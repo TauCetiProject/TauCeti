@@ -24,9 +24,9 @@ post-composition with the `K`-algebra endomorphism `x ↦ x ^ q ^ n` of `A`
 
 When `H` is commutative, the `q`-power map on the functions of `G₀` is the bialgebra
 endomorphism `TauCeti.frobeniusBialgHom K H`, the Frobenius endomorphism of `G₀` defined by its
-`𝔽_q`-structure, and the `q`-Frobenius on points is pre-composition with it. For `A = 𝔽̄_q`,
-reading the `𝔽̄_q`-points of `G = G₀ ×_{𝔽_q} 𝔽̄_q` as the `𝔽̄_q`-valued points of `H`, this is the
-geometric Frobenius `F` of `G`.
+`𝔽_q`-structure, and the `q`-Frobenius on points is pre-composition with it. For `A = k` an
+algebraic closure of `𝔽_q`, reading the `k`-points of `G = G₀ ×_{𝔽_q} k` as the `k`-valued points
+of `H`, this is the geometric Frobenius `F` of `G`.
 
 The fixed points of the Frobenius are the points valued in the Frobenius-fixed subalgebra of `A`
 (`TauCeti.FiniteField.frobeniusFixedPointsMulEquiv`). When `A` is a domain, for instance a field
@@ -177,8 +177,8 @@ theorem range_mapValue_val_frobeniusFixedSubalgebra (n : ℕ) :
 
 variable (K H A) in
 /-- **The Frobenius-fixed points are the points over the Frobenius-fixed subalgebra.** For
-`A = 𝔽̄_q` and `0 < n` the subalgebra is `𝔽_{q ^ n}`, so the points fixed by `F ^ n` are the
-`𝔽_{q ^ n}`-points. -/
+`A` an algebraic closure of `𝔽_q` and `0 < n` the subalgebra is `𝔽_{q ^ n}`, so the points fixed
+by `F ^ n` are the `𝔽_{q ^ n}`-points. -/
 noncomputable def frobeniusFixedPointsMulEquiv (n : ℕ) :
     WithConv (H →ₐ[K] frobeniusFixedSubalgebra K A n) ≃*
       fixedSubgroup (frobeniusPoints K n (H := H) (A := A)) :=
@@ -235,8 +235,8 @@ theorem range_mapValue_ofId :
 variable (K H) in
 /-- **The `q`-Frobenius-fixed points are the `K`-rational points.** For a Hopf algebra `H` over
 the finite field `K = 𝔽_q`, the coordinate algebra of an arbitrary `𝔽_q`-form `G₀`, and a domain
-`L` over `K` such as `𝔽̄_q`, the points fixed by the Frobenius `F` are the image of the
-`K`-points: `G^F ≃ G₀(𝔽_q)`. -/
+`L` over `K` such as an algebraic closure of `𝔽_q`, the points fixed by the Frobenius `F` are the
+image of the `K`-points: `G^F ≃ G₀(𝔽_q)`. -/
 noncomputable def rationalPointsMulEquiv :
     WithConv (H →ₐ[K] K) ≃* fixedSubgroup (frobeniusPoints K 1 (H := H) (A := L)) :=
   (MonoidHom.ofInjective (AlgHom.mapValue_injective (algebraMap K L).injective)).trans
