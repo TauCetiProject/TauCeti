@@ -15,13 +15,17 @@ An `n`-cell of an abstract simplicial complex is a face with `n + 1` vertices.  
 ordered vertex type, every cell has a canonical increasing enumeration.  This file also defines
 the codimension-one cell obtained by deleting an enumerated vertex and proves the semisimplicial
 face identity.  The codimension-one cells are classified by the vertex deleted from the original
-face.
+face.  Finally, a cell whose vertices all precede a vertex `v`, and to which `v` can be adjoined,
+has a cone with `v` as its last vertex; its faces are the original cell and the cones on the
+faces of the original cell.
 
 ## Main definitions
 
 * `AbstractSimplicialComplex.RealizationCell`: the faces with a prescribed dimension.
 * `AbstractSimplicialComplex.RealizationCell.vertexEmbedding`: the increasing vertex enumeration.
 * `AbstractSimplicialComplex.RealizationCell.face`: deletion of one enumerated vertex.
+* `AbstractSimplicialComplex.RealizationCell.vertex`: the `0`-cell of a vertex.
+* `AbstractSimplicialComplex.RealizationCell.cone`: the cone on a cell with a later vertex.
 -/
 
 public section
@@ -37,6 +41,21 @@ abbrev RealizationCell (K : AbstractSimplicialComplex ι) (n : ℕ) :=
   {σ : TauCeti.SetLike.Face K // σ.1.card = n + 1}
 
 namespace RealizationCell
+
+section Vertex
+
+variable (K : AbstractSimplicialComplex ι)
+
+/-- The `0`-cell of `K` whose only vertex is `v`. -/
+def vertex (v : ι) : RealizationCell K 0 :=
+  ⟨⟨{v}, K.singleton_mem v⟩, Finset.card_singleton v⟩
+
+/-- The vertex set of the `0`-cell of a vertex is that vertex. -/
+@[simp]
+theorem vertex_val (v : ι) : (vertex K v).1.1 = {v} :=
+  (rfl)
+
+end Vertex
 
 variable [LinearOrder ι]
 variable {K : AbstractSimplicialComplex ι} {n : ℕ}
@@ -142,6 +161,87 @@ theorem face_face (c : RealizationCell K (n + 2)) (i : Fin (n + 3)) (j : Fin (n 
     congrFun (vertexEmbedding_face c (i.succAbove j)) (j.predAbove i)]
   simp only [Function.comp_apply, Fin.succAbove_succAbove_predAbove]
   exact Finset.erase_right_comm
+
+section Cone
+
+/-- The cone on a cell `c` with a vertex `v` larger than all vertices of `c`, when adjoining `v`
+to `c` gives a face: the cell with vertex set `c ∪ {v}`. -/
+def cone (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
+    (hK : insert v c.1.1 ∈ K) : RealizationCell K (n + 1) :=
+  ⟨⟨insert v c.1.1, hK⟩, by
+    rw [Finset.card_insert_of_notMem fun hv ↦ (hlt v hv).false, c.2]⟩
+
+/-- The vertex set of a cone is obtained by adjoining the cone vertex. -/
+@[simp]
+theorem cone_val (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
+    (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).1.1 = insert v c.1.1 :=
+  (rfl)
+
+/-- The increasing enumeration of a cone enumerates the original cell and then the cone
+vertex. -/
+theorem vertexEmbedding_cone (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
+    (hK : insert v c.1.1 ∈ K) :
+    ⇑(c.cone v hlt hK).vertexEmbedding = Fin.lastCases v c.vertexEmbedding := by
+  symm
+  apply Finset.orderEmbOfFin_unique (c.cone v hlt hK).2
+  · intro i
+    rw [cone_val]
+    induction i using Fin.lastCases with
+    | last => simp
+    | cast i => simp
+  · refine Fin.strictMono_iff_lt_succ.mpr fun i ↦ ?_
+    induction i using Fin.lastCases with
+    | last =>
+      rw [Fin.succ_last, Fin.lastCases_last, Fin.lastCases_castSucc]
+      exact hlt _ (c.vertexEmbedding_mem (Fin.last n))
+    | cast i =>
+      rw [Fin.succ_castSucc, Fin.lastCases_castSucc, Fin.lastCases_castSucc]
+      exact c.strictMono_vertexEmbedding Fin.castSucc_lt_succ
+
+/-- Deleting the cone vertex from a cone recovers the original cell. -/
+@[simp]
+theorem face_cone_last (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
+    (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).face (Fin.last (n + 1)) = c := by
+  refine Subtype.ext (Subtype.ext ?_)
+  rw [face_val, congrFun (vertexEmbedding_cone c v hlt hK), Fin.lastCases_last, cone_val,
+    Finset.erase_insert fun hv ↦ (hlt v hv).false]
+
+/-- The vertex set of a deleted-vertex face of a cell lies in the original cell. -/
+theorem face_val_subset (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
+    (c.face j).1.1 ⊆ c.1.1 := by
+  rw [face_val]
+  exact Finset.erase_subset _ _
+
+/-- Adjoining `v` to a deleted-vertex face of a cell gives a face of `K` when adjoining it to the
+cell does. -/
+theorem insert_face_mem (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) {v : ι}
+    (hK : insert v c.1.1 ∈ K) : insert v (c.face j).1.1 ∈ K :=
+  K.isRelLowerSet_faces.mem_of_le hK (Finset.insert_subset_insert v (c.face_val_subset j))
+    (Finset.insert_nonempty _ _)
+
+/-- Deleting a vertex of the original cell from a cone gives the cone on the corresponding
+face. -/
+theorem face_cone_castSucc (c : RealizationCell K (n + 1)) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
+    (hK : insert v c.1.1 ∈ K) (j : Fin (n + 2)) :
+    (c.cone v hlt hK).face j.castSucc =
+      (c.face j).cone v (fun w hw ↦ hlt w (c.face_val_subset j hw)) (c.insert_face_mem j hK) := by
+  refine Subtype.ext (Subtype.ext ?_)
+  rw [face_val, congrFun (vertexEmbedding_cone c v hlt hK), Fin.lastCases_castSucc, cone_val,
+    cone_val, face_val, Finset.erase_insert_of_ne (hlt _ (c.vertexEmbedding_mem j)).ne']
+
+/-- Deleting the first vertex of the cone on a `0`-cell leaves the cone vertex. -/
+theorem face_cone_zero (c : RealizationCell K 0) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
+    (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).face 0 = vertex K v := by
+  refine Subtype.ext (Subtype.ext ?_)
+  obtain ⟨w, hw⟩ := Finset.card_eq_one.mp c.2
+  have h0 : c.vertexEmbedding 0 = w := by
+    simpa [hw] using c.vertexEmbedding_mem 0
+  rw [face_val, ← Fin.castSucc_zero,
+    congrFun (vertexEmbedding_cone c v hlt hK), Fin.lastCases_castSucc, h0, cone_val, hw,
+    vertex_val, Finset.erase_insert_of_ne (hlt w (by simp [hw])).ne', Finset.erase_singleton,
+    insert_empty_eq]
+
+end Cone
 
 end RealizationCell
 
