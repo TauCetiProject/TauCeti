@@ -214,9 +214,8 @@ theorem exists_lTensor_coact_eq_tmul_iff_mem_span [IsDomain R] {d : ℕ} {f : Mv
       have hgB : g.ofConv.toLinearMap = uB.ofConv.toLinearMap ∘ₗ
           (UpperTriangular.coordinateMap R 2).hom.toLinearMap := LinearMap.ext fun x ↦ by
         simp [g, BialgHom.toCoalgHom_apply]
-      rw [Comodule.endOfPoint_tmul, one_smul, hgB, LinearMap.lTensor_comp_apply, hfh,
-        LinearMap.lTensor_tmul, TensorProduct.comm_tmul, TensorProduct.smul_tmul', smul_eq_mul,
-        mul_one, AlgHom.toLinearMap_apply]
+      rw [Comodule.endOfPoint_tmul, hgB, LinearMap.lTensor_comp_apply, hfh]
+      simp [TensorProduct.smul_tmul']
     have hpoly := congrArg (MvPolynomial.algebraTensorAlgEquiv R R[X]) key
     rw [algebraTensorAlgEquiv_endOfPoint_binaryForm g hg, map_smul,
       MvPolynomial.algebraTensorAlgEquiv_tmul, one_smul] at hpoly

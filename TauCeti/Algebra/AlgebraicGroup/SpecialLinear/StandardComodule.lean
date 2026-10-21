@@ -166,10 +166,9 @@ theorem ofConv_coefficientMatrix (g : WithConv (coordinateHopfAlgebra R n →ₐ
         (Pi.basisFun R (Fin n)) i j) =
       (pointsMulEquiv (R := R) (A := A) n g : Matrix (Fin n) (Fin n) A) i j := by
   rw [← Matrix.SpecialLinearGroup.coe_GL_coe_matrix, ← pointsMulEquiv_toGL,
-    GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply,
-    CommHopfAlgCat.quotientPointsHom_apply, ofConv_toConv, AlgHom.comp_apply,
-    ← GeneralLinear.genericMatrix_apply, coefficientMatrix_basisFun, Matrix.map_apply,
-    BialgHom.coe_toAlgHom]
+    coefficientMatrix_basisFun, GeneralLinear.pointsMulEquiv_apply,
+    GeneralLinear.pointToGeneralLinear_apply, CommHopfAlgCat.quotientPointsHom_apply_apply]
+  simp
 
 end PointAction
 

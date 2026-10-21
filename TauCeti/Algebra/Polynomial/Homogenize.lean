@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Roots
 public import TauCeti.Algebra.Polynomial.Degree.Operations
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
+import Mathlib.RingTheory.MvPolynomial.Tower
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -236,45 +237,22 @@ theorem IsHomogeneous.mem_span_X_one_pow_of_aeval_eq_smul {R : Type*} [CommRing 
   -- The dehomogenization `p = f(x, 1)` and the value `a = f(0, 1)`.
   set p : R[X] := MvPolynomial.aeval ![(Polynomial.X : R[X]), 1] f with hp
   set a : R := MvPolynomial.aeval ![(0 : R), 1] f with ha
-  -- Evaluate the semi-invariance at `(x, y) = (t, 1)` and at `(x, y) = (0, 1)`.
-  -- The two evaluations, as `R`-algebra homomorphisms out of `MvPolynomial (Fin 2) R[t]`.
-  let ev₁ : MvPolynomial (Fin 2) R[X] →ₐ[R] R[X] :=
-    (MvPolynomial.aeval (R := R[X]) ![Polynomial.X, 1]).restrictScalars R
-  let ev₀ : MvPolynomial (Fin 2) R[X] →ₐ[R] R[X] :=
-    (MvPolynomial.aeval (R := R[X]) ![0, 1]).restrictScalars R
-  let σ : MvPolynomial (Fin 2) R →ₐ[R] MvPolynomial (Fin 2) R[X] :=
-    MvPolynomial.aeval ![X 0 - C Polynomial.X * X 1, X 1]
-  let ι := mapAlgHom (σ := Fin 2) (Algebra.ofId R R[X])
-  have k₁ : ev₁.comp σ = (Algebra.ofId R R[X]).comp (MvPolynomial.aeval ![(0 : R), 1]) :=
-    algHom_ext fun i ↦ by fin_cases i <;> simp [ev₁, σ]
-  have k₁' : ev₁.comp ι = MvPolynomial.aeval ![(Polynomial.X : R[X]), 1] :=
-    algHom_ext fun i ↦ by fin_cases i <;> simp [ev₁, ι]
-  have k₀ : ev₀.comp σ = MvPolynomial.aeval ![(-Polynomial.X : R[X]), 1] :=
-    algHom_ext fun i ↦ by fin_cases i <;> simp [ev₀, σ]
-  have k₀' : ev₀.comp ι = (Algebra.ofId R R[X]).comp (MvPolynomial.aeval ![(0 : R), 1]) :=
-    algHom_ext fun i ↦ by fin_cases i <;> simp [ev₀, ι]
-  have hι : ι f = f.map (algebraMap R R[X]) := by simp [ι]
-  have h1 : Polynomial.C a = c * p := by
-    have e := congrArg (MvPolynomial.aeval (R := R[X]) ![(Polynomial.X : R[X]), 1]) h
-    rw [map_smul, smul_eq_mul, ← hι] at e
-    have eL := DFunLike.congr_fun k₁ f
-    have eR := DFunLike.congr_fun k₁' f
-    simp only [AlgHom.comp_apply] at eL eR
-    rw [hp, ha, ← eR, ← Polynomial.algebraMap_eq, ← Algebra.ofId_apply, ← eL]
-    exact e
+  -- Evaluating the semi-invariance at a point `(x, y)` gives `f(x - t y, y) = c f(x, y)`.
+  have ev (x y : R[X]) : MvPolynomial.aeval ![x - Polynomial.X * y, y] f =
+      c * MvPolynomial.aeval ![x, y] f := by
+    have e := congrArg (MvPolynomial.aeval ![x, y]) h
+    rw [map_smul, smul_eq_mul, aeval_map_algebraMap, ← AlgHom.coe_restrictScalars' (R := R),
+      comp_aeval_apply] at e
+    convert e using 3
+    ext i; fin_cases i <;> simp
+  have hC : MvPolynomial.aeval ![(0 : R[X]), 1] f = Polynomial.C a := by
+    rw [ha, ← Polynomial.algebraMap_eq, ← aeval_algebraMap_apply]
+    congr 1; ext i; fin_cases i <;> simp
+  -- Evaluate at `(x, y) = (t, 1)` and at `(x, y) = (0, 1)`.
+  have h1 : Polynomial.C a = c * p := by simpa [hC] using ev Polynomial.X 1
   have h2 : Polynomial.aeval (-Polynomial.X) p = c * Polynomial.C a := by
-    have e := congrArg (MvPolynomial.aeval (R := R[X]) ![(0 : R[X]), 1]) h
-    rw [map_smul, smul_eq_mul, ← hι] at e
-    have eL := DFunLike.congr_fun k₀ f
-    have eR := DFunLike.congr_fun k₀' f
-    simp only [AlgHom.comp_apply] at eL eR
-    have hcomp :
-        Polynomial.aeval (-Polynomial.X) p = MvPolynomial.aeval ![(-Polynomial.X : R[X]), 1] f := by
-      rw [hp, comp_aeval_apply]
-      refine congrArg (MvPolynomial.aeval · f) (_root_.funext fun i ↦ ?_)
-      fin_cases i <;> simp
-    rw [hcomp, ← eL, ha, ← Polynomial.algebraMap_eq, ← Algebra.ofId_apply, ← eR]
-    exact e
+    rw [hp, comp_aeval_apply, ← hC, ← ev]
+    congr 1; ext i; fin_cases i <;> simp
   have hdeg : p.natDegree = 0 := by
     rcases eq_or_ne p 0 with hp0 | hp0
     · rw [hp0, Polynomial.natDegree_zero]
