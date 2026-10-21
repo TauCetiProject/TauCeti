@@ -70,12 +70,6 @@ namespace CircleSobolev
 variable {s : ℝ} {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup E'] [NormedSpace ℂ E'] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- A sequence lies in `H^s` exactly when its weighted norms are square-summable. -/
-private theorem memℓp_weight_smul_iff (c : ℤ → E) :
-    Memℓp (fun n ↦ weight s n • c n) 2 ↔ Summable fun n ↦ (weight s n * ‖c n‖) ^ 2 := by
-  rw [memℓp_gen_iff (by norm_num)]
-  simp [norm_smul, abs_of_nonneg (weight_nonneg s _)]
-
 private theorem summable_sq_weight_mul_norm_coeff (a : CircleSobolev s E) :
     Summable fun n : ℤ ↦ ((1 + |(n : ℝ)|) ^ s * ‖a.coeff n‖) ^ 2 := by
   simpa only [weight_def] using (hasSum_sq_weight_mul_norm_coeff a).summable
@@ -264,6 +258,7 @@ theorem mul_def (a b : CircleSobolev s A) : a * b = convolution hs.out (.mul ℂ
   (rfl)
 
 /-- The coefficients of a product are the convolution sums `∑ₘ a.coeff (n - m) * b.coeff m`. -/
+@[simp]
 theorem coeff_mul (a b : CircleSobolev s A) (n : ℤ) :
     (a * b).coeff n = ∑' m, a.coeff (n - m) * b.coeff m :=
   coeff_convolution_apply hs.out _ a b n
