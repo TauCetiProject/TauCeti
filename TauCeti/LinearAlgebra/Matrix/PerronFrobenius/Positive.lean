@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Algebra.Spectrum
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
-public import Mathlib.LinearAlgebra.Eigenspace.Matrix
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Connected
 
@@ -258,15 +258,6 @@ theorem spectralRadius_eq_of_mulVec_eq_smul [Nonempty n] (hA : ∀ i j, 0 ≤ A 
     (hv : ∀ i, 0 < v i) (hAv : A *ᵥ v = r • v) :
     spectralRadius ℂ (A.map (↑) : Matrix n n ℂ) = ENNReal.ofReal r := by
   classical
-  have hmem : ∀ μ : ℂ, μ ∈ spectrum ℂ (A.map (↑) : Matrix n n ℂ) ↔
-      ∃ z : n → ℂ, z ≠ 0 ∧ A.map (↑) *ᵥ z = μ • z := by
-    intro μ
-    rw [← spectrum_toLin', ← Module.End.hasEigenvalue_iff_mem_spectrum]
-    refine ⟨fun h => ?_, fun ⟨z, hz, hAz⟩ => ?_⟩
-    · obtain ⟨z, hz⟩ := h.exists_hasEigenvector
-      exact ⟨z, hz.2, by simpa using Module.End.mem_eigenspace_iff.1 hz.1⟩
-    · exact Module.End.hasEigenvalue_of_hasEigenvector
-        ⟨Module.End.mem_eigenspace_iff.2 (by simpa using hAz), hz⟩
   obtain ⟨i₀⟩ := ‹Nonempty n›
   have hr : 0 ≤ r := by
     have h := mulVec_nonneg hA (fun i => (hv i).le) i₀
@@ -274,10 +265,11 @@ theorem spectralRadius_eq_of_mulVec_eq_smul [Nonempty n] (hA : ∀ i j, 0 ≤ A 
     exact nonneg_of_mul_nonneg_left h (hv i₀)
   rw [spectralRadius_eq_of_unital]
   refine le_antisymm (iSup₂_le fun μ hμ => ?_) ?_
-  · obtain ⟨z, hz, hAz⟩ := (hmem μ).1 hμ
+  · obtain ⟨z, hz, hAz⟩ := mem_spectrum_iff_exists_mulVec_eq_smul.1 hμ
     rw [← ENNReal.ofReal_coe_nnreal, coe_nnnorm]
     exact ENNReal.ofReal_le_ofReal (norm_le_of_mulVec_eq_smul hA hv hAv hz hAz)
-  · refine le_iSup₂_of_le (r : ℂ) ((hmem _).2 ⟨fun i => v i, ?_, ?_⟩) ?_
+  · refine le_iSup₂_of_le (r : ℂ)
+      (mem_spectrum_iff_exists_mulVec_eq_smul.2 ⟨fun i => v i, ?_, ?_⟩) ?_
     · exact fun h => (hv i₀).ne' (by simpa using congrFun h i₀)
     · ext i
       simpa [mulVec, dotProduct] using congrArg Complex.ofReal (congrFun hAv i)
