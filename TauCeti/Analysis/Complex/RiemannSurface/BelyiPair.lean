@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.MonodromyTriple
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover
+public import TauCeti.Analysis.Complex.RiemannSurface.ChebyshevMap
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
@@ -77,7 +78,9 @@ injective on isomorphism classes
 The basic examples live on the sphere itself: for `n ≠ 0`, the power map `z ↦ z ^ n` is a Belyi
 map of degree `n`, ramified of index `n` over `0` and `∞` and unramified over `1`
 (`TauCeti.AnalyticBelyiPair.pow`). For `n = 1` this is the trivial pair, the identity of the
-sphere.
+sphere. The polynomial `z ↦ 4z(1 - z)` is a Belyi map of degree `2`, unramified over `0` and
+ramified of index `2` over `1` and `∞`, so that its ramification partitions over `0`, `1` and `∞`
+are `[1, 1]`, `[2]` and `[2]` (`TauCeti.AnalyticBelyiPair.chebyshev`).
 
 ## Main declarations
 
@@ -129,6 +132,11 @@ sphere.
   isomorphic underlying topological branched covers are isomorphic.
 * `TauCeti.AnalyticBelyiPair.pow`: the power map `z ↦ z ^ n` of the sphere, of degree `n`
   (`TauCeti.RiemannSurface.degree_onePointMap_pow`).
+* `TauCeti.AnalyticBelyiPair.chebyshev`: the map `z ↦ 4z(1 - z)` of the sphere, of degree `2`
+  (`TauCeti.AnalyticBelyiPair.degree_β_chebyshev`), with branch values `1` and `∞`
+  (`TauCeti.AnalyticBelyiPair.branchValues_β_chebyshev`); its fibres and local multiplicities
+  over `0`, `1` and `∞` are `TauCeti.RiemannSurface.preimage_onePointMap_four_mul_mul_one_sub_zero`
+  and its companions in `TauCeti.Analysis.Complex.RiemannSurface.ChebyshevMap`.
 
 ## References
 
@@ -468,6 +476,41 @@ def pow {n : ℕ} (hn : n ≠ 0) : AnalyticBelyiPair.{0} where
 @[simp]
 theorem coe_β_pow {n : ℕ} (hn : n ≠ 0) : ⇑(pow hn).β = OnePoint.map fun z : ℂ ↦ z ^ n :=
   FiniteHolomorphicMap.coe_spherePow hn
+
+end AnalyticBelyiPair
+
+/-- **The map `z ↦ 4z(1 - z)` is a Belyi map.** The Riemann sphere with the map `z ↦ 4z(1 - z)`,
+sending `∞` to `∞`, is an analytic Belyi pair of degree `2`. It is unramified over `0`, whose
+preimages are `0` and `1`, and ramified of index `2` over `1`, at `1/2`, and over `∞`, at `∞`, so
+its ramification partitions over `0`, `1` and `∞` are `[1, 1]`, `[2]` and `[2]`. The map is
+`z ↦ (1 - T₂(1 - 2z)) / 2` for the Chebyshev polynomial `T₂ = 2x² - 1`. -/
+-- The body is exposed so that the surface of the pair is `OnePoint ℂ` by definition.
+@[expose]
+def AnalyticBelyiPair.chebyshev : AnalyticBelyiPair.{0} where
+  X := OnePoint ℂ
+  β := .spherePolynomial RiemannSurface.natDegree_four_mul_X_mul_one_sub_X_pos
+  branchValues_subset := by
+    rw [RiemannSurface.branchValues_spherePolynomial_four_mul_X_mul_one_sub_X]
+    simp
+
+namespace AnalyticBelyiPair
+
+/-- The Belyi map of `chebyshev` is the map `z ↦ 4z(1 - z)` of the sphere. -/
+@[simp]
+theorem coe_β_chebyshev : ⇑chebyshev.β = OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z) :=
+  (FiniteHolomorphicMap.coe_spherePolynomial _).trans
+    RiemannSurface.onePointMap_eval_four_mul_X_mul_one_sub_X
+
+/-- The Belyi map `z ↦ 4z(1 - z)` has degree `2`. -/
+theorem degree_β_chebyshev : degree chebyshev.β = 2 :=
+  -- The surface of `chebyshev` is `OnePoint ℂ` by definition, so `coe_β_chebyshev` applies.
+  (congrArg degree coe_β_chebyshev).trans degree_onePointMap_four_mul_mul_one_sub
+
+/-- The branch values of `z ↦ 4z(1 - z)` are exactly `1` and `∞`: it is unramified over `0`. -/
+@[simp]
+theorem branchValues_β_chebyshev : chebyshev.β.branchValues = {((1 : ℂ) : OnePoint ℂ), ∞} :=
+  -- `chebyshev.β` is the polynomial map of `4X(1 - X)` by definition.
+  RiemannSurface.branchValues_spherePolynomial_four_mul_X_mul_one_sub_X
 
 end AnalyticBelyiPair
 

@@ -32,6 +32,9 @@ is obtained by inserting the first entry into the corresponding image for the ta
   `Fin.cons x a`.
 * `Fin.init_contractNth_castSucc_last`: contracting the last two entries and dropping the last
   one drops the last two entries.
+* `Fin.contractNth_last`: contracting at the last position drops the last entry.
+* `Fin.contractNth_castSucc_castSucc_apply_last` and `Fin.contractNth_castSucc_last_apply_last`:
+  the last entry of a contraction.
 * `Fin.contractNth_castSucc_eq_update_removeNth_succ`: contracting the entries `j` and `j + 1`
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
@@ -117,6 +120,24 @@ theorem init_contractNth_castSucc_last (a : Fin (n + 2) → α) :
     init (contractNth (last n).castSucc op a) = init (init a) := by
   funext k
   simp only [init, contractNth, val_castSucc, val_last, k.is_lt, ↓reduceIte]
+
+/-- Contracting at the last position, which has no successor, drops the last entry. -/
+@[simp]
+theorem contractNth_last (a : Fin (n + 1) → α) : contractNth (last n) op a = init a := by
+  funext k
+  rw [contractNth_apply_of_lt _ _ _ _ (by simp), init]
+
+/-- A contraction not involving the last entry keeps the last entry. -/
+@[simp]
+theorem contractNth_castSucc_castSucc_apply_last (j : Fin n) (a : Fin (n + 2) → α) :
+    contractNth j.castSucc.castSucc op a (last n) = a (last (n + 1)) := by
+  rw [contractNth_apply_of_gt _ _ _ _ (by simp [j.isLt]), succ_last]
+
+/-- Contracting the last two entries makes their product the last entry. -/
+@[simp]
+theorem contractNth_castSucc_last_apply_last (a : Fin (n + 2) → α) :
+    contractNth (last n).castSucc op a (last n) = op (a (last n).castSucc) (a (last (n + 1))) := by
+  rw [contractNth_apply_of_eq _ _ _ _ (by simp), succ_last]
 
 /-- Contracting the entries `j` and `j + 1` is deleting entry `j + 1` and then overwriting
 entry `j` by the contraction. -/

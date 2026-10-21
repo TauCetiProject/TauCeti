@@ -26,6 +26,10 @@ The multiplicity transport at invertible roots works over arbitrary commutative 
 including rings with zero divisors. The zero-root statements work over arbitrary rings.
 No splitting hypothesis is needed.
 
+Evaluating the reversal of `p` at `0` gives the leading coefficient of `p`, which is nonzero
+when `p` is, and at a nonzero point `w` of a field it gives `w ^ d p(w⁻¹)`, where `d` is the
+degree of `p`: the reversal is `p` read in the reciprocal coordinate.
+
 The file also records how reversal interacts with products of monic polynomials and with the
 binomials `X ^ n - C a`, which together compute the reverse of a characteristic polynomial that
 factors into such binomials.
@@ -158,5 +162,24 @@ theorem reverse_multiset_prod_of_monic [CommSemiring R] {s : Multiset R[X]}
     rw [Multiset.prod_cons, Multiset.map_cons, Multiset.prod_cons,
       reverse_mul (by rw [hp.leadingCoeff, hprod.leadingCoeff, one_mul]; exact one_ne_zero),
       ih hs']
+
+/-- The reversal of a polynomial takes the value of the leading coefficient at `0`. -/
+@[simp]
+theorem eval_zero_reverse [Semiring R] (p : R[X]) : p.reverse.eval 0 = p.leadingCoeff := by
+  rw [← coeff_zero_eq_eval_zero, coeff_zero_reverse]
+
+/-- The reversal of a nonzero polynomial does not vanish at `0`, where its value is the leading
+coefficient. -/
+theorem eval_zero_reverse_ne_zero [Semiring R] {p : R[X]} (hp : p ≠ 0) : p.reverse.eval 0 ≠ 0 := by
+  simpa using hp
+
+/-- At a nonzero point `w`, the reversal of a polynomial `p` of degree `d` takes the value
+`w ^ d p(w⁻¹)`. -/
+theorem eval_reverse_of_ne_zero [Field R] (p : R[X]) {w : R} (hw : w ≠ 0) :
+    p.reverse.eval w = w ^ p.natDegree * p.eval w⁻¹ := by
+  let : Invertible w⁻¹ := invertibleOfNonzero (inv_ne_zero hw)
+  have h := eval₂_reverse_mul_pow (RingHom.id R) w⁻¹ p
+  rw [invOf_eq_inv, inv_inv, eval₂_id, eval₂_id, inv_pow] at h
+  rw [← h, mul_comm, inv_mul_cancel_right₀ (pow_ne_zero _ hw)]
 
 end Polynomial
