@@ -52,12 +52,14 @@ The two main results are the following.
   (`TauCeti.isCompact_polynomialPolyhedron`) and polynomially convex
   (`TauCeti.isPolynomiallyConvex_polynomialPolyhedron`), and its interior contains
   `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}`
-  (`TauCeti.ball_inter_iInter_subset_interior_polynomialPolyhedron`).
+  (`TauCeti.ball_inter_biInter_subset_interior_polynomialPolyhedron`).
 
 ## Main results
 
 * `TauCeti.exists_norm_eval_lt_one_lt_of_notMem_polynomialHull`: a point outside the hull of `K`
   is separated from `K` by a polynomial of modulus `< 1` on `K` and `> 1` at the point.
+* `TauCeti.isPolynomiallyConvex_iff_forall_notMem_exists_norm_eval_lt_one_lt`: `K` is
+  polynomially convex if and only if every point outside `K` is separated from `K` in this way.
 * `IsCompact.notMem_polynomialHull_of_forall_norm_eval_lt`: if `|p| < |p(z)|` at every point of a
   compact `K`, then `z` is not in the hull of `K`.
 * `IsCompact.isPolynomiallyConvex_of_forall_im_eq_zero`: compact subsets of `ℝⁿ` are polynomially
@@ -96,6 +98,9 @@ def IsPolynomiallyConvex (K : Set (ι → ℂ)) : Prop :=
   polynomialHull K ⊆ K
 
 variable {K L : Set (ι → ℂ)} {z : ι → ℂ}
+
+theorem isPolynomiallyConvex_iff : IsPolynomiallyConvex K ↔ polynomialHull K ⊆ K :=
+  Iff.rfl
 
 theorem mem_polynomialHull_iff :
     z ∈ polynomialHull K ↔
@@ -177,26 +182,39 @@ theorem isPolynomiallyConvex_polynomialHull (K : Set (ι → ℂ)) :
 modulus `< 1` on `K` and `> 1` at the point. -/
 theorem IsPolynomiallyConvex.exists_norm_eval_lt_one_lt (hK : IsPolynomiallyConvex K)
     (hz : z ∉ K) : ∃ p : MvPolynomial ι ℂ, (∀ w ∈ K, ‖eval w p‖ < 1) ∧ 1 < ‖eval z p‖ :=
-  exists_norm_eval_lt_one_lt_of_notMem_polynomialHull fun h ↦ hz (hK h)
+  exists_norm_eval_lt_one_lt_of_notMem_polynomialHull fun h ↦
+    hz (isPolynomiallyConvex_iff.1 hK h)
+
+/-- A set `K` is polynomially convex if and only if every point outside `K` is separated from `K`
+by a polynomial of modulus `< 1` on `K` and `> 1` at the point. -/
+theorem isPolynomiallyConvex_iff_forall_notMem_exists_norm_eval_lt_one_lt :
+    IsPolynomiallyConvex K ↔
+      ∀ z ∉ K, ∃ p : MvPolynomial ι ℂ, (∀ w ∈ K, ‖eval w p‖ < 1) ∧ 1 < ‖eval z p‖ := by
+  refine ⟨fun hK _ hz ↦ hK.exists_norm_eval_lt_one_lt hz, fun h ↦ ?_⟩
+  refine isPolynomiallyConvex_iff.2 fun z hz ↦ by_contra fun hzK ↦ ?_
+  obtain ⟨p, hpK, hpz⟩ := h z hzK
+  exact (mem_polynomialHull_iff.1 hz p 1 fun w hw ↦ (hpK w hw).le).not_gt hpz
 
 theorem isPolynomiallyConvex_empty : IsPolynomiallyConvex (∅ : Set (ι → ℂ)) := by
-  simp [IsPolynomiallyConvex]
+  simp [isPolynomiallyConvex_iff]
 
 /-- An intersection of polynomially convex sets is polynomially convex. -/
 theorem isPolynomiallyConvex_iInter {κ : Sort*} {K : κ → Set (ι → ℂ)}
     (hK : ∀ k, IsPolynomiallyConvex (K k)) : IsPolynomiallyConvex (⋂ k, K k) :=
-  fun _ hz ↦ mem_iInter.2 fun k ↦ hK k (polynomialHull_mono (iInter_subset K k) hz)
+  isPolynomiallyConvex_iff.2 fun _ hz ↦ mem_iInter.2 fun k ↦
+    isPolynomiallyConvex_iff.1 (hK k) (polynomialHull_mono (iInter_subset K k) hz)
 
 /-- The intersection of two polynomially convex sets is polynomially convex. -/
 theorem IsPolynomiallyConvex.inter (hK : IsPolynomiallyConvex K) (hL : IsPolynomiallyConvex L) :
     IsPolynomiallyConvex (K ∩ L) :=
-  fun _ hz ↦ ⟨hK (polynomialHull_mono inter_subset_left hz),
-    hL (polynomialHull_mono inter_subset_right hz)⟩
+  isPolynomiallyConvex_iff.2 fun _ hz ↦
+    ⟨isPolynomiallyConvex_iff.1 hK (polynomialHull_mono inter_subset_left hz),
+      isPolynomiallyConvex_iff.1 hL (polynomialHull_mono inter_subset_right hz)⟩
 
 /-- A sublevel set `{w | |p(w)| ≤ c}` of the modulus of a polynomial is polynomially convex. -/
 theorem isPolynomiallyConvex_setOf_norm_eval_le (p : MvPolynomial ι ℂ) (c : ℝ) :
     IsPolynomiallyConvex {w | ‖eval w p‖ ≤ c} :=
-  fun _ hz ↦ hz p c fun _ hw ↦ hw
+  isPolynomiallyConvex_iff.2 fun _ hz ↦ hz p c fun _ hw ↦ hw
 
 /-- Closed balls of `ℂⁿ` for the sup norm, that is, closed polydiscs, are polynomially convex. -/
 theorem isPolynomiallyConvex_closedBall [Fintype ι] (x : ι → ℂ) (r : ℝ) :
@@ -233,7 +251,7 @@ private theorem eval_sum_sq_sub_re_self [Fintype ι] (z : ι → ℂ) :
 theorem _root_.IsCompact.isPolynomiallyConvex_of_forall_im_eq_zero [Finite ι]
     (hK : IsCompact K) (hreal : ∀ w ∈ K, ∀ i, (w i).im = 0) : IsPolynomiallyConvex K := by
   have := Fintype.ofFinite ι
-  intro z hz
+  refine isPolynomiallyConvex_iff.2 fun z hz ↦ ?_
   by_contra hzK
   -- `f w = ∑ᵢ (Re wᵢ - Re zᵢ)²` is bounded on `K`; choose `ε > 0` with `ε f < 1` on `K`.
   set f : (ι → ℂ) → ℝ := fun w ↦ ∑ i, ((w i).re - (z i).re) ^ 2
@@ -299,7 +317,7 @@ theorem isCompact_polynomialPolyhedron (R : ℝ) (s : Finset (MvPolynomial ι �
 
 /-- The open set `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}` lies in the interior of the polynomial
 polyhedron `polynomialPolyhedron R s`. -/
-theorem ball_inter_iInter_subset_interior_polynomialPolyhedron (R : ℝ)
+theorem ball_inter_biInter_subset_interior_polynomialPolyhedron (R : ℝ)
     (s : Finset (MvPolynomial ι ℂ)) :
     ball 0 R ∩ ⋂ p ∈ s, {w | ‖eval w p‖ < 1} ⊆ interior (polynomialPolyhedron R s) :=
   interior_maximal
@@ -359,6 +377,6 @@ theorem IsPolynomiallyConvex.exists_subset_interior_polynomialPolyhedron [Fintyp
     ∃ (R : ℝ) (s : Finset (MvPolynomial ι ℂ)), 0 < R ∧
       K ⊆ interior (polynomialPolyhedron R s) ∧ polynomialPolyhedron R s ⊆ U := by
   obtain ⟨R, s, hR, hKs, hsU⟩ := hKc.exists_polynomialPolyhedron_subset hK hU hKU
-  exact ⟨R, s, hR, hKs.trans (ball_inter_iInter_subset_interior_polynomialPolyhedron R s), hsU⟩
+  exact ⟨R, s, hR, hKs.trans (ball_inter_biInter_subset_interior_polynomialPolyhedron R s), hsU⟩
 
 end TauCeti
