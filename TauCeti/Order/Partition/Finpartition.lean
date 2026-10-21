@@ -26,9 +26,10 @@ subset on the parts, cardinality bounds for common refinements, a bound on the s
 part sizes, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
 the behavior of intersections of parts under refinement, the symmetry of lying in a common part,
 the determination of a partition by its parts through each point, the parts of a restriction, the
-monotonicity of `Finpartition.part` under refinement, and the coarse parent
-`Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
-summation formulas for the fine parts below a coarse part.
+monotonicity of `Finpartition.part` under refinement, the splitting of a sum over the support into
+sums over the parts, and the coarse parent `Finpartition.refinementParent` of a part of a finer
+partition, together with the coarse part through each point and decomposition and summation
+formulas for the fine parts below a coarse part.
 -/
 
 public section
@@ -239,6 +240,12 @@ theorem sum_card_subtype {R : Type*} [AddCommMonoidWithOne R] (P : Finpartition 
   rw [Finset.sum_coe_sort P.parts fun A => (#A : R)]
   rw [← Nat.cast_sum, P.sum_card_parts]
 
+/-- A sum over the support of a finite partition splits as a sum over its parts. -/
+theorem sum_sum_coe_parts {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : α → M) :
+    ∑ A : P.parts, ∑ x ∈ A.1, f x = ∑ x ∈ s, f x := by
+  rw [Finset.sum_coe_sort P.parts fun A => ∑ x ∈ A, f x]
+  exact (Finset.sum_biUnion P.disjoint).symm.trans (by rw [P.biUnion_parts])
+
 /-- The weights `|A||B| / |s|²` of the ordered pairs of parts sum to at most one.
 No compatibility between the preorder and arithmetic is needed beyond `0 ≤ 1`. -/
 theorem sum_sum_weight_le_one {K : Type*} [DivisionSemiring K] [Preorder K] [ZeroLEOneClass K]
@@ -297,6 +304,11 @@ theorem part_restrict {t : Finset α} (P : Finpartition s) (hts : t ≤ s) {a : 
   refine part_eq_of_mem _ ?_ hat
   rw [parts_restrict, mem_erase]
   exact ⟨ne_empty_of_mem hat, mem_image_of_mem _ (P.part_mem.2 (hts ha))⟩
+
+/-- The coarse part through a point of a fine part `B` is the coarse parent of `B`. -/
+theorem part_eq_refinementParent (h : Q ≤ P) (B : Q.parts) {x : α} (hx : x ∈ B.1) :
+    P.part x = (refinementParent h B).1 :=
+  P.part_eq_of_mem (refinementParent h B).2 (le_refinementParent h B hx)
 
 /-- A coarse part is the disjoint union of the fine parts whose coarse parent it is. -/
 theorem biUnion_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
