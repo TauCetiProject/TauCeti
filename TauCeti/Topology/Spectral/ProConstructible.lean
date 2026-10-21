@@ -72,9 +72,10 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
   pro-constructible subsets, because the constructible topology of the target is Hausdorff.
 * `TauCeti.IsProConstructible.closure_eq_setOfPred_specializes` — **the closure of a
   pro-constructible subset is its set of specializations**; hence
-  `.isClosed_iff_stableUnderSpecialization`, and dually
-  `.eq_sInter_of_stableUnderGeneralization`: a pro-constructible subset stable under
-  generalization is the intersection of the quasi-compact opens containing it.
+  `.isClosed_iff_stableUnderSpecialization`.
+* `IsCompact.eq_sInter_of_stableUnderGeneralization` — dually, in a prespectral space a
+  quasi-compact subset stable under generalization is the intersection of the quasi-compact opens
+  containing it; hence `TauCeti.IsProConstructible.eq_sInter_of_stableUnderGeneralization`.
 * `IsSpectralMap.isQuotientMap_of_generalizingMap` — a surjective generalizing spectral map onto
   a spectral space is a quotient map. This is the general form of Mathlib's
   `PrimeSpectrum.isQuotientMap_of_generalizingMap`, whose proof it follows.
@@ -323,6 +324,26 @@ end Spectral
 
 /-! ### Images, closures and quotient maps -/
 
+/-- In a prespectral space, a quasi-compact subset that is stable under generalization is the
+intersection of the quasi-compact open subsets containing it. -/
+theorem _root_.IsCompact.eq_sInter_of_stableUnderGeneralization [PrespectralSpace X] {s : Set X}
+    (hs : IsCompact s) (hg : StableUnderGeneralization s) :
+    s = ⋂₀ {U | IsOpen U ∧ IsCompact U ∧ s ⊆ U} := by
+  refine Set.Subset.antisymm (fun x hx ↦ Set.mem_sInter.2 fun U hU ↦ hU.2.2 hx) fun x hx ↦ ?_
+  by_contra hxs
+  -- Each `z ∈ s` has a quasi-compact open neighbourhood `U z` missing `x`, since `x` is not a
+  -- generalization of `z`.
+  have hU (z : X) (hz : z ∈ s) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ z ∈ U ∧ x ∉ U :=
+    PrespectralSpace.exists_isOpen_isCompact_of_not_specializes fun h ↦ hxs (hg h hz)
+  choose! U hUo hUc hzU hxU using hU
+  -- Finitely many of the `U z` cover `s`; their union is a quasi-compact open missing `x`.
+  obtain ⟨t, hts, htfin, hcover⟩ := hs.elim_finite_subcover_image
+    (fun z hz ↦ hUo z hz) (fun w hw ↦ Set.mem_biUnion hw (hzU _ hw))
+  obtain ⟨z, hz, hxz⟩ := Set.mem_iUnion₂.1 <| Set.mem_sInter.1 hx (⋃ z ∈ t, U z)
+    ⟨isOpen_biUnion fun z hz ↦ hUo z (hts hz),
+      htfin.isCompact_biUnion fun z hz ↦ hUc z (hts hz), hcover⟩
+  exact hxU z (hts hz) hxz
+
 section CompactConstructible
 
 variable [CompactSpace X] [QuasiSober X] [PrespectralSpace X] [QuasiSeparatedSpace X] {s : Set X}
@@ -380,21 +401,8 @@ theorem IsProConstructible.isClosed_iff_stableUnderSpecialization (hs : IsProCon
 that is stable under generalization is the intersection of the quasi-compact open subsets
 containing it. -/
 theorem IsProConstructible.eq_sInter_of_stableUnderGeneralization (hs : IsProConstructible s)
-    (hg : StableUnderGeneralization s) : s = ⋂₀ {U | IsOpen U ∧ IsCompact U ∧ s ⊆ U} := by
-  refine Set.Subset.antisymm (fun x hx ↦ Set.mem_sInter.2 fun U hU ↦ hU.2.2 hx) fun x hx ↦ ?_
-  by_contra hxs
-  -- Each `z ∈ s` has a quasi-compact open neighbourhood `U z` missing `x`, since `x` is not a
-  -- generalization of `z`.
-  have hU (z : X) (hz : z ∈ s) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ z ∈ U ∧ x ∉ U :=
-    PrespectralSpace.exists_isOpen_isCompact_of_not_specializes fun h ↦ hxs (hg h hz)
-  choose! U hUo hUc hzU hxU using hU
-  -- Finitely many of the `U z` cover `s`; their union is a quasi-compact open missing `x`.
-  obtain ⟨t, hts, htfin, hcover⟩ := hs.isCompact.elim_finite_subcover_image
-    (fun z hz ↦ hUo z hz) (fun w hw ↦ Set.mem_biUnion hw (hzU _ hw))
-  obtain ⟨z, hz, hxz⟩ := Set.mem_iUnion₂.1 <| Set.mem_sInter.1 hx (⋃ z ∈ t, U z)
-    ⟨isOpen_biUnion fun z hz ↦ hUo z (hts hz),
-      htfin.isCompact_biUnion fun z hz ↦ hUc z (hts hz), hcover⟩
-  exact hxU z (hts hz) hxz
+    (hg : StableUnderGeneralization s) : s = ⋂₀ {U | IsOpen U ∧ IsCompact U ∧ s ⊆ U} :=
+  hs.isCompact.eq_sInter_of_stableUnderGeneralization hg
 
 end CompactConstructible
 
