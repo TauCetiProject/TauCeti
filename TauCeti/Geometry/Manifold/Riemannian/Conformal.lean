@@ -298,7 +298,7 @@ theorem yamabeRescale_yamabeRescale_inv
 /-- Positive conformal factors are determined by the rescaled metric when the
 model space is nonzero and its dimension is not two. -/
 @[simp]
-theorem yamabeRescale_eq_iff [Nontrivial E]
+theorem yamabeRescale_inj [Nontrivial E]
     {g : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _)}
     {u v : M → ℝ} {hu : ContMDiff I 𝓘(ℝ) k u} {hv : ContMDiff I 𝓘(ℝ) k v}
     {hup : ∀ x, 0 < u x} {hvp : ∀ x, 0 < v x}
@@ -333,7 +333,7 @@ theorem mem_conformalClass_iff_existsUnique_yamabeRescale [Nontrivial E]
     obtain ⟨u, hu, hp, heq⟩ := (mem_conformalClass_iff_exists_yamabeRescale hdim).mp hh
     refine ⟨u, ⟨hu, hp, heq⟩, ?_⟩
     rintro v ⟨hv, hvp, hv_eq⟩
-    exact (yamabeRescale_eq_iff hdim).mp (hv_eq.trans heq.symm)
+    exact (yamabeRescale_inj hdim).mp (hv_eq.trans heq.symm)
   · rintro ⟨u, ⟨hu, hp, rfl⟩, -⟩
     exact yamabeRescale_mem_conformalClass
 
