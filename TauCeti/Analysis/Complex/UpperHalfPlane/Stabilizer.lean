@@ -52,7 +52,8 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
   orbit of a finite stabilizer of order `m` exactly when their disc coordinates have the same
   `m`-th power.
 * `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of
-  `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic.
+  `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic, which by
+  `Matrix.SpecialLinearGroup.isElliptic_mapGL_iff` means that its trace has square less than `4`.
 * `Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self`: a nontrivial
   element of `PSL(2, ℝ)` fixes at most one point of `ℍ`.
 * `Matrix.ProjectiveSpecialLinearGroup.exists_rotation_eq_of_smul_I_eq_I`: the stabilizer of `I`
@@ -344,6 +345,13 @@ theorem mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow (Γ : Subgroup PSL(2,
 end Subgroup
 
 namespace Matrix.SpecialLinearGroup
+
+/-- An element of `SL(2, ℝ)` is elliptic exactly when the square of its trace is less than `4`. -/
+theorem isElliptic_mapGL_iff (g : SL(2, ℝ)) :
+    Matrix.GeneralLinearGroup.IsElliptic (mapGL ℝ g) ↔
+      (g : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 < 4 := by
+  simp [Matrix.GeneralLinearGroup.IsElliptic, Matrix.IsElliptic, Matrix.discr_fin_two,
+    mapGL_coe_matrix]
 
 /-- **A nonidentity element fixing a point of `ℍ` is elliptic.** -/
 theorem isElliptic_of_smul_eq_self_of_ne_one {g : SL(2, ℝ)} {z : ℍ} (hz : g • z = z)
