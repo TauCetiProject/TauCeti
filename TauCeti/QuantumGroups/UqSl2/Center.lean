@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.QuantumGroups.UqSl2.Casimir
 public import TauCeti.QuantumGroups.UqSl2.PBW
-public import TauCeti.QuantumGroups.UqSl2.Verma
+public import TauCeti.QuantumGroups.UqSl2.Verma.Basic
 
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import Mathlib.RingTheory.Adjoin.Polynomial.Basic

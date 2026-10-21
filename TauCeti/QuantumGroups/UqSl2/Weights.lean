@@ -83,21 +83,6 @@ theorem kInv_smul_of_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace 
       kInv q • v = μ⁻¹ • μ • kInv q • v := by rw [smul_smul, inv_mul_cancel₀ hμ, one_smul]
       _ = μ⁻¹ • v := by rw [← hv']
 
-/-- On a vector of weight `μ`, an integer power `K^b` acts by `μ^b`. -/
-theorem kUnit_zpow_smul_of_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ)
-    (b : ℤ) : ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) • v = μ ^ b • v := by
-  rcases eq_or_ne μ 0 with rfl | hμ
-  · rw [weightSpace_zero, Submodule.mem_bot] at hv
-    simp [hv]
-  induction b using Int.induction_on with
-  | zero => simp
-  | succ n ih =>
-    rw [zpow_add_one, Units.val_mul, mul_smul, kUnit_val, mem_weightSpace_iff.mp hv, smul_comm,
-      ih, smul_smul, zpow_add_one₀ hμ, mul_comm]
-  | pred n ih =>
-    rw [zpow_sub_one, Units.val_mul, mul_smul, kUnit_inv, kInv_smul_of_mem_weightSpace hv,
-      smul_comm, ih, smul_smul, zpow_sub_one₀ hμ, mul_comm]
-
 /-- Raising a weight vector multiplies its weight by `q²`. -/
 theorem e_smul_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) :
     e q • v ∈ weightSpace q V (q ^ 2 * μ) := by
