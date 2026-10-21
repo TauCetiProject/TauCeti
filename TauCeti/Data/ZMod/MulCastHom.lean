@@ -40,8 +40,8 @@ characters.
 * `ZMod.mulCastHom_mulCastHom`: two successive multiplications compose to one.
 * `ZMod.castHom_mulCastHom_eq_mulCastHom_castHom`: the reductions commute with the
   multiplications.
-* `ZMod.natCard_ker_castHom`: for `k ≠ 0` the kernel of the reduction `ZMod n → ZMod k` has `m`
-  elements.
+* `ZMod.natCard_ker_castHom`: for `k ≠ 0` the kernel of the reduction `ZMod n → ZMod k` has
+  `Nat.card` equal to `m`; for `m ≠ 0` it has `m` elements.
 * `ZMod.ker_castHom_sq_eq_bot`: for `m ∣ k` that kernel is a square-zero ideal, so that
   `ZMod n → ZMod k` is a square-zero extension; for `pʳ⁺¹ → pʳ` with `r ≥ 1` this is the step
   in which Hensel-type lifting arguments over `ℤ/pʳ` take place.
@@ -149,8 +149,10 @@ theorem castHom_mulCastHom_eq_mulCastHom_castHom {m' n' : ℕ} (h' : m' * k = n'
   obtain ⟨a, rfl⟩ := intCast_surjective a
   rw [mulCastHom_intCast, map_mul, map_intCast, map_natCast, map_intCast, mulCastHom_intCast]
 
-/-- **The kernel of the reduction `ZMod n → ZMod k` has `m` elements** for `n = m * k` and
-`k ≠ 0`: by exactness it is the image of the injective multiplication by `k` on `ZMod m`. -/
+/-- **The kernel of the reduction `ZMod n → ZMod k` has `Nat.card` equal to `m`** for
+`n = m * k` and `k ≠ 0`: by exactness it is the image of the injective multiplication by `k` on
+`ZMod m`. For `m ≠ 0` the kernel therefore has exactly `m` elements; for `m = 0` it is infinite
+and both sides are `0`. -/
 theorem natCard_ker_castHom (hk : k ≠ 0) :
     Nat.card (RingHom.ker (castHom (Dvd.intro_left m h) (ZMod k))) = m := by
   refine (Nat.card_congr ((Equiv.ofInjective _ (mulCastHom_injective k h hk)).trans

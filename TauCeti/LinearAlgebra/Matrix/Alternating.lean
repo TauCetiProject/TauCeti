@@ -32,9 +32,9 @@ covers every ring of odd characteristic.
 * `Matrix.trace_eq_zero_of_transpose_eq_neg`: the trace vanishes when `2` is invertible.
 * `Matrix.ext_of_lt_of_transpose_eq_neg`: two such matrices with vanishing diagonals agree as soon
   as they agree above the diagonal.
-* `Matrix.natCard_transpose_eq_neg`: when doubling is injective at zero, there are
-  `(Nat.card I) ^ (k.choose 2)` such matrices with entries in an additive subgroup `I`, for an
-  index type of cardinality `k`.
+* `Matrix.natCard_transpose_eq_neg`: when doubling is injective at zero, the `Nat.card` of such
+  matrices with entries in an additive subgroup `I` is `(Nat.card I) ^ (k.choose 2)`, for an
+  index type of cardinality `k`; for finite `I` this is the number of such matrices.
 -/
 
 public section
@@ -114,7 +114,8 @@ theorem ext_of_lt_of_transpose_eq_neg [LinearOrder n] [Zero S] [Neg S] {M N : Ma
 /-- **Counting matrices equal to the negative of their transpose with entries in a subgroup.**
 When zero is the only element that doubles to zero, such a matrix is determined by its entries
 above the diagonal, and these are arbitrary elements of the subgroup; for an index type of
-cardinality `k` there are `k.choose 2` of them. -/
+cardinality `k` there are `k.choose 2` of them. As an identity of `Nat.card`s this holds for
+every subgroup; when the subgroup is finite it counts the matrices. -/
 theorem natCard_transpose_eq_neg [Fintype n] [AddCommGroup S] (I : AddSubgroup S)
     (h2 : ∀ x : S, x + x = 0 → x = 0) :
     Nat.card {M : Matrix n n S // (∀ i j, M i j ∈ I) ∧ Mᵀ = -M} =

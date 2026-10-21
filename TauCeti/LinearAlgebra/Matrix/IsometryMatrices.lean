@@ -27,10 +27,11 @@ here are what that count needs.
 * Let `f : R →+* S` be surjective with square-zero kernel, let `2` be a unit of `R`, and let `A`
   be symmetric with unit determinant. Then every solution over `S` lifts to a solution over `R`,
   and the solutions over `R` lying above a fixed one correspond to the skew-symmetric matrices
-  with entries in the kernel. Hence the count over `R` is `#(ker f) ^ (k.choose 2)` times the
-  count over `S`, for `k` the size of the index type. This is the infinitesimal lifting property
-  behind the smoothness of the orthogonal group of a nondegenerate form away from `2`, with its
-  relative dimension `k (k - 1) / 2`.
+  with entries in the kernel. Hence, as an identity of `Nat.card`s, the count over `R` is
+  `Nat.card (ker f) ^ (k.choose 2)` times the count over `S`, for `k` the size of the index
+  type; when `R` is finite these are the actual numbers of solutions. This is the infinitesimal
+  lifting property behind the smoothness of the orthogonal group of a nondegenerate form away
+  from `2`, with its relative dimension `k (k - 1) / 2`.
 
 The lift corrects an arbitrary preimage `M` of the solution: with error `E = A - Mᵀ * A * M`,
 the matrix `M * (1 + ½ A⁻¹ E)` is a solution, since all quadratic terms in the error vanish.
@@ -132,12 +133,6 @@ section SquareZero
 
 variable {f : R →+* S}
 
-omit [Fintype n] [DecidableEq n] in
-/-- The entries of a matrix lie in the kernel of `f` exactly when its image under `f` is zero. -/
-private theorem forall_mem_ker_iff_map_eq_zero {D : Matrix n n R} :
-    (∀ i j, D i j ∈ RingHom.ker f) ↔ D.map f = 0 := by
-  simp only [RingHom.mem_ker, ← Matrix.ext_iff, map_apply, zero_apply]
-
 /-- **Matrices preserving a Gram matrix lift across a square-zero extension.** Let `f` be a
 surjective ring homomorphism whose kernel squares to zero, let `2` be a unit, and let `A` be
 symmetric with unit determinant. Then every solution of `Yᵀ * A * Y = A` over the target is the
@@ -165,8 +160,9 @@ theorem exists_map_eq_of_mem_isometryMatrices_map (hf : Function.Surjective f)
     exact Ideal.mul_mem_left _ _ (hE i j)
   have hAZ : A * Z = c • E := by
     rw [hZ_def, Matrix.mul_smul, ← Matrix.mul_assoc, mul_nonsing_inv A hdet, Matrix.one_mul]
-  have hZA : Zᵀ * A = c • E := by
-    rw [show Zᵀ * A = (A * Z)ᵀ by rw [transpose_mul, hA], hAZ, transpose_smul, hEt]
+  have hZA : Zᵀ * A = c • E :=
+    calc Zᵀ * A = (A * Z)ᵀ := by rw [transpose_mul, hA]
+      _ = c • E := by rw [hAZ, transpose_smul, hEt]
   have hEE : c • E + c • E = E := by
     rw [← add_smul, ← two_mul, mul_comm, hc, one_smul]
   have hZt : ∀ i j, Zᵀ i j ∈ RingHom.ker f := fun i j => hZ j i
@@ -189,9 +185,11 @@ theorem exists_map_eq_of_mem_isometryMatrices_map (hf : Function.Surjective f)
 
 /-- **Counting matrices preserving a Gram matrix across a square-zero extension.** Let `f` be a
 surjective ring homomorphism whose kernel squares to zero, let `2` be a unit, and let `A` be
-symmetric with unit determinant. Above each solution over the target lie exactly
-`#(ker f) ^ (k.choose 2)` solutions over the source, for `k` the size of the index type: they
-are a torsor under the skew-symmetric matrices with entries in `ker f`. -/
+symmetric with unit determinant. The solutions over the source lying above a solution over the
+target are a torsor under the skew-symmetric matrices with entries in `ker f`, so the `Nat.card`
+of the solutions over the source is `Nat.card (ker f) ^ (k.choose 2)` times that over the target,
+for `k` the size of the index type. When the source is finite, above each solution over the
+target lie exactly `Nat.card (ker f) ^ (k.choose 2)` solutions over the source. -/
 theorem natCard_isometryMatrices_eq_pow_mul (hf : Function.Surjective f)
     (hker : RingHom.ker f ^ 2 = ⊥) (h2 : IsUnit (2 : R)) {A : Matrix n n R} (hA : Aᵀ = A)
     (hdet : IsUnit A.det) :
