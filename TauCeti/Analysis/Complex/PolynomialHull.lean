@@ -50,7 +50,9 @@ The two main results are the following.
 * `TauCeti.polynomialPolyhedron R s`: the polynomial polyhedron
   `closedBall 0 R ∩ ⋂_{p ∈ s} {|p| ≤ 1}`; it is compact
   (`TauCeti.isCompact_polynomialPolyhedron`) and polynomially convex
-  (`TauCeti.isPolynomiallyConvex_polynomialPolyhedron`).
+  (`TauCeti.isPolynomiallyConvex_polynomialPolyhedron`), and its interior contains
+  `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}`
+  (`TauCeti.ball_inter_iInter_subset_interior_polynomialPolyhedron`).
 
 ## Main results
 
@@ -61,7 +63,9 @@ The two main results are the following.
 * `IsCompact.isPolynomiallyConvex_of_forall_im_eq_zero`: compact subsets of `ℝⁿ` are polynomially
   convex.
 * `TauCeti.IsPolynomiallyConvex.exists_polynomialPolyhedron_subset`: the polynomial polyhedron
-  neighbourhoods of a compact polynomially convex set.
+  neighbourhoods of a compact polynomially convex set, and
+  `TauCeti.IsPolynomiallyConvex.exists_subset_interior_polynomialPolyhedron`: such a set lies in
+  the interior of a polynomial polyhedron inside any given open neighbourhood.
 
 ## References
 
@@ -278,6 +282,7 @@ noncomputable def polynomialPolyhedron (R : ℝ) (s : Finset (MvPolynomial ι �
 
 variable {R : ℝ} {s : Finset (MvPolynomial ι ℂ)} {w : ι → ℂ}
 
+@[simp]
 theorem mem_polynomialPolyhedron_iff :
     w ∈ polynomialPolyhedron R s ↔ ‖w‖ ≤ R ∧ ∀ p ∈ s, ‖eval w p‖ ≤ 1 := by
   simp [polynomialPolyhedron]
@@ -291,6 +296,17 @@ theorem isCompact_polynomialPolyhedron (R : ℝ) (s : Finset (MvPolynomial ι �
     IsCompact (polynomialPolyhedron R s) :=
   (isCompact_closedBall 0 R).inter_right <| isClosed_biInter fun p _ ↦
     isClosed_le (continuous_eval p).norm continuous_const
+
+/-- The open set `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}` lies in the interior of the polynomial
+polyhedron `polynomialPolyhedron R s`. -/
+theorem ball_inter_iInter_subset_interior_polynomialPolyhedron (R : ℝ)
+    (s : Finset (MvPolynomial ι ℂ)) :
+    ball 0 R ∩ ⋂ p ∈ s, {w | ‖eval w p‖ < 1} ⊆ interior (polynomialPolyhedron R s) :=
+  interior_maximal
+    (inter_subset_inter ball_subset_closedBall <| biInter_mono subset_rfl fun _ _ ↦
+      ofPred_subset_ofPred.2 fun _ hw ↦ hw.le)
+    (isOpen_ball.inter <| isOpen_biInter_finset fun p _ ↦
+      isOpen_lt (continuous_eval p).norm continuous_const)
 
 /-- Polynomial polyhedra are polynomially convex. -/
 theorem isPolynomiallyConvex_polynomialPolyhedron (R : ℝ) (s : Finset (MvPolynomial ι ℂ)) :
@@ -334,5 +350,15 @@ theorem IsPolynomiallyConvex.exists_polynomialPolyhedron_subset [Fintype ι]
     have hpw' := mem_iInter₂.1 hws p.1 (Finset.mem_map_of_mem _ hpt)
     simp only [mem_ofPred_eq] at hpw hpw'
     linarith
+
+/-- A compact polynomially convex set `K ⊆ ℂⁿ` lies in the interior of a polynomial polyhedron
+contained in any given open neighbourhood `U` of `K`. -/
+theorem IsPolynomiallyConvex.exists_subset_interior_polynomialPolyhedron [Fintype ι]
+    (hKc : IsPolynomiallyConvex K) (hK : IsCompact K) {U : Set (ι → ℂ)} (hU : IsOpen U)
+    (hKU : K ⊆ U) :
+    ∃ (R : ℝ) (s : Finset (MvPolynomial ι ℂ)), 0 < R ∧
+      K ⊆ interior (polynomialPolyhedron R s) ∧ polynomialPolyhedron R s ⊆ U := by
+  obtain ⟨R, s, hR, hKs, hsU⟩ := hKc.exists_polynomialPolyhedron_subset hK hU hKU
+  exact ⟨R, s, hR, hKs.trans (ball_inter_iInter_subset_interior_polynomialPolyhedron R s), hsU⟩
 
 end TauCeti
