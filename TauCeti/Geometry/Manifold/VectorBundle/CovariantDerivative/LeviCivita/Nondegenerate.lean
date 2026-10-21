@@ -217,16 +217,11 @@ theorem IsLeviCivitaConnection.derivBilinearTensor_eq_zero (h : g.IsLeviCivitaCo
 theorem IsLeviCivitaConnection.two_apply_eq_koszul (h : g.IsLeviCivitaConnection cov)
     (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
     2 * g x (cov Y x (X x)) (Z x) = g.koszul X Y Z x := by
-  have hm₁ := h.isMetricCompatible.mvfderiv_eq hY hZ (X x)
-  have hm₂ := h.isMetricCompatible.mvfderiv_eq hZ hX (Y x)
-  have hm₃ := h.isMetricCompatible.mvfderiv_eq hX hY (Z x)
-  have ht {X Y : Π x : M, TangentSpace I x} (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) :=
-    (cov.torsion_eq_zero_iff.mp h.torsion) hX hY
-  rw [koszul_apply, ← ht hX hY, ← ht hX hZ, ← ht hY hZ, hm₁, hm₂, hm₃]
-  simp only [map_sub, sub_apply]
-  rw [g.apply_comm x (Y x) (cov Z x (X x)), g.apply_comm x (Z x) (cov X x (Y x)),
-    g.apply_comm x (X x) (cov Y x (Z x))]
-  ring
+  have := TauCeti.Manifold.koszulBilinear_sub_two_mul_apply_eq_derivBilinearTensor h.torsion
+    g.apply_comm (fun _ _ ↦ g.mdifferentiableAt_apply) hX hY hZ
+  simp only [h.derivBilinearTensor_eq_zero, zero_apply] at this
+  rw [koszul]
+  linarith
 
 /-- A covariant derivative on the tangent bundle is a Levi-Civita connection of a nondegenerate
 metric exactly when it satisfies the Koszul formula. -/
