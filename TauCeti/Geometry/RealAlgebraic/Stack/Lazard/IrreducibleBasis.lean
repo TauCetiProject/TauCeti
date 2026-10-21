@@ -33,8 +33,8 @@ members of `F` may be nullified at points of `S`, and their contents may vanish.
 This is the passage from the basis to the original family in Lazard's lifting: once the basis
 has a Lazard delineation over a cell on which the Lazard projection is valuation-invariant, every
 original input is valuation-invariant, hence sign-invariant, on each section and sector above it
-(`TauCeti.LazardDelineation.lazardValuation_snoc_eq_of_mem_sectionSet`,
-`TauCeti.LazardDelineation.signInvariant_sectionSet` and their sector versions).
+(`TauCeti.LazardDelineation.lazardValuation_snoc_eq_of_mem_sectionSet`, its sector version and
+`IsPreconnected.signInvariant_eval_of_lazardValuationReindex_eq`).
 
 ## Main definitions and results
 

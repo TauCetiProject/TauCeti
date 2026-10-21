@@ -126,7 +126,7 @@ theorem IsCAD.exists_isCAD_lazardValuation_eq_of_lazardDelineation
     simpa only [lazardValuationReindex_finRotate_symm, rename_rename, Equiv.symm_comp_self,
       rename_id_apply, Equiv.coe_refl, Equiv.refl_symm, Function.comp_id] using hv k E hE x hx y hy
   exact ⟨𝓒, h𝓒, htail, ha, fun k E hE x hx y hy ↦ hval k hE hx hy, fun k E hE ↦
-    (h𝓒.isConnected hE).isPreconnected.signInvariant_of_lazardValuationReindex_eq
+    (h𝓒.isConnected hE).isPreconnected.signInvariant_eval_of_lazardValuationReindex_eq
       fun x hx y hy ↦ hval k hE hx hy⟩
 
 end TauCeti

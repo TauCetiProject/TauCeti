@@ -19,8 +19,8 @@ sign-invariance asked of a cylindrical algebraic decomposition.
 
 ## Main results
 
-* `IsPreconnected.signInvariant_of_lazardValuationReindex_eq`: constant Lazard valuation implies
-  sign-invariance on preconnected sets.
+* `IsPreconnected.signInvariant_eval_of_lazardValuationReindex_eq`: constant Lazard valuation
+  implies sign-invariance on preconnected sets.
 
 ## References
 
@@ -34,7 +34,7 @@ open MvPolynomial
 
 /-- A polynomial whose reindexed Lazard valuation is constant on a preconnected set is
 sign-invariant there: the valuation vanishes exactly where the polynomial does not. -/
-theorem IsPreconnected.signInvariant_of_lazardValuationReindex_eq {σ τ R : Type*}
+theorem IsPreconnected.signInvariant_eval_of_lazardValuationReindex_eq {σ τ R : Type*}
     [LinearOrder τ] [WellFoundedGT τ] [CommSemiring R] [LinearOrder R] [TopologicalSpace R]
     [OrderTopology R] [IsTopologicalSemiring R] {s : Set (σ → R)} (hs : IsPreconnected s)
     {p : MvPolynomial σ R} {e : σ ≃ τ}

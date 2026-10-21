@@ -113,8 +113,9 @@ theorem IsCAD.exists_isCAD_lazardValuationReindex_revPerm_eq_of_lazardProjection
       Fin.revPerm_symm, hsnoc] at h
     simpa only [lazardValuationReindex_def, Fin.revPerm_symm] using h
   exact ⟨𝓒, h𝓒, htail, ha, fun f hf E hE x hx y hy ↦ hval f hf hE hx hy,
-    fun f hf E hE ↦ (h𝓒.isConnected hE).isPreconnected.signInvariant_of_lazardValuationReindex_eq
-      fun x hx y hy ↦ hval f hf hE hx hy⟩
+    fun f hf E hE ↦
+      (h𝓒.isConnected hE).isPreconnected.signInvariant_eval_of_lazardValuationReindex_eq
+        fun x hx y hy ↦ hval f hf hE hx hy⟩
 
 /-- **Cylindrical algebraic decomposition by recursive Lazard projection.** For every finite
 family `F` of real polynomials in `n` variables there is a cylindrical algebraic decomposition of
