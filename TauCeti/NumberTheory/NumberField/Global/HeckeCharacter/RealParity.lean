@@ -17,13 +17,13 @@ infinity type (`HeckeCharacter.infinityType_eq_toContinuous_realParity`). This f
 these parities with the infinite part of the conductor of `χ`: the real place `w` divides the
 conductor exactly when `ε_w = 1`, that is, exactly when `χ` is nontrivial on `K_wˣ`.
 
-One half holds for every modulus. If `χ` comes from a ray class character of `𝔪`, it is trivial at
-every infinite place outside `𝔪`, because the idele classes concentrated there lie in
-`raySubgroup 𝔪`. Conversely, if `χ` comes from `𝔪` and is trivial at a real place `w` of `𝔪`, it
-still comes from the modulus obtained by removing `w` from `𝔪`: dividing an idele congruent to one
-modulo the smaller modulus by its own component at `w` makes it congruent to one modulo `𝔪`. The
-conductor is the least modulus from which `χ` comes, so it omits every real place at which `χ` is
-trivial.
+The comparison rests on two facts about an arbitrary modulus, proved in
+`TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.InfinityType`. If `χ` comes from a ray class
+character of `𝔪`, it is trivial at every infinite place outside `𝔪`
+(`HeckeCharacter.infiniteComponent_eq_one_of_mem_range_ofRayClassCharacter`). Conversely, if `χ`
+comes from `𝔪` and is trivial at a real place `w` of `𝔪`, it still comes from the modulus obtained
+by removing `w` from `𝔪` (`HeckeCharacter.mem_range_ofRayClassCharacter_erase`). The conductor is
+the least modulus from which `χ` comes, so it omits every real place at which `χ` is trivial.
 
 Consequently the infinity type of a finite-order Hecke character is zero exactly when its conductor
 has no real places, and only then is it the continuous infinity type of an
@@ -33,10 +33,6 @@ the identity component, which does not see the real signs.
 
 ## Main results
 
-* `HeckeCharacter.infiniteComponent_eq_one_of_mem_range_ofRayClassCharacter`: a Hecke character
-  coming from a ray class character of `𝔪` is trivial at every infinite place outside `𝔪`.
-* `HeckeCharacter.infiniteComponent_eq_one_iff`: a finite-order Hecke character is trivial at a
-  real place exactly when its real parity there is zero.
 * `HeckeCharacter.mem_conductor_infinitePart_iff`: a real place divides the conductor of a
   finite-order Hecke character exactly when its real parity there is one.
 * `HeckeCharacter.infinityType_eq_zero_iff`: the infinity type of a finite-order Hecke character
@@ -61,66 +57,6 @@ namespace TauCeti.GlobalNumberFields
 namespace HeckeCharacter
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- **A Hecke character coming from a ray class character of `𝔪` is trivial at every infinite
-place outside `𝔪`.** The idele classes concentrated at such a place lie in `raySubgroup 𝔪`. -/
-theorem infiniteComponent_eq_one_of_mem_range_ofRayClassCharacter {𝔪 : Modulus K}
-    {χ : HeckeCharacter K} (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) {w : InfinitePlace K}
-    (hw : ∀ w' ∈ 𝔪.infinitePart, (w' : InfinitePlace K) ≠ w) : χ.infiniteComponent w = 1 := by
-  obtain ⟨η, rfl⟩ := hχ
-  refine ContinuousMonoidHom.ext fun u ↦ ?_
-  rw [infiniteComponent_apply, ContinuousMonoidHom.coe_one, Pi.one_apply,
-    ofRayClassCharacter_apply_eq_one_of_mem_raySubgroup η (ofCompletion_mem_raySubgroup hw u)]
-
-/-- **A finite-order Hecke character is trivial at a real place exactly when its real parity there
-is zero.** Its modulus exponents vanish, so its component at `w` is `x ↦ sgn(x) ^ ε_w`. -/
-theorem infiniteComponent_eq_one_iff {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    χ.infiniteComponent w.1 = 1 ↔ χ.infinityType.realParity w = 0 := by
-  have hreal : χ.realComponent w = realUnitsCharacter 0 (χ.infinityType.realParity w) := by
-    rw [realComponent_eq, infinityType_eq_toContinuous_realParity hχ,
-      FiniteOrderInfinityType.toContinuous_realExponent,
-      FiniteOrderInfinityType.toContinuous_realParity]
-  refine ⟨fun h ↦ ?_, fun h ↦ ContinuousMonoidHom.ext fun u ↦ ?_⟩
-  · have h1 : χ.realComponent w = realUnitsCharacter 0 0 :=
-      ContinuousMonoidHom.ext fun x ↦ by simp [h]
-    exact (realUnitsCharacter_inj.mp (hreal.symm.trans h1)).2
-  · have hu := DFunLike.congr_fun hreal
-      (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2) u)
-    rw [realComponent_apply, ContinuousMulEquiv.symm_apply_apply] at hu
-    simpa [h] using hu
-
-open scoped Classical in
-/-- A Hecke character coming from `𝔪` and trivial at a real place `w` comes from the modulus with
-the same finite part and with `w` removed from the infinite part. -/
-private theorem mem_range_ofRayClassCharacter_erase {𝔪 : Modulus K} {χ : HeckeCharacter K}
-    (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) {w : {w : InfinitePlace K // w.IsReal}}
-    (hw : χ.infiniteComponent w.1 = 1) :
-    χ ∈ (ofRayClassCharacter
-      ⟨𝔪.finitePart, 𝔪.finitePart_ne_bot, 𝔪.infinitePart.erase w⟩).range := by
-  rw [mem_range_ofRayClassCharacter_iff] at hχ ⊢
-  intro c hc
-  obtain ⟨x, hx, rfl⟩ := mem_raySubgroup_iff.mp hc
-  obtain ⟨h₁, h₂, h₃⟩ := mem_ideleCongruenceSubgroup_iff.mp hx
-  -- Dividing `x` by its own component at `w` gives an idele congruent to one modulo `𝔪`.
-  let u : w.1.Completionˣ := w.1.ideleInfiniteCoord x
-  have hy : x * (IdeleGroup.ofCompletion (𝓞 K) K w.1 u)⁻¹ ∈ ideleCongruenceSubgroup 𝔪 := by
-    refine mem_ideleCongruenceSubgroup_iff.mpr
-      ⟨fun v hv ↦ by simpa using h₁ v hv, fun v hv ↦ by simpa [Modulus.exponent_def] using h₂ v hv,
-        fun w' hw' ↦ ?_⟩
-    by_cases hww' : w' = w
-    · subst hww'
-      simp [u]
-    · have hne : w'.1 ≠ w.1 := fun h ↦ hww' (Subtype.ext h)
-      simpa [hne] using h₃ w' (Finset.mem_erase.mpr ⟨hww', hw'⟩)
-  have hsplit : QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K) x =
-      QuotientGroup.mk' _ (x * (IdeleGroup.ofCompletion (𝓞 K) K w.1 u)⁻¹) *
-        IdeleClassGroup.ofCompletion (𝓞 K) K w.1 u := by
-    rw [IdeleClassGroup.ofCompletion_apply, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
-      ← QuotientGroup.mk_mul, inv_mul_cancel_right]
-  rw [MonoidHom.mem_ker, hsplit, map_mul,
-    MonoidHom.mem_ker.mp (hχ (mem_raySubgroup_iff.mpr ⟨_, hy, rfl⟩)), one_mul]
-  simpa using DFunLike.congr_fun hw u
 
 /-- **The real places outside the conductor.** The real parity of a finite-order Hecke character at
 a real place `w` is zero exactly when `w` does not divide its conductor. -/
