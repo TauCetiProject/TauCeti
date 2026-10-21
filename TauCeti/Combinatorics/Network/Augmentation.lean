@@ -48,6 +48,8 @@ and upper bounds and preserves every excess: this is cycle augmentation of bound
   amount.
 * `TauCeti.Flow.val_lt_val_augmentBottleneck`: augmentation along an augmenting `s`–`t` path by its
   bottleneck strictly increases the value.
+* `TauCeti.Flow.augmentBottleneck_toFun_mem`: augmentation by the bottleneck preserves arrow values
+  in an additive subgroup containing the capacities.
 * `TauCeti.residualUpdate_walkAssignment_mem_Icc` and
   `TauCeti.excessAt_residualUpdate_walkAssignment_self`: augmentation along a residual walk
   preserves feasibility, and along a closed walk it also preserves every excess.
@@ -310,6 +312,18 @@ theorem augmentBottleneck_toFun :
       residualUpdate f.toFun
         (walkAssignment p (p.bottleneck (residualCapacity 0 cap f.toFun) hne)) :=
   augmentWalk_toFun
+
+/-- Augmentation by the bottleneck preserves arrow values in an additive subgroup `H` that
+contains the capacities: residual capacities, and hence the bottleneck, lie in `H`. -/
+theorem augmentBottleneck_toFun_mem (H : AddSubgroup K)
+    (hcap : ∀ ⦃x y⦄ (e : Q x y), cap e ∈ H) (hf : ∀ ⦃x y⦄ (e : Q x y), f.toFun e ∈ H) {x y : V}
+    (e : Q x y) : (f.augmentBottleneck p hp hne).toFun e ∈ H := by
+  have hres : ∀ ⦃v w⦄ (e : ResidualHom Q v w), residualCapacity 0 cap f.toFun e ∈ H :=
+    fun _ _ ↦ residualCapacity_mem H (fun _ _ _ ↦ H.zero_mem) hcap hf
+  obtain ⟨a, -, ha⟩ := ArrowWalk.exists_mem_bottleneck_eq
+    (c := residualCapacity 0 cap f.toFun) (hne := hne)
+  rw [augmentBottleneck_toFun]
+  exact residualUpdate_mem H hf (fun _ _ _ ↦ walkAssignment_mem p (ha ▸ hres a.2.2) _) e
 
 /-- Augmenting along a residual walk between distinct terminals by its bottleneck increases the
 value by the bottleneck. -/

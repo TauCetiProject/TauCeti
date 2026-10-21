@@ -36,6 +36,8 @@ augmentations.
 
 * `TauCeti.BoundedFlow.IsMaximum`: a bounded `s`–`t` assignment of largest value.
 * `TauCeti.Flow.IsMaximum`: an ordinary `s`–`t` flow of largest value.
+* `TauCeti.Flow.AugmentationStep f g`: the flow `g` arises from `f` by augmentation along an
+  augmenting path by its bottleneck.
 
 ## Main results
 
@@ -45,6 +47,10 @@ augmentations.
   value equals the cut bound of the vertices positively reachable from the source.
 * `TauCeti.BoundedFlow.tfae_isMaximum` and `TauCeti.Flow.tfae_isMaximum`: the augmenting-path
   optimality criterion for bounded `s`–`t` assignments and for ordinary flows.
+* `TauCeti.Flow.isMaximum_iff_forall_not_augmentationStep`: a flow between distinct terminals is
+  maximum exactly when it admits no augmentation step.
+* `TauCeti.Flow.AugmentationStep.toFun_mem`: augmentation steps preserve arrow values in an additive
+  subgroup containing the capacities.
 
 ## References
 
@@ -225,6 +231,60 @@ equals the capacity of the arrows leaving some vertex set containing `s` but not
 theorem IsMaximum.exists_val_eq_arrowSum [DecidableEq V] (hst : s ≠ t) {f : Flow cap s t}
     (hf : f.IsMaximum) : ∃ S : Finset V, s ∈ S ∧ t ∉ S ∧ f.val = arrowSum cap S Sᶜ :=
   ((f.tfae_isMaximum hst).out 1 3).1 hf
+
+/-! ### Augmentation steps -/
+
+/-- An *augmentation step* from the flow `f` to the flow `g`: `g` is the augmentation of `f`
+along a path from `s` to `t` in the residual network of `f`, all of whose arrows have positive
+residual capacity, by the bottleneck of that path. -/
+def AugmentationStep (f g : Flow cap s t) : Prop :=
+  ∃ (p : ArrowWalk (ResidualHom Q) s t) (hp : p.IsPath) (hne : p.arrows ≠ []),
+    (∀ a ∈ p.arrows, 0 < residualCapacity 0 cap f.toFun a.2.2) ∧
+      f.augmentBottleneck p hp.nodup_arrows hne = g
+
+variable {f g : Flow cap s t}
+
+theorem augmentationStep_iff :
+    AugmentationStep f g ↔
+      ∃ (p : ArrowWalk (ResidualHom Q) s t) (hp : p.IsPath) (hne : p.arrows ≠ []),
+        (∀ a ∈ p.arrows, 0 < residualCapacity 0 cap f.toFun a.2.2) ∧
+          f.augmentBottleneck p hp.nodup_arrows hne = g :=
+  Iff.rfl
+
+/-- Augmenting along a path whose arrows all have positive residual capacity, by its bottleneck,
+is an augmentation step. -/
+theorem augmentationStep_augmentBottleneck {p : ArrowWalk (ResidualHom Q) s t} (hp : p.IsPath)
+    (hne : p.arrows ≠ []) (hpos : ∀ a ∈ p.arrows, 0 < residualCapacity 0 cap f.toFun a.2.2) :
+    AugmentationStep f (f.augmentBottleneck p hp.nodup_arrows hne) :=
+  augmentationStep_iff.2 ⟨p, hp, hne, hpos, rfl⟩
+
+/-- An augmentation step strictly increases the value of the flow. -/
+theorem AugmentationStep.val_lt (hst : s ≠ t) (h : AugmentationStep f g) : f.val < g.val := by
+  obtain ⟨p, hp, hne, hpos, rfl⟩ := augmentationStep_iff.1 h
+  exact val_lt_val_augmentBottleneck hst hpos
+
+/-- A flow between distinct terminals admits an augmentation step exactly when it has an
+augmenting walk. -/
+theorem exists_augmentationStep_iff (hst : s ≠ t) :
+    (∃ g, AugmentationStep f g) ↔ PositiveReachable (residualCapacity 0 cap f.toFun) s t := by
+  refine ⟨fun ⟨_, h⟩ ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨p, -, -, hpos, -⟩ := augmentationStep_iff.1 h
+    exact positiveReachable_def.2 ⟨p, hpos⟩
+  · obtain ⟨p, hp, hpos⟩ := positiveReachable_iff_exists_isPath.1 h
+    exact ⟨_, augmentationStep_augmentBottleneck hp (p.arrows_ne_nil hst) hpos⟩
+
+/-- A flow between distinct terminals is maximum exactly when it admits no augmentation step. -/
+theorem isMaximum_iff_forall_not_augmentationStep (hst : s ≠ t) :
+    f.IsMaximum ↔ ∀ g, ¬AugmentationStep f g := by
+  rw [isMaximum_iff_not_positiveReachable hst, ← exists_augmentationStep_iff hst, not_exists]
+
+/-- An augmentation step preserves arrow values in an additive subgroup `H` that contains the
+capacities. -/
+theorem AugmentationStep.toFun_mem (H : AddSubgroup K) (hcap : ∀ ⦃x y⦄ (e : Q x y), cap e ∈ H)
+    (hf : ∀ ⦃x y⦄ (e : Q x y), f.toFun e ∈ H) (h : AugmentationStep f g) {x y : V}
+    (e : Q x y) : g.toFun e ∈ H := by
+  obtain ⟨p, hp, hne, -, rfl⟩ := augmentationStep_iff.1 h
+  exact augmentBottleneck_toFun_mem H hcap hf e
 
 end LinearOrder
 

@@ -162,8 +162,9 @@ theorem map_arrowSum {L F : Type*} [AddCommMonoid L] [FunLike F K L] [AddMonoidH
 total value on the arrows from `S` to `T`. -/
 theorem arrowSum_mem {M : Type*} [SetLike M K] [AddSubmonoidClass M K] {H : M}
     {f : Assignment Q K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) (S T : Finset V) :
-    arrowSum f S T ∈ H :=
-  sum_mem fun _ _ ↦ sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e
+    arrowSum f S T ∈ H := by
+  rw [arrowSum_def]
+  exact sum_mem fun _ _ ↦ sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e
 
 /-- Summing over the arrows between two vertex sets is monotone in the assignment. -/
 @[gcongr]
@@ -273,8 +274,9 @@ theorem excessAt_sub (f g : Assignment Q K) (v : V) :
 /-- Excess preserves values in an additive subgroup: if `f` takes values in `H`, so does its
 excess at every vertex. -/
 theorem excessAt_mem {M : Type*} [SetLike M K] [AddSubgroupClass M K] {H : M}
-    {f : Assignment Q K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) (v : V) : excessAt f v ∈ H :=
-  sub_mem (sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e) (sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e)
+    {f : Assignment Q K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) (v : V) : excessAt f v ∈ H := by
+  rw [excessAt_eq_arrowSum_sub]
+  exact sub_mem (arrowSum_mem hf _ _) (arrowSum_mem hf _ _)
 
 /-- **Excess on a vertex set.** The total excess of `f` on `S` is the value on arrows entering `S`
 from its complement minus the value on arrows leaving `S` for its complement; arrows with both ends

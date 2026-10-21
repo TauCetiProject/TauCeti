@@ -16,7 +16,7 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Int.Cast.Lemmas
 
 /-!
-# Numerator and denominator of a rational multiplier between integers
+# Denominators of rationals: divisibility and common denominators
 
 If `a' = r * a` with `a, a' ∈ ℤ` and `r ∈ ℚ`, then the denominator of `r` divides `a` and the
 numerator of `r` divides `a'`. This is Mathlib's `Rat.den_dvd` and `Rat.num_dvd` for the fraction
@@ -24,6 +24,11 @@ numerator of `r` divides `a'`. This is Mathlib's `Rat.den_dvd` and `Rat.num_dvd`
 explicit quotient, so that it applies with no case split on `a = 0` at the point of use. It is
 what turns a rational scaling between two integral objects into integer divisibilities, as for
 the scaling `(A, B) ↦ (r⁴A, r⁶B)` between two integral short Weierstrass equations.
+
+The denominator of `r` divides `n ≠ 0` exactly when `r` is an integer multiple of `1 / n`. So
+finitely many rationals lie in the cyclic subgroup `AddSubgroup.zmultiples ((D : ℚ)⁻¹)` for a
+common denominator `D`, which turns statements about finitely many rational quantities into
+statements about integer multiples of `1 / D`.
 
 ## Main results
 
