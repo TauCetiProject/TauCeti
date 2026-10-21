@@ -27,8 +27,8 @@ values in `ℤˣ`. The central extension `1 → ℤˣ → Q̂ → Q → 1` it bu
 For a simply laced diagram, `-B i j` is the number of bonds between distinct vertices `i` and `j`,
 so `ε(a, b)` is the parity of the bonds pairing a later coordinate of `a` with an earlier one of
 `b`. The point of the cover is its commutator formula: when `B` is symmetric with even diagonal,
-the commutator of two elements of `Q̂` lying over `a` and `b` is the central sign
-`(-1) ^ (a ⬝ᵥ B *ᵥ b)` (`Matrix.commutatorElement_signCover`). This is the sign input of the
+the commutator of two elements of `Q̂` lying over `a` and `b` is `τ ^ (a ⬝ᵥ B *ᵥ b)`, a power of the
+central sign `τ = (0, -1)` (`Matrix.commutatorElement_signCover`). This is the sign input of the
 Frenkel--Kac construction of a simply laced Lie algebra over `ℤ`, whose root vectors are indexed by
 lifts of roots to `Q̂`; that bracket is not constructed here. The section
 `a ↦ (a, 1)` is a homomorphism exactly when every strictly lower entry of `B` is even
@@ -48,6 +48,7 @@ file supplies the sign cocycle and the two facts specific to it.
 * `Matrix.orderedSign B`: its sign `ε`, as a bimultiplicative map on `Multiplicative Q`.
 * `Matrix.signFactorSet B`: `ε` as a factor set for the trivial action of `Q` on `ℤˣ`.
 * `Matrix.SignCover B`: the central extension `Q̂` of `Q` by `ℤˣ` it builds.
+* `Matrix.SignCover.tau B`: the central sign `τ`, the image of `-1 : ℤˣ` in `Q̂`.
 
 ## Main results
 
@@ -105,23 +106,17 @@ transpose recovers the Gram pairing `a ⬝ᵥ B *ᵥ b` with its diagonal terms 
 off-diagonal pair `i ≠ j` is counted once by whichever of the two forms sees `j < i`. -/
 theorem orderedSignForm_add_orderedSignForm_swap (hB : B.IsSymm) (a b : I → ℤ) :
     orderedSignForm B a b + orderedSignForm B b a + ∑ i, a i * B i i * b i = a ⬝ᵥ B *ᵥ b := by
-  rw [orderedSignForm_apply, orderedSignForm_apply, Finset.sum_comm (f := fun i j =>
-      if j < i then b i * B i j * a j else 0), ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
-  simp only [dotProduct, mulVec, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← Finset.sum_add_distrib, ← Finset.add_sum_erase _ _ (Finset.mem_univ i),
-    ← Finset.add_sum_erase _ _ (Finset.mem_univ i)]
-  simp only [lt_irrefl, ite_false, zero_add]
-  rw [add_comm]
-  congr 1
-  · ring
-  · refine Finset.sum_congr rfl fun j hj => ?_
-    rcases lt_or_gt_of_ne (Finset.ne_of_mem_erase hj) with h | h
-    · simp only [h, ↓reduceIte, not_lt_of_gt h, add_zero]
+  have key : ∀ i j, ((if j < i then a i * B i j * b j else 0) +
+      (if i < j then b j * B j i * a i else 0) + if i = j then a i * B i i * b i else 0) =
+      a i * (B i j * b j) := fun i j => by
+    rcases lt_trichotomy j i with h | rfl | h
+    · simp [h, h.not_gt, h.ne', mul_assoc]
+    · simp [mul_assoc]
+    · rw [ite_eq_right h.not_gt, ite_eq_left h, ite_eq_right h.ne, zero_add, add_zero, hB.apply i j]
       ring
-    · simp only [not_lt_of_gt h, ↓reduceIte, h, zero_add]
-      rw [hB.apply]
-      ring
+  rw [orderedSignForm_apply B b a, Finset.sum_comm]
+  simp only [orderedSignForm_apply, dotProduct, mulVec, Finset.mul_sum, ← key,
+    Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
 
 /-- **The ordered sign of an integer matrix**: `ε(a, b) = (-1) ^ orderedSignForm B a b`, as a map
 on `Multiplicative (I → ℤ)` that is multiplicative in each variable. This is the factor set of the
@@ -147,13 +142,12 @@ theorem orderedSign_div_orderedSign_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B
     orderedSign B a b / orderedSign B b a = (-1) ^ (a.toAdd ⬝ᵥ B *ᵥ b.toAdd) := by
   have hd : Even (2 * orderedSignForm B b.toAdd a.toAdd + ∑ i, a.toAdd i * B i i * b.toAdd i) :=
     (even_two_mul _).add (Finset.even_sum _ fun i _ => ((hdiag i).mul_left _).mul_right _)
-  rw [orderedSign_apply, orderedSign_apply, div_eq_mul_inv, ← zpow_sub,
-    ← orderedSignForm_add_orderedSignForm_swap B hB,
-    show orderedSignForm B a.toAdd b.toAdd + orderedSignForm B b.toAdd a.toAdd +
-        ∑ i, a.toAdd i * B i i * b.toAdd i =
-      orderedSignForm B a.toAdd b.toAdd - orderedSignForm B b.toAdd a.toAdd +
-        (2 * orderedSignForm B b.toAdd a.toAdd + ∑ i, a.toAdd i * B i i * b.toAdd i) by ring,
-    zpow_add, hd.neg_one_zpow, mul_one]
+  have hsum : a.toAdd ⬝ᵥ B *ᵥ b.toAdd = orderedSignForm B a.toAdd b.toAdd -
+      orderedSignForm B b.toAdd a.toAdd +
+        (2 * orderedSignForm B b.toAdd a.toAdd + ∑ i, a.toAdd i * B i i * b.toAdd i) := by
+    linarith [orderedSignForm_add_orderedSignForm_swap B hB a.toAdd b.toAdd]
+  rw [orderedSign_apply, orderedSign_apply, hsum, zpow_add, hd.neg_one_zpow, mul_one, zpow_sub,
+    div_eq_mul_inv]
 
 section Cover
 
@@ -182,14 +176,40 @@ action being trivial. -/
 abbrev SignCover : Type _ :=
   (signFactorSet B).Extension
 
+/-- **The central sign** `τ = ⟨-1, 1⟩` of the ordered sign cover: the image of `-1 : ℤˣ`, an
+element of order `2` in the center. -/
+noncomputable def SignCover.tau : SignCover B :=
+  FactorSet.inl (signFactorSet B) (-1)
+
+@[simp]
+theorem SignCover.tau_left : (SignCover.tau B).left = -1 :=
+  FactorSet.inl_left _ _
+
+@[simp]
+theorem SignCover.tau_right : (SignCover.tau B).right = 1 :=
+  FactorSet.inl_right _ _
+
+@[simp]
+theorem SignCover.tau_mul_self : SignCover.tau B * SignCover.tau B = 1 := by
+  rw [SignCover.tau, ← map_mul, Int.units_mul_self, map_one]
+
+theorem SignCover.tau_ne_one : SignCover.tau B ≠ 1 := by
+  rw [SignCover.tau, ← map_one (FactorSet.inl (signFactorSet B)),
+    (FactorSet.inl_injective _).ne_iff]
+  decide
+
+theorem SignCover.tau_mem_center : SignCover.tau B ∈ Subgroup.center (SignCover B) :=
+  FactorSet.inl_range_le_center _ trivialMulDistribMulAction_smul ⟨-1, rfl⟩
+
 /-- **The commutator formula of the ordered sign cover.** For a symmetric matrix `B` with even
-diagonal, two elements of the cover lying over `a` and `b` commute up to the central sign
-`(-1) ^ (a ⬝ᵥ B *ᵥ b)` of their Gram pairing, whatever signs they carry. -/
+diagonal, two elements of the cover lying over `a` and `b` commute up to the power
+`τ ^ (a ⬝ᵥ B *ᵥ b)` of the central sign given by their Gram pairing, whatever signs they
+carry. -/
 theorem commutatorElement_signCover (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i))
     (x y : SignCover B) :
-    ⁅x, y⁆ = FactorSet.inl (signFactorSet B) ((-1) ^ (x.right.toAdd ⬝ᵥ B *ᵥ y.right.toAdd)) := by
+    ⁅x, y⁆ = SignCover.tau B ^ (x.right.toAdd ⬝ᵥ B *ᵥ y.right.toAdd) := by
   rw [FactorSet.commutatorElement_eq_inl _ trivialMulDistribMulAction_smul, signFactorSet_apply,
-    signFactorSet_apply, orderedSign_div_orderedSign_swap B hB hdiag]
+    signFactorSet_apply, orderedSign_div_orderedSign_swap B hB hdiag, map_zpow, SignCover.tau]
 
 /-- **The canonical section of the ordered sign cover is a homomorphism exactly when every strictly
 lower triangular entry of `B` is even**, that is, exactly when the ordered sign is trivial. -/
@@ -211,18 +231,19 @@ theorem forall_canonicalSection_signFactorSet_mul_iff :
     · exact Even.zero
 
 /-- **For a simply laced Gram matrix, the canonical section of the ordered sign cover is a
-homomorphism exactly when the diagram has no bonds.** Here `B` is symmetric with off-diagonal
-entries `0` or `-1`, the negative of the number of bonds, as for the Cartan matrix of a simply laced
-Dynkin diagram. -/
+homomorphism exactly when the diagram has no bonds.** Here `B` is symmetric and simply laced, with
+off-diagonal entries `0` or `-1`, the negative of the number of bonds, as for the Cartan matrix of a
+simply laced Dynkin diagram. The hypothesis `hsl` is the unfolding of Mathlib's
+`Matrix.IsSimplyLaced`, so a proof of `B.IsSimplyLaced` can be passed for it directly. -/
 theorem forall_canonicalSection_signFactorSet_mul_iff_of_simplyLaced (hB : B.IsSymm)
-    (hoff : ∀ i j, i ≠ j → B i j = 0 ∨ B i j = -1) :
+    (hsl : Pairwise fun i j => B i j = 0 ∨ B i j = -1) :
     (∀ a b : Multiplicative (I → ℤ), (signFactorSet B).canonicalSection (a * b) =
         (signFactorSet B).canonicalSection a * (signFactorSet B).canonicalSection b) ↔
       ∀ i j, i ≠ j → B i j = 0 := by
   rw [forall_canonicalSection_signFactorSet_mul_iff]
   refine ⟨fun h i j hij => ?_, fun h i j hji => by simp [h i j hji.ne']⟩
   have key : ∀ i j, j < i → B i j = 0 := fun i j hji =>
-    (hoff i j hji.ne').resolve_right fun h' => by simpa [h'] using h i j hji
+    (hsl hji.ne').resolve_right fun h' => by simpa [h'] using h i j hji
   rcases lt_or_gt_of_ne hij with hlt | hlt
   · rw [← hB.apply]
     exact key j i hlt
