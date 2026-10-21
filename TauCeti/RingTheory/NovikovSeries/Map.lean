@@ -208,6 +208,7 @@ theorem map_id {M : Type*} [AddCommMonoid M] :
 
 /-- The pushforward along composite coefficient and exponent maps is the composite of the
 pushforwards. -/
+@[simp]
 theorem map_map (ρ' : S →+ T) (φ' : H' →+ H'') (hφ' : ∃ c > 0, ∀ h, N'' (φ' h) = c * N' h)
     (a : NovikovSeries R H N) :
     map ρ' φ' hφ' (map ρ φ hφ a) =
@@ -291,6 +292,14 @@ theorem coeff_comap (b : NovikovSeries R H' N') (h : H) :
     (comap φ hφ hker b).coeff h = b.coeff (φ h) := by
   rfl
 
+/-- The exponents of nonzero coefficient of a restriction are the preimages of those of the
+series. -/
+@[simp]
+theorem support_comap (b : NovikovSeries R H' N') :
+    (comap φ hφ hker b).support = φ ⁻¹' b.support := by
+  ext
+  simp
+
 /-- The restriction sends a series vanishing below the period cutoff `c * C` to a series
 vanishing below `C`, where `c > 0` is the period rescaling factor of `φ`. -/
 theorem coeff_comap_eq_zero_of_lt {c C : ℝ} (hc : 0 < c) (hcφ : ∀ h, N' (φ h) = c * N h)
@@ -307,6 +316,7 @@ theorem comap_id :
 
 /-- The restriction along a composite exponent homomorphism is the composite of the
 restrictions. -/
+@[simp]
 theorem comap_comap (φ' : H' →+ H'') (hφ' : ∃ c > 0, ∀ h, N'' (φ' h) = c * N' h)
     (hker' : (φ'.ker : Set H').Finite) (b : NovikovSeries R H'' N'') :
     comap φ hφ hker (comap φ' hφ' hker' b) =
