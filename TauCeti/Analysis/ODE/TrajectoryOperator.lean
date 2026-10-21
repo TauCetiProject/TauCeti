@@ -159,6 +159,13 @@ theorem norm_trajectoryOperator_sub_le (A B : Lp (F →L[ℝ] F) ∞ (mu.restric
           exact (ContinuousLinearMap.norm_holderL_le _).trans ContinuousLinearMap.norm_id_le)
     _ = ‖A - B‖ := by ring
 
+/-- The trajectory operator depends `1`-Lipschitz continuously on its `L∞` coefficient, for the
+operator norm. -/
+theorem lipschitzWith_trajectoryOperator :
+    LipschitzWith 1 (trajectoryOperator (F := F) (mu := mu) (Omega := Omega) (p := p)) :=
+  LipschitzWith.of_dist_le_mul fun A B ↦ by
+    simpa only [dist_eq_norm, NNReal.coe_one, one_mul] using norm_trajectoryOperator_sub_le A B
+
 /-- Solving the bounded trajectory equation is equivalent to solving the weak ordinary
 differential equation `u' = f - A u`. -/
 theorem trajectoryOperator_eq_iff_hasWeakLineDerivOn

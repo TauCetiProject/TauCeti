@@ -80,6 +80,12 @@ jobs:
 
       # Pinned leanprover/elan release, verified by SHA-256; scripts/test_elan_pin.py keeps the
       # copies of the pin honest.
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
       - name: Install elan (pinned + checksum)
         env:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
@@ -176,7 +182,8 @@ jobs:
       # deleted modules do not linger (the navigation bar lists whatever pages are on disk). That
       # means removing the module pages AND the marker that tells Lake the render is up to date;
       # removing only the pages would leave Lake skipping the render and produce none at all. The
-      # previous run's provenance marker goes too, since the step after this one writes it anew.
+      # previous run's provenance marker goes too, since the step after this one writes it anew, and
+      # so does the previous facts file, which describes the previous marker's commit.
       - name: Build the API documentation (doc-gen4)
         env:
           DOCGEN_LOCAL_MODULE_ROOTS: TauCeti
@@ -184,7 +191,7 @@ jobs:
           # The restore above placed what this needs, so do not reach for a remote cache.
           LAKE_NO_CACHE: "true"
         run: |
-          rm -rf .lake/build/doc/TauCeti .lake/build/doc/SOURCE_SHA
+          rm -rf .lake/build/doc/TauCeti .lake/build/doc/SOURCE_SHA .lake/build/doc/facts.json.gz
           rm -f .lake/build/doc-data/*.docs_built
           lake build TauCetiDocs:docs
 
@@ -206,6 +213,28 @@ jobs:
             exit 1
           fi
           printf '%s\n' "$SHA" > "$marker"
+
+      # One compact file of declaration facts (scripts/docs-facts.md), so progress reporting reads
+      # one URL, /docs/facts.json.gz, instead of thousands of pages that a deploy can change
+      # between reads. Read from this build's pages, index and doc-gen4 database while that
+      # database is still here; no Lean runs. It sits beside SOURCE_SHA, so every deploy of this
+      # tree serves the facts for exactly its pages. A failure must not cost the documentation:
+      # the tree is saved without the file, and the next hourly run exports again.
+      - name: Export the documentation facts
+        id: facts
+        continue-on-error: true
+        env:
+          DOCS_BASE: ${{ vars.DOCS_BASE_URL || 'https://taucetiproject.org/docs' }}
+        run: |
+          python3 ../scripts/docs_facts.py export \
+            --doc-dir .lake/build/doc --db .lake/build/api-docs.db --repo .. --root TauCeti \
+            --docs-base "$DOCS_BASE" --toolchain-file ../lean-toolchain --docs-manifest lake-manifest.json
+
+      # The exporter writes facts.json.gz with a single rename, and refuses to replace an existing
+      # file, so a failure leaves the tree as doc-gen4 produced it.
+      - name: Note that this tree has no facts file
+        if: steps.facts.outcome == 'failure'
+        run: echo "::warning title=No documentation facts::this tree is saved without facts.json.gz; the next hourly run exports again"
 
       # pages.yml publishes the most recently SAVED tree, which is not necessarily the newest one:
       # re-running an old run of this workflow would save its older tree last, and the next Pages

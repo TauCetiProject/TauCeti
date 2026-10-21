@@ -38,12 +38,22 @@ carries.  The tensor form asks nothing of `M` and keeps that structure: every `A
 of `M` acts on the second factor and on nothing else (`TauCeti.isotypicEval_comp`), which is
 exactly what a double-centralizer decomposition consumes.
 
+Summing over components gives the uncounted form of the whole decomposition of a semisimple
+module. For pairwise non-isomorphic simple modules `S j` that represent every simple submodule of a
+semisimple `M`, evaluation is an isomorphism `⨁ⱼ S j ⊗[k] (S j →ₗ[A] M) ≃ₗ[A] M`. Injectivity
+combines injectivity on each summand with the independence of the isotypic components
+(`TauCeti.iSupIndep_isotypicComponent`). Again nothing is asked of `M` beyond semisimplicity; in
+particular infinitely many `S j` may occur, with infinite-dimensional multiplicity spaces.
+
 ## Main definitions
 
 * `TauCeti.isotypicComponentTensorEquiv`: **the isotypic component is `S` tensored with its
   multiplicity space**, `S ⊗[k] (S →ₗ[A] M) ≃ₗ[A] isotypicComponent A M S`.
 * `TauCeti.isotypicTensorEquiv`: the same for a module that is its own isotypic component,
   `S ⊗[k] (S →ₗ[A] M) ≃ₗ[A] M`.
+* `TauCeti.directSumIsotypicEval`: the sum of the evaluation maps of a family of modules `S j`.
+* `TauCeti.directSumIsotypicTensorEquiv`: **the isotypic decomposition of a semisimple module**,
+  `⨁ⱼ S j ⊗[k] (S j →ₗ[A] M) ≃ₗ[A] M`.
 
 ## Main results
 
@@ -54,6 +64,12 @@ exactly what a double-centralizer decomposition consumes.
   on nothing else, read on the equivalences.
 * `TauCeti.isotypicTensorEquiv_symm_apply_map`: the same read on the inverse — the form that,
   taking `N = M`, transports the commutant of `A` onto the multiplicity space.
+* `TauCeti.range_directSumIsotypicEval`: the range of the summed evaluation is the sum of the
+  isotypic components; `TauCeti.directSumIsotypicEval_surjective` and
+  `TauCeti.directSumIsotypicEval_injective` give the two halves of the decomposition.
+* `TauCeti.directSumIsotypicEval_comp`, `TauCeti.directSumIsotypicTensorEquiv_map` and
+  `TauCeti.directSumIsotypicTensorEquiv_symm_apply_map`: naturality of the decomposition in the
+  target, so that `A`-linear maps act on the multiplicity spaces alone.
 
 ## References
 
@@ -212,5 +228,176 @@ theorem isotypicTensorEquiv_symm_apply_map (hM : isotypicComponent A M S = ⊤)
         (LinearMap.compRight (M := S) k g) ((isotypicTensorEquiv k hM).symm y) := by
   apply (isotypicTensorEquiv k hN).injective
   rw [LinearEquiv.apply_symm_apply, isotypicTensorEquiv_map k hM hN, LinearEquiv.apply_symm_apply]
+
+end TauCeti
+
+/-! ### The isotypic decomposition of a semisimple module -/
+
+namespace TauCeti
+
+open TensorProduct
+
+section DirectSum
+
+variable (k A : Type*) [CommRing k] [Ring A] [Algebra k A]
+  {κ : Type*} [DecidableEq κ] (S : κ → Type*) [∀ j, AddCommGroup (S j)] [∀ j, Module k (S j)]
+  [∀ j, Module A (S j)] [∀ j, IsScalarTower k A (S j)]
+  (M : Type*) [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+
+/-- The sum over a family of modules `S j` of the evaluation maps
+`S j ⊗[k] (S j →ₗ[A] M) →ₗ[A] M`, `s ⊗ f ↦ f s`. -/
+noncomputable def directSumIsotypicEval : (Π₀ j, S j ⊗[k] (S j →ₗ[A] M)) →ₗ[A] M :=
+  DFinsupp.lsum ℕ fun _ => isotypicEval k
+
+/-- On the `j`-th summand, `directSumIsotypicEval` is the evaluation map of `S j`. -/
+@[simp]
+theorem directSumIsotypicEval_single (j : κ) (x : S j ⊗[k] (S j →ₗ[A] M)) :
+    directSumIsotypicEval k A S M (DFinsupp.single j x) = isotypicEval k x :=
+  DFinsupp.lsum_single _ _ _ _
+
+/-- `directSumIsotypicEval` factors through the direct sum of the ranges of the summands. -/
+private theorem directSumIsotypicEval_eq_lsum_comp :
+    directSumIsotypicEval k A S M =
+      (DFinsupp.lsum ℕ fun j => (LinearMap.range (isotypicEval k (S := S j) (M := M))).subtype)
+        ∘ₗ DFinsupp.mapRange.linearMap fun _ => (isotypicEval k).rangeRestrict := by
+  ext j x
+  simp
+
+section Naturality
+
+variable {A M} {N : Type*} [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
+
+/-- **Naturality of the summed evaluation in the target.** An `A`-linear map `g : M →ₗ[A] N`
+acts on each summand through its multiplicity space alone; the factors `S j` are untouched. -/
+theorem directSumIsotypicEval_comp (g : M →ₗ[A] N) :
+    g ∘ₗ directSumIsotypicEval k A S M =
+      directSumIsotypicEval k A S N ∘ₗ DFinsupp.mapRange.linearMap fun j =>
+        AlgebraTensorModule.map (LinearMap.id (R := A) (M := S j))
+          (LinearMap.compRight (M := S j) k g) := by
+  ext j x
+  simp
+
+-- Not `@[simp]`, unlike `TauCeti.isotypicEval_map_apply`: the `simps` lemma
+-- `DFinsupp.mapRange.linearMap_apply` already rewrites the left-hand side.
+/-- The value form of `TauCeti.directSumIsotypicEval_comp`. -/
+theorem directSumIsotypicEval_map_apply (g : M →ₗ[A] N) (x : Π₀ j, S j ⊗[k] (S j →ₗ[A] M)) :
+    directSumIsotypicEval k A S N
+        (DFinsupp.mapRange.linearMap (fun j =>
+          AlgebraTensorModule.map (LinearMap.id (R := A) (M := S j))
+            (LinearMap.compRight (M := S j) k g)) x) =
+      g (directSumIsotypicEval k A S M x) :=
+  (LinearMap.congr_fun (directSumIsotypicEval_comp k S g) x).symm
+
+end Naturality
+
+variable [∀ j, IsSimpleModule A (S j)]
+
+/-- The range of `directSumIsotypicEval` is the sum of the isotypic components of the `S j`. -/
+theorem range_directSumIsotypicEval :
+    LinearMap.range (directSumIsotypicEval k A S M) = ⨆ j, isotypicComponent A M (S j) := by
+  rw [directSumIsotypicEval_eq_lsum_comp, LinearMap.range_comp_of_range_eq_top,
+    ← Submodule.iSup_eq_range_dfinsupp_lsum]
+  · simp only [range_isotypicEval]
+  · exact LinearMap.range_eq_top.mpr <|
+      (DFinsupp.mapRange_surjective _ fun _ => map_zero _).mpr fun _ =>
+        LinearMap.surjective_rangeRestrict _
+
+variable {A M}
+
+/-- Evaluation is onto a semisimple module `M` as soon as each simple submodule of `M` is
+isomorphic to one of the `S j`. -/
+theorem directSumIsotypicEval_surjective [IsSemisimpleModule A M]
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    Function.Surjective (directSumIsotypicEval k A S M) := by
+  rw [← LinearMap.range_eq_top, range_directSumIsotypicEval, eq_top_iff,
+    ← IsSemisimpleModule.sSup_simples_eq_top]
+  refine sSup_le fun m hm => ?_
+  obtain ⟨j, ⟨e⟩⟩ := hcover m hm
+  exact m.le_isotypicComponent.trans <| e.symm.isotypicComponent_eq.le.trans <|
+    le_iSup (fun j => isotypicComponent A M (S j)) j
+
+end DirectSum
+
+section DirectSumEquiv
+
+variable (k : Type*) {A : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]
+  {κ : Type*} [DecidableEq κ] (S : κ → Type*) [∀ j, AddCommGroup (S j)] [∀ j, Module k (S j)]
+  [∀ j, Module A (S j)] [∀ j, IsScalarTower k A (S j)] [∀ j, IsSimpleModule A (S j)]
+  [∀ j, FiniteDimensional k (S j)]
+  {M : Type*} [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+  {N : Type*} [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
+
+/-- For pairwise non-isomorphic simple modules `S j`, finite-dimensional over the algebraically
+closed field `k`, evaluation `⨁ⱼ S j ⊗[k] (S j →ₗ[A] M) → M` is injective. No finiteness is asked
+of `M`. -/
+theorem directSumIsotypicEval_injective (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j) :
+    Function.Injective (directSumIsotypicEval k A S M) := by
+  -- Each summand maps injectively onto its isotypic component, and these are independent.
+  have hind : iSupIndep fun j => LinearMap.range (isotypicEval k (A := A) (S := S j) (M := M)) := by
+    simpa only [range_isotypicEval] using iSupIndep_isotypicComponent A M S hS
+  rw [directSumIsotypicEval_eq_lsum_comp, LinearMap.coe_comp]
+  exact hind.dfinsupp_lsum_injective.comp <|
+    (DFinsupp.mapRange_injective _ fun _ => map_zero _).mpr fun _ =>
+      (LinearMap.injective_rangeRestrict_iff _).mpr (isotypicEval_injective k)
+
+/-- **The isotypic decomposition of a semisimple module.** Let `S j` be pairwise non-isomorphic
+simple modules, finite-dimensional over the algebraically closed field `k`, such that every simple
+submodule of the semisimple module `M` is isomorphic to one of them. Then evaluation
+`s ⊗ f ↦ f s` is an isomorphism `⨁ⱼ S j ⊗[k] (S j →ₗ[A] M) ≃ M` of `A`-modules. -/
+noncomputable def directSumIsotypicTensorEquiv [IsSemisimpleModule A M]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    (Π₀ j, S j ⊗[k] (S j →ₗ[A] M)) ≃ₗ[A] M :=
+  .ofBijective (directSumIsotypicEval k A S M)
+    ⟨directSumIsotypicEval_injective k S hS, directSumIsotypicEval_surjective k S hcover⟩
+
+/-- `directSumIsotypicTensorEquiv` is the summed evaluation map. -/
+@[simp]
+theorem directSumIsotypicTensorEquiv_apply [IsSemisimpleModule A M]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (x : Π₀ j, S j ⊗[k] (S j →ₗ[A] M)) :
+    directSumIsotypicTensorEquiv k S hS hcover x = directSumIsotypicEval k A S M x :=
+  (rfl)
+
+-- Not `@[simp]`: `directSumIsotypicTensorEquiv_apply` and `DFinsupp.mapRange.linearMap_apply`
+-- already rewrite the left-hand side.
+/-- **The isotypic decomposition is natural in the target.** An `A`-linear map `g : M →ₗ[A] N`
+between semisimple modules acts on each multiplicity space `S j →ₗ[A] M` by postcomposition, and
+on nothing else: this is `TauCeti.directSumIsotypicEval_comp` read through the equivalences. -/
+theorem directSumIsotypicTensorEquiv_map [IsSemisimpleModule A M] [IsSemisimpleModule A N]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcoverM : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (hcoverN : ∀ m : Submodule A N, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (g : M →ₗ[A] N) (x : Π₀ j, S j ⊗[k] (S j →ₗ[A] M)) :
+    directSumIsotypicTensorEquiv k S hS hcoverN
+        (DFinsupp.mapRange.linearMap (fun j =>
+          AlgebraTensorModule.map (LinearMap.id (R := A) (M := S j))
+            (LinearMap.compRight (M := S j) k g)) x) =
+      g (directSumIsotypicTensorEquiv k S hS hcoverM x) := by
+  rw [directSumIsotypicTensorEquiv_apply, directSumIsotypicTensorEquiv_apply,
+    directSumIsotypicEval_map_apply]
+
+/-- **Transporting a map to the multiplicity spaces.** Reading
+`TauCeti.directSumIsotypicTensorEquiv_map` backwards: the inverse equivalences carry an
+`A`-linear map `g : M →ₗ[A] N` to `1 ⊗ (g ∘ ·)` on every summand. For `N = M` this says that
+under the decomposition the commutant of `A` acts on the multiplicity spaces and trivially on the
+`S j`. -/
+@[simp]
+theorem directSumIsotypicTensorEquiv_symm_apply_map [IsSemisimpleModule A M]
+    [IsSemisimpleModule A N] (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcoverM : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (hcoverN : ∀ m : Submodule A N, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (g : M →ₗ[A] N) (y : M) :
+    (directSumIsotypicTensorEquiv k S hS hcoverN).symm (g y) =
+      DFinsupp.mapRange.linearMap (fun j =>
+        AlgebraTensorModule.map (LinearMap.id (R := A) (M := S j))
+          (LinearMap.compRight (M := S j) k g))
+        ((directSumIsotypicTensorEquiv k S hS hcoverM).symm y) := by
+  apply (directSumIsotypicTensorEquiv k S hS hcoverN).injective
+  rw [LinearEquiv.apply_symm_apply, directSumIsotypicTensorEquiv_map k S hS hcoverM hcoverN,
+    LinearEquiv.apply_symm_apply]
+
+end DirectSumEquiv
 
 end TauCeti

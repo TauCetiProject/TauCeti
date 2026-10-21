@@ -19,8 +19,8 @@ import Mathlib.Topology.MetricSpace.Thickening
 
 A family of holomorphic functions on an open set `U ⊆ ℂ` that is *locally bounded* — uniformly
 bounded on every compact subset of `U` — is automatically equicontinuous on `U`.  This is the
-analytic heart of Montel's normal-families theorem: combined with Arzelà--Ascoli and an
-exhaustion/diagonal argument, it yields precompactness for local uniform convergence.
+analytic heart of Montel's normal-families theorem: for a proper target, equicontinuity and the
+pointwise norm bounds give relative compactness by the compact-open Arzelà–Ascoli theorem.
 
 The estimates here are stated for maps `ℂ → E` into a complex normed space, because nothing in a
 Cauchy estimate uses the multiplicative structure of the target: Mathlib's
@@ -60,24 +60,17 @@ the family, which is exactly equicontinuity.
   `closedBall c (2 * r)` makes a holomorphic function `M / r`-Lipschitz on `ball c r`.
 * `TauCeti.IsLocallyBoundedOn.equicontinuousOn`: a locally bounded family of holomorphic
   functions is equicontinuous.  With `TauCeti.IsLocallyBoundedOn.exists_forall_norm_le`, this
-  supplies the local inputs for an Arzelà--Ascoli exhaustion argument.
+  supplies the hypotheses of the compact-open Arzelà–Ascoli theorem when the target is proper.
 * `TauCeti.IsLocallyBoundedOn.deriv` and `TauCeti.IsLocallyBoundedOn.equicontinuousOn_deriv`: the
   derivatives of a locally bounded family of holomorphic functions are again locally bounded, hence
   also equicontinuous.
 
-This advances the L1 (normal families / Montel) layer of the conformal-mapping roadmap, which
-fixes local boundedness as "bounded on each compact `K ⊆ Ω`".  The roadmap's scalar generality bar
-governs the *conformal* statements it adds — Rouché, Hurwitz, the Riemann mapping theorem — whose
-hypotheses genuinely use `ℂ` as the target; the Cauchy estimates below are the inputs those
-statements consume, and are stated at the generality Mathlib already provides for them.  As with
-the rest of the L0--L3 conformal-mapping material it is coordinated with the upstream Mathlib
-Riemann-mapping effort leanprover-community/mathlib4#33505, which proves a Montel equicontinuity
-statement internally as a private lemma; these declarations are a temporary shim, to be deleted
-and refactored to Mathlib's API once that human-curated work lands.
-
 ## References
 
-Ahlfors, *Complex Analysis*, Ch. 5; Conway, *Functions of One Complex Variable I*, VII.
+* Ahlfors, *Complex Analysis*, Ch. 5.
+* Conway, *Functions of One Complex Variable I*, VII.
+* The Montel equicontinuity argument in the Riemann mapping formalization
+  [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505).
 -/
 
 public section
@@ -96,8 +89,7 @@ variable {X : Type*} [TopologicalSpace X] [Norm E] {s t : Set X} {F : ι → X �
 **locally bounded** on `s` if it is uniformly bounded — with a single constant, independent of
 the index — on every compact subset of `s`.
 
-This is the hypothesis of Montel's theorem, in the form fixed by the conformal-mapping roadmap;
-there `X = ℂ` and `E` is a complex normed space. -/
+This is the hypothesis of Montel's theorem; there `X = ℂ` and `E` is a complex normed space. -/
 def IsLocallyBoundedOn (F : ι → X → E) (s : Set X) : Prop :=
   ∀ K ⊆ s, IsCompact K → ∃ C, ∀ i, ∀ z ∈ K, ‖F i z‖ ≤ C
 
@@ -126,8 +118,8 @@ theorem IsLocallyBoundedOn.comp {κ : Type*} (hb : IsLocallyBoundedOn F s)
 
 /-- A locally bounded family is bounded at each point of the set, uniformly in the index.
 
-Together with `IsLocallyBoundedOn.equicontinuousOn`, this supplies the pointwise bounds used in
-an Arzelà--Ascoli exhaustion argument. -/
+These pointwise bounds combine with `IsLocallyBoundedOn.equicontinuousOn` in the compact-open
+Arzelà–Ascoli theorem when the target is proper. -/
 theorem IsLocallyBoundedOn.exists_forall_norm_le (hb : IsLocallyBoundedOn F s) {z : X}
     (hz : z ∈ s) : ∃ C, ∀ i, ‖F i z‖ ≤ C := by
   obtain ⟨C, hC⟩ := hb {z} (singleton_subset_iff.2 hz) isCompact_singleton

@@ -340,11 +340,26 @@ class StatusBinding(unittest.TestCase):
             gh = fake / 'gh'
             current = ('e' * 40 if moved else head) + (' other' if retarget else ' main')
             gh.write_text(f'#!{sys.executable}\n' + r"""import json, os, sys
-if sys.argv[1:3] == ['api', '-X']:
+args = sys.argv[1:]
+method = args[args.index('--method') + 1]
+path = next(arg for arg in args if arg.startswith('repos/'))
+if method == 'POST':
+    payload = json.load(sys.stdin)
     with open(os.environ['POSTS'], 'a') as output:
-        output.write(json.dumps(sys.argv[1:]) + '\n')
+        output.write(json.dumps({'path': path, 'payload': payload}) + '\n')
+    response = {}
+elif path.endswith('/actions/runs/9'):
+    response = {'id': 9, 'run_attempt': 1, 'conclusion': None,
+                'run_started_at': '2026-10-21T00:00:00Z'}
+elif path.endswith('/pulls/42'):
+    head, base = os.environ['CURRENT'].split()
+    response = {'head': {'sha': head}, 'base': {'ref': base}}
+elif '/commits/' in path and '/statuses?' in path:
+    response = []
 else:
-    print(os.environ['CURRENT'])
+    raise SystemExit('unexpected API request: ' + path)
+print('HTTP/2 200 OK\nContent-Type: application/json\n')
+print(json.dumps(response))
 """)
             gh.chmod(0o755)
             report = next(s['run'] for s in STEPS if s.get('id') == 'report')
@@ -355,18 +370,21 @@ else:
                       'github.server_url': 'https://github.invalid', 'github.run_id': '9'}
             values.update({'env.' + key: value for key, value in (guards or {}).items()})
             script = re.sub(r'\$\{\{ (.*?) \}\}', lambda m: values.get(m[1], ''), report)
+            script = script.replace('CI_STATUS_MAX_WAIT=600', 'CI_STATUS_MAX_WAIT=0')
             env = dict(os.environ, PATH=str(fake) + os.pathsep + os.environ['PATH'],
                        RUNNER_TEMP=str(root), RAW_HEAD=head, CAPTURED_BASE=base,
                        CANDIDATE_MODE='pr-integration', TESTED_SHA='f' * 40 if wrong_output else tested,
                        TESTED_TREE=tree, CURRENT=current, POSTS=str(root / 'posts'),
-                       GITHUB_OUTPUT=str(root / 'output'))
+                       GITHUB_OUTPUT=str(root / 'output'), GITHUB_REPOSITORY='o/r',
+                       GITHUB_RUN_ID='9', GITHUB_RUN_ATTEMPT='1', IS_BATCH='false')
             result = subprocess.run(['bash', '-euo', 'pipefail', '-c', script],
                                     cwd=root, env=env, capture_output=True, text=True)
-            posts = [json.loads(line) for line in (root / 'posts').read_text().splitlines()]
+            posts_file = root / 'posts'
+            posts = [json.loads(line) for line in posts_file.read_text().splitlines()] if posts_file.exists() else []
             status = {}
             for post in posts:
-                self.assertIn('repos/o/r/statuses/' + head, post)
-                fields = dict(arg.split('=', 1) for arg in post if '=' in arg)
+                self.assertEqual(post['path'], 'repos/o/r/statuses/' + head)
+                fields = post['payload']
                 status[fields['context']] = fields
             return result, status
 
@@ -393,9 +411,15 @@ else:
                 if guards.get('INTEGRATION_CONFLICT'):
                     self.assertEqual(posts['scope']['state'], 'success')
 
-    def test_head_changes_retarget_and_identity_failures_cannot_post_green(self):
-        for options in (dict(moved=True), dict(retarget=True), dict(missing=True),
-                        dict(malformed=True), dict(wrong_output=True)):
+    def test_head_changes_and_retarget_cannot_publish_obsolete_results(self):
+        for options in (dict(moved=True), dict(retarget=True)):
+            with self.subTest(options=options):
+                result, posts = self.report(**options)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(posts, {})
+
+    def test_identity_failures_cannot_post_green(self):
+        for options in (dict(missing=True), dict(malformed=True), dict(wrong_output=True)):
             with self.subTest(options=options):
                 result, posts = self.report(**options)
                 self.assertNotEqual(result.returncode, 0)
@@ -418,9 +442,10 @@ class WorkflowContract(unittest.TestCase):
         report = next(s for s in STEPS if s.get('id') == 'report')
         self.assertIn('prepare_pr_integration.py verify', report['run'])
         self.assertIn('[ "$identity_ok" != 1 ]', report['run'])
-        self.assertIn('statuses/${{ steps.pr.outputs.status_sha }}', report['run'])
+        self.assertIn("--sha '${{ steps.pr.outputs.status_sha }}'", report['run'])
+        self.assertIn('python3 gate/scripts/ci_status.py', report['run'])
+        self.assertIn('resume "$RUNNER_TEMP/tauceti-status-intents"', report['run'])
         self.assertIn('integration B=${CAPTURED_BASE:0:12} T=${TESTED_SHA:0:12}', report['run'])
-        self.assertIn('head_moved=1', report['run'])
         self.assertNotIn('exact-head sandboxed build and workflow-pinned audits passed', report['run'])
 
     def test_no_new_trigger_or_pr_cache_producer_and_pinned_sandbox_stays(self):

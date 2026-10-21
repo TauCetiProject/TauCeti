@@ -66,7 +66,8 @@ right half-plane is `{sideForm g > 0}`.
   neither half-plane.
 * `TauCeti.UpperHalfPlane.sideForm g`: the real quadratic form whose sign is the side of
   `geodesicLine g`, with `sideForm_mk` and `sideForm_mk_ofReal` in the entries of a
-  representative; `mem_leftHalfPlane_iff_sideForm_neg`, `mem_rightHalfPlane_iff_sideForm_pos`,
+  representative, and `sideForm_one`, `sideForm_pslS` for the imaginary axis and its reversal;
+  `mem_leftHalfPlane_iff_sideForm_neg`, `mem_rightHalfPlane_iff_sideForm_pos`,
   `mem_range_geodesicLine_iff_sideForm_eq_zero`, `mem_closure_leftHalfPlane_iff_sideForm_nonpos`;
   `sideForm_mul_dilation`: it too is unchanged by a dilation;
   `exists_sideForm_eq_mul_normSq_sub`: a side form vanishing at two points of a circle centred on
@@ -390,6 +391,18 @@ theorem sideForm_mk_ofReal (A : SL(2, ℝ)) (x : ℝ) :
     sideForm (A : PSL(2, ℝ)) x = (A 1 1 * x - A 0 1) * (-A 1 0 * x + A 0 0) := by
   rw [sideForm_mk, Complex.normSq_ofReal, Complex.ofReal_re]
   ring
+
+/-- The side form of the imaginary axis is the real part. -/
+@[simp]
+theorem sideForm_one (z : ℂ) : sideForm 1 z = z.re := by
+  rw [← QuotientGroup.mk_one, sideForm_mk]
+  simp
+
+/-- The side form of the reversed imaginary axis is minus the real part. -/
+@[simp]
+theorem sideForm_pslS (z : ℂ) : sideForm pslS z = -z.re := by
+  rw [pslS_def, psl2zToPSL2R_mk, sl2zToPSL2R_apply, sideForm_mk]
+  simp [ModularGroup.coe_S]
 
 /-- The real part of `g⁻¹ • z` is a positive multiple of the side form at `z`. -/
 theorem exists_pos_re_inv_smul_eq (g : PSL(2, ℝ)) (z : ℍ) :
