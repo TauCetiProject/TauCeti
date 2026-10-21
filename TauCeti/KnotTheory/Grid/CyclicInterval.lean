@@ -1012,6 +1012,13 @@ theorem insert_cIco_subset_cIco {A C s s' : Fin n} (hs : s ∈ cIco A C) (hs' : 
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs hs' hr' ⊢
   split_ifs at hs hs' hr' ⊢ <;> omega
 
+/-- Two points occurring in order in the initial piece of a half-open cyclic interval cut at an
+interior point occur in the same order in the whole interval. -/
+theorem mem_cIco_and_mem_cIoo_of_mem_cIoo {a b c s s' : Fin n} (hb : b ∈ cIoo a c)
+    (hs : s ∈ cIco a b) (hs' : s' ∈ cIoo s b) : s ∈ cIco a c ∧ s' ∈ cIoo s c := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hb hs hs' ⊢
+  split_ifs at hb hs hs' ⊢ <;> omega
+
 /-- A point is never in the half-open cyclic interval starting at its own successor.
 Going clockwise from `c + 1`, the point `c` is the last point reached — only after a full
 cycle. The half-open arc `cIco (c + 1) r` stops before `r`, hence before completing the
