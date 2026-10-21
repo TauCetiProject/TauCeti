@@ -142,13 +142,13 @@ theorem totalVariationOn_mono (h : Ω' ≤ Ω) :
       fun x => by simpa only [hcoe] using hφ x
 
 /-- **Inner continuity in the open set.** The total variation on the union of a directed family
-of open sets is the supremum of the total variations on its members: every test vector field is
-supported in a compact set, which lies in one of them. -/
+of open sets is the supremum of the total variations on its members. -/
 theorem totalVariationOn_iSup {ι : Type*} [Nonempty ι] {Ω : ι → Opens E}
     (hΩ : Directed (· ≤ ·) Ω) :
     totalVariationOn μ (⨆ i, Ω i) u = ⨆ i, totalVariationOn μ (Ω i) u := by
   refine le_antisymm (totalVariationOn_le_iff.mpr fun φ hφ => ?_)
     (iSup_le fun i => totalVariationOn_mono (le_iSup Ω i))
+  -- The compact support of a test vector field lies in one member of the family.
   obtain ⟨i, hi⟩ := φ.hasCompactSupport.isCompact.elim_directed_cover (fun i => (Ω i : Set E))
     (fun i => (Ω i).isOpen) (by simpa using φ.tsupport_subset) (hΩ.mono_comp _ fun _ _ h => h)
   let φ' : 𝓓(Ω i, E) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hi⟩

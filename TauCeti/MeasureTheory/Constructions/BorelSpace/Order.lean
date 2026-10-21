@@ -15,19 +15,21 @@ A lower semicontinuous function into a second-countable linear order is Borel me
 many points: each superlevel set `{f > y}` is the union of its interior, which contains every
 superlevel point where `f` is lower semicontinuous, and of a countable set.
 
-Functions of this kind arise as monotone limits that are continuous only away from the countably
-many atoms of a measure, such as the perimeter of the superlevel sets `{u > t}` of a function `u`
-as a function of the level `t`.
+Such functions arise, for instance, as the perimeter of the superlevel sets `{u > t}` of a
+function `u` as a function of the level `t`, which is lower semicontinuous at every level whose
+level set is null, hence off a countable set.
 
 ## Main results
 
-* `measurable_of_countable_setOf_not_lowerSemicontinuousAt`: a function that is lower
+* `TauCeti.measurable_of_countable_setOf_not_lowerSemicontinuousAt`: a function that is lower
   semicontinuous at all but countably many points is measurable.
 -/
 
 public section
 
 open Set Topology
+
+namespace TauCeti
 
 variable {α δ : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α]
   [LinearOrder α] [OrderTopology α] [SecondCountableTopology α]
@@ -45,3 +47,5 @@ theorem measurable_of_countable_setOf_not_lowerSemicontinuousAt {f : δ → α}
     · exact Or.inr ⟨hx, hlsc⟩
   rw [subset_antisymm hsub (union_subset interior_subset inter_subset_left)]
   exact isOpen_interior.measurableSet.union (hf.mono inter_subset_right).measurableSet
+
+end TauCeti
