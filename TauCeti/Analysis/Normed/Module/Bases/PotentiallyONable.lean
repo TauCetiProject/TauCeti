@@ -39,9 +39,12 @@ Over a ring with a multiplicative pseudo-uniformiser (`TauCeti.NormedRing.IsTate
   of the coordinate vectors, which exist by the quantitative open mapping theorem.
 * `TauCeti.hasPr_iff_forall_exists_comp_eq_id`: over a complete ultrametric such ring, a complete
   ultrametric module has (Pr) exactly when every continuous linear surjection onto it from a
-  complete ultrametric module has a continuous linear section. For the converse, the vectors of
-  norm at most one are the coordinate images of a surjection from a model space onto `M`.
-* `TauCeti.HasPr.projective`: a finitely generated complete module with (Pr) is projective.
+  complete ultrametric module in `Type (max u v)` has a continuous linear section. For the
+  converse, the vectors of norm at most one are the coordinate images of a surjection from a model
+  space onto `M`.
+* `TauCeti.HasPr.projective`: a finitely generated module with (Pr) is projective. It is complete
+  by `TauCeti.HasPr.completeSpace`, since over a complete ring a retract of `C₀(I, R)` is
+  complete.
 
 ## References
 
@@ -103,12 +106,6 @@ section Seminormed
 variable [SeminormedRing R] {M N : Type u} [SeminormedAddCommGroup M] [Module R M]
   [SeminormedAddCommGroup N] [Module R N]
 
-/-- A model space `C₀(I, R)` is orthonormalisable, for an index type `I` in any universe. -/
-theorem isONable_zeroAtInfty (I : Type*) [TopologicalSpace I] [DiscreteTopology I] :
-    IsONable R C₀(I, R) :=
-  (isONable_def R _).2
-    ⟨ULift I, inferInstance, inferInstance, ⟨congrLeft R R Homeomorph.ulift.symm⟩⟩
-
 /-- An orthonormalisable module is potentially orthonormalisable. -/
 theorem IsONable.isPotentiallyONable (h : IsONable R M) : IsPotentiallyONable R M :=
   let ⟨I, _, hI, ⟨c⟩⟩ := (isONable_def R M).1 h
@@ -155,6 +152,17 @@ theorem HasPr.prod (hM : HasPr R M) (hN : HasPr R N) : HasPr R (M × N) := by
     (r.prodMap s).comp (e : _ →L[R] _), ?_⟩
   ext x <;> simp [hri', hsj']
 
+/-- Over a complete ring, a module with property (Pr) is complete: a Cauchy filter on `M` maps
+to a Cauchy filter on the complete model space `C₀(I, R)`, whose limit the retraction sends to a
+limit of the original filter. -/
+theorem HasPr.completeSpace [CompleteSpace R] (h : HasPr R M) : CompleteSpace M := by
+  obtain ⟨I, _, _, i, r, hri⟩ := h
+  refine ⟨fun {f} hf ↦ ?_⟩
+  obtain ⟨y, hy⟩ := CompleteSpace.complete (hf.map i.uniformContinuous)
+  refine ⟨r y, ?_⟩
+  have hri' : r ∘ i = id := funext fun x ↦ by simpa using DFunLike.congr_fun hri x
+  simpa [Filter.Tendsto, hri'] using (r.continuous.tendsto y).comp hy
+
 end Seminormed
 
 section Lifting
@@ -191,13 +199,15 @@ end Lifting
 section Splitting
 
 variable [NormedRing R] [NormedRing.IsTate R] [IsUltrametricDist R] [CompleteSpace R]
-  {M : Type u} [NormedAddCommGroup M] [Module R M] [IsBoundedSMul R M] [CompleteSpace M]
+  {M : Type u} [NormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
 
 /-- **Property (Pr) is the splitting of surjections**: over a complete ultrametric ring with a
 multiplicative pseudo-uniformiser, a complete ultrametric module `M` has property (Pr) exactly
-when every continuous linear surjection `q : E →L[R] M` from a complete ultrametric module has a
-continuous linear section. -/
-theorem hasPr_iff_forall_exists_comp_eq_id [IsUltrametricDist M] :
+when every continuous linear surjection `q : E →L[R] M` from a complete ultrametric module `E` in
+`Type (max u v)` has a continuous linear section. This universe suffices because the converse only
+uses the model space `C₀({x : M // ‖x‖ ≤ 1}, R)`; for sources in arbitrary universes, the forward
+direction is `HasPr.lifting_property`. -/
+theorem hasPr_iff_forall_exists_comp_eq_id [CompleteSpace M] [IsUltrametricDist M] :
     HasPr R M ↔ ∀ (E : Type max u v) [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
       [IsUltrametricDist E] [CompleteSpace E] (q : E →L[R] M), Surjective q →
         ∃ s : M →L[R] E, q.comp s = .id R M := by
@@ -222,18 +232,18 @@ theorem hasPr_iff_forall_exists_comp_eq_id [IsUltrametricDist M] :
   exact ⟨B, ⊥, ⟨rfl⟩, s, q, hs⟩
 
 /-- **Finite (Pr) modules are projective**: over a complete ultrametric ring with a
-multiplicative pseudo-uniformiser, a finitely generated complete module with property (Pr) is a
-projective module. -/
+multiplicative pseudo-uniformiser, a finitely generated module with property (Pr) is a projective
+module. -/
 theorem HasPr.projective [Module.Finite R M] (h : HasPr R M) : Module.Projective R M := by
+  have := h.completeSpace
   obtain ⟨n, v, hv⟩ := Module.Finite.exists_fin (R := R) (M := M)
   -- The generators `v` give a continuous linear surjection `R ^ n → M`; it splits by (Pr).
-  let q : (Fin n → R) →L[R] M := ∑ k, (ContinuousLinearMap.proj k).smulRight (v k)
-  have hq : Surjective q := fun y ↦ by
-    obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun R).1 (hv ▸ Submodule.mem_top)
-    exact ⟨c, by simpa [q] using hc⟩
+  let q : (Fin n → R) →L[R] M :=
+    ⟨Fintype.linearCombination R v, (Fintype.linearCombination R v).continuous_on_pi⟩
+  have hq : Surjective q := (span_range_eq_top_iff_surjective_fintypeLinearCombination R v).1 hv
   obtain ⟨s, hs⟩ := h.lifting_property q (.id R M) hq
   exact Module.Projective.of_split s.toLinearMap q.toLinearMap
-    (congrArg ContinuousLinearMap.toLinearMap hs)
+    (by rw [← ContinuousLinearMap.toLinearMap_comp, hs, ContinuousLinearMap.coe_id])
 
 end Splitting
 
