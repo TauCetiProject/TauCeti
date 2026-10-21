@@ -165,8 +165,8 @@ parameters have norm below one in a non-archimedean seminormed ring. -/
 theorem summable_norm_intCast_mul_pow_mul_pow {K : Type*} [SeminormedRing K]
     [IsUltrametricDist K] (c : ℕ × ℕ → ℤ) {u v : K} (hu : ‖u‖ < 1) (hv : ‖v‖ < 1) :
     Summable (fun p : ℕ × ℕ ↦ ‖(c p : K) * u ^ p.1 * v ^ p.2‖) := by
-  have hs := (summable_norm_geometric_of_norm_lt_one hu).mul_of_nonneg
-    (summable_norm_geometric_of_norm_lt_one hv) (fun _ ↦ norm_nonneg _)
+  have hs := (summable_norm_pow_of_norm_lt_one hu).mul_of_nonneg
+    (summable_norm_pow_of_norm_lt_one hv) (fun _ ↦ norm_nonneg _)
     (fun _ ↦ norm_nonneg _)
   apply Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun p ↦ ?_) (hs.mul_left ‖(1 : K)‖)
   calc

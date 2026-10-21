@@ -25,7 +25,7 @@ namespace TauCeti
 
 /-- The norms of the powers of an element in the open unit ball are summable in a seminormed
 ring, without requiring a normalized seminorm. -/
-theorem summable_norm_geometric_of_norm_lt_one {K : Type*} [SeminormedRing K]
+theorem summable_norm_pow_of_norm_lt_one {K : Type*} [SeminormedRing K]
     {q : K} (hq : ‖q‖ < 1) : Summable (fun n : ℕ ↦ ‖q ^ n‖) := by
   -- The positive-degree estimate does not require any bound on the seminorm of one.
   rw [← summable_nat_add_iff 1]
@@ -39,7 +39,7 @@ theorem summable_norm_mul_pow_of_norm_le {K : Type*} [SeminormedRing K]
     {b : ℕ → K} {C : ℝ} (hb : ∀ n, ‖b n‖ ≤ C) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ ‖b n * q ^ n‖) := by
   apply Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
-    ((summable_norm_geometric_of_norm_lt_one hq).mul_left C)
+    ((summable_norm_pow_of_norm_lt_one hq).mul_left C)
   exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hb n) (norm_nonneg _))
 
 /-- A geometric series with bounded coefficients is summable in a complete seminormed ring
