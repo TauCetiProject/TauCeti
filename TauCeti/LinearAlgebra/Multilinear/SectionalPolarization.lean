@@ -15,25 +15,28 @@ import Mathlib.Tactic.LinearCombination
 Let `T(x, y, z, w)` be a quadrilinear form on a module which is antisymmetric in its first pair
 and in its last pair of arguments and satisfies the first Bianchi identity
 `T(x, y, z, w) + T(y, z, x, w) + T(z, x, y, w) = 0`. These are the algebraic symmetries of a
-Riemann curvature tensor `Rm(x, y, z, w) = ⟨R(x, y)z, w⟩`. Such a `T` is determined by its
-values `T(x, y, y, x)`, which for a Riemann curvature tensor are the numerators of the sectional
-curvatures. Explicitly, writing `k(x, y) = T(x, y, y, x)`,
+Riemann curvature tensor `Rm(x, y, z, w) = ⟨R(x, y)z, w⟩`. The values `T(x, y, y, x)`, which
+for a Riemann curvature tensor are the numerators of the sectional curvatures, determine `6 T`,
+and hence `T` itself whenever multiplication by `6` is injective on the scalars. Explicitly,
+writing `k(x, y) = T(x, y, y, x)`,
 
 `6 T(x, y, z, w) = k(x + w, y + z) - k(x + z, y + w) - k(x, y + z) - k(w, y + z)`
 `    + k(x, y + w) + k(z, y + w) - k(x + w, y) + k(x + z, y) - k(x + w, z) + k(x + z, w)`
 `    + k(w, y) - k(z, y) + k(x, z) - k(x, w)`.
 
 This identity holds over every commutative ring. When multiplication by `6` is injective on the
-scalars, it shows that two such tensors with the same values `T(x, y, y, x)` are equal. Over a
-domain in which `6 ≠ 0` it is enough to compare these values on linearly independent pairs, that
-is, on the pairs spanning a plane, since both sides vanish on dependent pairs. This is how the
-sectional curvatures of a Riemannian manifold determine its curvature tensor.
+scalars, it can be cancelled, so two such tensors with the same values `T(x, y, y, x)` are
+equal. Over a domain in which `6 ≠ 0` it is enough to compare these values on linearly
+independent pairs, that is, on the pairs spanning a plane, since both sides vanish on dependent
+pairs. This is how the sectional curvatures of a Riemannian manifold determine its curvature
+tensor.
 
 ## Main declarations
 
-* `LinearMap.six_mul_apply_eq_of_cyclic_eq_zero`: the polarization identity.
+* `LinearMap.six_mul_apply_eq_of_cyclic_eq_zero`: the polarization identity, expressing `6 T`
+  through the values `T(x, y, y, x)`.
 * `LinearMap.eq_of_cyclic_eq_zero`: two curvature-type tensors with the same values
-  `T(x, y, y, x)` are equal.
+  `T(x, y, y, x)` are equal when multiplication by `6` is injective.
 * `LinearMap.apply_eq_zero_of_not_linearIndependent`: `T(x, y, y, x) = 0` on linearly dependent
   pairs.
 * `LinearMap.eq_of_cyclic_eq_zero_of_linearIndependent`: two curvature-type tensors agreeing on
@@ -52,9 +55,10 @@ namespace LinearMap
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   {T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] R}
 
-/-- The polarization identity for curvature-type tensors: a quadrilinear form `T` antisymmetric
-in its first and in its last pair of arguments and satisfying the first Bianchi identity is
-recovered from its values `T(x, y, y, x)`. -/
+/-- The polarization identity for curvature-type tensors: for a quadrilinear form `T`
+antisymmetric in its first and in its last pair of arguments and satisfying the first Bianchi
+identity, `6 T(x, y, z, w)` is an explicit combination of values `T(a, b, b, a)`. This recovers
+`T` itself only when multiplication by `6` is injective, see `LinearMap.eq_of_cyclic_eq_zero`. -/
 theorem six_mul_apply_eq_of_cyclic_eq_zero
     (h₁ : ∀ x y z w, T x y z w = -T y x z w) (h₂ : ∀ x y z w, T x y z w = -T x y w z)
     (h₃ : ∀ x y z w, T x y z w + T y z x w + T z x y w = 0) (x y z w : M) :

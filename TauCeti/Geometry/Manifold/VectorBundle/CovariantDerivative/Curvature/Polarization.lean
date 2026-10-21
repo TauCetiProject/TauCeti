@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
 import TauCeti.LinearAlgebra.BilinearForm.KulkarniNomizu
-import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
 
 /-!
 # Sectional curvature determines the curvature tensor
@@ -18,7 +17,8 @@ metric-lowered curvature tensor `Rm(u, v, w, z) = ⟨R(u, v)w, z⟩` is antisymm
 arguments and satisfies the first Bianchi identity. By the polarization identity
 `LinearMap.six_mul_apply_eq_of_cyclic_eq_zero` it is therefore determined by the numerators
 `⟨R(u, v)v, u⟩` of the sectional curvatures, and in fact by their values on linearly independent
-pairs `u, v`, which are the pairs spanning a tangent two-plane.
+pairs `u, v`, which are the pairs spanning a tangent two-plane
+(`CovariantDerivative.IsMetricCompatible.riemannCurvatureTensor_eq_of_forall_linearIndependent`).
 
 In particular, the tangent two-planes at a point all have sectional curvature `κ` exactly when
 the curvature tensor there has the constant-curvature form
@@ -35,9 +35,6 @@ curvature at a point is unique (`CovariantDerivative.HasSectionalCurvatureAt.eq_
 
 ## Main results
 
-* `CovariantDerivative.IsMetricCompatible.riemannCurvatureTensor_eq_of_forall_linearIndependent`:
-  `Rm` is the unique tensor with the curvature symmetries and the same values `T(u, v, v, u)` on
-  linearly independent pairs.
 * `CovariantDerivative.hasSectionalCurvatureAt_iff_curvatureTensor_eq_smul_inner_sub`: sectional
   curvature `κ` at a point is the constant-curvature form of the curvature tensor there.
 * `CovariantDerivative.hasConstantSectionalCurvature_iff_isConstantCurvatureTensor`: the global
@@ -72,24 +69,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 local notation "curvature" => cov.curvatureTensor (I := I) (M := M) (F := E)
   (V := TangentSpace I)
-
-/-- For a metric-compatible torsion-free connection, the Riemann curvature tensor at `x` is the
-only quadrilinear form with the algebraic symmetries of a curvature tensor whose values
-`T(u, v, v, u)` on linearly independent pairs are the sectional-curvature numerators
-`⟨R(u, v)v, u⟩`. -/
-theorem IsMetricCompatible.riemannCurvatureTensor_eq_of_forall_linearIndependent
-    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
-    (ht : cov.torsion = 0) (x : M)
-    {T : TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[ℝ]
-      TangentSpace I x →ₗ[ℝ] ℝ}
-    (h₁ : ∀ u v w z, T u v w z = -T v u w z) (h₂ : ∀ u v w z, T u v w z = -T u v z w)
-    (h₃ : ∀ u v w z, T u v w z + T v w u z + T w u v z = 0)
-    (hT : ∀ u v, LinearIndependent ℝ ![u, v] → cov.riemannCurvatureTensor x u v v u = T u v v u) :
-    cov.riemannCurvatureTensor x = T :=
-  LinearMap.eq_of_cyclic_eq_zero_of_linearIndependent (by norm_num)
-    (cov.riemannCurvatureTensor_antisymm_first x)
-    (IsMetricCompatible.riemannCurvatureTensor_antisymm_last cov hcov x)
-    (cov.riemannCurvatureTensor_cyclic_eq_zero ht x) h₁ h₂ h₃ hT
 
 /-- At a point where every tangent two-plane has sectional curvature `κ`, the curvature tensor of
 a metric-compatible torsion-free connection has the constant-curvature form
