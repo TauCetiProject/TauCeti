@@ -64,10 +64,8 @@ the value `𝟙_ V` at `𝟙_ C`. -/
 instance isIso_ν [Subsingleton (𝟙_ C ⟶ 𝟙_ C)] : IsIso (ν C V) := by
   have : (Functor.fromPUnit.{0} (𝟙_ C)).Full :=
     ⟨fun _ ↦ ⟨Discrete.eqToHom (Subsingleton.elim _ _), Subsingleton.elim (α := 𝟙_ C ⟶ 𝟙_ C) _ _⟩⟩
-  have := (Functor.isPointwiseLeftKanExtensionOfIsLeftKanExtension _ (νNatTrans C V)
-    (𝟙_ C)).isIso_ι_app_of_isTerminal _
-    (CostructuredArrow.mkIdTerminal (S := Functor.fromPUnit.{0} (𝟙_ C)) (Y := ⟨⟨⟩⟩))
-  simpa using this
+  exact (Functor.isPointwiseLeftKanExtensionOfIsLeftKanExtension _ (νNatTrans C V)
+    (𝟙_ C)).isIso_hom_app (X := ⟨⟨⟩⟩)
 
 /-- If there is no morphism `𝟙_ C ⟶ d`, then the Day convolution unit takes an initial value
 at `d`. -/

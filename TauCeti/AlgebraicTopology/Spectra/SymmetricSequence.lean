@@ -10,7 +10,6 @@ public import Mathlib.CategoryTheory.WithTerminal.Cone
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Closed
 public import TauCeti.CategoryTheory.FiniteBijection
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Braided
--- Exported for the computation of the unit symmetric sequence described below.
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Unit
 
 /-!
@@ -35,9 +34,10 @@ convolution monoidal structure, and check that the hypotheses of Mathlib's const
 
 As the block sum on finite sets and the smash product are symmetric, Day convolution makes
 symmetric sequences a symmetric monoidal category. Its unit is the zero sphere `S⁰` in level
-zero and the point in every positive level: `DayFunctor.isIso_ν` identifies level zero with
-`S⁰`, and `DayFunctor.isInitialUnitObj` shows that each positive level, which receives no
-bijection from `Fin 0`, is initial, that is, isomorphic to the one-point pointed simplicial set.
+zero and the point in every positive level: the instance `DayFunctor.isIso_ν` identifies level
+zero with `S⁰`, and `SymmetricSequence.isInitialUnitObj` shows that each positive level, which
+receives no bijection from `Fin 0`, is initial, that is, isomorphic to the one-point pointed
+simplicial set.
 
 Symmetric spectra are the modules over the commutative monoid of spheres in this symmetric
 monoidal category.
@@ -47,6 +47,11 @@ monoidal category.
 * `SymmetricSequence`: symmetric sequences of pointed simplicial sets, with the Day convolution
   product.
 * The instance `SymmetricCategory SymmetricSequence`.
+
+## Main statements
+
+* `SymmetricSequence.isInitialUnitObj`: the unit symmetric sequence is initial in every positive
+  level.
 
 ## References
 
@@ -71,5 +76,11 @@ abbrev SymmetricSequence := FiniteBijection ⊛⥤ PointedSSet.{u}
 /-- Day convolution makes symmetric sequences of pointed simplicial sets a symmetric monoidal
 category. -/
 noncomputable instance : SymmetricCategory SymmetricSequence.{u} := inferInstance
+
+/-- The unit symmetric sequence is initial, the point, in every positive level `n + 1`: no
+bijection reaches `Fin (n + 1)` from `Fin 0`. -/
+noncomputable def SymmetricSequence.isInitialUnitObj (n : ℕ) :
+    Limits.IsInitial ((𝟙_ SymmetricSequence.{u}).functor.obj (FiniteBijection.mk (n + 1))) :=
+  DayFunctor.isInitialUnitObj
 
 end TauCeti
