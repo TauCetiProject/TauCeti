@@ -53,14 +53,11 @@ theorem IsFiberwiseInjective.etale_pointsDivisor (hφ : E.IsFiberwiseInjective �
     rw [pointsDivisor_def]
     apply Scheme.IdealSheafData.prod_eq_iInf_of_pairwise_disjoint_support
     intro a b hab
-    have ha := (φ a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
-    have hb := (φ b).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
     apply disjoint_iff.mpr
     apply SetLike.coe_injective
     simpa only [Set.inf_eq_inter, Set.bot_eq_empty, TopologicalSpace.Closeds.coe_inf,
       TopologicalSpace.Closeds.coe_bot,
-      Scheme.Hom.support_ker, (φ a).left.isClosedEmbedding.isClosed_range.closure_eq,
-      (φ b).left.isClosedEmbedding.isClosed_range.closure_eq] using
+      coe_support_ker_left] using
       (hφ.disjoint_range hab).eq_bot
   have hle : (E.torsionι N).left.ker ≤ I := by
     rw [hprod]
@@ -115,14 +112,7 @@ private theorem exists_sectionCover_pointsDivisor
   have hcovers (x : D.left) : ∃ a t, (s a).left t = x := by
     have hx := I.subschemeι.range_subset_ker_support ⟨x, rfl⟩
     rw [Scheme.IdealSheafData.ker_subschemeι] at hx
-    have hsupport : (I.support : Set E.carrier) = ⋃ a, Set.range (φ a).left := by
-      dsimp only [I]
-      rw [pointsDivisor_def, Scheme.IdealSheafData.coe_support_prod]
-      congr 1
-      funext a
-      have := (φ a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
-      rw [Scheme.Hom.support_ker, (φ a).left.isClosedEmbedding.isClosed_range.closure_eq]
-    rw [hsupport, Set.mem_iUnion] at hx
+    rw [E.coe_support_pointsDivisor φ, Set.mem_iUnion] at hx
     obtain ⟨a, ha⟩ := hx
     obtain ⟨t, ht⟩ := ha
     refine ⟨a, t, I.subschemeι.injective ?_⟩
@@ -167,6 +157,8 @@ theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFib
       (𝒱 : T.OpenCover) (h : ∀ a, I ≤ (𝒱.f a ≫ f).ker) : I ≤ f.ker := by
     rw [← f.iInf_ker_openCover_map_comp 𝒱]
     exact le_iInf h
+  -- The section cover detects the three subgroup equations: the unit lies on the divisor,
+  -- and multiplication and inversion preserve it after restriction to the section charts.
   apply (GroupScheme.exists_grpObj_isMonHom_iff_ker_le i).mpr
   have hi : i.left.ker = I := Scheme.IdealSheafData.ker_subschemeι I
   rw [hi]
@@ -180,7 +172,7 @@ theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFib
         ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap]).left =
         pullback.fst ((s a).left ≫ D.hom) ((s b).left ≫ D.hom) ≫ (φ (a * b)).left := by
       have h := TauCeti.CategoryTheory.Over.pullback_map_comp_mul_left i (s a) (s b)
-      erw [hs a, hs b, ← map_mul] at h
+      rw [hs a, hs b, ← map_mul] at h
       exact h
     rw [h]
     exact (E.pointsDivisor_le_ker φ (a * b)).trans (Scheme.Hom.le_ker_comp _ _)

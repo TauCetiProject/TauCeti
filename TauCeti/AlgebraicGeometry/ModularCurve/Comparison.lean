@@ -104,7 +104,7 @@ noncomputable def gammaOneToGammaOneNaive (hN : ∀ b : B, (N : B.residueField b
     ⟨(zmodMonoidHomEquiv N _).symm
         ⟨(gammaOneEquiv X.unop α).1, (gammaOneEquiv X.unop α).2.pow_eq_one⟩,
       EllipticCurveGeom.IsOfExactOrder.isFiberwiseInjective
-        (by rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+        (by rw [zmodMonoidHomEquiv_symm_apply_ofAdd_one]
             exact (gammaOneEquiv X.unop α).2)
         fun s ↦ X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
   naturality X Y φ := by
@@ -116,7 +116,7 @@ noncomputable def gammaOneToGammaOneNaive (hN : ∀ b : B, (N : B.residueField b
     simp only [op_unop, TypeCat.Fun.toFun_apply, comp_apply, TypeCat.hom_ofHom,
       TypeCat.Fun.coe_mk, Equiv.apply_symm_apply, coe_zmodMonoidHomEquiv_apply]
     rw [← Quiver.Hom.op_unop φ, gammaOneEquiv_map, naiveLevelEquiv_map, Equiv.apply_symm_apply,
-      MonoidHom.comp_apply, ← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+      MonoidHom.comp_apply, zmodMonoidHomEquiv_symm_apply_ofAdd_one]
 
 variable {hN : ∀ b : B, (N : B.residueField b) ≠ 0}
 
@@ -136,7 +136,7 @@ theorem naiveLevelEquiv_gammaOneToGammaOneNaive_app_one (X : EllObj B)
       (gammaOneEquiv X α).1 := by
   simp only [gammaOneToGammaOneNaive, TypeCat.hom_ofHom, TypeCat.Fun.coe_mk,
     Equiv.apply_symm_apply]
-  rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+  rw [zmodMonoidHomEquiv_symm_apply_ofAdd_one]
 
 /-- Where `N` is invertible, the comparison from Drinfeld to naive `[Γ₁(N)]` is an
 isomorphism of moduli problems. -/
@@ -197,15 +197,13 @@ theorem gammaOneEquiv_gammaOneRepresentableBy_homEquiv (h4 : 4 ≤ N) {X : EllOb
     (k : X ⟶ EllObj.yOne B N hN) :
     (gammaOneEquiv X ((gammaOneRepresentableBy (hN := hN) h4).homEquiv k)).1 =
       EllipticCurveGeom.pointsPullback (k ≫ EllObj.yOneι B N hN).isPullback
-        (k ≫ EllObj.yOneι B N hN).zero_total (EllObj.universalTatePoint B) :=
-  by
-    have h : (gammaOneEquiv X ((inv (gammaOneToGammaOneNaive B N hN)).app (op X)
-        ((gammaOneNaiveRepresentableBy hN h4).homEquiv k))).1 =
-        EllipticCurveGeom.pointsPullback (k ≫ EllObj.yOneι B N hN).isPullback
-          (k ≫ EllObj.yOneι B N hN).zero_total (EllObj.universalTatePoint B) := by
-      rw [NatIso.isIso_inv_app, gammaOneEquiv_inv_gammaOneToGammaOneNaive_app]
-      exact naiveLevelEquiv_gammaOneNaiveRepresentableBy_homEquiv hN h4 k
-    exact h
+        (k ≫ EllObj.yOneι B N hN).zero_total (EllObj.universalTatePoint B) := by
+  -- `RepresentableBy.ofIso` composes the representing equivalence with the component
+  -- of the isomorphism; the pinned Mathlib has no evaluation lemma for this construction.
+  dsimp only [gammaOneRepresentableBy, Functor.RepresentableBy.ofIso, Equiv.trans_apply]
+  simp only [Iso.toEquiv_fun, Iso.app_hom, Iso.symm_hom, asIso_inv, NatIso.isIso_inv_app,
+    gammaOneEquiv_inv_gammaOneToGammaOneNaive_app]
+  exact naiveLevelEquiv_gammaOneNaiveRepresentableBy_homEquiv hN h4 k
 
 variable (B N) in
 /-- **`[Γ₁(N)]` is rigid for `N ≥ 4` where `N` is invertible.** Over a base `B` on which `N` is

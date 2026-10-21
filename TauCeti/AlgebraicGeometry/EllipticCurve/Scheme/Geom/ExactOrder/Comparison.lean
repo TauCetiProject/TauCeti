@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Nai
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveExactOrder.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.FiniteSubgroup
 import TauCeti.Data.ZMod.MonoidHomEquiv
+import TauCeti.Data.ZMod.FinEquiv
 
 /-!
 # Comparison of naive and Drinfeld exact order
@@ -40,8 +41,7 @@ theorem IsOfNaiveExactOrder.isOfExactOrder
     {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} (hP : E.IsOfNaiveExactOrder P N)
     (hN : ∀ s : S, (N : S.residueField s) ≠ 0) : E.IsOfExactOrder P N := by
   let φ := (zmodMonoidHomEquiv N _).symm ⟨P, hP.pow_eq_one⟩
-  have hφ1 : φ (.ofAdd 1) = P := by
-    rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+  have hφ1 : φ (.ofAdd 1) = P := zmodMonoidHomEquiv_symm_apply_ofAdd_one _
   have hφ : E.IsFiberwiseInjective φ :=
     isFiberwiseInjective_iff_isOfNaiveExactOrder.mpr (by rwa [hφ1])
   have hkill (a : Multiplicative (ZMod N)) : φ a ^ N = 1 := by
@@ -57,12 +57,9 @@ theorem IsOfNaiveExactOrder.isOfExactOrder
       rw [← hφ1, ← map_pow]
       congr 1
       apply Multiplicative.toAdd.injective
-      rcases N with _ | N
-      · exact (NeZero.ne 0 rfl).elim
-      · simp only [toAdd_pow, toAdd_ofAdd, nsmul_eq_mul, Nat.cast_add, Nat.cast_one,
-          _root_.mul_one]
-        congr 1
-        exact Fin.ext (Nat.mod_eq_of_lt a.isLt)
+      simp only [toAdd_pow, toAdd_ofAdd, nsmul_eq_mul, Nat.cast_add, Nat.cast_one,
+        _root_.mul_one, e, Equiv.trans_apply, RingEquiv.toEquiv_eq_coe,
+        RingEquiv.coe_toEquiv, Equiv.coe_addRight, ZMod.finEquiv_apply]
     simp_rw [he]
     exact E.pointsDivisor_comp_equiv φ e
   -- Transport the subgroup predicate as a whole; rewriting its dependent structure fields
@@ -81,8 +78,7 @@ theorem isOfExactOrder_iff_isOfNaiveExactOrder
     E.IsOfExactOrder P N ↔ E.IsOfNaiveExactOrder P N := by
   refine ⟨fun hP ↦ ?_, fun hP ↦ hP.isOfExactOrder hN⟩
   let φ := (zmodMonoidHomEquiv N _).symm ⟨P, hP.pow_eq_one⟩
-  have hφ1 : φ (.ofAdd 1) = P := by
-    rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+  have hφ1 : φ (.ofAdd 1) = P := zmodMonoidHomEquiv_symm_apply_ofAdd_one _
   rw [← hφ1, ← isFiberwiseInjective_iff_isOfNaiveExactOrder]
   exact IsOfExactOrder.isFiberwiseInjective (by rwa [hφ1]) hN
 
