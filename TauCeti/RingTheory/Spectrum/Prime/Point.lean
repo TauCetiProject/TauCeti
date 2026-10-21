@@ -120,6 +120,26 @@ theorem PointData.toAlgHom_apply (data : PointData R S Ω) (element : S) :
 
 end CommRing
 
+section Nontrivial
+
+variable {R S Ω : Type*} [CommRing R] [CommRing S] [CommRing Ω] [Nontrivial Ω]
+  [Algebra R S] [Algebra R Ω]
+
+/-- Residue-field data are determined by their algebra-valued point. -/
+theorem PointData.toAlgHom_injective :
+    Function.Injective (PointData.toAlgHom : PointData R S Ω → S →ₐ[R] Ω) := by
+  rintro ⟨firstPrime, firstEmbedding⟩ ⟨secondPrime, secondEmbedding⟩ equality
+  have hprime : firstPrime = secondPrime := by
+    apply PrimeSpectrum.ext
+    exact (Ideal.ker_residueEmbedding_comp _ firstEmbedding).symm.trans
+      ((congrArg RingHom.ker equality).trans
+        (Ideal.ker_residueEmbedding_comp _ secondEmbedding))
+  subst secondPrime
+  congr 1
+  exact Ideal.ResidueField.algHom_ext equality
+
+end Nontrivial
+
 section Field
 
 variable {R S Ω : Type*} [CommRing R] [CommRing S] [Field Ω] [Algebra R S] [Algebra R Ω]
@@ -131,15 +151,7 @@ local instance (point : S →ₐ[R] Ω) : (RingHom.ker point).IsPrime :=
 theorem PointData.toAlgHom_bijective :
     Function.Bijective (PointData.toAlgHom : PointData R S Ω → S →ₐ[R] Ω) := by
   constructor
-  · rintro ⟨firstPrime, firstEmbedding⟩ ⟨secondPrime, secondEmbedding⟩ equality
-    have hprime : firstPrime = secondPrime := by
-      apply PrimeSpectrum.ext
-      exact (Ideal.ker_residueEmbedding_comp _ firstEmbedding).symm.trans
-        ((congrArg RingHom.ker equality).trans
-          (Ideal.ker_residueEmbedding_comp _ secondEmbedding))
-    subst secondPrime
-    congr 1
-    exact Ideal.ResidueField.algHom_ext equality
+  · exact PointData.toAlgHom_injective
   · intro point
     exact ⟨⟨⟨RingHom.ker point, inferInstance⟩, point.residueEmbedding⟩,
       point.residueEmbedding_comp⟩

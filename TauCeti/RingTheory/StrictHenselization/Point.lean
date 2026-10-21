@@ -12,9 +12,9 @@ public import TauCeti.RingTheory.Spectrum.Prime.Point
 # Pointed étale neighbourhoods as triples
 
 The induced category of étale algebra, prime, and residue-map triples of Stacks Tag 04GW is
-defined over any commutative target algebra. Its morphisms are characterized by prime and
-residue-field compatibility when the target is nontrivial. For a field target, the
-point/residue-field correspondence gives an equivalence with pointed étale algebras.
+empty for a trivial target algebra. For a nontrivial target, its objects and morphisms retain
+the prime and residue data. For a field target, the point/residue-field correspondence gives
+an equivalence with pointed étale algebras.
 
 ## References
 
@@ -132,12 +132,6 @@ theorem Neighbourhood.toTriple_toNeighbourhood (point : Neighbourhood R Ω) :
     (point.toTriple R Ω).toNeighbourhood R Ω = point :=
   (tripleNeighbourhoodEquiv R Ω).right_inv point
 
-/-- Triples agree when their associated pointed étale neighbourhoods agree. -/
-@[ext]
-theorem TripleNeighbourhood.ext {first second : TripleNeighbourhood R Ω}
-    (equality : first.toNeighbourhood R Ω = second.toNeighbourhood R Ω) : first = second :=
-  (tripleNeighbourhoodEquiv R Ω).injective equality
-
 /-- The forward object equivalence uses the pointed algebra of a triple. -/
 @[simp]
 theorem tripleNeighbourhoodEquiv_apply (triple : TripleNeighbourhood R Ω) :
@@ -152,13 +146,44 @@ theorem tripleNeighbourhoodEquiv_symm_apply (point : Neighbourhood R Ω) :
 
 end Field
 
+section Nontrivial
+
+variable (R : Type u) (Ω : Type v) [CommRing R] [CommRing Ω] [Nontrivial Ω]
+  [Algebra R Ω]
+
+/-- Triples agree when their associated pointed étale neighbourhoods agree. -/
+@[ext]
+theorem TripleNeighbourhood.ext {first second : TripleNeighbourhood R Ω}
+    (equality : first.toNeighbourhood R Ω = second.toNeighbourhood R Ω) : first = second := by
+  cases first with
+  | mk firstCarrier firstData =>
+    cases second with
+    | mk secondCarrier secondData =>
+      have hcat := congrArg (fun point : Neighbourhood R Ω => point.obj.left) equality
+      cases hcat
+      have hobj := congrArg (fun point : Neighbourhood R Ω => point.obj) equality
+      have hpoint : firstData.toAlgHom = secondData.toAlgHom := by
+        injection hobj with hleft hright hhom
+        have hmap := congrArg CommAlgCat.Hom.hom hhom
+        have hcomposed := congrArg
+          (fun map : firstCarrier →ₐ[R] ULift.{u} Ω =>
+            ULift.algEquiv.toAlgHom.comp map) hmap
+        simpa only [CommAlgCat.hom_ofHom, ← AlgHom.comp_assoc, AlgEquiv.comp_symm,
+          AlgHom.id_comp] using hcomposed
+      congr 1
+      exact PointData.toAlgHom_injective hpoint
+
+end Nontrivial
+
 section CommRingTripleCategory
 
 variable (R : Type u) (Ω : Type v) [CommRing R] [CommRing Ω] [Algebra R Ω]
 
-/-- The category induced by the pointed algebra of an étale algebra, prime, and residue map. -/
+/-- The category induced by nontrivial-target triples and their pointed algebras. -/
 abbrev TripleCategory :=
-  InducedCategory (Neighbourhood R Ω) (TripleNeighbourhood.toNeighbourhood R Ω)
+  InducedCategory (Neighbourhood R Ω)
+    (fun (triple : { _triple : TripleNeighbourhood R Ω // Nontrivial Ω }) =>
+      triple.val.toNeighbourhood R Ω)
 
 /-- Triple morphisms agree when their underlying algebra maps agree. -/
 @[ext]
@@ -174,15 +199,15 @@ theorem TripleCategory.hom_ext {first second : TripleCategory R Ω}
 @[simp]
 theorem TripleCategory.hom_point {first second : TripleCategory R Ω}
     (morphism : first ⟶ second) :
-    second.data.toAlgHom.comp morphism.hom.hom.left.hom = first.data.toAlgHom := by
+    second.val.data.toAlgHom.comp morphism.hom.hom.left.hom = first.val.data.toAlgHom := by
   have h := congrArg CommAlgCat.Hom.hom morphism.hom.hom.w
   ext element
   exact congrArg ULift.down (DFunLike.congr_fun h element)
 
 /-- Construct a morphism of triples from a map preserving their points. -/
 noncomputable def TripleCategory.homMk (first second : TripleCategory R Ω)
-    (map : first.carrier →ₐ[R] second.carrier)
-    (hpoint : second.data.toAlgHom.comp map = first.data.toAlgHom) : first ⟶ second :=
+    (map : first.val.carrier →ₐ[R] second.val.carrier)
+    (hpoint : second.val.data.toAlgHom.comp map = first.val.data.toAlgHom) : first ⟶ second :=
   InducedCategory.homMk (ObjectProperty.homMk (Over.homMk (CommAlgCat.ofHom map) (by
     apply CommAlgCat.hom_ext
     ext element
@@ -191,8 +216,8 @@ noncomputable def TripleCategory.homMk (first second : TripleCategory R Ω)
 /-- The algebra map underlying a constructed triple morphism is the supplied map. -/
 @[simp]
 theorem TripleCategory.homMk_left (first second : TripleCategory R Ω)
-    (map : first.carrier →ₐ[R] second.carrier)
-    (hpoint : second.data.toAlgHom.comp map = first.data.toAlgHom) :
+    (map : first.val.carrier →ₐ[R] second.val.carrier)
+    (hpoint : second.val.data.toAlgHom.comp map = first.val.data.toAlgHom) :
     (TripleCategory.homMk R Ω first second map hpoint).hom.hom.left.hom = map := by
   rfl
 
@@ -200,23 +225,37 @@ variable [Nontrivial Ω]
 
 /-- A morphism of triples is an algebra map preserving the prime and residue-field map. -/
 theorem tripleCategory_hom_iff (first second : TripleCategory R Ω)
-    (map : first.carrier →ₐ[R] second.carrier) :
+    (map : first.val.carrier →ₐ[R] second.val.carrier) :
     (∃ morphism : first ⟶ second, morphism.hom.hom.left.hom = map) ↔
-      ∃ hprime : first.data.1.asIdeal = second.data.1.asIdeal.comap map.toRingHom,
-        second.data.2.comp
-          (Ideal.ResidueField.mapₐ first.data.1.asIdeal second.data.1.asIdeal map hprime) =
-          first.data.2 := by
+      ∃ hprime : first.val.data.1.asIdeal = second.val.data.1.asIdeal.comap map.toRingHom,
+        second.val.data.2.comp
+          (Ideal.ResidueField.mapₐ first.val.data.1.asIdeal second.val.data.1.asIdeal map hprime) =
+          first.val.data.2 := by
   constructor
   · rintro ⟨morphism, equality⟩
-    apply (PointData.toAlgHom_comp_iff first.data second.data map).mp
+    apply (PointData.toAlgHom_comp_iff first.val.data second.val.data map).mp
     rw [← equality]
     exact TripleCategory.hom_point R Ω morphism
   · intro h
-    have hcomp := (PointData.toAlgHom_comp_iff first.data second.data map).mpr h
+    have hcomp := (PointData.toAlgHom_comp_iff first.val.data second.val.data map).mpr h
     exact ⟨TripleCategory.homMk R Ω first second map hcomp,
       TripleCategory.homMk_left R Ω first second map hcomp⟩
 
 end CommRingTripleCategory
+
+section NontrivialTripleCategory
+
+variable (R : Type u) (Ω : Type v) [CommRing R] [CommRing Ω] [Nontrivial Ω]
+  [Algebra R Ω]
+
+/-- Triple-category objects agree when their pointed étale neighbourhoods agree. -/
+@[ext]
+theorem TripleCategory.ext {first second : TripleCategory R Ω}
+    (equality : first.val.toNeighbourhood R Ω = second.val.toNeighbourhood R Ω) :
+    first = second :=
+  Subtype.ext (TripleNeighbourhood.ext R Ω equality)
+
+end NontrivialTripleCategory
 
 section Field
 
@@ -224,13 +263,21 @@ variable (R : Type u) (Ω : Type v) [CommRing R] [Field Ω] [Algebra R Ω]
 
 /-- The category of Stacks 04GW triples is equivalent to pointed étale neighbourhoods. -/
 noncomputable def tripleCategoryEquivalence : TripleCategory R Ω ≌ Neighbourhood R Ω :=
-  Equivalence.induced (tripleNeighbourhoodEquiv R Ω)
+  Equivalence.induced
+    ({ toFun := fun triple => triple.val.toNeighbourhood R Ω
+       invFun := fun point => ⟨point.toTriple R Ω, inferInstance⟩
+       left_inv := by
+         intro triple
+         apply Subtype.ext
+         exact TripleNeighbourhood.toNeighbourhood_toTriple R Ω triple.val
+       right_inv := Neighbourhood.toTriple_toNeighbourhood R Ω } :
+      { _triple : TripleNeighbourhood R Ω // Nontrivial Ω } ≃ Neighbourhood R Ω)
 
 /-- The forward equivalence sends a triple to its pointed neighbourhood. -/
 @[simp]
 theorem tripleCategoryEquivalence_functor_obj (triple : TripleCategory R Ω) :
     (tripleCategoryEquivalence R Ω).functor.obj triple =
-      triple.toNeighbourhood R Ω := by
+      triple.val.toNeighbourhood R Ω := by
   rfl
 
 /-- The forward equivalence retains the underlying neighbourhood morphism. -/
@@ -243,7 +290,8 @@ theorem tripleCategoryEquivalence_functor_map {first second : TripleCategory R �
 /-- The inverse equivalence records the prime and residue embedding of the point. -/
 @[simp]
 theorem tripleCategoryEquivalence_inverse_obj (point : Neighbourhood R Ω) :
-    (tripleCategoryEquivalence R Ω).inverse.obj point = point.toTriple R Ω := by
+    (tripleCategoryEquivalence R Ω).inverse.obj point =
+      (⟨point.toTriple R Ω, inferInstance⟩ : TripleCategory R Ω) := by
   rfl
 
 end Field
