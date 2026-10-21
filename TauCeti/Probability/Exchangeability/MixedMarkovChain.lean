@@ -317,18 +317,6 @@ open ProbabilityTheory
 
 variable (ν : Measure α) [IsProbabilityMeasure ν] (κ : Kernel α α) [IsMarkovKernel κ]
 
-/-- The finite path masses of the homogeneous Markov chain of `ν` and `κ`, read through
-`prefixLaw` for its coordinate process. This is the product form
-`markovExchangeable_of_prefixLaw_singleton_eq` and
-`mixedMarkovChainWith_const_of_prefixLaw_singleton_eq` ask for, so it is what supplies those two
-theorems with genuine instances. -/
-theorem markovChainLaw_prefixLaw_singleton [MeasurableSingletonClass α]
-    (n : ℕ) (w : Fin (n + 1) → α) :
-    prefixLaw (markovChainLaw ν κ) (fun i x => x i) (n + 1) {w}
-      = ν {w 0} * ∏ i : Fin n, κ (w i.castSucc) {w i.succ} := by
-  rw [prefixLaw_def, blockLaw_def]
-  exact markovChainLaw_map_prefix_apply_singleton ν κ n w
-
 /-- **A homogeneous Markov chain is Markov exchangeable.** Its finite path masses factor as an
 initial weight times a product of transition weights, and such a product depends on the path only
 through its first state and its transition counts. -/
@@ -336,7 +324,7 @@ theorem markovChainLaw_markovExchangeable [Countable α] [MeasurableSingletonCla
     MarkovExchangeable (markovChainLaw ν κ) fun i x => x i :=
   markovExchangeable_of_prefixLaw_singleton_eq
     (fun i => (measurable_pi_apply i).aemeasurable) (fun a => ν {a}) (fun a b => κ a {b})
-    (markovChainLaw_prefixLaw_singleton ν κ)
+    (MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton ν κ)
 
 /-- **A homogeneous Markov chain is the degenerate mixture of Markov chains** at its own initial
 law and transition kernel: the two witnesses are the constant ones. This is the source of genuine
@@ -347,7 +335,7 @@ theorem markovChainLaw_mixedMarkovChainWith [Countable α] [MeasurableSingletonC
       fun _ a => (⟨κ a, inferInstance⟩ : ProbabilityMeasure α) :=
   mixedMarkovChainWith_const_of_prefixLaw_singleton_eq
     (fun i => (measurable_pi_apply i).aemeasurable) ⟨ν, inferInstance⟩
-    (fun a => ⟨κ a, inferInstance⟩) (markovChainLaw_prefixLaw_singleton ν κ)
+    (fun a => ⟨κ a, inferInstance⟩) (MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton ν κ)
 
 /-- **A homogeneous Markov chain is a mixture of Markov chains**, existential form. -/
 theorem markovChainLaw_mixedMarkovChain [Countable α] [MeasurableSingletonClass α] :

@@ -88,7 +88,7 @@ private theorem exists_isCoupling_eLpNorm_top_le_iSup (μ ν : Measure X) [IsPro
   let t : ℕ → Set (ProbabilityMeasure (X × X)) := fun n ↦
     {π | IsCoupling π.toMeasure μ ν} ∩ {π | ∫⁻ z, d z ^ (q n : ℝ) ∂π.toMeasure ≤ L ^ (q n : ℝ)}
   have htcl (n : ℕ) : IsClosed (t n) :=
-    (isClosed_setOfPred_isCoupling_of_polishSpace μ' ν').inter
+    (isClosed_setOfPred_isCoupling μ' ν').inter
       (isClosed_setOfPred_lintegral_le_probabilityMeasure
         (ENNReal.continuous_rpow_const.comp continuous_edist).lowerSemicontinuous _)
   have ht0 : IsCompact (t 0) :=

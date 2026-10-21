@@ -24,6 +24,9 @@ class* of `M` for the orientation `o`, whose image in `Hₙ(M, M ∖ {x}; ℤ)` 
 `x`. Reversing the orientation negates it. If `M` is moreover connected, the fundamental class
 generates `Hₙ(M; ℤ)` freely: `c ↦ c • o.fundamentalClass hn` is an isomorphism from `ℤ`.
 
+A continuous map `f : M → X` carries the fundamental class to a class `f_*[M] ∈ Hₙ(X; ℤ)`, which
+is functorial in `f` and depends only on the homotopy class of `f`.
+
 The fundamental class is what cohomology classes are evaluated on, through the Kronecker map
 `TopCat.singularKronecker`, and what Poincaré duality caps with.
 
@@ -35,6 +38,8 @@ The fundamental class is what cohomology classes are evaluated on, through the K
   manifold.
 * `TauCeti.HomologicalOrientation.fundamentalClassEquiv`: for a compact connected oriented
   manifold, the isomorphism `ℤ ≃ₗ[ℤ] Hₙ(M; ℤ)` sending `1` to the fundamental class.
+* `TauCeti.HomologicalOrientation.mapFundamentalClass`: the image `f_*[M] ∈ Hₙ(X; ℤ)` of the
+  fundamental class under a continuous map `f : M → X`.
 
 ## Main results
 
@@ -42,6 +47,8 @@ The fundamental class is what cohomology classes are evaluated on, through the K
   restricting to the orientation at every point.
 * `TauCeti.HomologicalOrientation.fundamentalClass_neg`: the fundamental class of the reversed
   orientation is the negated fundamental class.
+* `TauCeti.HomologicalOrientation.mapFundamentalClass_eq_of_homotopic`: homotopic maps carry the
+  fundamental class to the same class.
 
 ## Implementation notes
 
@@ -219,6 +226,62 @@ theorem fundamentalClass_neg : (-o).fundamentalClass hn = -o.fundamentalClass hn
   rw [← toLocalHomology_apply, map_neg, toLocalHomology_apply,
     localHomologyRestriction_singularHomologyπ_fundamentalClass, neg_apply,
     LocalOrientation.coe_neg]
+
+section Map
+
+open AlgebraicTopology
+
+variable {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- The image `f_*[M] ∈ Hₙ(X; ℤ)` of the fundamental class of a compact oriented manifold `M` under
+a continuous map `f : M → X`: the homology class carried by the singular manifold `f`. -/
+def mapFundamentalClass (f : C(M, X)) :
+    ((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).obj
+      (TopCat.of X) :=
+  (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
+    (TopCat.ofHom f)).hom (o.fundamentalClass hn)
+
+theorem mapFundamentalClass_def (f : C(M, X)) :
+    o.mapFundamentalClass hn f =
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
+        (TopCat.ofHom f)).hom (o.fundamentalClass hn) :=
+  (rfl)
+
+/-- The image of the fundamental class under the identity is the fundamental class. -/
+@[simp]
+theorem mapFundamentalClass_id : o.mapFundamentalClass hn (ContinuousMap.id M) =
+    o.fundamentalClass hn := by
+  rw [mapFundamentalClass_def, TopCat.ofHom_id, CategoryTheory.Functor.map_id]
+  -- The identity morphism acts as the identity; its source is read as `SSet.homology`.
+  rfl
+
+/-- The image of the fundamental class under a composite `g ∘ f` is the image under `g` of its
+image under `f`. -/
+theorem mapFundamentalClass_comp (g : C(X, Y)) (f : C(M, X)) :
+    o.mapFundamentalClass hn (g.comp f) =
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
+        (TopCat.ofHom g)).hom (o.mapFundamentalClass hn f) := by
+  rw [mapFundamentalClass_def, mapFundamentalClass_def, TopCat.ofHom_comp,
+    CategoryTheory.Functor.map_comp]
+  -- The fundamental class lives in `SSet.homology`, which `rw` does not see through.
+  rfl
+
+/-- **Homotopy invariance**: homotopic maps carry the fundamental class to the same class. -/
+theorem mapFundamentalClass_eq_of_homotopic {f g : C(M, X)} (h : f.Homotopic g) :
+    o.mapFundamentalClass hn f = o.mapFundamentalClass hn g := by
+  rw [mapFundamentalClass_def, mapFundamentalClass_def]
+  congr 2
+  exact TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ)
+    (f := TopCat.ofHom f) (g := TopCat.ofHom g) h.some _ n
+
+/-- Reversing the orientation negates the image of the fundamental class. -/
+@[simp]
+theorem mapFundamentalClass_neg (f : C(M, X)) :
+    (-o).mapFundamentalClass hn f = -o.mapFundamentalClass hn f := by
+  rw [mapFundamentalClass_def, mapFundamentalClass_def, fundamentalClass_neg]
+  exact map_neg _ _
+
+end Map
 
 /-- Multiples of the fundamental class restrict to the same multiples of the local orientation. -/
 private theorem toLocalHomology_comp_toSpanSingleton (x : M) :

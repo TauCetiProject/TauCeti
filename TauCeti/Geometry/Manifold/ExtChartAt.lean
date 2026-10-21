@@ -22,7 +22,9 @@ admit finite open chart covers whose coordinate images lie in compact subsets of
 even without Hausdorffness.
 
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
-without differentiability assumptions.
+without differentiability assumptions. On an open subset, extended charts are restrictions of the
+ambient ones, so near a chart point the inverse charts of nested open subsets differ only by the
+inclusion.
 
 ## Main results
 
@@ -70,6 +72,25 @@ theorem injOn_extChartAt_coordChange (α β : M) {s : Set M}
   rw [PartialEquiv.trans_source, PartialEquiv.symm_source, Set.mem_inter_iff,
     Set.mem_preimage, (extChartAt I α).left_inv (hsub hx).1]
   exact ⟨(extChartAt I α).map_source (hsub hx).1, (hsub hx).2⟩
+
+/-- The extended chart of an open subset at a point sends that point to the same coordinates as
+the extended chart of a larger open subset at its image under the inclusion. -/
+theorem extChartAt_inclusion_self {U V : TopologicalSpace.Opens M} (h : U ≤ V) (x : U) :
+    extChartAt I (TopologicalSpace.Opens.inclusion h x) (TopologicalSpace.Opens.inclusion h x) =
+      extChartAt I x x := by
+  simp [extChartAt, TopologicalSpace.Opens.chartAt_eq]
+
+/-- Near the chart image of a point of an open subset, the inverse extended chart of a larger
+open subset is the inclusion composed with the inverse extended chart of the smaller one. -/
+theorem extChartAt_inclusion_symm_eventuallyEq {U V : TopologicalSpace.Opens M} (h : U ≤ V)
+    (x : U) :
+    (extChartAt I (TopologicalSpace.Opens.inclusion h x)).symm =ᶠ[nhds (extChartAt I x x)]
+      TopologicalSpace.Opens.inclusion h ∘ (extChartAt I x).symm := by
+  have hc : Filter.Tendsto I.symm (nhds (extChartAt I x x))
+      (nhds (chartAt H (TopologicalSpace.Opens.inclusion h x) (Set.inclusion h x))) := by
+    simpa [extChartAt, TopologicalSpace.Opens.chartAt_eq] using
+      I.continuous_symm.tendsto (extChartAt I x x)
+  exact (TopologicalSpace.Opens.chartAt_inclusion_symm_eventuallyEq h).comp_tendsto hc
 
 /-- An extended chart target is measurable in the model space. -/
 theorem measurableSet_extChartAt_target [MeasurableSpace E] [OpensMeasurableSpace E]

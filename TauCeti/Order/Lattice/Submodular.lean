@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Order.Filter.Extr
 public import Mathlib.Order.Hom.Lattice
 public import Mathlib.Order.SupClosed
@@ -20,9 +21,11 @@ particular graph or network representation.
 ## Main declarations
 
 * `TauCeti.IsSubmodular`: the submodular inequality on a lattice.
+* `TauCeti.IsSymmSubmodular`: a symmetric submodular function on a Boolean algebra.
 * `TauCeti.IsSubmodular.add`: sums of submodular functions are submodular.
 * `TauCeti.IsSubmodular.comp_latticeHom`: precomposition by a lattice homomorphism preserves
   submodularity.
+* `TauCeti.isSubmodular_finsetSum`: summing fixed vertex weights over a finite set is submodular.
 * `TauCeti.IsSubmodular.isSublattice_minimizers`: minimizers over a sublattice form a sublattice.
 -/
 
@@ -37,6 +40,15 @@ sum of its values at the original pair. -/
 def IsSubmodular [Add K] [LE K] [Lattice L] (f : L → K) : Prop :=
   ∀ a b, f (a ⊔ b) + f (a ⊓ b) ≤ f a + f b
 
+/-- A function on a Boolean algebra is symmetric submodular if it is invariant under taking
+complements and is submodular. Symmetry is additional data: the submodular theory itself does not
+require it. -/
+structure IsSymmSubmodular [Add K] [LE K] [BooleanAlgebra L] (f : L → K) : Prop where
+  /-- An element and its complement have the same value. -/
+  symm (a : L) : f aᶜ = f a
+  /-- The set function satisfies the submodular inequality. -/
+  submodular : IsSubmodular f
+
 /-- A function is submodular exactly when it satisfies the submodular inequality at every pair. -/
 theorem isSubmodular_def [Add K] [LE K] [Lattice L] (f : L → K) :
     IsSubmodular f ↔ ∀ a b, f (a ⊔ b) + f (a ⊓ b) ≤ f a + f b := Iff.rfl
@@ -47,6 +59,13 @@ theorem isSubmodular_const [Add K] [Preorder K] [Lattice L] (c : K) :
   intro a b
   exact le_rfl
 
+/-- The sum of fixed weights over a finite set is submodular. In fact, its submodular inequality
+is always an equality. -/
+theorem isSubmodular_finsetSum {V : Type*} [DecidableEq V] [AddCommMonoid K] [Preorder K]
+    (f : V → K) : IsSubmodular (fun S : Finset V ↦ ∑ v ∈ S, f v) := by
+  intro S T
+  exact le_of_eq Finset.sum_union_inter
+
 namespace IsSubmodular
 
 /-- Extract the submodular inequality at a pair of lattice elements. -/
@@ -55,7 +74,7 @@ protected theorem apply [Add K] [LE K] [Lattice L] {f : L → K} (hf : IsSubmodu
   (isSubmodular_def f).mp hf a b
 
 /-- The pointwise sum of two submodular functions is submodular. -/
-theorem add [AddCommMonoid K] [PartialOrder K] [IsOrderedAddMonoid K] [Lattice L]
+theorem add [AddCommMonoid K] [Preorder K] [IsOrderedAddMonoid K] [Lattice L]
     {f g : L → K} (hf : IsSubmodular f) (hg : IsSubmodular g) :
     IsSubmodular (fun a ↦ f a + g a) := by
   intro a b
@@ -74,7 +93,7 @@ theorem comp_latticeHom [Add K] [LE K] [Lattice L] [Lattice M] {f : L → K}
 
 /-- The join and meet of two minimizers of a submodular function are again minimizers, provided
 the domain of minimization is closed under joins and meets. -/
-theorem isMinOn_sup_inf [AddCommMonoid K] [PartialOrder K] [IsOrderedCancelAddMonoid K]
+theorem isMinOn_sup_inf [AddCommMonoid K] [Preorder K] [IsOrderedCancelAddMonoid K]
     [Lattice L] {f : L → K} (hf : IsSubmodular f) {s : Set L} (hs : IsSublattice s)
     {a b : L} (ha : a ∈ s) (hb : b ∈ s) (hamin : IsMinOn f s a) (hbmin : IsMinOn f s b) :
     IsMinOn f s (a ⊔ b) ∧ IsMinOn f s (a ⊓ b) := by
@@ -94,7 +113,7 @@ theorem isMinOn_sup_inf [AddCommMonoid K] [PartialOrder K] [IsOrderedCancelAddMo
 
 /-- The minimizers of a submodular function over a sublattice form a sublattice. Membership in
 this set records both membership in the original domain and minimality there. -/
-theorem isSublattice_minimizers [AddCommMonoid K] [PartialOrder K]
+theorem isSublattice_minimizers [AddCommMonoid K] [Preorder K]
     [IsOrderedCancelAddMonoid K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
     {s : Set L} (hs : IsSublattice s) :
     IsSublattice {a | a ∈ s ∧ IsMinOn f s a} := by

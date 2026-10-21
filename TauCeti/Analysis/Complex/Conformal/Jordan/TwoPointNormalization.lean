@@ -100,11 +100,12 @@ private theorem tendsto_inv_sub_comp_const_sub_inv_zero {f : ℂ → ℂ}
     Tendsto (fun z => (f ((c : ℂ) - z⁻¹) - q)⁻¹) (𝓝[upperHalfPlaneSet] ((0 : ℝ) : ℂ)) (𝓝 0) := by
   have hφ : Tendsto (fun z : ℂ => (c : ℂ) - z⁻¹) (𝓝[upperHalfPlaneSet] ((0 : ℝ) : ℂ))
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) := by
-    refine tendsto_inf.mpr ⟨(tendsto_const_sub_cobounded _).comp ?_, tendsto_principal.mpr
-      (eventually_nhdsWithin_of_forall (bijOn_const_sub_inv_upperHalfPlaneSet c).mapsTo)⟩
+    have hsub : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} \ {0} := fun z (hz : 0 < z.im) =>
+      ⟨hz.le, by rintro rfl; simp at hz⟩
     rw [ofReal_zero]
-    exact tendsto_inv₀_nhdsNE_zero.mono_left
-      (nhdsWithin_mono _ fun z (hz : 0 < z.im) (h : z = 0) => by simp [h] at hz)
+    refine tendsto_inf.mpr ⟨((tendsto_const_sub_inv_nhdsWithin_zero c).mono_left
+      (nhdsWithin_mono _ hsub)).mono_right inf_le_left, tendsto_principal.mpr
+      (eventually_nhdsWithin_of_forall (bijOn_const_sub_inv_upperHalfPlaneSet c).mapsTo)⟩
   exact (tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded q)).comp (hf.comp hφ)
 
 /-- **Two-point normalization of conformal maps onto an unbounded Jordan domain.** Let `U` be an
