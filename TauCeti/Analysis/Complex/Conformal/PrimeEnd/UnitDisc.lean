@@ -253,8 +253,8 @@ private lemma IsNullChain.eventually_exists_norm_sub_sq_le (hC : IsNullChain (ba
     by_contra! hlt
     -- the part of the disc below level `1 - δ'` misses the crosscut, so it lies in the domain
     have hA : ball 0 1 ∩ {w | inner ℝ x w < 1 - δ'} ⊆ nullChainDomain (ball 0 1) C n :=
-      subset_nullChainDomain
-        ((convex_ball 0 1).inter (convex_halfSpace_lt (innerₗ ℂ x).isLinear _)).isPreconnected
+      ((convex_ball 0 1).inter
+          (convex_halfSpace_lt (innerₗ ℂ x).isLinear _)).isPreconnected.subset_nullChainDomain
         (fun w hw => ⟨hw.1, fun hwC => by
           have hw2 : inner ℝ x w < 1 - δ' := hw.2
           linarith [one_sub_norm_sub_le_inner hx w, hn w hwC x hxC]⟩)
@@ -284,8 +284,8 @@ private lemma IsNullChain.exists_cap_subset_nullChainDomain (hC : IsNullChain (b
   rw [nullChainDomain_unitDiscRadialChain hζ]
   set t := 1 - 1 / ((n : ℝ) + 2)
   -- the cap is a convex set off the crosscut
-  refine subset_nullChainDomain
-    ((convex_ball 0 1).inter (convex_halfSpace_gt (innerₗ ℂ ζ).isLinear t)).isPreconnected
+  refine ((convex_ball 0 1).inter
+      (convex_halfSpace_gt (innerₗ ℂ ζ).isLinear t)).isPreconnected.subset_nullChainDomain
     (fun z hz => ⟨hz.1, hrC ?_⟩) ?_
   · have h := norm_sub_sq_le hζ (mem_ball_zero_iff.mp hz.1).le hz.2.le
     have h' : 1 - t = 1 / ((n : ℝ) + 2) := by ring
