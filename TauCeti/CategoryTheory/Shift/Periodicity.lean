@@ -199,6 +199,12 @@ theorem periodicityZPow_zero (φ : shiftFunctor C n ⋙ G ≅ G) :
       isoWhiskerRight (shiftFunctorZero' C (n * 0) (mul_zero n)) G ≪≫ G.leftUnitor := by
   rfl
 
+/-- The zeroth power of a periodicity isomorphism, on components. -/
+theorem periodicityZPow_zero_hom_app (φ : shiftFunctor C n ⋙ G ≅ G) (X : C) :
+    (φ.periodicityZPow 0).hom.app X =
+      G.map ((shiftFunctorZero' C (n * 0) (mul_zero n)).hom.app X) := by
+  simp [periodicityZPow_zero]
+
 /-- The power `φ^(i + 1)` is `φ` composed with `φ^i`. -/
 theorem periodicityZPow_succ (φ : shiftFunctor C n ⋙ G ≅ G) (i j : ℤ) (h : i + 1 = j) :
     φ.periodicityZPow j = φ.shiftComp (φ.periodicityZPow i) (by rw [← h]; ring) := by

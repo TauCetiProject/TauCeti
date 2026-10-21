@@ -395,10 +395,9 @@ instance : (lift G φ).Additive where
 /-- The descent sends the projection of a morphism `f` of `D` to `G.map f`. -/
 theorem lift_map_projection_map {X Y : D} (f : X ⟶ Y) :
     (lift G φ).map (projection.map f) = G.map f := by
-  rw [projection_map, lift_map_homOf, Iso.periodicityZPow_zero]
-  simp only [ShiftedHom.mk₀, Functor.map_comp, Iso.trans_hom, Functor.isoWhiskerRight_hom,
-    NatTrans.comp_app, Functor.comp_obj, Functor.id_obj, Functor.whiskerRight_app,
-    Functor.leftUnitor_hom_app, Category.comp_id, Category.assoc, Iso.inv_hom_id_app_map]
+  rw [projection_map, lift_map_homOf, Iso.periodicityZPow_zero_hom_app]
+  simp only [ShiftedHom.mk₀, ← Functor.map_comp, Category.assoc, Iso.inv_hom_id_app,
+    Functor.id_obj, Category.comp_id]
   -- The two sides agree up to unfolding the objects of `lift G φ`.
   rfl
 
@@ -431,9 +430,9 @@ theorem projectionCompLift_inv_app (X : D) : (projectionCompLift G φ).inv.app X
 /-- The descent carries the periodicity isomorphism of the projection to `φ`. -/
 theorem lift_map_periodicity_hom_app (X : D) :
     (lift G φ).map (periodicity.hom.app X) = φ.hom.app X := by
-  simp only [Functor.comp_obj, shiftNatIso_hom_app, shiftIso_hom, lift_map_homOf,
-    Iso.periodicityZPow_one_hom_app, eqToHom_map_comp_assoc, eqToHom_refl,
-    CategoryTheory.Functor.map_id, Category.id_comp]
+  rw [shiftNatIso_hom_app, shiftIso_hom, lift_map_homOf, Iso.periodicityZPow_one_hom_app]
+  simp only [Functor.comp_obj, eqToHom_map_comp_assoc, eqToHom_refl, CategoryTheory.Functor.map_id,
+    Category.id_comp]
   -- The two sides agree up to unfolding the objects of `lift G φ`.
   rfl
 
@@ -473,12 +472,13 @@ private theorem conjShiftNatIso_eq
   · rintro i _ rfl
     ext X
     have he' : F.map (shiftIso X n 1 (mul_one n)).hom ≫ e.hom.app X =
-        e.hom.app (X⟦n⟧) ≫ φ.hom.app X := he X
+        e.hom.app (X⟦n⟧) ≫ φ.hom.app X := by
+      simpa only [shiftNatIso_hom_app] using he X
     rw [conjShiftNatIso_hom_app, Iso.shiftComp_hom_app, conjShiftNatIso_hom_app,
       shiftIso_hom_eq_comp X (mul_one n) rfl rfl (add_comm 1 i), F.map_comp, F.map_comp]
     simp only [Category.assoc]
     rw [← he', ← projection_map, ← Functor.comp_map, ← e.inv.naturality_assoc]
-    rfl
+    simp only [Functor.comp_obj]
 
 /-- Uniqueness in Keller's universal property: an additive functor `F` out of the orbit
 category whose restriction along the projection is identified with `G` by `e`, compatibly with
