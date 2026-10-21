@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Enumerative.InvolutionTransversal
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Action
 
 /-!
@@ -114,12 +115,10 @@ theorem sum_prod_mul_ite_isConstantOnArcs (D : BrauerDiagram k) {A : Matrix ι �
   have hprod : ∀ z : S → ι, ∏ p, A (x p) (Φ z p) =
       ∏ s : S, (A (x s) (z s) * A (x (σ s)) (z s)) := by
     intro z
-    rw [← Finset.prod_mul_prod_compl S]
-    have hcompl : ∏ p ∈ Sᶜ, A (x p) (Φ z p) = ∏ p ∈ S, A (x (σ p)) (Φ z (σ p)) :=
-      Finset.prod_nbij' σ σ (fun p hp => (hS p).1 (Finset.mem_compl.1 hp))
-        (fun p hp => Finset.mem_compl.2 fun h => (hS (σ p)).2 (by rwa [hσσ]) h)
-        (fun p _ => hσσ p) (fun p _ => hσσ p) (fun p _ => by rw [hσσ])
-    rw [hcompl, ← Finset.prod_mul_distrib, ← Finset.prod_coe_sort]
+    have hT : IsInvolutionTransversal σ Finset.univ S :=
+      ⟨Finset.subset_univ S, fun p _ => (not_iff_comm.1 (hS p)).symm⟩
+    rw [← hT.prod_mul_prod_comp _ (fun p _ => Finset.mem_univ _) (fun p _ => hσσ p),
+      ← Finset.prod_mul_distrib, ← Finset.prod_coe_sort]
     exact Finset.prod_congr rfl fun s _ => by rw [hΦS, hΦσ]
   -- Summing over the label of one arc meets the identity `A * Aᵀ = 1`.
   have hpair : ∀ s : S, ∑ c, A (x s) c * A (x (σ s)) c =
