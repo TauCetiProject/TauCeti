@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
-public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Algebra.Lie.OfAssociative
+public import TauCeti.Analysis.Normed.Operator.Mul
 import TauCeti.Analysis.Normed.Algebra.Basic
 
 /-!
@@ -47,28 +47,6 @@ open NormedSpace
 section Seminormed
 
 variable {R : Type*} [SeminormedRing R] [NormedAlgebra ℝ R]
-
-private theorem mulLeft_toLinearMap (x : R) :
-    (ContinuousLinearMap.mul ℝ R x).toLinearMap = LinearMap.mulLeft ℝ x := by
-  ext y
-  simp
-
-private theorem mulRight_toLinearMap (x : R) :
-    ((ContinuousLinearMap.mul ℝ R).flip x).toLinearMap = LinearMap.mulRight ℝ x := by
-  ext y
-  simp
-
-private theorem mulLeft_pow_apply (x y : R) (n : ℕ) :
-    ((ContinuousLinearMap.mul ℝ R x) ^ n) y = x ^ n * y := by
-  -- Transport Mathlib's linear-map power identity through the explicit bundling boundary.
-  rw [← ContinuousLinearMap.coe_coe, ContinuousLinearMap.toLinearMap_pow,
-    mulLeft_toLinearMap, LinearMap.pow_mulLeft, LinearMap.mulLeft_apply]
-
-private theorem mulRight_pow_apply (x y : R) (n : ℕ) :
-    (((ContinuousLinearMap.mul ℝ R).flip x) ^ n) y = y * x ^ n := by
-  -- Transport Mathlib's linear-map power identity through the explicit bundling boundary.
-  rw [← ContinuousLinearMap.coe_coe, ContinuousLinearMap.toLinearMap_pow,
-    mulRight_toLinearMap, LinearMap.pow_mulRight, LinearMap.mulRight_apply]
 
 /-- The continuous-linear family of endomorphisms `y ↦ x * y - y * x`. -/
 def continuousCommutator : R →L[ℝ] R →L[ℝ] R :=
@@ -111,7 +89,7 @@ theorem exp_mulLeft_apply (x y : R) :
     (exp_series_hasSum_exp' (𝕂 := ℝ) (ContinuousLinearMap.mul ℝ R x))
   have halg := (exp_series_hasSum_exp' (𝕂 := ℝ) x).mul_right y
   apply HasSum.unique (hop.congr_fun fun n => ?_) halg
-  simp only [map_smul, ContinuousLinearMap.apply_apply, mulLeft_pow_apply]
+  simp only [map_smul, ContinuousLinearMap.apply_apply, ContinuousLinearMap.mul_pow_apply]
   simp only [smul_mul_assoc]
 
 /-- Exponentiating the bounded right-multiplication operator gives right multiplication by the
@@ -123,7 +101,7 @@ theorem exp_mulRight_apply (x y : R) :
     (exp_series_hasSum_exp' (𝕂 := ℝ) ((ContinuousLinearMap.mul ℝ R).flip x))
   have halg := (exp_series_hasSum_exp' (𝕂 := ℝ) x).mul_left y
   apply HasSum.unique (hop.congr_fun fun n => ?_) halg
-  simp only [map_smul, ContinuousLinearMap.apply_apply, mulRight_pow_apply]
+  simp only [map_smul, ContinuousLinearMap.apply_apply, ContinuousLinearMap.flip_mul_pow_apply]
   simp only [mul_smul_comm]
 
 /-- Exponentiating the bounded left-multiplication operator gives the operator of left
