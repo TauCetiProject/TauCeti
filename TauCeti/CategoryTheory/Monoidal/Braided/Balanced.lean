@@ -66,14 +66,9 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 theorem twist_hom_app_unit : (twist (C := C)).hom.app (𝟙_ C) = 𝟙 (𝟙_ C) := by
   -- Naturality at the left unitor of `𝟙_ C ⊗ 𝟙_ C`, together with the balancing axiom, shows
   -- that the twist of the unit is idempotent.
-  have h := (twist (C := C)).hom.naturality (λ_ (𝟙_ C)).hom
-  simp only [Functor.id_obj, Functor.id_map, twist_tensor, tensorHom_def, whiskerRight_id,
-    ← unitors_equal, id_whiskerLeft, Category.assoc, braiding_tensorUnit_right, Iso.hom_inv_id,
-    Category.comp_id, Iso.inv_hom_id, Iso.cancel_iso_hom_left] at h
-  rw [unitors_equal, Iso.inv_hom_id_assoc] at h
-  rw [← cancel_epi ((twist (C := C)).hom.app (𝟙_ C)), ← h]
-  -- The identity on the right is the identity of `(𝟭 C).obj (𝟙_ C)`, which is `𝟙_ C`.
-  exact (Category.comp_id _).symm
+  rw [← cancel_epi ((twist (C := C)).hom.app (𝟙_ C))]
+  simpa [twist_tensor, tensorHom_def, ← unitors_equal, ← unitors_inv_equal] using
+    ((twist (C := C)).hom.naturality (λ_ (𝟙_ C)).hom).symm
 
 end BalancedCategory
 

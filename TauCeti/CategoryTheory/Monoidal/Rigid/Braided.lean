@@ -87,6 +87,28 @@ namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 
+/-- Braiding `A` past `Z` and then applying `f : A ⊗ A' ⟶ 𝟙_ C` after `Z` is braiding `A'` back
+under `Z` and then applying `f` before `Z`. -/
+private theorem braiding_whiskerRight_comp_whiskerLeft {A A' : C} (Z : C) (f : A ⊗ A' ⟶ 𝟙_ C) :
+    (β_ A Z).hom ▷ A' ≫ (α_ Z A A').hom ≫ Z ◁ f =
+      (α_ A Z A').hom ≫ A ◁ (β_ A' Z).inv ≫ (α_ A A' Z).inv ≫ f ▷ Z ≫ (λ_ Z).hom ≫
+        (ρ_ Z).inv := by
+  have h := braiding_naturality_left f Z
+  rw [braiding_tensorUnit_left, braiding_tensor_left_hom] at h
+  simp only [Category.assoc] at h ⊢
+  rw [h]
+  simp only [Iso.inv_hom_id_assoc, whiskerLeft_inv_hom_assoc, Iso.hom_inv_id_assoc]
+
+/-- Braiding `Z` past `A` and then applying `f : A' ⊗ A ⟶ 𝟙_ C` before `Z` is braiding `Z` back
+under `A'` and then applying `f` after `Z`. -/
+private theorem whiskerLeft_braiding_comp_whiskerRight {A A' : C} (Z : C) (f : A' ⊗ A ⟶ 𝟙_ C) :
+    A' ◁ (β_ Z A).hom ≫ (α_ A' A Z).inv ≫ f ▷ Z =
+      (α_ A' Z A).inv ≫ (β_ Z A').inv ▷ A ≫ (α_ Z A' A).hom ≫ Z ◁ f ≫ (ρ_ Z).hom ≫
+        (λ_ Z).inv := by
+  have h := braiding_naturality_right Z f
+  rw [braiding_tensorUnit_right, braiding_tensor_right_hom] at h
+  simp [h]
+
 /-- A braiding is its own mate with respect to tensor product pairings: precomposing the
 evaluation of the tensor product pairing `(X ⊗ Y, Y' ⊗ X')` with the braiding of `Y` past `X`
 is precomposing the evaluation of `(Y ⊗ X, X' ⊗ Y')` with the braiding of `Y'` past `X'`. -/
@@ -97,28 +119,16 @@ theorem whiskerLeft_braiding_comp_tensor_evaluation (X X' Y Y' : C) [ExactPairin
   rw [ExactPairing.tensor_evaluation, ExactPairing.tensor_evaluation]
   -- Both sides close the loop of `X` after braiding `Y` back under `X'`, by naturality of the
   -- braiding with respect to the evaluations of `(X, X')` and `(Y, Y')`.
-  have hX : X' ◁ (β_ Y X).hom ≫ (α_ X' X Y).inv ≫ ε_ X X' ▷ Y =
-      (α_ X' Y X).inv ≫ (β_ Y X').inv ▷ X ≫ (α_ Y X' X).hom ≫ Y ◁ ε_ X X' ≫ (ρ_ Y).hom ≫
-        (λ_ Y).inv := by
-    have h := braiding_naturality_right Y (ε_ X X')
-    rw [braiding_tensorUnit_right, braiding_tensor_right_hom] at h
-    simp [h]
-  have hY : (β_ Y' X').hom ▷ Y ≫ (α_ X' Y' Y).hom ≫ X' ◁ ε_ Y Y' =
-      (α_ Y' X' Y).hom ≫ Y' ◁ (β_ Y X').inv ≫ (α_ Y' Y X').inv ≫ ε_ Y Y' ▷ X' ≫
-        (λ_ X').hom ≫ (ρ_ X').inv := by
-    have h := braiding_naturality_left (ε_ Y Y') X'
-    rw [braiding_tensorUnit_left, braiding_tensor_left_hom] at h
-    simp [h]
   calc
     _ = 𝟙 _ ⊗≫ Y' ◁ (X' ◁ (β_ Y X).hom ≫ (α_ X' X Y).inv ≫ ε_ X X' ▷ Y) ⊗≫ ε_ Y Y' := by
       monoidal
     _ = 𝟙 _ ⊗≫ Y' ◁ (β_ Y X').inv ▷ X ⊗≫ ((Y' ⊗ Y) ◁ ε_ X X' ≫ ε_ Y Y' ▷ 𝟙_ C) ⊗≫
           𝟙 (𝟙_ C) := by
-      rw [hX]; monoidal
+      rw [whiskerLeft_braiding_comp_whiskerRight]; monoidal
     _ = 𝟙 _ ⊗≫ (Y' ◁ (β_ Y X').inv ≫ (α_ Y' Y X').inv ≫ ε_ Y Y' ▷ X') ▷ X ⊗≫ ε_ X X' := by
       rw [whisker_exchange]; monoidal
     _ = 𝟙 _ ⊗≫ ((β_ Y' X').hom ▷ Y ≫ (α_ X' Y' Y).hom ≫ X' ◁ ε_ Y Y') ▷ X ⊗≫ ε_ X X' := by
-      rw [hY]; monoidal
+      rw [braiding_whiskerRight_comp_whiskerLeft]; monoidal
     _ = _ := by monoidal
 
 /-- The double braiding is its own mate with respect to tensor product pairings: precomposing
@@ -131,18 +141,6 @@ theorem whiskerLeft_braiding_comp_braiding_comp_tensor_evaluation (A A' B B' : C
   rw [whiskerLeft_comp, Category.assoc, whiskerLeft_braiding_comp_tensor_evaluation,
     whisker_exchange_assoc, whiskerLeft_braiding_comp_tensor_evaluation, comp_whiskerRight,
     Category.assoc]
-
-/-- Braiding `A` past `Z` and then applying `f : A ⊗ A' ⟶ 𝟙_ C` after `Z` is braiding `A'` back
-under `Z` and then applying `f` before `Z`. -/
-private theorem braiding_whiskerRight_comp_whiskerLeft {A A' : C} (Z : C) (f : A ⊗ A' ⟶ 𝟙_ C) :
-    (β_ A Z).hom ▷ A' ≫ (α_ Z A A').hom ≫ Z ◁ f =
-      (α_ A Z A').hom ≫ A ◁ (β_ A' Z).inv ≫ (α_ A A' Z).inv ≫ f ▷ Z ≫ (λ_ Z).hom ≫
-        (ρ_ Z).inv := by
-  have h := braiding_naturality_left f Z
-  rw [braiding_tensorUnit_left, braiding_tensor_left_hom] at h
-  simp only [Category.assoc] at h ⊢
-  rw [h]
-  simp only [Iso.inv_hom_id_assoc, whiskerLeft_inv_hom_assoc, Iso.hom_inv_id_assoc]
 
 /-- The braided evaluation of the tensor product pairing `(X ⊗ Y, Y' ⊗ X')` is the inverse of the
 double braiding `β_{Y',X'} ≫ β_{X',Y'}` of `Y' ⊗ X'`, followed by the braided evaluation of
