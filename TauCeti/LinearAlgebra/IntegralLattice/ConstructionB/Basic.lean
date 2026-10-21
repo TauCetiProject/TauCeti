@@ -40,7 +40,8 @@ Golay Construction A lattice from which the Leech lattice is obtained by gluing 
   for doubly even codes.
 * `TauCeti.ConstructionB.sumHalf`: half the coordinate sum modulo two, with kernel
   `ker_sumHalf` and surjectivity `sumHalf_surjective`.
-* `TauCeti.ConstructionB.relIndex_lattice`: Construction B has index two in Construction A.
+* `TauCeti.ConstructionB.relIndex_lattice`: Construction B has index two in Construction A, and
+  `mem_constructionA_lattice_iff` writes Construction A as Construction B and one coset.
 * `TauCeti.ConstructionB.integralLattice`: Construction B as an integral lattice, with
   `discriminant_integralLattice` and `isEven_integralLattice`.
 
@@ -201,6 +202,26 @@ theorem sumHalf_surjective [Nonempty ι] (hC : BinaryCode.IsEven C) :
   refine ⟨a.val • ⟨_, ConstructionA.single_mem_lattice 2 C.toAddSubgroup i⟩, ?_⟩
   rw [map_nsmul, sumHalf_apply_of_sum_eq C hC (k := 1) (by simp), Int.cast_one, nsmul_eq_mul,
     mul_one, ZMod.natCast_zmod_val]
+
+/-- **Construction A is Construction B together with one coset**: for an even binary code and
+any coordinate `i`, a Construction A vector lies either in Construction B or in its translate by
+`2eᵢ`. -/
+theorem mem_constructionA_lattice_iff [DecidableEq ι] (hC : BinaryCode.IsEven C) (i : ι)
+    {x : ι → ℚ} :
+    x ∈ ConstructionA.lattice 2 C.toAddSubgroup ↔
+      x ∈ lattice C ∨ x - Pi.single i 2 ∈ lattice C := by
+  have hi : Pi.single i 2 ∈ ConstructionA.lattice 2 C.toAddSubgroup := by
+    simpa using ConstructionA.single_mem_lattice 2 C.toAddSubgroup i
+  constructor
+  · intro hx
+    rcases (show ∀ a : ZMod 2, a = 0 ∨ a = 1 by decide) (sumHalf C hC ⟨x, hx⟩) with h | h
+    · exact Or.inl ((sumHalf_eq_zero_iff C hC _).mp h)
+    · refine Or.inr ((sumHalf_eq_zero_iff C hC (⟨x, hx⟩ - ⟨_, hi⟩)).mp ?_)
+      rw [map_sub, h, sumHalf_apply_of_sum_eq C hC (k := 1) (by simp)]
+      simp
+  · rintro (h | h)
+    · exact lattice_le C h
+    · simpa using add_mem (lattice_le C h) hi
 
 /-- **Construction B has index two in Construction A**, for an even binary code with at least one
 coordinate. -/
