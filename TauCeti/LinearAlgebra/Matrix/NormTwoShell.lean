@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.Algebra.Order.Group.PosPart
+import TauCeti.LinearAlgebra.Matrix.Gram
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
@@ -117,19 +118,13 @@ theorem sub_mem_normTwoShell_iff (hB : B.IsSymm) (ha : a ∈ B.normTwoShell)
   rw [mem_normTwoShell, hB.sub_dotProduct_mulVec_sub, ha.out, hb.out]
   omega
 
-/-- **The reflection in a vector of the norm-two shell preserves the pairing.** For `⟪a, a⟫ = 2`,
-the map `x ↦ x - ⟪x, a⟫ a` preserves `⟪x, x⟫`. -/
-theorem dotProduct_mulVec_sub_smul (hB : B.IsSymm) (ha : a ∈ B.normTwoShell) (x : I → ℤ) :
-    (x - (x ⬝ᵥ B *ᵥ a) • a) ⬝ᵥ B *ᵥ (x - (x ⬝ᵥ B *ᵥ a) • a) = x ⬝ᵥ B *ᵥ x := by
-  rw [hB.sub_dotProduct_mulVec_sub, mulVec_smul, smul_dotProduct, dotProduct_smul,
-    dotProduct_smul, ha.out]
-  simp only [smul_eq_mul]
-  ring
-
 /-- The reflection in a vector of the norm-two shell maps the shell to itself. -/
 theorem sub_smul_mem_normTwoShell (hB : B.IsSymm) (ha : a ∈ B.normTwoShell)
     (hx : x ∈ B.normTwoShell) : x - (x ⬝ᵥ B *ᵥ a) • a ∈ B.normTwoShell := by
-  rw [mem_normTwoShell, hB.dotProduct_mulVec_sub_smul ha]
+  have h := TauCeti.reflect_vecMul_dotProduct_self hB (u := a)
+    (by rw [← dotProduct_mulVec]; exact ha) x
+  simp only [← dotProduct_mulVec] at h
+  rw [mem_normTwoShell, h]
   exact hx
 
 end IsSymm
