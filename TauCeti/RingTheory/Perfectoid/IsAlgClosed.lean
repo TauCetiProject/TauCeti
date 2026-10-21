@@ -14,10 +14,10 @@ public import TauCeti.RingTheory.Perfectoid.Basic
 
 Let `K` be a complete algebraically closed nontrivially normed field with ultrametric norm, and let
 `p ≠ 0` be a natural number with `‖p‖ < 1` in `K`. Then `K` is a perfectoid Tate ring at `p`: its
-power-bounded subring is the closed unit ball, a `p`-th root `ϖ` of `p` (or of any `c` with
-`‖p‖ ≤ ‖c‖ < 1`) is a pseudouniformiser with `ϖ ^ p ∣ p` in `K°`, and every element of `K°` has a
-`p`-th root. Both characteristics are covered: when `p = 0` in `K` the condition `‖p‖ < 1` is
-automatic.
+power-bounded subring is the closed unit ball, a `p`-th root `ϖ` of any `c ≠ 0` with
+`‖p‖ ≤ ‖c‖ < 1` (for example `c = p` when `p ≠ 0` in `K`) is a pseudouniformiser with
+`ϖ ^ p ∣ p` in `K°`, and every element of `K°` has a `p`-th root. Both characteristics are
+covered: when `p = 0` in `K` the condition `‖p‖ < 1` is automatic.
 
 ## Main results
 
