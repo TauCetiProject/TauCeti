@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Topology
 public import Mathlib.LinearAlgebra.Eigenspace.Matrix
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.MulVec
+import TauCeti.LinearAlgebra.Matrix.Connected
 
 /-!
 # The Perron–Frobenius theorem for positive matrices
@@ -107,21 +108,17 @@ entries is spanned by `v`: every eigenvector for the same eigenvalue, of any sig
 of `v`. -/
 theorem exists_eq_smul_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0 < v i)
     (hAv : A *ᵥ v = r • v) (hAw : A *ᵥ w = r • w) : ∃ c : K, w = c • v := by
-  cases isEmpty_or_nonempty n
-  · exact ⟨0, Subsingleton.elim _ _⟩
-  -- Subtract the largest multiple of `v` lying below `w`; the difference is a nonnegative
-  -- eigenvector with a zero entry, hence zero.
-  obtain ⟨i, hi⟩ := Finite.exists_min fun i => w i / v i
-  set c := w i / v i
-  refine ⟨c, ?_⟩
-  have hx : 0 ≤ w - c • v := fun k => by
-    simpa [mul_comm] using (le_div_iff₀ (hv k)).1 (hi k)
-  have hxi : (w - c • v) i = 0 := by simp [c, div_mul_cancel₀ _ (hv i).ne']
-  have hAx : A *ᵥ (w - c • v) = r • (w - c • v) := by
-    rw [mulVec_sub, mulVec_smul, hAv, hAw, smul_sub, smul_comm]
-  by_contra hne
-  have := mulVec_pos hA hx (sub_ne_zero.2 hne) i
-  simp [hAx, hxi] at this
+  classical
+  -- Both eigenvectors lie in the kernel of `A - r • 1`, whose off-diagonal entries are those of
+  -- `A`, so the weighted maximum principle applies.
+  have hker {u : n → K} (hu : A *ᵥ u = r • u) : (A - r • 1) *ᵥ u = 0 := by
+    rw [sub_mulVec, smul_mulVec, one_mulVec, hu, sub_self]
+  have hoff {i j : n} (hij : i ≠ j) : (A - r • 1) i j = A i j := by simp [hij]
+  refine eq_smul_of_mulVec_eq_zero _ (fun i j hij => (hoff hij).symm ▸ (hA i j).le)
+    (fun i j => ?_) v w hv (hker hAv) (hker hAw)
+  by_cases hij : i = j
+  · exact hij ▸ .refl
+  · exact .single ⟨hij, (hoff hij).symm ▸ hA i j⟩
 
 /-- A nonzero nonnegative eigenvector of a strictly positive matrix has the same eigenvalue as any
 eigenvector with strictly positive entries. -/
