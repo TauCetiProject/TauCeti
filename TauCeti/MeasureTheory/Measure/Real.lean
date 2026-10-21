@@ -28,6 +28,8 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
   at zero;
 * `MeasureTheory.Measure.map_eq_map_map_add_of_forall_measure_setOf_le_add_eq` — translated
   distribution functions of a real-valued function give translated laws;
+* `MeasureTheory.Measure.map_restrict_eq_map_map_add_of_forall_measure_sep_le_add_eq` — the same
+  for the restrictions of one measure to two sets;
 * `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
   measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
@@ -78,6 +80,20 @@ theorem map_eq_map_map_add_of_forall_measure_setOf_le_add_eq {α : Type*} [Measu
   rw [Measure.map_map (measurable_add_const c) hf, Measure.map_apply hf measurableSet_Iic,
     Measure.map_apply ((measurable_add_const c).comp hf) measurableSet_Iic]
   convert h (a - c) using 2 <;> ext x <;> simp [le_sub_iff_add_le]
+
+/-- **Translated distribution functions on two sets give translated laws.** If the distribution
+function of a real-valued measurable `f` on a set `t` of finite `μ`-measure is that on `s`
+translated by `c`, then the law of `f` under `μ` restricted to `t` is the law of `f` under `μ`
+restricted to `s` translated by `c`. -/
+theorem map_restrict_eq_map_map_add_of_forall_measure_sep_le_add_eq {α : Type*}
+    [MeasurableSpace α] {μ : Measure α} {s t : Set α} (ht : μ t ≠ ⊤) {f : α → ℝ}
+    (hf : Measurable f) {c : ℝ} (h : ∀ r : ℝ, μ {x ∈ t | f x ≤ r + c} = μ {x ∈ s | f x ≤ r}) :
+    (μ.restrict t).map f = ((μ.restrict s).map f).map (· + c) := by
+  have : IsFiniteMeasure (μ.restrict t) := isFiniteMeasure_restrict.2 ht
+  refine map_eq_map_map_add_of_forall_measure_setOf_le_add_eq hf fun r ↦ ?_
+  rw [restrict_apply (measurableSet_le hf measurable_const),
+    restrict_apply (measurableSet_le hf measurable_const)]
+  convert h r using 2 <;> ext x <;> simp [and_comm]
 
 end MeasureTheory.Measure
 

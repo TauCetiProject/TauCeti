@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.LocallyConvex.Separation
 public import Mathlib.Topology.Algebra.Affine
 import Mathlib.Tactic.Positivity
 
 /-!
-# Separating two directions by a functional
+# Separation by functionals
 
 Two vectors `d₁` and `d₂` of a real locally convex Hausdorff space with `0 ∉ [-d₁, d₂]`, that is,
 both nonzero and not on a common ray from `0`, are separated by a continuous functional `ℓ` with
@@ -19,15 +20,22 @@ both nonzero and not on a common ray from `0`, are separated by a continuous fun
 strict inequalities are open conditions, so `ℓ` can moreover be perturbed to be nonzero at any
 prescribed vector on which some functional does not vanish.
 
+In a real Hilbert space, the geometric Hahn--Banach theorem `geometric_hahn_banach_closed_point`
+together with the Riesz representation shows that a nonempty closed convex set is determined by
+its supporting half-spaces in unit directions.
+
 ## Main results
 
 * `TauCeti.exists_strongDual_neg_pos_ne_zero`: a functional negative on `d₁`, positive on `d₂`,
   and nonzero at a prescribed vector `u`.
+* `Convex.subset_of_forall_upperBounds_image_inner_subset`: if every supporting half-space of a
+  nonempty closed convex set `S` in a unit direction contains `T`, then `T ⊆ S`.
 -/
 
 public section
 
 open Set
+open scoped RealInnerProductSpace
 
 namespace TauCeti
 
@@ -62,3 +70,42 @@ theorem exists_strongDual_neg_pos_ne_zero {d₁ d₂ : E} (h : (0 : E) ∉ segme
   · exact ⟨f, by linarith, by linarith, hfu⟩
 
 end TauCeti
+
+section InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- **Supporting half-spaces determine a closed convex set.** If every upper bound of the heights
+`⟪e, x⟫` over a nonempty closed convex set `S`, in a unit direction `e`, also bounds the heights
+over `T`, then `T ⊆ S`. -/
+theorem Convex.subset_of_forall_upperBounds_image_inner_subset [CompleteSpace E] {S T : Set E}
+    (hS : Convex ℝ S) (hSc : IsClosed S) (hSne : S.Nonempty)
+    (h : ∀ e : E, ‖e‖ = 1 → upperBounds ((⟪e, ·⟫) '' S) ⊆ upperBounds ((⟪e, ·⟫) '' T)) :
+    T ⊆ S := by
+  intro x hx
+  by_contra hxS
+  obtain ⟨f, u, hfS, hfx⟩ := geometric_hahn_banach_closed_point hS hSc hxS
+  set w := (InnerProductSpace.toDual ℝ E).symm f
+  have hw (y : E) : f y = ⟪w, y⟫ := InnerProductSpace.toDual_symm_apply.symm
+  obtain ⟨a, ha⟩ := hSne
+  have hw0 : w ≠ 0 := by
+    rintro hw0
+    have h₁ := hfS a ha
+    rw [hw, hw0, inner_zero_left] at h₁ hfx
+    linarith
+  have hwpos : 0 < ‖w‖ := norm_pos_iff.2 hw0
+  -- The unit normal `‖w‖⁻¹ • w` bounds the heights over `S` by `‖w‖⁻¹ * u` but not at `x`.
+  have hub : ‖w‖⁻¹ * u ∈ upperBounds ((⟪‖w‖⁻¹ • w, ·⟫) '' S) := by
+    rintro _ ⟨y, hy, rfl⟩
+    dsimp only
+    rw [real_inner_smul_left, ← hw]
+    exact mul_le_mul_of_nonneg_left (hfS y hy).le (inv_nonneg.2 hwpos.le)
+  have hunit : ‖‖w‖⁻¹ • w‖ = 1 := by
+    rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hwpos.ne']
+  have hx' := h _ hunit hub ⟨x, hx, rfl⟩
+  dsimp only at hx'
+  rw [real_inner_smul_left, ← hw] at hx'
+  have := le_of_mul_le_mul_left hx' (inv_pos.2 hwpos)
+  linarith
+
+end InnerProductSpace

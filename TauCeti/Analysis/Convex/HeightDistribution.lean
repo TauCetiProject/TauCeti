@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Body
-public import Mathlib.Analysis.InnerProductSpace.Dual
-public import Mathlib.Analysis.LocallyConvex.Separation
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Convex.Measure
+public import TauCeti.Analysis.LocallyConvex.Separation
 public import TauCeti.MeasureTheory.Measure.Real
 
 /-!
@@ -39,8 +38,9 @@ The proof combines three facts, each stated in its natural generality.
   `c_e` is `⟪e, v⟫`, where `v` is the measure-normalized difference of the two first moments, and in
   particular depends linearly on `e`.
 * A closed convex set is determined by its supporting half-spaces in unit directions
-  (`Convex.subset_of_forall_upperBounds_image_inner_subset`), a consequence of the geometric
-  Hahn–Banach theorem `geometric_hahn_banach_closed_point`.
+  (`Convex.subset_of_forall_upperBounds_image_inner_subset`, in
+  `TauCeti.Analysis.LocallyConvex.Separation`), a consequence of the geometric Hahn–Banach
+  theorem `geometric_hahn_banach_closed_point`.
 
 ## References
 
@@ -56,43 +56,6 @@ open MeasureTheory Set
 open scoped ENNReal RealInnerProductSpace Pointwise
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-section Separation
-
-/-- **Supporting half-spaces determine a closed convex set.** If every upper bound of the heights
-`⟪e, x⟫` over a nonempty closed convex set `S`, in a unit direction `e`, also bounds the heights
-over `T`, then `T ⊆ S`. -/
-theorem Convex.subset_of_forall_upperBounds_image_inner_subset [CompleteSpace E] {S T : Set E}
-    (hS : Convex ℝ S) (hSc : IsClosed S) (hSne : S.Nonempty)
-    (h : ∀ e : E, ‖e‖ = 1 → upperBounds ((⟪e, ·⟫) '' S) ⊆ upperBounds ((⟪e, ·⟫) '' T)) :
-    T ⊆ S := by
-  intro x hx
-  by_contra hxS
-  obtain ⟨f, u, hfS, hfx⟩ := geometric_hahn_banach_closed_point hS hSc hxS
-  set w := (InnerProductSpace.toDual ℝ E).symm f
-  have hw (y : E) : f y = ⟪w, y⟫ := InnerProductSpace.toDual_symm_apply.symm
-  obtain ⟨a, ha⟩ := hSne
-  have hw0 : w ≠ 0 := by
-    rintro hw0
-    have h₁ := hfS a ha
-    rw [hw, hw0, inner_zero_left] at h₁ hfx
-    linarith
-  have hwpos : 0 < ‖w‖ := norm_pos_iff.2 hw0
-  -- The unit normal `‖w‖⁻¹ • w` bounds the heights over `S` by `‖w‖⁻¹ * u` but not at `x`.
-  have hub : ‖w‖⁻¹ * u ∈ upperBounds ((⟪‖w‖⁻¹ • w, ·⟫) '' S) := by
-    rintro _ ⟨y, hy, rfl⟩
-    dsimp only
-    rw [real_inner_smul_left, ← hw]
-    exact mul_le_mul_of_nonneg_left (hfS y hy).le (inv_nonneg.2 hwpos.le)
-  have hunit : ‖‖w‖⁻¹ • w‖ = 1 := by
-    rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hwpos.ne']
-  have hx' := h _ hunit hub ⟨x, hx, rfl⟩
-  dsimp only at hx'
-  rw [real_inner_smul_left, ← hw] at hx'
-  have := le_of_mul_le_mul_left hx' (inv_pos.2 hwpos)
-  linarith
-
-end Separation
 
 section Measure
 
@@ -126,28 +89,22 @@ theorem Convex.measure_sep_inner_le_eq_iff [μ.IsOpenPosMeasure] {s : Set E} (hs
 
 namespace TauCeti
 
-/-- If the height distribution of `t` in direction `e` is that of `s` translated by `c`, then the
-height law of `t`, the image of `μ` restricted to `t` under `⟪e, ·⟫`, is that of `s` translated
-by `c`. -/
-private theorem map_restrict_inner_eq_map_add {s t : Set E} (ht : μ t ≠ ∞) {e : E} {c : ℝ}
+omit [OpensMeasurableSpace E] in
+/-- If the height distribution of `t` in direction `e` is that of `s` translated by `c`, then `s`
+and `t` have the same measure. -/
+theorem measure_eq_of_forall_measure_sep_inner_le_add_eq {s t : Set E} {e : E} {c : ℝ}
     (h : ∀ r : ℝ, μ {x ∈ t | ⟪e, x⟫ ≤ r + c} = μ {x ∈ s | ⟪e, x⟫ ≤ r}) :
-    (μ.restrict t).map (⟪e, ·⟫) = ((μ.restrict s).map (⟪e, ·⟫)).map (· + c) := by
-  have hf : Measurable (⟪e, ·⟫ : E → ℝ) := (continuous_const.inner continuous_id).measurable
-  have : IsFiniteMeasure (μ.restrict t) := isFiniteMeasure_restrict.2 ht
-  refine Measure.map_eq_map_map_add_of_forall_measure_setOf_le_add_eq hf fun r ↦ ?_
-  rw [Measure.restrict_apply (measurableSet_le hf measurable_const),
-    Measure.restrict_apply (measurableSet_le hf measurable_const)]
-  convert h r using 2 <;> ext x <;> simp [and_comm]
-
-/-- If the height distribution of `t` in direction `e` is that of `s` translated by `c`, and `t`
-has finite measure, then `s` and `t` have the same measure. -/
-theorem measure_eq_of_forall_measure_sep_inner_le_add_eq {s t : Set E} (ht : μ t ≠ ∞) {e : E}
-    {c : ℝ} (h : ∀ r : ℝ, μ {x ∈ t | ⟪e, x⟫ ≤ r + c} = μ {x ∈ s | ⟪e, x⟫ ≤ r}) :
     μ t = μ s := by
-  have hf : Measurable (⟪e, ·⟫ : E → ℝ) := (continuous_const.inner continuous_id).measurable
-  simpa only [Measure.map_apply hf MeasurableSet.univ, Measure.map_apply (measurable_add_const c)
-    MeasurableSet.univ, preimage_univ, Measure.restrict_apply_univ] using
-    congrArg (· univ) (map_restrict_inner_eq_map_add ht h)
+  -- Each set is the increasing union of its parts below the levels `n + a`, `n : ℕ`.
+  have hU (u : Set E) (a : ℝ) : ⋃ n : ℕ, {x ∈ u | ⟪e, x⟫ ≤ n + a} = u := by
+    refine Subset.antisymm (iUnion_subset fun _ ↦ sep_subset _ _) fun x hx ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_ge (⟪e, x⟫ - a)
+    exact mem_iUnion.2 ⟨n, hx, by linarith⟩
+  have hmono (u : Set E) (a : ℝ) : Monotone fun n : ℕ ↦ {x ∈ u | ⟪e, x⟫ ≤ n + a} :=
+    fun m n hmn x hx ↦ ⟨hx.1, hx.2.trans (by gcongr)⟩
+  calc μ t = ⨆ n : ℕ, μ {x ∈ t | ⟪e, x⟫ ≤ n + c} := by rw [← (hmono t c).measure_iUnion, hU]
+    _ = ⨆ n : ℕ, μ {x ∈ s | ⟪e, x⟫ ≤ n + 0} := by simp only [add_zero, h]
+    _ = μ s := by rw [← (hmono s 0).measure_iUnion, hU]
 
 /-- If the height distribution of `t` in direction `e` is that of `s` translated by `c`, then the
 first moment of `t` in direction `e` is that of `s` plus `c` times the measure of `s`. -/
@@ -157,13 +114,14 @@ theorem integral_inner_eq_add_mul_of_forall_measure_sep_inner_le_add_eq {s t : S
     ∫ x in t, ⟪e, x⟫ ∂μ = ∫ x in s, ⟪e, x⟫ ∂μ + c * μ.real s := by
   have hf : Measurable (⟪e, ·⟫ : E → ℝ) := (continuous_const.inner continuous_id).measurable
   have : IsFiniteMeasure (μ.restrict s) :=
-    isFiniteMeasure_restrict.2 (measure_eq_of_forall_measure_sep_inner_le_add_eq ht h ▸ ht)
+    isFiniteMeasure_restrict.2 (measure_eq_of_forall_measure_sep_inner_le_add_eq h ▸ ht)
   -- Both first moments are means of the height laws, which differ by the translation `c`.
   calc ∫ x in t, ⟪e, x⟫ ∂μ = ∫ y, y ∂(μ.restrict t).map (⟪e, ·⟫) :=
         (integral_map (f := fun y ↦ y) hf.aemeasurable aestronglyMeasurable_id).symm
     _ = ∫ y, y + c ∂(μ.restrict s).map (⟪e, ·⟫) := by
-        rw [map_restrict_inner_eq_map_add ht h, integral_map (f := fun y ↦ y)
-          (measurable_add_const c).aemeasurable aestronglyMeasurable_id]
+        rw [Measure.map_restrict_eq_map_map_add_of_forall_measure_sep_le_add_eq ht hf h,
+          integral_map (f := fun y ↦ y) (measurable_add_const c).aemeasurable
+            aestronglyMeasurable_id]
     _ = ∫ x in s, ⟪e, x⟫ + c ∂μ :=
         integral_map hf.aemeasurable (measurable_id.add_const c).aestronglyMeasurable
     _ = ∫ x in s, ⟪e, x⟫ ∂μ + c * μ.real s := by
@@ -221,7 +179,7 @@ theorem ConvexBody.exists_eq_vadd_iff_forall_measure_sep_inner_le_add_eq (K L : 
       field_simp
       ring
     have hLK : μ L = μ K :=
-      TauCeti.measure_eq_of_forall_measure_sep_inner_le_add_eq hLfin hc
+      TauCeti.measure_eq_of_forall_measure_sep_inner_le_add_eq hc
     have hLint : (interior (L : Set E)).Nonempty :=
       (L.convex.addHaar_pos_iff_interior_nonempty (μ := μ)).1 (hLK ▸ hK)
     have hKint : (interior (K : Set E)).Nonempty :=
