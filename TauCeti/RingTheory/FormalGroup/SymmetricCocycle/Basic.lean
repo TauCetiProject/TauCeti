@@ -20,7 +20,7 @@ import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.GCDMonoid.Finset
 import TauCeti.Algebra.MvPolynomial.Coeff
 -- Proof-only: the coefficients of the four terms of the cocycle identity.
-import TauCeti.Algebra.MvPolynomial.FinThree
+import TauCeti.Algebra.MvPolynomial.Fin.Three
 
 /-!
 # The Lazard symmetric 2-cocycles `C_n(X, Y)`
