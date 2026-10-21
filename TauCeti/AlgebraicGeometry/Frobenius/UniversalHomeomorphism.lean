@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Integral
-public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 public import TauCeti.AlgebraicGeometry.Frobenius.Twist
+public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 
 /-!
 # Frobenius morphisms are integral universal homeomorphisms
@@ -40,10 +40,6 @@ inverse continuous maps of underlying spaces.
 * `AlgebraicGeometry.Scheme.Hom.universally_isHomeomorph_relativeFrobenius` and
   `AlgebraicGeometry.Scheme.Hom.universally_isHomeomorph_iterateRelativeFrobenius`: the relative
   Frobenius and its iterates are universal homeomorphisms.
-* `AlgebraicGeometry.Surjective.of_universally_isHomeomorph`,
-  `AlgebraicGeometry.UniversallyInjective.of_universally_isHomeomorph` and
-  `AlgebraicGeometry.UniversallyClosed.of_universally_isHomeomorph`: a universal homeomorphism is
-  surjective, universally injective and universally closed.
 * Instances: these morphisms are `Surjective`, `UniversallyInjective`, `UniversallyClosed` and
   `IsIntegralHom`.
 
@@ -60,27 +56,6 @@ open CategoryTheory Limits MorphismProperty
 universe u
 
 namespace AlgebraicGeometry
-
-section UniversalHomeomorphism
-
-variable {X Y : Scheme.{u}} {f : X ⟶ Y}
-
-/-- A universal homeomorphism is surjective. -/
-theorem Surjective.of_universally_isHomeomorph (hf : (topologically @IsHomeomorph).universally f) :
-    Surjective f :=
-  ⟨(universally_le _ _ hf).surjective⟩
-
-/-- A universal homeomorphism is universally injective. -/
-theorem UniversallyInjective.of_universally_isHomeomorph
-    (hf : (topologically @IsHomeomorph).universally f) : UniversallyInjective f :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.injective) _ hf⟩
-
-/-- A universal homeomorphism is universally closed. -/
-theorem UniversallyClosed.of_universally_isHomeomorph
-    (hf : (topologically @IsHomeomorph).universally f) : UniversallyClosed f :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ hf⟩
-
-end UniversalHomeomorphism
 
 namespace Scheme
 
