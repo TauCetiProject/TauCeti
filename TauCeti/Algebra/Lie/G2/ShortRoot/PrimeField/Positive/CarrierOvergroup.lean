@@ -57,6 +57,13 @@ def generatedPositiveRestriction :
   (coordinateHopfAlgebraGeneratedIso k).inv ≫
     CommHopfAlgCat.baseChangeMap (K := k) PrimeField.positiveRestriction
 
+/-- Positive restriction on the generated carrier is the scalar extension of positive
+restriction on the carrier, read through the coordinate identification. -/
+theorem generatedPositiveRestriction_def :
+    generatedPositiveRestriction k = (coordinateHopfAlgebraGeneratedIso k).inv ≫
+      CommHopfAlgCat.baseChangeMap (K := k) PrimeField.positiveRestriction := by
+  rw [generatedPositiveRestriction]
+
 /-- The generated carrier's ambient coordinate map followed by positive restriction is the
 standard coordinate map of the positive subgroup. -/
 @[reassoc (attr := simp)]
