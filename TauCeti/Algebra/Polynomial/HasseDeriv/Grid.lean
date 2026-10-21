@@ -31,7 +31,7 @@ nonvanishing on rectangular integer grids.
 * `TauCeti.Grid.Polynomial.exists_eval_hasseDeriv_intCast_ne_zero`: for nonzero `p : R[X]` of
   degree `≤ s` and `B > 0`, there exist `z : ℤ` and `i : ℕ` with `|z| ≤ B`, `i ≤ s / B`, and
   `(hasseDeriv i p).eval (z : R) ≠ 0`.
-* `TauCeti.Grid.Polynomial.lt_two_mul_floor_add_one_mul_floor_div_add_one`: the number of
+* `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`: the number of
   integer points times the number of allowed derivative orders exceeds the degree bound.
 
 ## References
@@ -42,7 +42,7 @@ nonvanishing on rectangular integer grids.
 
 public section
 
-namespace TauCeti.Grid
+namespace TauCeti
 
 /-- The integer grid `[-⌊B⌋₊, ⌊B⌋₊]` has `2 * ⌊B⌋₊ + 1` distinct images in any
 characteristic-zero additive group with one. -/
@@ -58,12 +58,6 @@ theorem natAbs_le_of_mem_Icc_floor {B : ℝ} (hB : 0 ≤ B) {z : ℤ}
   obtain ⟨hz1, hz2⟩ := Finset.mem_Icc.1 hz
   exact (Nat.cast_le.2 (by omega : z.natAbs ≤ ⌊B⌋₊)).trans (Nat.floor_le hB)
 
-namespace Polynomial
-
-open _root_.Polynomial
-
-variable {R : Type*}
-
 /-- For any degree bound `s : ℕ` and positive parameter `B : ℝ`, the number of integer grid points
 in `[-⌊B⌋₊, ⌊B⌋₊]` times the number of derivative orders in `[0, ⌊s / B⌋₊]` strictly exceeds
 `s`. -/
@@ -77,6 +71,12 @@ theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (s : ℕ) {B : ℝ} (hB :
       _ < (2 * (⌊B⌋₊ : ℝ) + 1) * ((⌊(s : ℝ) / B⌋₊ : ℝ) + 1) :=
           mul_lt_mul'' h1 h2 hB.le (div_nonneg (Nat.cast_nonneg s) hB.le)
   exact_mod_cast h3
+
+namespace Grid.Polynomial
+
+open _root_.Polynomial
+
+variable {R : Type*}
 
 /-- A nonzero polynomial has a nonvanishing Hasse derivative of order at most `N` at a point
 of `S` whenever `S.card * (N + 1)` exceeds its degree. -/
@@ -139,6 +139,6 @@ example : (X ^ 2 - X : (ZMod 2)[X]) ≠ 0 ∧
     generalize (z : ZMod 2) = x
     fin_cases x <;> rfl
 
-end Polynomial
+end Grid.Polynomial
 
-end TauCeti.Grid
+end TauCeti

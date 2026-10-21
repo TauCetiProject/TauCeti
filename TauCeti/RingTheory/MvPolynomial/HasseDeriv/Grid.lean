@@ -132,7 +132,7 @@ theorem exists_eval_hasseDeriv_intCast_ne_zero {σ : Type*} [Finite σ] [CommRin
     (fun j ↦ by
       rw [card_intCast_Icc_floor]
       exact (hs j).trans_lt
-        (Polynomial.lt_two_mul_floor_add_one_mul_floor_div_add_one (s j) (hB j)))
+        (lt_two_mul_floor_add_one_mul_floor_div_add_one (s j) (hB j)))
   choose z hz hzx using fun j ↦ Finset.mem_map.1 (hx j)
   refine ⟨z, i, ?_, ?_, ?_⟩
   · exact fun j ↦ natAbs_le_of_mem_Icc_floor (hB j).le (hz j)
