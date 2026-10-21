@@ -182,15 +182,14 @@ theorem commute_brauerActionOrth_piTensorProductMap {A : Matrix (Fin n) (Fin n) 
     rw [← key]
     exact Finset.sum_congr rfl fun w _ => Finset.sum_congr rfl fun w' _ => by ring
   have horth : Tᵀ * T = 1 := by
-    ext v u
-    simp only [T, Matrix.mul_apply, Matrix.transpose_apply, Matrix.of_apply,
-      ← Finset.prod_mul_distrib]
-    rw [← Fintype.prod_sum fun i c => A c (v i) * A c (u i)]
-    have hcol : ∀ i, ∑ c, A c (v i) * A c (u i) = (1 : Matrix (Fin n) (Fin n) R) (v i) (u i) :=
-      fun i => by simp [← hA, Matrix.mul_apply]
-    simp only [hcol, Matrix.one_apply, Fintype.prod_boole, funext_iff]
-    -- The two sides decide `∀ i, v i = u i` through different instances.
-    congr 1
+    -- `Tᵀ` is the matrix of `Aᵀ ⊗ ⋯ ⊗ Aᵀ`, so this is the functoriality of `PiTensorProduct.map`.
+    have hTt : Tᵀ = Matrix.of fun v u => ∏ i, Aᵀ (v i) (u i) := by
+      ext v u
+      simp [T]
+    rw [hTt, ← toMatrix_piTensorProductMap,
+      show T = _ from (toMatrix_piTensorProductMap R n k A).symm, ← LinearMap.toMatrix_comp,
+      ← PiTensorProduct.map_comp, ← Matrix.mulVecLin_mul, hA, Matrix.mulVecLin_one,
+      PiTensorProduct.map_id, LinearMap.toMatrix_id]
   have hcomm : M * T = T * M := by
     calc M * T = T * M * Tᵀ * T := by rw [hconj]
       _ = T * M := by rw [Matrix.mul_assoc (T * M), horth, Matrix.mul_one]
