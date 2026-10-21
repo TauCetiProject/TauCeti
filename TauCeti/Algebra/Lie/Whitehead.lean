@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Lie.Cochain
 import TauCeti.Algebra.Lie.Extension
 import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
 import TauCeti.Algebra.Lie.LeviDecomposition.Abelian
+import TauCeti.Algebra.Lie.Quotient
 
 /-!
 # Whitehead's lemmas
@@ -116,7 +117,7 @@ theorem exists_eq_lie_of_d₁₂_eq_zero {f : oneCochain K L M} (hf : d₁₂ K 
   let D : LieDerivation K L M :=
     { toLinearMap := f
       leibniz' x y := by
-        have h : d₁₂ K L M f x y = 0 := by rw [hf]; rfl
+        have h : d₁₂ K L M f x y = 0 := by simp [hf, ← twoCochain_val_apply]
         rw [d₁₂_apply_apply, sub_eq_zero] at h
         exact h.symm }
   obtain ⟨m, hm⟩ := LieDerivation.IsKilling.exists_eq_inner D
@@ -132,24 +133,15 @@ theorem exists_d₁₂_eq (c : twoCocycle K L M) : ∃ f : oneCochain K L M, d�
     isKilling_of_equiv (p.quotKerEquivOfSurjective (ofTwoCocycle.proj_surjective c)).symm
   obtain ⟨S, hS⟩ := p.ker.exists_lieSubalgebra_isCompl_of_isLieAbelian
   -- The projection identifies the Levi complement `S` with `L`.
-  have hinj : Function.Injective (p.comp S.incl) := by
-    rw [← LieHom.coe_toLinearMap, ← LinearMap.ker_eq_bot, eq_bot_iff]
-    intro s hs
-    simpa using (Submodule.disjoint_def.1 hS.disjoint) _ (LieHom.mem_ker.2 hs) s.2
-  have hsurj : Function.Surjective (p.comp S.incl) := by
-    intro x
-    obtain ⟨y, rfl⟩ := ofTwoCocycle.proj_surjective c x
-    obtain ⟨i, hi, s, hs, rfl⟩ := Submodule.mem_sup.1 (hS.sup_eq_top ▸ Submodule.mem_top (x := y))
-    refine ⟨⟨s, hs⟩, ?_⟩
-    rw [LieHom.comp_apply, LieSubalgebra.coe_incl, map_add, LieHom.mem_ker.1 hi, zero_add]
-  let e := LieEquiv.ofBijective _ ⟨hinj, hsurj⟩
+  let e : S ≃ₗ⁅K⁆ L := (p.ker.quotientEquivOfIsCompl S hS).symm.trans
+    (p.quotKerEquivOfSurjective (ofTwoCocycle.proj_surjective c))
   -- The inverse identification is a Lie section `x ↦ (x, g x)` of `p`.
   let g : oneCochain K L M := LinearMap.snd K L M ∘ₗ (ofProdLinearEquiv c).symm.toLinearMap ∘ₗ
     S.toSubmodule.subtype ∘ₗ (e.symm : L →ₗ⁅K⁆ S).toLinearMap
   have hg (z : L) : g z = ((ofProd c).symm (e.symm z : ofTwoCocycle c)).2 := by simp [g]
+  have he (s : S) : e s = p s := by simp [e]
   have hfst (z : L) : ((ofProd c).symm (e.symm z : ofTwoCocycle c)).1 = z := by
-    rw [← ofTwoCocycle.proj_apply]
-    exact e.apply_symm_apply z
+    simpa [p] using (he (e.symm z)).symm.trans (e.apply_symm_apply z)
   -- That the section preserves brackets says exactly that `c = d₁₂ (-g)`.
   refine ⟨-g, ?_⟩
   ext x y
@@ -164,6 +156,6 @@ in a finite-dimensional module, are exactly the coboundaries. -/
 theorem twoCocycle_eq_range_d₁₂ : twoCocycle K L M = LinearMap.range (d₁₂ K L M) := by
   refine le_antisymm (fun c hc ↦ exists_d₁₂_eq ⟨c, hc⟩) ?_
   rintro _ ⟨f, rfl⟩
-  rw [twoCocycle, LinearMap.mem_ker, ← LinearMap.comp_apply, d₂₃_comp_d₁₂, LinearMap.zero_apply]
+  rw [mem_twoCocycle_iff, ← LinearMap.comp_apply, d₂₃_comp_d₁₂, LinearMap.zero_apply]
 
 end LieModule.Cohomology

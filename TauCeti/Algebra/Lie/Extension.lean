@@ -64,7 +64,7 @@ def proj : ofTwoCocycle c →ₗ⁅R⁆ L where
 lemma proj_apply (x : ofTwoCocycle c) : proj c x = ((ofProd c).symm x).1 := (rfl)
 
 lemma proj_surjective : Function.Surjective (proj c) :=
-  fun x ↦ ⟨ofProd c (x, 0), (rfl)⟩
+  fun x ↦ ⟨ofProd c (x, 0), by simp⟩
 
 lemma mem_ker_proj {x : ofTwoCocycle c} : x ∈ (proj c).ker ↔ ((ofProd c).symm x).1 = 0 :=
   LieHom.mem_ker
