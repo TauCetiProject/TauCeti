@@ -15,9 +15,10 @@ Let `μ` be a measure on the real line and let `φ ≤ 1` on `(a, ∞)`. If the 
 of `φ` over `(a, ∞)` is at most the weight of `(a, ρ]`, the same comparison holds after
 intersecting both domains with any initial segment of `(a, ∞)`.
 
-`TauCeti.setLIntegral_le_of_lintegral_le` supplies this comparison without measurability
-assumptions on the weight, density, or initial segment. Applied along each ray, it compares a
-radial density with the indicator of a ball on sets star-shaped about the origin.
+`TauCeti.setLIntegral_indicator_mul_le_setLIntegral_indicator_inter_Iic`
+supplies this comparison without measurability assumptions on the weight, density, or initial
+segment. Applied along each ray, it compares a radial density with the indicator of a ball on sets
+star-shaped about the origin.
 
 ## References
 
@@ -38,7 +39,8 @@ open scoped ENNReal
 against a weight `w` is at most the weight of `(a, ρ]`, then its integral over `R` is at most
 the weight of `R ∩ (a, ρ]`. The measure is arbitrary, and no measurability assumptions on
 `w`, `φ`, or `R` are needed. -/
-theorem setLIntegral_le_of_lintegral_le {μ : Measure ℝ} {a ρ : ℝ} {w φ : ℝ → ℝ≥0∞}
+theorem setLIntegral_indicator_mul_le_setLIntegral_indicator_inter_Iic
+    {μ : Measure ℝ} {a ρ : ℝ} {w φ : ℝ → ℝ≥0∞}
     {R : Set ℝ} (hφ : ∀ r ∈ Ioi a, φ r ≤ 1)
     (hmass : ∫⁻ r in Ioi a, w r * φ r ∂μ ≤ ∫⁻ r in Ioi a, (Iic ρ).indicator w r ∂μ)
     (hR : ∀ ⦃r s⦄, a < s → s ≤ r → r ∈ R → s ∈ R) :
