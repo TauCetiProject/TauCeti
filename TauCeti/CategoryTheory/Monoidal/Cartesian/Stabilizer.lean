@@ -24,7 +24,8 @@ When `G` is a group object, the stabilizer of `x` is the fiber over `x` itself. 
 are the stabilizer, in the group `T ⟶ G`, of the point `x` restricted to `T`. These subgroups
 form a presheaf of groups
 represented by the stabilizer, so Mathlib's `GrpObj.ofRepresentableBy` makes the stabilizer
-a group object; its inclusion into `G` is a monoid morphism. The stabilizer is also the
+a group object. Mathlib's `yonedaGrpObjIsoOfRepresentableBy` supplies its group equivalence
+on each test object; its inclusion into `G` is a monoid morphism. The stabilizer is also the
 equalizer of the orbit morphism and the constant morphism at `x`. The orbit morphism is
 `TauCeti.orbitMap`.
 
@@ -107,7 +108,7 @@ theorem mul_comp_orbitMap_of_mem (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
 
 /-- Conjugating by a translate: a `T`-point stabilizing `h • x` conjugates to one
 stabilizing `x`. -/
-theorem conj_mem_stabilizerPoints_smul (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
+theorem inv_conj_mem_stabilizerPoints_of_mem_smul (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
     (hg : g ∈ stabilizerPoints G (h • x) T) :
     (toUnit T ≫ h)⁻¹ * g * (toUnit T ≫ h) ∈ stabilizerPoints G x T := by
   simpa only [MulAction.stabilizerEquivStabilizer_symm_apply, MulAut.conj_apply, inv_inv] using
@@ -115,7 +116,7 @@ theorem conj_mem_stabilizerPoints_smul (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
 
 /-- Conjugating the other way: a `T`-point stabilizing `x` conjugates to one stabilizing
 `h • x`. -/
-theorem conj_mem_stabilizerPoints_of_mem (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
+theorem conj_mem_stabilizerPoints_smul (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
     (hg : g ∈ stabilizerPoints G x T) :
     (toUnit T ≫ h) * g * (toUnit T ≫ h)⁻¹ ∈ stabilizerPoints G (h • x) T := by
   simpa only [MulAction.stabilizerEquivStabilizer_apply, MulAut.conj_apply] using
@@ -257,9 +258,9 @@ instance : IsMonHom (incl G x) where
     ext <;> simp
 
 /-- The `T`-points of the stabilizer are the stabilizing `T`-points of `G`, as groups. -/
-def homMulEquiv (T : C) : (T ⟶ stabilizer G x) ≃* stabilizerPoints G x T where
-  toEquiv := (representableBy G x).homEquiv
-  map_mul' s t := Subtype.ext (MonObj.mul_comp s t (incl G x))
+def homMulEquiv (T : C) : (T ⟶ stabilizer G x) ≃* stabilizerPoints G x T :=
+  ((yonedaGrpObjIsoOfRepresentableBy (stabilizer G x) (pointsPresheaf G x)
+    (representableBy G x)).app (op T)).groupIsoToMulEquiv
 
 @[simp]
 theorem homMulEquiv_apply_coe {T : C} (s : T ⟶ stabilizer G x) :
@@ -324,46 +325,84 @@ theorem fiberSmulIso_inv_incl [HasPullback (orbitMap G x) (h • x)] :
 
 variable [HasPullback (orbitMap G (h • x)) (h • x)]
 
+/-- The forward conjugation map, before proving its inverse laws. -/
+private def conjugationHom : stabilizer G (h • x) ⟶ stabilizer G x :=
+  stabilizer.lift G x _
+    (inv_conj_mem_stabilizerPoints_of_mem_smul G x h (incl_mem G (h • x)))
+
+/-- The inverse conjugation map, before proving its inverse laws. -/
+private def conjugationInv : stabilizer G x ⟶ stabilizer G (h • x) :=
+  stabilizer.lift G (h • x) _
+    (conj_mem_stabilizerPoints_smul G x h (incl_mem G x))
+
+/-- Restriction of the forward map is conjugation by the inverse restricted point. -/
+private theorem comp_conjugationHom_incl {T : C} (s : T ⟶ stabilizer G (h • x)) :
+    s ≫ conjugationHom G x h ≫ incl G x =
+      (MulAut.conj (toUnit T ≫ h)).symm (s ≫ incl G (h • x)) := by
+  simp [conjugationHom, MulAut.conj_symm_apply, MonObj.comp_mul, GrpObj.comp_inv]
+
+/-- Restriction of the inverse map is conjugation by the restricted point. -/
+private theorem comp_conjugationInv_incl {T : C} (s : T ⟶ stabilizer G x) :
+    s ≫ conjugationInv G x h ≫ incl G (h • x) =
+      (MulAut.conj (toUnit T ≫ h)) (s ≫ incl G x) := by
+  simp [conjugationInv, MulAut.conj_apply, MonObj.comp_mul, GrpObj.comp_inv]
+
+private theorem conjugationHom_incl :
+    conjugationHom G x h ≫ incl G x =
+      (MulAut.conj (toUnit (stabilizer G (h • x)) ≫ h)).symm (incl G (h • x)) := by
+  simpa using comp_conjugationHom_incl G x h (𝟙 _)
+
+private theorem conjugationInv_incl :
+    conjugationInv G x h ≫ incl G (h • x) =
+      (MulAut.conj (toUnit (stabilizer G x) ≫ h)) (incl G x) := by
+  simpa using comp_conjugationInv_incl G x h (𝟙 _)
+
 /-- The stabilizers of `x` and of its translate `h • x` are isomorphic, by conjugation with
 `h`: a point `g` stabilizing `h • x` corresponds to `h⁻¹ * g * h`, which stabilizes `x`. -/
 def smulIso : stabilizer G (h • x) ≅ stabilizer G x where
-  hom := stabilizer.lift G x _
-    (conj_mem_stabilizerPoints_smul G x h (incl_mem G (h • x)))
-  inv := stabilizer.lift G (h • x) _
-    (conj_mem_stabilizerPoints_of_mem G x h (incl_mem G x))
+  hom := conjugationHom G x h
+  inv := conjugationInv G x h
   hom_inv_id := by
     apply (cancel_mono (incl G (h • x))).1
-    simp only [Category.assoc, lift_incl, MonObj.comp_mul, GrpObj.comp_inv,
-      comp_toUnit_assoc, Category.id_comp]
-    simpa only [MulAut.conj_apply, MulAut.conj_symm_apply] using
-      (MulAut.conj (toUnit (stabilizer G (h • x)) ≫ h)).apply_symm_apply (incl G (h • x))
+    rw [Category.assoc, comp_conjugationInv_incl, conjugationHom_incl, Category.id_comp]
+    exact (MulAut.conj (toUnit (stabilizer G (h • x)) ≫ h)).apply_symm_apply _
   inv_hom_id := by
     apply (cancel_mono (incl G x)).1
-    simp only [Category.assoc, lift_incl, MonObj.comp_mul, GrpObj.comp_inv,
-      comp_toUnit_assoc, Category.id_comp]
-    simpa only [MulAut.conj_apply, MulAut.conj_symm_apply] using
-      (MulAut.conj (toUnit (stabilizer G x) ≫ h)).symm_apply_apply (incl G x)
+    rw [Category.assoc, comp_conjugationHom_incl, conjugationInv_incl, Category.id_comp]
+    exact (MulAut.conj (toUnit (stabilizer G x) ≫ h)).symm_apply_apply _
 
 @[reassoc (attr := simp)]
 theorem smulIso_hom_incl :
     (smulIso G x h).hom ≫ incl G x =
       (toUnit _ ≫ h)⁻¹ * incl G (h • x) * (toUnit _ ≫ h) := by
-  simp [smulIso]
+  simpa only [smulIso, MulAut.conj_symm_apply] using conjugationHom_incl G x h
 
 @[reassoc (attr := simp)]
 theorem smulIso_inv_incl :
     (smulIso G x h).inv ≫ incl G (h • x) =
       (toUnit _ ≫ h) * incl G x * (toUnit _ ≫ h)⁻¹ := by
-  simp [smulIso]
+  simpa only [smulIso, MulAut.conj_apply] using conjugationInv_incl G x h
+
+/-- On arbitrary test-object points, the forward map conjugates by the inverse of `h`. -/
+theorem comp_smulIso_hom_incl {T : C} (s : T ⟶ stabilizer G (h • x)) :
+    s ≫ (smulIso G x h).hom ≫ incl G x =
+      (toUnit T ≫ h)⁻¹ * (s ≫ incl G (h • x)) * (toUnit T ≫ h) := by
+  simpa only [smulIso, MulAut.conj_symm_apply] using comp_conjugationHom_incl G x h s
+
+/-- On arbitrary test-object points, the inverse map conjugates by `h`. -/
+theorem comp_smulIso_inv_incl {T : C} (s : T ⟶ stabilizer G x) :
+    s ≫ (smulIso G x h).inv ≫ incl G (h • x) =
+      (toUnit T ≫ h) * (s ≫ incl G x) * (toUnit T ≫ h)⁻¹ := by
+  simpa only [smulIso, MulAut.conj_apply] using comp_conjugationInv_incl G x h s
 
 /-- Composing with the conjugation isomorphism preserves products of `T`-points. -/
 theorem mul_comp_smulIso_hom {T : C} (s t : T ⟶ stabilizer G (h • x)) :
     (s * t) ≫ (smulIso G x h).hom = s ≫ (smulIso G x h).hom * t ≫ (smulIso G x h).hom := by
   apply (cancel_mono (incl G x)).1
-  simp only [Category.assoc, MonObj.mul_comp _ _ (incl G x), smulIso_hom_incl, MonObj.comp_mul,
-    GrpObj.comp_inv, comp_toUnit_assoc, MonObj.mul_comp s t (incl G (h • x))]
-  simpa only [MulAut.conj_apply, MulAut.conj_symm_apply] using
-    (MulAut.conj (toUnit T ≫ h)).symm.map_mul (s ≫ incl G (h • x)) (t ≫ incl G (h • x))
+  change ((s * t) ≫ conjugationHom G x h) ≫ incl G x =
+    (s ≫ conjugationHom G x h * t ≫ conjugationHom G x h) ≫ incl G x
+  simp only [Category.assoc, comp_conjugationHom_incl, MonObj.mul_comp]
+  exact (MulAut.conj (toUnit T ≫ h)).symm.map_mul _ _
 
 /-- Conjugation is a morphism of group objects. Its inverse is one too, by Mathlib's instance
 for inverses of monoid isomorphisms. -/
@@ -371,10 +410,9 @@ instance : IsMonHom (smulIso G x h).hom where
   one_hom := by
     rw [MonObj.one_eq_one, MonObj.one_eq_one]
     apply (cancel_mono (incl G x)).1
-    simp only [Category.assoc, smulIso_hom_incl, MonObj.comp_mul, GrpObj.comp_inv,
-      comp_toUnit_assoc, MonObj.one_comp (incl G x), MonObj.one_comp (incl G (h • x))]
-    simpa only [MulAut.conj_apply, MulAut.conj_symm_apply] using
-      (MulAut.conj (toUnit (𝟙_ C) ≫ h)).symm.map_one
+    change (1 ≫ conjugationHom G x h) ≫ incl G x = 1 ≫ incl G x
+    simp only [Category.assoc, comp_conjugationHom_incl, MonObj.one_comp]
+    exact (MulAut.conj (toUnit (𝟙_ C) ≫ h)).symm.map_one
   mul_hom := by
     rw [MonObj.mul_eq_mul, MonObj.mul_eq_mul, mul_comp_smulIso_hom, MonObj.comp_mul,
       tensorHom_fst, tensorHom_snd]
