@@ -29,6 +29,8 @@ Borel measurable structure on the scalar field.
 ## Additional results
 
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
+  over the vertices weighted by its coordinates, at distance at most `√(1 - ‖x‖ ^ 2)` from them.
 * `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
   `𝕜 × 𝕜ⁿ`.
 -/
@@ -46,6 +48,39 @@ variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
 theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
   Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
+
+/-- For a vector `x` whose coordinates sum to one, the `x`-weighted mean squared distance from
+`x` to the standard basis vectors is `1 - ‖x‖ ^ 2`. -/
+theorem sum_mul_dist_basisFun_sq {x : EuclideanSpace ℝ ι} (hx1 : ∑ i, x i = 1) :
+    ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) ^ 2 = 1 - ‖x‖ ^ 2 := by
+  classical
+  have hdist (i : ι) :
+      dist x (EuclideanSpace.basisFun ι ℝ i) ^ 2 = ‖x‖ ^ 2 - 2 * x i + 1 := by
+    rw [EuclideanSpace.basisFun_apply, dist_eq_norm, norm_sub_sq_real,
+      EuclideanSpace.inner_single_right]
+    simp
+  simp_rw [hdist, mul_add, mul_sub, mul_one, Finset.sum_add_distrib, Finset.sum_sub_distrib,
+    ← Finset.sum_mul, hx1, EuclideanSpace.real_norm_sq_eq x]
+  have hsq : ∑ i, x i * (2 * x i) = 2 * ∑ i, x i ^ 2 := by
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ by ring
+  rw [hsq]
+  ring
+
+/-- A point `x` of the standard simplex is, on average over the vertices weighted by its own
+coordinates, at distance at most `√(1 - ‖x‖ ^ 2)` from them. -/
+theorem sum_mul_dist_basisFun_le_sqrt {x : EuclideanSpace ℝ ι} (hx0 : ∀ i, 0 ≤ x i)
+    (hx1 : ∑ i, x i = 1) :
+    ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) ≤ √(1 - ‖x‖ ^ 2) := by
+  apply Real.le_sqrt_of_sq_le
+  calc
+    (∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i)) ^ 2 ≤
+        (∑ i, x i) * ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) ^ 2 := by
+      apply Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul Finset.univ
+      · exact fun i _ ↦ hx0 i
+      · exact fun i _ ↦ mul_nonneg (hx0 i) (sq_nonneg _)
+      · exact fun i _ ↦ le_of_eq (by ring)
+    _ = 1 - ‖x‖ ^ 2 := by rw [hx1, one_mul, sum_mul_dist_basisFun_sq hx1]
 
 variable [RCLike 𝕜]
 

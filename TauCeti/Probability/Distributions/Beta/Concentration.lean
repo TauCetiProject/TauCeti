@@ -78,51 +78,20 @@ theorem tendsto_betaMeasure_concentration_atBot {p : ℝ} (hp : p ∈ Ioo 0 1) :
           ProbabilityMeasure ℝ)) atBot
       (𝓝 (⟨bernoulliMeasure (1 : ℝ) 0 ⟨p, hp.1.le, hp.2.le⟩, inferInstance⟩ :
         ProbabilityMeasure ℝ)) := by
-  let pnn : ℝ≥0 := ⟨p, hp.1.le⟩
-  let qnn : ℝ≥0 := ⟨1 - p, sub_nonneg.mpr hp.2.le⟩
-  have htotal : pnn + qnn = 1 := by
-    apply NNReal.eq
-    simp only [NNReal.coe_add, NNReal.coe_one]
-    change p + (1 - p) = 1
-    ring
+  let q : unitInterval := ⟨p, hp.1.le, hp.2.le⟩
   let w : Convexity.StdSimplex ℝ≥0 (Fin 2) :=
-    .duple 0 1 (s := pnn) (t := qnn) (by positivity) (by positivity) htotal
-  have hwweights : w.weights = Finsupp.single 0 pnn + Finsupp.single 1 qnn := by
-    simpa only [w] using Convexity.StdSimplex.weights_duple 0 1
-      (by positivity : 0 ≤ pnn) (by positivity : 0 ≤ qnn) htotal
-  have hw0 : (w.weights 0 : ℝ) = p := by
-    rw [hwweights]
-    rw [Finsupp.add_apply, Finsupp.single_eq_same]
-    have h10 : (Finsupp.single (1 : Fin 2) qnn) 0 = 0 :=
-      Finsupp.single_eq_of_ne (by decide)
-    rw [h10, add_zero]
-    rfl
-  have hw1 : (w.weights 1 : ℝ) = 1 - p := by
-    rw [hwweights]
-    rw [Finsupp.add_apply]
-    have h01 : (Finsupp.single (0 : Fin 2) pnn) 1 = 0 :=
-      Finsupp.single_eq_of_ne (by decide)
-    rw [h01, Finsupp.single_eq_same, zero_add]
-    rfl
+    .duple 0 1 zero_le zero_le (unitInterval.toNNReal_add_toNNReal_symm q)
+  have hw0 : (w.weights 0 : ℝ) = p := by simp [w, q]
+  have hw1 : (w.weights 1 : ℝ) = 1 - p := by simp [w, q]
   have hw (i : Fin 2) : 0 < w.weights i := by
+    rw [← NNReal.coe_pos]
     fin_cases i
-    · exact_mod_cast (show 0 < (w.weights 0 : ℝ) by rw [hw0]; exact hp.1)
-    · exact_mod_cast (show 0 < (w.weights 1 : ℝ) by rw [hw1]; exact sub_pos.mpr hp.2)
-  have hweight0 : w.weights 0 = unitInterval.toNNReal ⟨p, hp.1.le, hp.2.le⟩ := by
-    apply NNReal.eq
-    simpa using hw0
-  have hweight1 : w.weights 1 = unitInterval.toNNReal (unitInterval.symm
-      ⟨p, hp.1.le, hp.2.le⟩) := by
-    apply NNReal.eq
-    rw [hw1]
-    simp
+    · simpa [hw0] using hp.1
+    · simpa [hw1] using hp.2
   have h := (ProbabilityMeasure.continuous_map
     (f := fun x : EuclideanSpace ℝ (Fin 2) ↦ x 0) (by fun_prop)).tendsto
-      (⟨∑ i, w.weights i • Measure.dirac (EuclideanSpace.basisFun (Fin 2) ℝ i),
-        TauCeti.isProbabilityMeasure_sum_smul_dirac w.total_of_fintype
-          (EuclideanSpace.basisFun (Fin 2) ℝ)⟩ :
-        ProbabilityMeasure (EuclideanSpace ℝ (Fin 2))) |>.comp
-          (tendsto_dirichletMeasure_concentration_atBot w hw)
+      ((categoricalMeasure w).map (EuclideanSpace.basisFun (Fin 2) ℝ)).toProbabilityMeasure
+        |>.comp (tendsto_dirichletMeasure_concentration_atBot w hw)
   have hmap (c : Ioi (0 : ℝ)) :
       ProbabilityMeasure.map (⟨dirichletMeasure
           (fun i ↦ (c : ℝ) * (w.weights i : ℝ)),
@@ -134,35 +103,20 @@ theorem tendsto_betaMeasure_concentration_atBot {p : ℝ} (hp : p ∈ Ioo 0 1) :
         isProbabilityMeasureBeta (mul_pos c.2 hp.1) (mul_pos c.2 (sub_pos.mpr hp.2))⟩ :
           ProbabilityMeasure ℝ) := by
     apply ProbabilityMeasure.toMeasure_injective
-    change Measure.map (fun x : EuclideanSpace ℝ (Fin 2) ↦ x 0)
-        (dirichletMeasure (fun i ↦ (c : ℝ) * (w.weights i : ℝ))) =
-      betaMeasure ((c : ℝ) * p) ((c : ℝ) * (1 - p))
-    have ha (i : Fin 2) : 0 < (c : ℝ) * (w.weights i : ℝ) :=
-      mul_pos c.2 (by exact_mod_cast hw i)
-    calc
-      _ = betaMeasure ((c : ℝ) * (w.weights 0 : ℝ))
-          ((c : ℝ) * (w.weights 1 : ℝ)) :=
-        map_eval_zero_dirichletMeasure_fin_two
-          (a := fun i ↦ (c : ℝ) * (w.weights i : ℝ)) ha
-      _ = _ := by rw [hw0, hw1]
+    refine (ProbabilityMeasure.toMeasure_map _).trans ?_
+    exact (map_eval_zero_dirichletMeasure_fin_two
+      fun i ↦ mul_pos c.2 (by exact_mod_cast hw i)).trans
+        (by rw [hw0, hw1, ProbabilityMeasure.coe_mk])
+  have hcat : categoricalMeasure w = bernoulliMeasure 0 1 q := by
+    simp [categoricalMeasure_def, bernoulliMeasure_def, Fin.sum_univ_two, w]
   have hlimit :
       ProbabilityMeasure.map
-          (⟨∑ i, w.weights i • Measure.dirac (EuclideanSpace.basisFun (Fin 2) ℝ i),
-            TauCeti.isProbabilityMeasure_sum_smul_dirac w.total_of_fintype
-              (EuclideanSpace.basisFun (Fin 2) ℝ)⟩ :
-            ProbabilityMeasure (EuclideanSpace ℝ (Fin 2)))
+          ((categoricalMeasure w).map (EuclideanSpace.basisFun (Fin 2) ℝ)).toProbabilityMeasure
           (fun x : EuclideanSpace ℝ (Fin 2) ↦ x 0) =
-        (⟨bernoulliMeasure (1 : ℝ) 0 ⟨p, hp.1.le, hp.2.le⟩, inferInstance⟩ :
-          ProbabilityMeasure ℝ) := by
+        (⟨bernoulliMeasure (1 : ℝ) 0 q, inferInstance⟩ : ProbabilityMeasure ℝ) := by
     apply ProbabilityMeasure.toMeasure_injective
-    change Measure.map (fun x : EuclideanSpace ℝ (Fin 2) ↦ x 0)
-        (∑ i, w.weights i • Measure.dirac (EuclideanSpace.basisFun (Fin 2) ℝ i)) =
-      bernoulliMeasure (1 : ℝ) 0 ⟨p, hp.1.le, hp.2.le⟩
-    rw [Measure.map_finset_sum' (by fun_prop), Fin.sum_univ_two,
-      Measure.map_smul _ (by fun_prop), Measure.map_smul _ (by fun_prop),
-      Measure.map_dirac' (by fun_prop), Measure.map_dirac' (by fun_prop),
-      EuclideanSpace.basisFun_apply]
-    simp [hweight0, hweight1, bernoulliMeasure_def]
+    refine (ProbabilityMeasure.toMeasure_map _).trans ?_
+    simp [hcat, map_bernoulliMeasure]
   rw [hlimit] at h
   exact h.congr (fun c ↦ hmap c)
 
