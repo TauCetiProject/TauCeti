@@ -112,6 +112,16 @@ theorem resolventCoeff_succ' (u : C₀(I, R) →L[R] C₀(I, R)) (m : ℕ) :
   rw [resolventCoeff_def, resolventCoeff_def]
   exact TauCeti.sum_range_succ_smul_pow_sub' u.matrixCoeff.charCoeff u m
 
+omit [DiscreteTopology I] [DecidableEq I] in
+/-- A scalar multiple of an operator commuting with `w` commutes with `w`. This is
+`Commute.smul_left`, which does not apply here: instance search finds `Algebra R (C₀(I, R) →L[R]
+C₀(I, R))` but not the derived `IsScalarTower` and `SMulCommClass` instances on the operator ring,
+so the proof uses `Algebra.smul_mul_assoc` and `Algebra.mul_smul_comm` directly. -/
+private theorem commute_smul_left {v w : C₀(I, R) →L[R] C₀(I, R)} (h : Commute v w) (a : R) :
+    Commute (a • v) w :=
+  (Algebra.smul_mul_assoc a v w).trans <|
+    (congrArg (a • ·) h.eq).trans (Algebra.mul_smul_comm a w v).symm
+
 /-- Each coefficient of the Fredholm resolvent commutes with the operator. -/
 theorem commute_resolventCoeff (u : C₀(I, R) →L[R] C₀(I, R)) (m : ℕ) :
     Commute u (u.resolventCoeff m) := by
@@ -155,7 +165,8 @@ private theorem pow_succ_smul_resolventCoeff_succ (u : C₀(I, R) →L[R] C₀(I
       (a • u) * (a ^ m • u.resolventCoeff m) +
         (PowerSeries.coeff (m + 1) u.matrixCoeff.charPowerSeries • a ^ (m + 1)) • 1 := by
   refine ContinuousLinearMap.ext fun x ↦ ?_
-  simp [resolventCoeff_succ, map_smul]
+  simp only [resolventCoeff_succ, _root_.smul_apply, _root_.add_apply, one_apply_eq_self,
+    mul_apply_eq_comp, Matrix.coeff_charPowerSeries, smul_eq_mul, map_smul]
   module
 
 end Algebraic
@@ -308,17 +319,14 @@ theorem resolventAt_def (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
 /-- At the scalar `0` the Fredholm resolvent is the identity. -/
 @[simp]
 theorem resolventAt_zero (u : C₀(I, R) →L[R] C₀(I, R)) : u.resolventAt 0 = 1 := by
-  rw [resolventAt_def, tsum_eq_single 0 fun m hm ↦ ContinuousLinearMap.ext fun x ↦ by
-    simp [zero_pow hm]]
-  ext x
-  simp
+  rw [resolventAt, PowerSeries.evalScalar_at_zero, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
+    coeff_resolventSeries, resolventCoeff_zero]
 
 /-- The value of the Fredholm resolvent at a scalar commutes with the operator. -/
 theorem commute_resolventAt (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
     Commute u (u.resolventAt a) := by
   rw [resolventAt_def]
-  exact Commute.tsum_right u fun m ↦ (u.comp_smul _ _).trans <|
-    (congrArg (_ • ·) (u.commute_resolventCoeff m).eq).trans (smul_comp _ _ _).symm
+  exact Commute.tsum_right u fun m ↦ (commute_smul_left (u.commute_resolventCoeff m).symm _).symm
 
 /-- The value of the Fredholm resolvent at a scalar lies in the operator-norm closure of the
 polynomials in `u`. -/
@@ -367,9 +375,8 @@ theorem IsRowCompact.one_sub_smul_mul_resolventAt {u : C₀(I, R) →L[R] C₀(I
 theorem IsRowCompact.resolventAt_mul_one_sub_smul {u : C₀(I, R) →L[R] C₀(I, R)}
     (hu : u.IsRowCompact) (a : R) :
     u.resolventAt a * (1 - a • u) = u.matrixCoeff.charPowerSeries.evalAt a • 1 := by
-  have h : Commute (a • u) (u.resolventAt a) := (smul_comp _ _ _).trans <|
-    (congrArg (a • ·) (u.commute_resolventAt a).eq).trans (comp_smul _ _ _).symm
-  have h' := Commute.sub_left (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_left _) h
+  have h' := Commute.sub_left (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_left _)
+    (commute_smul_left (u.commute_resolventAt a) a)
   exact h'.eq.symm.trans (hu.one_sub_smul_mul_resolventAt a)
 
 /-- The operator `det (1 - a u)⁻¹ • V(a)` is a two-sided inverse of `1 - a u` when `det (1 - a u)`
@@ -380,10 +387,11 @@ private theorem IsRowCompact.mul_eq_one_of_isUnit {u : C₀(I, R) →L[R] C₀(I
       (Ring.inverse (u.matrixCoeff.charPowerSeries.evalAt a) • u.resolventAt a) * (1 - a • u) =
         1 := by
   have hh := Ring.inverse_mul_cancel _ ha
-  exact ⟨(comp_smul _ _ _).trans <| (congrArg (_ • ·) (hu.one_sub_smul_mul_resolventAt a)).trans <|
-      by rw [smul_smul, hh, one_smul],
-    (smul_comp _ _ _).trans <| (congrArg (_ • ·) (hu.resolventAt_mul_one_sub_smul a)).trans <|
-      by rw [smul_smul, hh, one_smul]⟩
+  set c := Ring.inverse (u.matrixCoeff.charPowerSeries.evalAt a)
+  refine ⟨(Algebra.mul_smul_comm c (1 - a • u) (u.resolventAt a)).trans ?_,
+    (Algebra.smul_mul_assoc c (u.resolventAt a) (1 - a • u)).trans ?_⟩
+  · rw [hu.one_sub_smul_mul_resolventAt, smul_smul, hh, one_smul]
+  · rw [hu.resolventAt_mul_one_sub_smul, smul_smul, hh, one_smul]
 
 /-- **Invertibility from the Fredholm determinant.** If `u` is row compact and the value
 `det (1 - a u)` of its Fredholm determinant at `a` is a unit, then `1 - a u` is invertible. -/
