@@ -144,27 +144,129 @@ private theorem measurableSet_image_smul_add_smul_gradient [MeasurableSpace E] [
   measurable_image_of_fderivWithin hs (fun _ hx => hasFDerivWithinAt_smul_add_smul_gradient hP t hx)
     (injOn_smul_add_smul_gradient hP ht₀ ht₁)
 
+section ChangeOfVariables
+
+variable {X : Type*} [MeasurableSpace X] (ρ : Measure X)
+
+/-- Let `T` be a measurable map and `J` a measurable function vanishing nowhere on a measurable set
+`S`, such that `ρ.withDensity g (T '' s) = ∫⁻ x in s, J x * g (T x) ∂ρ` for every measurable
+`s ⊆ S` and every `g`. Then `T` pushes `μ ≪ ρ` restricted to `S` to a measure absolutely continuous
+with respect to `ρ`. -/
+private theorem map_restrict_absolutelyContinuous_of_withDensity_image_eq {T : X → X}
+    (hT : Measurable T) {S : Set X} (hSm : MeasurableSet S) {J : X → ℝ≥0∞} (hJm : Measurable J)
+    (hJ : ∀ x ∈ S, J x ≠ 0)
+    (hcov : ∀ s, MeasurableSet s → s ⊆ S → ∀ g : X → ℝ≥0∞,
+      ρ.withDensity g (T '' s) = ∫⁻ x in s, J x * g (T x) ∂ρ)
+    {μ : Measure X} (hμ : μ ≪ ρ) :
+    (μ.restrict S).map T ≪ ρ := by
+  refine AbsolutelyContinuous.mk fun A hA hρA => ?_
+  set s := T ⁻¹' A ∩ S
+  have hs : MeasurableSet s := (hT hA).inter hSm
+  -- The image of `s` lies in the null set `A`, so `J` integrates to `0` over `s`, which is
+  -- therefore null.
+  have hint : ∫⁻ x in s, J x ∂ρ = 0 := by
+    have himage := hcov s hs inter_subset_right 1
+    rw [withDensity_one, measure_mono_null ((image_preimage_subset T A).trans' (image_mono
+      inter_subset_left)) hρA] at himage
+    simpa using himage.symm
+  have hρs : ρ s = 0 :=
+    measure_eq_zero_iff_ae_notMem.2 (((setLIntegral_eq_zero_iff hs hJm).1 hint).mono
+      fun x hx hxs => hJ x hxs.2 (hx hxs))
+  rw [map_apply hT hA, restrict_apply (hT hA)]
+  exact hμ hρs
+
+variable [SigmaFinite ρ]
+
+/-- Under the change of variables of `map_restrict_absolutelyContinuous_of_withDensity_image_eq`,
+with `T` injective on `S` and sending measurable subsets of `S` to measurable sets, `μ` restricted
+to `S` has density `J x * d((T)₊ (μ|S))/dρ (T x)` on `S`. -/
+private theorem restrict_eq_withDensity_indicator_rnDeriv_map_restrict {T : X → X}
+    (hT : Measurable T) {S : Set X} (hSm : MeasurableSet S) (hinj : InjOn T S)
+    (himage : ∀ s, MeasurableSet s → s ⊆ S → MeasurableSet (T '' s)) {J : X → ℝ≥0∞}
+    (hcov : ∀ s, MeasurableSet s → s ⊆ S → ∀ g : X → ℝ≥0∞,
+      ρ.withDensity g (T '' s) = ∫⁻ x in s, J x * g (T x) ∂ρ)
+    {μ : Measure X} [SFinite μ] (hac : (μ.restrict S).map T ≪ ρ) :
+    μ.restrict S =
+      ρ.withDensity (S.indicator fun x => J x * ((μ.restrict S).map T).rnDeriv ρ (T x)) := by
+  set ν := (μ.restrict S).map T
+  have hν : ρ.withDensity (ν.rnDeriv ρ) = ν := withDensity_rnDeriv_eq _ _ hac
+  ext s hs
+  have hsS : MeasurableSet (s ∩ S) := hs.inter hSm
+  have hTs := himage _ hsS inter_subset_right
+  calc μ.restrict S s = ν (T '' (s ∩ S)) := by
+        rw [restrict_apply hs, map_apply hT hTs, restrict_apply (hT hTs),
+          hinj.preimage_image_inter inter_subset_right]
+    _ = ρ.withDensity (ν.rnDeriv ρ) (T '' (s ∩ S)) := by rw [hν]
+    _ = ∫⁻ x in s ∩ S, J x * ν.rnDeriv ρ (T x) ∂ρ := hcov _ hsS inter_subset_right _
+    _ = _ := by rw [withDensity_apply _ hs, setLIntegral_indicator hSm, inter_comm S s]
+
+/-- Under the hypotheses of `restrict_eq_withDensity_indicator_rnDeriv_map_restrict`, with `J`
+positive and finite on `S`, integrals of a function `Φ` with `Φ 0 = 0` of the density of
+`(T)₊ (μ|S)` are integrals over `S`:
+`∫ Φ (d((T)₊ (μ|S))/dρ) dρ = ∫_S J x * Φ (dμ/dρ (x) / J x) dρ`. -/
+private theorem lintegral_comp_rnDeriv_map_restrict {T : X → X} (hT : Measurable T) {S : Set X}
+    (hSm : MeasurableSet S) (hinj : InjOn T S)
+    (himage : ∀ s, MeasurableSet s → s ⊆ S → MeasurableSet (T '' s)) {J : X → ℝ≥0∞}
+    (hJm : Measurable J) (hJ : ∀ x ∈ S, J x ≠ 0 ∧ J x ≠ ∞)
+    (hcov : ∀ s, MeasurableSet s → s ⊆ S → ∀ g : X → ℝ≥0∞,
+      ρ.withDensity g (T '' s) = ∫⁻ x in s, J x * g (T x) ∂ρ)
+    {μ : Measure X} [SFinite μ] (hac : (μ.restrict S).map T ≪ ρ) {Φ : ℝ≥0∞ → ℝ≥0∞}
+    (hΦ : Φ 0 = 0) :
+    ∫⁻ y, Φ (((μ.restrict S).map T).rnDeriv ρ y) ∂ρ =
+      ∫⁻ x in S, J x * Φ (μ.rnDeriv ρ x / J x) ∂ρ := by
+  set ν := (μ.restrict S).map T
+  set g := ν.rnDeriv ρ
+  have hν : ρ.withDensity g = ν := withDensity_rnDeriv_eq _ _ hac
+  have hTS := himage S hSm subset_rfl
+  -- `ν` is carried by `T '' S`, so `g` vanishes almost everywhere off it.
+  have hg0 : ∀ᵐ y ∂ρ, y ∈ (T '' S)ᶜ → g y = 0 := by
+    have hνc : ν (T '' S)ᶜ = 0 := by
+      rw [map_apply hT hTS.compl, restrict_apply (hT hTS.compl)]
+      exact measure_mono_null (fun x hx => (hx.1 (mem_image_of_mem T hx.2)).elim) measure_empty
+    rw [← setLIntegral_eq_zero_iff hTS.compl (measurable_rnDeriv ν ρ), ← withDensity_apply _
+      hTS.compl, hν, hνc]
+  -- The Jacobian equation on `S`: `dμ/dρ (x) = J x * g (T x)`.
+  have hJac : ∀ᵐ x ∂ρ, x ∈ S → g (T x) = μ.rnDeriv ρ x / J x := by
+    have h₁ := rnDeriv_restrict μ ρ hSm
+    rw [restrict_eq_withDensity_indicator_rnDeriv_map_restrict ρ hT hSm hinj himage hcov hac] at h₁
+    filter_upwards [h₁.symm.trans (rnDeriv_withDensity ρ
+      ((hJm.mul ((measurable_rnDeriv ν ρ).comp hT)).indicator hSm))] with x hx hxS
+    rw [indicator_of_mem hxS, indicator_of_mem hxS] at hx
+    rw [ENNReal.eq_div_iff (hJ x hxS).1 (hJ x hxS).2, hx]
+  calc ∫⁻ y, Φ (g y) ∂ρ = ∫⁻ y, (T '' S).indicator (fun y => Φ (g y)) y ∂ρ := by
+        refine lintegral_congr_ae (hg0.mono fun y hy => ?_)
+        by_cases hyS : y ∈ T '' S
+        · rw [indicator_of_mem hyS]
+        · simp [indicator_of_notMem hyS, hy hyS, hΦ]
+    _ = ∫⁻ x in S, J x * Φ (g (T x)) ∂ρ := by
+        rw [lintegral_indicator hTS, ← withDensity_apply' _ (T '' S)]
+        exact hcov S hSm subset_rfl _
+    _ = _ := setLIntegral_congr_fun_ae hSm (hJac.mono fun x hx hxS => by rw [hx hxS])
+
+end ChangeOfVariables
+
 variable [MeasurableSpace E] [BorelSpace E] (ρ : Measure E) [ρ.IsAddHaarMeasure]
 
 /-- If almost every point of the interior `D` of the effective domain of a convex `f` has a
 first-order expansion of the subdifferential with derivative `H x`, then every measure `μ ≪ ρ`
 carried by `D` is carried by the measurable set of points supplied by
-`exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient`. -/
-private theorem exists_measurableSet_measure_compl_eq_zero
+`exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient`, on which `H` agrees with a
+measurable `H'`; the expansion is stated for `H'`. -/
+private theorem exists_measurableSet_restrict_eq_self
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
     {μ : Measure E} (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤}) :
     ∃ S, MeasurableSet S ∧ S ⊆ interior {x | f x ≠ ⊤} ∧ interior {x | f x ≠ ⊤} =ᵐ[ρ] S ∧
-      μ Sᶜ = 0 ∧
-      (∀ x ∈ S, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
-        (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
-          ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖) ∧
-      ∃ H' : E → E →L[ℝ] E, Measurable H' ∧ ∀ x ∈ S, H x = H' x := by
-  obtain ⟨S, hSm, hSD, hDS, hS, hH'⟩ :=
+      μ.restrict S = μ ∧ ∃ H' : E → E →L[ℝ] E, Measurable H' ∧ (∀ x ∈ S, H x = H' x) ∧
+      ∀ x ∈ S, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+        (H' x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+          ‖y' - (∇ fun x' => (f x').toReal) x - H' x (x' - x)‖ ≤ ε * ‖x' - x‖ := by
+  obtain ⟨S, hSm, hSD, hDS, hS, H', hH'm, hHS⟩ :=
     exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient ρ hf hbot hH
-  exact ⟨S, hSm, hSD, hDS,
-    (measure_congr (EventuallyEqSet.compl (hμ.ae_eq hDS))).symm.trans (mem_ae_iff.1 hμD), hS, hH'⟩
+  exact ⟨S, hSm, hSD, hDS, restrict_eq_self_of_ae_mem (mem_ae_iff.2
+    ((measure_congr (EventuallyEqSet.compl (hμ.ae_eq hDS))).symm.trans (mem_ae_iff.1 hμD))),
+    H', hH'm, hHS, fun x hx => hHS x hx ▸ hS x hx⟩
 
 /-- **Change of variables along the interpolating map.** Let `s` be a measurable set at each point
 of which the subdifferential of `f : E → EReal` is the single gradient `∇F x` of its real
@@ -189,25 +291,6 @@ theorem withDensity_image_smul_add_smul_gradient_eq_setLIntegral {H : E → E �
   refine setLIntegral_congr_fun hs fun x hx => ?_
   rw [abs_of_pos ((hP x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)]
 
-/-- If `μ` is carried by a measurable set `S` of points at which the subdifferential of `f` is the
-single gradient with a first-order expansion, then for `0 ≤ t < 1` the interpolant `(Tₜ)₊ μ` gives
-the image `Tₜ '' (s ∩ S)` the mass `μ (s ∩ S)`, because `Tₜ` is injective on `S`. -/
-private theorem measure_inter_eq_map_image {H : E → E →L[ℝ] E} {S : Set E} (hSm : MeasurableSet S)
-    (hS : ∀ x ∈ S, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
-      (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
-        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
-    {μ : Measure E} (hμS : μ Sᶜ = 0) {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t < 1) {s : Set E}
-    (hs : MeasurableSet s) :
-    μ (s ∩ S) = μ.map (fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x)
-      ((fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x) '' (s ∩ S)) := by
-  set T := fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x
-  have hT : Measurable T := measurable_smul_add_smul_gradient t
-  have hinj : InjOn T S := injOn_smul_add_smul_gradient hS ht₀ ht₁
-  have hmeas : MeasurableSet (T '' (s ∩ S)) :=
-    measurableSet_image_smul_add_smul_gradient (hs.inter hSm) (fun x hx => hS x hx.2) ht₀ ht₁
-  rw [map_apply hT hmeas, ← measure_inter_conull (s := T ⁻¹' (T '' (s ∩ S))) hμS,
-    hinj.preimage_image_inter inter_subset_right]
-
 /-- **Interpolants of an absolutely continuous law are absolutely continuous.** Let `f : E → EReal`
 be convex (convex real epigraph, never `⊥`), with real representative `F`, and let `μ` be a measure
 absolutely continuous with respect to an additive Haar measure `ρ` and carried by the interior of
@@ -218,43 +301,19 @@ theorem map_smul_add_smul_gradient_absolutelyContinuous (hf : Convex ℝ {p : E 
     (hbot : ∀ x, f x ≠ ⊥) {μ : Measure E} (hμ : μ ≪ ρ)
     (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤}) {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
     μ.map (fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x) ≪ ρ := by
-  set T := fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x
-  have hT : Measurable T := measurable_smul_add_smul_gradient t
   obtain ⟨H, hH, -⟩ := exists_mongeAmpereMeasure_eq_singularPart_add_withDensity ρ hf hbot
-  obtain ⟨S, hSm, -, -, hμS, hS, H', hH'm, hHS⟩ := exists_measurableSet_measure_compl_eq_zero ρ hf
+  obtain ⟨S, hSm, -, -, hμS, H', hH'm, -, hS⟩ := exists_measurableSet_restrict_eq_self ρ hf
     hbot (H := H) (by filter_upwards [hH] with x hx hxD; exact ⟨_, (hx (interior_subset hxD)).2⟩)
     hμ hμD
-  refine AbsolutelyContinuous.mk fun A hA hρA => ?_
-  set s := T ⁻¹' A ∩ S
-  have hs : MeasurableSet s := (hT hA).inter hSm
-  -- The image of `s` lies in the null set `A`, and the change of variables formula with the
-  -- positive Jacobian `det ((1 - t) • 1 + t • H x)` shows that `s` itself is null.
-  have hdet := measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t
-  have hint : ∫⁻ x in s, ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H' x).det ∂ρ
-      = 0 := by
-    have himage := withDensity_image_smul_add_smul_gradient_eq_setLIntegral ρ hs
-      (fun x hx => hS x hx.2) ht₀ ht₁ 1
-    rw [withDensity_one, measure_mono_null (image_preimage_subset T A |>.trans' (image_mono
-      inter_subset_left)) hρA] at himage
-    rw [himage.trans (setLIntegral_congr_fun hs fun x hx => by rw [hHS x hx.2, Pi.one_apply,
-      mul_one])]
-  have hρs : ρ s = 0 := by
-    refine measure_eq_zero_iff_ae_notMem.2 (((setLIntegral_eq_zero_iff hs hdet).1 hint).mono
-      fun x hx hxs => ?_)
-    refine (ENNReal.ofReal_pos.2 ?_).ne' (hx hxs)
-    exact hHS x hxs.2 ▸ (hS x hxs.2).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁
-  rw [map_apply hT hA, ← measure_inter_conull hμS]
-  exact hμ hρs
-
-/-- For `0 ≤ t < 1`, the interpolant of an s-finite measure `μ ≪ ρ` carried by the interior of the
-effective domain is the measure with density its Radon–Nikodym derivative with respect to `ρ`. -/
-private theorem withDensity_rnDeriv_map_smul_add_smul_gradient
-    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {μ : Measure E} [SFinite μ]
-    (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤}) {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
-    ρ.withDensity ((μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x).rnDeriv ρ) =
-      μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x :=
-  withDensity_rnDeriv_eq _ ρ
-    (map_smul_add_smul_gradient_absolutelyContinuous ρ hf hbot hμ hμD ht₀ ht₁)
+  -- Change variables on `S`, with the positive Jacobian `det ((1 - t) • 1 + t • H' x)`.
+  rw [← hμS]
+  exact map_restrict_absolutelyContinuous_of_withDensity_image_eq ρ
+    (measurable_smul_add_smul_gradient t) hSm
+    (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t)
+    (fun x hx => (ENNReal.ofReal_pos.2
+      ((hS x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)).ne')
+    (fun s hs hsS => withDensity_image_smul_add_smul_gradient_eq_setLIntegral ρ hs
+      (fun x hx => hS x (hsS hx)) ht₀ ht₁) hμ
 
 /-- **The Jacobian equation along the interpolation of a convex gradient.** Let `f : E → EReal` be
 convex (convex real epigraph, never `⊥`), with real representative `F` and `D` the interior of its
@@ -277,26 +336,28 @@ theorem rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradien
         (μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x).rnDeriv ρ
           ((1 - t) • x + t • (∇ fun x' => (f x').toReal) x) := by
   set T := fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x
-    with hTdef
   set g := (μ.map T).rnDeriv ρ
   have hT : Measurable T := measurable_smul_add_smul_gradient t
-  have hν : ρ.withDensity g = μ.map T :=
-    withDensity_rnDeriv_map_smul_add_smul_gradient ρ hf hbot hμ hμD ht₀ ht₁
-  obtain ⟨S, hSm, -, hDS, hμS, hS, H', hH'm, hHS⟩ :=
-    exists_measurableSet_measure_compl_eq_zero ρ hf hbot hH hμ hμD
+  obtain ⟨S, hSm, -, hDS, hμS, H', hH'm, hHS, hS⟩ :=
+    exists_measurableSet_restrict_eq_self ρ hf hbot hH hμ hμD
   set φ : E → ℝ≥0∞ := fun x =>
     ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H' x).det * g (T x)
   have hφ : Measurable φ := (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t).mul
     ((measurable_rnDeriv (μ.map T) ρ).comp hT)
-  -- `μ` has density `φ` on `S`: on each measurable `s ∩ S`, transport `μ` to `ν` by the
-  -- injective map `T` and change variables back.
+  -- `μ` has density `φ` on `S`, by the change of variables along the injective map `T`.
+  have hcov (s : Set E) (hs : MeasurableSet s) (hsS : s ⊆ S) :=
+    withDensity_image_smul_add_smul_gradient_eq_setLIntegral ρ hs (fun x hx => hS x (hsS hx))
+      ht₀ ht₁
   have hμφ : μ = ρ.withDensity (S.indicator φ) := by
-    ext s hs
-    rw [← measure_inter_conull hμS, measure_inter_eq_map_image hSm hS hμS ht₀ ht₁ hs, ← hTdef, ← hν,
-      withDensity_image_smul_add_smul_gradient_eq_setLIntegral ρ (hs.inter hSm)
-        (fun x hx => hS x hx.2) ht₀ ht₁, withDensity_apply _ hs,
-      setLIntegral_indicator hSm, inter_comm S s]
-    exact setLIntegral_congr_fun (hs.inter hSm) fun x hx => by rw [hHS x hx.2]
+    have := restrict_eq_withDensity_indicator_rnDeriv_map_restrict ρ hT hSm
+      (injOn_smul_add_smul_gradient hS ht₀ ht₁)
+      (fun s hs hsS => measurableSet_image_smul_add_smul_gradient hs (fun x hx => hS x (hsS hx))
+        ht₀ ht₁) hcov
+      (map_restrict_absolutelyContinuous_of_withDensity_image_eq ρ hT hSm
+        (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t)
+        (fun x hx => (ENNReal.ofReal_pos.2
+          ((hS x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)).ne') hcov hμ)
+    rwa [hμS] at this
   calc μ.rnDeriv ρ =ᵐ[ρ] S.indicator φ := by
         rw [hμφ]
         exact rnDeriv_withDensity ρ (hφ.indicator hSm)
@@ -325,79 +386,28 @@ theorem lintegral_comp_rnDeriv_map_smul_add_smul_gradient
           Φ (μ.rnDeriv ρ x /
             ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det) ∂ρ := by
   set T := fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x
-    with hTdef
-  set g := (μ.map T).rnDeriv ρ
-  set J : E → ℝ≥0∞ := fun x =>
-    ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det
   have hT : Measurable T := measurable_smul_add_smul_gradient t
-  have hν : ρ.withDensity g = μ.map T :=
-    withDensity_rnDeriv_map_smul_add_smul_gradient ρ hf hbot hμ hμD ht₀ ht₁
-  obtain ⟨S, hSm, hSD, hDS, hμS, hS, -⟩ :=
-    exists_measurableSet_measure_compl_eq_zero ρ hf hbot hH hμ hμD
-  have hTS : MeasurableSet (T '' S) := measurableSet_image_smul_add_smul_gradient hSm hS ht₀ ht₁
-  -- The interpolant is carried by `T '' S`, so its density vanishes almost everywhere off it.
-  have hνS : μ.map T (T '' S)ᶜ = 0 := by
-    rw [map_apply hT hTS.compl]
-    exact measure_mono_null (t := Sᶜ) (fun x hx hxS => hx (mem_image_of_mem T hxS)) hμS
-  have hg0 : ∀ᵐ y ∂ρ, y ∈ (T '' S)ᶜ → g y = 0 := by
-    rw [← setLIntegral_eq_zero_iff hTS.compl (measurable_rnDeriv (μ.map T) ρ), ← withDensity_apply _
-      hTS.compl, hν, hνS]
-  -- On `S`, the Jacobian equation gives `g (T x) = dμ/dρ (x) / J x`.
-  have hJac : ∀ᵐ x ∂ρ, x ∈ S → g (T x) = μ.rnDeriv ρ x / J x := by
-    filter_upwards [rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradient ρ
-      hf hbot hH hμ hμD ht₀ ht₁] with x hx hxS
-    have hJ : 0 < ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det :=
-      (hS x hxS).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁
-    rw [hx, indicator_of_mem (hSD hxS), ENNReal.eq_div_iff (ENNReal.ofReal_pos.2 hJ).ne'
-      ENNReal.ofReal_ne_top]
-  calc ∫⁻ y, Φ (g y) ∂ρ = ∫⁻ y, (T '' S).indicator (fun y => Φ (g y)) y ∂ρ := by
-        refine lintegral_congr_ae (hg0.mono fun y hy => ?_)
-        by_cases hyS : y ∈ T '' S
-        · rw [indicator_of_mem hyS]
-        · simp [indicator_of_notMem hyS, hy hyS, hΦ]
-    _ = ∫⁻ x in S, J x * Φ (g (T x)) ∂ρ := by
-        rw [lintegral_indicator hTS, ← withDensity_apply' _ (T '' S),
-          withDensity_image_smul_add_smul_gradient_eq_setLIntegral ρ hSm hS ht₀ ht₁]
-    _ = ∫⁻ x in S, J x * Φ (μ.rnDeriv ρ x / J x) ∂ρ :=
-        setLIntegral_congr_fun_ae hSm (hJac.mono fun x hx hxS => by rw [hx hxS])
-    _ = _ := setLIntegral_congr hDS.symm
+  obtain ⟨S, hSm, -, hDS, hμS, H', hH'm, hHS, hS⟩ :=
+    exists_measurableSet_restrict_eq_self ρ hf hbot hH hμ hμD
+  have hJ (x : E) (hx : x ∈ S) :
+      ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H' x).det ≠ 0 :=
+    (ENNReal.ofReal_pos.2 ((hS x hx).2.1.det_one_sub_smul_id_add_smul_pos ht₀ ht₁)).ne'
+  have hcov (s : Set E) (hs : MeasurableSet s) (hsS : s ⊆ S) :=
+    withDensity_image_smul_add_smul_gradient_eq_setLIntegral ρ hs (fun x hx => hS x (hsS hx))
+      ht₀ ht₁
+  -- Change variables along the injective map `T` on `S`, which carries `μ` and is `D` up to a
+  -- null set.
+  have h := lintegral_comp_rnDeriv_map_restrict ρ hT hSm (injOn_smul_add_smul_gradient hS ht₀ ht₁)
+    (fun s hs hsS => measurableSet_image_smul_add_smul_gradient hs (fun x hx => hS x (hsS hx))
+      ht₀ ht₁) (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t)
+    (fun x hx => ⟨hJ x hx, ENNReal.ofReal_ne_top⟩) hcov
+    (map_restrict_absolutelyContinuous_of_withDensity_image_eq ρ hT hSm
+      (measurable_ofReal_det_one_sub_smul_id_add_smul hH'm t) hJ hcov hμ) hΦ
+  rw [hμS] at h
+  rw [h, setLIntegral_congr hDS]
+  exact setLIntegral_congr_fun hSm fun x hx => by rw [hHS x hx]
 
 /-! ### The endpoint `t = 1` -/
-
-/-- The gradient `∇F` pushes `μ ≪ ρ`, restricted to a measurable set `Z` at each point of which the
-subdifferential of `f` is the single gradient with a first-order expansion of nonzero
-determinant, to a measure absolutely continuous with respect to `ρ`. -/
-private theorem map_restrict_gradient_absolutelyContinuous
-    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) {H : E → E →L[ℝ] E} (hHm : Measurable H)
-    {Z : Set E} (hZm : MeasurableSet Z)
-    (hZ : ∀ x ∈ Z, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
-      (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
-        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
-    (hdet : ∀ x ∈ Z, (H x).det ≠ 0) {μ : Measure E} (hμ : μ ≪ ρ) :
-    (μ.restrict Z).map (∇ fun x' => (f x').toReal) ≪ ρ := by
-  set G := ∇ fun x' => (f x').toReal
-  have hG : Measurable G := measurable_gradient _
-  refine AbsolutelyContinuous.mk fun A hA hρA => ?_
-  set s := G ⁻¹' A ∩ Z
-  have hs : MeasurableSet s := (hG hA).inter hZm
-  have hsZ : MeasurableSet (s ∩ {x | (H x).det ≠ 0}) := by
-    rwa [inter_eq_left.2 fun x (hx : x ∈ s) => hdet x hx.2]
-  -- The image of `s` lies in the null set `A`, so the positive Jacobian `det (H x)` integrates to
-  -- `0` over `s`, which is therefore null.
-  have hint : ∫⁻ x in s, ENNReal.ofReal (H x).det ∂ρ = 0 := by
-    have himage := withDensity_image_gradient_eq_setLIntegral ρ hf hs hsZ (fun x hx => hZ x hx.2) 1
-    rw [withDensity_one, measure_mono_null ((image_preimage_subset G A).trans' (image_mono
-      inter_subset_left)) hρA] at himage
-    simpa using himage.symm
-  have hρs : ρ s = 0 := by
-    have hdetm : Measurable fun x => ENNReal.ofReal (H x).det :=
-      ENNReal.measurable_ofReal.comp (ContinuousLinearMap.continuous_det.measurable.comp hHm)
-    refine measure_eq_zero_iff_ae_notMem.2 (((setLIntegral_eq_zero_iff hs hdetm).1 hint).mono
-      fun x hx hxs => ?_)
-    refine (ENNReal.ofReal_pos.2 (lt_of_le_of_ne ?_ (hdet x hxs.2).symm)).ne' (hx hxs)
-    exact ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2 (hZ x hxs.2).2.1).det_nonneg
-  rw [map_apply hG hA, restrict_apply (hG hA)]
-  exact hμ hρs
 
 /-- The gradient `∇F` pushes any measure restricted to a measurable set `Z`, at each point of which
 the subdifferential of `f` is the single gradient with a first-order expansion of zero
@@ -426,58 +436,65 @@ private theorem map_restrict_gradient_mutuallySingular
     (hx.1 (subset_toMeasurable _ _ (mem_image_of_mem G hx.2))).elim) measure_empty
 
 /-- The decomposition behind the endpoint `t = 1`. If `μ ≪ ρ` is s-finite and carried by the
-interior `D` of the effective domain, there is a measurable `Z ⊆ D` on which the subdifferential of
-`f` is the single gradient with a first-order expansion of positive determinant, on which `∇F` is
-injective and `H` agrees with a measurable map, and such that `det (H x) = 0` at almost every
-point of `D \ Z`. The gradient pushes `μ` restricted to `Z` to a measure absolutely continuous with
-respect to `ρ`, and `μ` restricted to `Zᶜ`, which is `μ` restricted to `{x | det (H x) = 0}`, to a
-measure singular with respect to `ρ`. -/
+interior `D` of the effective domain, there is a measurable `Z ⊆ D` on which `det (H x) > 0` and
+`∇F` is injective with measurable images of measurable sets, on which `H` agrees with a measurable
+`H'` giving the change of variables along `∇F` with Jacobian `det (H' x)`, and such that
+`det (H x) = 0` at almost every point of `D \ Z`. The gradient pushes `μ` restricted to `Z` to a
+measure absolutely continuous with respect to `ρ`, and `μ` restricted to `Zᶜ`, which is `μ`
+restricted to `{x | det (H x) = 0}`, to a measure singular with respect to `ρ`. -/
 private theorem exists_map_gradient_restrict_decomposition
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
     {μ : Measure E} (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤}) :
     ∃ Z, MeasurableSet Z ∧ Z ⊆ interior {x | f x ≠ ⊤} ∧
-      (∀ x ∈ Z, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
-        (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
-          ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖) ∧
+      (∀ s, MeasurableSet s → s ⊆ Z → MeasurableSet ((∇ fun x' => (f x').toReal) '' s)) ∧
       (∀ x ∈ Z, 0 < (H x).det) ∧ InjOn (∇ fun x' => (f x').toReal) Z ∧
-      (∃ H' : E → E →L[ℝ] E, Measurable H' ∧ ∀ x ∈ Z, H x = H' x) ∧
+      (∃ H' : E → E →L[ℝ] E, Measurable H' ∧ (∀ x ∈ Z, H x = H' x) ∧
+        ∀ s, MeasurableSet s → s ⊆ Z → ∀ g : E → ℝ≥0∞,
+          ρ.withDensity g ((∇ fun x' => (f x').toReal) '' s) =
+            ∫⁻ x in s, ENNReal.ofReal (H' x).det * g ((∇ fun x' => (f x').toReal) x) ∂ρ) ∧
       (∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → x ∉ Z → (H x).det = 0) ∧
       Zᶜ =ᵐ[μ] {x | (H x).det = 0} ∧
       (μ.restrict Z).map (∇ fun x' => (f x').toReal) ≪ ρ ∧
       (μ.restrict Zᶜ).map (∇ fun x' => (f x').toReal) ⟂ₘ ρ := by
-  obtain ⟨S, hSm, hSD, hDS, hμS, hS, H', hH'm, hHS⟩ :=
-    exists_measurableSet_measure_compl_eq_zero ρ hf hbot hH hμ hμD
+  obtain ⟨S, hSm, hSD, hDS, hμS, H', hH'm, hHS, hS⟩ :=
+    exists_measurableSet_restrict_eq_self ρ hf hbot hH hμ hμD
   set Z := S ∩ {x | (H' x).det ≠ 0}
   have hZm : MeasurableSet Z :=
     hSm.inter ((measurableSet_singleton 0).compl.preimage
       (ContinuousLinearMap.continuous_det.measurable.comp hH'm))
-  have hdetZ (x : E) (hx : x ∈ Z) : (H x).det ≠ 0 := by rw [hHS x hx.1]; exact hx.2
-  have hZ (x : E) (hx : x ∈ Z) := hS x hx.1
+  have hpos (x : E) (hx : x ∈ Z) : 0 < (H' x).det :=
+    lt_of_le_of_ne ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2 (hS x hx.1).2.1).det_nonneg
+      (Ne.symm hx.2)
+  have hinj : InjOn (∇ fun x' => (f x').toReal) Z := by
+    have := injOn_gradient_inter_setOf_det_ne_zero hf (H := H') (t := Z)
+      fun x hx => ⟨(hS x hx.1).1, (hS x hx.1).2.2⟩
+    rwa [inter_eq_left.2 fun x (hx : x ∈ Z) => hx.2] at this
+  have hcov (s : Set E) (hs : MeasurableSet s) (hsZ : s ⊆ Z) :=
+    withDensity_image_gradient_eq_setLIntegral ρ hf hs
+      (by rwa [inter_eq_left.2 fun x (hx : x ∈ s) => (hsZ hx).2]) fun x hx => hS x (hsZ hx).1
   -- On `S`, the complement of `Z` is the degenerate set.
   have hSZ (x : E) (hx : x ∈ S) : x ∉ Z ↔ (H x).det = 0 := by
     simp [Z, hx, hHS x hx]
-  have hμS' : ∀ᵐ x ∂μ, x ∈ S := measure_eq_zero_iff_ae_notMem.1 hμS |>.mono fun x hx => not_not.1 hx
-  have hZc : Zᶜ =ᵐ[μ] {x | (H x).det = 0} :=
-    eventuallyEqSet_iff.2 (hμS'.mono fun x hx => hSZ x hx)
+  have hμS' : ∀ᵐ x ∂μ, x ∈ S := hμS ▸ ae_restrict_mem hSm
   have hZc' : Zᶜ =ᵐ[μ] S \ Z :=
     eventuallyEqSet_iff.2 (hμS'.mono fun x hx => by simp [hx])
-  refine ⟨Z, hZm, inter_subset_left.trans hSD, hZ, fun x hx => lt_of_le_of_ne
-      ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2 (hZ x hx).2.1).det_nonneg
-      (hdetZ x hx).symm, ?_, ⟨H', hH'm, fun x hx => hHS x hx.1⟩, ?_, hZc, ?_, ?_⟩
-  · have := injOn_gradient_inter_setOf_det_ne_zero hf (H := H) (t := Z)
-      fun x hx => ⟨(hZ x hx).1, (hZ x hx).2.2⟩
-    rwa [inter_eq_left.2 fun x hx => hdetZ x hx] at this
+  refine ⟨Z, hZm, inter_subset_left.trans hSD, fun s hs hsZ => ?_,
+    fun x hx => hHS x hx.1 ▸ hpos x hx, hinj, ⟨H', hH'm, fun x hx => hHS x hx.1, hcov⟩, ?_,
+    eventuallyEqSet_iff.2 (hμS'.mono fun x hx => hSZ x hx), ?_, ?_⟩
+  · exact measurable_image_of_fderivWithin hs (fun x hx =>
+      hasFDerivWithinAt_gradient_toReal_of_forall_mem_subdifferential_norm_sub_le
+        (fun x' hx' => by rw [(hS x' (hsZ hx').1).1]; exact mem_singleton _)
+        (hS x (hsZ hx).1).2.2) (hinj.mono hsZ)
   · filter_upwards [hDS.mem_iff] with x hx hxD hxZ
     exact (hSZ x (hx.1 hxD)).1 hxZ
-  · refine map_restrict_gradient_absolutelyContinuous ρ hf hH'm hZm (fun x hx => ?_)
-      (fun x hx => hx.2) hμ
-    rw [← hHS x hx.1]
-    exact hZ x hx
+  · exact map_restrict_absolutelyContinuous_of_withDensity_image_eq ρ (measurable_gradient _) hZm
+      (ENNReal.measurable_ofReal.comp (ContinuousLinearMap.continuous_det.measurable.comp hH'm))
+      (fun x hx => (ENNReal.ofReal_pos.2 (hpos x hx)).ne') hcov hμ
   · rw [restrict_congr_set hZc']
-    exact map_restrict_gradient_mutuallySingular ρ hf (H := H) (hSm.diff hZm)
-      (fun x hx => hS x hx.1) (fun x hx => (hSZ x hx.1).1 hx.2) μ
+    exact map_restrict_gradient_mutuallySingular ρ hf (H := H') (hSm.diff hZm)
+      (fun x hx => hS x hx.1) (fun x hx => not_not.1 fun h => hx.2 ⟨hx.1, h⟩) μ
 
 /-- **The singular part of the pushforward by the gradient.** Let `f : E → EReal` be convex (convex
 real epigraph, never `⊥`), with real representative `F` and `D` the interior of its effective
@@ -524,66 +541,24 @@ theorem lintegral_comp_rnDeriv_map_gradient (hf : Convex ℝ {p : E × ℝ | f p
   set G := ∇ fun x' => (f x').toReal
   set D := interior {x | f x ≠ ⊤}
   have hG : Measurable G := measurable_gradient _
-  obtain ⟨Z, hZm, hZD, hZ, hpos, hinj, ⟨H', hH'm, hHZ⟩, hdeg, -, hac, hsing⟩ :=
+  obtain ⟨Z, hZm, hZD, himage, hpos, hinj, ⟨H', hH'm, hHZ, hcov⟩, hdeg, -, hac, hsing⟩ :=
     exists_map_gradient_restrict_decomposition ρ hf hbot hH hμ hμD
   set ν := (μ.restrict Z).map G
-  set g := ν.rnDeriv ρ
-  have hν : ρ.withDensity g = ν := withDensity_rnDeriv_eq _ _ hac
-  -- The absolutely continuous part of `μ₁` is `ν`, so its density is `g`.
-  have hg : g =ᵐ[ρ] (μ.map G).rnDeriv ρ := by
+  -- The absolutely continuous part of `μ₁` is `ν`, so its density is that of `ν`.
+  have hg : ν.rnDeriv ρ =ᵐ[ρ] (μ.map G).rnDeriv ρ := by
     refine eq_rnDeriv (measurable_rnDeriv _ _) hsing ?_
-    rw [hν, ← Measure.map_add _ _ hG, add_comm, restrict_add_restrict_compl hZm]
-  have hGZ : MeasurableSet (G '' Z) :=
-    measurable_image_of_fderivWithin hZm (fun x hx =>
-      hasFDerivWithinAt_gradient_toReal_of_forall_mem_subdifferential_norm_sub_le
-        (fun x' hx' => by rw [(hZ x' hx').1]; exact mem_singleton _) (hZ x hx).2.2) hinj
-  -- `ν` is carried by `∇F '' Z`, so `g` vanishes almost everywhere off it.
-  have hg0 : ∀ᵐ y ∂ρ, y ∈ (G '' Z)ᶜ → g y = 0 := by
-    have hνc : ν (G '' Z)ᶜ = 0 := by
-      rw [map_apply hG hGZ.compl, restrict_apply (hG hGZ.compl)]
-      exact measure_mono_null (fun x hx => (hx.1 (mem_image_of_mem G hx.2)).elim) measure_empty
-    rw [← setLIntegral_eq_zero_iff hGZ.compl (measurable_rnDeriv ν ρ), ← withDensity_apply _
-      hGZ.compl, hν, hνc]
-  -- The Jacobian equation on `Z`: `dμ/dρ (x) = det (H x) * g (∇F x)`.
-  set φ : E → ℝ≥0∞ := fun x => ENNReal.ofReal (H' x).det * g (G x)
-  have hφ : Measurable φ := (ENNReal.measurable_ofReal.comp
-    (ContinuousLinearMap.continuous_det.measurable.comp hH'm)).mul
-    ((measurable_rnDeriv ν ρ).comp hG)
-  have hμZ : μ.restrict Z = ρ.withDensity (Z.indicator φ) := by
-    ext s hs
-    have hsZ : MeasurableSet (s ∩ Z ∩ {x | (H x).det ≠ 0}) := by
-      rw [inter_eq_left.2 fun x (hx : x ∈ s ∩ Z) => (hpos x hx.2).ne']
-      exact hs.inter hZm
-    have hGs : MeasurableSet (G '' (s ∩ Z)) :=
-      measurable_image_of_fderivWithin (hs.inter hZm) (fun x hx =>
-        hasFDerivWithinAt_gradient_toReal_of_forall_mem_subdifferential_norm_sub_le
-          (fun x' hx' => by rw [(hZ x' hx'.2).1]; exact mem_singleton _) (hZ x hx.2).2.2)
-        (hinj.mono inter_subset_right)
-    have hmap : ν (G '' (s ∩ Z)) = μ (s ∩ Z) := by
-      rw [map_apply hG hGs, restrict_apply (hG hGs), hinj.preimage_image_inter inter_subset_right]
-    rw [restrict_apply hs, ← hmap, ← hν, withDensity_image_gradient_eq_setLIntegral ρ hf
-      (hs.inter hZm) hsZ (fun x hx => hZ x hx.2) g, withDensity_apply _ hs,
-      setLIntegral_indicator hZm, inter_comm s Z]
-    exact setLIntegral_congr_fun (hZm.inter hs) fun x hx => by rw [hHZ x hx.1]
-  have hJac : ∀ᵐ x ∂ρ, x ∈ Z → g (G x) = μ.rnDeriv ρ x / ENNReal.ofReal (H x).det := by
-    have h₁ := rnDeriv_restrict μ ρ hZm
-    rw [hμZ] at h₁
-    filter_upwards [h₁.symm.trans (rnDeriv_withDensity ρ (hφ.indicator hZm))] with x hx hxZ
-    rw [indicator_of_mem hxZ, indicator_of_mem hxZ] at hx
-    rw [ENNReal.eq_div_iff (ENNReal.ofReal_pos.2 (hpos x hxZ)).ne' ENNReal.ofReal_ne_top, hx,
-      hHZ x hxZ]
-  calc ∫⁻ y, Φ ((μ.map G).rnDeriv ρ y) ∂ρ = ∫⁻ y, (G '' Z).indicator (fun y => Φ (g y)) y ∂ρ := by
-        refine lintegral_congr_ae ((hg.and hg0).mono fun y hy => ?_)
-        dsimp only
-        by_cases hyZ : y ∈ G '' Z
-        · rw [indicator_of_mem hyZ, hy.1]
-        · rw [indicator_of_notMem hyZ, ← hy.1, hy.2 hyZ, hΦ]
-    _ = ∫⁻ x in Z, ENNReal.ofReal (H x).det * Φ (g (G x)) ∂ρ := by
-        rw [lintegral_indicator hGZ, ← withDensity_apply' _ (G '' Z),
-          withDensity_image_gradient_eq_setLIntegral ρ hf hZm
-            (by rwa [inter_eq_left.2 fun x (hx : x ∈ Z) => (hpos x hx).ne']) hZ]
+    rw [withDensity_rnDeriv_eq _ _ hac, ← Measure.map_add _ _ hG, add_comm,
+      restrict_add_restrict_compl hZm]
+  calc ∫⁻ y, Φ ((μ.map G).rnDeriv ρ y) ∂ρ = ∫⁻ y, Φ (ν.rnDeriv ρ y) ∂ρ :=
+        lintegral_congr_ae (hg.mono fun y hy => congrArg Φ hy.symm)
+    _ = ∫⁻ x in Z, ENNReal.ofReal (H' x).det * Φ (μ.rnDeriv ρ x / ENNReal.ofReal (H' x).det) ∂ρ :=
+        lintegral_comp_rnDeriv_map_restrict ρ hG hZm hinj himage
+          (J := fun x => ENNReal.ofReal (H' x).det)
+          (ENNReal.measurable_ofReal.comp (ContinuousLinearMap.continuous_det.measurable.comp hH'm))
+          (fun x hx => ⟨(ENNReal.ofReal_pos.2 (hHZ x hx ▸ hpos x hx)).ne', ENNReal.ofReal_ne_top⟩)
+          hcov hac hΦ
     _ = ∫⁻ x in Z, ENNReal.ofReal (H x).det * Φ (μ.rnDeriv ρ x / ENNReal.ofReal (H x).det) ∂ρ :=
-        setLIntegral_congr_fun_ae hZm (hJac.mono fun x hx hxZ => by rw [hx hxZ])
+        setLIntegral_congr_fun hZm fun x hx => by rw [hHZ x hx]
     _ = ∫⁻ x in D, ENNReal.ofReal (H x).det * Φ (μ.rnDeriv ρ x / ENNReal.ofReal (H x).det) ∂ρ := by
         -- Off `Z`, the Jacobian vanishes almost everywhere in `D`.
         rw [← inter_eq_left.2 hZD, ← setLIntegral_indicator hZm]

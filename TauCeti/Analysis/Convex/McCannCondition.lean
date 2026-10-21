@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Function
+public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import TauCeti.Analysis.Convex.RecessionConstant
@@ -14,20 +15,26 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import TauCeti.Analysis.Convex.FunctionTopology
+import TauCeti.Analysis.InnerProductSpace.Spectrum
+import TauCeti.Analysis.Matrix.MinkowskiDeterminant
 
 /-!
-# Scalar consequences of McCann's condition
+# Consequences of McCann's condition
 
 A function `U : ℝ → ℝ` satisfies *McCann's condition* in dimension `n` when
 `φ(s) = sⁿ U(s⁻ⁿ)` is convex and nonincreasing on `(0, ∞)`. This is the hypothesis of McCann's
 displacement convexity of the internal energy `∫ U(dμ/dρ) dρ`. This file records the scalar facts
-about `U` and `φ` that it is used through, independently of any transport.
+about `U` and `φ` that it is used through, independently of any transport, and McCann's pointwise
+inequality at a positive operator, where the dimension `n` is that of the underlying space.
 
 ## Main results
 
 * `TauCeti.pow_mul_apply_div_pow_eq`: for `r, a > 0`, `aⁿ U(r / aⁿ) = r φ(r^{-1/n} a)`.
 * `TauCeti.pow_mul_apply_div_pow_le`: McCann's pointwise inequality, comparing `aⁿ U(r / aⁿ)` with
   the convex combination of its values at `1` and `a₁` when `(1 - t) + t a₁ ≤ a`.
+* `ContinuousLinearMap.IsPositive.det_mul_apply_div_det_le`: McCann's pointwise inequality at a
+  positive operator `A`, comparing `Jₜ U(r / Jₜ)` with the convex combination of its values at
+  `t = 0` and `t = 1`, where `Jₜ = det ((1 - t) • 1 + t • A)`.
 * `TauCeti.pow_mul_apply_inv_pow_le_recessionConstant`: if `φ` is nonincreasing on `(0, ∞)`, then
   the recession constant of `U` bounds `φ` above there.
 * `TauCeti.measurable_apply_max_of_convexOn`: if `φ` is convex on `(0, ∞)`, then `U` is measurable
@@ -40,7 +47,7 @@ about `U` and `φ` that it is used through, independently of any transport.
 
 public section
 
-open Set Filter
+open Set Filter Module
 
 namespace TauCeti
 
@@ -126,6 +133,44 @@ theorem pow_mul_apply_div_pow_le (hn : n ≠ 0) (hU0 : U 0 = 0)
       ring
     have := mul_le_mul_of_nonneg_left (h₁.trans h₂) hr.le
     linarith
+
+/-- **McCann's inequality at a positive operator.** Let `U 0 = 0` and let `φ(s) = sⁿ U(s⁻ⁿ)` be
+convex and nonincreasing on `(0, ∞)`, where `n ≥ 1` is the dimension of `E`. For a positive operator
+`A` on `E`, write `Jₛ = det ((1 - s) • 1 + s • A)`. For `0 < t < 1` and `r ≥ 0`,
+`Jₜ U(r / Jₜ) ≤ (1 - t) U(r) + t J₁ U(r / J₁)` when `J₁ ≠ 0`, and
+`Jₜ U(r / Jₜ) ≤ (1 - t) U(r) + t L r` when `J₁ = 0`, provided `L` then bounds `φ` above. The
+concavity of `s ↦ Jₛ^{1/n}` is Minkowski's determinant inequality. -/
+theorem _root_.ContinuousLinearMap.IsPositive.det_mul_apply_div_det_le {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E]
+    {A : E →L[ℝ] E} (hA : A.IsPositive) (hU0 : U 0 = 0)
+    (hc : ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹)
+    (ha : AntitoneOn (fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹) (Ioi 0))
+    {r t L : ℝ} (hr : 0 ≤ r) (ht₀ : 0 < t) (ht₁ : t < 1)
+    (hL : A.det = 0 → 0 < r →
+      ∀ s ∈ Ioi (0 : ℝ), s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹ ≤ L) :
+    ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det *
+        U (r / ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det) ≤
+      (1 - t) * U r + t * (if A.det = 0 then L * r else A.det * U (r / A.det)) := by
+  set n := finrank ℝ E
+  have hn : n ≠ 0 := finrank_pos.ne'
+  have hn' : (n : ℝ)⁻¹ ≠ 0 := inv_ne_zero (Nat.cast_ne_zero.2 hn)
+  have hA' := (ContinuousLinearMap.isPositive_toLinearMap_iff _).2 hA
+  have hJ : 0 < ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det :=
+    hA.det_one_sub_smul_id_add_smul_pos ht₀.le ht₁
+  have hJ₁ : 0 ≤ A.det := hA'.det_nonneg
+  -- Minkowski's determinant inequality: `s ↦ det ((1 - s) • 1 + s • A) ^ (1 / n)` is concave.
+  have hle : 1 - t + t * A.det ^ (n⁻¹ : ℝ) ≤
+      ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det ^ (n⁻¹ : ℝ) := by
+    have := LinearMap.concaveOn_det_rpow.2 ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2
+      ContinuousLinearMap.isPositive_id) hA' (sub_nonneg.2 ht₁.le) ht₀.le (sub_add_cancel 1 t)
+    simpa [ContinuousLinearMap.det, smul_eq_mul] using this
+  have key := pow_mul_apply_div_pow_le hn hU0 hc ha (r := r) (L := L) hr ⟨ht₀.le, ht₁.le⟩
+    (Real.rpow_pos_of_pos hJ _) (Real.rpow_nonneg hJ₁ _) hle
+    fun ha₁ => hL ((Real.rpow_eq_zero hJ₁ hn').1 ha₁)
+  rw [Real.rpow_inv_natCast_pow hJ.le hn, Real.rpow_inv_natCast_pow hJ₁ hn] at key
+  simp only [Real.rpow_eq_zero hJ₁ hn'] at key
+  refine key.trans_eq ?_
+  split_ifs <;> ring
 
 /-- If `φ(s) = sⁿ U(s⁻ⁿ)` is convex on `(0, ∞)`, with `n ≠ 0`, then `U` is measurable on
 `[0, ∞)`: it is continuous on `(0, ∞)`, where `U(r) = r φ(r^{-1/n})` with `φ` convex. -/

@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeod
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Data.EReal.Operations
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 
 /-!
@@ -272,17 +273,9 @@ theorem potentialEnergy_le_mul_add_mul {V₀ V₁ : X → ℝ} (hV₀ : AEStrong
       integral_add (hi₀.const_mul _) (hi₁.const_mul _), integral_const_mul, integral_const_mul]
     norm_cast
   -- One of the two energies is `⊤`, and neither is `⊥`, so the right side is `⊤`.
-  have h₀' : ((1 - t : ℝ) : EReal) * potentialEnergy V₀ μ ≠ ⊥ :=
-    (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr h₀, .inl (EReal.coe_ne_top _),
-      .inl (EReal.coe_nonneg.2 (sub_nonneg.2 ht₁.le))⟩
-  have h₁' : (t : EReal) * potentialEnergy V₁ μ ≠ ⊥ :=
-    (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr h₁, .inl (EReal.coe_ne_top _),
-      .inl (EReal.coe_nonneg.2 ht₀.le)⟩
-  rcases not_and_or.1 hfin with h | h <;> rw [not_not] at h <;> rw [h]
-  · rw [EReal.coe_mul_top_of_pos (sub_pos.2 ht₁), EReal.top_add_of_ne_bot h₁']
-    exact le_top
-  · rw [EReal.coe_mul_top_of_pos ht₀, EReal.add_top_of_ne_bot h₀']
-    exact le_top
+  rw [EReal.coe_mul_add_coe_mul_eq_top (sub_pos.2 ht₁) ht₀ h₀ h₁
+    (by simpa only [not_and_or, not_not] using hfin)]
+  exact le_top
 
 /-- The potential energy of the zero measure is `0`. -/
 @[simp]
@@ -500,18 +493,8 @@ theorem _root_.StrongConvexOn.potentialEnergy_map_le (hV : StrongConvexOn univ m
   by_cases hfin : potentialEnergy V π.fst ≠ ⊤ ∧ potentialEnergy V π.snd ≠ ⊤
   swap
   · -- One endpoint has energy `⊤`, so the right-hand side is `⊤`.
-    have h₀' : ((1 - t : ℝ) : EReal) * potentialEnergy V π.fst ≠ ⊥ :=
-      (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr h₀, .inl (EReal.coe_ne_top _),
-        .inl (EReal.coe_nonneg.2 (sub_nonneg.2 ht.2))⟩
-    have h₁' : (t : EReal) * potentialEnergy V π.snd ≠ ⊥ :=
-      (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr h₁, .inl (EReal.coe_ne_top _),
-        .inl (EReal.coe_nonneg.2 ht.1)⟩
-    have htop : ((1 - t : ℝ) : EReal) * potentialEnergy V π.fst +
-        (t : EReal) * potentialEnergy V π.snd = ⊤ := by
-      rcases not_and_or.1 hfin with h | h <;> rw [not_not] at h <;> rw [h]
-      · rw [EReal.coe_mul_top_of_pos (sub_pos.2 ht₁), EReal.top_add_of_ne_bot h₁']
-      · rw [EReal.coe_mul_top_of_pos ht₀, EReal.add_top_of_ne_bot h₀']
-    rw [htop, EReal.top_sub_coe]
+    rw [EReal.coe_mul_add_coe_mul_eq_top (sub_pos.2 ht₁) ht₀ h₀ h₁
+      (by simpa only [not_and_or, not_not] using hfin), EReal.top_sub_coe]
     exact le_top
   obtain ⟨hfin₀, hfin₁⟩ := hfin
   have hi₀ : Integrable V π.fst :=

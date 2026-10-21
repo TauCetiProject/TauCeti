@@ -10,8 +10,6 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 import TauCeti.Analysis.Convex.McCannCondition
-import TauCeti.Analysis.Matrix.MinkowskiDeterminant
-import TauCeti.Data.ENNReal.Real
 import TauCeti.MeasureTheory.OptimalTransport.Brenier
 import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 
@@ -88,49 +86,6 @@ open scoped ENNReal Topology Gradient
 
 namespace TauCeti
 
-section McCannCondition
-
-variable {U : ℝ → ℝ}
-
-/-- **McCann's inequality at a positive operator.** Let `U 0 = 0` and let `φ(s) = sⁿ U(s⁻ⁿ)` be
-convex and nonincreasing on `(0, ∞)`, where `n ≥ 1` is the dimension of `E`. For a positive operator
-`A` on `E`, write `Jₛ = det ((1 - s) • 1 + s • A)`. For `0 < t < 1` and `r ≥ 0`,
-`Jₜ U(r / Jₜ) ≤ (1 - t) U(r) + t J₁ U(r / J₁)` when `J₁ ≠ 0`, and
-`Jₜ U(r / Jₜ) ≤ (1 - t) U(r) + t L r` when `J₁ = 0`, provided `L` then bounds `φ` above. The
-concavity of `s ↦ Jₛ^{1/n}` is Minkowski's determinant inequality. -/
-private theorem pointwise_mcCann {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [FiniteDimensional ℝ E] [Nontrivial E] (hU0 : U 0 = 0)
-    (hc : ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹)
-    (ha : AntitoneOn (fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹) (Ioi 0))
-    {A : E →L[ℝ] E} (hA : A.IsPositive) {r t L : ℝ} (hr : 0 ≤ r) (ht₀ : 0 < t) (ht₁ : t < 1)
-    (hL : A.det = 0 → 0 < r →
-      ∀ s ∈ Ioi (0 : ℝ), s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹ ≤ L) :
-    ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det *
-        U (r / ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det) ≤
-      (1 - t) * U r + t * (if A.det = 0 then L * r else A.det * U (r / A.det)) := by
-  set n := finrank ℝ E
-  have hn : n ≠ 0 := finrank_pos.ne'
-  have hn' : (n : ℝ)⁻¹ ≠ 0 := inv_ne_zero (Nat.cast_ne_zero.2 hn)
-  have hA' := (ContinuousLinearMap.isPositive_toLinearMap_iff _).2 hA
-  have hJ : 0 < ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det :=
-    hA.det_one_sub_smul_id_add_smul_pos ht₀.le ht₁
-  have hJ₁ : 0 ≤ A.det := hA'.det_nonneg
-  -- Minkowski's determinant inequality: `s ↦ det ((1 - s) • 1 + s • A) ^ (1 / n)` is concave.
-  have hle : 1 - t + t * A.det ^ (n⁻¹ : ℝ) ≤
-      ((1 - t) • ContinuousLinearMap.id ℝ E + t • A).det ^ (n⁻¹ : ℝ) := by
-    have := LinearMap.concaveOn_det_rpow.2 ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2
-      ContinuousLinearMap.isPositive_id) hA' (sub_nonneg.2 ht₁.le) ht₀.le (sub_add_cancel 1 t)
-    simpa [ContinuousLinearMap.det, smul_eq_mul] using this
-  have key := pow_mul_apply_div_pow_le hn hU0 hc ha (r := r) (L := L) hr ⟨ht₀.le, ht₁.le⟩
-    (Real.rpow_pos_of_pos hJ _) (Real.rpow_nonneg hJ₁ _) hle
-    fun ha₁ => hL ((Real.rpow_eq_zero hJ₁ hn').1 ha₁)
-  rw [Real.rpow_inv_natCast_pow hJ.le hn, Real.rpow_inv_natCast_pow hJ₁ hn] at key
-  simp only [Real.rpow_eq_zero hJ₁ hn'] at key
-  refine key.trans_eq ?_
-  split_ifs <;> ring
-
-end McCannCondition
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (ρ : Measure E) [ρ.IsAddHaarMeasure] {f : E → EReal}
   {U : ℝ → ℝ}
@@ -173,8 +128,8 @@ theorem internalEnergy_map_smul_add_smul_gradient (hU0 : U 0 = 0)
     refine lintegral_congr_ae (hJ.mono fun x hx => ?_)
     dsimp only
     by_cases hxD : x ∈ D
-    · rw [indicator_of_mem hxD, indicator_of_mem hxD,
-        ENNReal.ofReal_mul_ofReal_apply_toReal_div (hx hxD) fun a => ε * U a, mul_left_comm]
+    · rw [indicator_of_mem hxD, indicator_of_mem hxD, ENNReal.toReal_div,
+        ENNReal.toReal_ofReal (hx hxD), ← ENNReal.ofReal_mul (hx hxD), mul_left_comm]
     · rw [indicator_of_notMem hxD, indicator_of_notMem hxD, mul_zero, ENNReal.ofReal_zero]
   have hpos := hlint 1
   have hneg := hlint (-1)
@@ -243,9 +198,10 @@ theorem internalEnergy_map_gradient (hU0 : U 0 = 0) (hf : Convex ℝ {p : E × �
     refine lintegral_congr_ae (hDS.mem_iff.mono fun x hx => ?_)
     dsimp only
     by_cases hxD : x ∈ D
-    · rw [indicator_of_mem hxD, indicator_of_mem hxD, ENNReal.ofReal_mul_ofReal_apply_toReal_div
-        ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2 (hS x (hx.1 hxD)).2.1).det_nonneg
-        fun a => ε * U a, mul_left_comm]
+    · have hJ := ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2
+        (hS x (hx.1 hxD)).2.1).det_nonneg
+      rw [indicator_of_mem hxD, indicator_of_mem hxD, ENNReal.toReal_div, ENNReal.toReal_ofReal hJ,
+        ← ENNReal.ofReal_mul hJ, mul_left_comm]
     · rw [indicator_of_notMem hxD, indicator_of_notMem hxD, mul_zero, ENNReal.ofReal_zero]
   -- Both parts together give the claimed potential.
   have hsum (ε : ℝ) : ∫⁻ y, ENNReal.ofReal (ε * U ((μ.map G).rnDeriv ρ y).toReal) ∂ρ +
@@ -306,7 +262,8 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
   -- After the trivial endpoints `t = 0, 1` and the case where the endpoint has energy `⊤`, all
   -- three energies are potential energies against `ρ` of explicit functions on `D`
   -- (`internalEnergy_map_smul_add_smul_gradient`, `internalEnergy_map_gradient`), and the claim
-  -- follows by integrating McCann's pointwise inequality (`pointwise_mcCann`).
+  -- follows by integrating McCann's pointwise inequality
+  -- (`ContinuousLinearMap.IsPositive.det_mul_apply_div_det_le`).
   rcases ht.1.eq_or_lt with rfl | ht₀
   · simp [Measure.map_id']
   rcases ht.2.eq_or_lt with rfl | ht₁
@@ -322,11 +279,8 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
   · have hσ : (μ.map G).singularPart ρ ≠ 0 := fun h => hA.2 (by
       rw [← singularPart_map_gradient_apply_univ ρ hf hbot hH hμ hμD, h, Measure.coe_zero,
         Pi.zero_apply])
-    have h₀' : ((1 - t : ℝ) : EReal) * internalEnergy U ρ μ ≠ ⊥ :=
-      (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr h₀, .inl (EReal.coe_ne_top _),
-        .inl (EReal.coe_nonneg.2 (sub_nonneg.2 ht₁.le))⟩
-    rw [internalEnergy_eq_top_of_recessionConstant_eq_top hA.1 hσ, EReal.coe_mul_top_of_pos ht₀,
-      EReal.add_top_of_ne_bot h₀']
+    rw [internalEnergy_eq_top_of_recessionConstant_eq_top hA.1 hσ,
+      EReal.coe_mul_add_coe_mul_eq_top (sub_pos.2 ht₁) ht₀ h₀ top_ne_bot (.inr rfl)]
     exact le_top
   -- Otherwise the endpoint is described by `internalEnergy_map_gradient` with a real `L`.
   set L := (recessionConstant U).toReal
@@ -392,7 +346,7 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
     simp
   have hxS' := hxS.1 hxD
   rw [indicator_of_mem hxD, indicator_of_mem hxD, indicator_of_mem hxD]
-  refine pointwise_mcCann hU0 hc ha (hS x hxS').2.1 ENNReal.toReal_nonneg ht₀ ht₁
+  refine (hS x hxS').2.1.det_mul_apply_div_det_le hU0 hc ha ENNReal.toReal_nonneg ht₀ ht₁
     fun h0 hr s hs => ?_
   -- The bound `φ ≤ L` is needed only where the density is positive and `det (H x) = 0`.
   by_cases hrec : recessionConstant U = L
