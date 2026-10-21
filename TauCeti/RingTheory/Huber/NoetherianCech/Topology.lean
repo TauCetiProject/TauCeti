@@ -54,6 +54,8 @@ term, which are not treated here.
   is a topological, and a uniform, additive group.
 * `TauCeti.Huber.NoetherianCech.filtration_hasBasis`: the filtration is a basis of neighbourhoods
   of zero.
+* `TauCeti.Huber.NoetherianCech.uniformity_hasBasis_filtration`: the filtration gives a basis of
+  entourages of `termUniformSpace`.
 
 ## References
 
@@ -330,5 +332,15 @@ theorem filtration_hasBasis [Finite ι] (hf : Ideal.span (Set.range f) = ⊤) {N
     (fun Ik _ ↦ ⟨Ik.2, trivial, fun x hx S _ ↦ (mem_filtration f P M hf N p _ _).mp hx S⟩)
     fun i _ ↦ ⟨(Set.univ, i), ⟨Set.finite_univ, trivial⟩, fun x hx ↦
       (mem_filtration f P M hf N p _ _).mpr fun S ↦ hx S trivial⟩
+
+/-- **The filtration is a basis of entourages**: if `ι` is finite and `N` is a finite set
+generating `M`, the sets `{(x, y) | y - x ∈ K_i^p}` form a basis of the uniformity
+`termUniformSpace`. -/
+theorem uniformity_hasBasis_filtration [Finite ι] (hf : Ideal.span (Set.range f) = ⊤)
+    {N : Set M} (hN : N.Finite) (hspan : Submodule.span B N = ⊤) (p : ℕ) :
+    (@uniformity _ (termUniformSpace f P M hf p)).HasBasis (fun _ : ℕ ↦ True)
+      fun i ↦ {xy | xy.2 - xy.1 ∈ filtration f P M hf N p i} :=
+  @Filter.HasBasis.uniformity_of_nhds_zero _ (termUniformSpace f P M hf p) _
+    (termUniformAdd f P M hf p) _ _ _ (filtration_hasBasis f P M hf hN hspan p)
 
 end TauCeti.Huber.NoetherianCech
