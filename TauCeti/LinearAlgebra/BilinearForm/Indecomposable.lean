@@ -140,14 +140,6 @@ private theorem apply_eq_zero_of_not_reachable {u v : {x : M // B.IsOrthIrreduci
   rw [orthIrreducibleGraph, SimpleGraph.fromRel_adj]
   exact ⟨fun huv' ↦ h (huv' ▸ SimpleGraph.Reachable.refl u), Or.inl huv⟩
 
-/-- A property of vertices preserved along edges is preserved along walks. -/
-private theorem of_reachable {V : Type*} {G : SimpleGraph V} {p : V → Prop}
-    (hp : ∀ u v, G.Adj u v → p u → p v) {u v : V} (h : G.Reachable u v) (hu : p u) : p v := by
-  obtain ⟨w⟩ := h
-  induction w with
-  | nil => exact hu
-  | cons hadj _ ih => exact ih (hp _ _ hadj hu)
-
 /-- Irreducible vectors outside a connected component of the non-orthogonality graph span a
 submodule orthogonal to the span of that component. -/
 private theorem span_le_orthogonal_span_supp {s : Set M} (hs : ∀ x ∈ s, B.IsOrthIrreducible x)
@@ -188,11 +180,45 @@ private theorem forall_mem_of_mem {c : (orthIrreducibleGraph B).ConnectedCompone
       ¬(orthIrreducibleGraph B).Adj u v)
     {u₀ : {x : M // B.IsOrthIrreducible x}} (hu₀ : u₀ ∈ c.supp) (h₀ : (u₀ : M) ∈ P) :
     ∀ u ∈ c.supp, (u : M) ∈ P := by
-  refine fun u hu ↦ (of_reachable (p := fun v ↦ v ∈ c.supp ∧ (v : M) ∈ P) ?_
-    (c.reachable_of_mem_supp hu₀ hu) ⟨hu₀, h₀⟩).2
-  rintro v w hvw ⟨hv, hvP⟩
-  have hw := c.mem_supp_of_adj_mem_supp hv hvw
-  exact ⟨hw, (hmem w hw).resolve_right fun hwQ ↦ hadj v w hvP hwQ hvw⟩
+  intro u hu
+  have h := (SimpleGraph.reachable_iff_reflTransGen _ _).mp (c.reachable_of_mem_supp hu₀ hu)
+  clear hu
+  suffices u ∈ c.supp ∧ (u : M) ∈ P from this.2
+  induction h with
+  | refl => exact ⟨hu₀, h₀⟩
+  | @tail v w _ hvw ih =>
+    have hw := c.mem_supp_of_adj_mem_supp ih.1 hvw
+    exact ⟨hw, (hmem w hw).resolve_right fun hwQ ↦ hadj v w ih.2 hwQ hvw⟩
+
+/-- For a reflexive anisotropic form, each orthogonal component is orthogonally indecomposable. -/
+theorem isOrthIndecomposable_of_mem_orthComponents (hB : B.IsRefl)
+    (hani : B.toQuadraticMap.Anisotropic) {N : Submodule R M} (hN : N ∈ B.orthComponents) :
+    B.IsOrthIndecomposable N := by
+  obtain ⟨c, rfl⟩ := hN
+  dsimp only
+  obtain ⟨u₀, hu₀⟩ := c.nonempty_supp
+  refine ⟨(Submodule.ne_bot_iff _).mpr ⟨u₀, subset_span ⟨u₀, hu₀, rfl⟩, u₀.2.ne_zero⟩,
+    fun P Q hPQ hsup ↦ ?_⟩
+  have hmem : ∀ u ∈ c.supp, (u : M) ∈ P ∨ (u : M) ∈ Q := fun u hu ↦
+    u.2.mem_or_mem_of_mem_sup hPQ (hsup ▸ subset_span ⟨u, hu, rfl⟩)
+  -- No edge joins a vector of `P` to a vector of `Q`, so the component lies in one summand.
+  have hadj : ∀ u v : {x : M // B.IsOrthIrreducible x}, (u : M) ∈ P → (v : M) ∈ Q →
+      ¬(orthIrreducibleGraph B).Adj u v := fun u v hu hv huv ↦ by
+    have h₁ : B v u = 0 := hPQ hu v hv
+    rw [orthIrreducibleGraph, SimpleGraph.fromRel_adj] at huv
+    exact huv.2.elim (· (hB _ _ h₁)) (· h₁)
+  rcases hmem u₀ hu₀ with h₀ | h₀
+  · have hle : span R (Subtype.val '' c.supp) ≤ P := span_le.mpr <| by
+      rintro _ ⟨u, hu, rfl⟩
+      exact forall_mem_of_mem hmem hadj hu₀ h₀ u hu
+    exact Or.inr <| eq_bot_of_le_orthogonal hani <|
+      (le_sup_right.trans hsup.le).trans (hle.trans hPQ)
+  · have hle : span R (Subtype.val '' c.supp) ≤ Q := span_le.mpr <| by
+      rintro _ ⟨u, hu, rfl⟩
+      exact forall_mem_of_mem (fun u hu ↦ (hmem u hu).symm)
+        (fun u v hu hv huv ↦ hadj v u hv hu huv.symm) hu₀ h₀ u hu
+    have hPQ' : P ≤ Q := (le_sup_left.trans hsup.le).trans hle
+    exact Or.inl <| eq_bot_of_le_orthogonal hani <| hPQ.trans (orthogonal_le hPQ')
 
 section Int
 
@@ -222,37 +248,6 @@ theorem sSup_orthComponents (hB : B.IsRefl) (hpos : B.toQuadraticMap.PosDef) :
   rw [orthComponents, sSup_range, ← span_iUnion, ← Set.image_iUnion,
     SimpleGraph.iUnion_connectedComponentSupp, Set.image_univ, Subtype.range_coe_subtype]
   exact span_setOf_isOrthIrreducible hB hpos
-
-/-- For a reflexive positive definite integral form, each orthogonal component is orthogonally
-indecomposable. -/
-theorem isOrthIndecomposable_of_mem_orthComponents (hB : B.IsRefl)
-    (hpos : B.toQuadraticMap.PosDef) {N : Submodule ℤ M} (hN : N ∈ B.orthComponents) :
-    B.IsOrthIndecomposable N := by
-  obtain ⟨c, rfl⟩ := hN
-  dsimp only
-  obtain ⟨u₀, hu₀⟩ := c.nonempty_supp
-  refine ⟨(Submodule.ne_bot_iff _).mpr ⟨u₀, subset_span ⟨u₀, hu₀, rfl⟩, u₀.2.ne_zero⟩,
-    fun P Q hPQ hsup ↦ ?_⟩
-  have hmem : ∀ u ∈ c.supp, (u : M) ∈ P ∨ (u : M) ∈ Q := fun u hu ↦
-    u.2.mem_or_mem_of_mem_sup hPQ (hsup ▸ subset_span ⟨u, hu, rfl⟩)
-  -- No edge joins a vector of `P` to a vector of `Q`, so the component lies in one summand.
-  have hadj : ∀ u v : {x : M // B.IsOrthIrreducible x}, (u : M) ∈ P → (v : M) ∈ Q →
-      ¬(orthIrreducibleGraph B).Adj u v := fun u v hu hv huv ↦ by
-    have h₁ : B v u = 0 := hPQ hu v hv
-    rw [orthIrreducibleGraph, SimpleGraph.fromRel_adj] at huv
-    exact huv.2.elim (· (hB _ _ h₁)) (· h₁)
-  rcases hmem u₀ hu₀ with h₀ | h₀
-  · have hle : span ℤ (Subtype.val '' c.supp) ≤ P := span_le.mpr <| by
-      rintro _ ⟨u, hu, rfl⟩
-      exact forall_mem_of_mem hmem hadj hu₀ h₀ u hu
-    exact Or.inr <| eq_bot_of_le_orthogonal hpos.anisotropic <|
-      (le_sup_right.trans hsup.le).trans (hle.trans hPQ)
-  · have hle : span ℤ (Subtype.val '' c.supp) ≤ Q := span_le.mpr <| by
-      rintro _ ⟨u, hu, rfl⟩
-      exact forall_mem_of_mem (fun u hu ↦ (hmem u hu).symm)
-        (fun u v hu hv huv ↦ hadj v u hv hu huv.symm) hu₀ h₀ u hu
-    have hPQ' : P ≤ Q := (le_sup_left.trans hsup.le).trans hle
-    exact Or.inl <| eq_bot_of_le_orthogonal hpos.anisotropic <| hPQ.trans (orthogonal_le hPQ')
 
 /-- A member of a decomposition into pairwise orthogonal submodules is spanned by the irreducible
 vectors it contains. -/
@@ -294,13 +289,18 @@ private theorem eq_span_supp (hB : B.IsRefl) (hpos : B.toQuadraticMap.PosDef)
   -- The component of `u` lies in `N`, since an edge never leaves a member of `S`.
   have hC : Subtype.val '' c.supp ⊆ I := by
     rintro _ ⟨v, hv, rfl⟩
-    refine ⟨v.2, of_reachable (p := fun w : {x : M // B.IsOrthIrreducible x} ↦ (w : M) ∈ N)
-      (fun w w' hww' hw ↦ ?_) (SimpleGraph.ConnectedComponent.exact hv.symm) hu⟩
-    obtain ⟨N', hN', hw'⟩ := w'.2.exists_mem_of_sSup_eq_top hS htop
-    by_contra hne
-    have h₁ : B w' w = 0 := hS hN hN' (fun h ↦ hne (h ▸ hw')) hw w' hw'
-    rw [orthIrreducibleGraph, SimpleGraph.fromRel_adj] at hww'
-    exact hww'.2.elim (· (hB _ _ h₁)) (· h₁)
+    refine ⟨v.2, ?_⟩
+    have h := (SimpleGraph.reachable_iff_reflTransGen _ _).mp
+      (SimpleGraph.ConnectedComponent.exact hv.symm)
+    clear hv
+    induction h with
+    | refl => exact hu
+    | @tail w w' _ hww' hw =>
+      obtain ⟨N', hN', hw'⟩ := w'.2.exists_mem_of_sSup_eq_top hS htop
+      by_contra hne
+      have h₁ : B w' w = 0 := hS hN hN' (fun h ↦ hne (h ▸ hw')) hw w' hw'
+      rw [orthIrreducibleGraph, SimpleGraph.fromRel_adj] at hww'
+      exact hww'.2.elim (· (hB _ _ h₁)) (· h₁)
   -- The other irreducible vectors of `N` span an orthogonal summand, which must vanish.
   have hsplit : span ℤ (Subtype.val '' c.supp) ⊔ span ℤ (I \ Subtype.val '' c.supp) = N := by
     rw [← span_union, Set.union_sdiff_cancel hC,
@@ -324,7 +324,7 @@ theorem eq_orthComponents_iff (hB : B.IsRefl) (hpos : B.toQuadraticMap.PosDef)
       S.Pairwise (fun N N' ↦ N ≤ B.orthogonal N') ∧ sSup S = ⊤ := by
   refine ⟨?_, fun ⟨hind, hS, htop⟩ ↦ Set.ext fun N ↦ ⟨fun hN ↦ ?_, ?_⟩⟩
   · rintro rfl
-    exact ⟨fun N hN ↦ isOrthIndecomposable_of_mem_orthComponents hB hpos hN,
+    exact ⟨fun N hN ↦ isOrthIndecomposable_of_mem_orthComponents hB hpos.anisotropic hN,
       pairwise_orthComponents, sSup_orthComponents hB hpos⟩
   · obtain ⟨u, hu⟩ : ∃ u : {x : M // B.IsOrthIrreducible x}, (u : M) ∈ N := by
       by_contra! h
@@ -343,7 +343,7 @@ when it is its only orthogonal component. -/
 theorem isOrthIndecomposable_top_iff (hB : B.IsRefl) (hpos : B.toQuadraticMap.PosDef) :
     B.IsOrthIndecomposable ⊤ ↔ B.orthComponents = {⊤} := by
   refine ⟨fun h ↦ ((eq_orthComponents_iff hB hpos).mpr ?_).symm, fun h ↦
-    isOrthIndecomposable_of_mem_orthComponents hB hpos (h ▸ Set.mem_singleton ⊤)⟩
+    isOrthIndecomposable_of_mem_orthComponents hB hpos.anisotropic (h ▸ Set.mem_singleton ⊤)⟩
   exact ⟨fun N hN ↦ (Set.mem_singleton_iff.mp hN) ▸ h, Set.pairwise_singleton _ _, sSup_singleton⟩
 
 end Int
