@@ -42,7 +42,7 @@ open scoped Topology
 variable {E P G α : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup G] [NormedSpace ℝ G]
   [CompleteSpace G]
-  [TopologicalSpace α] [CompactSpace α] [SecondCountableTopology α] [MeasurableSpace α]
+  [TopologicalSpace α] [CompactSpace α] [MeasurableSpace α]
   [OpensMeasurableSpace α] {μ : Measure α} {ι : α → P} {g : α → ℝ} {W : Set (E × P)}
   {U : Set E}
 
