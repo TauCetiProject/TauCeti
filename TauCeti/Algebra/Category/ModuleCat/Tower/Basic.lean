@@ -119,6 +119,12 @@ def limπ (n : ℕ) : F.lim →ₗ[R] F.obj (op n) :=
 theorem limπ_apply (n : ℕ) (x : F.lim) : F.limπ n x = (x : F.Product) n :=
   (rfl)
 
+/-- An element of `lim A` is compatible with the transition `Aₙ₊₁ → Aₙ`. -/
+@[simp]
+theorem transition_coe_lim_succ (x : F.lim) (n : ℕ) :
+    F.transition n ((x : F.Product) (n + 1)) = (x : F.Product) n :=
+  F.mem_lim.1 x.2 n
+
 @[simp]
 theorem transition_comp_limπ (n : ℕ) : F.transition n ∘ₗ F.limπ (n + 1) = F.limπ n := by
   ext x
