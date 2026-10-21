@@ -301,6 +301,7 @@ theorem ofConv_pointsMulEquiv_symm_genericMatrix (M : Matrix.SpecialLinearGroup 
 
 /-- The `(i, j)` entry of the matrix of a point of `SLₙ` is its value on the `(i, j)` entry of the
 generic matrix. -/
+@[simp]
 theorem coe_pointsMulEquiv_apply
     (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) (CommAlgCat.of R A))
     (i j : Fin n) :
