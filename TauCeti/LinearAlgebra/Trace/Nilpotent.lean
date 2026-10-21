@@ -38,6 +38,8 @@ construction of the neutral element of an `sl₂`-triple in the Jacobson–Moroz
 
 ## Main results
 
+* `Commute.lie_pow_succ_left`: if `a` commutes with `⁅a, b⁆` in a ring, then
+  `⁅a ^ (n + 1), b⁆ = (n + 1) • (a ^ n * ⁅a, b⁆)`.
 * `LinearMap.isNilpotent_iff_forall_trace_pow_eq_zero`: in characteristic zero, an endomorphism is
   nilpotent if and only if all traces of its positive powers vanish.
 * `LinearMap.isNilpotent_lie_of_lie_lie_eq_zero`: Jacobson's lemma.
@@ -53,6 +55,21 @@ construction of the neutral element of an `sl₂`-triple in the Jacobson–Moroz
 -/
 
 public section
+
+/-- If `a` commutes with `⁅a, b⁆`, then `⁅a ^ (n + 1), b⁆ = (n + 1) • (a ^ n * ⁅a, b⁆)`. This is
+the ring analogue of `Commute.commutatorElement_pow_left`. -/
+theorem Commute.lie_pow_succ_left {R : Type*} [Ring R] {a b : R} (h : Commute a ⁅a, b⁆)
+    (n : ℕ) : ⁅a ^ (n + 1), b⁆ = (n + 1) • (a ^ n * ⁅a, b⁆) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    calc ⁅a ^ (n + 1 + 1), b⁆ = a * ⁅a ^ (n + 1), b⁆ + ⁅a, b⁆ * a ^ (n + 1) := by
+          rw [pow_succ' a (n + 1)]
+          simp only [Ring.lie_def, mul_sub, sub_mul, mul_assoc]
+          abel
+      _ = (n + 1 + 1) • (a ^ (n + 1) * ⁅a, b⁆) := by
+          rw [ih, mul_smul_comm, ← mul_assoc, ← pow_succ', ← (h.pow_left (n + 1)).eq,
+            ← succ_nsmul]
 
 namespace LinearMap
 
@@ -113,7 +130,7 @@ variable [CharZero K] {A B : Module.End K M}
 then `⁅A, B⁆` is nilpotent: each of its positive powers is a commutator with `A`, hence
 traceless. -/
 theorem isNilpotent_lie_of_lie_lie_eq_zero (h : ⁅A, ⁅A, B⁆⁆ = 0) : IsNilpotent ⁅A, B⁆ := by
-  have hc : Commute A ⁅A, B⁆ := sub_eq_zero.1 (by rwa [← Ring.lie_def])
+  have hc : Commute A ⁅A, B⁆ := commute_iff_lie_eq.2 h
   -- Left multiplication of `⁅A, B⁆` by anything commuting with `A` gives a commutator with `A`.
   have hcomm (D : Module.End K M) (hD : Commute A D) :
       D * ⁅A, B⁆ = A * (D * B) - D * B * A := by
@@ -127,19 +144,8 @@ In characteristic zero, the trace of `A * B` on `ker (A ^ i)` is independent of 
 raises and `A` lowers the index by one and `⁅A, B⁆` is nilpotent by Jacobson's lemma. -/
 theorem trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero (hA : IsNilpotent A)
     (h : ⁅A, ⁅A, B⁆⁆ = 0) : trace K M (A * B) = 0 := by
-  have hc : Commute A ⁅A, B⁆ := sub_eq_zero.1 (by rwa [← Ring.lie_def])
+  have hc : Commute A ⁅A, B⁆ := commute_iff_lie_eq.2 h
   have hAB : A * B = B * A + ⁅A, B⁆ := by rw [Ring.lie_def]; abel
-  -- `A ^ (n + 1) * B = B * A ^ (n + 1) + (n + 1) • (A ^ n * ⁅A, B⁆)`
-  have hpow (n : ℕ) : A ^ (n + 1) * B = B * A ^ (n + 1) + (n + 1) • (A ^ n * ⁅A, B⁆) := by
-    induction n with
-    | zero => simp [hAB]
-    | succ n ih =>
-      calc A ^ (n + 1 + 1) * B = A * (A ^ (n + 1) * B) := by rw [pow_succ', mul_assoc]
-        _ = A * B * A ^ (n + 1) + (n + 1) • (A ^ (n + 1) * ⁅A, B⁆) := by
-          rw [ih, mul_add, mul_smul_comm, ← mul_assoc, ← mul_assoc, ← pow_succ']
-        _ = B * A ^ (n + 1 + 1) + (n + 1 + 1) • (A ^ (n + 1) * ⁅A, B⁆) := by
-          rw [hAB, add_mul, mul_assoc, ← pow_succ', ← (hc.pow_left (n + 1)).eq, add_assoc,
-            ← succ_nsmul']
   let V : ℕ → Submodule K M := fun i => ker (A ^ i)
   have hCV (i : ℕ) : ∀ v ∈ V i, ⁅A, B⁆ v ∈ V i := fun v hv => by
     simp only [V, mem_ker] at hv ⊢
@@ -147,9 +153,11 @@ theorem trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero (hA : IsNilpotent A)
   have hBV (i : ℕ) : ∀ v ∈ V i, B v ∈ V (i + 1) := fun v hv => by
     have hCv := hCV i v hv
     simp only [V, mem_ker] at hv hCv ⊢
-    -- Both terms of `hpow i` applied to `v` vanish, since `A ^ i` kills `v` and `⁅A, B⁆ v`.
+    -- Both terms of `A ^ (i + 1) * B = B * A ^ (i + 1) + (i + 1) • (A ^ i * ⁅A, B⁆)` applied to
+    -- `v` vanish, since `A ^ i` kills `v` and `⁅A, B⁆ v`.
     have hv' : (A ^ (i + 1)) v = 0 := by rw [pow_succ', Module.End.mul_apply, hv, map_zero]
-    rw [← Module.End.mul_apply, hpow]
+    rw [← Module.End.mul_apply, (sub_eq_iff_eq_add').1 (Ring.lie_def _ _).symm,
+      hc.lie_pow_succ_left]
     simp only [add_apply, smul_apply, Module.End.mul_apply, hv', hCv, map_zero, smul_zero,
       add_zero]
   have hAV (i : ℕ) : ∀ v ∈ V (i + 1), A v ∈ V i := fun v hv => by
