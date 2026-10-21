@@ -131,6 +131,17 @@ theorem permutationAugmentation_apply (v : MonoidAlgebra k X) :
     (permutationAugmentation k G X).hom v = (MonoidAlgebra.basis X k).sumCoords v :=
   (rfl)
 
+/-- Read on coefficients, the permutation augmentation sums the coefficients. -/
+theorem forget₂_map_permutationAugmentation :
+    (forget₂ (Rep k G) (ModuleCat k)).map (permutationAugmentation k G X) =
+      (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom ≫
+        ModuleCat.ofHom (Finsupp.linearCombination k fun _ ↦ (1 : k)) := by
+  refine ModuleCat.hom_ext ((MonoidAlgebra.basis X k).ext fun x ↦ ?_)
+  simp only [Rep.forget₂_moduleCat_map, ModuleCat.hom_ofHom, ModuleCat.hom_comp,
+    LinearMap.comp_apply, Representation.IntertwiningMap.toLinearMap_apply]
+  rw [permutationAugmentation_apply]
+  simp
+
 /-- For a nonempty permutation set, augmentation is surjective. -/
 instance permutationAugmentation_epi [Nonempty X] : Epi (permutationAugmentation k G X) :=
   (Rep.epi_iff_surjective _).2 (MonoidAlgebra.sumCoords_basis_surjective (k := k) (X := X))

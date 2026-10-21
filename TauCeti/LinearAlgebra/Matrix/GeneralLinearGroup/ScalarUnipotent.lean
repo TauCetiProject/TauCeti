@@ -328,7 +328,7 @@ theorem index_gl2ScalarUnipotent (F : Type u) [Field F] [Fintype F] :
     Nat.mul_pos (Nat.sub_pos_of_lt (Fintype.one_lt_card (α := F))) Fintype.card_pos
   refine index_eq_of_natCard_eq_mul hpos ?_ ?_
   · rw [natCard_gl2ScalarUnipotent, Nat.card_eq_fintype_card]
-  · rw [natCard_GL_fin_two_eq_sq_sub_one_mul]
+  · rw [natCard_GL_fin_two_eq_sq_sub_one_mul, Nat.card_eq_fintype_card]
     ac_rfl
 
 end TauCeti

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.Basic
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.Basic
 
 /-!
 # The curvature-dimension condition `CD(K, ∞)`
