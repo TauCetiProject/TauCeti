@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.RepresentationTheory.Cyclic.Automorphism
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
@@ -277,10 +276,9 @@ noncomputable def groupCohomologyOddEquivTorsionBy (i : ℕ) (hi : Odd i) :
   (LinearEquiv.ofBijective ((groupCohomologyπOdd ((AddEquiv.refl T).cyclicRep
       (AddEquiv.iterate_refl m)) (.ofAdd 1) mem_zpowers_ofAdd_one i hi).hom ∘ₗ ι)
     ⟨fun x y h ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, groupCohomologyπOdd_eq_iff,
-        AddEquiv.mem_range_cyclicRep_refl_applyAsHom_sub_iff, sub_eq_zero,
-        LinearMap.codRestrict_apply, LinearMap.codRestrict_apply, Submodule.coe_subtype] at h
-      exact Subtype.ext h,
+      simp only [LinearMap.comp_apply] at h
+      rw [groupCohomologyπOdd_eq_iff, AddEquiv.mem_range_cyclicRep_refl_applyAsHom_sub_iff] at h
+      simpa [ι, sub_eq_zero] using h,
     fun c ↦ by
       obtain ⟨x, rfl⟩ := groupCohomologyπOdd_surjective _ _ mem_zpowers_ofAdd_one i hi c
       -- `ι` sends `⟨x, _⟩` to `x`.
@@ -321,9 +319,8 @@ noncomputable def groupCohomologyEvenEquivQuotSMulTop (i : ℕ) [NeZero i] (hi :
   have hker : LinearMap.ker φ = (m : ℤ) • (⊤ : Submodule ℤ T) := by
     ext x
     rw [LinearMap.mem_ker, LinearMap.comp_apply, groupCohomologyπEven_eq_zero_iff,
-      LinearMap.codRestrict_apply, LinearMap.id_apply, AddEquiv.mem_range_cyclicRep_refl_norm_iff,
-      Submodule.mem_smul_pointwise_iff_exists]
-    simp
+      AddEquiv.mem_range_cyclicRep_refl_norm_iff]
+    simp [ι, Submodule.mem_smul_pointwise_iff_exists]
   ((Submodule.quotEquivOfEq _ _ hker).symm.trans (φ.quotKerEquivOfSurjective hφ)).symm
 
 /-- The even-degree class corresponding to the coset of `x` is the class of `x`. -/
@@ -375,12 +372,11 @@ theorem groupCohomologyEvenEquivQuotSMulTop_δ
   obtain ⟨v, hv⟩ := (hexact (m • s)).1 <| by
     rw [map_nsmul, hs, ← natCast_zsmul]
     exact (Submodule.mem_torsionBy_iff _ _).1 t.2
-  rw [LinearEquiv.apply_symm_apply, groupCohomologyOddEquivTorsionBy_symm_apply,
-    δ_cyclicRepShortComplex_groupCohomologyπOdd_one hS
-      ⟨t, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 t.2⟩ s
-      (by rw [LinearMap.toAddMonoidHom_coe, hs])
-      ⟨v, AddEquiv.mem_ker_cyclicRep_refl_applyAsHom_sub v⟩
-      (by rw [LinearMap.toAddMonoidHom_coe, hv]; simp),
+  -- `δ` sends the class of `t` to the class of `v`, and so does the snake map.
+  have hδ := δ_cyclicRepShortComplex_groupCohomologyπOdd_one hS
+    ⟨t, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 t.2⟩ s (by simpa using hs)
+    ⟨v, AddEquiv.mem_ker_cyclicRep_refl_applyAsHom_sub v⟩ (by simp [hv])
+  rw [LinearEquiv.apply_symm_apply, groupCohomologyOddEquivTorsionBy_symm_apply, hδ,
     groupCohomologyEvenEquivQuotSMulTop_groupCohomologyπEven,
     torsionByδ_eq hexact hinj hsurj t hs (by rw [hv, natCast_zsmul])]
 
@@ -394,9 +390,7 @@ theorem torsionByδEquiv_eq_trans_cyclicConnectingEquiv
       ((groupCohomologyOddEquivTorsionBy T m 1 odd_one).symm.trans
         (cyclicConnectingEquiv hS hm)).trans (groupCohomologyEvenEquivQuotSMulTop Λ m 2 even_two) :=
   LinearEquiv.ext fun t ↦ by
-    rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, cyclicConnectingEquiv_apply,
-      groupCohomologyEvenEquivQuotSMulTop_δ hS hinj hexact hsurj, LinearEquiv.apply_symm_apply,
-      torsionByδEquiv_apply]
+    simp [groupCohomologyEvenEquivQuotSMulTop_δ hS hinj hexact hsurj]
 
 end TrivialConnecting
 
