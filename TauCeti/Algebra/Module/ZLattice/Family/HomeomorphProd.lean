@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Algebra.Module.ZLattice.Family.Basic
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
 
