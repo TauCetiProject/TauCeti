@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.EllipticDivisibilitySequence.Invariant.Basic
 public import TauCeti.NumberTheory.EllipticDivisibilitySequence.NormEDS
+public import TauCeti.NumberTheory.EllipticDivisibilitySequence.Universal
 import Mathlib.Tactic.LinearCombination
 
 /-!

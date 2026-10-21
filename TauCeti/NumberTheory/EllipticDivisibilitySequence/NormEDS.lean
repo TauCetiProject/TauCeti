@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.EllipticDivisibilitySequence.Universal
+public import Mathlib.NumberTheory.EllipticDivisibilitySequence
 
 /-!
 # Special values of a normalised elliptic divisibility sequence
@@ -31,8 +31,6 @@ Angdinata as its author. The special values extend its `normEDS_two_three_two` a
 -/
 
 public section
-
-open MvPolynomial NormEDSParam
 
 /-- **The 2-complement of `normEDS 2 3 2` is the constant `2`, over any commutative ring**:
 the complement of `n` in `2n` for the integer-cast sequence. -/
