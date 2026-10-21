@@ -37,8 +37,9 @@ The restriction to changes of variables over `ℤ` matters: the scaling `(x, y) 
 Both restrictions are load-bearing. On `y² + ½y = x³` the point `(0, 0)` has integral coordinates
 while its negative `(0, -½)` does not (`exists_not_hasIntegralCoordinates_neg`), so stability under
 negation is not guaranteed on an arbitrary rational model. On `y² = x³ + 3` the change of variables
-`(x, y) ↦ (4x, 8y)`, that is `u = 2` with `r = s = t = 0`, identifies the integral point `(1, 2)`
-with `(1/4, 1/4)`, which is not integral
+`(x, y) ↦ (4x, 8y)`, that is `u = 2` with `r = s = t = 0`, sends the point `(1/4, 1/4)` of the
+transformed curve `C • W : y² = x³ + 3/64` to the integral point `(1, 2)`, so it does not map the
+integral points of `C • W` onto those of `W`
 (`exists_not_surjOn_equivVariableChange_hasIntegralCoordinates`).
 
 ## References
@@ -445,16 +446,17 @@ private theorem curveAddThree_nonsingular : curveAddThree.toAffine.Nonsingular 1
   · norm_num [curveAddThree]
   · norm_num [curveAddThree]
 
-/-- The change of variables `(x, y) ↦ (4x, 8y)` of `y² = x³ + 3`, that is `u = 2` with
-`r = s = t = 0`. -/
+/-- The change of variables with `u = 2` and `r = s = t = 0`, which acts on a point of `C • W` as
+`(x, y) ↦ (4x, 8y)`. -/
 private def twoChange : WeierstrassCurve.VariableChange ℚ := ⟨Units.mk0 2 (by norm_num), 0, 0, 0⟩
 
 /-- **A change of variables needs `u = ±1`.** Over `ℚ` the change with `u = 2` and
 `r = s = t = 0`, integral apart from the unit, identifies the rational points of `C • W` with
 those of `W`, but it does not map the integral points of `C • W` onto those of `W`: on
-`y² = x³ + 3` the integral point `(1, 2)` is the image of `(1/4, 1/4)`, whose coordinates are not
-integers. Over `ℤ` the unit group is `{±1}`, and there the identification is a bijection on
-integral points (`bijOn_pointEquivVariableChange_integralPoints`). -/
+`y² = x³ + 3` the integral point `(1, 2)` is the image of the point `(1/4, 1/4)` of
+`C • W : y² = x³ + 3/64`, whose coordinates are not integers. Over `ℤ` the unit group is `{±1}`,
+and there the identification is a bijection on integral points
+(`bijOn_pointEquivVariableChange_integralPoints`). -/
 theorem exists_not_surjOn_equivVariableChange_hasIntegralCoordinates :
     ∃ (W : WeierstrassCurve ℚ) (C : WeierstrassCurve.VariableChange ℚ) (P : W.toAffine.Point),
       (C.u : ℚ) = 2 ∧ C.r = 0 ∧ C.s = 0 ∧ C.t = 0 ∧ P.HasIntegralCoordinates ∧
