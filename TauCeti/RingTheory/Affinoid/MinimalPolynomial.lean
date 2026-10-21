@@ -61,19 +61,6 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
   {A : Type*} [CommRing A] [Algebra K A] {B : Type*} [CommRing B] [Algebra K B]
   [Algebra A B] [IsScalarTower K A B]
 
-/-- The residue field of `A` at a classical point is finite over `K` when `A` embeds integrally
-into an affinoid algebra, since the point lies under a classical point of the affinoid algebra. -/
-private theorem finite_quotient_of_isIntegral (hB : IsAffinoidAlgebra K B)
-    [Algebra.IsIntegral A B] [FaithfulSMul A B] (x : MaximalSpectrum A) :
-    Module.Finite K (A ⧸ x.asIdeal) := by
-  obtain ⟨y, rfl⟩ := hB.maximalSpectrumComap_surjective (IsScalarTower.toAlgHom K A B)
-    (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b) (FaithfulSMul.algebraMap_injective A B) x
-  have := hB.finite_quotient_of_isMaximal y.asIdeal
-  rw [maximalSpectrumComap_asIdeal]
-  exact Module.Finite.of_injective
-    (Ideal.quotientMapₐ y.asIdeal (IsScalarTower.toAlgHom K A B) le_rfl).toLinearMap
-    Ideal.quotientMap_injective
-
 /-- A root `α` of `p` in a field `Ω` over `A`, whose kernel on `A` is maximal, is the value of
 `f` at a classical point of `B`, provided `p` divides every polynomial vanishing at `f`. -/
 private theorem exists_pointNorm_eq_spectralNorm (hB : IsAffinoidAlgebra K B)
@@ -85,8 +72,11 @@ private theorem exists_pointNorm_eq_spectralNorm (hB : IsAffinoidAlgebra K B)
   let S := (aeval (R := A) f).range
   let g : A[X] →ₐ[A] S := (aeval f).rangeRestrict
   have hg : Function.Surjective g := AlgHom.rangeRestrict_surjective _
+  have hgval (q : A[X]) : (g q : B) = aeval f q := AlgHom.coe_codRestrict _ _ _ q
   have hker (q : A[X]) (hq : q ∈ RingHom.ker g) : aeval α q = 0 := by
-    obtain ⟨r, rfl⟩ := hdvd q (congrArg Subtype.val (RingHom.mem_ker.mp hq))
+    have hfq : aeval f q = 0 := by
+      rw [← hgval, RingHom.mem_ker.mp hq, ZeroMemClass.coe_zero]
+    obtain ⟨r, rfl⟩ := hdvd q hfq
     rw [map_mul, hα, zero_mul]
   let χ : S →ₐ[A] Ω := (Ideal.Quotient.liftₐ (RingHom.ker g) (aeval α) hker).comp
     (Ideal.quotientKerAlgEquivOfSurjective hg).symm.toAlgHom
@@ -113,7 +103,7 @@ private theorem exists_pointNorm_eq_spectralNorm (hB : IsAffinoidAlgebra K B)
   have hfS : f ∈ S := (AlgHom.mem_range _).mpr ⟨X, aeval_X f⟩
   have hfα : χ ⟨f, hfS⟩ = α := by
     rw [← aeval_X (R := A) α, ← hχ X]
-    exact congrArg χ (Subtype.ext (aeval_X f).symm)
+    exact congrArg χ (Subtype.ext (by rw [hgval, aeval_X]))
   rw [← hfα, ← AlgHom.restrictScalars_apply K χ,
     ← pointNorm_eq_spectralNorm (x := ⟨_, hmax⟩) le_rfl, ← hy,
     hB.pointNorm_maximalSpectrumComap]
@@ -127,7 +117,9 @@ private theorem pointNorm_coeff_le_supSeminorm_pow (hB : IsAffinoidAlgebra K B)
     pointNorm K x (p.coeff i) ≤ supSeminorm K f ^ (p.natDegree - i) := by
   -- Compute the point norms at `x` in an algebraic closure `Ω` of the residue field.
   let := Ideal.Quotient.field x.asIdeal
-  have := hB.finite_quotient_of_isIntegral x
+  have := hB.finite_quotient_of_isIntegral (IsScalarTower.toAlgHom K A B)
+    (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b) (FaithfulSMul.algebraMap_injective A B)
+    x.asIdeal
   let Ω := AlgebraicClosure (A ⧸ x.asIdeal)
   have : Algebra.IsAlgebraic K Ω := Algebra.IsAlgebraic.trans K (A ⧸ x.asIdeal) Ω
   have hker : RingHom.ker (algebraMap A Ω) = x.asIdeal := by
@@ -143,8 +135,8 @@ private theorem pointNorm_coeff_le_supSeminorm_pow (hB : IsAffinoidAlgebra K B)
     obtain ⟨y, hy⟩ := hB.exists_pointNorm_eq_spectralNorm hdvd (hker.symm ▸ x.isMaximal) hα
     rw [spectralMulAlgNorm_def, ← hy]
     exact hB.pointNorm_le_supSeminorm y f
-  have h := hP.apply_coeff_le_pow_of_card_roots (fun a n _ ↦ map_pow _ a n)
-    (fun a b ↦ isNonarchimedean_spectralNorm (K := K) a b)
+  have h := hP.apply_coeff_le_pow_of_card_roots (map_one _).le
+    (fun a b ↦ by simpa only [spectralMulAlgNorm_def] using isNonarchimedean_spectralNorm a b)
     (IsAlgClosed.splits P).natDegree_eq_card_roots.symm hM i
   rwa [spectralMulAlgNorm_def, coeff_map, hp.natDegree_map] at h
 

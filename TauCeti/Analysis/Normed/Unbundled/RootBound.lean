@@ -27,7 +27,8 @@ equations used to bound supremum seminorms of affinoid algebras.
 Conversely, if `p` has `d` roots in a domain, counted with multiplicity, then each coefficient is
 bounded by the largest root: `f aᵢ ≤ M ^ (d - i)` whenever `f a ≤ M` for every root `a`. Together
 the two bounds identify `max_{i < d} f aᵢ ^ (1 / (d - i))` with the largest value of `f` on the
-roots of a split monic polynomial.
+roots of a split monic polynomial. This adapts the second half of the proof of Mathlib's
+`max_norm_root_eq_spectralValue` ([BGR] §3.1.2, Proposition 1(2)) to ring seminorms.
 
 ## Main results
 
@@ -42,7 +43,7 @@ roots of a split monic polynomial.
 ## References
 
 * [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §3.1.2
-  and §3.8.1.
+  (Proposition 1) and §3.8.1.
 -/
 
 public section
@@ -116,8 +117,10 @@ variable {R F : Type*} [CommRing R] [FunLike F R ℝ] [RingSeminormClass F R ℝ
 
 /-- The elementary symmetric functions of a multiset are bounded by powers of a bound on its
 elements: if `f a ≤ M` for every `a ∈ s`, then `f (s.esymm k) ≤ M ^ k` for every `k` up to the
-cardinality of `s`, for every nonarchimedean power-multiplicative ring seminorm `f`. -/
-theorem Multiset.apply_esymm_le_pow (hf_pm : IsPowMul f) (hf_na : IsNonarchimedean f)
+cardinality of `s`, for every nonarchimedean ring seminorm `f` with `f 1 ≤ 1`. This adapts the
+coefficient half of the proof of Mathlib's `max_norm_root_eq_spectralValue`
+([BGR] §3.1.2, Proposition 1(2)). -/
+theorem Multiset.apply_esymm_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f)
     {s : Multiset R} {M : ℝ} (hM : ∀ a ∈ s, f a ≤ M) {k : ℕ} (hk : k ≤ Multiset.card s) :
     f (s.esymm k) ≤ M ^ k := by
   -- The sum over the subfamilies of size `k` is dominated by one of its products.
@@ -126,23 +129,23 @@ theorem Multiset.apply_esymm_le_pow (hf_pm : IsPowMul f) (hf_na : IsNonarchimede
   rw [Multiset.esymm]
   calc _ ≤ f t.prod := hle
     _ ≤ (t.map f).prod := Multiset.le_prod_of_submultiplicative_of_nonneg f (apply_nonneg f)
-        hf_pm.map_one_le_one (map_mul_le_mul f) t
+        hf1 (map_mul_le_mul f) t
     _ ≤ M ^ Multiset.card t := Multiset.prod_map_le_pow_card (fun a _ ↦ apply_nonneg f a)
         fun a ha ↦ hM a (hts a ha)
     _ = M ^ k := by rw [ht]
 
 /-- **Coefficients are bounded by the roots.** If a monic polynomial `p` of degree `d` over a
 domain has `d` roots counted with multiplicity, and `f a ≤ M` for every root `a`, then
-`f (p.coeff i) ≤ M ^ (d - i)` for every `i`, for every nonarchimedean power-multiplicative ring
-seminorm `f`. This complements
+`f (p.coeff i) ≤ M ^ (d - i)` for every `i`, for every nonarchimedean ring seminorm `f` with
+`f 1 ≤ 1`. This complements
 `Polynomial.Monic.apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero`. -/
 theorem Polynomial.Monic.apply_coeff_le_pow_of_card_roots [IsDomain R] {p : R[X]} (hp : p.Monic)
-    (hf_pm : IsPowMul f) (hf_na : IsNonarchimedean f)
+    (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f)
     (hroots : Multiset.card p.roots = p.natDegree) {M : ℝ} (hM : ∀ a ∈ p.roots, f a ≤ M)
     (i : ℕ) : f (p.coeff i) ≤ M ^ (p.natDegree - i) := by
   rcases le_or_gt i p.natDegree with hi | hi
   · rw [coeff_eq_esymm_roots_of_card hroots hi, hp.leadingCoeff, one_mul]
-    have hesymm := Multiset.apply_esymm_le_pow hf_pm hf_na hM (k := p.natDegree - i) (by omega)
+    have hesymm := Multiset.apply_esymm_le_pow hf1 hf_na hM (k := p.natDegree - i) (by omega)
     rcases neg_one_pow_eq_or R (p.natDegree - i) with h | h
     · rwa [h, one_mul]
     · rwa [h, neg_one_mul, map_neg_eq_map]
