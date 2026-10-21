@@ -27,7 +27,7 @@ arrows count dimensions over `k`, not the valuations over the residue division r
 The instances here make the general API apply without further hypotheses:
 
 * the morphism spaces between representatives are finite-dimensional
-  (`ModuleCat.finiteDimensional_hom_of_finite`), so every arrow set is finite;
+  (`ModuleCat.finite_hom_of_finite`), so every arrow set is finite;
 * representatives have local endomorphism rings
   (`TauCeti.isLocalRing_end_of_indecomposable`, Fitting's lemma for the finite-dimensional
   endomorphism algebra), so

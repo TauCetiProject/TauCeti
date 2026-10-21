@@ -11,10 +11,9 @@ public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
 public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleComposite
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.RingTheory.Artinian.Defs
-import Mathlib.Algebra.Category.ModuleCat.Algebra
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
-import TauCeti.Algebra.Module.LinearMap.Finite
+import TauCeti.Algebra.Category.ModuleCat.Algebra
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.CategoryTheory.Preadditive.Radical.RepresentationFinite
 
@@ -57,21 +56,12 @@ universe w v u
 variable (R : Type u) {A : Type v} [CommRing R] [IsArtinianRing R] [Ring A] [Algebra R A]
   [Module.Finite R A]
 
-open ModuleCat.Algebra in
-include R in
-/-- The endomorphisms of a finitely generated module over an Artin algebra form a finitely generated
-`R`-module, for the `R`-linear structure `ModuleCat.Algebra.instLinear` on `FGModuleCat A`. -/
-private theorem module_finite_hom (X : FGModuleCat.{w} A) : Module.Finite R (X ⟶ X) := by
-  have : Module.Finite A X.obj := (ModuleCat.isFG_iff _).mp X.property
-  have : Module.Finite R X.obj := .trans A _
-  have : Module.Finite R (X.obj →ₗ[A] X.obj) := .linearMap_of_isNoetherian
-  have : Module.Finite R (X.obj ⟶ X.obj) := .equiv (ModuleCat.homLinearEquiv (S := R)).symm
-  exact .equiv (InducedCategory.homLinearEquiv (R := R)).symm
-
-/-- Over a representation-finite ring whose finitely generated modules form an idempotent-complete
-category, finitely many finitely generated modules represent every indecomposable object of
-`FGModuleCat A`. -/
-private theorem IsRepresentationFinite.exists_indecomposable_iso [IsNoetherianRing A]
+/-- Over a representation-finite Noetherian ring `A`, every indecomposable object of
+`FGModuleCat A` is isomorphic to one of finitely many objects `P i`. This is the form in which
+representation-finiteness enters the results for linear categories with finitely many
+indecomposable objects, such as
+`TauCeti.exists_jacobsonRadicalIdeal_pow_eq_bot_of_finite_indecomposables`. -/
+theorem IsRepresentationFinite.exists_indecomposable_iso [IsNoetherianRing A]
     (h : IsRepresentationFinite.{w} A) :
     ∃ (m : ℕ) (P : Fin m → FGModuleCat.{w} A),
       ∀ X : FGModuleCat.{w} A, Indecomposable X → ∃ i, Nonempty (X ≅ P i) := by
@@ -99,7 +89,6 @@ theorem IsRepresentationFinite.exists_jacobsonRadicalIdeal_pow_eq_bot
     ∃ N : ℕ, jacobsonRadicalIdeal (FGModuleCat.{w} A) ^ N = ⊥ := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   have : HasFiniteBiproducts (FGModuleCat.{w} A) := .of_hasFiniteProducts
-  have : ∀ X : FGModuleCat.{w} A, Module.Finite R (X ⟶ X) := module_finite_hom R
   obtain ⟨m, P, hP⟩ := h.exists_indecomposable_iso
   exact exists_jacobsonRadicalIdeal_pow_eq_bot_of_finite_indecomposables R P hP
 
@@ -115,7 +104,6 @@ theorem IsRepresentationFinite.mem_closure_isIrreducibleComposite
     f ∈ AddSubgroup.closure {g : X ⟶ Y | IsIrreducibleComposite g} := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   have : HasFiniteBiproducts (FGModuleCat.{w} A) := .of_hasFiniteProducts
-  have : ∀ X : FGModuleCat.{w} A, Module.Finite R (X ⟶ X) := module_finite_hom R
   obtain ⟨m, P, hP⟩ := h.exists_indecomposable_iso
   -- Indecomposability in `ModuleCat A` gives a local endomorphism ring in `FGModuleCat A`.
   have := FGModuleCat.isLocalRing_end_of_indecomposable hX
