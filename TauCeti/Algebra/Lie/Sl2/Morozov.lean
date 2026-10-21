@@ -23,11 +23,12 @@ This is the second half of the Jacobson–Morozov theorem: the first half produc
 The key point is that the eigenvalues of `ad h` on the centralizer `ker (ad e)` are natural
 numbers. This is proved at the level of operators: if `E`, `H`, `Z` are endomorphisms of a vector
 space with `E` nilpotent, `E * Z - Z * E = H` and `H * E - E * H = 2 • E`, then `H` preserves
-`ker E`, and on the decreasing filtration `ker E ⊓ range (E ^ k)` the operator `H - k` lowers the
-filtration degree by one. Since the filtration reaches `0` at the nilpotency index of `E`, the
-operator `H - a` is bijective on `ker E` for every `a` that is not a natural number. For the Lie
-algebra statement take `E = ad e`, `H = ad h` and `Z = ad z` where `h = ⁅e, z⁆`; the operator
-form applies equally to the images of `e`, `h`, `z` in any representation.
+`ker E`, and on the decreasing filtration `ker E ⊓ range (E ^ k)` the operator `H - k` maps
+the `k`-th step into the `(k + 1)`-st. Since the filtration reaches `0` at the nilpotency index
+of `E`, the operator `H - a` is bijective on `ker E` for every `a` that is not a natural number.
+For the Lie algebra statement take `E = ad e`, `H = ad h` and `Z = ad z` where `h = ⁅e, z⁆`; the
+operator form applies equally to the images of `e`, `h`, `z` in any representation in which the
+image of `e` is nilpotent.
 
 Mathlib's `IsSl2Triple.HasPrimitiveVectorWith.exists_nat` reaches the same kind of conclusion for
 a primitive vector of a complete `sl₂` triple acting on a Noetherian module. Here the third element
@@ -75,10 +76,10 @@ private theorem apply_pow_apply_sub_smul_mem_range_pow_succ (hEZ : E * Z - Z * E
   simp only [Module.End.mul_apply, hy, map_zero, LinearMap.sub_apply, LinearMap.smul_apply,
     map_add, LinearMap.add_apply, Module.End.natCast_apply, ← Nat.cast_smul_eq_nsmul K,
     map_smul] at h₁ h₂
-  rw [map_smul, eq_of_sub_eq_zero h₁.symm, h₂, smul_smul, Nat.cast_succ,
-    inv_mul_cancel₀ (Nat.cast_add_one_ne_zero k), one_smul]
+  have hinv : ((k : K) + 1)⁻¹ * ((k : K) + 1) = 1 := inv_mul_cancel₀ (Nat.cast_add_one_ne_zero k)
+  rw [map_smul, eq_of_sub_eq_zero h₁.symm, h₂]
   push_cast
-  module
+  linear_combination (norm := module) hinv • ((E ^ k) (H y) + (k : K) • (E ^ k) y)
 
 /-- `H - k` maps the `k`-th step `ker E ⊓ range (E ^ k)` of the filtration into the next one. -/
 private theorem apply_sub_smul_mem_ker_inf_range_pow_succ (hEZ : E * Z - Z * E = H)
@@ -86,21 +87,13 @@ private theorem apply_sub_smul_mem_ker_inf_range_pow_succ (hEZ : E * Z - Z * E =
     (hc : c ∈ LinearMap.ker E ⊓ LinearMap.range (E ^ k)) :
     H c - (k : K) • c ∈ LinearMap.ker E ⊓ LinearMap.range (E ^ (k + 1)) := by
   obtain ⟨hcE, y, rfl⟩ := hc
-  replace hcE : E ((E ^ k) y) = 0 := hcE
+  replace hcE := LinearMap.mem_ker.mp hcE
   refine ⟨?_, apply_pow_apply_sub_smul_mem_range_pow_succ hEZ hHE ?_⟩
   · have := congr($hHE ((E ^ k) y))
     simp only [LinearMap.sub_apply, Module.End.mul_apply, hcE, map_zero, LinearMap.smul_apply,
       smul_zero, zero_sub, neg_eq_zero] at this
     simp [this, hcE]
   · rw [pow_succ', Module.End.mul_apply, hcE]
-
-omit [CharZero K] in
-/-- The filtration `ker E ⊓ range (E ^ k)` decreases. -/
-private theorem ker_inf_range_pow_succ_le (k : ℕ) :
-    LinearMap.ker E ⊓ LinearMap.range (E ^ (k + 1)) ≤ LinearMap.ker E ⊓ LinearMap.range (E ^ k) :=
-  inf_le_inf_left _ <| by
-    rw [pow_succ, Module.End.mul_eq_comp]
-    exact LinearMap.range_comp_le_range _ _
 
 /-- For `a` not a natural number, `H - a` is injective on, and maps onto, every step of the
 filtration `ker E ⊓ range (E ^ k)`. This is proved by descending induction on `k`, starting from
@@ -137,7 +130,7 @@ private theorem injOn_and_surjOn_ker_inf_range_pow (hE : IsNilpotent E)
       simpa [smul_smul, inv_mul_cancel₀ hak] using Submodule.smul_mem _ (a - k)⁻¹ hmem
     · obtain ⟨c, hc, hHc⟩ := hsurj _
         (Submodule.smul_mem _ (a - k)⁻¹ (apply_sub_smul_mem_ker_inf_range_pow_succ hEZ hHE hw))
-      refine ⟨c - (a - k)⁻¹ • w, sub_mem (ker_inf_range_pow_succ_le k hc)
+      refine ⟨c - (a - k)⁻¹ • w, sub_mem ⟨hc.1, E.iterateRange.monotone k.le_succ hc.2⟩
         (Submodule.smul_mem _ _ hw), ?_⟩
       have hinv : (a - k)⁻¹ * (a - k) = 1 := inv_mul_cancel₀ hak
       rw [map_sub, map_smul]
@@ -191,12 +184,6 @@ theorem exists_eq_natCast_of_lie_eq_smul (he : IsNilpotent (ad K L e)) (hhe : �
   exact Sl2.exists_eq_natCast_of_apply_eq_smul he hEZ hHE (by simpa using hc) hc0
     (by simpa using hhc)
 
-/-- `-2` is not a natural number. -/
-private theorem neg_two_ne_natCast (n : ℕ) : (-2 : K) ≠ n := by
-  intro hn
-  have : ((n + 2 : ℕ) : K) = 0 := by push_cast; linear_combination -hn
-  exact Nat.succ_ne_zero _ (Nat.cast_eq_zero.mp this)
-
 /-- **Morozov's lemma**. Let `ad e` be nilpotent, `⁅h, e⁆ = 2 • e` and `h ∈ [e, L]`, over a field
 of characteristic zero. Then there is a unique `f` with `⁅e, f⁆ = h` and `⁅h, f⁆ = -(2 • f)`.
 The case `h = 0` is allowed. -/
@@ -206,11 +193,13 @@ theorem existsUnique_lie_eq_and_lie_eq_neg_two_nsmul (he : IsNilpotent (ad K L e
   have ⟨z, hz⟩ := hh
   rw [ad_apply] at hz
   obtain ⟨hEZ, hHE⟩ := ad_relations (K := K) hhe hz
+  have hneg (n : ℕ) : (-2 : K) ≠ n := by
+    exact_mod_cast (by omega : (-2 : ℤ) ≠ n)
   have hw : ⁅h, z⁆ + 2 • z ∈ LinearMap.ker (ad K L e) := by
     rw [LinearMap.mem_ker, ad_apply, lie_add, leibniz_lie, ← lie_skew e h, hhe]
     simp [hz]
   obtain ⟨c, hc, hhc⟩ :=
-    Sl2.exists_mem_ker_apply_sub_smul_eq he hEZ hHE neg_two_ne_natCast hw
+    Sl2.exists_mem_ker_apply_sub_smul_eq he hEZ hHE hneg hw
   rw [LinearMap.mem_ker, ad_apply] at hc
   rw [ad_apply] at hhc
   refine ⟨z - c, ⟨by rw [lie_sub, hz, hc, sub_zero], ?_⟩, ?_⟩
@@ -221,7 +210,7 @@ theorem existsUnique_lie_eq_and_lie_eq_neg_two_nsmul (he : IsNilpotent (ad K L e
     obtain ⟨n, hn⟩ := exists_eq_natCast_of_lie_eq_smul he hhe hh (c := f - (z - c))
       (by rw [lie_sub, hf₁, lie_sub, hz, hc, sub_zero, sub_self]) (sub_ne_zero.mpr hne)
       (a := -2) (by rw [lie_sub, lie_sub, hf₂]; linear_combination (norm := module) hhc)
-    exact neg_two_ne_natCast n hn
+    exact hneg n hn
 
 /-- **Morozov's lemma** for `sl₂` triples. Let `ad e` be nilpotent, `⁅h, e⁆ = 2 • e`, `h ≠ 0` and
 `h ∈ [e, L]`, over a field of characteristic zero. Then there is a unique `f` such that `(h, e, f)`
