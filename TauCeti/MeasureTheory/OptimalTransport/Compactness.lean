@@ -48,8 +48,8 @@ this lives here rather than in the stability file that consumes it.
 ## Main statements
 
 * `TauCeti.isClosed_setOfPred_isCoupling` — the couplings of `μ` and `ν` are a weakly closed set of
-  probability measures on the product, with Borel `HasOuterApproxClosed` and
-  compact-pseudometrizable specialisations;
+  probability measures on the product, including Borel `HasOuterApproxClosed` factors through
+  typeclass inference, with a compact-pseudometrizable specialisation;
 * `TauCeti.isTightMeasureSet_setOfPred_exists_isCoupling` and
   `TauCeti.isTightMeasureSet_setOfPred_isCoupling` — the couplings of two tight families of
   measures, and of two tight measures, form a tight family, with no topological hypothesis beyond
@@ -300,23 +300,6 @@ theorem isCompact_setOfPred_isCoupling_of_compactSpace (μ : ProbabilityMeasure 
     IsTightMeasureSet.of_compactSpace
 
 end CompactMetrizable
-
-section OuterApproxClosed
-
-variable {X Y : Type*} [TopologicalSpace X] [HasOuterApproxClosed X] [MeasurableSpace X]
-  [BorelSpace X] [TopologicalSpace Y] [HasOuterApproxClosed Y] [MeasurableSpace Y] [BorelSpace Y]
-
-/-- **Closedness of couplings on Borel spaces with outer approximations of closed sets.** The
-spaces of marginal probability measures are Hausdorff by
-`MeasureTheory.ProbabilityMeasure.t2Space`. The product need only have measurable opens, as holds
-when either factor is second countable. In particular, this applies to Polish Borel spaces. -/
-theorem isClosed_setOfPred_isCoupling_of_hasOuterApproxClosed
-    [OpensMeasurableSpace (X × Y)] (μ : ProbabilityMeasure X) (ν : ProbabilityMeasure Y) :
-    IsClosed
-      {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} :=
-  isClosed_setOfPred_isCoupling μ ν
-
-end OuterApproxClosed
 
 section Polish
 
