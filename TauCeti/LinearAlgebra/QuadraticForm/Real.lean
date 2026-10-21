@@ -152,18 +152,8 @@ positive or all negative. No nonvanishing hypothesis is needed: a zero coefficie
 corresponding basis vector isotropic and rules out both alternatives. -/
 theorem _root_.QuadraticMap.anisotropic_weightedSumSquares_iff {ι : Type*} [Fintype ι]
     (b : ι → ℝ) : (weightedSumSquares ℝ b).Anisotropic ↔ (∀ i, 0 < b i) ∨ ∀ i, b i < 0 := by
-  classical
-  have hposDef (c : ι → ℝ) : (weightedSumSquares ℝ c).PosDef ↔ ∀ i, 0 < c i := by
-    refine ⟨fun h i ↦ by simpa [Pi.single_apply] using h (Pi.single i 1) (by simp),
-      fun h x hx ↦ ?_⟩
-    obtain ⟨i, hi⟩ := Function.ne_iff.mp hx
-    rw [weightedSumSquares_apply]
-    exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (h j).le (mul_self_nonneg _))
-      ⟨i, Finset.mem_univ i, mul_pos (h i) (mul_self_pos.mpr hi)⟩
-  have hneg : -weightedSumSquares ℝ b = weightedSumSquares ℝ (-b) := by
-    ext x
-    simp [Finset.sum_neg_distrib]
-  rw [anisotropic_iff_posDef_or_negDef, hneg, hposDef, hposDef]
+  rw [anisotropic_iff_posDef_or_negDef, neg_weightedSumSquares, posDef_weightedSumSquares_iff,
+    posDef_weightedSumSquares_iff]
   simp only [Pi.neg_apply, Left.neg_pos_iff]
 
 end Definiteness
