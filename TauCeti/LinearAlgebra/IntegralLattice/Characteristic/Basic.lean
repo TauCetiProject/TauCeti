@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Int.ModEq
+public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 
@@ -17,7 +18,9 @@ with the latter's norm. This parity condition is the input to the characteristic
 for unimodular lattices. The results here give its behavior under evenness, isometries,
 translation by twice a vector, and orthogonal sums.
 
-The congruences are in `ℤ`, using the integral restriction of the rational bilinear form.
+The congruences are in `ℤ`, using the integral restriction of the rational bilinear form, so the
+characteristic vectors of a lattice are those of that integral form in the sense of
+`LinearMap.BilinForm.IsCharacteristic`.
 
 ## References
 
@@ -60,6 +63,14 @@ theorem isCharacteristicVector_iff_forall_integralForm_eq_normParity
   · intro hw x
     apply (ZMod.intCast_eq_intCast_iff _ _ 2).mp
     simpa only [L.normParity_apply] using hw x
+
+/-- The characteristic vectors of `L` are the characteristic vectors of its integral bilinear
+form. -/
+theorem isCharacteristicVector_iff_isCharacteristic (L : IntegralLattice V) (w : L) :
+    L.IsCharacteristicVector w ↔ L.integralForm.IsCharacteristic w := by
+  rw [isCharacteristicVector_iff, LinearMap.BilinForm.isCharacteristic_iff]
+  refine forall_congr' fun x ↦ ?_
+  rw [Int.modEq_iff_dvd, L.integralNorm_apply, ← dvd_neg, neg_sub]
 
 /-- Zero is characteristic precisely when the lattice is even. -/
 @[simp ←]

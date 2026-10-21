@@ -38,6 +38,7 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   topology.
 * `PadicInt.toZMod_eq_zero_iff_dvd`, `PadicInt.toZModPow_eq_zero_iff_dvd`: the kernels of
   reduction and truncation, as divisibility statements.
+* `PadicInt.two_dvd_sq_sub_self`: every `2`-adic integer satisfies `x ^ 2 ≡ x` modulo `2`.
 * `PadicInt.toZModPow_eq_one_of_norm_sub_one_le`: a norm bound forcing a `p`-adic integer to
   reduce to `1` modulo `p ^ n`.
 * `PadicInt.cast_toZModPow_eq_toZMod`: reducing the truncation modulo `p ^ n` further modulo `p`
@@ -125,6 +126,18 @@ theorem continuous_toZMod : Continuous (toZMod : ℤ_[p] → ZMod p) := by
 /-- A `p`-adic integer reduces to `0` modulo `p` exactly when `p` divides it. -/
 theorem toZMod_eq_zero_iff_dvd (x : ℤ_[p]) : toZMod x = 0 ↔ (p : ℤ_[p]) ∣ x := by
   rw [← RingHom.mem_ker, ker_toZMod, maximalIdeal_eq_span_p, Ideal.mem_span_singleton]
+
+-- This is the `p = 2` case of the congruence `x ^ p ≡ x` modulo `p`; the general case would need
+-- `ZMod.pow_card`, whose finite-field import closure is far wider than this file's.
+/-- Every `2`-adic integer satisfies `x ^ 2 ≡ x` modulo `2`, since the residue field of `ℤ_[2]` is
+`ZMod 2`. -/
+theorem two_dvd_sq_sub_self (x : ℤ_[2]) : (2 : ℤ_[2]) ∣ x ^ 2 - x := by
+  have h : toZMod (x ^ 2 - x) = 0 := by
+    rw [map_sub, map_pow]
+    generalize toZMod x = a
+    revert a
+    decide
+  simpa using (toZMod_eq_zero_iff_dvd _).mp h
 
 /-- A `p`-adic integer truncates to `0` modulo `p ^ n` exactly when `p ^ n` divides it. -/
 theorem toZModPow_eq_zero_iff_dvd (n : ℕ) (x : ℤ_[p]) :
