@@ -50,6 +50,7 @@ for `n = #Gal(L/K)^ab` absorbs the `p ^ m`-multiples.
   map is its norm residue symbol.
 * `TauCeti.padicCompletionUnitsNormResidue_surjective`: the completed norm residue map is
   surjective.
+* `TauCeti.padicCompletionUnitsNormResidue_padicCompletionUnitsNorm`: it kills completed norms.
 * `TauCeti.ker_padicCompletionUnitsNormResidue`: its kernel is the image of the completed norm.
 * `TauCeti.natCard_quotient_range_padicCompletionUnitsNorm`: the cokernel of the completed norm
   has order the full power of `p` dividing `#Gal(L/K)^ab`.
@@ -152,6 +153,18 @@ theorem padicCompletionUnitsNormResidue_pow_smul [Fact p.Prime] (m : ℕ)
     padicCompletionUnitsNormResidue p K L m ((p : ℤ_[p]) ^ m • y) = 0 := by
   simp [← Nat.cast_pow, ← toMul_eq_one]
 
+/-- The completed norm residue map kills completed norms: the level-`m` coordinate of a completed
+norm is the class of a norm, whose norm residue symbol is trivial. -/
+@[simp]
+theorem padicCompletionUnitsNormResidue_padicCompletionUnitsNorm [Fact p.Prime] (m : ℕ)
+    (y : Additive ↑(padicCompletionUnits p L)) :
+    padicCompletionUnitsNormResidue p K L m (padicCompletionUnitsNorm p K L y) = 0 := by
+  obtain ⟨v, hv⟩ := QuotientGroup.mk_surjective (y.toMul.1 m)
+  rw [padicCompletionUnitsNormResidue_eq p K L (u := Algebra.normUnits K v)
+    (by rw [padicCompletionUnitsNorm_apply, ← hv, padicCompletionPowerClassNorm_mk]),
+    (normResidue_mk_eq_one_iff K L _).2 (normUnits_mem_normGroup K L v), QuotientGroup.mk_one,
+    ofMul_one]
+
 /-- If `p ^ m` contains the full power of `p` dividing `#Gal(L/K)^ab`, then every
 `p ^ m`-multiple in `A(K)` is a completed norm. -/
 private theorem pow_smul_mem_range_padicCompletionUnitsNorm [Fact p.Prime] (hpK : (p : K) ≠ 0)
@@ -204,12 +217,7 @@ theorem ker_padicCompletionUnitsNormResidue [Fact p.Prime] (hpK : (p : K) ≠ 0)
     refine add_mem ⟨Additive.ofMul (padicCompletionUnitsOf p L v), by simp⟩ ?_
     exact pow_smul_mem_range_padicCompletionUnitsNorm p K L hpK hm _
   · rintro ⟨y, rfl⟩
-    -- The level-`m` coordinate of a completed norm is the class of a norm.
-    obtain ⟨v, hv⟩ := QuotientGroup.mk_surjective (y.toMul.1 m)
-    rw [padicCompletionUnitsNormResidue_eq p K L (u := Algebra.normUnits K v)
-      (by rw [padicCompletionUnitsNorm_apply, ← hv, padicCompletionPowerClassNorm_mk]),
-      (normResidue_mk_eq_one_iff K L _).2 (normUnits_mem_normGroup K L v), QuotientGroup.mk_one,
-      ofMul_one]
+    exact padicCompletionUnitsNormResidue_padicCompletionUnitsNorm p K L m y
 
 /-- **The cokernel of the completed norm** `A(L) → A(K)` is `Gal(L/K)^ab / (Gal(L/K)^ab)^(p^m)`,
 the maximal `p`-quotient of `Gal(L/K)^ab`, once `p ^ m` contains the full power of `p` dividing
