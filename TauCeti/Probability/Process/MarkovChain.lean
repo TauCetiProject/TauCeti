@@ -48,7 +48,7 @@ consumed downstream.
   property and the forward recursion for the one-dimensional marginals.
 * `TauCeti.Probability.markovChainLaw_map_prefix_apply_singleton` — on a state space with
   measurable singletons, the mass of a finite path is the initial weight times the product of the
-  transition weights; `TauCeti.Probability.markovChainLaw_prefixLaw_singleton` is the same formula
+  transition weights; `MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton` is the same formula
   for the prefix laws of the coordinate process.
 
 ## References
@@ -309,7 +309,8 @@ theorem markovChainLaw_map_prefix_apply_singleton [IsProbabilityMeasure ν]
 /-- **The finite path masses of the chain, as prefix laws.** The product formula
 `markovChainLaw_map_prefix_apply_singleton`, restated for the prefix laws of the coordinate process;
 this is the form consumed by statements about the finite path laws of a process. -/
-theorem markovChainLaw_prefixLaw_singleton [IsProbabilityMeasure ν] [MeasurableSingletonClass α]
+theorem _root_.MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton
+    [IsProbabilityMeasure ν] [MeasurableSingletonClass α]
     (n : ℕ) (w : Fin (n + 1) → α) :
     prefixLaw (markovChainLaw ν κ) (fun i x => x i) (n + 1) {w}
       = ν {w 0} * ∏ i : Fin n, κ (w i.castSucc) {w i.succ} := by

@@ -324,7 +324,7 @@ theorem markovChainLaw_markovExchangeable [Countable α] [MeasurableSingletonCla
     MarkovExchangeable (markovChainLaw ν κ) fun i x => x i :=
   markovExchangeable_of_prefixLaw_singleton_eq
     (fun i => (measurable_pi_apply i).aemeasurable) (fun a => ν {a}) (fun a b => κ a {b})
-    (markovChainLaw_prefixLaw_singleton ν κ)
+    (MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton ν κ)
 
 /-- **A homogeneous Markov chain is the degenerate mixture of Markov chains** at its own initial
 law and transition kernel: the two witnesses are the constant ones. This is the source of genuine
@@ -335,7 +335,7 @@ theorem markovChainLaw_mixedMarkovChainWith [Countable α] [MeasurableSingletonC
       fun _ a => (⟨κ a, inferInstance⟩ : ProbabilityMeasure α) :=
   mixedMarkovChainWith_const_of_prefixLaw_singleton_eq
     (fun i => (measurable_pi_apply i).aemeasurable) ⟨ν, inferInstance⟩
-    (fun a => ⟨κ a, inferInstance⟩) (markovChainLaw_prefixLaw_singleton ν κ)
+    (fun a => ⟨κ a, inferInstance⟩) (MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton ν κ)
 
 /-- **A homogeneous Markov chain is a mixture of Markov chains**, existential form. -/
 theorem markovChainLaw_mixedMarkovChain [Countable α] [MeasurableSingletonClass α] :

@@ -51,7 +51,7 @@ it the law restricted to an invariant event is preserved as well.
   reindexing fixes every invariants-measurable event;
 * `comp_reindex_apply_eq_of_measurable_invariants_of_eventually_add` — and leaves every
   invariants-measurable function unchanged, pointwise;
-* `measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add` — such a
+* `MeasurePreserving.restrict_reindex_of_measurableSet_invariants_of_eventually_add` — such a
   reindexing, if it preserves a law, preserves the law restricted to an invariant event.
 -/
 
@@ -215,6 +215,16 @@ theorem comp_reindex_apply_eq_of_measurable_invariants_of_eventually_add {m C : 
   comp_reindex_apply_eq_of_comp_shift_eq_of_eventually_add
     (MeasurableSpace.comp_eq_of_measurable_invariants hw) hφ x
 
+end Probability
+
+end TauCeti
+
+namespace MeasureTheory.MeasurePreserving
+
+open TauCeti.Probability
+
+variable {α : Type*} [MeasurableSpace α]
+
 /-- **An eventually-translating reindexing preserves the law restricted to an invariant event**,
 whenever it preserves the law itself. Consumers needing the Koopman operator on
 `Lp (ρ.restrict A)`, or a Bochner integral, get a `MeasurePreserving` rather than only an `ℝ≥0∞`
@@ -222,7 +232,7 @@ identity.
 
 Only measure preservation by *this* reindexing is assumed; in particular a merely shift-invariant
 law with `φ = (· + C)` qualifies. -/
-theorem measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add
+theorem restrict_reindex_of_measurableSet_invariants_of_eventually_add
     {ρ : Measure (ℕ → α)} {φ : ℕ → ℕ} {m C : ℕ}
     (hmp : MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) ρ ρ)
     (hφ_add : ∀ n, m ≤ n → φ n = n + C)
@@ -232,6 +242,4 @@ theorem measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventu
   have h := hmp.restrict_preimage (MeasurableSpace.measurableSet_invariants.1 hA).1
   rwa [preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add hA hφ_add] at h
 
-end Probability
-
-end TauCeti
+end MeasureTheory.MeasurePreserving

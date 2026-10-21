@@ -136,7 +136,7 @@ theorem ExchangeableLaw.map_prefixProj_of_injective {ρ : Measure (ℕ → α)}
     ρ.map (fun x : ℕ → α => fun i : Fin n => x (k i))
         = ρ.map (fun x : ℕ → α => fun i : Fin n => x (π i.val)) := by rw [← hidx]
     _ = (ρ.map (permReindex (α := α) π)).map (prefixProj α n) := by
-          rw [hperm, map_reindex_prefixProj]
+          rw [hperm, MeasureTheory.Measure.map_reindex_prefixProj]
     _ = ρ.map (prefixProj α n) := by rw [hρ.map_permReindex π]
 
 /-- The prefix marginal of an exchangeable path law is invariant under permutations of the

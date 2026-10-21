@@ -35,7 +35,7 @@ compare them:
 
 The definitions are hypothesis-light; measurability hypotheses enter only in the lemmas that
 compose `Measure.map`s (`map_prefixProj_pathLaw`, `map_blockLaw`, `map_reindex_pathLaw`,
-`map_permReindex_pathLaw`, …).
+`MeasureTheory.Measure.map_permReindex_pathLaw`, …).
 Nothing here mentions a symmetry of the process: the exchangeability predicates built on these
 laws live in `TauCeti.Probability.Exchangeability.Basic`.
 
@@ -359,7 +359,7 @@ theorem map_reindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
   rfl
 
 /-- Reindexing a path law by a time permutation gives the path law of the permuted process. -/
-theorem map_permReindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
+theorem _root_.MeasureTheory.Measure.map_permReindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
     (hX : ∀ i, AEMeasurable (X i) μ) (π : Equiv.Perm ℕ) :
     (pathLaw μ X).map (permReindex (α := α) π) =
       pathLaw μ (fun k ω => X (π k) ω) := by
@@ -373,7 +373,8 @@ theorem map_permReindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
 /-- The first-`n` prefix marginal of a path-space measure reindexed by `φ : ℕ → ℕ` is its
 finite coordinate marginal along `i ↦ φ i`. This only uses coordinate reindexing, so it holds
 for an arbitrary function `φ`, not just a permutation. -/
-theorem map_reindex_prefixProj (ρ : Measure (ℕ → α)) (φ : ℕ → ℕ) (n : ℕ) :
+theorem _root_.MeasureTheory.Measure.map_reindex_prefixProj
+    (ρ : Measure (ℕ → α)) (φ : ℕ → ℕ) (n : ℕ) :
     (ρ.map (fun x : ℕ → α => fun k => x (φ k))).map (prefixProj α n) =
       ρ.map (fun x : ℕ → α => fun i : Fin n => x (φ i.val)) := by
   rw [Measure.map_map (measurable_prefixProj n) (measurable_reindex φ)]

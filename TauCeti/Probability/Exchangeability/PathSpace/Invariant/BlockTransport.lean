@@ -25,7 +25,7 @@ point mass at an alternating path, `A = univ` and `φ = (· + 1)`. Eventual tran
 integral identity, which needs only `T ⁻¹' A = A`.
 
 The primitive, that such a reindexing preserves the restricted law, is the general path-space
-fact `measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add` in
+fact `MeasurePreserving.restrict_reindex_of_measurableSet_invariants_of_eventually_add` in
 `TauCeti.Probability.Process.Tail.ShiftInvariant`; this file specializes it to contractable laws.
 
 ## Main results
@@ -53,7 +53,7 @@ fact `measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventual
 The one `ℝ≥0∞` statement here is the block-cylinder mass corollary above, an equality of measure
 values. The transport results themselves are not restated in `ℝ≥0∞`: a
 consumer wanting that applies `.lintegral_comp` to
-`measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add`, or rewrites with
+`MeasurePreserving.restrict_reindex_of_measurableSet_invariants_of_eventually_add`, or rewrites with
 `lintegral_map` through the measure equality. A weighted `ℝ≥0∞` form is available both ways: via
 `.lintegral_comp` together with `comp_reindex_apply_eq_of_measurable_invariants_of_eventually_add`,
 or as a measure equality on `ρ.withDensity w`, which the reindexing preserves because it preserves
@@ -61,7 +61,7 @@ or as a measure equality on `ρ.withDensity w`, which the reindexing preserves b
 measures, which is why the `ℝ`-valued statements above are integral identities.
 
 The restricted measure preservation is taken from
-`measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add`, and Mathlib's
+`MeasurePreserving.restrict_reindex_of_measurableSet_invariants_of_eventually_add`, and Mathlib's
 `MeasurePreserving.lintegral_comp` gives the integral identity. This module restates no Mathlib
 API.
 
@@ -83,7 +83,7 @@ No material is adapted from `cameronfreer/exchangeability`. That development car
 block-reindexing and factorization material for the Koopman argument; the statements here were
 assembled from Tau Ceti's own pieces — the eventual-translation extension
 `StrictMono.exists_strictMono_nat_extending_fin_eventually_add`, the restricted measure
-preservation `measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add`,
+preservation `MeasurePreserving.restrict_reindex_of_measurableSet_invariants_of_eventually_add`,
 and contractable reindexing `ContractableLaw.measurePreserving_reindex`.
 
 -/
@@ -122,7 +122,7 @@ theorem ContractableLaw.map_restrict_prefixProj_of_strictMono_of_measurableSet_i
     (ρ.restrict A).map (fun x : ℕ → α => fun i : Fin m => x (k i))
       = (ρ.restrict A).map (prefixProj α m) := by
   obtain ⟨φ, C, hφ_mono, hφ_eq, hφ_add⟩ := hk.exists_strictMono_nat_extending_fin_eventually_add
-  have hmp := measurePreserving_restrict_reindex_of_measurableSet_invariants_of_eventually_add
+  have hmp := MeasurePreserving.restrict_reindex_of_measurableSet_invariants_of_eventually_add
     (hρ.measurePreserving_reindex hφ_mono) hφ_add hA
   have hcomp : (fun x : ℕ → α => fun i : Fin m => x (k i))
       = prefixProj α m ∘ fun x : ℕ → α => fun j => x (φ j) :=

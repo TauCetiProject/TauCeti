@@ -109,11 +109,11 @@ theorem fullyExchangeable_iff_forall_map_permReindex_pathLaw
         (pathLaw μ X).map (permReindex (α := α) π) = pathLaw μ X := by
   constructor
   · intro h π
-    rw [map_permReindex_pathLaw μ hX π]
+    rw [MeasureTheory.Measure.map_permReindex_pathLaw μ hX π]
     exact h.permute π
   · intro h π
     have hπ := h π
-    rwa [map_permReindex_pathLaw μ hX π] at hπ
+    rwa [MeasureTheory.Measure.map_permReindex_pathLaw μ hX π] at hπ
 
 /-- A fully exchangeable process has path law invariant under any time permutation. -/
 theorem FullyExchangeable.map_permReindex_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
