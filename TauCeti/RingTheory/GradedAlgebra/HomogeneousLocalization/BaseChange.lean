@@ -91,8 +91,11 @@ theorem Away.baseChangeMap_mk {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ) (a : A)
       Away.mk (fun i ↦ (𝒜 i).baseChange S)
         (Submodule.tmul_mem_baseChange_of_mem 1 hf) n (1 ⊗ₜ[R] a)
         (Submodule.tmul_mem_baseChange_of_mem 1 ha) := by
-  dsimp only [Away.baseChangeMap]
-  exact Away.map_mk _ f hf n a ha
+  rw [Away.baseChangeMap]
+  refine (Away.map_mk (TauCeti.GradedAlgebra.baseChangeMap S 𝒜) f hf n a ha).trans ?_
+  simp only [TauCeti.GradedAlgebra.baseChangeMap_apply]
+  -- The target index computes to `1 ⊗ₜ[R] f`; the membership witnesses are proofs.
+  rfl
 
 /-- The chart coefficient map is the homogeneous-localization map of graded coefficient
 inclusion. -/
@@ -104,7 +107,12 @@ theorem Away.val_baseChangeMap (z : Away 𝒜 f) :
     (Away.baseChangeMap 𝒜 S f z).val =
       Localization.awayMap
         (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f z.val := by
-  exact val_map (TauCeti.GradedAlgebra.baseChangeMap S 𝒜) _ z
+  rw [Away.baseChangeMap, Away.map]
+  refine (val_map (TauCeti.GradedAlgebra.baseChangeMap S 𝒜) _ z).trans ?_
+  simp only [TauCeti.GradedAlgebra.baseChangeMap_toRingHom,
+    Localization.awayMap, IsLocalization.Away.map]
+  -- Both targets compute to localization away from `1 ⊗ₜ[R] f`; the powers witnesses are proofs.
+  rfl
 
 /-- Coefficient extension on a chart respects the structure maps of the base rings. -/
 @[simp]
@@ -114,6 +122,7 @@ theorem Away.baseChangeMap_algebraMap (r : R) :
   apply val_injective
   rw [Away.val_baseChangeMap, val_algebraMap, val_algebraMap,
     ← IsScalarTower.algebraMap_apply R S]
+  rw [← IsLocalization.Away.mapₐ_apply]
   exact (Localization.awayMapₐ
     (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A) f).commutes r
 
