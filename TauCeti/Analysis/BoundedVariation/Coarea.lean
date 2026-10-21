@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.LayerCake
 import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
@@ -35,8 +36,8 @@ formula for locally Lipschitz functions:
 * for `u` locally Lipschitz on `Ω`, in particular `C¹`, the reverse inequality, so that
   `|Du|(Ω) = ∫_ℝ P({u > t}; Ω) dt = ∫_Ω ‖Du‖`. The indicator of `{u > t}` is the pointwise limit
   of `ψ ((n + 1) (u - t))` for the smooth transition function `ψ`; lower semicontinuity bounds
-  `P({u > t}; Ω)` by the variations of these smooth functions, and Fatou's lemma and Tonelli's
-  theorem integrate the bound over `t`.
+  `P({u > t}; Ω)` by the variations of these locally Lipschitz functions, and Fatou's lemma and
+  Tonelli's theorem integrate the bound over `t`.
 
 ## Main declarations
 
@@ -62,46 +63,6 @@ open MeasureTheory TopologicalSpace Filter TestFunction Set
 open scoped ENNReal Distributions Topology
 
 namespace TauCeti
-
-/-! ### The one-dimensional layer-cake integrals -/
-
-/-- `1_{t < a} - 1_{t < 0}`, as a function of `t`, is the signed indicator of the interval
-between `0` and `a`. -/
-private theorem indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
-    (fun t => (Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t) =
-      (Ico 0 a).indicator 1 - (Ico a 0).indicator 1 := by
-  ext t
-  simp only [Pi.sub_apply, indicator_apply, mem_Iio, mem_Ico, Pi.one_apply]
-  split_ifs <;> grind
-
-private theorem integrable_indicator_Ico_one (a b : ℝ) :
-    Integrable ((Ico a b).indicator (1 : ℝ → ℝ)) :=
-  (integrableOn_const measure_Ico_lt_top.ne).integrable_indicator measurableSet_Ico
-
-private theorem integrable_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
-    Integrable (fun t => (Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t) := by
-  rw [indicator_Iio_sub_indicator_Iio_zero]
-  exact (integrable_indicator_Ico_one _ _).sub (integrable_indicator_Ico_one _ _)
-
-/-- The layer-cake representation of a real number: `∫ (1_{t < a} - 1_{t < 0}) dt = a`. -/
-private theorem integral_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
-    ∫ t, ((Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t) = a := by
-  rw [indicator_Iio_sub_indicator_Iio_zero, integral_sub' (integrable_indicator_Ico_one _ _)
-    (integrable_indicator_Ico_one _ _), integral_indicator_one measurableSet_Ico,
-    integral_indicator_one measurableSet_Ico, Real.volume_real_Ico, Real.volume_real_Ico]
-  simp
-
-private theorem integral_norm_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
-    ∫ t, ‖(Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t‖ = |a| := by
-  have h : (fun t => ‖(Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t‖) =
-      (Ico 0 a).indicator 1 + (Ico a 0).indicator 1 := by
-    ext t
-    simp only [Real.norm_eq_abs, Pi.add_apply, indicator_apply, mem_Iio, mem_Ico, Pi.one_apply]
-    split_ifs <;> grind
-  rw [h, integral_add' (integrable_indicator_Ico_one _ _) (integrable_indicator_Ico_one _ _),
-    integral_indicator_one measurableSet_Ico,
-    integral_indicator_one measurableSet_Ico, Real.volume_real_Ico, Real.volume_real_Ico]
-  simp
 
 /-! ### The layer-cake formula and the coarea inequality -/
 
