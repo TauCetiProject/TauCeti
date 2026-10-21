@@ -109,7 +109,7 @@ theorem existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet
   have hanti : StrictAnti fun t ↦ f (hX.flow t y) :=
     hX.strictAnti_comp (fun _ ↦ hf _)
       (hX.isMIntegralCurve_flow y) fun t ↦ hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet
-        hab ⟨Flow.isInvariant_unstableSet _ a t hy.1, Flow.isInvariant_stableSet _ b t hy.2⟩
+        hab (hX.flow.isInvariant_unstableSet_inter_stableSet a b t hy)
   have hbot : Tendsto (fun t ↦ f (hX.flow t y)) atBot (𝓝 (f a)) :=
     (hfc.tendsto a).comp (Flow.mem_unstableSet.1 hy.1)
   have htop : Tendsto (fun t ↦ f (hX.flow t y)) atTop (𝓝 (f b)) :=
@@ -128,10 +128,7 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top
     Submodule.span ℝ
         (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) ⊔
       (mvfderiv 𝓘(ℝ, E) f y).ker = ⊤ := by
-  have hmem : X y ∈ Submodule.span ℝ
-      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) :=
-    Submodule.subset_span (hX.mem_mtangentConeAt_of_isInvariant (fun t _ hz ↦
-      ⟨Flow.isInvariant_unstableSet _ a t hz.1, Flow.isInvariant_stableSet _ b t hz.2⟩) hy)
+  have hmem := hX.mem_span_mtangentConeAt_unstableSet_inter_stableSet hy
   rw [hf.ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm]
   refine top_unique ?_
   rw [← LinearMap.span_singleton_sup_ker_eq_top
@@ -262,7 +259,7 @@ theorem isDiscrete_unstableSet_inter_stableSet_level (hf : IsMorse 𝓘(ℝ, E) 
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤) :
     IsDiscrete (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) := by
   have hab : a ≠ b := by rintro rfl; omega
-  refine isDiscrete_iff_discreteTopology.2 (discreteTopology_of_noAccPts fun y hy ↦ ?_)
+  refine isDiscrete_of_forall_exists_isSliceChart_zero (F := E) fun y hy ↦ ?_
   have htry := htr y hy
   obtain ⟨hyab, hyc⟩ := hy
   -- The slice is zero-dimensional, so the chart at `y` flattens it onto the point `0`.
@@ -275,11 +272,8 @@ theorem isDiscrete_unstableSet_inter_stableSet_level (hf : IsMorse 𝓘(ℝ, E) 
       (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) y)) = 0 := by
     omega
   rw [← hX.span_mtangentConeAt_unstableSet_inter_stableSet_level hf ha hb hab hyab htry hyc,
-    Submodule.finrank_eq_zero.1 h0] at hq
-  have hqy : q y = 0 := (isSliceChart_iff.1 hq y hyq).1 ⟨hyab, hyc⟩
-  intro hacc
-  obtain ⟨z, ⟨hz, hzS⟩, hzy⟩ := accPt_iff_nhds.1 hacc q.source (q.open_source.mem_nhds hyq)
-  exact hzy (q.injOn hz hyq (by rw [hqy]; exact (isSliceChart_iff.1 hq z hz).1 hzS))
+    Submodule.finrank_eq_zero.1 h0, Submodule.bot_coe] at hq
+  exact ⟨q, hyq, hq⟩
 
 omit hX in
 /-- **Spaces of unparametrized trajectories are manifolds.** Under the Morse–Smale condition, if
@@ -301,19 +295,17 @@ theorem IsMorseSmale.exists_unstableSet_inter_stableSet_level_isManifold
           (Subtype.val : ↥(hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) → M) := by
   obtain ⟨y₀, hy₀, hy₀c⟩ := hne
   have htr₀ := h.span_mtangentConeAt_sup_eq_top ha hb hy₀
+  have hdim₀ :=
+    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifoldMorseIndex hf ha
+      hb hab hy₀ htr₀ hy₀c
   -- Every tangent space of the slice has dimension `ind a - ind b - 1`; model it on one of them.
   refine ⟨Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E)
-      (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) y₀),
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifoldMorseIndex hf ha
-      hb hab hy₀ htr₀ hy₀c,
+      (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) y₀), hdim₀,
     exists_isManifold_of_finrankSubspaceCharts fun y hy ↦ ?_⟩
   obtain ⟨hyab, hyc⟩ := hy
   have htry := h.span_mtangentConeAt_sup_eq_top ha hb hyab
   obtain ⟨q, hyq, hq, hs⟩ :=
     hX.exists_unstableSet_inter_stableSet_level_chart hf ha hb hab hyab htry hyc
-  have hdim₀ :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifoldMorseIndex hf ha
-      hb hab hy₀ htr₀ hy₀c
   have hdim :=
     hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifoldMorseIndex hf ha
       hb hab hyab htry hyc

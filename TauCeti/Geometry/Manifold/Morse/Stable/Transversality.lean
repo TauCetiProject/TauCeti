@@ -113,6 +113,15 @@ theorem mem_mtangentConeAt_of_isInvariant {S : Set M} (hS : IsInvariant hX.flow 
     (Filter.Eventually.of_forall fun t ↦ hS t hy)
   rwa [Flow.map_zero_apply] at h
 
+/-- The velocity `X y` of the trajectory through a point `y` of `W^u(a) ∩ W^s(b)` is tangent to
+`W^u(a) ∩ W^s(b)`. -/
+theorem mem_span_mtangentConeAt_unstableSet_inter_stableSet
+    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
+    X y ∈ Submodule.span ℝ
+      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) :=
+  Submodule.subset_span
+    (hX.mem_mtangentConeAt_of_isInvariant (hX.flow.isInvariant_unstableSet_inter_stableSet a b) hy)
+
 /-- **Connecting trajectories avoid the critical points.** A point `y` on a trajectory running from
 a critical point `a` to a different critical point `b` is not a critical point of `f`: a critical
 point is a rest point of the flow, and the constant orbit of `y` cannot have two different limits.
@@ -198,10 +207,7 @@ theorem manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet (hf : IsMorse �
       htr
   -- The velocity `X y` is tangent to `W^u(a) ∩ W^s(b)`, and it is nonzero since `y` is not a
   -- critical point.
-  have hmem : X y ∈ Submodule.span ℝ
-      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) :=
-    Submodule.subset_span (hX.mem_mtangentConeAt_of_isInvariant (fun t _ hz ↦
-      ⟨Flow.isInvariant_unstableSet _ a t hz.1, Flow.isInvariant_stableSet _ b t hz.2⟩) hy)
+  have hmem := hX.mem_span_mtangentConeAt_unstableSet_inter_stableSet hy
   have hX0 : X y ≠ 0 :=
     hX.ne_zero_of_mfderiv_ne_zero (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hab hy)
   have hpos : 0 < Module.finrank ℝ (Submodule.span ℝ

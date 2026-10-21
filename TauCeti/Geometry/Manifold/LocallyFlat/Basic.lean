@@ -347,6 +347,16 @@ theorem prod {ψ : OpenPartialHomeomorph N F'} {S' : Set F'} {B : Set N}
 
 end IsSliceChart
 
+/-- A set flattened near each of its points onto the single point `0` of the model is discrete:
+a chart is injective on its source, so it sees no other point of the set. -/
+theorem isDiscrete_of_forall_exists_isSliceChart_zero [Zero F]
+    (h : ∀ y ∈ A, ∃ φ : OpenPartialHomeomorph M F, y ∈ φ.source ∧ IsSliceChart φ {0} A) :
+    IsDiscrete A := by
+  refine isDiscrete_iff_discreteTopology.2 (discreteTopology_of_noAccPts fun y hy hacc ↦ ?_)
+  obtain ⟨φ, hyφ, hφ⟩ := h y hy
+  obtain ⟨z, ⟨hz, hzA⟩, hzy⟩ := accPt_iff_nhds.1 hacc φ.source (φ.open_source.mem_nhds hyφ)
+  exact hzy (φ.injOn hz hyφ (((hφ.mem_iff hz).1 hzA).trans ((hφ.mem_iff hyφ).1 hy).symm))
+
 /-- A chart is a slice chart for the full model space exactly when everything it sees lies in the
 set: this is the codimension-zero case. -/
 @[simp]
