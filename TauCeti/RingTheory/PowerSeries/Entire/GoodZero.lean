@@ -230,9 +230,10 @@ theorem IsGoodZero.exists_eq_one_sub_C_mul_X_pow_mul (hf : f.IsEntire)
   obtain ⟨g, hg, rfl, hga⟩ := hf.isGoodZero_iff.mp hfa
   -- `X - u = (-u) (1 - u⁻¹ X)`, and the scalar `(-u)ʰ` is absorbed into the cofactor.
   have hfac : (X - C (u : R) : R⟦X⟧) = C (-(u : R)) * (1 - C (Ring.inverse (u : R)) * X) := by
-    rw [Ring.inverse_unit, mul_sub, mul_one, ← mul_assoc, ← map_mul, neg_mul, Units.mul_inv,
-      map_neg, map_neg, map_one]
-    ring
+    have hu : C (u : R) * C (Ring.inverse (u : R)) = (1 : R⟦X⟧) := by
+      simp [← map_mul]
+    rw [map_neg]
+    linear_combination (-X) * hu
   have hfg : (X - C (u : R)) ^ h * g =
       (1 - C (Ring.inverse (u : R)) * X) ^ h * (C ((-(u : R)) ^ h) * g) := by
     rw [hfac, mul_pow, map_pow]

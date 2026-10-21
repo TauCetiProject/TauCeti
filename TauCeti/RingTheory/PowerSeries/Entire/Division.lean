@@ -356,13 +356,13 @@ theorem IsEntire.evalAt_eq_zero_iff (hf : f.IsEntire) {a : R} :
     have h0 : r.coeff 0 = 0 := by
       have := congrArg (evalAt · a) hdiv
       rw [(isEntire_coe r).evalAt_add ((isEntire_coe _).mul (hf.divByMonic _)),
-        (isEntire_coe _).evalAt_mul (hf.divByMonic _), evalAt_coe, evalAt_coe, ha, hr] at this
-      simpa using this
+        (isEntire_coe _).evalAt_mul (hf.divByMonic _), evalAt_coe, evalAt_coe, hr] at this
+      simpa [ha] using this
     rw [hr, h0] at hdiv
     simpa using hdiv.symm
   · rintro ⟨q, hq, rfl⟩
-    rw [(isEntire_X.sub (isEntire_C a)).evalAt_mul hq, isEntire_X.evalAt_sub (isEntire_C a),
-      evalAt_X, evalAt_C, Algebra.algebraMap_self_apply, sub_self, zero_mul]
+    rw [(isEntire_X.sub (isEntire_C a)).evalAt_mul hq, isEntire_X.evalAt_sub (isEntire_C a)]
+    simp
 
 section Ultrametric
 

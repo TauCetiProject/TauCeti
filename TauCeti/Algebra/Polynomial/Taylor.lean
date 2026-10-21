@@ -86,6 +86,7 @@ theorem pow_sub_dvd_hasseDeriv_of_pow_dvd {p : R[X]} {r : R} {n : ℕ} (k : ℕ)
 otherwise: the Taylor expansion of `(X - r) ^ m` at `r` is `X ^ m`. -/
 theorem eval_hasseDeriv_X_sub_C_pow (r : R) (i m : ℕ) :
     (hasseDeriv i ((X - C r) ^ m)).eval r = if i = m then 1 else 0 := by
-  rw [← taylor_coeff, taylor_pow, map_sub, taylor_X, taylor_C, add_sub_cancel_right, coeff_X_pow]
+  rw [← taylor_coeff]
+  simp [taylor_pow, coeff_X_pow]
 
 end Polynomial
