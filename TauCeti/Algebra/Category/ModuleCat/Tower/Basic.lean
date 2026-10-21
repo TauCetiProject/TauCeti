@@ -239,6 +239,18 @@ theorem transitionOfLE_apply_of_mem_lim {x : F.Product} (hx : x ∈ F.lim) {n k 
     (h : n ≤ k) : F.transitionOfLE h (x k) = x n :=
   F.map_apply_of_mem_lim hx (homOfLE h).op
 
+/-- An element of `lim A` is compatible with the composite transition `Aₖ → Aₙ`, `n ≤ k`. -/
+@[simp]
+theorem transitionOfLE_coe_lim (x : F.lim) {n k : ℕ} (h : n ≤ k) :
+    F.transitionOfLE h ((x : F.Product) k) = (x : F.Product) n :=
+  F.transitionOfLE_apply_of_mem_lim x.2 h
+
+@[simp]
+theorem transitionOfLE_comp_limπ {n k : ℕ} (h : n ≤ k) :
+    F.transitionOfLE h ∘ₗ F.limπ k = F.limπ n := by
+  ext x
+  exact F.transitionOfLE_coe_lim x h
+
 /-- `lim A`, with its projections, is a limit of the tower `A` in `ModuleCat R`. -/
 def isLimitLimCone : Limits.IsLimit F.limCone where
   lift s := ModuleCat.ofHom <| F.limLift (fun n ↦ (s.π.app (op n)).hom) fun n ↦ by
