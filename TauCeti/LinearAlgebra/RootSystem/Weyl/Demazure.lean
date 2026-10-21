@@ -111,6 +111,7 @@ theorem demazureOperator_single_of_coroot'_eq_neg_natCast_sub_one {x : M} {n : �
     zero_sub]
 
 /-- On a weight `x` with `⟨x, αᵢ^∨⟩ = -1`, the Demazure operator vanishes. -/
+@[simp]
 theorem demazureOperator_single_of_coroot'_eq_neg_one {x : M} (h : P.coroot' i x = -1) :
     P.demazureOperator i (single x 1) = 0 := by
   rw [P.demazureOperator_single_of_coroot'_eq_neg_natCast_sub_one i (n := 0) (by simpa using h),
