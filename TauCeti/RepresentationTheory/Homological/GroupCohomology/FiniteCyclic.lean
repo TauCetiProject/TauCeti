@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyc
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Carry
 import TauCeti.RepresentationTheory.Cyclic.Norm
 import TauCeti.RepresentationTheory.Invariants
@@ -640,13 +641,10 @@ theorem map_groupCohomologyπOdd_one {g' : G'} (hg' : ∀ x, x ∈ Subgroup.zpow
     partialNormCocycle_apply_pow, partialNormCocycle_apply_pow, hz]
   -- The first `d * i` terms of the partial norm of `y` are `i` blocks of `d` terms, the `l`-th
   -- block being `g'ᵈˡ = f (gˡ)` applied to the first.
-  induction i with
-  | zero => simp
-  | succ i ih =>
-    rw [Nat.mul_succ, Finset.sum_range_add, map_add, ih, Finset.sum_range_succ,
-      ← hom_comm_apply φ, Rep.coe_res_obj_ρ', map_pow, hfg, ← pow_mul,
-      map_sum (B.ρ (g' ^ (d * i)))]
-    simp only [pow_add, map_mul, Module.End.mul_apply]
+  rw [Finset.sum_range_mul_eq_sum_sum, map_sum]
+  refine Finset.sum_congr rfl fun l _ => ?_
+  rw [← hom_comm_apply φ]
+  simp [hfg, ← pow_mul, pow_add, map_sum]
 
 omit [Fintype G] [Fintype G'] in
 /-- The pullback of the carry cocycle of `y` along `f`, where `f g = g' ^ d`, at `(x₁, x₂)`:

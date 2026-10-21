@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
+import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # The norm of a representation of a finite cyclic group
@@ -54,11 +55,8 @@ theorem sum_range_mod_orderOf_apply {a : V} (ha : ρ.norm a = 0) (i : ℕ) :
       ∑ l ∈ Finset.range (orderOf g), ρ (g ^ (orderOf g * q + l)) a = 0 := by
     simp only [pow_add, pow_mul, pow_orderOf_eq_one, one_pow, one_mul,
       ρ.sum_range_orderOf_apply hg, ha]
-  have hfull (q : ℕ) : ∑ l ∈ Finset.range (orderOf g * q), ρ (g ^ l) a = 0 := by
-    induction q with
-    | zero => simp
-    | succ q ih => rw [Nat.mul_succ, Finset.sum_range_add, ih, hblock, add_zero]
-  conv_rhs => rw [← Nat.div_add_mod i (orderOf g), Finset.sum_range_add, hfull, zero_add]
+  conv_rhs => rw [← Nat.div_add_mod i (orderOf g), Finset.sum_range_add,
+    Finset.sum_range_mul_eq_sum_sum, Finset.sum_eq_zero fun q _ => hblock q, zero_add]
   simp only [pow_add, pow_mul, pow_orderOf_eq_one, one_pow, one_mul]
 
 end Representation
