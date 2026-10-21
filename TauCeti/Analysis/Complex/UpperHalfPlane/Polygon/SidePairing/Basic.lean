@@ -292,6 +292,16 @@ theorem partialCycleMap_mul_cycleLength (j : Fin n) (k : ℕ) :
       exact ((Function.isPeriodicPt_minimalPeriod σ.next j).const_mul k).eq
     rw [Nat.succ_mul, partialCycleMap_add, hper, ih, ← cycleMap_def, pow_succ']
 
+/-- Going `k` times around the cycle through `j` and then `m` further steps is the `k`-th power
+of the cycle transformation followed by the first `m` side-pairing maps. -/
+theorem partialCycleMap_mul_cycleLength_add (j : Fin n) (k m : ℕ) :
+    σ.partialCycleMap j (k * σ.cycleLength j + m) = σ.partialCycleMap j m * σ.cycleMap j ^ k := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Nat.succ_mul, add_comm _ (σ.cycleLength j), add_assoc, partialCycleMap_add,
+      next_iterate_cycleLength, ih, ← cycleMap_def, mul_assoc, ← pow_succ]
+
 /-- The cycle transformation lies in every subgroup containing the side-pairing maps. -/
 theorem cycleMap_mem {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, σ.map i ∈ Γ) (j : Fin n) :
     σ.cycleMap j ∈ Γ :=
