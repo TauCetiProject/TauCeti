@@ -100,7 +100,7 @@ theorem map_invOfUnit_ringHom (f : R →+* S) (φ : MvPowerSeries σ R) (u : Rˣ
 /-- Over fields, a coefficient ring homomorphism commutes with the totalized inverse `φ⁻¹` of a
 multivariate power series. -/
 @[simp]
-theorem map_inv {k l : Type*} [Field k] [Field l] (f : k →+* l) (φ : MvPowerSeries σ k) :
+protected theorem map_inv {k l : Type*} [Field k] [Field l] (f : k →+* l) (φ : MvPowerSeries σ k) :
     map f φ⁻¹ = (map f φ)⁻¹ := by
   -- The field inverse is defined as inv.aux with the inverse constant coefficient
   -- (MvPowerSeries.inv); Mathlib has no multivariate inv_eq_inv_aux rewrite lemma.
@@ -161,7 +161,7 @@ theorem map_invOfUnit_ringHom (f : R →+* S) (φ : R⟦X⟧) (u : Rˣ) :
 /-- Over fields, a coefficient ring homomorphism commutes with the totalized inverse `φ⁻¹` of a
 power series. -/
 @[simp]
-theorem map_inv {k l : Type*} [Field k] [Field l] (f : k →+* l) (φ : k⟦X⟧) :
+protected theorem map_inv {k l : Type*} [Field k] [Field l] (f : k →+* l) (φ : k⟦X⟧) :
     map f φ⁻¹ = (map f φ)⁻¹ :=
   MvPowerSeries.map_inv f φ
 
