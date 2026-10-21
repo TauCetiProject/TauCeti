@@ -329,7 +329,7 @@ theorem _root_.OrthonormalBasis.morseIndex_mul_norm_sq_add_re_sum_mul_inner_sq
     have hl : e v (Sum.inl j) = (conj (ω j) * ⟪b j, v⟫_ℂ).re := rfl
     have hr : e v (Sum.inr j) = (conj (ω j) * ⟪b j, v⟫_ℂ).im := rfl
     have h : ⟪b j, v⟫_ℂ = ω j * (conj (ω j) * ⟪b j, v⟫_ℂ) := by rw [← mul_assoc, hωω, one_mul]
-    rw [show (e : E →ₗ[ℝ] ι ⊕ ι → ℝ).toFun v = e v from rfl, hl, hr]
+    rw [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, hl, hr]
     generalize conj (ω j) * ⟪b j, v⟫_ℂ = z at h ⊢
     rw [h, mul_pow, ← mul_assoc, hcω, norm_mul, hω, one_mul, ← normSq_eq_norm_sq, normSq_apply]
     simp only [Sum.elim_inl, Sum.elim_inr, smul_eq_mul, neg_re, neg_im, ofReal_re, ofReal_im,
