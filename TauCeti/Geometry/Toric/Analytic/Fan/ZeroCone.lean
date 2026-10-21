@@ -30,7 +30,6 @@ realization is a biholomorphism onto its open image.
 
 ## Main declarations
 
-* `TauCeti.Toric.Fan.contMDiff_analyticTorusι`: the canonical torus inclusion is holomorphic.
 * `TauCeti.Toric.Fan.analyticZeroConeDiffeomorph`: the realization of the zero-cone fan is
   biholomorphic to the complex torus.
 * `TauCeti.Toric.Fan.isLocalDiffeomorph_analyticTorusι`: the canonical torus inclusion is a local
@@ -54,26 +53,6 @@ universe u
 
 variable {N V : Type u} {ι : Type*} [AddCommGroup N] [AddCommGroup V]
   [Module ℝ V] [Fintype ι] {i : N →+ V}
-
-section Holomorphic
-
-variable (Φ : Fan i) (hΦ : Φ.IsRegular) (hΦ0 : Nonempty Φ.cones)
-  (e : IntegralCharacter N ≃+ (ι →₀ ℤ))
-
-/-- The canonical torus inclusion into the realization of a nonempty regular fan is holomorphic,
-for any finite free presentation of the character lattice: it is the orbit map of the
-distinguished point of the zero cone under the holomorphic torus action. -/
-theorem contMDiff_analyticTorusι (n : ℕ∞ω) :
-    let _ := complexTorusChartedSpace e
-    letI := Φ.analyticChartedSpace hΦ
-    ContMDiff 𝓘(ℂ, ι → ℂ) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (Φ.analyticTorusι hΦ hΦ0) := by
-  let _ := complexTorusChartedSpace e
-  let _ := Φ.analyticChartedSpace hΦ
-  have hsmul := (Φ.contMDiffSMul_complexTorus_analyticRealization hΦ e n).contMDiff_smul
-  exact (hsmul.comp (contMDiff_id.prodMk contMDiff_const)).congr fun t ↦
-    Φ.analyticTorusι_def hΦ hΦ0 t
-
-end Holomorphic
 
 section ZeroCone
 
