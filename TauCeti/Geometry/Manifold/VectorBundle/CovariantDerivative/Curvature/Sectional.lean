@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.GramPair
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Metric
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
+import TauCeti.LinearAlgebra.Multilinear.Curvature.Polarization
 
 /-!
 # Sectional curvature
@@ -25,7 +26,12 @@ independent of the chosen basis of the tangent plane; no torsion-free hypothesis
 
 The constant-curvature tensor `R(w, u)v = κ * (<u, v> * w - <w, v> * u)` has sectional
 curvature `κ`, fixing the sign convention and providing the form used to state constant negative
-curvature.
+curvature. Conversely, for a metric-compatible torsion-free connection the sectional curvatures
+at a point determine the curvature tensor there, by the polarization identity
+`LinearMap.six_mul_apply_polarization`; so sectional curvature `κ` at a point is equivalent to the
+constant-curvature form of the curvature tensor at that point, and then `Ric = (n - 1) κ g` and
+the scalar curvature is `n (n - 1) κ`. In tangent dimension at most one there are no tangent
+two-planes, and both sides of this equivalence hold for every `κ`.
 
 The definition and convention follow J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 8, pp. 250–254 (Proposition 8.36).  The curvature convention is
@@ -38,6 +44,16 @@ Springer GTM 176 (2018), Chapter 8, pp. 250–254 (Proposition 8.36).  The curva
   sectional curvature.
 * `CovariantDerivative.HasConstantSectionalCurvature`: every tangent two-plane at every point has
   the same sectional curvature.
+
+## Main results
+
+* `CovariantDerivative.hasSectionalCurvatureAt_iff_curvatureTensor_eq_smul_inner_sub` and
+  `CovariantDerivative.hasConstantSectionalCurvature_iff_curvatureTensor_eq_smul_inner_sub`:
+  pointwise and constant sectional curvature `κ` are characterized by the constant-curvature
+  tensor.
+* `CovariantDerivative.HasSectionalCurvatureAt.ricciTensor_eq` and
+  `CovariantDerivative.HasSectionalCurvatureAt.scalarCurvature_eq`: the resulting Ricci and scalar
+  curvature.
 -/
 
 public section
@@ -216,5 +232,91 @@ theorem hasConstantSectionalCurvature_zero_of_curvatureTensor_eq_zero
   apply cov.hasConstantSectionalCurvature_of_curvatureTensor_eq_smul_inner_sub hcov 0
   intro x w u v
   simp [h x]
+
+variable {cov} in
+/-- At a point of sectional curvature `k`, the numerator `⟨R(u, v)v, u⟩` of the sectional quotient
+is `k` times its Gram determinant for every pair of tangent vectors, linearly dependent or not. -/
+theorem HasSectionalCurvatureAt.riemannCurvatureTensor_eq_mul_det_gram
+    {hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov} {x : M} {k : ℝ}
+    (h : cov.HasSectionalCurvatureAt hcov x k) (u v : TangentSpace I x) :
+    cov.riemannCurvatureTensor x u v v u = k * (Matrix.gram ℝ ![u, v]).det := by
+  by_cases huv : LinearIndependent ℝ ![u, v]
+  · rw [riemannCurvatureTensor_apply, ← div_eq_iff
+      (Matrix.det_gram_ne_zero_iff_linearIndependent.2 huv), ← sectionalCurvature_apply cov hcov,
+      h u v huv]
+  · rw [not_not.1 (mt Matrix.det_gram_ne_zero_iff_linearIndependent.1 huv), mul_zero]
+    rcases eq_or_ne u 0 with rfl | hu
+    · simp
+    · obtain ⟨a, rfl⟩ : ∃ a : ℝ, a • u = v := by
+        simpa [LinearIndependent.pair_iff' hu] using huv
+      simp
+
+variable {cov} in
+/-- **Sectional curvature `k` at a point forces the constant-curvature tensor there.** For a
+metric-compatible torsion-free connection with sectional curvature `k` at `x`, the curvature tensor
+at `x` is `R(w, u)v = k (⟨u, v⟩ w - ⟨w, v⟩ u)`.
+
+In tangent dimension at most one the hypothesis holds for every `k`, and so does the conclusion,
+since both sides vanish. -/
+theorem HasSectionalCurvatureAt.curvatureTensor_eq_smul_inner_sub
+    {hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov} {x : M} {k : ℝ}
+    (h : cov.HasSectionalCurvatureAt hcov x k) (ht : cov.torsion = 0)
+    (w u v : TangentSpace I x) :
+    curvature x w u v = k • (inner ℝ u v • w - inner ℝ w v • u) := by
+  -- Recover `⟨R(w, u)v, z⟩` from the sectional values `k * det(Gram)` by polarization.
+  refine ext_inner_right ℝ fun z ↦ mul_left_cancel₀ (by norm_num : (6 : ℝ) ≠ 0) ?_
+  rw [← riemannCurvatureTensor_apply, LinearMap.six_mul_apply_polarization
+    (cov.riemannCurvatureTensor_antisymm_first x) (hcov.riemannCurvatureTensor_antisymm_last cov x)
+    (cov.riemannCurvatureTensor_cyclic_eq_zero ht x)]
+  simp only [h.riemannCurvatureTensor_eq_mul_det_gram, Matrix.real_det_gram_fin_two,
+    inner_add_left, inner_add_right, inner_sub_right, real_inner_smul_right, real_inner_comm]
+  ring
+
+/-- For a metric-compatible torsion-free connection, having sectional curvature `k` at `x` is
+equivalent to the curvature tensor at `x` being `R(w, u)v = k (⟨u, v⟩ w - ⟨w, v⟩ u)`. -/
+theorem hasSectionalCurvatureAt_iff_curvatureTensor_eq_smul_inner_sub
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov) (ht : cov.torsion = 0) (x : M) (k : ℝ) :
+    cov.HasSectionalCurvatureAt hcov x k ↔
+      ∀ w u v : TangentSpace I x, curvature x w u v = k • (inner ℝ u v • w - inner ℝ w v • u) :=
+  ⟨fun h ↦ h.curvatureTensor_eq_smul_inner_sub ht,
+    cov.hasSectionalCurvatureAt_of_curvatureTensor_eq_smul_inner_sub hcov x k⟩
+
+/-- For a metric-compatible torsion-free connection, constant sectional curvature `k` is
+equivalent to the curvature tensor being `R(w, u)v = k (⟨u, v⟩ w - ⟨w, v⟩ u)` at every point. -/
+theorem hasConstantSectionalCurvature_iff_curvatureTensor_eq_smul_inner_sub
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov) (ht : cov.torsion = 0) (k : ℝ) :
+    cov.HasConstantSectionalCurvature hcov k ↔
+      ∀ (x : M) (w u v : TangentSpace I x),
+        curvature x w u v = k • (inner ℝ u v • w - inner ℝ w v • u) :=
+  forall_congr' fun x ↦
+    cov.hasSectionalCurvatureAt_iff_curvatureTensor_eq_smul_inner_sub hcov ht x k
+
+variable {cov} in
+/-- A metric-compatible torsion-free connection with sectional curvature `k` at `x` has Ricci
+tensor `Ric = (n - 1) k g` at `x`, where `n` is the tangent dimension. -/
+theorem HasSectionalCurvatureAt.ricciTensor_eq
+    {hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov} {x : M} {k : ℝ}
+    (h : cov.HasSectionalCurvatureAt hcov x k) (ht : cov.torsion = 0) :
+    cov.ricciTensor x =
+      ((Module.finrank ℝ (TangentSpace I x) - 1 : ℝ) * k) • innerₗ (TangentSpace I x) :=
+  cov.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub x k
+    (h.curvatureTensor_eq_smul_inner_sub ht)
+
+variable {cov} in
+/-- A metric-compatible torsion-free connection with sectional curvature `k` at `x` has scalar
+curvature `n (n - 1) k` at `x`, where `n` is the tangent dimension. -/
+theorem HasSectionalCurvatureAt.scalarCurvature_eq
+    {hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov} {x : M} {k : ℝ}
+    (h : cov.HasSectionalCurvatureAt hcov x k) (ht : cov.torsion = 0) :
+    cov.scalarCurvature x = (Module.finrank ℝ (TangentSpace I x) : ℝ) *
+      (Module.finrank ℝ (TangentSpace I x) - 1) * k :=
+  cov.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub x k
+    (h.curvatureTensor_eq_smul_inner_sub ht)
 
 end CovariantDerivative

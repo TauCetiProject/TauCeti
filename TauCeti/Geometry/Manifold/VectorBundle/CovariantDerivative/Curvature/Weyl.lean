@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Schouten
-import TauCeti.LinearAlgebra.Multilinear.CurvatureDimThree
+import TauCeti.LinearAlgebra.Multilinear.Curvature.DimThree
 
 /-!
 # The Weyl curvature tensor of a smooth connection
