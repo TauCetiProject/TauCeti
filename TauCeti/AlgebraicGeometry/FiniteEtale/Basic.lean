@@ -63,6 +63,22 @@ instance {S : Scheme.{u}} (X : FiniteEtaleScheme S) : IsFinite X.obj.hom := X.pr
 
 instance {S : Scheme.{u}} (X : FiniteEtaleScheme S) : Etale X.obj.hom := X.property.2
 
+/-- A morphism of finite étale schemes over `S` is finite. -/
+instance isFinite_hom_left {S : Scheme.{u}} {X Y : FiniteEtaleScheme S} (f : X ⟶ Y) :
+    IsFinite f.hom.left := by
+  have : IsFinite (f.hom.left ≫ Y.obj.hom) := by
+    rw [Over.w]
+    infer_instance
+  exact IsFinite.of_comp f.hom.left Y.obj.hom
+
+/-- A morphism of finite étale schemes over `S` is étale. -/
+instance etale_hom_left {S : Scheme.{u}} {X Y : FiniteEtaleScheme S} (f : X ⟶ Y) :
+    Etale f.hom.left := by
+  have : Etale (f.hom.left ≫ Y.obj.hom) := by
+    rw [Over.w]
+    infer_instance
+  exact Etale.of_comp f.hom.left Y.obj.hom
+
 /-- Bundle a scheme with a finite étale structure morphism. -/
 def ofHom {S X : Scheme.{u}} (f : X ⟶ S) [IsFinite f] [Etale f] : FiniteEtaleScheme S :=
   ⟨Over.mk f, by

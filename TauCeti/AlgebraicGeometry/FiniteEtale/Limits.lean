@@ -23,8 +23,6 @@ the remaining half of (G2), are not treated here.
 
 ## Main results
 
-* `TauCeti.FiniteEtaleScheme.isFinite_hom_left`, `TauCeti.FiniteEtaleScheme.etale_hom_left`:
-  a morphism of finite étale schemes over `S` is finite and étale.
 * `TauCeti.FiniteEtaleScheme.isOpenImmersion_hom_left`,
   `TauCeti.FiniteEtaleScheme.isClosedImmersion_hom_left`: the underlying morphism of a
   monomorphism of finite étale schemes is an open and closed immersion.
@@ -126,20 +124,6 @@ instance : PreservesFiniteCoproducts (finiteEtaleSchemeProperty S).ι :=
   ⟨fun _ ↦ inferInstance⟩
 
 variable {X Y : FiniteEtaleScheme S}
-
-/-- A morphism of finite étale schemes over `S` is finite. -/
-instance isFinite_hom_left (f : X ⟶ Y) : IsFinite f.hom.left := by
-  have : IsFinite (f.hom.left ≫ Y.obj.hom) := by
-    rw [Over.w]
-    infer_instance
-  exact IsFinite.of_comp f.hom.left Y.obj.hom
-
-/-- A morphism of finite étale schemes over `S` is étale. -/
-instance etale_hom_left (f : X ⟶ Y) : Etale f.hom.left := by
-  have : Etale (f.hom.left ≫ Y.obj.hom) := by
-    rw [Over.w]
-    infer_instance
-  exact Etale.of_comp f.hom.left Y.obj.hom
 
 /-- The underlying morphism of schemes of a monomorphism of finite étale schemes is a
 monomorphism. -/
