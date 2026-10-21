@@ -71,6 +71,12 @@ theorem multivariateLogNormalPDFReal_of_not_pos (m : EuclideanSpace ℝ ι) (S :
     {x : EuclideanSpace ℝ ι} (hx : ¬ ∀ i, 0 < x i) : multivariateLogNormalPDFReal m S x = 0 := by
   simp [multivariateLogNormalPDFReal_def, hx]
 
+/-- The extended-real density vanishes outside the positive orthant. -/
+@[simp]
+theorem multivariateLogNormalPDF_of_not_pos (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
+    {x : EuclideanSpace ℝ ι} (hx : ¬ ∀ i, 0 < x i) : multivariateLogNormalPDF m S x = 0 := by
+  simp [multivariateLogNormalPDF_def, hx]
+
 /-- The explicit density formula on the positive orthant. -/
 theorem multivariateLogNormalPDFReal_of_pos (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
     {x : EuclideanSpace ℝ ι} (hx : ∀ i, 0 < x i) :
@@ -98,6 +104,14 @@ theorem multivariateLogNormalPDFReal_pos_iff (m : EuclideanSpace ℝ ι)
       (Finset.prod_pos fun i _ ↦ hx i)) hx
   · simp [hx]
 
+/-- With positive covariance determinant the extended-real density is positive exactly on the
+positive orthant. -/
+@[simp]
+theorem multivariateLogNormalPDF_pos_iff (m : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hdet : 0 < S.det) (x : EuclideanSpace ℝ ι) :
+    0 < multivariateLogNormalPDF m S x ↔ ∀ i, 0 < x i := by
+  rw [multivariateLogNormalPDF_def, ENNReal.ofReal_pos, multivariateLogNormalPDFReal_pos_iff m hdet]
+
 /-- Converting the extended-real density back to reals recovers its real-valued companion. -/
 @[simp]
 theorem toReal_multivariateLogNormalPDF (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
@@ -113,15 +127,17 @@ theorem multivariateLogNormalPDF_ne_top (m : EuclideanSpace ℝ ι) (S : Matrix 
   rw [multivariateLogNormalPDF_def]
   exact ENNReal.ofReal_ne_top
 
+/-- The extended-real density is strictly below infinity at every covariance parameter. -/
+theorem multivariateLogNormalPDF_lt_top (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
+    (x : EuclideanSpace ℝ ι) : multivariateLogNormalPDF m S x < ⊤ :=
+  ENNReal.ofReal_lt_top
+
 /-- The real-valued multivariate log-normal density is measurable. -/
 @[fun_prop]
 theorem measurable_multivariateLogNormalPDFReal (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
     Measurable (multivariateLogNormalPDFReal m S) := by
   unfold multivariateLogNormalPDFReal
-  apply Measurable.ite
-  · rw [Set.ofPred_forall]
-    exact MeasurableSet.iInter fun i ↦
-      measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)
+  apply Measurable.ite measurableSet_setOf_forall_pos
   · exact ((measurable_multivariateGaussianPDFReal m S).comp (by fun_prop)).div (by fun_prop)
   · exact measurable_const
 
@@ -176,23 +192,19 @@ theorem multivariateLogNormalMeasure_eq_withDensity (m : EuclideanSpace ℝ ι)
   have hjac := map_withDensity_abs_det_fderiv_eq_addHaar volume
     MeasurableSet.univ.nullMeasurableSet
     (fun x _ ↦ (PiLp.hasFDerivAt_exp x).hasFDerivWithinAt) hinj.injOn
-  simp only [Measure.restrict_univ, ← (PiLp.hasFDerivAt_exp _).fderiv,
-    PiLp.det_fderiv_exp, abs_of_pos (Finset.prod_pos fun i _ ↦ Real.exp_pos _)] at hjac
+  simp only [Measure.restrict_univ, Matrix.det_toEuclideanCLM_diagonal,
+    abs_of_pos (Finset.prod_pos fun i _ ↦ Real.exp_pos _)] at hjac
   rw [hrange] at hjac
   have hmap := Measure.map_withDensity_eq_withDensity he (by fun_prop)
     (measurable_multivariateLogNormalPDF m S) hjac
     (ae_of_all _ (exp_jacobian_mul_pdf m S))
-  have hpos : MeasurableSet {x : EuclideanSpace ℝ ι | ∀ i, 0 < x i} := by
-    rw [Set.ofPred_forall]
-    exact MeasurableSet.iInter fun i ↦
-      measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)
   rw [multivariateLogNormalMeasure_def, multivariateGaussian_eq_withDensity hS m, hmap,
-    ← withDensity_indicator hpos]
+    ← withDensity_indicator measurableSet_setOf_forall_pos]
   apply withDensity_congr_ae
   exact ae_of_all _ fun x ↦ by
     by_cases hx : ∀ i, 0 < x i
     · simp [hx]
-    · simp [hx, multivariateLogNormalPDF_def]
+    · simp [hx]
 
 /-- The extended-real density integrates to one at positive-definite log-covariance. -/
 @[simp]

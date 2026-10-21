@@ -43,8 +43,7 @@ theorem det_fderiv_exp (x : EuclideanSpace ℝ ι) :
     (fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 (fun i ↦ Real.exp (y i))) x).det =
       ∏ i, Real.exp (x i) := by
   classical
-  rw [(hasFDerivAt_exp x).fderiv, ContinuousLinearMap.det,
-    Matrix.coe_toEuclideanCLM_eq_toEuclideanLin, LinearMap.det_toLpLin, Matrix.det_diagonal]
+  rw [(hasFDerivAt_exp x).fderiv, Matrix.det_toEuclideanCLM_diagonal]
 
 /-- The derivative of coordinatewise logarithms where every coordinate is nonzero. -/
 theorem hasFDerivAt_log (x : EuclideanSpace ℝ ι) (hx : ∀ i, x i ≠ 0) :
@@ -63,8 +62,6 @@ theorem det_fderiv_log (x : EuclideanSpace ℝ ι) (hx : ∀ i, x i ≠ 0) :
     (fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 (fun i ↦ Real.log (y i))) x).det =
       (∏ i, x i)⁻¹ := by
   classical
-  rw [(hasFDerivAt_log x hx).fderiv, ContinuousLinearMap.det,
-    Matrix.coe_toEuclideanCLM_eq_toEuclideanLin, LinearMap.det_toLpLin, Matrix.det_diagonal,
-    Finset.prod_inv_distrib]
+  rw [(hasFDerivAt_log x hx).fderiv, Matrix.det_toEuclideanCLM_diagonal, Finset.prod_inv_distrib]
 
 end PiLp

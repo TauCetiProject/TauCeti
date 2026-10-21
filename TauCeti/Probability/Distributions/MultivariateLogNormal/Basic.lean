@@ -64,15 +64,21 @@ theorem multivariateLogNormalMeasure_zero (m : EuclideanSpace ℝ ι) :
       Measure.dirac (WithLp.toLp 2 (fun i ↦ Real.exp (m i))) := by
   simp [multivariateLogNormalMeasure_def, multivariateGaussian]
 
+omit [Fintype ι] [DecidableEq ι] in
+/-- The positive orthant in finite real Euclidean space is measurable. -/
+theorem measurableSet_setOf_forall_pos [Finite ι] :
+    MeasurableSet {x : EuclideanSpace ℝ ι | ∀ i, 0 < x i} := by
+  let : Fintype ι := Fintype.ofFinite ι
+  rw [Set.ofPred_forall]
+  exact MeasurableSet.iInter fun i ↦
+    measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)
+
 /-- A multivariate log-normal vector has every coordinate strictly positive almost surely. -/
 theorem ae_pos_multivariateLogNormalMeasure (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
     ∀ᵐ x ∂multivariateLogNormalMeasure m S, ∀ i, 0 < x i := by
   rw [multivariateLogNormalMeasure_def]
-  have hmeas : MeasurableSet {x : EuclideanSpace ℝ ι | ∀ i, 0 < x i} := by
-    rw [Set.ofPred_forall]
-    exact MeasurableSet.iInter fun i ↦ measurableSet_lt
-      (measurable_const (a := (0 : ℝ))) (by fun_prop)
-  exact (ae_map_iff (by fun_prop) hmeas).mpr (ae_of_all _ fun x i ↦ Real.exp_pos (x i))
+  exact (ae_map_iff (by fun_prop) measurableSet_setOf_forall_pos).mpr
+    (ae_of_all _ fun x i ↦ Real.exp_pos (x i))
 
 /-- Coordinatewise logarithms recover the original Gaussian, even at invalid covariances. -/
 @[simp]
