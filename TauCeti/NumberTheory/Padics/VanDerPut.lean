@@ -247,13 +247,13 @@ theorem sum_vanDerPutTerm_vanDerPutCoeff_apply [AddCommGroup E] [TopologicalSpac
 
 /-- **Biorthogonality**: the van der Put coefficients of the `m`-th van der Put term with value `a`
 are `a` at `m` and `0` elsewhere. -/
+@[simp]
 theorem vanDerPutCoeff_vanDerPutTerm [AddGroup E] [TopologicalSpace E] (a : E) (m n : ℕ) :
-    vanDerPutCoeff (vanDerPutTerm (p := p) a m) n = if m = n then a else 0 := by
+    vanDerPutCoeff (vanDerPutTerm (p := p) a m) n = if n = m then a else 0 := by
   rcases eq_or_ne n 0 with rfl | hn
   · have h0 := vanDerPutTerm_natCast (p := p) a m 0
     rw [Nat.cast_zero, Nat.zero_mod] at h0
     rw [vanDerPutCoeff_zero, h0]
-    exact if_congr eq_comm rfl rfl
   rw [vanDerPutCoeff_of_ne_zero _ hn, vanDerPutTerm_natCast, vanDerPutTerm_natCast]
   set L := Nat.log p n
   have hnL : n < p ^ (L + 1) := Nat.lt_pow_succ_log_self hp.out.one_lt n
@@ -263,7 +263,7 @@ theorem vanDerPutCoeff_vanDerPutTerm [AddGroup E] [TopologicalSpace E] (a : E) (
   · -- The term is constant along `n ≡ n⁻ [MOD p ^ L]`, and `m < p ^ L ≤ n`.
     have hmn : m ≠ n := ((Nat.lt_base_pow_length_digits hp.out.one_lt).trans_le
       ((Nat.pow_le_pow_right hp.out.pos hm).trans hLn)).ne
-    rw [Nat.mod_mod_of_dvd _ (pow_dvd_pow p hm), sub_self, ite_eq_right hmn]
+    rw [Nat.mod_mod_of_dvd _ (pow_dvd_pow p hm), sub_self, ite_eq_right hmn.symm]
   · -- Here `m` has at least as many digits as `n`, so `n⁻ < p ^ L ≤ m`.
     have hm0 : m ≠ 0 := by
       rintro rfl
@@ -275,7 +275,6 @@ theorem vanDerPutCoeff_vanDerPutTerm [AddGroup E] [TopologicalSpace E] (a : E) (
     rw [Nat.mod_eq_of_lt (hnL.trans_le hpow),
       Nat.mod_eq_of_lt (hmod.trans_le (Nat.pow_le_pow_right hp.out.pos hm.le)),
       ite_eq_right (hmod.trans_le hLm).ne, sub_zero]
-    exact if_congr eq_comm rfl rfl
 
 end Coeff
 
@@ -357,7 +356,9 @@ theorem vanDerPutCoeff_vanDerPutSeries (ha : Tendsto a atTop (𝓝 0)) (n : ℕ)
   simp_rw [vanDerPutCoeff_vanDerPutTerm] at hsum
   refine hsum.unique ?_
   convert hasSum_ite_eq n (a n) using 2 with m
-  split_ifs with hm <;> simp [hm]
+  rcases eq_or_ne m n with rfl | hm
+  · simp
+  · simp [hm, hm.symm]
 
 /-- **Van der Put's theorem**: a continuous function on `ℤ_[p]` with values in a complete
 ultrametric normed group is the uniformly convergent sum of its van der Put terms. -/
@@ -433,7 +434,6 @@ theorem vanDerPutEquiv_symm_single (n : ℕ) (a : E) :
   ext m
   rw [vanDerPutEquiv_apply, vanDerPutCoeff_vanDerPutTerm,
     ZeroAtInftyContinuousMap.single_apply]
-  exact if_congr eq_comm rfl rfl
 
 end Normed
 
