@@ -33,6 +33,7 @@ satisfying a Weitzenböck identity `L* L = L L* = -Δ + c`: then `L⁻¹ = L* (-
 * `TauCeti.hasTemperateGrowth_inv_mul_norm_sq_add`: the symbol `(a ‖ξ‖² + c)⁻¹`, for `a ≥ 0` and
   `c > 0`, has temperate growth.
 * `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
+* `SchwartzMap.fourierMultiplierCLM_laplacian`: Fourier multipliers commute with the Laplacian.
 * `SchwartzMap.neg_laplacian_fourierMultiplierCLM_add_smul` and
   `SchwartzMap.fourierMultiplierCLM_neg_laplacian_add_smul`: the Fourier multiplier with symbol
   `((2π)² ‖ξ‖² + c)⁻¹` is a two-sided inverse of `-Δ + c` on complex Schwartz space.
@@ -93,6 +94,16 @@ theorem fourierMultiplierCLM_add {g₁ g₂ : E → 𝕜} (hg₁ : g₁.HasTempe
 
 variable [CompleteSpace F]
 
+/-- Fourier multipliers commute with the Laplacian. -/
+theorem fourierMultiplierCLM_laplacian {g : E → 𝕜} (hg : g.HasTemperateGrowth) (f : 𝓢(E, F)) :
+    fourierMultiplierCLM F g (Δ f) = Δ (fourierMultiplierCLM F g f) := by
+  have hn : (fun ξ : E ↦ ‖ξ‖ ^ 2).HasTemperateGrowth := by fun_prop
+  rw [laplacian_eq_fourierMultiplierCLM, laplacian_eq_fourierMultiplierCLM,
+    ContinuousLinearMap.map_smul_of_tower, ← fourierMultiplierCLM_ofReal 𝕜 hn,
+    ← fourierMultiplierCLM_ofReal 𝕜 hn,
+    fourierMultiplierCLM_fourierMultiplierCLM_apply hg (by fun_prop),
+    fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop) hg, mul_comm g]
+
 /-- The Fourier multiplier with symbol `((2π)² ‖ξ‖² + c)⁻¹` is a right inverse of `-Δ + c`. -/
 @[simp]
 theorem neg_laplacian_fourierMultiplierCLM_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢(E, F)) :
@@ -110,26 +121,20 @@ theorem neg_laplacian_fourierMultiplierCLM_add_smul {c : ℝ} (hc : 0 < c) (f : 
   have h₁ : ((2 * π) ^ 2 • ((fun ξ : E ↦ ‖ξ‖ ^ 2) * g)).HasTemperateGrowth :=
     (Function.HasTemperateGrowth.const _).smul (hn.mul hg)
   have h₂ : (c • g).HasTemperateGrowth := (Function.HasTemperateGrowth.const _).smul hg
-  rw [laplacian_eq_fourierMultiplierCLM, fourierMultiplierCLM_fourierMultiplierCLM_apply hn hg,
-    neg_smul, neg_neg, ← smul_apply, ← smul_apply, ← fourierMultiplierCLM_smul (hn.mul hg),
-    ← fourierMultiplierCLM_smul hg, ← _root_.add_apply,
-    ← fourierMultiplierCLM_add h₁ h₂, hsum]
-  simp
+  have hop : fourierMultiplierCLM F ((2 * π) ^ 2 • ((fun ξ : E ↦ ‖ξ‖ ^ 2) * g) + c • g) =
+      ContinuousLinearMap.id ℝ 𝓢(E, F) := by
+    simp [hsum]
+  rw [fourierMultiplierCLM_add h₁ h₂, fourierMultiplierCLM_smul (hn.mul hg),
+    fourierMultiplierCLM_smul hg] at hop
+  simpa [laplacian_eq_fourierMultiplierCLM, fourierMultiplierCLM_fourierMultiplierCLM_apply hn hg]
+    using congr($hop f)
 
 /-- The Fourier multiplier with symbol `((2π)² ‖ξ‖² + c)⁻¹` is a left inverse of `-Δ + c`. -/
 @[simp]
 theorem fourierMultiplierCLM_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢(E, F)) :
     fourierMultiplierCLM F (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹) (-Δ f + c • f) = f := by
-  set g : E → ℝ := fun ξ ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹
-  have hg : g.HasTemperateGrowth :=
-    TauCeti.hasTemperateGrowth_inv_mul_norm_sq_add (by positivity) hc
-  have hn : (fun ξ : E ↦ ‖ξ‖ ^ 2).HasTemperateGrowth := by fun_prop
-  -- Fourier multipliers commute, so the multiplier commutes with the Laplacian.
-  have hcomm : fourierMultiplierCLM F g (Δ f) = Δ (fourierMultiplierCLM F g f) := by
-    rw [laplacian_eq_fourierMultiplierCLM, laplacian_eq_fourierMultiplierCLM, map_smul,
-      fourierMultiplierCLM_fourierMultiplierCLM_apply hg hn,
-      fourierMultiplierCLM_fourierMultiplierCLM_apply hn hg, mul_comm g]
-  rw [map_add, map_neg, map_smul, hcomm]
+  rw [map_add, map_neg, map_smul, fourierMultiplierCLM_laplacian
+    (TauCeti.hasTemperateGrowth_inv_mul_norm_sq_add (by positivity) hc)]
   exact neg_laplacian_fourierMultiplierCLM_add_smul hc f
 
 end Complex
@@ -139,12 +144,6 @@ section Real
 open TauCeti.Complexification
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem postcompCLM_reCLM_ofRealLI (f : 𝓢(E, G)) :
-    (f.postcompCLM (ofRealLI G).toContinuousLinearMap).postcompCLM (reCLM G) = f := by
-  ext x
-  simp
 
 /-- The **resolvent of the Laplacian** `(c - Δ)⁻¹` on Schwartz functions with values in a real
 Banach space `G`. For `c > 0` it is the two-sided inverse of `-Δ + c`
@@ -172,14 +171,16 @@ variable [CompleteSpace G]
 theorem neg_laplacian_laplacianResolvent_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
     -Δ (laplacianResolvent c f) + c • laplacianResolvent c f = f := by
   rw [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM, ← map_neg, ← map_smul, ← map_add,
-    neg_laplacian_fourierMultiplierCLM_add_smul hc, postcompCLM_reCLM_ofRealLI]
+    neg_laplacian_fourierMultiplierCLM_add_smul hc, postcompCLM_postcompCLM, reCLM_comp_ofRealLI]
+  rfl
 
 /-- The resolvent of the Laplacian is a left inverse of `-Δ + c`, for `c > 0`. -/
 @[simp]
 theorem laplacianResolvent_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
     laplacianResolvent c (-Δ f + c • f) = f := by
   rw [laplacianResolvent_apply, map_add, map_neg, map_smul, ← TauCeti.laplacian_postcompCLM,
-    fourierMultiplierCLM_neg_laplacian_add_smul hc, postcompCLM_reCLM_ofRealLI]
+    fourierMultiplierCLM_neg_laplacian_add_smul hc, postcompCLM_postcompCLM, reCLM_comp_ofRealLI]
+  rfl
 
 end Real
 
