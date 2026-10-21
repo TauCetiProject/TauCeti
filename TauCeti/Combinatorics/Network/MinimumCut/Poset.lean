@@ -193,6 +193,7 @@ theorem coe_ofDual_minimumCutOrderIso_inf (hst : s ≠ t) (hf : f.IsMaximum)
   rw [map_inf, _root_.ofDual_inf, UpperSet.coe_sup]
 
 /-- The empty upper set of free components gives the smallest minimum cut. -/
+@[simp]
 theorem coe_minimumCutOrderIso_symm_bot (hst : s ≠ t) (hf : f.IsMaximum)
     (hsub : IsSubmodular (cutBound lo hi)) :
     ((hf.minimumCutOrderIso hst hsub).symm ⊥ : Finset V) =
@@ -202,6 +203,7 @@ theorem coe_minimumCutOrderIso_symm_bot (hst : s ≠ t) (hf : f.IsMaximum)
   simp
 
 /-- The full upper set of free components gives the largest minimum cut. -/
+@[simp]
 theorem coe_minimumCutOrderIso_symm_top (hst : s ≠ t) (hf : f.IsMaximum)
     (hsub : IsSubmodular (cutBound lo hi)) :
     ((hf.minimumCutOrderIso hst hsub).symm ⊤ : Finset V) =
@@ -334,6 +336,7 @@ theorem coe_ofDual_minimumCutOrderIso_inf (hst : s ≠ t) (hf : f.IsMaximum)
   rw [map_inf, _root_.ofDual_inf, UpperSet.coe_sup]
 
 /-- The empty upper set of free components gives the smallest minimum cut. -/
+@[simp]
 theorem coe_minimumCutOrderIso_symm_bot (hst : s ≠ t) (hf : f.IsMaximum)
     (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) :
     ((hf.minimumCutOrderIso hst hsub).symm ⊥ : Finset V) =
@@ -344,6 +347,7 @@ theorem coe_minimumCutOrderIso_symm_bot (hst : s ≠ t) (hf : f.IsMaximum)
     hf'.mem_smallest_iff hst, hf.mem_smallest_iff hst hsub]
 
 /-- The full upper set of free components gives the largest minimum cut. -/
+@[simp]
 theorem coe_minimumCutOrderIso_symm_top (hst : s ≠ t) (hf : f.IsMaximum)
     (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) :
     ((hf.minimumCutOrderIso hst hsub).symm ⊤ : Finset V) =
