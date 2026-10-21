@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Covering.Besicovitch
+public import TauCeti.MeasureTheory.Covering.DensityPoints
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 public import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 
@@ -274,15 +274,17 @@ theorem convex_setOf_tendsto_volume_inter_closedBall_div {s : Set E}
 
 /-- **Essential convexity.** A Lebesgue-measurable set whose line sections, in every unit
 direction, almost all agree a.e. with intervals agrees almost everywhere with a convex set.
-A canonical such set is its set of Lebesgue density points, by
+A canonical such set is its essential interior, the set of its Lebesgue density points, by
 `TauCeti.convex_setOf_tendsto_volume_inter_closedBall_div` and
-`MeasureTheory.NullMeasurableSet.ae_eq_setOf_tendsto_measure_inter_div`. -/
+`MeasureTheory.NullMeasurableSet.essentialInterior_ae_eq`. -/
 theorem exists_convex_ae_eq_of_ae_lineSection_ordConnected {s : Set E}
     (hs : NullMeasurableSet s volume)
     (h : ∀ e : E, ‖e‖ = 1 → ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, ∃ I : Set ℝ, I.OrdConnected ∧
       {t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I) :
     ∃ K : Set E, Convex ℝ K ∧ s =ᵐ[volume] K :=
-  ⟨_, convex_setOf_tendsto_volume_inter_closedBall_div hs h,
-    hs.ae_eq_setOf_tendsto_measure_inter_div⟩
+  ⟨essentialInterior volume s, by
+    convert convex_setOf_tendsto_volume_inter_closedBall_div hs h using 1
+    ext x
+    exact mem_essentialInterior, hs.essentialInterior_ae_eq.symm⟩
 
 end TauCeti
