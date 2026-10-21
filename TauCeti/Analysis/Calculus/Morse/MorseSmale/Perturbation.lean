@@ -108,6 +108,7 @@ theorem perturb_zero (f : E → ℝ) (h : ι → E → ℝ) : perturb f h 0 = f 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- Perturbing a perturbation by the same family adds the parameters: `f_{s₀}` perturbed by `s` is
 `f_{s₀ + s}`. -/
+@[simp]
 theorem perturb_perturb (f : E → ℝ) (h : ι → E → ℝ) (s₀ s : EuclideanSpace ℝ ι) :
     perturb (perturb f h s₀) h s = perturb f h (s₀ + s) := by
   ext x
@@ -681,18 +682,19 @@ private theorem fst_perturbedFlow_apply_eventuallyEq (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
     (hc : ∀ i, HasCompactSupport (h i)) {s₀ : EuclideanSpace ℝ ι} (hs₀ : ‖s₀‖ < 1) {K' : ℝ≥0}
     (hf' : LipschitzWith K' (∇ (perturb f h s₀))) (t : ℝ) (x : E) :
-    (fun p : E × EuclideanSpace ℝ ι ↦ (perturbedFlow f h hf hh hc t (p.1, s₀ + p.2)).1)
+    (fun p : E × EuclideanSpace ℝ ι ↦ (perturbedFlow f h hf hh hc t (((0 : E), s₀) + p)).1)
       =ᶠ[𝓝 (x, 0)] fun p ↦ (perturbedFlow (perturb f h s₀) h hf' hh hc t p).1 := by
   have hnear : ∀ᶠ p : E × EuclideanSpace ℝ ι in 𝓝 (x, 0), ‖p.2‖ < 1 - ‖s₀‖ :=
     (continuous_norm.comp continuous_snd).continuousAt.eventually_lt continuousAt_const
       (by simpa using sub_pos.2 hs₀)
   filter_upwards [hnear] with p hp
+  have hshift : ((0 : E), s₀) + p = (p.1, s₀ + p.2) := Prod.ext (zero_add p.1) (Prod.snd_add _ _)
   have hn : ‖s₀ + p.2‖ ≤ 1 := by linarith [norm_add_le s₀ p.2]
   obtain ⟨K₁, hK₁⟩ := exists_lipschitzWith_gradient_perturb
     (hfs.differentiable (by norm_num)) hf hh hc (s₀ + p.2)
   obtain ⟨K₂, hK₂⟩ := exists_lipschitzWith_gradient_perturb
     ((contDiff_perturb hfs hh s₀).differentiable (by norm_num)) hf' hh hc p.2
-  rw [perturbedFlow_apply_of_norm_le (hfs.differentiable (by norm_num)) hf hh hc hn hK₁,
+  rw [hshift, perturbedFlow_apply_of_norm_le (hfs.differentiable (by norm_num)) hf hh hc hn hK₁,
     perturbedFlow_apply_of_norm_le ((contDiff_perturb hfs hh s₀).differentiable (by norm_num)) hf'
       hh hc (by linarith [norm_nonneg s₀]) hK₂]
   dsimp only
@@ -720,18 +722,16 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral_of_norm_lt (hfs : ContDif
   have hΦ : DifferentiableAt ℝ Φ (x, s₀) := differentiableAt_perturbedFlow hfs hf hh hc T _
   have hΨ : DifferentiableAt ℝ Ψ (x, 0) :=
     differentiableAt_perturbedFlow (contDiff_perturb hfs hh s₀) hf' hh hc T _
-  have hA : HasFDerivAt (fun p : E × EuclideanSpace ℝ ι ↦ ((0 : E), s₀) + p)
-      (ContinuousLinearMap.id ℝ _) (x, 0) := (hasFDerivAt_id _).const_add _
-  have hpt : (((0 : E), s₀) + (x, 0) : E × EuclideanSpace ℝ ι) = (x, s₀) := by simp
-  have h1 := hasFDerivAt_fst.comp (x, 0) ((hpt ▸ hΦ.hasFDerivAt).comp (x, 0) hA)
-  have heq := fst_perturbedFlow_apply_eventuallyEq hfs hf hh hc hs₀ hf' T x
-  have hshift : ∀ p : E × EuclideanSpace ℝ ι, ((0 : E), s₀) + p = (p.1, s₀ + p.2) := fun p ↦
-    Prod.ext (zero_add _) rfl
-  have h3 : HasFDerivAt (fun p ↦ (Ψ p).1) _ (x, 0) :=
-    h1.congr_of_eventuallyEq
-      (heq.mono fun p hp ↦ by simp only [Function.comp_apply, hshift]; exact hp.symm)
-  have h4 := h3.unique (hasFDerivAt_fst.comp (x, 0) hΨ.hasFDerivAt)
-  simpa using congrArg (· (0, e)) h4
+  have hfst : ∀ {G : E × EuclideanSpace ℝ ι → E × EuclideanSpace ℝ ι} {y},
+      DifferentiableAt ℝ G y → fderiv ℝ (fun p ↦ (G p).1) y = (ContinuousLinearMap.fst ℝ E _).comp
+        (fderiv ℝ G y) := fun hG ↦ (hasFDerivAt_fst.comp _ hG.hasFDerivAt).fderiv
+  have hpt : ((0 : E), s₀) + (x, 0) = (x, s₀) := by simp
+  have hshift := fderiv_comp_add_left (𝕜 := ℝ) (f := fun p : E × EuclideanSpace ℝ ι ↦ (Φ p).1)
+    (x := (x, 0)) ((0 : E), s₀)
+  rw [hpt, hfst hΦ] at hshift
+  rw [(fst_perturbedFlow_apply_eventuallyEq hfs hf hh hc hs₀ hf' T x).fderiv_eq,
+    hfst hΨ] at hshift
+  exact (congrArg (· (0, e)) hshift).symm
 
 end ParameterDerivative
 
