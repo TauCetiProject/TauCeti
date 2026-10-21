@@ -155,7 +155,8 @@ theorem isSeparable_adjoin_x_of_equation (h : (W.baseChange F).toAffine.Equation
   have := W.toAffine.isSeparable_functionField (RatFunc k)
   exact Algebra.IsSeparable.of_equiv_equiv (RingEquiv.refl (RatFunc k))
     (W.toAffine.functionFieldRatFuncEquivOfAdjoinEqTop h hx hxy).toRingEquiv
-    (RingHom.ext fun r ↦ ((W.toAffine.functionFieldRatFuncEquivOfAdjoinEqTop h hx hxy).commutes r).symm)
+    (RingHom.ext fun r ↦
+      ((W.toAffine.functionFieldRatFuncEquivOfAdjoinEqTop h hx hxy).commutes r).symm)
 
 end Equation
 
