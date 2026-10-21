@@ -24,13 +24,12 @@ The form is nondegenerate, since pairing with the monomial `X⁻¹⁻ⁿ` reads 
 `Xⁿ`. The orthogonal complement of `U_a` is exactly `U_{-a}`: the product of a series in `U_a`
 and a series in `U_{-a}` has no negative exponents, and the monomials `Xᵏ`, `k ≥ a`, detect every
 coefficient below `-a`. Consequently the form descends to a pairing
-`U_a / U_b × U_{-b} / U_{-a} → R`, which is perfect over every commutative ring. Over any ring
-`R`, the coefficients at the exponents `a ≤ n < b` identify `U_a / U_b` with the functions on
-this finite interval, so these quotients are finite free. Their rank is `(b - a).toNat` when `R`
-satisfies the strong rank condition. In these coordinates the pairing matches the coefficient
-of `Xⁿ` with that of `X⁻¹⁻ⁿ`. This finite-level duality is the input for describing continuous
-linear functionals on a Laurent-series field, which vanish on some `U_a`, through the residue
-form.
+`U_a / U_b × U_{-b} / U_{-a} → R`, which is perfect over every commutative ring. We use the
+coefficient identification `TauCeti.LaurentSeries.latticeQuotientEquiv` from
+`TauCeti.RingTheory.LaurentSeries.Lattice`. In these coordinates the pairing matches the
+coefficient of `Xⁿ` with that of `X⁻¹⁻ⁿ`. This finite-level duality is the input for describing
+continuous linear functionals on a Laurent-series field, which vanish on some `U_a`, through
+the residue form.
 
 ## Main definitions
 

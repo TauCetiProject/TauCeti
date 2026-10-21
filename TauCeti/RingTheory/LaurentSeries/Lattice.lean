@@ -37,7 +37,8 @@ used together with the action of scalar Laurent series on module-valued Laurent 
 * `TauCeti.LaurentSeries.latticeQuotient R V a b`: the finite-jet module.
 * `TauCeti.LaurentSeries.latticeQuotientEquiv R V a b`: coefficients on `[a, b)` identify the
   finite-jet quotient with `Finset.Ico a b → V`.
-* `HahnModule.lattice`, `HahnModule.latticeQuotient` and `HahnModule.latticeQuotientEquiv`:
+* `TauCeti.HahnModule.lattice`, `TauCeti.HahnModule.latticeQuotient` and
+  `TauCeti.HahnModule.latticeQuotientEquiv`:
   the corresponding lattice and finite-jet comparison on `HahnModule ℤ R V`.
 
 ## Main results
@@ -50,6 +51,9 @@ used together with the action of scalar Laurent series on module-valued Laurent 
 * `TauCeti.LaurentSeries.mul_mem_lattice`: `U_a U_b ⊆ U_{a + b}`.
 * `TauCeti.LaurentSeries.mem_lattice_iff_valuation_le`: over a field, `U_a` is a closed
   valuation ball.
+* `TauCeti.LaurentSeries.finrank_latticeQuotient`,
+  `TauCeti.HahnModule.finrank_latticeQuotient`: finite jets have `finrank` equal to
+  `(b - a).toNat * Module.finrank R V`.
 -/
 
 public section
@@ -259,7 +263,9 @@ end Quotient
 
 end TauCeti.LaurentSeries
 
-namespace HahnModule
+namespace TauCeti.HahnModule
+
+open _root_.HahnModule
 
 section Lattice
 
@@ -288,12 +294,18 @@ noncomputable def latticeEquiv (a : ℤ) :
 @[simp]
 theorem latticeEquiv_apply (a : ℤ) (f : lattice R V a) :
     (latticeEquiv R V a f : HahnSeries ℤ V) =
-      (ofLinearEquiv R).symm (f : HahnModule ℤ R V) := (rfl)
+      (of R).symm (f : HahnModule ℤ R V) := by
+  calc
+    _ = (ofLinearEquiv R).symm (f : HahnModule ℤ R V) := (rfl)
+    _ = _ := ofLinearEquiv_symm_apply _
 
 @[simp]
 theorem latticeEquiv_symm_apply (a : ℤ) (f : TauCeti.LaurentSeries.lattice R V a) :
     ((latticeEquiv R V a).symm f : HahnModule ℤ R V) =
-      ofLinearEquiv R (f : HahnSeries ℤ V) := (rfl)
+      of R (f : HahnSeries ℤ V) := by
+  calc
+    _ = ofLinearEquiv R (f : HahnSeries ℤ V) := (rfl)
+    _ = _ := ofLinearEquiv_apply _
 
 end Lattice
 
@@ -353,10 +365,10 @@ theorem finrank_latticeQuotient [StrongRankCondition R] [Module.Free R V]
     (a b : ℤ) :
     Module.finrank R (latticeQuotient R V a b) =
       (b - a).toNat * Module.finrank R V := by
-  rw [(latticeQuotientEquiv R V a b).finrank_eq]
-  simp only [Module.finrank, rank_fun_eq_lift_mul, Cardinal.toNat_mul,
-    Cardinal.toNat_natCast, Cardinal.toNat_lift, Fintype.card_coe, Int.card_Ico]
+  rw [(latticeQuotientEquiv R V a b).finrank_eq,
+    ← (TauCeti.LaurentSeries.latticeQuotientEquiv R V a b).finrank_eq,
+    TauCeti.LaurentSeries.finrank_latticeQuotient]
 
 end Quotient
 
-end HahnModule
+end TauCeti.HahnModule
