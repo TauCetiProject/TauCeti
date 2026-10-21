@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
+public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.LinearAlgebra.Trace
 
 /-!
@@ -34,6 +35,8 @@ ring. When the ring is nontrivial, `n` is the module's rank and this is its top 
 * `Module.Basis.trace_map_exteriorPower_of_apply` sums those eigenvalues to compute the trace.
 * `Module.Basis.exteriorPower_ιMulti_eq_det_smul` expands a degree-`n` exterior product in terms
   of the wedge of a basis indexed by `Fin n`.
+* `Module.Basis.topVector_eq_ιMulti` identifies Mathlib's top exterior product
+  `Module.Basis.topVector` of a basis indexed by `Fin n` with the wedge of the basis vectors.
 * `Module.Basis.map_exteriorPower_top_eq_det_smul` gives the degree-`n` action as its determinant
   for a basis indexed by `Fin n`.
 * `LinearMap.map_exteriorPower_finrank_eq_det_smul` gives the action in degree `Module.finrank`
@@ -138,6 +141,21 @@ theorem _root_.Module.Basis.exteriorPower_ιMulti_eq_det_smul (b : Module.Basis 
     _ = b.det v * (b.exteriorPower n).repr (ιMulti R n ⇑b) s := by
         rw [← hφ_apply ⇑b, mul_comm]
     _ = (b.exteriorPower n).repr (b.det v • ιMulti R n ⇑b) s := by simp
+
+/-- The top exterior product of a basis indexed by `Fin n` is the wedge of the basis vectors in
+their given order, read in the degree `finrank R M = n`. -/
+theorem _root_.Module.Basis.topVector_eq_ιMulti [Nontrivial R] (h : Module.finrank R M = n)
+    (b : Module.Basis (Fin n) R M) :
+    b.topVector = ιMulti R _ (b ∘ finCongr h) := by
+  -- The increasing enumeration of `Finset.univ` is the unique order embedding into `Fin n`.
+  set s : Set.powersetCard (Fin n) (Module.finrank R M) :=
+    ⟨Finset.univ, by simp [Module.finrank_eq_card_basis b]⟩
+  have he : Set.powersetCard.ofFinEmbEquiv.symm s = (Fin.castOrderIso h).toOrderEmbedding := by
+    refine OrderEmbedding.eq_of_range_eq ?_
+    ext i
+    simpa using (Set.powersetCard.mem_range_ofFinEmbEquiv_symm_iff_mem s i).2 (Finset.mem_univ i)
+  rw [← b.topVector_eq_exteriorPower s, basis_apply, ιMulti_family, he]
+  simp [Function.comp_def]
 
 /-- For a basis indexed by `Fin n`, an endomorphism acts on the degree-`n` exterior power as
 multiplication by its determinant. -/
