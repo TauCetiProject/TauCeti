@@ -119,19 +119,6 @@ noncomputable def grade (n : ℕ) : Submodule R (coeffSubalgebra M) :=
   Submodule.comap (coeffSubalgebra M).val.toLinearMap
     (Submodule.map ((Polynomial.monomial n).restrictScalars R) (M n))
 
-/-- A finitely generated coefficient space gives a finitely generated homogeneous piece. -/
-theorem fg_grade {n : ℕ} (hM : (M n).FG) : (grade M n).FG := by
-  apply Submodule.fg_of_fg_map_injective (coeffSubalgebra M).val.toLinearMap
-    Subtype.val_injective
-  have heq : (grade M n).map (coeffSubalgebra M).val.toLinearMap =
-      (M n).map ((Polynomial.monomial n).restrictScalars R) := by
-    rw [grade, Submodule.map_comap_eq]
-    apply inf_eq_right.mpr
-    rintro p ⟨b, hb, rfl⟩
-    exact ⟨monomial M n b hb, rfl⟩
-  rw [heq]
-  exact hM.map _
-
 /-- The elements of degree `n` of `coeffSubalgebra M` are the monomials `b Xⁿ` with `b ∈ M n`. -/
 theorem mem_grade_iff {n : ℕ} {f : coeffSubalgebra M} :
     f ∈ grade M n ↔ ∃ b ∈ M n, Polynomial.monomial n b = (f : B[X]) :=
@@ -258,6 +245,11 @@ noncomputable def gradeEquiv (n : ℕ) : M n ≃ₗ[R] grade M n where
   map_smul' r b := by ext1; ext1; simp
   left_inv b := by ext1; simp
   right_inv f := by ext1; ext1; exact mem_grade_iff_monomial_coeff.mp f.2
+
+/-- A finitely generated coefficient space gives a finitely generated homogeneous piece. -/
+theorem fg_grade {n : ℕ} (hM : (M n).FG) : (grade M n).FG := by
+  rw [← Module.Finite.iff_fg] at hM ⊢
+  exact Module.Finite.equiv (gradeEquiv M n)
 
 @[simp]
 theorem coe_gradeEquiv_apply (n : ℕ) (b : M n) :

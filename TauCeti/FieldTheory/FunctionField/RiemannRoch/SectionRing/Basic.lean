@@ -175,6 +175,12 @@ theorem coe_sectionRingGradeOneEquiv_symm_apply (D : Divisor k F) (f : sectionRi
     ((sectionRingGradeOneEquiv D).symm f : F) = ((f : sectionRing D) : F[X]).coeff 1 := by
   simp [sectionRingGradeOneEquiv]
 
+/-- Each homogeneous piece of a function-field section ring is finite-dimensional. -/
+theorem finiteDimensional_sectionRingGrade (hF : IsFunctionField k F)
+    (D : Divisor k F) (n : ℕ) : FiniteDimensional k (sectionRingGrade D n) := by
+  have := finiteDimensional_riemannRochSpace hF (n • D)
+  exact Module.Finite.equiv (coeffSubalgebra.gradeEquiv _ n)
+
 /-! ### Generation in degree one -/
 
 /-- **The section ring of `D` is generated in degree one** exactly when `L(nD) ⊆ L(D)ⁿ` for

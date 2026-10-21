@@ -37,13 +37,6 @@ open AlgebraicGeometry _root_.Polynomial
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
-/-- Each homogeneous piece of a function-field section ring is finite-dimensional. -/
-theorem finiteDimensional_sectionRingGrade (hF : IsFunctionField k F)
-    (D : Divisor k F) (n : ℕ) : FiniteDimensional k (sectionRingGrade D n) := by
-  have := finiteDimensional_riemannRochSpace hF (n • D)
-  exact Module.Finite.of_fg (coeffSubalgebra.fg_grade
-    ((Submodule.fg_iff_finiteDimensional _).mpr inferInstance))
-
 /-- The pencil recurrence for Riemann–Roch spaces lifts to multiplication of homogeneous
 pieces in the section ring of the pole divisor. -/
 theorem sectionRingGrade_succ_poles_le_mul (hF : IsFunctionField k F)
