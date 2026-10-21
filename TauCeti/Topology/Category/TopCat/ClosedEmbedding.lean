@@ -33,7 +33,8 @@ complexes:
 
 The last point comes from a statement about directed colimits: if all transition maps of a
 directed diagram are closed embeddings, so are the maps to its colimit
-(`TauCeti.TopCat.isClosedEmbedding_ι_of_isColimit`).
+(`TauCeti.TopCat.isClosedEmbedding_ι_of_isColimit`), refining the corresponding statement for
+injective maps (`TauCeti.TopCat.injective_ι_of_isColimit`).
 
 With Mathlib's description of a relative cell complex as a transfinite composition of pushouts of
 coproducts of its basic cells, these stability properties show that a relative cell complex in
@@ -153,17 +154,23 @@ end Coproduct
 
 section TransfiniteComposition
 
+/-- If all transition maps of a directed diagram in `TopCat` are injective, then so are the maps
+from the objects of the diagram to its colimit. -/
+theorem injective_ι_of_isColimit {J : Type w} [Preorder J] [IsDirectedOrder J]
+    {F : J ⥤ TopCat.{u}} (hF : ∀ ⦃i j : J⦄ (hij : i ≤ j), Function.Injective (F.map (homOfLE hij)))
+    {c : Cocone F} (hc : IsColimit c) (i : J) : Function.Injective (c.ι.app i) := fun x y h ↦ by
+  have : Nonempty J := ⟨i⟩
+  obtain ⟨k, g, hk⟩ :=
+    (Types.FilteredColimit.isColimit_eq_iff' (isColimitOfPreserves (forget TopCat) hc) x y).1 h
+  exact hF (leOfHom g) hk
+
 /-- If all transition maps of a directed diagram in `TopCat` are closed embeddings, then so are
 the maps from the objects of the diagram to its colimit. -/
 theorem isClosedEmbedding_ι_of_isColimit {J : Type w} [Preorder J] [IsDirectedOrder J]
     {F : J ⥤ TopCat.{u}}
     (hF : ∀ ⦃i j : J⦄ (hij : i ≤ j), IsClosedEmbedding (F.map (homOfLE hij)))
     {c : Cocone F} (hc : IsColimit c) (i : J) : IsClosedEmbedding (c.ι.app i) := by
-  have : Nonempty J := ⟨i⟩
-  have hc' := isColimitOfPreserves (forget TopCat) hc
-  have hinj (j : J) : Function.Injective (c.ι.app j) := fun x y h ↦ by
-    obtain ⟨k, g, hk⟩ := (Types.FilteredColimit.isColimit_eq_iff' hc' x y).1 h
-    exact (hF (leOfHom g)).injective hk
+  have hinj := injective_ι_of_isColimit (fun _ _ hij ↦ (hF hij).injective) hc
   refine .of_continuous_injective_isClosedMap (c.ι.app i).hom.continuous (hinj i) fun Z hZ ↦ ?_
   rw [TopCat.isClosed_iff_of_isColimit _ hc]
   intro k
