@@ -38,7 +38,6 @@ fold three on hold on every form similar to such a Pfister form. In fold one thi
 
 ## Main results
 
-* `TauCeti.sw2Class_add_mk_rankOne_mul`: the second class of `q ⊥ ⟨c⟩ ⊗ q`.
 * `TauCeti.sw1Class_pfisterFormClass_one` and `TauCeti.sw2Class_pfisterFormClass_one`: the
   one-fold values.
 * `TauCeti.sw1Class_pfisterFormClass`: `w₁` vanishes from fold two on.
@@ -91,35 +90,12 @@ section SecondClass
 
 variable {K : Type} [Field K] [Invertible (2 : K)]
 
-/-- **The second Stiefel–Whitney class of `q ⊥ ⟨c⟩ ⊗ q`**, that is of `⟨1, c⟩ ⊗ q`: for `q` of
-rank `n`,
-`w₂(q ⊥ ⟨c⟩ ⊗ q) = C(n, 2) · (c) ∪ (-1) + (c) ∪ w₁(q) + w₁(q) ∪ (-1)`.
-In particular it depends on `q` only through its rank and its first class. -/
-theorem sw2Class_add_mk_rankOne_mul (c : Kˣ) (x : RegularFormClass K) :
-    sw2Class (x + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => c⟩ * x) =
-      x.rank.choose 2 • (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
-          (kummerClass c) (kummerClass (-1)) +
-        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass c) (sw1Class x) +
-        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1Class x)
-          (kummerClass (-1)) := by
-  induction x using Quotient.inductionOn with
-  | h p =>
-    obtain ⟨n, w⟩ := p
-    rw [sw2Class_add, sw2Class_mk_rankOne_mul, sw1Class_mk_rankOne_mul, RegularFormClass.rank_mk,
-      sw1Class_mk, sw2Class_mk, sw1_eq_kummerClass_prod, map_add, map_nsmul, cup_kummerClass_self,
-      cup_kummerClass_comm (∏ i, w i) c]
-    rcases n with _ | m
-    · simp
-    · rw [Nat.add_sub_cancel, succ_nsmul]
-      set W := sw2 w
-      set A := (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
-        (kummerClass c) (kummerClass (-1))
-      set B := (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
-        (kummerClass c) (kummerClass (∏ i, w i))
-      set E := (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
-        (kummerClass (∏ i, w i)) (kummerClass (-1))
-      calc _ = (m + 1).choose 2 • A + B + E + (W + W) + (m • B + m • B) := by abel
-        _ = _ := by simp only [ZModModule.add_self, add_zero]
+/-- `C(2ᵐ, 2)` is even for `m ≥ 2`, so it kills every `𝔽₂`-module. -/
+private theorem two_pow_choose_two_nsmul_eq_zero {M : Type*} [AddCommGroup M]
+    [Module (ZMod 2) M] {m : ℕ} (hm : 2 ≤ m) (y : M) : (2 ^ m).choose 2 • y = 0 := by
+  obtain ⟨k, hk⟩ := Nat.Prime.dvd_choose_pow Nat.prime_two two_ne_zero
+    (show 2 ≠ 2 ^ m from fun h => by have := Nat.pow_le_pow_right two_pos hm; omega)
+  rw [hk, two_mul, add_nsmul, ZModModule.add_self]
 
 /-- **`w₂⟨⟨a⟩⟩ = 0`**: the one-fold Pfister form `⟨1, -a⟩` has trivial second class. -/
 theorem sw2Class_pfisterFormClass_one (a : Fin 1 → Kˣ) : sw2Class (pfisterFormClass a) = 0 := by
@@ -133,10 +109,10 @@ theorem sw2Class_pfisterFormClass_two (a b : Kˣ) :
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass b) +
         (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
           (kummerClass (-1)) (kummerClass (-1)) := by
-  have hcons : (![a, b] : Fin 2 → Kˣ) = Fin.cons a ![b] := (rfl)
-  rw [hcons, pfisterFormClass_cons, add_mul, one_mul, sw2Class_add_mk_rankOne_mul,
-    sw1Class_pfisterFormClass_one, rank_pfisterFormClass]
-  simp only [Matrix.cons_val_fin_one, pow_one, Nat.choose_self, one_smul]
+  rw [← Fin.cons_self_tail ![a, b], pfisterFormClass_cons, add_mul, one_mul,
+    sw2Class_add_mk_rankOne_mul, sw1Class_pfisterFormClass_one, rank_pfisterFormClass]
+  simp only [Matrix.cons_val_zero, Fin.tail_def, Matrix.cons_val_succ, Matrix.cons_val_fin_one,
+    pow_one, Nat.choose_self, one_smul]
   rw [← neg_one_mul a, ← neg_one_mul b]
   simp only [kummerClass_mul, map_add, LinearMap.add_apply]
   rw [cup_kummerClass_comm (-1) b]
@@ -154,13 +130,8 @@ theorem sw2Class_pfisterFormClass_of_three_le {n : ℕ} (a : Fin n → Kˣ) (hn 
     sw2Class (pfisterFormClass a) = 0 := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (show 1 ≤ n by omega)
   rw [← Fin.cons_self_tail a, pfisterFormClass_cons, add_mul, one_mul,
-    sw2Class_add_mk_rankOne_mul, rank_pfisterFormClass, sw1Class_pfisterFormClass _ (by omega)]
-  -- `C(2ᵐ, 2)` is even for `m ≥ 2`.
-  obtain ⟨k, hk⟩ := Nat.Prime.dvd_choose_pow Nat.prime_two two_ne_zero
-    (show 2 ≠ 2 ^ m from fun h => by
-      have := Nat.pow_le_pow_right two_pos (show 2 ≤ m by omega)
-      omega)
-  rw [hk, two_mul, add_nsmul, ZModModule.add_self]
+    sw2Class_add_mk_rankOne_mul, rank_pfisterFormClass, sw1Class_pfisterFormClass _ (by omega),
+    two_pow_choose_two_nsmul_eq_zero (by omega)]
   simp
 
 /-- **Scaling a Pfister form of fold at least two does not change its second class**:
@@ -170,11 +141,8 @@ theorem sw2Class_mk_rankOne_mul_pfisterFormClass (c : Kˣ) {n : ℕ} (a : Fin n 
     (hn : 2 ≤ n) :
     sw2Class (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => c⟩ * pfisterFormClass a) =
       sw2Class (pfisterFormClass a) := by
-  -- `C(2ⁿ, 2)` is even for `n ≥ 2`.
-  obtain ⟨k, hk⟩ := Nat.Prime.dvd_choose_pow Nat.prime_two two_ne_zero
-    (show 2 ≠ 2 ^ n from fun h => by have := Nat.pow_le_pow_right two_pos hn; omega)
-  rw [sw2Class_mk_rankOne_mul, rank_pfisterFormClass, sw1Class_pfisterFormClass a hn, hk,
-    two_mul, add_nsmul, ZModModule.add_self]
+  rw [sw2Class_mk_rankOne_mul, rank_pfisterFormClass, sw1Class_pfisterFormClass a hn,
+    two_pow_choose_two_nsmul_eq_zero hn]
   simp
 
 end SecondClass

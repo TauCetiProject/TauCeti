@@ -32,6 +32,8 @@ products of quaternion symbols become sums of Kummer cup products.
   `TauCeti.sw2Class_eq_zero_iff_hasseInvariant_eq_one`: equality and vanishing criteria.
 * `TauCeti.sw2Class_mk_rankOne_mul`: the scaling formula for `w₂`, transported from the scaling
   formula for the Hasse invariant.
+* `TauCeti.sw2Class_add_mk_rankOne_mul`: the second class of `q ⊥ ⟨c⟩ ⊗ q`, which depends on `q`
+  only through its rank and its first class.
 
 ## References
 
@@ -100,5 +102,35 @@ theorem sw2Class_mk_rankOne_mul (c : Kˣ) (x : RegularFormClass K) :
       RegularFormClass.rank_mk, sw1Class_mk, sw1_eq_kummerClass_prod]
     simp only [ofMul_mul, ofMul_pow, map_add, map_nsmul, brauerCohomologyEquiv_hasseInvariant,
       brauerCohomologyEquiv_quaternionClass]
+
+/-- **The second Stiefel–Whitney class of `q ⊥ ⟨c⟩ ⊗ q`**, that is of `⟨1, c⟩ ⊗ q`: for `q` of
+rank `n`,
+`w₂(q ⊥ ⟨c⟩ ⊗ q) = C(n, 2) · (c) ∪ (-1) + (c) ∪ w₁(q) + w₁(q) ∪ (-1)`.
+In particular it depends on `q` only through its rank and its first class. -/
+theorem sw2Class_add_mk_rankOne_mul (c : Kˣ) (x : RegularFormClass K) :
+    sw2Class (x + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => c⟩ * x) =
+      x.rank.choose 2 • (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+          (kummerClass c) (kummerClass (-1)) +
+        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass c) (sw1Class x) +
+        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1Class x)
+          (kummerClass (-1)) := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    obtain ⟨n, w⟩ := p
+    rw [sw2Class_add, sw2Class_mk_rankOne_mul, sw1Class_mk_rankOne_mul, RegularFormClass.rank_mk,
+      sw1Class_mk, sw2Class_mk, sw1_eq_kummerClass_prod, map_add, map_nsmul, cup_kummerClass_self,
+      cup_kummerClass_comm (∏ i, w i) c]
+    rcases n with _ | m
+    · simp
+    · rw [Nat.add_sub_cancel, succ_nsmul]
+      set W := sw2 w
+      set A := (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+        (kummerClass c) (kummerClass (-1))
+      set B := (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+        (kummerClass c) (kummerClass (∏ i, w i))
+      set E := (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+        (kummerClass (∏ i, w i)) (kummerClass (-1))
+      calc _ = (m + 1).choose 2 • A + B + E + (W + W) + (m • B + m • B) := by abel
+        _ = _ := by simp only [ZModModule.add_self, add_zero]
 
 end TauCeti
