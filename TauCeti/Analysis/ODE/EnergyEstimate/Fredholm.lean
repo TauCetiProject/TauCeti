@@ -209,6 +209,8 @@ theorem map_ker_le_orthogonal_range_trajectoryOperator [FiniteDimensional ℝ E]
   have hu : u ∈ K := by
     rw [← sum_smulRightW1pL_toW1pL (Module.finBasis ℝ E) u]
     exact K.sum_mem fun i _ ↦ hcoord _ _
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
+    innerSL_apply_apply] at hu
   rw [ContinuousLinearMap.coe_coe, prevL_apply]
   exact hu
 
