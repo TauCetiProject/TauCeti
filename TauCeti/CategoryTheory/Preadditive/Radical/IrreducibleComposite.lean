@@ -15,9 +15,10 @@ A composite of irreducible morphisms between objects with local endomorphism rin
 category with binary biproducts is nilpotent and every object is a direct summand of a finite sum
 of objects with local endomorphism rings. Then every radical morphism between two objects with local
 endomorphism rings is a sum of such composites
-(`TauCeti.mem_closure_isIrreducibleComposite_of_mem_jacobsonRadical`). Between indecomposable
-objects the radical morphisms are the non-isomorphisms, so every non-isomorphism is a sum of
-composites of irreducible morphisms.
+(`TauCeti.mem_closure_isIrreducibleComposite_of_mem_jacobsonRadical`). Between objects with local
+endomorphism rings (for example indecomposable modules of finite length) the radical morphisms are
+the non-isomorphisms (`TauCeti.mem_jacobsonRadical_iff_not_isIso`), so every non-isomorphism between
+such objects is a sum of composites of irreducible morphisms.
 
 The proof shows by induction on `n` that every radical morphism agrees with a sum of composites of
 irreducible morphisms modulo `radⁿ⁺¹`. A radical morphism outside `rad²` is irreducible
