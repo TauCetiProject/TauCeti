@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
-import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
 # Signatures of quadratic forms at real places
