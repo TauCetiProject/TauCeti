@@ -41,8 +41,6 @@ The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter
 
 ## Main statements
 
-* `TauCeti.CStarAction.integral_comp_comm`: each automorphism of the action commutes with Bochner
-  integrals.
 * `TauCeti.CStarAction.support_convolution_subset`: the support of a twisted convolution lies in
   the product of the supports.
 * `TauCeti.CStarAction.convolution_assoc`: twisted convolution is associative.
@@ -59,12 +57,6 @@ namespace TauCeti
 namespace CStarAction
 
 variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
-
-/-- Each automorphism of a C⋆-action commutes with Bochner integrals. No integrability is needed,
-since the automorphism is a linear isometry. -/
-theorem integral_comp_comm (α : CStarAction G A) {X : Type*} [MeasurableSpace X] (ν : Measure X)
-    (g : G) (F : X → A) : ∫ x, α g (F x) ∂ν = α g (∫ x, F x ∂ν) :=
-  LinearIsometry.integral_comp_comm ⟨(α g : A →ₗ[ℂ] A), StarAlgEquiv.norm_map (α g)⟩ F
 
 /-! ### The twisted integrand -/
 
