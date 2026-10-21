@@ -168,12 +168,10 @@ theorem range_mapValue_val_frobeniusFixedSubalgebra (n : ℕ) :
     (AlgHom.mapValue (H := H) (frobeniusFixedSubalgebra K A n).val).range =
       fixedSubgroup (frobeniusPoints K n) := by
   ext f
-  rw [MonoidHom.mem_range, mem_fixedSubgroup, frobeniusPoints_eq_self_iff]
-  refine ⟨?_, fun hf => ?_⟩
-  · rintro ⟨g, rfl⟩ h
-    simpa using mem_frobeniusFixedSubalgebra.mp (g.ofConv h).2
-  · refine ⟨toConv (f.ofConv.codRestrict _ fun h => mem_frobeniusFixedSubalgebra.mpr (hf h)), ?_⟩
-    exact ofConv_injective (AlgHom.ext fun h => by simp)
+  rw [MonoidHom.mem_range, ← MonoidHom.mem_mrange,
+    AlgHom.mem_mrange_mapValue_iff Subtype.val_injective, mem_fixedSubgroup,
+    frobeniusPoints_eq_self_iff, Subalgebra.range_val]
+  exact forall_congr' fun h => mem_frobeniusFixedSubalgebra
 
 variable (K H A) in
 /-- **The Frobenius-fixed points are the points over the Frobenius-fixed subalgebra.** For
@@ -215,22 +213,11 @@ variable (K H) in
 theorem range_mapValue_ofId :
     (AlgHom.mapValue (H := H) (Algebra.ofId K L)).range = fixedSubgroup (frobeniusPoints K 1) := by
   ext f
-  rw [MonoidHom.mem_range, mem_fixedSubgroup, frobeniusPoints_eq_self_iff]
-  simp only [pow_one, pow_natCard_eq_self_iff_mem_range_algebraMap]
-  refine ⟨?_, fun hf => ?_⟩
-  · rintro ⟨g, rfl⟩ h
-    simp
-  · -- The values lie in the image of the injective map `K → L`; invert it there.
-    have hinj := (algebraMap K L).injective
-    have hrange (h : H) : f.ofConv h ∈ (Algebra.ofId K L).range := by
-      obtain ⟨y, hy⟩ := hf h
-      exact (_root_.AlgHom.mem_range _).mpr ⟨y, by rw [Algebra.ofId_apply, hy]⟩
-    refine ⟨toConv ((AlgEquiv.ofInjective (Algebra.ofId K L) hinj).symm.toAlgHom.comp
-      (f.ofConv.codRestrict _ hrange)), ofConv_injective (AlgHom.ext fun h => ?_)⟩
-    rw [AlgHom.mapValue_apply, ofConv_toConv, ofConv_toConv, AlgHom.comp_apply,
-      AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ← AlgEquiv.ofInjective_apply _ hinj,
-      AlgEquiv.apply_symm_apply]
-    simp
+  rw [MonoidHom.mem_range, ← MonoidHom.mem_mrange,
+    AlgHom.mem_mrange_mapValue_iff (algebraMap K L).injective, mem_fixedSubgroup,
+    frobeniusPoints_eq_self_iff]
+  simp only [pow_one, pow_natCard_eq_self_iff_mem_range_algebraMap, AlgHom.mem_range,
+    Algebra.ofId_apply, Set.mem_range]
 
 variable (K H) in
 /-- **The `q`-Frobenius-fixed points are the `K`-rational points.** For a Hopf algebra `H` over
@@ -250,6 +237,17 @@ theorem coe_rationalPointsMulEquiv (f : WithConv (H →ₐ[K] K)) :
       AlgHom.mapValue (Algebra.ofId K L) f := by
   rw [rationalPointsMulEquiv, MulEquiv.coe_trans, Function.comp_apply,
     MulEquiv.subgroupCongr_apply, MonoidHom.ofInjective_apply]
+
+/-- The inverse identification sends a Frobenius-fixed point to the `K`-point whose values map to
+its values under the structure map `K → L`. -/
+@[simp]
+theorem algebraMap_rationalPointsMulEquiv_symm_apply_apply
+    (g : fixedSubgroup (frobeniusPoints K 1 (H := H) (A := L))) (h : H) :
+    algebraMap K L (((rationalPointsMulEquiv K H L).symm g).ofConv h) =
+      (g : WithConv (H →ₐ[K] L)).ofConv h := by
+  conv_rhs => rw [← (rationalPointsMulEquiv K H L).apply_symm_apply g]
+  rw [coe_rationalPointsMulEquiv, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+    Algebra.ofId_apply]
 
 /-- **The identification of the Frobenius-fixed points with the `K`-points is natural in the
 group scheme**: a morphism `φ` of group schemes over `K` acts compatibly on `K`-points and on
