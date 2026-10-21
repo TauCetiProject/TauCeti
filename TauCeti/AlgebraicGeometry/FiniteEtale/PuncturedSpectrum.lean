@@ -64,12 +64,17 @@ closed point. -/
 @[stacks 0BM7 "definition of purity"]
 def PurityHolds : Prop := (restrictPunctured R).EssSurj
 
-/-- Under purity, every finite étale cover of the puncture extends across the closed point. -/
-theorem PurityHolds.exists_extension (h : PurityHolds R)
-    (cover : TauCeti.FiniteEtaleScheme (puncturedSpectrum R).toScheme) :
-    ∃ extension : TauCeti.FiniteEtaleScheme (Spec (.of R)),
-      Nonempty ((restrictPunctured R).obj extension ≅ cover) := by
-  let : (restrictPunctured R).EssSurj := h
-  exact Functor.EssSurj.mem_essImage (restrictPunctured R) cover
+/-- Purity is equivalent to the extension of every finite étale cover of the puncture. -/
+theorem purityHolds_iff :
+    PurityHolds R ↔
+      ∀ cover : TauCeti.FiniteEtaleScheme (puncturedSpectrum R).toScheme,
+        ∃ extension : TauCeti.FiniteEtaleScheme (Spec (.of R)),
+          Nonempty ((restrictPunctured R).obj extension ≅ cover) := by
+  constructor
+  · intro h cover
+    let : (restrictPunctured R).EssSurj := h
+    exact Functor.EssSurj.mem_essImage (restrictPunctured R) cover
+  · intro h
+    exact ⟨h⟩
 
 end IsLocalRing
