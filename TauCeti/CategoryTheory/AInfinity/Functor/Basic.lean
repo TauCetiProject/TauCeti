@@ -170,10 +170,11 @@ theorem map_mem (X Y : C) {p : ℤ} {f : homModule (R := R) X Y}
 theorem map_decompose (X Y : C) (p : ℤ) (f : homModule (R := R) X Y) :
     ℱ.map X Y (DirectSum.decompose (grading (R := R) X Y).piece f p) =
       (DirectSum.decompose (grading (R := R) (ℱ.obj X) (ℱ.obj Y)).piece (ℱ.map X Y f) p :
-        homModule (R := R) (ℱ.obj X) (ℱ.obj Y)) :=
-  DirectSum.map_decompose_shift (grading (R := R) X Y).piece
-    (grading (R := R) (ℱ.obj X) (ℱ.obj Y)).piece (ℱ.map X Y).toAddMonoidHom id
-    Function.injective_id (fun _ _ ↦ ℱ.map_mem X Y) p f
+        homModule (R := R) (ℱ.obj X) (ℱ.obj Y)) := by
+  have h := LinearMap.IsHomogeneous.map_decompose (ℳ := (grading (R := R) X Y).piece)
+    (𝓝 := (grading (R := R) (ℱ.obj X) (ℱ.obj Y)).piece) (r := 0)
+    (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by simpa using ℱ.map_mem X Y hx) p f
+  rwa [add_zero] at h
 
 /-- **The map of an `A∞` functor on a Hom module is a chain map** for the differentials `m₁`: this
 is the arity-one `A∞` functor equation. -/

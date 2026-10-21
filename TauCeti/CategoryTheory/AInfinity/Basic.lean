@@ -250,8 +250,8 @@ theorem homDifferential_decompose (X Y : C) (p : ℤ) (f : homModule (R := R) X 
     𝒞.homDifferential X Y (DirectSum.decompose (grading (R := R) X Y).piece f p) =
       (DirectSum.decompose (grading (R := R) X Y).piece (𝒞.homDifferential X Y f) (p + 1) :
         homModule (R := R) X Y) :=
-  DirectSum.map_decompose_shift _ _ (𝒞.homDifferential X Y).toAddMonoidHom (· + 1)
-    (add_left_injective 1) (fun _ _ ↦ 𝒞.homDifferential_mem_piece) p f
+  LinearMap.IsHomogeneous.map_decompose (r := 1)
+    (LinearMap.isHomogeneous_def.mpr fun _ _ ↦ 𝒞.homDifferential_mem_piece) p f
 
 /-- **The differential of an `A∞` category squares to zero.** -/
 @[simp]
