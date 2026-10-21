@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.VectorBundle.FiberwiseMap
+public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 
 /-!
@@ -34,7 +35,8 @@ This file computes how they act on the Liouville form `λ` and on the canonical 
 
 All of these come from one observation: pulling `λ` back along any differentiable self-map `Φ` of
 `T*M` that covers the identity of `M` evaluates the image covector `Φ p` on the derivative of the
-projection (`TauCeti.CotangentBundle.mpullback_liouvilleForm_apply_of_proj_eq`).
+projection (`TauCeti.CotangentBundle.mpullback_liouvilleForm_apply_of_proj_eq`, the self-map case
+of `TauCeti.CotangentBundle.mpullback_liouvilleForm_apply`).
 
 As in `TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville`, the base may have boundary or
 corners and need not be finite-dimensional.
@@ -114,6 +116,15 @@ theorem fiberTranslation_symm (α : SmoothForm I M ℝ 1) :
     (fiberTranslation α).symm = fiberTranslation (-α) :=
   Diffeomorph.ext fun z ↦ (fiberTranslation α).toEquiv.symm_apply_eq.mpr (by simp)
 
+/-- Fibre negation of the cotangent bundle is smooth, being fibrewise multiplication by `-1`. -/
+private theorem fiberNeg_contMDiff :
+    ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
+      fun z : CotangentBundle I M ↦
+        (TotalSpace.mk' (E →L[ℝ] ℝ) z.proj (-z.2) : CotangentBundle I M) :=
+  (ContMDiff.smul_totalSpace (V := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (I := I)
+      (contMDiff_const (c := (-1 : ℝ))) contMDiff_id).congr fun z ↦
+    (congrArg (TotalSpace.mk' (E →L[ℝ] ℝ) z.proj) (neg_one_smul ℝ z.2)).symm
+
 /-- **Fibre negation** of the cotangent bundle: the involutive diffeomorphism of `T*M` sending a
 covector `p` to `-p`. -/
 def fiberNeg :
@@ -123,12 +134,8 @@ def fiberNeg :
   invFun z := TotalSpace.mk' (E →L[ℝ] ℝ) z.proj (-z.2)
   left_inv z := by simp
   right_inv z := by simp
-  contMDiff_toFun := by
-    simpa using contMDiff_totalSpace_mk_smul (V := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)
-      (IB := I) (n := ∞) (-1 : ℝ)
-  contMDiff_invFun := by
-    simpa using contMDiff_totalSpace_mk_smul (V := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)
-      (IB := I) (n := ∞) (-1 : ℝ)
+  contMDiff_toFun := fiberNeg_contMDiff
+  contMDiff_invFun := fiberNeg_contMDiff
 
 /-- Fibre negation negates a covector. -/
 @[simp]
@@ -164,25 +171,8 @@ theorem mpullback_liouvilleForm_apply_of_proj_eq
     mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) Φ (liouvilleForm I M).1 z v =
       (Φ z).2 (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (π (E →L[ℝ] ℝ)
         (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0)) := by
-  have hcomp := mfderiv_comp z
-    ((Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt
-      one_ne_zero) hΦz
-  rw [show π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ∘ Φ =
-      π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) from funext hΦ] at hcomp
-  rw [mpullback_apply, liouvilleForm_apply]
-  exact congrArg (Φ z).2 (DFunLike.congr_fun hcomp (v 0)).symm
-
-/-- Evaluating the pullback of a one-form along the projection of `T*M` on a single tangent
-vector. -/
-private theorem mpullback_proj_apply (α : SmoothForm I M ℝ 1) (z : CotangentBundle I M)
-    (v : Fin 1 → TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
-    (SmoothForm.mpullback (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ))
-        (Bundle.contMDiff_proj _) α).1 z v =
-      SmoothForm.degreeOneEquiv α z.proj
-        (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (π (E →L[ℝ] ℝ)
-          (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0)) := by
-  rw [SmoothForm.mpullback_apply, SmoothForm.degreeOneEquiv_apply_apply]
-  exact congrArg (α.1 z.proj) (funext fun i ↦ by rw [Fin.fin_one_eq_zero i])
+  rw [mpullback_liouvilleForm_apply hΦz]
+  exact congrArg (fun g ↦ (Φ z).2 (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I g z (v 0))) (funext hΦ)
 
 /-- **Fibre translation changes the Liouville form by the pulled-back one-form:**
 `τ_α^* λ = λ + π^* α`. -/
@@ -198,8 +188,8 @@ theorem mpullback_fiberTranslation_liouvilleForm (α : SmoothForm I M ℝ 1) :
   rw [SmoothForm.coe_mpullback, mpullback_liouvilleForm_apply_of_proj_eq
       (proj_fiberTranslation α) ((fiberTranslation α).mdifferentiable (by simp) z),
     SmoothForm.add_toRoughForm, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    liouvilleForm_apply, mpullback_proj_apply, fiberTranslation_apply]
-  rfl
+    liouvilleForm_apply, SmoothForm.mpullback_apply_degreeOne, fiberTranslation_apply,
+    add_apply]
 
 /-- **Fibre negation reverses the sign of the Liouville form.** -/
 theorem mpullback_fiberNeg_liouvilleForm :
@@ -209,8 +199,8 @@ theorem mpullback_fiberNeg_liouvilleForm :
   ext v
   rw [SmoothForm.coe_mpullback, mpullback_liouvilleForm_apply_of_proj_eq proj_fiberNeg
       (fiberNeg.mdifferentiable (by simp) z), NegMemClass.coe_neg, Pi.neg_apply,
-    ContinuousAlternatingMap.neg_apply, liouvilleForm_apply, fiberNeg_apply]
-  rfl
+    ContinuousAlternatingMap.neg_apply, liouvilleForm_apply, fiberNeg_apply,
+    neg_apply]
 
 end Liouville
 

@@ -9,21 +9,17 @@ public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 
 /-!
-# Smooth fibrewise maps of the total space of a vector bundle
+# Smooth fibre translation of the total space of a vector bundle
 
-Two elementary self-maps of the total space of a vector bundle `V → B` cover the identity of the
-base and act on each fibre:
+Translation by a section `s` of a vector bundle `V → B` is the self-map of the total space that
+covers the identity of the base and sends `v ∈ V x` to `v + s x`. It is `C^n` as soon as the
+section is `C^n` (`Bundle.contMDiff_totalSpace_mk_add_section`). In a trivialization it is an
+affine map of the model fibre, so smoothness follows from Mathlib's characterization
+`Bundle.contMDiffAt_totalSpace` of `C^n` maps into a total space. No `C^n` vector bundle
+structure is needed: only the fibrewise linearity of the trivializations is used.
 
-* translation by a section `s`, sending `v ∈ V x` to `v + s x`
-  (`Bundle.contMDiff_totalSpace_mk_add_section`);
-* multiplication by a fixed scalar `c`, sending `v ∈ V x` to `c • v`
-  (`Bundle.contMDiff_totalSpace_mk_smul`).
-
-Both are `C^n` on the total space, the first one as soon as the section is `C^n`. In a
-trivialization they are an affine, respectively linear, map of the model fibre, so smoothness
-follows from Mathlib's characterization `Bundle.contMDiffAt_totalSpace` of `C^n` maps into a
-total space. No `C^n` vector bundle structure is needed: only the fibrewise linearity of the
-trivializations is used.
+Fibrewise multiplication by a scalar is treated in `TauCeti.Geometry.Manifold.VectorBundle.Scalar`
+(`ContMDiff.smul_totalSpace`).
 -/
 
 public section
@@ -70,19 +66,5 @@ theorem contMDiff_totalSpace_mk_add_section {s : ∀ x, V x}
   refine ((contMDiffAt_trivializationAt_snd z₀).add hsec).congr_of_eventuallyEq ?_
   filter_upwards [eventually_proj_mem_baseSet z₀] with z hz
   exact ((trivializationAt F V z₀.proj).linear 𝕜 hz).map_add z.2 (s z.proj)
-
-/-- **Fibrewise scalar multiplication is smooth.** For a scalar `c`, the self-map `v ↦ c • v` of
-the total space of a vector bundle is `C^n`. -/
-theorem contMDiff_totalSpace_mk_smul (c : 𝕜) :
-    ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n
-      fun z : TotalSpace F V ↦ TotalSpace.mk' F z.proj (c • z.2) := by
-  intro z₀
-  rw [contMDiffAt_totalSpace]
-  refine ⟨contMDiffAt_proj V, ?_⟩
-  -- In the trivialization at `z₀`, the fibre coordinate is `c` times that of `z`.
-  refine ((contDiff_const_smul c).comp_contMDiffAt
-    (contMDiffAt_trivializationAt_snd z₀)).congr_of_eventuallyEq ?_
-  filter_upwards [eventually_proj_mem_baseSet z₀] with z hz
-  exact ((trivializationAt F V z₀.proj).linear 𝕜 hz).map_smul c z.2
 
 end Bundle
