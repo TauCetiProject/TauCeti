@@ -48,9 +48,32 @@ jobs:
           tools-repository: TauCetiProject/TauCetiTools
           tools-ref: 02db6ea51c27553cb6271e605612a56169ae72f6
           project-directory: .
-      - name: Abandon stuck PRs and close duplicates
+      - name: Diagnose stale PR policy (one read-only batch query)
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
           DRY_RUN: ${{ inputs.dry-run && '1' || '' }}
-        run: python3 scripts/housekeeping.py
+        run: |
+          python3 - <<'PY'
+          import json, subprocess, datetime
+          import sys
+          sys.path.insert(0, "scripts/pr_status")
+          import core
+          numbers=[2193,8279,8282,8284,8287,8288,9112,11769]
+          parts=[]
+          for n in numbers:
+              parts.append(f'p{n}:pullRequest(number:{n}){{number state isDraft updatedAt labels(first:30){{nodes{{name}}}} comments(first:100){{pageInfo{{hasNextPage}} nodes{{body updatedAt authorAssociation author{{login}}}}}}}}')
+          query='query { repository(owner:"TauCetiProject",name:"TauCeti") {'+' '.join(parts)+'} }'
+          r=subprocess.run(['gh','api','graphql','-f','query='+query],capture_output=True,text=True,check=True)
+          d=json.loads(r.stdout)
+          if d.get("errors"): raise RuntimeError("GraphQL diagnostic failed")
+          cutoff=datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(days=7)
+          for p in d['data']['repository'].values():
+              comments=p['comments']['nodes']
+              boards=[c for c in comments if 'tauceti-scoreboard' in c['body']]
+              rows=[dict(body=c['body'],updated=c['updatedAt'],author_association=c['authorAssociation']) for c in boards]
+              trusted=core.scoreboard_meta_from([c for c in rows if c['author_association'] in core._REPO_ASSOCIATED])
+              labels={x['name'].lower() for x in p['labels']['nodes']}
+              proposed=(p['state']=='OPEN' and not p['isDraft'] and 'awaiting-author' in labels and not labels.intersection({'keep','hold','wip','human','on-hold','do-not-close'}) and datetime.datetime.fromisoformat(p['updatedAt'].replace('Z','+00:00'))<cutoff)
+              print(json.dumps(dict(pr=p['number'],state=p['state'],updated=p['updatedAt'],scoreboard_actors=[dict(login=c['author']['login'],association=c['authorAssociation']) for c in boards],old_policy_has_trusted_scoreboard=bool(trusted),proposed_stale_eligible=proposed,more_comments=p['comments']['pageInfo']['hasNextPage'])))
+          PY
