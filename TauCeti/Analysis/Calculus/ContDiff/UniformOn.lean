@@ -34,7 +34,10 @@ once.
 * `TauCeti.UniformContDiffOn.uniformContinuousOn`, `.continuousOn`, `.differentiableOn` and
   `.contDiffOn`: the relation to Mathlib's `ContDiffOn`.
 * `TauCeti.UniformContDiffOn.mono` and `TauCeti.UniformContDiffOn.of_le`: shrinking the set and
-  lowering the order.
+  lowering the order. `TauCeti.UniformContDiffOn.congr`: the predicate depends only on the values
+  of the function on an open set.
+* `TauCeti.uniformContDiffOn_succ_iff_fderiv_of_isOpen`: on an open set, the derivative family is
+  `fderiv`.
 * `ContDiffOn.uniformContDiffOn`: a function that is `C^n` on an open set is uniformly `C^n` on
   every compact subset.
 -/
@@ -124,6 +127,31 @@ theorem UniformContDiffOn.differentiableOn {n : ℕ} (hn : 1 ≤ n) (h : Uniform
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
   obtain ⟨-, G', hG', -⟩ := uniformContDiffOn_succ_iff.1 h
   exact fun x hx ↦ (hG' x hx).differentiableAt.differentiableWithinAt
+
+/-- Uniform `C^n` regularity on an open set depends only on the values of the function there. -/
+theorem UniformContDiffOn.congr (hs : IsOpen s) {n : ℕ} {G₂ : X → Y} (hGG : EqOn G G₂ s)
+    (h : UniformContDiffOn 𝕜 n G s) : UniformContDiffOn 𝕜 n G₂ s := by
+  induction n generalizing Y with
+  | zero => exact UniformContinuousOn.congr h hGG
+  | succ n ih =>
+    obtain ⟨hu, G', hG', hC, hG'n⟩ := uniformContDiffOn_succ_iff.1 h
+    exact uniformContDiffOn_succ_iff.2 ⟨hu.congr hGG, G', fun x hx ↦
+      (hG' x hx).congr_of_eventuallyEq (Filter.eventuallyEq_of_mem (hs.mem_nhds hx) hGG.symm),
+      hC, hG'n⟩
+
+/-- **The derivative characterization of uniform regularity on an open set.** A function is
+uniformly `C^{n+1}` on an open set `s` if and only if it is differentiable and uniformly
+continuous on `s`, with `fderiv 𝕜 G` bounded and uniformly `C^n` on `s`. -/
+theorem uniformContDiffOn_succ_iff_fderiv_of_isOpen (hs : IsOpen s) {n : ℕ} :
+    UniformContDiffOn 𝕜 (n + 1) G s ↔ DifferentiableOn 𝕜 G s ∧ UniformContinuousOn G s ∧
+      (∃ C, ∀ x ∈ s, ‖fderiv 𝕜 G x‖ ≤ C) ∧ UniformContDiffOn 𝕜 n (fderiv 𝕜 G) s := by
+  refine ⟨fun h ↦ ?_, fun ⟨hd, hu, ⟨C, hC⟩, hG'⟩ ↦ ?_⟩
+  · obtain ⟨hu, G', hG', ⟨C, hC⟩, hG'n⟩ := uniformContDiffOn_succ_iff.1 h
+    have hder : EqOn G' (fderiv 𝕜 G) s := fun x hx ↦ (hG' x hx).fderiv.symm
+    exact ⟨h.differentiableOn le_add_self, hu, ⟨C, fun x hx ↦ (hder hx) ▸ hC x hx⟩,
+      hG'n.congr hs hder⟩
+  · exact uniformContDiffOn_succ_iff.2 ⟨hu, fderiv 𝕜 G, fun x hx ↦
+      ((hd x hx).differentiableAt (hs.mem_nhds hx)).hasFDerivAt, ⟨C, hC⟩, hG'⟩
 
 /-- On an open set, a uniformly `C^n` function is `C^n`. -/
 theorem UniformContDiffOn.contDiffOn {n : ℕ} (hs : IsOpen s) (h : UniformContDiffOn 𝕜 n G s) :
