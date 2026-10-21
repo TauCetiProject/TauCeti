@@ -44,6 +44,8 @@ into `EReal` without installing a coercion; it is additive.
 * `EReal.coe_le_coe_ennreal_of_ofReal_le` — a real number whose positive part is at most
   `a : ℝ≥0∞` is at most `a` in `EReal`.
 * `EReal.coe_ennreal_iInf` — the coercion from `ℝ≥0∞` to `EReal` commutes with infima.
+* `EReal.coe_mul_add_coe_mul_eq_top` — a combination `s a + t b` with positive real weights is `⊤`
+  when neither `a` nor `b` is `⊥` and one of them is `⊤`.
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -214,6 +216,20 @@ theorem _root_.EReal.coe_ennreal_iInf {ι : Sort*} (f : ι → ℝ≥0∞) :
     exact EReal.coe_ennreal_le_coe_ennreal_iff.2 <| le_iInf fun i ↦
       (EReal.toENNReal_le_toENNReal (iInf_le (fun j ↦ (f j : EReal)) i)).trans_eq
         EReal.toENNReal_coe
+
+/-- A combination `s a + t b` with positive real weights `s`, `t` is `⊤` when neither `a` nor `b`
+is `⊥` and one of them is `⊤`. -/
+theorem _root_.EReal.coe_mul_add_coe_mul_eq_top {s t : ℝ} (hs : 0 < s) (ht : 0 < t) {a b : EReal}
+    (ha : a ≠ ⊥) (hb : b ≠ ⊥) (h : a = ⊤ ∨ b = ⊤) : (s : EReal) * a + (t : EReal) * b = ⊤ := by
+  rcases h with rfl | rfl
+  · rw [EReal.coe_mul_top_of_pos hs]
+    refine EReal.top_add_of_ne_bot ?_
+    exact (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr hb, .inl (EReal.coe_ne_top _),
+      .inl (EReal.coe_nonneg.2 ht.le)⟩
+  · rw [EReal.coe_mul_top_of_pos ht]
+    refine EReal.add_top_of_ne_bot ?_
+    exact (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr ha, .inl (EReal.coe_ne_top _),
+      .inl (EReal.coe_nonneg.2 hs.le)⟩
 
 end TauCeti
 

@@ -15,6 +15,10 @@ For a field `k` and a nontrivial commutative `k`-algebra `A`, being integrally c
 means every element of `A` algebraic over `k` is a constant. An algebraically closed field is
 integrally closed in every domain algebra.
 
+If `R` is integrally closed in `A`, divisibility in `R` can be tested on `n`-th powers by any
+element of `R` that becomes a unit in `A`: a quotient `b / a` in `A` whose `n`-th power lies in `R`
+is integral over `R`. This is the non-domain form of Mathlib's `IsIntegrallyClosed.pow_dvd_pow_iff`.
+
 If a subring `S` of `B` is integrally closed in `B`, then its preimage under a ring homomorphism
 `f : A → B` is integrally closed in `A`: an element of `A` integral over the preimage is sent by
 `f` to an element integral over `S`, which therefore lies in `S`.
@@ -25,10 +29,10 @@ If a subring `S` of `B` is integrally closed in `B`, then its preimage under a r
   to be integrally closed in a nontrivial commutative algebra.
 * `TauCeti.isIntegrallyClosedIn_of_isAlgClosed`: an algebraically closed field is integrally
   closed in every domain algebra.
+* `IsIntegrallyClosedIn.pow_dvd_pow_iff`: for `a ∈ R` invertible in `A` and `n ≠ 0`,
+  `a ^ n ∣ b ^ n ↔ a ∣ b` in `R`.
 * `Subring.isIntegrallyClosedIn_comap`: the preimage of an integrally closed subring is integrally
   closed.
-* `IsIntegrallyClosedIn.pow_dvd_pow_iff`: if `R` is integrally closed in `A` and `a ∈ R` becomes a
-  unit of `A`, then `a ^ n ∣ b ^ n ↔ a ∣ b` in `R` for `n ≠ 0`.
 -/
 
 public section
@@ -56,6 +60,28 @@ theorem isIntegrallyClosedIn_of_isAlgClosed [IsAlgClosed k] [IsDomain A] :
 
 end TauCeti
 
+namespace IsIntegrallyClosedIn
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] [IsIntegrallyClosedIn R A]
+
+/-- If `R` is integrally closed in `A` and `a ∈ R` is a unit in `A`, then for `n ≠ 0`,
+`a ^ n` divides `b ^ n` in `R` exactly when `a` divides `b` in `R`. Compare
+`IsIntegrallyClosed.pow_dvd_pow_iff`, which asks `R` to be a domain integrally closed in its
+fraction field. -/
+theorem pow_dvd_pow_iff {n : ℕ} (hn : n ≠ 0) {a b : R} (ha : IsUnit (algebraMap R A a)) :
+    a ^ n ∣ b ^ n ↔ a ∣ b := by
+  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ pow_dvd_pow_of_dvd h n⟩
+  obtain ⟨u, hu⟩ := ha
+  have hpow : (algebraMap R A b * ↑u⁻¹) ^ n = algebraMap R A c := by
+    rw [mul_pow, ← map_pow, hc]
+    simp [← hu, mul_right_comm, ← mul_pow]
+  obtain ⟨d, hd⟩ := exists_algebraMap_eq_of_isIntegral_pow (Nat.pos_of_ne_zero hn)
+    (hpow ▸ isIntegral_algebraMap)
+  refine ⟨d, IsIntegralClosure.algebraMap_injective R R A ?_⟩
+  simp [hd, ← hu, mul_left_comm (u : A)]
+
+end IsIntegrallyClosedIn
+
 namespace Subring
 
 variable {A B : Type*} [CommRing A] [CommRing B]
@@ -69,25 +95,3 @@ instance isIntegrallyClosedIn_comap (f : A →+* B) (S : Subring B) [IsIntegrall
     inferInstance (hx.map_of_comp_eq (f.restrict _ S fun _ hy ↦ hy) f rfl)
 
 end Subring
-
-namespace IsIntegrallyClosedIn
-
-variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] [IsIntegrallyClosedIn R A]
-
-/-- **Divisibility of powers in an integrally closed subring.** If `R` is integrally closed in `A`
-and `a : R` becomes a unit of `A`, then `a ^ n ∣ b ^ n ↔ a ∣ b` in `R` for `n ≠ 0`. Unlike
-`IsIntegrallyClosed.pow_dvd_pow_iff`, `R` need not be a domain. -/
-theorem pow_dvd_pow_iff {n : ℕ} (hn : n ≠ 0) {a b : R} (ha : IsUnit (algebraMap R A a)) :
-    a ^ n ∣ b ^ n ↔ a ∣ b := by
-  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ pow_dvd_pow_of_dvd h n⟩
-  obtain ⟨u, hu⟩ := ha
-  obtain ⟨x, hx⟩ : ∃ x : A, algebraMap R A b = u * x := ⟨↑u⁻¹ * algebraMap R A b, by simp⟩
-  have hpow : x ^ n = algebraMap R A c := by
-    have h := congrArg (algebraMap R A) hc
-    simp only [map_pow, map_mul, hx, ← hu, mul_pow] at h
-    exact (u.isUnit.pow n).mul_left_cancel h
-  obtain ⟨d, hd⟩ := exists_algebraMap_eq_of_isIntegral_pow (Nat.pos_of_ne_zero hn)
-    (hpow ▸ isIntegral_algebraMap)
-  exact ⟨d, IsIntegralClosure.algebraMap_injective R R A (by simp [hx, hd, hu])⟩
-
-end IsIntegrallyClosedIn
