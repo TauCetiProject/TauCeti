@@ -211,9 +211,7 @@ theorem e_pow_smul_vec_add (c j : ℕ) :
   | zero => simp
   | succ c ih =>
     rw [pow_succ, mul_smul, ← add_assoc, e_smul_vec_succ, smul_comm, ih, smul_smul,
-      Finset.prod_range_succ, mul_comm]
-    push_cast
-    rfl
+      Finset.prod_range_succ, mul_comm, Nat.cast_add]
 
 /-- A power of `E` of exponent larger than `j` kills `v_j`. -/
 theorem e_pow_smul_vec_of_lt {c j : ℕ} (h : j < c) : e q ^ c • vec q μ j = 0 := by
@@ -499,6 +497,12 @@ def basis (hq : q ≠ 0) (hμ : μ ≠ 0) : Module.Basis ℕ ℂ (VermaModule q 
 @[simp]
 theorem coe_basis (hq : q ≠ 0) (hμ : μ ≠ 0) : ⇑(basis hq hμ) = vec q μ :=
   Module.Basis.coe_mk _ _
+
+/-- The coordinates of `v_j` in the basis `(v_j)_(j ∈ ℕ)` of `M(μ)`. -/
+@[simp]
+theorem basis_repr_vec (hq : q ≠ 0) (hμ : μ ≠ 0) (j : ℕ) :
+    (basis hq hμ).repr (vec q μ j) = Finsupp.single j 1 := by
+  rw [← coe_basis hq hμ, Module.Basis.repr_self]
 
 /-- For nonzero `q` and `μ`, every vector `v_j` is nonzero. -/
 theorem vec_ne_zero (hq : q ≠ 0) (hμ : μ ≠ 0) (j : ℕ) : vec q μ j ≠ 0 :=

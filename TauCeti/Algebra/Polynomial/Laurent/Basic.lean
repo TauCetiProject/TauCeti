@@ -189,6 +189,13 @@ theorem laurentEval_eq_eval₂ {S : Type*} [CommSemiring S] [Algebra R S] (u : S
   | add p q hp hq => simp [hp, hq]
   | C_mul_T n a => simp
 
+/-- Evaluating a polynomial in `T + T⁻¹` at the unit `u` evaluates it at `u + u⁻¹`. -/
+@[simp]
+theorem laurentEval_eval₂_T_add_T_neg_one (u : Aˣ) (g : Polynomial R) :
+    laurentEval u (g.eval₂ C (T 1 + T (-1))) = Polynomial.aeval ((u : A) + (u⁻¹ : Aˣ)) g := by
+  rw [RingHom.ext C_eq_algebraMap, ← Polynomial.aeval_def, ← Polynomial.aeval_algHom_apply]
+  simp
+
 /-- **Substituting a nonzero power of `T` is injective.**  Evaluating a Laurent polynomial at a
 unit of `R[T;T⁻¹]` whose value is `T k` substitutes `Tᵏ` for `T`; for `k ≠ 0` this sends distinct
 monomials to distinct monomials, so it loses no information. -/

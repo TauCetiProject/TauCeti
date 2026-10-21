@@ -158,10 +158,9 @@ private theorem repr_pbwBasis_smul_vec (hμ : μ ≠ 0) (a' : ℕ) (b : ℤ) {c'
     simp [hlt.ne']
   · have hK := kUnit_zpow_smul_of_mem_weightSpace
       (mem_weightSpace_iff.mpr (k_smul_vec_zero (q := q) (μ := μ))) b
-    rw [pbwBasis_apply, mul_smul, mul_smul, e_pow_smul_vec_self, smul_comm _ (eProd q μ c), hK,
-      smul_comm _ (eProd q μ c), smul_comm _ (μ ^ b), f_pow_smul_vec, add_zero, smul_smul,
-      ← coe_basis Fact.out hμ, LinearEquiv.map_smul, Module.Basis.repr_self, Finsupp.smul_apply,
-      Finsupp.single_apply, smul_eq_mul]
+    rw [pbwBasis_apply, mul_smul, mul_smul, e_pow_smul_vec_self]
+    simp only [smul_algebra_smul_comm (A := UqSl2 q), hK, f_pow_smul_vec, add_zero, map_smul,
+      basis_repr_vec]
     by_cases ha : a' = a <;> simp [ha]
 
 /-- If the PBW coefficients of `x` with exponent of `E` below `c` vanish, then the coefficient of
@@ -197,8 +196,8 @@ private theorem repr_k_smul (hμ : μ ≠ 0) (y : VermaModule q μ) (a : ℕ) :
         (basis (Fact.out : q ≠ 0) hμ).repr.toLinearMap) := by
     refine (basis (Fact.out : q ≠ 0) hμ).ext fun j => ?_
     simp only [LinearMap.comp_apply, Algebra.lsmul_coe, coe_basis, k_smul_vec,
-      LinearEquiv.coe_coe, map_smul, LinearMap.smul_apply, Finsupp.lapply_apply, smul_eq_mul]
-    rw [← coe_basis Fact.out hμ, Module.Basis.repr_self, Finsupp.single_apply]
+      LinearEquiv.coe_coe, map_smul, LinearMap.smul_apply, Finsupp.lapply_apply, smul_eq_mul,
+      basis_repr_vec, Finsupp.single_apply]
     split_ifs with hj <;> simp [hj]
   exact LinearMap.congr_fun h y
 
@@ -222,8 +221,7 @@ private theorem smul_vec_zero_eq (hq : IsGenericQuantumParameter q) {z : UqSl2 q
   have hr : (basis (Fact.out : q ≠ 0) hμ).repr
       (laurentEval (Units.mk0 μ hμ) (harishChandra q z) • vec q μ 0) a =
         laurentEval (Units.mk0 μ hμ) (harishChandra q z) * if 0 = a then 1 else 0 := by
-    rw [LinearEquiv.map_smul, Finsupp.smul_apply, ← coe_basis Fact.out hμ, Module.Basis.repr_self,
-      Finsupp.single_apply, smul_eq_mul]
+    rw [map_smul, Finsupp.smul_apply, basis_repr_vec, Finsupp.single_apply, smul_eq_mul]
   rw [hr]
   rcases eq_or_ne a 0 with rfl | ha
   · rw [repr_smul_vec hμ (fun _ _ _ h => absurd h (Nat.not_lt_zero _)),
@@ -316,13 +314,10 @@ theorem exists_eval_casimirScalar_eq_laurentEval_harishChandra (hq : IsGenericQu
   have hR' : laurentEval (Q * Units.mk0 μ hμ) R =
       laurentEval (Units.mk0 μ hμ) (harishChandra q z) := by
     rw [laurentEval_rescale, hmap, inv_mul_cancel_left]
-  have hC : (C : ℂ →+* ℂ[T;T⁻¹]) = algebraMap ℂ ℂ[T;T⁻¹] := RingHom.ext C_eq_algebraMap
-  rw [← hR', ← hg, hC,
-    ← Polynomial.aeval_def, ← Polynomial.aeval_algHom_apply, Polynomial.coe_aeval_eq_eval,
+  rw [← hR', ← hg, laurentEval_eval₂_T_add_T_neg_one, Polynomial.coe_aeval_eq_eval,
     Polynomial.eval_comp]
-  simp only [Polynomial.eval_mul, Polynomial.eval_C, Polynomial.eval_X, map_add, laurentEval_T,
-    zpow_one, zpow_neg_one, Units.val_mul, Units.val_inv_eq_inv_val, Units.val_mk0, Q,
-    casimirScalar_def]
+  simp only [Polynomial.eval_mul, Polynomial.eval_C, Polynomial.eval_X, Units.val_mul,
+    Units.val_inv_eq_inv_val, Units.val_mk0, Q, casimirScalar_def]
   congr 1
   rw [mul_div_cancel₀ _ (pow_ne_zero 2 hq.sub_inv_ne_zero), mul_inv]
 
