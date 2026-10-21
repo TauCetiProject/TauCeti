@@ -46,6 +46,7 @@ morphism.
 * `CategoryTheory.leftAdjointMate_rightAdjointMate` and
   `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
   original morphism;
+* `CategoryTheory.Iso.rightAdjointMate`: the isomorphism `Yᘁ ≅ Xᘁ` induced by `X ≅ Y`;
 * `CategoryTheory.ExactPairing.rightMate`: the right adjoint mate with respect to explicit exact
   pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` and
   `CategoryTheory.ExactPairing.coevaluation_comp_rightMate`, with `rightMate_id` and
@@ -486,6 +487,26 @@ theorem rightAdjointMate_leftAdjointMate {X Y : C} [HasLeftDual X] [HasLeftDual 
     _ = X ◁ leftAdjointMate f ≫ ε_ (ᘁX) X :=
       rightAdjointMate_comp_evaluation (leftAdjointMate f)
     _ = _ := leftAdjointMate_comp_evaluation f
+
+/-- An isomorphism `X ≅ Y` induces an isomorphism `Yᘁ ≅ Xᘁ` of right duals, whose components are
+the right adjoint mates of those of `X ≅ Y`. -/
+def Iso.rightAdjointMate {X Y : C} [HasRightDual X] [HasRightDual Y] (e : X ≅ Y) : Yᘁ ≅ Xᘁ where
+  hom := e.homᘁ
+  inv := e.invᘁ
+  hom_inv_id := by rw [← comp_rightAdjointMate, e.inv_hom_id, rightAdjointMate_id]
+  inv_hom_id := by rw [← comp_rightAdjointMate, e.hom_inv_id, rightAdjointMate_id]
+
+/-- The component of `Iso.rightAdjointMate e` is the right adjoint mate of that of `e`. -/
+@[simp]
+theorem Iso.rightAdjointMate_hom {X Y : C} [HasRightDual X] [HasRightDual Y] (e : X ≅ Y) :
+    e.rightAdjointMate.hom = e.homᘁ :=
+  (rfl)
+
+/-- The inverse of `Iso.rightAdjointMate e` is the right adjoint mate of the inverse of `e`. -/
+@[simp]
+theorem Iso.rightAdjointMate_inv {X Y : C} [HasRightDual X] [HasRightDual Y] (e : X ≅ Y) :
+    e.rightAdjointMate.inv = e.invᘁ :=
+  (rfl)
 
 end CategoryTheory
 
