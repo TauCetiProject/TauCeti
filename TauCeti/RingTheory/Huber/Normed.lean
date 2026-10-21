@@ -52,6 +52,7 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   pseudouniformisers are the nonzero elements of norm less than one.
 * `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall`: in an ultrametric normed field `K°` is the
   closed unit ball.
+* `TauCeti.Huber.dvd_iff_norm_le`: divisibility in `K°` is comparison of norms.
 * `TauCeti.Huber.IsTateRing.of_isUnit_norm_lt_one`: an ultrametric seminormed commutative ring
   with `‖1‖ = 1` and a unit of norm less than one is a Tate ring.
 * `TauCeti.Huber.IsTateRing.of_nontriviallyNormedField`: a nontrivially normed field with an
@@ -228,6 +229,24 @@ theorem coe_powerBoundedSubring_eq_closedBall :
     (powerBoundedSubring K : Set K) = Metric.closedBall 0 1 := by
   ext x
   simp
+
+variable {K} in
+/-- **Divisibility in `K°` is comparison of norms**: in the closed unit ball of an ultrametric
+normed field, `a ∣ b` exactly when `‖b‖ ≤ ‖a‖`. -/
+theorem dvd_iff_norm_le {a b : powerBoundedSubring K} : a ∣ b ↔ ‖(b : K)‖ ≤ ‖(a : K)‖ := by
+  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ ?_⟩
+  · rw [hc, Subring.coe_mul, norm_mul]
+    exact mul_le_of_le_one_right (norm_nonneg _)
+      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2))
+  · by_cases ha : (a : K) = 0
+    · rw [ha, norm_zero, norm_le_zero_iff, ← Subring.coe_zero, Subtype.coe_inj] at h
+      rw [h]
+      exact dvd_zero a
+    · refine ⟨⟨b / a, mem_powerBoundedSubring.mpr (isPowerBounded_iff_norm_le_one.mpr ?_)⟩,
+        Subtype.ext ?_⟩
+      · rw [norm_div]
+        exact div_le_one_of_le₀ h (norm_nonneg _)
+      · rw [Subring.coe_mul, mul_div_cancel₀ _ ha]
 
 end Ultrametric
 
