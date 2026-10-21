@@ -306,25 +306,21 @@ private def slConjJ : SL(2, ℝ) →* SL(2, ℝ) where
     fin_cases i <;> fin_cases j <;>
       simp [coe_slConjJFun, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
 
-private theorem coe_slConjJ (A : SL(2, ℝ)) :
-    (slConjJ A : Matrix (Fin 2) (Fin 2) ℝ) = !![A 0 0, -A 0 1; -A 1 0, A 1 1] :=
-  (rfl)
-
 private theorem J_mul_mapGL (A : SL(2, ℝ)) :
     J * Matrix.SpecialLinearGroup.mapGL ℝ A =
       Matrix.SpecialLinearGroup.mapGL ℝ (slConjJ A) * J := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [coe_slConjJ, Matrix.mul_apply, Fin.sum_univ_two,
+    simp [slConjJ, coe_slConjJFun, Matrix.mul_apply, Fin.sum_univ_two,
       Matrix.SpecialLinearGroup.mapGL_coe_matrix]
 
 private theorem slConjJ_slConjJ (A : SL(2, ℝ)) : slConjJ (slConjJ A) = A := by
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [coe_slConjJ]
+  fin_cases i <;> fin_cases j <;> simp [slConjJ, coe_slConjJFun]
 
 private theorem slConjJ_neg_one : slConjJ (-1) = -1 := by
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [coe_slConjJ]
+  fin_cases i <;> fin_cases j <;> simp [slConjJ, coe_slConjJFun]
 
 private def pslConjJHom : PSL(2, ℝ) →* PSL(2, ℝ) :=
   QuotientGroup.map _ _ slConjJ fun A hA ↦ by
@@ -382,7 +378,7 @@ theorem pslConjJ_pslS : pslConjJ pslS = pslS := by
     ← Matrix.ProjectiveSpecialLinearGroup.mk_neg]
   congr 1
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [coe_slConjJ, ModularGroup.coe_S]
+  fin_cases i <;> fin_cases j <;> simp [slConjJ, coe_slConjJFun, ModularGroup.coe_S]
 
 /-- Conjugation by `J` fixes the dilations `z ↦ exp s * z`. -/
 @[simp]
@@ -392,7 +388,8 @@ theorem pslConjJ_dilation (s : ℝ) :
   rw [pslConjJ_mk]
   congr 1
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [coe_slConjJ, Matrix.SpecialLinearGroup.coe_dilation]
+  fin_cases i <;> fin_cases j <;>
+    simp [slConjJ, coe_slConjJFun, Matrix.SpecialLinearGroup.coe_dilation]
 
 /-- `J` negates real ideal points. -/
 @[simp]

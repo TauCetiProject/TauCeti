@@ -5,19 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Reflection
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.DoubleTriangle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Basic
-import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.GaussBonnet
 
 /-!
-# The double of a hyperbolic triangle and its side pairing
+# The side pairing of the double of a hyperbolic triangle
 
 Let `P` be a convex hyperbolic triangle, with vertices in `ℍ ∪ ∂ℍ`, whose interior angles at the
 two ends `P 0`, `P 1` of side `0` are acute. Reflecting `P` in the geodesic line of side `0` gives
 a second triangle, and together they form the convex quadrilateral `P.doubleTriangle` with
 vertices `P 0`, `P 2'`, `P 1`, `P 2`, where `P 2'` is the mirror image of `P 2`
-(`ConvexPolygon.carrier_doubleTriangle`). The acute angles are what makes it strictly convex at
-`P 0` and `P 1`.
+(`ConvexPolygon.carrier_doubleTriangle`, in
+`TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.DoubleTriangle`).
 
 Its sides are paired by orientation-preserving products of two reflections in sides of `P`
 (`ConvexPolygon.doubleTriangleSidePairing`): the two sides at `P 0` by the product of the
@@ -30,9 +29,8 @@ of `P` can be doubled by first relabelling the vertices with `ConvexPolygon.rota
 
 ## Main declarations
 
-* `ConvexPolygon.doubleTriangle`: the double of a triangle across side `0`.
-* `ConvexPolygon.carrier_doubleTriangle`: it is the union of the triangle and its mirror image.
-* `ConvexPolygon.doubleTriangleSidePairing`: its side pairing by products of reflections.
+* `ConvexPolygon.doubleTriangleSidePairing`: the side pairing of `ConvexPolygon.doubleTriangle`
+  by products of reflections.
 
 ## References
 
@@ -50,160 +48,7 @@ open scoped Real
 
 namespace TauCeti.UpperHalfPlane.ConvexPolygon
 
-variable (P : ConvexPolygon 3)
-
-/-- The reflection in side `i` of a triangle fixes both ends of that side. -/
-private theorem extGeodesicReflection_sideGeodesic_vertex (i : Fin 3) :
-    extGeodesicReflection (P.sideGeodesic i) (P.vertex i) = P.vertex i ∧
-      extGeodesicReflection (P.sideGeodesic i) (P.vertex (i + 1)) = P.vertex (i + 1) :=
-  ⟨(P.isGeodesicFromTo_sideGeodesic i).extGeodesicReflection_left,
-    (P.isGeodesicFromTo_sideGeodesic i).extGeodesicReflection_right⟩
-
-/-- Reflecting the third vertex of a triangle across side `0`, with acute angles at both ends of
-that side, puts it strictly to the left of the other two sides. -/
-private theorem extGeodesicReflection_vertex_two_mem
-    (h₀ : P.interiorAngle 0 < π / 2) (h₁ : P.interiorAngle 1 < π / 2) :
-    extGeodesicReflection (P.sideGeodesic 0) (P.vertex 2) ∈
-        extLeftHalfPlane (geodesicFromTo (P.vertex 2) (P.vertex 0)) ∧
-      extGeodesicReflection (P.sideGeodesic 0) (P.vertex 2) ∈
-        extLeftHalfPlane (geodesicFromTo (P.vertex 1) (P.vertex 2)) := by
-  have hg := P.isGeodesicFromTo_sideGeodesic 0
-  have hc := P.vertex_mem_extLeftHalfPlane_sideGeodesic (i := 0) (j := 2) (by decide) (by decide)
-  rw [interiorAngle_def] at h₀ h₁
-  exact ⟨extGeodesicReflection_mem_extLeftHalfPlane_geodesicFromTo_left hg hc h₀,
-    extGeodesicReflection_mem_extLeftHalfPlane_geodesicFromTo_right hg hc h₁⟩
-
-/-- **The double of a triangle across a side.** For a triangle `P` whose angles at the ends of
-side `0` are acute, the convex quadrilateral with vertices `P 0`, the mirror image of `P 2` in
-side `0`, `P 1` and `P 2`, in this counterclockwise order. Its carrier is the union of `P` and
-its mirror image (`carrier_doubleTriangle`). -/
-def doubleTriangle (h₀ : P.interiorAngle 0 < π / 2) (h₁ : P.interiorAngle 1 < π / 2) :
-    ConvexPolygon 4 where
-  vertex := ![P.vertex 0, extGeodesicReflection (P.sideGeodesic 0) (P.vertex 2), P.vertex 1,
-    P.vertex 2]
-  three_le := by norm_num
-  vertex_ne_vertex_add_one := by
-    have hρ := extGeodesicReflection_injective (P.sideGeodesic 0)
-    have hv := P.vertex_injective
-    obtain ⟨e₀, e₁⟩ := P.extGeodesicReflection_sideGeodesic_vertex 0
-    rw [zero_add] at e₁
-    intro i
-    fin_cases i <;> simp only [Fin.reduceAdd, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
-      Matrix.cons_val]
-    · rw [← e₀]
-      exact hρ.ne (hv.ne (by decide))
-    · rw [← e₁]
-      exact hρ.ne (hv.ne (by decide))
-    · exact hv.ne (by decide)
-    · exact hv.ne (by decide)
-  vertex_mem_extLeftHalfPlane := by
-    obtain ⟨hK₀, hK₁⟩ := P.extGeodesicReflection_vertex_two_mem h₀ h₁
-    have hP₁ : P.vertex 0 ∈ extLeftHalfPlane (geodesicFromTo (P.vertex 1) (P.vertex 2)) :=
-      P.vertex_mem_extLeftHalfPlane 1 0 (by decide) (by decide)
-    have hP₂ : P.vertex 1 ∈ extLeftHalfPlane (geodesicFromTo (P.vertex 2) (P.vertex 0)) :=
-      P.vertex_mem_extLeftHalfPlane 2 1 (by decide) (by decide)
-    -- the sides at the mirror image of `P 2` are the mirror images of the sides at `P 2`
-    have hR {p q : Fin 3} (hpq : p ≠ q) (r : ℍ ⊕ OnePoint ℝ) :=
-      extGeodesicReflection_mem_extLeftHalfPlane_geodesicFromTo_iff (P.sideGeodesic 0)
-        (P.vertex_injective.ne hpq) r
-    obtain ⟨e₀, e₁⟩ := P.extGeodesicReflection_sideGeodesic_vertex 0
-    rw [zero_add] at e₁
-    intro i j hji hji'
-    fin_cases i <;> fin_cases j <;> simp only [Fin.reduceAdd, Fin.zero_eta, Fin.mk_one,
-      Fin.reduceFinMk, Matrix.cons_val, ne_eq, not_true_eq_false] at hji hji' ⊢
-    · simpa only [e₀, e₁] using (hR (p := 2) (q := 0) (by decide) _).2 hP₂
-    · simpa only [e₀, extGeodesicReflection_extGeodesicReflection] using
-        (hR (p := 2) (q := 0) (by decide) _).2 hK₀
-    · simpa only [e₀, e₁] using (hR (p := 1) (q := 2) (by decide) _).2 hP₁
-    · simpa only [e₁, extGeodesicReflection_extGeodesicReflection] using
-        (hR (p := 1) (q := 2) (by decide) _).2 hK₁
-    · exact hP₁
-    · exact hK₁
-    · exact hK₀
-    · exact hP₂
-
-variable {P} {h₀ : P.interiorAngle 0 < π / 2} {h₁ : P.interiorAngle 1 < π / 2}
-
-/-- The vertices of the double of a triangle. -/
-@[simp]
-theorem doubleTriangle_vertex :
-    (P.doubleTriangle h₀ h₁).vertex = ![P.vertex 0,
-      extGeodesicReflection (P.sideGeodesic 0) (P.vertex 2), P.vertex 1, P.vertex 2] :=
-  (rfl)
-
-/-- The double of a triangle contains the triangle. -/
-private theorem carrier_subset_carrier_doubleTriangle :
-    P.carrier ⊆ (P.doubleTriangle h₀ h₁).carrier := by
-  set Q := P.doubleTriangle h₀ h₁
-  rw [Q.carrier_def]
-  refine Set.subset_iInter fun i ↦ P.carrier_subset_closure_leftHalfPlane_of_forall fun k ↦ ?_
-  -- the vertices of `P` are vertices of its double
-  obtain ⟨l, hl⟩ : ∃ l, P.vertex k = Q.vertex l :=
-    ⟨![0, 2, 3] k, by fin_cases k <;> simp [Q]⟩
-  rw [hl]
-  exact Q.vertex_mem_extClosedLeftHalfPlane_sideGeodesic i l
-
-/-- The double of a triangle is symmetric under the reflection in side `0`, which exchanges the
-two sides at `P 0` and the two sides at `P 1`. -/
-private theorem geodesicReflection_mem_carrier_doubleTriangle {z : ℍ}
-    (hz : z ∈ (P.doubleTriangle h₀ h₁).carrier) :
-    geodesicReflection (P.sideGeodesic 0) z ∈ (P.doubleTriangle h₀ h₁).carrier := by
-  set Q := P.doubleTriangle h₀ h₁
-  set ρ := geodesicReflection (P.sideGeodesic 0)
-  obtain ⟨e₀, e₁⟩ := P.extGeodesicReflection_sideGeodesic_vertex 0
-  rw [zero_add] at e₁
-  have f₀ (w : ℍ) : ρ w ∈ closure (leftHalfPlane (geodesicFromTo (Q.vertex 0) (Q.vertex 1))) ↔
-      w ∈ closure (leftHalfPlane (geodesicFromTo (Q.vertex 3) (Q.vertex 0))) := by
-    have h := geodesicReflection_mem_closure_leftHalfPlane_geodesicFromTo_iff (P.sideGeodesic 0)
-      (P.vertex_injective.ne (by decide : (2 : Fin 3) ≠ 0)) w
-    rwa [e₀] at h
-  have f₁ (w : ℍ) : ρ w ∈ closure (leftHalfPlane (geodesicFromTo (Q.vertex 1) (Q.vertex 2))) ↔
-      w ∈ closure (leftHalfPlane (geodesicFromTo (Q.vertex 2) (Q.vertex 3))) := by
-    have h := geodesicReflection_mem_closure_leftHalfPlane_geodesicFromTo_iff (P.sideGeodesic 0)
-      (P.vertex_injective.ne (by decide : (1 : Fin 3) ≠ 2)) w
-    rwa [e₁] at h
-  have hρρ (w : ℍ) : ρ (ρ w) = w := geodesicReflection_geodesicReflection _ w
-  simp only [Q.mem_carrier_iff, sideGeodesic_def] at hz ⊢
-  intro i
-  fin_cases i
-  · exact (f₀ z).2 (hz 3)
-  · exact (f₁ z).2 (hz 2)
-  · simpa [hρρ] using (f₁ (ρ z)).1 (by simpa [hρρ] using hz 1)
-  · simpa [hρρ] using (f₀ (ρ z)).1 (by simpa [hρρ] using hz 0)
-
-/-- **The double of a triangle is the union of the triangle and its mirror image** in side `0`. -/
-theorem carrier_doubleTriangle :
-    (P.doubleTriangle h₀ h₁).carrier =
-      P.carrier ∪ geodesicReflection (P.sideGeodesic 0) '' P.carrier := by
-  set Q := P.doubleTriangle h₀ h₁
-  set ρ := geodesicReflection (P.sideGeodesic 0)
-  -- the sides of `Q` at `P 2` are those of `P`
-  have hQ₂ : Q.sideGeodesic 2 = P.sideGeodesic 1 := by
-    simp [Q, sideGeodesic_def]
-  have hQ₃ : Q.sideGeodesic 3 = P.sideGeodesic 2 := by
-    simp [Q, sideGeodesic_def]
-  have hP (w : ℍ) (h₀ : w ∈ closure (leftHalfPlane (P.sideGeodesic 0)))
-      (hw : w ∈ Q.carrier) : w ∈ P.carrier := by
-    rw [Q.mem_carrier_iff] at hw
-    refine (P.mem_carrier_iff w).2 fun i ↦ ?_
-    fin_cases i
-    · exact h₀
-    · exact hQ₂ ▸ hw 2
-    · exact hQ₃ ▸ hw 3
-  ext z
-  refine ⟨fun hz ↦ ?_, ?_⟩
-  · by_cases ht : z ∈ closure (leftHalfPlane (P.sideGeodesic 0))
-    · exact .inl (hP z ht hz)
-    · -- otherwise its mirror image lies on the side of `P`, and so in `P`
-      rw [mem_closure_leftHalfPlane_iff, not_le, ← mem_rightHalfPlane_iff] at ht
-      refine .inr ⟨ρ z, hP (ρ z) ?_ (geodesicReflection_mem_carrier_doubleTriangle hz),
-        geodesicReflection_geodesicReflection _ z⟩
-      exact subset_closure ((geodesicReflection_mem_leftHalfPlane_iff _ z).2 ht)
-  · rintro (hz | ⟨y, hy, rfl⟩)
-    · exact carrier_subset_carrier_doubleTriangle hz
-    · exact geodesicReflection_mem_carrier_doubleTriangle (carrier_subset_carrier_doubleTriangle hy)
-
-variable (P h₀ h₁)
+variable (P : ConvexPolygon 3) (h₀ : P.interiorAngle 0 < π / 2) (h₁ : P.interiorAngle 1 < π / 2)
 
 /-- **The side pairing of the double of a triangle.** Side `i` is paired with side `3 - i`. The
 two sides at `P 0` are paired by the product of the reflections in sides `0` and `2` of `P`, which
@@ -219,14 +64,20 @@ def doubleTriangleSidePairing : (P.doubleTriangle h₀ h₁).SidePairing where
   map_pair i := by
     fin_cases i <;> simp [Fin.rev]
   map_smul_vertex i := by
-    obtain ⟨a₀, a₁⟩ := P.extGeodesicReflection_sideGeodesic_vertex 0
-    obtain ⟨b₁, b₂⟩ := P.extGeodesicReflection_sideGeodesic_vertex 1
-    obtain ⟨c₂, c₀⟩ := P.extGeodesicReflection_sideGeodesic_vertex 2
+    have a₀ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_left
+    have a₁ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_right
+    have b₁ := (P.isGeodesicFromTo_sideGeodesic 1).extGeodesicReflection_left
+    have b₂ := (P.isGeodesicFromTo_sideGeodesic 1).extGeodesicReflection_right
+    have c₂ := (P.isGeodesicFromTo_sideGeodesic 2).extGeodesicReflection_left
+    have c₀ := (P.isGeodesicFromTo_sideGeodesic 2).extGeodesicReflection_right
     fin_cases i <;> simp_all [geodesicReflectionComp_smul_eq_extGeodesicReflection, Fin.rev]
   map_smul_vertex_add_one i := by
-    obtain ⟨a₀, a₁⟩ := P.extGeodesicReflection_sideGeodesic_vertex 0
-    obtain ⟨b₁, b₂⟩ := P.extGeodesicReflection_sideGeodesic_vertex 1
-    obtain ⟨c₂, c₀⟩ := P.extGeodesicReflection_sideGeodesic_vertex 2
+    have a₀ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_left
+    have a₁ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_right
+    have b₁ := (P.isGeodesicFromTo_sideGeodesic 1).extGeodesicReflection_left
+    have b₂ := (P.isGeodesicFromTo_sideGeodesic 1).extGeodesicReflection_right
+    have c₂ := (P.isGeodesicFromTo_sideGeodesic 2).extGeodesicReflection_left
+    have c₀ := (P.isGeodesicFromTo_sideGeodesic 2).extGeodesicReflection_right
     fin_cases i <;> simp_all [geodesicReflectionComp_smul_eq_extGeodesicReflection, Fin.rev]
 
 /-- The side pairing of the double of a triangle pairs side `i` with side `3 - i`. -/
