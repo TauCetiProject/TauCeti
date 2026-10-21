@@ -362,6 +362,16 @@ theorem subsingleton_cohomology_of_two_le [IsNoetherianRing R] (M : (projectiveL
     (Proj.basicOpen_mul 𝒜 _ _ ▸ Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mul_coord_mem R) two_pos)
     (basicOpen_coord_sup_eq_top R) n hn
 
+/-- The structure map from `R` to the global functions on the projective line is bijective, as
+the algebra map of the `R`-algebra structure given by `Scheme.baseRingToStructurePresheaf`. -/
+private theorem bijective_baseRingToStructurePresheaf_app_top :
+    letI : Algebra R Γ(projectiveLine R, ⊤) :=
+      (((projectiveLine R).baseRingToStructurePresheaf R).app (.op ⊤)).hom.toAlgebra
+    Function.Bijective (Algebra.linearMap R Γ(projectiveLine R, ⊤)) := by
+  convert bijective_baseRingToGlobalSections R
+  exact _root_.funext fun x ↦ ConcreteCategory.congr_hom
+    (Scheme.baseRingToStructurePresheaf_app_top R (projectiveLine R)) x
+
 /-- **The zeroth cohomology of the structure sheaf of the projective line is the base ring**:
 `H⁰(ℙ¹_R, 𝒪) ≅ R`, as `R`-modules. -/
 noncomputable def cohomologyZeroTrivialLinearEquiv :
@@ -370,10 +380,8 @@ noncomputable def cohomologyZeroTrivialLinearEquiv :
     (((projectiveLine R).baseRingToStructurePresheaf R).app (.op ⊤)).hom.toAlgebra
   ((trivialCohomologyBaseLinearEquiv R _ 0).trans ((cohomologyZeroBaseLinearEquiv R _ _).trans
     (structureSheafSectionsBaseLinearEquiv R _))).trans
-    (LinearEquiv.ofBijective (Algebra.linearMap R Γ(projectiveLine R, ⊤)) (by
-      convert bijective_baseRingToGlobalSections R
-      exact _root_.funext fun x ↦ ConcreteCategory.congr_hom
-        (Scheme.baseRingToStructurePresheaf_app_top R (projectiveLine R)) x)).symm
+    (LinearEquiv.ofBijective (Algebra.linearMap R Γ(projectiveLine R, ⊤))
+      (bijective_baseRingToStructurePresheaf_app_top R)).symm
 
 /-- Under `cohomologyZeroTrivialLinearEquiv`, an element `r` of the base ring is the class of the
 constant function `r`. -/
@@ -383,8 +391,7 @@ theorem cohomologyZeroTrivialLinearEquiv_symm_apply (r : R) :
         (SheafOfModules.unit (projectiveLine R).ringCatSheaf)).symm
           (baseRingToGlobalSections R (projectiveLine R) r)) := by
   simp only [cohomologyZeroTrivialLinearEquiv, LinearEquiv.trans_symm, LinearEquiv.symm_symm,
-    LinearEquiv.trans_apply, LinearEquiv.ofBijective_apply, Algebra.linearMap_apply,
-    structureSheafSectionsBaseLinearEquiv_symm_apply]
+    LinearEquiv.trans_apply, structureSheafSectionsBaseLinearEquiv_symm_apply]
   exact congrArg _ <| congrArg _ <| ConcreteCategory.congr_hom
     (Scheme.baseRingToStructurePresheaf_app_top R (projectiveLine R)) r
 
@@ -422,6 +429,16 @@ private noncomputable abbrev overlapAlgebra :
 
 attribute [local instance] overlapAlgebra
 
+/-- Restricted to the overlap, the constant fraction `c / 1` on the chart `D₊(Xᵢ)` is the image
+of the global constant function `c`. -/
+private theorem map_awayToSection_algebraMap (i : Fin 2) (c : R) :
+    (projectiveLine R).presheaf.map (homOfLE (overlap_le_basicOpen_coord R i)).op
+        (Proj.awayToSection 𝒜 (coord R i) (algebraMap R _ c)) =
+      algebraMap Γ(projectiveLine R, ⊤) Γ(projectiveLine R, W₀₁)
+        (baseRingToGlobalSections R (projectiveLine R) c) := by
+  rw [awayToSection_algebraMap_eq_map, ← CommRingCat.comp_apply, ← Functor.map_comp]
+  rfl
+
 /-- Restricted to the overlap, a polynomial in the affine coordinate of a chart is a polynomial in
 the restricted coordinate with coefficients restricted from the global functions. -/
 private theorem map_awayToSection_symm_mem_adjoin (i : Fin 2) (p : R[X]) :
@@ -431,9 +448,9 @@ private theorem map_awayToSection_symm_mem_adjoin (i : Fin 2) (p : R[X]) :
   induction p using Polynomial.induction_on' with
   | add p q hp hq => rw [map_add, map_add, map_add]; exact Subalgebra.add_mem _ hp hq
   | monomial n c =>
-    rw [← C_mul_X_pow_eq_monomial, ← Polynomial.algebraMap_eq, map_mul, map_pow,
-      AlgEquiv.commutes, map_mul, map_pow, map_mul, map_pow, awayToSection_algebraMap_eq_map,
-      ← CommRingCat.comp_apply, ← Functor.map_comp]
+    rw [← C_mul_X_pow_eq_monomial, ← Polynomial.algebraMap_eq]
+    simp only [map_mul, map_pow, AlgEquiv.commutes]
+    rw [map_awayToSection_algebraMap]
     exact Subalgebra.mul_mem _ (Subalgebra.algebraMap_mem _ _)
       (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton _ _) n)
 
@@ -527,7 +544,7 @@ private theorem finite_sectionsQuotient (M : (projectiveLine R).Modules) [M.IsQu
 
 /-- **The first cohomology of a quasi-coherent sheaf of finite type on the projective line is a
 finitely generated module** over a Noetherian base ring `R`. -/
-instance finite_cohomology_one [IsNoetherianRing R] (M : (projectiveLine R).Modules)
+theorem finite_cohomology_one [IsNoetherianRing R] (M : (projectiveLine R).Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] : Module.Finite R (Cohomology M 1) := by
   have hacyclic (i : Fin 2) : Subsingleton (cohomologyOn M 1 (Proj.basicOpen 𝒜 (coord R i))) :=
     have := isNoetherianRing_basicOpen_coord R i
@@ -542,16 +559,14 @@ instance finite_cohomology_one [IsNoetherianRing R] (M : (projectiveLine R).Modu
     (((projectiveLine R).baseRingToStructurePresheaf R).app (.op ⊤)).hom.toAlgebra
   have := isScalarTower_cohomology R (projectiveLine R) M 1
   have : Module.Finite R Γ(projectiveLine R, ⊤) := by
-    refine Module.Finite.of_surjective (Algebra.linearMap R Γ(projectiveLine R, ⊤)) ?_
-    convert (bijective_baseRingToGlobalSections R).surjective
-    exact _root_.funext fun x ↦ ConcreteCategory.congr_hom
-      (Scheme.baseRingToStructurePresheaf_app_top R (projectiveLine R)) x
+    exact Module.Finite.of_surjective (Algebra.linearMap R Γ(projectiveLine R, ⊤))
+      (bijective_baseRingToStructurePresheaf_app_top R).surjective
   exact Module.Finite.trans Γ(projectiveLine R, ⊤) (Cohomology M 1)
 
 /-- **The higher cohomology of a quasi-coherent sheaf of finite type on the projective line is
 finitely generated** over a Noetherian base ring `R`: it is `H¹`, or zero in degrees at least
 two. -/
-theorem finite_cohomology_succ [IsNoetherianRing R] (M : (projectiveLine R).Modules)
+instance finite_cohomology_succ [IsNoetherianRing R] (M : (projectiveLine R).Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) : Module.Finite R (Cohomology M (n + 1)) := by
   rcases n with _ | n
   · exact finite_cohomology_one R M

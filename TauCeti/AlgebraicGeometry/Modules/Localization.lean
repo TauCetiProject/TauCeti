@@ -201,10 +201,10 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_map [M.IsQuas
   obtain ⟨⟨y, _, n, rfl⟩, hy⟩ :=
     IsLocalizedModule.surj (Submonoid.powers f) (M.basicOpenRestrict f) x
   -- `f ^ n` acts on sections over `X.basicOpen f` through its restriction
-  have hy' : f ^ n • x = M.basicOpenRestrict f y := hy
+  simp only [Submonoid.smul_def] at hy
   rw [← IsScalarTower.algebraMap_smul Γ(X, X.basicOpen f), map_pow,
-    basicOpenRestrict_apply] at hy'
-  exact ⟨n, y, hy'⟩
+    basicOpenRestrict_apply] at hy
+  exact ⟨n, y, hy⟩
 
 end
 
