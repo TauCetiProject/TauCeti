@@ -437,13 +437,6 @@ def mayerVietorisδ (U V : Opens M) (k : ℕ) :
     deRhamCohomology I (U ⊓ V : Opens M) k →ₗ[ℝ] deRhamCohomology I (U ⊔ V : Opens M) (k + 1) :=
   ((mayerVietorisShortComplex_shortExact (I := I) U V).δ k (k + 1) rfl).hom
 
-/-- The Mayer–Vietoris connecting map is the connecting morphism of the homology sequence of the
-Mayer–Vietoris short exact sequence, so Mathlib's exactness results for that sequence apply. -/
-theorem ofHom_mayerVietorisδ (U V : Opens M) (k : ℕ) :
-    ModuleCat.ofHom (mayerVietorisδ I U V k) =
-      (mayerVietorisShortComplex_shortExact (I := I) U V).δ k (k + 1) rfl :=
-  (rfl)
-
 /-- **The Mayer–Vietoris connecting map on classes.** Let `φ` be a closed form on `U ⊓ V`, written
 as the difference `α - β` of the restrictions of forms `α` on `U` and `β` on `V`. If `σ` is a
 closed form on `U ⊔ V` restricting to `dα` on `U` and to `dβ` on `V`, then the connecting map sends
