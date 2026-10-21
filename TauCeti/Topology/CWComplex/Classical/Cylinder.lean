@@ -27,8 +27,9 @@ the inclusions `x ↦ (x, 0)` and `x ↦ (x, 1)`.
 A homotopy of maps out of `C` is a map out of `C × I`, and a homotopy relative to `D` between two
 given maps is a map out of `C × I` prescribed on `C × {0, 1} ∪ D × I`. So this relative structure is
 what lets cell-by-cell arguments (homotopy extension, compression into a subspace) apply to
-homotopies themselves; for instance, the injectivity half of Whitehead's lifting criterion
-(Hatcher, Proposition 4.22) compresses a homotopy defined on `C × I` relative to its two ends.
+homotopies themselves; for instance, the injectivity half of Hatcher, Proposition 4.22 (a weak
+homotopy equivalence `f : Y → Z` induces injections `[K, Y] → [K, Z]` for CW complexes `K`)
+compresses a homotopy defined on `C × I` relative to its two ends.
 
 The only point that is not formal is the weak topology. Since `I` is compact, the cylinder has
 the weak topology of the closed cells `closedCell n j × I` and of the base: this holds for the
@@ -183,8 +184,11 @@ private def cylinderIsometry (n : ℕ) : (Fin (n + 1) → ℝ) ≃ᵢ (Fin n →
       isometry_toFun := isometry_id.prodMap (IsometryEquiv.funUnique (Fin 1) ℝ).isometry }
 
 private theorem cylinderIsometry_apply {n : ℕ} (x : Fin (n + 1) → ℝ) :
-    cylinderIsometry n x = (Fin.init x, x (Fin.last n)) :=
-  (rfl)
+    cylinderIsometry n x = (Fin.init x, x (Fin.last n)) := by
+  rw [cylinderIsometry, IsometryEquiv.trans_apply, IsometryEquiv.coe_eq_toEquiv,
+    Fin.appendIsometry_symm_apply, Equiv.prodCongr_apply, Prod.map_apply, Equiv.funUnique_apply]
+  -- `x` is restricted along `Fin.castAdd 1` and `Fin.natAdd n`; compare indices by their values.
+  refine Prod.ext (funext fun i ↦ congrArg x (Fin.ext ?_)) (congrArg x (Fin.ext ?_)) <;> simp
 
 private theorem cylinderIsometry_zero (n : ℕ) : cylinderIsometry n 0 = 0 := by
   ext <;> simp [cylinderIsometry_apply, Fin.init]
