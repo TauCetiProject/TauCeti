@@ -70,8 +70,12 @@ counterclockwise; in `z` it turns clockwise, and its transport to `1/2` along `�
 
 * E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
   d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University Press, 2012,
-  Chapter 4 (the dessin of a Belyi function, and the monodromy permutations around `0` and `1` as
-  the rotations of its edges around the black and white vertices).
+  Chapter 4 (the dessin of a Belyi function, the monodromy permutations around `0` and `1` as
+  the rotations of its edges around the black and white vertices, and the triangulation by the
+  preimages of the two half-planes, whose positive triangles turn by `σinf` around the faces).
+* G. A. Jones and J. Wolfart, *Dessins d'Enfants on Riemann Surfaces*, Springer Monographs in
+  Mathematics, Springer, 2016, §2.2 (the positive and negative triangles of a dessin, and the
+  permutation `σinf` as their rotation around the face centres).
 * S. K. Lando and A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
   Mathematical Sciences 141, Springer 2004, Chapter 1 (the monodromy of a cover of the sphere
   branched over three points, read off its embedded graph).
@@ -487,24 +491,6 @@ private theorem mk_eq_mk_of_path {φ : 𝔻* → E} (hφ : Continuous φ) {e : �
   exact pathComponent_subset_component _
     ((joinedIn_iff_joined (F := p ⁻¹' upperHalfPlane) h₁ h₀).1
       ⟨(γ.map hφ).symm, fun t ↦ hφH _ (hγ _)⟩)
-
-/-- In the coordinate `z ↦ 2 / z` at `∞`, the loop `δInf` turns once counterclockwise around `0`
-from the coordinate of `p₊`. -/
-private theorem coe_coord_δInf (t : unitInterval) :
-    (Puncture.inf.coord (δInf t) : ℂ) = Puncture.inf.coord infBasePt * exp (2 * π * I * t) := by
-  have hδ0 := coe_δInf 0
-  rw [δInf.source] at hδ0
-  refine (Puncture.coe_coord_inf (δInf t)).trans <|
-    ((congrArg (2 / ·) (coe_δInf t)).trans ?_).trans
-      (congrArg (· * exp (2 * π * I * t)) ((Puncture.coe_coord_inf infBasePt).trans
-        (congrArg (2 / ·) hδ0)).symm)
-  have harg : ((Real.arccos (1 / 6) + 2 * π * (1 - (t : ℝ)) : ℝ) : ℂ) * I =
-      ((Real.arccos (1 / 6) + 2 * π * (1 - ((0 : unitInterval) : ℝ)) : ℝ) : ℂ) * I -
-        2 * π * I * t := by
-    push_cast
-    ring
-  rw [circleMap_zero, circleMap_zero, harg, exp_sub]
-  field_simp
 
 /-- The filling chart of an added point over `∞` goes over the upper half-plane exactly where its
 power is in the lower half-plane. -/
