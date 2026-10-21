@@ -51,6 +51,9 @@ passes to sheaves along sheafification.
   and degree-zero unit extracted from a monoid object in graded objects, together with their
   associativity, unit, and functoriality laws; `CategoryTheory.CommMon.mul_comm` is their
   graded commutativity for a commutative monoid object;
+* `CategoryTheory.Mon.hom_ext_of_epi_mul`: morphisms out of an `ℕ`-graded monoid object
+  generated in degree one, in the sense that its unit and the multiplications
+  `A.X n ⊗ A.X 1 ⟶ A.X (n + 1)` are epimorphisms, are determined by their degree-one components;
 * `CategoryTheory.GradedObject.mul_assoc_of_laxMonoidal`,
   `CategoryTheory.GradedObject.one_mul_of_laxMonoidal`,
   `CategoryTheory.GradedObject.mul_one_of_laxMonoidal` and
@@ -270,9 +273,13 @@ end AddCommMonoid
 
 section LaxMonoidal
 
-variable {I : Type*} [AddMonoid I] {C D : Type*} [Category* C] [Category* D]
+variable {C D : Type*} [Category* C] [Category* D]
   [MonoidalCategory C] [MonoidalCategory D] {F : C ⥤ D} [F.LaxMonoidal]
-  {X : GradedObject I C} {Y : GradedObject I D} {e : ∀ n, Y n ≅ F.obj (X n)}
+
+section AddSemigroup
+
+variable {I : Type*} [AddSemigroup I] {X : GradedObject I C} {Y : GradedObject I D}
+  {e : ∀ n, Y n ≅ F.obj (X n)}
   (mul : ∀ i j, X i ⊗ X j ⟶ X (i + j)) (mul' : ∀ i j, Y i ⊗ Y j ⟶ Y (i + j))
   (hmul : ∀ i j, mul' i j =
     ((e i).hom ⊗ₘ (e j).hom) ≫ Functor.LaxMonoidal.μ F (X i) (X j) ≫ F.map (mul i j) ≫
@@ -311,6 +318,18 @@ lemma mul_assoc_of_laxMonoidal
         simp only [Category.assoc, tensorHom_comp_tensorHom_assoc, Iso.inv_hom_id,
           Iso.inv_hom_id_assoc, Category.comp_id, Category.id_comp]
 
+end AddSemigroup
+
+section Add
+
+variable {I : Type*} [Add I] {X : GradedObject I C} {Y : GradedObject I D}
+  {e : ∀ n, Y n ≅ F.obj (X n)}
+  (mul : ∀ i j, X i ⊗ X j ⟶ X (i + j)) (mul' : ∀ i j, Y i ⊗ Y j ⟶ Y (i + j))
+  (hmul : ∀ i j, mul' i j =
+    ((e i).hom ⊗ₘ (e j).hom) ≫ Functor.LaxMonoidal.μ F (X i) (X j) ≫ F.map (mul i j) ≫
+      (e (i + j)).inv)
+include hmul
+
 /-- Morphisms transported along a lax monoidal functor `F` and identifications
 `e n : Y n ≅ F.obj (X n)`, `e' n : Y' n ≅ F.obj (X' n)` commute with the transported homogeneous
 multiplications when the original morphisms commute with the original ones. -/
@@ -329,6 +348,18 @@ lemma map_mul_of_laxMonoidal {X' : GradedObject I C} {Y' : GradedObject I D}
     Category.comp_id]
   rw [← tensorHom_comp_tensorHom_assoc, Functor.LaxMonoidal.μ_natural_assoc, ← F.map_comp_assoc,
     map_mul, F.map_comp_assoc]
+
+end Add
+
+section AddZeroClass
+
+variable {I : Type*} [AddZeroClass I] {X : GradedObject I C} {Y : GradedObject I D}
+  {e : ∀ n, Y n ≅ F.obj (X n)}
+  (mul : ∀ i j, X i ⊗ X j ⟶ X (i + j)) (mul' : ∀ i j, Y i ⊗ Y j ⟶ Y (i + j))
+  (hmul : ∀ i j, mul' i j =
+    ((e i).hom ⊗ₘ (e j).hom) ≫ Functor.LaxMonoidal.μ F (X i) (X j) ≫ F.map (mul i j) ≫
+      (e (i + j)).inv)
+include hmul
 
 variable (one : 𝟙_ C ⟶ X 0) (one' : 𝟙_ D ⟶ Y 0)
   (hone : one' = Functor.LaxMonoidal.ε F ≫ F.map one ≫ (e 0).inv)
@@ -380,11 +411,13 @@ lemma mul_one_of_laxMonoidal
         rw [reassoc_of% core, rightUnitor_naturality_assoc,
           TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_zero n).symm]
 
+end AddZeroClass
+
 end LaxMonoidal
 
 section LaxBraided
 
-variable {I : Type*} [AddCommMonoid I] {C D : Type*} [Category* C] [Category* D]
+variable {I : Type*} [AddCommMagma I] {C D : Type*} [Category* C] [Category* D]
   [MonoidalCategory C] [MonoidalCategory D] [BraidedCategory C] [BraidedCategory D]
   {F : C ⥤ D} [F.LaxBraided] {X : GradedObject I C} {Y : GradedObject I D}
   {e : ∀ n, Y n ≅ F.obj (X n)}
@@ -542,6 +575,29 @@ theorem mul_one (A : Mon (GradedObject I C)) (n : I) :
   rw [← Iso.inv_comp_eq, ← cancel_mono (eqToHom (congrArg A.X (add_zero n)))]
   simpa only [one_eq, GradedObject.categoryOfGradedObjects_id, id_tensorHom, whiskerLeft_comp,
     Category.assoc, Category.comp_id, eqToHom_trans, eqToHom_refl] using h
+
+end CategoryTheory.Mon
+
+namespace CategoryTheory.Mon
+
+variable {C : Type*} [Category* C] [MonoidalCategory C]
+  [∀ (X₁ X₂ : GradedObject ℕ C), GradedObject.HasTensor X₁ X₂]
+  [∀ (X₁ X₂ X₃ : GradedObject ℕ C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+  [∀ (X₁ X₂ X₃ : GradedObject ℕ C), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
+  [HasInitial C]
+  [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
+  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+  [∀ (X₁ X₂ X₃ X₄ : GradedObject ℕ C), GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
+
+/-- Morphisms out of an `ℕ`-graded monoid object `A` generated in degree one are determined by
+their degree-one components. Here generation in degree one means that the unit `𝟙_ C ⟶ A.X 0`
+and the multiplications `A.X n ⊗ A.X 1 ⟶ A.X (n + 1)` are epimorphisms. -/
+theorem hom_ext_of_epi_mul {A B : Mon (GradedObject ℕ C)} [Epi A.one] [∀ n, Epi (A.mul n 1)]
+    {f g : A ⟶ B} (h : f.hom 1 = g.hom 1) : f = g := by
+  refine Hom.ext (GradedObject.hom_ext _ _ fun n ↦ ?_)
+  induction n with
+  | zero => rw [← cancel_epi A.one, one_map, one_map]
+  | succ n ih => rw [← cancel_epi (A.mul n 1), ← map_mul, ← map_mul, ih, h]
 
 end CategoryTheory.Mon
 

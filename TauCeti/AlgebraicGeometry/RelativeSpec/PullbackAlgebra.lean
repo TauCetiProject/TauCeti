@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Functor
+public import TauCeti.CategoryTheory.Monoidal.Mon
 
 /-!
 # Pullback of quasicoherent algebras
@@ -25,8 +26,26 @@ The construction is Mathlib's `CategoryTheory.Functor.mapCommMon`, which carries
 monoid objects along a lax braided functor, applied to the strong symmetric monoidal structure
 on `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pullback`.
 
-The main declaration is `TauCeti.AlgebraicGeometry.QuasicoherentAlgebra.pullback`, pullback of
-quasicoherent algebras along a morphism of schemes.
+Pullback of algebras is left adjoint to pushforward of algebras: for `f : X ⟶ Y`, a
+quasicoherent algebra `A` on `Y` and any commutative algebra `B` on `X`, algebra maps
+`f^* A ⟶ B` correspond to algebra maps `A ⟶ f_* B`. The bijection is transposition along the
+pullback–pushforward adjunction of modules. It preserves algebra maps because that adjunction is
+monoidal (`CategoryTheory.Adjunction.isMonHom_homEquiv_iff`), and the multiplication of `f^* A` is
+that of `A` transported along the tensor comparison of pullback, which is invertible as `A` is
+quasicoherent. The algebra `B` need not be quasicoherent, so that `B` can be the structure sheaf
+of an arbitrary scheme.
+
+## Main declarations
+
+* `TauCeti.AlgebraicGeometry.QuasicoherentAlgebra.pullback`: pullback of quasicoherent algebras
+  along a morphism of schemes;
+* `TauCeti.AlgebraicGeometry.QuasicoherentAlgebra.pullbackHomEquiv`: the bijection between
+  algebra maps `f^* A ⟶ B` and `A ⟶ f_* B`, natural in `A` and `B`.
+
+## References
+
+* The Stacks Project, Tag 01LQ (relative spectrum as a functor), where this adjunction for
+  quasicoherent algebras gives the universal property of relative Spec in terms of pullbacks.
 -/
 
 public section
@@ -195,6 +214,141 @@ theorem pullback_map_hom_hom_hom {Y : Scheme.{u}} (f : Y ⟶ X)
         eqToHom (pullback_obj_X f B).symm := by
   unfold pullback ofCommMon toCommMon
   exact QuasicoherentSheaf.pullback_map_hom f _
+
+end QuasicoherentAlgebra
+
+namespace QuasicoherentAlgebra
+
+variable {X} {Y : Scheme.{u}} (f : X ⟶ Y)
+
+/-- A morphism out of the pullback of the underlying module of `A`, transported to the pulled-back
+algebra, is an algebra map exactly when it carries the pulled-back unit and multiplication of `A`
+to those of `B`, through the oplax comparisons of module pullback. -/
+private lemma isMonHom_eqToHom_comp_iff (A : QuasicoherentAlgebra Y) (B : CommMon X.Modules)
+    (φ : (Scheme.Modules.pullback f).obj A.obj.X ⟶ B.X) :
+    IsMonHom (eqToHom (pullback_obj_X f A) ≫ φ) ↔
+      (Scheme.Modules.pullback f).map η[A.obj.X] ≫ φ =
+          Functor.OplaxMonoidal.η (Scheme.Modules.pullback f) ≫ η[B.X] ∧
+        (Scheme.Modules.pullback f).map μ[A.obj.X] ≫ φ =
+          Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) A.obj.X A.obj.X ≫
+            (φ ⊗ₘ φ) ≫ μ[B.X] := by
+  have hone : η[((pullback f).obj A).obj.X] ≫ eqToHom (pullback_obj_X f A) ≫ φ = η[B.X] ↔
+      (Scheme.Modules.pullback f).map η[A.obj.X] ≫ φ =
+        Functor.OplaxMonoidal.η (Scheme.Modules.pullback f) ≫ η[B.X] := by
+    rw [pullback_obj_one]
+    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    rw [Scheme.Modules.pullback_η, Iso.inv_comp_eq]
+  have hmul : μ[((pullback f).obj A).obj.X] ≫ eqToHom (pullback_obj_X f A) ≫ φ =
+        ((eqToHom (pullback_obj_X f A) ≫ φ) ⊗ₘ (eqToHom (pullback_obj_X f A) ≫ φ)) ≫ μ[B.X] ↔
+      (Scheme.Modules.pullback f).map μ[A.obj.X] ≫ φ =
+        Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) A.obj.X A.obj.X ≫
+          (φ ⊗ₘ φ) ≫ μ[B.X] := by
+    rw [pullback_obj_mul, ← tensorHom_comp_tensorHom]
+    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    rw [cancel_epi, IsIso.inv_comp_eq]
+  rw [← hone, ← hmul]
+  exact ⟨fun h ↦ ⟨h.one_hom, h.mul_hom⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+open scoped Obj in
+private lemma isMonHom_homEquiv_iff_isMonHom_eqToHom_comp (A : QuasicoherentAlgebra Y)
+    (B : CommMon X.Modules) (φ : (Scheme.Modules.pullback f).obj A.obj.X ⟶ B.X) :
+    IsMonHom ((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _ φ) ↔
+      IsMonHom (eqToHom (pullback_obj_X f A) ≫ φ) :=
+  ((Scheme.Modules.pullbackPushforwardAdjunction f).isMonHom_homEquiv_iff φ).trans
+    (isMonHom_eqToHom_comp_iff f A B φ).symm
+
+open scoped Obj in
+private lemma isMonHom_iff_isMonHom_eqToHom_comp_homEquiv_symm (A : QuasicoherentAlgebra Y)
+    (B : CommMon X.Modules) (ψ : A.obj.X ⟶ (Scheme.Modules.pushforward f).obj B.X) :
+    IsMonHom ψ ↔ IsMonHom (eqToHom (pullback_obj_X f A) ≫
+      ((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _).symm ψ) := by
+  obtain ⟨φ, rfl⟩ := ((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _).surjective ψ
+  rw [Equiv.symm_apply_apply]
+  exact isMonHom_homEquiv_iff_isMonHom_eqToHom_comp f A B φ
+
+-- The two cancellations below are stated with their types explicit: inside the proofs of
+-- `pullbackHomEquiv`, `simp` cannot normalize the mixture of `X.Modules` and underlying sheaf
+-- instances on the carrier of the pulled-back algebra.
+private lemma eqToHom_comp_eqToHom_symm_comp (A : QuasicoherentAlgebra Y) {B : X.Modules}
+    (g : ((pullback f).obj A).obj.X ⟶ B) :
+    eqToHom (pullback_obj_X f A) ≫ eqToHom (pullback_obj_X f A).symm ≫ g = g := by
+  simp
+
+private lemma eqToHom_symm_comp_eqToHom_comp (A : QuasicoherentAlgebra Y) {B : X.Modules}
+    (φ : (Scheme.Modules.pullback f).obj A.obj.X ⟶ B) :
+    eqToHom (pullback_obj_X f A).symm ≫ eqToHom (pullback_obj_X f A) ≫ φ = φ := by
+  simp
+
+/-- **Pullback of quasicoherent algebras is left adjoint to pushforward of algebras.** For a
+morphism of schemes `f : X ⟶ Y`, a quasicoherent algebra `A` on `Y` and a commutative algebra `B`
+on `X`, algebra maps `f^* A ⟶ B` correspond to algebra maps `A ⟶ f_* B`. On underlying modules
+this is transposition along the pullback–pushforward adjunction
+(`pullbackHomEquiv_apply_hom_hom`). -/
+def pullbackHomEquiv (A : QuasicoherentAlgebra Y) (B : CommMon X.Modules) :
+    (((pullback f).obj A).obj ⟶ B) ≃
+      (A.obj ⟶ (Scheme.Modules.pushforward f).mapCommMon.obj B) where
+  toFun g :=
+    CommMon.homMk (@Mon.Hom.mk _ _ _ _ _
+      ((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _
+        (eqToHom (pullback_obj_X f A).symm ≫ g.hom.hom))
+      ((isMonHom_homEquiv_iff_isMonHom_eqToHom_comp f A B _).mpr
+        ((eqToHom_comp_eqToHom_symm_comp f A g.hom.hom).symm ▸ g.hom.isMonHom_hom)))
+  invFun ψ :=
+    CommMon.homMk (@Mon.Hom.mk _ _ _ _ _ (eqToHom (pullback_obj_X f A) ≫
+      ((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _).symm ψ.hom.hom)
+      ((isMonHom_iff_isMonHom_eqToHom_comp_homEquiv_symm f A B ψ.hom.hom).mp
+        ψ.hom.isMonHom_hom))
+  left_inv g := CommMon.hom_ext _ _
+    ((congrArg (eqToHom (pullback_obj_X f A) ≫ ·) (Equiv.symm_apply_apply _ _)).trans
+      (eqToHom_comp_eqToHom_symm_comp f A g.hom.hom))
+  right_inv _ := CommMon.hom_ext _ _
+    ((congrArg ((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _)
+      (eqToHom_symm_comp_eqToHom_comp f A _)).trans (Equiv.apply_symm_apply _ _))
+
+/-- On underlying modules, the algebra map `A ⟶ f_* B` corresponding to `g : f^* A ⟶ B` is the
+transpose of `g` along the pullback–pushforward adjunction. -/
+@[simp]
+lemma pullbackHomEquiv_apply_hom_hom (A : QuasicoherentAlgebra Y) (B : CommMon X.Modules)
+    (g : ((pullback f).obj A).obj ⟶ B) :
+    (pullbackHomEquiv f A B g).hom.hom =
+      (Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _
+        (eqToHom (pullback_obj_X f A).symm ≫ g.hom.hom) :=
+  (rfl)
+
+/-- On underlying modules, the algebra map `f^* A ⟶ B` corresponding to `ψ : A ⟶ f_* B` is the
+inverse transpose of `ψ` along the pullback–pushforward adjunction. -/
+@[simp]
+lemma pullbackHomEquiv_symm_apply_hom_hom (A : QuasicoherentAlgebra Y) (B : CommMon X.Modules)
+    (ψ : A.obj ⟶ (Scheme.Modules.pushforward f).mapCommMon.obj B) :
+    ((pullbackHomEquiv f A B).symm ψ).hom.hom =
+      eqToHom (pullback_obj_X f A) ≫
+        ((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _).symm ψ.hom.hom :=
+  (rfl)
+
+/-- The bijection `pullbackHomEquiv` is natural in the algebra on the base: precomposing with
+the pullback of `a : A' ⟶ A` corresponds to precomposing with `a`. -/
+lemma pullbackHomEquiv_naturality_left {A' A : QuasicoherentAlgebra Y} (a : A' ⟶ A)
+    (B : CommMon X.Modules) (g : ((pullback f).obj A).obj ⟶ B) :
+    pullbackHomEquiv f A' B (((pullback f).map a).hom ≫ g) = a.hom ≫ pullbackHomEquiv f A B g := by
+  have h : eqToHom (pullback_obj_X f A').symm ≫ ((pullback f).map a).hom.hom.hom ≫ g.hom.hom =
+      (Scheme.Modules.pullback f).map a.hom.hom.hom ≫
+        eqToHom (pullback_obj_X f A).symm ≫ g.hom.hom := by
+    rw [pullback_map_hom_hom_hom]
+    -- `simp` cannot normalize the mixture of `X.Modules` and underlying sheaf instances.
+    refine (congrArg (_ ≫ ·) (Category.assoc (obj := X.Modules) _ _ _)).trans ?_
+    refine (eqToHom_trans_assoc (C := X.Modules) _ _ _).trans ?_
+    exact (Category.id_comp (obj := X.Modules) _).trans (Category.assoc (obj := X.Modules) _ _ _)
+  exact CommMon.hom_ext _ _ ((congrArg ((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv
+    _ _) h).trans (Adjunction.homEquiv_naturality_left _ _ _))
+
+/-- The bijection `pullbackHomEquiv` is natural in the algebra on the source: postcomposing with
+`b : B ⟶ B'` corresponds to postcomposing with its pushforward. -/
+lemma pullbackHomEquiv_naturality_right (A : QuasicoherentAlgebra Y) {B B' : CommMon X.Modules}
+    (g : ((pullback f).obj A).obj ⟶ B) (b : B ⟶ B') :
+    pullbackHomEquiv f A B' (g ≫ b) =
+      pullbackHomEquiv f A B g ≫ (Scheme.Modules.pushforward f).mapCommMon.map b :=
+  CommMon.hom_ext _ _ ((congrArg ((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _)
+    (Category.assoc _ _ _).symm).trans (Adjunction.homEquiv_naturality_right _ _ _))
 
 end QuasicoherentAlgebra
 

@@ -114,7 +114,7 @@ theorem mem_fixingSubgroup_adjoin_iff_cyclotomicCharacter_eq_one {K L : Type*} [
       IntermediateField.fixedField H :=
     IntermediateField.adjoin_le_iff.2 fun ζ ⟨n, hζ⟩ ↦ (IntermediateField.mem_fixedField_iff _ _).2
       fun _ hh ↦ (cyclotomicCharacter_eq_one_iff p).1 hh n ζ hζ
-  exact (IntermediateField.le_iff_le _ _).1 hle
+  exact (IntermediateField.le_fixedField_iff_le_fixingSubgroup _ _).1 hle
     (MonoidHom.mem_ker.2 ((cyclotomicCharacter_eq_one_iff p).2 hg))
 
 /-- **Naturality of the cyclotomic character.** Let `f : A →+* B` be an injective homomorphism of

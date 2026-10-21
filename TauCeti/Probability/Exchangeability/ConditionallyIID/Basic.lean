@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.MixedIID.Basic
--- Non-public: `map_bind` is used only inside the projection proof.
-import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Conditionally i.i.d. families
@@ -192,7 +190,7 @@ theorem mixedIIDWith_of_conditionallyIIDWith {μ : Measure Ω} {X : ι → Ω �
         rw [h.jointLaw_eq_disintegration k hk]
     _ = μ.bind fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure := by
         simp only [Measure.snd]
-        rw [TauCeti.MeasureTheory.map_bind hK measurable_snd]
+        rw [Measure.map_bind hK measurable_snd.aemeasurable]
         simp
 
 /-- The existential form of the easy arrow. -/

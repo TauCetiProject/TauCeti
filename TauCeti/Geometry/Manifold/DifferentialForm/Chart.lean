@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
-public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
+public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
 public import Mathlib.Geometry.Manifold.MFDeriv.UniqueDifferential
 
@@ -55,6 +55,23 @@ theorem inChartAt_chart_apply [IsManifold I 1 M]
   rw [← TangentBundle.symmL_trivializationAt hx', TangentBundle.symmL_trivializationAt_eq_core hx']
   rw [(extChartAt I α).left_inv hx]
   rfl
+
+/-- Two rough forms have the same coordinate expression at the chart image of a point of the
+chart source exactly when they agree at that point. -/
+theorem inChartAt_chart_eq_iff [IsManifold I 1 M] {φ η : RoughForm I M F k} {α x : M}
+    (hx : x ∈ (extChartAt I α).source) :
+    φ.inChartAt α (extChartAt I α x) = η.inChartAt α (extChartAt I α x) ↔ φ x = η x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hinv (w : E) : tangentCoordChange I α x x (tangentCoordChange I x α x w) = w := by
+      rw [tangentCoordChange_comp ⟨⟨mem_extChartAt_source x, hx⟩, mem_extChartAt_source x⟩,
+        tangentCoordChange_self (mem_extChartAt_source x)]
+    ext v
+    have hv := congrArg (fun A ↦ A fun i ↦ tangentCoordChange I x α x (v i)) h
+    rw [inChartAt_chart_apply _ _ hx, inChartAt_chart_apply _ _ hx] at hv
+    rwa [show (fun i ↦ tangentCoordChange I α x x (tangentCoordChange I x α x (v i))) = v from
+      funext fun i ↦ hinv (v i)] at hv
+  · ext v
+    rw [inChartAt_chart_apply _ _ hx, inChartAt_chart_apply _ _ hx, h]
 
 /-- On an overlap of two preferred charts, a rough form read in the first chart is the pullback of
 its expression in the second chart by the coordinate change. -/

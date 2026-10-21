@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 public import TauCeti.Algebra.Coalgebra.Convolution
 public import TauCeti.RingTheory.Idempotents.Connected.Components
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Coinvariants
 import Mathlib.Algebra.BigOperators.Pi
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
 
@@ -44,6 +45,8 @@ file.
   morphism of the component map.
 * `TauCeti.FiniteTypeCommHopfAlgCat.kernelHopfIdeal_componentCoordinateHom`: its scheme-theoretic
   kernel is the identity component.
+* `CommHopfAlgCat.Hom.exists_map_eq_identityComponentIdempotent`: descent of the
+  identity-component idempotent along a faithfully flat homomorphism with connected kernel.
 
 ## References
 
@@ -156,11 +159,8 @@ theorem map_connectedComponentsIdempotent_eq_zero
     rw [rationalComponentMap_apply]
     apply (PrimeSpectrum.mem_basicOpen_connectedComponentsIdempotent C
       (rationalKernelPoint H g)).mp
-    rw [PrimeSpectrum.mem_basicOpen]
-    intro hmem
-    have : g.ofConv (PrimeSpectrum.connectedComponentsIdempotent C) = 0 := by
-      simpa [RingHom.mem_ker] using hmem
-    exact zero_ne_one (this.symm.trans hone)
+    exact (AlgHom.kernelPoint_mem_basicOpen_iff g.ofConv _).mpr
+      (hone.trans_ne one_ne_zero)
 
 /-- Evaluation of a component-indexed function at a rational point is evaluation at the
 connected component containing that point. -/
@@ -178,6 +178,16 @@ theorem eval_componentFunctionAlgHom (H : FiniteTypeCommHopfAlgCat.{u, u} k)
   · intro C _ hC
     rw [map_connectedComponentsIdempotent_eq_zero H g hC.symm, mul_zero]
   · simp
+
+/-- The counit evaluates a component-indexed function at the identity component. -/
+@[simp]
+theorem counit_componentFunctionAlgHom (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (f : ConnectedComponents (PrimeSpectrum H) → k) :
+    Coalgebra.counit (R := k) (componentFunctionAlgHom H f) = f 1 := by
+  simpa only [AlgHom.convOne_apply, Algebra.algebraMap_self_apply, map_one,
+    Bialgebra.counitAlgHom_apply] using
+    eval_componentFunctionAlgHom H
+      (1 : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) f
 
 /-- The component function algebra embeds in the coordinate ring. -/
 theorem componentFunctionAlgHom_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
@@ -419,6 +429,17 @@ theorem componentCoordinateHom_apply (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (componentCoordinateHom H).hom x = componentCoordinateMap H x := by
   rfl
 
+/-- The component coordinate morphism is injective on coordinate algebras. -/
+theorem componentCoordinateHom_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    Function.Injective (componentCoordinateHom H).hom := by
+  intro x y hxy
+  apply componentCoordinateMap_injective H
+  exact (componentCoordinateHom_apply H x).symm.trans
+    (hxy.trans (componentCoordinateHom_apply H y))
+
+instance (H : FiniteTypeCommHopfAlgCat.{u, u} k) : Mono (componentCoordinateHom H) :=
+  ConcreteCategory.mono_of_injective _ (componentCoordinateHom_injective H)
+
 /-- The idempotent of the identity component of `Spec H` is the idempotent of the connected
 component of the augmentation point. -/
 private theorem connectedComponentsIdempotent_one (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
@@ -512,3 +533,50 @@ theorem kernelHopfIdeal_componentCoordinateHom
   exact Ideal.mul_mem_left _ a (HopfIdeal.mem_toIdeal.mpr hgen)
 
 end TauCeti.FiniteTypeCommHopfAlgCat
+
+namespace CommHopfAlgCat.Hom
+
+open TauCeti TauCeti.CommHopfAlgCat
+
+universe u
+
+/-- Over an algebraically closed field, the identity-component idempotent descends along a
+faithfully flat homomorphism with connected scheme-theoretic kernel. Only the source group
+`Spec G` needs to be of finite type; the descended element is again idempotent. -/
+theorem exists_map_eq_identityComponentIdempotent
+    {k : Type u} [Field k] [IsAlgClosed k]
+    {Q G : CommHopfAlgCat.{u} k} [Algebra.FiniteType k G] (f : Q ⟶ G)
+    (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat)
+    [ConnectedSpace (PrimeSpectrum (quotient G (kernelHopfIdeal f)))] :
+    letI : IsNoetherianRing G := Algebra.FiniteType.isNoetherianRing k G
+    ∃ a : Q, IsIdempotentElem a ∧ f.hom a =
+      PrimeSpectrum.connectedComponentIdempotent (Bialgebra.augmentationPoint k G) := by
+  classical
+  let H : FiniteTypeCommHopfAlgCat.{u, u} k :=
+    ⟨G, (finiteTypeCommHopfAlgProperty_iff G).mpr inferInstance⟩
+  let _ : IsNoetherianRing G := Algebra.FiniteType.isNoetherianRing k G
+  let _ := FiniteTypeCommHopfAlgCat.instGroupConnectedComponents H
+  let z : PrimeSpectrum G := Bialgebra.augmentationPoint k G
+  let e : G := PrimeSpectrum.connectedComponentIdempotent z
+  -- The kernel is contained in the identity component, so component functions descend.
+  have hI : HopfAlgebra.identityComponentHopfIdeal (k := k) (H := G) ≤
+      kernelHopfIdeal f := by
+    intro x hx
+    exact (mkQuotient_eq_zero_iff G (kernelHopfIdeal f) x).mp
+      (identityComponentHopfIdeal_toIdeal_le_ker_of_connected
+        (mkQuotient G (kernelHopfIdeal f)) hx)
+  have hcoinv : ∀ x, (FiniteTypeCommHopfAlgCat.componentCoordinateHom H).hom x ∈
+      (kernelHopfIdeal f).coinvariants := by
+    apply (HopfIdeal.forall_hom_mem_coinvariants_iff _).mpr
+    rw [FiniteTypeCommHopfAlgCat.kernelHopfIdeal_componentCoordinateHom]
+    exact hI
+  have hecoinv : e ∈ (kernelHopfIdeal f).coinvariants := by
+    let C := ConnectedComponents (PrimeSpectrum H)
+    have he := hcoinv ((ConstantGroup.functionAlgEquiv k C).symm (Pi.single 1 1))
+    rw [FiniteTypeCommHopfAlgCat.componentCoordinateHom_apply,
+      FiniteTypeCommHopfAlgCat.componentCoordinateMap_indicator] at he
+    rwa [FiniteTypeCommHopfAlgCat.connectedComponentsIdempotent_one H] at he
+  exact f.exists_map_eq_of_isIdempotentElem_mem_coinvariants hf
+    (PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent z) hecoinv
+
+end CommHopfAlgCat.Hom

@@ -292,7 +292,7 @@ private theorem transfer_of_eq_one (g : G) :
   -- Every element is a representative times an element of `G'`, which the transfer kills.
   have hmem : (out (of g))⁻¹ * g ∈ commutator G := of_eq_one_iff.1 (by simp [of_out])
   rw [← mul_inv_cancel_left (out (of g)) g, map_mul, hrep, one_mul]
-  exact Abelianization.commutator_subset_ker _ hmem
+  exact Abelianization.commutator_le_ker _ hmem
 
 end TauCeti.CommutatorTransfer
 

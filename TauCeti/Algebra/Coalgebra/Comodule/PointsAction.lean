@@ -24,7 +24,7 @@ pushing the coaction coefficients through `g`, `A`-linearly. The two comodule ax
 are exactly the two monoid-action laws: the counit law sends the convolution unit to
 the identity, and coassociativity sends convolution products to composites. (The
 upgrade to automorphisms over a Hopf algebra is in
-`TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction`, with the group of
+`TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic`, with the group of
 points.) On the comodule attached to a group-like element `x`, this action is scalar
 multiplication by `g x`.
 

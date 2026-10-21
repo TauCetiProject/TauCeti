@@ -17,7 +17,10 @@ For an ideal `I` of a commutative ring `R`, the quotient map `R → R ⧸ I` ide
 `Spec (R ⧸ I)` homeomorphically with the closed subset `V(I)` of `Spec R`. So the topological Krull
 dimension of `V(I)` is the Krull dimension of `R ⧸ I`.
 Quotienting by the nilradical preserves the entire prime spectrum, hence its Krull dimension and
-the height of each prime ideal.
+the height of each prime ideal. Conversely, quotients by nonzero principal ideals bound the Krull
+dimension from above: the second prime of a chain contains a nonzero element, and the rest of the
+chain lies over it. This is the upper-bound step of dimension counts by induction on the number of
+variables.
 
 The spectrum of a ring is pure-dimensional of dimension `d` exactly when every quotient by a
 minimal prime has Krull dimension `d`: the irreducible components are the closed subsets `V(P)`
@@ -30,6 +33,11 @@ for minimal primes `P`. This gives a componentwise criterion using only quotient
 * `TauCeti.isPureDimensional_primeSpectrum_iff`: the spectrum is pure-dimensional exactly when
   every minimal-prime quotient has the prescribed dimension.
 * `TauCeti.ringKrullDim_quotient_nilradical`: reduction preserves Krull dimension.
+* `TauCeti.ringKrullDim_le_add_one_of_forall_ringKrullDim_quotient_le`: if every quotient by a
+  nonzero principal ideal has Krull dimension at most `n`, the ring has Krull dimension at most
+  `n + 1`.
+* `TauCeti.ringKrullDim_quotient_add_one_le_of_lt`: for a prime `p` strictly contained in an ideal
+  `q`, `ringKrullDim (R ⧸ q) + 1 ≤ ringKrullDim (R ⧸ p)`.
 * `Ideal.height_map_quotientMk_nilradical`: reduction preserves the height of a prime ideal.
 -/
 
@@ -74,6 +82,46 @@ theorem ringKrullDim_quotient_nilradical :
     ringKrullDim (R ⧸ nilradical R) = ringKrullDim R := by
   rw [ringKrullDim_quotient, PrimeSpectrum.zeroLocus_nilradical, ringKrullDim]
   exact Order.krullDim_eq_of_orderIso OrderIso.Set.univ
+
+variable {R}
+
+/-- If the quotient of `R` by every nonzero principal ideal has Krull dimension at most `n`, then
+`R` has Krull dimension at most `n + 1`. -/
+theorem ringKrullDim_le_add_one_of_forall_ringKrullDim_quotient_le {n : ℕ∞}
+    (h : ∀ f : R, f ≠ 0 → ringKrullDim (R ⧸ Ideal.span {f}) ≤ n) :
+    ringKrullDim R ≤ n + 1 := by
+  refine iSup_le fun l ↦ ?_
+  obtain hl | hl := eq_or_ne l.length 0
+  · rw [hl, Nat.cast_zero]
+    exact_mod_cast (zero_le : (0 : ℕ∞) ≤ n + 1)
+  -- The second prime `l 1` contains some `f ∉ l 0`; then `f ≠ 0`, and the tail of `l` is a
+  -- chain in `V(f)`.
+  let t : LTSeries (PrimeSpectrum R) := l.tail hl
+  have h₀₁ : l.head.asIdeal < t.head.asIdeal := by
+    rw [PrimeSpectrum.asIdeal_lt_asIdeal, RelSeries.head_tail, ← RelSeries.apply_zero]
+    exact l.strictMono (Fin.pos_iff_ne_zero.mpr (by simpa [Fin.ext_iff] using hl))
+  obtain ⟨f, hf₁, hf₀⟩ := IsConcreteLE.exists_of_lt h₀₁
+  have hf : f ≠ 0 := by
+    rintro rfl
+    exact hf₀ (zero_mem _)
+  let q : LTSeries (PrimeSpectrum.zeroLocus (R := R) (Ideal.span {f})) :=
+    .mk t.length (fun i ↦ ⟨t i, by
+      rw [PrimeSpectrum.mem_zeroLocus, SetLike.coe_subset_coe, Ideal.span_singleton_le_iff_mem]
+      exact LTSeries.head_le t i hf₁⟩) fun _ _ hij ↦ Subtype.mk_lt_mk.mpr (t.strictMono hij)
+  have hq : (t.length : WithBot ℕ∞) ≤ n := (Order.LTSeries.length_le_krullDim q).trans
+    ((ringKrullDim_quotient _).symm.le.trans (h f hf))
+  rw [show l.length = t.length + 1 by rw [RelSeries.tail_length]; omega]
+  simpa using add_le_add_left hq 1
+
+/-- If `p ⊊ q` with `p` prime, then `ringKrullDim (R ⧸ q) + 1 ≤ ringKrullDim (R ⧸ p)`. -/
+theorem ringKrullDim_quotient_add_one_le_of_lt {p q : Ideal R} [p.IsPrime] (h : p < q) :
+    ringKrullDim (R ⧸ q) + 1 ≤ ringKrullDim (R ⧸ p) := by
+  obtain ⟨x, hxq, hxp⟩ := IsConcreteLE.exists_of_lt h
+  refine ringKrullDim_succ_le_of_surjective (Ideal.Quotient.factor h.le)
+    (Ideal.Quotient.factor_surjective h.le) (r := Ideal.Quotient.mk p x)
+    (mem_nonZeroDivisors_of_ne_zero ?_) ?_
+  · rwa [ne_eq, Ideal.Quotient.eq_zero_iff_mem]
+  · rwa [Ideal.Quotient.factor_mk, Ideal.Quotient.eq_zero_iff_mem]
 
 end TauCeti
 

@@ -19,8 +19,11 @@ the exponent-`n` subgroup in that group is the product of the local power-class 
 and the infinite places. No roots-of-unity hypothesis is needed for this identity.
 
 If the primes in `S ∪ T` generate the ideal class group, every idele class has an `(S ∪ T)`-idele
-representative. Consequently the index of the image of the auxiliary Kummer subgroup in the idele
-class group divides the same product.
+representative, unique up to the principal ideles of the `(S ∪ T)`-units. Consequently the index
+of the image of the auxiliary Kummer subgroup in the idele class group, multiplied by the index in
+the `(S ∪ T)`-units of those whose principal ideles lie in the auxiliary subgroup, is the same
+product (`index_auxiliaryKummerIdeleClassSubgroup_mul_relIndex`); in particular the index divides
+it.
 
 ## References
 
@@ -63,6 +66,27 @@ theorem mem_auxiliaryKummerIdeleSubgroup_one_iff
     x ∈ auxiliaryKummerIdeleSubgroup S T 1 ↔
       ∀ v ∉ S, v ∉ T → Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
   simp
+
+/-- At exponent one, membership in the auxiliary Kummer subgroup is the unit condition outside
+the union `S ∪ T`. -/
+theorem mem_auxiliaryKummerIdeleSubgroup_one_iff_union
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) (x : IdeleGroup (𝓞 K) K) :
+    x ∈ auxiliaryKummerIdeleSubgroup S T 1 ↔
+      ∀ v ∉ ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T),
+        Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
+  rw [mem_auxiliaryKummerIdeleSubgroup_one_iff]
+  constructor
+  · exact fun h v hv ↦ h v (fun hvS ↦ hv (Or.inl hvS)) fun hvT ↦ hv (Or.inr hvT)
+  · exact fun h v hvS hvT ↦ h v fun hv ↦ hv.elim hvS hvT
+
+/-- The principal idele of `a` lies in the exponent-one auxiliary Kummer subgroup exactly when
+`a` is an `(S ∪ T)`-unit. -/
+theorem unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) (a : Kˣ) :
+    IdeleGroup.unitEmbedding (𝓞 K) K a ∈ auxiliaryKummerIdeleSubgroup S T 1 ↔
+      a ∈ ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T).unit K := by
+  rw [mem_auxiliaryKummerIdeleSubgroup_one_iff_union,
+    IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff]
 
 /-- Every auxiliary Kummer idele is an `(S ∪ T)`-idele. -/
 theorem auxiliaryKummerIdeleSubgroup_le_one
@@ -170,6 +194,66 @@ theorem mem_auxiliaryKummerIdeleClassSubgroup_iff
         (x : IdeleClassGroup (𝓞 K) K) = c :=
   (Iff.rfl)
 
+/-- The principal ideles that are integral units outside `S ∪ T` are the principal ideles of the
+`(S ∪ T)`-units. -/
+private theorem principalSubgroup_inf_auxiliaryKummerIdeleSubgroup_one
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) :
+    IdeleGroup.principalSubgroup (𝓞 K) K ⊓ auxiliaryKummerIdeleSubgroup S T 1 =
+      (((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T).unit K).map
+        (IdeleGroup.unitEmbedding (𝓞 K) K) := by
+  ext x
+  rw [Subgroup.mem_inf, Subgroup.mem_map]
+  constructor
+  · rintro ⟨hP, hx⟩
+    exact (IdeleGroup.mem_principalSubgroup_iff_exists_mem_unit
+      ((mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T x).mp hx)).1 hP
+  · rintro ⟨a, ha, rfl⟩
+    exact ⟨⟨a, rfl⟩, (unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff S T a).2 ha⟩
+
+/-- **The index of the auxiliary Kummer idele classes.** If the classes of `S ∪ T` generate the
+ideal class group, then
+`[C_K : E_{S,T} Kˣ / Kˣ] · [U_{S∪T} : U_{S∪T} ∩ E_{S,T}] = [I_{S∪T} : E_{S,T}]`,
+where `I_{S∪T}` is the group of `(S ∪ T)`-ideles, `U_{S∪T}` is the group of `(S ∪ T)`-units, and
+an `(S ∪ T)`-unit lies in `E_{S,T}` when its principal idele does. -/
+theorem index_auxiliaryKummerIdeleClassSubgroup_mul_relIndex
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
+    (hST : Subgroup.closure (HeightOneSpectrum.classGroupMk (R := 𝓞 K) ''
+      ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ (T : Set (HeightOneSpectrum (𝓞 K))))) = ⊤) :
+    (auxiliaryKummerIdeleClassSubgroup S T n).index *
+        ((auxiliaryKummerIdeleSubgroup S T n).comap (IdeleGroup.unitEmbedding (𝓞 K) K)).relIndex
+          (((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T).unit K) =
+      (auxiliaryKummerIdeleSubgroup S T n).relIndex (auxiliaryKummerIdeleSubgroup S T 1) := by
+  set E := auxiliaryKummerIdeleSubgroup S T n
+  set I := auxiliaryKummerIdeleSubgroup S T 1
+  -- The class map on `(S ∪ T)`-ideles is onto, and its kernel is the principal `(S ∪ T)`-ideles.
+  let f : I →* IdeleClassGroup (𝓞 K) K :=
+    (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)).comp I.subtype
+  have hf : Function.Surjective f := by
+    intro c
+    obtain ⟨x, hx, hc⟩ :=
+      IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hST c
+    exact ⟨⟨x, (mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T x).mpr hx⟩, hc⟩
+  have hmap : (E.subgroupOf I).map f = auxiliaryKummerIdeleClassSubgroup S T n := by
+    dsimp only [f]
+    rw [auxiliaryKummerIdeleClassSubgroup, ← Subgroup.map_map,
+      Subgroup.subgroupOf_map_subtype]
+    exact congrArg (Subgroup.map _) (inf_eq_left.mpr (auxiliaryKummerIdeleSubgroup_le_one S T n))
+  have hker : f.ker = (IdeleGroup.principalSubgroup (𝓞 K) K ⊓ I).subgroupOf I := by
+    rw [Subgroup.inf_subgroupOf_right, ← MonoidHom.comap_ker, QuotientGroup.ker_mk',
+      Subgroup.comap_subtype]
+  -- The first isomorphism theorem computes the index of the image from the kernel of `f`.
+  have himage : (auxiliaryKummerIdeleClassSubgroup S T n).index =
+      (E.subgroupOf I ⊔ f.ker).index := by
+    rw [← hmap, Subgroup.index_map, f.range_eq_top_of_surjective hf, Subgroup.index_top, mul_one]
+  -- Multiplicativity splits the index of `E` at the intermediate subgroup `E ⊔ ker f`.
+  have hmul : (E.subgroupOf I).relIndex f.ker * (E.subgroupOf I ⊔ f.ker).index =
+      (E.subgroupOf I).index := by
+    rw [← Subgroup.relIndex_sup_left]
+    exact Subgroup.relIndex_mul_index le_sup_left
+  rw [Subgroup.relIndex_comap, ← principalSubgroup_inf_auxiliaryKummerIdeleSubgroup_one,
+    ← Subgroup.relIndex_subgroupOf inf_le_right, ← hker, himage, mul_comm, hmul,
+    Subgroup.relIndex]
+
 /-- If the classes of `S ∪ T` generate the ideal class group, the index of the auxiliary Kummer
 idele-class subgroup divides the product of the local power-class counts. -/
 theorem index_auxiliaryKummerIdeleClassSubgroup_dvd
@@ -179,25 +263,8 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_dvd
     (auxiliaryKummerIdeleClassSubgroup S T n).index ∣
       (∏ v ∈ S, Nat.card ((v.adicCompletion K)ˣ ⧸ (powMonoidHom n).range)) *
         ∏ w : InfinitePlace K, Nat.card (w.Completionˣ ⧸ (powMonoidHom n).range) := by
-  let f : auxiliaryKummerIdeleSubgroup S T 1 →* IdeleClassGroup (𝓞 K) K :=
-    (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
-      (auxiliaryKummerIdeleSubgroup S T 1).subtype
-  have hf : Function.Surjective f := by
-    intro c
-    obtain ⟨x, hx, hc⟩ :=
-      IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hST c
-    exact ⟨⟨x, (mem_auxiliaryKummerIdeleSubgroup_one_iff S T x).mpr
-      (fun v hvS hvT ↦ hx v (by simp [hvS, hvT]))⟩, hc⟩
-  have hmap :
-      ((auxiliaryKummerIdeleSubgroup S T n).subgroupOf
-          (auxiliaryKummerIdeleSubgroup S T 1)).map f =
-        auxiliaryKummerIdeleClassSubgroup S T n := by
-    dsimp only [f]
-    rw [auxiliaryKummerIdeleClassSubgroup, ← Subgroup.map_map,
-      Subgroup.subgroupOf_map_subtype]
-    exact congrArg (Subgroup.map _)
-      (inf_eq_left.mpr (auxiliaryKummerIdeleSubgroup_le_one S T n))
-  rw [← relIndex_auxiliaryKummerIdeleSubgroup, Subgroup.relIndex, ← hmap]
-  exact Subgroup.index_map_dvd _ hf
+  rw [← relIndex_auxiliaryKummerIdeleSubgroup,
+    ← index_auxiliaryKummerIdeleClassSubgroup_mul_relIndex S T n hST]
+  exact dvd_mul_right _ _
 
 end TauCeti.ClassFieldTheory

@@ -35,8 +35,10 @@ objects kept **distinct**: the sign-quotient `Slope` (basis-free) and the `ℚ �
 sign in an abstract `ℤ`-module `M`, and every framing-dependent notion — `meridian`, `longitude`,
 `value`, and the bijection `slopeEquiv` — is a field/operation of `TauCeti.FramedBoundaryTorus`,
 carrying its own ordered basis. Identifying `H₁(T; ℤ)` with the boundary torus of a genuine link
-complement is now expressed through `BoundaryTorus.firstHomology`; constructing that boundary torus
-from the complement is later layer-5 work that consumes this arithmetic.
+complement is now expressed through `BoundaryTorus.firstHomology`; the framed boundary torus of a
+knot exterior is built in `TauCeti.LowDimTopology.DehnSurgery.Framing`, as
+`TauCeti.IsSolidTorusNeighborhood.framedBoundaryTorus` via
+`TauCeti.FramedBoundaryTorus.ofHomeomorph`.
 
 Primitivity of `v : M` is expressed basis-freely: `v` is primitive when some `ℤ`-linear functional
 `M →ₗ[ℤ] ℤ` sends it to `1`, so `v` splits off a copy of `ℤ`. Over the standard lattice

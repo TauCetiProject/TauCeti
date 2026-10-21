@@ -14,8 +14,8 @@ public import Mathlib.NumberTheory.Ostrowski
 Mathlib's `AbsoluteValue.denseRange_algebraMap_pi` approximates finitely many targets for a family
 of nontrivial, pairwise inequivalent absolute values. This file states it for a finite set of
 absolute values in which equivalent ones are equal, and supplies that hypothesis for absolute values
-on a field which restrict on `ℚ` to the real or to a `q`-adic absolute value: two such that are
-equivalent are equal.
+on a field which agree on natural-number casts with the real or a `q`-adic absolute value on `ℚ`:
+two such that are equivalent are equal.
 
 ## Main definitions
 
@@ -27,8 +27,10 @@ equivalent are equal.
   values in which equivalent ones are equal.
 * `AbsoluteValue.IsEquiv.eq_of_apply_eq`: equivalent absolute values agreeing at a nonzero element
   where they are not `1` are equal.
-* `AbsoluteValue.IsEquiv.eq_of_isStandard`: equivalent absolute values with standard restrictions
-  to `ℚ` are equal.
+* `AbsoluteValue.IsEquiv.eq_of_isStandard`: equivalent absolute values agreeing on natural-number
+  casts with standard absolute values on `ℚ` are equal.
+* `AbsoluteValue.isNontrivial_of_forall_natCast_eq`: agreement on natural-number casts transfers
+  nontriviality from an absolute value on `ℚ` to one on a semiring.
 -/
 
 public section
@@ -93,9 +95,9 @@ theorem _root_.Rat.AbsoluteValue.IsStandard.eq_of_isEquiv {a b : AbsoluteValue �
     obtain rfl := (Nat.prime_dvd_prime_iff_eq Fact.out Fact.out).mp hdvd
     rfl
 
-/-- A standard absolute value on `ℚ` takes a value other than `1` at a nonzero rational. -/
-theorem _root_.Rat.AbsoluteValue.IsStandard.exists_ne_one {a : AbsoluteValue ℚ ℝ}
-    (ha : Rat.AbsoluteValue.IsStandard a) : ∃ r : ℚ, r ≠ 0 ∧ a r ≠ 1 := by
+/-- A standard absolute value on `ℚ` is nontrivial. -/
+theorem _root_.Rat.AbsoluteValue.IsStandard.isNontrivial {a : AbsoluteValue ℚ ℝ}
+    (ha : Rat.AbsoluteValue.IsStandard a) : a.IsNontrivial := by
   rcases ha with rfl | ⟨q, hq, rfl⟩
   · exact ⟨2, two_ne_zero, by norm_num⟩
   · refine ⟨q, Nat.cast_ne_zero.mpr hq.out.ne_zero, ?_⟩
@@ -104,31 +106,39 @@ theorem _root_.Rat.AbsoluteValue.IsStandard.exists_ne_one {a : AbsoluteValue ℚ
     push_cast
     exact (inv_lt_one_of_one_lt₀ this).ne
 
-/-- **Equivalent absolute values restricting to standard ones on `ℚ` are equal.** -/
+/-- A nontrivial absolute value on `ℚ` takes a value other than `1` at a nonzero natural number. -/
+theorem _root_.AbsoluteValue.IsNontrivial.exists_nat_ne_one {a : AbsoluteValue ℚ ℝ}
+    (ha : a.IsNontrivial) : ∃ n : ℕ, n ≠ 0 ∧ a n ≠ 1 := by
+  contrapose! ha
+  refine (AbsoluteValue.isNontrivial_iff_ne_trivial a).not_left.mpr <|
+    Rat.AbsoluteValue.eq_on_nat_iff_eq.mp fun n ↦ ?_
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · simp [ha n hn, hn]
+
+/-- **Equivalent absolute values agreeing on natural-number casts with standard absolute values
+on `ℚ` are equal.** -/
 theorem _root_.AbsoluteValue.IsEquiv.eq_of_isStandard {F : Type*} [Field F]
     {v w : AbsoluteValue F ℝ} (h : v.IsEquiv w) {a b : AbsoluteValue ℚ ℝ}
     (ha : Rat.AbsoluteValue.IsStandard a) (hb : Rat.AbsoluteValue.IsStandard b)
-    (hva : ∀ r : ℚ, v r = a r) (hwb : ∀ r : ℚ, w r = b r) : v = w := by
-  have hab : a = b := ha.eq_of_isEquiv hb <| AbsoluteValue.isEquiv_iff_lt_one_iff.mpr fun r ↦ by
-    rw [← hva, ← hwb]
-    exact h.lt_one_iff
-  obtain ⟨r₀, hr₀, hr₀'⟩ := ha.exists_ne_one
-  exact h.eq_of_apply_eq (x := (r₀ : F))
-    (v.ne_zero_iff.mp (by rw [hva]; exact a.ne_zero hr₀)) (by rwa [hva])
+    (hva : ∀ n : ℕ, v n = a n) (hwb : ∀ n : ℕ, w n = b n) : v = w := by
+  obtain ⟨c, hc, hcw⟩ := AbsoluteValue.isEquiv_iff_exists_rpow_eq.mp h
+  have hab : a = b := ha.eq_of_isEquiv hb <|
+    Rat.AbsoluteValue.exists_nat_rpow_iff_isEquiv.mp ⟨c, hc, fun n ↦ by
+      rw [← hva, ← hwb]
+      exact congrFun hcw (n : F)⟩
+  obtain ⟨n, hn, hn'⟩ := ha.isNontrivial.exists_nat_ne_one
+  exact h.eq_of_apply_eq (x := (n : F))
+    (v.ne_zero_iff.mp (by rw [hva]; exact a.ne_zero (Nat.cast_ne_zero.mpr hn))) (by rwa [hva])
     (by rw [hva, hwb, hab])
 
-/-- An absolute value agreeing on rational casts with a nontrivial absolute value on `ℚ` is
+/-- An absolute value agreeing on natural-number casts with a nontrivial absolute value on `ℚ` is
 nontrivial. -/
-theorem _root_.AbsoluteValue.isNontrivial_of_forall_ratCast_eq {F : Type*} [Field F]
+theorem _root_.AbsoluteValue.isNontrivial_of_forall_natCast_eq {F : Type*} [Semiring F]
     {v : AbsoluteValue F ℝ} {a : AbsoluteValue ℚ ℝ} (ha : a.IsNontrivial)
-    (hva : ∀ r : ℚ, v r = a r) : v.IsNontrivial := by
-  obtain ⟨r₀, hr₀, hr₀'⟩ := ha
-  exact ⟨r₀, v.ne_zero_iff.mp (by rw [hva]; exact a.ne_zero hr₀), by rwa [hva]⟩
-
-/-- An absolute value restricting to a standard one on `ℚ` is nontrivial. -/
-theorem _root_.AbsoluteValue.isNontrivial_of_isStandard {F : Type*} [Field F]
-    {v : AbsoluteValue F ℝ} {a : AbsoluteValue ℚ ℝ} (ha : Rat.AbsoluteValue.IsStandard a)
-    (hva : ∀ r : ℚ, v r = a r) : v.IsNontrivial := by
-  exact AbsoluteValue.isNontrivial_of_forall_ratCast_eq ha.exists_ne_one hva
+    (hva : ∀ n : ℕ, v n = a n) : v.IsNontrivial := by
+  obtain ⟨n, hn, hn'⟩ := ha.exists_nat_ne_one
+  exact ⟨n, v.ne_zero_iff.mp (by rw [hva]; exact a.ne_zero (Nat.cast_ne_zero.mpr hn)),
+    by rwa [hva]⟩
 
 end TauCeti

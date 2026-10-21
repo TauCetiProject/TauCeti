@@ -21,7 +21,8 @@ The affine-minorant characterization shows that an admissible sequence and its
 lower convex envelope have identical supporting values. Translation and shear
 of the heights give the corresponding translation and parameter shift of the
 supporting values. Convex heights, including infinite heights outside their finite
-domain, are reconstructed as the supremum of their supporting lines.
+domain, are reconstructed as the supremum of their supporting lines. Consequently a convex
+height sequence lies below another sequence exactly when its supporting values do.
 
 The inclusion `WithTop.toEReal` regards heights in `WithTop ℝ` as extended reals
 without installing a new coercion.
@@ -70,6 +71,21 @@ theorem coe_le_supportingValue_iff :
   rw [EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot _))
     (.inl (EReal.coe_ne_top _)), ← EReal.coe_add]
   rw [← WithTop.toEReal_coe, WithTop.toEReal_le_toEReal_iff]
+
+/-- A real intercept lies below the supporting value exactly when its affine line
+lies below every finite height, compared as real numbers. -/
+theorem coe_le_supportingValue_iff_untop₀ :
+    (c : EReal) ≤ supportingValue a σ ↔
+      ∀ n, a n ≠ ⊤ → c + σ * n ≤ (a n).untop₀ := by
+  rw [coe_le_supportingValue_iff]
+  constructor
+  · intro hc n hn
+    simpa only [WithTop.untop₀_coe] using WithTop.untop₀_le_untop₀ hn (hc n)
+  · intro hc n
+    by_cases hn : a n = ⊤
+    · simp [hn]
+    · exact WithTop.le_of_untop₀_le_untop₀ WithTop.coe_ne_top
+        (by simpa only [WithTop.untop₀_coe] using hc n hn)
 
 /-- The supporting value lies below each tilted height. -/
 theorem supportingValue_le (a : ℕ → WithTop ℝ) (σ : ℝ) (n : ℕ) :
@@ -193,6 +209,15 @@ theorem IsConvexSeq.iSup_supportingValue_add (hh : IsConvexSeq h) (n : ℕ) :
     exact add_le_add (coe_le_supportingValue_iff.mpr hline) le_rfl
   exact (not_le_of_gt hr) ((EReal.coe_le_coe hrc).trans
     (hs.trans (le_iSup (fun σ : ℝ => supportingValue h σ + ((σ * n : ℝ) : EReal)) σ)))
+
+/-- A convex height sequence lies below another height sequence exactly when its supporting
+values do. The second sequence need not be convex. -/
+theorem IsConvexSeq.le_iff_forall_supportingValue_le (hh : IsConvexSeq h) :
+    h ≤ a ↔ ∀ σ, supportingValue h σ ≤ supportingValue a σ := by
+  refine ⟨fun hha σ => supportingValue_mono hha σ, fun hle n => ?_⟩
+  rw [← WithTop.toEReal_le_toEReal_iff, ← hh.iSup_supportingValue_add n]
+  exact iSup_le fun σ => (add_le_add (hle σ) le_rfl).trans
+    (EReal.add_le_of_le_sub (supportingValue_le a σ n))
 
 /-- The lower convex envelope of an admissible sequence is reconstructed from
 the supporting values of the sequence itself. -/

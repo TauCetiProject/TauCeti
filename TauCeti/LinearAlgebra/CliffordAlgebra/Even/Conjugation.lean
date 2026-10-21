@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Ring.Action.ConjAct
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
+public import Mathlib.LinearAlgebra.CliffordAlgebra.EvenEquiv
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 
 /-!
@@ -16,7 +17,9 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 Multiplying a Clifford generator on the right by a fixed generator produces a linear map into the
 even Clifford algebra. When the fixed vector has quadratic value `-1`, conjugation by its negated
 generator preserves the even subalgebra. These constructions provide the algebraic transport used
-by low-rank Spin action comparisons without depending on Spin groups.
+by low-rank Spin action comparisons without depending on Spin groups. On products of evenly many
+vectors, Mathlib's identification `evenEquivEvenNeg` of the even algebras of `Q` and `-Q` is the
+same product up to sign.
 
 ## Main definitions
 
@@ -24,6 +27,11 @@ by low-rank Spin action comparisons without depending on Spin groups.
   Clifford algebra.
 * `CliffordAlgebra.conjugateNegativeIotaEven Q e he` restricts conjugation by `-ι(e)` to the
   even algebra when `Q(e) = -1`.
+
+## Main results
+
+* `CliffordAlgebra.coe_evenEquivEvenNeg_prod_map_ι`: on a product of `2k` vectors,
+  `evenEquivEvenNeg` is `(-1) ^ k` times the same product in the Clifford algebra of `-Q`.
 -/
 
 public section
@@ -109,5 +117,34 @@ theorem coe_conjugateNegativeIotaEven (e : M) (he : Q e = -1) (x : even Q) :
     (conjugateNegativeIotaEven Q e he x : CliffordAlgebra Q) =
       (-ι Q e * (x : CliffordAlgebra Q)) * ι Q e :=
   conjugateNegativeIota_apply Q e he x
+
+variable {Q}
+
+omit [Invertible (2 : R)] in
+/-- On a product of `2k` vectors, `evenEquivEvenNeg` is the same product in the Clifford algebra of
+`-Q`, multiplied by `(-1) ^ k`. -/
+theorem coe_evenEquivEvenNeg_prod_map_ι :
+    ∀ (l : List M), Even l.length → ∀ h : (l.map (ι Q)).prod ∈ even Q,
+      (evenEquivEvenNeg Q ⟨_, h⟩ : CliffordAlgebra (-Q)) =
+        (-1 : R) ^ (l.length / 2) • (l.map (ι (-Q))).prod
+  | [], _, h => by
+    have h₁ : (⟨_, h⟩ : even Q) = 1 := Subtype.ext (by simp)
+    rw [h₁, map_one]
+    simp
+  | [_], hl, _ => absurd hl (by simp)
+  | a :: b :: l, hl, h => by
+    have hl' : Even l.length := by simpa [Nat.even_add_one] using hl
+    have hmem : (l.map (ι Q)).prod ∈ even Q := by
+      rw [← Subalgebra.mem_toSubmodule, even_toSubmodule]
+      exact prod_map_ι_mem_evenOdd_zero_of_even_length hl'
+    have hsplit : (⟨_, h⟩ : even Q) = (even.ι Q).bilin a b * ⟨_, hmem⟩ :=
+      Subtype.ext (by simp [mul_assoc])
+    have hlen : (a :: b :: l).length / 2 = l.length / 2 + 1 := by
+      simp only [List.length_cons]
+      omega
+    rw [hsplit, map_mul, evenEquivEvenNeg_apply, evenToNeg_ι,
+      Subalgebra.coe_mul, NegMemClass.coe_neg, coe_even_ι_bilin,
+      coe_evenEquivEvenNeg_prod_map_ι l hl' _, hlen]
+    simp [pow_succ, mul_assoc]
 
 end CliffordAlgebra

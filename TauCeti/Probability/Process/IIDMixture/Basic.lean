@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 public import TauCeti.MeasureTheory.Measure.ProductKernel
-import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
@@ -79,9 +78,9 @@ theorem iidMixtureLaw_map_fst (hP : Measurable P) :
   have hfst : ∀ t : T,
       ((Measure.dirac t).prod (Measure.infinitePi fun _ : ℕ => (P t : Measure α))).map Prod.fst
         = Measure.dirac t := fun _ => Measure.fst_prod
-  rw [iidMixtureLaw_def, TauCeti.MeasureTheory.map_bind
+  rw [iidMixtureLaw_def, Measure.map_bind
     (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const P hP).aemeasurable
-    measurable_fst]
+    measurable_fst.aemeasurable]
   simp_rw [hfst]
   exact Measure.bind_dirac
 
@@ -90,6 +89,24 @@ theorem iidMixtureLaw_map_directing (hP : Measurable P) :
     (iidMixtureLaw π P).map (fun ω => P ω.1) = π.map P := by
   have hcomp : (fun ω : T × (ℕ → α) => P ω.1) = P ∘ Prod.fst := rfl
   rw [hcomp, ← Measure.map_map hP measurable_fst, iidMixtureLaw_map_fst hP]
+
+/-- **Transport of the canonical law.** If the path map `g` carries each power `(P t)^{⊗ℕ}` to
+`(Q (f t))^{⊗ℕ}`, then relabelling the parameter by `f` and the path by `g` carries
+`iidMixtureLaw π P` to `iidMixtureLaw (π.map f) Q`. -/
+theorem map_prodMap_iidMixtureLaw {T' β : Type*} [MeasurableSpace T'] [MeasurableSpace β]
+    {Q : T' → ProbabilityMeasure β} {f : T → T'} {g : (ℕ → α) → ℕ → β}
+    (hP : Measurable P) (hQ : Measurable Q) (hf : Measurable f) (hg : Measurable g)
+    (hfib : ∀ t, (Measure.infinitePi fun _ : ℕ => (P t : Measure α)).map g =
+      Measure.infinitePi fun _ : ℕ => (Q (f t) : Measure β)) :
+    (iidMixtureLaw π P).map (Prod.map f g) = iidMixtureLaw (π.map f) Q := by
+  rw [iidMixtureLaw_def, iidMixtureLaw_def,
+    Measure.map_bind
+      (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const P hP).aemeasurable
+      (hf.prodMap hg).aemeasurable,
+    Measure.bind_map hf.aemeasurable
+      (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const Q hQ).aemeasurable]
+  refine congrArg π.bind (funext fun t => ?_)
+  rw [← Measure.map_prod_map _ _ hf hg, Measure.map_dirac' hf, hfib]
 
 /-- **The canonical law from a parameter and i.i.d. noise.** Draw a parameter `t` from `π` and an
 independent i.i.d. sequence `r` from `ρ`, and apply a jointly measurable `h t` to each noise
@@ -128,11 +145,11 @@ The parameter is integrated out, leaving the mixture of the prescribed i.i.d. la
 theorem pathLaw_iidMixtureLaw (hP : Measurable P) :
     pathLaw (iidMixtureLaw π P) (fun n ω => ω.2 n)
       = (π.map P).bind fun Q => Measure.infinitePi fun _ : ℕ => (Q : Measure α) := by
-  rw [pathLaw_def, iidMixtureLaw_def, TauCeti.MeasureTheory.map_bind
+  rw [pathLaw_def, iidMixtureLaw_def, Measure.map_bind
     (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const P hP).aemeasurable
-    measurable_snd]
+    measurable_snd.aemeasurable]
   simp only [Measure.map_snd_prod, measure_univ, one_smul]
-  exact (TauCeti.MeasureTheory.bind_map hP.aemeasurable
+  exact (Measure.bind_map hP.aemeasurable
     TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable).symm
 
 /-- **The prefix pushforward of the canonical mixture law.** Projecting `δ_t ⊗ (P t)^{⊗ℕ}` onto the
@@ -158,7 +175,7 @@ theorem map_prefixProjPair_iidMixtureLaw {T : Type*} [MeasurableSpace T] {π : M
       Measure.map_map (measurable_prefixProjPair T α n) measurable_prodMk_left, hcomp]
     exact TauCeti.MeasureTheory.map_infinitePi_pair_block t (P t) Fin.val_injective
   rw [iidMixtureLaw_def,
-    TauCeti.MeasureTheory.map_bind hker.aemeasurable (measurable_prefixProjPair T α n)]
+    Measure.map_bind hker.aemeasurable (measurable_prefixProjPair T α n).aemeasurable]
   simp_rw [hstep]
 
 end Probability

@@ -150,7 +150,7 @@ private theorem crossedProductClass_eq_one_of_inflateClass_eq_zero {c : TwoCocyc
         (galoisOpenNormalSubgroup K L L.val).toSubgroup := hVU
     rw [galoisOpenNormalSubgroup_toSubgroup, galoisOpenNormalSubgroup_toSubgroup,
       fieldRange_val, fieldRange_val] at h
-    rw [← InfiniteGalois.fixedField_fixingSubgroup M, le_iff_le]
+    rw [← InfiniteGalois.fixedField_fixingSubgroup M, le_fixedField_iff_le_fixingSubgroup]
     exact h
   -- `b` only depends on the restriction to `M`, and takes values in `Mˣ`
   have hconst : ∀ g g' : Gal(SeparableClosure K/K),

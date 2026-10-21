@@ -17,6 +17,7 @@ maximal ideal `P` of `B`. The degree formulas are `[L : D] = e * f`, `[D : K] = 
 `[L : E] = e * fᵢ`, and `[E : D] = fₛ`, where `fₛ` and `fᵢ` are the separable and inseparable
 residue degrees. The formulas for `[L : D]` and `[L : E]` assume `B/A` is a finite flat
 extension of domains; none of them assumes finiteness or separability of the residue fields.
+When the residue extension at `P` is separable, `fᵢ = 1` and so `[L : E] = e`.
 
 When `A` is a Dedekind domain with fraction field `K` and `B` a domain with fraction field `L`,
 the prime of the decomposition ring below `P` has ramification index and inertia degree one
@@ -84,6 +85,16 @@ theorem IsInertiaField.finrank_eq_ramificationIdx_mul_finInsepDegree [IsDomain A
   rw [← IsGaloisGroup.card_eq_finrank (inertia Gal(L/K) P) E L]
   exact P.card_inertia_eq_ramificationIdx_mul_finInsepDegree (R := A) (G := Gal(L/K))
 
+include K P in
+/-- When the residue extension at `P` is separable, the degree above the inertia field is the
+ramification index. This is Mathlib's `IsInertiaField.rank_left` with separability assumed only at
+`P` rather than at every prime over `P.under A`, and with `B` not required to be Dedekind. -/
+theorem IsInertiaField.finrank_eq_ramificationIdx [IsDomain A] [IsDomain B] [Module.Finite A B]
+    [Module.Flat A B] [P.IsMaximal] [Algebra.IsSeparable (A ⧸ P.under A) (B ⧸ P)] :
+    Module.finrank E L = P.ramificationIdx A := by
+  rw [IsInertiaField.finrank_eq_ramificationIdx_mul_finInsepDegree A K L P E,
+    (isSeparable_iff_finInsepDegree_eq_one _ _).mp inferInstance, mul_one]
+
 include K L P in
 /-- The degree of the inertia field over the decomposition field is the separable residue
 degree. -/
@@ -110,19 +121,17 @@ variable (A K L : Type*) {B : Type*} [Field K] [Field L] [Algebra K L]
   [Algebra 𝓞D D] [IsFractionRing 𝓞D D] [Algebra 𝓞D B] [Algebra 𝓞D L]
   [IsScalarTower 𝓞D D L] [IsScalarTower 𝓞D B L]
   [IsGalois K L] [FiniteDimensional K L] [IsDedekindDomain A] [IsDomain B]
-  [Module.Finite A B] [Module.IsTorsionFree A B] [Algebra A 𝓞D] [Module.Finite A 𝓞D]
-  [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D] [P.IsMaximal]
+  [Module.Finite A B] [Algebra A 𝓞D] [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D] [P.IsMaximal]
 
 omit [FiniteDimensional K L] [P.IsMaximal] in
 include K L D P in
 private theorem instances :
-    Module.Finite 𝓞D B ∧ Module.IsTorsionFree 𝓞D B ∧ Module.IsTorsionFree A 𝓞D ∧
+    Module.Finite 𝓞D B ∧ Module.IsTorsionFree 𝓞D B ∧ Module.IsTorsionFree A B ∧
       IsGaloisGroup Gal(L/K) A B ∧ IsGaloisGroup (stabilizer Gal(L/K) P) 𝓞D B := by
   have : Module.Finite 𝓞D B := Module.Finite.right A 𝓞D B
-  have : Module.IsTorsionFree 𝓞D B := by
-    rw [Module.isTorsionFree_iff_faithfulSMul]
-    exact Algebra.IsAlgebraic.faithfulSMul_tower_top A 𝓞D B
-  have : Module.IsTorsionFree A 𝓞D := Module.IsTorsionFree.of_faithfulSMul _ _ B
+  -- The fraction-field embeddings make both ring maps injective.
+  have : FaithfulSMul A B := .of_field_isFractionRing A B K L
+  have : FaithfulSMul 𝓞D B := .of_field_isFractionRing 𝓞D B D L
   exact ⟨inferInstance, inferInstance, inferInstance,
     .of_isFractionRing _ _ _ K L, .of_isFractionRing _ _ _ D L⟩
 

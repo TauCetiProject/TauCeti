@@ -138,6 +138,35 @@ theorem originalChart_extend (φ : OpenPartialHomeomorph (BoundarylessModel I M)
     (originalChart I φ).extend I = φ.toPartialEquiv := by
   rw [← chart_toPartialEquiv, chart_originalChart]
 
+/-- A chart of the copy and the corresponding original chart have the same source. -/
+@[simp]
+theorem originalChart_source (φ : OpenPartialHomeomorph (BoundarylessModel I M) E) :
+    (originalChart I φ).source = homeomorph I M ⁻¹' φ.source := by
+  ext y
+  rw [mem_preimage, homeomorph_apply, ← OpenPartialHomeomorph.extend_source (I := I),
+    originalChart_extend]
+  -- The extended chart's source is the chart's source, over the copy's carrier `M`.
+  rfl
+
+/-- The extended original chart of a chart of the copy has the same coordinates. -/
+theorem originalChart_extend_apply (φ : OpenPartialHomeomorph (BoundarylessModel I M) E)
+    (y : M) : (originalChart I φ).extend I y = φ (homeomorph I M y) := by
+  rw [originalChart_extend, homeomorph_apply]
+  -- Coercing the partial equivalence is coercing the chart; the carriers agree definitionally.
+  rfl
+
+/-- The extended original chart of a chart of the copy has the same inverse. -/
+theorem originalChart_extend_symm_apply (φ : OpenPartialHomeomorph (BoundarylessModel I M) E)
+    (v : E) : ((originalChart I φ).extend I).symm v = (homeomorph I M).symm (φ.symm v) := by
+  rw [originalChart_extend, homeomorph_symm_apply]
+  -- As above, now for the inverse chart.
+  rfl
+
+/-- The extended original chart of a chart of the copy has the same target. -/
+theorem originalChart_extend_target (φ : OpenPartialHomeomorph (BoundarylessModel I M) E) :
+    ((originalChart I φ).extend I).target = φ.target := by
+  rw [originalChart_extend]
+
 private theorem chart_trans_toPartialEquiv (c d : OpenPartialHomeomorph M H) :
     ((chart I c).symm.trans (chart I d)).toPartialEquiv = I.extendCoordChange c d := by
   rw [ModelWithCorners.extendCoordChange, OpenPartialHomeomorph.trans_toPartialEquiv,

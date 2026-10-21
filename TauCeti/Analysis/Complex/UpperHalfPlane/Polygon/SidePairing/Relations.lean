@@ -142,10 +142,8 @@ theorem partialCycleWord_mul_cycleLength (j : Fin n) (k : ℕ) :
   induction k with
   | zero => simp
   | succ k ih =>
-    have hper : sigma.next^[k * sigma.cycleLength j] j = j := by
-      rw [cycleLength_def]
-      exact ((Function.isPeriodicPt_minimalPeriod sigma.next j).const_mul k).eq
-    rw [Nat.succ_mul, partialCycleWord_add, hper, ih, ← cycleWord_def, pow_succ']
+    rw [Nat.succ_mul, partialCycleWord_add, next_iterate_mul_cycleLength, ih, ← cycleWord_def,
+      pow_succ']
 
 /-- **The cycle words along a cycle are conjugate**: the one at the successor of `j` is the
 conjugate of the one at `j` by the generator of the side leaving `j`. -/

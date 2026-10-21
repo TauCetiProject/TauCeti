@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.Algebra.Polynomial.Taylor
 
 /-!
-# The lowest Taylor coefficient at a root
+# Taylor coefficients at a root
 
 The Taylor expansion `taylor r p = p(X + r)` of a polynomial `p` at `r` starts in degree
 `p.rootMultiplicity r`, and its trailing coefficient is the value at `r` of `p` divided by the
@@ -17,6 +17,10 @@ largest power of `X - r` dividing it. This is the coefficient that survives when
 divided out of `p` as often as possible before evaluating at `r`; for `p ≠ 0` it is nonzero
 (`Polynomial.eval_divByMonic_pow_rootMultiplicity_ne_zero`), so it is the lowest nonzero
 coefficient of the Taylor expansion.
+
+Since the Taylor coefficients of `p` at `r` are the values at `r` of the Hasse derivatives of `p`,
+divisibility of `p` by `(X - r) ^ n` is the vanishing of its Hasse derivatives of order less than
+`n` at `r`. A Hasse derivative of order `k` therefore lowers such a divisibility by at most `k`.
 
 ## Main results
 
@@ -26,6 +30,8 @@ coefficient of the Taylor expansion.
   coefficient is `(p /ₘ (X - C r) ^ p.rootMultiplicity r).eval r`.
 * `Polynomial.eval_hasseDeriv_rootMultiplicity_ne_zero`: for `p ≠ 0`, the Hasse derivative of
   order `p.rootMultiplicity r` does not vanish at `r`.
+* `Polynomial.pow_sub_dvd_hasseDeriv_of_pow_dvd`: if `(X - r) ^ n` divides `p`, then
+  `(X - r) ^ (n - k)` divides the Hasse derivative of `p` of order `k`.
 -/
 
 public section
@@ -62,5 +68,17 @@ theorem eval_hasseDeriv_rootMultiplicity_ne_zero {p : R[X]} (hp : p ≠ 0) (r : 
     (hasseDeriv (p.rootMultiplicity r) p).eval r ≠ 0 := by
   rw [← taylor_coeff, ← natTrailingDegree_taylor]
   exact coeff_natTrailingDegree_ne_zero.2 ((taylor_eq_zero _ _).not.2 hp)
+
+/-- If `(X - r) ^ n` divides `p`, then `(X - r) ^ (n - k)` divides the Hasse derivative of `p` of
+order `k`. This is the analogue of `Polynomial.pow_sub_dvd_iterate_derivative_of_pow_dvd` for
+Hasse derivatives; it does not follow from it when `k !` is not invertible in `R`. -/
+theorem pow_sub_dvd_hasseDeriv_of_pow_dvd {p : R[X]} {r : R} {n : ℕ} (k : ℕ)
+    (h : (X - C r) ^ n ∣ p) : (X - C r) ^ (n - k) ∣ hasseDeriv k p := by
+  rw [X_sub_C_pow_dvd_iff, ← taylor_apply, X_pow_dvd_iff] at h ⊢
+  intro j hj
+  have := h (j + k) (by omega)
+  rw [taylor_coeff] at this ⊢
+  rw [← LinearMap.comp_apply, hasseDeriv_comp, LinearMap.smul_apply, nsmul_eq_mul, eval_mul, this,
+    mul_zero]
 
 end Polynomial

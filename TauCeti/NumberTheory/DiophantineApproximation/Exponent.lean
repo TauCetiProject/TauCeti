@@ -160,6 +160,20 @@ theorem _root_.Set.Infinite.liouvilleWith_of_abs_sub_lt_rpow_neg {p ξ : ℝ}
   · have hle := hden hr hne
     exact Or.inl ⟨hle, hbound hr hle⟩
 
+/-- An infinite set of rationals `r` with `|ξ - r| < r.den ^ (-p)` contains members of
+arbitrarily large denominator. -/
+theorem exists_le_den_of_infinite {p ξ : ℝ}
+    (hS : {r : ℚ | |ξ - r| < (r.den : ℝ) ^ (-p)}.Infinite) (N : ℕ) :
+    ∃ r : ℚ, |ξ - r| < (r.den : ℝ) ^ (-p) ∧ N ≤ r.den := by
+  obtain ⟨r, hr, hrN⟩ := (hS.sdiff
+    ((Metric.isBounded_ball (x := ξ) (r := (N : ℝ) ^ |p|)).finite_setOf_rat_den_le N)).nonempty
+  refine ⟨r, hr, not_lt.mp fun h ↦ hrN ⟨h.le, ?_⟩⟩
+  have hd : (1 : ℝ) ≤ r.den := by exact_mod_cast r.pos
+  rw [Metric.mem_ball, Real.dist_eq, abs_sub_comm]
+  calc |ξ - r| < (r.den : ℝ) ^ (-p) := hr
+    _ ≤ (r.den : ℝ) ^ |p| := Real.rpow_le_rpow_of_exponent_le hd (neg_le_abs p)
+    _ ≤ (N : ℝ) ^ |p| := by gcongr
+
 /-- A Liouville number with exponent `p` has, for every `q < p`, infinitely many rational
 approximations `r` with `|ξ - r| < r.den ^ (-q)`. -/
 theorem _root_.LiouvilleWith.infinite_setOf_abs_sub_lt_rpow_neg {p q ξ : ℝ}

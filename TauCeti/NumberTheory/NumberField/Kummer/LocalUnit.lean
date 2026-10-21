@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 
 /-!
 # Integral radicals of local units

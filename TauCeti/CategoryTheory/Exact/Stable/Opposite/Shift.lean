@@ -114,4 +114,24 @@ theorem projectiveStableOpEquivalenceFunctor_commShiftIso (n : ℤ) :
         (eqToIso (E.projectiveStableOpEquivalence_functor hE.projective_iff_injective)).symm
         (shiftFunctor E.ProjectiveStableCategoryᵒᵖ n) := (rfl)
 
+/-- The identification of the opposite stable equivalence's forward functor with the opposite
+stable comparison functor respects integral shifts. -/
+theorem projectiveStableOpEquivalence_functor_commShift :
+    letI := hE.stableHasShift
+    letI := hE.op.stableHasShift
+    letI := hE.projectiveStableOpFunctorCommShift
+    letI := hE.projectiveStableOpEquivalenceFunctorCommShift
+    (eqToIso
+      (E.projectiveStableOpEquivalence_functor hE.projective_iff_injective)).hom.CommShift ℤ := by
+  let := hE.stableHasShift
+  let := hE.op.stableHasShift
+  let := hE.projectiveStableOpFunctorCommShift
+  let := hE.projectiveStableOpEquivalenceFunctorCommShift
+  have : (eqToIso
+      (E.projectiveStableOpEquivalence_functor hE.projective_iff_injective)).symm.hom.CommShift ℤ :=
+    Functor.CommShift.ofIso_compatibility
+      (eqToIso (E.projectiveStableOpEquivalence_functor hE.projective_iff_injective)).symm ℤ
+  exact NatTrans.CommShift.of_iso_inv
+    (eqToIso (E.projectiveStableOpEquivalence_functor hE.projective_iff_injective)).symm ℤ
+
 end TauCeti.ExactStructure.IsFrobenius

@@ -16,7 +16,7 @@ import Mathlib.Topology.Separation.DisjointCover
 An abstract measure can be pushed to a finite discrete quotient by recording its values on the
 fibres.  This file constructs that linear projection, proves its functoriality under refinement,
 identifies measures on a finite discrete space with finitely supported coefficient functions, and
-proves that all finite projections together determine a measure on a profinite space.
+proves that binary projections already determine a measure on a profinite space.
 
 The construction follows the finite-coefficient description in Rodrigues Jacinto and Williams,
 *An introduction to p-adic L-functions*, Sections 3.2--3.3.
@@ -44,6 +44,22 @@ theorem fiberIndicator_apply [DiscreteTopology A] [DecidableEq A]
     q.fiberIndicator (R := R) a x = if q x = a then 1 else 0 := by
   classical
   simp [fiberIndicator, Pi.single_apply]
+
+/-- The fibre indicators of `q` pull back to the fibre indicators of `q ∘ φ`. -/
+@[simp]
+theorem fiberIndicator_comp [DiscreteTopology A] (q : C(X, A)) (φ : C(B, X)) (a : A) :
+    (q.fiberIndicator (R := R) a).comp φ = (q.comp φ).fiberIndicator a := by
+  classical
+  ext x
+  simp
+
+/-- The indicator of an empty fibre vanishes. -/
+theorem fiberIndicator_eq_zero_of_notMem_range [DiscreteTopology A] {q : C(X, A)} {a : A}
+    (ha : a ∉ Set.range q) : q.fiberIndicator (R := R) a = 0 := by
+  classical
+  ext x
+  have hx : q x ≠ a := fun h ↦ ha ⟨x, h⟩
+  simp [fiberIndicator_apply, hx]
 
 end ContinuousMap
 
@@ -90,6 +106,18 @@ theorem finiteProjection_dirac [Finite A] [DiscreteTopology A]
   classical
   ext a
   simp only [finiteProjection_apply, dirac_apply, fiberIndicator_apply, Finsupp.single_apply]
+
+/-- A fibre of `q` that is empty carries no mass. -/
+theorem finiteProjection_apply_of_notMem_range [Finite A] [DiscreteTopology A] {q : C(X, A)}
+    (μ : D(X, R)) {a : A} (ha : a ∉ Set.range q) : finiteProjection q μ a = 0 := by
+  rw [finiteProjection_apply, fiberIndicator_eq_zero_of_notMem_range ha, map_zero]
+
+/-- The finite projection of a pushforward is the finite projection along the composite. -/
+@[simp]
+theorem finiteProjection_map [Finite A] [DiscreteTopology A] (φ : C(B, X)) (q : C(X, A))
+    (μ : D(B, R)) : finiteProjection q (map φ μ) = finiteProjection (q.comp φ) μ := by
+  ext a
+  simp
 
 /-- Finite projection is functorial when one finite quotient refines another. -/
 theorem finiteProjection_comp [Finite A] [Finite B] [DiscreteTopology A] [DiscreteTopology B]
@@ -195,31 +223,28 @@ theorem finiteProjectionEquiv_apply [Finite A] [DiscreteTopology A] (μ : D(A, R
 theorem finiteProjectionEquiv_symm_apply [Finite A] [DiscreteTopology A] (c : A →₀ R) :
     finiteProjectionEquiv.symm c = ofFiniteCoefficients c := (rfl)
 
-end TopologicalRing
-
-section Normed
-
-variable [NormedCommRing R]
-
-/-- Finite projection is weakly continuous when its coefficients carry the product topology. -/
-theorem continuous_finiteProjection [Finite A] [DiscreteTopology A] (q : C(X, A)) :
-    @Continuous _ _ (WeakTopology (X := X) (R := R) (E := R)) inferInstance
-      (fun μ : D(X, R) ↦ fun a ↦ finiteProjection q μ a) := by
-  let : TopologicalSpace D(X, R) := WeakTopology
-  have heval : Continuous (fun μ : D(X, R) ↦ fun f : C(X, R) ↦ μ f) :=
-    continuous_induced_dom
-  exact continuous_pi fun a ↦
-    (continuous_apply (fiberIndicator (R := R) q a)).comp heval
-
 section Profinite
 
-variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X]
+variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] [T2Space R]
 
-/-- A measure on a profinite space is determined by its projections to all finite discrete
+/-- A measure on a profinite space is determined by its projections to binary discrete
 quotients. -/
 theorem finiteProjection_ext (μ ν : D(X, R))
-    (h : ∀ (n : ℕ) (q : C(X, Fin n)), finiteProjection q μ = finiteProjection q ν) :
+    (h : ∀ q : C(X, Fin 2), finiteProjection q μ = finiteProjection q ν) :
     μ = ν := by
+  -- A binary quotient detects each fibre of an arbitrary finite quotient.
+  have hfinite (n : ℕ) (q : C(X, Fin n)) : finiteProjection q μ = finiteProjection q ν := by
+    classical
+    ext a
+    let t : C(Fin n, Fin 2) := ContinuousMap.equivFnOfDiscrete.symm
+      (fun b ↦ if b = a then 0 else 1)
+    have ha : fiberIndicator (R := R) (t.comp q) 0 = fiberIndicator q a := by
+      ext x
+      simp [t]
+    simpa only [finiteProjection_apply, ha] using
+      congrArg (fun c : Fin 2 →₀ R ↦ c 0) (h (t.comp q))
+  -- The density argument only needs the canonical uniformity of the additive group of `R`.
+  let := IsTopologicalAddGroup.rightUniformSpace R
   let S : Set C(X, R) := {f | ∃ (n : ℕ) (q : C(X, Fin n)) (g : Fin n → R),
     f = (ContinuousMap.equivFnOfDiscrete.symm g).comp q}
   have hS : Dense S := by
@@ -236,12 +261,28 @@ theorem finiteProjection_ext (μ ν : D(X, R))
     exact ⟨f', ⟨n, q', g, rfl⟩, fun x ↦ hfg x⟩
   have hEqOn : Set.EqOn μ ν S := by
     rintro _ ⟨n, q, g, rfl⟩
-    rw [apply_comp_eq_sum_finiteProjection, apply_comp_eq_sum_finiteProjection, h n q]
+    rw [apply_comp_eq_sum_finiteProjection, apply_comp_eq_sum_finiteProjection, hfinite n q]
   apply AbstractMeasure.ext
   intro f
   exact congrFun (Continuous.ext_on hS μ.continuous ν.continuous hEqOn) f
 
 end Profinite
+
+end TopologicalRing
+
+section Normed
+
+variable [NormedCommRing R]
+
+/-- Finite projection is weakly continuous when its coefficients carry the product topology. -/
+theorem continuous_finiteProjection [Finite A] [DiscreteTopology A] (q : C(X, A)) :
+    @Continuous _ _ (WeakTopology (X := X) (R := R) (E := R)) inferInstance
+      (fun μ : D(X, R) ↦ fun a ↦ finiteProjection q μ a) := by
+  let : TopologicalSpace D(X, R) := WeakTopology
+  have heval : Continuous (fun μ : D(X, R) ↦ fun f : C(X, R) ↦ μ f) :=
+    continuous_induced_dom
+  exact continuous_pi fun a ↦
+    (continuous_apply (fiberIndicator (R := R) q a)).comp heval
 
 end Normed
 

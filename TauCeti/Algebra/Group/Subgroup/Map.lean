@@ -230,11 +230,11 @@ theorem _root_.MonoidHom.subgroupCongr_surjective {A A' : Subgroup G} {B B' : Su
 
 /-- A surjective homomorphism carries the derived subgroup onto the derived subgroup.
 
-Without surjectivity only `≤` survives (Mathlib's `map_derivedSeries_le_derivedSeries`); Mathlib's
-`map_commutator_eq` keeps an equality for an arbitrary `f`, at the cost of describing the
-image as `⁅f.range, f.range⁆`. Reach for this lemma rather than `map_derivedSeries_eq` whenever the
-derived subgroup is spelled `commutator`; `MulEquiv.commutatorCongr` below is the isomorphism it
-unlocks. -/
+Without surjectivity only `≤` survives (Mathlib's `Subgroup.map_derivedSeries_le_derivedSeries`);
+Mathlib's `map_commutator_eq` keeps an equality for an arbitrary `f`, at the cost of describing the
+image as `⁅f.range, f.range⁆`. Reach for this lemma rather than `Subgroup.map_derivedSeries_eq`
+whenever the derived subgroup is spelled `commutator`; `MulEquiv.commutatorCongr` below is the
+isomorphism it unlocks. -/
 theorem Subgroup.map_commutator_eq_commutator {f : G →* H} (hf : Function.Surjective f) :
     (commutator G).map f = commutator H := by
   rw [_root_.map_commutator_eq, MonoidHom.range_eq_top_of_surjective _ hf, _root_.commutator_def]

@@ -84,10 +84,7 @@ attribute [local instance 10] Place.algebraIntegersExtension Place.isScalarTower
 
 /-! ### Relative repartitions -/
 
-section Relative
-
-omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F']
-
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 variable (k F F') in
 /-- The **relative repartitions** of `F' / F`: the families `β : Place k F → F'` whose entry at
 `P` is integral over the valuation ring `𝒪_P` for all but finitely many places `P` of `F / k`.
@@ -109,6 +106,7 @@ noncomputable def relativeRepartitionSpace : Submodule k (Place k F → F') wher
     rw [Pi.smul_apply, Algebra.smul_def, IsScalarTower.algebraMap_apply k F F']
     exact (isIntegral_algebraMap (x := (⟨_, P.algebraMap_mem_integers c⟩ : P.integers))).mul h
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 /-- Membership in the relative repartitions, unfolded. -/
 @[simp]
 theorem mem_relativeRepartitionSpace_iff {β : Place k F → F'} :
@@ -116,6 +114,7 @@ theorem mem_relativeRepartitionSpace_iff {β : Place k F → F'} :
       ∀ᶠ (P : Place k F) in Filter.cofinite, IsIntegral P.integers (β P) :=
   (Iff.rfl)
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 /-- The relative repartitions are stable under multiplication by a function of `F`, which has
 only finitely many poles. -/
 theorem smul_mem_relativeRepartitionSpace (hF : IsFunctionField k F) (f : F)
@@ -126,14 +125,13 @@ theorem smul_mem_relativeRepartitionSpace (hF : IsFunctionField k F) (f : F)
   rw [Pi.smul_apply, Algebra.smul_def]
   exact (isIntegral_algebraMap (x := (⟨f, h.1⟩ : P.integers))).mul h.2
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 /-- The constant families are relative repartitions: a function of `F'`, which is integral over
 `F`, is integral over `𝒪_P` at almost every place `P`. -/
 theorem const_mem_relativeRepartitionSpace [Algebra.IsIntegral F F'] (hF : IsFunctionField k F)
     (x : F') : Function.const (Place k F) x ∈ relativeRepartitionSpace k F F' :=
   Filter.eventually_cofinite.mpr
     (Place.finite_setOf_not_isIntegral hF x (Algebra.IsIntegral.isIntegral x))
-
-end Relative
 
 /-! ### Pulling relative repartitions back to `F'` -/
 
@@ -299,8 +297,7 @@ section Trace
 
 variable [FiniteDimensional F F']
 
-omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F']
-
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 variable (k F F') in
 /-- Multiplication by functions of `F` on relative repartitions. -/
 noncomputable def relativeRepartitionMul (hF : IsFunctionField k F) :
@@ -315,6 +312,7 @@ noncomputable def relativeRepartitionMul (hF : IsFunctionField k F) :
   map_add' f g := LinearMap.ext fun β ↦ Subtype.ext (by simp [add_smul])
   commutes' c := LinearMap.ext fun β ↦ Subtype.ext (by simp [algebraMap_smul])
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 /-- The natural `F`-module structure on relative repartitions. It is a definition rather than a
 global instance because it depends on the explicit function-field hypothesis. -/
 @[instance_reducible]
@@ -322,6 +320,7 @@ noncomputable def relativeRepartitionSpaceModule (hF : IsFunctionField k F) :
     Module F ↥(relativeRepartitionSpace k F F') :=
   Module.compHom _ (relativeRepartitionMul k F F' hF).toRingHom
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 /-- The natural `F`-module structure on repartitions. It is a definition rather than a global
 instance because it depends on the explicit function-field hypothesis. -/
 @[instance_reducible]
@@ -329,6 +328,7 @@ noncomputable def repartitionSpaceModule (hF : IsFunctionField k F) :
     Module F ↥(repartitionSpace k F) :=
   Module.compHom _ (repartitionMul hF).toRingHom
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 omit [FiniteDimensional F F'] in
 /-- Scalar multiplication for the natural `F`-module structure on relative repartitions is
 entrywise multiplication. -/
@@ -340,6 +340,7 @@ theorem coe_relativeRepartitionSpaceModule_smul (hF : IsFunctionField k F) (f : 
       f • (β : Place k F → F') :=
   (rfl)
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 omit [FiniteDimensional F F'] in
 /-- Scalar multiplication for the natural `F`-module structure on repartitions is entrywise
 multiplication. -/
@@ -355,6 +356,7 @@ theorem coe_repartitionSpaceModule_smul (hF : IsFunctionField k F) (f : F)
     change ((repartitionMul hF f a : ↥(repartitionSpace k F)) : Place k F → F) = _
     exact coe_repartitionMul_apply hF f a
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 /-- The entrywise trace of a relative repartition is a repartition of `F / k`: the trace of an
 element integral over the integrally closed ring `𝒪_P` lies in `𝒪_P`. -/
 theorem trace_comp_mem_repartitionSpace {β : Place k F → F'}
@@ -363,6 +365,7 @@ theorem trace_comp_mem_repartitionSpace {β : Place k F → F'}
   mem_repartitionSpace_iff_integers.mpr <| (mem_relativeRepartitionSpace_iff.mp hβ).mono fun P h ↦
     P.mem_integers_of_isIntegral (R := P.integers) (fun a ↦ a.2) (Algebra.isIntegral_trace h)
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 variable (k F F') in
 /-- **The trace of relative repartitions** `Tr_{F'/F}`, taken entrywise (Stichtenoth,
 Section III.4): the `F`-linear map carrying a relative repartition `β` of `F' / F` to the
@@ -388,6 +391,7 @@ noncomputable def repartitionTrace (hF : IsFunctionField k F) :
         rw [congrFun (coe_repartitionMul_apply hF f _) P, Pi.smul_apply,
           LinearMap.map_smul] }
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 /-- The entries of the trace of a relative repartition are the traces of its entries. -/
 @[simp]
 theorem repartitionTrace_apply (hF : IsFunctionField k F)
@@ -396,6 +400,7 @@ theorem repartitionTrace_apply (hF : IsFunctionField k F)
       Algebra.trace F F' ((β : Place k F → F') P) :=
   (rfl)
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 /-- **The trace of a diagonal repartition is diagonal**: the trace of the constant family at `x`
 is the constant family at `Tr_{F'/F} x`. -/
 theorem repartitionTrace_const (hF : IsFunctionField k F)
@@ -405,6 +410,7 @@ theorem repartitionTrace_const (hF : IsFunctionField k F)
       Function.const (Place k F) (Algebra.trace F F' x) :=
   funext fun P ↦ by rw [repartitionTrace_apply, hβ, Function.const_apply, Function.const_apply]
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 /-- **The trace of repartitions is `F`-linear**: the trace of `f • β` is `f` times the trace of
 `β`. -/
 theorem repartitionTrace_smul (hF : IsFunctionField k F) (f : F)
@@ -417,6 +423,7 @@ theorem repartitionTrace_smul (hF : IsFunctionField k F) (f : F)
     let _ := repartitionSpaceModule hF
     exact map_smul (repartitionTrace k F F' hF) f β
 
+omit [Algebra k k'] [Algebra k' F'] [IsScalarTower k k' F'] in
 /-- **The trace estimate** (Stichtenoth, proof of Theorem 3.4.6): if the pullback of a relative
 repartition `β` to `F'` lies in `A_{F'}(Con D + Diff(F'/F))`, then its trace lies in `A_F(D)`.
 At each place `P` of `F` this is `TauCeti.Place.valuation_trace_le_exp`: the coefficient of

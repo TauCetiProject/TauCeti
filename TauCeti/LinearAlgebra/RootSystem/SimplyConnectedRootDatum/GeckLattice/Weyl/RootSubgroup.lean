@@ -96,6 +96,15 @@ theorem root_geckWeylRootIndex (l : List (Fin t.rank)) (i : Fin t.rank) :
       t.geckWeylWordProd ht l • (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) :=
   (RootPairing.weylGroup_apply_root _ _ _).symm
 
+/-- The simple root at `i`, evaluated on the inverse Weyl translate of `s`, is the root at
+`geckWeylRootIndex l i` evaluated on `s`. -/
+theorem torusCharacter_geckWeylTorusAction_inv_root_simpleIndex (l : List (Fin t.rank))
+    (i : Fin t.rank) (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
+    torusCharacter (t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ s)
+        ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) =
+      torusCharacter s ((t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i)) := by
+  rw [torusCharacter_geckWeylTorusAction, inv_inv, root_geckWeylRootIndex]
+
 /-- The empty word attaches the simple root itself. -/
 @[simp]
 theorem geckWeylRootIndex_nil (i : Fin t.rank) :
@@ -231,6 +240,32 @@ theorem map_geckWeylRootSubgroupPoints {A : Type v} {B : Type v'} [CommRing A] [
 
 /-! ## The pinning equation at every root -/
 
+/-- **Weyl transport of a pinning equation in any group.** Suppose `W` conjugates `T s` to the
+image under `T` of the action of the word `l` on `s`, and `x` satisfies the pinning equation at
+the simple root `α_i`. Then the conjugate `u ↦ W * x u * W⁻¹` satisfies the pinning equation at
+the root `geckWeylRootIndex l i`. -/
+theorem conj_conj_eq_torusCharacter_root_geckWeylRootIndex {G : Type*} [Group G] {A : Type v}
+    [CommRing A] (T : (Fin t.rank → Aˣ) → G) (x : Multiplicative A → G) (W : G)
+    (l : List (Fin t.rank)) (i : Fin t.rank)
+    (hW : ∀ s, W * T s * W⁻¹ = T (t.geckWeylWordTorusAction ht l A s))
+    (hx : ∀ s u, T s * x u * (T s)⁻¹ =
+      x (Multiplicative.ofAdd
+        ((torusCharacter s ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) : A) *
+          Multiplicative.toAdd u)))
+    (s : Fin t.rank → Aˣ) (u : Multiplicative A) :
+    T s * (W * x u * W⁻¹) * (T s)⁻¹ =
+      W * x (Multiplicative.ofAdd
+        ((torusCharacter s
+            ((t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i)) : A) *
+          Multiplicative.toAdd u)) * W⁻¹ := by
+  -- Write `s` as the word's action on `s' = w⁻¹ • s`, so that `T s` is the conjugate of `T s'`
+  -- by `W`.
+  set s' := t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ s
+  have hT : W * T s' * W⁻¹ = T s :=
+    (hW s').trans (congrArg T (t.geckWeylWordTorusAction_geckWeylTorusAction_inv ht l A s))
+  rw [← t.torusCharacter_geckWeylTorusAction_inv_root_simpleIndex ht l i A s, ← hx s' u, ← hT]
+  group
+
 /-- **The pinning equation of the root subgroup attached to a word.** Conjugation by a weight-torus
 point `s` rescales the parameter of `x_{l,i}` by `α(s)`, for `α` the root at
 `geckWeylRootIndex l i`, that is `w α_i` with `w` the Weyl-group element spelled by `l`. -/
@@ -242,23 +277,10 @@ theorem geckWeightTorusPoints_conj_geckWeylRootSubgroupPoints (l : List (Fin t.r
         (Multiplicative.ofAdd
           ((torusCharacter s
               ((t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i)) : A) *
-            Multiplicative.toAdd u)) := by
-  set w := t.geckWeylWordProd ht l
-  -- Write `s` as the word's action on `s' = w⁻¹ • s`, so that the torus point of `s` is the
-  -- conjugate of the torus point of `s'` by the word's Weyl representative.
-  set s' := t.geckWeylTorusAction ht A w⁻¹ s
-  have hs : t.geckWeylWordTorusAction ht l A s' = s := by
-    rw [← t.geckWeylTorusAction_apply_eq_word ht rfl, ← MulAut.mul_apply, ← map_mul,
-      mul_inv_cancel, map_one, MulAut.one_apply]
-  have hT := t.geckWeylWordPoint_conj_geckWeightTorusPoints ht l A s'
-  rw [hs] at hT
-  have hchar :
-      (torusCharacter s' ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) : A) =
-        torusCharacter s ((t.simplyConnectedRootDatum ht).root (t.geckWeylRootIndex ht l i)) := by
-    rw [torusCharacter_geckWeylTorusAction, inv_inv, root_geckWeylRootIndex]
-  simp only [geckWeylRootSubgroupPoints_apply, ← hT, ← hchar,
-    ← t.geckWeightTorusPoints_conj_geckRootSubgroupPoints_root_simpleIndex ht i A s' u]
-  group
+            Multiplicative.toAdd u)) :=
+  t.conj_conj_eq_torusCharacter_root_geckWeylRootIndex ht _ _ _ l i
+    (t.geckWeylWordPoint_conj_geckWeightTorusPoints ht l A)
+    (t.geckWeightTorusPoints_conj_geckRootSubgroupPoints_root_simpleIndex ht i A) s u
 
 end
 

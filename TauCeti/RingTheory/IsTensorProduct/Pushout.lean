@@ -110,6 +110,14 @@ theorem _root_.Algebra.FinitePresentation.of_isPushout [FinitePresentation R S] 
   have := IsPushout.symm (inferInstance : IsPushout R S R' S')
   exact FinitePresentation.equiv (IsPushout.equiv R R' S S')
 
+end CommRing
+
+section CancelBaseChange
+
+variable {R S R' S' : Type*} [CommSemiring R] [CommSemiring S] [CommRing R'] [CommRing S']
+  [Algebra R S] [Algebra R R'] [Algebra R' S'] [Algebra R S'] [Algebra S S']
+  [IsScalarTower R R' S'] [IsScalarTower R S S'] [IsPushout R S R' S']
+
 variable (S') in
 /-- The isomorphism `S ⊗[R] T ≃ₐ[S] S' ⊗[R'] T` is natural in the `R'`-algebra `T`. -/
 theorem cancelBaseChangeAlg_symm_lTensor {T T' : Type*} [CommRing T] [Algebra R' T]
@@ -120,6 +128,6 @@ theorem cancelBaseChangeAlg_symm_lTensor {T T' : Type*} [CommRing T] [Algebra R'
       Algebra.TensorProduct.lTensor (S := S') S' g ((cancelBaseChangeAlg R S R' S' T).symm z) := by
   induction z <;> simp [*]
 
-end CommRing
+end CancelBaseChange
 
 end Algebra.IsPushout

@@ -13,6 +13,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 The coordinate expression of a pullback uses the within-range derivative of the map composed
 with the inverse source chart. This is the actual manifold chain rule, including boundary
 points, and supplies the coefficient transport used in interval and product comparisons.
+Pulling a flat form back along a preferred chart and reading it in the same chart recovers the
+flat form on the chart target, which is how flat constructions in a chart are moved to the
+manifold.
 -/
 
 public section
@@ -70,5 +73,24 @@ theorem inChartAt_mpullback_modelSpace (ω : RoughForm 𝓘(ℝ, X) X F k) (f : 
           (fderivWithin ℝ (f ∘ (extChartAt I α).symm) (range I) z)) := by
   rw [inChartAt_mpullback ω f α hz hf, mfderivWithin_eq_fderivWithin]
   rfl
+
+/-- Pulling a flat form back along a preferred extended chart and reading the result in the same
+chart recovers the flat form on the chart target. -/
+theorem inChartAt_mpullback_extChartAt (ω : RoughForm 𝓘(ℝ, E) E F k) (α : M) {z : E}
+    (hz : z ∈ (extChartAt I α).target) :
+    (mpullback I 𝓘(ℝ, E) (extChartAt I α) ω).inChartAt α z = ω z := by
+  have hsource : (extChartAt I α).symm z ∈ (chartAt H α).source := by
+    simpa only [extChartAt_source] using (extChartAt I α).map_target hz
+  have hid : extChartAt I α ∘ (extChartAt I α).symm =ᶠ[𝓝[range I] z] id := by
+    filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem hz] with w hw
+    exact (extChartAt I α).right_inv hw
+  rw [inChartAt_mpullback_modelSpace ω _ α hz (mdifferentiableAt_extChartAt hsource),
+    hid.fderivWithin_eq ((extChartAt I α).right_inv hz),
+    fderivWithin_id (I.uniqueDiffOn _ (extChartAt_target_subset_range α hz))]
+  ext v
+  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply]
+  -- The model tangent identifications are identities, and the chart image of the point is `z`.
+  simp only [ContinuousLinearMap.comp_id, ContinuousLinearEquiv.coe_coe]
+  exact congrArg (fun y : E ↦ ω y v) ((extChartAt I α).right_inv hz)
 
 end TauCeti.RoughForm

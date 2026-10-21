@@ -88,7 +88,7 @@ theorem exists_nonneg_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
   simp only [Pi.add_apply] at hest
   rw [integral_const_mul, integral_add hiPot hiErr, integral_sub hiA hiCorr,
     integral_const_mul, integral_indicator measurableSet_Icc] at hest
-  rw [integral_norm_deriv_add_sq_eq hA hsym hu hc]
+  rw [integral_norm_deriv_add_sq_eq hA (fun s _ ↦ hsym s) hu hc]
   linarith
 
 -- Convergence of the potential, rather than separate gap estimates for A and A',

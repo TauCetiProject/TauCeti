@@ -5,12 +5,12 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.ChiSquared
+public import TauCeti.Probability.Distributions.ChiSquared.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import TauCeti.Probability.Moments.Pi
 
 /-!
-# Squares of standard Gaussian variables
+# Squares of Gaussian variables
 
 This file identifies the square of a standard real Gaussian variable with the chi-squared law
 of one degree of freedom. It then combines this identification with independence to prove that
@@ -26,6 +26,10 @@ statistic takes in eigen-coordinates.
 These laws identify Gaussian quadratic statistics with chi-squared distributions. In particular,
 they provide the scalar foundation for distributional results about Gaussian norms and Gaussian
 Gram matrices.
+
+For a unit-variance Gaussian with arbitrary mean `m`, the squared variable has mgf
+`(1 - 2 * t) ^ (-1 / 2) * exp (m ^ 2 * t / (1 - 2 * t))` for `t < 1 / 2`.
+This also supplies the exponential moments used to identify noncentral Gaussian-square laws.
 
 ## Main results
 
@@ -47,7 +51,7 @@ Gram matrices.
 ## References
 
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
-  2nd ed., Wiley (1994), ch. 18.
+  2nd ed., Wiley (1994), ch. 18; vol. 2, 2nd ed., Wiley (1995), ch. 29.
 -/
 
 public section
@@ -100,6 +104,41 @@ theorem gaussianReal_map_sq :
     rw [Real.erf_eq_regularizedGamma_half_sq herf]
     rw [div_pow, Real.sq_sqrt hx', Real.sq_sqrt (by positivity : (0 : ℝ) ≤ 2)]
     ring
+
+/-- The moment-generating function of the square of a unit-variance Gaussian, allowing an
+arbitrary mean. -/
+@[simp]
+theorem mgf_sq_gaussianReal_one (m : ℝ) {t : ℝ} (ht : t < 2⁻¹) :
+    mgf (fun x : ℝ ↦ x ^ 2) (gaussianReal m 1) t =
+      (1 - 2 * t) ^ (-1 / 2 : ℝ) * exp (m ^ 2 * t / (1 - 2 * t)) := by
+  have hb : 0 < 1 - 2 * t := by linarith
+  have hcomplete (x : ℝ) :
+      -(x - m) ^ 2 / 2 + t * x ^ 2 =
+        -((1 - 2 * t) / 2) * (x - m / (1 - 2 * t)) ^ 2 +
+          m ^ 2 * t / (1 - 2 * t) := by
+    field_simp
+    ring
+  rw [mgf, integral_gaussianReal_eq_integral_smul one_ne_zero]
+  simp only [gaussianPDFReal, NNReal.coe_one, mul_one, smul_eq_mul]
+  simp_rw [mul_assoc, ← exp_add, hcomplete, exp_add]
+  rw [integral_const_mul, integral_mul_const]
+  have hshift : (∫ x : ℝ, exp (-((1 - 2 * t) / 2) *
+      (x - m / (1 - 2 * t)) ^ 2)) = sqrt (π / ((1 - 2 * t) / 2)) := by
+    simpa only [sub_eq_add_neg] using
+      (integral_add_right_eq_self
+        (fun x : ℝ ↦ exp (-((1 - 2 * t) / 2) * x ^ 2))
+        (-(m / (1 - 2 * t)))).trans (integral_gaussian _)
+  rw [hshift]
+  have hfactor : (1 / sqrt (2 * π)) * sqrt (π / ((1 - 2 * t) / 2)) =
+      (1 - 2 * t) ^ (-1 / 2 : ℝ) := by
+    have hdiv : π / ((1 - 2 * t) / 2) = (2 * π) / (1 - 2 * t) := by field_simp
+    have hneg : (-1 / 2 : ℝ) = -(1 / 2) := by norm_num
+    rw [hdiv, sqrt_div (mul_nonneg (by positivity) pi_pos.le),
+      hneg, Real.rpow_neg hb.le, ← sqrt_eq_rpow]
+    have hp : sqrt (2 * π) ≠ 0 := ne_of_gt (sqrt_pos.2 (by positivity))
+    field_simp
+  simpa only [one_div, mul_assoc] using
+    congrArg (fun c ↦ c * exp (m ^ 2 * t / (1 - 2 * t))) hfactor
 
 section scalar
 

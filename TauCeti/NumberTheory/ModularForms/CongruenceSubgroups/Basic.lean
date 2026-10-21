@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Data.Nat.Factorization.Induction
+import TauCeti.Data.Int.ChineseRemainder
 import TauCeti.Data.ZMod.Divisibility
 
 /-!
@@ -692,22 +693,6 @@ theorem Gamma0_prime_power_index (p : ℕ) (hp : Nat.Prime p) (k : ℕ) (hk : 0 
 
 /-! ### The Chinese-remainder decomposition `Γ(gcd a b) = Γ(a) ⊔ Γ(b)` -/
 
-/-- Two integers agreeing modulo `gcd m n` are simultaneously congruent to a single lift,
-modulo `m` and modulo `n`: the Bézout coefficients give the lift explicitly. -/
-private lemma exists_int_modEq_of_modEq_gcd {m n x y : ℤ} (h : x ≡ y [ZMOD ↑(Int.gcd m n)]) :
-    ∃ z : ℤ, z ≡ x [ZMOD m] ∧ z ≡ y [ZMOD n] := by
-  rw [Int.modEq_iff_dvd] at h
-  obtain ⟨k, hk⟩ := h
-  have hbez := Int.gcd_eq_gcd_ab m n
-  refine ⟨x + m * (Int.gcdA m n * k), ?_, ?_⟩
-  · exact Int.modEq_iff_dvd.mpr ⟨-(Int.gcdA m n * k), by ring⟩
-  · refine Int.modEq_iff_dvd.mpr ⟨Int.gcdB m n * k, ?_⟩
-    -- `hk : y - x = gcd m n * k` is the divisibility witness; solved for `y` it is the shape
-    -- `hbez` can be substituted into.
-    have hy : y = x + (↑(Int.gcd m n) : ℤ) * k := by linarith
-    rw [hy, hbez]
-    ring
-
 /-- Entries of a `Γ(N)` matrix agree with the identity's modulo `N`. -/
 private lemma intCast_apply_modEq_one_of_mem_Gamma (N : ℕ) (γ : SL(2, ℤ))
     (hγ : γ ∈ Gamma N) (i j : Fin 2) :
@@ -808,7 +793,7 @@ private lemma exists_matrix_modEq_one_modEq_of_mem_Gamma_gcd {a b : ℕ} {γ : S
     have hgcd : (↑(Int.gcd (a : ℤ) (b : ℤ)) : ℤ) = ↑(Nat.gcd a b) := by simp [Int.gcd]
     rw [hgcd]
     exact intCast_apply_modEq_one_of_mem_Gamma _ γ hγ
-  choose z hza hzb using fun i j => exists_int_modEq_of_modEq_gcd (hcompat i j)
+  choose z hza hzb using fun i j => Int.exists_modEq_and_modEq_of_modEq_gcd (hcompat i j)
   exact ⟨Matrix.of z, hza, hzb⟩
 
 /-- **Shimura, Lemma 3.28.** `Γ(gcd a b) = Γ(a) ⊔ Γ(b)`: the join of two principal congruence

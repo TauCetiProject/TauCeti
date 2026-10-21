@@ -23,6 +23,8 @@ the group algebra on `Multiplicative (ULift (Fin n) →₀ ℤ)`.  Off the diago
 so over a nontrivial base ring every ordered pair `i ≠ j` gives an element of
 `Derivation.nontrivialAdjointWeights`.  On the diagonal the matrix units have trivial weight,
 identifying the diagonal tangent directions as torus-fixed vectors.
+Geometric scalar extension preserves all these normalized matrix-unit tangent vectors,
+including their scalar parameters.
 
 ## Main declarations
 
@@ -230,6 +232,20 @@ def matrixUnitTangent (i j : Fin n) :
 theorem cotangentDualMatrixEquiv_matrixUnitTangent (i j : Fin n) :
     cotangentDualMatrixEquiv (matrixUnitTangent (k := k) i j) = Matrix.single i j 1 := by
   exact LinearEquiv.apply_symm_apply _ _
+
+/-- Geometric scalar extension preserves every normalized matrix-unit tangent vector,
+including the diagonal directions, with its scalar parameter. -/
+@[simp↓]
+theorem cotangentDualBaseChangeEquiv_tmul_matrixUnitTangent
+    (R : Type u) (K : Type*) [CommRing R] [CommRing K] [Algebra R K]
+    {n : ℕ} (i j : Fin n) (c : K) :
+    cotangentDualBaseChangeEquiv R K n (c ⊗ₜ[R] matrixUnitTangent (k := R) i j) =
+      c • matrixUnitTangent (k := K) i j := by
+  apply cotangentDualMatrixEquiv.injective
+  rw [cotangentDualMatrixEquiv_cotangentDualBaseChangeEquiv_tmul,
+    cotangentDualMatrixEquiv_matrixUnitTangent, map_smul,
+    cotangentDualMatrixEquiv_matrixUnitTangent]
+  simp only [Matrix.map_single, map_one]
 
 /-- The universal diagonal-torus adjoint action multiplies the `(i, j)` matrix entry by the
 character `e_i - e_j`.  Unlike the matrix-unit specialization below, this formula applies to an

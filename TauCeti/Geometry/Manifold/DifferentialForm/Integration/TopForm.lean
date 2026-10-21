@@ -459,9 +459,7 @@ public theorem IntegrableTopForm.add {φ ψ : RoughForm I M ℝ k}
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   rw [integrableTopForm_iff] at hφ hψ ⊢
-  -- RoughForm has dependent tangent fibres, definitionally the fixed model space E.
-  -- HasCompactSupport.add needs that fixed codomain to infer its function argument.
-  refine ⟨HasCompactSupport.add (f := (show M → E [⋀^Fin k]→L[ℝ] ℝ from φ)) hφ.1 hψ.1, hφ.2.1, ?_⟩
+  refine ⟨RoughForm.isCompact_tsupport_add hφ.1 hψ.1, hφ.2.1, ?_⟩
   intro b α
   have heq : (φ + ψ).signedInChartAt b α (fun _ ↦ 1) =
       fun y ↦ φ.signedInChartAt b α (fun _ ↦ 1) y + ψ.signedInChartAt b α (fun _ ↦ 1) y :=
@@ -476,13 +474,7 @@ public theorem IntegrableTopForm.zero (b : Module.Basis (Fin k) ℝ E) :
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   rw [integrableTopForm_iff]
-  have hz : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ)
-      (0 : RoughForm I M ℝ k)) := by
-    -- Identify the dependent zero section with a fixed-codomain zero function so that
-    -- the function tsupport_zero simplification can apply.
-    change IsCompact (_root_.tsupport (0 : M → E [⋀^Fin k]→L[ℝ] ℝ))
-    simp
-  refine ⟨hz, ⟨b⟩, ?_⟩
+  refine ⟨RoughForm.isCompact_tsupport_zero, ⟨b⟩, ?_⟩
   intro b α
   have heq : (0 : RoughForm I M ℝ k).signedInChartAt b α (fun _ ↦ 1) = 0 :=
     funext (RoughForm.signedInChartAt_zero b α (fun _ ↦ 1))

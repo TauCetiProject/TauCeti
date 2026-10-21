@@ -58,8 +58,10 @@ complete Hausdorff targets.
   denominator becomes a pseudouniformiser, so the completed localization is Tate.
 * `isTateRing_completion_locTopology_of_isTateRing`: over a Tate base the completed localization
   is Tate for every denominator.
-* `existsUnique_continuous_ringHom_completion_locTopology`: the universal property, for complete
-  Hausdorff targets.
+* `existsUnique_continuous_ringHom_completion_locTopology_of_isBounded_submonoidClosure`: the
+  universal property, for complete Hausdorff targets and an arbitrary numerator set.
+* `existsUnique_continuous_ringHom_completion_locTopology`: its form for a finite numerator set,
+  with each fraction sent to a power-bounded element.
 * `completion_locTopology_ringHom_ext_of_continuous`: two continuous ring homomorphisms out of
   `A⟨T/s⟩` agreeing on `A` are equal, so a map out of `A⟨T/s⟩` is determined by its restriction to
   `A`. Unlike the universal property this needs no hypothesis on `s` or the fractions — those
@@ -119,7 +121,7 @@ It is *the* uniformity, not merely one compatible with the topology:
 additive group, so a consumer arriving with its own such structure rewrites rather than
 transports. -/
 @[instance_reducible]
-noncomputable def locUniformSpace (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*)
+noncomputable def locUniformSpace (P : PairOfDefinition A) (T : Set A) (s : A) (S : Type*)
     [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
     [IsTopologicalRing A] : UniformSpace S :=
   letI tS := locTopology P T s S hden
@@ -130,13 +132,13 @@ noncomputable def locUniformSpace (P : PairOfDefinition A) (T : Finset A) (s : A
 of the packaged uniformity: it lets a statement made at one be rewritten to the other. -/
 @[simp]
 theorem locUniformSpace_toTopologicalSpace [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     (locUniformSpace P T s S hden).toTopologicalSpace = locTopology P T s S hden := (rfl)
 
 /-- The image of an open ideal stays open under localization at the packaged uniformity. -/
 theorem isOpen_map_algebraMap_locUniformSpace [IsTopologicalRing A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S]
+    (P : PairOfDefinition A) (T : Set A) (s : A) (S : Type*) [CommRing S]
     [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) {J : Ideal A} (hJ : IsOpen (J : Set A)) :
     letI := locUniformSpace P T s S hden
@@ -147,7 +149,7 @@ theorem isOpen_map_algebraMap_locUniformSpace [IsTopologicalRing A]
 /-- `Aₛ` is a uniform additive group for `locUniformSpace`. The companion of `locUniformSpace`:
 the two together are what `UniformSpace.Completion S` needs. -/
 theorem isUniformAddGroup_locUniformSpace [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     @IsUniformAddGroup S (locUniformSpace P T s S hden) _ :=
   letI := isTopologicalRing_locTopology P T s S hden
@@ -157,7 +159,7 @@ theorem isUniformAddGroup_locUniformSpace [IsTopologicalRing A] (P : PairOfDefin
 topology rather than at `locTopology`, so that it applies where the packaged uniformity is in
 scope. -/
 theorem isTopologicalRing_locUniformSpace [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     IsTopologicalRing S :=
@@ -168,7 +170,7 @@ theorem isTopologicalRing_locUniformSpace [IsTopologicalRing A] (P : PairOfDefin
 a map runs between. It does not by itself identify any map; the structure maps *into* those rings
 are identified by `toCompletionLoc_heq` below, and the restriction maps out of them are still
 open. -/
-theorem locUniformSpace_congr [IsTopologicalRing A] (P : PairOfDefinition A) (T T' : Finset A)
+theorem locUniformSpace_congr [IsTopologicalRing A] (P : PairOfDefinition A) (T T' : Set A)
     (s s' : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     [IsLocalization.Away s' S] (hden : HasDenominatorPower P T s S)
     (hden' : HasDenominatorPower P T' s' S) (h : locSubring P T' s' S = locSubring P T s S) :
@@ -192,7 +194,7 @@ hypothesis for both pairs. This is the uniform counterpart of `locTopology_congr
 Compare `locUniformSpace_congr`, which instead fixes the pair of definition and changes the
 presentation `(T, s)` to one with the same ring of definition. -/
 theorem locUniformSpace_congr_pairOfDefinition [IsTopologicalRing A] (P P' : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) (hden' : HasDenominatorPower P' T s S) :
     locUniformSpace P T s S hden = locUniformSpace P' T s S hden' :=
   -- both are uniform additive group structures, so they agree once their topologies do; the
@@ -207,7 +209,7 @@ theorem locUniformSpace_congr_pairOfDefinition [IsTopologicalRing A] (P P' : Pai
 restates it so that it does not have to, which is what makes `powerBoundedSubring S` convenient to
 name there. -/
 theorem isHuberRing_locUniformSpace [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
@@ -220,7 +222,7 @@ same fact restated so that a consumer holding the uniformity need not transport 
 `locUniformSpace_toTopologicalSpace` itself. -/
 theorem isPowerBounded_algebraMap_of_isPowerBounded_locUniformSpace [IsTopologicalRing A]
     (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) {a : A} (ha : IsPowerBounded a) :
     letI := locUniformSpace P T s S hden
     IsPowerBounded (algebraMap A S a) :=
@@ -229,7 +231,7 @@ theorem isPowerBounded_algebraMap_of_isPowerBounded_locUniformSpace [IsTopologic
 /-- Each distinguished fraction `t/s` is power-bounded in `Aₛ`, at the uniformity's topology.
 The `locUniformSpace` companion of `isPowerBounded_divBy`. -/
 theorem isPowerBounded_divBy_locUniformSpace [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) {t : A} (ht : t ∈ T) :
     letI := locUniformSpace P T s S hden
     IsPowerBounded (divBy t s : S) :=
@@ -237,7 +239,7 @@ theorem isPowerBounded_divBy_locUniformSpace [IsTopologicalRing A] (P : PairOfDe
 
 /-- **The structure map `A → A⟨T/s⟩`**, the localisation map followed by the completion map. This
 is the canonical ring homomorphism the universal property extends. -/
-noncomputable def toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A)
+noncomputable def toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
@@ -252,7 +254,7 @@ noncomputable def toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A)
 /-- The structure map is the localisation map followed by the completion map. The body of
 `toCompletionLoc` is not exported, so this is how a consumer computes with it. -/
 @[simp]
-theorem toCompletionLoc_apply [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem toCompletionLoc_apply [IsTopologicalRing A] (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) (a : A) :
     letI := locUniformSpace P T s S hden
@@ -263,7 +265,7 @@ theorem toCompletionLoc_apply [IsTopologicalRing A] (P : PairOfDefinition A) (T 
 /-- **The structure map `A → A⟨T/s⟩` carries open ideals to ideals generating open ideals.** This
 is the openness hypothesis `hopen` of `presentationLimitPreAdicSpaceComap`, so it lets the structure
 map of a rational localisation induce a morphism of pre-adic spaces. -/
-theorem isOpen_map_toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A)
+theorem isOpen_map_toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) {J : Ideal A} (hJ : IsOpen (J : Set A)) :
     letI := locUniformSpace P T s S hden
@@ -290,7 +292,7 @@ be carried between presentations.
 The conclusion is `HEq` rather than `=` because the type `UniformSpace.Completion S` mentions the
 uniformity on `S`: the two structure maps do not share a codomain until `locUniformSpace_congr` is
 applied. -/
-theorem toCompletionLoc_heq [IsTopologicalRing A] (P : PairOfDefinition A) (T T' : Finset A)
+theorem toCompletionLoc_heq [IsTopologicalRing A] (P : PairOfDefinition A) (T T' : Set A)
     (s s' : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     [IsLocalization.Away s' S] (hden : HasDenominatorPower P T s S)
     (hden' : HasDenominatorPower P T' s' S) (h : locSubring P T' s' S = locSubring P T s S) :
@@ -306,7 +308,7 @@ under `A` needs before it can be carried between pairs of definition.
 As for `toCompletionLoc_heq`, the conclusion is `HEq` rather than `=` because the type
 `UniformSpace.Completion S` mentions the uniformity on `S`. -/
 theorem toCompletionLoc_heq_pairOfDefinition [IsTopologicalRing A] (P P' : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) (hden' : HasDenominatorPower P' T s S) :
     HEq (toCompletionLoc P T s S hden) (toCompletionLoc P' T s S hden') :=
   (algebraMap A S).completionCoe_comp_heq
@@ -320,7 +322,7 @@ to the topology the packaged uniformity induces.
 two topologies are equal, but not syntactically, so the transport has to be named: naming it here
 keeps the cast out of every statement about `A⟨T/s⟩` below. -/
 noncomputable def localizationUniform [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     PairOfDefinition S :=
@@ -331,7 +333,7 @@ is along an equality of topologies and `ringOfDefinition` is a `Subring S`, whic
 on one. This is what makes the completed pair's API reduce to the concrete data. -/
 @[simp]
 theorem localizationUniform_ringOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     (localizationUniform P T s S hden).ringOfDefinition = locSubring P T s S :=
@@ -342,7 +344,7 @@ theorem localizationUniform_ringOfDefinition [IsTopologicalRing A] (P : PairOfDe
 characteristic lemmas to the concrete `D` and `J`. -/
 @[simp]
 theorem mem_localizationUniform_idealOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S)
     {x : letI := locUniformSpace P T s S hden;
       (localizationUniform P T s S hden).ringOfDefinition} :
@@ -358,7 +360,7 @@ the ring of definition, `idealImage n` is an `AddSubgroup S`, so this is an equa
 membership statement. With `coe_mem_completionIdealImage_iff` or `coe_completionIdealImage` it
 computes the completed pair's neighbourhoods `completionIdealImage n` from `locIdealImage n`. -/
 @[simp]
-theorem localizationUniform_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A)
+theorem localizationUniform_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) (n : ℕ) :
     letI := locUniformSpace P T s S hden
@@ -378,7 +380,7 @@ theorem localizationUniform_idealImage [IsTopologicalRing A] (P : PairOfDefiniti
 the basic neighbourhood `locIdealImage P T s S m`, then the image of `a` in `A⟨T/s⟩` also lies
 within `completionIdealImage m` of `x`. -/
 theorem toCompletionLoc_sub_mem_completionIdealImage [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) {m : ℕ} :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -404,7 +406,7 @@ Its ring of definition and ideal of definition are characterised by
 `completionLocalization_ringOfDefinition` and `mem_completionLocalization_idealOfDefinition`,
 which are how a consumer computes with it — the body is not exposed. -/
 noncomputable def completionLocalization [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -419,7 +421,7 @@ noncomputable def completionLocalization [IsTopologicalRing A] (P : PairOfDefini
 supplies for the localisation pair: the closure of the image of `D`. -/
 @[simp]
 theorem completionLocalization_ringOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -439,7 +441,7 @@ does not expose — the same shape as `PairOfDefinition.mem_completion_idealOfDe
 this delegates to. -/
 @[simp]
 theorem mem_completionLocalization_idealOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -458,7 +460,7 @@ theorem mem_completionLocalization_idealOfDefinition [IsTopologicalRing A] (P : 
 
 /-- **The structure map `A → A⟨T/s⟩` is continuous**: it is the continuous localisation map
 followed by the completion map. -/
-theorem continuous_toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A)
+theorem continuous_toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
@@ -480,7 +482,7 @@ The statement introduces `locUniformSpace`, `isUniformAddGroup_locUniformSpace` 
 `isTopologicalRing_locUniformSpace`, because `locTopology` is not an instance and
 `UniformSpace.Completion S` is not well-formed without them. -/
 theorem isHuberRing_completion_locTopology [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -495,7 +497,7 @@ theorem isHuberRing_completion_locTopology [IsTopologicalRing A] (P : PairOfDefi
 localization: it is inverted by localization and remains topologically nilpotent under the
 continuous structure map. -/
 theorem isPseudoUniformizer_toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
     [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
     (hs : IsTopologicallyNilpotent s) :
     letI := locUniformSpace P T s S hden
@@ -512,7 +514,7 @@ theorem isPseudoUniformizer_toCompletionLoc [IsTopologicalRing A] (P : PairOfDef
 
 /-- The completed localization at a topologically nilpotent denominator is a Tate ring. -/
 theorem isTateRing_completion_locTopology_of_isTopologicallyNilpotent [IsTopologicalRing A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A)
+    (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) (hs : IsTopologicallyNilpotent s) :
     letI := locUniformSpace P T s S hden
@@ -532,7 +534,7 @@ for every denominator `s`.
 `isTateRing_completion_locTopology_of_isTopologicallyNilpotent` is the companion for a
 topologically nilpotent denominator; it asks no Tate hypothesis of the base. -/
 theorem isTateRing_completion_locTopology_of_isTateRing [IsTopologicalRing A] [IsTateRing A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    (P : PairOfDefinition A) (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
     [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -557,7 +559,7 @@ hypothesis that lemma takes. Nothing is unfolded at the level of coercions — t
 with bundled `RingHom`s throughout. Crossing the unexported body once here keeps it out of every
 consumer. -/
 theorem completion_locTopology_ringHom_ext_of_continuous [IsTopologicalRing A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    (P : PairOfDefinition A) (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
     [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
     {B : Type*} [Semiring B] [TopologicalSpace B] [T2Space B] :
     letI := locUniformSpace P T s S hden
@@ -573,9 +575,46 @@ theorem completion_locTopology_ringHom_ext_of_continuous [IsTopologicalRing A]
     (RingHom.ext fun a ↦ ?_)
   exact congrArg (fun k : A →+* B ↦ k a) hcomp
 
-/-- **The universal property of `A⟨T/s⟩`**, for complete Hausdorff targets: a ring homomorphism
-`φ : A →+* B` continuous at zero, with `φ s` a unit and each fraction `φ t / φ s` power-bounded,
-extends to the completion in exactly one continuous way.
+/-- **The universal property of `A⟨T/s⟩`**, for complete Hausdorff targets and an arbitrary
+numerator set `T`: a ring homomorphism `φ : A →+* B` continuous at zero, with `φ s` a unit and the
+fractions `φ t / φ s`, `t ∈ T`, generating a bounded submonoid, extends to the completion in
+exactly one continuous way.
+
+The hypotheses are those of
+`existsUnique_continuous_ringHom_locTopology_of_isBounded_submonoidClosure` together with `B`
+complete and separated, which is what an extension across the completion requires. As there, the
+condition on the fractions is sufficient and is not claimed to be necessary. -/
+theorem existsUnique_continuous_ringHom_completion_locTopology_of_isBounded_submonoidClosure
+    {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
+    [CompleteSpace B] [T0Space B] [IsTopologicalRing A] (P : PairOfDefinition A) (T : Set A)
+    (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) {φ : A →+* B} (hφ : ContinuousAt φ 0) (hs : IsUnit (φ s))
+    (hpow : IsBounded (Submonoid.closure ((fun t ↦ φ t * ↑hs.unit⁻¹) '' T) : Set B)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∃! g : UniformSpace.Completion S →+* B,
+      Continuous g ∧ g.comp (toCompletionLoc P T s S hden) = φ := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  obtain ⟨f, ⟨hfc, hfe⟩, _⟩ :=
+    existsUnique_continuous_ringHom_locTopology_of_isBounded_submonoidClosure P T s S hden hφ hs
+      hpow
+  have hext : (UniformSpace.Completion.extensionHom f hfc).comp
+      (toCompletionLoc P T s S hden) = φ := by
+    ext a
+    simpa [UniformSpace.Completion.extensionHom_coe, UniformSpace.Completion.coeRingHom] using
+      congrArg (fun h => h a) hfe
+  refine ⟨UniformSpace.Completion.extensionHom f hfc,
+    ⟨UniformSpace.Completion.continuous_extension, hext⟩, fun g ⟨hgc, hge⟩ ↦ ?_⟩
+  -- uniqueness is extensionality: both maps are continuous and agree after `toCompletionLoc`
+  exact completion_locTopology_ringHom_ext_of_continuous P T s S hden g _ hgc
+    UniformSpace.Completion.continuous_extension (hge.trans hext.symm)
+
+/-- **The universal property of `A⟨T/s⟩`**, for complete Hausdorff targets and a finite numerator
+set `T`: a ring homomorphism `φ : A →+* B` continuous at zero, with `φ s` a unit and each fraction
+`φ t / φ s` power-bounded, extends to the completion in exactly one continuous way.
 
 The hypotheses are those of `existsUnique_continuous_ringHom_locTopology` together with `B`
 complete and separated, which is what an extension across the completion requires. As there, the
@@ -590,22 +629,10 @@ theorem existsUnique_continuous_ringHom_completion_locTopology {B : Type*} [Comm
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     ∃! g : UniformSpace.Completion S →+* B,
-      Continuous g ∧ g.comp (toCompletionLoc P T s S hden) = φ := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  obtain ⟨f, ⟨hfc, hfe⟩, _⟩ :=
-    existsUnique_continuous_ringHom_locTopology P T s S hden hφ hs hpow
-  have hext : (UniformSpace.Completion.extensionHom f hfc).comp
-      (toCompletionLoc P T s S hden) = φ := by
-    ext a
-    simpa [UniformSpace.Completion.extensionHom_coe, UniformSpace.Completion.coeRingHom] using
-      congrArg (fun h => h a) hfe
-  refine ⟨UniformSpace.Completion.extensionHom f hfc,
-    ⟨UniformSpace.Completion.continuous_extension, hext⟩, fun g ⟨hgc, hge⟩ ↦ ?_⟩
-  -- uniqueness is extensionality: both maps are continuous and agree after `toCompletionLoc`
-  exact completion_locTopology_ringHom_ext_of_continuous P T s S hden g _ hgc
-    UniformSpace.Completion.continuous_extension (hge.trans hext.symm)
+      Continuous g ∧ g.comp (toCompletionLoc P T s S hden) = φ :=
+  existsUnique_continuous_ringHom_completion_locTopology_of_isBounded_submonoidClosure P T s S
+    hden hφ hs
+    (isBounded_submonoidClosure (T.finite_toSet.image _) fun _ ⟨t, ht, h⟩ ↦ h ▸ hpow t ht)
 
 
 /-- **The identity law.** A continuous ring endomorphism of `A⟨T/s⟩` fixing the structure map from
@@ -614,7 +641,7 @@ theorem existsUnique_continuous_ringHom_completion_locTopology {B : Type*} [Comm
 As with the composition law below, this constructs no restriction map: it says that at most one
 continuous endomorphism is compatible with the structure map, and names it. -/
 theorem eq_id_of_comp_toCompletionLoc_eq_self [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A)
+    (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
@@ -642,7 +669,7 @@ completed localisations of two further presentations and their structure maps, b
 requires that, and no restriction map is constructed: this is a uniqueness statement about maps
 compatible with the structure maps, not Layer 3.1's composition law for restriction maps. -/
 theorem eq_comp_of_comp_toCompletionLoc_eq [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S)
     {B C : Type*} [Semiring B] [TopologicalSpace B] [Semiring C] [TopologicalSpace C] [T2Space C]
     (phi' : A →+* B) (phi'' : A →+* C) :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.Connected.PathConnected
 
 /-!
 # The wedge sum of a family of pointed spaces
@@ -35,7 +36,8 @@ the universal property `TauCeti.WedgeSum.lift`.
 * `TauCeti.WedgeSum.subtypeVal` and `TauCeti.WedgeSum.isOpenEmbedding_subtypeVal`: the wedge sum
   of open neighbourhoods of the base points is an open subspace of the whole wedge sum.
 * `TauCeti.WedgeSum.proj`: the retraction of a wedge sum onto one summand, collapsing the others
-  to the base point.
+  to the base point. The retractions separate points, so a wedge sum of Hausdorff spaces is
+  Hausdorff.
 
 ## References
 
@@ -349,7 +351,44 @@ lemma proj_comp_incl (i : ι) : (proj x i).comp (incl x i) = ContinuousMap.id (X
   ext z
   simp
 
+/-- Points of the wedge sum are determined by their retractions onto all the summands. -/
+theorem proj_injective : Function.Injective fun w : WedgeSum x => fun i => proj x i w := by
+  intro v w h
+  have h' (i : ι) : proj x i v = proj x i w := congrFun h i
+  induction v using ind with
+  | base =>
+    induction w using ind with
+    | base => rfl
+    | incl j z =>
+      have hz : x j = z := by simpa using h' j
+      rw [← hz, incl_apply_self]
+  | incl i y =>
+    induction w using ind with
+    | base => simpa using h' i
+    | incl j z =>
+      by_cases hij : j = i
+      · subst hij
+        simpa using h' j
+      · have hy : y = x i := by simpa [hij] using h' i
+        have hz : x j = z := by simpa [Ne.symm hij] using h' j
+        rw [hy, ← hz, incl_apply_self, incl_apply_self]
+
+/-- **The wedge sum of Hausdorff spaces is Hausdorff**: the retractions onto the summands
+separate its points. -/
+instance [∀ i, T2Space (X i)] : T2Space (WedgeSum x) :=
+  .of_injective_continuous proj_injective (continuous_pi fun i => (proj x i).continuous)
+
 end Proj
+
+/-- **The wedge sum of path-connected spaces is path connected.** -/
+instance [∀ i, PathConnectedSpace (X i)] : PathConnectedSpace (WedgeSum x) := by
+  have h (w : WedgeSum x) : Joined (base x) w := by
+    induction w using ind with
+    | base => exact Joined.refl _
+    | incl i y =>
+      rw [← incl_apply_self (x := x) i]
+      exact (PathConnectedSpace.joined (x i) y).map (incl x i).continuous
+  exact ⟨⟨base x⟩, fun v w => (h v).symm.trans (h w)⟩
 
 end WedgeSum
 

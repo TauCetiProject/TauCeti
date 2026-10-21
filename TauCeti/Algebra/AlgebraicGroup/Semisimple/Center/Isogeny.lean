@@ -20,7 +20,7 @@ All results hold over any field, including when the central kernel is nonreduced
 need not be assumed semisimple: faithful flatness and triviality of its center suffice.
 The kernel calculation is `kernelHopfIdeal_eq_centerDefiningIdeal_of_injective`; coordinate
 exactness is `coinvariants_kernelHopfIdeal_eq_range`. The represented quotient and its
-factorization are those of `Semisimple.Center.RepresentableQuotient`.
+factorization are those of `Reductive.CenterQuotient`.
 
 ## References
 
@@ -46,11 +46,11 @@ the target's coordinate algebra to the quotient's coordinate algebra. -/
 noncomputable def centerQuotientIsoOfIsCentralIsogeny (f : H ⟶ G.obj)
     (hf : CommHopfAlgCat.IsCentralIsogeny f)
     (hH : CommHopfAlgCat.centerDefiningIdeal H = HopfIdeal.augmentation k H) :
-    H ≅ hG.centerQuotient.obj := by
-  let _ := hG.isIso_liftCenterQuotient_of_faithfullyFlat f hf.faithfullyFlat
+    H ≅ hG.reductive.centerQuotient.obj := by
+  let _ := hG.reductive.isIso_liftCenterQuotient_of_faithfullyFlat f hf.faithfullyFlat
     (CommHopfAlgCat.kernelHopfIdeal_eq_centerDefiningIdeal_of_injective f hf.injective
       hf.isCentral_kernelHopfIdeal hH)
-  exact asIso (hG.liftCenterQuotient f
+  exact asIso (hG.reductive.liftCenterQuotient f
     (CommHopfAlgCat.kernelHopfIdeal_eq_centerDefiningIdeal_of_injective f hf.injective
       hf.isCentral_kernelHopfIdeal hH).le)
 
@@ -60,7 +60,7 @@ projection. This equation characterizes it uniquely. -/
 theorem centerQuotientIsoOfIsCentralIsogeny_hom_comp (f : H ⟶ G.obj)
     (hf : CommHopfAlgCat.IsCentralIsogeny f)
     (hH : CommHopfAlgCat.centerDefiningIdeal H = HopfIdeal.augmentation k H) :
-    (hG.centerQuotientIsoOfIsCentralIsogeny f hf hH).hom ≫ hG.centerQuotientι = f := by
+    (hG.centerQuotientIsoOfIsCentralIsogeny f hf hH).hom ≫ hG.reductive.centerQuotientι = f := by
   simp [centerQuotientIsoOfIsCentralIsogeny]
 
 /-- The inverse comparison intertwines the center quotient with the given isogeny. -/
@@ -68,7 +68,7 @@ theorem centerQuotientIsoOfIsCentralIsogeny_hom_comp (f : H ⟶ G.obj)
 theorem centerQuotientIsoOfIsCentralIsogeny_inv_comp (f : H ⟶ G.obj)
     (hf : CommHopfAlgCat.IsCentralIsogeny f)
     (hH : CommHopfAlgCat.centerDefiningIdeal H = HopfIdeal.augmentation k H) :
-    (hG.centerQuotientIsoOfIsCentralIsogeny f hf hH).inv ≫ f = hG.centerQuotientι :=
+    (hG.centerQuotientIsoOfIsCentralIsogeny f hf hH).inv ≫ f = hG.reductive.centerQuotientι :=
   (hG.centerQuotientIsoOfIsCentralIsogeny f hf hH).inv_comp_eq.mpr
     (hG.centerQuotientIsoOfIsCentralIsogeny_hom_comp f hf hH).symm
 
@@ -77,10 +77,10 @@ compatible with the two quotient projections. -/
 theorem centerQuotientIsoOfIsCentralIsogeny_hom_unique (f : H ⟶ G.obj)
     (hf : CommHopfAlgCat.IsCentralIsogeny f)
     (hH : CommHopfAlgCat.centerDefiningIdeal H = HopfIdeal.augmentation k H)
-    (g : H ⟶ hG.centerQuotient.obj) (hg : g ≫ hG.centerQuotientι = f) :
+    (g : H ⟶ hG.reductive.centerQuotient.obj) (hg : g ≫ hG.reductive.centerQuotientι = f) :
     g = (hG.centerQuotientIsoOfIsCentralIsogeny f hf hH).hom := by
   simpa only [centerQuotientIsoOfIsCentralIsogeny, asIso_hom] using
-    hG.liftCenterQuotient_unique f
+    hG.reductive.liftCenterQuotient_unique f
       (CommHopfAlgCat.kernelHopfIdeal_eq_centerDefiningIdeal_of_injective f hf.injective
         hf.isCentral_kernelHopfIdeal hH).le g hg
 
