@@ -34,7 +34,6 @@ component formulas to downstream constructions.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§15--16.
 * J. S. Milne, *Algebraic Groups* (2017), §6.a.
 
-This is a prerequisite for Layer 5, "The unipotent radical", of the ReductiveGroups roadmap.
 For two normal closed subgroup schemes, conjugation supplies the action below; multiplication
 from their semidirect product is then a group-scheme morphism whose image is their product.
 -/

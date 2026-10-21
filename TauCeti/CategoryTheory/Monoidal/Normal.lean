@@ -38,8 +38,7 @@ the interface needed to put a semidirect-product group structure on an internal 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§15--16.
 * J. S. Milne, *Algebraic Groups* (2017), §6.a.
 
-This is the conjugation-action input for Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap. The product of two normal unipotent subgroup schemes is obtained as the
+The product of two normal unipotent subgroup schemes is obtained as the
 image of multiplication from the semidirect product defined by this action.
 -/
 
