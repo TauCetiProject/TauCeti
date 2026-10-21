@@ -34,14 +34,14 @@ noncomputable section
 open MeasureTheory ProbabilityTheory
 open scoped ENNReal
 
-namespace MeasureTheory.Measure
+namespace ProbabilityTheory.IsGaussian
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
 /-- Finite products of affine linear observables of a Gaussian measure are integrable,
 including the empty product. -/
-theorem integrable_prod_dual_of_isGaussian (μ : Measure E) [IsGaussian μ]
+theorem integrable_prod_dual (μ : Measure E) [IsGaussian μ]
     {ι : Type*} (s : Finset ι) (L : ι → StrongDual ℝ E) (c : ι → ℝ) :
     Integrable (fun x ↦ ∏ i ∈ s, (L i x + c i)) μ := by
   classical
@@ -58,27 +58,29 @@ theorem integrable_prod_dual_of_isGaussian (μ : Measure E) [IsGaussian μ]
 
 variable [CompleteSpace E] [SecondCountableTopology E]
 
+/-- The fourth centered moment of a linear observable of a Gaussian measure is three times
+the square of its variance, expressed by the covariance bilinear form. -/
+theorem integral_pow_four_sub_dual (μ : Measure E) [IsGaussian μ] (L : StrongDual ℝ E) :
+    (∫ x, L (x - μ[id]) ^ 4 ∂μ) = 3 * covarianceBilinDual μ L L ^ 2 := by
+  have h := TauCeti.Probability.centralMoment_id_two_mul_gaussianReal
+    μ[L] (Var[L; μ].toNNReal) 2
+  norm_num [centralMoment, integral_id_gaussianReal] at h
+  rw [← IsGaussian.map_eq_gaussianReal L, integral_map (by fun_prop) (by fun_prop)] at h
+  rw [covarianceBilinDual_self_eq_variance IsGaussian.memLp_two_id]
+  have hmean : μ[L] = L μ[id] :=
+    L.integral_comp_comm (IsGaussian.integrable_id (μ := μ))
+  rw [hmean] at h
+  simpa only [map_sub, Real.coe_toNNReal _ (variance_nonneg L μ), mul_comm] using h
+
 /-- The fourth centered mixed moment of four linear observables of a Gaussian measure
 is the sum over their three pairings. No independence or nondegeneracy is assumed. -/
-theorem integral_mul_mul_mul_sub_dual_of_isGaussian (μ : Measure E) [IsGaussian μ]
+theorem integral_mul_mul_mul_sub_dual (μ : Measure E) [IsGaussian μ]
     (L₁ L₂ L₃ L₄ : StrongDual ℝ E) :
     (∫ x, L₁ (x - μ[id]) * L₂ (x - μ[id]) *
       L₃ (x - μ[id]) * L₄ (x - μ[id]) ∂μ) =
       covarianceBilinDual μ L₁ L₂ * covarianceBilinDual μ L₃ L₄ +
       covarianceBilinDual μ L₁ L₃ * covarianceBilinDual μ L₂ L₄ +
       covarianceBilinDual μ L₁ L₄ * covarianceBilinDual μ L₂ L₃ := by
-  -- The diagonal values come from the scalar Gaussian fourth centered moment.
-  have hfourth (L : StrongDual ℝ E) :
-      (∫ x, L (x - μ[id]) ^ 4 ∂μ) = 3 * covarianceBilinDual μ L L ^ 2 := by
-    have h := TauCeti.Probability.centralMoment_id_two_mul_gaussianReal
-      μ[L] (Var[L; μ].toNNReal) 2
-    norm_num [centralMoment, integral_id_gaussianReal] at h
-    rw [← IsGaussian.map_eq_gaussianReal L, integral_map (by fun_prop) (by fun_prop)] at h
-    rw [covarianceBilinDual_self_eq_variance IsGaussian.memLp_two_id]
-    have hmean : μ[L] = L μ[id] :=
-      L.integral_comp_comm (IsGaussian.integrable_id (μ := μ))
-    rw [hmean] at h
-    simpa only [map_sub, Real.coe_toNNReal _ (variance_nonneg L μ), mul_comm] using h
   -- Eight signed fourth powers polarize the product of the four observables.
   let L : Fin 8 → StrongDual ℝ E :=
     ![L₁ + L₂ + L₃ + L₄, L₁ + L₂ + L₃ - L₄,
@@ -87,7 +89,7 @@ theorem integral_mul_mul_mul_sub_dual_of_isGaussian (μ : Measure E) [IsGaussian
       L₁ - L₂ - L₃ + L₄, L₁ - L₂ - L₃ - L₄]
   let w : Fin 8 → ℝ := ![1, -1, -1, 1, -1, 1, 1, -1]
   have hint (i : Fin 8) : Integrable (fun x ↦ L i (x - μ[id]) ^ 4) μ := by
-    simpa [map_sub, sub_eq_add_neg] using μ.integrable_prod_dual_of_isGaussian
+    simpa [map_sub, sub_eq_add_neg] using integrable_prod_dual μ
       (Finset.univ : Finset (Fin 4)) (fun _ ↦ L i) (fun _ ↦ -L i μ[id])
   have hpolar :
       192 * (∫ x, L₁ (x - μ[id]) * L₂ (x - μ[id]) *
@@ -105,7 +107,7 @@ theorem integral_mul_mul_mul_sub_dual_of_isGaussian (μ : Measure E) [IsGaussian
       _ = _ := by
         rw [integral_finsetSum _ (fun i _ ↦ (hint i).const_mul (w i))]
         simp_rw [integral_const_mul]
-  simp_rw [hfourth] at hpolar
+  simp_rw [integral_pow_four_sub_dual] at hpolar
   -- Bilinearity and symmetry reduce the polarized variances to the three pairings.
   conv_rhs at hpolar =>
     simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, L, w, Matrix.cons_val_zero,
@@ -117,7 +119,7 @@ theorem integral_mul_mul_mul_sub_dual_of_isGaussian (μ : Measure E) [IsGaussian
     covarianceBilinDual_comm (μ := μ) L₄ L₃] at hpolar
   linear_combination hpolar / 192
 
-end MeasureTheory.Measure
+end ProbabilityTheory.IsGaussian
 
 namespace TauCeti.Probability
 
@@ -130,7 +132,7 @@ theorem integrable_prod_pow_sub_multivariateGaussian (m c : EuclideanSpace ℝ �
     (S : Matrix ι ι ℝ) (n : ι → ℕ) :
     Integrable (fun x ↦ ∏ i, (x i - c i) ^ n i) (multivariateGaussian m S) := by
   simpa [Fintype.prod_sigma, sub_eq_add_neg] using
-    (multivariateGaussian m S).integrable_prod_dual_of_isGaussian
+    IsGaussian.integrable_prod_dual (multivariateGaussian m S)
       (Finset.univ : Finset (Σ i, Fin (n i)))
       (fun p ↦ EuclideanSpace.proj p.1) (fun p ↦ -c p.1)
 
@@ -141,7 +143,7 @@ theorem integral_mul_mul_mul_sub_multivariateGaussian
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ} (hS : S.PosSemidef) (i j k l : ι) :
     (∫ x, (x i - m i) * (x j - m j) * (x k - m k) * (x l - m l)
       ∂multivariateGaussian m S) = S i j * S k l + S i k * S j l + S i l * S j k := by
-  have h := (multivariateGaussian m S).integral_mul_mul_mul_sub_dual_of_isGaussian
+  have h := IsGaussian.integral_mul_mul_mul_sub_dual (multivariateGaussian m S)
     (EuclideanSpace.proj i) (EuclideanSpace.proj j)
     (EuclideanSpace.proj k) (EuclideanSpace.proj l)
   have hcov (i j : ι) : covarianceBilinDual (multivariateGaussian m S)
