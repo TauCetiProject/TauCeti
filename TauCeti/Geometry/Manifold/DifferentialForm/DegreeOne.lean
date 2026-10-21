@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 
@@ -34,6 +35,8 @@ derivative applies.
   statements for fixed-coefficient forms. For `F = ℝ` the bundle of fibrewise linear maps is
   `TauCeti.CotangentBundle I M`, so these identify smooth real one-forms with smooth sections of
   the cotangent bundle.
+* `TauCeti.SmoothForm.mpullback_apply_degreeOne`: the pullback of a one-form along a smooth map
+  evaluates a tangent vector by applying the form to its image under the derivative.
 -/
 
 public section
@@ -153,6 +156,25 @@ theorem degreeOneEquiv_symm_apply_apply
     (v : Fin 1 → TangentSpace I x) :
     (degreeOneEquiv.symm s).1 x v = s x (v 0) :=
   (rfl)
+
+/-- A smooth one-form evaluates a family of one tangent vector as its section evaluates that
+vector. -/
+theorem degreeOneEquiv_apply_apply_zero (φ : SmoothForm I M F 1) (x : M)
+    (v : Fin 1 → TangentSpace I x) :
+    degreeOneEquiv φ x (v 0) = φ.1 x v := by
+  rw [degreeOneEquiv_apply_apply]
+  exact congrArg (φ.1 x) (funext fun i ↦ by rw [Fin.fin_one_eq_zero i])
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
+
+/-- **Pullback of a one-form.** Pulling back a smooth one-form `α` along a smooth map `f`
+evaluates a tangent vector `v` at `z` by applying `α` at `f z` to the derivative of `f` at `z`. -/
+theorem mpullback_apply_degreeOne {f : M' → M} (hf : ContMDiff I' I ∞ f)
+    (α : SmoothForm I M F 1) (z : M') (v : Fin 1 → TangentSpace I' z) :
+    (mpullback f hf α).1 z v = degreeOneEquiv α (f z) (mfderiv I' I f z (v 0)) := by
+  rw [mpullback_apply]
+  exact (degreeOneEquiv_apply_apply_zero α (f z) fun i ↦ mfderiv I' I f z (v i)).symm
 
 end SmoothForm
 
