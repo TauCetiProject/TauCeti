@@ -179,23 +179,17 @@ theorem subst_toPowerSeries_eq_subst_smul_toPowerSeries (φ : FormalCoordinate R
       (φ • F).toPowerSeries.subst
         ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) φ.toPowerSeries,
           PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) φ.toPowerSeries] := by
-  have hX : ![(X 0 : MvPowerSeries (Fin 2) R), X 1] = X := by
-    funext s
-    fin_cases s <;> rfl
   rw [subst_smul_toPowerSeries_subst φ F (PowerSeries.HasSubst.X 0) (PowerSeries.HasSubst.X 1),
-    hX, subst_self, id]
+    finTwo_X_eq_X, subst_self, id]
 
 /-- Formal coordinates act on formal group laws: `1 • F = F` and `(φ * ψ) • F = φ • (ψ • F)`. -/
 noncomputable instance instMulActionFormalCoordinate :
     MulAction (FormalCoordinate R) (FormalGroup R) where
   one_smul F := FormalGroup.ext <| by
-    have hX : ![(X 0 : MvPowerSeries (Fin 2) R), X 1] = X := by
-      funext s
-      fin_cases s <;> rfl
     rw [smul_toPowerSeries, inv_one, FormalCoordinate.toPowerSeries_one,
       PowerSeries.subst_X (PowerSeries.HasSubst.X 0),
       PowerSeries.subst_X (PowerSeries.HasSubst.X 1),
-      hX, subst_self, id,
+      finTwo_X_eq_X, subst_self, id,
       PowerSeries.subst_X (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff)]
   mul_smul φ ψ F := FormalGroup.ext <| by
     have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
