@@ -22,9 +22,9 @@ whose `2I - A` is positive definite is a simply-laced Dynkin diagram and convers
 (`SimpleGraph.posDef_graphCartanMatrix_iff`). Hence the graph of a valid affine diagram other than
 `Ã₁` is not isomorphic to the diagram of any valid finite Dynkin type. This is the hypothesis under
 which the non-Dynkin theorems about preprojective and zigzag algebras are stated, so those
-theorems apply to every affine diagram `Ãₙ` (`n ≥ 2`), `D̃ₙ`, `Ẽ₆`, `Ẽ₇` and `Ẽ₈`. The exclusion
-of `Ã₁` is necessary: its graph is a single edge, the diagram of `A₂`; only its Cartan matrix
-`!![2, -2; -2, 2]` records the double edge.
+theorems apply to every affine diagram `Ãₙ` (`n ≥ 2`) and to affine `Dₙ`, `E₆`, `E₇` and `E₈`. The
+exclusion of `Ã₁` is necessary: its graph is a single edge, the diagram of `A₂`; only its Cartan
+matrix `!![2, -2; -2, 2]` records the double edge.
 
 ## Main results
 

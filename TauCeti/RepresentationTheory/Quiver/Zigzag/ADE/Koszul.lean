@@ -12,18 +12,18 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Koszul.NonDy
 /-!
 # Koszulity of the affine `E₈` example
 
-The arm-labelled affine `E₈ = T_{2,3,6}` graph `TauCeti.zigzagAffineE8Graph` is the graph of the
-affine diagram `Ẽ₈`, so it is not a finite Dynkin diagram
+The arm-labelled affine `E₈ = T_{2,3,6}` graph `Γ = TauCeti.zigzagAffineE8Graph` is the graph of
+the affine diagram `E₈`, so it is not a finite Dynkin diagram
 (`TauCeti.not_exists_dynkinType_iso_zigzagAffineE8Graph`). The non-Dynkin theory of preprojective
 and zigzag algebras therefore applies to it, although, being a tree, it has no orientation without
 sinks. Over every field `k` and for every orientation `o`:
 
-* the preprojective algebra `Π_k(Ẽ₈, o)` is infinite-dimensional;
-* the left Koszul differential of `Π_k(Ẽ₈, o)` is injective at every vertex, so every right
+* the preprojective algebra `Π_k(Γ, o)` is infinite-dimensional;
+* the left Koszul differential of `Π_k(Γ, o)` is injective at every vertex, so every right
   vertex module has a linear Koszul resolution of length two;
-* the matrix Hilbert series of `Π_k(Ẽ₈, o)` is `C(-X)⁻¹`, where `C(q) = (1 + q²) I + q A` is the
-  graded Cartan matrix of the zigzag algebra of `Ẽ₈`;
-* every graded vertex simple of the zigzag algebra of `Ẽ₈` has a linear graded projective
+* the matrix Hilbert series of `Π_k(Γ, o)` is `C(-X)⁻¹`, where `C(q) = (1 + q²) I + q A` is the
+  graded Cartan matrix of the zigzag algebra of affine `E₈`;
+* every graded vertex simple of the zigzag algebra of affine `E₈` has a linear graded projective
   resolution.
 
 These are the affine counterparts of the finite `D₄` and `E₈` examples, whose preprojective
@@ -48,7 +48,7 @@ algebras are finite-dimensional.
 * R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, J. Algebra 246
   (2001), Section 3, for the zigzag algebra and its graded Cartan matrix.
 * V. G. Kac, *Infinite dimensional Lie algebras*, 3rd ed., Chapter 4, for the affine diagram
-  `Ẽ₈ = T_{2,3,6}`.
+  `E₈`, which is `T_{2,3,6}`.
 -/
 
 public section
