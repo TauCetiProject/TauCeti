@@ -84,7 +84,6 @@ theorem isGradedExtInternallyFinite_of_finite
 /-- For a finitely generated source and a finite-dimensional target over a left Noetherian
 algebra, graded Euler-admissibility requires precisely uniform eventual Ext-vanishing.
 The internal finiteness condition follows from the module hypotheses. -/
-@[simp]
 theorem isGradedEulerAdmissible_iff_isGradedExtBounded
     (X Y : GradedModuleCat.{max uA v} 𝒜) [Module.Finite A X] [Module.Finite k Y] :
     IsGradedEulerAdmissible.{w} k (shift 𝒜) X Y ↔
