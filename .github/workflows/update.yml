@@ -34,10 +34,10 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e29d8d82f21200c96510116cd3e004e9d33bcaea
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e29d8d82f21200c96510116cd3e004e9d33bcaea
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
           project-directory: .
       - name: Install checksum-verified elan
         env:
@@ -78,10 +78,10 @@ jobs:
           ref: main
           fetch-depth: 0
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e29d8d82f21200c96510116cd3e004e9d33bcaea
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e29d8d82f21200c96510116cd3e004e9d33bcaea
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
           project-directory: .
       - name: Publish the fixed-target bump
         env:
