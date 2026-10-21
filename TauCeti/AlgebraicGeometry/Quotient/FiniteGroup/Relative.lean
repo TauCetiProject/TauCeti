@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.RingTheory.Invariant.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Equalizer
-public import TauCeti.AlgebraicGeometry.RelativeSpec.MorphismProperties
 import TauCeti.RingTheory.Invariant.Localization
 
 /-!
@@ -433,16 +433,10 @@ instance : Surjective (relativeSpecInvariantsπ ρ) := by
 /-- The quotient projection is finite when `Spec_X(A)` is locally of finite type over `X`. -/
 instance isFinite_relativeSpecInvariantsπ [LocallyOfFiniteType A.relativeSpecToBase] :
     IsFinite (relativeSpecInvariantsπ ρ) := by
-  observe hasFiniteAffineProperty : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  have : IsZariskiLocalAtTarget @IsFinite.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ hasFiniteAffineProperty
-  refine (relativeSpecInvariantsπ_iff ρ @IsFinite).mpr fun U ↦ ?_
-  have : Algebra.FiniteType Γ(X, U.1) Γ(A.X, U.1) :=
-    (A.relativeSpec_finiteType_iff.mp inferInstance) U.1 U.2
-  have : Algebra.FiniteType (invariantSections ρ U.1) Γ(A.X, U.1) :=
-    Algebra.FiniteType.of_restrictScalars_finiteType Γ(X, U.1) _ _
-  exact IsFinite.SpecMap_iff _ |>.mpr (RingHom.finite_algebraMap.mpr Algebra.IsIntegral.finite)
+  have : LocallyOfFiniteType (relativeSpecInvariantsπ ρ ≫ relativeSpecInvariantsToBase ρ) := by
+    rwa [relativeSpecInvariantsπ_relativeSpecInvariantsToBase]
+  exact (IsFinite.iff_isIntegralHom_and_locallyOfFiniteType _).mpr
+    ⟨inferInstance, locallyOfFiniteType_of_comp _ (relativeSpecInvariantsToBase ρ)⟩
 
 end
 
