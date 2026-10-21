@@ -31,11 +31,12 @@ Morse theory on a complex vector space `V` of dimension `n`.
   Every positive definite Hermitian form on a finite-dimensional complex space is the inner
   product of some inner product space structure, so this is the general positive Hermitian
   quadratic function.
-* The sum `z ↦ ‖z‖ ^ 2 + Re (q z z)` still has the inner product as Levi form. On `ℂⁿ` with the
-  diagonal form `q(z, z) = ∑ j, a j * z j ^ 2` (`a j` real), its Morse index is the number of `j`
-  with `1 < |a j|`. Choosing `a`, every index between `0` and `n` occurs for a strictly
-  plurisubharmonic quadratic function, so the index bound `λ ≤ n` for strictly plurisubharmonic
-  functions cannot be improved.
+* For real `t`, the sum `z ↦ t ‖z‖ ^ 2 + Re (q z z)` has Levi form `t ⟪·, ·⟫`; in particular
+  `z ↦ ‖z‖ ^ 2 + Re (q z z)` still has the inner product as Levi form. On `ℂⁿ` with the diagonal
+  form `q(z, z) = ∑ j, a j * z j ^ 2` (`a j` real), the Morse index of `‖z‖ ^ 2 + Re (q z z)` is
+  the number of `j` with `1 < |a j|`. Choosing `a`, every index between `0` and `n` occurs for a
+  strictly plurisubharmonic quadratic function, so the index bound `λ ≤ n` for strictly
+  plurisubharmonic functions cannot be improved.
 * For an orthonormal basis `b` of a finite-dimensional complex inner product space, the function
   `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` has Levi form `a ⟪·, ·⟫` and Morse index
   `∑ⱼ ([a < ‖c j‖] + [a < -‖c j‖])`. In coordinates it is `∑ⱼ (a |zⱼ|² + Re (c j zⱼ²))`, and each
@@ -54,8 +55,9 @@ Morse theory on a complex vector space `V` of dimension `n`.
   plus the complex dimension of the kernel of `q.flip + q` is `n`.
 * `TauCeti.leviForm_norm_sq`, `TauCeti.morseIndex_norm_sq_complex`: the Levi form of `‖z‖ ^ 2`
   is the inner product, and its Morse index is zero.
-* `ContinuousLinearMap.leviForm_norm_sq_add_re_apply_self`: the Levi form of
-  `‖z‖ ^ 2 + Re (q z z)` is the inner product.
+* `ContinuousLinearMap.hessianQuadraticForm_mul_norm_sq_add_re_apply_self`,
+  `ContinuousLinearMap.leviForm_mul_norm_sq_add_re_apply_self`: the Hessian and the Levi form of
+  `a ‖z‖ ^ 2 + Re (q z z)`; the Levi form is `a ⟪·, ·⟫`.
 * `TauCeti.leviForm_euclidean_norm_sq_add_sum_re_sq`,
   `TauCeti.morseIndex_euclidean_norm_sq_add_sum_re_sq`: on `ℂⁿ`, the Levi form of
   `‖z‖ ^ 2 + ∑ j, a j * Re (z j ^ 2)` is the standard inner product and its Morse index is the
@@ -203,21 +205,41 @@ theorem morseIndex_norm_sq_complex [FiniteDimensional ℂ E] (x : E) :
 
 variable (q : E →L[ℂ] E →L[ℂ] ℂ)
 
-/-- Adding the real part of a holomorphic quadratic form to the squared norm does not change the
-Levi form: it is still the inner product. -/
+/-- Adding the real part of a holomorphic quadratic form to a real multiple `a ‖z‖ ^ 2` of the
+squared norm does not change the Levi form: it is still `a` times the inner product. -/
 @[simp]
-theorem _root_.ContinuousLinearMap.leviForm_norm_sq_add_re_apply_self (x : E) :
-    leviForm (fun z ↦ ‖z‖ ^ 2 + (q z z).re) x = innerₛₗ ℂ := by
-  simpa [Pi.add_def] using
-    leviForm_add (contDiff_norm_sq ℂ).contDiffAt (contDiffAt_re_apply_self q x)
+theorem _root_.ContinuousLinearMap.leviForm_mul_norm_sq_add_re_apply_self (a : ℝ) (x : E) :
+    leviForm (fun z ↦ a * ‖z‖ ^ 2 + (q z z).re) x = (a : ℂ) • innerₛₗ ℂ := by
+  have h : ContDiffAt ℝ 2 (a • fun z : E ↦ ‖z‖ ^ 2) x :=
+    ((contDiff_norm_sq ℂ).const_smul a).contDiffAt
+  simpa [Pi.add_def] using leviForm_add h (contDiffAt_re_apply_self q x)
 
-/-- The Hessian quadratic form of `z ↦ ‖z‖ ^ 2 + Re (q z z)` is `v ↦ 2 * ‖v‖ ^ 2 + 2 * Re (q v v)`,
-at every point. -/
-theorem _root_.ContinuousLinearMap.hessianQuadraticForm_norm_sq_add_re_apply_self (x v : E) :
-    hessianQuadraticForm (fun z ↦ ‖z‖ ^ 2 + (q z z).re) x v = 2 * ‖v‖ ^ 2 + 2 * (q v v).re := by
-  simpa only [Pi.add_def, add_apply, hessianQuadraticForm_norm_sq_complex,
-    q.hessianQuadraticForm_re_apply_self] using congr($(hessianQuadraticForm_add
-      (contDiff_norm_sq ℂ).contDiffAt (contDiffAt_re_apply_self q x)) v)
+/-- The function `a ‖z‖ ^ 2 + Re (q z z)` is `z ↦ B z z` for a continuous real bilinear form
+`B`. -/
+private theorem exists_bilinear_mul_norm_sq_add_re_apply_self (a : ℝ) :
+    ∃ B : E →L[ℝ] E →L[ℝ] ℝ, ∀ v w, B v w = a * RCLike.re (inner ℂ v w) + (q v w).re := by
+  let _ : InnerProductSpace ℝ E := InnerProductSpace.complexToReal
+  let J : E →L[ℝ] E →L[ℝ] ℝ := innerSL ℝ
+  refine ⟨a • J + (ContinuousLinearMap.compL ℝ E ℂ ℝ reCLM).comp (q.bilinearRestrictScalars ℝ),
+    fun v w ↦ ?_⟩
+  simp only [J, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.compL_apply, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+    reCLM_apply, smul_eq_mul]
+  rw [innerSL_apply_apply, real_inner_eq_re_inner ℂ]
+
+/-- The Hessian quadratic form of `z ↦ a ‖z‖ ^ 2 + Re (q z z)` is
+`v ↦ 2 a ‖v‖ ^ 2 + 2 Re (q v v)`, at every point. -/
+theorem _root_.ContinuousLinearMap.hessianQuadraticForm_mul_norm_sq_add_re_apply_self (a : ℝ)
+    (x v : E) :
+    hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (q z z).re) x v =
+      2 * a * ‖v‖ ^ 2 + 2 * (q v v).re := by
+  obtain ⟨B, hB⟩ := exists_bilinear_mul_norm_sq_add_re_apply_self q a
+  have hf : (fun z ↦ a * ‖z‖ ^ 2 + (q z z).re) = fun z ↦ B z z := by
+    funext z
+    rw [hB, inner_self_eq_norm_sq]
+  rw [hf, hessianQuadraticForm_apply, B.fderiv_fderiv_apply_self]
+  simp only [add_apply, ContinuousLinearMap.flip_apply, hB, inner_self_eq_norm_sq]
+  ring
 
 end NormSq
 
@@ -230,22 +252,12 @@ open scoped InnerProductSpace
 
 variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [Fintype ι]
 
-/-- The function `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` is `z ↦ B z z` for a real bilinear form `B`
-whose holomorphic part is a complex bilinear form `Q`. -/
-private theorem exists_bilinear_apply_self_eq (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ι → ℂ) :
-    ∃ (Q : E →L[ℂ] E →L[ℂ] ℂ) (B : E →L[ℝ] E →L[ℝ] ℝ),
-      (∀ v, Q v v = ∑ j, c j * ⟪b j, v⟫_ℂ ^ 2) ∧
-        ∀ v w, B v w = a * RCLike.re ⟪v, w⟫_ℂ + (Q v w).re := by
-  let _ : InnerProductSpace ℝ E := InnerProductSpace.complexToReal
-  let Q : E →L[ℂ] E →L[ℂ] ℂ :=
-    ∑ j, c j • (ContinuousLinearMap.mul ℂ ℂ).bilinearComp (innerSL ℂ (b j)) (innerSL ℂ (b j))
-  let J : E →L[ℝ] E →L[ℝ] ℝ := innerSL ℝ
-  refine ⟨Q, a • J + (compL ℝ E ℂ ℝ reCLM).comp (Q.bilinearRestrictScalars ℝ), fun v ↦ ?_,
-    fun v w ↦ ?_⟩
-  · simp [Q, sq]
-  · simp only [J, add_apply, smul_apply, comp_apply, compL_apply,
-      bilinearRestrictScalars_apply_apply, reCLM_apply, smul_eq_mul]
-    rw [innerSL_apply_apply, real_inner_eq_re_inner ℂ]
+/-- The holomorphic quadratic form `∑ⱼ c j ⟪b j, z⟫²` is `z ↦ Q z z` for a continuous complex
+bilinear form `Q`. -/
+private theorem exists_apply_self_eq_sum_mul_inner_sq (b : OrthonormalBasis ι ℂ E) (c : ι → ℂ) :
+    ∃ Q : E →L[ℂ] E →L[ℂ] ℂ, ∀ v, Q v v = ∑ j, c j * ⟪b j, v⟫_ℂ ^ 2 :=
+  ⟨∑ j, c j • (ContinuousLinearMap.mul ℂ ℂ).bilinearComp (innerSL ℂ (b j)) (innerSL ℂ (b j)),
+    fun v ↦ by simp [sq]⟩
 
 /-- **The Hessian of a Hermitian plus holomorphic quadratic function.** For an orthonormal
 basis `b`, the Hessian quadratic form of `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` is
@@ -254,12 +266,9 @@ theorem _root_.OrthonormalBasis.hessianQuadraticForm_mul_norm_sq_add_re_sum_mul_
     (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ι → ℂ) (x v : E) :
     hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) x v =
       2 * (a * ‖v‖ ^ 2 + (∑ j, c j * ⟪b j, v⟫_ℂ ^ 2).re) := by
-  obtain ⟨Q, B, hQ, hB⟩ := exists_bilinear_apply_self_eq b a c
-  have hf : (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) = fun z ↦ B z z := by
-    funext z
-    rw [hB, hQ, inner_self_eq_norm_sq]
-  rw [hf, hessianQuadraticForm_apply, fderiv_fderiv_apply_self]
-  simp only [add_apply, flip_apply, hB, hQ, inner_self_eq_norm_sq]
+  obtain ⟨Q, hQ⟩ := exists_apply_self_eq_sum_mul_inner_sq b c
+  simp_rw [← hQ]
+  rw [Q.hessianQuadraticForm_mul_norm_sq_add_re_apply_self]
   ring
 
 /-- **The Levi form of a Hermitian plus holomorphic quadratic function.** For an orthonormal
@@ -269,15 +278,9 @@ theorem _root_.OrthonormalBasis.leviForm_mul_norm_sq_add_re_sum_mul_inner_sq
     (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ι → ℂ) (x : E) :
     leviForm (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) x =
       (a : ℂ) • innerₛₗ ℂ := by
-  obtain ⟨Q, -, hQ, -⟩ := exists_bilinear_apply_self_eq b a c
-  have hf : (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) =
-      (a • fun z : E ↦ ‖z‖ ^ 2) + fun z ↦ (Q z z).re := by
-    funext z
-    simp [hQ]
-  have h₁ : ContDiffAt ℝ 2 (a • fun z : E ↦ ‖z‖ ^ 2) x :=
-    ((contDiff_norm_sq ℂ).const_smul a).contDiffAt
-  rw [hf, leviForm_add h₁ (contDiffAt_re_apply_self Q x), Q.leviForm_re_apply_self, leviForm_smul,
-    leviForm_norm_sq, add_zero]
+  obtain ⟨Q, hQ⟩ := exists_apply_self_eq_sum_mul_inner_sq b c
+  simp_rw [← hQ]
+  exact Q.leviForm_mul_norm_sq_add_re_apply_self a x
 
 /-- **The Morse index of a Hermitian plus holomorphic quadratic function.** For an orthonormal
 basis `b`, the Morse index of `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` counts, for each `j`, one
@@ -367,7 +370,7 @@ private noncomputable def diagonalForm (a : ι → ℝ) :
 
 private theorem norm_sq_add_sum_re_sq_eq (a : ι → ℝ) :
     (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) =
-      fun z ↦ ‖z‖ ^ 2 + (diagonalForm a z z).re := by
+      fun z ↦ (1 : ℝ) * ‖z‖ ^ 2 + (diagonalForm a z z).re := by
   funext z
   simp [diagonalForm, sq]
 
@@ -376,7 +379,8 @@ inner product, for all real `a j`. -/
 @[simp]
 theorem leviForm_euclidean_norm_sq_add_sum_re_sq (a : ι → ℝ) (x : EuclideanSpace ℂ ι) :
     leviForm (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) x = innerₛₗ ℂ := by
-  rw [norm_sq_add_sum_re_sq_eq, ContinuousLinearMap.leviForm_norm_sq_add_re_apply_self]
+  rw [norm_sq_add_sum_re_sq_eq, ContinuousLinearMap.leviForm_mul_norm_sq_add_re_apply_self,
+    ofReal_one, one_smul]
 
 /-- On `ℂⁿ`, in the coordinates `z j = x j + I y j`, the Hessian quadratic form of
 `z ↦ ‖z‖ ^ 2 + ∑ j, a j * Re (z j ^ 2)` is `∑ j, (2 (1 + a j) x j ^ 2 + 2 (1 - a j) y j ^ 2)`. -/
@@ -384,7 +388,8 @@ theorem hessianQuadraticForm_euclidean_norm_sq_add_sum_re_sq (a : ι → ℝ)
     (x v : EuclideanSpace ℂ ι) :
     hessianQuadraticForm (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) x v =
       ∑ j, (2 * (1 + a j) * (v j).re ^ 2 + 2 * (1 - a j) * (v j).im ^ 2) := by
-  rw [norm_sq_add_sum_re_sq_eq, ContinuousLinearMap.hessianQuadraticForm_norm_sq_add_re_apply_self]
+  rw [norm_sq_add_sum_re_sq_eq,
+    ContinuousLinearMap.hessianQuadraticForm_mul_norm_sq_add_re_apply_self, mul_one]
   simp only [diagonalForm, EuclideanSpace.norm_sq_eq, Finset.mul_sum, ← Finset.sum_add_distrib,
     sum_apply, re_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
