@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
-public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
+public import TauCeti.Topology.Algebra.IsUniformGroup.Defs
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 
 /-!
 # Completeness of open quotients of right-uniform additive groups
@@ -47,17 +48,10 @@ theorem IsOpenQuotientMap.completeSpace (hf : IsOpenQuotientMap f) : CompleteSpa
   let N := AddMonoidHom.ker (f : G →+ H)
   let _ : UniformSpace (G ⧸ N) := IsTopologicalAddGroup.rightUniformSpace (G ⧸ N)
   have _ : CompleteSpace (G ⧸ N) := QuotientAddGroup.completeSpace_right G N
-  let e := QuotientAddGroup.quotientKerEquivOfSurjective (f : G →+ H) hf.surjective
-  -- `e` composed with the quotient map is `f`
-  have hef : (e : G ⧸ N → H) ∘ ((↑) : G → G ⧸ N) = f :=
-    funext fun g ↦ TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk _ _ g
-  have heq : IsQuotientMap e :=
-    (QuotientAddGroup.isQuotientMap_mk N).of_comp_iff.mp (hef ▸ hf.isQuotientMap)
-  have hemb : IsEmbedding e :=
-    (isHomeomorph_iff_isQuotientMap_injective.mpr ⟨heq, e.injective⟩).isEmbedding
-  -- An inducing homomorphism induces the right uniformities via neighborhoods of zero.
-  have _ : IsRightUniformAddGroup (G ⧸ N) := ⟨rfl⟩
-  have he : IsUniformEmbedding e := ⟨⟨by
-    simp [uniformity_eq_comap_nhds_zero, Filter.comap_comap, Function.comp_def,
-      hemb.nhds_eq_comap]⟩, e.injective⟩
+  have _ : IsRightUniformAddGroup (G ⧸ N) :=
+    IsTopologicalAddGroup.isRightUniformAddGroup (G ⧸ N)
+  let e := ContinuousAddEquiv.quotientKerEquivOfSurjective (f : G →+ H)
+    hf.isQuotientMap.isStrictMap hf.surjective
+  have he : IsUniformEmbedding e :=
+    AddMonoidHom.isUniformEmbedding_of_isEmbedding_right e.toHomeomorph.isEmbedding
   exact (completeSpace_congr (e := e.toEquiv) he).mp inferInstance
