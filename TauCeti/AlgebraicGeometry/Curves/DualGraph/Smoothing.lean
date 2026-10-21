@@ -173,6 +173,7 @@ lemma endpoint_smoothing (e : (G.smoothing S).Edge) (i : Fin 2) :
     (G.smoothing S).endpoint e i = G.smoothingVertex S (G.endpoint e.1 i) :=
   rfl
 
+@[simp]
 lemma genus_smoothing (x : (G.smoothing S).Vertex) :
     (G.smoothing S).genus x = (G.smoothingComponent S x).arithmeticGenus :=
   rfl
