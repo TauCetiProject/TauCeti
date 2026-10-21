@@ -41,8 +41,7 @@ of an invariant symmetric form `κ` is the cocycle attached here to `Φ = -κ`.
 * `TauCeti.CurrentAlgebra.residuePairing_ofLoop`: its restriction to polynomial currents.
 * `TauCeti.CurrentAlgebra.residuePairing_eq_zero_of_mem_orderSubmodule`: vanishing on currents of
   orders summing to a positive integer.
-* `TauCeti.CurrentAlgebra.residuePairing_lie`: the 2-cocycle identity for an invariant symmetric
-  form.
+* `TauCeti.CurrentAlgebra.residuePairing_lie`: the 2-cocycle identity for an invariant form.
 * `TauCeti.CurrentAlgebra.twoCochainOfBilinear`: the alternating 2-cochain of a symmetric form.
 * `TauCeti.CurrentAlgebra.twoCocycleOfBilinear`: the 2-cocycle of an invariant symmetric form.
 
@@ -156,10 +155,9 @@ section Lie
 
 variable [LieRing L] [LieAlgebra R L] {Φ : LinearMap.BilinForm R L}
 
-/-- The residue pairing of an invariant symmetric form satisfies the 2-cocycle identity with
-trivial coefficients. -/
-theorem residuePairing_lie (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
-    (u v w : currentAlgebra R L) :
+/-- The residue pairing of an invariant form satisfies the 2-cocycle identity with trivial
+coefficients. -/
+theorem residuePairing_lie (hΦ : Φ.lieInvariant L) (u v w : currentAlgebra R L) :
     residuePairing R L Φ u ⁅v, w⁆ =
       residuePairing R L Φ ⁅u, v⁆ w + residuePairing R L Φ v ⁅u, w⁆ := by
   induction u using TensorProduct.inductionOn with
@@ -172,9 +170,9 @@ theorem residuePairing_lie (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
   | add w w' hw hw' => simp only [map_add, lie_add, hw, hw']; abel
   | tmul h z =>
   simp only [LieAlgebra.ExtendScalars.bracket_tmul, residuePairing_tmul]
-  -- By invariance and symmetry, all three values of `Φ` are `±Φ(⁅x, y⁆, z)`.
+  -- By invariance, all three values of `Φ` are `±Φ(⁅x, y⁆, z)`.
   have h₁ : Φ x ⁅y, z⁆ = Φ ⁅x, y⁆ z := by
-    rw [hΦs.eq, hΦ, ← lie_skew, LinearMap.map_neg, neg_neg, hΦs.eq]
+    rw [← neg_neg (Φ x _), ← hΦ, ← lie_skew, LinearMap.map_neg, LinearMap.neg_apply, neg_neg]
   have h₂ : Φ y ⁅x, z⁆ = -Φ ⁅x, y⁆ z := by rw [hΦ, neg_neg]
   have e₁ := LaurentSeries.residuePairing_mul_right R f g h
   have e₂ := LaurentSeries.residuePairing_mul_right R g f h
@@ -244,7 +242,7 @@ def twoCocycleOfBilinear (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L
     twoCocycle R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) R) where
   val := twoCochainOfBilinear R L Φ hΦs
   property := (mem_twoCocycle_iff_of_trivial _ _ _ _).mpr fun u v w ↦ by
-    simp only [twoCochainOfBilinear_apply_apply, residuePairing_lie R L hΦ hΦs u v w, map_add]
+    simp only [twoCochainOfBilinear_apply_apply, residuePairing_lie R L hΦ u v w, map_add]
 
 /-- The underlying cochain of the residue cocycle is the residue cochain. -/
 @[simp]
