@@ -18,7 +18,6 @@ import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.QuadraticForm.Binary
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.SquareClass
 import TauCeti.NumberTheory.Padics.DyadicUnits
-import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -52,6 +51,8 @@ hypothesis by tripling four coefficients, which changes neither invariant.
   their coefficients differ by a square and the sums of their coefficients agree modulo `8`.
 * `LinearMap.BilinForm.iIsOrtho.equivalent_of_isSquare_prod_mul_prod_of_eight_dvd_sum_sub_sum`: the
   same statement for bilinear forms over `ℤ₂` with orthogonal bases of unit self-pairings.
+* `TauCeti.equivalent_weightedSumSquares_of_toZModPow_eq`: diagonal forms over `ℤ₂` whose
+  coefficients have equal odd residues modulo `8` are isometric.
 
 ## References
 
@@ -68,62 +69,14 @@ namespace TauCeti
 
 /-! ### Residues modulo `8` -/
 
-/-- The residue modulo `8` of a unit of `ℤ₂` squares to one. -/
-private theorem toZModPow_three_mul_self (u : ℤ_[2]ˣ) :
-    toZModPow 3 (u : ℤ_[2]) * toZModPow 3 (u : ℤ_[2]) = 1 := by
-  have key : ∀ x y : ZMod (2 ^ 3), x * y = 1 → x * x = 1 := by decide
-  exact key _ (toZModPow 3 ((u⁻¹ : ℤ_[2]ˣ) : ℤ_[2])) (by rw [← map_mul, Units.mul_inv, map_one])
-
-/-- A `2`-adic integer whose residue modulo `8` squares to one is a unit. -/
-private theorem isUnit_of_toZModPow_three_mul_self {x : ℤ_[2]}
-    (h : toZModPow 3 x * toZModPow 3 x = 1) : IsUnit x := by
-  have hdvd : ((2 : ℕ) : ℤ_[2]) ^ 3 ∣ x * x - 1 := by
-    rw [← toZModPow_eq_zero_iff_dvd, map_sub, map_mul, h, map_one, sub_self]
-  have hu : IsUnit (1 + (x * x - 1)) :=
-    isUnit_one_add_of_dvd ((dvd_pow_self _ three_ne_zero).trans hdvd)
-  rw [add_sub_cancel] at hu
-  exact isUnit_of_mul_isUnit_left hu
-
-/-- A product of `2`-adic integers with odd residues modulo `8` has an odd residue. -/
-private theorem toZModPow_three_mul_mul_self {x y : ℤ_[2]}
-    (hx : toZModPow 3 x * toZModPow 3 x = 1) (hy : toZModPow 3 y * toZModPow 3 y = 1) :
-    toZModPow 3 (x * y) * toZModPow 3 (x * y) = 1 := by
-  rw [map_mul]
-  linear_combination (toZModPow 3 y * toZModPow 3 y) * hx + hy
-
-/-- An element of `ℤ₂` with the same odd residue modulo `8` as `y` is `y` times the square of a
-unit. -/
-private theorem exists_eq_mul_sq_of_toZModPow_eq {r y : ℤ_[2]}
-    (hy : toZModPow 3 y * toZModPow 3 y = 1) (h : toZModPow 3 r = toZModPow 3 y) :
-    ∃ t : ℤ_[2]ˣ, r = y * (t : ℤ_[2]) ^ 2 := by
-  have hyu := isUnit_of_toZModPow_three_mul_self hy
-  have hru := isUnit_of_toZModPow_three_mul_self (h ▸ hy)
-  have hmem : hru.unit / hyu.unit ∈ unitsPrincipal 2 3 := by
-    rw [mem_unitsPrincipal_iff_toZModPow, div_eq_mul_inv, Units.val_mul, map_mul,
-      IsUnit.unit_spec, h, ← map_mul, IsUnit.mul_val_inv, map_one]
-  rw [unitsPrincipal_three_eq_range_powMonoidHom_two] at hmem
-  obtain ⟨t, ht⟩ := hmem
-  rw [powMonoidHom_apply, eq_div_iff_mul_eq'] at ht
-  refine ⟨t, ?_⟩
-  rw [← IsUnit.unit_spec hru, ← ht, Units.val_mul, Units.val_pow_eq_pow_val, IsUnit.unit_spec,
-    mul_comm]
-
-/-- Diagonal forms whose coefficients have equal odd residues modulo `8` are isometric:
+/-- Diagonal forms over `ℤ₂` whose coefficients have equal odd residues modulo `8` are isometric:
 corresponding coefficients differ by the square of a unit. -/
-private theorem equivalent_weightedSumSquares_of_toZModPow_eq {ι : Type*} [Fintype ι]
+theorem equivalent_weightedSumSquares_of_toZModPow_eq {ι : Type*} [Fintype ι]
     {w v : ι → ℤ_[2]} (hv : ∀ i, toZModPow 3 (v i) * toZModPow 3 (v i) = 1)
     (h : ∀ i, toZModPow 3 (w i) = toZModPow 3 (v i)) :
     (weightedSumSquares ℤ_[2] w).Equivalent (weightedSumSquares ℤ_[2] v) := by
   choose t ht using fun i ↦ exists_eq_mul_sq_of_toZModPow_eq (hv i) (h i)
   exact ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares t fun i ↦ (ht i).symm⟩
-
-/-- A congruence modulo `4`, read on residues modulo `8`, is divisibility by `4`. -/
-private theorem four_dvd_sub_of_two_mul_sub_eq_zero {x y : ℤ_[2]}
-    (h : 2 * (toZModPow 3 x - toZModPow 3 y) = 0) : (4 : ℤ_[2]) ∣ x - y := by
-  have h8 : ((2 : ℕ) : ℤ_[2]) ^ 3 ∣ 2 * (x - y) := by
-    rw [← toZModPow_eq_zero_iff_dvd, map_mul, map_sub, map_ofNat, h]
-  rw [show ((2 : ℕ) : ℤ_[2]) ^ 3 = 2 * 4 by norm_num] at h8
-  exact (mul_dvd_mul_iff_left two_ne_zero).mp h8
 
 /-- Two odd residues modulo `8` are congruent modulo `4` up to sign. -/
 private theorem two_mul_add_eq_zero_of_ne {x y : ZMod (2 ^ 3)} (hx : x * x = 1) (hy : y * y = 1)
@@ -305,11 +258,14 @@ private theorem equivalent_of_rank_four (ih : Classified 3) {w v : Fin 4 → ℤ
   have hb : toZModPow 3 b * toZModPow 3 b = 1 := hw 1
   have hc : toZModPow 3 c * toZModPow 3 c = 1 := hw 2
   have hd : toZModPow 3 d * toZModPow 3 d = 1 := hw 3
+  have hmul {x y : ℤ_[2]} (hx : toZModPow 3 x * toZModPow 3 x = 1)
+      (hy : toZModPow 3 y * toZModPow 3 y = 1) : toZModPow 3 (x * y) * toZModPow 3 (x * y) = 1 := by
+    rw [map_mul, mul_mul_mul_comm, hx, hy, one_mul]
   have hca : 2 * (toZModPow 3 c - toZModPow 3 a) = 0 := hw' 2
   have hda : 2 * (toZModPow 3 d - toZModPow 3 a) = 0 := hw' 3
-  have hbca := toZModPow_three_mul_mul_self (toZModPow_three_mul_mul_self hb hc) ha
-  have he := toZModPow_three_mul_mul_self (toZModPow_three_mul_mul_self hbca hd) ha
-  have hk := toZModPow_three_mul_mul_self ha he
+  have hbca := hmul (hmul hb hc) ha
+  have he := hmul (hmul hbca hd) ha
+  have hk := hmul ha he
   obtain ⟨hu₀, hu₁, hu₂, hu₃, hdet, hprod, hsum⟩ :=
     residues_of_rank_four _ _ _ _ _ ha hb (hw' 1) hc hca hd hda rfl
   -- Two binary steps give `⟨a, a, a, e⟩` with `e = (b c a) d a`.
@@ -329,7 +285,7 @@ private theorem equivalent_of_rank_four (ih : Classified 3) {w v : Fin 4 → ℤ
       (weightedSumSquares ℤ_[2] ![a, a, a, a * (a * (b * c * a * d * a))]) := by
     refine equivalent_weightedSumSquares_of_toZModPow_eq (fun i ↦ ?_) fun i ↦ ?_
     · fin_cases i <;> simp only [Matrix.cons_val, Fin.reduceFinMk, Fin.zero_eta, Fin.mk_one]
-      exacts [ha, ha, ha, toZModPow_three_mul_mul_self ha hk]
+      exacts [ha, ha, ha, hmul ha hk]
     · fin_cases i <;> simp only [Matrix.cons_val, Fin.reduceFinMk, Fin.zero_eta, Fin.mk_one]
       simp only [map_mul]
       linear_combination
