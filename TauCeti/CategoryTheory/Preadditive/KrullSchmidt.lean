@@ -85,7 +85,7 @@ private theorem exists_isLocalRing_end_sum_comp_eq (X : C) [Module.Finite R (X �
   have hlt (v : Y ⟶ Y) (hv : v ≫ v = v) (hv1 : v ≠ 𝟙 Y) :
       LinearMap.range (Linear.leftComp R X (r ≫ v ≫ i)) <
         LinearMap.range (Linear.leftComp R X e) :=
-    range_leftComp_lt_range_leftComp R he (hidem v hv) (by simp [← hri, reassoc_of% hir])
+    range_leftComp_lt_range_leftComp R (hidem v hv) (by simp [← hri, reassoc_of% hir])
       (by simp [← hri, reassoc_of% hir]) fun h ↦ hv1 (by
         simpa [reassoc_of% hir, hir, ← hri] using congrArg (fun φ ↦ i ≫ φ ≫ r) h)
   obtain ⟨ι, _, W, a, b, hW, hab⟩ := ih _ (hlt u hu hu1) _ (hidem u hu) rfl
