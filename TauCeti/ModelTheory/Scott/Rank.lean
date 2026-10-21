@@ -151,6 +151,20 @@ theorem orbitRank_lt_internalScottRank (a : Fin n → M) :
   exact (lt_add_one _).trans_le
     (Ordinal.le_iSup (fun p : Σ n, Fin n → M => orbitRank (L := L) p.2 + 1) ⟨n, a⟩)
 
+/-- If every tuple is orbit-stable at `α` and some tuple has orbit rank `α`, then the
+internal Scott rank is exactly the successor of `α`. -/
+theorem internalScottRank_eq_add_one_of_mem_orbitStable_of_orbitRank_eq {m : ℕ} {a₀ : Fin m → M}
+    {α : Ordinal.{w}}
+    (hα : ∀ n (a : Fin n → M), α ∈ orbitStable (L := L) a)
+    (h₀ : orbitRank (L := L) a₀ = α) :
+    internalScottRank (L := L) M = α + 1 := by
+  apply le_antisymm
+  · rw [internalScottRank_le_iff]
+    intro n a
+    exact (orbitRank_le a (hα n a)).trans_lt (lt_add_one α)
+  · rw [← h₀, Order.add_one_le_iff]
+    exact orbitRank_lt_internalScottRank a₀
+
 /-- The internal Scott rank is at least one, including for an empty structure. -/
 theorem one_le_internalScottRank : 1 ≤ internalScottRank (L := L) M := by
   exact Order.one_le_iff_pos.mpr (bot_le.trans_lt

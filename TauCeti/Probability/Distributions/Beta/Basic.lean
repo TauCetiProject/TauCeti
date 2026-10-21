@@ -8,8 +8,10 @@ module
 public import Mathlib.Probability.Distributions.Beta
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
+public import Mathlib.MeasureTheory.Measure.Support
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Density
 
 /-!
@@ -29,6 +31,9 @@ that the beta law is carried by `[0, 1]`, so every exponential moment exists.
 * `TauCeti.Probability.betaMeasure_eq_withDensity_restrict_Ioo` — the law is its density against
   Lebesgue
   measure on the open unit interval;
+* `TauCeti.Probability.support_betaMeasure` — the exact topological support at positive shapes;
+* `TauCeti.Probability.integrable_pow_betaMeasure` and
+  `TauCeti.Probability.integrable_pow_abs_betaMeasure` — integrability of natural powers;
 * `TauCeti.Probability.integrable_rpow_mul_one_sub_rpow_betaMeasure_iff` — the exact integrability
   criterion for mixed real powers;
 * `TauCeti.Probability.integral_rpow_mul_one_sub_rpow_betaMeasure` — the mixed real-power moments
@@ -55,7 +60,7 @@ public section
 
 namespace TauCeti.Probability
 
-open MeasureTheory ProbabilityTheory Set
+open _root_.MeasureTheory ProbabilityTheory Set
 open scoped ENNReal NNReal ProbabilityTheory
 
 /-- For positive shape parameters the beta density is nonnegative: it vanishes off the open unit
@@ -122,6 +127,29 @@ theorem ae_mem_Icc_betaMeasure (α β : ℝ) :
     ∀ᵐ x ∂betaMeasure α β, x ∈ Set.Icc (0 : ℝ) 1 := by
   filter_upwards [ae_mem_Ioo_betaMeasure α β] with x hx
   exact ⟨hx.1.le, hx.2.le⟩
+
+/-- At positive shape parameters, the topological support of a beta law is the closed unit
+interval. -/
+@[simp]
+theorem support_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) :
+    (betaMeasure α β).support = Icc 0 1 := by
+  have hsupp : Function.support (betaPDF α β) = Ioo 0 1 := by
+    ext x
+    rw [Function.mem_support]
+    constructor
+    · intro hx
+      constructor
+      · by_contra h
+        exact hx (betaPDF_eq_zero_of_nonpos (le_of_not_gt h))
+      · by_contra h
+        exact hx (betaPDF_eq_zero_of_one_le (le_of_not_gt h))
+    · intro hx
+      rw [betaPDF, ENNReal.ofReal_ne_zero_iff]
+      exact betaPDFReal_pos hx.1 hx.2 hα hβ
+  rw [betaMeasure,
+    Measure.support_withDensity_eq_closure (f := betaPDF α β)
+      (measurable_betaPDFReal α β).ennreal_ofReal isOpen_Ioo hsupp,
+    closure_Ioo zero_ne_one]
 
 private lemma betaPDFReal_mul_rpow_mul_one_sub_rpow {α β q s x : ℝ}
     (hx : x ∈ Ioo (0 : ℝ) 1) :
@@ -254,5 +282,18 @@ theorem integrableExpSet_id_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < 
   simp only [Set.mem_univ, iff_true, integrableExpSet, Set.mem_ofPred_eq, id_eq]
   exact integrable_exp_mul_of_mem_Icc measurable_id.aemeasurable
     (ae_mem_Icc_betaMeasure α β)
+
+/-- Every natural power is integrable against a beta law with positive shape parameters. -/
+theorem integrable_pow_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (n : ℕ) :
+    Integrable (fun x : ℝ ↦ x ^ n) (betaMeasure α β) := by
+  apply integrable_pow_of_mem_interior_integrableExpSet (X := id) _ n
+  simp only [integrableExpSet_id_betaMeasure hα hβ, interior_univ, mem_univ]
+
+/-- Every natural power of the absolute value is integrable against a beta law with positive
+shape parameters. -/
+theorem integrable_pow_abs_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (n : ℕ) :
+    Integrable (fun x : ℝ ↦ |x| ^ n) (betaMeasure α β) := by
+  apply integrable_pow_abs_of_mem_interior_integrableExpSet (X := id) _ n
+  simp only [integrableExpSet_id_betaMeasure hα hβ, interior_univ, mem_univ]
 
 end TauCeti.Probability

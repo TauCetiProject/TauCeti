@@ -23,9 +23,10 @@ function and allows infinite integrals. For an integrable function, almost every
 integrable restriction, the sphere integrals are integrable in the radius, and the Bochner formula
 holds. The ball versions integrate over the radii `r ∈ (0, R)`.
 
-The inputs are Mathlib's polar decomposition of volume,
-`MeasureTheory.Measure.measurePreserving_homeomorphUnitSphereProd`, the identification of its
-surface measure with Hausdorff measure, `TauCeti.euclideanHausdorffMeasure_restrict_sphere`, and
+The inputs are the polar decomposition of volume, Mathlib's
+`MeasureTheory.Measure.measurePreserving_homeomorphUnitSphereProd` and its integral forms such
+as `TauCeti.lintegral_eq_lintegral_toSphere_lintegral_Ioi`, the identification of its surface
+measure with Hausdorff measure, `TauCeti.euclideanHausdorffMeasure_restrict_sphere`, and
 the rescaling of Hausdorff measure on spheres,
 `TauCeti.euclideanHausdorffMeasure_restrict_sphere_eq_smul_map`.
 
@@ -87,34 +88,13 @@ the spheres `sphere c r`. -/
 theorem lintegral_eq_lintegral_Ioi_setLIntegral_sphere [Nontrivial E] (c : E)
     {f : E → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ x, f x = ∫⁻ r in Ioi (0 : ℝ), ∫⁻ y in sphere c r, f y ∂μHE[finrank ℝ E - 1] := by
-  set k := finrank ℝ E - 1
-  set h : sphere (0 : E) 1 × Ioi (0 : ℝ) → ℝ≥0∞ := fun p ↦ f (c + (p.2 : ℝ) • (p.1 : E))
-  have hh : Measurable h := hf.comp <| measurable_const.add <|
-    (measurable_subtype_coe.comp measurable_snd).smul (measurable_subtype_coe.comp measurable_fst)
-  have hcomp (x : ({0}ᶜ : Set E)) : h (homeomorphUnitSphereProd E x) = f (c + (x : E)) := by
-    have hx : ‖(x : E)‖ ≠ 0 := norm_ne_zero_iff.mpr x.2
-    simp [h, smul_smul, hx]
-  -- Translate to the origin, remove the null point `0`, and pass to polar coordinates.
-  calc ∫⁻ x, f x
-        = ∫⁻ x : ({0}ᶜ : Set E), f (c + (x : E)) ∂(volume.comap ((↑) : ({0}ᶜ : Set E) → E)) := by
-        rw [lintegral_subtype_comap (measurableSet_singleton _).compl (fun y ↦ f (c + y)),
-          restrict_compl_singleton, lintegral_add_left_eq_self]
-    _ = ∫⁻ p, h p ∂((volume : Measure E).toSphere.prod (volumeIoiPow k)) := by
-        rw [← (volume.measurePreserving_homeomorphUnitSphereProd).lintegral_comp_emb
-          (homeomorphUnitSphereProd E).measurableEmbedding]
-        simp_rw [hcomp]
-    _ = ∫⁻ r : Ioi (0 : ℝ), ENNReal.ofReal ((r : ℝ) ^ k) *
-          ∫⁻ u, h (u, r) ∂(volume : Measure E).toSphere
-            ∂(volume.comap ((↑) : Ioi (0 : ℝ) → ℝ)) := by
-        rw [lintegral_prod_symm' _ hh, volumeIoiPow,
-          lintegral_withDensity_eq_lintegral_mul _
-            (measurable_subtype_coe.pow_const k).ennreal_ofReal hh.lintegral_prod_left']
-        simp only [Pi.mul_apply]
-    _ = ∫⁻ r in Ioi (0 : ℝ), ∫⁻ y in sphere c r, f y ∂μHE[k] := by
-        rw [lintegral_subtype_comap measurableSet_Ioi (fun r ↦ ENNReal.ofReal (r ^ k) *
-          ∫⁻ u : sphere (0 : E) 1, f (c + r • (u : E)) ∂(volume : Measure E).toSphere)]
-        exact setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦
-          (setLIntegral_sphere_eq_mul_lintegral_toSphere c hr f).symm
+  have hfc : Measurable fun x ↦ f (c + x) := hf.comp (measurable_const_add c)
+  -- Translate to the origin, pass to polar coordinates, and swap the two integrals.
+  rw [← lintegral_add_left_eq_self f c, lintegral_eq_lintegral_toSphere_lintegral_Ioi hfc,
+    lintegral_lintegral_swap (by fun_prop)]
+  refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
+  rw [setLIntegral_sphere_eq_mul_lintegral_toSphere c hr f,
+    lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
 
 /-- **Integration over a ball in polar coordinates against Hausdorff measure.** In a nontrivial
 real inner product space of dimension `n`, the integral of a measurable nonnegative function over

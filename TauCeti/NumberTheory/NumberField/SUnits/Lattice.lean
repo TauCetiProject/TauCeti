@@ -47,7 +47,10 @@ the covolume of this lattice is what one calls the `S`-regulator.
 * `TauCeti.NumberField.SUnit.logEmbeddingEquiv`: the equivalence from the `S`-units modulo
   torsion onto the lattice.
 * `TauCeti.NumberField.SUnit.basisUnitLattice`: the basis of the lattice given by the
-  `S`-logarithmic images of a fundamental system of `S`-units.
+  `S`-logarithmic images of the chosen fundamental system of `S`-units.
+* `TauCeti.NumberField.SUnit.isFundSystem_iff_exists_basis`: a family of `S`-units is a
+  fundamental system exactly when its `S`-logarithmic images form a basis of the lattice, and
+  `TauCeti.NumberField.SUnit.basisOfIsFundSystem` is that basis.
 
 ## References
 
@@ -249,6 +252,45 @@ theorem logEmbedding_fundSystem
     logEmbedding S (Additive.ofMul (fundSystem (S : Set (HeightOneSpectrum (𝓞 K))) i)) =
       basisUnitLattice S i := by
   rw [basisUnitLattice, Basis.map_apply, ← fundSystem_mk, logEmbeddingEquiv_mk]
+
+/-! ### Fundamental systems and bases of the lattice -/
+
+variable {S}
+
+/-- The basis of the `S`-unit lattice formed by the `S`-logarithmic images of a fundamental
+system of `S`-units. This is the `S`-analogue of Mathlib's `NumberField.Units.basisOfIsMaxRank`,
+with `ℤ` in place of `ℝ`. -/
+def basisOfIsFundSystem {ι : Type*} {ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
+    (hε : IsFundSystem (S : Set (HeightOneSpectrum (𝓞 K))) ε) :
+    Basis ι ℤ (unitLattice S) :=
+  (Basis.mk ((isFundSystem_iff ε).mp hε).1 ((isFundSystem_iff ε).mp hε).2.ge).map
+    (logEmbeddingEquiv S)
+
+/-- The `i`-th vector of `basisOfIsFundSystem hε` is the `S`-logarithmic image of `ε i`. -/
+@[simp]
+theorem basisOfIsFundSystem_apply {ι : Type*}
+    {ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
+    (hε : IsFundSystem (S : Set (HeightOneSpectrum (𝓞 K))) ε) (i : ι) :
+    (basisOfIsFundSystem hε i : logSpace S) = logEmbedding S (Additive.ofMul (ε i)) := by
+  rw [basisOfIsFundSystem, Basis.map_apply, Basis.mk_apply, logEmbeddingEquiv_mk]
+
+/-- A family of `S`-units is a fundamental system exactly when its `S`-logarithmic images form a
+`ℤ`-basis of the `S`-unit lattice. -/
+theorem isFundSystem_iff_exists_basis {ι : Type*}
+    (ε : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K) :
+    IsFundSystem (S : Set (HeightOneSpectrum (𝓞 K))) ε ↔
+      ∃ b : Basis ι ℤ (unitLattice S),
+        ∀ i, (b i : logSpace S) = logEmbedding S (Additive.ofMul (ε i)) := by
+  refine ⟨fun hε ↦ ⟨basisOfIsFundSystem hε, basisOfIsFundSystem_apply hε⟩, ?_⟩
+  rintro ⟨b, hb⟩
+  have hmk : (fun i ↦ (Submodule.Quotient.mk (Additive.ofMul (ε i)) :
+      Additive ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) ⧸
+        Submodule.torsion ℤ (Additive ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)))) =
+      b.map (logEmbeddingEquiv S).symm := by
+    ext1 i
+    rw [Basis.map_apply, LinearEquiv.eq_symm_apply, Subtype.ext_iff, logEmbeddingEquiv_mk, hb]
+  rw [isFundSystem_iff, hmk]
+  exact ⟨Basis.linearIndependent _, Basis.span_eq _⟩
 
 end
 

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.Algebra.Homology.Single
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Cell
@@ -33,6 +35,8 @@ identified explicitly with its codimension-one faces.
 * `TauCeti.OrderedSimplicialChain`: finite linear combinations of ordered simplicial cells.
 * `TauCeti.OrderedSimplicialChain.boundary`: the alternating simplicial boundary.
 * `TauCeti.orderedSimplicialChainComplex`: the resulting chain complex of modules.
+* `TauCeti.orderedSimplicialChainComplexAugmentation`: the augmentation of the ordered chain
+  complex, a chain map to the coefficient ring in degree `0`.
 
 ## References
 
@@ -168,6 +172,13 @@ theorem boundary_boundary (n : ℕ) :
   simp_rw [← Int.cast_smul_eq_zsmul R] at h
   simpa only [Int.cast_pow, Int.cast_neg, Int.cast_one, Finset.smul_sum] using h
 
+/-- The coefficients of the boundary of a `1`-chain sum to zero. -/
+theorem augmentation_comp_boundary :
+    linearCombination R (fun _ : _root_.AbstractSimplicialComplex.RealizationCell K 0 ↦ (1 : R)) ∘ₗ
+      boundary R 0 = 0 := by
+  refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
+  simp [Fin.sum_univ_two]
+
 end OrderedSimplicialChain
 
 /-- The ordered simplicial chain complex of `K`, with one basis vector for every face and the
@@ -199,5 +210,59 @@ theorem orderedSimplicialChainComplex_d (n : ℕ) :
           eqToHom (orderedSimplicialChainComplex_X R n).symm := by
   simp only [orderedSimplicialChainComplex, ChainComplex.of_d]
   rfl
+
+/-- A short complex of modules whose first map is the differential `X (n + 1) ⟶ X n` of the
+ordered chain complex is exact exactly when every `n`-chain killed by its second map is a
+boundary. Here the second map is read on chains as `g'`, through an isomorphism `e` of its
+target. -/
+theorem exact_orderedSimplicialChainComplex_d_iff {n : ℕ} {M N : ModuleCat.{max u v} R}
+    {g : (orderedSimplicialChainComplex K R).X n ⟶ M}
+    (w : (orderedSimplicialChainComplex K R).d (n + 1) n ≫ g = 0) (e : M ≅ N)
+    {g' : OrderedSimplicialChain K R n →ₗ[R] N}
+    (hg : eqToHom (orderedSimplicialChainComplex_X R n).symm ≫ g ≫ e.hom = ModuleCat.ofHom g') :
+    (ShortComplex.mk _ g w).Exact ↔
+      ∀ z, g' z = 0 → ∃ y, OrderedSimplicialChain.boundary R n y = z := by
+  have hb : ModuleCat.ofHom (OrderedSimplicialChain.boundary (K := K) R n) =
+      eqToHom (orderedSimplicialChainComplex_X R (n + 1)).symm ≫
+        (orderedSimplicialChainComplex K R).d (n + 1) n ≫
+          eqToHom (orderedSimplicialChainComplex_X R n) := by
+    simp
+  let S : ShortComplex (ModuleCat.{max u v} R) :=
+    ShortComplex.mk (ModuleCat.ofHom (OrderedSimplicialChain.boundary (K := K) R n))
+      (ModuleCat.ofHom g') (by
+        rw [hb, ← hg]
+        simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+          reassoc_of% w, Limits.zero_comp, Limits.comp_zero])
+  rw [ShortComplex.exact_iff_of_iso (S₂ := S) (ShortComplex.isoMk
+      (eqToIso (orderedSimplicialChainComplex_X R (n + 1)))
+      (eqToIso (orderedSimplicialChainComplex_X R n)) e (by simp [S]) (by simp [S, ← hg])),
+    ShortComplex.moduleCat_exact_iff]
+  simp only [S, ModuleCat.hom_ofHom]
+
+section Augmentation
+
+variable (K) (R : Type u) [Ring R]
+
+/-- The **augmentation** of the ordered chain complex: the chain map to `R`, placed in degree
+`0`, that sums the coefficients of a `0`-chain. -/
+def orderedSimplicialChainComplexAugmentation :
+    orderedSimplicialChainComplex K R ⟶ (ChainComplex.single₀ (ModuleCat.{u} R)).obj
+      (ModuleCat.of R R) :=
+  ((orderedSimplicialChainComplex K R).toSingle₀Equiv _).symm
+    ⟨eqToHom (orderedSimplicialChainComplex_X R 0) ≫
+      ModuleCat.ofHom (linearCombination R fun _ ↦ (1 : R)), by
+      simp [orderedSimplicialChainComplex_d, ← ModuleCat.ofHom_comp,
+        OrderedSimplicialChain.augmentation_comp_boundary]⟩
+
+/-- In degree `0` the augmentation sums the coefficients. -/
+@[simp]
+theorem orderedSimplicialChainComplexAugmentation_f_zero :
+    (orderedSimplicialChainComplexAugmentation K R).f 0 =
+      eqToHom (orderedSimplicialChainComplex_X R 0) ≫
+        ModuleCat.ofHom (linearCombination R fun _ ↦ (1 : R)) ≫
+          (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 (ModuleCat.of R R)).inv := by
+  simp [orderedSimplicialChainComplexAugmentation, ChainComplex.toSingle₀Equiv]
+
+end Augmentation
 
 end TauCeti

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Resolution
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.KoszulComplex
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Koszul.Resolution
 import Mathlib.Combinatorics.SimpleGraph.Acyclic
 

@@ -167,6 +167,16 @@ theorem residualCapacity_mem (H : AddSubgroup K) {lo hi f : Assignment Q K}
   · exact H.sub_mem (hhi e) (hf e)
   · exact H.sub_mem (hf e) (hlo e)
 
+/-- The residual capacity on the residual arrows from `S` to `T` is the room left on the arrows
+from `S` to `T` plus the room left to decrease the arrows from `T` to `S`. -/
+theorem arrowSum_residualCapacity [∀ v w, Fintype (Q v w)] (lo hi f : Assignment Q K)
+    (S T : Finset V) :
+    arrowSum (residualCapacity lo hi f) S T = arrowSum (hi - f) S T + arrowSum (f - lo) T S := by
+  simp only [arrowSum_def, Fintype.sum_sum_type, residualCapacity_inl, residualCapacity_inr,
+    sum_add_distrib, Pi.sub_apply]
+  congr 1
+  exact sum_comm
+
 section Excess
 
 variable [Fintype V] [∀ v w, Fintype (Q v w)]

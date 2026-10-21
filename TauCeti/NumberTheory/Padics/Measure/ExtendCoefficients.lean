@@ -53,8 +53,9 @@ no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integ
 
 ## References
 
-* J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, Ann. Math. Qué.
-  (2024), Proposition 3.16 and Remark 3.28.
+* J. Rodrigues Jacinto and C. Williams,
+  [*An introduction to p-adic L-functions*](https://doi.org/10.2140/ent.2025.4.101),
+  Essential Number Theory **4** (2025), no. 1, 101–216, Proposition 3.16 and Remark 3.28.
 -/
 
 public noncomputable section
@@ -226,10 +227,10 @@ with `ι_j(μ)(j ∘ f) = j(μ(f))` for all `f ∈ C(X, O)` (`extendCoefficients
 `eq_extendCoefficients_of_apply_comp`). -/
 def extendCoefficients (hj : ∀ a, ‖j a‖ ≤ 1) : D(X, O) →+ D(X, K) where
   toFun μ := toCLMEquiv.symm (extendCoefficientsCLM j μ)
-  map_zero' := finiteProjection_ext _ _ fun n q ↦ by
+  map_zero' := finiteProjection_ext _ _ fun q ↦ by
     rw [finiteProjection_extendCoefficientsCLM j 0 hj]
     simp
-  map_add' μ ν := finiteProjection_ext _ _ fun n q ↦ by
+  map_add' μ ν := finiteProjection_ext _ _ fun q ↦ by
     rw [map_add, finiteProjection_extendCoefficientsCLM j _ hj,
       finiteProjection_extendCoefficientsCLM j _ hj, finiteProjection_extendCoefficientsCLM j _ hj]
     ext a
@@ -264,7 +265,7 @@ theorem extendCoefficients_apply_comp_eq_sum {A : Type*} [TopologicalSpace A]
 @[simp]
 theorem extendCoefficients_smul (a : O) :
     extendCoefficients j hj (a • μ) = j a • extendCoefficients j hj μ :=
-  finiteProjection_ext _ _ fun n q ↦ by
+  finiteProjection_ext _ _ fun q ↦ by
     ext b
     simp
 
@@ -272,7 +273,7 @@ theorem extendCoefficients_smul (a : O) :
 @[simp]
 theorem extendCoefficients_dirac (x : X) :
     extendCoefficients j hj (dirac O x) = dirac K x :=
-  finiteProjection_ext _ _ fun n q ↦ by
+  finiteProjection_ext _ _ fun q ↦ by
     simp
 
 /-- Extension of coefficients commutes with pushforward along continuous maps of profinite
@@ -281,7 +282,7 @@ spaces. -/
 theorem extendCoefficients_map {Y : Type*} [TopologicalSpace Y] [CompactSpace Y] [T2Space Y]
     [TotallyDisconnectedSpace Y] (φ : C(X, Y)) :
     extendCoefficients j hj (map φ μ) = map φ (extendCoefficients j hj μ) :=
-  finiteProjection_ext _ _ fun n q ↦ by
+  finiteProjection_ext _ _ fun q ↦ by
     simp
 
 /-- For continuous `j`, the extension of coefficients of `μ` integrates `j ∘ f` to `j (μ f)` for
@@ -309,7 +310,7 @@ of coefficients of `μ`. -/
 theorem eq_extendCoefficients_of_apply_comp (hjc : Continuous j) {ν : D(X, K)}
     (hν : ∀ f : C(X, O), ν ((⟨j, hjc⟩ : C(O, K)).comp f) = j (μ f)) :
     ν = extendCoefficients j hj μ :=
-  finiteProjection_ext _ _ fun n q ↦ by
+  finiteProjection_ext _ _ fun q ↦ by
     ext a
     rw [finiteProjection_extendCoefficients, Finsupp.mapRange_apply, finiteProjection_apply,
       finiteProjection_apply, ← hν]
@@ -321,7 +322,7 @@ theorem eq_extendCoefficients_of_apply_comp (hjc : Continuous j) {ν : D(X, K)}
 /-- Extension of coefficients along an injective `j` is injective. -/
 theorem extendCoefficients_injective [T2Space O] (hinj : Function.Injective j) :
     Function.Injective (extendCoefficients (X := X) j hj) := fun μ ν h ↦
-  finiteProjection_ext _ _ fun n q ↦ by
+  finiteProjection_ext _ _ fun q ↦ by
     have := congrArg (finiteProjection q) h
     rw [finiteProjection_extendCoefficients, finiteProjection_extendCoefficients] at this
     exact Finsupp.mapRange_injective _ (map_zero j) hinj this

@@ -15,7 +15,8 @@ For relational languages, tuple back-and-forth systems and systems of finitely g
 partial equivalences give the same notion of potential isomorphism. Matching atomic types
 produce an equivalence between the finite ranges of the tuples. Conversely, a partial
 equivalence preserves the atomic type of every tuple in its domain. Neither countability nor
-nonemptiness of the structures is required; nullary relations are retained.
+nonemptiness of the structures is required; nullary relations are retained. When the first
+tuple is onto its structure, matching atomic types even give an embedding of the whole structure.
 
 The comparison is the relational back-and-forth argument of Carol Karp,
 *Finite-quantifier equivalence* (1965). The tuple presentation also appears in Cameron Freer's
@@ -78,6 +79,18 @@ theorem SameAtomicType.exists_fgEquiv {n : ℕ} {a : Fin n → M} {b : Fin n →
   refine ⟨f, a', fun _ => rfl, ?_, Substructure.closure_eq_of_isRelational L _⟩
   intro i
   exact (e.equivRange_apply (a' i)).trans (hmap i (a' i) rfl)
+
+/-- If a tuple onto `M` has the same atomic type as a tuple `b` of `N`, then sending each entry
+to the corresponding entry of `b` is an embedding of `M` into `N`. Repeated entries are
+allowed. -/
+theorem SameAtomicType.exists_embedding_comp_eq {n : ℕ} {a : Fin n → M} {b : Fin n → N}
+    (h : SameAtomicType (L := L) a b) (ha : Function.Surjective a) :
+    ∃ f : M ↪[L] N, f ∘ a = b := by
+  obtain ⟨f, a', ha', hb', hdom⟩ := h.exists_fgEquiv
+  have hdom' : f.1.dom = ⊤ := SetLike.coe_injective (hdom.trans (Set.range_eq_univ.mpr ha))
+  refine ⟨PartialEquiv.toEmbeddingOfEqTop hdom', funext fun i => ?_⟩
+  rw [Function.comp_apply, PartialEquiv.toEmbeddingOfEqTop_apply, ← hb' i]
+  exact congrArg f.1.toEmbedding (Subtype.ext (ha' i).symm)
 
 /-- A tuple back-and-forth system gives a system of finitely generated partial equivalences. -/
 theorem IsTupleBFSystem.potentialIso

@@ -25,7 +25,9 @@ probability law with density `exp (t * x) / ∫ exp (t * y) ∂μ` with respect 
 operation, and the tilt acts on the parameters as follows.
 
 * `TauCeti.Probability.gaussianReal_tilted_mul`: the Gaussian `N(m, v)` tilts to
-  `N(m + v t, v)`, including the point mass at variance zero;
+  `N(m + v t, v)`, including the point mass at variance zero, and
+  `TauCeti.Probability.setIntegral_exp_mul_gaussianReal` reads this off as a weighted set
+  integral;
 * `TauCeti.Probability.gammaMeasure_tilted_mul`: the gamma law of shape `a` and rate `r` tilts
   to rate `r - t`, for `t < r`, which is exactly the range where the tilt is a probability law;
 * `TauCeti.Probability.poissonMeasure_tilted_mul`: the native Poisson law of rate `r` tilts to
@@ -73,6 +75,20 @@ theorem gaussianReal_tilted_mul (m : ℝ) (v : ℝ≥0) (t : ℝ) :
   congr 2
   field_simp
   ring
+
+/-- Integrating the exponential weight `exp (t * x)` against `N(m, v)` over a set `s` gives the
+moment-generating function `exp (m t + v t² / 2)` times the mass of `s` under the tilted law
+`N(m + v t, v)`. -/
+theorem setIntegral_exp_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (t : ℝ) (s : Set ℝ) :
+    ∫ x in s, exp (t * x) ∂gaussianReal m v =
+      exp (m * t + v * t ^ 2 / 2) * (gaussianReal (m + v * t) v).real s := by
+  have hZ : ∫ x, exp (t * x) ∂gaussianReal m v = exp (m * t + v * t ^ 2 / 2) := by
+    simpa [mgf] using congrFun (mgf_id_gaussianReal (μ := m) (v := v)) t
+  have h := setIntegral_tilted (μ := gaussianReal m v) (t * ·) (fun _ => (1 : ℝ)) s
+  rw [gaussianReal_tilted_mul, hZ, setIntegral_const] at h
+  simp only [smul_eq_mul, mul_one, integral_div] at h
+  rw [h]
+  field_simp
 
 /-- **Exponential tilting of a gamma law lowers its rate.** For `t < r`, tilting the gamma law of
 shape `a` and rate `r` by `exp (t * x)` gives the gamma law of shape `a` and rate `r - t`. -/

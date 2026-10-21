@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.OperatorIdeal.Family.SymmetricGauge
 public import TauCeti.Analysis.OperatorIdeal.SymmetricGauge.Lp
-public import TauCeti.Analysis.OperatorIdeal.Carrier
+public import TauCeti.Analysis.OperatorIdeal.Family.Carrier
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 
@@ -57,10 +57,11 @@ theorem gauge_schatten (p : ℝ) (hp : 1 ≤ p) (T : E →L[𝕜] F) :
 
 /-- An operator belongs to the Schatten `p` ideal exactly when the `p`-th powers of its
 approximation numbers are summable. -/
-theorem mem_ideal_schatten_iff (p : ℝ) (hp : 1 ≤ p) (T : E →L[𝕜] F) :
-    T ∈ (schatten 𝕜 p hp).ideal E F ↔ Summable (fun n ↦ T.singularValue n ^ p) := by
+theorem mem_finiteSubmodule_schatten_iff (p : ℝ) (hp : 1 ≤ p) (T : E →L[𝕜] F) :
+    T ∈ ((schatten 𝕜 p hp).operatorGauge E F).finiteSubmodule ↔
+      Summable (fun n ↦ T.singularValue n ^ p) := by
   have hp0 : 0 < p := zero_lt_one.trans_le hp
-  rw [mem_ideal_iff, gauge_schatten, lt_top_iff_ne_top,
+  rw [OperatorGauge.mem_finiteSubmodule, operatorGauge_apply, gauge_schatten, lt_top_iff_ne_top,
     ne_eq, ENNReal.rpow_eq_top_iff_of_pos (one_div_pos.mpr hp0)]
   simp_rw [← ENNReal.coe_rpow_of_nonneg _ hp0.le]
   exact ENNReal.tsum_coe_ne_top_iff_summable

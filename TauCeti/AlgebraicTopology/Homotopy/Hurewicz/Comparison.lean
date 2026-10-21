@@ -16,13 +16,16 @@ is an additive equivalence.  The natural chain-homotopy equivalence between simp
 normalized cubical singular chains transports this to an equivalence with ordinary singular
 homology (`HomotopyGroup.cubicalHurewiczSingularHomologyAddEquiv`).
 
-The resulting equivalence is natural in based maps.  It supplies the degree-`n + 2` singular
-homology isomorphism, while
+The resulting equivalence is natural in based maps; so is the transported cubical Hurewicz map
+itself, with no connectivity hypothesis
+(`HomotopyGroup.singularCubicalHomologyIso_inv_cubicalHurewiczHom_naturality`).  It supplies the
+degree-`n + 2` singular homology isomorphism, while
 `TauCeti.isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup` supplies the positive
-lower-degree vanishing.  The comparison here deliberately retains the cubical Hurewicz map as
-its forward description; identifying it with the independently defined
-relative-fundamental-class map `HomotopyGroup.hurewiczHom` requires a separate orientation
-comparison for the cube generator.
+lower-degree vanishing.  The comparison here retains the cubical Hurewicz map as its forward
+description.  The independently defined relative-fundamental-class map
+`HomotopyGroup.hurewiczHom` agrees with it up to a universal sign
+(`HomotopyGroup.exists_hurewicz_eq_units_smul_cubicalHurewicz`), which gives the Hurewicz
+theorem for `hurewiczHom` (`HomotopyGroup.hurewiczAddEquiv`).
 
 ## References
 
@@ -67,6 +70,28 @@ theorem cubicalHurewiczSingularHomologyAddEquiv_apply
     cubicalHurewiczAddEquiv_apply]
   rfl
 
+/-- The cubical Hurewicz class, transported to singular homology through the inverse
+cubical--simplicial comparison, is natural in based maps, for coefficients in any ring `k`. No
+connectivity hypothesis is needed. -/
+theorem singularCubicalHomologyIso_inv_cubicalHurewiczHom_naturality (k : Type) [Ring k]
+    (f : C(X, Y)) (hf : f x = y) (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
+    HomologicalComplex.homologyMap ((singularChains k).map (TopCat.ofHom f)) (n + 1)
+        ((singularCubicalHomologyIso k (TopCat.of X) (n + 1)).inv (cubicalHurewiczHom k n a)) =
+      (singularCubicalHomologyIso k (TopCat.of Y) (n + 1)).inv
+        (cubicalHurewiczHom k n (Additive.ofMul (HomotopyGroup.map f hf a.toMul))) := by
+  have hcomp :
+      (singularCubicalHomologyIso k (TopCat.of X) (n + 1)).inv ≫
+          HomologicalComplex.homologyMap ((singularChains k).map (TopCat.ofHom f)) (n + 1) =
+        HomologicalComplex.homologyMap
+            ((normalizedCubicalChainComplex k).map (TopCat.ofHom f)) (n + 1) ≫
+          (singularCubicalHomologyIso k (TopCat.of Y) (n + 1)).inv := by
+    rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
+    exact singularCubicalHomologyIso_hom_naturality (k := k) (TopCat.ofHom f) (n + 1)
+  rw [← ModuleCat.comp_apply, hcomp, ModuleCat.comp_apply,
+    cubicalHurewiczHom_apply, cubicalHurewiczHom_apply]
+  exact congrArg (singularCubicalHomologyIso k (TopCat.of Y) (n + 1)).inv.hom
+    (cubicalHurewicz_map k n f hf a.toMul).symm
+
 /-- The cubical Hurewicz equivalence with singular homology is natural in based maps between
 spaces satisfying the connectivity hypothesis. -/
 theorem cubicalHurewiczSingularHomologyAddEquiv_naturality
@@ -80,17 +105,6 @@ theorem cubicalHurewiczSingularHomologyAddEquiv_naturality
         (Additive.ofMul (HomotopyGroup.map f hf a.toMul)) := by
   rw [cubicalHurewiczSingularHomologyAddEquiv_apply,
     cubicalHurewiczSingularHomologyAddEquiv_apply]
-  have hcomp :
-      (singularCubicalHomologyIso ℤ (TopCat.of X) (n + 2)).inv ≫
-          HomologicalComplex.homologyMap ((singularChains ℤ).map (TopCat.ofHom f)) (n + 2) =
-        HomologicalComplex.homologyMap
-            ((normalizedCubicalChainComplex ℤ).map (TopCat.ofHom f)) (n + 2) ≫
-          (singularCubicalHomologyIso ℤ (TopCat.of Y) (n + 2)).inv := by
-    rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
-    exact singularCubicalHomologyIso_hom_naturality (k := ℤ) (TopCat.ofHom f) (n + 2)
-  rw [← ModuleCat.comp_apply, hcomp, ModuleCat.comp_apply,
-    cubicalHurewiczHom_apply, cubicalHurewiczHom_apply]
-  exact congrArg (singularCubicalHomologyIso ℤ (TopCat.of Y) (n + 2)).inv.hom
-    (cubicalHurewicz_map ℤ (n + 1) f hf a.toMul).symm
+  exact singularCubicalHomologyIso_inv_cubicalHurewiczHom_naturality ℤ f hf a
 
 end HomotopyGroup

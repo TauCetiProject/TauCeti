@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration
-public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.MeasureTheory.Constructions.Projective
+import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
 
 /-!
 # Finite measures on relational configurations
@@ -26,7 +27,18 @@ the restrictions along `Fin.val : Fin n → ℕ`.
   finite measure along a vertex map is determined by the laws of the finite sets of atoms that are
   relabelled from the source;
 * `TauCeti.RelationalConfiguration.measure_ext_of_map_restrict_val` — a finite measure on
-  configurations over `ℕ` is determined by its windows.
+  configurations over `ℕ` is determined by its windows;
+* `TauCeti.RelationalConfiguration.exists_map_restrict_val_eq` — conversely, probability laws on
+  the windows that are consistent under the inclusions `Fin n → Fin (n + 1)` are the windows of a
+  probability law over `ℕ`.
+
+The extension theorem is Kolmogorov's: the window laws prescribe the law of the values at every
+finite set of atoms, these laws form a projective family over the countably many atoms, and
+`TauCeti.Measure.exists_isProjectiveLimit_of_countable` realizes it. The construction follows the
+graph case `TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Basic`, which
+follows C. Freer, `cameronfreer/graphon` at commit `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`,
+Apache-2.0, `Graphon/InfiniteLaw.lean`, with the Boolean edge coordinates of a graph replaced by
+the Boolean atom coordinates of a configuration.
 -/
 
 public section
@@ -114,6 +126,132 @@ theorem measure_ext_of_map_restrict_val {μ ν : Measure (RelationalConfiguratio
     (measurable_restrict_eval J).comp (measurable_extend _)
   rw [hread, ← Measure.map_map hm (measurable_restrict _), h, Measure.map_map hm
     (measurable_restrict _)]
+
+/-! ### Extension of window laws to `ℕ` -/
+
+section Extension
+
+variable (P : ∀ n, Measure (RelationalConfiguration L (Fin n)))
+
+/-- Window laws consistent under the successive inclusions `Fin.castSucc` are consistent under
+every inclusion `Fin.castLE`. -/
+private theorem map_restrict_castLE_of_map_restrict_castSucc
+    (hP : ∀ n, (P (n + 1)).map (restrict Fin.castSucc) = P n) {m n : ℕ} (hmn : m ≤ n) :
+    (P n).map (restrict (Fin.castLE hmn)) = P m := by
+  induction n, hmn using Nat.le_induction with
+  | base =>
+    have hid : (Fin.castLE (le_refl m) : Fin m → Fin m) = id := funext (Fin.castLE_refl _)
+    rw [hid]
+    exact (congrArg (P m).map (funext restrict_id)).trans Measure.map_id
+  | succ n hmn ih =>
+    -- The inclusion `Fin m → Fin (n + 1)` factors through `Fin n`.
+    have hfac : restrict (L := L) (Fin.castLE (hmn.trans n.le_succ)) =
+        restrict (Fin.castLE hmn) ∘ restrict Fin.castSucc := by
+      have hcomp : Fin.castLE (hmn.trans n.le_succ) = Fin.castSucc ∘ Fin.castLE hmn :=
+        funext fun i => (Fin.castSucc_castLE hmn i).symm
+      funext c
+      rw [Function.comp_apply, ← restrict_comp, hcomp]
+    rw [hfac, ← Measure.map_map (measurable_restrict _) (measurable_restrict _), hP, ih]
+
+/-- The law of the atoms in `J` under the level-`n` window law, extended by `false` to `ℕ`. -/
+private noncomputable def windowAtomLaw (n : ℕ) (J : Finset (Atom L ℕ)) : Measure (∀ _ : J, Bool) :=
+  (P n).map fun d => J.restrict (d.extend Fin.val).eval
+
+private theorem measurable_restrict_eval_extend (n : ℕ) (J : Finset (Atom L ℕ)) :
+    Measurable fun d : RelationalConfiguration L (Fin n) => J.restrict (d.extend Fin.val).eval :=
+  (measurable_restrict_eval J).comp (measurable_extend _)
+
+/-- The law of the atoms in `J` does not depend on the level, as long as the level bounds the
+vertices of the atoms of `J`. -/
+private theorem windowAtomLaw_eq_of_le
+    (hP : ∀ n, (P (n + 1)).map (restrict Fin.castSucc) = P n) {J : Finset (Atom L ℕ)} {m n : ℕ}
+    (hJ : ∀ a ∈ J, ∃ b : Atom L (Fin m), b.map Fin.val = a) (hmn : m ≤ n) :
+    windowAtomLaw P n J = windowAtomLaw P m J := by
+  -- Reading the atoms of `J` at level `n` is reading them on the window below `m`.
+  have hread : (fun d : RelationalConfiguration L (Fin n) => J.restrict (d.extend Fin.val).eval) =
+      (fun d : RelationalConfiguration L (Fin m) => J.restrict (d.extend Fin.val).eval) ∘
+        restrict (Fin.castLE hmn) := by
+    funext d
+    ext a
+    obtain ⟨b, hb⟩ := hJ a a.2
+    have hval : (b.map (Fin.castLE hmn)).map Fin.val = b.map (Fin.val : Fin m → ℕ) := by
+      -- `Fin.val ∘ Fin.castLE hmn` is `Fin.val` by definition.
+      rw [← Atom.map_comp]
+      rfl
+    simp only [Function.comp_apply, Finset.restrict, ← hb]
+    rw [← hval, eval_extend_map Fin.val_injective, hval, eval_extend_map Fin.val_injective,
+      eval_restrict]
+  rw [windowAtomLaw, windowAtomLaw, ← map_restrict_castLE_of_map_restrict_castSucc P hP hmn,
+    Measure.map_map (measurable_restrict_eval_extend m J) (measurable_restrict _), ← hread]
+
+/-- A level bounding the vertices of the atoms in `J`. -/
+private noncomputable def atomLevel (J : Finset (Atom L ℕ)) : ℕ :=
+  (Atom.exists_forall_map_val J).choose
+
+private theorem atomLevel_spec (J : Finset (Atom L ℕ)) :
+    ∀ a ∈ J, ∃ b : Atom L (Fin (atomLevel J)), b.map Fin.val = a :=
+  (Atom.exists_forall_map_val J).choose_spec
+
+/-- The window laws prescribe the law of every finite set of atoms. -/
+private noncomputable def windowAtomFamily (J : Finset (Atom L ℕ)) : Measure (∀ _ : J, Bool) :=
+  windowAtomLaw P (atomLevel J) J
+
+private instance [∀ n, IsProbabilityMeasure (P n)] (J : Finset (Atom L ℕ)) :
+    IsProbabilityMeasure (windowAtomFamily P J) := by
+  unfold windowAtomFamily windowAtomLaw
+  infer_instance
+
+variable {P}
+
+/-- The prescribed law of the atoms in `J` is read off any level bounding their vertices. -/
+private theorem windowAtomFamily_eq (hP : ∀ n, (P (n + 1)).map (restrict Fin.castSucc) = P n)
+    {J : Finset (Atom L ℕ)} {n : ℕ} (hJ : ∀ a ∈ J, ∃ b : Atom L (Fin n), b.map Fin.val = a) :
+    windowAtomFamily P J = windowAtomLaw P n J := by
+  rw [windowAtomFamily,
+    ← windowAtomLaw_eq_of_le P hP (atomLevel_spec J) (le_max_left (atomLevel J) n),
+    windowAtomLaw_eq_of_le P hP hJ (le_max_right _ n)]
+
+private theorem isProjectiveMeasureFamily_windowAtomFamily
+    (hP : ∀ n, (P (n + 1)).map (restrict Fin.castSucc) = P n) :
+    IsProjectiveMeasureFamily (α := fun _ : Atom L ℕ => Bool) (windowAtomFamily P) := by
+  intro I J hJI
+  have hI := atomLevel_spec I
+  rw [windowAtomFamily_eq hP hI, windowAtomFamily_eq hP fun a ha => hI a (hJI ha), windowAtomLaw,
+    windowAtomLaw,
+    Measure.map_map (measurable_of_countable _) (measurable_restrict_eval_extend _ I)]
+  -- Restricting the atoms in `I` to `J` is restricting to `J` (`restrict₂_comp_restrict`).
+  rfl
+
+/-- **Kolmogorov extension for configurations over `ℕ`.** For a language with countably many
+relation symbols of each arity, probability laws on the configurations on the windows `Fin n` that
+are consistent under restriction along the inclusions `Fin n → Fin (n + 1)` are the windows of a
+probability law on the configurations over `ℕ`. This law is unique among finite measures by
+`measure_ext_of_map_restrict_val`. -/
+theorem exists_map_restrict_val_eq [∀ n, Countable (L.Relations n)]
+    [∀ n, IsProbabilityMeasure (P n)]
+    (hP : ∀ n, (P (n + 1)).map (restrict Fin.castSucc) = P n) :
+    ∃ ν : Measure (RelationalConfiguration L ℕ), IsProbabilityMeasure ν ∧
+      ∀ n, ν.map (restrict (Fin.val : Fin n → ℕ)) = P n := by
+  -- Kolmogorov extension of the laws of the atom coordinates, a countable family of Booleans.
+  obtain ⟨ν, hν, hlim⟩ := TauCeti.Measure.exists_isProjectiveLimit_of_countable
+    (X := fun _ : Atom L ℕ => Bool) (windowAtomFamily P)
+    (isProjectiveMeasureFamily_windowAtomFamily hP)
+  refine ⟨ν.map mk, inferInstance, fun n => ?_⟩
+  have hid : restrict (L := L) (Fin.val : Fin n → ℕ) ∘ extend Fin.val = id :=
+    funext (restrict_extend Fin.val_injective)
+  -- The window law is the window of its own extension by `false`; compare atom by atom.
+  rw [← Measure.map_id (μ := P n), ← hid,
+    ← Measure.map_map (measurable_restrict _) (measurable_extend _)]
+  refine map_restrict_eq_of_forall_finset _ fun J hJ => ?_
+  have hread : ((fun c : RelationalConfiguration L ℕ => J.restrict c.eval) ∘ mk) = J.restrict :=
+    funext fun x => funext fun a => eval_mk x a
+  rw [Measure.map_map (measurable_restrict_eval J) measurable_mk, hread, hlim J,
+    windowAtomFamily_eq hP hJ, windowAtomLaw,
+    Measure.map_map (measurable_restrict_eval J) (measurable_extend _)]
+  -- Both sides read the atoms of `J` off the extension, once through `Function.comp`.
+  rfl
+
+end Extension
 
 end RelationalConfiguration
 

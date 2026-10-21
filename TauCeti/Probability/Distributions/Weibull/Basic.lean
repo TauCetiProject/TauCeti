@@ -473,6 +473,12 @@ theorem cdf_weibullMeasure_eq (hk : 0 < k) (hlam : 0 < lam) (x : ℝ) :
       measureReal_Ioi_weibullMeasure hk hlam (not_le.mp hx)]
     simp
 
+/-- A valid Weibull law has positive survival at every finite point. -/
+theorem cdf_weibullMeasure_lt_one (hk : 0 < k) (hs : 0 < s) (x : ℝ) :
+    cdf (weibullMeasure k s) x < 1 := by
+  rw [cdf_weibullMeasure_eq hk hs]
+  split_ifs <;> linarith [Real.exp_pos (-(x / s) ^ k)]
+
 /-- **A shape-one Weibull law is exponential.** Its scale `lam` is the reciprocal of the
 exponential rate. No positivity is needed: at a nonpositive scale both sides are the zero
 measure, since the exponential law is the shape-one Gamma law, whose density is `ENNReal.ofReal`
