@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Action.End
-public import Mathlib.Algebra.Group.Action.Option
+public import Mathlib.Algebra.Group.Equiv.Basic
 public import Mathlib.GroupTheory.Coprod.Basic
-public import Mathlib.GroupTheory.FreeGroup.Reduce
-public import Mathlib.GroupTheory.Perm.Basic
-public import Mathlib.Tactic.Group
+public import Mathlib.GroupTheory.FreeGroup.Basic
+import Mathlib.Algebra.Group.Action.End
+import Mathlib.Algebra.Group.Action.Option
+import Mathlib.GroupTheory.FreeGroup.Reduce
+import Mathlib.GroupTheory.Perm.Basic
+import Mathlib.Tactic.Group
 
 /-!
 # `G`-groups and the free `G`-group `G[X]`
@@ -42,7 +44,7 @@ injectivity.
 * `TauCeti.GroupAlgGeom.GX.equivOfIsEmpty`, `TauCeti.GroupAlgGeom.GX.equivFreeGroup`: `G[∅] ≅ G`
   and, for trivial `G`, `G[X] ≅ F(X)`, under which evaluation is `FreeGroup.lift`.
 * `TauCeti.GroupAlgGeom.GX.not_commute_inl_inr_of`: a nontrivial coefficient does not commute
-  with a variable, so `G[X]` is not `G × F(X)`.
+  with a variable, so the inclusions of `G` and `F(X)` do not commute in `G[X]`.
 
 ## References
 
@@ -89,7 +91,7 @@ instance : MonoidHomClass (GHom ιH ιK) H K where
   map_one φ := φ.map_one'
 
 @[simp]
-theorem coe_toMonoidHom (φ : GHom ιH ιK) : ⇑φ.toMonoidHom = φ := rfl
+theorem toMonoidHom_eq_coe (φ : GHom ιH ιK) : φ.toMonoidHom = (φ : H →* K) := rfl
 
 @[simp]
 theorem coe_mk (φ : H →* K) (h : ∀ g, φ.toFun (ιH g) = ιK g) : ⇑(⟨φ, h⟩ : GHom ιH ιK) = φ :=
@@ -104,7 +106,7 @@ theorem map_coeff (φ : GHom ιH ιK) (g : G) : φ (ιH g) = ιK g :=
   φ.map_coeff' g
 
 @[simp]
-theorem comp_coeff (φ : GHom ιH ιK) : φ.toMonoidHom.comp ιH = ιK :=
+theorem comp_coeff (φ : GHom ιH ιK) : (φ : H →* K).comp ιH = ιK :=
   MonoidHom.ext φ.map_coeff
 
 variable (ιH) in
@@ -234,7 +236,7 @@ def homEquiv : GHom (inl : G →* GX G X) ι ≃ (X → H) where
   invFun v := evalGHom ι v
   left_inv φ := by
     refine GHom.ext fun w => ?_
-    simpa using (DFunLike.congr_fun (eq_eval φ.toMonoidHom) w).symm
+    simpa using (DFunLike.congr_fun (eq_eval (φ : GX G X →* H)) w).symm
   right_inv v := funext fun x => eval_inr_of ι v x
 
 @[simp]
@@ -243,6 +245,12 @@ theorem homEquiv_apply (φ : GHom (inl : G →* GX G X) ι) (x : X) :
 
 @[simp]
 theorem homEquiv_symm_apply : (homEquiv ι).symm v = evalGHom ι v := (rfl)
+
+/-- A `G`-homomorphism out of `G[X]` is determined by its values on the variables. -/
+@[ext]
+theorem GX.gHom_ext {φ ψ : GHom (inl : G →* GX G X) ι}
+    (h : ∀ x, φ (inr (FreeGroup.of x)) = ψ (inr (FreeGroup.of x))) : φ = ψ :=
+  (homEquiv ι).injective (funext h)
 
 variable {ι v}
 
@@ -259,8 +267,8 @@ theorem hom_eval {F : Type*} [FunLike F H K] [MonoidHomClass F H K] (f : F) (w :
 
 /-- `G`-homomorphisms commute with evaluation, as homomorphisms out of `G[X]`. -/
 theorem comp_eval {ιK : G →* K} (φ : GHom ι ιK) :
-    φ.toMonoidHom.comp (eval ι v) = eval ιK (φ ∘ v) := by
-  rw [MonoidHom.comp_eval, φ.comp_coeff, φ.coe_toMonoidHom]
+    (φ : H →* K).comp (eval ι v) = eval ιK (φ ∘ v) := by
+  rw [MonoidHom.comp_eval, φ.comp_coeff, MonoidHom.coe_ofClass]
 
 /-- `G`-homomorphisms commute with evaluation: `φ (w(v)) = w(φ ∘ v)`. -/
 @[simp]
@@ -316,8 +324,8 @@ theorem eval_eq_lift_equivFreeGroup [Subsingleton G] (ι : G →* H) (v : X → 
       (FreeGroup.ext_hom _ _ fun _ => by simp)
   exact DFunLike.congr_fun this w
 
-/-- A nontrivial coefficient does not commute with a variable in `G[X]`; in particular `G[X]` is
-not the direct product `G × F(X)`. -/
+/-- A nontrivial coefficient does not commute with a variable in `G[X]`; in particular the
+inclusions of `G` and `F(X)` do not commute, unlike in the direct product `G × F(X)`. -/
 theorem not_commute_inl_inr_of {a : G} (ha : a ≠ 1) (x : X) :
     ¬Commute (inl a : GX G X) (inr (FreeGroup.of x)) := by
   classical
