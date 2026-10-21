@@ -35,6 +35,8 @@ only a meet, not a join, so the join in `NC(s)` is characterised by its universa
 
 * `Finpartition.isNoncrossing_bot`, `Finpartition.isNoncrossing_top` — the partitions into
   singletons and into one part are noncrossing.
+* `Finpartition.IsNoncrossing.part_eq_part` — in a noncrossing partition, positions
+  `a < b < c < d` with `a, c` in one part and `b, d` in one part all lie in one part.
 * `Finpartition.IsNoncrossing.inf` — common refinements of noncrossing partitions are
   noncrossing.
 * `Finpartition.IsNoncrossing.restrict` — restricting a noncrossing partition of `s` to a subset
@@ -84,6 +86,15 @@ theorem isNoncrossing_iff_part :
   rw [← P.part_eq_of_mem hC hb] at hd
   rw [← P.part_eq_of_mem hB ha, ← P.part_eq_of_mem hC hb]
   exact h a (P.le hB ha) b (P.le hC hb) c hc d hd hab hbc hcd
+
+/-- In a noncrossing partition, positions `a < b < c < d` with `a, c` in a common part and `b, d`
+in a common part all lie in one part. -/
+theorem IsNoncrossing.part_eq_part (hP : P.IsNoncrossing) {a b c d : α} (ha : a ∈ s)
+    (hb : b ∈ s) (hac : P.part a = P.part c) (hbd : P.part b = P.part d) (hab : a < b)
+    (hbc : b < c) (hcd : c < d) : P.part a = P.part b :=
+  isNoncrossing_iff_part.1 hP a ha b hb c
+    (hac ▸ P.mem_part_self.2 (P.part_nonempty.1 (hac ▸ P.part_nonempty.2 ha))) d
+    (hbd ▸ P.mem_part_self.2 (P.part_nonempty.1 (hbd ▸ P.part_nonempty.2 hb))) hab hbc hcd
 
 /-- The partition into singletons is noncrossing. -/
 @[simp]
