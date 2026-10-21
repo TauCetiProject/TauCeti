@@ -77,8 +77,9 @@ theorem fourier_gaussian_of_im_pos_of_finrank_eq_two_mul {k : ℕ}
     (hk : Module.finrank ℝ V = 2 * k) {τ : ℂ} (hτ : 0 < τ.im) (y : V) :
     𝓕 (fun x : V ↦ cexp (π * I * ‖x‖ ^ 2 * τ)) y =
       ((-I) ^ k * τ ^ k)⁻¹ * cexp (π * I * ‖y‖ ^ 2 * (-1 / τ)) := by
-  rw [fourier_gaussian_of_im_pos hτ, hk, neg_div, cpow_neg,
-    show ((2 * k : ℕ) : ℂ) / 2 = (k : ℕ) by push_cast; ring, cpow_natCast, div_I, ← mul_pow]
+  -- Half the dimension `2 * k` is the natural number `k`, so the complex power is an integer power.
+  have hhalf : ((2 * k : ℕ) : ℂ) / 2 = (k : ℕ) := by push_cast; ring
+  rw [fourier_gaussian_of_im_pos hτ, hk, neg_div, cpow_neg, hhalf, cpow_natCast, div_I, ← mul_pow]
   congr 2
   ring
 
