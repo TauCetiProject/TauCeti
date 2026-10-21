@@ -19,9 +19,10 @@ A *tower* of modules over a ring `R` is a functor `ℕᵒᵖ ⥤ ModuleCat R`, t
 modules `A₀ ← A₁ ← A₂ ← ⋯` with transition maps `φₙ : Aₙ₊₁ → Aₙ`. On the product `∏ₙ Aₙ` the
 *shift* `δ(x)ₙ = xₙ - φₙ(xₙ₊₁)` is `R`-linear; its kernel `lim A` is the module of compatible
 families and its cokernel is `lim¹ A`. This file shows that `lim A`, with its projections, is a
-limit of the tower in `ModuleCat R`, and that `lim¹ A` vanishes when every transition map is
-surjective. By Stacks, Tag 07KW, `lim` and `lim¹` are the derived functors `R⁰lim` and `R¹lim` on
-`ℕ`-indexed towers, whose higher derived limits vanish; that identification is not formalized here.
+limit of the tower in `ModuleCat R`, that `lim¹ A` vanishes if and only if the shift is surjective,
+and hence that `lim¹ A` vanishes when every transition map is surjective. By Stacks, Tag 07KW,
+`lim` and `lim¹` are the derived functors `R⁰lim` and `R¹lim` on `ℕ`-indexed towers, whose higher
+derived limits vanish; that identification is not formalized here.
 The shift presentation is the input to the six-term sequence of a short exact sequence of towers,
 to Milnor sequences for towers of complexes, and to derived limits of towers of modules.
 
@@ -37,6 +38,8 @@ noncommutative ring are allowed.
 * `TauCeti.ModuleTower.isLimitLimCone`: `lim`, with its projections, is a limit of the tower.
 * `TauCeti.ModuleTower.limMap`, `TauCeti.ModuleTower.limOneMap`: the linear maps induced by a
   morphism of towers, with their identity, composition, zero and addition laws.
+* `TauCeti.ModuleTower.subsingleton_limOne_iff`: `lim¹` vanishes if and only if the shift map is
+  surjective.
 * `TauCeti.ModuleTower.subsingleton_limOne_of_surjective`: towers with surjective transitions
   have vanishing `lim¹`.
 
@@ -99,6 +102,9 @@ abbrev limOne : Type _ :=
 theorem lim_eq_ker : F.lim = LinearMap.ker F.shift :=
   (rfl)
 
+/-- `x ∈ lim A` if and only if `φₙ(xₙ₊₁) = xₙ` for every `n`: `lim A` is exactly the module of
+compatible families. -/
+@[simp]
 theorem mem_lim {x : F.Product} : x ∈ F.lim ↔ ∀ n, F.transition n (x (n + 1)) = x n := by
   rw [lim_eq_ker, LinearMap.mem_ker, funext_iff]
   simp only [shift_apply, Pi.zero_apply, sub_eq_zero]
@@ -187,13 +193,15 @@ def isLimitLimCone : Limits.IsLimit F.limCone where
     exact Subtype.ext <| funext fun n ↦
       LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (hg (op n))) x
 
+/-- `lim¹ A` vanishes if and only if the shift map is surjective. -/
 theorem subsingleton_limOne_iff : Subsingleton F.limOne ↔ Function.Surjective F.shift := by
   rw [Submodule.Quotient.subsingleton_iff, LinearMap.range_eq_top]
 
-/-- If every transition map of a tower is surjective, then so is its shift map: the equations
-`xₙ - φₙ(xₙ₊₁) = bₙ` are solved by choosing `x₀ = 0` and `xₙ₊₁` a preimage of `xₙ - bₙ`. -/
+/-- If every transition map of a tower is surjective, then so is its shift map. -/
 theorem shift_surjective (h : ∀ n, Function.Surjective (F.transition n)) :
     Function.Surjective F.shift := by
+  -- The equations `xₙ - φₙ(xₙ₊₁) = bₙ` are solved by choosing `x₀ = 0` and `xₙ₊₁` a preimage
+  -- of `xₙ - bₙ`.
   choose s hs using h
   intro b
   let x : F.Product := fun n ↦
@@ -216,7 +224,7 @@ variable {F G H : ModuleTower.{v} R}
 
 /-- The linear map `∏ₙ Aₙ → ∏ₙ Bₙ` induced levelwise by a morphism of towers. -/
 def productMap (f : F ⟶ G) : F.Product →ₗ[R] G.Product :=
-  LinearMap.pi fun n ↦ (f.app (op n)).hom ∘ₗ LinearMap.proj n
+  LinearMap.piMap fun n ↦ (f.app (op n)).hom
 
 @[simp]
 theorem productMap_apply (f : F ⟶ G) (x : F.Product) (n : ℕ) :
@@ -283,6 +291,7 @@ theorem limMap_zero : limMap (0 : F ⟶ G) = 0 :=
 theorem limMap_add (f g : F ⟶ G) : limMap (f + g) = limMap f + limMap g :=
   (rfl)
 
+/-- A morphism of towers maps the image of the shift map into the image of the shift map. -/
 theorem range_shift_le_comap (f : F ⟶ G) :
     LinearMap.range F.shift ≤ (LinearMap.range G.shift).comap (productMap f) := by
   rintro _ ⟨x, rfl⟩
