@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
-import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
 # The law of a selfadjoint element in a C⋆-probability space
@@ -35,11 +34,18 @@ are formulated analytically.
 * `PositiveLinearMap.eq_law_iff`: `μ_a` is the only finite measure on `ℝ` with this property for
   continuous `f`.
 * `PositiveLinearMap.law_compl_spectrum`: `μ_a` is concentrated on `spectrum ℝ a`.
+* `PositiveLinearMap.integrable_law`: every `f` continuous on `spectrum ℝ a` is `μ_a`-integrable.
 * `PositiveLinearMap.isProbabilityMeasure_law`: `μ_a` is a probability measure when `φ 1 = 1`.
 * `PositiveLinearMap.ofReal_integral_pow_law`: the moments of `μ_a` are `φ (a ^ n)`.
 * `PositiveLinearMap.law_cfc`, `PositiveLinearMap.law_aeval`,
   `PositiveLinearMap.law_smul_add_algebraMap`: the law of `g(a)`, of `p(a)` for a real
   polynomial `p`, and of `r • a + c` is the pushforward of `μ_a` along `g`, `p` and `x ↦ r x + c`.
+
+## Implementation notes
+
+The construction follows `ContinuousLinearMap.diagMeasure` in
+`TauCeti/Analysis/InnerProductSpace/BorelCalculus/DiagonalMeasure.lean`, which applies the same
+Riesz–Markov–Kakutani step to a vector state of a normal operator on a Hilbert space.
 
 ## References
 
@@ -66,11 +72,13 @@ selfadjoint element `a`, whose Riesz–Markov–Kakutani measure is the law of `
 private def lawFunctional (ha : IsSelfAdjoint a) : C_c(spectrum ℝ a, ℝ) →ₚ[ℝ] ℝ :=
   PositiveLinearMap.mk₀
     { toFun g := (φ (cfcHom ha g.toContinuousMap)).re
+      -- `toContinuousMap` commutes with `+` and `•` by definition, but `rw` matches
+      -- syntactically: restating the coercion lets `map_add` and `map_smul` of `cfcHom` fire.
       map_add' g h := by
-        rw [show (g + h).toContinuousMap = g.toContinuousMap + h.toContinuousMap by ext; simp,
+        rw [show (g + h).toContinuousMap = g.toContinuousMap + h.toContinuousMap from rfl,
           map_add, map_add, Complex.add_re]
       map_smul' c g := by
-        rw [show (c • g).toContinuousMap = c • g.toContinuousMap by ext; simp, map_smul,
+        rw [show (c • g).toContinuousMap = c • g.toContinuousMap from rfl, map_smul,
           ← Complex.coe_smul, map_smul]
         simp }
     fun g hg => by
@@ -98,6 +106,7 @@ private lemma law_of_isSelfAdjoint (ha : IsSelfAdjoint a) :
   simp [law, ha]
 
 /-- The law of an element that is not selfadjoint is, by convention, the zero measure. -/
+@[simp]
 theorem law_of_not_isSelfAdjoint (ha : ¬IsSelfAdjoint a) : law φ a = 0 := by
   simp [law, ha]
 
@@ -120,8 +129,23 @@ theorem law_compl_spectrum (a : A) : law φ a (spectrum ℝ a)ᶜ = 0 := by
   · simp [law_of_not_isSelfAdjoint φ ha]
 
 /-- The law `μ_a` is concentrated on the spectrum of `a`, as a restriction. -/
+@[simp]
 theorem restrict_spectrum_law (a : A) : (law φ a).restrict (spectrum ℝ a) = law φ a :=
   Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr (law_compl_spectrum φ a))
+
+/-- Every function continuous on the spectrum of `a` is integrable against the law `μ_a`. -/
+theorem integrable_law (a : A) (f : ℝ → ℝ)
+    (hf : ContinuousOn f (spectrum ℝ a) := by cfc_cont_tac) : Integrable f (law φ a) := by
+  rw [← restrict_spectrum_law]
+  exact hf.integrableOn_compact (ContinuousFunctionalCalculus.isCompact_spectrum a)
+
+/-- Every real polynomial is integrable against the law `μ_a`. -/
+theorem integrable_eval_law (a : A) (p : ℝ[X]) : Integrable (fun x ↦ p.eval x) (law φ a) :=
+  integrable_law φ a (fun x ↦ p.eval x)
+
+/-- Every power `x ^ n` is integrable against the law `μ_a`. -/
+theorem integrable_pow_law (a : A) (n : ℕ) : Integrable (· ^ n) (law φ a) :=
+  integrable_law φ a (· ^ n)
 
 /-- The defining identity of the law on the spectrum. -/
 private lemma ofReal_integral_spectrumLaw (ha : IsSelfAdjoint a) (g : C(spectrum ℝ a, ℝ)) :
