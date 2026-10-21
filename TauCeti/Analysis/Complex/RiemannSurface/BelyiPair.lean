@@ -1195,6 +1195,15 @@ def toHom (e : P.Iso Q) : P.Hom Q where
 theorem coe_toHom (e : P.Iso Q) : ⇑e.toHom = e :=
   (rfl)
 
+@[simp]
+theorem toHom_refl (P : AnalyticBelyiPair.{u}) : (Iso.refl P).toHom = Hom.id P :=
+  Hom.ext fun _ ↦ rfl
+
+@[simp]
+theorem toHom_trans {R : AnalyticBelyiPair.{u}} (e : P.Iso Q) (e' : Q.Iso R) :
+    (e.trans e').toHom = e'.toHom.comp e.toHom :=
+  Hom.ext fun _ ↦ rfl
+
 end AnalyticBelyiPair.Iso
 
 /-- The isomorphism given by a morphism between pairs of the same degree has that morphism as its
@@ -1202,6 +1211,12 @@ underlying morphism. -/
 @[simp]
 theorem AnalyticBelyiPair.Hom.toHom_toIso {P Q : AnalyticBelyiPair.{u}} (f : P.Hom Q)
     (h : degree P.β = degree Q.β) : (f.toIso h).toHom = f :=
+  ext fun x ↦ by simp
+
+/-- The isomorphism given by the morphism underlying an isomorphism is that isomorphism. -/
+@[simp]
+theorem AnalyticBelyiPair.Iso.toIso_toHom {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q)
+    (h : degree P.β = degree Q.β) : e.toHom.toIso h = e :=
   ext fun x ↦ by simp
 
 /-! ### The trivial pair and pairs of degree one -/
