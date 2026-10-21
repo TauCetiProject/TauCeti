@@ -32,8 +32,8 @@ space the constructible topology is totally separated, which makes compact subse
   subset lies in its constructible closure, in any topological space.
 * `PrespectralSpace.exists_isOpen_isCompact_of_not_specializes`: if `x` does not specialize to
   `y`, a quasi-compact open subset contains `y` but not `x`.
-* `IsCompact.isClopen_preimage_ofTopology`: a quasi-compact open subset is clopen in
-  `WithConstructibleTopology X`.
+* `IsCompact.isClopen_preimage_ofTopology_of_isOpen`: a quasi-compact open subset is clopen
+  in `WithConstructibleTopology X`.
 * `WithConstructibleTopology.instTotallySeparatedSpace`: the constructible topology of a T₀
   prespectral space is totally separated, hence Hausdorff and totally disconnected. On a spectral
   space it is also compact (`compactSpace_withConstructibleTopology`), so it is profinite.
@@ -125,7 +125,8 @@ theorem PrespectralSpace.exists_isOpen_isCompact_of_not_specializes [Prespectral
 
 /-- The preimage in `WithConstructibleTopology X` of a quasi-compact open subset of `X` is
 clopen. -/
-theorem IsCompact.isClopen_preimage_ofTopology {s : Set X} (hs : IsCompact s) (ho : IsOpen s) :
+theorem IsCompact.isClopen_preimage_ofTopology_of_isOpen {s : Set X} (hs : IsCompact s)
+    (ho : IsOpen s) :
     IsClopen (WithTopology.ofTopology ⁻¹' s : Set (WithConstructibleTopology X)) :=
   @IsClopen.preimage _ _ _ (constructibleTopology X) _
     (hs.isClopen_constructibleTopology_of_isOpen ho) _ (WithTopology.continuous_ofTopology _)
@@ -142,7 +143,7 @@ instance WithConstructibleTopology.instTotallySeparatedSpace [PrespectralSpace X
     exists_isOpen_xor_mem ((WithTopology.ofTopology_injective _).ne hxy)
   · obtain ⟨V, hVo, hVc, hxV, hyV⟩ :=
       PrespectralSpace.exists_isOpen_isCompact_of_not_specializes (hUo.not_specializes hy hx)
-    exact ⟨_, hVc.isClopen_preimage_ofTopology hVo, hxV, hyV⟩
+    exact ⟨_, hVc.isClopen_preimage_ofTopology_of_isOpen hVo, hxV, hyV⟩
   · obtain ⟨V, hVo, hVc, hyV, hxV⟩ :=
       PrespectralSpace.exists_isOpen_isCompact_of_not_specializes (hUo.not_specializes hx hy)
-    exact ⟨_, (hVc.isClopen_preimage_ofTopology hVo).compl, hxV, fun h ↦ h hyV⟩
+    exact ⟨_, (hVc.isClopen_preimage_ofTopology_of_isOpen hVo).compl, hxV, fun h ↦ h hyV⟩

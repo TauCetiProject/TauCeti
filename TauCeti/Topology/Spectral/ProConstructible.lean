@@ -353,7 +353,8 @@ theorem IsProConstructible.closure_eq_setOfPred_specializes (hs : IsProConstruct
     -- The complements of the `U x` are open for the constructible topology and cover `s`.
     obtain ⟨t, hts, htfin, hcover⟩ := (IsClosed.isCompact hs).elim_finite_subcover_image
       (b := s) (c := fun x ↦ WithTopology.ofTopology ⁻¹' (U x)ᶜ)
-      (fun x hx ↦ ((hUc x hx).isClopen_preimage_ofTopology (hUo x hx)).compl.isOpen)
+      (fun x hx ↦
+        ((hUc x hx).isClopen_preimage_ofTopology_of_isOpen (hUo x hx)).compl.isOpen)
       (fun w hw ↦ Set.mem_biUnion hw (hxU _ hw))
     rw [← Set.preimage_iUnion₂,
       (WithTopology.ofTopology_surjective _).preimage_subset_preimage_iff] at hcover
