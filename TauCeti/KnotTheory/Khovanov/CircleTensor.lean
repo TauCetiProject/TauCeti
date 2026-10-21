@@ -170,8 +170,8 @@ theorem fiberwiseMul_circleBasis [Fintype τ] (f : σ → τ) (l : σ → Bool) 
     by_cases hj : ∃ i, f i = j ∧ l i = true
     · obtain ⟨i, hi⟩ := hj
       have hpos : 0 < #{i | f i = j ∧ l i = true} := Finset.card_pos.mpr ⟨i, by simpa using hi⟩
-      rw [show #{i | f i = j ∧ l i = true} = 1 by have := h j; omega,
-        decide_eq_true ⟨i, hi⟩]
+      have hcard : #{i | f i = j ∧ l i = true} = 1 := by have := h j; omega
+      rw [hcard, decide_eq_true ⟨i, hi⟩]
       simp
     · rw [Finset.card_eq_zero.mpr (Finset.filter_eq_empty_iff.mpr fun i _ hi ↦ hj ⟨i, hi⟩),
         decide_eq_false hj]
@@ -254,6 +254,13 @@ theorem circleBasis_mem_circleQuantumGrading_piece (l : ι → Bool) :
   rw [← Module.Basis.repr_symm_single_one, circleQuantumGrading,
     InternalGrading.apply_mem_map_piece_iff]
   exact InternalGrading.single_mem_finsupp_piece _ _
+
+/-- The pure tensor of the labels of a labelling is homogeneous of the degree of the labelling.
+This is the simp-normal form of `TauCeti.Khovanov.circleBasis_mem_circleQuantumGrading_piece`. -/
+@[simp]
+theorem tprod_labelBasis_mem_circleQuantumGrading_piece (l : ι → Bool) :
+    (⨂ₜ[R] i, labelBasis R (l i)) ∈ (circleQuantumGrading R ι).piece (labellingQuantumDegree ι l) :=
+  circleBasis_apply (R := R) l ▸ circleBasis_mem_circleQuantumGrading_piece l
 
 /-- **A tensor of homogeneous elements is homogeneous**: if each factor `x i` of `R[ε]` has quantum
 degree `d i`, then `⨂ₜ x` has quantum degree `∑ i, d i`. -/
