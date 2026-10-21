@@ -86,7 +86,7 @@ theorem refl_transOpenPartialHomeomorph {X Y : Type*} [TopologicalSpace X] [Topo
 /-- The charted-space structure on `N` pulled back along a homeomorphism `e : N ≃ₜ M`: the atlas
 is `{e.transOpenPartialHomeomorph c | c ∈ atlas H M}` and the chart at `x` is the chart of `M` at
 `e x` precomposed with `e`. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 def pullbackChartedSpace (e : N ≃ₜ M) : ChartedSpace H N where
   atlas := (e.transOpenPartialHomeomorph ·) '' atlas H M
   chartAt x := e.transOpenPartialHomeomorph (chartAt H (e x))
@@ -177,8 +177,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
 /-- The pulled-back extended chart at `x` is `e` followed by the extended chart of `M` at `e x`. -/
 theorem pullbackChartedSpace_extChartAt (e : N ≃ₜ M) (x : N) :
     letI := e.pullbackChartedSpace (H := H)
-    extChartAt I x = e.toEquiv.transPartialEquiv (extChartAt I (e x)) :=
-  e.toEquiv.transPartialEquiv_trans _ _
+    extChartAt I x = e.toEquiv.transPartialEquiv (extChartAt I (e x)) := by
+  let := e.pullbackChartedSpace (H := H)
+  rw [extChartAt, OpenPartialHomeomorph.extend, pullbackChartedSpace_chartAt, extChartAt,
+    OpenPartialHomeomorph.extend]
+  -- The underlying partial equivalence of `e.transOpenPartialHomeomorph c` is, by definition,
+  -- `e.toEquiv.transPartialEquiv c.toPartialEquiv`.
+  exact e.toEquiv.transPartialEquiv_trans _ _
 
 /-- The structure pulled back from a `C^n` manifold along a homeomorphism is a `C^n` manifold. -/
 theorem pullback_isManifold (e : N ≃ₜ M) [IsManifold I n M] :

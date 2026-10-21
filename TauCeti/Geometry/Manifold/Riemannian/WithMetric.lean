@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
@@ -152,11 +152,8 @@ instance : MeasurableSpace (WithMetric g) := borel _
 instance : BorelSpace (WithMetric g) := ⟨rfl⟩
 
 /-- The copy of `M` carrying `g` has the charts of `M`, precomposed with `ofWithMetric`. -/
-instance : ChartedSpace H (WithMetric g) where
-  atlas := (homeomorph g).transOpenPartialHomeomorph '' atlas H M
-  chartAt x := (homeomorph g).transOpenPartialHomeomorph (chartAt H x.ofWithMetric)
-  mem_chart_source x := by simp [mem_chart_source]
-  chart_mem_atlas x := mem_image_of_mem _ (chart_mem_atlas H _)
+instance : ChartedSpace H (WithMetric g) :=
+  (homeomorph g).pullbackChartedSpace
 
 theorem chartAt_eq (x : WithMetric g) :
     chartAt H x = (homeomorph g).transOpenPartialHomeomorph (chartAt H x.ofWithMetric) :=
@@ -164,11 +161,8 @@ theorem chartAt_eq (x : WithMetric g) :
 
 /-- The chart transitions of the copy are those of `M`, so it is a manifold of the same
 smoothness. -/
-instance {k : ℕ∞ω} [IsManifold I k M] : IsManifold I k (WithMetric g) where
-  compatible := by
-    rintro _ _ ⟨e, he, rfl⟩ ⟨e', he', rfl⟩
-    rw [Homeomorph.transOpenPartialHomeomorph_symm_trans]
-    exact HasGroupoid.compatible he he'
+instance {k : ℕ∞ω} [IsManifold I k M] : IsManifold I k (WithMetric g) :=
+  (homeomorph g).pullback_isManifold I k
 
 variable {g}
 
