@@ -30,8 +30,7 @@ theorem, and applied to `S`-units they do the same for the `S`-logarithmic embed
 statement holds for `x = 0` as well, where all the terms vanish.
 
 The multiplicative height of a tuple `x` is likewise the product over all places of its largest
-normalized absolute value, `mulHeight x = ∏ᶠ v, max_i ‖x_i‖_v`. This needs `x ≠ 0`, since the
-height of the zero tuple is `1`.
+normalized absolute value, `mulHeight x = ∏ᶠ v, max_i ‖x_i‖_v`.
 
 ## Main results
 

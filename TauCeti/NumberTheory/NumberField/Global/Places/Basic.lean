@@ -36,8 +36,8 @@ standard normalization: `‖·‖_v` is the module of the local field at `v`, wh
 norm and the product formula require.
 
 Heights in Diophantine approximation instead use the degree-normalized absolute value
-`TauCeti.GlobalNumberFields.normAbs`, the `[K : ℚ]`-th root of `‖·‖_v`, whose products over the
-places give absolute heights.
+`TauCeti.GlobalNumberFields.normAbs`, written `|·|_v`, the `[K : ℚ]`-th root of `‖·‖_v`, whose
+products over the places give absolute heights.
 
 ## Main definitions
 
@@ -234,24 +234,18 @@ theorem finprod_normalizedAbsValue_eq_one (hx : x ≠ 0) :
 many places, largest normalized absolute value `1`. -/
 theorem hasFiniteMulSupport_iSup_normalizedAbsValue {ι : Type*} [Finite ι] {y : ι → K}
     (hy : y ≠ 0) : HasFiniteMulSupport fun v : Place K ↦ ⨆ i, normalizedAbsValue v (y i) := by
-  obtain ⟨j, hj⟩ := Function.ne_iff.mp hy
-  have : Nonempty ι := ⟨j⟩
-  refine ((Set.toFinite {i | y i ≠ 0}).biUnion fun i hi ↦
-    hasFiniteMulSupport_normalizedAbsValue hi).subset fun v hv ↦ ?_
-  by_contra hv'
-  simp only [Set.mem_iUnion, Set.mem_ofPred_eq, mem_mulSupport, not_exists, not_not] at hv'
-  have hle (i : ι) : normalizedAbsValue v (y i) ≤ 1 := by
-    by_cases hi : y i = 0
-    · simp [hi]
-    · exact (hv' i hi).le
-  exact hv <| le_antisymm (ciSup_le hle) <| (hv' j hj).symm.le.trans <|
-    le_ciSup (f := fun i ↦ normalizedAbsValue v (y i)) (Set.finite_range _).bddAbove j
+  refine hasFiniteMulSupport_sum_type ?_ (Set.toFinite _)
+  convert (FinitePlace.hasFiniteMulSupport_iSup hy).comp_of_injective
+    FinitePlace.equivHeightOneSpectrum.symm.injective
+  ext v
+  simp [FinitePlace.equivHeightOneSpectrum_symm_apply, FinitePlace.norm_embedding]
 
 /-! ### The degree-normalized absolute value -/
 
-/-- The degree-normalized absolute value `‖x‖_v = normalizedAbsValue v x ^ (1 / [K : ℚ])` at a
-place `v` of a number field `K`. At an infinite place `w` it is `|x|_w ^ (mult w / [K : ℚ])`
-(`normAbs_inr`), and at a finite place it is the `[K : ℚ]`-th root of the `v`-adic absolute value.
+/-- The degree-normalized absolute value `|x|_v = normalizedAbsValue v x ^ (1 / [K : ℚ])` at a
+place `v` of a number field `K`. At an infinite place `w` it is `w x ^ (mult w / [K : ℚ])`
+(`normAbs_inr`), and at a finite place it is the `[K : ℚ]`-th root of the `v`-adic absolute value
+(`normAbs_inl`).
 
 This is the normalization of Evertse–Ferretti, in which the product of the local factors of a
 height is the absolute height: it does not change when `K` is replaced by a finite extension. -/
@@ -267,8 +261,16 @@ noncomputable def normAbs (v : Place K) : K →*₀ ℝ where
 theorem normAbs_apply (v : Place K) (x : K) :
     normAbs v x = normalizedAbsValue v x ^ ((1 : ℝ) / Module.finrank ℚ K) := (rfl)
 
-/-- At an infinite place `w`, the degree-normalized absolute value is `|x|_w ^ (mult w / [K : ℚ])`.
+/-- At a finite place `v`, the degree-normalized absolute value is the `[K : ℚ]`-th root of the
+`v`-adic absolute value. -/
+@[simp]
+theorem normAbs_inl (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    normAbs (Sum.inl v) x =
+      NumberField.HeightOneSpectrum.adicAbv K v x ^ ((1 : ℝ) / Module.finrank ℚ K) := (rfl)
+
+/-- At an infinite place `w`, the degree-normalized absolute value is `w x ^ (mult w / [K : ℚ])`.
 -/
+@[simp]
 theorem normAbs_inr (w : InfinitePlace K) (x : K) :
     normAbs (Sum.inr w) x = w x ^ ((w.mult : ℝ) / Module.finrank ℚ K) := by
   rw [normAbs_apply, normalizedAbsValue_inr, ← Real.rpow_natCast,
