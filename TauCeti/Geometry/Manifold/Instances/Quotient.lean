@@ -42,6 +42,8 @@ an open invariant subset. The free locus inherits the charts of the ambient mani
   `C^n` maps on a `C^n` manifold is a `C^n` manifold.
 * `TauCeti.isLocalDiffeomorph_quotientMk`: the orbit projection is a `C^n` local
   diffeomorphism.
+* `TauCeti.instIsManifoldAddQuotient`, `TauCeti.isLocalDiffeomorph_addQuotientMk`: the same for
+  additive actions, on Mathlib's additive orbit space `AddAction.orbitRel.Quotient`.
 * `TauCeti.freeLocus.instChartedSpace`, `TauCeti.freeLocus.instIsManifold` and
   `TauCeti.freeLocus.instContMDiffConstSMul`: the free locus of a properly discontinuous action
   is an open submanifold on which the group acts by `C^n` maps.
@@ -192,6 +194,7 @@ variable [ContMDiffConstSMul I n G M]
 
 /-- Two points in one orbit are related by the action of a group element, a `C^n` deck
 transformation of the orbit projection. -/
+@[to_additive addQuotientMk_deck]
 private theorem quotientMk_deck (z w : M)
     (h : (Quotient.mk (MulAction.orbitRel G M) z) = Quotient.mk (MulAction.orbitRel G M) w) :
     ∃ φ : M → M, ContMDiffAt I I n φ z ∧ φ z = w ∧
@@ -205,6 +208,9 @@ variable [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul
 
 /-- The orbit space of a free, properly discontinuous action by `C^n` maps on a `C^n` manifold is a
 `C^n` manifold, for the charts pushed forward along the orbit projection. -/
+@[to_additive instIsManifoldAddQuotient /-- The orbit space of a free, properly discontinuous
+additive action by `C^n` maps on a `C^n` manifold is a `C^n` manifold, for the charts pushed
+forward along the orbit projection. -/]
 instance instIsManifoldQuotient [IsManifold I n M] :
     IsManifold I n (MulAction.orbitRel.Quotient G M) :=
   (isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := G) (E := M)).isCoveringMap
@@ -213,6 +219,9 @@ instance instIsManifoldQuotient [IsManifold I n M] :
 
 /-- The orbit projection of a free, properly discontinuous action by `C^n` maps on a `C^n` manifold
 is a `C^n` local diffeomorphism. -/
+@[to_additive isLocalDiffeomorph_addQuotientMk /-- The orbit projection of a free, properly
+discontinuous additive action by `C^n` maps on a `C^n` manifold is a `C^n` local
+diffeomorphism. -/]
 theorem isLocalDiffeomorph_quotientMk [IsManifold I n M] :
     IsLocalDiffeomorph I I n (Quotient.mk (MulAction.orbitRel G M)) :=
   (isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := G) (E := M)).isCoveringMap
