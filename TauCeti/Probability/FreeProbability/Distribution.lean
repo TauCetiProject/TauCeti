@@ -60,8 +60,12 @@ theorem jointDistribution_basisFreeMonoid (φ : A →ₗ[R] R) (a : ι → A)
     (w : FreeMonoid ι) :
     jointDistribution φ a (FreeAlgebra.basisFreeMonoid R ι w) =
       φ (w.toList.map a).prod := by
-  simp [FreeAlgebra.basisFreeMonoid, FreeAlgebra.equivMonoidAlgebraFreeMonoid,
-    FreeMonoid.lift_apply, map_list_prod, List.map_map, Function.comp_def]
+  -- Mathlib has no basis-vector evaluation lemma; isolate its representation here.
+  have basis_eq_prod : FreeAlgebra.basisFreeMonoid R ι w =
+      (w.toList.map (FreeAlgebra.ι R)).prod := by
+    simp [FreeAlgebra.basisFreeMonoid, FreeAlgebra.equivMonoidAlgebraFreeMonoid,
+      FreeMonoid.lift_apply]
+  rw [basis_eq_prod, jointDistribution_prod]
 
 /-- A joint algebraic distribution is determined by all its word moments, including the
 empty word. The two families may live in different algebras. -/
