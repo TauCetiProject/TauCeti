@@ -38,7 +38,8 @@ the kernel of `D_{-A}`, and the index of `D_A` is `dim ker D_A - dim ker D_{-A}`
 The inclusion of the orthogonal complement of the range in the kernel of `D_{-A}` needs neither
 finite dimensionality of `E` nor any hypothesis on `A` beyond essential boundedness and
 almost-everywhere symmetry, and is stated in that generality; the reverse inclusion uses only
-finite dimensionality of `E` in addition.
+finite dimensionality of `E` in addition. The index formula holds for any such coefficient whose
+trajectory operator has closed range.
 
 ## Main declarations
 
@@ -52,7 +53,10 @@ finite dimensionality of `E` in addition.
 * `TauCeti.WeakDerivStep.finiteDimensional_coker_trajectoryOperator`: the cokernel of `D_A` is
   finite dimensional.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`: `D_A` is a Fredholm operator.
-* `TauCeti.WeakDerivStep.index_trajectoryOperator`: its index is `dim ker D_A - dim ker D_{-A}`.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_of_isClosed_range`: whenever the range of `D_A`
+  is closed, its index is `dim ker D_A - dim ker D_{-A}`.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator`: in particular, this holds under the
+  asymptotic hypotheses above.
 
 ## References
 
@@ -208,7 +212,8 @@ theorem map_ker_le_orthogonal_range_trajectoryOperator [FiniteDimensional ℝ E]
   rw [ContinuousLinearMap.coe_coe, prevL_apply]
   exact hu
 
-/-- **The cokernel of `D_A` is the kernel of its formal adjoint.** If the coefficient of
+/-- **The orthogonal complement of the range of `D_A` is the kernel of its formal adjoint.** If
+the coefficient of
 `D_A u = u' + A u` is almost everywhere symmetric and `E` is finite dimensional, the orthogonal
 complement of the range of `D_A` in `L²(ℝ, E)` consists exactly of the values of the solutions of
 `v' - A v = 0` in `W^{1,2}(ℝ, E)`, the kernel of `D_{-A}`. -/
@@ -221,6 +226,33 @@ theorem orthogonal_range_trajectoryOperator_eq_map_ker [FiniteDimensional ℝ E]
           : _ →ₗ[ℝ] _) :=
   (orthogonal_range_trajectoryOperator_le_map_ker hsym).antisymm
     (map_ker_le_orthogonal_range_trajectoryOperator hsym)
+
+/-- **The index of a trajectory operator with closed range.** If the coefficient of
+`D_A u = u' + A u` is almost everywhere symmetric, `E` is finite dimensional and the range of
+`D_A` is closed, then the index of `D_A` is `dim ker D_A - dim ker D_{-A}`: its cokernel is the
+kernel of the formal adjoint `-d/ds + A`, whose solutions are those of `v' - A v = 0`. -/
+theorem index_trajectoryOperator_of_isClosed_range [FiniteDimensional ℝ E]
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hsym : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), (AL s).toLinearMap.IsSymmetric)
+    (hclosed : IsClosed ((trajectoryOperator (p := 2) AL).range :
+      Set (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker : ℤ) -
+        Module.finrank ℝ (trajectoryOperator (p := 2) (-AL)).ker := by
+  have := hclosed.completeSpace_coe
+  -- The value map `W^{1,2}(ℝ, E) → L²(ℝ, E)` is injective.
+  have hinj : Function.Injective
+      (prevL (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :=
+    fun u w h ↦ ext (by simpa using h)
+  -- The cokernel is the orthogonal complement of the range, which is the image of the kernel of
+  -- `D_{-A}` under the injective value map.
+  have hcoker : Module.finrank ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) ⧸
+      (trajectoryOperator (p := 2) AL).range) =
+        Module.finrank ℝ (trajectoryOperator (p := 2) (-AL)).ker :=
+    (((trajectoryOperator (p := 2) AL).range.quotientEquivOrthogonal.toLinearEquiv.trans
+      (LinearEquiv.ofEq _ _ (orthogonal_range_trajectoryOperator_eq_map_ker hsym))).trans
+      (Submodule.equivMapOfInjective _ hinj _).symm).finrank_eq
+  rw [ContinuousLinearMap.index_eq_finrank_sub, hcoker]
 
 end Orthogonal
 
@@ -313,7 +345,8 @@ theorem isFredholm_trajectoryOperator
 /-- **The index of the trajectory operator.** Under the hypotheses of
 `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`, the index of `D_A u = u' + A u` is
 `dim ker D_A - dim ker D_{-A}`: its cokernel is the kernel of the formal adjoint `-d/ds + A`,
-whose solutions are those of `v' - A v = 0`. -/
+whose solutions are those of `v' - A v = 0`. This specializes
+`TauCeti.WeakDerivStep.index_trajectoryOperator_of_isClosed_range`. -/
 theorem index_trajectoryOperator
     (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
     {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
@@ -324,22 +357,8 @@ theorem index_trajectoryOperator
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     (trajectoryOperator (p := 2) AL).index =
       (Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker : ℤ) -
-        Module.finrank ℝ (trajectoryOperator (p := 2) (-AL)).ker := by
-  have := completeSpace_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL
-    hAL
-  -- The value map `W^{1,2}(ℝ, E) → L²(ℝ, E)` is injective.
-  have hinj : Function.Injective
-      (prevL (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :=
-    fun u w h ↦ ext (by simpa using h)
-  -- The cokernel is the orthogonal complement of the range, which is the image of the kernel of
-  -- `D_{-A}` under the injective value map.
-  have hcoker : Module.finrank ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) ⧸
-      (trajectoryOperator (p := 2) AL).range) =
         Module.finrank ℝ (trajectoryOperator (p := 2) (-AL)).ker :=
-    (((trajectoryOperator (p := 2) AL).range.quotientEquivOrthogonal.toLinearEquiv.trans
-      (LinearEquiv.ofEq _ _
-        (orthogonal_range_trajectoryOperator_eq_map_ker (ae_isSymmetric hsym hAL)))).trans
-      (Submodule.equivMapOfInjective _ hinj _).symm).finrank_eq
-  rw [ContinuousLinearMap.index_eq_finrank_sub, hcoker]
+  index_trajectoryOperator_of_isClosed_range (ae_isSymmetric hsym hAL)
+    (isClosed_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL hAL)
 
 end TauCeti.WeakDerivStep
