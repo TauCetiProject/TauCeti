@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.OperatorIdeal.Family.HilbertSchmidt
-public import TauCeti.Analysis.OperatorIdeal.Family.KyFan
+public import TauCeti.Analysis.OperatorIdeal.Family.KyFan.Basic
 public import TauCeti.Analysis.OperatorIdeal.Family.TraceClass
 
 /-!
