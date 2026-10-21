@@ -52,4 +52,11 @@ theorem integral_max_zero_pow {n : ℕ} (hn : 0 < n) (a b : ℝ) :
   rw [sub_div]
   linarith
 
+/-- Integrating a reflected, translated positive-part power gives the difference of
+the truncated powers at the oriented endpoints. -/
+theorem integral_max_sub_zero_pow {n : ℕ} (hn : 0 < n) (c a b : ℝ) :
+    (∫ x in a..b, max (c - x) 0 ^ n) =
+      (max (c - a) 0 ^ (n + 1) - max (c - b) 0 ^ (n + 1)) / (n + 1) := by
+  rw [integral_comp_sub_left (fun x : ℝ ↦ max x 0 ^ n), integral_max_zero_pow hn]
+
 end TauCeti.intervalIntegral

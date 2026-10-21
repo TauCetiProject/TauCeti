@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.IrwinHall.Basic
 public import TauCeti.Probability.Cdf
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.PositivePart
-public import Mathlib.Data.Nat.Choose.Sum
+public import TauCeti.Data.Nat.Choose.Sum
 
 /-!
 # Cumulative distribution functions of Irwin–Hall laws
@@ -54,56 +54,25 @@ theorem cdf_irwinHallMeasure_eq {n : ℕ} (hn : 0 < n) (x : ℝ) :
     by_cases hn0 : n = 0
     · subst n
       rw [irwinHallMeasure_one, cdf_uniformMeasure zero_lt_one]
-      norm_num [Finset.sum_range_succ]
       split_ifs with hx hx1
-      · rw [max_eq_right hx, max_eq_right (by linarith)]
-        ring
-      · rw [max_eq_left (by linarith), max_eq_left (by linarith)]
-        ring
-      · rw [max_eq_left (by linarith), max_eq_right (by linarith)]
-        ring
+      · simp [Finset.sum_range_succ, max_eq_right hx, max_eq_right (by linarith : x - 1 ≤ 0)]
+      · simp [Finset.sum_range_succ, max_eq_left (by linarith : 0 ≤ x),
+          max_eq_left (by linarith : 0 ≤ x - 1)]
+      · simp [Finset.sum_range_succ, max_eq_left (by linarith : 0 ≤ x),
+          max_eq_right (by linarith : x - 1 ≤ 0)]
     have hn' : 0 < n := Nat.pos_of_ne_zero hn0
     -- Each integration increases the truncated-power degree and takes a unit difference.
     have hint (k : ℕ) : IntervalIntegrable
         (fun y : ℝ ↦ (-1 : ℝ) ^ k * (n.choose k : ℝ) * max (x - y - k) 0 ^ n)
         volume 0 1 := (by fun_prop : Continuous _).intervalIntegrable _ _
-    have hterm (k : ℕ) : (∫ y in 0..1, max (x - y - k) 0 ^ n) =
-        (max (x - k) 0 ^ (n + 1) - max (x - (k + 1)) 0 ^ (n + 1)) / (n + 1) := by
-      simp_rw [sub_right_comm x _ (k : ℝ)]
-      rw [intervalIntegral.integral_comp_sub_left (fun z : ℝ ↦ max z 0 ^ n),
-        intervalIntegral.integral_max_zero_pow hn']
-      simp only [sub_zero]
-      congr 2
-      congr 2
-      ring
-    -- Pascal's identity combines the two translated sums into the next binomial row.
-    have hsum :=
-      Finset.sum_choose_succ_mul
-        (fun k _ ↦ (-1 : ℝ) ^ k * max (x - k) 0 ^ (n + 1)) n
-    have hsum' :
-        (∑ k ∈ Finset.range (n + 2), (-1 : ℝ) ^ k * ((n + 1).choose k : ℝ) *
-          max (x - k) 0 ^ (n + 1)) =
-        ∑ k ∈ Finset.range (n + 1), (-1 : ℝ) ^ k * (n.choose k : ℝ) *
-          (max (x - k) 0 ^ (n + 1) - max (x - (k + 1)) 0 ^ (n + 1)) := by
-      calc
-        _ = ∑ k ∈ Finset.range (n + 2), ((n + 1).choose k : ℝ) *
-            ((-1 : ℝ) ^ k * max (x - k) 0 ^ (n + 1)) := by
-          apply Finset.sum_congr rfl
-          intro k hk
-          ring
-        _ = _ := hsum
-        _ = _ := by
-          rw [← Finset.sum_add_distrib]
-          apply Finset.sum_congr rfl
-          intro k hk
-          simp only [pow_succ, Nat.cast_add, Nat.cast_one]
-          ring
     rw [cdf_irwinHallMeasure_succ]
     simp_rw [ih hn']
     rw [intervalIntegral.integral_div, intervalIntegral.integral_finsetSum]
-    · simp_rw [intervalIntegral.integral_const_mul, hterm, ← mul_div_assoc]
+    · simp_rw [intervalIntegral.integral_const_mul, sub_right_comm x _ (↑(_ : ℕ) : ℝ),
+        intervalIntegral.integral_max_sub_zero_pow hn', sub_zero, ← mul_div_assoc]
       rw [← Finset.sum_div, div_div, Nat.factorial_succ, Nat.cast_mul,
-        Nat.cast_add, Nat.cast_one, hsum']
+        Nat.cast_add, Nat.cast_one, sum_neg_one_pow_mul_choose_succ]
+      simp only [Nat.cast_add, Nat.cast_one, sub_sub]
     · exact fun k _ ↦ hint k
 
 end TauCeti.Probability
