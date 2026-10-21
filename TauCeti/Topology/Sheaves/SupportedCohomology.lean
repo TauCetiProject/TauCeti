@@ -280,6 +280,29 @@ noncomputable def supportedHMap (hZS : Z ≤ S) (W : Opens X) (n : ℕ) :
   relativeH'.map F (Z.complInclusion W) (S.complInclusion W)
     (homOfLE (inf_le_inf_left W ((Closeds.complOrderIso X).monotone hZS))) (𝟙 W) rfl n
 
+@[simp]
+lemma supportedHMap_self (Z : Closeds X) (W : Opens X) {n : ℕ} (x : F.supportedH Z W n) :
+    F.supportedHMap (le_refl Z) W n x = x :=
+  -- `homOfLE` of a reflexivity proof is the identity of the thin category `Opens X`
+  relativeH'.map_id F (Z.complInclusion W) x
+
+@[simp]
+lemma supportedHMap_supportedHMap {T : Closeds X} (hZS : Z ≤ S) (hST : S ≤ T) (W : Opens X)
+    {n : ℕ} (x : F.supportedH Z W n) :
+    F.supportedHMap hST W n (F.supportedHMap hZS W n x) = F.supportedHMap (hZS.trans hST) W n x :=
+  relativeH'.map_map F _ _ _ _ _ _ _ _ _ x
+
+/-- Enlarging the support commutes with restriction to a smaller open `W' ≤ W`. -/
+@[simp]
+lemma supportedHRestrict_supportedHMap (hZS : Z ≤ S) {W' W : Opens X} (h : W' ≤ W) {n : ℕ}
+    (x : F.supportedH Z W n) :
+    F.supportedHRestrict S h n (F.supportedHMap hZS W n x) =
+      F.supportedHMap hZS W' n (F.supportedHRestrict Z h n x) := by
+  simp only [supportedHRestrict, supportedHMap, relativeH'.map_map]
+  -- both sides are induced by morphisms of pairs into `(W', W' ∖ S)`, which agree because
+  -- `Opens X` is a thin category
+  rfl
+
 /-- Under `supportedHZeroEquiv`, enlarging the support in degree zero is the inclusion of
 `Γ_Z(W, F)` in `Γ_S(W, F)`. -/
 lemma coe_supportedHZeroEquiv_supportedHMap (hZS : Z ≤ S) (W : Opens X)

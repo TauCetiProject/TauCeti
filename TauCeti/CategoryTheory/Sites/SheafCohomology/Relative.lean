@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
-import Mathlib.CategoryTheory.Abelian.CommSq
+import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
 
 /-!
 # Relative sheaf cohomology of a morphism of a site
@@ -263,20 +263,10 @@ abbrev relativeFreeYonedaTripleSequence : ShortComplex (Sheaf J AddCommGrpCat.{v
 /-- For morphisms `i : U ⟶ U'` and `j : U' ⟶ V` with `j` a monomorphism, the sequence
 `0 ⟶ ℤ_{U',U} ⟶ ℤ_{V,U} ⟶ ℤ_{V,U'} ⟶ 0` is short exact. -/
 lemma relativeFreeYonedaTripleSequence_shortExact [Mono j] :
-    (relativeFreeYonedaTripleSequence J i j).ShortExact := by
-  have : Epi (relativeFreeYonedaTripleSequence J i j).g :=
-    epi_of_epi_fac (f := cokernel.π ((freeYonedaSheafFunctor J).map (i ≫ j)))
-      (h := cokernel.π ((freeYonedaSheafFunctor J).map j)) (by simp)
-  refine
-    { exact := ShortComplex.exact_of_g_is_cokernel _ <|
-        CokernelCofork.IsColimit.ofπ' _ _ fun k hk ↦
-          ⟨cokernel.desc _ (cokernel.π _ ≫ k) (by simpa using cokernel.π _ ≫= hk),
-            (cancel_epi (cokernel.π _)).1 (by simp)⟩
-      mono_f := ?_ }
-  -- the square `ℤ_U ⟶ ℤ_{U'}` over `ℤ_U ⟶ ℤ_V` is a pullback, because `ℤ_{U'} ⟶ ℤ_V` is a
-  -- monomorphism
-  exact Abelian.mono_cokernel_map_of_isPullback (IsPullback.of_vert_isIso_mono
-    ⟨by rw [← Functor.map_comp, ← Functor.map_comp, Category.id_comp]⟩)
+    (relativeFreeYonedaTripleSequence J i j).ShortExact :=
+  TauCeti.shortExact_of_isColimit_cokernelCofork (Functor.map_comp _ _ _).symm inferInstance
+    (cokernelIsCokernel _) (cokernelIsCokernel _) (cokernelIsCokernel _)
+    (by simp [relativeFreeYonedaSheafMap]) (by simp [relativeFreeYonedaSheafMap])
 
 end triple
 
