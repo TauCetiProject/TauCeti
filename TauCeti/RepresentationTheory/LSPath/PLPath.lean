@@ -17,7 +17,7 @@ datum), identified up to nondecreasing surjective piecewise-linear reparametriza
 presentation of such a path is a subdivision `0 = t₀ ≤ t₁ ≤ ⋯ ≤ tₙ = 1` on whose pieces `π` is
 affine; it is recorded by its list of *segments* `[v₁, …, vₙ]`, `vₖ = π tₖ - π tₖ₋₁`. The lengths
 `tₖ - tₖ₋₁` are not recorded, since a reparametrization can change them at will. Two elementary
-moves change a presentation without changing the path:
+moves change a presentation but are meant not to change the path it presents:
 
 * a *merge* `[…, v, w, …] ↦ […, v + w, …]` of two adjacent segments pointing in the same
   direction (`SameRay 𝕜 v w`), whose inverse subdivides a segment;
@@ -28,9 +28,12 @@ This file develops these presentations and their normal form. The algorithm
 in the same direction, using only the vector-space operations of `V` (so a presentation over `ℚ`
 stays over `ℚ`; no Euclidean arc length is involved). Its output is reduced, and two segment lists
 have the same normal form exactly when they are related by the elementary moves. The type
-`TauCeti.PLPath 𝕜 V` of paths is the type of reduced segment lists, with Littelmann's
-concatenation `π₁ * π₂` as a monoid structure, the endpoint `π 1`, and the reversed path
-`t ↦ π (1 - t) - π 1`.
+`TauCeti.PLPath 𝕜 V` models paths by reduced segment lists, with Littelmann's concatenation
+`π₁ * π₂` as a monoid structure, the endpoint `π 1`, and the reversed path `t ↦ π (1 - t) - π 1`.
+
+This file works with segment lists only: it does not evaluate a presentation as a function
+`[0, 1] → V`, and it does not prove that two presentations give paths related by a nondecreasing
+surjective piecewise-linear reparametrization exactly when their normal forms agree.
 
 ## Main definitions
 
@@ -39,7 +42,8 @@ concatenation `π₁ * π₂` as a monoid structure, the endpoint `π 1`, and th
 * `TauCeti.PLPath.IsReduced`: a segment list with no stationary segment and no two adjacent
   segments pointing in the same direction.
 * `TauCeti.PLPath.Move`: the elementary moves between segment lists.
-* `TauCeti.PLPath`: piecewise-linear paths up to reparametrization, as reduced segment lists.
+* `TauCeti.PLPath`: the model of piecewise-linear paths up to reparametrization by reduced
+  segment lists.
 * `TauCeti.PLPath.ofSegments`: the path presented by a segment list.
 * `TauCeti.PLPath.endpoint`, `TauCeti.PLPath.reverse`, `TauCeti.PLPath.straight`: the endpoint,
   the reversed path and the straight path `t ↦ t • v`.
@@ -49,7 +53,8 @@ concatenation `π₁ * π₂` as a monoid structure, the endpoint `π 1`, and th
 * `TauCeti.PLPath.normalize_eq_self_iff`: a segment list is its own normal form exactly when it is
   reduced.
 * `TauCeti.PLPath.normalize_eq_normalize_iff`, `TauCeti.PLPath.ofSegments_eq_ofSegments_iff`: two
-  segment lists present the same path exactly when they are related by the elementary moves.
+  segment lists have the same normal form, that is define the same `TauCeti.PLPath`, exactly when
+  they are related by the elementary moves.
 * `TauCeti.PLPath.ofSegments_append`: concatenation of presentations presents the product.
 * `TauCeti.PLPath.endpoint_mul`, `TauCeti.PLPath.reverse_mul`, `TauCeti.PLPath.reverse_reverse`:
   the endpoint is additive and reversal is an involutive anti-automorphism.
@@ -102,9 +107,9 @@ structure IsReduced (l : List V) : Prop where
   /-- No two adjacent segments point in the same direction. -/
   isChain : l.IsChain fun v w ↦ ¬ SameRay 𝕜 v w
 
-/-- The elementary moves between segment lists, which change the presentation of a path but not the
-path: merging two adjacent segments in the same ray (the inverse of subdividing a segment), and
-removing a stationary segment. -/
+/-- The elementary moves between segment lists, which change the presentation of a path but are
+meant not to change the path: merging two adjacent segments in the same ray (the inverse of
+subdividing a segment), and removing a stationary segment. -/
 inductive Move : List V → List V → Prop
   /-- Merge two adjacent segments pointing in the same direction. -/
   | merge (l₁ l₂ : List V) {v w : V} :
@@ -193,21 +198,22 @@ theorem normalize_append_normalize (l₁ l₂ : List V) :
     normalize 𝕜 (l₁ ++ normalize 𝕜 l₂) = normalize 𝕜 (l₁ ++ l₂) := by
   rw [normalize_append, normalize_append, normalize_normalize]
 
+/-- Prepending a segment with `TauCeti.PLPath.consMerge` adds it to the endpoint. -/
+@[simp]
+theorem sum_consMerge (v : V) (l : List V) : (consMerge 𝕜 v l).sum = v + l.sum := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  cases l with
+  | nil => simp [consMerge_nil_of_ne_zero hv]
+  | cons w m =>
+    by_cases hvw : SameRay 𝕜 v w
+    · simp [consMerge_cons_of_sameRay hvw, add_assoc]
+    · simp [consMerge_cons_of_not_sameRay hvw]
+
 /-- Normalization preserves the endpoint `v₁ + ⋯ + vₙ` of a presentation. -/
 @[simp]
 theorem sum_normalize (l : List V) : (normalize 𝕜 l).sum = l.sum := by
-  induction l with
-  | nil => rfl
-  | cons v l ih =>
-    rw [normalize_cons, List.sum_cons, ← ih]
-    rcases eq_or_ne v 0 with rfl | hv
-    · simp
-    cases h : normalize 𝕜 l with
-    | nil => simp [consMerge_nil_of_ne_zero hv]
-    | cons w m =>
-      by_cases hvw : SameRay 𝕜 v w
-      · simp [consMerge_cons_of_sameRay hvw, add_assoc]
-      · simp [consMerge_cons_of_not_sameRay hvw]
+  induction l <;> simp [*]
 
 /-! ### Reduced segment lists -/
 
@@ -290,21 +296,24 @@ theorem Move.normalize_eq (h : Move 𝕜 l₁ l₂) : normalize 𝕜 l₁ = norm
   | merge m₁ m₂ hvw => simp [normalize_append, consMerge_consMerge hvw]
   | erase_zero m₁ m₂ => simp [normalize_append]
 
+/-- Prepending a segment with `TauCeti.PLPath.consMerge` is a sequence of elementary moves. -/
+theorem reflTransGen_move_consMerge (v : V) (l : List V) :
+    ReflTransGen (Move 𝕜) (v :: l) (consMerge 𝕜 v l) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simpa using ReflTransGen.single (Move.erase_zero [] l)
+  cases l with
+  | nil => simpa [consMerge_nil_of_ne_zero hv] using ReflTransGen.refl
+  | cons w m =>
+    by_cases hvw : SameRay 𝕜 v w
+    · simpa [consMerge_cons_of_sameRay hvw] using ReflTransGen.single (Move.merge [] m hvw)
+    · simpa [consMerge_cons_of_not_sameRay hvw] using ReflTransGen.refl
+
 /-- Every segment list is connected to its normal form by elementary moves. -/
 theorem reflTransGen_move_normalize (l : List V) : ReflTransGen (Move 𝕜) l (normalize 𝕜 l) := by
   induction l with
   | nil => exact .refl
   | cons v l ih =>
-    refine (ih.lift (v :: ·) fun _ _ h ↦ h.cons v).trans ?_
-    rw [normalize_cons]
-    rcases eq_or_ne v 0 with rfl | hv
-    · simpa using ReflTransGen.single (Move.erase_zero [] (normalize 𝕜 l))
-    cases h : normalize 𝕜 l with
-    | nil => simpa [consMerge_nil_of_ne_zero hv] using ReflTransGen.refl
-    | cons w m =>
-      by_cases hvw : SameRay 𝕜 v w
-      · simpa [consMerge_cons_of_sameRay hvw] using ReflTransGen.single (Move.merge [] m hvw)
-      · simpa [consMerge_cons_of_not_sameRay hvw] using ReflTransGen.refl
+    exact (ih.lift (v :: ·) fun _ _ h ↦ h.cons v).trans (reflTransGen_move_consMerge v _)
 
 /-- Two segment lists have the same normal form exactly when they are related by elementary
 moves: the normal form is a complete invariant for the elementary moves. -/
@@ -330,10 +339,11 @@ theorem normalize_reverse_map_neg (l : List V) :
 
 end PLPath
 
-/-- A piecewise-linear path `π : [0, 1] → V` with `π 0 = 0`, up to nondecreasing surjective
-piecewise-linear reparametrization, recorded by its reduced list of segments: the successive
-displacements along its maximal straight pieces. See `TauCeti.PLPath.ofSegments` for the path
-presented by an arbitrary segment list. -/
+/-- A model of piecewise-linear paths `π : [0, 1] → V` with `π 0 = 0`, up to nondecreasing
+surjective piecewise-linear reparametrization, by reduced segment lists: a path is meant to be
+recorded by the successive displacements along its maximal straight pieces. The comparison with
+parametrized functions `[0, 1] → V` is not proved here. See `TauCeti.PLPath.ofSegments` for the
+path presented by an arbitrary segment list. -/
 @[ext]
 structure PLPath (𝕜 : Type u) (V : Type v) [Field 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
     [AddCommGroup V] [Module 𝕜 V] where
@@ -372,7 +382,8 @@ theorem ofSegments_segments (p : PLPath 𝕜 V) : ofSegments 𝕜 p.segments = p
 theorem ofSegments_surjective : Function.Surjective (ofSegments 𝕜 : List V → PLPath 𝕜 V) :=
   fun p ↦ ⟨p.segments, ofSegments_segments p⟩
 
-/-- Two segment lists present the same path exactly when they are related by elementary moves. -/
+/-- Two segment lists define the same `TauCeti.PLPath`, that is have the same normal form, exactly
+when they are related by elementary moves. -/
 theorem ofSegments_eq_ofSegments_iff :
     ofSegments 𝕜 l₁ = ofSegments 𝕜 l₂ ↔ EqvGen (Move 𝕜) l₁ l₂ := by
   rw [PLPath.ext_iff, segments_ofSegments, segments_ofSegments, normalize_eq_normalize_iff]
@@ -392,6 +403,7 @@ noncomputable instance : Mul (PLPath 𝕜 V) :=
 theorem segments_one : (1 : PLPath 𝕜 V).segments = [] :=
   (rfl)
 
+@[simp]
 theorem segments_mul (p q : PLPath 𝕜 V) :
     (p * q).segments = normalize 𝕜 (p.segments ++ q.segments) :=
   (rfl)
@@ -403,11 +415,12 @@ theorem ofSegments_nil : ofSegments 𝕜 ([] : List V) = 1 :=
 @[simp]
 theorem ofSegments_append (l₁ l₂ : List V) :
     ofSegments 𝕜 (l₁ ++ l₂) = ofSegments 𝕜 l₁ * ofSegments 𝕜 l₂ :=
-  PLPath.ext (by simp [segments_mul])
+  PLPath.ext (by simp)
 
 noncomputable instance : Monoid (PLPath 𝕜 V) where
-  mul_assoc p q r := PLPath.ext (by simp [segments_mul])
-  one_mul p := by rw [← ofSegments_nil, ← ofSegments_segments p, ← ofSegments_append]; rfl
+  mul_assoc p q r := PLPath.ext (by simp)
+  one_mul p := by
+    rw [← ofSegments_nil, ← ofSegments_segments p, ← ofSegments_append, List.nil_append]
   mul_one p := by
     rw [← ofSegments_nil, ← ofSegments_segments p, ← ofSegments_append, List.append_nil]
 
