@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
+import Mathlib.LinearAlgebra.Dual.Lemmas
+
 /-!
 # Regular points and regular values of maps between manifolds
 
@@ -35,6 +37,10 @@ to manifolds, including manifolds with boundary or corners.
 * `TauCeti.isRegularPoint_iff_surjective_fderivWithin`: regularity read in arbitrary charts.
 * `TauCeti.isRegularPoint_iff_surjective_fderiv`: for maps between normed spaces, regularity is
   surjectivity of the Fréchet derivative.
+* `TauCeti.IsRegularPoint.surjective_fderiv_comp_extChartAt_symm` and
+  `TauCeti.IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, at
+  a regular point of a map into a normed space the derivative in the preferred extended chart is
+  surjective, with kernel of codimension one for scalar functions.
 
 ## References
 
@@ -128,5 +134,41 @@ theorem isRegularPoint_iff_surjective_fderiv {f : E → E'} {x : E} :
   rw [isRegularPoint_iff, mfderiv_eq_fderiv]
   exact (EquivLike.comp_surjective _ (NormedSpace.fromTangentSpace (f x)).symm).trans
     (EquivLike.surjective_comp (NormedSpace.fromTangentSpace x) _)
+
+section Boundaryless
+
+variable [I.Boundaryless]
+
+/-- At a regular point of a map into a normed space on a boundaryless manifold, the coordinate
+expression in the preferred extended chart has surjective derivative. -/
+theorem IsRegularPoint.surjective_fderiv_comp_extChartAt_symm {g : M → E'}
+    (h : IsRegularPoint I 𝓘(𝕜, E') g x) :
+    Surjective (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x)) := by
+  by_cases hg : MDifferentiableAt I 𝓘(𝕜, E') g x
+  · have h' : Surjective (mvfderiv I g x) := (NormedSpace.fromTangentSpace (g x)).surjective.comp
+      (isRegularPoint_iff.1 h)
+    rwa [hg.mvfderiv_eq_fderiv_comp_extChartAt_symm] at h'
+  · -- Without differentiability the manifold derivative is `0`, so `E'` is the zero space.
+    rw [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hg] at h
+    intro v
+    obtain ⟨u, hu⟩ := h v
+    exact ⟨0, by rw [map_zero]; exact hu⟩
+
+/-- At a regular point of a scalar function on a boundaryless manifold, the kernel of the
+preferred-chart derivative has codimension one. -/
+theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm [FiniteDimensional 𝕜 E]
+    {g : M → 𝕜} (h : IsRegularPoint I 𝓘(𝕜) g x) :
+    Module.finrank 𝕜 (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x)).ker =
+      Module.finrank 𝕜 E - 1 := by
+  have hne : (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x) : E →ₗ[𝕜] 𝕜) ≠ 0 := by
+    intro h0
+    obtain ⟨v, hv⟩ := h.surjective_fderiv_comp_extChartAt_symm 1
+    have hv' := LinearMap.congr_fun h0 v
+    rw [ContinuousLinearMap.coe_coe, hv, LinearMap.zero_apply] at hv'
+    exact one_ne_zero hv'
+  have := Module.Dual.finrank_ker_add_one_of_ne_zero hne
+  omega
+
+end Boundaryless
 
 end TauCeti

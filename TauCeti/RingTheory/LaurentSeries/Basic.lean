@@ -18,8 +18,9 @@ through `HahnSeries.ofPowerSeries`, so its scalar action is multiplication by th
 constant power series. This is propositionally, but not definitionally, equal to the coefficientwise
 action `HahnSeries.instSMul` found by default.
 
-The scalar tower `S → A⟦X⟧ → A⸨X⸩` for any `A⟦X⟧`-algebra `S` (in particular `R` and `A[X]`)
-is imported from `TauCeti.RingTheory.HahnSeries.PowerSeries`; the tower over `R` is what
+The scalar tower `S → A⟦X⟧ → A⸨X⸩` for any commutative semiring `S` over which `A⟦X⟧` is an
+algebra (in particular `S = R` and `S = A[X]`) is imported from
+`TauCeti.RingTheory.HahnSeries.PowerSeries`; the tower over `R` is what
 fraction-field constructions such as `IsFractionRing.algEquivOfAlgEquiv` require to extend an
 `R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`. This file shows that the algebra action
 of `R` on `A⸨X⸩` agrees with the coefficientwise action, and records that, over a field `K`, a
@@ -45,6 +46,8 @@ extends to every Laurent series: a substitution `X ↦ φ` preserves the residue
 
 * `TauCeti.LaurentSeries.coeff_algebraMap_mul`: multiplication by a constant of the algebra
   structure acts coefficientwise.
+* `TauCeti.LaurentSeries.mem_range_ofPowerSeries_iff`: the Laurent series coming from power series
+  are those with no negative exponents.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
   coefficientwise scalar action, and `TauCeti.laurentSeries_isScalarTower_algebra` transfers
   scalar towers from the coefficientwise action to the algebra action.
@@ -82,6 +85,19 @@ theorem coeff_algebraMap_mul (c : R) (f : R⸨X⸩) (n : ℤ) :
   rw [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C,
     HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul, smul_eq_mul]
 
+/-- A Laurent series is the image of a power series exactly when its coefficients at negative
+exponents vanish. -/
+theorem mem_range_ofPowerSeries_iff {f : R⸨X⸩} :
+    f ∈ Set.range (HahnSeries.ofPowerSeries ℤ R) ↔ ∀ n < 0, f.coeff n = 0 := by
+  refine ⟨?_, fun hf ↦ ⟨PowerSeries.mk fun n ↦ f.coeff n, ?_⟩⟩
+  · rintro ⟨g, rfl⟩ n hn
+    simp [PowerSeries.coeff_coe, hn]
+  ext n
+  rw [PowerSeries.coeff_coe]
+  split_ifs with hn
+  · exact (hf n hn).symm
+  · rw [PowerSeries.coeff_mk, Int.natCast_natAbs, abs_of_nonneg (not_lt.mp hn)]
+
 section Valuation
 
 open HahnSeries PowerSeries WithZero
@@ -94,9 +110,10 @@ theorem valuation_coe_of_isUnit {h : K⟦X⟧} (hh : IsUnit h) : Valued.v (h : K
   Valuation.Integers.one_of_isUnit' hh fun g ↦ (_root_.LaurentSeries.val_le_one_iff_eq_coe K _).mpr
     ⟨g, rfl⟩
 
-/-- The power series part of a nonzero Laurent series is a unit: its constant coefficient is the
-leading coefficient. -/
-theorem isUnit_powerSeriesPart {f : K⸨X⸩} (hf : f ≠ 0) : IsUnit f.powerSeriesPart := by
+/-- The power series part of a nonzero Laurent series over a division ring is a unit: its constant
+coefficient is the leading coefficient. -/
+theorem isUnit_powerSeriesPart {D : Type*} [DivisionRing D] {f : D⸨X⸩} (hf : f ≠ 0) :
+    IsUnit f.powerSeriesPart := by
   rw [isUnit_iff_constantCoeff, ← coeff_zero_eq_constantCoeff_apply,
     _root_.LaurentSeries.powerSeriesPart_coeff, Nat.cast_zero, add_zero, isUnit_iff_ne_zero]
   exact coeff_order_eq_zero.not.mpr hf
@@ -134,31 +151,19 @@ theorem laurentSeries_algebraMap_mul_eq_smul {R A : Type*} [CommSemiring R] [Com
 /-- A scalar tower `R → R⸨X⸩ → M` for the coefficientwise action of `R` on `R⸨X⸩`, which is the
 one found by instance search, is also a scalar tower for the algebra action, since the two actions
 agree. Derivations out of `R⸨X⸩` and Kähler differentials of `R⸨X⸩` use the algebra action. -/
-instance laurentSeries_isScalarTower_algebra {R M : Type*} [CommSemiring R] [AddCommMonoid M]
-    [Module R⸨X⸩ M] [Module R M] [IsScalarTower R R⸨X⸩ M] :
-    @IsScalarTower R R⸨X⸩ M Algebra.toSMul _ _ :=
-  .of_algebraMap_smul fun c m ↦ by
-    rw [← mul_one (algebraMap R R⸨X⸩ c), laurentSeries_algebraMap_mul_eq_smul, smul_assoc,
-      one_smul]
+instance laurentSeries_isScalarTower_algebra {R M : Type*} [CommSemiring R] [SMul R⸨X⸩ M]
+    [SMul R M] [IsScalarTower R R⸨X⸩ M] :
+    @IsScalarTower R R⸨X⸩ M Algebra.toSMul _ _ := by
+  -- Specify the algebra action rather than the default coefficientwise action in the constructor.
+  refine @IsScalarTower.mk R R⸨X⸩ M Algebra.toSMul _ _ ?_
+  intro c f m
+  rw [Algebra.smul_def, laurentSeries_algebraMap_mul_eq_smul, smul_assoc]
 
 end TauCeti
 
 namespace PowerSeries
 
 open HahnSeries LaurentSeries
-
-/-- The derivative of Laurent series extends the derivative of power series. -/
-@[simp]
-theorem coe_derivative {R : Type*} [CommRing R] (f : R⟦X⟧) :
-    ((d⁄dX f : R⟦X⟧) : R⸨X⸩) = LaurentSeries.derivative R (f : R⸨X⸩) := by
-  ext i
-  rw [derivative_apply, hasseDeriv_coeff, coeff_coe, coeff_coe]
-  rcases i with m | m
-  · have hm : ((m : ℤ) + 1).natAbs = m + 1 := by omega
-    simp [coeff_derivative, mul_comm, hm, show ¬((m : ℤ) + 1 < 0) by omega]
-  · rcases m with _ | m
-    · simp
-    · simp [Int.negSucc_lt_zero, show Int.negSucc (m + 1) + 1 < 0 by omega]
 
 /-- The Hasse derivatives of Laurent series extend the Hasse derivatives of power series. -/
 @[simp]
@@ -178,23 +183,48 @@ theorem coe_hasseDeriv {R : Type*} [Ring R] (k : ℕ) (f : R⟦X⟧) :
         ⟨_, (Int.toNat_of_nonneg (by omega)).symm⟩
       rw [hj, Ring.choose_natCast, Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, zero_smul]
 
+/-- The derivative of Laurent series extends the derivative of power series. -/
+@[simp]
+theorem coe_derivative {R : Type*} [CommRing R] (f : R⟦X⟧) :
+    ((d⁄dX f : R⟦X⟧) : R⸨X⸩) = LaurentSeries.derivative R (f : R⸨X⸩) := by
+  simpa only [hasseDeriv_one_apply, derivative_apply] using coe_hasseDeriv 1 f
+
 end PowerSeries
 
 namespace LaurentSeries
 
 open HahnSeries
 
-variable {R : Type*} [CommRing R]
+section Ring
 
-/-- The product rule for a monomial: `(c X ^ m * f)' = m c X ^ (m - 1) * f + c X ^ m * f'`. -/
+variable {R : Type*} [Ring R]
+
+/-- The product rule for a monomial over any ring:
+`(c X ^ m * f)' = m c X ^ (m - 1) * f + c X ^ m * f'`. -/
 theorem derivative_single_mul (m : ℤ) (c : R) (f : R⸨X⸩) :
     derivative R (single m c * f) = single (m - 1) (m * c) * f + single m c * derivative R f := by
   ext n
   simp only [derivative_apply, hasseDeriv_coeff, coeff_add, coeff_single_mul,
-    Ring.choose_one_right, zsmul_eq_mul]
-  rw [show n - (m - 1) = n + 1 - m by ring, show n - m + (1 : ℕ) = n + 1 - m by push_cast; ring]
+    Ring.choose_one_right]
+  have h₁ : n - (m - 1) = n + 1 - m := by omega
+  have h₂ : n - m + (1 : ℕ) = n + 1 - m := by omega
+  simp only [h₁, h₂, ← zsmul_eq_mul, smul_mul_assoc, mul_smul_comm, ← add_zsmul]
+  congr 1
+  omega
+
+/-- The derivative of `f` agrees with `m X⁻¹ f` up to a correction whose coefficient of `Xⁿ` is
+`(n + 1 - m)` times the coefficient of `Xⁿ⁺¹` in `f`. -/
+theorem coeff_derivative_sub_zsmul_single_mul (m n : ℤ) (f : R⸨X⸩) :
+    (derivative R f - m • (single (-1) 1 * f)).coeff n =
+      ((n + 1 - m : ℤ) : R) * f.coeff (n + 1) := by
+  rw [coeff_sub, coeff_smul, coeff_single_mul, derivative_apply, hasseDeriv_coeff,
+    Ring.choose_one_right, sub_neg_eq_add, one_mul, zsmul_eq_mul, zsmul_eq_mul]
   push_cast
-  ring
+  rw [sub_mul]
+
+end Ring
+
+variable {R : Type*} [CommRing R]
 
 /-- The product rule for a monomial times a power series:
 `(c X ^ m * φ)' = m c X ^ (m - 1) * φ + c X ^ m * φ'`. -/
@@ -229,16 +259,6 @@ theorem derivative_mul (f g : R⸨X⸩) :
   simp only [hfg, derivative_single_mul_coe]
   simp only [Derivation.leibniz, smul_eq_mul, PowerSeries.coe_add, PowerSeries.coe_mul]
   rw [hd, hab]
-  ring
-
-/-- The derivative of `f` agrees with `m X⁻¹ f` up to a correction whose coefficient of `Xⁿ` is
-`(n + 1 - m)` times the coefficient of `Xⁿ⁺¹` in `f`. -/
-theorem coeff_derivative_sub_zsmul_single_mul (m n : ℤ) (f : R⸨X⸩) :
-    (derivative R f - m • (single (-1) 1 * f)).coeff n =
-      ((n + 1 - m : ℤ) : R) * f.coeff (n + 1) := by
-  rw [coeff_sub, coeff_smul, coeff_single_mul, derivative_apply, hasseDeriv_coeff,
-    Ring.choose_one_right, sub_neg_eq_add, one_mul, zsmul_eq_mul, zsmul_eq_mul]
-  push_cast
   ring
 
 /-- **Differentiation lowers the order by at most one, with leading term `m X⁻¹ f`.** If `f` has

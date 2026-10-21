@@ -50,6 +50,8 @@ and under limits in operator norm (`ContinuousLinearMap.isRowCompact_of_tendsto`
 
 * `ContinuousLinearMap.isRowCompact_of_norm_matrixCoeff_le`: a null row majorant of the entries
   gives row compactness.
+* `ContinuousLinearMap.isRowCompact_of_apply_single_eq_sum`: columns that are uniformly bounded
+  combinations of finitely many vectors give a row-compact map.
 * `ContinuousLinearMap.ringOpNorm_eq_iSup_rowNorm`: `‖u‖ = ⨆ i, rᵢ(u)` over ultrametric Tate
   scalars.
 * `ContinuousLinearMap.isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp`: row compactness
@@ -134,6 +136,24 @@ theorem isRowCompact_of_norm_matrixCoeff_le {u : C₀(J, R) →L[R] C₀(I, R)} 
   refine ⟨⟨C, fun i j ↦ (h i j).trans (hC ⟨i, rfl⟩)⟩, squeeze_zero (rowNorm_nonneg u)
     (fun i ↦ rowNorm_le_of_forall_le (le_max_right (r i) 0) fun j ↦ (h i j).trans
       (le_max_left _ _)) (by simpa using hr.max (tendsto_const_nhds (x := (0 : ℝ))))⟩
+
+/-- **Bounded finite expansions of the columns give row decay.** If every column
+`u (single j 1)` of `u` is a combination `∑ k, a k • w k` of a fixed finite family `w` with
+coefficients of norm at most `B`, then `u` is row compact: row `i` is bounded by
+`∑ k, B * ‖w k i‖`. -/
+theorem isRowCompact_of_apply_single_eq_sum [DiscreteTopology I] {ι : Type*} [Fintype ι]
+    {u : C₀(J, R) →L[R] C₀(I, R)} (w : ι → C₀(I, R)) {B : ℝ}
+    (h : ∀ j, ∃ a : ι → R, (∀ k, ‖a k‖ ≤ B) ∧
+      u (ZeroAtInftyContinuousMap.single j 1) = ∑ k, a k • w k) :
+    u.IsRowCompact := by
+  refine isRowCompact_of_norm_matrixCoeff_le (r := fun i ↦ ∑ k, B * ‖w k i‖) ?_ fun i j ↦ ?_
+  · simpa using tendsto_finsetSum _ fun k _ ↦ (w k).tendsto_cofinite.norm.const_mul B
+  · obtain ⟨a, ha, hj⟩ := h j
+    calc ‖u.matrixCoeff i j‖ = ‖∑ k, a k * w k i‖ := by
+          simp [matrixCoeff_apply, hj]
+      _ ≤ ∑ k, ‖a k * w k i‖ := norm_sum_le _ _
+      _ ≤ ∑ k, B * ‖w k i‖ := Finset.sum_le_sum fun k _ ↦
+          (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (ha k) (norm_nonneg _))
 
 @[simp]
 theorem isRowCompact_zero : (0 : C₀(J, R) →L[R] C₀(I, R)).IsRowCompact :=

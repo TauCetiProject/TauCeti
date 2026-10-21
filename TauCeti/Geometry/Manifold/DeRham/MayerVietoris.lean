@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import Mathlib.Geometry.Manifold.Metrizable
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 
@@ -229,10 +230,10 @@ private theorem mpullback_extendByZero_mextDeriv_cutoff (φ : closedForms I (U �
   rw [mextDerivₗ_apply, mextDerivₗ_apply, cutoffLeft, cutoffRight,
     RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero,
     RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero,
-    mextDeriv_extendByZero inf_le_left (hρφ.of_le (by simp)) fun _ hx ↦
+    RoughForm.mextDeriv_extendByZero inf_le_left fun _ hx ↦
       RoughForm.eventually_extendByZero_smul_eq_zero inf_le_left _
         (eventually_eq_zero_of_tsupport_subset hρV hx),
-    mextDeriv_extendByZero inf_le_right (hρφ'.of_le (by simp)) fun _ hx ↦
+    RoughForm.mextDeriv_extendByZero inf_le_right fun _ hx ↦
       RoughForm.eventually_extendByZero_smul_eq_zero inf_le_right _
         (eventually_sub_one_eq_zero_of_tsupport_subset hρU hx)]
   refine ⟨rfl, congrArg _ ?_⟩
