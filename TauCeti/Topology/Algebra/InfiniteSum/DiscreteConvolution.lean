@@ -32,6 +32,12 @@ groupings agree.
 * `DiscreteConvolution.ringConvolution_assoc` and its additive version
   `DiscreteConvolution.addRingConvolution_assoc`: ring convolution is associative when the triple
   family and the inner convolutions are summable.
+* `DiscreteConvolution.addConvolution_eq_tsum_sub` and its ring version
+  `DiscreteConvolution.addRingConvolution_eq_tsum_sub`: on an additive group,
+  `(f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y)`.
+* `DiscreteConvolution.addConvolution_eq_tsum_neg_add` and its ring version
+  `DiscreteConvolution.addRingConvolution_eq_tsum_neg_add`: on an additive group,
+  `(f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x))`.
 -/
 
 public section
@@ -119,5 +125,53 @@ theorem ringConvolution_assoc {f g h : M → R} (hfg : ConvolutionExists (.mul �
   exacts [(hfg p.1.1).hasSum.mul_right (h p.1.2), (hgh p.1.2).hasSum.mul_left (f p.1.1)]
 
 end Assoc
+
+section AddGroup
+
+variable {M S E E' F R : Type*} [AddGroup M]
+
+/-- On an additive group, the fibre of addition at `x` is parametrised by its second coordinate,
+so additive convolution is the familiar sum `(f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y)`. -/
+@[simp]
+theorem addConvolution_eq_tsum_sub [CommSemiring S] [AddCommMonoid E] [AddCommMonoid E']
+    [AddCommMonoid F] [Module S E] [Module S E'] [Module S F] [TopologicalSpace F]
+    (L : E →ₗ[S] E' →ₗ[S] F) (f : M → E) (g : M → E') (x : M) :
+    (f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y) := by
+  let e : M ≃ addFiber x :=
+    { toFun y := ⟨(x - y, y), mem_addFiber.2 (sub_add_cancel x y)⟩
+      invFun ab := ab.1.2
+      left_inv _ := rfl
+      right_inv ab := Subtype.ext <| Prod.ext (eq_sub_of_add_eq (mem_addFiber.1 ab.2)).symm rfl }
+  rw [addConvolution]
+  exact (e.tsum_eq fun ab ↦ L (f ab.1.1) (g ab.1.2)).symm
+
+/-- On an additive group, `(f ⋆ᵣ₊ g) x = ∑' y, f (x - y) * g y`. -/
+theorem addRingConvolution_eq_tsum_sub [NonUnitalNonAssocSemiring R] [TopologicalSpace R]
+    (f g : M → R) (x : M) :
+    (f ⋆ᵣ₊ g) x = ∑' y, f (x - y) * g y :=
+  addConvolution_eq_tsum_sub _ f g x
+
+/-- On an additive group, the fibre of addition at `x` is also parametrised by its first
+coordinate, so `(f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x))`. -/
+theorem addConvolution_eq_tsum_neg_add [CommSemiring S] [AddCommMonoid E] [AddCommMonoid E']
+    [AddCommMonoid F] [Module S E] [Module S E'] [Module S F] [TopologicalSpace F]
+    (L : E →ₗ[S] E' →ₗ[S] F) (f : M → E) (g : M → E') (x : M) :
+    (f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x)) := by
+  let e : M ≃ addFiber x :=
+    { toFun y := ⟨(y, -y + x), mem_addFiber.2 (add_neg_cancel_left y x)⟩
+      invFun ab := ab.1.1
+      left_inv _ := rfl
+      right_inv ab :=
+        Subtype.ext <| Prod.ext rfl (eq_neg_add_of_add_eq (mem_addFiber.1 ab.2)).symm }
+  rw [addConvolution]
+  exact (e.tsum_eq fun ab ↦ L (f ab.1.1) (g ab.1.2)).symm
+
+/-- On an additive group, `(f ⋆ᵣ₊ g) x = ∑' y, f y * g (-y + x)`. -/
+theorem addRingConvolution_eq_tsum_neg_add [NonUnitalNonAssocSemiring R] [TopologicalSpace R]
+    (f g : M → R) (x : M) :
+    (f ⋆ᵣ₊ g) x = ∑' y, f y * g (-y + x) :=
+  addConvolution_eq_tsum_neg_add _ f g x
+
+end AddGroup
 
 end DiscreteConvolution

@@ -43,8 +43,9 @@ theorem.
 * `ConvexPolygon.mem_vertexSector_iff_toReal_orientedAngle_mem_Icc`,
   `ConvexPolygon.mem_interior_vertexSector_iff_toReal_orientedAngle_mem_Ioo`: the sector at a
   finite vertex and its interior in angular coordinates.
-* `ConvexPolygon.mem_vertexSector_iff_of_vertex_eq_inr_infty`: the sector at a vertex at `∞` is
-  a vertical strip.
+* `ConvexPolygon.mem_vertexSector_iff_of_vertex_eq_inr_infty`,
+  `ConvexPolygon.mem_interior_vertexSector_iff_of_vertex_eq_inr_infty`: the sector at a vertex
+  at `∞` is a closed vertical strip, and its interior is the open strip.
 * `ConvexPolygon.eventuallyEq_carrier_vertexSector_atImInfty`: near a vertex at `∞`, the polygon
   is that strip.
 
@@ -99,6 +100,14 @@ theorem mem_interior_vertexSector_iff (j : Fin n) (z : ℍ) :
     z ∈ interior (P.vertexSector j) ↔ z ∈ leftHalfPlane (P.sideGeodesic (j - 1)) ∧
       z ∈ leftHalfPlane (P.sideGeodesic j) := by
   rw [interior_vertexSector, mem_inter_iff]
+
+/-- A finite vertex lies on the boundary of its sector: it is on the outgoing side, so it is not
+strictly to the left of that side. -/
+theorem notMem_interior_vertexSector {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z) :
+    z ∉ interior (P.vertexSector j) := fun h ↦
+  (disjoint_leftHalfPlane_range_geodesicLine (P.sideGeodesic j)).notMem_of_mem_left
+    ((P.mem_interior_vertexSector_iff j z).1 h).2
+    (P.side_subset_range_sideGeodesic j (P.mem_side_of_vertex_eq_inl hz))
 
 /-- The polygon is contained in each of its vertex sectors. -/
 theorem carrier_subset_vertexSector (j : Fin n) : P.carrier ⊆ P.vertexSector j :=
@@ -166,6 +175,22 @@ theorem mem_vertexSector_iff_of_vertex_eq_inr_infty {j : Fin n} (hj : P.vertex j
     hprev.sideForm_eq_of_inr_infty_right (hj ▸ P.vertex_ne_vertex_sub_one j).symm,
     hnext.sideForm_eq_of_inr_infty_left (hj ▸ P.vertex_ne_vertex_add_one j).symm, coe_re,
     sub_nonpos, sub_nonpos, and_comm]
+
+/-- At a vertex at `∞`, the interior of the sector is the open vertical strip between the
+verticals through the next and the previous vertex. -/
+theorem mem_interior_vertexSector_iff_of_vertex_eq_inr_infty {j : Fin n}
+    (hj : P.vertex j = .inr ∞) (z : ℍ) :
+    z ∈ interior (P.vertexSector j) ↔ (toComplex (P.vertex (j + 1))).re < z.re ∧
+      z.re < (toComplex (P.vertex (j - 1))).re := by
+  have hprev := P.isGeodesicFromTo_sideGeodesic (j - 1)
+  have hnext := P.isGeodesicFromTo_sideGeodesic j
+  rw [sub_add_cancel, hj] at hprev
+  rw [hj] at hnext
+  rw [mem_interior_vertexSector_iff, mem_leftHalfPlane_iff_sideForm_neg,
+    mem_leftHalfPlane_iff_sideForm_neg,
+    hprev.sideForm_eq_of_inr_infty_right (hj ▸ P.vertex_ne_vertex_sub_one j).symm,
+    hnext.sideForm_eq_of_inr_infty_left (hj ▸ P.vertex_ne_vertex_add_one j).symm, coe_re,
+    sub_neg, sub_neg, and_comm]
 
 /-- At a vertex at `∞`, the vertical through the next vertex lies strictly to the left of the
 vertical through the previous vertex, so the sector there is a strip of positive width. -/

@@ -430,6 +430,15 @@ theorem XSet_inter_coveredSquares_of_mem_commutationHexagons {x y : GridState n}
       GridCommutationHexagonBetween.toGridRectangleBetween_inr]
     exact G.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_initialHexagon (C := C) hX
 
+/-- The rectangle under a commutation hexagon covers the `X`-marking of the column the hexagon cuts
+away, whether or not the hexagon is counted. -/
+theorem cutColumn_X_mem_toGridRectangle_coveredSquares {x y : GridState n}
+    (P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
+    (P.cutColumn, G.X P.cutColumn) ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares := by
+  cases P with
+  | inl P => exact G.column_mem_toGridRectangle_coveredSquares P C.X_column_below
+  | inr P => exact G.next_mem_toGridRectangle_coveredSquares P C.X_next_above
+
 /-- The counted commutation pentagons of either turn-side kind. -/
 noncomputable def commutationPentagons (x y : GridState n) :
     Finset (GridCommutationPentagonBetween C.column C.turnRow x y) :=

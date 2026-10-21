@@ -160,7 +160,7 @@ theorem map_arrowSum {L F : Type*} [AddCommMonoid L] [FunLike F K L] [AddMonoidH
 
 /-- Summing over the arrows between two vertex sets is monotone in the assignment. -/
 @[gcongr]
-theorem arrowSum_mono [PartialOrder K] [IsOrderedAddMonoid K] {f g : Assignment Q K} (h : f ≤ g)
+theorem arrowSum_mono [Preorder K] [AddLeftMono K] {f g : Assignment Q K} (h : f ≤ g)
     (S T : Finset V) : arrowSum f S T ≤ arrowSum g S T :=
   sum_le_sum fun v _ ↦ sum_le_sum fun w _ ↦ sum_le_sum fun e _ ↦ h v w e
 
@@ -175,8 +175,8 @@ theorem arrowSum_eq_zero_iff_of_nonneg [PartialOrder K] [IsOrderedAddMonoid K] {
     sum_eq_zero_iff_of_nonneg fun w _ ↦ h₃ _ w, sum_eq_zero_iff_of_nonneg fun e _ ↦ hf _ _ e,
     mem_univ, true_implies]
 
-/-- The total value entering `v` for a single arrow from `x` to `y` is `q` exactly when
-`v = y`. -/
+/-- The total value entering `v` for a single arrow from `x` to `y` is `q` when `v = y` and
+zero otherwise. -/
 theorem sum_sum_single_in [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q : K) (v : V) :
     ∑ w, ∑ e' : Q w v, Assignment.single e q e' = if v = y then q else 0 := by
   split_ifs with hv
@@ -188,8 +188,8 @@ theorem sum_sum_single_in [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q :
   · exact sum_eq_zero fun w _ ↦ sum_eq_zero fun e' _ ↦
       Assignment.single_apply_of_ne e q fun h ↦ hv (congrArg (fun a ↦ a.2.1) h)
 
-/-- The total value leaving `v` for a single arrow from `x` to `y` is `q` exactly when
-`v = x`. -/
+/-- The total value leaving `v` for a single arrow from `x` to `y` is `q` when `v = x` and
+zero otherwise. -/
 theorem sum_sum_single_out [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q : K) (v : V) :
     ∑ w, ∑ e' : Q v w, Assignment.single e q e' = if v = x then q else 0 := by
   split_ifs with hv
@@ -203,9 +203,9 @@ theorem sum_sum_single_out [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q 
 
 end AddCommMonoid
 
-section AddCommGroup
+section SubtractionCommMonoid
 
-variable [AddCommGroup K] [∀ v w, Fintype (Q v w)]
+variable [SubtractionCommMonoid K] [∀ v w, Fintype (Q v w)]
 
 @[simp]
 theorem arrowSum_neg (f : Assignment Q K) (S T : Finset V) :
@@ -217,7 +217,11 @@ theorem arrowSum_sub (f g : Assignment Q K) (S T : Finset V) :
     arrowSum (f - g) S T = arrowSum f S T - arrowSum g S T := by
   simp [arrowSum_def, sum_sub_distrib]
 
-variable [Fintype V]
+end SubtractionCommMonoid
+
+section AddCommGroup
+
+variable [AddCommGroup K] [∀ v w, Fintype (Q v w)] [Fintype V]
 
 /-- The *excess* of the assignment `f` at the vertex `v`: the total value on arrows entering `v`
 minus the total value on arrows leaving `v`. Loops at `v` cancel. -/
