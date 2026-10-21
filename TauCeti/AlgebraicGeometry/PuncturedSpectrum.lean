@@ -87,21 +87,26 @@ theorem puncturedSpectrum_eq_iSup_basicOpen {s : Set R}
     rw [hp]
     exact hxm
 
-/-- The punctured spectrum is quasi-compact when the maximal ideal is finitely generated.
-In particular, this holds for a Noetherian local ring. -/
-theorem isCompact_puncturedSpectrum (hfg : (IsLocalRing.maximalIdeal R).FG) :
+/-- The punctured spectrum is quasi-compact when the maximal ideal is the radical of a finitely
+generated ideal. -/
+theorem isCompact_puncturedSpectrum {J : Ideal R} (hfg : J.FG)
+    (hrad : J.radical = IsLocalRing.maximalIdeal R) :
     IsCompact (puncturedSpectrum R).1 := by
   obtain ⟨s, _, hs⟩ := Submodule.FG.exists_span_finset_card_eq_spanFinrank hfg
-  have hs' : (Ideal.span (s : Set R)).radical = IsLocalRing.maximalIdeal R := by
-    calc
-      (Ideal.span (s : Set R)).radical = (IsLocalRing.maximalIdeal R).radical :=
-        congrArg Ideal.radical hs
-      _ = _ := (IsLocalRing.maximalIdeal.isMaximal R).isPrime.radical
+  have hs' : (Ideal.span (s : Set R)).radical = IsLocalRing.maximalIdeal R :=
+    (congrArg Ideal.radical hs).trans hrad
   rw [puncturedSpectrum_eq_iSup_basicOpen R hs']
   -- The open of `Spec (.of R)` is an open of `PrimeSpectrum R` by definition.
   change IsCompact ((⨆ x : (s : Set R), PrimeSpectrum.basicOpen x.1 :
     TopologicalSpace.Opens (PrimeSpectrum R)) : Set (PrimeSpectrum R))
   simpa only [TopologicalSpace.Opens.coe_iSup] using
     (isCompact_iUnion fun x : (s : Set R) ↦ PrimeSpectrum.isCompact_basicOpen x.1)
+
+/-- A finitely generated maximal ideal gives a quasi-compact punctured spectrum, including
+the case of a Noetherian local ring. -/
+theorem isCompact_puncturedSpectrum_of_fg_maximalIdeal
+    (hfg : (IsLocalRing.maximalIdeal R).FG) :
+    IsCompact (puncturedSpectrum R).1 :=
+  isCompact_puncturedSpectrum R hfg (IsLocalRing.maximalIdeal.isMaximal R).isPrime.radical
 
 end IsLocalRing
