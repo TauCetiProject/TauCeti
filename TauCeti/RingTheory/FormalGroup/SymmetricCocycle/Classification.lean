@@ -222,17 +222,11 @@ section Polynomial
 
 variable {R : Type*} [CommRing R]
 
-/-- The exponent `XⁱYʲ` in two variables. -/
-private noncomputable abbrev expTwo (i j : ℕ) : Fin 2 →₀ ℕ :=
-  Finsupp.single 0 i + Finsupp.single 1 j
-
-/-- The coefficient of `XⁱYⁿ⁻ⁱ` in a polynomial in two variables. -/
-private noncomputable def coeffDeg (n : ℕ) (f : MvPolynomial (Fin 2) R) (i : ℕ) : R :=
-  f.coeff (expTwo i (n - i))
-
-private theorem coeffDeg_lazardCocycle {n i : ℕ} (hi : 0 < i) (hin : i < n) :
-    coeffDeg n (lazardCocycle n R) i = ((n.choose i / lazardGcd n : ℕ) : R) := by
-  rw [coeffDeg, coeff_lazardCocycle]
+/-- The coefficient of `XⁱYⁿ⁻ⁱ` in `C_n`, for `0 < i < n`, is `n.choose i / d_n`. -/
+private theorem coeff_single_add_single_lazardCocycle {n i : ℕ} (hi : 0 < i) (hin : i < n) :
+    (lazardCocycle n R).coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) =
+      ((n.choose i / lazardGcd n : ℕ) : R) := by
+  rw [coeff_lazardCocycle]
   simp only [Finsupp.add_apply, Finsupp.single_apply]
   rw [ite_eq_left ⟨by simp; omega, by simp; omega, by simp; omega⟩]
   simp
@@ -244,7 +238,7 @@ theorem isCocycleCoeff_coeff {f : MvPolynomial (Fin 2) R} (hs : f.IsSymmetric)
     IsCocycleCoeff n fun i => f.coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) where
   symm i hi := by
     have h := coeff_rename_mapDomain (Equiv.swap (0 : Fin 2) 1) (Equiv.injective _) f
-      (expTwo i (n - i))
+      (Finsupp.single 0 i + Finsupp.single 1 (n - i))
     rw [hs (Equiv.swap 0 1), Finsupp.mapDomain_add, Finsupp.mapDomain_single,
       Finsupp.mapDomain_single, Equiv.swap_apply_left, Equiv.swap_apply_right, add_comm] at h
     rw [Nat.sub_sub_self hi, h]
@@ -256,11 +250,6 @@ theorem isCocycleCoeff_coeff {f : MvPolynomial (Fin 2) R} (hs : f.IsSymmetric)
     rw [nsmul_eq_mul, nsmul_eq_mul, h₁, h₂]
     exact h
 
-/-- The coefficient of `Yⁿ` in an additive 2-cocycle vanishes for `n ≠ 0`. -/
-private theorem coeffDeg_zero {f : MvPolynomial (Fin 2) R} (hf : f.IsAddCocycle₂) {n : ℕ}
-    (hn : n ≠ 0) : coeffDeg n f 0 = 0 := by
-  simpa [coeffDeg, expTwo] using hf.coeff_single_one_eq_zero hn
-
 end Polynomial
 
 section General
@@ -269,9 +258,11 @@ section General
 
 variable {M : Type*} [AddCommGroup M]
 
-/-- The integral coefficient sequence of `C_n`. -/
+/-- The integral coefficient sequence of `C_n`. This is an `abbrev` for the sequence in
+`isCocycleCoeff_coeff`, so that lemma and `coeff_single_add_single_lazardCocycle` apply to it
+directly. -/
 private noncomputable abbrev lazardCoeff (n : ℕ) : ℕ → ℤ :=
-  coeffDeg n (lazardCocycle n ℤ)
+  fun i => (lazardCocycle n ℤ).coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i))
 
 private theorem isCocycleCoeff_lazardCoeff (n : ℕ) : IsCocycleCoeff n (lazardCoeff n) :=
   isCocycleCoeff_coeff (isSymmetric_lazardCocycle n) (isAddCocycle₂_lazardCocycle n) n
@@ -286,7 +277,7 @@ private theorem exists_eq_nsmul_of_torsion {p n : ℕ} (hp : p.Prime) (hn : 2 �
   obtain ⟨m, hm0, hmn, hm⟩ := exists_forall_eq_zero_of_eq_zero (M := M × ZMod p) hp hn
   set c : ℕ → ℕ := fun i => n.choose i / lazardGcd n
   have hcZ : ∀ i, 0 < i → i < n → lazardCoeff n i = c i := fun i hi hin =>
-    coeffDeg_lazardCocycle hi hin
+    coeff_single_add_single_lazardCocycle hi hin
   -- The coefficient `c m` of `C_n` is a unit modulo `p`, since the `c i` have no common factor.
   have hcm : ((c m : ℕ) : ZMod p) ≠ 0 := by
     intro hcm
@@ -366,7 +357,7 @@ theorem IsCocycleCoeff.exists_eq_nsmul {n : ℕ} (hn : 2 ≤ n) {b : ℕ → M}
   have hcZ : ∀ i ∈ Icc 1 (n - 1), lazardCoeff n i = (n.choose i / lazardGcd n : ℕ) :=
     fun i hi => by
       rw [mem_Icc] at hi
-      exact coeffDeg_lazardCocycle (by omega) (by omega)
+      exact coeff_single_add_single_lazardCocycle (by omega) (by omega)
   obtain ⟨l, hl⟩ :=
     Finset.exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one hn)
   have hl' : ∑ i ∈ Icc 1 (n - 1), l i * (n.choose i / lazardGcd n : ℕ) = 1 := by
@@ -398,25 +389,30 @@ theorem exists_eq_smul_lazardCocycle {n : ℕ} (hn : n ≠ 0) {f : MvPolynomial 
     (hh : f.IsHomogeneous n) (hs : f.IsSymmetric) (hf : f.IsAddCocycle₂) :
     ∃ r : R, f = r • lazardCocycle n R := by
   obtain ⟨r, hr⟩ : ∃ r : R, ∀ i, 0 < i → i < n →
-      coeffDeg n f i = (n.choose i / lazardGcd n) • r := by
+      f.coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) =
+        (n.choose i / lazardGcd n) • r := by
     rcases lt_or_ge n 2 with h2 | h2
     · exact ⟨0, fun i hi hin => by omega⟩
     · exact (isCocycleCoeff_coeff hs hf n).exists_eq_nsmul h2
   refine ⟨r, MvPolynomial.ext _ _ fun d => ?_⟩
   rw [coeff_smul, coeff_lazardCocycle, smul_eq_mul]
   by_cases hd : d 0 + d 1 = n
-  · have hd' : d = expTwo (d 0) (n - d 0) := by
+  · have hd' : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (n - d 0) := by
       ext x
       fin_cases x <;> simp [← hd]
-    have hfd : f.coeff d = coeffDeg n f (d 0) := by rw [coeffDeg, ← hd']
-    rw [hfd]
+    -- The coefficient of `Yⁿ`, which vanishes for a cocycle.
+    have hY : f.coeff (Finsupp.single 0 0 + Finsupp.single 1 (n - 0)) = 0 := by
+      rw [Finsupp.single_zero, zero_add, Nat.sub_zero]
+      exact hf.coeff_single_one_eq_zero hn
+    rw [congrArg f.coeff hd']
     by_cases h0 : d 0 = 0
     · rw [ite_eq_right (by omega), mul_zero, h0]
-      exact coeffDeg_zero hf hn
+      exact hY
     by_cases h1 : d 1 = 0
     · have hd0 : d 0 = n - 0 := by omega
       rw [ite_eq_right (by omega), mul_zero, hd0]
-      exact ((isCocycleCoeff_coeff hs hf n).symm 0 (Nat.zero_le n)).trans (coeffDeg_zero hf hn)
+      -- The coefficient of `Xⁿ` equals that of `Yⁿ`, by symmetry.
+      exact ((isCocycleCoeff_coeff hs hf n).symm 0 (Nat.zero_le n)).trans hY
     · rw [ite_eq_left ⟨hd, h0, h1⟩, hr _ (Nat.pos_of_ne_zero h0) (by omega), nsmul_eq_mul,
         mul_comm]
   · rw [ite_eq_right fun h => hd h.1, mul_zero]
