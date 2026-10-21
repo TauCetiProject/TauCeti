@@ -94,7 +94,7 @@ open Matrix.SpecialLinearGroup (dilation dilation_inv dilation_zpow conj_dilatio
   conj_dilation_apply_zero_one conj_dilation_apply_one_zero conj_dilation_apply_one_one
   dilation_conj_apply_zero_zero dilation_conj_apply_zero_one dilation_conj_apply_one_zero
   dilation_conj_apply_one_one diag_or_antidiag_of_conj_dilation trace_dilation
-  trace_commutatorElement_dilation exists_tendsto_dilation_conj)
+  trace_commutatorElement_dilation exists_tendsto_dilation_conj trace_mul_mul_inv)
 
 attribute [local simp] Matrix.adjugate_fin_two
 
@@ -249,11 +249,6 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
     |(A : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 - 4| +
         |((⁅A, B⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace - 2| =
       4 * Real.sinh (s / 2) ^ 2 * (1 + |(P⁻¹ * B * P) 0 1 * (P⁻¹ * B * P) 1 0|) := by
-  have trace_conj (M : SL(2, ℝ)) : ((P * M * P⁻¹ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
-      (M : Matrix (Fin 2) (Fin 2) ℝ).trace := by
-    simpa only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct,
-      Matrix.SpecialLinearGroup.coe_mul] using
-      ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P) (M : Matrix (Fin 2) (Fin 2) ℝ)
   -- `A` is `± P D P⁻¹` in `SL(2, ℝ)`
   replace hA : A = P * dilation s * P⁻¹ ∨ A = -(P * dilation s * P⁻¹) :=
     Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff.1 hA.symm
@@ -262,8 +257,8 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
     have h2 : (A : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 =
         (Real.exp (s / 2) + Real.exp (-(s / 2))) ^ 2 := by
       rcases hA with h | h
-      · rw [h, trace_conj, trace_dilation]
-      · rw [h, Matrix.SpecialLinearGroup.coe_neg, Matrix.trace_neg, neg_sq, trace_conj,
+      · rw [h, trace_mul_mul_inv, trace_dilation]
+      · rw [h, Matrix.SpecialLinearGroup.coe_neg, Matrix.trace_neg, neg_sq, trace_mul_mul_inv,
           trace_dilation]
     rw [h2]
     linear_combination 4 * Real.exp_half_mul_exp_neg_half s
@@ -275,8 +270,8 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
     · rw [hA', h]
     · rw [hA', ← h]
       simp [commutatorElement_def]
-  rw [htrA, hcomm, trace_conj, trace_commutatorElement_dilation, sub_sub_cancel_left, abs_neg,
-    abs_mul, abs_sq, ← Real.four_mul_sinh_half_sq]
+  rw [htrA, hcomm, trace_mul_mul_inv, trace_commutatorElement_dilation, sub_sub_cancel_left,
+    abs_neg, abs_mul, abs_sq, ← Real.four_mul_sinh_half_sq]
   ring
 
 /-- **Jørgensen's inequality for hyperbolic elements.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup

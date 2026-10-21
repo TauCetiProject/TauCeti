@@ -86,14 +86,6 @@ private theorem eq_of_smul_I_eq_I {k : SL(2, ℝ)} (hk : k • I = I) :
     k 1 1 = k 0 0 ∧ k 1 0 = -k 0 1 ∧ k 0 0 ^ 2 + k 0 1 ^ 2 = 1 :=
   ⟨((smul_I_eq_I_iff k).1 hk).1, ((smul_I_eq_I_iff k).1 hk).2, sq_add_sq_eq_one_of_smul_I_eq_I hk⟩
 
-/-- Conjugation in `SL(2, ℝ)` preserves the trace: the product form of
-`ConjAct.trace_specialLinearGroup_smul`. -/
-private theorem trace_mul_mul_inv (P k : SL(2, ℝ)) :
-    ((P * k * P⁻¹ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
-      (k : Matrix (Fin 2) (Fin 2) ℝ).trace := by
-  simpa only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct, ← coe_mul] using
-    ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct P) (k : Matrix (Fin 2) (Fin 2) ℝ)
-
 /-- The base-point displacement of a conjugate of `k = !![a, b; -b, a]`:
 `N(B k B⁻¹) - 2 = b² (N(B)² - 4)`, where `N` is the sum of the squares of the entries. -/
 private theorem sumSq_conj {B k : SL(2, ℝ)} (h₁₁ : k 1 1 = k 0 0) (h₁₀ : k 1 0 = -k 0 1)
