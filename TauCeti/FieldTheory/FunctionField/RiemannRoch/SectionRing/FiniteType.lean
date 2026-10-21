@@ -62,15 +62,11 @@ theorem sectionRingGrade_succ_poles_le_mul (hF : IsFunctionField k F)
   have hz := mem_riemannRochSpace_poles hF z
   have heq : f = monomialDegreeOne h1 * A + monomialDegreeOne hz * B := by
     apply Subtype.ext
-    simp only [Subalgebra.coe_add, Subalgebra.coe_mul, coe_monomialDegreeOne,
-      A, B, coeffSubalgebra.coe_monomial, monomial_mul_monomial, one_mul, ← map_add]
-    simpa only [Nat.add_comm 1 n] using hcf.symm
+    simpa only [Subalgebra.coe_add, A, B, monomialDegreeOne_mul_monomial, one_mul,
+      ← map_add] using hcf.symm
   rw [heq]
-  exact add_mem
-    (Submodule.mul_mem_mul (monomialDegreeOne_mem_sectionRingGrade h1)
-      (coeffSubalgebra.monomial_mem_grade _ _ ha))
-    (Submodule.mul_mem_mul (monomialDegreeOne_mem_sectionRingGrade hz)
-      (coeffSubalgebra.monomial_mem_grade _ _ hb))
+  exact add_mem (monomialDegreeOne_mul_monomial_mem h1 ha)
+    (monomialDegreeOne_mul_monomial_mem hz hb)
 
 /-- The section ring of the pole divisor of any nonzero function is a finitely generated
 algebra over the exact constant field. No separability or perfectness is required. -/
@@ -90,12 +86,9 @@ theorem finiteType_sectionRing_poles (hF : IsFunctionField k F)
       let A := coeffSubalgebra.monomial (fun i ↦ riemannRochSpace (i • poles hF z)) n a ha'
       have heq : f = monomialDegreeOne h1 * A := by
         apply Subtype.ext
-        simp only [Subalgebra.coe_mul, coe_monomialDegreeOne, A,
-          coeffSubalgebra.coe_monomial, monomial_mul_monomial, one_mul]
-        simpa only [Nat.add_comm 1 n] using haf.symm
+        simpa only [A, monomialDegreeOne_mul_monomial, one_mul] using haf.symm
       rw [heq]
-      exact Submodule.mul_mem_mul (monomialDegreeOne_mem_sectionRingGrade h1)
-        (coeffSubalgebra.monomial_mem_grade _ _ ha')
+      exact monomialDegreeOne_mul_monomial_mem h1 ha'
     · have hpos : 1 ≤ degree (poles hF z) := by
         have := degree_pos hF hD hzero
         omega

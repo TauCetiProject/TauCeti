@@ -141,6 +141,23 @@ theorem monomialDegreeOne_mem_sectionRingGrade {D : Divisor k F} {s : F}
     (hs : s ∈ riemannRochSpace D) : monomialDegreeOne hs ∈ sectionRingGrade D 1 :=
   coeffSubalgebra.monomial_mem_grade _ _ _
 
+/-- Multiplying a degree-one section by a monomial multiplies their coefficients. -/
+@[simp]
+theorem monomialDegreeOne_mul_monomial {D : Divisor k F} {s a : F} {n : ℕ}
+    (hs : s ∈ riemannRochSpace D) (ha : a ∈ riemannRochSpace (n • D)) :
+    ((monomialDegreeOne hs * coeffSubalgebra.monomial _ n a ha : sectionRing D) : F[X]) =
+      Polynomial.monomial (n + 1) (s * a) := by
+  simp only [Subalgebra.coe_mul, coe_monomialDegreeOne, coeffSubalgebra.coe_monomial,
+    monomial_mul_monomial, Nat.add_comm 1 n]
+
+/-- A degree-one section times a degree-`n` monomial lies in the product of those pieces. -/
+theorem monomialDegreeOne_mul_monomial_mem {D : Divisor k F} {s a : F} {n : ℕ}
+    (hs : s ∈ riemannRochSpace D) (ha : a ∈ riemannRochSpace (n • D)) :
+    monomialDegreeOne hs * coeffSubalgebra.monomial _ n a ha ∈
+      sectionRingGrade D 1 * sectionRingGrade D n :=
+  Submodule.mul_mem_mul (monomialDegreeOne_mem_sectionRingGrade hs)
+    (coeffSubalgebra.monomial_mem_grade _ _ ha)
+
 /-- The `k`-linear isomorphism `s ↦ s X` from `L(D)` onto the degree-one piece of the section
 ring of `D`. -/
 noncomputable def sectionRingGradeOneEquiv (D : Divisor k F) :
