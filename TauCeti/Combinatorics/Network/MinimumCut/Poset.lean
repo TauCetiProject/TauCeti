@@ -62,7 +62,10 @@ statements follow by specialization.
   the smallest and largest minimum cuts.
 * `TauCeti.BoundedFlow.IsMaximum.existsUnique_isMinimum_iff_isEmpty`: the minimum cut is unique
   exactly when there is no free component.
-* `TauCeti.Flow.IsMaximum.minimizersOrderIso`: the ordinary-flow specialization.
+* `TauCeti.Flow.IsMaximum.minimizersOrderIso`: the ordinary-flow specialization, with
+  `TauCeti.Flow.IsMaximum.minimizersOrderIso_symm_top` and
+  `TauCeti.Flow.IsMaximum.minimizersOrderIso_symm_bot` identifying its smallest and largest
+  minimum cuts.
 
 ## References
 
@@ -367,6 +370,48 @@ theorem mem_minimizersOrderIso_symm_iff (hst : s ≠ t) (hf : f.IsMaximum)
       f.residualComponent s ≤ f.residualComponent v ∨
         ∃ h, (⟨f.residualComponent v, h⟩ : f.FreeComponent) ∈ ofDual U :=
   BoundedFlow.IsMaximum.mem_minimizersOrderIso_symm_iff hst ((isMaximum_toBoundedFlow f).2 hf)
+
+/-- The free components contained in the union of two minimum cuts of a maximum ordinary flow are
+the union of those contained in each. -/
+theorem coe_minimizersOrderIso_sup (hst : s ≠ t) (hf : f.IsMaximum)
+    (S T : minimizers (isSubmodular_outgoingArrowSum cap (f.mem_Icc.1.trans f.mem_Icc.2)) {s} {t}) :
+    (↑(ofDual (hf.minimizersOrderIso hst (S ⊔ T))) : Set f.FreeComponent) =
+      ↑(ofDual (hf.minimizersOrderIso hst S)) ∪ ↑(ofDual (hf.minimizersOrderIso hst T)) := by
+  rw [map_sup, _root_.ofDual_sup, UpperSet.coe_inf]
+
+/-- The free components contained in the intersection of two minimum cuts of a maximum ordinary
+flow are the intersection of those contained in each. -/
+theorem coe_minimizersOrderIso_inf (hst : s ≠ t) (hf : f.IsMaximum)
+    (S T : minimizers (isSubmodular_outgoingArrowSum cap (f.mem_Icc.1.trans f.mem_Icc.2)) {s} {t}) :
+    (↑(ofDual (hf.minimizersOrderIso hst (S ⊓ T))) : Set f.FreeComponent) =
+      ↑(ofDual (hf.minimizersOrderIso hst S)) ∩ ↑(ofDual (hf.minimizersOrderIso hst T)) := by
+  rw [map_inf, _root_.ofDual_inf, UpperSet.coe_sup]
+
+/-- The empty upper set of free components gives the smallest minimum cut of a maximum ordinary
+flow. -/
+theorem minimizersOrderIso_symm_top (hst : s ≠ t) (hf : f.IsMaximum)
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) :
+    ((hf.minimizersOrderIso hst).symm (toDual ⊤) : Finset V) =
+      smallest hsub (disjoint_singleton.2 hst) := by
+  have hf' := (isMaximum_toBoundedFlow f).2 hf
+  have hsub' := isSubmodular_cutBound 0 cap (f.mem_Icc.1.trans f.mem_Icc.2)
+  ext v
+  rw [mem_minimizersOrderIso_symm_iff, hf.mem_smallest_iff hst hsub,
+    ← hf'.mem_smallest_iff hst hsub', ← hf'.minimizersOrderIso_symm_top hst hsub',
+    BoundedFlow.IsMaximum.mem_minimizersOrderIso_symm_iff]
+
+/-- The full upper set of free components gives the largest minimum cut of a maximum ordinary
+flow. -/
+theorem minimizersOrderIso_symm_bot (hst : s ≠ t) (hf : f.IsMaximum)
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) :
+    ((hf.minimizersOrderIso hst).symm (toDual ⊥) : Finset V) =
+      largest hsub (disjoint_singleton.2 hst) := by
+  have hf' := (isMaximum_toBoundedFlow f).2 hf
+  have hsub' := isSubmodular_cutBound 0 cap (f.mem_Icc.1.trans f.mem_Icc.2)
+  ext v
+  rw [mem_minimizersOrderIso_symm_iff, hf.mem_largest_iff hst hsub,
+    ← hf'.mem_largest_iff hst hsub', ← hf'.minimizersOrderIso_symm_bot hst hsub',
+    BoundedFlow.IsMaximum.mem_minimizersOrderIso_symm_iff]
 
 /-- The minimum cut is unique exactly when no residual component of a maximum ordinary flow is
 free. -/
