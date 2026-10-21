@@ -41,12 +41,13 @@ cohomology and no underlying DG module, and nothing here compares the two kinds 
   curvature zero.
 * `TauCeti.CurvedDGRightModuleCat.toDG`: a curved right module of curvature zero regarded as a DG
   right module; it is inverse to `toCurved` on objects.
-* `TauCeti.DGRightModuleCat.dgToCurvedFunctor`: the differential graded functor.
+* `TauCeti.DGRightModuleCat.dgToCurvedFunctor`: the differential graded functor, with inverse
+  differential graded functor `TauCeti.DGRightModuleCat.curvedToDGFunctor`.
 * `TauCeti.DGRightModuleCat.homotopyToCurvedEquivalence`: the induced equivalence of homotopy
-  categories.
-* `TauCeti.DGRightModuleCat.closedToCurvedFunctor` and
-  `TauCeti.DGRightModuleCat.closedToCurvedEquivalence`: the functor and equivalence on closed
-  degree-zero morphisms.
+  categories, with inverse induced by `curvedToDGFunctor`.
+* `TauCeti.DGRightModuleCat.closedToCurvedFunctor`, `TauCeti.DGRightModuleCat.closedToDGFunctor`
+  and `TauCeti.DGRightModuleCat.closedToCurvedEquivalence`: the functor, its inverse and the
+  equivalence on closed degree-zero morphisms.
 
 ## Main results
 
@@ -208,18 +209,92 @@ theorem isQuasiEquivalence_dgToCurvedFunctor :
 instance : (dgToCurvedFunctor (h := h)).mapDGHomotopyCategory.IsEquivalence :=
   isQuasiEquivalence_dgToCurvedFunctor.isEquivalence_mapDGHomotopyCategory
 
+/-- **Curved right modules of curvature zero are DG right modules.** The differential graded
+functor regarding a curved right module of curvature zero as a DG right module; it keeps the
+underlying cochain of every homogeneous morphism and is inverse to `dgToCurvedFunctor`. -/
+@[expose, implicit_reducible]
+noncomputable def curvedToDGFunctor :
+    EnrichedFunctor (CochainComplex (ModuleCat.{u} R) ℤ)
+      (CurvedDGRightModuleCat.{u, u, u} h.isCurvedDGAlgebra_zero)
+      (DGRightModuleCat.{u, u, u} h) :=
+  EnrichedFunctor.ofDGMap CurvedDGRightModuleCat.toDG
+    (fun {M N} n ↦ (toCurvedDGHomLinearEquiv M.toDG N.toDG n).symm.toLinearMap)
+    (fun {M N} n f ↦ (toCurvedDGHomLinearEquiv M.toDG N.toDG (n + 1)).injective <| by
+      simp only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+        toCurvedDGHomLinearEquiv_dgDifferential])
+    (fun M ↦ (toCurvedDGHomLinearEquiv M.toDG M.toDG 0).injective <| by
+      simp only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+        toCurvedDGHomLinearEquiv_dgId])
+    (fun {M _ P _ _ n} f g hpq ↦ (toCurvedDGHomLinearEquiv M.toDG P.toDG n).injective <| by
+      simp only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+        toCurvedDGHomLinearEquiv_dgComp])
+
+/-- The inverse differential graded functor sends a curved module of curvature zero to the same
+module regarded as a DG module. -/
+@[simp]
+theorem curvedToDGFunctor_obj
+    (M : CurvedDGRightModuleCat.{u, u, u} (h.isCurvedDGAlgebra_zero (𝒜 := 𝒜))) :
+    (curvedToDGFunctor (h := h)).obj M = M.toDG :=
+  (rfl)
+
+/-- The inverse differential graded functor acts on homogeneous morphisms by the inverse
+comparison of homogeneous morphisms. -/
+@[simp]
+theorem curvedToDGFunctor_dgMap
+    {M N : CurvedDGRightModuleCat.{u, u, u} (h.isCurvedDGAlgebra_zero (𝒜 := 𝒜))} (n : ℤ)
+    (f : DGHom R n M N) :
+    (curvedToDGFunctor (h := h)).dgMap n f =
+      (toCurvedDGHomLinearEquiv M.toDG N.toDG n).symm f := by
+  -- The component of `EnrichedFunctor.ofDGMap` in degree `n` is the prescribed linear map.
+  rw [EnrichedFunctor.dgMap_apply]
+  rfl
+
 /-- **The homotopy category of DG right modules is the curved homotopy category at curvature
-zero.** The equivalence is induced by the zero-curvature differential graded functor. -/
+zero.** The equivalence is induced by the zero-curvature differential graded functor, with inverse
+induced by `curvedToDGFunctor`; its unit and counit are identities. -/
 noncomputable def homotopyToCurvedEquivalence :
     DGHomotopyCategory R (DGRightModuleCat.{u, u, u} h) ≌
-      DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h.isCurvedDGAlgebra_zero) :=
-  (dgToCurvedFunctor (h := h)).mapDGHomotopyCategory.asEquivalence
+      DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h.isCurvedDGAlgebra_zero) where
+  functor := (dgToCurvedFunctor (h := h)).mapDGHomotopyCategory
+  inverse := (curvedToDGFunctor (h := h)).mapDGHomotopyCategory
+  unitIso := NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {X Y} f ↦ by
+    -- The two DG functors compose to the identity on every Hom complex.
+    have key : (dgToCurvedFunctor (h := h)).map (DGHomotopyCategory.underlying R X)
+        (DGHomotopyCategory.underlying R Y) ≫ (curvedToDGFunctor (h := h)).map _ _ = 𝟙 _ := by
+      ext n f
+      exact (toCurvedDGHomLinearEquiv (DGHomotopyCategory.underlying R X)
+        (DGHomotopyCategory.underlying R Y) n).symm_apply_apply f
+    refine (Category.comp_id _).trans (Eq.trans ?_ (Category.id_comp _).symm)
+    exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
+      (((congrArg (HomologicalComplex.homologyMap · 0) key).trans
+        (HomologicalComplex.homologyMap_id _ 0)).symm.trans
+          (HomologicalComplex.homologyMap_comp _ _ 0))) f
+  counitIso := NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {X Y} f ↦ by
+    -- The two DG functors compose to the identity on every Hom complex.
+    have key : (curvedToDGFunctor (h := h)).map (DGHomotopyCategory.underlying R X)
+        (DGHomotopyCategory.underlying R Y) ≫ (dgToCurvedFunctor (h := h)).map _ _ = 𝟙 _ := by
+      ext n f
+      exact (toCurvedDGHomLinearEquiv (DGHomotopyCategory.underlying R X).toDG
+        (DGHomotopyCategory.underlying R Y).toDG n).apply_symm_apply f
+    refine (Category.comp_id _).trans (Eq.trans ?_ (Category.id_comp _).symm)
+    exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
+      ((HomologicalComplex.homologyMap_comp _ _ 0).symm.trans
+        ((congrArg (HomologicalComplex.homologyMap · 0) key).trans
+          (HomologicalComplex.homologyMap_id _ 0)))) f
+  functor_unitIso_comp _ := (Category.comp_id _).trans (CategoryTheory.Functor.map_id _ _)
 
-/-- The homotopy equivalence sends a DG module to the same module regarded as curved. -/
+/-- The homotopy equivalence is the functor induced by `dgToCurvedFunctor`. -/
 @[simp]
-theorem homotopyToCurvedEquivalence_functor_obj (M : DGRightModuleCat.{u, u, u} h) :
-    (homotopyToCurvedEquivalence (h := h)).functor.obj (DGHomotopyCategory.of R M) =
-      DGHomotopyCategory.of R M.toCurved :=
+theorem homotopyToCurvedEquivalence_functor :
+    (homotopyToCurvedEquivalence (h := h)).functor =
+      (dgToCurvedFunctor (h := h)).mapDGHomotopyCategory :=
+  (rfl)
+
+/-- The inverse of the homotopy equivalence is the functor induced by `curvedToDGFunctor`. -/
+@[simp]
+theorem homotopyToCurvedEquivalence_inverse :
+    (homotopyToCurvedEquivalence (h := h)).inverse =
+      (curvedToDGFunctor (h := h)).mapDGHomotopyCategory :=
   (rfl)
 
 /-! ### Closed degree-zero morphisms -/
@@ -322,14 +397,70 @@ instance : (closedToCurvedFunctor (h := h)).Linear R where
       rw [← closedHom_closedToCurvedFunctor_map f]
       exact (CurvedDGRightModuleCat.closedHom_smul _ _).symm
 
+/-- The inverse of the closed zero-curvature comparison: a curved module of curvature zero is
+regarded as a DG module, and a closed morphism as the morphism of DG modules with the same
+underlying map. -/
+@[expose, implicit_reducible]
+noncomputable def closedToDGFunctor :
+    ForgetEnrichment (CochainComplex (ModuleCat.{u} R) ℤ)
+        (CurvedDGRightModuleCat.{u, u, u} h.isCurvedDGAlgebra_zero) ⥤
+      DGRightModuleCat.{u, u, u} h where
+  obj M := (ForgetEnrichment.to _ M).toDG
+  map f := fullyFaithfulClosedToCurvedFunctor.preimage f
+  map_id M := fullyFaithfulClosedToCurvedFunctor.preimage_id (X := (ForgetEnrichment.to _ M).toDG)
+  map_comp {M N P} f g := fullyFaithfulClosedToCurvedFunctor.preimage_comp
+    (X := (ForgetEnrichment.to _ M).toDG) (Y := (ForgetEnrichment.to _ N).toDG)
+    (Z := (ForgetEnrichment.to _ P).toDG) f g
+
+/-- The inverse closed comparison sends a curved module of curvature zero to the same module
+regarded as a DG module. -/
+@[simp]
+theorem closedToDGFunctor_obj
+    (M : ForgetEnrichment (CochainComplex (ModuleCat.{u} R) ℤ)
+      (CurvedDGRightModuleCat.{u, u, u} (h.isCurvedDGAlgebra_zero (𝒜 := 𝒜)))) :
+    (closedToDGFunctor (h := h)).obj M = (ForgetEnrichment.to _ M).toDG :=
+  (rfl)
+
+/-- The inverse closed comparison sends a closed morphism to the morphism of DG modules with the
+same underlying map. -/
+@[simp]
+theorem closedToDGFunctor_map
+    {M N : ForgetEnrichment (CochainComplex (ModuleCat.{u} R) ℤ)
+      (CurvedDGRightModuleCat.{u, u, u} (h.isCurvedDGAlgebra_zero (𝒜 := 𝒜)))} (f : M ⟶ N) :
+    (closedToDGFunctor (h := h)).map f =
+      ofClosedHom (M := (ForgetEnrichment.to _ M).toDG) (N := (ForgetEnrichment.to _ N).toDG) f :=
+  (rfl)
+
 /-- **The category of DG right modules is the closed degree-zero category of curved modules of
-curvature zero.** The equivalence is the closed zero-curvature comparison; it is additive and
-linear over the ground ring. -/
+curvature zero.** The equivalence is the closed zero-curvature comparison, with inverse
+`closedToDGFunctor`; its unit and counit are identities, and it is additive and linear over the
+ground ring. -/
 noncomputable def closedToCurvedEquivalence :
     DGRightModuleCat.{u, u, u} h ≌
       ForgetEnrichment (CochainComplex (ModuleCat.{u} R) ℤ)
-        (CurvedDGRightModuleCat.{u, u, u} h.isCurvedDGAlgebra_zero) :=
-  (closedToCurvedFunctor (h := h)).asEquivalence
+        (CurvedDGRightModuleCat.{u, u, u} h.isCurvedDGAlgebra_zero) where
+  functor := closedToCurvedFunctor
+  inverse := closedToDGFunctor
+  unitIso := NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦
+    (Category.comp_id _).trans (Eq.trans (fullyFaithfulClosedToCurvedFunctor.preimage_map f).symm
+      (Category.id_comp _).symm)
+  counitIso := NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {M N} f ↦
+    (Category.comp_id _).trans (Eq.trans (fullyFaithfulClosedToCurvedFunctor.map_preimage
+      (X := (ForgetEnrichment.to _ M).toDG) (Y := (ForgetEnrichment.to _ N).toDG) f)
+      (Category.id_comp _).symm)
+  functor_unitIso_comp _ := (Category.comp_id _).trans (CategoryTheory.Functor.map_id _ _)
+
+/-- The closed equivalence is the closed zero-curvature comparison. -/
+@[simp]
+theorem closedToCurvedEquivalence_functor :
+    (closedToCurvedEquivalence (h := h)).functor = closedToCurvedFunctor :=
+  (rfl)
+
+/-- The inverse of the closed equivalence is `closedToDGFunctor`. -/
+@[simp]
+theorem closedToCurvedEquivalence_inverse :
+    (closedToCurvedEquivalence (h := h)).inverse = closedToDGFunctor :=
+  (rfl)
 
 end DGRightModuleCat
 
