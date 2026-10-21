@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
 public import TauCeti.LinearAlgebra.RootSystem.BraidRelation
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit
 import all TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 
 /-!
@@ -52,6 +53,8 @@ its simple root is an inversion of the word, and the reflection in it deletes a 
   inversions.
 * `TauCeti.isReduced_weylCoxeterSystem_iff`: a word is reduced exactly when the element it spells
   has as many inversions as the word has letters.
+* `TauCeti.weylCoxeterSystem_isReflection_ofIdx`: the reflection in every root, simple or not, is a
+  reflection of the Coxeter system.
 
 ## References
 
@@ -187,5 +190,14 @@ inversions as the word has letters. -/
 theorem isReduced_weylCoxeterSystem_iff (l : List b.support) :
     (weylCoxeterSystem P b).IsReduced l ↔ (inversions P b (wordProd P b l)).ncard = l.length := by
   rw [CoxeterSystem.IsReduced, weylCoxeterSystem_wordProd, length_weylCoxeterSystem_eq]
+
+/-- **Root reflections are Coxeter reflections.** The reflection in any root, simple or not, is a
+conjugate of a simple reflection of the Coxeter system of the Weyl group, because every root is
+Weyl-conjugate to a simple root. -/
+theorem weylCoxeterSystem_isReflection_ofIdx (i : ι) :
+    (weylCoxeterSystem P b).IsReflection (RootPairing.weylGroup.ofIdx P i) := by
+  obtain ⟨j, hj, w, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b i
+  refine ⟨w, ⟨j, hj⟩, ?_⟩
+  rw [weylCoxeterSystem_simple, RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj]
 
 end TauCeti
