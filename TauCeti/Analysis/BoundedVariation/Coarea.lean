@@ -104,7 +104,7 @@ theorem integral_divergenceCLM_mul_eq_integral_integral_indicator
     rw [integrable_prod_iff hGm]
     refine ⟨.of_forall fun x =>
       (integrable_indicator_Iio_sub_indicator_Iio_zero (u x)).const_mul (divergenceCLM φ x), ?_⟩
-    simp_rw [G, norm_mul, integral_const_mul, integral_norm_indicator_Iio_sub_indicator_Iio_zero]
+    simp_rw [G, norm_mul, integral_const_mul]
     simpa using (integrable_smul_of_locallyIntegrableOn hu (divergenceCLM φ)).integrableOn.norm
   calc ∫ x, divergenceCLM φ x * u x ∂μ = ∫ x in Ω, ∫ t, G (x, t) ∂volume ∂μ := by
         rw [hrestrict]

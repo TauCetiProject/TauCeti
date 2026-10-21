@@ -55,7 +55,7 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
   forms for a measure on pairs of real variables;
 * `TauCeti.integral_indicator_Iio_sub_indicator_Iio_zero` — the signed layer-cake representation
   `a = ∫ (1_{t < a} - 1_{t < 0}) dt` of a real number, with
-  `TauCeti.integral_norm_indicator_Iio_sub_indicator_Iio_zero` computing the `L¹` norm `|a|` of
+  `TauCeti.integral_abs_indicator_Iio_sub_indicator_Iio_zero` computing the `L¹` norm `|a|` of
   its integrand.
 -/
 
@@ -438,13 +438,16 @@ theorem integral_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
     (integrable_indicator_Ico_one _ _)]
   simp [integral_indicator_one measurableSet_Ico]
 
-/-- The `L¹` norm of the signed indicator `t ↦ 1_{t < a} - 1_{t < 0}` is `|a|`. -/
-theorem integral_norm_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
-    ∫ t, ‖(Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t‖ = |a| := by
-  have h : (fun t => ‖(Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t‖) =
+/-- The `L¹` norm of the signed indicator `t ↦ 1_{t < a} - 1_{t < 0}` is `|a|`:
+`∫ |1_{t < a} - 1_{t < 0}| dt = |a|`. This is stated with `|·|`, the simp-normal form of the norm
+on `ℝ`, so that `simp` also evaluates the `‖·‖` form of the integral. -/
+@[simp]
+theorem integral_abs_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
+    ∫ t, |(Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t| = |a| := by
+  have h : (fun t => |(Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t|) =
       (Ico 0 a).indicator 1 + (Ico a 0).indicator 1 := by
     ext t
-    simp only [Real.norm_eq_abs, Pi.add_apply, indicator_apply, mem_Iio, mem_Ico, Pi.one_apply]
+    simp only [Pi.add_apply, indicator_apply, mem_Iio, mem_Ico, Pi.one_apply]
     split_ifs <;> grind
   rw [h, integral_add' (integrable_indicator_Ico_one _ _) (integrable_indicator_Ico_one _ _)]
   simp [integral_indicator_one measurableSet_Ico]
