@@ -102,15 +102,14 @@ theorem isLocallyBoundedOn_of_isCompact_closure_range
   let S : Set Ω := Subtype.val ⁻¹' K
   have : CompactSpace S := isCompact_iff_compactSpace.mp hK'
   -- Restriction to the compact domain S makes joint evaluation continuous.
-  have hcont : Continuous fun p : C(Ω, E) × S => ‖p.1 p.2‖ :=
+  have hcont : Continuous fun p : C(Ω, E) × S => ‖(p.1.restrict S) p.2‖ :=
     (continuous_eval.comp ((ContinuousMap.continuous_restrict S).prodMap continuous_id)).norm
   obtain ⟨C, hC⟩ := ((hcpt.prod isCompact_univ).image hcont).bddAbove
   refine ⟨C, fun i z hz => ?_⟩
   have hmem : (f i, (⟨⟨z, hKΩ hz⟩, hz⟩ : S)) ∈
       closure (Set.range f) ×ˢ (univ : Set S) :=
     ⟨subset_closure ⟨i, rfl⟩, mem_univ _⟩
-  have hle : ‖(f i) (⟨z, hKΩ hz⟩ : Ω)‖ ≤ C := hC (mem_image_of_mem _ hmem)
-  rwa [hf i] at hle
+  simpa [ContinuousMap.restrict_apply, hf i] using hC (mem_image_of_mem _ hmem)
 
 end GeneralDomain
 
