@@ -101,23 +101,16 @@ theorem pushforwardPushforwardAdj_unit_app_symmetricPower (n : ℕ)
         (ModuleCat.symmetricPower.coe_map_apply_eq_mapₛₗ _ n x)))).trans ?_
   refine Eq.trans ?_ (PresheafOfModulesOfCommRing.coe_symmetricPower_obj_map_apply n M.val
     (adj.counit.app V.unop).op x).symm
-  -- The coefficient maps compose to restriction along the counit by `H₁`, and the maps of
-  -- sections compose to it by definition.
+  -- The three maps of symmetric algebras compose to restriction along the counit: the first two
+  -- combine on the nose, and the coefficient maps of the result compose to it by `H₁`. The
+  -- coefficient ring is named because the unit's sections over `V` carry it under a different
+  -- instance head.
   have hR := congrArg (fun α ↦ α.app V) H₁
-  generalize x.1 = y
-  -- `erw`: each semilinear map is stated on a module of restricted scalars, whose carrier is
-  -- the module of sections only after unfolding `ModuleCat.restrictScalars`.
-  induction y using SymmetricAlgebra.induction with
-  | algebraMap r =>
-    erw [SymmetricAlgebra.mapₛₗ_algebraMap, SymmetricAlgebra.mapₛₗ_algebraMap,
-      SymmetricAlgebra.mapₛₗ_algebraMap, SymmetricAlgebra.mapₛₗ_algebraMap]
-    exact congrArg _ (ConcreteCategory.congr_hom hR r).symm
-  | ι m =>
-    erw [SymmetricAlgebra.mapₛₗ_ι, SymmetricAlgebra.mapₛₗ_ι, SymmetricAlgebra.mapₛₗ_ι,
-      SymmetricAlgebra.mapₛₗ_ι]
-    rfl
-  | mul a b ha hb => simp only [map_mul, ha, hb]
-  | add a b ha hb => simp only [map_add, ha, hb]
+  refine (congrArg (SymmetricAlgebra.mapₛₗ _) (RingHom.congr_fun
+    (SymmetricAlgebra.mapₛₗ_comp_mapₛₗ (R := R.obj.obj V) _ _ (LinearMap.comp _ _)
+      (fun _ ↦ rfl) (fun _ ↦ rfl)) _)).trans ?_
+  exact RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_comp_mapₛₗ (R := R.obj.obj V) _ _ _
+    (fun r ↦ (ConcreteCategory.congr_hom hR r).symm) (fun _ ↦ rfl)) _
 
 end
 
