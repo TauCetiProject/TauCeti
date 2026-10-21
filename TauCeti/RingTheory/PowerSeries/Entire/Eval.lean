@@ -37,6 +37,7 @@ with inverse `-∑ₙ aₙ₊₁ • aⁿ`, since `f(a) = 1 + a ∑ₙ aₙ₊�
 
 * `PowerSeries.IsEntire.hasSum_evalAt`: the series `∑ aₙ • bⁿ` converges to `f(b)`.
 * `PowerSeries.IsEntire.hasSum_evalScalar`: the series `∑ aⁿ • Fₙ` converges to `F(a)`.
+* `PowerSeries.IsEntire.evalScalar_add`: evaluation at a scalar is additive on entire series.
 * `PowerSeries.IsEntire.evalAt_add`, `PowerSeries.IsEntire.evalAt_mul`: evaluation is additive and
   multiplicative on entire series.
 * `PowerSeries.IsEntire.map_evalAt`: naturality in the algebra.
@@ -212,6 +213,12 @@ theorem IsEntire.hasSum_evalScalar [CompleteSpace A] (hF : F.IsEntire) (a : R) :
     HasSum (fun n ↦ a ^ n • coeff n F) (F.evalScalar a) := by
   rw [evalScalar_def]
   exact (hF.summable_norm_pow_smul_coeff a).of_norm.hasSum
+
+/-- Evaluation at a scalar is additive on entire series over a complete normed ring. -/
+theorem IsEntire.evalScalar_add [CompleteSpace A] {G : A⟦X⟧} (hF : F.IsEntire) (hG : G.IsEntire)
+    (a : R) : (F + G).evalScalar a = F.evalScalar a + G.evalScalar a :=
+  PowerSeries.evalScalar_add (hF.summable_norm_pow_smul_coeff a).of_norm
+    (hG.summable_norm_pow_smul_coeff a).of_norm
 
 end Scalar
 

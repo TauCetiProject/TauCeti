@@ -43,6 +43,9 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
 * `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
+* `PowerSeries.evalScalar_monomial`, `PowerSeries.evalScalar_at_zero`,
+  `PowerSeries.evalScalar_add`: evaluation at a scalar of monomials, at the scalar `0`, and of
+  sums.
 * `PowerSeries.norm_evalScalar_le`: a uniform bound on the terms `aⁿ • Fₙ` bounds `F(a)` in an
   ultrametric ring.
 -/
@@ -157,6 +160,66 @@ theorem evalScalar_def (F : A⟦X⟧) (a : R) : F.evalScalar a = ∑' n, a ^ n �
   (rfl)
 
 end Scalar
+
+section ScalarAction
+
+variable {R A : Type*} [Monoid R] [Semiring A] [DistribMulAction R A] [TopologicalSpace A]
+
+/-- The zero series evaluates to zero at every scalar. -/
+@[simp]
+theorem evalScalar_zero (a : R) : (0 : A⟦X⟧).evalScalar a = 0 := by
+  simp [evalScalar_def]
+
+/-- The monomial `c Xⁿ` evaluates to `aⁿ • c` at the scalar `a`. -/
+@[simp]
+theorem evalScalar_monomial (n : ℕ) (c : A) (a : R) :
+    (monomial n c).evalScalar a = a ^ n • c := by
+  rw [evalScalar_def, tsum_eq_single n fun m hm ↦ by simp [coeff_monomial, hm]]
+  simp
+
+/-- A constant series evaluates to its constant at every scalar. -/
+@[simp]
+theorem evalScalar_C (c : A) (a : R) : (C c).evalScalar a = c := by
+  simpa using evalScalar_monomial 0 c a
+
+/-- The series `1` evaluates to `1` at every scalar. -/
+@[simp]
+theorem evalScalar_one (a : R) : (1 : A⟦X⟧).evalScalar a = 1 := by
+  simpa using evalScalar_C (1 : A) a
+
+/-- Evaluation at a scalar is additive on series whose defining sums converge there. -/
+theorem evalScalar_add [ContinuousAdd A] [T2Space A] {F G : A⟦X⟧} {a : R}
+    (hF : Summable fun n ↦ a ^ n • coeff n F) (hG : Summable fun n ↦ a ^ n • coeff n G) :
+    (F + G).evalScalar a = F.evalScalar a + G.evalScalar a := by
+  simp only [evalScalar_def, map_add, smul_add]
+  exact hF.tsum_add hG
+
+end ScalarAction
+
+section ScalarZero
+
+variable {R A : Type*} [MonoidWithZero R] [Semiring A] [MulActionWithZero R A]
+  [TopologicalSpace A]
+
+/-- At the scalar `0`, a power series evaluates to its constant coefficient. -/
+@[simp]
+theorem evalScalar_at_zero (F : A⟦X⟧) : F.evalScalar (0 : R) = constantCoeff F := by
+  rw [evalScalar_def, tsum_eq_single 0 fun n hn ↦ by simp [zero_pow hn]]
+  simp
+
+end ScalarZero
+
+section ScalarRing
+
+variable {R A : Type*} [Monoid R] [Ring A] [DistribMulAction R A] [TopologicalSpace A]
+  [IsTopologicalAddGroup A] [T2Space A]
+
+/-- Evaluation at a scalar commutes with negation. -/
+@[simp]
+theorem evalScalar_neg (F : A⟦X⟧) (a : R) : (-F).evalScalar a = -F.evalScalar a := by
+  simp [evalScalar_def, tsum_neg]
+
+end ScalarRing
 
 section Normed
 

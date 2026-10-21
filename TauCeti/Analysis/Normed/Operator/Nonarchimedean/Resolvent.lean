@@ -328,11 +328,8 @@ theorem resolventAt_mem_closure_adjoin (u : C₀(I, R) →L[R] C₀(I, R)) (a : 
     Subalgebra.smul_mem _ (Subalgebra.sum_mem _ fun k _ ↦ Subalgebra.smul_mem _
       (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton R u) _) _) _
   rw [resolventAt_def]
-  by_cases hs : Summable fun m ↦ a ^ m • u.resolventCoeff m
-  · exact mem_closure_of_tendsto hs.hasSum
-      (.of_forall fun s ↦ Subalgebra.sum_mem _ fun m _ ↦ hV m)
-  · rw [tsum_eq_zero_of_not_summable hs]
-    exact subset_closure (Subalgebra.zero_mem _)
+  exact tsum_mem (Algebra.adjoin R {u}).toAddSubmonoid.isClosed_topologicalClosure
+    fun m ↦ subset_closure (hV m)
 
 /-- **Operator-norm bound for the value of the Fredholm resolvent.** If `c ≥ 0` bounds
 `‖a‖ ^ m * ‖Vₘ‖` for every `m`, then it bounds the operator norm of `V(a)`. -/
