@@ -22,17 +22,18 @@ Over each open `U` of `X`, the sections of `A` fixed by every `g : G` form a `Γ
 `CommMon.invariantSections ρ U` of `Γ(A.X, U)`. Over a basic open `X.basicOpen r` of an affine
 open `U`, these invariants are the localization away from `r` of the invariants over `U`: a section
 `x / rⁿ` fixed by every `g` satisfies `rᵐ (g • x - x) = 0` for some `m` depending on `g`, and
-since `G` is finite a single `m` works for all `g`, so that `rᵐ x` is invariant. Hence the affine
-schemes `Spec (CommMon.invariantSections ρ U)` glue, with Mathlib's relative gluing on the small
-affine Zariski site, to a scheme `CommMon.relativeSpecInvariants ρ` affine over `X`. The
-inclusions of the invariants glue to the quotient projection
-`CommMon.relativeSpecInvariantsπ ρ : Spec_X(A) ⟶ CommMon.relativeSpecInvariants ρ` over `X`,
-which is invariant under the action of `G` on `Spec_X(A)`.
+since `G` is finite a single `m` works for all `g`, so that `rᵐ x` is invariant. Hence the
+presheaf of invariant subalgebras `Q = CommMon.invariantSubalgebraPresheaf ρ` is coequifibered, and
+the affine schemes `Spec (CommMon.invariantSections ρ U)` glue, with Mathlib's relative gluing on
+the small affine Zariski site, to its relative spectrum `Q.relativeSpec`, affine over `X`
+(`CommMon.SubalgebraPresheaf.relativeSpec`). The inclusions of the invariants glue to the quotient
+projection `Q.relativeSpecπ : Spec_X(A) ⟶ Q.relativeSpec` over `X`, which is invariant under the
+action of `G` on `Spec_X(A)`.
 
 Over every affine open `U` of `X`, the projection is the affine invariant quotient
-`Spec Γ(A.X, U) ⟶ Spec Γ(A.X, U)ᴳ` (`CommMon.isPullback_relativeSpecInvariantsπ`). Since `G` is
-finite, `Γ(A.X, U)` is integral over its invariants, so the projection is integral and
-surjective, and it is finite when `Spec_X(A)` is of finite type over `X`. No flatness of the
+`Spec Γ(A.X, U) ⟶ Spec Γ(A.X, U)ᴳ` (`CommMon.SubalgebraPresheaf.isPullback_relativeSpecπ`).
+Since `G` is finite, `Γ(A.X, U)` is integral over its invariants, so the projection is integral
+and surjective, and it is finite when `Spec_X(A)` is of finite type over `X`. No flatness of the
 projection is asserted: for actions which are not free it can fail.
 
 The construction needs no hypothesis on `X`, and in particular the quotient of a scheme affine
@@ -41,31 +42,30 @@ preimages of the affine opens of `X` form one. The universal property of the quo
 étaleness of the projection for free actions are not proved in this file.
 
 The localization statement is a case of `TauCeti.FixedPoints.isLocalization_of_mem_range_iff`,
-which also gives `TauCeti.FixedPoints.isLocalization`, and the gluing follows the relative
-spectrum of an equalizer, `CommMon.relativeSpecEqualizer`.
+which also gives `TauCeti.FixedPoints.isLocalization`, and the gluing is the relative spectrum of
+a presheaf of subalgebras, which also gives the relative spectrum of an equalizer,
+`CommMon.equalizerSubalgebraPresheaf`.
 
 ## Main definitions
 
 * `CommMon.sectionsAction ρ U`: the action of `G` on `Γ(A.X, U)` by `Γ(X, U)`-algebra
   automorphisms.
 * `CommMon.invariantSections ρ U`: the invariant sections over `U`.
-* `CommMon.relativeSpecInvariants ρ`: the relative invariant quotient `Spec_X(A)/G`, with its
-  affine structure morphism `CommMon.relativeSpecInvariantsToBase ρ` and its charts
-  `CommMon.relativeSpecInvariantsCover ρ`.
-* `CommMon.relativeSpecInvariantsπ ρ`: the quotient projection.
+* `CommMon.invariantSubalgebraPresheaf ρ`: the presheaf of invariant subalgebras, whose relative
+  spectrum is the relative invariant quotient `Spec_X(A)/G` and whose `relativeSpecπ` is the
+  quotient projection.
 
 ## Main results
 
 * `CommMon.isLocalization_invariantSections_basicOpen`: invariants commute with localization at
-  a basic open of an affine open.
-* `CommMon.isPullback_relativeSpecInvariantsCover`: over an affine open `U` of `X`, the quotient
-  is `Spec (CommMon.invariantSections ρ U)`.
-* `CommMon.relativeSpecMap_relativeSpecInvariantsπ`: the projection is `G`-invariant.
-* `CommMon.isPullback_relativeSpecInvariantsπ`: over an affine open of `X`, the projection is the
-  affine invariant quotient.
+  a basic open of an affine open, so that `CommMon.invariantSubalgebraPresheaf ρ` is coequifibered
+  (`CommMon.isCoequifibered_invariantSubalgebraPresheaf`).
+* `CommMon.relativeSpecMap_invariantSubalgebraPresheaf_relativeSpecπ`: the projection is
+  `G`-invariant.
 * `CommMon.isIntegral_invariantSections`: the sections are integral over the invariant sections.
-* The projection is integral and surjective, and `CommMon.isFinite_relativeSpecInvariantsπ`: it
-  is finite when `Spec_X(A)` is locally of finite type over `X`.
+* The projection is integral and surjective, and
+  `CommMon.isFinite_invariantSubalgebraPresheaf_relativeSpecπ`: it is finite when `Spec_X(A)` is
+  locally of finite type over `X`.
 
 ## References
 
@@ -121,80 +121,15 @@ lemma restrictSections_mem_invariantSections {U V : X.Opens} (i : V ⟶ U) {x : 
   intro g
   rw [sectionsAlgHom_restrictSections, hx g]
 
-/-- The presheaf of rings of invariant sections of `A`. -/
-@[expose]
-def invariantSectionsPresheaf : X.Opensᵒᵖ ⥤ CommRingCat.{u} where
-  obj U := CommRingCat.of (invariantSections ρ U.unop)
-  map i := CommRingCat.ofHom ((A.restrictSections i.unop).restrict _ _
-    fun _ ↦ restrictSections_mem_invariantSections ρ i.unop)
-  map_id U := by
-    ext x
-    exact ConcreteCategory.congr_hom (A.sectionsPresheaf.map_id U) x.1
-  map_comp i j := by
-    ext x
-    exact ConcreteCategory.congr_hom (A.sectionsPresheaf.map_comp i j) x.1
+/-- The presheaf of subalgebras of invariant sections of `A`. -/
+def invariantSubalgebraPresheaf : A.SubalgebraPresheaf where
+  sections := invariantSections ρ
+  restrictSections_mem i _ := restrictSections_mem_invariantSections ρ i
 
 @[simp]
-lemma invariantSectionsPresheaf_obj (U : X.Opensᵒᵖ) :
-    (invariantSectionsPresheaf ρ).obj U = CommRingCat.of (invariantSections ρ U.unop) :=
+lemma invariantSubalgebraPresheaf_sections (U : X.Opens) :
+    (invariantSubalgebraPresheaf ρ).sections U = invariantSections ρ U :=
   (rfl)
-
-@[simp]
-lemma invariantSectionsPresheaf_map {U V : X.Opensᵒᵖ} (i : U ⟶ V) :
-    (invariantSectionsPresheaf ρ).map i =
-      CommRingCat.ofHom ((A.restrictSections i.unop).restrict _ _
-        fun _ ↦ restrictSections_mem_invariantSections ρ i.unop) :=
-  (rfl)
-
-/-- The structure morphism from the structure presheaf of `X`: regular functions act on `A`
-through the algebra map, and their images are invariant. -/
-def toInvariantSectionsPresheaf : X.presheaf ⟶ invariantSectionsPresheaf ρ where
-  app U := CommRingCat.ofHom (algebraMap Γ(X, U.unop) (invariantSections ρ U.unop))
-  naturality {U V} i := by
-    ext r
-    exact Subtype.ext (A.restrictSections_algebraMap i.unop r).symm
-
-@[simp]
-lemma toInvariantSectionsPresheaf_app (U : X.Opensᵒᵖ) :
-    (toInvariantSectionsPresheaf ρ).app U =
-      CommRingCat.ofHom (algebraMap Γ(X, U.unop) (invariantSections ρ U.unop)) :=
-  (rfl)
-
-/-- The inclusion of the invariant sections into all sections of `A`. -/
-def invariantSectionsPresheafι : invariantSectionsPresheaf ρ ⟶ A.sectionsPresheaf where
-  app U := CommRingCat.ofHom (invariantSections ρ U.unop).val.toRingHom
-  naturality _ _ _ := (rfl)
-
-@[simp]
-lemma invariantSectionsPresheafι_app (U : X.Opensᵒᵖ) :
-    (invariantSectionsPresheafι ρ).app U =
-      CommRingCat.ofHom (invariantSections ρ U.unop).val.toRingHom :=
-  (rfl)
-
-/-- The inclusion of the invariant sections is the algebra map of the subalgebra. -/
-lemma invariantSectionsPresheafι_app_eq_algebraMap (U : X.Opens) :
-    (invariantSectionsPresheafι ρ).app (op U) =
-      CommRingCat.ofHom (algebraMap (invariantSections ρ U) Γ(A.X, U)) :=
-  (rfl)
-
-/-- The inclusion of the invariant sections is compatible with the structure maps from the
-structure presheaf. -/
-@[reassoc (attr := simp)]
-lemma toInvariantSectionsPresheaf_comp_invariantSectionsPresheafι :
-    toInvariantSectionsPresheaf ρ ≫ invariantSectionsPresheafι ρ = A.toSectionsPresheaf := by
-  ext U r
-  rw [NatTrans.comp_app, toSectionsPresheaf_app]
-  rfl
-
-/-- The inclusion of the invariant sections is fixed by the morphisms of section rings induced by
-the action. -/
-@[reassoc (attr := simp)]
-lemma invariantSectionsPresheafι_comp_sectionsPresheafMap (g : G) :
-    invariantSectionsPresheafι ρ ≫ sectionsPresheafMap (ρ g).asIso.hom =
-      invariantSectionsPresheafι ρ := by
-  ext U x
-  rw [NatTrans.comp_app, sectionsPresheafMap_app]
-  exact mem_invariantSections.mp x.2 g
 
 /-- Over the basic open `X.basicOpen r` of an affine open `U`, the invariant sections of `A` are
 the localization away from `r` of those over `U`. This is the counterpart of
@@ -227,14 +162,10 @@ theorem isLocalization_invariantSections_basicOpen [Finite G] [A.X.IsQuasicohere
     Subtype.val_injective (hmem _) fun _ ↦ rfl
 
 /-- On the affine opens of `X`, the presheaf of invariant sections is coequifibered over the
-structure presheaf: its sections over basic opens are localizations. This is the condition under
-which Mathlib glues the spectra of its sections
-(`AlgebraicGeometry.Scheme.AffineZariskiSite.relativeGluingData`). -/
-theorem coequifibered_toInvariantSectionsPresheaf [Finite G] [A.X.IsQuasicoherent] :
-    ((toOpensFunctor X).op.whiskerLeft (toInvariantSectionsPresheaf ρ)).Coequifibered := by
-  apply coequifibered_iff_forall_isLocalizationAway.mpr
-  intro U r
-  exact isLocalization_invariantSections_basicOpen ρ U.2 r
+structure presheaf: its sections over basic opens are localizations. -/
+instance isCoequifibered_invariantSubalgebraPresheaf [Finite G] [A.X.IsQuasicoherent] :
+    (invariantSubalgebraPresheaf ρ).IsCoequifibered :=
+  .of_isLocalizationAway fun hU r ↦ isLocalization_invariantSections_basicOpen ρ hU r
 
 /-- The sections of `A` are integral over the invariant sections, since `G` is finite. -/
 instance isIntegral_invariantSections [Finite G] (U : X.Opens) :
@@ -252,191 +183,40 @@ instance isIntegral_invariantSections [Finite G] (U : X.Opens) :
 
 variable [Finite G] [A.X.IsQuasicoherent]
 
-/-- The relative gluing datum of the invariant quotient: the affine schemes
-`Spec (CommMon.invariantSections ρ U)` over the affine opens `U` of `X`. -/
-@[expose]
-def relativeSpecInvariantsGluingData : (directedCover X).RelativeGluingData :=
-  relativeGluingData (coequifibered_toInvariantSectionsPresheaf ρ)
-
-/-- The gluing diagram of the relative invariant quotient is locally directed. -/
-instance isLocallyDirected_relativeSpecInvariantsGluingData :
-    ((relativeSpecInvariantsGluingData ρ).functor ⋙ Scheme.forget).IsLocallyDirected :=
-  isLocallyDirected_relativeGluingData _
-
-/-- **The relative invariant quotient** `Spec_X(A)/G` of a finite group acting on a quasi-coherent
-commutative `𝒪ₓ`-algebra, glued from the affine schemes `Spec (CommMon.invariantSections ρ U)`
-over the affine opens `U` of `X`. -/
-@[expose]
-def relativeSpecInvariants : Scheme.{u} :=
-  (relativeSpecInvariantsGluingData ρ).glued
-
-/-- The structure morphism of the relative invariant quotient. -/
-@[expose]
-def relativeSpecInvariantsToBase : relativeSpecInvariants ρ ⟶ X :=
-  (relativeSpecInvariantsGluingData ρ).toBase
-
-/-- The open cover of the relative invariant quotient by the spectra of the invariant sections
-over the affine opens of `X`. -/
-@[expose]
-def relativeSpecInvariantsCover : (relativeSpecInvariants ρ).OpenCover :=
-  (relativeSpecInvariantsGluingData ρ).cover
-
-instance isOpenImmersion_relativeSpecInvariantsCover_f (U : X.AffineZariskiSite) :
-    IsOpenImmersion ((relativeSpecInvariantsCover ρ).f U) :=
-  isOpenImmersion_relativeGluingData_cover_f _ U
-
-lemma relativeSpecInvariantsCover_X (U : X.AffineZariskiSite) :
-    (relativeSpecInvariantsCover ρ).X U = Spec (CommRingCat.of (invariantSections ρ U.1)) :=
-  relativeGluingData_cover_X _ U
-
-/-- Over an affine open `U`, the structure morphism of the relative invariant quotient is `Spec`
-of the structure map `Γ(X, U) ⟶ CommMon.invariantSections ρ U`. -/
+/-- The quotient projection `Spec_X(A) ⟶ Spec_X(A)/G` is invariant under the action of `G` on
+`Spec_X(A)`. -/
 @[reassoc (attr := simp)]
-lemma relativeSpecInvariantsCover_f_relativeSpecInvariantsToBase (U : X.AffineZariskiSite) :
-    (relativeSpecInvariantsCover ρ).f U ≫ relativeSpecInvariantsToBase ρ =
-      Spec.map ((toInvariantSectionsPresheaf ρ).app (op U.1)) ≫ U.2.fromSpec :=
-  relativeGluingData_cover_f_toBase (coequifibered_toInvariantSectionsPresheaf ρ) U
-
-/-- The preimage of an affine open `U` under the structure morphism of the relative invariant
-quotient is the image of its chart over `U`. -/
-lemma relativeSpecInvariantsToBase_preimage (U : X.AffineZariskiSite) :
-    relativeSpecInvariantsToBase ρ ⁻¹ᵁ U.1 = ((relativeSpecInvariantsCover ρ).f U).opensRange :=
-  relativeGluingData_toBase_preimage (coequifibered_toInvariantSectionsPresheaf ρ) U
-
-/-- Over an affine open `U` of `X`, the relative invariant quotient is
-`Spec (CommMon.invariantSections ρ U)`. -/
-lemma isPullback_relativeSpecInvariantsCover (U : X.AffineZariskiSite) :
-    IsPullback (Spec.map ((toInvariantSectionsPresheaf ρ).app (op U.1)) ≫ U.2.isoSpec.inv)
-      ((relativeSpecInvariantsCover ρ).f U) U.1.ι (relativeSpecInvariantsToBase ρ) :=
-  isPullback_relativeGluingData_cover (coequifibered_toInvariantSectionsPresheaf ρ) U
-
-/-- The structure morphism of the relative invariant quotient is affine. -/
-instance isAffineHom_relativeSpecInvariantsToBase :
-    IsAffineHom (relativeSpecInvariantsToBase ρ) :=
-  isAffineHom_relativeGluingData_toBase (coequifibered_toInvariantSectionsPresheaf ρ)
-
-/-- Maps out of the relative invariant quotient are determined on its affine charts. -/
-lemma relativeSpecInvariants_hom_ext {T : Scheme.{u}} {f g : relativeSpecInvariants ρ ⟶ T}
-    (h : ∀ U : X.AffineZariskiSite, (relativeSpecInvariantsCover ρ).f U ≫ f =
-      (relativeSpecInvariantsCover ρ).f U ≫ g) : f = g :=
-  colimit.hom_ext h
-
-/-- **The quotient projection** `Spec_X(A) ⟶ Spec_X(A)/G` over `X`, given on each affine chart by
-`Spec` of the inclusion `CommMon.invariantSections ρ U ⟶ Γ(A.X, U)`. -/
-def relativeSpecInvariantsπ : A.relativeSpec ⟶ relativeSpecInvariants ρ :=
-  colimMap (Functor.whiskerRight
-    (((toOpensFunctor X).op.whiskerLeft (invariantSectionsPresheafι ρ)).rightOp) Scheme.Spec)
-
-/-- On an affine chart, `CommMon.relativeSpecInvariantsπ` is `Spec` of the inclusion of the
-invariant sections. -/
-@[reassoc (attr := simp)]
-lemma relativeSpecCover_f_relativeSpecInvariantsπ (U : X.AffineZariskiSite) :
-    A.relativeSpecCover.f U ≫ relativeSpecInvariantsπ ρ =
-      Spec.map ((invariantSectionsPresheafι ρ).app (op U.1)) ≫
-        (relativeSpecInvariantsCover ρ).f U :=
-  ι_colimMap _ U
-
-/-- `CommMon.relativeSpecInvariantsπ` is a morphism over `X`. -/
-@[reassoc (attr := simp)]
-lemma relativeSpecInvariantsπ_relativeSpecInvariantsToBase :
-    relativeSpecInvariantsπ ρ ≫ relativeSpecInvariantsToBase ρ = A.relativeSpecToBase := by
-  apply A.relativeSpec_hom_ext
-  intro U
-  -- Rebind the chart inclusions and the ring maps at their explicit sources and targets,
-  -- rather than the definitionally equal objects of the open covers and of the presheaves, so
-  -- that ordinary rewriting applies.
-  let ιA : Spec (CommRingCat.of Γ(A.X, U.1)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
-  let ιQ : Spec (CommRingCat.of (invariantSections ρ U.1)) ⟶ relativeSpecInvariants ρ :=
-    (relativeSpecInvariantsCover ρ).f U
-  let iU : CommRingCat.of (invariantSections ρ U.1) ⟶ CommRingCat.of Γ(A.X, U.1) :=
-    (invariantSectionsPresheafι ρ).app (op U.1)
-  let eU : CommRingCat.of Γ(X, U.1) ⟶ CommRingCat.of (invariantSections ρ U.1) :=
-    (toInvariantSectionsPresheaf ρ).app (op U.1)
-  let aU : CommRingCat.of Γ(X, U.1) ⟶ CommRingCat.of Γ(A.X, U.1) :=
-    A.toSectionsPresheaf.app (op U.1)
-  have hπ : ιA ≫ relativeSpecInvariantsπ ρ = Spec.map iU ≫ ιQ :=
-    relativeSpecCover_f_relativeSpecInvariantsπ ρ U
-  have hQ : ιQ ≫ relativeSpecInvariantsToBase ρ = Spec.map eU ≫ U.2.fromSpec :=
-    relativeSpecInvariantsCover_f_relativeSpecInvariantsToBase ρ U
-  have hA : ιA ≫ A.relativeSpecToBase = Spec.map aU ≫ U.2.fromSpec :=
-    A.relativeSpecCover_f_relativeSpecToBase U
-  have hcomp : eU ≫ iU = aU :=
-    NatTrans.congr_app (toInvariantSectionsPresheaf_comp_invariantSectionsPresheafι ρ) (op U.1)
-  change ιA ≫ relativeSpecInvariantsπ ρ ≫ relativeSpecInvariantsToBase ρ =
-    ιA ≫ A.relativeSpecToBase
-  rw [reassoc_of% hπ, hQ, ← Spec.map_comp_assoc, hcomp, hA]
-
-/-- The quotient projection is invariant under the action of `G` on `Spec_X(A)`. -/
-@[reassoc (attr := simp)]
-lemma relativeSpecMap_relativeSpecInvariantsπ (g : G) :
-    relativeSpecMap (ρ g).asIso.hom ≫ relativeSpecInvariantsπ ρ = relativeSpecInvariantsπ ρ := by
-  apply A.relativeSpec_hom_ext
-  intro U
-  -- Rebind the chart inclusions and the ring maps at their explicit sources, as above.
-  let ιA : Spec (CommRingCat.of Γ(A.X, U.1)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
-  let ιQ : Spec (CommRingCat.of (invariantSections ρ U.1)) ⟶ relativeSpecInvariants ρ :=
-    (relativeSpecInvariantsCover ρ).f U
-  let iU : CommRingCat.of (invariantSections ρ U.1) ⟶ CommRingCat.of Γ(A.X, U.1) :=
-    (invariantSectionsPresheafι ρ).app (op U.1)
-  let gU : CommRingCat.of Γ(A.X, U.1) ⟶ CommRingCat.of Γ(A.X, U.1) :=
-    CommRingCat.ofHom (sectionsAlgHom (ρ g).asIso.hom U.1).toRingHom
-  have hπ : ιA ≫ relativeSpecInvariantsπ ρ = Spec.map iU ≫ ιQ :=
-    relativeSpecCover_f_relativeSpecInvariantsπ ρ U
-  have hg : ιA ≫ relativeSpecMap (ρ g).asIso.hom = Spec.map gU ≫ ιA :=
-    relativeSpecCover_f_relativeSpecMap _ U
-  have hι : iU ≫ gU = iU := by
-    have h := NatTrans.congr_app (invariantSectionsPresheafι_comp_sectionsPresheafMap ρ g) (op U.1)
-    rwa [NatTrans.comp_app, sectionsPresheafMap_app] at h
-  change ιA ≫ relativeSpecMap (ρ g).asIso.hom ≫ relativeSpecInvariantsπ ρ =
-    ιA ≫ relativeSpecInvariantsπ ρ
-  rw [reassoc_of% hg, hπ, ← Spec.map_comp_assoc, hι]
-
-/-- Over an affine open `U` of `X`, the quotient projection is the affine invariant quotient
-`Spec Γ(A.X, U) ⟶ Spec Γ(A.X, U)ᴳ`: the square formed with the two charts over `U` is a pullback
-square. -/
-lemma isPullback_relativeSpecInvariantsπ (U : X.AffineZariskiSite) :
-    IsPullback (Spec.map ((invariantSectionsPresheafι ρ).app (op U.1))) (A.relativeSpecCover.f U)
-      ((relativeSpecInvariantsCover ρ).f U) (relativeSpecInvariantsπ ρ) := by
-  refine IsPullback.of_right ?_ (relativeSpecCover_f_relativeSpecInvariantsπ ρ U).symm
-    (isPullback_relativeSpecInvariantsCover ρ U)
-  rw [relativeSpecInvariantsπ_relativeSpecInvariantsToBase, ← Spec.map_comp_assoc,
-    ← NatTrans.comp_app, toInvariantSectionsPresheaf_comp_invariantSectionsPresheafι]
-  exact A.isPullback_relativeSpecCover U
-
-/-- A morphism property which is local on the target holds for the quotient projection exactly
-when it holds for the affine invariant quotients over the affine opens of `X`. -/
-private lemma relativeSpecInvariantsπ_iff (P : MorphismProperty Scheme.{u})
-    [IsZariskiLocalAtTarget P] :
-    P (relativeSpecInvariantsπ ρ) ↔ ∀ U : X.AffineZariskiSite,
-      P (Spec.map (CommRingCat.ofHom (algebraMap (invariantSections ρ U.1) Γ(A.X, U.1)))) := by
-  simp only [← invariantSectionsPresheafι_app_eq_algebraMap]
-  refine ⟨fun H U ↦ MorphismProperty.IsLocalAtTarget.of_isPullback (relativeSpecInvariantsCover ρ)
-    U (isPullback_relativeSpecInvariantsπ ρ U).flip H,
-    fun H ↦ MorphismProperty.IsLocalAtTarget.of_zeroHypercover (relativeSpecInvariantsCover ρ)
-      fun U ↦ ?_⟩
-  -- The second projection of the pullback is the chart of the projection, up to isomorphism.
-  have h := (isPullback_relativeSpecInvariantsπ ρ U).flip
-  exact h.isoPullback_inv_snd ▸ (P.cancel_left_of_respectsIso h.isoPullback.inv _).mpr (H U)
+lemma relativeSpecMap_invariantSubalgebraPresheaf_relativeSpecπ (g : G) :
+    relativeSpecMap (ρ g).asIso.hom ≫ (invariantSubalgebraPresheaf ρ).relativeSpecπ =
+      (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
+  rw [(invariantSubalgebraPresheaf ρ).relativeSpecMap_relativeSpecπ (g := 𝟙 A)
+    fun U x hx ↦ by rw [mem_invariantSections.mp hx g, sectionsAlgHom_id, AlgHom.id_apply],
+    relativeSpecMap_id, Category.id_comp]
 
 /-- The quotient projection is integral. -/
-instance : IsIntegralHom (relativeSpecInvariantsπ ρ) := by
+instance : IsIntegralHom (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
   have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
     @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
-  refine (relativeSpecInvariantsπ_iff ρ @IsIntegralHom).mpr fun U ↦ ?_
-  exact IsIntegralHom.SpecMap_iff.mpr (algebraMap_isIntegral_iff.mpr inferInstance)
+  refine ((invariantSubalgebraPresheaf ρ).relativeSpecπ_iff @IsIntegralHom).mpr fun U ↦ ?_
+  exact IsIntegralHom.SpecMap_iff.mpr
+    (algebraMap_isIntegral_iff.mpr (isIntegral_invariantSections ρ U.1))
 
 /-- The quotient projection is surjective. -/
-instance : Surjective (relativeSpecInvariantsπ ρ) := by
-  refine (relativeSpecInvariantsπ_iff ρ @Surjective).mpr fun U ↦ ?_
-  exact ⟨Algebra.IsIntegral.comap_surjective _ _⟩
+instance : Surjective (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
+  refine ((invariantSubalgebraPresheaf ρ).relativeSpecπ_iff @Surjective).mpr fun U ↦ ?_
+  have := isIntegral_invariantSections ρ U.1
+  exact ⟨Algebra.IsIntegral.comap_surjective (invariantSections ρ U.1) Γ(A.X, U.1)⟩
 
 /-- The quotient projection is finite when `Spec_X(A)` is locally of finite type over `X`. -/
-instance isFinite_relativeSpecInvariantsπ [LocallyOfFiniteType A.relativeSpecToBase] :
-    IsFinite (relativeSpecInvariantsπ ρ) := by
-  have : LocallyOfFiniteType (relativeSpecInvariantsπ ρ ≫ relativeSpecInvariantsToBase ρ) := by
-    rwa [relativeSpecInvariantsπ_relativeSpecInvariantsToBase]
+instance isFinite_invariantSubalgebraPresheaf_relativeSpecπ
+    [LocallyOfFiniteType A.relativeSpecToBase] :
+    IsFinite (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
+  have : LocallyOfFiniteType ((invariantSubalgebraPresheaf ρ).relativeSpecπ ≫
+      (invariantSubalgebraPresheaf ρ).relativeSpecToBase) := by
+    rwa [SubalgebraPresheaf.relativeSpecπ_relativeSpecToBase]
   exact (IsFinite.iff_isIntegralHom_and_locallyOfFiniteType _).mpr
-    ⟨inferInstance, locallyOfFiniteType_of_comp _ (relativeSpecInvariantsToBase ρ)⟩
+    ⟨inferInstance,
+      locallyOfFiniteType_of_comp _ (invariantSubalgebraPresheaf ρ).relativeSpecToBase⟩
 
 end
 
