@@ -19,7 +19,7 @@ Let `G` be a finite group whose order is invertible in the commutative ring `k`,
 $$(hf)(g_1, \dots, g_n) = \frac{1}{|G|} \sum_{g \in G} f(g_1, \dots, g_n, g),$$
 is a contracting homotopy of the complex of inhomogeneous cochains `inhomogeneousCochains A`
 in positive degrees, in Mathlib's convention for the differential
-`inhomogeneousCochains.d`, which lets `g_0` act on the first argument. In degree `0` the same
+`inhomogeneousCochains.d`, whose first face is `g_0 • f(g_1, …, g_n)`. In degree `0` the same
 operator recovers the averaging projection `Representation.averageMap` onto the invariants.
 
 Precisely, with the sign `(-1)^(n+1)` on the component of degree `n + 1 → n`, the identity of
@@ -97,9 +97,14 @@ theorem averageLast_hom_apply (n : ℕ) (f : ModuleCat.of k ((Fin (n + 1) → G)
 theorem d_comp_averageLast (n : ℕ) :
     d A (n + 1) ≫ averageLast A (n + 1) = averageLast A n ≫ d A n + (-1 : k) ^ n • 𝟙 _ := by
   ext f y
+  -- Evaluate both sides at `f` and `y`: the right side becomes
+  -- `ρ(y_0) (h f (tail y)) + ∑ j, (-1)^(j+1) • h f (contractNth j y) + (-1)^n • f y`.
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_add, ModuleCat.hom_smul,
     LinearMap.add_apply, LinearMap.smul_apply, ModuleCat.hom_id, LinearMap.id_apply, d_hom_apply,
     Pi.add_apply, Pi.smul_apply]
+  -- Unfold `h` and split the last two faces of `d f` evaluated at `Fin.snoc y g`. The other
+  -- contractions commute with appending `g`; contracting the last two entries gives
+  -- `f (Fin.snoc (init y) (y_n * g))`; the last face drops `g` and gives `f y`.
   simp only [averageLast, ModuleCat.hom_ofHom, LinearMap.coe_mk, AddHom.coe_mk, d_hom_apply,
     Fin.snoc_apply_zero,
     Fin.sum_univ_castSucc (n := n + 1), Fin.sum_univ_castSucc (n := n),
@@ -112,9 +117,13 @@ theorem d_comp_averageLast (n : ℕ) :
   have hlast : ∑ g, f (Fin.snoc (Fin.init y) (y (Fin.last n) * g)) =
       ∑ g, f (Fin.snoc (Fin.init y) g) :=
     Equiv.sum_comp (Equiv.mulLeft (y (Fin.last n))) fun g => f (Fin.snoc (Fin.init y) g)
+  -- Distribute the sum over `G` across the faces and pull it past the action and the signs. The
+  -- translation `hlast` absorbs `y_n` into the averaged variable, and the constant last face sums
+  -- to `|G| • f y`. Both sides now match except for `⅟|G| • (-1)^(n+2) • |G| • f y` on the left.
   simp only [htail, Finset.sum_add_distrib, ← Finset.smul_sum, ← map_sum, hlast,
     Finset.sum_comm (γ := G), Finset.sum_const, Finset.card_univ, Fin.val_castSucc, Fin.val_last,
     smul_add, map_smul]
+  -- Cancel `⅟|G|` against `|G|` and put the remaining scalars in a common position.
   have hc : ⅟(Fintype.card G : k) * ((-1) ^ (n + 1 + 1) * (Fintype.card G : k)) = (-1) ^ n := by
     rw [mul_left_comm, invOf_mul_self, mul_one]
     ring
@@ -128,13 +137,11 @@ theorem d_zero_comp_averageLast :
     d A 0 ≫ averageLast A 0 = ModuleCat.ofHom (A.ρ.averageMap.compLeft (Fin 0 → G)) - 𝟙 _ := by
   refine ModuleCat.hom_ext (LinearMap.ext fun f => funext fun y => ?_)
   have hy (z : Fin 0 → G) : z = y := Subsingleton.elim z y
-  simp only [averageLast, ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_sub,
-    LinearMap.sub_apply, ModuleCat.hom_id, LinearMap.id_apply, ModuleCat.hom_ofHom,
-    LinearMap.coe_mk, AddHom.coe_mk, d_hom_apply, LinearMap.compLeft_apply, Function.comp_apply,
-    Pi.sub_apply, _root_.Representation.averageMap_apply, hy, Fin.snoc_zero, Fin.sum_univ_succ,
-    Finset.univ_eq_empty, Finset.sum_empty, add_zero, Fin.val_zero, zero_add, pow_one,
-    neg_one_smul, ← sub_eq_add_neg, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
-    smul_sub, ← Nat.cast_smul_eq_nsmul k (Fintype.card G), smul_smul, invOf_mul_self, one_smul]
+  -- The sum of the constant `f y` over `G` is `|G| • f y`, which `⅟|G|` cancels.
+  have hc : ⅟(Fintype.card G : k) • (Fintype.card G • f y) = f y := by
+    rw [← Nat.cast_smul_eq_nsmul k, smul_smul, invOf_mul_self, one_smul]
+  simp [averageLast, d_hom_apply, -Representation.averageMap, Representation.averageMap_apply, hy,
+    Fin.snoc_zero, ← sub_eq_add_neg, Finset.sum_sub_distrib, smul_sub, hc]
 
 /-- **The explicit primitive of a positive-degree cocycle.** An `(n + 1)`-cocycle `f` is the
 coboundary of `(-1)^(n+1)` times its average over the last argument. -/
@@ -145,7 +152,9 @@ theorem d_smul_averageLast_of_d_eq_zero {n : ℕ} {f : ModuleCat.of k ((Fin (n +
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, hf, map_zero, ModuleCat.hom_add,
     ModuleCat.hom_smul, LinearMap.add_apply, LinearMap.smul_apply, ModuleCat.hom_id,
     LinearMap.id_apply] at h
-  have hsign : (-1 : k) ^ (n + 1) * (-1) ^ n = -1 := by simp [pow_succ, mul_comm, ← mul_pow]
+  have hsign : (-1 : k) ^ (n + 1) * (-1) ^ n = -1 := by
+    rw [← pow_add]
+    exact Odd.neg_one_pow ⟨n, by ring⟩
   rw [map_smul, eq_neg_of_add_eq_zero_left h.symm, smul_neg, smul_smul, hsign, neg_one_smul,
     neg_neg]
 
@@ -206,7 +215,9 @@ private theorem sub_averageCochainMap_eq_nullHomotopicMap' :
   · rw [Homotopy.nullHomotopicMap'_f (show (ComplexShape.up ℕ).Rel n (n + 1) from rfl)
       (show (ComplexShape.up ℕ).Rel (n + 1) (n + 1 + 1) from rfl),
       inhomogeneousCochains.d_def, inhomogeneousCochains.d_def]
-    have hsign : (-1 : k) ^ (n + 1 + 1) * (-1) ^ n = 1 := by simp [pow_succ, mul_comm, ← mul_pow]
+    have hsign : (-1 : k) ^ (n + 1 + 1) * (-1) ^ n = 1 := by
+      rw [← pow_add]
+      exact Even.neg_one_pow ⟨n + 1, by ring⟩
     have hneg : (-1 : k) ^ (n + 1 + 1) = -(-1) ^ (n + 1) := by rw [pow_succ, mul_neg_one]
     simp only [averagingHomotopyHom, HomologicalComplex.XIsoOfEq_rfl, Iso.refl_hom,
       Category.id_comp, Linear.smul_comp, Linear.comp_smul, d_comp_averageLast, smul_add,
