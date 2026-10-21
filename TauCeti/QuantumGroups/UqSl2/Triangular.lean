@@ -37,6 +37,8 @@ in `U⁻ ⊗ U⁰ ⊗ U⁺`, which is how central elements are reduced to their 
 ## Main results
 
 * `TauCeti.UqSl2.triangularEquiv_tmul`: its value `p(F) * r(K) * s(E)` on a pure tensor.
+* `TauCeti.UqSl2.triangularEquiv_symm_pbwBasis`: its inverse sends the PBW basis vector
+  `F ^ a * K ^ b * E ^ c` to the monomial tensor `X ^ a ⊗ T b ⊗ X ^ c`.
 * `TauCeti.UqSl2.transcendental_f` and `TauCeti.UqSl2.transcendental_e`: `F` and `E` generate
   polynomial subalgebras.
 * `TauCeti.UqSl2.laurentEval_kUnit_injective`: `K` generates a Laurent polynomial subalgebra.
@@ -130,5 +132,20 @@ theorem triangularEquiv_tmul (p : ℂ[X]) (r : ℂ[T;T⁻¹]) (s : ℂ[X]) :
     triangularEquiv q (p ⊗ₜ (r ⊗ₜ s)) =
       aeval (f q) p * laurentEval (kUnit q) r * aeval (e q) s := by
   rw [triangularEquiv, LinearEquiv.ofBijective_apply, triangularMap_tmul]
+
+/-- The inverse of the triangular decomposition sends the PBW basis vector `F ^ a * K ^ b * E ^ c`
+to the monomial tensor `X ^ a ⊗ T b ⊗ X ^ c`. -/
+theorem triangularEquiv_symm_pbwBasis (a : ℕ) (b : ℤ) (c : ℕ) :
+    (triangularEquiv q).symm (pbwBasis q (a, b, c)) = (X ^ a) ⊗ₜ (T b ⊗ₜ (X ^ c)) := by
+  rw [LinearEquiv.symm_apply_eq, triangularEquiv_tmul]
+  simp
+
+/-- The inverse of the triangular decomposition on an ordered monomial `F ^ a * K ^ b * E ^ c`;
+this is `triangularEquiv_symm_pbwBasis` in `simp` normal form. -/
+@[simp]
+theorem triangularEquiv_symm_f_pow_mul_kUnit_zpow_mul_e_pow (a : ℕ) (b : ℤ) (c : ℕ) :
+    (triangularEquiv q).symm (f q ^ a * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * e q ^ c) =
+      (X ^ a) ⊗ₜ (T b ⊗ₜ (X ^ c)) := by
+  rw [← pbwBasis_apply, triangularEquiv_symm_pbwBasis]
 
 end TauCeti.UqSl2
