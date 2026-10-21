@@ -246,17 +246,7 @@ private lemma truncLE'TensorHom_assoc (M : CochainComplex (ModuleCat.{v} R) ℤ)
   rw [← cancel_mono ((K ⊗ (L ⊗ M)).truncLE'ToX n)]
   refine mapBifunctor₁₂.hom_ext (fun p q r h => ?_)
   have h' : p + q + r = n := h
-  -- The inclusion of a tridegree summand, in the whiskered form used by `ι_ι_associator_hom`.
-  have e : mapBifunctor₁₂.ι (curriedTensor (ModuleCat.{v} R)) (curriedTensor (ModuleCat.{v} R))
-      (K.truncLE' embeddingDownNat) (L.truncLE' embeddingDownNat) (M.truncLE' embeddingDownNat)
-      (down ℕ) (down ℕ) p q r n h =
-      (ιTensorObj (K.truncLE' embeddingDownNat) (L.truncLE' embeddingDownNat) p q (p + q) rfl ▷
-          (M.truncLE' embeddingDownNat).X r) ≫
-        ιTensorObj (K.truncLE' embeddingDownNat ⊗ L.truncLE' embeddingDownNat)
-          (M.truncLE' embeddingDownNat) (p + q) r n h' := by
-    rw [mapBifunctor₁₂.ι_eq _ _ _ _ _ _ _ p q r (p + q) n rfl h']
-    rfl
-  rw [e]
+  rw [mapBifunctor₁₂.ι_eq_whiskerRight _ _ _ p q r (p + q) n rfl h']
   simp only [comp_f, Category.assoc, truncLE'Map_f_truncLE'ToX, ι_whiskerRight_assoc,
     ι_truncLE'TensorHom_f_truncLE'ToX_assoc, whiskerRight_comp_tensorHom_assoc,
     ι_truncLE'TensorHom_f_truncLE'ToX,
