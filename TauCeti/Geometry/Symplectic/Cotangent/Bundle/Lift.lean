@@ -56,6 +56,7 @@ variable [IsManifold I 2 M] [IsManifold J 2 N]
 
 /-- **Naturality of the Liouville form.** The cotangent lift of a smooth diffeomorphism
 pulls the Liouville form of `T*N` back to the Liouville form of `T*M`. -/
+@[simp]
 theorem mpullback_cotangent_liouvilleForm (h : M ≃ₘ⟮I, J⟯ N) :
     SmoothForm.mpullback h.cotangent h.cotangent.contMDiff (liouvilleForm J N) =
       liouvilleForm I M := by
@@ -85,6 +86,7 @@ variable [IsManifold I ∞ M] [IsManifold J ∞ N]
 
 /-- **Cotangent lifts are symplectic.** The cotangent lift of a smooth diffeomorphism pulls the
 canonical symplectic form of `T*N` back to the canonical symplectic form of `T*M`. -/
+@[simp]
 theorem mpullback_cotangent_symplecticForm (h : M ≃ₘ⟮I, J⟯ N) :
     SmoothForm.mpullback h.cotangent h.cotangent.contMDiff (symplecticForm J N) =
       symplecticForm I M := by
