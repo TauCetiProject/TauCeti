@@ -226,7 +226,7 @@ theorem fromSpec_def (hF : Ideal.span F = ⊤) :
 
 /-- The morphism `Spec B ⟶ Proj R(J)` is a morphism over `Spec C`: followed by the structure
 morphism of the blowup, it is the spectrum of the structure map `C → B`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem fromSpec_toSpec (hF : Ideal.span F = ⊤) :
     fromSpec C hF ≫ toSpec C F = Spec.map (CommRingCat.ofHom (algebraMap C B)) := by
   rw [fromSpec, toSpec, Proj.fromOfGlobalSections_toSpecZero_assoc, ← Spec.map_comp]
@@ -239,6 +239,7 @@ theorem fromSpec_toSpec (hF : Ideal.span F = ⊤) :
   simp
 
 /-- The standard open `D₊(f T)` of `Proj R(J)` pulls back to the basic open `D(f)` of `Spec B`. -/
+@[simp]
 theorem fromSpec_preimage_basicOpen (hF : Ideal.span F = ⊤) {f : B} (hf : f ∈ F) :
     fromSpec C hF ⁻¹ᵁ Proj.basicOpen (gradedRing C F) (monomialDegreeOne C hf) =
       PrimeSpectrum.basicOpen f := by
