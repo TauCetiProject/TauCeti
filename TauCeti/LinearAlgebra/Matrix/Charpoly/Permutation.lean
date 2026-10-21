@@ -41,15 +41,20 @@ the permutation action on the standard basis; the version for the permutation re
 
 ## Main results
 
-* `Equiv.Perm.blockTriangular_permMatrix`, `Equiv.Perm.toSquareBlock_permMatrix`: a labelling of
-  the coordinates that is constant along the cycles makes a permutation matrix block triangular,
-  and its diagonal blocks are the permutation matrices of the restrictions.
+* `Matrix.blockTriangular_permMatrix`, `Matrix.toSquareBlock_permMatrix`: a labelling of the
+  coordinates that is constant along the cycles makes a permutation matrix block triangular, and
+  its diagonal blocks are the permutation matrices of the restrictions.
+* `Equiv.Perm.pow_card_eq_one_of_forall_sameCycle`,
+  `Equiv.Perm.eq_zero_of_aeval_permMatrix_eq_zero`: a permutation `σ` with a single orbit on `n`
+  satisfies `σ ^ card n = 1`, and no nonzero polynomial of degree less than `card n` kills its
+  permutation matrix.
 * `Equiv.Perm.charpoly_permMatrix_of_forall_sameCycle`: a permutation with a single orbit on a
   nonempty set of size `d` has characteristic polynomial `X ^ d - 1`.
 * `Equiv.Perm.charpoly_permMatrix`: the characteristic polynomial of a permutation matrix is the
   product of `X ^ d - 1` over the full cycle type.
 * `Equiv.Perm.charpolyRev_permMatrix`: `det (1 - X P_σ)` is the product of `1 - X ^ d` over the
-  full cycle type.
+  full cycle type; the passage from the first product uses
+  `Polynomial.reflect_sum_prod_X_pow_sub_one`.
 * `Equiv.Perm.charpoly_lmapDomain`, `Equiv.Perm.reverse_charpoly_lmapDomain`: the same identities
   for the permutation action `Finsupp.lmapDomain R R σ` on `n →₀ R`, whose matrix in the standard
   basis is the transposed permutation matrix (`Equiv.Perm.toMatrix_lmapDomain`).
@@ -64,89 +69,120 @@ public section
 
 open Polynomial Matrix
 
-namespace Equiv.Perm
+namespace Matrix
 
-variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+variable {n R : Type*} [DecidableEq n]
 
 /-- The permutation matrix of a power of `σ` is the power of the permutation matrix of `σ`. -/
 @[simp]
-theorem permMatrix_pow (σ : Perm n) (k : ℕ) :
+theorem permMatrix_pow [Fintype n] [Semiring R] (σ : Equiv.Perm n) (k : ℕ) :
     (σ ^ k).permMatrix R = σ.permMatrix R ^ k := by
-  rw [← inv_inv (σ ^ k), ← permMatrixHom_apply, ← inv_pow, map_pow, permMatrixHom_apply, inv_inv]
+  induction k with
+  | zero => simp
+  | succ k ih => rw [pow_succ, permMatrix_mul, ih, pow_succ']
 
-omit [Fintype n] in
+variable [Zero R] [One R]
+
 /-- A permutation matrix is block triangular for any labelling of the coordinates that is
 constant along the cycles of the permutation. -/
-theorem blockTriangular_permMatrix {α : Type*} [Preorder α] (σ : Perm n) {b : n → α}
+theorem blockTriangular_permMatrix {α : Type*} [Preorder α] (σ : Equiv.Perm n) {b : n → α}
     (hb : ∀ x, b (σ x) = b x) : (σ.permMatrix R).BlockTriangular b := by
   intro i j hij
-  rw [permMatrix, PEquiv.toMatrix_toPEquiv_apply]
+  rw [Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_apply]
   refine Pi.single_eq_of_ne (fun h => ?_) _
   rw [h, hb] at hij
   exact lt_irrefl _ hij
 
-omit [Fintype n] in
 /-- The diagonal block of a permutation matrix over a fibre of a labelling preserved by `σ` is the
 permutation matrix of the restriction of `σ` to that fibre. -/
-theorem toSquareBlock_permMatrix {α : Type*} (σ : Perm n) {b : n → α}
+theorem toSquareBlock_permMatrix {α : Type*} (σ : Equiv.Perm n) {b : n → α}
     (hb : ∀ x, b (σ x) = b x) (a : α) :
     (σ.permMatrix R).toSquareBlock b a =
       (σ.subtypePerm (p := fun x => b x = a) fun x => by rw [hb]).permMatrix R := by
   ext x y
   simp [toSquareBlock_def, Subtype.ext_iff]
 
+end Matrix
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- Reflecting `∏ (X ^ d - 1)` at its degree `∑ d` gives `∏ (1 - X ^ d)`. -/
+theorem reflect_sum_prod_X_pow_sub_one (s : Multiset ℕ) :
+    reflect s.sum (s.map fun d => (X : R[X]) ^ d - 1).prod = (s.map fun d => 1 - X ^ d).prod := by
+  nontriviality R
+  have hdeg : ∀ d : ℕ, ((X : R[X]) ^ d - 1).natDegree = d := fun d => by
+    rw [← C_1, natDegree_X_pow_sub_C]
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    rw [Multiset.sum_cons, Multiset.map_cons, Multiset.prod_cons, Multiset.map_cons,
+      Multiset.prod_cons, reflect_mul _ _ (hdeg a).le, ih, reflect_sub]
+    · simp
+    · refine (natDegree_multiset_prod_le _).trans ?_
+      simp [Multiset.map_map, hdeg]
+
+end Polynomial
+
+namespace Equiv.Perm
+
+variable {n R : Type*} [Fintype n] [DecidableEq n]
+
+omit [DecidableEq n] in
+/-- A permutation with a single orbit on a finite set `n` has `σ ^ card n = 1`. -/
+theorem pow_card_eq_one_of_forall_sameCycle {σ : Perm n} (hσ : ∀ x y, σ.SameCycle x y) :
+    σ ^ Fintype.card n = 1 := by
+  have hf : σ.IsCycleOn (Finset.univ : Finset n) := by
+    rw [Finset.coe_univ]
+    exact ⟨Set.bijOn_univ.mpr σ.bijective, fun x _ y _ => hσ x y⟩
+  ext x
+  rw [← Finset.card_univ, hf.pow_card_apply (Finset.mem_univ x), one_apply]
+
+/-- If `σ` has a single orbit on `n`, then no nonzero polynomial of degree less than `card n` kills
+the permutation matrix of `σ`. -/
+theorem eq_zero_of_aeval_permMatrix_eq_zero [CommRing R] {σ : Perm n}
+    (hσ : ∀ x y, σ.SameCycle x y) {p : R[X]} (hp : p.natDegree < Fintype.card n)
+    (hA : aeval (σ.permMatrix R) p = 0) : p = 0 := by
+  have hf : σ.IsCycleOn (Finset.univ : Finset n) := by
+    rw [Finset.coe_univ]
+    exact ⟨Set.bijOn_univ.mpr σ.bijective, fun x _ y _ => hσ x y⟩
+  obtain ⟨x₀⟩ : Nonempty n := Fintype.card_pos_iff.mp (p.natDegree.zero_le.trans_lt hp)
+  -- The entry of `aeval P p` in row `x₀` and column `σ ^ j x₀` is the coefficient of `X ^ j`.
+  ext j
+  rw [coeff_zero]
+  rcases lt_or_ge j (Fintype.card n) with hj | hj
+  · have hentry := congrFun (congrFun hA x₀) ((σ ^ j) x₀)
+    rw [aeval_eq_sum_range' hp, Matrix.sum_apply, Finset.sum_eq_single j] at hentry
+    · simpa [← permMatrix_pow] using hentry
+    · intro i hi hij
+      have hne : (σ ^ i) x₀ ≠ (σ ^ j) x₀ := fun h =>
+        hij (hf.injOn_pow_apply (Finset.mem_univ x₀) (by simpa using Finset.mem_range.mp hi)
+          (by simpa using hj) h)
+      simp [← permMatrix_pow, hne]
+    · intro hj'
+      exact absurd (Finset.mem_range.mpr hj) hj'
+  · exact coeff_eq_zero_of_natDegree_lt (hp.trans_le hj)
+
 /-- A permutation with a single orbit on a nonempty finite set of size `d` has characteristic
 polynomial `X ^ d - 1`. -/
-theorem charpoly_permMatrix_of_forall_sameCycle [Nonempty n] (σ : Perm n)
+theorem charpoly_permMatrix_of_forall_sameCycle [CommRing R] [Nonempty n] (σ : Perm n)
     (hσ : ∀ x y, σ.SameCycle x y) :
     (σ.permMatrix R).charpoly = X ^ Fintype.card n - 1 := by
   nontriviality R
-  set d := Fintype.card n with hd_def
-  have hd : d ≠ 0 := Fintype.card_ne_zero
-  obtain ⟨x₀⟩ := ‹Nonempty n›
-  -- The orbit of `x₀` is everything, so `x₀` has minimal period `d`.
-  have hper : Function.minimalPeriod σ x₀ = d := by
-    have huniv : {y | σ.SameCycle x₀ y} = _root_.Set.univ :=
-      _root_.Set.eq_univ_of_forall (hσ x₀)
-    rw [← ncard_setOf_sameCycle, huniv, _root_.Set.ncard_univ, Nat.card_eq_fintype_card]
-  have hpow : σ ^ d = 1 := by
-    have h₀ : (σ ^ d) x₀ = x₀ := by
-      rw [← hper, ← iterate_eq_pow]
-      exact Function.iterate_minimalPeriod
-    ext x
-    obtain ⟨k, rfl⟩ := hσ x₀ x
-    rw [← mul_apply, (((Commute.refl σ).pow_left d).zpow_right k).eq, mul_apply, h₀, one_apply]
-  -- No nonzero polynomial of degree less than `d` kills the permutation matrix: its entry in row
-  -- `x₀` and column `σ ^ j x₀` is the coefficient of `X ^ j`.
-  have hkill : ∀ p : R[X], p.natDegree < d → aeval (σ.permMatrix R) p = 0 → p = 0 := by
-    intro p hp hA
-    ext j
-    rw [coeff_zero]
-    rcases lt_or_ge j d with hj | hj
-    · have hentry := congrFun (congrFun hA x₀) ((σ ^ j) x₀)
-      rw [aeval_eq_sum_range' hp, Matrix.sum_apply, Finset.sum_eq_single j] at hentry
-      · simpa [← permMatrix_pow] using hentry
-      · intro i hi hij
-        have hne : (σ ^ i) x₀ ≠ (σ ^ j) x₀ := by
-          intro h
-          refine hij (Function.iterate_injOn_Iio_minimalPeriod (f := σ) (x := x₀) ?_ ?_ ?_)
-          · rw [Set.mem_Iio, hper]
-            exact Finset.mem_range.mp hi
-          · rw [Set.mem_Iio, hper]
-            exact hj
-          · simpa only [iterate_eq_pow] using h
-        simp [← permMatrix_pow, hne]
-      · intro hj'
-        exact absurd (Finset.mem_range.mpr hj) hj'
-    · exact coeff_eq_zero_of_natDegree_lt (hp.trans_le hj)
-  have hmonic : IsMonicOfDegree (σ.permMatrix R).charpoly d :=
+  -- By Cayley–Hamilton, the difference of the two monic polynomials of degree `card n` kills the
+  -- permutation matrix, but has smaller degree.
+  have hd : Fintype.card n ≠ 0 := Fintype.card_ne_zero
+  have hmonic : IsMonicOfDegree (σ.permMatrix R).charpoly (Fintype.card n) :=
     ⟨charpoly_natDegree_eq_dim _, charpoly_monic _⟩
-  have hmonic' : IsMonicOfDegree (X ^ d - 1 : R[X]) d :=
-    (isMonicOfDegree_X_pow R d).sub (by rw [natDegree_one]; exact Nat.pos_of_ne_zero hd)
+  have hmonic' : IsMonicOfDegree (X ^ Fintype.card n - 1 : R[X]) (Fintype.card n) :=
+    (isMonicOfDegree_X_pow R _).sub (by rw [natDegree_one]; exact Nat.pos_of_ne_zero hd)
   rw [← sub_eq_zero]
-  refine hkill _ (hmonic.natDegree_sub_lt hd hmonic') ?_
-  rw [map_sub, aeval_self_charpoly, map_sub, map_pow, aeval_X, map_one, ← permMatrix_pow, hpow,
-    permMatrix_one, sub_self, sub_self]
+  refine eq_zero_of_aeval_permMatrix_eq_zero hσ (hmonic.natDegree_sub_lt hd hmonic') ?_
+  rw [map_sub, aeval_self_charpoly, map_sub, map_pow, aeval_X, map_one, ← permMatrix_pow,
+    pow_card_eq_one_of_forall_sameCycle hσ, permMatrix_one, sub_self, sub_self]
+
+variable [CommRing R]
 
 /-- The characteristic polynomial of a permutation matrix is the product of `X ^ d - 1` over the
 cycle lengths `d` of the permutation, fixed points included. -/
@@ -179,22 +215,8 @@ theorem charpoly_permMatrix (σ : Perm n) :
 product of `1 - X ^ d` over the cycle lengths `d` of the permutation, fixed points included. -/
 theorem charpolyRev_permMatrix (σ : Perm n) :
     (σ.permMatrix R).charpolyRev = (σ.fullCycleType.map fun d => 1 - X ^ d).prod := by
-  nontriviality R
-  have hdeg : ∀ d : ℕ, ((X : R[X]) ^ d - 1).natDegree = d := fun d => by
-    rw [← C_1, natDegree_X_pow_sub_C]
-  -- Reflecting `∏ (X ^ d - 1)` at the total degree `∑ d` gives `∏ (1 - X ^ d)`.
-  have hreflect : ∀ s : Multiset ℕ,
-      reflect s.sum (s.map fun d => (X : R[X]) ^ d - 1).prod = (s.map fun d => 1 - X ^ d).prod := by
-    intro s
-    induction s using Multiset.induction_on with
-    | empty => simp
-    | cons a s ih =>
-      rw [Multiset.sum_cons, Multiset.map_cons, Multiset.prod_cons, Multiset.map_cons,
-        Multiset.prod_cons, reflect_mul _ _ (hdeg a).le, ih, reflect_sub]
-      · simp
-      · refine (natDegree_multiset_prod_le _).trans ?_
-        simp [Multiset.map_map, hdeg]
-  rw [charpolyRev_eq_reflect, charpoly_permMatrix, ← sum_fullCycleType σ, hreflect]
+  rw [charpolyRev_eq_reflect, charpoly_permMatrix, ← sum_fullCycleType σ,
+    reflect_sum_prod_X_pow_sub_one]
 
 /-- In the standard basis of `n →₀ R`, the permutation action `Finsupp.lmapDomain R R σ` has the
 transpose of the permutation matrix of `σ` as its matrix. -/

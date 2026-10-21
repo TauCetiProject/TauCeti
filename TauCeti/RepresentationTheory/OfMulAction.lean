@@ -237,20 +237,21 @@ omit [Fintype X] [DecidableEq X] in
 private theorem ofMulAction_eq_conj_lmapDomain (g : G) :
     ofMulAction k G X g = (coeffLinearEquiv k).symm.conj
       (Finsupp.lmapDomain k k (MulAction.toPerm g : Equiv.Perm X)) := by
-  ext
-  simp
+  rw [LinearEquiv.conj_apply]
+  exact ofMulAction_def g
 
 /-- The characteristic polynomial of `g` on the permutation representation `k[X]` is the product
-of `X ^ d - 1` over the lengths `d` of the cycles of `g` on `X`, fixed points included. -/
+of `T ^ d - 1` over the lengths `d` of the cycles of `g` on `X`, fixed points included, where `T`
+is the polynomial variable. -/
 theorem charpoly_ofMulAction (g : G) :
     (ofMulAction k G X g).charpoly =
       ((MulAction.toPerm g : Equiv.Perm X).fullCycleType.map
         fun d => Polynomial.X ^ d - 1).prod := by
   rw [ofMulAction_eq_conj_lmapDomain, LinearEquiv.charpoly_conj, Equiv.Perm.charpoly_lmapDomain]
 
-/-- The reversed characteristic polynomial `det (1 - Z g)` of `g` on the permutation
-representation `k[X]` is the product of `1 - Z ^ d` over the lengths `d` of the cycles of `g` on
-`X`, fixed points included. -/
+/-- The reversed characteristic polynomial `det (1 - T g)` of `g` on the permutation
+representation `k[X]` is the product of `1 - T ^ d` over the lengths `d` of the cycles of `g` on
+`X`, fixed points included, where `T` is the polynomial variable. -/
 theorem reverse_charpoly_ofMulAction (g : G) :
     (ofMulAction k G X g).charpoly.reverse =
       ((MulAction.toPerm g : Equiv.Perm X).fullCycleType.map
