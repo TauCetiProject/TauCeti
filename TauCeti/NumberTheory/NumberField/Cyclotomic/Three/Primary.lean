@@ -35,6 +35,7 @@ The uniqueness of the primary associate uses Mathlib's special case of Kummer's 
 * K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 9, §3.
 * S. D. Adhikari, *The early reciprocity laws: from Gauss to Eisenstein*, §3.
 * M. C. Relyea, *On finite fields and higher reciprocity*, Lemmas 3.12 and 3.16.
+* Xu, *Reciprocity Laws*, Proposition 4.5.
 -/
 
 public section
@@ -136,7 +137,8 @@ theorem isPrimaryEisenstein_add_mul_iff {a b : ℤ} :
     intCast_dvd_intCast_add_intCast_mul_toInteger_iff, Int.modEq_comm, Int.modEq_iff_dvd,
     Int.modEq_zero_iff_dvd]
 
-/-- Every element of `𝓞 K` not divisible by `ζ - 1` has a primary multiple by a unit. -/
+/-- Every element of `𝓞 K` not divisible by `ζ - 1` has a primary multiple by a unit. The proof is
+the six-associate case analysis of Xu, *Reciprocity Laws*, Proposition 4.5. -/
 theorem exists_isPrimaryEisenstein_unit_mul {x : 𝓞 K} (hx : ¬ hζ.toInteger - 1 ∣ x) :
     ∃ u : (𝓞 K)ˣ, IsPrimaryEisenstein ((u : 𝓞 K) * x) := by
   obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq x
@@ -152,8 +154,10 @@ theorem exists_isPrimaryEisenstein_unit_mul {x : 𝓞 K} (hx : ¬ hζ.toInteger 
     rw [hx]
     exact dvd_add (dvd_mul_of_dvd_left h3 _) (dvd_mul_left _ _)
   let η : (𝓞 K)ˣ := (hζ.toInteger_isPrimitiveRoot.isUnit (by decide)).unit
-  have hη : (η : 𝓞 K) = ω := rfl
-  have h2 : ω ^ 2 = -ω - 1 := IsCyclotomicExtension.Rat.Three.eta_sq hζ
+  have hη : (η : 𝓞 K) = ω := IsCyclotomicExtension.Rat.Three.coe_eta hζ
+  have h2 : ω ^ 2 = -ω - 1 := by
+    simpa only [IsCyclotomicExtension.Rat.Three.coe_eta] using
+      IsCyclotomicExtension.Rat.Three.eta_sq hζ
   have h3 : ω ^ 3 = 1 := hζ.toInteger_cube_eq_one
   -- A unit `u` with `u * (a + b ω) = a' + b' ω` and `a' ≡ 2`, `b' ≡ 0` modulo `3` works.
   have key (u : (𝓞 K)ˣ) (a' b' : ℤ) (h : (u : 𝓞 K) * (a + b * ω) = a' + b' * ω)
@@ -187,7 +191,9 @@ theorem existsUnique_isPrimaryEisenstein_unit_mul {x : 𝓞 K} (hx : ¬ hζ.toIn
     hu.three_dvd_sub_one_of_mul (by simpa [← mul_assoc] using hv)
   -- `3 = (ω - 1) ^ 2 * (-ω ^ 2)`, so `v * u⁻¹` is congruent to `1` modulo `(ω - 1) ^ 2`.
   have hlam : (ω - 1) ^ 2 ∣ (3 : 𝓞 K) := by
-    have h2 : ω ^ 2 = -ω - 1 := IsCyclotomicExtension.Rat.Three.eta_sq hζ
+    have h2 : ω ^ 2 = -ω - 1 := by
+      simpa only [IsCyclotomicExtension.Rat.Three.coe_eta] using
+        IsCyclotomicExtension.Rat.Three.eta_sq hζ
     refine ⟨-ω ^ 2, ?_⟩
     linear_combination (ω - 2) * hζ.toInteger_cube_eq_one + h2
   rcases IsCyclotomicExtension.Rat.Three.eq_one_or_neg_one_of_unit_of_congruent hζ (v * u⁻¹)
@@ -258,8 +264,8 @@ section Examples
 variable {ζ : K} (hζ : IsPrimitiveRoot ζ 3)
 include hζ
 
-/- `-1 - 3ω`, of norm `7`, is primary, while its associate `3 + ω` and the element `2 + ω` are
-not; `1 - ω`, the prime above `3`, is not primary. -/
+/- `-1 - 3ω`, of norm `7`, is primary, while `3 + ω`, an associate of its conjugate `2 + 3ω`, and
+the element `2 + ω` are not; `1 - ω`, the prime above `3`, is not primary. -/
 example : IsPrimaryEisenstein (((-1 : ℤ) : 𝓞 K) + (-3 : ℤ) * hζ.toInteger) := by
   rw [hζ.isPrimaryEisenstein_add_mul_iff]; decide
 
