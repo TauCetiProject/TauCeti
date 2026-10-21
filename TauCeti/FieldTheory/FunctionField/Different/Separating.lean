@@ -56,7 +56,8 @@ namespace Place
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
 /-- **The different exponent over `RatFunc k` induced by `x` agrees with the different exponent
-over `k⟮x⟯`**: `RatFunc k ≃ₐ[k] k⟮x⟯` has degree one. -/
+over `k⟮x⟯`**: for a separating element `x` and any place `P` of `F`, the different exponent
+of `P` is the same over `RatFunc k` through `x` and over `k⟮x⟯`. -/
 theorem differentExponent_ratFunc_eq_differentExponent_adjoin (hF : IsFunctionField k F) {x : F}
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] (P : Place k F) :
     letI := ratFuncAlgebraOfTranscendental hx

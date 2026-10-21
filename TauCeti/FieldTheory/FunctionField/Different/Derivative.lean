@@ -201,8 +201,8 @@ theorem differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one {y : F'}
   have := differentExponent_le_ord_aeval_derivative k F hgen hψ hcoeff hy hne
   omega
 
-/-- **A degree-one extension has different exponent zero**: when `[F' : F] = 1`, `X ∈ F[X]` is a
-generating equation for `0` with derivative `1`. -/
+/-- **A degree-one extension has different exponent zero**: when `[F' : F] = 1`, every place
+of `F'` has different exponent zero over its restriction to `F`. -/
 theorem differentExponent_eq_zero_of_finrank_eq_one (P' : Place k' F')
     (h : Module.finrank F F' = 1) : differentExponent k F P' = 0 :=
   differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k F

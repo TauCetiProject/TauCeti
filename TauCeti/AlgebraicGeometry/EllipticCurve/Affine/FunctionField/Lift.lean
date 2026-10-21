@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GeneratedByY
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.InvariantDifferential
 
 /-!
 # Function-field embeddings at a solution of the Weierstrass equation
@@ -37,6 +38,8 @@ transfers to it. The curve need not be elliptic.
   `(x, y)`, and `WeierstrassCurve.Affine.eq_functionFieldLift` says it is the only `K`-embedding
   doing so.
 * `WeierstrassCurve.Affine.fieldRange_functionFieldLift`: its image is `K(x, y)`.
+* `WeierstrassCurve.Affine.functionFieldLift_invariantDifferentialDenom`: the embedding sends
+  the invariant-differential denominator to `2y + a₁x + a₃`.
 
 ## References
 
@@ -137,5 +140,24 @@ theorem functionFieldEquivOfAdjoinEqTop_symm_y (h : (W⁄L).toAffine.Equation x 
     (hx : Transcendental K x) (hxy : K⟮x, y⟯ = ⊤) :
     (functionFieldEquivOfAdjoinEqTop h hx hxy).symm y = W.genericY := by
   rw [AlgEquiv.symm_apply_eq, coe_functionFieldEquivOfAdjoinEqTop, functionFieldLift_genericY]
+
+/-- `functionFieldLift` carries `2y_W + a₁x_W + a₃` to `2y + a₁x + a₃`. -/
+@[simp]
+theorem functionFieldLift_invariantDifferentialDenom
+    (h : (W⁄L).toAffine.Equation x y) (hx : Transcendental K x) :
+    W.functionFieldLift h hx W.invariantDifferentialDenom =
+      2 * y + algebraMap K L W.a₁ * x + algebraMap K L W.a₃ := by
+  simp [invariantDifferentialDenom_def, map_ofNat]
+
+/-- The inverse presentation isomorphism carries `2y + a₁x + a₃` to the invariant differential
+denominator on the curve. -/
+@[simp]
+theorem functionFieldEquivOfAdjoinEqTop_symm_two_mul_add
+    (h : (W⁄L).toAffine.Equation x y) (hx : Transcendental K x) (hxy : K⟮x, y⟯ = ⊤) :
+    (W.functionFieldEquivOfAdjoinEqTop h hx hxy).symm
+        (2 * y + algebraMap K L W.a₁ * x + algebraMap K L W.a₃) =
+      W.invariantDifferentialDenom := by
+  rw [AlgEquiv.symm_apply_eq, coe_functionFieldEquivOfAdjoinEqTop,
+    functionFieldLift_invariantDifferentialDenom]
 
 end WeierstrassCurve.Affine

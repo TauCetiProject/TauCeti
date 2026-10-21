@@ -107,8 +107,8 @@ private theorem differentExponent_eq_differentExponent_map_symm (Q : Place k F) 
   let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
   rw [← Place.differentExponent_ratFunc_eq_differentExponent_adjoin hF hx Q,
     ← Place.differentExponent_map_restrictScalars Q
-      (functionFieldRatFuncEquivOfAdjoinEqTop h.equation hx hxy).symm,
-    restrictScalars_symm_functionFieldRatFuncEquivOfAdjoinEqTop]
+      (W.toAffine.functionFieldRatFuncEquivOfAdjoinEqTop h.equation hx hxy).symm,
+    Affine.restrictScalars_symm_functionFieldRatFuncEquivOfAdjoinEqTop]
 
 /-- **The different exponents away from `P`**: at every place `Q ≠ P`, the different exponent of
 `F / k(x)` is the order of `2y + a₁x + a₃` at `Q`. -/
@@ -127,7 +127,7 @@ theorem differentExponent_eq_ord {Q : Place k F} (hQ : Q ≠ P) :
     exact (mapEquiv e.symm).injective.ne hQ
   rw [h.differentExponent_eq_differentExponent_map_symm hF hP Q,
     W.toAffine.differentExponent_eq_ord_invariantDifferentialDenom hQ', ord_map,
-    AlgEquiv.symm_symm, ← functionFieldEquivOfAdjoinEqTop_symm_two_mul_add h.equation hx hxy,
+    AlgEquiv.symm_symm, ← Affine.functionFieldEquivOfAdjoinEqTop_symm_two_mul_add h.equation hx hxy,
     e.apply_symm_apply]
 
 /-- **The different exponent at `P`** is `4 + ord_P (2y + a₁x + a₃)`. -/
@@ -145,7 +145,7 @@ theorem differentExponent_self :
     h.map_symm_functionFieldEquivOfAdjoinEqTop hxy,
     W.toAffine.differentExponent_infinity_eq_four_add_ord,
     ← h.map_infinity_functionFieldEquivOfAdjoinEqTop hxy, ord_map,
-    functionFieldEquivOfAdjoinEqTop_symm_two_mul_add]
+    Affine.functionFieldEquivOfAdjoinEqTop_symm_two_mul_add]
 
 /-- **The different of an elliptic function field over `k(x)`**: in every characteristic,
 `Diff(F / k(x)) = div (2y + a₁x + a₃) + 4P`. -/

@@ -31,6 +31,10 @@ The relation is recorded as the affine equation of a Weierstrass curve `W` over 
 `F` along the base change `W.baseChange F`, so that Mathlib's Weierstrass-curve API (variable
 changes, the discriminant) applies to it.
 
+The Weierstrass place `P` is the unique pole of `x`. Away from characteristic two,
+`2y + a₁x + a₃` has pole divisor `3P`; in the normal form with `a₁ = a₃ = 0`, its orders,
+principal divisor and zero divisor agree with those of `y`.
+
 ## Main definitions
 
 * `TauCeti.Place.IsWeierstrassCoordinates`: `x` and `y` have pole divisors `2P` and `3P` and
@@ -49,6 +53,12 @@ changes, the discriminant) applies to it.
   (Stichtenoth, Proposition 6.1.2).
 * `TauCeti.IsEllipticFunctionField.exists_isWeierstrassCoordinates`: the same for an elliptic
   function field, at some place of degree one.
+
+* `TauCeti.Place.IsWeierstrassCoordinates.eq_of_isWeierstrassCoordinates`: the Weierstrass
+  place is unique. The lemmas `ord_two_mul_add` and `poles_two_mul_add` give order `-3` at `P`
+  and pole divisor `3P` away from characteristic two; `ord_two_mul_add_eq_ord_y`,
+  `principal_two_mul_add_eq_principal_y` and `zeros_two_mul_add_eq_zeros_y` identify the
+  corresponding data with those of `y` in normal form.
 
 ## References
 
