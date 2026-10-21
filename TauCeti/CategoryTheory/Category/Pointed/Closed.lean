@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
-public import TauCeti.CategoryTheory.Category.Pointed.Smash
+public import TauCeti.CategoryTheory.Category.Pointed.Smash.Basic
 
 /-!
 # The smash product of pointed types is closed
