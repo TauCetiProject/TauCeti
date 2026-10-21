@@ -238,17 +238,15 @@ theorem exists_mem_bottleneck_eq : ∃ a ∈ p.arrows, p.bottleneck c hne = c a.
   simpa [bottleneck, eq_comm] using List.min_mem (l := p.arrows.map fun a ↦ c a.2.2)
     (by simpa using hne)
 
-/-- A value is below the bottleneck exactly when it is below every capacity along the walk. -/
-theorem lt_bottleneck_iff {x : K} :
-    x < p.bottleneck c hne ↔ ∀ a ∈ p.arrows, x < c a.2.2 := by
-  refine ⟨fun h a ha ↦ h.trans_le (bottleneck_le ha), fun h ↦ ?_⟩
-  obtain ⟨a, ha, hb⟩ := exists_mem_bottleneck_eq (c := c) (hne := hne)
-  exact hb ▸ h a ha
-
 /-- The bottleneck lies in every set that contains the capacities along the walk. -/
 theorem bottleneck_mem {A : Set K} (h : ∀ a ∈ p.arrows, c a.2.2 ∈ A) : p.bottleneck c hne ∈ A := by
   obtain ⟨a, ha, hb⟩ := exists_mem_bottleneck_eq (c := c) (hne := hne)
   exact hb ▸ h a ha
+
+/-- A value is below the bottleneck exactly when it is below every capacity along the walk. -/
+theorem lt_bottleneck_iff {x : K} :
+    x < p.bottleneck c hne ↔ ∀ a ∈ p.arrows, x < c a.2.2 :=
+  ⟨fun h _ ha ↦ h.trans_le (bottleneck_le ha), bottleneck_mem (A := {y | x < y})⟩
 
 end Bottleneck
 

@@ -90,9 +90,7 @@ theorem AugmentsTo.val_add_le (hst : s ≠ t) (hcap : ∀ ⦃v w⦄ (e : Q v w),
   gcongr
   have hb : 0 < p.bottleneck (residualCapacity 0 cap f.toFun) hne :=
     ArrowWalk.lt_bottleneck_iff.2 hpos
-  obtain ⟨k, hk⟩ := mem_zmultiples_iff.1 <|
-    ArrowWalk.bottleneck_mem (c := residualCapacity 0 cap f.toFun) (hne := hne) fun a _ ↦
-      residualCapacity_mem _ (fun _ _ _ ↦ zero_mem _) hcap hf a.2.2
+  obtain ⟨k, hk⟩ := mem_zmultiples_iff.1 <| bottleneck_residualCapacity_mem (hne := hne) hcap hf
   rw [← hk] at hb ⊢
   rcases le_or_gt d 0 with hd | hd
   · exact hd.trans hb.le
