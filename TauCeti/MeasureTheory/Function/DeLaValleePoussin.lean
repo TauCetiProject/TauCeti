@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
+public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
 # The de la Vallée Poussin criterion
@@ -106,22 +107,6 @@ private theorem tendsto_tsum_max_sub_zero_div (ht : ∀ k : ℕ, (k : ℝ) ≤ t
 
 end Ramps
 
-/-- The positive parts `(‖f‖ - s)⁺` of an integrable function have integrals tending to zero as
-the level `s` tends to infinity. -/
-private theorem tendsto_lintegral_ofReal_norm_sub {f : α → F} (hf : Integrable f μ) :
-    Tendsto (fun s : ℝ ↦ ∫⁻ a, ENNReal.ofReal (‖f a‖ - s) ∂μ) atTop (𝓝 0) := by
-  have h := tendsto_lintegral_filter_of_dominated_convergence' (μ := μ) (l := atTop)
-    (F := fun (s : ℝ) a ↦ ENNReal.ofReal (‖f a‖ - s)) (f := fun _ ↦ 0) (fun a ↦ ‖f a‖ₑ)
-    (Eventually.of_forall fun s ↦
-      (hf.aestronglyMeasurable.norm.aemeasurable.sub_const s).ennreal_ofReal)
-    ((eventually_ge_atTop 0).mono fun s hs ↦ ae_of_all _ fun a ↦ by
-      rw [← ofReal_norm]
-      exact ENNReal.ofReal_le_ofReal (by linarith))
-    hf.hasFiniteIntegral.ne
-    (ae_of_all _ fun a ↦ tendsto_const_nhds.congr'
-      ((eventually_ge_atTop ‖f a‖).mono fun s hs ↦ (ENNReal.ofReal_eq_zero.2 (by linarith)).symm))
-  simpa using h
-
 end TauCeti
 
 namespace MeasureTheory.Integrable
@@ -134,10 +119,17 @@ superlinearly, `Φ t / t → ∞`. -/
 theorem exists_convexOn_superlinear_integrable {f : α → F} (hf : Integrable f μ) :
     ∃ Φ : ℝ → ℝ, Φ 0 = 0 ∧ Monotone Φ ∧ ConvexOn ℝ univ Φ ∧
       Tendsto (fun t ↦ Φ t / t) atTop atTop ∧ Integrable (fun a ↦ Φ ‖f a‖) μ := by
+  -- The positive parts `(‖f‖ - s)⁺` have integrals tending to zero as `s → ∞`.
+  have htail : Tendsto (fun s : ℝ ↦ ∫⁻ a, ENNReal.ofReal (‖f a‖ - s) ∂μ) atTop (𝓝 0) := by
+    refine ((tendsto_lintegral_tsub_atTop hf.aestronglyMeasurable.enorm
+      hf.hasFiniteIntegral.ne).comp Real.tendsto_toNNReal_atTop).congr' ?_
+    filter_upwards [eventually_ge_atTop 0] with s hs
+    simp only [Function.comp_apply, ← ofReal_norm, ENNReal.ofReal_sub _ hs]
+    rfl
   obtain ⟨δ, hδ, hδsum⟩ := ENNReal.exists_pos_sum_of_countable one_ne_zero ℕ
   -- Choose levels `t k ≥ k` above which `‖f‖` has integral at most `δ k`.
   choose t ht hδt using fun k : ℕ ↦ ((eventually_ge_atTop (k : ℝ)).and
-    ((tendsto_lintegral_ofReal_norm_sub hf).eventually
+    (htail.eventually
       (ge_mem_nhds (by exact_mod_cast hδ k : (0 : ℝ≥0∞) < δ k)))).exists
   have hmono := monotone_tsum_max_sub_zero ht
   refine ⟨fun x ↦ ∑' k, max (x - t k) 0, tsum_max_sub_zero_zero ht, hmono,
