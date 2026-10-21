@@ -258,18 +258,70 @@ For a type `A` of coefficient names, `L_A = Language.group[[A]]`. A group `G` wi
 map `c : A → G` is an `L_A`-structure through `constantsOn.structure c`. A group homomorphism
 `φ` with `φ ∘ c = d` is then a homomorphism of `L_A`-structures,
 `FirstOrder.Language.withConstantsHom c d φ h`, through the `Language.group.HomClass` instance
-above. -/
+above.
+
+The symbols `1`, `⁻¹` and `*` of `Language.group` are also symbols of `L_A`, so `L_A`-terms carry
+the same operations, and in any `L_A`-structure expanding a `Language.group`-structure they denote
+the group operations. Under `constantsOn.structure c` the constant term of `a : A` denotes `c a`,
+by `Term.realize_constants` and `FirstOrder.Language.coe_con_constantsOn`. -/
+
+instance : One (Language.group[[A]].Term α) :=
+  ⟨Constants.term ((Language.group.lhomWithConstants A).onFunction oneFunc)⟩
+
+instance : Inv (Language.group[[A]].Term α) :=
+  ⟨Functions.apply₁ ((Language.group.lhomWithConstants A).onFunction invFunc)⟩
+
+instance : Mul (Language.group[[A]].Term α) :=
+  ⟨Functions.apply₂ ((Language.group.lhomWithConstants A).onFunction mulFunc)⟩
+
+theorem one_withConstants_def :
+    (1 : Language.group[[A]].Term α) =
+      Constants.term ((Language.group.lhomWithConstants A).onFunction oneFunc) := (rfl)
+
+theorem inv_withConstants_def (t : Language.group[[A]].Term α) :
+    t⁻¹ = Functions.apply₁ ((Language.group.lhomWithConstants A).onFunction invFunc) t := (rfl)
+
+theorem mul_withConstants_def (t s : Language.group[[A]].Term α) :
+    t * s = Functions.apply₂ ((Language.group.lhomWithConstants A).onFunction mulFunc) t s := (rfl)
 
 section Operations
 
 variable [One G] [Inv G] [Mul G]
 
+section Expansion
+
+variable [Language.group[[A]].Structure G] [(Language.group.lhomWithConstants A).IsExpansionOn G]
+
+/-- The `L_A`-term `1` denotes the identity. -/
+@[simp]
+theorem realize_one_withConstants (v : α → G) :
+    (1 : Language.group[[A]].Term α).realize v = 1 := by
+  rw [one_withConstants_def, Term.realize_constants, ← funMap_eq_coe_constants (x := ![]),
+    LHom.map_onFunction, funMap_one]
+
+/-- The `L_A`-term `t⁻¹` denotes the inverse of the value of `t`. -/
+@[simp]
+theorem realize_inv_withConstants (t : Language.group[[A]].Term α) (v : α → G) :
+    t⁻¹.realize v = (t.realize v)⁻¹ := by
+  rw [inv_withConstants_def, Term.realize_functions_apply₁, LHom.map_onFunction, funMap_inv,
+    Matrix.cons_val_zero]
+
+/-- The `L_A`-term `t * s` denotes the product of the values of `t` and `s`. -/
+@[simp]
+theorem realize_mul_withConstants (t s : Language.group[[A]].Term α) (v : α → G) :
+    (t * s).realize v = t.realize v * s.realize v := by
+  rw [mul_withConstants_def, Term.realize_functions_apply₂, LHom.map_onFunction, funMap_mul,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero]
+
+end Expansion
+
 /-- The `L_A`-sentence `a * b = b * a`, for coefficient names `a b : A`. -/
 def commSentence (a b : A) : Language.group[[A]].Sentence :=
-  Term.bdEqual (Term.varsToConstants (var (Sum.inl a) * var (Sum.inl b)))
-    (Term.varsToConstants (var (Sum.inl b) * var (Sum.inl a)))
+  Term.bdEqual ((Language.group.con a).term * (Language.group.con b).term)
+    ((Language.group.con b).term * (Language.group.con a).term)
 
 /-- The sentence `a * b = b * a` holds exactly when the coefficients of `a` and `b` commute. -/
+@[simp]
 theorem realize_commSentence_iff (c : A → G) (a b : A) :
     letI := constantsOn.structure c
     G ⊨ commSentence a b ↔ Commute (c a) (c b) := by
