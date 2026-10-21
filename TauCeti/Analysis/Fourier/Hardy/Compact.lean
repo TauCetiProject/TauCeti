@@ -19,7 +19,7 @@ is built.
 
 ## Main results
 
-* `TauCeti.hankel_fourierLp_hasFiniteRange`: the Hankel operator of a Fourier monomial has
+* `TauCeti.hasFiniteRange_hankel_fourierLp`: the Hankel operator of a Fourier monomial has
   finite rank.
 * `TauCeti.isCompactOperator_hankel_toLp`: the Hankel operator of a continuous symbol is compact.
 * `TauCeti.isCompactOperator_toeplitz_comp_sub_toeplitz_toLp`: if the right symbol is continuous,
@@ -62,7 +62,7 @@ private theorem hankel_fourierLp_hardyBasis {n : ℤ} {k : ℕ} (h : 0 ≤ n + k
     fourierCoeff_fourier, Pi.single_apply, ite_eq_right (by omega)]
 
 /-- The Hankel operator of a Fourier monomial has finite rank. -/
-theorem hankel_fourierLp_hasFiniteRange (n : ℤ) :
+theorem hasFiniteRange_hankel_fourierLp (n : ℤ) :
     (hankel (fourierLp (T := 1) ∞ n) : HardySpace →ₗ[ℂ] ↥hardySubmoduleᗮ).HasFiniteRange :=
   hardyBasis.hasFiniteRange_of_apply_eq_zero _ (Finset.range (-n).toNat) fun k hk ↦
     hankel_fourierLp_hardyBasis (by simp only [Finset.mem_range, not_lt] at hk; omega)
@@ -83,7 +83,7 @@ theorem isCompactOperator_hankel_toLp (f : C(UnitAddCircle, ℂ)) :
   have hspan : Submodule.span ℂ (Set.range (fourier (T := 1))) ≤ K := by
     rw [Submodule.span_le]
     rintro _ ⟨n, rfl⟩
-    exact (hankel_fourierLp_hasFiniteRange n).isCompactOperator
+    exact (hasFiniteRange_hankel_fourierLp n).isCompactOperator
   have hf : f ∈ (Submodule.span ℂ (Set.range (fourier (T := 1)))).topologicalClosure := by
     rw [span_fourier_closure_eq_top]
     exact Submodule.mem_top
