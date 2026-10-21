@@ -44,6 +44,11 @@ so going down holds for it, as for every flat extension. The image of `M` lies o
 ideal of `K⟨X⟩`, of height `n - 1`, so going down gives it height at least `n - 1`. Quotienting
 by the non-zero-divisor `f` lowers heights by one, so `M` has height at least `n`.
 
+The maximal-ideal height proof follows the finite-variable induction and transport under renaming
+of `MvPolynomial.height_eq_natCard_of_isMaximal` in
+`TauCeti.RingTheory.KrullDimension.FiniteType`. Its Jacobson-ring step is replaced here by
+Weierstrass quotients and going down for finite free extensions.
+
 ## Main results
 
 * `TauCeti.MvPowerSeries.ringKrullDim_isRestricted_subring`: the Tate algebra in the variables
