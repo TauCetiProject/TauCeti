@@ -140,6 +140,15 @@ section Polish
 
 variable [PolishSpace X] [BorelSpace X] [PolishSpace Y] [BorelSpace Y]
 
+/-- For a nonnegative cost `c`, continuous in its first argument, and a potential `ψ` bounded
+above, the `c`-conjugate `x ↦ ⨅ y, c x y - ψ y` is upper semicontinuous. -/
+private theorem upperSemicontinuous_iInf_sub {α β : Type*} [TopologicalSpace α] {c : α → β → ℝ}
+    (hc : ∀ y, Continuous (c · y)) (hc0 : ∀ x y, 0 ≤ c x y) {ψ : β → ℝ}
+    (hψ : BddAbove (range ψ)) : UpperSemicontinuous fun x ↦ ⨅ y, c x y - ψ y := by
+  obtain ⟨C, hC⟩ := hψ
+  exact upperSemicontinuous_ciInf (fun x ↦ ⟨-C, forall_mem_range.2 fun y ↦ by
+    linarith [hc0 x y, hC ⟨y, rfl⟩]⟩) fun y ↦ ((hc y).sub continuous_const).upperSemicontinuous
+
 /-- **Kantorovich duality over bounded upper semicontinuous potentials.** For a nonnegative
 lower-semicontinuous cost on Polish spaces, the primal transport cost is the least upper bound, in
 `ℝ≥0∞`, of the positive parts of the values of the dual-feasible pairs of bounded upper
@@ -174,22 +183,13 @@ theorem isLUB_ofReal_kantorovichDualValue_upperSemicontinuous_of_lowerSemicontin
     obtain ⟨π, φ, ψ, h, hφ, hψ, hφb, hψb⟩ :=
       exists_isDualCertificate_of_continuous (μ := μ) (ν := ν) hcn_cont hcn_nonneg
         ⟨n, forall_mem_range.2 (lscApproxAux_le_natCast c n)⟩
-    obtain ⟨Cφ, hCφ⟩ := isBounded_iff_forall_norm_le.1 hφb
-    obtain ⟨Cψ, hCψ⟩ := isBounded_iff_forall_norm_le.1 hψb
-    -- Each potential is an infimum of continuous functions, bounded below because the other
-    -- potential is bounded above.
-    have hφu : UpperSemicontinuous φ := by
-      rw [funext hφ]
-      exact upperSemicontinuous_ciInf (fun x ↦ ⟨-Cψ, forall_mem_range.2 fun y ↦ by
-          linarith [hcn_nonneg (x, y), (Real.le_norm_self _).trans (hCψ _ ⟨y, rfl⟩)]⟩)
-        fun y ↦ ((hcn_cont.comp (Continuous.prodMk_left y)).sub
-          continuous_const).upperSemicontinuous
-    have hψu : UpperSemicontinuous ψ := by
-      rw [funext hψ]
-      exact upperSemicontinuous_ciInf (fun y ↦ ⟨-Cφ, forall_mem_range.2 fun x ↦ by
-          linarith [hcn_nonneg (x, y), (Real.le_norm_self _).trans (hCφ _ ⟨x, rfl⟩)]⟩)
-        fun x ↦ ((hcn_cont.comp (Continuous.prodMk_right x)).sub
-          continuous_const).upperSemicontinuous
+    -- Each potential is a `c`-conjugate of the other, which is bounded above.
+    have hφu : UpperSemicontinuous φ := funext hφ ▸ upperSemicontinuous_iInf_sub
+      (c := fun x y ↦ cn (x, y)) (fun y ↦ hcn_cont.comp (.prodMk_left y))
+      (fun x y ↦ hcn_nonneg (x, y)) hψb.bddAbove
+    have hψu : UpperSemicontinuous ψ := funext hψ ▸ upperSemicontinuous_iInf_sub
+      (c := fun y x ↦ cn (x, y)) (fun x ↦ hcn_cont.comp (.prodMk_right x))
+      (fun y x ↦ hcn_nonneg (x, y)) hφb.bddAbove
     have hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ :=
       h.dualFeasible.mono_cost fun z ↦
         EReal.coe_ennreal_le_coe_ennreal_iff.2 (ofReal_lscApproxAux_le c n z)

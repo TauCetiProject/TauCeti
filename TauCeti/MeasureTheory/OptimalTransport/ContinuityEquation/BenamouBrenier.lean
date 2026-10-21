@@ -90,13 +90,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
   [FiniteDimensional ℝ E] [BorelSpace E] {v : ℝ → E → E} {a b : ℝ} {ν : ℝ → FiniteMeasure E}
 
 omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- A bound `C` on the initial datum `f` bounds `k` times its Hopf–Lax value for the cost
-`‖w‖ ^ p` by `k * C`. -/
-private theorem norm_mul_hopfLax_norm_rpow_le {p k t C : ℝ} (hp : 0 < p) {f : E → ℝ}
-    (hfC : ∀ y, |f y| ≤ C) (hk : 0 ≤ k) (ht : 0 ≤ t) (x : E) :
-    ‖k * hopfLax (‖·‖ ^ p) f t x‖ ≤ k * C := by
+/-- For a bounded initial datum `f` and `k ≥ 0`, `k` times the Hopf–Lax value of `f` for the cost
+`‖w‖ ^ p` is bounded uniformly over all times `t ≥ 0` and positions. -/
+private theorem exists_norm_mul_hopfLax_norm_rpow_le {p k : ℝ} (hp : 0 < p) {f : E → ℝ}
+    (hf : Bornology.IsBounded (range f)) (hk : 0 ≤ k) :
+    ∃ M, ∀ t, 0 ≤ t → ∀ x, ‖k * hopfLax (‖·‖ ^ p) f t x‖ ≤ M := by
+  obtain ⟨C, hC⟩ := hf.exists_norm_le
+  refine ⟨k * C, fun t ht x ↦ ?_⟩
   rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg hk]
-  exact mul_le_mul_of_nonneg_left (abs_hopfLax_norm_rpow_le hp hfC ht x) hk
+  exact mul_le_mul_of_nonneg_left (abs_hopfLax_norm_rpow_le hp
+    (fun y ↦ by simpa [Real.norm_eq_abs] using hC _ ⟨y, rfl⟩) ht x) hk
 
 namespace IsContinuityEquation
 
@@ -112,8 +115,7 @@ private theorem ofReal_integral_hopfLax_sub_le
         ∫ x, k * hopfLax (‖·‖ ^ p) f δ x ∂(ν a : Measure E)) ≤
       ENNReal.ofReal k *
         ∫⁻ t in Ioo a b, ∫⁻ x, ENNReal.ofReal (‖v t x‖ ^ p) ∂(ν t : Measure E) := by
-  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 hf
-  have hfC (y : E) : |f y| ≤ C := by simpa [Real.norm_eq_abs] using hC _ ⟨y, rfl⟩
+  obtain ⟨M, hM⟩ := exists_norm_mul_hopfLax_norm_rpow_le (p := p) (by linarith) hf hk
   -- The delayed Hopf–Lax function, defined on all of `ℝ × E` by freezing times below `a - δ / 2`.
   let u : ℝ × E → ℝ := fun q ↦ k * hopfLax (‖·‖ ^ p) f (max (q.1 - a + δ) (δ / 2)) q.2
   have hu : Continuous u := by
@@ -125,7 +127,7 @@ private theorem ofReal_integral_hopfLax_sub_le
   have hua (x : E) : u (a, x) = k * hopfLax (‖·‖ ^ p) f δ x := by
     simp only [u, sub_self, zero_add, max_eq_left (half_le_self hδ.le)]
   have key := h.ofReal_integral_sub_integral_le_lintegral_of_add_smul_le
-    (L := fun w ↦ k * ‖w‖ ^ p) (M := k * C) hν hab hu.measurable (fun q ↦ ?_)
+    (L := fun w ↦ k * ‖w‖ ^ p) (M := M) hν hab hu.measurable (fun q ↦ ?_)
     (ae_of_all _ fun x ↦ hu.continuousAt.upperSemicontinuousAt)
     (ae_of_all _ fun x ↦ hu.continuousAt.lowerSemicontinuousAt) (half_pos hδ) (fun w ↦ ?_)
   · simp only [hub, hua] at key
@@ -134,8 +136,7 @@ private theorem ofReal_integral_hopfLax_sub_le
     refine setLIntegral_congr_fun measurableSet_Ioo fun t _ ↦ ?_
     rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
     simp_rw [ENNReal.ofReal_mul hk]
-  · exact norm_mul_hopfLax_norm_rpow_le (by linarith) hfC hk
-      (le_max_of_le_right (half_pos hδ).le) _
+  · exact hM _ (le_max_of_le_right (half_pos hδ).le) _
   · -- The subsolution inequality holds on the strip, where the delay keeps times positive.
     filter_upwards [self_mem_nhdsWithin] with s (hs : 0 < s) q hq
     have hτ : δ / 2 ≤ q.1 - a + δ := by linarith [hq.1]
@@ -145,7 +146,7 @@ private theorem ofReal_integral_hopfLax_sub_le
     have hsub := hopfLax_norm_rpow_add_add_smul_le hp hf.bddBelow
       (show 0 < q.1 - a + δ by linarith) hs.le q.2 w
     rw [show q.1 - a + δ + s = q.1 + s - a + δ by ring] at hsub
-    nlinarith [mul_le_mul_of_nonneg_left hsub hk]
+    linarith [mul_le_mul_of_nonneg_left hsub hk]
 
 /-- **The Hopf–Lax test.** For a bounded initial datum `f` that is lower semicontinuous, `k ≥ 0`
 and `1 < p`, the Hopf–Lax function `u` of `f` for the cost `‖w‖ ^ p`, run for the time `b - a`,
@@ -158,10 +159,7 @@ private theorem ofReal_integral_hopfLax_sub_integral_le
         ∫ x, k * f x ∂(ν a : Measure E)) ≤
       ENNReal.ofReal k *
         ∫⁻ t in Ioo a b, ∫⁻ x, ENNReal.ofReal (‖v t x‖ ^ p) ∂(ν t : Measure E) := by
-  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 hf
-  have hfC (y : E) : |f y| ≤ C := by simpa [Real.norm_eq_abs] using hC _ ⟨y, rfl⟩
-  have hHC {t : ℝ} (ht : 0 < t) (x : E) : ‖k * hopfLax (‖·‖ ^ p) f t x‖ ≤ k * C :=
-    norm_mul_hopfLax_norm_rpow_le (by linarith) hfC hk ht.le x
+  obtain ⟨M, hM⟩ := exists_norm_mul_hopfLax_norm_rpow_le (p := p) (by linarith) hf hk
   have hT : 0 < b - a := sub_pos.2 hab
   have hH := continuousOn_hopfLax_norm_rpow hp.le hf
   have hmeas {t : ℝ} (ht : 0 < t) : Measurable fun x ↦ k * hopfLax (‖·‖ ^ p) f t x :=
@@ -181,12 +179,12 @@ private theorem ofReal_integral_hopfLax_sub_integral_le
         .of_forall fun n ↦ show 0 < b - a + δ n by linarith [hδ0 n]⟩
     exact ((hH (b - a, x) hT).tendsto.comp hq).const_mul k
   have hlimb := tendsto_integral_of_dominated_convergence (μ := (ν b : Measure E))
-    (fun _ ↦ k * C) (fun n ↦ (hmeas (by linarith [hδ0 n])).aestronglyMeasurable)
-    (integrable_const _) (fun n ↦ ae_of_all _ (hHC (by linarith [hδ0 n]))) (ae_of_all _ hconv)
+    (fun _ ↦ M) (fun n ↦ (hmeas (by linarith [hδ0 n])).aestronglyMeasurable)
+    (integrable_const _) (fun n ↦ ae_of_all _ (hM _ (by linarith [hδ0 n]))) (ae_of_all _ hconv)
   -- At time `a`, they converge to the initial datum, which is lower semicontinuous.
   have hlima := tendsto_integral_of_dominated_convergence (μ := (ν a : Measure E))
-    (fun _ ↦ k * C) (fun n ↦ (hmeas (hδ0 n)).aestronglyMeasurable)
-    (integrable_const _) (fun n ↦ ae_of_all _ (hHC (hδ0 n)))
+    (fun _ ↦ M) (fun n ↦ (hmeas (hδ0 n)).aestronglyMeasurable)
+    (integrable_const _) (fun n ↦ ae_of_all _ (hM _ (hδ0 n).le))
     (ae_of_all _ fun x ↦ ((tendsto_hopfLax_norm_rpow_nhdsGT_zero hp hf.bddBelow
       (hfl x)).comp hδ).const_mul k)
   exact le_of_tendsto (ENNReal.tendsto_ofReal (hlimb.sub hlima))
@@ -242,12 +240,11 @@ theorem wassersteinEDist_rpow_le_mul_lintegral
     refine le_ciInf fun x ↦ ?_
     rw [mul_add, hkf, ← hk_def, mul_div_cancel₀ _ hk.ne', norm_sub_rev]
     linarith [hfeas' x y]
-  obtain ⟨Cf, hCf⟩ := isBounded_iff_forall_norm_le.1 hf
-  have hfC (y : E) : |f y| ≤ Cf := by simpa [Real.norm_eq_abs] using hCf _ ⟨y, rfl⟩
+  obtain ⟨M, hM⟩ := exists_norm_mul_hopfLax_norm_rpow_le (p := p.toReal) (by linarith) hf hk.le
   have hHint : Integrable (fun y ↦ k * hopfLax (‖·‖ ^ p.toReal) f (b - a) y) (ν b : Measure E) :=
-    .of_bound (C := k * Cf) (continuous_const.mul
+    .of_bound (C := M) (continuous_const.mul
       (continuous_hopfLax_norm_rpow hr.le hf hT)).aestronglyMeasurable
-      (ae_of_all _ (norm_mul_hopfLax_norm_rpow_le (by linarith) hfC hk.le hT.le))
+      (ae_of_all _ (hM _ hT.le))
   have hint := integral_mono
     (MeasureTheory.integrable_of_isBounded_range hψ.measurable.aestronglyMeasurable hψb) hHint hψle
   rw [kantorovichDualValue_def, integral_neg]
