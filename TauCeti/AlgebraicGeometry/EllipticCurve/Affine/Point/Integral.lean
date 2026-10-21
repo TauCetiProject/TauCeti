@@ -17,6 +17,13 @@ is kept over `ℤ`, so negation preserves integral points even when the model is
 search over a box of integer coordinates gives a certificate for every point in that box. No
 finiteness assertion is made for the set of all integral points.
 
+The same coordinate property is also defined on its own, as
+`WeierstrassCurve.Affine.Point.HasIntegralCoordinates`: a point of an arbitrary
+`WeierstrassCurve ℚ` has integral coordinates when it is affine and both of its coordinates are
+integers. On an integral model this agrees with membership in `integralPoints`
+(`hasIntegralCoordinates_iff_mem_integralPoints`). It is the predicate the two counterexamples
+below are stated for, since neither of them lives on a model that is integral over `ℤ`.
+
 The set depends on the integral equation, rather than only on its rational isomorphism class. A
 change of variables `C` over `ℤ`, so with `u = ±1` and `r, s, t ∈ ℤ`, identifies the rational points
 of `C • W` and of `W` by `(x, y) ↦ (u²x + r, u³y + u²sx + t)`
