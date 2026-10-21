@@ -24,6 +24,10 @@ normed ring (`TauCeti.RingTheory.PowerSeries.Entire.Eval`). This file records th
 `evalAt` that need no convergence hypothesis. In an ultrametric normed algebra, `‖f(b)‖` is
 bounded by the Gauss norm of `f` at every radius `r ≥ ‖b‖` at which that Gauss norm is defined.
 
+A power series `F = ∑ Fₙ Xⁿ` whose coefficients lie in a ring `A` acted on by `R`, such as a series
+of operators, is instead evaluated at a scalar `a : R`: `PowerSeries.evalScalar F a` is the
+infinite sum `∑ₙ aⁿ • Fₙ`.
+
 Over a field `𝕜`, the same sum is Mathlib's `FormalMultilinearSeries.ofScalarsSum`
 (`PowerSeries.evalAt_eq_ofScalarsSum`); that construction needs a field of scalars, while the
 coefficient rings here may have nilpotents.
@@ -31,13 +35,22 @@ coefficient rings here may have nilpotents.
 ## Main definitions
 
 * `PowerSeries.evalAt`: the value `∑ₙ aₙ • bⁿ` of a power series at `b`.
+* `PowerSeries.evalScalar`: the value `∑ₙ aⁿ • Fₙ` of a power series at a scalar `a`.
 
 ## Main results
 
 * `PowerSeries.evalAt_coe`: on polynomials, `evalAt` is `Polynomial.aeval`.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
+* `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
 * `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
+* `PowerSeries.evalScalar_monomial`, `PowerSeries.evalScalar_at_zero`,
+  `PowerSeries.evalScalar_add`: evaluation at a scalar of monomials, at the scalar `0`, and of
+  sums.
+* `PowerSeries.commute_evalScalar`: an element commuting with the coefficients of a series
+  commutes with its value at a scalar.
+* `PowerSeries.norm_evalScalar_le`: in an ultrametric ring, a uniform bound `c ≥ 0` on
+  `‖a‖ ^ n * ‖Fₙ‖` bounds `‖F(a)‖`.
 -/
 
 public section
@@ -107,6 +120,13 @@ theorem evalAt_map_algebraMap {S : Type*} [CommSemiring S] [Algebra R S] [Algebr
     [IsScalarTower R S A] (f : R⟦X⟧) (b : A) : (map (algebraMap R S) f).evalAt b = f.evalAt b := by
   simp [evalAt_def]
 
+/-- Rescaling the variable by `a` evaluates at the rescaled point: `f(a X)` at `b` is
+`f(a • b)`. -/
+@[simp]
+theorem evalAt_rescale (f : R⟦X⟧) (a : R) (b : A) :
+    (rescale a f).evalAt b = f.evalAt (a • b) := by
+  simp only [evalAt_def, coeff_rescale, smul_pow, mul_comm (a ^ _), mul_smul]
+
 /-- Over a field, `evalAt` is the sum `FormalMultilinearSeries.ofScalarsSum` of the scalar
 series with the same coefficients. -/
 theorem evalAt_eq_ofScalarsSum {𝕜 E : Type*} [Field 𝕜] [Ring E] [Algebra 𝕜 E]
@@ -133,6 +153,96 @@ theorem evalAt_neg (f : R⟦X⟧) (b : A) : (-f).evalAt b = -f.evalAt b := by
 
 end Ring
 
+section Scalar
+
+variable {R A : Type*} [Monoid R] [Semiring A] [SMul R A] [TopologicalSpace A]
+
+/-- The value `F(a) = ∑ₙ aⁿ • Fₙ` at a scalar `a : R` of a power series `F = ∑ Fₙ Xⁿ` whose
+coefficients lie in a topological semiring `A` acted on by `R`, defined as an infinite sum. Unlike
+`PowerSeries.evalAt`, the coefficients need not be scalars, so this evaluates series of operators
+at scalars. It takes the junk value `0` when the sum does not converge; for entire `F` over a
+complete normed ring it converges at every `a` (`PowerSeries.IsEntire.hasSum_evalScalar`). -/
+noncomputable def evalScalar (F : A⟦X⟧) (a : R) : A :=
+  ∑' n, a ^ n • coeff n F
+
+/-- The value `F(a)` at a scalar is the infinite sum `∑ₙ aⁿ • Fₙ`. -/
+theorem evalScalar_def (F : A⟦X⟧) (a : R) : F.evalScalar a = ∑' n, a ^ n • coeff n F :=
+  (rfl)
+
+/-- An element commuting with every coefficient of a series commutes with its value at a
+scalar. -/
+theorem commute_evalScalar [IsTopologicalSemiring A] [T2Space A] [SMulCommClass R A A]
+    [IsScalarTower R A A] {b : A} {F : A⟦X⟧} (h : ∀ n, Commute b (coeff n F)) (a : R) :
+    Commute b (F.evalScalar a) :=
+  Commute.tsum_right _ fun n ↦ (h n).smul_right _
+
+end Scalar
+
+section ScalarAction
+
+variable {R A : Type*} [Monoid R] [Semiring A] [DistribMulAction R A] [TopologicalSpace A]
+
+/-- The zero series evaluates to zero at every scalar. -/
+@[simp]
+theorem evalScalar_zero (a : R) : (0 : A⟦X⟧).evalScalar a = 0 := by
+  simp [evalScalar_def]
+
+/-- The monomial `c Xⁿ` evaluates to `aⁿ • c` at the scalar `a`. -/
+@[simp]
+theorem evalScalar_monomial (n : ℕ) (c : A) (a : R) :
+    (monomial n c).evalScalar a = a ^ n • c := by
+  rw [evalScalar_def, tsum_eq_single n fun m hm ↦ by simp [coeff_monomial, hm]]
+  simp
+
+/-- A constant series evaluates to its constant at every scalar. -/
+@[simp]
+theorem evalScalar_C (c : A) (a : R) : (C c).evalScalar a = c := by
+  simpa using evalScalar_monomial 0 c a
+
+/-- The variable `X` evaluates to `a • 1` at the scalar `a`. -/
+@[simp]
+theorem evalScalar_X (a : R) : (X : A⟦X⟧).evalScalar a = a • 1 := by
+  rw [X_eq, evalScalar_monomial, pow_one]
+
+/-- The series `1` evaluates to `1` at every scalar. -/
+@[simp]
+theorem evalScalar_one (a : R) : (1 : A⟦X⟧).evalScalar a = 1 := by
+  simpa using evalScalar_C (1 : A) a
+
+/-- Evaluation at a scalar is additive on series whose defining sums converge there. -/
+theorem evalScalar_add [ContinuousAdd A] [T2Space A] {F G : A⟦X⟧} {a : R}
+    (hF : Summable fun n ↦ a ^ n • coeff n F) (hG : Summable fun n ↦ a ^ n • coeff n G) :
+    (F + G).evalScalar a = F.evalScalar a + G.evalScalar a := by
+  simp only [evalScalar_def, map_add, smul_add]
+  exact hF.tsum_add hG
+
+end ScalarAction
+
+section ScalarZero
+
+variable {R A : Type*} [MonoidWithZero R] [Semiring A] [MulActionWithZero R A]
+  [TopologicalSpace A]
+
+/-- At the scalar `0`, a power series evaluates to its constant coefficient. -/
+@[simp]
+theorem evalScalar_at_zero (F : A⟦X⟧) : F.evalScalar (0 : R) = constantCoeff F := by
+  rw [evalScalar_def, tsum_eq_single 0 fun n hn ↦ by simp [zero_pow hn]]
+  simp
+
+end ScalarZero
+
+section ScalarRing
+
+variable {R A : Type*} [Monoid R] [Ring A] [DistribMulAction R A] [TopologicalSpace A]
+  [IsTopologicalAddGroup A] [T2Space A]
+
+/-- Evaluation at a scalar commutes with negation. -/
+@[simp]
+theorem evalScalar_neg (F : A⟦X⟧) (a : R) : (-F).evalScalar a = -F.evalScalar a := by
+  simp [evalScalar_def, tsum_neg]
+
+end ScalarRing
+
 section Normed
 
 variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
@@ -149,6 +259,19 @@ theorem norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A] {r : ℝ
       (mul_le_mul_of_nonneg_left ((norm_pow_le b n).trans
         (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)).trans <|
       le_gaussNorm _ _ _ hf n
+
+/-- In an ultrametric normed ring, if `c ≥ 0` bounds `‖a‖ ^ n * ‖Fₙ‖` for every `n`, then it
+bounds the value at the scalar `a` of the series `F = ∑ Fₙ Xⁿ`. This needs no convergence: the
+junk value `0` satisfies the bound too. -/
+theorem norm_evalScalar_le {R A : Type*} [SeminormedRing R] [NormedRing A] [Module R A]
+    [IsBoundedSMul R A] [IsUltrametricDist A] {F : A⟦X⟧} {a : R} {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ n, ‖a‖ ^ n * ‖coeff n F‖ ≤ c) : ‖F.evalScalar a‖ ≤ c := by
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hc fun n ↦ ?_
+  -- `‖aⁿ‖ ≤ ‖a‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is treated separately
+  cases n with
+  | zero => simpa using h 0
+  | succ n => exact (norm_smul_le _ _).trans <|
+      (mul_le_mul_of_nonneg_right (norm_pow_le' a n.succ_pos) (norm_nonneg _)).trans (h _)
 
 end Normed
 

@@ -46,6 +46,9 @@ order.  A diagram with at most one column has its cells described one row at a t
 `YoungDiagram.card_eq_colLen_of_rowLen_le_one`; a diagram with at most one row is described
 by `YoungDiagram.mem_iff_of_colLen_le_one` and counted by
 `YoungDiagram.card_eq_rowLen_of_colLen_le_one`.
+
+Finally, `YoungDiagram.cellContent` is the *content* `j - i` of the cell `(i, j)`, its column index
+minus its row index; transposition negates it (`YoungDiagram.cellContent_swap`).
 -/
 
 public section
@@ -349,6 +352,18 @@ theorem cells_eq_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤ 1) :
 theorem card_eq_rowLen_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤ 1) :
     μ.card = μ.rowLen 0 := by
   simp [_root_.YoungDiagram.card, cells_eq_of_colLen_le_one h]
+
+/-- The **content** of the cell `(i, j)`: its column index minus its row index, `j - i`. -/
+def cellContent (c : ℕ × ℕ) : ℤ := c.2 - c.1
+
+theorem cellContent_def (c : ℕ × ℕ) : cellContent c = c.2 - c.1 := (rfl)
+
+@[simp]
+theorem cellContent_mk (i j : ℕ) : cellContent (i, j) = j - i := (rfl)
+
+@[simp]
+theorem cellContent_swap (c : ℕ × ℕ) : cellContent c.swap = -cellContent c := by
+  simp [cellContent_def]
 
 end YoungDiagram
 
