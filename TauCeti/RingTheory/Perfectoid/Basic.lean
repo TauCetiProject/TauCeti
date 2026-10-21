@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Perfect
-public import Mathlib.NumberTheory.Padics.Complex
-public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.Uniform
 public import TauCeti.RingTheory.Ideal.Quotient.Frobenius
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
@@ -49,8 +47,6 @@ surjectivity of `Φ` has to be checked (`TauCeti.Perfectoid.IsPerfectoidTateRing
   isomorphisms of topological rings.
 * `TauCeti.Perfectoid.IsPerfectoidTateRing.of_perfectRing`: a uniform perfect Tate ring of
   characteristic `p` is perfectoid.
-* `TauCeti.Perfectoid.isPerfectoidTateRing_padicComplex`: `ℂ_p` is a perfectoid Tate ring.
-* `TauCeti.Perfectoid.not_isPerfectoidTateRing_padic`: `ℚ_p` is not.
 * `TauCeti.Perfectoid.isPerfectoidTateRing_of_subsingleton`: the zero ring is.
 
 ## References
@@ -135,13 +131,10 @@ theorem IsPerfectoidTateRing.of_forall_exists_pow_eq [NeZero p] [IsUniform R]
     (hroot : ∀ x : powerBoundedSubring R, ∃ y : R, y ^ p = x) : IsPerfectoidTateRing p R := by
   refine .of_surjective ϖ hϖ h fun x ↦ ?_
   obtain ⟨y, hy⟩ := hroot x
-  have hint : IsIntegral (powerBoundedSubring R) (y ^ p) := by
-    rw [hy]
-    exact isIntegral_algebraMap (x := x)
-  have hyR : y ∈ powerBoundedSubring R := mem_powerBoundedSubring.mpr
-    (isPowerBounded_of_isIntegral (hint.of_pow (Nat.pos_of_ne_zero (NeZero.ne p))))
-  refine ⟨⟨y, hyR⟩, ?_⟩
-  rw [show x = ⟨y, hyR⟩ ^ p from Subtype.ext hy.symm, sub_self]
+  obtain ⟨z, rfl⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow
+    (R := powerBoundedSubring R) (x := y) (NeZero.pos p) (hy ▸ isIntegral_algebraMap)
+  refine ⟨z, ?_⟩
+  rw [show x = z ^ p from Subtype.ext hy.symm, sub_self]
   exact dvd_zero _
 
 /-- **A uniform perfect Tate ring of characteristic `p` is perfectoid** (Scholze, *Étale cohomology
@@ -188,48 +181,6 @@ theorem isPerfectoidTateRing_of_subsingleton (R : Type*) [CommRing R] [UniformSp
   exists_pseudoUniformizer := ⟨0, isPseudoUniformizer_iff.mpr ⟨isUnit_of_subsingleton _, .zero⟩,
     ⟨0, Subsingleton.elim _ _⟩, fun _ ↦ ⟨0, ⟨0, Subsingleton.elim _ _⟩⟩,
     fun _ _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
-
-variable [Fact p.Prime]
-
-/-- **`ℂ_p` is a perfectoid Tate ring**: `ϖ = p ^ (1 / p)` is a pseudouniformiser with
-`ϖ ^ p = p`, and every element of `ℂ_p` has a `p`-th root. -/
-instance isPerfectoidTateRing_padicComplex : IsPerfectoidTateRing p ℂ_[p] := by
-  obtain ⟨ϖ, hϖ⟩ := IsAlgClosed.exists_pow_nat_eq (p : ℂ_[p]) (Nat.pos_of_ne_zero (NeZero.ne p))
-  have hnorm : ‖ϖ‖ ^ p < 1 := by
-    rw [← norm_pow, hϖ, ← map_natCast (algebraMap ℚ_[p] ℂ_[p]) p, norm_algebraMap',
-      Padic.norm_p]
-    exact inv_lt_one_of_one_lt₀ (mod_cast (Fact.out : p.Prime).one_lt)
-  have hlt : ‖ϖ‖ < 1 := (pow_lt_one_iff_of_nonneg (norm_nonneg ϖ) (NeZero.ne p)).mp hnorm
-  have hϖ0 : ϖ ≠ 0 := by
-    rintro rfl
-    rw [zero_pow (NeZero.ne p)] at hϖ
-    exact Nat.cast_ne_zero.mpr (NeZero.ne p) hϖ.symm
-  refine .of_forall_exists_pow_eq
-    ⟨ϖ, mem_powerBoundedSubring.mpr (isPowerBounded_iff_norm_le_one.mpr hlt.le)⟩
-    (isPseudoUniformizer_iff_norm_lt_one.mpr ⟨hϖ0, hlt⟩) ⟨1, Subtype.ext (by simp [hϖ])⟩
-    fun x ↦ IsAlgClosed.exists_pow_nat_eq (x : ℂ_[p]) (Nat.pos_of_ne_zero (NeZero.ne p))
-
-/-- **`ℚ_p` is not a perfectoid Tate ring**, although Frobenius on `ℤ_p ⧸ p = 𝔽_p` is bijective:
-a pseudouniformiser `ϖ` of `ℚ_p` has `‖ϖ‖ ≤ p⁻¹`, so `‖ϖ ^ p‖ < ‖p‖` and `ϖ ^ p ∤ p` in `ℤ_p`
-(Scholze, *Étale cohomology of diamonds*, Remark 3.3). -/
-theorem not_isPerfectoidTateRing_padic : ¬ IsPerfectoidTateRing p ℚ_[p] := by
-  rintro ⟨-, ϖ, hϖ, ⟨c, hc⟩, -⟩
-  have hp : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
-  have hϖ1 : ‖(ϖ : ℚ_[p])‖ ≤ (p : ℝ)⁻¹ := by
-    have := (Padic.norm_le_pow_iff_norm_lt_pow_add_one (ϖ : ℚ_[p]) (-1)).mpr
-      (by simpa using (isPseudoUniformizer_iff_norm_lt_one.mp hϖ).2)
-    simpa using this
-  have hc1 : ‖(c : ℚ_[p])‖ ≤ 1 := isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2)
-  have hceq : (p : ℚ_[p]) = (ϖ : ℚ_[p]) ^ p * c := by
-    simpa using congrArg Subtype.val hc
-  have : (p : ℝ)⁻¹ ≤ (p : ℝ)⁻¹ ^ p := by
-    calc (p : ℝ)⁻¹ = ‖(p : ℚ_[p])‖ := Padic.norm_p.symm
-      _ = ‖(ϖ : ℚ_[p])‖ ^ p * ‖(c : ℚ_[p])‖ := by rw [hceq, norm_mul, norm_pow]
-      _ ≤ (p : ℝ)⁻¹ ^ p * 1 := by gcongr
-      _ = (p : ℝ)⁻¹ ^ p := mul_one _
-  have hp2 : 1 < p := (Fact.out : p.Prime).one_lt
-  exact absurd this (not_le.mpr (pow_lt_self_of_lt_one₀ (by positivity)
-    (inv_lt_one_of_one_lt₀ hp) hp2))
 
 end Examples
 
