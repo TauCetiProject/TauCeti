@@ -90,7 +90,9 @@ theorem torsion_eq_one_or_neg_one_of_torsionOrder_eq_two (h : torsionOrder K = 2
   · exact .inr (Units.ext hx)
 
 /-- A number field contains a primitive root of unity of order `torsionOrder K`, namely a
-generator of the cyclic group `torsion K`. -/
+generator of the cyclic group `torsion K`.
+
+Adapted from the first step of Mathlib's proof of `IsCyclotomicExtension.Rat.torsionOrder_eq`. -/
 theorem exists_isPrimitiveRoot_torsionOrder : ∃ ζ : K, IsPrimitiveRoot ζ (torsionOrder K) := by
   obtain ⟨μ, hμ⟩ : ∃ μ : torsion K, orderOf μ = torsionOrder K :=
     IsCyclic.exists_ofOrder_eq_natCard
@@ -107,8 +109,7 @@ theorem totient_torsionOrder_le_finrank : (torsionOrder K).totient ≤ finrank �
     (Polynomial.cyclotomic.irreducible_rat (by simpa using torsionOrder_pos K))
 
 /-- **In unit rank zero every unit is a root of unity.** If the unit rank of `K` is `0`, as for
-`ℚ` and the imaginary quadratic fields, then the logarithmic embedding of the units lands in the
-zero space, so every unit of `𝓞 K` is torsion. -/
+`ℚ` and the imaginary quadratic fields, then every unit of `𝓞 K` is torsion. -/
 theorem torsion_eq_top_of_rank_eq_zero (h : rank K = 0) : torsion K = ⊤ := by
   have : IsEmpty (Fin (rank K)) := by rw [h]; infer_instance
   have := (equivFinRank K).symm.isEmpty

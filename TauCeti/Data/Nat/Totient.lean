@@ -14,7 +14,7 @@ import Mathlib.Tactic.IntervalCases
 Mathlib's `Nat.totient_eq_one_iff` says that `φ(n) = 1` exactly for `n = 1` and `n = 2`. This file
 specialises it to prime powers: `φ(p ^ k) = 1` exactly when `k = 0`, or `p = 2` and `k = 1`. It
 also determines the next value: `φ(n) = 2` exactly for `n = 3, 4, 6`. These are the orders of the
-roots of unity of degree at most `2` over `ℚ`, which is what bounds the roots of unity in a
+roots of unity of degree exactly `2` over `ℚ`, which is what bounds the roots of unity in a
 quadratic field.
 
 ## Main results
@@ -34,11 +34,12 @@ theorem totient_prime_pow_eq_one_iff {p k : ℕ} (hp : p.Prime) :
   rw [Nat.totient_eq_one_iff, Nat.pow_eq_one, Nat.Prime.pow_eq_iff Nat.prime_two]
   simp [hp.ne_one]
 
-/-- **The totient is `2` exactly at `3`, `4` and `6`.** Every prime power `p ^ (k + 1)` dividing
-`n` has totient `p ^ k * (p - 1)` dividing `φ(n) = 2`, which forces `p ^ (k + 1) ∣ 12`; so `n ∣ 12`,
-and `3`, `4`, `6` are the divisors of `12` with totient `2`. -/
+/-- **The totient is `2` exactly at `3`, `4` and `6`.** -/
 theorem totient_eq_two_iff {n : ℕ} : n.totient = 2 ↔ n = 3 ∨ n = 4 ∨ n = 6 := by
   refine ⟨fun h => ?_, by rintro (rfl | rfl | rfl) <;> decide⟩
+  -- Every prime power `p ^ (k + 1)` dividing `n` has totient `p ^ k * (p - 1)` dividing
+  -- `φ(n) = 2`, which forces `p ^ (k + 1) ∣ 12`; so `n ∣ 12`, and `3`, `4`, `6` are the divisors
+  -- of `12` with totient `2`.
   have h12 : n ∣ 12 := by
     refine (Nat.dvd_iff_prime_pow_dvd_dvd 12 n).mpr fun p k hp hpk => ?_
     rcases k with _ | k

@@ -8,12 +8,12 @@ module
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import TauCeti.NumberTheory.NumberField.Units.Torsion
-import Mathlib.RingTheory.Polynomial.Cyclotomic.Expand
+import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import TauCeti.Data.Nat.Totient
 import TauCeti.NumberTheory.EffectiveBounds.Regulator
 import TauCeti.NumberTheory.NumberField.Quadratic.Radicand
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
-import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Units
+import TauCeti.RingTheory.RootsOfUnity.Sixth
 
 /-!
 # The roots of unity of a quadratic field
@@ -35,8 +35,6 @@ are six of them for `D = -3`, four for `D = -4`, and only `±1` otherwise.
 ## Main results
 
 * `TauCeti.NumberField.Units.torsionOrder_eq_two_or_four_or_six`: in degree `2`, `w ∈ {2, 4, 6}`.
-* `TauCeti.NumberField.Units.isPrimitiveRoot_one_add_gen_div_two`: `(1 + √-3) / 2` is a primitive
-  sixth root of unity.
 * `TauCeti.NumberField.Units.torsionOrder_eq_of_squarefree`: `w` in terms of the squarefree
   radicand.
 * `TauCeti.NumberField.Units.torsionOrder_eq_of_finrank_eq_two`: `w` in terms of the
@@ -56,8 +54,8 @@ namespace TauCeti.NumberField.Units
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
-/-- **The torsion order of a quadratic field is `2`, `4` or `6`.** It is even, and its totient is at
-most the degree `2`. -/
+/-- **The torsion order of a quadratic field is `2`, `4` or `6`.** Every root of unity in a
+quadratic field has order dividing `4` or `6`. -/
 theorem torsionOrder_eq_two_or_four_or_six (hK : finrank ℚ K = 2) :
     torsionOrder K = 2 ∨ torsionOrder K = 4 ∨ torsionOrder K = 6 := by
   have hle : (torsionOrder K).totient ≤ 2 := hK ▸ totient_torsionOrder_le_finrank
@@ -74,16 +72,6 @@ theorem torsionOrder_eq_two_or_four_or_six (hK : finrank ℚ K = 2) :
     · exact .inr (.inl h)
     · exact .inr (.inr h)
 
-/-- **The sixth roots of unity of `ℚ(√-3)`.** If `θ` has minimal polynomial `X² + 3`, then
-`(1 + θ) / 2` is a primitive sixth root of unity: it is a root of `Φ₆ = X² - X + 1`. -/
-theorem isPrimitiveRoot_one_add_gen_div_two (hmin : minpoly ℤ θ = X ^ 2 + 3) :
-    IsPrimitiveRoot ((1 + (θ : K)) / 2) 6 := by
-  have hsq : (θ : K) ^ 2 = -3 := by
-    simpa using coe_gen_sq (d := -3) (by rw [hmin]; simp)
-  rw [← isRoot_cyclotomic_iff_charZero (by norm_num), cyclotomic_six]
-  simp only [IsRoot.def, eval_add, eval_sub, eval_pow, eval_X, eval_one]
-  linear_combination hsq / 4
-
 /-- **The torsion order of a quadratic field from its squarefree radicand.** For `K = ℚ(√d)` with
 `d` squarefree, the number of roots of unity in `K` is `4` if `d = -1`, `6` if `d = -3`, and `2`
 otherwise. -/
@@ -98,17 +86,18 @@ theorem torsionOrder_eq_of_squarefree (hmin : minpoly ℤ θ = X ^ 2 - C d)
     have : q ^ 2 = n := (algebraMap ℚ K).injective (by rw [map_pow, hq, hz, map_intCast])
     nlinarith [sq_nonneg q, (by exact_mod_cast hn : (n : ℚ) < 0)]
   split_ifs with h1 h3
-  · subst h1
-    exact GaussianRationals.torsionOrder_eq_four (by rw [hmin]; simp) hgen
-  · subst h3
+  · -- `θ ^ 2 = -1`, so `θ` is a primitive fourth root of unity.
+    subst h1
+    have hsq : (θ : K) ^ 2 = -1 := by simpa using coe_gen_sq hmin
+    have h4 := dvd_torsionOrder_of_isPrimitiveRoot (IsPrimitiveRoot.iff_orderOf.mpr
+      (orderOf_eq_prime_pow (x := (θ : K)) (p := 2) (n := 1) (by norm_num [hsq])
+        (by rw [pow_succ, pow_mul, pow_one, hsq]; norm_num)))
+    rcases torsionOrder_eq_two_or_four_or_six hK with h | h | h <;> rw [h] at h4 <;> omega
+  · -- `θ ^ 2 = -3`, so `(1 + θ) / 2` is a primitive sixth root of unity.
+    subst h3
     have h6 := dvd_torsionOrder_of_isPrimitiveRoot
-      (isPrimitiveRoot_one_add_gen_div_two (K := K) (by rw [hmin]; simp))
-    rcases torsionOrder_eq_two_or_four_or_six hK with h | h | h
-    · rw [h] at h6
-      omega
-    · rw [h] at h6
-      omega
-    · exact h
+      (isPrimitiveRoot_one_add_div_two (x := (θ : K)) (by simpa using coe_gen_sq hmin))
+    rcases torsionOrder_eq_two_or_four_or_six hK with h | h | h <;> rw [h] at h6 <;> omega
   · obtain ⟨ζ, hζ⟩ := exists_isPrimitiveRoot_torsionOrder (K := K)
     rcases torsionOrder_eq_two_or_four_or_six hK with h | h | h
     · exact h
@@ -121,12 +110,9 @@ theorem torsionOrder_eq_of_squarefree (hmin : minpoly ℤ θ = X ^ 2 - C d)
       exact squarefree_one
     · -- For a primitive sixth root of unity `ζ`, `(2ζ - 1)² = -3`.
       rw [h] at hζ
-      have hroot := hζ.isRoot_cyclotomic (by norm_num)
-      rw [cyclotomic_six] at hroot
-      simp only [IsRoot.def, eval_add, eval_sub, eval_pow, eval_X, eval_one] at hroot
       refine absurd (key (2 * ζ - 1) (-3) ?_ (by norm_num) ?_) h3
       · push_cast
-        linear_combination 4 * hroot
+        linear_combination 4 * isPrimitiveRoot_six_iff.mp hζ
       · rw [← Int.squarefree_natAbs]
         exact Nat.prime_three.squarefree
 
