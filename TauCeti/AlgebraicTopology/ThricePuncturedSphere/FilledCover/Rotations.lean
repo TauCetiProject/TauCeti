@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Charte
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Edges
 
 import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # Rotations of the edges and positive triangles around the added points of a filled cover
@@ -443,15 +444,7 @@ private theorem exists_path_pow_im_neg {e : ℕ} (he : e ≠ 0) (w : 𝔻*) (hw 
     mem_ball_zero_iff.1 (convex_ball (0 : ℂ) 1 (mem_ball_zero_iff.2 ha1) (mem_ball_zero_iff.2 hc1)
       (sub_nonneg.2 t.2.2) t.2.1 (by ring))
   -- Its quotients by `a` avoid the closed negative real axis, so they have continuous `e`-th roots.
-  have hslit (t : unitInterval) : s t / a ∈ slitPlane := by
-    rw [mem_slitPlane_iff]
-    by_contra! h
-    have hst : s t = ((s t / a).re : ℂ) * a := by
-      conv_lhs => rw [← div_mul_cancel₀ (s t) ha0, ← re_add_im (s t / a), h.2]
-      simp
-    have him := hs_im t
-    rw [hst, im_ofReal_mul] at him
-    nlinarith [h.1, hw]
+  have hslit (t : unitInterval) : s t / a ∈ slitPlane := div_mem_slitPlane_of_im_neg hw (hs_im t)
   let u : unitInterval → ℂ := fun t ↦ w * (s t / a) ^ ((e : ℂ)⁻¹)
   have hu_pow (t : unitInterval) : u t ^ e = s t := by
     simp only [u]
