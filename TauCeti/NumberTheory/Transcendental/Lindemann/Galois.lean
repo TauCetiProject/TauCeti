@@ -11,8 +11,7 @@ public import TauCeti.NumberTheory.Transcendental.Lindemann.ExpSum
 
 import Mathlib.Algebra.Group.UniqueProds.VectorSpace
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
-import Mathlib.NumberTheory.NumberField.Norm
-import Mathlib.RingTheory.Norm.Transitivity
+import Mathlib.NumberTheory.NumberField.House
 import TauCeti.NumberTheory.Transcendental.Lindemann.AuxValue
 
 /-!
@@ -33,11 +32,11 @@ The weak theorem follows Hermite's argument. After clearing denominators, the co
 are algebraic integers and `l γ` is an algebraic integer for a positive integer `l` and every
 `γ` in the support `S` of `x`. Fix `γ₀ ∈ S`. For large primes `p` the auxiliary value
 `a = auxValue x l p γ₀` is a nonzero algebraic integer (`auxValue_ne_zero`,
-`isIntegral_auxValue`), so its norm to `ℚ` is a nonzero integer. Since `x` is Galois-invariant,
-the conjugates of `a` are the auxiliary values at the conjugates of `γ₀` (`auxValue_galConj`),
-and if `expEval K x = 0` these all have absolute value less than `1` for large `p`
-(`eventually_norm_auxValue_lt_one`). The norm, the product of the conjugates of `a`, would then
-have absolute value less than `1`.
+`isIntegral_auxValue`), so some complex conjugate of `a` has absolute value at least `1`
+(`NumberField.exists_conjugate_one_le_norm`). Since `K / ℚ` is normal and `x` is
+Galois-invariant, the conjugates of `a` are the auxiliary values at the conjugates of `γ₀`
+(`auxValue_galConj`), and if `expEval K x = 0` these all have absolute value less than `1` for
+large `p` (`eventually_norm_auxValue_lt_one`).
 
 ## References
 
@@ -89,27 +88,16 @@ private theorem expEval_ne_zero_of_forall_galConj_eq_of_isIntegral {x : K[K]} (h
     linarith
   set a := auxValue x m.natAbs p γ₀
   have ha0 : a ≠ 0 := auxValue_ne_zero hγ₀ hint (Int.natAbs_ne_zero.2 hm) hl hp hpN
-  -- The norm of `a` is the product of the auxiliary values at the conjugates of `γ₀`. The rest is
-  -- the argument of `NumberField.exists_conjugate_one_le_norm`, with the automorphisms of `K`
-  -- in place of its complex embeddings.
-  have hprod :
-      algebraMap ℚ K (Algebra.norm ℚ a) = ∏ τ : K ≃ₐ[ℚ] K, auxValue x m.natAbs p (τ γ₀) := by
-    rw [Algebra.norm_eq_prod_automorphisms]
-    exact prod_congr rfl fun τ _ ↦ by rw [← auxValue_galConj, hfix]
-  -- This product has absolute value less than `1`.
-  have hlt : ‖algebraMap K ℂ (algebraMap ℚ K (Algebra.norm ℚ a))‖ < 1 := by
-    rw [hprod, map_prod, norm_prod, ← prod_const_one (s := (univ : Finset (K ≃ₐ[ℚ] K)))]
-    refine prod_lt_prod_of_nonempty₀ (fun τ _ ↦ norm_pos_iff.2 ?_)
-      (fun τ _ ↦ hp₀ p (le_of_max_le_left hp_ge) _ (hτS τ)) univ_nonempty
-    rw [map_ne_zero_iff _ (algebraMap K ℂ).injective, ← hfix τ, auxValue_galConj]
-    exact (map_ne_zero_iff _ τ.injective).2 ha0
-  -- But the norm of the nonzero algebraic integer `a` is a nonzero integer.
-  let a' : 𝓞 K := ⟨a, isIntegral_auxValue hγ₀ hint hl⟩
-  have hn : Algebra.norm ℤ a' ≠ 0 :=
-    Algebra.norm_ne_zero_iff.2 fun h ↦ ha0 congr($h.1)
-  have hcast : Algebra.norm ℚ a = (Algebra.norm ℤ a' : ℚ) := (Algebra.coe_norm_int a').symm
-  rw [hcast, map_intCast, map_intCast, Complex.norm_intCast] at hlt
-  exact hlt.not_ge (by exact_mod_cast Int.one_le_abs hn)
+  -- Some complex embedding `σ` of the nonzero algebraic integer `a` has absolute value at least
+  -- `1`. Since `K / ℚ` is normal, `σ` is the fixed embedding precomposed with an automorphism `τ`,
+  -- and `τ a` is the auxiliary value at `τ γ₀`, of absolute value less than `1`.
+  obtain ⟨σ, hσ⟩ := exists_conjugate_one_le_norm (K := K)
+    (α := ⟨a, isIntegral_auxValue hγ₀ hint hl⟩) fun h ↦ ha0 congr($h.1)
+  set τ := σ.toRatAlgHom.restrictNormal' K
+  have hτ : σ a = algebraMap K ℂ (auxValue x m.natAbs p (τ γ₀)) := by
+    rw [← hfix τ, auxValue_galConj]
+    exact (σ.toRatAlgHom.restrictNormal_commutes K a).symm
+  exact (hp₀ p (le_of_max_le_left hp_ge) _ (hτS τ)).not_ge (hτ ▸ hσ)
 
 /-- **The weak Lindemann–Weierstrass theorem.** Let `K` be a number field, Galois over `ℚ` and
 embedded in `ℂ`. If a nonzero formal exponential sum `x = ∑ δ_γ [γ] ∈ K[K]` is fixed by the
@@ -141,9 +129,8 @@ theorem expEval_injective : Function.Injective (expEval K) := by
     (prod_ne_zero_iff.2 fun τ _ ↦ (map_ne_zero_iff _ (galConj τ).injective).2 hx)
     (fun σ ↦ galConj_prod_galConj σ x) ?_
   rw [map_prod]
-  have h1 : galConj (1 : K ≃ₐ[ℚ] K) x = x := by
-    ext γ
-    simp [coeff_galConj, ← AlgEquiv.aut_inv]
+  have h1 : galConj (1 : K ≃ₐ[ℚ] K) x = x :=
+    DFunLike.congr_fun (galConj_refl (K := K) (F := ℚ)) x
   exact prod_eq_zero (mem_univ 1) (by rwa [h1])
 
 end TauCeti.LindemannWeierstrass
