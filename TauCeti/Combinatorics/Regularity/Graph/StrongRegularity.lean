@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Regularity.Graph.SeededRegularity
 public import TauCeti.Combinatorics.Regularity.Partition.Energy
+public import Mathlib.Order.PartialSups
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -14,20 +15,22 @@ import Mathlib.Tactic.Linarith
 
 A *strong regularity witness* for a finite graph `G` is a pair of equipartitions `Q ≤ P` (so `Q`
 refines `P`) such that the coarse partition `P` is `ε`-uniform, the fine partition `Q` is uniform
-at the much smaller scale `F #P.parts` prescribed by an arbitrary positive schedule `F : ℕ → ℝ`,
-and passing from `P` to `Q` raises the size-weighted energy `SimpleGraph.weightedEnergy` by at most
-`ε`. The energy gap controls how far the fine densities deviate from the coarse ones
-(`SimpleGraph.weightedDensityDeviation_abs_le`), so counts computed on the fine partition, where
-regularity is strong, transfer to the coarse partition, where the number of parts is small. This is
-the input of the induced counting lemma for strong regularity.
+at the scale `F #P.parts` prescribed by a positive schedule `F : ℕ → ℝ`, and passing from `P` to
+`Q` raises the size-weighted energy `SimpleGraph.weightedEnergy` by at most `ε`. Choosing `F`
+sufficiently small makes the fine partition as regular as a counting argument requires. The energy
+gap controls how far the fine densities deviate from the coarse ones
+(`SimpleGraph.weightedDensityDeviation_abs_le`), so counts computed on the fine partition transfer
+to the coarse partition, where the number of parts is small. This is the input of the induced
+counting lemma for strong regularity.
 
 The existence theorem iterates `SimpleGraph.exists_regular_exact_refining_equipartition`. Starting
-from an `ε`-uniform equipartition `P`, refine it exactly to an equipartition `Q` that is uniform at
-`min ε (F #P.parts)`. If the energy rises by at most `ε`, then `(P, Q)` is a witness. Otherwise
-replace `P` by `Q` and repeat. The weighted energy lies in `[0, 1]` and every unsuccessful round
-raises it by more than `ε`, so the iteration stops within `⌊1 / ε⌋₊ + 1` rounds. Since every
-round refines exactly, the coarse partition keeps almost refining the starting partition, and its
-number of parts never drops below the requested minimum.
+from an `ε`-uniform equipartition `P` given by `SimpleGraph.exists_regular_almostRefines_le_card`,
+refine it exactly to an equipartition `Q` that is uniform at `min ε (F #P.parts)`. If the energy
+rises by at most `ε`, then `(P, Q)` is a witness. Otherwise replace `P` by `Q` and repeat. The
+weighted energy lies in `[0, 1]` and every unsuccessful round raises it by more than `ε`, so the
+iteration stops within `⌊1 / ε⌋₊ + 1` rounds. Since every round refines exactly, the coarse
+partition keeps almost refining the starting partition, and its number of parts never drops below
+the requested minimum.
 
 The number of parts is bounded independently of the graph. As the schedule `F` is arbitrary, the
 bound for one round is a maximum over all smaller partition sizes
@@ -60,12 +63,18 @@ parts: the largest of the bounds `nestedRefinementBound (min ε (F j)) j` for ex
 regularity, over all `j ≤ m`. Taking the maximum makes the bound monotone in `m` for every
 schedule `F`. -/
 noncomputable def strongRegularityStepBound (ε : ℝ) (F : ℕ → ℝ) (m : ℕ) : ℕ :=
-  (range (m + 1)).sup fun j ↦ nestedRefinementBound (min ε (F j)) j
+  partialSups (fun j ↦ nestedRefinementBound (min ε (F j)) j) m
 
-/-- The bound for one round is the largest exact-refinement bound over smaller sizes. -/
+/-- The bound for one round is the partial supremum of the exact-refinement bounds. -/
 theorem strongRegularityStepBound_def (ε : ℝ) (F : ℕ → ℝ) (m : ℕ) :
     strongRegularityStepBound ε F m =
-      (range (m + 1)).sup fun j ↦ nestedRefinementBound (min ε (F j)) j := (rfl)
+      partialSups (fun j ↦ nestedRefinementBound (min ε (F j)) j) m := (rfl)
+
+/-- The bound for one round is the largest exact-refinement bound over smaller sizes. -/
+theorem strongRegularityStepBound_eq_sup_range (ε : ℝ) (F : ℕ → ℝ) (m : ℕ) :
+    strongRegularityStepBound ε F m =
+      (range (m + 1)).sup fun j ↦ nestedRefinementBound (min ε (F j)) j :=
+  partialSups_eq_sup_range _ m
 
 variable {ε : ℝ} {F : ℕ → ℝ}
 
@@ -73,7 +82,7 @@ variable {ε : ℝ} {F : ℕ → ℝ}
 partition with at most `m` parts. -/
 theorem nestedRefinementBound_le_strongRegularityStepBound {j m : ℕ} (h : j ≤ m) :
     nestedRefinementBound (min ε (F j)) j ≤ strongRegularityStepBound ε F m :=
-  le_sup (f := fun j ↦ nestedRefinementBound (min ε (F j)) j) (mem_range.2 (Nat.lt_succ_of_le h))
+  le_partialSups_of_le (fun j ↦ nestedRefinementBound (min ε (F j)) j) h
 
 /-- One round never needs fewer parts than it starts from. -/
 theorem le_strongRegularityStepBound (m : ℕ) : m ≤ strongRegularityStepBound ε F m :=
@@ -81,7 +90,7 @@ theorem le_strongRegularityStepBound (m : ℕ) : m ≤ strongRegularityStepBound
 
 /-- The bound for one round is monotone in the starting number of parts. -/
 theorem strongRegularityStepBound_mono : Monotone (strongRegularityStepBound ε F) :=
-  fun _ _ h ↦ sup_mono (range_subset_range.2 (Nat.succ_le_succ h))
+  (partialSups fun j ↦ nestedRefinementBound (min ε (F j)) j).monotone
 
 /-- The complexity bound for strong graph regularity, in terms of the starting complexity `l₀`:
 `⌊1 / ε⌋₊ + 1` rounds of `strongRegularityStepBound ε F`, started from the bound
@@ -130,40 +139,6 @@ structure StrongRegular (P Q : Finpartition (univ : Finset α)) (ε : ℝ) (F : 
   /-- The number of fine parts is bounded independently of the graph. -/
   boundedFine : #Q.parts ≤ strongGraphRegularityBound ε F l₀
 
-/-- The starting partition for strong regularity: an `ε`-uniform equipartition almost refining
-`P₀` with at least `l` parts, obtained by refining exactly an equipartition into
-`max l₀ ⌈2 * l₀ / ε⌉₊` parts almost refining `P₀`, where `l₀ = max l #P₀.parts`. -/
-private theorem exists_regular_almostRefines_le_card (P₀ : Finpartition (univ : Finset α))
-    (hP₀ : P₀.IsEquipartition) {l : ℕ} (hl : l ≤ card α) {ε : ℝ} (hε : 0 < ε) :
-    ∃ P : Finpartition (univ : Finset α), P.IsEquipartition ∧ P.IsUniform G ε ∧
-      P.AlmostRefines P₀ ε ∧ l ≤ #P.parts ∧ #P.parts ≤
-        nestedRefinementBound ε (max (max l #P₀.parts) ⌈2 * (max l #P₀.parts : ℕ) / ε⌉₊) := by
-  set l₀ := max l #P₀.parts
-  set n := max l₀ ⌈2 * l₀ / ε⌉₊
-  -- On an empty host, or one with fewer than `n` vertices, the partition into singletons works.
-  by_cases hsmall : card α = 0 ∨ card α < n
-  · refine ⟨⊥, bot_isEquipartition _, bot_isUniform G hε, almostRefines_of_le bot_le hε.le, ?_, ?_⟩
-    · rwa [card_bot, card_univ]
-    · rw [card_bot, card_univ]
-      rcases hsmall with h | h
-      · exact h ▸ Nat.zero_le _
-      · exact h.le.trans (le_nestedRefinementBound _ _)
-  push Not at hsmall
-  obtain ⟨hα, hn⟩ := hsmall
-  have : Nonempty α := card_pos_iff.1 (Nat.pos_of_ne_zero hα)
-  have hk : 0 < #P₀.parts := card_pos.2 <| P₀.parts_nonempty univ_nonempty.ne_empty
-  have hn₀ : n ≠ 0 := (hk.trans_le ((le_max_right _ _).trans (le_max_left _ _))).ne'
-  have hδ : 2 * (#P₀.parts : ℝ) ≤ ε * n := by
-    rw [← div_le_iff₀' hε]
-    calc 2 * (#P₀.parts : ℝ) / ε ≤ 2 * (l₀ : ℝ) / ε := by gcongr; exact_mod_cast le_max_right _ _
-      _ ≤ ⌈2 * (l₀ : ℝ) / ε⌉₊ := Nat.le_ceil _
-      _ ≤ n := Nat.cast_le.2 (le_max_right _ _)
-  obtain ⟨P₁, hP₁, hP₁card, hP₁P₀⟩ :=
-    hP₀.exists_equipartition_card_eq_almostRefines hn₀ (by rwa [card_univ]) hδ
-  obtain ⟨P, hPP₁, hP, hPG, hPcard⟩ := G.exists_regular_exact_refining_equipartition P₁ hP₁ hε
-  refine ⟨P, hP, hPG, hP₁P₀.mono_left hPP₁, ?_, hP₁card ▸ hPcard⟩
-  exact ((le_max_left _ _).trans (le_max_left _ _)).trans (hP₁card ▸ card_mono hPP₁)
-
 /-- **Strong graph regularity.** Let `ε > 0` and let `F : ℕ → ℝ` be a positive schedule. Every
 equipartition `P₀` of a finite graph `G` is almost refined, up to `ε`, by the coarse partition `P`
 of a strong regularity witness `(P, Q)`, where `P` has at least `l` parts for any requested
@@ -175,7 +150,7 @@ theorem exists_strong_regular (P₀ : Finpartition (univ : Finset α)) (hP₀ : 
   set L := nestedRefinementBound ε (max (max l #P₀.parts) ⌈2 * (max l #P₀.parts : ℕ) / ε⌉₊)
   set g := strongRegularityStepBound ε F
   obtain ⟨P₁, hP₁, hP₁G, hP₁P₀, hlP₁, hP₁card⟩ :=
-    exists_regular_almostRefines_le_card G P₀ hP₀ hl hε
+    G.exists_regular_almostRefines_le_card P₀ hP₀ hl hε
   -- One round refines an equipartition `P` exactly to a `min ε (F #P.parts)`-uniform one.
   have step (P : Finpartition (univ : Finset α)) (hP : P.IsEquipartition) :
       ∃ Q : Finpartition (univ : Finset α), Q ≤ P ∧ Q.IsEquipartition ∧
