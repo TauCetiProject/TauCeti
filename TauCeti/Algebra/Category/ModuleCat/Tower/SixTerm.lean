@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Isomorphisms
+public import Mathlib.Algebra.Category.ModuleCat.Kernels
+public import Mathlib.Algebra.Homology.ShortComplex.ConcreteCategory
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.Algebra.Homology.ShortComplex.SnakeLemma
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
 public import TauCeti.LinearAlgebra.Exact
 
@@ -26,12 +29,15 @@ map of `B`; it is natural in morphisms of such sequences. As a consequence, `lim
 surjective whenever `lim¹ A` vanishes.
 
 This is the snake lemma applied to the shift maps of the short exact sequence of products
-`0 → ∏ₙ Aₙ → ∏ₙ Bₙ → ∏ₙ Cₙ → 0`. The ring `R` is only assumed associative and unital, so the
-argument is carried out directly rather than through Mathlib's `SnakeLemma.δ`, which is stated
-over commutative rings.
+`0 → ∏ₙ Aₙ → ∏ₙ Bₙ → ∏ₙ Cₙ → 0`, whose kernels and cokernels are the rows of `lim` and `lim¹`.
+It is Mathlib's categorical snake lemma `CategoryTheory.ShortComplex.SnakeInput` in the abelian
+category `ModuleCat R`, so the ring `R` need only be associative and unital. The exactness
+statements not involving the connecting map are proved directly, so that each assumes only the
+levelwise hypotheses it uses.
 
 ## Main declarations
 
+* `TauCeti.ModuleTower.snakeInput`: the snake input formed by the shift maps of the products.
 * `TauCeti.ModuleTower.connectingMap`: the connecting map `lim C → lim¹ A`.
 * `TauCeti.ModuleTower.connectingMap_eq_mk`: its value on a family `c` is the class of any `a`
   with `f(a) = δ(b)` and `g(b) = c`.
@@ -58,7 +64,7 @@ namespace TauCeti
 
 namespace ModuleTower
 
-open CategoryTheory Opposite
+open CategoryTheory Limits Opposite
 
 universe v u
 
@@ -126,109 +132,105 @@ theorem exists_productMap_eq_shift {b : B.Product} (hb : productMap g b ∈ C.li
   rw [← shift_productMap_apply]
   exact C.mem_lim_iff_shift_eq_zero.1 hb
 
-/-- The families in `∏ₙ Bₙ` lifting a compatible family of `C`, the domain of the relation
-defining the connecting map. -/
-private abbrev liftDomain (g : B ⟶ C) : Submodule R B.Product :=
-  C.lim.comap (productMap g)
+/-- `lim A` is a kernel of the shift map in `ModuleCat R`. -/
+private def isLimitLim (F : ModuleTower.{v} R) :
+    IsLimit (KernelFork.ofι (f := ModuleCat.ofHom F.shift) (ModuleCat.ofHom F.lim.subtype)
+      (ModuleCat.hom_ext <| LinearMap.ext fun x ↦ (mem_lim_iff_shift_eq_zero _).1 x.2)) :=
+  ModuleCat.isLimitKernelFork _ _
+    (LinearMap.exact_iff.2 (by
+      rw [ModuleCat.hom_ofHom, ModuleCat.hom_ofHom, Submodule.range_subtype, lim_eq_ker]))
+    Subtype.val_injective
 
-/-- The map sending a lift `b` of a compatible family of `C` to that family. -/
-private def liftProj (g : B ⟶ C) : liftDomain g →ₗ[R] C.lim :=
-  (productMap g).restrict fun _ hb ↦ hb
+/-- `lim¹ A` is a cokernel of the shift map in `ModuleCat R`. -/
+private def isColimitLimOne (F : ModuleTower.{v} R) :
+    IsColimit (CokernelCofork.ofπ (f := ModuleCat.ofHom F.shift)
+      (ModuleCat.ofHom (LinearMap.range F.shift).mkQ)
+      (ModuleCat.hom_ext <| LinearMap.range_mkQ_comp _)) :=
+  ModuleCat.isColimitCokernelCofork _ _ (LinearMap.exact_iff.2 (Submodule.ker_mkQ _))
+    (Submodule.mkQ_surjective _)
 
-include hg in
-private theorem liftProj_surjective : Function.Surjective (liftProj g) := by
-  intro c
-  obtain ⟨b, hb⟩ := productMap_surjective hg (c : C.Product)
-  exact ⟨⟨b, by rw [Submodule.mem_comap, hb]; exact c.2⟩, Subtype.ext hb⟩
+include hfg in
+/-- The composite of a levelwise exact pair of morphisms of towers vanishes. -/
+private theorem comp_eq_zero : f ≫ g = 0 := by
+  ext n x
+  exact (hfg n.unop).apply_apply_eq_zero x
 
-/-- The map sending a lift `b` of a compatible family of `C` to the class in `lim¹ A` of the
-preimage of `δ(b)` under the injective map `∏ₙ Aₙ → ∏ₙ Bₙ`. -/
-private def liftClass : liftDomain g →ₗ[R] A.limOne :=
-  (LinearMap.range A.shift).mkQ ∘ₗ
-    (LinearEquiv.ofInjective (productMap f) (productMap_injective hf)).symm.toLinearMap ∘ₗ
-    (B.shift ∘ₗ (liftDomain g).subtype).codRestrict (LinearMap.range (productMap f))
-      fun b ↦ by
-        obtain ⟨a, ha⟩ := exists_productMap_eq_shift hfg b.2
-        exact ⟨a, ha⟩
+/-- The short complex `∏ₙ Aₙ → ∏ₙ Bₙ → ∏ₙ Cₙ` of product maps. -/
+private abbrev productComplex : ShortComplex (ModuleCat.{v} R) :=
+  ShortComplex.mk (ModuleCat.ofHom (productMap f)) (ModuleCat.ofHom (productMap g)) <| by
+    rw [← ModuleCat.ofHom_comp, ← productMap_comp, comp_eq_zero hfg, productMap_zero]
+    rfl
 
-private theorem liftClass_apply (b : liftDomain g) {a : A.Product}
-    (ha : productMap f a = B.shift b) :
-    liftClass hf hfg b = Submodule.Quotient.mk a := by
-  simp only [liftClass, LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-    Submodule.mkQ_apply]
-  congr 1
-  rw [LinearEquiv.symm_apply_eq]
-  exact Subtype.ext ha.symm
-
-private theorem ker_liftProj_le :
-    LinearMap.ker (liftProj g) ≤ LinearMap.ker (liftClass hf hfg) := by
-  intro b hb
-  rw [LinearMap.mem_ker] at hb ⊢
-  -- A lift of the zero family is `f(a')`, and then `δ(f(a')) = f(δ(a'))` has class zero.
-  obtain ⟨a', ha'⟩ := (exact_productMap hfg (b : B.Product)).1 (congrArg Subtype.val hb)
-  rw [liftClass_apply hf hfg b (a := A.shift a'), Submodule.Quotient.mk_eq_zero]
-  · exact LinearMap.mem_range_self _ _
-  · rw [← ha', shift_productMap_apply]
+/-- The snake input of a levelwise short exact sequence `0 → A → B → C → 0` of towers: the shift
+maps of the short exact sequence of products `0 → ∏ₙ Aₙ → ∏ₙ Bₙ → ∏ₙ Cₙ → 0`, whose kernels
+and cokernels are the rows `lim A → lim B → lim C` and `lim¹ A → lim¹ B → lim¹ C`. -/
+def snakeInput : ShortComplex.SnakeInput (ModuleCat.{v} R) where
+  L₀ := ShortComplex.mk (ModuleCat.ofHom (limMap f)) (ModuleCat.ofHom (limMap g)) <| by
+    rw [← ModuleCat.ofHom_comp, ← limMap_comp, comp_eq_zero hfg, limMap_zero]
+    rfl
+  L₁ := productComplex hfg
+  L₂ := productComplex hfg
+  L₃ := ShortComplex.mk (ModuleCat.ofHom (limOneMap f)) (ModuleCat.ofHom (limOneMap g)) <| by
+    rw [← ModuleCat.ofHom_comp, ← limOneMap_comp, comp_eq_zero hfg, limOneMap_zero]
+    rfl
+  v₀₁ :=
+    { τ₁ := ModuleCat.ofHom A.lim.subtype
+      τ₂ := ModuleCat.ofHom B.lim.subtype
+      τ₃ := ModuleCat.ofHom C.lim.subtype }
+  v₁₂ :=
+    { τ₁ := ModuleCat.ofHom A.shift
+      τ₂ := ModuleCat.ofHom B.shift
+      τ₃ := ModuleCat.ofHom C.shift
+      comm₁₂ := ModuleCat.hom_ext (shift_natural f).symm
+      comm₂₃ := ModuleCat.hom_ext (shift_natural g).symm }
+  v₂₃ :=
+    { τ₁ := ModuleCat.ofHom (LinearMap.range A.shift).mkQ
+      τ₂ := ModuleCat.ofHom (LinearMap.range B.shift).mkQ
+      τ₃ := ModuleCat.ofHom (LinearMap.range C.shift).mkQ }
+  w₀₂ := by
+    ext x : 3 <;> exact (mem_lim_iff_shift_eq_zero _).1 x.2
+  w₁₃ := by
+    ext x : 3 <;> exact (Submodule.Quotient.mk_eq_zero _).2 (LinearMap.mem_range_self _ x)
+  h₀ := ShortComplex.isLimitOfIsLimitπ _
+    ((KernelFork.isLimitMapConeEquiv _ _).symm A.isLimitLim)
+    ((KernelFork.isLimitMapConeEquiv _ _).symm B.isLimitLim)
+    ((KernelFork.isLimitMapConeEquiv _ _).symm C.isLimitLim)
+  h₃ := ShortComplex.isColimitOfIsColimitπ _
+    ((CokernelCofork.isColimitMapCoconeEquiv _ _).symm A.isColimitLimOne)
+    ((CokernelCofork.isColimitMapCoconeEquiv _ _).symm B.isColimitLimOne)
+    ((CokernelCofork.isColimitMapCoconeEquiv _ _).symm C.isColimitLimOne)
+  L₁_exact :=
+    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 (exact_productMap hfg)
+  epi_L₁_g := (ModuleCat.epi_iff_surjective _).2 (productMap_surjective hg)
+  L₂_exact :=
+    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 (exact_productMap hfg)
+  mono_L₂_f := (ModuleCat.mono_iff_injective _).2 (productMap_injective hf)
 
 /-- The connecting map `lim C → lim¹ A` of a levelwise short exact sequence `0 → A → B → C → 0`
-of towers. It sends `c ∈ lim C` to the class of the family `a ∈ ∏ₙ Aₙ` with `f(a) = δ(b)`, for
-any family `b ∈ ∏ₙ Bₙ` with `g(b) = c` (see `connectingMap_eq_mk`). -/
+of towers, the connecting map of `snakeInput`. It sends `c ∈ lim C` to the class of the family
+`a ∈ ∏ₙ Aₙ` with `f(a) = δ(b)`, for any family `b ∈ ∏ₙ Bₙ` with `g(b) = c` (see
+`connectingMap_eq_mk`). -/
 def connectingMap : C.lim →ₗ[R] A.limOne :=
-  (LinearMap.ker (liftProj g)).liftQ (liftClass hf hfg) (ker_liftProj_le hf hfg) ∘ₗ
-    ((liftProj g).quotKerEquivOfSurjective (liftProj_surjective hg)).symm.toLinearMap
+  (snakeInput hf hfg hg).δ.hom
 
 /-- The connecting map sends `c ∈ lim C` to the class of `a`, whenever `g(b) = c` and
 `f(a) = δ(b)`. -/
 theorem connectingMap_eq_mk (c : C.lim) {b : B.Product} (hb : productMap g b = c)
     {a : A.Product} (ha : productMap f a = B.shift b) :
-    connectingMap hf hfg hg c = Submodule.Quotient.mk a := by
-  have hmem : b ∈ liftDomain g := by rw [Submodule.mem_comap, hb]; exact c.2
-  have hc : c = liftProj g ⟨b, hmem⟩ := Subtype.ext hb.symm
-  rw [connectingMap, LinearMap.comp_apply, LinearEquiv.coe_coe, hc,
-    LinearMap.quotKerEquivOfSurjective_symm_apply, Submodule.liftQ_apply]
-  exact liftClass_apply hf hfg _ ha
+    connectingMap hf hfg hg c = Submodule.Quotient.mk a :=
+  (snakeInput hf hfg hg).δ_apply c b a hb ha
 
 /-- Exactness of `lim B → lim C → lim¹ A`. -/
 theorem exact_limMap_connectingMap :
-    Function.Exact (limMap g) (connectingMap hf hfg hg) := by
-  intro c
-  constructor
-  · intro hc
-    obtain ⟨b, hb⟩ := productMap_surjective hg (c : C.Product)
-    obtain ⟨a, ha⟩ := exists_productMap_eq_shift hfg (b := b) (by rw [hb]; exact c.2)
-    rw [connectingMap_eq_mk hf hfg hg c hb ha, Submodule.Quotient.mk_eq_zero] at hc
-    obtain ⟨a', rfl⟩ := hc
-    -- Correcting `b` by `f(a')` gives a compatible family of `B` still lifting `c`.
-    have hmem : b - productMap f a' ∈ B.lim := by
-      rw [mem_lim_iff_shift_eq_zero, map_sub, shift_productMap_apply, ha, sub_self]
-    refine ⟨⟨_, hmem⟩, Subtype.ext ?_⟩
-    rw [coe_limMap_apply, Submodule.coe_mk, map_sub, hb,
-      (exact_productMap hfg).apply_apply_eq_zero, sub_zero]
-  · rintro ⟨x, rfl⟩
-    have hx : B.shift x = 0 := B.mem_lim_iff_shift_eq_zero.1 x.2
-    rw [connectingMap_eq_mk hf hfg hg _ (coe_limMap_apply g x).symm (a := 0)
-      (by rw [map_zero, hx]), Submodule.Quotient.mk_zero]
+    Function.Exact (limMap g) (connectingMap hf hfg hg) :=
+  (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+    (snakeInput hf hfg hg).L₁'_exact
 
 /-- Exactness of `lim C → lim¹ A → lim¹ B`. -/
 theorem exact_connectingMap_limOneMap :
-    Function.Exact (connectingMap hf hfg hg) (limOneMap f) := by
-  intro y
-  induction y using Submodule.Quotient.induction_on with | H a => ?_
-  rw [limOneMap_mk, Submodule.Quotient.mk_eq_zero]
-  constructor
-  · rintro ⟨b, hb⟩
-    have hmem : productMap g b ∈ C.lim := by
-      rw [mem_lim_iff_shift_eq_zero, shift_productMap_apply, hb,
-        (exact_productMap hfg).apply_apply_eq_zero]
-    exact ⟨⟨_, hmem⟩, connectingMap_eq_mk hf hfg hg _ rfl hb.symm⟩
-  · rintro ⟨c, hc⟩
-    obtain ⟨b, hb⟩ := productMap_surjective hg (c : C.Product)
-    obtain ⟨a', ha'⟩ := exists_productMap_eq_shift hfg (b := b) (by rw [hb]; exact c.2)
-    rw [connectingMap_eq_mk hf hfg hg c hb ha', Submodule.Quotient.eq] at hc
-    -- `a' - a = δ(a'')`, so `f(a) = δ(b) - δ(f(a'')) = δ(b - f(a''))`.
-    obtain ⟨a'', ha''⟩ := hc
-    refine ⟨b - productMap f a'', ?_⟩
-    rw [map_sub, ← ha', shift_productMap_apply, ← map_sub, ha'', sub_sub_cancel]
+    Function.Exact (connectingMap hf hfg hg) (limOneMap f) :=
+  (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+    (snakeInput hf hfg hg).L₂'_exact
 
 end Exact
 
@@ -282,16 +284,33 @@ theorem connectingMap_natural {A' B' C' : ModuleTower.{v} R} {f' : A' ⟶ B'} {g
     (hg' : ∀ n, Function.Surjective (g'.app (op n)).hom)
     (α : A ⟶ A') (β : B ⟶ B') (γ : C ⟶ C') (hαβ : f ≫ β = α ≫ f') (hβγ : g ≫ γ = β ≫ g') :
     connectingMap hf' hfg' hg' ∘ₗ limMap γ = limOneMap α ∘ₗ connectingMap hf hfg hg := by
-  ext c
-  obtain ⟨b, hb⟩ := productMap_surjective hg (c : C.Product)
-  obtain ⟨a, ha⟩ := exists_productMap_eq_shift hfg (b := b) (by rw [hb]; exact c.2)
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, connectingMap_eq_mk hf hfg hg c hb ha,
-    limOneMap_mk]
-  refine connectingMap_eq_mk hf' hfg' hg' _ (b := productMap β b) ?_ ?_
-  · rw [coe_limMap_apply, ← hb, ← LinearMap.comp_apply (productMap g'), ← productMap_comp,
-      ← hβγ, productMap_comp, LinearMap.comp_apply]
-  · rw [← LinearMap.comp_apply (productMap f'), ← productMap_comp, ← hαβ, productMap_comp,
-      LinearMap.comp_apply, ha, shift_productMap_apply]
+  -- The morphisms of towers induce a morphism of snake inputs, levelwise on `lim`, the products
+  -- and `lim¹`.
+  let ψ : productComplex hfg ⟶ productComplex hfg' :=
+    { τ₁ := ModuleCat.ofHom (productMap α)
+      τ₂ := ModuleCat.ofHom (productMap β)
+      τ₃ := ModuleCat.ofHom (productMap γ)
+      comm₁₂ := by simp only [← ModuleCat.ofHom_comp, ← productMap_comp, hαβ]
+      comm₂₃ := by simp only [← ModuleCat.ofHom_comp, ← productMap_comp, hβγ] }
+  let φ : snakeInput hf hfg hg ⟶ snakeInput hf' hfg' hg' :=
+    { f₀ :=
+        { τ₁ := ModuleCat.ofHom (limMap α)
+          τ₂ := ModuleCat.ofHom (limMap β)
+          τ₃ := ModuleCat.ofHom (limMap γ)
+          comm₁₂ := by simp only [snakeInput, ← ModuleCat.ofHom_comp, ← limMap_comp, hαβ]
+          comm₂₃ := by simp only [snakeInput, ← ModuleCat.ofHom_comp, ← limMap_comp, hβγ] }
+      f₁ := ψ
+      f₂ := ψ
+      f₃ :=
+        { τ₁ := ModuleCat.ofHom (limOneMap α)
+          τ₂ := ModuleCat.ofHom (limOneMap β)
+          τ₃ := ModuleCat.ofHom (limOneMap γ)
+          comm₁₂ := by simp only [snakeInput, ← ModuleCat.ofHom_comp, ← limOneMap_comp, hαβ]
+          comm₂₃ := by simp only [snakeInput, ← ModuleCat.ofHom_comp, ← limOneMap_comp, hβγ] }
+      comm₀₁ := by ext x : 3 <;> exact coe_limMap_apply _ x
+      comm₁₂ := by ext x : 3 <;> exact shift_productMap_apply _ x
+      comm₂₃ := by ext x : 3 <;> exact (limOneMap_mk _ x).symm }
+  exact congrArg ModuleCat.Hom.hom (ShortComplex.SnakeInput.naturality_δ φ).symm
 
 end ModuleTower
 
