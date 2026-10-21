@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.ConstantSpeed
 public import TauCeti.Geometry.Euclidean.Volume.Measure
 public import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
+public import TauCeti.Topology.MetricSpace.Arclength.Basic
 
 /-!
 # Constant speed and the length of curves of bounded variation
@@ -63,14 +64,6 @@ theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [Topolo
   rw [edist_dist, Real.dist_eq, variationOnFromTo.sub_right hf.locallyBoundedVariationOn ha hx hy,
     ← ENNReal.ofReal_toReal hf]
   exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_le_eVariationOn hf)
-
-/-- The natural parameterization of a curve of locally bounded variation on `s` recovers the
-curve at the cumulative variation of each point of `s`. -/
-theorem LocallyBoundedVariationOn.naturalParameterization_variationOnFromTo {α E : Type*}
-    [LinearOrder α] [EMetricSpace E] {f : α → E} {s : Set α}
-    (hf : LocallyBoundedVariationOn f s) {a b : α} (ha : a ∈ s) (hb : b ∈ s) :
-    naturalParameterization f s a (variationOnFromTo f s a b) = f b :=
-  edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hb)
 
 /-- A curve of locally bounded variation on `s` factors, on `s`, through its natural
 parameterization restricted to the set of cumulative variations from a base point. -/

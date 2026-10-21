@@ -39,6 +39,14 @@ public section
 open Set
 open scoped ENNReal
 
+/-- The natural parameterization of a curve of locally bounded variation on `s` recovers the
+curve at the cumulative variation of each point of `s`. -/
+theorem LocallyBoundedVariationOn.naturalParameterization_variationOnFromTo {α E : Type*}
+    [LinearOrder α] [EMetricSpace E] {f : α → E} {s : Set α}
+    (hf : LocallyBoundedVariationOn f s) {a b : α} (ha : a ∈ s) (hb : b ∈ s) :
+    naturalParameterization f s a (variationOnFromTo f s a b) = f b :=
+  edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hb)
+
 namespace BoundedVariationOn
 
 variable {X : Type*} [MetricSpace X] {γ : ℝ → X} {a b : ℝ}
@@ -115,8 +123,8 @@ theorem eqOn_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
     EqOn g (naturalParameterization γ (Icc a b) a) (Icc 0 (eVariationOn γ (Icc a b)).toReal) := by
   rw [← hγ.image_variationOnFromTo_Icc hcont hab]
   rintro _ ⟨t, ht, rfl⟩
-  exact (hg ht).trans (edist_eq_zero.mp <|
-    edist_naturalParameterization_eq_zero hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab) ht).symm
+  exact (hg ht).trans <| .symm <|
+    hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab) ht
 
 /-- The natural parameterization of a continuous rectifiable curve on its length interval traces
 the same set as the curve. -/
@@ -125,8 +133,8 @@ theorem image_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
     naturalParameterization γ (Icc a b) a '' Icc 0 (eVariationOn γ (Icc a b)).toReal =
       γ '' Icc a b := by
   rw [← hγ.image_variationOnFromTo_Icc hcont hab, image_image]
-  exact image_congr fun t ht ↦ edist_eq_zero.mp <|
-    edist_naturalParameterization_eq_zero hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab) ht
+  exact image_congr fun t ht ↦
+    hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab) ht
 
 /-- For a continuous rectifiable curve injective on the interior of its parameter interval,
 cumulative variation is an increasing homeomorphism onto the length interval. The endpoint
