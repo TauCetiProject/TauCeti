@@ -260,11 +260,9 @@ theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries 
     (zero_le (a := (g.subst φ : MvPowerSeries σ S).order))
   have hpow := MvPowerSeries.homogeneousComponent_pow_of_le_order (p := 1)
     (MvPowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr hφ) n
-  rw [add_zero] at hmul
-  rw [mul_one] at hpow
-  rw [subst_mul hφ', subst_pow hφ', subst_X hφ', hmul, hpow, mul_comm,
-    MvPowerSeries.homogeneousComponent_zero, constantCoeff_subst_of_constantCoeff_zero hφ,
-    coeff_X_pow_mul', ite_eq_left (le_refl n), Nat.sub_self, coeff_zero_eq_constantCoeff_apply]
+  simp only [add_zero, mul_one] at hmul hpow
+  rw [subst_mul hφ', subst_pow hφ', subst_X hφ', hmul, hpow]
+  simp [mul_comm, constantCoeff_subst_of_constantCoeff_zero hφ, coeff_mul_X_pow']
 
 end Algebra
 
