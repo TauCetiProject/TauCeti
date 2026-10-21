@@ -617,8 +617,8 @@ of a vector of weight `g` and a vector of weight `h` has weight `g * h`. -/
 theorem tmul_mem_weightSpace_tensor {g h : G} {v : V} {w : W}
     (hv : v ∈ weightSpace R G V g) (hw : w ∈ weightSpace R G W h) :
     v ⊗ₜ[R] w ∈ weightSpace R G (V ⊗[R] W) (g * h) := by
-  rw [mem_weightSpace, tensor_coact, tensorCoact_tmul, mem_weightSpace.mp hv,
-    mem_weightSpace.mp hw, tensorCombine_tmul_tmul, MonoidAlgebra.single_mul_single, one_mul]
+  rw [mem_weightSpace, tensor_coact, tensorCoact_tmul, mem_weightSpace.mp hv, mem_weightSpace.mp hw]
+  simp [MonoidAlgebra.single_mul_single]
 
 end Tensor
 
@@ -632,8 +632,8 @@ variable {R G V}
 theorem matrixCoefficient_of_mem_weightSpace {g : G} {v : V} (hv : v ∈ weightSpace R G V g)
     (φ : Module.Dual R V) :
     matrixCoefficient (C := MonoidAlgebra R G) φ v = MonoidAlgebra.single g (φ v) := by
-  rw [matrixCoefficient_def, mem_weightSpace.mp hv, TensorProduct.map_tmul, LinearMap.id_apply,
-    TensorProduct.lid_tmul, MonoidAlgebra.smul_single', mul_one]
+  rw [matrixCoefficient_def, mem_weightSpace.mp hv]
+  simp
 
 end MatrixCoefficient
 

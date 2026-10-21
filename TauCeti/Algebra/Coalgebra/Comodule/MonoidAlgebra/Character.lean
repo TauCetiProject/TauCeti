@@ -87,8 +87,7 @@ private theorem dualTensorHom_coact_of_mem_weightSpace (φ : Module.Dual R V) {h
     dualTensorHom R V (MonoidAlgebra R G)
         (coact (R := R) (C := MonoidAlgebra R G) (M := Module.Dual R V) φ) v =
       MonoidAlgebra.single h⁻¹ (φ v) := by
-  rw [dual_coact, dualTensorHom_dualCoact_apply, matrixCoefficient_of_mem_weightSpace hv,
-    MonoidAlgebra.antipode_single]
+  rw [dual_coact, dualTensorHom_dualCoact_apply, matrixCoefficient_of_mem_weightSpace hv]
   simp
 
 /-- **Weights negate in the dual.** A functional on a finite projective comodule over `R[G]` has
@@ -100,11 +99,8 @@ theorem mem_weightSpace_dual_iff {φ : Module.Dual R V} {g : G} :
   constructor
   · intro hφ h hne v hv
     have key := dualTensorHom_coact_of_mem_weightSpace φ hv
-    rw [mem_weightSpace.mp hφ, dualTensorHom_apply, MonoidAlgebra.smul_single', mul_one,
-      MonoidAlgebra.single_inj] at key
-    rcases key with ⟨hg, -⟩ | ⟨h0, -⟩
-    · exact absurd (inv_eq_iff_eq_inv.mp hg.symm) hne
-    · exact h0
+    rw [mem_weightSpace.mp hφ] at key
+    simpa [MonoidAlgebra.single_inj, ← inv_eq_iff_eq_inv, hne.symm] using key
   · intro hφ
     rw [mem_weightSpace]
     apply (dualTensorHomEquiv R V (MonoidAlgebra R G)).injective
@@ -115,11 +111,10 @@ theorem mem_weightSpace_dual_iff {φ : Module.Dual R V} {g : G} :
     induction hv using Submodule.iSup_induction' with
     | mem h v hv =>
       rw [← LinearEquiv.coe_toLinearMap, toLinearMap_dualTensorHomEquiv,
-        dualTensorHom_coact_of_mem_weightSpace φ hv, dualTensorHom_apply,
-        MonoidAlgebra.smul_single', mul_one]
+        dualTensorHom_coact_of_mem_weightSpace φ hv]
       by_cases hh : h = g⁻¹
-      · rw [hh, inv_inv]
-      · rw [hφ h hh v hv, MonoidAlgebra.single_zero, MonoidAlgebra.single_zero]
+      · simp [hh]
+      · simp [hφ h hh v hv]
     | zero => simp
     | add v₁ v₂ _ _ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
 
@@ -255,8 +250,8 @@ theorem formalCharacter_dual :
     formalCharacter k G (Module.Dual k V) =
       MonoidAlgebra.mapDomain (fun g : G ↦ g⁻¹) (formalCharacter k G V) := by
   refine MonoidAlgebra.coeff_injective (Finsupp.ext fun g ↦ ?_)
-  rw [formalCharacter_coeff, finrank_weightSpace_dual, MonoidAlgebra.coeff_mapDomain,
-    ← inv_inv g, Finsupp.mapDomain_apply_of_injective inv_injective, inv_inv, formalCharacter_coeff]
+  simpa [finrank_weightSpace_dual] using
+    (Finsupp.mapDomain_equiv_apply (f := Equiv.inv G) (formalCharacter k G V).coeff g).symm
 
 end Dual
 
