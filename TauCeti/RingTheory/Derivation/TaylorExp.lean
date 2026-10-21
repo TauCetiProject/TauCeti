@@ -48,8 +48,8 @@ polynomial ring, scaled by `r`, the Taylor exponential is the Taylor shift `p �
   `taylorExp D a`.
 * `Derivation.taylorExp_apply_mem`: the Taylor exponential preserves every ideal mapped into
   itself by the derivation.
-* `Derivation.map_taylorExp`: Taylor exponentials are natural for algebra homomorphisms
-  intertwining two derivations.
+* `Derivation.map_taylorExp`: Taylor exponentials are natural for additive maps intertwining
+  two derivations.
 * `Polynomial.taylorExp_smul_derivative'`: for the scaled derivative of a polynomial ring the
   Taylor exponential is `Polynomial.taylorAlgHom`.
 
@@ -216,11 +216,11 @@ theorem taylorExp_apply_mem {I : Ideal A} (hI : ∀ x ∈ I, D x ∈ I) {a : A} 
   rw [← algebraMap_smul A, smul_eq_mul]
   exact I.mul_mem_left _ hi
 
-/-- **Naturality of Taylor exponentials.** An algebra homomorphism intertwining two locally
-nilpotent derivations intertwines their Taylor exponentials. -/
-theorem map_taylorExp {B : Type*} [CommRing B] [Algebra R B] [Algebra ℚ B]
-    (D' : Derivation R B B) (hD' : ∀ b, ∃ n, D'^[n] b = 0) (f : A →ₐ[R] B)
-    (hf : ∀ a, f (D a) = D' (f a)) (a : A) :
+/-- **Naturality of Taylor exponentials.** An additive map intertwining two locally nilpotent
+derivations, possibly over different base rings, intertwines their Taylor exponentials. -/
+theorem map_taylorExp {R' B : Type*} [CommSemiring R'] [CommRing B] [Algebra R' B] [Algebra ℚ B]
+    (D' : Derivation R' B B) (hD' : ∀ b, ∃ n, D'^[n] b = 0) {F : Type*} [FunLike F A B]
+    [AddMonoidHomClass F A B] (f : F) (hf : ∀ a, f (D a) = D' (f a)) (a : A) :
     f (taylorExp D hD a) = taylorExp D' hD' (f a) := by
   have hiter : ∀ i, f (D^[i] a) = D'^[i] (f a) := fun i =>
     Function.Semiconj.iterate_right hf i a
