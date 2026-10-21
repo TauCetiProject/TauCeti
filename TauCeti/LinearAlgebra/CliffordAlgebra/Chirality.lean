@@ -81,7 +81,10 @@ open scoped RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
 
-variable [FiniteDimensional ℝ V] [Fact (finrank ℝ V = 4)]
+variable [Fact (finrank ℝ V = 4)]
+
+/-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
+local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
 variable (Q) (o : Orientation ℝ V (Fin 4))
 
@@ -132,7 +135,7 @@ theorem chirality_eq (b : OrthonormalBasis (Fin 4) ℝ V) (hb : b.toBasis.orient
 private abbrev frame : OrthonormalBasis (Fin 4) ℝ V :=
   o.finOrthonormalBasis (by norm_num) Fact.out
 
-omit [FiniteDimensional ℝ V] hQ in
+omit hQ in
 private theorem frame_orientation : (frame o).toBasis.orientation = o :=
   o.finOrthonormalBasis_orientation _ _
 
