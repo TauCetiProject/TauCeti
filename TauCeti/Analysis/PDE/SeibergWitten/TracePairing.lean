@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.TraceFree
+public import TauCeti.Analysis.InnerProductSpace.Trace.Free
 public import TauCeti.Analysis.PDE.SeibergWitten.QuadraticEnd
 
 /-!
@@ -65,10 +65,8 @@ theorem quadraticEnd_eq_traceFreePart (h₂ : Module.finrank ℂ E = 2) (ψ : E)
 theorem trace_quadraticEnd_mul (ψ : E) (T : E →L[ℂ] E) :
     LinearMap.trace ℂ E (quadraticEnd ψ * T) =
       ⟪ψ, T ψ⟫_ℂ - (‖ψ‖ : ℂ) ^ 2 / 2 * LinearMap.trace ℂ E T := by
-  rw [← ContinuousLinearMap.toLinearMap_mul, quadraticEnd_def, sub_mul,
-    ContinuousLinearMap.toLinearMap_sub, map_sub, ContinuousLinearMap.toLinearMap_mul,
-    trace_rankOne_mul]
-  simp [Module.End.mul_eq_comp]
+  rw [← trace_rankOne_mul]
+  simp [quadraticEnd_def, sub_mul, Module.End.mul_eq_comp]
 
 /-- Against a trace-free endomorphism `T`, `Q₀(ψ)` pairs as `tr (Q₀(ψ) T) = ⟪ψ, T ψ⟫`. -/
 theorem trace_quadraticEnd_mul_of_trace_eq_zero {T : E →L[ℂ] E}
@@ -89,11 +87,8 @@ theorem trace_quadraticEnd_mul_self (h₂ : Module.finrank ℂ E = 2) (ψ : E) :
 theorem trace_quadraticEndPolar_mul (ψ φ : E) (T : E →L[ℂ] E) :
     LinearMap.trace ℂ E (quadraticEndPolar ψ φ * T) =
       ⟪ψ, T φ⟫_ℂ + ⟪φ, T ψ⟫_ℂ - (Complex.re ⟪ψ, φ⟫_ℂ : ℂ) * LinearMap.trace ℂ E T := by
-  rw [← ContinuousLinearMap.toLinearMap_mul, quadraticEndPolar_apply, sub_mul, add_mul,
-    ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_add, map_sub, map_add,
-    ContinuousLinearMap.toLinearMap_mul, ContinuousLinearMap.toLinearMap_mul, trace_rankOne_mul,
-    trace_rankOne_mul]
-  simp [Module.End.mul_eq_comp]
+  rw [← trace_rankOne_mul, ← trace_rankOne_mul]
+  simp [quadraticEndPolar_apply, sub_mul, add_mul, Module.End.mul_eq_comp]
 
 variable [CompleteSpace E]
 
@@ -115,10 +110,9 @@ theorem quadraticEndPolar_mem_traceFreeSelfAdjoint (h₂ : Module.finrank ℂ E 
 theorem trace_quadraticEndPolar_mul_of_mem_traceFreeSelfAdjoint {T : E →L[ℂ] E}
     (hT : T ∈ traceFreeSelfAdjoint E) (ψ φ : E) :
     LinearMap.trace ℂ E (quadraticEndPolar ψ φ * T) = 2 * Complex.re ⟪T ψ, φ⟫_ℂ := by
-  rw [mem_traceFreeSelfAdjoint] at hT
-  rw [trace_quadraticEndPolar_mul, hT.2, mul_zero, sub_zero,
-    ← ContinuousLinearMap.adjoint_inner_left, ← ContinuousLinearMap.star_eq_adjoint, hT.1.star_eq,
-    ← inner_conj_symm (T ψ) φ, Complex.conj_re, add_comm, Complex.add_conj]
-  norm_cast
+  obtain ⟨hsa, htr⟩ := mem_traceFreeSelfAdjoint.1 hT
+  have h : ⟪ψ, T φ⟫_ℂ = ⟪T ψ, φ⟫_ℂ := (hsa.isSymmetric ψ φ).symm
+  rw [trace_quadraticEndPolar_mul, htr, h, ← inner_conj_symm φ (T ψ), Complex.add_conj]
+  simp
 
 end TauCeti.SeibergWitten

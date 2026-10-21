@@ -46,8 +46,6 @@ pairing `tr (T* U) = tr (T U)` is real.
   `TauCeti.traceFreePart_id`: `traceFreePart` projects onto the trace-free endomorphisms along the
   scalars.
 * `TauCeti.trace_traceFreePart_mul`: the projection is orthogonal for the trace pairing.
-* `TauCeti.finrank_selfAdjoint_submodule`: the self-adjoint elements of a complex star module have
-  the `ℝ`-dimension that the module has over `ℂ`.
 * `TauCeti.finrank_traceFreeSelfAdjoint`: the trace-free self-adjoint endomorphisms of a complex
   inner product space of dimension `n` have real dimension `n² - 1`.
 -/
@@ -93,8 +91,8 @@ theorem _root_.IsSelfAdjoint.conj_trace [CompleteSpace E] {T : E →L[𝕜] E} (
 theorem _root_.IsSelfAdjoint.conj_trace_mul [CompleteSpace E] {T U : E →L[𝕜] E}
     (hT : IsSelfAdjoint T) (hU : IsSelfAdjoint U) :
     conj (LinearMap.trace 𝕜 E (T * U)) = LinearMap.trace 𝕜 E (T * U) := by
-  rw [← toLinearMap_mul, ← trace_adjoint, ← star_eq_adjoint, star_mul, hT.star_eq, hU.star_eq,
-    toLinearMap_mul, LinearMap.trace_mul_comm, toLinearMap_mul]
+  rw [← toLinearMap_mul, ← trace_adjoint, ← star_eq_adjoint, star_mul, hT.star_eq, hU.star_eq]
+  simpa using LinearMap.trace_mul_comm 𝕜 (U : E →ₗ[𝕜] E) T
 
 end ContinuousLinearMap
 
@@ -117,17 +115,6 @@ theorem trace_rankOne_mul (x y : E) (T : E →L[𝕜] E) :
 end InnerProductSpace
 
 namespace TauCeti
-
-/-- The self-adjoint elements of a complex star module have the `ℝ`-dimension that the module has
-over `ℂ`: they are the real points of the conjugation `star`. -/
-theorem finrank_selfAdjoint_submodule {A : Type*} [AddCommGroup A] [Module ℂ A] [StarAddMonoid A]
-    [StarModule ℂ A] : finrank ℝ (selfAdjoint.submodule ℝ A) = finrank ℂ A := by
-  let K : A →ₛₗ[starRingEnd ℂ] A := (starLinearEquiv ℂ (A := A)).toLinearMap
-  have h : selfAdjoint.submodule ℝ A = realPoints K := by
-    ext x
-    rw [mem_realPoints, LinearEquiv.coe_coe, starLinearEquiv_apply]
-    exact selfAdjoint.mem_iff (R := A)
-  rw [h, finrank_realPoints (K := K) star_star]
 
 section TraceFreePart
 
