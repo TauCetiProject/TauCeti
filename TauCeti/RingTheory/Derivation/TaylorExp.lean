@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.Adjoin.Basic
+public import TauCeti.RingTheory.Derivation.Basic
 import Mathlib.Algebra.Module.Rat
 import Mathlib.RingTheory.Adjoin.Polynomial.Basic
 import Mathlib.Tactic.FieldSimp
@@ -26,20 +27,21 @@ is then a finite sum for each `a`, and it is an algebra endomorphism of `A`. No 
 nilpotence bound is needed, so the construction applies to the invariant vector fields of
 unipotent groups on their infinite-dimensional coordinate rings.
 
-Multiplicativity comes from the general Leibniz rule `Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`.
-After division by factorials it says that `a ↦ ∑ (Dⁿ a / n!) Xⁿ` is a ring homomorphism into the
-polynomial ring `A[X]`; the Taylor exponential is its evaluation at `X = 1`.
+Multiplicativity comes from the general Leibniz rule `Derivation.iterate_apply_mul`,
+`Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`. After division by factorials it says that the Taylor
+expansion `a ↦ ∑ (Dⁿ a / n!) Xⁿ` is an algebra homomorphism into the polynomial ring `A[X]`; the
+Taylor exponential is its evaluation at `X = 1`.
 
-A locally nilpotent derivation preserves an ideal it maps into itself, so the same holds for its
-Taylor exponential. Local nilpotence may be checked on algebra generators. For the derivative
-`d / dX` of a polynomial ring, scaled by `r`, the Taylor exponential is the Taylor shift
-`p ↦ p (X + r)`.
+If a locally nilpotent derivation maps an ideal into itself, so does its Taylor exponential.
+Local nilpotence may be checked on algebra generators. For the derivative `d / dX` of a
+polynomial ring, scaled by `r`, the Taylor exponential is the Taylor shift `p ↦ p (X + r)`.
 
 ## Main declarations
 
-* `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
 * `Derivation.exists_iterate_apply_eq_zero_of_adjoin_eq_top`: a derivation which is locally
   nilpotent on a set of algebra generators is locally nilpotent.
+* `Derivation.taylorExpPolynomial`: the Taylor expansion `a ↦ ∑ (Dⁿ a / n!) Xⁿ` of a locally
+  nilpotent derivation, as an algebra homomorphism into `A[X]`.
 * `Derivation.taylorExp`: the Taylor exponential of a locally nilpotent derivation, as an algebra
   homomorphism.
 * `Derivation.taylorExp_apply_eq_sum`: any iterate killing `a` gives a finite expansion of
@@ -66,35 +68,6 @@ open scoped Nat
 namespace Derivation
 
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
-
-/-- **General Leibniz rule** for iterates of a derivation of a commutative algebra. -/
-theorem iterate_apply_mul (D : Derivation R A A) (n : ℕ) (a b : A) :
-    D^[n] (a * b) = ∑ ij ∈ antidiagonal n, n.choose ij.1 • (D^[ij.1] a * D^[ij.2] b) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [sum_antidiagonal_choose_succ_nsmul (M := A) (fun i j => D^[i] a * D^[j] b) n]
-    simp only [Function.iterate_succ_apply', ih, map_sum, map_nsmul, leibniz, smul_eq_mul,
-      nsmul_add, sum_add_distrib]
-    congr 1
-    refine sum_congr rfl fun ij hij => ?_
-    rw [n.choose_symm_of_eq_add (mem_antidiagonal.1 hij).symm, mul_comm]
-
-/-- An iterate of a derivation which kills an element kills it from then on. -/
-theorem iterate_apply_eq_zero_of_le (D : Derivation R A A) {a : A} {m n : ℕ}
-    (hm : D^[m] a = 0) (hmn : m ≤ n) : D^[n] a = 0 := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hmn
-  rw [add_comm, Function.iterate_add_apply, hm, iterate_map_zero]
-
-/-- A product of elements killed by the iterates `D^[m]` and `D^[n]` is killed by `D^[m + n]`. -/
-theorem iterate_apply_mul_eq_zero (D : Derivation R A A) {a b : A} {m n : ℕ}
-    (ha : D^[m] a = 0) (hb : D^[n] b = 0) : D^[m + n] (a * b) = 0 := by
-  rw [iterate_apply_mul]
-  refine sum_eq_zero fun ij hij => ?_
-  rw [mem_antidiagonal] at hij
-  rcases le_or_gt m ij.1 with h | h
-  · rw [D.iterate_apply_eq_zero_of_le ha h, zero_mul, smul_zero]
-  · rw [D.iterate_apply_eq_zero_of_le hb (by omega), mul_zero, smul_zero]
 
 /-- **Local nilpotence can be checked on generators.** If every element of a set generating `A`
 as an `R`-algebra is killed by some iterate of a derivation, then so is every element of `A`. -/
@@ -159,8 +132,9 @@ private theorem coeff_taylorPolynomial (a : A) (n : ℕ) :
   · rw [mem_range] at h
     rw [D.iterate_apply_eq_zero_of_le (Nat.find_spec (hD a)) (not_lt.mp h), smul_zero]
 
-/-- The Taylor expansion `a ↦ ∑ (Dⁿ a / n!) Xⁿ`, an algebra homomorphism into `A[X]`. -/
-private noncomputable def taylorPolynomialAlgHom : A →ₐ[R] A[X] where
+/-- The **Taylor expansion** `a ↦ ∑ (Dⁿ a / n!) Xⁿ` of a locally nilpotent derivation `D`, an
+algebra homomorphism into `A[X]`. Its evaluation at `X = 1` is the Taylor exponential. -/
+noncomputable def taylorExpPolynomial : A →ₐ[R] A[X] where
   toFun := taylorPolynomial D hD
   map_one' := by
     ext n
@@ -186,11 +160,22 @@ private noncomputable def taylorPolynomialAlgHom : A →ₐ[R] A[X] where
     · rw [Function.iterate_succ_apply, map_algebraMap, iterate_map_zero, smul_zero]
       simp
 
+/-- The coefficients of the Taylor expansion are the Taylor terms `Dⁿ a / n!`. -/
+@[simp]
+theorem coeff_taylorExpPolynomial (a : A) (n : ℕ) :
+    (taylorExpPolynomial D hD a).coeff n = (n ! : ℚ)⁻¹ • D^[n] a :=
+  coeff_taylorPolynomial D hD a n
+
 /-- The **Taylor exponential** `a ↦ ∑ Dⁿ a / n!` of a locally nilpotent derivation `D` of a
 commutative `ℚ`-algebra. The sum is finite because some iterate of `D` kills `a`, and the map is
 an algebra endomorphism by the general Leibniz rule. -/
 noncomputable def taylorExp : A →ₐ[R] A :=
-  ((aeval (1 : A)).restrictScalars R).comp (taylorPolynomialAlgHom D hD)
+  ((aeval (1 : A)).restrictScalars R).comp (taylorExpPolynomial D hD)
+
+/-- The Taylor exponential is the evaluation of the Taylor expansion at `X = 1`. -/
+theorem aeval_one_taylorExpPolynomial (a : A) :
+    aeval (1 : A) (taylorExpPolynomial D hD a) = taylorExp D hD a :=
+  (rfl)
 
 /-- **Finite expansion of the Taylor exponential.** If `D^[n]` kills `a`, then the Taylor
 exponential of `a` is the sum of its first `n` Taylor terms. -/
@@ -252,7 +237,8 @@ namespace Polynomial
 
 variable {R : Type*} [CommRing R]
 
-/-- Every iterate of the scaled derivative `r • d / dX` is eventually zero on each polynomial. -/
+/-- The scaled derivative `r • d / dX` is locally nilpotent: some iterate of it kills each
+polynomial. -/
 theorem exists_iterate_smul_derivative'_apply_eq_zero (r : R) (p : R[X]) :
     ∃ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = 0 := by
   refine Derivation.exists_iterate_apply_eq_zero_of_adjoin_eq_top _ adjoin_X ?_ p

@@ -99,12 +99,16 @@ theorem expPoint_zero (hd : ∀ h, ∃ n, (leftInvariantDerivation (0 : Derivati
 
 /-- **The Taylor exponential of an invariant vector field is right translation by the
 exponential point**: `exp D h = ∑ h₍₁₎ (exp d)(h₍₂₎)`. -/
-theorem taylorExp_leftInvariantDerivation_apply [Algebra ℚ R]
+theorem taylorExp_leftInvariantDerivation_apply
     (d : Derivation R H (CounitAlgebra R H R))
     (hd : ∀ h, ∃ n, (leftInvariantDerivation d)^[n] h = 0) (h : H) :
     (leftInvariantDerivation d).taylorExp hd h =
       tensorComponent (expPoint d hd).toLinearMap (Coalgebra.comul (R := R) h) := by
   classical
+  -- The counit makes `R` a `ℚ`-algebra, which lets the rational Taylor coefficients pass through
+  -- the counit.
+  let : Algebra ℚ R :=
+    ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
   set D := leftInvariantDerivation d
   let 𝓡 := Coalgebra.Repr.arbitrary R h
   -- A single truncation `N` computes the Taylor exponential of `h` and of every right

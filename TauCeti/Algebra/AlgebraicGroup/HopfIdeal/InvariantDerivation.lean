@@ -22,8 +22,8 @@ bialgebra morphism. Conversely, the counit vanishes on `I`, so preservation by t
 invariant extension forces its value at the identity to vanish on `I`.
 
 This is the differential-ideal input to restricting polynomial exponential maps to
-closed unipotent subgroups. It works over arbitrary commutative base rings, without
-smoothness, reducedness, finite type, or a characteristic assumption.
+closed unipotent subgroups. The ideal-preservation results work over arbitrary commutative
+base rings, without smoothness, reducedness, finite type, or a characteristic assumption.
 
 Over a `ℚ`-algebra, if the invariant vector field `D` of a subgroup tangent vector is locally
 nilpotent, its Taylor exponential `∑ Dⁿ / n!` therefore also preserves `I`. Since the counit
