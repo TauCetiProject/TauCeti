@@ -5,35 +5,47 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterKernel
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.LinearlyReductive
-public import TauCeti.Algebra.AlgebraicGroup.Solvable.CharacterKernel
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Reductive
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Commutative
-import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Naturality
-import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
+import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
+import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Radical
 import TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Connected
+import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 
 /-!
-# Solvable reductive groups in characteristic zero are tori
+# Solvable reductive groups are tori
 
-The common kernel of characters of the geometric fibre of a solvable reductive group is
-trivial in characteristic zero. Indeed, Lie--Kolchin makes this normal subgroup unipotent,
-Cartier's theorem makes it smooth, and characteristic-zero unipotent groups are connected.
-Reductivity therefore eliminates it. Every unipotent point lies in this kernel, so every point
-of the geometric fibre is semisimple.
+A reductive group with solvable geometric points is a torus, over every field and in every
+characteristic. The torus need not split over the ground field.
 
-The commutativity theorem for solvable reductive groups and the diagonalization criterion
-`TauCeti.torusCommHopfAlgProperty_of_isSemisimplePoint` then identify the group as a torus,
-so it is linearly reductive. This applies to non-split groups over arbitrary characteristic-zero
-fields. The character kernel and its unipotence theorem are those of
-`CommHopfAlgCat.characterKernelIdeal` and
-`TauCeti.CommHopfAlgCat.geometricallyUnipotentPointsCommHopfAlgProperty_characterKernelIdeal`.
+Pass to the geometric fibre `G` over an algebraic closure. It is smooth and connected, and it is
+commutative by `TauCeti.reductiveCommHopfAlgProperty.isCocomm_of_geometricallySolvable`. For a
+reduced connected commutative group, the unipotent radical is the closed unipotent Jordan factor,
+whose rational points are exactly the unipotent points
+(`TauCeti.HopfAlgebra.Point.mem_quotientPointsSubgroup_unipotentRadical_iff`). Reductivity makes
+this radical trivial, so the unipotent part of every rational point of `G` is the identity: every
+point is semisimple. The diagonalization criterion
+`TauCeti.torusCommHopfAlgProperty_of_isSemisimplePoint` then identifies `G` as a split torus.
+
+Consequently such a group is linearly reductive, and the common kernel of characters of its
+geometric fibre is trivial.
+
+## Main declarations
+
+* `TauCeti.reductiveCommHopfAlgProperty.torus_of_geometricallySolvable`: a solvable reductive
+  group is a torus.
+* `TauCeti.reductiveCommHopfAlgProperty.linearlyReductive_of_geometricallySolvable`: a solvable
+  reductive group is linearly reductive.
+* `TauCeti.reductiveCommHopfAlgProperty.characterKernelIdeal_baseChange_eq_augmentation`: the
+  characters of the geometric fibre of a solvable reductive group separate its points
+  scheme-theoretically.
 
 ## References
 
-* A. Borel, *Linear Algebraic Groups*, §§10--11.
-* J. S. Milne, *Algebraic Groups* (2017), Chapters 14 and 19.
+* A. Borel, *Linear Algebraic Groups*, 2nd ed. (1991), §§4.7, 10.6 and 11.5.
+* J. S. Milne, *Algebraic Groups* (2017), Theorem 16.13 and Chapter 19.
 -/
 
 public section
@@ -44,41 +56,12 @@ namespace TauCeti.reductiveCommHopfAlgProperty
 
 universe u
 
-variable {k : Type u} [Field k] [CharZero k]
+variable {k : Type u} [Field k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
-/-- In characteristic zero, the common kernel of characters of the geometric fibre of a
-solvable reductive group is the identity subgroup, scheme-theoretically. -/
-theorem characterKernelIdeal_baseChange_eq_augmentation
-    (hH : reductiveCommHopfAlgProperty k H)
-    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k H.obj) :
-    let G := FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H
-    _root_.CommHopfAlgCat.characterKernelIdeal G.obj =
-      HopfIdeal.augmentation (AlgebraicClosure k) G := by
-  let K := AlgebraicClosure k
-  let G := FiniteTypeCommHopfAlgCat.baseChange (K := K) H
-  let I := _root_.CommHopfAlgCat.characterKernelIdeal G.obj
-  let Q := FiniteTypeCommHopfAlgCat.quotient G I
-  let _ : IsReduced G := HopfAlgebra.isReduced_of_charZero K G
-  let _ : ConnectedSpace (PrimeSpectrum G) :=
-    hH.geometricallyConnected.connectedSpace_algebraicClosureBaseChange
-  let _ : Group.IsSolvable (WithConv (H →ₐ[k] K)) :=
-    (geometricallySolvablePointsCommHopfAlgProperty_iff k H.obj).mp hsolv
-  let e := (AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := H) (R := K)).symm
-  let _ : Group.IsSolvable (WithConv (G →ₐ[K] K)) :=
-    Group.isSolvable_of_isSolvable_injective (f := e.toMonoidHom) e.injective
-  have hU : smoothUnipotentCommHopfAlgProperty K Q := by
-    rw [smoothUnipotentCommHopfAlgProperty_iff]
-    exact ⟨(smoothCommHopfAlgProperty_iff Q.obj).mp
-      (smoothCommHopfAlgProperty_of_charZero K Q.obj),
-      (geometricallyUnipotentPointsCommHopfAlgProperty_iff K Q.obj).mp
-        (CommHopfAlgCat.geometricallyUnipotentPointsCommHopfAlgProperty_characterKernelIdeal
-          (k := K) (H := G))⟩
-  exact hH.eq_augmentation I (_root_.CommHopfAlgCat.isNormal_characterKernelIdeal G.obj)
-    hU.geometricallyConnected hU
-
-/-- Every point of the geometric fibre of a solvable reductive group in characteristic zero is
-semisimple. Semisimplicity is tested on all finite-dimensional representations of that fibre. -/
+/-- Every point of the geometric fibre of a solvable reductive group is semisimple, in every
+characteristic. Semisimplicity is tested on all finite-dimensional representations of that
+fibre. -/
 private theorem isSemisimplePoint_geometricFiber_of_geometricallySolvable
     (hH : reductiveCommHopfAlgProperty k H)
     (hsolv : geometricallySolvablePointsCommHopfAlgProperty k H.obj)
@@ -88,28 +71,33 @@ private theorem isSemisimplePoint_geometricFiber_of_geometricallySolvable
     HopfAlgebra.IsSemisimplePoint g := by
   let K := AlgebraicClosure k
   let G := FiniteTypeCommHopfAlgCat.baseChange (K := K) H
+  have hG := hH.algebraicClosureBaseChange
+  let _ : Algebra.Smooth K G := hG.smooth
+  let _ : IsReduced G := isReduced_of_smooth K G
+  let _ : _root_.Coalgebra.IsCocomm k H := hH.isCocomm_of_geometricallySolvable hsolv
+  let _ : _root_.Coalgebra.IsCocomm K G := inferInstance
   rw [HopfAlgebra.isSemisimplePoint_iff_unipotentPart_eq_one]
   let v := HopfAlgebra.Point.unipotentPart K G K g
   have hv : HopfAlgebra.IsUnipotentPoint v := by
     rw [HopfAlgebra.isUnipotentPoint_def]
     exact fun M ↦ HopfAlgebra.Point.isUnipotent_pointsAction_unipotentPart K G K g M
-  have hker := (_root_.CommHopfAlgCat.characterKernelIdeal_toIdeal_le_ker_iff
-    G.obj v.ofConv).mpr hv.apply_groupLike_eq_one
-  rw [hH.characterKernelIdeal_baseChange_eq_augmentation hsolv] at hker
-  apply ofConv_injective
-  apply AlgHom.ext
-  intro x
-  exact AlgHom.apply_eq_counit_of_augmentation_le_ker v.ofConv hker x
+  -- The unipotent radical of the commutative fibre consists of its unipotent points, and
+  -- reductivity makes it the identity subgroup.
+  rw [← HopfAlgebra.Point.mem_quotientPointsSubgroup_unipotentRadical_iff K G
+    hG.geometricallyConnected, hG.unipotentRadicalDefiningIdeal_eq_augmentation] at hv
+  exact CommHopfAlgCat.eq_one_of_mem_quotientPointsSubgroup_augmentation _ _ hv
 
-/-- A reductive group with solvable geometric points over a characteristic-zero field is a
-torus. The torus need not split over the ground field. -/
+/-- **A reductive group with solvable geometric points is a torus**, over every field and in
+every characteristic. The torus need not split over the ground field. -/
 theorem torus_of_geometricallySolvable
     (hH : reductiveCommHopfAlgProperty k H)
     (hsolv : geometricallySolvablePointsCommHopfAlgProperty k H.obj) :
     torusCommHopfAlgProperty k H := by
   let K := AlgebraicClosure k
   let G := FiniteTypeCommHopfAlgCat.baseChange (K := K) H
-  let _ : IsReduced G := HopfAlgebra.isReduced_of_charZero K G
+  have hG := hH.algebraicClosureBaseChange
+  let _ : Algebra.Smooth K G := hG.smooth
+  let _ : IsReduced G := isReduced_of_smooth K G
   let _ : ConnectedSpace (PrimeSpectrum G) :=
     hH.geometricallyConnected.connectedSpace_algebraicClosureBaseChange
   let _ : _root_.Coalgebra.IsCocomm k H := hH.isCocomm_of_geometricallySolvable hsolv
@@ -120,12 +108,32 @@ theorem torus_of_geometricallySolvable
   exact (torusCommHopfAlgProperty_iff k H).mpr
     ((splitTorusCommHopfAlgProperty_iff K G).mp (hT.split K G))
 
-/-- A reductive group with solvable geometric points is linearly reductive in characteristic
-zero, including when its torus does not split over the ground field. -/
+/-- A reductive group with solvable geometric points is linearly reductive, in every
+characteristic and including when its torus does not split over the ground field. -/
 theorem linearlyReductive_of_geometricallySolvable
     (hH : reductiveCommHopfAlgProperty k H)
     (hsolv : geometricallySolvablePointsCommHopfAlgProperty k H.obj) :
     linearlyReductiveCommHopfAlgProperty k H.obj :=
   (hH.torus_of_geometricallySolvable hsolv).linearlyReductive
+
+/-- The common kernel of characters of the geometric fibre of a solvable reductive group is the
+identity subgroup, scheme-theoretically and in every characteristic. -/
+theorem characterKernelIdeal_baseChange_eq_augmentation
+    (hH : reductiveCommHopfAlgProperty k H)
+    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k H.obj) :
+    let G := FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H
+    _root_.CommHopfAlgCat.characterKernelIdeal G.obj =
+      HopfIdeal.augmentation (AlgebraicClosure k) G := by
+  intro G
+  let K := AlgebraicClosure k
+  have hsplit : splitTorusCommHopfAlgProperty K G :=
+    (splitTorusCommHopfAlgProperty_iff K G).mpr
+      ((torusCommHopfAlgProperty_iff k H).mp (hH.torus_of_geometricallySolvable hsolv))
+  -- The split fibre is spanned by its characters, so evaluation of characters is surjective.
+  have hspan := (DiagonalizableGroup.groupLikeSpannedProperty_iff K G).mp
+    (hsplit.groupLikeSpanned K G)
+  rw [_root_.CommHopfAlgCat.characterKernelIdeal_def]
+  exact CommHopfAlgCat.kernelHopfIdeal_eq_augmentation_of_surjective _
+    ((GroupLike.liftGroupLikeBialgHom_surjective_iff_groupLikeSetSpan_eq_top K G).mpr hspan)
 
 end TauCeti.reductiveCommHopfAlgProperty
