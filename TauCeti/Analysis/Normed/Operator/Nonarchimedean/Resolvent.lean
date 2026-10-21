@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Cyclicity
 public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 import TauCeti.Topology.Algebra.InfiniteSum.LinearRecurrence
+import TauCeti.Algebra.Algebra.PowMulRecurrence
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.RingTheory.PowerSeries.Geometric
 
@@ -208,22 +209,6 @@ private theorem coeff_succ_hasseDeriv_succ_resolventSeries (u : C₀(I, R) →L[
   simp only [_root_.smul_apply, _root_.add_apply, mul_apply_eq_comp, map_smul, one_apply_eq_self]
   push_cast
   module
-
-/-- The recursion behind the Riesz projector, in any `R`-algebra. Let `C` commute with `u`, and
-let `Wₖ` satisfy `C W₀ = c₀ • 1` and `C Wₖ₊₁ = cₖ₊₁ • 1 + u Wₖ`. If `cⱼ = 0` for `j < h`, then
-`C ^ (h + 1) W_h = c_h • C ^ h`. -/
-private theorem pow_succ_mul_eq_smul_pow_of_mul_eq {A : Type*} [Ring A] [Algebra R A] {C u : A}
-    {W : ℕ → A} {c : ℕ → R} (hu : Commute u C) (h0 : C * W 0 = c 0 • 1)
-    (hsucc : ∀ k, C * W (k + 1) = c (k + 1) • 1 + u * W k) {h : ℕ} (hc : ∀ j < h, c j = 0) :
-    C ^ (h + 1) * W h = c h • C ^ h := by
-  induction h with
-  | zero => simpa using h0
-  | succ h ih =>
-    -- `C ^ (h + 1) W_h = 0` by induction, and `u` commutes past `C ^ (h + 1)`
-    have hz : C ^ (h + 1) * W h = 0 := by
-      rw [ih fun j hj ↦ hc j (by omega), hc h (by omega), zero_smul]
-    rw [pow_succ, mul_assoc, hsucc, mul_add, ← mul_assoc, ← (hu.pow_right (h + 1)).eq, mul_assoc,
-      hz, mul_zero, add_zero, Algebra.mul_smul_comm, mul_one]
 
 /-- The terms `dₘ = aᵐ • Vₘ` of the value at a scalar `a` of the Fredholm resolvent obey the
 first-order recurrence `dₘ₊₁ = (a • u) * dₘ + (cₘ₊₁ aᵐ⁺¹) • 1`. -/
@@ -609,7 +594,7 @@ theorem IsRowCompact.one_sub_smul_pow_succ_mul_resolventHasseDerivAt
     (hH : ∀ j < h, (PowerSeries.hasseDeriv j u.matrixCoeff.charPowerSeries).evalAt a = 0) :
     (1 - a • u) ^ (h + 1) * u.resolventHasseDerivAt h a =
       (PowerSeries.hasseDeriv h u.matrixCoeff.charPowerSeries).evalAt a • (1 - a • u) ^ h :=
-  pow_succ_mul_eq_smul_pow_of_mul_eq (A := C₀(I, R) →L[R] C₀(I, R))
+  Commute.pow_succ_mul_eq_smul_pow_of_mul_eq (A := C₀(I, R) →L[R] C₀(I, R))
     (W := fun j ↦ u.resolventHasseDerivAt j a)
     (c := fun j ↦ (PowerSeries.hasseDeriv j u.matrixCoeff.charPowerSeries).evalAt a)
     (Commute.sub_right (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_right u)
