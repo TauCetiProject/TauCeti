@@ -255,9 +255,11 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
         Subtype.ext_iff.1 ((hf hr').fixedPoint_unique' (x := ⟨_, hv⟩) (y := ⟨_, (hw _ hr').1⟩)
           (Subtype.ext hfv) (Subtype.ext (hw _ hr').2))
       refine ⟨_, hr, ?_⟩
-      dsimp only
-      rw [← hvw, hvz, ← hzg, ← WithLp.ofLp_fst, ← WithLp.ofLp_snd, Prod.mk.eta,
-        WithLp.toLp_ofLp]
+      apply WithLp.ofLp_injective
+      ext
+      · simp only [← hvw, hvz]
+        simpa using hzg.symm
+      · simpa [← hvw] using hvz
     · -- Conversely, the point with gluing parameter `r` exits the box at `(r • g (r • w r), w r)`,
       -- which lies on the graph of `k` because `w r` is a fixed point.
       rintro ⟨r, hr, rfl⟩
