@@ -150,7 +150,7 @@ theorem exists_isSupportingLine_isLeast_supportingFace {h : ℕ → WithTop ℝ}
 /-- A height sequence with only finitely many finite heights has no supporting value `⊥`. -/
 theorem supportingValue_ne_bot_of_finite {h : ℕ → WithTop ℝ} (hfin : {n | h n ≠ ⊤}.Finite)
     (σ : ℝ) : supportingValue h σ ≠ ⊥ := by
-  rcases hfin.eq_empty_or_nonempty with hemp | hne
+  rcases Set.eq_empty_or_nonempty {n | h n ≠ ⊤} with hemp | hne
   · have htop : h = ⊤ := funext fun n => not_ne_iff.mp fun hn => by simpa using hemp.subset hn
     simp [htop]
   obtain ⟨c, -, hc, -⟩ := exists_isSupportingLine_isLeast_supportingFace hfin hne σ
