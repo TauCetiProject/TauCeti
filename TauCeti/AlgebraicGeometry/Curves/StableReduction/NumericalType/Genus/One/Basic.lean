@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Top
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.IntersectionForm
 import TauCeti.Data.Int.MulAddMulEqFour
 import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
-import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
@@ -327,10 +326,8 @@ theorem topologicalGenus_le_one : T.topologicalGenus ≤ 1 := by
   have hdeg (i : T.Component) : T.intersectionGraph.degree i = 2 := by
     rw [← SimpleGraph.card_neighborSet_eq_degree, Set.fintypeCard_eq_ncard,
       ncard_neighborSet_eq_two_of_topologicalGenus_pos hself (by omega) i]
-  have hsum := T.intersectionGraph.sum_degrees_eq_twice_card_edges
+  have hsum := T.sum_degrees_eq_twice_ncard_edges
   simp only [hdeg, sum_const, card_univ, smul_eq_mul] at hsum
-  have hedge : #T.intersectionGraph.edgeFinset = T.intersectionGraph.edgeSet.ncard := by
-    rw [SimpleGraph.edgeFinset_card, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
   have hcard : T.intersectionGraph.edgeSet.ncard = Nat.card T.Component := by
     rw [Nat.card_eq_fintype_card]
     omega
@@ -685,6 +682,38 @@ theorem isMinimal_and_arithmeticGenus_eq_one_iff_of_card_eq_three
           rw [card_insert_of_notMem (by simp [hxj, hxz]), card_pair hjz, hcard])).symm
       exact fun l ↦ ⟨hg l, intersection_self_eq_of_card_eq_three hxj hxz hjz hu hxz₀ hpat l⟩
 
+/-- Integral weight and multiplicity ratios with arbitrary natural bounds give uniform
+natural-number divisibility bounds. -/
+lemma exists_weight_and_multiplicity_dvd_and_le_of_int (T : NumericalType)
+    (jw jm : T.Component) {nw nm : ℕ}
+    (hw : ∀ i, ∃ k ≤ nw, (T.weight i : ℤ) = (k : ℤ) * T.weight jw)
+    (hm : ∀ i, ∃ k ≤ nm, (T.multiplicity i : ℤ) = (k : ℤ) * T.multiplicity jm) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ nw * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ nm * T.multiplicity j) := by
+  have bound (f : T.Component → ℕ+) (j : T.Component) (n : ℕ)
+      (h : ∀ i, ∃ k ≤ n, (f i : ℤ) = (k : ℤ) * f j) :
+      ∃ j, ∀ i, (f j : ℕ) ∣ f i ∧ (f i : ℕ) ≤ n * f j := by
+    refine ⟨j, fun i ↦ ?_⟩
+    obtain ⟨k, hk, hi⟩ := h i
+    have hiNat : (f i : ℕ) = k * f j := by exact_mod_cast hi
+    rw [hiNat]
+    exact ⟨Nat.dvd_mul_left _ _, Nat.mul_le_mul_right _ hk⟩
+  exact ⟨bound T.weight jw nw hw, bound T.multiplicity jm nm hm⟩
+
+/-- Bounded integral ratios on a finite set exhausting the components give uniform weight and
+multiplicity divisibility bounds. This lets finite shape proofs check each listed component. -/
+lemma exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset (T : NumericalType)
+    (s : Finset T.Component) (hs : s = univ) (jw jm : T.Component) {nw nm : ℕ}
+    (hw : ∀ i ∈ s, ∃ k ≤ nw, (T.weight i : ℤ) = (k : ℤ) * T.weight jw)
+    (hm : ∀ i ∈ s, ∃ k ≤ nm, (T.multiplicity i : ℤ) = (k : ℤ) * T.multiplicity jm) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ nw * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ nm * T.multiplicity j) := by
+  apply T.exists_weight_and_multiplicity_dvd_and_le_of_int jw jm
+  · exact fun i ↦ hw i (hs ▸ mem_univ i)
+  · exact fun i ↦ hm i (hs ▸ mem_univ i)
+
 /-- For a genus-one pair of distinct components exhausting a two-component type, some component's
 weight divides every weight with quotient at most four, and some component's multiplicity
 divides every multiplicity with quotient at most six. -/
@@ -695,18 +724,19 @@ lemma IsGenusOnePairShape.exists_weight_and_multiplicity_dvd_and_le
       (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
         (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
   classical
-  have mem (i : T.Component) : i = x ∨ i = y := by
-    have hu : ({x, y} : Finset T.Component) = univ :=
-      eq_univ_of_card _ (by rw [card_pair hxy, hcard])
-    simpa using (hu ▸ mem_univ i : i ∈ ({x, y} : Finset T.Component))
+  have hu : ({x, y} : Finset T.Component) = univ :=
+    eq_univ_of_card _ (by rw [card_pair hxy, hcard])
   rcases isGenusOnePairShape_iff.mp h2 with ⟨hw, hm, -⟩ | ⟨hw, hm, -⟩
-  all_goals first
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x y ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl <;> omega)
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, y} hu (nw := 4) (nm := 6) x x ?_ ?_
+  case' inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, y} hu (nw := 4) (nm := 6) x y ?_ ?_
+  all_goals
+    simp only [forall_mem_insert, mem_singleton, forall_eq, ← Nat.lt_succ_iff,
+      Nat.exists_lt_succ_right]
+    omega
 
 /-- For a genus-one chain of three distinct components exhausting a three-component type, some
 component's weight divides every weight with quotient at most four, and some component's
@@ -718,27 +748,31 @@ lemma IsGenusOneChainShape.exists_weight_and_multiplicity_dvd_and_le
       (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
         (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
   classical
-  have mem (i : T.Component) : i = x ∨ i = j ∨ i = z := by
-    have hu : ({x, j, z} : Finset T.Component) = univ :=
-      eq_univ_of_card _ (by
-        rw [card_insert_of_notMem (by simp [hxj, hxz]), card_pair hjz, hcard])
-    simpa using (hu ▸ mem_univ i : i ∈ ({x, j, z} : Finset T.Component))
+  have hu : ({x, j, z} : Finset T.Component) = univ :=
+    eq_univ_of_card _ (by
+      rw [card_insert_of_notMem (by simp [hxj, hxz]), card_pair hjz, hcard])
   rcases isGenusOneChainShape_iff.mp h3 with ⟨hw1, hw2, hm1, hm2, -⟩ |
     ⟨hw1, hw2, hm1, hm2, -⟩ | ⟨hw1, hw2, hm1, hm2, -⟩ |
     ⟨hw1, hw2, hm1, hm2, -⟩ | ⟨hw1, hw2, hm1, hm2, -⟩
-  all_goals first
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) z x ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x z ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) j x ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl <;> omega)
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, j, z} hu (nw := 4) (nm := 6) x x ?_ ?_
+  case' inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, j, z} hu (nw := 4) (nm := 6) z x ?_ ?_
+  case' inr.inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, j, z} hu (nw := 4) (nm := 6) x z ?_ ?_
+  case' inr.inr.inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, j, z} hu (nw := 4) (nm := 6) x x ?_ ?_
+  case' inr.inr.inr.inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, j, z} hu (nw := 4) (nm := 6) j x ?_ ?_
+  all_goals
+    simp only [forall_mem_insert, mem_singleton, forall_eq, ← Nat.lt_succ_iff,
+      Nat.exists_lt_succ_right]
+    omega
 
 end NumericalType
 

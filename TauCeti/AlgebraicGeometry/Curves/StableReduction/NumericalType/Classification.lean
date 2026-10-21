@@ -520,6 +520,37 @@ variable {t : ℕ} {c : ℕ → T.Component}
 
 /-! ### Exhibiting star and affine `E` configurations -/
 
+/-- A chain and an injective family outside it give an injective map from their disjoint sum. -/
+private lemma injective_sumElim (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    {ι : Type*} {b : ι → T.Component} (hb : Function.Injective b)
+    (hb_ne : ∀ j i, i < t → b j ≠ c i) :
+    Function.Injective (Sum.elim (fun i : Fin t ↦ c i) b) := by
+  apply Function.Injective.sumElim
+  · intro i j hij
+    exact Fin.ext (hc.injOn i i.isLt j j.isLt hij)
+  · exact hb
+  · exact fun i j ↦ (hb_ne j i i.isLt).symm
+
+/-- Intersections for a chain with extra vertices reduce to consecutive chain positions and
+intersections involving the extra vertices. -/
+private lemma intersection_pos_sumElim (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    {ι : Type*} (b : ι → T.Component) (i j : Fin t ⊕ ι)
+    (h : match i, j with
+      | .inl i, .inl j => (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i
+      | .inl i, .inr j => 0 < T.intersection (c i) (b j)
+      | .inr i, .inl j => 0 < T.intersection (c j) (b i)
+      | .inr i, .inr j => 0 < T.intersection (b i) (b j)) :
+    0 < T.intersection (Sum.elim (fun i : Fin t ↦ c i) b i)
+      (Sum.elim (fun i : Fin t ↦ c i) b j) := by
+  rcases i with i | i <;> rcases j with j | j
+  · rcases h with h | h
+    · exact hc.intersection_pos h.symm j.isLt
+    · rw [T.intersection_comm]
+      exact hc.intersection_pos h.symm i.isLt
+  · exact h
+  · simpa only [Sum.elim_inr, Sum.elim_inl, T.intersection_comm] using h
+  · exact h
+
 /-- A chain component `c r` (`0 < r` and `r + 1 < t`) meeting two distinct components `x` and `y`
 outside the chain forms a four-leaf star with leaves `c (r - 1)`, `c (r + 1)`, `x` and `y`. -/
 private lemma exists_fourLeafStar (hc : T.IsSelfIntersectionMinusTwoChain t c) {r : ℕ}
@@ -528,25 +559,32 @@ private lemma exists_fourLeafStar (hc : T.IsSelfIntersectionMinusTwoChain t c) {
     (hx : 0 < T.intersection (c r) x) (hy : 0 < T.intersection (c r) y) :
     ∃ c₀ : T.Component, ∃ l : Fin 4 → T.Component,
       Function.Injective l ∧ ∀ i, T.Adj c₀ (l i) := by
-  let l : Fin 4 → T.Component := ![c (r - 1), c (r + 1), x, y]
-  refine ⟨c r, l, ?_, ?_⟩
-  · intro i j hij
-    fin_cases i <;> fin_cases j <;> simp only [l] at hij ⊢
-    all_goals first
-      | exact absurd hij (hc.ne (by omega) (by omega) (by omega))
-      | exact absurd hij (hx_ne _ (by omega)).symm
-      | exact absurd hij (hx_ne _ (by omega))
-      | exact absurd hij (hy_ne _ (by omega)).symm
-      | exact absurd hij (hy_ne _ (by omega))
-      | exact absurd hij hxy
-      | exact absurd hij hxy.symm
-  · intro i
-    fin_cases i <;> simp only [l, T.adj_iff]
-    · exact ⟨hc.ne (by omega) (by omega) (by omega),
-        by rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega)⟩
-    · exact ⟨hc.ne (by omega) (by omega) (by omega), hc.intersection_succ_pos r hrt⟩
-    · exact ⟨(hx_ne r (by omega)).symm, hx⟩
-    · exact ⟨(hy_ne r (by omega)).symm, hy⟩
+  let p : Fin 4 → Fin t ⊕ Fin 2 :=
+    ![.inl ⟨r - 1, by omega⟩, .inl ⟨r + 1, by omega⟩,
+      .inr 0, .inr 1]
+  let l : Fin 4 → T.Component := Sum.elim (fun i : Fin t ↦ c i) (![x, y]) ∘ p
+  have hp : Function.Injective p := by
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp [p] at hij ⊢; omega
+  have hl : Function.Injective l := by
+    apply (hc.injective_sumElim (b := (![x, y])) ?_ ?_).comp hp
+    · intro i j hij
+      fin_cases i <;> fin_cases j <;> simp_all
+    · intro j i hi
+      fin_cases j
+      · exact hx_ne i hi
+      · exact hy_ne i hi
+  refine ⟨c r, l, hl, ?_⟩
+  intro i
+  fin_cases i <;>
+    simp only [Nat.succ_eq_add_one, Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+      Function.comp_apply, cons_val_zero, cons_val_one, cons_val_fin_one, Matrix.cons_val,
+      Sum.elim_inl, Sum.elim_inr, T.adj_iff, ne_eq, l, p]
+  · exact ⟨hc.ne (by omega) (by omega) (by omega),
+      by rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega)⟩
+  · exact ⟨hc.ne (by omega) (by omega) (by omega), hc.intersection_succ_pos r hrt⟩
+  · exact ⟨(hx_ne r (by omega)).symm, hx⟩
+  · exact ⟨(hy_ne r (by omega)).symm, hy⟩
 
 /-- A chain component `c r` (`2 ≤ r` and `r + 3 ≤ t`) meeting `x` outside the chain, which in turn
 meets `y` outside the chain, produces the seven-component affine `E₆` configuration. -/
@@ -556,31 +594,33 @@ private lemma exists_affineE6 (hc : T.IsSelfIntersectionMinusTwoChain t c) {r : 
     (hx : 0 < T.intersection (c r) x) (hxy_pos : 0 < T.intersection x y) :
     ∃ l : Fin 7 → T.Component, Function.Injective l ∧
       ∀ i j, AffineDynkinType.E6.graph.Adj i j → T.Adj (l i) (l j) := by
-  let l : Fin 7 → T.Component := ![c r, c (r - 1), c (r - 2), c (r + 1), c (r + 2), x, y]
-  have hl : Function.Injective l := by
+  let p : Fin 7 → Fin t ⊕ Fin 2 :=
+    ![.inl ⟨r, by omega⟩, .inl ⟨r - 1, by omega⟩,
+      .inl ⟨r - 2, by omega⟩, .inl ⟨r + 1, by omega⟩,
+      .inl ⟨r + 2, by omega⟩, .inr 0,
+      .inr 1]
+  let l : Fin 7 → T.Component := Sum.elim (fun i : Fin t ↦ c i) (![x, y]) ∘ p
+  have hp : Function.Injective p := by
     intro i j hij
-    fin_cases i <;> fin_cases j <;> simp only [l] at hij ⊢
-    all_goals first
-      | exact absurd hij (hc.ne (by omega) (by omega) (by omega))
-      | exact absurd hij (hx_ne _ (by omega)).symm
-      | exact absurd hij (hx_ne _ (by omega))
-      | exact absurd hij (hy_ne _ (by omega)).symm
-      | exact absurd hij (hy_ne _ (by omega))
-      | exact absurd hij hxy
-      | exact absurd hij hxy.symm
+    fin_cases i <;> fin_cases j <;> simp [p] at hij ⊢ <;> omega
+  have hl : Function.Injective l := by
+    apply (hc.injective_sumElim (b := (![x, y])) ?_ ?_).comp hp
+    · intro i j hij
+      fin_cases i <;> fin_cases j <;> simp_all
+    · intro j i hi
+      fin_cases j
+      · exact hx_ne i hi
+      · exact hy_ne i hi
   refine ⟨l, hl, fun i j hadj ↦ T.adj_iff.mpr ⟨hl.ne hadj.ne, ?_⟩⟩
   apply T.intersection_pos_of_adj_of_forall_lt (G := AffineDynkinType.E6.graph)
     (l := l) ?_ hadj
-  intro u v _huv h
+  intro u v huv h
+  apply hc.intersection_pos_sumElim (![x, y]) (p u) (p v)
   fin_cases u <;> fin_cases v
-  all_goals norm_num [Fin.lt_def] at _huv
+  all_goals norm_num [Fin.lt_def] at huv
   all_goals norm_num [AffineDynkinType.graph_E6_adj] at h
-  all_goals simp only [l]
-  all_goals first
-    | exact hx
-    | exact hxy_pos
-    | exact hc.intersection_pos (by omega) (by omega)
-    | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
+  all_goals simp [p]
+  all_goals omega
 
 /-- A chain component `c r` (`3 ≤ r` and `r + 4 ≤ t`) meeting `x` outside the chain produces the
 eight-component affine `E₇` configuration. -/
@@ -589,27 +629,29 @@ private lemma exists_affineE7 (hc : T.IsSelfIntersectionMinusTwoChain t c) {r : 
     (hx : 0 < T.intersection (c r) x) :
     ∃ l : Fin 8 → T.Component, Function.Injective l ∧
       ∀ i j, AffineDynkinType.E7.graph.Adj i j → 0 < T.intersection (l i) (l j) := by
-  let l : Fin 8 → T.Component :=
-    ![c r, x, c (r - 1), c (r - 2), c (r - 3), c (r + 1), c (r + 2), c (r + 3)]
-  have hl : Function.Injective l := by
+  let p : Fin 8 → Fin t ⊕ Fin 1 :=
+    ![.inl ⟨r, by omega⟩, .inr 0,
+      .inl ⟨r - 1, by omega⟩, .inl ⟨r - 2, by omega⟩,
+      .inl ⟨r - 3, by omega⟩, .inl ⟨r + 1, by omega⟩,
+      .inl ⟨r + 2, by omega⟩, .inl ⟨r + 3, by omega⟩]
+  let l : Fin 8 → T.Component := Sum.elim (fun i : Fin t ↦ c i) (fun _ : Fin 1 ↦ x) ∘ p
+  have hp : Function.Injective p := by
     intro i j hij
-    fin_cases i <;> fin_cases j <;> simp only [l] at hij ⊢
-    all_goals first
-      | exact absurd hij (hc.ne (by omega) (by omega) (by omega))
-      | exact absurd hij (hx_ne _ (by omega)).symm
-      | exact absurd hij (hx_ne _ (by omega))
+    fin_cases i <;> fin_cases j <;> simp [p] at hij ⊢ <;> omega
+  have hl : Function.Injective l := by
+    apply (hc.injective_sumElim (b := (fun _ : Fin 1 ↦ x)) ?_ ?_).comp hp
+    · exact Function.injective_of_subsingleton _
+    · exact fun _ i hi ↦ hx_ne i hi
   refine ⟨l, hl, fun i j hadj ↦ ?_⟩
   apply T.intersection_pos_of_adj_of_forall_lt (G := AffineDynkinType.E7.graph)
     (l := l) ?_ hadj
-  intro u v _huv h
+  intro u v huv h
+  apply hc.intersection_pos_sumElim (fun _ : Fin 1 ↦ x) (p u) (p v)
   fin_cases u <;> fin_cases v
-  all_goals norm_num [Fin.lt_def] at _huv
+  all_goals norm_num [Fin.lt_def] at huv
   all_goals norm_num [AffineDynkinType.graph_E7_adj] at h
-  all_goals simp only [l]
-  all_goals first
-    | exact hx
-    | exact hc.intersection_pos (by omega) (by omega)
-    | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
+  all_goals simp [p]
+  all_goals omega
 
 /-- A chain `c 0, …, c (t - 1)` of length `8 ≤ t` with a leaf `x` outside the chain meeting `c 2`
 produces the nine-component affine `E₈` configuration. -/
@@ -617,26 +659,30 @@ private lemma exists_affineE8 (hc : T.IsSelfIntersectionMinusTwoChain t c) (ht :
     {x : T.Component} (hx_ne : ∀ i < t, x ≠ c i) (hx : 0 < T.intersection (c 2) x) :
     ∃ l : Fin 9 → T.Component, Function.Injective l ∧
       ∀ i j, AffineDynkinType.E8.graph.Adj i j → 0 < T.intersection (l i) (l j) := by
-  let l : Fin 9 → T.Component := ![c 2, x, c 1, c 0, c 3, c 4, c 5, c 6, c 7]
-  have hl : Function.Injective l := by
+  let p : Fin 9 → Fin t ⊕ Fin 1 :=
+    ![.inl ⟨2, by omega⟩, .inr 0,
+      .inl ⟨1, by omega⟩, .inl ⟨0, by omega⟩,
+      .inl ⟨3, by omega⟩, .inl ⟨4, by omega⟩,
+      .inl ⟨5, by omega⟩, .inl ⟨6, by omega⟩,
+      .inl ⟨7, by omega⟩]
+  let l : Fin 9 → T.Component := Sum.elim (fun i : Fin t ↦ c i) (fun _ : Fin 1 ↦ x) ∘ p
+  have hp : Function.Injective p := by
     intro i j hij
-    fin_cases i <;> fin_cases j <;> simp only [l] at hij ⊢
-    all_goals first
-      | exact absurd hij (hc.ne (by omega) (by omega) (by omega))
-      | exact absurd hij (hx_ne _ (by omega)).symm
-      | exact absurd hij (hx_ne _ (by omega))
+    fin_cases i <;> fin_cases j <;> simp [p] at hij ⊢
+  have hl : Function.Injective l := by
+    apply (hc.injective_sumElim (b := (fun _ : Fin 1 ↦ x)) ?_ ?_).comp hp
+    · exact Function.injective_of_subsingleton _
+    · exact fun _ i hi ↦ hx_ne i hi
   refine ⟨l, hl, fun i j hadj ↦ ?_⟩
   apply T.intersection_pos_of_adj_of_forall_lt (G := AffineDynkinType.E8.graph)
     (l := l) ?_ hadj
-  intro u v _huv h
+  intro u v huv h
+  apply hc.intersection_pos_sumElim (fun _ : Fin 1 ↦ x) (p u) (p v)
   fin_cases u <;> fin_cases v
-  all_goals norm_num [Fin.lt_def] at _huv
+  all_goals norm_num [Fin.lt_def] at huv
   all_goals norm_num [AffineDynkinType.graph_E8_adj] at h
-  all_goals simp only [l]
-  all_goals first
-    | exact hx
-    | exact hc.intersection_pos (by omega) (by omega)
-    | (rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega))
+  all_goals simp [p]
+  all_goals omega
 
 /-- Two distinct leaves `x` and `y` outside a chain `c` meeting interior chain components `c r`
 and `c s` (`0 < r ≤ s` and `s + 1 < t`) either sit at the same component (forming a four-leaf

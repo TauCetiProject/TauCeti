@@ -386,23 +386,30 @@ lemma IsGenusOneFivePathShape.exists_weight_and_multiplicity_dvd_and_le
       (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
         (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
   classical
-  have mem (i : T.Component) : i = x ∨ i = y ∨ i = z ∨ i = t ∨ i = u := by
-    simpa using (huniv ▸ mem_univ i : i ∈ ({x, y, z, t, u} : Finset T.Component))
   obtain ⟨w, m, _, _, ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
     ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
     ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
     ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
     ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩⟩ :=
       isGenusOneFivePathShape_iff.mp h5
-  all_goals first
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) t x ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x u ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl | rfl <;> omega)
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, y, z, t, u} huniv (nw := 4) (nm := 6) x x ?_ ?_
+  case' inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, y, z, t, u} huniv (nw := 4) (nm := 6) t x ?_ ?_
+  case' inr.inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, y, z, t, u} huniv (nw := 4) (nm := 6) x u ?_ ?_
+  case' inr.inr.inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, y, z, t, u} huniv (nw := 4) (nm := 6) x x ?_ ?_
+  case' inr.inr.inr.inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, y, z, t, u} huniv (nw := 4) (nm := 6) y x ?_ ?_
+  all_goals
+    simp only [forall_mem_insert, mem_singleton, forall_eq, ← Nat.lt_succ_iff,
+      Nat.exists_lt_succ_right]
+    omega
 
 end TauCeti.NumericalType

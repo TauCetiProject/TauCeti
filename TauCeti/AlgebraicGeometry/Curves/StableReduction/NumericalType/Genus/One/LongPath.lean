@@ -342,14 +342,6 @@ private lemma false_of_left_equal {n : ℕ} {c : ℕ → T.Component}
       linear_combination hP
     nlinarith
 
-private lemma nonconsecutive_zero_reverse {n : ℕ} {c : ℕ → T.Component}
-    (hzero : ∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
-      T.intersection (c i) (c j) = 0) :
-    ∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
-      T.intersection (c (n - 1 - i)) (c (n - 1 - j)) = 0 := by
-  intro i hi j hj hij hnext hprev
-  apply hzero (n - 1 - i) (by omega) (n - 1 - j) (by omega) <;> omega
-
 private lemma shape_of_left_half_right_double {n : ℕ} {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain n c) (hcard : Fintype.card T.Component = n)
     (hn : 6 ≤ n)
@@ -507,7 +499,7 @@ theorem isGenusOneLongPathShape_or_isGenusOneLongPathShape {n : ℕ}
   obtain ⟨W, hW, hint, hleft, hright⟩ := interior_weight_eq hc hcard hn
   let cr : ℕ → T.Component := fun i ↦ c (n - 1 - i)
   have hcRev : T.IsSelfIntersectionMinusTwoChain n cr := hc.reverse
-  have hzeroRev := nonconsecutive_zero_reverse hzero
+  have hzeroRev := intersection_reverse_eq_zero_of_nonconsecutive hzero
   have hintRev : ∀ i, 0 < i → i + 1 < n → (T.weight (cr i) : ℤ) = W := by
     intro i hi hin
     exact hint (n - 1 - i) (by omega) (by omega)

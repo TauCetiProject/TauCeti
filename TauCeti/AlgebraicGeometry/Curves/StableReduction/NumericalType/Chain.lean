@@ -184,6 +184,15 @@ lemma card_image_range (hc : T.IsSelfIntersectionMinusTwoChain t c) :
 
 end IsSelfIntersectionMinusTwoChain
 
+/-- Nonconsecutive vanishing intersections are preserved by reversing the index order. -/
+lemma intersection_reverse_eq_zero_of_nonconsecutive {n : ℕ} {c : ℕ → T.Component}
+    (hzero : ∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c i) (c j) = 0) :
+    ∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c (n - 1 - i)) (c (n - 1 - j)) = 0 := by
+  intro i hi j hj hij hnext hprev
+  apply hzero (n - 1 - i) (by omega) (n - 1 - j) (by omega) <;> omega
+
 /-- Every set of components contains a longest chain. -/
 lemma exists_chain_forall_le (S : Finset T.Component) :
     ∃ t c, T.IsSelfIntersectionMinusTwoChain t c ∧ (∀ i < t, c i ∈ S) ∧

@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 -- the no-disconnected-cut criterion that discharges the `connected` field of a numerical type
 public import TauCeti.LinearAlgebra.Matrix.Connected
-import TauCeti.Data.Nat.Bounds
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
@@ -605,20 +604,6 @@ lemma equivReindex_toEquiv : (T.equivReindex e).toEquiv = e := (rfl)
 lemma nonempty_equiv_iff {T' : NumericalType.{v}} :
     Nonempty (T.Equiv T') ↔ ∃ e : T.Component ≃ T'.Component, T.reindex e = T' :=
   ⟨fun ⟨f⟩ ↦ ⟨f.toEquiv, f.reindex_eq⟩, fun ⟨e, he⟩ ↦ he ▸ ⟨T.equivReindex e⟩⟩
-
-/-- Integral weight and multiplicity ratios with arbitrary natural bounds give uniform
-natural-number divisibility bounds. -/
-lemma exists_weight_and_multiplicity_dvd_and_le_of_int (jw jm : T.Component) {nw nm : ℕ}
-    (hw : ∀ i, ∃ k ≤ nw, (T.weight i : ℤ) = (k : ℤ) * T.weight jw)
-    (hm : ∀ i, ∃ k ≤ nm, (T.multiplicity i : ℤ) = (k : ℤ) * T.multiplicity jm) :
-    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ nw * T.weight j) ∧
-      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
-        (T.multiplicity i : ℕ) ≤ nm * T.multiplicity j) := by
-  refine ⟨⟨jw, fun i ↦ ?_⟩, ⟨jm, fun i ↦ ?_⟩⟩
-  · obtain ⟨k, hk, hi⟩ := hw i
-    exact Nat.dvd_and_le_mul_of_int hk hi
-  · obtain ⟨k, hk, hi⟩ := hm i
-    exact Nat.dvd_and_le_mul_of_int hk hi
 
 /-! ### Worked examples -/
 

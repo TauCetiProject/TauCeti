@@ -324,10 +324,7 @@ theorem exists_isGenusOneFourStarShape (hcard : Fintype.card T.Component = 4)
       hzero x z (by simp) (by simp) hxyz.2.1,
       hzero y z (by simp) (by simp) hxyz.2.2, hshape⟩
   -- The four components are distinct, so they exhaust `T` and each satisfies a fibre relation.
-  have hr := fiber_relation_of_card_eq_four hcard (ne_of_intersection_nonneg hc hci0.le)
-    (ne_of_intersection_nonneg hc hcj0.le) (ne_of_intersection_nonneg hc hck0.le)
-    (ne_of_intersection_nonneg hi hij0.ge) (ne_of_intersection_nonneg hi hik0.ge)
-    (ne_of_intersection_nonneg hj hjk0.ge)
+  have hr := fiber_relation_of_card_eq_four hcard hci hcj hck hij hik hjk
   have rc := hr c
   have ri := hr i
   have rj := hr j
@@ -399,20 +396,21 @@ lemma IsGenusOneFourPathShape.exists_weight_and_multiplicity_dvd_and_le
       (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
         (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
   classical
-  have mem (i : T.Component) : i = x ∨ i = y ∨ i = z ∨ i = t := by
-    simpa using (huniv ▸ mem_univ i : i ∈ ({x, y, z, t} : Finset T.Component))
   rcases isGenusOneFourPathShape_iff.mp h4 with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
     ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ | ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
-  all_goals first
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x t ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) y x ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, y, z, t} huniv (nw := 4) (nm := 6) x t ?_ ?_
+  case' inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, y, z, t} huniv (nw := 4) (nm := 6) x x ?_ ?_
+  case' inr.inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {x, y, z, t} huniv (nw := 4) (nm := 6) y x ?_ ?_
+  all_goals
+    simp only [forall_mem_insert, mem_singleton, forall_eq, ← Nat.lt_succ_iff,
+      Nat.exists_lt_succ_right]
+    omega
 
 /-- For a genus-one four-component star whose vertices exhaust all components, some component's
 weight divides every weight with quotient at most four, and some component's multiplicity
@@ -424,17 +422,18 @@ lemma IsGenusOneFourStarShape.exists_weight_and_multiplicity_dvd_and_le
       (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
         (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
   classical
-  have mem (i : T.Component) : i = c₀ ∨ i = x ∨ i = y ∨ i = z := by
-    simpa using (huniv ▸ mem_univ i : i ∈ ({c₀, x, y, z} : Finset T.Component))
   rcases isGenusOneFourStarShape_iff.mp hstar with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
     ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
-  all_goals first
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) c₀ x ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
-    | (refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) z x ?_ ?_
-       all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-       all_goals intro i; rcases mem i with rfl | rfl | rfl | rfl <;> omega)
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {c₀, x, y, z} huniv (nw := 4) (nm := 6) c₀ x ?_ ?_
+  case' inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
+      {c₀, x, y, z} huniv (nw := 4) (nm := 6) z x ?_ ?_
+  all_goals
+    simp only [forall_mem_insert, mem_singleton, forall_eq, ← Nat.lt_succ_iff,
+      Nat.exists_lt_succ_right]
+    omega
 
 end NumericalType
 
