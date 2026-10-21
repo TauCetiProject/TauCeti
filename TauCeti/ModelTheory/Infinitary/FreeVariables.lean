@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.Infinitary.Reindex
 public import TauCeti.ModelTheory.Infinitary.Operations
+public import TauCeti.ModelTheory.Infinitary.Substitution
 public import TauCeti.ModelTheory.Term.FreeVariables
 public import Mathlib.Data.Set.Countable
 
@@ -22,6 +23,8 @@ Realization depends only on the free valuation on this set. For a countable bran
 the support is countable, and for an embedded first-order formula it is exactly Mathlib's
 `BoundedFormula.freeVarFinset`. Coded connectives collect the support of their original branches,
 and carrier transport and bound-variable relabelling preserve support.
+Substitution collects the supports of the replacement terms, while free-variable relabelling
+keeps exactly the support images that remain free rather than becoming bound slots.
 
 Use the support API with the `TauCeti.BoundedFormulaInf` qualification or after
 `open TauCeti.BoundedFormulaInf`, including the finitary embedding laws
@@ -155,6 +158,52 @@ theorem freeVarSupport_mapBound {m : ℕ} (f : Fin m → Fin n)
 theorem freeVarSupport_castLE {m : ℕ} (h : m ≤ n) (φ : L.BoundedFormulaInf ι α m) :
     freeVarSupport (φ.castLE h) = freeVarSupport φ := by
   rw [FirstOrder.Language.BoundedFormulaInf.castLE_def, freeVarSupport_mapBound]
+
+/-- Substitution collects the variables of the substituted terms over the original support. -/
+@[simp]
+theorem freeVarSupport_subst {β : Type*} [DecidableEq β]
+    (φ : L.BoundedFormulaInf ι α n) (f : α → L.Term β) :
+    freeVarSupport (subst φ f) = ⋃ a ∈ freeVarSupport φ, ↑(f a).varFinset := by
+  classical
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ =>
+    simp only [subst_equal, freeVarSupport_equal, varFinsetLeft_subst_sumElim, Set.biUnion_union]
+  | rel R ts =>
+    simp only [subst_rel, freeVarSupport_rel, varFinsetLeft_subst_sumElim, Set.biUnion_iUnion]
+  | imp φ ψ ihφ ihψ =>
+    simp only [subst_imp, freeVarSupport_imp, ihφ, ihψ, Set.biUnion_union]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp only [subst_iSup, freeVarSupport_iSup, ih, Set.biUnion_iUnion]
+  | iInf φs ih => simp only [subst_iInf, freeVarSupport_iInf, ih, Set.biUnion_iUnion]
+
+/-- Relabelling retains exactly the support images that remain free variables. -/
+@[simp]
+theorem freeVarSupport_relabel {β : Type*} {m : ℕ} (g : α → β ⊕ Fin m)
+    (φ : L.BoundedFormulaInf ι α n) :
+    freeVarSupport (relabel g φ) = Sum.inl ⁻¹' (g '' freeVarSupport φ) := by
+  classical
+  have haux (k : ℕ) : BoundedFormula.relabelAux g k =
+      Sum.elim (Sum.map id (Fin.castAdd k) ∘ g) (Sum.inr ∘ Fin.natAdd m) := by
+    funext a
+    cases a with
+    | inl a => cases h : g a <;> simp [BoundedFormula.relabelAux, h]
+    | inr b => simp [BoundedFormula.relabelAux]
+  have hterm {k : ℕ} (t : L.Term (α ⊕ Fin k)) :
+      (↑(t.relabel (BoundedFormula.relabelAux g k)).varFinsetLeft : Set β) =
+        Sum.inl ⁻¹' (g '' (t.varFinsetLeft : Set α)) := by
+    rw [haux, varFinsetLeft_relabel_sumElim]
+    ext b
+    simp only [Set.mem_preimage, Set.mem_image, Function.comp_apply]
+    exact exists_congr fun a => by cases g a <;> simp
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp [hterm, Set.image_union, Set.preimage_union]
+  | rel R ts => simp [hterm, Set.image_iUnion, Set.preimage_iUnion]
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ, Set.image_union, Set.preimage_union]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih, Set.image_iUnion, Set.preimage_iUnion]
+  | iInf φs ih => simp [ih, Set.image_iUnion, Set.preimage_iUnion]
 
 private theorem mem_freeVarSupport_pad {κ : Type uκ} (c : IndexCoding ι κ)
     (d : L.BoundedFormulaInf κ α n) (φs : ι → L.BoundedFormulaInf κ α n) (k : κ) (a : α) :
