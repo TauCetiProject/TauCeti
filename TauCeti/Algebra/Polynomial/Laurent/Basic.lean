@@ -84,8 +84,10 @@ theorem mapAlgHom_T (φ : A →ₐ[R] B) (n : ℤ) :
 /-- The Laurent monomial of a finite sum of exponents is the product of the monomials. -/
 theorem T_sum {ι : Type*} (s : Finset ι) (f : ι → ℤ) :
     (T (∑ i ∈ s, f i) : LaurentPolynomial R) = ∏ i ∈ s, T (f i) := by
-  unfold T
-  rw [AddMonoidAlgebra.prod_single, Finset.prod_const_one]
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.sum_insert hi, Finset.prod_insert hi, T_add, ih]
 
 /-- Evaluating `-(T + T⁻¹)` at the negative of a unit gives the sum of that unit and its inverse. -/
 theorem eval₂_neg_neg_T_one_add_T_neg_one {S U : Type*} [CommRing S] [CommRing U]
