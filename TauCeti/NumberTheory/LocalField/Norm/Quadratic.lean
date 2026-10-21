@@ -138,9 +138,10 @@ theorem exists_norm_eq_iff_of_integerRing (B : Module.Basis (Fin 2) 𝒪[K] 𝒪
   · -- The norms of `u + u t ω` and of `u t + u ω`.
     have hnorm (v : Fin 2 → 𝒪[K]) : Algebra.norm K (B.equivFun.symm v : L) =
         ((v 0 ^ 2 + v 0 * v 1 * T + v 1 ^ 2 * N : 𝒪[K]) : K) := by
-      rw [← coe_norm_integerRing, B.norm_eq_of_apply_zero_eq_one hB]
-      simp only [← B.equivFun_apply, LinearEquiv.apply_symm_apply]
-      rfl
+      rw [B.norm_coe_eq_of_integerRing hB, ← coe_trace_integerRing, ← coe_norm_integerRing]
+      simp only [← B.equivFun_apply, LinearEquiv.apply_symm_apply, T, N]
+      push_cast
+      ring
     rintro ⟨u, t, rfl | rfl⟩
     exacts [⟨B.equivFun.symm ![(u : 𝒪[K]), u * t], by rw [hnorm]; push_cast; ring⟩,
       ⟨B.equivFun.symm ![u * t, (u : 𝒪[K])], by rw [hnorm]; push_cast; ring⟩]

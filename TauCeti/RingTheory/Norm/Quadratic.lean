@@ -146,7 +146,9 @@ theorem norm_eq_of_apply_zero_eq_one (B : Module.Basis (Fin 2) K L) (hB : B 0 = 
     { toFree := .of_basis B
       finrank_eq_two' := by rw [Module.finrank_eq_card_basis B, Fintype.card_fin] }
   conv_lhs => rw [← B.sum_repr w]
-  simp [Fin.sum_univ_two, hB, Algebra.smul_def, mul_comm]
+  rw [Fin.sum_univ_two, hB, Algebra.smul_def, Algebra.smul_def, mul_one,
+    Algebra.IsQuadraticExtension.norm_algebraMap_add_algebraMap_mul]
+  ring
 
 end Module.Basis
 
