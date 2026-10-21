@@ -24,6 +24,7 @@ variable {α : Type*} [AddCommGroup α] [Lattice α]
 
 /-- Choosing, by the same condition, between each of `a` and `b` and its complement with respect
 to `d` does not change their absolute difference. -/
+@[simp]
 theorem abs_ite_sub_ite (c : Prop) [Decidable c] (a b d : α) :
     |(if c then a else d - a) - (if c then b else d - b)| = |a - b| := by
   split_ifs
