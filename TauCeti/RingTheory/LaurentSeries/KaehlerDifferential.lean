@@ -370,17 +370,13 @@ noncomputable def substEquiv (φ : FormalCoordinate K) :
   toFun := subst φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero
   invFun := subst φ⁻¹.constantCoeff_toPowerSeries φ⁻¹.toPowerSeries_ne_zero
   map_add' := map_add _
-  map_smul' f ω := by simp [LaurentSeries.coe_substAlgEquiv]
+  map_smul' f ω := by simp
   left_inv ω := by
     rw [subst_subst]
-    exact subst_eq_self_of_eq_X _ _ (by
-      rw [← FormalCoordinate.toPowerSeries_mul, mul_inv_cancel,
-        FormalCoordinate.toPowerSeries_one]) ω
+    exact subst_eq_self_of_eq_X _ _ (FormalCoordinate.toPowerSeries_mul_inv φ) ω
   right_inv ω := by
     rw [subst_subst]
-    exact subst_eq_self_of_eq_X _ _ (by
-      rw [← FormalCoordinate.toPowerSeries_mul, inv_mul_cancel,
-        FormalCoordinate.toPowerSeries_one]) ω
+    exact subst_eq_self_of_eq_X _ _ (FormalCoordinate.toPowerSeries_inv_mul φ) ω
 
 @[simp]
 theorem substEquiv_apply (φ : FormalCoordinate K) (ω : ContinuousKaehlerDifferential K) :

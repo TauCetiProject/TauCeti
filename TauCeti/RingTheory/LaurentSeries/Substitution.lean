@@ -398,22 +398,18 @@ noncomputable def substAlgEquiv (φ : FormalCoordinate K) : K⸨X⸩ ≃ₐ[K] K
     (substAlgHom φ⁻¹.constantCoeff_toPowerSeries φ⁻¹.toPowerSeries_ne_zero)
     (by
       rw [substAlgHom_comp_substAlgHom]
-      exact substAlgHom_eq_id_of_eq_X _ _ <| by
-        rw [← FormalCoordinate.toPowerSeries_mul, inv_mul_cancel,
-          FormalCoordinate.toPowerSeries_one])
+      exact substAlgHom_eq_id_of_eq_X _ _ (FormalCoordinate.toPowerSeries_inv_mul φ))
     (by
       rw [substAlgHom_comp_substAlgHom]
-      exact substAlgHom_eq_id_of_eq_X _ _ <| by
-        rw [← FormalCoordinate.toPowerSeries_mul, mul_inv_cancel,
-          FormalCoordinate.toPowerSeries_one])
+      exact substAlgHom_eq_id_of_eq_X _ _ (FormalCoordinate.toPowerSeries_mul_inv φ))
 
 /-- The substitution automorphism of a formal coordinate is the substitution `substAlgHom`. -/
+@[simp]
 theorem coe_substAlgEquiv (φ : FormalCoordinate K) :
     ⇑(substAlgEquiv φ) = substAlgHom φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero :=
   (rfl)
 
 /-- On power series, the substitution automorphism of `K⸨X⸩` is that of `K⟦X⟧`. -/
-@[simp]
 theorem substAlgEquiv_coe (φ : FormalCoordinate K) (f : K⟦X⟧) :
     substAlgEquiv φ (f : K⸨X⸩) = ((φ.substAlgEquiv f : K⟦X⟧) : K⸨X⸩) := by
   rw [coe_substAlgEquiv, substAlgHom_coe, FormalCoordinate.substAlgEquiv_apply]

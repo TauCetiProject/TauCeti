@@ -154,6 +154,14 @@ noncomputable instance : Group (FormalCoordinate R) where
     ext1
     simp [subst_substInvOfIsUnit_left _ φ.constantCoeff_toPowerSeries]
 
+/-- A formal coordinate composed with its inverse is `X`. -/
+theorem toPowerSeries_mul_inv (φ : FormalCoordinate R) : (φ * φ⁻¹).toPowerSeries = X := by
+  rw [mul_inv_cancel, toPowerSeries_one]
+
+/-- The inverse of a formal coordinate composed with it is `X`. -/
+theorem toPowerSeries_inv_mul (φ : FormalCoordinate R) : (φ⁻¹ * φ).toPowerSeries = X := by
+  rw [inv_mul_cancel, toPowerSeries_one]
+
 section Points
 
 variable {σ : Type*} {x : MvPowerSeries σ R}
