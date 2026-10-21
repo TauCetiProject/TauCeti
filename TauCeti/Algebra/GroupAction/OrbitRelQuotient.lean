@@ -55,9 +55,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   a group isomorphism induces an equivalence of orbit spaces.
 * `TauCeti.MulAction.orbitRelQuotientLift`: a `G`-invariant map descends to the orbit space,
   uniquely (`TauCeti.MulAction.eq_orbitRelQuotientLift_iff`).
-* `TauCeti.MulAction.orbitRelQuotientMap`: an equivariant map induces a map of orbit spaces,
+* `MulActionHom.orbitRelQuotientMap`: an equivariant map induces a map of orbit spaces,
   functorially, and descent is natural along it
-  (`TauCeti.MulAction.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
+  (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
 * `TauCeti.MulAction.stabilizer_sigma_mk`: the stabilizer of a sigma point is its fibre
   stabilizer.
 * `TauCeti.MulAction.orbitRelQuotientSigmaEquiv`: the orbit space of a componentwise sigma
@@ -793,14 +793,19 @@ theorem MulAction.orbitRelQuotientLift_prodMk {f' : X → Z}
 
 end Lift
 
-section Map
+end TauCeti
 
-variable {H Y : Type*} [Group H] [MulAction H Y] {σ : G → H}
+namespace MulActionHom
+
+open TauCeti
+
+variable {G X : Type*} [Group G] [MulAction G X] {H Y : Type*} [Group H] [MulAction H Y]
+  {σ : G → H}
 
 /-- **The map of orbit spaces induced by an equivariant map.** A map `φ : X → Y` carrying the
 `G`-action to the `H`-action along `σ : G → H` sends `G`-orbits into `H`-orbits, so it descends to
 a map of orbit spaces. -/
-def MulAction.orbitRelQuotientMap (φ : X →ₑ[σ] Y) :
+def orbitRelQuotientMap (φ : X →ₑ[σ] Y) :
     MulAction.orbitRel.Quotient G X → MulAction.orbitRel.Quotient H Y :=
   MulAction.orbitRelQuotientLift (fun x ↦ Quotient.mk (MulAction.orbitRel H Y) (φ x))
     fun g x ↦ by
@@ -809,32 +814,31 @@ def MulAction.orbitRelQuotientMap (φ : X →ₑ[σ] Y) :
 
 /-- The map induced by `φ` sends the orbit of `x` to the orbit of `φ x`. -/
 @[simp]
-theorem MulAction.orbitRelQuotientMap_mk (φ : X →ₑ[σ] Y) (x : X) :
-    MulAction.orbitRelQuotientMap φ (Quotient.mk (MulAction.orbitRel G X) x) =
+theorem orbitRelQuotientMap_mk (φ : X →ₑ[σ] Y) (x : X) :
+    orbitRelQuotientMap φ (Quotient.mk (MulAction.orbitRel G X) x) =
       Quotient.mk (MulAction.orbitRel H Y) (φ x) :=
   (rfl)
 
 /-- The map induced by `φ` composed with the orbit projection of `X` is the orbit projection of
 `Y` composed with `φ`. -/
 @[simp]
-theorem MulAction.orbitRelQuotientMap_comp_mk (φ : X →ₑ[σ] Y) :
-    MulAction.orbitRelQuotientMap φ ∘ Quotient.mk (MulAction.orbitRel G X) =
+theorem orbitRelQuotientMap_comp_mk (φ : X →ₑ[σ] Y) :
+    orbitRelQuotientMap φ ∘ Quotient.mk (MulAction.orbitRel G X) =
       Quotient.mk (MulAction.orbitRel H Y) ∘ φ :=
   (rfl)
 
 /-- The identity map induces the identity of the orbit space. -/
 @[simp]
-theorem MulAction.orbitRelQuotientMap_id :
-    MulAction.orbitRelQuotientMap (MulActionHom.id G (X := X)) = id := by
+theorem orbitRelQuotientMap_id :
+    orbitRelQuotientMap (MulActionHom.id G (X := X)) = id := by
   ext q
   induction q using Quotient.inductionOn with
   | h x => rfl
 
 /-- The map induced by a composite of equivariant maps is the composite of the induced maps. -/
-theorem MulAction.orbitRelQuotientMap_comp {K Z : Type*} [Group K] [MulAction K Z] {τ : H → K}
+theorem orbitRelQuotientMap_comp {K Z : Type*} [Group K] [MulAction K Z] {τ : H → K}
     {χ : G → K} [CompTriple σ τ χ] (ψ : Y →ₑ[τ] Z) (φ : X →ₑ[σ] Y) :
-    MulAction.orbitRelQuotientMap (ψ.comp φ) =
-      MulAction.orbitRelQuotientMap ψ ∘ MulAction.orbitRelQuotientMap φ := by
+    orbitRelQuotientMap (ψ.comp φ) = orbitRelQuotientMap ψ ∘ orbitRelQuotientMap φ := by
   ext q
   induction q using Quotient.inductionOn with
   | h x => rfl
@@ -842,15 +846,13 @@ theorem MulAction.orbitRelQuotientMap_comp {K Z : Type*} [Group K] [MulAction K 
 /-- **Naturality of descent.** For a `σ`-equivariant map `φ : X → Y` and an `H`-invariant map
 `f : Y → Z`, the descent of the `G`-invariant map `f ∘ φ` factors through the map of orbit spaces
 induced by `φ`. -/
-theorem MulAction.orbitRelQuotientLift_comp_orbitRelQuotientMap {Z : Type*} (φ : X →ₑ[σ] Y)
+theorem orbitRelQuotientLift_comp_orbitRelQuotientMap {Z : Type*} (φ : X →ₑ[σ] Y)
     {f : Y → Z} (hf : ∀ (h : H) (y : Y), f (h • y) = f y) :
-    MulAction.orbitRelQuotientLift f hf ∘ MulAction.orbitRelQuotientMap φ =
+    MulAction.orbitRelQuotientLift f hf ∘ orbitRelQuotientMap φ =
       MulAction.orbitRelQuotientLift (f ∘ φ) fun g x ↦ by
         simp only [Function.comp_apply, map_smulₛₗ, hf] := by
   ext q
   induction q using Quotient.inductionOn with
   | h x => rfl
 
-end Map
-
-end TauCeti
+end MulActionHom
