@@ -16,13 +16,13 @@ import Mathlib.Tactic.NoncommRing
 /-!
 # Matrices preserving a Gram matrix
 
-For a square matrix `A` over a commutative ring, `Matrix.isometryMatrices A` is the set of
-matrices `X` with `Xᵀ * A * X = A`, the endomorphisms of the coordinate module that preserve the
-bilinear form with Gram matrix `A`. Counting these matrices over the finite rings
+For a square matrix `A` over a commutative ring, `Matrix.isometryMatrices A` is the submonoid
+of matrices `X` with `Xᵀ * A * X = A`, the endomorphisms of the coordinate module that preserve
+the bilinear form with Gram matrix `A`. Counting these matrices over the finite rings
 `ZMod (p ^ r)` is how the local density of a quadratic lattice is defined, and the two results
 here are what that count needs.
 
-* A change of basis `A ↦ Pᵀ * A * P` by an invertible `P` conjugates the set by `P`, so its
+* A change of basis `A ↦ Pᵀ * A * P` by an invertible `P` conjugates the submonoid by `P`, so its
   cardinality does not depend on the basis.
 * Let `f : R →+* S` be surjective with square-zero kernel, let `2` be a unit of `R`, and let `A`
   be symmetric with unit determinant. Then every solution over `S` lifts to a solution over `R`,
@@ -56,30 +56,24 @@ public section
 
 namespace Matrix
 
-variable {n R S : Type*} [Fintype n] [CommRing R] [CommRing S]
+variable {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
 
-/-- The matrices `X` with `Xᵀ * A * X = A`, the endomorphisms of the coordinate module that
-preserve the bilinear form with Gram matrix `A`. -/
-def isometryMatrices (A : Matrix n n R) : Set (Matrix n n R) :=
-  {X | Xᵀ * A * X = A}
+/-- The submonoid of matrices `X` with `Xᵀ * A * X = A`, the endomorphisms of the coordinate
+module that preserve the bilinear form with Gram matrix `A`. -/
+def isometryMatrices (A : Matrix n n R) : Submonoid (Matrix n n R) where
+  carrier := {X | Xᵀ * A * X = A}
+  one_mem' := by simp
+  mul_mem' {X Y} hX hY := by
+    simp only [Set.mem_ofPred_eq] at *
+    calc (X * Y)ᵀ * A * (X * Y) = Yᵀ * (Xᵀ * A * X) * Y := by
+          simp only [transpose_mul, Matrix.mul_assoc]
+      _ = A := by rw [hX, hY]
 
 /-- Membership in `isometryMatrices A` is the equation `Xᵀ * A * X = A`. -/
 @[simp]
 theorem mem_isometryMatrices {A X : Matrix n n R} :
     X ∈ isometryMatrices A ↔ Xᵀ * A * X = A :=
   Iff.rfl
-
-/-- The identity matrix preserves every Gram matrix. -/
-theorem one_mem_isometryMatrices [DecidableEq n] (A : Matrix n n R) : 1 ∈ isometryMatrices A := by
-  simp
-
-/-- The matrices preserving a Gram matrix are closed under multiplication. -/
-theorem mul_mem_isometryMatrices {A X Y : Matrix n n R} (hX : X ∈ isometryMatrices A)
-    (hY : Y ∈ isometryMatrices A) : X * Y ∈ isometryMatrices A := by
-  rw [mem_isometryMatrices] at *
-  calc (X * Y)ᵀ * A * (X * Y) = Yᵀ * (Xᵀ * A * X) * Y := by
-        simp only [transpose_mul, Matrix.mul_assoc]
-    _ = A := by rw [hX, hY]
 
 /-- A ring homomorphism carries solutions of `Xᵀ * A * X = A` to solutions for the image of
 `A`. -/
@@ -104,8 +98,6 @@ theorem add_transpose_mul_mul_add_of_sq_eq_bot {I : Ideal R} (hI : I ^ 2 = ⊥)
         rw [mem_isometryMatrices.mp hX, hDD, add_zero, transpose_mul, transpose_mul,
           transpose_transpose, hA]
         simp only [Matrix.mul_assoc]
-
-variable [DecidableEq n]
 
 /-- A matrix preserving a Gram matrix with unit determinant has unit determinant, its square
 being `1`. -/
@@ -207,7 +199,6 @@ skew-symmetric matrices with entries in the ideal.** Let `A` be symmetric with u
 and let `X₀` preserve `A`. The solutions `X` with `X - X₀` having entries in a square-zero
 ideal `I` correspond to the skew-symmetric `K` with entries in `I`, via
 `K = X₀ᵀ * A * (X - X₀)` and `X = X₀ + (X₀ᵀ * A)⁻¹ * K`. -/
-@[expose, simps apply_coe symm_apply_coe_coe]
 noncomputable def isometryMatricesFiberEquiv {I : Ideal R} (hI : I ^ 2 = ⊥) {A X₀ : Matrix n n R}
     (hA : Aᵀ = A) (hdet : IsUnit A.det) (hX₀ : X₀ ∈ isometryMatrices A) :
     {X : isometryMatrices A // ∀ i j, X.1 i j - X₀ i j ∈ I} ≃
@@ -234,6 +225,26 @@ noncomputable def isometryMatricesFiberEquiv {I : Ideal R} (hI : I ^ 2 = ⊥) {A
       ext : 1
       dsimp only
       rw [add_sub_cancel_left, ← Matrix.mul_assoc, mul_nonsing_inv _ hB, Matrix.one_mul] }
+
+/-- `Matrix.isometryMatricesFiberEquiv` sends a solution `X` to `X₀ᵀ * A * (X - X₀)`. -/
+@[simp]
+theorem isometryMatricesFiberEquiv_apply_coe {I : Ideal R} (hI : I ^ 2 = ⊥)
+    {A X₀ : Matrix n n R} (hA : Aᵀ = A) (hdet : IsUnit A.det) (hX₀ : X₀ ∈ isometryMatrices A)
+    (X : {X : isometryMatrices A // ∀ i j, X.1 i j - X₀ i j ∈ I}) :
+    (isometryMatricesFiberEquiv hI hA hdet hX₀ X : Matrix n n R) = X₀ᵀ * A * (X.1.1 - X₀) :=
+  -- `(rfl)` opts out of exporting the definitional equality, so the equivalence can remain
+  -- opaque while this theorem and the next provide its rewriting interface.
+  (rfl)
+
+/-- The inverse of `Matrix.isometryMatricesFiberEquiv` sends a skew-symmetric `K` to
+`X₀ + (X₀ᵀ * A)⁻¹ * K`. -/
+@[simp]
+theorem isometryMatricesFiberEquiv_symm_apply_coe_coe {I : Ideal R} (hI : I ^ 2 = ⊥)
+    {A X₀ : Matrix n n R} (hA : Aᵀ = A) (hdet : IsUnit A.det) (hX₀ : X₀ ∈ isometryMatrices A)
+    (K : {K : Matrix n n R // (∀ i j, K i j ∈ I) ∧ Kᵀ = -K}) :
+    (((isometryMatricesFiberEquiv hI hA hdet hX₀).symm K : isometryMatrices A) : Matrix n n R) =
+      X₀ + (X₀ᵀ * A)⁻¹ * K.1 :=
+  (rfl)
 
 /-- **Counting matrices preserving a Gram matrix across a square-zero extension.** Let `f` be a
 surjective ring homomorphism whose kernel squares to zero, let `2` be a unit, and let `A` be

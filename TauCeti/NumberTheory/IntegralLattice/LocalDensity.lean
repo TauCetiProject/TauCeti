@@ -61,7 +61,7 @@ open Filter Topology
 
 namespace Matrix
 
-variable {n : Type*} [Fintype n] {p : ℕ} [Fact p.Prime]
+variable {n : Type*} [Fintype n] [DecidableEq n] {p : ℕ} [Fact p.Prime]
 
 /-- The counting function of the local density of a Gram matrix `A` over `ℤ_p`: the number of
 matrices `X ∈ Mₙ(ℤ/pʳ)` with `Xᵀ A X = A` modulo `pʳ`. -/
@@ -77,13 +77,10 @@ theorem localDensityCount_def (A : Matrix n n ℤ_[p]) (r : ℕ) :
 /-- The local density count is positive: the identity matrix is always counted. -/
 theorem localDensityCount_pos (A : Matrix n n ℤ_[p]) (r : ℕ) :
     0 < A.localDensityCount r := by
-  classical
   have : NeZero (p ^ r) := ⟨pow_ne_zero r (Fact.out : p.Prime).ne_zero⟩
   have : Nonempty (isometryMatrices (A.map (PadicInt.toZModPow r))) :=
-    ⟨⟨1, one_mem_isometryMatrices _⟩⟩
+    ⟨⟨1, (isometryMatrices _).one_mem⟩⟩
   exact Nat.card_pos
-
-variable [DecidableEq n]
 
 /-- **The local density count does not depend on the basis**: replacing the Gram matrix `A` by
 `Pᵀ A P` for an invertible `P` over `ℤ_p` leaves the count unchanged. -/
