@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Cyclicity
+public import TauCeti.RingTheory.PowerSeries.Entire.Eval
+import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
+import TauCeti.Topology.Algebra.InfiniteSum.LinearRecurrence
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.RingTheory.PowerSeries.Geometric
 
@@ -44,6 +47,20 @@ coordinates. The entries of their resolvent coefficients are entries of the coef
 of linear polynomials (`Matrix.norm_sum_coeff_charpolyRev_smul_pow_apply_le`). It then passes to
 `u` because the truncations converge to `u` in operator norm, and each coefficient of the
 determinant, hence each `Vₘ`, is continuous in operator norm on row-compact operators.
+
+Both `H_u` and `V` are therefore entire, so they can be evaluated at every scalar `a`. The value
+`V(a) = ∑ₘ aᵐ • Vₘ` (`ContinuousLinearMap.resolventAt`) converges in operator norm
+(`ContinuousLinearMap.IsRowCompact.hasSum_resolventAt`), commutes with `u`, and lies in the
+operator-norm closure of the polynomials in `u`. It satisfies the evaluated resolvent identities
+
+`(1 - a u) V(a) = V(a) (1 - a u) = H_u(a) • 1`
+
+(`ContinuousLinearMap.IsRowCompact.one_sub_smul_mul_resolventAt`,
+`ContinuousLinearMap.IsRowCompact.resolventAt_mul_one_sub_smul`), where `H_u(a)` is the value of
+the entire series `H_u` at `a`. Consequently `1 - a u` is invertible whenever `H_u(a)` is a unit
+of `R`, with inverse `H_u(a)⁻¹ • V(a)` (`ContinuousLinearMap.IsRowCompact.isUnit_one_sub_smul`,
+`ContinuousLinearMap.IsRowCompact.inverse_one_sub_smul`). This needs no convergence of the
+Neumann series `∑ aⁿ uⁿ`.
 
 ## References
 
@@ -129,6 +146,25 @@ theorem resolventSeries_mul_one_sub_C_mul_X (u : C₀(I, R) →L[R] C₀(I, R)) 
       PowerSeries.map (algebraMap R _) u.matrixCoeff.charPowerSeries := by
   rw [Matrix.charPowerSeries_def, resolventSeries_def]
   exact TauCeti.powerSeries_mk_sum_smul_pow_mul_one_sub_C_mul_X u.matrixCoeff.charCoeff u
+
+/-- The terms `dₘ = aᵐ • Vₘ` of the value at a scalar `a` of the Fredholm resolvent obey the
+first-order recurrence `dₘ₊₁ = (a • u) * dₘ + (cₘ₊₁ aᵐ⁺¹) • 1`. -/
+private theorem pow_succ_smul_resolventCoeff_succ (u : C₀(I, R) →L[R] C₀(I, R)) (a : R)
+    (m : ℕ) :
+    a ^ (m + 1) • u.resolventCoeff (m + 1) =
+      (a • u) * (a ^ m • u.resolventCoeff m) +
+        (PowerSeries.coeff (m + 1) u.matrixCoeff.charPowerSeries • a ^ (m + 1)) • 1 := by
+  refine ContinuousLinearMap.ext fun x ↦ ?_
+  simp [resolventCoeff_succ, map_smul]
+  module
+
+/-- The terms `aᵐ • Vₘ` of the value at a scalar `a` of the Fredholm resolvent commute with the
+operator. -/
+private theorem commute_pow_smul_resolventCoeff (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) (m : ℕ) :
+    Commute u (a ^ m • u.resolventCoeff m) := by
+  refine ContinuousLinearMap.ext fun x ↦ ?_
+  simpa [map_smul] using
+    congrArg (a ^ m • ·) (DFunLike.congr_fun (u.commute_resolventCoeff m).eq x)
 
 end Algebraic
 
@@ -240,6 +276,164 @@ theorem IsRowCompact.isRestricted_resolventSeries {u : C₀(I, R) →L[R] C₀(I
     u.rowNorm_nonneg hu.tendsto_rowNorm (fun m ↦ ringOpNorm_nonneg (u.resolventCoeff m))
     (fun _ _ hc hs ↦ hu.ringOpNorm_resolventCoeff_le hu.norm_matrixCoeff_le_rowNorm hc hs) c
 
+omit [CompleteSpace R] [TauCeti.NormedRing.IsTate R] in
+/-- **The Fredholm determinant of a row-compact operator is entire**: its principal-minor series
+is a restricted power series at every radius. -/
+theorem IsRowCompact.isEntire_charPowerSeries {u : C₀(I, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) : u.matrixCoeff.charPowerSeries.IsEntire :=
+  PowerSeries.isEntire_iff.2 <|
+    Matrix.isRestricted_charPowerSeries hu.norm_matrixCoeff_le_rowNorm hu.tendsto_rowNorm
+
+/-- The Fredholm resolvent of a row-compact operator is an entire power series over the Banach
+ring of operators. -/
+theorem IsRowCompact.isEntire_resolventSeries {u : C₀(I, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) : u.resolventSeries.IsEntire :=
+  PowerSeries.isEntire_iff.2 hu.isRestricted_resolventSeries
+
 end Analytic
+
+section Value
+
+variable [NormedCommRing R] [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
+
+open scoped TauCeti.RingOpNorm
+
+/-- The value `V(a) = ∑ₘ aᵐ • Vₘ` at a scalar `a` of the Fredholm resolvent
+`V(T) = det (1 - T u) (1 - T u)⁻¹` of an endomorphism `u` of `C₀(I, R)`, the sum being taken in
+the operator norm. It takes the junk value `0` when the sum does not converge; for row-compact
+`u` over a complete ring it converges at every `a`
+(`ContinuousLinearMap.IsRowCompact.hasSum_resolventAt`).
+
+The coefficients of the resolvent are operators rather than scalars, so this is not an instance
+of `PowerSeries.evalAt`. -/
+noncomputable def resolventAt (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) : C₀(I, R) →L[R] C₀(I, R) :=
+  ∑' m, a ^ m • u.resolventCoeff m
+
+theorem resolventAt_def (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
+    u.resolventAt a = ∑' m, a ^ m • u.resolventCoeff m :=
+  (rfl)
+
+/-- At the scalar `0` the Fredholm resolvent is the identity. -/
+@[simp]
+theorem resolventAt_zero (u : C₀(I, R) →L[R] C₀(I, R)) : u.resolventAt 0 = 1 := by
+  rw [resolventAt_def, tsum_eq_single 0 fun m hm ↦ ContinuousLinearMap.ext fun x ↦ by
+    simp [zero_pow hm]]
+  ext x
+  simp
+
+/-- The value of the Fredholm resolvent at a scalar commutes with the operator. -/
+theorem commute_resolventAt (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
+    Commute u (u.resolventAt a) := by
+  rw [resolventAt_def]
+  exact Commute.tsum_right u (u.commute_pow_smul_resolventCoeff a)
+
+/-- The value of the Fredholm resolvent at a scalar lies in the operator-norm closure of the
+polynomials in `u`. -/
+theorem resolventAt_mem_closure_adjoin (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
+    u.resolventAt a ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
+  have hV (m : ℕ) : a ^ m • u.resolventCoeff m ∈ Algebra.adjoin R {u} :=
+    Subalgebra.smul_mem _ (Subalgebra.sum_mem _ fun k _ ↦ Subalgebra.smul_mem _
+      (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton R u) _) _) _
+  rw [resolventAt_def]
+  by_cases hs : Summable fun m ↦ a ^ m • u.resolventCoeff m
+  · exact mem_closure_of_tendsto hs.hasSum
+      (.of_forall fun s ↦ Subalgebra.sum_mem _ fun m _ ↦ hV m)
+  · rw [tsum_eq_zero_of_not_summable hs]
+    exact subset_closure (Subalgebra.zero_mem _)
+
+variable [NormOneClass R]
+
+/-- The `m`-th term `aᵐ • Vₘ` of the value of the Fredholm resolvent at `a` has operator norm at
+most `‖a‖ ^ m * ‖Vₘ‖`. -/
+private theorem ringOpNorm_pow_smul_resolventCoeff_le (u : C₀(I, R) →L[R] C₀(I, R)) (a : R)
+    (m : ℕ) : ‖a ^ m • u.resolventCoeff m‖ ≤ ‖a‖ ^ m * ‖u.resolventCoeff m‖ :=
+  (ringOpNorm_smul_le _ _).trans
+    (mul_le_mul_of_nonneg_right (norm_pow_le a m) (ringOpNorm_nonneg _))
+
+/-- **Operator-norm bound for the value of the Fredholm resolvent.** If `c ≥ 0` bounds
+`‖a‖ ^ m * ‖Vₘ‖` for every `m`, then it bounds the operator norm of `V(a)`. -/
+theorem ringOpNorm_resolventAt_le (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ m, ‖a‖ ^ m * ‖u.resolventCoeff m‖ ≤ c) : ‖u.resolventAt a‖ ≤ c := by
+  rw [resolventAt_def]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (f := fun m ↦ a ^ m • u.resolventCoeff m) hc fun m ↦ ?_
+  exact (ringOpNorm_pow_smul_resolventCoeff_le u a m).trans (h m)
+
+variable [CompleteSpace R]
+
+/-- **Evaluation of the Fredholm resolvent.** For a row-compact `u`, the series `∑ₘ aᵐ • Vₘ`
+converges in operator norm at every scalar `a`. -/
+theorem IsRowCompact.hasSum_resolventAt {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
+    (a : R) : HasSum (fun m ↦ a ^ m • u.resolventCoeff m) (u.resolventAt a) := by
+  have hs := hu.isEntire_resolventSeries.summable_norm_coeff_mul_pow ‖a‖
+  simp only [coeff_resolventSeries] at hs
+  have hb (m : ℕ) : ‖a ^ m • u.resolventCoeff m‖ ≤ ‖u.resolventCoeff m‖ * ‖a‖ ^ m :=
+    (ringOpNorm_pow_smul_resolventCoeff_le u a m).trans_eq (mul_comm _ _)
+  have hn : Summable fun m ↦ ‖a ^ m • u.resolventCoeff m‖ :=
+    hs.of_nonneg_of_le (fun _ ↦ ringOpNorm_nonneg _) hb
+  -- Completeness of the operator space is found through its normed group structure.
+  let _ : NormedAddCommGroup (C₀(I, R) →L[R] C₀(I, R)) := inferInstance
+  rw [resolventAt_def]
+  exact hn.of_norm.hasSum
+
+/-- **The evaluated resolvent identity** `(1 - a u) V(a) = det (1 - a u) • 1` for a row-compact
+`u`, where `det (1 - a u)` is the value at `a` of the Fredholm determinant `det (1 - T u)`. -/
+theorem IsRowCompact.one_sub_smul_mul_resolventAt {u : C₀(I, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) (a : R) :
+    (1 - a • u) * u.resolventAt a = u.matrixCoeff.charPowerSeries.evalAt a • 1 := by
+  -- The sum `∑ₘ aᵐ • Vₘ x` satisfies a first-order recurrence in `C₀(I, R)`, with `a • u` acting
+  -- by evaluation and inhomogeneous terms `(cₘ aᵐ) • x` summing to `H(a) • x`.
+  refine ContinuousLinearMap.ext fun x ↦ ?_
+  have h := (hasSum_apply (hu.hasSum_resolventAt a) x).sub_smul_eq_of_linearRec₁ (D := a • u)
+    ((hu.isEntire_charPowerSeries.hasSum_evalAt a).smul_const x)
+    (by simp)
+    fun m ↦ by simpa using congr($(pow_succ_smul_resolventCoeff_succ u a m) x)
+  simpa using h
+
+/-- **The evaluated resolvent identity** `V(a) (1 - a u) = det (1 - a u) • 1` for a row-compact
+`u`. -/
+theorem IsRowCompact.resolventAt_mul_one_sub_smul {u : C₀(I, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) (a : R) :
+    u.resolventAt a * (1 - a • u) = u.matrixCoeff.charPowerSeries.evalAt a • 1 := by
+  rw [← hu.one_sub_smul_mul_resolventAt a]
+  refine ContinuousLinearMap.ext fun x ↦ ?_
+  have h : u (u.resolventAt a x) = u.resolventAt a (u x) :=
+    DFunLike.congr_fun (u.commute_resolventAt a).eq x
+  simp [map_smul, h]
+
+/-- The operator `det (1 - a u)⁻¹ • V(a)` is a two-sided inverse of `1 - a u` when `det (1 - a u)`
+is a unit. -/
+private theorem IsRowCompact.mul_eq_one_of_isUnit {u : C₀(I, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) {a : R} (ha : IsUnit (u.matrixCoeff.charPowerSeries.evalAt a)) :
+    (1 - a • u) * (Ring.inverse (u.matrixCoeff.charPowerSeries.evalAt a) • u.resolventAt a) = 1 ∧
+      (Ring.inverse (u.matrixCoeff.charPowerSeries.evalAt a) • u.resolventAt a) * (1 - a • u) =
+        1 := by
+  have hh := Ring.inverse_mul_cancel _ ha
+  constructor <;> refine ContinuousLinearMap.ext fun x ↦ ?_
+  · have hx := DFunLike.congr_fun (hu.one_sub_smul_mul_resolventAt a) x
+    simp only [mul_apply_eq_comp, _root_.smul_apply, map_smul, _root_.sub_apply,
+      one_apply_eq_self] at hx ⊢
+    rw [hx, smul_smul, hh, one_smul]
+  · have hx := DFunLike.congr_fun (hu.resolventAt_mul_one_sub_smul a) x
+    simp only [mul_apply_eq_comp, _root_.sub_apply, one_apply_eq_self, _root_.smul_apply] at hx ⊢
+    rw [hx, smul_smul, hh, one_smul]
+
+/-- **Invertibility from the Fredholm determinant.** If `u` is row compact and the value
+`det (1 - a u)` of its Fredholm determinant at `a` is a unit, then `1 - a u` is invertible. -/
+theorem IsRowCompact.isUnit_one_sub_smul {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
+    {a : R} (ha : IsUnit (u.matrixCoeff.charPowerSeries.evalAt a)) : IsUnit (1 - a • u) :=
+  let h := hu.mul_eq_one_of_isUnit ha
+  ⟨⟨_, _, h.1, h.2⟩, rfl⟩
+
+/-- **The inverse of `1 - a u` from the Fredholm resolvent.** If `u` is row compact and
+`det (1 - a u)` is a unit, then the inverse of `1 - a u` is `det (1 - a u)⁻¹ • V(a)`. -/
+theorem IsRowCompact.inverse_one_sub_smul {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
+    {a : R} (ha : IsUnit (u.matrixCoeff.charPowerSeries.evalAt a)) :
+    Ring.inverse (1 - a • u) =
+      Ring.inverse (u.matrixCoeff.charPowerSeries.evalAt a) • u.resolventAt a :=
+  let h := hu.mul_eq_one_of_isUnit ha
+  Ring.inverse_unit ⟨_, _, h.1, h.2⟩
+
+end Value
 
 end ContinuousLinearMap
