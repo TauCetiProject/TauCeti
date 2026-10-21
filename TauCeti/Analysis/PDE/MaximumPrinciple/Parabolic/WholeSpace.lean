@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
-public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
 
 /-!
@@ -24,7 +23,7 @@ for `0 < t < T`. In Lean `∂ᵢ∂ⱼu` at `(t, x)` is
 `fderiv ℝ (fderiv ℝ (u t)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)`, `bⁱ ∂ᵢu` is
 `fderiv ℝ (u t) x (b t x)` and `∂ₜu` is `deriv (fun s ↦ u s x) t`, as in
 `TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence` and
-`TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic`.
+`TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.Basic`.
 
 The coefficients are only required to satisfy, for `0 < t < T`,
 
@@ -59,15 +58,16 @@ coefficient `c - γ ≤ 0`.
 
 ## Main declarations
 
-* `TauCeti.PDE.sum_mul_fderiv_fderiv_norm_sq_add_fderiv`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
-  applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
-* `TauCeti.PDE.le_exp_mul_mul_add_mul_of_deriv_le_add`: **the a priori bound**
-  `u ≤ exp (γ t) (M + t F)` for subsolutions `P u ≤ F`.
-* `TauCeti.PDE.abs_le_exp_mul_mul_add_mul_of_abs_deriv_sub_le`: the two-sided bound for
-  `|P u| ≤ F`.
-* `TauCeti.PDE.le_of_deriv_sub_le_deriv_sub_of_le_initial`: **the comparison principle**.
-* `TauCeti.PDE.eqOn_of_deriv_sub_eq_deriv_sub_of_eqOn_initial`: uniqueness for the Cauchy
-  problem among bounded classical solutions.
+All declarations are in the `TauCeti.PDE` namespace.
+
+* `le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add`:
+  **the a priori bound** `u ≤ exp (γ t) (M + t F)` for subsolutions `P u ≤ F`.
+* `abs_le_exp_mul_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le`:
+  the two-sided bound for `|P u| ≤ F`.
+* `le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initial`:
+  **the comparison principle**.
+* `eqOn_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_of_eqOn_initial`:
+  uniqueness for the Cauchy problem among bounded classical solutions.
 
 ## References
 
@@ -88,15 +88,6 @@ namespace PDE
 open Matrix RealInnerProductSpace Set
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the squared norm `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`. -/
-theorem sum_mul_fderiv_fderiv_norm_sq_add_fderiv (A : Matrix ι ι ℝ)
-    (x v : EuclideanSpace ℝ ι) :
-    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
-      fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x v = 2 * A.trace + 2 * ⟪x, v⟫ := by
-  simp only [fderiv_fderiv_norm_sq_apply]
-  simp [EuclideanSpace.inner_single_left, Matrix.trace, Finset.mul_sum, mul_comm]
 
 variable {a : ℝ → EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {b : ℝ → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : ℝ → EuclideanSpace ℝ ι → ℝ}
@@ -140,7 +131,7 @@ private theorem not_forall_sub_mul_exp_mul_le
     rw [hfmax.fderiv_eq_zero, _root_.zero_apply, add_zero]
     exact sum_mul_fderiv_fderiv_nonpos_of_isLocalMax (ha ht₀ x₀) hfcd hfmax
   rw [sum_mul_fderiv_fderiv_add_fderiv_add_smul (hcd ht₀ x₀) hnormcd,
-    sum_mul_fderiv_fderiv_norm_sq_add_fderiv] at hLf
+    sum_mul_fderiv_fderiv_add_fderiv_norm_sq] at hLf
   -- In time, `t₀` maximizes `s ↦ u s x₀ - ε exp (K s) (1 + q²)` from the left, so its derivative
   -- `∂ₜu - ε K e (1 + q²)` is nonnegative.
   have hg : HasDerivAt (fun s ↦ u s x₀ - ε * (Real.exp (K * s) * (1 + q ^ 2)))
@@ -281,13 +272,46 @@ private theorem nonpos_of_deriv_le_of_nonpos
       ht).mono Ico_subset_Icc_self
   exact hcw.closure_le (by rw [closure_Ico hpos.ne]; exact ht) continuousWithinAt_const hlt
 
+/-- The exponential change of variables: if `P u ≤ F` at `(t, x)` with `c ≤ γ` there, then
+`w = exp (-γ t) u - (M + t F)` satisfies `P w ≤ 0` at `(t, x)` for the zeroth-order coefficient
+`c - γ`, provided `0 ≤ γ t`, `0 ≤ M + t F` and `0 ≤ F`. -/
+private theorem deriv_le_of_eq_exp_neg_mul_mul_sub {A : Matrix ι ι ℝ}
+    {u w : ℝ → EuclideanSpace ℝ ι → ℝ} {c γ M F t : ℝ} {x v : EuclideanSpace ℝ ι}
+    (hw : ∀ s y, w s y = Real.exp (-(γ * s)) * u s y - (M + s * F))
+    (hc : c ≤ γ) (hγt : 0 ≤ γ * t) (hMF : 0 ≤ M + t * F) (hF : 0 ≤ F)
+    (hcd : ContDiffAt ℝ 2 (u t) x) (hdiff : DifferentiableAt ℝ (fun s ↦ u s x) t)
+    (hsub : deriv (fun s ↦ u s x) t ≤
+      ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ (u t)) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ (u t) x v + c * u t x + F) :
+    deriv (fun s ↦ w s x) t ≤
+      ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ (w t)) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ (w t) x v + (c - γ) * w t x := by
+  set e := Real.exp (-(γ * t))
+  have he : 0 < e := Real.exp_pos _
+  have he1 : e ≤ 1 := Real.exp_le_one_iff.mpr (by linarith)
+  have hwt : w t = (fun _ ↦ -(M + t * F)) + e • u t := funext fun y ↦ by
+    simp only [hw, Pi.add_apply, Pi.smul_apply, smul_eq_mul, e]
+    ring
+  have hexp : HasDerivAt (fun s ↦ Real.exp (-(γ * s))) (-γ * e) t := by
+    simpa [e, mul_comm] using ((hasDerivAt_id t).const_mul γ).neg.exp
+  have hderiv : deriv (fun s ↦ w s x) t = -γ * e * u t x + e * deriv (fun s ↦ u s x) t - F := by
+    simp only [hw]
+    rw [((hexp.fun_mul hdiff.hasDerivAt).fun_sub
+      (((hasDerivAt_id' t).mul_const F).const_add M)).deriv]
+    ring
+  rw [hderiv, hwt, sum_mul_fderiv_fderiv_add_fderiv_add_smul contDiffAt_const hcd]
+  simp only [fderiv_fun_const, fderiv_zero, Pi.zero_apply, _root_.zero_apply, mul_zero,
+    Finset.sum_const_zero, zero_add, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+  have hcγ : (c - γ) * (M + t * F) ≤ 0 := mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.mpr hc) hMF
+  nlinarith [mul_le_mul_of_nonneg_left hsub he.le, mul_le_mul_of_nonneg_right he1 hF]
+
 /-- **The a priori bound for parabolic equations on the whole space.** Let
 `P u = ∂ₜu - ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` where, for `0 < t < T`, the matrix `a(t, x)` has
 nonnegative quadratic form and trace at most `Λ`, `‖b(t, x)‖ ≤ β` and `c(t, x) ≤ γ` with
 `0 ≤ γ`. Let `u` be continuous on `[0, T] × ℝⁿ` and bounded above there, `C²` in space and
 differentiable in time for `0 < t < T`, with `P u ≤ F` there and `u(·, 0) ≤ M`, where `0 ≤ M` and
 `0 ≤ F`. Then `u(t, x) ≤ exp (γ t) (M + t F)` on `[0, T] × ℝⁿ`. -/
-theorem le_exp_mul_mul_add_mul_of_deriv_le_add
+theorem le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
     (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
     (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
@@ -308,61 +332,42 @@ theorem le_exp_mul_mul_add_mul_of_deriv_le_add
   have hw : ∀ t x, w t x = Real.exp (-(γ * t)) * u t x - (M + t * F) := fun t x ↦ by
     simp only [w, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
-  obtain ⟨Mu, hMu⟩ := hbdd
+  have hwcont : ContinuousOn (Function.uncurry w) (Icc 0 T ×ˢ univ) := by
+    refine ContinuousOn.congr ?_ fun p _ ↦ hw p.1 p.2
+    exact (((by fun_prop : Continuous fun p : ℝ × EuclideanSpace ℝ ι ↦
+      Real.exp (-(γ * p.1))).continuousOn.mul hcont).sub
+      (by fun_prop : Continuous fun p : ℝ × EuclideanSpace ℝ ι ↦ M + p.1 * F).continuousOn)
+  have hwbdd : BddAbove (Function.uncurry w '' Icc 0 T ×ˢ univ) := by
+    obtain ⟨Mu, hMu⟩ := hbdd
+    refine ⟨max Mu 0, ?_⟩
+    rintro _ ⟨⟨t, x⟩, ⟨ht, -⟩, rfl⟩
+    have h1 : Real.exp (-(γ * t)) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith [ht.1])
+    have h2 : u t x ≤ max Mu 0 := (hMu ⟨(t, x), ⟨ht, mem_univ x⟩, rfl⟩).trans (le_max_left _ _)
+    have h3 : 0 ≤ M + t * F := by nlinarith [ht.1]
+    simp only [Function.uncurry_apply_pair, hw]
+    nlinarith [Real.exp_pos (-(γ * t)), le_max_right Mu 0,
+      mul_le_mul_of_nonneg_left h2 (Real.exp_pos (-(γ * t))).le,
+      mul_le_mul_of_nonneg_right h1 (le_max_right Mu 0)]
   have hwle := nonpos_of_deriv_le_of_nonpos (u := w) (c := fun t x ↦ c t x - γ) ha htr hb
-    (fun t ht x ↦ sub_nonpos.mpr (hc ht x))
-    (by
-      refine ContinuousOn.congr ?_ fun p _ ↦ hw p.1 p.2
-      exact (((by fun_prop : Continuous fun p : ℝ × EuclideanSpace ℝ ι ↦
-        Real.exp (-(γ * p.1))).continuousOn.mul hcont).sub
-        (by fun_prop : Continuous fun p : ℝ × EuclideanSpace ℝ ι ↦ M + p.1 * F).continuousOn))
-    (by
-      refine ⟨max Mu 0, ?_⟩
-      rintro _ ⟨⟨t, x⟩, ⟨ht, -⟩, rfl⟩
-      have h1 : Real.exp (-(γ * t)) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith [ht.1])
-      have h2 : u t x ≤ max Mu 0 := (hMu ⟨(t, x), ⟨ht, mem_univ x⟩, rfl⟩).trans (le_max_left _ _)
-      have h3 : 0 ≤ M + t * F := by nlinarith [ht.1]
-      simp only [Function.uncurry_apply_pair, hw]
-      nlinarith [Real.exp_pos (-(γ * t)), le_max_right Mu 0,
-        mul_le_mul_of_nonneg_left h2 (Real.exp_pos (-(γ * t))).le,
-        mul_le_mul_of_nonneg_right h1 (le_max_right Mu 0)])
+    (fun t ht x ↦ sub_nonpos.mpr (hc ht x)) hwcont hwbdd
     (fun t ht x ↦ contDiffAt_const.add ((hcd ht x).const_smul (Real.exp (-(γ * t)))))
     (fun t ht x ↦ by
       simp only [hw]
       fun_prop (disch := exact hdiff ht x))
-    (fun t ht x ↦ by
-      have ht0 : 0 ≤ t := ht.1.le
-      set e := Real.exp (-(γ * t))
-      have he : 0 < e := Real.exp_pos _
-      have he1 : e ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith)
-      have hderiv : deriv (fun s ↦ w s x) t = -γ * e * u t x + e * deriv (fun s ↦ u s x) t - F := by
-        have hexp : HasDerivAt (fun s ↦ Real.exp (-(γ * s))) (-γ * e) t := by
-          simpa [e, mul_comm] using ((hasDerivAt_id t).const_mul γ).neg.exp
-        have := (hexp.fun_mul (hdiff ht x).hasDerivAt).fun_sub
-          (((hasDerivAt_id' t).mul_const F).const_add M)
-        simp only [hw]
-        rw [this.deriv]
-        ring
-      rw [hderiv, sum_mul_fderiv_fderiv_add_fderiv_add_smul contDiffAt_const (hcd ht x)]
-      simp only [fderiv_fun_const, fderiv_zero, Pi.zero_apply, _root_.zero_apply,
-        mul_zero, Finset.sum_const_zero, zero_add, hw]
-      have hkey := hsub ht x
-      have hmul := mul_le_mul_of_nonneg_left hkey he.le
-      have hcγ : (c t x - γ) * (M + t * F) ≤ 0 :=
-        mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.mpr (hc ht x)) (by positivity)
-      nlinarith [mul_le_mul_of_nonneg_right he1 hF])
+    (fun t ht x ↦ deriv_le_of_eq_exp_neg_mul_mul_sub hw (hc ht x) (mul_nonneg hγ ht.1.le)
+      (add_nonneg hM (mul_nonneg ht.1.le hF)) hF (hcd ht x) (hdiff ht x) (hsub ht x))
     (fun x ↦ by simpa [hw] using hinit x)
   intro t ht x
   have h := hwle ht x
-  rw [hw, sub_nonpos] at h
-  have := mul_le_mul_of_nonneg_left h (Real.exp_pos (γ * t)).le
-  rwa [← mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_mul] at this
+  rwa [hw, sub_nonpos, Real.exp_neg, inv_mul_le_iff₀ (Real.exp_pos _)] at h
 
 /-- **The two-sided a priori bound for parabolic equations on the whole space.** Under the
-hypotheses on `a`, `b`, `c` of `le_exp_mul_mul_add_mul_of_deriv_le_add`, a function `u` that is
-continuous and bounded on `[0, T] × ℝⁿ`, `C²` in space and differentiable in time for `0 < t < T`,
-with `|P u| ≤ F` there and `|u(·, 0)| ≤ M`, satisfies `|u(t, x)| ≤ exp (γ t) (M + t F)`. -/
-theorem abs_le_exp_mul_mul_add_mul_of_abs_deriv_sub_le
+hypotheses on `a`, `b`, `c` of
+`le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add`, a function `u`
+that is continuous and bounded on `[0, T] × ℝⁿ`, `C²` in space and differentiable in time for
+`0 < t < T`, with `|P u| ≤ F` there and `|u(·, 0)| ≤ M`, satisfies
+`|u(t, x)| ≤ exp (γ t) (M + t F)`. -/
+theorem abs_le_exp_mul_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
     (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
     (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
@@ -379,10 +384,12 @@ theorem abs_le_exp_mul_mul_add_mul_of_abs_deriv_sub_le
     (hinit : ∀ x, |u 0 x| ≤ M) :
     ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ x, |u t x| ≤ Real.exp (γ * t) * (M + t * F) := by
   intro t ht x
-  have hle := le_exp_mul_mul_add_mul_of_deriv_le_add ha htr hb hc hγ hM hF hcont hbdd hcd hdiff
+  have hle := le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add ha htr
+    hb hc hγ hM hF hcont hbdd hcd hdiff
     (fun s hs y ↦ by linarith [(abs_le.mp (hP hs y)).2]) (fun y ↦ (abs_le.mp (hinit y)).2) ht x
   -- The lower bound is the upper bound for `-u`.
-  have hge := le_exp_mul_mul_add_mul_of_deriv_le_add (u := -u) ha htr hb hc hγ hM hF
+  have hge := le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add
+    (u := -u) ha htr hb hc hγ hM hF
     (hcont.neg.congr fun _ _ ↦ by simp [Function.uncurry_def])
     (by
       obtain ⟨m, hm⟩ := hbdd'
@@ -403,11 +410,11 @@ theorem abs_le_exp_mul_mul_add_mul_of_abs_deriv_sub_le
   exact abs_le.mpr ⟨by linarith, hle⟩
 
 /-- **The comparison principle for parabolic equations on the whole space.** Let `a`, `b` be as
-in `le_exp_mul_mul_add_mul_of_deriv_le_add` and let `c` be bounded above for `0 < t < T`. Let `u`
-and `v` be continuous on `[0, T] × ℝⁿ`, `C²` in space and differentiable in time for
-`0 < t < T`, with `u` bounded above and `v` bounded below. If `P u ≤ P v` for `0 < t < T` and
-`u(·, 0) ≤ v(·, 0)`, then `u ≤ v` on `[0, T] × ℝⁿ`. -/
-theorem le_of_deriv_sub_le_deriv_sub_of_le_initial
+in `le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add` and let `c` be
+bounded above for `0 < t < T`. Let `u` and `v` be continuous on `[0, T] × ℝⁿ`, `C²` in space and
+differentiable in time for `0 < t < T`, with `u` bounded above and `v` bounded below. If
+`P u ≤ P v` for `0 < t < T` and `u(·, 0) ≤ v(·, 0)`, then `u ≤ v` on `[0, T] × ℝⁿ`. -/
+theorem le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initial
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
     (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
     (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
@@ -435,8 +442,9 @@ theorem le_of_deriv_sub_le_deriv_sub_of_le_initial
     ring
   obtain ⟨Mu, hMu⟩ := hubdd
   obtain ⟨mv, hmv⟩ := hvbdd
-  have h := le_exp_mul_mul_add_mul_of_deriv_le_add (u := w) (γ := max γ 0) (M := 0) (F := 0) ha
-    htr hb (fun t ht x ↦ (hc ht x).trans (le_max_left _ _)) (le_max_right _ _) le_rfl le_rfl
+  have h := le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add (u := w)
+    (γ := max γ 0) (M := 0) (F := 0) ha htr hb (fun t ht x ↦ (hc ht x).trans (le_max_left _ _))
+    (le_max_right _ _) le_rfl le_rfl
     ((hucont.sub hvcont).congr fun p _ ↦ hw p.1 p.2)
     ⟨Mu - mv, by
       rintro _ ⟨⟨t, x⟩, hp, rfl⟩
@@ -460,10 +468,10 @@ theorem le_of_deriv_sub_le_deriv_sub_of_le_initial
   linarith
 
 /-- **Uniqueness for the Cauchy problem on the whole space.** With `a`, `b`, `c` as in
-`le_of_deriv_sub_le_deriv_sub_of_le_initial`, two functions that are continuous and bounded on
-`[0, T] × ℝⁿ`, `C²` in space and differentiable in time for `0 < t < T`, with `P u = P v` there
-and `u(·, 0) = v(·, 0)`, agree on `[0, T] × ℝⁿ`. -/
-theorem eqOn_of_deriv_sub_eq_deriv_sub_of_eqOn_initial
+`le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initial`, two functions that are
+continuous and bounded on `[0, T] × ℝⁿ`, `C²` in space and differentiable in time for
+`0 < t < T`, with `P u = P v` there and `u(·, 0) = v(·, 0)`, agree on `[0, T] × ℝⁿ`. -/
+theorem eqOn_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_of_eqOn_initial
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
     (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
     (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
@@ -487,10 +495,12 @@ theorem eqOn_of_deriv_sub_eq_deriv_sub_of_eqOn_initial
   rw [isBounded_iff_bddBelow_bddAbove] at hubdd hvbdd
   rintro ⟨t, x⟩ ⟨ht, -⟩
   exact le_antisymm
-    (le_of_deriv_sub_le_deriv_sub_of_le_initial ha htr hb hc hucont hvcont hubdd.2 hvbdd.1 hucd
-      hvcd hudiff hvdiff (fun s hs y ↦ (hP hs y).le) (fun y ↦ (hinit (mem_univ y)).le) ht x)
-    (le_of_deriv_sub_le_deriv_sub_of_le_initial ha htr hb hc hvcont hucont hvbdd.2 hubdd.1 hvcd
-      hucd hvdiff hudiff (fun s hs y ↦ (hP hs y).ge) (fun y ↦ (hinit (mem_univ y)).ge) ht x)
+    (le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initial ha htr hb hc hucont
+      hvcont hubdd.2 hvbdd.1 hucd hvcd hudiff hvdiff (fun s hs y ↦ (hP hs y).le)
+      (fun y ↦ (hinit (mem_univ y)).le) ht x)
+    (le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initial ha htr hb hc hvcont
+      hucont hvbdd.2 hubdd.1 hvcd hucd hvdiff hudiff (fun s hs y ↦ (hP hs y).ge)
+      (fun y ↦ (hinit (mem_univ y)).ge) ht x)
 
 end PDE
 
