@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.Algebra.MvPolynomial.Coeff
+import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -33,8 +33,6 @@ polynomials on a Cartan subalgebra, where `S` is the set of dominant integral we
 
 ## Main results
 
-* `MvPolynomial.IsHomogeneous.support_subset_finsuppAntidiag`: in finitely many variables, the
-  exponents of a homogeneous polynomial of degree `n` are among those of total degree `n`.
 * `MvPolynomial.span_sum_smul_X_pow_eq_homogeneousSubmodule`: the `n`-th powers of the linear
   forms with coefficient vectors in a polynomially dense set span the homogeneous polynomials of
   degree `n`.
@@ -50,40 +48,7 @@ namespace MvPolynomial
 
 variable {σ : Type*} [Fintype σ]
 
-/-- The `n`-th power of a linear form is homogeneous of degree `n`. -/
-theorem sum_smul_X_pow_mem_homogeneousSubmodule {R : Type*} [CommSemiring R] (x : σ → R)
-    (n : ℕ) : (∑ i, x i • X i : MvPolynomial σ R) ^ n ∈ homogeneousSubmodule σ R n := by
-  have h1 : (∑ i, x i • X i : MvPolynomial σ R) ∈ homogeneousSubmodule σ R 1 :=
-    Submodule.sum_mem _ fun i _ ↦
-      Submodule.smul_mem _ _ ((mem_homogeneousSubmodule 1 _).mpr (isHomogeneous_X R i))
-  simpa using ((mem_homogeneousSubmodule 1 _).mp h1).pow n
-
-/-- In finitely many variables, the exponents of a homogeneous polynomial of degree `n` lie in the
-finite set of exponents of total degree `n`. -/
-theorem IsHomogeneous.support_subset_finsuppAntidiag {R : Type*} [CommSemiring R] [DecidableEq σ]
-    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) :
-    p.support ⊆ (Finset.univ : Finset σ).finsuppAntidiag n := fun d hd ↦ by
-  have hdeg : d.degree = n := by
-    rw [Finsupp.degree_eq_weight_one]
-    exact hp (mem_support_iff.mp hd)
-  rw [Finsupp.degree_eq_sum] at hdeg
-  exact Finset.mem_finsuppAntidiag.mpr ⟨hdeg, Finset.subset_univ _⟩
-
-variable {K : Type*} [Field K]
-
-/-- A linear functional on homogeneous polynomials of degree `n` is determined by its values on
-the monomials of degree `n`. -/
-private theorem apply_eq_sum_coeff_mul [DecidableEq σ] {φ : Module.Dual K (MvPolynomial σ K)}
-    {n : ℕ} {p : MvPolynomial σ K} (hp : p ∈ homogeneousSubmodule σ K n) :
-    φ p = ∑ d ∈ (Finset.univ : Finset σ).finsuppAntidiag n, p.coeff d * φ (monomial d 1) := by
-  have hsupp := ((mem_homogeneousSubmodule n p).mp hp).support_subset_finsuppAntidiag
-  conv_lhs => rw [p.as_sum, Finset.sum_subset hsupp fun d _ hd ↦ by
-    rw [notMem_support_iff.mp hd, monomial_zero]]
-  simp only [map_sum]
-  refine Finset.sum_congr rfl fun d _ ↦ ?_
-  rw [← smul_eq_mul, ← map_smul, smul_monomial, smul_eq_mul, mul_one]
-
-variable [CharZero K]
+variable {K : Type*} [Field K] [CharZero K]
 
 /-- **Polarization.** Over a field of characteristic zero, let `S` be a polynomially dense set of
 points of `K^σ`, in the sense that only the zero polynomial vanishes at every point of `S`. Then the
@@ -100,10 +65,16 @@ theorem span_sum_smul_X_pow_eq_homogeneousSubmodule (S : Set (σ → K))
   by_contra hu'
   obtain ⟨φ, hφu, hφS⟩ := Submodule.exists_dual_map_eq_bot_of_notMem hu' inferInstance
   set D := (Finset.univ : Finset σ).finsuppAntidiag n
+  -- on homogeneous polynomials of degree `n`, `φ` is determined by its values on monomials
+  have hφ {p : MvPolynomial σ K} (hp : p ∈ homogeneousSubmodule σ K n) :
+      φ p = ∑ d ∈ D, p.coeff d * φ (monomial d 1) := by
+    conv_lhs => rw [((mem_homogeneousSubmodule n p).mp hp).as_sum_finsuppAntidiag, map_sum]
+    refine Finset.sum_congr rfl fun d _ ↦ ?_
+    rw [← smul_eq_mul, ← map_smul, smul_monomial, smul_eq_mul, mul_one]
   -- the polynomial in the coordinates whose value at `x` is `φ ((∑ i, x i • X i) ^ n)`
   set Q : MvPolynomial σ K := ∑ d ∈ D, monomial d ((d.multinomial : K) * φ (monomial d 1))
   have hQ (x : σ → K) : eval x Q = φ ((∑ i, x i • X i : MvPolynomial σ K) ^ n) := by
-    rw [apply_eq_sum_coeff_mul (sum_smul_X_pow_mem_homogeneousSubmodule x n), map_sum]
+    rw [hφ (sum_smul_X_pow_mem_homogeneousSubmodule x n), map_sum]
     refine Finset.sum_congr rfl fun d hd ↦ ?_
     have hdeg : d.sum (fun _ m ↦ m) = n := by
       simpa [Finsupp.sum_fintype] using (Finset.mem_finsuppAntidiag.mp hd).1
@@ -119,7 +90,7 @@ theorem span_sum_smul_X_pow_eq_homogeneousSubmodule (S : Set (σ → K))
       AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply] at hcoeff
     exact (mul_eq_zero.mp hcoeff).resolve_left (Nat.cast_ne_zero.mpr
       (Finsupp.multinomial_eq d ▸ Nat.multinomial_pos _ _).ne')
-  exact hφu <| (apply_eq_sum_coeff_mul hu).trans <|
+  exact hφu <| (hφ hu).trans <|
     Finset.sum_eq_zero fun d hd ↦ by rw [hmono d hd, mul_zero]
 
 end MvPolynomial
