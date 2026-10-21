@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Integral
-public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
-public import TauCeti.AlgebraicGeometry.Frobenius.Relative
 public import TauCeti.AlgebraicGeometry.Frobenius.Twist
 
 /-!
@@ -127,9 +125,9 @@ instance universallyClosed_frobenius (hX : (p : Γ(X, ⊤)) = 0) :
   ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ <|
     universally_isHomeomorph_frobenius hX⟩
 
-/-- **The absolute Frobenius is integral.** It is affine, since it pulls back every open to
-itself, and universally closed. -/
+/-- **The absolute Frobenius is integral.** -/
 instance isIntegralHom_frobenius (hX : (p : Γ(X, ⊤)) = 0) : IsIntegralHom (X.frobenius p hX) :=
+  -- `F_X` is affine, since it pulls back every open to itself, and universally closed
   have : IsAffineHom (X.frobenius p hX) := ⟨fun U hU ↦ by rwa [frobenius_preimage]⟩
   IsIntegralHom.iff_universallyClosed_and_isAffineHom.2 ⟨inferInstance, inferInstance⟩
 
@@ -145,31 +143,6 @@ end Absolute
 namespace Hom
 
 variable {X S : Scheme.{u}} (π : X ⟶ S) (p : ℕ) [Fact p.Prime] (hS : (p : Γ(S, ⊤)) = 0)
-
-/-- The projection `X^{(p^n)} ⟶ X` from the `n`-th Frobenius twist, followed by the iterated
-relative Frobenius, is the `n`-fold absolute Frobenius of the twist. -/
-@[reassoc (attr := simp)]
-theorem fst_iterateRelativeFrobenius (n : ℕ) :
-    pullback.fst π (S.iterateFrobenius p hS n) ≫ π.iterateRelativeFrobenius p hS n =
-      (pullback π (S.iterateFrobenius p hS n)).iterateFrobenius p
-        (natCast_eq_zero_of_hom (pullback.snd _ _) hS) n := by
-  ext
-  · rw [Category.assoc, iterateRelativeFrobenius_fst,
-      iterateFrobenius_naturality _ (natCast_eq_zero_of_hom π hS)]
-  · rw [Category.assoc, iterateRelativeFrobenius_snd, pullback.condition,
-      iterateFrobenius_naturality _ hS]
-
-/-- The projection `X^{(p)} ⟶ X` from the Frobenius twist, followed by the relative Frobenius,
-is the absolute Frobenius of the twist. -/
-@[reassoc (attr := simp)]
-theorem fst_relativeFrobenius :
-    pullback.fst π (S.frobenius p hS) ≫ π.relativeFrobenius p hS =
-      (pullback π (S.frobenius p hS)).frobenius p
-        (natCast_eq_zero_of_hom (pullback.snd _ _) hS) := by
-  ext
-  · rw [Category.assoc, relativeFrobenius_fst,
-      frobenius_naturality _ (natCast_eq_zero_of_hom π hS)]
-  · rw [Category.assoc, relativeFrobenius_snd, pullback.condition, frobenius_naturality _ hS]
 
 /-- **The iterated relative Frobenius is a universal homeomorphism.** -/
 theorem universally_isHomeomorph_iterateRelativeFrobenius (n : ℕ) :
@@ -212,20 +185,20 @@ instance universallyClosed_relativeFrobenius : UniversallyClosed (π.relativeFro
   ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ <|
     universally_isHomeomorph_relativeFrobenius π p hS⟩
 
-/-- **The iterated relative Frobenius is integral.** Its composite with the projection
-`X^{(p^n)} ⟶ X`, which is integral and hence separated as a base change of `F_S^n`, is the
-integral morphism `F_X^n`. -/
+/-- **The iterated relative Frobenius is integral.** -/
 instance isIntegralHom_iterateRelativeFrobenius (n : ℕ) :
     IsIntegralHom (π.iterateRelativeFrobenius p hS n) :=
+  -- its composite with the projection `X^{(p^n)} ⟶ X`, which is integral and hence separated as
+  -- a base change of `F_S^n`, is the integral morphism `F_X^n`
   have : IsSeparated (pullback.fst π (S.iterateFrobenius p hS n)) := .of_isAffineHom _
   have : IsIntegralHom (π.iterateRelativeFrobenius p hS n ≫ pullback.fst _ _) := by
     rw [iterateRelativeFrobenius_fst]; infer_instance
   .of_comp _ (pullback.fst _ _)
 
-/-- **The relative Frobenius is integral.** Its composite with the projection `X^{(p)} ⟶ X`,
-which is integral and hence separated as a base change of `F_S`, is the integral morphism
-`F_X`. -/
+/-- **The relative Frobenius is integral.** -/
 instance isIntegralHom_relativeFrobenius : IsIntegralHom (π.relativeFrobenius p hS) :=
+  -- its composite with the projection `X^{(p)} ⟶ X`, which is integral and hence separated as a
+  -- base change of `F_S`, is the integral morphism `F_X`
   have : IsSeparated (pullback.fst π (S.frobenius p hS)) := .of_isAffineHom _
   have : IsIntegralHom (π.relativeFrobenius p hS ≫ pullback.fst _ _) := by
     rw [relativeFrobenius_fst]; infer_instance
