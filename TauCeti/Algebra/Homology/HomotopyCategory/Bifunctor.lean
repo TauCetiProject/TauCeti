@@ -148,10 +148,15 @@ def map₂HomotopyCategoryLeftUnitor :
     (NatIso.ofComponents (F := HomotopyCategory.quotient D c ⋙ _)
       (G := HomotopyCategory.quotient D c ⋙ 𝟭 _)
       (fun K ↦ (HomotopyCategory.quotient D c).mapIso (mapBifunctorLeftUnitor F X e K))
-      (fun f ↦ ((HomotopyCategory.quotient D c).map_comp _ _).symm.trans
-        (((HomotopyCategory.quotient D c).congr_map
-          (mapBifunctorLeftUnitor_naturality F X e f)).trans
-          ((HomotopyCategory.quotient D c).map_comp _ _))))
+      -- The source objects of the goal are `(quotient ⋙ _).obj K`, which agree with
+      -- `quotient.obj (mapBifunctor X[0] K F c)` by `map₂HomotopyCategory_obj_obj` (`rfl`),
+      -- so the image of the naturality on complexes closes the goal.
+      (fun f ↦ by
+        simp only [Functor.comp_map, map₂HomotopyCategory_obj_map, Functor.id_map]
+        have h := (HomotopyCategory.quotient D c).congr_map
+          (mapBifunctorLeftUnitor_naturality F X e f)
+        rw [Functor.map_comp, Functor.map_comp] at h
+        exact h))
 
 @[simp]
 lemma map₂HomotopyCategoryLeftUnitor_hom_app (K : HomologicalComplex D c) :
@@ -215,13 +220,16 @@ def map₂HomotopyCategoryAssociator (K₁ : HomologicalComplex C₁ c₁)
       (G := HomotopyCategory.quotient C₃ c₃ ⋙ _)
       (fun K₃ ↦ (HomotopyCategory.quotient C₄ c₄).mapIso
         (mapBifunctorAssociator associator K₁ K₂ K₃ c₁₂ c₂₃ c₄))
-      (fun f ↦ ((HomotopyCategory.quotient C₄ c₄).map_comp _ _).symm.trans
-        (((HomotopyCategory.quotient C₄ c₄).congr_map (by
-          have h := TauCeti.HomologicalComplex.mapBifunctorAssociator_naturality associator
-            c₁₂ c₂₃ c₄ (𝟙 K₁) (𝟙 K₂) f
-          rw [mapBifunctorMap_id] at h
-          exact h)).trans
-          ((HomotopyCategory.quotient C₄ c₄).map_comp _ _))))
+      -- As for the left unitor, both sides agree with images of complexes by
+      -- `map₂HomotopyCategory_obj_obj` (`rfl`), so the image of the naturality on complexes
+      -- closes the goal.
+      (fun f ↦ by
+        simp only [Functor.comp_map, map₂HomotopyCategory_obj_map]
+        have h := (HomotopyCategory.quotient C₄ c₄).congr_map
+          (TauCeti.HomologicalComplex.mapBifunctorAssociator_naturality associator
+            c₁₂ c₂₃ c₄ (𝟙 K₁) (𝟙 K₂) f)
+        rw [mapBifunctorMap_id, Functor.map_comp, Functor.map_comp] at h
+        exact h))
 
 @[simp]
 lemma map₂HomotopyCategoryAssociator_hom_app (K₁ : HomologicalComplex C₁ c₁)
