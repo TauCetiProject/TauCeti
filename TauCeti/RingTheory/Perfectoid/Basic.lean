@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.Padics.Complex
 public import TauCeti.RingTheory.Huber.Frobenius
 public import TauCeti.RingTheory.Huber.Normed
-public import TauCeti.RingTheory.Huber.Uniform
 
 /-!
 # Perfectoid Tate rings
