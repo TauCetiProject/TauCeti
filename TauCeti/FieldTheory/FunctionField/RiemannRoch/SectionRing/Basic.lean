@@ -142,7 +142,6 @@ theorem monomialDegreeOne_mem_sectionRingGrade {D : Divisor k F} {s : F}
   coeffSubalgebra.monomial_mem_grade _ _ _
 
 /-- Multiplying a degree-one section by a monomial multiplies their coefficients. -/
-@[simp]
 theorem monomialDegreeOne_mul_monomial {D : Divisor k F} {s a : F} {n : ℕ}
     (hs : s ∈ riemannRochSpace D) (ha : a ∈ riemannRochSpace (n • D)) :
     ((monomialDegreeOne hs * coeffSubalgebra.monomial _ n a ha : sectionRing D) : F[X]) =
@@ -177,9 +176,9 @@ theorem coe_sectionRingGradeOneEquiv_symm_apply (D : Divisor k F) (f : sectionRi
 
 /-- Each homogeneous piece of a function-field section ring is finite-dimensional. -/
 theorem finiteDimensional_sectionRingGrade (hF : IsFunctionField k F)
-    (D : Divisor k F) (n : ℕ) : FiniteDimensional k (sectionRingGrade D n) := by
-  have := finiteDimensional_riemannRochSpace hF (n • D)
-  exact Module.Finite.equiv (coeffSubalgebra.gradeEquiv _ n)
+    (D : Divisor k F) (n : ℕ) : FiniteDimensional k (sectionRingGrade D n) :=
+  (Submodule.fg_iff_finiteDimensional _).mp (coeffSubalgebra.fg_grade
+    ((Submodule.fg_iff_finiteDimensional _).mpr (finiteDimensional_riemannRochSpace hF (n • D))))
 
 /-! ### Generation in degree one -/
 
