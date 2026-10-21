@@ -90,7 +90,7 @@ theorem IsSmoothForm.wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {φ : R
     IsSmoothForm I n (φ.wedgeWith μ ψ) := by
   rw [isSmoothForm_def] at hφ hψ ⊢
   simpa only [isSmoothBundleForm_def, bundleWedgeWith_trivial] using
-    IsSmoothBundleForm.wedgeWith (fun _ ↦ μ.continuous₂) (contMDiff_const_bundlePairing μ)
+    IsSmoothBundleForm.bundleWedgeWith (fun _ ↦ μ.continuous₂) (contMDiff_const_bundlePairing μ)
       ((isSmoothBundleForm_def n φ).mpr hφ) ((isSmoothBundleForm_def n ψ).mpr hψ)
 
 /-- The real wedge of two real-valued forms of class `C^n` is of class `C^n`. -/
@@ -107,7 +107,7 @@ theorem smoothForms_wedgeWith_mem (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ 
       smoothForms I M F₃ (k + l) := by
   apply mem_smoothForms.mpr
   simpa only [bundleWedgeWith_trivial] using
-    IsSmoothBundleForm.wedgeWith (fun _ ↦ μ.continuous₂)
+    IsSmoothBundleForm.bundleWedgeWith (fun _ ↦ μ.continuous₂)
       (contMDiff_const_bundlePairing μ) φ.isSmoothBundleForm ψ.isSmoothBundleForm
 
 /-- Smooth real-valued forms are closed under the real wedge. -/

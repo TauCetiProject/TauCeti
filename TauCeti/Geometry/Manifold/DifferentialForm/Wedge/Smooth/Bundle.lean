@@ -155,7 +155,7 @@ theorem _root_.ContMDiffAt.bundleWedgeWith_form
   ContMDiffWithinAt.bundleWedgeWith_form hμ hpair hφ hψ
 
 /-- A `C^n` pairing preserves `C^n` bundle-valued forms. -/
-theorem IsSmoothBundleForm.wedgeWith
+theorem IsSmoothBundleForm.bundleWedgeWith
     {μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y}
     (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
     (hpair : ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
@@ -176,7 +176,7 @@ def wedgeWith (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
     SmoothBundleForm I F₁ V₁ k →ₗ[ℝ] SmoothBundleForm I F₂ V₂ l →ₗ[ℝ]
       SmoothBundleForm I F₃ V₃ (k + l) :=
   LinearMap.mk₂ ℝ (fun φ ψ ↦ ⟨bundleWedgeWith μ hμ φ.1 ψ.1,
-      mem_smoothBundleForms.mpr <| IsSmoothBundleForm.wedgeWith hμ hpair
+      mem_smoothBundleForms.mpr <| IsSmoothBundleForm.bundleWedgeWith hμ hpair
         (mem_smoothBundleForms.mp φ.2) (mem_smoothBundleForms.mp ψ.2)⟩)
     (fun φ φ' ψ ↦ Subtype.ext <| bundleWedgeWith_add_left μ hμ φ.1 φ'.1 ψ.1)
     (fun c φ ψ ↦ Subtype.ext <| bundleWedgeWith_smul_left μ hμ c φ.1 ψ.1)
