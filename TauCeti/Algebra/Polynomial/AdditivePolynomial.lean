@@ -44,6 +44,9 @@ characteristic `p`, `a_V = X ^ p - X`.
 * `AddSubgroup.aeval_additivePolynomial_eq_zero_iff`: the roots of `a_V` in a domain are the
   elements of `V`.
 * `AddSubgroup.aeval_additivePolynomial_add`: `a_V (x + y) = a_V x + a_V y`.
+* `AddSubgroup.map_additivePolynomial_sub_C_eq_prod`: `a_V - u = ∏_{c ∈ V} (X - (y + c))`.
+* `AddSubgroup.splits_additivePolynomial_sub_C`: `a_V - u` splits in any commutative `K`-algebra
+  containing one of its roots.
 * `AddSubgroup.derivative_additivePolynomial`: the derivative of `a_V` is the constant
   `∏_{c ∈ V, c ≠ 0} (-c)`.
 * `AddSubgroup.isIntegral_of_aeval_additivePolynomial_eq`: a root of `a_V - u` is integral.
@@ -189,6 +192,29 @@ theorem aeval_additivePolynomial_sub (x y : A) :
     aeval (x - y) V.additivePolynomial =
       aeval x V.additivePolynomial - aeval y V.additivePolynomial := by
   rw [eq_sub_iff_add_eq, ← aeval_additivePolynomial_add, sub_add_cancel]
+
+/-- If `y` is a root of `a_V - u`, then `a_V - u` is the product of `X - (y + c)` over `c ∈ V`. -/
+theorem map_additivePolynomial_sub_C_eq_prod {u : K} {y : A}
+    (hy : aeval y V.additivePolynomial = algebraMap K A u) :
+    (V.additivePolynomial - C u).map (algebraMap K A) =
+      ∏ c : V, (X - C (y + algebraMap K A c)) := by
+  have hX : aeval (X : A[X]) V.additivePolynomial = V.additivePolynomial.map (algebraMap K A) := by
+    rw [← aeval_map_algebraMap A, aeval_X_left_apply]
+  have h := V.aeval_additivePolynomial_sub (A := A[X]) X (C y)
+  rw [hX, ← algebraMap_eq (R := A), aeval_algebraMap_apply, hy, algebraMap_eq,
+    aeval_additivePolynomial] at h
+  rw [Polynomial.map_sub, map_C, ← h]
+  refine Fintype.prod_congr _ _ fun c ↦ ?_
+  rw [IsScalarTower.algebraMap_apply K A A[X], algebraMap_eq, C_add]
+  ring
+
+/-- `a_V - u` splits in any commutative `K`-algebra containing one of its roots. -/
+theorem splits_additivePolynomial_sub_C {u : K} {y : A}
+    (hy : aeval y V.additivePolynomial = algebraMap K A u) :
+    ((V.additivePolynomial - C u).map (algebraMap K A)).Splits := by
+  rw [V.map_additivePolynomial_sub_C_eq_prod hy]
+  exact Splits.prod fun c _ ↦ Splits.X_sub_C _
+
 
 /-- **The derivative of `a_V` is constant**: `a_V' = ∏_{c ∈ V, c ≠ 0} (-c)`. In particular it is
 a unit, which makes `a_V - u` separable for every `u`. -/

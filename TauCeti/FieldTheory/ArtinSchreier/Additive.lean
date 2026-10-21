@@ -17,8 +17,8 @@ Let `V` be a finite additive subgroup of a field `K`, with additive polynomial
 splits in `L` into distinct linear factors. Hence `L / K` is Galois, every automorphism `σ`
 translates `y` by an element `σ y - y` of `V`, and this translation is an injective homomorphism
 `Gal(L/K) → V`. In particular `[L : K] ≤ |V|`, and when equality holds the Galois group is `V`.
-The splitting results hold in any commutative `K`-algebra containing the root `y`; the translation
-results require only a domain `K`-algebra.
+The translation results require only a domain `K`-algebra. The polynomial factorization and
+splitting results are in `TauCeti/Algebra/Polynomial/AdditivePolynomial.lean`.
 
 For `V` the prime field of a field of characteristic `p` this is the Artin–Schreier theory of
 `TauCeti/FieldTheory/ArtinSchreier/Basic.lean`. For larger `V` the Galois group is elementary
@@ -33,7 +33,6 @@ forced by a totally ramified place
 
 ## Main results
 
-* `AddSubgroup.map_additivePolynomial_sub_C_eq_prod`: `a_V - u = ∏_{c ∈ V} (X - (y + c))`.
 * `AddSubgroup.isGalois_of_aeval_additivePolynomial_eq`: `L / K` is Galois.
 * `AddSubgroup.artinSchreierTranslationHom_injective`: an automorphism is determined by its
   translation.
@@ -54,34 +53,6 @@ namespace AddSubgroup
 
 variable {K L : Type*} [Field K]
 variable (V : AddSubgroup K) [Fintype V] {u : K} {y : L}
-
-section CommRing
-
-variable [CommRing L] [Algebra K L]
-variable (hy : aeval y V.additivePolynomial = algebraMap K L u)
-include hy
-
-/-- If `y` is a root of `a_V - u`, then `a_V - u` is the product of `X - (y + c)` over `c ∈ V`. -/
-theorem map_additivePolynomial_sub_C_eq_prod :
-    (V.additivePolynomial - C u).map (algebraMap K L) =
-      ∏ c : V, (X - C (y + algebraMap K L c)) := by
-  have hX : aeval (X : L[X]) V.additivePolynomial = V.additivePolynomial.map (algebraMap K L) := by
-    rw [← aeval_map_algebraMap L, aeval_X_left_apply]
-  have h := V.aeval_additivePolynomial_sub (A := L[X]) X (C y)
-  rw [hX, ← algebraMap_eq (R := L), aeval_algebraMap_apply, hy, algebraMap_eq,
-    aeval_additivePolynomial] at h
-  rw [Polynomial.map_sub, map_C, ← h]
-  refine Fintype.prod_congr _ _ fun c ↦ ?_
-  rw [IsScalarTower.algebraMap_apply K L L[X], algebraMap_eq, C_add]
-  ring
-
-/-- `a_V - u` splits in any commutative `K`-algebra containing one of its roots. -/
-theorem splits_additivePolynomial_sub_C :
-    ((V.additivePolynomial - C u).map (algebraMap K L)).Splits := by
-  rw [V.map_additivePolynomial_sub_C_eq_prod hy]
-  exact Splits.prod fun c _ ↦ Splits.X_sub_C _
-
-end CommRing
 
 section Domain
 
