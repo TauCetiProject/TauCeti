@@ -68,7 +68,7 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   a strict subsolution of `L`, with an explicit lower bound for `L w`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_add_smul`,
   `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
-* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
+* `Matrix.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
@@ -246,7 +246,7 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_neg (A : Matrix ι ι ℝ)
   simp only [h, fderiv_neg, _root_.neg_apply, mul_neg, Finset.sum_neg_distrib, neg_add]
 
 /-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the squared norm `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`. -/
-theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq (A : Matrix ι ι ℝ)
+theorem _root_.Matrix.sum_mul_fderiv_fderiv_add_fderiv_norm_sq (A : Matrix ι ι ℝ)
     (x v : EuclideanSpace ℝ ι) :
     ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x
       (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
-import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
 
 /-!
 # The comparison principle for parabolic equations on the whole space
@@ -38,9 +37,9 @@ satisfies `P u ≤ F` and `u(·, 0) ≤ M`, where `0 ≤ γ`, `0 ≤ M` and `0 �
 `u(t, x) ≤ exp (γ t) (M + t F)`.
 
 Taking `γ = C₊ = max (0, sup c)`, `M = sup u(·, 0)⁺` and `F = sup (P u)⁺` gives
-`sup u⁺ ≤ exp (C₊ T) (sup u(·, 0)⁺ + T sup (P u)⁺)`. The comparison
-principle and uniqueness among bounded classical solutions of the Cauchy problem follow. These are
-the whole-space analogues of the maximum principle on bounded cylinders; on `ℝⁿ` the parabolic
+`sup u⁺ ≤ exp (C₊ T) (sup u(·, 0)⁺ + T sup (P u)⁺)`. The comparison principle and uniqueness for
+the Cauchy problem among classical solutions with bounded difference follow. These are the
+whole-space analogues of the maximum principle on bounded cylinders; on `ℝⁿ` the parabolic
 boundary is the initial slice alone, and the boundedness hypothesis replaces the lateral boundary
 condition.
 
@@ -67,7 +66,7 @@ All declarations are in the `TauCeti.PDE` namespace.
 * `le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initial`:
   **the comparison principle**.
 * `eqOn_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_of_eqOn_initial`:
-  uniqueness for the Cauchy problem among bounded classical solutions.
+  uniqueness for the Cauchy problem among classical solutions with bounded difference.
 
 ## References
 
@@ -412,7 +411,7 @@ theorem abs_le_exp_mul_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_add_fd
 /-- **The comparison principle for parabolic equations on the whole space.** Let `a`, `b` be as
 in `le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add` and let `c` be
 bounded above for `0 < t < T`. Let `u` and `v` be continuous on `[0, T] × ℝⁿ`, `C²` in space and
-differentiable in time for `0 < t < T`, with `u` bounded above and `v` bounded below. If
+differentiable in time for `0 < t < T`, with `u - v` bounded above. If
 `P u ≤ P v` for `0 < t < T` and `u(·, 0) ≤ v(·, 0)`, then `u ≤ v` on `[0, T] × ℝⁿ`. -/
 theorem le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initial
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
@@ -421,8 +420,7 @@ theorem le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initia
     (hc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, c t x ≤ γ)
     (hucont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ univ))
     (hvcont : ContinuousOn (Function.uncurry v) (Icc 0 T ×ˢ univ))
-    (hubdd : BddAbove (Function.uncurry u '' Icc 0 T ×ˢ univ))
-    (hvbdd : BddBelow (Function.uncurry v '' Icc 0 T ×ˢ univ))
+    (hbdd : BddAbove (Function.uncurry (u - v) '' Icc 0 T ×ˢ univ))
     (hucd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ContDiffAt ℝ 2 (u t) x)
     (hvcd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ContDiffAt ℝ 2 (v t) x)
     (hudiff : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, DifferentiableAt ℝ (fun s ↦ u s x) t)
@@ -440,18 +438,15 @@ theorem le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initia
   have hw : ∀ t x, w t x = u t x - v t x := fun t x ↦ by
     simp only [w, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
-  obtain ⟨Mu, hMu⟩ := hubdd
-  obtain ⟨mv, hmv⟩ := hvbdd
+  obtain ⟨Mw, hMw⟩ := hbdd
   have h := le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add (u := w)
     (γ := max γ 0) (M := 0) (F := 0) ha htr hb (fun t ht x ↦ (hc ht x).trans (le_max_left _ _))
     (le_max_right _ _) le_rfl le_rfl
     ((hucont.sub hvcont).congr fun p _ ↦ hw p.1 p.2)
-    ⟨Mu - mv, by
+    ⟨Mw, by
       rintro _ ⟨⟨t, x⟩, hp, rfl⟩
-      have h1 : u t x ≤ Mu := hMu ⟨(t, x), hp, rfl⟩
-      have h2 : mv ≤ v t x := hmv ⟨(t, x), hp, rfl⟩
-      simp only [Function.uncurry_apply_pair, hw]
-      linarith⟩
+      have h1 : u t x - v t x ≤ Mw := hMw ⟨(t, x), hp, rfl⟩
+      simpa only [Function.uncurry_apply_pair, hw] using h1⟩
     (fun t ht x ↦ (hucd ht x).add ((hvcd ht x).const_smul (-1 : ℝ)))
     (fun t ht x ↦ by
       simp only [hw]
@@ -469,8 +464,8 @@ theorem le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initia
 
 /-- **Uniqueness for the Cauchy problem on the whole space.** With `a`, `b`, `c` as in
 `le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initial`, two functions that are
-continuous and bounded on `[0, T] × ℝⁿ`, `C²` in space and differentiable in time for
-`0 < t < T`, with `P u = P v` there and `u(·, 0) = v(·, 0)`, agree on `[0, T] × ℝⁿ`. -/
+continuous on `[0, T] × ℝⁿ` with bounded difference there, `C²` in space and differentiable in
+time for `0 < t < T`, with `P u = P v` there and `u(·, 0) = v(·, 0)`, agree on `[0, T] × ℝⁿ`. -/
 theorem eqOn_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_of_eqOn_initial
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
     (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
@@ -478,8 +473,7 @@ theorem eqOn_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_of_eqOn_in
     (hc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, c t x ≤ γ)
     (hucont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ univ))
     (hvcont : ContinuousOn (Function.uncurry v) (Icc 0 T ×ˢ univ))
-    (hubdd : Bornology.IsBounded (Function.uncurry u '' Icc 0 T ×ˢ univ))
-    (hvbdd : Bornology.IsBounded (Function.uncurry v '' Icc 0 T ×ˢ univ))
+    (hbdd : Bornology.IsBounded (Function.uncurry (u - v) '' Icc 0 T ×ˢ univ))
     (hucd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ContDiffAt ℝ 2 (u t) x)
     (hvcd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ContDiffAt ℝ 2 (v t) x)
     (hudiff : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, DifferentiableAt ℝ (fun s ↦ u s x) t)
@@ -492,14 +486,22 @@ theorem eqOn_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_of_eqOn_in
         (EuclideanSpace.single j 1) + fderiv ℝ (v t) x (b t x) + c t x * v t x))
     (hinit : EqOn (u 0) (v 0) univ) :
     EqOn (Function.uncurry u) (Function.uncurry v) (Icc 0 T ×ˢ univ) := by
-  rw [isBounded_iff_bddBelow_bddAbove] at hubdd hvbdd
+  rw [isBounded_iff_bddBelow_bddAbove] at hbdd
+  -- The difference `v - u` is bounded above because `u - v` is bounded below.
+  have hbdd' : BddAbove (Function.uncurry (v - u) '' Icc 0 T ×ˢ univ) := by
+    obtain ⟨m, hm⟩ := hbdd.1
+    refine ⟨-m, ?_⟩
+    rintro _ ⟨⟨t, x⟩, hp, rfl⟩
+    have h1 : m ≤ u t x - v t x := hm ⟨(t, x), hp, rfl⟩
+    simp only [Function.uncurry_apply_pair, Pi.sub_apply]
+    linarith
   rintro ⟨t, x⟩ ⟨ht, -⟩
   exact le_antisymm
     (le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initial ha htr hb hc hucont
-      hvcont hubdd.2 hvbdd.1 hucd hvcd hudiff hvdiff (fun s hs y ↦ (hP hs y).le)
+      hvcont hbdd.2 hucd hvcd hudiff hvdiff (fun s hs y ↦ (hP hs y).le)
       (fun y ↦ (hinit (mem_univ y)).le) ht x)
     (le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initial ha htr hb hc hvcont
-      hucont hvbdd.2 hubdd.1 hvcd hucd hvdiff hudiff (fun s hs y ↦ (hP hs y).ge)
+      hucont hbdd' hvcd hucd hvdiff hudiff (fun s hs y ↦ (hP hs y).ge)
       (fun y ↦ (hinit (mem_univ y)).ge) ht x)
 
 end PDE
