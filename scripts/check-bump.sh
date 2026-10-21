@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 # Implementation is pinned in tauceti.toml; CI materializes it from TauCetiTools.
-exec uvx --from git+https://github.com/TauCetiProject/TauCetiTools@02db6ea51c27553cb6271e605612a56169ae72f6 tauceti-tools script check-bump.sh "$@"
+exec uvx --from git+https://github.com/TauCetiProject/TauCetiTools@e29d8d82f21200c96510116cd3e004e9d33bcaea tauceti-tools script check-bump.sh "$@"
