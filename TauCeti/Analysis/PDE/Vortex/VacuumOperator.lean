@@ -236,20 +236,6 @@ theorem integral_inner_vacuumAdjoint (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)
   simp_rw [h₁, h₂]
   exact (integral_inner_vacuumOperator g f).symm
 
-/-- The `L²` pairing of `x` with `(-Δ + 1/4) x` is `‖∂₁ x‖₂² + ‖∂₂ x‖₂² + ‖x‖₂² / 4`. -/
-private theorem integral_inner_neg_laplacian_add (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∫ z, ⟪f z, (-Δ f + (4⁻¹ : ℝ) • f) z⟫ ∂μ =
-      ∫ z, ‖(∂_{(1 : ℂ)} f) z‖ ^ 2 ∂μ + ∫ z, ‖(∂_{Complex.I} f) z‖ ^ 2 ∂μ +
-        4⁻¹ * ∫ z, ‖f z‖ ^ 2 ∂μ := by
-  have e : ∀ z, ⟪f z, (-Δ f + (4⁻¹ : ℝ) • f) z⟫ = -⟪f z, Δ f z⟫ + 4⁻¹ * ⟪f z, f z⟫ := by
-    intro z
-    simp [inner_add_right, inner_neg_right, inner_smul_right]
-  simp_rw [e]
-  rw [integral_add (by exact (integrable_inner f (Δ f)).neg)
-      (by exact (integrable_inner f f).const_mul _), integral_neg, integral_const_mul,
-    integral_inner_laplacian_right_self_eq_neg_sum Complex.orthonormalBasisOneI f]
-  simp [Fin.sum_univ_two]
-
 /-- **Energy identity** for the vacuum vortex operator:
 `‖L₀ x‖₂² = ‖∂₁ x‖₂² + ‖∂₂ x‖₂² + ‖x‖₂² / 4`. -/
 theorem integral_norm_vacuumOperator_sq (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
@@ -258,7 +244,8 @@ theorem integral_norm_vacuumOperator_sq (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4
         4⁻¹ * ∫ z, ‖f z‖ ^ 2 ∂μ := by
   simp_rw [← real_inner_self_eq_norm_sq (vacuumOperator f _)]
   rw [integral_inner_vacuumOperator, vacuumAdjoint_vacuumOperator,
-    integral_inner_neg_laplacian_add]
+    integral_inner_neg_laplacian_add_smul_self Complex.orthonormalBasisOneI, Fin.sum_univ_two]
+  simp
 
 /-- **Energy identity** for the adjoint:
 `‖L₀* x‖₂² = ‖∂₁ x‖₂² + ‖∂₂ x‖₂² + ‖x‖₂² / 4`. -/
@@ -268,7 +255,8 @@ theorem integral_norm_vacuumAdjoint_sq (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)
         4⁻¹ * ∫ z, ‖f z‖ ^ 2 ∂μ := by
   simp_rw [← real_inner_self_eq_norm_sq (vacuumAdjoint f _)]
   rw [integral_inner_vacuumAdjoint, vacuumOperator_vacuumAdjoint,
-    integral_inner_neg_laplacian_add]
+    integral_inner_neg_laplacian_add_smul_self Complex.orthonormalBasisOneI, Fin.sum_univ_two]
+  simp
 
 /-- The **first-order gap** of the vacuum vortex operator: `‖x‖₂² ≤ 4 ‖L₀ x‖₂²`. -/
 theorem integral_norm_sq_le_four_mul_integral_norm_vacuumOperator_sq

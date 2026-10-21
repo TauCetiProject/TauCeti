@@ -25,7 +25,10 @@ Directional derivatives of a Schwartz function commute (`SchwartzMap.lineDerivOp
 integrating by parts along an orthonormal basis gives Green's identity
 `∫ B(f, Δg) = -∑ᵢ ∫ B(∂_{bᵢ} f, ∂_{bᵢ} g)` for a continuous bilinear map `B`
 (`SchwartzMap.integral_bilinear_laplacian_right_eq_neg_sum`). For the inner product this reads
-`∫ ⟪f, Δf⟫ = -∑ᵢ ‖∂_{bᵢ} f‖₂²` (`SchwartzMap.integral_inner_laplacian_right_self_eq_neg_sum`).
+`∫ ⟪f, Δf⟫ = -∑ᵢ ‖∂_{bᵢ} f‖₂²` (`SchwartzMap.integral_inner_laplacian_right_self_eq_neg_sum`),
+and for the shifted Laplacian `-Δ + c` it is the energy identity
+`∫ ⟪f, (-Δ + c) f⟫ = ∑ᵢ ‖∂_{bᵢ} f‖₂² + c ‖f‖₂²`
+(`SchwartzMap.integral_inner_neg_laplacian_add_smul_self`).
 -/
 
 public section
@@ -127,5 +130,24 @@ theorem integral_inner_laplacian_right_self_eq_neg_sum {E F ι : Type*} [NormedA
     -- `innerSL ℝ u w` unfolds to `⟪u, w⟫`.
     integral_bilinear_laplacian_right_eq_neg_sum b f f (innerSL ℝ)
   simpa only [real_inner_self_eq_norm_sq] using h
+
+open MeasureTheory LineDeriv Laplacian RealInnerProductSpace in
+/-- The **energy identity** for the shifted Laplacian `-Δ + c` on Schwartz space: for an
+orthonormal basis `b` and a scalar `c`, `∫ ⟪f, (-Δ + c) f⟫ = ∑ᵢ ∫ ‖∂_{bᵢ} f‖² + c ∫ ‖f‖²`. -/
+theorem integral_inner_neg_laplacian_add_smul_self {E F ι : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [Fintype ι] (b : OrthonormalBasis ι ℝ E) (c : ℝ) (f : 𝓢(E, F)) :
+    ∫ x, ⟪f x, (-Δ f + c • f) x⟫ ∂μ =
+      ∑ i, ∫ x, ‖∂_{b i} f x‖ ^ 2 ∂μ + c * ∫ x, ‖f x‖ ^ 2 ∂μ := by
+  have e : ∀ x, ⟪f x, (-Δ f + c • f) x⟫ = -⟪f x, Δ f x⟫ + c * ‖f x‖ ^ 2 := fun x => by
+    simp [inner_add_right, inner_neg_right, inner_smul_right]
+  simp_rw [e]
+  -- `innerSL ℝ u w` unfolds to `⟪u, w⟫`, so these pairings are the integrands.
+  have hΔ : Integrable (fun x => ⟪f x, Δ f x⟫) μ := (pairing (innerSL ℝ) f (Δ f)).integrable
+  have hf : Integrable (fun x => ⟪f x, f x⟫) μ := (pairing (innerSL ℝ) f f).integrable
+  simp only [real_inner_self_eq_norm_sq] at hf
+  rw [integral_add (by exact hΔ.neg) (hf.const_mul c), integral_neg, integral_const_mul,
+    integral_inner_laplacian_right_self_eq_neg_sum b f, neg_neg]
 
 end SchwartzMap
