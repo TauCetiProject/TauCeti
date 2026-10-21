@@ -243,7 +243,7 @@ theorem ofConv_mul (f g : ConvolutionAlgebra α μ) :
   (rfl)
 
 @[simp]
-theorem toConv_mul (f g : C_c(G, A)) :
+theorem toConv_convolution (f g : C_c(G, A)) :
     (toConv (α.convolution μ f g) : ConvolutionAlgebra α μ) = toConv f * toConv g :=
   (rfl)
 
@@ -281,7 +281,7 @@ theorem ofConv_star (f : ConvolutionAlgebra α μ) :
   (rfl)
 
 @[simp]
-theorem toConv_star (f : C_c(G, A)) :
+theorem toConv_twistedInvolution (f : C_c(G, A)) :
     (toConv (α.twistedInvolution f) : ConvolutionAlgebra α μ) = star (toConv f) :=
   (rfl)
 
