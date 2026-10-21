@@ -372,8 +372,7 @@ theorem isHomogeneous_relations :
     lift ⟨(formalGroup.map Polynomial.C).rescale (Polynomial.X ^ 2), inferInstance⟩
   have hφ : φ.comp mk = (Polynomial.mapRingHom mk).comp (MvPolynomial.aeval
       fun ij ↦ Polynomial.C (MvPolynomial.X ij) * Polynomial.X ^ degree ij).toRingHom := by
-    rw [show φ.comp mk = _ from lift_comp_mk _]
-    refine MvPolynomial.ringHom_ext (fun r ↦ by simp) fun ⟨i, j⟩ ↦ ?_
+    refine (lift_comp_mk _).trans <| MvPolynomial.ringHom_ext (fun r ↦ by simp) fun ⟨i, j⟩ ↦ ?_
     simp [FormalGroup.coeff_rescale]
     ring
   intro n p hp
