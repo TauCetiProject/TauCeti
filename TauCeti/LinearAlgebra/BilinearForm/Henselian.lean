@@ -88,7 +88,7 @@ theorem IsSymm.equivalent_iff_isSquare_det_mul_det
       ring
     have hdiag := (TauCeti.equivalent_weightedSumSquares_iff_isSquare_prod_mul_prod_of_isUnit_two
       h2 w v).mpr hsq
-    exact (hB.equivalent_iff_toQuadraticMap_equivalent hC).mpr
+    exact (hB.equivalent_iff_toQuadraticMap_equivalent hC h2.isRegular).mpr
       (hw.trans (hdiag.trans hv.symm))
 
 open IsLocalRing in

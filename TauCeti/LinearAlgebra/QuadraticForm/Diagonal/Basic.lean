@@ -20,6 +20,8 @@ of squares.
 * `TauCeti.equivalent_weightedSumSquares_comp`: reindexing the coefficients preserves equivalence.
 * `TauCeti.equivalent_weightedSumSquares_of_pair`: a binary equivalence extends across fixed
   coordinates.
+* `TauCeti.equivalent_weightedSumSquares_cons`: an equivalence extends across a common first
+  coefficient.
 * `QuadraticMap.associated_weightedSumSquares`, `QuadraticForm.toMatrix'_weightedSumSquares`, and
   `QuadraticForm.discr'_weightedSumSquares`: over a ring in which two is invertible, the associated
   bilinear form of a diagonal form is the weighted dot product, its Gram matrix in the standard
@@ -174,6 +176,24 @@ theorem equivalent_weightedSumSquares_comp (w : ι → R) (σ : κ ≃ ι) :
     map_app' := fun x => ?_ }⟩
   simp only [QuadraticMap.weightedSumSquares_apply, Function.comp_apply, smul_eq_mul]
   simpa using (Equiv.sum_comp σ.symm (fun i => w (σ i) * (x (σ i) * x (σ i)))).symm
+
+/-- Adjoining the same first coefficient to isometric diagonal forms gives isometric diagonal
+forms. The weights may lie in any monoid acting on `R`, for instance `R` itself or its units. -/
+theorem equivalent_weightedSumSquares_cons {S : Type*} [Monoid S] [DistribMulAction S R]
+    [SMulCommClass S R R] {n : ℕ} (a : S) {w w' : Fin n → S}
+    (h : (weightedSumSquares R w).Equivalent (weightedSumSquares R w')) :
+    (weightedSumSquares R (Fin.cons a w : Fin (n + 1) → S)).Equivalent
+      (weightedSumSquares R (Fin.cons a w' : Fin (n + 1) → S)) := by
+  obtain ⟨e⟩ := h
+  -- Split off the first coordinate, apply `e` to the others, and put the coordinate back.
+  let L : (Fin (n + 1) → R) ≃ₗ[R] (Fin (n + 1) → R) :=
+    (Fin.consLinearEquiv R fun _ ↦ R).symm ≪≫ₗ
+      ((LinearEquiv.refl R R).prodCongr e.toLinearEquiv ≪≫ₗ Fin.consLinearEquiv R fun _ ↦ R)
+  refine ⟨{ toLinearEquiv := L
+            map_app' := fun x ↦ ?_ }⟩
+  have he := e.map_app (Fin.tail x)
+  simp only [weightedSumSquares_apply] at he
+  simp [L, weightedSumSquares_apply, Fin.sum_univ_succ, he, Fin.tail]
 
 /-- A diagonal form with unit weights is the diagonal form with the underlying scalar weights. -/
 theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
