@@ -300,21 +300,8 @@ and zero below it. -/
 theorem cdf_chiMeasure_eq (hk : 0 < k) (hs : 0 < s) (x : ℝ) :
     cdf (chiMeasure k s) x =
       if x < 0 then 0 else regularizedGamma (k / 2) ((x / s) ^ 2 / 2) := by
-  let _ := isProbabilityMeasure_chiMeasure hk.le hs
-  let _ := isProbabilityMeasure_chiSquaredMeasure hk.le
-  rw [cdf_eq_real, chiMeasure_of_scale_pos hs,
-    map_measureReal_apply (by fun_prop) measurableSet_Iic]
-  by_cases hx : x < 0
-  · have hpre : (fun y : ℝ ↦ s * √y) ⁻¹' Iic x = ∅ := by
-      ext y
-      simp only [mem_preimage, mem_Iic, mem_empty_iff_false, iff_false]
-      exact not_le_of_gt (lt_of_lt_of_le hx (mul_nonneg hs.le (sqrt_nonneg y)))
-    simp [hpre, hx]
-  · have hpre : (fun y : ℝ ↦ s * √y) ⁻¹' Iic x = Iic ((x / s) ^ 2) := by
-      ext y
-      simp only [mem_preimage, mem_Iic, ← le_div_iff₀' hs, sqrt_le_iff,
-        div_nonneg (le_of_not_gt hx) hs.le, true_and]
-    rw [hpre, ← cdf_eq_real, cdf_chiSquaredMeasure_eq hk, ite_eq_right hx]
+  have := isProbabilityMeasure_chiSquaredMeasure hk.le
+  rw [chiMeasure_of_scale_pos hs, Measure.cdf_map_const_mul_sqrt _ hs, cdf_chiSquaredMeasure_eq hk]
 
 /-- The cdf at the degree-zero boundary is the unit step at zero. -/
 theorem cdf_chiMeasure_zero (hs : 0 < s) (x : ℝ) :

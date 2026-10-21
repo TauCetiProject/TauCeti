@@ -28,8 +28,9 @@ the behavior of intersections of parts under refinement, the symmetry of lying i
 the determination of a partition by its parts through each point, the parts of a restriction, the
 monotonicity of `Finpartition.part` under refinement, the coarse parent
 `Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
-summation formulas for the fine parts below a coarse part, and the position of the parts of
-`Finpartition.atomise` relative to the sets it cuts along.
+summation formulas for the fine parts below a coarse part and for sums over points of functions of
+the fine and coarse parts through them, and the position of the parts of `Finpartition.atomise`
+relative to the sets it cuts along.
 -/
 
 public section
@@ -326,6 +327,28 @@ theorem sum_card_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
         Finset.sum_congr rfl fun B _ ↦ by rw [Finset.inter_eq_right.2 (Q.le B.2)]
     _ = #A.1 := by
         rw [sum_card_inter_filter_refinementParent_eq, Finset.inter_eq_right.2 (P.le A.2)]
+
+/-- Under a refinement `Q ≤ P`, the coarse part through a point of a fine part `B` is the coarse
+parent of `B`. -/
+theorem part_eq_refinementParent (h : Q ≤ P) (B : Q.parts) {a : α} (ha : a ∈ B.1) :
+    P.part a = (refinementParent h B).1 :=
+  P.part_eq_of_mem (refinementParent h B).2 (le_refinementParent h B ha)
+
+/-- Under a refinement `Q ≤ P`, a sum of a function of the fine and coarse parts through each
+point groups the points by fine part, each fine part paired with its coarse parent. -/
+theorem sum_apply_part_part (h : Q ≤ P) {M : Type*} [AddCommMonoid M]
+    (f : Finset α → Finset α → M) :
+    ∑ a ∈ s, f (Q.part a) (P.part a) = ∑ B : Q.parts, #B.1 • f B.1 (refinementParent h B).1 := by
+  have hs : ∑ a ∈ s, f (Q.part a) (P.part a) =
+      ∑ B ∈ Q.parts, ∑ a ∈ B, f (Q.part a) (P.part a) := by
+    calc ∑ a ∈ s, f (Q.part a) (P.part a)
+        = ∑ a ∈ Q.parts.biUnion id, f (Q.part a) (P.part a) := by rw [Q.biUnion_parts]
+      _ = _ := Finset.sum_biUnion Q.supIndep.pairwiseDisjoint
+  rw [hs, ← Finset.sum_coe_sort Q.parts]
+  refine Finset.sum_congr rfl fun B _ => ?_
+  rw [← Finset.sum_const]
+  exact Finset.sum_congr rfl fun a ha => by
+    rw [Q.part_eq_of_mem B.2 ha, part_eq_refinementParent h B ha]
 
 end FinsetRefinement
 

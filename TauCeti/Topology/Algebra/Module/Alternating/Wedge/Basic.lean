@@ -23,7 +23,9 @@ This file constructs the paired wedge of continuous alternating maps on real mod
 topology. Its determinant normalization is the signed-permutation sum divided by the two input
 factorials. It provides bilinearity and pullback compatibility for general topological coefficient
 spaces, including the flip law. Joint continuity of each pairing is supplied explicitly; no norm
-is required on the domain or coefficients.
+is required on the domain or coefficients. The wedge construction requires continuity only for
+multiplication by fixed scalars on the output coefficients; the flip law uses the stronger
+continuity assumptions of `ContinuousLinearMap.pairingFlip`.
 
 It also proves the norm-free interior-product antiderivation law
 `ι_v (φ ∧ ψ) = ι_v φ ∧ ψ + (-1) ^ (deg φ) • φ ∧ ι_v ψ`, using
@@ -51,7 +53,11 @@ variable {E F₁ F₂ F₃ : Type*}
   [AddCommGroup F₁] [Module ℝ F₁] [TopologicalSpace F₁]
   [AddCommGroup F₂] [Module ℝ F₂] [TopologicalSpace F₂]
   [AddCommGroup F₃] [Module ℝ F₃] [TopologicalSpace F₃]
-  [IsTopologicalAddGroup F₃] [ContinuousSMul ℝ F₃]
+  [IsTopologicalAddGroup F₃]
+
+section Wedge
+
+variable [ContinuousConstSMul ℝ F₃]
 
 /-- The linear map induced by a continuous bilinear pairing on the tensor product. -/
 noncomputable def pairingLinear (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
@@ -105,6 +111,7 @@ noncomputable def wedgeWithUnalternatedContinuous {k l : ℕ}
       fun_prop }
 
 /-- Evaluation of the continuous unalternated pairing on concatenated vectors. -/
+@[simp]
 theorem wedgeWithUnalternatedContinuous_apply {k l : ℕ}
     (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
@@ -220,7 +227,7 @@ theorem pairedWedge_smul_right [ContinuousConstSMul ℝ F₂] {k l : ℕ} (μ : 
 /-- Postcomposing the pairing postcomposes the paired wedge. -/
 @[simp]
 theorem pairedWedge_postcomp {F₄ : Type*} [AddCommGroup F₄] [Module ℝ F₄]
-    [TopologicalSpace F₄] [IsTopologicalAddGroup F₄] [ContinuousSMul ℝ F₄]
+    [TopologicalSpace F₄] [IsTopologicalAddGroup F₄] [ContinuousConstSMul ℝ F₄]
     {k l : ℕ} (nu : F₃ →L[ℝ] F₄) (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
@@ -313,6 +320,12 @@ theorem pairedWedge_zero_right {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F
   simp only [pairedWedge_apply, ContinuousAlternatingMap.coe_zero, Pi.zero_apply, _root_.map_zero,
     smul_zero, Finset.sum_const_zero]
 
+end Wedge
+
+section Flip
+
+variable [ContinuousSMul ℝ F₃]
+
 /-- The flip identity: swapping the two forms of a paired wedge flips the pairing and costs the
 graded sign `(-1) ^ (k * l)`. This holds for every pairing. -/
 theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
@@ -391,13 +404,17 @@ theorem pairedWedge_comm [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
   rw [pairedWedge_flip]
   simp only [hflip]
 
+end Flip
+
 section InteriorProduct
+
+variable [ContinuousConstSMul ℝ F₃]
 
 open Equiv
 
 variable {k l : ℕ}
 
-private lemma sum_sign_smul_insertNth_castAdd [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁]
+private lemma sum_sign_smul_insertNth_castAdd [ContinuousAdd F₁] [ContinuousConstSMul ℝ F₁]
     (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁) (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
     (w : Fin (k + 1 + l) → E) (i : Fin (k + 1)) :
@@ -422,7 +439,7 @@ private lemma sum_sign_smul_insertNth_castAdd [IsTopologicalAddGroup F₁] [Cont
     fun sigma => ?_
   simp [Perm.sign_permCongr]
 
-private lemma sum_sign_smul_insertNth_natAdd [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂]
+private lemma sum_sign_smul_insertNth_natAdd [ContinuousAdd F₂] [ContinuousConstSMul ℝ F₂]
     (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁) (psi : E [⋀^Fin (l + 1)]→L[ℝ] F₂) (v : E)
     (w : Fin (k + 1 + l) → E) (i : Fin (l + 1)) :
@@ -448,8 +465,8 @@ private lemma sum_sign_smul_insertNth_natAdd [IsTopologicalAddGroup F₂] [Conti
 This is the topological counterpart of `ContinuousAlternatingMap.curryLeft_pairedWedge` and the
 formula of Lee, *Introduction to Smooth Manifolds*, 2nd ed., Lemma 14.13. -/
 theorem curryLeftTopological_pairedWedge
-    [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁]
-    [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂]
+    [ContinuousAdd F₁] [ContinuousConstSMul ℝ F₁]
+    [ContinuousAdd F₂] [ContinuousConstSMul ℝ F₂]
     (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (phi : E [⋀^Fin (k + 1)]→L[ℝ] F₁)

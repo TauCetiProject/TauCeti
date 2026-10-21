@@ -62,6 +62,22 @@ theorem leftSingularSubspace_eq_pointSpectralSubspace (A : E →ₗ[𝕜] F) (Ω
       Module.End.pointSpectralSubspace (A ∘ₗ A.adjoint) Ω :=
   (rfl)
 
+/-- The right singular subspace of the adjoint is the left singular subspace
+of the original map. -/
+@[simp]
+theorem rightSingularSubspace_adjoint (A : E →ₗ[𝕜] F) (Ω : Set ℝ) :
+    A.adjoint.rightSingularSubspace Ω = A.leftSingularSubspace Ω := by
+  rw [rightSingularSubspace_eq_pointSpectralSubspace, adjoint_adjoint,
+    leftSingularSubspace_eq_pointSpectralSubspace]
+
+/-- The left singular subspace of the adjoint is the right singular subspace
+of the original map. -/
+@[simp]
+theorem leftSingularSubspace_adjoint (A : E →ₗ[𝕜] F) (Ω : Set ℝ) :
+    A.adjoint.leftSingularSubspace Ω = A.rightSingularSubspace Ω := by
+  rw [leftSingularSubspace_eq_pointSpectralSubspace, adjoint_adjoint,
+    rightSingularSubspace_eq_pointSpectralSubspace]
+
 /-- Enlarging the selected squared singular values enlarges the right block. -/
 theorem rightSingularSubspace_mono (A : E →ₗ[𝕜] F) {Ω Ω' : Set ℝ}
     (hΩ : Ω ⊆ Ω') : A.rightSingularSubspace Ω ≤ A.rightSingularSubspace Ω' := by
