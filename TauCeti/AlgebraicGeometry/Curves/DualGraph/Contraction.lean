@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Basic
 import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.Tactic.IntervalCases
 
 /-!
 # Contracting unstable rational components of dual graphs
