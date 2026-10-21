@@ -29,9 +29,9 @@ The class `TauCeti.Perfectoid.IsPerfectoidTateRing` states the Frobenius conditi
 every element of `R°` is a `p`-th power modulo `ϖ ^ p`, and `ϖ ^ p ∣ y ^ p` forces `ϖ ∣ y`. The
 second clause is in fact automatic for every `ϖ ∈ R°` invertible in `R`, because `R°` is integrally
 closed in `R` (`TauCeti.Perfectoid.injective_frobeniusModPow`); so a uniform Tate ring is
-perfectoid as soon as Frobenius is surjective for one such `ϖ`
-(`TauCeti.Perfectoid.IsPerfectoidTateRing.of_surjective`). Uniformity cannot be dropped, and is not
-implied by the Frobenius condition; it makes a perfectoid Tate ring reduced.
+perfectoid as soon as Frobenius is surjective for one pseudouniformiser `ϖ ∈ R°` with `ϖ ^ p ∣ p`
+in `R°` (`TauCeti.Perfectoid.IsPerfectoidTateRing.of_surjective`). Uniformity cannot be dropped,
+and is not implied by the Frobenius condition; it makes a perfectoid Tate ring reduced.
 
 ## Main definitions
 
