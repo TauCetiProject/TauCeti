@@ -290,6 +290,13 @@ theorem charPowerSeries_of_isEmpty [IsEmpty ι] (A : Matrix ι ι R) : A.charPow
   let _ : Fintype ι := Fintype.ofIsEmpty
   rw [charPowerSeries_eq_charpolyRev, charpolyRev_isEmpty, Polynomial.coe_one]
 
+/-- The principal-minor series of the zero matrix is `1`: every nonempty principal minor
+vanishes. -/
+@[simp]
+theorem charPowerSeries_zero : (0 : Matrix ι ι R).charPowerSeries = 1 := by
+  rw [← charPowerSeries_submatrix_of_row_eq_zero 0 (Function.Embedding.ofIsEmpty (α := PEmpty.{1}))
+    fun _ _ _ ↦ rfl, charPowerSeries_of_isEmpty]
+
 end Defs
 
 section ProductMajorants

@@ -174,6 +174,10 @@ theorem not_nil_cons {e : β} {h : G.IsLink e x y} {p : G.Walk y z} :
 theorem length_eq_zero_iff {p : G.Walk x y} : p.length = 0 ↔ p.Nil := by
   cases p <;> simp
 
+@[simp]
+theorem edges_eq_nil {p : G.Walk x y} : p.edges = [] ↔ p.Nil := by
+  cases p <;> simp
+
 @[grind .]
 protected theorem Nil.eq {p : G.Walk x y} : p.Nil → x = y
   | .nil => rfl

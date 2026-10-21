@@ -11,62 +11,51 @@ public import Mathlib.Data.Fintype.EquivFin
 /-!
 # The reachability order on strongly connected components
 
-Mathlib's `Quiver.StronglyConnectedComponent V` is the quotient of the vertices of a quiver by
-mutual reachability. Reachability itself descends to this quotient: one component lies below
-another when some, equivalently every, vertex of the first has a path to some, equivalently
-every, vertex of the second. Mutual reachability is exactly equality of components, so this is a
-partial order, the condensation order of the quiver. It is finite when the vertices are.
-
-## Main definitions
-
-* `Quiver.StronglyConnectedComponent.instPartialOrder`: components ordered by reachability.
+The strongly connected components of a quiver are the classes of vertices joined by paths in both
+directions. Reachability descends to them: one component is below another when some, equivalently
+every, vertex of the first has a path to some, equivalently every, vertex of the second. This
+relation is a partial order, the reachability order of the condensation of the quiver, and the
+components are finite in number when the vertices are. This order organizes, for instance, the
+minimum cuts of a network through the strongly connected components of its residual network.
 
 ## Main results
 
-* `Quiver.StronglyConnectedComponent.mk_le_mk`: the component of `a` lies below that of `b`
-  exactly when there is a path from `a` to `b`.
-* `Quiver.StronglyConnectedComponent.mk_surjective` and `Quiver.StronglyConnectedComponent.ind`:
-  every component is the component of a vertex.
+* `Quiver.StronglyConnectedComponent.instPartialOrder`: strongly connected components are
+  partially ordered by reachability.
+* `Quiver.StronglyConnectedComponent.mk_le_mk`: the component of `a` is below that of `b` exactly
+  when there is a path from `a` to `b`.
+* `Quiver.StronglyConnectedComponent.mk_surjective`: every component contains a vertex.
 -/
 
 public section
 
 namespace Quiver.StronglyConnectedComponent
 
-universe v u
+variable {V : Type*} [Quiver V]
 
-variable {V : Type u} [Quiver.{v} V]
-
+/-- Every strongly connected component contains a vertex. -/
 theorem mk_surjective :
     Function.Surjective (StronglyConnectedComponent.mk : V → StronglyConnectedComponent V) :=
-  @Quotient.mk'_surjective _ (stronglyConnectedSetoid V)
+  fun C ↦ Quotient.inductionOn C fun a ↦ ⟨a, rfl⟩
 
-/-- Induction on strongly connected components: a property of components holds for all of them
-when it holds for the component of every vertex. -/
-@[elab_as_elim]
-protected theorem ind {β : StronglyConnectedComponent V → Prop}
-    (h : ∀ v : V, β (StronglyConnectedComponent.mk v)) (C : StronglyConnectedComponent V) : β C :=
-  Quotient.ind h C
+instance [Finite V] : Finite (StronglyConnectedComponent V) :=
+  Quotient.finite _
 
-/-- Strongly connected components are ordered by reachability: `C ≤ D` when there is a path from
-a vertex of `C` to a vertex of `D`. Mutually reachable vertices have equal components, so this
-order is antisymmetric. -/
+/-- Strongly connected components are partially ordered by reachability: `C ≤ D` when a vertex of
+`C` has a path to a vertex of `D`. -/
 instance instPartialOrder : PartialOrder (StronglyConnectedComponent V) where
-  le := @Quotient.lift₂ _ _ _ (stronglyConnectedSetoid V) (stronglyConnectedSetoid V)
+  le := Quotient.lift₂ (s₁ := stronglyConnectedSetoid V) (s₂ := stronglyConnectedSetoid V)
     (fun a b ↦ Nonempty (Path a b)) fun _ _ _ _ ⟨⟨p⟩, ⟨p'⟩⟩ ⟨⟨q⟩, ⟨q'⟩⟩ ↦
-      propext ⟨fun ⟨r⟩ ↦ ⟨(p'.comp r).comp q⟩, fun ⟨r⟩ ↦ ⟨(p.comp r).comp q'⟩⟩
+      propext ⟨fun ⟨r⟩ ↦ ⟨p'.comp (r.comp q)⟩, fun ⟨r⟩ ↦ ⟨p.comp (r.comp q')⟩⟩
   le_refl C := Quotient.inductionOn C fun _ ↦ ⟨Path.nil⟩
   le_trans C D E := Quotient.inductionOn₃ C D E fun _ _ _ ⟨p⟩ ⟨q⟩ ↦ ⟨p.comp q⟩
   le_antisymm C D := Quotient.inductionOn₂ C D fun _ _ hab hba ↦ Quotient.sound ⟨hab, hba⟩
 
-/-- The component of `a` lies below that of `b` exactly when there is a path from `a` to `b`. -/
+/-- The component of `a` is below the component of `b` exactly when there is a path from `a` to
+`b`. -/
 @[simp]
 theorem mk_le_mk {a b : V} :
-    StronglyConnectedComponent.mk a ≤ (StronglyConnectedComponent.mk b :
-      StronglyConnectedComponent V) ↔ Nonempty (Path a b) :=
+    StronglyConnectedComponent.mk a ≤ StronglyConnectedComponent.mk b ↔ Nonempty (Path a b) :=
   Iff.rfl
-
-instance instFinite [Finite V] : Finite (StronglyConnectedComponent V) :=
-  Quotient.finite _
 
 end Quiver.StronglyConnectedComponent

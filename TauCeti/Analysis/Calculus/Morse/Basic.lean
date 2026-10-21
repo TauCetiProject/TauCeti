@@ -79,6 +79,14 @@ the notion be read off in any chart.
   locus all of whose points are nondegenerate is discrete.
 * `TauCeti.HasNondegenerateCriticalPointsOn.finite_setOfPred_fderiv_eq_zero`: such a critical
   locus is finite on a compact set on which `fderiv ℝ f` is continuous.
+* `ContDiffAt.exists_norm_fderiv_le_mul_norm_sub` and
+  `ContDiffAt.exists_abs_sub_le_mul_norm_sub_sq`: near a critical point the differential is
+  bounded by a multiple of the distance to it, and the energy difference by a multiple of its
+  square.
+* `TauCeti.IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_fderiv` and
+  `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`: near a
+  nondegenerate critical point the differential is bounded below by a multiple of the distance,
+  and the Morse form of Łojasiewicz's inequality holds.
 * `TauCeti.isNondegenerateCriticalPoint_comp_iff` and `TauCeti.IsNondegenerateCriticalPoint.comp`:
   nondegeneracy is invariant under a change of coordinates with invertible differential.
 * `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
@@ -324,6 +332,104 @@ theorem _root_.ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self_of_fl
 
 
 end Model
+
+end TauCeti
+
+/-! ### Upper and lower estimates on a normed space
+
+Near a critical point, the differential is bounded above by a multiple of the distance to the
+point, and the energy difference by a multiple of its square; at a nondegenerate critical point
+the differential is also bounded below by a multiple of the distance. These estimates use only the
+Fréchet derivative, so they hold on any real normed space; their gradient forms on a Hilbert space
+are in `TauCeti.Analysis.Calculus.Morse.Linearization`. -/
+
+namespace ContDiffAt
+
+section NormedSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
+
+/-- Near a critical point of a twice continuously differentiable function the differential is
+bounded above by a multiple of the distance to that point: it vanishes at the point and is
+differentiable there. -/
+theorem exists_norm_fderiv_le_mul_norm_sub (hf : ContDiffAt ℝ 2 f x) (hf' : fderiv ℝ f x = 0) :
+    ∃ C > 0, ∀ᶠ y in 𝓝 x, ‖fderiv ℝ f y‖ ≤ C * ‖y - x‖ := by
+  simpa only [hf', sub_zero] using
+    Asymptotics.isBigO_iff'.1 (hf.hasFDerivAt_fderiv le_rfl).isBigO_sub
+
+/-- Near a critical point of a twice continuously differentiable function the absolute energy
+difference `|f y - f x|` is bounded by a multiple of the squared distance to that point. This is
+the mean value inequality applied along the segment from `x` to `y`, on which the differential is
+bounded by a multiple of `‖y - x‖`. -/
+theorem exists_abs_sub_le_mul_norm_sub_sq (hf : ContDiffAt ℝ 2 f x) (hf' : fderiv ℝ f x = 0) :
+    ∃ C > 0, ∀ᶠ y in 𝓝 x, |f y - f x| ≤ C * ‖y - x‖ ^ 2 := by
+  obtain ⟨C, hC, hbd⟩ := hf.exists_norm_fderiv_le_mul_norm_sub hf'
+  have hdiff : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y := by
+    filter_upwards [hf.eventually (by simp)] with y hy
+    exact hy.differentiableAt (by simp)
+  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.1 (hbd.and hdiff)
+  refine ⟨C, hC, Metric.eventually_nhds_iff.2 ⟨r, hr, fun {y} hy ↦ ?_⟩⟩
+  have hyr : ‖y - x‖ < r := by rwa [← dist_eq_norm]
+  have hsub : Metric.closedBall x ‖y - x‖ ⊆ Metric.ball x r := fun z hz ↦
+    lt_of_le_of_lt (Metric.mem_closedBall.1 hz) hyr
+  have hkey : ‖f y - f x‖ ≤ C * ‖y - x‖ * ‖y - x‖ := by
+    refine Convex.norm_image_sub_le_of_norm_fderiv_le (s := Metric.closedBall x ‖y - x‖)
+      (fun z hz ↦ (hball (hsub hz)).2) (fun z hz ↦ ?_) (convex_closedBall x ‖y - x‖) ?_ ?_
+    · refine ((hball (hsub hz)).1).trans (mul_le_mul_of_nonneg_left ?_ hC.le)
+      have hz' := Metric.mem_closedBall.1 hz
+      rwa [dist_eq_norm] at hz'
+    · exact Metric.mem_closedBall_self (norm_nonneg _)
+    · simp [Metric.mem_closedBall, dist_eq_norm]
+  calc |f y - f x| = ‖f y - f x‖ := by rw [Real.norm_eq_abs]
+    _ ≤ C * ‖y - x‖ * ‖y - x‖ := hkey
+    _ = C * ‖y - x‖ ^ 2 := by ring
+
+end NormedSpace
+
+end ContDiffAt
+
+namespace TauCeti
+
+section NormedSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
+
+/-- Near a nondegenerate critical point the differential is bounded below by a multiple of the
+distance to that point: the second derivative is a linear homeomorphism onto the dual, hence
+bounded below, and the differential differs from it by a term of smaller order. -/
+theorem IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_fderiv
+    (h : IsNondegenerateCriticalPoint f x) :
+    ∃ c > 0, ∀ᶠ y in 𝓝 x, c * ‖y - x‖ ≤ ‖fderiv ℝ f y‖ := by
+  obtain ⟨A, hA⟩ := h.isInvertible
+  have hd : HasFDerivAt (fderiv ℝ f) (A : E →L[ℝ] E →L[ℝ] ℝ) x := by
+    rw [hA]
+    exact h.contDiffAt.hasFDerivAt_fderiv le_rfl
+  have hb := A.isBigO_sub_rev (𝓝 x) x
+  have he : Asymptotics.IsEquivalent (𝓝 x) (fun y ↦ fderiv ℝ f y - fderiv ℝ f x)
+      (fun y ↦ A (y - x)) :=
+    hd.isLittleO.trans_isBigO hb
+  simpa only [h.fderiv_eq_zero, sub_zero] using
+    Asymptotics.isBigO_iff''.1 (hb.trans he.isBigO_symm)
+
+/-- **The Morse form of Łojasiewicz's gradient inequality on a normed space.** Near a
+nondegenerate critical point the absolute energy difference is bounded by a multiple of the
+squared norm of the differential; equivalently the Łojasiewicz inequality holds there with
+exponent `1 / 2`. -/
+theorem IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq
+    (h : IsNondegenerateCriticalPoint f x) :
+    ∃ lam > 0, ∀ᶠ y in 𝓝 x, lam * |f y - f x| ≤ ‖fderiv ℝ f y‖ ^ 2 := by
+  obtain ⟨c, hc, h1⟩ := h.exists_mul_norm_sub_le_norm_fderiv
+  obtain ⟨C, hC, h2⟩ := h.contDiffAt.exists_abs_sub_le_mul_norm_sub_sq h.fderiv_eq_zero
+  refine ⟨c ^ 2 / C, by positivity, ?_⟩
+  filter_upwards [h1, h2] with y hy1 hy2
+  have h3 : (c * ‖y - x‖) ^ 2 ≤ ‖fderiv ℝ f y‖ ^ 2 :=
+    pow_le_pow_left₀ (by positivity) hy1 2
+  calc c ^ 2 / C * |f y - f x| ≤ c ^ 2 / C * (C * ‖y - x‖ ^ 2) :=
+        mul_le_mul_of_nonneg_left hy2 (by positivity)
+    _ = (c * ‖y - x‖) ^ 2 := by field_simp
+    _ ≤ ‖fderiv ℝ f y‖ ^ 2 := h3
+
+end NormedSpace
 
 end TauCeti
 
