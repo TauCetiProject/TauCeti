@@ -293,6 +293,30 @@ private theorem exists_tQ_eq : ∃ Q₂ : (Polynomial ℚ)⟦X⟧,
 
 /-! ### The coordinates as power series in `u` -/
 
+/-- `∑_{a ≥ 1} a uᵃ = u / (1 - u)²`. -/
+private theorem mk_id_mul_one_sub_X_sq : (mk fun a : ℕ ↦ (a : R)) * (1 - X) ^ 2 = X := by
+  -- `∑_{a ≥ 1} a uᵃ = u (1 + u + u² + ⋯)²`
+  have h : (mk fun a : ℕ ↦ (a : R)) = X * mk 1 ^ 2 := by
+    rw [mk_one_pow_eq_mk_choose_add]
+    refine PowerSeries.ext fun n ↦ ?_
+    rcases n with _ | n
+    · simp
+    · simp [coeff_succ_X_mul, add_comm]
+  rw [h, mul_assoc, ← mul_pow, mk_one_mul_one_sub_eq_one, one_pow, mul_one]
+
+/-- `∑_{a ≥ 2} a (a - 1) / 2 · uᵃ = u² / (1 - u)³`. -/
+private theorem mk_choose_two_mul_one_sub_X_pow_three :
+    (mk fun a : ℕ ↦ (a.choose 2 : R)) * (1 - X) ^ 3 = X ^ 2 := by
+  -- `∑_{a ≥ 2} a (a - 1) / 2 · uᵃ = u² (1 + u + u² + ⋯)³`
+  have h : (mk fun a : ℕ ↦ (a.choose 2 : R)) = X ^ 2 * mk 1 ^ 3 := by
+    rw [mk_one_pow_eq_mk_choose_add]
+    refine PowerSeries.ext fun n ↦ ?_
+    rw [coeff_mk, coeff_X_pow_mul', coeff_mk]
+    split_ifs with hn
+    · rw [Nat.add_sub_cancel' hn]
+    · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
+  rw [h, mul_assoc, ← mul_pow, mk_one_mul_one_sub_eq_one, one_pow, mul_one]
+
 private theorem mk_sq_mul_one_sub_X_pow_four :
     (mk fun a : ℕ ↦ (a : ℚ) ^ 2) * (1 - X) ^ 4 = X - X ^ 3 := by
   have h : ((1 : ℚ⟦X⟧) - X) ^ 4 = 1 - C 4 * X ^ 1 + C 6 * X ^ 2 - C 4 * X ^ 3 + X ^ 4 := by
@@ -391,27 +415,12 @@ theorem coeff_zero_tateFormalY : coeff 0 (tateFormalY R) = mk fun a ↦ (a.choos
 
 /-- `(1 - u)²` times the constant coefficient in `v` of `x` is `u`. -/
 theorem coeff_zero_tateFormalX_mul_one_sub_X_sq : coeff 0 (tateFormalX R) * (1 - X) ^ 2 = X := by
-  -- `∑_{a ≥ 1} a uᵃ = u (1 + u + u² + ⋯)²`
-  have h : coeff 0 (tateFormalX R) = X * mk 1 ^ 2 := by
-    rw [mk_one_pow_eq_mk_choose_add, coeff_zero_tateFormalX]
-    refine PowerSeries.ext fun n ↦ ?_
-    rcases n with _ | n
-    · simp
-    · simp [coeff_succ_X_mul, add_comm]
-  rw [h, mul_assoc, ← mul_pow, mk_one_mul_one_sub_eq_one, one_pow, mul_one]
+  rw [coeff_zero_tateFormalX, mk_id_mul_one_sub_X_sq]
 
 /-- `(1 - u)³` times the constant coefficient in `v` of `y` is `u²`. -/
 theorem coeff_zero_tateFormalY_mul_one_sub_X_pow_three :
     coeff 0 (tateFormalY R) * (1 - X) ^ 3 = X ^ 2 := by
-  -- `∑_{a ≥ 2} a (a - 1) / 2 · uᵃ = u² (1 + u + u² + ⋯)³`
-  have h : coeff 0 (tateFormalY R) = X ^ 2 * mk 1 ^ 3 := by
-    rw [mk_one_pow_eq_mk_choose_add, coeff_zero_tateFormalY]
-    refine PowerSeries.ext fun n ↦ ?_
-    rw [coeff_mk, coeff_X_pow_mul', coeff_mk]
-    split_ifs with hn
-    · rw [Nat.add_sub_cancel' hn]
-    · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
-  rw [h, mul_assoc, ← mul_pow, mk_one_mul_one_sub_eq_one, one_pow, mul_one]
+  rw [coeff_zero_tateFormalY, mk_choose_two_mul_one_sub_X_pow_three]
 
 private theorem coeff_zero_two_mul_tateFormalY_add :
     coeff 0 (2 * tateFormalY ℚ + tateFormalX ℚ) = mk fun a ↦ (a : ℚ) ^ 2 := by
@@ -471,8 +480,7 @@ private theorem single_mul_coeff_two_mul_tateFormalY_add {N : ℕ} (hN : N ≠ 0
 
 private theorem ofPowerSeries_mk_id_mul_psi :
     HahnSeries.ofPowerSeries ℤ ℚ (mk fun a ↦ (a : ℚ)) * psi wP = 1 := by
-  rw [psi_X_sub_two, mul_left_comm, ← map_mul, ← coeff_zero_tateFormalX,
-    coeff_zero_tateFormalX_mul_one_sub_X_sq,
+  rw [psi_X_sub_two, mul_left_comm, ← map_mul, mk_id_mul_one_sub_X_sq,
     HahnSeries.ofPowerSeries_X, single_neg_one_mul_single_one]
 
 private theorem ofPowerSeries_mk_sq_mul_psi_sq :

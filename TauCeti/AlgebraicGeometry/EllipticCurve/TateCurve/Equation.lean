@@ -93,29 +93,28 @@ private theorem toSeries_circleX : toSeries circleX = C ((1 - X) ^ 2) * tateForm
   refine PowerSeries.ext fun N ↦ ?_
   rw [coeff_map, coeff_C_mul, circleX, map_add, coeff_C, coeff_C_mul, coeff_mk]
   rcases eq_or_ne N 0 with rfl | hN
-  · rw [ite_eq_left rfl, Nat.divisors_zero, Finset.sum_empty, mul_zero, add_zero, mul_comm,
-      coeff_zero_tateFormalX_mul_one_sub_X_sq, Polynomial.coeToPowerSeries.ringHom_apply,
-      Polynomial.coe_X]
-  · rw [ite_eq_right_iff.mpr fun h ↦ absurd h hN, zero_add, coeff_tateFormalX_of_ne_zero hN]
-    simp only [map_add, map_mul, map_pow, map_sub, map_one, map_sum, map_natCast, map_ofNat,
+  · simp only [↓reduceIte, Nat.divisors_zero, Finset.sum_empty, mul_zero, add_zero,
+      mul_comm _ (coeff 0 _), coeff_zero_tateFormalX_mul_one_sub_X_sq,
+      Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
+  · simp only [hN, ↓reduceIte, zero_add, coeff_tateFormalX_of_ne_zero hN, map_add, map_mul,
+      map_pow, map_sub, map_one, map_sum, map_natCast, map_ofNat,
       Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
 
 private theorem toSeries_circleY : toSeries circleY = C ((1 - X) ^ 3) * tateFormalY ℤ := by
   refine PowerSeries.ext fun N ↦ ?_
   rw [coeff_map, coeff_C_mul, circleY, map_add, coeff_C, coeff_C_mul, coeff_mk]
   rcases eq_or_ne N 0 with rfl | hN
-  · rw [ite_eq_left rfl, Nat.divisors_zero, Finset.sum_empty, mul_zero, add_zero, mul_comm,
-      coeff_zero_tateFormalY_mul_one_sub_X_pow_three, map_pow,
+  · simp only [↓reduceIte, Nat.divisors_zero, Finset.sum_empty, mul_zero, add_zero,
+      mul_comm _ (coeff 0 _), coeff_zero_tateFormalY_mul_one_sub_X_pow_three, map_pow,
       Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
-  · rw [ite_eq_right_iff.mpr fun h ↦ absurd h hN, zero_add, coeff_tateFormalY_of_ne_zero hN]
-    simp only [map_add, map_mul, map_pow, map_sub, map_one, map_sum, map_natCast,
+  · simp only [hN, ↓reduceIte, zero_add, coeff_tateFormalY_of_ne_zero hN, map_add, map_mul,
+      map_pow, map_sub, map_one, map_sum, map_natCast,
       Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
 
 private theorem toSeries_circleParam (g : ℤ⟦X⟧) : toSeries (circleParam g) = tateParamHom ℤ g := by
   refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
-  rw [coeff_coeff_tateParamHom, coeff_map, circleParam, RingHom.comp_apply, coeff_rescale,
-    coeff_map, Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coeff_coe, mul_comm,
-    Polynomial.coeff_C_mul_X_pow, Int.cast_id]
+  simp [coeff_coeff_tateParamHom, circleParam, coeff_rescale, mul_comm _ (Polynomial.C _),
+    -eq_intCast]
 
 /-- The formal Tate equation multiplied by `(1 - u)⁶`, in `ℤ[u]⟦v⟧`. -/
 private theorem circle_equation :
@@ -141,9 +140,8 @@ variable {K : Type*} [NormedField K]
 private theorem aeval_sum_divisors_X_mul_div_pow {q u : K} (hu₀ : u ≠ 0) (N : ℕ) :
     Polynomial.aeval u (∑ d ∈ N.divisors, (d : Polynomial ℤ) * (Polynomial.X ^ (N + d) +
         Polynomial.X ^ (N - d) - 2 * Polynomial.X ^ N)) * (q / u) ^ N =
-      (∑ d ∈ N.divisors, ((d : ℤ) : K) * u ^ d) * q ^ N +
-        (∑ d ∈ N.divisors, ((d : ℤ) : K) * u⁻¹ ^ d) * q ^ N -
-          2 * ((((σ 1 N : ℕ) : ℤ) : K) * q ^ N) := by
+      (∑ d ∈ N.divisors, (d : K) * u ^ d) * q ^ N +
+        (∑ d ∈ N.divisors, (d : K) * u⁻¹ ^ d) * q ^ N - 2 * ((σ 1 N : K) * q ^ N) := by
   rw [sigma_one_apply]
   push_cast
   rw [map_sum, Finset.sum_mul, Finset.sum_mul, Finset.sum_mul, Finset.sum_mul, Finset.mul_sum,
@@ -161,9 +159,8 @@ private theorem aeval_sum_divisors_Y_mul_div_pow {q u : K} (hu₀ : u ≠ 0) (N 
     Polynomial.aeval u (∑ d ∈ N.divisors, ((d.choose 2 : Polynomial ℤ) * Polynomial.X ^ (N + d) -
         ((d + 1).choose 2 : Polynomial ℤ) * Polynomial.X ^ (N - d) +
           (d : Polynomial ℤ) * Polynomial.X ^ N)) * (q / u) ^ N =
-      (∑ d ∈ N.divisors, ((d.choose 2 : ℤ) : K) * u ^ d) * q ^ N +
-        (∑ d ∈ N.divisors, ((-((d + 1).choose 2 : ℤ) : ℤ) : K) * u⁻¹ ^ d) * q ^ N +
-          (((σ 1 N : ℕ) : ℤ) : K) * q ^ N := by
+      (∑ d ∈ N.divisors, (d.choose 2 : K) * u ^ d) * q ^ N +
+        (∑ d ∈ N.divisors, -((d + 1).choose 2 : K) * u⁻¹ ^ d) * q ^ N + (σ 1 N : K) * q ^ N := by
   rw [sigma_one_apply]
   push_cast
   rw [map_sum, Finset.sum_mul, Finset.sum_mul, Finset.sum_mul, Finset.sum_mul,
@@ -236,8 +233,8 @@ private theorem circleEval_circleX {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : �
   have hA := hasSum_sum_divisors_intCast_mul_pow (fun d ↦ (d : ℤ)) _ hF hu.le hq
   have hB := hasSum_sum_divisors_intCast_mul_pow (fun d ↦ (d : ℤ)) _ hF hui hq
   have hS := (summable_divisorSumSeries 1 hq).hasSum
-  have hP := (hA.add hB).sub (hS.mul_left 2)
-  simp_rw [← aeval_sum_divisors_X_mul_div_pow hu₀] at hP
+  have hP := ((hA.add hB).sub (hS.mul_left 2)).congr_fun fun N ↦
+    (aeval_sum_divisors_X_mul_div_pow hu₀ N).trans (by push_cast; rfl)
   rw [circleX, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq,
     ← divisorSumAt_def]
   have h₁ : (1 : K) - u ≠ 0 := sub_ne_zero.mpr (Ne.symm hu₁)
@@ -256,13 +253,13 @@ private theorem circleEval_circleY {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : �
       ∑' m : ℕ, ((((m + 1).choose 2 : ℕ) : ℤ) : K) * r ^ (m + 1) = r ^ 2 / (1 - r) ^ 3 := by
     simpa only [Int.cast_natCast] using tsum_choose_two_mul_pow_succ r hr
   have hF₂ (r : K) (hr : ‖r‖ < 1) :
-      ∑' m : ℕ, ((-(((m + 1 + 1).choose 2 : ℕ) : ℤ) : ℤ) : K) * r ^ (m + 1) = -r / (1 - r) ^ 3 := by
+      ∑' m : ℕ, ((-(m + 1 + 1).choose 2 : ℤ) : K) * r ^ (m + 1) = -r / (1 - r) ^ 3 := by
     simpa only [Int.cast_neg, Int.cast_natCast] using tsum_neg_choose_two_mul_pow_succ r hr
   have hA := hasSum_sum_divisors_intCast_mul_pow (fun d ↦ (d.choose 2 : ℤ)) _ hF₁ hu.le hq
   have hB := hasSum_sum_divisors_intCast_mul_pow (fun d ↦ -((d + 1).choose 2 : ℤ)) _ hF₂ hui hq
   have hS := (summable_divisorSumSeries 1 hq).hasSum
-  have hP := (hA.add hB).add hS
-  simp_rw [← aeval_sum_divisors_Y_mul_div_pow hu₀] at hP
+  have hP := ((hA.add hB).add hS).congr_fun fun N ↦
+    (aeval_sum_divisors_Y_mul_div_pow hu₀ N).trans (by push_cast; rfl)
   rw [circleY, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq,
     ← divisorSumAt_def]
   have h₁ : (1 : K) - u ≠ 0 := sub_ne_zero.mpr (Ne.symm hu₁)
