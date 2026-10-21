@@ -31,6 +31,9 @@ space by them.
   the connected component of the image point.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
   component of an open set has its frontier in the complement of that set.
+* `IsPreconnected.subset_connectedComponentIn_of_inter_closure_subset`: a preconnected set through
+  a point of an open set `U` lies in the component of that point in `U`, as soon as it meets the
+  closure of that component only inside `U`.
 * `TauCeti.connectedComponentIn_eq_of_lt`: a preconnected set on which a function stays on one
   side of a value it never takes is a connected component.
 * `TauCeti.isPreconnected_compl_of_isPreconnected_frontier`: in a preconnected, locally connected
@@ -112,6 +115,22 @@ theorem frontier_connectedComponentIn_subset_compl [LocallyConnectedSpace X] {F 
     rw [connectedComponentIn_eq hzx, ← connectedComponentIn_eq hzy]
     exact mem_connectedComponentIn hyF
   exact hy.2 (by rwa [hC.interior_eq])
+
+/-- **Trapping a preconnected set in a component of an open set.** Let `U` be open in a locally
+connected space and let `C` be the connected component of `x ∈ U` in `U`. A preconnected set `A`
+through `x` lies in `C` as soon as it meets the closure of `C` only inside `U`. This weakens the
+hypothesis `A ⊆ U` of `IsPreconnected.subset_connectedComponentIn`. -/
+theorem _root_.IsPreconnected.subset_connectedComponentIn_of_inter_closure_subset
+    [LocallyConnectedSpace X] {A U : Set X} {x : X} (hA : IsPreconnected A)
+    (hU : IsOpen U) (hxA : x ∈ A) (hxU : x ∈ U)
+    (h : A ∩ closure (_root_.connectedComponentIn U x) ⊆ U) :
+    A ⊆ _root_.connectedComponentIn U x := by
+  refine hA.subset_of_closure_inter_subset hU.connectedComponentIn
+    ⟨x, hxA, mem_connectedComponentIn hxU⟩ fun y hy => ?_
+  by_contra hyC
+  have hfr : y ∈ frontier (_root_.connectedComponentIn U x) :=
+    ⟨hy.1, by rwa [hU.connectedComponentIn.interior_eq]⟩
+  exact frontier_connectedComponentIn_subset_compl hU x hfr (h ⟨hy.2, hy.1⟩)
 
 /-- **A strict superlevel set cuts out a connected component.** Let `φ` be continuous on `D` and
 never equal to `c` there. A preconnected subset `H ⊆ D` containing every point of `D` where `φ`
