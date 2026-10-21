@@ -132,6 +132,18 @@ theorem whiskerLeft_braiding_comp_braiding_comp_tensor_evaluation (A A' B B' : C
     whisker_exchange_assoc, whiskerLeft_braiding_comp_tensor_evaluation, comp_whiskerRight,
     Category.assoc]
 
+/-- Braiding `A` past `Z` and then applying `f : A ⊗ A' ⟶ 𝟙_ C` after `Z` is braiding `A'` back
+under `Z` and then applying `f` before `Z`. -/
+private theorem braiding_whiskerRight_comp_whiskerLeft {A A' : C} (Z : C) (f : A ⊗ A' ⟶ 𝟙_ C) :
+    (β_ A Z).hom ▷ A' ≫ (α_ Z A A').hom ≫ Z ◁ f =
+      (α_ A Z A').hom ≫ A ◁ (β_ A' Z).inv ≫ (α_ A A' Z).inv ≫ f ▷ Z ≫ (λ_ Z).hom ≫
+        (ρ_ Z).inv := by
+  have h := braiding_naturality_left f Z
+  rw [braiding_tensorUnit_left, braiding_tensor_left_hom] at h
+  simp only [Category.assoc] at h ⊢
+  rw [h]
+  simp only [Iso.inv_hom_id_assoc, whiskerLeft_inv_hom_assoc, Iso.hom_inv_id_assoc]
+
 /-- The braided evaluation of the tensor product pairing `(X ⊗ Y, Y' ⊗ X')` is the inverse of the
 double braiding `β_{Y',X'} ≫ β_{X',Y'}` of `Y' ⊗ X'`, followed by the braided evaluation of
 `(Y, Y')` nested inside the braided evaluation of `(X, X')`. In a symmetric category the double
@@ -143,30 +155,11 @@ theorem braiding_comp_tensor_evaluation (X X' Y Y' : C) [ExactPairing X X']
       (X ⊗ Y) ◁ ((β_ X' Y').inv ≫ (β_ Y' X').inv) ⊗≫
         X ◁ (((β_ Y Y').hom ≫ ε_ Y Y') ▷ X') ⊗≫ (β_ X X').hom ≫ ε_ X X' := by
   rw [ExactPairing.tensor_evaluation]
-  -- Braiding `X` past `Y'` and then closing the loop of `X` is braiding `X'` back under `Y'` and
-  -- then closing the loop of `X`.
-  have hX : (β_ X Y').hom ▷ X' ≫ (α_ Y' X X').hom ≫ Y' ◁ ((β_ X X').hom ≫ ε_ X X') =
-      (α_ X Y' X').hom ≫ X ◁ (β_ X' Y').inv ≫ (α_ X X' Y').inv ≫
-        ((β_ X X').hom ≫ ε_ X X') ▷ Y' ≫ (λ_ Y').hom ≫ (ρ_ Y').inv := by
-    have h := braiding_naturality_left ((β_ X X').hom ≫ ε_ X X') Y'
-    rw [braiding_tensorUnit_left, braiding_tensor_left_hom] at h
-    simp only [Category.assoc] at h ⊢
-    rw [h]
-    simp only [Iso.inv_hom_id_assoc, whiskerLeft_inv_hom_assoc, Iso.hom_inv_id_assoc]
-  -- The same for `Y` past `X'` and the loop of `Y`.
-  have hY : (β_ Y X').hom ▷ Y' ≫ (α_ X' Y Y').hom ≫ X' ◁ ((β_ Y Y').hom ≫ ε_ Y Y') =
-      (α_ Y X' Y').hom ≫ Y ◁ (β_ Y' X').inv ≫ (α_ Y Y' X').inv ≫
-        ((β_ Y Y').hom ≫ ε_ Y Y') ▷ X' ≫ (λ_ X').hom ≫ (ρ_ X').inv := by
-    have h := braiding_naturality_left ((β_ Y Y').hom ≫ ε_ Y Y') X'
-    rw [braiding_tensorUnit_left, braiding_tensor_left_hom] at h
-    simp only [Category.assoc] at h ⊢
-    rw [h]
-    simp only [Iso.inv_hom_id_assoc, whiskerLeft_inv_hom_assoc, Iso.hom_inv_id_assoc]
-  -- Expand the braiding of `X ⊗ Y` past `Y' ⊗ X'` into four elementary crossings. By `hX`, the
-  -- crossing of `X` past `Y'` is traded for one of `X'` under `Y'`, after which the loop of `X`
-  -- closes. The crossings of `Y` past `Y' ⊗ X'` and of `X'` under `Y'` are then rearranged, by
-  -- naturality of the braiding, into a crossing of `Y'` under `X'` followed by those of `Y` past
-  -- `X' ⊗ Y'`, and by `hY` the loop of `Y` closes.
+  -- Expand the braiding of `X ⊗ Y` past `Y' ⊗ X'` into four elementary crossings. By
+  -- `braiding_whiskerRight_comp_whiskerLeft`, the crossing of `X` past `Y'` is traded for one of
+  -- `X'` under `Y'`, after which the loop of `X` closes. The crossings of `Y` past `Y' ⊗ X'` and of
+  -- `X'` under `Y'` are then rearranged, by naturality of the braiding, into a crossing of `Y'`
+  -- under `X'` followed by those of `Y` past `X' ⊗ Y'`, and the loop of `Y` closes in the same way.
   calc
     _ = 𝟙 _ ⊗≫ X ◁ (β_ Y Y').hom ▷ X' ⊗≫ (X ⊗ Y') ◁ (β_ Y X').hom ⊗≫
           ((β_ X Y').hom ▷ X' ≫ (α_ Y' X X').hom ≫ Y' ◁ ((β_ X X').hom ≫ ε_ X X')) ▷ Y ⊗≫
@@ -181,7 +174,7 @@ theorem braiding_comp_tensor_evaluation (X X' Y Y' : C) [ExactPairing X X']
         _ = _ := by rw [← whisker_exchange]; monoidal
     _ = 𝟙 _ ⊗≫ X ◁ ((β_ Y Y').hom ▷ X' ⊗≫ Y' ◁ (β_ Y X').hom ⊗≫ (β_ X' Y').inv ▷ Y) ⊗≫
           (((β_ X X').hom ≫ ε_ X X') ▷ (Y' ⊗ Y) ≫ 𝟙_ C ◁ ε_ Y Y') ⊗≫ 𝟙 (𝟙_ C) := by
-      rw [hX]; monoidal
+      rw [braiding_whiskerRight_comp_whiskerLeft]; monoidal
     _ = 𝟙 _ ⊗≫ X ◁ ((β_ Y (Y' ⊗ X')).hom ≫ (β_ X' Y').inv ▷ Y) ⊗≫
           ((X ⊗ X') ◁ ε_ Y Y' ≫ ((β_ X X').hom ≫ ε_ X X') ▷ 𝟙_ C) ⊗≫ 𝟙 (𝟙_ C) := by
       rw [← whisker_exchange, braiding_tensor_right_hom Y Y' X']; monoidal
@@ -189,7 +182,7 @@ theorem braiding_comp_tensor_evaluation (X X' Y Y' : C) [ExactPairing X X']
           ((β_ Y X').hom ▷ Y' ≫ (α_ X' Y Y').hom ≫ X' ◁ ((β_ Y Y').hom ≫ ε_ Y Y'))) ⊗≫
             ((β_ X X').hom ≫ ε_ X X') := by
       rw [← braiding_naturality_right, braiding_tensor_right_hom Y X' Y']; monoidal
-    _ = _ := by rw [hY]; monoidal
+    _ = _ := by rw [braiding_whiskerRight_comp_whiskerLeft]; monoidal
 
 /-- After the double braiding `β_{X,Y} ≫ β_{Y,X}` of `X ⊗ Y`, the braided evaluation of the tensor
 product pairing `(X ⊗ Y, Y' ⊗ X')` nests the braided evaluation of `(Y, Y')` inside that of
