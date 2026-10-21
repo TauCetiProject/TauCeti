@@ -297,7 +297,8 @@ theorem curvatureTensor_leviCivitaConnection_rescale
       (mvfderiv I φ x u * ⟪v, w⟫ - mvfderiv I φ x v * ⟪u, w⟫) • mgradient I φ x -
       ‖mgradient I φ x‖ ^ 2 • (⟪v, w⟫ • u - ⟪u, w⟫ • v) := by
   have hφ : ContMDiff I 𝓘(ℝ) ∞ φ := by
-    simpa [hfφ] using (hf.log fun y ↦ (hf_pos y).ne').div_const 2
+    simpa only [hfφ, Real.log_exp, mul_div_cancel_left₀ _ (two_ne_zero' ℝ)] using
+      (hf.log fun y ↦ (hf_pos y).ne').div_const 2
   obtain rfl : f = fun y ↦ Real.exp (2 * φ y) := funext hfφ
   obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
   obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
@@ -361,7 +362,12 @@ theorem ricciTensor_leviCivitaConnection_rescale
   simp only [LinearMap.flip_apply, curvatureTensor_leviCivitaConnection_rescale g hf hf_pos hfφ]
   simp only [inner_add_right, inner_sub_right, inner_smul_right, Finset.sum_add_distrib,
     Finset.sum_sub_distrib, ← Finset.mul_sum]
-  -- The contractions against the orthonormal basis `b`.
+  -- The contractions against the orthonormal basis `b`: a linear functional `ℓ` satisfies
+  -- `∑ i, ℓ (b i) ⟪b i, a⟫ = ℓ a`, and in particular `∑ i, ⟪b i, a⟫ ⟪b i, c⟫ = ⟪a, c⟫`.
+  have hℓ (ℓ : TangentSpace I x →L[ℝ] ℝ) (a : TangentSpace I x) :
+      ∑ i, ℓ (b i) * ⟪b i, a⟫ = ℓ a := by
+    conv_rhs => rw [← b.sum_repr' a]
+    simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
   have hsum (a c : TangentSpace I x) : ∑ i, ⟪b i, a⟫ * ⟪b i, c⟫ = ⟪a, c⟫ := by
     rw [← b.sum_inner_mul_inner a c]
     simp only [real_inner_comm a]
@@ -374,37 +380,24 @@ theorem ricciTensor_leviCivitaConnection_rescale
       laplaceBeltrami I φ x := by
     simp only [laplaceBeltrami_eq_sum_hessian I φ x b, hessian_def, real_inner_comm]
   have hH₁ : ∑ i, hessian I φ x (b i) v * ⟪b i, u⟫ = hessian I φ x u v := by
-    calc ∑ i, hessian I φ x (b i) v * ⟪b i, u⟫ =
-        ∑ i, ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x v, b i⟫ *
-          ⟪b i, u⟫ :=
-          Finset.sum_congr rfl fun i _ ↦ by rw [hessian_symm hφ, hessian_def]
-      _ = hessian I φ x u v := by rw [b.sum_inner_mul_inner, ← hessian_def, hessian_symm hφ]
+    simpa only [hessian_def, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+      innerSL_apply_apply] using
+      hℓ (((innerSL ℝ).flip v).comp
+        (CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x)) u
   have hH₂ : ∑ i, ⟪b i, v⟫ *
       ⟪b i, CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x u⟫ =
       hessian I φ x u v := by
     rw [hsum, real_inner_comm, hessian_def]
   have hP₁ : ∑ i, mvfderiv I φ x (b i) * mvfderiv I φ x v * ⟪b i, u⟫ =
       mvfderiv I φ x u * mvfderiv I φ x v := by
-    calc ∑ i, mvfderiv I φ x (b i) * mvfderiv I φ x v * ⟪b i, u⟫ =
-        ∑ i, ⟪mgradient I φ x, b i⟫ * ⟪b i, u⟫ * mvfderiv I φ x v :=
-          Finset.sum_congr rfl fun i _ ↦ by
-            rw [← inner_mgradient (b i)]
-            ring
-      _ = mvfderiv I φ x u * mvfderiv I φ x v := by
-        rw [← Finset.sum_mul, b.sum_inner_mul_inner, inner_mgradient]
+    simp only [mul_right_comm _ (mvfderiv I φ x v), ← Finset.sum_mul, hℓ]
   have hP₂ : ∑ i, (mvfderiv I φ x (b i) * ⟪u, v⟫ - mvfderiv I φ x u * ⟪b i, v⟫) *
       ⟪b i, mgradient I φ x⟫ =
       ⟪u, v⟫ * ‖mgradient I φ x‖ ^ 2 - mvfderiv I φ x u * mvfderiv I φ x v := by
-    calc ∑ i, (mvfderiv I φ x (b i) * ⟪u, v⟫ - mvfderiv I φ x u * ⟪b i, v⟫) *
-          ⟪b i, mgradient I φ x⟫ =
-        ∑ i, (⟪u, v⟫ * (⟪mgradient I φ x, b i⟫ * ⟪b i, mgradient I φ x⟫) -
-          mvfderiv I φ x u * (⟪v, b i⟫ * ⟪b i, mgradient I φ x⟫)) :=
-          Finset.sum_congr rfl fun i _ ↦ by
-            rw [← inner_mgradient (b i), real_inner_comm (b i) v]
-            ring
-      _ = ⟪u, v⟫ * ‖mgradient I φ x‖ ^ 2 - mvfderiv I φ x u * mvfderiv I φ x v := by
-        rw [Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.mul_sum, b.sum_inner_mul_inner,
-          b.sum_inner_mul_inner, real_inner_self_eq_norm_sq, inner_mgradient_right]
+    simp only [sub_mul, Finset.sum_sub_distrib, mul_right_comm _ ⟪u, v⟫,
+      mul_assoc (mvfderiv I φ x u), ← Finset.mul_sum, ← Finset.sum_mul, hℓ, hsum]
+    rw [mvfderiv_apply_mgradient, real_inner_self_eq_norm_sq, inner_mgradient_right]
+    ring
   rw [hH₁, hdim, hH₂, hΔ, hP₁, hP₂, hsum v u, real_inner_comm v u]
   ring
 
@@ -420,36 +413,18 @@ theorem scalarCurvature_rescale
       letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
       (f x)⁻¹ * (g.scalarCurvature x - 2 * (Module.finrank ℝ E - 1) * laplaceBeltrami I φ x -
         (Module.finrank ℝ E - 1) * (Module.finrank ℝ E - 2) * ‖mgradient I φ x‖ ^ 2) := by
-  -- A `g`-orthonormal basis, recorded through the inner products of `g` itself, and the
-  -- contractions in it of the tensors appearing in the conformal change of the Ricci tensor.
-  obtain ⟨d, b, hb, hs, hΔ, hG, hd⟩ : ∃ (d : ℕ) (b : Module.Basis (Fin d) ℝ (TangentSpace I x)),
-      (∀ i j, g.inner x (b i) (b j) = if i = j then 1 else 0) ∧
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) =
-        ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-          (CovariantDerivative.leviCivitaConnection I M).ricciTensor x) (b j) (b j) ∧
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        laplaceBeltrami I φ x) =
-        ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-          hessian I φ x (b j) (b j)) ∧
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        ‖mgradient I φ x‖ ^ 2) = ∑ j, mvfderiv I φ x (b j) * mvfderiv I φ x (b j) ∧
-      (d : ℝ) = Module.finrank ℝ E := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-    refine ⟨_, b.toBasis, fun i j ↦ ?_, ?_, ?_, ?_, rfl⟩
-    · rw [b.coe_toBasis, ← inner_riemannianBundle]
-      exact orthonormal_iff_ite.1 b.orthonormal i j
-    · rw [b.coe_toBasis]
-      exact CovariantDerivative.scalarCurvature_eq_sum _ x b
-    · rw [b.coe_toBasis]
-      exact laplaceBeltrami_eq_sum_hessian I φ x b
-    · rw [b.coe_toBasis, ← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner]
-      simp only [inner_mgradient, inner_mgradient_right]
-  rw [scalarCurvature_rescale_eq_sum g hf hf_pos b hb, scalarCurvature_def]
-  simp only [ricciTensor_leviCivitaConnection_rescale g hf hf_pos hfφ, inner_riemannianBundle, hb,
-    ite_true, mul_one]
-  rw [hs, hΔ, hG]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  -- Contract the conformal change of the Ricci tensor against the `g`-orthonormal basis `b`.
+  have hG : ‖mgradient I φ x‖ ^ 2 = ∑ j, mvfderiv I φ x (b j) * mvfderiv I φ x (b j) := by
+    rw [← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner]
+    simp only [inner_mgradient, inner_mgradient_right]
+  -- The tangent space `TangentSpace I x` is the model space `E`.
+  have hd : (Module.finrank ℝ (TangentSpace I x) : ℝ) = Module.finrank ℝ E := rfl
+  rw [scalarCurvature_rescale_eq_sum g hf hf_pos b, scalarCurvature_def,
+    CovariantDerivative.scalarCurvature_eq_sum _ x b]
+  simp only [ricciTensor_leviCivitaConnection_rescale g hf hf_pos hfφ, real_inner_self_eq_norm_sq,
+    b.orthonormal.1, one_pow, mul_one, laplaceBeltrami_eq_sum_hessian I φ x b, hG]
   simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, Finset.sum_const,
     Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hd]
   ring

@@ -272,17 +272,26 @@ theorem ricciTensor_leviCivitaConnection_rescale_const (x : M) :
   simp only [CovariantDerivative.ricciTensor_apply,
     curvatureTensor_leviCivitaConnection_rescale_const g hc x]
 
-/-- The scalar curvature of a rescaled metric `f g` at `x`, computed in a basis `b` of `T_x M` that
-is orthonormal for `g`: it is `(f x)⁻¹ ∑ⱼ Ric^(f g)_x (b j) (b j)`, since dividing `b` by `√(f x)`
-gives a basis orthonormal for `f g`. -/
+/-- The scalar curvature of a rescaled metric `f g` at `x`, computed in an orthonormal basis `b` of
+`T_x M` for `g`: it is `(f x)⁻¹ ∑ⱼ Ric^(f g)_x (b j) (b j)`, since dividing `b` by `√(f x)` gives a
+basis orthonormal for `f g`. -/
 theorem scalarCurvature_rescale_eq_sum {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hf_pos : ∀ x, 0 < f x) {x : M} {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι ℝ (TangentSpace I x))
-    (hb : ∀ i j, g.inner x (b i) (b j) = if i = j then 1 else 0) :
+    (hf_pos : ∀ x, 0 < f x) {x : M} {ι : Type*} [Fintype ι]
+    (b : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      OrthonormalBasis ι ℝ (TangentSpace I x)) :
     (g.rescale f hf hf_pos).scalarCurvature x =
       (f x)⁻¹ * ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
         (CovariantDerivative.leviCivitaConnection I M).ricciTensor x) (b j) (b j) := by
+  classical
+  -- `b` as a basis, with its orthonormality recorded through the inner products of `g` itself.
+  obtain ⟨b₀, hb₀, hb⟩ : ∃ b₀ : Module.Basis ι ℝ (TangentSpace I x), ⇑b₀ = ⇑b ∧
+      ∀ i j, g.inner x (b₀ i) (b₀ j) = if i = j then 1 else 0 := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    refine ⟨b.toBasis, b.coe_toBasis, fun i j ↦ ?_⟩
+    rw [b.coe_toBasis, ← inner_riemannianBundle]
+    exact orthonormal_iff_ite.1 b.orthonormal i j
+  rw [← hb₀]
   set s := Real.sqrt (f x)
   have hs0 : 0 < s := Real.sqrt_pos.2 (hf_pos x)
   have hss : s⁻¹ * s⁻¹ = (f x)⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt (hf_pos x).le]
@@ -290,7 +299,7 @@ theorem scalarCurvature_rescale_eq_sum {f : M → ℝ} (hf : ContMDiff I 𝓘(�
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
   -- Dividing `b` by `√(f x)` gives a basis orthonormal for the rescaled metric at `x`.
-  have hon : Orthonormal ℝ (b.unitsSMul fun _ ↦ Units.mk0 s⁻¹ (inv_ne_zero hs0.ne')) := by
+  have hon : Orthonormal ℝ (b₀.unitsSMul fun _ ↦ Units.mk0 s⁻¹ (inv_ne_zero hs0.ne')) := by
     rw [orthonormal_iff_ite]
     intro i j
     simp only [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0,
@@ -299,7 +308,7 @@ theorem scalarCurvature_rescale_eq_sum {f : M → ℝ} (hf : ContMDiff I 𝓘(�
     · field_simp
       exact (Real.sq_sqrt (hf_pos x).le).symm
     · simp
-  rw [CovariantDerivative.scalarCurvature_eq_sum _ x ((b.unitsSMul _).toOrthonormalBasis hon),
+  rw [CovariantDerivative.scalarCurvature_eq_sum _ x ((b₀.unitsSMul _).toOrthonormalBasis hon),
     Finset.mul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp only [Module.Basis.coe_toOrthonormalBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
@@ -313,11 +322,8 @@ theorem scalarCurvature_rescale_const (x : M) :
       c⁻¹ * g.scalarCurvature x := by
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [scalarCurvature_rescale_eq_sum g _ _ b.toBasis fun i j ↦ by
-      rw [b.coe_toBasis, ← inner_riemannianBundle]
-      exact orthonormal_iff_ite.1 b.orthonormal i j,
-    ricciTensor_leviCivitaConnection_rescale_const g hc x, scalarCurvature_def,
-    CovariantDerivative.scalarCurvature_eq_sum _ x b, b.coe_toBasis]
+  rw [scalarCurvature_rescale_eq_sum g _ _ b, ricciTensor_leviCivitaConnection_rescale_const g hc x,
+    scalarCurvature_def, CovariantDerivative.scalarCurvature_eq_sum _ x b]
 
 end Curvature
 
