@@ -74,7 +74,7 @@ private lemma boundary_comp_lmapDomain_smul (n : ℕ) (g : G) :
         lmapDomain k k (g • ·) =
       lmapDomain k k (g • ·) ∘ₗ OrderedSimplicialChain.boundary k n := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
-  simp [face_smul_universalGSpace]
+  simp
 
 /-- The ordered simplicial boundary of the countable join, as a morphism between the permutation
 representations of `G` on its simplices of consecutive dimensions. -/
@@ -98,6 +98,15 @@ theorem universalGSpaceBoundary_hom_single {n : ℕ}
   simp [universalGSpaceBoundary, ← MonoidAlgebra.ofCoeff_single, ← MonoidAlgebra.ofCoeff_smul,
     smul_single]
 
+/-- Read on coefficients, the equivariant boundary is the ordered simplicial boundary. -/
+theorem universalGSpaceBoundary_comp_coeff (n : ℕ) :
+    (forget₂ (Rep k G) (ModuleCat k)).map (universalGSpaceBoundary k G n) ≫
+        (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom =
+      (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom ≫
+        ModuleCat.ofHom (OrderedSimplicialChain.boundary k n) := by
+  ext x
+  simp [universalGSpaceBoundary]
+
 /-- **The ordered chains of the countable join as a complex of representations.** In degree `n`
 it is the permutation representation of `G` on the `n`-simplices of the countable join, which
 are the `n`-cells of `universalGSpace G`, and its differential is the alternating simplicial
@@ -108,11 +117,12 @@ boundary. -/
 @[expose]
 def universalGSpaceChainComplex : ChainComplex (Rep k G) ℕ :=
   ChainComplex.of (fun n ↦ Rep.ofMulAction k G ((indexedJoin fun _ : ℕ => G).RealizationCell n))
-    (universalGSpaceBoundary k G) fun n ↦ by
-      refine Rep.hom_ext (Representation.IntertwiningMap.ext (LinearMap.ext fun x ↦ ?_))
-      simpa [universalGSpaceBoundary] using congr((MonoidAlgebra.coeffLinearEquiv k).symm
-        ($(OrderedSimplicialChain.boundary_boundary (K := indexedJoin fun _ : ℕ => G) k n)
-          (MonoidAlgebra.coeffLinearEquiv k x)))
+    (universalGSpaceBoundary k G) fun n ↦ (forget₂ (Rep k G) (ModuleCat k)).map_injective <| by
+      rw [Functor.map_comp, Functor.map_zero,
+        ← cancel_mono (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom, Category.assoc,
+        universalGSpaceBoundary_comp_coeff, reassoc_of% universalGSpaceBoundary_comp_coeff,
+        ← ModuleCat.ofHom_comp, OrderedSimplicialChain.boundary_boundary, ModuleCat.ofHom_zero,
+        Limits.comp_zero, Limits.zero_comp]
 
 /-- In degree `n` the complex is the permutation representation on the `n`-simplices. -/
 @[simp]
@@ -143,15 +153,9 @@ def universalGSpaceChainComplexForget₂Iso :
       subst h
       rw [Functor.mapHomologicalComplex_obj_d, universalGSpaceChainComplex_d,
         orderedSimplicialChainComplex_d]
-      have hb : (forget₂ (Rep k G) (ModuleCat k)).map (universalGSpaceBoundary k G j) ≫
-          (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom =
-            (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom ≫
-              ModuleCat.ofHom (OrderedSimplicialChain.boundary k j) := by
-        ext x
-        simp [universalGSpaceBoundary]
       simp only [Iso.trans_hom, eqToIso.hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
         Category.id_comp]
-      exact ((reassoc_of% hb) _).symm
+      exact ((reassoc_of% universalGSpaceBoundary_comp_coeff k G j) _).symm
 
 /-- In each degree the isomorphism reads a vector as its coefficients. -/
 @[simp]
@@ -161,19 +165,25 @@ theorem universalGSpaceChainComplexForget₂Iso_hom_f (n : ℕ) :
         eqToHom (orderedSimplicialChainComplex_X k n).symm :=
   (rfl)
 
+/-- Read on coefficients, the permutation augmentation sums the coefficients of a `0`-chain. -/
+private lemma forget₂_map_permutationAugmentation :
+    (forget₂ (Rep k G) (ModuleCat k)).map
+        (permutationAugmentation k G ((indexedJoin fun _ : ℕ => G).RealizationCell 0)) =
+      (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom ≫
+        ModuleCat.ofHom (linearCombination k fun _ ↦ (1 : k)) := by
+  refine ModuleCat.hom_ext ((MonoidAlgebra.basis _ k).ext fun c ↦ ?_)
+  simp only [Rep.forget₂_moduleCat_map, ModuleCat.hom_ofHom, ModuleCat.hom_comp,
+    LinearMap.comp_apply, Representation.IntertwiningMap.toLinearMap_apply]
+  rw [permutationAugmentation_apply]
+  simp
+
 /-- The coefficient sum vanishes on boundaries of `1`-simplices. -/
 private lemma universalGSpaceBoundary_comp_permutationAugmentation :
-    universalGSpaceBoundary k G 0 ≫ permutationAugmentation k G _ = 0 := by
-  refine Rep.hom_ext (Representation.IntertwiningMap.ext (LinearMap.ext fun x ↦ ?_))
-  rw [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap, LinearMap.comp_apply,
-    Representation.IntertwiningMap.toLinearMap_apply, permutationAugmentation_apply]
-  have h := congr($(OrderedSimplicialChain.augmentation_comp_boundary
-    (K := indexedJoin fun _ : ℕ => G) k) (MonoidAlgebra.coeffLinearEquiv k x))
-  simp only [LinearMap.comp_apply, linearCombination_apply, smul_eq_mul, mul_one,
-    LinearMap.zero_apply] at h
-  simp only [universalGSpaceBoundary, Module.Basis.coe_sumCoords]
-  -- The two sums differ only by unfolding `id`.
-  exact h
+    universalGSpaceBoundary k G 0 ≫ permutationAugmentation k G _ = 0 :=
+  (forget₂ (Rep k G) (ModuleCat k)).map_injective <| by
+    rw [Functor.map_comp, Functor.map_zero, forget₂_map_permutationAugmentation,
+      reassoc_of% universalGSpaceBoundary_comp_coeff, ← ModuleCat.ofHom_comp,
+      OrderedSimplicialChain.augmentation_comp_boundary, ModuleCat.ofHom_zero, Limits.comp_zero]
 
 /-- The **augmentation** of the ordered chains of the countable join: the chain map to the
 trivial representation, placed in degree `0`, that sums the coefficients of a `0`-chain. -/
@@ -199,21 +209,10 @@ instance quasiIso_universalGSpaceAugmentation : QuasiIso (universalGSpaceAugment
       (indexedJoin fun _ : ℕ => G) k) ?_]
   · exact quasiIso_orderedSimplicialChainComplexAugmentation_indexedJoin k
   · -- In degree `0` both augmentations sum the coefficients of a `0`-chain.
-    have h : (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom ≫
-        ModuleCat.ofHom (linearCombination k fun _ ↦ (1 : k)) =
-          (forget₂ (Rep k G) (ModuleCat k)).map (permutationAugmentation k G
-            ((indexedJoin fun _ : ℕ => G).RealizationCell 0)) := by
-      refine ModuleCat.hom_ext (LinearMap.ext fun v ↦ ?_)
-      rw [ModuleCat.hom_comp, Rep.forget₂_moduleCat_map, ModuleCat.hom_ofHom,
-        ModuleCat.hom_ofHom, LinearMap.comp_apply,
-        Representation.IntertwiningMap.toLinearMap_apply, permutationAugmentation_apply]
-      simp only [Module.Basis.coe_sumCoords, linearCombination_apply, smul_eq_mul, mul_one]
-      -- The two sums differ only by unfolding `id`.
-      rfl
     refine Arrow.isoMk' _ _ (universalGSpaceChainComplexForget₂Iso k G)
       ((HomologicalComplex.singleMapHomologicalComplex _ _ 0).app _) ?_
     ext : 1
-    simpa using h
+    simpa using (forget₂_map_permutationAugmentation k G).symm
 
 end ChainComplex
 

@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Sum
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import Mathlib.RepresentationTheory.Rep.Iso
-public import TauCeti.GroupTheory.GroupAction.Free
 public import TauCeti.GroupTheory.QuotientGroup.Basic
+public import TauCeti.RepresentationTheory.FreeOfBasis
 
 /-!
 # Equivalences of permutation representations
@@ -261,38 +262,26 @@ end QuotientTop
 
 section Free
 
-open _root_.MulAction (orbitRel)
-open _root_.TauCeti.MulAction (sigmaOrbitsEquivOfIsCancelSMul sigmaOrbitsEquivOfIsCancelSMul_apply)
+open _root_.MulAction (orbitRel selfEquivOrbitsQuotientProd)
 
 variable (k : Type u) [CommRing k] {G : Type u} [Group G] (X : Type u) [MulAction G X]
   [IsCancelSMul G X]
 
-/-- The basis equivalence underlying `TauCeti.ofMulActionIsoFree` sends the generator
-`single q (single g 1)` to the basis vector of `g • q.out`. -/
-private lemma basisEquiv_single (q : orbitRel.Quotient G X) (g : G) :
-    (Finsupp.basis fun _ ↦ MonoidAlgebra.basis G k).equiv (MonoidAlgebra.basis X k)
-        (sigmaOrbitsEquivOfIsCancelSMul G X) (Finsupp.single q (MonoidAlgebra.single g 1)) =
-      MonoidAlgebra.single (g • q.out) 1 := by
-  simpa only [Finsupp.coe_basis, MonoidAlgebra.basis_apply,
-    sigmaOrbitsEquivOfIsCancelSMul_apply] using
-    Module.Basis.equiv_apply (b := Finsupp.basis fun _ ↦ MonoidAlgebra.basis G k) (i := ⟨q, g⟩)
-      (MonoidAlgebra.basis X k) (sigmaOrbitsEquivOfIsCancelSMul G X)
-
-/-- The isomorphism of `TauCeti.ofMulActionIsoFree`, as an equivalence of representations from
-the free representation. -/
-private noncomputable def freeEquivOfMulAction :
-    (Representation.free k G (orbitRel.Quotient G X)).Equiv (Representation.ofMulAction k G X) :=
-  .mk ((Finsupp.basis fun _ ↦ MonoidAlgebra.basis G k).equiv (MonoidAlgebra.basis X k)
-      (sigmaOrbitsEquivOfIsCancelSMul G X)) fun g ↦
-    (Finsupp.basis fun _ ↦ MonoidAlgebra.basis G k).ext fun p ↦ by
-      simp [basisEquiv_single, mul_smul]
+/-- For a free action, Mathlib's decomposition `MulAction.selfEquivOrbitsQuotientProd` sends
+`(q, g)` to the translate `g • q.out` of the chosen representative of the orbit `q`. -/
+private lemma selfEquivOrbitsQuotientProd_symm_apply (q : orbitRel.Quotient G X) (g : G) :
+    (selfEquivOrbitsQuotientProd IsCancelSMul.stabilizer_eq_bot).symm (q, g) = g • q.out :=
+  (rfl)
 
 /-- **The permutation representation of a free action is free over the group ring**, with
 basis the chosen representatives `q.out` of the orbits: the generator `single q (single g r)` of
 the free representation corresponds to `single (g • q.out) r`. -/
 noncomputable def ofMulActionIsoFree :
     Rep.ofMulAction k G X ≅ Rep.free k G (orbitRel.Quotient G X) :=
-  (Rep.mkIso (freeEquivOfMulAction k X)).symm
+  (Rep.mkIso ((Representation.ofMulAction k G X).freeEquivOfBasis (MonoidAlgebra.basis X k)
+    ((Equiv.sigmaEquivProd _ G).trans
+      (selfEquivOrbitsQuotientProd IsCancelSMul.stabilizer_eq_bot).symm) fun g h q ↦ by
+        simp [selfEquivOrbitsQuotientProd_symm_apply, mul_smul])).symm
 
 /-- The generator `single q (single g r)` of the free representation corresponds to the basis
 vector `single (g • q.out) r` of the permutation representation. -/
@@ -301,9 +290,16 @@ theorem ofMulActionIsoFree_inv_hom_single (q : orbitRel.Quotient G X) (g : G) (r
     (dsimp% only ((ofMulActionIsoFree k X).inv.hom
         (Finsupp.single q (MonoidAlgebra.single g r)))) =
       MonoidAlgebra.single (g • q.out) r := by
-  rw [ofMulActionIsoFree, Iso.symm_inv, Rep.mkIso_hom_hom_apply, ← mul_one r, ← smul_eq_mul,
-    ← MonoidAlgebra.smul_single, ← MonoidAlgebra.smul_single, ← Finsupp.smul_single, map_smul]
-  exact congrArg (r • ·) (basisEquiv_single k X q g)
+  rw [ofMulActionIsoFree, Iso.symm_inv, Rep.mkIso_hom_hom_apply]
+  simp [selfEquivOrbitsQuotientProd_symm_apply]
+
+/-- The basis vector `single (g • q.out) r` of the permutation representation corresponds to the
+generator `single q (single g r)` of the free representation. -/
+@[simp]
+theorem ofMulActionIsoFree_hom_hom_single (q : orbitRel.Quotient G X) (g : G) (r : k) :
+    (dsimp% only ((ofMulActionIsoFree k X).hom.hom (MonoidAlgebra.single (g • q.out) r))) =
+      Finsupp.single q (MonoidAlgebra.single g r) := by
+  rw [← ofMulActionIsoFree_inv_hom_single, Rep.hom_inv_apply]
 
 /-- The permutation representation of a free action is projective. -/
 instance projective_ofMulAction : Projective (Rep.ofMulAction k G X) :=

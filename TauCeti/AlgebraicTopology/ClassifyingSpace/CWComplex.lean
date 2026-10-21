@@ -263,13 +263,14 @@ theorem vertexEmbedding_smul_universalGSpace (g : G)
 
 /-- Translation commutes with deleting a vertex: the `j`-th face of a translated simplex of the
 countable join is the translate of its `j`-th face. -/
+@[simp]
 theorem face_smul_universalGSpace (g : G)
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell (n + 1)) (j : Fin (n + 2)) :
     (g • c).face j = g • c.face j := by
   refine Subtype.ext (Subtype.ext ?_)
   rw [RealizationCell.face_val, smul_realizationCell_face, smul_realizationCell_face,
-    RealizationCell.face_val, vertexEmbedding_smul_universalGSpace, Finset.map_erase]
-  rfl
+    RealizationCell.face_val, vertexEmbedding_smul_universalGSpace, Finset.map_erase,
+    Equiv.toEmbedding_apply, MulAction.toPerm_apply]
 
 end RealizationCell
 
