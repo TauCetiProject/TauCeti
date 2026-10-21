@@ -22,22 +22,22 @@ import TauCeti.CategoryTheory.Preadditive.Radical.RepresentationFinite
 
 Let `A` be an Artin algebra, that is, an algebra over a commutative Artinian ring `R` that is
 finitely generated as an `R`-module; a finite-dimensional algebra over a field is the basic
-example. If `A` is representation-finite, the radical of the category `FGModuleCat A` of finitely
-generated `A`-modules is nilpotent: some power `radᴺ` vanishes
-(`TauCeti.IsRepresentationFinite.exists_jacobsonRadicalIdeal_pow_eq_bot`).
+example. Suppose that `A` is representation-finite. Then, in the category `FGModuleCat A` of
+finitely generated `A`-modules:
 
-Both statements are the case `C = FGModuleCat A` of the results for linear categories with finitely
-many indecomposable objects,
-`TauCeti.exists_jacobsonRadicalIdeal_pow_eq_bot_of_finite_indecomposables` and
-`TauCeti.mem_closure_isIrreducibleComposite_of_finite_indecomposables`. The category
+* the radical is nilpotent: some power `radᴺ` vanishes
+  (`TauCeti.IsRepresentationFinite.exists_jacobsonRadicalIdeal_pow_eq_bot`);
+* every morphism between finitely generated indecomposable modules that is not an isomorphism is a
+  sum of composites of irreducible morphisms between finitely generated indecomposable modules
+  (`TauCeti.IsRepresentationFinite.mem_closure_isIrreducibleComposite`).
+
+Both are the case `C = FGModuleCat A` of the results for linear categories with finitely many
+indecomposable objects, `TauCeti.exists_jacobsonRadicalIdeal_pow_eq_bot_of_finite_indecomposables`
+and `TauCeti.mem_closure_isIrreducibleComposite_of_finite_indecomposables`. The category
 `FGModuleCat A` is `R`-linear through `A` (`ModuleCat.Algebra.instLinear`), it is abelian and hence
-idempotent complete, and the endomorphisms of a finitely generated module are finitely generated
-over `R`, since the module is. Representation-finiteness provides finitely many modules `P i`
-representing every finitely generated indecomposable module.
-
-Consequently every morphism between finitely generated indecomposable modules that is not an
-isomorphism is a sum of composites of irreducible morphisms between finitely generated
-indecomposable modules (`TauCeti.IsRepresentationFinite.mem_closure_isIrreducibleComposite`).
+idempotent complete, and its morphism modules are finitely generated over `R`
+(`FGModuleCat.finite_hom`). Representation-finiteness provides finitely many modules `P i` that
+represent every indecomposable object (`TauCeti.IsRepresentationFinite.exists_indecomposable_iso`).
 
 ## References
 
