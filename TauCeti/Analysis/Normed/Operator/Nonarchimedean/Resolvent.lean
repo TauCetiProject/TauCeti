@@ -71,7 +71,8 @@ identity gives
 
 `(1 - a • u) Δᵏ⁺¹V(a) = Δᵏ⁺¹V(a) (1 - a • u) = Δᵏ⁺¹H_u(a) • 1 + u ΔᵏV(a)`
 
-(`ContinuousLinearMap.IsRowCompact.one_sub_smul_mul_resolventHasseDerivAt_succ`). Put
+(`ContinuousLinearMap.IsRowCompact.one_sub_smul_mul_resolventHasseDerivAt_succ`,
+`ContinuousLinearMap.IsRowCompact.resolventHasseDerivAt_succ_mul_one_sub_smul`). Put
 `C = 1 - a • u`. If `ΔʲH_u(a) = 0` for `j < h`, it follows that
 `C ^ (h + 1) ΔʰV(a) = ΔʰH_u(a) • C ^ h`
 (`ContinuousLinearMap.IsRowCompact.one_sub_smul_pow_succ_mul_resolventHasseDerivAt`). If moreover
@@ -82,12 +83,13 @@ This is the identity behind the Riesz decomposition of `u` at a good zero: `1 - 
 the Riesz projector onto the generalized eigenspace `ker C ^ h`, and `(C b) ^ h` is its
 complementary projector.
 
-The estimate is first proved for the output truncations `π_S ∘ u` to finite sets `S` of
-coordinates. The entries of their resolvent coefficients are entries of the coefficients of
-`adjugate (1 - T A)` for finite blocks `A`, which are coefficients of determinants of matrices
-of linear polynomials (`Matrix.norm_sum_coeff_charpolyRev_smul_pow_apply_le`). It then passes to
-`u` because the truncations converge to `u` in operator norm, and each coefficient of the
-determinant, hence each `Vₘ`, is continuous in operator norm on row-compact operators.
+The coefficient estimate `‖Vₘ‖ ≤ c` is first proved for the output truncations `π_S ∘ u` to
+finite sets `S` of coordinates. The entries of their resolvent coefficients are entries of the
+coefficients of `adjugate (1 - T A)` for finite blocks `A`, which are coefficients of
+determinants of matrices of linear polynomials
+(`Matrix.norm_sum_coeff_charpolyRev_smul_pow_apply_le`). It then passes to `u` because the
+truncations converge to `u` in operator norm, and each coefficient of the determinant, hence
+each `Vₘ`, is continuous in operator norm on row-compact operators.
 
 ## References
 
