@@ -90,7 +90,7 @@ theorem mem_span_singleton_of_forall_mul_mem (hm : ¬ (maximalIdeal R).IsPrincip
   · -- Otherwise `u c = b v` with `v` a unit for some `u` in the maximal ideal, which is then `(u)`.
     push Not at hall
     obtain ⟨u, hu, v, huv, hv⟩ := hall
-    have hv : IsUnit v := not_not.mp (mt (mem_maximalIdeal v).mpr hv)
+    have hv : IsUnit v := notMem_maximalIdeal.mp hv
     refine absurd ⟨⟨u, le_antisymm (fun z hz ↦ ?_) ((span_singleton_le_iff_mem _).mpr hu)⟩⟩ hm
     obtain ⟨w, hw⟩ := hc' z hz
     have : v * z = u * w := mul_left_cancel₀ hb (by linear_combination u * hw - z * huv)
