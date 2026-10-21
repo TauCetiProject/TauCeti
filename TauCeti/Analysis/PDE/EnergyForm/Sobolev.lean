@@ -1142,13 +1142,13 @@ theorem mul_norm_sq_le_energyFormH1_self_of_subset_slab
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 ≤ c x)
-    {i : Fin (n + 1)} {s t : ℝ} (hst : s ≤ t)
+    {i : Fin (n + 1)} {s t : ℝ}
     (hslab : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), x i ∈ Icc s t)
     {u : W1p volume Omega 2} (hu : u ∈ w1p0Submodule volume Omega 2) :
     (lam ^ 2 - beta ^ 2 * (t - s) ^ 2) / (2 * lam * ((t - s) ^ 2 + 1)) * ‖u‖ ^ 2
       ≤ energyFormH1 a b c u u :=
   mul_norm_sq_le_energyFormH1_self_of_poincare h ha hb hc hb_bound hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab hst hslab hu)
+    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab hslab hu)
 
 /-- **An energy-form lower bound on `H¹₀(Ω)` for a domain inside a ball.** For
 `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` every `u ∈ W^{1,2}_0(Ω)` satisfies
