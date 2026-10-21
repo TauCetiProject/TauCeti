@@ -135,7 +135,7 @@ lemma smoothingVertexLift_smoothingVertex {α : Sort*} (f : G.Vertex → α)
 /-- To prove a property of every component of the smoothing, it suffices to prove it for the
 component containing each component of `G`. -/
 @[elab_as_elim]
-theorem smoothingVertex_induction {p : Quot (G.SmoothingRel S) → Prop}
+theorem smoothingVertex_induction_on {p : Quot (G.SmoothingRel S) → Prop}
     (x : Quot (G.SmoothingRel S)) (h : ∀ v, p (G.smoothingVertex S v)) : p x :=
   Quot.ind h x
 
@@ -165,6 +165,25 @@ noncomputable abbrev smoothingComponent (x : Quot (G.SmoothingRel S)) :
     | trans a b c hab _ ih₁ ih₂ =>
       have hb := ((G.smoothingVertex_eq_smoothingVertex_iff S).mpr hab).symm.trans hv
       exact (ih₁ hv hb).trans (ih₂ hb hw)
+
+@[simp]
+lemma endpoint_smoothingComponent (x : Quot (G.SmoothingRel S))
+    (e : (G.smoothingComponent S x).Edge) (i : Fin 2) :
+    (G.smoothingComponent S x).endpoint e i =
+      ⟨G.endpoint e.1 i, (G.smoothingVertex_endpoint S e.2.1 i 0).trans e.2.2⟩ :=
+  rfl
+
+@[simp]
+lemma genus_smoothingComponent (x : Quot (G.SmoothingRel S))
+    (v : (G.smoothingComponent S x).Vertex) :
+    (G.smoothingComponent S x).genus v = G.genus v.1 :=
+  rfl
+
+@[simp]
+lemma marking_smoothingComponent (x : Quot (G.SmoothingRel S))
+    (i : {i : ι // G.smoothingVertex S (G.marking i) = x}) :
+    (G.smoothingComponent S x).marking i = ⟨G.marking i, i.2⟩ :=
+  rfl
 
 /-! ### The smoothed graph -/
 
@@ -246,22 +265,17 @@ theorem arithmeticGenus_smoothing : (G.smoothing S).arithmeticGenus = G.arithmet
     (card_eq_sum_card_fiberwise (s := S) (t := univ)
       (f := fun e ↦ G.smoothingVertex S (G.endpoint e 0)) (by simp)).symm
   -- Sum the genus formula over all components of the smoothing.
-  have h := sum_congr rfl fun x (_ : x ∈ univ) ↦ G.genus_smoothing_add_card S x
-  rw [sum_add_distrib, sum_add_distrib, sum_add_distrib, hV, hS, sum_fiberwise, sum_const,
-    card_univ, smul_eq_mul, mul_one] at h
+  have h : ∑ x, (G.smoothing S).genus x + Fintype.card G.Vertex =
+      ∑ v, G.genus v + #S + Fintype.card (G.smoothing S).Vertex := by
+    simpa [sum_add_distrib, hV, hS, sum_fiberwise] using
+      sum_congr rfl fun x (_ : x ∈ univ) ↦ G.genus_smoothing_add_card S x
   omega
 
 /-- A count of objects lying over components in the class `x`, split over those components. -/
 private lemma card_filter_smoothingVertex_eq_sum {α : Type*} [Fintype α] (f : α → G.Vertex)
     (x : Quot (G.SmoothingRel S)) :
     #{a | G.smoothingVertex S (f a) = x} = ∑ v with G.smoothingVertex S v = x, #{a | f a = v} := by
-  rw [card_eq_sum_card_fiberwise (f := f) (t := {v | G.smoothingVertex S v = x})
-    fun a ha ↦ by simpa using ha]
-  refine sum_congr rfl fun v hv ↦ ?_
-  rw [filter_filter]
-  refine congrArg card (filter_congr fun a _ ↦ ?_)
-  rw [mem_filter] at hv
-  exact ⟨And.right, fun h ↦ ⟨h ▸ hv.2, h⟩⟩
+  simpa using (sum_card_fiberwise_eq_card_filter univ {v | G.smoothingVertex S v = x} f).symm
 
 /-- The valence of a smoothed component is the total valence of the components of `G` in it,
 minus the two branches of each smoothed node joining them. -/
@@ -274,17 +288,17 @@ theorem valence_smoothing_add (x : (G.smoothing S).Vertex) :
     rw [sum_comm]
     exact sum_congr rfl fun e _ ↦ (G.card_filter_smoothingVertex_eq_sum S (G.endpoint e) x).symm
   -- Both branches of a smoothed node lie on the same smoothed component.
-  have hS : ∀ e ∈ S, #{i | G.smoothingVertex S (G.endpoint e i) = x} =
-      if G.smoothingVertex S (G.endpoint e 0) = x then 2 else 0 := by
-    intro e he
+  have hS : ∑ e ∈ S, #{i | G.smoothingVertex S (G.endpoint e i) = x} =
+      2 * #{e ∈ S | G.smoothingVertex S (G.endpoint e 0) = x} := by
+    rw [card_filter, mul_sum]
+    refine sum_congr rfl fun e he ↦ ?_
     simp_rw [G.smoothingVertex_endpoint S he _ 0]
     split_ifs <;> simp [*]
   -- The nodes outside `S` are the edges of the smoothing, and contribute its valence at `x`.
-  have hX : (G.smoothing S).valence x =
-      ∑ e : {e // e ∉ S}, #{i | G.smoothingVertex S (G.endpoint e.1 i) = x} :=
-    valence_eq_sum _ x
-  rw [hX, hG, ← sum_add_sum_compl S, sum_congr rfl hS, ← sum_filter, sum_const, smul_eq_mul,
-    sum_subtype Sᶜ (fun _ ↦ mem_compl) _]
+  have hX : ∑ e ∈ Sᶜ, #{i | G.smoothingVertex S (G.endpoint e i) = x} =
+      (G.smoothing S).valence x :=
+    (sum_subtype Sᶜ (fun _ ↦ mem_compl) _).trans (valence_eq_sum _ x).symm
+  have h := sum_add_sum_compl S fun e ↦ #{i | G.smoothingVertex S (G.endpoint e i) = x}
   omega
 
 /-- The markings on a smoothed component are those on the components of `G` in it. -/
