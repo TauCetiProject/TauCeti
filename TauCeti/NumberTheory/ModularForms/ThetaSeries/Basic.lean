@@ -45,8 +45,8 @@ half-planes and locally uniformly on `ℍ`, and are holomorphic, both as functio
 
 ## Main statements
 
-* `ZLattice.norm_cexp_pi_mul_I_mul_norm_add_sq`: the term of index `v` has norm
-  `exp (-π ‖γ + v‖² im τ)`.
+* `Complex.norm_exp_pi_mul_I_mul_ofReal_mul`: `‖exp (π i t z)‖ = exp (-π t im z)` for real `t`,
+  so the term of index `v` has norm `exp (-π ‖γ + v‖² im τ)`.
 * `ZLattice.summable_thetaCoset`: the series converge at every `τ : ℍ`.
 * `ZLattice.hasSumUniformlyOn_thetaCoset`: uniform convergence on `{τ | y ≤ im τ}` for `0 < y`.
 * `ZLattice.hasSumLocallyUniformly_thetaCoset`: locally uniform convergence on `ℍ`.
@@ -66,6 +66,27 @@ public section
 open Complex Filter Topology
 open UpperHalfPlane (ofComplex ofComplex_apply_of_im_pos mdifferentiable_iff)
 open scoped Real Manifold UpperHalfPlane
+
+namespace Complex
+
+/-- For real `t`, `‖exp (π i t z)‖ = exp (-π t im z)`; with `t = ‖γ + v‖²` this is the norm of
+the term of index `v` of a theta series. -/
+theorem norm_exp_pi_mul_I_mul_ofReal_mul (t : ℝ) (z : ℂ) :
+    ‖cexp (π * I * t * z)‖ = Real.exp (-(π * t) * z.im) := by
+  rw [Complex.norm_exp]
+  congr 1
+  simp only [mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im]
+  ring
+
+/-- For `0 ≤ t`, on the half-plane `{z | y ≤ im z}` the function `exp (π i t z)` is bounded in
+norm by `exp (-π y t)`; this dominates the terms of a theta series by a Gaussian. -/
+theorem norm_exp_pi_mul_I_mul_ofReal_mul_le {t y : ℝ} (ht : 0 ≤ t) {z : ℂ} (hz : y ≤ z.im) :
+    ‖cexp (π * I * t * z)‖ ≤ Real.exp (-(π * y) * t) := by
+  rw [norm_exp_pi_mul_I_mul_ofReal_mul, Real.exp_le_exp]
+  have : 0 ≤ π * t := by positivity
+  nlinarith
+
+end Complex
 
 namespace ZLattice
 
@@ -98,22 +119,6 @@ theorem thetaCoset_zero : thetaCoset L 0 = thetaSeries L := by
   ext τ
   simp [thetaCoset_apply, thetaSeries_apply]
 
-/-- The term of index `v` of `θ_{γ+L}` at `z` has norm `exp (-π ‖γ + v‖² im z)`. -/
-theorem norm_cexp_pi_mul_I_mul_norm_add_sq (γ v : E) (z : ℂ) :
-    ‖cexp (π * I * (‖γ + v‖ ^ 2 : ℝ) * z)‖ = Real.exp (-(π * ‖γ + v‖ ^ 2) * z.im) := by
-  rw [Complex.norm_exp]
-  congr 1
-  simp only [mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im]
-  ring
-
-/-- On the half-plane `{z | y ≤ im z}`, the terms of `θ_{γ+L}` are dominated by the summable
-Gaussian `exp (-π y ‖γ + v‖²)`. -/
-theorem norm_cexp_pi_mul_I_mul_norm_add_sq_le (γ v : E) {y : ℝ} {z : ℂ} (hz : y ≤ z.im) :
-    ‖cexp (π * I * (‖γ + v‖ ^ 2 : ℝ) * z)‖ ≤ Real.exp (-(π * y) * ‖γ + v‖ ^ 2) := by
-  rw [norm_cexp_pi_mul_I_mul_norm_add_sq, Real.exp_le_exp]
-  have : 0 ≤ π * ‖γ + v‖ ^ 2 := by positivity
-  nlinarith
-
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
 
 /-- The theta series of a translate of a discrete subgroup converges at every point of
@@ -121,7 +126,7 @@ the upper half-plane. -/
 theorem summable_thetaCoset (γ : E) (τ : ℍ) :
     Summable fun v : L => cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ) :=
   .of_norm_bounded (summable_exp_neg_mul_norm_add_sq L (c := π * τ.im) (by positivity) γ)
-    fun v => norm_cexp_pi_mul_I_mul_norm_add_sq_le γ v le_rfl
+    fun v => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) le_rfl
 
 /-- The theta series of a discrete subgroup converges at every point of the upper
 half-plane. -/
@@ -136,7 +141,7 @@ theorem hasSumUniformlyOn_thetaCoset (γ : E) {y : ℝ} (hy : 0 < y) :
       (thetaCoset L γ) {τ : ℍ | y ≤ τ.im} :=
   HasSumUniformlyOn.of_norm_le_summable
     (summable_exp_neg_mul_norm_add_sq L (c := π * y) (by positivity) γ)
-    fun v _ hτ => norm_cexp_pi_mul_I_mul_norm_add_sq_le γ v hτ
+    fun v _ hτ => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) hτ
 
 /-- The theta series converges uniformly on each half-plane `{τ | y ≤ im τ}` with `0 < y`. -/
 theorem hasSumUniformlyOn_thetaSeries {y : ℝ} (hy : 0 < y) :
@@ -174,7 +179,7 @@ theorem differentiableOn_thetaCoset (γ : E) :
     differentiableOn_tsum_of_summable_norm (summable_exp_neg_mul_norm_add_sq L (c := π * (z.im / 2))
       (mul_pos Real.pi_pos (half_pos hz)) γ)
       (fun v => ((differentiable_id.const_mul _).cexp).differentiableOn) hU
-      fun v w hw => norm_cexp_pi_mul_I_mul_norm_add_sq_le γ v (le_of_lt hw)
+      fun v w hw => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) (le_of_lt hw)
   refine ((hdiff z hzU).differentiableAt (hU.mem_nhds hzU)).congr_of_eventuallyEq ?_
     |>.differentiableWithinAt
   filter_upwards [hU.mem_nhds hzU] with w hw
