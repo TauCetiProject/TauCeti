@@ -283,11 +283,12 @@ namespace Set.powersetCard
 
 /-- **The shuffle signs of complementary index sets**: for a set `s` of `k` indices whose
 complement has `l` indices, `sign s * sign sᶜ = (-1) ^ (k * l)`. The two shuffles differ by moving
-the block `sᶜ` past the block `s`. The proof compares `e_s ∧ e_{sᶜ}` and `e_{sᶜ} ∧ e_s` in the
-exterior algebra of `I → ℤ`, where they are `sign s` and `sign sᶜ` times the top basis vector. -/
+the block `sᶜ` past the block `s`. -/
 theorem sign_mul_sign_compl {I : Type*} [LinearOrder I] [Fintype I] {k l : ℕ}
     (h : l + k = Fintype.card I) (s : powersetCard I k) :
     powersetCard.sign s * powersetCard.sign (compl h s) = (-1) ^ (k * l) := by
+  -- Compare `e_s ∧ e_{sᶜ}` and `e_{sᶜ} ∧ e_s` in the exterior algebra of `I → ℤ`, where they are
+  -- `sign s` and `sign sᶜ` times the top basis vector.
   set t := compl h s
   have h' : k + l = Fintype.card I := by omega
   have hst : Disjoint s.val t.val :=
