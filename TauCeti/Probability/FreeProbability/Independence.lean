@@ -56,7 +56,7 @@ labels.
   `φ (a * b) = φ a * φ b`; `TauCeti.IsFreelyIndependent.apply_mul_mul_of_ne` and
   `TauCeti.IsFreelyIndependent.apply_mul_mul_mul_of_ne` compute the alternating mixed moments of
   orders three and four.
-* `TauCeti.IsFreelyIndependent.variance_mul_variance_eq_zero_of_commute` — freeness is not
+* `TauCeti.IsFreelyIndependent.sub_mul_sub_eq_zero_of_commute` — freeness is not
   classical independence: for commuting letters from distinct members the product of their
   variances vanishes.
 * `TauCeti.toSubmodule_iSup_eq_span_insert_one_centeredAlternatingProds` — for a normalised
@@ -276,7 +276,7 @@ theorem apply_mul_mul_mul_of_ne (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) 
 with distinct labels and commute, then for a normalised functional the product of their variances
 `φ (a * a) - φ a ^ 2` and `φ (b * b) - φ b ^ 2` vanishes; over a ring without zero divisors, such
 as `ℂ`, one of them is zero, so commuting variables of nonzero variance are never free. -/
-theorem variance_mul_variance_eq_zero_of_commute (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1)
+theorem sub_mul_sub_eq_zero_of_commute (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1)
     {i j : ι} (hij : i ≠ j) {a b : A} (ha : a ∈ B i) (hb : b ∈ B j) (hab : Commute a b) :
     (φ (a * a) - φ a ^ 2) * (φ (b * b) - φ b ^ 2) = 0 := by
   -- Compare the two evaluations of `φ (a * b * a * b) = φ (a * a * (b * b))`.

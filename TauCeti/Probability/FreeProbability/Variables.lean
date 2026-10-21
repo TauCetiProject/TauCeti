@@ -140,10 +140,10 @@ theorem apply_mul_mul_mul_of_ne (h : IsFreelyIndependentElements φ a) (hφ : φ
 
 /-- Two distinct freely independent elements that commute have variances
 `φ (a i * a i) - φ (a i) ^ 2` and `φ (a j * a j) - φ (a j) ^ 2` with vanishing product. -/
-theorem variance_mul_variance_eq_zero_of_commute (h : IsFreelyIndependentElements φ a)
+theorem sub_mul_sub_eq_zero_of_commute (h : IsFreelyIndependentElements φ a)
     (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) (hcomm : Commute (a i) (a j)) :
     (φ (a i * a i) - φ (a i) ^ 2) * (φ (a j * a j) - φ (a j) ^ 2) = 0 :=
-  IsFreelyIndependent.variance_mul_variance_eq_zero_of_commute h hφ hij
+  IsFreelyIndependent.sub_mul_sub_eq_zero_of_commute h hφ hij
     (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _) hcomm
 
 /-- Grouping freely independent variables along the fibres of a map gives freely independent
