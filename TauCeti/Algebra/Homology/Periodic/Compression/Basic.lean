@@ -158,23 +158,21 @@ noncomputable def πCompression (r : ZMod n) (j : ℤ) :
 
 /-- The inclusion of the term of degree `j` of `K` into the term of residue `r` of the
 compression; it is zero when `j` does not lie in the residue class `r`. -/
--- This is `GradedObject.ιMapObjOrZero` for the coproducts defining the compression, restated
--- through `ιCompression` because the terms of `compression` are not exposed as those coproducts.
 noncomputable def ιCompressionOrZero (j : ℤ) (r : ZMod n) :
     K.X j ⟶ (compression n K).X r :=
-  if h : (j : ZMod n) = r then ιCompression n K j r h else 0
+  GradedObject.ιMapObjOrZero K.X _ j r
 
 /-- On a degree in the residue class `r`, `ιCompressionOrZero` is the summand inclusion. -/
 @[simp]
 lemma ιCompressionOrZero_eq (j : ℤ) (r : ZMod n) (h : (j : ZMod n) = r) :
-    ιCompressionOrZero n K j r = ιCompression n K j r h := by
-  simp [ιCompressionOrZero, h]
+    ιCompressionOrZero n K j r = ιCompression n K j r h :=
+  GradedObject.ιMapObjOrZero_eq _ _ _ _ h
 
 /-- On a degree outside the residue class `r`, `ιCompressionOrZero` is zero. -/
 @[simp]
 lemma ιCompressionOrZero_eq_zero (j : ℤ) (r : ZMod n) (h : (j : ZMod n) ≠ r) :
-    ιCompressionOrZero n K j r = 0 := by
-  simp [ιCompressionOrZero, h]
+    ιCompressionOrZero n K j r = 0 :=
+  GradedObject.ιMapObjOrZero_eq_zero _ _ _ _ h
 
 /-- The projection onto the summand of degree `j` restricts to the identity on that summand and to
 zero on the other summands. -/
