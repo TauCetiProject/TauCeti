@@ -380,6 +380,7 @@ theorem fullCycleType_one :
   rw [fullCycleType_def, Equiv.Perm.parts_partition_one]
 
 /-- The identity is the only permutation all of whose full cycle lengths are one. -/
+@[simp]
 theorem forall_mem_fullCycleType_eq_one_iff {σ : Equiv.Perm α} :
     (∀ k ∈ fullCycleType σ, k = 1) ↔ σ = 1 := by
   refine ⟨fun h => ?_, fun h k hk => ?_⟩

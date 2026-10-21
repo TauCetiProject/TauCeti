@@ -20,10 +20,10 @@ and the pairs with at most one branch value.
 
 * A pair unramified over `1` is isomorphic to the power map `z ↦ z ^ n` of the Riemann sphere,
   where `n` is its degree (`TauCeti.AnalyticBelyiPair.nonempty_iso_pow_iff`). Indeed `σ1 = 1`
-  in its monodromy triple, so `σ0` alone generates a transitive group and the triple is the
-  cyclic triple `TauCeti.PermutationTriple.cyclicTriple n`
-  (`TauCeti.AnalyticBelyiPair.isoClass_monodromyTriple_eq_cyclicTriple_iff`), which is also the
-  triple of `z ↦ z ^ n`. In particular the surface of such a pair is the Riemann sphere.
+  in its monodromy triple, so `σ0` alone generates a transitive group and the triple is
+  isomorphic to the cyclic triple `TauCeti.PermutationTriple.cyclicTriple n`
+  (`TauCeti.AnalyticBelyiPair.isoClass_monodromyTriple_eq_cyclicTriple_iff`), as is the triple of
+  `z ↦ z ^ n`. In particular the surface of such a pair is the Riemann sphere.
 * A pair with at most one branch value has degree one
   (`TauCeti.AnalyticBelyiPair.degree_β_eq_one_of_branchValues_subset_singleton`): two of the
   components of its triple are the identity, so the third is too, and a connected triple with
@@ -47,8 +47,8 @@ open scoped OnePoint
 
 namespace AnalyticBelyiPair
 
-/-- **The monodromy triple of a pair is the cyclic triple exactly when the Belyi map is unramified
-over `1`**, for any numbering of the fibre over `1/2`. -/
+/-- **The monodromy triple of a pair is isomorphic to the cyclic triple exactly when the Belyi map
+is unramified over `1`**, for any numbering of the fibre over `1/2`. -/
 theorem isoClass_monodromyTriple_eq_cyclicTriple_iff {P : AnalyticBelyiPair.{0}} {n : ℕ}
     (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
     IsoClass.mk (P.isCoveringMap_restrict.monodromyTriple ν) = IsoClass.mk (cyclicTriple n) ↔
