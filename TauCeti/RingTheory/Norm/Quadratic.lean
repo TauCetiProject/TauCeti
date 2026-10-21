@@ -42,6 +42,9 @@ algebra `K × K`, and the non-reduced `K[X]/(X²)`:
 * `discrim_eq_zero_of_mem_range_algebraMap`, the easy half of the characterisation: a scalar
   `θ = c` has `t = 2c` and `n = c²`, so `t² - 4n = 0`.
 
+`Module.Basis.norm_eq_of_apply_zero_eq_one` reads the norm formula in the coordinates of a basis
+`(1, θ)`: the norm of `x + y θ` is the binary form `x² + x y Tr(θ) + y² N(θ)`.
+
 Separability is genuinely needed for the other half, and hence for `discrim_ne_zero` and
 `exists_discrim_ne_zero`: over a purely inseparable quadratic extension the trace form vanishes,
 so `t = 0` and `t² - 4n = 0` for *every* `θ`. In characteristic two `discrim_ne_zero` says
@@ -128,6 +131,24 @@ theorem discrim_eq_zero_of_mem_range_algebraMap {θ : L} (hθ : θ ∈ Set.range
 end Algebra.IsQuadraticExtension
 
 end CommRing
+
+namespace Module.Basis
+
+variable {K L : Type*} [CommRing K] [Nontrivial K] [CommRing L] [Algebra K L]
+
+/-- **The norm form of a basis `(1, θ)`.** For a basis `B` of a commutative algebra `L` over a
+nontrivial commutative ring `K` with `B 0 = 1` and `θ = B 1`, the norm of `w = x + y θ` is
+`x² + x y Tr(θ) + y² N(θ)`. -/
+theorem norm_eq_of_apply_zero_eq_one (B : Module.Basis (Fin 2) K L) (hB : B 0 = 1) (w : L) :
+    Algebra.norm K w = B.repr w 0 ^ 2 + B.repr w 0 * B.repr w 1 * Algebra.trace K L (B 1) +
+      B.repr w 1 ^ 2 * Algebra.norm K (B 1) := by
+  have : Algebra.IsQuadraticExtension K L :=
+    { toFree := .of_basis B
+      finrank_eq_two' := by rw [Module.finrank_eq_card_basis B, Fintype.card_fin] }
+  conv_lhs => rw [← B.sum_repr w]
+  simp [Fin.sum_univ_two, hB, Algebra.smul_def, mul_comm]
+
+end Module.Basis
 
 section SquareRoot
 
