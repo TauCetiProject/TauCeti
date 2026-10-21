@@ -108,6 +108,8 @@ closed unit disc next to its Gauss points.
 * `TauCeti.PowerSeries.gaussValuationAbove_monomial_coeff_le` and
   `TauCeti.PowerSeries.gaussValuationBelow_monomial_coeff_le`: every monomial of a series is at
   most the series for both refined Gauss valuations.
+* `TauCeti.PowerSeries.summable_norm_coeff_of_summable_gaussNorm`: summable Gauss norms give
+  summable coefficient norms in every degree over a seminormed ring, without completeness.
 * `TauCeti.PowerSeries.summable_coeff_of_summable_gaussNorm` and
   `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff`: summable Gauss norms give summable coefficients
   over a complete seminormed ring, and the coefficientwise `tsum`s of restricted series are
@@ -664,18 +666,28 @@ section Summation
 
 section SeminormedRing
 
-variable {R : Type*} [SeminormedRing R] [CompleteSpace R] {c : ℝ}
+variable {R : Type*} [SeminormedRing R] {c : ℝ}
   {ι : Type*} {a : ι → PowerSeries R}
+
+/-- Summable Gauss norms give summable coefficient norms in every degree over a seminormed
+ring, without any completeness assumption. -/
+theorem summable_norm_coeff_of_summable_gaussNorm (hc : 0 < c)
+    (ha : ∀ k, (a k).HasGaussNorm norm c)
+    (hs : Summable fun k ↦ (a k).gaussNorm norm c) (i : ℕ) :
+    Summable fun k ↦ ‖(a k).coeff i‖ := by
+  refine (hs.mul_right (c ^ i)⁻¹).of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun k ↦ ?_
+  rw [← div_eq_mul_inv, le_div_iff₀ (pow_pos hc i)]
+  exact PowerSeries.le_gaussNorm norm c _ (ha k) i
+
+variable [CompleteSpace R]
 
 /-- Over a complete seminormed ring, a family of power series with summable Gauss norms has
 summable coefficients in every degree. -/
 theorem summable_coeff_of_summable_gaussNorm (hc : 0 < c)
     (ha : ∀ k, (a k).HasGaussNorm norm c)
     (hs : Summable fun k ↦ (a k).gaussNorm norm c) (i : ℕ) :
-    Summable fun k ↦ (a k).coeff i := by
-  refine Summable.of_norm_bounded (hs.mul_right (c ^ i)⁻¹) fun k ↦ ?_
-  rw [← div_eq_mul_inv, le_div_iff₀ (pow_pos hc i)]
-  exact PowerSeries.le_gaussNorm norm c _ (ha k) i
+    Summable fun k ↦ (a k).coeff i :=
+  (summable_norm_coeff_of_summable_gaussNorm hc ha hs i).of_norm
 
 end SeminormedRing
 
@@ -691,11 +703,9 @@ completeness. -/
 theorem isRestricted_mk_tsum_coeff (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted c)
     (hs : Summable fun k ↦ (a k).gaussNorm norm c) :
     (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).IsRestricted c := by
-  have hbound (i k) : ‖(a k).coeff i‖ ≤ (a k).gaussNorm norm c * (c ^ i)⁻¹ := by
-    rw [← div_eq_mul_inv, le_div_iff₀ (pow_pos hc i)]
-    exact PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted (ha k)) i
   have hsum (i) : Summable fun k ↦ ‖(a k).coeff i‖ :=
-    (hs.mul_right (c ^ i)⁻¹).of_nonneg_of_le (fun _ ↦ norm_nonneg _) (hbound i)
+    summable_norm_coeff_of_summable_gaussNorm (R := R) hc
+      (fun k ↦ hasGaussNorm_of_isRestricted (ha k)) hs i
   have hlimit : Tendsto (fun i ↦ ∑' k, ‖(a k).coeff i‖ * c ^ i) atTop (𝓝 0) := by
     simpa only [tsum_zero] using tendsto_tsum_of_dominated_convergence hs
       (fun k ↦ (PowerSeries.isRestricted_iff' c (a k)).mp (ha k))
