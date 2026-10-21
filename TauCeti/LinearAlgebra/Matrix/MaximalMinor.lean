@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GCDMonoid.Finset
-public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
 import Mathlib.Algebra.GCDMonoid.Nat
@@ -14,7 +13,6 @@ import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
-import TauCeti.LinearAlgebra.Matrix.Gram
 
 /-!
 # Maximal minors and their gcd
@@ -24,17 +22,17 @@ determinant `det (A.submatrix id e)` of the square submatrix on all the rows and
 picked out by an embedding `e : m ↪ n`. Over an integral domain the rows of `A` are linearly
 independent exactly when some maximal minor is nonzero.
 
-Over a GCD domain, `Matrix.minorGcd A` is the normalized gcd of the maximal minors. For an
-integer matrix `A` with linearly independent rows, the quotient `√det (A * Aᵀ) / minorGcd A` is
-the covolume of the lattice of integer solutions of `A *ᵥ x = 0`, which enters the sharp form of
-Siegel's lemma due to Bombieri and Vaaler (`Matrix.covolume_intLattice_ker_mulVecLin`). Since the
-covolume depends only on the kernel, the quotient must be unchanged when `A` is replaced by
-`B * A` with `det B ≠ 0`, and this file proves that invariance directly: the maximal minors are
-multiplied by `det B` and the Gram determinant `det (A * Aᵀ)` by `det B ^ 2`. In particular the
-quotient is invariant under `GL_m(ℤ)`, unlike Siegel's bound in terms of the entries of `A`. The
-examples at the end of the file check this on the row `[2, 2]` and on a unimodular shear.
+Over a GCD domain, `Matrix.minorGcd A` is the normalized gcd of the maximal minors. Left
+multiplication by a square matrix `B` multiplies every maximal minor by `det B`, so it multiplies
+the minor gcd by `normalize (det B)` and leaves it unchanged for `B` invertible. For an integer
+matrix `A` with linearly independent rows, the quotient `√det (A * Aᵀ) / minorGcd A` is the
+covolume of the lattice of integer solutions of `A *ᵥ x = 0`, which enters the sharp form of
+Siegel's lemma due to Bombieri and Vaaler; that quotient and its invariance under `A ↦ B * A`
+are treated in `TauCeti.NumberTheory.Height.Arakelov.IntMatrix`. The examples at the end of the
+file compute the minor gcd and Gram determinant of the row `[2, 2]` and of a matrix before and
+after a unimodular shear.
 
-The Gram determinant itself is treated elsewhere: its behaviour under `A ↦ B * A` and its
+The Gram determinant `det (A * Aᵀ)` is not treated here: its behaviour under `A ↦ B * A` and its
 independence criterion are in `TauCeti.LinearAlgebra.Matrix.Gram`, and its positivity, a
 consequence of the Cauchy–Binet formula, is in `TauCeti.LinearAlgebra.ExteriorPower.Plucker`.
 
@@ -55,9 +53,6 @@ consequence of the Cauchy–Binet formula, is in `TauCeti.LinearAlgebra.Exterior
 * `Matrix.linearIndependent_rat_row_iff`: the rows of an integer matrix are linearly independent
   over `ℚ` exactly when they are over `ℤ`; `Matrix.one_le_minorGcd` takes independence over `ℚ`
   as its hypothesis.
-* `Matrix.sqrt_det_div_minorGcd_mul_left` and `Matrix.sqrt_det_div_minorGcd_unit_mul`: the
-  quotient `√det (A * Aᵀ) / minorGcd A` is unchanged by `A ↦ B * A` for `det B ≠ 0`, in
-  particular for `B ∈ GL_m(ℤ)`.
 
 ## References
 
@@ -228,23 +223,6 @@ least `1`. -/
 theorem one_le_minorGcd {A : Matrix m n ℤ} (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
     1 ≤ A.minorGcd :=
   minorGcd_pos_iff.2 (linearIndependent_rat_row_iff.1 hA)
-
-/-- The quotient `√det (A * Aᵀ) / minorGcd A` is unchanged by `A ↦ B * A` for any square integer
-matrix `B` with `det B ≠ 0`: both numerator and denominator are multiplied by `|det B|`. -/
-theorem sqrt_det_div_minorGcd_mul_left {B : Matrix m m ℤ} (hB : B.det ≠ 0)
-    (A : Matrix m n ℤ) :
-    √((B * A * (B * A)ᵀ).det : ℝ) / ((B * A).minorGcd : ℝ) =
-      √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
-  rw [det_mul_transpose_mul_left, minorGcd_mul_left, ← Int.abs_eq_normalize]
-  push_cast [-Int.cast_det]
-  rw [Real.sqrt_mul (by positivity), Real.sqrt_sq_eq_abs, mul_div_mul_left _ _ (by simpa)]
-
-/-- The quotient `√det (A * Aᵀ) / minorGcd A` is invariant under `A ↦ U * A` for `U ∈ GL_m(ℤ)`. -/
-theorem sqrt_det_div_minorGcd_unit_mul (U : GL m ℤ) (A : Matrix m n ℤ) :
-    √(((U : Matrix m m ℤ) * A * ((U : Matrix m m ℤ) * A)ᵀ).det : ℝ) /
-        (((U : Matrix m m ℤ) * A).minorGcd : ℝ) =
-      √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) :=
-  sqrt_det_div_minorGcd_mul_left (isUnits_det_units U).ne_zero A
 
 end Int
 

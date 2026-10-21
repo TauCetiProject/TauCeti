@@ -8,6 +8,7 @@ module
 public import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 public import TauCeti.LinearAlgebra.Matrix.MaximalMinor
 public import TauCeti.NumberTheory.Height.Arakelov.Covolume
+import TauCeti.LinearAlgebra.Matrix.Gram
 
 /-!
 # The height of the row space and the kernel of an integer matrix
@@ -32,6 +33,11 @@ replaced by any integer matrix with the same rational row space.
 * `Matrix.minorGcd_mul_subspaceHeight_span_range_row`: the identity for the row space.
 * `Matrix.minorGcd_mul_subspaceHeight_ker_mulVecLin`: the identity for the kernel.
 * `Matrix.covolume_intLattice_ker_mulVecLin`: the covolume of the lattice of integral solutions.
+* `Matrix.sqrt_det_div_minorGcd_mul_left` and `Matrix.sqrt_det_div_minorGcd_unit_mul`: the
+  quotient `√det (A Aᵀ) / g` is unchanged by `A ↦ B * A` for `det B ≠ 0`, in particular for
+  `B ∈ GL_m(ℤ)`, unlike Siegel's bound in terms of the entries of `A`. This is proved directly,
+  without a rank hypothesis: the maximal minors are multiplied by `det B` and the Gram determinant
+  by `det B ^ 2`.
 
 ## Implementation notes
 
@@ -104,6 +110,29 @@ theorem covolume_intLattice_ker_mulVecLin {A : Matrix (Fin p) ι ℤ}
   have hg : A.minorGcd ≠ 0 := minorGcd_ne_zero_iff.2 (linearIndependent_rat_row_iff.1 hA)
   rw [covolume_intLattice, ← minorGcd_mul_subspaceHeight_ker_mulVecLin,
     mul_div_cancel_left₀ _ (Int.cast_ne_zero.mpr hg)]
+
+section Invariance
+
+variable {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n]
+
+/-- The quotient `√det (A * Aᵀ) / minorGcd A` is unchanged by `A ↦ B * A` for any square integer
+matrix `B` with `det B ≠ 0`: both numerator and denominator are multiplied by `|det B|`. -/
+theorem sqrt_det_div_minorGcd_mul_left {B : Matrix m m ℤ} (hB : B.det ≠ 0)
+    (A : Matrix m n ℤ) :
+    √((B * A * (B * A)ᵀ).det : ℝ) / ((B * A).minorGcd : ℝ) =
+      √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
+  rw [det_mul_transpose_mul_left, minorGcd_mul_left, ← Int.abs_eq_normalize]
+  push_cast [-Int.cast_det]
+  rw [Real.sqrt_mul (by positivity), Real.sqrt_sq_eq_abs, mul_div_mul_left _ _ (by simpa)]
+
+/-- The quotient `√det (A * Aᵀ) / minorGcd A` is invariant under `A ↦ U * A` for `U ∈ GL_m(ℤ)`. -/
+theorem sqrt_det_div_minorGcd_unit_mul (U : GL m ℤ) (A : Matrix m n ℤ) :
+    √(((U : Matrix m m ℤ) * A * ((U : Matrix m m ℤ) * A)ᵀ).det : ℝ) /
+        (((U : Matrix m m ℤ) * A).minorGcd : ℝ) =
+      √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) :=
+  sqrt_det_div_minorGcd_mul_left (isUnits_det_units U).ne_zero A
+
+end Invariance
 
 end Matrix
 
