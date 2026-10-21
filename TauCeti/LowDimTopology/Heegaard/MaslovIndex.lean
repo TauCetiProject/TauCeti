@@ -398,25 +398,12 @@ theorem pointMeasure_nonneg (hD : 0 ≤ D) (p : Point) : 0 ≤ H.pointMeasure D 
   have := H.abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure hD p
   linarith [abs_nonneg (H.alphaArcBoundary (H.alphaBoundary D) p : ℚ)]
 
-/-- On an `α`-curve where `x` and `y` differ, the point of `x` is a corner of every domain from
-`x` to `y`, at which the boundary of its `α`-part has coefficient `-1`. -/
-private theorem IsDomainBetween.alphaArcBoundary_alphaBoundary_point_left
-    (hD : H.IsDomainBetween x y D) {i : Fin n} (hi : H.point x i ≠ H.point y i) :
-    H.alphaArcBoundary (H.alphaBoundary D) (H.point x i) = -1 := by
-  classical
-  simp only [HeegaardIntersectionSystem.point_apply] at hi
-  rw [(isDomainBetween_iff.mp hD).1]
-  simp [Ne.symm hi]
-
-/-- On an `α`-curve where `x` and `y` differ, the point of `y` is a corner of every domain from
-`x` to `y`, at which the boundary of its `α`-part has coefficient `1`. -/
-private theorem IsDomainBetween.alphaArcBoundary_alphaBoundary_point_right
-    (hD : H.IsDomainBetween x y D) {i : Fin n} (hi : H.point x i ≠ H.point y i) :
-    H.alphaArcBoundary (H.alphaBoundary D) (H.point y i) = 1 := by
-  classical
-  simp only [HeegaardIntersectionSystem.point_apply] at hi
-  rw [(isDomainBetween_iff.mp hD).1]
-  simp [hi]
+variable (H) in
+/-- The point measure of a nonnegative domain at a generator is nonnegative. -/
+theorem generatorPointMeasure_nonneg (hD : 0 ≤ D) (x : H.Generator) :
+    0 ≤ H.generatorPointMeasure x D := by
+  rw [generatorPointMeasure_apply]
+  exact sum_nonneg fun i _ => H.pointMeasure_nonneg hD _
 
 variable [DecidableEq Point]
 

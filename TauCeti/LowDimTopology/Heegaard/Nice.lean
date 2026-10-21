@@ -45,9 +45,11 @@ two, as a rectangle does.
 * `TauCeti.HeegaardRegionSystem.IsNice.card_le_two_mul_maslovIndex`: in a nice diagram,
   `m ≤ 2 μ(D)` for a nonnegative domain `D` from `x` to `y` avoiding the basepoints, where `m`
   is the number of `α`-curves on which `x` and `y` differ.
-* `TauCeti.HeegaardRegionSystem.IsNice.maslovIndex_nonneg`: such a domain has nonnegative Maslov
-  index, and `TauCeti.HeegaardRegionSystem.IsNice.card_le_two_of_maslovIndex_le_one`: if its index
-  is at most one, it moves at most two points.
+* `TauCeti.HeegaardRegionSystem.IsNice.maslovIndex_nonneg`: in a nice diagram, a nonnegative
+  domain avoiding the basepoints has nonnegative Maslov index between any two generators.
+* `TauCeti.HeegaardRegionSystem.IsNice.card_le_two_of_maslovIndex_le_one`: in a nice diagram, a
+  nonnegative domain from `x` to `y` avoiding the basepoints of index at most one moves at most
+  two points.
 * `TauCeti.HeegaardRegionSystem.IsNice.card_eq_one_or_card_eq_two_of_maslovIndex_eq_one`: in a
   weakly admissible nice diagram, such a domain of index one moves exactly one or two points.
 * `TauCeti.HeegaardRegionSystem.IsNice.eq_zero_of_maslovIndex_nonpos`: in a weakly admissible
@@ -79,13 +81,6 @@ variable {n : ℕ} {Point : Type u} {Region : Type v} {Basepoint : Type w}
 open Finset
 
 section Nice
-
-variable [DecidableEq Point] in
-/-- Two generators whose points agree on every `α`-curve are equal. -/
-private theorem eq_of_card_filter_point_ne_eq_zero
-    (h : #{i | H.point x i ≠ H.point y i} = 0) : x = y :=
-  H.point_injective (funext fun i => by
-    simpa using filter_eq_empty_iff.mp (card_eq_zero.mp h) (mem_univ i))
 
 variable [Fintype Point] [DecidableEq Region]
 
@@ -130,11 +125,11 @@ theorem IsNice.card_le_two_mul_maslovIndex [DecidableEq Point] (h : H.IsNice χ)
 
 /-- In a nice diagram, a nonnegative domain avoiding the basepoints has nonnegative Maslov
 index. -/
-theorem IsNice.maslovIndex_nonneg (h : H.IsNice χ) (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D)
+theorem IsNice.maslovIndex_nonneg (h : H.IsNice χ) (hD0 : 0 ≤ D)
     (hz : ∀ z, D (H.basepoint z) = 0) : 0 ≤ H.maslovIndex χ x y D := by
-  classical
-  have := h.card_le_two_mul_maslovIndex hD hD0 hz
-  linarith [(#{i | H.point x i ≠ H.point y i}).cast_nonneg (α := ℚ)]
+  rw [maslovIndex_apply]
+  linarith [h.eulerMeasure_nonneg hD0 hz, H.generatorPointMeasure_nonneg hD0 x,
+    H.generatorPointMeasure_nonneg hD0 y]
 
 /-- In a nice diagram, a nonnegative domain from `x` to `y` avoiding the basepoints with Maslov
 index at most one moves the points of `x` on at most two `α`-curves. -/
@@ -153,7 +148,7 @@ theorem IsNice.eq_of_maslovIndex_nonpos (h : H.IsNice χ) (hD : H.IsDomainBetwee
   classical
   have hcard : (#{i | H.point x i ≠ H.point y i} : ℚ) ≤ 0 := by
     linarith [h.card_le_two_mul_maslovIndex hD hD0 hz]
-  exact eq_of_card_filter_point_ne_eq_zero (Nat.le_zero.mp (by exact_mod_cast hcard))
+  exact H.eq_of_card_filter_point_ne_eq_zero (Nat.le_zero.mp (by exact_mod_cast hcard))
 
 /-- In a weakly admissible nice diagram, a nonnegative domain avoiding the basepoints with
 Maslov index at most zero is the zero domain. -/
@@ -173,7 +168,7 @@ theorem IsNice.card_eq_one_or_card_eq_two_of_maslovIndex_eq_one [DecidableEq Poi
   have hle := h.card_le_two_of_maslovIndex_le_one hD hD0 hz hμ.le
   have hpos : #{i | H.point x i ≠ H.point y i} ≠ 0 := by
     intro hcard
-    obtain rfl := eq_of_card_filter_point_ne_eq_zero hcard
+    obtain rfl := H.eq_of_card_filter_point_ne_eq_zero hcard
     have hD' := weaklyAdmissible_iff.mp hW D (isDomainBetween_self_iff.mp ⟨hD, hz⟩) hD0
     simp [hD'] at hμ
   omega
