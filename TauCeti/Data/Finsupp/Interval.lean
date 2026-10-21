@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Data.Finsupp.Interval
+public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Order.Interval.Finset.Nat
 
 /-!
@@ -18,10 +19,13 @@ A finite set of multi-indices `m : σ →₀ ℕ` with `mᵢ ≤ rᵢ` for every
 `C ≥ 0` is therefore at most `∏ᵢ (rᵢ + 1) C`. This is how the monomials of a polynomial with
 partial degrees `degreeOf i P ≤ r i` are counted.
 
+Since the boxes `Iic m` are finite, subtracting a fixed multi-index has finite fibres.
+
 ## Main results
 
 * `Finsupp.card_le_prod_of_forall_le`: `#s ≤ ∏ᵢ (rᵢ + 1)`.
 * `Finsupp.sum_le_prod_mul_of_forall_le`: `∑ m ∈ s, f m ≤ ∏ᵢ (rᵢ + 1) C` when `f ≤ C` on `s`.
+* `Finsupp.tendsto_sub_single_cofinite`: `n ↦ n - eᵢ` maps the cofinite filter into itself.
 -/
 
 public section
@@ -55,5 +59,19 @@ theorem sum_le_prod_mul_of_forall_le {R : Type*} [CommSemiring R] [PartialOrder 
   rw [nsmul_eq_mul]
   gcongr
   simpa using Nat.mono_cast (α := R) (card_le_prod_of_forall_le hs)
+
+end Finsupp
+
+namespace Finsupp
+
+open Filter
+
+/-- Subtracting `eᵢ` from multi-indices has finite fibres: if `n - eᵢ = m` then `n ≤ m + eᵢ`. -/
+theorem tendsto_sub_single_cofinite {σ : Type*} (i : σ) :
+    Tendsto (fun n : σ →₀ ℕ ↦ n - single i 1) cofinite cofinite := by
+  classical
+  exact Tendsto.cofinite_of_finite_preimage_singleton fun m ↦
+    ((Set.finite_Iic (m + single i 1)).subset fun _ hn ↦
+      tsub_le_iff_right.1 (le_of_eq hn)).to_subtype
 
 end Finsupp
