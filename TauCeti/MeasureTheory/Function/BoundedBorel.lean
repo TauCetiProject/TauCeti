@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Classes
-public import Mathlib.Analysis.Normed.Lp.lpSpace
+public import Mathlib.Analysis.CStarAlgebra.lpSpace
 import Mathlib.Analysis.Normed.Group.Indicator
 public import Mathlib.MeasureTheory.Function.SimpleFunc
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
@@ -72,10 +71,10 @@ namespace BoundedBorelFunction
 instance : CompleteSpace (BoundedBorelFunction X) :=
   (isClosed_boundedBorelSubalgebra X).completeSpace_coe
 
-/-- Bounded Borel symbols form a commutative unital C⋆-algebra. -/
-instance : CommCStarAlgebra (BoundedBorelFunction X) where
-  norm_mul_self_le f := CStarRing.norm_star_mul_self (x := (f : lp (fun _ : X ↦ ℂ) ∞)) |>.symm.le
-  mul_comm _ _ := Subtype.ext <| mul_comm _ _
+/-- Bounded Borel symbols form a commutative unital C⋆-algebra, as a closed star subalgebra of
+`ℓ^∞(X, ℂ)`. -/
+instance : CommCStarAlgebra (BoundedBorelFunction X) :=
+  StarSubalgebra.commCStarAlgebra _ (h_closed := isClosed_boundedBorelSubalgebra X)
 
 variable {X}
 
