@@ -44,6 +44,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
   evaluate the cdf of the image of a real law under absolute value, and
   `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
+* `MeasureTheory.Measure.cdf_map_const_mul_sqrt` evaluates the cdf of the image of a real law
+  under a positive multiple of the square root;
 * `MeasureTheory.Measure.leftLim_cdf` identifies the left limit of the cdf at a point with the
   mass of the open ray to its left;
 * `Set.OrdConnected.mem_of_measureReal_Iio_le_of_le_cdf` shows that a cumulative-crossing point
@@ -128,6 +130,23 @@ theorem cdf_map_abs_of_isNegInvariant (μ : Measure ℝ) [IsProbabilityMeasure �
     [μ.IsNegInvariant] {x : ℝ} (hx : 0 ≤ x) : cdf (μ.map (|·|)) x = 2 * cdf μ x - 1 := by
   rw [μ.cdf_map_abs_of_nonneg hx, μ.measureReal_Iio_neg x]
   ring
+
+/-- At positive scale `s`, the image of `μ` under `y ↦ s * √y` puts no mass on the negative
+half-line, and at `x ≥ 0` its cdf is the cdf of `μ` at `(x / s) ^ 2`. -/
+theorem cdf_map_const_mul_sqrt (μ : Measure ℝ) [IsProbabilityMeasure μ] {s : ℝ} (hs : 0 < s)
+    (x : ℝ) :
+    cdf (μ.map fun y ↦ s * √y) x = if x < 0 then 0 else cdf μ ((x / s) ^ 2) := by
+  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic]
+  by_cases hx : x < 0
+  · have hpre : (fun y ↦ s * √y) ⁻¹' Iic x = ∅ :=
+      eq_empty_of_forall_notMem fun y hy ↦
+        not_le.2 hx ((mul_nonneg hs.le (Real.sqrt_nonneg y)).trans hy)
+    rw [hpre, measureReal_empty, ite_eq_left hx]
+  · have hpre : (fun y ↦ s * √y) ⁻¹' Iic x = Iic ((x / s) ^ 2) := by
+      ext y
+      simp only [mem_preimage, mem_Iic, ← le_div_iff₀' hs, Real.sqrt_le_iff,
+        div_nonneg (le_of_not_gt hx) hs.le, true_and]
+    rw [hpre, ← cdf_eq_real, ite_eq_right hx]
 
 /-- The cdf of an integer-valued law cast to the reals is its cumulative mass through the integer
 floor of the argument. Unlike natural floor, integer floor also accounts for negative values. -/
