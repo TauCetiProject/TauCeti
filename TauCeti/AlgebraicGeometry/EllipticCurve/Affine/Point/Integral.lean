@@ -60,16 +60,17 @@ private theorem integral_toAffine_baseChange :
   rfl
 
 omit [(W.baseChange ℚ).IsElliptic] in
-/-- An integral solution of the equation stays a solution of the rational base change. -/
-theorem integral_equation_baseChange (x y : ℤ) (h : W.toAffine.Equation x y) :
-    (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) := by
+/-- The rational base change satisfies the Weierstrass equation at integer-cast coordinates
+exactly when the integral model does. -/
+theorem equation_baseChange_iff {x y : ℤ} :
+    (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) ↔ W.toAffine.Equation x y := by
   rw [W.integral_toAffine_baseChange]
-  exact h.map (Int.castRingHom ℚ)
+  exact Affine.map_equation W.toAffine (f := Int.castRingHom ℚ) Int.cast_injective x y
 
 /-- An integral solution of the affine Weierstrass equation determines a rational point. -/
 def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
     (W.baseChange ℚ).toAffine.Point :=
-  .mk (W.integral_equation_baseChange x y h)
+  .mk (W.equation_baseChange_iff.mpr h)
 
 /-- The point built from an integral solution is the affine point with those coordinates. Not a
 `simp` lemma: it would rewrite the left-hand sides of `pointOfIntegralSolution_mem` and the
@@ -77,7 +78,7 @@ def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
 theorem pointOfIntegralSolution_eq_some (x y : ℤ) (h : W.toAffine.Equation x y) :
     W.pointOfIntegralSolution x y h =
       .some (x : ℚ) (y : ℚ)
-        (Affine.equation_iff_nonsingular.mp (W.integral_equation_baseChange x y h)) := by
+        (Affine.equation_iff_nonsingular.mp (W.equation_baseChange_iff.mpr h)) := by
   simp only [pointOfIntegralSolution, Affine.Point.mk]
 
 /-- The affine coordinates of the rational point constructed from an integral solution. -/
@@ -85,7 +86,7 @@ theorem pointOfIntegralSolution_eq_some (x y : ℤ) (h : W.toAffine.Equation x y
 theorem pointEquiv_pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
     (W.baseChange ℚ).toAffine.pointEquiv (W.pointOfIntegralSolution x y h) =
       .some ⟨⟨(x : ℚ), (y : ℚ)⟩, by
-        exact W.integral_equation_baseChange x y h⟩ := by
+        exact W.equation_baseChange_iff.mpr h⟩ := by
   simp only [pointOfIntegralSolution, Affine.pointEquiv_some]
   congr 1
 
@@ -340,12 +341,6 @@ namespace WeierstrassCurve
 
 variable (W : WeierstrassCurve ℤ) [(W.baseChange ℚ).IsElliptic]
 
-omit [(W.baseChange ℚ).IsElliptic] in
-private theorem equation_baseChange_iff {x y : ℤ} :
-    (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) ↔ W.toAffine.Equation x y := by
-  rw [W.integral_toAffine_baseChange]
-  exact Affine.map_equation W.toAffine (f := Int.castRingHom ℚ) Int.cast_injective x y
-
 /-- On an integral model the coordinate predicate is exactly membership in `integralPoints`. -/
 @[simp]
 theorem hasIntegralCoordinates_iff_mem_integralPoints
@@ -360,7 +355,7 @@ theorem hasIntegralCoordinates_iff_mem_integralPoints
     rw [W.pointOfIntegralSolution_eq_some, Affine.Point.some.injEq]
     exact ⟨rfl, rfl⟩
   · rintro ⟨x, y, h, rfl⟩
-    refine ⟨x, y, Affine.equation_iff_nonsingular.mp (W.integral_equation_baseChange x y h), ?_⟩
+    refine ⟨x, y, Affine.equation_iff_nonsingular.mp (W.equation_baseChange_iff.mpr h), ?_⟩
     rw [W.pointOfIntegralSolution_eq_some, Affine.Point.some.injEq]
     exact ⟨rfl, rfl⟩
 
