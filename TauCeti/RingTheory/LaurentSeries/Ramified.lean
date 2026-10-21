@@ -250,6 +250,7 @@ theorem contract_sum {ι S : Type*} [AddCommMonoid S] (d : ℕ+) (s : Finset ι)
 
 /-- The congruence components of a monomial: `X ^ m` contributes to component `r` exactly when
 `m ≡ r` modulo `d`, and then as the monomial of exponent `(m - r) / d`. -/
+@[simp]
 theorem contract_single {S : Type*} [Zero S] (d : ℕ+) (m : ℤ) (a : S) (r : Fin d) :
     contract d (single m a) r = if (d : ℤ) ∣ m - r then single ((m - r) / d) a else 0 := by
   ext k

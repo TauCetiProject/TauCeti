@@ -54,6 +54,7 @@ variable {R : Type*} [Semiring R]
 
 /-- On power series, the exponent-congruence components of Laurent series are the Cartier
 operators of power series. -/
+@[simp]
 theorem contract_coe (d : ℕ+) (F : R⟦X⟧) (r : Fin d) :
     contract d (F : R⸨X⸩) r = (PowerSeries.cartier R d r F : R⸨X⸩) := by
   ext k
@@ -102,7 +103,7 @@ Frobenius identity at a power. -/
 
 example : contract 2 (single (-3) (1 : ℤ)) 1 = single (-2) 1 ∧
     contract 2 (single (-3) (1 : ℤ)) 0 = 0 := by
-  constructor <;> rw [contract_single] <;> norm_num
+  norm_num
 
 example (g : (ZMod 3)⸨X⸩) : contract 3 (g ^ 3) 0 = g := by
   have h := contract_pow_card 3 (ZMod.card 3).symm g 0
