@@ -38,6 +38,8 @@ their nonclosed points. The closed orbit produced is not claimed to be unique.
   closure.
 * `TauCeti.SchemeAction.orbitClosure_subset_orbitBoundary`: the orbit closure of a rational point
   of the boundary of `O_x` lies in that boundary.
+* `TauCeti.SchemeAction.exists_rationalPoint_mem_orbitBoundary_of_not_isClosed`: a nonclosed
+  orbit has a rational point in its boundary.
 * `TauCeti.SchemeAction.isClosed_orbit_of_forall_mem_orbitClosure`: an orbit of minimal dimension
   is closed.
 * `TauCeti.SchemeAction.exists_isClosed_orbit_subset_orbitClosure`: every orbit closure contains a
@@ -122,6 +124,15 @@ theorem topologicalKrullDim_orbit_lt_of_mem_orbitBoundary {x y : 𝟙_ (Over (Sp
       (orbitClosure_subset_orbitBoundary G hy))).isInducing.topologicalKrullDim_le
     (topologicalKrullDim_orbitBoundary_lt G x)
 
+/-- A nonclosed orbit has a rational point in its boundary. -/
+theorem exists_rationalPoint_mem_orbitBoundary_of_not_isClosed (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+    (h : ¬ IsClosed (orbit G x)) :
+    ∃ (y : 𝟙_ (Over (Spec (.of k))) ⟶ X) (a : (𝟙_ (Over (Spec (.of k)))).left),
+      y.left a ∈ orbitBoundary G x := by
+  obtain ⟨y, hyπ, hy⟩ := (isClosed_orbitBoundary G x).isLocallyClosed.exists_rationalPoint_mem
+    X.hom (Set.nonempty_iff_ne_empty.mpr ((isClosed_orbit_iff_orbitBoundary_eq_empty G x).not.mp h))
+  exact ⟨Over.homMk y hyπ, _, hy⟩
+
 /-- **Closed-orbit lemma.** If the orbit of `x` has minimal dimension among the orbits of the
 rational points of its closure, then it is closed. -/
 theorem isClosed_orbit_of_forall_mem_orbitClosure (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
@@ -129,12 +140,10 @@ theorem isClosed_orbit_of_forall_mem_orbitClosure (x : 𝟙_ (Over (Spec (.of k)
       y.left a ∈ orbitClosure G x →
         topologicalKrullDim (orbit G x) ≤ topologicalKrullDim (orbit G y)) :
     IsClosed (orbit G x) := by
-  rw [isClosed_orbit_iff_orbitBoundary_eq_empty]
   by_contra hne
-  obtain ⟨y, hyπ, hy⟩ := (isClosed_orbitBoundary G x).isLocallyClosed.exists_rationalPoint_mem
-    X.hom (Set.nonempty_iff_ne_empty.mpr hne)
-  exact (hmin (Over.homMk y hyπ) _ ((mem_orbitBoundary G x _).mp hy).1).not_gt
-    (topologicalKrullDim_orbit_lt_of_mem_orbitBoundary G (y := Over.homMk y hyπ) hy)
+  obtain ⟨y, a, hy⟩ := exists_rationalPoint_mem_orbitBoundary_of_not_isClosed G x hne
+  exact (hmin y a (orbitBoundary_subset_orbitClosure G x hy)).not_gt
+    (topologicalKrullDim_orbit_lt_of_mem_orbitBoundary G hy)
 
 /-- **Existence of closed orbits.** The closure of the orbit of every rational point contains the
 closed orbit of a rational point. -/
@@ -147,13 +156,11 @@ theorem exists_isClosed_orbit_subset_orbitClosure (x : 𝟙_ (Over (Spec (.of k)
   | ind d ih =>
   by_cases hclosed : IsClosed (orbit G x)
   · exact ⟨x, hclosed, orbit_subset_orbitClosure G x⟩
-  obtain ⟨y, hyπ, hy⟩ := (isClosed_orbitBoundary G x).isLocallyClosed.exists_rationalPoint_mem
-    X.hom (Set.nonempty_iff_ne_empty.mpr ((isClosed_orbit_iff_orbitBoundary_eq_empty G x).not.mp
-      hclosed))
-  have hlt := topologicalKrullDim_orbit_lt_of_mem_orbitBoundary G (y := Over.homMk y hyπ) hy
-  obtain ⟨z, hz, hzy⟩ := ih _ (hd ▸ hlt) _ rfl
-  exact ⟨z, hz, hzy.trans ((orbitClosure_subset_orbitBoundary G (y := Over.homMk y hyπ) hy).trans
-    fun p hp ↦ ((mem_orbitBoundary G x p).mp hp).1)⟩
+  obtain ⟨y, a, hy⟩ := exists_rationalPoint_mem_orbitBoundary_of_not_isClosed G x hclosed
+  obtain ⟨z, hz, hzy⟩ :=
+    ih _ (hd ▸ topologicalKrullDim_orbit_lt_of_mem_orbitBoundary G hy) _ rfl
+  exact ⟨z, hz, hzy.trans ((orbitClosure_subset_orbitBoundary G hy).trans
+    (orbitBoundary_subset_orbitClosure G x))⟩
 
 /-- Every nonempty closed subset of `X` stable under translation by the rational points of `G`
 contains the closed orbit of a rational point. -/

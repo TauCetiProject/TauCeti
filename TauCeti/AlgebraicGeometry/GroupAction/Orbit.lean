@@ -75,6 +75,10 @@ theorem mem_orbitBoundary (x : 𝟙_ (Over S) ⟶ X) (p : X.left) :
 theorem orbit_subset_orbitClosure (x : 𝟙_ (Over S) ⟶ X) :
     orbit G x ⊆ orbitClosure G x := subset_closure
 
+/-- The orbit boundary is contained in the orbit closure. -/
+theorem orbitBoundary_subset_orbitClosure (x : 𝟙_ (Over S) ⟶ X) :
+    orbitBoundary G x ⊆ orbitClosure G x := Set.sdiff_subset
+
 /-- The orbit closure is closed. -/
 theorem isClosed_orbitClosure (x : 𝟙_ (Over S) ⟶ X) :
     IsClosed (orbitClosure G x) := isClosed_closure
