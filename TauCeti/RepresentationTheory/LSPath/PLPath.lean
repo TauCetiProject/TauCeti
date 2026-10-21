@@ -31,9 +31,9 @@ have the same normal form exactly when they are related by the elementary moves.
 `TauCeti.PLPath 𝕜 V` models paths by reduced segment lists, with Littelmann's concatenation
 `π₁ * π₂` as a monoid structure, the endpoint `π 1`, and the reversed path `t ↦ π (1 - t) - π 1`.
 
-This file works with segment lists only. The parametrized paths `[0, 1] → V` of presentations
-with durations, and the theorem that two of them are related by nondecreasing surjective
-piecewise-linear reparametrizations exactly when their normal forms agree, are in
+This file works with segment lists only. The parametrized paths `𝕜 → V` of presentations with
+durations (running over `[0, duration p]`), and the theorem that two presentations are
+reparametrizations of a common one exactly when their normal forms agree, are in
 `TauCeti/RepresentationTheory/LSPath/Reparametrization.lean`.
 
 ## Main definitions
@@ -61,6 +61,7 @@ piecewise-linear reparametrizations exactly when their normal forms agree, are i
   the endpoint is additive and reversal is an involutive anti-automorphism.
 * `TauCeti.PLPath.straight_add`: a straight path along `v + w`, for `v` and `w` in the same ray,
   is the concatenation of the straight paths along `v` and along `w`.
+* `TauCeti.PLPath.straight_smul_mul_straight_smul`: subdividing a straight path along a ray.
 
 ## References
 
@@ -533,6 +534,12 @@ theorem straight_add (h : SameRay 𝕜 v w) : straight 𝕜 (v + w) = straight �
   rw [straight, straight, straight, ← ofSegments_append, List.singleton_append,
     ofSegments_eq_ofSegments_iff]
   exact .symm _ _ (.rel _ _ (Move.merge [] [] h))
+
+/-- Subdivision along a ray: for `0 ≤ a` and `0 ≤ b`, the straight path along `a • w` followed by
+the straight path along `b • w` is the straight path along `(a + b) • w`. -/
+theorem straight_smul_mul_straight_smul {a b : 𝕜} (ha : 0 ≤ a) (hb : 0 ≤ b) (w : V) :
+    straight 𝕜 (a • w) * straight 𝕜 (b • w) = straight 𝕜 ((a + b) • w) := by
+  rw [add_smul, straight_add ((SameRay.sameRay_nonneg_smul_left w ha).nonneg_smul_right hb)]
 
 end PLPath
 
