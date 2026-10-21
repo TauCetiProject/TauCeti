@@ -13,18 +13,18 @@ public import TauCeti.KnotTheory.PDCode.ResolvedCircle
 # Enhanced states and the Jones polynomial
 
 An enhanced state of a PD-code is a state `s` together with a label `1` or `X` on every circle of
-the diagram smoothed according to `s`. The enhanced states index a basis of the Khovanov chain
-groups, so this file fixes their bigrading. A state selects the `B`-smoothing at the crossings `S`
-where it is `false`. For an oriented code with `n₊` positive and `n₋` negative crossings, the
-enhanced state has cochain degree `|S| - n₋`. Its quantum degree is `|S| + n₊ - 2 n₋` plus `1` for
-each circle labelled `1` and minus `1` for each circle labelled `X`
-(`TauCeti.OrientedPDCode.stateCochainDegree`, `TauCeti.OrientedPDCode.enhancedQuantumDegree`).
+the diagram smoothed according to `s`. The enhanced states are meant to index a basis of the
+Khovanov chain groups, which are not yet defined; this file fixes their bigrading. A state selects
+the `B`-smoothing at the crossings `S` where it is `false`. For an oriented code with `n₊` positive
+and `n₋` negative crossings, the enhanced state has cochain degree `|S| - n₋`. Its quantum degree
+is `|S| + n₊ - 2 n₋` plus `1` for each circle labelled `1` and minus `1` for each circle labelled
+`X` (`TauCeti.OrientedPDCode.stateCochainDegree`, `TauCeti.OrientedPDCode.enhancedQuantumDegree`).
 
-The graded Euler characteristic of a bounded complex of finite free modules is computed from the
-ranks of its chain groups. Since the enhanced states of bidegree `(i, j)` index a basis of the
-Khovanov chain group in that bidegree, it is the signed sum
+The signed count of enhanced states by bidegree is the sum
 `TauCeti.OrientedPDCode.enhancedStateSum` of `(-1) ^ i q ^ j` over all enhanced states; here the
-generator `T` of `ℤ[T;T⁻¹]` plays the role of `q`.
+generator `T` of `ℤ[T;T⁻¹]` plays the role of `q`. Once the Khovanov chain groups `Cⁱʲ` are defined,
+with basis the enhanced states of bidegree `(i, j)`, this sum is meant to compute their graded
+Euler characteristic `∑ (-1) ^ i q ^ j rank Cⁱʲ`.
 This file proves that, for a nonempty diagram, this sum is the Jones polynomial in Khovanov's
 normalization: with the substitution `t ^ (1/2) ↦ -q`, it is `(q + q⁻¹)` times
 `TauCeti.OrientedPDCode.jonesPolynomial`
@@ -119,9 +119,10 @@ theorem enhancedQuantumDegree_def (D : OrientedPDCode n) (e : D.toPDCode.Enhance
     D.enhancedQuantumDegree e = D.stateQuantumShift e.1 + ∑ c, bif e.2 c then -1 else 1 := (rfl)
 
 /-- **The enhanced state sum** of an oriented code: the sum of `(-1) ^ i q ^ j` over all enhanced
-states, where `i` is the cochain degree and `j` the quantum degree, with `q = T`. The enhanced
-states of bidegree `(i, j)` index a basis of the Khovanov chain group in that bidegree, so this is
-the graded Euler characteristic `∑ (-1) ^ i q ^ j rank Cⁱʲ` of the Khovanov chain groups. -/
+states, where `i` is the cochain degree and `j` the quantum degree, with `q = T`; that is, the
+signed count of enhanced states by bidegree. Once the Khovanov chain groups `Cⁱʲ` are defined, with
+basis the enhanced states of bidegree `(i, j)`, it is meant to compute their graded Euler
+characteristic `∑ (-1) ^ i q ^ j rank Cⁱʲ`. -/
 noncomputable def enhancedStateSum (D : OrientedPDCode n) : ℤ[T;T⁻¹] :=
   ∑ e : D.toPDCode.EnhancedState,
     (D.stateCochainDegree e.1).negOnePow • T (D.enhancedQuantumDegree e)
@@ -194,9 +195,8 @@ private theorem eval₂_jonesLoop :
   simp [add_comm]
 
 /-- **The enhanced state sum of a nonempty diagram is `(q + q⁻¹)` times its Jones polynomial at
-`t ^ (1/2) = -q`.** A code has a component exactly when it has a crossing or a crossing-free
-circle. Then every state leaves a circle, so the factor `q + q⁻¹` completes the truncated power
-`k - 1` of the loop value in the Jones state sum to the `k`-th power. -/
+`t ^ (1/2) = -q`.** The hypothesis `0 < componentCount` says that the diagram is nonempty; it
+excludes the empty diagram, whose enhanced state sum is `1`. -/
 theorem enhancedStateSum_eq_mul_eval₂_jonesPolynomial (D : OrientedPDCode n)
     (h : 0 < D.toPDCode.componentCount) :
     D.enhancedStateSum =
