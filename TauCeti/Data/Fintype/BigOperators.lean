@@ -34,29 +34,14 @@ theorem sum_piFinset_apply_apply {ι κ M : Type*} [Fintype ι] [DecidableEq ι]
   have hfib (p : κ × κ) (hp : p ∈ s ×ˢ s) :
       #{g ∈ piFinset fun _ : ι ↦ s | (g i, g j) = p} = #s ^ (card ι - 2) := by
     rw [mem_product] at hp
-    have hbox : {g ∈ piFinset fun _ : ι ↦ s | (g i, g j) = p} =
-        piFinset fun k ↦ if k = i then {p.1} else if k = j then {p.2} else s := by
-      ext g
-      simp only [mem_filter, mem_piFinset, Prod.ext_iff]
-      refine ⟨fun ⟨_, h₁, h₂⟩ k ↦ ?_, fun h ↦ ⟨fun k ↦ ?_, by simpa using h i,
-        by simpa [hij.symm] using h j⟩⟩
-      · split_ifs with hki hkj
-        · simp [hki, h₁]
-        · simp [hkj, h₂]
-        · exact ‹∀ k, g k ∈ s› k
-      · have := h k
-        split_ifs at this with hki hkj
-        · exact (mem_singleton.1 this) ▸ hp.1
-        · exact (mem_singleton.1 this) ▸ hp.2
-        · exact this
-    rw [hbox, card_piFinset]
-    have hcard (k : ι) : #(if k = i then {p.1} else if k = j then {p.2} else s) =
-        if k ∈ ({i, j} : Finset ι) then 1 else #s := by
-      by_cases hki : k = i <;> by_cases hkj : k = j <;> simp [hki, hkj, hij.symm]
-    simp only [hcard, prod_ite, prod_const_one, one_mul, prod_const]
-    congr 1
-    rw [filter_not, filter_mem_eq_inter, univ_inter, card_sdiff, inter_univ, card_pair hij,
-      card_univ]
+    have hj : p.2 ∈ Function.update (fun _ : ι ↦ s) i {p.1} j := by
+      simpa [Function.update_of_ne hij.symm] using hp.2
+    simp only [Prod.ext_iff, ← filter_filter]
+    rw [← piFinset_update_singleton_eq_filter_piFinset_eq (fun _ : ι ↦ s) i hp.1,
+      ← piFinset_update_singleton_eq_filter_piFinset_eq _ j hj, card_piFinset]
+    simp_rw [Function.apply_update (fun _ ↦ Finset.card (α := κ))]
+    rw [prod_update_of_mem (mem_univ j), prod_update_of_mem (by simpa using hij)]
+    simp [card_sdiff, hij, Nat.sub_sub]
   rw [← sum_fiberwise_of_maps_to (g := fun g : ι → κ ↦ (g i, g j)) (t := s ×ˢ s)
     fun g hg ↦ mem_product.2 ⟨mem_piFinset.1 hg i, mem_piFinset.1 hg j⟩]
   calc ∑ p ∈ s ×ˢ s, ∑ g ∈ piFinset (fun _ : ι ↦ s) with (g i, g j) = p, F (g i) (g j)

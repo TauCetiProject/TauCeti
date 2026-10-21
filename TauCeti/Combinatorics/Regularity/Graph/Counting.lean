@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Pi
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+import TauCeti.Combinatorics.SimpleGraph.Density
 import TauCeti.Combinatorics.SimpleGraph.Regularity.Uniform
 
 /-!
@@ -64,11 +65,6 @@ private def patternWeight (G : SimpleGraph α) [DecidableRel G.Adj] (e : Prop) [
     (x y : α) : 𝕜 :=
   if (e ↔ G.Adj x y) then 1 else 0
 
-/-- The density of `(s, t)` if `e` holds, and its nonedge density otherwise. -/
-private def patternDensity (G : SimpleGraph α) [DecidableRel G.Adj] (e : Prop) [Decidable e]
-    (s t : Finset α) : 𝕜 :=
-  if e then (G.edgeDensity s t : 𝕜) else 1 - G.edgeDensity s t
-
 private lemma patternWeight_nonneg (e : Prop) [Decidable e] (x y : α) :
     0 ≤ (patternWeight G e x y : 𝕜) := by
   unfold patternWeight; split_ifs <;> norm_num
@@ -76,18 +72,6 @@ private lemma patternWeight_nonneg (e : Prop) [Decidable e] (x y : α) :
 private lemma patternWeight_le_one (e : Prop) [Decidable e] (x y : α) :
     (patternWeight G e x y : 𝕜) ≤ 1 := by
   unfold patternWeight; split_ifs <;> norm_num
-
-private lemma patternDensity_nonneg (e : Prop) [Decidable e] (s t : Finset α) :
-    0 ≤ (patternDensity G e s t : 𝕜) := by
-  have h₀ : (0 : 𝕜) ≤ G.edgeDensity s t := by exact_mod_cast G.edgeDensity_nonneg s t
-  have h₁ : (G.edgeDensity s t : 𝕜) ≤ 1 := by exact_mod_cast G.edgeDensity_le_one s t
-  unfold patternDensity; split_ifs <;> linarith
-
-private lemma patternDensity_le_one (e : Prop) [Decidable e] (s t : Finset α) :
-    (patternDensity G e s t : 𝕜) ≤ 1 := by
-  have h₀ : (0 : 𝕜) ≤ G.edgeDensity s t := by exact_mod_cast G.edgeDensity_nonneg s t
-  have h₁ : (G.edgeDensity s t : 𝕜) ≤ 1 := by exact_mod_cast G.edgeDensity_le_one s t
-  unfold patternDensity; split_ifs <;> linarith
 
 /-- The test-function discrepancy bound, for the indicator of adjacency or of nonadjacency. -/
 private lemma IsUniform.abs_sum_sum_mul_patternWeight_sub_le (h : G.IsUniform ε s t) (e : Prop)
@@ -97,15 +81,15 @@ private lemma IsUniform.abs_sum_sum_mul_patternWeight_sub_le (h : G.IsUniform ε
       ε * #s * #t := by
   have key := h.abs_sum_sum_mul_sub_le hf₀ hf₁ hg₀ hg₁
   by_cases he : e
-  · simpa [patternWeight, patternDensity, he] using key
+  · simpa [patternWeight, patternDensity_def, he] using key
   · rw [← abs_neg] at key
     convert key using 2
     simp only [← sum_neg_distrib]
     refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ ?_
     by_cases hxy : G.Adj x y
-    · simp [patternWeight, patternDensity, he, hxy]
+    · simp [patternWeight, patternDensity_def, he, hxy]
       ring
-    · simp [patternWeight, patternDensity, he, hxy]
+    · simp [patternWeight, patternDensity_def, he, hxy]
 
 /-- The counting lemma for a triple of cells, with the three pattern conditions explicit. -/
 private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Decidable e₀₁] [Decidable e₀₂]
@@ -121,10 +105,10 @@ private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Dec
   set p : 𝕜 := patternDensity G e₀₁ s₀ s₁
   set q : 𝕜 := patternDensity G e₀₂ s₀ s₂
   set r : 𝕜 := patternDensity G e₁₂ s₁ s₂
-  have hp₀ : 0 ≤ p := patternDensity_nonneg _ _ _
-  have hp₁ : p ≤ 1 := patternDensity_le_one _ _ _
-  have hq₀ : 0 ≤ q := patternDensity_nonneg _ _ _
-  have hq₁ : q ≤ 1 := patternDensity_le_one _ _ _
+  have hp₀ : 0 ≤ p := G.patternDensity_nonneg _ _ _
+  have hp₁ : p ≤ 1 := G.patternDensity_le_one _ _ _
+  have hq₀ : 0 ≤ q := G.patternDensity_nonneg _ _ _
+  have hq₁ : q ≤ 1 := G.patternDensity_le_one _ _ _
   have hpq₀ : 0 ≤ p * q := mul_nonneg hp₀ hq₀
   have hpq₁ : p * q ≤ 1 := (mul_le_of_le_one_left hq₀ hp₁).trans hq₁
   have ha₀ := patternWeight_nonneg (G := G) (𝕜 := 𝕜) e₀₁
@@ -219,7 +203,7 @@ theorem abs_card_induced_fin_three_sub_le (J : SimpleGraph (Fin 3)) [DecidableRe
     rw [← prod_subtype ({(0, 1), (0, 2), (1, 2)} : Finset (Fin 3 × Fin 3)) (by decide)
       (fun p ↦ if J.Adj p.1 p.2 then (G.edgeDensity (A p.1) (A p.2) : 𝕜)
         else 1 - G.edgeDensity (A p.1) (A p.2))]
-    simp [patternDensity, mul_assoc]
+    simp [patternDensity_def, mul_assoc]
   have hsum : (#{q ∈ A 0 ×ˢ A 1 ×ˢ A 2 | (J.Adj 0 1 ↔ G.Adj q.1 q.2.1) ∧
       (J.Adj 0 2 ↔ G.Adj q.1 q.2.2) ∧ (J.Adj 1 2 ↔ G.Adj q.2.1 q.2.2)} : 𝕜) =
       ∑ x ∈ A 0, ∑ y ∈ A 1, ∑ z ∈ A 2, patternWeight G (J.Adj 0 1) x y *
