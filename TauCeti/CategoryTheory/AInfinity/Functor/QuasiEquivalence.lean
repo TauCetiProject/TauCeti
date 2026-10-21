@@ -179,11 +179,9 @@ theorem exists_mem_homCyclesZero_sub_map_mem_range {X Y : C}
   refine ⟨DirectSum.decompose (grading (R := R) X Y).piece f 0,
     ℬ.mem_homCyclesZero.mpr ⟨(DirectSum.decompose (grading (R := R) X Y).piece f 0).property, ?_⟩,
     DirectSum.decompose (grading (R := R) (ℱ.obj X) (ℱ.obj Y)).piece h (-1), ?_⟩
-  · rw [ℬ.homDifferential_decompose, hf, DirectSum.decompose_zero, DirectSum.zero_apply,
-      ZeroMemClass.coe_zero]
-  · rw [𝒞.homDifferential_decompose, neg_add_cancel, hh, DirectSum.decompose_sub,
-      DirectSum.sub_apply, AddSubgroupClass.coe_sub, DirectSum.decompose_of_mem_same _ hg.1,
-      ℱ.map_decompose]
+  · simp [ℬ.homDifferential_decompose, hf]
+  · rw [𝒞.homDifferential_decompose, neg_add_cancel, hh]
+    simp [DirectSum.decompose_of_mem_same _ hg.1, ℱ.map_decompose]
 
 /-- **A quasi-fully faithful functor is bijective on Hom classes** of closed degree-zero
 morphisms. -/
@@ -213,6 +211,44 @@ theorem isUnital : ℱ.IsUnital := by
   rw [he.id_comp, hc, he'.comp_id, homClassMap_homClass] at key
   exact (AInfinityCategory.homClass_eq_iff_sub_mem_range _ _ _).mp key.symm
 
+/-- Let `e` be a closed endomorphism of `Y` whose image under `f₁` is cohomologous to an
+endomorphism `e'` of `F Y`.  If composing with `e'` on the left fixes `f₁ f` up to a boundary, for
+a closed morphism `f`, then composing with `e` on the left fixes `f` up to a boundary. -/
+theorem comp_sub_mem_range_of_map_sub_mem_range_left {X Y : C} {e : homModule (R := R) Y Y}
+    {e' : homModule (R := R) (ℱ.obj Y) (ℱ.obj Y)} {f : homModule (R := R) X Y}
+    (he : ℬ.homDifferential Y Y e = 0) (hf : ℬ.homDifferential X Y f = 0)
+    (hee' : ℱ.map Y Y e - e' ∈ LinearMap.range (𝒞.homDifferential (ℱ.obj Y) (ℱ.obj Y)))
+    (he' : 𝒞.comp (ℱ.obj X) (ℱ.obj Y) (ℱ.obj Y) e' (ℱ.map X Y f) - ℱ.map X Y f ∈
+      LinearMap.range (𝒞.homDifferential (ℱ.obj X) (ℱ.obj Y))) :
+    ℬ.comp X Y Y e f - f ∈ LinearMap.range (ℬ.homDifferential X Y) := by
+  -- Up to boundaries, `f₁ (m₂(e, f) - f)` is `m₂(e', f₁ f) - f₁ f`.
+  refine hℱ.mem_range_of_map_mem_range ?_ ?_
+  · rw [map_sub, ℬ.homDifferential_comp_eq_zero he hf, hf, sub_zero]
+  · convert add_mem (add_mem (ℱ.map_comp_sub_comp_mem_range he hf)
+      (𝒞.comp_mem_range_homDifferential_of_left hee' (ℱ.homDifferential_map_eq_zero hf))) he'
+      using 1
+    rw [map_sub, LinearMap.map_sub₂]
+    abel
+
+/-- Let `e` be a closed endomorphism of `X` whose image under `f₁` is cohomologous to an
+endomorphism `e'` of `F X`.  If composing with `e'` on the right fixes `f₁ f` up to a boundary,
+for a closed morphism `f`, then composing with `e` on the right fixes `f` up to a boundary. -/
+theorem comp_sub_mem_range_of_map_sub_mem_range_right {X Y : C} {e : homModule (R := R) X X}
+    {e' : homModule (R := R) (ℱ.obj X) (ℱ.obj X)} {f : homModule (R := R) X Y}
+    (hf : ℬ.homDifferential X Y f = 0) (he : ℬ.homDifferential X X e = 0)
+    (hee' : ℱ.map X X e - e' ∈ LinearMap.range (𝒞.homDifferential (ℱ.obj X) (ℱ.obj X)))
+    (he' : 𝒞.comp (ℱ.obj X) (ℱ.obj X) (ℱ.obj Y) (ℱ.map X Y f) e' - ℱ.map X Y f ∈
+      LinearMap.range (𝒞.homDifferential (ℱ.obj X) (ℱ.obj Y))) :
+    ℬ.comp X X Y f e - f ∈ LinearMap.range (ℬ.homDifferential X Y) := by
+  -- Up to boundaries, `f₁ (m₂(f, e) - f)` is `m₂(f₁ f, e') - f₁ f`.
+  refine hℱ.mem_range_of_map_mem_range ?_ ?_
+  · rw [map_sub, ℬ.homDifferential_comp_eq_zero hf he, hf, sub_zero]
+  · convert add_mem (add_mem (ℱ.map_comp_sub_comp_mem_range hf he)
+      (𝒞.comp_mem_range_homDifferential_of_right (ℱ.homDifferential_map_eq_zero hf) hee')) he'
+      using 1
+    rw [map_sub, map_sub]
+    abel
+
 /-- **Cohomological unitality descends along quasi-fully faithful functors.**  If `𝒞` is
 cohomologically unital, so is `ℬ`. -/
 theorem cohomologicallyUnital (h𝒞 : 𝒞.CohomologicallyUnital) : ℬ.CohomologicallyUnital := by
@@ -225,26 +261,10 @@ theorem cohomologicallyUnital (h𝒞 : 𝒞.CohomologicallyUnital) : ℬ.Cohomol
     rw [← neg_sub]
     exact neg_mem (hee X)
   refine ℬ.cohomologicallyUnital_iff.mpr ⟨e, he, fun X Y f hf ↦ ?_, fun X Y f hf ↦ ?_⟩
-  · -- Up to boundaries, `f₁ (m₂(e Y, f) - f)` is `m₂(e' (ℱ.obj Y), f₁ f) - f₁ f`.
-    refine hℱ.mem_range_of_map_mem_range ?_ ?_
-    · rw [map_sub, ℬ.homDifferential_comp_eq_zero (ℬ.mem_homCyclesZero.mp (he Y)).2 hf, hf,
-        sub_zero]
-    · have hmf := ℱ.homDifferential_map_eq_zero hf
-      convert add_mem (add_mem (ℱ.map_comp_sub_comp_mem_range (ℬ.mem_homCyclesZero.mp (he Y)).2 hf)
-        (𝒞.comp_mem_range_homDifferential_of_left (hunit Y) hmf))
-        (he'.left_unit _ _ _ hmf) using 1
-      rw [map_sub, LinearMap.map_sub₂]
-      abel
-  · -- Up to boundaries, `f₁ (m₂(f, e X) - f)` is `m₂(f₁ f, e' (ℱ.obj X)) - f₁ f`.
-    refine hℱ.mem_range_of_map_mem_range ?_ ?_
-    · rw [map_sub, ℬ.homDifferential_comp_eq_zero hf (ℬ.mem_homCyclesZero.mp (he X)).2, hf,
-        sub_zero]
-    · have hmf := ℱ.homDifferential_map_eq_zero hf
-      convert add_mem (add_mem (ℱ.map_comp_sub_comp_mem_range hf (ℬ.mem_homCyclesZero.mp (he X)).2)
-        (𝒞.comp_mem_range_homDifferential_of_right hmf (hunit X)))
-        (he'.right_unit _ _ _ hmf) using 1
-      rw [map_sub, map_sub]
-      abel
+  · exact hℱ.comp_sub_mem_range_of_map_sub_mem_range_left (ℬ.mem_homCyclesZero.mp (he Y)).2 hf
+      (hunit Y) (he'.left_unit _ _ _ (ℱ.homDifferential_map_eq_zero hf))
+  · exact hℱ.comp_sub_mem_range_of_map_sub_mem_range_right hf (ℬ.mem_homCyclesZero.mp (he X)).2
+      (hunit X) (he'.right_unit _ _ _ (ℱ.homDifferential_map_eq_zero hf))
 
 variable (hℬ : ℬ.CohomologicallyUnital) (h𝒞 : 𝒞.CohomologicallyUnital)
 
