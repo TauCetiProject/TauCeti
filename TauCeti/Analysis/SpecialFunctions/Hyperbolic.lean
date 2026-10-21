@@ -28,7 +28,7 @@ itself, nor its continuity. This file supplies these, together with the square o
   continuous.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 
-The formula is the quotient of the other two, both sides carrying the factor
+The formula `Real.tanh_add` is the quotient of the other two, both sides carrying the factor
 `cosh a * cosh b`, which is nonzero because `Real.cosh` is positive.
 
 Where it is used: `TauCeti/Analysis/SpecialFunctions/Artanh.lean` inverts it into the additive

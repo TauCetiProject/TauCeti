@@ -326,8 +326,7 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
   have trace_conj (M : SL(2, ℝ)) : ((P * M * P⁻¹ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
       (M : Matrix (Fin 2) (Fin 2) ℝ).trace := by
     rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
-      ← ConjAct.ofConjAct_toConjAct P, ← ConjAct.specialLinearGroup_smul_def,
-      ConjAct.trace_specialLinearGroup_smul]
+      Matrix.SpecialLinearGroup.trace_mul_mul_inv]
   -- `A` is `± P D P⁻¹` in `SL(2, ℝ)`
   replace hA : A = P * dilation s * P⁻¹ ∨ A = -(P * dilation s * P⁻¹) :=
     Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff.1 hA.symm
