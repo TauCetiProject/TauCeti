@@ -8,8 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
-public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
-public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
+public import TauCeti.RingTheory.GradedAlgebra.SubmoduleBlowup
 
 /-!
 # The blowup of a submodule
@@ -20,11 +19,12 @@ the powers `n ↦ Jⁿ`, and it is generated over `C` by the elements `f T` with
 
 `Y = Proj R(J) ⟶ Spec C`
 
-is the *blowup of the submodule `J`*. When `B = C` and `J` is an ideal, `R(J)` is the Rees
-algebra (`reesAlgebra_eq_coeffSubalgebra`) and `Y` is the blowup of `Spec C` along `V(J)`. For a
-general ring map `C → B`, this is the scheme used in Huber's proof that a complete Huber ring `B`
-with a noetherian ring of definition `C` is sheafy, applied to generators `F` of the unit ideal of
-`B` that define a standard rational covering of `Spa B`.
+is the *blowup of the submodule `J`*; the ring theory of `R(J)` and of its charts is in
+`TauCeti/RingTheory/GradedAlgebra/SubmoduleBlowup.lean`. When `B = C` and `J` is an ideal, `R(J)`
+is the Rees algebra (`reesAlgebra_eq_coeffSubalgebra`) and `Y` is the blowup of `Spec C` along
+`V(J)`. For a general ring map `C → B`, this is the scheme used in Huber's proof that a complete
+Huber ring `B` with a noetherian ring of definition `C` is sheafy, applied to generators `F` of the
+unit ideal of `B` that define a standard rational covering of `Spa B`.
 
 The construction of `Y` needs no hypothesis on `F`, and the standard opens `D₊(f T)`, `f ∈ F`,
 cover it. If `F` is finite, `Y` is proper over `Spec C`, and noetherian when `C` is. If `F`
@@ -39,23 +39,16 @@ spectrum of the chart ring `C[F/S]`: the `C`-subalgebra of the localization `B_t
 fractions `f/f'` with `f ∈ F` and `f' ∈ S`. The fraction `x/(t T^{#S})ⁿ` of the homogeneous
 localization, with `x = b T^{n #S}`, corresponds to `b/tⁿ`, and the generator `f/f'` to
 `(f T)/(f' T)`. In Huber's proof, the rings `C[F/f']` are the rings of definition of the rational
-localizations `B(F/f')`.
+localizations `B(F/f')`. The charts follow the ideal case `affineBlowupι_toSpecZero` in
+`TauCeti/AlgebraicGeometry/Blowup/AffineCharts.lean`: the chart is `Proj.basicOpenIsoSpec`
+followed by the spectrum of the ring isomorphism `awayEquivFractionSubalgebra`.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.submoduleBlowup.gradedRing C F`: the graded ring `R(J)`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup C F`: the scheme `Proj R(J)`.
-* `TauCeti.AlgebraicGeometry.submoduleBlowup.monomialDegreeOne C hf`: the element `f T` of
-  `R(J)`, for `f ∈ F`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.toSpec C F`: the structure morphism to `Spec C`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.fromSpec C hF`: the morphism `Spec B ⟶ Y`, when
   `F` generates the unit ideal of `B`.
-* `TauCeti.AlgebraicGeometry.submoduleBlowup.fractionSubalgebra C F S L`: the chart ring
-  `C[F/S]`, inside a `B`-algebra `L`.
-* `TauCeti.AlgebraicGeometry.submoduleBlowup.monomialProd C hS`: the element `t T^{#S}` of `R(J)`,
-  for a finite subset `S ⊆ F` with product `t`.
-* `TauCeti.AlgebraicGeometry.submoduleBlowup.awayEquivFractionSubalgebra C L hS`: the isomorphism
-  `R(J)_(t T^{#S}) ≃ₐ[C] C[F/S]`, for a localization `L` of `B` away from `t`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.basicOpenIsoSpec C L hS hS₀`: the isomorphism
   `D₊(t T^{#S}) ≅ Spec C[F/S]`, for nonempty `S`.
 
@@ -72,8 +65,6 @@ localizations `B(F/f')`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.fromSpec_preimage_basicOpen`: `D₊(f T)` pulls back
   to `D(f)`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.isAffineHom_fromSpec`: `Spec B ⟶ Y` is affine.
-* `TauCeti.AlgebraicGeometry.submoduleBlowup.mem_fractionSubalgebra_iff`: the elements of
-  `C[F/S]` are the fractions `y/tⁿ` with `y ∈ J^{n #S}`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.basicOpenIsoSpec_inv_comp`: the chart
   `Spec C[F/S] ⟶ Y` is a morphism over `Spec C`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.basicOpenIsoSpec_hom_generator`: the chart pulls the
@@ -96,383 +87,6 @@ universe u
 namespace TauCeti.AlgebraicGeometry
 
 open _root_.AlgebraicGeometry
-
-namespace submoduleBlowup
-
-section GradedRing
-
-variable (C : Type*) {B : Type*} [CommRing C] [CommRing B] [Algebra C B] (F : Set B)
-
-/-- The graded ring `R(J) = ⨁ₙ Jⁿ Tⁿ ⊆ B[T]` of the submodule `J = span C F` of the `C`-algebra
-`B`, graded by the power of `T`. Its degree `n` piece consists of the monomials `b Tⁿ` with
-`b ∈ Jⁿ`. -/
-noncomputable abbrev gradedRing :
-    ℕ → Submodule C (coeffSubalgebra fun n ↦ Submodule.span C F ^ n) :=
-  coeffSubalgebra.grade fun n ↦ Submodule.span C F ^ n
-
-variable {F} in
-/-- The element `f T` of degree one of `R(J)`, for `f ∈ F`. -/
-noncomputable def monomialDegreeOne {f : B} (hf : f ∈ F) :
-    coeffSubalgebra fun n ↦ Submodule.span C F ^ n :=
-  coeffSubalgebra.monomial _ 1 f (by rw [pow_one]; exact Submodule.subset_span hf)
-
-variable {F} in
-@[simp]
-theorem coe_monomialDegreeOne {f : B} (hf : f ∈ F) :
-    (monomialDegreeOne C hf : Polynomial B) = Polynomial.monomial 1 f :=
-  coeffSubalgebra.coe_monomial _ _ _
-
-variable {F} in
-theorem monomialDegreeOne_mem_gradedRing {f : B} (hf : f ∈ F) :
-    monomialDegreeOne C hf ∈ gradedRing C F 1 :=
-  coeffSubalgebra.monomial_mem_grade 1 f _
-
-/-- `R(J)` is generated over its degree zero part by the elements `f T` with `f ∈ F`. -/
-theorem adjoin_monomialDegreeOne_eq_top :
-    Algebra.adjoin (gradedRing C F 0) (Set.range fun f : F ↦ monomialDegreeOne C f.2) = ⊤ := by
-  -- The degree zero part acts through multiplication in `R(J)`, compatibly with `C`.
-  have : IsScalarTower C (gradedRing C F 0) (coeffSubalgebra fun n ↦ Submodule.span C F ^ n) :=
-    ⟨fun c a x ↦ smul_mul_assoc c (a : coeffSubalgebra fun n ↦ Submodule.span C F ^ n) x⟩
-  have h : Algebra.adjoin C (Set.range fun f : F ↦ monomialDegreeOne C f.2) = ⊤ :=
-    coeffSubalgebra.adjoin_monomial_one_eq_top F
-  refine eq_top_iff.mpr fun x _ ↦ ?_
-  have hx : x ∈ Algebra.adjoin C (Set.range fun f : F ↦ monomialDegreeOne C f.2) := by
-    rw [h]
-    exact Algebra.mem_top
-  exact Algebra.adjoin_le (S := (Algebra.adjoin (gradedRing C F 0)
-    (Set.range fun f : F ↦ monomialDegreeOne C f.2)).restrictScalars C) Algebra.subset_adjoin hx
-
-variable {F} in
-/-- Evaluation of `R(J) ⊆ B[T]` at `T = 1` sends `f T` to `f`. -/
-@[simp]
-theorem evalOne_monomialDegreeOne {f : B} (hf : f ∈ F) :
-    coeffSubalgebra.evalOne _ (monomialDegreeOne C hf) = f :=
-  coeffSubalgebra.evalOne_monomial _ _ _
-
-variable {F} in
-/-- If `F` generates the unit ideal of `B`, the ideal of `B` generated by the image of the
-irrelevant ideal of `R(J)` under evaluation at `T = 1` is all of `B`. -/
-theorem map_evalOne_irrelevant (hF : Ideal.span F = ⊤) :
-    (HomogeneousIdeal.irrelevant (gradedRing C F)).toIdeal.map (coeffSubalgebra.evalOne _) = ⊤ := by
-  rw [eq_top_iff, ← hF, Ideal.span_le]
-  intro f hf
-  rw [SetLike.mem_coe, ← evalOne_monomialDegreeOne C hf]
-  exact Ideal.mem_map_of_mem _ (HomogeneousIdeal.mem_irrelevant_of_mem _ one_pos
-    (monomialDegreeOne_mem_gradedRing C hf))
-
-end GradedRing
-
-section Chart
-
-open Polynomial HomogeneousLocalization Finset
-
-variable (C : Type*) {B : Type*} [CommRing C] [CommRing B] (F : Set B)
-  (S : Finset B) (L : Type*) [CommRing L] [Algebra C L] [Algebra B L]
-
-/-- **The chart ring `C[F/S]`.** The `C`-subalgebra of `L` generated by the fractions `f/f'` with
-`f ∈ F` and `f' ∈ S`, that is, by the elements `z` with `f' z = f`. When `L` is a localization of
-`B` away from the product `t` of the elements of `S`, every `f' ∈ S` is a unit of `L` and `f/f'` is
-the unique such `z`; then `C[F/S]` is the coordinate ring of the standard open `D₊(t T^{#S})` of
-the blowup `Proj R(J)` (`submoduleBlowup.basicOpenIsoSpec`). -/
-noncomputable def fractionSubalgebra : Subalgebra C L :=
-  Algebra.adjoin C {z | ∃ f ∈ F, ∃ f' ∈ S, algebraMap B L f' * z = algebraMap B L f}
-
-/-- `C[F/S]` is generated over `C` by the elements `z` with `f' z = f`, for `f ∈ F` and
-`f' ∈ S`. -/
-theorem fractionSubalgebra_def : fractionSubalgebra C F S L =
-    Algebra.adjoin C {z | ∃ f ∈ F, ∃ f' ∈ S, algebraMap B L f' * z = algebraMap B L f} :=
-  (rfl)
-
-variable {C F S L}
-
-/-- The fraction `f/f'`, for `f ∈ F` and `f' ∈ S`, lies in `C[F/S]`. -/
-theorem mem_fractionSubalgebra_of_mul_eq {f f' : B} (hf : f ∈ F) (hf' : f' ∈ S) {z : L}
-    (hz : algebraMap B L f' * z = algebraMap B L f) : z ∈ fractionSubalgebra C F S L :=
-  Algebra.subset_adjoin ⟨f, hf, f', hf', hz⟩
-
-/-- A subalgebra of `L` contains `C[F/S]` exactly when it contains every fraction `f/f'` with
-`f ∈ F` and `f' ∈ S`. -/
-theorem fractionSubalgebra_le_iff {A : Subalgebra C L} :
-    fractionSubalgebra C F S L ≤ A ↔ ∀ f ∈ F, ∀ f' ∈ S, ∀ z : L,
-      algebraMap B L f' * z = algebraMap B L f → z ∈ A := by
-  rw [fractionSubalgebra_def, Algebra.adjoin_le_iff]
-  exact ⟨fun h f hf f' hf' z hz ↦ h ⟨f, hf, f', hf', hz⟩,
-    fun h z ⟨f, hf, f', hf', hz⟩ ↦ h f hf f' hf' z hz⟩
-
-variable [Algebra C B]
-
-/-- The product of the elements of a finite subset `U ⊆ F` lies in `Jᵏ`, where `k = #U`. -/
-private theorem prod_mem_span_pow {U : Finset B} (hU : (U : Set B) ⊆ F) :
-    ∏ g ∈ U, g ∈ Submodule.span C F ^ #U := by
-  classical
-  induction U using Finset.induction_on with
-  | empty =>
-    rw [prod_empty, card_empty, pow_zero]
-    exact Submodule.one_le.mp le_rfl
-  | insert g U hg ih =>
-    rw [prod_insert hg, card_insert_of_notMem hg, pow_succ']
-    exact Submodule.mul_mem_mul (Submodule.subset_span (hU (mem_insert_self g U)))
-      (ih fun x hx ↦ hU (mem_insert_of_mem hx))
-
-variable (C) in
-/-- The element `t T^{#S}` of degree `#S` of `R(J)`, for a finite subset `S ⊆ F` with product
-`t`: the product of the elements `f T` with `f ∈ S`. -/
-noncomputable def monomialProd (hS : (S : Set B) ⊆ F) :
-    coeffSubalgebra fun n ↦ Submodule.span C F ^ n :=
-  coeffSubalgebra.monomial _ #S (∏ g ∈ S, g) (prod_mem_span_pow hS)
-
-variable (C) in
-/-- `t T^{#S}` is the monomial of degree `#S` with coefficient `t`. -/
-@[simp]
-theorem coe_monomialProd (hS : (S : Set B) ⊆ F) :
-    (monomialProd C hS : Polynomial B) = Polynomial.monomial #S (∏ g ∈ S, g) :=
-  coeffSubalgebra.coe_monomial _ _ _
-
-variable (C) in
-/-- `t T^{#S}` is homogeneous of degree `#S`. -/
-theorem monomialProd_mem_gradedRing (hS : (S : Set B) ⊆ F) :
-    monomialProd C hS ∈ gradedRing C F #S :=
-  coeffSubalgebra.monomial_mem_grade _ _ _
-
-variable (C) in
-/-- Evaluation of `R(J) ⊆ B[T]` at `T = 1` sends `t T^{#S}` to `t`. -/
-@[simp]
-theorem evalOne_monomialProd (hS : (S : Set B) ⊆ F) :
-    coeffSubalgebra.evalOne _ (monomialProd C hS) = ∏ g ∈ S, g :=
-  coeffSubalgebra.evalOne_monomial _ _ _
-
-variable (C) in
-/-- For `f ∈ F` and `f' ∈ S`, the product `(f T) ∏_{g ∈ S, g ≠ f'} g T` is homogeneous of degree
-`#S`, the degree of `t T^{#S}`: it is the numerator of `(f T)/(f' T)` over `t T^{#S}`. -/
-theorem monomialDegreeOne_mul_monomialProd_erase_mem_gradedRing [DecidableEq B]
-    (hS : (S : Set B) ⊆ F) {f f' : B} (hf : f ∈ F) (hf' : f' ∈ S) :
-    monomialDegreeOne C hf * monomialProd C ((coe_subset.mpr (S.erase_subset f')).trans hS) ∈
-      gradedRing C F (1 • #S) := by
-  simpa [← card_erase_add_one hf', add_comm] using
-    SetLike.mul_mem_graded (monomialDegreeOne_mem_gradedRing C hf) (monomialProd_mem_gradedRing C _)
-
-variable [IsLocalization.Away (∏ g ∈ S, g) L] [IsScalarTower C B L]
-
-/-- Every element `j` of `J = span C F` is `g` times an element of `C[F/S]`, for `g ∈ S`. -/
-private theorem exists_mem_mul_eq_of_mem_span {g : B} (hg : g ∈ S) {j : B}
-    (hj : j ∈ Submodule.span C F) :
-    ∃ z ∈ fractionSubalgebra C F S L, algebraMap B L g * z = algebraMap B L j := by
-  induction hj using Submodule.span_induction with
-  | mem f hf =>
-    obtain ⟨u, hu⟩ := IsLocalization.Away.isUnit_of_dvd (S := L) _ (dvd_prod_of_mem (fun g ↦ g) hg)
-    have : algebraMap B L g * (↑u⁻¹ * algebraMap B L f) = algebraMap B L f := by
-      rw [← hu, Units.mul_inv_cancel_left]
-    exact ⟨_, mem_fractionSubalgebra_of_mul_eq hf hg this, this⟩
-  | zero => exact ⟨0, zero_mem _, by simp⟩
-  | add x y _ _ hx hy =>
-    obtain ⟨z, hz, hzx⟩ := hx
-    obtain ⟨z', hz', hzy⟩ := hy
-    exact ⟨z + z', add_mem hz hz', by rw [mul_add, hzx, hzy, map_add]⟩
-  | smul c x _ hx =>
-    obtain ⟨z, hz, hzx⟩ := hx
-    refine ⟨algebraMap C L c * z, mul_mem (Subalgebra.algebraMap_mem _ c) hz, ?_⟩
-    rw [Algebra.smul_def, map_mul, ← hzx, IsScalarTower.algebraMap_apply C B L]
-    ring
-
-/-- Every element `y` of `Jⁿ` is `gⁿ` times an element of `C[F/S]`, for `g ∈ S`. -/
-private theorem exists_mem_pow_mul_eq_of_mem_pow {g : B} (hg : g ∈ S) {n : ℕ} {y : B}
-    (hy : y ∈ Submodule.span C F ^ n) :
-    ∃ z ∈ fractionSubalgebra C F S L, algebraMap B L g ^ n * z = algebraMap B L y := by
-  induction n generalizing y with
-  | zero =>
-    obtain ⟨c, rfl⟩ := Submodule.mem_one.mp (pow_zero (Submodule.span C F) ▸ hy)
-    exact ⟨algebraMap C L c, Subalgebra.algebraMap_mem _ c, by
-      rw [pow_zero, one_mul, ← IsScalarTower.algebraMap_apply]⟩
-  | succ n ih =>
-    rw [pow_succ'] at hy
-    induction hy using Submodule.mul_induction_on' with
-    | mem_mul_mem j hj y hy =>
-      obtain ⟨z, hz, hzj⟩ := exists_mem_mul_eq_of_mem_span (L := L) hg hj
-      obtain ⟨z', hz', hzy⟩ := ih hy
-      exact ⟨z * z', mul_mem hz hz', by rw [map_mul, ← hzj, ← hzy]; ring⟩
-    | add y _ y' _ hy hy' =>
-      obtain ⟨z, hz, hzy⟩ := hy
-      obtain ⟨z', hz', hzy'⟩ := hy'
-      exact ⟨z + z', add_mem hz hz', by rw [mul_add, hzy, hzy', map_add]⟩
-
-/-- Every element `y` of `Jⁿᵏ`, with `k = #S`, is `tⁿ` times an element of `C[F/S]`. -/
-private theorem exists_mem_prod_pow_mul_eq {n : ℕ} {y : B}
-    (hy : y ∈ Submodule.span C F ^ (n * #S)) :
-    ∃ z ∈ fractionSubalgebra C F S L, algebraMap B L (∏ g ∈ S, g) ^ n * z = algebraMap B L y := by
-  classical
-  suffices h : ∀ U ⊆ S, ∀ y ∈ Submodule.span C F ^ (n * #U),
-      ∃ z ∈ fractionSubalgebra C F S L, algebraMap B L (∏ g ∈ U, g) ^ n * z = algebraMap B L y from
-    h S subset_rfl y hy
-  intro U
-  induction U using Finset.induction_on with
-  | empty =>
-    intro _ y hy
-    obtain ⟨c, rfl⟩ := Submodule.mem_one.mp (by simpa using hy)
-    exact ⟨algebraMap C L c, Subalgebra.algebraMap_mem _ c, by
-      rw [prod_empty, map_one, one_pow, one_mul, ← IsScalarTower.algebraMap_apply]⟩
-  | insert g U hg ih =>
-    intro hU y hy
-    rw [card_insert_of_notMem hg, mul_add_one, pow_add, mul_comm] at hy
-    induction hy using Submodule.mul_induction_on' with
-    | mem_mul_mem j hj y hy =>
-      obtain ⟨z, hz, hzj⟩ := exists_mem_pow_mul_eq_of_mem_pow (L := L) (hU (mem_insert_self g U)) hj
-      obtain ⟨z', hz', hzy⟩ := ih ((subset_insert g U).trans hU) y hy
-      refine ⟨z * z', mul_mem hz hz', ?_⟩
-      rw [prod_insert hg, map_mul, mul_pow, map_mul, ← hzj, ← hzy]
-      ring
-    | add y _ y' _ hy hy' =>
-      obtain ⟨z, hz, hzy⟩ := hy
-      obtain ⟨z', hz', hzy'⟩ := hy'
-      exact ⟨z + z', add_mem hz hz', by rw [mul_add, hzy, hzy', map_add]⟩
-
-omit [Algebra C L] [IsScalarTower C B L] in
-/-- Evaluation at `T = 1` followed by the localization map inverts `t T^{#S}`. -/
-private theorem isUnit_evalOne_monomialProd (hS : (S : Set B) ⊆ F) :
-    IsUnit ((algebraMap B L).comp (coeffSubalgebra.evalOne _).toRingHom (monomialProd C hS)) := by
-  simpa using IsLocalization.Away.algebraMap_isUnit (S := L) (∏ g ∈ S, g)
-
-variable (C L) in
-/-- The `C`-algebra map `R(J)_(t T^{#S}) → L` sending `x/(t T^{#S})ⁿ` to `x(1)/tⁿ`. -/
-private noncomputable def awayToLocalization (hS : (S : Set B) ⊆ F) :
-    Away (gradedRing C F) (monomialProd C hS) →ₐ[C] L where
-  __ := Away.lift (gradedRing C F) ((algebraMap B L).comp (coeffSubalgebra.evalOne _).toRingHom)
-    (isUnit_evalOne_monomialProd (C := C) hS)
-  commutes' c := by
-    simp only [RingHom.toFun_eq_coe]
-    rw [HomogeneousLocalization.algebraMap_eq_comp, RingHom.comp_apply,
-      ← HomogeneousLocalization.algebraMap_eq, Away.lift_algebraMap,
-      SetLike.GradeZero.coe_algebraMap, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
-      AlgHom.coe_toRingHom, AlgHom.commutes, ← IsScalarTower.algebraMap_apply]
-
-private theorem pow_mul_awayToLocalization_mk (hS : (S : Set B) ⊆ F) {n : ℕ}
-    {x : coeffSubalgebra fun n ↦ Submodule.span C F ^ n} (hx : x ∈ gradedRing C F (n • #S)) :
-    algebraMap B L (∏ g ∈ S, g) ^ n *
-        awayToLocalization C L hS (Away.mk _ (monomialProd_mem_gradedRing C hS) n x hx) =
-      algebraMap B L ((x : Polynomial B).coeff (n • #S)) := by
-  have hu := isUnit_evalOne_monomialProd (C := C) (L := L) hS
-  have ht : algebraMap B L (∏ g ∈ S, g) ^ n = ↑(hu.unit ^ n) := by
-    rw [Units.val_pow_eq_pow_val, IsUnit.unit_spec]
-    simp
-  simp only [awayToLocalization, AlgHom.coe_mk, Away.lift_mk]
-  rw [ht, mul_left_comm, Units.mul_inv, mul_one, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
-    AlgHom.coe_toRingHom, coeffSubalgebra.evalOne_apply, coeffSubalgebra.eval_one_of_mem_grade hx]
-
-private theorem awayToLocalization_injective (hS : (S : Set B) ⊆ F) :
-    Function.Injective (awayToLocalization (F := F) C L hS) := by
-  refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
-  obtain ⟨n, x, hx, rfl⟩ := Away.mk_surjective _ (monomialProd_mem_gradedRing C hS) z
-  have h := pow_mul_awayToLocalization_mk (L := L) hS hx
-  rw [hz, mul_zero, eq_comm, IsLocalization.map_eq_zero_iff (Submonoid.powers (∏ g ∈ S, g))] at h
-  obtain ⟨⟨_, k, rfl⟩, hk⟩ := h
-  -- The numerator `x` is killed by `(t T^{#S})ᵏ` in `R(J)`.
-  have hxk : monomialProd C hS ^ k * x = 0 := by
-    refine Subtype.ext ?_
-    push_cast [coe_monomialProd]
-    rw [← coeffSubalgebra.mem_grade_iff_monomial_coeff.mp hx, monomial_pow, monomial_mul_monomial,
-      hk, map_zero]
-  ext1
-  rw [Away.val_mk, val_zero, Localization.mk_eq_mk', IsLocalization.mk'_eq_zero_iff]
-  exact ⟨⟨_, k, rfl⟩, hxk⟩
-
-private theorem awayToLocalization_mk_eq_iff (hS : (S : Set B) ⊆ F) {n : ℕ}
-    {x : coeffSubalgebra fun n ↦ Submodule.span C F ^ n} (hx : x ∈ gradedRing C F (n • #S))
-    {z : L} :
-    awayToLocalization C L hS (Away.mk _ (monomialProd_mem_gradedRing C hS) n x hx) = z ↔
-      algebraMap B L (∏ g ∈ S, g) ^ n * z = algebraMap B L ((x : Polynomial B).coeff (n • #S)) := by
-  rw [← pow_mul_awayToLocalization_mk hS hx]
-  exact ⟨fun h ↦ h ▸ rfl,
-    fun h ↦ (((IsLocalization.Away.algebraMap_isUnit _).pow n).mul_left_cancel h).symm⟩
-
-/-- `f · ∏_{g ∈ S, g ≠ f'} g` lies in `J^{#S}` for `f ∈ F` and `f' ∈ S ⊆ F`. -/
-private theorem mul_prod_erase_mem_span_pow [DecidableEq B] (hS : (S : Set B) ⊆ F) {f f' : B}
-    (hf : f ∈ F) (hf' : f' ∈ S) : f * ∏ g ∈ S.erase f', g ∈ Submodule.span C F ^ #S := by
-  rw [← card_erase_add_one hf', pow_succ']
-  exact Submodule.mul_mem_mul (Submodule.subset_span hf)
-    (prod_mem_span_pow ((coe_subset.mpr (S.erase_subset f')).trans hS))
-
-private theorem range_awayToLocalization (hS : (S : Set B) ⊆ F) :
-    (awayToLocalization (F := F) C L hS).range = fractionSubalgebra C F S L := by
-  classical
-  refine le_antisymm ?_ (fractionSubalgebra_le_iff.mpr fun f hf f' hf' z hz ↦ ?_)
-  · intro y hy
-    obtain ⟨w, rfl⟩ := (AlgHom.mem_range _).mp hy
-    obtain ⟨n, x, hx, rfl⟩ := Away.mk_surjective _ (monomialProd_mem_gradedRing C hS) w
-    obtain ⟨z, hz, hzx⟩ := exists_mem_prod_pow_mul_eq (L := L)
-      (by simpa using mem_coeffSubalgebra_iff.mp x.2 (n • #S))
-    rwa [(awayToLocalization_mk_eq_iff hS hx).mpr (by rwa [smul_eq_mul])]
-  · have hx : coeffSubalgebra.monomial _ #S _ (mul_prod_erase_mem_span_pow hS hf hf') ∈
-        gradedRing C F (1 • #S) := by
-      simpa using coeffSubalgebra.monomial_mem_grade _ _ _
-    refine ⟨_, (awayToLocalization_mk_eq_iff hS hx).mpr ?_⟩
-    rw [one_smul, coeffSubalgebra.coe_monomial, coeff_monomial_same, pow_one,
-      ← mul_prod_erase S (fun g ↦ g) hf', map_mul, map_mul, mul_comm (algebraMap B L f'),
-      mul_assoc, hz, mul_comm]
-
-variable (C L) in
-/-- **The affine charts of the blowup of a submodule.** For a finite subset `S ⊆ F` with product
-`t`, the homogeneous localization `R(J)_(t T^{#S})`, the coordinate ring of the standard open
-`D₊(t T^{#S})` of `Proj R(J)`, is isomorphic to the chart ring `C[F/S]` inside a localization `L`
-of `B` away from `t`: the fraction `x/(t T^{#S})ⁿ` corresponds to `b/tⁿ`, where `x = b T^{n #S}`.
-The isomorphism preserves coefficients from `C`. -/
-noncomputable def awayEquivFractionSubalgebra (hS : (S : Set B) ⊆ F) :
-    Away (gradedRing C F) (monomialProd C hS) ≃ₐ[C] fractionSubalgebra C F S L :=
-  (AlgEquiv.ofInjective _ (awayToLocalization_injective hS)).trans
-    (Subalgebra.equivOfEq _ _ (range_awayToLocalization hS))
-
-/-- As an element of `L`, the image of `z` under `awayEquivFractionSubalgebra` is
-`awayToLocalization C L hS z`. -/
-private theorem coe_awayEquivFractionSubalgebra (hS : (S : Set B) ⊆ F)
-    (z : Away (gradedRing C F) (monomialProd C hS)) :
-    (↑(awayEquivFractionSubalgebra C L hS z) : L) = awayToLocalization C L hS z := by
-  simp [awayEquivFractionSubalgebra]
-
-/-- The fraction `x/(t T^{#S})ⁿ`, for `x = b T^{n #S}` homogeneous of degree `n #S`, corresponds
-to the element `b/tⁿ` of `C[F/S]`. -/
-theorem algebraMap_pow_mul_awayEquivFractionSubalgebra_mk (hS : (S : Set B) ⊆ F) {n : ℕ}
-    {x : coeffSubalgebra fun n ↦ Submodule.span C F ^ n} (hx : x ∈ gradedRing C F (n • #S)) :
-    algebraMap B L (∏ g ∈ S, g) ^ n *
-        (awayEquivFractionSubalgebra C L hS
-          (Away.mk _ (monomialProd_mem_gradedRing C hS) n x hx) : L) =
-      algebraMap B L ((x : Polynomial B).coeff (n • #S)) := by
-  rw [coe_awayEquivFractionSubalgebra, pow_mul_awayToLocalization_mk]
-
-/-- **The elements of `C[F/S]`.** For a finite subset `S ⊆ F` with product `t`, an element `z` of
-a localization `L` of `B` away from `t` lies in `C[F/S]` exactly when `tⁿ z ∈ J^{n #S}` for some
-`n`, that is, when `z` is a fraction `y/tⁿ` with `y ∈ J^{n #S}`. -/
-theorem mem_fractionSubalgebra_iff (hS : (S : Set B) ⊆ F) {z : L} :
-    z ∈ fractionSubalgebra C F S L ↔ ∃ n : ℕ, ∃ y ∈ Submodule.span C F ^ (n * #S),
-      algebraMap B L (∏ g ∈ S, g) ^ n * z = algebraMap B L y := by
-  rw [← range_awayToLocalization hS, AlgHom.mem_range]
-  constructor
-  · rintro ⟨w, rfl⟩
-    obtain ⟨n, x, hx, rfl⟩ := Away.mk_surjective _ (monomialProd_mem_gradedRing C hS) w
-    exact ⟨n, _, smul_eq_mul n #S ▸ mem_coeffSubalgebra_iff.mp x.2 (n • #S),
-      pow_mul_awayToLocalization_mk hS hx⟩
-  · rintro ⟨n, y, hy, hz⟩
-    have hx : coeffSubalgebra.monomial _ (n • #S) y (by rwa [smul_eq_mul]) ∈
-        gradedRing C F (n • #S) :=
-      coeffSubalgebra.monomial_mem_grade _ _ _
-    exact ⟨_, (awayToLocalization_mk_eq_iff hS hx).mpr (by simpa using hz)⟩
-
-/-- **The generators of the chart.** For `f ∈ F` and `f' ∈ S`, the generator `f/f'` of `C[F/S]`
-corresponds to the homogeneous fraction `(f T)/(f' T)`, written over the denominator
-`t T^{#S} = ∏_{g ∈ S} g T` as `((f T) ∏_{g ∈ S, g ≠ f'} g T)/(t T^{#S})`. -/
-theorem awayEquivFractionSubalgebra_symm_apply_of_mul_eq [DecidableEq B] (hS : (S : Set B) ⊆ F)
-    {f f' : B} (hf : f ∈ F) (hf' : f' ∈ S) {z : L}
-    (hz : algebraMap B L f' * z = algebraMap B L f) :
-    (awayEquivFractionSubalgebra C L hS).symm ⟨z, mem_fractionSubalgebra_of_mul_eq hf hf' hz⟩ =
-      Away.mk _ (monomialProd_mem_gradedRing C hS) 1 _
-        (monomialDegreeOne_mul_monomialProd_erase_mem_gradedRing C hS hf hf') := by
-  rw [AlgEquiv.symm_apply_eq, Subtype.ext_iff, coe_awayEquivFractionSubalgebra, eq_comm,
-    awayToLocalization_mk_eq_iff]
-  -- The numerator is `(f ∏_{g ≠ f'} g) T^{#S}`, and `t = f' ∏_{g ≠ f'} g`.
-  rw [MulMemClass.coe_mul, coe_monomialDegreeOne, coe_monomialProd, monomial_mul_monomial,
-    one_smul, ← card_erase_add_one hf', add_comm, coeff_monomial_same, pow_one,
-    ← mul_prod_erase S (fun g ↦ g) hf', map_mul, map_mul, mul_right_comm, hz]
-
-end Chart
-
-end submoduleBlowup
 
 variable (C : Type u) {B : Type u} [CommRing C] [CommRing B] [Algebra C B] (F : Set B)
 
