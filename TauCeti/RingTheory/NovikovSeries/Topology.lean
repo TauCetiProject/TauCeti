@@ -28,7 +28,9 @@ truncation `TauCeti.NovikovSeries.trunc C a` of a series `a`, which keeps the co
 period `< C`, differs from `a` by an element of `U_C`. Consequently the Novikov series are the
 completion of the group ring `H →₀ R` for the uniform structure of its period filtration
 (`TauCeti.NovikovSeries.completionPkg`), and every uniformly continuous map from the group ring
-to a complete separated uniform space extends uniquely to the Novikov series.
+to a complete separated uniform space extends uniquely to the Novikov series. The packaging as an
+`AbstractCompletion` follows Mathlib's `LaurentSeries.LaurentSeriesPkg` in
+`Mathlib/RingTheory/LaurentSeries.lean`; no code is copied from there.
 
 ## Main definitions
 
@@ -36,8 +38,6 @@ to a complete separated uniform space extends uniquely to the Novikov series.
   no nonzero coefficient of period `< C`.
 * The instances `TopologicalSpace`, `IsTopologicalAddGroup`, `UniformSpace` and
   `IsUniformAddGroup` on `TauCeti.NovikovSeries R H N`: the period topology.
-* `TauCeti.NovikovSeries.trunc C a`: the finitely supported truncation of `a` below the period
-  cutoff `C`.
 * `TauCeti.NovikovSeries.groupRingUniformSpace`: the uniform structure of the period filtration
   on the group ring `H →₀ R`.
 * `TauCeti.NovikovSeries.completionPkg`: the Novikov series as an abstract completion of the
@@ -150,6 +150,7 @@ instance : UniformSpace (NovikovSeries R H N) :=
 instance : IsUniformAddGroup (NovikovSeries R H N) :=
   isUniformAddGroup_of_addCommGroup
 
+/-- The subgroups `U_C` form a basis of neighbourhoods of `0` in the period topology. -/
 theorem hasBasis_nhds_zero :
     (𝓝 (0 : NovikovSeries R H N)).HasBasis (fun _ : ℝ => True)
       fun C => (periodFiltration R N C : Set (NovikovSeries R H N)) := by
@@ -166,11 +167,13 @@ theorem isOpen_periodFiltration (C : ℝ) :
     IsOpen (periodFiltration R N C : Set (NovikovSeries R H N)) :=
   AddSubgroup.isOpen_of_mem_nhds _ (periodFiltration_mem_nhds_zero C)
 
+/-- The sets `{b | b - a ∈ U_C}` form a basis of neighbourhoods of `a` in the period topology. -/
 theorem hasBasis_nhds (a : NovikovSeries R H N) :
     (𝓝 a).HasBasis (fun _ : ℝ => True) fun C => {b | b - a ∈ periodFiltration R N C} := by
   rw [← nhds_translation_sub a]
   exact hasBasis_nhds_zero.comap _
 
+/-- The entourages `{(a, b) | b - a ∈ U_C}` form a basis of the period uniformity. -/
 theorem hasBasis_uniformity :
     (𝓤 (NovikovSeries R H N)).HasBasis (fun _ : ℝ => True)
       fun C => {p | p.2 - p.1 ∈ periodFiltration R N C} := by
@@ -225,42 +228,6 @@ end Topology
 
 section Truncation
 
-variable {C : ℝ}
-
-section Zero
-
-variable [Zero R] {a : NovikovSeries R H N}
-
-/-- The truncation of a Novikov series `a` below the period cutoff `C`: the finitely supported
-coefficient function that agrees with `a` at exponents of period `< C` and vanishes elsewhere. -/
-def trunc (C : ℝ) (a : NovikovSeries R H N) : H →₀ R :=
-  Finsupp.ofSupportFinite ({h | N h < C}.indicator a.coeff) <| by
-    rw [support_indicator]
-    exact (a.finite_lt C).subset fun _ hh => ⟨hh.2, hh.1⟩
-
-theorem trunc_apply (C : ℝ) (a : NovikovSeries R H N) (h : H) :
-    trunc C a h = if N h < C then a.coeff h else 0 := by
-  simp [trunc, Finsupp.ofSupportFinite_coe, indicator_apply]
-
-theorem trunc_apply_of_lt {h : H} (hh : N h < C) : trunc C a h = a.coeff h := by
-  simp [trunc_apply, hh]
-
-theorem trunc_apply_of_le {h : H} (hh : C ≤ N h) : trunc C a h = 0 := by
-  simp [trunc_apply, hh.not_gt]
-
-end Zero
-
-@[simp]
-theorem trunc_zero [Zero R] (C : ℝ) : trunc C (0 : NovikovSeries R H N) = 0 := by
-  ext h
-  simp [trunc_apply]
-
-@[simp]
-theorem trunc_add [AddZeroClass R] (C : ℝ) (a b : NovikovSeries R H N) :
-    trunc C (a + b) = trunc C a + trunc C b := by
-  ext h
-  by_cases hh : N h < C <;> simp [trunc_apply, hh]
-
 variable [AddCommGroup R]
 
 /-- A Novikov series differs from its truncation below `C` by an element of `U_C`. -/
@@ -296,6 +263,8 @@ structure induced by the inclusion into the Novikov series. -/
 def groupRingUniformSpace : UniformSpace (H →₀ R) :=
   UniformSpace.comap (ofFinsupp (N := N)) inferInstance
 
+/-- The entourages of pairs of finitely supported functions that agree at every exponent of period
+`< C` form a basis of the period filtration uniformity on the group ring. -/
 theorem hasBasis_groupRingUniformSpace :
     (@uniformity (H →₀ R) (groupRingUniformSpace R H N)).HasBasis (fun _ : ℝ => True)
       fun C => {p | ∀ h, N h < C → p.1 h = p.2 h} := by
