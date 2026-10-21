@@ -35,7 +35,7 @@ place `w₁ ≠ w₀`, the form is indefinite at `w₁`, so indefiniteness at on
 imply global isotropy either. Over `ℚ`, with its single real place, one may take `a = 1`, giving
 the sum of `n + 1` squares.
 
-In rank at least five a regular form is isotropic at every finite place, so in these ranks only a
+In rank at least five every form is isotropic at every finite place, so in these ranks only a
 real place can be the omitted one.
 
 ## Main results
@@ -97,7 +97,7 @@ theorem exists_anisotropic_and_not_anisotropic_away_from_realPlace
     exact ((_root_.QuadraticForm.isLocallyIsotropic_iff Q).mp
       (_root_.QuadraticForm.isLocallyIsotropic_of_not_anisotropic Q h)).2 w₀ hQ₀
   refine ⟨Q, hQ, hQK, hQ₀,
-    _root_.QuadraticForm.not_anisotropic_atFinitePlace_of_five_le_finrank hQ
+    _root_.QuadraticForm.not_anisotropic_atFinitePlace_of_five_le_finrank Q
       (by rw [Module.finrank_fin_fun]; omega), fun w hw => ?_⟩
   -- Away from `w₀` the first coefficient is negative and the second positive.
   rw [_root_.QuadraticForm.anisotropic_atRealPlace_weightedSumSquares_iff hc w, not_or]
