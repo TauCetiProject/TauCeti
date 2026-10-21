@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Finite-dimensional normed spaces
@@ -129,12 +130,7 @@ theorem continuous_equivFunL_symm_of_continuous (h : ∀ i, Continuous fun y ↦
     Continuous fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F) := by
   have := Fintype.ofFinite ι
   refine continuous_clm_apply.2 fun x ↦ ?_
-  have hx (y : Y) : (B y).equivFunL.symm x = ∑ i, x i • B y i := by
-    rw [← Basis.equivFun_symm_apply]
-    refine (B y).equivFunL.injective <| funext fun i ↦ ?_
-    rw [ContinuousLinearEquiv.apply_symm_apply, Basis.equivFunL_apply, ← Basis.equivFun_apply,
-      LinearEquiv.apply_symm_apply]
-  simp only [ContinuousLinearEquiv.coe_coe, hx]
+  simp only [ContinuousLinearEquiv.coe_coe, equivFunL_symm_apply]
   exact continuous_finsetSum _ fun i _ ↦ continuous_const.smul (h i)
 
 /-- **Continuity of a family of coordinate maps.** If every vector of a family of bases depends

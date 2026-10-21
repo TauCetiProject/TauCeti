@@ -104,15 +104,20 @@ noncomputable def torusFamilyHomeomorphProd (hcont : ∀ l, Continuous fun y ↦
       Y × (ι → ℝ) ⧸ span ℤ (range (Pi.basisFun ℝ ι)) :=
   letI := periodAddAction P
   -- The coordinates `(y, v) ↦ (y, F_y⁻¹ v)` and their inverse, before passing to quotients.
-  have hfwd : Continuous fun p : Y × E ↦ (periodBasis P b hinj p.1).equivFunL p.2 := by
+  have hfwd : Continuous fun p : Y × E ↦ (periodBasis P b hinj p.1).equivFun p.2 := by
     have := Fintype.ofFinite ι
-    exact ((continuous_periodBasis_equivFunL P b hinj hcont).comp continuous_fst).clm_apply
-      continuous_snd
+    refine continuous_pi fun i ↦ ?_
+    simpa only [comp_def, ContinuousLinearEquiv.coe_coe, Basis.equivFunL_apply,
+      Basis.equivFun_apply] using
+      (continuous_apply i).comp <| ((continuous_periodBasis_equivFunL P b hinj hcont).comp
+        continuous_fst).clm_apply continuous_snd
   have hbwd : Continuous fun p : Y × (ι → ℝ) ↦
-      (periodBasis P b hinj p.1).equivFunL.symm p.2 := by
+      (periodBasis P b hinj p.1).equivFun.symm p.2 := by
     have := Fintype.ofFinite ι
-    exact ((continuous_periodBasis_equivFunL_symm P b hinj hcont).comp continuous_fst).clm_apply
-      continuous_snd
+    simpa only [comp_def, ContinuousLinearEquiv.coe_coe, Basis.equivFunL_symm_apply,
+      Basis.equivFun_symm_apply] using
+      ((continuous_periodBasis_equivFunL_symm P b hinj hcont).comp continuous_fst).clm_apply
+        continuous_snd
   { toFun := Quotient.lift
       (fun p ↦ (p.1, Submodule.Quotient.mk ((periodBasis P b hinj p.1).equivFun p.2)))
       fun p q h ↦ by

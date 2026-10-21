@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 
 /-!
-# Multilinear maps and seminorms on finite-dimensional spaces are continuous
+# Finite-dimensional topological vector spaces
 
 A multilinear map `f : MultilinearMap 𝕜 M N` on finitely many finite-dimensional Hausdorff
 topological vector spaces over a complete nontrivially normed field is continuous when addition
@@ -29,6 +29,11 @@ continuous: `Seminorm.continuous_of_finiteDimensional`. Such a seminorm is domin
 of the sup norm of the coordinates in a basis, and those coordinates are continuous. This is how a
 norm defined by algebra, such as the spectral norm of a finite field extension, is compared with a
 topology given in advance.
+
+The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of a finite
+basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
+`Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
+`Module.Basis.equivFun_symm_apply`.
 -/
 
 public section
@@ -94,3 +99,17 @@ theorem continuous_of_finiteDimensional (p : Seminorm 𝕜 E) : Continuous p := 
   simpa using hc.tendsto 0
 
 end Seminorm
+
+namespace Module.Basis
+
+variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup E]
+  [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [T2Space E]
+  [Fintype ι]
+
+/-- The inverse of the continuous coordinate equivalence of a finite basis `v` sends a coordinate
+vector `x` to the linear combination `∑ i, x i • v i`. -/
+@[simp] theorem equivFunL_symm_apply (v : Basis ι 𝕜 E) (x : ι → 𝕜) :
+    v.equivFunL.symm x = ∑ i, x i • v i :=
+  v.equivFun_symm_apply x
+
+end Module.Basis
