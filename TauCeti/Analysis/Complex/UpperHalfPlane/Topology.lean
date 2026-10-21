@@ -268,21 +268,12 @@ theorem continuousOn_update_comp_const_sub_inv {α : Type*} [TopologicalSpace α
     {L : α} (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im})
     (hg : Tendsto g (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 L)) (c : ℝ) :
     ContinuousOn (Function.update (fun z : ℂ => g ((c : ℂ) - z⁻¹)) 0 L) {z : ℂ | 0 ≤ z.im} := by
-  intro z hz
-  rcases eq_or_ne z 0 with rfl | hz0
-  · -- at `0`, continuity is the limit of `g` at infinity
-    rw [← continuousWithinAt_sdiff_self, ContinuousWithinAt, Function.update_self]
-    exact (hg.comp (tendsto_const_sub_inv_nhdsWithin_zero c)).congr'
-      (eventually_nhdsWithin_of_forall fun z hz => (Function.update_of_ne hz.2 _ _).symm)
-  · -- away from `0`, the function is `g` composed with a continuous self-map of the half-plane
-    have hφ : ContinuousAt (fun z : ℂ => (c : ℂ) - z⁻¹) z :=
-      continuousAt_const.sub (continuousAt_inv₀ hz0)
-    refine ((hgc _ ((im_const_sub_inv_nonneg c).mpr hz)).comp
-      (f := fun w : ℂ => (c : ℂ) - w⁻¹) hφ.continuousWithinAt
-      fun w hw => (im_const_sub_inv_nonneg c).mpr hw).congr_of_eventuallyEq ?_
-      (Function.update_of_ne hz0 _ _)
-    exact eventually_nhdsWithin_of_eventually_nhds
-      ((isOpen_ne.eventually_mem hz0).mono fun w hw => Function.update_of_ne hw _ _)
+  -- at `0`, continuity is the limit of `g` at infinity; away from `0`, the function is `g`
+  -- composed with a continuous self-map of the half-plane
+  refine continuousOn_update_iff.mpr
+    ⟨?_, fun _ => hg.comp (tendsto_const_sub_inv_nhdsWithin_zero c)⟩
+  exact hgc.comp (continuousOn_const.sub (continuousOn_inv₀.mono fun _ hz => hz.2))
+    fun _ hz => (im_const_sub_inv_nonneg c).mpr hz.1
 
 /-- **Moving infinity to a real point, at infinity.** If `g` is continuous at the real point `c`
 within the closed upper half-plane, then `g` precomposed with `z ↦ c - z⁻¹`, whatever its value at
