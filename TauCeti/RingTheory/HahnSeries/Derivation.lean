@@ -153,6 +153,7 @@ private theorem ratHahnSeriesDerivation_apply (x : HahnSeries ℚ R) :
 
 /-- The coefficient of `t ^ q` in the derivative of `x` is `q + 1` times the coefficient of
 `t ^ (q + 1)` in `x`. -/
+@[simp]
 theorem coeff_ratHahnSeriesDerivation (x : HahnSeries ℚ R) (q : ℚ) :
     (ratHahnSeriesDerivation R x).coeff q = (q + 1) • x.coeff (q + 1) := by
   rw [ratHahnSeriesDerivation_apply, coeff_single_mul, one_mul, sub_neg_eq_add,
