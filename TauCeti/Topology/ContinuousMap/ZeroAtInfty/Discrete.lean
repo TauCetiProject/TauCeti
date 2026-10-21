@@ -109,7 +109,8 @@ theorem mkOfDiscrete_coe (f : C₀(I, β)) : mkOfDiscrete f f.tendsto_cofinite =
 theorem tendsto_indicator_cofinite (S : Set I) (f : C₀(I, β)) :
     Tendsto (S.indicator f) cofinite (𝓝 0) := by
   classical
-  exact f.tendsto_cofinite.if' tendsto_const_nhds
+  exact (f.tendsto_cofinite.if' tendsto_const_nhds (p := fun i ↦ i ∈ S)).congr
+    fun i ↦ (Set.indicator_apply S f i).symm
 
 variable [DecidableEq I]
 
@@ -295,6 +296,12 @@ section Indicator
 
 variable [SeminormedAddCommGroup β]
 
+private theorem norm_mkOfDiscrete_indicator_le (S : Set I) (f : C₀(I, β)) :
+    ‖mkOfDiscrete (S.indicator f) (tendsto_indicator_cofinite S f)‖ ≤ ‖f‖ := by
+  refine (norm_le (norm_nonneg f)).2 fun i ↦ ?_
+  rw [coe_mkOfDiscrete]
+  exact norm_indicator_le_norm_self f i |>.trans (norm_coe_le_norm f i)
+
 variable (R : Type*) [Semiring R] [Module R β] [ContinuousConstSMul R β]
 
 /-- The **coordinate projection** onto a set `S` of indices: the continuous linear map sending
@@ -302,15 +309,15 @@ variable (R : Type*) [Semiring R] [Module R β] [ContinuousConstSMul R β]
 zero. It has norm at most one (`norm_indicatorCLM_apply_le`), and for finite `S` it is the
 partial sum of the coordinate expansion over `S` (`indicatorCLM_finset_apply`). -/
 noncomputable def indicatorCLM (S : Set I) : C₀(I, β) →L[R] C₀(I, β) :=
+  -- LinearMap.mkContinuous requires ring scalars, so attach continuity directly for semirings.
   let L : C₀(I, β) →ₗ[R] C₀(I, β) :=
     { toFun f := mkOfDiscrete (S.indicator f) (tendsto_indicator_cofinite S f)
       map_add' f g := by ext i; by_cases hi : i ∈ S <;> simp [hi]
       map_smul' c f := by ext i; by_cases hi : i ∈ S <;> simp [hi] }
   { L with
     cont := AddMonoidHomClass.continuous_of_bound L 1 fun f ↦ by
-      rw [one_mul]
-      exact (norm_le (norm_nonneg f)).2 fun i ↦
-        norm_indicator_le_norm_self f i |>.trans (norm_coe_le_norm f i) }
+      simpa only [L, LinearMap.coe_mk, AddHom.coe_mk, one_mul] using
+        norm_mkOfDiscrete_indicator_le S f }
 
 variable {R}
 
@@ -320,8 +327,7 @@ theorem coe_indicatorCLM (S : Set I) (f : C₀(I, β)) : ⇑(indicatorCLM R S f)
 
 /-- The coordinate projections have norm at most one. -/
 theorem norm_indicatorCLM_apply_le (S : Set I) (f : C₀(I, β)) : ‖indicatorCLM R S f‖ ≤ ‖f‖ :=
-  (norm_le (norm_nonneg f)).2 fun i ↦ by
-    simpa using norm_indicator_le_norm_self f i |>.trans (norm_coe_le_norm f i)
+  norm_mkOfDiscrete_indicator_le S f
 
 @[simp]
 theorem indicatorCLM_univ :
