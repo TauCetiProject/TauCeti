@@ -17,22 +17,28 @@ normed space `E`, as in `TauCeti.Algebra.Module.ZLattice.Family.Basic`, and let 
 `ℤ`-basis of `Λ` indexed by `ι`. At each `y` the periods `P y (b i)` form a real basis of `E`
 (`TauCeti.periodBasis`), whose coordinate map `F_y⁻¹ : E ≃ ℝ^ι` carries the lattice
 `LinearMap.range (P y)` onto the standard lattice `ℤ^ι = span ℤ (range (Pi.basisFun ℝ ι))`.
-Both `F_y` and `F_y⁻¹` depend continuously on `y` in the operator norm.
+Both `F_y` and `F_y⁻¹` depend continuously on `y` in the operator norm, as does any family of
+bases whose vectors depend continuously on the parameter.
 
 Consequently `[y, v] ↦ (y, [F_y⁻¹ v])` descends to a homeomorphism
-`(Y × E)/Λ ≃ₜ Y × ℝ^ι/ℤ^ι` over `Y` (`TauCeti.periodTrivialization`), from the orbit space of the
-period translation action to the product of the parameter space with one fixed torus. The
+`(Y × E)/Λ ≃ₜ Y × ℝ^ι/ℤ^ι` over `Y` (`TauCeti.torusFamilyHomeomorphProd`), from the orbit space of
+the period translation action to the product of the parameter space with one fixed torus, the
+quotient `(ι → ℝ) ⧸ span ℤ (range (Pi.basisFun ℝ ι))`. This is the global trivialization of the
+family. The
 trivialization is real-linear on fibres, not complex-linear: when `E` is a complex vector space
 the complex structure of the fibre `E ⧸ LinearMap.range (P y)` varies with `y`, and a family whose
 period ratio varies is not holomorphically a product.
 
 ## Main results
 
+* `Module.Basis.continuous_equivFunL_symm_of_continuous`,
+  `Module.Basis.continuous_equivFunL_of_continuous`: a family of bases whose vectors depend
+  continuously on a parameter has continuously varying frame and coordinate maps.
 * `TauCeti.periodBasis_equivFun_mem_span_iff`: the coordinates of `v` in the period basis at `y` are
   integers exactly when `v` is a period at `y`.
 * `TauCeti.continuous_periodBasis_equivFunL_symm`, `TauCeti.continuous_periodBasis_equivFunL`:
   the frame `F_y` and its inverse depend continuously on `y`.
-* `TauCeti.periodTrivialization`: the homeomorphism `(Y × E)/Λ ≃ₜ Y × ℝ^ι/ℤ^ι` over `Y`.
+* `TauCeti.torusFamilyHomeomorphProd`: the homeomorphism `(Y × E)/Λ ≃ₜ Y × ℝ^ι/ℤ^ι` over `Y`.
 
 ## References
 
@@ -44,6 +50,49 @@ period ratio varies is not holomorphically a product.
 public section
 
 open Module Set Function Submodule
+
+namespace Module.Basis
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {Y : Type*} [TopologicalSpace Y] {ι : Type*} [Finite ι] {B : Y → Basis ι 𝕜 F}
+
+/-- **Continuity of a family of frames.** If every vector of a family of bases depends continuously
+on the parameter, then so does the frame `x ↦ ∑ i, x i • B y i`, in the operator norm. -/
+theorem continuous_equivFunL_symm_of_continuous (h : ∀ i, Continuous fun y ↦ B y i) :
+    Continuous fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F) := by
+  have := Fintype.ofFinite ι
+  have h' : (fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F)) =
+      fun y ↦ ∑ i, (ContinuousLinearMap.proj i : (ι → 𝕜) →L[𝕜] 𝕜).smulRight (B y i) := by
+    ext1 y
+    refine ContinuousLinearMap.ext fun x ↦ ?_
+    rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_eq]
+    ext j
+    classical
+    simp [Finsupp.single_apply]
+  rw [h']
+  exact continuous_finsetSum _ fun i _ ↦
+    (ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) F (ContinuousLinearMap.proj i)).continuous.comp (h i)
+
+/-- **Continuity of a family of coordinate maps.** If every vector of a family of bases depends
+continuously on the parameter, then so does the coordinate map `F → ι → 𝕜`, in the operator
+norm. -/
+theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y i) :
+    Continuous fun y ↦ ((B y).equivFunL : F →L[𝕜] ι → 𝕜) := by
+  have := Fintype.ofFinite ι
+  have h' : (fun y ↦ ((B y).equivFunL : F →L[𝕜] ι → 𝕜)) =
+      fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F).inverse := by
+    ext1 y
+    rw [ContinuousLinearMap.inverse_equiv, ContinuousLinearEquiv.symm_symm]
+  rw [h', continuous_iff_continuousAt]
+  intro y
+  have := (B y).finiteDimensional_of_finite
+  have := FiniteDimensional.complete 𝕜 F
+  exact ContinuousAt.comp (g := ContinuousLinearMap.inverse)
+    (contDiffAt_map_inverse (n := 0) (B y).equivFunL.symm).continuousAt
+    (continuous_equivFunL_symm_of_continuous h).continuousAt
+
+end Module.Basis
 
 namespace TauCeti
 
@@ -63,64 +112,42 @@ theorem periodBasis_equivFun_mem_span_iff (y : Y) (v : E) :
   simp
 
 /-- The period translation relation, read in the period frame: the classes of `(y, v)` and
-`(y', v')` agree exactly when `y = y'` and the period coordinates of `v` and `v'` at `y` differ by
-an element of the standard lattice. -/
+`(y', v')` agree exactly when `y = y'` and the period coordinates of `v` and `v'` at `y` have the
+same class modulo the standard lattice. -/
 private theorem orbitRel_periodAddAction_iff {p q : Y × E} :
     letI := periodAddAction P
     AddAction.orbitRel Λ (Y × E) p q ↔ p.1 = q.1 ∧
-      AddAction.orbitRel (span ℤ (range (Pi.basisFun ℝ ι))) (ι → ℝ)
-        ((periodBasis P b hinj q.1).equivFun p.2) ((periodBasis P b hinj q.1).equivFun q.2) := by
+      (Submodule.Quotient.mk ((periodBasis P b hinj q.1).equivFun p.2) :
+        (ι → ℝ) ⧸ span ℤ (range (Pi.basisFun ℝ ι))) =
+        Submodule.Quotient.mk ((periodBasis P b hinj q.1).equivFun q.2) := by
   let _ := periodAddAction P
-  rw [AddAction.orbitRel_apply, mem_orbit_periodAddAction_iff, AddAction.orbitRel_apply,
-    AddAction.mem_orbit_iff, ← periodBasis_equivFun_mem_span_iff P b hinj, map_sub]
-  refine and_congr_right fun _ ↦ ⟨fun h ↦ ⟨⟨_, h⟩, by simp [Submodule.vadd_def]⟩, ?_⟩
-  rintro ⟨l, hl⟩
-  simp [← hl, Submodule.vadd_def]
+  rw [AddAction.orbitRel_apply, mem_orbit_periodAddAction_iff, Submodule.Quotient.eq,
+    ← map_sub, periodBasis_equivFun_mem_span_iff]
 
 variable [TopologicalSpace Y]
 
 /-- **Continuity of the period frame.** The real linear isomorphism `F_y : ℝ^ι → E`,
 `x ↦ ∑ i, x i • P y (b i)`, depends continuously on `y` in the operator norm. -/
 theorem continuous_periodBasis_equivFunL_symm (hcont : ∀ l, Continuous fun y ↦ P y l) :
-    Continuous fun y ↦ ((periodBasis P b hinj y).equivFunL.symm : (ι → ℝ) →L[ℝ] E) := by
-  have := Fintype.ofFinite ι
-  have h : (fun y ↦ ((periodBasis P b hinj y).equivFunL.symm : (ι → ℝ) →L[ℝ] E)) =
-      fun y ↦ ∑ i, (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).smulRight (P y (b i)) := by
-    ext1 y
-    refine ContinuousLinearMap.ext fun x ↦ ?_
-    rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_eq]
-    ext j
-    classical
-    simp [Finsupp.single_apply]
-  rw [h]
-  exact continuous_finsetSum _ fun i _ ↦
-    (ContinuousLinearMap.smulRightL ℝ (ι → ℝ) E (ContinuousLinearMap.proj i)).continuous.comp
-      (hcont (b i))
+    Continuous fun y ↦ ((periodBasis P b hinj y).equivFunL.symm : (ι → ℝ) →L[ℝ] E) :=
+  Basis.continuous_equivFunL_symm_of_continuous fun i ↦ by simpa using hcont (b i)
 
 /-- **Continuity of the inverse period frame.** The coordinate map `F_y⁻¹ : E → ℝ^ι` of the period
 basis depends continuously on `y` in the operator norm. -/
 theorem continuous_periodBasis_equivFunL (hcont : ∀ l, Continuous fun y ↦ P y l) :
-    Continuous fun y ↦ ((periodBasis P b hinj y).equivFunL : E →L[ℝ] ι → ℝ) := by
-  have := Fintype.ofFinite ι
-  have h : (fun y ↦ ((periodBasis P b hinj y).equivFunL : E →L[ℝ] ι → ℝ)) =
-      fun y ↦ ((periodBasis P b hinj y).equivFunL.symm : (ι → ℝ) →L[ℝ] E).inverse := by
-    ext1 y
-    rw [ContinuousLinearMap.inverse_equiv, ContinuousLinearEquiv.symm_symm]
-  rw [h, continuous_iff_continuousAt]
-  exact fun y ↦ ContinuousAt.comp (g := ContinuousLinearMap.inverse)
-    (contDiffAt_map_inverse (n := 0) (periodBasis P b hinj y).equivFunL.symm).continuousAt
-    (continuous_periodBasis_equivFunL_symm P b hinj hcont).continuousAt
+    Continuous fun y ↦ ((periodBasis P b hinj y).equivFunL : E →L[ℝ] ι → ℝ) :=
+  Basis.continuous_equivFunL_of_continuous fun i ↦ by simpa using hcont (b i)
 
 /-- **The global trivialization** of a continuous family of full lattices. For a `ℤ`-basis `b`
 of `Λ` indexed by `ι`, the map `[y, v] ↦ (y, [F_y⁻¹ v])`, with `F_y⁻¹` the coordinate map of the
 period basis at `y`, is a homeomorphism from the orbit space of the period translation action to
 the product of `Y` with the fixed torus `ℝ^ι/ℤ^ι`. It lies over `Y`
-(`TauCeti.fst_periodTrivialization`), and on each fibre it is induced by the real linear
+(`TauCeti.fst_torusFamilyHomeomorphProd`), and on each fibre it is induced by the real linear
 isomorphism `F_y⁻¹`. -/
-noncomputable def periodTrivialization (hcont : ∀ l, Continuous fun y ↦ P y l) :
+noncomputable def torusFamilyHomeomorphProd (hcont : ∀ l, Continuous fun y ↦ P y l) :
     letI := periodAddAction P
     AddAction.orbitRel.Quotient Λ (Y × E) ≃ₜ
-      Y × AddAction.orbitRel.Quotient (span ℤ (range (Pi.basisFun ℝ ι))) (ι → ℝ) :=
+      Y × (ι → ℝ) ⧸ span ℤ (range (Pi.basisFun ℝ ι)) :=
   letI := periodAddAction P
   -- The coordinates `(y, v) ↦ (y, F_y⁻¹ v)` and their inverse, before passing to quotients.
   have hfwd : Continuous fun p : Y × E ↦ (periodBasis P b hinj p.1).equivFunL p.2 := by
@@ -133,15 +160,17 @@ noncomputable def periodTrivialization (hcont : ∀ l, Continuous fun y ↦ P y 
     exact ((continuous_periodBasis_equivFunL_symm P b hinj hcont).comp continuous_fst).clm_apply
       continuous_snd
   { toFun := Quotient.lift
-      (fun p ↦ (p.1, Quotient.mk _ ((periodBasis P b hinj p.1).equivFun p.2)))
+      (fun p ↦ (p.1, Submodule.Quotient.mk ((periodBasis P b hinj p.1).equivFun p.2)))
       fun p q h ↦ by
         obtain ⟨h₁, h₂⟩ := (orbitRel_periodAddAction_iff P b hinj).1 h
         rw [h₁]
-        exact Prod.ext rfl (Quotient.sound h₂)
-    invFun r := Quotient.lift
+        exact Prod.ext rfl h₂
+    invFun r := Quotient.liftOn' r.2
       (fun x ↦ Quotient.mk _ (r.1, (periodBasis P b hinj r.1).equivFun.symm x))
       (fun x x' h ↦ Quotient.sound <| (orbitRel_periodAddAction_iff P b hinj).2
-        ⟨rfl, by rwa [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]⟩) r.2
+        ⟨rfl, by
+          rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+          exact Quotient.sound' h⟩)
     left_inv := by
       rintro ⟨p⟩
       exact congrArg (Quotient.mk _)
@@ -149,35 +178,35 @@ noncomputable def periodTrivialization (hcont : ∀ l, Continuous fun y ↦ P y 
     right_inv := by
       rintro ⟨y, ⟨x⟩⟩
       exact Prod.ext rfl
-        (congrArg (Quotient.mk _) ((periodBasis P b hinj y).equivFun.apply_symm_apply x))
+        (congrArg Submodule.Quotient.mk ((periodBasis P b hinj y).equivFun.apply_symm_apply x))
     continuous_toFun := Continuous.quotient_lift
-      (continuous_fst.prodMk (continuous_quot_mk.comp hfwd)) _
+      (continuous_fst.prodMk ((span ℤ _).isOpenQuotientMap_mkQ.continuous.comp hfwd)) _
     continuous_invFun := by
       -- `Y × ℝ^ι → Y × ℝ^ι/ℤ^ι` is an open quotient map, so continuity can be checked upstairs.
       refine (IsOpenQuotientMap.id.prodMap
-        AddAction.isOpenQuotientMap_quotientMk).continuous_comp_iff.1 ?_
+        (span ℤ (range (Pi.basisFun ℝ ι))).isOpenQuotientMap_mkQ).continuous_comp_iff.1 ?_
       exact continuous_quot_mk.comp (continuous_fst.prodMk hbwd) }
 
 variable (hcont : ∀ l, Continuous fun y ↦ P y l)
 
-/-- The trivialization sends the class of `(y, v)` to `y` and the class of the period coordinates
+/-- The homeomorphism sends the class of `(y, v)` to `y` and the class of the period coordinates
 of `v` at `y`. -/
-@[simp] theorem periodTrivialization_mk (p : Y × E) :
+@[simp] theorem torusFamilyHomeomorphProd_mk (p : Y × E) :
     letI := periodAddAction P
-    periodTrivialization P b hinj hcont (Quotient.mk _ p) =
-      (p.1, Quotient.mk _ ((periodBasis P b hinj p.1).equivFun p.2)) := (rfl)
+    torusFamilyHomeomorphProd P b hinj hcont (Quotient.mk _ p) =
+      (p.1, Submodule.Quotient.mk ((periodBasis P b hinj p.1).equivFun p.2)) := (rfl)
 
-/-- The inverse trivialization sends `y` and the class of `x` to the class of
+/-- The inverse homeomorphism sends `y` and the class of `x` to the class of
 `(y, ∑ i, x i • P y (b i))`. -/
-@[simp] theorem periodTrivialization_symm_mk (y : Y) (x : ι → ℝ) :
+@[simp] theorem torusFamilyHomeomorphProd_symm_mk (y : Y) (x : ι → ℝ) :
     letI := periodAddAction P
-    (periodTrivialization P b hinj hcont).symm (y, Quotient.mk _ x) =
+    (torusFamilyHomeomorphProd P b hinj hcont).symm (y, Submodule.Quotient.mk x) =
       Quotient.mk _ (y, (periodBasis P b hinj y).equivFun.symm x) := (rfl)
 
-/-- The trivialization lies over the parameter space. -/
-@[simp] theorem fst_periodTrivialization
+/-- The homeomorphism lies over the parameter space. -/
+@[simp] theorem fst_torusFamilyHomeomorphProd
     (z : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E)) :
-    (periodTrivialization P b hinj hcont z).1 = torusFamilyProjection P z := by
+    (torusFamilyHomeomorphProd P b hinj hcont z).1 = torusFamilyProjection P z := by
   let _ := periodAddAction P
   induction z using Quotient.inductionOn
   simp

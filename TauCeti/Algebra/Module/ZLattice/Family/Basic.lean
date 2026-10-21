@@ -38,7 +38,7 @@ the projection of the family of tori to its parameter space
 The `ℤ`-basis of the full lattice `LinearMap.range (P y)` given by the periods of a `ℤ`-basis `b`
 of `Λ` is packaged as the real basis `TauCeti.periodBasis P b hinj y` of `E`. The global
 trivialization of the family built from it is in
-`TauCeti.Algebra.Module.ZLattice.Family.Trivialization`.
+`TauCeti.Algebra.Module.ZLattice.Family.HomeomorphProd`.
 
 ## Main definitions
 
