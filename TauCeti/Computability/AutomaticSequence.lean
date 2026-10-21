@@ -18,8 +18,9 @@ import TauCeti.Data.Nat.Periodic
 For a base `k`, a sequence `a : ℕ → Δ` is `k`-automatic if some deterministic automaton with
 output (`TauCeti.DFAO`) with finitely many states and input alphabet `Fin k` computes `a n` from
 the base-`k` digits of `n`. The digits are Mathlib's `Nat.digits k n`, read least significant
-digit first and without padding zeros. This is the reverse reading of Bridy and the lecture
-inverse of Christol, Kamae, Mendès France and Rauzy. Automatic sequences are the subject of
+digit first and without padding zeros. Reading the least significant digit first is the
+convention that Bridy (Section 2.1) calls reverse reading and that Christol, Kamae, Mendès France
+and Rauzy (Section 4) call *lecture inverse*. Automatic sequences are the subject of
 Christol's theorem, which identifies the `p`-automatic sequences with values in `𝔽_p`, for a
 prime `p`, with the coefficient sequences of the power series over `𝔽_p` algebraic over
 `𝔽_p(X)`, and of Cobham's theorem, which identifies the

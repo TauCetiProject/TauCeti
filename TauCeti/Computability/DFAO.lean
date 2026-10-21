@@ -98,6 +98,13 @@ theorem eval_eq_evalFrom (x : List α) : M.eval x = M.evalFrom M.start x :=
 theorem eval_nil : M.eval [] = M.start :=
   (rfl)
 
+@[simp]
+theorem eval_cons (a : α) (x : List α) : M.eval (a :: x) = M.evalFrom (M.step M.start a) x :=
+  (rfl)
+
+theorem eval_singleton (a : α) : M.eval [a] = M.step M.start a :=
+  (rfl)
+
 theorem eval_append (x y : List α) : M.eval (x ++ y) = M.evalFrom (M.eval x) y :=
   M.evalFrom_append M.start x y
 
