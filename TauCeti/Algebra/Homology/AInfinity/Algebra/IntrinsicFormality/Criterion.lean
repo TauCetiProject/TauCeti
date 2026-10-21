@@ -42,6 +42,8 @@ from `ℋ` to the original structure.
 
 ## Main results
 
+* `TauCeti.AInfinityAlgebra.HochschildVanishesAt`: the vanishing of the bigraded Hochschild
+  cohomology `HH^{n + 1, 1 - n}(H, H)`, stated on cochains.
 * `TauCeti.AInfinityAlgebra.IsMinimal.exists_isIso_of_forall_hochschildDifferential_eq`: if
   `HH^{n, 2 - n}(H, H) = 0` for every `n ≥ 3`, every minimal `A∞` structure with the grading and the
   binary operation of `ℋ` is `A∞` isomorphic to `ℋ`.
@@ -70,6 +72,31 @@ section CommRing
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
   {ℋ ℬ : AInfinityAlgebra R A}
 
+variable (ℋ) in
+/-- The bigraded Hochschild cohomology `HH^{n + 1, 1 - n}(H, H)` of `ℋ` vanishes: every
+Hochschild cocycle of `ℋ` of suspended degree one concentrated on the words of length `n + 1` is
+the Hochschild differential of a cochain of suspended degree zero concentrated on the words of
+length `n`.  This is the obstruction group for killing the operation of arity `n + 1`. -/
+def HochschildVanishesAt (n : {n : ℕ // 0 < n}) : Prop :=
+  ∀ F : ReducedTensorWords R A →ₗ[R] A,
+    LinearMap.IsHomogeneous F (gradedPiece (ℋ.grading.shift 1)) (ℋ.grading.shift 1).piece 1 →
+    F ∘ₗ lengthProj R A ⟨n.1 + 1, n.1.succ_pos⟩ = F → ℋ.hochschildDifferential 1 F = 0 →
+    ∃ φ : ReducedTensorWords R A →ₗ[R] A,
+      LinearMap.IsHomogeneous φ (gradedPiece (ℋ.grading.shift 1))
+        (ℋ.grading.shift 1).piece 0 ∧
+      φ ∘ₗ lengthProj R A n = φ ∧ ℋ.hochschildDifferential 0 φ = F
+
+/-- Unfolding `HochschildVanishesAt`. -/
+theorem hochschildVanishesAt_iff {n : {n : ℕ // 0 < n}} :
+    ℋ.HochschildVanishesAt n ↔ ∀ F : ReducedTensorWords R A →ₗ[R] A,
+      LinearMap.IsHomogeneous F (gradedPiece (ℋ.grading.shift 1)) (ℋ.grading.shift 1).piece 1 →
+      F ∘ₗ lengthProj R A ⟨n.1 + 1, n.1.succ_pos⟩ = F → ℋ.hochschildDifferential 1 F = 0 →
+      ∃ φ : ReducedTensorWords R A →ₗ[R] A,
+        LinearMap.IsHomogeneous φ (gradedPiece (ℋ.grading.shift 1))
+          (ℋ.grading.shift 1).piece 0 ∧
+        φ ∘ₗ lengthProj R A n = φ ∧ ℋ.hochschildDifferential 0 φ = F :=
+  Iff.rfl
+
 /-- A stage of the killing procedure: a minimal `A∞` structure with the grading of `ℋ` whose
 Taylor map agrees with that of `ℋ` on the words of length at most `N`, with an `A∞` morphism to
 `ℬ` whose linear part is the identity. -/
@@ -89,13 +116,7 @@ a stage agreeing with `ℋ` on the words of length at most `k + 2` is followed b
 components on the words of length at most `k + 1`. -/
 private theorem exists_killingStage_succ (hℋ : ℋ.IsMinimal) (hm : ∀ n, 3 ≤ n → ℋ.m n = 0)
     {k : ℕ}
-    (hHH : ∀ F : ReducedTensorWords R A →ₗ[R] A,
-      LinearMap.IsHomogeneous F (gradedPiece (ℋ.grading.shift 1)) (ℋ.grading.shift 1).piece 1 →
-      F ∘ₗ lengthProj R A ⟨k + 3, by omega⟩ = F → ℋ.hochschildDifferential 1 F = 0 →
-      ∃ φ : ReducedTensorWords R A →ₗ[R] A,
-        LinearMap.IsHomogeneous φ (gradedPiece (ℋ.grading.shift 1))
-          (ℋ.grading.shift 1).piece 0 ∧
-        φ ∘ₗ lengthProj R A ⟨k + 2, by omega⟩ = φ ∧ ℋ.hochschildDifferential 0 φ = F)
+    (hHH : ℋ.HochschildVanishesAt ⟨k + 2, by omega⟩)
     (s : KillingStage ℋ ℬ (k + 2)) :
     ∃ s' : KillingStage ℋ ℬ (k + 3),
       ∀ z ∈ filtration R A (k + 1), s'.hom.taylor z = s.hom.taylor z := by
@@ -131,13 +152,7 @@ variable (ℋ ℬ) in
 /-- The successive stages of the killing procedure, starting from a stage agreeing with `ℋ` on the
 words of length at most two. -/
 private noncomputable def killingStage (hℋ : ℋ.IsMinimal) (hm : ∀ n, 3 ≤ n → ℋ.m n = 0)
-    (hHH : ∀ n (hn : 2 ≤ n) (F : ReducedTensorWords R A →ₗ[R] A),
-      LinearMap.IsHomogeneous F (gradedPiece (ℋ.grading.shift 1)) (ℋ.grading.shift 1).piece 1 →
-      F ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ = F → ℋ.hochschildDifferential 1 F = 0 →
-      ∃ φ : ReducedTensorWords R A →ₗ[R] A,
-        LinearMap.IsHomogeneous φ (gradedPiece (ℋ.grading.shift 1))
-          (ℋ.grading.shift 1).piece 0 ∧
-        φ ∘ₗ lengthProj R A ⟨n, by omega⟩ = φ ∧ ℋ.hochschildDifferential 0 φ = F)
+    (hHH : ∀ n (hn : 2 ≤ n), ℋ.HochschildVanishesAt ⟨n, by omega⟩)
     (s₀ : KillingStage ℋ ℬ 2) : (k : ℕ) → KillingStage ℋ ℬ (k + 2)
   | 0 => s₀
   | k + 1 => Classical.choose (exists_killingStage_succ hℋ hm (hHH (k + 2) (by omega))
@@ -152,13 +167,7 @@ of a cochain of suspended degree zero concentrated on the words of length `n`.  
 theorem IsMinimal.exists_isIso_of_forall_hochschildDifferential_eq (hℬ : ℬ.IsMinimal)
     (hℋ : ℋ.IsMinimal) (hm : ∀ n, 3 ≤ n → ℋ.m n = 0) (hG : ℬ.grading = ℋ.grading)
     (h₂ : ℬ.m 2 = ℋ.m 2)
-    (hHH : ∀ n (hn : 2 ≤ n) (F : ReducedTensorWords R A →ₗ[R] A),
-      LinearMap.IsHomogeneous F (gradedPiece (ℋ.grading.shift 1)) (ℋ.grading.shift 1).piece 1 →
-      F ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ = F → ℋ.hochschildDifferential 1 F = 0 →
-      ∃ φ : ReducedTensorWords R A →ₗ[R] A,
-        LinearMap.IsHomogeneous φ (gradedPiece (ℋ.grading.shift 1))
-          (ℋ.grading.shift 1).piece 0 ∧
-        φ ∘ₗ lengthProj R A ⟨n, by omega⟩ = φ ∧ ℋ.hochschildDifferential 0 φ = F) :
+    (hHH : ∀ n (hn : 2 ≤ n), ℋ.HochschildVanishesAt ⟨n, by omega⟩) :
     ∃ f : AInfinityHom ℬ ℋ, f.IsIso := by
   -- The first stage is `ℬ` itself, which agrees with `ℋ` on the words of length at most two.
   have hm₂ : ∀ k, 0 < k → k ≤ 2 → ℬ.m k = ℋ.m k := fun k hk hk₂ ↦ by
@@ -193,13 +202,7 @@ degree one concentrated on the words of length `n + 1` is the Hochschild differe
 of suspended degree zero concentrated on the words of length `n`. -/
 theorem isIntrinsicallyFormal_of_forall_hochschildDifferential_eq (hℋ : ℋ.IsMinimal)
     (hm : ∀ n, 3 ≤ n → ℋ.m n = 0)
-    (hHH : ∀ n (hn : 2 ≤ n) (F : ReducedTensorWords K A →ₗ[K] A),
-      LinearMap.IsHomogeneous F (gradedPiece (ℋ.grading.shift 1)) (ℋ.grading.shift 1).piece 1 →
-      F ∘ₗ lengthProj K A ⟨n + 1, n.succ_pos⟩ = F → ℋ.hochschildDifferential 1 F = 0 →
-      ∃ φ : ReducedTensorWords K A →ₗ[K] A,
-        LinearMap.IsHomogeneous φ (gradedPiece (ℋ.grading.shift 1))
-          (ℋ.grading.shift 1).piece 0 ∧
-        φ ∘ₗ lengthProj K A ⟨n, by omega⟩ = φ ∧ ℋ.hochschildDifferential 0 φ = F) :
+    (hHH : ∀ n (hn : 2 ≤ n), ℋ.HochschildVanishesAt ⟨n, by omega⟩) :
     ℋ.IsIntrinsicallyFormal :=
   (isIntrinsicallyFormal_iff_forall_exists_isIso hℋ hm).2 fun _ hG hℬ h₂ ↦
     hℬ.exists_isIso_of_forall_hochschildDifferential_eq hℋ hm hG h₂ hHH
