@@ -88,14 +88,11 @@ Fredholm series is not a unit of `R`. -/
 theorem IsRowCompact.inv_mem_spectrum_iff {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
     {r : Rˣ} :
     ((r⁻¹ : Rˣ) : R) ∈ spectrum R u ↔ ¬IsUnit (u.matrixCoeff.charPowerSeries.evalAt (r : R)) := by
-  -- `r⁻¹ • 1 - u = (r⁻¹ • 1) (1 - r • u)`, and `r⁻¹ • 1` is a unit with inverse `r • 1`.
-  let v : (C₀(I, R) →L[R] C₀(I, R))ˣ :=
-    ⟨((r⁻¹ : Rˣ) : R) • 1, (r : R) • 1,
-      by rw [mul_def, smul_comp, ← mul_def, one_mul, smul_smul, Units.inv_mul, one_smul],
-      by rw [mul_def, smul_comp, ← mul_def, one_mul, smul_smul, Units.mul_inv, one_smul]⟩
+  -- `r⁻¹ • 1 - u = (r⁻¹ • 1) (1 - r • u)`, and `r⁻¹ • 1` is the image of the unit `r⁻¹`.
+  let v := Units.map (algebraMap R (C₀(I, R) →L[R] C₀(I, R))).toMonoidHom r⁻¹
   have h : ((r⁻¹ : Rˣ) : R) • (1 : C₀(I, R) →L[R] C₀(I, R)) - u = v * (1 - (r : R) • u) := by
     ext x i
-    simp [v, mul_sub, ← mul_assoc]
+    simp [v, Algebra.algebraMap_eq_smul_one, mul_sub, ← mul_assoc]
   rw [spectrum.mem_iff, Algebra.algebraMap_eq_smul_one, h, Units.isUnit_units_mul,
     hu.isUnit_one_sub_smul_iff]
 
