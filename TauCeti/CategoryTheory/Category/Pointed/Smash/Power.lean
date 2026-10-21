@@ -28,7 +28,8 @@ sphere sequence underlying symmetric spectra.
 * `Pointed.smashPow.mk f`: the class of a family `f : ι → X`.
 * `Pointed.smashPow.lift`: the pointed map induced by a function of families sending the fat
   wedge to the basepoint; `Pointed.smashPow.hom_ext` gives uniqueness.
-* `Pointed.smashPow.map`: the smash power of a pointed map.
+* `Pointed.smashPow.map`: the smash power of a pointed map, and `Pointed.smashPowFunctor ι`, the
+  smash power as an endofunctor of pointed types.
 * `Pointed.smashPow.reindex`: the action of a bijection of index types.
 * `Pointed.smashPow.append`: concatenation of classes of families.
 
@@ -153,6 +154,20 @@ lemma map_id : map ι (𝟙 X) = 𝟙 (X.smashPow ι) := by
 lemma map_comp (g : X ⟶ Y) (h : Y ⟶ Z) : map ι (g ≫ h) = map ι g ≫ map ι h := by
   ext f
   simp [Function.comp_assoc]
+
+end smashPow
+
+/-- The smash power `X ↦ X^∧ι` as a functor of pointed types. -/
+@[expose, simps]
+noncomputable def smashPowFunctor (ι : Type v) : Pointed.{u} ⥤ Pointed.{max u v} where
+  obj X := X.smashPow ι
+  map g := smashPow.map ι g
+  map_id _ := smashPow.map_id
+  map_comp := smashPow.map_comp
+
+namespace smashPow
+
+variable {X Y Z : Pointed.{u}} {ι κ μ : Type v}
 
 /-- The action of a bijection of index types on smash powers, reindexing the coordinates. -/
 noncomputable def reindex (X : Pointed.{u}) (e : ι ≃ κ) : X.smashPow ι ⟶ X.smashPow κ :=

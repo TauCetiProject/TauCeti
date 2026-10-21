@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Circle
-public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Smash
-public import TauCeti.CategoryTheory.Category.Pointed.SmashPower
+public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Smash.Basic
+public import TauCeti.CategoryTheory.Category.Pointed.Smash.Power
 public import TauCeti.CategoryTheory.FiniteBijection
 
 /-!
@@ -37,6 +37,8 @@ symmetric sequences, and symmetric spectra are the modules over the sphere seque
 
 * `PointedSSet.smashPow X ι`: the smash power `X^∧ι`.
 * `PointedSSet.smashPowMk`: the class of a family of simplices.
+* `PointedSSet.smashPowLift`: the based map out of a smash power induced by degreewise functions
+  of families sending the families with a coordinate at the basepoint to the basepoint.
 * `PointedSSet.smashPowReindex`, `PointedSSet.smashPowReindexIso`: the action of a bijection of
   index types.
 * `PointedSSet.smashPowAppendIso`: concatenation `X^∧ι ⊗ X^∧κ ≅ X^∧(ι ⊕ κ)`.
@@ -67,23 +69,7 @@ variable (X : PointedSSet.{u}) {ι κ μ : Type}
 /-- The smash power `X^∧ι` of a pointed simplicial set, formed degreewise: its `n`-simplices are
 the basepoint and the families `ι → X_n` avoiding the basepoint in every coordinate. -/
 noncomputable def smashPow (ι : Type) : PointedSSet.{u} :=
-  Under.mk (Y :=
-    { obj n := Pointed.smashPow (Pointed.of (X.point n)) ι
-      map f := ↾(Pointed.smashPow.map ι ⟨X.right.map f, X.map_point f⟩).toFun
-      map_id n := by
-        ext a
-        induction a using Pointed.smashPow.ind with
-        | point => exact Pointed.Hom.map_point _
-        | mk f => simp [Function.comp_def]
-      map_comp f g := by
-        ext a
-        induction a using Pointed.smashPow.ind with
-        | point => simp [Pointed.Hom.map_point]
-        | mk h => simp [Function.comp_def] })
-    { app n := ↾fun _ ↦ (Pointed.smashPow (Pointed.of (X.point n)) ι).point
-      naturality n m f := by
-        ext a
-        exact (Pointed.Hom.map_point _).symm }
+  fromSimplicialPointed.obj (toSimplicialPointed.obj X ⋙ Pointed.smashPowFunctor ι)
 
 variable {X} {n m : SimplexCategoryᵒᵖ}
 
@@ -148,23 +134,6 @@ lemma smashPow_tensor_hom_ext {Y Z : PointedSSet.{u}} {f g : X.smashPow ι ⊗ Y
     | point => simp
     | mk y => exact h n x y
 
-/- The two constructions below assemble based maps out of a smash power from degreewise
-functions, stated on the simplices of the pointed simplicial sets themselves. -/
-
-/-- A based map of pointed simplicial sets from based degreewise functions commuting with the
-simplicial operators. -/
-private def homOfFun {Y Z : PointedSSet.{u}} (φ : ∀ n, Y.right.obj n → Z.right.obj n)
-    (hpt : ∀ n, φ n (Y.point n) = Z.point n)
-    (nat : ∀ n m (g : n ⟶ m) y, φ m (Y.right.map g y) = Z.right.map g (φ n y)) : Y ⟶ Z :=
-  Under.homMk
-    { app n := ↾(φ n)
-      naturality n m g := by
-        ext y
-        exact nat n m g y }
-    (by
-      ext n a
-      exact ((congrArg (φ n) (hom_app Y n a)).trans (hpt n)).trans (hom_app Z n a).symm)
-
 /-- The function on `n`-simplices out of a smash power induced by a function of families sending
 the families with a coordinate at the basepoint to the basepoint. -/
 private noncomputable def liftAt {Z : PointedSSet.{u}} (n : SimplexCategoryᵒᵖ)
@@ -182,37 +151,61 @@ private lemma liftAt_point {Z : PointedSSet.{u}} (F : (ι → X.right.obj n) →
     liftAt n F hF ((X.smashPow ι).point n) = Z.point n :=
   (congrArg _ smashPow_point).trans (Pointed.Hom.map_point _)
 
+/-- The based map out of the smash power `X^∧ι` induced by degreewise functions of families that
+send the families with a coordinate at the basepoint to the basepoint and commute with the
+simplicial operators. -/
+noncomputable def smashPowLift {Z : PointedSSet.{u}}
+    (F : ∀ n, (ι → X.right.obj n) → Z.right.obj n)
+    (hF : ∀ n f i, f i = X.point n → F n f = Z.point n)
+    (nat : ∀ n m (g : n ⟶ m) f, F m (X.right.map g ∘ f) = Z.right.map g (F n f)) :
+    X.smashPow ι ⟶ Z :=
+  Under.homMk
+    { app n := ↾(liftAt n (F n) (hF n))
+      naturality n m g := by
+        ext a
+        change liftAt m (F m) (hF m) ((X.smashPow ι).right.map g a) =
+          Z.right.map g (liftAt n (F n) (hF n) a)
+        induction a using smashPowMk_induction with
+        | point => rw [map_point, liftAt_point, liftAt_point, map_point]
+        | mk f => rw [map_smashPowMk, liftAt_smashPowMk, liftAt_smashPowMk, nat] }
+    (by
+      ext n a
+      exact ((congrArg _ (hom_app _ n a)).trans (liftAt_point _ _)).trans (hom_app Z n a).symm)
+
+@[simp]
+lemma smashPowLift_app_smashPowMk {Z : PointedSSet.{u}}
+    (F : ∀ n, (ι → X.right.obj n) → Z.right.obj n)
+    (hF : ∀ n f i, f i = X.point n → F n f = Z.point n)
+    (nat : ∀ n m (g : n ⟶ m) f, F m (X.right.map g ∘ f) = Z.right.map g (F n f))
+    (f : ι → X.right.obj n) :
+    (smashPowLift F hF nat).right.app n (smashPowMk f) = F n f :=
+  liftAt_smashPowMk _ _ f
+
 /-! ### Reindexing -/
 
 variable (X) in
 /-- The action of a bijection `e : ι ≃ κ` on smash powers, sending the class of a family `f` to
 the class of `f ∘ e.symm`. -/
 noncomputable def smashPowReindex (e : ι ≃ κ) : X.smashPow ι ⟶ X.smashPow κ :=
-  homOfFun (fun n ↦ liftAt n (fun f ↦ smashPowMk (f ∘ e.symm)) fun f i hi ↦
-      smashPowMk_eq_point_iff.2 ⟨e i, by simpa using hi⟩)
-    (fun _ ↦ liftAt_point _ _)
-    (fun n m g y ↦ by
-      induction y using smashPowMk_induction with
-      | point => rw [map_point, liftAt_point, liftAt_point, map_point]
-      | mk f =>
-        rw [map_smashPowMk, liftAt_smashPowMk, liftAt_smashPowMk, map_smashPowMk,
-          Function.comp_assoc])
+  fromSimplicialPointed.map
+    { app _ := Pointed.smashPow.reindex _ e
+      naturality _ _ g := Pointed.smashPow.map_reindex ((toSimplicialPointed.obj X).map g) e }
 
 @[simp]
 lemma smashPowReindex_app_smashPowMk (e : ι ≃ κ) (f : ι → X.right.obj n) :
     (X.smashPowReindex e).right.app n (smashPowMk f) = smashPowMk (f ∘ e.symm) :=
-  liftAt_smashPowMk _ _ f
+  Pointed.smashPow.reindex_mk (X := Pointed.of (X.point n)) e f
 
 @[simp]
-lemma smashPowReindex_refl : X.smashPowReindex (Equiv.refl ι) = 𝟙 _ := by
-  ext n f
-  simp
+lemma smashPowReindex_refl : X.smashPowReindex (Equiv.refl ι) = 𝟙 _ :=
+  (congrArg fromSimplicialPointed.map (NatTrans.ext (funext fun _ ↦
+    Pointed.smashPow.reindex_refl))).trans (fromSimplicialPointed.map_id _)
 
 @[simp]
 lemma smashPowReindex_trans (e : ι ≃ κ) (e' : κ ≃ μ) :
-    X.smashPowReindex (e.trans e') = X.smashPowReindex e ≫ X.smashPowReindex e' := by
-  ext n f
-  simp [Function.comp_assoc]
+    X.smashPowReindex (e.trans e') = X.smashPowReindex e ≫ X.smashPowReindex e' :=
+  (congrArg fromSimplicialPointed.map (NatTrans.ext (funext fun _ ↦
+    Pointed.smashPow.reindex_trans e e'))).trans (fromSimplicialPointed.map_comp _ _)
 
 variable (X) in
 /-- The isomorphism of smash powers induced by a bijection of index types. -/
@@ -257,28 +250,20 @@ variable (X ι κ) in
 /-- Splitting a family into its two blocks, the based map `X^∧(ι ⊕ κ) ⟶ X^∧ι ⊗ X^∧κ` inverse
 to concatenation. -/
 noncomputable def smashPowSplit : X.smashPow (ι ⊕ κ) ⟶ X.smashPow ι ⊗ X.smashPow κ :=
-  homOfFun (fun n ↦ liftAt n
-      (fun h ↦ smashMk (smashPowMk (h ∘ Sum.inl)) (smashPowMk (h ∘ Sum.inr)))
-      fun h i hi ↦ by
-        rcases i with i | i
-        · simp only [smashMk_eq_point_iff, smashPowMk_eq_point_iff]
-          exact .inl ⟨i, hi⟩
-        · simp only [smashMk_eq_point_iff, smashPowMk_eq_point_iff]
-          exact .inr ⟨i, hi⟩)
-    (fun _ ↦ liftAt_point _ _)
-    (fun n m g y ↦ by
-      induction y using smashPowMk_induction with
-      | point => rw [map_point, liftAt_point, liftAt_point, map_point]
-      | mk f =>
-        rw [map_smashPowMk, liftAt_smashPowMk, liftAt_smashPowMk, map_smashMk, map_smashPowMk,
-          map_smashPowMk]
-        simp only [Function.comp_assoc])
+  smashPowLift (fun _ h ↦ smashMk (smashPowMk (h ∘ Sum.inl)) (smashPowMk (h ∘ Sum.inr)))
+    (fun _ h i hi ↦ by
+      rcases i with i | i
+      · simp only [smashMk_eq_point_iff, smashPowMk_eq_point_iff]
+        exact .inl ⟨i, hi⟩
+      · simp only [smashMk_eq_point_iff, smashPowMk_eq_point_iff]
+        exact .inr ⟨i, hi⟩)
+    (fun _ _ _ _ ↦ by simp [Function.comp_assoc])
 
 @[simp]
 lemma smashPowSplit_app_smashPowMk (h : ι ⊕ κ → X.right.obj n) :
     (smashPowSplit X ι κ).right.app n (smashPowMk h) =
       smashMk (smashPowMk (h ∘ Sum.inl)) (smashPowMk (h ∘ Sum.inr)) :=
-  liftAt_smashPowMk _ _ h
+  smashPowLift_app_smashPowMk _ _ _ h
 
 variable (X ι κ) in
 /-- Concatenation of families identifies `X^∧ι ⊗ X^∧κ` with `X^∧(ι ⊕ κ)`. -/
@@ -302,17 +287,13 @@ variable (X ι) in
 /-- The based map `X^∧ι ⟶ S⁰` for empty `ι`, sending the class of the empty family to the
 non-basepoint simplex. -/
 noncomputable def smashPowToUnit [IsEmpty ι] : X.smashPow ι ⟶ 𝟙_ PointedSSet.{u} :=
-  homOfFun (fun n ↦ liftAt n (fun _ ↦ tensorUnitSimplex n) fun _ i ↦ isEmptyElim i)
-    (fun _ ↦ liftAt_point _ _)
-    (fun n m g y ↦ by
-      induction y using smashPowMk_induction with
-      | point => rw [map_point, liftAt_point, liftAt_point, map_point]
-      | mk f => rw [map_smashPowMk, liftAt_smashPowMk, liftAt_smashPowMk, map_tensorUnitSimplex])
+  smashPowLift (fun n _ ↦ tensorUnitSimplex n) (fun _ _ i ↦ isEmptyElim i)
+    (fun _ _ _ _ ↦ (map_tensorUnitSimplex _).symm)
 
 @[simp]
 lemma smashPowToUnit_app_smashPowMk [IsEmpty ι] (f : ι → X.right.obj n) :
     (smashPowToUnit X ι).right.app n (smashPowMk f) = tensorUnitSimplex n :=
-  liftAt_smashPowMk _ _ f
+  smashPowLift_app_smashPowMk _ _ _ f
 
 instance [IsEmpty ι] : IsIso (smashPowToUnit X ι) := by
   refine (isIso_iff_of_reflects_iso _ (Under.forget _)).1 ?_
@@ -361,7 +342,7 @@ noncomputable abbrev smashPowFunctor : FiniteBijection ⥤ PointedSSet.{u} where
 
 /-- The block-concatenation isomorphism `X^∧k ⊗ X^∧l ≅ X^∧(k + l)`. -/
 private noncomputable def μIso (X : PointedSSet.{u}) (k l : FiniteBijection) :
-    (smashPowFunctor X).obj k ⊗ (smashPowFunctor X).obj l ≅ (smashPowFunctor X).obj (k ⊗ l) :=
+    X.smashPow (Fin k.len) ⊗ X.smashPow (Fin l.len) ≅ X.smashPow (Fin (k ⊗ l).len) :=
   smashPowAppendIso X (Fin k.len) (Fin l.len) ≪≫ X.smashPowReindexIso finSumFinEquiv
 
 private lemma μIso_hom_app {k l : FiniteBijection} (x : Fin k.len → X.right.obj n)
@@ -379,11 +360,12 @@ private lemma μIso_hom_app {k l : FiniteBijection} (x : Fin k.len → X.right.o
 
 /-- The identification `S⁰ ≅ X^∧0`. -/
 private noncomputable def εIso (X : PointedSSet.{u}) :
-    𝟙_ PointedSSet.{u} ≅ (smashPowFunctor X).obj (𝟙_ FiniteBijection) :=
+    𝟙_ PointedSSet.{u} ≅ X.smashPow (Fin (𝟙_ FiniteBijection).len) :=
   smashPowUnitIso X (Fin 0)
 
 private lemma εIso_hom_app :
-    (εIso X).hom.right.app n (tensorUnitSimplex n) = smashPowMk Fin.elim0 :=
+    (εIso X).hom.right.app n (tensorUnitSimplex n) =
+      smashPowMk (ι := Fin (𝟙_ FiniteBijection).len) Fin.elim0 :=
   (smashPowUnitIso_hom_app_tensorUnitSimplex (ι := Fin 0)).trans
     (congrArg smashPowMk (Subsingleton.elim _ _))
 
@@ -399,15 +381,13 @@ noncomputable def smashPowFunctorCoreMonoidal : (smashPowFunctor X).CoreMonoidal
   εIso := εIso X
   μIso := μIso X
   μIso_hom_natural_left f l := smashPow_tensor_hom_ext fun n x y ↦ by
-    simp only [Under.comp_right, NatTrans.comp_app, ConcreteCategory.comp_apply,
-      whiskerRight_app_smashMk, smashPowReindex_app_smashPowMk]
-    rw [μIso_hom_app, μIso_hom_app, smashPowReindex_app_smashPowMk]
+    simp only [comp_right_app_apply, whiskerRight_app_smashMk, smashPowReindex_app_smashPowMk,
+      μIso_hom_app]
     refine smashPowMk_eq_smashPowMk_comp_symm _ fun i ↦ ?_
     induction i using Fin.addCases <;> simp
   μIso_hom_natural_right k f := smashPow_tensor_hom_ext fun n x y ↦ by
-    simp only [Under.comp_right, NatTrans.comp_app, ConcreteCategory.comp_apply,
-      whiskerLeft_app_smashMk, smashPowReindex_app_smashPowMk]
-    rw [μIso_hom_app, μIso_hom_app, smashPowReindex_app_smashPowMk]
+    simp only [comp_right_app_apply, whiskerLeft_app_smashMk, smashPowReindex_app_smashPowMk,
+      μIso_hom_app]
     refine smashPowMk_eq_smashPowMk_comp_symm _ fun i ↦ ?_
     induction i using Fin.addCases <;> simp
   associativity k l p := by
@@ -422,10 +402,8 @@ noncomputable def smashPowFunctorCoreMonoidal : (smashPowFunctor X).CoreMonoidal
         induction z using smashPowMk_induction with
         | point => simp
         | mk z =>
-          simp only [Under.comp_right, NatTrans.comp_app, ConcreteCategory.comp_apply,
-            whiskerLeft_app_smashMk, whiskerRight_app_smashMk, associator_hom_app_smashMk]
-          rw [μIso_hom_app, μIso_hom_app, μIso_hom_app, μIso_hom_app,
-            smashPowReindex_app_smashPowMk]
+          simp only [comp_right_app_apply, whiskerLeft_app_smashMk, whiskerRight_app_smashMk,
+            associator_hom_app_smashMk, smashPowReindex_app_smashPowMk, μIso_hom_app]
           refine (smashPowMk_eq_smashPowMk_comp_symm _ fun i ↦ ?_).symm
           induction i using Fin.addCases with
           | left i => induction i using Fin.addCases <;> simp
@@ -437,13 +415,12 @@ noncomputable def smashPowFunctorCoreMonoidal : (smashPowFunctor X).CoreMonoidal
     induction x using smashPowMk_induction with
     | point => simp
     | mk x =>
-      simp only [Under.comp_right, NatTrans.comp_app, ConcreteCategory.comp_apply,
-        leftUnitor_hom_app_smashMk, whiskerRight_app_smashMk]
-      rw [εIso_hom_app, μIso_hom_app, smashPowReindex_app_smashPowMk]
+      simp only [comp_right_app_apply, leftUnitor_hom_app_smashMk, whiskerRight_app_smashMk,
+        smashPowReindex_app_smashPowMk, εIso_hom_app, μIso_hom_app]
       refine smashPowMk_eq_smashPowMk_comp_symm _ fun i ↦ ?_
       induction i using Fin.addCases with
       | left i => exact i.elim0
-      | right i => simp
+      | right i => simp only [FiniteBijection.toEquiv_leftUnitor_hom_natAdd, Fin.append_right]
   right_unitality k := by
     ext n x s
     rcases eq_point_or_eq_tensorUnitSimplex s with rfl | rfl
@@ -451,12 +428,11 @@ noncomputable def smashPowFunctorCoreMonoidal : (smashPowFunctor X).CoreMonoidal
     induction x using smashPowMk_induction with
     | point => simp
     | mk x =>
-      simp only [Under.comp_right, NatTrans.comp_app, ConcreteCategory.comp_apply,
-        rightUnitor_hom_app_smashMk, whiskerLeft_app_smashMk]
-      rw [εIso_hom_app, μIso_hom_app, smashPowReindex_app_smashPowMk]
+      simp only [comp_right_app_apply, rightUnitor_hom_app_smashMk, whiskerLeft_app_smashMk,
+        smashPowReindex_app_smashPowMk, εIso_hom_app, μIso_hom_app]
       refine smashPowMk_eq_smashPowMk_comp_symm _ fun i ↦ ?_
       induction i using Fin.addCases with
-      | left i => simp
+      | left i => simp only [FiniteBijection.toEquiv_rightUnitor_hom_castAdd, Fin.append_left]
       | right i => exact i.elim0
 
 noncomputable instance : (smashPowFunctor X).Monoidal :=
@@ -479,6 +455,10 @@ lemma smashPowFunctor_ε :
 @[simp]
 lemma smashPowFunctor_η :
     Functor.OplaxMonoidal.η (smashPowFunctor X) = smashPowToUnit X (Fin 0) := (rfl)
+
+/- The next two lemmas are rewrite lemmas, not `simp` lemmas: `simp` cannot match a left-hand side
+whose types mention the objects of the abbreviation `smashPowFunctor`, so it reaches `μ` and `δ`
+through `smashPowFunctor_μ` and `smashPowFunctor_δ` instead. -/
 
 /-- The multiplication of the symmetric sequence of smash powers concatenates families. -/
 lemma smashPowFunctor_μ_app_smashMk {k l : FiniteBijection} (x : Fin k.len → X.right.obj n)
@@ -505,8 +485,7 @@ lemma smashPowFunctor_δ_app_smashPowMk {k l : FiniteBijection}
 `X^∧k ∧ X^∧l`, so the symmetric sequence of smash powers is a braided monoidal functor. -/
 noncomputable instance : (smashPowFunctor X).Braided where
   braided k l := smashPow_tensor_hom_ext fun n x y ↦ by
-    simp only [Under.comp_right, NatTrans.comp_app, ConcreteCategory.comp_apply,
-      braiding_hom_app_smashMk]
+    simp only [comp_right_app_apply, braiding_hom_app_smashMk]
     rw [smashPowFunctor_μ_app_smashMk, smashPowFunctor_μ_app_smashMk,
       smashPowReindex_app_smashPowMk]
     refine (smashPowMk_eq_smashPowMk_comp_symm _ fun i ↦ ?_).symm
