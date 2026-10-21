@@ -101,7 +101,7 @@ theorem posDef_toQuadraticMap_add_flip_iff {R M : Type*} [CommSemiring R] [Linea
     (B + B.flip).toQuadraticMap.PosDef ↔ B.toQuadraticMap.PosDef := by
   have hflip : B.flip.toQuadraticMap = B.toQuadraticMap := by
     ext x
-    rfl
+    simp only [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.BilinForm.flip_apply]
   rw [LinearMap.BilinMap.toQuadraticMap_add, hflip, ← two_smul R B.toQuadraticMap]
   exact QuadraticMap.posDef_smul_iff_of_pos _ (a := (2 : R)) zero_lt_two
 
