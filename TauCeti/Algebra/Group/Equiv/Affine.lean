@@ -35,6 +35,8 @@ variable {T : Type*}
 
 /-- View an additive automorphism as an element of the endomorphism monoid, so that its
 powers and geometric sums use composition and pointwise addition. -/
+-- The explicit result type is needed at this pin: `A.toAddMonoidHom` has type `T →+ T`,
+-- which has no composition-power instance, even with an `AddMonoid.End T` type ascription.
 def toEnd [AddZeroClass T] (A : T ≃+ T) : AddMonoid.End T :=
   A.toAddMonoidHom
 
@@ -46,12 +48,16 @@ variable [AddCommGroup T]
 /-- For an involution, the period-two norm followed by the difference map is zero. -/
 theorem one_sub_comp_one_add_of_sq_eq_one (A : AddMonoid.End T) (hA : A ^ 2 = 1) :
     (1 - A).comp (1 + A) = 0 := by
+  -- Mathlib has no bundled composition/product rewrite at this pin; multiplication is
+  -- defined as composition, so expose it to apply the geometric-sum identity.
   change (1 - A) * (1 + A) = 0
   rw [add_comm (1 : AddMonoid.End T) A, ← geom_sum_two, mul_neg_geom_sum, hA, sub_self]
 
 /-- For an involution, the difference map followed by the period-two norm is zero. -/
 theorem one_add_comp_one_sub_of_sq_eq_one (A : AddMonoid.End T) (hA : A ^ 2 = 1) :
     (1 + A).comp (1 - A) = 0 := by
+  -- Mathlib has no bundled composition/product rewrite at this pin; multiplication is
+  -- defined as composition, so expose it to apply the geometric-sum identity.
   change (1 + A) * (1 - A) = 0
   rw [add_comm (1 : AddMonoid.End T) A, ← geom_sum_two, geom_sum_mul_neg, hA, sub_self]
 
@@ -69,6 +75,7 @@ theorem affinePerm_symm_apply (A : T ≃+ T) (t x : T) :
   simp [affinePerm, sub_eq_add_neg]
 
 /-- Composing affine permutations composes their linear parts and transports the twist. -/
+@[simp]
 theorem affinePerm_mul (B A : T ≃+ T) (s t : T) :
     affinePerm B s * affinePerm A t = affinePerm (A.trans B) (B t + s) := by
   ext x
@@ -137,6 +144,8 @@ theorem affinePerm_pow_apply_eq_self_iff (A : T ≃+ T) (t : T) (k : ℕ) (x : T
     (affinePerm A t ^ k) x = x ↔
       (1 - (toEnd A) ^ k) x = (∑ i ∈ Finset.range k, (toEnd A) ^ i) t := by
   rw [affinePerm_pow_apply]
+  -- `AddMonoidHom.sub_apply` does not rewrite the endomorphism ring's subtraction at
+  -- this pin. Expose its pointwise definition and the composition-power coercion.
   change A^[k] x + (∑ i ∈ Finset.range k, (toEnd A) ^ i) t = x ↔
     x - A^[k] x = (∑ i ∈ Finset.range k, (toEnd A) ^ i) t
   rw [sub_eq_iff_eq_add']
@@ -147,9 +156,8 @@ corresponding difference map. This applies to every power, including composite p
 theorem exists_affinePerm_pow_fixedPoint_iff (A : T ≃+ T) (t : T) (k : ℕ) :
     (∃ x, (affinePerm A t ^ k) x = x) ↔
       (∑ i ∈ Finset.range k, (toEnd A) ^ i) t ∈ (1 - (toEnd A) ^ k).range := by
-  change (∃ x, (affinePerm A t ^ k) x = x) ↔
-    ∃ x, (1 - (toEnd A) ^ k) x = (∑ i ∈ Finset.range k, (toEnd A) ^ i) t
-  simp only [affinePerm_pow_apply_eq_self_iff]
+  -- Range membership is definitionally existence of a preimage; transport that witness.
+  exact exists_congr fun x ↦ affinePerm_pow_apply_eq_self_iff A t k x
 
 /-- No power `k` with `0 < k < m` has a fixed point iff, for each such `k`, the partial
 norm `N_k t` is not in the range of `1 - A^k`. -/
@@ -163,6 +171,8 @@ theorem affinePerm_pow_fixedPoint_free_iff (A : T ≃+ T) (t : T) (m : ℕ) :
 theorem affinePerm_conj_addRight (A : T ≃+ T) (t b : T) :
     Equiv.addRight b * affinePerm A t * (Equiv.addRight b)⁻¹ =
       affinePerm A (t + (1 - toEnd A) b) := by
+  -- As in the fixed-point proof, expose pointwise subtraction in `AddMonoid.End`;
+  -- `AddMonoidHom.sub_apply` does not rewrite through its ring instance at this pin.
   change Equiv.addRight b * affinePerm A t * (Equiv.addRight b)⁻¹ =
     affinePerm A (t + (b - A b))
   ext x
