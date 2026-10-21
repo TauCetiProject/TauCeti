@@ -35,14 +35,16 @@ these results say that `P(λ)` is parabolic for every diagonal cocharacter of `G
 
 ## Main declarations
 
-* `TauCeti.GeneralLinear.weightParabolicDefiningHopfIdeal_le_conjugate_definingHopfIdeal`: if
-  `w ∘ τ` is antitone, the weight parabolic contains the conjugate of the upper-triangular
-  subgroup by the permutation matrix of `τ`.
-* `TauCeti.GeneralLinear.weightParabolicDefiningHopfIdeal_le_definingHopfIdeal`: for antitone
-  `w`, the weight parabolic contains the upper-triangular subgroup.
-* `TauCeti.GeneralLinear.isParabolic_weightParabolicDefiningHopfIdeal` and
-  `TauCeti.GeneralLinear.isParabolicOverAlgClosed_weightParabolicDefiningHopfIdeal`: every
-  weight parabolic is a parabolic subgroup of `GL_N`.
+All declarations below are in the `TauCeti.GeneralLinear` namespace.
+
+* `weightParabolicDefiningHopfIdeal_le_conjugate_upperTriangular_definingHopfIdeal`: if `w ∘ τ`
+  is antitone, the weight parabolic contains the conjugate of the upper-triangular subgroup by the
+  permutation matrix of `τ`.
+* `weightParabolicDefiningHopfIdeal_le_upperTriangular_definingHopfIdeal`: for antitone `w`, the
+  weight parabolic contains the upper-triangular subgroup.
+* `isParabolic_weightParabolicDefiningHopfIdeal` and
+  `isParabolicOverAlgClosed_weightParabolicDefiningHopfIdeal`: every weight parabolic is a
+  parabolic subgroup of `GL_N`.
 
 ## References
 
@@ -66,8 +68,8 @@ variable (R : Type u) [CommRing R] {N : ℕ}
 antitone, the closed subgroup cut out by the weight-parabolic ideal of `w` contains the conjugate
 of the upper-triangular subgroup by the permutation matrix of `τ`. Containment of closed
 subgroups is the reversed inequality of Hopf ideals. -/
-theorem weightParabolicDefiningHopfIdeal_le_conjugate_definingHopfIdeal {w : Fin N → ℤ}
-    {τ : Equiv.Perm (Fin N)} (hτ : Antitone (w ∘ τ)) :
+theorem weightParabolicDefiningHopfIdeal_le_conjugate_upperTriangular_definingHopfIdeal
+    {w : Fin N → ℤ} {τ : Equiv.Perm (Fin N)} (hτ : Antitone (w ∘ τ)) :
     weightParabolicDefiningHopfIdeal R w ≤
       (UpperTriangular.definingHopfIdeal R N).conjugate
         (generalLinearToPoint (R := R) N (permutationGL τ)) := by
@@ -108,11 +110,11 @@ theorem weightParabolicDefiningHopfIdeal_le_conjugate_definingHopfIdeal {w : Fin
 
 /-- **Standard weight parabolics contain the upper-triangular subgroup.** For an antitone weight
 `w`, every upper-triangular matrix lies in the weight parabolic of `w`. -/
-theorem weightParabolicDefiningHopfIdeal_le_definingHopfIdeal {w : Fin N → ℤ}
-    (hw : Antitone w) :
+theorem weightParabolicDefiningHopfIdeal_le_upperTriangular_definingHopfIdeal
+    {w : Fin N → ℤ} (hw : Antitone w) :
     weightParabolicDefiningHopfIdeal R w ≤ UpperTriangular.definingHopfIdeal R N := by
-  have h := weightParabolicDefiningHopfIdeal_le_conjugate_definingHopfIdeal R
-    (τ := 1) (w := w) hw
+  have h := weightParabolicDefiningHopfIdeal_le_conjugate_upperTriangular_definingHopfIdeal R
+    (τ := 1) (w := w) (by rwa [Equiv.Perm.coe_one, Function.comp_id])
   rwa [map_one, ← pointsMulEquiv_symm_apply, map_one, HopfIdeal.conjugate_one] at h
 
 variable (k : Type u) [Field k]
@@ -122,7 +124,7 @@ and contains a conjugate of the upper-triangular Borel subgroup. -/
 theorem isParabolic_weightParabolicDefiningHopfIdeal (w : Fin N → ℤ) :
     HopfIdeal.IsParabolic k (coordinateHopfAlgebra k N) (weightParabolicDefiningHopfIdeal k w) :=
   ((UpperTriangular.isBorel_definingHopfIdeal k N).conjugate _).isParabolic.of_le
-    (weightParabolicDefiningHopfIdeal_le_conjugate_definingHopfIdeal k
+    (weightParabolicDefiningHopfIdeal_le_conjugate_upperTriangular_definingHopfIdeal k
       (Tuple.antitone_sortDesc w))
     (smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra k w)
 
@@ -135,7 +137,7 @@ theorem isParabolicOverAlgClosed_weightParabolicDefiningHopfIdeal [IsAlgClosed k
       (weightParabolicDefiningHopfIdeal k w) :=
   ((UpperTriangular.isBorelOverAlgClosed_definingHopfIdeal k N).conjugate
       _).isParabolicOverAlgClosed.of_le
-    (weightParabolicDefiningHopfIdeal_le_conjugate_definingHopfIdeal k
+    (weightParabolicDefiningHopfIdeal_le_conjugate_upperTriangular_definingHopfIdeal k
       (Tuple.antitone_sortDesc w))
     (smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra k w)
 
