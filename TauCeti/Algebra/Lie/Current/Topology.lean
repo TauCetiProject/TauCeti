@@ -38,8 +38,6 @@ of `∑ᵢ Xⁱ ⊗ bᵢ` form a Cauchy sequence without a limit in the tensor p
   neighbourhoods of zero.
 * `TauCeti.CurrentAlgebra.tendsto_nhds_iff`: convergence of currents in terms of orders.
 * `TauCeti.CurrentAlgebra.continuous_lie`: the bracket of formal currents is continuous.
-* `TauCeti.CurrentAlgebra.exists_forall_coeff_eq`: over a finite free coefficient module, every
-  coefficient family vanishing below some order is the coefficient family of a current.
 * `TauCeti.CurrentAlgebra.instT2Space`, `TauCeti.CurrentAlgebra.instCompleteSpace`: the topology is
   Hausdorff, and complete over a finite free coefficient module.
 * `TauCeti.CurrentAlgebra.denseRange_ofLoop`: polynomial currents are dense.
@@ -168,19 +166,6 @@ instance instT2Space [Module.Free R L] : T2Space (currentAlgebra R L) := by
   obtain ⟨N, hN⟩ : ∃ N, u ∉ orderSubmodule R L N := by
     simpa only [Submodule.mem_iInf, not_forall] using hu'
   exact ⟨_, orderSubmodule_mem_nhds_zero R L N, hN⟩
-
-/-- Over a finite free coefficient module, every coefficient family vanishing below some order is
-the coefficient family of a formal current. -/
-theorem exists_forall_coeff_eq [Module.Free R L] [Module.Finite R L] (c : ℤ → L) {a : ℤ}
-    (hc : ∀ n < a, c n = 0) : ∃ u : currentAlgebra R L, ∀ n, coeff R L n u = c n := by
-  classical
-  let b := Module.Free.chooseBasis R L
-  have hbdd (i : Module.Free.ChooseBasisIndex R L) :
-      BddBelow (Function.support fun n ↦ b.repr (c n) i) :=
-    ⟨a, fun n hn ↦ not_lt.mp fun h ↦ hn (by simp [hc n h])⟩
-  refine ⟨∑ i, HahnSeries.ofSuppBddBelow _ (hbdd i) ⊗ₜ b i, fun n ↦ ?_⟩
-  simp only [map_sum, coeff_tmul, HahnSeries.coeff_ofSuppBddBelow]
-  exact b.sum_repr (c n)
 
 /-- Formal currents carry the uniform structure of their topological additive group. -/
 instance : UniformSpace (currentAlgebra R L) :=
