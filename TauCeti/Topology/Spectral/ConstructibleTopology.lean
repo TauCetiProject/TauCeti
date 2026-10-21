@@ -5,17 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Connected.Separation
 public import Mathlib.Topology.Spectral.ConstructibleTopology
 public import Mathlib.Topology.Spectral.Prespectral
 import Mathlib.Topology.WithTopology
 
 /-!
-# Maps and generic points for the constructible topology
+# Maps, generic points and separation for the constructible topology
 
 The constructible topology refines the given topology on a prespectral space. Spectral maps
 are continuous for the constructible topologies, and every generic point of the closure of a
 subset lies in its constructible closure. These facts let pro-constructible subspaces inherit
-compactness and quasi-sobriety under their respective ambient hypotheses.
+compactness and quasi-sobriety under their respective ambient hypotheses. On a T₀ prespectral
+space the constructible topology is totally separated, which makes compact subsets of it closed.
 
 ## Main results
 
@@ -27,10 +29,17 @@ compactness and quasi-sobriety under their respective ambient hypotheses.
   constructible topologies.
 * `IsGenericPoint.mem_closure_constructibleTopology`: a generic point of the closure of a
   subset lies in its constructible closure, in any topological space.
+* `IsCompact.isClopen_preimage_ofTopology`: a quasi-compact open subset is clopen in
+  `WithConstructibleTopology X`.
+* `WithConstructibleTopology.instTotallySeparatedSpace`: the constructible topology of a T₀
+  prespectral space is totally separated, hence Hausdorff and totally disconnected. On a spectral
+  space it is also compact (`compactSpace_withConstructibleTopology`), so it is profinite.
 
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, §3.
+* P. Scholze, *Étale cohomology of diamonds*, arXiv:1709.07343, §2 (the paragraph after
+  Theorem 2.2).
 -/
 
 public section
@@ -90,3 +99,32 @@ theorem IsGenericPoint.mem_closure_constructibleTopology {s : Set X} {η : X}
   · exact mem_sInter.1 hxO U ⟨hUF, hUopen⟩
   · exact (hη.mem_closed_set_iff hUclosed).1 (mem_sInter.1 hηF U hUF)
       (subset_closure hxs)
+
+/-! ### Separation of the constructible topology -/
+
+/-- The preimage in `WithConstructibleTopology X` of a quasi-compact open subset of `X` is
+clopen. -/
+theorem IsCompact.isClopen_preimage_ofTopology {s : Set X} (hs : IsCompact s) (ho : IsOpen s) :
+    IsClopen (WithTopology.ofTopology ⁻¹' s : Set (WithConstructibleTopology X)) :=
+  @IsClopen.preimage _ _ _ (constructibleTopology X) _
+    (hs.isClopen_constructibleTopology_of_isOpen ho) _ (WithTopology.continuous_ofTopology _)
+
+/-- The constructible topology of a T₀ prespectral space is totally separated. Hence it is
+Hausdorff (`TotallySeparatedSpace.t2Space`) and totally disconnected; on a spectral space it is
+moreover compact (`compactSpace_withConstructibleTopology`), that is, profinite. -/
+instance WithConstructibleTopology.instTotallySeparatedSpace [PrespectralSpace X] [T0Space X] :
+    TotallySeparatedSpace (WithConstructibleTopology X) := by
+  -- Distinct points are separated by a quasi-compact open subset, which is clopen for the
+  -- constructible topology: shrink an open set containing exactly one of them.
+  have hsep {a b : X} {U : Set X} (hUo : IsOpen U) (ha : a ∈ U) (hb : b ∉ U) :
+      ∃ V : Set X, IsOpen V ∧ IsCompact V ∧ a ∈ V ∧ b ∉ V := by
+    obtain ⟨V, ⟨hVo, hVc⟩, haV, hVU⟩ :=
+      PrespectralSpace.isTopologicalBasis.exists_subset_of_mem_open ha hUo
+    exact ⟨V, hVo, hVc, haV, fun hbV ↦ hb (hVU hbV)⟩
+  refine totallySeparatedSpace_iff_exists_isClopen.2 fun x y hxy ↦ ?_
+  obtain ⟨U, hUo, ⟨hx, hy⟩ | ⟨hy, hx⟩⟩ :=
+    exists_isOpen_xor_mem ((WithTopology.ofTopology_injective _).ne hxy)
+  · obtain ⟨V, hVo, hVc, hxV, hyV⟩ := hsep hUo hx hy
+    exact ⟨_, hVc.isClopen_preimage_ofTopology hVo, hxV, hyV⟩
+  · obtain ⟨V, hVo, hVc, hyV, hxV⟩ := hsep hUo hy hx
+    exact ⟨_, (hVc.isClopen_preimage_ofTopology hVo).compl, hxV, fun h ↦ h hyV⟩
