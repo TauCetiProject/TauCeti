@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Network.MinimumCut.Symmetric
+import Mathlib.Data.Set.Card
 
 /-!
 # Non-crossing minimum cuts
@@ -17,6 +18,13 @@ also lets them be uncrossed by the two set differences.
 The main result is the non-crossing lemma. If two vertices lie on the same side of a minimum
 `s`–`t` cut, they have a minimum cut with one side contained in that `s`–`t` side. This is a basic
 ingredient in constructions of Gomory–Hu cut trees.
+
+Those constructions maintain a whole family of pairwise non-crossing minimum cuts. Two cuts
+cross when each side of one meets each side of the other; representing every cut by its side
+avoiding a fixed root vertex turns a non-crossing family into a laminar one, whose members are
+pairwise nested or disjoint. Uncrossing by union preserves non-crossing, which gives the
+multi-cut non-crossing lemma: if no member of such a family separates `s` from `t`, some minimum
+`s`–`t` cut crosses none of its members.
 
 ## References
 
@@ -112,6 +120,249 @@ theorem IsMinimum.exists_isMinimum_subset (hf : IsSymmSubmodular f)
     exact ⟨X ∩ S, inter_subset_right, Or.inl hmin.2⟩
 
 end LinearOrder
+
+/-!
+## Laminar and crossing cuts
+
+A family of sets is laminar when its members are pairwise nested or disjoint. Two cuts, viewed as
+bipartitions, cross when each side of one meets each side of the other. Choosing for every cut
+its side avoiding a fixed root vertex turns a pairwise non-crossing family of cuts into a laminar
+family. This lets uncrossing arguments for symmetric set functions work with laminar families.
+-/
+
+section Laminar
+
+/-- Two sets are nested or disjoint when one contains the other or they do not meet. A family
+is laminar when its members are pairwise nested or disjoint. -/
+def NestedOrDisjoint (S T : Finset V) : Prop := S ⊆ T ∨ T ⊆ S ∨ Disjoint S T
+
+/-- Two sets are nested or disjoint exactly when one contains the other or they do not meet. -/
+theorem nestedOrDisjoint_def {S T : Finset V} :
+    NestedOrDisjoint S T ↔ S ⊆ T ∨ T ⊆ S ∨ Disjoint S T := Iff.rfl
+
+/-- A set is nested with every superset. -/
+theorem NestedOrDisjoint.of_subset {S T : Finset V} (h : S ⊆ T) : NestedOrDisjoint S T :=
+  Or.inl h
+
+/-- A set is nested with every subset. -/
+theorem NestedOrDisjoint.of_superset {S T : Finset V} (h : T ⊆ S) : NestedOrDisjoint S T :=
+  Or.inr (Or.inl h)
+
+/-- Disjoint sets are nested or disjoint. -/
+theorem NestedOrDisjoint.of_disjoint {S T : Finset V} (h : Disjoint S T) :
+    NestedOrDisjoint S T :=
+  Or.inr (Or.inr h)
+
+/-- Being nested or disjoint is a symmetric relation. -/
+theorem nestedOrDisjoint_comm {S T : Finset V} :
+    NestedOrDisjoint S T ↔ NestedOrDisjoint T S := by
+  simp only [NestedOrDisjoint, disjoint_comm (a := S)]
+  tauto
+
+/-- Being nested or disjoint is a symmetric relation. -/
+theorem NestedOrDisjoint.symm {S T : Finset V} (h : NestedOrDisjoint S T) :
+    NestedOrDisjoint T S :=
+  nestedOrDisjoint_comm.mp h
+
+variable [DecidableEq V]
+
+/-- Intersecting two sets preserves being nested with or disjoint from a third set. -/
+theorem NestedOrDisjoint.inter {S T U : Finset V} (hS : NestedOrDisjoint S U)
+    (hT : NestedOrDisjoint T U) : NestedOrDisjoint (S ∩ T) U := by
+  simp only [NestedOrDisjoint, subset_iff, disjoint_left, mem_inter] at *
+  grind
+
+/-- The union of two meeting sets is nested with or disjoint from every set that is nested with
+or disjoint from both of them. Without a common element this fails: `{1}` and `{2}` are nested
+with or disjoint from `{1, 3}`, but `{1, 2}` is not. -/
+theorem NestedOrDisjoint.union {S T U : Finset V} (hST : (S ∩ T).Nonempty)
+    (hS : NestedOrDisjoint S U) (hT : NestedOrDisjoint T U) :
+    NestedOrDisjoint (S ∪ T) U := by
+  obtain ⟨x, hx⟩ := hST
+  simp only [NestedOrDisjoint, subset_iff, disjoint_left, mem_inter, mem_union] at *
+  grind
+
+end Laminar
+
+section Crossing
+
+/-- Two cuts `(S, Sᶜ)` and `(T, Tᶜ)` cross when each side of one meets each side of the other. -/
+def Crosses (S T : Finset V) : Prop :=
+  (∃ v ∈ S, v ∈ T) ∧ (∃ v ∈ S, v ∉ T) ∧ (∃ v ∈ T, v ∉ S) ∧ ∃ v, v ∉ S ∧ v ∉ T
+
+/-- Two cuts cross exactly when each side of one contains a vertex of each side of the other. -/
+theorem crosses_def {S T : Finset V} :
+    Crosses S T ↔
+      (∃ v ∈ S, v ∈ T) ∧ (∃ v ∈ S, v ∉ T) ∧ (∃ v ∈ T, v ∉ S) ∧ ∃ v, v ∉ S ∧ v ∉ T :=
+  Iff.rfl
+
+/-- Two cuts cross exactly when the four intersections of their sides are nonempty. -/
+theorem crosses_iff [Fintype V] [DecidableEq V] {S T : Finset V} :
+    Crosses S T ↔
+      (S ∩ T).Nonempty ∧ (S \ T).Nonempty ∧ (T \ S).Nonempty ∧ (Sᶜ ∩ Tᶜ).Nonempty := by
+  simp [Crosses, Finset.Nonempty]
+
+/-- Crossing is a symmetric relation. -/
+theorem crosses_comm {S T : Finset V} : Crosses S T ↔ Crosses T S := by
+  simp only [Crosses]
+  grind
+
+/-- Crossing is a symmetric relation. -/
+theorem Crosses.symm {S T : Finset V} (h : Crosses S T) : Crosses T S :=
+  crosses_comm.mp h
+
+/-- Crossing depends only on the bipartition, not on the side chosen for the first cut. -/
+@[simp] theorem crosses_compl_left [Fintype V] [DecidableEq V] {S T : Finset V} :
+    Crosses Sᶜ T ↔ Crosses S T := by
+  simp only [Crosses, mem_compl, not_not]
+  grind
+
+/-- Crossing depends only on the bipartition, not on the side chosen for the second cut. -/
+@[simp] theorem crosses_compl_right [Fintype V] [DecidableEq V] {S T : Finset V} :
+    Crosses S Tᶜ ↔ Crosses S T := by
+  rw [crosses_comm, crosses_compl_left, crosses_comm]
+
+/-- Nested or disjoint sets do not cross. -/
+theorem NestedOrDisjoint.not_crosses {S T : Finset V} (h : NestedOrDisjoint S T) :
+    ¬Crosses S T := by
+  simp only [NestedOrDisjoint, Crosses, subset_iff, disjoint_left] at *
+  grind
+
+/-- **Root convention.** Two sets avoiding a common vertex do not cross exactly when they are
+nested or disjoint: their union cannot cover all vertices. -/
+theorem not_crosses_iff_nestedOrDisjoint {r : V} {S T : Finset V} (hS : r ∉ S) (hT : r ∉ T) :
+    ¬Crosses S T ↔ NestedOrDisjoint S T := by
+  refine ⟨fun h ↦ ?_, NestedOrDisjoint.not_crosses⟩
+  simp only [NestedOrDisjoint, Crosses, subset_iff, disjoint_left] at *
+  grind
+
+/-- **Uncrossing preserves non-crossing.** The union of two meeting sets crosses no cut that
+neither of them crosses. -/
+theorem not_crosses_union [DecidableEq V] {S T U : Finset V} (hST : (S ∩ T).Nonempty)
+    (hSU : ¬Crosses S U) (hTU : ¬Crosses T U) : ¬Crosses (S ∪ T) U := by
+  obtain ⟨x, hx⟩ := hST
+  simp only [Crosses, mem_inter, mem_union] at *
+  grind
+
+variable [Fintype V] [DecidableEq V]
+
+/-- The side of the cut `(S, Sᶜ)` not containing the root vertex `r`. -/
+def sideAvoiding (r : V) (S : Finset V) : Finset V := if r ∈ S then Sᶜ else S
+
+/-- The side avoiding the root does not contain it. -/
+@[simp] theorem notMem_sideAvoiding (r : V) (S : Finset V) : r ∉ sideAvoiding r S := by
+  by_cases h : r ∈ S <;> simp [sideAvoiding, h]
+
+/-- A side not containing the root is its own side avoiding the root. -/
+theorem sideAvoiding_of_notMem {r : V} {S : Finset V} (h : r ∉ S) : sideAvoiding r S = S := by
+  simp [sideAvoiding, h]
+
+/-- The side avoiding the root of a side containing it is the complement. -/
+theorem sideAvoiding_of_mem {r : V} {S : Finset V} (h : r ∈ S) : sideAvoiding r S = Sᶜ := by
+  simp [sideAvoiding, h]
+
+/-- Both sides of a cut have the same side avoiding the root. -/
+@[simp] theorem sideAvoiding_compl (r : V) (S : Finset V) :
+    sideAvoiding r Sᶜ = sideAvoiding r S := by
+  by_cases h : r ∈ S <;> simp [sideAvoiding, h]
+
+/-- Replacing the first cut by its side avoiding the root does not affect crossing. -/
+@[simp] theorem crosses_sideAvoiding_left {r : V} {S T : Finset V} :
+    Crosses (sideAvoiding r S) T ↔ Crosses S T := by
+  by_cases h : r ∈ S <;> simp [sideAvoiding, h]
+
+/-- Replacing the second cut by its side avoiding the root does not affect crossing. -/
+@[simp] theorem crosses_sideAvoiding_right {r : V} {S T : Finset V} :
+    Crosses S (sideAvoiding r T) ↔ Crosses S T := by
+  by_cases h : r ∈ T <;> simp [sideAvoiding, h]
+
+/-- **Root convention.** Representing each cut of a pairwise non-crossing family by its side
+avoiding a fixed root vertex gives a laminar family. -/
+theorem pairwise_nestedOrDisjoint_image_sideAvoiding {𝒞 : Set (Finset V)}
+    (h𝒞 : 𝒞.Pairwise fun S T ↦ ¬Crosses S T) (r : V) :
+    (sideAvoiding r '' 𝒞).Pairwise NestedOrDisjoint := by
+  rintro _ ⟨S, hS, rfl⟩ _ ⟨T, hT, rfl⟩ hne
+  rw [← not_crosses_iff_nestedOrDisjoint (notMem_sideAvoiding r S) (notMem_sideAvoiding r T),
+    crosses_sideAvoiding_left, crosses_sideAvoiding_right]
+  exact h𝒞 hS hT fun h ↦ hne (h ▸ rfl)
+
+end Crossing
+
+section MultiCut
+
+variable [Fintype V] [DecidableEq V] [AddCommMonoid K] [LinearOrder K]
+  [IsOrderedCancelAddMonoid K]
+variable {f : Finset V → K}
+
+/-- One uncrossing step: a minimum `s`–`t` cut crossing a minimum `a`–`b` cut `Z` that avoids
+both `s` and `t` can be replaced by a minimum `s`–`t` cut that does not cross `Z` and crosses
+no cut that neither original cut crosses. -/
+private theorem IsMinimum.exists_uncross (hf : IsSymmSubmodular f) {s t a b : V}
+    {X Z : Finset V} (hX : IsMinimum f {s} {t} X) (hZ : IsMinimum f {a} {b} Z)
+    (hsZ : s ∉ Z) (htZ : t ∉ Z) (hXZ : Crosses X Z) :
+    ∃ X', IsMinimum f {s} {t} X' ∧ ¬Crosses X' Z ∧
+      ∀ Y, ¬Crosses X Y → ¬Crosses Z Y → ¬Crosses X' Y := by
+  obtain ⟨hsX, htX⟩ := isAdmissible_singleton.mp hX.admissible
+  obtain ⟨haZ, hbZ⟩ := isAdmissible_singleton.mp hZ.admissible
+  obtain ⟨hmeet, -, ⟨w, hwZ, hwX⟩, -⟩ := crosses_def.mp hXZ
+  by_cases haX : a ∈ X
+  · -- Enlarge `X` by `Z`, which meets it.
+    have hmin := hZ.uncross_union_inter hf.submodular hX
+      (isAdmissible_singleton.mpr ⟨mem_union_right _ hsX, by simp [htX, htZ]⟩)
+      (isAdmissible_singleton.mpr ⟨mem_inter.mpr ⟨haZ, haX⟩, fun h ↦ hbZ (mem_inter.mp h).1⟩)
+    refine ⟨Z ∪ X, hmin.1, ?_, fun Y hXY hZY ↦ ?_⟩
+    · exact (NestedOrDisjoint.of_superset subset_union_left).not_crosses
+    · obtain ⟨v, hvX, hvZ⟩ := hmeet
+      exact not_crosses_union ⟨v, mem_inter.mpr ⟨hvZ, hvX⟩⟩ hZY hXY
+  · -- Shrink `X` away from `Z`; the complement `Xᶜ ∪ Z` is a union of two meeting sets.
+    have hmin := hX.uncross_sdiff hf hZ
+      (isAdmissible_singleton.mpr ⟨mem_sdiff.mpr ⟨hsX, hsZ⟩, fun h ↦ htX (mem_sdiff.mp h).1⟩)
+      (isAdmissible_singleton.mpr ⟨mem_sdiff.mpr ⟨haZ, haX⟩, fun h ↦ hbZ (mem_sdiff.mp h).1⟩)
+    refine ⟨X \ Z, hmin.1, ?_, fun Y hXY hZY ↦ ?_⟩
+    · exact (NestedOrDisjoint.of_disjoint sdiff_disjoint).not_crosses
+    · have h := not_crosses_union ⟨w, mem_inter.mpr ⟨mem_compl.mpr hwX, hwZ⟩⟩
+        (crosses_compl_left.not.mpr hXY) hZY
+      have hcompl : Xᶜ ∪ Z = (X \ Z)ᶜ := by
+        ext v
+        simp only [mem_union, mem_compl, mem_sdiff, not_and, not_not]
+        tauto
+      rwa [hcompl, crosses_compl_left] at h
+
+/-- **Multi-cut non-crossing lemma.** Let `𝒞` be a pairwise non-crossing family of cuts, each a
+minimum cut of a symmetric submodular `f` between some pair of vertices. If none of them
+separates the distinct vertices `s` and `t`, then some minimum `s`–`t` cut crosses none of
+them. -/
+theorem exists_isMinimum_forall_not_crosses (hf : IsSymmSubmodular f)
+    {𝒞 : Set (Finset V)} (h𝒞 : 𝒞.Pairwise fun Y Z ↦ ¬Crosses Y Z)
+    (hmin : ∀ Y ∈ 𝒞, ∃ a b, IsMinimum f {a} {b} Y) {s t : V} (hst : s ≠ t)
+    (hsep : ∀ Y ∈ 𝒞, s ∈ Y ↔ t ∈ Y) :
+    ∃ X, IsMinimum f {s} {t} X ∧ ∀ Y ∈ 𝒞, ¬Crosses X Y := by
+  -- Choose a minimum `s`–`t` cut crossing as few members of `𝒞` as possible.
+  let crossed : Finset V → Set (Finset V) := fun X ↦ {Y ∈ 𝒞 | Crosses X Y}
+  obtain ⟨X, hX, hXmin⟩ := Set.exists_min_image {X | IsMinimum f {s} {t} X}
+    (fun X ↦ (crossed X).ncard) (Set.toFinite _)
+    (exists_minimum f (disjoint_singleton.mpr hst))
+  refine ⟨X, hX, fun Z hZ hXZ ↦ ?_⟩
+  -- Represent `Z` by its side avoiding both `s` and `t`.
+  obtain ⟨a, b, hab⟩ := hmin Z hZ
+  obtain ⟨Z', a', b', hZ', hsZ', htZ', hZZ'⟩ : ∃ Z' a' b', IsMinimum f {a'} {b'} Z' ∧
+      s ∉ Z' ∧ t ∉ Z' ∧ ∀ Y, Crosses Z' Y ↔ Crosses Z Y := by
+    by_cases hs : s ∈ Z
+    · exact ⟨Zᶜ, b, a, hab.compl hf.symm, by simpa using hs,
+        by simpa [← hsep Z hZ] using hs, fun _ ↦ crosses_compl_left⟩
+    · exact ⟨Z, a, b, hab, hs, by rwa [← hsep Z hZ], fun _ ↦ Iff.rfl⟩
+  obtain ⟨X', hX', hX'Z, hX'Y⟩ :=
+    hX.exists_uncross hf hZ' hsZ' htZ' (crosses_comm.mp ((hZZ' X).mpr hXZ.symm))
+  -- The new cut crosses only members that `X` crosses, and not `Z`.
+  have hsub : crossed X' ⊂ crossed X := by
+    refine ⟨fun Y ⟨hY, hX'Y'⟩ ↦ ⟨hY, by_contra fun hXY ↦ ?_⟩, fun h ↦ ?_⟩
+    · obtain rfl | hYZ := eq_or_ne Y Z
+      · exact hX'Z (crosses_comm.mp ((hZZ' X').mpr hX'Y'.symm))
+      · exact hX'Y Y hXY ((hZZ' Y).not.mpr (h𝒞 hZ hY hYZ.symm)) hX'Y'
+    · exact hX'Z (crosses_comm.mp ((hZZ' X').mpr (h ⟨hZ, hXZ⟩).2.symm))
+  exact (Set.ncard_lt_ncard hsub (Set.toFinite _)).not_ge (hXmin X' hX')
+
+end MultiCut
 
 end TerminalCut
 
