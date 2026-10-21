@@ -114,10 +114,8 @@ theorem _root_.ContinuousLinearMap.leviForm_re_apply_self (x : V) :
 inertia: multiplication by `I` negates its Hessian. -/
 theorem _root_.ContinuousLinearMap.morseIndex_re_apply_self_eq_sigPos (x : V) :
     morseIndex (fun z ↦ (q z z).re) x = sigPos (hessianQuadraticForm (fun z ↦ (q z z).re) x) := by
-  rw [morseIndex_def]
-  refine QuadraticForm.sigNeg_eq_sigPos_of_comp_eq_neg _
-    ((LinearEquiv.smulOfNeZero ℂ V I I_ne_zero).restrictScalars ℝ) fun v ↦ ?_
-  simp [q.hessianQuadraticForm_re_apply_self]
+  rw [← morseIndex_neg_eq_of_leviForm_eq_zero (q.leviForm_re_apply_self x), morseIndex_def,
+    hessianQuadraticForm_neg, sigNeg_neg]
 
 /-- The radical of the Hessian of the real part of a holomorphic quadratic form is the kernel of
 the polarization `q.flip + q`. -/
