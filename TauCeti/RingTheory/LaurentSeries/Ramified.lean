@@ -44,8 +44,11 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 * `LaurentSeries.mem_range_expand_iff`: a Laurent series is in the image of `X ↦ X ^ d` exactly
   when all its exponents are divisible by `d`.
 * `LaurentSeries.expand_coe`: `expand` extends `PowerSeries.expand`.
+* `FiniteField.LaurentSeries.expand_card`: over a finite field with `q` elements, the expansion
+  `X ↦ X ^ q` of a Laurent series is its `q`-th power.
 * `LaurentSeries.sum_single_mul_expand_contract`: reconstruction from congruence components.
 * `LaurentSeries.contract_eq_of_sum_eq`: uniqueness of the congruence components.
+* `LaurentSeries.contract_expand_mul`: `contract d (expand d g * h) r = g * contract d h r`.
 * `LaurentSeries.coeff_ramifiedEmbedding_intCast_div`,
   `LaurentSeries.coeff_ramifiedEmbedding_of_not_den_dvd`: the coefficients of the level-`n`
   embedding.
@@ -184,6 +187,14 @@ theorem expand_coe {R : Type*} [CommRing R] (d : ℕ+) (f : R⟦X⟧) :
     rintro ⟨c, hc⟩
     exact hk ⟨c, by omega⟩
 
+/-- Over a finite field with `q` elements, the expansion `X ↦ X ^ q` of a Laurent series is its
+`q`-th power. The modulus is given as a positive natural number `d` with `d = q`. -/
+theorem _root_.FiniteField.LaurentSeries.expand_card {K : Type*} [Field K] [Fintype K] (d : ℕ+)
+    (hd : (d : ℕ) = Fintype.card K) (f : K⸨X⸩) : expand K d f = f ^ Fintype.card K := by
+  rw [← single_order_mul_powerSeriesPart f]
+  simp [-single_order_mul_powerSeriesPart, expand_coe, FiniteField.PowerSeries.expand_card,
+    mul_pow, single_pow, hd]
+
 /-! ### Contraction by exponent congruence classes -/
 
 /-- The `r`-th exponent-congruence component of a Laurent series. Its coefficient at `k` is the
@@ -269,8 +280,8 @@ theorem contract_one {S : Type*} [Zero S] [One S] (d : ℕ+) (r : Fin d) :
       omega
     have hrd : (r : ℤ) < d := by exact_mod_cast r.isLt
     have hdvd : ¬ (d : ℤ) ∣ 0 - r := by
-      rintro ⟨j, hj⟩
-      rcases lt_trichotomy j 0 with hj0 | rfl | hj0 <;> nlinarith
+      rw [zero_sub, dvd_neg]
+      exact fun h ↦ hr0.ne' (Int.eq_zero_of_dvd_of_nonneg_of_lt hr0.le hrd h)
     rw [ite_eq_right hdvd, ite_eq_right hr]
 
 /-- At exponent `d * k + r`, a sum of expanded congruence components recovers coefficient `k`
@@ -322,6 +333,23 @@ theorem contract_eq_of_sum_eq {A : Type*} [CommSemiring A] (d : ℕ+) (g : Fin d
     contract d f r = g r := by
   ext k
   rw [coeff_contract, ← h, coeff_sum_single_mul_expand]
+
+/-- Multiplication by an expanded series passes through the exponent-congruence components. -/
+@[simp]
+theorem contract_expand_mul {A : Type*} [CommSemiring A] (d : ℕ+) (g h : A⸨X⸩) (r : Fin d) :
+    contract d (expand A d g * h) r = g * contract d h r := by
+  refine contract_eq_of_sum_eq d (fun s ↦ g * contract d h s) _ ?_ r
+  conv_rhs => rw [← sum_single_mul_expand_contract d h]
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  rw [map_mul, mul_left_comm]
+
+/-- The congruence components of an expanded series: `expand A d g` lies in the residue-zero
+component, where it contracts back to `g`. -/
+@[simp]
+theorem contract_expand {A : Type*} [CommSemiring A] (d : ℕ+) (g : A⸨X⸩) (r : Fin d) :
+    contract d (expand A d g) r = if r = 0 then g else 0 := by
+  simpa using contract_expand_mul d g 1 r
 
 /-! ### Ramified levels in rational exponents -/
 

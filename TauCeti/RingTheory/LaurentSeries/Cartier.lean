@@ -28,11 +28,10 @@ These are the operations used in Christol's theorem to pass from an algebraic po
 ## Main results
 
 * `LaurentSeries.contract_coe`: on power series, `contract` is `PowerSeries.cartier`.
-* `LaurentSeries.contract_expand_mul`: `contract d (expand d g * h) r = g * contract d h r`.
-* `FiniteField.LaurentSeries.expand_card`: over a finite field with `q` elements, the expansion
-  `X ↦ X ^ q` of a Laurent series is its `q`-th power.
 * `LaurentSeries.contract_pow_card_mul` and `LaurentSeries.sum_single_mul_contract_pow_card`: the
-  two Frobenius identities above.
+  two Frobenius identities above, deduced from `LaurentSeries.contract_expand_mul` and
+  `FiniteField.LaurentSeries.expand_card`.
+* `LaurentSeries.contract_pow_card`: `Λ_r (g ^ q)` is `g` at `r = 0` and `0` otherwise.
 
 ## References
 
@@ -70,44 +69,6 @@ theorem contract_coe (d : ℕ+) (F : R⟦X⟧) (r : Fin d) :
 
 end Semiring
 
-section CommSemiring
-
-variable {A : Type*} [CommSemiring A]
-
-/-- Multiplication by an expanded series passes through the exponent-congruence components. -/
-theorem contract_expand_mul (d : ℕ+) (g h : A⸨X⸩) (r : Fin d) :
-    contract d (expand A d g * h) r = g * contract d h r := by
-  refine contract_eq_of_sum_eq d (fun s ↦ g * contract d h s) _ ?_ r
-  conv_rhs => rw [← sum_single_mul_expand_contract d h]
-  rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [map_mul, mul_left_comm]
-
-end CommSemiring
-
-end LaurentSeries
-
-namespace FiniteField.LaurentSeries
-
-open _root_.LaurentSeries
-
-variable {K : Type*} [Field K] [Fintype K]
-
-/-- Over a finite field with `q` elements, the expansion `X ↦ X ^ q` of a Laurent series is its
-`q`-th power. The modulus is given as a positive natural number `d` with `d = q`. -/
-theorem expand_card (d : ℕ+) (hd : (d : ℕ) = Fintype.card K) (f : K⸨X⸩) :
-    expand K d f = f ^ Fintype.card K := by
-  have hexp : PowerSeries.expand (d : ℕ) d.ne_zero f.powerSeriesPart =
-      f.powerSeriesPart ^ (d : ℕ) := by
-    simp only [hd]
-    exact FiniteField.PowerSeries.expand_card _
-  rw [← single_order_mul_powerSeriesPart f, map_mul, expand_single, expand_coe, hexp,
-    PowerSeries.coe_pow, mul_pow, single_pow, one_pow, nsmul_eq_mul, hd]
-
-end FiniteField.LaurentSeries
-
-namespace LaurentSeries
-
 section FiniteField
 
 variable {K : Type*} [Field K] [Fintype K]
@@ -118,6 +79,13 @@ Cartier operators of modulus `q`. The modulus is given as a positive natural num
 theorem contract_pow_card_mul (d : ℕ+) (hd : (d : ℕ) = Fintype.card K) (g h : K⸨X⸩) (r : Fin d) :
     contract d (g ^ Fintype.card K * h) r = g * contract d h r := by
   rw [← FiniteField.LaurentSeries.expand_card d hd, contract_expand_mul]
+
+/-- Over a finite field with `q` elements, the Cartier operators of modulus `q` send a `q`-th
+power `g ^ q` to `g` at residue zero and to `0` at the other residues. The modulus is given as a
+positive natural number `d` with `d = q`. -/
+theorem contract_pow_card (d : ℕ+) (hd : (d : ℕ) = Fintype.card K) (g : K⸨X⸩) (r : Fin d) :
+    contract d (g ^ Fintype.card K) r = if r = 0 then g else 0 := by
+  rw [← FiniteField.LaurentSeries.expand_card d hd, contract_expand]
 
 /-- Over a finite field with `q` elements, a Laurent series `f` is `∑_{r < q} X ^ r * (Λ_r f) ^ q`,
 where `Λ_r` is the Cartier operator of modulus `q`. The modulus is given as a positive natural
@@ -137,7 +105,7 @@ example : contract 2 (single (-3) (1 : ℤ)) 1 = single (-2) 1 ∧
   constructor <;> rw [contract_single] <;> norm_num
 
 example (g : (ZMod 3)⸨X⸩) : contract 3 (g ^ 3) 0 = g := by
-  have h := contract_pow_card_mul 3 (ZMod.card 3).symm g 1 0
-  rwa [ZMod.card, mul_one, contract_one, ite_eq_left rfl, mul_one] at h
+  have h := contract_pow_card 3 (ZMod.card 3).symm g 0
+  rwa [ZMod.card, ite_eq_left rfl] at h
 
 end LaurentSeries
