@@ -251,10 +251,8 @@ def orderedSimplicialChainComplexAugmentation :
   ((orderedSimplicialChainComplex K R).toSingle₀Equiv _).symm
     ⟨eqToHom (orderedSimplicialChainComplex_X R 0) ≫
       ModuleCat.ofHom (linearCombination R fun _ ↦ (1 : R)), by
-      rw [orderedSimplicialChainComplex_d, Category.assoc, Category.assoc, eqToHom_trans_assoc,
-        eqToHom_refl, Category.id_comp, ← ModuleCat.ofHom_comp,
-        OrderedSimplicialChain.augmentation_comp_boundary]
-      simp⟩
+      simp [orderedSimplicialChainComplex_d, ← ModuleCat.ofHom_comp,
+        OrderedSimplicialChain.augmentation_comp_boundary]⟩
 
 /-- In degree `0` the augmentation sums the coefficients. -/
 @[simp]

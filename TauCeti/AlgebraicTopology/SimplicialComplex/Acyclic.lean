@@ -170,8 +170,7 @@ theorem exists_boundary_eq_of_boundary_eq_zero_of_cone {n : ℕ}
     ∃ y, boundary R (n + 1) y = z := by
   obtain ⟨v, hv⟩ := exists_cone_vertex_of_cone R h z
   refine ⟨(-1 : R) ^ (n + 2) • cone R v (n + 1) z, ?_⟩
-  rw [map_smul, boundary_cone_succ hv, hz, map_zero, zero_add, smul_smul, ← pow_add,
-    Even.neg_one_pow ⟨n + 2, rfl⟩, one_smul]
+  simp [boundary_cone_succ hv, hz, smul_smul, ← pow_add, Even.neg_one_pow ⟨n + 2, rfl⟩]
 
 /-- **Exactness in degree `0`.** If every finite set of vertices has a cone vertex, every ordered
 `0`-chain of `K` whose coefficients sum to zero is a boundary. -/
@@ -179,8 +178,7 @@ theorem exists_boundary_eq_of_augmentation_eq_zero_of_cone
     {z : OrderedSimplicialChain K R 0} (hz : linearCombination R (fun _ ↦ (1 : R)) z = 0) :
     ∃ y, boundary R 0 y = z := by
   obtain ⟨v, hv⟩ := exists_cone_vertex_of_cone R h z
-  exact ⟨-cone R v 0 z, by rw [map_neg, boundary_cone_zero hv, hz, single_zero, zero_sub,
-    neg_neg]⟩
+  exact ⟨-cone R v 0 z, by simp [boundary_cone_zero hv, hz]⟩
 
 /-- The ordered chain complex of a complex in which every finite set of vertices has a cone
 vertex is exact in every positive degree. -/

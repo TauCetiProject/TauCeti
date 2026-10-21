@@ -80,6 +80,16 @@ theorem image_vertexEmbedding (c : RealizationCell K n) :
     Finset.univ.image c.vertexEmbedding = c.1.1 :=
   Finset.image_orderEmbOfFin_univ c.1.1 c.2
 
+/-- The only enumerated vertex of the `0`-cell of a vertex is that vertex. -/
+@[simp]
+theorem vertexEmbedding_vertex (v : ι) (i : Fin 1) : (vertex K v).vertexEmbedding i = v :=
+  Finset.mem_singleton.mp ((vertex K v).vertexEmbedding_mem i)
+
+/-- Every `0`-cell is the `0`-cell of its only vertex. -/
+theorem eq_vertex (c : RealizationCell K 0) : c = vertex K (c.vertexEmbedding 0) :=
+  Subtype.ext (Subtype.ext (Finset.eq_singleton_iff_unique_mem.mpr ⟨c.vertexEmbedding_mem 0,
+    fun _ hw ↦ Finset.card_le_one.mp c.2.le _ hw _ (c.vertexEmbedding_mem 0)⟩))
+
 /-- The codimension-one face obtained by deleting the `j`-th vertex in the increasing
 enumeration of a simplicial cell. -/
 def face (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) : RealizationCell K n := by
@@ -235,12 +245,10 @@ theorem face_cone_castSucc (c : RealizationCell K (n + 1)) (v : ι) (hlt : ∀ w
 theorem face_cone_zero (c : RealizationCell K 0) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
     (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).face 0 = vertex K v := by
   refine Subtype.ext (Subtype.ext ?_)
-  obtain ⟨w, hw⟩ := Finset.card_eq_one.mp c.2
-  have h0 : c.vertexEmbedding 0 = w := by
-    simpa [hw] using c.vertexEmbedding_mem 0
+  have hc : c.1.1 = {c.vertexEmbedding 0} := congrArg (fun d ↦ d.1.1) c.eq_vertex
   rw [face_val, ← Fin.castSucc_zero, congrFun (vertexEmbedding_cone c v hlt hK),
-    Fin.lastCases_castSucc, h0, cone_val, hw]
-  simp [Finset.erase_insert_of_ne (hlt w (by simp [hw])).ne']
+    Fin.lastCases_castSucc, cone_val, hc]
+  simp [Finset.erase_insert_of_ne (hlt _ (c.vertexEmbedding_mem 0)).ne']
 
 end Cone
 
