@@ -158,21 +158,21 @@ private theorem comp_eq_zero : f ≫ g = 0 := by
 /-- The short complex `∏ₙ Aₙ → ∏ₙ Bₙ → ∏ₙ Cₙ` of product maps. -/
 private abbrev productComplex : ShortComplex (ModuleCat.{v} R) :=
   ShortComplex.mk (ModuleCat.ofHom (productMap f)) (ModuleCat.ofHom (productMap g)) <| by
-    rw [← ModuleCat.ofHom_comp, ← productMap_comp, comp_eq_zero hfg, productMap_zero]
-    rfl
+    rw [← ModuleCat.ofHom_comp, ← productMap_comp, comp_eq_zero hfg, productMap_zero,
+      ModuleCat.ofHom_zero]
 
 /-- The snake input of a levelwise short exact sequence `0 → A → B → C → 0` of towers: the shift
 maps of the short exact sequence of products `0 → ∏ₙ Aₙ → ∏ₙ Bₙ → ∏ₙ Cₙ → 0`, whose kernels
 and cokernels are the rows `lim A → lim B → lim C` and `lim¹ A → lim¹ B → lim¹ C`. -/
 def snakeInput : ShortComplex.SnakeInput (ModuleCat.{v} R) where
   L₀ := ShortComplex.mk (ModuleCat.ofHom (limMap f)) (ModuleCat.ofHom (limMap g)) <| by
-    rw [← ModuleCat.ofHom_comp, ← limMap_comp, comp_eq_zero hfg, limMap_zero]
-    rfl
+    rw [← ModuleCat.ofHom_comp, ← limMap_comp, comp_eq_zero hfg, limMap_zero,
+      ModuleCat.ofHom_zero]
   L₁ := productComplex hfg
   L₂ := productComplex hfg
   L₃ := ShortComplex.mk (ModuleCat.ofHom (limOneMap f)) (ModuleCat.ofHom (limOneMap g)) <| by
-    rw [← ModuleCat.ofHom_comp, ← limOneMap_comp, comp_eq_zero hfg, limOneMap_zero]
-    rfl
+    rw [← ModuleCat.ofHom_comp, ← limOneMap_comp, comp_eq_zero hfg, limOneMap_zero,
+      ModuleCat.ofHom_zero]
   v₀₁ :=
     { τ₁ := ModuleCat.ofHom A.lim.subtype
       τ₂ := ModuleCat.ofHom B.lim.subtype
@@ -263,18 +263,27 @@ theorem limOneMap_surjective (hg : ∀ n, Function.Surjective (g.app (op n)).hom
   obtain ⟨b, rfl⟩ := productMap_surjective hg c
   exact ⟨Submodule.Quotient.mk b, limOneMap_mk g b⟩
 
-/-- If `lim¹ A = 0`, then `lim B → lim C` is surjective for a levelwise short exact sequence
-`0 → A → B → C → 0` of towers. -/
+/-- If `lim¹ A = 0`, then `lim B → lim C` is surjective for a levelwise exact sequence
+`A → B → C → 0` of towers. -/
 theorem limMap_surjective_of_subsingleton_limOne
-    (hf : ∀ n, Function.Injective (f.app (op n)).hom)
     (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
     (hg : ∀ n, Function.Surjective (g.app (op n)).hom) [Subsingleton A.limOne] :
-    Function.Surjective (limMap g) := fun c ↦
-  (exact_limMap_connectingMap hf hfg hg c).1 (Subsingleton.elim _ _)
+    Function.Surjective (limMap g) := by
+  intro c
+  -- Lift `c` to `b` and write `δ(b) = f(a)`; as `lim¹ A = 0`, `a = δ(a')`, so `b - f(a')` is
+  -- compatible and lifts `c`.
+  obtain ⟨b, hb⟩ := productMap_surjective hg (c : C.Product)
+  obtain ⟨a, ha⟩ := exists_productMap_eq_shift hfg (hb ▸ c.2)
+  obtain ⟨a', rfl⟩ := (Submodule.Quotient.mk_eq_zero _).1
+    (Subsingleton.elim (Submodule.Quotient.mk a : A.limOne) 0)
+  refine ⟨⟨b - productMap f a', ?_⟩, Subtype.ext ?_⟩
+  · rw [mem_lim_iff_shift_eq_zero, map_sub, shift_productMap_apply, ha, sub_self]
+  · rw [coe_limMap_apply, map_sub, hb, ← LinearMap.comp_apply, ← productMap_comp,
+      comp_eq_zero hfg, productMap_zero, LinearMap.zero_apply, sub_zero]
 
 /-- **Naturality of the connecting map.** A morphism `(α, β, γ)` of levelwise short exact sequences
 of towers, from `0 → A → B → C → 0` to `0 → A' → B' → C' → 0`, commutes with the connecting
-maps: `δ' ∘ lim γ = lim¹ α ∘ δ`. -/
+maps: `connectingMap' ∘ lim γ = lim¹ α ∘ connectingMap`. -/
 theorem connectingMap_natural {A' B' C' : ModuleTower.{v} R} {f' : A' ⟶ B'} {g' : B' ⟶ C'}
     (hf : ∀ n, Function.Injective (f.app (op n)).hom)
     (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
