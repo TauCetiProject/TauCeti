@@ -154,13 +154,13 @@ theorem orderTriple_cyclicTriple (hn : n ≠ 0) : (cyclicTriple n).orderTriple =
   linarith
 
 /-- **The connected triples unramified over `1` are the cyclic triples**: a connected triple is
-isomorphic to `cyclicTriple n` exactly when its component over `1` is the identity. Then `σ0`
-alone generates the transitive monodromy group, so it is one cycle through all the sheets. -/
+isomorphic to `cyclicTriple n` exactly when its component over `1` is the identity. -/
 theorem equivalent_cyclicTriple_iff {t : PermutationTriple n} (ht : t.IsConnected) :
     t.Equivalent (cyclicTriple n) ↔ t.σ1 = 1 := by
   refine ⟨fun h => ?_, fun h1 => ?_⟩
   · obtain ⟨τ, hτ⟩ := equivalent_iff_exists_smul_eq.1 h
     simpa using congrArg PermutationTriple.σ1 hτ
+  -- `σ0` alone generates the transitive monodromy group, so it is one cycle through all the sheets.
   have := ht.isPretransitive
   rw [← closure_pair_eq_monodromyGroup, h1, Set.pair_comm, Subgroup.closure_insert_one,
     ← Subgroup.zpowers_eq_closure] at this

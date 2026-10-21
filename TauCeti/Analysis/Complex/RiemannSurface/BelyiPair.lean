@@ -408,7 +408,7 @@ theorem ncard_restrict_preimage_singleton (z : ThricePuncturedSphere) :
 
 /-- A numbering of a fibre of the cover of `ℂ ∖ {0, 1}` attached to an analytic Belyi pair by
 `Fin n` determines the degree of the pair: it is `n`. -/
-theorem degree_eq_of_restrict_preimage_singleton_equiv {z : ThricePuncturedSphere} {n : ℕ}
+theorem degree_β_eq_of_restrict_preimage_singleton_equiv {z : ThricePuncturedSphere} {n : ℕ}
     (ν : P.restrict ⁻¹' {z} ≃ Fin n) : degree P.β = n := by
   rw [← P.ncard_restrict_preimage_singleton z, ← Nat.card_coe_set_eq, Nat.card_congr ν,
     Nat.card_fin]

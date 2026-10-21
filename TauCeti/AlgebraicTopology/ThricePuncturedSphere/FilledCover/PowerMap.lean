@@ -9,14 +9,14 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Analyt
 public import TauCeti.Combinatorics.PermutationTriple.Examples
 
 /-!
-# Analytic Belyi pairs unramified over a point
+# Analytic Belyi pairs unramified over `1`
 
 An analytic Belyi pair is determined up to isomorphism by the isomorphism class of its monodromy
 triple (`TauCeti.AnalyticBelyiPair.nonempty_iso_iff_isoClass_monodromyTriple_eq`), and the
 components of that triple that are the identity are exactly the points of `{0, 1, ∞}` over which
 the Belyi map is unramified (`TauCeti.AnalyticBelyiPair.monodromyTriple_σ1_eq_one_iff` and its
-analogues over `0` and `∞`). This file treats the pairs whose Belyi map is unramified over one or
-two of the three points.
+analogues over `0` and `∞`). This file treats the pairs whose Belyi map is unramified over `1`,
+and the pairs with at most one branch value.
 
 * A pair unramified over `1` is isomorphic to the power map `z ↦ z ^ n` of the Riemann sphere,
   where `n` is its degree (`TauCeti.AnalyticBelyiPair.nonempty_iso_pow_iff`). Indeed `σ1 = 1`
@@ -25,7 +25,7 @@ two of the three points.
   (`TauCeti.AnalyticBelyiPair.isoClass_monodromyTriple_eq_cyclicTriple_iff`), which is also the
   triple of `z ↦ z ^ n`. In particular the surface of such a pair is the Riemann sphere.
 * A pair with at most one branch value has degree one
-  (`TauCeti.AnalyticBelyiPair.degree_eq_one_of_branchValues_subset_singleton`): two of the
+  (`TauCeti.AnalyticBelyiPair.degree_β_eq_one_of_branchValues_subset_singleton`): two of the
   components of its triple are the identity, so the third is too, and a connected triple with
   trivial monodromy has a single sheet.
 
@@ -74,33 +74,24 @@ theorem nonempty_iso_pow_iff {P : AnalyticBelyiPair.{0}} {n : ℕ} (hn : n ≠ 0
       (P.isoClass_monodromyTriple_eq_cyclicTriple_iff _).2 h]
 
 /-- **An analytic Belyi pair with at most one branch value has degree one**, so it is trivial
-(`TauCeti.AnalyticBelyiPair.degree_β_eq_one_iff_nonempty_iso`). Its Belyi map is unramified over
-two of the three points `0`, `1` and `∞`, so two of the components of its monodromy triple are the
-identity, hence all three are, and the connected triple with trivial monodromy has one sheet. -/
-theorem degree_eq_one_of_branchValues_subset_singleton (P : AnalyticBelyiPair.{0}) {q : OnePoint ℂ}
-    (hq : P.β.branchValues ⊆ {q}) : degree P.β = 1 := by
+(`TauCeti.AnalyticBelyiPair.degree_β_eq_one_iff_nonempty_iso`). -/
+theorem degree_β_eq_one_of_branchValues_subset_singleton (P : AnalyticBelyiPair.{0})
+    {q : OnePoint ℂ} (hq : P.β.branchValues ⊆ {q}) : degree P.β = 1 := by
   obtain ⟨ν⟩ := P.nonempty_restrict_preimage_singleton_equiv basePt
   set t := P.isCoveringMap_restrict.monodromyTriple ν
   have hne {y : OnePoint ℂ} (hy : y ≠ q) : y ∉ P.β.branchValues := fun h ↦ hy (hq h)
   have h0 := P.monodromyTriple_σ0_eq_one_iff ν
   have h1 := P.monodromyTriple_σ1_eq_one_iff ν
   have hinf := P.monodromyTriple_σinf_eq_one_iff ν
-  -- Two of the three components are the identity, and the product relation gives the third.
+  -- The Belyi map is unramified over two of the three points, so two of the components are the
+  -- identity, and the product relation gives the third. The connected trivial triple has one sheet.
   have ht : t = 1 := by
     by_cases hq0 : ((0 : ℂ) : OnePoint ℂ) = q
     · subst hq0
-      have h1' := h1.2 (hne (by simp))
-      have hinf' := hinf.2 (hne (by simp))
-      have h := t.σinf_eq_inv
-      rw [h1', hinf', one_mul, eq_comm, inv_eq_one] at h
-      exact ext_of_two h h1'
+      exact eq_one_of_σ1_eq_one_of_σinf_eq_one (h1.2 (hne (by simp))) (hinf.2 (hne (by simp)))
     by_cases hq1 : ((1 : ℂ) : OnePoint ℂ) = q
     · subst hq1
-      have h0' := h0.2 (hne (by simp))
-      have hinf' := hinf.2 (hne (by simp))
-      have h := t.σinf_eq_inv
-      rw [h0', hinf', mul_one, eq_comm, inv_eq_one] at h
-      exact ext_of_two h0' h
+      exact eq_one_of_σ0_eq_one_of_σinf_eq_one (h0.2 (hne (by simp))) (hinf.2 (hne (by simp)))
     · exact ext_of_two (h0.2 (hne hq0)) (h1.2 (hne hq1))
   exact isConnected_one_iff.1 (ht ▸ P.isCoveringMap_restrict.isConnected_monodromyTriple ν)
 

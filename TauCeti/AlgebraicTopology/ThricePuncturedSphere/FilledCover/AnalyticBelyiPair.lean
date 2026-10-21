@@ -372,8 +372,8 @@ theorem nonempty_iso_iff_isoClass_monodromyTriple_eq {P Q : AnalyticBelyiPair.{0
       PermutationTriple.IsoClass.mk (P.isCoveringMap_restrict.monodromyTriple ν) =
         PermutationTriple.IsoClass.mk (Q.isCoveringMap_restrict.monodromyTriple ν') := by
   refine ⟨fun ⟨e⟩ ↦ (e.isoClass_monodromyTriple_eq ν ν').symm, fun h ↦ ?_⟩
-  have hP := P.degree_eq_of_restrict_preimage_singleton_equiv ν
-  have hQ := Q.degree_eq_of_restrict_preimage_singleton_equiv ν'
+  have hP := P.degree_β_eq_of_restrict_preimage_singleton_equiv ν
+  have hQ := Q.degree_β_eq_of_restrict_preimage_singleton_equiv ν'
   refine isoSetoid_r.1 (Quotient.exact (s := isoSetoid n) (a := ⟨P, hP⟩) (b := ⟨Q, hQ⟩) ?_)
   exact toIsoClass_injective n (by rw [toIsoClass_mk _ ν, toIsoClass_mk _ ν', h])
 
@@ -387,7 +387,7 @@ private theorem exists_cycleData_monodromyTriple_eq (P : AnalyticBelyiPair.{0}) 
     ∃ (hn : degree P.β = n) (ν' : (P.toTopBranchedCover hn).restrict ⁻¹' {basePt} ≃ Fin n),
       ((P.toTopBranchedCover hn).isCoveringMap_restrict.monodromyTriple ν').cycleData =
         (P.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
-  have hn : degree P.β = n := P.degree_eq_of_restrict_preimage_singleton_equiv ν
+  have hn : degree P.β = n := P.degree_β_eq_of_restrict_preimage_singleton_equiv ν
   obtain ⟨ν'⟩ := (P.toTopBranchedCover hn).nonempty_restrict_preimage_singleton_equiv basePt
   exact ⟨hn, ν', PermutationTriple.cycleData_eq_of_equivalent <|
     PermutationTriple.IsoClass.mk_eq_mk_iff.1 <|
