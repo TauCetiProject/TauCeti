@@ -40,7 +40,7 @@ exact sequences of derived limits of towers.
   `TauCeti.ModuleTower.exact_connecting_limOneMap`, `TauCeti.ModuleTower.exact_limOneMap`:
   exactness of the six-term sequence; exactness at the two ends is
   `TauCeti.ModuleTower.limMap_injective` and `TauCeti.ModuleTower.limOneMap_surjective`.
-* `TauCeti.ModuleTower.naturality_connecting`: naturality of the connecting map.
+* `TauCeti.ModuleTower.connecting_naturality`: naturality of the connecting map.
 * `TauCeti.ModuleTower.limMap_surjective_of_subsingleton_limOne`: `lim B → lim C` is surjective
   when `lim¹ A = 0`.
 
@@ -79,6 +79,16 @@ theorem comp_eq_zero_of_exact (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g
   ext n : 2
   exact ModuleCat.hom_ext (hfg (unop n)).linearMap_comp_eq_zero
 
+/-- Every compatible family `c` of `C` lifts to a family `b` of `B` whose shift comes from `A`. -/
+private theorem exists_lift (f : F ⟶ G) (g : G ⟶ H)
+    (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
+    (hg : ∀ n, Function.Surjective (g.app (op n)).hom) (c : H.lim) :
+    ∃ b : G.Product, productMap g b = c ∧ ∃ a : F.Product, productMap f a = G.shift b := by
+  obtain ⟨b, hb⟩ := productMap_surjective hg (c : H.Product)
+  refine ⟨b, hb, (exact_productMap hfg (G.shift b)).1 ?_⟩
+  rw [← LinearMap.comp_apply (productMap g), ← shift_natural, LinearMap.comp_apply, hb]
+  exact LinearMap.mem_ker.1 (H.lim_eq_ker ▸ c.2)
+
 end Product
 
 section Lim
@@ -110,10 +120,7 @@ theorem limMap_surjective_of_subsingleton_limOne
   intro z
   -- Lift `z` to a family `y`; the shift of `y` comes from a family `x` of `A`, which is itself a
   -- shift `F.shift w` since `lim¹ A = 0`. Then `y - f w` is compatible and maps to `z`.
-  obtain ⟨y, hy⟩ := productMap_surjective hg (z : H.Product)
-  obtain ⟨x, hx⟩ := (exact_productMap hfg (G.shift y)).1 <| by
-    rw [← LinearMap.comp_apply (productMap g), ← shift_natural, LinearMap.comp_apply, hy]
-    exact LinearMap.mem_ker.1 (H.lim_eq_ker ▸ z.2)
+  obtain ⟨y, hy, x, hx⟩ := exists_lift f g hfg hg z
   obtain ⟨w, hw⟩ := F.subsingleton_limOne_iff.1 ‹_› x
   have hlim : y - productMap f w ∈ G.lim := by
     rw [lim_eq_ker, LinearMap.mem_ker, map_sub, ← LinearMap.comp_apply G.shift, shift_natural,
@@ -179,15 +186,6 @@ private theorem connectingAux_apply (c : H.lim) (b : G.Product) (hb : productMap
     connectingAux f g hf hfg hg c = Submodule.Quotient.mk a :=
   SnakeLemma.δ'_eq (x := c) (y := b) (hy := hb) (z := a) (hz := ha) ..
 
-include hfg hg in
-/-- Every compatible family `c` of `C` lifts to a family `b` of `B` whose shift comes from `A`. -/
-private theorem exists_lift (c : H.lim) :
-    ∃ b : G.Product, productMap g b = c ∧ ∃ a : F.Product, productMap f a = G.shift b := by
-  obtain ⟨b, hb⟩ := productMap_surjective hg (c : H.Product)
-  refine ⟨b, hb, (exact_productMap hfg (G.shift b)).1 ?_⟩
-  rw [← LinearMap.comp_apply (productMap g), ← shift_natural, LinearMap.comp_apply, hb]
-  exact LinearMap.mem_ker.1 (H.lim_eq_ker ▸ c.2)
-
 /-- The connecting map `lim C → lim¹ A` of the six-term sequence of a levelwise short exact
 sequence of towers `0 → A → B → C → 0`. It sends a compatible family `c` to the class of any
 family `a` of `A` with `f(a) = δ(b)` for some lift `b` of `c`; see `connecting_apply`. -/
@@ -245,7 +243,7 @@ theorem exact_connecting_limOneMap : Function.Exact (connecting f g hf hfg hg) (
 /-- **Naturality of the connecting map.** A morphism `(α, β, γ)` from the short exact sequence of
 towers `0 → A → B → C → 0` to `0 → A' → B' → C' → 0` gives a commutative square relating the two
 connecting maps `lim C → lim¹ A` and `lim C' → lim¹ A'`. -/
-theorem naturality_connecting {F' G' H' : ModuleTower.{v} R} {f' : F' ⟶ G'} {g' : G' ⟶ H'}
+theorem connecting_naturality {F' G' H' : ModuleTower.{v} R} {f' : F' ⟶ G'} {g' : G' ⟶ H'}
     (hf' : ∀ n, Function.Injective (f'.app (op n)).hom)
     (hfg' : ∀ n, Function.Exact (f'.app (op n)).hom (g'.app (op n)).hom)
     (hg' : ∀ n, Function.Surjective (g'.app (op n)).hom)
