@@ -51,21 +51,6 @@ namespace TauCeti
 
 variable {K E : Type*} [NontriviallyNormedField K] [NormedAddCommGroup E] [NormedSpace K E]
 
-/-- For `t < 1`, a strictly decreasing sequence of positive constants in `[t, 1]`. These are the
-orthogonality constants of the successive initial segments in the Gram–Schmidt process. -/
-private theorem exists_strictAnti_mem_Icc {t : ℝ≥0} (ht : t < 1) :
-    ∃ T : ℕ → ℝ≥0, StrictAnti T ∧ ∀ n, 0 < T n ∧ t ≤ T n ∧ T n ≤ 1 := by
-  have h1t : 0 < 1 - t := tsub_pos_of_lt ht
-  refine ⟨fun n ↦ t + (1 - t) / 2 ^ n, strictAnti_nat_of_succ_lt fun n ↦ ?_, fun n ↦ ⟨?_, ?_, ?_⟩⟩
-  · exact add_lt_add_right (div_lt_div_of_pos_left h1t (by positivity)
-      (pow_lt_pow_right₀ one_lt_two n.lt_succ_self)) t
-  · positivity
-  · exact le_self_add
-  · calc t + (1 - t) / 2 ^ n ≤ t + (1 - t) := by
-          gcongr
-          exact div_le_self zero_le (one_le_pow₀ one_le_two)
-      _ = 1 := add_tsub_cancel_of_le ht.le
-
 /-- If `w` is `r`-orthogonal to a submodule `F` (that is, `r * ‖w‖ ≤ ‖w - z‖` for `z ∈ F`) with
 `r ≤ 1`, then in an ultrametric space `r * max ‖c • w‖ ‖z‖ ≤ ‖c • w + z‖` for every scalar `c` and
 every `z ∈ F`. -/
@@ -85,15 +70,6 @@ private theorem mul_max_nnnorm_le_nnnorm_smul_add [IsUltrametricDist E] {F : Sub
   · exact (mul_le_mul_of_nonneg_left h zero_le).trans h₁
   · rw [IsUltrametricDist.nnnorm_add_eq_max_of_nnnorm_ne_nnnorm h.ne, max_eq_right h.le]
     exact mul_le_of_le_one_left zero_le hr
-
-/-- If two sequences have the same initial spans, the span of the first is contained in the span
-of the second. -/
-private theorem span_range_le_of_span_image_Iio_eq {f g : ℕ → E}
-    (h : ∀ n, span K (f '' Iio n) = span K (g '' Iio n)) : span K (range f) ≤ span K (range g) :=
-  span_le.2 <| range_subset_iff.2 fun n ↦ by
-    have hn : f n ∈ span K (f '' Iio (n + 1)) := subset_span ⟨n, n.lt_succ_self, rfl⟩
-    rw [h] at hn
-    exact span_mono (image_subset_range g _) hn
 
 /-- If each `e N` is `T (N + 1) / T N`-orthogonal to the span of the previous vectors, for a
 strictly decreasing sequence `T` of positive constants at most one, then in an ultrametric space
@@ -143,7 +119,11 @@ variable [CompleteSpace K] [IsUltrametricDist E]
 theorem exists_isTOrthogonalFamily_span_image_Iio_eq (w : ℕ → E) {t : ℝ≥0} (ht : t < 1) :
     ∃ e : ℕ → E, IsTOrthogonalFamily K t e ∧
       ∀ n, span K (e '' Iio n) = span K (w '' Iio n) := by
-  obtain ⟨T, hT, hT'⟩ := exists_strictAnti_mem_Icc ht
+  -- Orthogonality constants of the successive initial segments: a strictly decreasing sequence
+  -- in `(t, 1)`.
+  obtain ⟨T, hT, hTt, -⟩ := exists_seq_strictAnti_tendsto' ht
+  have hT' (n : ℕ) : 0 < T n ∧ t ≤ T n ∧ T n ≤ 1 :=
+    ⟨zero_le.trans_lt (hTt n).1, (hTt n).1.le, (hTt n).2.le⟩
   -- The initial spans `span K (w '' Iio n)` are finite-dimensional, hence closed.
   have hF (n : ℕ) : IsClosed (span K (w '' Iio n) : Set E) :=
     have := FiniteDimensional.span_of_finite K ((finite_Iio n).image w)
@@ -190,12 +170,14 @@ theorem exists_isTOrthogonalBasis_of_dense_span {v : ℕ → E}
     by_cases h : e n = 0
     · exact Or.inl h
     · exact Or.inr ⟨⟨n, h⟩, rfl⟩
+  -- Equal initial spans give equal spans, as `range` is the union of the initial segments.
+  have hspan' : span K (range e) = span K (range v) := by
+    simp only [← image_univ, ← iUnion_Iio, image_iUnion, span_iUnion, hspan]
   have : span K (range fun n : {n | e n ≠ 0} ↦ e n) = span K (range v) := by
-    refine le_antisymm ((span_mono ?_).trans (span_range_le_of_span_image_Iio_eq hspan)) ?_
+    refine le_antisymm ((span_mono ?_).trans hspan'.le) ?_
     · rintro _ ⟨n, rfl⟩
       exact ⟨n, rfl⟩
-    · calc span K (range v) ≤ span K (range e) :=
-            span_range_le_of_span_image_Iio_eq fun n ↦ (hspan n).symm
+    · calc span K (range v) = span K (range e) := hspan'.symm
         _ ≤ span K (insert 0 (range fun n : {n | e n ≠ 0} ↦ e n)) := span_mono hrange
         _ = _ := span_insert_zero
   rw [this]
