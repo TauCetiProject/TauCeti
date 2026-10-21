@@ -36,8 +36,8 @@ coefficient object indexed by the path components other than that of the point
 `[y] - [x]`. This is the kernel of the codiagonal of Mathlib's `TopCat.singularHomology₀Iso`.
 With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
 the number of path components other than that of the point
-(`TauCeti.rank_reducedSingularHomologyFunctor_zero`). In particular a nonempty space with vanishing
-reduced zeroth homology is path-connected.
+(`TauCeti.rank_reducedSingularHomologyFunctor_zero`). With coefficients in any nontrivial ring, a
+nonempty space with vanishing reduced zeroth homology is path-connected.
 
 With coefficients in a module `M`, the splitting shows that `H_q(X; M)` of a nonempty space is
 free or finitely generated when the reduced homology in degree `q` is and `M` is, and that its
@@ -339,23 +339,23 @@ theorem rank_reducedSingularHomologyFunctor_zero {X : TopCat.{w}} (x : X) :
     (reducedSingularHomology₀Iso (ModuleCat.of K K) x).symm).toLinearEquiv.rank_eq
   simpa only [rank_directSum, Module.rank_self, Cardinal.sum_const', mul_one] using this.symm
 
-/-- A nonempty space whose reduced zeroth singular homology vanishes, with coefficients in a ring
-with the strong rank condition, is path-connected. This is the converse of
+end Rank
+
+/-- A nonempty space whose reduced zeroth singular homology vanishes, with coefficients in a
+nontrivial ring, is path-connected. This is the converse of
 `TauCeti.isZero_reducedSingularHomologyFunctor_zero`. -/
-theorem pathConnectedSpace_of_isZero_reducedSingularHomologyFunctor_zero {X : TopCat.{w}}
-    [Nonempty X] (h : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of K K) 0).obj X)) :
+theorem pathConnectedSpace_of_isZero_reducedSingularHomologyFunctor_zero {K : Type w} [Ring K]
+    [Nontrivial K] {X : TopCat.{w}} [Nonempty X]
+    (h : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of K K) 0).obj X)) :
     PathConnectedSpace X := by
   obtain ⟨x⟩ := ‹Nonempty X›
-  have : Subsingleton ((reducedSingularHomologyFunctor (ModuleCat.of K K) 0).obj X) :=
-    ModuleCat.subsingleton_of_isZero h
-  have hrank := rank_reducedSingularHomologyFunctor_zero (K := K) x
-  rw [rank_subsingleton', eq_comm, Cardinal.mk_eq_zero_iff] at hrank
-  refine pathConnectedSpace_iff_zerothHomotopy.2 ⟨⟨.mk x⟩, ⟨fun c d ↦ ?_⟩⟩
-  have hc : c = .mk x := by_contra fun hc ↦ hrank.false ⟨c, hc⟩
-  have hd : d = .mk x := by_contra fun hd ↦ hrank.false ⟨d, hd⟩
-  rw [hc, hd]
-
-end Rank
+  -- Every summand `K` of the coproduct `reducedSingularHomology₀Iso` is a retract of it, so
+  -- there is no path component other than that of `x`.
+  have hc : ∀ c : ZerothHomotopy X, c = .mk x := fun c ↦ by_contra fun hc ↦
+    not_subsingleton K <| ModuleCat.subsingleton_of_isZero <|
+      (h.of_iso (reducedSingularHomology₀Iso (ModuleCat.of K K) x).symm).of_mono
+        (Sigma.ι (fun _ : {c : ZerothHomotopy X // c ≠ .mk x} ↦ ModuleCat.of K K) ⟨c, hc⟩)
+  exact pathConnectedSpace_iff_zerothHomotopy.2 ⟨⟨.mk x⟩, ⟨fun c d ↦ by rw [hc c, hc d]⟩⟩
 
 end TauCeti
 
