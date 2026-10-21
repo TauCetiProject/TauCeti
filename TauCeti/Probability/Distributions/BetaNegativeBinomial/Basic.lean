@@ -228,13 +228,22 @@ theorem betaNegativeBinomialWeightReal_pos_iff {r a b : ℝ} (hr : 0 ≤ r) (ha 
           (beta_pos (add_pos ha hr) (add_pos_of_pos_of_nonneg hb (Nat.cast_nonneg k))))
         (beta_pos ha hb)
 
+/-- The `ℝ≥0∞` mass is nonzero at every natural number at positive shape; at shape zero only at
+zero. -/
+@[simp]
+theorem betaNegativeBinomialWeight_ne_zero_iff {r a b : ℝ} (hr : 0 ≤ r) (ha : 0 < a)
+    (hb : 0 < b) (k : ℕ) :
+    betaNegativeBinomialWeight r a b k ≠ 0 ↔ k = 0 ∨ 0 < r := by
+  rw [betaNegativeBinomialWeight_def, ENNReal.ofReal_ne_zero_iff,
+    betaNegativeBinomialWeightReal_pos_iff hr ha hb]
+
 /-- The native support of a valid beta-negative-binomial law is `{0}` at shape zero and all of
 `ℕ` at positive shape. -/
 theorem betaNegativeBinomialMeasure_singleton_ne_zero_iff {r a b : ℝ} (hr : 0 ≤ r)
     (ha : 0 < a) (hb : 0 < b) (k : ℕ) :
     betaNegativeBinomialMeasure r a b {k} ≠ 0 ↔ k = 0 ∨ 0 < r := by
-  rw [betaNegativeBinomialMeasure_singleton hr ha hb, betaNegativeBinomialWeight_def,
-    ENNReal.ofReal_ne_zero_iff, betaNegativeBinomialWeightReal_pos_iff hr ha hb]
+  rw [betaNegativeBinomialMeasure_singleton hr ha hb,
+    betaNegativeBinomialWeight_ne_zero_iff hr ha hb]
 
 /-- The beta-negative-binomial family is jointly measurable in all three real parameters. -/
 @[fun_prop]
