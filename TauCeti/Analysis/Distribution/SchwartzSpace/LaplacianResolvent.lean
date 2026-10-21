@@ -98,11 +98,17 @@ variable [CompleteSpace F]
 theorem fourierMultiplierCLM_laplacian {g : E → 𝕜} (hg : g.HasTemperateGrowth) (f : 𝓢(E, F)) :
     fourierMultiplierCLM F g (Δ f) = Δ (fourierMultiplierCLM F g f) := by
   have hn : (fun ξ : E ↦ ‖ξ‖ ^ 2).HasTemperateGrowth := by fun_prop
-  rw [laplacian_eq_fourierMultiplierCLM, laplacian_eq_fourierMultiplierCLM,
-    ContinuousLinearMap.map_smul_of_tower, ← fourierMultiplierCLM_ofReal 𝕜 hn,
-    ← fourierMultiplierCLM_ofReal 𝕜 hn,
-    fourierMultiplierCLM_fourierMultiplierCLM_apply hg (by fun_prop),
-    fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop) hg, mul_comm g]
+  -- Commute the two symbols before transporting the identity through the Laplacian formula.
+  have hcomm : fourierMultiplierCLM F g
+      (fourierMultiplierCLM F (fun ξ : E ↦ ‖ξ‖ ^ 2) f) =
+      fourierMultiplierCLM F (fun ξ : E ↦ ‖ξ‖ ^ 2) (fourierMultiplierCLM F g f) := by
+    have hn𝕜 : (fun ξ : E ↦ RCLike.ofReal (K := 𝕜) (‖ξ‖ ^ 2)).HasTemperateGrowth := by
+      fun_prop
+    simp only [← fourierMultiplierCLM_ofReal 𝕜 hn]
+    simp only [fourierMultiplierCLM_fourierMultiplierCLM_apply hg hn𝕜,
+      fourierMultiplierCLM_fourierMultiplierCLM_apply hn𝕜 hg, mul_comm g]
+  simpa only [laplacian_eq_fourierMultiplierCLM, ContinuousLinearMap.map_smul_of_tower]
+    using congrArg (fun q ↦ -((2 * π) ^ 2) • q) hcomm
 
 /-- The Fourier multiplier with symbol `((2π)² ‖ξ‖² + c)⁻¹` is a right inverse of `-Δ + c`. -/
 @[simp]
@@ -170,17 +176,26 @@ variable [CompleteSpace G]
 @[simp]
 theorem neg_laplacian_laplacianResolvent_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
     -Δ (laplacianResolvent c f) + c • laplacianResolvent c f = f := by
-  rw [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM, ← map_neg, ← map_smul, ← map_add,
-    neg_laplacian_fourierMultiplierCLM_add_smul hc, postcompCLM_postcompCLM, reCLM_comp_ofRealLI]
-  rfl
+  -- Project the complex inverse identity to real values, then normalize the linear maps.
+  have hcomplex := neg_laplacian_fourierMultiplierCLM_add_smul hc
+    (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
+  have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
+  ext x
+  simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM, map_add, map_neg,
+    map_smul, postcompCLM_postcompCLM, reCLM_comp_ofRealLI, postcompCLM_apply,
+    ContinuousLinearMap.id_apply] using congrArg (fun u : 𝓢(E, G) ↦ u x) hreal
 
 /-- The resolvent of the Laplacian is a left inverse of `-Δ + c`, for `c > 0`. -/
 @[simp]
 theorem laplacianResolvent_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
     laplacianResolvent c (-Δ f + c • f) = f := by
-  rw [laplacianResolvent_apply, map_add, map_neg, map_smul, ← TauCeti.laplacian_postcompCLM,
-    fourierMultiplierCLM_neg_laplacian_add_smul hc, postcompCLM_postcompCLM, reCLM_comp_ofRealLI]
-  rfl
+  have hcomplex := fourierMultiplierCLM_neg_laplacian_add_smul hc
+    (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
+  have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
+  ext x
+  simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM, map_add, map_neg,
+    map_smul, postcompCLM_postcompCLM, reCLM_comp_ofRealLI, postcompCLM_apply,
+    ContinuousLinearMap.id_apply] using congrArg (fun u : 𝓢(E, G) ↦ u x) hreal
 
 end Real
 
