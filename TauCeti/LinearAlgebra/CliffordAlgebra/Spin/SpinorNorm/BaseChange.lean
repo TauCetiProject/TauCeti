@@ -70,8 +70,6 @@ theorem orthogonalSpinorNorm_comp_orthogonalGroupBaseChange (Q : QuadraticForm K
   refine QuadraticMap.orthogonalGroup_hom_ext Q hQ fun v _ ↦ ?_
   have hv : Q.baseChange L (1 ⊗ₜ v) = algebraMap K L (Q v) := by
     rw [QuadraticForm.baseChange_tmul, mul_one, Algebra.smul_def, mul_one]
-  let _ : Invertible (Q.baseChange L (1 ⊗ₜ v)) :=
-    (Invertible.map (algebraMap K L) (Q v)).copy _ hv
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply,
     QuadraticMap.orthogonalGroupBaseChange_reflectionOrthogonal,
     orthogonalSpinorNorm_reflectionOrthogonal, orthogonalSpinorNorm_reflectionOrthogonal]
