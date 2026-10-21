@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 public import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.FunctionField.Different.Tame
+import TauCeti.FieldTheory.FunctionField.Different.Tower
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 
 /-!
@@ -33,6 +34,9 @@ has infinitely many places with residue field separable over `k`, even when `k` 
 
 ## Main results
 
+* `TauCeti.Place.differentExponent_ratFunc_eq_differentExponent_adjoin` and
+  `TauCeti.Divisor.different_ratFunc_eq_different_adjoin`: the different exponent and different
+  divisor over `RatFunc k` induced by `x` agree with those over `k⟮x⟯`.
 * `TauCeti.Place.finite_setOf_forall_ord_sub_algebraMap_ne_one`: at all but finitely many rational
   places that are not poles of a separating `x`, some `x - a` is a prime element.
 * `TauCeti.Place.finite_setOf_forall_irreducible_ord_aeval_ne_one`: at all but finitely many places
@@ -50,6 +54,34 @@ namespace TauCeti
 namespace Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
+
+/-- **The different exponent over `RatFunc k` induced by `x` agrees with the different exponent
+over `k⟮x⟯`**: for a separating element `x` and any place `P` of `F`, the different exponent
+of `P` is the same over `RatFunc k` through `x` and over `k⟮x⟯`. -/
+theorem differentExponent_ratFunc_eq_differentExponent_adjoin (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] (P : Place k F) :
+    letI := ratFuncAlgebraOfTranscendental hx
+    letI := isScalarTower_ratFuncAlgebraOfTranscendental hx
+    letI := isFunctionField_iff_functionField.mp hF
+    letI := isSeparable_ratFuncAlgebraOfTranscendental hx
+    haveI := hF.finiteDimensional_adjoin hx
+    differentExponent k (RatFunc k) P = differentExponent k k⟮x⟯ P := by
+  let _ := ratFuncAlgebraOfTranscendental hx
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  let _ := isFunctionField_iff_functionField.mp hF
+  let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
+  let _ := hF.finiteDimensional_adjoin hx
+  let e := RatFunc.algEquivOfTranscendental x hx
+  let _ : Algebra (RatFunc k) k⟮x⟯ := e.toAlgHom.toRingHom.toAlgebra
+  have : IsScalarTower (RatFunc k) k⟮x⟯ F :=
+    .of_algebraMap_eq fun r ↦ algebraMap_ratFuncAlgebraOfTranscendental_apply hx r
+  have : IsScalarTower k (RatFunc k) k⟮x⟯ := .of_algebraMap_eq fun c ↦ (e.commutes c).symm
+  have hfin1 : Module.finrank (RatFunc k) k⟮x⟯ = 1 :=
+    Module.finrank_of_bijective_algebraMap e.bijective
+  let _ : FiniteDimensional (RatFunc k) k⟮x⟯ := FiniteDimensional.left (RatFunc k) k⟮x⟯ F
+  let _ : Algebra.IsSeparable (RatFunc k) k⟮x⟯ :=
+    Algebra.isSeparable_tower_bot_of_isSeparable (RatFunc k) k⟮x⟯ F
+  exact differentExponent_eq_of_finrank_left_eq_one (k₁ := k) (F₁ := k⟮x⟯) P hfin1
 
 /-- **Almost every rational place has a translate of `x` as a prime element**: for a separating
 element `x`, only finitely many rational places `P` with `ord_P x ≥ 0` admit no constant `a` with
@@ -147,5 +179,30 @@ theorem infinite_setOf_isSeparable_residueField (hF : IsFunctionField k F) {x : 
   exact Algebra.IsSeparable.trans k ((P a).restrict k (RatFunc k)).ResidueField (P a).ResidueField
 
 end Place
+
+namespace Divisor
+
+variable {k F : Type*} [Field k] [Field F] [Algebra k F]
+
+/-- **The different divisor over `RatFunc k` induced by `x` agrees with the different divisor over
+`k⟮x⟯`.** -/
+theorem different_ratFunc_eq_different_adjoin (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
+    letI := ratFuncAlgebraOfTranscendental hx
+    letI := isScalarTower_ratFuncAlgebraOfTranscendental hx
+    letI := isFunctionField_iff_functionField.mp hF
+    letI := isSeparable_ratFuncAlgebraOfTranscendental hx
+    haveI := hF.finiteDimensional_adjoin hx
+    different k F (IsFunctionField.ratFunc k) = different k F hx.isFunctionField_adjoin := by
+  let _ := ratFuncAlgebraOfTranscendental hx
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  let _ := isFunctionField_iff_functionField.mp hF
+  let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
+  let _ := hF.finiteDimensional_adjoin hx
+  ext P
+  rw [coeff_different, coeff_different,
+    Place.differentExponent_ratFunc_eq_differentExponent_adjoin hF hx P]
+
+end Divisor
 
 end TauCeti
