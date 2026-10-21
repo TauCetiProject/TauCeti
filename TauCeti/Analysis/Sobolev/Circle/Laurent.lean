@@ -24,8 +24,9 @@ The second half of the file makes this precise. The power series `∑_{n ≥ 0} 
 converges on the open unit disc for every order `s` and defines a holomorphic function there,
 the disc function of `a`. For `s > 1/2` it converges on the closed disc and is continuous there,
 and when the negative coefficients of `a` vanish its values on the unit circle are the continuous
-function `CircleSobolev.toContinuousMap` attached to `a`. In particular an element of `H^s_{≥0}`,
-`s > 1/2`, is determined by its holomorphic extension to the open disc.
+function `CircleSobolev.toContinuousMap` attached to `a`. For every order `s`, an element of
+`H^s_{≥0}` is determined by its holomorphic extension to the open disc, whose Taylor coefficients
+at `0` are its nonnegative Fourier coefficients.
 
 ## Main definitions
 
@@ -46,8 +47,8 @@ function `CircleSobolev.toContinuousMap` attached to `a`. In particular an eleme
 * `TauCeti.CircleSobolev.toContinuousMap_apply_eq_diskFunction`: for `s > 1/2` and `a` with
   vanishing negative coefficients, the boundary values of the disc function are the continuous
   function attached to `a`.
-* `TauCeti.CircleSobolev.eq_of_eqOn_diskFunction`: for `s > 1/2`, elements with vanishing
-  negative coefficients are determined by their disc functions on the open disc.
+* `TauCeti.CircleSobolev.eq_of_eqOn_diskFunction`: elements with vanishing negative coefficients
+  are determined by their disc functions on the open disc.
 
 ## References
 
@@ -92,6 +93,15 @@ theorem supported_mono (h : S ⊆ S') : supported s E S ≤ supported s E S' :=
 @[simp]
 theorem supported_univ : supported s E Set.univ = ⊤ :=
   eq_top_iff.2 fun _ _ ↦ Set.subset_univ _
+
+@[simp]
+theorem supported_empty : supported s E ∅ = ⊥ :=
+  eq_bot_iff.2 fun a ha ↦ (Submodule.mem_bot ℂ).2 <| CircleSobolev.ext <| by
+    simpa using Function.support_eq_empty_iff.1 (Set.subset_empty_iff.1 ha)
+
+@[simp]
+theorem supported_inter : supported s E (S ∩ S') = supported s E S ⊓ supported s E S' :=
+  Submodule.ext fun _ ↦ Set.subset_inter_iff
 
 theorem single_mem_supported {n : ℤ} (hn : n ∈ S) (x : E) : single n x ∈ supported s E S := by
   rw [mem_supported, coeff_single]
@@ -155,6 +165,11 @@ theorem indicator_univ : (indicator Set.univ : CircleSobolev s E →L[ℂ] Circl
     ContinuousLinearMap.id ℂ _ :=
   ContinuousLinearMap.ext fun a ↦ CircleSobolev.ext (Set.indicator_univ a.coeff)
 
+@[simp]
+theorem indicator_empty : (indicator ∅ : CircleSobolev s E →L[ℂ] CircleSobolev s E) = 0 :=
+  ContinuousLinearMap.ext fun a ↦ CircleSobolev.ext (Set.indicator_empty a.coeff)
+
+@[simp]
 theorem indicator_add_indicator_compl (S : Set ℤ) (a : CircleSobolev s E) :
     indicator S a + indicator Sᶜ a = a :=
   CircleSobolev.ext (Set.indicator_self_add_compl S a.coeff)
@@ -367,6 +382,25 @@ theorem analyticOnNhd_diskFunction (a : CircleSobolev s E) :
     AnalyticOnNhd ℂ (diskFunction a) (ball 0 1) :=
   (differentiableOn_diskFunction a).analyticOnNhd isOpen_ball
 
+/-- An element of `H^s` with vanishing negative Fourier coefficients is determined by its disc
+function on the open unit disc: its nonnegative coefficients are the Taylor coefficients of the
+disc function at `0`. -/
+theorem eq_of_eqOn_diskFunction {a b : CircleSobolev s E}
+    (ha : a ∈ supported s E (Set.Ici 0)) (hb : b ∈ supported s E (Set.Ici 0))
+    (h : Set.EqOn (diskFunction a) (diskFunction b) (ball 0 1)) : a = b := by
+  have hp (c : CircleSobolev s E) : HasFPowerSeriesAt (diskFunction c)
+      (fun n ↦ ContinuousMultilinearMap.mkPiRing ℂ (Fin n) (c.coeff n) :
+        FormalMultilinearSeries ℂ ℂ E) 0 :=
+    hasFPowerSeriesAt_iff.2 <| eventually_of_mem (ball_mem_nhds 0 one_pos) fun w hw ↦ by
+      simpa [FormalMultilinearSeries.coeff] using hasSum_diskFunction c (mem_ball_zero_iff.1 hw)
+  have hpq := (hp a).eq_formalMultilinearSeries <|
+    (hp b).congr (h.symm.eventuallyEq_of_mem (ball_mem_nhds 0 one_pos))
+  refine CircleSobolev.ext <| funext fun n ↦ ?_
+  rcases lt_or_ge n 0 with hn | hn
+  · rw [mem_supported'.1 ha n (not_le.2 hn), mem_supported'.1 hb n (not_le.2 hn)]
+  · lift n to ℕ using hn
+    simpa [FormalMultilinearSeries.coeff] using congr_arg (·.coeff n) hpq
+
 /-! ### The closed disc and the boundary circle for `s > 1/2` -/
 
 /-- For `s > 1/2`, the power series of the disc function converges absolutely on the closed unit
@@ -395,19 +429,6 @@ theorem toContinuousMap_apply_eq_diskFunction (T : ℝ) [Fact (0 < T)] (hs : 1 /
   rw [toContinuousMap_apply, diskFunction, ← Nat.cast_injective.tsum_eq hsupp]
   refine tsum_congr fun n ↦ ?_
   rw [fourier_one, fourier_apply, natCast_zsmul, AddCircle.toCircle_nsmul, Circle.coe_pow]
-
-/-- For `s > 1/2`, an element of `H^s` with vanishing negative Fourier coefficients is
-determined by its disc function on the open unit disc. -/
-theorem eq_of_eqOn_diskFunction (hs : 1 / 2 < s) {a b : CircleSobolev s E}
-    (ha : a ∈ supported s E (Set.Ici 0)) (hb : b ∈ supported s E (Set.Ici 0))
-    (h : Set.EqOn (diskFunction a) (diskFunction b) (ball 0 1)) : a = b := by
-  have hT : Fact ((0 : ℝ) < 1) := ⟨zero_lt_one⟩
-  have hclosed : Set.EqOn (diskFunction a) (diskFunction b) (closedBall 0 1) :=
-    h.of_subset_closure (continuousOn_diskFunction hs a) (continuousOn_diskFunction hs b)
-      ball_subset_closedBall (closure_ball 0 one_ne_zero).ge
-  refine toContinuousMap_injective 1 hs (ContinuousMap.ext fun x ↦ ?_)
-  rw [toContinuousMap_apply_eq_diskFunction 1 hs ha, toContinuousMap_apply_eq_diskFunction 1 hs hb]
-  exact hclosed (by simp)
 
 end CircleSobolev
 
