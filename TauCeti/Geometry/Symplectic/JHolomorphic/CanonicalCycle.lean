@@ -39,10 +39,12 @@ explicit hypothesis `B.IsSymm` of every theorem below except
   adjunction it is a square-zero torus orthogonal to `κ`;
 * every subcycle `e = ∑ a_i C_i` with `a_i ≤ m_i` has virtual dimension zero;
 * for every class `S` with `κ · S < 0` which each image either equals or meets nonnegatively,
-  in particular for every exceptional sphere, `e · S` is `0` or `-1`.
+  in particular for every `J`-holomorphic exceptional sphere by positivity of intersections,
+  `e · S` is `0` or `-1`.
 
 The last statement is the numerical input to the vanishing of the Seiberg–Witten point invariant
-of a class `e` that is not good, i.e. which pairs below `-1` with some exceptional sphere.
+of a class `e` that is not good, i.e. which pairs below `-1` with some `J`-holomorphic
+exceptional sphere.
 
 The argument is local in each image: evaluating `κ = ∑ m_j C_j` on an image `C_i` of nonnegative
 square and comparing with `d(C_i) ≥ 0` forces `(m_i - 1) C_i · C_i` and every `C_j · C_i` with
@@ -59,9 +61,10 @@ square and comparing with `d(C_i) ≥ 0` forces `(m_i - 1) C_i · C_i` and every
 * `TauCeti.IsCanonicalCycle.apply_self_eq_zero_of_one_lt_mult`,
   `TauCeti.IsCanonicalCycle.apply_canonical_eq_zero_of_one_lt_mult`: repeated images are
   square-zero and orthogonal to `κ`.
-* `TauCeti.IsCanonicalCycle.apply_canonical_sum_eq`: every subcycle has virtual dimension zero.
-* `TauCeti.IsCanonicalCycle.apply_sum_eq_zero_or_eq_neg_one`: every subcycle pairs with an
-  exceptional class to `0` or `-1`.
+* `TauCeti.IsCanonicalCycle.apply_canonical_sum_eq_apply_self`: every subcycle has virtual
+  dimension zero.
+* `TauCeti.IsCanonicalCycle.apply_sum_eq_zero_or_eq_neg_one`: every subcycle pairs to `0` or `-1`
+  with every `J`-holomorphic exceptional sphere.
 
 ## References
 
@@ -229,8 +232,9 @@ theorem apply_sum_eq_mul (hB : B.IsSymm) (h : IsCanonicalCycle B κ C m) (a : ι
 
 /-- Every subcycle `e = ∑ a i • C i`, `a ≤ m`, of a canonical cycle has virtual dimension zero:
 `κ · e = e · e`. -/
-theorem apply_canonical_sum_eq (hB : B.IsSymm) (h : IsCanonicalCycle B κ C m) {a : ι → ℕ}
-    (ha : ∀ i, a i ≤ m i) : B κ (∑ i, a i • C i) = B (∑ i, a i • C i) (∑ i, a i • C i) := by
+theorem apply_canonical_sum_eq_apply_self (hB : B.IsSymm) (h : IsCanonicalCycle B κ C m)
+    {a : ι → ℕ} (ha : ∀ i, a i ≤ m i) :
+    B κ (∑ i, a i • C i) = B (∑ i, a i • C i) (∑ i, a i • C i) := by
   simp only [map_sum (B _), map_nsmul, nsmul_eq_mul, h.apply_sum_eq_mul hB,
     h.apply_canonical_eq_mul hB]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -256,7 +260,7 @@ theorem exists_eq_of_apply_canonical_neg (h : IsCanonicalCycle B κ C m) {S : H}
 
 /-- A subcycle `e = ∑ a i • C i`, `a ≤ m`, of a canonical cycle pairs to `0` or `-1` with every
 class `S` on which the canonical class is negative and which each image either equals or meets
-nonnegatively; in particular with every exceptional sphere. -/
+nonnegatively; in particular with every `J`-holomorphic exceptional sphere. -/
 theorem apply_sum_eq_zero_or_eq_neg_one (hB : B.IsSymm) (h : IsCanonicalCycle B κ C m)
     {a : ι → ℕ} (ha : ∀ i, a i ≤ m i) {S : H} (hS : B κ S < 0)
     (hpos : ∀ i, C i = S ∨ 0 ≤ B (C i) S) :
