@@ -17,6 +17,9 @@ fraction field, with value `v a / v b` on `a / b`. Nonarchimedean absolute value
 nonarchimedean. In particular,
 this constructs normed fraction fields from multiplicative ring norms without completing them.
 
+Use `TauCeti.fractionRingAbsoluteValue F v` to extend `v` to `F`;
+`TauCeti.fractionRingAbsoluteValue_algebraMap` characterizes its restriction to the domain.
+
 The multiplicative extension uses Mathlib's `Submonoid.LocalizationMap.lift₀`.
 -/
 
