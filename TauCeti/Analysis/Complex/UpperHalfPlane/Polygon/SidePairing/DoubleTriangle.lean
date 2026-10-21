@@ -64,21 +64,9 @@ def doubleTriangleSidePairing : (P.doubleTriangle h₀ h₁).SidePairing where
   map_pair i := by
     fin_cases i <;> simp [Fin.rev]
   map_smul_vertex i := by
-    have a₀ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_left
-    have a₁ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_right
-    have b₁ := (P.isGeodesicFromTo_sideGeodesic 1).extGeodesicReflection_left
-    have b₂ := (P.isGeodesicFromTo_sideGeodesic 1).extGeodesicReflection_right
-    have c₂ := (P.isGeodesicFromTo_sideGeodesic 2).extGeodesicReflection_left
-    have c₀ := (P.isGeodesicFromTo_sideGeodesic 2).extGeodesicReflection_right
-    fin_cases i <;> simp_all [geodesicReflectionComp_smul_eq_extGeodesicReflection, Fin.rev]
+    fin_cases i <;> simp [geodesicReflectionComp_smul_eq_extGeodesicReflection, Fin.rev]
   map_smul_vertex_add_one i := by
-    have a₀ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_left
-    have a₁ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_right
-    have b₁ := (P.isGeodesicFromTo_sideGeodesic 1).extGeodesicReflection_left
-    have b₂ := (P.isGeodesicFromTo_sideGeodesic 1).extGeodesicReflection_right
-    have c₂ := (P.isGeodesicFromTo_sideGeodesic 2).extGeodesicReflection_left
-    have c₀ := (P.isGeodesicFromTo_sideGeodesic 2).extGeodesicReflection_right
-    fin_cases i <;> simp_all [geodesicReflectionComp_smul_eq_extGeodesicReflection, Fin.rev]
+    fin_cases i <;> simp [geodesicReflectionComp_smul_eq_extGeodesicReflection, Fin.rev]
 
 /-- The side pairing of the double of a triangle pairs side `i` with side `3 - i`. -/
 @[simp]

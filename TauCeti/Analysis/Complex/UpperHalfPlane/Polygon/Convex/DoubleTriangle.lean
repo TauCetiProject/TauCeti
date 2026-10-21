@@ -26,6 +26,9 @@ Its side pairing by products of reflections, used to construct hyperbolic triang
 
 ## Main declarations
 
+* `ConvexPolygon.extGeodesicReflection_sideGeodesic_vertex` and
+  `ConvexPolygon.extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq`: the reflection in a
+  side of a convex polygon fixes the ends of that side.
 * `ConvexPolygon.doubleTriangle`: the double of a triangle across side `0`.
 * `ConvexPolygon.carrier_doubleTriangle`: it is the union of the triangle and its mirror image.
 
@@ -45,6 +48,22 @@ open scoped Real
 
 namespace TauCeti.UpperHalfPlane.ConvexPolygon
 
+/-- The reflection in the line of a side of a convex polygon fixes the starting vertex of that
+side. -/
+@[simp]
+theorem extGeodesicReflection_sideGeodesic_vertex {n : ℕ} [NeZero n] (P : ConvexPolygon n)
+    (i : Fin n) : extGeodesicReflection (P.sideGeodesic i) (P.vertex i) = P.vertex i :=
+  (P.isGeodesicFromTo_sideGeodesic i).extGeodesicReflection_left
+
+/-- The reflection in the line of a side of a convex polygon fixes the final vertex of that
+side. The index of that vertex is a separate variable, so that `simp` can use this lemma for
+explicit indices such as `P.vertex 2` and side `1`. -/
+@[simp]
+theorem extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq {n : ℕ} [NeZero n]
+    (P : ConvexPolygon n) {i j : Fin n} (h : i + 1 = j) :
+    extGeodesicReflection (P.sideGeodesic i) (P.vertex j) = P.vertex j :=
+  h ▸ (P.isGeodesicFromTo_sideGeodesic i).extGeodesicReflection_right
+
 variable (P : ConvexPolygon 3)
 
 /-- **The double of a triangle across a side.** For a triangle `P` whose angles at the ends of
@@ -59,9 +78,8 @@ def doubleTriangle (h₀ : P.interiorAngle 0 < π / 2) (h₁ : P.interiorAngle 1
   vertex_ne_vertex_add_one := by
     have hρ := extGeodesicReflection_injective (P.sideGeodesic 0)
     have hv := P.vertex_injective
-    have e₀ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_left
-    have e₁ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_right
-    rw [zero_add] at e₁
+    have e₀ := P.extGeodesicReflection_sideGeodesic_vertex 0
+    have e₁ := P.extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq (i := 0) (j := 1) rfl
     intro i
     fin_cases i <;> simp only [Fin.reduceAdd, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
       Matrix.cons_val]
@@ -86,9 +104,8 @@ def doubleTriangle (h₀ : P.interiorAngle 0 < π / 2) (h₁ : P.interiorAngle 1
     have hR {p q : Fin 3} (hpq : p ≠ q) (r : ℍ ⊕ OnePoint ℝ) :=
       extGeodesicReflection_mem_extLeftHalfPlane_geodesicFromTo_iff (P.sideGeodesic 0)
         (P.vertex_injective.ne hpq) r
-    have e₀ := hg.extGeodesicReflection_left
-    have e₁ := hg.extGeodesicReflection_right
-    rw [zero_add] at e₁
+    have e₀ := P.extGeodesicReflection_sideGeodesic_vertex 0
+    have e₁ := P.extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq (i := 0) (j := 1) rfl
     intro i j hji hji'
     fin_cases i <;> fin_cases j <;> simp only [Fin.reduceAdd, Fin.zero_eta, Fin.mk_one,
       Fin.reduceFinMk, Matrix.cons_val, ne_eq, not_true_eq_false] at hji hji' ⊢
@@ -131,9 +148,8 @@ private theorem geodesicReflection_mem_carrier_doubleTriangle {z : ℍ}
     geodesicReflection (P.sideGeodesic 0) z ∈ (P.doubleTriangle h₀ h₁).carrier := by
   set Q := P.doubleTriangle h₀ h₁
   set ρ := geodesicReflection (P.sideGeodesic 0)
-  have e₀ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_left
-  have e₁ := (P.isGeodesicFromTo_sideGeodesic 0).extGeodesicReflection_right
-  rw [zero_add] at e₁
+  have e₀ := P.extGeodesicReflection_sideGeodesic_vertex 0
+  have e₁ := P.extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq (i := 0) (j := 1) rfl
   have f₀ (w : ℍ) : ρ w ∈ closure (leftHalfPlane (geodesicFromTo (Q.vertex 0) (Q.vertex 1))) ↔
       w ∈ closure (leftHalfPlane (geodesicFromTo (Q.vertex 3) (Q.vertex 0))) := by
     have h := geodesicReflection_mem_closure_leftHalfPlane_geodesicFromTo_iff (P.sideGeodesic 0)

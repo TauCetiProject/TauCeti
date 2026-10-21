@@ -31,7 +31,7 @@ extended to `ℍ ∪ ∂ℍ`, where `J` acts on `∂ℍ = ℝ ∪ {∞}` by `x �
 fixes the line of `g` with its ideal endpoints, reverses orientation (the left side of the
 geodesic from `p` to `q` goes to the left side of the geodesic from the image of `q` to the image
 of `p`), and preserves angles. Reflecting a point `c` to the left of a line from `a` to `b` lands
-it to the left of the geodesic from `c` to `a` exactly when the angle at `a` is acute; this is the
+it to the left of the geodesic from `c` to `a` when the angle at `a` is acute; this is the
 convexity condition for gluing a triangle to its mirror image.
 
 ## Main declarations
@@ -54,8 +54,8 @@ convexity condition for gluing a triangle to its mirror image.
 * `TauCeti.UpperHalfPlane.geodesicReflection_image_rightHalfPlane` and
   `TauCeti.UpperHalfPlane.geodesicReflection_image_leftHalfPlane`: reflection exchanges the two
   sides of the geodesic.
-* `TauCeti.UpperHalfPlane.pslConjJ`: conjugation by `J` on `PSL(2, ℝ)`, with `J_smul_smul` and
-  `J_smul_smul_onePoint`.
+* `TauCeti.UpperHalfPlane.pslConjJ`: conjugation by `J` on `PSL(2, ℝ)`, computed on matrices by
+  `pslConjJ_mk`, with `J_smul_smul` and `J_smul_smul_onePoint`.
 * `TauCeti.UpperHalfPlane.extGeodesicReflection`: reflection in `geodesicLine g` on `ℍ ∪ ∂ℍ`.
 * `TauCeti.UpperHalfPlane.extGeodesicReflection_mem_extLeftHalfPlane_geodesicFromTo_iff`: a
   geodesic reflection reverses orientation.
@@ -283,49 +283,29 @@ theorem geodesicReflection_image_leftHalfPlane (g : PSL(2, ℝ)) :
 
 /-! ### Conjugation by `J` -/
 
-private theorem conjJ_neg_one : Matrix.SpecialLinearGroup.conjJ (-1 : SL(2, ℝ)) = -1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
-
-private def pslConjJHom : PSL(2, ℝ) →* PSL(2, ℝ) :=
-  QuotientGroup.map _ _ (Matrix.SpecialLinearGroup.conjJMulAut : MulAut SL(2, ℝ)).toMonoidHom
-    fun A hA ↦ by
-      rw [Subgroup.mem_comap]
-      rcases (Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one).1 hA with rfl | rfl
-      · rw [map_one]; exact Subgroup.one_mem _
-      · rw [MulEquiv.coe_toMonoidHom, Matrix.SpecialLinearGroup.conjJMulAut_apply,
-          conjJ_neg_one]
-        exact hA
-
-private theorem pslConjJHom_mk (A : SL(2, ℝ)) :
-    pslConjJHom (A : PSL(2, ℝ)) = (Matrix.SpecialLinearGroup.conjJ A : PSL(2, ℝ)) := by
-  rw [pslConjJHom, QuotientGroup.map_mk, MulEquiv.coe_toMonoidHom,
-    Matrix.SpecialLinearGroup.conjJMulAut_apply]
-
-private theorem pslConjJHom_pslConjJHom (g : PSL(2, ℝ)) : pslConjJHom (pslConjJHom g) = g := by
-  induction g using QuotientGroup.induction_on with | H A => ?_
-  rw [pslConjJHom_mk, pslConjJHom_mk, Matrix.SpecialLinearGroup.conjJ_conjJ]
-
 /-- Conjugation by the orientation-reversing involution `UpperHalfPlane.J : z ↦ -conj z` on
-`PSL(2, ℝ)`: the class of `!![a, b; c, d]` goes to the class of `!![a, -b; -c, d]`. It is
-characterised by `J_smul_smul` and `J_smul_smul_onePoint`. -/
+`PSL(2, ℝ)`: the class of `!![a, b; c, d]` goes to the class of `!![a, -b; -c, d]`
+(`pslConjJ_mk`). It is characterised by `J_smul_smul` and `J_smul_smul_onePoint`. -/
 def pslConjJ : PSL(2, ℝ) ≃* PSL(2, ℝ) :=
-  pslConjJHom.toMulEquiv pslConjJHom (MonoidHom.ext pslConjJHom_pslConjJHom)
-    (MonoidHom.ext pslConjJHom_pslConjJHom)
+  QuotientGroup.congr _ _ Matrix.SpecialLinearGroup.conjJMulAut
+    (Subgroup.characteristic_iff_map_eq.1 inferInstance _)
+
+/-- Conjugation by `J` sends the class of `!![a, b; c, d]` to the class of `!![a, -b; -c, d]`. -/
+theorem pslConjJ_mk (A : SL(2, ℝ)) :
+    pslConjJ (A : PSL(2, ℝ)) = (Matrix.SpecialLinearGroup.conjJ A : PSL(2, ℝ)) := by
+  rw [pslConjJ]
+  exact congrArg _ (Matrix.SpecialLinearGroup.conjJMulAut_apply A)
 
 /-- Conjugation by `J` is an involution. -/
 @[simp]
-theorem pslConjJ_pslConjJ (g : PSL(2, ℝ)) : pslConjJ (pslConjJ g) = g :=
-  pslConjJHom_pslConjJHom g
+theorem pslConjJ_pslConjJ (g : PSL(2, ℝ)) : pslConjJ (pslConjJ g) = g := by
+  induction g using QuotientGroup.induction_on with | H A => ?_
+  rw [pslConjJ_mk, pslConjJ_mk, Matrix.SpecialLinearGroup.conjJ_conjJ]
 
 /-- Conjugation by `J` is its own inverse. -/
 @[simp]
 theorem pslConjJ_symm : pslConjJ.symm = pslConjJ :=
-  (rfl)
-
-private theorem pslConjJ_mk (A : SL(2, ℝ)) :
-    pslConjJ (A : PSL(2, ℝ)) = (Matrix.SpecialLinearGroup.conjJ A : PSL(2, ℝ)) :=
-  pslConjJHom_mk A
+  MulEquiv.ext fun g ↦ pslConjJ.symm_apply_eq.2 (pslConjJ_pslConjJ g).symm
 
 /-- `J` intertwines the action of `g` on `ℍ` with that of its conjugate `pslConjJ g`. -/
 theorem J_smul_smul (g : PSL(2, ℝ)) (z : ℍ) : J • g • z = pslConjJ g • J • z := by
