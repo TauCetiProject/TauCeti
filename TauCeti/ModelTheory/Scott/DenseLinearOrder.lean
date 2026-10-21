@@ -9,6 +9,8 @@ public import TauCeti.ModelTheory.BackAndForth.Karp
 public import TauCeti.ModelTheory.Scott.ExtensionPair
 public import TauCeti.ModelTheory.Scott.PotentialIso
 public import Mathlib.ModelTheory.Order
+public import Mathlib.SetTheory.Cardinal.Rat
+public import Mathlib.SetTheory.Cardinal.Regular
 
 /-!
 # Scott analysis of dense linear orders
@@ -29,8 +31,11 @@ cardinality:
 
 For countable structures potential isomorphism is isomorphism
 (`TauCeti.countable_potentialIso_iff_iso`), so the first item refines Cantor's
-`ℵ₀`-categoricity (Mathlib's `aleph0_categorical_dlo`); for uncountable orders it is strictly
-weaker, as `ℚ` and `ℝ` are potentially isomorphic but not isomorphic.
+`ℵ₀`-categoricity (Mathlib's `aleph0_categorical_dlo`). For uncountable orders it is strictly
+weaker, even in a single cardinality: the lexicographic product `ω₁ ×ₗ ℚ` of `ω₁` copies of `ℚ`
+and its order dual are nonempty dense linear orders without endpoints of cardinality `ℵ₁`, hence
+potentially isomorphic and `L∞ω`-equivalent, but they are not isomorphic, because the first has
+cofinality `ℵ₁` and the second has cofinality `ℵ₀`.
 
 ## Main results
 
@@ -39,11 +44,15 @@ weaker, as `ℚ` and `ℝ` are potentially isomorphic but not isomorphic.
 * `TauCeti.bfEquiv_iff_sameAtomicType_of_dlo` and `TauCeti.potentialIso_of_dlo`.
 * `TauCeti.internalScottRank_eq_one_of_dlo`.
 * `TauCeti.realize_scottSentence_iff_of_dlo`.
+* `TauCeti.isEmpty_equiv_orderDual_toType_omega_one_lex_rat` and
+  `TauCeti.exists_dlo_aleph_one_potentialIso_isEmpty_equiv`: two dense linear orders without
+  endpoints of cardinality `ℵ₁` that are potentially isomorphic but not isomorphic.
 
 ## References
 
 * Georg Cantor, *Beiträge zur Begründung der transfiniten Mengenlehre*, 1895.
 * Dana Scott, *Logic with denumerably long formulas and finite strings of quantifiers*, 1965.
+* Carol Karp, *Finite-quantifier equivalence*, in *The Theory of Models*, 1965.
 -/
 
 public section
@@ -111,5 +120,72 @@ theorem realize_scottSentence_iff_of_dlo (M : Type w) [Language.order.Structure 
   · rintro ⟨hN, hdlo⟩
     exact (infEquivAt_iff.mp ((potentialIso_of_dlo M N).infEquivAt ℕ) _).mp
       (realize_scottSentence_self M)
+
+section AlephOne
+
+open Cardinal Order
+open scoped Ordinal
+
+attribute [local instance] orderStructure
+
+-- Under `orderStructure`, the order symbol is interpreted as the order.
+local instance {M : Type*} [LE M] : Language.order.OrderedStructure M := ⟨fun _ => Iff.rfl⟩
+
+/-- The lexicographic product `ω₁ ×ₗ ℚ` is not isomorphic, as a structure in the language of
+orders, to its order dual: it has cofinality `ℵ₁`, while its order dual has cofinality `ℵ₀`. -/
+theorem isEmpty_equiv_orderDual_toType_omega_one_lex_rat :
+    IsEmpty ((ω₁ : Ordinal.{w}).ToType ×ₗ ℚ ≃[Language.order]
+      ((ω₁ : Ordinal.{w}).ToType ×ₗ ℚ)ᵒᵈ) := by
+  have : Nonempty (ω₁ : Ordinal.{w}).ToType :=
+    Ordinal.nonempty_toType_iff.mpr (Ordinal.omega_pos 1).ne'
+  have : NoTopOrder (ω₁ : Ordinal.{w}).ToType :=
+    one_lt_cof_iff.mp (by simp [one_lt_aleph0.trans_le (aleph0_le_aleph 1)])
+  have := NoTopOrder.to_noMaxOrder (ω₁ : Ordinal.{w}).ToType
+  -- The copies `(i, 0)` of the elements of `ω₁` are cofinal in `ω₁ ×ₗ ℚ`.
+  have hcof : Order.cof ((ω₁ : Ordinal.{w}).ToType ×ₗ ℚ) = ℵ₁ := by
+    rw [← cof_congr_of_strictMono (f := fun i : (ω₁ : Ordinal.{w}).ToType => toLex (i, (0 : ℚ)))
+      (fun i j h => by simp [Prod.Lex.toLex_lt_toLex, h]) ?_]
+    · simp
+    · rintro ⟨i, q⟩
+      obtain ⟨j, hj⟩ := exists_gt i
+      exact ⟨_, Set.mem_range_self j, (Prod.Lex.toLex_lt_toLex.mpr (.inl hj)).le⟩
+  -- The copy of `ℚ` over the least element of `ω₁` is coinitial in `ω₁ ×ₗ ℚ`.
+  have hcof_dual : Order.cof ((ω₁ : Ordinal.{w}).ToType ×ₗ ℚ)ᵒᵈ = ℵ₀ := by
+    let := WellFoundedLT.toOrderBot (ω₁ : Ordinal.{w}).ToType
+    let f (q : ℚ) : ((ω₁ : Ordinal.{w}).ToType ×ₗ ℚ)ᵒᵈ := OrderDual.toDual (toLex (⊥, -q))
+    have hf : IsCofinal (Set.range f) := fun x => by
+      refine ⟨_, Set.mem_range_self (-(ofLex (OrderDual.ofDual x)).2), ?_⟩
+      rw [OrderDual.le_toDual, neg_neg]
+      exact Prod.Lex.toLex_le_toLex.mpr (bot_le.lt_or_eq.imp id fun h => ⟨h, le_rfl⟩)
+    simpa using (lift_cof_congr_of_strictMono (f := f)
+      (fun q r h => by simpa [f, Prod.Lex.toLex_lt_toLex] using h) hf).symm
+  refine ⟨fun e => ?_⟩
+  let := StrongHomClass.toOrderIsoClass Language.order _ _
+    ((ω₁ : Ordinal.{w}).ToType ×ₗ ℚ ≃[Language.order] ((ω₁ : Ordinal.{w}).ToType ×ₗ ℚ)ᵒᵈ)
+  have h := (OrderIso.ofClass e).cof_congr
+  rw [hcof, hcof_dual] at h
+  exact aleph0_lt_aleph_one.ne' h
+
+/-- Potential isomorphism, and hence `L∞ω`-equivalence, does not imply isomorphism for
+uncountable structures of the same cardinality: in every universe there are two dense linear
+orders without endpoints of cardinality `ℵ₁` that are potentially isomorphic, and so
+`L∞ω`-equivalent (`TauCeti.InfEquivW`), but not isomorphic. The witnesses are `ω₁ ×ₗ ℚ` and its
+order dual. -/
+theorem exists_dlo_aleph_one_potentialIso_isEmpty_equiv :
+    ∃ (M N : Type w) (_ : Language.order.Structure M) (_ : Language.order.Structure N),
+      M ⊨ Language.order.dlo ∧ N ⊨ Language.order.dlo ∧ #M = ℵ₁ ∧ #N = ℵ₁ ∧
+        PotentialIso (L := Language.order) M N ∧ InfEquivW (L := Language.order) M N ∧
+        IsEmpty (M ≃[Language.order] N) := by
+  have : Nonempty (ω₁ : Ordinal.{w}).ToType :=
+    Ordinal.nonempty_toType_iff.mpr (Ordinal.omega_pos 1).ne'
+  have hmk : #((ω₁ : Ordinal.{w}).ToType ×ₗ ℚ) = ℵ₁ := by
+    simp [Cardinal.mk_congr toLex.symm, mul_aleph0_eq]
+  have hiso := potentialIso_of_dlo ((ω₁ : Ordinal.{w}).ToType ×ₗ ℚ)
+    ((ω₁ : Ordinal.{w}).ToType ×ₗ ℚ)ᵒᵈ
+  exact ⟨(ω₁ : Ordinal.{w}).ToType ×ₗ ℚ, ((ω₁ : Ordinal.{w}).ToType ×ₗ ℚ)ᵒᵈ, _, _,
+    inferInstance, inferInstance, hmk, hmk, hiso, karp_theorem.mp hiso,
+    isEmpty_equiv_orderDual_toType_omega_one_lex_rat⟩
+
+end AlephOne
 
 end TauCeti
