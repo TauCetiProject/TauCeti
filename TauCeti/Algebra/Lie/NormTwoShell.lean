@@ -290,8 +290,9 @@ theorem rootBracket_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (a b : B.
     have hsign : (B.orderedSignForm b a).negOnePow = -(B.orderedSignForm a b).negOnePow := by
       rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff, Int.even_iff]
       omega
-    rw [rootBracket_of_mem hm, rootBracket_of_mem hm', hsign, Units.neg_smul,
-      show (⟨_, hm'⟩ : B.normTwoShell) = ⟨_, hm⟩ from Subtype.ext (add_comm _ _)]
+    -- The two brackets land on the same root `b + a = a + b`, packaged with different proofs.
+    have hroot : (⟨_, hm'⟩ : B.normTwoShell) = ⟨_, hm⟩ := Subtype.ext (add_comm _ _)
+    rw [rootBracket_of_mem hm, rootBracket_of_mem hm', hsign, Units.neg_smul, hroot]
   by_cases hz : (a : I → ℤ) + b = 0
   · have hb : (b : I → ℤ) = -a := eq_neg_of_add_eq_zero_right hz
     have hp : (a : I → ℤ) ⬝ᵥ B *ᵥ b = -2 := by
@@ -299,8 +300,9 @@ theorem rootBracket_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (a b : B.
     have hsign : (B.orderedSignForm b a).negOnePow = (B.orderedSignForm a b).negOnePow := by
       rw [Int.negOnePow_eq_iff, Int.even_iff]
       omega
+    have hcartan : cartan B b = -cartan B a := by rw [hb, map_neg]
     rw [rootBracket_of_add_eq_zero hz, rootBracket_of_add_eq_zero (by rwa [add_comm]), hsign,
-      show cartan B b = -cartan B a by rw [hb, map_neg], smul_neg]
+      hcartan, smul_neg]
   · rw [rootBracket_of_not_mem_of_add_ne_zero hm hz,
       rootBracket_of_not_mem_of_add_ne_zero (by rwa [add_comm]) (by rwa [add_comm]), neg_zero]
 
@@ -416,9 +418,11 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
     rw [hS.add_dotProduct_mulVec_add, hS.add_dotProduct_mulVec_add, add_dotProduct,
       mem_normTwoShell.mp ha, mem_normTwoShell.mp hb, mem_normTwoShell.mp hc, hac]
     ring
+  -- Each double bracket lands on the same lattice vector `a + b + c`, in a rotated order.
+  have hbca : (b : I → ℤ) + c + a = (a : I → ℤ) + b + c := by abel
+  have hcab : (c : I → ℤ) + a + b = (a : I → ℤ) + b + c := by abel
   rw [root_bracket_rootBracket hbc', root_bracket_rootBracket hca', root_bracket_rootBracket hab',
-    show (b : I → ℤ) + c + a = (a : I → ℤ) + b + c by abel,
-    show (c : I → ℤ) + a + b = (a : I → ℤ) + b + c by abel]
+    hbca, hcab]
   simp only [map_add]
   by_cases hd : (a : I → ℤ) + b + c = 0
   · -- All three pairings are `-1`, and the terms are multiples of `H_a`, `H_b` and `H_c`.
@@ -477,9 +481,11 @@ private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : �
     rw [hS.add_mem_normTwoShell_iff c.2 a.2, hS.dotProduct_mulVec_comm]
   have pca := even_orderedSignForm_add_orderedSignForm_swap_sub B hS hdiag c a
   rw [Int.even_iff, hS.dotProduct_mulVec_comm] at pca
+  -- Since `a + b = 0`, both nonzero double brackets land on the root `c`.
+  have habc : (a : I → ℤ) + b + c = c := by rw [hab, zero_add]
+  have hbca : (b : I → ℤ) + c + a = c := by rw [hbv]; abel
   rw [root_bracket_rootBracket hbc, root_bracket_rootBracket hca', rootBracket_of_add_eq_zero hab,
-    bracket_units_smul, root_bracket_cartan, show (a : I → ℤ) + b + c = c by rw [hab, zero_add],
-    show (b : I → ℤ) + c + a = c by rw [hbv]; abel, rootOf_coe]
+    bracket_units_smul, root_bracket_cartan, habc, hbca, rootOf_coe]
   simp only [hc0, ↓reduceIte, add_zero]
   rcases (by omega : (a : I → ℤ) ⬝ᵥ B *ᵥ c = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ c = 0 ∨
       (a : I → ℤ) ⬝ᵥ B *ᵥ c = 1) with hd | hd | hd
