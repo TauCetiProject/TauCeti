@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.GCDMonoid.Finset
 public import Mathlib.Algebra.GCDMonoid.Nat
-public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Data.Nat.Choose.Lucas
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
@@ -67,14 +66,14 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
   2-cocycle vanishes for `n ≠ 0`.
 * `TauCeti.lazardGcd_eq_minFac_of_isPrimePow`, `TauCeti.lazardGcd_eq_one_of_not_isPrimePow`:
   `d_n` is `p` for `n = pᵏ`, and `1` for `n ≥ 2` not a prime power.
-* `TauCeti.prime_dvd_lazardGcd_iff`: for `n ≥ 2` and a prime `p`, `p ∣ d_n` exactly when `n` is a
+* `TauCeti.prime_dvd_lazardGcd_iff`: for `n ≠ 0` and a prime `p`, `p ∣ d_n` exactly when `n` is a
   power of `p`. In particular `d_n` is odd unless `n` is a power of two.
 * `TauCeti.gcd_choose_div_lazardGcd_eq_one`: for `n ≥ 2`, the coefficients `n.choose i / d_n`
   have greatest common divisor `1`.
 * `TauCeti.coeff_lazardCocycle`: the coefficient of `XⁱYʲ` in `C_n` is
   `n.choose i / d_n` when `i + j = n` and `i, j ≠ 0`, and `0` otherwise.
 * `TauCeti.lazardGcd_nsmul_lazardCocycle`: `d_n • C_n = (X + Y)ⁿ - Xⁿ - Yⁿ` for `n ≠ 0`.
-* `TauCeti.aeval_X_X_lazardCocycle`: the diagonal `C_n(X, X)` is `((2ⁿ - 2) / d_n) • Xⁿ`.
+* `TauCeti.aeval_diag_lazardCocycle`: the diagonal `C_n(a, a)` is `((2ⁿ - 2) / d_n) • aⁿ`.
 * `TauCeti.map_lazardCocycle`: `C_n` is compatible with ring homomorphisms.
 * `TauCeti.isHomogeneous_lazardCocycle`, `TauCeti.isSymmetric_lazardCocycle`,
   `TauCeti.isAddCocycle₂_lazardCocycle`: `C_n` is a homogeneous symmetric additive 2-cocycle
@@ -200,9 +199,12 @@ theorem lazardGcd_eq_zero_of_lt_two {n : ℕ} (hn : n < 2) : lazardGcd n = 0 := 
 theorem lazardGcd_prime_pow {p k : ℕ} (hp : p.Prime) (hk : k ≠ 0) : lazardGcd (p ^ k) = p := by
   rw [lazardGcd_eq_minFac_of_isPrimePow (hp.isPrimePow.pow hk), hp.pow_minFac hk]
 
-/-- For `n ≥ 2` and a prime `p`, `p` divides `d_n` exactly when `n` is a power of `p`. -/
-theorem prime_dvd_lazardGcd_iff {n p : ℕ} (hp : p.Prime) (hn : 2 ≤ n) :
+/-- For `n ≠ 0` and a prime `p`, `p` divides `d_n` exactly when `n` is a power of `p`. -/
+theorem prime_dvd_lazardGcd_iff {n p : ℕ} (hp : p.Prime) (hn : n ≠ 0) :
     p ∣ lazardGcd n ↔ ∃ k, n = p ^ k := by
+  -- For `n = 1`, both sides hold: `d_1 = 0` and `1 = p⁰`.
+  rcases eq_or_ne n 1 with rfl | hn1
+  · exact iff_of_true (by simp [lazardGcd_eq_zero_of_lt_two]) ⟨0, (pow_zero p).symm⟩
   refine ⟨fun h => ?_, ?_⟩
   · by_cases hpp : IsPrimePow n
     · obtain ⟨q, k, hq, hk, rfl⟩ := (isPrimePow_nat_iff n).1 hpp
@@ -213,7 +215,7 @@ theorem prime_dvd_lazardGcd_iff {n p : ℕ} (hp : p.Prime) (hn : 2 ≤ n) :
   · rintro ⟨k, rfl⟩
     rw [lazardGcd_prime_pow hp]
     rintro rfl
-    simp at hn
+    simp at hn1
 
 /-- `d ∣ d_n` if and only if `d` divides every `n.choose i`, `0 < i < n`. -/
 theorem dvd_lazardGcd_iff {n d : ℕ} :
@@ -323,13 +325,12 @@ theorem lazardGcd_nsmul_aeval_lazardCocycle {A : Type*} [CommRing A] [Algebra R 
   rw [← map_nsmul, lazardGcd_nsmul_lazardCocycle hn]
   simp
 
-/-- The diagonal `C_n(X, X)` of the Lazard cocycle is `((2ⁿ - 2) / d_n) • Xⁿ`: the coefficients
-`n.choose i`, `0 < i < n`, of `(X + Y)ⁿ - Xⁿ - Yⁿ` sum to `2ⁿ - 2`. For `n < 2` both sides
-vanish. -/
+/-- The diagonal `C_n(a, a)` of the Lazard cocycle, for an element `a` of any commutative
+`R`-algebra, is `((2ⁿ - 2) / d_n) • aⁿ`: the coefficients `n.choose i`, `0 < i < n`, of
+`(X + Y)ⁿ - Xⁿ - Yⁿ` sum to `2ⁿ - 2`. For `n < 2` both sides vanish. -/
 @[simp]
-theorem aeval_X_X_lazardCocycle (n : ℕ) :
-    aeval ![Polynomial.X, Polynomial.X] (lazardCocycle n R) =
-      ((2 ^ n - 2) / lazardGcd n) • (Polynomial.X : Polynomial R) ^ n := by
+theorem aeval_diag_lazardCocycle {A : Type*} [CommRing A] [Algebra R A] (n : ℕ) (a : A) :
+    aeval ![a, a] (lazardCocycle n R) = ((2 ^ n - 2) / lazardGcd n) • a ^ n := by
   -- The coefficient is the sum of the coefficients `n.choose i / d_n` of `C_n`.
   have hsum : (2 ^ n - 2) / lazardGcd n = ∑ i ∈ Icc 1 (n - 1), n.choose i / lazardGcd n := by
     rw [← Nat.sum_Icc_choose_eq_two_pow_sub_two]

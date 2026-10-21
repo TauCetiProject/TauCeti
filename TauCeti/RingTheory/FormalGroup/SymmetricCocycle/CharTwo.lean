@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
 
 /-!
@@ -38,8 +39,8 @@ classification over an arbitrary commutative ring and binomial-coefficient arith
 
 * `TauCeti.lazardCocycle_eq_of_two_eq_zero`: if `2 = 0` in `R` and `n ≠ 0` is not a power of two,
   then `C_n = (X + Y)ⁿ - Xⁿ - Yⁿ`.
-* `TauCeti.aeval_X_X_lazardCocycle_two_pow`: if `2 = 0` in `R` and `k ≠ 0`, then
-  `C_{2ᵏ}(X, X) = X^{2ᵏ}`.
+* `TauCeti.aeval_diag_lazardCocycle_two_pow`: if `2 = 0` in `R` and `k ≠ 0`, then
+  `C_{2ᵏ}(a, a) = a^{2ᵏ}` for every element `a` of an `R`-algebra.
 * `TauCeti.existsUnique_eq_smul_add_pow_sub_pow_sub_pow_of_two_eq_zero`: if `2 = 0` in `R` and
   `n ≠ 0` is not a power of two, a homogeneous symmetric additive 2-cocycle of degree `n` is
   `r • ((X + Y)ⁿ - Xⁿ - Yⁿ)` for a unique `r : R`.
@@ -68,33 +69,31 @@ so `d_n = 1` in `R`. -/
 theorem lazardCocycle_eq_of_two_eq_zero (h2 : (2 : R) = 0) {n : ℕ} (hn0 : n ≠ 0)
     (hn : ∀ k, n ≠ 2 ^ k) :
     lazardCocycle n R = (X 0 + X 1) ^ n - X 0 ^ n - X 1 ^ n := by
-  have hn2 : 2 ≤ n := by
-    have := hn 0
-    omega
   have hodd : Odd (lazardGcd n) := by
     refine Nat.odd_iff.2 (Nat.two_dvd_ne_zero.1 fun h => ?_)
-    obtain ⟨k, hk⟩ := (prime_dvd_lazardGcd_iff Nat.prime_two hn2).1 h
+    obtain ⟨k, hk⟩ := (prime_dvd_lazardGcd_iff Nat.prime_two hn0).1 h
     exact hn k hk
   rw [← lazardGcd_nsmul_lazardCocycle hn0, ← Nat.cast_smul_eq_nsmul R,
     natCast_eq_one_of_odd_of_two_eq_zero hodd h2, one_smul]
 
 /-- If `2 = 0` in `R` and `k ≠ 0`, the diagonal of the Lazard cocycle of degree `2ᵏ` is
-`C_{2ᵏ}(X, X) = X^{2ᵏ}`: its integral coefficient `(2^{2ᵏ} - 2) / 2` is odd. -/
--- High priority, so that `simp` tries this before the general `aeval_X_X_lazardCocycle`.
+`C_{2ᵏ}(a, a) = a^{2ᵏ}` for an element `a` of any commutative `R`-algebra: its integral
+coefficient `(2^{2ᵏ} - 2) / 2` is odd. -/
+-- High priority, so that `simp` tries this before the general `aeval_diag_lazardCocycle`.
 @[simp high]
-theorem aeval_X_X_lazardCocycle_two_pow (h2 : (2 : R) = 0) {k : ℕ} (hk : k ≠ 0) :
-    aeval ![Polynomial.X, Polynomial.X] (lazardCocycle (2 ^ k) R) =
-      (Polynomial.X : Polynomial R) ^ 2 ^ k := by
-  rw [aeval_X_X_lazardCocycle, lazardGcd_prime_pow Nat.prime_two hk, ← Nat.cast_smul_eq_nsmul R,
+theorem aeval_diag_lazardCocycle_two_pow {A : Type*} [CommRing A] [Algebra R A]
+    (h2 : (2 : R) = 0) {k : ℕ} (hk : k ≠ 0) (a : A) :
+    aeval ![a, a] (lazardCocycle (2 ^ k) R) = a ^ 2 ^ k := by
+  rw [aeval_diag_lazardCocycle, lazardGcd_prime_pow Nat.prime_two hk, ← Nat.cast_smul_eq_nsmul R,
     natCast_eq_one_of_odd_of_two_eq_zero _ h2, one_smul]
-  -- Write `2 ^ 2 ^ k = 4 * a` with `a ≥ 1`; then `(4 * a - 2) / 2 = 2 * a - 1` is odd.
-  obtain ⟨a, ha, ha'⟩ : ∃ a, 1 ≤ a ∧ 2 ^ 2 ^ k = 4 * a := by
+  -- Write `2 ^ 2 ^ k = 4 * m` with `m ≥ 1`; then `(4 * m - 2) / 2 = 2 * m - 1` is odd.
+  obtain ⟨m, hm, hm'⟩ : ∃ m, 1 ≤ m ∧ 2 ^ 2 ^ k = 4 * m := by
     refine ⟨2 ^ (2 ^ k - 2), Nat.one_le_two_pow, ?_⟩
     have : 2 ≤ 2 ^ k := Nat.le_self_pow hk 2
     have h4 : (4 : ℕ) = 2 ^ 2 := by norm_num
     rw [h4, ← pow_add, Nat.add_sub_cancel' this]
-  rw [ha']
-  exact ⟨a - 1, by omega⟩
+  rw [hm']
+  exact ⟨m - 1, by omega⟩
 
 /-- **The symmetric 2-cocycle lemma when `2 = 0`, away from powers of two.** If `2 = 0` in `R`
 and `n ≠ 0` is not a power of two, a homogeneous symmetric additive 2-cocycle of degree `n` over
@@ -120,7 +119,7 @@ theorem eq_zero_of_two_eq_zero_of_aeval_X_X_eq_zero (h2 : (2 : R) = 0) {k : ℕ}
   rcases eq_or_ne k 0 with rfl | hk
   · rw [lazardCocycle_eq_zero_of_lt_two (by norm_num), smul_zero]
   · -- The diagonal of `r • C_{2ᵏ}` is `r • X^{2ᵏ}`, whose coefficient of `X^{2ᵏ}` is `r`.
-    rw [map_smul, aeval_X_X_lazardCocycle_two_pow h2 hk] at hd
+    rw [map_smul, aeval_diag_lazardCocycle_two_pow h2 hk] at hd
     have hr : r = 0 := by simpa using congrArg (Polynomial.coeff · (2 ^ k)) hd
     rw [hr, zero_smul]
 
