@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Basic
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Chord
 import Mathlib.Analysis.InnerProductSpace.Continuous
 import TauCeti.Analysis.Complex.Inner
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
@@ -209,13 +210,6 @@ section Surjective
 
 variable {C : ℕ → Set ℂ} {k : ℕ}
 
-/-- The level of `z` in the direction of a point `x` of the circle is at least `1 - ‖z - x‖`. -/
-private lemma one_sub_norm_sub_le_inner {x : ℂ} (hx : ‖x‖ = 1) (z : ℂ) :
-    1 - ‖z - x‖ ≤ inner ℝ x z := by
-  have h := real_inner_le_norm x (x - z)
-  rw [inner_sub_right, real_inner_self_eq_norm_sq, hx, norm_sub_rev] at h
-  linarith
-
 /-- The crosscuts of a null chain of the disc eventually have small Euclidean diameter: on the
 closed disc the chordal distance is at least half the Euclidean one. -/
 private lemma IsNullChain.eventually_norm_sub_lt (hC : IsNullChain (ball 0 1) C) {ε : ℝ}
@@ -259,7 +253,7 @@ private lemma IsNullChain.eventually_exists_norm_sub_sq_le (hC : IsNullChain (ba
     by_contra! hlt
     -- the part of the disc below level `1 - δ'` misses the crosscut, so it lies in the domain
     have hA : ball 0 1 ∩ {w | inner ℝ x w < 1 - δ'} ⊆ nullChainDomain (ball 0 1) C n :=
-      hC.subset_nullChainDomain
+      subset_nullChainDomain
         ((convex_ball 0 1).inter (convex_halfSpace_lt (innerₗ ℂ x).isLinear _)).isPreconnected
         (fun w hw => ⟨hw.1, fun hwC => by
           have hw2 : inner ℝ x w < 1 - δ' := hw.2
@@ -290,7 +284,7 @@ private lemma IsNullChain.exists_cap_subset_nullChainDomain (hC : IsNullChain (b
   rw [nullChainDomain_unitDiscRadialChain hζ]
   set t := 1 - 1 / ((n : ℝ) + 2)
   -- the cap is a convex set off the crosscut
-  refine hC.subset_nullChainDomain
+  refine subset_nullChainDomain
     ((convex_ball 0 1).inter (convex_halfSpace_gt (innerₗ ℂ ζ).isLinear t)).isPreconnected
     (fun z hz => ⟨hz.1, hrC ?_⟩) ?_
   · have h := norm_sub_sq_le hζ (mem_ball_zero_iff.mp hz.1).le hz.2.le

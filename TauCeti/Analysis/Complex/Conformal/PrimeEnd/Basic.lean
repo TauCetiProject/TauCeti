@@ -37,11 +37,11 @@ equivalence of chains visibly an equivalence relation.
 ## Main declarations
 
 * `TauCeti.nullChainDomain` -- the domain cut off by the `n`-th crosscut of a chain.
+* `TauCeti.subset_nullChainDomain` -- a preconnected set off a crosscut that meets its domain
+  lies in it.
 * `TauCeti.IsNullChain` -- the null-chain predicate.
 * `TauCeti.IsNullChain.nullChainDomain_eq_connectedComponentIn` -- each domain is the component
   of the cut set containing the next crosscut.
-* `TauCeti.IsNullChain.subset_nullChainDomain` -- a preconnected set off a crosscut that meets
-  its domain lies in it.
 * `TauCeti.IsNullChain.separatesIn` -- Pommerenke's separation condition.
 * `TauCeti.NullChainEquivalent` -- equivalence of chains, an equivalence relation.
 * `TauCeti.PrimeEnd` -- the prime ends of a plane set.
@@ -79,6 +79,16 @@ theorem mem_nullChainDomain_iff {z : ℂ} :
 /-- The domain cut off by a crosscut avoids that crosscut. -/
 theorem nullChainDomain_subset : nullChainDomain U C n ⊆ U \ C n :=
   iUnion₂_subset fun _ _ => connectedComponentIn_subset _ _
+
+/-- A preconnected subset of `U \ C n` that meets the domain cut off by the `n`-th crosscut lies
+in that domain. -/
+theorem subset_nullChainDomain {S : Set ℂ} (hS : IsPreconnected S) (hSC : S ⊆ U \ C n)
+    (hSD : (S ∩ nullChainDomain U C n).Nonempty) : S ⊆ nullChainDomain U C n := by
+  obtain ⟨q, hqS, hqD⟩ := hSD
+  obtain ⟨w, hw, hqw⟩ := mem_nullChainDomain_iff.mp hqD
+  have hSw := hS.subset_connectedComponentIn hqS hSC
+  rw [← connectedComponentIn_eq hqw] at hSw
+  exact fun z hz => mem_nullChainDomain_iff.mpr ⟨w, hw, hSw hz⟩
 
 /-- A **null chain** of `U ⊆ ℂ`: a sequence of crosscuts of `U`, recorded by their closed ranges,
 each disjoint from the next, cutting off a decreasing sequence of domains, and with chordal
@@ -125,17 +135,6 @@ theorem nullChainDomain_eq_connectedComponentIn (hC : IsNullChain U C) {z : ℂ}
   obtain ⟨w, hw, hqw⟩ := mem_nullChainDomain_iff.mp hq
   have hwU : w ∈ U := (connectedComponentIn_nonempty_iff.mp ⟨q, hqw⟩).1
   rwa [connectedComponentIn_eq (hsub ⟨hw, hwU⟩)]
-
-/-- A preconnected subset of `U \ C n` that meets the domain cut off by the `n`-th crosscut of a
-null chain lies in that domain. -/
-theorem subset_nullChainDomain (hC : IsNullChain U C) {S : Set ℂ} (hS : IsPreconnected S)
-    (hSC : S ⊆ U \ C n) (hSD : (S ∩ nullChainDomain U C n).Nonempty) :
-    S ⊆ nullChainDomain U C n := by
-  obtain ⟨q, hqS, hqD⟩ := hSD
-  obtain ⟨w, hw⟩ := (hC.isConnected_inter (n + 1)).nonempty
-  rw [hC.nullChainDomain_eq_connectedComponentIn hw] at hqD ⊢
-  rw [connectedComponentIn_eq hqD]
-  exact hS.subset_connectedComponentIn hqS hSC
 
 /-- Every domain cut off by a null chain is nonempty. -/
 theorem nonempty_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
