@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.IntegralLattice.Binary.Orientation
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+import Mathlib.LinearAlgebra.SpecialLinearGroup
 
 /-!
 # Binary isometries and reflected proper classes
@@ -90,7 +91,7 @@ theorem exists_improper_isometry_iff :
   · rintro ⟨γ, hγ⟩
     let bRev := b.unitsSMul (Function.update 1 (1 : Fin 2) (-1))
     let f := Matrix.toLinearEquiv bRev ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)
-      (by rw [SpecialLinearGroup.det_coe]; exact isUnit_one)
+      (by rw [Matrix.SpecialLinearGroup.det_coe]; exact isUnit_one)
     let b' := bRev.map f
     have hf : f.toLinearMap = Matrix.toLin bRev bRev
         ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) := by
@@ -118,7 +119,7 @@ theorem exists_improper_isometry_iff :
     rw [← e.carrierBasisEquiv_apply, he]
     have ho : b'.orientation = bRev.orientation := by
       apply (Basis.orientation_comp_linearEquiv_eq_iff_det_pos bRev f).mpr
-      rw [hf, LinearMap.det_toLin, SpecialLinearGroup.det_coe]
+      rw [hf, LinearMap.det_toLin, Matrix.SpecialLinearGroup.det_coe]
       norm_num
     exact ho.trans (b.orientation_neg_single 1)
 
@@ -130,22 +131,22 @@ theorem index_specialOrthogonalGroup_eq_two_iff_reflected :
         γ • (L.binaryNormForm b).primPart.reflected :=
   (index_specialOrthogonalGroup_eq_two_iff L).trans (exists_improper_isometry_iff b)
 
+/-- The restriction of a proper isometry to the carrier, as a special linear automorphism. -/
+private def toSpecialLinearGroup : specialOrthogonalGroup L →* _root_.SpecialLinearGroup ℤ L where
+  toFun g := ⟨(g : Isometry L L).carrierEquiv,
+    (Isometry.det_apply _).symm.trans (mem_specialOrthogonalGroup_iff.mp g.prop)⟩
+  map_one' := Subtype.ext (by simpa using map_one (Isometry.carrierEquivHom L))
+  map_mul' g h :=
+    Subtype.ext (by simpa using map_mul (Isometry.carrierEquivHom L) (g : Isometry L L) h)
+
 /-- The matrix of a proper isometry in a carrier basis, as an element of `SL(2, ℤ)`. -/
-private noncomputable def toSL : specialOrthogonalGroup L →* SL(2, ℤ) where
-  toFun g := ⟨LinearMap.toMatrix b b ((g : Isometry L L).carrierEquiv : L →ₗ[ℤ] L), by
-    rw [LinearMap.det_toMatrix, ← Isometry.coe_det, mem_specialOrthogonalGroup_iff.mp g.prop,
-      Units.val_one]⟩
-  map_one' := Subtype.ext <|
-    (congrArg (fun e : L ≃ₗ[ℤ] L ↦ LinearMap.toMatrix b b (e : L →ₗ[ℤ] L))
-      (Isometry.carrierEquiv_refl L)).trans (LinearMap.toMatrix_id b)
-  map_mul' g h := Subtype.ext <|
-    (congrArg (fun e : L ≃ₗ[ℤ] L ↦ LinearMap.toMatrix b b (e : L →ₗ[ℤ] L))
-      (Isometry.carrierEquiv_trans (h : Isometry L L) g)).trans
-      (LinearMap.toMatrix_comp b b b _ _)
+private noncomputable def toSL : specialOrthogonalGroup L →* SL(2, ℤ) :=
+  (Matrix.SpecialLinearGroup.toLin_equiv b).symm.toMonoidHom.comp toSpecialLinearGroup
 
 private theorem coe_toSL (g : specialOrthogonalGroup L) :
     ((toSL b g : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
-      LinearMap.toMatrix b b ((g : Isometry L L).carrierEquiv : L →ₗ[ℤ] L) := (rfl)
+      LinearMap.toMatrix b b ((g : Isometry L L).carrierEquiv : L →ₗ[ℤ] L) :=
+  Matrix.SpecialLinearGroup.toLin_equiv.symm_toLinearMap_eq b _
 
 /-- The matrix of a proper isometry fixes the binary norm form. -/
 private theorem toSL_mem_stabilizer (g : specialOrthogonalGroup L) :
@@ -155,19 +156,15 @@ private theorem toSL_mem_stabilizer (g : specialOrthogonalGroup L) :
   rw [← Isometry.carrierBasisEquiv_apply, binaryNormForm_map_isometry] at h
   exact (Subgroup.inv_mem_iff _).mp (mem_stabilizer_iff.mpr h.symm)
 
-private theorem toSL_injective : Function.Injective (toSL (L := L) b) := by
-  intro g h hgh
-  apply Subtype.ext
-  apply Isometry.carrierEquiv_injective
-  apply LinearEquiv.toLinearMap_injective
-  apply (LinearMap.toMatrix b b).injective
-  simpa only [coe_toSL] using congrArg (fun γ : SL(2, ℤ) ↦ (γ : Matrix (Fin 2) (Fin 2) ℤ)) hgh
+private theorem toSL_injective : Function.Injective (toSL (L := L) b) :=
+  (Matrix.SpecialLinearGroup.toLin_equiv b).symm.injective.comp fun _ _ h ↦
+    Subtype.ext (Isometry.carrierEquiv_injective (congrArg Subtype.val h))
 
 /-- Every proper automorph of the norm form is the matrix of a proper isometry. -/
 private theorem exists_toSL_eq {γ : SL(2, ℤ)} (hγ : γ ∈ stabilizer SL(2, ℤ) (L.binaryNormForm b)) :
     ∃ g : specialOrthogonalGroup L, toSL b g = γ := by
   let φ := Matrix.toLinearEquiv b (γ : Matrix (Fin 2) (Fin 2) ℤ)
-    (by rw [SpecialLinearGroup.det_coe]; exact isUnit_one)
+    (by rw [Matrix.SpecialLinearGroup.det_coe]; exact isUnit_one)
   have hφ : b.toMatrix (b.map φ) = γ := by
     rw [Basis.coe_map, ← LinearEquiv.coe_toLinearMap, ← LinearMap.toMatrix_eq_basisToMatrix]
     exact LinearMap.toMatrix_toLin b b _
@@ -181,7 +178,8 @@ private theorem exists_toSL_eq {γ : SL(2, ℤ)} (hγ : γ ∈ stabilizer SL(2, 
   have hdet : e ∈ specialOrthogonalGroup L := by
     rw [mem_specialOrthogonalGroup_iff]
     apply Units.ext
-    rw [Isometry.coe_det, ← LinearMap.det_toMatrix b, hm, SpecialLinearGroup.det_coe, Units.val_one]
+    rw [Isometry.coe_det, ← LinearMap.det_toMatrix b, hm, Matrix.SpecialLinearGroup.det_coe,
+      Units.val_one]
   exact ⟨⟨e, hdet⟩, Subtype.ext hm⟩
 
 /-- **Proper isometries are proper automorphs.** In a carrier basis `b` of a rank-two lattice, the
