@@ -25,9 +25,11 @@ Then every `A`-module `M` is `S` tensored with its **multiplicity space** `S →
 
 is an isomorphism of `A`-modules (`TauCeti.isotypicTensorEquivOfBijective`). Nothing is assumed
 of `M`: it need not be finite, free or semisimple, and `k` need not be a field. Nor is `S` asked
-to be nonzero: for `S = 0` the algebra `A` is zero and so is every `A`-module. This is the
-module-level content of the Morita equivalence between `k` and `End_k S`, with the explicit
-functors `X ↦ S ⊗[k] X` and `M ↦ S →ₗ[A] M`.
+to be nonzero: for `S = 0` the algebra `A` is zero and so is every `A`-module. This is one half
+of the Morita correspondence for `S`: the counit `S ⊗[k] (S →ₗ[A] M) → M` is an isomorphism; the
+unit `X → S →ₗ[A] (S ⊗[k] X)` is not treated here. When `S` is also a generator (for instance
+nonzero over a field), the two functors `X ↦ S ⊗[k] X` and `M ↦ S →ₗ[A] M` give a Morita
+equivalence between `k` and `End_k S`.
 
 The inverse is explicit. A linear form `φ` on `S` and a vector `x : M` give the `A`-linear map
 `TauCeti.homOfDual h φ x : S →ₗ[A] M` sending `s` to `a • x`, where `a ∈ A` acts on `S` as the
@@ -86,28 +88,11 @@ variable (h : Function.Bijective (Algebra.lsmul k k S : A →ₐ[k] Module.End k
 /-! ### The matrix units attached to linear forms -/
 
 /-- The element of `A` acting as an endomorphism `f` of `S` acts on a vector by `f`. -/
-private theorem ofBijective_symm_smul (f : Module.End k S) (s : S) :
+@[simp]
+theorem ofBijective_lsmul_symm_smul (f : Module.End k S) (s : S) :
     (AlgEquiv.ofBijective _ h).symm f • s = f s := by
   conv_rhs => rw [← (AlgEquiv.ofBijective _ h).apply_symm_apply f]
   rw [AlgEquiv.ofBijective_apply, Algebra.lsmul_apply]
-
-/-- The rank-one endomorphism `t ↦ φ t • a • s` is `a` composed with `t ↦ φ t • s`. -/
-private theorem ofBijective_symm_smulRight_smul (φ : Dual k S) (a : A) (s : S) :
-    (AlgEquiv.ofBijective _ h).symm (φ.smulRight (a • s)) =
-      a * (AlgEquiv.ofBijective _ h).symm (φ.smulRight s) := by
-  apply (AlgEquiv.ofBijective _ h).injective
-  rw [map_mul, AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
-  ext t
-  simp [AlgEquiv.ofBijective_apply, smul_comm (φ t) a s]
-
-/-- A family `∑ᵢ φᵢ(t) vᵢ = t` gives rank-one endomorphisms summing to the identity. -/
-private theorem sum_ofBijective_symm_smulRight {ι : Type*} (s : Finset ι) (φ : ι → Dual k S)
-    (v : ι → S) (hv : ∀ t, ∑ i ∈ s, φ i t • v i = t) :
-    ∑ i ∈ s, (AlgEquiv.ofBijective _ h).symm ((φ i).smulRight (v i)) = 1 := by
-  apply (AlgEquiv.ofBijective _ h).injective
-  rw [map_sum, map_one]
-  ext t
-  simp [hv t]
 
 /-- For `A ≅ End_k S`, a linear form `φ` on `S` and a vector `x : M`, the `A`-linear map
 `S →ₗ[A] M` sending `s` to `a • x`, where `a ∈ A` acts on `S` as the rank-one endomorphism
@@ -120,7 +105,14 @@ noncomputable def homOfDual (φ : Dual k S) : M →ₗ[k] S →ₗ[A] M where
         rw [show φ.smulRight (s + t) = φ.smulRight s + φ.smulRight t by ext; simp [smul_add],
           map_add, add_smul]
       map_smul' := fun a s ↦ by
-        rw [ofBijective_symm_smulRight_smul, mul_smul, RingHom.id_apply] }
+        -- The rank-one endomorphism `t ↦ φ t • a • s` is `a` composed with `t ↦ φ t • s`.
+        have : (AlgEquiv.ofBijective _ h).symm (φ.smulRight (a • s)) =
+            a * (AlgEquiv.ofBijective _ h).symm (φ.smulRight s) := by
+          apply (AlgEquiv.ofBijective _ h).injective
+          rw [map_mul, AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
+          ext t
+          simp [AlgEquiv.ofBijective_apply, smul_comm (φ t) a s]
+        rw [this, mul_smul, RingHom.id_apply] }
   map_add' x y := by ext; simp [smul_add]
   map_smul' c x := by ext; simp [smul_comm _ c x]
 
@@ -137,7 +129,7 @@ itself, scaled by `φ s`; for a basis `(eᵢ)` this is `Eᵢⱼ T(eⱼ) = T(eᵢ
 theorem homOfDual_apply_map (φ : Dual k S) (T : S →ₗ[A] M) (s : S) :
     homOfDual h φ (T s) = φ s • T := by
   ext t
-  rw [homOfDual_apply_apply, ← T.map_smul, ofBijective_symm_smul, LinearMap.smulRight_apply,
+  rw [homOfDual_apply_apply, ← T.map_smul, ofBijective_lsmul_symm_smul, LinearMap.smulRight_apply,
     LinearMap.smul_apply, LinearMap.map_smul_of_tower]
 
 /-! ### Evaluation is an isomorphism -/
@@ -150,9 +142,15 @@ private noncomputable def isotypicEvalInv {ι : Type*} (s : Finset ι) (φ : ι 
 private theorem isotypicEval_isotypicEvalInv {ι : Type*} (s : Finset ι) (φ : ι → Dual k S)
     (v : ι → S) (hv : ∀ t, ∑ i ∈ s, φ i t • v i = t) (x : M) :
     isotypicEval k (isotypicEvalInv h s φ v x) = x := by
+  -- The rank-one endomorphisms `t ↦ φᵢ t • vᵢ` sum to the identity.
+  have hsum : ∑ i ∈ s, (AlgEquiv.ofBijective _ h).symm ((φ i).smulRight (v i)) = 1 := by
+    apply (AlgEquiv.ofBijective _ h).injective
+    rw [map_sum, map_one]
+    ext t
+    simp [hv t]
   simp only [isotypicEvalInv, LinearMap.sum_apply, LinearMap.comp_apply,
     TensorProduct.mk_apply, map_sum, isotypicEval_tmul, homOfDual_apply_apply, ← Finset.sum_smul,
-    sum_ofBijective_symm_smulRight h s φ v hv, one_smul]
+    hsum, one_smul]
 
 private theorem isotypicEvalInv_isotypicEval {ι : Type*} (s : Finset ι) (φ : ι → Dual k S)
     (v : ι → S) (hv : ∀ t, ∑ i ∈ s, φ i t • v i = t) (y : S ⊗[k] (S →ₗ[A] M)) :
