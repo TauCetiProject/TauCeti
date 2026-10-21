@@ -68,7 +68,7 @@ lemma comp_right_app_apply {X Y Z : PointedSSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     (f ≫ g).right.app n x = g.right.app n (f.right.app n x) := (rfl)
 
 /-- Evaluate a pointed simplicial set as a simplicial object in pointed types. -/
-@[expose] def toSimplicialPointed : PointedSSet.{u} ⥤ SimplicialObject Pointed.{u} where
+def toSimplicialPointed : PointedSSet.{u} ⥤ SimplicialObject Pointed.{u} where
   obj X :=
     { obj n := Pointed.of (X.point n)
       map f := ⟨X.right.map f, X.map_point f⟩
@@ -83,7 +83,7 @@ lemma comp_right_app_apply {X Y Z : PointedSSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
         exact congr_hom (f.right.naturality g) x) }
 
 /-- Recover a pointed simplicial set from its compatible degreewise points. -/
-@[expose] def fromSimplicialPointed : SimplicialObject Pointed.{u} ⥤ PointedSSet.{u} where
+def fromSimplicialPointed : SimplicialObject Pointed.{u} ⥤ PointedSSet.{u} where
   -- Fix the underlying functor to the native forgetful image.
   obj X := Under.mk (show Δ[0] ⟶ X ⋙ forget Pointed from
     { app n := ↾(fun _ ↦ (X.obj n).point)

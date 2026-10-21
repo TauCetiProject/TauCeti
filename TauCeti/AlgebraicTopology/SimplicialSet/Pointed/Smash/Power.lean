@@ -9,6 +9,9 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Circle
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Smash.Basic
 public import TauCeti.CategoryTheory.Category.Pointed.Smash.Power
 public import TauCeti.CategoryTheory.FiniteBijection
+-- Proof-only: the degreewise description of the smash power unfolds the bodies of
+-- `toSimplicialPointed` and `fromSimplicialPointed`, which are not exposed.
+import all TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 
 /-!
 # Smash powers of pointed simplicial sets and the sphere sequence
@@ -163,8 +166,7 @@ noncomputable def smashPowLift {Z : PointedSSet.{u}}
     { app n := ↾(liftAt n (F n) (hF n))
       naturality n m g := by
         ext a
-        change liftAt m (F m) (hF m) ((X.smashPow ι).right.map g a) =
-          Z.right.map g (liftAt n (F n) (hF n) a)
+        simp only [TypeCat.Fun.toFun_apply, types_comp_apply, TypeCat.ofHom_apply]
         induction a using smashPowMk_induction with
         | point => rw [map_point, liftAt_point, liftAt_point, map_point]
         | mk f => rw [map_smashPowMk, liftAt_smashPowMk, liftAt_smashPowMk, nat] }
@@ -352,11 +354,8 @@ private lemma μIso_hom_app {k l : FiniteBijection} (x : Fin k.len → X.right.o
   simp only [μIso, Iso.trans_hom, smashPowAppendIso_hom, smashPowReindexIso_hom, Under.comp_right,
     NatTrans.comp_app, ConcreteCategory.comp_apply, smashPowAppend_app_smashMk,
     smashPowReindex_app_smashPowMk]
-  refine congrArg smashPowMk (funext fun i ↦ ?_)
-  -- `simp` needs the index fixed to rewrite `finSumFinEquiv.symm` at a block index.
-  induction i using Fin.addCases with
-  | left i => simp [finSumFinEquiv_symm_apply_castAdd i]
-  | right i => simp [finSumFinEquiv_symm_apply_natAdd i]
+  exact congrArg smashPowMk ((Equiv.eq_comp_symm finSumFinEquiv (Fin.append x y)
+    (Sum.elim x y)).2 Fin.append_comp_sumElim).symm
 
 /-- The identification `S⁰ ≅ X^∧0`. -/
 private noncomputable def εIso (X : PointedSSet.{u}) :
