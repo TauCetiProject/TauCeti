@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
+public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 
 /-!
 # Evaluation of power series as infinite sums
@@ -35,6 +37,8 @@ coefficient rings here may have nilpotents.
 ## Main results
 
 * `PowerSeries.evalAt_coe`: on polynomials, `evalAt` is `Polynomial.aeval`.
+* `PowerSeries.evalAt_hasseDeriv_coe`: the value at `a` of a Hasse derivative of a polynomial is a
+  coefficient of its Taylor expansion at `a`.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
 * `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
@@ -69,6 +73,12 @@ theorem evalAt_coe (p : Polynomial R) (b : A) : (p : R⟦X⟧).evalAt b = Polyno
   · intro n hn
     rw [Finset.mem_range, not_lt] at hn
     simp [Polynomial.coeff_eq_zero_of_natDegree_lt hn]
+
+/-- The value at `a` of a Hasse derivative of a polynomial is a coefficient of its Taylor
+expansion at `a`. -/
+theorem evalAt_hasseDeriv_coe [TopologicalSpace R] {a : R} (p : Polynomial R) (j : ℕ) :
+    (hasseDeriv j (p : R⟦X⟧)).evalAt a = (Polynomial.taylor a p).coeff j := by
+  rw [hasseDeriv_coe, evalAt_coe, Polynomial.coe_aeval_eq_eval, Polynomial.taylor_coeff]
 
 /-- The zero series evaluates to zero. -/
 @[simp]

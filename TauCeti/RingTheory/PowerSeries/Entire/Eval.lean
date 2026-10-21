@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Ring.InfiniteSum
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
 public import TauCeti.RingTheory.PowerSeries.EvalAt
+import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
 # Evaluation of entire power series
@@ -37,6 +38,8 @@ with inverse `-∑ₙ aₙ₊₁ • aⁿ`, since `f(a) = 1 + a ∑ₙ aₙ₊�
 * `PowerSeries.IsEntire.evalAt_sum`: evaluation commutes with finite sums of entire series.
 * `PowerSeries.IsEntire.map_evalAt`: naturality in the algebra.
 * `PowerSeries.IsEntire.evalAt_map`: naturality in continuous coefficient homomorphisms.
+* `PowerSeries.IsEntire.evalAt_hasseDeriv_X_sub_C_pow_mul`: the evaluated Leibniz rule
+  `(Δʲ ((X - a)ᵐ g))(a) = (Δʲ⁻ᵐ g)(a)` for `m ≤ j`, and `0` otherwise.
 * `PowerSeries.IsEntire.isUnit_of_evalAt_eq_zero` and
   `PowerSeries.IsEntire.inverse_eq_of_evalAt_eq_zero`: a zero of an entire series with constant
   coefficient `1` is a unit, with explicit inverse.
@@ -170,6 +173,23 @@ theorem IsEntire.evalAt_map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Spa
     (PowerSeries.map φ f).evalAt (φ a) = φ (f.evalAt a) := by
   rw [← ((hf.hasSum_evalAt a).map φ hφ).tsum_eq, evalAt_def]
   simp [map_pow]
+
+/-- **Evaluated Leibniz rule at `a` for `(X - a)ᵐ g`.** For entire `g`, the Hasse derivative of
+order `j` of `(X - a)ᵐ g` at `a` is the Hasse derivative of order `j - m` of `g` at `a` when
+`m ≤ j`, and `0` otherwise. -/
+theorem IsEntire.evalAt_hasseDeriv_X_sub_C_pow_mul [CompleteSpace R] (hg : g.IsEntire) (a : R)
+    (m j : ℕ) :
+    (PowerSeries.hasseDeriv j ((X - C a) ^ m * g)).evalAt a =
+      if m ≤ j then (PowerSeries.hasseDeriv (j - m) g).evalAt a else 0 := by
+  have hP : ((X - C a) ^ m : R⟦X⟧) = ((Polynomial.X - Polynomial.C a) ^ m : Polynomial R) := by
+    simp
+  rw [hP, hasseDeriv_mul, IsEntire.evalAt_sum _ fun ij _ ↦
+    ((isEntire_coe _).hasseDeriv _).mul (hg.hasseDeriv _),
+    Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  simp_rw [((isEntire_coe _).hasseDeriv _).evalAt_mul (hg.hasseDeriv _), hasseDeriv_coe,
+    evalAt_coe, Polynomial.coe_aeval_eq_eval, Polynomial.eval_hasseDeriv_X_sub_C_pow, ite_mul,
+    one_mul, zero_mul]
+  simp [Finset.sum_ite_eq']
 
 /-- The value of an entire series at `b` is `a₀ + b ∑ₙ aₙ₊₁ • bⁿ`. -/
 theorem IsEntire.evalAt_eq_algebraMap_add_mul (hf : f.IsEntire) (b : A) :

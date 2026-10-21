@@ -61,6 +61,8 @@ operators, whose Fredholm determinants are entire series.
   `‖1‖ = 1`, dividing `p * q` by `p` returns `q` for entire `q`.
 * `PowerSeries.IsEntire.evalAt_eq_zero_iff`: the factor theorem; an entire series vanishes at
   `a` exactly when it is `X - a` times an entire series.
+* `PowerSeries.IsEntire.exists_eq_X_sub_C_pow_mul`: if the Hasse derivatives of order less than
+  `h` of an entire series vanish at `a`, then it is `(X - a)ʰ` times an entire series.
 * `PowerSeries.IsEntire.modByMonic_eq_zero_iff`: over an ultrametric ring with `‖1‖ = 1`, the
   remainder vanishes exactly when `p` divides `f` with entire quotient.
 
@@ -363,6 +365,20 @@ theorem IsEntire.evalAt_eq_zero_iff (hf : f.IsEntire) {a : R} :
   · rintro ⟨q, hq, rfl⟩
     rw [(isEntire_X.sub (isEntire_C a)).evalAt_mul hq, isEntire_X.evalAt_sub (isEntire_C a)]
     simp
+
+/-- If the Hasse derivatives of order less than `h` of an entire series `f` vanish at `a`, then
+`f = (X - a)ʰ g` for an entire series `g`. -/
+theorem IsEntire.exists_eq_X_sub_C_pow_mul (hf : f.IsEntire)
+    {a : R} {h : ℕ} (hzero : ∀ j < h, (PowerSeries.hasseDeriv j f).evalAt a = 0) :
+    ∃ g : R⟦X⟧, g.IsEntire ∧ f = (X - C a) ^ h * g := by
+  induction h with
+  | zero => exact ⟨f, hf, by simp⟩
+  | succ h ih =>
+    obtain ⟨g, hg, rfl⟩ := ih fun j hj ↦ hzero j (by omega)
+    have hga : g.evalAt a = 0 := by
+      simpa [hg.evalAt_hasseDeriv_X_sub_C_pow_mul, hasseDeriv_zero] using hzero h h.lt_succ_self
+    obtain ⟨q, hq, rfl⟩ := (hg.evalAt_eq_zero_iff).mp hga
+    exact ⟨q, hq, by ring⟩
 
 section Ultrametric
 

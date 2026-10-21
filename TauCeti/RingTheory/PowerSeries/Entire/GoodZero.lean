@@ -23,10 +23,11 @@ characteristic and over rings with nilpotents.
 For an entire series over a complete normed ring, the good zeros of order `h` at `a` are exactly
 the factorisations `f = (X - a)ʰ g` with `g` entire and `g(a)` a unit
 (`PowerSeries.IsEntire.isGoodZero_iff`). This follows from the evaluated Leibniz rule
-`(Δʲ ((X - a)ᵐ g))(a) = (Δʲ⁻ᵐ g)(a)` for `m ≤ j`, and `0` otherwise, together with the factor
-theorem for entire series. Consequently orders add under products, and when `f(0) = 1` a good
-zero of positive order is a unit, so the factor `(X - a)ʰ` may be renormalised to
-`(1 - a⁻¹ X)ʰ`.
+`(Δʲ ((X - a)ᵐ g))(a) = (Δʲ⁻ᵐ g)(a)` for `m ≤ j`, and `0` otherwise
+(`PowerSeries.IsEntire.evalAt_hasseDeriv_X_sub_C_pow_mul`), together with the factor theorem for
+entire series (`PowerSeries.IsEntire.exists_eq_X_sub_C_pow_mul`). Consequently orders add under
+products, and when `f(0) = 1` a good zero of positive order is a unit, so the factor `(X - a)ʰ`
+may be renormalised to `(1 - a⁻¹ X)ʰ`.
 
 ## Main definitions
 
@@ -35,8 +36,6 @@ zero of positive order is a unit, so the factor `(X - a)ʰ` may be renormalised 
 ## Main results
 
 * `PowerSeries.IsGoodZero.unique`: over a nontrivial ring the order of a good zero is unique.
-* `PowerSeries.evalAt_hasseDeriv_coe`: the value at `a` of a Hasse derivative of a polynomial is a
-  coefficient of its Taylor expansion at `a`.
 * `PowerSeries.isGoodZero_coe_iff`, `PowerSeries.isGoodZero_coe_iff_of_field`: for polynomials
   the order is the root multiplicity, and over a ring the quotient by `(X - a)ʰ` must be a unit
   at `a`.
@@ -104,12 +103,6 @@ theorem IsGoodZero.unique [Nontrivial R] (hh : f.IsGoodZero a h) (hk : f.IsGoodZ
   · rfl
   · exact absurd (hh.evalAt_hasseDeriv_eq_zero hlt ▸ hk.isUnit_evalAt_hasseDeriv) not_isUnit_zero
 
-/-- The value at `a` of a Hasse derivative of a polynomial is a coefficient of its Taylor
-expansion at `a`. -/
-theorem evalAt_hasseDeriv_coe (p : Polynomial R) (j : ℕ) :
-    (hasseDeriv j (p : R⟦X⟧)).evalAt a = (Polynomial.taylor a p).coeff j := by
-  rw [hasseDeriv_coe, evalAt_coe, Polynomial.coe_aeval_eq_eval, Polynomial.taylor_coeff]
-
 /-- The series `(X - a)ʰ` has a good zero of order `h` at `a`. -/
 theorem isGoodZero_X_sub_C_pow : ((X - C a) ^ h : R⟦X⟧).IsGoodZero a h := by
   have hP : ((X - C a) ^ h : R⟦X⟧) = ((Polynomial.X - Polynomial.C a) ^ h : Polynomial R) := by
@@ -158,22 +151,6 @@ section Normed
 
 variable {R : Type*} [NormedCommRing R] [CompleteSpace R] {f g : R⟦X⟧} {a : R} {h k : ℕ}
 
-/-- **Evaluated Leibniz rule at `a` for `(X - a)ᵐ g`.** For entire `g`, the Hasse derivative of
-order `j` of `(X - a)ᵐ g` at `a` is the Hasse derivative of order `j - m` of `g` at `a` when
-`m ≤ j`, and `0` otherwise. -/
-theorem IsEntire.evalAt_hasseDeriv_X_sub_C_pow_mul (hg : g.IsEntire) (a : R) (m j : ℕ) :
-    (PowerSeries.hasseDeriv j ((X - C a) ^ m * g)).evalAt a =
-      if m ≤ j then (PowerSeries.hasseDeriv (j - m) g).evalAt a else 0 := by
-  have hP : ((X - C a) ^ m : R⟦X⟧) = ((Polynomial.X - Polynomial.C a) ^ m : Polynomial R) := by
-    simp
-  rw [hP, hasseDeriv_mul, IsEntire.evalAt_sum _ fun ij _ ↦
-    ((isEntire_coe _).hasseDeriv _).mul (hg.hasseDeriv _),
-    Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  simp_rw [((isEntire_coe _).hasseDeriv _).evalAt_mul (hg.hasseDeriv _), hasseDeriv_coe,
-    evalAt_coe, Polynomial.coe_aeval_eq_eval, Polynomial.eval_hasseDeriv_X_sub_C_pow, ite_mul,
-    one_mul, zero_mul]
-  simp [Finset.sum_ite_eq']
-
 /-- For entire `g`, the series `(X - a)ʰ g` has a good zero of order `h` at `a` exactly when
 `g(a)` is a unit. -/
 theorem IsEntire.isGoodZero_X_sub_C_pow_mul_iff (hg : g.IsEntire) :
@@ -182,20 +159,6 @@ theorem IsEntire.isGoodZero_X_sub_C_pow_mul_iff (hg : g.IsEntire) :
     Nat.sub_self, hasseDeriv_zero, LinearMap.id_apply, and_iff_right_iff_imp]
   intro _ j hj
   simp [Nat.not_le.mpr hj]
-
-/-- If the Hasse derivatives of order less than `h` of an entire series `f` vanish at `a`, then
-`f = (X - a)ʰ g` for an entire series `g`. -/
-theorem IsEntire.exists_eq_X_sub_C_pow_mul (hf : f.IsEntire)
-    (hzero : ∀ j < h, (PowerSeries.hasseDeriv j f).evalAt a = 0) :
-    ∃ g : R⟦X⟧, g.IsEntire ∧ f = (X - C a) ^ h * g := by
-  induction h with
-  | zero => exact ⟨f, hf, by simp⟩
-  | succ h ih =>
-    obtain ⟨g, hg, rfl⟩ := ih fun j hj ↦ hzero j (by omega)
-    have hga : g.evalAt a = 0 := by
-      simpa [hg.evalAt_hasseDeriv_X_sub_C_pow_mul, hasseDeriv_zero] using hzero h h.lt_succ_self
-    obtain ⟨q, hq, rfl⟩ := (hg.evalAt_eq_zero_iff).mp hga
-    exact ⟨q, hq, by ring⟩
 
 /-- **Factorisation at a good zero.** An entire series `f` has a good zero of order `h` at `a`
 exactly when `f = (X - a)ʰ g` for an entire series `g` with `g(a)` a unit. -/
