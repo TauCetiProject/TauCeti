@@ -226,47 +226,55 @@ jobs:
             STATUS_SHA="$SHA"
             AUTHOR=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .user.login)
           fi
+          # Keep the known head if a base or merge-base lookup fails. The always-run
+          # reporter still needs a valid status target after infrastructure errors.
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "INFRA=1" >> "$GITHUB_ENV"
+            echo "::error::could not resolve a valid candidate head"; exit 1;
+          }
+          {
+            echo "num=$NUM"
+            echo "sha=$SHA"
+            echo "repo=$REPO"
+            echo "base_ref=$BASE_REF"
+            echo "status_sha=$STATUS_SHA"
+            echo "author=$AUTHOR"
+          } >> "$GITHUB_OUTPUT"
+          echo "MERGEBASE_EXACT=0" >> "$GITHUB_ENV"
+
           # Resolve the target branch to a commit ONCE. Everything below -- policy validation,
           # the merge-base attestation, and the scope compare -- then refers to the same base,
           # instead of each step separately racing a branch that moves every few minutes. For
           # merge_group BASE_REF is already the immutable base_sha the queue synthesized on.
           if [ "${{ env.IS_BATCH }}" != "true" ]; then
-            BASE_SHA=$(gh api "repos/${{ github.repository }}/commits/$BASE_REF" --jq .sha 2>/dev/null) || BASE_SHA=""
-            if [ -z "$BASE_SHA" ]; then
-              echo "INFRA=1" >> "$GITHUB_ENV"
-              echo "::warning::could not resolve $BASE_REF to a commit — re-run pr-build"
+            if ! BASE_SHA=$(gh api "repos/${{ github.repository }}/commits/$BASE_REF" --jq .sha 2>/dev/null); then
+              BASE_SHA=""
             fi
           else
             BASE_SHA="$BASE_REF"
           fi
-
-          # Merge-base with the target branch, for the Lake-pin bump validation below:
-          # check-bump.sh uses it to scope the PR's own pin delta. owner:sha for forks;
-          # `|| true` so a failed substitution does not trip set -e before the fallback.
-          #
-          # Against BASE_SHA, not the branch name: check-bump.sh reads mergebase/ to decide
-          # whether the pins were touched at all, so if the branch moved between here and the
-          # checkouts, base/, pr/ and mergebase/ would be describing three different bases and
-          # that decision would be made against a snapshot nothing else in the job shares.
-          OWNER="${REPO%%/*}"
-          MB=$(gh api "repos/${{ github.repository }}/compare/${BASE_SHA}...${OWNER}:${SHA}" \
-                 --jq '.merge_base_commit.sha' 2>/dev/null || true)
-          if [ -n "$MB" ]; then
-            echo "MERGEBASE_EXACT=1" >> "$GITHUB_ENV"
-          else
-            MB="$BASE_SHA"
-            echo "::warning::merge-base unresolved; falling back to the base commit $BASE_SHA"
+          if ! [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "INFRA=1" >> "$GITHUB_ENV"
+            echo "::error::could not resolve $BASE_REF to a commit — re-run pr-build"
+            exit 1
           fi
-          {
-            echo "num=$NUM"
-            echo "base_sha=$BASE_SHA"
-            echo "sha=$SHA"
-            echo "repo=$REPO"
-            echo "base_ref=$BASE_REF"
-            echo "mergebase=$MB"
-            echo "status_sha=$STATUS_SHA"
-            echo "author=$AUTHOR"
-          } >> "$GITHUB_OUTPUT"
+          echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+
+          # check-bump.sh needs the exact merge base against captured BASE_SHA.
+          # A failed gh command can emit error JSON on stdout: accept its value
+          # only when both the command succeeds and the SHA is well formed.
+          OWNER="${REPO%%/*}"
+          if ! MB=$(gh api "repos/${{ github.repository }}/compare/${BASE_SHA}...${OWNER}:${SHA}" \
+                 --jq '.merge_base_commit.sha' 2>/dev/null); then
+            MB=""
+          fi
+          if ! [[ "$MB" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "INFRA=1" >> "$GITHUB_ENV"
+            echo "::error::could not resolve the merge base — re-run pr-build"
+            exit 1
+          fi
+          echo "MERGEBASE_EXACT=1" >> "$GITHUB_ENV"
+          echo "mergebase=$MB" >> "$GITHUB_OUTPUT"
           echo "Building PR #$NUM @ $SHA from $REPO (author=${AUTHOR:-merge-group}, status -> $STATUS_SHA, bump delta vs merge-base $MB)"
 
       # Full history is intentional. lake cache get walks ancestors until it reaches a published
@@ -1266,7 +1274,9 @@ jobs:
           fi
 
           identity_ok=0
-          if python3 gate/scripts/prepare_pr_integration.py verify \
+          # An earlier infrastructure failure skipped preparation; keep its
+          # original diagnosis instead of checking a record that cannot exist.
+          if [ "${{ env.INFRA }}" != "1" ] && python3 gate/scripts/prepare_pr_integration.py verify \
                --head "$RAW_HEAD" --base "$CAPTURED_BASE" --mode "$CANDIDATE_MODE" \
                --identity "$RUNNER_TEMP/tested-integration.json" \
                --tested-sha "$TESTED_SHA" --tested-tree "$TESTED_TREE"; then
