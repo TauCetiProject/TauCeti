@@ -109,13 +109,6 @@ private theorem covariance_cast_dirichletMultinomialMeasure {a : ι → ℝ}
   rw [covariance_bind hK (.of_forall fun _ ↦ isProbabilityMeasure_multinomialMeasure n _)
     hmi hmj]
   simp_rw [covariance_cast_apply_multinomialMeasure, integral_cast_apply_multinomialMeasure]
-  -- Recover the Dirichlet product moment from its covariance and coordinate means.
-  have hprod := covariance_eq_sub (memLp_eval_dirichletMeasure (a := a) i 2)
-    (memLp_eval_dirichletMeasure (a := a) j 2)
-  simp only [Pi.mul_apply, integral_eval_dirichletMeasure ha] at hprod
-  have hproduct : (∫ x, x i * x j ∂dirichletMeasure a) =
-      cov[fun x ↦ x i, fun x ↦ x j; dirichletMeasure a] +
-        (a i / ∑ l, a l) * (a j / ∑ l, a l) := by linarith [hprod]
   have hi := (memLp_eval_dirichletMeasure (a := a) i 2).integrable one_le_two
   have hij : Integrable (fun x : EuclideanSpace ℝ ι ↦ x i * x j) (dirichletMeasure a) :=
     (memLp_eval_dirichletMeasure (a := a) i 2).integrable_mul
@@ -130,23 +123,15 @@ private theorem covariance_cast_dirichletMultinomialMeasure {a : ι → ℝ}
       =ᵐ[dirichletMeasure a] fun x ↦ (n : ℝ) * x l := by
     filter_upwards [hweights] with x hx
     rw [hx]
-  have hcovmeans :
-      cov[fun x ↦ (n : ℝ) * ((p x).weights i : ℝ),
-        fun x ↦ (n : ℝ) * ((p x).weights j : ℝ); dirichletMeasure a] =
-      cov[fun x ↦ (n : ℝ) * x i, fun x ↦ (n : ℝ) * x j; dirichletMeasure a] := by
-    simp only [covariance, integral_congr_ae (hmeans i), integral_congr_ae (hmeans j)]
-    apply integral_congr_ae
-    filter_upwards [hmeans i, hmeans j] with x hi hj
-    rw [hi, hj]
   -- Integrate the component covariance and combine it with the scaled Dirichlet covariance.
-  rw [integral_congr_ae heq, hcovmeans,
+  rw [integral_congr_ae heq, covariance_congr_ae (hmeans i) (hmeans j),
     covariance_const_mul_left, covariance_const_mul_right, integral_const_mul]
   split_ifs with he
   · rw [integral_sub hi hij, integral_eval_dirichletMeasure ha]
-    rw [hproduct]
+    rw [integral_mul_eval_dirichletMeasure ha]
     ring
   · simp only [zero_sub, integral_neg]
-    rw [hproduct]
+    rw [integral_mul_eval_dirichletMeasure ha]
     ring
 
 /-- A Euclidean Dirichlet-multinomial coordinate has variance `n pᵢ (1 - pᵢ) (A+n)/(A+1)`,
