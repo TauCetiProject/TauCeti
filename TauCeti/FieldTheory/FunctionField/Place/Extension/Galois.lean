@@ -173,11 +173,11 @@ theorem integers_smul : (σ • P).integers = σ • P.integers := by
 `F`-isomorphism `e : L ≃ₐ[F] F'` carries the action of `e.autCongr τ` on the places of `F'` to
 the action of `τ` on the places of `L`. -/
 theorem equivOfRingEquiv_autCongr_smul {L : Type*} [Field L] [Algebra k L] [Algebra F L]
-    [IsScalarTower k F L] (e : L ≃ₐ[F] F') (τ : L ≃ₐ[F] L)
-    (h : ∀ c, e.symm.toRingEquiv (algebraMap k F' c) = algebraMap k L (RingEquiv.refl k c))
-    (Q : Place k F') :
-    equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv h (e.autCongr τ • Q) =
-      τ • equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv h Q :=
+    [IsScalarTower k F L] (e : L ≃ₐ[F] F') (τ : L ≃ₐ[F] L) (Q : Place k F') :
+    equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
+        e.symm.toRingEquiv_algebraMap_of_tower (e.autCongr τ • Q) =
+      τ • equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
+        e.symm.toRingEquiv_algebraMap_of_tower Q :=
   Place.ext (Valuation.ext fun z ↦ by simp)
 
 /-- **The two actions on places agree**: restricting the scalars of an automorphism of `F'` over

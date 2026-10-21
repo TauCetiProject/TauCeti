@@ -82,12 +82,6 @@ namespace Place.IsWeierstrassCoordinates
 
 variable {P : Place k F} {W : WeierstrassCurve k} [W.IsElliptic] {x y : F}
 
-/-- The inverse of a `k`-isomorphism of function fields fixes the constants, in the form taken by
-the transport of places and divisor classes. -/
-private theorem symm_toRingEquiv_algebraMap {L : Type*} [Field L] [Algebra k L] (e : L ≃ₐ[k] F)
-    (c : k) : e.symm.toRingEquiv (algebraMap k F c) = algebraMap k L (RingEquiv.refl k c) := by
-  simp
-
 /-- Weierstrass coordinates at a place of degree one identify the function field of the
 Weierstrass model with `F`. -/
 private noncomputable def functionFieldEquiv (hF : IsFunctionField k F) (hP : P.degree = 1)
@@ -100,8 +94,19 @@ private noncomputable def degreeZeroClassGroupEquivPoint [DecidableEq k]
     (Divisor.degreeClass hF).ker ≃+ W.toAffine.Point :=
   (Divisor.degreeZeroClassGroupEquivOfRingEquiv (RingEquiv.refl k)
     (functionFieldEquiv hF hP h).symm.toRingEquiv
-      (symm_toRingEquiv_algebraMap _) hF
+      (functionFieldEquiv hF hP h).symm.toRingEquiv_algebraMap_of_tower hF
       W.toAffine.isFunctionField).trans W.toAffine.pointEquivDegreeZeroDivisorClass.symm
+
+/-- The point attached to a class `c` has as its class the transport of `c` to the model. -/
+private theorem pointEquivDegreeZeroDivisorClass_degreeZeroClassGroupEquivPoint [DecidableEq k]
+    (hF : IsFunctionField k F) (hP : P.degree = 1) (h : P.IsWeierstrassCoordinates W x y)
+    (c : (Divisor.degreeClass hF).ker) :
+    W.toAffine.pointEquivDegreeZeroDivisorClass (degreeZeroClassGroupEquivPoint hF hP h c) =
+      Divisor.degreeZeroClassGroupEquivOfRingEquiv (RingEquiv.refl k)
+        (functionFieldEquiv hF hP h).symm.toRingEquiv
+        (functionFieldEquiv hF hP h).symm.toRingEquiv_algebraMap_of_tower hF
+        W.toAffine.isFunctionField c := by
+  simp [degreeZeroClassGroupEquivPoint]
 
 /-- **The translations of an elliptic function field** (Stichtenoth, Exercise 6.14), read
 through Weierstrass coordinates `(x, y)` at a place `P` of degree one: the model identifies
@@ -169,8 +174,8 @@ theorem divisorClass_pointDifference_translationHom_smul
         (Place.orderSystem hF).ClassGroup) := by
   set e := functionFieldEquiv hF hP h
   set T := Place.equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
-    (symm_toRingEquiv_algebraMap e)
-  set Pt := degreeZeroClassGroupEquivPoint hF hP h (Multiplicative.toAdd c)
+    e.symm.toRingEquiv_algebraMap_of_tower
+  set Pt := degreeZeroClassGroupEquivPoint hF hP h (Multiplicative.toAdd c) with hPt
   -- `Q` is the transport of the place of a point `R` of the model
   set R := (W.toAffine.pointEquivDegreeOnePlace).symm
     ⟨T Q, (Place.degree_equivOfRingEquiv _ _ _ Q).trans hQ⟩
@@ -182,21 +187,13 @@ theorem divisorClass_pointDifference_translationHom_smul
     exact Affine.translation_smul_pointEquivDegreeOnePlace W.toAffine Pt R
   -- compare both sides in the class group of the model
   apply (Divisor.classGroupEquivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
-    (symm_toRingEquiv_algebraMap e) hF W.toAffine.isFunctionField).injective
-  have hc : W.toAffine.pointEquivDegreeZeroDivisorClass Pt =
-      Divisor.degreeZeroClassGroupEquivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
-        (symm_toRingEquiv_algebraMap e) hF W.toAffine.isFunctionField (Multiplicative.toAdd c) :=
-    AddEquiv.apply_symm_apply _ _
+    e.symm.toRingEquiv_algebraMap_of_tower hF W.toAffine.isFunctionField).injective
+  -- the class of `Pt = R - (R - Pt)` is the class of `(R) - (R - Pt)` on the model
   rw [Divisor.classGroupEquivOfRingEquiv_divisorClass,
-    ← Divisor.coe_degreeZeroClassGroupEquivOfRingEquiv_apply, ← hc,
-    WeilDivisor.pointDifference, map_sub, WeilDivisor.domCongr_ofPoint,
-    WeilDivisor.domCongr_ofPoint, hσ, ← hR]
-  -- the class of `Pt` is the difference of the classes of `R` and `R - Pt`
-  have hsub := map_sub W.toAffine.pointEquivDegreeZeroDivisorClass R (R - Pt)
-  rw [sub_sub_cancel] at hsub
-  rw [hsub, AddSubgroup.coe_sub, Affine.val_pointEquivDegreeZeroDivisorClass,
-    Affine.val_pointEquivDegreeZeroDivisorClass, ← map_sub, WeilDivisor.pointDifference,
-    WeilDivisor.pointDifference, sub_sub_sub_cancel_right]
+    ← Divisor.coe_degreeZeroClassGroupEquivOfRingEquiv_apply,
+    ← pointEquivDegreeZeroDivisorClass_degreeZeroClassGroupEquivPoint, ← hPt, ← sub_sub_cancel R Pt,
+    Affine.val_pointEquivDegreeZeroDivisorClass_sub, ← hσ, hR]
+  simp only [T, WeilDivisor.pointDifference, map_sub, WeilDivisor.domCongr_ofPoint]
 
 end Place.IsWeierstrassCoordinates
 

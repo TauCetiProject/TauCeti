@@ -28,6 +28,8 @@ points with that ideal class group gives the points as degree-zero divisor class
   affine point `P` to the class of `(P) - (O)`, and
   `WeierstrassCurve.Affine.val_pointEquivDegreeZeroDivisorClass` reads every point, the point at
   infinity included, through its place.
+* `WeierstrassCurve.Affine.val_pointEquivDegreeZeroDivisorClass_sub`: the difference `R - S` of
+  two points goes to the class of `(R) - (S)`.
 
 ## References
 
@@ -130,6 +132,18 @@ theorem val_pointEquivDegreeZeroDivisorClass (R : W.Point) :
   | some x y hxy =>
     rw [coe_pointEquivDegreeOnePlace_some, val_pointEquivDegreeZeroDivisorClass_some,
       WeilDivisor.pointDifference]
+
+/-- **A difference of points goes to the class of `(R) - (S)`**: the class of `R - S` is the
+class of the place of `R` minus the place of `S`. -/
+theorem val_pointEquivDegreeZeroDivisorClass_sub (R S : W.Point) :
+    (W.pointEquivDegreeZeroDivisorClass (R - S) :
+        (Place.orderSystem W.isFunctionField).ClassGroup) =
+      (Place.orderSystem W.isFunctionField).divisorClass
+        (WeilDivisor.pointDifference (W.pointEquivDegreeOnePlace R).1
+          (W.pointEquivDegreeOnePlace S).1) := by
+  rw [map_sub, AddSubgroup.coe_sub, val_pointEquivDegreeZeroDivisorClass,
+    val_pointEquivDegreeZeroDivisorClass, ← map_sub, WeilDivisor.pointDifference,
+    WeilDivisor.pointDifference, WeilDivisor.pointDifference, sub_sub_sub_cancel_right]
 
 end WeierstrassCurve.Affine
 
