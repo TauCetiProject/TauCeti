@@ -31,6 +31,13 @@ tessellation at a finite vertex in Poincaré's polygon theorem; for a cycle it a
 circuits whenever `t` times the angle sum is at least `2π`, in particular for an elliptic cycle
 with angle sum `2π / t`.
 
+Conversely, while the angles add up to at most `2π`, the pulled-back sectors turn through at
+most a full circle, so their interiors, and hence the interiors of the tiles, are pairwise
+disjoint; in particular the partial cycle maps involved are distinct. For an elliptic cycle with
+angle sum `2π / t`, the tiles met along `t` circuits therefore cover a neighbourhood of the vertex
+without overlapping. This local no-overlap at finite vertices is needed to derive, from the cycle
+conditions alone, that the translates of the polygon have disjoint interiors.
+
 ## Main results
 
 * `SidePairing.mem_interior_iUnion_inv_partialCycleMap_smul_carrier_iff`: the tiles cover a
@@ -45,6 +52,13 @@ with angle sum `2π / t`.
 * `SidePairing.mem_interior_iUnion_inv_partialCycleMap_smul_carrier_of_le_mul_cycleAngleSum`:
   `t` circuits of a finite vertex cycle with total angle at least `2π` cover a neighbourhood of
   the vertex.
+* `SidePairing.pairwiseDisjoint_inv_partialCycleMap_smul_interior_vertexSector`,
+  `SidePairing.pairwiseDisjoint_inv_partialCycleMap_smul_interior_carrier`: pulled-back sectors and
+  tiles with total angle at most `2π` have pairwise disjoint interiors.
+* `SidePairing.injOn_partialCycleMap`: the corresponding partial cycle maps are distinct.
+* `SidePairing.pairwiseDisjoint_inv_partialCycleMap_smul_interior_carrier_of_mul_cycleAngleSum_le`:
+  `t` circuits of a finite vertex cycle with total angle at most `2π` give tiles with pairwise
+  disjoint interiors.
 
 ## References
 
@@ -278,6 +292,129 @@ theorem mem_interior_iUnion_inv_partialCycleMap_smul_carrier_of_le_mul_cycleAngl
     z ∈ interior (⋃ m ∈ Finset.range (t * σ.cycleLength j),
       (σ.partialCycleMap j m)⁻¹ • P.carrier) :=
   σ.mem_interior_iUnion_inv_partialCycleMap_smul_carrier hz
+    (by rwa [σ.sum_range_mul_cycleLength_interiorAngle])
+
+/-! ### Disjointness of the tiles around a finite vertex -/
+
+/-- **The interior of a pulled-back sector in the common coordinate.** At a finite vertex `z`, a
+point `w ≠ z` is interior to the `m`-th pulled-back sector exactly when it lies clockwise of the
+incoming ray of the first tile by an angle strictly between the sums of the first `m` and the
+first `m + 1` interior angles. -/
+theorem mem_inv_partialCycleMap_smul_interior_vertexSector_iff {j : Fin n} {z w : ℍ}
+    (hz : P.vertex j = .inl z) (hw : z ≠ w) (m : ℕ) :
+    w ∈ (σ.partialCycleMap j m)⁻¹ • interior (P.vertexSector (σ.next^[m] j)) ↔
+      ∃ x ∈ Set.Ioo (∑ l ∈ Finset.range m, P.interiorAngle (σ.next^[l] j))
+          (∑ l ∈ Finset.range (m + 1), P.interiorAngle (σ.next^[l] j)),
+        orientedAngle z (geodesicLine (rayToward z (P.vertex (j - 1))) 1) w =
+          ((-x : ℝ) : Real.Angle) := by
+  have hle := P.interiorAngle_le_pi (σ.next^[m] j)
+  rw [← interior_smul, ← vertexSector_smul,
+    ((σ.partialCycleMap j m)⁻¹ • P).mem_interior_vertexSector_iff_toReal_orientedAngle_mem_Ioo
+      (σ.inv_partialCycleMap_smul_vertex hz m) hw, interiorAngle_smul,
+    σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one_left hz m w,
+    Finset.sum_range_succ]
+  -- the angle of `w` from the outgoing ray of the `m`-th tile is `θ + B (m + 1)`, where `θ` is
+  -- its angle from the incoming ray of the first tile; so `θ = -x` with `x = B (m + 1) - y`
+  set B := ∑ l ∈ Finset.range m, P.interiorAngle (σ.next^[l] j)
+  set θ := orientedAngle z (geodesicLine (rayToward z (P.vertex (j - 1))) 1) w
+  constructor
+  · intro hy
+    refine ⟨B + P.interiorAngle (σ.next^[m] j) -
+      (θ + ((B + P.interiorAngle (σ.next^[m] j) : ℝ) : Real.Angle)).toReal,
+      ⟨by linarith [hy.2], by linarith [hy.1]⟩, ?_⟩
+    rw [neg_sub, Real.Angle.coe_sub, Real.Angle.coe_toReal, add_sub_cancel_right]
+  · rintro ⟨x, hx, hwx⟩
+    rw [hwx, ← Real.Angle.coe_add,
+      Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith [Real.pi_pos, hx.2], by linarith [hx.1]⟩]
+    exact ⟨by linarith [hx.2], by linarith [hx.1]⟩
+
+/-- Two pulled-back sectors at a finite vertex whose interior angles, up to the later one, sum to
+at most `2π` have disjoint interiors. -/
+private theorem disjoint_inv_partialCycleMap_smul_interior_vertexSector_of_lt {j : Fin n}
+    {z : ℍ} (hz : P.vertex j = .inl z) {m m' : ℕ} (hmm' : m < m')
+    (hm' : ∑ l ∈ Finset.range (m' + 1), P.interiorAngle (σ.next^[l] j) ≤ 2 * π) :
+    Disjoint ((σ.partialCycleMap j m)⁻¹ • interior (P.vertexSector (σ.next^[m] j)))
+      ((σ.partialCycleMap j m')⁻¹ • interior (P.vertexSector (σ.next^[m'] j))) := by
+  refine Set.disjoint_left.2 fun w hw hw' ↦ ?_
+  rcases eq_or_ne z w with rfl | hzw
+  · rw [← interior_smul, ← vertexSector_smul] at hw
+    exact notMem_interior_vertexSector _ (σ.inv_partialCycleMap_smul_vertex hz m) hw
+  obtain ⟨x, hx, hxw⟩ :=
+    (σ.mem_inv_partialCycleMap_smul_interior_vertexSector_iff hz hzw m).1 hw
+  obtain ⟨x', hx', hxw'⟩ :=
+    (σ.mem_inv_partialCycleMap_smul_interior_vertexSector_iff hz hzw m').1 hw'
+  -- the two angular ranges are consecutive pieces of `[0, 2π]`, so `0 < x' - x < 2π`; but
+  -- `-x` and `-x'` are the same angle
+  have hmono : ∑ l ∈ Finset.range (m + 1), P.interiorAngle (σ.next^[l] j) ≤
+      ∑ l ∈ Finset.range m', P.interiorAngle (σ.next^[l] j) :=
+    Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_subset_range.2 hmm')
+      fun l _ _ ↦ P.interiorAngle_nonneg _
+  have h₀ : 0 ≤ ∑ l ∈ Finset.range m, P.interiorAngle (σ.next^[l] j) :=
+    Finset.sum_nonneg fun l _ ↦ P.interiorAngle_nonneg _
+  obtain ⟨k, hk⟩ := Real.Angle.angle_eq_iff_two_pi_dvd_sub.1 (hxw.symm.trans hxw')
+  have hk₀ : (0 : ℝ) < k := by nlinarith [Real.pi_pos, hx.2, hx'.1]
+  have hk₁ : (k : ℝ) < 1 := by nlinarith [Real.pi_pos, hx.1, hx'.2]
+  have : (0 : ℤ) < k := by exact_mod_cast hk₀
+  have : k < (1 : ℤ) := by exact_mod_cast hk₁
+  omega
+
+/-- **The vertex sectors along a cycle do not overlap while their angles stay within `2π`.**
+Pull back the sectors of the vertices `next^[m] j`, `m < r`, to the finite vertex `z = vertex j`
+by the inverse partial cycle maps. If their interior angles sum to at most `2π`, these sectors
+turn around `z` through at most a full circle, so their interiors are pairwise disjoint. -/
+theorem pairwiseDisjoint_inv_partialCycleMap_smul_interior_vertexSector {j : Fin n} {z : ℍ}
+    (hz : P.vertex j = .inl z) {r : ℕ}
+    (hr : ∑ m ∈ Finset.range r, P.interiorAngle (σ.next^[m] j) ≤ 2 * π) :
+    (Finset.range r : Set ℕ).PairwiseDisjoint fun m ↦
+      (σ.partialCycleMap j m)⁻¹ • interior (P.vertexSector (σ.next^[m] j)) := by
+  -- the angle sum over the tiles up to any `m' < r` is at most the full sum
+  have hle {m' : ℕ} (hm' : m' ∈ (Finset.range r : Set ℕ)) :
+      ∑ l ∈ Finset.range (m' + 1), P.interiorAngle (σ.next^[l] j) ≤ 2 * π :=
+    le_trans (Finset.sum_le_sum_of_subset_of_nonneg
+      (Finset.range_subset_range.2 (Finset.mem_range.1 (Finset.mem_coe.1 hm')))
+      fun l _ _ ↦ P.interiorAngle_nonneg _) hr
+  intro m hm m' hm' hne
+  rcases hne.lt_or_gt with h | h
+  · exact σ.disjoint_inv_partialCycleMap_smul_interior_vertexSector_of_lt hz h (hle hm')
+  · exact (σ.disjoint_inv_partialCycleMap_smul_interior_vertexSector_of_lt hz h (hle hm)).symm
+
+/-- **Local no-overlap at a finite vertex.** If the interior angles at the first `r` vertices of
+the cycle through a finite vertex `z = vertex j` sum to at most `2π`, then the pulled-back tiles
+`(partialCycleMap j m)⁻¹ • P`, `m < r`, have pairwise disjoint interiors. -/
+theorem pairwiseDisjoint_inv_partialCycleMap_smul_interior_carrier {j : Fin n} {z : ℍ}
+    (hz : P.vertex j = .inl z) {r : ℕ}
+    (hr : ∑ m ∈ Finset.range r, P.interiorAngle (σ.next^[m] j) ≤ 2 * π) :
+    (Finset.range r : Set ℕ).PairwiseDisjoint fun m ↦
+      (σ.partialCycleMap j m)⁻¹ • interior P.carrier :=
+  (σ.pairwiseDisjoint_inv_partialCycleMap_smul_interior_vertexSector hz hr).mono fun _ ↦
+    Set.smul_set_mono (interior_mono (P.carrier_subset_vertexSector _))
+
+/-- The tiles around a finite vertex are distinct while their angles stay within `2π`: the
+partial cycle maps `partialCycleMap j m`, `m < r`, are pairwise distinct when the interior angles
+at the first `r` vertices of the cycle sum to at most `2π`. -/
+theorem injOn_partialCycleMap {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z) {r : ℕ}
+    (hr : ∑ m ∈ Finset.range r, P.interiorAngle (σ.next^[m] j) ≤ 2 * π) :
+    Set.InjOn (σ.partialCycleMap j) (Finset.range r : Set ℕ) := by
+  intro m hm m' hm' h
+  by_contra hne
+  obtain ⟨w, hw⟩ := P.nonempty_interior_carrier
+  have hdisj : Disjoint ((σ.partialCycleMap j m)⁻¹ • interior P.carrier)
+      ((σ.partialCycleMap j m')⁻¹ • interior P.carrier) :=
+    σ.pairwiseDisjoint_inv_partialCycleMap_smul_interior_carrier hz hr hm hm' hne
+  rw [h] at hdisj
+  exact Set.disjoint_left.1 hdisj (Set.smul_mem_smul_set hw) (Set.smul_mem_smul_set hw)
+
+/-- **Local no-overlap at a finite vertex cycle.** If `t` circuits of the cycle through a finite
+vertex `z = vertex j` have total angle at most `2π`, then the tiles met along those circuits have
+pairwise disjoint interiors. For an elliptic cycle whose angle sum is `2π / t`, these tiles also
+cover a neighbourhood of `z`, by
+`mem_interior_iUnion_inv_partialCycleMap_smul_carrier_of_le_mul_cycleAngleSum`. -/
+theorem pairwiseDisjoint_inv_partialCycleMap_smul_interior_carrier_of_mul_cycleAngleSum_le
+    {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z) {t : ℕ}
+    (ht : t * σ.cycleAngleSum j ≤ 2 * π) :
+    (Finset.range (t * σ.cycleLength j) : Set ℕ).PairwiseDisjoint fun m ↦
+      (σ.partialCycleMap j m)⁻¹ • interior P.carrier :=
+  σ.pairwiseDisjoint_inv_partialCycleMap_smul_interior_carrier hz
     (by rwa [σ.sum_range_mul_cycleLength_interiorAngle])
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

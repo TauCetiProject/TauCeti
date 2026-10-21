@@ -100,6 +100,14 @@ theorem mem_interior_vertexSector_iff (j : Fin n) (z : ℍ) :
       z ∈ leftHalfPlane (P.sideGeodesic j) := by
   rw [interior_vertexSector, mem_inter_iff]
 
+/-- A finite vertex lies on the boundary of its sector: it is on the outgoing side, so it is not
+strictly to the left of that side. -/
+theorem notMem_interior_vertexSector {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z) :
+    z ∉ interior (P.vertexSector j) := fun h ↦
+  (disjoint_leftHalfPlane_range_geodesicLine (P.sideGeodesic j)).notMem_of_mem_left
+    ((P.mem_interior_vertexSector_iff j z).1 h).2
+    (P.side_subset_range_sideGeodesic j (P.mem_side_of_vertex_eq_inl hz))
+
 /-- The polygon is contained in each of its vertex sectors. -/
 theorem carrier_subset_vertexSector (j : Fin n) : P.carrier ⊆ P.vertexSector j :=
   subset_inter (P.carrier_subset_closure_leftHalfPlane (j - 1))
