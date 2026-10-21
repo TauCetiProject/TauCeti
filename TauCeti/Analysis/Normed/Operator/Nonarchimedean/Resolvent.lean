@@ -353,12 +353,13 @@ theorem IsRowCompact.one_sub_smul_mul_resolventAt {u : C₀(I, R) →L[R] C₀(I
 theorem IsRowCompact.resolventAt_mul_one_sub_smul {u : C₀(I, R) →L[R] C₀(I, R)}
     (hu : u.IsRowCompact) (a : R) :
     u.resolventAt a * (1 - a • u) = u.matrixCoeff.charPowerSeries.evalAt a • 1 := by
+  -- Generic `IsScalarTower`/`SMulCommClass` instances for the operator algebra are not found by
+  -- instance search here, so the scalar is moved through `comp` with `smul_comp`/`comp_smul`.
+  have h : Commute (a • u) (u.resolventAt a) := by
+    rw [Commute, SemiconjBy, mul_def, mul_def, smul_comp, comp_smul]
+    exact congrArg (a • ·) (hu.commute_resolventAt a).eq
   rw [← hu.one_sub_smul_mul_resolventAt a]
-  ext1 x
-  have h := congr($((hu.commute_resolventAt a).eq) x)
-  simp only [mul_apply_eq_comp, _root_.sub_apply, one_apply_eq_self, _root_.smul_apply, map_sub,
-    map_smul] at h ⊢
-  rw [h]
+  exact (Commute.sub_left (R := C₀(I, R) →L[R] C₀(I, R)) (.one_left (u.resolventAt a)) h).eq.symm
 
 /-- If `H_u(a)` is a unit, `H_u(a)⁻¹ • V(a)` is a two-sided inverse of `1 - a • u`. -/
 private theorem IsRowCompact.mul_inverse_smul_resolventAt {u : C₀(I, R) →L[R] C₀(I, R)}
@@ -366,13 +367,11 @@ private theorem IsRowCompact.mul_inverse_smul_resolventAt {u : C₀(I, R) →L[R
     (1 - a • u) * (Ring.inverse (u.matrixCoeff.charPowerSeries.evalAt a) • u.resolventAt a) = 1 ∧
       (Ring.inverse (u.matrixCoeff.charPowerSeries.evalAt a) • u.resolventAt a) * (1 - a • u) =
         1 := by
-  constructor <;> ext1 x
-  · have h := congr($(hu.one_sub_smul_mul_resolventAt a) x)
-    simp only [mul_apply_eq_comp, _root_.smul_apply, map_smul, one_apply_eq_self] at h ⊢
-    rw [h, smul_smul, Ring.inverse_mul_cancel _ ha, one_smul]
-  · have h := congr($(hu.resolventAt_mul_one_sub_smul a) x)
-    simp only [mul_apply_eq_comp, _root_.smul_apply, one_apply_eq_self] at h ⊢
-    rw [h, smul_smul, Ring.inverse_mul_cancel _ ha, one_smul]
+  constructor
+  · rw [mul_def, comp_smul, ← mul_def, hu.one_sub_smul_mul_resolventAt, smul_smul,
+      Ring.inverse_mul_cancel _ ha, one_smul]
+  · rw [mul_def, smul_comp, ← mul_def, hu.resolventAt_mul_one_sub_smul, smul_smul,
+      Ring.inverse_mul_cancel _ ha, one_smul]
 
 /-- **Invertibility from the Fredholm determinant.** If `u` is row compact and `H_u(a)`, the
 value at `a` of its Fredholm determinant, is a unit of `R`, then `1 - a • u` is invertible. -/
