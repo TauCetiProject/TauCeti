@@ -215,17 +215,6 @@ theorem bijOn_const_sub_inv_upperHalfPlaneSet (c : ℝ) :
     fun w (hw : 0 < w.im) => ⟨-(w - c)⁻¹, im_neg_inv_pos.mpr (by simpa using hw), by simp⟩⟩
   simpa [upperHalfPlaneSet] using im_neg_inv_pos.mpr hz
 
-/-- `w ↦ -w⁻¹` carries the closed upper half-plane near `0` to the closed upper half-plane near
-infinity, so a limit of `f` at infinity in the closed upper half-plane is a limit of `w ↦ f (-w⁻¹)`
-at `0` in the punctured closed upper half-plane. -/
-theorem tendsto_comp_neg_inv_cobounded {α : Type*} {l : Filter α} {f : ℂ → α}
-    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) l) :
-    Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) l := by
-  refine hp.comp (tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩)
-  · exact (tendsto_neg_cobounded.comp tendsto_inv₀_nhdsNE_zero).mono_left
-      (nhdsWithin_mono _ fun w hw => hw.2)
-  · exact eventually_nhdsWithin_of_forall fun w hw => im_neg_inv_nonneg.mpr hw.1
-
 /-- For real `c`, the Möbius map `z ↦ c - z⁻¹` sends `z` into the closed upper half-plane exactly
 when `z` lies in it. -/
 theorem im_const_sub_inv_nonneg (c : ℝ) {z : ℂ} : 0 ≤ ((c : ℂ) - z⁻¹).im ↔ 0 ≤ z.im := by
@@ -249,6 +238,14 @@ theorem tendsto_const_sub_inv_nhdsWithin_zero (c : ℝ) :
       (tendsto_inv₀_nhdsNE_zero.mono_left (nhdsWithin_mono _ fun _ hz => hz.2)),
     tendsto_principal.mpr (eventually_nhdsWithin_of_forall fun _ hz =>
       (im_const_sub_inv_nonneg c).mpr hz.1)⟩
+
+/-- `w ↦ -w⁻¹` carries the closed upper half-plane near `0` to the closed upper half-plane near
+infinity, so a limit of `f` at infinity in the closed upper half-plane is a limit of `w ↦ f (-w⁻¹)`
+at `0` in the punctured closed upper half-plane. -/
+theorem tendsto_comp_neg_inv_cobounded {α : Type*} {l : Filter α} {f : ℂ → α}
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) l) :
+    Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) l := by
+  simpa [Function.comp_def] using hp.comp (tendsto_const_sub_inv_nhdsWithin_zero 0)
 
 /-- For real `c`, the Möbius map `z ↦ c - z⁻¹` carries the closed upper half-plane near infinity
 to the closed upper half-plane near `c`. -/
