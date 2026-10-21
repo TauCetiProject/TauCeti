@@ -69,11 +69,7 @@ theorem isGradedEulerAdmissible_of_finite_of_forall_simple
   induction hn : Module.finrank k X using Nat.strong_induction_on generalizing X with
   | _ n ih =>
     by_cases hX : IsZero X
-    · have : Projective X := hX.projective
-      have hsub (j : ℤ) : Subsingleton (X ⟶ (e ^ j).functor.obj Y) :=
-        ⟨fun f g ↦ hX.eq_of_src f g⟩
-      exact isGradedEulerAdmissible_of_projective k e X Y
-        (HasFiniteLaurentSupport.of_finset (fun _ ↦ inferInstance) ∅ fun j _ ↦ hsub j)
+    · exact IsGradedEulerAdmissible.of_isZero_left k e hX
     by_cases hs : Simple X
     · exact h X inferInstance hs
     obtain ⟨Z, i, hi, hZ, hQ, _, hdimZ, hdimQ⟩ :=

@@ -42,8 +42,7 @@ supplies the hypothesis, that the projective basis vectors are the classes `[A e
 * `TauCeti.isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasis`: if every pair of graded
   heads `(Sᵢ, Sⱼ)` is graded Euler-admissible, the graded Cartan matrix has unit determinant.
   Contrapositively, a graded Cartan determinant that is not a unit of `ℤ[q,q⁻¹]` exhibits a pair
-  of graded simples whose bigraded `Ext` groups do not vanish in high cohomological degrees, or
-  are not finite in some internal degree.
+  of graded heads that is not graded Euler-admissible.
 
 ## References
 
