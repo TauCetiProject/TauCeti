@@ -11,6 +11,7 @@ public import Mathlib.Order.Interval.Set.Nat
 public import Mathlib.RingTheory.PowerSeries.Order
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.Analysis.Convex.Sequence.Envelope
+public import TauCeti.Analysis.Convex.Sequence.Supporting
 
 /-!
 # Newton polygons of polynomials and power series
@@ -42,6 +43,8 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
 
 * `Polynomial.isLowerConvexEnvelope_newtonPolygon`: the Newton polygon of a polynomial is the
   greatest convex minorant of its coefficient heights.
+* `PowerSeries.supportingValue_newtonPolygon` and `Polynomial.supportingValue_newtonPolygon`:
+  the Newton polygon has the same supporting values as the coefficient heights.
 * `Polynomial.newtonPolygon_eq_top_iff`: the Newton polygon of a polynomial is empty exactly
   when every coefficient has infinite valuation.
 * `Polynomial.newtonPolygon_ne_top_iff`: if only zero has infinite valuation (for example
@@ -110,6 +113,12 @@ theorem newtonPolygon_le (hf : IsAdmissible fun n => v (coeff n f)) (n : ℕ) :
 theorem le_newtonPolygon {H : ℕ → WithTop ℝ} (hH : IsConvexSeq H)
     (hHf : ∀ n, H n ≤ v (coeff n f)) : H ≤ f.newtonPolygon v :=
   le_lowerConvexEnvelope hH hHf
+
+/-- For admissible coefficient heights, the Newton polygon has the same supporting values as
+the coefficient heights. -/
+theorem supportingValue_newtonPolygon (hf : IsAdmissible fun n => v (coeff n f)) :
+    supportingValue (f.newtonPolygon v) = supportingValue fun n => v (coeff n f) :=
+  supportingValue_lowerConvexEnvelope hf
 
 variable (v)
 
@@ -217,6 +226,11 @@ variable {f v} in
 theorem le_newtonPolygon {H : ℕ → WithTop ℝ} (hH : IsConvexSeq H)
     (hHf : ∀ n, H n ≤ v (f.coeff n)) : H ≤ f.newtonPolygon v :=
   le_lowerConvexEnvelope hH hHf
+
+/-- The Newton polygon has the same supporting values as the coefficient heights. -/
+theorem supportingValue_newtonPolygon :
+    supportingValue (f.newtonPolygon v) = supportingValue fun n => v (f.coeff n) :=
+  supportingValue_lowerConvexEnvelope (isAdmissible_addValuation_coeff f v)
 
 /-- The zero polynomial has the empty Newton polygon. -/
 @[simp]

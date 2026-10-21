@@ -131,11 +131,6 @@ namespace Polynomial
 
 variable {R : Type*} [Ring R] (f g : R[X]) (v : AddValuation R (WithTop ℝ))
 
-/-- The coefficient heights of a polynomial, viewed as a power series, are admissible. -/
-private theorem isAdmissible_addValuation_coeff_coe :
-    IsAdmissible fun n => v (PowerSeries.coeff n (f : PowerSeries R)) := by
-  simpa only [coeff_coe] using isAdmissible_addValuation_coeff f v
-
 /-- A polynomial with a nonempty Newton polygon has a supporting line of each slope, touching
 its coefficient heights at a least index. -/
 private theorem exists_isSupportingLine_isLeast_coeff_coe (hf : f.newtonPolygon v ≠ ⊤)
@@ -158,22 +153,20 @@ theorem newtonPolygon_mul :
   swap
   · simpa only [← newtonPolygon_coe, coe_mul] using
       PowerSeries.minkowskiSum_newtonPolygon_le_newtonPolygon_mul v
-        (isAdmissible_addValuation_coeff_coe f v) (isAdmissible_addValuation_coeff_coe g v)
+        (by simpa only [coeff_coe] using isAdmissible_addValuation_coeff f v)
+        (by simpa only [coeff_coe] using isAdmissible_addValuation_coeff g v)
   rcases eq_or_ne (f.newtonPolygon v) ⊤ with hf | hf
   · simp [hf]
   rcases eq_or_ne (g.newtonPolygon v) ⊤ with hg | hg
   · simp [hg]
   -- Compare supporting values. Those of a Newton polygon are those of the coefficient heights.
-  have hS (p : R[X]) : supportingValue (p.newtonPolygon v) =
-      supportingValue fun n => v (PowerSeries.coeff n (p : PowerSeries R)) := by
-    rw [← newtonPolygon_coe, PowerSeries.newtonPolygon_def,
-      supportingValue_lowerConvexEnvelope (isAdmissible_addValuation_coeff_coe p v)]
   rw [(isConvexSeq_newtonPolygon _ v).le_iff_forall_supportingValue_le]
   intro σ
   obtain ⟨c, i, hc, hi⟩ := exists_isSupportingLine_isLeast_coeff_coe f v hf σ
   obtain ⟨d, j, hd, hj⟩ := exists_isSupportingLine_isLeast_coeff_coe g v hg σ
-  rw [supportingValue_minkowskiSum hf hg, hS, hS, hS, coe_mul,
-    supportingValue_eq_coe_of_mem_supportingFace hc hi.1,
+  simp only [supportingValue_minkowskiSum hf hg, supportingValue_newtonPolygon, ← coeff_coe,
+    coe_mul]
+  rw [supportingValue_eq_coe_of_mem_supportingFace hc hi.1,
     supportingValue_eq_coe_of_mem_supportingFace hd hj.1]
   -- The coefficient of the product at the sum of the first contact indices of the factors
   -- lies on the line of slope `σ` and intercept `c + d`.
