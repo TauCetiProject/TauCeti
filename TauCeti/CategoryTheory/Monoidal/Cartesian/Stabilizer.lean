@@ -399,6 +399,8 @@ theorem comp_smulIso_inv_incl {T : C} (s : T ⟶ stabilizer G x) :
 theorem mul_comp_smulIso_hom {T : C} (s t : T ⟶ stabilizer G (h • x)) :
     (s * t) ≫ (smulIso G x h).hom = s ≫ (smulIso G x h).hom * t ≫ (smulIso G x h).hom := by
   apply (cancel_mono (incl G x)).1
+  -- Expose the isomorphism's forward morphism as `conjugationHom`, so its pointwise
+  -- conjugation formula applies to the composites with the inclusion.
   change ((s * t) ≫ conjugationHom G x h) ≫ incl G x =
     (s ≫ conjugationHom G x h * t ≫ conjugationHom G x h) ≫ incl G x
   simp only [Category.assoc, comp_conjugationHom_incl, MonObj.mul_comp]
@@ -410,6 +412,8 @@ instance : IsMonHom (smulIso G x h).hom where
   one_hom := by
     rw [MonObj.one_eq_one, MonObj.one_eq_one]
     apply (cancel_mono (incl G x)).1
+    -- Expose `smulIso`'s forward morphism as `conjugationHom`; after inclusion,
+    -- its unit equation is the bundled conjugation automorphism's `map_one` law.
     change (1 ≫ conjugationHom G x h) ≫ incl G x = 1 ≫ incl G x
     simp only [Category.assoc, comp_conjugationHom_incl, MonObj.one_comp]
     exact (MulAut.conj (toUnit (𝟙_ C) ≫ h)).symm.map_one
