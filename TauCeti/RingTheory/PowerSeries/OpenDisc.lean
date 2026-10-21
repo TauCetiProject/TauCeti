@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
+public import TauCeti.RingTheory.PowerSeries.GaussNorm
 
 /-!
 # Power series on an open disc
@@ -27,8 +28,8 @@ The condition can equivalently be tested along any family of radii below `R₀` 
 (`PowerSeries.onOpenDisc_iff_of_tendsto`), for instance along a sequence, and it amounts to
 bounded weighted coefficient norms at every smaller radius
 (`PowerSeries.onOpenDisc_iff_forall_hasGaussNorm`). In particular, a series with bounded
-coefficients lies on the open unit disc (`PowerSeries.onOpenDisc_one_of_bddAbove`); this is the
-inclusion of bounded-coefficient series into the open unit-disc algebra used in Iwasawa theory.
+coefficients lies on the open unit disc (`PowerSeries.onOpenDisc_of_bddAbove_norm_coeff`); this is
+the inclusion of bounded-coefficient series into the open unit-disc algebra used in Iwasawa theory.
 
 No ultrametric hypothesis is needed for the algebraic structure: products and Hasse derivatives
 only lose an arbitrarily small amount of radius, which the open condition absorbs. Thus over any
@@ -40,7 +41,7 @@ The geometric series `∑ aⁿ Xⁿ` lies on the open disc of radius `‖a‖⁻
 (`PowerSeries.onOpenDisc_mk_pow`), but for `a ≠ 0` and a multiplicative norm it is not
 restricted at that radius (`TauCeti.PowerSeries.not_isRestricted_mk_pow`). Similarly `∑ Xⁿ` lies
 on the open unit disc without being restricted at the radius `1`
-(`PowerSeries.onOpenDisc_mk_one`, `PowerSeries.not_isRestricted_mk_one`).
+(`PowerSeries.onOpenDisc_mk_one`, `TauCeti.PowerSeries.not_isRestricted_mk_one`).
 
 ## Main definitions
 
@@ -55,8 +56,9 @@ on the open unit disc without being restricted at the radius `1`
   to `R₀` from below.
 * `PowerSeries.onOpenDisc_iff_forall_hasGaussNorm`: the condition amounts to bounded weighted
   coefficient norms at every smaller radius.
-* `PowerSeries.HasGaussNorm.onOpenDisc` and `PowerSeries.onOpenDisc_one_of_bddAbove`: bounded
-  weighted coefficients at `R₀` give a series on the open disc of radius `R₀`.
+* `PowerSeries.HasGaussNorm.onOpenDisc`: bounded weighted coefficients at `R₀` give a series on
+  the open disc of radius `R₀`; `PowerSeries.onOpenDisc_of_bddAbove_norm_coeff` is the case
+  `R₀ = 1`.
 * `PowerSeries.IsRestricted.onOpenDisc` and `PowerSeries.isEntire_iff_forall_onOpenDisc`: the
   comparisons with restricted and entire series.
 * `PowerSeries.OnOpenDisc.add`, `PowerSeries.OnOpenDisc.mul`, `PowerSeries.onOpenDisc_coe` and
@@ -138,7 +140,7 @@ theorem onOpenDisc_iff_forall_hasGaussNorm :
   exact (hf s (hr.trans hrs) hsR).isRestricted_of_abs_lt ((abs_of_pos hr).trans_lt hrs)
 
 /-- A series with bounded coefficients lies on the open unit disc. -/
-theorem onOpenDisc_one_of_bddAbove (hf : BddAbove (Set.range fun n ↦ ‖coeff n f‖)) :
+theorem onOpenDisc_of_bddAbove_norm_coeff (hf : BddAbove (Set.range fun n ↦ ‖coeff n f‖)) :
     f.OnOpenDisc 1 :=
   HasGaussNorm.onOpenDisc (by simpa only [HasGaussNorm, one_pow, mul_one] using hf)
 
@@ -249,15 +251,7 @@ theorem onOpenDisc_mk_pow (a : R) : (mk fun n ↦ a ^ n).OnOpenDisc ‖a‖⁻¹
 
 /-- The series `∑ Xⁿ` lies on the open unit disc, its coefficients being bounded. -/
 theorem onOpenDisc_mk_one : (mk 1 : R⟦X⟧).OnOpenDisc 1 :=
-  onOpenDisc_one_of_bddAbove ⟨‖(1 : R)‖, by simp [upperBounds]⟩
-
-/-- Over a nontrivial normed ring, the series `∑ Xⁿ` is not restricted at the radius `1`: all its
-weighted coefficient norms there equal `‖1‖ ≠ 0`. -/
-theorem not_isRestricted_mk_one [Nontrivial R] : ¬(mk 1 : R⟦X⟧).IsRestricted 1 := by
-  intro hf
-  have h := (isRestricted_iff' _ _).mp hf
-  simp only [coeff_mk, Pi.one_apply, one_pow, mul_one] at h
-  exact norm_ne_zero_iff.mpr one_ne_zero (tendsto_nhds_unique tendsto_const_nhds h)
+  onOpenDisc_of_bddAbove_norm_coeff ⟨‖(1 : R)‖, by simp [upperBounds]⟩
 
 variable (R) in
 /-- The power series on the open disc of radius `R₀` form a subring. -/
@@ -276,7 +270,7 @@ theorem OnOpenDisc.mem_subring : f ∈ OnOpenDisc.subring R R₀ ↔ f.OnOpenDis
 
 variable (R) in
 /-- The subring of series on the open disc of radius `R₀` shrinks as `R₀` grows. -/
-theorem OnOpenDisc.antitone_subring : Antitone (OnOpenDisc.subring R) :=
+theorem OnOpenDisc.subring_antitone : Antitone (OnOpenDisc.subring R) :=
   fun _ _ h _ hf ↦ OnOpenDisc.mono hf h
 
 /-- Entire series lie in the subring of series on every open disc. -/

@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import Mathlib.RingTheory.PowerSeries.Restricted
-public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
+public import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
 # Hasse derivatives of restricted power series
@@ -106,31 +106,26 @@ growth of the binomial coefficients is absorbed by the geometric factor `(|c| / 
 ultrametric ring no radius is lost (`PowerSeries.IsRestricted.hasseDeriv`). -/
 theorem IsRestricted.hasseDeriv_of_abs_lt (hf : f.IsRestricted c') (h : |c| < |c'|) (k : ℕ) :
     (hasseDeriv k f).IsRestricted c := by
-  rw [← isRestricted_abs_iff] at hf ⊢
-  rw [isRestricted_iff'] at hf ⊢
+  obtain ⟨A, hA0, hA⟩ := TauCeti.PowerSeries.exists_nonneg_norm_coeff_mul_pow_le hf
   set q := |c'|
-  set ρ := |c| / q with hρ
+  set ρ := |c| / q
   have hq : 0 < q := (abs_nonneg c).trans_lt h
-  have hρ0 : 0 ≤ ρ := by positivity
-  have hρ1 : ρ < 1 := (div_lt_one hq).mpr h
-  obtain ⟨A, hA⟩ := hf.bddAbove_range
-  have hAf (n : ℕ) : ‖coeff n f‖ * q ^ n ≤ A := hA ⟨n, rfl⟩
-  have hA0 : 0 ≤ A := (by positivity : 0 ≤ ‖coeff 0 f‖ * q ^ 0).trans (hAf 0)
   have hupper : Tendsto
       (fun n : ℕ ↦ ((n + k : ℝ) ^ k * ρ ^ n) * (q⁻¹ ^ k * A)) atTop (𝓝 0) := by
-    simpa using
-      (TauCeti.tendsto_add_pow_mul_pow_of_lt_one k hρ0 hρ1).mul_const (q⁻¹ ^ k * A)
+    simpa using (TauCeti.tendsto_add_pow_mul_pow_of_lt_one k (by positivity)
+      ((div_lt_one hq).mpr h)).mul_const (q⁻¹ ^ k * A)
+  -- the coefficients `aₙ₊ₖ` have weighted norms at most `q⁻¹ ^ k * A` at the radius `q`
+  have hAk (m : ℕ) : ‖coeff m (mk fun m ↦ coeff (m + k) f)‖ * q ^ m ≤ q⁻¹ ^ k * A :=
+    calc ‖coeff m (mk fun m ↦ coeff (m + k) f)‖ * q ^ m
+        = q⁻¹ ^ k * (‖coeff (m + k) f‖ * q ^ (m + k)) := by
+          rw [coeff_mk, pow_add, inv_pow]
+          field_simp
+      _ ≤ q⁻¹ ^ k * A := by gcongr; exact hA (m + k)
+  rw [← isRestricted_abs_iff, isRestricted_iff']
   refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hupper
   rw [coeff_hasseDeriv, ← nsmul_eq_mul]
   have hscaled : ‖coeff (n + k) f‖ * |c| ^ n ≤ q⁻¹ ^ k * A * ρ ^ n := by
-    calc
-      ‖coeff (n + k) f‖ * |c| ^ n
-          = q⁻¹ ^ k * (‖coeff (n + k) f‖ * q ^ (n + k)) * ρ ^ n := by
-            rw [hρ, div_pow, inv_pow, pow_add]
-            field_simp [hq.ne']
-      _ ≤ q⁻¹ ^ k * A * ρ ^ n := by
-        gcongr
-        exact hAf (n + k)
+    simpa only [coeff_mk] using TauCeti.PowerSeries.norm_coeff_mul_pow_le_of_forall_le hq hAk n
   calc
     ‖(n + k).choose k • coeff (n + k) f‖ * |c| ^ n
         ≤ ((n + k).choose k : ℝ) * (‖coeff (n + k) f‖ * |c| ^ n) := by

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Analysis.Asymptotics.Lemmas
@@ -16,9 +15,8 @@ public import TauCeti.Analysis.Asymptotics.Lemmas
 Mathlib's `PowerSeries.IsRestricted` asks the weighted coefficient norms of a power series to
 tend to zero. A series whose coefficients vanish in every degree past some bound — a polynomial —
 satisfies that condition at every radius, and a series restricted at one radius is restricted at
-every smaller one. Without any ultrametric hypothesis, bounded weighted coefficients at one
-radius make a series restricted at every strictly smaller radius, and products of series
-restricted at one radius are restricted at every strictly smaller radius. Over an ultrametric
+every smaller one. Without any ultrametric hypothesis, products of series restricted at one
+radius are restricted at every strictly smaller radius. Over an ultrametric
 normed commutative ring, constant series give the restricted subring its coefficient algebra
 structure. The polynomial inclusion is an algebra homomorphism;
 it induces the polynomial-to-series comparisons used in Weierstrass division and its quotients.
@@ -30,12 +28,13 @@ it induces the polynomial-to-series comparisons used in Weierstrass division and
 * `TauCeti.PowerSeries.isRestricted_of_abs_le`: restrictedness passes to smaller radii, and
   `TauCeti.PowerSeries.isRestrictedSubring_le_of_abs_le` is the resulting containment of subrings.
 * `TauCeti.PowerSeries.isRestricted_polynomial`: every polynomial is restricted.
-* `PowerSeries.HasGaussNorm.isRestricted_of_abs_lt`: bounded weighted coefficients at `c'` give
-  restrictedness at every `c` with `|c| < c'`.
+* `TauCeti.PowerSeries.norm_coeff_mul_pow_le_of_forall_le`: weighted coefficient norms bounded
+  by `A` at a radius `q > 0` are bounded by `A * (|c| / q)ⁿ` at the radius `c`.
 * `PowerSeries.IsRestricted.mul_of_abs_lt`: over any normed ring, a product of series restricted
   at `c'` is restricted at every `c` with `|c| < |c'|`.
 * `TauCeti.PowerSeries.not_isRestricted_mk_pow`: for `a ≠ 0` and a multiplicative norm, `∑ aⁿ Xⁿ`
-  is not restricted at the radius `‖a‖⁻¹`.
+  is not restricted at the radius `‖a‖⁻¹`, and `TauCeti.PowerSeries.not_isRestricted_mk_one`:
+  `∑ Xⁿ` is not restricted at the radius `1`.
 * `PowerSeries.IsRestricted.rescale`: if `f(X)` is restricted at `‖a‖ * c`, then `f(aX)`
   is restricted at `c`.
 * `TauCeti.PowerSeries.polynomialToRestricted`: the polynomial inclusion as an algebra map.
@@ -104,6 +103,30 @@ theorem not_isRestricted_mk_pow [NormMulClass R] {a : R} (ha : a ≠ 0) :
     one_pow] at h
   exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds h)
 
+/-- Over a nontrivial normed ring, the series `∑ Xⁿ` is not restricted at the radius `1`: all its
+weighted coefficient norms there equal `‖1‖ ≠ 0`. -/
+theorem not_isRestricted_mk_one [Nontrivial R] :
+    ¬(PowerSeries.mk 1 : PowerSeries R).IsRestricted 1 := by
+  intro hf
+  have h := (PowerSeries.isRestricted_iff' _ _).mp hf
+  simp only [PowerSeries.coeff_mk, Pi.one_apply, one_pow, mul_one] at h
+  exact norm_ne_zero_iff.mpr one_ne_zero (tendsto_nhds_unique tendsto_const_nhds h)
+
+/-- A series restricted at `c` has weighted coefficient norms at `|c|` bounded by some `A ≥ 0`. -/
+theorem exists_nonneg_norm_coeff_mul_pow_le (hf : f.IsRestricted c) :
+    ∃ A, 0 ≤ A ∧ ∀ n, ‖f.coeff n‖ * |c| ^ n ≤ A := by
+  rw [← PowerSeries.isRestricted_abs_iff, PowerSeries.isRestricted_iff'] at hf
+  obtain ⟨A, hA⟩ := hf.bddAbove_range
+  exact ⟨A, (by positivity : 0 ≤ ‖f.coeff 0‖ * |c| ^ 0).trans (hA ⟨0, rfl⟩), fun n ↦ hA ⟨n, rfl⟩⟩
+
+/-- If the weighted coefficient norms of `f` at a radius `q > 0` are bounded by `A`, then at the
+radius `c` they are bounded by `A * (|c| / q)ⁿ`. -/
+theorem norm_coeff_mul_pow_le_of_forall_le {q A : ℝ} (hq : 0 < q)
+    (hA : ∀ n, ‖f.coeff n‖ * q ^ n ≤ A) (n : ℕ) : ‖f.coeff n‖ * |c| ^ n ≤ A * (|c| / q) ^ n :=
+  calc ‖f.coeff n‖ * |c| ^ n = ‖f.coeff n‖ * q ^ n * (|c| / q) ^ n := by
+        rw [div_pow]; field_simp
+    _ ≤ A * (|c| / q) ^ n := by gcongr; exact hA n
+
 section Algebra
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ}
@@ -154,22 +177,6 @@ open scoped Topology
 
 variable {R : Type*} [NormedRing R] {c c' : ℝ} {f g : PowerSeries R}
 
-/-- **Bounded weighted coefficients give restrictedness at smaller radii.** If the weighted
-coefficient norms `‖aₙ‖ c'ⁿ` are bounded, then `‖aₙ‖ cⁿ → 0` for every `c` with `|c| < c'`, being
-dominated by a multiple of `(|c| / c')ⁿ`. -/
-theorem HasGaussNorm.isRestricted_of_abs_lt (hf : f.HasGaussNorm norm c') (h : |c| < c') :
-    f.IsRestricted c := by
-  rw [← isRestricted_abs_iff, isRestricted_iff']
-  have hc' : 0 < c' := (abs_nonneg c).trans_lt h
-  obtain ⟨B, hB⟩ := hf
-  have hle (n : ℕ) : ‖coeff n f‖ * |c| ^ n ≤ B * (|c| / c') ^ n := by
-    rw [div_pow, mul_div, le_div_iff₀ (by positivity), mul_assoc, ← mul_pow,
-      mul_comm |c|, mul_pow, ← mul_assoc]
-    exact mul_le_mul_of_nonneg_right (hB ⟨n, rfl⟩) (by positivity)
-  refine squeeze_zero (fun n ↦ by positivity) hle ?_
-  simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity)
-    ((div_lt_one hc').mpr h)).const_mul B
-
 /-- **Products of restricted series at a smaller radius.** Over any normed ring, if `f` and `g`
 are restricted at the radius `c'`, then `f * g` is restricted at every radius `c` with
 `|c| < |c'|`: the weighted coefficient norms of `f * g` at `c'` grow at most linearly, and the
@@ -177,22 +184,14 @@ geometric factor `(|c| / |c'|)ⁿ` absorbs this growth. Over an ultrametric ring
 (`MvPowerSeries.IsRestricted.mul`). -/
 theorem IsRestricted.mul_of_abs_lt (hf : f.IsRestricted c') (hg : g.IsRestricted c')
     (h : |c| < |c'|) : (f * g).IsRestricted c := by
-  rw [← isRestricted_abs_iff] at hf hg ⊢
-  rw [isRestricted_iff'] at hf hg ⊢
-  set q := |c'|
-  set ρ := |c| / q
-  have hq : 0 < q := (abs_nonneg c).trans_lt h
-  have hρ0 : 0 ≤ ρ := by positivity
-  have hρ1 : ρ < 1 := (div_lt_one hq).mpr h
-  obtain ⟨A, hA⟩ := hf.bddAbove_range
-  obtain ⟨B, hB⟩ := hg.bddAbove_range
-  have hAf (n : ℕ) : ‖coeff n f‖ * q ^ n ≤ A := hA ⟨n, rfl⟩
-  have hBg (n : ℕ) : ‖coeff n g‖ * q ^ n ≤ B := hB ⟨n, rfl⟩
-  have hA0 : 0 ≤ A := (by positivity : 0 ≤ ‖coeff 0 f‖ * q ^ 0).trans (hAf 0)
-  have hB0 : 0 ≤ B := (by positivity : 0 ≤ ‖coeff 0 g‖ * q ^ 0).trans (hBg 0)
-  have hscale : |c| = q * ρ := by rw [mul_div_cancel₀ _ hq.ne']
+  obtain ⟨A, hA0, hA⟩ := TauCeti.PowerSeries.exists_nonneg_norm_coeff_mul_pow_le hf
+  obtain ⟨B, hB0, hB⟩ := TauCeti.PowerSeries.exists_nonneg_norm_coeff_mul_pow_le hg
+  have hq : 0 < |c'| := (abs_nonneg c).trans_lt h
+  set ρ := |c| / |c'|
   have hupper : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ) * ρ ^ n * (A * B)) atTop (𝓝 0) := by
-    simpa using (TauCeti.tendsto_add_pow_mul_pow_of_lt_one 1 hρ0 hρ1).mul_const (A * B)
+    simpa using (TauCeti.tendsto_add_pow_mul_pow_of_lt_one 1 (by positivity)
+      ((div_lt_one hq).mpr h)).mul_const (A * B)
+  rw [← isRestricted_abs_iff, isRestricted_iff']
   refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hupper
   rw [coeff_mul]
   calc
@@ -204,19 +203,16 @@ theorem IsRestricted.mul_of_abs_lt (hf : f.IsRestricted c') (hg : g.IsRestricted
     _ ≤ ∑ _p ∈ Finset.antidiagonal n, A * B * ρ ^ n := by
       refine Finset.sum_le_sum fun p hp ↦ ?_
       have hp' := Finset.mem_antidiagonal.mp hp
-      have hfp : ‖coeff p.1 f‖ * |c| ^ p.1 ≤ A * ρ ^ p.1 := by
-        rw [hscale, mul_pow, ← mul_assoc]
-        exact mul_le_mul_of_nonneg_right (hAf p.1) (by positivity)
-      have hgp : ‖coeff p.2 g‖ * |c| ^ p.2 ≤ B * ρ ^ p.2 := by
-        rw [hscale, mul_pow, ← mul_assoc]
-        exact mul_le_mul_of_nonneg_right (hBg p.2) (by positivity)
       calc
         ‖coeff p.1 f * coeff p.2 g‖ * |c| ^ n
             ≤ (‖coeff p.1 f‖ * ‖coeff p.2 g‖) * |c| ^ n := by gcongr; exact norm_mul_le _ _
         _ = (‖coeff p.1 f‖ * |c| ^ p.1) * (‖coeff p.2 g‖ * |c| ^ p.2) := by
           rw [← hp', pow_add]
           ring
-        _ ≤ (A * ρ ^ p.1) * (B * ρ ^ p.2) := by gcongr
+        _ ≤ (A * ρ ^ p.1) * (B * ρ ^ p.2) :=
+          mul_le_mul (TauCeti.PowerSeries.norm_coeff_mul_pow_le_of_forall_le hq hA p.1)
+            (TauCeti.PowerSeries.norm_coeff_mul_pow_le_of_forall_le hq hB p.2)
+            (by positivity) (by positivity)
         _ = A * B * ρ ^ n := by rw [← hp', pow_add]; ring
     _ = (n + 1 : ℝ) * ρ ^ n * (A * B) := by
       rw [Finset.sum_const, Finset.Nat.card_antidiagonal]
