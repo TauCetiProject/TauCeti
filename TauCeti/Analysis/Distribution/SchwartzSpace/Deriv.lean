@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 
 /-!
@@ -19,6 +20,11 @@ Multiplication by a continuous linear functional `L` satisfies the Leibniz rule
 `∂_v^(k+1) (L f) = L ∂_v^(k+1) f + (k + 1) L v ∂_v^k f`. On the Fourier side, multiplying a symbol
 by `⟪h, ξ⟫` differentiates its kernel along `h`, so these identities control the derivatives of
 the symbol of a differentiated kernel.
+
+Directional derivatives of a Schwartz function commute (`SchwartzMap.lineDerivOp_comm`), and
+integrating by parts along an orthonormal basis gives Green's identity
+`∫ B(f, Δg) = -∑ᵢ ∫ B(∂_{bᵢ} f, ∂_{bᵢ} g)` for a continuous bilinear map `B`
+(`SchwartzMap.integral_bilinear_laplacian_right_eq_neg_sum`).
 -/
 
 public section
@@ -75,5 +81,37 @@ theorem iterate_lineDerivOp_smulLeftCLM_clm (L : V →L[ℝ] ℝ) (f : 𝓢(V, F
     congr 2
     push_cast
     ring
+
+/-- **Directional derivatives of Schwartz functions commute.** -/
+theorem lineDerivOp_comm (f : 𝓢(V, F)) (v w : V) : ∂_{v} (∂_{w} f) = ∂_{w} (∂_{v} f) := by
+  ext x
+  have hd : DifferentiableAt ℝ (fderiv ℝ (f : V → F)) x :=
+    (f.smooth ⊤).fderiv_right (m := 1) (by simp) |>.differentiable one_ne_zero x
+  have key : ∀ a b : V, ∂_{a} (∂_{b} f) x = fderiv ℝ (fderiv ℝ (f : V → F)) x a b := by
+    intro a b
+    have hb : ((∂_{b} f : 𝓢(V, F)) : V → F) = fun y => fderiv ℝ (f : V → F) y b :=
+      funext fun y => lineDerivOp_apply_eq_fderiv b f y
+    rw [lineDerivOp_apply_eq_fderiv, hb, fderiv_clm_apply hd (differentiableAt_const _)]
+    simp
+  rw [key, key]
+  exact (ContDiffAt.isSymmSndFDerivAt (f := (f : V → F)) (x := x) (f.smooth ⊤).contDiffAt
+    (by simp)).eq v w
+
+open MeasureTheory LineDeriv Laplacian in
+/-- **Green's identity on Schwartz space**: for a continuous bilinear map `B` and an orthonormal
+basis `b`, `∫ B(f, Δg) = -∑ᵢ ∫ B(∂_{bᵢ} f, ∂_{bᵢ} g)`. -/
+theorem integral_bilinear_laplacian_right_eq_neg_sum {E F₁ F₂ F₃ ι : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F₁]
+    [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃]
+    [NormedSpace ℝ F₃] [Fintype ι] (b : OrthonormalBasis ι ℝ E) (f : 𝓢(E, F₁)) (g : 𝓢(E, F₂))
+    (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
+    ∫ x, B (f x) (Δ g x) ∂μ = -∑ i, ∫ x, B (∂_{b i} f x) (∂_{b i} g x) ∂μ := by
+  simp_rw [laplacian_eq_sum b, _root_.sum_apply, map_sum]
+  have hint : ∀ i ∈ Finset.univ, Integrable (fun x => B (f x) (∂_{b i} (∂_{b i} g) x)) μ :=
+    fun i _ => (pairing B f (∂_{b i} (∂_{b i} g))).integrable
+  rw [integral_finsetSum _ hint, ← Finset.sum_neg_distrib]
+  exact Finset.sum_congr rfl fun i _ =>
+    integral_bilinear_lineDerivOp_right_eq_neg_left f (∂_{b i} g) B (b i)
 
 end SchwartzMap
