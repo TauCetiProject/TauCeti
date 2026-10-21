@@ -208,7 +208,7 @@ theorem characterPairing_ofCharacter_sub_self {V W : Type*} [AddCommGroup V] [Mo
 open scoped Classical in
 /-- The character pairing of irreducible characters is Kronecker orthonormal. -/
 theorem characterPairing_ofCharacter_orthonormal {V W : Type*} [AddCommGroup V] [Module k V]
-    [FiniteDimensional k V] [AddCommGroup W] [Module k W] [FiniteDimensional k W]
+    [AddCommGroup W] [Module k W]
     [Invertible (Nat.card G : k)] [IsAlgClosed k] (ρ : Representation k G V)
     (σ : Representation k G W) [ρ.IsIrreducible] [σ.IsIrreducible] :
     characterPairing (ofCharacter ρ) (ofCharacter σ) =
@@ -219,7 +219,7 @@ theorem characterPairing_ofCharacter_orthonormal {V W : Type*} [AddCommGroup V] 
 /-- An irreducible character pairs to `1` with itself. -/
 @[simp]
 theorem characterPairing_ofCharacter_self {V : Type*} [AddCommGroup V] [Module k V]
-    [FiniteDimensional k V] [Invertible (Nat.card G : k)] [IsAlgClosed k]
+    [Invertible (Nat.card G : k)] [IsAlgClosed k]
     (ρ : Representation k G V) [ρ.IsIrreducible] :
     characterPairing (ofCharacter ρ) (ofCharacter ρ) = 1 := by
   classical

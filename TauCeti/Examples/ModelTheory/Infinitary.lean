@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.ModelTheory.Infinitary.CodedConnectives
+import TauCeti.ModelTheory.Infinitary.FreeVariables
 import Mathlib.ModelTheory.Graph
 import Mathlib.Tactic.FinCases
 
@@ -23,6 +23,8 @@ through public statements only:
 * coded conjunctions and disjunctions realize as the conjunction and disjunction of their branches,
   for an empty source carrier, with unused target indices, and with a decoder that sends several
   target indices to the same branch;
+* a countable conjunction can have infinite free-variable support, also after carrier transport;
+* changing a valuation outside support preserves truth, also under a quantifier;
 * `simp` uses a formula- or sentence-level hypothesis, or a default-priority formula-level rewrite
   rule, before descending to bounded realization.
 -/
@@ -131,6 +133,62 @@ example {L : Language.{u, v}} {α : Type u'} {M : Type w} [L.Structure M] {n : �
     ((iInfAlong c φs).Realize v xs ↔ (φs false).Realize v xs ∧ (φs true).Realize v xs) ∧
       ((iSupAlong c φs).Realize v xs ↔ (φs false).Realize v xs ∨ (φs true).Realize v xs) := by
   simp [Bool.forall_bool, Bool.exists_bool]
+
+/-! ### Free-variable support -/
+
+namespace TauCeti
+
+open TauCeti.BoundedFormulaInf
+
+attribute [local instance] Language.emptyStructure
+
+-- Comparing every free coordinate to a bound variable gives infinite support,
+-- even after quantifying that bound variable.
+example : freeVarSupport
+    (all (iInf fun i : ℕ => equal (.var (.inl i)) (.var (.inr 0))) :
+      Language.empty.BoundedFormulaω ℕ 0) = Set.univ := by
+  ext i
+  simp [Term.varFinsetLeft]
+
+-- Transport keeps this infinite support even when the target has an unused padding index.
+example : freeVarSupport
+    ((all (iInf fun i : ℕ => equal (.var (.inl i)) (.var (.inr 0))) :
+      Language.empty.BoundedFormulaω ℕ 0).reindex (IndexCoding.sumInl ℕ Unit)) = Set.univ := by
+  ext i
+  simp [Term.varFinsetLeft]
+
+-- The conjunction is true of the zero valuation at zero.
+example : (iInf fun i : ℕ => equal (.var (.inl i)) (.var (.inr 0)) :
+    Language.empty.BoundedFormulaω ℕ 1).Realize (M := ℕ) (fun _ => 0) (fun _ => 0) := by
+  simp
+
+-- It is false of the identity valuation at zero.
+example : ¬ (iInf fun i : ℕ => equal (.var (.inl i)) (.var (.inr 0)) :
+    Language.empty.BoundedFormulaω ℕ 1).Realize (M := ℕ) id (fun _ => 0) := by
+  simp only [realize_iInf, realize_equal, Term.realize_var,
+    Sum.elim_inl, Sum.elim_inr, id_eq]
+  exact fun h => Nat.one_ne_zero (h 1)
+
+-- An empty branching carrier contributes no free variables.
+example {L : Language.{u, v}} {α : Type u'} {n : ℕ} :
+    freeVarSupport (iInf Empty.elim : L.BoundedFormulaInf Empty α n) = ∅ := by
+  simp
+
+-- Finitary support stays finite even when the unused branching carrier is large.
+example {L : Language.{u, v}} {α : Type u'} {n : ℕ} (φ : L.BoundedFormula α n) :
+    (freeVarSupport (φ.toInf (ι := Type))).Finite :=
+  finite_freeVarSupport_toInf φ
+
+-- The quantified equation uses only free variable zero. All other coordinates may change.
+example {v₁ v₂ : ℕ → ℕ} (h : v₁ 0 = v₂ 0) :
+    (all (equal (.var (.inl 0)) (.var (.inr 0))) :
+      Language.empty.BoundedFormulaω ℕ 0).Realize v₁ Fin.elim0 ↔
+    (all (equal (.var (.inl 0)) (.var (.inr 0))) :
+      Language.empty.BoundedFormulaω ℕ 0).Realize v₂ Fin.elim0 := by
+  apply realize_congr_freeVarSupport
+  simpa [Term.varFinsetLeft] using h
+
+end TauCeti
 
 /-! ### Formula- and sentence-level facts in `simp` -/
 
