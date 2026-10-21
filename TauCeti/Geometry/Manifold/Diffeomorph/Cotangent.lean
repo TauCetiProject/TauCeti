@@ -97,9 +97,8 @@ protected def cotangent (h : M ≃ₘ⟮I, J⟯ N) :
   toFun := h.cotangentMap
   invFun := h.symm.cotangentMap
   left_inv := h.cotangentMap_symm_cotangentMap
-  right_inv z := by
-    simpa only [show h.symm.symm = h from Diffeomorph.ext fun _ ↦ rfl] using
-      h.symm.cotangentMap_symm_cotangentMap z
+  -- `h.symm.symm` is `h` up to structure eta, so this is the left inverse law for `h.symm`.
+  right_inv := h.symm.cotangentMap_symm_cotangentMap
   contMDiff_toFun := h.contMDiff_cotangentMap
   contMDiff_invFun := h.symm.contMDiff_cotangentMap
 

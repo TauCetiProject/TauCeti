@@ -83,19 +83,12 @@ section Symplectic
 
 variable [IsManifold I ∞ M] [IsManifold J ∞ N]
 
-/-- The canonical symplectic form is minus the bundled exterior derivative of the Liouville
-form. -/
-private theorem symplecticForm_eq_neg_mextDerivₗ_liouvilleForm :
-    symplecticForm I M = -mextDerivₗ (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1 (liouvilleForm I M) :=
-  Subtype.ext (by rw [symplecticForm_eq_neg_mextDeriv, NegMemClass.coe_neg, mextDerivₗ_apply])
-
 /-- **Cotangent lifts are symplectic.** The cotangent lift of a smooth diffeomorphism pulls the
 canonical symplectic form of `T*N` back to the canonical symplectic form of `T*M`. -/
 theorem mpullback_cotangent_symplecticForm (h : M ≃ₘ⟮I, J⟯ N) :
     SmoothForm.mpullback h.cotangent h.cotangent.contMDiff (symplecticForm J N) =
       symplecticForm I M := by
-  rw [symplecticForm_eq_neg_mextDerivₗ_liouvilleForm,
-    symplecticForm_eq_neg_mextDerivₗ_liouvilleForm, map_neg,
+  rw [symplecticForm_eq_neg_mextDerivₗ, symplecticForm_eq_neg_mextDerivₗ, map_neg,
     ← SmoothForm.mextDerivₗ_mpullback, mpullback_cotangent_liouvilleForm]
 
 end Symplectic
