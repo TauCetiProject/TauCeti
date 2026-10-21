@@ -383,23 +383,22 @@ open scoped InnerProductSpace
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The diagonal complex bilinear form `(v, w) ↦ ∑ j, a j * v j * w j` on `ℂⁿ`. -/
-private noncomputable def diagonalForm (a : ι → ℝ) :
-    EuclideanSpace ℂ ι →L[ℂ] EuclideanSpace ℂ ι →L[ℂ] ℂ :=
-  ∑ j, (a j : ℂ) • (EuclideanSpace.proj j).smulRight (EuclideanSpace.proj j)
-
+/-- On `ℂⁿ`, `‖z‖ ^ 2 + ∑ j, a j * Re (z j ^ 2)` is the orthonormal-basis model
+`1 * ‖z‖² + Re (∑ⱼ a j ⟪b j, z⟫²)` for the standard basis `b`. -/
 private theorem norm_sq_add_sum_re_sq_eq (a : ι → ℝ) :
-    (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) =
-      fun z ↦ ‖z‖ ^ 2 + (diagonalForm a z z).re := by
+    (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) = fun z ↦
+      (1 : ℝ) * ‖z‖ ^ 2 + (∑ j, (a j : ℂ) * ⟪EuclideanSpace.basisFun ι ℂ j, z⟫_ℂ ^ 2).re := by
   funext z
-  simp [diagonalForm, sq]
+  simp only [EuclideanSpace.basisFun_inner, one_mul, re_sum, re_ofReal_mul]
 
 /-- On `ℂⁿ`, the Levi form of `z ↦ ‖z‖ ^ 2 + ∑ j, a j * Re (z j ^ 2)` is the standard Hermitian
 inner product, for all real `a j`. -/
 @[simp]
 theorem leviForm_euclidean_norm_sq_add_sum_re_sq (a : ι → ℝ) (x : EuclideanSpace ℂ ι) :
     leviForm (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) x = innerₛₗ ℂ := by
-  rw [norm_sq_add_sum_re_sq_eq, ContinuousLinearMap.leviForm_norm_sq_add_re_apply_self]
+  rw [norm_sq_add_sum_re_sq_eq,
+    (EuclideanSpace.basisFun ι ℂ).leviForm_mul_norm_sq_add_re_sum_mul_inner_sq, ofReal_one,
+    one_smul]
 
 /-- On `ℂⁿ`, in the coordinates `z j = x j + I y j`, the Hessian quadratic form of
 `z ↦ ‖z‖ ^ 2 + ∑ j, a j * Re (z j ^ 2)` is `∑ j, (2 (1 + a j) x j ^ 2 + 2 (1 - a j) y j ^ 2)`. -/
@@ -407,13 +406,12 @@ theorem hessianQuadraticForm_euclidean_norm_sq_add_sum_re_sq (a : ι → ℝ)
     (x v : EuclideanSpace ℂ ι) :
     hessianQuadraticForm (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) x v =
       ∑ j, (2 * (1 + a j) * (v j).re ^ 2 + 2 * (1 - a j) * (v j).im ^ 2) := by
-  have h := (diagonalForm a).hessianQuadraticForm_mul_norm_sq_add_re_apply_self 1 x v
-  simp only [one_mul, mul_one] at h
-  rw [norm_sq_add_sum_re_sq_eq, h]
-  simp only [diagonalForm, EuclideanSpace.norm_sq_eq, Finset.mul_sum, ← Finset.sum_add_distrib,
-    sum_apply, re_sum]
+  rw [norm_sq_add_sum_re_sq_eq,
+    (EuclideanSpace.basisFun ι ℂ).hessianQuadraticForm_mul_norm_sq_add_re_sum_mul_inner_sq]
+  simp only [EuclideanSpace.basisFun_inner, one_mul, EuclideanSpace.norm_sq_eq, re_sum,
+    re_ofReal_mul, ← Finset.sum_add_distrib, Finset.mul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp [← normSq_eq_norm_sq, normSq_apply]
+  rw [Complex.sq_norm, normSq_apply, sq, mul_re]
   ring
 
 /-- **Explicit inertia of a strictly plurisubharmonic quadratic function.** On `ℂⁿ`, the function
@@ -424,11 +422,7 @@ theorem morseIndex_euclidean_norm_sq_add_sum_re_sq (a : ι → ℝ) (x : Euclide
     morseIndex (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) x =
       {j | 1 < |a j|}.ncard := by
   classical
-  have hf : (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) = fun z ↦
-      (1 : ℝ) * ‖z‖ ^ 2 + (∑ j, (a j : ℂ) * ⟪EuclideanSpace.basisFun ι ℂ j, z⟫_ℂ ^ 2).re := by
-    funext z
-    simp only [EuclideanSpace.basisFun_inner, one_mul, re_sum, re_ofReal_mul]
-  rw [hf, OrthonormalBasis.morseIndex_mul_norm_sq_add_re_sum_mul_inner_sq,
+  rw [norm_sq_add_sum_re_sq_eq, OrthonormalBasis.morseIndex_mul_norm_sq_add_re_sum_mul_inner_sq,
     Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   have h : ¬(1 : ℝ) < -|a j| := by linarith [abs_nonneg (a j)]
