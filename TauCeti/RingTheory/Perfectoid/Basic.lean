@@ -22,8 +22,10 @@ Fix a prime `p`. A complete Hausdorff Tate ring `R`, with power-bounded subring 
 
 No perfectoid base field is fixed, and both characteristic `0` and characteristic `p` are allowed.
 Uniformity is not implied by the second condition, and the divisibility `ϖ ^ p ∣ p` must hold in
-`R°`, not merely in `R`. Without it, `ℚ_p` would qualify, since Frobenius on `ℤ_p ⧸ p = 𝔽_p` is
-bijective.
+`R°`, not merely in `R`, where it is automatic since `ϖ` is a unit of `R`. It makes `[x] ↦ [x ^ p]`
+a ring homomorphism `R° ⧸ (ϖ) → R° ⧸ (ϖ ^ p)` (`TauCeti.frobeniusModPow`). Bijectivity of Frobenius
+on `R° ⧸ (p)` alone is not enough: it holds on `ℤ_p ⧸ p = 𝔽_p`, yet `ℚ_p` is not perfectoid, as the
+definition asks for the different map modulo `ϖ ^ p`.
 
 The class `TauCeti.Perfectoid.IsPerfectoidTateRing` states the second condition elementwise, and
 `TauCeti.Perfectoid.isPerfectoidTateRing_iff` recovers the bijectivity of
