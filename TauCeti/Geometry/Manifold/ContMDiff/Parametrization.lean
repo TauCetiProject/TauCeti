@@ -10,15 +10,16 @@ public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 
 /-!
-# Globally defined smooth local parametrizations
+# Globally defined differentiable local parametrizations
 
-Every point of a finite-dimensional boundaryless real manifold lies in the image of a smooth
-parametrization defined on an entire Cartesian space, with smooth inverse on its image.
+Every point of a finite-dimensional boundaryless real `C^n` manifold lies in the image of a
+`C^n` parametrization defined on an entire Cartesian space, with `C^n` inverse on its image,
+for every finite order or smoothness order `n ≤ ∞`.
 These parametrizations allow continuity and smoothness to be tested on globally defined plots,
 without requiring a chart inverse to extend beyond its domain.
 
 The construction uses Mathlib's `OpenPartialHomeomorph.univBall` and `toEuclidean` to shrink
-an ordinary smooth chart.
+an ordinary manifold chart.
 -/
 
 public noncomputable section
@@ -29,16 +30,18 @@ open scoped Manifold Topology ContDiff
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
+  {n : ℕ∞} [IsManifold 𝓘(ℝ, E) n M]
 
-/-- A point of a finite-dimensional boundaryless real manifold has smooth local coordinates
-parametrized by an entire Cartesian space, with a smooth inverse on their open image. -/
+/-- A point of a finite-dimensional boundaryless real `C^n` manifold, for `n ≤ ∞`, has `C^n`
+local coordinates parametrized by an entire Cartesian space, with a `C^n` inverse on their
+open image. -/
 theorem exists_contMDiff_parametrization (x : M) :
     ∃ e : OpenPartialHomeomorph (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) M,
       e.source = univ ∧ x ∈ e.target ∧
-      ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) 𝓘(ℝ, E) ∞ e ∧
+      ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) 𝓘(ℝ, E) n e ∧
       ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
-        ∞ e.symm e.target := by
+        n e.symm e.target := by
   let L := toEuclidean (E := E)
   let c := (chartAt E x).trans L.toHomeomorph.toOpenPartialHomeomorph
   have hc : c x ∈ c.target := c.map_source (by simp [c, mem_chart_source])
@@ -60,12 +63,12 @@ theorem exists_contMDiff_parametrization (x : M) :
       simpa only [b, OpenPartialHomeomorph.univBall_target _ hr] using
         Metric.mem_ball_self hr⟩
   have hcs : ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
-      𝓘(ℝ, E) ∞ c.symm c.target := by
+      𝓘(ℝ, E) n c.symm c.target := by
     rw [OpenPartialHomeomorph.coe_trans_symm]
     exact (contMDiffOn_chart_symm (I := 𝓘(ℝ, E)) (x := x)).comp
       (L.symm.contDiff.contMDiff.contMDiffOn (s := c.target)) (fun z hz => hz.2)
   have hcf : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
-      ∞ c c.source := by
+      n c c.source := by
     exact L.contDiff.contMDiff.comp_contMDiffOn
       ((contMDiffOn_chart (I := 𝓘(ℝ, E)) (x := x)).mono inter_subset_left)
   refine ⟨e, hs, ht, ?_, ?_⟩

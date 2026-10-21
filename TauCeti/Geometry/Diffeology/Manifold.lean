@@ -60,12 +60,24 @@ def manifoldDiffeology : DiffeologicalSpace M :=
       refine ⟨fun hu _ p hp => IsOpen.preimage hp.continuous hu,
         fun h => isOpen_iff_mem_nhds.mpr ?_⟩
       intro x hx
-      obtain ⟨e, hs, he, hp, _⟩ := exists_contMDiff_parametrization (E := E) x
+      obtain ⟨e, hs, he, hp, _⟩ := exists_contMDiff_parametrization (E := E) (n := ⊤) x
       have ho := (e.isOpenEmbedding hs).isOpenMap _ (h e hp)
       have hm : x ∈ e '' (e ⁻¹' u) := ⟨e.symm x, by simpa [e.right_inv he], e.right_inv he⟩
       exact Filter.mem_of_superset (ho.mem_nhds hm) (image_preimage_subset _ _) }
 
 variable {E M}
+
+/-- The plots of the manifold diffeology are exactly the smooth Cartesian parametrizations. -/
+theorem isPlot_manifoldDiffeology_iff {n : ℕ} {p : EuclideanSpace ℝ (Fin n) → M} :
+    @IsPlot M (manifoldDiffeology E M) n p ↔
+      ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, E) ∞ p :=
+  -- The construction passes its global plots unchanged to `ofCorePlotsOn`.
+  (Iff.rfl)
+
+/-- The D-topology of the manifold diffeology is the original manifold topology. -/
+theorem dTopology_manifoldDiffeology : @dTopology M (manifoldDiffeology E M) = tM :=
+  -- `ofCorePlotsOn` retains the topology supplied by the construction.
+  (rfl)
 
 /-- A diffeology agrees with the smooth manifold structure if its Cartesian plots are
 exactly the smooth manifold maps. -/
@@ -111,23 +123,22 @@ end
 
 instance : @IsContMDiffCompatible E _ _ M _ _ (manifoldDiffeology E M) := by
   let := manifoldDiffeology E M
-  exact ⟨Iff.rfl⟩
-
-instance : @IsDTopologyCompatible M _ (manifoldDiffeology E M) := by
-  let := manifoldDiffeology E M
-  exact ⟨rfl⟩
+  exact ⟨isPlot_manifoldDiffeology_iff⟩
 
 /-- Characterization of the manifold diffeology by its plots. -/
 theorem isContMDiffCompatible_iff_eq_manifoldDiffeology [d : DiffeologicalSpace M] :
     IsContMDiffCompatible (E := E) (M := M) ↔ d = manifoldDiffeology E M := by
   refine ⟨fun h => ?_, fun h => h ▸ inferInstance⟩
   ext n p
+  rw [isPlot_manifoldDiffeology_iff]
   exact h.isPlot_iff
 
 /-- The manifold construction agrees with Mathlib's standard normed-space diffeology. -/
 @[simp]
 theorem manifoldDiffeology_self : manifoldDiffeology E E = NormedSpace.toDiffeology E := by
+  let := NormedSpace.toDiffeology E
   ext n p
+  rw [isPlot_manifoldDiffeology_iff, isPlot_iff_contDiff]
   exact contMDiff_iff_contDiff
 
 /-- Smoothly equivalent atlases give the same diffeology, even when their model spaces differ. -/
@@ -138,6 +149,7 @@ theorem manifoldDiffeology_eq_of_contMDiff_id
     (h' : ContMDiff 𝓘(ℝ, F) 𝓘(ℝ, E) ∞ (id : M → M)) :
     manifoldDiffeology E M = manifoldDiffeology F M := by
   ext n p
+  rw [isPlot_manifoldDiffeology_iff, isPlot_manifoldDiffeology_iff]
   exact ⟨fun hp => h.comp hp, fun hp => h'.comp hp⟩
 
 variable [DiffeologicalSpace M] [IsContMDiffCompatible (E := E) (M := M)]
@@ -146,7 +158,8 @@ variable [DiffeologicalSpace M] [IsContMDiffCompatible (E := E) (M := M)]
 instance : IsDTopologyCompatible M := by
   rw [isContMDiffCompatible_iff_eq_manifoldDiffeology.mp
     (inferInstance : IsContMDiffCompatible (E := E) (M := M))]
-  infer_instance
+  let := manifoldDiffeology E M
+  exact ⟨dTopology_manifoldDiffeology⟩
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
@@ -158,16 +171,14 @@ theorem dSmooth_iff_contMDiff {f : M → N} :
     DSmooth f ↔ ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ f := by
   constructor
   · intro hf x
-    obtain ⟨e, _, hx, he, hei⟩ := exists_contMDiff_parametrization (E := E) x
+    obtain ⟨e, _, hx, he, hei⟩ := exists_contMDiff_parametrization (E := E) (n := ⊤) x
     have hfe := (IsContMDiffCompatible.isPlot_iff (E := F)).mp
       (hf _ e (IsContMDiffCompatible.isPlot_iff.mpr he))
     have hg := hfe.contMDiffAt.comp x
       (hei.contMDiffAt (e.open_target.mem_nhds hx))
     exact hg.congr_of_eventuallyEq (Filter.eventuallyEq_of_mem
       (e.open_target.mem_nhds hx) (fun y hy => congrArg f (e.right_inv hy).symm))
-  · intro hf n p hp
-    exact IsContMDiffCompatible.isPlot_iff.mpr
-      (hf.comp (IsContMDiffCompatible.isPlot_iff.mp hp))
+  · exact ContMDiff.dSmooth
 
 /-- A diffeologically smooth map from a finite-dimensional smooth manifold to a compatible
 charted space is smooth as a manifold map. -/
