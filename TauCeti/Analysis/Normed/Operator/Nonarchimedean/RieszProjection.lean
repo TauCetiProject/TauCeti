@@ -142,39 +142,6 @@ theorem unique {E' : C₀(I, R) →L[R] C₀(I, R)} (hE : IsRieszProjection u a 
 
 end IsRieszProjection
 
-/-! The operator-norm closure of the polynomials in `u` is closed under the ring operations. These
-steps are stated for the closure as a set, as in
-`ContinuousLinearMap.resolventHasseDerivAt_mem_closure_adjoin`: for the semiring structure that
-`Algebra.adjoin` uses, instance search does not find the `IsSemitopologicalSemiring` instance that
-`Subalgebra.topologicalClosure` needs. -/
-
-/-- Products of operator-norm limits of polynomials in `u` are again such limits. -/
-private theorem mul_mem_closure_adjoin {u x y : C₀(I, R) →L[R] C₀(I, R)}
-    (hx : x ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))))
-    (hy : y ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R)))) :
-    x * y ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) :=
-  map_mem_closure₂ continuous_mul hx hy fun _ ha _ hb ↦ Subalgebra.mul_mem _ ha hb
-
-/-- Differences of operator-norm limits of polynomials in `u` are again such limits. -/
-private theorem sub_mem_closure_adjoin {u x y : C₀(I, R) →L[R] C₀(I, R)}
-    (hx : x ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))))
-    (hy : y ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R)))) :
-    x - y ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
-  -- Written as `x + (-1) • y`: instance search does not find `ContinuousSub` for the operator
-  -- subtraction, while continuity of addition and of scalar multiplication are available.
-  rw [sub_eq_add_neg (G := C₀(I, R) →L[R] C₀(I, R)), ← neg_one_smul R y]
-  exact map_mem_closure₂ continuous_add hx
-    (map_mem_closure (continuous_const_smul _) hy fun _ hb ↦ Subalgebra.smul_mem _ hb _)
-    fun _ ha _ hb ↦ Subalgebra.add_mem _ ha hb
-
-/-- Powers of an operator-norm limit of polynomials in `u` are again such limits. -/
-private theorem pow_mem_closure_adjoin {u x : C₀(I, R) →L[R] C₀(I, R)}
-    (hx : x ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R)))) (n : ℕ) :
-    x ^ n ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
-  induction n with
-  | zero => exact subset_closure (Subalgebra.one_mem _)
-  | succ n ih => exact pow_succ x n ▸ mul_mem_closure_adjoin ih hx
-
 variable [DiscreteTopology I] [DecidableEq I]
 
 /-- The **Riesz projector** `1 - (C b) ^ h` of an endomorphism `u` of `C₀(I, R)` at the scalar
@@ -210,15 +177,6 @@ private theorem commute_one_sub_smul_inverse_smul_resolventHasseDerivAt
   (Commute.sub_left (R := C₀(I, R) →L[R] C₀(I, R))
     (Commute.one_left (u.resolventHasseDerivAt h a))
     ((u.commute_resolventHasseDerivAt h a).smul_left a)).smul_right _
-
-/-- The normalised Hasse derivative `b = c⁻¹ • ΔʰV(a)` of the resolvent lies in the operator-norm
-closure of the polynomials in `u`. -/
-private theorem inverse_smul_resolventHasseDerivAt_mem_closure_adjoin
-    (u : C₀(I, R) →L[R] C₀(I, R)) (a c : R) (h : ℕ) :
-    Ring.inverse c • u.resolventHasseDerivAt h a ∈
-      closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) :=
-  map_mem_closure (continuous_const_smul _) (u.resolventHasseDerivAt_mem_closure_adjoin h a)
-    fun _ ha ↦ Subalgebra.smul_mem _ ha _
 
 /-- The normalised Hasse derivative of the resolvent inverts `1 - a • u` up to a multiple of `u`:
 `(1 - a • u) (c⁻¹ • Δᵏ⁺¹V(a)) = 1 + c⁻¹ • u ΔᵏV(a)` when `c = Δᵏ⁺¹H_u(a)` is a unit. -/
@@ -256,21 +214,31 @@ theorem IsRowCompact.isRieszProjection_rieszProjection {u : C₀(I, R) →L[R] C
   have huC : Commute u C := Commute.sub_right (R := C₀(I, R) →L[R] C₀(I, R))
     (Commute.one_right u) ((Commute.refl u).smul_right a)
   have hub : Commute u b := (u.commute_resolventHasseDerivAt h a).smul_right _
-  -- Both `C` and `b`, hence `(C b) ^ h` and `b (C b) ^ h`, lie in the closure of `R[u]`.
-  have hCS : C ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) :=
+  -- Both `C` and `b`, hence `(C b) ^ h`, `1 - (C b) ^ h` and `b (C b) ^ h`, lie in the closure
+  -- of `R[u]`, which carries the closure submonoid and closure submodule of `R[u]`.
+  set S := (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R)))
+  have hCS : C ∈ closure S :=
     subset_closure <| Subalgebra.sub_mem (A := C₀(I, R) →L[R] C₀(I, R)) _ (Subalgebra.one_mem _)
       (Subalgebra.smul_mem _ (Algebra.self_mem_adjoin_singleton R u) a)
-  have hbS := inverse_smul_resolventHasseDerivAt_mem_closure_adjoin u a
-    ((PowerSeries.hasseDeriv h u.matrixCoeff.charPowerSeries).evalAt a) h
-  have hpS := pow_mem_closure_adjoin (mul_mem_closure_adjoin hCS hbS) h
+  have hbS : b ∈ closure S := (Algebra.adjoin R {u}).toSubmodule.topologicalClosure.smul_mem _
+    (u.resolventHasseDerivAt_mem_closure_adjoin h a)
+  have hpS : (C * b) ^ h ∈ closure S :=
+    (Algebra.adjoin R {u}).toSubmonoid.topologicalClosure.pow_mem
+      ((Algebra.adjoin R {u}).toSubmonoid.topologicalClosure.mul_mem hCS hbS) h
+  have hES : 1 - (C * b) ^ h ∈ closure S := by
+    -- Written as `1 + (-1) • (C b) ^ h`: instance search does not find `ContinuousSub` for the
+    -- operator subtraction, so `Submodule.sub_mem` does not apply to the closure submodule.
+    rw [sub_eq_add_neg (G := C₀(I, R) →L[R] C₀(I, R)), ← neg_one_smul R ((C * b) ^ h)]
+    exact (Algebra.adjoin R {u}).toSubmodule.topologicalClosure.add_mem
+      (subset_closure (Subalgebra.one_mem _))
+      ((Algebra.adjoin R {u}).toSubmodule.topologicalClosure.smul_mem _ hpS)
   rw [rieszProjection_def]
   refine ⟨IsIdempotentElem.one_sub (R := C₀(I, R) →L[R] C₀(I, R)) hp,
     Commute.sub_right (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_right u)
-      ((huC.mul_right hub).pow_right h),
-    sub_mem_closure_adjoin (subset_closure (Subalgebra.one_mem _)) hpS,
-    ?_, b * (C * b) ^ h, ?_, ?_, ?_, ?_, mul_mem_closure_adjoin hbS hpS⟩
+      ((huC.mul_right hub).pow_right h), hES, ?_, b * (C * b) ^ h, ?_, ?_, ?_, ?_,
+    (Algebra.adjoin R {u}).toSubmonoid.topologicalClosure.mul_mem hbS hpS⟩
   · rw [mul_sub (α := C₀(I, R) →L[R] C₀(I, R)), mul_one,
-      pow_mul_mul_pow_of_pow_succ_mul_eq (M := C₀(I, R) →L[R] C₀(I, R)) hb]
+      TauCeti.pow_mul_mul_pow_of_pow_succ_mul_eq (M := C₀(I, R) →L[R] C₀(I, R)) hb]
     exact sub_self _
   · rw [sub_sub_cancel (G := C₀(I, R) →L[R] C₀(I, R)),
       hCb.mul_mul_mul_pow_of_pow_succ_mul_eq (M := C₀(I, R) →L[R] C₀(I, R)) hb]

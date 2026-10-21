@@ -29,7 +29,7 @@ invertible modulo each of them (`C * wᵢ = wᵢ * C = 1 - Eᵢ`), are equal
 
 ## Main results
 
-* `pow_mul_mul_pow_of_pow_succ_mul_eq`: `C ^ h * (C * b) ^ n = C ^ h` for every `n`.
+* `TauCeti.pow_mul_mul_pow_of_pow_succ_mul_eq`: `C ^ h * (C * b) ^ n = C ^ h` for every `n`.
 * `Commute.isIdempotentElem_mul_pow_of_pow_succ_mul_eq`: `(C * b) ^ h` is idempotent.
 * `Commute.mul_mul_mul_pow_of_pow_succ_mul_eq`,
   `Commute.mul_mul_pow_mul_of_pow_succ_mul_eq`: `C * (b * (C * b) ^ h) = (C * b) ^ h` and
@@ -52,12 +52,16 @@ section Monoid
 
 variable {M : Type*} [Monoid M] {C b : M} {h : ℕ}
 
+namespace TauCeti
+
 /-- If `C ^ (h + 1) * b = C ^ h`, then `C ^ h * (C * b) ^ n = C ^ h` for every `n`. -/
 theorem pow_mul_mul_pow_of_pow_succ_mul_eq (hb : C ^ (h + 1) * b = C ^ h) (n : ℕ) :
     C ^ h * (C * b) ^ n = C ^ h := by
   induction n with
   | zero => rw [pow_zero, mul_one]
   | succ n ih => rw [pow_succ', ← mul_assoc, ← mul_assoc, ← pow_succ, hb, ih]
+
+end TauCeti
 
 namespace Commute
 
@@ -68,7 +72,7 @@ include hCb hb
 `(C * b) ^ (h + n) = (C * b) ^ h` for every `n`. -/
 theorem mul_pow_add_of_pow_succ_mul_eq (n : ℕ) : (C * b) ^ (h + n) = (C * b) ^ h := by
   rw [pow_add, hCb.mul_pow, (hCb.pow_pow h h).eq, mul_assoc,
-    pow_mul_mul_pow_of_pow_succ_mul_eq hb, ← (hCb.pow_pow h h).eq, ← hCb.mul_pow]
+    TauCeti.pow_mul_mul_pow_of_pow_succ_mul_eq hb, ← (hCb.pow_pow h h).eq, ← hCb.mul_pow]
 
 /-- If `C` and `b` commute and `C ^ (h + 1) * b = C ^ h`, then `(C * b) ^ h` is idempotent. -/
 theorem isIdempotentElem_mul_pow_of_pow_succ_mul_eq : IsIdempotentElem ((C * b) ^ h) := by
