@@ -199,6 +199,7 @@ theorem realParity_infinityType_ofDirichletCharacter_eq_zero_iff (ψ : Dirichlet
     coe_infiniteComponent_ofDirichletCharacter_neg_one, DirichletCharacter.Even]
 
 /-- The Hecke character attached to an even Dirichlet character has zero infinity type. -/
+@[simp]
 theorem infinityType_ofDirichletCharacter_of_even {ψ : DirichletCharacter ℂ n} (hψ : ψ.Even) :
     (ofDirichletCharacter n hn ψ).infinityType = 0 := by
   rw [infinityType_eq_toContinuous_realParity (isFiniteOrder_ofDirichletCharacter ψ),
@@ -208,6 +209,7 @@ theorem infinityType_ofDirichletCharacter_of_even {ψ : DirichletCharacter ℂ n
 
 /-- The Hecke character attached to an odd Dirichlet character has the nontrivial sign at the
 real place as its infinity type. -/
+@[simp]
 theorem infinityType_ofDirichletCharacter_of_odd {ψ : DirichletCharacter ℂ n} (hψ : ψ.Odd) :
     (ofDirichletCharacter n hn ψ).infinityType = FiniteOrderInfinityType.toContinuous 1 := by
   rw [infinityType_eq_toContinuous_realParity (isFiniteOrder_ofDirichletCharacter ψ)]
