@@ -44,8 +44,9 @@ functor `K^b(C)/[n] ⥤ K_n(C)` (`TauCeti.PeriodicComplex.orbitCompressionFuncto
   551–581, Section 1.
 * T. Stai, *The triangulated hull of periodic complexes*, Mathematical Research Letters **25**
   (2018), 199–236, Section 3.3.
-* The naturality proof of `compressionFunctorPeriodicityIso` on bounded complexes is adapted from
-  that of `TauCeti.PeriodicComplex.compressionFunctorShiftIso`
+* `compressionFunctorPeriodicityIso` on bounded complexes is assembled like
+  `TauCeti.PeriodicComplex.compressionFunctorShiftIso`, from their shared comparison
+  `TauCeti.PeriodicComplex.shiftCompCompressionFunctorIso`
   (`TauCeti.Algebra.Homology.Periodic.Compression.Shift`), and the descent of
   `homotopyCompressionFunctorPeriodicityIso` along the localization functor follows the
   construction of Mathlib's `CategoryTheory.Functor.commShiftOfLocalization.iso`.
@@ -164,56 +165,12 @@ of `n`. -/
 noncomputable def compressionFunctorPeriodicityIso :
     CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k ⋙ compressionFunctor n ≅
       compressionFunctor n :=
-  NatIso.ofComponents (fun K ↦
-    let : HasCompression n
-        ((CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k ⋙
-          CochainComplex.Bounded.ι C).obj K) :=
-      hasCompression_of_bounded n (K⟦k⟧).property
-    let : HasCompression n
-        ((CochainComplex.Bounded.ι C ⋙
-          CategoryTheory.shiftFunctor (CochainComplex C ℤ) k).obj K) :=
-      inferInstanceAs (HasCompression n (K.obj⟦k⟧))
-    eqToIso (compressionFunctor_obj n (K⟦k⟧)) ≪≫
-      compressionMapIso n (((CochainComplex.Bounded.ι C).commShiftIso k).app K) ≪≫
-      compressionPeriodicityIso n K.obj k hk ≪≫ eqToIso (compressionFunctor_obj n K).symm)
-    (fun {K L} f ↦ by
-      let : HasCompression n
-          ((CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k ⋙
-            CochainComplex.Bounded.ι C).obj K) :=
-        hasCompression_of_bounded n (K⟦k⟧).property
-      let : HasCompression n
-          ((CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k ⋙
-            CochainComplex.Bounded.ι C).obj L) :=
-        hasCompression_of_bounded n (L⟦k⟧).property
-      let : HasCompression n
-          ((CochainComplex.Bounded.ι C ⋙
-            CategoryTheory.shiftFunctor (CochainComplex C ℤ) k).obj K) :=
-        inferInstanceAs (HasCompression n (K.obj⟦k⟧))
-      let : HasCompression n
-          ((CochainComplex.Bounded.ι C ⋙
-            CategoryTheory.shiftFunctor (CochainComplex C ℤ) k).obj L) :=
-        inferInstanceAs (HasCompression n (L.obj⟦k⟧))
-      let : HasCompression n ((CochainComplex.Bounded.ι C).obj K) :=
-        hasCompression_of_bounded n K.property
-      let : HasCompression n ((CochainComplex.Bounded.ι C).obj L) :=
-        hasCompression_of_bounded n L.property
-      -- Move the compression of the shifted map across the comparison with the shift of the
-      -- underlying complexes, then apply naturality of the periodicity isomorphism.
-      have hcomp :
-          compressionMap n ((CategoryTheory.shiftFunctor (CochainComplex.Bounded C) k).map f).hom ≫
-              compressionMap n (((CochainComplex.Bounded.ι C).commShiftIso k).hom.app L) =
-            compressionMap n (((CochainComplex.Bounded.ι C).commShiftIso k).hom.app K) ≫
-              compressionMap n (f.hom⟦k⟧') := by
-        rw [← compressionMap_comp, ← compressionMap_comp]
-        congr 1
-        exact Functor.commShiftIso_hom_naturality (CochainComplex.Bounded.ι C) f k
-      simp only [Functor.comp_map, compressionFunctor_map, Iso.trans_hom, eqToIso.hom,
-        compressionMapIso_hom, Iso.app_hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
-        Category.id_comp]
-      rw [reassoc_of% hcomp, compressionPeriodicityIso_hom_naturality_assoc]
-      -- The two sides differ only in writing the underlying complex of `K` as
-      -- `(CochainComplex.Bounded.ι C).obj K` or as `K.obj`, which agree by definition.
-      rfl)
+  shiftCompCompressionFunctorIso n k ≪≫
+    NatIso.ofComponents (fun K ↦
+      eqToIso (shiftCompressionFunctor_obj n k K) ≪≫ compressionPeriodicityIso n K.obj k hk ≪≫
+        eqToIso (compressionFunctor_obj n K).symm)
+      (fun {K L} f ↦ by
+        simp [compressionPeriodicityIso_hom_naturality_assoc])
 
 /-- The component of `compressionFunctorPeriodicityIso` at a bounded complex is the periodicity
 isomorphism of its underlying complex, after identifying the underlying complex of its shift with
@@ -226,8 +183,9 @@ lemma compressionFunctorPeriodicityIso_hom_app (K : CochainComplex.Bounded C) :
           (((CochainComplex.Bounded.ι C).commShiftIso k).hom.app K) ≫
           (compressionPeriodicityIso n K.obj k hk).hom ≫
             eqToHom (compressionFunctor_obj n K).symm := by
-  simp only [compressionFunctorPeriodicityIso, NatIso.ofComponents_hom_app, Iso.trans_hom,
-    eqToIso.hom, compressionMapIso_hom, Iso.app_hom]
+  simp only [compressionFunctorPeriodicityIso, Iso.trans_hom, NatTrans.comp_app,
+    shiftCompCompressionFunctorIso_hom_app, NatIso.ofComponents_hom_app, eqToIso.hom,
+    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
 
 /-- The component of the inverse of `compressionFunctorPeriodicityIso` at a bounded complex is the
 inverse periodicity isomorphism of its underlying complex, followed by the identification of the
@@ -240,8 +198,9 @@ lemma compressionFunctorPeriodicityIso_inv_app (K : CochainComplex.Bounded C) :
           compressionMap (K := K.obj⟦k⟧) (L := (K⟦k⟧).obj) n
             (((CochainComplex.Bounded.ι C).commShiftIso k).inv.app K) ≫
             eqToHom (compressionFunctor_obj n (K⟦k⟧)).symm := by
-  simp only [compressionFunctorPeriodicityIso, NatIso.ofComponents_inv_app, Iso.trans_inv,
-    eqToIso.inv, compressionMapIso_inv, Iso.app_inv, Category.assoc]
+  simp only [compressionFunctorPeriodicityIso, Iso.trans_inv, NatTrans.comp_app,
+    shiftCompCompressionFunctorIso_inv_app, NatIso.ofComponents_inv_app, eqToIso.inv,
+    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
 
 end Bounded
 
