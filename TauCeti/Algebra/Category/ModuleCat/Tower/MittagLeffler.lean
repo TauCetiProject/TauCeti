@@ -73,8 +73,7 @@ transition. -/
 private theorem range_forget_map {n k : ℕ} (f : op k ⟶ op n) :
     Set.range ((F ⋙ forget (ModuleCat R)).map f) =
       (LinearMap.range (F.transitionOfLE (leOfHom f.unop)) : Set (F.obj (op n))) := by
-  rw [LinearMap.coe_range, transitionOfLE_def, Subsingleton.elim (homOfLE _).op f]
-  rfl
+  simp [LinearMap.coe_range, transitionOfLE_def, Subsingleton.elim (homOfLE _).op f]
 
 /-- **Eventual-range form of the Mittag-Leffler condition**: a tower is Mittag-Leffler if and
 only if, for every `n`, the images of the composite transitions `Aₖ → Aₙ` are constant for all

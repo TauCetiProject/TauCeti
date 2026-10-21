@@ -99,14 +99,12 @@ theorem transitionOfLE_succ (n : ℕ) : F.transitionOfLE (Nat.le_succ n) = F.tra
 
 @[simp]
 theorem transitionOfLE_refl (n : ℕ) : F.transitionOfLE (le_refl n) = LinearMap.id := by
-  rw [transitionOfLE_def, Subsingleton.elim (homOfLE (le_refl n)) (𝟙 n), op_id, F.map_id,
-    ModuleCat.hom_id]
+  simp [transitionOfLE_def]
 
 @[simp]
 theorem transitionOfLE_comp_transitionOfLE {m n k : ℕ} (hmn : m ≤ n) (hnk : n ≤ k) :
     F.transitionOfLE hmn ∘ₗ F.transitionOfLE hnk = F.transitionOfLE (hmn.trans hnk) := by
-  rw [transitionOfLE_def, transitionOfLE_def, transitionOfLE_def, ← ModuleCat.hom_comp,
-    ← F.map_comp, ← op_comp, homOfLE_comp]
+  simp only [transitionOfLE_def, ← ModuleCat.hom_comp, ← F.map_comp, ← op_comp, homOfLE_comp]
 
 @[simp]
 theorem transitionOfLE_transitionOfLE {m n k : ℕ} (hmn : m ≤ n) (hnk : n ≤ k)
