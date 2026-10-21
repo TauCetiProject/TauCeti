@@ -54,6 +54,8 @@ markings; the number of vertices decreases at every step.
   the contracted vertex.
 * `TauCeti.DualGraph.logCanonicalDegree_contractTail` and
   `TauCeti.DualGraph.logCanonicalDegree_contractBridge`: the change of log-canonical degrees.
+* `TauCeti.DualGraph.isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos`: a vertex of
+  nonpositive log-canonical degree other than the only vertex can be contracted.
 * `TauCeti.DualGraph.isStable_iff_forall_not_stabilizationStep`: in the stable range, a graph is
   stable exactly when it admits no stabilization step.
 * `TauCeti.DualGraph.exists_reflTransGen_stabilizationStep_isStable`: in the stable range,
@@ -584,29 +586,24 @@ theorem arithmeticGenus_eq_of_reflTransGen (h : Relation.ReflTransGen Stabilizat
   | refl => rfl
   | tail _ hstep ih => exact hstep.arithmeticGenus_eq.trans ih
 
-variable (G)
-
-/-- In the stable range `2g - 2 + n > 0`, a graph that is not stable admits a stabilization
-step. A vertex of nonpositive log-canonical degree is a rational tail with at most one marking, a
-rational bridge without markings, or carries only loops; in the last case it is the only vertex,
-and its log-canonical degree is `2g - 2 + n`. -/
-theorem exists_stabilizationStep_of_not_isStable
-    (hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι) (hG : ¬ G.IsStable) :
-    ∃ H, StabilizationStep G H := by
-  obtain ⟨v, hv⟩ : ∃ v, G.logCanonicalDegree v ≤ 0 := by
-    simpa [isStable_iff, not_forall, not_lt] using hG
-  have hsingle : ¬ ∀ e, G.endpoint e 0 = v ↔ G.endpoint e 1 = v := fun h ↦ by
-    have := G.sum_logCanonicalDegree
-    rw [Fintype.sum_eq_single v fun w hw ↦ absurd (G.eq_of_forall_endpoint_zero_eq_iff h w) hw]
-      at this
-    omega
+/-- A vertex of nonpositive log-canonical degree in a graph with at least one other vertex is a
+rational tail with at most one marking or an unmarked rational bridge, so it can be contracted by
+a stabilization step. -/
+theorem isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos {v : G.Vertex}
+    (hv : G.logCanonicalDegree v ≤ 0) (hw : ∃ w, w ≠ v) :
+    (G.IsRationalTail v ∧ G.numMarkings v ≤ 1) ∨
+      (G.IsRationalBridge v ∧ ∀ i, G.marking i ≠ v) := by
+  -- If every edge at `v` were a loop, `v` would be the only vertex.
+  have hsingle : ¬ ∀ e, G.endpoint e 0 = v ↔ G.endpoint e 1 = v := fun h ↦
+    have ⟨w, hw⟩ := hw
+    hw (G.eq_of_forall_endpoint_zero_eq_iff h w)
   have hval₀ : G.valence v ≠ 0 := fun h ↦ hsingle fun e ↦
     iff_of_false (G.valence_eq_zero_iff.mp h e 0) (G.valence_eq_zero_iff.mp h e 1)
   rcases G.logCanonicalDegree_nonpos_iff.mp hv with ⟨hg, hval⟩ | ⟨-, hval, -⟩
   · have : G.valence v ≤ 2 := by omega
     interval_cases h : G.valence v
     · exact absurd rfl hval₀
-    · exact ⟨_, .contractTail G (G.isRationalTail_iff.mpr ⟨hg, h⟩) (by omega)⟩
+    · exact .inl ⟨G.isRationalTail_iff.mpr ⟨hg, h⟩, by omega⟩
     · have hm : ∀ i, G.marking i ≠ v := by
         have : G.numMarkings v = 0 := by omega
         simpa [numMarkings_def, filter_eq_empty_iff] using this
@@ -615,8 +612,29 @@ theorem exists_stabilizationStep_of_not_isStable
         have := endpoint_eq_iff_eq_of_valence_eq_two h he₀ he₁
         exact absurd (fun e' ↦ by rw [this, this]) hsingle
       · simp only [not_exists, not_and] at hloop
-        exact ⟨_, .contractBridge G (G.isRationalBridge_iff.mpr ⟨hg, h, hloop⟩) hm⟩
+        exact .inr ⟨G.isRationalBridge_iff.mpr ⟨hg, h, hloop⟩, hm⟩
   · exact absurd hval hval₀
+
+variable (G)
+
+/-- In the stable range `2g - 2 + n > 0`, a graph that is not stable admits a stabilization
+step. A vertex of nonpositive log-canonical degree is a rational tail with at most one marking, a
+rational bridge without markings, or the only vertex; in the last case its log-canonical degree is
+`2g - 2 + n`. -/
+theorem exists_stabilizationStep_of_not_isStable
+    (hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι) (hG : ¬ G.IsStable) :
+    ∃ H, StabilizationStep G H := by
+  obtain ⟨v, hv⟩ : ∃ v, G.logCanonicalDegree v ≤ 0 := by
+    simpa [isStable_iff, not_forall, not_lt] using hG
+  have hw : ∃ w, w ≠ v := by
+    by_contra! h
+    have := G.sum_logCanonicalDegree
+    rw [Fintype.sum_eq_single v fun w hw ↦ absurd (h w) hw] at this
+    omega
+  rcases isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos hv hw with
+    ⟨ht, hm⟩ | ⟨hb, hm⟩
+  · exact ⟨_, .contractTail G ht hm⟩
+  · exact ⟨_, .contractBridge G hb hm⟩
 
 /-- In the stable range `2g - 2 + n > 0`, a graph is stable exactly when it admits no
 stabilization step. -/
