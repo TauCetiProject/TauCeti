@@ -215,6 +215,22 @@ theorem mpullback_comp (f : M → M') (g : M' → M'')
   simp only [coe_mpullback, LinearMap.comp_apply]
   exact TauCeti.mpullback_comp (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)) φ.1
 
+/-- If `g ∘ f = id`, pulling back along `g` and then along `f` recovers every smooth form. -/
+theorem leftInverse_mpullback {f : M → M'} {g : M' → M} (hf : ContMDiff I I' ∞ f)
+    (hg : ContMDiff I' I ∞ g) (h : Function.LeftInverse g f) :
+    Function.LeftInverse (mpullback (F := F) (k := k) f hf) (mpullback g hg) := by
+  intro φ
+  apply Subtype.ext
+  rw [coe_mpullback, coe_mpullback,
+    ← TauCeti.mpullback_comp (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)),
+    h.comp_eq_id, TauCeti.mpullback_id]
+
+/-- Pullback along a smooth map with a smooth right inverse is injective on smooth forms. -/
+theorem mpullback_injective {f : M → M'} {g : M' → M} (hf : ContMDiff I I' ∞ f)
+    (hg : ContMDiff I' I ∞ g) (h : Function.LeftInverse g f) :
+    Function.Injective (mpullback (F := F) (k := k) g hg) :=
+  (leftInverse_mpullback hf hg h).injective
+
 variable {F₁ F₂ F₃ : Type*}
   [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
   [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]

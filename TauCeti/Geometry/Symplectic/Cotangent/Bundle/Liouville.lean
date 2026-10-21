@@ -217,6 +217,12 @@ theorem symplecticForm_eq_neg_mextDeriv :
     (symplecticForm I M).1 = -mextDeriv (liouvilleForm I M).1 := by
   rw [symplecticForm, NegMemClass.coe_neg, mextDerivₗ_apply]
 
+/-- The canonical symplectic form is minus the bundled exterior derivative of the Liouville
+form. -/
+theorem symplecticForm_eq_neg_mextDerivₗ :
+    symplecticForm I M = -mextDerivₗ (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1 (liouvilleForm I M) :=
+  (rfl)
+
 /-- **Chart formula for the canonical symplectic form.** In every preferred chart of the cotangent
 bundle, the canonical symplectic form is the linear form
 `TauCeti.strongDualCotangentSymplecticForm`, `ω((δq, δp), (δq', δp')) = δp'(δq) - δp(δq')`. -/
