@@ -14,7 +14,8 @@ public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 Composing restriction maps along inclusions of opens in both directions gives the identity after
 any morphism into the starting section object, since the inclusions force the opens to be equal.
 A family of sections over opens is compatible as soon as any two of its sections are restrictions
-of a common section in the family.
+of a common section in the family, and two sections of a sheaf of types that agree on the
+intersection of their domains glue to a section over the union.
 
 ## Main results
 
@@ -22,11 +23,13 @@ of a common section in the family.
   directions gives the identity after any morphism into the starting section object.
 * `TopCat.Presheaf.isCompatible_of_directed`: a family of sections, any two of which are
   restrictions of a common member, is compatible.
+* `TopCat.Presheaf.IsSheaf.exists_gluing_sup`: two sections of a sheaf of types that agree on the
+  intersection of their domains glue to a section over the union.
 -/
 
 public section
 
-open CategoryTheory Opposite TopologicalSpace
+open CategoryTheory Limits Opposite TopologicalSpace
 
 namespace TopCat.Presheaf
 
@@ -56,5 +59,14 @@ theorem isCompatible_of_directed {FC : C → C → Type*} {CC : C → Type*}
   rw [← hi, ← hj, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← F.map_comp,
     ← F.map_comp]
   rfl
+
+/-- Two sections of a sheaf of types over `U` and `V` that agree on `U ⊓ V` glue to a section over
+`U ⊔ V`. -/
+theorem IsSheaf.exists_gluing_sup {F : Presheaf (Type u) T} (hF : F.IsSheaf) {U V : Opens T}
+    (a : F.obj (op U)) (b : F.obj (op V))
+    (h : F.map (homOfLE inf_le_left).op a = F.map (homOfLE inf_le_right).op b) :
+    ∃ s : F.obj (op (U ⊔ V)),
+      F.map (homOfLE le_sup_left).op s = a ∧ F.map (homOfLE le_sup_right).op s = b :=
+  Types.exists_of_isPullback (.of_isLimit (Sheaf.isLimitPullbackCone ⟨F, hF⟩ U V)) a b h
 
 end TopCat.Presheaf

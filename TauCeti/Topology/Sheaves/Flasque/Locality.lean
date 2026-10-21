@@ -35,7 +35,6 @@ open cover.
 
 ## Main declarations
 
-* `TopCat.Presheaf.IsSheaf.exists_gluing_sup`: the binary gluing step of the Zorn argument;
 * `TopCat.Presheaf.IsSheaf.map_surjective_of_locally_flasque`: the locality statement for
   sheaves of types;
 * `TopCat.Sheaf.map_surjective_of_locally_flasque`: the same statement for sheaves valued in a
@@ -62,15 +61,6 @@ namespace TopCat
 variable {X : TopCat.{u}}
 
 namespace Presheaf
-
-/-- Two sections of a sheaf of types over `U` and `V` that agree on `U ⊓ V` glue to a section over
-`U ⊔ V`. -/
-theorem IsSheaf.exists_gluing_sup {F : Presheaf (Type w) X} (hF : F.IsSheaf) {U V : Opens X}
-    (a : F.obj (op U)) (b : F.obj (op V))
-    (h : F.map (homOfLE inf_le_left).op a = F.map (homOfLE inf_le_right).op b) :
-    ∃ s : F.obj (op (U ⊔ V)),
-      F.map (homOfLE le_sup_left).op s = a ∧ F.map (homOfLE le_sup_right).op s = b :=
-  Types.exists_of_isPullback (.of_isLimit (Sheaf.isLimitPullbackCone ⟨F, hF⟩ U V)) a b h
 
 /-- If every restriction map of a sheaf of types inside some neighbourhood of each point is
 surjective, then every restriction map is surjective. -/
