@@ -17,6 +17,7 @@ import Mathlib.Algebra.Order.GroupWithZero.Finset
 import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Topology.Order.LiminfLimsup
+import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import Mathlib.RingTheory.Polynomial.GaussNorm
 
 /-!
@@ -39,7 +40,8 @@ Over a complete seminormed ring, summable Gauss norms ensure summability in ever
 Over any normed ring, the coefficientwise `tsum`s of such a family of restricted series form a
 restricted series. For complete coefficients this is the convergence statement behind
 successive-approximation arguments, taking the place of completeness of the restricted-series
-space for the Gauss norm.
+space for the Gauss norm. Over a complete ultrametric ring, it suffices for the Gauss norms
+to tend to zero along the cofinite filter, without absolute summability of those real norms.
 
 Multiplicativity and the ultrametric inequality together make the Gauss norm a valuation with
 values in `ℝ≥0` on the ring of restricted series, `gaussValuation`, whose support is trivial.
@@ -108,6 +110,9 @@ closed unit disc next to its Gauss points.
 * `TauCeti.PowerSeries.gaussValuationAbove_monomial_coeff_le` and
   `TauCeti.PowerSeries.gaussValuationBelow_monomial_coeff_le`: every monomial of a series is at
   most the series for both refined Gauss valuations.
+* `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff_of_tendsto_gaussNorm_zero`: over a complete
+  ultrametric ring, coefficientwise sums are restricted when their Gauss norms tend to zero
+  along the cofinite filter.
 * `TauCeti.PowerSeries.summable_norm_coeff_of_summable_gaussNorm`: summable Gauss norms give
   summable coefficient norms in every degree over a seminormed ring, without completeness.
 * `TauCeti.PowerSeries.summable_coeff_of_summable_gaussNorm` and
@@ -716,6 +721,44 @@ theorem isRestricted_mk_tsum_coeff (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted 
   refine squeeze_zero (fun _ ↦ by positivity) (fun i ↦ ?_) hlimit
   rw [PowerSeries.coeff_mk, tsum_mul_right]
   exact mul_le_mul_of_nonneg_right (norm_tsum_le_tsum_norm (hsum i)) (pow_nonneg hc.le i)
+
+variable [CompleteSpace R] [IsUltrametricDist R]
+
+/-- Over a complete ultrametric ring, the coefficientwise sum of restricted power series is
+restricted whenever their Gauss norms tend to zero along the cofinite filter. Unlike absolute
+summability of the real Gauss norms, this is the convergence criterion intrinsic to an
+ultrametric norm. -/
+theorem isRestricted_mk_tsum_coeff_of_tendsto_gaussNorm_zero (hc : 0 < c)
+    (ha : ∀ k, (a k).IsRestricted c)
+    (hs : Tendsto (fun k ↦ (a k).gaussNorm norm c) cofinite (𝓝 0)) :
+    (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).IsRestricted c := by
+  let : Fact (0 < c) := ⟨hc⟩
+  -- Univariate series are Unit-indexed multivariate series; use their complete Gauss norm.
+  let S := MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)
+  let A : ι → S := fun k ↦ ⟨a k, ha k⟩
+  have hnorm (k) : ‖A k‖ = (a k).gaussNorm norm c :=
+    MvPowerSeries.norm_eq_gaussNorm (A k)
+  have hA : Summable A := by
+    apply NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+    rw [tendsto_zero_iff_norm_tendsto_zero]
+    simpa only [hnorm] using hs
+  have hcoeff (n : ℕ) : HasSum (fun k ↦ (a k).coeff n)
+      (PowerSeries.coeff n ((∑' k, A k : S) : PowerSeries R)) := by
+    let coeffHom : S →+ R :=
+      (PowerSeries.coeff n).toAddMonoidHom.comp S.subtype.toAddMonoidHom
+    have hcont : Continuous coeffHom :=
+      (AddMonoidHomClass.uniformContinuous_of_bound coeffHom (c ^ n)⁻¹ fun f ↦ by
+        rw [← div_eq_inv_mul, le_div_iff₀ (pow_pos hc n),
+          MvPowerSeries.norm_eq_gaussNorm (c := fun _ : Unit ↦ c)]
+        exact PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.2) n).continuous
+    exact hA.hasSum.map coeffHom hcont
+  have heq : (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i) =
+      ((∑' k, A k : S) : PowerSeries R) := by
+    ext n
+    rw [PowerSeries.coeff_mk]
+    exact (hcoeff n).tsum_eq
+  rw [heq]
+  exact (∑' k, A k).2
 
 end Summation
 
