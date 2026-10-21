@@ -33,8 +33,6 @@ the description `u² (1 - a t²)` of `TauCeti.mem_quadraticNormSubgroup_iff_of_i
 
 ## Main results
 
-* `Module.Basis.norm_coe_eq_of_integerRing`: the norm of an integer is the norm form of the
-  basis `(1, ω)` at its coordinates.
 * `Module.Basis.exists_norm_eq_iff_of_integerRing`: the unit norms are exactly the two
   families above.
 
@@ -50,34 +48,33 @@ open ValuativeRel IsLocalRing TauCeti
 
 namespace Module.Basis
 
-/-- The binary form `x² + x y T + y² N` takes values in an ideal `I` at coordinates in `I`. -/
-private lemma normForm_mem_of_mem {R : Type*} [CommRing R] {I : Ideal R} {x y : R} (hx : x ∈ I)
-    (hy : y ∈ I) (T N : R) : x ^ 2 + x * y * T + y ^ 2 * N ∈ I := by
-  rw [show x ^ 2 + x * y * T + y ^ 2 * N = x * (x + y * T) + y * (y * N) by ring]
-  exact add_mem (I.mul_mem_right _ hx) (I.mul_mem_right _ hy)
-
 /-- Dividing a binary form by the square of a unit coordinate `u`: the value
 `p u² + T u y + q y²` is `u² (p + T t + q t²)` for `t = y u⁻¹`. -/
 private lemma unit_sq_mul {R : Type*} [CommRing R] (u : Rˣ) (p q T y : R) :
     p * u ^ 2 + T * u * y + q * y ^ 2 = u ^ 2 * (p + T * (y * ↑u⁻¹) + q * (y * ↑u⁻¹) ^ 2) := by
   linear_combination (-(T * u * y) - q * y ^ 2 * (u * ↑u⁻¹ + 1)) * u.mul_inv
 
+/-- A unit value of the binary form `x² + x y T + y² N` over a local ring lies in one of the
+families `u² (1 + T t + N t²)` and `u² (N + T t + t²)`. One of `x` and `y` is a unit, since
+otherwise the value lies in the maximal ideal, and dividing by its square gives the family. -/
+private lemma exists_eq_of_isUnit_normForm {R : Type*} [CommRing R] [IsLocalRing R] {x y : R}
+    (T N : R) (h : IsUnit (x ^ 2 + x * y * T + y ^ 2 * N)) :
+    ∃ (u : Rˣ) (t : R), x ^ 2 + x * y * T + y ^ 2 * N = u ^ 2 * (1 + T * t + N * t ^ 2) ∨
+      x ^ 2 + x * y * T + y ^ 2 * N = u ^ 2 * (N + T * t + t ^ 2) := by
+  by_cases hx : IsUnit x
+  · obtain ⟨u, rfl⟩ := hx
+    exact ⟨u, y * ↑u⁻¹, Or.inl (by linear_combination unit_sq_mul u 1 N T y)⟩
+  by_cases hy : IsUnit y
+  · obtain ⟨u, rfl⟩ := hy
+    exact ⟨u, x * ↑u⁻¹, Or.inr (by linear_combination unit_sq_mul u N 1 T x)⟩
+  refine absurd h ((mem_maximalIdeal _).mp ?_)
+  rw [show x ^ 2 + x * y * T + y ^ 2 * N = x * (x + y * T) + y * (y * N) by ring]
+  exact add_mem (Ideal.mul_mem_right _ _ ((mem_maximalIdeal x).mpr hx))
+    (Ideal.mul_mem_right _ _ ((mem_maximalIdeal y).mpr hy))
+
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-
-/-- **The norm form of an integral basis `(1, ω)`.** For a basis `B` of `𝒪[L]` over `𝒪[K]`
-with `B 0 = 1` and `ω = B 1`, the field norm of `w = x + y ω ∈ 𝒪[L]` is
-`x² + x y Tr(ω) + y² N(ω)`. -/
-theorem norm_coe_eq_of_integerRing (B : Module.Basis (Fin 2) 𝒪[K] 𝒪[L]) (hB : B 0 = 1)
-    (w : 𝒪[L]) :
-    Algebra.norm K (w : L) = (B.repr w 0 : K) ^ 2 +
-      B.repr w 0 * B.repr w 1 * Algebra.trace K L (B 1 : L) +
-        (B.repr w 1 : K) ^ 2 * Algebra.norm K (B 1 : L) := by
-  rw [← coe_norm_integerRing, B.norm_eq_of_apply_zero_eq_one hB, ← coe_trace_integerRing,
-    ← coe_norm_integerRing]
-  push_cast
-  ring
 
 /-- **Unit norms in an integral basis** (O'Meara §63A). Let `B` be a basis of `𝒪[L]` over
 `𝒪[K]` with `B 0 = 1`, and write `ω = B 1`, `T = Tr(ω)` and `N = N(ω)`. An element `b` of `K`
@@ -98,50 +95,21 @@ theorem exists_norm_eq_iff_of_integerRing (B : Module.Basis (Fin 2) 𝒪[K] 𝒪
   set N := Algebra.norm 𝒪[K] (B 1)
   constructor
   · rintro ⟨z, rfl⟩
-    have hz0 : z ≠ 0 := by
-      rintro rfl
-      simp at hb
     -- A norm of valuation zero is the norm of a unit `w` of `𝒪[L]`.
-    have hzv : valuation L z = 1 := by
-      have hN : Algebra.normUnits K (Units.mk0 z hz0) ∈ unitFiltration K 0 := by
-        rw [mem_unitFiltration_zero, Algebra.coe_normUnits, Units.val_mk0, hb]
-      simpa using (mem_unitFiltration_zero _).mp (normUnits_mem_unitFiltration_zero_iff.mp hN)
     obtain ⟨w, rfl⟩ : ∃ w : 𝒪[L], (w : L) = z :=
-      ⟨⟨z, (Valuation.mem_integer_iff _ _).mpr hzv.le⟩, rfl⟩
+      ⟨⟨z, (Valuation.mem_integer_iff _ _).mpr (valuation_norm_eq_one_iff.mp hb).le⟩, rfl⟩
     rw [← coe_norm_integerRing] at hb ⊢
     have hunit : IsUnit (Algebra.norm 𝒪[K] w) :=
       (Valuation.Integers.isUnit_iff_valuation_eq_one
         (Valuation.integer.integers (valuation K))).mpr hb
-    set x := B.repr w 0
-    set y := B.repr w 1
-    have hbw : Algebra.norm 𝒪[K] w = x ^ 2 + x * y * T + y ^ 2 * N :=
-      B.norm_eq_of_apply_zero_eq_one hB w
-    -- One coordinate of `w` is a unit, since otherwise its norm lies in the maximal ideal.
-    -- Dividing by that coordinate gives one of the two families.
-    by_cases hx : IsUnit x
-    · obtain ⟨u, hu⟩ := hx
-      rw [← hu] at hbw
-      refine ⟨u, y * ↑u⁻¹, Or.inl ?_⟩
-      exact_mod_cast (show Algebra.norm 𝒪[K] w =
-          u ^ 2 * (1 + T * (y * ↑u⁻¹) + N * (y * ↑u⁻¹) ^ 2) by
-        linear_combination hbw + unit_sq_mul u 1 N T y)
-    by_cases hy : IsUnit y
-    · obtain ⟨u, hu⟩ := hy
-      rw [← hu] at hbw
-      refine ⟨u, x * ↑u⁻¹, Or.inr ?_⟩
-      exact_mod_cast (show Algebra.norm 𝒪[K] w =
-          u ^ 2 * (N + T * (x * ↑u⁻¹) + (x * ↑u⁻¹) ^ 2) by
-        linear_combination hbw + unit_sq_mul u N 1 T x)
-    rw [hbw] at hunit
-    exact absurd hunit ((mem_maximalIdeal _).mp (normForm_mem_of_mem
-      ((mem_maximalIdeal x).mpr hx) ((mem_maximalIdeal y).mpr hy) T N))
+    rw [B.norm_eq_of_apply_zero_eq_one hB w] at hunit ⊢
+    obtain ⟨u, t, h | h⟩ := exists_eq_of_isUnit_normForm T N hunit
+    exacts [⟨u, t, Or.inl (by exact_mod_cast h)⟩, ⟨u, t, Or.inr (by exact_mod_cast h)⟩]
   · -- The norms of `u + u t ω` and of `u t + u ω`.
     have hnorm (v : Fin 2 → 𝒪[K]) : Algebra.norm K (B.equivFun.symm v : L) =
         ((v 0 ^ 2 + v 0 * v 1 * T + v 1 ^ 2 * N : 𝒪[K]) : K) := by
-      rw [B.norm_coe_eq_of_integerRing hB, ← coe_trace_integerRing, ← coe_norm_integerRing]
+      rw [← coe_norm_integerRing, B.norm_eq_of_apply_zero_eq_one hB]
       simp only [← B.equivFun_apply, LinearEquiv.apply_symm_apply, T, N]
-      push_cast
-      ring
     rintro ⟨u, t, rfl | rfl⟩
     exacts [⟨B.equivFun.symm ![(u : 𝒪[K]), u * t], by rw [hnorm]; push_cast; ring⟩,
       ⟨B.equivFun.symm ![u * t, (u : 𝒪[K])], by rw [hnorm]; push_cast; ring⟩]
