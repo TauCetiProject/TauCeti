@@ -31,7 +31,20 @@ Consequently only finitely many `l` have `‖P y l‖ ≤ R` for some `y ∈ K`
 (`TauCeti.finite_setOf_exists_norm_period_le`). This is exactly what makes the period
 translation action `l +ᵥ (y, v) = (y, v + P y l)` of `Λ` on `Y × E`
 (`TauCeti.periodAddAction`) properly discontinuous, whose orbit space is the total space of the
-family of tori. The action is free and acts by homeomorphisms.
+family of tori. The action is free and acts by homeomorphisms. The first projection descends to
+the projection of the family of tori to its parameter space
+(`TauCeti.torusFamilyProjection`), a continuous open surjection.
+
+The `ℤ`-basis of the full lattice `LinearMap.range (P y)` given by the periods of a `ℤ`-basis `b`
+of `Λ` is packaged as the real basis `TauCeti.periodBasis P b hinj y` of `E`. The global
+trivialization of the family built from it is in
+`TauCeti.Algebra.Module.ZLattice.Family.Trivialization`.
+
+## Main definitions
+
+* `TauCeti.periodBasis`: the periods at `y` of a `ℤ`-basis of `Λ`, as a real basis of `E`.
+* `TauCeti.periodAddAction`: the period translation action of `Λ` on `Y × E`.
+* `TauCeti.torusFamilyProjection`: the projection `(Y × E)/Λ → Y` descended from `Prod.fst`.
 
 ## Main results
 
@@ -46,6 +59,8 @@ family of tori. The action is free and acts by homeomorphisms.
   properly discontinuous, free, and continuous.
 * `TauCeti.mem_orbit_periodAddAction_iff`: two points lie in one orbit exactly when they have the
   same parameter `y` and differ by a period at `y`.
+* `TauCeti.continuous_torusFamilyProjection`, `TauCeti.isOpenMap_torusFamilyProjection`: the
+  projection of the family of tori is continuous and open.
 
 ## References
 
@@ -68,6 +83,37 @@ section Separation
 variable [FiniteDimensional ℝ E] [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))] {K : Set Y}
 
+/-- The **period basis** at `y`: the periods `P y (b i)` of a `ℤ`-basis `b` of `Λ`, viewed as a
+real basis of `E`. They form a `ℤ`-basis of the full lattice `LinearMap.range (P y)`, hence a real
+basis of `E`. Its inverse coordinate map `x ↦ ∑ i, x i • P y (b i)` is the real linear
+isomorphism `ℝ^ι ≃ E` carrying the standard lattice `ℤ^ι` onto the periods at `y`. -/
+noncomputable def periodBasis {ι : Type*} (b : Basis ι ℤ Λ)
+    (hinj : ∀ y, Injective (P y)) (y : Y) : Basis ι ℝ E :=
+  (b.map (LinearEquiv.ofInjective (P y) (hinj y))).ofZLatticeBasis ℝ (LinearMap.range (P y))
+
+omit [TopologicalSpace Y] in
+/-- The `i`-th vector of the period basis at `y` is the period `P y (b i)`. -/
+@[simp] theorem periodBasis_apply {ι : Type*} (b : Basis ι ℤ Λ)
+    (hinj : ∀ y, Injective (P y)) (y : Y) (i : ι) : periodBasis P b hinj y i = P y (b i) := by
+  simp [periodBasis]
+
+omit [TopologicalSpace Y] in
+/-- The period basis at `y` spans the lattice of periods at `y` over `ℤ`. -/
+theorem span_range_periodBasis {ι : Type*} (b : Basis ι ℤ Λ)
+    (hinj : ∀ y, Injective (P y)) (y : Y) :
+    Submodule.span ℤ (range (periodBasis P b hinj y)) = LinearMap.range (P y) :=
+  Basis.ofZLatticeBasis_span ..
+
+omit [TopologicalSpace Y] in
+/-- The coordinates of a period `P y l` in the period basis at `y` are the integer coordinates of
+`l` in `b`. -/
+@[simp] theorem periodBasis_repr_period {ι : Type*} (b : Basis ι ℤ Λ)
+    (hinj : ∀ y, Injective (P y)) (y : Y) (l : Λ) (i : ι) :
+    (periodBasis P b hinj y).repr (P y l) i = b.repr l i := by
+  have h := Basis.ofZLatticeBasis_repr_apply ℝ (LinearMap.range (P y))
+    (b.map (LinearEquiv.ofInjective (P y) (hinj y))) (LinearEquiv.ofInjective (P y) (hinj y) l) i
+  rwa [Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] at h
+
 /-- **Uniform bound for inverse period maps.** For a basis `b` of `Λ`, the real linear maps
 `x ↦ ∑ i, x i • P y (b i)` are bounded below by one constant `c > 0` as `y` ranges over a
 compact set: `c * ‖x‖ ≤ ‖∑ i, x i • P y (b i)‖`. -/
@@ -79,15 +125,13 @@ theorem exists_pos_mul_norm_le_norm_sum_smul_period_of_isCompact {ι : Type*} [F
   have hf : Continuous f := continuous_finsetSum _ fun i _ ↦
     ((continuous_apply i).comp continuous_snd).smul ((hcont (b i)).comp continuous_fst)
   -- On `K × sphere 0 1` the combination does not vanish: the periods of a `ℤ`-basis of `Λ` form
-  -- a `ℤ`-basis of the full lattice `range (P y)`, hence an `ℝ`-basis of `E`.
+  -- the real basis `periodBasis P b hinj y` of `E`.
   have hpos : ∀ p ∈ K ×ˢ sphere (0 : ι → ℝ) 1, 0 < ‖f p‖ := by
     rintro ⟨y, x⟩ ⟨-, hx⟩
     refine norm_pos_iff.2 fun h0 ↦ ?_
-    let b' := (b.map (LinearEquiv.ofInjective (P y) (hinj y))).ofZLatticeBasis ℝ
     have hli : LinearIndependent ℝ fun i ↦ P y (b i) := by
-      convert b'.linearIndependent using 1
-      ext i
-      simp [b']
+      rw [← funext (periodBasis_apply P b hinj y)]
+      exact (periodBasis P b hinj y).linearIndependent
     have hx0 : x = 0 := funext (Fintype.linearIndependent_iff.1 hli x h0)
     simp [hx0] at hx
   obtain ⟨c, hc, hcK⟩ :=
@@ -214,6 +258,38 @@ theorem continuousConstVAdd_periodAddAction [TopologicalSpace Y] [TopologicalSpa
   refine ⟨fun l ↦ ?_⟩
   simp only [periodAddAction_vadd]
   exact continuous_fst.prodMk (continuous_snd.add ((hcont l).comp continuous_fst))
+
+/-- The projection `(Y × E)/Λ → Y` of the family of tori to its parameter space, descended from
+`Prod.fst` along the period translation action. -/
+def torusFamilyProjection :
+    letI := periodAddAction P
+    AddAction.orbitRel.Quotient Λ (Y × E) → Y :=
+  letI := periodAddAction P
+  Quotient.lift Prod.fst fun _ _ h ↦ ((mem_orbit_periodAddAction_iff P).1 h).1
+
+/-- The projection of the family of tori sends the class of `(y, v)` to `y`. -/
+@[simp] theorem torusFamilyProjection_mk (p : Y × E) :
+    letI := periodAddAction P
+    torusFamilyProjection P (Quotient.mk _ p) = p.1 := (rfl)
+
+/-- The projection of the family of tori is surjective: the class of `(y, 0)` lies over `y`. -/
+theorem torusFamilyProjection_surjective : Surjective (torusFamilyProjection P) :=
+  fun y ↦ ⟨Quotient.mk _ (y, 0), rfl⟩
+
+/-- The projection of the family of tori is continuous. -/
+theorem continuous_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace E] :
+    Continuous (torusFamilyProjection P) :=
+  let _ := periodAddAction P
+  continuous_fst.quotient_lift _
+
+/-- The projection of the family of tori is open when the periods depend continuously on the
+parameter. -/
+theorem isOpenMap_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace E]
+    [ContinuousAdd E] (hcont : ∀ l, Continuous fun y ↦ P y l) :
+    IsOpenMap (torusFamilyProjection P) :=
+  let _ := periodAddAction P
+  have := continuousConstVAdd_periodAddAction P hcont
+  AddAction.isOpenQuotientMap_quotientMk.isOpenMap_iff.2 isOpenMap_fst
 
 end Action
 
