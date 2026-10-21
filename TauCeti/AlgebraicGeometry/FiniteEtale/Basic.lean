@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Group.Affine
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.RingTheory.Etale.Finite
+public import Mathlib.CategoryTheory.Limits.FintypeCat
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # Finite étale schemes and their coordinate algebras
@@ -21,7 +23,9 @@ coordinate algebras without replacing a scheme by a chosen affine presentation.
 The construction restricts Mathlib's fully faithful `AlgebraicGeometry.algSpec`; essential
 surjectivity uses affineness of finite morphisms. The inverse is naturally identified with
 `AlgebraicGeometry.algΓ` using `AlgebraicGeometry.algΓAlgSpecAdjunction`. The classification
-over a separably closed field uses `CommAlgCat.FiniteEtale.equivOfIsSepClosed`.
+over a separably closed field uses `CommAlgCat.FiniteEtale.equivOfIsSepClosed`, and
+`equivOfIsSepClosedFunctorCompInclIso` identifies the finite set it attaches to a finite étale
+scheme with the set of sections of that scheme.
 
 ## References
 
@@ -197,6 +201,40 @@ noncomputable def equivOfIsSepClosedFunctorIsoFiber (K : Type u) [Field K] [IsSe
         CommAlgCat.FiniteEtale.fiber K K :=
   eqToIso (equivOfIsSepClosed_functor K) ≪≫
     Functor.isoWhiskerLeft _ (CommAlgCat.FiniteEtale.fiberIsoFiniteSpec K).symm
+
+/-- Over a separably closed field `K`, the finite set attached to a finite étale scheme by
+`equivOfIsSepClosed` is naturally its set of sections, that is, of its `K`-rational points. -/
+noncomputable def equivOfIsSepClosedFunctorCompInclIso (K : Type u) [Field K] [IsSepClosed K] :
+    (equivOfIsSepClosed K).functor ⋙ FintypeCat.incl ≅
+      (finiteEtaleSchemeProperty (Spec (.of K))).ι ⋙ coyoneda.obj (op (Over.mk (𝟙 _))) :=
+  letI E := equivOfIsSepClosed K
+  -- The equivalence sends the terminal finite étale scheme to a one-point set; a section
+  -- `g` goes to the image of that point under `E.functor.map g`.
+  letI : Unique (E.functor.obj (ofHom (𝟙 (Spec (.of K))))) :=
+    Limits.Concrete.uniqueOfTerminalOfPreserves _
+      ((isTerminalOfHomId _).isTerminalObj E.functor _)
+  Iso.symm <| NatIso.ofComponents (fun Y ↦ Equiv.toIso
+    { toFun g := E.functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g)) default
+      invFun y :=
+        eqToHom (ofHom_obj _).symm ≫ (E.functor.preimage (FintypeCat.homMk fun _ ↦ y)).hom
+      left_inv g := by
+        have : FintypeCat.homMk (fun _ ↦ E.functor.map
+            (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g)) default) =
+            E.functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g)) := by
+          ext a
+          rw [Unique.eq_default a, FintypeCat.homMk_apply]
+        simp only [this, Functor.preimage_map, ObjectProperty.homMk_hom, eqToHom_trans_assoc,
+          eqToHom_refl, Category.id_comp]
+      right_inv y := by
+        simp only [eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+          ObjectProperty.homMk_eta, Functor.map_preimage, FintypeCat.homMk_apply] }) (by
+    intro Y Y' f
+    ext g
+    suffices E.functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g ≫ f.hom)) default =
+        E.functor.map f (E.functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g))
+          default) by simpa
+    rw [← FintypeCat.comp_apply, ← Functor.map_comp, ← Category.assoc, ObjectProperty.homMk_comp,
+      ObjectProperty.homMk_eta])
 
 end FiniteEtaleScheme
 
