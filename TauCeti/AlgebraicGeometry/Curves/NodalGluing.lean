@@ -162,13 +162,16 @@ def fstPoint (d : FlagPairData ι Flag X) (f : Flag) : Σ i, X i := ⟨d.fst f, 
 /-- The second point of a flag pair, as a point of the disjoint union of the components. -/
 def sndPoint (d : FlagPairData ι Flag X) (f : Flag) : Σ i, X i := ⟨d.snd f, d.sndPt f⟩
 
+-- These two are plain rewrite lemmas rather than `@[simp]` lemmas: `fstPoint` and `sndPoint` occur
+-- on the left-hand side of `mk_fstPoint` and `mk_sndPoint`, so tagging them would take those steps
+-- out of simp-normal form.
 /-- The first point of a flag pair, with its two components. -/
-@[simp] theorem fstPoint_def (d : FlagPairData ι Flag X) (f : Flag) :
+theorem fstPoint_def (d : FlagPairData ι Flag X) (f : Flag) :
     fstPoint d f = ⟨d.fst f, d.fstPt f⟩ :=
   (rfl)
 
 /-- The second point of a flag pair, with its two components. -/
-@[simp] theorem sndPoint_def (d : FlagPairData ι Flag X) (f : Flag) :
+theorem sndPoint_def (d : FlagPairData ι Flag X) (f : Flag) :
     sndPoint d f = ⟨d.snd f, d.sndPt f⟩ :=
   (rfl)
 
