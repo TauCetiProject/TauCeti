@@ -24,8 +24,9 @@ pair of distinct ends therefore preserves every cut capacity.
 ## Main result
 
 * `Graph.pairCutCapacity_pairCapacity`: aggregation preserves every cut capacity.
-* `Graph.isSubmodular_edgeCutCapacity`: a nonnegative edge-capacity function has a symmetric
-  submodular cut function.
+* `Graph.isSubmodular_edgeCutCapacity`: a nonnegative edge-capacity function has a submodular cut
+  function.
+* `Graph.isSymmSubmodular_edgeCutCapacity`: the bundled symmetric-submodular result.
 -/
 
 public section
@@ -195,5 +196,12 @@ theorem isSubmodular_edgeCutCapacity [Fintype G.edgeSet] [DecidableEq G.vertexSe
     by_cases hxS : x ∈ S <;> by_cases hxT : x ∈ T <;>
       by_cases hyS : y ∈ S <;> by_cases hyT : y ∈ T <;>
       simp_all
+
+/-- The cut function of nonnegative edge weights on a multigraph is symmetric submodular. -/
+theorem isSymmSubmodular_edgeCutCapacity [Fintype G.vertexSet] [Fintype G.edgeSet]
+    [DecidableEq G.vertexSet] [AddCommMonoid K] [PartialOrder K] [IsOrderedAddMonoid K]
+    (c : G.edgeSet → K) (hc : 0 ≤ c) :
+    TauCeti.IsSymmSubmodular (G.edgeCutCapacity c) :=
+  ⟨G.edgeCutCapacity_compl c, G.isSubmodular_edgeCutCapacity c hc⟩
 
 end Graph

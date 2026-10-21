@@ -8,9 +8,6 @@ module
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.RingTheory.DedekindDomain.Different
 import Mathlib.RingTheory.Finiteness.Quotient
--- Non-public: `TauCeti.Place.isIntegral_integers_algebraMap` puts the constants into the local
--- model, in a proof below only.
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 -- Non-public: `Algebra.HasSeparableResidueFieldsAt.isSeparable_quotient` supplies the separability
 -- half of tameness over a perfect residue field, in the proof below only.
 import Mathlib.RingTheory.LocalRing.ResidueField.Separable
@@ -55,6 +52,8 @@ the statement.
   `e(P' ∣ P) = d(P' ∣ P) + 1`, holding exactly at the tame places.
 * `TauCeti.Place.ramificationIdx_le_differentExponent_iff`: `e(P' ∣ P) ≤ d(P' ∣ P)` exactly at the
   wild places (Stichtenoth, Corollary 3.5.5).
+* `TauCeti.Place.ramificationIdx_eq_one_and_isSeparable_iff_isUnramifiedAt`: ramification index
+  one and separable residue extension characterize an unramified local model at the centre.
 * `TauCeti.Place.relativeDegree_eq_one_of_isSepClosed_of_differentExponent_eq_zero`: a place with
   zero different exponent over a separably closed residue field has relative degree one.
 * `TauCeti.Divisor.coeff_different_add_one_eq_ramificationIdx_iff` and
@@ -122,20 +121,13 @@ theorem isTame_iff :
           0 :=
   Iff.rfl
 
-/-- **Tameness read on residue fields**: a place `P'` of `F' / k` is tame over `F` exactly when
+/-- **Tameness read on residue fields**: a place `P'` of `F' / k'` is tame over `F` exactly when
 the residue extension `F'_{P'} / F_P` of the two places is separable and `e(P' ∣ P)` is nonzero in
 `F_P`. -/
-theorem isTame_iff_isSeparable_residueField (P' : Place k F') :
+theorem isTame_iff_isSeparable_residueField :
     IsTame k F P' ↔ Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField ∧
       ((ramificationIdx F P' : ℕ) : (P'.restrict k F).ResidueField) ≠ 0 := by
   have hS := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  have hconstants : ∀ c : k, algebraMap k F' c ∈
-      integralClosure (P'.restrict k F).integers F' := fun c ↦
-    isIntegral_integers_algebraMap (F' := F') (P'.restrict k F) c
-  let _ : Algebra k (integralClosure (P'.restrict k F).integers F') :=
-    ((algebraMap k F').codRestrict _ hconstants).toAlgebra
-  let _ : IsScalarTower k (integralClosure (P'.restrict k F).integers F') F' :=
-    .of_algebraMap_eq fun _ ↦ rfl
   have : (centerIntegralClosure k F P').asIdeal.IsMaximal :=
     (centerIntegralClosure k F P').isPrime.isMaximal (centerIntegralClosure k F P').ne_bot
   let _ : Field ((P'.restrict k F).integers ⧸
@@ -148,15 +140,14 @@ theorem isTame_iff_isSeparable_residueField (P' : Place k F') :
   let e : (integralClosure (P'.restrict k F).integers F' ⧸
       (centerIntegralClosure k F P').asIdeal) ≃+* P'.ResidueField :=
     (Ideal.quotEquivOfEq (by rw [centerIntegralClosure_def])).trans
-      (P'.quotientAlgEquivResidueField hS).toRingEquiv
+      (P'.quotientRingEquivResidueField hS)
   have he : (algebraMap (P'.restrict k F).ResidueField P'.ResidueField).comp e₀.toRingHom =
       e.toRingHom.comp (algebraMap ((P'.restrict k F).integers ⧸
         IsLocalRing.maximalIdeal (P'.restrict k F).integers) _) := by
     refine Ideal.Quotient.ringHom_ext (RingHom.ext fun r ↦ ?_)
-    simp only [RingHom.coe_comp, Function.comp_apply, Ideal.Quotient.algebraMap_mk_of_liesOver,
+    simp only [RingHom.comp_apply, Ideal.Quotient.algebraMap_mk_of_liesOver,
       e, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingEquiv.trans_apply,
-      Ideal.quotEquivOfEq_mk, AlgEquiv.coe_toRingEquiv, quotientAlgEquivResidueField_mk,
-      residueHom_apply]
+      Ideal.quotEquivOfEq_mk, quotientRingEquivResidueField_mk, residueRingHom_apply]
     -- `e₀` is the identity and `Ideal.Quotient.mk` of the maximal ideal is the residue map, but
     -- only after unfolding `IsLocalRing.ResidueField` to the quotient: `e₀` expects an argument
     -- of the quotient type, so rewriting with `IsLocalRing.residue_def` under it gives an
@@ -282,6 +273,31 @@ theorem ramificationIdx_eq_differentExponent_add_one_iff :
   have hiff : ramificationIdx F P' = differentExponent k F P' + 1 ↔
       ¬ ramificationIdx F P' ≤ differentExponent k F P' := ⟨fun _ ↦ by omega, fun _ ↦ by omega⟩
   rw [hiff, ramificationIdx_le_differentExponent_iff, IsWild, not_not]
+
+/-- **Unramified places are those with unramified local model**: a place `P'` has ramification
+index one and separable residue extension exactly when the local model `𝒪'_P` is unramified at
+the centre of `P'`, in Mathlib's `Algebra.IsUnramifiedAt` sense. Equivalently, the different
+exponent vanishes (Stichtenoth, Corollary 3.5.5; see
+`TauCeti.Place.differentExponent_eq_zero_iff`). -/
+theorem ramificationIdx_eq_one_and_isSeparable_iff_isUnramifiedAt :
+    (ramificationIdx F P' = 1 ∧
+      Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField) ↔
+      Algebra.IsUnramifiedAt ((P'.restrict k F).integers)
+      (centerIntegralClosure k F P').asIdeal := by
+  have hle := ramificationIdx_le_differentExponent_add_one k F P'
+  have hpos := ramificationIdx_pos F P'
+  rw [← differentExponent_eq_zero_iff]
+  constructor
+  · intro h
+    have htame : IsTame k F P' :=
+      (isTame_iff_isSeparable_residueField k F P').mpr ⟨h.2, by simp [h.1]⟩
+    have := (ramificationIdx_eq_differentExponent_add_one_iff k F P').mpr htame
+    have := h.1
+    omega
+  · intro hd
+    have he : ramificationIdx F P' = 1 := by omega
+    have htame := (ramificationIdx_eq_differentExponent_add_one_iff k F P').mp (by omega)
+    exact ⟨he, ((isTame_iff_isSeparable_residueField k F P').mp htame).1⟩
 
 /-- If the residue field of the place below `P'` is separably closed and the different exponent
 of `P'` vanishes, then the relative residue degree of `P'` is one. -/

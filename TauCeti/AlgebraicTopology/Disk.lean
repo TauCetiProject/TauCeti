@@ -214,6 +214,24 @@ lemma mem_range_diskBoundaryInclusion_iff {n : ℕ} (z : TopCat.disk.{u} n) :
   exact mem_sphere_zero_iff_norm.1
     (s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
 
+/-- The centre `0` of the Euclidean disk `TopCat.disk n`. -/
+def diskCenter (n : ℕ) : TopCat.disk.{u} n :=
+  (ULift.up ⟨0, Metric.mem_closedBall_self zero_le_one⟩ :
+    ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
+
+@[simp]
+lemma coe_diskCenter_down (n : ℕ) :
+    (((diskCenter.{u} n : TopCat.disk.{u} n) :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)) = 0 :=
+  (rfl)
+
+/-- The centre of the disk does not lie on its boundary sphere. -/
+lemma diskCenter_notMem_range_diskBoundaryInclusion (n : ℕ) :
+    diskCenter.{u} n ∉ Set.range (TopCat.diskBoundaryInclusion.{u} n) := by
+  rw [mem_range_diskBoundaryInclusion_iff, coe_diskCenter_down]
+  simp
+
 /-- A point of the disk is sent to the unit sphere of the sup norm by
 `TauCeti.diskHomeomorphClosedBall` exactly when it lies on the boundary sphere. -/
 lemma norm_diskHomeomorphClosedBall_eq_one_iff {n : ℕ} (z : TopCat.disk.{u} n) :
@@ -322,6 +340,12 @@ def diskBoundaryPairToCube : diskBoundaryPair.{u} n ⟶ cubeBoundaryPair.{u} n :
       (continuous_uliftUp.comp ((diskHomeomorphCube n).continuous.comp
         (TopCat.diskBoundaryInclusion n).hom.continuous)).subtype_mk _⟩)
     (by ext; rfl)
+
+variable {n} in
+/-- On the disk, `TauCeti.diskBoundaryPairToCube` is `TauCeti.diskHomeomorphCube`. -/
+lemma diskBoundaryPairToCube_fst_apply_down (z : (diskBoundaryPair.{u} n).fst) :
+    (TopPair.Hom.fst (diskBoundaryPairToCube.{u} n) z).down = diskHomeomorphCube n z :=
+  (rfl)
 
 variable {n} in
 /-- On the boundary sphere, `TauCeti.diskBoundaryPairToCube` is `TauCeti.diskHomeomorphCube`. -/

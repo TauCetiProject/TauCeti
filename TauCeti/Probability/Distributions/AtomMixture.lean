@@ -58,7 +58,7 @@ theorem integral_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval)
     (hμ : Integrable id μ) :
     ∫ x, x ∂μ.atomMixture c w =
       (w : ℝ) * c + (1 - (w : ℝ)) * ∫ x, x ∂μ := by
-  simpa only [id_eq, smul_eq_mul] using integral_atomMixture μ c w id hμ
+  simpa only [id_eq, smul_eq_mul] using μ.integral_atomMixture c w id hμ
 
 /-- The second raw moment of an atom mixture is the convex combination of the component second
 moments. -/
@@ -66,7 +66,7 @@ theorem integral_sq_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval)
     (hμ : Integrable (fun x => x ^ 2) μ) :
     ∫ x, x ^ 2 ∂μ.atomMixture c w =
       (w : ℝ) * c ^ 2 + (1 - (w : ℝ)) * ∫ x, x ^ 2 ∂μ := by
-  simpa only [smul_eq_mul] using integral_atomMixture μ c w (fun x => x ^ 2) hμ
+  simpa only [smul_eq_mul] using μ.integral_atomMixture c w (fun x => x ^ 2) hμ
 
 /-- The variance of an atom mixture is the within-component variance plus the variance caused by
 separating the atom from the component mean. -/
@@ -90,7 +90,7 @@ private theorem mgf_atomMixture_of_integrable (μ : Measure ℝ) (c : ℝ)
     (hμ : Integrable (fun x => Real.exp (t * x)) μ) :
     mgf id (μ.atomMixture c w) t =
       (w : ℝ) * Real.exp (t * c) + (1 - (w : ℝ)) * mgf id μ t := by
-  simpa [mgf] using integral_atomMixture μ c w (fun x => Real.exp (t * x)) hμ
+  simpa [mgf] using μ.integral_atomMixture c w (fun x => Real.exp (t * x)) hμ
 
 /-- Away from the pure-atom endpoint, an atom mixture has an exponential moment exactly when its
 base component does. -/
@@ -152,6 +152,6 @@ theorem charFun_atomMixture (μ : Measure ℝ) [IsFiniteMeasure μ] (c : ℝ)
     convert le_rfl
     simp [← Complex.ofReal_mul]
   simpa [charFun_apply_real] using
-    integral_atomMixture μ c w (fun x : ℝ => Complex.exp (t * x * Complex.I)) hμ
+    μ.integral_atomMixture c w (fun x : ℝ => Complex.exp (t * x * Complex.I)) hμ
 
 end TauCeti.Probability

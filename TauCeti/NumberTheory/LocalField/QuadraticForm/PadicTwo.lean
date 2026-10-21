@@ -45,6 +45,9 @@ full `8 × 8` table of the symbol over `ℚ_2`, the check that pins the dyadic s
 * `TauCeti.hilbertSymbol_padicTwo`: Serre's formula for the Hilbert symbol over `ℚ_2`.
 * `TauCeti.hilbertSymbol_natCast_natCast_padicTwo`: for odd natural numbers `m` and `n`,
   `(m, n) = (-1) ^ ((m - 1)/2 · (n - 1)/2)` over `ℚ_2`.
+* `TauCeti.coe_hilbertSymbol_neg_one_natCast_padicTwo`,
+  `TauCeti.coe_hilbertSymbol_two_natCast_padicTwo`: for an odd natural number `n`,
+  `(-1, n) = χ₄(n)` and `(2, n) = χ₈(n)` over `ℚ_2`.
 * `TauCeti.hilbertSymbol_neg_one_neg_one_padicTwo`: `(-1, -1) = −1` over `ℚ_2`, that is `-1` is
   not of the form `x² + y²` in `ℚ_2`.
 * `TauCeti.hilbertSymbol_two_five_padicTwo`: `(2, 5) = −1` over `ℚ_2`.
@@ -112,8 +115,8 @@ private theorem exists_eq_two_zpow_mul (b : ℚ_[2]ˣ) :
 /-- A unit of `ℤ_2` that is not `1 mod 8` is a nonsquare of `ℚ_2ˣ`. -/
 private theorem not_isSquare_of_toZModPow_ne_one {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
     (ha : (a : ℚ_[2]) = u) (hu : PadicInt.toZModPow 3 (u : ℤ_[2]) ≠ 1) : ¬IsSquare a := by
-  rw [← isSquare_units_val_iff, ha, isSquare_coe_iff_mem_unitsPrincipal_three,
-    mem_unitsPrincipal_iff_toZModPow]
+  rw [isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero ha,
+    serreEps_eq_zero_and_serreOmega_eq_zero_iff, mem_unitsPrincipal_iff_toZModPow]
   exact hu
 
 /-- For a nonsquare `c`, the symbol `(c, ·)` is nontrivial on one of the generators `2`, `-1`,
@@ -214,6 +217,28 @@ theorem hilbertSymbol_natCast_natCast_padicTwo {m n : ℕ} (hm : Odd m) (hn : Od
     (by simp), serreEps_eq_natCast_div_two_of_coe_eq_natCast hum.unit_spec,
     serreEps_eq_natCast_div_two_of_coe_eq_natCast hun.unit_spec]
   simp only [Int.cast_zero, zero_mul, add_zero, ← Nat.cast_mul, uzpow_natCast]
+
+/-- **The Hilbert symbol of `-1` and an odd natural number over `ℚ_2`**: `(-1, n) = χ₄(n)`, which is
+`-1` exactly when `n ≡ 3 (mod 4)`. This is the dyadic factor of the product formula behind the
+first supplementary law of quadratic reciprocity. -/
+theorem coe_hilbertSymbol_neg_one_natCast_padicTwo {n : ℕ} (hn : Odd n) :
+    ((hilbertSymbol (-1) (Units.mk0 (n : ℚ_[2]) (Nat.cast_ne_zero.2 hn.pos.ne')) : ℤˣ) : ℤ) =
+      ZMod.χ₄ n := by
+  have hun := PadicInt.isUnit_natCast_of_coprime (p := 2) (Nat.coprime_two_left.2 hn)
+  rw [hilbertSymbol_padicTwo (α := 0) (β := 0) (u := -1) (v := hun.unit) (by simp) (by simp)]
+  simp only [serreEps_neg_one, one_mul, Int.cast_zero, zero_mul, add_zero]
+  rw [coe_neg_one_uzpow_serreEps, hun.unit_spec, map_natCast]
+
+/-- **The Hilbert symbol of `2` and an odd natural number over `ℚ_2`**: `(2, n) = χ₈(n)`, which is
+`-1` exactly when `n ≡ ±3 (mod 8)`. This is the dyadic factor of the product formula behind the
+second supplementary law of quadratic reciprocity. -/
+theorem coe_hilbertSymbol_two_natCast_padicTwo {n : ℕ} (hn : Odd n) :
+    ((hilbertSymbol (Units.mk0 (2 : ℚ_[2]) two_ne_zero)
+        (Units.mk0 (n : ℚ_[2]) (Nat.cast_ne_zero.2 hn.pos.ne')) : ℤˣ) : ℤ) = ZMod.χ₈ n := by
+  have hun := PadicInt.isUnit_natCast_of_coprime (p := 2) (Nat.coprime_two_left.2 hn)
+  rw [hilbertSymbol_padicTwo (α := 1) (β := 0) (u := 1) (v := hun.unit) (by simp) (by simp)]
+  simp only [serreEps_one, zero_mul, zero_add, Int.cast_one, one_mul, Int.cast_zero, add_zero]
+  rw [coe_neg_one_uzpow_serreOmega, hun.unit_spec, map_natCast]
 
 /-! ### The symbol on a basis of the square classes, and the `8 × 8` table -/
 

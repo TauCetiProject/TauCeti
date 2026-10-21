@@ -235,13 +235,6 @@ theorem IsSmoothForm.contMDiff [IsManifold I 1 M] {n : WithTop ℕ∞}
       (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ x)) :=
   (isSmoothForm_def n φ).mp hφ
 
-/-- A fixed-coefficient form of regularity `n` has every lower regularity `m`. -/
-theorem IsSmoothForm.of_le [IsManifold I 1 M] {m n : WithTop ℕ∞}
-    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) (hmn : m ≤ n) :
-    IsSmoothForm I m φ := by
-  rw [isSmoothForm_def] at hφ ⊢
-  exact hφ.of_le hmn
-
 /-- Addition preserves regularity of the actual fixed-coefficient bundle sections. -/
 theorem IsSmoothForm.add [IsManifold I 1 M] {n : WithTop ℕ∞}
     {φ ψ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) (hψ : IsSmoothForm I n ψ) :
@@ -283,6 +276,11 @@ theorem IsSmoothForm.fun_smul [IsManifold I 1 M] {n : WithTop ℕ∞}
   rw [isSmoothForm_def]
   exact hf.smul_section hφ.contMDiff
 
+/-- A `C^n` form is `C^m` for every `m ≤ n`. -/
+theorem IsSmoothForm.of_le [IsManifold I 1 M] {m n : WithTop ℕ∞} {φ : RoughForm I M F k}
+    (hφ : IsSmoothForm I n φ) (hmn : m ≤ n) : IsSmoothForm I m φ :=
+  (isSmoothForm_def m φ).mpr (hφ.contMDiff.of_le hmn)
+
 /-- The submodule of smooth fixed-coefficient `F`-valued rough forms. -/
 def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
@@ -297,6 +295,11 @@ def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     φ ∈ smoothForms I M F k ↔
       IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (k := k) (n := ∞) φ :=
   Iff.rfl
+
+/-- A smooth fixed-coefficient rough form lies in `smoothForms`. -/
+theorem IsSmoothForm.mem_smoothForms [IsManifold I 1 M] {φ : RoughForm I M F k}
+    (hφ : IsSmoothForm I ∞ φ) : φ ∈ smoothForms I M F k :=
+  TauCeti.mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ φ).mpr ((isSmoothForm_def ∞ φ).mp hφ))
 
 /-- A smooth fixed-coefficient differential `k`-form. -/
 abbrev SmoothForm (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]

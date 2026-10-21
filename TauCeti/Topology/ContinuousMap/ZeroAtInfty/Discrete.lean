@@ -28,7 +28,9 @@ This file develops the coordinate structure of `C₀(I, E)`:
 * `ZeroAtInftyContinuousMap.mkOfDiscrete`: a family tending to zero along the cofinite filter as
   an element of `C₀(I, E)`;
 * `ZeroAtInftyContinuousMap.single i x`: the coordinate vector supported at `i` with value `x`,
-  of norm `‖x‖` (`ZeroAtInftyContinuousMap.norm_single`); a finite sum of coordinate vectors at
+  of norm `‖x‖` (`ZeroAtInftyContinuousMap.norm_single`), so that on an infinite index the
+  coordinate vectors with a fixed nonzero value are not norm null
+  (`ZeroAtInftyContinuousMap.not_tendsto_single_cofinite`); a finite sum of coordinate vectors at
   distinct coordinates has the maximum of their norms
   (`ZeroAtInftyContinuousMap.nnnorm_sum_single`);
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
@@ -249,6 +251,15 @@ theorem dense_setOf_finite_support : Dense {f : C₀(I, β) | (Function.support 
       exact hj (by simp only [sum_single_apply]; simp [Finset.mem_coe.not.1 h])
 
 end Normed
+
+/-- On an infinite index type, the coordinate vectors `single i b` with a fixed nonzero value `b`
+do not tend to zero in norm along the cofinite filter. In particular the unit coordinate vectors
+of `c₀` are not norm null. -/
+theorem not_tendsto_single_cofinite [NormedAddCommGroup β] [DecidableEq I] [Infinite I] {b : β}
+    (hb : b ≠ 0) : ¬ Tendsto (fun i : I ↦ single i b) cofinite (𝓝 0) := fun h ↦ by
+  have h1 := h.norm
+  simp only [norm_single, norm_zero] at h1
+  exact hb (norm_eq_zero.1 (tendsto_const_nhds_iff.1 h1))
 
 section Ring
 

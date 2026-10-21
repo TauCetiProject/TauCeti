@@ -6,6 +6,7 @@ Authors: Chris Birkbeck, The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
 
 /-!
 # The Möbius-action conjugation at a positive determinant
@@ -31,6 +32,8 @@ unfolded by hand.
   `g • z` cleared.
 * `UpperHalfPlane.J_smul_re`, `UpperHalfPlane.J_smul_im`: the involution `J : z ↦ -conj z`
   negates the real part and preserves the imaginary part.
+* `Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J`, `Matrix.SpecialLinearGroup.J_mul_mapGL`:
+  conjugation by `J` realizes `conjJ` on the image of `SL(2, R)` in `GL(2, ℝ)`.
 * `ModularGroup.sl_smul_set`: the `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action
   along the coercion, the pointwise-image counterpart of Mathlib's `ModularGroup.sl_moeb`.
 * `ModularGroup.smul_eq_smul_of_eq_or_eq_neg`: elements of `SL(2, ℤ)` that agree up to sign act
@@ -93,6 +96,23 @@ theorem J_smul_re (τ : ℍ) : (J • τ).re = -τ.re := by
 @[simp]
 theorem J_smul_im (τ : ℍ) : (J • τ).im = τ.im := by
   rw [← coe_im, coe_J_smul, Complex.neg_im, Complex.conj_im, neg_neg, coe_im]
+
+/-- Conjugation by `J` realizes `conjJ` on the image of `SL(2, R)` in `GL(2, ℝ)`. -/
+theorem _root_.Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J {R : Type*} [CommRing R]
+    [Algebra R ℝ] (γ : SL(2, R)) :
+    J * Matrix.SpecialLinearGroup.mapGL ℝ γ * J =
+      Matrix.SpecialLinearGroup.mapGL ℝ (Matrix.SpecialLinearGroup.conjJ γ) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [J, Matrix.SpecialLinearGroup.mapGL_coe_matrix, Matrix.mul_apply, Fin.sum_univ_two,
+      Matrix.vecMul, dotProduct]
+
+/-- `J` intertwines the image of `γ ∈ SL(2, R)` in `GL(2, ℝ)` with that of `conjJ γ`. -/
+theorem _root_.Matrix.SpecialLinearGroup.J_mul_mapGL {R : Type*} [CommRing R] [Algebra R ℝ]
+    (γ : SL(2, R)) :
+    J * Matrix.SpecialLinearGroup.mapGL ℝ γ =
+      Matrix.SpecialLinearGroup.mapGL ℝ (Matrix.SpecialLinearGroup.conjJ γ) * J := by
+  rw [← Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J, mul_assoc, ← sq, J_sq, mul_one]
 
 /-- A real linear combination `m z + n` of a point `z` of the upper half-plane and `1` vanishes only
 when both coefficients do, as `z` is not real: the `iff` form of `UpperHalfPlane.linear_ne_zero`. -/
