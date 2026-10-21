@@ -16,6 +16,8 @@ For capacities `c` on an arrow family `Q`, the *positive distance* `positiveEDis
 least length of a walk from `s` to `t` that traverses only arrows of positive capacity, and `⊤`
 when there is no such walk. For the residual capacities of a flow it is the length of a shortest
 augmenting walk, the quantity that controls shortest-path augmentation.
+The definition follows Mathlib's `SimpleGraph.edist`, the infimum in `ℕ∞` of the lengths of
+walks.
 
 Along every arrow of positive capacity the distance from `s` rises by at most one, and conversely
 every function vanishing at `s` with this property is a lower bound for the distance from `s`.

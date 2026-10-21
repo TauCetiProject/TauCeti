@@ -25,7 +25,7 @@ maximum flow takes its values in that subgroup.
 The argument is that of Edmonds and Karp, and of Dinitz. Write `d` for the positive distance from
 `s` in the residual network of `f`, and `d'` for that of the augmented assignment. A residual arrow
 that becomes positive is the reverse of an arrow of the augmenting walk, so along it `d` decreases
-by one. Hence `d'` rises by at most one along every positive residual arrow of the new assignment,
+by one. Hence `d` rises by at most one along every positive residual arrow of the new assignment,
 and `d ≤ d'` (`TauCeti.BoundedFlow.ShortestAugmentationStep.positiveEDist_le`). When `d' = d`, the
 positive residual arrows `u → v` with `d v = d u + 1` after the step are among those before it,
 and the arrow of the walk attaining the bottleneck is no longer positive. Since distances are
