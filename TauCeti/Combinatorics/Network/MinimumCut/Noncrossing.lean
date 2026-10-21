@@ -10,10 +10,9 @@ public import TauCeti.Combinatorics.Network.MinimumCut.Symmetric
 /-!
 # Non-crossing minimum cuts
 
-For a symmetric submodular set function, the usual submodular inequality has a complementary
-form: the sum on the two set differences is at most the sum on the original sets. These two
-inequalities let minimum cuts be uncrossed by intersection and union, or by the two differences,
-without changing their values.
+Minimum cuts of a submodular set function can be uncrossed by intersection and union without
+changing their values. For a symmetric submodular set function, complementing one of the cuts
+also lets them be uncrossed by the two set differences.
 
 The main result is the non-crossing lemma. If two vertices lie on the same side of a minimum
 `s`–`t` cut, they have a minimum cut with one side contained in that `s`–`t` side. This is a basic
@@ -34,22 +33,6 @@ open Finset
 
 variable {V K : Type*}
 
-namespace IsSymmSubmodular
-
-variable [Fintype V] [DecidableEq V] [AddCommSemigroup K] [LE K]
-variable {f : Finset V → K}
-
-/-- The posimodular inequality for a symmetric submodular set function. -/
-theorem sdiff_add_sdiff_le (hf : IsSymmSubmodular f) (S T : Finset V) :
-    f (S \ T) + f (T \ S) ≤ f S + f T := by
-  have h := hf.submodular.apply S Tᶜ
-  simp only [sup_eq_union, inf_eq_inter] at h
-  rw [← hf.symm (S ∪ Tᶜ), hf.symm T] at h
-  simpa only [sdiff_eq_inter_compl, Finset.compl_union, compl_compl, inter_comm, add_comm]
-    using h
-
-end IsSymmSubmodular
-
 namespace TerminalCut
 
 section PartialOrder
@@ -64,23 +47,10 @@ theorem IsMinimum.uncross_union_inter (hf : IsSubmodular f)
     {A B C D S T : Finset V} (hS : IsMinimum f A B S) (hT : IsMinimum f C D T)
     (hunion : IsAdmissible C D (S ∪ T)) (hinter : IsAdmissible A B (S ∩ T)) :
     IsMinimum f C D (S ∪ T) ∧ IsMinimum f A B (S ∩ T) := by
-  have hsub := hf.apply S T
-  have hSle := hS.le hinter
-  have hTle := hT.le hunion
-  have hunion_le : f (S ∪ T) ≤ f T := by
-    apply le_of_add_le_add_right
-    calc
-      f (S ∪ T) + f S ≤ f (S ∪ T) + f (S ∩ T) := add_le_add_right hSle _
-      _ ≤ f S + f T := hsub
-      _ = f T + f S := add_comm _ _
-  have hinter_le : f (S ∩ T) ≤ f S := by
-    apply le_of_add_le_add_left
-    calc
-      f T + f (S ∩ T) ≤ f (S ∪ T) + f (S ∩ T) := add_le_add_left hTle _
-      _ ≤ f S + f T := hsub
-      _ = f T + f S := add_comm _ _
-  exact ⟨isMinimum_iff.mpr ⟨hunion, fun U hU ↦ hunion_le.trans (hT.le hU)⟩,
-    isMinimum_iff.mpr ⟨hinter, fun U hU ↦ hinter_le.trans (hS.le hU)⟩⟩
+  have h := hf.isMinOn_sup_inf (s := {U | IsAdmissible A B U}) (t := {U | IsAdmissible C D U})
+    (isMinOn_iff.mpr fun _ ↦ hS.le) (isMinOn_iff.mpr fun _ ↦ hT.le) hunion hinter
+  exact ⟨isMinimum_iff.mpr ⟨hunion, isMinOn_iff.mp h.1⟩,
+    isMinimum_iff.mpr ⟨hinter, isMinOn_iff.mp h.2⟩⟩
 
 /-- Uncross two minimum cuts by set difference when the resulting sides have the required
 terminal orientations. -/
@@ -89,21 +59,12 @@ theorem IsMinimum.uncross_sdiff [Fintype V] (hf : IsSymmSubmodular f)
     (hT : IsMinimum f C D T)
     (hST : IsAdmissible A B (S \ T)) (hTS : IsAdmissible C D (T \ S)) :
     IsMinimum f A B (S \ T) ∧ IsMinimum f C D (T \ S) := by
-  have hpos := hf.sdiff_add_sdiff_le S T
-  have hSle := hS.le hST
-  have hTle := hT.le hTS
-  have hSTle : f (S \ T) ≤ f S := by
-    apply le_of_add_le_add_right
-    calc
-      f (S \ T) + f T ≤ f (S \ T) + f (T \ S) := add_le_add_right hTle _
-      _ ≤ f S + f T := hpos
-  have hTSle : f (T \ S) ≤ f T := by
-    apply le_of_add_le_add_left
-    calc
-      f S + f (T \ S) ≤ f (S \ T) + f (T \ S) := add_le_add_left hSle _
-      _ ≤ f S + f T := hpos
-  exact ⟨isMinimum_iff.mpr ⟨hST, fun U hU ↦ hSTle.trans (hS.le hU)⟩,
-    isMinimum_iff.mpr ⟨hTS, fun U hU ↦ hTSle.trans (hT.le hU)⟩⟩
+  have hST_eq : S \ T = S ∩ Tᶜ := sdiff_eq_inter_compl S T
+  have hTS_eq : (S ∪ Tᶜ)ᶜ = T \ S := by
+    rw [compl_union, compl_compl, sdiff_eq_inter_compl, inter_comm]
+  have h := hS.uncross_union_inter hf.submodular (hT.compl hf.symm)
+    (isAdmissible_compl_iff.mp (by rwa [hTS_eq])) (by rwa [← hST_eq])
+  exact ⟨hST_eq ▸ h.2, hTS_eq ▸ h.1.compl hf.symm⟩
 
 end PartialOrder
 
