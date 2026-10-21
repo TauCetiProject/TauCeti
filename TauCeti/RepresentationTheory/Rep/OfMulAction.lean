@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.RepresentationTheory.FreeOfBasis
+import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # Equivalences of permutation representations
@@ -267,12 +268,6 @@ open _root_.MulAction (orbitRel selfEquivOrbitsQuotientProd)
 variable (k : Type u) [CommRing k] {G : Type u} [Group G] (X : Type u) [MulAction G X]
   [IsCancelSMul G X]
 
-/-- For a free action, Mathlib's decomposition `MulAction.selfEquivOrbitsQuotientProd` sends
-`(q, g)` to the translate `g • q.out` of the chosen representative of the orbit `q`. -/
-private lemma selfEquivOrbitsQuotientProd_symm_apply (q : orbitRel.Quotient G X) (g : G) :
-    (selfEquivOrbitsQuotientProd IsCancelSMul.stabilizer_eq_bot).symm (q, g) = g • q.out :=
-  (rfl)
-
 /-- **The permutation representation of a free action is free over the group ring**, with
 basis the chosen representatives `q.out` of the orbits: the generator `single q (single g r)` of
 the free representation corresponds to `single (g • q.out) r`. -/
@@ -281,7 +276,7 @@ noncomputable def ofMulActionIsoFree :
   (Rep.mkIso ((Representation.ofMulAction k G X).freeEquivOfBasis (MonoidAlgebra.basis X k)
     ((Equiv.sigmaEquivProd _ G).trans
       (selfEquivOrbitsQuotientProd IsCancelSMul.stabilizer_eq_bot).symm) fun g h q ↦ by
-        simp [selfEquivOrbitsQuotientProd_symm_apply, mul_smul])).symm
+        simp [mul_smul])).symm
 
 /-- The generator `single q (single g r)` of the free representation corresponds to the basis
 vector `single (g • q.out) r` of the permutation representation. -/
@@ -291,7 +286,7 @@ theorem ofMulActionIsoFree_inv_hom_single (q : orbitRel.Quotient G X) (g : G) (r
         (Finsupp.single q (MonoidAlgebra.single g r)))) =
       MonoidAlgebra.single (g • q.out) r := by
   rw [ofMulActionIsoFree, Iso.symm_inv, Rep.mkIso_hom_hom_apply]
-  simp [selfEquivOrbitsQuotientProd_symm_apply]
+  simp
 
 /-- The basis vector `single (g • q.out) r` of the permutation representation corresponds to the
 generator `single q (single g r)` of the free representation. -/

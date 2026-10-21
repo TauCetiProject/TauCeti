@@ -23,7 +23,7 @@ generator `single i (single h 1)` of `Representation.free k G ι` corresponds to
   representation with the free representation on the labels.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 

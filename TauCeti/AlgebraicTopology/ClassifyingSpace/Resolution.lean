@@ -223,6 +223,9 @@ variable (k : Type u) [CommRing k] (G : Type u) [Group G]
 /-- **The ordered chains of Milnor's countable join are a projective resolution** of the
 trivial representation of `G`: the terms are free over the group ring, because `G` acts freely
 on the simplices, and the augmentation is a quasi-isomorphism. -/
+-- The body is exposed, as for Mathlib's `standardResolution`, so that the complex of the
+-- resolution is the chain complex by definition: even stating `universalGSpaceResolution_π`
+-- needs this, its augmentation having source `universalGSpaceChainComplex k G`.
 @[expose]
 def universalGSpaceResolution : ProjectiveResolution (Rep.trivial k G k) where
   complex := universalGSpaceChainComplex k G
