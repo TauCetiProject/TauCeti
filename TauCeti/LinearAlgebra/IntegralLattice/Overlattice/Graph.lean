@@ -25,8 +25,9 @@ gluing correspondence. The ambient rational form is the orthogonal sum form thro
 Conversely, every even unimodular lattice for the orthogonal sum form which contains `L ⊥ M`
 and meets the two coordinate spaces in exactly `L` and `M` arises by this construction. Its
 subgroup of the discriminant group of `L ⊥ M` is a Lagrangian meeting both factors trivially,
-hence the graph of an isometry of opposite discriminant forms. So the orthogonal complement of a
-primitive sublattice of an even unimodular lattice carries the negative discriminant form.
+hence the graph of an isometry of opposite discriminant forms. This is the orthogonal-sum model of
+the statement that a nondegenerate primitive sublattice of an even unimodular lattice and its
+orthogonal complement have opposite discriminant forms.
 
 ## References
 
@@ -335,8 +336,9 @@ private theorem mk_mem_map_discriminantSubgroup_iff (N : (L.orthogonalSum M).Int
 lattice for the orthogonal sum form which contains `L ⊥ M` and meets the two coordinate spaces in
 exactly `L` and `M`. Then `N` is obtained by gluing along an isometry from the discriminant form of
 `L` to the negative of that of `M`. This is the converse of the construction
-`TauCeti.IntegralLattice.glueAlongDiscriminant`: a primitive sublattice of an even unimodular
-lattice and its orthogonal complement have opposite discriminant forms. -/
+`TauCeti.IntegralLattice.glueAlongDiscriminant`, and the orthogonal-sum model of the statement
+that a nondegenerate primitive sublattice of an even unimodular lattice and its orthogonal
+complement have opposite discriminant forms. -/
 theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
     (hform : N.form = (L.orthogonalSum M).form)
     (hle : (L.orthogonalSum M).carrier ≤ N.carrier) (hNe : N.IsEven) (hNu : N.IsUnimodular)
