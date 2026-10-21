@@ -32,7 +32,7 @@ while its negative `(0, -½)` does not (`exists_not_hasIntegralCoordinates_neg`)
 negation is not guaranteed on an arbitrary rational model. On `y² = x³ + 3` the change of variables
 `(x, y) ↦ (4x, 8y)`, that is `u = 2` with `r = s = t = 0`, identifies the integral point `(1, 2)`
 with `(1/4, 1/4)`, which is not integral
-(`exists_variableChange_not_surjective_on_integralCoordinates`).
+(`exists_not_surjOn_equivVariableChange_hasIntegralCoordinates`).
 
 ## References
 
@@ -52,7 +52,8 @@ private theorem integral_toAffine_baseChange :
   rfl
 
 omit [(W.baseChange ℚ).IsElliptic] in
-private theorem integral_equation_baseChange (x y : ℤ) (h : W.toAffine.Equation x y) :
+/-- An integral solution of the equation stays a solution of the rational base change. -/
+theorem integral_equation_baseChange (x y : ℤ) (h : W.toAffine.Equation x y) :
     (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) := by
   rw [W.integral_toAffine_baseChange]
   exact h.map (Int.castRingHom ℚ)
@@ -65,11 +66,11 @@ def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
 /-- The point built from an integral solution is the affine point with those coordinates. Not a
 `simp` lemma: it would rewrite the left-hand sides of `pointOfIntegralSolution_mem` and the
 `pointEquiv` lemmas, which are themselves in `simp` normal form. -/
-private theorem pointOfIntegralSolution_eq_some (x y : ℤ) (h : W.toAffine.Equation x y) :
+theorem pointOfIntegralSolution_eq_some (x y : ℤ) (h : W.toAffine.Equation x y) :
     W.pointOfIntegralSolution x y h =
       .some (x : ℚ) (y : ℚ)
-        (Affine.equation_iff_nonsingular.mp (W.integral_equation_baseChange x y h)) :=
-  rfl
+        (Affine.equation_iff_nonsingular.mp (W.integral_equation_baseChange x y h)) := by
+  simp only [pointOfIntegralSolution, Affine.Point.mk]
 
 /-- The affine coordinates of the rational point constructed from an integral solution. -/
 @[simp]
@@ -296,6 +297,15 @@ namespace Point
 
 variable {W : WeierstrassCurve ℚ}
 
+/-- An affine point over `ℚ` has integral coordinates exactly when it is the point with
+integer-cast coordinates. This is the general form of `hasIntegralCoordinates_some`, and the form
+to use when building or destructuring such a point. -/
+theorem hasIntegralCoordinates_iff (P : W.toAffine.Point) :
+    P.HasIntegralCoordinates ↔
+      ∃ (x y : ℤ) (h : W.toAffine.Nonsingular (x : ℚ) (y : ℚ)),
+        P = .some (x : ℚ) (y : ℚ) h :=
+  Iff.rfl
+
 /-- The coordinates of an affine point with integral coordinates are integers, and conversely. -/
 @[simp]
 theorem hasIntegralCoordinates_some {x y : ℚ} (h : W.toAffine.Nonsingular x y) :
@@ -438,7 +448,7 @@ those of `W`, but it does not map the integral points of `C • W` onto those of
 `y² = x³ + 3` the integral point `(1, 2)` is the image of `(1/4, 1/4)`, whose coordinates are not
 integers. Over `ℤ` the unit group is `{±1}`, and there the identification is a bijection on
 integral points (`bijOn_pointEquivVariableChange_integralPoints`). -/
-theorem exists_variableChange_not_surjective_on_integralCoordinates :
+theorem exists_not_surjOn_equivVariableChange_hasIntegralCoordinates :
     ∃ (W : WeierstrassCurve ℚ) (C : WeierstrassCurve.VariableChange ℚ) (P : W.toAffine.Point),
       (C.u : ℚ) = 2 ∧ C.r = 0 ∧ C.s = 0 ∧ C.t = 0 ∧ P.HasIntegralCoordinates ∧
         ∀ Q : (C • W).toAffine.Point,
