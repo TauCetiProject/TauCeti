@@ -45,6 +45,12 @@ only through `det (Jₜ x)`. Since `A ↦ det A ^ (1 / n)` is concave on positiv
 (`LinearMap.concaveOn_det_rpow`), this is the formula behind McCann's displacement convexity of
 internal energies.
 
+At `t = 1` the interpolating map is the gradient itself, whose Jacobian `det (H x)` may vanish.
+The gradient is injective where `det (H x) ≠ 0` and maps the degenerate set `{det (H x) = 0}` to a
+null set, so the endpoint `μ₁ = (∇F)₊ μ` splits into an absolutely continuous part, the image of
+`μ` restricted to the nondegenerate set, and a singular part of total mass `μ {det (H x) = 0}`.
+The integral formula above then holds at `t = 1` for the absolutely continuous part.
+
 ## Main statements
 
 * `TauCeti.withDensity_image_smul_add_smul_gradient_eq_setLIntegral` — the change of variables
@@ -54,7 +60,11 @@ internal energies.
 * `TauCeti.rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradient` — the
   Jacobian equation of the interpolating map;
 * `TauCeti.lintegral_comp_rnDeriv_map_smul_add_smul_gradient` — integrals of functions of the
-  density of an interpolant, as integrals over the source.
+  density of an interpolant, as integrals over the source;
+* `TauCeti.singularPart_map_gradient_apply_univ` — the singular part of the endpoint `(∇F)₊ μ` has
+  total mass `μ {det (H x) = 0}`;
+* `TauCeti.lintegral_comp_rnDeriv_map_gradient` — integrals of functions of the density of the
+  endpoint, as integrals over the source.
 
 ## References
 
@@ -351,5 +361,235 @@ theorem lintegral_comp_rnDeriv_map_smul_add_smul_gradient
     _ = ∫⁻ x in S, J x * Φ (μ.rnDeriv ρ x / J x) ∂ρ :=
         setLIntegral_congr_fun_ae hSm (hJac.mono fun x hx hxS => by rw [hx hxS])
     _ = _ := setLIntegral_congr hDS.symm
+
+/-! ### The endpoint `t = 1` -/
+
+/-- The gradient `∇F` pushes `μ ≪ ρ`, restricted to a measurable set `Z` at each point of which the
+subdifferential of `f` is the single gradient with a first-order expansion of nonzero
+determinant, to a measure absolutely continuous with respect to `ρ`. -/
+private theorem map_restrict_gradient_absolutelyContinuous
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) {H : E → E →L[ℝ] E} (hHm : Measurable H)
+    {Z : Set E} (hZm : MeasurableSet Z)
+    (hZ : ∀ x ∈ Z, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+      (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    (hdet : ∀ x ∈ Z, (H x).det ≠ 0) {μ : Measure E} (hμ : μ ≪ ρ) :
+    (μ.restrict Z).map (∇ fun x' => (f x').toReal) ≪ ρ := by
+  set G := ∇ fun x' => (f x').toReal
+  have hG : Measurable G := measurable_gradient _
+  refine AbsolutelyContinuous.mk fun A hA hρA => ?_
+  set s := G ⁻¹' A ∩ Z
+  have hs : MeasurableSet s := (hG hA).inter hZm
+  have hsZ : MeasurableSet (s ∩ {x | (H x).det ≠ 0}) := by
+    rwa [inter_eq_left.2 fun x (hx : x ∈ s) => hdet x hx.2]
+  -- The image of `s` lies in the null set `A`, so the positive Jacobian `det (H x)` integrates to
+  -- `0` over `s`, which is therefore null.
+  have hint : ∫⁻ x in s, ENNReal.ofReal (H x).det ∂ρ = 0 := by
+    have himage := withDensity_image_gradient_eq_setLIntegral ρ hf hs hsZ (fun x hx => hZ x hx.2) 1
+    rw [withDensity_one, measure_mono_null ((image_preimage_subset G A).trans' (image_mono
+      inter_subset_left)) hρA] at himage
+    simpa using himage.symm
+  have hρs : ρ s = 0 := by
+    have hdetm : Measurable fun x => ENNReal.ofReal (H x).det :=
+      ENNReal.measurable_ofReal.comp (ContinuousLinearMap.continuous_det.measurable.comp hHm)
+    refine measure_eq_zero_iff_ae_notMem.2 (((setLIntegral_eq_zero_iff hs hdetm).1 hint).mono
+      fun x hx hxs => ?_)
+    refine (ENNReal.ofReal_pos.2 (lt_of_le_of_ne ?_ (hdet x hxs.2).symm)).ne' (hx hxs)
+    exact ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2 (hZ x hxs.2).2.1).det_nonneg
+  rw [map_apply hG hA, restrict_apply (hG hA)]
+  exact hμ hρs
+
+/-- The gradient `∇F` pushes any measure restricted to a measurable set `Z`, at each point of which
+the subdifferential of `f` is the single gradient with a first-order expansion of zero
+determinant, to a measure singular with respect to `ρ`: it maps `Z` to a `ρ`-null set. -/
+private theorem map_restrict_gradient_mutuallySingular
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) {H : E → E →L[ℝ] E} {Z : Set E}
+    (hZm : MeasurableSet Z)
+    (hZ : ∀ x ∈ Z, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+      (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    (hdet : ∀ x ∈ Z, (H x).det = 0) (μ : Measure E) :
+    (μ.restrict Z).map (∇ fun x' => (f x').toReal) ⟂ₘ ρ := by
+  set G := ∇ fun x' => (f x').toReal
+  have hG : Measurable G := measurable_gradient _
+  have hρ : ρ (G '' Z) = 0 := by
+    have hZ0 : Z ∩ {x | (H x).det ≠ 0} = ∅ :=
+      eq_empty_iff_forall_notMem.2 fun x hx => hx.2 (hdet x hx.1)
+    have := withDensity_image_gradient_eq_setLIntegral ρ hf hZm (by rw [hZ0]; exact .empty) hZ 1
+    rw [withDensity_one] at this
+    rw [this]
+    exact (setLIntegral_congr_fun hZm fun x hx => by simp [hdet x hx]).trans lintegral_zero
+  have hN := (measurableSet_toMeasurable ρ (G '' Z)).compl
+  refine ⟨(toMeasurable ρ (G '' Z))ᶜ, hN, ?_, by rw [compl_compl, measure_toMeasurable, hρ]⟩
+  rw [map_apply hG hN, restrict_apply (hG hN)]
+  exact measure_mono_null (fun x hx =>
+    (hx.1 (subset_toMeasurable _ _ (mem_image_of_mem G hx.2))).elim) measure_empty
+
+/-- The decomposition behind the endpoint `t = 1`. If `μ ≪ ρ` is s-finite and carried by the
+interior `D` of the effective domain, there is a measurable `Z ⊆ D` on which the subdifferential of
+`f` is the single gradient with a first-order expansion of positive determinant, on which `∇F` is
+injective and `H` agrees with a measurable map, and such that `det (H x) = 0` at almost every
+point of `D \ Z`. The gradient pushes `μ` restricted to `Z` to a measure absolutely continuous with
+respect to `ρ`, and `μ` restricted to `Zᶜ`, which is `μ` restricted to `{x | det (H x) = 0}`, to a
+measure singular with respect to `ρ`. -/
+private theorem exists_map_gradient_restrict_decomposition
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
+    (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {μ : Measure E} (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤}) :
+    ∃ Z, MeasurableSet Z ∧ Z ⊆ interior {x | f x ≠ ⊤} ∧
+      (∀ x ∈ Z, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+        (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+          ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖) ∧
+      (∀ x ∈ Z, 0 < (H x).det) ∧ InjOn (∇ fun x' => (f x').toReal) Z ∧
+      (∃ H' : E → E →L[ℝ] E, Measurable H' ∧ ∀ x ∈ Z, H x = H' x) ∧
+      (∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → x ∉ Z → (H x).det = 0) ∧
+      Zᶜ =ᵐ[μ] {x | (H x).det = 0} ∧
+      (μ.restrict Z).map (∇ fun x' => (f x').toReal) ≪ ρ ∧
+      (μ.restrict Zᶜ).map (∇ fun x' => (f x').toReal) ⟂ₘ ρ := by
+  obtain ⟨S, hSm, hSD, hDS, hμS, hS, H', hH'm, hHS⟩ :=
+    exists_measurableSet_measure_compl_eq_zero ρ hf hbot hH hμ hμD
+  set Z := S ∩ {x | (H' x).det ≠ 0}
+  have hZm : MeasurableSet Z :=
+    hSm.inter ((measurableSet_singleton 0).compl.preimage
+      (ContinuousLinearMap.continuous_det.measurable.comp hH'm))
+  have hdetZ (x : E) (hx : x ∈ Z) : (H x).det ≠ 0 := by rw [hHS x hx.1]; exact hx.2
+  have hZ (x : E) (hx : x ∈ Z) := hS x hx.1
+  -- On `S`, the complement of `Z` is the degenerate set.
+  have hSZ (x : E) (hx : x ∈ S) : x ∉ Z ↔ (H x).det = 0 := by
+    simp [Z, hx, hHS x hx]
+  have hμS' : ∀ᵐ x ∂μ, x ∈ S := measure_eq_zero_iff_ae_notMem.1 hμS |>.mono fun x hx => not_not.1 hx
+  have hZc : Zᶜ =ᵐ[μ] {x | (H x).det = 0} :=
+    eventuallyEqSet_iff.2 (hμS'.mono fun x hx => hSZ x hx)
+  have hZc' : Zᶜ =ᵐ[μ] S \ Z :=
+    eventuallyEqSet_iff.2 (hμS'.mono fun x hx => by simp [hx])
+  refine ⟨Z, hZm, inter_subset_left.trans hSD, hZ, fun x hx => lt_of_le_of_ne
+      ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2 (hZ x hx).2.1).det_nonneg
+      (hdetZ x hx).symm, ?_, ⟨H', hH'm, fun x hx => hHS x hx.1⟩, ?_, hZc, ?_, ?_⟩
+  · have := injOn_gradient_inter_setOf_det_ne_zero hf (H := H) (t := Z)
+      fun x hx => ⟨(hZ x hx).1, (hZ x hx).2.2⟩
+    rwa [inter_eq_left.2 fun x hx => hdetZ x hx] at this
+  · filter_upwards [hDS.mem_iff] with x hx hxD hxZ
+    exact (hSZ x (hx.1 hxD)).1 hxZ
+  · refine map_restrict_gradient_absolutelyContinuous ρ hf hH'm hZm (fun x hx => ?_)
+      (fun x hx => hx.2) hμ
+    rw [← hHS x hx.1]
+    exact hZ x hx
+  · rw [restrict_congr_set hZc']
+    exact map_restrict_gradient_mutuallySingular ρ hf (H := H) (hSm.diff hZm)
+      (fun x hx => hS x hx.1) (fun x hx => (hSZ x hx.1).1 hx.2) μ
+
+/-- **The singular part of the pushforward by the gradient.** Let `f : E → EReal` be convex (convex
+real epigraph, never `⊥`), with real representative `F` and `D` the interior of its effective
+domain, and let `H x` be, for almost every `x ∈ D`, a first-order expansion of the subdifferential
+of `f` at `x` (the Alexandrov Hessian, see `rnDeriv_mongeAmpereMeasure_withDensity_ae_eq`). Let `μ`
+be an s-finite measure, absolutely continuous with respect to an additive Haar measure `ρ` and
+carried by `D`. Then the singular part of the endpoint `μ₁ = (∇F)₊ μ` of the interpolation with
+respect to `ρ` has total mass `μ {x | det (H x) = 0}`: the gradient collapses the degenerate set,
+and only it, to a null set. -/
+theorem singularPart_map_gradient_apply_univ (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
+    (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {μ : Measure E} [SFinite μ] (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤}) :
+    (μ.map (∇ fun x' => (f x').toReal)).singularPart ρ univ = μ {x | (H x).det = 0} := by
+  set G := ∇ fun x' => (f x').toReal
+  have hG : Measurable G := measurable_gradient _
+  obtain ⟨Z, hZm, -, -, -, -, -, -, hZc, hac, hsing⟩ :=
+    exists_map_gradient_restrict_decomposition ρ hf hbot hH hμ hμD
+  have hadd : μ.map G = (μ.restrict Zᶜ).map G +
+      ρ.withDensity (((μ.restrict Z).map G).rnDeriv ρ) := by
+    rw [withDensity_rnDeriv_eq _ _ hac, ← Measure.map_add _ _ hG, add_comm,
+      restrict_add_restrict_compl hZm]
+  rw [← eq_singularPart (measurable_rnDeriv _ _) hsing hadd, map_apply hG MeasurableSet.univ,
+    preimage_univ, restrict_apply_univ]
+  exact measure_congr hZc
+
+/-- **Integrals of the density of the pushforward by the gradient, as integrals over the source.**
+Under the hypotheses of `singularPart_map_gradient_apply_univ`, for every `Φ : ℝ≥0∞ → ℝ≥0∞` with
+`Φ 0 = 0`, the absolutely continuous part of the endpoint `μ₁ = (∇F)₊ μ` satisfies
+`∫ Φ (dμ₁/dρ) dρ = ∫_D det (H x) * Φ (dμ/dρ (x) / det (H x)) dρ`. This is the formula of
+`lintegral_comp_rnDeriv_map_smul_add_smul_gradient` at `t = 1`, where the Jacobian `det (H x)` may
+vanish: the degenerate set contributes nothing to the right side, and its image carries the singular
+part of `μ₁`. -/
+theorem lintegral_comp_rnDeriv_map_gradient (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
+    (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {μ : Measure E} [SFinite μ] (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    {Φ : ℝ≥0∞ → ℝ≥0∞} (hΦ : Φ 0 = 0) :
+    ∫⁻ y, Φ ((μ.map (∇ fun x' => (f x').toReal)).rnDeriv ρ y) ∂ρ =
+      ∫⁻ x in interior {x | f x ≠ ⊤},
+        ENNReal.ofReal (H x).det * Φ (μ.rnDeriv ρ x / ENNReal.ofReal (H x).det) ∂ρ := by
+  set G := ∇ fun x' => (f x').toReal
+  set D := interior {x | f x ≠ ⊤}
+  have hG : Measurable G := measurable_gradient _
+  obtain ⟨Z, hZm, hZD, hZ, hpos, hinj, ⟨H', hH'm, hHZ⟩, hdeg, -, hac, hsing⟩ :=
+    exists_map_gradient_restrict_decomposition ρ hf hbot hH hμ hμD
+  set ν := (μ.restrict Z).map G
+  set g := ν.rnDeriv ρ
+  have hν : ρ.withDensity g = ν := withDensity_rnDeriv_eq _ _ hac
+  -- The absolutely continuous part of `μ₁` is `ν`, so its density is `g`.
+  have hg : g =ᵐ[ρ] (μ.map G).rnDeriv ρ := by
+    refine eq_rnDeriv (measurable_rnDeriv _ _) hsing ?_
+    rw [hν, ← Measure.map_add _ _ hG, add_comm, restrict_add_restrict_compl hZm]
+  have hGZ : MeasurableSet (G '' Z) :=
+    measurable_image_of_fderivWithin hZm (fun x hx =>
+      hasFDerivWithinAt_gradient_toReal_of_forall_mem_subdifferential_norm_sub_le
+        (fun x' hx' => by rw [(hZ x' hx').1]; exact mem_singleton _) (hZ x hx).2.2) hinj
+  -- `ν` is carried by `∇F '' Z`, so `g` vanishes almost everywhere off it.
+  have hg0 : ∀ᵐ y ∂ρ, y ∈ (G '' Z)ᶜ → g y = 0 := by
+    have hνc : ν (G '' Z)ᶜ = 0 := by
+      rw [map_apply hG hGZ.compl, restrict_apply (hG hGZ.compl)]
+      exact measure_mono_null (fun x hx => (hx.1 (mem_image_of_mem G hx.2)).elim) measure_empty
+    rw [← setLIntegral_eq_zero_iff hGZ.compl (measurable_rnDeriv ν ρ), ← withDensity_apply _
+      hGZ.compl, hν, hνc]
+  -- The Jacobian equation on `Z`: `dμ/dρ (x) = det (H x) * g (∇F x)`.
+  set φ : E → ℝ≥0∞ := fun x => ENNReal.ofReal (H' x).det * g (G x)
+  have hφ : Measurable φ := (ENNReal.measurable_ofReal.comp
+    (ContinuousLinearMap.continuous_det.measurable.comp hH'm)).mul
+    ((measurable_rnDeriv ν ρ).comp hG)
+  have hμZ : μ.restrict Z = ρ.withDensity (Z.indicator φ) := by
+    ext s hs
+    have hsZ : MeasurableSet (s ∩ Z ∩ {x | (H x).det ≠ 0}) := by
+      rw [inter_eq_left.2 fun x (hx : x ∈ s ∩ Z) => (hpos x hx.2).ne']
+      exact hs.inter hZm
+    have hGs : MeasurableSet (G '' (s ∩ Z)) :=
+      measurable_image_of_fderivWithin (hs.inter hZm) (fun x hx =>
+        hasFDerivWithinAt_gradient_toReal_of_forall_mem_subdifferential_norm_sub_le
+          (fun x' hx' => by rw [(hZ x' hx'.2).1]; exact mem_singleton _) (hZ x hx.2).2.2)
+        (hinj.mono inter_subset_right)
+    have hmap : ν (G '' (s ∩ Z)) = μ (s ∩ Z) := by
+      rw [map_apply hG hGs, restrict_apply (hG hGs), hinj.preimage_image_inter inter_subset_right]
+    rw [restrict_apply hs, ← hmap, ← hν, withDensity_image_gradient_eq_setLIntegral ρ hf
+      (hs.inter hZm) hsZ (fun x hx => hZ x hx.2) g, withDensity_apply _ hs,
+      setLIntegral_indicator hZm, inter_comm s Z]
+    exact setLIntegral_congr_fun (hZm.inter hs) fun x hx => by rw [hHZ x hx.1]
+  have hJac : ∀ᵐ x ∂ρ, x ∈ Z → g (G x) = μ.rnDeriv ρ x / ENNReal.ofReal (H x).det := by
+    have h₁ := rnDeriv_restrict μ ρ hZm
+    rw [hμZ] at h₁
+    filter_upwards [h₁.symm.trans (rnDeriv_withDensity ρ (hφ.indicator hZm))] with x hx hxZ
+    rw [indicator_of_mem hxZ, indicator_of_mem hxZ] at hx
+    rw [ENNReal.eq_div_iff (ENNReal.ofReal_pos.2 (hpos x hxZ)).ne' ENNReal.ofReal_ne_top, hx,
+      hHZ x hxZ]
+  calc ∫⁻ y, Φ ((μ.map G).rnDeriv ρ y) ∂ρ = ∫⁻ y, (G '' Z).indicator (fun y => Φ (g y)) y ∂ρ := by
+        refine lintegral_congr_ae ((hg.and hg0).mono fun y hy => ?_)
+        dsimp only
+        by_cases hyZ : y ∈ G '' Z
+        · rw [indicator_of_mem hyZ, hy.1]
+        · rw [indicator_of_notMem hyZ, ← hy.1, hy.2 hyZ, hΦ]
+    _ = ∫⁻ x in Z, ENNReal.ofReal (H x).det * Φ (g (G x)) ∂ρ := by
+        rw [lintegral_indicator hGZ, ← withDensity_apply' _ (G '' Z),
+          withDensity_image_gradient_eq_setLIntegral ρ hf hZm
+            (by rwa [inter_eq_left.2 fun x (hx : x ∈ Z) => (hpos x hx).ne']) hZ]
+    _ = ∫⁻ x in Z, ENNReal.ofReal (H x).det * Φ (μ.rnDeriv ρ x / ENNReal.ofReal (H x).det) ∂ρ :=
+        setLIntegral_congr_fun_ae hZm (hJac.mono fun x hx hxZ => by rw [hx hxZ])
+    _ = ∫⁻ x in D, ENNReal.ofReal (H x).det * Φ (μ.rnDeriv ρ x / ENNReal.ofReal (H x).det) ∂ρ := by
+        -- Off `Z`, the Jacobian vanishes almost everywhere in `D`.
+        rw [← inter_eq_left.2 hZD, ← setLIntegral_indicator hZm]
+        refine setLIntegral_congr_fun_ae measurableSet_interior (hdeg.mono fun x hx hxD => ?_)
+        by_cases hxZ : x ∈ Z
+        · rw [indicator_of_mem hxZ]
+        · rw [indicator_of_notMem hxZ, hx hxD hxZ, ENNReal.ofReal_zero, zero_mul]
 
 end TauCeti
