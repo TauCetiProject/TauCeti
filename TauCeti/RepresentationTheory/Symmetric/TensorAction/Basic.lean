@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.RepresentationTheory.Basic
 
@@ -35,6 +36,8 @@ It reuses `PiTensorProduct.reindex`; the convention is
 
 * `TauCeti.finrank_tensorPower` is the dimension count `dim (Rⁿ)^{⊗d} = nᵈ` that the monomial
   basis supplies.
+* `TauCeti.toMatrix_piTensorProductMap` is the matrix of the diagonal action `A ⊗ ⋯ ⊗ A` of a
+  matrix `A` in the monomial basis.
 -/
 
 public section
@@ -186,6 +189,17 @@ theorem tensorPowerBasis_apply (f : Fin d → Fin n) :
 theorem finrank_tensorPower [StrongRankCondition R] :
     Module.finrank R (⨂[R] _ : Fin d, Fin n → R) = n ^ d := by
   rw [Module.finrank_eq_card_basis (tensorPowerBasis R n d), Fintype.card_fun]
+  simp
+
+/-- **The matrix of a tensor power of a matrix.** In the monomial basis, the diagonal action
+`A ⊗ ⋯ ⊗ A` of `A` on `(Rⁿ)^{⊗d}` has entry `∏ i, A (v i) (u i)` at `(v, u)`. -/
+theorem toMatrix_piTensorProductMap (A : Matrix (Fin n) (Fin n) R) :
+    LinearMap.toMatrix (tensorPowerBasis R n d) (tensorPowerBasis R n d)
+        (PiTensorProduct.map fun _ : Fin d => Matrix.mulVecLin A) =
+      Matrix.of fun v u => ∏ i, A (v i) (u i) := by
+  ext v u
+  rw [LinearMap.toMatrix_apply, tensorPowerBasis_def, Basis.piTensorProduct_apply,
+    PiTensorProduct.map_tprod, Basis.piTensorProduct_repr_tprod_apply]
   simp
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already

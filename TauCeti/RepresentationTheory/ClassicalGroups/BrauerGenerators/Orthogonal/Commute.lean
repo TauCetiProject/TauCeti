@@ -156,16 +156,6 @@ section CommSemiring
 
 variable {R : Type u} [CommSemiring R] {n k : ℕ}
 
-/-- The matrix of the diagonal action of `A` on `(Rⁿ)^{⊗k}` in the monomial basis. -/
-private theorem toMatrix_piTensorProductMap (A : Matrix (Fin n) (Fin n) R) :
-    LinearMap.toMatrix (tensorPowerBasis R n k) (tensorPowerBasis R n k)
-        (PiTensorProduct.map fun _ : Fin k => Matrix.mulVecLin A) =
-      Matrix.of fun v u => ∏ i, A (v i) (u i) := by
-  ext v u
-  rw [LinearMap.toMatrix_apply, tensorPowerBasis_def, Basis.piTensorProduct_apply,
-    PiTensorProduct.map_tprod, Basis.piTensorProduct_repr_tprod_apply]
-  simp
-
 /-- **The Brauer action commutes with the diagonal action of an orthogonal matrix.** Every element
 of the Brauer algebra `B_k(n)` acts on `(Rⁿ)^{⊗k}` commuting with `A ⊗ ⋯ ⊗ A` for every matrix `A`
 with `Aᵀ * A = 1`. -/
