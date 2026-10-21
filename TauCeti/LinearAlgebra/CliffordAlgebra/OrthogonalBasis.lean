@@ -34,8 +34,9 @@ For `s = t` the product `reverse e_s * e_s` collapses to the scalar `∏ i ∈ s
 `s ≠ t` some index lies in exactly one of `s` and `t`, so its basis vector occurs exactly once in
 the product and is orthogonal to every other factor, and the scalar part of such a product
 vanishes. Expanding in the basis then computes the pairing of arbitrary elements coordinatewise,
-`τ (reverse x * y) = ∑ₛ xₛ * (∏ i ∈ s, Q (b i)) * yₛ`; this is the formula from which positivity
-of the pairing for a positive semidefinite form is read off.
+`τ (reverse x * y) = ∑ₛ xₛ * (∏ i ∈ s, Q (b i)) * yₛ`. Over an ordered ring this gives positivity
+of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0`, and if every
+`Q (b i)` is positive then `τ (reverse x * x) = 0` only for `x = 0`.
 
 ## Main results
 
@@ -47,6 +48,9 @@ of the pairing for a positive semidefinite form is read off.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul`: pairing against a basis vector extracts a
   coordinate, `τ (reverse e_s * x) = (∏ i ∈ s, Q (b i)) * xₛ`.
 * `CliffordAlgebra.scalarTrace_reverse_mul`: the pairing in coordinates.
+* `CliffordAlgebra.scalarTrace_reverse_mul_self_nonneg` and
+  `CliffordAlgebra.scalarTrace_reverse_mul_self_eq_zero_iff`: positivity and faithfulness of the
+  pairing over an ordered ring.
 
 ## References
 
@@ -156,5 +160,43 @@ theorem scalarTrace_reverse_mul (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
   conv_lhs => rw [← (basis Q b).linearCombination_repr x, Finsupp.linearCombination_apply]
   simp only [map_finsuppSum, Finsupp.sum_mul, map_smul, smul_mul_assoc, smul_eq_mul,
     scalarTrace_reverse_basis_mul hb]
+
+section Ordered
+
+variable [LinearOrder R]
+
+omit [Invertible (2 : R)] [LinearOrder I] in
+/-- A summand `c * ((∏ i ∈ s, Q (b i)) * c)` of the coordinate formula for `τ (reverse x * x)` is
+nonnegative when `Q` is nonnegative on `b`. -/
+private lemma mul_prod_mul_self_nonneg [IsOrderedRing R] (hQ : ∀ i, 0 ≤ Q (b i)) (s : Finset I)
+    (c : R) : 0 ≤ c * ((∏ i ∈ s, Q (b i)) * c) := by
+  rw [mul_left_comm]
+  exact mul_nonneg (Finset.prod_nonneg fun i _ ↦ hQ i) (mul_self_nonneg _)
+
+/-- **Positivity of the trace pairing**: if `Q` is nonnegative on an orthogonal basis, then
+`τ (reverse x * x) ≥ 0` for every `x`. -/
+theorem scalarTrace_reverse_mul_self_nonneg [IsOrderedRing R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 ≤ Q (b i)) (x : CliffordAlgebra Q) :
+    0 ≤ scalarTrace Q (reverse x * x) := by
+  rw [scalarTrace_reverse_mul hb, Finsupp.sum]
+  exact Finset.sum_nonneg fun s _ ↦ mul_prod_mul_self_nonneg hQ s _
+
+/-- **Faithfulness of the trace pairing**: if `Q` is positive on an orthogonal basis, then
+`τ (reverse x * x) = 0` only for `x = 0`. -/
+theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 < Q (b i))
+    {x : CliffordAlgebra Q} : scalarTrace Q (reverse x * x) = 0 ↔ x = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  have hpos (s : Finset I) : 0 < ∏ i ∈ s, Q (b i) := Finset.prod_pos fun i _ ↦ hQ i
+  rw [scalarTrace_reverse_mul hb, Finsupp.sum, Finset.sum_eq_zero_iff_of_nonneg
+    fun s _ ↦ mul_prod_mul_self_nonneg (fun i ↦ (hQ i).le) s _] at h
+  rw [← (basis Q b).repr.map_eq_zero_iff, ← Finsupp.support_eq_empty,
+    Finset.eq_empty_iff_forall_notMem]
+  intro s hs
+  have hs' := h s hs
+  rw [mul_left_comm, mul_eq_zero, or_iff_right (hpos s).ne', mul_self_eq_zero] at hs'
+  exact Finsupp.mem_support_iff.mp hs hs'
+
+end Ordered
 
 end CliffordAlgebra

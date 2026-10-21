@@ -296,6 +296,10 @@ theorem studentTMeasure_map_neg (ν : ℝ) :
     (Homeomorph.neg ℝ).measurableEmbedding (studentTPDF ν) t
   simpa only [studentTPDF_neg] using h
 
+/-- Student's t law is invariant under negation, including its invalid zero-measure branch. -/
+instance isNegInvariant_studentTMeasure (ν : ℝ) : (studentTMeasure ν).IsNegInvariant :=
+  ⟨studentTMeasure_map_neg ν⟩
+
 /-! ### One degree of freedom -/
 
 /-- With one degree of freedom the Student t density is the standard Cauchy density. -/
