@@ -79,11 +79,11 @@ variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [PseudoMetricSp
 
 /-- The discrepancy of the endpoint kernels is a.e. strongly measurable as soon as the
 interpolating kernels at times `0` and `1` are, since it is their distance. -/
-private theorem aestronglyMeasurable_edist_of_ae_isGeodesicSegment
+private theorem aestronglyMeasurable_dist_of_ae_isGeodesicSegment
     (hg : ∀ᵐ q ∂(π.prod π), IsGeodesicSegment (g q) (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
     (hgm : ∀ t ∈ Icc (0 : ℝ) 1, AEStronglyMeasurable (fun q ↦ g q t) (π.prod π)) :
-    AEStronglyMeasurable (fun q ↦ edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2))) (π.prod π) := by
-  refine (continuous_edist.comp_aestronglyMeasurable₂ (hgm 0 (left_mem_Icc.2 zero_le_one))
+    AEStronglyMeasurable (fun q ↦ dist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2))) (π.prod π) := by
+  refine (continuous_dist.comp_aestronglyMeasurable₂ (hgm 0 (left_mem_Icc.2 zero_le_one))
     (hgm 1 (right_mem_Icc.2 zero_le_one))).congr ?_
   filter_upwards [hg] with q hq
   rw [hq.source, hq.target]
@@ -98,13 +98,11 @@ theorem gromovWassersteinEDist_le_of_ae_isGeodesicSegment [SFinite π]
     (hs : s ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) (p : ℝ≥0∞) :
     gromovWassersteinEDist p π (fun q ↦ g q s) π (fun q ↦ g q t) ≤
       ENNReal.ofReal |s - t| * gromovWassersteinDistortion p ωX ωY π := by
-  have hd := aestronglyMeasurable_edist_of_ae_isGeodesicSegment hg hgm
-  have hdist : AEStronglyMeasurable (fun q ↦ dist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
-      (π.prod π) := by
-    refine (continuous_dist.comp_aestronglyMeasurable₂ (hgm 0 (left_mem_Icc.2 zero_le_one))
-      (hgm 1 (right_mem_Icc.2 zero_le_one))).congr ?_
-    filter_upwards [hg] with q hq
-    rw [hq.source, hq.target]
+  have hdist := aestronglyMeasurable_dist_of_ae_isGeodesicSegment hg hgm
+  have hd : AEStronglyMeasurable (fun q ↦ edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
+      (π.prod π) :=
+    (ENNReal.continuous_ofReal.comp_aestronglyMeasurable hdist).congr
+      (.of_forall fun _ ↦ (edist_dist _ _).symm)
   refine (gromovWassersteinEDist_le_eLpNorm (MeasurePreserving.id π) (MeasurePreserving.id π)
     (hgm s hs) (hgm t ht) p).trans_eq ?_
   -- Pass to the real distance, which the geodesic condition scales by the constant `|s - t|`.
@@ -166,7 +164,7 @@ private theorem memLp_edist_of_ae_isGeodesicSegment [SFinite π] (hp : 1 ≤ p)
     filter_upwards [hg] with q hq
     simp only [Pi.add_apply, enorm_eq_self]
     have hdt : dist (g q t) (g q 0) = t * dist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)) := by
-      rw [hq.dist_eq t ht 0 (left_mem_Icc.2 zero_le_one), sub_zero, abs_of_nonneg ht.1]
+      rw [dist_comm, hq.source, hq.dist_source_apply ht]
     calc edist (g q t) z ≤ edist (g q t) (g q 0) + edist (g q 0) z := edist_triangle _ _ _
       _ ≤ edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)) + edist (ωX (q.1.1, q.2.1)) z := by
         gcongr
