@@ -225,7 +225,7 @@ private def eigenvectors (A : Matrix n n K) : Set (n → K) :=
 omit [DecidableEq n] in
 /-- A matrix and its transpose have eigenspaces of equal size for every scalar: both are
 `|K| ^ (|n| - r)`, where `r` is the common rank of `A - c` and its transpose. -/
-private theorem natCard_eigenspace_transpose [Finite K] (A : Matrix n n K) (c : K) :
+private theorem natCard_eigenspace_transpose (A : Matrix n n K) (c : K) :
     Nat.card {v : n → K // Aᵀ *ᵥ v = c • v} = Nat.card {v : n → K // A *ᵥ v = c • v} := by
   classical
   have key (B : Matrix n n K) :
