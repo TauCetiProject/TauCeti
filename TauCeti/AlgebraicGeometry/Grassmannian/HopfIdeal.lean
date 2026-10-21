@@ -90,10 +90,14 @@ private theorem algebraMap_sections (U : (scheme R M k).Opens) :
 private theorem fromSpec_toSpec {U : (scheme R M k).Opens} (hU : IsAffineOpen U) :
     hU.fromSpec ≫ toSpec R M k =
       Spec.map (CommRingCat.ofHom (algebraMap R Γ(scheme R M k, U))) := by
-  rw [algebraMap_sections, CommRingCat.ofHom_hom, Spec.map_comp,
-    ← IsAffineOpen.SpecMap_appLE_fromSpec (toSpec R M k) (isAffineOpen_top _) hU
-      fun _ _ ↦ trivial,
-    IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv]
+  calc hU.fromSpec ≫ toSpec R M k
+      -- over `U`, `toSpec` is `Spec` of its map on sections `Γ(Spec R, ⊤) → Γ(G(k, M), U)`
+      _ = Spec.map ((toSpec R M k).appLE ⊤ U fun _ _ ↦ trivial) ≫ (Spec (.of R)).isoSpec.inv := by
+        rw [← IsAffineOpen.fromSpec_top]
+        exact (IsAffineOpen.SpecMap_appLE_fromSpec _ (isAffineOpen_top _) hU _).symm
+      -- the isomorphism `Spec R ≅ Spec Γ(Spec R, ⊤)` is `Spec` of `ΓSpecIso R`
+      _ = Spec.map (CommRingCat.ofHom (algebraMap R Γ(scheme R M k, U))) := by
+        rw [Scheme.isoSpec_Spec_inv, ← Spec.map_comp, algebraMap_sections, CommRingCat.ofHom_hom]
 
 /-- The point of the Grassmannian over the sections of an affine open `U` classifying the
 inclusion `Spec Γ(G(k, M), U) ⟶ G(k, M)`. -/
@@ -166,9 +170,14 @@ private theorem map_appTop_map_hopfIdealLocus {A B : Type u} [CommRing A] [Algeb
     (P.hopfIdealLocus.map (Scheme.ΓSpecIso (.of B)).inv.hom).map
         (Spec.map (CommRingCat.ofHom (φ : B →+* A))).appTop.hom =
       (map φ P).hopfIdealLocus.map (Scheme.ΓSpecIso (.of A)).inv.hom := by
-  rw [Ideal.map_map, hopfIdealLocus_map, ← Ideal.map_coe φ, Ideal.map_map,
-    ← CommRingCat.hom_comp, ← Scheme.ΓSpecIso_inv_naturality]
-  rfl
+  calc _ = P.hopfIdealLocus.map ((Spec.map (CommRingCat.ofHom (φ : B →+* A))).appTop.hom.comp
+          (Scheme.ΓSpecIso (.of B)).inv.hom) := Ideal.map_map _ _
+      -- naturality of `ΓSpecIso`
+      _ = P.hopfIdealLocus.map ((Scheme.ΓSpecIso (.of A)).inv.hom.comp (φ : B →+* A)) := by
+        rw [← CommRingCat.hom_comp, ← Scheme.ΓSpecIso_inv_naturality]
+        rfl
+      -- the formation of `hopfIdealLocus` commutes with base change
+      _ = _ := by rw [← Ideal.map_map, Ideal.map_coe, hopfIdealLocus_map]
 
 /-- The inverse image of the closed subscheme of Hopf ideals along a morphism landing in an affine
 open `U`, induced by an `R`-algebra map `φ : Γ(G(k, H), U) → A`. -/
@@ -260,11 +269,15 @@ is a two-sided Hopf ideal of `A ⊗[R] H` (`Module.Grassmannian.hopfIdealLocus_e
 theorem schemeHopfIdealLocus_le_ker_toSchemeHom_iff {A : Type u} [CommRing A] [Algebra R A]
     (N : G(k, A ⊗[R] H; A)) :
     schemeHopfIdealLocus R H k ≤ (toSchemeHom N).ker ↔ N.hopfIdealLocus = ⊥ := by
-  rw [← Scheme.IdealSheafData.map_bot, le_map_iff_comap_le, le_bot_iff,
-    comap_toSchemeHom_schemeHopfIdealLocus,
-    ← equivOfIsAffine_symm_apply, ← map_bot (equivOfIsAffine (X := Spec (.of A))).symm,
-    EmbeddingLike.apply_eq_iff_eq, Ideal.map_eq_bot_iff_of_injective]
-  exact Function.LeftInverse.injective (g := (Scheme.ΓSpecIso (.of A)).hom.hom) fun x ↦ by simp
+  calc schemeHopfIdealLocus R H k ≤ (toSchemeHom N).ker
+      -- a morphism factors through a closed subscheme when it pulls back its ideal sheaf to `⊥`
+      _ ↔ (schemeHopfIdealLocus R H k).comap (toSchemeHom N) = ⊥ := by
+        rw [← Scheme.IdealSheafData.map_bot, le_map_iff_comap_le, le_bot_iff]
+      _ ↔ N.hopfIdealLocus.map (Scheme.ΓSpecIso (.of A)).inv.hom = ⊥ := by
+        rw [comap_toSchemeHom_schemeHopfIdealLocus, ofIdealTop_eq_bot_iff]
+      -- `Γ(Spec A, ⊤) ≅ A` is injective
+      _ ↔ N.hopfIdealLocus = ⊥ := Ideal.map_eq_bot_iff_of_injective
+        (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso (.of A)).inv).1
 
 variable (R H k) in
 /-- **The closed subscheme of Hopf ideals represents the Hopf ideals in the Grassmannian.** For an
