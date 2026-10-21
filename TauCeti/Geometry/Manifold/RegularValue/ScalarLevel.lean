@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Basic
-public import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
+public import TauCeti.Geometry.Manifold.ModelTransport.Immersion
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Manifold
 
+import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
@@ -41,6 +43,15 @@ of `M` applied to the inverse implicit-function chart of `f - c` on the zero sli
 existential atlas, are what comparisons with normal forms of `f` near the level use; the
 existential `TauCeti.exists_isManifold_sectionZero_of_contMDiff` does not determine them.
 
+For this atlas the level is an embedded submanifold: the inclusion `{x // f x = c} → M` is a
+`C^m` immersion with complement `ℝ` and a topological embedding, hence a smooth embedding
+(`TauCeti.isSmoothEmbedding_coe_scalarRegularLevel`), and its differential at `x` has range
+`ker (mfderiv I 𝓘(ℝ) f x)` (`TauCeti.range_mfderiv_coe_scalarRegularLevel`). The immersion is the
+section-zero immersion `TauCeti.isImmersionOfComplement_coe_sectionZero`, read on the level through
+the pulled-back atlas `Homeomorph.pullbackChartedSpace` and into `M` through the target-model
+comparison `TauCeti.BoundarylessModel.isImmersionOfComplement_target_iff`; both transports keep the
+normal-form charts and the complement.
+
 ## Main declarations
 
 * `TauCeti.scalarRegularLevelChartAt` and `TauCeti.scalarRegularLevelChartedSpace`: the preferred
@@ -50,11 +61,17 @@ existential `TauCeti.exists_isManifold_sectionZero_of_contMDiff` does not determ
   `TauCeti.mem_scalarRegularLevelChartAt_target_iff` and
   `TauCeti.coe_scalarRegularLevelChartAt_symm_apply`: the chart formulas.
 * `TauCeti.isManifold_scalarRegularLevel`: the level is a manifold of dimension `dim E - 1`.
+* `TauCeti.isImmersionOfComplement_coe_scalarRegularLevel` and
+  `TauCeti.isSmoothEmbedding_coe_scalarRegularLevel`: the inclusion of the level is an immersion
+  with complement `ℝ` and a smooth embedding.
+* `TauCeti.range_mfderiv_coe_scalarRegularLevel`: the tangent space of the level at `x` is the
+  kernel of the differential of `f` at `x`.
 
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
-  Springer, 2013, Corollary 5.14 (regular level sets).
+  Springer, 2013, Corollary 5.14 (regular level sets) and Proposition 5.38 (their tangent
+  spaces).
 -/
 
 public section
@@ -361,16 +378,12 @@ theorem coe_scalarRegularLevelChartAt_symm_apply (x : {x : M // f x = c})
   -- the preferred-chart derivative at `x`.
   rfl
 
-/-- A regular level `f⁻¹(c)` of a function which is `C^m` near the level, with `m ≥ 1`, is a
-`C^m` manifold of dimension `dim E - 1` for its preferred atlas. -/
-theorem isManifold_scalarRegularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
-    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) m f x) (hreg : IsRegularValue I 𝓘(ℝ) f c) :
-    letI := scalarRegularLevelChartedSpace (fun x hx ↦ (hfm x hx).of_le hm) hreg
-    IsManifold 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) m {x : M // f x = c} := by
-  have hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x := fun x hx ↦ (hfm x hx).of_le hm
-  let := scalarRegularLevelChartedSpace hf hreg
-  -- The section `f - c` is `C^m` in the preferred chart at every zero of its chart domain.
-  have hs : m ≠ 0 → ∀ z w : ↥{y : BoundarylessModel I M | sec I f c y = 0},
+/-- The coordinate smoothness input of the section-zero atlas of `f - c`: when `f` is `C^m` at the
+points of the level, the trivialization coordinate of `f - c` is `C^m` in the preferred chart of
+the self-modelled copy at every zero of its chart domain. -/
+private theorem contDiffAt_coord {m : ℕ∞ω} [IsManifold I m M]
+    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) m f x) :
+    m ≠ 0 → ∀ z w : ↥{y : BoundarylessModel I M | sec I f c y = 0},
       w.1 ∈ (chartAt E z.1).source →
       (fun _ ↦ (0 : ℝ)) w.1 ∈
         (trivializationAt ℝ (Bundle.Trivial ℝ ℝ) ((fun _ ↦ (0 : ℝ)) z.1)).baseSet →
@@ -381,23 +394,141 @@ theorem isManifold_scalarRegularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 
         (fun y ↦ ((trivializationAt ℝ (Bundle.Trivial ℝ ℝ) ((fun _ ↦ (0 : ℝ)) z.1))
           ⟨(fun _ ↦ (0 : ℝ)) ((chartAt E z.1).symm y), sec I f c ((chartAt E z.1).symm y)⟩).2)
         (chartAt E z.1 w.1) := by
-    intro _ z w hw _ _
-    have hw' := (mem_chartAt_source_iff z w).1 hw
-    rw [coord_eq, chartAt_apply, ← coe_zeroHomeomorph, ← coe_zeroHomeomorph]
-    exact ContDiffAt.sub ((contMDiffAt_iff_contDiffAt_comp_extend_symm
-      (IsManifold.chart_mem_maximalAtlas (I := I) (n := m) _) hw').1
-      (hfm _ (zeroHomeomorph I f c w).2)) contDiffAt_const
+  intro _ z w hw _ _
+  have hw' := (mem_chartAt_source_iff z w).1 hw
+  rw [coord_eq, chartAt_apply, ← coe_zeroHomeomorph, ← coe_zeroHomeomorph]
+  exact ContDiffAt.sub ((contMDiffAt_iff_contDiffAt_comp_extend_symm
+    (IsManifold.chart_mem_maximalAtlas (I := I) (n := m) _) hw').1
+    (hfm _ (zeroHomeomorph I f c w).2)) contDiffAt_const
+
+/-- A regular level `f⁻¹(c)` of a function which is `C^m` near the level, with `m ≥ 1`, is a
+`C^m` manifold of dimension `dim E - 1` for its preferred atlas. -/
+theorem isManifold_scalarRegularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
+    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) m f x) (hreg : IsRegularValue I 𝓘(ℝ) f c) :
+    letI := scalarRegularLevelChartedSpace (fun x hx ↦ (hfm x hx).of_le hm) hreg
+    IsManifold 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) m {x : M // f x = c} := by
+  have hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x := fun x hx ↦ (hfm x hx).of_le hm
+  let := scalarRegularLevelChartedSpace hf hreg
   refine isManifold_of_contDiffOn _ _ _ fun χ χ' hχ hχ' ↦ ?_
   rw [scalarRegularLevelChartedSpace_atlas] at hχ hχ'
   obtain ⟨x, rfl⟩ := hχ
   obtain ⟨x', rfl⟩ := hχ'
   have htrans := contDiffOn_sectionZeroChartAt_trans (hasStrictFDerivAt_coord hf)
-    isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg) hs
-    ((zeroHomeomorph I f c).symm x) ((zeroHomeomorph I f c).symm x')
+    isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg)
+    (contDiffAt_coord hf hreg hfm) ((zeroHomeomorph I f c).symm x)
+    ((zeroHomeomorph I f c).symm x')
   simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Set.range_id,
     Set.inter_univ, Set.preimage_id, Function.comp_id, Function.id_comp]
   -- The transport along the level homeomorphism cancels in each chart transition.
   rwa [scalarRegularLevelChartAt, scalarRegularLevelChartAt,
     Homeomorph.transOpenPartialHomeomorph_symm_trans]
+
+/-! ### The level as a submanifold -/
+
+/-- The section-zero atlas of `f - c` on the zero set in the self-modelled copy. -/
+private noncomputable abbrev zeroChartedSpace :
+    ChartedSpace (Fin (finrank ℝ E - 1) → ℝ) ↥{y : BoundarylessModel I M | sec I f c y = 0} :=
+  sectionZeroChartedSpace (hasStrictFDerivAt_coord hf) isFredholm_linearization
+    (surjective_linearization hreg) (index_linearization hreg) (fun _ ↦ continuousAt_const)
+    (fun _ ↦ mem_baseSet_trivializationAt ℝ (Bundle.Trivial ℝ ℝ) _)
+
+/-- The atlas of the level is the section-zero atlas of `f - c`, pulled back along the
+identification of the level with the zero set. -/
+private theorem scalarRegularLevelChartedSpace_eq_pullbackChartedSpace :
+    scalarRegularLevelChartedSpace hf hreg =
+      letI := zeroChartedSpace hf hreg
+      (zeroHomeomorph I f c).symm.pullbackChartedSpace := by
+  let := zeroChartedSpace hf hreg
+  ext1
+  · refine (scalarRegularLevelChartedSpace_atlas hf hreg).trans
+      (Eq.trans ?_ (Homeomorph.pullbackChartedSpace_atlas _).symm)
+    rw [sectionZeroChartedSpace_atlas, ← range_comp,
+      ← (zeroHomeomorph I f c).symm.surjective.range_comp]
+    -- Each preferred chart of the level is by definition the transported section-zero chart.
+    rfl
+  · funext x
+    refine (scalarRegularLevelChartedSpace_chartAt hf hreg x).trans
+      (Eq.trans ?_ (Homeomorph.pullbackChartedSpace_chartAt _ x).symm)
+    rw [sectionZeroChartedSpace_chartAt, scalarRegularLevelChartAt]
+
+/-- **The inclusion of a regular level is an immersion with complement `ℝ`.** For the preferred
+atlas `TauCeti.scalarRegularLevelChartedSpace`, the inclusion of a regular level `f⁻¹(c)` of a
+function which is `C^m` near the level, `m ≥ 1`, is a `C^m` immersion whose normal forms have the
+line `ℝ` of values of `f` as complement. -/
+theorem isImmersionOfComplement_coe_scalarRegularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
+    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) m f x) (hreg : IsRegularValue I 𝓘(ℝ) f c) :
+    letI := scalarRegularLevelChartedSpace (fun x hx ↦ (hfm x hx).of_le hm) hreg
+    Manifold.IsImmersionOfComplement ℝ 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) I m
+      (Subtype.val : {x : M // f x = c} → M) := by
+  have hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x := fun x hx ↦ (hfm x hx).of_le hm
+  let := zeroChartedSpace hf hreg
+  have hZ := isImmersionOfComplement_coe_sectionZero (hasStrictFDerivAt_coord hf)
+    isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg)
+    (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt ℝ (Bundle.Trivial ℝ ℝ) _)
+    (contDiffAt_coord hf hreg hfm)
+  have := isManifold_sectionZero (hasStrictFDerivAt_coord hf)
+    isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg)
+    (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt ℝ (Bundle.Trivial ℝ ℝ) _)
+    (contDiffAt_coord hf hreg hfm)
+  rw [scalarRegularLevelChartedSpace_eq_pullbackChartedSpace]
+  let := (zeroHomeomorph I f c).symm.pullbackChartedSpace (H := Fin (finrank ℝ E - 1) → ℝ)
+  have := (zeroHomeomorph I f c).symm.pullback_isManifold 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) m
+  refine BoundarylessModel.isImmersionOfComplement_target_iff.1 ?_
+  -- Read in the self-modelled copy, the inclusion of the level is the inclusion of the zero set
+  -- precomposed with the pulled-back diffeomorphism from the level to the zero set.
+  have hcomp : BoundarylessModel.homeomorph I M ∘ (Subtype.val : {x : M // f x = c} → M) =
+      Subtype.val ∘ (zeroHomeomorph I f c).symm.pullbackDiffeomorph
+        𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) m := by
+    funext x
+    rw [comp_apply, comp_apply, Homeomorph.coe_pullbackDiffeomorph, coe_zeroHomeomorph_symm]
+  rw [hcomp]
+  exact isImmersionOfComplement_comp_diffeomorph _ hZ
+
+/-- **A regular level is an embedded submanifold.** For the preferred atlas
+`TauCeti.scalarRegularLevelChartedSpace`, the inclusion of a regular level `f⁻¹(c)` of a function
+which is `C^m` near the level, `m ≥ 1`, is a `C^m` smooth embedding. -/
+theorem isSmoothEmbedding_coe_scalarRegularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
+    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) m f x) (hreg : IsRegularValue I 𝓘(ℝ) f c) :
+    letI := scalarRegularLevelChartedSpace (fun x hx ↦ (hfm x hx).of_le hm) hreg
+    Manifold.IsSmoothEmbedding 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) I m
+      (Subtype.val : {x : M // f x = c} → M) :=
+  letI := scalarRegularLevelChartedSpace (fun x hx ↦ (hfm x hx).of_le hm) hreg
+  ⟨(isImmersionOfComplement_coe_scalarRegularLevel hm hfm hreg).isImmersion,
+    Topology.IsEmbedding.subtypeVal⟩
+
+/-- **The tangent space of a regular level is the kernel of `df`.** At a point `x` of a regular
+level `f⁻¹(c)`, the differential of the inclusion, for the preferred atlas
+`TauCeti.scalarRegularLevelChartedSpace`, has range the kernel of the differential of `f` at
+`x`. -/
+theorem range_mfderiv_coe_scalarRegularLevel [IsManifold I 1 M] (x : {x : M // f x = c}) :
+    letI := scalarRegularLevelChartedSpace hf hreg
+    (mfderiv 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) I (Subtype.val : {x : M // f x = c} → M) x).range =
+      (mfderiv I 𝓘(ℝ) f x).ker := by
+  let := scalarRegularLevelChartedSpace hf hreg
+  have hι := (isImmersionOfComplement_coe_scalarRegularLevel le_rfl hf hreg) x
+  have hιd : MDifferentiableAt 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) I
+      (Subtype.val : {x : M // f x = c} → M) x :=
+    hι.contMDiffAt.mdifferentiableAt one_ne_zero
+  -- `f` is constant on the level, so the composite differential vanishes.
+  have hle : (mfderiv 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) I
+      (Subtype.val : {x : M // f x = c} → M) x).range ≤ (mfderiv I 𝓘(ℝ) f x).ker := by
+    rintro _ ⟨v, rfl⟩
+    have hconst : f ∘ (Subtype.val : {x : M // f x = c} → M) = fun _ ↦ c := funext fun y ↦ y.2
+    have h := mfderiv_comp x ((hf x x.2).mdifferentiableAt one_ne_zero) hιd
+    rw [hconst, mfderiv_const] at h
+    exact (congrArg (fun T ↦ T v) h).symm
+  refine Submodule.eq_of_le_of_finrank_eq hle ?_
+  have hsurj : (mfderiv I 𝓘(ℝ) f x).range = ⊤ :=
+    LinearMap.range_eq_top.2 (isRegularPoint_iff.1 (hreg.isRegularPoint x.2))
+  have hker := LinearMap.finrank_range_add_finrank_ker
+    (mfderiv I 𝓘(ℝ) f x : TangentSpace I (x : M) →ₗ[ℝ] TangentSpace 𝓘(ℝ) (f x))
+  rw [hsurj, finrank_top] at hker
+  -- The tangent spaces of the level, of `ℝ` and of `M` are their model spaces.
+  have hV : finrank ℝ (TangentSpace 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) x) = finrank ℝ E - 1 :=
+    finrank_fin_fun ℝ
+  have hℝ : finrank ℝ (TangentSpace 𝓘(ℝ) (f x)) = 1 := finrank_self ℝ
+  have hE : finrank ℝ (TangentSpace I (x : M)) = finrank ℝ E := rfl
+  rw [LinearMap.finrank_range_of_inj (hι.mfderiv_injective one_ne_zero)]
+  omega
 
 end TauCeti
