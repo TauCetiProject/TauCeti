@@ -46,6 +46,13 @@ theorem finiteEtaleSchemeProperty_iff {S : Scheme.{u}} (X : Over S) :
     finiteEtaleSchemeProperty S X ↔ IsFinite X.hom ∧ Etale X.hom :=
   (Iff.rfl)
 
+/-- The finite étale property of schemes over `S` is the object property of `Over S` induced by
+the morphism property `IsFinite ⊓ Etale`. Use it to apply Mathlib's closure results for
+`MorphismProperty.overObj`. -/
+theorem finiteEtaleSchemeProperty_eq_overObj (S : Scheme.{u}) :
+    finiteEtaleSchemeProperty S = (@IsFinite ⊓ @Etale : MorphismProperty Scheme).overObj :=
+  (rfl)
+
 /-- Finite étale schemes over `S`, with all morphisms over `S`. -/
 abbrev FiniteEtaleScheme (S : Scheme.{u}) :=
   (finiteEtaleSchemeProperty S).FullSubcategory
