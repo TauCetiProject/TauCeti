@@ -50,8 +50,8 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
 * `TauCeti.NovikovSeries.support_mul_subset`: the support of a product lies in the sum of the
   supports.
 * `TauCeti.NovikovSeries.single_mul_single`: monomials multiply by adding exponents.
-* `TauCeti.NovikovSeries.isUnit_single`: over an additive group, a monomial with unit coefficient
-  is a unit.
+* `TauCeti.NovikovSeries.unitsSingle`, `TauCeti.NovikovSeries.isUnit_single`: over an additive
+  group, a monomial `u e^g` with unit coefficient is a unit, with inverse `u⁻¹ e^(-g)`.
 * `TauCeti.NovikovSeries.ofAddMonoidAlgebra_injective`: the group ring embeds into Novikov series.
   Over an additive group `H` and for nontrivial `R`, by
   `TauCeti.NovikovSeries.ofFinsupp_surjective_iff` this embedding is onto exactly when `N = 0`.
@@ -441,11 +441,32 @@ theorem coeff_mul_single [NonUnitalNonAssocSemiring R] (a : NovikovSeries R H N)
     (h : H) : (a * single g r).coeff h = a.coeff (h - g) * r := by
   rw [← coeff_mul_single_add, sub_add_cancel]
 
+/-- The monomial `u e^g` with unit coefficient `u`, as a unit with inverse `u⁻¹ e^(-g)`. -/
+@[expose]
+def unitsSingle [Semiring R] (g : H) (u : Rˣ) : (NovikovSeries R H N)ˣ where
+  val := single g u
+  inv := single (-g) ↑u⁻¹
+  val_inv := by simp
+  inv_val := by simp
+
+/-- The underlying series of `unitsSingle g u` is the monomial `u e^g`. -/
+@[simp]
+theorem val_unitsSingle [Semiring R] (g : H) (u : Rˣ) :
+    ((unitsSingle g u : (NovikovSeries R H N)ˣ) : NovikovSeries R H N) = single g (u : R) :=
+  rfl
+
+/-- The inverse of `unitsSingle g u` is the monomial `u⁻¹ e^(-g)`. -/
+@[simp]
+theorem val_inv_unitsSingle [Semiring R] (g : H) (u : Rˣ) :
+    (((unitsSingle g u)⁻¹ : (NovikovSeries R H N)ˣ) : NovikovSeries R H N) =
+      single (-g) (↑u⁻¹ : R) :=
+  rfl
+
 /-- A monomial `r e^g` with unit coefficient is a unit. -/
 theorem isUnit_single [Semiring R] (g : H) {r : R} (hr : IsUnit r) :
     IsUnit (single g r : NovikovSeries R H N) := by
   obtain ⟨u, rfl⟩ := hr
-  exact ⟨⟨single g u, single (-g) ↑u⁻¹, by simp, by simp⟩, rfl⟩
+  exact ⟨unitsSingle g u, rfl⟩
 
 end Group
 
