@@ -20,11 +20,11 @@ has no proper submodule with nonempty interior (Mathlib's
 completely pseudometrisable modules. The same fact gives the remaining implications of Wedhorn's
 Theorem 6.16, in `TauCeti.Topology.Algebra.OpenMapping.Converse`.
 
-A completely pseudometrisable module all of whose submodules are closed is noetherian, generalising
-the converse half of Wedhorn's Proposition 6.17. Given an ascending chain of submodules, their union
-`S` is closed, hence completely pseudometrisable and so a Baire space. The members of the chain are
-closed in `S` and cover it, so one of them has interior in `S`. That member is then an open
-submodule of `S`, hence all of `S`, and the chain stops there.
+Over such a ring, a completely pseudometrisable topological module all of whose submodules are
+closed is noetherian, generalising the converse half of Wedhorn's Proposition 6.17. Given an
+ascending chain of submodules, their union `S` is closed, hence completely pseudometrisable and so
+a Baire space. The members of the chain are closed in `S` and cover it, so one of them has interior
+in `S`. That member is then an open submodule of `S`, hence all of `S`, and the chain stops there.
 
 Over a complete Hausdorff Tate ring the forward half, that every submodule of a noetherian module is
 closed, is `TauCeti.Huber.isClosed_of_isNoetherian`; the two halves are assembled into Wedhorn's
@@ -32,8 +32,8 @@ equivalence in `TauCeti.Huber.isNoetherian_iff_forall_isClosed`.
 
 ## Main results
 
-* `TauCeti.isNoetherian_of_forall_isClosed`: a completely pseudometrisable
-  module whose submodules are all closed is noetherian.
+* `TauCeti.isNoetherian_of_forall_isClosed`: over a ring in which zero is a limit of units, a
+  completely pseudometrisable topological module whose submodules are all closed is noetherian.
 
 ## References
 
@@ -50,8 +50,9 @@ variable {A : Type*} [Ring A] [TopologicalSpace A] [NeBot (𝓝[{x : A | IsUnit 
 
 variable {M : Type*} [AddCommGroup M] [Module A M]
 
-/-- **A completely pseudometrisable module all of whose submodules are closed is noetherian**,
-generalising [Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 6.17, *if* direction. -/
+/-- **Over a ring in which zero is a limit of units, a completely pseudometrisable topological
+module all of whose submodules are closed is noetherian**, generalising
+[Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 6.17, *if* direction. -/
 theorem isNoetherian_of_forall_isClosed [TopologicalSpace M]
     [IsCompletelyPseudoMetrizableSpace M] [ContinuousAdd M] [ContinuousSMul A M]
     (h : ∀ N : Submodule A M, IsClosed (N : Set M)) : IsNoetherian A M := by
