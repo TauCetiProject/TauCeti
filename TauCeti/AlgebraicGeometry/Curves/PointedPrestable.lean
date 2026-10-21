@@ -90,7 +90,6 @@ namespace PointedPrestableFamily
 variable {S T : Scheme.{u}} {m n : ℕ} (P : PointedPrestableFamily S n)
 
 /-- The structure morphism lies under each marking. -/
-@[simp]
 theorem toBase_marking_apply (i : Fin n) (s : S) : P.toBase (P.marking i s) = s := by
   simp [← Scheme.Hom.comp_apply]
 
