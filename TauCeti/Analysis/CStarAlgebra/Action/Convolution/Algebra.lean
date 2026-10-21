@@ -124,9 +124,15 @@ theorem ofConv_toConv (f : C_c(G, A)) : (toConv f : ConvolutionAlgebra α μ).of
 theorem toConv_ofConv (f : ConvolutionAlgebra α μ) : toConv f.ofConv = f :=
   (rfl)
 
+theorem ofConv_injective : Function.Injective (ofConv : ConvolutionAlgebra α μ → C_c(G, A)) :=
+  fun f g h => by rw [← toConv_ofConv f, h, toConv_ofConv]
+
+theorem toConv_injective : Function.Injective (toConv : C_c(G, A) → ConvolutionAlgebra α μ) :=
+  fun f g h => by rw [← ofConv_toConv (α := α) (μ := μ) f, h, ofConv_toConv]
+
 @[ext]
-theorem ext {f g : ConvolutionAlgebra α μ} (h : f.ofConv = g.ofConv) : f = g := by
-  rw [← toConv_ofConv f, h, toConv_ofConv]
+theorem ext {f g : ConvolutionAlgebra α μ} (h : f.ofConv = g.ofConv) : f = g :=
+  ofConv_injective h
 
 variable (α μ) in
 /-- `ConvolutionAlgebra.ofConv` and `ConvolutionAlgebra.toConv` as an equivalence. -/
@@ -184,6 +190,29 @@ theorem ofConv_sub (f g : ConvolutionAlgebra α μ) : (f - g).ofConv = f.ofConv 
 theorem ofConv_smul (c : ℂ) (f : ConvolutionAlgebra α μ) : (c • f).ofConv = c • f.ofConv :=
   (rfl)
 
+@[simp]
+theorem toConv_zero : (toConv 0 : ConvolutionAlgebra α μ) = 0 :=
+  (rfl)
+
+@[simp]
+theorem toConv_add (f g : C_c(G, A)) :
+    (toConv (f + g) : ConvolutionAlgebra α μ) = toConv f + toConv g :=
+  (rfl)
+
+@[simp]
+theorem toConv_neg (f : C_c(G, A)) : (toConv (-f) : ConvolutionAlgebra α μ) = -toConv f :=
+  (rfl)
+
+@[simp]
+theorem toConv_sub (f g : C_c(G, A)) :
+    (toConv (f - g) : ConvolutionAlgebra α μ) = toConv f - toConv g :=
+  (rfl)
+
+@[simp]
+theorem toConv_smul (c : ℂ) (f : C_c(G, A)) :
+    (toConv (c • f) : ConvolutionAlgebra α μ) = c • toConv f :=
+  (rfl)
+
 variable (α μ) in
 /-- `ConvolutionAlgebra.ofConv` as a complex linear equivalence with `C_c(G, A)`. -/
 def linearEquiv : ConvolutionAlgebra α μ ≃ₗ[ℂ] C_c(G, A) where
@@ -211,6 +240,11 @@ instance : Mul (ConvolutionAlgebra α μ) where
 @[simp]
 theorem ofConv_mul (f g : ConvolutionAlgebra α μ) :
     (f * g).ofConv = α.convolution μ f.ofConv g.ofConv :=
+  (rfl)
+
+@[simp]
+theorem toConv_mul (f g : C_c(G, A)) :
+    (toConv (α.convolution μ f g) : ConvolutionAlgebra α μ) = toConv f * toConv g :=
   (rfl)
 
 instance : NonUnitalNonAssocRing (ConvolutionAlgebra α μ) where
@@ -244,6 +278,11 @@ instance : Star (ConvolutionAlgebra α μ) where
 @[simp]
 theorem ofConv_star (f : ConvolutionAlgebra α μ) :
     (star f).ofConv = α.twistedInvolution f.ofConv :=
+  (rfl)
+
+@[simp]
+theorem toConv_star (f : C_c(G, A)) :
+    (toConv (α.twistedInvolution f) : ConvolutionAlgebra α μ) = star (toConv f) :=
   (rfl)
 
 instance : InvolutiveStar (ConvolutionAlgebra α μ) where
