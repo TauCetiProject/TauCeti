@@ -24,12 +24,17 @@ This identifies a field presented by a Weierstrass equation with the function fi
 curve, so that what is computed for `K(W)` — the genus, the constants, the place at infinity —
 transfers to it. The curve need not be elliptic.
 
+When `L` is viewed as a `RatFunc K`-algebra through `x`, the presentation isomorphism also
+respects `RatFunc K`. Its restriction to `K` recovers the original isomorphism and its inverse.
+
 ## Main definitions
 
 * `WeierstrassCurve.Affine.functionFieldLift`: the embedding `K(W) →ₐ[K] L` determined by a
   solution `(x, y)` in `L` with `x` transcendental.
 * `WeierstrassCurve.Affine.functionFieldEquivOfAdjoinEqTop`: the isomorphism `K(W) ≃ₐ[K] L` when
   moreover `L = K(x, y)`.
+* `WeierstrassCurve.Affine.functionFieldRatFuncEquivOfAdjoinEqTop`: the same presentation as
+  an isomorphism of `RatFunc K`-algebras.
 
 ## Main results
 
@@ -159,5 +164,53 @@ theorem functionFieldEquivOfAdjoinEqTop_symm_two_mul_add
       W.invariantDifferentialDenom := by
   rw [AlgEquiv.symm_apply_eq, coe_functionFieldEquivOfAdjoinEqTop,
     functionFieldLift_invariantDifferentialDenom]
+
+open TauCeti
+
+open scoped _root_.RatFunc
+
+/-- The isomorphism `K(W) ≃ₐ[K] L` induced by a generating solution `(x, y)` of the Weierstrass
+equation of `W` is an isomorphism of `RatFunc K`-algebras when `L` is given the `RatFunc K`-algebra
+structure induced by `x`. -/
+noncomputable def functionFieldRatFuncEquivOfAdjoinEqTop
+    (h : (W⁄L).toAffine.Equation x y) (hx : Transcendental K x) (hxy : K⟮x, y⟯ = ⊤) :
+    letI := ratFuncAlgebraOfTranscendental hx
+    W.FunctionField ≃ₐ[RatFunc K] L :=
+  letI := ratFuncAlgebraOfTranscendental hx
+  letI := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  { W.functionFieldEquivOfAdjoinEqTop h hx hxy with
+    commutes' r := by
+      have hcomm := map_algebraMap_ratFuncAlgebraOfTranscendental
+        (W.functionFieldEquivOfAdjoinEqTop h hx hxy)
+        (W.functionFieldEquivOfAdjoinEqTop h hx hxy).injective
+        (transcendental_genericX W) r
+      rw [ratFuncAlgebraOfTranscendental_eq_liftAlgebra
+          (transcendental_genericX W)
+          (genericX_eq_algebraMap W).symm] at hcomm
+      refine hcomm.trans ?_
+      congr! 2
+      simp }
+
+/-- Restricting the presentation isomorphism to `K` recovers the original `K`-algebra
+isomorphism. -/
+@[simp]
+theorem restrictScalars_functionFieldRatFuncEquivOfAdjoinEqTop
+    (h : (W⁄L).toAffine.Equation x y) (hx : Transcendental K x) (hxy : K⟮x, y⟯ = ⊤) :
+    letI := ratFuncAlgebraOfTranscendental hx
+    letI := isScalarTower_ratFuncAlgebraOfTranscendental hx
+    (functionFieldRatFuncEquivOfAdjoinEqTop h hx hxy).restrictScalars K =
+      W.functionFieldEquivOfAdjoinEqTop h hx hxy :=
+  (rfl)
+
+/-- Restricting the inverse presentation isomorphism to `K` recovers the inverse of the
+original `K`-algebra isomorphism. -/
+@[simp]
+theorem restrictScalars_symm_functionFieldRatFuncEquivOfAdjoinEqTop
+    (h : (W⁄L).toAffine.Equation x y) (hx : Transcendental K x) (hxy : K⟮x, y⟯ = ⊤) :
+    letI := ratFuncAlgebraOfTranscendental hx
+    letI := isScalarTower_ratFuncAlgebraOfTranscendental hx
+    (functionFieldRatFuncEquivOfAdjoinEqTop h hx hxy).symm.restrictScalars K =
+      (W.functionFieldEquivOfAdjoinEqTop h hx hxy).symm :=
+  (rfl)
 
 end WeierstrassCurve.Affine

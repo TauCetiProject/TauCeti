@@ -7,10 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Genus
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Lift
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.InvariantDifferential
 public import TauCeti.FieldTheory.FunctionField.Elliptic.Nonsingular
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
-public import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # Function fields presented by a Weierstrass equation
@@ -58,59 +56,6 @@ an elliptic curve exactly when the field has genus one.
 
 public section
 
-namespace WeierstrassCurve.Affine
-
-open TauCeti
-open scoped _root_.IntermediateField _root_.RatFunc
-
-variable {k F : Type*} [Field k] [Field F] [Algebra k F]
-variable {W : Affine k} {x y : F}
-
-/-- The isomorphism `k(W) ≃ₐ[k] F` induced by a generating solution `(x, y)` of the Weierstrass
-equation of `W` is an isomorphism of `RatFunc k`-algebras when `F` is given the `RatFunc k`-algebra
-structure induced by `x`. -/
-noncomputable def functionFieldRatFuncEquivOfAdjoinEqTop
-    (h : (W⁄F).toAffine.Equation x y) (hx : Transcendental k x) (hxy : k⟮x, y⟯ = ⊤) :
-    letI := ratFuncAlgebraOfTranscendental hx
-    W.FunctionField ≃ₐ[RatFunc k] F :=
-  letI := ratFuncAlgebraOfTranscendental hx
-  letI := isScalarTower_ratFuncAlgebraOfTranscendental hx
-  { W.functionFieldEquivOfAdjoinEqTop h hx hxy with
-    commutes' r := by
-      have hcomm := map_algebraMap_ratFuncAlgebraOfTranscendental
-        (W.functionFieldEquivOfAdjoinEqTop h hx hxy)
-        (W.functionFieldEquivOfAdjoinEqTop h hx hxy).injective
-        (transcendental_genericX W) r
-      rw [ratFuncAlgebraOfTranscendental_eq_liftAlgebra
-          (transcendental_genericX W)
-          (genericX_eq_algebraMap W).symm] at hcomm
-      refine hcomm.trans ?_
-      congr! 2
-      simp }
-
-/-- Restricting the presentation isomorphism to `k` recovers the original `k`-algebra
-isomorphism. -/
-@[simp]
-theorem restrictScalars_functionFieldRatFuncEquivOfAdjoinEqTop
-    (h : (W⁄F).toAffine.Equation x y) (hx : Transcendental k x) (hxy : k⟮x, y⟯ = ⊤) :
-    letI := ratFuncAlgebraOfTranscendental hx
-    letI := isScalarTower_ratFuncAlgebraOfTranscendental hx
-    (functionFieldRatFuncEquivOfAdjoinEqTop h hx hxy).restrictScalars k =
-      W.functionFieldEquivOfAdjoinEqTop h hx hxy :=
-  (rfl)
-
-/-- Restricting the inverse presentation isomorphism to `k` recovers the inverse of the
-original `k`-algebra isomorphism. -/
-@[simp]
-theorem restrictScalars_symm_functionFieldRatFuncEquivOfAdjoinEqTop
-    (h : (W⁄F).toAffine.Equation x y) (hx : Transcendental k x) (hxy : k⟮x, y⟯ = ⊤) :
-    letI := ratFuncAlgebraOfTranscendental hx
-    letI := isScalarTower_ratFuncAlgebraOfTranscendental hx
-    (functionFieldRatFuncEquivOfAdjoinEqTop h hx hxy).symm.restrictScalars k =
-      (W.functionFieldEquivOfAdjoinEqTop h hx hxy).symm :=
-  (rfl)
-
-end WeierstrassCurve.Affine
 
 namespace TauCeti
 
