@@ -117,9 +117,8 @@ theorem isPartialIsometry_iff_adjoint_apply_apply :
     exact sub_eq_zero.mp <| (Submodule.mem_bot 𝕜).mp <|
       u.ker.inf_orthogonal_eq_bot ▸ ⟨hker, hmem⟩
   · ext x
-    have hproj := u.toLinearMap.apply_sub_starProjection_ker x
-    rw [coe_coe, ← Submodule.starProjection_orthogonal_val] at hproj
-    rw [comp_apply, comp_apply, ← hproj,
+    rw [comp_apply, comp_apply,
+      ← DFunLike.congr_fun u.comp_starProjection_orthogonal_ker x, comp_apply,
       h _ (Submodule.starProjection_apply_mem _ x)]
 
 /-- A bounded partial isometry `u` satisfies `u† u x = x` on its initial space `(ker u)ᗮ`. -/
@@ -132,9 +131,7 @@ its initial space `(ker u)ᗮ`. -/
 theorem IsPartialIsometry.adjoint_comp_self_eq_starProjection (hu : u.IsPartialIsometry) :
     u† ∘L u = u.kerᗮ.starProjection := by
   ext x
-  have hproj := u.toLinearMap.apply_sub_starProjection_ker x
-  rw [coe_coe, ← Submodule.starProjection_orthogonal_val] at hproj
-  rw [comp_apply, ← hproj,
+  rw [comp_apply, ← DFunLike.congr_fun u.comp_starProjection_orthogonal_ker x, comp_apply,
     hu.adjoint_apply_apply (Submodule.starProjection_apply_mem _ x)]
 
 /-- A bounded operator is a partial isometry iff `u† u` is a star projection. -/
