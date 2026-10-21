@@ -99,12 +99,6 @@ theorem IsContractedComponent.subsingleton_image {E : Set F.curve.total}
     (h : F.IsContractedComponent E) : (F.map '' E).Subsingleton :=
   h.2
 
-/-- The map of a prestable map is locally of finite type: its composite with the target is the
-structure morphism of the source curve, which is proper. -/
-instance locallyOfFiniteType_map : LocallyOfFiniteType F.map :=
-  have : LocallyOfFiniteType (F.map ≫ q) := F.w ▸ inferInstance
-  locallyOfFiniteType_of_comp F.map q
-
 section Jacobson
 
 variable [JacobsonSpace S] [LocallyOfFiniteType q]

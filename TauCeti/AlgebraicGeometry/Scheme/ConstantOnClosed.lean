@@ -21,8 +21,11 @@ three ways of saying that `f` is constant on `Z`:
   factors through the spectrum `Spec κ(y)` of the residue field of a point `y` of `Y`, and when
   `Y` is locally of finite type over an algebraically closed field `K`, through a `K`-point of `Y`.
 
-The three agree when `f` is locally of finite type and `Y` is a Jacobson scheme, for instance when
-`X` and `Y` are locally of finite type over a field. The input is that such a morphism maps closed
+When `f` is locally of finite type and `Y` is a Jacobson scheme, for instance when `X` and `Y` are
+locally of finite type over a field, the set-theoretic and scheme-theoretic descriptions agree for
+nonempty closed subsets `Z`, and all three agree when `Z` is moreover irreducible. (Without
+irreducibility the dimension condition is weaker: two distinct closed points have image of
+dimension zero under the identity.) The input is that such a morphism maps closed
 points to closed points (`AlgebraicGeometry.Scheme.Hom.closedPoints_subset_preimage_closedPoints`),
 and that every nonempty closed subset of `X` contains a closed point. Thus a morphism constant on
 a nonempty closed subset maps it to a closed point `y`, and the morphism `Spec κ(y) ⟶ Y` is then a
