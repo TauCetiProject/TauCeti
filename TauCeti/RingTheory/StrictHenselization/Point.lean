@@ -11,10 +11,10 @@ public import TauCeti.RingTheory.Spectrum.Prime.Point
 /-!
 # Pointed étale neighbourhoods as triples
 
-For a field target, the point/residue-field correspondence gives an equivalence between the
-categories of pointed étale algebras and étale algebra, prime,
-residue-embedding triples of Stacks Tag 04GW. The forward triple construction is defined for any
-commutative target algebra.
+The induced category of étale algebra, prime, and residue-map triples of Stacks Tag 04GW is
+defined over any commutative target algebra. Its morphisms are characterized by prime and
+residue-field compatibility when the target is nontrivial. For a field target, the
+point/residue-field correspondence gives an equivalence with pointed étale algebras.
 
 ## References
 
@@ -152,13 +152,13 @@ theorem tripleNeighbourhoodEquiv_symm_apply (point : Neighbourhood R Ω) :
 
 end Field
 
-section Field
+section CommRingTripleCategory
 
-variable (R : Type u) (Ω : Type v) [CommRing R] [Field Ω] [Algebra R Ω]
+variable (R : Type u) (Ω : Type v) [CommRing R] [CommRing Ω] [Algebra R Ω]
 
-/-- The category of étale algebra, prime, and residue-field embedding triples. -/
+/-- The category induced by the pointed algebra of an étale algebra, prime, and residue map. -/
 abbrev TripleCategory :=
-  InducedCategory (Neighbourhood R Ω) (tripleNeighbourhoodEquiv R Ω)
+  InducedCategory (Neighbourhood R Ω) (TripleNeighbourhood.toNeighbourhood R Ω)
 
 /-- Triple morphisms agree when their underlying algebra maps agree. -/
 @[ext]
@@ -196,6 +196,8 @@ theorem TripleCategory.homMk_left (first second : TripleCategory R Ω)
     (TripleCategory.homMk R Ω first second map hpoint).hom.hom.left.hom = map := by
   rfl
 
+variable [Nontrivial Ω]
+
 /-- A morphism of triples is an algebra map preserving the prime and residue-field map. -/
 theorem tripleCategory_hom_iff (first second : TripleCategory R Ω)
     (map : first.carrier →ₐ[R] second.carrier) :
@@ -213,6 +215,12 @@ theorem tripleCategory_hom_iff (first second : TripleCategory R Ω)
     have hcomp := (PointData.toAlgHom_comp_iff first.data second.data map).mpr h
     exact ⟨TripleCategory.homMk R Ω first second map hcomp,
       TripleCategory.homMk_left R Ω first second map hcomp⟩
+
+end CommRingTripleCategory
+
+section Field
+
+variable (R : Type u) (Ω : Type v) [CommRing R] [Field Ω] [Algebra R Ω]
 
 /-- The category of Stacks 04GW triples is equivalent to pointed étale neighbourhoods. -/
 noncomputable def tripleCategoryEquivalence : TripleCategory R Ω ≌ Neighbourhood R Ω :=
