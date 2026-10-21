@@ -104,8 +104,9 @@ theorem exists_equivariant_chart_of_contMDiffAt [Finite G] [ContinuousConstSMul 
     simp [χ]
   have hL (g : G) : HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm)
       (fderiv 𝕜 (χ ∘ (g • ·) ∘ χ.symm) (χ y)) (χ y) := by
-    rw [hχ, hχs]
-    exact (hsmooth g).hasStrictFDerivAt_extChartAt_conj (hy g)
+    have h := (hsmooth g).hasStrictFDerivAt_extChartAt_conj
+    rw [hy g] at h
+    rwa [hχ, hχs]
   let σ := isotropyRepresentation hyχ hy fun g ↦ (hL g).differentiableAt
   have hσ := hasStrictFDerivAt_conj_smul_isotropyRepresentation hyχ hy hL
   obtain ⟨e, hye, -, -, he, -⟩ := χ.exists_equivariant_chart hyχ hy σ hσ
