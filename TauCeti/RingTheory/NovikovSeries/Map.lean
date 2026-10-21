@@ -270,8 +270,11 @@ end Map
 
 section Comap
 
-variable [AddGroup H] [AddGroup H'] [AddGroup H''] {N : H →+ ℝ} {N' : H' →+ ℝ}
-  {N'' : H'' →+ ℝ} [AddMonoid R]
+variable [AddGroup H] {N : H →+ ℝ} [AddMonoid R]
+
+section Restriction
+
+variable [AddZeroClass H'] {N' : H' →+ ℝ}
 
 /-- The restriction of a Novikov series along an exponent homomorphism `φ` with finite kernel
 rescaling periods by a positive constant: the coefficient at `h` is the coefficient at `φ h`. -/
@@ -318,6 +321,21 @@ theorem comap_id :
   ext
   simp
 
+/-- Restricting a pushforward along an injective exponent homomorphism gives back the series with
+the coefficient map applied to its coefficients. -/
+theorem comap_map_of_injective [AddCommMonoid S] (ρ : R →+ S) (hinj : Injective φ)
+    (a : NovikovSeries R H N) :
+    comap φ hφ hker (map ρ φ hφ a) = map ρ (AddMonoidHom.id H) exists_period_rescale_id a := by
+  ext h
+  rw [coeff_comap, coeff_map_of_injective _ _ _ hinj, coeff_map_id_right]
+
+end Restriction
+
+section Composition
+
+variable [AddGroup H'] [AddZeroClass H''] {N' : H' →+ ℝ} {N'' : H'' →+ ℝ}
+variable (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hker : (φ.ker : Set H).Finite)
+
 /-- The restriction along a composite exponent homomorphism is the composite of the
 restrictions. -/
 @[simp]
@@ -329,13 +347,7 @@ theorem comap_comap (φ' : H' →+ H'') (hφ' : ∃ c > 0, ∀ h, N'' (φ' h) = 
   ext
   simp
 
-/-- Restricting a pushforward along an injective exponent homomorphism gives back the series with
-the coefficient map applied to its coefficients. -/
-theorem comap_map_of_injective [AddCommMonoid S] (ρ : R →+ S) (hinj : Injective φ)
-    (a : NovikovSeries R H N) :
-    comap φ hφ hker (map ρ φ hφ a) = map ρ (AddMonoidHom.id H) exists_period_rescale_id a := by
-  ext h
-  rw [coeff_comap, coeff_map_of_injective _ _ _ hinj, coeff_map_id_right]
+end Composition
 
 end Comap
 
