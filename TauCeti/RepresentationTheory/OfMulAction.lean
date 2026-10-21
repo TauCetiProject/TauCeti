@@ -292,6 +292,7 @@ theorem invariantOrbitSumBasis_repr_mk (v : (ofMulAction k I X).invariants) (x :
   simp [invariantOrbitSumBasis, invariantsEquivFun, Quotient.liftOn'_mk'']
 
 /-- The basis vector at an orbit `ω` is the indicator function of `ω`. -/
+@[simp]
 theorem coeff_invariantOrbitSumBasis (ω : orbitRel.Quotient I X) (x : X) :
     (invariantOrbitSumBasis k I X ω : k[X]).coeff x = ω.orbit.indicator 1 x := by
   classical
@@ -339,7 +340,7 @@ variable (X)
 omit [Finite X] in
 /-- The invariants of `k[X]` under the subgroup `I`, read through the permutation representation
 of the ambient group, are those of the permutation representation of `I`. -/
-theorem invariants_comp_subtype_ofMulAction :
+theorem invariants_ofMulAction_comp_subtype :
     invariants ((ofMulAction k D X).comp I.subtype) = (ofMulAction k I X).invariants := by
   ext v
   simp [ofMulAction_subgroup]
@@ -348,7 +349,7 @@ theorem invariants_comp_subtype_ofMulAction :
 private noncomputable def orbitSumLinearEquiv :
     k[orbitRel.Quotient I X] ≃ₗ[k] invariants ((ofMulAction k D X).comp I.subtype) :=
   (MonoidAlgebra.basis _ k).equiv ((invariantOrbitSumBasis k I X).map
-    (LinearEquiv.ofEq _ _ (invariants_comp_subtype_ofMulAction k X I).symm)) (.refl _)
+    (LinearEquiv.ofEq _ _ (invariants_ofMulAction_comp_subtype k X I).symm)) (.refl _)
 
 private theorem coe_orbitSumLinearEquiv_single (ω : orbitRel.Quotient I X) :
     (orbitSumLinearEquiv k X I (single ω 1) : k[X]) = invariantOrbitSumBasis k I X ω := by

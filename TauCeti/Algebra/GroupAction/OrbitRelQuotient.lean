@@ -475,17 +475,16 @@ variable (H : Subgroup G) [H.Normal]
 to the orbit of `g • x`. -/
 instance MulAction.instMulActionOrbitRelQuotientOfNormal :
     MulAction G (MulAction.orbitRel.Quotient H X) where
-  smul g := Quotient.map' (g • ·) fun _ _ hxy ↦ by
-    rw [MulAction.orbitRel_apply] at hxy ⊢
-    exact normalizer_smul_mem_orbit H ⟨g, by simp [H.normalizer_eq_top]⟩ hxy
-  one_smul q := Quotient.inductionOn' q fun x ↦ congrArg Quotient.mk'' (one_smul G x)
-  mul_smul g g' q := Quotient.inductionOn' q fun x ↦ congrArg Quotient.mk'' (mul_smul g g' x)
+  smul g := MulAction.normalizerOrbitRelQuotientMap H ⟨g, by simp [H.normalizer_eq_top]⟩
+  one_smul q := congrFun (MulAction.normalizerOrbitRelQuotientMap_one H) q
+  mul_smul g g' q := congrFun (MulAction.normalizerOrbitRelQuotientMap_mul H
+    ⟨g, by simp [H.normalizer_eq_top]⟩ ⟨g', by simp [H.normalizer_eq_top]⟩) q
 
 /-- For a normal subgroup `H`, the group `G` sends the `H`-orbit of `x` to that of `g • x`. -/
 @[simp]
 lemma MulAction.smul_orbitRelQuotient_mk (g : G) (x : X) :
     g • (⟦x⟧ : MulAction.orbitRel.Quotient H X) = ⟦g • x⟧ :=
-  rfl
+  MulAction.normalizerOrbitRelQuotientMap_apply H _ x
 
 /-- For a normal subgroup `H`, the action of `G` on the `H`-orbits descends to `G ⧸ H`, in the
 same way as Mathlib's action of `G ⧸ H` on the `H`-fixed points. -/
