@@ -185,7 +185,7 @@ theorem newtonPolygon_mul :
 polynomials is the sum of the finite slope multisets of the factors. The hypotheses exclude
 zero factors: the product `0 * g` has no finite slopes, whatever those of `g`. If only zero
 has infinite valuation, a nonzero polynomial has a nonempty Newton polygon by
-`Polynomial.newtonPolygon_ne_top`. -/
+`Polynomial.newtonPolygon_ne_top_of_ne_zero`. -/
 theorem newtonSlopes_mul (hf : f.newtonPolygon v ≠ ⊤) (hg : g.newtonPolygon v ≠ ⊤) :
     (f * g).newtonSlopes v = f.newtonSlopes v + g.newtonSlopes v := by
   obtain ⟨d₁, hd₁⟩ := (exists_finiteSlopeData_heights_eq_iff f v).2 hf

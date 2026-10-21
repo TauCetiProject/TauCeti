@@ -50,7 +50,7 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
 * `Polynomial.newtonPolygon_ne_top_iff`: if only zero has infinite valuation (for example
   over a division ring), a nonzero polynomial has a polygon whose finite domain is the
   interval from its order of vanishing at zero to its degree; in particular the polygon is
-  nonempty by `Polynomial.newtonPolygon_ne_top`.
+  nonempty by `Polynomial.newtonPolygon_ne_top_of_ne_zero`.
 * `Polynomial.newtonPolygon_natTrailingDegree` and `Polynomial.newtonPolygon_natDegree`:
   the polygon begins at the trailing coefficient and ends at the leading coefficient.
 * `Polynomial.ncard_finiteEdges_newtonPolygon`: if only zero has infinite valuation, a
@@ -324,7 +324,7 @@ theorem newtonPolygon_ne_top_iff (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]} (h
 variable {f v} in
 /-- If only zero has infinite valuation, a nonzero polynomial has a nonempty Newton polygon.
 Over a division ring the hypothesis on `v` is `AddValuation.top_iff`. -/
-theorem newtonPolygon_ne_top (hv : ∀ x, v x = ⊤ → x = 0) (hf : f ≠ 0) :
+theorem newtonPolygon_ne_top_of_ne_zero (hv : ∀ x, v x = ⊤ → x = 0) (hf : f ≠ 0) :
     f.newtonPolygon v ≠ ⊤ := fun h =>
   leadingCoeff_ne_zero.mpr hf (hv _ ((newtonPolygon_eq_top_iff f v).mp h f.natDegree))
 
