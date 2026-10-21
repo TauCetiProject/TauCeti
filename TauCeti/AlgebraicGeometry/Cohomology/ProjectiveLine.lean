@@ -480,25 +480,21 @@ private theorem span_image_map_eq_top (M : (projectiveLine R).Modules) [M.IsQuas
     (hS₁ : Submodule.span Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R 1)) S₁ = ⊤) :
     Submodule.span Γ(projectiveLine R, W₀₁)
       (M.presheaf.map (homOfLE (overlap_le_basicOpen_coord R 1)).op '' S₁) = ⊤ := by
-  have hres (y : Γ(M, Proj.basicOpen 𝒜 (coord R 1))) :
-      M.presheaf.map (homOfLE (overlap_le_basicOpen_coord R 1)).op y ∈
-        Submodule.span Γ(projectiveLine R, W₀₁)
-          (M.presheaf.map (homOfLE (overlap_le_basicOpen_coord R 1)).op '' S₁) := by
-    have hyS : y ∈ Submodule.span Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R 1)) S₁ :=
-      hS₁ ▸ Submodule.mem_top
-    induction hyS using Submodule.span_induction with
-    | mem z hz => exact Submodule.subset_span ⟨z, hz, rfl⟩
-    | zero => rw [map_zero]; exact Submodule.zero_mem _
-    | add z z' _ _ hz hz' => rw [map_add]; exact Submodule.add_mem _ hz hz'
-    | smul c z _ hz => rw [M.map_smul]; exact Submodule.smul_mem _ _ hz
-  refine eq_top_iff.mpr fun x _ ↦ ?_
-  -- some `(X₀ / X₁) ^ k • x` extends to `D₊(X₁)`, and `X₁ / X₀` is the inverse of `X₀ / X₁`
-  obtain ⟨k, y, hy⟩ := M.exists_pow_smul_eq_map (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R 1)
-    one_pos) (chartCoord R 1) (basicOpen_chartCoord R 1) (overlap_le_basicOpen_coord R 1) x
-  have hx : x = overlapCoord R 0 ^ k • (overlapCoord R 1 ^ k • x) := by
-    rw [smul_smul, ← mul_pow, overlapCoord_zero_mul_overlapCoord_one, one_pow, one_smul]
-  rw [hx]
-  exact Submodule.smul_mem _ _ (hy ▸ hres y)
+  -- the overlap is the basic open of `X₀ / X₁` in `D₊(X₁)`, so restriction to it is a
+  -- localization
+  suffices h : ∀ (V : (projectiveLine R).Opens)
+      (_ : (projectiveLine R).basicOpen (chartCoord R 1) = V)
+      (hV : V ≤ Proj.basicOpen 𝒜 (coord R 1)),
+      Submodule.span Γ(projectiveLine R, V) (M.presheaf.map (homOfLE hV).op '' S₁) = ⊤ from
+    h _ (basicOpen_chartCoord R 1) _
+  rintro _ rfl _
+  have hU := Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R 1) one_pos
+  have := hU.isLocalization_basicOpen (chartCoord R 1)
+  have := M.isLocalizedModule_basicOpenRestrict hU (chartCoord R 1)
+  have h := span_eq_top_of_isLocalizedModule Γ(projectiveLine R, (projectiveLine R).basicOpen
+    (chartCoord R 1)) (.powers (chartCoord R 1)) (M.basicOpenRestrict (chartCoord R 1)) hS₁
+  rwa [show ⇑(M.basicOpenRestrict (chartCoord R 1)) = _ from
+    funext (M.basicOpenRestrict_apply (chartCoord R 1))] at h
 
 /-- The Čech description of `H¹(ℙ¹_R, M)`, the overlap sections modulo the restrictions from the
 two charts, is a finitely generated module over the global functions, for `M` quasi-coherent of
