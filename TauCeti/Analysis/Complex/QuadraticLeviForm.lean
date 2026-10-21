@@ -10,10 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.Calculus.Morse.NormSq
 public import TauCeti.Analysis.Complex.LeviForm
-public import TauCeti.Analysis.InnerProductSpace.Orthonormal.SumInnerSq
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
-public import TauCeti.LinearAlgebra.Basis.RangeSpan
-public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
 /-!
 # Levi forms and inertia of the quadratic models
@@ -39,11 +36,14 @@ Morse theory on a complex vector space `V` of dimension `n`.
   with `1 < |a j|`. Choosing `a`, every index between `0` and `n` occurs for a strictly
   plurisubharmonic quadratic function, so the index bound `λ ≤ n` for strictly plurisubharmonic
   functions cannot be improved.
-* For an orthonormal basis `b` of a finite-dimensional complex inner product space of complex
-  dimension `n`, the function `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` has Levi form `a ⟪·, ·⟫` and Morse
-  index `n [a < ‖c‖] + n [a < -‖c‖]`. In coordinates it is
-  `a ∑ⱼ |zⱼ|² + Re (c ∑ⱼ zⱼ²)`; for `a > 0` it is strictly plurisubharmonic, and its Morse index
-  jumps from `0` to the complex dimension when `‖c‖` crosses `a`.
+* For an orthonormal basis `b` of a finite-dimensional complex inner product space, the function
+  `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` has Levi form `a ⟪·, ·⟫` and Morse index
+  `∑ⱼ ([a < ‖c j‖] + [a < -‖c j‖])`. In coordinates it is `∑ⱼ (a |zⱼ|² + Re (c j zⱼ²))`, and each
+  coordinate contributes the inertia of `a |w|² + Re (c j w²)` on `ℂ`, whose real eigenvalues are
+  `a ± ‖c j‖`. With one coefficient `c` for all `j`, the index is `n [a < ‖c‖] + n [a < -‖c‖]`:
+  for `a > 0` the function is strictly plurisubharmonic, and its Morse index jumps from `0` to
+  the complex dimension when `‖c‖` crosses `a`. The diagonal example on `ℂⁿ` above is the case
+  of the standard basis, `a = 1` and real `c j`.
 
 ## Main results
 
@@ -60,10 +60,12 @@ Morse theory on a complex vector space `V` of dimension `n`.
   `TauCeti.morseIndex_euclidean_norm_sq_add_sum_re_sq`: on `ℂⁿ`, the Levi form of
   `‖z‖ ^ 2 + ∑ j, a j * Re (z j ^ 2)` is the standard inner product and its Morse index is the
   number of `j` with `1 < |a j|`.
-* `OrthonormalBasis.hessianQuadraticForm_mul_norm_sq_add_re_mul_sum_inner_sq`,
-  `OrthonormalBasis.leviForm_mul_norm_sq_add_re_mul_sum_inner_sq`,
-  `OrthonormalBasis.morseIndex_mul_norm_sq_add_re_mul_sum_inner_sq`: the Hessian, the Levi form
-  and the Morse index of `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` for an orthonormal basis `b`.
+* `OrthonormalBasis.hessianQuadraticForm_mul_norm_sq_add_re_sum_mul_inner_sq`,
+  `OrthonormalBasis.leviForm_mul_norm_sq_add_re_sum_mul_inner_sq`,
+  `OrthonormalBasis.morseIndex_mul_norm_sq_add_re_sum_mul_inner_sq`: the Hessian, the Levi form
+  and the Morse index of `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` for an orthonormal basis `b`.
+* `OrthonormalBasis.morseIndex_mul_norm_sq_add_re_mul_sum_inner_sq`: the Morse index of
+  `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)`.
 
 ## References
 
@@ -228,15 +230,15 @@ open scoped InnerProductSpace
 
 variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [Fintype ι]
 
-/-- The function `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` is `z ↦ B z z` for a real bilinear form `B`
+/-- The function `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` is `z ↦ B z z` for a real bilinear form `B`
 whose holomorphic part is a complex bilinear form `Q`. -/
-private theorem exists_bilinear_apply_self_eq (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ℂ) :
+private theorem exists_bilinear_apply_self_eq (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ι → ℂ) :
     ∃ (Q : E →L[ℂ] E →L[ℂ] ℂ) (B : E →L[ℝ] E →L[ℝ] ℝ),
-      (∀ v, Q v v = c * ∑ j, ⟪b j, v⟫_ℂ ^ 2) ∧
+      (∀ v, Q v v = ∑ j, c j * ⟪b j, v⟫_ℂ ^ 2) ∧
         ∀ v w, B v w = a * RCLike.re ⟪v, w⟫_ℂ + (Q v w).re := by
   let _ : InnerProductSpace ℝ E := InnerProductSpace.complexToReal
   let Q : E →L[ℂ] E →L[ℂ] ℂ :=
-    c • ∑ j, (ContinuousLinearMap.mul ℂ ℂ).bilinearComp (innerSL ℂ (b j)) (innerSL ℂ (b j))
+    ∑ j, c j • (ContinuousLinearMap.mul ℂ ℂ).bilinearComp (innerSL ℂ (b j)) (innerSL ℂ (b j))
   let J : E →L[ℝ] E →L[ℝ] ℝ := innerSL ℝ
   refine ⟨Q, a • J + (compL ℝ E ℂ ℝ reCLM).comp (Q.bilinearRestrictScalars ℝ), fun v ↦ ?_,
     fun v w ↦ ?_⟩
@@ -246,40 +248,29 @@ private theorem exists_bilinear_apply_self_eq (b : OrthonormalBasis ι ℂ E) (a
     rw [innerSL_apply_apply, real_inner_eq_re_inner ℂ]
 
 /-- **The Hessian of a Hermitian plus holomorphic quadratic function.** For an orthonormal
-basis `b`, the Hessian quadratic form of `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` is
-`v ↦ 2 (a ‖v‖² + Re (c ∑ⱼ ⟪b j, v⟫²))` at every point. -/
-theorem _root_.OrthonormalBasis.hessianQuadraticForm_mul_norm_sq_add_re_mul_sum_inner_sq
-    (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ℂ) (x v : E) :
-    hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) x v =
-      2 * (a * ‖v‖ ^ 2 + (c * ∑ j, ⟪b j, v⟫_ℂ ^ 2).re) := by
+basis `b`, the Hessian quadratic form of `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` is
+`v ↦ 2 (a ‖v‖² + Re (∑ⱼ c j ⟪b j, v⟫²))` at every point. -/
+theorem _root_.OrthonormalBasis.hessianQuadraticForm_mul_norm_sq_add_re_sum_mul_inner_sq
+    (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ι → ℂ) (x v : E) :
+    hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) x v =
+      2 * (a * ‖v‖ ^ 2 + (∑ j, c j * ⟪b j, v⟫_ℂ ^ 2).re) := by
   obtain ⟨Q, B, hQ, hB⟩ := exists_bilinear_apply_self_eq b a c
-  have hf : (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) = fun z ↦ B z z := by
+  have hf : (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) = fun z ↦ B z z := by
     funext z
     rw [hB, hQ, inner_self_eq_norm_sq]
   rw [hf, hessianQuadraticForm_apply, fderiv_fderiv_apply_self]
   simp only [add_apply, flip_apply, hB, hQ, inner_self_eq_norm_sq]
   ring
 
-/-- On the real span of `ζ • b j`, for a unit complex number `ζ`, the Hessian of
-`a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` is the multiple `2 (a + Re (c ζ²))` of `‖v‖²`. -/
-private theorem exists_submodule_hessianQuadraticForm_eq (b : OrthonormalBasis ι ℂ E) (a : ℝ)
-    (c : ℂ) (x : E) {ζ : ℂ} (hζ : ‖ζ‖ = 1) : ∃ S : Submodule ℝ E, finrank ℝ S = finrank ℂ E ∧
-      ∀ v ∈ S, hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) x v =
-        2 * (a + (c * ζ ^ 2).re) * ‖v‖ ^ 2 := by
-  refine ⟨_, b.toBasis.finrank_span_smul (ne_zero_of_norm_ne_zero (hζ.trans_ne one_ne_zero)),
-    fun v hv ↦ ?_⟩
-  rw [b.hessianQuadraticForm_mul_norm_sq_add_re_mul_sum_inner_sq,
-    b.sum_inner_sq_eq_of_mem_span_smul hζ hv, ← ofReal_pow, ← mul_assoc, re_mul_ofReal]
-  ring
-
 /-- **The Levi form of a Hermitian plus holomorphic quadratic function.** For an orthonormal
-basis `b`, the Levi form of `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` is `a ⟪·, ·⟫` at every point: the
+basis `b`, the Levi form of `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` is `a ⟪·, ·⟫` at every point: the
 holomorphic part does not contribute. -/
-theorem _root_.OrthonormalBasis.leviForm_mul_norm_sq_add_re_mul_sum_inner_sq
-    (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ℂ) (x : E) :
-    leviForm (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) x = (a : ℂ) • innerₛₗ ℂ := by
+theorem _root_.OrthonormalBasis.leviForm_mul_norm_sq_add_re_sum_mul_inner_sq
+    (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ι → ℂ) (x : E) :
+    leviForm (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) x =
+      (a : ℂ) • innerₛₗ ℂ := by
   obtain ⟨Q, -, hQ, -⟩ := exists_bilinear_apply_self_eq b a c
-  have hf : (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) =
+  have hf : (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) =
       (a • fun z : E ↦ ‖z‖ ^ 2) + fun z ↦ (Q z z).re := by
     funext z
     simp [hQ]
@@ -289,80 +280,83 @@ theorem _root_.OrthonormalBasis.leviForm_mul_norm_sq_add_re_mul_sum_inner_sq
     leviForm_norm_sq, add_zero]
 
 /-- **The Morse index of a Hermitian plus holomorphic quadratic function.** For an orthonormal
-basis `b` of a complex inner product space of complex dimension `n`, the Morse index of
-`a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` is `n` if `-‖c‖ ≤ a < ‖c‖`, it is `2 n` if `a < -‖c‖`, and it is
-`0` if `‖c‖ ≤ a`.
+basis `b`, the Morse index of `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` counts, for each `j`, one
+negative direction if `a < ‖c j‖` and a second one if `a < -‖c j‖`.
+
+By the Autonne-Takagi factorization, on a finite-dimensional space every holomorphic quadratic
+form `q z z` is `∑ⱼ c j ⟪b j, z⟫²` with `c j ≥ 0` for some orthonormal basis `b`, so this computes
+the inertia of every function `a ‖z‖² + Re (q z z)`. -/
+theorem _root_.OrthonormalBasis.morseIndex_mul_norm_sq_add_re_sum_mul_inner_sq
+    (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ι → ℂ) (x : E) :
+    morseIndex (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) x =
+      ∑ j, ((if a < ‖c j‖ then 1 else 0) + (if a < -‖c j‖ then 1 else 0)) := by
+  classical
+  -- Rotating the coordinate `⟪b j, z⟫` by a unit `ω j` with `c j * ω j ^ 2 = -‖c j‖`, the real
+  -- and imaginary parts of the rotated coordinates diagonalize the Hessian.
+  choose ω hω hcω using fun j ↦ Complex.exists_norm_eq_one_mul_sq_eq_neg_norm (c j)
+  have hωω (j : ι) : ω j * conj (ω j) = 1 := by
+    rw [mul_conj, normSq_eq_norm_sq, hω, one_pow, ofReal_one]
+  let e : E ≃ₗ[ℝ] (ι ⊕ ι → ℝ) :=
+    { toFun := fun v ↦ Sum.elim (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).re)
+        (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).im)
+      invFun := fun u ↦ ∑ j, (ω j * ⟨u (Sum.inl j), u (Sum.inr j)⟩) • b j
+      map_add' := fun v w ↦ by ext (j | j) <;> simp [inner_add_right, mul_add]
+      map_smul' := fun r v ↦ by
+        ext (j | j) <;> simp [← coe_smul, inner_smul_right, mul_left_comm _ (r : ℂ)]
+      left_inv := fun v ↦ by
+        conv_rhs => rw [← b.sum_repr' v]
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        simp only [Sum.elim_inl, Sum.elim_inr, Complex.eta, ← mul_assoc, hωω, one_mul]
+      right_inv := fun u ↦ by
+        have hk (k : ι) : conj (ω k) *
+            ⟪b k, ∑ j, (ω j * ⟨u (Sum.inl j), u (Sum.inr j)⟩) • b j⟫_ℂ =
+              ⟨u (Sum.inl k), u (Sum.inr k)⟩ := by
+          rw [b.orthonormal.inner_right_fintype, ← mul_assoc, mul_comm (conj _), hωω, one_mul]
+        ext (j | j) <;> simp only [hk, Sum.elim_inl, Sum.elim_inr] }
+  rw [morseIndex_def, QuadraticForm.sigNeg_of_equiv_weightedSumSquares
+    (w := Sum.elim (fun j ↦ 2 * (a - ‖c j‖)) (fun j ↦ 2 * (a + ‖c j‖))) ⟨⟨e, fun v ↦ ?_⟩⟩]
+  · simp only [Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter,
+      Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    congr 1 <;> congr 1 <;> apply propext <;> constructor <;> intro <;> linarith
+  · rw [b.hessianQuadraticForm_mul_norm_sq_add_re_sum_mul_inner_sq, ← b.sum_sq_norm_inner_right,
+      QuadraticMap.weightedSumSquares_apply, Fintype.sum_sum_type, ← Finset.sum_add_distrib,
+      re_sum, Finset.mul_sum, ← Finset.sum_add_distrib, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    have hl : e v (Sum.inl j) = (conj (ω j) * ⟪b j, v⟫_ℂ).re := rfl
+    have hr : e v (Sum.inr j) = (conj (ω j) * ⟪b j, v⟫_ℂ).im := rfl
+    have h : ⟪b j, v⟫_ℂ = ω j * (conj (ω j) * ⟪b j, v⟫_ℂ) := by rw [← mul_assoc, hωω, one_mul]
+    rw [show (e : E →ₗ[ℝ] ι ⊕ ι → ℝ).toFun v = e v from rfl, hl, hr]
+    generalize conj (ω j) * ⟪b j, v⟫_ℂ = z at h ⊢
+    rw [h, mul_pow, ← mul_assoc, hcω, norm_mul, hω, one_mul, ← normSq_eq_norm_sq, normSq_apply]
+    simp only [Sum.elim_inl, Sum.elim_inr, smul_eq_mul, neg_re, neg_im, ofReal_re, ofReal_im,
+      mul_re, sq]
+    ring
+
+/-- **The Morse index of a Hermitian plus holomorphic quadratic function with one coefficient.**
+For an orthonormal basis `b` of a complex inner product space of complex dimension `n`, the Morse
+index of `a ‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` is `n` if `-‖c‖ ≤ a < ‖c‖`, it is `2 n` if `a < -‖c‖`,
+and it is `0` if `‖c‖ ≤ a`.
 
 In particular, for `a = 0` and `c ≠ 0`, the real part of the nondegenerate holomorphic quadratic
 form `c ∑ⱼ ⟪b j, z⟫²` has Morse index `n`. For `a = 1`, the strictly plurisubharmonic function
 `‖z‖² + Re (c ∑ⱼ ⟪b j, z⟫²)` has Morse index `n` if `1 < ‖c‖`, and `0` otherwise. -/
 theorem _root_.OrthonormalBasis.morseIndex_mul_norm_sq_add_re_mul_sum_inner_sq
-    [FiniteDimensional ℂ E] (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ℂ) (x : E) :
+    (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ℂ) (x : E) :
     morseIndex (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) x =
       (if a < ‖c‖ then finrank ℂ E else 0) + (if a < -‖c‖ then finrank ℂ E else 0) := by
-  -- Bound `sigNeg H` below by negative-definite subspaces and above by subspaces on which `H` is
-  -- nonnegative: the real spans of `ω • b j` and `(I * ω) • b j`, or the whole space.
-  rw [morseIndex_def]
-  set H := hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (c * ∑ j, ⟪b j, z⟫_ℂ ^ 2).re) x
-  have hH (v : E) : H v = 2 * (a * ‖v‖ ^ 2 + (c * ∑ j, ⟪b j, v⟫_ℂ ^ 2).re) :=
-    b.hessianQuadraticForm_mul_norm_sq_add_re_mul_sum_inner_sq a c x v
-  have habs (v : E) : |(c * ∑ j, ⟪b j, v⟫_ℂ ^ 2).re| ≤ ‖c‖ * ‖v‖ ^ 2 := by
-    refine (abs_re_le_norm _).trans ?_
-    rw [norm_mul]
-    gcongr
-    exact b.norm_sum_inner_sq_le v
-  obtain ⟨ω, hω, hcω⟩ := Complex.exists_norm_eq_one_mul_sq_eq_neg_norm c
-  have hdim := finrank_real_eq_two_mul_finrank_complex (V := E)
-  have hc := norm_nonneg c
-  have hlow : a < ‖c‖ → finrank ℂ E ≤ sigNeg H := by
-    intro ha
-    obtain ⟨S, hS, hSv⟩ := exists_submodule_hessianQuadraticForm_eq b a c x hω
-    rw [← hS]
-    refine le_sigNeg_of_negDef H fun v hv ↦ ?_
-    have hv' : 0 < ‖(v : E)‖ := norm_pos_iff.2 (by simpa using hv)
-    rw [QuadraticMap.restrict_apply, neg_apply, hSv v v.2, hcω, neg_re, ofReal_re]
-    nlinarith [mul_pos hv' hv']
-  have hup : -‖c‖ ≤ a → sigNeg H ≤ finrank ℂ E := by
-    intro ha
-    obtain ⟨S, hS, hSv⟩ :=
-      exists_submodule_hessianQuadraticForm_eq b a c x (ζ := I * ω) (by simp [hω])
-    have h := QuadraticForm.sigPos_add_finrank_le_of_nonpos (Q := -H) (V := S) fun v hv ↦ by
-      rw [neg_apply, hSv v hv, mul_pow, I_sq, neg_one_mul, mul_neg, hcω, neg_neg, ofReal_re,
-        neg_nonpos]
-      nlinarith [sq_nonneg ‖v‖]
-    rw [sigPos_neg, hS, hdim] at h
-    omega
-  have hzero : ‖c‖ ≤ a → sigNeg H = 0 := by
-    intro ha
-    refine (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero H).1 fun v ↦ ?_
-    rw [hH]
-    nlinarith [habs v, neg_abs_le (c * ∑ j, ⟪b j, v⟫_ℂ ^ 2).re,
-      sq_nonneg ‖v‖]
-  have hall : a < -‖c‖ → sigNeg H = 2 * finrank ℂ E := by
-    intro ha
-    have h := le_sigNeg_of_negDef H (V := ⊤) fun v hv ↦ by
-      have hv' : 0 < ‖(v : E)‖ := norm_pos_iff.2 (by simpa using hv)
-      rw [QuadraticMap.restrict_apply, neg_apply, hH]
-      nlinarith [habs v, le_abs_self (c * ∑ j, ⟪b j, (v : E)⟫_ℂ ^ 2).re,
-        mul_pos hv' hv']
-    have h' := sigPos_le_finrank (-H)
-    rw [sigPos_neg] at h'
-    rw [finrank_top] at h
-    omega
-  split_ifs with h₁ h₂ h₂
-  · rw [hall h₂]
-    ring
-  · have := hlow h₁
-    have := hup (not_lt.1 h₂)
-    omega
-  · exact absurd (h₂.trans_le (by linarith)) h₁
-  · exact hzero (not_lt.1 h₁)
+  simp_rw [Finset.mul_sum]
+  rw [b.morseIndex_mul_norm_sq_add_re_sum_mul_inner_sq, Finset.sum_add_distrib,
+    finrank_eq_card_basis b.toBasis]
+  split_ifs <;> simp
 
 end OrthonormalBasis
 
 /-! ### A diagonal example on `ℂⁿ` -/
 
 section Diagonal
+
+open scoped InnerProductSpace
 
 variable {ι : Type*} [Fintype ι]
 
@@ -397,25 +391,6 @@ theorem hessianQuadraticForm_euclidean_norm_sq_add_sum_re_sq (a : ι → ℝ)
   simp [← normSq_eq_norm_sq, normSq_apply]
   ring
 
-omit [Fintype ι] in
-/-- Counting the negative weights `2 (1 + a j)` and `2 (1 - a j)`. -/
-private theorem ncard_sum_elim_neg [Finite ι] (a : ι → ℝ) :
-    {i | Sum.elim (fun j ↦ 2 * (1 + a j)) (fun j ↦ 2 * (1 - a j)) i < 0}.ncard =
-      {j | 1 < |a j|}.ncard := by
-  classical
-  have := Fintype.ofFinite ι
-  simp only [Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter,
-    Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  have e1 : 2 * (1 + a j) < 0 ↔ a j < -1 := by constructor <;> intro <;> linarith
-  have e2 : 2 * (1 - a j) < 0 ↔ 1 < a j := by constructor <;> intro <;> linarith
-  have e3 : 1 < |a j| ↔ a j < -1 ∨ 1 < a j := by
-    rw [lt_abs]
-    constructor <;> rintro (h | h) <;> first | (left; linarith) | (right; linarith)
-  simp only [e1, e2, e3]
-  by_cases h1 : a j < -1 <;> by_cases h2 : 1 < a j <;> simp [h1, h2]
-  linarith
-
 /-- **Explicit inertia of a strictly plurisubharmonic quadratic function.** On `ℂⁿ`, the function
 `z ↦ ‖z‖ ^ 2 + ∑ j, a j * Re (z j ^ 2)`, whose Levi form is the standard Hermitian inner product
 (`TauCeti.leviForm_euclidean_norm_sq_add_sum_re_sq`), has Morse index equal to the number of `j`
@@ -423,19 +398,16 @@ with `1 < |a j|`, at every point. -/
 theorem morseIndex_euclidean_norm_sq_add_sum_re_sq (a : ι → ℝ) (x : EuclideanSpace ℂ ι) :
     morseIndex (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) x =
       {j | 1 < |a j|}.ncard := by
-  -- The real coordinates `(Re z j, Im z j)` diagonalize the Hessian.
-  let e : EuclideanSpace ℂ ι ≃ₗ[ℝ] (ι ⊕ ι → ℝ) :=
-    { toFun := fun z ↦ Sum.elim (fun j ↦ (z j).re) (fun j ↦ (z j).im)
-      invFun := fun u ↦ WithLp.toLp 2 fun j ↦ ⟨u (Sum.inl j), u (Sum.inr j)⟩
-      map_add' := fun z z' ↦ by ext (j | j) <;> simp
-      map_smul' := fun c z ↦ by ext (j | j) <;> simp [← coe_smul]
-      left_inv := fun z ↦ by ext j; simp
-      right_inv := fun u ↦ by ext (j | j) <;> simp }
-  rw [morseIndex_def, QuadraticForm.sigNeg_of_equiv_weightedSumSquares
-    (w := Sum.elim (fun j ↦ 2 * (1 + a j)) (fun j ↦ 2 * (1 - a j))) ⟨⟨e, fun v ↦ ?_⟩⟩,
-    ncard_sum_elim_neg]
-  rw [hessianQuadraticForm_euclidean_norm_sq_add_sum_re_sq]
-  simp [QuadraticMap.weightedSumSquares_apply, Fintype.sum_sum_type, e, sq, Finset.sum_add_distrib]
+  classical
+  have hf : (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) = fun z ↦
+      (1 : ℝ) * ‖z‖ ^ 2 + (∑ j, (a j : ℂ) * ⟪EuclideanSpace.basisFun ι ℂ j, z⟫_ℂ ^ 2).re := by
+    funext z
+    simp only [EuclideanSpace.basisFun_inner, one_mul, re_sum, re_ofReal_mul]
+  rw [hf, OrthonormalBasis.morseIndex_mul_norm_sq_add_re_sum_mul_inner_sq,
+    Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have h : ¬(1 : ℝ) < -|a j| := by linarith [abs_nonneg (a j)]
+  simp [h]
 
 end Diagonal
 
