@@ -9,7 +9,6 @@ public import TauCeti.Probability.Process.Array
 public import TauCeti.Probability.Process.IIDMixture.Coding
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.MeasureTheory.Measure.Mixture.Injective
-import Mathlib.Probability.Independence.InfinitePi
 
 /-!
 # Sampling array rows from a random path law
@@ -237,56 +236,13 @@ theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
     rw [arrayRowCodingLaw_def,
       ← Measure.map_prod_unitIntervalCoding_eq_iidMixtureLaw (α := ℕ → α) π,
       Measure.map_map hC hK]
+    -- `C ∘ K` unfolds to the row-coding map: uncurrying the sampled rows gives the entries.
     rfl
-  have hrow (P : ProbabilityMeasure (ℕ → α)) :
-      (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α))).map
-          (fun x i ↦ x (σ i)) =
-        Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α)) :=
-    Measure.map_infinitePi_infinitePi_of_inj σ.injective
-  have hcol (P : ProbabilityMeasure (ℕ → α)) :
-      (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α))).map
-          (fun x i ↦ permReindex τ (x i)) =
-        Measure.infinitePi fun _ : ℕ ↦ (f P : Measure (ℕ → α)) := by
-    have h := Measure.infinitePi_map_pi
-      (μ := fun _ : ℕ ↦ (P : Measure (ℕ → α)))
-      (f := fun _ : ℕ ↦ permReindex τ)
-      (fun _ ↦ measurable_reindex τ)
-    rw [h]
-    congr 1
-  have hgf (P : ProbabilityMeasure (ℕ → α)) :
-      (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α))).map g =
-        Measure.infinitePi fun _ : ℕ ↦ (f P : Measure (ℕ → α)) := by
-    let r : (ℕ → (ℕ → α)) → (ℕ → (ℕ → α)) := fun x i ↦ x (σ i)
-    let c : (ℕ → (ℕ → α)) → (ℕ → (ℕ → α)) := fun x i ↦ permReindex τ (x i)
-    let z : (ℕ → (ℕ → α)) → (ℕ → (ℕ → α)) := fun x i ↦ permReindex τ (x (σ i))
-    have hr : Measurable r := Measurable.of_eval fun i ↦ measurable_pi_apply (σ i)
-    have hc : Measurable c := Measurable.of_eval fun i ↦
-      (measurable_reindex τ).comp (measurable_pi_apply i)
-    have hz : z = c ∘ r := by
-      funext x i
-      rfl
-    have hgz : g = z := by
-      funext x i
-      rfl
-    rw [hgz]
-    rw [hz, ← Measure.map_map hc hr, hrow, hcol]
-  have hfib (P : ProbabilityMeasure (ℕ → α)) :
-      ((Measure.dirac P).prod
-          (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α)))).map J =
-        (Measure.dirac (f P)).prod
-          (Measure.infinitePi fun _ : ℕ ↦ (f P : Measure (ℕ → α))) := by
-    rw [← Measure.map_prod_map (Measure.dirac P)
-      (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α)))
-      hf hg, Measure.map_dirac' hf, hgf]
-  have hkernel : Measurable fun P : ProbabilityMeasure (ℕ → α) ↦
-      (Measure.dirac P).prod (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α))) :=
-    TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const id measurable_id
-  have hmix : (iidMixtureLaw π id).map J = iidMixtureLaw (π.map f) id := by
-    rw [iidMixtureLaw_def, iidMixtureLaw_def]
-    simp only [id_eq]
-    rw [Measure.map_bind hkernel.aemeasurable hJ.aemeasurable]
-    simp_rw [hfib]
-    rw [Measure.bind_map hf.aemeasurable hkernel.aemeasurable]
+  -- Each fibre `P^{⊗ℕ}` is carried to `(f P)^{⊗ℕ}`: `σ` permutes the i.i.d. rows and `τ`
+  -- reindexes each row.
+  have hmix : (iidMixtureLaw π id).map J = iidMixtureLaw (π.map f) id :=
+    map_prodMap_iidMixtureLaw (P := id) (Q := id) measurable_id measurable_id hf hg fun P ↦
+      TauCeti.MeasureTheory.map_infinitePi_comp_injective P σ.injective (measurable_reindex τ)
   have hJlaw : (iidMixtureLaw π id).map J = iidMixtureLaw π id := by
     rw [hmix, hπ]
   have hH : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) ↦
