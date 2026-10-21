@@ -36,13 +36,15 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 The local path-connectedness and semilocal simple-connectedness assumptions are exactly those
 used by the canonical based-path universal cover. The covering homomorphism is the endpoint
-projection, and its smooth structure and Lie-group laws are the pulled-back canonical instances.
+projection, with its smoothness, covering property, and Lie-group laws supplied by the canonical
+construction and its pulled-back instances.
 -/
 theorem exists_universalCover [IsTopologicalGroup G] [LocallyPathConnectedSpace G]
     [SemilocallySimplyConnectedSpace G] [ConnectedSpace G] :
     ∃ (Gt : Type w) (_ : TopologicalSpace Gt) (_ : ChartedSpace H Gt)
       (_ : IsManifold I ∞ Gt) (_ : Group Gt) (_ : LieGroup I ∞ Gt) (p : Gt →* G),
-      SimplyConnectedSpace Gt ∧ IsCoveringMap (p : Gt → G) := by
+      SimplyConnectedSpace Gt ∧ IsCoveringMap (p : Gt → G) ∧
+        ContMDiff I I ∞ (p : Gt → G) := by
   let _ : PathConnectedSpace G := PathConnectedSpace.of_locallyPathConnectedSpace
   let Gt := UniversalCover (1 : G)
   let p : Gt →* G := (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
@@ -51,7 +53,11 @@ theorem exists_universalCover [IsTopologicalGroup G] [LocallyPathConnectedSpace 
     -- select the native coercion expected by its covering theorem.
     change IsCoveringMap (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
     exact UniversalCover.isCoveringMap_projHom
+  have hsmooth : ContMDiff I I ∞ (p : Gt → G) := by
+    dsimp [p]
+    rw [UniversalCover.coe_projHom]
+    exact UniversalCover.contMDiff_proj (x₀ := (1 : G))
   exact ⟨Gt, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, p,
-    UniversalCover.simplyConnectedSpace (1 : G), hp⟩
+    UniversalCover.simplyConnectedSpace (1 : G), hp, hsmooth⟩
 
 end TauCeti.UniversalCover
