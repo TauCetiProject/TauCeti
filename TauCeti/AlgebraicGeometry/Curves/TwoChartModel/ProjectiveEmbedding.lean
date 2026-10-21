@@ -118,10 +118,9 @@ theorem toProjSymmetricAlgebra_projToSpec :
         TauCeti.SymmetricAlgebra.projToSpec k (riemannRochSpace (poles hF z)) =
       twoChartModel hF z.ne_zero ↘ Spec (.of k) := by
   rw [toProjSymmetricAlgebra_def, Category.assoc, TauCeti.SymmetricAlgebra.projToSpec_def,
-    Proj.map_toSpecZero_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
-    Iso.inv_comp_eq, sectionRingProjIso_hom_over, Proj.toSpecCoeff_def]
-  congr 3
-  exact RingHom.ext (SymmetricAlgebra.gradedLift_gradedZeroRingHom_algebraMap k _ _)
+    ← Proj.toSpecCoeff_def,
+    Proj.map_toSpecCoeff _ _ _ (SymmetricAlgebra.gradedLift_gradedZeroRingHom_algebraMap k _ _),
+    Iso.inv_comp_eq, sectionRingProjIso_hom_over]
 
 instance : (toProjSymmetricAlgebra hF z hgen).IsOver (Spec (.of k)) :=
   ⟨toProjSymmetricAlgebra_projToSpec hF z hgen⟩
