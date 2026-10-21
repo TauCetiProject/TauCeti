@@ -229,6 +229,20 @@ lemma compressionFunctorPeriodicityIso_hom_app (K : CochainComplex.Bounded C) :
   simp only [compressionFunctorPeriodicityIso, NatIso.ofComponents_hom_app, Iso.trans_hom,
     eqToIso.hom, compressionMapIso_hom, Iso.app_hom]
 
+/-- The component of the inverse of `compressionFunctorPeriodicityIso` at a bounded complex is the
+inverse periodicity isomorphism of its underlying complex, followed by the identification of the
+shift of its underlying complex with the underlying complex of its shift. -/
+@[simp]
+lemma compressionFunctorPeriodicityIso_inv_app (K : CochainComplex.Bounded C) :
+    (compressionFunctorPeriodicityIso n k hk).inv.app K =
+      eqToHom (compressionFunctor_obj n K) ≫
+        (compressionPeriodicityIso n K.obj k hk).inv ≫
+          compressionMap (K := K.obj⟦k⟧) (L := (K⟦k⟧).obj) n
+            (((CochainComplex.Bounded.ι C).commShiftIso k).inv.app K) ≫
+            eqToHom (compressionFunctor_obj n (K⟦k⟧)).symm := by
+  simp only [compressionFunctorPeriodicityIso, NatIso.ofComponents_inv_app, Iso.trans_inv,
+    eqToIso.inv, compressionMapIso_inv, Iso.app_inv, Category.assoc]
+
 end Bounded
 
 end Complex
@@ -271,6 +285,21 @@ lemma homotopyCompressionFunctorPeriodicityIso_hom_app_quotient_obj
           (HomotopyCategory.quotient C _).map
             ((compressionFunctorPeriodicityIso n k hk).hom.app K) ≫
             (quotientCompHomotopyCompressionFunctorIso n).inv.app K := by
+  have : HasBinaryBiproducts C := .of_hasBinaryCoproducts
+  simp [homotopyCompressionFunctorPeriodicityIso]
+
+/-- On the class of a bounded complex, the inverse of the periodicity isomorphism of
+`K^b(C) ⥤ K_n(C)` is the class of the inverse periodicity isomorphism of compression, conjugated by
+the identifications of the descended compression on classes of bounded complexes. -/
+@[simp]
+lemma homotopyCompressionFunctorPeriodicityIso_inv_app_quotient_obj
+    (K : CochainComplex.Bounded C) :
+    (homotopyCompressionFunctorPeriodicityIso n k hk).inv.app ((quotient C).obj K) =
+      (quotientCompHomotopyCompressionFunctorIso n).hom.app K ≫
+        (HomotopyCategory.quotient C _).map
+          ((compressionFunctorPeriodicityIso n k hk).inv.app K) ≫
+          (quotientCompHomotopyCompressionFunctorIso n).inv.app (K⟦k⟧) ≫
+            (homotopyCompressionFunctor n).map (((quotient C).commShiftIso k).hom.app K) := by
   have : HasBinaryBiproducts C := .of_hasBinaryCoproducts
   simp [homotopyCompressionFunctorPeriodicityIso]
 
