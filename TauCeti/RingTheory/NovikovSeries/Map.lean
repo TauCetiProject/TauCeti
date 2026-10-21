@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Data.Finsupp.Basic
+public import TauCeti.GroupTheory.Coset.Fiber
 public import TauCeti.RingTheory.NovikovSeries.Basic
-import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # Pushforward and restriction of Novikov series
@@ -48,6 +48,9 @@ vanishing below `C`. Restricting a pushforward along an injective `φ` gives bac
 
 * `TauCeti.NovikovSeries.finite_support_inter_preimage_singleton`: a fibre of a period-rescaling
   homomorphism meets the support of a Novikov series in a finite set.
+* `TauCeti.NovikovSeries.exists_period_rescale_id` and
+  `TauCeti.NovikovSeries.exists_period_rescale_comp`: the identity rescales periods by `1`, and
+  composites rescale them by the product of the factors.
 * `TauCeti.NovikovSeries.coeff_map_eq_sum`: a coefficient of a pushforward as a sum over any
   finite set of exponents in the fibre containing the nonzero coefficients there.
 * `TauCeti.NovikovSeries.map_id` and `TauCeti.NovikovSeries.map_map`: the identity and composition
@@ -94,6 +97,18 @@ theorem finite_support_inter_preimage_singleton [Zero R] (a : NovikovSeries R H 
   refine (a.finite_le (N' h' / c)).subset ?_
   rintro h ⟨hh, rfl⟩
   exact ⟨mem_support.1 hh, (le_div_iff₀' hc).2 (hφ h).ge⟩
+
+/-- The identity rescales periods by `1`. -/
+theorem exists_period_rescale_id : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h :=
+  ⟨1, one_pos, fun h => (one_mul (N h)).symm⟩
+
+/-- If `φ` rescales periods by `c` and `φ'` by `c'`, then `φ'.comp φ` rescales them by `c' * c`. -/
+theorem exists_period_rescale_comp {φ : H →+ H'} {φ' : H' →+ H''}
+    (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hφ' : ∃ c > 0, ∀ h, N'' (φ' h) = c * N' h) :
+    ∃ c > 0, ∀ h, N'' (φ'.comp φ h) = c * N h := by
+  obtain ⟨c, hc, hφ⟩ := hφ
+  obtain ⟨c', hc', hφ'⟩ := hφ'
+  exact ⟨c' * c, mul_pos hc' hc, fun h => by rw [AddMonoidHom.comp_apply, hφ', hφ, mul_assoc]⟩
 
 variable [AddMonoid R] [AddCommMonoid S] [AddCommMonoid T]
 
@@ -169,10 +184,9 @@ theorem coeff_map_of_injective (hinj : Injective φ) (a : NovikovSeries R H N) (
 /-- The pushforward along the identity of exponents applies the coefficient map to each
 coefficient. -/
 @[simp]
-theorem coeff_map_id_right (hφ : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h)
-    (a : NovikovSeries R H N) (h : H) :
-    (map ρ (AddMonoidHom.id H) hφ a).coeff h = ρ (a.coeff h) :=
-  coeff_map_of_injective ρ _ hφ injective_id a h
+theorem coeff_map_id_right (a : NovikovSeries R H N) (h : H) :
+    (map ρ (AddMonoidHom.id H) exists_period_rescale_id a).coeff h = ρ (a.coeff h) :=
+  coeff_map_of_injective ρ _ _ injective_id a h
 
 /-- The pushforward sends a series vanishing below the period cutoff `C` to a series vanishing
 below `c * C`, where `c` is the period rescaling factor of `φ`. -/
@@ -186,20 +200,22 @@ theorem coeff_map_eq_zero_of_lt {c C : ℝ} (hc : 0 ≤ c) (hcφ : ∀ h, N' (φ
     (mul_le_mul_of_nonneg_left hCh hc)))
 
 @[simp]
-theorem map_id {M : Type*} [AddCommMonoid M]
-    (hφ : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h) :
-    map (AddMonoidHom.id M) (AddMonoidHom.id H) hφ = AddMonoidHom.id (NovikovSeries M H N) := by
+theorem map_id {M : Type*} [AddCommMonoid M] :
+    map (AddMonoidHom.id M) (AddMonoidHom.id H) exists_period_rescale_id =
+      AddMonoidHom.id (NovikovSeries M H N) := by
   ext a h
-  exact coeff_map_id_right _ hφ a h
+  exact coeff_map_id_right _ a h
 
 /-- The pushforward along composite coefficient and exponent maps is the composite of the
 pushforwards. -/
 theorem map_map (ρ' : S →+ T) (φ' : H' →+ H'') (hφ' : ∃ c > 0, ∀ h, N'' (φ' h) = c * N' h)
-    (hφφ' : ∃ c > 0, ∀ h, N'' (φ' (φ h)) = c * N h) (a : NovikovSeries R H N) :
-    map ρ' φ' hφ' (map ρ φ hφ a) = map (ρ'.comp ρ) (φ'.comp φ) hφφ' a := by
+    (a : NovikovSeries R H N) :
+    map ρ' φ' hφ' (map ρ φ hφ a) =
+      map (ρ'.comp ρ) (φ'.comp φ) (exists_period_rescale_comp hφ hφ') a := by
   classical
   ext h''
-  set t := (a.finite_support_inter_preimage_singleton (φ := φ'.comp φ) hφφ' h'').toFinset
+  have hφφ' := exists_period_rescale_comp hφ hφ'
+  set t := (a.finite_support_inter_preimage_singleton hφφ' h'').toFinset
   have ht : ∀ h, h ∈ t ↔ a.coeff h ≠ 0 ∧ φ' (φ h) = h'' := fun h => by
     simp [t, mem_support]
   rw [coeff_map_eq_sum ρ' φ' hφ' _ (t.image φ) ?_ ?_,
@@ -283,26 +299,27 @@ theorem coeff_comap_eq_zero_of_lt {c C : ℝ} (hc : 0 < c) (hcφ : ∀ h, N' (φ
   hb _ ((hcφ h).symm ▸ mul_lt_mul_of_pos_left hh hc)
 
 @[simp]
-theorem comap_id (hφ : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h)
-    (hker : ((AddMonoidHom.id H).ker : Set H).Finite) :
-    comap (AddMonoidHom.id H) hφ hker = AddMonoidHom.id (NovikovSeries R H N) := by
+theorem comap_id :
+    comap (AddMonoidHom.id H) exists_period_rescale_id (by simp [AddMonoidHom.ker_id]) =
+      AddMonoidHom.id (NovikovSeries R H N) := by
   ext
   simp
 
 /-- The restriction along a composite exponent homomorphism is the composite of the
 restrictions. -/
 theorem comap_comap (φ' : H' →+ H'') (hφ' : ∃ c > 0, ∀ h, N'' (φ' h) = c * N' h)
-    (hker' : (φ'.ker : Set H').Finite) (hφφ' : ∃ c > 0, ∀ h, N'' (φ' (φ h)) = c * N h)
-    (hkerφφ' : ((φ'.comp φ).ker : Set H).Finite) (b : NovikovSeries R H'' N'') :
-    comap φ hφ hker (comap φ' hφ' hker' b) = comap (φ'.comp φ) hφφ' hkerφφ' b := by
+    (hker' : (φ'.ker : Set H').Finite) (b : NovikovSeries R H'' N'') :
+    comap φ hφ hker (comap φ' hφ' hker' b) =
+      comap (φ'.comp φ) (exists_period_rescale_comp hφ hφ') (φ'.finite_ker_comp φ hker' hker)
+        b := by
   ext
   simp
 
 /-- Restricting a pushforward along an injective exponent homomorphism gives back the series with
 the coefficient map applied to its coefficients. -/
 theorem comap_map_of_injective [AddCommMonoid S] (ρ : R →+ S) (hinj : Injective φ)
-    (hid : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h) (a : NovikovSeries R H N) :
-    comap φ hφ hker (map ρ φ hφ a) = map ρ (AddMonoidHom.id H) hid a := by
+    (a : NovikovSeries R H N) :
+    comap φ hφ hker (map ρ φ hφ a) = map ρ (AddMonoidHom.id H) exists_period_rescale_id a := by
   ext h
   rw [coeff_comap, coeff_map_of_injective _ _ _ hinj, coeff_map_id_right]
 
