@@ -47,10 +47,13 @@ degree `n` (`TauCeti.isZero_singularHomology_ofSubset_of_relHomotopyGroup`).
   class of a relative cube at `a₀`
   (`TauCeti.RelHomotopyGroup.exists_hurewicz_eq_singularHomologyMap`), and every `c_*(x)` is a
   relative Hurewicz image
-  (`TauCeti.RelHomotopyGroup.exists_hurewicz_apply_one_eq_singularHomologyMap`).
+  (`TauCeti.RelHomotopyGroup.exists_hurewicz_apply_one_eq_singularHomologyMap`). So the class of
+  every such cube, read in singular homology, is a relative Hurewicz image
+  (`TauCeti.RelHomotopyGroup.exists_hurewicz_apply_one_eq_singularCubicalHomologyIso_inv`).
 
-As the relative Hurewicz map is a homomorphism in degrees at least two, its image is a subgroup,
-and it contains a set of generators of `Hₙ(X, A; ℤ)`.
+As the relative Hurewicz map is a homomorphism in degrees at least two
+(`TauCeti.RelHomotopyGroup.hurewiczIntHom`), its image is a subgroup, and it contains a set of
+generators of `Hₙ(X, A; ℤ)`.
 
 ## Main results
 
@@ -117,17 +120,18 @@ theorem homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle {P : TopPair.{u}} 
     ContinuousMap.ext fun y ↦ cubeBoundaryPairHom_fst_apply c hc _
   rw [← ModuleCat.comp_apply, HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
   exact congrArg _ ((TopPair.cyclesMap_cubicalCycleOfCube k _ _ _ (by rw [hcid]; exact hc)).trans
-    (by congr 1))
+    (by simp only [hcid]))
 
 end CubeBoundaryPair
-
-variable {Y : TopCat.{0}} {B : Set Y}
 
 namespace RelHomotopyGroup
 
 /-! ### Cubes with boundary in the subspace -/
 
-variable {C : Type*} [Category C] [HasCoproducts.{0} C] [Abelian C] (R : C)
+section Coefficients
+
+variable {Y : TopCat.{u}} {B : Set Y}
+variable {C : Type*} [Category C] [HasCoproducts.{u} C] [Abelian C] (R : C)
 
 /-- **The class of a cube with boundary in a path-connected subspace is a relative Hurewicz
 class.** If `B` is path connected and `b ∈ B`, then for every singular `(n + 1)`-cube `c` sending
@@ -166,7 +170,11 @@ theorem exists_hurewicz_eq_singularHomologyMap (b : B) (hB : IsPathConnected B) 
     (RelGenLoop.mapsTo_comp_cubeSplitHomeomorph q) (hcg ▸ hc) (n + 1) using 3
   exact hcg.symm
 
+end Coefficients
+
 /-! ### Surjectivity of the relative Hurewicz map -/
+
+variable {Y : TopCat.{0}} {B : Set Y}
 
 /-- Over `ℤ`, if `B` is path connected and `b ∈ B`, then for every singular `(n + 2)`-cube `c`
 sending the boundary of the cube into `B`, the image of every class of `Hₙ₊₂(Iⁿ⁺², ∂Iⁿ⁺²; ℤ)` under
@@ -179,19 +187,30 @@ theorem exists_hurewicz_apply_one_eq_singularHomologyMap (b : B) (hB : IsPathCon
     ∃ a : RelHomotopyGroup (Fin (n + 1)) ⟨TopPair.ofSubset B, b⟩,
       (hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 =
         TopPair.singularHomologyMap (cubeBoundaryPairHom c hc) (ModuleCat.of ℤ ℤ) (n + 2) x := by
-  let R := ModuleCat.of ℤ ℤ
-  obtain ⟨a, ha⟩ := exists_hurewicz_eq_singularHomologyMap R b hB c hc
+  obtain ⟨a, ha⟩ := exists_hurewicz_eq_singularHomologyMap (ModuleCat.of ℤ ℤ) b hB c hc
   -- `x` is an integer multiple of the generator of `Hₙ₊₂(Iⁿ⁺², ∂Iⁿ⁺²; ℤ) ≅ ℤ`.
-  let e := singularHomologyCubeBoundaryPairIso R (n + 2)
+  let e := singularHomologyCubeBoundaryPairIso (ModuleCat.of ℤ ℤ) (n + 2)
   obtain ⟨k, rfl⟩ : ∃ k : ℤ, k • e.inv (1 : ℤ) = x :=
     ⟨e.hom x, by rw [← map_zsmul, smul_eq_mul, mul_one, Iso.hom_inv_id_apply]⟩
   refine ⟨(k • Additive.ofMul a).toMul, ?_⟩
-  rw [← hurewiczHom_apply, map_zsmul, ModuleCat.hom_zsmul, map_zsmul, hurewiczHom_apply,
-    toMul_ofMul, ha]
-  -- An integer multiple of a linear map is computed pointwise.
-  refine (AddMonoidHom.zsmul_apply (e.inv ≫ TopPair.singularHomologyMap (cubeBoundaryPairHom c hc)
-    R (n + 2)).hom.toAddMonoidHom k 1).trans ?_
-  rw [LinearMap.toAddMonoidHom_coe, ModuleCat.hom_comp, LinearMap.comp_apply]
+  rw [← hurewiczIntHom_apply, map_zsmul, hurewiczIntHom_apply, toMul_ofMul, ha, map_zsmul,
+    ModuleCat.comp_apply]
+
+/-- Over `ℤ`, if `B` is path connected and `b ∈ B`, then the class of every singular `(n + 2)`-cube
+`c` sending the boundary of the cube into `B`, read in relative singular homology
+`Hₙ₊₂(Y, B; ℤ)`, is the relative Hurewicz image of a class of `πₙ₊₂(Y, B, b)`. -/
+theorem exists_hurewicz_apply_one_eq_singularCubicalHomologyIso_inv (b : B)
+    (hB : IsPathConnected B) {n : ℕ} (c : SingularCube (TopPair.ofSubset B).fst (n + 2))
+    (hc : MapsTo c (Cube.boundary (Fin (n + 2))) (range (TopPair.ofSubset B).map)) :
+    ∃ a : RelHomotopyGroup (Fin (n + 1)) ⟨TopPair.ofSubset B, b⟩,
+      (hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 =
+        (TopPair.singularCubicalHomologyIso ℤ (TopPair.ofSubset B) (n + 2)).inv
+          (((TopPair.ofSubset B).cubicalChainComplex ℤ).homologyπ (n + 2)
+            (TopPair.cubicalCycleOfCube ℤ c hc)) := by
+  -- Relative cubical and singular homology are naturally isomorphic.
+  rw [← homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle ℤ c hc, ← ModuleCat.comp_apply,
+    TopPair.singularCubicalHomologyIso_inv_naturality, ModuleCat.comp_apply]
+  exact exists_hurewicz_apply_one_eq_singularHomologyMap b hB c hc _
 
 /-- **The relative Hurewicz map is surjective.** Let `B` be a path-connected subset of `Y` and
 `b ∈ B`. If every point of `Y` is joined by a path to a point of `B`, and the relative homotopy set
@@ -203,21 +222,10 @@ theorem surjective_hurewicz (b : B) {n : ℕ} (h₀ : ∀ y : Y, ∃ a ∈ B, Jo
       Subsingleton (RelHomotopyGroup (Fin k) ⟨TopPair.ofSubset B, b⟩)) :
     Function.Surjective fun a : RelHomotopyGroup (Fin (n + 1)) ⟨TopPair.ofSubset B, b⟩ ↦
       (hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 := by
-  let R := ModuleCat.of ℤ ℤ
-  -- The image of the relative Hurewicz homomorphism, evaluated at `1`, is a subgroup.
-  let φ : Additive (RelHomotopyGroup (Fin (n + 1)) ⟨TopPair.ofSubset B, b⟩) →+
-      ↑((TopPair.ofSubset B).singularHomology R (n + 2) : ModuleCat ℤ) :=
-    { toFun a := (hurewiczHom R n a).hom 1
-      map_zero' := by simp
-      map_add' a a' := by simp }
   -- The relative homotopy sets vanish at every point of `B`, by base-point change.
-  have h' (k : ℕ) (hk : k + 1 < n + 2) (a : B) :
-      Subsingleton (RelHomotopyGroup (Fin k) ⟨TopPair.ofSubset B, a⟩) :=
-    have := h k hk
-    (equivOfPath (N := Fin k) (X := ⟨TopPair.ofSubset B, b⟩)
-      (hB.joinedIn _ b.2 _ a.2).joined_subtype.somePath).symm.subsingleton
   obtain ⟨D⟩ := nonempty_subspaceCubeDeformation_of_relHomotopyGroup (n := (n + 2 : ℕ)) h₀
-    fun k hk ↦ h' k (by exact_mod_cast hk)
+    fun k hk a ↦ (subsingleton_iff_of_joined (N := Fin k) (X := ⟨TopPair.ofSubset B, b⟩)
+      (hB.joinedIn _ b.2 _ a.2).joined_subtype).1 (h k (by exact_mod_cast hk))
   rw [← TopPair.range_ofSubset_map (B := B)] at D
   intro y
   let iso := TopPair.singularCubicalHomologyIso ℤ (TopPair.ofSubset B) (n + 2)
@@ -226,25 +234,18 @@ theorem surjective_hurewicz (b : B) {n : ℕ} (h₀ : ∀ y : Y, ∃ a ∈ B, Jo
   -- cubical homology. `AddSubgroup.toIntSubmodule` would use the `ℤ`-action
   -- `AddCommGroup.toIntModule`, which is not definitionally the `ModuleCat ℤ` action, so
   -- `smul_mem'` rewrites the latter (`Int.cast_smul_eq_zsmul`) into the `zsmul` of `zsmul_mem`.
+  let S := (hurewiczIntHom ⟨TopPair.ofSubset B, b⟩ n).range.comap iso.inv.hom.toAddMonoidHom
   let T : Submodule ℤ (((TopPair.ofSubset B).cubicalChainComplex ℤ).homology (n + 2)) :=
-    { φ.range.comap iso.inv.hom.toAddMonoidHom with
+    { S with
       smul_mem' k x hx := by
-        have := (φ.range.comap iso.inv.hom.toAddMonoidHom).zsmul_mem hx k
+        have := S.zsmul_mem hx k
         rwa [← Int.cast_smul_eq_zsmul ℤ, Int.cast_id] at this }
   have hmem := D.homologyπ_mem_of_cube ℤ (m := n + 1) (by exact_mod_cast Nat.lt_succ_self _) T
-      (fun c hc ↦ by
-    rw [← homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle ℤ c hc]
-    refine AddSubgroup.mem_comap.2 ?_
-    -- Relative cubical and singular homology are naturally isomorphic.
-    rw [LinearMap.toAddMonoidHom_coe, ← ModuleCat.comp_apply,
-      TopPair.singularCubicalHomologyIso_inv_naturality, ModuleCat.comp_apply]
-    exact (exists_hurewicz_apply_one_eq_singularHomologyMap b hB c hc _).elim
-      fun a ha ↦ ⟨Additive.ofMul a,
-        (congrArg (fun f ↦ ModuleCat.Hom.hom f (1 : ℤ)) (hurewiczHom_apply R n _)).trans ha⟩) z
-  have hmem' := AddSubgroup.mem_comap.1 hmem
-  rw [LinearMap.toAddMonoidHom_coe, hz, Iso.hom_inv_id_apply] at hmem'
-  obtain ⟨a, rfl⟩ := hmem'
-  exact ⟨a.toMul, (congrArg (fun f ↦ ModuleCat.Hom.hom f (1 : ℤ)) (hurewiczHom_apply R n a)).symm⟩
+    (fun c hc ↦ (exists_hurewicz_apply_one_eq_singularCubicalHomologyIso_inv b hB c hc).elim
+      fun a ha ↦ ⟨Additive.ofMul a, (hurewiczIntHom_apply _ n _).trans ha⟩) z
+  obtain ⟨a, ha⟩ := AddSubgroup.mem_comap.1 hmem
+  rw [LinearMap.toAddMonoidHom_coe, hz, Iso.hom_inv_id_apply] at ha
+  exact ⟨a.toMul, (hurewiczIntHom_apply _ n a).symm.trans ha⟩
 
 end RelHomotopyGroup
 

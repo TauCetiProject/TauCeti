@@ -61,6 +61,8 @@ Hurewicz map, splits its relative Hurewicz class into those of `p` and `q`.
 * `TauCeti.RelHomotopyGroup.hurewicz_mul`, `TauCeti.RelHomotopyGroup.hurewiczHom`: the relative
   Hurewicz map is a homomorphism from `π_{n+2}(X, A, a₀)`, written additively, to the group of
   morphisms `R ⟶ Hₙ₊₂(X, A; R)`.
+* `TauCeti.RelHomotopyGroup.hurewiczIntHom`: with integer coefficients, the relative Hurewicz
+  homomorphism evaluated at `1`, `π_{n+2}(X, A, a₀) → Hₙ₊₂(X, A; ℤ)`.
 
 ## References
 
@@ -394,6 +396,22 @@ def hurewiczHom :
 @[simp]
 lemma hurewiczHom_apply (a : Additive (RelHomotopyGroup (Fin (n + 1)) X)) :
     hurewiczHom R n a = hurewicz R (n + 1) a.toMul :=
+  (rfl)
+
+/-- **The relative Hurewicz homomorphism with integer coefficients**
+`π_{n+2}(X, A, a₀) → Hₙ₊₂(X, A; ℤ)`, `[p] ↦ p_*[Iⁿ⁺²]`: the relative Hurewicz homomorphism with
+coefficients `ℤ`, evaluated at `1`. -/
+def hurewiczIntHom (X : BasedTopPair.{0}) (n : ℕ) :
+    Additive (RelHomotopyGroup (Fin (n + 1)) X) →+
+      ↑(X.pair.singularHomology (ModuleCat.of ℤ ℤ) (n + 2) : ModuleCat ℤ) where
+  toFun a := (hurewiczHom (ModuleCat.of ℤ ℤ) n a).hom 1
+  map_zero' := by simp
+  map_add' a b := by simp
+
+@[simp]
+lemma hurewiczIntHom_apply (X : BasedTopPair.{0}) (n : ℕ)
+    (a : Additive (RelHomotopyGroup (Fin (n + 1)) X)) :
+    hurewiczIntHom X n a = (hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a.toMul).hom 1 :=
   (rfl)
 
 /-- The inclusion of pairs `(X, {a₀}) ⟶ (X, A)` of a based pair. -/

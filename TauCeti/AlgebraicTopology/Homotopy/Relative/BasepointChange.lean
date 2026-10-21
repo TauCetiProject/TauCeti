@@ -61,7 +61,8 @@ this characterisation, by composing, reversing or restricting homotopies along p
   `transport_default`.
 * `TauCeti.RelHomotopyGroup.equivOfPath`, `TauCeti.RelHomotopyGroup.mulEquivOfPath`:
   **a path from `a` to `b` in `A` induces a bijection `π_{n+1}(X, A, a) ≃ π_{n+1}(X, A, b)`, which
-  is a group isomorphism when `n ≥ 1`.**
+  is a group isomorphism when `n ≥ 1`.** So `TauCeti.RelHomotopyGroup.subsingleton_iff_of_joined`:
+  triviality of the relative homotopy set does not depend on the base point in a path component.
 * `TauCeti.RelHomotopyGroup.boundary_transport`,
   `TauCeti.RelHomotopyGroup.transport_ofHomotopyGroup`, `TauCeti.RelHomotopyGroup.map_transport`:
   compatibility with the long exact sequence and naturality.
@@ -750,6 +751,14 @@ theorem equivOfPath_congr {γ γ' : Path X.basepoint b} (h : γ.Homotopic γ') :
     equivOfPath (N := N) γ = equivOfPath γ' := by
   ext x
   rw [equivOfPath_apply, equivOfPath_apply, transport_congr h]
+
+omit [Fintype N] in
+/-- The relative homotopy set at `a` is trivial if and only if it is trivial at any point `b` of
+the subspace joined to `a` by a path in the subspace. -/
+theorem subsingleton_iff_of_joined [Finite N] (h : Joined X.basepoint b) :
+    Subsingleton (RelHomotopyGroup N X) ↔ Subsingleton (RelHomotopyGroup N ⟨X.pair, b⟩) :=
+  have := Fintype.ofFinite N
+  (equivOfPath h.somePath).subsingleton_congr
 
 /-- Transport commutes with the boundary map: restricted to the face in `A`, it is base-point
 change of homotopy groups of `A`. -/
