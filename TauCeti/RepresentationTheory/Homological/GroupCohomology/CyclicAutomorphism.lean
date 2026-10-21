@@ -290,9 +290,9 @@ theorem cyclicConnectingEquiv_apply (hm : Function.Bijective fun x : E ↦ m •
 /-- **Naturality of the connecting homomorphism.** Let `fΛ`, `fE`, `fT` be additive maps from
 an exact sequence `0 → Λ → E → T → 0` with automorphisms `AΛ`, `AE`, `AT` to another one
 `0 → Λ' → E' → T' → 0` with automorphisms `AΛ'`, `AE'`, `AT'`, intertwining the automorphisms and
-commuting with the maps of the two sequences. Then the connecting homomorphisms
-`H¹(C_m, T) ⟶ H²(C_m, Λ)` and `H¹(C_m, T') ⟶ H²(C_m, Λ')` commute with the maps induced by `fT`
-and `fΛ`. -/
+commuting with the maps of the two sequences. Then for `q = n + 1` the connecting homomorphisms
+`Hⁿ(C_m, T) ⟶ H^q(C_m, Λ)` and `Hⁿ(C_m, T') ⟶ H^q(C_m, Λ')` commute with the maps induced by
+`fT` and `fΛ`. -/
 theorem map_δ_cyclicRepShortComplex {Λ' E' T' : Type} [AddCommGroup Λ'] [AddCommGroup E']
     [AddCommGroup T'] {AΛ' : Λ' ≃+ Λ'} {AE' : E' ≃+ E'} {AT' : T' ≃+ T'} {i' : Λ' →+ E'}
     {p' : E' →+ T'} {hΛ' : (⇑AΛ')^[m] = _root_.id} {hE' : (⇑AE')^[m] = _root_.id}
@@ -302,11 +302,11 @@ theorem map_δ_cyclicRepShortComplex {Λ' E' T' : Type} [AddCommGroup Λ'] [AddC
     (fΛ : Λ →+ Λ') (fE : E →+ E') (fT : T →+ T') (hfΛ : ∀ x, fΛ (AΛ x) = AΛ' (fΛ x))
     (hfE : ∀ x, fE (AE x) = AE' (fE x)) (hfT : ∀ x, fT (AT x) = AT' (fT x))
     (hfi : ∀ x, fE (i x) = i' (fΛ x)) (hfp : ∀ x, fT (p x) = p' (fE x))
-    (x : groupCohomology (AT.cyclicRep hT) 1) :
-    map (MonoidHom.id (Multiplicative (ZMod m))) (fΛ.cyclicRepHom hΛ hΛ' hfΛ) 2
-        (δ hS 1 2 rfl x) =
-      δ hS' 1 2 rfl
-        (map (MonoidHom.id (Multiplicative (ZMod m))) (fT.cyclicRepHom hT hT' hfT) 1 x) := by
+    (n q : ℕ) (hnq : n + 1 = q) (x : groupCohomology (AT.cyclicRep hT) n) :
+    map (MonoidHom.id (Multiplicative (ZMod m))) (fΛ.cyclicRepHom hΛ hΛ' hfΛ) q
+        (δ hS n q hnq x) =
+      δ hS' n q hnq
+        (map (MonoidHom.id (Multiplicative (ZMod m))) (fT.cyclicRepHom hT hT' hfT) n x) := by
   -- The squares of the morphism of short complexes, since `i' ∘ fΛ = fE ∘ i` and
   -- `p' ∘ fE = fT ∘ p`.
   have h₁₂ : fΛ.cyclicRepHom hΛ hΛ' hfΛ ≫ i'.cyclicRepHom hΛ' hE' hi' =
@@ -326,6 +326,6 @@ theorem map_δ_cyclicRepShortComplex {Λ' E' T' : Type} [AddCommGroup Λ'] [AddC
       τ₃ := fT.cyclicRepHom hT hT' hfT
       comm₁₂ := h₁₂
       comm₂₃ := h₂₃ }
-  exact congr($(δ_naturality hS hS' F 1 2 rfl) x)
+  exact congr($(δ_naturality hS hS' F n q hnq) x)
 
 end TauCeti

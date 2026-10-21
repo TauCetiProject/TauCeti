@@ -10,7 +10,9 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoria
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
 import TauCeti.Data.Nat.Carry
+import TauCeti.RepresentationTheory.Cyclic.Norm
 import TauCeti.RepresentationTheory.Invariants
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
 import TauCeti.RepresentationTheory.Homological.Resolution
 
@@ -77,8 +79,6 @@ Frobenius.
 * `Rep.FiniteCyclicGroup.groupCohomologyπEven_two`,
   `Rep.FiniteCyclicGroup.groupCohomologyπEven_two_apply`: in degree `2`, `groupCohomologyπEven`
   sends a fixed element to the class of its carry cocycle.
-* `Rep.FiniteCyclicGroup.sum_range_orderOf_apply`: the norm is the sum of the images under the
-  powers `1, g, …, gⁿ⁻¹` of the generator.
 * `Rep.FiniteCyclicGroup.partialNormCocycle_apply`,
   `Rep.FiniteCyclicGroup.partialNormCocycle_apply_pow`: the values of the partial norm cocycle.
 * `Rep.FiniteCyclicGroup.groupCohomologyπOdd_one`,
@@ -448,39 +448,13 @@ theorem partialNormCocycle_apply (x : LinearMap.ker A.norm.asHom.hom.toLinearMap
       ∑ l ∈ Finset.range (cyclicLog g hg y), A.ρ (g ^ l) x.1 :=
   partialNormCochain_apply A g hg x.1 y
 
-include hg in
-/-- The sum `a + g a + ⋯ + gⁿ⁻¹ a` over the order `n` of the generator `g` is the norm of `a`. -/
-theorem sum_range_orderOf_apply (a : A) :
-    ∑ l ∈ Finset.range (orderOf g), A.ρ (g ^ l) a = A.ρ.norm a := by
-  rw [Representation.norm, LinearMap.sum_apply]
-  exact Finset.sum_nbij' (fun l => g ^ l) (cyclicLog g hg) (fun _ _ => Finset.mem_univ _)
-    (fun x _ => Finset.mem_range.2 (cyclicLog_lt g hg x))
-    (fun l hl => by rw [cyclicLog_pow, Nat.mod_eq_of_lt (Finset.mem_range.1 hl)])
-    (fun x _ => pow_cyclicLog g hg x) (fun _ _ => rfl)
-
-include hg in
-/-- For `a` killed by the norm, the partial norm `a + g a + ⋯ + gⁱ⁻¹ a` depends only on `i`
-modulo the order `n` of `g`: each block of `n` consecutive terms sums to the norm of `a`. -/
-private theorem sum_range_mod_orderOf_apply (a : A) (ha : A.ρ.norm a = 0) (i : ℕ) :
-    ∑ l ∈ Finset.range (i % orderOf g), A.ρ (g ^ l) a = ∑ l ∈ Finset.range i, A.ρ (g ^ l) a := by
-  have hblock (q : ℕ) :
-      ∑ l ∈ Finset.range (orderOf g), A.ρ (g ^ (orderOf g * q + l)) a = 0 := by
-    simp only [pow_add, pow_mul, pow_orderOf_eq_one, one_pow, one_mul,
-      sum_range_orderOf_apply A g hg, ha]
-  have hfull (q : ℕ) : ∑ l ∈ Finset.range (orderOf g * q), A.ρ (g ^ l) a = 0 := by
-    induction q with
-    | zero => simp
-    | succ q ih => rw [Nat.mul_succ, Finset.sum_range_add, ih, hblock, add_zero]
-  conv_rhs => rw [← Nat.div_add_mod i (orderOf g), Finset.sum_range_add, hfull, zero_add]
-  simp only [pow_add, pow_mul, pow_orderOf_eq_one, one_pow, one_mul]
-
 /-- The values of the partial norm cocycle: on `gⁱ` it is `a + g a + ⋯ + gⁱ⁻¹ a`, for every
 `i`, since `a` is killed by the norm. -/
 @[simp]
 theorem partialNormCocycle_apply_pow (x : LinearMap.ker A.norm.asHom.hom.toLinearMap) (i : ℕ) :
     (partialNormCocycle A g hg x : G → A) (g ^ i) = ∑ l ∈ Finset.range i, A.ρ (g ^ l) x.1 := by
   rw [partialNormCocycle_apply, cyclicLog_pow,
-    sum_range_mod_orderOf_apply A g hg x.1 (LinearMap.mem_ker.1 x.2)]
+    A.ρ.sum_range_mod_orderOf_apply hg (LinearMap.mem_ker.1 x.2)]
 
 end PartialNormCocycle
 
@@ -658,15 +632,11 @@ theorem map_groupCohomologyπOdd_one {g' : G'} (hg' : ∀ x, x ∈ Subgroup.zpow
     (hz : z.1 = φ.hom (∑ j ∈ Finset.range d, B.ρ (g' ^ j) y.1)) :
     groupCohomology.map f φ 1 (groupCohomologyπOdd B g' hg' 1 odd_one y) =
       groupCohomologyπOdd A g hg 1 odd_one z := by
-  rw [groupCohomologyπOdd_one_apply, groupCohomologyπOdd_one_apply,
-    ← LinearMap.comp_apply (groupCohomology.map f φ 1).hom, ← ModuleCat.hom_comp, H1π_comp_map,
-    ModuleCat.hom_comp, LinearMap.comp_apply]
+  rw [groupCohomologyπOdd_one_apply, groupCohomologyπOdd_one_apply, H1π_comp_map_apply]
   congr 1
   refine cocycles₁_ext fun x => ?_
   obtain ⟨i, rfl⟩ : ∃ i : ℕ, g ^ i = x := ⟨_, pow_cyclicLog g hg x⟩
-  rw [coe_mapCocycles₁, cochainsMap₁, ModuleCat.ofHom_apply, LinearMap.comp_apply,
-    LinearMap.compLeft_apply, Function.comp_apply, LinearMap.funLeft_apply,
-    Representation.IntertwiningMap.toLinearMap_apply, map_pow, hfg, ← pow_mul,
+  rw [TauCeti.groupCohomology.mapCocycles₁_apply, map_pow, hfg, ← pow_mul,
     partialNormCocycle_apply_pow, partialNormCocycle_apply_pow, hz]
   -- The first `d * i` terms of the partial norm of `y` are `i` blocks of `d` terms, the `l`-th
   -- block being `g'ᵈˡ = f (gˡ)` applied to the first.
