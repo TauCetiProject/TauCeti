@@ -9,7 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import TauCeti.Analysis.Normed.Operator.Banach
-public import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Basic
 
 /-!

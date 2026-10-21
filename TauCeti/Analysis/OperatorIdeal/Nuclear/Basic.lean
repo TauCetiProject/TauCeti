@@ -139,9 +139,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 theorem nuclearENorm_eq_zero (T : E →L[𝕜] F) :
     T.nuclearENorm = 0 ↔ T = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  have hz : ‖T‖ₑ = 0 := le_antisymm (h ▸ T.enorm_le_nuclearENorm) bot_le
-  have hn : ‖T‖ = 0 := by simpa using congrArg ENNReal.toReal hz
-  exact T.opNorm_eq_zero_iff.mp hn
+  exact T.opENorm_eq_zero_iff.mp (le_antisymm (h ▸ T.enorm_le_nuclearENorm) bot_le)
 
 end Separated
 

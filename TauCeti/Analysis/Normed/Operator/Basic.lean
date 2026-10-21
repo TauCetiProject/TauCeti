@@ -35,9 +35,10 @@ variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [Nontrivially
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
   {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
 
-/-- An operator from a seminormed space to a normed space has zero norm exactly when it is zero. -/
+/-- An operator from a seminormed space to a normed space has zero norm exactly when it is zero.
+This generalizes `opNorm_zero_iff` to seminormed sources. -/
 @[simp]
-theorem opNorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖ = 0 ↔ f = 0 := by
+theorem opNorm_zero_iff' (f : E →SL[σ] F) : ‖f‖ = 0 ↔ f = 0 := by
   constructor
   · intro hf
     ext x
@@ -45,10 +46,20 @@ theorem opNorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖ = 0 ↔ f = 0 := by
   · rintro rfl
     exact norm_zero
 
+/-- The nonnegative operator norm vanishes exactly at zero, even for a seminormed source. -/
+@[simp]
+theorem opNNNorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖₊ = 0 ↔ f = 0 := by
+  simpa only [← NNReal.coe_eq_zero, coe_nnnorm] using f.opNorm_zero_iff'
+
+/-- The extended operator norm vanishes exactly at zero, even for a seminormed source. -/
+@[simp]
+theorem opENorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖ₑ = 0 ↔ f = 0 := by
+  simpa only [enorm, ENNReal.coe_eq_zero] using f.opNNNorm_eq_zero_iff
+
 /-- Continuous semilinear maps from a seminormed space to a normed space form a normed group
 for the operator norm. Use this construction locally when the source is only seminormed. -/
 noncomputable abbrev normedAddCommGroup : NormedAddCommGroup (E →SL[σ] F) :=
-  .ofSeparation fun f ↦ f.opNorm_eq_zero_iff.mp
+  .ofSeparation fun f ↦ f.opNorm_zero_iff'.mp
 
 end Semilinear
 
