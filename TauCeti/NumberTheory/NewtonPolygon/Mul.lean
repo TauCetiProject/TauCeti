@@ -220,16 +220,10 @@ theorem newtonPolygon_mul (f : R[X]) (v : AddValuation R (WithTop ℝ)) (g : R[X
   rw [← (isConvexSeq_newtonPolygon (f * g) v).iSup_supportingValue_add n,
     ← hM.iSup_supportingValue_add n]
   refine iSup_congr fun σ => congrArg (· + _) ?_
-  rw [hS, supportingValue_addValuation_coeff_mul]
-  -- A factor with empty Newton polygon makes both sides empty.
-  by_cases hf : f.newtonPolygon v = ⊤
-  · rw [hf, top_minkowskiSum, supportingValue_top, ← hS, hf, supportingValue_top,
-      EReal.top_add_of_ne_bot (supportingValue_ne_bot_of_finite
-        (finite_setOf_addValuation_coeff_ne_top g v) σ)]
-  by_cases hg : g.newtonPolygon v = ⊤
-  · rw [hg, minkowskiSum_top, supportingValue_top, ← hS g, hg, supportingValue_top,
-      EReal.add_top_of_ne_bot (supportingValue_ne_bot_of_finite
-        (finite_setOf_addValuation_coeff_ne_top f v) σ)]
-  rw [supportingValue_minkowskiSum hf hg, hS, hS]
+  have hB (h : R[X]) : supportingValue (h.newtonPolygon v) σ ≠ ⊥ := by
+    rw [hS]
+    exact supportingValue_ne_bot_of_finite (finite_setOf_addValuation_coeff_ne_top h v) σ
+  rw [hS, supportingValue_addValuation_coeff_mul,
+    supportingValue_minkowskiSum_of_ne_bot (hB f) (hB g), hS, hS]
 
 end Polynomial

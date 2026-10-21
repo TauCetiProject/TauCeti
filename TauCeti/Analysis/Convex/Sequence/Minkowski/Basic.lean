@@ -33,7 +33,8 @@ absorbing element) with those of multiplication of power series.
 * `minkowskiSum_add_eq_of_forall_lt`, `minkowskiSum_add_eq_of_forall_gt`: first points add,
   and so do last points when both finite domains are bounded above.
 * `IsConvexSeq.minkowskiSum`: the Minkowski sum of convex height sequences is convex.
-* `supportingValue_minkowskiSum`: for nonempty sequences supporting values add in `EReal`.
+* `supportingValue_minkowskiSum`, `supportingValue_minkowskiSum_of_ne_bot`: supporting values add
+  in `EReal` for nonempty sequences, or when neither supporting value is `⊥`.
 * `minkowskiSum_add_eq_add_iff`: a split `n = i + j` of convex sequences is minimising exactly
   when `i` and `j` lie on supporting faces of `h` and `g` with a common slope.
 
@@ -306,6 +307,18 @@ theorem supportingValue_minkowskiSum (hh : h ≠ ⊤) (hg : g ≠ ⊤) (σ : ℝ
     obtain ⟨i, j, rfl, hn⟩ := exists_minkowskiSum_eq h g n
     rw [hn, Nat.cast_add, mul_add, WithTop.toEReal_add_sub_coe_add]
     exact add_le_add (supportingValue_le h σ i) (supportingValue_le g σ j)
+
+/-- Supporting values of a Minkowski sum add in `EReal` whenever neither summand has
+supporting value `⊥`. Compared with `supportingValue_minkowskiSum`, this allows either sequence
+to be empty: then both sides are `⊤`. -/
+theorem supportingValue_minkowskiSum_of_ne_bot {σ : ℝ} (hh : supportingValue h σ ≠ ⊥)
+    (hg : supportingValue g σ ≠ ⊥) :
+    supportingValue (minkowskiSum h g) σ = supportingValue h σ + supportingValue g σ := by
+  obtain rfl | hh' := eq_or_ne h ⊤
+  · rw [top_minkowskiSum, supportingValue_top, EReal.top_add_of_ne_bot hg]
+  obtain rfl | hg' := eq_or_ne g ⊤
+  · rw [minkowskiSum_top, supportingValue_top, EReal.add_top_of_ne_bot hh]
+  exact supportingValue_minkowskiSum hh' hg' σ
 
 /-! ### Minimising splits -/
 
