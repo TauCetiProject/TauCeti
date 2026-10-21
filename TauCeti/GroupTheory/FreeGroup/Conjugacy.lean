@@ -92,6 +92,12 @@ theorem _root_.List.IsRotated.isCyclicallyReduced_iff {L L' : List (α × Bool)}
   · obtain ⟨n, rfl⟩ := h.symm
     exact hL'.rotate n
 
+/-- A rotation of a word is cyclically reduced exactly when the word is. -/
+@[simp]
+theorem isCyclicallyReduced_rotate {L : List (α × Bool)} {n : ℕ} :
+    IsCyclicallyReduced (L.rotate n) ↔ IsCyclicallyReduced L :=
+  (List.IsRotated.forall L n).isCyclicallyReduced_iff
+
 /-- Rotating a word is conjugation by the inverse of its initial segment. -/
 theorem conj_mk_rotate (u : List (α × Bool)) (n : ℕ) :
     (mk (u.take (n % u.length)))⁻¹ * mk u * mk (u.take (n % u.length)) =
@@ -192,27 +198,9 @@ private theorem isRotated_of_mk_mul_mk_mul_inv_eq {w u v : List (α × Bool)}
     -- Nothing cancels, so the conjugate is the reduced word `w l u l⁻¹ w⁻¹`, which is not
     -- cyclically reduced.
     exfalso
-    have hred : IsReduced (w ++ [l] ++ (u₀ ++ [c]) ++ invRev (w ++ [l])) := by
-      refine List.isChain_append.mpr ⟨List.isChain_append.mpr ⟨hw, hu.isReduced, ?_⟩,
-        hw.invRev, ?_⟩
-      · intro x hx y hy
-        simp only [List.getLast?_append, List.getLast?_singleton, Option.mem_def,
-          Option.some_or, Option.some.injEq] at hx
-        subst hx
-        intro h1
-        by_contra h2
-        exact hhead <| (Option.mem_def.mp hy).trans <|
-          congrArg some (Prod.ext h1.symm (Bool.eq_not.mpr (Ne.symm h2)))
-      · intro x hx y hy
-        simp only [List.getLast?_append, List.getLast?_singleton, Option.mem_def,
-          Option.some_or, Option.some.injEq] at hx
-        have hinv : invRev (w ++ [l]) = (l.1, !l.2) :: invRev w := by
-          simp [invRev]
-        rw [hinv, List.head?_cons, Option.mem_def, Option.some.injEq] at hy
-        subst hx hy
-        intro h1
-        by_contra h2
-        exact hlast (Prod.ext h1 (by simpa using h2))
+    have hred : IsReduced (w ++ [l] ++ (u₀ ++ [c]) ++ invRev (w ++ [l])) :=
+      hw.append_append_invRev hu.isReduced (by simp) (by simpa using hhead)
+        (by simpa [eq_comm] using hlast)
     have hv' := hv.isReduced.eq_of_mk_eq hred <| by
       rw [← h, inv_mk, mul_mk, mul_mk]
     exact not_isCyclicallyReduced_append_append_invRev (by simp) (u₀ ++ [c]) (hv' ▸ hv)
@@ -239,18 +227,14 @@ theorem isConj_iff_isRotated_reduceCyclically [DecidableEq α] {x y : FreeGroup 
   exact ((isConj_mk_reduceCyclically x.toWord).symm.trans h).trans
     (isConj_mk_reduceCyclically y.toWord)
 
-/-- For distinct letters `a` and `b`, the elements `a b` and `a b⁻¹` of a free group are not
-conjugate: their reduced words are cyclically reduced and are not rotations of each other. -/
-theorem not_isConj_of_mul_of_of_mul_inv_of {a b : α} (hab : a ≠ b) :
+/-- For any letters `a` and `b`, the elements `a b` and `a b⁻¹` of a free group are not
+conjugate: the homomorphism to `Multiplicative ℤ` sending every generator to `ofAdd 1` maps them
+to `ofAdd 2` and `ofAdd 0`. -/
+theorem not_isConj_of_mul_of_of_mul_inv_of (a b : α) :
     ¬IsConj (of a * of b) (of a * (of b)⁻¹) := by
-  have e₁ : of a * of b = mk [(a, true), (b, true)] := by
-    rw [of, of, mul_mk, List.singleton_append]
-  have e₂ : of a * (of b)⁻¹ = mk [(a, true), (b, false)] := by
-    rw [of, of, inv_mk_singleton, mul_mk, List.singleton_append]
-    rfl
-  rw [e₁, e₂, isConj_mk_iff_isRotated (by simp [IsCyclicallyReduced, hab, hab.symm])
-    (by simp [IsCyclicallyReduced, hab, hab.symm])]
   intro h
-  simpa [hab.symm] using h.perm.mem_iff.mp (List.mem_cons_of_mem _ List.mem_cons_self)
+  have := (FreeGroup.lift fun _ => Multiplicative.ofAdd (1 : ℤ)).map_isConj h
+  rw [isConj_iff_eq] at this
+  simp [← ofAdd_add] at this
 
 end FreeGroup
