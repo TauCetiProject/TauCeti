@@ -231,12 +231,10 @@ theorem _root_.ContinuousLinearMap.hessianQuadraticForm_mul_norm_sq_add_re_apply
       2 * a * ‖v‖ ^ 2 + 2 * (q v v).re := by
   have h : ContDiffAt ℝ 2 (a • fun z : E ↦ ‖z‖ ^ 2) x :=
     ((contDiff_norm_sq ℂ).const_smul a).contDiffAt
-  have hfun : (fun z ↦ a * ‖z‖ ^ 2 + (q z z).re) =
-      (a • fun z : E ↦ ‖z‖ ^ 2) + fun z ↦ (q z z).re := rfl
-  rw [hfun, hessianQuadraticForm_add h (contDiffAt_re_apply_self q x), _root_.add_apply,
-    hessianQuadraticForm_smul, _root_.smul_apply, smul_eq_mul,
-    hessianQuadraticForm_norm_sq_complex, q.hessianQuadraticForm_re_apply_self]
-  ring
+  -- Keep the Hessians folded so that the named Hessian lemmas of both summands apply.
+  simpa [-hessianQuadraticForm_apply, Pi.add_def, hessianQuadraticForm_norm_sq_complex,
+    q.hessianQuadraticForm_re_apply_self, ← mul_assoc, mul_comm a 2] using
+    congr($(hessianQuadraticForm_add h (contDiffAt_re_apply_self q x)) v)
 
 end NormSq
 
