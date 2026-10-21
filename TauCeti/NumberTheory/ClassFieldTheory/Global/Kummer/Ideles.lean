@@ -103,11 +103,8 @@ theorem auxiliaryKummerIdeleSubgroup_le_one
 theorem comap_unitEmbedding_auxiliaryKummerIdeleSubgroup_one
     (S T : Finset (HeightOneSpectrum (𝓞 K))) :
     (auxiliaryKummerIdeleSubgroup S T 1).comap (IdeleGroup.unitEmbedding (𝓞 K) K) =
-      ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T).unit K := by
-  ext a
-  rw [Subgroup.mem_comap, mem_auxiliaryKummerIdeleSubgroup_one_iff,
-    ← IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff]
-  simp only [Set.mem_union, Finset.mem_coe, not_or, and_imp]
+      ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T).unit K :=
+  Subgroup.ext (unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff S T)
 
 private abbrev LocalPowerClasses (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :=
   (∀ v : S, (v.1.adicCompletion K)ˣ ⧸ (powMonoidHom n).range) ×
@@ -229,12 +226,11 @@ theorem auxiliaryKummerIdeleClassSubgroup_one_eq_top
   obtain ⟨x, hx, hc⟩ :=
     IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hST c
   exact (mem_auxiliaryKummerIdeleClassSubgroup_iff S T 1 c).2
-    ⟨x, (mem_auxiliaryKummerIdeleSubgroup_one_iff S T x).2
-      (fun v hvS hvT ↦ hx v (by simp [hvS, hvT])), hc⟩
+    ⟨x, (mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T x).2 hx, hc⟩
 
 /-- If the classes of `S ∪ T` generate the ideal class group, the quotient map restricted
 to the auxiliary Kummer subgroup of exponent one is surjective. -/
-theorem auxiliaryKummerIdeleSubgroup_mk_surjective
+theorem auxiliaryKummerIdeleSubgroup_one_mk_surjective
     (S T : Finset (HeightOneSpectrum (𝓞 K)))
     (hST : Subgroup.closure (HeightOneSpectrum.classGroupMk (R := 𝓞 K) ''
       ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ (T : Set (HeightOneSpectrum (𝓞 K))))) = ⊤) :
@@ -276,7 +272,7 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_mul_relIndex
   let E := (auxiliaryKummerIdeleSubgroup S T n).subgroupOf J
   let q := QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)
   let f : J →* IdeleClassGroup (𝓞 K) K := q.comp J.subtype
-  have hf : Function.Surjective f := auxiliaryKummerIdeleSubgroup_mk_surjective S T hST
+  have hf : Function.Surjective f := auxiliaryKummerIdeleSubgroup_one_mk_surjective S T hST
   have hmap : E.map f = auxiliaryKummerIdeleClassSubgroup S T n :=
     map_subgroupOf_auxiliaryKummerIdeleSubgroup S T n
   have hker : f.ker.map J.subtype = IdeleGroup.principalSubgroup (𝓞 K) K ⊓ J := by
