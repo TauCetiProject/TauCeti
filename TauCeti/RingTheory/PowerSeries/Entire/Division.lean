@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Trunc
-public import TauCeti.RingTheory.PowerSeries.Entire.Basic
+public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.PowerSeries.Inverse
@@ -59,6 +59,8 @@ operators, whose Fredholm determinants are entire series.
   with entire quotient and remainder of degree less than `d` is this one.
 * `PowerSeries.IsEntire.coe_mul_divByMonic_cancel_left`: over an ultrametric ring with
   `‖1‖ = 1`, dividing `p * q` by `p` returns `q` for entire `q`.
+* `PowerSeries.IsEntire.evalAt_eq_zero_iff`: the factor theorem; an entire series vanishes at
+  `a` exactly when it is `X - a` times an entire series.
 * `PowerSeries.IsEntire.modByMonic_eq_zero_iff`: over an ultrametric ring with `‖1‖ = 1`, the
   remainder vanishes exactly when `p` divides `f` with entire quotient.
 
@@ -337,6 +339,30 @@ theorem divByMonic_coe_of_degree_lt {g : Polynomial R} (hp : p.Monic)
 theorem modByMonic_coe_of_degree_lt {g : Polynomial R} (hp : p.Monic)
     (hg : g.degree < p.degree) : (g : R⟦X⟧).modByMonic p = g := by
   rw [modByMonic_coe g hp, (Polynomial.div_modByMonic_unique 0 g hp ⟨by simp, hg⟩).2]
+
+/-- **Factor theorem for entire series.** An entire series vanishes at `a` exactly when it is
+`X - a` times an entire series. -/
+theorem IsEntire.evalAt_eq_zero_iff (hf : f.IsEntire) {a : R} :
+    f.evalAt a = 0 ↔ ∃ q : R⟦X⟧, q.IsEntire ∧ f = (X - C a) * q := by
+  refine ⟨fun ha ↦ ⟨f.divByMonic (Polynomial.X - Polynomial.C a), hf.divByMonic _, ?_⟩, ?_⟩
+  · nontriviality R
+    have hp := Polynomial.monic_X_sub_C a
+    have hdiv := hf.modByMonic_add_divByMonic hp
+    -- the remainder `r` has degree less than `1`, and its value at `a` is `f(a) = 0`
+    set r := f.modByMonic (Polynomial.X - Polynomial.C a)
+    have hr : r = Polynomial.C (r.coeff 0) := Polynomial.eq_C_of_degree_le_zero <|
+      Nat.WithBot.lt_one_iff_le_zero.mp
+        ((degree_modByMonic_lt f hp.ne_zero).trans_le (Polynomial.degree_X_sub_C_le a))
+    have h0 : r.coeff 0 = 0 := by
+      have := congrArg (evalAt · a) hdiv
+      rw [(isEntire_coe r).evalAt_add ((isEntire_coe _).mul (hf.divByMonic _)),
+        (isEntire_coe _).evalAt_mul (hf.divByMonic _), evalAt_coe, evalAt_coe, ha, hr] at this
+      simpa using this
+    rw [hr, h0] at hdiv
+    simpa using hdiv.symm
+  · rintro ⟨q, hq, rfl⟩
+    rw [(isEntire_X.sub (isEntire_C a)).evalAt_mul hq, isEntire_X.evalAt_sub (isEntire_C a),
+      evalAt_X, evalAt_C, Algebra.algebraMap_self_apply, sub_self, zero_mul]
 
 section Ultrametric
 

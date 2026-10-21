@@ -34,7 +34,9 @@ with inverse `-∑ₙ aₙ₊₁ • aⁿ`, since `f(a) = 1 + a ∑ₙ aₙ₊�
 * `PowerSeries.IsEntire.hasSum_evalAt`: the series `∑ aₙ • bⁿ` converges to `f(b)`.
 * `PowerSeries.IsEntire.evalAt_add`, `PowerSeries.IsEntire.evalAt_mul`: evaluation is additive and
   multiplicative on entire series.
+* `PowerSeries.IsEntire.evalAt_sum`: evaluation commutes with finite sums of entire series.
 * `PowerSeries.IsEntire.map_evalAt`: naturality in the algebra.
+* `PowerSeries.IsEntire.evalAt_map`: naturality in continuous coefficient homomorphisms.
 * `PowerSeries.IsEntire.isUnit_of_evalAt_eq_zero` and
   `PowerSeries.IsEntire.inverse_eq_of_evalAt_eq_zero`: a zero of an entire series with constant
   coefficient `1` is a unit, with explicit inverse.
@@ -108,6 +110,18 @@ theorem IsEntire.evalAt_smul (hf : f.IsEntire) (a : R) (b : A) :
   rw [evalAt_def]
   exact HasSum.tsum_eq (by simpa [mul_smul] using (hf.hasSum_evalAt b).const_smul a)
 
+/-- Evaluation commutes with finite sums of entire series. -/
+theorem IsEntire.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
+    (hf : ∀ i ∈ s, (f i).IsEntire) (b : A) :
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      (hf i (by simp)).evalAt_add (IsEntire.sum fun j hj ↦ hf j (by simp [hj])),
+      ih fun j hj ↦ hf j (by simp [hj])]
+
 /-- Evaluation is multiplicative on entire series: this is the Cauchy product formula for the
 absolutely convergent series `∑ aₙ • bⁿ` and `∑ cₙ • bⁿ`. -/
 theorem IsEntire.evalAt_mul (hf : f.IsEntire) (hg : g.IsEntire) (b : A) :
@@ -148,6 +162,14 @@ theorem IsEntire.map_evalAt {B F : Type*} [Semiring B] [Algebra R B] [Topologica
     (hψ : Continuous ψ) (b : A) : ψ (f.evalAt b) = f.evalAt (ψ b) := by
   rw [← ((hf.hasSum_evalAt b).map ψ hψ).tsum_eq, evalAt_def]
   simp [map_smul, map_pow]
+
+/-- Evaluation of entire series commutes with continuous coefficient homomorphisms:
+`(φ f)(φ a) = φ (f(a))`. -/
+theorem IsEntire.evalAt_map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Space S]
+    [CompleteSpace R] (hf : f.IsEntire) (φ : R →+* S) (hφ : Continuous φ) (a : R) :
+    (PowerSeries.map φ f).evalAt (φ a) = φ (f.evalAt a) := by
+  rw [← ((hf.hasSum_evalAt a).map φ hφ).tsum_eq, evalAt_def]
+  simp [map_pow]
 
 /-- The value of an entire series at `b` is `a₀ + b ∑ₙ aₙ₊₁ • bⁿ`. -/
 theorem IsEntire.evalAt_eq_algebraMap_add_mul (hf : f.IsEntire) (b : A) :
