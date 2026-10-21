@@ -445,6 +445,45 @@ private lemma mapCoh_erase_sub_dgComp_eq_zero {a b t : Fin (m + 1)} {T : Finset 
   · rw [x.dgComp_mapCoh_of_eq_right α hα hgt]
     exact Coherences.congr _ (by rw [hsplit, hgt, union_empty])
 
+/-- Away from two adjacent collapsed vertices `u < v`, the term at an interior vertex `t` of the dg
+nerve equation for the pullback vanishes. -/
+private lemma mapCoh_erase_sub_dgComp_eq_zero_of_collapse {a b u v t : Fin (m + 1)}
+    {T : Finset (Fin (m + 1))} {d : ℤ} (hab : a ≤ b) (hT : T ⊆ Ioo a b) (hd : d + #T = 0)
+    (ht : t ∈ T) (hu : u = a ∨ u ∈ T) (hv : v = b ∨ v ∈ T) (huvT : u ∈ T ∨ v ∈ T) (huv : u < v)
+    (hα : α u = α v) (hcons : ∀ s ∈ T, ¬ (u < s ∧ s < v)) (htu : t ≠ u) (htv : t ≠ v) :
+    x.mapCoh α a b (T.erase t) (d + 1) hab ((erase_subset _ _).trans hT)
+        (add_one_add_card_erase_eq_zero ht hd) -
+      (#{s ∈ T | s < t} * #{s ∈ T | t < s} : ℤ).negOnePow •
+        dgComp R
+          (x.mapCoh α a t {s ∈ T | s < t} _ (mem_Ioo.1 (hT ht)).1.le (filter_lt_subset_Ioo hT)
+            (neg_add_cancel _))
+          (x.mapCoh α t b {s ∈ T | t < s} _ (mem_Ioo.1 (hT ht)).2.le (filter_gt_subset_Ioo hT)
+            (neg_add_cancel _))
+          (neg_card_filter_lt_add_neg_card_filter_gt ht hd) = 0 := by
+  rw [x.mapCoh_erase_eq_zero_of_collapse α hab hT hd ht hu hv huvT huv hα htu htv,
+    x.dgComp_mapCoh_eq_zero_of_collapse α hT hd ht hu hv huv hα hcons htu htv, smul_zero,
+    sub_zero]
+
+/-- If `α` collapses two adjacent vertices `u < v`, one of which is an endpoint and the other the
+interior vertex `w`, then the right-hand side of the dg nerve equation for the pullback vanishes:
+the two parts of the term at `w` cancel, and every other term vanishes. -/
+private lemma boundary_mapCoh_eq_zero_of_endpoint {a b u v w : Fin (m + 1)}
+    {T : Finset (Fin (m + 1))} {d : ℤ} (hab : a ≤ b) (hT : T ⊆ Ioo a b) (hd : d + #T = 0)
+    (hu : u = a ∨ u ∈ T) (hv : v = b ∨ v ∈ T) (huvT : u ∈ T ∨ v ∈ T) (huv : u < v)
+    (hα : α u = α v) (hcons : ∀ s ∈ T, ¬ (u < s ∧ s < v))
+    (hne : ∀ t ∈ T, t ≠ w → t ≠ u ∧ t ≠ v)
+    (hw : ({s ∈ T | s < w} = ∅ ∧ α a = α w) ∨ ({s ∈ T | w < s} = ∅ ∧ α w = α b)) :
+    boundary R (x.mapCoh α) a b T d hab hT hd = 0 := by
+  refine sum_eq_zero ?_
+  rintro ⟨t, ht⟩ -
+  dsimp only
+  by_cases htw : t = w
+  · subst htw
+    rw [x.mapCoh_erase_sub_dgComp_eq_zero α hab hT hd ht hw, smul_zero]
+  · obtain ⟨htu, htv⟩ := hne t ht htw
+    rw [x.mapCoh_erase_sub_dgComp_eq_zero_of_collapse α hab hT hd ht hu hv huvT huv hα hcons htu
+      htv, smul_zero]
+
 /-- When `α` collapses two vertices of `a < T < b`, the right-hand side of the dg nerve equation
 for the pullback vanishes. -/
 private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 1))} {d : ℤ}
@@ -460,35 +499,16 @@ private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 
     exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo α.monotone hT h
   have hTa : ∀ s ∈ T, a < s := fun s hs ↦ (mem_Ioo.1 (hT hs)).1
   have hTb : ∀ s ∈ T, s < b := fun s hs ↦ (mem_Ioo.1 (hT hs)).2
-  -- Away from `u` and `v`, both parts of each term vanish.
-  have hA (t : Fin (m + 1)) (ht : t ∈ T) (htu : t ≠ u) (htv : t ≠ v) :=
-    x.mapCoh_erase_eq_zero_of_collapse α hab hT hd ht hu hv huvT huv hα htu htv
-  have hB (t : Fin (m + 1)) (ht : t ∈ T) (htu : t ≠ u) (htv : t ≠ v) :=
-    x.dgComp_mapCoh_eq_zero_of_collapse α hT hd ht hu hv huv hα hcons htu htv
   rcases hu with hua | huT
-  · -- `α a = α v` with `v` the first interior vertex: the two parts of its term cancel.
-    refine sum_eq_zero ?_
-    rintro ⟨t, ht⟩ -
-    dsimp only
-    by_cases htv : t = v
-    · subst htv
-      refine (congrArg _ ?_).trans (smul_zero _)
-      exact x.mapCoh_erase_sub_dgComp_eq_zero α hab hT hd ht (Or.inl
+  · -- `α a = α v` with `v` the first interior vertex.
+    refine x.boundary_mapCoh_eq_zero_of_endpoint α hab hT hd (Or.inl hua) hv huvT huv hα hcons
+      (fun t ht htv ↦ ⟨by rintro rfl; exact (hTa t ht).ne' hua, htv⟩) (Or.inl
         ⟨filter_eq_empty_iff.2 fun s hs hst ↦ hcons s hs ⟨hua ▸ hTa s hs, hst⟩, hua ▸ hα⟩)
-    · have htu : t ≠ u := by rintro rfl; exact (hTa t ht).ne' hua
-      rw [hA t ht htu htv, hB t ht htu htv, smul_zero, sub_zero, smul_zero]
   rcases hv with hvb | hvT
-  · -- `α u = α b` with `u` the last interior vertex: the two parts of its term cancel.
-    refine sum_eq_zero ?_
-    rintro ⟨t, ht⟩ -
-    dsimp only
-    by_cases htu : t = u
-    · subst htu
-      refine (congrArg _ ?_).trans (smul_zero _)
-      exact x.mapCoh_erase_sub_dgComp_eq_zero α hab hT hd ht (Or.inr
+  · -- `α u = α b` with `u` the last interior vertex.
+    refine x.boundary_mapCoh_eq_zero_of_endpoint α hab hT hd (Or.inr huT) (Or.inl hvb) huvT huv
+      hα hcons (fun t ht htu ↦ ⟨htu, by rintro rfl; exact (hTb t ht).ne hvb⟩) (Or.inr
         ⟨filter_eq_empty_iff.2 fun s hs hts ↦ hcons s hs ⟨hts, hvb ▸ hTb s hs⟩, hvb ▸ hα⟩)
-    · have htv : t ≠ v := by rintro rfl; exact (hTb t ht).ne hvb
-      rw [hA t ht htu htv, hB t ht htu htv, smul_zero, sub_zero, smul_zero]
   · -- `u < v` are adjacent interior vertices: the terms for `u` and `v` cancel.
     rw [boundary, sum_eq_add_of_mem ⟨u, huT⟩ ⟨v, hvT⟩ (mem_attach _ _) (mem_attach _ _)
       (fun he ↦ huv.ne (congrArg Subtype.val he)) ?_]
@@ -518,7 +538,8 @@ private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 
       have htu : t ≠ u := fun h ↦ hne.1 (Subtype.ext h)
       have htv : t ≠ v := fun h ↦ hne.2 (Subtype.ext h)
       dsimp only
-      rw [hA t ht htu htv, hB t ht htu htv, smul_zero, sub_zero, smul_zero]
+      rw [x.mapCoh_erase_sub_dgComp_eq_zero_of_collapse α hab hT hd ht (Or.inr huT) (Or.inr hvT)
+        huvT huv hα hcons htu htv, smul_zero]
 
 /-- The pulled-back coherences satisfy the dg nerve equation. -/
 -- When `α` is injective on the interior vertices the equation is a reindexing of the original
@@ -699,12 +720,8 @@ theorem eq_edge (x : Simplex R C 1) : x = edge ⟨_, x.coh_zero_one_mem_dgCycles
 /-- Distinct closed morphisms give distinct edges. -/
 theorem edge_injective {X Y : C} : Function.Injective (edge : dgCycles R X Y → Simplex R C 1) := by
   intro f g h
-  have key : ∀ x y : Simplex R C 1, x = y →
-      x.coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) ≍
-        y.coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) := by
-    rintro x _ rfl
-    rfl
-  have hh := key _ _ h
+  have hh := congr_arg_heq
+    (fun x : Simplex R C 1 ↦ x.coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp)) h
   have := eq_of_heq hh
   rw [edge_coh_zero_one, edge_coh_zero_one] at this
   exact Subtype.ext this
