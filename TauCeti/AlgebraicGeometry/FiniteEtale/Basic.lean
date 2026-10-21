@@ -202,6 +202,15 @@ noncomputable def equivOfIsSepClosedFunctorIsoFiber (K : Type u) [Field K] [IsSe
   eqToIso (equivOfIsSepClosed_functor K) ≪≫
     Functor.isoWhiskerLeft _ (CommAlgCat.FiniteEtale.fiberIsoFiniteSpec K).symm
 
+/-- Over a separably closed field `K`, the finite set that `equivOfIsSepClosed` attaches to the
+terminal finite étale scheme `Spec K` is a single point, since the equivalence preserves
+terminal objects. -/
+noncomputable instance uniqueEquivOfIsSepClosedFunctorObjOfHomId (K : Type u) [Field K]
+    [IsSepClosed K] :
+    Unique ((equivOfIsSepClosed K).functor.obj (ofHom (𝟙 (Spec (.of K))))) :=
+  Limits.Concrete.uniqueOfTerminalOfPreserves _
+    ((isTerminalOfHomId _).isTerminalObj (equivOfIsSepClosed K).functor _)
+
 /-- Over a separably closed field `K`, the finite set attached to a finite étale scheme by
 `equivOfIsSepClosed` is naturally its set of sections, that is, of its `K`-rational points. -/
 noncomputable def equivOfIsSepClosedFunctorCompInclIso (K : Type u) [Field K] [IsSepClosed K] :
@@ -210,9 +219,6 @@ noncomputable def equivOfIsSepClosedFunctorCompInclIso (K : Type u) [Field K] [I
   letI E := equivOfIsSepClosed K
   -- The equivalence sends the terminal finite étale scheme to a one-point set; a section
   -- `g` goes to the image of that point under `E.functor.map g`.
-  letI : Unique (E.functor.obj (ofHom (𝟙 (Spec (.of K))))) :=
-    Limits.Concrete.uniqueOfTerminalOfPreserves _
-      ((isTerminalOfHomId _).isTerminalObj E.functor _)
   Iso.symm <| NatIso.ofComponents (fun Y ↦ Equiv.toIso
     { toFun g := E.functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g)) default
       invFun y :=
@@ -244,10 +250,9 @@ theorem equivOfIsSepClosedFunctorCompInclIso_inv_app_apply (K : Type u) [Field K
     (a : (equivOfIsSepClosed K).functor.obj (ofHom (𝟙 (Spec (.of K))))) :
     (equivOfIsSepClosedFunctorCompInclIso K).inv.app Y g =
       (equivOfIsSepClosed K).functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g)) a := by
-  let : Unique ((equivOfIsSepClosed K).functor.obj (ofHom (𝟙 (Spec (.of K))))) :=
-    Limits.Concrete.uniqueOfTerminalOfPreserves _
-      ((isTerminalOfHomId _).isTerminalObj (equivOfIsSepClosed K).functor _)
-  rw [Unique.eq_default a]
+  -- At `default` (from `uniqueEquivOfIsSepClosedFunctorObjOfHomId`, the instance used by the
+  -- definition) the two sides agree by definition of the inverse component.
+  rw [Subsingleton.elim a default]
   rfl
 
 /-- A point `y` of the finite set attached to a finite étale scheme `Y` over a separably closed
