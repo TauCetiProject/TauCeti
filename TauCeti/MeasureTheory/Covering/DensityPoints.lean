@@ -34,15 +34,17 @@ is density zero of `sᶜ`. This lets density arguments estimate the complement, 
 add, and return to density-one points.
 
 For a locally finite measure positive on open sets, the essential boundary is contained in the
-topological frontier (`TauCeti.essentialBoundary_subset_frontier`), complements have the same
-essential boundary, and the essential boundary of a union, an intersection or a difference lies
-in the union of the essential boundaries. The inclusion in the frontier is strict in general:
-null modifications change the frontier but not the essential boundary.
+topological frontier (`TauCeti.essentialBoundary_subset_frontier`), a null-measurable set and
+its complement have the same essential boundary, and the essential boundary of an intersection
+or a difference of null-measurable sets lies in the union of the essential boundaries. For an
+arbitrary measure the same holds for a union of arbitrary sets. The inclusion in the frontier is
+strict in general: null modifications change the frontier but not the essential boundary.
 
-On a space with the Besicovitch covering property (for instance a finite-dimensional real
-normed space), Lebesgue's density theorem says that a null-measurable set agrees almost
-everywhere with its essential interior, its complement with its essential exterior, and hence
-its essential boundary is null (`MeasureTheory.NullMeasurableSet.measure_essentialBoundary`).
+For a locally finite measure on a space with the Besicovitch covering property (for instance a
+finite-dimensional real normed space), Lebesgue's density theorem says that a null-measurable
+set agrees almost everywhere with its essential interior, its complement with its essential
+exterior, and hence its essential boundary is null
+(`MeasureTheory.NullMeasurableSet.measure_essentialBoundary`).
 
 As a basic example, an endpoint of a nondegenerate interval in `ℝ` is a point of density `1/2`,
 and the essential boundary of `[a, b]` is `{a, b}` (`TauCeti.essentialBoundary_Icc`).
@@ -63,12 +65,14 @@ finite-dimensional space, spheres are null, so open balls give the same notions.
   null-measurable set along a family of sets is density zero of its complement.
 * `TauCeti.essentialBoundary_congr_ae`: invariance under null modification.
 * `TauCeti.essentialBoundary_subset_frontier`: the essential boundary lies in the frontier.
-* `TauCeti.essentialBoundary_compl`: complements have the same essential boundary.
+* `TauCeti.essentialBoundary_compl`: a null-measurable set and its complement have the same
+  essential boundary.
 * `TauCeti.essentialBoundary_union_subset`, `TauCeti.essentialBoundary_inter_subset`,
-  `TauCeti.essentialBoundary_diff_subset`: essential boundaries of Boolean combinations.
+  `TauCeti.essentialBoundary_diff_subset`: essential boundaries of Boolean combinations (of
+  null-measurable sets, for intersections and differences).
 * `MeasureTheory.NullMeasurableSet.essentialInterior_ae_eq`: Lebesgue's density theorem in set
-  form, and `MeasureTheory.NullMeasurableSet.measure_essentialBoundary`: the essential boundary
-  is null.
+  form for a locally finite measure, and
+  `MeasureTheory.NullMeasurableSet.measure_essentialBoundary`: the essential boundary is null.
 * `TauCeti.essentialBoundary_Icc`: the essential boundary of a closed interval.
 
 ## References
@@ -350,33 +354,23 @@ section Interval
 
 variable {a b : ℝ}
 
-/-- The proportion of `[a, b]` in a ball of radius `r` centred at an endpoint is `1/2`, as long
-as `r` is at most the length of the interval. -/
-private theorem volume_div_volume_eq_inv_two {I J : Set ℝ} {r : ℝ} (hr : 0 < r)
-    (hI : volume I = ENNReal.ofReal r) (hJ : volume J = ENNReal.ofReal (2 * r)) :
-    volume I / volume J = 2⁻¹ := by
-  rw [hI, hJ, ← ENNReal.ofReal_div_of_pos (by positivity), div_mul_cancel_right₀ hr.ne',
-    ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat]
-
 /-- The left endpoint of a nondegenerate closed interval is a point of density `1/2`. -/
 theorem left_mem_densityPoints_Icc (h : a < b) : a ∈ densityPoints volume (Icc a b) 2⁻¹ := by
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 h)] with r hr
-  refine (volume_div_volume_eq_inv_two hr.1 ?_ ?_).symm
-  · rw [Real.closedBall_eq_Icc, Icc_inter_Icc, max_eq_left (by linarith [hr.1]),
-      min_eq_right (by linarith [hr.2]), Real.volume_Icc, add_sub_cancel_left]
-  · rw [Real.closedBall_eq_Icc, Real.volume_Icc]
-    ring_nf
+  rw [Real.closedBall_eq_Icc, Icc_inter_Icc, max_eq_left (by linarith [hr.1]),
+    min_eq_right (by linarith [hr.2]), Real.volume_Icc, Real.volume_Icc, add_sub_cancel_left,
+    show a + r - (a - r) = 2 * r by ring, ← ENNReal.ofReal_div_of_pos (by linarith [hr.1]),
+    div_mul_cancel_right₀ hr.1.ne', ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat]
 
 /-- The right endpoint of a nondegenerate closed interval is a point of density `1/2`. -/
 theorem right_mem_densityPoints_Icc (h : a < b) : b ∈ densityPoints volume (Icc a b) 2⁻¹ := by
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 h)] with r hr
-  refine (volume_div_volume_eq_inv_two hr.1 ?_ ?_).symm
-  · rw [Real.closedBall_eq_Icc, Icc_inter_Icc, max_eq_right (by linarith [hr.2]),
-      min_eq_left (by linarith [hr.1]), Real.volume_Icc, sub_sub_cancel]
-  · rw [Real.closedBall_eq_Icc, Real.volume_Icc]
-    ring_nf
+  rw [Real.closedBall_eq_Icc, Icc_inter_Icc, max_eq_right (by linarith [hr.2]),
+    min_eq_left (by linarith [hr.1]), Real.volume_Icc, Real.volume_Icc, sub_sub_cancel,
+    show b + r - (b - r) = 2 * r by ring, ← ENNReal.ofReal_div_of_pos (by linarith [hr.1]),
+    div_mul_cancel_right₀ hr.1.ne', ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat]
 
 /-- The essential boundary of a nondegenerate closed interval consists of its endpoints. -/
 theorem essentialBoundary_Icc (h : a < b) : essentialBoundary volume (Icc a b) = {a, b} := by
