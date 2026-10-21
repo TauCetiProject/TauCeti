@@ -174,8 +174,9 @@ def autToCurve (F : PrestableMap q n) : Aut F →* Aut F.curve :=
 @[simp]
 theorem autToCurve_apply_asIso_hom (e : Aut F) :
     (autToCurve F e).asIso.hom = e.asIso.hom.curve := by
-  unfold autToCurve
-  rfl
+  -- `simp` cannot use `Functor.mapAut_apply_asIso` directly: the codomain `Aut F.curve` of
+  -- `autToCurve F` is `Aut (toCurve.obj F)` only after unfolding `toCurve`.
+  exact congr(Iso.hom $(Functor.mapAut_apply_asIso F toCurve e))
 
 /-- An automorphism of a prestable map is determined by its automorphism of the pointed source
 curve. -/
@@ -251,11 +252,9 @@ def pullbackFunctor (g : T ⟶ S) :
   -- the functoriality of base change of pointed prestable families.
   map_id F := by
     ext1
-    rw [pullbackMap_curve, id_curve, id_curve]
     exact (PointedPrestableFamily.pullbackFunctor g).map_id F.curve
   map_comp f f' := by
     ext1
-    rw [pullbackMap_curve, comp_curve, comp_curve, pullbackMap_curve, pullbackMap_curve]
     exact (PointedPrestableFamily.pullbackFunctor g).map_comp f.curve f'.curve
 
 /-- Reindexing the markings along an injection `e : Fin m ↪ Fin n` as a functor; a morphism of
@@ -263,6 +262,8 @@ prestable maps preserves in particular the reindexed markings. -/
 @[expose, simps]
 def reindexFunctor (e : Fin m ↪ Fin n) : PrestableMap q n ⥤ PrestableMap q m where
   obj F := F.reindex e
+  -- The total spaces and maps of `F.reindex e` are those of `F` by definition, and the reindexed
+  -- morphism of source curves has the same map of total spaces `f.curve.hom`.
   map f := ⟨(PointedPrestableFamily.reindexFunctor e).map f.curve, f.hom_comp_map⟩
 
 end PrestableMap
