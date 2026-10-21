@@ -45,20 +45,20 @@ cyclic representations (`AddMonoidHom.shortExact_cyclicRepShortComplex`), and it
 homomorphism `δ : H¹(C_m, T) ⟶ H²(C_m, Λ)` is computed on classes: for `t` killed by the norm
 and a lift `s : E` of `t`, the norm `∑ j < m, AE^j s` is the image of a fixed point `v` of `AΛ`
 (`AddMonoidHom.exists_apply_eq_sum_range_iterate`), and `δ` sends the class of `t` to the class
-of `v` (`AddMonoidHom.δ_cyclicRepShortComplex_groupCohomologyπOdd_one`). Changing `s` by the
+of `v` (`TauCeti.δ_cyclicRepShortComplex_groupCohomologyπOdd_one`). Changing `s` by the
 image of `l : Λ` changes `v` by the norm of `l` (`AddMonoidHom.sum_range_iterate_add_apply`),
 which does not change its class. In particular, when multiplication by `m` is injective on `E`
 and `m • s = i v`, the class of the image of `s` is sent to the class of `v`, that is
 `δ [v / m] = [v]`
-(`AddMonoidHom.δ_cyclicRepShortComplex_groupCohomologyπOdd_one_of_nsmul_eq`). When multiplication
+(`TauCeti.δ_cyclicRepShortComplex_groupCohomologyπOdd_one_of_nsmul_eq`). When multiplication
 by `m` is bijective on `E`, as for a real vector space, the cohomology of `E` vanishes in positive
-degrees and `δ` is an isomorphism (`AddMonoidHom.cyclicConnectingEquiv`).
+degrees and `δ` is an isomorphism (`TauCeti.cyclicConnectingEquiv`).
 
 ## Main definitions
 
 * `AddMonoidHom.cyclicRepShortComplex`: the short complex `Λ ⟶ E ⟶ T` of cyclic
   representations.
-* `AddMonoidHom.cyclicConnectingEquiv`: the connecting isomorphism `H¹(C_m, T) ≃ H²(C_m, Λ)`
+* `TauCeti.cyclicConnectingEquiv`: the connecting isomorphism `H¹(C_m, T) ≃ H²(C_m, Λ)`
   when multiplication by `m` is bijective on `E`.
 
 ## Main results
@@ -71,8 +71,8 @@ degrees and `δ` is an isomorphism (`AddMonoidHom.cyclicConnectingEquiv`).
   of `A` modulo the image of the norm.
 * `AddMonoidHom.shortExact_cyclicRepShortComplex`: an exact sequence of abelian groups with
   equivariant maps is a short exact sequence of cyclic representations.
-* `AddMonoidHom.δ_cyclicRepShortComplex_groupCohomologyπOdd_one`,
-  `AddMonoidHom.δ_cyclicRepShortComplex_groupCohomologyπOdd_one_of_nsmul_eq`: the connecting
+* `TauCeti.δ_cyclicRepShortComplex_groupCohomologyπOdd_one`,
+  `TauCeti.δ_cyclicRepShortComplex_groupCohomologyπOdd_one_of_nsmul_eq`: the connecting
   homomorphism sends the class of `t` to the class of the norm of a lift of `t`, and the class of
   `v / m` to the class of `v`.
 
@@ -134,8 +134,6 @@ end AddEquiv
 
 namespace AddMonoidHom
 
-open groupCohomology
-
 /-! ### The connecting class of an equivariant short exact sequence -/
 
 variable {Λ E T : Type} [AddCommGroup Λ] [AddCommGroup E] [AddCommGroup T] {m : ℕ} [NeZero m]
@@ -172,7 +170,15 @@ theorem shortExact_cyclicRepShortComplex {hΛ : (⇑AΛ)^[m] = _root_.id}
     mono_f := (Rep.mono_iff_injective _).2 fun x y h ↦ hinj ((hf x).symm.trans (h.trans (hf y)))
     epi_g := (Rep.epi_iff_surjective _).2 fun x ↦ (hsurj x).imp fun y hy ↦ (hg y).trans hy }
 
-variable {i p} {hΛ : (⇑AΛ)^[m] = _root_.id} {hE : (⇑AE)^[m] = _root_.id}
+end AddMonoidHom
+
+open groupCohomology
+
+namespace TauCeti
+
+variable {Λ E T : Type} [AddCommGroup Λ] [AddCommGroup E] [AddCommGroup T] {m : ℕ} [NeZero m]
+  {AΛ : Λ ≃+ Λ} {AE : E ≃+ E} {AT : T ≃+ T} {i : Λ →+ E} {p : E →+ T}
+  {hΛ : (⇑AΛ)^[m] = _root_.id} {hE : (⇑AE)^[m] = _root_.id}
   {hT : (⇑AT)^[m] = _root_.id} {hi : ∀ x, i (AΛ x) = AE (i x)} {hp : ∀ x, p (AE x) = AT (p x)}
   {hpi : ∀ x, p (i x) = 0} (hS : (i.cyclicRepShortComplex p hΛ hE hT hi hp hpi).ShortExact)
 
@@ -188,8 +194,8 @@ theorem δ_cyclicRepShortComplex_groupCohomologyπOdd_one
         (groupCohomologyπOdd (AT.cyclicRep hT) (.ofAdd 1) mem_zpowers_ofAdd_one 1 odd_one t) =
       groupCohomologyπEven (AΛ.cyclicRep hΛ) (.ofAdd 1) mem_zpowers_ofAdd_one 2 even_two v :=
   Rep.FiniteCyclicGroup.δ_groupCohomologyπOdd_one _ _ hS t s
-    ((congrFun (coe_cyclicRepHom_hom p hE hT hp) s).trans hs) v
-    ((congrFun (coe_cyclicRepHom_hom i hΛ hE hi) v).trans
+    ((congrFun (AddMonoidHom.coe_cyclicRepHom_hom p hE hT hp) s).trans hs) v
+    ((congrFun (AddMonoidHom.coe_cyclicRepHom_hom i hΛ hE hi) v).trans
       (hv.trans (AE.cyclicRepresentation_norm_apply hE s).symm))
 
 /-- **The connecting class of `v / m`.** If multiplication by `m` is injective on `E` and
@@ -227,4 +233,4 @@ theorem cyclicConnectingEquiv_apply (hm : Function.Bijective fun x : E ↦ m •
     cyclicConnectingEquiv hS hm x = δ hS 1 2 rfl x :=
   (rfl)
 
-end AddMonoidHom
+end TauCeti
