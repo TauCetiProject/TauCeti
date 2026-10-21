@@ -66,7 +66,8 @@ respect to the target for the swapped cost `fun z ↦ c z.swap`.
   `TauCeti.isCConvexSet_norm_sub_sq_div_two_iff` — for the quadratic cost, the `c`-exponential
   is `x + p`, `c`-segments are segments, and `c`-convexity is convexity;
 * `TauCeti.cExp_sqrt_one_add_norm_sub_sq` — for the cost `√(1 + ‖x - y‖ ^ 2)`, the
-  `c`-exponential of a momentum `q` with `‖q‖ < 1` is `x + q / √(1 - ‖q‖ ^ 2)`.
+  `c`-exponential of a momentum `q` with `‖q‖ < 1` is `x + q / √(1 - ‖q‖ ^ 2)` whenever that
+  point lies in `V`.
 
 ## References
 

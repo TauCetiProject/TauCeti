@@ -29,12 +29,12 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 /-- The inverse Riesz isomorphism sends the functional `innerSL 𝕜 w = ⟪w, ·⟫` back to `w`. -/
 @[simp]
 theorem toDual_symm_innerSL (w : E) : (toDual 𝕜 E).symm (innerSL 𝕜 w) = w :=
-  (toDual 𝕜 E).symm_apply_apply w
+  (toDual 𝕜 E).symm_apply_eq.2 (by ext; simp)
 
 /-- The functional `⟪(toDual 𝕜 E).symm q, ·⟫` represented by the inverse Riesz isomorphism is
 `q`. -/
 @[simp]
-theorem innerSL_toDual_symm (q : StrongDual 𝕜 E) : innerSL 𝕜 ((toDual 𝕜 E).symm q) = q :=
-  (toDual 𝕜 E).apply_symm_apply q
+theorem innerSL_toDual_symm (q : StrongDual 𝕜 E) : innerSL 𝕜 ((toDual 𝕜 E).symm q) = q := by
+  ext v; simp [toDual_symm_apply]
 
 end InnerProductSpace
