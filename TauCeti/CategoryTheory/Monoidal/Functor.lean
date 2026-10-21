@@ -220,76 +220,77 @@ open MonoidalCategory
 
 section Retract
 
-variable {F G : C ⥤ D} [F.OplaxMonoidal] (i : G ⟶ F) (r : F ⟶ G)
+variable {F G : C ⥤ D} [F.OplaxMonoidal]
 
-private lemma retract_δ_natural {X Y X' Y' : C} (f : X ⟶ Y) (g : X' ⟶ Y') :
+private lemma retract_δ_natural (i : G ⟶ F) (r : F ⟶ G) {X Y X' Y' : C} (f : X ⟶ Y)
+    (g : X' ⟶ Y') :
     (i.app (X ⊗ X') ≫ δ F X X' ≫ (r.app X ⊗ₘ r.app X')) ≫ (G.map f ⊗ₘ G.map g) =
       G.map (f ⊗ₘ g) ≫ i.app (Y ⊗ Y') ≫ δ F Y Y' ≫ (r.app Y ⊗ₘ r.app Y') := by
   rw [Category.assoc, Category.assoc, tensorHom_comp_tensorHom, ← r.naturality, ← r.naturality,
     ← tensorHom_comp_tensorHom, δ_natural_assoc, i.naturality_assoc]
 
 /-- An oplax monoidal structure on a retract `G` of an oplax monoidal functor `F`, given by
-`i : G ⟶ F` and `r : F ⟶ G` with `i ≫ r = 𝟙 G`, provided the idempotent `r ≫ i` of `F` does not
-change the counit `η F` and the comultiplication `δ F` followed by `r ⊗ r`.  The counit of `G`
-is `i ≫ η F` (`CategoryTheory.Functor.OplaxMonoidal.ofRetract_η`) and its comultiplication is
-`i ≫ δ F ≫ (r ⊗ r)` (`CategoryTheory.Functor.OplaxMonoidal.ofRetract_δ`). -/
+`e : Retract G F`, provided the idempotent `e.r ≫ e.i` of `F` does not change the counit `η F`
+and the comultiplication `δ F` followed by `e.r ⊗ e.r`.  The counit of `G` is `e.i ≫ η F`
+(`CategoryTheory.Functor.OplaxMonoidal.ofRetract_η`) and its comultiplication is
+`e.i ≫ δ F ≫ (e.r ⊗ e.r)` (`CategoryTheory.Functor.OplaxMonoidal.ofRetract_δ`). -/
 @[instance_reducible]
-def ofRetract (hir : i ≫ r = 𝟙 G)
-    (hδ : ∀ X Y : C, r.app (X ⊗ Y) ≫ i.app (X ⊗ Y) ≫ δ F X Y ≫ (r.app X ⊗ₘ r.app Y) =
-      δ F X Y ≫ (r.app X ⊗ₘ r.app Y))
-    (hη : r.app (𝟙_ C) ≫ i.app (𝟙_ C) ≫ η F = η F) : G.OplaxMonoidal where
-  η := i.app (𝟙_ C) ≫ η F
-  δ X Y := i.app (X ⊗ Y) ≫ δ F X Y ≫ (r.app X ⊗ₘ r.app Y)
+def ofRetract (e : Retract G F)
+    (hδ : ∀ X Y : C, e.r.app (X ⊗ Y) ≫ e.i.app (X ⊗ Y) ≫ δ F X Y ≫ (e.r.app X ⊗ₘ e.r.app Y) =
+      δ F X Y ≫ (e.r.app X ⊗ₘ e.r.app Y))
+    (hη : e.r.app (𝟙_ C) ≫ e.i.app (𝟙_ C) ≫ η F = η F) : G.OplaxMonoidal where
+  η := e.i.app (𝟙_ C) ≫ η F
+  δ X Y := e.i.app (X ⊗ Y) ≫ δ F X Y ≫ (e.r.app X ⊗ₘ e.r.app Y)
   δ_natural_left f X' := by
-    simpa using retract_δ_natural i r f (𝟙 X')
+    simpa using retract_δ_natural e.i e.r f (𝟙 X')
   δ_natural_right X' f := by
-    simpa using retract_δ_natural i r (𝟙 X') f
+    simpa using retract_δ_natural e.i e.r (𝟙 X') f
   oplax_associativity X Y Z := by
-    -- the idempotent `r ≫ i` created between the two comultiplications is absorbed by `hδ`
-    have hl : (r.app (X ⊗ Y) ⊗ₘ r.app Z) ≫
-        (i.app (X ⊗ Y) ≫ δ F X Y ≫ (r.app X ⊗ₘ r.app Y)) ▷ G.obj Z =
-          (δ F X Y ▷ F.obj Z) ≫ ((r.app X ⊗ₘ r.app Y) ⊗ₘ r.app Z) := by
+    -- the idempotent `e.r ≫ e.i` created between the two comultiplications is absorbed by `hδ`
+    have hl : (e.r.app (X ⊗ Y) ⊗ₘ e.r.app Z) ≫
+        (e.i.app (X ⊗ Y) ≫ δ F X Y ≫ (e.r.app X ⊗ₘ e.r.app Y)) ▷ G.obj Z =
+          (δ F X Y ▷ F.obj Z) ≫ ((e.r.app X ⊗ₘ e.r.app Y) ⊗ₘ e.r.app Z) := by
       rw [← tensorHom_id, tensorHom_comp_tensorHom, Category.comp_id, hδ,
         ← tensorHom_id, tensorHom_comp_tensorHom, Category.id_comp]
-    have hr : (r.app X ⊗ₘ r.app (Y ⊗ Z)) ≫
-        G.obj X ◁ (i.app (Y ⊗ Z) ≫ δ F Y Z ≫ (r.app Y ⊗ₘ r.app Z)) =
-          (F.obj X ◁ δ F Y Z) ≫ (r.app X ⊗ₘ (r.app Y ⊗ₘ r.app Z)) := by
+    have hr : (e.r.app X ⊗ₘ e.r.app (Y ⊗ Z)) ≫
+        G.obj X ◁ (e.i.app (Y ⊗ Z) ≫ δ F Y Z ≫ (e.r.app Y ⊗ₘ e.r.app Z)) =
+          (F.obj X ◁ δ F Y Z) ≫ (e.r.app X ⊗ₘ (e.r.app Y ⊗ₘ e.r.app Z)) := by
       rw [← id_tensorHom, tensorHom_comp_tensorHom, Category.comp_id, hδ,
         ← id_tensorHom, tensorHom_comp_tensorHom, Category.id_comp]
     simp only [Category.assoc]
-    rw [reassoc_of% hl, associator_naturality, associativity_assoc, ← i.naturality_assoc, hr]
+    rw [reassoc_of% hl, associator_naturality, associativity_assoc, ← e.i.naturality_assoc, hr]
   oplax_left_unitality X := by
-    have h : (r.app (𝟙_ C) ⊗ₘ r.app X) ≫ (i.app (𝟙_ C) ≫ η F) ▷ G.obj X =
-        (η F ▷ F.obj X) ≫ (𝟙_ D ◁ r.app X) := by
+    have h : (e.r.app (𝟙_ C) ⊗ₘ e.r.app X) ≫ (e.i.app (𝟙_ C) ≫ η F) ▷ G.obj X =
+        (η F ▷ F.obj X) ≫ (𝟙_ D ◁ e.r.app X) := by
       rw [← tensorHom_id, tensorHom_comp_tensorHom, Category.comp_id, hη, ← id_tensorHom,
         ← tensorHom_id, tensorHom_comp_tensorHom, Category.comp_id, Category.id_comp]
     simp only [Category.assoc]
-    rw [h, i.naturality_assoc, ← left_unitality_assoc, leftUnitor_inv_naturality_assoc,
-      ← MonoidalCategory.whiskerLeft_comp, ← NatTrans.comp_app, hir, NatTrans.id_app,
+    rw [h, e.i.naturality_assoc, ← left_unitality_assoc, leftUnitor_inv_naturality_assoc,
+      ← MonoidalCategory.whiskerLeft_comp, ← NatTrans.comp_app, e.retract, NatTrans.id_app,
       MonoidalCategory.whiskerLeft_id, Category.comp_id]
   oplax_right_unitality X := by
-    have h : (r.app X ⊗ₘ r.app (𝟙_ C)) ≫ G.obj X ◁ (i.app (𝟙_ C) ≫ η F) =
-        (F.obj X ◁ η F) ≫ (r.app X ▷ 𝟙_ D) := by
+    have h : (e.r.app X ⊗ₘ e.r.app (𝟙_ C)) ≫ G.obj X ◁ (e.i.app (𝟙_ C) ≫ η F) =
+        (F.obj X ◁ η F) ≫ (e.r.app X ▷ 𝟙_ D) := by
       rw [← id_tensorHom, tensorHom_comp_tensorHom, Category.comp_id, hη, ← id_tensorHom,
         ← tensorHom_id, tensorHom_comp_tensorHom, Category.comp_id, Category.id_comp]
     simp only [Category.assoc]
-    rw [h, i.naturality_assoc, ← right_unitality_assoc, rightUnitor_inv_naturality_assoc,
-      ← MonoidalCategory.comp_whiskerRight, ← NatTrans.comp_app, hir, NatTrans.id_app,
+    rw [h, e.i.naturality_assoc, ← right_unitality_assoc, rightUnitor_inv_naturality_assoc,
+      ← MonoidalCategory.comp_whiskerRight, ← NatTrans.comp_app, e.retract, NatTrans.id_app,
       MonoidalCategory.id_whiskerRight, Category.comp_id]
 
-variable (hir : i ≫ r = 𝟙 G)
-  (hδ : ∀ X Y : C, r.app (X ⊗ Y) ≫ i.app (X ⊗ Y) ≫ δ F X Y ≫ (r.app X ⊗ₘ r.app Y) =
-    δ F X Y ≫ (r.app X ⊗ₘ r.app Y))
-  (hη : r.app (𝟙_ C) ≫ i.app (𝟙_ C) ≫ η F = η F)
+variable (e : Retract G F)
+  (hδ : ∀ X Y : C, e.r.app (X ⊗ Y) ≫ e.i.app (X ⊗ Y) ≫ δ F X Y ≫ (e.r.app X ⊗ₘ e.r.app Y) =
+    δ F X Y ≫ (e.r.app X ⊗ₘ e.r.app Y))
+  (hη : e.r.app (𝟙_ C) ≫ e.i.app (𝟙_ C) ≫ η F = η F)
 
 /-- The counit of the oplax monoidal structure on a retract. -/
-lemma ofRetract_η : letI := ofRetract i r hir hδ hη
-    η G = i.app (𝟙_ C) ≫ η F :=
+lemma ofRetract_η : letI := ofRetract e hδ hη
+    η G = e.i.app (𝟙_ C) ≫ η F :=
   (rfl)
 
 /-- The comultiplication of the oplax monoidal structure on a retract. -/
-lemma ofRetract_δ (X Y : C) : letI := ofRetract i r hir hδ hη
-    δ G X Y = i.app (X ⊗ Y) ≫ δ F X Y ≫ (r.app X ⊗ₘ r.app Y) :=
+lemma ofRetract_δ (X Y : C) : letI := ofRetract e hδ hη
+    δ G X Y = e.i.app (X ⊗ Y) ≫ δ F X Y ≫ (e.r.app X ⊗ₘ e.r.app Y) :=
   (rfl)
 
 end Retract

@@ -21,11 +21,14 @@ of `Γ` is what composes the simplicial mapping objects `Γ(τ_{≥0} Hom(x, y))
 enrichment of a differential graded category (J. Lurie, *Higher Algebra*, Construction 1.3.1.13).
 
 The normalized chains `N X` are the direct summand of the alternating face map complex of `X`
-cut out by the idempotent `PInfty`, whose kernel is spanned by the degenerate simplices; for an
-abelian category `C` this summand is isomorphic to the normalized Moore complex
-(`CategoryTheory.Idempotents.DoldKan.inclusionN` and
-`CategoryTheory.Idempotents.DoldKan.PInftyToN`).  The key point is that the Alexander–Whitney map
-of `CategoryTheory.SimplicialObject.alexanderWhitney` preserves degenerate chains
+cut out by the idempotent `PInfty`, whose kernel is spanned by the degenerate simplices, with
+inclusion `CategoryTheory.Idempotents.DoldKan.inclusionN` and projection
+`CategoryTheory.Idempotents.DoldKan.PInftyToN`, bundled as the retract
+`CategoryTheory.Idempotents.DoldKan.retractN`.  For an abelian category `C` this summand is
+isomorphic to the normalized Moore complex
+(`AlgebraicTopology.DoldKan.N₁_iso_normalizedMooreComplex_comp_toKaroubi`).  The key point is
+that the Alexander–Whitney map of `CategoryTheory.SimplicialObject.alexanderWhitney` preserves
+degenerate chains
 (`CategoryTheory.SimplicialObject.QInfty_comp_alexanderWhitney_comp_tensorHom_PInfty`): every
 summand of the Alexander–Whitney map of a degenerate simplex has a degenerate front or back face.
 The comultiplication of the alternating face map complex therefore passes to the retract `N`
@@ -137,15 +140,24 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [IsIdempotentComplete C]
   [HasFiniteCoproducts C]
 
 /-- The inclusion of the normalized chains `N X` of the pseudoabelian Dold–Kan correspondence
-into the alternating face map complex of `X`, as the direct summand cut out by `PInfty`. -/
+into the alternating face map complex of `X`, as the direct summand cut out by `PInfty`.
+
+By definition `N = N₁ ⋙ (toKaroubiEquivalence _).inverse`, so `N.obj X` is the object of chain
+complexes corresponding to the formal direct summand `N₁.obj X` of the Karoubi envelope, whose
+underlying complex is the alternating face map complex of `X` with idempotent `PInfty`
+(`AlgebraicTopology.DoldKan.N₁_obj_p`); the counit of `toKaroubiEquivalence` identifies the two.
+-/
 def inclusionN : (N : SimplicialObject C ⥤ _) ⟶ alternatingFaceMapComplex C where
   app X := ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X)).f
   naturality X Y f := by
     have h := congrArg Karoubi.Hom.f
       ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.naturality (N₁.map f))
     have hp : ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X)).f ≫
-        PInfty = ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X)).f :=
-      Karoubi.comp_p _
+        PInfty = ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X)).f := by
+      have h := Karoubi.comp_p
+        ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X))
+      simp only [Functor.id_obj, N₁_obj_p] at h
+      exact h
     simp only [Karoubi.comp_f, Functor.comp_map, Functor.id_map, N₁_map_f,
       reassoc_of% hp] at h
     exact h
@@ -159,48 +171,80 @@ def PInftyToN : alternatingFaceMapComplex C ⟶ (N : SimplicialObject C ⥤ _) w
       ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.naturality (N₁.map f))
     have hp : PInfty ≫
         ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj Y)).f =
-          ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj Y)).f :=
-      Karoubi.p_comp ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj Y))
+          ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj Y)).f := by
+      have h := Karoubi.p_comp
+        ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj Y))
+      simp only [Functor.id_obj, N₁_obj_p] at h
+      exact h
     have hn : PInfty ≫ AlternatingFaceMapComplex.map f =
         AlternatingFaceMapComplex.map f ≫ PInfty := by
-      ext n : 1
-      exact (PInfty_f_naturality n f).symm
+      have h := ((natTransPInfty C).naturality f).symm
+      simp only [natTransPInfty_app] at h
+      exact h
     simp only [Karoubi.comp_f, Functor.comp_map, Functor.id_map, N₁_map_f, hn, Category.assoc,
       hp] at h
     exact h
 
+private lemma inclusionN_app (X : SimplicialObject C) :
+    inclusionN.app X = ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X)).f :=
+  rfl
+
+private lemma PInftyToN_app (X : SimplicialObject C) :
+    PInftyToN.app X = ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj X)).f :=
+  rfl
+
 /-- The normalized chains are a retract of the alternating face map complex. -/
 @[reassoc (attr := simp)]
 lemma inclusionN_app_comp_PInftyToN_app (X : SimplicialObject C) :
-    inclusionN.app X ≫ PInftyToN.app X = 𝟙 (N.obj X) :=
-  congrArg Karoubi.Hom.f
+    inclusionN.app X ≫ PInftyToN.app X = 𝟙 (N.obj X) := by
+  rw [inclusionN_app, PInftyToN_app]
+  have h := congrArg Karoubi.Hom.f
     ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom_inv_id_app (N₁.obj X))
+  simp only [Karoubi.comp_f, Karoubi.id_f, Functor.comp_obj, toKaroubiEquivalence,
+    Functor.asEquivalence_functor, toKaroubi_obj_p] at h
+  exact h
 
 /-- The idempotent of the alternating face map complex cutting out the normalized chains is
 `PInfty`. -/
 @[reassoc (attr := simp)]
 lemma PInftyToN_app_comp_inclusionN_app (X : SimplicialObject C) :
-    PInftyToN.app X ≫ inclusionN.app X = PInfty :=
-  congrArg Karoubi.Hom.f
+    PInftyToN.app X ≫ inclusionN.app X = PInfty := by
+  rw [inclusionN_app, PInftyToN_app]
+  have h := congrArg Karoubi.Hom.f
     ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv_hom_id_app (N₁.obj X))
+  simp only [Karoubi.comp_f, Karoubi.id_f, Functor.id_obj, N₁_obj_p] at h
+  exact h
 
 /-- The projection onto normalized chains is unchanged by first applying `PInfty`. -/
 @[reassoc (attr := simp)]
 lemma PInfty_comp_PInftyToN_app (X : SimplicialObject C) :
-    PInfty ≫ PInftyToN.app X = PInftyToN.app X :=
-  Karoubi.p_comp ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj X))
+    PInfty ≫ PInftyToN.app X = PInftyToN.app X := by
+  rw [PInftyToN_app]
+  have h :=
+    Karoubi.p_comp ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj X))
+  simp only [Functor.id_obj, N₁_obj_p] at h
+  exact h
 
 /-- Normalized chains are fixed by `PInfty`. -/
 @[reassoc (attr := simp)]
 lemma inclusionN_app_comp_PInfty (X : SimplicialObject C) :
-    inclusionN.app X ≫ PInfty = inclusionN.app X :=
-  Karoubi.comp_p ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X))
+    inclusionN.app X ≫ PInfty = inclusionN.app X := by
+  rw [inclusionN_app]
+  have h :=
+    Karoubi.comp_p ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X))
+  simp only [Functor.id_obj, N₁_obj_p] at h
+  exact h
 
-/-- The normalized chain functor is a retract of the alternating face map complex functor. -/
-lemma inclusionN_comp_PInftyToN :
-    inclusionN ≫ PInftyToN = 𝟙 (N : SimplicialObject C ⥤ _) := by
-  ext X : 2
-  exact inclusionN_app_comp_PInftyToN_app X
+/-- The normalized chain functor is a retract of the alternating face map complex functor, with
+inclusion `CategoryTheory.Idempotents.DoldKan.inclusionN` and projection
+`CategoryTheory.Idempotents.DoldKan.PInftyToN`. -/
+@[expose, simps]
+def retractN : Retract (N : SimplicialObject C ⥤ _) (alternatingFaceMapComplex C) where
+  i := inclusionN
+  r := PInftyToN
+  retract := by
+    ext X : 2
+    exact inclusionN_app_comp_PInftyToN_app X
 
 section Monoidal
 
@@ -211,17 +255,18 @@ variable [MonoidalCategory C] [MonoidalPreadditive C]
 /-- **The Alexander–Whitney oplax monoidal structure on normalized chains**: the normalized
 chain functor `N` of the Dold–Kan correspondence is oplax monoidal, with comultiplication the
 Alexander–Whitney map restricted to normalized chains and projected back onto them
-(`CategoryTheory.Idempotents.DoldKan.N_δ`), and counit the identity of `𝟙_ C` in degree zero
+(`CategoryTheory.Idempotents.DoldKan.N_δ`), and counit the counit of the alternating face map
+complex (the identity of `𝟙_ C` in degree zero) restricted to normalized chains
 (`CategoryTheory.Idempotents.DoldKan.N_η`). -/
 @[no_expose]
 instance oplaxMonoidalN : (N : SimplicialObject C ⥤ _).OplaxMonoidal :=
-  Functor.OplaxMonoidal.ofRetract inclusionN PInftyToN inclusionN_comp_PInftyToN
+  Functor.OplaxMonoidal.ofRetract retractN
     (fun X Y ↦ by
-      rw [PInftyToN_app_comp_inclusionN_app_assoc,
+      rw [retractN_i, retractN_r, PInftyToN_app_comp_inclusionN_app_assoc,
         SimplicialObject.alternatingFaceMapComplex_δ, ← PInfty_comp_PInftyToN_app X,
         ← PInfty_comp_PInftyToN_app Y, ← tensorHom_comp_tensorHom,
         SimplicialObject.PInfty_comp_alexanderWhitney_comp_tensorHom_PInfty_assoc])
-    (by rw [PInftyToN_app_comp_inclusionN_app_assoc,
+    (by rw [retractN_i, retractN_r, PInftyToN_app_comp_inclusionN_app_assoc,
       SimplicialObject.PInfty_comp_η_alternatingFaceMapComplex])
 
 /-- The comultiplication of the normalized chain functor: the Alexander–Whitney map of the
@@ -230,8 +275,8 @@ alternating face map complexes, restricted to and projected onto normalized chai
 lemma N_δ (X Y : SimplicialObject C) :
     Functor.OplaxMonoidal.δ N X Y = inclusionN.app (X ⊗ Y) ≫
       SimplicialObject.alexanderWhitney X Y ≫ (PInftyToN.app X ⊗ₘ PInftyToN.app Y) :=
-  (Functor.OplaxMonoidal.ofRetract_δ _ _ _ _ _ X Y).trans (by
-    rw [SimplicialObject.alternatingFaceMapComplex_δ])
+  (Functor.OplaxMonoidal.ofRetract_δ _ _ _ X Y).trans (by
+    rw [SimplicialObject.alternatingFaceMapComplex_δ, retractN_i, retractN_r])
 
 /-- The counit of the normalized chain functor: the counit of the alternating face map complex,
 the identity of `𝟙_ C` in degree zero, restricted to normalized chains. -/
@@ -239,7 +284,7 @@ the identity of `𝟙_ C` in degree zero, restricted to normalized chains. -/
 lemma N_η :
     Functor.OplaxMonoidal.η (N : SimplicialObject C ⥤ _) =
       inclusionN.app (𝟙_ _) ≫ Functor.OplaxMonoidal.η (alternatingFaceMapComplex C) :=
-  Functor.OplaxMonoidal.ofRetract_η _ _ _ _ _
+  Functor.OplaxMonoidal.ofRetract_η _ _ _
 
 /-- On normalized chains, the comultiplication of `N` is the Alexander–Whitney map followed by
 the projection onto normalized chains. -/
@@ -264,7 +309,11 @@ Dold–Kan equivalence. -/
 lemma Γ_ε :
     Functor.LaxMonoidal.ε (Γ : ChainComplex C ℕ ⥤ _) =
       (equivalence (C := C)).unit.app (𝟙_ _) ≫ Γ.map (Functor.OplaxMonoidal.η N) :=
-  (rfl)
+  -- `laxMonoidalΓ` is `rightAdjointLaxMonoidal` for the Dold–Kan equivalence, whose functor is
+  -- `N` and inverse is `Γ` (`equivalence_functor`, `equivalence_inverse`)
+  letI : (equivalence (C := C)).functor.OplaxMonoidal := oplaxMonoidalN
+  equivalence.toAdjunction.rightAdjointLaxMonoidal_ε.trans
+    (equivalence.toAdjunction.homEquiv_unit _ _ _)
 
 /-- The tensorator of the lax monoidal functor `Γ` is the transpose of the comultiplication of
 `N` along the Dold–Kan equivalence. -/
@@ -273,7 +322,9 @@ lemma Γ_μ (K L : ChainComplex C ℕ) :
       (equivalence (C := C)).unit.app (Γ.obj K ⊗ Γ.obj L) ≫
         Γ.map (Functor.OplaxMonoidal.δ N (Γ.obj K) (Γ.obj L) ≫
           ((equivalence (C := C)).counit.app K ⊗ₘ (equivalence (C := C)).counit.app L)) :=
-  (rfl)
+  letI : (equivalence (C := C)).functor.OplaxMonoidal := oplaxMonoidalN
+  (equivalence.toAdjunction.rightAdjointLaxMonoidal_μ K L).trans
+    (equivalence.toAdjunction.homEquiv_unit _ _ _)
 
 end Monoidal
 
