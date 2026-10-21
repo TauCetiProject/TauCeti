@@ -75,6 +75,41 @@ namespace LinearMap
 
 open Module Polynomial
 
+section KerPow
+
+variable {R N : Type*} [Semiring R] [AddCommGroup N] [Module R N] {A B : Module.End R N}
+
+/-- An endomorphism commuting with `A` preserves `ker (A ^ i)`. -/
+private theorem apply_mem_ker_pow_of_commute {C : Module.End R N} (hc : Commute A C) {i : ℕ}
+    {v : N} (hv : v ∈ ker (A ^ i)) : C v ∈ ker (A ^ i) := by
+  rw [mem_ker] at hv ⊢
+  rw [← Module.End.mul_apply, (hc.pow_left i).eq, Module.End.mul_apply, hv, map_zero]
+
+/-- If `A` commutes with `⁅A, B⁆`, then `B` maps `ker (A ^ i)` into `ker (A ^ (i + 1))`. -/
+private theorem apply_mem_ker_pow_succ_of_commute_lie (hc : Commute A ⁅A, B⁆) {i : ℕ} {v : N}
+    (hv : v ∈ ker (A ^ i)) : B v ∈ ker (A ^ (i + 1)) := by
+  have hCv := apply_mem_ker_pow_of_commute hc hv
+  rw [mem_ker] at hv hCv ⊢
+  -- Both terms of `A ^ (i + 1) * B = B * A ^ (i + 1) + (i + 1) • (A ^ i * ⁅A, B⁆)` applied to
+  -- `v` vanish, since `A ^ i` kills `v` and `⁅A, B⁆ v`.
+  have hv' : (A ^ (i + 1)) v = 0 := by rw [pow_succ', Module.End.mul_apply, hv, map_zero]
+  rw [← Module.End.mul_apply, (sub_eq_iff_eq_add').1 (Ring.lie_def _ _).symm,
+    hc.lie_pow_succ_left]
+  simp only [add_apply, smul_apply, Module.End.mul_apply, hv', hCv, map_zero, smul_zero, add_zero]
+
+/-- `A` maps `ker (A ^ (i + 1))` into `ker (A ^ i)`. -/
+private theorem apply_mem_ker_pow_of_mem_ker_pow_succ {i : ℕ} {v : N}
+    (hv : v ∈ ker (A ^ (i + 1))) : A v ∈ ker (A ^ i) := by
+  rw [mem_ker] at hv ⊢
+  rwa [← Module.End.mul_apply, ← pow_succ]
+
+/-- If `A` commutes with `⁅A, B⁆`, then `A * B` preserves `ker (A ^ i)`. -/
+private theorem mul_apply_mem_ker_pow_of_commute_lie (hc : Commute A ⁅A, B⁆) {i : ℕ} {v : N}
+    (hv : v ∈ ker (A ^ i)) : (A * B) v ∈ ker (A ^ i) :=
+  apply_mem_ker_pow_of_mem_ker_pow_succ (apply_mem_ker_pow_succ_of_commute_lie hc hv)
+
+end KerPow
+
 variable {K M : Type*} [Field K] [AddCommGroup M] [Module K M] [FiniteDimensional K M]
 
 /-- **Trace criterion for nilpotence.** Over a field of characteristic zero, an endomorphism of a
@@ -139,60 +174,57 @@ theorem isNilpotent_lie_of_lie_lie_eq_zero (h : ⁅A, ⁅A, B⁆⁆ = 0) : IsNil
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hk
   rw [zero_add, pow_succ, hcomm _ (hc.pow_right k), map_sub, trace_mul_comm, sub_self]
 
+/-- If `A` commutes with `⁅A, B⁆`, then the trace of `A * B` on `ker (A ^ (i + 1))` equals its
+trace on `ker (A ^ i)`: on `ker (A ^ (i + 1))`, `A * B` is `B * A` plus the nilpotent `⁅A, B⁆`, and
+`B * A` and `A * B` are the two products of `A : ker (A ^ (i + 1)) → ker (A ^ i)` and
+`B : ker (A ^ i) → ker (A ^ (i + 1))`. -/
+private theorem trace_restrict_mul_ker_pow_succ (hc : Commute A ⁅A, B⁆) (i : ℕ) :
+    trace K (ker (A ^ (i + 1)))
+        ((A * B).restrict fun _ => mul_apply_mem_ker_pow_of_commute_lie hc) =
+      trace K (ker (A ^ i))
+        ((A * B).restrict fun _ => mul_apply_mem_ker_pow_of_commute_lie hc) := by
+  have hAV (v : M) (hv : v ∈ ker (A ^ (i + 1))) : A v ∈ ker (A ^ i) :=
+    apply_mem_ker_pow_of_mem_ker_pow_succ hv
+  have hBV (v : M) (hv : v ∈ ker (A ^ i)) : B v ∈ ker (A ^ (i + 1)) :=
+    apply_mem_ker_pow_succ_of_commute_lie hc hv
+  have hsplit : (A * B).restrict (fun _ => mul_apply_mem_ker_pow_of_commute_lie hc (i := i + 1)) =
+      (B * A).restrict (fun _ hv => hBV _ (hAV _ hv)) +
+        ⁅A, B⁆.restrict (fun _ => apply_mem_ker_pow_of_commute hc) := by
+    ext v
+    simp [Ring.lie_def]
+  have hnil : trace K (ker (A ^ (i + 1)))
+      (⁅A, B⁆.restrict (fun _ => apply_mem_ker_pow_of_commute hc)) = 0 :=
+    (isNilpotent_trace_of_isNilpotent (Module.End.isNilpotent.restrict _
+      (isNilpotent_lie_of_lie_lie_eq_zero (commute_iff_lie_eq.1 hc)))).eq_zero
+  have hBA : (B * A).restrict (fun _ hv => hBV _ (hAV _ hv)) =
+      (B.restrict hBV) ∘ₗ (A.restrict hAV) := by
+    ext v
+    simp
+  have hAB : (A * B).restrict (fun _ => mul_apply_mem_ker_pow_of_commute_lie hc (i := i)) =
+      (A.restrict hAV) ∘ₗ (B.restrict hBV) := by
+    ext v
+    simp
+  rw [hsplit, map_add, hnil, add_zero, hBA, hAB, trace_comp_comm']
+
 /-- **The trace of `A * B` vanishes when `A` is nilpotent and commutes with `⁅A, B⁆`.**
 In characteristic zero, the trace of `A * B` on `ker (A ^ i)` is independent of `i`, since `B`
 raises and `A` lowers the index by one and `⁅A, B⁆` is nilpotent by Jacobson's lemma. -/
 theorem trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero (hA : IsNilpotent A)
     (h : ⁅A, ⁅A, B⁆⁆ = 0) : trace K M (A * B) = 0 := by
   have hc : Commute A ⁅A, B⁆ := commute_iff_lie_eq.2 h
-  have hAB : A * B = B * A + ⁅A, B⁆ := by rw [Ring.lie_def]; abel
-  let V : ℕ → Submodule K M := fun i => ker (A ^ i)
-  have hCV (i : ℕ) : ∀ v ∈ V i, ⁅A, B⁆ v ∈ V i := fun v hv => by
-    simp only [V, mem_ker] at hv ⊢
-    rw [← Module.End.mul_apply, (hc.pow_left i).eq, Module.End.mul_apply, hv, map_zero]
-  have hBV (i : ℕ) : ∀ v ∈ V i, B v ∈ V (i + 1) := fun v hv => by
-    have hCv := hCV i v hv
-    simp only [V, mem_ker] at hv hCv ⊢
-    -- Both terms of `A ^ (i + 1) * B = B * A ^ (i + 1) + (i + 1) • (A ^ i * ⁅A, B⁆)` applied to
-    -- `v` vanish, since `A ^ i` kills `v` and `⁅A, B⁆ v`.
-    have hv' : (A ^ (i + 1)) v = 0 := by rw [pow_succ', Module.End.mul_apply, hv, map_zero]
-    rw [← Module.End.mul_apply, (sub_eq_iff_eq_add').1 (Ring.lie_def _ _).symm,
-      hc.lie_pow_succ_left]
-    simp only [add_apply, smul_apply, Module.End.mul_apply, hv', hCv, map_zero, smul_zero,
-      add_zero]
-  have hAV (i : ℕ) : ∀ v ∈ V (i + 1), A v ∈ V i := fun v hv => by
-    simp only [V, mem_ker] at hv ⊢
-    rwa [← Module.End.mul_apply, ← pow_succ]
-  have hABV (i : ℕ) : ∀ v ∈ V i, (A * B) v ∈ V i := fun v hv => hAV i _ (hBV i v hv)
-  have hBAV (i : ℕ) : ∀ v ∈ V (i + 1), (B * A) v ∈ V (i + 1) := fun v hv => hBV i _ (hAV i v hv)
-  -- The trace of `A * B` on `V i` does not depend on `i`.
-  have hstep (i : ℕ) : trace K (V (i + 1)) ((A * B).restrict (hABV (i + 1))) =
-      trace K (V i) ((A * B).restrict (hABV i)) := by
-    have hsplit : (A * B).restrict (hABV (i + 1)) =
-        (B * A).restrict (hBAV i) + ⁅A, B⁆.restrict (hCV (i + 1)) := by
-      ext v
-      simp [hAB]
-    have hnil : trace K (V (i + 1)) (⁅A, B⁆.restrict (hCV (i + 1))) = 0 :=
-      (isNilpotent_trace_of_isNilpotent
-        (Module.End.isNilpotent.restrict _ (isNilpotent_lie_of_lie_lie_eq_zero h))).eq_zero
-    have hBA : (B * A).restrict (hBAV i) = (B.restrict (hBV i)) ∘ₗ (A.restrict (hAV i)) := by
-      ext v
-      simp
-    have hAB' : (A * B).restrict (hABV i) = (A.restrict (hAV i)) ∘ₗ (B.restrict (hBV i)) := by
-      ext v
-      simp
-    rw [hsplit, map_add, hnil, add_zero, hBA, hAB', trace_comp_comm']
-  have hconst (i : ℕ) : trace K (V i) ((A * B).restrict (hABV i)) = 0 := by
+  have hABV (i : ℕ) : ∀ v ∈ ker (A ^ i), (A * B) v ∈ ker (A ^ i) :=
+    fun _ => mul_apply_mem_ker_pow_of_commute_lie hc
+  have hconst (i : ℕ) : trace K (ker (A ^ i)) ((A * B).restrict (hABV i)) = 0 := by
     induction i with
     | zero =>
-      have : Subsingleton (V 0) := by
+      have : Subsingleton (ker (A ^ 0)) := by
         rw [Submodule.subsingleton_iff_eq_bot]
-        simp [V, Module.End.one_eq_id]
+        simp [Module.End.one_eq_id]
       rw [Subsingleton.elim ((A * B).restrict (hABV 0)) 0, map_zero]
-    | succ i ih => rw [hstep, ih]
+    | succ i ih => rw [trace_restrict_mul_ker_pow_succ hc, ih]
   obtain ⟨n, hn⟩ := hA
   rw [← hconst n, trace_restrict_eq_of_forall_mem]
   intro v
-  simp only [V, mem_ker, hn, zero_apply]
+  simp only [mem_ker, hn, zero_apply]
 
 end LinearMap
