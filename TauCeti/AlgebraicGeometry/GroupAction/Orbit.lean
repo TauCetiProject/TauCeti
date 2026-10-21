@@ -16,6 +16,8 @@ orbit morphism `G ⟶ X`. Its geometric orbit is the image of the underlying sch
 map, including nonclosed points. Define its closure and boundary in the same
 underlying topological space. Translation by any section of `G` preserves all
 three sets, and moving the base section by the action gives the same orbit.
+The translation homeomorphisms assemble into an action of the sections of `G`
+on the underlying space of `X`, under which the orbit is invariant.
 Equivariant morphisms carry orbit images onto orbit images.
 
 No finite-type, smoothness, reducedness or connectedness assumption is needed.
@@ -59,6 +61,10 @@ def orbitBoundary (x : 𝟙_ (Over S) ⟶ X) : Set X.left := orbitClosure G x \ 
 /-- Membership in the orbit closure is membership in the closure of the orbit image. -/
 theorem orbitClosure_def (x : 𝟙_ (Over S) ⟶ X) :
     orbitClosure G x = closure (orbit G x) := (rfl)
+
+/-- The orbit boundary is the orbit closure with the orbit removed. -/
+theorem orbitBoundary_def (x : 𝟙_ (Over S) ⟶ X) :
+    orbitBoundary G x = orbitClosure G x \ orbit G x := (rfl)
 
 /-- Boundary membership consists of closure membership and failure of orbit membership. -/
 @[simp]
@@ -127,5 +133,52 @@ theorem orbit_smul (g : 𝟙_ (Over S) ⟶ G) (x : 𝟙_ (Over S) ⟶ X) :
     Set.range_comp, hs.range_eq, Set.image_univ] using
       congrArg (fun f : G.left ⟶ X.left ↦ Set.range f) h
 
+section Translation
+
+variable (X)
+
+/-- The global points of a group scheme act on the underlying space of a scheme it acts on, each
+acting through its translation automorphism. Install it locally to select this action. -/
+@[instance_reducible]
+def translationMulAction : MulAction (𝟙_ (Over S) ⟶ G) X.left where
+  smul g p := (translation X g).hom.left p
+  one_smul p := by simp [HSMul.hSMul]
+  mul_smul g h p := by
+    simp only [HSMul.hSMul, SMul.smul, translation_mul, Iso.trans_hom, Over.comp_left,
+      Scheme.Hom.comp_apply]
+
+variable {G X}
+
+/-- A global point acts through its translation automorphism. -/
+theorem translationMulAction_smul (g : 𝟙_ (Over S) ⟶ G) (p : X.left) :
+    letI := translationMulAction G X
+    g • p = (translation X g).hom.left p :=
+  (rfl)
+
+/-- On the point underlying a section, the translation action is the action on sections. -/
+theorem translationMulAction_smul_apply (g : 𝟙_ (Over S) ⟶ G) (y : 𝟙_ (Over S) ⟶ X)
+    (a : (𝟙_ (Over S)).left) :
+    letI := translationMulAction G X
+    g • y.left a = (g • y).left a := by
+  rw [translationMulAction_smul, ← Scheme.Hom.comp_apply, ← Over.comp_left, comp_translation_hom,
+    toUnit_unit, Category.id_comp]
+
+/-- Every global point acts by a homeomorphism. -/
+theorem continuousConstSMul_translationMulAction :
+    letI := translationMulAction G X
+    ContinuousConstSMul (𝟙_ (Over S) ⟶ G) X.left :=
+  letI := translationMulAction G X
+  ⟨fun g ↦ (translation X g).hom.left.continuous⟩
+
+/-- Translation by a global point preserves the orbit, so the orbit is invariant under the
+translation action. -/
+theorem preimage_smul_orbit (g : 𝟙_ (Over S) ⟶ G) (x : 𝟙_ (Over S) ⟶ X) :
+    letI := translationMulAction G X
+    (fun p : X.left ↦ g • p) ⁻¹' orbit G x = orbit G x := by
+  let := translationMulAction G X
+  rw [Set.preimage_smul, ← Set.image_smul]
+  exact image_translation_orbit G g⁻¹ x
+
+end Translation
 
 end TauCeti.SchemeAction
