@@ -47,8 +47,7 @@ half-planes and locally uniformly on `ℍ`, and are holomorphic, both as functio
 
 * `ZLattice.norm_cexp_pi_mul_I_mul_norm_add_sq`: the term of index `v` has norm
   `exp (-π ‖γ + v‖² im τ)`.
-* `ZLattice.summable_thetaCoset`, `ZLattice.hasSum_thetaCoset`: the series converge at every
-  `τ : ℍ`.
+* `ZLattice.summable_thetaCoset`: the series converge at every `τ : ℍ`.
 * `ZLattice.hasSumUniformlyOn_thetaCoset`: uniform convergence on `{τ | y ≤ im τ}` for `0 < y`.
 * `ZLattice.hasSumLocallyUniformly_thetaCoset`: locally uniform convergence on `ℍ`.
 * `ZLattice.differentiableOn_thetaCoset`, `ZLattice.mdifferentiable_thetaCoset`: holomorphy.
@@ -124,22 +123,11 @@ theorem summable_thetaCoset (γ : E) (τ : ℍ) :
   .of_norm_bounded (summable_exp_neg_mul_norm_add_sq L (c := π * τ.im) (by positivity) γ)
     fun v => norm_cexp_pi_mul_I_mul_norm_add_sq_le γ v le_rfl
 
-/-- The theta series of a translate is the sum of its terms at every point of the upper
-half-plane. -/
-theorem hasSum_thetaCoset (γ : E) (τ : ℍ) :
-    HasSum (fun v : L => cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ)) (thetaCoset L γ τ) :=
-  (summable_thetaCoset L γ τ).hasSum
-
 /-- The theta series of a discrete subgroup converges at every point of the upper
 half-plane. -/
 theorem summable_thetaSeries (τ : ℍ) :
     Summable fun v : L => cexp (π * I * (‖(v : E)‖ ^ 2 : ℝ) * τ) := by
   simpa using summable_thetaCoset L 0 τ
-
-/-- The theta series is the sum of its terms at every point of the upper half-plane. -/
-theorem hasSum_thetaSeries (τ : ℍ) :
-    HasSum (fun v : L => cexp (π * I * (‖(v : E)‖ ^ 2 : ℝ) * τ)) (thetaSeries L τ) :=
-  (summable_thetaSeries L τ).hasSum
 
 /-- The theta series of a translate converges uniformly on each half-plane `{τ | y ≤ im τ}` with
 `0 < y`. -/
