@@ -31,9 +31,10 @@ subalgebra, as in the classification of the continuous central extensions of a l
 
 ## The arguments
 
-*First lemma.* A Lie derivation `D : L → M` shears the action of `L` on `M × K`:
-`⁅x, (m, c)⁆ = (⁅x, m⁆ + c • D x, 0)`. This is a Lie module precisely because `D` satisfies the
-Leibniz rule, and `L` carries it into the proper Lie submodule `M × 0`. By Weyl's theorem
+*First lemma.* A Lie derivation `D : L → M` shears the action of `L` on `M × K`
+(`LieDerivation.ShearedModule D`): `⁅x, (m, c)⁆ = (⁅x, m⁆ + c • D x, 0)`. This is a Lie module
+precisely because `D` satisfies the Leibniz rule, and `L` carries it into the proper Lie submodule
+`M × 0`. By Weyl's theorem
 (`TauCeti.exists_invariant_notMem_of_isKilling`) there is an invariant vector `(m, c)` with
 `c ≠ 0`, and then `D x = ⁅x, -c⁻¹ • m⁆`.
 
@@ -74,34 +75,21 @@ namespace LieDerivation.IsKilling
 finite-dimensional Lie algebra with nondegenerate Killing form into a finite-dimensional module is
 inner: it is `x ↦ ⁅x, m⁆` for some `m`. -/
 theorem exists_eq_inner (D : LieDerivation K L M) : ∃ m : M, inner K L M m = D := by
-  -- The action of `L` on `M × K` sheared by `D`.
-  let _ : LieRingModule L (M × K) :=
-    { bracket x v := (⁅x, v.1⁆ + v.2 • D x, 0)
-      add_lie x y v := by
-        simp only [add_lie, map_add, smul_add, Prod.mk_add_mk, add_zero]
-        abel_nf
-      lie_add x v w := by
-        simp only [Prod.fst_add, Prod.snd_add, lie_add, add_smul, Prod.mk_add_mk, add_zero]
-        abel_nf
-      leibniz_lie x y v := by
-        simp only [lie_add, lie_smul, D.apply_lie_eq_sub, zero_smul, add_zero, Prod.mk_add_mk,
-          smul_sub, leibniz_lie x y v.1]
-        abel_nf }
-  have hbr (x : L) (v : M × K) : ⁅x, v⁆ = (⁅x, v.1⁆ + v.2 • D x, 0) := rfl
-  have _ : LieModule K L (M × K) :=
-    { smul_lie t x v := by simp [hbr, smul_add, smul_comm t v.2]
-      lie_smul t x v := by simp [hbr, smul_add, smul_smul, mul_comm t v.2] }
-  -- The proper Lie submodule `M × 0`, into which `L` carries everything.
-  let N : LieSubmodule K L (M × K) :=
-    { (LinearMap.snd K M K).ker with
-      lie_mem {x v} _ := by simp [hbr] }
-  have hmemN (v : M × K) : v ∈ N ↔ v.2 = 0 := LinearMap.mem_ker
-  have hN : N ≠ ⊤ := fun h ↦ one_ne_zero ((hmemN (0, 1)).1 (h ▸ LieSubmodule.mem_top _))
+  -- The proper Lie submodule `M × 0` of the module sheared by `D`, into which `L` carries
+  -- everything.
+  let e := LieDerivation.ShearedModule.ofProd D
+  let N : LieSubmodule K L D.ShearedModule :=
+    { (LinearMap.snd K M K ∘ₗ e.symm.toLinearMap).ker with
+      lie_mem {x v} _ := by simp [e] }
+  have hmemN (v : D.ShearedModule) : v ∈ N ↔ (e.symm v).2 = 0 := LinearMap.mem_ker
+  have hN : N ≠ ⊤ := fun h ↦
+    one_ne_zero (α := K) (by simpa [e] using (hmemN (e (0, 1))).1 (h ▸ LieSubmodule.mem_top _))
   obtain ⟨v, hvN, hv⟩ := TauCeti.exists_invariant_notMem_of_isKilling N hN
-    fun x v ↦ (hmemN _).2 (by simp [hbr])
-  have hc : v.2 ≠ 0 := fun h ↦ hvN ((hmemN v).2 h)
-  refine ⟨-v.2⁻¹ • v.1, LieDerivation.ext fun x ↦ ?_⟩
-  have h : ⁅x, v.1⁆ + v.2 • D x = 0 := by simpa [hbr] using congrArg Prod.fst (hv x)
+    fun x v ↦ (hmemN _).2 (by simp [e])
+  have hc : (e.symm v).2 ≠ 0 := fun h ↦ hvN ((hmemN v).2 h)
+  refine ⟨-(e.symm v).2⁻¹ • (e.symm v).1, LieDerivation.ext fun x ↦ ?_⟩
+  have h : ⁅x, (e.symm v).1⁆ + (e.symm v).2 • D x = 0 := by
+    simpa [e] using congrArg (fun w ↦ (e.symm w).1) (hv x)
   rw [inner_apply_apply, lie_smul, eq_neg_of_add_eq_zero_left h]
   simp [smul_smul, hc]
 
@@ -114,14 +102,8 @@ finite-dimensional Lie algebra with nondegenerate Killing form with values in a 
 module is a coboundary, `f x = ⁅x, m⁆`. -/
 theorem exists_eq_lie_of_d₁₂_eq_zero {f : oneCochain K L M} (hf : d₁₂ K L M f = 0) :
     ∃ m : M, ∀ x, f x = ⁅x, m⁆ := by
-  let D : LieDerivation K L M :=
-    { toLinearMap := f
-      leibniz' x y := by
-        have h : d₁₂ K L M f x y = 0 := by simp [hf, ← twoCochain_val_apply]
-        rw [d₁₂_apply_apply, sub_eq_zero] at h
-        exact h.symm }
-  obtain ⟨m, hm⟩ := LieDerivation.IsKilling.exists_eq_inner D
-  exact ⟨m, fun x ↦ (congrArg (· x) hm).symm⟩
+  obtain ⟨m, hm⟩ := LieDerivation.IsKilling.exists_eq_inner (.ofD₁₂EqZero f hf)
+  exact ⟨m, fun x ↦ by simpa using (congrArg (· x) hm).symm⟩
 
 /-- **Whitehead's second lemma.** Over a field of characteristic zero, every 2-cocycle of a
 finite-dimensional Lie algebra with nondegenerate Killing form with values in a finite-dimensional
@@ -153,9 +135,7 @@ theorem exists_d₁₂_eq (c : twoCocycle K L M) : ∃ f : oneCochain K L M, d�
 /-- **Whitehead's second lemma**, as an equality of submodules: the 2-cocycles of a
 finite-dimensional Lie algebra with nondegenerate Killing form in characteristic zero, with values
 in a finite-dimensional module, are exactly the coboundaries. -/
-theorem twoCocycle_eq_range_d₁₂ : twoCocycle K L M = LinearMap.range (d₁₂ K L M) := by
-  refine le_antisymm (fun c hc ↦ exists_d₁₂_eq ⟨c, hc⟩) ?_
-  rintro _ ⟨f, rfl⟩
-  rw [mem_twoCocycle_iff, ← LinearMap.comp_apply, d₂₃_comp_d₁₂, LinearMap.zero_apply]
+theorem twoCocycle_eq_range_d₁₂ : twoCocycle K L M = LinearMap.range (d₁₂ K L M) :=
+  le_antisymm (fun c hc ↦ exists_d₁₂_eq ⟨c, hc⟩) range_d₁₂_le_twoCocycle
 
 end LieModule.Cohomology
