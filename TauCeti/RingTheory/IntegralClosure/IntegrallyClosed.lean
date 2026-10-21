@@ -27,6 +27,8 @@ If a subring `S` of `B` is integrally closed in `B`, then its preimage under a r
   closed in every domain algebra.
 * `Subring.isIntegrallyClosedIn_comap`: the preimage of an integrally closed subring is integrally
   closed.
+* `IsIntegrallyClosedIn.pow_dvd_pow_iff`: if `R` is integrally closed in `A` and `a ∈ R` becomes a
+  unit of `A`, then `a ^ n ∣ b ^ n ↔ a ∣ b` in `R` for `n ≠ 0`.
 -/
 
 public section
@@ -67,3 +69,25 @@ instance isIntegrallyClosedIn_comap (f : A →+* B) (S : Subring B) [IsIntegrall
     inferInstance (hx.map_of_comp_eq (f.restrict _ S fun _ hy ↦ hy) f rfl)
 
 end Subring
+
+namespace IsIntegrallyClosedIn
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] [IsIntegrallyClosedIn R A]
+
+/-- **Divisibility of powers in an integrally closed subring.** If `R` is integrally closed in `A`
+and `a : R` becomes a unit of `A`, then `a ^ n ∣ b ^ n ↔ a ∣ b` in `R` for `n ≠ 0`: if
+`b ^ n = a ^ n * c`, the element `b / a` of `A` is a root of the monic `X ^ n - c`, so it lies in
+`R`. Unlike `IsIntegrallyClosed.pow_dvd_pow_iff`, `R` need not be a domain. -/
+theorem pow_dvd_pow_iff {n : ℕ} (hn : n ≠ 0) {a b : R} (ha : IsUnit (algebraMap R A a)) :
+    a ^ n ∣ b ^ n ↔ a ∣ b := by
+  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ pow_dvd_pow_of_dvd h n⟩
+  obtain ⟨u, hu⟩ := ha
+  have hpow : ((↑u⁻¹ : A) * algebraMap R A b) ^ n = algebraMap R A c := by
+    rw [mul_pow, ← map_pow, hc, map_mul, map_pow, ← hu, ← mul_assoc, ← mul_pow, Units.inv_mul,
+      one_pow, one_mul]
+  obtain ⟨d, hd⟩ := exists_algebraMap_eq_of_isIntegral_pow (Nat.pos_of_ne_zero hn)
+    (hpow ▸ isIntegral_algebraMap)
+  refine ⟨d, IsIntegralClosure.algebraMap_injective R R A ?_⟩
+  rw [map_mul, hd, ← hu, ← mul_assoc, Units.mul_inv, one_mul]
+
+end IsIntegrallyClosedIn
