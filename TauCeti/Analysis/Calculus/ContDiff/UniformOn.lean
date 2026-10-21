@@ -15,10 +15,12 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 # Uniformly smooth functions on a set
 
 `TauCeti.UniformContDiffOn 𝕜 s n Y G` says that a function `G : X → Y` between normed spaces is
-`n` times differentiable at every point of `s`, with all derivatives up to order `n - 1` bounded
-on `s` and the `n`-th derivative uniformly continuous on `s`. The derivatives are carried along as
-functions `X → (X →L[𝕜] ⋯ →L[𝕜] Y)` rather than as iterated Fréchet derivatives, so a proof by
-induction on `n` applies the case `n` to the derivative of `G`.
+`n` times differentiable at every point of `s`, with `G` and all its derivatives up to order `n`
+uniformly continuous on `s`, and the derivatives of orders `1` to `n` bounded on `s` (`G` itself
+need not be bounded). The derivatives are carried along as functions
+`X → (X →L[𝕜] ⋯ →L[𝕜] Y)` rather than as iterated Fréchet derivatives, so a proof by induction on
+`n` applies the case `n` to the derivative of `G`. The domain and the target lie in the same
+universe, because the recursion passes to the target `X →L[𝕜] Y`.
 
 This is the regularity needed for superposition operators on bounded continuous functions: the
 uniform control is what makes the derivative of `f ↦ G ∘ f` converge at all the points `f t` at
@@ -30,6 +32,8 @@ once.
   `TauCeti.uniformContDiffOn_succ_iff` unfolding it.
 * `TauCeti.UniformContDiffOn.uniformContinuousOn` and `TauCeti.UniformContDiffOn.continuousOn`:
   such a function is uniformly continuous, hence continuous, on `s`.
+* `TauCeti.UniformContDiffOn.mono` and `TauCeti.UniformContDiffOn.of_le`: shrinking the set and
+  lowering the order.
 * `ContDiff.uniformContDiffOn`: a `C^n` function is uniformly `C^n` on a compact set.
 -/
 
@@ -74,6 +78,39 @@ theorem UniformContDiffOn.uniformContinuousOn {n : ℕ} (h : UniformContDiffOn �
   cases n with
   | zero => exact h
   | succ n => exact h.1
+
+/-- Uniform `C^n` regularity on `s` implies it on every subset of `s`. -/
+theorem UniformContDiffOn.mono {t : Set X} (hts : t ⊆ s) :
+    ∀ {n : ℕ} {Y : Type u} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {G : X → Y},
+      UniformContDiffOn 𝕜 s n Y G → UniformContDiffOn 𝕜 t n Y G := by
+  intro n
+  induction n with
+  | zero => exact fun h ↦ UniformContinuousOn.mono h hts
+  | succ n ih =>
+    intro Y _ _ G h
+    obtain ⟨hu, G', hG', ⟨C, hC⟩, hG'n⟩ := uniformContDiffOn_succ_iff.1 h
+    exact uniformContDiffOn_succ_iff.2 ⟨hu.mono hts, G', fun x hx ↦ hG' x (hts hx),
+      ⟨C, fun x hx ↦ hC x (hts hx)⟩, ih hG'n⟩
+
+/-- Uniform `C^{n+1}` regularity implies uniform `C^n` regularity. -/
+theorem UniformContDiffOn.of_succ :
+    ∀ {n : ℕ} {Y : Type u} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {G : X → Y},
+      UniformContDiffOn 𝕜 s (n + 1) Y G → UniformContDiffOn 𝕜 s n Y G := by
+  intro n
+  induction n with
+  | zero => exact fun h ↦ (uniformContDiffOn_succ_iff.1 h).1
+  | succ n ih =>
+    intro Y _ _ G h
+    obtain ⟨hu, G', hG', hC, hG'n⟩ := uniformContDiffOn_succ_iff.1 h
+    exact uniformContDiffOn_succ_iff.2 ⟨hu, G', hG', hC, ih hG'n⟩
+
+/-- Uniform `C^n` regularity implies uniform `C^m` regularity for `m ≤ n`. -/
+theorem UniformContDiffOn.of_le {m n : ℕ} (hmn : m ≤ n) {Y : Type u} [NormedAddCommGroup Y]
+    [NormedSpace 𝕜 Y] {G : X → Y} (h : UniformContDiffOn 𝕜 s n Y G) :
+    UniformContDiffOn 𝕜 s m Y G := by
+  induction n, hmn using Nat.le_induction with
+  | base => exact h
+  | succ n _ ih => exact ih h.of_succ
 
 /-- A uniformly `C^n` function is continuous on `s`. -/
 theorem UniformContDiffOn.continuousOn {n : ℕ} (h : UniformContDiffOn 𝕜 s n Y G) :
