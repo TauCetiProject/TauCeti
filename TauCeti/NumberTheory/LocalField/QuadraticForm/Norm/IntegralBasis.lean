@@ -33,9 +33,9 @@ the description `u² (1 - a t²)` of `TauCeti.mem_quadraticNormSubgroup_iff_of_i
 
 ## Main results
 
-* `TauCeti.norm_coe_eq_of_basis_integerRing`: the norm of an integer is the norm form of the
+* `Module.Basis.norm_coe_eq_of_integerRing`: the norm of an integer is the norm form of the
   basis `(1, ω)` at its coordinates.
-* `TauCeti.exists_norm_eq_iff_of_basis_integerRing`: the unit norms are exactly the two
+* `Module.Basis.exists_norm_eq_iff_of_integerRing`: the unit norms are exactly the two
   families above.
 
 ## References
@@ -46,9 +46,9 @@ the description `u² (1 - a t²)` of `TauCeti.mem_quadraticNormSubgroup_iff_of_i
 
 public section
 
-open ValuativeRel IsLocalRing
+open ValuativeRel IsLocalRing TauCeti
 
-namespace TauCeti
+namespace Module.Basis
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -57,7 +57,7 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- **The norm form of an integral basis `(1, ω)`.** For a basis `B` of `𝒪[L]` over `𝒪[K]`
 with `B 0 = 1` and `ω = B 1`, the field norm of `w = x + y ω ∈ 𝒪[L]` is
 `x² + x y Tr(ω) + y² N(ω)`. -/
-theorem norm_coe_eq_of_basis_integerRing (B : Module.Basis (Fin 2) 𝒪[K] 𝒪[L]) (hB : B 0 = 1)
+theorem norm_coe_eq_of_integerRing (B : Module.Basis (Fin 2) 𝒪[K] 𝒪[L]) (hB : B 0 = 1)
     (w : 𝒪[L]) :
     Algebra.norm K (w : L) = (B.repr w 0 : K) ^ 2 +
       B.repr w 0 * B.repr w 1 * Algebra.trace K L (B 1 : L) +
@@ -77,7 +77,7 @@ theorem norm_coe_eq_of_basis_integerRing (B : Module.Basis (Fin 2) 𝒪[K] 𝒪[
 `𝒪[K]` with `B 0 = 1`, and write `ω = B 1`, `T = Tr(ω)` and `N = N(ω)`. An element `b` of `K`
 of valuation zero is a norm from `L` exactly when `b = u² (1 + T t + N t²)` or
 `b = u² (N + T t + t²)` for a unit `u` and an element `t` of `𝒪[K]`. -/
-theorem exists_norm_eq_iff_of_basis_integerRing (B : Module.Basis (Fin 2) 𝒪[K] 𝒪[L])
+theorem exists_norm_eq_iff_of_integerRing (B : Module.Basis (Fin 2) 𝒪[K] 𝒪[L])
     (hB : B 0 = 1) {b : K} (hb : valuation K b = 1) :
     (∃ z : L, Algebra.norm K z = b) ↔
       ∃ (u : 𝒪[K]ˣ) (t : 𝒪[K]),
@@ -92,7 +92,7 @@ theorem exists_norm_eq_iff_of_basis_integerRing (B : Module.Basis (Fin 2) 𝒪[K
         (v 1 : K) ^ 2 * Algebra.norm K (B 1 : L) := by
     have hv (i : Fin 2) : B.repr (B.equivFun.symm v) i = v i := by
       rw [← B.equivFun_apply, LinearEquiv.apply_symm_apply]
-    rw [norm_coe_eq_of_basis_integerRing B hB, hv, hv]
+    rw [norm_coe_eq_of_integerRing B hB, hv, hv]
   constructor
   · rintro ⟨z, hz⟩
     have hz0 : z ≠ 0 := by
@@ -105,7 +105,7 @@ theorem exists_norm_eq_iff_of_basis_integerRing (B : Module.Basis (Fin 2) 𝒪[K
       simpa using (mem_unitFiltration_zero _).mp (normUnits_mem_unitFiltration_zero_iff.mp hN)
     obtain ⟨w, rfl⟩ : ∃ w : 𝒪[L], (w : L) = z :=
       ⟨⟨z, (Valuation.mem_integer_iff _ _).mpr hzv.le⟩, rfl⟩
-    have hbw := norm_coe_eq_of_basis_integerRing B hB w
+    have hbw := norm_coe_eq_of_integerRing B hB w
     set x := B.repr w 0
     set y := B.repr w 1
     rw [hz, ← coe_trace_integerRing, ← coe_norm_integerRing] at hbw
@@ -150,4 +150,4 @@ theorem exists_norm_eq_iff_of_basis_integerRing (B : Module.Basis (Fin 2) 𝒪[K
       push_cast
       ring
 
-end TauCeti
+end Module.Basis
