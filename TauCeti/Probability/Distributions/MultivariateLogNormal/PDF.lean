@@ -177,7 +177,7 @@ theorem multivariateLogNormalMeasure_eq_withDensity (m : EuclideanSpace ℝ ι)
   have he : Measurable e := by fun_prop
   have hjac := map_withDensity_abs_det_fderiv_eq_addHaar volume (f := e)
     MeasurableSet.univ.nullMeasurableSet
-    (fun x _ ↦ (PiLp.hasFDerivAt_exp x).hasFDerivWithinAt) (PiLp.injective_exp 2).injOn
+    (fun x _ ↦ (PiLp.hasFDerivAt_exp x).hasFDerivWithinAt) (PiLp.exp_injective 2).injOn
   simp only [Measure.restrict_univ, Matrix.det_toEuclideanCLM_diagonal,
     abs_of_pos (Finset.prod_pos fun i _ ↦ Real.exp_pos _)] at hjac
   rw [Set.image_univ, PiLp.range_exp] at hjac

@@ -31,7 +31,7 @@ open scoped ENNReal
 namespace PiLp
 
 /-- Coordinatewise real exponentiation is injective. -/
-theorem injective_exp (p : ℝ≥0∞) {ι : Type*} :
+theorem exp_injective (p : ℝ≥0∞) {ι : Type*} :
     Function.Injective (fun x : PiLp p (fun _ : ι ↦ ℝ) ↦
       WithLp.toLp p (fun i ↦ Real.exp (x i))) := by
   intro x y h
