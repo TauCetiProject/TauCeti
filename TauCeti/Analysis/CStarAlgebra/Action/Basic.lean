@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
+public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Dynamics.Flow.Basic
 
@@ -17,6 +18,8 @@ whose orbits are norm-continuous. The algebra need not have an identity. Automor
 isometric, hence each one is a continuous complex linear map, and point-norm continuity implies
 joint continuity of evaluation. This is the continuity needed when an action is applied to a
 coefficient-valued convolution integrand.
+
+Each automorphism of an action commutes with Bochner integrals.
 
 Actions can be pulled back along continuous group homomorphisms and transported along
 star-algebra equivalences. The latter construction expresses conjugacy of dynamical systems.
@@ -94,6 +97,13 @@ def toContinuousLinearMap (α : CStarAction G A) (g : G) : A →L[ℂ] A where
 theorem toContinuousLinearMap_apply (α : CStarAction G A) (g : G) (a : A) :
     α.toContinuousLinearMap g a = α g a :=
   (rfl)
+
+/-- Each automorphism of a C⋆-action commutes with Bochner integrals. No integrability is needed,
+since the automorphism is a linear isometry. -/
+theorem integral_comp_comm (α : CStarAction G A) {X : Type*} [MeasurableSpace X]
+    (ν : MeasureTheory.Measure X) (g : G) (F : X → A) :
+    ∫ x, α g (F x) ∂ν = α g (∫ x, F x ∂ν) :=
+  LinearIsometry.integral_comp_comm ⟨(α g : A →ₗ[ℂ] A), StarAlgEquiv.norm_map (α g)⟩ F
 
 /-- Membership in an invariant subset is unchanged by the action. -/
 @[simp]

@@ -25,6 +25,7 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 
 ## Main results
 
+* `Multiplicative.mem_zpowers_ofAdd_one`: the element `1` generates `ℤ/Nℤ`.
 * `TauCeti.zmodMonoidHomEquiv_symm_apply` and `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: the
   homomorphism of `g` sends `a` to `g ^ a.val`, and that of `(g, h)` sends `(a, b)` to
   `g ^ a.val * h ^ b.val`.
@@ -34,9 +35,14 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 
 public section
 
-namespace TauCeti
-
 variable {N : ℕ}
+
+/-- The standard generator `1` of `ℤ/Nℤ`, written multiplicatively, generates the group. -/
+theorem Multiplicative.mem_zpowers_ofAdd_one (x : Multiplicative (ZMod N)) :
+    x ∈ Subgroup.zpowers (.ofAdd 1) :=
+  ⟨x.toAdd.cast, by simp [← ofAdd_zsmul]⟩
+
+namespace TauCeti
 
 /-- The homomorphism `ℤ/Nℤ →+ G` sending `1` to an element `g` of `G` killed by `N`. -/
 private noncomputable def zmodLift {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) :

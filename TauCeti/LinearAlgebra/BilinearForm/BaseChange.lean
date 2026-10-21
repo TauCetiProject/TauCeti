@@ -27,10 +27,11 @@ records how nondegeneracy behaves under base change.
 Nondegeneracy is not preserved by an arbitrary base change: a form can acquire a kernel when its
 discriminant becomes a zero divisor. On a finite free module it is exactly the nonvanishing of
 that discriminant, so any structure map between integral domains reflects it, and an injective one
-also preserves it. Those are `TauCeti.nondegenerate_of_nondegenerate_baseChange` and
-`TauCeti.nondegenerate_baseChange_iff`, and the computations behind them,
-`TauCeti.bilinForm_toMatrix_baseChange` and `TauCeti.bilinForm_det_toMatrix_baseChange`, say that
-base change acts entrywise on the Gram matrix of a basis and maps its determinant accordingly.
+also preserves it. The theorems
+`LinearMap.BilinForm.nondegenerate_of_nondegenerate_baseChange` and
+`LinearMap.BilinForm.nondegenerate_baseChange_iff`, and the computations behind them,
+`LinearMap.BilinForm.toMatrix_baseChange` and `LinearMap.BilinForm.det_toMatrix_baseChange`, say
+that base change acts entrywise on the Gram matrix of a basis and maps its determinant accordingly.
 
 When the scalar algebra is free over the original semiring, base change preserves left separation
 and nondegeneracy without any finiteness or freeness hypothesis on the module carrying the form.
@@ -57,14 +58,14 @@ rational form is compared with its real extension.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
   second form, evaluating it through the associated base-change equivalence agrees with the
   canonical base change of the second form.
-* `TauCeti.bilinForm_toMatrix_baseChange`: the Gram matrix of a base-changed form, in the
+* `LinearMap.BilinForm.toMatrix_baseChange`: the Gram matrix of a base-changed form, in the
   base-changed basis, is the entrywise image of the original Gram matrix.
-* `TauCeti.bilinForm_det_toMatrix_baseChange`: the determinant of that Gram matrix is the image of
+* `LinearMap.BilinForm.det_toMatrix_baseChange`: the determinant of that Gram matrix is the image of
   the original determinant.
-* `TauCeti.nondegenerate_of_nondegenerate_baseChange`: a bilinear form on a finite free
+* `LinearMap.BilinForm.nondegenerate_of_nondegenerate_baseChange`: a bilinear form on a finite free
   module over an integral domain is nondegenerate as soon as its base change into a second integral
   domain is, with no hypothesis on the structure map.
-* `TauCeti.nondegenerate_baseChange_iff`: along an injective structure map between
+* `LinearMap.BilinForm.nondegenerate_baseChange_iff`: along an injective structure map between
   integral domains the implication is an equivalence.
 * `LinearMap.BilinForm.IsometryEquiv.baseChange`: an isometric equivalence of bilinear forms
   base-changes to an isometric equivalence of their base changes.
@@ -331,6 +332,10 @@ theorem _root_.IsBaseChange.bilinForm_baseChange (h : IsBaseChange A f)
 
 end
 
+end TauCeti
+
+namespace LinearMap.BilinForm
+
 section Semiring
 
 variable {R A M ι : Type*}
@@ -340,7 +345,7 @@ variable [AddCommMonoid M] [Module R M]
 /-- Base change acts entrywise on the Gram matrix of a bilinear form: the matrix of `B.baseChange A`
 in the base-changed basis is the image of the matrix of `B` under the structure map. -/
 @[simp]
-theorem bilinForm_toMatrix_baseChange [Fintype ι] [DecidableEq ι]
+theorem toMatrix_baseChange [Fintype ι] [DecidableEq ι]
     (B : LinearMap.BilinForm R M) (b : Basis ι R M) :
     LinearMap.BilinForm.toMatrix (b.baseChange A) (B.baseChange A) =
       (LinearMap.BilinForm.toMatrix b B).map (algebraMap R A) := by
@@ -358,11 +363,11 @@ variable [AddCommGroup M] [Module R M]
 
 /-- The Gram determinant of a base-changed bilinear form is the image of the original Gram
 determinant under the structure map. -/
-theorem bilinForm_det_toMatrix_baseChange [Fintype ι] [DecidableEq ι]
+theorem det_toMatrix_baseChange [Fintype ι] [DecidableEq ι]
     (B : LinearMap.BilinForm R M) (b : Basis ι R M) :
     (LinearMap.BilinForm.toMatrix (b.baseChange A) (B.baseChange A)).det =
       algebraMap R A (LinearMap.BilinForm.toMatrix b B).det := by
-  rw [bilinForm_toMatrix_baseChange, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  rw [toMatrix_baseChange, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
 
 variable (A) in
 /-- **Nondegeneracy descends along any base change of integral domains.** On a finite free module,
@@ -376,7 +381,7 @@ theorem nondegenerate_of_nondegenerate_baseChange [Finite ι] [IsDomain R] [IsDo
   classical
   have : Fintype ι := Fintype.ofFinite ι
   rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (b.baseChange A),
-    bilinForm_det_toMatrix_baseChange] at h
+    det_toMatrix_baseChange] at h
   rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b]
   exact fun hdet ↦ h (by rw [hdet, map_zero])
 
@@ -392,11 +397,15 @@ theorem nondegenerate_baseChange_iff [Finite ι] [IsDomain A] [FaithfulSMul R A]
   have : Fintype ι := Fintype.ofFinite ι
   refine ⟨nondegenerate_of_nondegenerate_baseChange A B b, fun h ↦ ?_⟩
   rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (b.baseChange A),
-    bilinForm_det_toMatrix_baseChange]
+    det_toMatrix_baseChange]
   exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective R A)).mpr
     ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).mp h)
 
 end Nondegenerate
+
+end LinearMap.BilinForm
+
+namespace TauCeti
 
 section IsometryEquiv
 

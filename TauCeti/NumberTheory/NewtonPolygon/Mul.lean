@@ -5,139 +5,163 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NewtonPolygon.Basic
-public import TauCeti.Analysis.Convex.Sequence.Minkowski.Face
+public import TauCeti.Analysis.Convex.Sequence.Minkowski.SlopeData
+public import TauCeti.NumberTheory.NewtonPolygon.Slopes
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Newton polygons of products
 
-The coefficient heights of a product `f * g` lie above the Minkowski sum (min-convolution)
-of the coefficient heights of `f` and `g`, by the ultrametric inequality. At the least, and
-likewise at the greatest, contact indices of supporting lines of a common slope, the
-coefficient of the product has a unique dominant term, so the inequality is an equality
-there. Consequently, whenever supporting lines of a common slope touch the coefficient heights
-of both `f` and `g`, the supporting value of `f * g` at that slope is the sum of those of `f`
-and `g`. These statements hold for power series over any ring with a real additive valuation,
-without any convergence hypothesis.
+The Newton polygon of a product of polynomials is the Minkowski sum of the Newton polygons of
+the factors, given by the min-convolution `TauCeti.minkowskiSum`. When both Newton polygons are
+nonempty, for example when both factors are nonzero over a field, the finite slopes of the
+product are those of the two factors together. These are the identities from which the slopes
+of a split polynomial are read off its linear factors.
 
-For polynomials, every slope has a supporting line touching the coefficient heights (unless
-they are all infinite), so the supporting values of `f * g` are the sums of those of `f` and
-`g` at every slope. In the language of Gauss norms this is the multiplicativity of Gauss norms
-at every radius. Reconstructing a convex sequence from its
-supporting lines then gives the product formula for Newton polygons: the polygon of `f * g`
-is the Minkowski sum of the polygons of `f` and `g`. No hypothesis on `f`, `g` or `v` is
-needed; if either factor has empty polygon, both sides are empty.
+One inequality is the ultrametric inequality for the coefficients of a product, and holds for
+power series with admissible coefficient heights. For the other, fix a slope `σ` and take the
+first index at which the coefficient heights of each factor touch their supporting line of
+slope `σ`. At the sum of these two indices the coefficient of the product has a unique dominant
+term, so its valuation is the sum of the two valuations. Hence the supporting values of the
+product are the sums of the supporting values of the factors, and a convex sequence is
+determined by its supporting values.
+
+The same dominant-term argument works for power series at any slope where supporting lines
+touch the coefficient heights of both factors, with no convergence hypothesis. There the
+supporting values of the product are again the sums of those of the factors. When `v` comes
+from an absolute value, this is the multiplicativity of Gauss norms at the corresponding radius.
 
 ## Main results
 
+* `PowerSeries.addValuation_coeff_mul_eq_add_of_isLeast` and
+  `PowerSeries.addValuation_coeff_mul_eq_add_of_isGreatest`: at the sum of the first,
+  respectively last, contact indices of supporting lines of a common slope, the valuation of
+  the coefficient of a product is the sum of the valuations of the two coefficients;
+  `PowerSeries.addValuation_coeff_mul_eq_add_of_lt` is the general unique-dominant-term form.
 * `PowerSeries.minkowskiSum_le_addValuation_coeff_mul`: the coefficient heights of a product
   lie above the Minkowski sum of the coefficient heights of the factors.
-* `PowerSeries.addValuation_coeff_mul_of_isLeast` and
-  `PowerSeries.addValuation_coeff_mul_of_isGreatest`: the unique dominant term at the sum of
-  the least, respectively greatest, contact indices of supporting lines of a common slope.
 * `PowerSeries.supportingValue_addValuation_coeff_mul`: supporting values of coefficient
   heights add under multiplication, at any slope where both factors touch a supporting line.
-* `Polynomial.supportingValue_addValuation_coeff_mul`: supporting values of coefficient heights
-  add under multiplication of polynomials.
+* `PowerSeries.minkowskiSum_newtonPolygon_le_newtonPolygon_mul`: for admissible coefficient
+  heights, the Minkowski sum of the Newton polygons of two power series lies below the Newton
+  polygon of their product.
 * `Polynomial.newtonPolygon_mul`: the Newton polygon of a product of polynomials is the
-  Minkowski sum of the Newton polygons of the factors.
+  Minkowski sum of the Newton polygons of the factors. No hypothesis is needed: if either
+  factor has the empty polygon, so does the product.
+* `Polynomial.supportingValue_addValuation_coeff_mul`: supporting values of coefficient heights
+  add under multiplication of polynomials, at every slope.
+* `Polynomial.newtonSlopes_mul`: if both factors have nonempty Newton polygons, the finite
+  slope multiset of the product is the sum of the finite slope multisets of the factors.
 
 ## References
 
-* N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
-  Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §3.
 * M. Lazard, *Les zéros d'une fonction analytique d'une variable sur un corps valué complet*,
   Publications Mathématiques de l'IHÉS 14 (1962), §1, Proposition 1.
+* K. S. Kedlaya, [*Newton polygons*](https://kskedlaya.org/18.787/newton-poly.pdf),
+  MIT 18.787, fall 2007, §§1–2. Kedlaya plots coefficient points at negative indices; our
+  convention uses positive indices, so the slopes have the opposite sign.
+* N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
+  Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §3.
 -/
 
 public section
 
-open Finset TauCeti
+open TauCeti
 
 namespace PowerSeries
 
-variable {R : Type*} [Ring R]
+variable {R : Type*} [Ring R] (v : AddValuation R (WithTop ℝ)) {f g : R⟦X⟧}
+
+/-- The unique dominant term of a coefficient of a product. Suppose the coefficient heights of
+`f` and `g` touch supporting lines of a common slope `σ` at `i` and `j`, and every other split
+`p + q = i + j` has `p` or `q` strictly above its line. Then the valuation of the coefficient of
+`f * g` at `i + j` is the sum of the valuations of the coefficients of `f` at `i` and of `g`
+at `j`. -/
+theorem addValuation_coeff_mul_eq_add_of_lt {σ c d : ℝ} {i j : ℕ}
+    (hf : IsSupportingLine (fun n => v (coeff n f)) σ c)
+    (hi : i ∈ supportingFace (fun n => v (coeff n f)) σ c)
+    (hg : IsSupportingLine (fun n => v (coeff n g)) σ d)
+    (hj : j ∈ supportingFace (fun n => v (coeff n g)) σ d)
+    (hsplit : ∀ p q, p + q = i + j → p ≠ i →
+      ((c + σ * p : ℝ) : WithTop ℝ) < v (coeff p f) ∨
+        ((d + σ * q : ℝ) : WithTop ℝ) < v (coeff q g)) :
+    v (coeff (i + j) (f * g)) = v (coeff i f) + v (coeff j g) := by
+  simp only [mem_supportingFace] at hi hj
+  have hmem : (i, j) ∈ Finset.antidiagonal (i + j) := Finset.mem_antidiagonal.mpr rfl
+  rw [coeff_mul, ← Finset.add_sum_erase _ _ hmem, ← AddValuation.map_mul]
+  refine AddValuation.map_add_eq_of_lt_left v ?_
+  rw [AddValuation.map_mul, hi, hj, ← WithTop.coe_add]
+  refine AddValuation.map_lt_sum v WithTop.coe_ne_top fun x hx => ?_
+  obtain ⟨hxij, hx⟩ := Finset.mem_erase.mp hx
+  have hpq := Finset.mem_antidiagonal.mp hx
+  have hp : x.1 ≠ i := fun h => hxij (Prod.ext h (by omega))
+  have hline : (c + σ * i) + (d + σ * j) = (c + σ * x.1) + (d + σ * x.2) := by
+    have hcast : (x.1 : ℝ) + x.2 = i + j := by exact_mod_cast hpq
+    linear_combination (-σ) * hcast
+  rw [AddValuation.map_mul, hline, WithTop.coe_add]
+  rcases hsplit x.1 x.2 hpq hp with h | h
+  · exact WithTop.add_lt_add_of_lt_of_le WithTop.coe_ne_top h
+      (isSupportingLine_iff_forall.mp hg x.2)
+  · exact WithTop.add_lt_add_of_le_of_lt WithTop.coe_ne_top
+      (isSupportingLine_iff_forall.mp hf x.1) h
+
+/-- The valuation of the coefficient of a product at the sum of the first contact indices.
+If `i` and `j` are the least indices at which the coefficient heights of `f` and `g` touch
+supporting lines of a common slope, then the valuation of the coefficient of `f * g` at `i + j`
+is the sum of the valuations of the coefficients of `f` at `i` and of `g` at `j`. -/
+theorem addValuation_coeff_mul_eq_add_of_isLeast {σ c d : ℝ} {i j : ℕ}
+    (hf : IsSupportingLine (fun n => v (coeff n f)) σ c)
+    (hi : IsLeast (supportingFace (fun n => v (coeff n f)) σ c) i)
+    (hg : IsSupportingLine (fun n => v (coeff n g)) σ d)
+    (hj : IsLeast (supportingFace (fun n => v (coeff n g)) σ d) j) :
+    v (coeff (i + j) (f * g)) = v (coeff i f) + v (coeff j g) := by
+  refine addValuation_coeff_mul_eq_add_of_lt v hf hi.1 hg hj.1 fun p q hpq hp => ?_
+  rcases lt_or_gt_of_ne hp with hp | hp
+  · exact .inl <| (isSupportingLine_iff_forall.mp hf p).lt_of_ne fun h => by
+      have := hi.2 (mem_supportingFace.mpr h.symm)
+      omega
+  · exact .inr <| (isSupportingLine_iff_forall.mp hg q).lt_of_ne fun h => by
+      have := hj.2 (mem_supportingFace.mpr h.symm)
+      omega
+
+/-- The valuation of the coefficient of a product at the sum of the last contact indices.
+If `i` and `j` are the greatest indices at which the coefficient heights of `f` and `g` touch
+supporting lines of a common slope, then the valuation of the coefficient of `f * g` at `i + j`
+is the sum of the valuations of the coefficients of `f` at `i` and of `g` at `j`. -/
+theorem addValuation_coeff_mul_eq_add_of_isGreatest {σ c d : ℝ} {i j : ℕ}
+    (hf : IsSupportingLine (fun n => v (coeff n f)) σ c)
+    (hi : IsGreatest (supportingFace (fun n => v (coeff n f)) σ c) i)
+    (hg : IsSupportingLine (fun n => v (coeff n g)) σ d)
+    (hj : IsGreatest (supportingFace (fun n => v (coeff n g)) σ d) j) :
+    v (coeff (i + j) (f * g)) = v (coeff i f) + v (coeff j g) := by
+  refine addValuation_coeff_mul_eq_add_of_lt v hf hi.1 hg hj.1 fun p q hpq hp => ?_
+  rcases lt_or_gt_of_ne hp with hp | hp
+  · exact .inr <| (isSupportingLine_iff_forall.mp hg q).lt_of_ne fun h => by
+      have := hj.2 (mem_supportingFace.mpr h.symm)
+      omega
+  · exact .inl <| (isSupportingLine_iff_forall.mp hf p).lt_of_ne fun h => by
+      have := hi.2 (mem_supportingFace.mpr h.symm)
+      omega
 
 /-- The coefficient heights of a product of power series lie above the Minkowski sum of the
 coefficient heights of the factors. -/
-theorem minkowskiSum_le_addValuation_coeff_mul (f : R⟦X⟧) (v : AddValuation R (WithTop ℝ))
-    (g : R⟦X⟧) (n : ℕ) :
+theorem minkowskiSum_le_addValuation_coeff_mul (n : ℕ) :
     minkowskiSum (fun n => v (coeff n f)) (fun n => v (coeff n g)) n ≤
       v (coeff n (f * g)) := by
   rw [coeff_mul]
-  exact v.map_le_sum fun p hp =>
-    (minkowskiSum_le_add_of_add_eq (mem_antidiagonal.mp hp)).trans_eq (v.map_mul _ _).symm
-
-variable {v : AddValuation R (WithTop ℝ)} {f g : R⟦X⟧} {σ c d : ℝ} {l l' : ℕ}
-
-/-- If `l` and `l'` touch supporting lines of a common slope for the coefficient heights of
-`f` and `g`, and no other split of `l + l'` touches both lines, then the coefficient of
-`f * g` at `l + l'` has a unique term of least valuation. -/
-private theorem addValuation_coeff_mul_of_unique
-    (hc : IsSupportingLine (fun n => v (coeff n f)) σ c)
-    (hl : l ∈ supportingFace (fun n => v (coeff n f)) σ c)
-    (hd : IsSupportingLine (fun n => v (coeff n g)) σ d)
-    (hl' : l' ∈ supportingFace (fun n => v (coeff n g)) σ d)
-    (huniq : ∀ i j, i + j = l + l' → i ∈ supportingFace (fun n => v (coeff n f)) σ c →
-      j ∈ supportingFace (fun n => v (coeff n g)) σ d → i = l) :
-    v (coeff (l + l') (f * g)) = v (coeff l f) + v (coeff l' g) := by
-  classical
-  have hmin := minkowskiSum_add_eq_of_mem_supportingFace hc hl hd hl'
-  have hmem := (mem_supportingFace_minkowskiSum_iff hc hd).mpr ⟨l, l', rfl, hl, hl'⟩
-  have hfin : v (coeff l f) + v (coeff l' g) ≠ ⊤ := by
-    rw [mem_supportingFace] at hl hl'
-    rw [hl, hl', ← WithTop.coe_add]
-    exact WithTop.coe_ne_top
-  have hll' : (l, l') ∈ antidiagonal (l + l') := mem_antidiagonal.mpr rfl
-  rw [coeff_mul, ← add_sum_erase _ _ hll', v.map_add_eq_of_lt_left, v.map_mul]
-  rw [v.map_mul]
-  refine v.map_lt_sum hfin fun p hp => ?_
-  obtain ⟨hne, hp⟩ := mem_erase.mp hp
-  have hp' : p.1 + p.2 = l + l' := mem_antidiagonal.mp hp
-  rw [v.map_mul]
-  refine (hmin ▸ minkowskiSum_le_add_of_add_eq hp').lt_of_ne fun heq => hne ?_
-  obtain ⟨hi, hj⟩ := (minkowskiSum_add_eq_add_iff_of_mem_supportingFace hc hd (hp' ▸ hmem)).mp
-    (by rw [hp', hmin, heq])
-  have hi' := huniq p.1 p.2 hp' hi hj
-  exact Prod.ext hi' (by omega)
-
-/-- At the sum of the least contact indices of supporting lines of a common slope, the
-coefficient of a product has a unique dominant term: its valuation is the sum of the
-valuations of the two corresponding coefficients. -/
-theorem addValuation_coeff_mul_of_isLeast
-    (hc : IsSupportingLine (fun n => v (coeff n f)) σ c)
-    (hl : IsLeast (supportingFace (fun n => v (coeff n f)) σ c) l)
-    (hd : IsSupportingLine (fun n => v (coeff n g)) σ d)
-    (hl' : IsLeast (supportingFace (fun n => v (coeff n g)) σ d) l') :
-    v (coeff (l + l') (f * g)) = v (coeff l f) + v (coeff l' g) :=
-  addValuation_coeff_mul_of_unique hc hl.1 hd hl'.1 fun i j hij hi hj => by
-    have := hl.2 hi
-    have := hl'.2 hj
-    omega
-
-/-- At the sum of the greatest contact indices of supporting lines of a common slope, the
-coefficient of a product has a unique dominant term: its valuation is the sum of the
-valuations of the two corresponding coefficients. -/
-theorem addValuation_coeff_mul_of_isGreatest
-    (hc : IsSupportingLine (fun n => v (coeff n f)) σ c)
-    (hu : IsGreatest (supportingFace (fun n => v (coeff n f)) σ c) l)
-    (hd : IsSupportingLine (fun n => v (coeff n g)) σ d)
-    (hu' : IsGreatest (supportingFace (fun n => v (coeff n g)) σ d) l') :
-    v (coeff (l + l') (f * g)) = v (coeff l f) + v (coeff l' g) :=
-  addValuation_coeff_mul_of_unique hc hu.1 hd hu'.1 fun i j hij hi hj => by
-    have := hu.2 hi
-    have := hu'.2 hj
-    omega
+  exact AddValuation.map_le_sum v fun x hx =>
+    (minkowskiSum_le_add_of_add_eq (Finset.mem_antidiagonal.mp hx)).trans_eq
+      (AddValuation.map_mul v _ _).symm
 
 /-- If supporting lines of a common slope touch the coefficient heights of `f` and `g`, then
 the supporting value of the coefficient heights of `f * g` at that slope is the sum of those
 of `f` and `g`. When `v` comes from an absolute value, this is the multiplicativity of Gauss
 norms at the corresponding radius. -/
-theorem supportingValue_addValuation_coeff_mul
-    (hc : IsSupportingLine (fun n => v (coeff n f)) σ c)
-    (hl : l ∈ supportingFace (fun n => v (coeff n f)) σ c)
-    (hd : IsSupportingLine (fun n => v (coeff n g)) σ d)
-    (hl' : l' ∈ supportingFace (fun n => v (coeff n g)) σ d) :
+theorem supportingValue_addValuation_coeff_mul {σ c d : ℝ} {i j : ℕ}
+    (hf : IsSupportingLine (fun n => v (coeff n f)) σ c)
+    (hi : i ∈ supportingFace (fun n => v (coeff n f)) σ c)
+    (hg : IsSupportingLine (fun n => v (coeff n g)) σ d)
+    (hj : j ∈ supportingFace (fun n => v (coeff n g)) σ d) :
     supportingValue (fun n => v (coeff n (f * g))) σ =
       supportingValue (fun n => v (coeff n f)) σ +
         supportingValue (fun n => v (coeff n g)) σ := by
@@ -145,85 +169,113 @@ theorem supportingValue_addValuation_coeff_mul
   -- sum of the least contact indices, by the unique dominant term there.
   have hline : IsSupportingLine (fun n => v (coeff n (f * g))) σ (c + d) :=
     isSupportingLine_iff_forall.mpr fun n =>
-      (isSupportingLine_iff_forall.mp (hc.minkowskiSum hd) n).trans
-        (minkowskiSum_le_addValuation_coeff_mul f v g n)
-  have hm := isLeast_csInf ⟨l, hl⟩
-  have hm' := isLeast_csInf ⟨l', hl'⟩
+      (isSupportingLine_iff_forall.mp (hf.minkowskiSum hg) n).trans
+        (minkowskiSum_le_addValuation_coeff_mul v n)
+  have hm := isLeast_csInf ⟨i, hi⟩
+  have hm' := isLeast_csInf ⟨j, hj⟩
   have hmem : sInf (supportingFace (fun n => v (coeff n f)) σ c) +
       sInf (supportingFace (fun n => v (coeff n g)) σ d) ∈
         supportingFace (fun n => v (coeff n (f * g))) σ (c + d) := by
-    have key := addValuation_coeff_mul_of_isLeast hc hm hd hm'
+    have key := addValuation_coeff_mul_eq_add_of_isLeast v hf hm hg hm'
     have hmc := hm.1
     have hmc' := hm'.1
     rw [mem_supportingFace] at hmc hmc' ⊢
     rw [key, hmc, hmc', ← WithTop.coe_add, WithTop.coe_eq_coe, Nat.cast_add]
     ring
   rw [supportingValue_eq_coe_of_mem_supportingFace hline hmem,
-    supportingValue_eq_coe_of_mem_supportingFace hc hl,
-    supportingValue_eq_coe_of_mem_supportingFace hd hl', EReal.coe_add]
+    supportingValue_eq_coe_of_mem_supportingFace hf hi,
+    supportingValue_eq_coe_of_mem_supportingFace hg hj, EReal.coe_add]
+
+/-- For admissible coefficient heights, the Minkowski sum of the Newton polygons of two power
+series lies below the Newton polygon of their product. -/
+theorem minkowskiSum_newtonPolygon_le_newtonPolygon_mul
+    (hf : IsAdmissible fun n => v (coeff n f)) (hg : IsAdmissible fun n => v (coeff n g)) :
+    minkowskiSum (f.newtonPolygon v) (g.newtonPolygon v) ≤ (f * g).newtonPolygon v :=
+  le_newtonPolygon ((isConvexSeq_newtonPolygon f v).minkowskiSum (isConvexSeq_newtonPolygon g v))
+    fun n => (minkowskiSum_mono (newtonPolygon_le hf) (newtonPolygon_le hg) n).trans
+      (minkowskiSum_le_addValuation_coeff_mul v n)
 
 end PowerSeries
 
 namespace Polynomial
 
-variable {R : Type*} [Ring R]
+variable {R : Type*} [Ring R] (f g : R[X]) (v : AddValuation R (WithTop ℝ))
+
+/-- A polynomial with a nonempty Newton polygon has a supporting line of each slope, touching
+its coefficient heights at a least index. -/
+private theorem exists_isSupportingLine_isLeast_coeff_coe (hf : f.newtonPolygon v ≠ ⊤)
+    (σ : ℝ) : ∃ (c : ℝ) (i : ℕ),
+      IsSupportingLine (fun n => v (PowerSeries.coeff n (f : PowerSeries R))) σ c ∧
+        IsLeast (supportingFace (fun n => v (PowerSeries.coeff n (f : PowerSeries R))) σ c) i := by
+  refine exists_isSupportingLine_isLeast_supportingFace ?_ ?_ σ
+  · simpa only [coeff_coe] using finite_setOf_addValuation_coeff_ne_top f v
+  · obtain ⟨n, hn⟩ := not_forall.mp (mt (newtonPolygon_eq_top_iff f v).mpr hf)
+    exact ⟨n, by rwa [Set.mem_ofPred_eq, coeff_coe]⟩
+
+/-- The Newton polygon of a product of polynomials is the Minkowski sum of the Newton polygons
+of the factors. If either factor has the empty Newton polygon, for example if it is zero, so
+does the product. -/
+theorem newtonPolygon_mul :
+    (f * g).newtonPolygon v = minkowskiSum (f.newtonPolygon v) (g.newtonPolygon v) := by
+  refine le_antisymm ?_ ?_
+  swap
+  · simpa only [← newtonPolygon_coe, coe_mul] using
+      PowerSeries.minkowskiSum_newtonPolygon_le_newtonPolygon_mul v
+        (by simpa only [coeff_coe] using isAdmissible_addValuation_coeff f v)
+        (by simpa only [coeff_coe] using isAdmissible_addValuation_coeff g v)
+  rcases eq_or_ne (f.newtonPolygon v) ⊤ with hf | hf
+  · simp [hf]
+  rcases eq_or_ne (g.newtonPolygon v) ⊤ with hg | hg
+  · simp [hg]
+  -- Compare supporting values. Those of a Newton polygon are those of the coefficient heights.
+  rw [(isConvexSeq_newtonPolygon _ v).le_iff_forall_supportingValue_le]
+  intro σ
+  obtain ⟨c, i, hc, hi⟩ := exists_isSupportingLine_isLeast_coeff_coe f v hf σ
+  obtain ⟨d, j, hd, hj⟩ := exists_isSupportingLine_isLeast_coeff_coe g v hg σ
+  simp only [supportingValue_minkowskiSum hf hg, supportingValue_newtonPolygon, ← coeff_coe,
+    coe_mul]
+  rw [supportingValue_eq_coe_of_mem_supportingFace hc hi.1,
+    supportingValue_eq_coe_of_mem_supportingFace hd hj.1]
+  -- The coefficient of the product at the sum of the first contact indices of the factors
+  -- lies on the line of slope `σ` and intercept `c + d`.
+  rw [← EReal.coe_add]
+  refine supportingValue_le_coe_of_mem_supportingFace (n := i + j) ?_
+  have hi' := hi.1
+  have hj' := hj.1
+  simp only [mem_supportingFace] at hi' hj' ⊢
+  rw [PowerSeries.addValuation_coeff_mul_eq_add_of_isLeast v hc hi hd hj, hi', hj',
+    ← WithTop.coe_add]
+  congr 1
+  push_cast
+  ring
 
 /-- Supporting values of coefficient heights add under multiplication of polynomials. When `v`
 comes from an absolute value, this is the multiplicativity of Gauss norms at every radius.
 No hypothesis is needed: if all coefficient heights of a factor are infinite, both sides
 are `⊤`. -/
-theorem supportingValue_addValuation_coeff_mul (f : R[X]) (v : AddValuation R (WithTop ℝ))
-    (g : R[X]) (σ : ℝ) :
+theorem supportingValue_addValuation_coeff_mul (σ : ℝ) :
     supportingValue (fun n => v ((f * g).coeff n)) σ =
       supportingValue (fun n => v (f.coeff n)) σ +
         supportingValue (fun n => v (g.coeff n)) σ := by
-  have hle (n : ℕ) :
-      minkowskiSum (fun n => v (f.coeff n)) (fun n => v (g.coeff n)) n ≤
-        v ((f * g).coeff n) := by
-    simpa only [← coe_mul, coeff_coe] using
-      PowerSeries.minkowskiSum_le_addValuation_coeff_mul (f : PowerSeries R) v g n
-  -- A factor with only infinite coefficient heights forces the same for the product.
-  by_cases hf : (fun n => v (f.coeff n)) = ⊤
-  · rw [hf, supportingValue_top, EReal.top_add_of_ne_bot (supportingValue_ne_bot_of_finite
-      (finite_setOf_addValuation_coeff_ne_top g v) σ), supportingValue_eq_top_iff, eq_top_iff]
-    intro n
-    have h := hle n
-    rwa [hf, top_minkowskiSum] at h
-  by_cases hg : (fun n => v (g.coeff n)) = ⊤
-  · rw [hg, supportingValue_top, EReal.add_top_of_ne_bot (supportingValue_ne_bot_of_finite
-      (finite_setOf_addValuation_coeff_ne_top f v) σ), supportingValue_eq_top_iff, eq_top_iff]
-    intro n
-    have h := hle n
-    rwa [hg, minkowskiSum_top] at h
-  obtain ⟨c, l, hc, hl⟩ := exists_isSupportingLine_and_mem_supportingFace
-    (finite_setOf_addValuation_coeff_ne_top f v) hf σ
-  obtain ⟨d, l', hd, hl'⟩ := exists_isSupportingLine_and_mem_supportingFace
-    (finite_setOf_addValuation_coeff_ne_top g v) hg σ
-  simpa only [← coe_mul, coeff_coe] using
-    PowerSeries.supportingValue_addValuation_coeff_mul (f := (f : PowerSeries R)) (g := g)
-      (by simpa only [coeff_coe] using hc) (by simpa only [coeff_coe] using hl)
-      (by simpa only [coeff_coe] using hd) (by simpa only [coeff_coe] using hl')
-
-/-- The Newton polygon of a product of polynomials is the Minkowski sum of the Newton polygons
-of the factors. No hypothesis is needed: if either factor has empty Newton polygon, so does
-the product. -/
-theorem newtonPolygon_mul (f : R[X]) (v : AddValuation R (WithTop ℝ)) (g : R[X]) :
-    (f * g).newtonPolygon v = minkowskiSum (f.newtonPolygon v) (g.newtonPolygon v) := by
-  have hS (h : R[X]) : supportingValue (h.newtonPolygon v) =
-      supportingValue fun n => v (h.coeff n) := by
-    rw [newtonPolygon_def]
-    exact supportingValue_lowerConvexEnvelope (isAdmissible_addValuation_coeff h v)
-  -- Both sides are convex, so it suffices to compare their supporting values.
-  have hM := (isConvexSeq_newtonPolygon f v).minkowskiSum (isConvexSeq_newtonPolygon g v)
-  funext n
-  refine WithTop.toEReal_injective ?_
-  rw [← (isConvexSeq_newtonPolygon (f * g) v).iSup_supportingValue_add n,
-    ← hM.iSup_supportingValue_add n]
-  refine iSup_congr fun σ => congrArg (· + _) ?_
   have hB (h : R[X]) : supportingValue (h.newtonPolygon v) σ ≠ ⊥ := by
-    rw [hS]
+    rw [supportingValue_newtonPolygon]
     exact supportingValue_ne_bot_of_finite (finite_setOf_addValuation_coeff_ne_top h v) σ
-  rw [hS, supportingValue_addValuation_coeff_mul,
-    supportingValue_minkowskiSum_of_ne_bot (hB f) (hB g), hS, hS]
+  rw [← supportingValue_newtonPolygon (f * g), ← supportingValue_newtonPolygon f,
+    ← supportingValue_newtonPolygon g, newtonPolygon_mul,
+    supportingValue_minkowskiSum_of_ne_bot (hB f) (hB g)]
+
+/-- If both factors have nonempty Newton polygons, the finite slope multiset of a product of
+polynomials is the sum of the finite slope multisets of the factors. The hypotheses exclude
+zero factors: the product `0 * g` has no finite slopes, whatever those of `g`. If only zero
+has infinite valuation, a nonzero polynomial has a nonempty Newton polygon by
+`Polynomial.newtonPolygon_ne_top_of_ne_zero`. -/
+theorem newtonSlopes_mul (hf : f.newtonPolygon v ≠ ⊤) (hg : g.newtonPolygon v ≠ ⊤) :
+    (f * g).newtonSlopes v = f.newtonSlopes v + g.newtonSlopes v := by
+  obtain ⟨d₁, hd₁⟩ := (exists_finiteSlopeData_heights_eq_iff f v).2 hf
+  obtain ⟨d₂, hd₂⟩ := (exists_finiteSlopeData_heights_eq_iff g v).2 hg
+  rw [newtonSlopes_eq_slopeMultiset hd₁, newtonSlopes_eq_slopeMultiset hd₂,
+    ← FiniteSlopeData.slopeMultiset_minkowskiSum]
+  exact newtonSlopes_eq_slopeMultiset
+    (by rw [FiniteSlopeData.heights_minkowskiSum, hd₁, hd₂, newtonPolygon_mul])
 
 end Polynomial

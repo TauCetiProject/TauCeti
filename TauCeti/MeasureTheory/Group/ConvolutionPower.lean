@@ -63,6 +63,14 @@ variable [MeasurableAdd₂ α]
 theorem convolutionPower_one (μ : Measure α) [SFinite μ] : μ.convolutionPower 1 = μ := by
   rw [convolutionPower_succ, convolutionPower_zero, dirac_zero_conv]
 
+/-- Every positive convolution power of an absolutely continuous measure is absolutely
+continuous with respect to the same left-translation-invariant measure. -/
+theorem convolutionPower_succ_absolutelyContinuous {μ ν : Measure α} [SFinite μ]
+    [IsAddLeftInvariant ν] (h : μ ≪ ν) (n : ℕ) :
+    μ.convolutionPower (n + 1) ≪ ν := by
+  rw [convolutionPower_succ]
+  exact conv_absolutelyContinuous h
+
 /-- Convolution powers turn addition of exponents into convolution. -/
 theorem convolutionPower_add (μ : Measure α) [SFinite μ] (m n : ℕ) :
     μ.convolutionPower (m + n) = μ.convolutionPower m ∗ μ.convolutionPower n := by
