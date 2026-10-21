@@ -33,8 +33,6 @@ join, where a vertex over an index larger than every index in sight is a cone ve
 ## Main definitions
 
 * `TauCeti.OrderedSimplicialChain.cone`: the cone operator on ordered simplicial chains.
-* `TauCeti.orderedSimplicialChainComplexAugmentation`: the augmentation of the ordered chain
-  complex, a chain map to the coefficient ring in degree `0`.
 
 ## Main results
 
@@ -47,6 +45,10 @@ join, where a vertex over an index larger than every index in sight is a cone ve
   individual chains, in positive degrees and in degree `0`.
 * `TauCeti.quasiIso_orderedSimplicialChainComplexAugmentation_of_cone`: the augmentation is a
   quasi-isomorphism, so the ordered chain complex is a resolution of the coefficient ring.
+
+The proof that the augmentation is a quasi-isomorphism follows the proof of
+`Rep.FiniteCyclicGroup.resolution_quasiIso` in
+`Mathlib/RepresentationTheory/Homological/FiniteCyclic.lean`.
 
 ## References
 
@@ -91,12 +93,12 @@ theorem cone_single {v : ι} {n : ℕ} (c : RealizationCell K n) (hlt : ∀ w �
     cone R v n (single c a) = single (c.cone v hlt hK) a := by
   simp [cone, iff_true_intro hlt, hK]
 
-variable (R) in
-/-- The coefficients of the boundary of a `1`-chain sum to zero. -/
-theorem augmentation_comp_boundary :
-    linearCombination R (fun _ : RealizationCell K 0 ↦ (1 : R)) ∘ₗ boundary R 0 = 0 := by
-  refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
-  simp [Fin.sum_univ_two]
+/-- The cone operator sends a multiple of a cell that cannot be coned off at `v` to `0`. -/
+@[simp]
+theorem cone_single_of_not {v : ι} {n : ℕ} (c : RealizationCell K n)
+    (h : ¬((∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K)) (a : R) :
+    cone R v n (single c a) = 0 := by
+  simp [cone, h]
 
 /-- **The cone identity in degree `0`.** For a `0`-chain supported on vertices smaller than `v`
 and joined to `v` by an edge, the boundary of its cone is its augmentation times `[v]`, minus the
@@ -112,10 +114,10 @@ theorem boundary_cone_zero {v : ι} {z : OrderedSimplicialChain K R 0}
     Finsupp.single_finsetSum, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun c hc ↦ ?_
   obtain ⟨hlt, hK⟩ := hz c hc
-  rw [cone_single c hlt hK, boundary_single, Fin.sum_univ_two, Fin.val_zero, Fin.val_one,
-    pow_zero, pow_one, one_smul, neg_one_smul, ← sub_eq_add_neg,
-    RealizationCell.face_cone_zero, show (1 : Fin 2) = Fin.last 1 from rfl,
+  -- Splitting off the last vertex puts the second face in the form of `face_cone_last`.
+  rw [cone_single c hlt hK, boundary_single, Fin.sum_univ_castSucc,
     RealizationCell.face_cone_last]
+  simp [sub_eq_add_neg]
 
 /-- **The cone identity in positive degrees.** For an `(n + 1)`-chain supported on cells that can
 be coned off at `v`, the boundary of its cone is the cone on its boundary plus
@@ -169,7 +171,7 @@ theorem exists_boundary_eq_of_boundary_eq_zero_of_cone {n : ℕ}
   obtain ⟨v, hv⟩ := exists_cone_vertex_of_cone R h z
   refine ⟨(-1 : R) ^ (n + 2) • cone R v (n + 1) z, ?_⟩
   rw [map_smul, boundary_cone_succ hv, hz, map_zero, zero_add, smul_smul, ← pow_add,
-    ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
+    Even.neg_one_pow ⟨n + 2, rfl⟩, one_smul]
 
 /-- **Exactness in degree `0`.** If every finite set of vertices has a cone vertex, every ordered
 `0`-chain of `K` whose coefficients sum to zero is a boundary. -/
@@ -185,50 +187,15 @@ vertex is exact in every positive degree. -/
 theorem exactAt_orderedSimplicialChainComplex_of_cone (n : ℕ) :
     (orderedSimplicialChainComplex K R).ExactAt (n + 1) := by
   rw [HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp)]
-  -- The objects of the complex are the chain modules only up to `eqToHom`, so the short complex
-  -- is compared with the one built from the boundary maps themselves.
-  let S : ShortComplex (ModuleCat.{max u v} R) :=
-    ShortComplex.mk (ModuleCat.ofHom (boundary (K := K) R (n + 1)))
-      (ModuleCat.ofHom (boundary (K := K) R n))
-      (by rw [← ModuleCat.ofHom_comp, boundary_boundary]; rfl)
-  have e : (orderedSimplicialChainComplex K R).sc' (n + 2) (n + 1) n ≅ S :=
-    ShortComplex.isoMk (eqToIso (orderedSimplicialChainComplex_X R (n + 2)))
-      (eqToIso (orderedSimplicialChainComplex_X R (n + 1)))
-      (eqToIso (orderedSimplicialChainComplex_X R n))
-      (by simp [S, orderedSimplicialChainComplex_d]) (by simp [S, orderedSimplicialChainComplex_d])
-  rw [ShortComplex.exact_iff_of_iso e, ShortComplex.moduleCat_exact_iff_ker_sub_range]
-  intro z hz
-  obtain ⟨y, hy⟩ := exists_boundary_eq_of_boundary_eq_zero_of_cone h (z := z) hz
-  exact ⟨y, hy⟩
+  refine (exact_orderedSimplicialChainComplex_d_iff R _
+    (eqToIso (orderedSimplicialChainComplex_X R n)) (g' := boundary R n) (by simp)).2 fun z hz ↦ ?_
+  exact exists_boundary_eq_of_boundary_eq_zero_of_cone h hz
 
 end Exactness
 
 section Augmentation
 
-variable (K) (R : Type u) [Ring R]
-
-/-- The **augmentation** of the ordered chain complex: the chain map to `R`, placed in degree
-`0`, that sums the coefficients of a `0`-chain. -/
-def orderedSimplicialChainComplexAugmentation :
-    orderedSimplicialChainComplex K R ⟶ (ChainComplex.single₀ (ModuleCat.{u} R)).obj
-      (ModuleCat.of R R) :=
-  ((orderedSimplicialChainComplex K R).toSingle₀Equiv _).symm
-    ⟨eqToHom (orderedSimplicialChainComplex_X R 0) ≫
-      ModuleCat.ofHom (linearCombination R fun _ ↦ (1 : R)), by
-      rw [orderedSimplicialChainComplex_d, Category.assoc, Category.assoc, eqToHom_trans_assoc,
-        eqToHom_refl, Category.id_comp, ← ModuleCat.ofHom_comp, augmentation_comp_boundary]
-      simp⟩
-
-/-- In degree `0` the augmentation sums the coefficients. -/
-@[simp]
-theorem orderedSimplicialChainComplexAugmentation_f_zero :
-    (orderedSimplicialChainComplexAugmentation K R).f 0 =
-      eqToHom (orderedSimplicialChainComplex_X R 0) ≫
-        ModuleCat.ofHom (linearCombination R fun _ ↦ (1 : R)) ≫
-          (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 (ModuleCat.of R R)).inv := by
-  simp [orderedSimplicialChainComplexAugmentation, ChainComplex.toSingle₀Equiv]
-
-variable {K R}
+variable {R : Type u} [Ring R]
 
 /-- **The ordered chain complex is a resolution.** If every finite set of vertices of `K` has a
 cone vertex, a vertex larger than all of them that can be adjoined to every face of `K` on them,
@@ -241,20 +208,10 @@ theorem quasiIso_orderedSimplicialChainComplexAugmentation_of_cone
     | zero =>
       rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _ (by simp) rfl rfl]
       let ε := linearCombination R fun _ : RealizationCell K 0 ↦ (1 : R)
-      have hε : ModuleCat.ofHom (boundary (K := K) R 0) ≫ ModuleCat.ofHom ε = 0 := by
-        rw [← ModuleCat.ofHom_comp, augmentation_comp_boundary]
-        rfl
-      -- As in positive degrees, compare with the short complex of the linear maps themselves.
-      refine ⟨(ShortComplex.exact_iff_of_iso (S₂ := ShortComplex.mk _ _ hε)
-        (ShortComplex.isoMk (eqToIso (orderedSimplicialChainComplex_X R 1))
-          (eqToIso (orderedSimplicialChainComplex_X R 0))
-          (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 (ModuleCat.of R R))
-          ?_ ?_)).2 ?_, ?_⟩
-      · simp [orderedSimplicialChainComplex_d]
-      · simp [ε, orderedSimplicialChainComplexAugmentation_f_zero]
-      · rw [ShortComplex.moduleCat_exact_iff_ker_sub_range]
-        intro z hz
-        exact exists_boundary_eq_of_augmentation_eq_zero_of_cone h hz
+      refine ⟨(exact_orderedSimplicialChainComplex_d_iff R _
+        (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 (ModuleCat.of R R))
+        (g' := ε) (by simp [ε])).2 fun z hz ↦ ?_, ?_⟩
+      · exact exists_boundary_eq_of_augmentation_eq_zero_of_cone h hz
       · have : Epi (ModuleCat.ofHom ε) := by
           rw [ModuleCat.epi_iff_surjective]
           intro r

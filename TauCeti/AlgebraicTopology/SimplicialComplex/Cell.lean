@@ -221,6 +221,7 @@ theorem insert_face_mem (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) {v : �
 
 /-- Deleting a vertex of the original cell from a cone gives the cone on the corresponding
 face. -/
+@[simp]
 theorem face_cone_castSucc (c : RealizationCell K (n + 1)) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
     (hK : insert v c.1.1 ∈ K) (j : Fin (n + 2)) :
     (c.cone v hlt hK).face j.castSucc =
@@ -230,16 +231,16 @@ theorem face_cone_castSucc (c : RealizationCell K (n + 1)) (v : ι) (hlt : ∀ w
     cone_val, face_val, Finset.erase_insert_of_ne (hlt _ (c.vertexEmbedding_mem j)).ne']
 
 /-- Deleting the first vertex of the cone on a `0`-cell leaves the cone vertex. -/
+@[simp]
 theorem face_cone_zero (c : RealizationCell K 0) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
     (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).face 0 = vertex K v := by
   refine Subtype.ext (Subtype.ext ?_)
   obtain ⟨w, hw⟩ := Finset.card_eq_one.mp c.2
   have h0 : c.vertexEmbedding 0 = w := by
     simpa [hw] using c.vertexEmbedding_mem 0
-  rw [face_val, ← Fin.castSucc_zero,
-    congrFun (vertexEmbedding_cone c v hlt hK), Fin.lastCases_castSucc, h0, cone_val, hw,
-    vertex_val, Finset.erase_insert_of_ne (hlt w (by simp [hw])).ne', Finset.erase_singleton,
-    insert_empty_eq]
+  rw [face_val, ← Fin.castSucc_zero, congrFun (vertexEmbedding_cone c v hlt hK),
+    Fin.lastCases_castSucc, h0, cone_val, hw]
+  simp [Finset.erase_insert_of_ne (hlt w (by simp [hw])).ne']
 
 end Cone
 
