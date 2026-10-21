@@ -180,7 +180,7 @@ theorem residuePairing_eq_sum {M N : ℤ} {f g : R⸨X⸩} (hf : (M : WithTop �
       · simp [h]
       · rw [coeff_derivative, sub_add_cancel] at h
         rw [← mul_smul_comm, h, mul_zero]
-    · rw [coeff_derivative, sub_add_cancel, mul_smul_comm] at *
+    · rw [coeff_derivative, sub_add_cancel, mul_smul_comm]
       simpa using hn
   · rintro ⟨i, j⟩ hij _
     rw [Finset.mem_antidiagonal] at hij

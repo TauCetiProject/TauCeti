@@ -80,8 +80,8 @@ def residuePairing : LinearMap.BilinForm R (currentAlgebra R L) :=
 /-- The residue pairing on pure tensors. -/
 @[simp]
 theorem residuePairing_tmul (f g : R⸨X⸩) (x y : L) :
-    residuePairing R L Φ (f ⊗ₜ x) (g ⊗ₜ y) = LaurentSeries.residuePairing R f g * Φ x y :=
-  mul_comm _ _
+    residuePairing R L Φ (f ⊗ₜ x) (g ⊗ₜ y) = LaurentSeries.residuePairing R f g * Φ x y := by
+  rw [residuePairing, LinearMap.BilinForm.tensorDistrib_tmul, smul_eq_mul, mul_comm]
 
 /-- The finite coefficient formula for the residue pairing: if `u` has order at least `M` and `v`
 has order at least `N`, then the pairing is `∑_{N ≤ n ≤ -M} n Φ(u₋ₙ, vₙ)`. -/
@@ -141,14 +141,14 @@ theorem exists_orderSubmodule_le_ker_residuePairing (u : currentAlgebra R L) :
 variable {Φ}
 
 /-- The residue pairing of a symmetric form is skew-symmetric. -/
-theorem residuePairing_swap (hΦ : Φ.IsSymm) (u v : currentAlgebra R L) :
-    residuePairing R L Φ v u = -residuePairing R L Φ u v := by
+theorem residuePairing_eq_neg_swap (hΦ : Φ.IsSymm) (u v : currentAlgebra R L) :
+    residuePairing R L Φ u v = -residuePairing R L Φ v u := by
   induction u using TensorProduct.inductionOn with
   | tmul f x =>
     induction v using TensorProduct.inductionOn with
     | tmul g y =>
-      rw [residuePairing_tmul, residuePairing_tmul, LaurentSeries.residuePairing_eq_neg_swap R g f,
-        hΦ.eq y x, neg_mul]
+      rw [residuePairing_tmul, residuePairing_tmul, LaurentSeries.residuePairing_eq_neg_swap R f g,
+        hΦ.eq x y, neg_mul]
     | add v w hv hw => simp [hv, hw, add_comm]
   | add u w hu hw => simp [hu, hw, add_comm]
 
@@ -159,7 +159,7 @@ theorem residuePairing_self (hΦ : Φ.IsSymm) (u : currentAlgebra R L) :
   induction u using TensorProduct.inductionOn with
   | tmul f x => simp
   | add u v hu hv =>
-    simp [hu, hv, residuePairing_swap R L hΦ u v]
+    simp [hu, hv, residuePairing_eq_neg_swap R L hΦ v u]
 
 end Module
 
@@ -215,8 +215,8 @@ theorem residuePairing_ofLoop (Φ : LinearMap.BilinForm R L)
     residuePairing_tmul, _root_.LieAlgebra.LoopAlgebra.residuePairing_apply_apply,
     _root_.LieAlgebra.LoopAlgebra.toFinsupp_single_tmul]
   have hT (k : ℤ) : LaurentPolynomial.toLaurentSeries (AddMonoidAlgebra.single k (1 : R)) =
-      HahnSeries.single k 1 :=
-    LaurentPolynomial.toLaurentSeries_T k
+      HahnSeries.single k 1 := by
+    rw [LaurentPolynomial.single_eq_C_mul_T, map_one, one_mul, LaurentPolynomial.toLaurentSeries_T]
   rw [hT, hT, LaurentSeries.residuePairing_single, Finsupp.sum_single_index (by simp),
     Finsupp.single_apply]
   by_cases h : m + n = 0
