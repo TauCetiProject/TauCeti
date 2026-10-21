@@ -439,7 +439,8 @@ private theorem ratCharFun_eq_zpow (x : PrimeToPTateModule 1 E)
       rw [h, hc, Nat.cast_mul, ← mul_assoc, Rat.mul_den_eq_num, mul_comm]
     exact_mod_cast this
   have hpow := proj_pow_div x (m := n) (n := ⟨q.den, q.den_nz, Nat.coprime_one_right _⟩) ⟨c, hc⟩
-  rw [show (n : ℕ) / q.den = c by rw [hc, Nat.mul_div_cancel_left _ q.den_pos]] at hpow
+  have hdiv : (n : ℕ) / q.den = c := by rw [hc, Nat.mul_div_cancel_left _ q.den_pos]
+  rw [hdiv] at hpow
   rw [ratCharFun, hk, zpow_mul, zpow_natCast, hpow]
 
 variable (E) in
