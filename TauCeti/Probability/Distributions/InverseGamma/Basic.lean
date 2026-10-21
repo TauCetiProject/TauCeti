@@ -20,8 +20,8 @@ for positive parameters and uses the zero measure otherwise.  It derives the den
 
 `r ^ a / Gamma a * x ^ (-a - 1) * exp (-r / x)`
 
-on the positive half-line, proves its support and boundary behavior, identifies its
-Radon--Nikodym derivative, and proves parameter measurability.
+on the positive half-line, proves its support, boundary behavior and positive scaling, identifies
+its Radon--Nikodym derivative, and proves parameter measurability.
 
 The density is derived from the pushforward definition.  On `(0, ∞)`, inversion is an involution
 with absolute derivative `x⁻²`; the one-dimensional change of variables
@@ -32,6 +32,7 @@ map.
 
 * `TauCeti.Probability.inverseGammaMeasure`, `inverseGammaPDFReal`, and `inverseGammaPDF` define
   the law and its density;
+* `inverseGammaMeasure_map_const_mul` scales the law by a positive constant;
 * `inverseGammaMeasure_eq_withDensity`, `hasPDF_of_hasLaw_inverseGammaMeasure`, and
   `rnDeriv_inverseGammaMeasure` identify the density;
 * `measurable_inverseGammaMeasure` makes the parameterized family available to kernels.
@@ -107,6 +108,22 @@ invalid-parameter cases. -/
 theorem ae_pos_inverseGammaMeasure (a r : ℝ) : ∀ᵐ x ∂inverseGammaMeasure a r, 0 < x := by
   rw [ae_iff]
   simpa only [not_lt, ← Iic_def] using inverseGammaMeasure_Iic_zero a r
+
+/-- Scaling an inverse-gamma variable by `b > 0` multiplies its scale by `b`. The identity also
+holds at invalid parameters, where both sides are the zero measure. -/
+@[simp]
+theorem inverseGammaMeasure_map_const_mul {b : ℝ} (hb : 0 < b) :
+    (inverseGammaMeasure a r).map (b * ·) = inverseGammaMeasure a (b * r) := by
+  by_cases h : 0 < a ∧ 0 < r
+  · have hcomp : ((b * ·) ∘ Inv.inv : ℝ → ℝ) = Inv.inv ∘ (b⁻¹ * ·) := by
+      ext x
+      simp [mul_comm]
+    rw [inverseGammaMeasure_of_pos h.1 h.2, inverseGammaMeasure_of_pos h.1 (mul_pos hb h.2),
+      Measure.map_map (measurable_const_mul b) measurable_inv, hcomp,
+      ← Measure.map_map measurable_inv (measurable_const_mul _),
+      gammaMeasure_map_const_mul h.1 h.2 (inv_pos.mpr hb), div_inv_eq_mul, mul_comm]
+  · have h' : ¬ (0 < a ∧ 0 < b * r) := fun h' ↦ h ⟨h'.1, pos_of_mul_pos_right h'.2 hb.le⟩
+    rw [inverseGammaMeasure_of_not_pos h, inverseGammaMeasure_of_not_pos h', Measure.map_zero]
 
 /-! ### Density -/
 
