@@ -54,7 +54,7 @@ term, which are not treated here.
   `isUniformAddGroup_termUniformSpace`: the term is a topological, and a uniform, additive group.
 * `TauCeti.Huber.NoetherianCech.hasBasis_nhds_zero_filtration`: the filtration is a basis of
   neighbourhoods of zero.
-* `TauCeti.Huber.NoetherianCech.uniformity_hasBasis_filtration`: the filtration gives a basis of
+* `TauCeti.Huber.NoetherianCech.hasBasis_uniformity_filtration`: the filtration gives a basis of
   entourages of `termUniformSpace`.
 
 ## References
@@ -337,7 +337,7 @@ theorem hasBasis_nhds_zero_filtration [Finite ι] (hf : Ideal.span (Set.range f)
 /-- **The filtration is a basis of entourages**: if `ι` is finite and `N` is a finite set
 generating `M`, the sets `{(x, y) | y - x ∈ K_i^p}` form a basis of the uniformity
 `termUniformSpace`. -/
-theorem uniformity_hasBasis_filtration [Finite ι] (hf : Ideal.span (Set.range f) = ⊤)
+theorem hasBasis_uniformity_filtration [Finite ι] (hf : Ideal.span (Set.range f) = ⊤)
     {N : Set M} (hN : N.Finite) (hspan : Submodule.span B N = ⊤) (p : ℕ) :
     (@uniformity _ (termUniformSpace f P M hf p)).HasBasis (fun _ : ℕ ↦ True)
       fun i ↦ {xy | xy.2 - xy.1 ∈ filtration f P M hf N p i} :=
