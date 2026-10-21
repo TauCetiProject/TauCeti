@@ -277,6 +277,8 @@ theorem directSumIsotypicEval_comp (g : M →ₗ[A] N) :
   ext j x
   simp
 
+-- Not `@[simp]`, unlike `TauCeti.isotypicEval_map_apply`: the `simps` lemma
+-- `DFinsupp.mapRange.linearMap_apply` already rewrites the left-hand side.
 /-- The value form of `TauCeti.directSumIsotypicEval_comp`. -/
 theorem directSumIsotypicEval_map_apply (g : M →ₗ[A] N) (x : Π₀ j, S j ⊗[k] (S j →ₗ[A] M)) :
     directSumIsotypicEval k A S N
@@ -358,8 +360,8 @@ theorem directSumIsotypicTensorEquiv_apply [IsSemisimpleModule A M]
     directSumIsotypicTensorEquiv k S hS hcover x = directSumIsotypicEval k A S M x :=
   (rfl)
 
--- Not `@[simp]`: `directSumIsotypicTensorEquiv_apply` already rewrites the left-hand side, after
--- which `directSumIsotypicEval_map_apply` finishes.
+-- Not `@[simp]`: `directSumIsotypicTensorEquiv_apply` and `DFinsupp.mapRange.linearMap_apply`
+-- already rewrite the left-hand side.
 /-- **The isotypic decomposition is natural in the target.** An `A`-linear map `g : M →ₗ[A] N`
 between semisimple modules acts on each multiplicity space `S j →ₗ[A] M` by postcomposition, and
 on nothing else: this is `TauCeti.directSumIsotypicEval_comp` read through the equivalences. -/

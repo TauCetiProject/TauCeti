@@ -138,7 +138,8 @@ section Naturality
 variable {W : Type*} [AddCommGroup W] [Module ℂ W] [Module (UqSl2 q) W]
   [IsScalarTower ℂ (UqSl2 q) W]
 
--- Not `@[simp]`: unfolding `ladderModuleTensorHomEquiv` rewrites the left-hand side.
+-- Not `@[simp]`: the `simps` lemma `DFinsupp.mapRange.linearMap_apply` already rewrites the
+-- left-hand side.
 /-- **The evaluation isomorphism is natural.** A `UqSl2 q`-linear map `g : V → W` of locally
 finite modules acts on each multiplicity space `Hom_U(L_m^ε, V)` by postcomposition, and trivially
 on the `L_m^ε`. -/
