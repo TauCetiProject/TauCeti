@@ -45,6 +45,8 @@ differentiable fields; this determines the curvature tensor.
 * `Bundle.ContMDiffRiemannianMetric.curvatureTensor_leviCivitaConnection_rescale_const` and
   `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_rescale_const`: the curvature
   and Ricci tensors of `c g` and `g` coincide.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_eq_sum`: the scalar curvature of a
+  rescaled metric `f g`, computed in a `g`-orthonormal basis.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_const`: `Scal(c g) = c⁻¹ Scal(g)`.
 * `Bundle.ContMDiffRiemannianMetric.mgradient_rescale_const` and
   `Bundle.ContMDiffRiemannianMetric.laplaceBeltrami_rescale_const`: `grad_{c g} = c⁻¹ grad_g`
@@ -270,33 +272,24 @@ theorem ricciTensor_leviCivitaConnection_rescale_const (x : M) :
   simp only [CovariantDerivative.ricciTensor_apply,
     curvatureTensor_leviCivitaConnection_rescale_const g hc x]
 
-/-- **Scaling of scalar curvature.** Multiplying a smooth metric by a positive constant `c`
-multiplies its scalar curvature by `c⁻¹`. -/
-@[simp]
-theorem scalarCurvature_rescale_const (x : M) :
-    (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).scalarCurvature x =
-      c⁻¹ * g.scalarCurvature x := by
-  rw [scalarCurvature_def, scalarCurvature_def]
-  -- A `g`-orthonormal basis, recorded through the inner products of `g` itself.
-  obtain ⟨d, b, hb, hs⟩ : ∃ (d : ℕ) (b : Module.Basis (Fin d) ℝ (TangentSpace I x)),
-      (∀ i j, g.inner x (b i) (b j) = if i = j then 1 else 0) ∧
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) =
-      ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+/-- The scalar curvature of a rescaled metric `f g` at `x`, computed in a basis `b` of `T_x M` that
+is orthonormal for `g`: it is `(f x)⁻¹ ∑ⱼ Ric^(f g)_x (b j) (b j)`, since dividing `b` by `√(f x)`
+gives a basis orthonormal for `f g`. -/
+theorem scalarCurvature_rescale_eq_sum {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hf_pos : ∀ x, 0 < f x) {x : M} {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℝ (TangentSpace I x))
+    (hb : ∀ i j, g.inner x (b i) (b j) = if i = j then 1 else 0) :
+    (g.rescale f hf hf_pos).scalarCurvature x =
+      (f x)⁻¹ * ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
         (CovariantDerivative.leviCivitaConnection I M).ricciTensor x) (b j) (b j) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-    refine ⟨_, b.toBasis, fun i j ↦ ?_, ?_⟩
-    · rw [b.coe_toBasis, ← inner_riemannianBundle]
-      exact orthonormal_iff_ite.1 b.orthonormal i j
-    · rw [b.coe_toBasis]
-      exact CovariantDerivative.scalarCurvature_eq_sum _ x b
-  set s := Real.sqrt c
-  have hs0 : 0 < s := Real.sqrt_pos.2 hc
-  have hss : s⁻¹ * s⁻¹ = c⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt hc.le]
+  set s := Real.sqrt (f x)
+  have hs0 : 0 < s := Real.sqrt_pos.2 (hf_pos x)
+  have hss : s⁻¹ * s⁻¹ = (f x)⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt (hf_pos x).le]
+  rw [scalarCurvature_def]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
-  -- Dividing it by `√c` gives a basis orthonormal for the rescaled metric.
+    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+  -- Dividing `b` by `√(f x)` gives a basis orthonormal for the rescaled metric at `x`.
   have hon : Orthonormal ℝ (b.unitsSMul fun _ ↦ Units.mk0 s⁻¹ (inv_ne_zero hs0.ne')) := by
     rw [orthonormal_iff_ite]
     intro i j
@@ -304,13 +297,27 @@ theorem scalarCurvature_rescale_const (x : M) :
       inner_riemannianBundle, rescale_inner, map_smul, smul_apply, smul_eq_mul, hb]
     split_ifs
     · field_simp
-      exact (Real.sq_sqrt hc.le).symm
+      exact (Real.sq_sqrt (hf_pos x).le).symm
     · simp
   rw [CovariantDerivative.scalarCurvature_eq_sum _ x ((b.unitsSMul _).toOrthonormalBasis hon),
-    ricciTensor_leviCivitaConnection_rescale_const g hc x, hs, Finset.mul_sum]
+    Finset.mul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp only [Module.Basis.coe_toOrthonormalBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
     Units.val_mk0, map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, hss]
+
+/-- **Scaling of scalar curvature.** Multiplying a smooth metric by a positive constant `c`
+multiplies its scalar curvature by `c⁻¹`. -/
+@[simp]
+theorem scalarCurvature_rescale_const (x : M) :
+    (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).scalarCurvature x =
+      c⁻¹ * g.scalarCurvature x := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [scalarCurvature_rescale_eq_sum g _ _ b.toBasis fun i j ↦ by
+      rw [b.coe_toBasis, ← inner_riemannianBundle]
+      exact orthonormal_iff_ite.1 b.orthonormal i j,
+    ricciTensor_leviCivitaConnection_rescale_const g hc x, scalarCurvature_def,
+    CovariantDerivative.scalarCurvature_eq_sum _ x b, b.coe_toBasis]
 
 end Curvature
 

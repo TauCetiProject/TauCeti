@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Scaling
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
@@ -419,7 +420,6 @@ theorem scalarCurvature_rescale
       letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
       (f x)⁻¹ * (g.scalarCurvature x - 2 * (Module.finrank ℝ E - 1) * laplaceBeltrami I φ x -
         (Module.finrank ℝ E - 1) * (Module.finrank ℝ E - 2) * ‖mgradient I φ x‖ ^ 2) := by
-  rw [scalarCurvature_def, scalarCurvature_def]
   -- A `g`-orthonormal basis, recorded through the inner products of `g` itself, and the
   -- contractions in it of the tensors appearing in the conformal change of the Ricci tensor.
   obtain ⟨d, b, hb, hs, hΔ, hG, hd⟩ : ∃ (d : ℕ) (b : Module.Basis (Fin d) ℝ (TangentSpace I x)),
@@ -446,27 +446,10 @@ theorem scalarCurvature_rescale
       exact laplaceBeltrami_eq_sum_hessian I φ x b
     · rw [b.coe_toBasis, ← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner]
       simp only [inner_mgradient, inner_mgradient_right]
-  set s := Real.sqrt (f x)
-  have hs0 : 0 < s := Real.sqrt_pos.2 (hf_pos x)
-  have hss : s⁻¹ * s⁻¹ = (f x)⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt (hf_pos x).le]
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
-  -- Dividing it by `√(f x)` gives a basis orthonormal for the rescaled metric at `x`.
-  have hon : Orthonormal ℝ (b.unitsSMul fun _ ↦ Units.mk0 s⁻¹ (inv_ne_zero hs0.ne')) := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    simp only [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0,
-      inner_riemannianBundle, rescale_inner, map_smul, smul_apply, smul_eq_mul, hb]
-    split_ifs
-    · field_simp
-      exact (Real.sq_sqrt (hf_pos x).le).symm
-    · simp
-  rw [CovariantDerivative.scalarCurvature_eq_sum _ x ((b.unitsSMul _).toOrthonormalBasis hon)]
-  simp only [Module.Basis.coe_toOrthonormalBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
-    Units.val_mk0, map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, hss,
-    ricciTensor_leviCivitaConnection_rescale g hf hf_pos hfφ, inner_riemannianBundle, hb,
+  rw [scalarCurvature_rescale_eq_sum g hf hf_pos b hb, scalarCurvature_def]
+  simp only [ricciTensor_leviCivitaConnection_rescale g hf hf_pos hfφ, inner_riemannianBundle, hb,
     ite_true, mul_one]
-  rw [← Finset.mul_sum, hs, hΔ, hG]
+  rw [hs, hΔ, hG]
   simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, Finset.sum_const,
     Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hd]
   ring
