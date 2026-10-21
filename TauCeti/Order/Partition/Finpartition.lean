@@ -24,10 +24,11 @@ the single part of the coarsest partition of a non-bottom element, the partition
 fibres of a map to a finite type, the associated indexed partition, the sizes of the traces of a
 subset on the parts, cardinality bounds for common refinements, a bound on the sum of the squared
 part sizes, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
-the behavior of intersections of parts under refinement, the monotonicity of `Finpartition.part`
-under refinement, and the coarse parent `Finpartition.refinementParent` of a part of a finer
-partition, together with decomposition and summation formulas for the fine parts below a coarse
-part.
+the behavior of intersections of parts under refinement, the symmetry of lying in a common part,
+the determination of a partition by its parts through each point, the parts of a restriction, the
+monotonicity of `Finpartition.part` under refinement, and the coarse parent
+`Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
+summation formulas for the fine parts below a coarse part.
 -/
 
 public section
@@ -266,6 +267,35 @@ theorem part_mono (h : P ≤ Q) (a : α) : P.part a ⊆ Q.part a := by
     rw [Q.part_eq_of_mem hC (hPC (P.mem_part_self.2 ha))]
     exact hPC
   · simp [P.part_eq_empty.2 ha]
+
+/-- Lying in the same part of a finite partition is symmetric. -/
+theorem mem_part_comm {a b : α} : b ∈ P.part a ↔ a ∈ P.part b := by
+  simp only [mem_part_iff_exists, and_comm]
+
+/-- A finite partition of a finset is determined by the part containing each point. -/
+theorem part_injective : Function.Injective (part : Finpartition s → α → Finset α) := by
+  have key {P Q : Finpartition s} (h : P.part = Q.part) {B : Finset α} (hB : B ∈ P.parts) :
+      B ∈ Q.parts := by
+    obtain ⟨a, ha⟩ := P.nonempty_of_mem_parts hB
+    rw [← P.part_eq_of_mem hB ha, h]
+    exact Q.part_mem.2 (P.le hB ha)
+  exact fun P Q h => Finpartition.ext <| Finset.ext fun B => ⟨key h, key h.symm⟩
+
+/-- Two finite partitions of `s` coincide when they have the same part through each point of
+`s`. -/
+theorem ext_of_part (h : ∀ a ∈ s, P.part a = Q.part a) : P = Q :=
+  part_injective <| funext fun a => by
+    by_cases ha : a ∈ s
+    · exact h a ha
+    · rw [P.part_eq_empty.2 ha, Q.part_eq_empty.2 ha]
+
+/-- Restricting a partition to a subset `t` cuts the part through each point of `t` down to `t`. -/
+theorem part_restrict {t : Finset α} (P : Finpartition s) (hts : t ≤ s) {a : α} (ha : a ∈ t) :
+    (P.restrict hts).part a = P.part a ∩ t := by
+  have hat : a ∈ P.part a ∩ t := mem_inter.2 ⟨P.mem_part_self.2 (hts ha), ha⟩
+  refine part_eq_of_mem _ ?_ hat
+  rw [parts_restrict, mem_erase]
+  exact ⟨ne_empty_of_mem hat, mem_image_of_mem _ (P.part_mem.2 (hts ha))⟩
 
 /-- A coarse part is the disjoint union of the fine parts whose coarse parent it is. -/
 theorem biUnion_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
