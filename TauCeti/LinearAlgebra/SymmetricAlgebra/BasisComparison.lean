@@ -105,7 +105,7 @@ noncomputable def _root_.Module.Basis.symmetricAlgebraHomogeneous {ι : Type w}
     Basis (Sym ι n) R (homogeneousSubmodule R M n) := by
   exact ((TauCeti.homogeneousMonomialBasis (R := R) n).map
     (homogeneousSubmoduleEquivMvPolynomial R M b n).symm).reindex
-      (TauCeti.Sym.equivFinsuppDegree ι n).symm
+      (TauCeti.symEquivFinsuppDegree ι n).symm
 
 /-- Under the polynomial equivalence, a homogeneous symmetric-algebra basis vector is the
 corresponding monomial. -/
@@ -115,7 +115,7 @@ theorem equivMvPolynomial_symmetricAlgebraHomogeneous_apply {ι : Type w}
     (d : Sym ι n) :
     SymmetricAlgebra.equivMvPolynomial b
         (Module.Basis.symmetricAlgebraHomogeneous b n d : SymmetricAlgebra R M) =
-      MvPolynomial.monomial (TauCeti.Sym.equivFinsuppDegree ι n d).1 1 := by
+      MvPolynomial.monomial (TauCeti.symEquivFinsuppDegree ι n d).1 1 := by
   classical
   rw [← coe_homogeneousSubmoduleEquivMvPolynomial_apply R M b n]
   simp [Module.Basis.symmetricAlgebraHomogeneous]
