@@ -5,26 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
-# Completeness of open quotients of uniform additive groups
+# Completeness of open quotients of right-uniform additive groups
 
 Mathlib's `QuotientAddGroup.completeSpace_right` makes the quotient `G ⧸ N` of a complete first
-countable uniform additive group complete for its canonical uniformity. An additive group `H`
+countable right-uniform additive group complete for its right uniformity. An additive group `H`
 receiving an open quotient map `f : G → H` is that quotient in disguise: the induced isomorphism
 `G ⧸ ker f ≃+ H` is a homeomorphism, hence a uniform embedding for any uniformity making `H` a
-uniform additive group. So `H` is complete, whatever compatible uniformity it carries.
+right-uniform additive group (for instance a uniform additive group). So `H` is complete, whatever
+such uniformity it carries. No commutativity is needed.
 
 This is the form in which completeness is needed for a ring presented as an open quotient of a
 complete ring, such as an algebra topologically of finite type over a Tate ring.
 
 ## Main results
 
-* `IsOpenQuotientMap.completeSpace`: a commutative uniform additive group admitting an open
-  quotient map from a complete first countable uniform additive group is complete.
+* `IsOpenQuotientMap.completeSpace`: a right-uniform additive group admitting an open quotient
+  map from a complete first countable right-uniform additive group is complete.
 
 ## References
 
@@ -35,28 +35,29 @@ public section
 
 open Topology
 
-variable {G H : Type*} [AddCommGroup G] [UniformSpace G] [IsUniformAddGroup G] [CompleteSpace G]
-  [FirstCountableTopology G] [AddCommGroup H] [UniformSpace H] [IsUniformAddGroup H]
+variable {G H : Type*} [AddGroup G] [UniformSpace G] [IsRightUniformAddGroup G] [CompleteSpace G]
+  [FirstCountableTopology G] [AddGroup H] [UniformSpace H] [IsRightUniformAddGroup H]
   {F : Type*} [FunLike F G H] [AddMonoidHomClass F G H] {f : F}
 
-/-- **An open quotient of a complete first countable commutative uniform additive group is
+/-- **An open quotient of a complete first countable right-uniform additive group is
 complete.** If `f : G → H` is a continuous open surjective additive homomorphism, `G` is complete
-and first countable, and `H` is a uniform additive group, then `H` is complete: `f` identifies `H`
-with `G ⧸ ker f`, which is complete by `QuotientAddGroup.completeSpace_right`. -/
+and first countable, and `H` is a right-uniform additive group, then `H` is complete: `f`
+identifies `H` with `G ⧸ ker f`, which is complete by `QuotientAddGroup.completeSpace_right`. -/
 theorem IsOpenQuotientMap.completeSpace (hf : IsOpenQuotientMap f) : CompleteSpace H := by
   let N := AddMonoidHom.ker (f : G →+ H)
   let _ : UniformSpace (G ⧸ N) := IsTopologicalAddGroup.rightUniformSpace (G ⧸ N)
-  have _ : IsUniformAddGroup (G ⧸ N) := isUniformAddGroup_of_addCommGroup
   have _ : CompleteSpace (G ⧸ N) := QuotientAddGroup.completeSpace_right G N
   let e := QuotientAddGroup.quotientKerEquivOfSurjective (f : G →+ H) hf.surjective
   -- `e` composed with the quotient map is `f`
   have hef : (e : G ⧸ N → H) ∘ ((↑) : G → G ⧸ N) = f :=
     funext fun g ↦ TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk _ _ g
-  have hcont : Continuous e := (QuotientAddGroup.isQuotientMap_mk N).continuous_iff.mpr
-    (hef ▸ hf.continuous)
-  have hopen : IsOpenMap e := fun U hU ↦ by
-    rw [← Set.image_preimage_eq U QuotientAddGroup.mk_surjective, ← Set.image_comp, hef]
-    exact hf.isOpenMap _ (hU.preimage QuotientAddGroup.continuous_mk)
-  have he : IsUniformEmbedding e := AddMonoidHom.isUniformEmbedding_of_isEmbedding
-    (IsOpenEmbedding.of_continuous_injective_isOpenMap hcont e.injective hopen).isEmbedding
+  have heq : IsQuotientMap e :=
+    (QuotientAddGroup.isQuotientMap_mk N).of_comp_iff.mp (hef ▸ hf.isQuotientMap)
+  have hemb : IsEmbedding e :=
+    (isHomeomorph_iff_isQuotientMap_injective.mpr ⟨heq, e.injective⟩).isEmbedding
+  -- An inducing homomorphism induces the right uniformities via neighborhoods of zero.
+  have _ : IsRightUniformAddGroup (G ⧸ N) := ⟨rfl⟩
+  have he : IsUniformEmbedding e := ⟨⟨by
+    simp [uniformity_eq_comap_nhds_zero, Filter.comap_comap, Function.comp_def,
+      hemb.nhds_eq_comap]⟩, e.injective⟩
   exact (completeSpace_congr (e := e.toEquiv) he).mp inferInstance
