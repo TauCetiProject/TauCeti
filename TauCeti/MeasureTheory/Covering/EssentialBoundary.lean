@@ -26,8 +26,8 @@ every open set, `interior s ⊆ essentialInterior μ s ⊆ closure s` and
 `essentialBoundary μ s ⊆ frontier s`. For such a measure and a null-measurable set `s`,
 complements exchange the essential interior and exterior, so the essential boundary of `sᶜ` is
 that of `s`. The essential boundary of a union of any two sets lies in the union of their
-essential boundaries; the same holds for an intersection of two null-measurable sets, for any
-measure.
+essential boundaries; the same holds for an intersection of two sets one of which is
+null-measurable, for any measure.
 
 For a locally finite measure on a second-countable metric space with its Borel σ-algebra and the
 Besicovitch covering property, such as a finite-dimensional real normed space, Lebesgue's density
@@ -226,31 +226,37 @@ theorem essentialBoundary_union_subset :
   · exact hx.1 (essentialInterior_mono subset_union_right ht)
   · exact hx.2 (essentialExterior_union (μ := μ) ▸ ⟨hs, ht⟩)
 
-/-- A point is in the essential interior of an intersection of null-measurable sets exactly when
-it is in the essential interior of both sets. -/
+/-- A point is in the essential interior of an intersection with a null-measurable set exactly
+when it is in the essential interior of both sets. -/
 @[simp]
-theorem essentialInterior_inter (hs : NullMeasurableSet s μ) (ht : NullMeasurableSet t μ) :
+theorem essentialInterior_inter (hs : NullMeasurableSet s μ) :
     essentialInterior μ (s ∩ t) = essentialInterior μ s ∩ essentialInterior μ t := by
   refine Subset.antisymm (subset_inter (essentialInterior_mono inter_subset_left)
     (essentialInterior_mono inter_subset_right)) fun x ⟨hxs, hxt⟩ => ?_
-  have hx :=
-    (mem_essentialInterior.1 hxs).eventually_measure_closedBall_ne_zero_ne_top one_ne_zero
-  have h0 : x ∈ essentialExterior μ (s ∩ t)ᶜ := by
-    rw [compl_inter, essentialExterior_union]
-    exact ⟨by simpa using (mem_essentialInterior.1 hxs).compl hs hx,
-      by simpa using (mem_essentialInterior.1 hxt).compl ht hx⟩
-  simpa using (mem_essentialExterior.1 h0).compl (hs.inter ht).compl hx
+  have hc : HasDensityAt μ sᶜ x 0 := by
+    simpa using (mem_essentialInterior.1 hxs).compl hs
+      ((mem_essentialInterior.1 hxs).eventually_measure_closedBall_ne_zero_ne_top one_ne_zero)
+  rw [mem_essentialInterior, hasDensityAt_iff] at hxt ⊢
+  -- `t ∩ B ⊆ (s ∩ t ∩ B) ∪ (sᶜ ∩ B)` bounds the proportion of `s ∩ t` below by that of `t`
+  -- minus that of `sᶜ`, which tends to `1 - 0`.
+  have hlow := ENNReal.Tendsto.sub hxt hc (Or.inl ENNReal.one_ne_top)
+  rw [tsub_zero] at hlow
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le hlow tendsto_const_nhds (fun r => ?_)
+    fun r => measure_inter_div_le_one _ _
+  rw [tsub_le_iff_right, ← ENNReal.add_div]
+  have hsub : t ∩ closedBall x r ⊆ s ∩ t ∩ closedBall x r ∪ sᶜ ∩ closedBall x r :=
+    fun y ⟨hyt, hyB⟩ => (em (y ∈ s)).imp (fun hys => ⟨⟨hys, hyt⟩, hyB⟩) fun hys => ⟨hys, hyB⟩
+  exact ENNReal.div_le_div_right ((measure_mono hsub).trans (measure_union_le _ _)) _
 
-/-- The essential boundary of an intersection of null-measurable sets lies in the union of the
+/-- The essential boundary of an intersection with a null-measurable set lies in the union of the
 essential boundaries. -/
-theorem essentialBoundary_inter_subset (hs : NullMeasurableSet s μ)
-    (ht : NullMeasurableSet t μ) :
+theorem essentialBoundary_inter_subset (hs : NullMeasurableSet s μ) :
     essentialBoundary μ (s ∩ t) ⊆ essentialBoundary μ s ∪ essentialBoundary μ t := by
   intro x hx
   by_contra hst
   simp only [mem_union, mem_essentialBoundary, not_or, not_and_or, not_not] at hx hst
   obtain ⟨hs' | hs', ht' | ht'⟩ := hst
-  · exact hx.1 (essentialInterior_inter hs ht ▸ ⟨hs', ht'⟩)
+  · exact hx.1 (essentialInterior_inter hs ▸ ⟨hs', ht'⟩)
   · exact hx.2 (essentialExterior_anti inter_subset_right ht')
   · exact hx.2 (essentialExterior_anti inter_subset_left hs')
   · exact hx.2 (essentialExterior_anti inter_subset_left hs')
