@@ -51,6 +51,8 @@ the vanishing of the endomorphism-valued one-form `CovariantDerivative.differenc
   Koszul expression is tensorial in its last argument and in its first.
 * `TauCeti.Manifold.koszul_add_second` and `TauCeti.Manifold.koszul_smul_second`: additivity and
   the Leibniz rule in the middle argument, the slot which the connection differentiates.
+* `TauCeti.Manifold.koszulBilinear_mpullback`: the Koszul expression of a pairing is natural under
+  maps with invertible differentials pulling one pairing back to the other.
 
 ## References
 
@@ -202,6 +204,62 @@ theorem torsion_eq_zero_of_two_apply_eq_koszulBilinear [FiniteDimensional ℝ E]
     (X := X) (Y := Y) (Z := Z) (x := x)
   simp only [map_sub, sub_apply]
   linarith
+
+section Naturality
+
+variable [CompleteSpace E] [IsManifold I 2 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 2 N]
+  {b' : (y : N) → TangentSpace J y →L[ℝ] TangentSpace J y →L[ℝ] ℝ} {f : M → N}
+
+/-- **Naturality of the bilinear Koszul expression.** Let `f : M → N` be a map with invertible
+differentials, `C²` at `x`, which pulls the pairing `b'` on `N` back to the pairing `b` on `M`,
+`b_y(v, w) = b'_{f y}(df_y v, df_y w)`. Suppose that `b'` pairs vector fields differentiable at
+`f x` to a function differentiable at `f x`. Then the Koszul expression of `b` on the pullbacks of
+three vector fields differentiable at `f x` is the Koszul expression of `b'` on the fields
+themselves, evaluated at `f x`. -/
+theorem koszulBilinear_mpullback (hf : ContMDiffAt I J 2 f x)
+    (hinv : ∀ y, (mfderiv I J f y).IsInvertible)
+    (hb : ∀ y (v w : TangentSpace I y),
+      b y v w = b' (f y) (mfderiv I J f y v) (mfderiv I J f y w))
+    (hb' : ∀ ⦃V W : Π y : N, TangentSpace J y⦄, MDiffAt (T% V) (f x) → MDiffAt (T% W) (f x) →
+      MDiffAt (fun y ↦ b' y (V y) (W y)) (f x))
+    {X Y Z : Π y : N, TangentSpace J y} (hX : MDiffAt (T% X) (f x))
+    (hY : MDiffAt (T% Y) (f x)) (hZ : MDiffAt (T% Z) (f x)) :
+    koszulBilinear I b (mpullback I J f X) (mpullback I J f Y) (mpullback I J f Z) x =
+      koszulBilinear J b' X Y Z (f x) := by
+  -- Pairing two pulled-back fields with `b` is pairing the fields with `b'`, composed with `f`.
+  have hpair (V W : Π y : N, TangentSpace J y) :
+      (fun y ↦ b y (mpullback I J f V y) (mpullback I J f W y)) =
+        (fun y ↦ b' y (V y) (W y)) ∘ f := by
+    funext y
+    simp only [hb, mpullback_apply, (hinv y).self_apply_inverse, Function.comp_apply]
+  -- Directional derivatives of the pairings: the chain rule through `f`.
+  have hd {V W : Π y : N, TangentSpace J y} (U : Π y : N, TangentSpace J y)
+      (hV : MDiffAt (T% V) (f x)) (hW : MDiffAt (T% W) (f x)) :
+      mvfderiv I (fun y ↦ b y (mpullback I J f V y) (mpullback I J f W y)) x
+          (mpullback I J f U x) =
+        mvfderiv J (fun y ↦ b' y (V y) (W y)) (f x) (U (f x)) := by
+    rw [hpair, mvfderiv_comp_apply x (hb' hV hW) (hf.mdifferentiableAt (by simp)),
+      mpullback_apply, (hinv x).self_apply_inverse]
+  -- Lie brackets: Mathlib's naturality of the Lie bracket under pullback.
+  have hbr {V W : Π y : N, TangentSpace J y} (hV : MDiffAt (T% V) (f x))
+      (hW : MDiffAt (T% W) (f x)) :
+      mlieBracket I (mpullback I J f V) (mpullback I J f W) x =
+        mpullback I J f (mlieBracket J V W) x := by
+    let _ : IsManifold I (minSmoothness ℝ 2) M := by
+      rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
+    let _ : IsManifold J (minSmoothness ℝ 2) N := by
+      rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
+    exact (mpullback_mlieBracket hV hW hf (by simp)).symm
+  have hval (V W : Π y : N, TangentSpace J y) :
+      b x (mpullback I J f V x) (mpullback I J f W x) = b' (f x) (V (f x)) (W (f x)) :=
+    congr_fun (hpair V W) x
+  rw [koszulBilinear_apply, koszulBilinear_apply, hd X hY hZ, hd Y hZ hX, hd Z hX hY, hbr hX hY,
+    hbr hX hZ, hbr hY hZ, hval, hval, hval]
+
+end Naturality
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 

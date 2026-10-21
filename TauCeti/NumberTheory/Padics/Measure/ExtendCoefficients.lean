@@ -53,8 +53,9 @@ no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integ
 
 ## References
 
-* J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, Ann. Math. Qué.
-  (2024), Proposition 3.16 and Remark 3.28.
+* J. Rodrigues Jacinto and C. Williams,
+  [*An introduction to p-adic L-functions*](https://doi.org/10.2140/ent.2025.4.101),
+  Essential Number Theory **4** (2025), no. 1, 101–216, Proposition 3.16 and Remark 3.28.
 -/
 
 public noncomputable section

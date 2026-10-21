@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Sobolev.TestFunctionLp
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Function.Holder
 
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+
 /-!
 # The closed-graph step for weak Sobolev spaces
 
@@ -187,8 +189,7 @@ theorem mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn
       HasWeakFDerivOn mu Omega (base (WithLp.fst J))
         (WithLp.snd J : Lp (E →L[ℝ] F) p (mu.restrict Omega)) := by
   have hbase : LocallyIntegrableOn (base (WithLp.fst J)) Omega mu :=
-    locallyIntegrableOn_of_locallyIntegrable_restrict
-      ((Lp.memLp (base (WithLp.fst J))).locallyIntegrable Fact.out)
+    Lp.locallyIntegrableOn (base (WithLp.fst J)) Fact.out
   have hderiv (v : E) : LocallyIntegrableOn (fun x => WithLp.snd J x v) Omega mu := by
     apply locallyIntegrableOn_of_locallyIntegrable_restrict
     exact (((Lp.memLp (WithLp.snd J)).continuousLinearMap_comp
