@@ -60,9 +60,9 @@ The model is the following.
   with the quotient topology: a subset of the glued curve is open exactly when its inverse image
   under the quotient map `Quotient.mk (gluedRelSetoid d)` is open in the disjoint union.  The
   quotient map is continuous (`continuous_quotient_mk'`) and identifies two points exactly when
-  the generated relation relates them (`mk_eq_mk_iff`).  The glued curve is a quotient, so it has
-  a lifting property: a map out of the disjoint union that takes the same value on the two points
-  of every flag pair descends to a map out of the glued curve (`GluedCurve.lift`,
+  the generated relation relates them (Mathlib's `Quotient.eq`).  The glued curve is a quotient,
+  so it has a lifting property: a map out of the disjoint union that takes the same value on the
+  two points of every flag pair descends to a map out of the glued curve (`GluedCurve.lift`,
   `GluedCurve.lift_mk`, `GluedCurve.continuous_lift`).
 * `nodeSet` is the image of the flag points in the glued curve.  It is the image of the flag
   pairs under `nodeOfFlag` (`nodeSet_eq_range_nodeOfFlag`), it is finite (`nodeSet_finite`) and it
@@ -74,8 +74,8 @@ The model is the following.
   is open (`isOpen_complNodeSet`), and it is the image of the components minus their flag points
   under the quotient map (`image_quotient_mk_compl`).  The quotient map restricts to a
   homeomorphism from the disjoint union of the normalization components minus their flag points
-  onto the complement of the node set (`isHomeomorph_quotientMapOnComplNodeSet`, bundled as
-  `quotientMapOnComplNodeSetHomeomorph`).
+  onto the complement of the node set, because it is an open embedding there
+  (`quotientMapOnComplNodeSetHomeomorph`).
 
 The node set and its complement are *intended* to be the singular locus and the smooth locus of
 the nodal curve.  This file only builds the underlying topological space, so the two names are
@@ -379,12 +379,6 @@ quotient topology, i.e. the finest topology making the quotient map continuous. 
 abbrev GluedCurve (d : FlagPairData ι Flag X) :=
   Quotient (gluedRelSetoid d)
 
-/-- The quotient map identifies two points of the disjoint union exactly when the generated
-relation relates them. -/
-theorem mk_eq_mk_iff (d : FlagPairData ι Flag X) (x y : Σ i, X i) :
-    Quotient.mk (gluedRelSetoid d) x = Quotient.mk (gluedRelSetoid d) y ↔ gluedRel d x y :=
-  (Quotient.eq).trans (gluedRelSetoid_r d x y)
-
 /-- A map out of the disjoint union that is constant on the two points of every flag pair is
 constant on the classes of the generated relation. -/
 private theorem lift_agree (d : FlagPairData ι Flag X) {Y : Type*} (g : (Σ i, X i) → Y)
@@ -460,7 +454,7 @@ equal, so every non-empty fibre of `nodeOfFlag` is a singleton.  The fibres over
 are not nodes are empty. -/
 @[simp] theorem nodeOfFlag_inj (d : FlagPairData ι Flag X) (f g : Flag) :
     nodeOfFlag d f = nodeOfFlag d g ↔ f = g := by
-  simp only [nodeOfFlag, mk_eq_mk_iff]
+  simp only [nodeOfFlag, Quotient.eq, gluedRelSetoid_r]
   exact gluedRel_iff_of_flagPoints d (Or.inl rfl) (Or.inl rfl)
 
 /-- **The flag-pair map to the node set is injective.**  Distinct flag pairs give distinct nodes,
@@ -508,7 +502,7 @@ node exactly when that point is a flag point: the preimage of the node set is th
     rw [Set.mem_preimage] at hx
     -- The point `x` is sent to a node, so it is glued to the first point of a flag pair.
     obtain ⟨f, hxf⟩ := (mem_nodeSet d (Quotient.mk (gluedRelSetoid d) x)).mp hx
-    have hrel : gluedRel d x (fstPoint d f) := (mk_eq_mk_iff d x (fstPoint d f)).mp hxf.symm
+    have hrel : gluedRel d x (fstPoint d f) := Quotient.exact hxf.symm
     rcases eq_or_mem_flagPointSet_of_gluedRel d hrel with heq | ⟨hxF, _⟩
     · exact (mem_flagPointSet d _).mpr ⟨f, Or.inl heq⟩
     · exact hxF
@@ -593,81 +587,14 @@ theorem isOpenEmbedding_domRestrict_quotient_mk (d : FlagPairData ι Flag X)
   Setoid.isOpenEmbedding_domRestrict_quotient_mk (gluedRelSetoid d) (flagPointSet_finite d)
     (mem_flagPointSet_of_gluedRelSetoid_of_ne d)
 
-/-- **The quotient map sends a non-flag point to a non-node.**  A point of the disjoint union that
-is not a flag point is sent to a point of the complement of the node set. -/
-theorem mem_complNodeSet_of_notMem_flagPointSet (d : FlagPairData ι Flag X)
-    {x : Σ i, X i} (hx : x ∉ flagPointSet d) :
-    Quotient.mk (gluedRelSetoid d) x ∈ complNodeSet d := by
-  rw [mem_complNodeSet]
-  intro hmem
-  rw [← Set.mem_preimage, preimage_nodeSet] at hmem
-  exact hx hmem
-
-/-- **The quotient map on the complement of the node set.**  The quotient map, restricted to the
-points of the disjoint union that are not flag points, with its codomain restricted to the
-complement of the node set. -/
-def quotientMapOnComplNodeSet (d : FlagPairData ι Flag X) :
-    ↑((flagPointSet d)ᶜ) → ↑(complNodeSet d) :=
-  Set.codRestrict ((flagPointSet d)ᶜ.domRestrict (Quotient.mk (gluedRelSetoid d)))
-    (complNodeSet d) (fun x => mem_complNodeSet_of_notMem_flagPointSet d x.2)
-
-/-- **The quotient map is a homeomorphism of the complement of the node set.**  The disjoint union
-of the normalization components minus the flag points is homeomorphic to the complement of the
-node set in the glued curve; the homeomorphism is the restriction of the quotient map. -/
-theorem isHomeomorph_quotientMapOnComplNodeSet (d : FlagPairData ι Flag X)
-    [∀ i, TopologicalSpace (X i)] [∀ i, T1Space (X i)] [Finite Flag] :
-    IsHomeomorph (quotientMapOnComplNodeSet d) := by
-  rw [isHomeomorph_iff_isEmbedding_surjective]
-  constructor
-  · -- The quotient map, restricted to the points that are not flag points, is an open embedding,
-    -- and restricting its codomain to the complement of the node set keeps it an embedding.
-    have hf : IsEmbedding ((flagPointSet d)ᶜ.domRestrict (Quotient.mk (gluedRelSetoid d))) :=
-      (isOpenEmbedding_domRestrict_quotient_mk d).toIsEmbedding
-    -- `quotientMapOnComplNodeSet d` is the codomain restriction of that map to the complement of
-    -- the node set, and Mathlib's `IsEmbedding.codRestrict` carries an embedding through it.
-    exact hf.codRestrict (complNodeSet d) (fun x => mem_complNodeSet_of_notMem_flagPointSet d x.2)
-  · -- The restriction is onto the complement of the node set, the image of the components minus
-    -- the flag points.
-    intro q
-    have hq : q.1 ∈ Quotient.mk (gluedRelSetoid d) '' (flagPointSet d)ᶜ := by
-      rw [image_quotient_mk_compl d]
-      exact q.2
-    obtain ⟨y, hy, hqy⟩ :=
-      (Set.mem_image (Quotient.mk (gluedRelSetoid d)) (flagPointSet d)ᶜ q.1).mp hq
-    refine ⟨⟨y, hy⟩, ?_⟩
-    apply Subtype.ext
-    exact hqy
-
 /-- **The bundled homeomorphism of the complement of the node set.**  The quotient map, restricted
 to the points of the disjoint union that are not flag points, is a homeomorphism from them onto
 the complement of the node set in the glued curve. -/
 def quotientMapOnComplNodeSetHomeomorph (d : FlagPairData ι Flag X)
     [∀ i, TopologicalSpace (X i)] [∀ i, T1Space (X i)] [Finite Flag] :
     ↑((flagPointSet d)ᶜ) ≃ₜ ↑(complNodeSet d) :=
-  IsHomeomorph.homeomorph (quotientMapOnComplNodeSet d)
-    (isHomeomorph_quotientMapOnComplNodeSet d)
-
-/-- The quotient map on the complement of the node set sends a point of the disjoint union to its
-image in the glued curve. -/
-@[simp] theorem quotientMapOnComplNodeSet_apply (d : FlagPairData ι Flag X)
-    (x : ↑((flagPointSet d)ᶜ)) :
-    ((quotientMapOnComplNodeSet d x).val : GluedCurve d) = Quotient.mk (gluedRelSetoid d) x.1 := by
-  unfold quotientMapOnComplNodeSet
-  rfl
-
-/-- The bundled homeomorphism of the complement of the node set sends a point of the disjoint union
-to its image in the glued curve. -/
-@[simp] theorem quotientMapOnComplNodeSetHomeomorph_apply (d : FlagPairData ι Flag X)
-    [∀ i, TopologicalSpace (X i)] [∀ i, T1Space (X i)] [Finite Flag]
-    (x : ↑((flagPointSet d)ᶜ)) :
-    ((quotientMapOnComplNodeSetHomeomorph d x).val : GluedCurve d) =
-      Quotient.mk (gluedRelSetoid d) x.1 := by
-  -- `IsHomeomorph.homeomorph` builds the bundled homeomorphism on `Equiv.ofBijective f _`, whose
-  -- forward map is `f` by definition; the `change` below is exactly that reduction, applied to
-  -- our own bundled definition.
-  unfold quotientMapOnComplNodeSetHomeomorph
-  change (quotientMapOnComplNodeSet d x).val = _
-  exact quotientMapOnComplNodeSet_apply d x
+  (isOpenEmbedding_domRestrict_quotient_mk d).toIsEmbedding.toHomeomorph.trans
+    (.setCongr (by rw [Set.range_domRestrict, image_quotient_mk_compl]))
 
 end NodalGluing
 
