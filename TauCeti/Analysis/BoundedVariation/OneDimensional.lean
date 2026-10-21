@@ -45,7 +45,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 /-- The classical derivative measure of a globally bounded-variation function is its
 measure-valued distributional derivative. The test function is only required to be `C¹`.
 Neither continuity of `f` nor integrability of `f` on the whole line is assumed. -/
-theorem _root_.BoundedVariationOn.integral_deriv_smul_eq_neg_vectorMeasure
+theorem _root_.BoundedVariationOn.integral_deriv_smul_eq_neg_integral_vectorMeasure
     (hf : BoundedVariationOn f univ) {φ : ℝ → ℝ}
     (hφ : ContDiff ℝ 1 φ) (hcφ : HasCompactSupport φ) :
     ∫ x, deriv φ x • f x = -∫ᵛ x, φ x ∂•hf.vectorMeasure := by
@@ -79,7 +79,7 @@ theorem _root_.BoundedVariationOn.totalVariationOn_le_variation_vectorMeasure
   have hpair : ∫ x, TestFunction.divergenceCLM φ x * f x =
       -∫ᵛ x, φ x ∂•hf.vectorMeasure := by
     simp_rw [TestFunction.divergenceCLM_apply_eq_deriv]
-    exact hf.integral_deriv_smul_eq_neg_vectorMeasure
+    exact hf.integral_deriv_smul_eq_neg_integral_vectorMeasure
       (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
   have hloc : ∫ᵛ x in Ω, φ x ∂•hf.vectorMeasure = ∫ᵛ x, φ x ∂•hf.vectorMeasure :=
     VectorMeasure.setIntegral_eq_integral_of_forall_compl_eq_zero Ω.isOpen.measurableSet
