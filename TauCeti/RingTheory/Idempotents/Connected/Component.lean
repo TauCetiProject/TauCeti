@@ -130,10 +130,8 @@ component idempotent of `x`. -/
 theorem map_connectedComponentIdempotent_eq_self (e : R ≃+* R) (x : PrimeSpectrum R)
     (hx : comap (e : R →+* R) x = x) :
     e (connectedComponentIdempotent x) = connectedComponentIdempotent x := by
-  rw [map_connectedComponentIdempotent]
-  -- The homeomorphism acts by contraction along `e.symm`, and its inverse along `e`.
-  exact congrArg connectedComponentIdempotent
-    ((homeomorphOfRingEquiv e).eq_symm_apply.mp hx.symm)
+  apply e.symm.injective
+  rw [e.symm_apply_apply, map_connectedComponentIdempotent, RingEquiv.symm_symm, hx]
 
 /-- If the whole prime spectrum is preconnected, its component idempotent is one. -/
 @[simp]
