@@ -62,7 +62,9 @@ convexity condition for gluing a triangle to its mirror image.
 * `TauCeti.UpperHalfPlane.vertexAngle_extGeodesicReflection`: geodesic reflections preserve
   angles.
 * `TauCeti.UpperHalfPlane.geodesicReflectionComp`: the product of two geodesic reflections, as an
-  element of `PSL(2, ℝ)` (`geodesicReflectionComp_smul`).
+  element of `PSL(2, ℝ)` (`geodesicReflectionComp_smul`), composing by
+  `geodesicReflectionComp_mul_geodesicReflectionComp` and moving equivariantly by
+  `mul_geodesicReflectionComp_mul_inv`.
 * `TauCeti.UpperHalfPlane.extGeodesicReflection_mem_extLeftHalfPlane_geodesicFromTo_left` and
   `TauCeti.UpperHalfPlane.extGeodesicReflection_mem_extLeftHalfPlane_geodesicFromTo_right`:
   reflecting across a side with an acute angle at one end.
@@ -458,9 +460,9 @@ axis. -/
 private theorem extGeodesicReflection_one_mem_extLeftHalfPlane_pslS_iff (p : ℍ ⊕ OnePoint ℝ) :
     extGeodesicReflection 1 p ∈ extLeftHalfPlane pslS ↔ p ∈ extLeftHalfPlane 1 := by
   rcases p with z | ξ
-  · rw [extGeodesicReflection_inl, inl_mem_extLeftHalfPlane_iff, inl_mem_extLeftHalfPlane_iff,
-      mem_leftHalfPlane_iff_sideForm_neg, mem_leftHalfPlane_iff_sideForm_neg, sideForm_pslS,
-      sideForm_one, geodesicReflection_one, coe_re, coe_re, imaginaryAxisReflection_re, neg_neg]
+  · simp only [extGeodesicReflection_inl, inl_mem_extLeftHalfPlane_iff,
+      mem_leftHalfPlane_iff_sideForm_neg, sideForm_pslS, sideForm_one, geodesicReflection_one,
+      coe_re, imaginaryAxisReflection_re, neg_neg]
   · induction ξ using OnePoint.rec with
     | infty =>
       simp only [extGeodesicReflection_inr, inv_one, one_smul, J_smul_infty,
@@ -656,6 +658,45 @@ theorem geodesicReflectionComp_inv (g h : PSL(2, ℝ)) :
 theorem geodesicReflectionComp_self (g : PSL(2, ℝ)) : geodesicReflectionComp g g = 1 := by
   simp [geodesicReflectionComp]
 
+/-- Products of reflections compose: the middle reflection cancels. -/
+@[simp]
+theorem geodesicReflectionComp_mul_geodesicReflectionComp (g h k : PSL(2, ℝ)) :
+    geodesicReflectionComp g h * geodesicReflectionComp h k = geodesicReflectionComp g k := by
+  simp [geodesicReflectionComp, mul_assoc]
+
+/-- Conjugating a product of reflections by `k` gives the product of the reflections in the
+moved geodesics. -/
+theorem mul_geodesicReflectionComp_mul_inv (k g h : PSL(2, ℝ)) :
+    k * geodesicReflectionComp g h * k⁻¹ = geodesicReflectionComp (k * g) (k * h) := by
+  simp [geodesicReflectionComp, mul_assoc]
+
+/-- Reversing the orientation of the first line does not change the product of reflections. -/
+@[simp]
+theorem geodesicReflectionComp_mul_pslS_left (g h : PSL(2, ℝ)) :
+    geodesicReflectionComp (g * pslS) h = geodesicReflectionComp g h := by
+  simp [geodesicReflectionComp, mul_assoc, -pslS_inv]
+
+/-- Reversing the orientation of the second line does not change the product of reflections. -/
+@[simp]
+theorem geodesicReflectionComp_mul_pslS_right (g h : PSL(2, ℝ)) :
+    geodesicReflectionComp g (h * pslS) = geodesicReflectionComp g h := by
+  simp [geodesicReflectionComp, mul_assoc, -pslS_inv]
+
+/-- Shifting the parametrisation of the first line does not change the product of reflections. -/
+@[simp]
+theorem geodesicReflectionComp_mul_dilation_left (g h : PSL(2, ℝ)) (s : ℝ) :
+    geodesicReflectionComp (g * ↑(Matrix.SpecialLinearGroup.dilation s)) h =
+      geodesicReflectionComp g h := by
+  simp [geodesicReflectionComp, mul_assoc]
+
+/-- Shifting the parametrisation of the second line does not change the product of
+reflections. -/
+@[simp]
+theorem geodesicReflectionComp_mul_dilation_right (g h : PSL(2, ℝ)) (s : ℝ) :
+    geodesicReflectionComp g (h * ↑(Matrix.SpecialLinearGroup.dilation s)) =
+      geodesicReflectionComp g h := by
+  simp [geodesicReflectionComp, mul_assoc]
+
 /-! ### Reflecting a vertex across a side with acute angles -/
 
 /-- Reflection in the imaginary axis is `z ↦ -conj z` on points of `ℍ ∪ ∂ℍ` read as complex
@@ -690,18 +731,15 @@ private theorem center_neg_of_vertexAngle_lt {a b c : ℍ ⊕ OnePoint ℝ} {m �
       · obtain ⟨-, rfl⟩ := isGeodesicFromTo_inl_inr.1 hab
         rw [one_smul]
     have h := vertexAngle_infty_of_lt_re hρ hcinf hainf hcm ham (by rw [hare]; exact hcre)
-    rw [vertexAngle_inl, hray, ← vertexAngle_inl, h, hare, zero_sub,
-      Real.arccos_lt_pi_div_two] at hangle
-    exact neg_pos.1 (pos_of_mul_pos_left (by rwa [div_eq_mul_inv] at hangle) (inv_pos.2 hρ).le)
+    rw [vertexAngle_inl, hray, ← vertexAngle_inl, h, hare, Real.arccos_lt_pi_div_two,
+      div_pos_iff_of_pos_right hρ] at hangle
+    linarith
   · -- an ideal `a` is `0`, and the centre is `|c|² / (2 Re c)`
     have hξ := hab.smul_zero_eq
     rw [one_smul] at hξ
     subst hξ
-    rw [toComplex_inr_coe, Complex.ofReal_zero, zero_sub, Complex.normSq_neg,
-      Complex.normSq_ofReal] at ham
     have hy := im_toComplex_nonneg c
-    rw [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-      Complex.ofReal_im, sub_zero, ← ham] at hcm
+    simp [Complex.normSq_apply] at ham hcm
     nlinarith
 
 /-- In the frame where the reflecting line is the upward imaginary axis, running from `a` to `b`:

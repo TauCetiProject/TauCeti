@@ -162,10 +162,14 @@ private theorem geodesicReflection_mem_carrier_doubleTriangle {z : ℍ}
     rwa [e₁] at h
   have hρρ (w : ℍ) : ρ (ρ w) = w := geodesicReflection_geodesicReflection _ w
   simp only [Q.mem_carrier_iff, sideGeodesic_def] at hz ⊢
+  -- normalise the `Fin 4` indices `2 + 1` and `3 + 1` of the sides used below
+  have h₂ := hz 2
+  have h₃ := hz 3
+  simp only [Fin.reduceAdd] at h₂ h₃
   intro i
-  fin_cases i
-  · exact (f₀ z).2 (hz 3)
-  · exact (f₁ z).2 (hz 2)
+  fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.reduceAdd]
+  · exact (f₀ z).2 h₃
+  · exact (f₁ z).2 h₂
   · simpa [hρρ] using (f₁ (ρ z)).1 (by simpa [hρρ] using hz 1)
   · simpa [hρρ] using (f₀ (ρ z)).1 (by simpa [hρρ] using hz 0)
 
