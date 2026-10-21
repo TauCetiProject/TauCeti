@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 
 /-!
@@ -26,10 +27,11 @@ first-order operator `L₀ x = (G, C, H₁, H₂)` with
   linearized `∂bar_a α`).
 
 This file defines `L₀` and its formal `L²` adjoint `L₀*` as continuous linear operators on
-`ℝ⁴`-valued Schwartz fields on `ℂ`. It proves the Weitzenböck identity `L₀* L₀ = -Δ + 1 / 4` and
-the energy identity `‖L₀ x‖₂² = ‖∇x‖₂² + ‖x‖₂² / 4`, together with their consequences
-`‖x‖₂ ≤ 2 ‖L₀ x‖₂` and the injectivity of `L₀` on Schwartz fields. These are the vacuum inputs
-for the linear analysis of vortices, whose exterior regions are modelled on the vacuum.
+`ℝ⁴`-valued Schwartz fields on `ℂ`. It proves the Weitzenböck identities
+`L₀* L₀ = L₀ L₀* = -Δ + 1 / 4` and the energy identity `‖L₀ x‖₂² = ‖∇x‖₂² + ‖x‖₂² / 4`, together
+with their consequences `‖x‖₂ ≤ 2 ‖L₀ x‖₂` and the injectivity of `L₀` on Schwartz fields. These
+are the vacuum inputs for the linear analysis of vortices, whose exterior regions are modelled on
+the vacuum.
 
 ## Main declarations
 
@@ -39,7 +41,8 @@ for the linear analysis of vortices, whose exterior regions are modelled on the 
 * `TauCeti.Vortex.vacuumAdjoint`: its formal adjoint `L₀*`, characterized by
   `TauCeti.Vortex.vacuumAdjoint_apply_zero` through `TauCeti.Vortex.vacuumAdjoint_apply_three`.
 * `TauCeti.Vortex.integral_inner_vacuumOperator`: `∫ ⟪L₀ x, y⟫ = ∫ ⟪x, L₀* y⟫`.
-* `TauCeti.Vortex.vacuumAdjoint_vacuumOperator`: `L₀* L₀ = -Δ + 1 / 4`.
+* `TauCeti.Vortex.vacuumAdjoint_vacuumOperator` and `TauCeti.Vortex.vacuumOperator_vacuumAdjoint`:
+  `L₀* L₀ = -Δ + 1 / 4` and `L₀ L₀* = -Δ + 1 / 4`.
 * `TauCeti.Vortex.integral_norm_sq_vacuumOperator`: `‖L₀ x‖₂² = ‖∂₁ x‖₂² + ‖∂₂ x‖₂² + ‖x‖₂² / 4`.
 * `TauCeti.Vortex.integral_norm_sq_le_four_mul_integral_norm_sq_vacuumOperator` and
   `TauCeti.Vortex.vacuumOperator_injective`: the resulting lower bound, and triviality of the
@@ -197,11 +200,14 @@ theorem vacuumAdjoint_vacuumOperator :
   · simp [lineDerivOp_vacuumOperator, laplacian_eq_lineDerivOp_one_I, hc]
     ring
 
-private theorem integrable_inner (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    Integrable (fun z ↦ ⟪f z, g z⟫) := by
-  convert (pairing (innerSL ℝ) f g).integrable (μ := volume) using 1
-  ext z
-  rw [pairing_apply_apply, innerSL_apply_apply]
+/-- The reverse Weitzenböck identity at the vacuum: `L₀ L₀* = -Δ + 1 / 4`. -/
+theorem vacuumOperator_vacuumAdjoint :
+    vacuumOperator (vacuumAdjoint y) = -Δ y + (1 / 4 : ℝ) • y := by
+  have hc := y.lineDerivOp_comm I 1
+  ext z i
+  fin_cases i <;>
+  · simp [lineDerivOp_vacuumAdjoint, laplacian_eq_lineDerivOp_one_I, hc]
+    ring
 
 private theorem integral_inner_firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) ℝ) :
     ∫ z, ⟪firstOrder A₁ A₂ B x z, y z⟫ = ∫ z, ⟪x z, firstOrder (-A₁ᵀ) (-A₂ᵀ) Bᵀ y z⟫ := by
