@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Distributions.Poisson.Measurability
+import TauCeti.Probability.Distributions.Gamma.Poisson
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Analysis.SpecialFunctions.Gamma
 
@@ -139,7 +140,7 @@ theorem isProbabilityMeasure_negativeMultinomialMeasure {r p₀ : ℝ} (hr : 0 �
   · rw [negativeMultinomialMeasure_of_pos hr hp₀ hp]
     have := isProbabilityMeasure_gammaMeasure hr hp₀
     exact isProbabilityMeasure_bind
-      ((measurable_pi_poissonMeasure.comp (Measurable.of_eval fun _ => by fun_prop)).aemeasurable)
+      (measurable_pi_poissonMeasure_mul_toNNReal p).aemeasurable
       (ae_of_all _ fun _ => inferInstance)
 
 private lemma integral_prod_poissonMass_gammaMeasure {r p₀ : ℝ} (hr : 0 < r)
@@ -148,35 +149,16 @@ private lemma integral_prod_poissonMass_gammaMeasure {r p₀ : ℝ} (hr : 0 < r)
       (k i).factorial) ∂gammaMeasure r p₀ = negativeMultinomialWeightReal r p₀ p k := by
   classical
   have hshape : 0 < r + ∑ i, (k i : ℝ) := by positivity
-  have hcollect (x : ℝ) (hx : x ∈ Ioi (0 : ℝ)) :
-      (p₀ ^ r / Real.Gamma r * x ^ (r - 1) * Real.exp (-(p₀ * x))) *
-        (∏ i, (Real.exp (-((p i : ℝ) * x)) * ((p i : ℝ) * x) ^ k i /
-          (k i).factorial)) =
-      (p₀ ^ r / Real.Gamma r * (∏ i, (p i : ℝ) ^ k i) /
-        (∏ i, ((k i).factorial : ℝ))) *
-        (x ^ (r + ∑ i, (k i : ℝ) - 1) * Real.exp (-(1 * x))) := by
-    simp_rw [Finset.prod_div_distrib, Finset.prod_mul_distrib, mul_pow,
-      Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum, ← Real.exp_sum,
-      Finset.sum_neg_distrib, ← Finset.sum_mul]
-    have hexp : Real.exp (-(p₀ * x)) * Real.exp (-((∑ i, (p i : ℝ)) * x)) =
-        Real.exp (-(1 * x)) := by
-      rw [← Real.exp_add, ← neg_add, ← add_mul, hp]
-    have hpow : x ^ (r - 1) * x ^ (∑ i, k i) =
-        x ^ (r + ∑ i, (k i : ℝ) - 1) := by
-      rw [← Real.rpow_add_natCast hx.ne']
-      congr 1
-      push_cast
-      ring
-    calc
-      _ = (p₀ ^ r / Real.Gamma r * (∏ i, (p i : ℝ) ^ k i) /
-          (∏ i, ((k i).factorial : ℝ))) *
-          ((x ^ (r - 1) * x ^ (∑ i, k i)) *
-            (Real.exp (-(p₀ * x)) * Real.exp (-((∑ i, (p i : ℝ)) * x)))) := by ring
-      _ = _ := by rw [hpow, hexp]
+  -- Transfer to the Gamma density on its positive support.
   rw [integral_gammaMeasure_eq_integral_Ioi hr hp₀]
   simp only [smul_eq_mul]
+  -- Collect the Poisson factors; normalization of the weights makes the combined rate one.
+  have hcollect := fun x (hx : x ∈ Ioi (0 : ℝ)) =>
+    Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial p₀ r (fun i => (p i : ℝ)) k hx.ne'
   rw [setIntegral_congr_fun measurableSet_Ioi hcollect, integral_const_mul,
-    Real.integral_rpow_mul_exp_neg_mul_Ioi hshape zero_lt_one,
+    hp]
+  -- Euler's Gamma integral evaluates the shifted shape, leaving the mass constants.
+  rw [Real.integral_rpow_mul_exp_neg_mul_Ioi hshape zero_lt_one,
     negativeMultinomialWeightReal_of_ne_zero hr.ne']
   simp only [one_div_one, Real.one_rpow]
   ring
@@ -195,7 +177,7 @@ theorem negativeMultinomialMeasure_singleton {r p₀ : ℝ} (hr : 0 ≤ r) (hp�
     · simp [negativeMultinomialWeight, hk, eq_comm]
   have hkernel : Measurable fun x : ℝ =>
       Measure.pi (fun i => poissonMeasure (p i * Real.toNNReal x)) :=
-    measurable_pi_poissonMeasure.comp (Measurable.of_eval fun _ => by fun_prop)
+    measurable_pi_poissonMeasure_mul_toNNReal p
   have := isProbabilityMeasure_gammaMeasure hr hp₀
   have := isProbabilityMeasure_negativeMultinomialMeasure hr.le hp₀ hp
   apply (ENNReal.toReal_eq_toReal_iff'
@@ -257,7 +239,7 @@ theorem negativeMultinomialMeasure_singleton_ne_zero_iff {r p₀ : ℝ} (hr : 0 
 
 /-- At success weight one, all category weights vanish and the law is Dirac at zero. -/
 @[simp]
-theorem negativeMultinomialMeasure_one {r : ℝ} (hr : 0 ≤ r) :
+theorem negativeMultinomialMeasure_eq_dirac_of_successWeight_eq_one {r : ℝ} (hr : 0 ≤ r) :
     negativeMultinomialMeasure r 1 (0 : ι → ℝ≥0) = Measure.dirac 0 := by
   classical
   apply Measure.ext_of_singleton

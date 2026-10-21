@@ -37,4 +37,11 @@ theorem measurable_pi_poissonMeasure {ι : Type*} [Fintype ι] :
   have hν (i : ι) : Measurable (ν i) :=
     (measurable_poissonMeasure.comp (measurable_pi_apply i)).subtype_mk
   exact TauCeti.MeasureTheory.measurable_probabilityMeasure_pi_toMeasure ν hν
+
+/-- The finite product of Poisson laws with rates `p i * Real.toNNReal x` is a measurable
+mixing kernel on the real line. -/
+@[fun_prop]
+theorem measurable_pi_poissonMeasure_mul_toNNReal {ι : Type*} [Fintype ι] (p : ι → ℝ≥0) :
+    Measurable fun x : ℝ => Measure.pi (fun i => poissonMeasure (p i * Real.toNNReal x)) :=
+  measurable_pi_poissonMeasure.comp (Measurable.of_eval fun _ => by fun_prop)
 end TauCeti.Probability
