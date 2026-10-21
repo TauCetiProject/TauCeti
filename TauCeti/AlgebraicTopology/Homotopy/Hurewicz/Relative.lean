@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.BasepointChange
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Hurewicz
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.CubePair
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Relative
 
 /-!
@@ -57,9 +58,6 @@ generators of `Hₙ(X, A; ℤ)`.
 
 ## Main results
 
-* `TauCeti.cubeBoundaryPairCycle`: the fundamental relative cycle of the cube pair `(Iᵐ⁺¹, ∂Iᵐ⁺¹)`,
-  sent by the map of pairs of a cube `c` to the class of `c`
-  (`TauCeti.homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle`).
 * `TauCeti.RelHomotopyGroup.exists_hurewicz_eq_singularHomologyMap`: when `A` is path connected,
   the image of the generator of `Hₙ(Iⁿ, ∂Iⁿ)` under a cube sending the boundary of the cube into
   `A` is a relative Hurewicz class at any point of `A`.
@@ -85,44 +83,6 @@ open scoped unitInterval Topology
 universe u
 
 namespace TauCeti
-
-/-! ### The fundamental cycle of the cube pair -/
-
-section CubeBoundaryPair
-
-variable (k : Type u) [Ring k]
-
-/-- The identity cube `upCube m` sends the boundary of `Iᵐ` into the subspace `∂Iᵐ` of the cube
-pair. -/
-lemma mapsTo_upCube_boundary (m : ℕ) :
-    MapsTo (upCube.{u} m : SingularCube (cubeBoundaryPair.{u} m).fst m) (Cube.boundary (Fin m))
-      (range (cubeBoundaryPair.{u} m).map) :=
-  fun y hy ↦ ⟨⟨ULift.up y, hy⟩, rfl⟩
-
-/-- The fundamental relative cycle of the cube pair `(Iᵐ⁺¹, ∂Iᵐ⁺¹)`: the identity cube `upCube`,
-as a relative cycle of the normalized cubical chains with coefficients in `k`. -/
-def cubeBoundaryPairCycle (m : ℕ) :
-    ((cubeBoundaryPair.{u} (m + 1)).cubicalChainComplex k).cycles (m + 1) :=
-  TopPair.cubicalCycleOfCube k _ (mapsTo_upCube_boundary (m + 1))
-
-/-- The map of pairs `c : (Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ P` given by a cube `c` sends the class of the fundamental
-cycle of the cube pair to the class of `c` in relative cubical homology. -/
-theorem homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle {P : TopPair.{u}} {m : ℕ}
-    (c : SingularCube P.fst (m + 1)) (hc : MapsTo c (Cube.boundary (Fin (m + 1))) (range P.map)) :
-    HomologicalComplex.homologyMap
-        (TopPair.cubicalChainComplexMap k (cubeBoundaryPairHom c hc)) (m + 1)
-        (((cubeBoundaryPair.{u} (m + 1)).cubicalChainComplex k).homologyπ (m + 1)
-          (cubeBoundaryPairCycle k m)) =
-      (P.cubicalChainComplex k).homologyπ (m + 1) (TopPair.cubicalCycleOfCube k c hc) := by
-  -- The cube `c ∘ upCube` is `c`.
-  have hcid : (TopPair.Hom.fst (cubeBoundaryPairHom c hc)).hom.comp
-      (upCube.{u} (m + 1) : SingularCube (cubeBoundaryPair.{u} (m + 1)).fst (m + 1)) = c :=
-    ContinuousMap.ext fun y ↦ cubeBoundaryPairHom_fst_apply c hc _
-  rw [← ModuleCat.comp_apply, HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
-  exact congrArg _ ((TopPair.cyclesMap_cubicalCycleOfCube k _ _ _ (by rw [hcid]; exact hc)).trans
-    (by simp only [hcid]))
-
-end CubeBoundaryPair
 
 namespace RelHomotopyGroup
 
