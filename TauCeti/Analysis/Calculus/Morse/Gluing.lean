@@ -188,8 +188,7 @@ private theorem isFixedPt_gluing_snd_splitPassage {z : WithLp 2 (Eₛ × Eᵤ)}
     rw [snd_splitPassage hsrc, smul_smul, div_mul_div_cancel₀ hε.ne',
       div_self (norm_ne_zero_iff.2 (mem_splitPassage_source.1 hsrc).2.1), one_smul]
   refine ⟨?_, hvz⟩
-  change k _ = _
-  rw [hvz, ← hzg, ← fst_splitPassage hsrc]
+  rw [Function.IsFixedPt, hvz, ← hzg, ← fst_splitPassage hsrc]
   exact hzk.symm
 
 /-- **Gluing transverse discs through the split hyperbolic box.** Let `y ↦ (g y, y)` be a disc in
@@ -257,8 +256,8 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
           (Subtype.ext hfv) (Subtype.ext (hw _ hr').2))
       refine ⟨_, hr, ?_⟩
       dsimp only
-      rw [← hvw, hvz, ← hzg]
-      rfl
+      rw [← hvw, hvz, ← hzg, ← WithLp.ofLp_fst, ← WithLp.ofLp_snd, Prod.mk.eta,
+        WithLp.toLp_ofLp]
     · -- Conversely, the point with gluing parameter `r` exits the box at `(r • g (r • w r), w r)`,
       -- which lies on the graph of `k` because `w r` is a fixed point.
       rintro ⟨r, hr, rfl⟩
