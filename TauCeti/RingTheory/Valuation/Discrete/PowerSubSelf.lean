@@ -120,7 +120,7 @@ theorem ord_sub_pow_sub_self_eq_min {n : ℕ} (hn : 1 < n) {u : R} (hu : v.ord u
   rcases eq_or_ne (v w) 0 with hw0 | hw0
   · have hsub : v (w ^ n - w) = 0 := by
       rw [v.map_sub_of_right_eq_zero hw0, map_pow, hw0, zero_pow (by omega)]
-    rw [v.ord_of_map_eq_zero hw0, mul_zero, min_eq_left hu.le,
+    rw [v.ord_eq_zero_of_map_eq_zero hw0, mul_zero, min_eq_left hu.le,
       v.ord_sub_of_map_right_eq_zero hsub]
   have hwn : v (w ^ n) ≠ 0 := by
     rw [map_pow]
