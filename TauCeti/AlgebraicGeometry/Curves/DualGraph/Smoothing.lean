@@ -132,6 +132,14 @@ lemma smoothingVertexLift_smoothingVertex {α : Sort*} (f : G.Vertex → α)
     smoothingVertexLift f hf (G.smoothingVertex S v) = f v := by
   simp [smoothingVertexLift, smoothingVertex]
 
+variable {G S} in
+/-- A function on the components of `G` that agrees on the two branches of every node in `S`
+takes the same value on components of `G` lying on the same component of the smoothing. -/
+lemma apply_eq_apply_of_smoothingVertex_eq {α : Sort*} (f : G.Vertex → α)
+    (hf : ∀ e ∈ S, f (G.endpoint e 0) = f (G.endpoint e 1)) {v w : G.Vertex}
+    (h : G.smoothingVertex S v = G.smoothingVertex S w) : f v = f w := by
+  simpa using congrArg (smoothingVertexLift f hf) h
+
 /-- To prove a property of every component of the smoothing, it suffices to prove it for the
 component containing each component of `G`. -/
 @[elab_as_elim]
@@ -345,16 +353,8 @@ theorem smoothingVertex_eq_iff_of_forall_endpoint_ne {v w : G.Vertex}
     (hv : ∀ e ∈ S, ∀ i, G.endpoint e i ≠ v) :
     G.smoothingVertex S w = G.smoothingVertex S v ↔ w = v := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  have key : ∀ a b, Relation.EqvGen (G.SmoothingRel S) a b → (a = v ↔ b = v) := by
-    intro a b hab
-    induction hab with
-    | rel a b h =>
-      obtain ⟨e, he, rfl, rfl⟩ := h
-      exact iff_of_false (hv e he 0) (hv e he 1)
-    | refl => exact Iff.rfl
-    | symm _ _ _ ih => exact ih.symm
-    | trans _ _ _ _ _ ih₁ ih₂ => exact ih₁.trans ih₂
-  exact (key _ _ ((G.smoothingVertex_eq_smoothingVertex_iff S).mp h)).mpr rfl
+  simpa using apply_eq_apply_of_smoothingVertex_eq (· = v)
+    (fun e he ↦ propext (iff_of_false (hv e he 0) (hv e he 1))) h
 
 /-- Smoothing does not change the genus of a component carrying no branch of a smoothed node. -/
 theorem genus_smoothing_of_forall_endpoint_ne {v : G.Vertex}
@@ -385,23 +385,9 @@ theorem smoothingVertex_singleton_eq_iff {w : G.Vertex} :
       w = G.endpoint e 0 ∨ w = G.endpoint e 1 := by
   constructor
   · intro h
-    have key : ∀ a b, Relation.EqvGen (G.SmoothingRel {e}) a b → a = b ∨
-        ((a = G.endpoint e 0 ∨ a = G.endpoint e 1) ∧
-          (b = G.endpoint e 0 ∨ b = G.endpoint e 1)) := by
-      intro a b hab
-      induction hab with
-      | rel a b h =>
-        obtain ⟨e', he', rfl, rfl⟩ := h
-        rw [mem_singleton] at he'
-        subst he'
-        exact .inr ⟨.inl rfl, .inr rfl⟩
-      | refl => exact .inl rfl
-      | symm _ _ _ ih => tauto
-      | trans _ _ _ _ _ ih₁ ih₂ =>
-        rcases ih₁ with rfl | ⟨h₁, h₁'⟩ <;> rcases ih₂ with rfl | ⟨h₂, h₂'⟩ <;> tauto
-    rcases key _ _ ((G.smoothingVertex_eq_smoothingVertex_iff {e}).mp h) with h | ⟨h, -⟩
-    · exact .inl h
-    · exact h
+    simpa using apply_eq_apply_of_smoothingVertex_eq
+      (fun w ↦ w = G.endpoint e 0 ∨ w = G.endpoint e 1)
+      (fun e' he' ↦ by rw [mem_singleton.mp he']; simp) h
   · rintro (rfl | rfl)
     · rfl
     · exact G.smoothingVertex_endpoint {e} (mem_singleton_self e) 1 0
