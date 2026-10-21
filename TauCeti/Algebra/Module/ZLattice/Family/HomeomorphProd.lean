@@ -129,15 +129,17 @@ noncomputable def torusFamilyHomeomorphProd (hcont : ∀ l, Continuous fun y ↦
       (fun x x' h ↦ Quotient.sound <| (orbitRel_periodAddAction_iff P b hinj).2
         ⟨rfl, by
           rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
-          exact Quotient.sound' h⟩)
+          exact (Submodule.Quotient.eq _).2 ((Submodule.quotientRel_def _).1 h)⟩)
     left_inv := by
       rintro ⟨p⟩
       exact congrArg (Quotient.mk _)
         (Prod.ext rfl ((periodBasis P b hinj p.1).equivFun.symm_apply_apply p.2))
     right_inv := by
-      rintro ⟨y, ⟨x⟩⟩
-      exact Prod.ext rfl
-        (congrArg Submodule.Quotient.mk ((periodBasis P b hinj y).equivFun.apply_symm_apply x))
+      rintro ⟨y, z⟩
+      induction z using Submodule.Quotient.induction_on with | H x => ?_
+      beta_reduce
+      rw [← Submodule.Quotient.mk''_eq_mk, Quotient.liftOn'_mk'', Quotient.lift_mk,
+        LinearEquiv.apply_symm_apply, Submodule.Quotient.mk''_eq_mk]
     continuous_toFun := Continuous.quotient_lift
       (continuous_fst.prodMk ((span ℤ _).isOpenQuotientMap_mkQ.continuous.comp hfwd)) _
     continuous_invFun := by

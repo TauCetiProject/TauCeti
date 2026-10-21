@@ -110,6 +110,7 @@ variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 vector `x` to the linear combination `∑ i, x i • v i`. -/
 @[simp] theorem equivFunL_symm_apply (v : Basis ι 𝕜 E) (x : ι → 𝕜) :
     v.equivFunL.symm x = ∑ i, x i • v i :=
-  v.equivFun_symm_apply x
+  v.equivFunL.symm_apply_eq.2 <| funext fun i ↦ by
+    rw [equivFunL_apply, ← equivFun_apply, ← v.equivFun_symm_apply, LinearEquiv.apply_symm_apply]
 
 end Module.Basis
