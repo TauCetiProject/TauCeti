@@ -436,8 +436,9 @@ private theorem map_awayToSection_algebraMap (i : Fin 2) (c : R) :
         (Proj.awayToSection 𝒜 (coord R i) (algebraMap R _ c)) =
       algebraMap Γ(projectiveLine R, ⊤) Γ(projectiveLine R, W₀₁)
         (baseRingToGlobalSections R (projectiveLine R) c) := by
-  rw [awayToSection_algebraMap_eq_map, ← CommRingCat.comp_apply, ← Functor.map_comp]
-  rfl
+  rw [awayToSection_algebraMap_eq_map, ← CommRingCat.comp_apply, ← Functor.map_comp,
+    RingHom.algebraMap_toAlgebra]
+  exact congrArg (fun f ↦ ((projectiveLine R).presheaf.map f).hom _) (Subsingleton.elim _ _)
 
 /-- Restricted to the overlap, a polynomial in the affine coordinate of a chart is a polynomial in
 the restricted coordinate with coefficients restricted from the global functions. -/
