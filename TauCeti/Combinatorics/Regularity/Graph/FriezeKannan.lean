@@ -91,8 +91,8 @@ theorem abs_steppedCount_sub_steppedCount_le {P Q : Finpartition (univ : Finset 
         obtain ⟨x, -⟩ := Q.nonempty_of_mem_parts C.2
         have : Nonempty V := ⟨x⟩
         have hn : n ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
-        rw [← sub_mul, ← sub_mul, abs_mul, abs_mul, Nat.abs_cast, Nat.abs_cast, ← mul_assoc,
-          mul_div_cancel₀ _ (pow_ne_zero 2 hn), mul_comm _ |_|, ← mul_assoc]
+        rw [← sub_mul, ← sub_mul, abs_mul, abs_mul, Nat.abs_cast, Nat.abs_cast]
+        field_simp
         gcongr <;> exact inter_subset_right
     _ = n ^ 2 * ∑ C : Q.parts, ∑ D : Q.parts, (#C.1 * #D.1 / n ^ 2) *
         |(G.edgeDensity C.1 D.1 : ℝ) -
