@@ -24,9 +24,7 @@ Write `a ∈ ℚ_2ˣ` as `a = 2 ^ α u` with `u` a unit of `ℤ_2`. The defect e
 Here `ε` and `ω` are Serre's sign functions `TauCeti.serreEps` and `TauCeti.serreOmega`. Since
 `v(2) = 1`, the defects of the units of `ℤ_2` are `0`, `4 ℤ_2` and `2 ℤ_2`, attained by `1`, `5`
 and `-1`: this is the general list `0`, `𝓂^{2e}`, `𝓂^{2k+1}` (`k < e`) of
-`TauCeti.defectExponent_eq_two_mul_natCastValuation_or_odd` at `e = 1`. The proof reads the
-defects of `±1` and `±5` off that general theory, and moves the square factor and the power of
-`2` with `TauCeti.defectExponent_mul_sq` and `TauCeti.defectExponent_of_odd`.
+`TauCeti.defectExponent_eq_two_mul_natCastValuation_or_odd` at `e = 1`.
 
 On the eight representatives `1, -1, 5, -5, 2, -2, 10, -10` of the square classes of `ℚ_2`
 (`TauCeti.padicTwoSquareClassRep`) the defects are `0, 2, 4, 2, 2, 2, 2, 2` times `ℤ_2`. In
@@ -143,6 +141,8 @@ theorem defectExponent_padicTwo {a : ℚ_[2]ˣ} {α : ℤ} {u : ℤ_[2]ˣ}
     (ha : (a : ℚ_[2]) = 2 ^ α * u) :
     defectExponent a = if Odd α then (α : WithTop ℤ) else
       if serreEps u = 1 then (α + 1 : ℤ) else if serreOmega u = 1 then (α + 2 : ℤ) else ⊤ := by
+  -- The defects of `±1` and `±5` come from the general theory; the square factor and the power
+  -- of `2` are moved with `defectExponent_mul_sq` and `defectExponent_of_odd`.
   have hv : (normalizedValuation ℚ_[2] a).toAdd = α := by
     rw [Padic.toAdd_normalizedValuation_eq_valuation, ha]
     exact_mod_cast Padic.valuation_p_zpow_mul_unit (p := 2) α u
