@@ -107,10 +107,9 @@ theorem lintegral_ofReal_mul_deriv (a : ℝ) {c : ℝ} (hc : 0 < c) :
   have hint : Integrable fun t => c * deriv smoothTransition (c * (a - t)) :=
     ((integrable_deriv.comp_mul_left' hc.ne').comp_sub_left a).const_mul c
   rw [← ofReal_integral_eq_lintegral_ofReal hint
-    (.of_forall fun t => mul_nonneg hc.le smoothTransition.monotone.deriv_nonneg),
-    integral_const_mul, integral_sub_left_eq_self (fun s => deriv smoothTransition (c * s)),
-    Measure.integral_comp_mul_left, integral_deriv, abs_inv, abs_of_pos hc, smul_eq_mul, mul_one,
-    mul_inv_cancel₀ hc.ne', ENNReal.ofReal_one]
+    (.of_forall fun t => mul_nonneg hc.le smoothTransition.monotone.deriv_nonneg)]
+  simp [integral_const_mul, integral_sub_left_eq_self (fun s => deriv smoothTransition (c * s)),
+    Measure.integral_comp_mul_left, abs_of_pos hc, hc.ne']
 
 end Real.smoothTransition
 

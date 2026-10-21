@@ -435,9 +435,8 @@ theorem integrable_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
 theorem integral_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
     ∫ t, ((Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t) = a := by
   rw [indicator_Iio_sub_indicator_Iio_zero, integral_sub' (integrable_indicator_Ico_one _ _)
-    (integrable_indicator_Ico_one _ _), integral_indicator_one measurableSet_Ico,
-    integral_indicator_one measurableSet_Ico, Real.volume_real_Ico, Real.volume_real_Ico]
-  simp
+    (integrable_indicator_Ico_one _ _)]
+  simp [integral_indicator_one measurableSet_Ico]
 
 /-- The `L¹` norm of the signed indicator `t ↦ 1_{t < a} - 1_{t < 0}` is `|a|`. -/
 theorem integral_norm_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
@@ -447,9 +446,7 @@ theorem integral_norm_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
     ext t
     simp only [Real.norm_eq_abs, Pi.add_apply, indicator_apply, mem_Iio, mem_Ico, Pi.one_apply]
     split_ifs <;> grind
-  rw [h, integral_add' (integrable_indicator_Ico_one _ _) (integrable_indicator_Ico_one _ _),
-    integral_indicator_one measurableSet_Ico,
-    integral_indicator_one measurableSet_Ico, Real.volume_real_Ico, Real.volume_real_Ico]
-  simp
+  rw [h, integral_add' (integrable_indicator_Ico_one _ _) (integrable_indicator_Ico_one _ _)]
+  simp [integral_indicator_one measurableSet_Ico]
 
 end TauCeti
