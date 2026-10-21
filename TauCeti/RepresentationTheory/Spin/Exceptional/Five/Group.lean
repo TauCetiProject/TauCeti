@@ -21,6 +21,9 @@ a symplectic involution, identifying the Spin group with `Sp₄`. The matrix mod
 symplectic involution need not use the Fock basis, but Skolem–Noether conjugates it to that basis.
 The inverse conjugating matrix then identifies the spin representation with the standard
 representation of `Sp₄`.
+Over a separably closed field with `2 ≠ 0`, every nondegenerate five-dimensional quadratic space
+admits polarization data via `SpinPolarizationData.ofNondegenerate`, so its spin representation is
+the standard representation of `Sp₄`.
 
 ## References
 
@@ -151,7 +154,7 @@ theorem
 characteristic different from two admits polarization data identifying its Spin group with
 `Sp₄`, under which the spin representation is standard. -/
 theorem
-    exists_spinGroup_mulEquiv_symplecticGroup_and_spinRep_equiv_stdSymplecticRep_of_sepClosed
+    exists_spinGroup_mulEquiv_symplecticGroup_and_spinRep_equiv_stdSymplecticRep_of_isSepClosed
     [NeZero (2 : K)] [IsSepClosed K] (hQ : Q.Nondegenerate) (hV : finrank K V = 5) :
     ∃ P : SpinPolarizationData Q, ∃ f : spinGroup Q ≃* Matrix.symplecticGroup (Fin 2) K,
       Nonempty ((spinRep Q P).Equiv ((stdSymplecticRep K 2).comp f.toMonoidHom)) := by
