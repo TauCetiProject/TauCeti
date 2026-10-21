@@ -111,14 +111,21 @@ end SimpleClasses
 
 namespace SplitK0
 
-variable [EssentiallySmall.{w} C] [IsFiniteSemisimpleCategory C]
+variable [EssentiallySmall.{w} C]
+
+/-- The class of the representative of the dual simple class is the class of the right dual of the
+representative. -/
+@[simp]
+theorem of_dual_repr (S : SimpleClasses C) : (of S.dual.repr : SplitK0 C) = of S.reprᘁ :=
+  of_congr (SimpleClasses.dualReprIso S)
+
+variable [IsFiniteSemisimpleCategory C]
 
 /-- The duality of the Grothendieck ring sends the basis element of a simple class to the basis
 element of the dual class. -/
 theorem dual_simpleBasis (S : SimpleClasses C) :
     dual (simpleBasis C S) = simpleBasis C S.dual := by
-  rw [simpleBasis_apply, dual_of, simpleBasis_apply]
-  exact of_congr (SimpleClasses.dualReprIso S).symm
+  simp
 
 variable [Simple (𝟙_ C)]
 
