@@ -131,8 +131,12 @@ theorem log_den_le_logHeight₁ (q : ℚ) : Real.log q.den ≤ logHeight₁ q :=
   rw [logHeight₁_eq_log_mulHeight₁]
   exact Real.log_le_log (by positivity) (den_le_mulHeight₁ q)
 
+end Rat
+
+namespace padicValNat
+
 /-- The `p`-adic valuation of a natural number `n` satisfies `v_p(n) log p ≤ log n`. -/
-theorem _root_.padicValNat.mul_log_le_log (p n : ℕ) :
+theorem mul_log_le_log (p n : ℕ) :
     (padicValNat p n : ℝ) * Real.log p ≤ Real.log n := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
@@ -142,6 +146,10 @@ theorem _root_.padicValNat.mul_log_le_log (p n : ℕ) :
   rw [← Real.log_pow]
   exact Real.log_le_log (by exact_mod_cast hpos)
     (by exact_mod_cast Nat.le_of_dvd hn' pow_padicValNat_dvd)
+
+end padicValNat
+
+namespace Rat
 
 /-- The `p`-adic valuation of a rational number `q` satisfies `|v_p(q)| log p ≤ h(q)`, where
 `h` is the logarithmic height. -/
