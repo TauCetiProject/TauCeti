@@ -40,6 +40,10 @@ string lengths carry no further freedom.
 * `TauCeti.NormalCrystal.eIter`, `TauCeti.NormalCrystal.fIter`: iterated root operators.
 * `TauCeti.NormalCrystal.StrictHom`: strict morphisms of normal crystals, with identities,
   composition and duals.
+* `TauCeti.NormalCrystal.StrictIso`: strict isomorphisms of normal crystals, with inverses,
+  composition and duals.
+* `TauCeti.NormalCrystal.transport`: the transport of a normal crystal along a bijection of the
+  underlying types, with the strict isomorphism `TauCeti.NormalCrystal.transportIso`.
 
 ## Main results
 
@@ -51,6 +55,8 @@ string lengths carry no further freedom.
 * `TauCeti.NormalCrystal.StrictHom.ε_apply`, `TauCeti.NormalCrystal.StrictHom.φ_apply`,
   `TauCeti.NormalCrystal.StrictHom.f_apply`: a map preserving weights and commuting with the
   raising operators preserves the string lengths and commutes with the lowering operators.
+* `TauCeti.NormalCrystal.StrictIso.eq_transport`: the target of a strict isomorphism is the
+  transport of its source along the underlying bijection.
 
 ## References
 
@@ -457,6 +463,199 @@ def dual : StrictHom c.dual d.dual where
 theorem dual_apply : ψ.dual x = ψ x := (rfl)
 
 end StrictHom
+
+/-! ### Strict isomorphisms and transport -/
+
+/-- A **strict isomorphism** of normal crystals: a bijection of the underlying types preserving
+weights and commuting with the raising operators. Its inverse is again a strict isomorphism
+(`TauCeti.NormalCrystal.StrictIso.symm`). -/
+structure StrictIso (c : NormalCrystal P b B) (d : NormalCrystal P b B') extends B ≃ B' where
+  /-- A strict isomorphism preserves weights. -/
+  wt_toFun (x : B) : d.wt (toFun x) = c.wt x
+  /-- A strict isomorphism commutes with the raising operators. -/
+  e_toFun (i : b.support) (x : B) : d.e i (toFun x) = (c.e i x).map toFun
+
+namespace StrictIso
+
+variable {c : NormalCrystal P b B} {d : NormalCrystal P b B'} {d' : NormalCrystal P b B''}
+
+instance : EquivLike (StrictIso c d) B B' where
+  coe ψ := ψ.toFun
+  inv ψ := ψ.invFun
+  left_inv ψ := ψ.left_inv
+  right_inv ψ := ψ.right_inv
+  coe_injective' ψ χ h _ := by
+    obtain ⟨ψ, _, _⟩ := ψ
+    obtain ⟨χ, _, _⟩ := χ
+    congr
+    exact Equiv.coe_fn_injective h
+
+@[simp]
+theorem coe_toEquiv (ψ : StrictIso c d) : ⇑ψ.toEquiv = ψ := (rfl)
+
+@[simp]
+theorem coe_mk (g : B ≃ B') (hwt he) : ⇑(⟨g, hwt, he⟩ : StrictIso c d) = g := (rfl)
+
+@[ext]
+theorem ext {ψ χ : StrictIso c d} (h : ∀ x, ψ x = χ x) : ψ = χ :=
+  DFunLike.ext _ _ h
+
+/-- The strict morphism underlying a strict isomorphism. -/
+def toStrictHom (ψ : StrictIso c d) : StrictHom c d where
+  toFun := ψ
+  wt_toFun := ψ.wt_toFun
+  e_toFun := ψ.e_toFun
+
+@[simp]
+theorem coe_toStrictHom (ψ : StrictIso c d) : ⇑ψ.toStrictHom = ψ := (rfl)
+
+variable (ψ : StrictIso c d) (i : b.support) (x : B)
+
+@[simp]
+theorem wt_apply : d.wt (ψ x) = c.wt x := ψ.wt_toFun x
+
+@[simp]
+theorem e_apply : d.e i (ψ x) = (c.e i x).map ψ := ψ.e_toFun i x
+
+@[simp]
+theorem ε_apply : d.ε i (ψ x) = c.ε i x := ψ.toStrictHom.ε_apply i x
+
+@[simp]
+theorem φ_apply : d.φ i (ψ x) = c.φ i x := ψ.toStrictHom.φ_apply i x
+
+@[simp]
+theorem f_apply : d.f i (ψ x) = (c.f i x).map ψ := ψ.toStrictHom.f_apply i x
+
+variable (c) in
+/-- The identity strict isomorphism. -/
+def refl : StrictIso c c where
+  toEquiv := Equiv.refl B
+  wt_toFun _ := rfl
+  e_toFun _ x := by simp
+
+@[simp]
+theorem refl_apply : StrictIso.refl c x = x := (rfl)
+
+/-- The inverse of a strict isomorphism. -/
+def symm : StrictIso d c where
+  toEquiv := ψ.toEquiv.symm
+  wt_toFun y := by
+    obtain ⟨x, rfl⟩ := ψ.toEquiv.surjective y
+    rw [Equiv.toFun_as_coe, Equiv.symm_apply_apply, coe_toEquiv, wt_apply]
+  e_toFun i y := by
+    obtain ⟨x, rfl⟩ := ψ.toEquiv.surjective y
+    rw [Equiv.toFun_as_coe, Equiv.symm_apply_apply, coe_toEquiv, e_apply, Option.map_map]
+    simp [← coe_toEquiv, Function.comp_def]
+
+@[simp]
+theorem toEquiv_symm : ψ.symm.toEquiv = ψ.toEquiv.symm := (rfl)
+
+@[simp]
+theorem coe_toEquiv_symm : ⇑ψ.toEquiv.symm = ψ.symm := (rfl)
+
+@[simp]
+theorem symm_apply_apply : ψ.symm (ψ x) = x := ψ.toEquiv.symm_apply_apply x
+
+@[simp]
+theorem apply_symm_apply (y : B') : ψ (ψ.symm y) = y := ψ.toEquiv.apply_symm_apply y
+
+@[simp]
+theorem symm_symm : ψ.symm.symm = ψ := (rfl)
+
+/-- Composition of strict isomorphisms. -/
+def trans (χ : StrictIso d d') : StrictIso c d' where
+  toEquiv := ψ.toEquiv.trans χ.toEquiv
+  wt_toFun x := by simp
+  e_toFun i x := by simp [Option.map_map, Function.comp_def]
+
+@[simp]
+theorem trans_apply (χ : StrictIso d d') : ψ.trans χ x = χ (ψ x) := (rfl)
+
+@[simp]
+theorem self_trans_symm : ψ.trans ψ.symm = StrictIso.refl c := ext fun x => by simp
+
+@[simp]
+theorem symm_trans_self : ψ.symm.trans ψ = StrictIso.refl d := ext fun x => by simp
+
+/-- A bijective strict morphism is a strict isomorphism. -/
+noncomputable def ofBijective (ψ : StrictHom c d) (h : Function.Bijective ψ) : StrictIso c d where
+  toEquiv := Equiv.ofBijective ψ h
+  wt_toFun := ψ.wt_apply
+  e_toFun := ψ.e_apply
+
+@[simp]
+theorem coe_ofBijective (ψ : StrictHom c d) (h : Function.Bijective ψ) :
+    ⇑(ofBijective ψ h) = ψ := (rfl)
+
+/-- A strict isomorphism is also a strict isomorphism between the dual crystals. -/
+def dual : StrictIso c.dual d.dual where
+  toEquiv := ψ.toEquiv
+  wt_toFun x := by simp
+  e_toFun i x := by simp
+
+@[simp]
+theorem dual_apply : ψ.dual x = ψ x := (rfl)
+
+end StrictIso
+
+section Transport
+
+variable (c : NormalCrystal P b B) (σ : B ≃ B')
+
+/-- The **transport** of a normal crystal along a bijection `σ : B ≃ B'`: the normal crystal on
+`B'` for which `σ` is a strict isomorphism (`TauCeti.NormalCrystal.transportIso`). -/
+def transport : NormalCrystal P b B' where
+  wt y := c.wt (σ.symm y)
+  e i y := (c.e i (σ.symm y)).map σ
+  f i y := (c.f i (σ.symm y)).map σ
+  ε i y := c.ε i (σ.symm y)
+  φ i y := c.φ i (σ.symm y)
+  f_eq_some_iff {i x y} := by
+    simp only [Option.map_eq_some_iff, ← Equiv.eq_symm_apply, exists_eq_right, c.f_eq_some_iff]
+  wt_of_e_eq_some {i x y} h := by
+    obtain ⟨z, hz, rfl⟩ := Option.map_eq_some_iff.1 h
+    rw [Equiv.symm_apply_apply, c.wt_of_e_eq_some hz]
+  ε_eq_zero_iff := by simp [c.ε_eq_zero_iff]
+  ε_of_e_eq_some {i x y} h := by
+    obtain ⟨z, hz, rfl⟩ := Option.map_eq_some_iff.1 h
+    rw [Equiv.symm_apply_apply, c.ε_of_e_eq_some hz]
+  φ_eq_zero_iff := by simp [c.φ_eq_zero_iff]
+  φ_sub_ε i y := c.φ_sub_ε i (σ.symm y)
+
+@[simp]
+theorem transport_wt (y : B') : (c.transport σ).wt y = c.wt (σ.symm y) := (rfl)
+
+@[simp]
+theorem transport_e (i : b.support) (y : B') :
+    (c.transport σ).e i y = (c.e i (σ.symm y)).map σ := (rfl)
+
+@[simp]
+theorem transport_f (i : b.support) (y : B') :
+    (c.transport σ).f i y = (c.f i (σ.symm y)).map σ := (rfl)
+
+@[simp]
+theorem transport_ε (i : b.support) (y : B') : (c.transport σ).ε i y = c.ε i (σ.symm y) := (rfl)
+
+@[simp]
+theorem transport_φ (i : b.support) (y : B') : (c.transport σ).φ i y = c.φ i (σ.symm y) := (rfl)
+
+/-- The bijection `σ` as a strict isomorphism onto the transported crystal. -/
+def transportIso : StrictIso c (c.transport σ) where
+  toEquiv := σ
+  wt_toFun x := by simp
+  e_toFun i x := by simp
+
+@[simp]
+theorem coe_transportIso : ⇑(c.transportIso σ) = σ := (rfl)
+
+/-- **Uniqueness of transport**: the target of a strict isomorphism is the transport of its
+source along the underlying bijection. -/
+theorem StrictIso.eq_transport {d : NormalCrystal P b B'} (ψ : StrictIso c d) :
+    d = c.transport ψ.toEquiv :=
+  NormalCrystal.ext (funext fun y => by obtain ⟨x, rfl⟩ := ψ.toEquiv.surjective y; simp)
+    (funext₂ fun i y => by obtain ⟨x, rfl⟩ := ψ.toEquiv.surjective y; simp)
+
+end Transport
 
 end NormalCrystal
 
