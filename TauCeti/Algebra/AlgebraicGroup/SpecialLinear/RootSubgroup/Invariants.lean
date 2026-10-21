@@ -7,18 +7,16 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Basic
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Basic
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.ClosedImmersion
 import Mathlib.Algebra.MonoidAlgebra.MapDomain
 import Mathlib.RingTheory.Localization.Away.Basic
-import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 
 /-!
 # Invariants of the root subgroups of the special linear group
 
-For distinct indices `i ≠ j`, the root subgroup `xᵢⱼ(𝔾ₐ) ⊆ SLₙ` is a closed subgroup; its Hopf
-ideal `TauCeti.SpecialLinear.rootSubgroupHopfIdeal` is the kernel of the surjective coordinate
-morphism `O(SLₙ) → O(𝔾ₐ)`. Right translation by `xᵢⱼ(t)` adds `t` times column `i` to column `j`,
-so every entry of the generic matrix outside column `j` is a right invariant.
+For distinct indices `i ≠ j`, right translation by the closed root subgroup `xᵢⱼ(𝔾ₐ) ⊆ SLₙ`,
+with Hopf ideal `TauCeti.SpecialLinear.rootSubgroupHopfIdeal`, adds `t` times column `i` to
+column `j`, so every entry of the generic matrix outside column `j` is a right invariant.
 
 For `SL₂` and the upper unipotent subgroup `N⁺ = x₀₁(𝔾ₐ)`, with generic matrix
 `[[a, b], [c, d]]`, right translation by `n(t) = [[1, t], [0, 1]]` is
@@ -46,9 +44,6 @@ its affinization `𝔸²`. Neither the torsor nor the quotient is constructed in
 
 ## Main declarations
 
-* `TauCeti.SpecialLinear.rootSubgroupHopfIdeal`: the Hopf ideal of the closed root subgroup.
-* `TauCeti.SpecialLinear.mem_quotientPointsSubgroup_rootSubgroupHopfIdeal_iff`: its points are
-  the elementary transvections.
 * `TauCeti.SpecialLinear.genericMatrix_mem_coinvariants_rootSubgroupHopfIdeal`: generic entries
   outside column `j` are right invariant under `xᵢⱼ(𝔾ₐ)`.
 * `TauCeti.SpecialLinear.coinvariants_rootSubgroupHopfIdeal_eq_adjoin`: the right invariants of
@@ -84,47 +79,7 @@ universe u
 
 variable {R : Type u} [CommRing R] {N : ℕ} {i j : Fin N}
 
-/-! ### The Hopf ideal of a root subgroup -/
-
-/-- The Hopf ideal of the closed root subgroup `xᵢⱼ(𝔾ₐ) ⊆ SLₙ`: the kernel of the surjective
-root-subgroup coordinate morphism `O(SLₙ) → O(𝔾ₐ)`. -/
-noncomputable def rootSubgroupHopfIdeal (hij : i ≠ j) :
-    HopfIdeal R (coordinateHopfAlgebra R N) :=
-  HopfIdeal.kerOfSurjective (rootSubgroupCoordinateMap hij).hom
-    (rootSubgroupCoordinateMap_surjective hij)
-
-/-- A function lies in the root-subgroup Hopf ideal exactly when it vanishes on the root
-subgroup. -/
-@[simp]
-theorem mem_rootSubgroupHopfIdeal (hij : i ≠ j) {h : coordinateHopfAlgebra R N} :
-    h ∈ rootSubgroupHopfIdeal hij ↔ (rootSubgroupCoordinateMap hij).hom h = 0 :=
-  HopfIdeal.mem_kerOfSurjective _ _
-
 variable {A : Type u} [CommRing A] [Algebra R A]
-
-/-- The points of `SLₙ` lying in the root subgroup `xᵢⱼ(𝔾ₐ)` are exactly the elementary
-transvections `1 + t Eᵢⱼ`. -/
-theorem mem_quotientPointsSubgroup_rootSubgroupHopfIdeal_iff (hij : i ≠ j)
-    (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N) (CommAlgCat.of R A)) :
-    g ∈ CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R N)
-        (rootSubgroupHopfIdeal hij) (CommAlgCat.of R A) ↔
-      ∃ t : A, pointsMulEquiv (R := R) (A := A) N g =
-        Matrix.SpecialLinearGroup.transvection hij t := by
-  rw [rootSubgroupHopfIdeal,
-    HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor]
-  constructor
-  · rintro ⟨f, rfl⟩
-    refine ⟨Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A) f), ?_⟩
-    rw [← pointsMulEquiv_rootSubgroupPoints hij f,
-      ← mapPointsFunctor_rootSubgroupCoordinateMap_app hij (CommAlgCat.of R A) f]
-  · rintro ⟨t, ht⟩
-    refine ⟨(AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).symm (Multiplicative.ofAdd t), ?_⟩
-    apply (pointsMulEquiv (R := R) (A := A) N).injective
-    have hf := mapPointsFunctor_rootSubgroupCoordinateMap_app hij (CommAlgCat.of R A)
-      ((AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).symm (Multiplicative.ofAdd t))
-    rw [ht]
-    refine (congrArg (pointsMulEquiv (R := R) (A := A) N) hf).trans ?_
-    rw [pointsMulEquiv_rootSubgroupPoints, MulEquiv.apply_symm_apply, toAdd_ofAdd]
 
 /-! ### Right invariance -/
 
@@ -179,6 +134,37 @@ private theorem entry_det :
     entry R 0 0 * entry R 1 1 - entry R 0 1 * entry R 1 0 = 1 := by
   rw [entry, entry, entry, entry, ← Matrix.det_fin_two]
   exact det_map_genericMatrix_coordinateMap R 2
+
+/-- The relation `a d - b c = 1` after applying an algebra map. -/
+private theorem map_entry_det {L : Type*} [CommRing L] [Algebra R L]
+    (τ : coordinateHopfAlgebra R 2 →ₐ[R] L) :
+    τ (entry R 0 0) * τ (entry R 1 1) - τ (entry R 0 1) * τ (entry R 1 0) = 1 := by
+  rw [← map_mul, ← map_mul, ← map_sub, entry_det, map_one]
+
+/-- The point of `SL₂` over `L` whose value on each generic entry is its image under `τ`. -/
+private theorem coe_pointsMulEquiv_toConv {L : Type u} [CommRing L] [Algebra R L]
+    (τ : coordinateHopfAlgebra R 2 →ₐ[R] L) (k l : Fin 2) :
+    (pointsMulEquiv (R := R) (A := L) 2 (toConv τ) : Matrix (Fin 2) (Fin 2) L) k l =
+      τ (entry R k l) := by
+  rw [coe_pointsMulEquiv_apply, ofConv_toConv, entry]
+
+/-- The algebra map out of `R[M₁ × M₂]` that is multiplicative in each factor, given by `f` on
+the first exponent and `g` on the second. -/
+private noncomputable def prodLift {M₁ M₂ L : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂]
+    [CommRing L] [Algebra R L] (f : Multiplicative M₁ →* L) (g : Multiplicative M₂ →* L) :
+    AddMonoidAlgebra R (M₁ × M₂) →ₐ[R] L :=
+  lift R L (M₁ × M₂)
+    { toFun m := f (.ofAdd m.toAdd.1) * g (.ofAdd m.toAdd.2)
+      map_one' := by simp
+      map_mul' m m' := by
+        simp only [toAdd_mul, Prod.fst_add, Prod.snd_add, ofAdd_add, map_mul]
+        ring }
+
+private theorem prodLift_single {M₁ M₂ L : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂]
+    [CommRing L] [Algebra R L] (f : Multiplicative M₁ →* L) (g : Multiplicative M₂ →* L)
+    (m : M₁ × M₂) (r : R) :
+    prodLift f g (single m r) = r • (f (.ofAdd m.1) * g (.ofAdd m.2)) := by
+  rw [prodLift, lift_single, MonoidHom.coe_mk, OneHom.coe_mk, toAdd_ofAdd]
 
 /-- The section of the first-column torsor over the chart `D(a)`. -/
 private noncomputable def chartPointA :
@@ -325,25 +311,16 @@ private theorem algebraMap_away_eq_zero_of_chartEvalA {h : coordinateHopfAlgebra
   let τ : coordinateHopfAlgebra R 2 →ₐ[R] L := IsScalarTower.toAlgHom R _ L
   let u : Lˣ := (IsLocalization.Away.algebraMap_isUnit (entry R 0 0)).unit
   have hu : (u : L) = τ (entry R 0 0) := IsUnit.unit_spec _
-  have hdet := congrArg τ (entry_det (R := R))
-  rw [map_sub, map_mul, map_mul, map_one] at hdet
-  let φ : AddMonoidAlgebra R (ℤ × ℕ) →ₐ[R] L := lift R L (ℤ × ℕ)
-    { toFun m := ((u ^ m.toAdd.1 : Lˣ) : L) * τ (entry R 1 0) ^ m.toAdd.2
-      map_one' := by simp
-      map_mul' m m' := by
-        simp only [toAdd_mul, Prod.fst_add, Prod.snd_add, zpow_add, Units.val_mul, pow_add]
-        ring }
-  refine eq_zero_of_pointsMulEquiv_eq_map_mul hh τ chartPointA φ (↑u⁻¹ * τ (entry R 0 1)) ?_ h0
-  refine Matrix.SpecialLinearGroup.ext _ _ fun k l ↦ ?_
-  rw [coe_pointsMulEquiv_apply, ofConv_toConv, Matrix.SpecialLinearGroup.coe_mul,
-    Matrix.SpecialLinearGroup.map_apply_coe]
   -- The lower-right entry is `d = c (a⁻¹ b) + a⁻¹`, which is `a d - b c = 1` divided by `a`.
-  have hinv : (↑u⁻¹ : L) * τ (entry R 0 0) = 1 := by rw [← hu, Units.inv_mul]
   have hd : τ (entry R 1 1) = τ (entry R 1 0) * (↑u⁻¹ * τ (entry R 0 1)) + ↑u⁻¹ := by
-    linear_combination (↑u⁻¹ : L) * hdet - τ (entry R 1 1) * hinv
-  change τ (entry R k l) = _
+    linear_combination (↑u⁻¹ : L) * map_entry_det τ - τ (entry R 1 1) * u.inv_mul_eq_one.mpr hu
+  refine eq_zero_of_pointsMulEquiv_eq_map_mul hh τ chartPointA
+    (prodLift ((Units.coeHom L).comp (zpowersHom Lˣ u)) (powersHom L (τ (entry R 1 0))))
+    (↑u⁻¹ * τ (entry R 0 1)) (Matrix.SpecialLinearGroup.ext _ _ fun k l ↦ ?_) h0
+  rw [coe_pointsMulEquiv_toConv, Matrix.SpecialLinearGroup.coe_mul,
+    Matrix.SpecialLinearGroup.map_apply_coe]
   fin_cases k <;> fin_cases l <;>
-    simp [chartPointA, φ, Matrix.mul_apply, Fin.sum_univ_two,
+    simp [chartPointA, prodLift_single, Matrix.mul_apply, Fin.sum_univ_two,
       Matrix.SpecialLinearGroup.transvection_coe, ← hu, hd]
 
 /-- A right invariant vanishing at the section over `D(c)` vanishes after inverting `c`. -/
@@ -355,25 +332,16 @@ private theorem algebraMap_away_eq_zero_of_chartEvalC {h : coordinateHopfAlgebra
   let τ : coordinateHopfAlgebra R 2 →ₐ[R] L := IsScalarTower.toAlgHom R _ L
   let v : Lˣ := (IsLocalization.Away.algebraMap_isUnit (entry R 1 0)).unit
   have hv : (v : L) = τ (entry R 1 0) := IsUnit.unit_spec _
-  have hdet := congrArg τ (entry_det (R := R))
-  rw [map_sub, map_mul, map_mul, map_one] at hdet
-  let φ : AddMonoidAlgebra R (ℕ × ℤ) →ₐ[R] L := lift R L (ℕ × ℤ)
-    { toFun m := τ (entry R 0 0) ^ m.toAdd.1 * ((v ^ m.toAdd.2 : Lˣ) : L)
-      map_one' := by simp
-      map_mul' m m' := by
-        simp only [toAdd_mul, Prod.fst_add, Prod.snd_add, zpow_add, Units.val_mul, pow_add]
-        ring }
-  refine eq_zero_of_pointsMulEquiv_eq_map_mul hh τ chartPointC φ (↑v⁻¹ * τ (entry R 1 1)) ?_ h0
-  refine Matrix.SpecialLinearGroup.ext _ _ fun k l ↦ ?_
-  rw [coe_pointsMulEquiv_apply, ofConv_toConv, Matrix.SpecialLinearGroup.coe_mul,
-    Matrix.SpecialLinearGroup.map_apply_coe]
   -- The upper-right entry is `b = a (c⁻¹ d) - c⁻¹`, which is `a d - b c = 1` divided by `c`.
-  have hinv : (↑v⁻¹ : L) * τ (entry R 1 0) = 1 := by rw [← hv, Units.inv_mul]
   have hb : τ (entry R 0 1) = τ (entry R 0 0) * (↑v⁻¹ * τ (entry R 1 1)) - ↑v⁻¹ := by
-    linear_combination (-(↑v⁻¹ : L)) * hdet - τ (entry R 0 1) * hinv
-  change τ (entry R k l) = _
+    linear_combination (-(↑v⁻¹ : L)) * map_entry_det τ - τ (entry R 0 1) * v.inv_mul_eq_one.mpr hv
+  refine eq_zero_of_pointsMulEquiv_eq_map_mul hh τ chartPointC
+    (prodLift (powersHom L (τ (entry R 0 0))) ((Units.coeHom L).comp (zpowersHom Lˣ v)))
+    (↑v⁻¹ * τ (entry R 1 1)) (Matrix.SpecialLinearGroup.ext _ _ fun k l ↦ ?_) h0
+  rw [coe_pointsMulEquiv_toConv, Matrix.SpecialLinearGroup.coe_mul,
+    Matrix.SpecialLinearGroup.map_apply_coe]
   fin_cases k <;> fin_cases l <;>
-    simp [chartPointC, φ, Matrix.mul_apply, Fin.sum_univ_two,
+    simp [chartPointC, prodLift_single, Matrix.mul_apply, Fin.sum_univ_two,
       Matrix.SpecialLinearGroup.transvection_coe, ← hv, hb, sub_eq_add_neg]
 
 /-- A right invariant vanishing at the section over `D(a)` is zero. -/
@@ -397,12 +365,6 @@ private theorem eq_zero_of_chartEvalA_eq_zero {h : coordinateHopfAlgebra R 2}
   obtain ⟨x, y, hxy⟩ := hpow
   linear_combination (-h) * hxy + (x * entry R 0 0 ^ n) * hm + (y * entry R 1 0 ^ m) * hn
 
-/-- The first column `{a, c}` as the range of a vector. -/
-private theorem range_entry_col_zero :
-    Set.range ![entry R 0 0, entry R 1 0] = {entry R 0 0, entry R 1 0} := by
-  rw [Matrix.range_cons, Matrix.range_cons, Matrix.range_empty, Set.union_empty,
-    Set.singleton_union]
-
 /-- **The right invariants of the upper unipotent subgroup of `SL₂`.** Over every commutative
 ring, the functions on `SL₂` invariant under right translation by `n(t) = [[1, t], [0, 1]]` are
 exactly the polynomials in the first-column entries `a` and `c`. -/
@@ -420,7 +382,8 @@ theorem coinvariants_rootSubgroupHopfIdeal_eq_adjoin :
   obtain ⟨p, hp⟩ := exists_chartEvalA_eq hh
   have hmem : MvPolynomial.aeval ![entry R 0 0, entry R 1 0] p ∈
       Algebra.adjoin R {entry R 0 0, entry R 1 0} := by
-    rw [← range_entry_col_zero, Algebra.adjoin_range_eq_range_aeval]
+    rw [← Matrix.range_cons_cons_empty (entry R 0 0) (entry R 1 0) ![],
+      Algebra.adjoin_range_eq_range_aeval]
     exact ⟨p, rfl⟩
   have hsub := eq_zero_of_chartEvalA_eq_zero (sub_mem hh (hle hmem)) <| by
     rw [map_sub, hp, chartEvalA_aeval, sub_self]
@@ -446,7 +409,7 @@ noncomputable def coinvariantsRootSubgroupHopfIdealAlgEquiv :
   (algebraicIndependent_genericMatrix_col_zero (R := R)).aevalEquiv.trans
     (Subalgebra.equivOfEq _ _ <| by
       rw [coinvariants_rootSubgroupHopfIdeal_eq_adjoin]
-      exact congrArg (Algebra.adjoin R) range_entry_col_zero)
+      exact congrArg (Algebra.adjoin R) (Matrix.range_cons_cons_empty _ _ _))
 
 /-- The polynomial-ring presentation of the right invariants evaluates a polynomial at the
 first column. -/

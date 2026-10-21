@@ -296,8 +296,8 @@ theorem ofConv_pointsMulEquiv_symm_genericMatrix (M : Matrix.SpecialLinearGroup 
   have hij := congrArg (fun g : Matrix.GeneralLinearGroup (Fin n) A ↦ (g : Matrix _ _ A) i j) h
   simp only [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply] at hij
   rw [Matrix.map_apply, coordinateMap_apply, GeneralLinear.genericMatrix_apply,
-    ← CommHopfAlgCat.quotientPointsHom_apply_apply, hij]
-  rfl
+    ← CommHopfAlgCat.quotientPointsHom_apply_apply, hij,
+    Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
 
 /-- The `(i, j)` entry of the matrix of a point of `SLₙ` is its value on the `(i, j)` entry of the
 generic matrix. -/
