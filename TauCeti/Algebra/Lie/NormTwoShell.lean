@@ -140,12 +140,14 @@ noncomputable def rootBracket (a b : B.normTwoShell) : ShellLieAlgebra B := by
 
 variable {B} in
 /-- The bracket of two root vectors whose sum is in the norm-two shell. -/
+@[simp]
 theorem rootBracket_of_mem {a b : B.normTwoShell} (h : (a : I → ℤ) + b ∈ B.normTwoShell) :
     rootBracket B a b = (B.orderedSignForm a b).negOnePow • root B ⟨_, h⟩ := by
   rw [rootBracket, dite_eq_left h]
 
 variable {B} in
 /-- The bracket of two opposite root vectors. -/
+@[simp]
 theorem rootBracket_of_add_eq_zero {a b : B.normTwoShell} (h : (a : I → ℤ) + b = 0) :
     rootBracket B a b = (B.orderedSignForm a b).negOnePow • cartan B a := by
   have hm : (a : I → ℤ) + b ∉ B.normTwoShell := h ▸ fun h0 ↦ ne_zero_of_mem_normTwoShell h0 rfl
@@ -153,6 +155,7 @@ theorem rootBracket_of_add_eq_zero {a b : B.normTwoShell} (h : (a : I → ℤ) +
 
 variable {B} in
 /-- Two root vectors whose sum is neither in the norm-two shell nor zero have bracket zero. -/
+@[simp]
 theorem rootBracket_of_not_mem_of_add_ne_zero {a b : B.normTwoShell}
     (h : (a : I → ℤ) + b ∉ B.normTwoShell) (h' : (a : I → ℤ) + b ≠ 0) :
     rootBracket B a b = 0 := by
@@ -440,16 +443,16 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
       ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩
     · rw [ite_eq_left (hmbc.2 h2), ite_eq_left (hmca.2 h3), ite_eq_right (by rw [hmab]; omega),
         sign_neg (B.orderedSignForm c a) (B.orderedSignForm b c + B.orderedSignForm b a)
-          (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega),
-        Units.neg_smul, add_neg_cancel, add_zero]
+          (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega)]
+      simp
     · rw [ite_eq_right (by rw [hmbc]; omega), ite_eq_left (hmca.2 h3), ite_eq_left (hmab.2 h1),
         sign_neg (B.orderedSignForm a b) (B.orderedSignForm c a + B.orderedSignForm c b)
-          (B.orderedSignForm c a) (B.orderedSignForm b c + B.orderedSignForm b a) (by omega),
-        Units.neg_smul, zero_add, add_neg_cancel]
+          (B.orderedSignForm c a) (B.orderedSignForm b c + B.orderedSignForm b a) (by omega)]
+      simp
     · rw [ite_eq_left (hmbc.2 h2), ite_eq_right (by rw [hmca]; omega), ite_eq_left (hmab.2 h1),
         sign_neg (B.orderedSignForm a b) (B.orderedSignForm c a + B.orderedSignForm c b)
-          (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega),
-        Units.neg_smul, add_zero, add_neg_cancel]
+          (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega)]
+      simp
   · simp [rootOf_of_not_mem hdm]
 
 /-- The Jacobi identity for three root vectors, the first two of which are opposite. -/
@@ -485,8 +488,8 @@ private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : �
       rw [← Int.negOnePow_add, ← Int.negOnePow_succ, Int.negOnePow_eq_iff, Int.even_iff]
       simp only [hbv, map_add, map_neg, LinearMap.neg_apply]
       omega
-    rw [ite_eq_right (by rw [hmbc]; omega), ite_eq_left (hmca.2 hd), hsign, hd, Units.neg_smul,
-      neg_one_smul, neg_neg, zero_add, neg_add_cancel]
+    rw [ite_eq_right (by rw [hmbc]; omega), ite_eq_left (hmca.2 hd), hsign, hd]
+    simp
   · rw [ite_eq_right (by rw [hmbc]; omega), ite_eq_right (by rw [hmca]; omega), hd]
     simp
   · have hsign : (B.orderedSignForm b c).negOnePow * (B.orderedSignForm a (b + c)).negOnePow =
@@ -494,8 +497,8 @@ private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : �
       rw [← Int.negOnePow_add, Int.negOnePow_eq_iff, Int.even_iff]
       simp only [hbv, map_add, map_neg, LinearMap.neg_apply]
       omega
-    rw [ite_eq_left (hmbc.2 hd), ite_eq_right (by rw [hmca]; omega), hsign, hd, one_smul,
-      smul_neg, add_zero, add_neg_cancel]
+    rw [ite_eq_left (hmbc.2 hd), ite_eq_right (by rw [hmca]; omega), hsign, hd]
+    simp
 
 /-- The Jacobi identity for three root vectors. -/
 private theorem jacobi_root_root_root (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
