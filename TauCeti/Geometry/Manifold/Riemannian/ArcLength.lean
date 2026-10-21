@@ -138,12 +138,17 @@ theorem _root_.ContMDiffOn.pathELength_le_ofReal_sqrt_energy {γ : ℝ → M} {s
           (∫⁻ _ in Icc a b, (1 : ℝ≥0∞) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) :=
         ENNReal.lintegral_mul_le_Lp_mul_Lq _ Real.HolderConjugate.two_two
           (hcont.aemeasurable measurableSet_Icc).ennreal_ofReal aemeasurable_const
-    _ = ENNReal.ofReal √(2 * (b - a) * energy I γ a b) := by
-        rw [hsq, ENNReal.one_rpow, setLIntegral_const, one_mul, Real.volume_Icc,
-          ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
+    -- the integral of the constant `1` over `[a, b]` is `b - a`
+    _ = ENNReal.ofReal (2 * energy I γ a b) ^ (1 / (2 : ℝ)) *
+          ENNReal.ofReal (b - a) ^ (1 / (2 : ℝ)) := by
+        simp only [hsq, ENNReal.one_rpow, setLIntegral_const, one_mul, Real.volume_Icc]
+    -- the `ENNReal` square roots are coercions of real square roots
+    _ = ENNReal.ofReal (√(2 * energy I γ a b) * √(b - a)) := by
+        rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
           ENNReal.ofReal_rpow_of_nonneg (sub_nonneg.2 hab) (by norm_num),
-          ← ENNReal.ofReal_mul (by positivity), ← Real.mul_rpow (by positivity) (sub_nonneg.2 hab),
-          ← Real.sqrt_eq_rpow, mul_right_comm]
+          ← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, ENNReal.ofReal_mul (by positivity)]
+    _ = ENNReal.ofReal √(2 * (b - a) * energy I γ a b) := by
+        rw [← Real.sqrt_mul (by positivity), mul_right_comm]
 
 /-! ### Unit-speed reparametrization -/
 

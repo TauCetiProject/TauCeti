@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.Flow
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Riemannian.Energy
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+import TauCeti.Geometry.Manifold.IntegralCurve.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Topology.OmegaLimit
@@ -42,6 +43,8 @@ arbitrary: it need not be adapted to the Morse charts of `f`.
 
 ## Main declarations
 
+* `TauCeti.contMDiffOn_maximalIntegralCurve_neg_mgradient`: a negative gradient trajectory is
+  `C¹` on its interval of definition.
 * `TauCeti.hasDerivAt_comp_maximalIntegralCurve_neg_mgradient` and
   `TauCeti.antitoneOn_comp_maximalIntegralCurve_neg_mgradient`: energy dissipation and
   monotonicity along a negative gradient trajectory.
@@ -82,13 +85,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ} {x : M} {K : Set M} {t : ℝ}
 
-omit [T2Space M] [BoundarylessManifold I M] in
-/-- `TauCeti.Manifold.contMDiff_neg_mgradient` at `n = 1`, with the smoothness order `1 + 1`
-written as `2`, in the form taken by the integral-curve API. -/
-theorem contMDiff_neg_mgradient_one (hf : ContMDiff I 𝓘(ℝ) 2 f) :
-    ContMDiff I I.tangent 1 (fun y ↦ (⟨y, (-mgradient I f) y⟩ : TangentBundle I M)) :=
-  have : IsManifold I (1 + 1) M := by rwa [one_add_one_eq_two]
-  contMDiff_neg_mgradient (n := 1) (by rwa [one_add_one_eq_two])
+/-- The maximal integral curve of `-grad f` is `C¹` on its interval of definition. -/
+theorem contMDiffOn_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    ContMDiffOn 𝓘(ℝ) I 1 (maximalIntegralCurve (-mgradient I f) x)
+      (maximalIntegralCurveInterval (-mgradient I f) x) :=
+  (contMDiffOn_two_of_isMIntegralCurveOn isOpen_maximalIntegralCurveInterval.uniqueDiffOn
+    (isMIntegralCurveOn_maximalIntegralCurve (contMDiff_neg_mgradient_one hf))
+    fun _ _ ↦ (contMDiff_neg_mgradient_one hf).contMDiffAt).of_le one_le_two
 
 /-! ### Energy dissipation -/
 

@@ -8,11 +8,10 @@ module
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 public import TauCeti.Geometry.Manifold.Morse.GradientFlow
 -- Private: the normed-space Łojasiewicz inequality, Grönwall's inequality, the continuity of a
--- `C¹` metric, the regularity of integral curves and the comparison of length with energy are used
--- only inside proofs; no declaration below exposes their APIs.
+-- `C¹` metric and the comparison of length with energy are used only inside proofs; no
+-- declaration below exposes their APIs.
 import TauCeti.Analysis.Calculus.Morse.Basic
 import TauCeti.Analysis.ODE.Gronwall
-import TauCeti.Geometry.Manifold.IntegralCurve.Regularity
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -168,14 +167,6 @@ theorem exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff
     by linarith [hloj' s hs, mul_le_mul_of_nonneg_left (le_abs_self (g s)) hlam.le]⟩
 
 /-! ### Length of a trajectory and distance to its limit -/
-
-/-- The maximal integral curve of `-grad f` is `C¹` on its interval of definition. -/
-private theorem contMDiffOn_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f) :
-    ContMDiffOn 𝓘(ℝ) I 1 (maximalIntegralCurve (-mgradient I f) x)
-      (maximalIntegralCurveInterval (-mgradient I f) x) :=
-  (contMDiffOn_two_of_isMIntegralCurveOn isOpen_maximalIntegralCurveInterval.uniqueDiffOn
-    (isMIntegralCurveOn_maximalIntegralCurve (contMDiff_neg_mgradient_one hf))
-    fun _ _ ↦ (contMDiff_neg_mgradient_one hf).contMDiffAt).of_le one_le_two
 
 variable (hp : IsManifoldNondegenerateCriticalPoint I f p)
   (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x)
