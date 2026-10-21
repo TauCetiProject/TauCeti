@@ -32,6 +32,8 @@ The comparison of models reuses the classification of the models themselves,
   of `d` is isomorphic to `QuadraticAlgebra ℚ d 0`.
 * `NumberField.nonempty_algEquiv_iff_of_squarefree`: two quadratic fields presented by squarefree
   radicands `d` and `e` are isomorphic exactly when `d = e`.
+* `NumberField.radicand_eq_of_sq_eq_intCast`: an irrational square root of a squarefree integer `n`
+  in a quadratic field of squarefree radicand `d` forces `d = n`.
 * `NumberField.existsUnique_squarefree_algEquiv`: every quadratic field is isomorphic to
   `QuadraticAlgebra ℚ d 0` for exactly one squarefree integer `d`.
 * `NumberField.existsUnique_neg_squarefree_algEquiv`: every imaginary quadratic field is
@@ -67,6 +69,16 @@ theorem nonempty_algEquiv_iff_of_squarefree (hK : finrank ℚ K = 2) (hL : finra
   obtain ⟨ψ⟩ := nonempty_algEquiv_quadraticAlgebra hL hη
   rw [← QuadraticAlgebra.nonempty_algEquiv_iff_of_squarefree hd he]
   exact ⟨fun ⟨σ⟩ => ⟨(φ.symm.trans σ).trans ψ⟩, fun ⟨τ⟩ => ⟨(φ.trans τ).trans ψ.symm⟩⟩
+
+/-- **A square root of a squarefree integer is the radicand.** If a quadratic field presented by a
+square root of the squarefree integer `d` contains an irrational square root `z` of the squarefree
+integer `n`, then `d = n`. -/
+theorem radicand_eq_of_sq_eq_intCast (hK : finrank ℚ K = 2) {θ : 𝓞 K}
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd : Squarefree d) {z : K} {n : ℤ} (hz : z ^ 2 = n)
+    (hzQ : z ∉ Set.range (algebraMap ℚ K)) (hn : Squarefree n) : d = n := by
+  have : Algebra.IsQuadraticExtension ℚ K := ⟨hK⟩
+  obtain ⟨η, hη, -⟩ := exists_gen_of_sq_eq_intCast hz hzQ
+  exact (nonempty_algEquiv_iff_of_squarefree hK hK hmin hη hd hn).mp ⟨AlgEquiv.refl⟩
 
 /-- **The squarefree model of a quadratic field.** Every number field of degree `2` over `ℚ` is
 isomorphic to `QuadraticAlgebra ℚ d 0` for exactly one squarefree integer `d`. -/
