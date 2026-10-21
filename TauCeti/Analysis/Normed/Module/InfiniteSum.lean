@@ -133,14 +133,15 @@ theorem hasSum_bilinear_of_nonarchimedean
     hf.summable hg.summable
   have hright (x : E) : HasSum (fun j ↦ c (B x (g j))) (c (B x b)) := by
     exact ((B x |>.mkContinuous (C * ‖x‖) (hB x)).hasSum hg).map c
-      (UniformSpace.Completion.continuous_coe G)
+      UniformSpace.Completion.continuous_toCompl
   have hleft : HasSum (fun i ↦ c (B (f i) b)) (c (B a b)) := by
     exact ((B.flip b |>.mkContinuous (C * ‖b‖)
       (fun x ↦ by simpa only [LinearMap.flip_apply, mul_right_comm] using hB x b)).hasSum hf).map
-      c (UniformSpace.Completion.continuous_coe G)
+      c UniformSpace.Completion.continuous_toCompl
   have hsum : HasSum (fun ij : ι × κ ↦ c (B (f ij.1) (g ij.2))) (c (B a b)) :=
     (hleft.unique (hfg.hasSum.prod_fiberwise (fun i ↦ hright (f i)))) ▸ hfg.hasSum
-  exact (hasSum_iff_hasSum_compl _ _).mp hsum
+  rw [← hasSum_iff_hasSum_compl]
+  simpa only [Function.comp_def, c, UniformSpace.Completion.toCompl_apply] using hsum
 
 /-- Evaluating a bounded bilinear map on two infinite sums equals its double sum. -/
 theorem bilinear_tsum_tsum_of_nonarchimedean [T0Space G]
