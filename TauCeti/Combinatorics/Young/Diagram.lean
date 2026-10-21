@@ -354,14 +354,16 @@ theorem card_eq_rowLen_of_colLen_le_one {μ : YoungDiagram} (h : μ.colLen 0 ≤
   simp [_root_.YoungDiagram.card, cells_eq_of_colLen_le_one h]
 
 /-- The **content** of the cell `(i, j)`: its column index minus its row index, `j - i`. -/
-@[expose] def cellContent (c : ℕ × ℕ) : ℤ := c.2 - c.1
+def cellContent (c : ℕ × ℕ) : ℤ := c.2 - c.1
+
+theorem cellContent_def (c : ℕ × ℕ) : cellContent c = c.2 - c.1 := (rfl)
 
 @[simp]
 theorem cellContent_mk (i j : ℕ) : cellContent (i, j) = j - i := (rfl)
 
 @[simp]
 theorem cellContent_swap (c : ℕ × ℕ) : cellContent c.swap = -cellContent c := by
-  simp [cellContent]
+  simp [cellContent_def]
 
 end YoungDiagram
 

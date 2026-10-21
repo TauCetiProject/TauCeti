@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.Abel

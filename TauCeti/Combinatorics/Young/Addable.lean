@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Ring.GeomSum
 public import TauCeti.Combinatorics.Young.HookLength.Basic
 
 /-!
@@ -19,17 +18,18 @@ for symmetric groups and Hecke algebras.
 
 The *content* of the cell `(i, j)` is `j - i`, its column index minus its row index. On a fixed
 Young diagram the contents of the addable cells are well separated: two distinct addable cells
-of `μ` have contents differing by at least `2` and by at most `μ.card + 1`, and both bounds are
-attained. On the semisimple Hecke algebra `Hₙ(q)` with `Q = q²` the Jucys–Murphy elements act on
-the new box of a one-box branching `μ ⊂ μ + c` by the eigenvalue `Q ^ content c`. The bounds
-above therefore say exactly when those eigenvalues separate the branches: for every diagram of
-size less than `n` the map `c ↦ Q ^ content c` is injective on addable cells if and only if
-`Q ^ d ≠ 1` for `2 ≤ d ≤ n`. Without zero divisors, this holds whenever `Q ≠ 1` and the
-split-semisimplicity product `∏_{d=1}^{n} [d]_Q` of `Q`-integers is nonzero.
+of `μ` have contents differing by at least `2` and by at most `μ.card + 1`. The upper bound is
+sharp: for every `d ≥ 2`, some diagram `μ` with `μ.card + 1 = d` has two addable cells whose
+contents differ by exactly `d` (for `d = 2` this also attains the lower bound). On the semisimple
+Hecke algebra `Hₙ(q)` with `Q = q²` the Jucys–Murphy elements act on the new box of a one-box
+branching `μ ⊂ μ + c` by the eigenvalue `Q ^ content c`. The bounds above therefore say exactly
+when those eigenvalues separate the branches: for every diagram of size less than `n` the map
+`c ↦ Q ^ content c` is injective on addable cells if and only if `Q ^ d ≠ 1` for `2 ≤ d ≤ n`.
 
 ## Main definitions
 
 * `YoungDiagram.IsAddable`: the predicate cutting out the addable cells of a diagram.
+* `YoungDiagram.addables`: the addable cells of a diagram, as a finite set of cells.
 * `YoungDiagram.addCell`: the diagram with the principal lower set of a cell added; at an addable
   cell exactly that cell is added.
 
@@ -41,6 +41,8 @@ The content `YoungDiagram.cellContent` of a cell is defined in
 * `YoungDiagram.isAddable_iff_isLowerSet`: a cell outside `μ` is addable exactly when adding it
   to `μ` gives a Young diagram.
 * `YoungDiagram.addCell_le_iff`: `addCell μ c` is the least diagram containing `μ` and `c`.
+* `YoungDiagram.IsAddable.rowLen_addCell` and `YoungDiagram.IsAddable.colLen_addCell`: adding an
+  addable cell lengthens its row and its column by one and leaves the others unchanged.
 * `YoungDiagram.isAddable_iff_rowLen`: the cell `(i, j)` is addable exactly when `j` is the
   length of row `i` and, unless `i = 0`, row `i` is shorter than row `i - 1`.
 * `YoungDiagram.IsAddable.isCorner_addCell` and `YoungDiagram.IsCorner.isAddable_erase`, with
@@ -51,9 +53,6 @@ The content `YoungDiagram.cellContent` of a cell is defined in
   least `2` and at most `μ.card + 1`.
 * `YoungDiagram.injOn_zpow_cellContent_iff`: the powers `Q ^ content c` separate the addable
   cells of every diagram of size less than `n` if and only if `Q ^ d ≠ 1` for `2 ≤ d ≤ n`.
-* `YoungDiagram.injOn_zpow_cellContent_of_prod_geom_sum_ne_zero`: without zero divisors, the
-  split-semisimplicity criterion `∏_{d=1}^{n} [d]_Q ≠ 0` together with `Q ≠ 1` gives this
-  separation.
 
 ## References
 
@@ -84,6 +83,9 @@ predicate. -/
 theorem isAddable_def (μ : YoungDiagram) (c : ℕ × ℕ) :
     IsAddable μ c ↔ c ∉ μ ∧ ∀ d < c, d ∈ μ :=
   Iff.rfl
+
+instance instDecidableIsAddable (μ : YoungDiagram) (c : ℕ × ℕ) : Decidable (IsAddable μ c) :=
+  decidable_of_iff (c ∉ μ ∧ ∀ d ∈ Finset.Iio c, d ∈ μ) (by simp [isAddable_def])
 
 namespace IsAddable
 
@@ -119,7 +121,22 @@ theorem fst_eq_colLen (h : IsAddable μ c) : c.1 = μ.colLen c.2 := by
 theorem eq_of_fst_eq (hc : IsAddable μ c) (hd : IsAddable μ d) (h : c.1 = d.1) : c = d :=
   Prod.ext h (by rw [hc.snd_eq_rowLen, hd.snd_eq_rowLen, h])
 
+/-- An addable cell lies in one of the rows of the diagram or in the row just below them. -/
+theorem fst_le_colLen_zero (h : IsAddable μ c) : c.1 ≤ μ.colLen 0 :=
+  h.fst_eq_colLen ▸ μ.colLen_anti _ _ (Nat.zero_le _)
+
 end IsAddable
+
+/-- The addable cells of a Young diagram, as a finite set of cells: each is the cell just past the
+end of one of the rows `0, …, μ.colLen 0`. -/
+def addables (μ : YoungDiagram) : Finset (ℕ × ℕ) :=
+  ((Finset.range (μ.colLen 0 + 1)).image fun i ↦ (i, μ.rowLen i)).filter (IsAddable μ)
+
+@[simp]
+theorem mem_addables : c ∈ addables μ ↔ IsAddable μ c := by
+  simp only [addables, Finset.mem_filter, Finset.mem_image, Finset.mem_range,
+    and_iff_right_iff_imp]
+  exact fun h ↦ ⟨c.1, Nat.lt_succ_of_le h.fst_le_colLen_zero, Prod.ext rfl h.snd_eq_rowLen.symm⟩
 
 /-- **Addable cells by row lengths.** The cell `(i, j)` is addable to `μ` exactly when `j` is the
 length of row `i` and, unless `i = 0`, row `i` is strictly shorter than row `i - 1`. -/
@@ -146,8 +163,7 @@ theorem isAddable_transpose : IsAddable μ.transpose c ↔ IsAddable μ c.swap :
 
 /-- The Young diagram obtained from `μ` by adding the cell `c` together with every cell below it in
 the product order. It is defined without a hypothesis on `c`, dually to `YoungDiagram.erase`; at
-an addable cell, and only there, exactly the cell `c` is added
-(`YoungDiagram.IsAddable.cells_addCell_eq_insert`). -/
+an addable cell exactly the cell `c` is added (`YoungDiagram.IsAddable.cells_addCell_eq_insert`). -/
 def addCell (μ : YoungDiagram) (c : ℕ × ℕ) : YoungDiagram where
   cells := μ.cells ∪ Finset.range (c.1 + 1) ×ˢ Finset.range (c.2 + 1)
   isLowerSet := by
@@ -193,15 +209,43 @@ theorem mem_addCell_iff (h : IsAddable μ c) : d ∈ addCell μ c ↔ d ∈ μ �
     · exact .inr hne
     · exact .inl (h.mem_of_lt (lt_of_le_of_ne hdc hne))
 
+@[simp]
 theorem cells_addCell_eq_insert (h : IsAddable μ c) :
     (addCell μ c).cells = insert c μ.cells := by
   ext d
   simp [h.mem_addCell_iff, or_comm]
 
 /-- Adding an addable cell raises the number of cells by one. -/
+@[simp]
 theorem card_addCell (h : IsAddable μ c) : (addCell μ c).card = μ.card + 1 := by
   simp only [YoungDiagram.card, h.cells_addCell_eq_insert]
   exact Finset.card_insert_of_notMem (by simpa using h.notMem)
+
+/-- Adding an addable cell lengthens its row by one and leaves every other row unchanged. -/
+@[simp]
+theorem rowLen_addCell (h : IsAddable μ c) (i : ℕ) :
+    (addCell μ c).rowLen i = if c.1 = i then μ.rowLen i + 1 else μ.rowLen i := by
+  refine eq_of_forall_lt_iff fun j ↦ ?_
+  have hc := h.snd_eq_rowLen
+  rw [← mem_iff_lt_rowLen, h.mem_addCell_iff, mem_iff_lt_rowLen, Prod.ext_iff]
+  split_ifs with hi
+  · subst hi
+    simp only [true_and]
+    omega
+  · simp [Ne.symm hi]
+
+/-- Adding an addable cell lengthens its column by one and leaves every other column unchanged. -/
+@[simp]
+theorem colLen_addCell (h : IsAddable μ c) (j : ℕ) :
+    (addCell μ c).colLen j = if c.2 = j then μ.colLen j + 1 else μ.colLen j := by
+  refine eq_of_forall_lt_iff fun i ↦ ?_
+  have hc := h.fst_eq_colLen
+  rw [← mem_iff_lt_colLen, h.mem_addCell_iff, mem_iff_lt_colLen, Prod.ext_iff]
+  split_ifs with hj
+  · subst hj
+    simp only [and_true]
+    omega
+  · simp [Ne.symm hj]
 
 /-- An addable cell is a corner of the diagram obtained by adding it. -/
 theorem isCorner_addCell (h : IsAddable μ c) : IsCorner (addCell μ c) c := by
@@ -251,6 +295,13 @@ theorem addCell_erase (h : IsCorner μ c) : addCell (erase μ c) c = μ := by
 
 end IsCorner
 
+@[simp]
+theorem addCell_transpose (μ : YoungDiagram) (c : ℕ × ℕ) :
+    addCell μ.transpose c = (addCell μ c.swap).transpose := by
+  ext d
+  simp only [mem_cells, mem_addCell, mem_transpose]
+  exact or_congr_right ⟨fun h ↦ Prod.swap_le_swap.mpr h, fun h ↦ Prod.swap_le_swap.mp h⟩
+
 /-! ### Contents -/
 
 namespace IsAddable
@@ -262,7 +313,7 @@ theorem two_le_cellContent_sub (hc : IsAddable μ c) (hd : IsAddable μ d) (h : 
   obtain ⟨i, hi⟩ : ∃ i, d.1 = i + 1 := ⟨d.1 - 1, by omega⟩
   have habove : d.2 < μ.rowLen i := mem_iff_lt_rowLen.mp (hd.mem_above hi)
   have hrow : μ.rowLen i ≤ c.2 := hc.snd_eq_rowLen ▸ μ.rowLen_anti _ _ (by omega)
-  simp only [cellContent]
+  simp only [cellContent_def]
   omega
 
 /-- **Addable contents are bounded.** The contents of two addable cells of `μ` differ by at most
@@ -272,7 +323,7 @@ theorem cellContent_sub_le (hc : IsAddable μ c) (hd : IsAddable μ d) :
   have hrow : c.2 ≤ μ.rowLen 0 := hc.snd_eq_rowLen ▸ μ.rowLen_anti _ _ (Nat.zero_le _)
   have hcol : d.1 ≤ μ.colLen 0 := hd.fst_eq_colLen ▸ μ.colLen_anti _ _ (Nat.zero_le _)
   have hcard := μ.rowLen_zero_add_colLen_zero_le
-  simp only [cellContent]
+  simp only [cellContent_def]
   omega
 
 /-- Distinct addable cells of `μ` have contents at distance between `2` and `μ.card + 1`. -/
@@ -298,8 +349,9 @@ theorem injOn_cellContent (μ : YoungDiagram) : Set.InjOn cellContent {c | IsAdd
   rw [h, sub_self] at this
   simp at this
 
-/-- **Both content bounds are attained.** For `2 ≤ d`, the one-row diagram with `d - 1` cells has
-the addable cells `(0, d - 1)` and `(1, 0)`, whose contents differ by exactly `d`. -/
+/-- **The upper content bound is sharp.** For `2 ≤ d`, some diagram of size `d - 1` has two
+addable cells whose contents differ by exactly `d`: the one-row diagram with `d - 1` cells has the
+addable cells `(0, d - 1)` and `(1, 0)`. -/
 theorem exists_isAddable_cellContent_sub_eq {d : ℕ} (hd : 2 ≤ d) :
     ∃ μ : YoungDiagram, μ.card + 1 = d ∧ ∃ c c', IsAddable μ c ∧ IsAddable μ c' ∧
       cellContent c - cellContent c' = d := by
@@ -340,18 +392,5 @@ theorem injOn_zpow_cellContent_iff {G : Type*} [Group G] {Q : G} {n : ℕ} :
     rw [← mul_inv_eq_one, ← zpow_sub, hcc', zpow_natCast, hQd]
   rw [heq, sub_self] at hcc'
   omega
-
-/-- **Split semisimplicity separates the Jucys–Murphy eigenvalues.** Over a commutative ring
-without zero divisors, if the unit `Q` is not `1` and the product `∏_{d=1}^{n} [d]_Q` of the
-`Q`-integers `[d]_Q = 1 + Q + ⋯ + Q ^ (d - 1)` is nonzero, then on every Young diagram of size
-less than `n` the powers `Q ^ content c` of distinct addable cells are distinct. -/
-theorem injOn_zpow_cellContent_of_prod_geom_sum_ne_zero {R : Type*} [CommRing R]
-    [NoZeroDivisors R] {Q : Rˣ} {n : ℕ} (hQ : (Q : R) ≠ 1)
-    (hprod : ∏ d ∈ Finset.Icc 1 n, ∑ i ∈ Finset.range d, (Q : R) ^ i ≠ 0) (hμ : μ.card < n) :
-    Set.InjOn (fun c ↦ ((Q ^ cellContent c : Rˣ) : R)) {c | IsAddable μ c} := by
-  refine Units.val_injective.comp_injOn (injOn_zpow_cellContent (fun d hd hdn hQd ↦ ?_) hμ)
-  refine (TauCeti.prod_geom_sum_ne_zero_iff hQ _).mp hprod d
-    (Finset.mem_Icc.mpr ⟨by omega, hdn⟩) ?_
-  rw [← Units.val_pow_eq_pow_val, hQd, Units.val_one]
 
 end YoungDiagram
