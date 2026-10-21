@@ -140,10 +140,13 @@ theorem toSpecZero_preimage_basicOpen (r : 𝒜 0) :
       ((HomogeneousIdeal.toIdeal_irrelevant_le 𝒜).mpr h))
   obtain ⟨z, rfl⟩ : x ∈ (awayι 𝒜 f f_deg hi).opensRange := by rwa [opensRange_awayι]
   have h₁ : awayι 𝒜 f f_deg hi z ∈ toSpecZero 𝒜 ⁻¹ᵁ PrimeSpectrum.basicOpen r ↔
-      z ∈ (PrimeSpectrum.basicOpen (fromZeroRingHom 𝒜 _ r) : (Spec (.of (Away 𝒜 f))).Opens) :=
-    -- both sides unfold to membership of the same point of `Spec A₀` in `D(r)`
-    Iff.of_eq (congrArg (fun g ↦ g z ∈ (PrimeSpectrum.basicOpen r : (Spec (.of (𝒜 0))).Opens))
-      (awayι_toSpecZero 𝒜 f f_deg hi))
+      z ∈ (PrimeSpectrum.basicOpen (fromZeroRingHom 𝒜 _ r) : (Spec (.of (Away 𝒜 f))).Opens) := by
+    have h := Scheme.Hom.comp_preimage (awayι 𝒜 f f_deg hi) (toSpecZero 𝒜)
+      (PrimeSpectrum.basicOpen r)
+    rw [awayι_toSpecZero, SpecMap_preimage_basicOpen] at h
+    rw [← Scheme.Hom.mem_preimage, ← h, CommRingCat.ofHom_apply]
+    -- the sides differ only in typing `D(r / 1)` as an open of `Spec` or of the prime spectrum
+    rfl
   -- On `D₊(f)`, the standard open `D₊(r) = D₊(r f)` is cut out by `(r f)ⁱ / fⁱ = (r / 1)ⁱ`.
   have hrf : (r : A) * f ∈ 𝒜 i := by simpa using SetLike.mul_mem_graded r.2 f_deg
   have helem : Away.isLocalizationElem f_deg hrf = fromZeroRingHom 𝒜 _ r ^ i := by

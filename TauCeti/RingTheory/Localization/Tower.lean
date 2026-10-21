@@ -58,17 +58,13 @@ theorem Away.bijective_awayMap_of_injective (a : A) [IsLocalization.Away a S]
   have : IsLocalization.Away (algebraMap A B a) S := by
     simpa [Algebra.algebraMapSubmonoid, Submonoid.map_powers] using
       isLocalization_algebraMapSubmonoid_of_injective (Submonoid.powers a) h
-  -- `A_a → B_a → S` is the canonical isomorphism `A_a ≃ S`, and `B_a → S` is an isomorphism.
-  let e₁ := algEquiv (Submonoid.powers a) (Localization.Away a) S
+  -- `A_a → B_a → S` is a map of localizations of `A` at `a`, and `B_a → S` is an isomorphism.
   let e₂ := algEquiv (Submonoid.powers (algebraMap A B a)) (Localization.Away (algebraMap A B a)) S
-  have hcomp : (e₂ : Localization.Away (algebraMap A B a) →+* S).comp
-      (Localization.awayMap (algebraMap A B) a) = e₁ := by
-    refine ringHom_ext (Submonoid.powers a) (RingHom.ext fun r ↦ ?_)
-    simp only [RingHom.comp_apply, Localization.awayMap, Away.map, map_eq, RingHom.coe_coe,
-      AlgEquiv.commutes]
-    exact (IsScalarTower.algebraMap_apply A B S r).symm
-  have hbij : Function.Bijective ((e₂ : Localization.Away (algebraMap A B a) →+* S).comp
-      (Localization.awayMap (algebraMap A B) a)) := hcomp ▸ e₁.bijective
+  have hbij := IsLocalization.bijective (Submonoid.powers a)
+    ((e₂ : Localization.Away (algebraMap A B a) →+* S).comp
+      (Localization.awayMap (algebraMap A B) a))
+    (RingHom.ext fun r ↦ by
+      simp [Localization.awayMap, Away.map, map_eq, IsScalarTower.algebraMap_apply A B S])
   exact (Function.Bijective.of_comp_iff' e₂.bijective _).mp hbij
 
 end IsLocalization

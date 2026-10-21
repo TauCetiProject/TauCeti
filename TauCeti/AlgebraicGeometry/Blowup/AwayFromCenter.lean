@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.Restrict
 
 /-!
 # The blowup of an affine scheme away from its center
@@ -28,9 +29,11 @@ model of the same generic fibre.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.affineBlowupι_image_basicOpen`: for `a ∈ I`, the inverse image of
-  `D(a)` in the blowup is the image of the basic open `D(a)` of the chart `Spec R[I/a]`.
-* `TauCeti.AlgebraicGeometry.isIso_morphismRestrict_affineBlowup_of_disjoint_zeroLocus`: the blowup
+Both results are in the namespace `TauCeti.AlgebraicGeometry`.
+
+* `affineBlowupι_image_basicOpen`: for `a ∈ I`, the inverse image of `D(a)` in the blowup is the
+  image of the basic open `D(a)` of the chart `Spec R[I/a]`.
+* `isIso_morphismRestrict_toSpecZero_reesAlgebra_of_disjoint_zeroLocus`: the blowup
   `Proj R[It] ⟶ Spec R` restricts to an isomorphism over every open subset of `Spec R` that is
   disjoint from `V(I)`.
 
@@ -63,8 +66,11 @@ private theorem preimage_basicOpen_le_basicOpen_monomialDegreeOne (ha : a ∈ I)
   -- A point over `D(a)` is a homogeneous prime not containing `a`.
   have hxa :
       x ∈ Proj.basicOpen (grade I) ((gradeZeroEquiv I a : grade I 0) : reesAlgebra I) := by
-    have : x ∈ Proj.toSpecZero (grade I) ⁻¹ᵁ PrimeSpectrum.basicOpen (gradeZeroEquiv I a) := hx
-    rwa [Proj.toSpecZero_preimage_basicOpen] at this
+    have h := Scheme.Hom.comp_preimage (Proj.toSpecZero (grade I))
+      (Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) (PrimeSpectrum.basicOpen a)
+    rw [SpecMap_preimage_basicOpen, RingEquiv.toCommRingCatIso_hom, CommRingCat.ofHom_apply,
+      Proj.toSpecZero_preimage_basicOpen] at h
+    exact h ▸ hx
   -- It also avoids some `b t` with `b ∈ I`, since these generate the irrelevant ideal.
   have hcover := Proj.iSup_basicOpen_eq_top (grade I) (fun b : I ↦ monomialDegreeOne b.2)
     (irrelevant_eq_span_monomialDegreeOne (s := fun b : I ↦ (b : R)) (by simp)).le
@@ -93,9 +99,10 @@ theorem affineBlowupι_image_basicOpen (ha : a ∈ I) :
   rw [← opensRange_affineBlowupι S ha] at hle
   -- On the chart, the inverse image of `D(a)` is the basic open of `a`.
   have h : affineBlowupι S ha ⁻¹ᵁ (f ⁻¹ᵁ PrimeSpectrum.basicOpen a) =
-      PrimeSpectrum.basicOpen (algebraMap R (I.affineBlowup a S) a) :=
-    congrArg (fun g : Spec (.of (I.affineBlowup a S)) ⟶ Spec (.of R) ↦
-      g ⁻¹ᵁ (PrimeSpectrum.basicOpen a : (Spec (.of R)).Opens)) (affineBlowupι_toSpecZero S ha)
+      PrimeSpectrum.basicOpen (algebraMap R (I.affineBlowup a S) a) := by
+    have h' := Scheme.Hom.comp_preimage (affineBlowupι S ha) f (PrimeSpectrum.basicOpen a)
+    rw [affineBlowupι_toSpecZero, SpecMap_preimage_basicOpen, CommRingCat.ofHom_apply] at h'
+    exact h'.symm
   calc _ = affineBlowupι S ha ''ᵁ (affineBlowupι S ha ⁻¹ᵁ (f ⁻¹ᵁ PrimeSpectrum.basicOpen a)) :=
         congrArg (affineBlowupι S ha ''ᵁ ·) h.symm
     _ = _ := by rw [Scheme.Hom.image_preimage_eq_opensRange_inf, inf_eq_right.mpr hle]
@@ -112,23 +119,13 @@ private theorem isIso_morphismRestrict_of_le_basicOpen (ha : a ∈ I) {W : (Spec
     isIso_SpecMap_morphismRestrict_basicOpen_of_injective (S := Localization.Away a) a
       Subtype.val_injective
   -- Hence also over `W ⊆ D(a)`.
-  set D : (Spec (.of R)).Opens := PrimeSpectrum.basicOpen a
-  have himage : D.ι ''ᵁ (D.ι ⁻¹ᵁ W) = W := by
-    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
-    exact inf_eq_right.mpr hW
-  have hgW : IsIso (g ∣_ W) :=
-    ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
-      (morphismRestrictRestrict g _ _ ≪≫ morphismRestrictEq g himage)).mp
-      (inferInstanceAs (IsIso ((g ∣_ _) ∣_ _)))
+  have hgW : IsIso (g ∣_ W) := isIso_morphismRestrict_of_le g hW
   -- Over `W`, the blowup lies in the chart of `a`, so `g ∣_ W` is `f ∣_ W` up to an isomorphism.
   have hle : f ⁻¹ᵁ W ≤ (affineBlowupι (Localization.Away a) ha).opensRange := by
     rw [opensRange_affineBlowupι]
     exact (f.preimage_mono hW).trans (preimage_basicOpen_le_basicOpen_monomialDegreeOne ha)
-  have : IsIso (affineBlowupι (Localization.Away a) ha ∣_ f ⁻¹ᵁ W) := by
-    refine (isIso_iff_isOpenImmersion_and_surjective _).mpr ⟨inferInstance, ⟨fun y ↦ ?_⟩⟩
-    obtain ⟨z, hz⟩ := hle y.2
-    exact ⟨⟨z, (Scheme.Hom.mem_preimage _).mpr (hz ▸ y.2)⟩,
-      Subtype.ext ((morphismRestrict_base_coe _ _ _).trans hz)⟩
+  have : IsIso (affineBlowupι (Localization.Away a) ha ∣_ f ⁻¹ᵁ W) :=
+    (affineBlowupι (Localization.Away a) ha).isIso_morphismRestrict_of_le_opensRange hle
   have hcomp : IsIso ((affineBlowupι (Localization.Away a) ha ≫ f) ∣_ W) := by
     rwa [affineBlowupι_toSpecZero]
   rw [morphismRestrict_comp] at hcomp
@@ -140,8 +137,8 @@ private theorem isIso_morphismRestrict_of_le_basicOpen (ha : a ∈ I) {W : (Spec
 /-- **The blowup is an isomorphism away from its center.** The blowup `Proj R[It] ⟶ Spec R` of
 `Spec R` along `V(I)` restricts to an isomorphism over every open subset `U` of `Spec R` that is
 disjoint from `V(I)`. -/
-theorem isIso_morphismRestrict_affineBlowup_of_disjoint_zeroLocus {U : (Spec (.of R)).Opens}
-    (hU : Disjoint (α := Set (PrimeSpectrum R)) (U : Set (Spec (.of R)))
+theorem isIso_morphismRestrict_toSpecZero_reesAlgebra_of_disjoint_zeroLocus
+    {U : (Spec (.of R)).Opens} (hU : Disjoint (α := Set (PrimeSpectrum R)) (U : Set (Spec (.of R)))
       (PrimeSpectrum.zeroLocus (I : Set R))) :
     IsIso ((Proj.toSpecZero (grade I) ≫
       Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) ∣_ U) := by
@@ -157,11 +154,9 @@ theorem isIso_morphismRestrict_affineBlowup_of_disjoint_zeroLocus {U : (Spec (.o
   rw [← MorphismProperty.isomorphisms.iff,
     IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := MorphismProperty.isomorphisms Scheme) V hV]
   intro b
-  have himage : U.ι ''ᵁ V b = U ⊓ PrimeSpectrum.basicOpen (b : R) :=
-    (U.ι.image_preimage_eq_opensRange_inf _).trans (by rw [Scheme.Opens.opensRange_ι])
   refine ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
-    (morphismRestrictRestrict f U (V b) ≪≫ morphismRestrictEq f himage)).mpr ?_
+    (morphismRestrictRestrict f U (V b))).mpr ?_
   exact (MorphismProperty.isomorphisms.iff _).mpr
-    (isIso_morphismRestrict_of_le_basicOpen b.2 inf_le_right)
+    (isIso_morphismRestrict_of_le_basicOpen b.2 (U.ι.image_preimage_le _))
 
 end TauCeti.AlgebraicGeometry
