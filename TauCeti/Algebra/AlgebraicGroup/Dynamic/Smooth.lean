@@ -98,11 +98,65 @@ private theorem mapValue_twistedPoint {D : Type*} [CommRing D] [Algebra R D] (φ
     conjugate_apply]
   group
 
+section ConstCoeff
+
+variable {J : Ideal C} {Ψ : WithConv (H →ₐ[R] LaurentPolynomial C)}
+  {g₀ : WithConv (H →ₐ[R] C ⧸ J)}
+
+/-- If `Ψ` reduces modulo `J` to the constant point `g₀`, then its coefficients reduce to those
+of `g₀`. -/
+private theorem mk_coeff_of_mapValue_eq_constPoint
+    (hΨ : AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ (Ideal.Quotient.mkₐ R J)) Ψ =
+      constPoint (C ⧸ J) g₀) (h : H) (n : ℤ) :
+    Ideal.Quotient.mk J ((Ψ.ofConv h).coeff n) = if n = 0 then g₀.ofConv h else 0 := by
+  have := congrArg (fun x : WithConv (H →ₐ[R] LaurentPolynomial (C ⧸ J)) ↦
+    (x.ofConv h).coeff n) hΨ
+  simpa [constPoint_apply, LaurentPolynomial.C_apply] using this
+
+/-- The constant coefficient of a point `Ψ` over `C[T;T⁻¹]` that reduces, modulo a square-zero
+ideal `J`, to a constant point. It is an algebra map because the nonconstant coefficients of `Ψ`
+lie in `J`. -/
+private noncomputable def constCoeffAlgHom (hJ : J ^ 2 = ⊥)
+    (hΨ : AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ (Ideal.Quotient.mkₐ R J)) Ψ =
+      constPoint (C ⧸ J) g₀) : H →ₐ[R] C where
+  toFun h := (Ψ.ofConv h).coeff 0
+  map_one' := by simp
+  map_mul' a b := by
+    have hmem (h : H) (n : ℤ) (hn : n ≠ 0) : (Ψ.ofConv h).coeff n ∈ J := by
+      rw [← Ideal.Quotient.eq_zero_iff_mem, mk_coeff_of_mapValue_eq_constPoint hΨ]
+      simp [hn]
+    rw [map_mul]
+    exact LaurentPolynomial.mul_coeff_zero_of_coeff_mem hJ (hmem a) (hmem b)
+  map_zero' := by simp
+  map_add' a b := by simp
+  commutes' r := by
+    rw [AlgHom.commutes, IsScalarTower.algebraMap_apply R C (LaurentPolynomial C),
+      ← LaurentPolynomial.C_eq_algebraMap, LaurentPolynomial.C_apply]
+    simp
+
+private theorem constCoeffAlgHom_apply (hJ : J ^ 2 = ⊥)
+    (hΨ : AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ (Ideal.Quotient.mkₐ R J)) Ψ =
+      constPoint (C ⧸ J) g₀) (h : H) :
+    constCoeffAlgHom hJ hΨ h = (Ψ.ofConv h).coeff 0 :=
+  rfl
+
+/-- The constant coefficient of `Ψ` lifts `g₀`. -/
+private theorem mkₐ_comp_constCoeffAlgHom (hJ : J ^ 2 = ⊥)
+    (hΨ : AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ (Ideal.Quotient.mkₐ R J)) Ψ =
+      constPoint (C ⧸ J) g₀) :
+    (Ideal.Quotient.mkₐ R J).comp (constCoeffAlgHom hJ hΨ) = g₀.ofConv := by
+  refine AlgHom.ext fun h ↦ ?_
+  rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, constCoeffAlgHom_apply,
+    mk_coeff_of_mapValue_eq_constPoint hΨ]
+  simp
+
+end ConstCoeff
+
 end Lift
 
 /-- **The dynamic parabolic of a formally smooth affine group is formally smooth.** No
 finite-type, field or reductivity hypothesis is needed. -/
-theorem formallySmooth_quotient_parabolicDefiningHopfIdeal (l : H →ₐc[R] LaurentPolynomial R)
+instance formallySmooth_quotient_parabolicDefiningHopfIdeal (l : H →ₐc[R] LaurentPolynomial R)
     [Algebra.FormallySmooth R H] :
     Algebra.FormallySmooth R (H ⧸ (parabolicDefiningHopfIdeal l).toIdeal) := by
   refine Algebra.FormallySmooth.iff_comp_surjective.mpr fun C _ _ J hJ f ↦ ?_
@@ -132,42 +186,20 @@ theorem formallySmooth_quotient_parabolicDefiningHopfIdeal (l : H →ₐc[R] Lau
     refine mapValue_twistedPoint l _ _ g₀ ?_
     rw [AlgHom.mapValue_apply, ofConv_toConv, hF, ofPolyPoint_apply, ofConv_toConv, hF₀,
       toConv_ofConv]
-  have hcoeff (h : H) (n : ℤ) :
-      Ideal.Quotient.mk J ((Ψ.ofConv h).coeff n) = if n = 0 then g₀.ofConv h else 0 := by
-    have := congrArg (fun x : WithConv (H →ₐ[R] LaurentPolynomial (C ⧸ J)) ↦
-      (x.ofConv h).coeff n) hΨ
-    simpa [constPoint_apply, LaurentPolynomial.C_apply] using this
-  have hmem (h : H) (n : ℤ) (hn : n ≠ 0) : (Ψ.ofConv h).coeff n ∈ J := by
-    rw [← Ideal.Quotient.eq_zero_iff_mem, hcoeff]
-    simp [hn]
   -- Its constant coefficient is an algebra map lifting `g₀`.
-  let g : H →ₐ[R] C :=
-    { toFun h := (Ψ.ofConv h).coeff 0
-      map_one' := by simp
-      map_mul' a b := by
-        rw [map_mul]
-        exact LaurentPolynomial.mul_coeff_zero_of_coeff_mem hJ (hmem a) (hmem b)
-      map_zero' := by simp
-      map_add' a b := by simp
-      commutes' r := by
-        rw [AlgHom.commutes, IsScalarTower.algebraMap_apply R C (LaurentPolynomial C),
-          ← LaurentPolynomial.C_eq_algebraMap, LaurentPolynomial.C_apply]
-        simp }
-  have hg (x : H) : g x = (Ψ.ofConv x).coeff 0 := rfl
+  let g := constCoeffAlgHom hJ hΨ
   -- It vanishes on the negative coefficients of universal conjugation, which generate the
   -- defining ideal of the dynamic parabolic.
   have hgI : (parabolicDefiningHopfIdeal l).toIdeal ≤ RingHom.ker g := by
     rw [parabolicDefiningHopfIdeal_toIdeal, Ideal.span_le]
     rintro _ ⟨h, n, hn, rfl⟩
-    rw [SetLike.mem_coe, RingHom.mem_ker, hg, twistedPoint_coeff_conjugationAlgHom,
-      ← LaurentPolynomial.T_mul, LaurentPolynomial.coeff_T_mul, zero_sub, neg_neg]
+    rw [SetLike.mem_coe, RingHom.mem_ker, constCoeffAlgHom_apply,
+      twistedPoint_coeff_conjugationAlgHom, ← LaurentPolynomial.T_mul,
+      LaurentPolynomial.coeff_T_mul, zero_sub, neg_neg]
     exact exists_toLaurent_eq_iff.mp ⟨_, rfl⟩ n hn
   refine ⟨Ideal.Quotient.liftₐ _ g fun x hx ↦ RingHom.mem_ker.mp (hgI hx),
     Ideal.Quotient.algHom_ext R ?_⟩
-  rw [AlgHom.comp_assoc, Ideal.Quotient.liftₐ_comp]
-  refine AlgHom.ext fun h ↦ ?_
-  rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, hg, hcoeff]
-  simp [g₀]
+  rw [AlgHom.comp_assoc, Ideal.Quotient.liftₐ_comp, mkₐ_comp_constCoeffAlgHom]
 
 variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, v} k}
 
@@ -176,7 +208,6 @@ theorem smoothCommHopfAlgProperty_quotient_parabolicDefiningHopfIdeal
     [Algebra.Smooth k H] (l : H →ₐc[k] LaurentPolynomial k) :
     smoothCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.quotient H (parabolicDefiningHopfIdeal l)).obj := by
-  have := formallySmooth_quotient_parabolicDefiningHopfIdeal l
   rw [smoothCommHopfAlgProperty_iff]
   exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
 
@@ -186,7 +217,6 @@ theorem smoothCommHopfAlgProperty_quotient_unipotentDefiningHopfIdeal
     [Algebra.Smooth k H] (l : H →ₐc[k] LaurentPolynomial k) :
     smoothCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.quotient H l.unipotentDefiningHopfIdeal).obj := by
-  have := formallySmooth_quotient_parabolicDefiningHopfIdeal l
   have := formallySmooth_quotient_unipotentDefiningHopfIdeal l
   rw [smoothCommHopfAlgProperty_iff]
   exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
@@ -197,7 +227,6 @@ theorem smoothCommHopfAlgProperty_quotient_leviDefiningHopfIdeal
     [Algebra.Smooth k H] (l : H →ₐc[k] LaurentPolynomial k) :
     smoothCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.quotient H (leviDefiningHopfIdeal l)).obj := by
-  have := formallySmooth_quotient_parabolicDefiningHopfIdeal l
   have := formallySmooth_quotient_leviDefiningHopfIdeal l
   rw [smoothCommHopfAlgProperty_iff]
   exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
