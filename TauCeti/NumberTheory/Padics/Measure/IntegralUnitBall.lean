@@ -58,8 +58,8 @@ theorem amiceTransform_extendCoefficients {O K : Type*} [CommRing O] [Topologica
     (extendCoefficients (j : O →+* K) hj μ).amiceTransform =
       PowerSeries.map (j : O →+* K) μ.amiceTransform := by
   ext n
-  rw [coeff_amiceTransform, PowerSeries.coeff_map, coeff_amiceTransform,
-    ← extendCoefficients_apply_comp (j : O →+* K) μ hj hjc]
+  simp only [coeff_amiceTransform, PowerSeries.coeff_map]
+  rw [← extendCoefficients_apply_comp (j : O →+* K) μ hj hjc]
   congr 1
   ext x
   simp
@@ -104,8 +104,9 @@ example : ¬ ∃! μ : D(ℤ_[p], ℤ_[p]), ∀ f : C(ℤ_[p], ℤ_[p]),
     ((p : ℚ_[p])⁻¹ • dirac ℚ_[p] (0 : ℤ_[p]))
         ((⟨fun x : ℤ_[p] ↦ (x : ℚ_[p]), continuous_subtype_val⟩ : C(ℤ_[p], ℚ_[p])).comp f) =
       (μ f : ℚ_[p]) := by
-  rw [existsUnique_integral_iff_norm_le_one, map_smul, norm_smul,
-    TauCeti.AbstractMeasure.norm_dirac, mul_one, norm_inv, Padic.norm_p, inv_inv, not_le]
+  rw [existsUnique_integral_iff_norm_le_one]
+  simp only [map_smul, norm_smul, TauCeti.AbstractMeasure.norm_dirac, norm_inv, Padic.norm_p,
+    mul_one, inv_inv, not_le]
   exact_mod_cast (Fact.out : p.Prime).one_lt
 
 end AbstractMeasure

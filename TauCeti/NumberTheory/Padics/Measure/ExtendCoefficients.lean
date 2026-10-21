@@ -51,6 +51,9 @@ no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integ
 * `AbstractMeasure.norm_toCLMEquiv_extendCoefficients_le`: the extension has norm at most `1`.
 * `AbstractMeasure.extendCoefficients_apply_comp`: `ι_j(μ)(j ∘ f) = j(μ(f))` for continuous `j`.
 * `AbstractMeasure.eq_extendCoefficients_of_apply_comp`: this property characterises `ι_j(μ)`.
+* `AbstractMeasure.exists_apply_comp_eq_of_norm_le_one`: for an embedding `j` onto the closed unit
+  ball of `K` and compact `X`, a `K`-valued measure of norm at most `1` restricts to an `O`-valued
+  measure.
 * `AbstractMeasure.mem_range_extendCoefficients_iff`,
   `AbstractMeasure.existsUnique_apply_comp_eq_iff_norm_le_one`: for an embedding `j` onto the
   closed unit ball, the extensions of coefficients form the closed unit ball of `D(X, K)`.
@@ -356,7 +359,7 @@ include hj in
 /-- If `j` is a topological embedding onto the closed unit ball of `K`, a `K`-valued measure `ν` of
 norm at most `1` sends the test functions `j ∘ f` into the image of `j`, and the preimages form an
 `O`-valued measure `μ` with `ν (j ∘ f) = j (μ f)`. -/
-private theorem exists_apply_comp_eq_of_norm_le_one (hje : Topology.IsEmbedding j)
+theorem exists_apply_comp_eq_of_norm_le_one (hje : Topology.IsEmbedding j)
     (hjr : Metric.closedBall 0 1 ⊆ Set.range j) {ν : D(X, K)} (hν : ‖toCLMEquiv ν‖ ≤ 1) :
     ∃ μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f) := by
   let J : C(O, K) := ⟨j, hje.continuous⟩
@@ -369,16 +372,16 @@ private theorem exists_apply_comp_eq_of_norm_le_one (hje : Topology.IsEmbedding 
   have hspec (f : C(X, O)) : j (hmem f).choose = ν (J.comp f) := (hmem f).choose_spec
   let L : C(X, O) →ₗ[O] O :=
     { toFun f := (hmem f).choose
-      map_add' f g := hje.injective <| by
+      map_add' f g := hje.injective <| (hspec _).trans <| by
         have hJ : J.comp (f + g) = J.comp f + J.comp g := by
           ext
           simp [J]
-        rw [map_add, hspec, hspec, hspec, hJ, map_add]
-      map_smul' a f := hje.injective <| by
+        simp [hspec, hJ]
+      map_smul' a f := hje.injective <| (hspec _).trans <| by
         have hJ : J.comp (a • f) = j a • J.comp f := by
           ext
           simp [J]
-        rw [RingHom.id_apply, smul_eq_mul, map_mul, hspec, hspec, hJ, map_smul, smul_eq_mul] }
+        simp [hspec, hJ] }
   have hL : Continuous L := hje.continuous_iff.mpr <| by
     simpa [Function.comp_def, L, hspec] using
       (map_continuous ν).comp (ContinuousMap.continuous_postcomp J)
