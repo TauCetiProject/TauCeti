@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Taylor
+public import TauCeti.Algebra.Polynomial.Derivative
 public import TauCeti.RingTheory.Derivation.Basic
 import Mathlib.Algebra.Module.Rat
 import Mathlib.Tactic.FieldSimp
@@ -214,28 +215,7 @@ end Derivation
 
 namespace Polynomial
 
-variable {R : Type*}
-
-section CommSemiring
-
-variable [CommSemiring R]
-
-/-- The scaled derivative `r • d / dX` is locally nilpotent: some iterate of it kills each
-polynomial. -/
-theorem exists_iterate_smul_derivative'_apply_eq_zero (r : R) (p : R[X]) :
-    ∃ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = 0 := by
-  have h : ∀ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = r ^ n • derivative^[n] p := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [Function.iterate_succ_apply', ih, Derivation.smul_apply, Derivation.map_smul,
-        derivative'_apply, ← Function.iterate_succ_apply' derivative, smul_smul, pow_succ']
-  exact ⟨p.natDegree + 1, by rw [h, iterate_derivative_eq_zero (Nat.lt_succ_self _), smul_zero]⟩
-
-end CommSemiring
-
-variable [CommRing R] [Algebra ℚ R]
+variable {R : Type*} [CommRing R] [Algebra ℚ R]
 
 /-- **Taylor's formula for polynomials.** Over a `ℚ`-algebra, the Taylor exponential of the
 scaled derivative `r • d / dX` is the Taylor shift `p ↦ p (X + r)`. -/
