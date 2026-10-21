@@ -51,26 +51,6 @@ namespace TauCeti
 
 variable {K E : Type*} [NontriviallyNormedField K] [NormedAddCommGroup E] [NormedSpace K E]
 
-/-- If `w` is `r`-orthogonal to a submodule `F` (that is, `r * ‖w‖ ≤ ‖w - z‖` for `z ∈ F`) with
-`r ≤ 1`, then in an ultrametric space `r * max ‖c • w‖ ‖z‖ ≤ ‖c • w + z‖` for every scalar `c` and
-every `z ∈ F`. -/
-private theorem mul_max_nnnorm_le_nnnorm_smul_add [IsUltrametricDist E] {F : Submodule K E}
-    {w : E} {r : ℝ≥0} (hr : r ≤ 1) (hw : ∀ z ∈ F, r * ‖w‖₊ ≤ ‖w - z‖₊) (c : K) {z : E}
-    (hz : z ∈ F) : r * max ‖c • w‖₊ ‖z‖₊ ≤ ‖c • w + z‖₊ := by
-  have h₁ : r * ‖c • w‖₊ ≤ ‖c • w + z‖₊ := by
-    rcases eq_or_ne c 0 with rfl | hc
-    · simp
-    have : c • w + z = c • (w - (-c⁻¹) • z) := by
-      rw [smul_sub, smul_smul, mul_neg, mul_inv_cancel₀ hc, neg_smul, one_smul, sub_neg_eq_add]
-    rw [this, nnnorm_smul, nnnorm_smul, mul_left_comm]
-    exact mul_le_mul_of_nonneg_left (hw _ (F.smul_mem _ hz)) zero_le
-  rw [mul_max_of_nonneg _ _ zero_le]
-  refine max_le h₁ ?_
-  rcases le_or_gt ‖z‖₊ ‖c • w‖₊ with h | h
-  · exact (mul_le_mul_of_nonneg_left h zero_le).trans h₁
-  · rw [IsUltrametricDist.nnnorm_add_eq_max_of_nnnorm_ne_nnnorm h.ne, max_eq_right h.le]
-    exact mul_le_of_le_one_left zero_le hr
-
 /-- If each `e N` is `T (N + 1) / T N`-orthogonal to the span of the previous vectors, for a
 strictly decreasing sequence `T` of positive constants at most one, then in an ultrametric space
 the vectors `e i` with `i < N` are `T N`-orthogonal. -/
