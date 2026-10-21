@@ -28,7 +28,6 @@ Taylor series, and its value at the identity is the exponential of the tangent v
 
 ## Main declarations
 
-* `TauCeti.Bialgebra.iterate_leftInvariantDerivation_apply`: `Dⁿ h = ∑ h₍₁₎ ε(Dⁿ h₍₂₎)`.
 * `TauCeti.Bialgebra.expPoint`: the exponential `ε ∘ exp D` of a tangent vector whose
   left-invariant derivation is locally nilpotent.
 * `TauCeti.Bialgebra.expPoint_zero`: the exponential of the zero tangent vector is the identity
@@ -50,20 +49,6 @@ open TensorProduct LinearMap
 namespace TauCeti.Bialgebra
 
 variable {R H : Type*} [CommRing R] [CommRing H] [_root_.Bialgebra R H]
-
-/-- **Iterated invariant vector fields.** Applying `n` times the left-invariant derivation of a
-tangent vector contracts the comultiplication against `ε ∘ Dⁿ`: `Dⁿ h = ∑ h₍₁₎ ε(Dⁿ h₍₂₎)`. -/
-theorem iterate_leftInvariantDerivation_apply (d : Derivation R H (CounitAlgebra R H R))
-    (n : ℕ) (h : H) :
-    (leftInvariantDerivation d)^[n] h =
-      tensorComponent (Coalgebra.counit (R := R) ∘ₗ (leftInvariantDerivation d).toLinearMap ^ n)
-        (Coalgebra.comul (R := R) h) := by
-  -- The counit axiom recovers `Dⁿ h` from its comultiplication.
-  have hcounit := congrArg (TensorProduct.rid R H)
-    (Coalgebra.lTensor_counit_comul (R := R) ((leftInvariantDerivation d)^[n] h))
-  rw [TensorProduct.rid_tmul, one_smul] at hcounit
-  rw [← hcounit, comul_iterate_leftInvariantDerivation, ← LinearMap.lTensor_comp_apply,
-    tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe]
 
 variable [Algebra ℚ H]
 

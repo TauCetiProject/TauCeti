@@ -9,8 +9,6 @@ public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Taylor
 public import TauCeti.RingTheory.Derivation.Basic
 import Mathlib.Algebra.Module.Rat
-import TauCeti.Algebra.Lie.Derivation.LocallyNilpotent
-import Mathlib.RingTheory.Adjoin.Polynomial.Basic
 import Mathlib.Tactic.FieldSimp
 
 /-!
@@ -151,6 +149,7 @@ noncomputable def taylorExp : A →ₐ[R] A :=
   ((aeval (1 : A)).restrictScalars R).comp (taylorExpPolynomial D hD)
 
 /-- The Taylor exponential is the evaluation of the Taylor expansion at `X = 1`. -/
+@[simp]
 theorem aeval_one_taylorExpPolynomial (a : A) :
     aeval (1 : A) (taylorExpPolynomial D hD a) = taylorExp D hD a :=
   (rfl)
@@ -215,23 +214,28 @@ end Derivation
 
 namespace Polynomial
 
-variable {R : Type*} [CommRing R]
+variable {R : Type*}
+
+section CommSemiring
+
+variable [CommSemiring R]
 
 /-- The scaled derivative `r • d / dX` is locally nilpotent: some iterate of it kills each
 polynomial. -/
 theorem exists_iterate_smul_derivative'_apply_eq_zero (r : R) (p : R[X]) :
     ∃ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = 0 := by
-  set D : Derivation R R[X] R[X] := r • derivative'
-  -- Local nilpotence on the generator `X` extends to all of `R[X]`.
-  have hD : ⇑(TauCeti.derivationEquivDerivationLieAlgebra D : Module.End R R[X]) = D :=
-    funext (TauCeti.derivationEquivDerivationLieAlgebra_apply D)
-  simpa only [Module.End.pow_apply, hD] using
-    TauCeti.derivationLieAlgebra.exists_pow_apply_eq_zero_of_mem_adjoin
-      (TauCeti.derivationEquivDerivationLieAlgebra D) (s := {X})
-      (fun x hx => ⟨2, by rw [Set.mem_singleton_iff.1 hx, Module.End.pow_apply, hD]; simp [D]⟩)
-      (by rw [adjoin_X]; exact Algebra.mem_top)
+  have h : ∀ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = r ^ n • derivative^[n] p := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [Function.iterate_succ_apply', ih, Derivation.smul_apply, Derivation.map_smul,
+        derivative'_apply, ← Function.iterate_succ_apply' derivative, smul_smul, pow_succ']
+  exact ⟨p.natDegree + 1, by rw [h, iterate_derivative_eq_zero (Nat.lt_succ_self _), smul_zero]⟩
 
-variable [Algebra ℚ R]
+end CommSemiring
+
+variable [CommRing R] [Algebra ℚ R]
 
 /-- **Taylor's formula for polynomials.** Over a `ℚ`-algebra, the Taylor exponential of the
 scaled derivative `r • d / dX` is the Taylor shift `p ↦ p (X + r)`. -/

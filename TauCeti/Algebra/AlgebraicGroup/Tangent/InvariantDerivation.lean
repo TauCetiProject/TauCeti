@@ -44,6 +44,7 @@ tangent space as the ambient group. This is the infinitesimal input to Cartier's
 * `TauCeti.Bialgebra.comul_leftInvariantDerivation`: its invariance under left translations.
 * `TauCeti.Bialgebra.comul_iterate_leftInvariantDerivation`: the same invariance for its
   iterates.
+* `TauCeti.Bialgebra.iterate_leftInvariantDerivation_apply`: `Dⁿ h = ∑ h₍₁₎ ε(Dⁿ h₍₂₎)`.
 * `TauCeti.Bialgebra.eq_leftInvariantDerivation`: a left-invariant derivation is determined
   by its value at the identity.
 * `BialgHom.map_leftInvariantDerivation`: invariant derivations intertwine a
@@ -158,6 +159,20 @@ theorem comul_iterate_leftInvariantDerivation (d : Derivation R H (CounitAlgebra
   | succ n ih =>
     rw [Function.iterate_succ_apply', comul_leftInvariantDerivation, ih, pow_succ',
       LinearMap.lTensor_mul, Module.End.mul_apply]
+
+/-- **Iterated invariant vector fields.** Applying `n` times the left-invariant derivation of a
+tangent vector contracts the comultiplication against `ε ∘ Dⁿ`: `Dⁿ h = ∑ h₍₁₎ ε(Dⁿ h₍₂₎)`. -/
+theorem iterate_leftInvariantDerivation_apply (d : Derivation R H (CounitAlgebra R H R))
+    (n : ℕ) (h : H) :
+    (leftInvariantDerivation d)^[n] h =
+      tensorComponent (Coalgebra.counit (R := R) ∘ₗ (leftInvariantDerivation d).toLinearMap ^ n)
+        (Coalgebra.comul (R := R) h) := by
+  -- The counit axiom recovers `Dⁿ h` from its comultiplication.
+  have hcounit := congrArg (TensorProduct.rid R H)
+    (Coalgebra.lTensor_counit_comul (R := R) ((leftInvariantDerivation d)^[n] h))
+  rw [TensorProduct.rid_tmul, one_smul] at hcounit
+  rw [← hcounit, comul_iterate_leftInvariantDerivation, ← LinearMap.lTensor_comp_apply,
+    tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe]
 
 /-- A left-invariant derivation with value `d` at the identity is the left-invariant
 extension of `d`. -/
