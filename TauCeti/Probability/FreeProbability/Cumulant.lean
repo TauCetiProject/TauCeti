@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finset.Sort
 public import TauCeti.Combinatorics.Enumerative.IncidenceAlgebra
 public import TauCeti.Combinatorics.NoncrossingPartition.Basic
+public import TauCeti.Data.Finset.Sort
 
 /-!
 # Free cumulants
@@ -179,31 +179,17 @@ theorem freeCumulant_empty : freeCumulant φ a ∅ = 1 := by
 /-- The first free cumulant is the mean, `κ₁(a_i) = φ a_i`. -/
 @[simp]
 theorem freeCumulant_singleton (i : α) : freeCumulant φ a {i} = φ (a i) := by
-  have htop : (⊤ : NoncrossingPartition ({i} : Finset α)) = ⊥ :=
-    Subtype.ext <| Finpartition.ext <| by simp [Finpartition.parts_top (singleton_ne_empty i)]
-  rw [freeCumulant_def, htop, partitionCumulant_bot, prod_singleton]
+  rw [freeCumulant_def, Subsingleton.elim (⊤ : NoncrossingPartition ({i} : Finset α)) ⊥,
+    partitionCumulant_bot, prod_singleton]
 
 /-- The second free cumulant is the covariance, `κ₂(a_i, a_j) = φ (a_i * a_j) - φ a_i * φ a_j`
 for positions `i < j`. -/
 theorem freeCumulant_pair {i j : α} (hij : i < j) :
     freeCumulant φ a {i, j} = φ (a i * a j) - φ (a i) * φ (a j) := by
-  have hne : (⊥ : NoncrossingPartition ({i, j} : Finset α)) ≠ ⊤ := fun h => by
-    have := congrArg (fun P : NoncrossingPartition ({i, j} : Finset α) => #P.1.parts) h
-    simp only [NoncrossingPartition.coe_bot, NoncrossingPartition.coe_top,
-      Finpartition.card_bot, Finpartition.parts_top (insert_ne_empty i {j}), card_singleton,
-      card_pair hij.ne] at this
-    omega
-  have huniv : (univ : Finset (NoncrossingPartition ({i, j} : Finset α))) = {⊥, ⊤} := by
-    ext π
-    simp only [mem_univ, mem_insert, mem_singleton, true_iff]
-    rcases Finpartition.eq_bot_or_eq_top_of_pair π.1 with h | h
-    · exact Or.inl (Subtype.ext h)
-    · exact Or.inr (Subtype.ext h)
-  have hsort : ({i, j} : Finset α).sort = [i, j] := by
-    rw [sort_insert _ (fun b hb => by rw [mem_singleton.1 hb]; exact hij.le)
-      (notMem_singleton.2 hij.ne), sort_singleton]
   have := apply_prod_eq_sum_partitionCumulant φ a (insert_nonempty i {j})
-  rw [huniv, sum_pair hne, partitionCumulant_bot, prod_pair hij.ne, hsort] at this
+  rw [NoncrossingPartition.univ_eq_bot_top_of_pair, sum_pair
+      (NoncrossingPartition.bot_ne_top_of_one_lt_card (by rw [card_pair hij.ne]; omega)),
+    partitionCumulant_bot, prod_pair hij.ne, sort_pair _ hij.le hij.ne] at this
   simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one] at this
   rw [freeCumulant_def, this, add_sub_cancel_left]
 
