@@ -125,18 +125,6 @@ private theorem exists_ball_abs_arg_div_of_image_eq (hfc : ContinuousOn f {z : �
       (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
         (hfc _ hz0.symm.le) hz0 (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi hz0))
 
-/-- A real point of a set `T` containing the upper half-plane, on which `f` is continuous and
-injective, is carried to the frontier of `U = f '' upperHalfPlaneSet`. -/
-private theorem mem_frontier_of_mem_of_im_eq_zero {T : Set ℂ} (hHT : upperHalfPlaneSet ⊆ T)
-    (hfc : ContinuousOn f T) (hfi : InjOn f T) (hfU : f '' upperHalfPlaneSet = U) {z : ℂ}
-    (hzT : z ∈ T) (hz : z.im = 0) : f z ∈ frontier U := by
-  rw [← hfU]
-  refine ⟨((hfc z hzT).mono hHT).mem_closure_image (by simp [hz]), fun h => ?_⟩
-  obtain ⟨y, hy, hyz⟩ := interior_subset h
-  have hy' : 0 < y.im := hy
-  rw [hfi (hHT hy) hzT hyz, hz] at hy'
-  exact lt_irrefl 0 hy'
-
 /-- **Condition at infinity.**  Let `f` be continuous and injective on a set `T` which contains the
 upper half-plane and every point of the closed upper half-plane far enough out.  If `f` tends at
 infinity to a point `p` on a side of `U` which is not a value of `f` on `T`, then in the coordinate
@@ -196,7 +184,8 @@ private theorem exists_eqOn_neg_inv_of_tendsto {T : Set ℂ} (hHT : upperHalfPla
     · rw [update_of_ne h0]
       have hw' := hball w hw hw0.symm.le h0
       exact im_div_eq_zero_of_mem_frontier hU hw'.1
-        (mem_frontier_of_mem_of_im_eq_zero hHT hfc hfi hfU hw'.2 (by simp [hw0]))
+        (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_mem_of_im_eq_zero hHT (hfc _ hw'.2) hfi
+          hw'.2 (by simp [hw0]))
   · rw [update_of_ne (hne w hw.2)]
     exact (hU _ (hball w hw.1 hw.2.le (hne w hw.2)).1).mp
       (hfU ▸ mem_image_of_mem f (hmem w hw.2))

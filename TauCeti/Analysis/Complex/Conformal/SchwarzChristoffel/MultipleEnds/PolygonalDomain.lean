@@ -141,9 +141,9 @@ private theorem eqOn_and_tendsto_of_inverted_coordinate [Fintype ι] [Fintype κ
     have hx0 : g x ≠ 0 := fun h => by
       obtain ⟨k, rfl⟩ := hzd x h
       exact hx (Sum.inr k) rfl
-    have hxU : F x ∈ frontier U := hFU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
-      (continuousWithinAt_const.add ((hgc _ (by simp)).inv₀ hx0)) (ofReal_im x)
-      (hFf.image_eq ▸ add_inv_notMem_image_of_inverted_coordinate hgf hgi (ofReal_im x) hx0)
+    have hxU : F x ∈ frontier U := hFU ▸
+      mem_frontier_image_upperHalfPlaneSet_of_mem_of_im_eq_zero hHT (hFc _ ⟨by simp, hx0⟩) hFi
+        ⟨by simp, hx0⟩ (ofReal_im x)
     have hxv : ∀ i, F x ≠ v i := fun i h => by
       rw [← hgv i] at h
       exact hx (Sum.inl i) (ofReal_injective (hgi ⟨by simp, hga i⟩ ⟨by simp, hx0⟩ (hFeq h).symm))
