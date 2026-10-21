@@ -239,16 +239,22 @@ theorem inChartAt_symplecticForm_apply (z₀ : CotangentBundle I M) {w : E × (E
 
 /-- At a covector `z`, read in the preferred chart at `z` itself, where tangent vectors are their
 own coordinates, the canonical symplectic form is the linear form. -/
-private theorem eval₂_symplecticForm (z : CotangentBundle I M)
+@[simp]
+theorem symplecticForm_apply (z : CotangentBundle I M)
+    (v : Fin 2 → TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
+    (symplecticForm I M).1 z v = strongDualCotangentSymplecticForm (V := E) (v 0) (v 1) := by
+  have h := inChartAt_symplecticForm_apply z (mem_extChartAt_target z) v
+  rw [RoughForm.inChartAt_extChartAt_self] at h
+  -- Tangent vectors at `z` are their own coordinates in the chart at `z`.
+  exact h
+
+/-- The canonical symplectic form, evaluated on an ordered pair of tangent vectors at a covector
+`z`, is the linear form `TauCeti.strongDualCotangentSymplecticForm`. -/
+theorem eval₂_symplecticForm (z : CotangentBundle I M)
     (v w : TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
     SmoothForm.eval₂ (symplecticForm I M) z v w =
       strongDualCotangentSymplecticForm (V := E) v w := by
-  have h := inChartAt_symplecticForm_apply z (mem_extChartAt_target z) ![v, w]
-  rw [RoughForm.inChartAt_extChartAt_self] at h
-  rw [SmoothForm.eval₂_apply]
-  -- `h` evaluates `![v, w] 0` and `![v, w] 1`, which reduce to `v` and `w`; tangent vectors at `z`
-  -- are their own coordinates in the chart at `z`.
-  exact h
+  simp
 
 /-- The canonical symplectic form of the cotangent bundle is closed and nondegenerate. -/
 theorem isSymplectic_symplecticForm : (symplecticForm I M).IsSymplectic where
