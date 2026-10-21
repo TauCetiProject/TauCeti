@@ -110,7 +110,7 @@ namespace liftTruncLE'
 
 open scoped Classical in
 /-- Auxiliary definition for `HomologicalComplex.liftTruncLE'`. -/
-noncomputable def f (i : ι) : A.X i ⟶ (K.truncLE' e).X i :=
+private noncomputable def f (i : ι) : A.X i ⟶ (K.truncLE' e).X i :=
   if hi : e.BoundaryLE i then
     K.liftCycles (φ.f i ≫ (K.restrictionXIso e rfl).hom) _ rfl (by simpa using hφ i hi _ rfl _) ≫
       (K.truncLE'XIsoCycles e rfl hi).inv
@@ -120,7 +120,7 @@ noncomputable def f (i : ι) : A.X i ⟶ (K.truncLE' e).X i :=
 open scoped Classical in
 /-- `HomologicalComplex.liftTruncLE'.f` lifts the components of `φ`. -/
 @[reassoc]
-lemma f_comp (i : ι) : f φ hφ i ≫ (K.truncLE'ToRestriction e).f i = φ.f i := by
+private lemma f_comp (i : ι) : f φ hφ i ≫ (K.truncLE'ToRestriction e).f i = φ.f i := by
   by_cases hi : e.BoundaryLE i
   · rw [f, dite_eq_left hi, K.truncLE'ToRestriction_f_eq_iso_hom_iCycles_iso_inv e rfl hi]
     simp
