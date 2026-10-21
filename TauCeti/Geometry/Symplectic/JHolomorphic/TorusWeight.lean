@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import TauCeti.RingTheory.PowerSeries.Expand
-public import TauCeti.RingTheory.PowerSeries.PiTopology
 
 /-!
 # Four-twist multiplicity weights of square-zero pseudoholomorphic tori
@@ -31,11 +30,17 @@ of the configurations with total multiplicity `n` is the `n`-th coefficient of t
 their local series, which `TauCeti.coeff_prod_torusWeightSeries` expands as a sum of products of
 local weights.
 
-On the ray of a primitive square-zero class `A₀`, a torus of class `d • A₀` with label `(σ, i)`
-and multiplicity `m` contributes `m * d` to the total class, so its local series enters as
-`f_(σ, i)(t ^ d)`. Configurations made only of such ray tori, finitely many in each class, have
-the total weights given by the coefficients of the infinite product `∏_c f_label(c)(t ^ d c)`,
-and the coefficient of `t ^ n` only involves the tori of class at most `n • A₀`.
+On the homology ray of a primitive square-zero class `A₀`, a torus of class `m • A₀` enters
+with its local series evaluated at `t ^ m`. The ray series `∏_C f_label(C)(t ^ m_C)` of a family
+of such tori, with finitely many tori in each class, is an infinite product in the
+coefficientwise topology (`PowerSeries.WithPiTopology`); each of its coefficients is computed by
+a finite cutoff and expands as a sum over the configurations of these tori of the given total
+class. A configuration of total class `n • A₀` from a finite family `s` of tori, the torus `c`
+having class `m c • A₀`, is a multiplicity assignment `l` in the weighted antidiagonal
+`s.weightedFinsuppAntidiag m n`, that is, supported in `s` with `∑ c ∈ s, m c * l c = n`. The
+expansion, cutoff and infinite product hold for any family of power series in place of the local
+series (`PowerSeries.coeff_prod_expand`, `PowerSeries.coeff_prod_expand_of_subset`,
+`PowerSeries.coeff_tprod_expand`), and are specialised here to the tori.
 
 This file constructs only this series data and its coefficients; it assumes no geometric
 regularity and gives no curve-count interpretation.
@@ -50,11 +55,6 @@ regularity and gives no curve-count interpretation.
 * `TauCeti.coeff_prod_torusWeightSeries`: the weight of a finite configuration of tori with total
   multiplicity `n` is the sum, over all distributions of `n` among the tori, of the products of
   the local weights.
-* `TauCeti.coeff_prod_expand_torusWeightSeries`: the weight of the configurations of finitely many
-  ray tori with total class `n • A₀` is the `n`-th coefficient of `∏_c f_label(c)(t ^ d c)`.
-* `TauCeti.hasProd_expand_torusWeightSeries`: for infinitely many ray tori, finitely many with
-  class at most `n • A₀` for each `n`, the product `∏_c f_label(c)(t ^ d c)` converges, and its
-  `n`-th coefficient is the configuration weight computed from the tori of class at most `n • A₀`.
 * `TauCeti.torusWeightSeries_not_mul`, `TauCeti.isUnit_torusWeightSeries`: the series of
   opposite sign and equal index are mutually inverse units.
 * `TauCeti.torusWeightSeries_true_zero`, `TauCeti.torusWeightSeries_true_one`,
@@ -66,6 +66,15 @@ regularity and gives no curve-count interpretation.
   `TauCeti.coeff_torusWeightSeries_false_one`, `TauCeti.coeff_torusWeightSeries_false_two`,
   `TauCeti.coeff_torusWeightSeries_false_three`: closed forms for the multiplicity weights
   of the five series that are neither polynomials nor `PowerSeries.mk 1`.
+* `TauCeti.rayTorusWeightSeries s m σ i`: the ray series `∏ c ∈ s, f_(σ c, i c)(t ^ m c)` of a
+  finite family of tori; `TauCeti.constantCoeff_rayTorusWeightSeries` gives its constant term.
+* `TauCeti.coeff_rayTorusWeightSeries`: the independent-component expansion of the coefficients
+  of the ray series as sums over configurations of products of local weights.
+* `TauCeti.coeff_rayTorusWeightSeries_of_subset`: tori of class larger than `n • A₀` do not
+  affect the `n`-th coefficient.
+* `TauCeti.multipliable_expand_torusWeightSeries`,
+  `TauCeti.coeff_tprod_expand_torusWeightSeries`: the infinite ray product over a family with
+  finitely many tori in each class exists, and its coefficients are those of finite cutoffs.
 
 ## References
 
@@ -76,7 +85,6 @@ regularity and gives no curve-count interpretation.
 public section
 
 open PowerSeries
-open scoped PowerSeries.WithPiTopology
 
 namespace TauCeti
 
@@ -305,46 +313,76 @@ theorem coeff_torusWeightSeries_false_three (m : ℕ) :
       simp [pow_succ, pow_mul, coeff_X]
       omega
 
-/-! ### Tori on a square-zero ray
+/-! ### Tori on a square-zero homology ray
 
-Fix a primitive square-zero class `A₀` and index by `ι` the tori whose classes are positive
-multiples of `A₀`, the torus `c` having class `d c • A₀` and label `(σ c, i c)`. A configuration of
-such tori is a multiplicity function `l : ι →₀ ℕ`: the torus `c` occurs with multiplicity `l c`,
-the total class is `(∑ c, l c * d c) • A₀`, and the weight is `∏ c, w_(σ c, i c)(l c)`, where
-the absent tori contribute `w_(σ c, i c)(0) = 1`. -/
+Let `A₀` be a primitive square-zero class. A torus whose class is `m • A₀` and which appears
+with multiplicity `l` contributes the class `(m * l) • A₀`, so its local series enters the count
+of configurations on the ray of `A₀` with `t` replaced by `t ^ m`. The coefficient expansion,
+the finite cutoff and the infinite product specialise the corresponding results of
+`TauCeti.RingTheory.PowerSeries.Expand` for products of expanded power series. -/
 
-/-- **Independent-component expansion on a ray.** For finitely many tori `s`, the torus `c` having
-class `d c • A₀` with `d c ≠ 0` and label `(σ c, i c)`, the `n`-th coefficient of the product of
-the expanded local series `f_(σ c, i c)(X ^ d c)` is the total weight of the configurations of
-these tori with total class `n • A₀`: the sum, over the multiplicity functions `l` supported on `s`
-with `∑ c ∈ s, l c * d c = n`, of the products of the local weights `w_(σ c, i c)(l c)`. -/
-theorem coeff_prod_expand_torusWeightSeries {ι : Type*} (s : Finset ι)
-    (d : ι → ℕ) (hd : ∀ c, d c ≠ 0) (σ : ι → Bool) (i : ι → Fin 4) (n : ℕ) :
-    coeff n (∏ c ∈ s, expand (d c) (hd c) (torusWeightSeries (σ c) (i c))) =
-      ∑ l ∈ s.finsupp (fun _ ↦ Finset.range (n + 1)) with ∑ c ∈ s, l c * d c = n,
-        ∏ c ∈ s, torusWeight (σ c) (i c) (l c) :=
-  coeff_prod_expand s d hd _ n
+section Ray
 
-/-- **The ray product through finite cutoffs.** Let the torus `c` have class `d c • A₀` with
-`d c ≠ 0` and label `(σ c, i c)`, and let `T n` be a finite set containing every torus of class at
-most `n • A₀`. Then the product `∏_c f_(σ c, i c)(X ^ d c)` over all the tori converges
-coefficientwise, and its `n`-th coefficient is the total weight of the configurations of the tori
-in `T n` with total class `n • A₀`. -/
-theorem hasProd_expand_torusWeightSeries {ι : Type*} (d : ι → ℕ)
-    (hd : ∀ c, d c ≠ 0) (σ : ι → Bool) (i : ι → Fin 4) (T : ℕ → Finset ι)
-    (hT : ∀ n c, d c ≤ n → c ∈ T n) :
-    HasProd (fun c ↦ expand (d c) (hd c) (torusWeightSeries (σ c) (i c)))
-      (mk fun n ↦ ∑ l ∈ (T n).finsupp (fun _ ↦ Finset.range (n + 1)) with ∑ c ∈ T n, l c * d c = n,
-        ∏ c ∈ T n, torusWeight (σ c) (i c) (l c)) := by
-  -- A torus outside `T n` has class beyond `n • A₀`, so its factor is `1` modulo `X ^ (n + 1)`.
-  have hF (n : ℕ) (c : ι) (hc : c ∉ T n) :
-      X ^ (n + 1) ∣ expand (d c) (hd c) (torusWeightSeries (σ c) (i c)) - 1 := by
-    have hlt : n + 1 ≤ d c := by
-      by_contra h
-      exact hc (hT n c (by omega))
-    simpa using (pow_dvd_pow (X : ℤ⟦X⟧) hlt).trans
-      (X_pow_dvd_expand_sub_C_constantCoeff (d c) (hd c) (torusWeightSeries (σ c) (i c)))
-  simpa only [coeff_prod_expand_torusWeightSeries] using
-    WithPiTopology.hasProd_of_X_pow_dvd_sub_one T hF
+variable {ι : Type*}
+
+/-- The weight series `∏ c ∈ s, f_(σ c, i c)(t ^ m c)` of a finite family `s` of embedded
+square-zero pseudoholomorphic tori on the homology ray of a primitive class `A₀`, the torus `c`
+having class `m c • A₀` and label `(σ c, i c)`. Its `n`-th coefficient is the sum, over the
+multiplicity assignments of total class `n • A₀`, of the products of the local weights
+(`TauCeti.coeff_rayTorusWeightSeries`). -/
+noncomputable def rayTorusWeightSeries (s : Finset ι) (m : ι → ℕ+) (σ : ι → Bool)
+    (i : ι → Fin 4) : ℤ⟦X⟧ :=
+  ∏ c ∈ s, expand (m c) (m c).ne_zero (torusWeightSeries (σ c) (i c))
+
+/-- The ray series is the product of the local series evaluated at `t ^ m c`. -/
+theorem rayTorusWeightSeries_def (s : Finset ι) (m : ι → ℕ+) (σ : ι → Bool) (i : ι → Fin 4) :
+    rayTorusWeightSeries s m σ i =
+      ∏ c ∈ s, expand (m c) (m c).ne_zero (torusWeightSeries (σ c) (i c)) := by
+  rw [rayTorusWeightSeries]
+
+/-- The ray series has constant term `1`. -/
+@[simp]
+theorem constantCoeff_rayTorusWeightSeries (s : Finset ι) (m : ι → ℕ+) (σ : ι → Bool)
+    (i : ι → Fin 4) : constantCoeff (rayTorusWeightSeries s m σ i) = 1 := by
+  simp [rayTorusWeightSeries_def, map_prod, constantCoeff_expand]
+
+/-- **Independent-component expansion** of the ray series: its `n`-th coefficient is the sum,
+over all configurations `l` of total class `n • A₀` (the elements of
+`s.weightedFinsuppAntidiag m n`), of the products of the local weights
+`w_(σ c, i c)(l c)`. -/
+theorem coeff_rayTorusWeightSeries (s : Finset ι) (m : ι → ℕ+) (σ : ι → Bool) (i : ι → Fin 4)
+    (n : ℕ) :
+    coeff n (rayTorusWeightSeries s m σ i) =
+      ∑ l ∈ s.weightedFinsuppAntidiag m n, ∏ c ∈ s, torusWeight (σ c) (i c) (l c) :=
+  coeff_prod_expand s m _ n
+
+/-- **Finite cutoff** for the ray series: adjoining tori whose classes are all larger than
+`n • A₀` does not change the `n`-th coefficient. -/
+theorem coeff_rayTorusWeightSeries_of_subset {s t : Finset ι} (hst : s ⊆ t) {m : ι → ℕ+}
+    (σ : ι → Bool) (i : ι → Fin 4) {n : ℕ} (h : ∀ c ∈ t, c ∉ s → n < m c) :
+    coeff n (rayTorusWeightSeries t m σ i) = coeff n (rayTorusWeightSeries s m σ i) :=
+  coeff_prod_expand_of_subset hst h fun c _ _ ↦ constantCoeff_torusWeightSeries (σ c) (i c)
+
+open scoped PowerSeries.WithPiTopology
+
+/-- The ray factors `f_(σ c, i c)(t ^ m c)` of a family of tori with finitely many tori in each
+class `m • A₀` have an infinite product in the coefficientwise topology
+(`PowerSeries.WithPiTopology`) on `ℤ⟦X⟧`. -/
+theorem multipliable_expand_torusWeightSeries {m : ι → ℕ+}
+    (hm : ∀ n : ℕ, {c | (m c : ℕ) ≤ n}.Finite) (σ : ι → Bool) (i : ι → Fin 4) :
+    Multipliable fun c ↦ expand (m c) (m c).ne_zero (torusWeightSeries (σ c) (i c)) :=
+  multipliable_expand hm fun c ↦ constantCoeff_torusWeightSeries (σ c) (i c)
+
+/-- The `n`-th coefficient of the infinite ray product `∏_c f_(σ c, i c)(t ^ m c)`, over a
+family of tori with finitely many tori in each class, is that of the ray series of any finite
+subfamily containing every torus of class at most `n • A₀`. -/
+theorem coeff_tprod_expand_torusWeightSeries {m : ι → ℕ+}
+    (hm : ∀ n : ℕ, {c | (m c : ℕ) ≤ n}.Finite) (σ : ι → Bool) (i : ι → Fin 4) {s : Finset ι}
+    {n : ℕ} (hs : ∀ c, (m c : ℕ) ≤ n → c ∈ s) :
+    coeff n (∏' c, expand (m c) (m c).ne_zero (torusWeightSeries (σ c) (i c))) =
+      coeff n (rayTorusWeightSeries s m σ i) :=
+  coeff_tprod_expand hm (fun c ↦ constantCoeff_torusWeightSeries (σ c) (i c)) hs
+
+end Ray
 
 end TauCeti

@@ -41,3 +41,11 @@ example (R : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] : IsN1 R :=
 example (R : Type*) [CommRing R] [IsDomain R] [IsNoetherianRing R] [CharZero (FractionRing R)] :
     IsJapanese R ↔ IsN1 R :=
   isJapanese_iff_isN1
+
+-- Localizations of N-1 and Japanese domains are N-1 and Japanese; at a prime this is found by
+-- instance search.
+example (p : Ideal ℤ) [p.IsPrime] : IsJapanese (Localization.AtPrime p) := inferInstance
+
+example (R : Type*) [CommRing R] [IsDomain R] [IsN1 R] (p : Ideal R) [p.IsPrime] :
+    IsN1 (Localization.AtPrime p) :=
+  inferInstance
