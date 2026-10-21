@@ -41,6 +41,8 @@ norm.
 
 ## Main results
 
+* `AbstractMeasure.amiceTransform_map_mulLeft_natCast`: pushforward along `x ↦ m x` is the
+  substitution `T ↦ (1 + T) ^ m - 1` on Amice transforms.
 * `AbstractMeasure.amiceTransform_phiMeasure`: `A_(φ μ) (T) = A_μ ((1 + T) ^ p - 1)`.
 * `AbstractMeasure.psiMeasure_phiMeasure`: `ψ (φ μ) = μ`.
 * `AbstractMeasure.phiMeasure_psiMeasure`: `φ (ψ μ)` is the restriction of `μ` to `pℤ_p`.
@@ -97,19 +99,20 @@ theorem phiMeasure_apply_one (μ : D(ℤ_[p], R)) : phiMeasure μ 1 = μ 1 := by
 
 variable [Algebra ℤ_[p] R] [ContinuousSMul ℤ_[p] R]
 
-/-- **The Amice transform of `φ μ`** is the Amice transform of `μ` composed with
-`T ↦ (1 + T) ^ p - 1`: `A_(φ μ) (T) = A_μ ((1 + T) ^ p - 1)`. -/
-theorem amiceTransform_phiMeasure (μ : D(ℤ_[p], R)) :
-    amiceTransform (phiMeasure μ) = (amiceTransform μ).subst ((1 + X : R⟦X⟧) ^ p - 1) := by
-  set G : ℤ⟦X⟧ := (1 + X) ^ p - 1
-  have hG : constantCoeff ((1 + X : R⟦X⟧) ^ p - 1) = 0 := by simp
+/-- **The Amice transform of a dilation**: the pushforward along multiplication by `m` composes
+the Amice transform with `T ↦ (1 + T) ^ m - 1`. -/
+theorem amiceTransform_map_mulLeft_natCast (m : ℕ) (μ : D(ℤ_[p], R)) :
+    amiceTransform (map (ContinuousMap.mulLeft (m : ℤ_[p])) μ) =
+      (amiceTransform μ).subst ((1 + X : R⟦X⟧) ^ m - 1) := by
+  set G : ℤ⟦X⟧ := (1 + X) ^ m - 1
+  have hG : constantCoeff ((1 + X : R⟦X⟧) ^ m - 1) = 0 := by simp
   -- Over `R`, the coefficients of the powers of the substituted series are those of `G`.
-  have hcoeff (n k : ℕ) : coeff n (((1 + X : R⟦X⟧) ^ p - 1) ^ k) = ((coeff n (G ^ k) : ℤ) : R) := by
-    rw [show (1 + X : R⟦X⟧) ^ p - 1 = PowerSeries.map (Int.castRingHom R) G by simp [G], ← map_pow,
+  have hcoeff (n k : ℕ) : coeff n (((1 + X : R⟦X⟧) ^ m - 1) ^ k) = ((coeff n (G ^ k) : ℤ) : R) := by
+    rw [show (1 + X : R⟦X⟧) ^ m - 1 = PowerSeries.map (Int.castRingHom R) G by simp [G], ← map_pow,
       coeff_map, eq_intCast]
-  -- The Mahler function `x ↦ (p x choose n)`, with values in `R`, in the Mahler basis.
+  -- The Mahler function `x ↦ (m x choose n)`, with values in `R`, in the Mahler basis.
   have hmahler (n : ℕ) :
-      ((mahler n : C(ℤ_[p], ℤ_[p])) • (1 : C(ℤ_[p], R))).comp (ContinuousMap.mulLeft (p : ℤ_[p])) =
+      ((mahler n : C(ℤ_[p], ℤ_[p])) • (1 : C(ℤ_[p], R))).comp (ContinuousMap.mulLeft (m : ℤ_[p])) =
         ∑ k ∈ Finset.range (n + 1), ((coeff n (G ^ k) : ℤ) : R) •
           ((mahler k : C(ℤ_[p], ℤ_[p])) • (1 : C(ℤ_[p], R))) := by
     ext x
@@ -119,7 +122,7 @@ theorem amiceTransform_phiMeasure (μ : D(ℤ_[p], R)) :
   ext n
   rw [coeff_subst' (HasSubst.of_constantCoeff_zero' hG),
     finsum_eq_sum_of_support_subset (s := Finset.range (n + 1)) _ fun k hk ↦ ?_]
-  · rw [coeff_amiceTransform, phiMeasure_apply, hmahler, map_sum]
+  · rw [coeff_amiceTransform, map_apply, hmahler, map_sum]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     simp [hcoeff, coeff_amiceTransform, mul_comm]
   · -- Only the powers `k ≤ n` of a series without constant term contribute to `T ^ n`.
@@ -129,6 +132,12 @@ theorem amiceTransform_phiMeasure (μ : D(ℤ_[p], R)) :
     refine hk ?_
     rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by lia : n < k)).trans_le
       (le_order_pow_of_constantCoeff_eq_zero k hG)), smul_zero]
+
+/-- **The Amice transform of `φ μ`** is the Amice transform of `μ` composed with
+`T ↦ (1 + T) ^ p - 1`: `A_(φ μ) (T) = A_μ ((1 + T) ^ p - 1)`. -/
+theorem amiceTransform_phiMeasure (μ : D(ℤ_[p], R)) :
+    amiceTransform (phiMeasure μ) = (amiceTransform μ).subst ((1 + X : R⟦X⟧) ^ p - 1) := by
+  rw [phiMeasure_eq_map, amiceTransform_map_mulLeft_natCast]
 
 end Phi
 
@@ -182,7 +191,7 @@ theorem phiMeasure_comp_psiMeasure :
   LinearMap.ext phiMeasure_psiMeasure
 
 /-- `φ` is injective. -/
-theorem injective_phiMeasure : Function.Injective (phiMeasure : D(ℤ_[p], R) → D(ℤ_[p], R)) :=
+theorem phiMeasure_injective : Function.Injective (phiMeasure : D(ℤ_[p], R) → D(ℤ_[p], R)) :=
   Function.LeftInverse.injective psiMeasure_phiMeasure
 
 /-- `1 - φ ψ` is the restriction to `ℤ_pˣ`. -/
@@ -196,7 +205,7 @@ restriction to `pℤ_p`. Such a map is automatically a left inverse of `φ`
 theorem existsUnique_psiMeasure :
     ∃! ψ : D(ℤ_[p], R) →ₗ[R] D(ℤ_[p], R), phiMeasure ∘ₗ ψ = restrictMultiples := by
   refine ⟨psiMeasure, phiMeasure_comp_psiMeasure, fun ψ hψ ↦ LinearMap.ext fun μ ↦ ?_⟩
-  refine injective_phiMeasure ?_
+  refine phiMeasure_injective ?_
   rw [← LinearMap.comp_apply, hψ, phiMeasure_psiMeasure]
 
 /-- `ψ` sends the Dirac measure at `p x` to the Dirac measure at `x`. -/
