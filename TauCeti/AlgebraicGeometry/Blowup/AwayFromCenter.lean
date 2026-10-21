@@ -29,8 +29,10 @@ model of the same generic fibre.
 
 ## Main results
 
-Both results are in the namespace `TauCeti.AlgebraicGeometry`.
+All results are in the namespace `TauCeti.AlgebraicGeometry`.
 
+* `toSpecZero_reesAlgebra_preimage_basicOpen`: the inverse image of `D(a)` in the blowup is the
+  standard open `D₊(a)` of the degree-zero element `a`.
 * `affineBlowupι_image_basicOpen`: for `a ∈ I`, the inverse image of `D(a)` in the blowup is the
   image of the basic open `D(a)` of the chart `Spec R[I/a]`.
 * `isIso_morphismRestrict_toSpecZero_reesAlgebra_of_disjoint_zeroLocus`: the blowup
@@ -56,6 +58,18 @@ open _root_.AlgebraicGeometry
 
 variable {R : Type u} [CommRing R] {I : Ideal R} {a : R}
 
+variable (I) in
+/-- The inverse image of the basic open `D(a)` of `Spec R` in the blowup `Proj R[It]` is the
+standard open `D₊(a)` of the degree-zero element `a`: the homogeneous primes not containing `a`. -/
+theorem toSpecZero_reesAlgebra_preimage_basicOpen (a : R) :
+    (Proj.toSpecZero (grade I) ≫ Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) ⁻¹ᵁ
+        PrimeSpectrum.basicOpen a =
+      Proj.basicOpen (grade I) ((gradeZeroEquiv I a : grade I 0) : reesAlgebra I) := by
+  have h := Scheme.Hom.comp_preimage (Proj.toSpecZero (grade I))
+    (Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) (PrimeSpectrum.basicOpen a)
+  rwa [SpecMap_preimage_basicOpen, RingEquiv.toCommRingCatIso_hom, CommRingCat.ofHom_apply,
+    Proj.toSpecZero_preimage_basicOpen] at h
+
 /-- Over `D(a)`, the blowup lies inside the chart of `a`: the inverse image of `D(a)` in
 `Proj R[It]` is contained in the standard open `D₊(a t)`. -/
 private theorem preimage_basicOpen_le_basicOpen_monomialDegreeOne (ha : a ∈ I) :
@@ -64,13 +78,7 @@ private theorem preimage_basicOpen_le_basicOpen_monomialDegreeOne (ha : a ∈ I)
       Proj.basicOpen (grade I) (monomialDegreeOne ha) := by
   intro x hx
   -- A point over `D(a)` is a homogeneous prime not containing `a`.
-  have hxa :
-      x ∈ Proj.basicOpen (grade I) ((gradeZeroEquiv I a : grade I 0) : reesAlgebra I) := by
-    have h := Scheme.Hom.comp_preimage (Proj.toSpecZero (grade I))
-      (Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) (PrimeSpectrum.basicOpen a)
-    rw [SpecMap_preimage_basicOpen, RingEquiv.toCommRingCatIso_hom, CommRingCat.ofHom_apply,
-      Proj.toSpecZero_preimage_basicOpen] at h
-    exact h ▸ hx
+  rw [toSpecZero_reesAlgebra_preimage_basicOpen] at hx
   -- It also avoids some `b t` with `b ∈ I`, since these generate the irrelevant ideal.
   have hcover := Proj.iSup_basicOpen_eq_top (grade I) (fun b : I ↦ monomialDegreeOne b.2)
     (irrelevant_eq_span_monomialDegreeOne (s := fun b : I ↦ (b : R)) (by simp)).le
@@ -82,7 +90,7 @@ private theorem preimage_basicOpen_le_basicOpen_monomialDegreeOne (ha : a ∈ I)
     simp [Polynomial.C_mul_monomial, mul_comm]
   have hmem : x ∈ Proj.basicOpen (grade I)
       (((gradeZeroEquiv I b : grade I 0) : reesAlgebra I) * monomialDegreeOne ha) :=
-    hab ▸ (Proj.basicOpen_mul _ _ _).ge ⟨hxa, hxb⟩
+    hab ▸ (Proj.basicOpen_mul _ _ _).ge ⟨hx, hxb⟩
   exact ((Proj.basicOpen_mul _ _ _).le hmem).2
 
 variable (S : Type u) [CommRing S] [Algebra R S] [IsLocalization.Away a S]

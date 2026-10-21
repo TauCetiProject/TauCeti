@@ -178,8 +178,10 @@ theorem toSpecZero_preimage_basicOpen (r : 𝒜 0) :
   have hrf : (r : A) * f ∈ 𝒜 i := by simpa using SetLike.mul_mem_graded r.2 f_deg
   have helem : Away.isLocalizationElem f_deg hrf = fromZeroRingHom 𝒜 _ r ^ i := by
     apply val_injective
-    -- by definition, `fromZeroRingHom` sends `r` to the fraction `r / 1`
-    have hr : (fromZeroRingHom 𝒜 (Submonoid.powers f) r).val = Localization.mk (r : A) 1 := rfl
+    -- `fromZeroRingHom` sends `r` to the fraction `r / 1`
+    have hr : (fromZeroRingHom 𝒜 (Submonoid.powers f) r).val = Localization.mk (r : A) 1 := by
+      simp only [fromZeroRingHom]
+      exact val_mk _
     rw [Away.val_mk, val_pow, hr, Localization.mk_pow, Localization.mk_eq_mk_iff,
       Localization.r_iff_exists]
     exact ⟨1, by simp [mul_pow, mul_comm]⟩
