@@ -548,11 +548,7 @@ theorem equivFunOnFintype_compLeft [Fintype I] (u : E →L[R] F)
     equivFunOnFintype R F (compLeft u hu f) = u ∘ equivFunOnFintype R E f := by
   ext; simp
 
-end Semiring
-
 section Curry
-
-variable [SeminormedRing R] [Module R E] [IsBoundedSMul R E] [Module R F] [IsBoundedSMul R F]
 
 /-- The rows `j ↦ f (i, j)` of a family `f` vanishing at infinity on `I × J` tend to zero
 uniformly: their sup norms tend to zero along the cofinite filter on `I`. -/
@@ -628,6 +624,8 @@ theorem curryEquiv_compLeft (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ 
   ext; simp
 
 end Curry
+
+end Semiring
 
 end Comparison
 
