@@ -185,6 +185,8 @@ theorem universalHomeomorphism_affineComparison {R S : CommRingCat.{u}} (φ : R 
       apply h K
       exact Spec.map_injective (by simpa only [Spec.map_comp] using hg)
   · simp only [surjective_iff, Function.Surjective, Spec.map_apply]
+    -- Points of Spec are definitionally prime ideals; Spec.map_apply identifies the point map
+    -- with PrimeSpectrum.comap, so the two surjectivity statements are definitionally equal.
     rfl
 
 /-- Composites of universal homeomorphisms are universal homeomorphisms. -/

@@ -77,19 +77,10 @@ instance _root_.AlgebraicGeometry.Scheme.universallyInjective_frobenius
     ConcreteCategory.congr_hom hbase _
   let U := (X.affineCover.f (X.affineCover.idx (g₁ (IsLocalRing.closedPoint K)))).opensRange
   have hU : IsAffineOpen U := isAffineOpen_opensRange _
-  have h₁ : g₁ ⁻¹ᵁ U = ⊤ := by
-    apply top_unique
-    intro x _
-    have hx : x = IsLocalRing.closedPoint K := Subsingleton.elim _ _
-    subst x
-    exact X.affineCover.covers _
-  have h₂ : g₂ ⁻¹ᵁ U = ⊤ := by
-    apply top_unique
-    intro x _
-    have hx : x = IsLocalRing.closedPoint K := Subsingleton.elim _ _
-    subst x
-    apply (Scheme.Hom.mem_preimage g₂).mpr
-    exact hpoint ▸ X.affineCover.covers _
+  have h₁ : g₁ ⁻¹ᵁ U = ⊤ :=
+    Scheme.preimage_eq_top_of_closedPoint_mem g₁ (X.affineCover.covers _)
+  have h₂ : g₂ ⁻¹ᵁ U = ⊤ :=
+    Scheme.preimage_eq_top_of_closedPoint_mem g₂ (hpoint ▸ X.affineCover.covers _)
   apply eq_of_SpecMap_comp_eq_of_isAffineOpen
     (CommRingCat.ofHom (frobenius K p)) (frobenius_inj K p) U hU h₁ h₂
   rw [← TauCeti.powRingHom_eq_frobenius hK, Scheme.Spec_map_powRingHom (.of K) hK,
