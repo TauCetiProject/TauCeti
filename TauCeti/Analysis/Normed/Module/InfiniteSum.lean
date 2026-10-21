@@ -241,32 +241,26 @@ section Module
 
 variable [SeminormedRing R] [Module R M] [IsBoundedSMul R M]
 
-private def smulBilinearMap : R →ₗ[ℤ] M →ₗ[ℤ] M :=
-  LinearMap.mk₂ ℤ (· • ·) add_smul smul_assoc smul_add (fun z r m ↦ smul_comm r z m)
-
-omit [IsUltrametricDist M] [IsBoundedSMul R M] in
-private theorem smulBilinearMap_apply (r : R) (m : M) :
-    smulBilinearMap r m = r • m := (LinearMap.mk₂_apply ..)
-
 omit [IsUltrametricDist M] in
-private theorem norm_smulBilinearMap_le (r : R) (m : M) :
-    ‖smulBilinearMap r m‖ ≤ 1 * ‖r‖ * ‖m‖ := by
-  simpa only [smulBilinearMap_apply, one_mul] using norm_smul_le r m
+private theorem norm_lsmul_le (r : R) (m : M) :
+    ‖(Algebra.lsmul ℤ ℤ M : R →ₐ[ℤ] Module.End ℤ M).toLinearMap r m‖ ≤
+      1 * ‖r‖ * ‖m‖ := by
+  simpa only [AlgHom.toLinearMap_apply, Algebra.lsmul_apply, one_mul] using norm_smul_le r m
 
 /-- Scalar multiplication distributes over two infinite sums in an ultrametric normed module. -/
 theorem _root_.HasSum.smul_of_nonarchimedean {α β : Type*} {f : α → R} {g : β → M} {a : R}
     {b : M} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun ij : α × β ↦ f ij.1 • g ij.2) (a • b) := by
-  simpa only [smulBilinearMap_apply] using
-    hasSum_bilinear_of_nonarchimedean norm_smulBilinearMap_le hf hg
+  simpa only [AlgHom.toLinearMap_apply, Algebra.lsmul_apply] using
+    hasSum_bilinear_of_nonarchimedean norm_lsmul_le hf hg
 
 /-- The scalar multiple of two infinite sums in a Hausdorff ultrametric normed module is their
 double sum. -/
 protected theorem _root_.Summable.tsum_smul_tsum_of_nonarchimedean [T0Space M] {α β : Type*}
     {f : α → R} {g : β → M} (hf : Summable f) (hg : Summable g) :
     (∑' i, f i) • (∑' j, g j) = ∑' ij : α × β, f ij.1 • g ij.2 := by
-  simpa only [smulBilinearMap_apply] using
-    bilinear_tsum_tsum_of_nonarchimedean norm_smulBilinearMap_le hf hg
+  simpa only [AlgHom.toLinearMap_apply, Algebra.lsmul_apply] using
+    bilinear_tsum_tsum_of_nonarchimedean norm_lsmul_le hf hg
 
 section CauchyProduct
 
@@ -277,9 +271,9 @@ of the original two sums. -/
 theorem _root_.HasSum.sum_smul_antidiagonal_of_nonarchimedean {f : A → R} {g : A → M} {a : R}
     {b : M} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun n ↦ ∑ ij ∈ Finset.antidiagonal n, f ij.1 • g ij.2) (a • b) := by
-  simpa only [smulBilinearMap_apply] using
+  simpa only [AlgHom.toLinearMap_apply, Algebra.lsmul_apply] using
     hasSum_sum_bilinear_antidiagonal_of_nonarchimedean
-      norm_smulBilinearMap_le hf hg
+      norm_lsmul_le hf hg
 
 /-- The Cauchy-product formula for the scalar multiple of two infinite sums, grouped over the
 antidiagonals of an additive index type, in a Hausdorff ultrametric normed module. -/
@@ -287,9 +281,9 @@ protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_antidiagonal_of_non
     [T0Space M] {f : A → R} {g : A → M} (hf : Summable f) (hg : Summable g) :
     (∑' n, f n) • (∑' n, g n) =
       ∑' n, ∑ ij ∈ Finset.antidiagonal n, f ij.1 • g ij.2 := by
-  simpa only [smulBilinearMap_apply] using
+  simpa only [AlgHom.toLinearMap_apply, Algebra.lsmul_apply] using
     bilinear_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
-      norm_smulBilinearMap_le hf hg
+      norm_lsmul_le hf hg
 
 end CauchyProduct
 
@@ -301,18 +295,18 @@ protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_range_of_nonarchime
     [T0Space M] {f : ℕ → R} {g : ℕ → M} (hf : Summable f) (hg : Summable g) :
     (∑' n, f n) • (∑' n, g n) =
       ∑' n, ∑ k ∈ Finset.range (n + 1), f k • g (n - k) := by
-  simpa only [smulBilinearMap_apply] using
+  simpa only [AlgHom.toLinearMap_apply, Algebra.lsmul_apply] using
     bilinear_tsum_tsum_eq_tsum_sum_range_of_nonarchimedean
-      norm_smulBilinearMap_le hf hg
+      norm_lsmul_le hf hg
 
 /-- In an ultrametric normed module, the natural-number Cauchy product sums to the scalar multiple
 of the original two sums. -/
 theorem _root_.HasSum.sum_smul_range_of_nonarchimedean {f : ℕ → R} {g : ℕ → M}
     {a : R} {b : M} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun n ↦ ∑ k ∈ Finset.range (n + 1), f k • g (n - k)) (a • b) := by
-  simpa only [smulBilinearMap_apply] using
+  simpa only [AlgHom.toLinearMap_apply, Algebra.lsmul_apply] using
     hasSum_sum_bilinear_range_of_nonarchimedean
-      norm_smulBilinearMap_le hf hg
+      norm_lsmul_le hf hg
 
 end Nat
 
