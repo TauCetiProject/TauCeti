@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.FirstInequality
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Index
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.ClassFieldTheory.ClassField
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.CoprimeNorm
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.PrimeDegree
 
 /-!
-# The second fundamental inequality from its Kummer case
+# The second fundamental inequality
 
 Let `K` be a number field. The **second fundamental inequality** for the idele-class formation
 `globalFormation K` says that `#H²(U/V, C_L) ∣ [U : V]` on every finite normal layer `V ◁ U`, and it
@@ -26,11 +27,13 @@ cyclic extension `L/F` of number fields of prime degree `p` whose ground field `
 [C_F : N_{L/F}(C_L)] ≤ p.
 ```
 
-This file assembles that reduction for the idele-class formation. It shows that the Kummer case,
-for all number fields, implies `H¹ = 0` and `#H² ∣ [U : V]` for every layer of `globalFormation K`
+This file assembles that reduction for the idele-class formation. The Kummer index computation
+(`index_range_ideleClassNormMap_le_of_finrank_prime`) shows that the Kummer case holds for all
+number fields. It therefore gives `H¹ = 0` and `#H² ∣ [U : V]` for every layer of
+`globalFormation K`
 (`subsingleton_h1_globalFormation_of_forall_index_le`,
-`natCard_H2_globalFormation_dvd_degree_of_forall_index_le`). The Kummer case itself, Milne's
-computation with the `S`-units and the auxiliary set of places `T` of VII §6, is not proved here.
+`natCard_H2_globalFormation_dvd_degree_of_forall_index_le`), both conditionally from any Kummer
+bound and unconditionally by applying the proved one.
 
 The steps are the following.
 
@@ -60,6 +63,10 @@ The steps are the following.
   case, `H¹` of every layer of the idele-class formation vanishes.
 * `TauCeti.ClassFieldTheory.natCard_H2_globalFormation_dvd_degree_of_forall_index_le`: from the
   Kummer case, the order of `H²` of every layer divides its degree.
+* `TauCeti.ClassFieldTheory.subsingleton_h1_globalFormation`: `H¹` of every layer of the
+  idele-class formation vanishes.
+* `TauCeti.ClassFieldTheory.natCard_H2_globalFormation_dvd_degree`: the second fundamental
+  inequality for every layer of the idele-class formation.
 
 ## References
 
@@ -166,5 +173,33 @@ theorem natCard_H2_globalFormation_dvd_degree_of_forall_index_le
     have := NormalLayer.isCyclic_gal_of_prime_degree hp
     ⟨herbrandQuotient_rep_globalFormation_eq_degree L',
       (natCard_normQuotient_globalFormation_eq_degree_of_forall_index_le h L' hp).dvd⟩
+
+/-! ### Unconditional consequences -/
+
+/-- **The norm quotient on a layer of prime degree has order its degree.** -/
+theorem natCard_normQuotient_globalFormation_eq_degree_of_prime
+    (Lay : NormalLayer (AbsoluteGaloisGroup K)) (hp : Lay.degree.Prime) :
+    Nat.card (Lay.NormQuotient (globalFormation K)) = Lay.degree :=
+  natCard_normQuotient_globalFormation_eq_degree_of_forall_index_le
+    (fun F L _ _ _ _ _ _ p _ _ hfin ↦
+      index_range_ideleClassNormMap_le_of_finrank_prime F L p hfin) Lay hp
+
+/-- **`H¹` of the global idele-class formation vanishes.** For every finite normal layer
+`V ◁ U` of `G_K`, the group `H¹(U/V, C_L)` is trivial. -/
+theorem subsingleton_h1_globalFormation
+    (Lay : NormalLayer (AbsoluteGaloisGroup K)) :
+    Subsingleton (Lay.H (globalFormation K) 1) :=
+  subsingleton_h1_globalFormation_of_forall_index_le
+    (fun F L _ _ _ _ _ _ p _ _ hfin ↦
+      index_range_ideleClassNormMap_le_of_finrank_prime F L p hfin) Lay
+
+/-- **The second fundamental inequality for the global idele-class formation.** For every finite
+normal layer `V ◁ U` of `G_K`, the order of `H²(U/V, C_L)` divides `[U : V]`. -/
+theorem natCard_H2_globalFormation_dvd_degree
+    (Lay : NormalLayer (AbsoluteGaloisGroup K)) :
+    Nat.card (Lay.H (globalFormation K) 2) ∣ Lay.degree :=
+  natCard_H2_globalFormation_dvd_degree_of_forall_index_le
+    (fun F L _ _ _ _ _ _ p _ _ hfin ↦
+      index_range_ideleClassNormMap_le_of_finrank_prime F L p hfin) Lay
 
 end TauCeti.ClassFieldTheory

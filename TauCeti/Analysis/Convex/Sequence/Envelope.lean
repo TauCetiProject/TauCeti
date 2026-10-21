@@ -43,7 +43,10 @@ input: geometric conclusions about `lowerConvexEnvelope a` assume `IsAdmissible 
 * `lowerConvexEnvelope_eq_of_forall_lt` and `lowerConvexEnvelope_eq_of_forall_gt`: the
   envelope passes through the first point and, when there is one, the last point.
 * `lowerConvexEnvelope_add_affine`: adding a real affine function to the sequence adds it
-  to the envelope.
+  to the envelope; `lowerConvexEnvelope_const_add` allows an infinite constant, and
+  `lowerConvexEnvelope_add_nsmul` states the shear by a finite slope.
+* `lowerConvexEnvelope_shift`: shifting the sequence to the right, with infinite heights
+  at the vacated indices, shifts the envelope in the same way.
 
 ## References
 
@@ -339,17 +342,7 @@ theorem lowerConvexEnvelope_eq_of_forall_gt {p : ℕ}
   · rw [hap]
     exact lowerConvexEnvelope_eq_top_of_forall_ge fun k hk =>
       (eq_or_lt_of_le hk).elim (fun h => h ▸ hap) (hp k)
-  -- A constant below every finite height bounds `a` from below.
-  have ha : IsAdmissible a := by
-    refine isAdmissible_iff.mpr ⟨(Finset.range (p + 1)).inf' Finset.nonempty_range_add_one
-      fun k => (a k).untop₀, 0, fun n => ?_⟩
-    by_cases hn : a n = ⊤
-    · simp [hn]
-    have hnp : n ∈ Finset.range (p + 1) :=
-      Finset.mem_range.mpr (Nat.lt_succ_of_le (not_lt.mp fun h => hn (hp n h)))
-    rw [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe, zero_mul, add_zero]
-    exact Finset.inf'_le _ hnp
-  obtain ⟨c, m, hcm⟩ := isAdmissible_iff.mp ha
+  obtain ⟨c, m, hcm⟩ := isAdmissible_iff.mp (isAdmissible_of_forall_gt hp)
   set y := (a p).untop₀
   have hy : a p = y := (WithTop.coe_untop₀_of_ne_top hap).symm
   have hδ : c + m * p ≤ y := by
@@ -398,6 +391,60 @@ theorem lowerConvexEnvelope_add_affine (a : ℕ → WithTop ℝ) (c m : ℝ) :
       |>.eq_lowerConvexEnvelope).symm
   · rw [lowerConvexEnvelope_of_not_isAdmissible ha, lowerConvexEnvelope_of_not_isAdmissible
       (by simpa using ha)]
+    funext n
+    simp
+
+/-- Adding a constant height, possibly infinite, to a sequence adds it to the envelope. An
+infinite constant gives the empty polygon on both sides. -/
+theorem lowerConvexEnvelope_const_add (t : WithTop ℝ) (a : ℕ → WithTop ℝ) :
+    lowerConvexEnvelope (fun n => t + a n) = fun n => t + lowerConvexEnvelope a n := by
+  induction t with
+  | top =>
+    simp only [top_add]
+    exact lowerConvexEnvelope_top
+  | coe r =>
+    simpa [add_comm] using lowerConvexEnvelope_add_affine a r 0
+
+/-- Adding the shear `n ↦ n • t` of a finite slope `t` to a sequence adds it to the envelope.
+The finiteness hypothesis is needed: `n • ⊤` is `0` at `n = 0` and `⊤` elsewhere, which is
+not affine. -/
+theorem lowerConvexEnvelope_add_nsmul (a : ℕ → WithTop ℝ) {t : WithTop ℝ} (ht : t ≠ ⊤) :
+    lowerConvexEnvelope (fun n => a n + n • t) = fun n => lowerConvexEnvelope a n + n • t := by
+  lift t to ℝ using ht with m
+  have key (n : ℕ) : n • (m : WithTop ℝ) = ((0 + m * n : ℝ) : WithTop ℝ) := by
+    rw [← WithTop.coe_nsmul, nsmul_eq_mul, zero_add, mul_comm]
+  simp only [key]
+  exact lowerConvexEnvelope_add_affine a 0 m
+
+/-! ### Translation of indices -/
+
+/-- Shifting the points `k` places to the right, with infinite heights at the first `k`
+indices, shifts their lower convex envelope in the same way. -/
+theorem IsLowerConvexEnvelope.shift (hh : IsLowerConvexEnvelope a h) (k : ℕ) :
+    IsLowerConvexEnvelope (fun n => if k ≤ n then a (n - k) else ⊤)
+      (fun n => if k ≤ n then h (n - k) else ⊤) := by
+  refine ⟨hh.isConvexSeq.shift k, fun n => ?_, fun g hg hga n => ?_⟩
+  · dsimp only
+    split_ifs
+    exacts [hh.le _, le_rfl]
+  · -- Dropping the first `k` heights of `g` gives a convex minorant of `a`.
+    have hle := hh.greatest (hg.comp_add_right k) fun m => by simpa using hga (m + k)
+    dsimp only
+    split_ifs with hkn
+    · simpa [Nat.sub_add_cancel hkn] using hle (n - k)
+    · exact le_top
+
+/-- Shifting a sequence `k` places to the right, with infinite heights at the first `k`
+indices, shifts its lower convex envelope in the same way. This holds for inadmissible
+sequences too, where both sides are the all-infinite fallback. -/
+theorem lowerConvexEnvelope_shift (a : ℕ → WithTop ℝ) (k : ℕ) :
+    lowerConvexEnvelope (fun n => if k ≤ n then a (n - k) else ⊤) =
+      fun n => if k ≤ n then lowerConvexEnvelope a (n - k) else ⊤ := by
+  by_cases ha : IsAdmissible a
+  · exact ((isLowerConvexEnvelope_lowerConvexEnvelope ha).shift k
+      |>.eq_lowerConvexEnvelope).symm
+  · rw [lowerConvexEnvelope_of_not_isAdmissible ha, lowerConvexEnvelope_of_not_isAdmissible
+      (by rwa [isAdmissible_shift_iff])]
     funext n
     simp
 

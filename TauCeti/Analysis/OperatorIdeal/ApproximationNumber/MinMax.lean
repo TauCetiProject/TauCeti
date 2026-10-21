@@ -178,11 +178,12 @@ end UnitNorm
 
 section OrthogonalTail
 
-variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
-/-- Composing with the projection onto a subspace of rank at most `n` has rank at most `n`. -/
-theorem rank_comp_starProjection_le (T : E →L[𝕜] F) {n : ℕ} {V : Submodule 𝕜 E}
+/-- Composing with the projection onto a subspace of rank at most `n` has rank at most `n`.
+The target needs only a topology and a module structure; no target norm is used. -/
+theorem rank_comp_starProjection_le {F : Type*} [TopologicalSpace F] [AddCommMonoid F]
+    [Module 𝕜 F] (T : E →L[𝕜] F) {n : ℕ} {V : Submodule 𝕜 E}
     [V.HasOrthogonalProjection] (hV : Module.rank 𝕜 V ≤ n) :
     (T ∘L V.starProjection).rank ≤ n := by
   have hP : (V.starProjection : E →ₗ[𝕜] E).rank ≤ n := by
@@ -190,6 +191,8 @@ theorem rank_comp_starProjection_le (T : E →L[𝕜] F) {n : ℕ} {V : Submodul
   have hle := (LinearMap.lift_rank_comp_le_right (V.starProjection : E →ₗ[𝕜] E)
     (T : E →ₗ[𝕜] F)).trans (Cardinal.lift_le.mpr hP)
   rwa [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hle
+
+variable {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- The projection approximant's error is bounded by the norm on the orthogonal complement. -/
 theorem nnnorm_sub_comp_starProjection_le (T : E →L[𝕜] F) (V : Submodule 𝕜 E)
@@ -361,13 +364,28 @@ def HasMinMaxLowerBound : Prop :=
     ∃ s : ℝ, r < s ∧ ∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
       ∀ x ∈ Submodule.span 𝕜 (Set.range v), s * ‖x‖ ≤ ‖T x‖
 
-variable {𝕜 E F} in
+variable {𝕜 E F}
+
 /-- Unfolding `HasMinMaxLowerBound`. -/
 theorem hasMinMaxLowerBound_iff : HasMinMaxLowerBound 𝕜 E F ↔
     ∀ (T : E →L[𝕜] F) (n : ℕ) {r : ℝ}, 0 ≤ r → r < T.singularValue n →
       ∃ s : ℝ, r < s ∧ ∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
         ∀ x ∈ Submodule.span 𝕜 (Set.range v), s * ‖x‖ ≤ ‖T x‖ :=
   Iff.rfl
+
+/-- **Coercive subspaces of a prescribed rank.** On a pair with the converse min–max localization
+property, if `0 ≤ t` lies strictly below the first `i` approximation numbers of `T`, then `T` is
+`t`-coercive on a subspace of rank `i`. The source may be seminormed. -/
+theorem HasMinMaxLowerBound.exists_rank_eq_coercive (h : HasMinMaxLowerBound 𝕜 E F)
+    (T : E →L[𝕜] F) {i : ℕ} {t : ℝ} (ht : 0 ≤ t) (hi : ∀ k < i, t < T.singularValue k) :
+    ∃ V : Submodule 𝕜 E, Module.rank 𝕜 V = i ∧ ∀ x ∈ V, t * ‖x‖ ≤ ‖T x‖ := by
+  rcases i with _ | i
+  · exact ⟨⊥, by simp, fun x hx ↦ by simp [(Submodule.mem_bot 𝕜).mp hx]⟩
+  obtain ⟨s, hts, v, hv, hs⟩ := hasMinMaxLowerBound_iff.mp h T i ht (hi i i.lt_succ_self)
+  refine ⟨Submodule.span 𝕜 (Set.range v), ?_, fun x hx ↦
+    (mul_le_mul_of_nonneg_right hts.le (norm_nonneg x)).trans (hs x hx)⟩
+  have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
+  rw [← Module.finrank_eq_rank, finrank_span_eq_card hv, Fintype.card_fin]
 
 end HasMinMaxLowerBound
 
@@ -403,20 +421,6 @@ theorem HasMinMaxLowerBound.isLUB_singularValue (h : HasMinMaxLowerBound 𝕜 E 
     IsLUB {s : ℝ≥0 | ∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
       ∀ x ∈ Submodule.span 𝕜 (Set.range v), s * ‖x‖ ≤ ‖T x‖} (T.singularValue n) :=
   hasMinMaxLowerBound_iff_forall_isLUB.mp h T n
-
-/-- **Coercive subspaces of a prescribed rank.** On a pair with the converse min–max localization
-property, if `0 ≤ t` lies strictly below the first `i` approximation numbers of `T`, then `T` is
-`t`-coercive on a subspace of rank `i`. -/
-theorem HasMinMaxLowerBound.exists_rank_eq_coercive (h : HasMinMaxLowerBound 𝕜 E F)
-    (T : E →L[𝕜] F) {i : ℕ} {t : ℝ} (ht : 0 ≤ t) (hi : ∀ k < i, t < T.singularValue k) :
-    ∃ V : Submodule 𝕜 E, Module.rank 𝕜 V = i ∧ ∀ x ∈ V, t * ‖x‖ ≤ ‖T x‖ := by
-  rcases i with _ | i
-  · exact ⟨⊥, by simp, fun x hx ↦ by simp [(Submodule.mem_bot 𝕜).mp hx]⟩
-  obtain ⟨s, hts, v, hv, hs⟩ := hasMinMaxLowerBound_iff.mp h T i ht (hi i i.lt_succ_self)
-  refine ⟨Submodule.span 𝕜 (Set.range v), ?_, fun x hx ↦
-    (mul_le_mul_of_nonneg_right hts.le (norm_nonneg x)).trans (hs x hx)⟩
-  have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
-  rw [← Module.finrank_eq_rank, finrank_span_eq_card hv, Fintype.card_fin]
 
 section CompleteSpace
 

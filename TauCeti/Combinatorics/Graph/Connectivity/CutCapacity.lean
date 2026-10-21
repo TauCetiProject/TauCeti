@@ -24,6 +24,9 @@ pair of distinct ends therefore preserves every cut capacity.
 ## Main result
 
 * `Graph.pairCutCapacity_pairCapacity`: aggregation preserves every cut capacity.
+* `Graph.isSubmodular_edgeCutCapacity`: a nonnegative edge-capacity function has a submodular cut
+  function.
+* `Graph.isSymmSubmodular_edgeCutCapacity`: the bundled symmetric-submodular result.
 -/
 
 public section
@@ -155,5 +158,50 @@ theorem pairCutCapacity_pairCapacity [Fintype G.vertexSet] [Fintype G.edgeSet]
       apply sum_congr rfl
       intro e _
       simp only [G.edgeEnds_crosses_iff_mem_edgeCut e S]
+
+/-- Multigraph cut capacity is unchanged when the two sides of the cut are exchanged. -/
+@[simp]
+theorem edgeCutCapacity_compl [Fintype G.vertexSet] [Fintype G.edgeSet]
+    [DecidableEq G.vertexSet] [AddCommMonoid K] (c : G.edgeSet → K)
+    (S : Finset G.vertexSet) :
+    G.edgeCutCapacity c Sᶜ = G.edgeCutCapacity c S := by
+  classical
+  rw [edgeCutCapacity_def, edgeCutCapacity_def]
+  apply sum_congr rfl
+  intro e _
+  rw [← G.edgeEnds_crosses_iff_mem_edgeCut e Sᶜ,
+    ← G.edgeEnds_crosses_iff_mem_edgeCut e S]
+  simp only [Finset.coe_compl, Sym2.crosses_compl]
+
+/-- The cut function of nonnegative edge weights on a multigraph is submodular. Together with
+`edgeCutCapacity_compl`, this makes it a symmetric submodular set function. Parallel edges are
+counted separately and loops contribute nothing. -/
+theorem isSubmodular_edgeCutCapacity [Fintype G.edgeSet] [DecidableEq G.vertexSet]
+    [AddCommMonoid K] [PartialOrder K] [IsOrderedAddMonoid K]
+    (c : G.edgeSet → K) (hc : 0 ≤ c) :
+    TauCeti.IsSubmodular (G.edgeCutCapacity c) := by
+  classical
+  rw [TauCeti.isSubmodular_def]
+  intro S T
+  simp only [sup_eq_union, inf_eq_inter]
+  simp_rw [edgeCutCapacity_def]
+  rw [← sum_add_distrib, ← sum_add_distrib]
+  apply sum_le_sum
+  intro e _
+  simp_rw [← G.edgeEnds_crosses_iff_mem_edgeCut e]
+  induction G.edgeEnds e using Sym2.inductionOn with
+  | _ x y =>
+    have he := hc e
+    have hee := add_nonneg he he
+    by_cases hxS : x ∈ S <;> by_cases hxT : x ∈ T <;>
+      by_cases hyS : y ∈ S <;> by_cases hyT : y ∈ T <;>
+      simp_all
+
+/-- The cut function of nonnegative edge weights on a multigraph is symmetric submodular. -/
+theorem isSymmSubmodular_edgeCutCapacity [Fintype G.vertexSet] [Fintype G.edgeSet]
+    [DecidableEq G.vertexSet] [AddCommMonoid K] [PartialOrder K] [IsOrderedAddMonoid K]
+    (c : G.edgeSet → K) (hc : 0 ≤ c) :
+    TauCeti.IsSymmSubmodular (G.edgeCutCapacity c) :=
+  ⟨G.edgeCutCapacity_compl c, G.isSubmodular_edgeCutCapacity c hc⟩
 
 end Graph

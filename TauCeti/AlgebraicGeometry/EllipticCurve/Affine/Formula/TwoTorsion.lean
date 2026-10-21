@@ -22,8 +22,11 @@ equation is `y² = (x - e)(x - e')(x - e'')`, it is `(e - e')(e - e'')`.
 
 This file records the facts about such solutions that do not involve the group law, valid in every
 characteristic: `(e, t)` is the only solution over `e`, and two of them `T = (e, t)` and
-`T₀ = (e₀, t₀)` with `e₀ ≠ e` have `c_T + c_{T₀} = (e - e₀)²`. The formulas for translation by a
-point of order two are in `TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion`.
+`T₀ = (e₀, t₀)` with `e₀ ≠ e` have `c_T + c_{T₀} = (e - e₀)²`. The characterization of `ψ₂ = 0`
+holds over any commutative ring, uniqueness over `e` holds over any reduced commutative ring, and
+the identity for `c_T + c_{T₀}` holds over any commutative ring without zero divisors. The formulas
+for translation by a point of order two are in
+`TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion`.
 
 ## Main results
 
@@ -43,7 +46,7 @@ public section
 
 namespace WeierstrassCurve.Affine
 
-variable {F : Type*} [Field F] {W : Affine F} {e t x y : F}
+variable {R : Type*} [CommRing R] {W : Affine R} {e t x y : R}
 
 /-- **`ψ₂` vanishes exactly at the points that are their own negatives**:
 `ψ₂(x, y) = 0 ↔ y = negY x y`. -/
@@ -52,15 +55,16 @@ theorem evalEval_polynomialY_eq_zero_iff : W.polynomialY.evalEval x y = 0 ↔ y 
 
 /-- **The only point over a point of order two is itself**: if `ψ₂(e, t) = 0` and `(e, t₀)` lies
 on the curve, then `t₀ = t`. -/
-theorem Y_eq_of_evalEval_polynomialY_eq_zero (hT : W.Equation e t)
-    (hψ : W.polynomialY.evalEval e t = 0) {t₀ : F} (hT₀ : W.Equation e t₀) : t₀ = t := by
-  rcases Y_eq_of_X_eq hT₀ hT rfl with h | h
-  · exact h
-  · rwa [← evalEval_polynomialY_eq_zero_iff.1 hψ] at h
+theorem Y_eq_of_evalEval_polynomialY_eq_zero [IsReduced R] (hT : W.Equation e t)
+    (hψ : W.polynomialY.evalEval e t = 0) {t₀ : R} (hT₀ : W.Equation e t₀) : t₀ = t := by
+  rw [equation_iff] at hT hT₀
+  rw [evalEval_polynomialY] at hψ
+  refine sub_eq_zero.1 (eq_zero_of_pow_eq_zero (n := 2) ?_)
+  linear_combination hT₀ - hT - (t₀ - t) * hψ
 
 /-- **A point with `ψ₂ ≠ 0` does not lie over a point of order two**: if `ψ₂(e, t) = 0` and
 `ψ₂(x, y) ≠ 0`, then `x ≠ e`, since the only point over `e` is `(e, t)`. -/
-theorem X_ne_of_evalEval_polynomialY_ne_zero (hT : W.Equation e t)
+theorem X_ne_of_evalEval_polynomialY_ne_zero [IsReduced R] (hT : W.Equation e t)
     (hψ : W.polynomialY.evalEval e t = 0) (h : W.Equation x y)
     (hy : W.polynomialY.evalEval x y ≠ 0) : x ≠ e := by
   rintro rfl
@@ -71,8 +75,8 @@ theorem X_ne_of_evalEval_polynomialY_ne_zero (hT : W.Equation e t)
 `e₀ ≠ e`, then `W_X(e, t) + W_X(e₀, t₀) = -(e - e₀)²`, that is `c_T + c_{T₀} = (e - e₀)²`. When the
 equation is `y² = (x - e)(x - e₀)(x - e'')`, this is
 `(e - e₀)(e - e'') + (e₀ - e)(e₀ - e'') = (e - e₀)²`. -/
-theorem evalEval_polynomialX_add_evalEval_polynomialX {e₀ t₀ : F} (hT : W.Equation e t)
-    (hψ : W.polynomialY.evalEval e t = 0) (hT₀ : W.Equation e₀ t₀)
+theorem evalEval_polynomialX_add_evalEval_polynomialX [NoZeroDivisors R] {e₀ t₀ : R}
+    (hT : W.Equation e t) (hψ : W.polynomialY.evalEval e t = 0) (hT₀ : W.Equation e₀ t₀)
     (hψ₀ : W.polynomialY.evalEval e₀ t₀ = 0) (he : e₀ ≠ e) :
     W.polynomialX.evalEval e t + W.polynomialX.evalEval e₀ t₀ = -(e - e₀) ^ 2 := by
   rw [equation_iff] at hT hT₀

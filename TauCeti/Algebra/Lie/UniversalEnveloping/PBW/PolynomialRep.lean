@@ -73,7 +73,7 @@ universe u v w
 
 namespace Module.Basis
 
-variable {R : Type u} {L : Type v} {ι : Type w} [CommRing R] [LinearOrder ι]
+variable {R : Type u} {L : Type v} {ι : Type w}
 
 local notation "S" => MvPolynomial ι R
 
@@ -88,37 +88,44 @@ namespace PBWPolynomialRep
 -- Keep the split-off variable first so Mathlib normalizes its monomial directly.
 attribute [local simp] monomial_single_add
 
+/-! ### Multiplication by the linear form -/
+
+section Semiring
+
+variable [CommSemiring R] [AddCommMonoid L] [Module R L] (b : Basis ι R L)
+
+/-- Multiplication by the linear form `zₓ = b.constr R X x`. -/
+private noncomputable def naive : L →ₗ[R] S →ₗ[R] S :=
+  (LinearMap.mul R S).comp (b.constr R X)
+
+private theorem naive_apply (x : L) (p : S) : naive b x p = b.constr R X x * p :=
+  rfl
+
+end Semiring
+
+section DegreeBound
+
+variable [CommRing R] [AddCommGroup L] [Module R L] (b : Basis ι R L)
+
+/-- The degree estimate `g x p - zₓ p ∈ S≤ d` for `p ∈ S≤ d`, in every degree. -/
+private def DegreeBound (g : L →ₗ[R] S →ₗ[R] S) : Prop :=
+  ∀ (d : ℕ) (x : L) (p : S), p ∈ (S≤ d) → g x p - b.constr R X x * p ∈ S≤ d
+
+private theorem DegreeBound.mem {g : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBound b g) {d : ℕ} (x : L)
+    {p : S} (hp : p ∈ S≤ d) : g x p ∈ S≤ (d + 1) := by
+  have := Submodule.add_mem _ (restrictTotalDegree_mono ι R (Nat.le_succ d) (hg d x p hp))
+    (b.constr_X_mul_mem_restrictTotalDegree x hp)
+  rwa [sub_add_cancel] at this
+
+end DegreeBound
+
+variable [CommRing R] [LinearOrder ι]
+
 /-! ### The inductive step -/
 
 section Construction
 
-variable [AddCommGroup L] [Module R L] (b : Basis ι R L)
-
-/-- The linear form `x ↦ zₓ`, sending `bᵢ` to the variable `zᵢ`. -/
-private noncomputable def gen : L →ₗ[R] S :=
-  b.constr R X
-
-omit [LinearOrder ι] in
-private theorem gen_basis (i : ι) : gen b (b i) = X i :=
-  b.constr_basis R X i
-
-/-- Multiplication by the linear form `zₓ`. -/
-private noncomputable def naive : L →ₗ[R] S →ₗ[R] S :=
-  (LinearMap.mul R S).comp (gen b)
-
-omit [LinearOrder ι] in
-private theorem naive_apply (x : L) (p : S) : naive b x p = gen b x * p :=
-  rfl
-
-omit [LinearOrder ι] in
-private theorem naive_mem {d : ℕ} (x : L) {p : S} (hp : p ∈ S≤ d) : naive b x p ∈ S≤ (d + 1) :=
-  TauCeti.MvPolynomial.apply_mem_of_basis b (naive b) _ d (fun l σ hσ ↦ by
-    rw [naive_apply, gen_basis]
-    have hm : (monomial (Finsupp.single l 1 + σ) 1 : S) ∈ S≤ (d + 1) :=
-      monomial_mem_restrictTotalDegree (by simpa [Nat.one_add] using hσ) 1
-    simpa using hm) x hp
-
-variable [Bracket L L]
+variable [AddCommGroup L] [Module R L] (b : Basis ι R L) [Bracket L L]
 
 /-- One step of the inductive construction: from an action `g`, valid in degrees below that of
 `σ`, define the action of `bₗ` on `z^σ`. -/
@@ -156,22 +163,11 @@ private theorem step_of_lt (g : L →ₗ[R] S →ₗ[R] S) {l μ : ι} {τ : ι 
       (Finset.le_min' _ _ _ (by simpa [Finsupp.support_add_eq_union] using hμτ))
   simp only [hmin, add_tsub_cancel_left]
 
-/-- The degree estimate `g x p - zₓ p ∈ S≤ d` for `p ∈ S≤ d`, in every degree. -/
-private def DegreeBound (g : L →ₗ[R] S →ₗ[R] S) : Prop :=
-  ∀ (d : ℕ) (x : L) (p : S), p ∈ (S≤ d) → g x p - gen b x * p ∈ S≤ d
-
-omit [LinearOrder ι] [Bracket L L] in
-private theorem DegreeBound.mem {g : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBound b g) {d : ℕ} (x : L)
-    {p : S} (hp : p ∈ S≤ d) : g x p ∈ S≤ (d + 1) := by
-  have := Submodule.add_mem _ (restrictTotalDegree_mono ι R (Nat.le_succ d) (hg d x p hp))
-    (naive_mem b x hp)
-  rwa [naive_apply, sub_add_cancel] at this
-
 private theorem degreeBound_step {g : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBound b g) :
     DegreeBound b (step b g) := by
   intro d x p hp
-  refine TauCeti.MvPolynomial.apply_mem_of_basis b (step b g - naive b) _ d (fun l σ hσ ↦ ?_) x hp
-  rw [LinearMap.sub_apply, LinearMap.sub_apply, naive_apply, gen_basis]
+  refine b.apply_mem_of_monomial_degree_le (step b g - naive b) _ d (fun l σ hσ ↦ ?_) x hp
+  rw [LinearMap.sub_apply, LinearMap.sub_apply, naive_apply, Basis.constr_basis]
   by_cases h : ∀ i ∈ σ.support, l ≤ i
   · rw [step_of_le b g h, sub_self]
     exact Submodule.zero_mem _
@@ -188,7 +184,7 @@ private theorem degreeBound_step {g : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBou
   refine restrictTotalDegree_mono ι R hτ
     (Submodule.add_mem _ (DegreeBound.mem b hg _ ?_) (DegreeBound.mem b hg _ hτmem))
   have := hg _ (b l) _ hτmem
-  rwa [gen_basis] at this
+  rwa [Basis.constr_basis] at this
 
 /-- `step` only looks one degree down: actions agreeing in degree at most `d` give the same next
 step in degree at most `d + 1`. -/
@@ -196,7 +192,7 @@ private theorem step_congr {g g' : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBound 
     (hgg' : ∀ (x : L) (p : S), p ∈ (S≤ d) → g x p = g' x p) (x : L) {p : S}
     (hp : p ∈ S≤ (d + 1)) : step b g x p = step b g' x p := by
   rw [← sub_eq_zero, ← LinearMap.sub_apply, ← LinearMap.sub_apply, ← Submodule.mem_bot R]
-  refine TauCeti.MvPolynomial.apply_mem_of_basis b (step b g - step b g') ⊥ (d + 1)
+  refine b.apply_mem_of_monomial_degree_le (step b g - step b g') ⊥ (d + 1)
     (fun l σ hσ ↦ ?_) x hp
   rw [LinearMap.sub_apply, LinearMap.sub_apply, Submodule.mem_bot, sub_eq_zero]
   by_cases h : ∀ i ∈ σ.support, l ≤ i
@@ -206,7 +202,7 @@ private theorem step_congr {g g' : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBound 
     monomial_mem_restrictTotalDegree (by simpa [Nat.one_add] using hσ) 1
   have hq : g (b l) (monomial τ 1) - X l * monomial τ 1 ∈ S≤ d := by
     have := hg d (b l) _ hτmem
-    rwa [gen_basis] at this
+    rwa [Basis.constr_basis] at this
   rw [step_of_lt b g hμl hμτ, step_of_lt b g' hμl hμτ, hgg' _ _ hq, hgg' _ _ hτmem,
     hgg' _ _ hτmem]
 
@@ -228,12 +224,12 @@ private theorem approx_succ_eq (n : ℕ) (x : L) {p : S} (hp : p ∈ S≤ n) :
   induction n generalizing x p with
   | zero =>
       rw [← sub_eq_zero, ← LinearMap.sub_apply, ← LinearMap.sub_apply, ← Submodule.mem_bot R]
-      refine TauCeti.MvPolynomial.apply_mem_of_basis b (approx b 1 - approx b 0) ⊥ 0
+      refine b.apply_mem_of_monomial_degree_le (approx b 1 - approx b 0) ⊥ 0
         (fun l σ hσ ↦ ?_) x hp
       rw [LinearMap.sub_apply, LinearMap.sub_apply, Submodule.mem_bot, sub_eq_zero]
       have hσ : σ = 0 := (Finsupp.degree_eq_zero_iff σ).1 (Nat.le_zero.1 hσ)
       subst hσ
-      rw [approx, approx, step_of_le b _ (by simp), naive_apply, gen_basis]
+      rw [approx, approx, step_of_le b _ (by simp), naive_apply, Basis.constr_basis]
   | succ n ih => exact step_congr b (degreeBound_approx b (n + 1)) ih x hp
 
 private theorem approx_add_eq (n k : ℕ) (x : L) {p : S} (hp : p ∈ S≤ n) :
@@ -253,7 +249,7 @@ private noncomputable def act : L →ₗ[R] S →ₗ[R] S :=
 private theorem act_eq_approx {d n : ℕ} (hdn : d ≤ n) (x : L) {p : S} (hp : p ∈ S≤ d) :
     act b x p = approx b n x p := by
   rw [← sub_eq_zero, ← LinearMap.sub_apply, ← LinearMap.sub_apply, ← Submodule.mem_bot R]
-  refine TauCeti.MvPolynomial.apply_mem_of_basis b (act b - approx b n) ⊥ d (fun l σ hσ ↦ ?_) x hp
+  refine b.apply_mem_of_monomial_degree_le (act b - approx b n) ⊥ d (fun l σ hσ ↦ ?_) x hp
   have hσb : (monomial σ 1 : S) = basisMonomials ι R σ := by simp
   rw [LinearMap.sub_apply, LinearMap.sub_apply, Submodule.mem_bot, sub_eq_zero, act,
     Basis.constr_basis, hσb, Basis.constr_basis, ← hσb]
@@ -261,7 +257,7 @@ private theorem act_eq_approx {d n : ℕ} (hdn : d ≤ n) (x : L) {p : S} (hp : 
   exact (approx_add_eq b _ k _ (monomial_mem_restrictTotalDegree le_rfl 1)).symm
 
 private theorem act_sub_mem {d : ℕ} (x : L) {p : S} (hp : p ∈ S≤ d) :
-    act b x p - gen b x * p ∈ S≤ d := by
+    act b x p - b.constr R X x * p ∈ S≤ d := by
   rw [act_eq_approx b le_rfl x hp]
   exact degreeBound_approx b d d x p hp
 
@@ -280,7 +276,7 @@ private theorem act_of_lt {l μ : ι} {τ : ι →₀ ℕ} (hμl : μ < l) (hμ�
   have hτmem : (monomial τ 1 : S) ∈ S≤ τ.degree := monomial_mem_restrictTotalDegree le_rfl 1
   have hq : approx b τ.degree (b l) (monomial τ 1) - X l * monomial τ 1 ∈ S≤ τ.degree := by
     have := degreeBound_approx b τ.degree τ.degree (b l) _ hτmem
-    rwa [gen_basis] at this
+    rwa [Basis.constr_basis] at this
   rw [act_eq_approx b le_rfl _
       (monomial_mem_restrictTotalDegree (s := Finsupp.single μ 1 + τ) le_rfl 1), map_add,
     Finsupp.degree_single, add_comm 1 τ.degree, approx, step_of_lt b _ hμl hμτ,
@@ -322,7 +318,7 @@ private theorem act_act_eq_of_lt {l m ν : ι} {Ψ : ι →₀ ℕ} (hνl : ν <
   set w := act b (b m) (monomial Ψ 1) - monomial (Finsupp.single m 1 + Ψ) 1 with hw
   have hwmem : w ∈ S≤ Ψ.degree := by
     rw [hw]
-    simpa [gen_basis] using act_sub_mem b (b m) hΨ
+    simpa [Basis.constr_basis] using act_sub_mem b (b m) hΨ
   have hνΨm : ∀ i ∈ (Finsupp.single m 1 + Ψ).support, ν ≤ i :=
     by simpa [Finsupp.support_add_eq_union] using And.intro hνm.le hνΨ
   have hsplit : act b (b m) (monomial Ψ 1) = monomial (Finsupp.single m 1 + Ψ) 1 + w := by
@@ -362,7 +358,7 @@ private theorem commRel_of_basis {d : ℕ}
   have key : ∀ (l : ι) (y : L) (p : S), p ∈ (S≤ d) → defect b (b l) y p = 0 := by
     intro l y p hp
     rw [← Submodule.mem_bot R]
-    refine TauCeti.MvPolynomial.apply_mem_of_basis b (defect b (b l)) ⊥ d
+    refine b.apply_mem_of_monomial_degree_le (defect b (b l)) ⊥ d
       (fun m τ hτ ↦ ?_) y hp
     simp [defect, h l m τ hτ]
   intro x y p hp
@@ -413,7 +409,7 @@ end PBWPolynomialRep
 
 open PBWPolynomialRep
 
-variable [LieRing L] [LieAlgebra R L] (b : Basis ι R L)
+variable [CommRing R] [LinearOrder ι] [LieRing L] [LieAlgebra R L] (b : Basis ι R L)
 
 /-- **The PBW representation.** For a Lie algebra `L` with a basis `b` indexed by a linearly
 ordered type `ι`, the representation of `L` on the polynomial algebra `R[zᵢ | i ∈ ι]` in which
