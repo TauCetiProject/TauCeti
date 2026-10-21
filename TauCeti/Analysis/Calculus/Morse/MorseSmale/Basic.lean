@@ -20,11 +20,11 @@ finite-dimensional.
 
 `IsMorseSmale f hf` states that this transversality holds at every common point of the unstable
 set of every nondegenerate critical point `p` and the stable set of every nondegenerate critical
-point `q`. It is the global transversality hypothesis `htr : IsMorseSmale f hf` of the results of
-`TauCeti.Analysis.Calculus.Morse.Breaking`, `…CompactSublevel`, `…SequentialCompactness` and
-`…Boundary`. For a Morse function (all of whose critical points are nondegenerate), this is the
-classical Morse–Smale condition. It is a plain predicate: the regularity of `f` is a separate
-hypothesis of the statements that use it.
+point `q`. It is the global transversality hypothesis `htr : IsMorseSmale f hf` of the results on
+breaking of trajectories, compactness of trajectory spaces and the mod-two Morse boundary. For a
+Morse function (all of whose critical points are nondegenerate), this is the classical Morse–Smale
+condition. It is a plain predicate: the regularity of `f` is a separate hypothesis of the
+statements that use it.
 
 ## Main declarations
 

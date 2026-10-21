@@ -284,8 +284,7 @@ theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet
         obtain ⟨a, z, ha, hax, hzq, hza⟩ :=
           exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
             hx hfs hf hqx hy hconv
-        have hdrop := hx.morseIndex_lt_of_mem_unstableSet_inter_stableSet ha hfs hf
-          hax.symm hzq.2 hza (htr.transverse_at hx ha ⟨hzq.2, hza⟩)
+        have hdrop := htr.morseIndex_lt hx ha hfs hax.symm hzq.2 hza
         have hedge : x ≠ a ∧
             (Flow.unstableSet (negativeGradientFlow f hf) x ∩
               Flow.stableSet (negativeGradientFlow f hf) a).Nonempty :=
@@ -369,8 +368,7 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet
         obtain ⟨a, z, ha, hax, hzp, hza⟩ :=
           exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
             hx hfs hf hpx hy hconv
-        have hxa := ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hx hfs hf hax
-          hza hzp.2 (htr.transverse_at ha hx ⟨hza, hzp.2⟩)
+        have hxa := htr.morseIndex_lt ha hx hfs hax hza hzp.2
         have hcodim : d - morseIndex f a < d - morseIndex f x := by
           have hxa' := morseIndex_le_finrank (f := f) (x := a)
           omega
@@ -454,8 +452,7 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
     by_cases hab : a = b
     · subst a
       exact le_rfl
-    · exact (ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hb hfs hf hab hya hyb
-        (htr.transverse_at ha hb ⟨hya, hyb⟩)).le
+    · exact (htr.morseIndex_lt ha hb hfs hab hya hyb).le
   have hbq : b = q := by
     by_contra hbq
     have hqb := hb.morseIndex_lt_of_mem_closure_stableSet_inter_stableSet hfs hf
@@ -468,8 +465,7 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
     subst a
     have hab : p = b := by
       by_contra hab
-      have hba' := hp.morseIndex_lt_of_mem_unstableSet_inter_stableSet hb hfs hf hab hya hyb
-        (htr.transverse_at hp hb ⟨hya, hyb⟩)
+      have hba' := htr.morseIndex_lt hp hb hfs hab hya hyb
       omega
     subst b
     have hyp : y = p := Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
@@ -491,8 +487,7 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
           hfs.continuous.continuousAt ⟨hya, hyb⟩
       rw [hyq] at hyc
       linarith
-    · have hba' := ha.morseIndex_lt_of_mem_unstableSet_inter_stableSet hq hfs hf hab hya hyb
-        (htr.transverse_at ha hq ⟨hya, hyb⟩)
+    · have hba' := htr.morseIndex_lt ha hq hfs hab hya hyb
       omega
   subst a
   exact ⟨⟨hya, hyb⟩, hyc⟩
