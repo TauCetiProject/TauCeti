@@ -24,7 +24,7 @@ pushing the coaction coefficients through `g`, `A`-linearly. The two comodule ax
 are exactly the two monoid-action laws: the counit law sends the convolution unit to
 the identity, and coassociativity sends convolution products to composites. (The
 upgrade to automorphisms over a Hopf algebra is in
-`TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction`, with the group of
+`TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic`, with the group of
 points.) On the comodule attached to a group-like element `x`, this action is scalar
 multiplication by `g x`.
 
@@ -85,6 +85,13 @@ lemma endOfPoint_tmul (g : H →ₐ[R] A) (a : A) (v : V) :
     endOfPoint V g (a ⊗ₜ[R] v) =
       a • TensorProduct.comm R V A (LinearMap.lTensor V g.toLinearMap (coact v)) := by
   simp [endOfPoint]
+
+/-- Every algebra-valued point fixes the scalar extension of a rationally fixed vector. -/
+lemma endOfPoint_tmul_of_coact_eq_tmul_one {v : V}
+    (hv : coact (R := R) (C := H) v = v ⊗ₜ[R] (1 : H))
+    (g : H →ₐ[R] A) (a : A) :
+    endOfPoint V g (a ⊗ₜ[R] v) = a ⊗ₜ[R] v := by
+  simp [endOfPoint_tmul, hv, TensorProduct.smul_tmul']
 
 section BaseChange
 

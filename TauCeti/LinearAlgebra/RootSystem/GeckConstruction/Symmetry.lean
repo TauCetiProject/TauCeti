@@ -169,15 +169,14 @@ end
 section Numbered
 
 variable [CharZero R] [P.IsCrystallographic] [P₂.IsCrystallographic]
-variable (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
-include hτ
 
 /-! ## Conjugating the numbered matrices -/
 
 /-- The entrywise computation behind `RootPairing.Equiv.reindex_geckIndexEquiv_h`: pulling back
 `RootPairing.GeckConstruction.h (τ i)` along the index equivalence gives the matrix numbered by
 `i`. -/
-private theorem submatrix_geckIndexEquiv_h (i : b.support) :
+private theorem submatrix_geckIndexEquiv_h (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
+    (i : b.support) :
     (GeckConstruction.h (b := b₂) (τ i)).submatrix
         (geckIndexEquiv g τ) (geckIndexEquiv g τ) =
       GeckConstruction.h (b := b) (R := R) i := by
@@ -196,7 +195,8 @@ variable [Finite ι] [Finite ι₂] [IsDomain R]
 /-- The entrywise computation behind `RootPairing.Equiv.reindex_geckIndexEquiv_e`: pulling back
 `RootPairing.GeckConstruction.e (τ i)` along the index equivalence gives the matrix numbered by
 `i`. -/
-private theorem submatrix_geckIndexEquiv_e (i : b.support) :
+private theorem submatrix_geckIndexEquiv_e (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
+    (i : b.support) :
     (GeckConstruction.e (b := b₂) (τ i)).submatrix
         (geckIndexEquiv g τ) (geckIndexEquiv g τ) =
       GeckConstruction.e (b := b) (R := R) i := by
@@ -215,7 +215,8 @@ private theorem submatrix_geckIndexEquiv_e (i : b.support) :
 /-- The entrywise computation behind `RootPairing.Equiv.reindex_geckIndexEquiv_f`: pulling back
 `RootPairing.GeckConstruction.f (τ i)` along the index equivalence gives the matrix numbered by
 `i`. -/
-private theorem submatrix_geckIndexEquiv_f (i : b.support) :
+private theorem submatrix_geckIndexEquiv_f (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
+    (i : b.support) :
     (GeckConstruction.f (b := b₂) (τ i)).submatrix
         (geckIndexEquiv g τ) (geckIndexEquiv g τ) =
       GeckConstruction.f (b := b) (R := R) i := by
@@ -240,7 +241,8 @@ variable [DecidableEq ι] [Fintype ι] [DecidableEq ι₂] [Fintype ι₂]
 /-- Conjugation by the index permutation carries the Cartan generator `h i` to the one
 numbered by `τ i`. -/
 @[simp]
-theorem reindex_geckIndexEquiv_h (i : b.support) :
+theorem reindex_geckIndexEquiv_h (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
+    (i : b.support) :
     reindexAlgEquiv R R (geckIndexEquiv g τ) (GeckConstruction.h (b := b) (R := R) i) =
       GeckConstruction.h (b := b₂) (τ i) := by
   rw [← AlgEquiv.eq_symm_apply]
@@ -254,7 +256,8 @@ variable [IsDomain R]
 /-- Conjugation by the index permutation carries the raising matrix numbered by `i` to the one
 numbered by `τ i`. -/
 @[simp]
-theorem reindex_geckIndexEquiv_e (i : b.support) :
+theorem reindex_geckIndexEquiv_e (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
+    (i : b.support) :
     reindexAlgEquiv R R (geckIndexEquiv g τ) (GeckConstruction.e (b := b) (R := R) i) =
       GeckConstruction.e (b := b₂) (τ i) := by
   rw [← AlgEquiv.eq_symm_apply]
@@ -264,7 +267,8 @@ theorem reindex_geckIndexEquiv_e (i : b.support) :
 /-- Conjugation by the index permutation carries the lowering matrix numbered by `i` to the one
 numbered by `τ i`. -/
 @[simp]
-theorem reindex_geckIndexEquiv_f (i : b.support) :
+theorem reindex_geckIndexEquiv_f (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
+    (i : b.support) :
     reindexAlgEquiv R R (geckIndexEquiv g τ) (GeckConstruction.f (b := b) (R := R) i) =
       GeckConstruction.f (b := b₂) (τ i) := by
   rw [← AlgEquiv.eq_symm_apply]
@@ -276,7 +280,7 @@ theorem reindex_geckIndexEquiv_f (i : b.support) :
 /-- **Geck's Lie algebra is invariant under base-preserving equivalence of root pairings.**
 Reindexing carries the Lie subalgebra spanned by the source numbered matrices onto the target one,
 because it carries each of the three numbered families onto its target counterpart. -/
-theorem map_lieAlgebra_geckIndexEquiv :
+theorem map_lieAlgebra_geckIndexEquiv (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i) :
     (GeckConstruction.lieAlgebra b).map
         ((reindexAlgEquiv R R (geckIndexEquiv g τ)).toLieEquiv.toLieHom) =
       GeckConstruction.lieAlgebra b₂ := by
@@ -292,6 +296,8 @@ theorem map_lieAlgebra_geckIndexEquiv :
   congr 1
   rw [image_union, image_union, key _ _ (reindex_geckIndexEquiv_h g τ hτ),
     key _ _ (reindex_geckIndexEquiv_e g τ hτ), key _ _ (reindex_geckIndexEquiv_f g τ hτ)]
+
+variable (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
 
 /-- The equivalence of Geck's Lie algebras induced by a base-preserving equivalence of root
 pairings: the restriction of matrix reindexing. -/
@@ -353,7 +359,8 @@ variable [Fintype ι] [Fintype ι₂]
 /-- The coordinate permutation carries the action of the Cartan generator `h i` to the
 action of the one numbered by `τ i`. -/
 @[simp]
-theorem geckModuleEquiv_mulVec_h (i : b.support) (v : (b.support ⊕ ι) → R) :
+theorem geckModuleEquiv_mulVec_h (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
+    (i : b.support) (v : (b.support ⊕ ι) → R) :
     geckModuleEquiv g τ (GeckConstruction.h (b := b) (R := R) i *ᵥ v) =
       GeckConstruction.h (b := b₂) (τ i) *ᵥ geckModuleEquiv g τ v := by
   classical
@@ -367,7 +374,8 @@ variable [IsDomain R]
 action of the one numbered by `τ i`. This is the intertwining relation that a numbered symmetry of
 the Kostant data is built from. -/
 @[simp]
-theorem geckModuleEquiv_mulVec_e (i : b.support) (v : (b.support ⊕ ι) → R) :
+theorem geckModuleEquiv_mulVec_e (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
+    (i : b.support) (v : (b.support ⊕ ι) → R) :
     geckModuleEquiv g τ (GeckConstruction.e (b := b) (R := R) i *ᵥ v) =
       GeckConstruction.e (b := b₂) (τ i) *ᵥ geckModuleEquiv g τ v := by
   classical
@@ -376,7 +384,8 @@ theorem geckModuleEquiv_mulVec_e (i : b.support) (v : (b.support ⊕ ι) → R) 
 /-- The coordinate permutation carries the action of the lowering matrix numbered by `i` to the
 action of the one numbered by `τ i`. -/
 @[simp]
-theorem geckModuleEquiv_mulVec_f (i : b.support) (v : (b.support ⊕ ι) → R) :
+theorem geckModuleEquiv_mulVec_f (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
+    (i : b.support) (v : (b.support ⊕ ι) → R) :
     geckModuleEquiv g τ (GeckConstruction.f (b := b) (R := R) i *ᵥ v) =
       GeckConstruction.f (b := b₂) (τ i) *ᵥ geckModuleEquiv g τ v := by
   classical

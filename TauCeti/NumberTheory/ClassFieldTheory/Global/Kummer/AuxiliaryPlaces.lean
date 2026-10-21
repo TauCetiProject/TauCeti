@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Units.LocalPowerClass
+public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
+public import TauCeti.RingTheory.Ideal.PrimesOver
 
 import TauCeti.NumberTheory.ClassFieldTheory.Global.FrobeniusGeneration
 import TauCeti.NumberTheory.NumberField.Frobenius.SplitBasis
@@ -16,12 +18,13 @@ import TauCeti.NumberTheory.NumberField.Kummer.Unramified
 
 Let `K` be a number field containing the `p`-th roots of unity, let `S` be a finite set of
 finite places containing the places above the prime `p`, and put `M = K(U_S^{1/p})`. For every
-intermediate field `L`, this file chooses a finite set `T` of auxiliary places with the three
+intermediate field `L`, this file chooses a finite set `T` of auxiliary places with the four
 properties needed in the counting step of the Kummer proof of the second fundamental inequality:
 
 * `S` and `T` are disjoint;
 * `p ^ #T = [M : L]`;
-* the `S`-units surject onto the product of the local unit `p`-th power classes at `T`.
+* the `S`-units surject onto the product of the local unit `p`-th power classes at `T`;
+* every place in `T` has a place of `L` above it of local degree one.
 
 The Frobenius elements outside `S` generate `Gal(M/L)` by the first fundamental inequality.
 The Frobenius-basis theorem extracts `T`; its cardinality identity then makes the Kummer-theoretic
@@ -30,7 +33,7 @@ counting bound for local power classes an equality.
 ## Main result
 
 * `TauCeti.ClassFieldTheory.exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective`: the
-  auxiliary set `T`, including its cardinality and local-power-class properties.
+  auxiliary set `T`, including its cardinality, local-power-class and local-degree properties.
 
 ## References
 
@@ -42,7 +45,7 @@ public noncomputable section
 
 open IsDedekindDomain NumberField IntermediateField
 open TauCeti.NumberField TauCeti.NumberFieldArithmetic
-open scoped AdicCompletionExtension
+open scoped AdicCompletionExtension NumberField.LiesOver
 
 namespace TauCeti.ClassFieldTheory
 
@@ -51,8 +54,8 @@ variable {K E : Type} [Field K] [NumberField K] [Field E] [Algebra K E]
 /-- **Auxiliary places for the Kummer second inequality.** Let `p` be prime, let `S` contain all
 finite places above `p`, and let `M = K(U_S^{1/p})` in an ambient field containing the required
 radicals. For every intermediate field `L/K` in `M`, there is a finite set `T`, disjoint from
-`S`, such that `p ^ #T = [M : L]` and the `S`-units surject onto the local unit `p`-th power
-classes at `T`. -/
+`S`, such that `p ^ #T = [M : L]`, the `S`-units surject onto the local unit `p`-th power
+classes at `T`, and every place in `T` has a place of `L` above it of local degree one. -/
 theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
     {p : ℕ} (hp : p.Prime) (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hpS : ∀ v : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ v.asIdeal → v ∈ S)
@@ -60,13 +63,15 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
     (hroots : ∀ a ∈ (S : Set (HeightOneSpectrum (𝓞 K))).unit K,
       ∃ x : E, x ^ p = algebraMap K E (a : K))
     (L : IntermediateField K
-      (kummerField E p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K))) :
+      (kummerField E p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K))) [NumberField L] :
     ∃ T : Finset (HeightOneSpectrum (𝓞 K)),
       ∃ hST : Disjoint (S : Set (HeightOneSpectrum (𝓞 K))) (T : Set _),
         p ^ T.card = Module.finrank L
             (kummerField E p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) ∧
           Function.Surjective
-            (Set.unitLocalPowerClassMap (S : Set (HeightOneSpectrum (𝓞 K))) (T : Set _) hST p) := by
+            (Set.unitLocalPowerClassMap (S : Set (HeightOneSpectrum (𝓞 K))) (T : Set _) hST p) ∧
+          ∀ v ∈ T, ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
+            Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1 := by
   classical
   let _ : NeZero p := ⟨hp.ne_zero⟩
   have hζK : IsPrimitiveRoot (algebraMap (𝓞 K) K ζ) p :=
@@ -88,7 +93,7 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
       ∃ Q : {Q : HeightOneSpectrum (𝓞 M) // Q.asIdeal.LiesOver v.asIdeal},
         IsArithFrobAt (𝓞 L) τ Q.1.asIdeal} = ⊤ :=
     closure_isArithFrobAt_eq_top_tower (K := K) (L := L) (M := M) S
-  obtain ⟨T, hST, hclosure, hcard, _⟩ :=
+  obtain ⟨T, hST, hclosure, hcard, hsplit⟩ :=
     exists_finset_closure_artinElementAway_eq_range_restrictScalarsHom hp
       exponent_algEquiv_kummerField_dvd hab S hur hgen
   have hST' : Disjoint (S : Set (HeightOneSpectrum (𝓞 K))) (T : Set _) := by
@@ -131,6 +136,6 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
       (K := K) (M := M) (S := (S : Set (HeightOneSpectrum (𝓞 K))))
       (T := (T : Set (HeightOneSpectrum (𝓞 K)))) hST' hp.ne_zero L σ Q hσ hfix hζ
       havoid hrootsM hM hbound
-  exact ⟨T, hST', hcard, hsurj⟩
+  exact ⟨T, hST', hcard, hsurj, hsplit⟩
 
 end TauCeti.ClassFieldTheory

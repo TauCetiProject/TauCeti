@@ -95,7 +95,7 @@ theorem mono_kostantRootSubgroupToToral :
     Mono (kostantRootSubgroupToToral e h ρ M hM hnil b wt i) :=
   have := isClosedImmersion_kostantRootSubgroupToToral
     e h ρ M hM i hnil b wt hc hstep hsq
-  mono_of_isClosedImmersion_underlying
+  Grp.mono_of_mono_left
     (kostantRootSubgroupToToral e h ρ M hM hnil b wt i)
 
 /-- The `i`th Kostant root subgroup as a closed subgroup scheme of the toral closure. Its

@@ -34,6 +34,9 @@ monoidal functor.
 * `SheafOfModules.symmetricPowerMul`: the multiplication `Symⁱ M ⊗ Symʲ M ⟶ Symⁱ⁺ʲ M`, with
   defining equation `SheafOfModules.symmetricPowerMul_def`;
 * `SheafOfModules.symmetricPowerMul_naturality`: naturality in `M`;
+* `SheafOfModules.epi_symmetricPowerMul`: the multiplication is an epimorphism; in particular so
+  is `Symⁿ M ⊗ Sym¹ M ⟶ Symⁿ⁺¹ M`, which is the sense in which the symmetric algebra is generated
+  in degree one;
 * `SheafOfModules.symmetricPowerMul_assoc`, `symmetricPowerMul_comm`,
   `symmetricPowerMul_one_mul` and `symmetricPowerMul_mul_one`: the graded associativity,
   commutativity and unit laws.
@@ -89,6 +92,19 @@ theorem symmetricPowerMul_naturality {M N : SheafOfModules.{u} (ringCatSheaf R)}
     (Y' := fun n ↦ (symmetricPower R n).obj N) (e' := fun n ↦ symmetricPowerIso n N) _ _
     (symmetricPowerMul_def N) _ _ (fun n ↦ symmetricPower_map n φ)
     (PresheafOfModulesOfCommRing.symmetricPowerMul_naturality φ.val) i j
+
+/-- The multiplication of symmetric powers of a sheaf of modules is an epimorphism: it is the
+sheafification of the sectionwise multiplication, which is an epimorphism, up to isomorphisms. -/
+instance epi_symmetricPowerMul (M : SheafOfModules.{u} (ringCatSheaf R)) (i j : ℕ) :
+    Epi (symmetricPowerMul M i j) := by
+  rw [symmetricPowerMul_def]
+  -- The sectionwise multiplication and the tensor comparison of sheafification are stated for
+  -- presheaves of modules over `R.obj ⋙ forget₂ _ _` rather than `(ringCatSheaf R).obj`; the two
+  -- agree only after unfolding `sheafCompose`, so their instances are supplied by hand.
+  refine epi_comp' inferInstance (epi_comp' ?_ (epi_comp' ?_ inferInstance))
+  · exact (Functor.Monoidal.μIso _ _ _).isIso_hom.epi_of_iso
+  · exact @Functor.map_epi _ _ _ _ _ _ _ _ _
+      (PresheafOfModulesOfCommRing.epi_symmetricPowerMul M.val i j)
 
 /-- The unit `R ≅ Sym⁰ M` is the sheafification of the sectionwise unit, preceded by the unit
 comparison of sheafification. -/

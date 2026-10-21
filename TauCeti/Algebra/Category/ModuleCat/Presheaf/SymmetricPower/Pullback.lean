@@ -18,7 +18,8 @@ Taking its mate under the pullback--pushforward adjunction constructs a natural 
 `α* (Symⁿ M) ⟶ Symⁿ (α* M)` for pullback of module presheaves. Only the adjunction is needed
 for this construction. This supplies the sectionwise input to symmetric-power pullback
 comparisons for sheaves. Restriction of scalars does not generally give an isomorphism of
-symmetric powers, and no invertibility assertion is made here.
+symmetric powers; the comparison is invertible when the coefficient presheaf map is an
+isomorphism.
 
 The construction follows the exterior-power comparison
 `TauCeti.PresheafOfModules.pullbackExteriorPowerComparison`: it uses the module-level
@@ -135,6 +136,26 @@ theorem pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerOneIso
     erw [SymmetricAlgebra.mapₛₗ_ι]
     rfl
   · exact TauCeti.SymmetricAlgebra.ι_injective _ _
+
+/-- Pushforward along an isomorphism of coefficient presheaves preserves symmetric powers
+sectionwise. -/
+instance isIso_pushforwardSymmetricPowerComparison [IsIso α] (n : ℕ) :
+    IsIso (pushforwardSymmetricPowerComparison α n) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro M
+  have h (U : Cᵒᵖ) :
+      IsIso (((pushforwardSymmetricPowerComparison α n).app M).app U) :=
+    ModuleCat.isIso_restrictScalarsSymmetricPowerComparison_app_of_bijective
+      (α.app U).hom ((ConcreteCategory.isIso_iff_bijective (α.app U)).mp inferInstance)
+      n (M.obj (F.op.obj U))
+  let e := _root_.PresheafOfModules.isoMk
+    (fun U ↦ asIso (((pushforwardSymmetricPowerComparison α n).app M).app U))
+    (fun _ _ f ↦ ((pushforwardSymmetricPowerComparison α n).app M).naturality f)
+  have he : e.hom = (pushforwardSymmetricPowerComparison α n).app M := by
+    ext U
+    rfl
+  rw [← he]
+  infer_instance
 
 variable [(PresheafOfModulesOfCommRing.pushforward.{u} α).IsRightAdjoint]
 

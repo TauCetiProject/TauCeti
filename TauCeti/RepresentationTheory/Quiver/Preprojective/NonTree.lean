@@ -32,7 +32,9 @@ A preconnected simple graph which is not acyclic has an orientation without sink
 orientation of such a graph, over every commutative ring, the Koszul complex of every vertex module
 is exact at its left end, so it is a projective resolution of the vertex module. This covers the
 cycles `A~ₙ` (`n ≥ 2`) and every connected graph with more edges than a spanning tree, all of which
-are non-Dynkin; the non-Dynkin trees, such as `D~ₙ` and `E₆~`, `E₇~`, `E₈~`, are not covered.
+are non-Dynkin; the non-Dynkin trees, such as `D~ₙ` and `E₆~`, `E₇~`, `E₈~`, are not covered. Over
+a field, every connected non-Dynkin graph, trees included, is covered by
+`TauCeti.forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_not_exists_dynkinType_iso`.
 The shifted graded Koszul complex is consequently a linear graded projective resolution
 of each right vertex module, over the ordinary opposite algebra.
 

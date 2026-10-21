@@ -1012,6 +1012,24 @@ theorem isOptimalCoupling_edist_rpow_iff (hd : Measurable fun z : X × X ↦ edi
     rw [← eLpNorm_rpow_eq_lintegral hp0 hp hd.aemeasurable, hval,
       wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
 
+/-- For a finite nonzero exponent, the transport integral of `edist ^ p` against an optimal
+coupling for that cost is the `p`-th power of the Wasserstein distance. -/
+theorem IsOptimalCoupling.lintegral_edist_rpow_eq (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) {μ ν : Measure X} {π : Measure (X × X)}
+    (hπ : IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) π μ ν) :
+    ∫⁻ z, edist z.1 z.2 ^ p.toReal ∂π = wassersteinEDist p μ ν ^ p.toReal := by
+  rw [hπ.lintegral_eq, wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
+
+/-- At finite Wasserstein distance and for a finite nonzero exponent, the ground distance lies in
+`L^p` of an optimal coupling for the cost `edist ^ p`. -/
+theorem IsOptimalCoupling.memLp_edist (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) {μ ν : Measure X} {π : Measure (X × X)}
+    (hπ : IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) π μ ν)
+    (hfin : wassersteinEDist p μ ν ≠ ∞) :
+    MemLp (fun z : X × X ↦ edist z.1 z.2) p π := by
+  rw [memLp_iff, ((isOptimalCoupling_edist_rpow_iff hd hp0 hp).1 hπ).2]
+  exact hfin.lt_top
+
 /-- The root form of `TauCeti.wassersteinEDist_rpow_eq_transportCost`: for a finite nonzero
 exponent the Wasserstein distance is the `p`-th root of the transport cost of `edist ^ p`. -/
 theorem wassersteinEDist_eq_transportCost_rpow (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
@@ -1031,6 +1049,31 @@ theorem wassersteinEDist_one_eq_transportCost (hd : Measurable fun z : X × X �
     wassersteinEDist_eq_transportCost_rpow (X := X) hd one_ne_zero ENNReal.one_ne_top μ ν
 
 end Bridge
+
+section NormedOptimal
+
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+  [SecondCountableTopology E] {μ ν : Measure E} {π : Measure (E × E)}
+
+/-- For a finite nonzero exponent, the `p`-th moment of the displacement `(x, y) ↦ y - x` under an
+optimal coupling for the cost `‖x - y‖ ^ p` is the `p`-th power of the Wasserstein distance. -/
+theorem IsOptimalCoupling.lintegral_enorm_sub_rpow_eq (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (hπ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) π μ ν) :
+    ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p.toReal ∂π = wassersteinEDist p μ ν ^ p.toReal := by
+  rw [← hπ.lintegral_edist_rpow_eq measurable_edist hp0 hp]
+  simp only [edist_eq_enorm_sub, enorm_sub_rev]
+
+/-- At finite Wasserstein distance and for a finite nonzero exponent, the displacement
+`(x, y) ↦ y - x` lies in `L^p` of an optimal coupling for the cost `‖x - y‖ ^ p`. -/
+theorem IsOptimalCoupling.memLp_sub (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (hπ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) π μ ν)
+    (hfin : wassersteinEDist p μ ν ≠ ∞) :
+    MemLp (fun z : E × E ↦ z.2 - z.1) p π :=
+  (memLp_congr_enorm (by fun_prop) measurable_edist.aestronglyMeasurable
+    (.of_forall fun z ↦ by simp [edist_eq_enorm_sub, enorm_sub_rev])).2
+    (hπ.memLp_edist measurable_edist hp0 hp hfin)
+
+end NormedOptimal
 
 section InfiniteMoment
 

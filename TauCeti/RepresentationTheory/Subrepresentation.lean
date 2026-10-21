@@ -50,6 +50,10 @@ being additive and preserving both summands, supplies the equivariance.  Being a
 `Submodule.prodEquivOfIsCompl`, it asks for the coefficients to be a ring and the module to be a
 group, as that construction does.
 
+The subrepresentations whose underlying submodule is finitely generated form a join-semilattice
+(`Subrepresentation.instSemilatticeSupFG`), as the finitely generated submodules do in Mathlib, so
+they can index a filtered colimit.
+
 Restriction along a surjective monoid homomorphism identifies the lattices of invariant
 submodules, keeping the underlying submodule in both directions. In particular it preserves
 irreducibility, as does restriction along a monoid isomorphism.
@@ -81,6 +85,7 @@ irreducibility, as does restriction along a monoid isomorphism.
 * `Subrepresentation.asModuleEquivAsSubmodule`
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
 * `Subrepresentation.equivProdOfIsCompl`
+* `Subrepresentation.instSemilatticeSupFG`
 -/
 
 public section
@@ -321,6 +326,23 @@ theorem equivProdOfIsCompl_symm_apply {ρ₁ ρ₂ : Subrepresentation ρ} (h : 
   (rfl)
 
 end Splitting
+
+section FG
+
+variable {A G W : Type*} [Semiring A] [Monoid G] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G W}
+
+/-- The finitely generated subrepresentations form a join-semilattice: the join of two of them,
+taken in `Subrepresentation ρ`, carries the sum of two finitely generated submodules. This is the
+counterpart of Mathlib's instance on `{P : Submodule A W // P.FG}`, and it makes the finitely
+generated subrepresentations a directed index category. -/
+instance instSemilatticeSupFG : SemilatticeSup {σ : Subrepresentation ρ // σ.toSubmodule.FG} :=
+  Subtype.semilatticeSup fun _ _ h₁ h₂ ↦ h₁.sup h₂
+
+instance instInhabitedFG : Inhabited {σ : Subrepresentation ρ // σ.toSubmodule.FG} :=
+  ⟨⟨⊥, Submodule.fg_bot⟩⟩
+
+end FG
 
 end Subrepresentation
 

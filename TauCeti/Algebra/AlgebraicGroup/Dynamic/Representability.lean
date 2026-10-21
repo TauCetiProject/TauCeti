@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Functor
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Representability
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 public import TauCeti.Algebra.Polynomial.Laurent.Polynomial
 
 /-!
@@ -177,3 +178,20 @@ theorem quotientPointsHom_parabolicPointsIso_inv_app_apply
     (_root_.CommHopfAlgCat.of R H) (parabolicDefiningHopfIdeal l) (fun A ↦ parabolic A l) _ A g
 
 end TauCeti.Cocharacter
+
+namespace BialgHom
+
+open TauCeti TauCeti.Cocharacter
+
+variable {R : Type*} {H : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
+
+/-- If the dynamic parabolic of a cocharacter is the whole group, then its points over every
+value algebra are all the points. -/
+theorem parabolic_eq_top_of_parabolicDefiningHopfIdeal_eq_bot
+    (l : H →ₐc[R] LaurentPolynomial R) (hl : parabolicDefiningHopfIdeal l = ⊥)
+    (A : Type*) [CommRing A] [Algebra R A] :
+    parabolic A l = ⊤ := by
+  rw [← quotientPointsSubgroup_parabolicDefiningHopfIdeal, hl,
+    CommHopfAlgCat.quotientPointsSubgroup_bot]
+
+end BialgHom

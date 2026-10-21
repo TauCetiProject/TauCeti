@@ -151,6 +151,19 @@ theorem isOpen_rightHalfPlane (g : PSL(2, ℝ)) : IsOpen (rightHalfPlane g) :=
 theorem isOpen_leftHalfPlane (g : PSL(2, ℝ)) : IsOpen (leftHalfPlane g) :=
   (isOpen_lt UpperHalfPlane.continuous_re continuous_const).smul g
 
+/-- The right half-plane bounded by `geodesicLine g` is preconnected. -/
+theorem isPreconnected_rightHalfPlane (g : PSL(2, ℝ)) : IsPreconnected (rightHalfPlane g) := by
+  have h : IsPreconnected {z : ℍ | 0 < z.re} := by
+    rw [← isOpenEmbedding_coe.isInducing.isPreconnected_image]
+    have himage : ((↑) : ℍ → ℂ) '' {z : ℍ | 0 < z.re} = {w : ℂ | 0 < w.re} ∩ {w | 0 < w.im} := by
+      ext w
+      refine ⟨?_, fun hw ↦ ⟨⟨w, hw.2⟩, hw.1, rfl⟩⟩
+      rintro ⟨z, hz, rfl⟩
+      exact ⟨hz, z.im_pos⟩
+    rw [himage]
+    exact ((convex_halfSpace_re_gt 0).inter (convex_halfSpace_im_gt 0)).isPreconnected
+  exact h.image _ (continuous_const_smul g).continuousOn
+
 /-- The right and left half-planes bounded by the same `geodesicLine g` are disjoint. -/
 theorem disjoint_rightHalfPlane_leftHalfPlane (g : PSL(2, ℝ)) :
     Disjoint (rightHalfPlane g) (leftHalfPlane g) := by
@@ -226,6 +239,22 @@ theorem closure_leftHalfPlane (g : PSL(2, ℝ)) :
   ext z
   simp only [Set.mem_ofPred_eq, Set.mem_union, le_iff_lt_or_eq]
 
+/-- The right half-plane bounded by `geodesicLine g` is disjoint from the closed left
+half-plane. -/
+theorem disjoint_rightHalfPlane_closure_leftHalfPlane (g : PSL(2, ℝ)) :
+    Disjoint (rightHalfPlane g) (closure (leftHalfPlane g)) := by
+  rw [closure_leftHalfPlane]
+  exact (disjoint_rightHalfPlane_leftHalfPlane g).union_right
+    (disjoint_rightHalfPlane_range_geodesicLine g)
+
+/-- The left half-plane bounded by `geodesicLine g` is disjoint from the closed right
+half-plane. -/
+theorem disjoint_leftHalfPlane_closure_rightHalfPlane (g : PSL(2, ℝ)) :
+    Disjoint (leftHalfPlane g) (closure (rightHalfPlane g)) := by
+  rw [closure_rightHalfPlane]
+  exact (disjoint_rightHalfPlane_leftHalfPlane g).symm.union_right
+    (disjoint_leftHalfPlane_range_geodesicLine g)
+
 -- Not `@[simp]`: `closure_rightHalfPlane` already rewrites `closure (rightHalfPlane g)` first.
 /-- A point `z` lies in the closed right half-plane of `g` iff `0 ≤ (g⁻¹ • z).re`. -/
 theorem mem_closure_rightHalfPlane_iff (g : PSL(2, ℝ)) (z : ℍ) :
@@ -288,6 +317,11 @@ theorem rightHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
 theorem leftHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
     leftHalfPlane (g * pslS) = rightHalfPlane g := by
   rw [← rightHalfPlane_mul_pslS (g * pslS), mul_assoc, pslS_mul_self, mul_one]
+
+/-- The left half-plane bounded by `geodesicLine g` is preconnected. -/
+theorem isPreconnected_leftHalfPlane (g : PSL(2, ℝ)) : IsPreconnected (leftHalfPlane g) := by
+  rw [← rightHalfPlane_mul_pslS]
+  exact isPreconnected_rightHalfPlane _
 
 /-- The interior of a closed right half-plane is its open half-plane. -/
 -- Not `@[simp]`: `closure_rightHalfPlane` rewrites the inner closure first.

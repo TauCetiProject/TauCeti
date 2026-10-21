@@ -11,10 +11,11 @@ import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 /-!
 # The kernel of the exterior-square action
 
-An automorphism of a finite free module of rank at least three acts trivially on its exterior
+An automorphism of a free module with at least three basis vectors acts trivially on its exterior
 square exactly when it is scalar multiplication by a scalar whose square is one. This holds
-over any commutative ring, including in characteristic two. Over a domain the scalars are `±1`.
-The rank restriction is essential: in rank two the exterior square detects only the determinant.
+over any commutative ring, including in characteristic two. Without zero divisors the scalars
+are `±1`. The rank restriction is essential: in rank two the exterior square detects only the
+determinant.
 
 This criterion identifies the kernel of the exterior-square realization of the six-dimensional
 orthogonal representation of the four-dimensional special linear group.
@@ -52,15 +53,15 @@ theorem exteriorPower_pairing_eq_of_map_eq_id {f : M ≃ₗ[R] M}
 
 end TauCeti
 
-/-- In rank at least three, an automorphism acts trivially on the exterior square exactly when
-it is scalar multiplication by a scalar whose square is one. -/
-theorem Module.Basis.exteriorPower_map_eq_id_iff [Fintype ι] (b : Module.Basis ι R M)
-    (hι : 3 ≤ Fintype.card ι) (f : M ≃ₗ[R] M) :
+/-- With at least three basis vectors, an automorphism acts trivially on the exterior square
+exactly when it is scalar multiplication by a scalar whose square is one. -/
+theorem Module.Basis.exteriorPower_map_eq_id_iff (b : Module.Basis ι R M)
+    (hι : 3 ≤ ENat.card ι) (f : M ≃ₗ[R] M) :
     exteriorPower.map 2 f.toLinearMap = LinearMap.id ↔
       ∃ c : R, c ^ 2 = 1 ∧ f.toLinearMap = c • LinearMap.id := by
   classical
   have hthird (i j : ι) : ∃ k : ι, k ≠ i ∧ k ≠ j :=
-    ENat.exists_ne_ne_of_three_le (by simpa using hι) i j
+    ENat.exists_ne_ne_of_three_le hι i j
   constructor
   · intro hf
     -- Pairing against a third basis coordinate forces every off-diagonal entry to vanish.
@@ -73,7 +74,7 @@ theorem Module.Basis.exteriorPower_map_eq_id_iff [Fintype ι] (b : Module.Basis 
       simpa [Module.Basis.coord_apply, hij, hij.symm]
         using TauCeti.exteriorPower_pairing_eq_of_map_eq_id hf (b.coord i) (b.coord j) (b i) (b j)
     -- A third index relates any two diagonal entries through the same inverse entry.
-    obtain ⟨i₀⟩ : Nonempty ι := Fintype.card_pos_iff.mp (by omega)
+    obtain ⟨i₀⟩ := (ENat.card_pos_iff_nonempty ι).mp (lt_of_lt_of_le (by norm_num) hι)
     let c := b.coord i₀ (f (b i₀))
     have hsame (i : ι) : b.coord i (f (b i)) = c := by
       obtain ⟨j, hji, hji₀⟩ := hthird i i₀
@@ -107,10 +108,11 @@ theorem Module.Basis.exteriorPower_map_eq_id_iff [Fintype ι] (b : Module.Basis 
     rw [(ιMulti R 2).map_smul_univ (fun _ ↦ c) v]
     simp [hc]
 
-/-- Over a domain, the kernel of the exterior-square action in rank at least three consists of
-the two scalar automorphisms `±1`. In characteristic two these coincide. -/
-theorem Module.Basis.exteriorPower_map_eq_id_iff_eq_or_eq_neg_id [Fintype ι]
-    [IsDomain R] (b : Module.Basis ι R M) (hι : 3 ≤ Fintype.card ι) (f : M ≃ₗ[R] M) :
+/-- Over a ring without zero divisors, the kernel of the exterior-square action on a free module
+with at least three basis vectors consists of the scalar automorphisms `±1`. In characteristic
+two these coincide. -/
+theorem Module.Basis.exteriorPower_map_eq_id_iff_eq_or_eq_neg_id
+    [NoZeroDivisors R] (b : Module.Basis ι R M) (hι : 3 ≤ ENat.card ι) (f : M ≃ₗ[R] M) :
     exteriorPower.map 2 f.toLinearMap = LinearMap.id ↔
       f.toLinearMap = LinearMap.id ∨ f.toLinearMap = -LinearMap.id := by
   rw [b.exteriorPower_map_eq_id_iff hι f]

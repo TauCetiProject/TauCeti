@@ -100,32 +100,6 @@ namespace TauCeti
 
 open groupCohomology
 
-/-! ### Rearrangements in a commutative group
-
-The coboundary bookkeeping below is a handful of identities in the commutative group `kˣ`, isolated
-here so that the arguments about factor sets are not interrupted by them. Read `a, b, d` as the
-values of a rescaling at `g₁`, `g₂` and `g₁ * g₂`.
--/
-
-private theorem coboundary_aux {M : Type*} [CommGroup M] (a b d : M) : b / d * a = a * b * d⁻¹ := by
-  apply Additive.ofMul.injective
-  simp only [ofMul_mul, ofMul_div, ofMul_inv]
-  abel
-
-private theorem coboundary_inv_aux {M : Type*} [CommGroup M] (a b d : M) :
-    a⁻¹ * b⁻¹ * (d⁻¹)⁻¹ * (b / d * a) = 1 := by
-  apply Additive.ofMul.injective
-  simp only [ofMul_mul, ofMul_div, ofMul_inv, ofMul_one]
-  abel
-
-private theorem cohomologous_aux {M : Type*} [CommGroup M] (a b u v z : M)
-    (h : v / z * u = a / b) : a * z = b * (u * v) := by
-  have ha : a = v / z * u * b := div_eq_iff_eq_mul.1 h.symm
-  subst ha
-  apply Additive.ofMul.injective
-  simp only [ofMul_mul, ofMul_div]
-  abel
-
 section TrivialAction
 
 attribute [local instance] trivialMulDistribMulAction
@@ -214,7 +188,7 @@ theorem IsProjectiveRep.cohomologyClass_rescale (h : IsProjectiveRep ρ α) (c :
   refine (FactorSet.cohomologyClass_eq_iff _ _).2 ⟨c, fun g₁ g₂ ↦ ?_⟩
   simp only [IsProjectiveRep.factorSet_apply, trivialMulDistribMulAction_smul]
   rw [mul_div_cancel_right]
-  exact coboundary_aux _ _ _
+  simp [div_eq_mul_inv, mul_assoc, mul_comm]
 
 /-- A lift obtained from another by multiplying by units is again normalized: the scalars take the
 value `1` at `1`. Faithfulness is what lets a scalar be read off from its action, and only scalars
@@ -263,7 +237,8 @@ theorem IsProjectiveRep.exists_monoidHom_of_cohomologyClass_eq_zero (h : IsProje
     funext g₁ g₂
     simp only [Pi.one_apply]
     rw [← hx' g₁ g₂]
-    exact coboundary_inv_aux _ _ _
+    simp only [inv_inv, div_mul_eq_mul_div, mul_comm (x g₂) (x g₁), ← mul_inv,
+      mul_mul_div_cancel, inv_mul_cancel]
   rw [hone] at hrs
   refine ⟨x, hrs.toMonoidHom, hx1, fun g ↦ ?_⟩
   refine LinearEquiv.ext fun v ↦ ?_
@@ -286,7 +261,7 @@ theorem IsProjectiveRep.cohomologyClass_eq_zero_of_monoidHom [FaithfulSMul kˣ V
   refine (FactorSet.cohomologyClass_eq_zero_iff h.factorSet).2 ⟨c, fun g₁ g₂ ↦ ?_⟩
   simp only [IsProjectiveRep.factorSet_apply, trivialMulDistribMulAction_smul,
     congrFun (congrFun hα g₁) g₂, Pi.one_apply, mul_one]
-  exact coboundary_aux _ _ _
+  simp [div_eq_mul_inv, mul_assoc, mul_comm]
 
 /-- **The class of a projective representation vanishes exactly when it linearizes**: exactly when
 its lift is a homomorphism `G →* (V ≃ₗ[k] V)` rescaled by units of `k`. So the Schur-multiplier
@@ -337,7 +312,8 @@ theorem TwistedMonoidAlgebra.nonempty_algEquiv_of_cohomologyClass_eq {α β : G 
   refine ⟨TwistedMonoidAlgebra.equivOfCoboundary β α y fun g₁ g₂ ↦ ?_⟩
   have hy' := hy g₁ g₂
   simp only [trivialMulDistribMulAction_smul, IsFactorSet.toFactorSet_apply] at hy'
-  exact cohomologous_aux _ _ _ _ _ hy'
+  rw [div_mul_eq_mul_div] at hy'
+  simpa only [mul_comm] using (div_eq_div_iff_mul_eq_mul.mp hy').symm
 
 end TrivialAction
 

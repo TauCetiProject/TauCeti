@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.FieldTheory.Relrank
+public import TauCeti.LinearAlgebra.LinearIndependent.Algebra
 
 /-!
 # Relative degrees under linearly disjoint base change
@@ -26,9 +27,6 @@ independent over `A`.
 
 * `IntermediateField.coe_sup_eq_span_of_isAlgebraic_left`: for `A` algebraic, `A ⊔ D` is the
   `A`-span of `D`.
-* `TauCeti.linearIndependent_of_linearIndependent_mul_of_mem_span`: if a family `γ` spans `S` over
-  `R` and the products `γ m * β i` are linearly independent over `R`, then `β` is linearly
-  independent over `S`.
 * `IntermediateField.LinearDisjoint.linearIndependent_sup_of_isAlgebraic_left`: linear
   independence over `C ≤ B` persists over `A ⊔ C`.
 * `IntermediateField.relrank_sup_sup_eq_relrank_of_linearDisjoint` and
@@ -100,35 +98,6 @@ theorem _root_.IntermediateField.span_subset_span_of_le {S S' : IntermediateFiel
   letI : Algebra S S' := (IntermediateField.inclusion h).toAlgebra
   haveI : IsScalarTower S S' L := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
   Submodule.span_subset_span S S' t
-
-/-- **Linear independence over a field spanned by a family.** If every element of `S` is an
-`R`-linear combination of a family `γ` in `L`, and the products `γ m * β i` are linearly
-independent over `R`, then `β` is linearly independent over `S`. -/
-theorem linearIndependent_of_linearIndependent_mul_of_mem_span {R S : Type*} [CommRing R]
-    [Field S] [Algebra R L] [Algebra S L] {κ ι : Type*} {γ : κ → L} {β : ι → L}
-    (hγ : ∀ x : S, algebraMap S L x ∈ Submodule.span R (Set.range γ))
-    (h : LinearIndependent R fun p : ι × κ ↦ γ p.2 * β p.1) :
-    LinearIndependent S β := by
-  classical
-  rw [linearIndependent_iff']
-  intro s g hg i hi
-  choose c hc using fun j ↦ (Finsupp.mem_span_range_iff_exists_finsupp).mp (hγ (g j))
-  let T := s.biUnion fun j ↦ (c j).support
-  have hgT : ∀ j ∈ s, algebraMap S L (g j) = ∑ m ∈ T, c j m • γ m := fun j hj ↦ by
-    rw [← hc j, Finsupp.sum_of_support_subset _
-      (Finset.subset_biUnion_of_mem (fun j ↦ (c j).support) hj)]
-    intro m _
-    simp
-  have hzero : ∑ p ∈ s ×ˢ T, c p.1 p.2 • (γ p.2 * β p.1) = 0 := by
-    rw [Finset.sum_product, ← hg]
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rw [Algebra.smul_def, hgT j hj, Finset.sum_mul]
-    exact Finset.sum_congr rfl fun m _ ↦ (smul_mul_assoc _ _ _).symm
-  have hc0 := (linearIndependent_iff'.mp h) (s ×ˢ T) (fun p ↦ c p.1 p.2) hzero
-  refine (algebraMap S L).injective ?_
-  rw [hgT i hi, map_zero]
-  exact Finset.sum_eq_zero fun m hm ↦ by
-    rw [hc0 (i, m) (Finset.mem_product.mpr ⟨hi, hm⟩), zero_smul]
 
 /-- **Linear disjointness survives adjoining part of the other side.** Let `A` be algebraic over
 `k` and linearly disjoint from `B`, and let `C ≤ B`. A family in `B` that is linearly

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.Algebra.Lie.Subalgebra
+public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.RingTheory.Derivation.Localization
 public import TauCeti.RingTheory.LaurentSeries.Derivative
 
@@ -41,6 +42,9 @@ classifications hold in every characteristic.
 * `Derivation.continuous_iff_exists_eq_smul_laurentSeriesDerivation`: a derivation is continuous
   if and only if it is a multiple of `D`, and `TauCeti.smul_laurentSeriesDerivation_inj`: the
   multiple is unique.
+* `Derivation.apply_eq_laurentSeriesDerivation_smul` and
+  `Derivation.continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul`: the same
+  classification for derivations into any `F`-module with its module topology, `δ f = D f • δ X`.
 * `TauCeti.continuousDerivations`: the `F`-submodule of continuous derivations, and
   `TauCeti.continuousDerivationsEquiv`: its identification with `F` sending `a` to `a • D`.
 * `TauCeti.continuousDerivationsLieSubalgebra`: continuous derivations as a Lie subalgebra.
@@ -122,6 +126,32 @@ theorem continuous_iff_exists_eq_smul_laurentSeriesDerivation {δ : Derivation K
   refine ⟨fun hδ ↦ ⟨_, δ.eq_smul_laurentSeriesDerivation hδ⟩, ?_⟩
   rintro ⟨a, rfl⟩
   exact TauCeti.continuous_smul_laurentSeriesDerivation a
+
+variable {M : Type*} [AddCommGroup M] [Module K⸨X⸩ M] [Module K M]
+  [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M] [IsModuleTopology K⸨X⸩ M]
+
+/-- **Continuous derivations of Laurent series into a topological module.** A `K`-derivation
+`δ : K⸨X⸩ → M` into a `K⸨X⸩`-module with its module topology that is continuous for the valuation
+topology satisfies `δ f = D f • δ X`, where `D` is the formal derivative. -/
+theorem apply_eq_laurentSeriesDerivation_smul (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ)
+    (f : K⸨X⸩) : δ f = TauCeti.laurentSeriesDerivation K f • δ (single 1 1) := by
+  let b := Module.Free.chooseBasis K⸨X⸩ M
+  refine b.ext_elem fun i ↦ ?_
+  -- Each coordinate of `δ` is a continuous derivation of `K⸨X⸩` into itself.
+  have hc : Continuous ((b.coord i).compDer δ) :=
+    (IsModuleTopology.continuous_of_linearMap (b.coord i)).comp hδ
+  simpa [mul_comm] using congr($(((b.coord i).compDer δ).eq_smul_laurentSeriesDerivation hc) f)
+
+/-- A `K`-derivation of `K⸨X⸩` into a `K⸨X⸩`-module with its module topology is continuous if and
+only if it is `f ↦ D f • m` for some `m`, where `D` is the formal derivative. -/
+theorem continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul {δ : Derivation K K⸨X⸩ M} :
+    Continuous δ ↔ ∃ m : M, ∀ f, δ f = TauCeti.laurentSeriesDerivation K f • m := by
+  refine ⟨fun hδ ↦ ⟨_, δ.apply_eq_laurentSeriesDerivation_smul hδ⟩, ?_⟩
+  rintro ⟨m, hm⟩
+  have h : (δ : K⸨X⸩ → M) = fun f ↦ LaurentSeries.derivative K f • m :=
+    funext fun f ↦ by simp [hm]
+  rw [h]
+  exact LaurentSeries.continuous_derivative.smul continuous_const
 
 end Derivation
 

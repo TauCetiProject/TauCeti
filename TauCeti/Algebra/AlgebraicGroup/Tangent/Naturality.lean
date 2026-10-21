@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Adjoint
+import TauCeti.Algebra.DualNumber.Basic
 
 /-!
 # Naturality of the tangent and adjoint actions in the coefficient algebra
@@ -109,6 +110,48 @@ section Adjoint
 
 variable [HopfAlgebra R A] [CommSemiring B] [Algebra R B]
   [CommSemiring C] [Algebra R C]
+
+open TrivSqZeroExt in
+/-- Specializing a coefficient-extended tangent point by `DualNumber.lift` agrees with
+mapping the original tangent point along the corresponding dual-number algebra map. -/
+theorem mapValue_lift_tangentPoint
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B))
+    (χ : DualNumber (Bialgebra.CounitAlgebra R A B) →ₐ[R] C) :
+    let D := Bialgebra.CounitAlgebra R A C
+    let φ := (χ.comp (inlAlgHom R (Bialgebra.CounitAlgebra R A B)
+      (Bialgebra.CounitAlgebra R A B))).comp
+        (Bialgebra.CounitAlgebra.algEquivSelf R A B).symm.toAlgHom
+    let e : DualNumber D →ₐ[R] C := DualNumber.lift
+      ⟨((Bialgebra.CounitAlgebra.algEquivSelf R A C).toAlgHom, χ DualNumber.eps),
+        by rw [← map_mul, DualNumber.eps_mul_eps, map_zero], fun _ ↦ Commute.all _ _⟩
+    AlgHom.mapValue (H := A) e
+        (derivationMulEquivTangentKer R A C (Multiplicative.ofAdd (mapValue φ d))).val =
+      AlgHom.mapValue χ
+        (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val := by
+  intro D φ e
+  apply ofConv_injective
+  apply AlgHom.ext
+  intro x
+  simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
+  have hscalar (r : R) :
+      χ (inl (algebraMap R (Bialgebra.CounitAlgebra R A B) r)) = algebraMap R C r := by
+    rw [← inlAlgHom_apply R _ _, (inlAlgHom R _ _).commutes, χ.commutes]
+  have hdval : Bialgebra.CounitAlgebra.algEquivSelf R A C (mapValue φ d x) =
+      χ (inl (d x)) := by
+    rw [mapValue_apply, Bialgebra.CounitAlgebra.algEquivSelf_map]
+    simp only [φ, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply,
+      inlAlgHom_apply]
+  dsimp only [e]
+  rw [DualNumber.lift_apply_apply,
+    χ.apply_dualNumber
+      ((derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val.ofConv x)]
+  rw [fst_apply_of_mem_tangentKer (SetLike.coe_mem _),
+    fst_apply_of_mem_tangentKer (SetLike.coe_mem _),
+    derivationMulEquivTangentKer_apply_snd, derivationMulEquivTangentKer_apply_snd]
+  simp only [toAdd_ofAdd, AlgEquiv.coe_toAlgHom]
+  rw [hdval, hscalar]
+  congr 1
+  exact (Bialgebra.CounitAlgebra.algEquivSelf R A C).commutes _
 
 /-- **The adjoint action is natural in the coefficient algebra.** Mapping a point and
 a tangent vector along `phi` and then applying the adjoint action gives the same

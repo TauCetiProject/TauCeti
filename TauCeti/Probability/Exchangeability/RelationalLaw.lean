@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 public import TauCeti.ModelTheory.RelationalConfiguration
+public import Mathlib.MeasureTheory.Group.Arithmetic
+public import Mathlib.MeasureTheory.Group.Defs
+public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.Logic.Equiv.Fintype
-import Mathlib.MeasureTheory.Constructions.Projective
-import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
 import TauCeti.MeasureTheory.Measure.RelationalConfiguration
 
 /-!
@@ -27,23 +29,37 @@ set has two presentations.
 
 The two presentations agree (`exchangeableRelationalLawEquivInfinite`) when `L` has countably
 many relation symbols of each arity. From an infinite law, the marginals are its windows: the
-restrictions along `Fin.val : Fin k → ℕ`. Conversely, a finite set of atoms over `ℕ` involves
-finitely many vertices, so the marginals prescribe the law of every finite set of atom coordinates.
-Kolmogorov's extension theorem on the countable product of these Boolean coordinates provides the
-infinite law; it is unique because a finite measure on configurations over `ℕ` is determined by its
-windows (`measure_ext_of_map_restrict_val`).
+restrictions along `Fin.val : Fin k → ℕ`. Conversely, consistent marginals are the windows of a law
+over `ℕ` by Kolmogorov's extension theorem for configurations
+(`TauCeti.RelationalConfiguration.exists_map_restrict_val_eq`), which is unique because a finite
+measure on configurations over `ℕ` is determined by its windows
+(`measure_ext_of_map_restrict_val`).
+
+The finitely supported permutations of `ℕ` act on configurations over `ℕ` by relabelling
+(`TauCeti.RelationalConfiguration.instMulActionFinitaryPerm`), and every exchangeable law on
+configurations over `ℕ` is invariant under this action. Ergodicity of the action on such a law,
+Mathlib's `ErgodicSMul`, is the relational counterpart of the ergodicity of exchangeable arrays.
 
 ## Main definitions
 
+* `TauCeti.RelationalConfiguration.instMulActionFinitaryPerm` — finitely supported permutations
+  of `ℕ` relabel configurations over `ℕ`;
 * `TauCeti.Probability.ExchangeableRelationalLaw` — a consistent family of finite relational laws;
 * `TauCeti.Probability.InfiniteExchangeableRelationalLaw` — a relabelling-invariant probability law
   on the configurations over `ℕ`;
+* `TauCeti.Probability.ExchangeableRelationalLaw.IsDissociated` — restrictions to disjoint vertex
+  windows are independent;
 * `TauCeti.Probability.exchangeableRelationalLawEquivInfinite` — the two presentations agree.
 
 ## Main results
 
+* `TauCeti.Probability.InfiniteExchangeableRelationalLaw.instSMulInvariantMeasureLaw` — an
+  exchangeable law on configurations over `ℕ` is invariant under finitary relabelling;
 * `TauCeti.Probability.exchangeableRelationalLawEquivInfinite_law_map_restrict` — the windows of
-  the infinite law attached to consistent marginals are those marginals.
+  the infinite law attached to consistent marginals are those marginals;
+* `TauCeti.Probability.ExchangeableRelationalLaw.isDissociated_iff_forall_map_restrict_prod` — a
+  law is dissociated exactly when the restrictions of a marginal along any two injections with
+  disjoint ranges are independent.
 
 ## References
 
@@ -68,6 +84,39 @@ open MeasureTheory
 open _root_.FirstOrder (Language)
 
 namespace TauCeti
+
+namespace RelationalConfiguration
+
+/-! ### Finitary relabelling of configurations over `ℕ` -/
+
+variable {L : Language}
+
+/-- Finitely supported permutations of `ℕ` relabel configurations over `ℕ`: `g` acts by
+restriction along `g⁻¹`, so that relabelling is a left action. -/
+instance instSMulFinitaryPerm : SMul FinitaryPerm (RelationalConfiguration L ℕ) :=
+  ⟨fun g c => c.restrict ⇑(FinitaryPerm.toPerm g)⁻¹⟩
+
+/-- Relabelling by `g` is restriction along `g⁻¹`. -/
+theorem finitaryPerm_smul_def (g : FinitaryPerm) (c : RelationalConfiguration L ℕ) :
+    g • c = c.restrict ⇑(FinitaryPerm.toPerm g)⁻¹ := (rfl)
+
+/-- Relabelling by `g` reads every atom at its relabelling along `g⁻¹`. -/
+@[simp]
+theorem eval_finitaryPerm_smul (g : FinitaryPerm) (c : RelationalConfiguration L ℕ)
+    (a : Atom L ℕ) : (g • c).eval a = c.eval (a.map ⇑(FinitaryPerm.toPerm g)⁻¹) := by
+  rw [finitaryPerm_smul_def, eval_restrict]
+
+/-- Finitary relabelling is a left action on configurations over `ℕ`. -/
+instance instMulActionFinitaryPerm : MulAction FinitaryPerm (RelationalConfiguration L ℕ) where
+  one_smul c := ext fun a => by simp [FinitaryPerm.toPerm_one, Atom.map_id]
+  mul_smul g h c := ext fun a => by simp [FinitaryPerm.toPerm_mul, mul_inv_rev, ← Atom.map_comp]
+
+/-- Each finitary relabelling of configurations over `ℕ` is measurable. -/
+instance instMeasurableConstSMulFinitaryPerm :
+    MeasurableConstSMul FinitaryPerm (RelationalConfiguration L ℕ) :=
+  ⟨fun _ => measurable_restrict _⟩
+
+end RelationalConfiguration
 
 namespace Probability
 
@@ -107,107 +156,76 @@ theorem ext {μ ν : ExchangeableRelationalLaw L} (h : ∀ k, μ.law k = ν.law 
 
 variable (μ : ExchangeableRelationalLaw L)
 
-/-- The law of the atoms in `J` under the level-`n` marginal, extended by `false` to `ℕ`. -/
-private def coordLaw (n : ℕ) (J : Finset (Atom L ℕ)) : Measure (∀ _ : J, Bool) :=
-  (μ.law n).map fun d => J.restrict (d.extend Fin.val).eval
+/-! ### Dissociation -/
 
-private theorem measurable_restrict_eval_extend (n : ℕ) (J : Finset (Atom L ℕ)) :
-    Measurable fun d : RelationalConfiguration L (Fin n) => J.restrict (d.extend Fin.val).eval :=
-  (measurable_restrict_eval J).comp (measurable_extend _)
+/-- An exchangeable relational law is **dissociated** when restrictions to disjoint vertex windows
+are independent: the level-`(k + l)` marginal, pushed to the pair of configurations it induces on
+the first `k` and on the last `l` vertices, is the product of the level-`k` and level-`l`
+marginals. -/
+def IsDissociated : Prop :=
+  ∀ k l : ℕ,
+    (μ.law (k + l)).map (fun c => (c.restrict (Fin.castAdd l), c.restrict (Fin.natAdd k))) =
+      (μ.law k).prod (μ.law l)
 
-/-- The law of the atoms in `J` does not depend on the level, as long as the level bounds the
-vertices of the atoms of `J`. -/
-private theorem coordLaw_eq_of_le {J : Finset (Atom L ℕ)} {m n : ℕ}
-    (hJ : ∀ a ∈ J, ∃ b : Atom L (Fin m), b.map Fin.val = a) (hmn : m ≤ n) :
-    μ.coordLaw n J = μ.coordLaw m J := by
-  -- Reading the atoms of `J` at level `n` is reading them on the window below `m`.
-  have hread : (fun d : RelationalConfiguration L (Fin n) => J.restrict (d.extend Fin.val).eval) =
-      (fun d : RelationalConfiguration L (Fin m) => J.restrict (d.extend Fin.val).eval) ∘
-        restrict (Fin.castLEEmb hmn) := by
-    funext d
-    ext a
-    obtain ⟨b, hb⟩ := hJ a a.2
-    have hval : (b.map (Fin.castLEEmb hmn)).map Fin.val = b.map (Fin.val : Fin m → ℕ) := by
-      -- `Fin.val ∘ Fin.castLEEmb hmn` is `Fin.val` by definition.
-      rw [← Atom.map_comp]
-      rfl
-    simp only [Function.comp_apply, Finset.restrict, ← hb]
-    rw [← hval, eval_extend_map Fin.val_injective, hval, eval_extend_map Fin.val_injective,
-      eval_restrict]
-  rw [coordLaw, coordLaw, ← μ.consistent (Fin.castLEEmb hmn),
-    Measure.map_map (measurable_restrict_eval_extend m J) (measurable_restrict _), ← hread]
+/-- The defining identity of a dissociated law. -/
+theorem isDissociated_iff :
+    μ.IsDissociated ↔ ∀ k l : ℕ,
+      (μ.law (k + l)).map (fun c => (c.restrict (Fin.castAdd l), c.restrict (Fin.natAdd k))) =
+        (μ.law k).prod (μ.law l) := (Iff.rfl)
 
-/-- A level bounding the vertices of the atoms in `J`. -/
-private def level (J : Finset (Atom L ℕ)) : ℕ :=
-  (Atom.exists_forall_map_val J).choose
+/-- **Dissociated laws are independent on any two disjoint windows**: the restrictions of the
+level-`n` marginal along two injections with disjoint ranges are independent, with the level-`k`
+and level-`l` marginals as laws. -/
+theorem IsDissociated.map_restrict_prod {μ : ExchangeableRelationalLaw L} (hμ : μ.IsDissociated)
+    {k l n : ℕ} {f : Fin k → Fin n} {g : Fin l → Fin n} (hf : Function.Injective f)
+    (hg : Function.Injective g) (hfg : ∀ i j, f i ≠ g j) :
+    (μ.law n).map (fun c => (c.restrict f, c.restrict g)) = (μ.law k).prod (μ.law l) := by
+  let e : Fin (k + l) ↪ Fin n := ⟨Fin.append f g, Fin.append_injective_iff.2 ⟨hf, hg, hfg⟩⟩
+  -- Merge the two injections into one; both windows are read off the merged window along `e`,
+  -- along which the level-`n` marginal restricts to the level-`(k + l)` marginal.
+  have hwin : (fun c : RelationalConfiguration L (Fin n) => (c.restrict f, c.restrict g)) =
+      (fun c => (c.restrict (Fin.castAdd l), c.restrict (Fin.natAdd k))) ∘ restrict ⇑e := by
+    funext c
+    simp only [Function.comp_apply, ← restrict_comp]
+    congr 2 <;> funext i
+    · exact (Fin.append_left f g i).symm
+    · exact (Fin.append_right f g i).symm
+  rw [hwin, ← Measure.map_map ((measurable_restrict _).prodMk (measurable_restrict _))
+    (measurable_restrict _), μ.consistent, hμ k l]
 
-private theorem level_spec (J : Finset (Atom L ℕ)) :
-    ∀ a ∈ J, ∃ b : Atom L (Fin (level J)), b.map Fin.val = a :=
-  (Atom.exists_forall_map_val J).choose_spec
+/-- **Dissociation on arbitrary disjoint windows.** A law is dissociated exactly when the
+restrictions of every marginal along any two injections with disjoint ranges are independent,
+with the smaller marginals as laws. -/
+theorem isDissociated_iff_forall_map_restrict_prod :
+    μ.IsDissociated ↔ ∀ (k l n : ℕ) (f : Fin k → Fin n) (g : Fin l → Fin n),
+      Function.Injective f → Function.Injective g → (∀ i j, f i ≠ g j) →
+        (μ.law n).map (fun c => (c.restrict f, c.restrict g)) = (μ.law k).prod (μ.law l) :=
+  ⟨fun hμ _ _ _ _ _ hf hg hfg => hμ.map_restrict_prod hf hg hfg, fun h k l =>
+    h k l (k + l) _ _ (Fin.castAdd_injective k l) (Fin.natAdd_injective l k) fun i j => by
+      simp [Fin.ext_iff]; omega⟩
 
-/-- The marginals prescribe the law of every finite set of atoms. -/
-private def coordFamily (J : Finset (Atom L ℕ)) : Measure (∀ _ : J, Bool) :=
-  μ.coordLaw (level J) J
-
-private instance (J : Finset (Atom L ℕ)) : IsProbabilityMeasure (μ.coordFamily J) := by
-  unfold coordFamily coordLaw
-  infer_instance
-
-/-- The prescribed law of the atoms in `J` is read off any level bounding their vertices. -/
-private theorem coordFamily_eq {J : Finset (Atom L ℕ)} {n : ℕ}
-    (hJ : ∀ a ∈ J, ∃ b : Atom L (Fin n), b.map Fin.val = a) :
-    μ.coordFamily J = μ.coordLaw n J := by
-  rw [coordFamily, ← μ.coordLaw_eq_of_le (level_spec J) (le_max_left (level J) n),
-    μ.coordLaw_eq_of_le hJ (le_max_right _ n)]
-
-private theorem isProjectiveMeasureFamily_coordFamily :
-    IsProjectiveMeasureFamily (α := fun _ : Atom L ℕ => Bool) μ.coordFamily := by
-  intro I J hJI
-  have hI := level_spec I
-  rw [μ.coordFamily_eq hI, μ.coordFamily_eq fun a ha => hI a (hJI ha), coordLaw, coordLaw,
-    Measure.map_map (measurable_of_countable _) (measurable_restrict_eval_extend _ I)]
-  -- Restricting the atoms in `I` to `J` is restricting to `J` (`restrict₂_comp_restrict`).
-  rfl
+/-! ### Extension of the marginals to `ℕ` -/
 
 variable [∀ n, Countable (L.Relations n)]
 
-/-- **Kolmogorov extension** of the coordinate laws prescribed by the marginals. -/
-private theorem exists_isProjectiveLimit_coordFamily :
-    ∃ ν : Measure (Atom L ℕ → Bool), IsProbabilityMeasure ν ∧
-      IsProjectiveLimit ν μ.coordFamily :=
-  TauCeti.Measure.exists_isProjectiveLimit_of_countable (X := fun _ : Atom L ℕ => Bool)
-    μ.coordFamily μ.isProjectiveMeasureFamily_coordFamily
+/-- The marginals are consistent under the inclusions `Fin n → Fin (n + 1)`, so they are the
+windows of a probability law on configurations over `ℕ`. -/
+private theorem exists_map_restrict_val_eq_law :
+    ∃ ν : Measure (RelationalConfiguration L ℕ), IsProbabilityMeasure ν ∧
+      ∀ n, ν.map (restrict (Fin.val : Fin n → ℕ)) = μ.law n :=
+  exists_map_restrict_val_eq fun _ => μ.consistent Fin.castSuccEmb
 
 /-- The law on configurations over `ℕ` extending the marginals. -/
 private def extensionLaw : Measure (RelationalConfiguration L ℕ) :=
-  μ.exists_isProjectiveLimit_coordFamily.choose.map RelationalConfiguration.mk
+  μ.exists_map_restrict_val_eq_law.choose
 
-private instance : IsProbabilityMeasure μ.extensionLaw := by
-  have := μ.exists_isProjectiveLimit_coordFamily.choose_spec.1
-  unfold extensionLaw
-  infer_instance
-
-/-- The atoms in `J` have the law prescribed by the marginals under the extension. -/
-private theorem extensionLaw_map_restrict_eval (J : Finset (Atom L ℕ)) :
-    μ.extensionLaw.map (fun c => J.restrict c.eval) = μ.coordFamily J := by
-  have hread : ((fun c : RelationalConfiguration L ℕ => J.restrict c.eval) ∘
-      RelationalConfiguration.mk) = J.restrict :=
-    funext fun x => funext fun a => eval_mk x a
-  rw [extensionLaw, Measure.map_map (measurable_restrict_eval J) measurable_mk, hread]
-  exact μ.exists_isProjectiveLimit_coordFamily.choose_spec.2 J
+private instance : IsProbabilityMeasure μ.extensionLaw :=
+  μ.exists_map_restrict_val_eq_law.choose_spec.1
 
 /-- The windows of the extension are the marginals. -/
 private theorem extensionLaw_map_restrict (n : ℕ) :
-    μ.extensionLaw.map (restrict Fin.val) = μ.law n := by
-  have hid : restrict (L := L) (Fin.val : Fin n → ℕ) ∘ extend Fin.val = id :=
-    funext (restrict_extend Fin.val_injective)
-  -- The marginal is the window of its own extension by `false`.
-  rw [← Measure.map_id (μ := μ.law n), ← hid,
-    ← Measure.map_map (measurable_restrict _) (measurable_extend _)]
-  refine map_restrict_eq_of_forall_finset _ fun J hJ => ?_
-  rw [extensionLaw_map_restrict_eval, coordFamily_eq _ hJ, coordLaw,
-    Measure.map_map (measurable_restrict_eval J) (measurable_extend _)]
-  rfl
+    μ.extensionLaw.map (restrict Fin.val) = μ.law n :=
+  μ.exists_map_restrict_val_eq_law.choose_spec.2 n
 
 /-- The extension is invariant under every relabelling: a window of the relabelled extension is a
 restriction of a larger window along an injection of vertices. -/
@@ -251,6 +269,14 @@ variable {L}
 
 instance instIsProbabilityMeasureLaw (μ : InfiniteExchangeableRelationalLaw L) :
     IsProbabilityMeasure μ.law := μ.prob
+
+/-- An exchangeable law on configurations over `ℕ` is invariant under finitary relabelling. -/
+instance instSMulInvariantMeasureLaw (μ : InfiniteExchangeableRelationalLaw L) :
+    SMulInvariantMeasure FinitaryPerm (RelationalConfiguration L ℕ) μ.law :=
+  ⟨fun g s hs => by
+    have hsmul : (fun c : RelationalConfiguration L ℕ => g • c) =
+        restrict ⇑(FinitaryPerm.toPerm g)⁻¹ := funext (finitaryPerm_smul_def g)
+    rw [← Measure.map_apply (measurable_const_smul g) hs, hsmul, μ.exchangeable]⟩
 
 /-- An exchangeable law on configurations over `ℕ` is determined by its law: the other fields are
 propositions. -/

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
-public import TauCeti.NumberTheory.EllipticDivisibilitySequence.NormEDS
 
 /-!
 # The division polynomial `ψ` as a normalised EDS
@@ -17,8 +16,7 @@ This file states it, at the level of functions, and draws the one consequence th
 else: the `ψ` family is an elliptic **net**. The elliptic-sequence reading is the last index held
 at `0`, available as `.isEllipticSequence`.
 
-These two facts depend only on Mathlib's `DivisionPolynomial/Basic.lean` and this repository's
-`EllipticDivisibilitySequence/NormEDS.lean`, so they sit at exactly that level — below both the
+These two facts depend only on Mathlib's `DivisionPolynomial/Basic.lean`, so they sit below the
 `ω` development (`DivisionPolynomial/Omega.lean`, whose `ω_spec` rewrites through the function
 form) and the universal-curve transports (`DivisionPolynomial/Universal.lean`, whose elliptic
 sequence statement over `Universal.Field` factors through the same identification).
@@ -34,7 +32,7 @@ sequence statement over `Universal.Field` factors through the same identificatio
 `LutzNagell/DivisionPolynomialOmega.lean` in AINTLIB (`github.com/CBirkbeck/AINTLIB`,
 Apache-2.0, `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`), declaration `isEllSequence_ψ`.
 It is **strengthened rather than transcribed**: the source states the `s = 0` shift, and the net
-holds by the identical one-line route through `isEllipticNet_normEDS`, so the weaker form was
+holds by the identical one-line route through `IsEllipticNet.normEDS`, so the weaker form was
 never the cheaper one. The sequence form is not kept alongside because it had **no consumer** —
 `IsEllipticNet.isEllipticSequence` recovers it for any future one. (The addition formula at
 `ZSMul.lean:191` does consume a sequence form, but the *universal* one,
@@ -65,6 +63,6 @@ consequence is the last relator index held at `0`, which `IsEllipticNet.isEllipt
 off; only a consumer needing an arbitrary fourth index needs the net itself. -/
 theorem isEllipticNet_ψ : IsEllipticNet W.ψ := by
   rw [ψ_eq_normEDS]
-  exact isEllipticNet_normEDS _ _ _
+  exact IsEllipticNet.normEDS _ _ _
 
 end WeierstrassCurve

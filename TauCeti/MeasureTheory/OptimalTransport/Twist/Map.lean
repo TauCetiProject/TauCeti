@@ -78,11 +78,10 @@ theorem IsDualCertificate.exists_optimal_transportMap_unique_ae
   have hcontact : ∀ᵐ x ∂μ, (x, T x) ∈ contactSet c
       (fun x ↦ (φ x : EReal)) (fun y ↦ (ψ y : EReal)) := by
     have haeπ := h.ae_mem_dualContactSet
-    rw [hgraph, graphPlan_def] at haeπ
+    rw [hgraph] at haeπ
     have hae : ∀ᵐ x ∂μ,
         (x, T x) ∈ dualContactSet (fun z ↦ ENNReal.ofReal (c z)) φ ψ :=
-      MeasureTheory.ae_of_ae_map (aemeasurable_prodMk_self hT.aemeasurable)
-        haeπ
+      ae_of_ae_graphPlan hT.aemeasurable haeπ
     simpa only [← dualContactSet_ofReal hc₀] using hae
   have hderiv : ∀ᵐ x ∂μ,
       fderiv ℝ φ x = fderiv ℝ (fun x' ↦ c (x', T x)) x := by

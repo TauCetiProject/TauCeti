@@ -218,7 +218,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
   intro mu _ Omega w A B x₀ r R hA hB hr hrR hball hcacc
   -- A cutoff equal to one on `ball x₀ r` and supported in
   -- `closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R`.
-  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad⟩ := hC x₀ hr (by linarith : r < (r + R) / 2)
+  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad, -⟩ := hC x₀ hr.le (by linarith : r < (r + R) / 2)
   have htsR : tsupport ψ ⊆ ball x₀ R :=
     hts.trans (closedBall_subset_ball (by linarith))
   have hcpt : HasCompactSupport ψ :=
@@ -231,7 +231,8 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
   have hleft : ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
     MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (W1p.integrable_norm_gradient_sq w)
-      (fun x => sq_nonneg _) hψ.continuous.aestronglyMeasurable hrange measurableSet_ball
+      (ae_of_all _ fun x => sq_nonneg _) hψ.continuous.aestronglyMeasurable
+      (ae_of_all _ fun x => hrange (mem_range_self x)) measurableSet_ball
       (hone.mono ball_subset_closedBall) ((ball_subset_ball hrR.le).trans hball)
   -- `∇ψ` vanishes off `B(x₀, R)`, where it is bounded by `G`.
   have hright : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤

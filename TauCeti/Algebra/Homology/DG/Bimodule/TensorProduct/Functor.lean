@@ -153,6 +153,13 @@ def tensorMap (f : M ⟶ M') (g : N ⟶ N') : tensorObj M N ⟶ tensorObj M' N' 
     rw [DGRightModuleHom.coe_mk, hT, hT]
     exact BalancedTensorProduct.map_smul_left A F G hf hg (fun a m => map_smul_left f a m) a z
 
+/-- The ground-ring linear map underlying a tensor morphism is the balanced tensor map. -/
+theorem tensorMap_toLinearMap (f : M ⟶ M') (g : N ⟶ N') :
+    (tensorMap f g).val.toLinearMap.restrictScalars R =
+      BalancedTensorProduct.map (f.val.toLinearMap.restrictScalars R)
+        (g.val.toLinearMap.restrictScalars R)
+        (fun b m ↦ map_smul f (op b) m) (fun b n ↦ map_smul_left g b n) := (rfl)
+
 /-- Tensor morphisms act factor by factor, with no sign since both maps have degree zero.
 This runs before simplification of the bundled carriers, which would prevent matching. -/
 @[simp↓]

@@ -86,10 +86,8 @@ theorem contMDiffSMul_complexTorus_analyticRealization (n : ℕ∞ω) :
   refine (hloc.contMDiffAt hmem).congr_of_eventuallyEq ?_
   filter_upwards [hmem] with ⟨t, z⟩ hz
   obtain ⟨y, rfl⟩ := hP ▸ hz.2
-  have hPy : P.symm (Φ.analyticAffineChartι hΦ σ y) = y := by
-    rw [← Φ.analyticAffineChartPartialDiffeomorph_apply hΦ σ hB κ g n y]
-    exact P.left_inv ((Φ.analyticAffineChartPartialDiffeomorph_source hΦ σ hB κ g n).symm ▸
-      mem_univ y)
+  have hPy : P.symm (Φ.analyticAffineChartι hΦ σ y) = y :=
+    Φ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΦ σ hB κ g n y
   simp only [Function.comp_apply, hPy, smul_analyticAffineChartι]
   -- The torus action on the chart is, by construction, the action on its complex points.
   rfl

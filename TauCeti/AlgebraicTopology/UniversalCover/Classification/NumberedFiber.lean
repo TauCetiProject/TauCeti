@@ -398,6 +398,19 @@ theorem ConnectedCoverClass.mk_surjective :
     Function.Surjective (mk : ConnectedCover x n → _) :=
   Quotient.mk_surjective
 
+/-- A function on covers that is constant on isomorphism classes of the underlying covers, as a
+function on the classes. -/
+def ConnectedCoverClass.lift {α : Sort*} (f : ConnectedCover x n → α)
+    (hf : ∀ c c', IsIsomorphic c.cover c'.cover → f c = f c') : ConnectedCoverClass x n → α :=
+  Quotient.lift f hf
+
+/-- The lift of `f` takes the class of `c` to `f c`. -/
+@[simp]
+theorem ConnectedCoverClass.lift_mk {α : Sort*} (f : ConnectedCover x n → α)
+    (hf : ∀ c c', IsIsomorphic c.cover c'.cover → f c = f c') (c : ConnectedCover x n) :
+    ConnectedCoverClass.lift f hf (ConnectedCoverClass.mk c) = f c :=
+  (rfl)
+
 /-! ### The forgetful maps -/
 
 /-- Forgetting the numbering of the fibre. -/
@@ -698,6 +711,12 @@ theorem nonempty_equiv_fin_of_mem_connectedComponent (c : ConnectedCover x n) {y
     (hy : y ∈ connectedComponent x) : Nonempty (⇑c.cover.proj ⁻¹' {y} ≃ Fin n) :=
   (c.cover.isCoveringMap_proj.isClopen_setOf_nonempty_fiber_equiv (Fin n)).connectedComponent_subset
     c.nonempty_equiv_fin hy
+
+/-- The fibre of a connected cover over its basepoint is finite. -/
+theorem finite_proj_preimage_singleton (c : ConnectedCover x n) :
+    Finite (⇑c.cover.proj ⁻¹' {x}) :=
+  let ⟨ν⟩ := c.nonempty_equiv_fin
+  .of_equiv _ ν.symm
 
 variable [PreconnectedSpace X]
 

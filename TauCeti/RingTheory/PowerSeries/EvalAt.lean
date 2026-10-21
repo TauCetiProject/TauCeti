@@ -1,0 +1,155 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Analytic.OfScalars
+public import Mathlib.Analysis.Normed.Group.Ultra
+public import Mathlib.RingTheory.PowerSeries.GaussNorm
+
+/-!
+# Evaluation of power series as infinite sums
+
+For a power series `f = ∑ aₙ Xⁿ` over a commutative ring `R` and an element `b` of an `R`-algebra
+`A` with a topology, `PowerSeries.evalAt f b` is the infinite sum `∑ₙ aₙ • bⁿ`, with the junk
+value `0` when the sum does not converge. The algebra `A` need not be commutative: the scalars
+`aₙ` act centrally, so the values of `f` at `b` commute with `b`.
+
+Unlike Mathlib's `PowerSeries.aeval`, which evaluates every power series at a topologically
+nilpotent point of a complete linearly topologized algebra, `evalAt` makes sense at every point;
+it is meaningful for series whose coefficients decay fast enough, such as entire series over a
+normed ring (`TauCeti.RingTheory.PowerSeries.Entire.Eval`). This file records the values of
+`evalAt` that need no convergence hypothesis. In an ultrametric normed algebra, `‖f(b)‖` is
+bounded by the Gauss norm of `f` at every radius `r ≥ ‖b‖` at which that Gauss norm is defined.
+
+Over a field `𝕜`, the same sum is Mathlib's `FormalMultilinearSeries.ofScalarsSum`
+(`PowerSeries.evalAt_eq_ofScalarsSum`); that construction needs a field of scalars, while the
+coefficient rings here may have nilpotents.
+
+## Main definitions
+
+* `PowerSeries.evalAt`: the value `∑ₙ aₙ • bⁿ` of a power series at `b`.
+
+## Main results
+
+* `PowerSeries.evalAt_coe`: on polynomials, `evalAt` is `Polynomial.aeval`.
+* `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
+* `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
+* `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
+-/
+
+public section
+
+namespace PowerSeries
+
+section Semiring
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [TopologicalSpace A]
+
+/-- The value `f(b) = ∑ₙ aₙ • bⁿ` of the power series `f = ∑ aₙ Xⁿ` at an element `b` of a
+topological `R`-algebra, defined as an infinite sum. It takes the junk value `0` when the sum does
+not converge; for entire `f` over a normed ring it converges in every complete normed algebra
+(`PowerSeries.IsEntire.hasSum_evalAt`). -/
+noncomputable def evalAt (f : R⟦X⟧) (b : A) : A :=
+  ∑' n, coeff n f • b ^ n
+
+/-- The value `f(b)` is the infinite sum `∑ₙ aₙ • bⁿ`. -/
+theorem evalAt_def (f : R⟦X⟧) (b : A) : f.evalAt b = ∑' n, coeff n f • b ^ n :=
+  (rfl)
+
+/-- On polynomials, evaluation is `Polynomial.aeval`. -/
+@[simp]
+theorem evalAt_coe (p : Polynomial R) (b : A) : (p : R⟦X⟧).evalAt b = Polynomial.aeval b p := by
+  rw [evalAt_def, tsum_eq_sum (s := Finset.range (p.natDegree + 1)),
+    Polynomial.aeval_eq_sum_range]
+  · simp
+  · intro n hn
+    rw [Finset.mem_range, not_lt] at hn
+    simp [Polynomial.coeff_eq_zero_of_natDegree_lt hn]
+
+/-- The zero series evaluates to zero. -/
+@[simp]
+theorem evalAt_zero (b : A) : (0 : R⟦X⟧).evalAt b = 0 := by
+  simpa using evalAt_coe (0 : Polynomial R) b
+
+/-- A constant series evaluates to its constant, mapped into the algebra. -/
+@[simp]
+theorem evalAt_C (a : R) (b : A) : (C a).evalAt b = algebraMap R A a := by
+  simpa using evalAt_coe (Polynomial.C a) b
+
+/-- The series `1` evaluates to `1`. -/
+@[simp]
+theorem evalAt_one (b : A) : (1 : R⟦X⟧).evalAt b = 1 := by
+  simpa using evalAt_coe (1 : Polynomial R) b
+
+/-- The variable `X` evaluates to the point of evaluation. -/
+@[simp]
+theorem evalAt_X (b : A) : (X : R⟦X⟧).evalAt b = b := by
+  simpa using evalAt_coe (Polynomial.X : Polynomial R) b
+
+/-- The monomial `a Xⁿ` evaluates to `a • bⁿ`. -/
+@[simp]
+theorem evalAt_monomial (n : ℕ) (a : R) (b : A) : (monomial n a).evalAt b = a • b ^ n := by
+  simpa [Algebra.smul_def] using evalAt_coe (Polynomial.monomial n a) b
+
+/-- At the point `0`, a power series evaluates to its constant coefficient. -/
+@[simp]
+theorem evalAt_at_zero (f : R⟦X⟧) : f.evalAt (0 : A) = algebraMap R A (constantCoeff f) := by
+  rw [evalAt_def, tsum_eq_single 0 fun n hn ↦ by simp [zero_pow hn]]
+  simp [Algebra.smul_def]
+
+/-- Evaluation is compatible with extension of scalars: mapping the coefficients along
+`R → S` does not change the value at a point of an `S`-algebra. -/
+@[simp]
+theorem evalAt_map_algebraMap {S : Type*} [CommSemiring S] [Algebra R S] [Algebra S A]
+    [IsScalarTower R S A] (f : R⟦X⟧) (b : A) : (map (algebraMap R S) f).evalAt b = f.evalAt b := by
+  simp [evalAt_def]
+
+/-- Over a field, `evalAt` is the sum `FormalMultilinearSeries.ofScalarsSum` of the scalar
+series with the same coefficients. -/
+theorem evalAt_eq_ofScalarsSum {𝕜 E : Type*} [Field 𝕜] [Ring E] [Algebra 𝕜 E]
+    [TopologicalSpace E] [IsTopologicalRing E] (f : 𝕜⟦X⟧) (x : E) :
+    f.evalAt x = FormalMultilinearSeries.ofScalarsSum (E := E) (fun n ↦ coeff n f) x :=
+  (FormalMultilinearSeries.ofScalars_sum_eq _ x).symm
+
+/-- The values of a series at `b` commute with `b`. -/
+theorem commute_evalAt [IsTopologicalSemiring A] [T2Space A] (f : R⟦X⟧) (b : A) :
+    Commute b (f.evalAt b) :=
+  Commute.tsum_right _ fun n ↦ ((Commute.refl b).pow_right n).smul_right _
+
+end Semiring
+
+section Ring
+
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] [TopologicalSpace A]
+  [IsTopologicalAddGroup A] [T2Space A]
+
+/-- Evaluation commutes with negation. -/
+@[simp]
+theorem evalAt_neg (f : R⟦X⟧) (b : A) : (-f).evalAt b = -f.evalAt b := by
+  simp [evalAt_def, neg_smul, tsum_neg]
+
+end Ring
+
+section Normed
+
+variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
+  {f : R⟦X⟧}
+
+/-- In an ultrametric normed algebra with `‖1‖ = 1`, the value of a series at a point `b` with
+`‖b‖ ≤ r` is bounded by the Gauss norm of the series at the radius `r`, whenever the latter is
+defined. This needs no convergence: the junk value `0` satisfies the bound too. -/
+theorem norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A] {r : ℝ}
+    (hf : f.HasGaussNorm norm r) {b : A} (hb : ‖b‖ ≤ r) :
+    ‖f.evalAt b‖ ≤ gaussNorm norm r f :=
+  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (gaussNorm_nonneg _ _ _ norm_nonneg)
+    fun n ↦ (norm_smul_le _ _).trans <|
+      (mul_le_mul_of_nonneg_left ((norm_pow_le b n).trans
+        (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)).trans <|
+      le_gaussNorm _ _ _ hf n
+
+end Normed
+
+end PowerSeries

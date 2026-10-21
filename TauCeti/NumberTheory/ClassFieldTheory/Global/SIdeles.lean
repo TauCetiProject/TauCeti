@@ -119,6 +119,7 @@ private def sIdelesToFiniteSIdelesHom : sIdeles (K := K) L S →* finiteSIdeles 
   ((IdeleGroup.toFiniteIdele (𝓞 L) L).comp (sIdeles L _).subtype).codRestrict _ fun x ↦
     toFiniteIdele_mem_finiteSIdeles_iff.2 x.2
 
+omit [NumberField K] in
 private theorem coe_sIdelesToFiniteSIdelesHom (x : sIdeles (K := K) L S) :
     ((sIdelesToFiniteSIdelesHom L S x : (FiniteAdeleRing (𝓞 L) L)ˣ) : FiniteAdeleRing (𝓞 L) L) =
       ((x : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).2 :=
@@ -130,6 +131,7 @@ private theorem sIdelesToFiniteSIdelesHom_smul (σ : L ≃ₐ[K] L) (x : sIdeles
   simp only [coe_sIdelesToFiniteSIdelesHom, coe_smul_finiteSIdeles, Units.coe_map,
     MonoidHom.coe_ofClass, coe_smul_sIdeles, coe_idele_smul, adeleGaloisAction_snd]
 
+omit [NumberField K] in
 /-- An `S`-idele with trivial finite part is the idele of its infinite part. -/
 private theorem sIdelesToFiniteSIdelesHom_eq_one_iff (x : sIdeles (K := K) L S) :
     sIdelesToFiniteSIdelesHom L S x = 1 ↔ ∃ y, infiniteIdelesToSIdelesHom L S y = x := by
@@ -155,6 +157,7 @@ private theorem infiniteIdelesToSIdelesHom_injective :
   simpa only [coe_infiniteIdelesToSIdelesHom] using
     congrArg (fun z : sIdeles (K := K) L S ↦ ((z : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).1) hxy
 
+omit [NumberField K] in
 private theorem sIdelesToFiniteSIdelesHom_surjective :
     Function.Surjective (sIdelesToFiniteSIdelesHom L S) := fun y ↦
   ⟨⟨IdeleGroup.ofFiniteIdele (𝓞 L) L y,

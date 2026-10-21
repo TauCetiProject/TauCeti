@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
+public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.Submodule.Prod
@@ -22,7 +23,8 @@ complement Mathlib's definitions of `QuadraticMap.PosDef`, `sigPos`, and `sigNeg
 
 It also proves that restriction to a subspace cannot increase either index of inertia, that
 quotienting a quadratic form by its radical preserves both indices, and that multiplication by a
-positive scalar preserves both indices while multiplication by a negative scalar exchanges them.
+positive scalar preserves both indices while multiplication by a negative scalar exchanges them; a
+form which a linear automorphism negates has equal indices.
 Finally, both indices are additive under orthogonal products.
 
 ## Main results
@@ -39,6 +41,8 @@ Finally, both indices are additive under orthogonal products.
   preserves both indices.
 * `QuadraticForm.sigPos_smul_of_neg` and `QuadraticForm.sigNeg_smul_of_neg`: negative scaling
   exchanges the two indices.
+* `QuadraticForm.sigNeg_eq_sigPos_of_comp_eq_neg`: a form negated by a linear automorphism has
+  equal indices of inertia.
 * `QuadraticForm.sigPos_lift_radical`: quotienting by the radical preserves the positive
   index of inertia.
 * `QuadraticForm.sigNeg_lift_radical`: quotienting by the radical preserves the negative
@@ -105,6 +109,15 @@ theorem sigNeg_smul_of_neg (Q : _root_.QuadraticForm K M) {a : K} (ha : a < 0) :
     sigNeg (a • Q) = sigPos (-(a • Q)) := (sigPos_neg (Q := a • Q)).symm
     _ = sigPos ((-a) • Q) := congrArg sigPos (neg_smul a Q).symm
     _ = sigPos Q := sigPos_smul_of_pos Q hpos
+
+omit [IsStrictOrderedRing K] [FiniteDimensional K M] in
+/-- If a linear automorphism `e` negates a quadratic form, `Q (e v) = -Q v`, then `Q` and `-Q` are
+equivalent, so the two indices of inertia of `Q` agree. For example, the real part of a complex
+quadratic form is negated by multiplication by `I`. -/
+theorem sigNeg_eq_sigPos_of_comp_eq_neg (Q : _root_.QuadraticForm K M) (e : M ≃ₗ[K] M)
+    (he : ∀ v, Q (e v) = -Q v) : sigNeg Q = sigPos Q := by
+  rw [← sigPos_neg]
+  exact (QuadraticMap.Equivalent.sigPos_eq ⟨⟨e, fun v ↦ by simp [he]⟩⟩).symm
 
 /-- A quadratic form is nonnegative exactly when its negative index of inertia vanishes. -/
 theorem forall_nonneg_iff_sigNeg_eq_zero (Q : _root_.QuadraticForm K M) :
@@ -300,6 +313,19 @@ open _root_.QuadraticForm
 
 variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+
+omit [IsStrictOrderedRing K] [FiniteDimensional K M] in
+/-- The negative index of a bilinear form agrees with that of its Gram matrix in any basis. -/
+@[simp]
+theorem sigNeg_toMatrix {I : Type*} [Fintype I] [DecidableEq I]
+    (b : Module.Basis I K M) (B : LinearMap.BilinForm K M) :
+    _root_.sigNeg ((B.toMatrix b).toQuadraticForm') = _root_.sigNeg B.toQuadraticMap := by
+  apply QuadraticMap.Equivalent.sigNeg_eq
+  refine ⟨{
+    toLinearEquiv := b.equivFun.symm
+    map_app' := fun v ↦ ?_ }⟩
+  rw [Matrix.toQuadraticForm'_apply, LinearMap.BilinMap.toQuadraticMap_apply]
+  exact (B.dotProduct_toMatrix_mulVec b v v).symm
 
 /-- A symmetric bilinear form is positive-semidefinite if and only if the negative index of its
 associated quadratic form vanishes. -/

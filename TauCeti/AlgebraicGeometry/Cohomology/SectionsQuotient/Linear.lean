@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Basic
+import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import Mathlib.LinearAlgebra.Isomorphisms
@@ -36,7 +37,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits TopologicalSpace AlgebraicGeometry
+open CategoryTheory Limits TopologicalSpace AlgebraicGeometry Opposite
 open TauCeti.AlgebraicGeometry.Scheme.Modules TauCeti.CategoryTheory
 
 universe u
@@ -61,6 +62,72 @@ lemma mayerVietorisSectionsDifferenceLinear_apply (s : Γ(M, U)) (t : Γ(M, V)) 
     LinearMap.comp_apply, LinearMap.fst_apply, LinearMap.snd_apply,
     Scheme.Modules.sectionsRestrictionLinear_apply, mayerVietorisSectionsDifference_apply]
   rfl
+
+/-- Restricting a global section to the two members of an open cover, linear over global
+functions. -/
+-- The source uses the native action of the top section ring. The domain of
+-- `sectionsRestrictionLinear` instead restricts that action along the top restriction map.
+def mayerVietorisSectionsRestrictionLinear :
+    Γ(M, ⊤) →ₗ[Γ(X, ⊤)] Γ(M, U) × Γ(M, V) where
+  toFun s := (M.presheaf.map U.leTop.op s, M.presheaf.map V.leTop.op s)
+  map_add' s t := by simp
+  map_smul' r s := by
+    simp only [M.map_smul, Prod.smul_mk, Scheme.Modules.sectionsGlobal_smul,
+      RingHom.id_apply]
+
+/-- The two components are the usual restrictions to the cover members. -/
+@[simp]
+lemma mayerVietorisSectionsRestrictionLinear_apply (s : Γ(M, ⊤)) :
+    mayerVietorisSectionsRestrictionLinear M U V s =
+      (M.presheaf.map U.leTop.op s, M.presheaf.map V.leTop.op s) :=
+  (rfl)
+
+/-- A section on a two-open cover is determined by its two restrictions. -/
+lemma mayerVietorisSectionsRestrictionLinear_injective (hUV : U ⊔ V = ⊤) :
+    Function.Injective (mayerVietorisSectionsRestrictionLinear M U V) := by
+  intro s t h
+  exact TopCat.Sheaf.eq_of_locally_eq₂ (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+    U.leTop V.leTop hUV.ge s t (congrArg Prod.fst h) (congrArg Prod.snd h)
+
+/-- The sections on a two-open cover that agree on the overlap are precisely restrictions of
+global sections. -/
+lemma exact_mayerVietorisSectionsRestrictionLinear (hUV : U ⊔ V = ⊤) :
+    Function.Exact (mayerVietorisSectionsRestrictionLinear M U V)
+      (mayerVietorisSectionsDifferenceLinear M U V) := by
+  intro ⟨s, t⟩
+  constructor
+  · intro h
+    rw [mayerVietorisSectionsDifferenceLinear_apply, mayerVietorisSectionsDifference_apply] at h
+    -- The linear difference uses module-category maps; gluing uses the underlying presheaf.
+    change M.presheaf.map (homOfLE inf_le_left).op s -
+      M.presheaf.map (homOfLE inf_le_right).op t = 0 at h
+    have heq := sub_eq_zero.mp h
+    let F : TopCat.Sheaf AddCommGrpCat X := ⟨M.presheaf, M.isSheaf⟩
+    let W : Bool → X.Opens := fun b ↦ if b then U else V
+    let a : ∀ b, F.obj.obj (op (W b)) := fun b ↦ by cases b <;> assumption
+    have hc : TopCat.Presheaf.IsCompatible F.obj W a := by
+      intro i j
+      cases i <;> cases j
+      · rfl
+      · have heq' := congrArg (M.presheaf.map (eqToHom (inf_comm V U)).op) heq.symm
+        simpa [W, a, F, Opens.infLELeft, Opens.infLERight,
+          ← M.presheaf.map_comp_apply] using heq'
+      · simpa [W, a, F, Opens.infLELeft, Opens.infLERight] using heq
+      · rfl
+    obtain ⟨z, hz, -⟩ := F.existsUnique_gluing' W ⊤
+      (fun _ ↦ homOfLE le_top) (by simp [W, iSup_bool_eq, hUV]) a hc
+    exact ⟨z, Prod.ext (hz true) (hz false)⟩
+  · rintro ⟨z, hz⟩
+    have hzero : mayerVietorisSectionsDifferenceLinear M U V
+        (mayerVietorisSectionsRestrictionLinear M U V z) = 0 := by
+      rw [mayerVietorisSectionsRestrictionLinear_apply,
+        mayerVietorisSectionsDifferenceLinear_apply, mayerVietorisSectionsDifference_apply]
+      -- Convert the module-category coercions to the presheaf restriction maps.
+      change M.presheaf.map (homOfLE inf_le_left).op (M.presheaf.map U.leTop.op z) -
+        M.presheaf.map (homOfLE inf_le_right).op (M.presheaf.map V.leTop.op z) = 0
+      simp only [← M.presheaf.map_comp_apply]
+      exact sub_self _
+    exact hz ▸ hzero
 
 private def terminalUnion (hUV : U ⊔ V = ⊤) : IsTerminal (U ⊔ V) := by
   rw [hUV]

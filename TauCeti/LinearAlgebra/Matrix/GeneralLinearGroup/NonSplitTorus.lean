@@ -22,7 +22,7 @@ import TauCeti.GroupTheory.Index.Basic
 -- Non-public: conjugation invariance of the shifted determinant is used only inside a proof.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 -- Non-public: lifting a unit of `E` lying in `F` to a unit of `F` is used only inside a proof.
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 -- Non-public: the order of `GL (Fin 2) F` over a finite field is used only inside the proof of
 -- `TauCeti.GL2NonSplitTorus.index_eq`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card

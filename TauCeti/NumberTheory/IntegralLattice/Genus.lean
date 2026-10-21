@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import Mathlib.Data.Nat.PrimeFin
+import Mathlib.Data.Int.Associated
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The genus of an integral lattice
@@ -16,6 +18,11 @@ Two integral lattices have the same genus when their real signatures agree and t
 localizations are isometric at every prime. This relation also makes sense for degenerate forms.
 The local condition concerns the actual forms on `ℤ_p ⊗[ℤ] L`, rather than just their extensions
 to `ℚ_p`.
+
+The genus determines the signed determinant. Integral local isometry at `p` changes the
+determinant by the square of a unit of `ℤ_p`, so the absolute determinants have the same
+`p`-adic valuation at every prime and are therefore equal. The real signature fixes the sign,
+since the signed determinant is `(-1) ^ n₋` times the absolute determinant.
 
 For lattices with equal nonzero signed determinants, the local tests reduce to the finite set
 of prime factors of twice the absolute determinant. Outside that set, the local determinants
@@ -80,6 +87,20 @@ theorem trans (h : L.SameGenus M) (h' : M.SameGenus N) : L.SameGenus N :=
     ⟨h.signature_eq.trans h'.signature_eq,
       fun p ↦ (h.localIntegralForm_equivalent p).trans (h'.localIntegralForm_equivalent p)⟩
 
+/-- **Lattices in the same genus have equal signed determinants.** No nondegeneracy assumption is
+needed: degenerate lattices in one genus both have determinant zero. -/
+theorem determinant_eq (h : L.SameGenus M) : L.determinant = M.determinant := by
+  have habs : L.determinant.natAbs = M.determinant.natAbs := by
+    refine Int.natAbs_eq_iff_associated.mpr
+      (Int.associated_iff_forall_associated_padicInt.mpr fun p _ ↦ ?_)
+    obtain ⟨u, hu⟩ := L.exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent M p
+      (h.localIntegralForm_equivalent p)
+    exact Associated.symm ⟨u ^ 2, by rw [hu, Units.val_pow_eq_pow_val, mul_comm]⟩
+  have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) h.signature_eq
+  rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
+    M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hneg, discriminant_def,
+    discriminant_def, habs]
+
 end SameGenus
 
 /-- An integral-lattice isometry preserves the genus. -/
@@ -101,15 +122,12 @@ theorem sameGenus_iff_localIntegralForm_equivalent_primeFactors
   · intro h
     exact ⟨h.signature_eq, fun p _ _ ↦ h.localIntegralForm_equivalent p⟩
   · rintro ⟨hsig, hlocal⟩
-    have hrank : Module.finrank ℤ L = Module.finrank ℤ M := by
-      rw [L.finrank_carrier, M.finrank_carrier,
-        ← L.signature_sum_eq_finrank, ← M.signature_sum_eq_finrank]
-      exact congrArg (fun s : ℕ × ℕ × ℕ ↦ s.1 + s.2.1 + s.2.2) hsig
     have hn : 2 * L.determinant.natAbs ≠ 0 :=
       mul_ne_zero (by decide) (Int.natAbs_ne_zero.mpr hdet0)
     refine (sameGenus_iff L M).mpr ⟨hsig, fun p ↦ ?_⟩
     by_cases hp : p ∣ 2 * L.determinant.natAbs
     · exact hlocal p ((Fact.out : p.Prime).mem_primeFactors hp hn)
-    · exact L.localIntegralForm_equivalent_of_not_dvd M hrank hdet hp
+    · exact L.localIntegralForm_equivalent_of_not_dvd M (L.finrank_eq_of_signature_eq hsig)
+        hdet hp
 
 end TauCeti.IntegralLattice

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.GraphStep
+public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 
 /-!
 # The bounded first-order trajectory operator
@@ -32,7 +32,7 @@ of smooth paths. Neither symmetry nor finite dimensionality of the target is req
 * M. Schwarz, *Morse Homology*, Chapter 2 (linearized trajectory operators).
 
 The coefficient action is Mathlib's `ContinuousLinearMap.holderL`, applied to evaluation;
-the domain is the closed weak-derivative graph of `TauCeti.Analysis.Sobolev.GraphStep`.
+the domain is the closed weak-derivative graph of `TauCeti.Analysis.Sobolev.GraphStep.Basic`.
 -/
 
 public section

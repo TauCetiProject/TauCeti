@@ -123,6 +123,31 @@ theorem conjugate_mono (g : WithConv (H →ₐ[R] R)) {I J : HopfIdeal R H} (h :
   intro x hx
   exact mem_conjugate.mpr (h (mem_conjugate.mp hx))
 
+/-- Conjugating a closed subgroup inside another closed subgroup agrees with conjugating
+its image in the ambient group. -/
+@[simp]
+theorem conjugate_comapOfSurjective {K : Type w} [CommRing K] [HopfAlgebra R K]
+    (I : HopfIdeal R K) (π : H →ₐc[R] K) (hπ : Function.Surjective π)
+    (g : WithConv (K →ₐ[R] R)) :
+    (I.comapOfSurjective π hπ).conjugate (WithConv.toConv (g.ofConv.comp π.toAlgHom)) =
+      (I.conjugate g).comapOfSurjective π hπ := by
+  ext x
+  simp only [mem_conjugate, mem_comapOfSurjective]
+  have h := AlgHom.congr_fun (π.comp_pointConjugationAlgHom_mapDomain g) x
+  simpa only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, BialgHom.mapDomain_apply] using
+    (congrArg (· ∈ I) h).to_iff
+
+/-- Conjugate closed subgroups of a closed subgroup are conjugate in the ambient group,
+using the image of the same conjugating point. No rational-point surjectivity is needed. -/
+theorem exists_conjugate_eq_comapOfSurjective {K : Type w} [CommRing K] [HopfAlgebra R K]
+    (I J : HopfIdeal R K) (π : H →ₐc[R] K) (hπ : Function.Surjective π)
+    (h : ∃ g : WithConv (K →ₐ[R] R), I.conjugate g = J) :
+    ∃ g : WithConv (H →ₐ[R] R),
+      (I.comapOfSurjective π hπ).conjugate g = J.comapOfSurjective π hπ := by
+  obtain ⟨g, hg⟩ := h
+  exact ⟨BialgHom.mapDomain π g, by
+    rw [BialgHom.mapDomain_apply, conjugate_comapOfSurjective, hg]⟩
+
 /-- If a conjugated point annihilates `J` and the kernel of the original point is contained in
 `I`, then conjugating `J` by the inverse point gives an ideal contained in `I`. -/
 theorem conjugate_inv_le_of_mem_quotientPointsSubgroup

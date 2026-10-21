@@ -80,24 +80,16 @@ theorem IsProP.mk_padicPow_eq_of_pow_dvd_sub (hG : IsProP p G) (g : G) (k : ℕ)
 group. It is the module structure on the abelian pro-`p` quotient `λ_n / λ_{n+1}`. -/
 @[instance_reducible]
 noncomputable def IsProP.gradedPieceModule (hG : IsProP p G) (q n : ℕ) :
-    Module ℤ_[p] (gradedPiece q G n) := by
-  let R := pLowerCentralSeries q G n
-  let N := (pLowerCentralSeries q G (n + 1)).subgroupOf R
-  let _ : IsClosed (R : Set G) := isClosed_pLowerCentralSeries n
-  let _ : IsClosed (N : Set R) := by
-    rw [isClosed_induced_iff]
-    exact ⟨pLowerCentralSeries q G (n + 1), isClosed_pLowerCentralSeries (n + 1), rfl⟩
-  exact ((hG.subgroup R).quotient N).module
+    Module ℤ_[p] (gradedPiece q G n) :=
+  ((hG.subgroup (pLowerCentralSeries q G n)).quotient
+    ((pLowerCentralSeries q G (n + 1)).subgroupOf (pLowerCentralSeries q G n))).module
 
 /-- The graded-piece module is the canonical module on its underlying abelian pro-`p` quotient. -/
 theorem IsProP.gradedPieceModule_def (hG : IsProP p G) (q n : ℕ) :
     hG.gradedPieceModule q n =
-      let R := pLowerCentralSeries q G n
-      let N := (pLowerCentralSeries q G (n + 1)).subgroupOf R
-      letI : IsClosed (R : Set G) := isClosed_pLowerCentralSeries n
-      letI : IsClosed (N : Set R) :=
-        (isClosed_pLowerCentralSeries (n + 1)).preimage continuous_subtype_val
-      ((hG.subgroup R).quotient N).module := (rfl)
+      ((hG.subgroup (pLowerCentralSeries q G n)).quotient
+        ((pLowerCentralSeries q G (n + 1)).subgroupOf (pLowerCentralSeries q G n))).module :=
+  (rfl)
 
 /-- In a pro-`p` group, the class of a `p`-adic power in a graded piece of the lower `q`-series is
 the corresponding `ℤ_p`-scalar multiple. -/
@@ -110,10 +102,6 @@ theorem IsProP.gradedMk_padicPow (hG : IsProP p G) {q n : ℕ}
       u • gradedMk q G n x := by
   let R := pLowerCentralSeries q G n
   let N := (pLowerCentralSeries q G (n + 1)).subgroupOf R
-  let _ : IsClosed (R : Set G) := isClosed_pLowerCentralSeries n
-  let _ : IsClosed (N : Set R) := by
-    rw [isClosed_induced_iff]
-    exact ⟨pLowerCentralSeries q G (n + 1), isClosed_pLowerCentralSeries (n + 1), rfl⟩
   let hR : IsProP p R := hG.subgroup R
   let xuR : R := ⟨hG.padicPow (x : G) u, hG.padicPow_mem (isClosed_pLowerCentralSeries n) x.2 u⟩
   have hpow : hR.padicPow x u = xuR := by
@@ -144,7 +132,6 @@ theorem IsProP.mk_commutatorElement_padicPow_left (hG : IsProP p G) {q j k : ℕ
       ((hG.padicPow ⁅(x : G), (y : G)⁆ u : G) :
         G ⧸ pLowerCentralSeries q G (j + k + 1 + 1)) := by
   let N := pLowerCentralSeries q G (j + k + 1 + 1)
-  let _ : IsClosed (N : Set G) := isClosed_pLowerCentralSeries _
   have hpow (z : G) : Continuous fun a : ℤ_[p] ↦ hG.padicPow z a :=
     hG.continuous_padicPow.comp (continuous_id.prodMk continuous_const)
   have hleft : Continuous fun a : ℤ_[p] ↦
@@ -178,7 +165,6 @@ theorem IsProP.mk_commutatorElement_padicPow_right (hG : IsProP p G) {q j k : �
       ((hG.padicPow ⁅(x : G), (y : G)⁆ u : G) :
         G ⧸ pLowerCentralSeries q G (j + k + 1 + 1)) := by
   let N := pLowerCentralSeries q G (j + k + 1 + 1)
-  let _ : IsClosed (N : Set G) := isClosed_pLowerCentralSeries _
   have hpow (z : G) : Continuous fun a : ℤ_[p] ↦ hG.padicPow z a :=
     hG.continuous_padicPow.comp (continuous_id.prodMk continuous_const)
   have hleft : Continuous fun a : ℤ_[p] ↦

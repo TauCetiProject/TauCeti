@@ -15,30 +15,37 @@ string. It also shows that any integer-valued length function symmetrizing the C
 quadratic along integral root relations. The results are the root-system calculation behind the
 integrality of Chevalley structure constants.
 
+## Main results
+
+* `RootPairing.length_of_root_eq_add_zsmul`: a symmetrizing integer-valued length function is
+  quadratic along integral root relations `γ = β + n • α`.
+* `RootPairing.chainBotCoeff_comm_of_root_add_mem`: `chainBotCoeff` is symmetric when the sum of
+  two roots is a root.
+* `RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero`: orthogonal roots
+  whose sum is a root have equal squared length under any invariant form.
+* `RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq`: along a root string,
+  `q B(γ, γ) = (p + 1) B(β, β)` for `γ = α + β`.
+
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.1.
-
-This advances the Chevalley-basis input to the explicit Chevalley--Demazure construction in Layer
-9 of `TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of the
-`CFSGStatement` roadmap.
 -/
 
 public section
 
 noncomputable section
 
-open Function Set
+open Set
 
-namespace TauCeti
+namespace RootPairing
 
 section
 
 variable {I M N : Type*} [AddCommGroup M] [Module ℤ M] [AddCommGroup N] [Module ℤ N]
 
 /-- A symmetrizing integer-valued length function is quadratic along integral root relations. -/
-theorem _root_.RootPairing.length_of_root_eq_add_zsmul (P : RootPairing I ℤ M N)
+theorem length_of_root_eq_add_zsmul (P : RootPairing I ℤ M N)
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I) (n : ℤ) (h : P.root γ = P.root β + n • P.root α) :
@@ -65,18 +72,12 @@ theorem _root_.RootPairing.length_of_root_eq_add_zsmul (P : RootPairing I ℤ M 
         linear_combination -n * hsym α β
   exact mul_left_cancel₀ (by norm_num : (2 : ℤ) ≠ 0) htwo
 
-end
+variable {P : RootPairing I ℤ M N}
 
-section
-
-variable {I M N : Type*} [Finite I] [AddCommGroup M] [Module ℤ M]
-  [Module.IsTorsionFree ℤ M] [AddCommGroup N] [Module ℤ N] {P : RootPairing I ℤ M N}
-  [P.IsCrystallographic] [P.IsReduced]
-
-omit [P.IsCrystallographic] [P.IsReduced] in
 /-- Distinct non-opposite roots of equal positive length have Cartan pairing `-1`, `0`, or `1`
 when that pairing has absolute value at most two. -/
-theorem _root_.RootPairing.pairing_mem_neg_one_zero_one_of_length_eq
+theorem pairing_mem_neg_one_zero_one_of_length_eq
+    [Finite I] [Module.IsTorsionFree ℤ M]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β : I) (hpair : |P.pairing β α| ≤ 2)
@@ -100,10 +101,10 @@ theorem _root_.RootPairing.pairing_mem_neg_one_zero_one_of_length_eq
   have hbounds : -2 ≤ P.pairing β α ∧ P.pairing β α ≤ 2 := abs_le.mp hpair
   omega
 
-omit [P.IsCrystallographic] [P.IsReduced] in
 /-- An equal-length root string through non-opposite roots has no term two or more steps
 in the positive direction when the resulting root has length less than three times theirs. -/
-theorem _root_.RootPairing.not_root_eq_add_nsmul_of_length_eq_of_two_le
+theorem not_root_eq_add_nsmul_of_length_eq_of_two_le
+    [Finite I] [Module.IsTorsionFree ℤ M]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I) (n : ℕ) (hpair : |P.pairing β α| ≤ 2)
@@ -128,9 +129,8 @@ theorem _root_.RootPairing.not_root_eq_add_nsmul_of_length_eq_of_two_le
     rw [hp] at hlen <;>
     nlinarith [mul_nonneg hquad (le_of_lt hαpos)]
 
-omit [Finite I] [Module.IsTorsionFree ℤ M] [P.IsCrystallographic] [P.IsReduced] in
 /-- If two roots of length one add to a root of length two, their Cartan pairing is zero. -/
-theorem _root_.RootPairing.pairing_eq_zero_of_short_add_short_eq_long
+theorem pairing_eq_zero_of_short_add_short_eq_long
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I) (hα : length α = 1) (hβ : length β = 1) (hγ : length γ = 2)
@@ -140,10 +140,9 @@ theorem _root_.RootPairing.pairing_eq_zero_of_short_add_short_eq_long
   norm_num at hlen ⊢
   omega
 
-omit [Finite I] [Module.IsTorsionFree ℤ M] [P.IsCrystallographic] [P.IsReduced] in
 /-- A positive root string from a root of length one in a length-two direction has at most one
 step, and that step again has length one. -/
-theorem _root_.RootPairing.n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_long
+theorem n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_long
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I) (n : ℕ) (hpair : |P.pairing α β| ≤ 2)
@@ -186,10 +185,10 @@ theorem _root_.RootPairing.n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
     rcases hp with hp | hp | hp <;> rw [hp] at hlen' <;> norm_num at hlen'
 
-omit [Module.IsTorsionFree ℤ M] in
 /-- If two roots of length one add to a root of length two, and every root at the next positive
 string position has length one or two, their descending chain coefficient is one. -/
-theorem _root_.RootPairing.chainBotCoeff_eq_one_of_short_add_short_eq_long
+theorem chainBotCoeff_eq_one_of_short_add_short_eq_long
+    [Finite I] [P.IsCrystallographic] [P.IsReduced]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I)
@@ -225,10 +224,9 @@ theorem _root_.RootPairing.chainBotCoeff_eq_one_of_short_add_short_eq_long
   rw [hpIn] at hdiff
   omega
 
-omit [Finite I] [Module.IsTorsionFree ℤ M] [P.IsCrystallographic] [P.IsReduced] in
 /-- If adding twice a length-one root to a length-two root gives a root, the endpoint has length
 two and the two Cartan pairings are `-2` and `-1`. -/
-theorem _root_.RootPairing.pairings_of_long_add_two_short
+theorem pairings_of_long_add_two_short
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I)
@@ -245,7 +243,8 @@ theorem _root_.RootPairing.pairings_of_long_add_two_short
 
 /-- A two-step root string from a length-two root in a length-one direction has a length-one
 midpoint, and its chain coefficients are zero, two, one, and one. -/
-theorem _root_.RootPairing.exists_short_midpoint_of_long_add_two_short
+theorem exists_short_midpoint_of_long_add_two_short
+    [Finite I] [Module.IsTorsionFree ℤ M] [P.IsCrystallographic] [P.IsReduced]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I)
@@ -265,7 +264,7 @@ theorem _root_.RootPairing.exists_short_midpoint_of_long_add_two_short
     have hpairs := (P.pairing_neg_two_neg_two_iff α β).2 hneg
     omega
   have hlin : LinearIndependent ℤ ![P.root α, P.root β] :=
-    RootPairing.IsReduced.linearIndependent P hne hneg
+    IsReduced.linearIndependent P hne hneg
   have htop_ge : 2 ≤ P.chainTopCoeff α β := by
     rw [← P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hlin]
     refine ⟨γ, ?_⟩
@@ -293,14 +292,12 @@ theorem _root_.RootPairing.exists_short_midpoint_of_long_add_two_short
     exact hδlen
   have hδbot := P.chainBotCoeff_of_add hlin hδ
   have hδtop := P.chainTopCoeff_of_add hlin hδ
-  refine ⟨δ, hδ, hδshort, hbot, htop, ?_, ?_⟩
-  · omega
-  · omega
+  exact ⟨δ, hδ, hδshort, hbot, htop, by omega, by omega⟩
 
-omit [Module.IsTorsionFree ℤ M] [P.IsReduced] in
 /-- A root edge whose source and target have the same positive length has no descending root
 when every possible predecessor has length at most two. -/
-theorem _root_.RootPairing.chainBotCoeff_eq_zero_of_add_of_length_eq
+theorem chainBotCoeff_eq_zero_of_add_of_length_eq
+    [Finite I] [P.IsCrystallographic]
     (length : I → ℤ)
     (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
     (α β γ : I) (hαpos : 0 < length α)
@@ -333,7 +330,7 @@ variable {I R M N : Type*} [Finite I] [CommRing R] [CharZero R] [IsDomain R]
 
 /-- The lower endpoint of the root string through two roots is symmetric when their sum is a
 root. -/
-theorem _root_.RootPairing.chainBotCoeff_comm_of_root_add_mem {i j : I}
+theorem chainBotCoeff_comm_of_root_add_mem {i j : I}
     (hadd : P.root i + P.root j ∈ range P.root) :
     P.chainBotCoeff i j = P.chainBotCoeff j i := by
   have hij := P.linearIndependent_of_add_mem_range_root' hadd
@@ -367,7 +364,7 @@ theorem _root_.RootPairing.chainBotCoeff_comm_of_root_add_mem {i j : I}
 
 /-- Two orthogonal roots whose sum is a root have the same squared length in every invariant
 form. -/
-theorem _root_.RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
+theorem InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
     (B : P.InvariantForm) {i j k : I}
     (hk : P.root k = P.root i + P.root j) (hij₀ : P.pairing i j = 0) :
     B.form (P.root i) (P.root i) = B.form (P.root j) (P.root j) := by
@@ -422,13 +419,11 @@ theorem _root_.RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairi
   simp only [mem_insert_iff, mem_singleton_iff, Prod.mk.injEq] at hpik hpjk
   have hik₁ : P.pairing i k = 1 := by
     have : P.pairingIn ℤ i k = 1 := by omega
-    rw [← P.algebraMap_pairingIn ℤ]
-    rw [this]
+    rw [← P.algebraMap_pairingIn ℤ, this]
     norm_num
   have hjk₁ : P.pairing j k = 1 := by
     have : P.pairingIn ℤ j k = 1 := by omega
-    rw [← P.algebraMap_pairingIn ℤ]
-    rw [this]
+    rw [← P.algebraMap_pairingIn ℤ, this]
     norm_num
   -- Step 4: Combine the invariant-form swap identities `B(i, i) ⟨k, i⟩ = B(k, k) ⟨i, k⟩`.
   have hi := B.pairing_mul_eq_pairing_mul_swap i k
@@ -440,14 +435,14 @@ theorem _root_.RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairi
   linear_combination hi - hj
 
 /-- Along a root string, the squared lengths of two consecutive roots have the ratio of the
-corresponding raising coefficients.  If `γ = α + β`, then
+corresponding raising coefficients. If `γ = α + β`, then
 
 ```text
 q (γ, γ) = (p + 1) (β, β),
 ```
 
 where `p = chainBotCoeff α β` and `q = chainTopCoeff α β`. -/
-theorem _root_.RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq
+theorem InvariantForm.chainTopCoeff_mul_apply_root_self_eq
     (B : P.InvariantForm) {i j k : I}
     (hk : P.root k = P.root i + P.root j) :
     (P.chainTopCoeff i j : R) * B.form (P.root k) (P.root k) =
@@ -457,7 +452,7 @@ theorem _root_.RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq
   have hij := P.linearIndependent_of_add_mem_range_root' hadd
   have hji := P.linearIndependent_of_add_mem_range_root' (i := j) (j := i)
     (by simpa [add_comm] using hadd)
-  have hbot := RootPairing.chainBotCoeff_comm_of_root_add_mem (P := P) hadd
+  have hbot := P.chainBotCoeff_comm_of_root_add_mem hadd
   have htop := P.one_le_chainTopCoeff_of_root_add_mem hadd
   have htop' := P.one_le_chainTopCoeff_of_root_add_mem (i := j) (j := i)
     (by simpa [add_comm] using hadd)
@@ -532,9 +527,7 @@ theorem _root_.RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq
   · have hij₀ : P.pairing i j = 0 := by
       rw [hpqR', ← hbot, hp, hq']
       norm_num
-    have heq :=
-      RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
-        (P := P) B hk hij₀
+    have heq := B.apply_root_self_eq_of_root_add_of_pairing_eq_zero hk hij₀
     norm_num [hp, hq] at heq ⊢
     linear_combination heq
   · norm_num [hp, hq, hq', hbot] at hlength ⊢
@@ -543,4 +536,4 @@ theorem _root_.RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq
 
 end
 
-end TauCeti
+end RootPairing

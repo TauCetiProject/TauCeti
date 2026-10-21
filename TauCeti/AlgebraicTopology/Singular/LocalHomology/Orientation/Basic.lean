@@ -152,6 +152,38 @@ theorem nat_card_localOrientation {M : Type w} [TopologicalSpace M] {x : M} {d :
     · exact Set.mem_insert_iff.mpr (Or.inl (Subtype.ext h))
     · exact Set.mem_insert_of_mem _ (Set.mem_singleton_iff.mpr (Subtype.ext h))
 
+/-- In a local homology fibre isomorphic to `ℤ`, two local orientations agree up to sign. -/
+theorem IsLocalOrientation.eq_or_eq_neg {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ))
+    {z z' : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
+    (hz : IsLocalOrientation x d z) (hz' : IsLocalOrientation x d z') : z' = z ∨ z' = -z := by
+  rcases (isLocalOrientation_iff_eq_or_eq_neg_inv_one e z).1 hz with rfl | rfl <;>
+    rcases (isLocalOrientation_iff_eq_or_eq_neg_inv_one e z').1 hz' with rfl | rfl <;> simp
+
+/-- In a local homology fibre isomorphic to `ℤ`, a local orientation has infinite order. -/
+theorem IsLocalOrientation.zsmul_eq_zero_iff {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ))
+    {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
+    (hz : IsLocalOrientation x d z) {c : ℤ} : c • z = 0 ↔ c = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  have h' := congrArg (fun a ↦ (e.hom a).down) h
+  rcases (isLocalOrientation_iff_eq_or_eq_neg_inv_one e z).1 hz with rfl | rfl <;> simpa using h'
+
+/-- In a local homology fibre isomorphic to `ℤ`, a local orientation differs from its reversal. -/
+theorem IsLocalOrientation.neg_ne {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ))
+    {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
+    (hz : IsLocalOrientation x d z) : -z ≠ z := by
+  intro h
+  have h2 : (2 : ℤ) • z = 0 := by
+    rw [two_zsmul]
+    nth_rw 1 [← h]
+    exact neg_add_cancel z
+  exact two_ne_zero ((hz.zsmul_eq_zero_iff e).1 h2)
+
 /-- The local orientation at `x` selected by a chart and its chart-induced local homology
 isomorphism. -/
 def localOrientationOfChart {M E : Type w} [TopologicalSpace M] [T2Space M]

@@ -19,6 +19,12 @@ assignment on `κ` to the coordinates in the image of `e` has the corresponding 
 `ι`. This is the finite-family form of the fact that a subfamily of independent coordinates is
 still independent.
 
+**Currying.** A product measure over the pairs `⟨i, j⟩` of a sigma type is the product over `i`
+of the product measures over `j`: `MeasurableEquiv.piCurry` carries one to the other. Mathlib has
+this for products of probability measures (`MeasureTheory.Measure.infinitePi_map_piCurry`); here
+the factors are σ-finite. It regroups the coordinates of a product of products, for instance when
+an orthonormal basis is chosen in each factor of a Euclidean product.
+
 **Reading off a pair of coordinates.** The evaluation map `x ↦ (x a, x b)` at two distinct indices
 pushes `Measure.pi μ` forward to `μ a ⊗ μ b`: distinct coordinates of a product measure are
 independent, and each single coordinate has law `μ a` (Mathlib's `measurePreserving_eval`). This
@@ -51,10 +57,19 @@ with the right-nested products `β × β × β` and `β × β × β × β`; unde
 `finFourArrowPairPair`, groups alternate coordinates as `((x 0, x 2), (x 1, x 3))` and carries
 the product measure to `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
 
+**Extensionality from boxes.** A finite measure on a finite product space, which need not be a
+product measure, is determined by its values on measurable boxes `Set.univ.pi s`, because boxes
+form a π-system generating the product σ-algebra and contain the whole space. The same holds on
+`γ × (∀ i, α i)` for the products `S ×ˢ Set.univ.pi s`. These are the box analogues of Mathlib's
+`MeasureTheory.Measure.ext_prod`; Mathlib's `MeasureTheory.Measure.pi_eq` covers only the case
+where one side is a product measure.
+
 ## Main statements
 
 * `TauCeti.measurePreserving_pi_comp_embedding` — restricting a product assignment along an
   embedding is measure preserving;
+* `TauCeti.measurePreserving_piCurry` — currying a product measure over a sigma type is measure
+  preserving;
 * `TauCeti.measurePreserving_eval_pair` — reading off two distinct coordinates is measure
   preserving;
 * `TauCeti.measurePreserving_piSplitAt` — separating the coordinate `i₀` from the rest is
@@ -68,6 +83,10 @@ the product measure to `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
 * `TauCeti.finFourArrowPairPair` and `TauCeti.measurePreserving_finFourArrowPairPair` — functions
   on `Fin 4` as two pairs of alternate coordinates, carrying `Measure.pi` to a product of two
   product measures.
+* `MeasureTheory.Measure.ext_pi` — two finite measures on a finite product that agree on
+  measurable boxes are equal;
+* `MeasureTheory.Measure.ext_prod_pi` — two finite measures on `γ × (∀ i, α i)` that agree
+  on products of a measurable set and a measurable box are equal.
 
 ## Implementation
 
@@ -105,6 +124,25 @@ theorem measurePreserving_pi_comp_embedding {ι κ : Type*} [Fintype ι] [Fintyp
   congr 1
   funext i
   exact (measurePreserving_eval μ (e i)).map_eq
+
+/-- **Currying a finite product measure.** A product measure indexed by the pairs `⟨i, j⟩` with
+`j : κ i` is carried by `MeasurableEquiv.piCurry` to the product over `i` of the product measures
+over `j`.
+
+Mathlib's `MeasureTheory.Measure.infinitePi_map_piCurry` is the corresponding statement for
+products of probability measures; here the factors are only σ-finite. -/
+theorem measurePreserving_piCurry {ι : Type*} {κ : ι → Type*} [Fintype ι] [∀ i, Fintype (κ i)]
+    {X : ∀ i, κ i → Type*} [∀ i j, MeasurableSpace (X i j)] (μ : ∀ i j, Measure (X i j))
+    [∀ i j, SigmaFinite (μ i j)] :
+    MeasurePreserving (MeasurableEquiv.piCurry X)
+      (Measure.pi fun p : (i : ι) × κ i => μ p.1 p.2) (Measure.pi fun i => Measure.pi (μ i)) := by
+  refine MeasurePreserving.symm _ ⟨(MeasurableEquiv.piCurry X).symm.measurable,
+    (Measure.pi_eq fun s _ => ?_).symm⟩
+  have hpre : Sigma.uncurry ⁻¹' univ.pi s = univ.pi fun i => univ.pi fun j => s ⟨i, j⟩ := by
+    simpa using uncurry_preimage_sigma_pi univ (fun _ => univ) s
+  rw [MeasurableEquiv.map_apply, MeasurableEquiv.coe_piCurry_symm, hpre, Measure.pi_pi,
+    ← Finset.univ_sigma_univ, Finset.prod_sigma]
+  exact Finset.prod_congr rfl fun i _ => Measure.pi_pi _ _
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
   [∀ i, MeasurableSpace (α i)]
@@ -341,3 +379,38 @@ theorem measurePreserving_finFourArrowPairPair (μ : Measure β) [SigmaFinite μ
 end FinArrow
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+variable {ι : Type*} [Finite ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+
+/-- **Finite measures on a finite product are determined by boxes.** Two measures on
+`∀ i, α i` agreeing on every measurable box `Set.univ.pi s` are equal, provided the first is finite;
+the box `Set.univ` then makes the second finite too. -/
+theorem ext_pi {μ ν : Measure (∀ i, α i)} [IsFiniteMeasure μ]
+    (h : ∀ s : ∀ i, Set (α i), (∀ i, MeasurableSet (s i)) → μ (univ.pi s) = ν (univ.pi s)) :
+    μ = ν := by
+  refine ext_of_generate_finite _ generateFrom_pi.symm isPiSystem_pi ?_ ?_
+  · rintro _ ⟨s, hs, rfl⟩
+    exact h s fun i ↦ hs i (mem_univ i)
+  · simpa using h (fun _ ↦ univ) fun _ ↦ .univ
+
+/-- **Finite measures on `γ × (∀ i, α i)` are determined by box rectangles.** Two measures agreeing
+on every product `S ×ˢ Set.univ.pi s` of a measurable set and a measurable box are equal, provided
+the first is finite. -/
+theorem ext_prod_pi {γ : Type*} [MeasurableSpace γ] {μ ν : Measure (γ × ∀ i, α i)}
+    [IsFiniteMeasure μ]
+    (h : ∀ S : Set γ, MeasurableSet S → ∀ s : ∀ i, Set (α i), (∀ i, MeasurableSet (s i)) →
+      μ (S ×ˢ univ.pi s) = ν (S ×ˢ univ.pi s)) :
+    μ = ν := by
+  refine ext_of_generate_finite (image2 (· ×ˢ ·) {S : Set γ | MeasurableSet S}
+    (univ.pi '' univ.pi fun i ↦ {s : Set (α i) | MeasurableSet s})) ?_ ?_ ?_ ?_
+  · exact (generateFrom_eq_prod MeasurableSpace.generateFrom_measurableSet generateFrom_pi
+      isCountablySpanning_measurableSet
+      (IsCountablySpanning.pi fun _ ↦ isCountablySpanning_measurableSet)).symm
+  · exact MeasurableSpace.isPiSystem_measurableSet.prod isPiSystem_pi
+  · rintro _ ⟨S, hS, _, ⟨s, hs, rfl⟩, rfl⟩
+    exact h S hS s fun i ↦ hs i (mem_univ i)
+  · simpa using h univ .univ (fun _ ↦ univ) fun _ ↦ .univ
+
+end MeasureTheory.Measure

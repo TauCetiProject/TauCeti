@@ -17,17 +17,18 @@ import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 # Bessel-potential and weak-derivative Sobolev spaces agree
 
 This file proves that the Fourier-theoretic and weak-derivative definitions of integer-order
-`L²` Sobolev regularity on the whole space agree: for every natural number `k`, a real `L²`
-function lies in Mathlib's Bessel-potential space `H^{k,2}(ℝⁿ)` exactly when it is the value of an
-element of the weak-derivative Sobolev space `W^{k,2}(ℝⁿ)`.
+`Lᵖ` Sobolev regularity on the whole space agree for `1 < p < ∞` (Calderón's theorem): for every
+natural number `k`, a real `Lᵖ` function lies in Mathlib's Bessel-potential space `H^{k,p}(ℝⁿ)`
+exactly when it is the value of an element of the weak-derivative Sobolev space `W^{k,p}(ℝⁿ)`.
+The two scales differ at `p = 1` and `p = ∞`.
 
-Both scales are described by first derivatives. A tempered distribution lies in `H^{k+1,2}` when it
-lies in `L²` and its directional derivatives lie in `H^{k,2}`
-(`TemperedDistribution.memSobolev_natCast_add_one_iff`), and a function lies in `W^{k+1,2}` when
-its directional weak derivatives lie in `W^{k,2}`
-(`TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn`). On the whole space, weak
-derivatives are tempered-distributional derivatives
-(`TauCeti.hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq`), and an `L²`
+Both scales are described by first derivatives. A tempered distribution lies in `H^{k+1,p}` when
+it lies in `Lᵖ` and its directional derivatives lie in `H^{k,p}`
+(`TemperedDistribution.memSobolev_natCast_add_one_iff`, which rests on the Mihlin–Hörmander
+multiplier theorem when `p ≠ 2`), and a function lies in `W^{k+1,p}` when its directional weak
+derivatives lie in `W^{k,p}` (`TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn`).
+On the whole space, weak derivatives are tempered-distributional derivatives
+(`TauCeti.hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq`), and an `Lᵖ`
 derivative of a real function has a real representative. Induction on `k` then matches the two
 descriptions.
 
@@ -35,11 +36,14 @@ descriptions.
 
 * `MeasureTheory.Lp.exists_real_lp_lineDeriv_of_memSobolev_zero`: an order-zero Bessel-potential
   representative of a derivative of a real `Lᵖ` function may be chosen real.
-* `MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`: `H^{k,2}(ℝⁿ) = W^{k,2}(ℝⁿ)` for
-  every natural `k`.
+* `MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`: `H^{k,p}(ℝⁿ) = W^{k,p}(ℝⁿ)` for
+  every natural `k` and `1 < p < ∞`.
 
 ## References
 
+* A.-P. Calderón, *Lebesgue spaces of differentiable functions and distributions*, Proc. Sympos.
+  Pure Math. **4** (1961), 33–49.
+* E. M. Stein, *Singular Integrals and Differentiability Properties of Functions*, Chapter V, §3.
 * L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.8.
 * M. Taylor, *Partial Differential Equations I*, Chapter 4.
 -/
@@ -122,12 +126,14 @@ theorem exists_real_lp_lineDeriv_of_memSobolev_zero {p : ENNReal} [Fact (1 ≤ p
       filter_upwards [Complex.reCLM.coeFn_compLp z] with x hx
       simp [u', hx]
 
-/-- **Weak-derivative and Bessel-potential Sobolev spaces agree.** At every natural order `k`, a
-real `L²` function lies in Mathlib's Bessel-potential space `H^{k,2}(ℝⁿ)` exactly when it is the
-value of an element of the weak-derivative Sobolev space `W^{k,2}(ℝⁿ)`. -/
-theorem memSobolev_natCast_iff_exists_wkp_value_eq (k : ℕ) (u : Lp ℝ 2 (volume : Measure E)) :
-    MemSobolev k 2 (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) ↔
-      ∃ w : Wkp volume ⊤ 2 k, (Wkp.value k w : E → ℝ) =ᵐ[volume] u := by
+/-- **Weak-derivative and Bessel-potential Sobolev spaces agree** (Calderón). For `1 < p < ∞` and
+every natural order `k`, a real `Lᵖ` function lies in Mathlib's Bessel-potential space
+`H^{k,p}(ℝⁿ)` exactly when it is the value of an element of the weak-derivative Sobolev space
+`W^{k,p}(ℝⁿ)`. -/
+theorem memSobolev_natCast_iff_exists_wkp_value_eq {p : ENNReal} [Fact (1 ≤ p)] (hp : 1 < p)
+    (hp_top : p ≠ ⊤) (k : ℕ) (u : Lp ℝ p (volume : Measure E)) :
+    MemSobolev k p (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) ↔
+      ∃ w : Wkp volume ⊤ p k, (Wkp.value k w : E → ℝ) =ᵐ[volume] u := by
   have hvolume : (volume : Measure E) = volume.restrict ((⊤ : Opens E) : Set E) := by simp
   induction k generalizing u with
   | zero =>
@@ -141,22 +147,23 @@ theorem memSobolev_natCast_iff_exists_wkp_value_eq (k : ℕ) (u : Lp ℝ 2 (volu
       -- regularity by `memSobolev_natCast_add_one_iff`, weak regularity by
       -- `Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn`. The two notions of derivative
       -- agree by `hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq`.
-      set uTop : Lp ℝ 2 (volume.restrict ((⊤ : Opens E) : Set E)) :=
+      set uTop : Lp ℝ p (volume.restrict ((⊤ : Opens E) : Set E)) :=
         castLpₗᵢ (𝕜 := ℝ) hvolume u
       have hcoe : ∀ x, uTop x = u x := coeFn_castLpₗᵢ hvolume u
-      have hvalue : (∃ w : Wkp volume ⊤ 2 (k + 1), (Wkp.value (k + 1) w : E → ℝ) =ᵐ[volume] u) ↔
-          ∃ w : Wkp volume ⊤ 2 (k + 1), Wkp.value (k + 1) w = uTop := by
+      have hvalue : (∃ w : Wkp volume ⊤ p (k + 1), (Wkp.value (k + 1) w : E → ℝ) =ᵐ[volume] u) ↔
+          ∃ w : Wkp volume ⊤ p (k + 1), Wkp.value (k + 1) w = uTop := by
         refine exists_congr fun w => ⟨fun h => Lp.ext ?_, fun h => ?_⟩
         · exact Filter.EventuallyEq.trans (ae_restrict_of_ae h) (.of_forall fun x => (hcoe x).symm)
         · rw [h]
           exact .of_forall hcoe
-      rw [Nat.cast_succ, TemperedDistribution.memSobolev_natCast_add_one_iff, hvalue,
+      rw [Nat.cast_succ, TemperedDistribution.memSobolev_natCast_add_one_iff hp hp_top, hvalue,
         Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn]
       refine ⟨fun h v => ?_, fun h => ⟨memSobolev_zero_iff.mpr ⟨_, rfl⟩, fun v => ?_⟩⟩
-      · -- an `H^k` derivative is an `L²` function, hence by induction the value of a `W^{k,2}`
-        -- function
+      · -- an `H^{k,p}` derivative is an `Lᵖ` function, hence by induction the value of a
+        -- `W^{k,p}` function
         obtain ⟨u', hu'⟩ :=
-          exists_real_lp_lineDeriv_of_memSobolev_zero u v ((h.2 v).mono (Nat.cast_nonneg k))
+          exists_real_lp_lineDeriv_of_memSobolev_zero u v
+            ((h.2 v).mono_of_one_lt hp hp_top (Nat.cast_nonneg k))
         obtain ⟨d, hd⟩ := (ih u').mp (hu' ▸ h.2 v)
         refine ⟨d, ?_⟩
         have hline := (hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq
@@ -164,7 +171,7 @@ theorem memSobolev_natCast_iff_exists_wkp_value_eq (k : ℕ) (u : Lp ℝ 2 (volu
         exact (hline.congr_ae (.of_forall fun x => (hcoe x).symm)).congr_ae_deriv
           (by simpa only [Opens.coe_top, Measure.restrict_univ] using hd.symm)
       · obtain ⟨d, hd⟩ := h v
-        set u' : Lp ℝ 2 (volume : Measure E) := castLpₗᵢ (𝕜 := ℝ) hvolume.symm (Wkp.value k d)
+        set u' : Lp ℝ p (volume : Measure E) := castLpₗᵢ (𝕜 := ℝ) hvolume.symm (Wkp.value k d)
         have hline : HasWeakLineDerivOn volume ⊤ u u' v :=
           (hd.congr_ae (.of_forall hcoe)).congr_ae_deriv
             (.of_forall fun x => (coeFn_castLpₗᵢ hvolume.symm _ x).symm)

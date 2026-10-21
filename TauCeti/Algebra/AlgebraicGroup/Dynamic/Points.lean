@@ -196,6 +196,19 @@ theorem genericPoint_eq_pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
       pointsHom (LaurentPolynomial A) l (LaurentPolynomial.genericUnit A) := by
   rw [genericPoint]
 
+/-- The generic cocharacter point is its coordinate map with coefficients extended to the
+value algebra. -/
+theorem genericPoint_ofConv (l : H →ₐc[R] LaurentPolynomial R) :
+    (genericPoint A l).ofConv =
+      (AddMonoidAlgebra.mapAlgHom ℤ (Algebra.ofId R A)).comp l.toAlgHom := by
+  have he : laurentEval (R := R) (LaurentPolynomial.genericUnit A) =
+      AddMonoidAlgebra.mapAlgHom ℤ (Algebra.ofId R A) := by
+    apply Eq.symm
+    apply laurentEval_unique
+    simp [LaurentPolynomial.genericUnit_val]
+  rw [genericPoint_eq_pointsHom, pointsHom_apply, BialgHom.mapDomain_apply,
+    ofConv_toConv, he]
+
 /-! ### Naturality in the value algebra -/
 
 section Naturality
@@ -258,3 +271,28 @@ theorem genericPoint_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) 
 end HopfAlgebra
 
 end TauCeti.Cocharacter
+
+namespace BialgHom
+
+open TauCeti.Cocharacter
+
+variable {R H K A : Type*} [CommSemiring R] [Semiring H] [Semiring K]
+variable [Bialgebra R H] [Bialgebra R K] [CommSemiring A] [Algebra R A]
+
+/-- Inclusion of polynomial-valued points commutes with a group homomorphism. -/
+theorem mapDomain_ofPolyPoint (φ : H →ₐc[R] K)
+    (F : WithConv (K →ₐ[R] Polynomial A)) :
+    BialgHom.mapDomain φ (ofPolyPoint A F) =
+      ofPolyPoint A (BialgHom.mapDomain φ F) := by
+  ext h
+  simp [ofPolyPoint_apply, BialgHom.mapDomain_apply]
+
+/-- Evaluation at the origin commutes with a group homomorphism. -/
+theorem mapDomain_evalZeroPoint (φ : H →ₐc[R] K)
+    (F : WithConv (K →ₐ[R] Polynomial A)) :
+    BialgHom.mapDomain φ (evalZeroPoint A F) =
+      evalZeroPoint A (BialgHom.mapDomain φ F) := by
+  ext h
+  simp [evalZeroPoint_apply, BialgHom.mapDomain_apply]
+
+end BialgHom

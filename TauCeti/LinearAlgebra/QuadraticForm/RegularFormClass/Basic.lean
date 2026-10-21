@@ -50,6 +50,8 @@ rank is additive.
 * `TauCeti.exists_presentedForm_equivalent`: every regular form has a diagonal presentation.
 * `TauCeti.formClass_mk`: the class of a form is computed by any of its diagonalizations.
 * `TauCeti.formClass_eq_iff`: two regular forms are isometric exactly when their classes agree.
+* `TauCeti.formClass_eq_zero_iff`: a regular form has zero class exactly when its space has
+  dimension zero.
 * `TauCeti.formClass_lift_radical_eq_of_equivalent`: equivalent forms have equal regular quotient
   classes.
 * `TauCeti.formClass_lift_radical_eq`: a zero-plus-regular splitting computes the regular quotient
@@ -702,6 +704,13 @@ theorem rank_formClass (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
   rw [formClass_mk Q hQ p hp, RegularFormClass.rank_mk]
   obtain ⟨e⟩ := hp
   simpa using e.toLinearEquiv.finrank_eq.symm
+
+/-- A regular quadratic form has zero isometry class exactly when its underlying space has
+dimension zero. -/
+@[simp]
+theorem formClass_eq_zero_iff (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    formClass Q hQ = 0 ↔ Module.finrank K V = 0 := by
+  rw [← RegularFormClass.rank_eq_zero_iff, rank_formClass]
 
 /-- The class of an orthogonal product is the sum of the classes. -/
 @[simp]

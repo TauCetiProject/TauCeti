@@ -174,7 +174,7 @@ theorem injective_lieMapSubtypeVal (d : EmbeddedLieSubgroupData I K E') :
   let _ : ChartedSpace E' K := d.chartedSpace
   let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   dsimp only
-  apply lieMap_injective_of_mfderiv_injective
+  apply ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective
   have hderiv :
       mfderiv 𝓘(ℝ, E') I d.subtypeVal 1 =
         mfderiv 𝓘(ℝ, E') I (fun k : K ↦ (k : G)) 1 :=

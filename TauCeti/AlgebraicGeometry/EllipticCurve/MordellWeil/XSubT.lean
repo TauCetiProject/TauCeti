@@ -215,6 +215,14 @@ lemma negY_of_isCharNeTwoNF [W.IsCharNeTwoNF] (x y : R) : W.negY x y = -y := by
   rw [negY, a₁_of_isCharNeTwoNF, a₃_of_isCharNeTwoNF]
   ring
 
+/-- In a normal form for characteristic `≠ 2`, `polynomialY` vanishes at every `(x, 0)`; at a point
+of the curve this is the condition for `(x, 0)` to have order dividing two. -/
+@[simp]
+lemma evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF [W.IsCharNeTwoNF] (x : R) :
+    W.polynomialY.evalEval x 0 = 0 := by
+  rw [evalEval_polynomialY, a₁_of_isCharNeTwoNF, a₃_of_isCharNeTwoNF]
+  ring
+
 /-- At a point of `W`, a nonzero value of `f x` forces the `y`-coordinate to be nonzero. -/
 lemma y_ne_zero_of_eval_f_ne_zero [W.IsCharNeTwoNF] {x y : R} (h : W.Equation x y)
     (hx : W.f.eval x ≠ 0) : y ≠ 0 :=
@@ -334,7 +342,7 @@ variable {K : Type*} [CommRing K] [Nontrivial K] (W : Affine K)
 
 lemma ringChar_ne_two [W.IsElliptic] [W.IsCharNeTwoNF] : ringChar K ≠ 2 := by
   have h := W.isUnit_Δ.ne_zero
-  contrapose! h
+  contrapose h
   have h2 : (2 : K) = 0 := by
     have := ringChar.Nat.cast_ringChar (R := K)
     rw [h] at this

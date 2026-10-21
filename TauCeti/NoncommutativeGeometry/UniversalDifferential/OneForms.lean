@@ -58,6 +58,8 @@ theorem mem_universalOneForms {t : Unitization k A ⊗[k] Unitization k A} :
 
 namespace UniversalOneForms
 
+instance instAddCommGroup : AddCommGroup (UniversalOneForms k A) := inferInstance
+
 /-- Left multiplication on the first factor of the tensor model for universal one-forms. -/
 def leftAction (a : Unitization k A) :
     Unitization k A ⊗[k] Unitization k A →ₗ[k] Unitization k A ⊗[k] Unitization k A :=
@@ -221,6 +223,14 @@ def d : A →ₗ[k] UniversalOneForms k A :=
 theorem d_apply (a : A) : d k A a = (derivation k A) (a : Unitization k A) := by
   rfl
 
+/-- Differentiation on the forced unitization ignores its scalar component. -/
+theorem d_snd (y : Unitization k A) : d k A y.snd = (derivation k A) y := by
+  induction y with
+  | inl_add_inr r a =>
+    rw [map_add, ← Unitization.algebraMap_eq_inl, BimoduleDerivation.map_algebraMap,
+      zero_add, ← d_apply]
+    simp [Unitization.algebraMap_eq_inl]
+
 /-- The universal differential is `1 ⊗ a - a ⊗ 1` inside the forced unitization. -/
 theorem coe_d (a : A) :
     ((d k A a : UniversalOneForms k A) : Unitization k A ⊗[k] Unitization k A) =
@@ -234,6 +244,14 @@ theorem d_mul (a b : A) :
   rw [d_apply, d_apply, d_apply, Unitization.inr_mul]
   exact (derivation k A).leibniz (a : Unitization k A) (b : Unitization k A)
 
+/-- Right multiplication of a tensor word is determined by the Leibniz rule on `A⁺`. -/
+theorem smul_right_smul_d (x : Unitization k A) (a : A) (y : Unitization k A) :
+    op y • (x • d k A a) = x • d k A ((a : Unitization k A) * y).snd -
+      (x * (a : Unitization k A)) • d k A y.snd := by
+  rw [d_snd, (derivation k A).leibniz, ← d_apply, ← d_snd, smul_add,
+    smul_comm x (op y), ← mul_smul]
+  abel
+
 section UniversalProperty
 
 variable {M : Type w} [AddCommGroup M] [Module k M]
@@ -244,13 +262,15 @@ variable {M : Type w} [AddCommGroup M] [Module k M]
 
 attribute [local instance] TensorProduct.Algebra.module
 
-private def tensorLift (D : BimoduleDerivation k (Unitization k A) M) :
+/-- The linear map on tensors induced by the bilinear map `x, y ↦ x • D y`. -/
+def tensorLift (D : BimoduleDerivation k (Unitization k A) M) :
     Unitization k A ⊗[k] Unitization k A →ₗ[k] M :=
   TensorProduct.lift ((Algebra.lsmul k k M).toLinearMap.compl₂ D.toLinearMap)
 
+/-- The tensor lift sends a pure tensor `x ⊗ y` to `x • D y`. -/
 @[simp]
-private theorem tensorLift_tmul (D : BimoduleDerivation k (Unitization k A) M)
-    (x y : Unitization k A) : tensorLift k A D (x ⊗ₜ[k] y) = x • D y := rfl
+theorem tensorLift_tmul (D : BimoduleDerivation k (Unitization k A) M)
+    (x y : Unitization k A) : tensorLift k A D (x ⊗ₜ[k] y) = x • D y := (rfl)
 
 private theorem tensorLift_leftAction (D : BimoduleDerivation k (Unitization k A) M)
     (a : Unitization k A) (t : Unitization k A ⊗[k] Unitization k A) :
@@ -314,7 +334,8 @@ private theorem coe_tensorLift_derivation (t : Unitization k A ⊗[k] Unitizatio
       simp only [map_add, Submodule.coe_add, hx, hy, add_tmul]
       abel
 
-private theorem tensorLift_derivation_coe (ω : UniversalOneForms k A) :
+/-- Lifting the universal derivation recovers a one-form from its underlying tensor. -/
+theorem tensorLift_derivation_coe (ω : UniversalOneForms k A) :
     tensorLift k A (derivation k A) ω.1 = ω := by
   apply Subtype.ext
   rw [coe_tensorLift_derivation, (mem_universalOneForms k A).1 ω.2, zero_tmul, sub_zero]

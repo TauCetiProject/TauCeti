@@ -203,7 +203,23 @@ namespace BialgHom
 open TauCeti WithConv
 
 variable {R H K : Type*} [CommSemiring R] [CommSemiring H] [CommSemiring K]
-  [HopfAlgebra R H] [HopfAlgebra R K] [Coalgebra.IsCocomm R K]
+  [HopfAlgebra R H] [HopfAlgebra R K]
+
+/-- A morphism of affine groups intertwines conjugation by a point with conjugation by
+its image. The equality is contravariant on coordinate algebras. -/
+theorem comp_pointConjugationAlgHom_mapDomain (π : H →ₐc[R] K)
+    (g : WithConv (K →ₐ[R] R)) :
+    π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom (BialgHom.mapDomain π g)) =
+      (HopfAlgebra.pointConjugationAlgHom g).comp π.toAlgHom := by
+  apply WithConv.toConv_injective
+  rw [HopfAlgebra.comp_pointConjugationAlgHom, ← BialgHom.mapDomain_apply,
+    HopfAlgebra.toConv_pointConjugationAlgHom, map_mul, map_mul, map_inv]
+  have hconst := DFunLike.congr_fun (BialgHom.mapValue_mapDomain π (Algebra.ofId R K)) g
+  simp only [MonoidHom.comp_apply] at hconst
+  rw [hconst]
+  simp only [BialgHom.mapDomain_apply, AlgHom.id_comp]
+
+variable [Coalgebra.IsCocomm R K]
 
 /-- A point coming from a commutative affine group centralizes that group's image,
 scheme-theoretically: conjugation restricts to the identity coordinate map. -/

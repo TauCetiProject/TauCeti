@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.Integrated.Symmetry
 public import TauCeti.Analysis.PDE.EnergyForm.VariableLp
 public import TauCeti.Analysis.Sobolev.Poincare.W1p0
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # The divergence-form energy form on `H¹(Ω)`, and Gårding's inequality
@@ -287,6 +288,19 @@ theorem memLp_energyIntegrand_of_continuous (hLam : ∀ x, ‖matrixBilinearForm
       simpa [Real.norm_eq_abs] using
         (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hLam x) le_rfl le_rfl)
     (fun _ _ => by simp) (fun _ _ => by simp)
+
+/-- Coefficient fields continuous on the compact closure of `Ω` define an essentially bounded field
+of pointwise energy forms on `Ω`. No bound on the coefficients is assumed: compactness supplies
+one. -/
+theorem memLp_energyIntegrand_of_continuousOn
+    (hΩ : IsCompact (closure (Omega : Set (EuclideanSpace ℝ ι))))
+    (ha : ContinuousOn a (closure Omega)) (hb : ContinuousOn b (closure Omega))
+    (hc : ContinuousOn c (closure Omega)) :
+    MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) :=
+  -- The codomain is named explicitly: elaboration does not infer it by unification with the goal.
+  ContinuousOn.memLp_top_restrict_of_subset_isCompact
+    (E := (ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ)
+    (ContinuousOn.energyIntegrand ha hb hc) hΩ Omega.isOpen.measurableSet subset_closure
 
 variable [mu.IsAddHaarMeasure]
 
@@ -1128,13 +1142,13 @@ theorem mul_norm_sq_le_energyFormH1_self_of_subset_slab
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 ≤ c x)
-    {i : Fin (n + 1)} {s t : ℝ} (hst : s ≤ t)
+    {i : Fin (n + 1)} {s t : ℝ}
     (hslab : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), x i ∈ Icc s t)
     {u : W1p volume Omega 2} (hu : u ∈ w1p0Submodule volume Omega 2) :
     (lam ^ 2 - beta ^ 2 * (t - s) ^ 2) / (2 * lam * ((t - s) ^ 2 + 1)) * ‖u‖ ^ 2
       ≤ energyFormH1 a b c u u :=
   mul_norm_sq_le_energyFormH1_self_of_poincare h ha hb hc hb_bound hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab hst hslab hu)
+    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab hslab hu)
 
 /-- **An energy-form lower bound on `H¹₀(Ω)` for a domain inside a ball.** For
 `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` every `u ∈ W^{1,2}_0(Ω)` satisfies

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.Homotopy.Path
 public import Mathlib.Topology.Homotopy.Equiv
 
 /-!
@@ -39,10 +40,13 @@ and its companions record.
   and the projection onto the target, with `TauCeti.MappingCylinder.proj_comp_incl` the
   factorization of `f` and `TauCeti.MappingCylinder.isClosedEmbedding_incl`,
   `TauCeti.MappingCylinder.isClosedEmbedding_mkBase` the closedness of the two subspaces, and
-  `TauCeti.MappingCylinder.inclHomeomorph` the homeomorphism of the source with the bottom face.
+  `TauCeti.MappingCylinder.inclHomeomorph` the homeomorphism of the source with the bottom face,
+  through which `TauCeti.MappingCylinder.proj_comp_subtypeVal_comp_inclHomeomorph` factors `f`.
 * `TauCeti.MappingCylinder.deformation`: **the mapping cylinder deformation retracts onto its
   base**, with `TauCeti.MappingCylinder.homotopyEquiv` the resulting homotopy equivalence with
   the target.
+* `TauCeti.MappingCylinder.exists_mem_range_incl_joined`: when `f` is surjective on path
+  components, every point of the mapping cylinder is joined by a path to the bottom face.
 
 ## References
 
@@ -332,6 +336,17 @@ def inclHomeomorph (f : C(X, Y)) : X ≃ₜ Set.range (incl f) :=
 lemma inclHomeomorph_apply_coe (x : X) : (inclHomeomorph f x : MappingCylinder f) = incl f x :=
   (rfl)
 
+/-- `f` factors as the homeomorphism of its source with the bottom face of the mapping cylinder,
+followed by the inclusion of the bottom face and the projection onto the target. -/
+@[simp]
+lemma proj_comp_subtypeVal_comp_inclHomeomorph :
+    (proj f).comp ((ContinuousMap.subtypeVal (Set.range (incl f))).comp
+      (inclHomeomorph f : C(X, Set.range (incl f)))) = f := by
+  ext x
+  rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, ContinuousMap.subtypeVal_apply,
+    ContinuousMap.coe_ofClass, inclHomeomorph_apply_coe, ← ContinuousMap.comp_apply (proj f),
+    proj_comp_incl]
+
 /-- **The target of `f` is a closed subspace of its mapping cylinder.** -/
 theorem isClosedEmbedding_mkBase : IsClosedEmbedding (mkBase f) := by
   refine .of_continuous_injective_isClosedMap (mkBase f).continuous mkBase_injective
@@ -416,9 +431,27 @@ def homotopyEquiv (f : C(X, Y)) : ContinuousMap.HomotopyEquiv (MappingCylinder f
 @[simp]
 lemma homotopyEquiv_apply (m : MappingCylinder f) : homotopyEquiv f m = proj f m := (rfl)
 
+/-- The forward map of the homotopy equivalence with the target is the projection. -/
+lemma homotopyEquiv_toFun : (homotopyEquiv f).toFun = proj f := (rfl)
+
 /-- The homotopy inverse of the projection is the base inclusion. -/
 @[simp]
 lemma homotopyEquiv_symm_apply (y : Y) : (homotopyEquiv f).symm y = mkBase f y := (rfl)
+
+/-- Every point of the mapping cylinder is joined by a path to the point of the base below it:
+follow the deformation onto the base. -/
+theorem joined_mkBase_proj (m : MappingCylinder f) : Joined m (mkBase f (proj f m)) :=
+  ⟨(deformation f).toHomotopy.evalAt m⟩
+
+/-- If every point of `Y` is joined by a path to a point of the image of `f`, then every point of
+the mapping cylinder is joined by a path to a point of the bottom face. -/
+theorem exists_mem_range_incl_joined (h : ∀ y, ∃ x, Joined (f x) y) (m : MappingCylinder f) :
+    ∃ b ∈ Set.range (incl f), Joined m b := by
+  obtain ⟨x, hx⟩ := h (proj f m)
+  have hx' := joined_mkBase_proj (incl f x)
+  rw [← ContinuousMap.comp_apply (proj f), proj_comp_incl] at hx'
+  exact ⟨incl f x, Set.mem_range_self x,
+    (joined_mkBase_proj m).trans ((hx.symm.map (mkBase f).continuous).trans hx'.symm)⟩
 
 end Deformation
 

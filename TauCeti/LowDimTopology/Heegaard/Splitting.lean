@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import TauCeti.Analysis.InnerProductSpace.Hemisphere
-public import TauCeti.LowDimTopology.Handlebody
+public import TauCeti.LowDimTopology.Handlebody.Basic
 
 /-!
 # Heegaard splittings and Heegaard genus
@@ -210,9 +210,12 @@ def hemisphereHeegaardSplitting (p : sphere (0 : E) 1) : HeegaardSplitting (sphe
   union_eq_univ := by
     refine eq_univ_of_forall fun x ↦ ?_
     simpa [inner_neg_right] using le_total 0 ⟪(x : E), (p : E)⟫
-  inter_eq_frontier_left := by rw [frontier_setOf_inner_nonneg, range_equatorInclusion]
-  inter_eq_frontier_right := by rw [frontier_setOf_inner_nonneg, range_equatorInclusion, neg_neg,
-    inter_comm]
+  inter_eq_frontier_left := by
+    rw [frontier_setOf_inner_nonneg, range_equatorInclusion]
+    simp only [coe_neg_sphere]
+  inter_eq_frontier_right := by
+    rw [frontier_setOf_inner_nonneg, range_equatorInclusion]
+    simp only [coe_neg_sphere, neg_neg, inter_comm]
   nonempty_homeomorph_left := nonempty_homeomorph_hemisphere_handlebody_zero p
   nonempty_homeomorph_right := nonempty_homeomorph_hemisphere_handlebody_zero (-p)
 

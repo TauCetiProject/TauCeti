@@ -239,22 +239,6 @@ section Centre
 
 variable {G : MvPolynomial (Fin 3) k} {d : ℕ}
 
-/-- The binary form `G(T, 1, 0)` has degree at most `d`. -/
-private theorem natDegree_aeval_X_one_zero_le (hG : G.IsHomogeneous d) :
-    (aeval ![Polynomial.X, 1, 0] G : k[X]).natDegree ≤ d := by
-  conv_lhs => rw [G.as_sum]
-  rw [map_sum]
-  refine Polynomial.natDegree_sum_le_of_forall_le _ _ fun s hs ↦ ?_
-  have hdeg : s 0 + s 1 + s 2 = d := by
-    simpa [Finsupp.weight_apply, Finsupp.sum_fintype, Fin.sum_univ_three] using
-      hG (mem_support_iff.mp hs)
-  rw [aeval_monomial, Finsupp.prod_fintype _ _ (by simp), Fin.prod_univ_three]
-  rcases eq_or_ne (s 2) 0 with h2 | h2
-  · simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, one_pow, h2,
-      pow_zero, mul_one, Polynomial.algebraMap_eq]
-    exact (Polynomial.natDegree_C_mul_X_pow_le _ _).trans (by omega)
-  · simp [h2]
-
 /-- **A centre of projection off the curve, avoiding one slope**: if `k` has more than `d + 1`
 elements, `G(X₀, X₁, 0) ≠ 0`, and `a, b ∈ F` are not both zero, then some `c ∈ k` satisfies
 `G(c, 1, 0) ≠ 0` and `c a + b ≠ 0`. The first condition excludes the at most `d` roots of
@@ -271,7 +255,7 @@ private theorem exists_eval_ne_zero_and_mul_add_ne_zero (hG : G.IsHomogeneous d)
       ext i
       fin_cases i <;> simp
     rw [← Polynomial.coe_aeval_eq_eval, comp_aeval_apply, hv, aeval_eq_eval]
-  have hPdeg : P.natDegree ≤ d := natDegree_aeval_X_one_zero_le hG
+  have hPdeg : P.natDegree ≤ d := hG.natDegree_aeval_le fun i ↦ by fin_cases i <;> simp
   have hcard' := Cardinal.natCast_lt_toENat.mp hcard
   by_cases hc₀ : ∃ c₀ : k, algebraMap k F c₀ * a + b = 0
   · obtain ⟨c₀, hc₀⟩ := hc₀

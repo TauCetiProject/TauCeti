@@ -74,9 +74,9 @@ theorem natCard_pow_add_self_eq [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) {c : 
     rw [← pow_mul, ← sq, hpow, add_comm]
   have hfix : #({c | c ^ q = c} : Finset K) ≤ q := by
     refine (card_le_degree_of_subset_roots fun c hc ↦ ?_).trans
-      (FiniteField.X_pow_card_sub_X_natDegree_eq K hq).le
+      (Polynomial.natDegree_X_pow_sub_X (R := K) hq).le
     have hc : c ^ q = c := (Finset.mem_filter.mp hc).2
-    rw [mem_roots (FiniteField.X_pow_card_sub_X_ne_zero K hq)]
+    rw [mem_roots (Polynomial.X_pow_sub_X_ne_zero hq)]
     simp [hc]
   -- `|ker T| · |im T| = q²`, so both have exactly `q` elements.
   have hmul : Nat.card T.ker * Nat.card T.range = q ^ 2 := by

@@ -20,6 +20,8 @@ the embedded Lie-subgroup chart.
 
 * The local characterization theorem below: a closed subgroup is locally the
   exponential image of its Lie algebra.
+* `TauCeti.Lie.isOpen_subgroupOf_of_lieSubalgebraOfSubgroup_le`: a closed subgroup of a closed
+  subgroup `K` whose Lie algebra contains that of `K` is open in `K`.
 
 ## References
 
@@ -139,5 +141,23 @@ theorem exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq
   -- The reverse direction is the defining exponential-membership property of the Lie subalgebra.
   · rintro ⟨X, hX, rfl⟩
     exact lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK hX
+
+/-- **A closed subgroup `T` whose Lie algebra contains that of a closed subgroup `K` is open in
+`K`**: `T ∩ K` is an open subgroup of `K`. -/
+theorem isOpen_subgroupOf_of_lieSubalgebraOfSubgroup_le [T2Space G] {T K : Subgroup G}
+    (hT : IsClosed (T : Set G)) (hK : IsClosed (K : Set G))
+    (h : lieSubalgebraOfSubgroup (I := I) K ≤ lieSubalgebraOfSubgroup (I := I) T) :
+    IsOpen (T.subgroupOf K : Set K) := by
+  -- Near the identity `K` is the exponential image of its Lie algebra, which lies in `Lie(T)`.
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  obtain ⟨U, hU, hUK⟩ :=
+    exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq_of_isClosed
+      (I := I) hK
+  refine Subgroup.isOpen_of_mem_nhds _ (g := 1) ?_
+  rw [nhds_subtype_eq_comap]
+  refine ⟨U, hU, fun k hk => ?_⟩
+  obtain ⟨X, hX, hXk⟩ := (hUK k hk).mp k.2
+  rw [SetLike.mem_coe, Subgroup.mem_subgroupOf, ← hXk]
+  exact lieExp_mem_of_mem_lieSubalgebraOfSubgroup hT (h hX)
 
 end TauCeti.Lie

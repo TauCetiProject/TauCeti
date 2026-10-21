@@ -60,7 +60,7 @@ open Set unitInterval
 
 universe u u' v
 
-variable {X : Type u} [TopologicalSpace X] {A : Set X}
+variable {X : Type u} {A : Set X}
 
 /-- The subspace `{0} × X ∪ I × A` of the cylinder `I × X`: the bottom of the cylinder together
 with the part of the cylinder lying over `A`.  For closed `A`, a homotopy extension problem for
@@ -69,18 +69,17 @@ cylinder; the closedness is what lets the two pieces of initial data be glued in
 continuous map on the union. -/
 def cylinderExtensionDomain (A : Set X) : Set (I × X) := {p | p.1 = 0 ∨ p.2 ∈ A}
 
-omit [TopologicalSpace X] in
 @[simp]
 lemma mem_cylinderExtensionDomain_iff {p : I × X} :
     p ∈ cylinderExtensionDomain A ↔ p.1 = 0 ∨ p.2 ∈ A := Iff.rfl
 
-omit [TopologicalSpace X] in
 lemma zero_mem_cylinderExtensionDomain (x : X) : ((0 : I), x) ∈ cylinderExtensionDomain A :=
   Or.inl rfl
 
-omit [TopologicalSpace X] in
 lemma mem_cylinderExtensionDomain_of_mem {t : I} {x : X} (hx : x ∈ A) :
     (t, x) ∈ cylinderExtensionDomain A := Or.inr hx
+
+variable [TopologicalSpace X]
 
 lemma isClosed_cylinderExtensionDomain (hA : IsClosed A) :
     IsClosed (cylinderExtensionDomain A) :=

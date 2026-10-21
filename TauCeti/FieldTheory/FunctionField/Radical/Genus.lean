@@ -49,7 +49,7 @@ separable, and the places above `P` are totally ramified, so `k` stays the exact
 
 `2g' - 2 = n (2g - 2) + ∑_{P ∈ S} (n - r_P) deg P`.
 
-When instead `k` contains a primitive `n`-th root of unity and `u` is not a `p`-th power in `F`
+When instead `F` contains a primitive `n`-th root of unity and `u` is not a `p`-th power in `F`
 for any prime `p ∣ n` (Stichtenoth's hypotheses for a Kummer extension, Proposition 3.7.3), the
 degree `[F' : F] = n` and separability are consequences
 (`TauCeti.finrank_eq_of_pow_eq_of_adjoin_eq_top`), and `F' / F` is cyclic Galois
@@ -67,7 +67,7 @@ keeps the factor `[k' : k]`.
 * `TauCeti.isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one`: a place with `gcd(n, ord_P u) = 1`
   keeps the constant field exact.
 * `TauCeti.genus_formula_of_pow_eq_of_isPrimitiveRoot`: the genus formula of a Kummer extension,
-  with `[F' : F] = n` derived from a primitive `n`-th root of unity in `k` and the nondegeneracy
+  with `[F' : F] = n` derived from a primitive `n`-th root of unity in `F` and the nondegeneracy
   of `u`.
 * `TauCeti.two_mul_genus_sub_two_eq_of_pow_eq_of_gcd_ord_eq_one`: the genus formula
   `2g' - 2 = n (2g - 2) + ∑ (n - r_P) deg P` in that case, and
@@ -199,9 +199,9 @@ variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k 
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 /-- **The genus formula for Kummer extensions** (Stichtenoth, Proposition 3.7.3): let
-`F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, where the exact constant field `k` of `F`
-contains a primitive `n`-th root of unity and `u` is not a `p`-th power in `F` for any prime
-`p ∣ n`. If `k'` is the exact constant field of `F'` and `k' / k` is separable, then
+`F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, where `F` contains a primitive `n`-th root of
+unity and `u` is not a `p`-th power in `F` for any prime `p ∣ n`. If the constant fields `k` of
+`F` and `k'` of `F'` are exact and `k' / k` is separable, then
 
 `[k' : k] (2g' - 2) = n (2g - 2) + ∑_{P ∈ S} (n - r_P) deg P`,
 
@@ -211,18 +211,18 @@ hypotheses. -/
 theorem genus_formula_of_pow_eq_of_isPrimitiveRoot [Algebra.IsSeparable k k']
     (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (hex : IsIntegrallyClosedIn k F)
     (hex' : IsIntegrallyClosedIn k' F') {y : F'} {n : ℕ} {u : F} (hgen : F⟮y⟯ = ⊤)
-    (hy : y ^ n = algebraMap F F' u) {ζ : k} (hζ : IsPrimitiveRoot ζ n) (hu : u ≠ 0)
+    (hy : y ^ n = algebraMap F F' u) {ζ : F} (hζ : IsPrimitiveRoot ζ n) (hu : u ≠ 0)
     (hnd : ∀ p : ℕ, p.Prime → p ∣ n → ∀ w : F, w ^ p ≠ u) (S : Finset (Place k F))
     (hS : ∀ P ∉ S, (n : ℤ) ∣ P.ord u) :
     (Module.finrank k k' : ℤ) * (2 * genus k' F' - 2) =
       n * (2 * genus k F - 2) + ∑ P ∈ S, ((n : ℤ) - Int.gcd n (P.ord u)) * P.degree := by
   have := neZero_of_forall_prime_pow_ne hnd hy
-  have hζF := hζ.map_of_injective (algebraMap k F).injective
-  have hfin := finrank_eq_of_pow_eq_of_adjoin_eq_top hζF hnd hy hgen
+  have hnF : (n : F) ≠ 0 := hζ.neZero'.out
+  have hn : (n : k) ≠ 0 := by rwa [← (algebraMap k F).injective.ne_iff, map_natCast, map_zero]
+  have hfin := finrank_eq_of_pow_eq_of_adjoin_eq_top hζ hnd hy hgen
   have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hfin.symm ▸ NeZero.pos n)
-  have : Algebra.IsSeparable F F' :=
-    isSeparable_of_pow_eq_of_adjoin_eq_top hζF.neZero'.out hu hy hgen
-  exact genus_formula_of_pow_eq hF hgen hy hζ.neZero'.out hu S hS hF' hex hex' hfin
+  have : Algebra.IsSeparable F F' := isSeparable_of_pow_eq_of_adjoin_eq_top hnF hu hy hgen
+  exact genus_formula_of_pow_eq hF hgen hy hn hu S hS hF' hex hex' hfin
 
 end Kummer
 

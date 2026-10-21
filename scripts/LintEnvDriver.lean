@@ -33,6 +33,9 @@ Usage: `lint-env-driver [--only-listed] <tag> <marker-file> <modules-file> <lint
 * Then prints the contents of `<marker-file>` (a per-run nonce) on its own line, proving the
   process ran past the linters. The nonce is passed in a file rather than on the command line so
   that learning it takes the same two steps as it did for the generated driver file.
+* Before the report, emits bounded, optional `LINT-ENV-ORIGINS` metadata from these same
+  results. `lint-env.sh` validates and joins it only to NEW findings. See
+  `scripts/env-lint-locations.md`; this untrusted metadata has retry authority only.
 
 `trace.Batteries.Lint` is enabled, so each linter's progress is also printed to stdout. All of it
 comes before the report header, and `lint-env.sh` parses only what follows the header. Once Batteries
@@ -43,6 +46,46 @@ open Lean Core Batteries.Tactic.Lint
 
 /-- The package whose declarations are linted. -/
 def lintedPackage : Name := `TauCeti
+
+/-- Optional, bounded retry hints. Never use these to decide whether lint passed. -/
+def linterOrigins (modules : Array Name)
+    (results : Array (NamedLinter × Std.HashMap Name MessageData)) : CoreM Json := do
+  let started ← IO.monoMsNow
+  let env ← getEnv
+  let total := results.foldl (fun n r => n + r.2.size) 0
+  let mut records : Array Json := #[]
+  for (linter, findings) in results do
+    for (decl, _) in findings.toArray do
+      if records.size >= 128 then break
+      -- Use exactly the report's rendering for the join to the existing report parser.
+      -- Keep the actual environment name too; never infer an origin from either name.
+      let rendered ← (← addMessageContext m!"{← mkConstWithLevelParams decl}").toString
+      let reportName := if rendered.startsWith "@" then rendered.drop 1 |>.toString else rendered
+      let mut fields := [("linter", toJson linter.name.toString),
+        ("declaration", toJson decl.toString), ("report_name", toJson reportName)]
+      let unknown (reason : String) := Json.mkObj (fields ++ [("unknown", toJson reason)])
+      let record ← do
+        if decl.toString.length > 1024 || reportName.length > 1024 ||
+            reportName.any Char.isWhitespace then
+          pure <| Json.mkObj [("unknown", toJson "unsupported_name")]
+        else if env.isPrivateOrAutoDecl decl then
+          pure <| unknown "private_or_generated"
+        else if let some idx := env.getModuleIdxFor? decl then
+          let mod := env.header.moduleNames[idx.toNat]!
+          if !modules.contains mod then
+            pure <| unknown "unsupported_module"
+          else if let some ranges ← findDeclarationRangesCore? decl then
+            -- No auxiliary-declaration fallback to a parent's range.
+            let pos := ranges.selectionRange.pos
+            fields := fields ++ [("module", toJson mod.toString),
+              ("line", toJson pos.line), ("column", toJson (pos.column + 1))]
+            pure <| Json.mkObj fields
+          else pure <| unknown "missing_range"
+        else pure <| unknown "missing_origin"
+      records := records.push record
+  return Json.mkObj [("version", toJson (1 : Nat)), ("total", toJson total),
+    ("truncated", toJson (decide (total > records.size))), ("records", toJson records),
+    ("elapsed_ms", toJson ((← IO.monoMsNow) - started))]
 
 unsafe def main (args : List String) : IO UInt32 := do
   let (onlyListed, args) := match args with
@@ -63,7 +106,7 @@ unsafe def main (args : List String) : IO UInt32 := do
     (loadExts := true)
   let opts : Options := ({} : Options).setBool `trace.Batteries.Lint true
   let ctx : Core.Context := { fileName := tag, fileMap := default, options := opts }
-  let (failed, report) ← Prod.fst <$> (CoreM.toIO · ctx { env }) do
+  let (failed, report, origins) ← Prod.fst <$> (CoreM.toIO · ctx { env }) do
     let decls ← getDeclsInPackage lintedPackage
     let decls ← if onlyListed then
         let env ← getEnv
@@ -81,7 +124,11 @@ unsafe def main (args : List String) : IO UInt32 := do
     let fmt ← formatLinterResults results decls (groupByFilename := true)
       s!"in {lintedPackage}" (runSlowLinters := true) .medium linters.size
     let report ← (← addMessageContext fmt).toString
-    return (failed, report)
+    let origins ← try linterOrigins modules results catch _ =>
+      pure <| Json.mkObj [("unknown", toJson "collection_failed")]
+    return (failed, report, origins)
+  -- Before the report region: existing report/nonce parsing is unchanged.
+  IO.println s!"LINT-ENV-ORIGINS {origins.compress}"
   -- Lean prints a diagnostic followed by exactly one newline.
   let diagnostic (s : String) := if s.endsWith "\n" then s else s ++ "\n"
   if failed then

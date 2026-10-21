@@ -37,7 +37,7 @@ The nonzerodivisor hypothesis is what the induction consumes. The odd step deriv
 multiplied through by `normEDS b c d k`, and cancelling that factor is the only use of `hk`; the
 even step and both base cases are unconditional. It is removable by specialising from the
 universal parameters, where the sequence is a nonzerodivisor at every **nonzero** index — the
-route `NormEDS.lean` takes for `isEllipticNet_normEDS`. It vanishes at `k = 0`, so that case is
+same universal specialisation used by the invariant theory. It vanishes at `k = 0`, so that case is
 split off first and closed by `simp`. The route is now available: `universalNormEDS_ne_zero`
 (`NormEDS.lean`) gives the nonvanishing, and `mem_nonZeroDivisors_of_ne_zero` turns it into the
 hypothesis this induction consumes, `ℤ[B, C, D]` being a domain.
@@ -126,7 +126,7 @@ private theorem normEDS_mul_complEDS_of_mem_nonZeroDivisors {k : ℤ} (hk : norm
       have hih₁ := ih (j + 1) (by omega)
       have hih₂ := ih (j + 2) (by omega)
       push_cast at hih₁ hih₂
-      have hell := isEllipticSequence_normEDS b c d (((j : ℤ) + 2) * k) 1 (((j : ℤ) + 1) * k)
+      have hell := IsEllipticSequence.normEDS b c d (((j : ℤ) + 2) * k) 1 (((j : ℤ) + 1) * k)
       simp only [IsEllipticNet.rel, add_zero, normEDS_one, mul_one] at hell
       -- only the reflected index needs rewriting by hand; `ring_nf` normalises the rest
       rw [show (1 : ℤ) - ((j : ℤ) + 1) * k = -(((j : ℤ) + 1) * k - 1) by ring, normEDS_neg,
@@ -165,7 +165,7 @@ theorem normEDS_dvd_normEDS_mul (b c d : R) (k n : ℤ) :
 
 /-- **A normalised EDS is a divisibility sequence.** This is the second conjunct of the TODO
 Mathlib records for `normEDS`, in the predicate form the TODO states it in; the first conjunct is
-`isEllipticSequence_normEDS`. -/
+`IsEllipticSequence.normEDS`. -/
 theorem isDvdSequence_normEDS (b c d : R) : IsDvdSequence (normEDS b c d) := by
   rintro k _ ⟨n, rfl⟩
   rw [mul_comm]

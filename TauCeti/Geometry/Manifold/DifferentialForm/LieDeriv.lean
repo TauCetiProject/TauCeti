@@ -28,7 +28,7 @@ The two characterizations below show that the definition is intrinsic.
   `L_V φ (X₀, …, Xₖ₋₁) = V (φ (X₀, …, Xₖ₋₁)) - ∑ i, φ (X₀, …, [V, Xᵢ], …, Xₖ₋₁)`.
 * **Cartan's magic formula** [Lee, Thm. 14.35]: `L_V φ = ι_V dφ + d (ι_V φ)` for a
   differentiable form and a differentiable vector field, and `L_V f = ι_V df` in degree zero
-  without hypotheses.
+  without hypotheses. On a closed form it reads `L_V φ = d (ι_V φ)`.
 
 ## Main declarations
 
@@ -38,6 +38,8 @@ The two characterizations below show that the definition is intrinsic.
   the bracket formula.
 * `TauCeti.mlieDerivFormWithin_eq_interior_mextDerivWithin_add`,
   `TauCeti.mlieDerivForm_eq_interior_mextDeriv_add`: Cartan's magic formula.
+* `TauCeti.mlieDerivFormWithin_eq_mextDerivWithin_interior`,
+  `TauCeti.mlieDerivForm_eq_mextDeriv_interior`: on closed forms, `L_V φ = d (ι_V φ)`.
 * `TauCeti.mlieDerivFormWithin_eq_lieDerivFormWithin`: over the model space, the manifold Lie
   derivative is the flat one.
 
@@ -255,6 +257,40 @@ theorem mlieDerivForm_eq_interior_mextDeriv_add {φ : RoughForm I M F (k + 1)}
     (hV : MDifferentiable I I.tangent (fun y ↦ (V y : TangentBundle I M))) :
     mlieDerivForm V φ = (mextDeriv φ).interior V + mextDeriv (φ.interior V) :=
   funext fun x ↦ mlieDerivForm_eq_interior_mextDeriv_add_apply (hφ x) (hV x)
+
+/-- For a form whose exterior derivative within the set vanishes at the point, **Cartan's
+formula** within the set reduces to `L_V φ = d (ι_V φ)`. -/
+theorem mlieDerivFormWithin_eq_mextDerivWithin_interior {φ : RoughForm I M F (k + 1)}
+    (hφ : MDifferentiableWithinAt I (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) y (φ y)) s x)
+    (hV : MDifferentiableWithinAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) s x)
+    (hs : UniqueMDiffWithinAt I s x) (hdφ : mextDerivWithin φ s x = 0) :
+    mlieDerivFormWithin V φ s x = mextDerivWithin (φ.interior V) s x := by
+  rw [mlieDerivFormWithin_eq_interior_mextDerivWithin_add hφ hV hs, add_eq_right]
+  ext v
+  simp [hdφ]
+
+/-- For a form whose exterior derivative vanishes at the point, **Cartan's formula** reduces to
+`L_V φ = d (ι_V φ)`. -/
+theorem mlieDerivForm_eq_mextDeriv_interior_apply {φ : RoughForm I M F (k + 1)}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) y (φ y)) x)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (hdφ : mextDeriv φ x = 0) :
+    mlieDerivForm V φ x = mextDeriv (φ.interior V) x := by
+  rw [mlieDerivForm_eq_interior_mextDeriv_add_apply hφ hV, add_eq_right]
+  ext v
+  simp [hdφ]
+
+/-- On a differentiable closed form, along a differentiable vector field, **Cartan's formula**
+reduces to `L_V φ = d (ι_V φ)`. -/
+theorem mlieDerivForm_eq_mextDeriv_interior {φ : RoughForm I M F (k + 1)}
+    (hφ : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) y (φ y)))
+    (hV : MDifferentiable I I.tangent (fun y ↦ (V y : TangentBundle I M)))
+    (hdφ : mextDeriv φ = 0) :
+    mlieDerivForm V φ = mextDeriv (φ.interior V) :=
+  funext fun x ↦ mlieDerivForm_eq_mextDeriv_interior_apply (hφ x) (hV x) (congrFun hdφ x)
 
 /-- Cartan's formula in degree zero within a set, `L_V f = ι_V df`, holds for every rough
 `0`-form and every vector field. -/

@@ -39,6 +39,8 @@ for `K L : Type`.
 * `TauCeti.galoisEvens2_kummerClass`: `N^{Ev}((a)) = (Tr a) ∪ (−d · N a) + (2) ∪ (d)` if
   `Tr a ≠ 0`.
 * `TauCeti.galoisEvens2_kummerClass_of_trace_eq_zero`: `N^{Ev}((a)) = (2) ∪ (d)` if `Tr a = 0`.
+* `TauCeti.galoisEvens2_kummerClass_algebraMap_mul`: for `c ∈ Kˣ`,
+  `N^{Ev}((c a)) = N^{Ev}((a)) + (c) ∪ (−d · N a)`.
 * `TauCeti.galoisEvens2_kummerClass_one_add`: `N^{Ev}((1 + t x)) = (2) ∪ (1 − t² d)`.
 * `TauCeti.galoisEvens2_kummerClass_sqrt`: `N^{Ev}((x)) = (2) ∪ (d)`.
 
@@ -280,6 +282,62 @@ theorem galoisEvens2_kummerClass (σ : L →ₐ[K] SeparableClosure K)
         Algebra.IsQuadraticExtension.trace_inv, ← ht, smul_eq_mul, Units.val_mul,
         Units.val_inv_eq_inv_val, hN, Units.coe_map]
       ring
+
+/-- **The Evens norm of a Kummer class scaled by a base unit**: for `c ∈ Kˣ` and `a ∈ Lˣ`,
+
+```text
+N^{Ev}((c a)) = N^{Ev}((a)) + (c) ∪ (−d · N a).
+```
+
+If `Tr a = 0`, then `−d · N a` is a square and the correction term vanishes. -/
+theorem galoisEvens2_kummerClass_algebraMap_mul (σ : L →ₐ[K] SeparableClosure K)
+    (hdeg : Module.finrank K L = 2) (d : Kˣ) {x : L} (hx : x ∉ Set.range (algebraMap K L))
+    (hx2 : x ^ 2 = algebraMap K L (d : K)) (c : Kˣ) (a : Lˣ) :
+    galoisEvens K L σ hdeg (kummerClass (Units.map (algebraMap K L : K →* L) c * a)) =
+      galoisEvens K L σ hdeg (kummerClass a) +
+        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass c)
+          (kummerClass (-(d * Units.map (Algebra.norm K : L →* K) a))) := by
+  have : Algebra.IsQuadraticExtension K L := ⟨hdeg⟩
+  set N := Units.map (Algebra.norm K : L →* K) a with hN
+  have htr : Algebra.trace K L (algebraMap K L c * a) = c * Algebra.trace K L (a : L) := by
+    rw [← Algebra.smul_def, map_smul, smul_eq_mul]
+  by_cases ht : Algebra.trace K L (a : L) = 0
+  · -- Write `a = y x`; then `−d · N a = (d y)²`.
+    obtain ⟨y, z, hyz⟩ := Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul
+      K L hx (a : L)
+    obtain rfl : z = 0 := by
+      rw [hyz, Algebra.IsQuadraticExtension.trace_algebraMap_add_algebraMap_mul_of_sq_eq hx hx2,
+        mul_eq_zero] at ht
+      exact ht.resolve_left two_ne_zero
+    have hy : y ≠ 0 := by
+      rintro rfl
+      exact a.ne_zero (by simp [hyz])
+    have hsq : kummerClass (-(d * N)) = 0 := by
+      refine (kummerClass_eq_zero_iff_square K).2 (Subgroup.mem_square.2 ⟨d * Units.mk0 y hy, ?_⟩)
+      ext
+      simp only [hN, Units.val_neg, Units.val_mul, Units.coe_map, hyz,
+        Algebra.IsQuadraticExtension.norm_algebraMap_add_algebraMap_mul_of_sq_eq hx hx2,
+        Units.val_mk0]
+      ring
+    rw [galoisEvens2_kummerClass_of_trace_eq_zero σ hdeg d hx hx2 _ (by simp [htr, ht]),
+      galoisEvens2_kummerClass_of_trace_eq_zero σ hdeg d hx hx2 a ht, hsq, map_zero, add_zero]
+  · -- Both values come from `TauCeti.galoisEvens2_kummerClass`, with `N (c a) = c² N a`.
+    have hNc : Units.map (Algebra.norm K : L →* K) (Units.map (algebraMap K L : K →* L) c * a) =
+        c ^ 2 * N := by
+      ext
+      simp [hN, Algebra.norm_algebraMap, hdeg]
+    have hsq : kummerClass (-(d * (c ^ 2 * N))) = kummerClass (-(d * N)) := by
+      have hc2 : kummerClass (c ^ 2) = 0 :=
+        (kummerClass_eq_zero_iff_square K).2 (Subgroup.mem_square.2 ⟨c, sq _⟩)
+      have hfac : -(d * (c ^ 2 * N)) = -(d * N) * c ^ 2 := by
+        ext
+        simp only [Units.val_neg, Units.val_mul, Units.val_pow_eq_pow_val]
+        ring
+      rw [hfac, kummerClass_mul, hc2, add_zero]
+    rw [galoisEvens2_kummerClass σ hdeg d hx hx2 _ (c * Units.mk0 _ ht) (by simp [htr]),
+      galoisEvens2_kummerClass σ hdeg d hx hx2 a (Units.mk0 _ ht) rfl, hNc, hsq, kummerClass_mul,
+      map_add, LinearMap.add_apply]
+    abel
 
 end Universe
 

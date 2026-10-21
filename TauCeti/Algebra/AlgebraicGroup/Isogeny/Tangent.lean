@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Etale
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 import TauCeti.Algebra.AlgebraicGroup.Tangent.KrullDimension
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
-import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.RingTheory.KrullDimension.Integral
 import TauCeti.RingTheory.Smooth.Regular
 
@@ -134,5 +135,21 @@ theorem lieEquivOfEtaleKernel_apply_apply (hf : IsIsogeny f)
   rw [AlgEquiv.apply_symm_apply]
   rw [lieEquivOfEtaleKernel_apply]
   exact algEquivSelf_derivationComp_apply f.hom d a
+
+/-- The differential of a smooth affine isogeny with étale kernel is bijective on
+cotangent duals. -/
+theorem dualCotangentMap_bijective_of_etaleKernel (hf : IsIsogeny f)
+    (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal)) :
+    Function.Bijective (Derivation.dualCotangentMap f.hom) := by
+  let e := (Derivation.cotangentLinearEquiv (R := k) (A := K) (B := k)).trans
+    ((hf.lieEquivOfEtaleKernel hker).toLinearEquiv.trans
+      (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)).symm)
+  have he (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+      e x = Derivation.dualCotangentMap f.hom x := by
+    apply (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)).injective
+    simp only [e, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
+      LieEquiv.coe_toLinearEquiv, lieEquivOfEtaleKernel_apply,
+      Derivation.cotangentLinearEquiv_dualCotangentMap]
+  exact (funext he : ⇑e = _) ▸ e.bijective
 
 end TauCeti.CommHopfAlgCat.IsIsogeny

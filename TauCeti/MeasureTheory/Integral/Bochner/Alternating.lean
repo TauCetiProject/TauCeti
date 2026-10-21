@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
+public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.LinearAlgebra.Orientation.Basis
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic

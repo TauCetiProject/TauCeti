@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.KilledByRank
 public import TauCeti.AlgebraicGeometry.GroupScheme.FiniteFlat
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.CartierDuality.Rank
+import TauCeti.CategoryTheory.Monoidal.Mon
 
 /-!
 # Finite locally free commutative group schemes are killed by their rank
@@ -37,6 +38,8 @@ powers in the groups of points.
   and cocommutative Hopf algebra which is finite projective of constant rank `n` is killed by `n`.
 * `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.pow_eq_one_of_finrank`: a finite locally
   free commutative group scheme of constant rank `n` is killed by `n`.
+* `TauCeti.GroupScheme.pow_eq_one_of_finrank_of_mono`: a finite locally free subgroup of constant
+  rank `n` in a commutative group scheme is killed by `n` after its inclusion.
 
 ## References
 
@@ -142,3 +145,28 @@ theorem pow_eq_one_of_finrank {S : Scheme.{u}} (G : FiniteFlatCommGroupScheme S)
 end FiniteFlatCommGroupScheme
 
 end TauCeti.AlgebraicGeometry
+
+namespace TauCeti.GroupScheme
+
+/-- Let `i : H ⟶ G` be a monomorphism of group schemes into a commutative group scheme. If
+`H` is finite locally free of constant rank `n`, then the point of `G` given by `i` is killed by
+`n`. This is the form of Deligne's rank theorem used to place finite locally free subgroup schemes
+inside torsion subgroup schemes. -/
+theorem pow_eq_one_of_finrank_of_mono {S X Y : Scheme.{u}} {p : X ⟶ S} {q : Y ⟶ S}
+    [GrpObj (Over.mk p)] [GrpObj (Over.mk q)] [IsCommMonObj (Over.mk q)]
+    (i : Over.mk p ⟶ Over.mk q) [IsMonHom i] [Mono i] {n : ℕ}
+    (hfinite : IsFinite p) (hflat : Flat p) (hlfp : LocallyOfFinitePresentation p)
+    (hn : ∀ s, p.finrank s = n) :
+    i ^ n = 1 := by
+  let K : AlgebraicGeometry.FiniteFlatCommGroupScheme S :=
+    { carrier := X
+      structureMap := p
+      grp := inferInstance
+      comm := TauCeti.isCommMonObj_of_mono i
+      finite := hfinite
+      flat := hflat
+      locallyOfFinitePresentation := hlfp }
+  have hid : (𝟙 K.toOver) ^ n = 1 := K.pow_eq_one_of_finrank hn _
+  rw [← Category.id_comp i, ← MonObj.pow_comp, hid, MonObj.one_comp]
+
+end TauCeti.GroupScheme

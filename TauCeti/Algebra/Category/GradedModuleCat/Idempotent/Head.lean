@@ -54,7 +54,6 @@ of its maximal graded submodules, so `Sᵢ = A eᵢ / A₊eᵢ` is the graded he
 * `TauCeti.simple_gradedIdempotentHead`: each graded head `Sᵢ` is a simple graded module.
 * `TauCeti.isExhaustiveGradedSimpleFamily_gradedIdempotentHead`: every simple finite graded module
   is isomorphic to a shift of some `Sᵢ`.
-
 ## References
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3, for graded modules

@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.Basic
 

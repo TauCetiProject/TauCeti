@@ -173,7 +173,7 @@ registers, and it exists to name that step once: the uniformity carried by
 only definitionally, and the completeness proof below should not depend on that unfolding. -/
 private theorem exists_mem_forall_sub_mem_weightedNhd {T : Fin k → Set A} {hT : IsWeightFamily T}
     {F : Filter (weightedRestrictedSubring T hT)} (hF : Cauchy F) (U : OpenAddSubgroup A) :
-    ∃ M ∈ F, ∀ᵉ (x ∈ M) (y ∈ M), y - x ∈ weightedNhd T hT U.toAddSubgroup :=
+    ∃ M ∈ F, ∀ x ∈ M, ∀ y ∈ M, y - x ∈ weightedNhd T hT U.toAddSubgroup :=
   ((weightedNhd_subgroups_basis hT).toRingFilterBasis.toAddGroupFilterBasis.cauchy_iff.mp hF).2 _
     ((weightedNhd_subgroups_basis hT).mem_addGroupFilterBasis U)
 

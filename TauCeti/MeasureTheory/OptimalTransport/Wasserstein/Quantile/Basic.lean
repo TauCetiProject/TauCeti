@@ -36,6 +36,8 @@ identity for every exponent `1 ≤ p ≤ ∞` — is a rearrangement inequality 
 ## Main statements
 
 * `MeasureTheory.Measure.isCoupling_quantileCoupling` — the monotone coupling is a transport plan;
+* `MeasureTheory.Measure.ae_fst_le_snd_quantileCoupling` — it is concentrated on ordered pairs
+  whenever the cdfs are ordered;
 * `MeasureTheory.Measure.quantileCoupling_Iic_prod_Ioi` — its mass on a quadrant
   `Iic a ×ˢ Ioi b` is the positive part of `cdf μ a - cdf ν b`;
 * `TauCeti.eLpNorm_edist_quantileCoupling` — its transport objective is the `L^p (0,1)` distance
@@ -98,6 +100,16 @@ theorem map_swap_quantileCoupling (μ ν : Measure ℝ) :
     (μ.quantileCoupling ν).map Prod.swap = ν.quantileCoupling μ := by
   rw [quantileCoupling_def, quantileCoupling_def, map_map measurable_swap (by fun_prop)]
   simp only [Function.comp_def, Prod.swap_prod_mk]
+
+/-- If the cdfs are ordered, the common-uniform quantile coupling is concentrated on ordered
+pairs. Thus the stochastic comparison is realized by random variables satisfying `X ≤ Y` almost
+surely. -/
+theorem ae_fst_le_snd_quantileCoupling (μ ν : Measure ℝ) (h : ∀ x, cdf ν x ≤ cdf μ x) :
+    ∀ᵐ z ∂μ.quantileCoupling ν, z.1 ≤ z.2 := by
+  rw [quantileCoupling_def]
+  refine (ae_map_iff (by fun_prop) (measurableSet_le measurable_fst measurable_snd)).2 ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioo] with u hu
+  exact (cdf_le_iff_quantile_le μ ν).1 h u hu.1 hu.2
 
 /-- **The monotone coupling on a quadrant.** The monotone coupling of two real laws gives the
 quadrant `Iic a ×ˢ Ioi b` the positive part of the gap `cdf μ a - cdf ν b`: the uniform levels `t`
