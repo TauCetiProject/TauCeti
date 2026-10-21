@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Star.PartialIsometry
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
@@ -63,11 +64,6 @@ namespace ContinuousLinearMap
 section Complete
 
 variable [CompleteSpace E] [CompleteSpace F] {u : E →L[𝕜] F}
-
-/-- The adjoint of a bounded operator takes values in the orthogonal complement of its kernel. -/
-theorem adjoint_apply_mem_orthogonal_ker (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
-  rw [orthogonal_ker]
-  exact Submodule.le_topologicalClosure _ ⟨y, rfl⟩
 
 /-- A bounded operator `u : E →L[𝕜] F` is a **partial isometry** when `u u† u = u`. -/
 def IsPartialIsometry (u : E →L[𝕜] F) : Prop :=
