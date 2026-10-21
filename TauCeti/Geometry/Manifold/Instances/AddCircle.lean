@@ -293,11 +293,18 @@ a real number representing it. -/
 theorem coe_apply_of_mem_atlas {c : OpenPartialHomeomorph (AddCircle p) ℝ}
     (hc : c ∈ atlas ℝ (AddCircle p)) {x : AddCircle p} (hx : x ∈ c.source) :
     (c x : AddCircle p) = x := by
+  rw [Homeomorph.pullbackChartedSpace_atlas] at hc
+  -- A chart of the orbit space is, by definition of Mathlib's pushed-forward atlas, a local
+  -- inverse of the orbit projection at a chosen lift followed by a chart of `PeriodLine p`.
   obtain ⟨_, ⟨q, rfl⟩, rfl⟩ := hc
-  -- The chart is the inverse of `quotientHomeomorph p` followed by a local inverse of the orbit
-  -- projection, so the orbit projection undoes it.
-  have h := IsLocalHomeomorph.apply_localInverseAt_of_mem _ (mem_of_mem_inter_left hx)
-  simpa [chartAt_apply] using congrArg (quotientHomeomorph p) h
+  -- The orbit projection undoes the local inverse, so `quotientHomeomorph p` sends the lifted point
+  -- back to `x`.
+  have h := congrArg (quotientHomeomorph p)
+    (IsLocalHomeomorph.apply_localInverseAt_of_mem _ (mem_of_mem_inter_left hx))
+  simp only [Homeomorph.coe_toEquiv, quotientHomeomorph_mk, Homeomorph.apply_symm_apply] at h
+  simp only [Homeomorph.transOpenPartialHomeomorph_apply, OpenPartialHomeomorph.coe_trans,
+    Function.comp_apply, chartAt_apply]
+  exact h
 
 variable {p} in
 /-- A local lift of `AddCircle p` to `ℝ`, a partial homeomorphism sending each point of its source
