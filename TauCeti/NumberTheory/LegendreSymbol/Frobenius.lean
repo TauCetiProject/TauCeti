@@ -12,9 +12,9 @@ import TauCeti.RingTheory.Ideal.LiesOver
 /-!
 # The Frobenius acts on square roots by the Legendre symbol
 
-Let `S` be a commutative domain, `Q` an ideal of `S` lying over the rational prime `p ≠ 2`, and
-`φ` an arithmetic Frobenius at `Q` (`AlgHom.IsArithFrobAt`, so `φ y ≡ y ^ p (mod Q)` for all
-`y`). If `x ∈ S` is a square root of an integer `d` with `p ∤ d`, then
+Let `S` be a commutative ring without zero divisors, `Q` an ideal of `S` lying over the rational
+prime `p ≠ 2`, and `φ` an arithmetic Frobenius at `Q` (`AlgHom.IsArithFrobAt`, so
+`φ y ≡ y ^ p (mod Q)` for all `y`). If `x ∈ S` is a square root of an integer `d` with `p ∤ d`, then
 
 `φ x = legendreSym p d • x`.
 
@@ -43,19 +43,8 @@ namespace TauCeti
 
 variable {S : Type*} [CommRing S] {p : ℕ} [Fact p.Prime] {d : ℤ}
 
-omit [Fact p.Prime] in
-/-- The base Frobenius congruence over a rational prime: for an arithmetic Frobenius
-`φ : S →ₐ[ℤ] S` at an ideal `Q` lying over `(p)`, `φ y ≡ y ^ p (mod Q)`, the exponent being `p`,
-the cardinality of the base residue ring `ℤ ⧸ Q ∩ ℤ`. Internal plumbing for `apply_sqrt`. -/
-private theorem _root_.AlgHom.IsArithFrobAt.sub_pow_mem {φ : S →ₐ[ℤ] S}
-    (H : φ.IsArithFrobAt Q)
-    [Q.LiesOver (span {(p : ℤ)})] (y : S) : φ y - y ^ p ∈ Q := by
-  have h := H y
-  rwa [Ideal.natCard_quotient_under_of_liesOver (p := p) Q] at h
+variable {Q : Ideal S} {x : S}
 
-variable [IsDomain S] {Q : Ideal S} {x : S}
-
-omit [IsDomain S] in
 /-- The **Frobenius congruence for a square root, refined by Euler's criterion**: for an
 arithmetic Frobenius `φ : S →ₐ[ℤ] S` at `Q` lying over the odd rational prime `p`, if
 `x² = d` then `φ x ≡ legendreSym p d • x (mod Q)`. Internal step of `apply_sqrt`. -/
@@ -81,11 +70,12 @@ private theorem _root_.AlgHom.IsArithFrobAt.sub_legendreSym_smul_mem {φ : S →
     rw [hfactor]
     exact Q.mul_mem_right x ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr heuler)
   -- Combine with the base congruence `φ x ≡ x ^ p (mod Q)`.
-  have hsum := Q.add_mem (AlgHom.IsArithFrobAt.sub_pow_mem (p := p) H x) hstep
+  have hpow : φ x - x ^ p ∈ Q := by
+    simpa only [Ideal.natCard_quotient_under_of_liesOver (p := p) Q] using H x
+  have hsum := Q.add_mem hpow hstep
   rw [hxp] at hsum
   rwa [sub_add_sub_cancel] at hsum
 
-omit [IsDomain S] in
 /-- The two square roots of `d` are **distinct modulo `Q`**: if `x² = d`, the prime `p` is odd
 and `p ∤ d`, and `Q` lies over `(p)`, then `x + x ∉ Q`. (Otherwise `(x + x) * x = 2d ∈ Q` would
 give `p ∣ 2d`, forcing `p = 2` or `p ∣ d`.) Internal step of `apply_sqrt`. -/
@@ -104,19 +94,19 @@ private theorem add_self_notMem (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
   · exact hd hdd
 
 /-- **An arithmetic Frobenius acts on square roots by the Legendre symbol.** Let `S` be a
-domain, `Q` an ideal of `S` over the odd rational prime `p`, and `φ : S →ₐ[ℤ] S` an arithmetic
-Frobenius at `Q`. If `x² = d` for an integer `d` not divisible by `p`, then
-`φ x = legendreSym p d • x`: the Frobenius fixes `√d` when `d` is a quadratic residue mod `p`
-and negates it otherwise. (Primality of `Q` is not needed: the sign separation comes from `S`
-being a domain and `Q ∩ ℤ = (p)`.) -/
-theorem _root_.AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.IsArithFrobAt Q)
+commutative ring without zero divisors, `Q` an ideal of `S` over the odd rational prime `p`, and
+`φ : S →ₐ[ℤ] S` an arithmetic Frobenius at `Q`. If `x² = d` for an integer `d` not divisible
+by `p`, then `φ x = legendreSym p d • x`: the Frobenius fixes `√d` when `d` is a quadratic
+residue mod `p` and negates it otherwise. Primality of `Q` is not needed. -/
+theorem _root_.AlgHom.IsArithFrobAt.apply_sqrt [NoZeroDivisors S] {φ : S →ₐ[ℤ] S}
+    (H : φ.IsArithFrobAt Q)
     [Q.LiesOver (span {(p : ℤ)})] (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
     (hx : x ^ 2 = algebraMap ℤ S d) :
     φ x = legendreSym p d • x := by
   -- `φ x ≡ legendreSym p d • x (mod Q)` by the Frobenius congruence refined via Euler.
   have hkey : φ x - legendreSym p d • x ∈ Q :=
     AlgHom.IsArithFrobAt.sub_legendreSym_smul_mem H hodd hx
-  -- `(φ x)² = x²`, so in the domain `S` the value `φ x` is `x` or `-x` on the nose.
+  -- `(φ x)² = x²`, so as `S` has no zero divisors the value `φ x` is `x` or `-x` on the nose.
   have hpm : φ x = x ∨ φ x = -x :=
     sq_eq_sq_iff_eq_or_eq_neg.mp (by rw [← map_pow, hx, AlgHom.commutes])
   -- The target `legendreSym p d • x` is likewise `x` or `-x`, since the symbol is `±1`.
@@ -131,8 +121,8 @@ theorem _root_.AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.Is
 /-- **A Frobenius element acts on square roots by the Legendre symbol**, action form: if `σ : M`
 is an arithmetic Frobenius at an ideal `Q` over the odd prime `p` and `x² = d` with `p ∤ d`,
 then `σ • x = legendreSym p d • x`. Only a monoid action is needed. -/
-theorem _root_.IsArithFrobAt.smul_sqrt {M : Type*} [Monoid M] [MulSemiringAction M S]
-    [SMulCommClass M ℤ S] {σ : M} (H : _root_.IsArithFrobAt ℤ σ Q)
+theorem _root_.IsArithFrobAt.smul_sqrt [NoZeroDivisors S] {M : Type*} [Monoid M]
+    [MulSemiringAction M S] {σ : M} (H : _root_.IsArithFrobAt ℤ σ Q)
     [Q.LiesOver (span {(p : ℤ)})] (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
     (hx : x ^ 2 = algebraMap ℤ S d) :
     σ • x = legendreSym p d • x := by
