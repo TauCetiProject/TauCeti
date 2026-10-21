@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Submonoid.BigOperators
-public import Mathlib.Algebra.Order.Group.PosPart
 public import Mathlib.Algebra.Order.Pi
 public import TauCeti.Combinatorics.Network.Augmentation
 
