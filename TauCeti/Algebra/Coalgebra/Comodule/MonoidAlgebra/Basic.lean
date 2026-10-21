@@ -9,8 +9,11 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 public import Mathlib.RingTheory.Coalgebra.MonoidAlgebra
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
+public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 import TauCeti.Algebra.Module.Submodule.Finite
 import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
@@ -57,6 +60,10 @@ spanning and the independence half of the decomposition.
   direct sum of its weight submodules.**
 * `TauCeti.Comodule.endOfPoint_tmul_of_mem_weightSpace`: an algebra map out of `R[G]` acts on the
   `g`-weight submodule by multiplication by its value at the group-like element `single g 1`.
+* `TauCeti.Comodule.tmul_mem_weightSpace_tensor`: a tensor product of weight vectors of weights
+  `g` and `h` is a weight vector of weight `g * h`.
+* `TauCeti.Comodule.matrixCoefficient_of_mem_weightSpace`: the matrix coefficients of a vector of
+  weight `g` are multiples of `g`.
 * `TauCeti.Comodule.Hom.map_mem_weightSpace`: a comodule morphism preserves the weight
   submodules.
 * `TauCeti.Comodule.weightProj_mem_subcomodule`: every subcomodule is stable under the weight
@@ -172,7 +179,7 @@ theorem tensorComponent_monoidCoeff_comul (g : G) (a : MonoidAlgebra R G) :
       (monoidCoeff R G g).smulRight (MonoidAlgebra.single g (1 : R)) := by
     refine MonoidAlgebra.lhom_ext' fun h ↦ ?_
     ext r
-    by_cases hh : h = g <;> simp [MonoidAlgebra.comul_single, hh]
+    by_cases hh : h = g <;> simp [hh]
   simpa only [LinearMap.comp_apply, LinearMap.smulRight_apply, monoidCoeff_apply] using
     LinearMap.congr_fun h a
 
@@ -593,6 +600,42 @@ theorem endOfPoint_tmul_of_mem_weightSpace (f : MonoidAlgebra R G →ₐ[R] A) (
   simp [TensorProduct.smul_tmul']
 
 end Points
+
+/-! ## Weights of tensor products and matrix coefficients of weight vectors -/
+
+section Tensor
+
+variable [Monoid G] [Comodule R (MonoidAlgebra R G) V]
+variable {W : Type*} [AddCommMonoid W] [Module R W] [Comodule R (MonoidAlgebra R G) W]
+
+attribute [local instance] Comodule.tensor
+
+variable {R G V}
+
+/-- **Weights add in a tensor product.** For the diagonal coaction on `V ⊗ W`, the tensor product
+of a vector of weight `g` and a vector of weight `h` has weight `g * h`. -/
+theorem tmul_mem_weightSpace_tensor {g h : G} {v : V} {w : W}
+    (hv : v ∈ weightSpace R G V g) (hw : w ∈ weightSpace R G W h) :
+    v ⊗ₜ[R] w ∈ weightSpace R G (V ⊗[R] W) (g * h) := by
+  rw [mem_weightSpace, tensor_coact, tensorCoact_tmul, mem_weightSpace.mp hv,
+    mem_weightSpace.mp hw, tensorCombine_tmul_tmul, MonoidAlgebra.single_mul_single, one_mul]
+
+end Tensor
+
+section MatrixCoefficient
+
+variable [Comodule R (MonoidAlgebra R G) V]
+
+variable {R G V}
+
+/-- The matrix coefficients of a vector of weight `g` are multiples of `g`. -/
+theorem matrixCoefficient_of_mem_weightSpace {g : G} {v : V} (hv : v ∈ weightSpace R G V g)
+    (φ : Module.Dual R V) :
+    matrixCoefficient (C := MonoidAlgebra R G) φ v = MonoidAlgebra.single g (φ v) := by
+  rw [matrixCoefficient_def, mem_weightSpace.mp hv, TensorProduct.map_tmul, LinearMap.id_apply,
+    TensorProduct.lid_tmul, MonoidAlgebra.smul_single', mul_one]
+
+end MatrixCoefficient
 
 end Comodule
 

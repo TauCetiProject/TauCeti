@@ -34,8 +34,10 @@ The computations go through bases of weight vectors. Every finite-dimensional co
 basis vectors of that weight (`Module.Basis.finrank_comoduleWeightSpace_eq_card`), and the formal
 character is the sum of the weights of the basis vectors
 (`Module.Basis.comoduleFormalCharacter_eq_sum`). Tensor products, products and duals of
-weight bases are again weight bases. The underlying statements about weight vectors,
-`TauCeti.Comodule.tmul_mem_weightSpace_tensor`, `TauCeti.Comodule.mem_weightSpace_dual_iff` and
+weight bases are again weight bases. Tensor products of weight vectors are handled by
+`TauCeti.Comodule.tmul_mem_weightSpace_tensor` in
+`TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic`. The underlying statements about dual
+weight vectors, `TauCeti.Comodule.mem_weightSpace_dual_iff` and
 `Module.Basis.dualBasis_mem_comoduleWeightSpace`, hold over every commutative semiring.
 
 ## Main definitions
@@ -44,8 +46,6 @@ weight bases are again weight bases. The underlying statements about weight vect
 
 ## Main results
 
-* `TauCeti.Comodule.tmul_mem_weightSpace_tensor`: a tensor product of weight vectors of weights
-  `g` and `h` is a weight vector of weight `g * h`.
 * `TauCeti.Comodule.mem_weightSpace_dual_iff`: a functional has weight `g` on the dual comodule
   exactly when it kills every weight space other than that of `g⁻¹`.
 * `TauCeti.Comodule.formalCharacter_coeff`: the coefficients of the formal character are the
@@ -70,38 +70,12 @@ namespace TauCeti.Comodule
 
 universe u v w x
 
-/-! ### Weights of tensor products and duals -/
-
-section Tensor
-
-variable {R : Type u} {G : Type v} [CommSemiring R] [Monoid G]
-variable {V : Type w} [AddCommMonoid V] [Module R V] [Comodule R (MonoidAlgebra R G) V]
-variable {W : Type x} [AddCommMonoid W] [Module R W] [Comodule R (MonoidAlgebra R G) W]
-
-attribute [local instance] Comodule.tensor
-
-/-- **Weights add in a tensor product.** For the diagonal coaction on `V ⊗ W`, the tensor product
-of a vector of weight `g` and a vector of weight `h` has weight `g * h`. -/
-theorem tmul_mem_weightSpace_tensor {g h : G} {v : V} {w : W}
-    (hv : v ∈ weightSpace R G V g) (hw : w ∈ weightSpace R G W h) :
-    v ⊗ₜ[R] w ∈ weightSpace R G (V ⊗[R] W) (g * h) := by
-  rw [mem_weightSpace, tensor_coact, tensorCoact_tmul, mem_weightSpace.mp hv,
-    mem_weightSpace.mp hw, tensorCombine_tmul_tmul, MonoidAlgebra.single_mul_single, one_mul]
-
-end Tensor
+/-! ### Weights of duals -/
 
 section Dual
 
 variable {R : Type u} {G : Type v} [CommSemiring R]
 variable {V : Type w} [AddCommMonoid V] [Module R V] [Comodule R (MonoidAlgebra R G) V]
-
-/-- The matrix coefficients of a vector of weight `g` are multiples of `g`. -/
-theorem matrixCoefficient_of_mem_weightSpace {g : G} {v : V} (hv : v ∈ weightSpace R G V g)
-    (φ : Module.Dual R V) :
-    matrixCoefficient (C := MonoidAlgebra R G) φ v = MonoidAlgebra.single g (φ v) := by
-  rw [matrixCoefficient_def, mem_weightSpace.mp hv, TensorProduct.map_tmul, LinearMap.id_apply,
-    TensorProduct.lid_tmul, MonoidAlgebra.smul_single', mul_one]
-
 variable [Group G] [Module.Finite R V] [Module.Projective R V]
 
 attribute [local instance] Comodule.dual
