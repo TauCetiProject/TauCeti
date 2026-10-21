@@ -36,6 +36,8 @@ zero of positive order is a unit, so the factor `(X - a)ʰ` may be renormalised 
 ## Main results
 
 * `PowerSeries.IsGoodZero.unique`: over a nontrivial ring the order of a good zero is unique.
+* `PowerSeries.evalAt_hasseDeriv_coe`: the value at `a` of a Hasse derivative of a polynomial is a
+  coefficient of its Taylor expansion at `a`.
 * `PowerSeries.isGoodZero_coe_iff`, `PowerSeries.isGoodZero_coe_iff_of_field`: for polynomials
   the order is the root multiplicity, and over a ring the quotient by `(X - a)ʰ` must be a unit
   at `a`.
@@ -105,7 +107,7 @@ theorem IsGoodZero.unique [Nontrivial R] (hh : f.IsGoodZero a h) (hk : f.IsGoodZ
 
 /-- The value at `a` of a Hasse derivative of a polynomial is a coefficient of its Taylor
 expansion at `a`. -/
-private theorem evalAt_hasseDeriv_coe (p : Polynomial R) (j : ℕ) :
+theorem evalAt_hasseDeriv_coe (p : Polynomial R) (j : ℕ) :
     (hasseDeriv j (p : R⟦X⟧)).evalAt a = (Polynomial.taylor a p).coeff j := by
   rw [hasseDeriv_coe, evalAt_coe, Polynomial.coe_aeval_eq_eval, Polynomial.taylor_coeff]
 
