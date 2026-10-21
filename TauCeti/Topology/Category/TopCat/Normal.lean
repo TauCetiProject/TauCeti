@@ -178,9 +178,9 @@ theorem normalSpace_of_isColimit
     fun n ↦ by ext x; exact congrArg ULift.up (congrFun (hu' n) x)⟩
   let v : C(c.pt, ℝ) := ⟨fun p ↦ (d p).down, continuous_uliftDown.comp d.hom.continuous⟩
   have hv (n : ℕ) (x : F.obj n) : v (c.ι.app n x) = u n x := by
-    change (d (c.ι.app n x)).down = _
+    simp only [v, ContinuousMap.coe_mk]
     rw [← ConcreteCategory.comp_apply, hc.fac]
-    rfl
+    simp [NatTrans.ofSequence_app]
   have hp (p : c.pt) : ∃ n x, c.ι.app n x = p :=
     Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) p
   -- The sublevel and superlevel sets at `1 / 2` separate `S` and `T`.
