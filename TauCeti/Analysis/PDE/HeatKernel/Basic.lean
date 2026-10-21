@@ -102,8 +102,7 @@ theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 < t) (x : E) :
     heatKernel t x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel 1 ((√t)⁻¹ • x) := by
   have hst : 0 < √t := sqrt_pos.2 ht
   have hpow : (√t)⁻¹ ^ Module.finrank ℝ E = t ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
-    rw [sqrt_eq_rpow, ← rpow_natCast, inv_rpow (by positivity), ← rpow_mul ht.le, ← rpow_neg ht.le]
-    ring_nf
+    rw [rpow_div_two_eq_sqrt _ ht.le, rpow_neg hst.le, rpow_natCast, inv_pow]
   have hnorm : ‖(√t)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / t := by
     rw [norm_smul, norm_inv, norm_of_nonneg hst.le, mul_pow, inv_pow, sq_sqrt ht.le]
     ring
@@ -115,8 +114,8 @@ theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 < t) (x : E) :
 theorem heatKernel_mul_eq_mul_heatKernel_smul {t s : ℝ} (ht : 0 < t) (hs : 0 < s) (x : E) :
     heatKernel (t * s) x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel s ((√t)⁻¹ • x) := by
   rw [heatKernel_eq_mul_heatKernel_one_smul (mul_pos ht hs),
-    heatKernel_eq_mul_heatKernel_one_smul hs, smul_smul, sqrt_mul ht.le, mul_inv,
-    mul_comm (√s)⁻¹ (√t)⁻¹, mul_pow, mul_assoc]
+    heatKernel_eq_mul_heatKernel_one_smul hs, smul_smul, sqrt_mul ht.le, mul_inv, mul_pow]
+  ring_nf
 
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=

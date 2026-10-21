@@ -88,9 +88,7 @@ theorem exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (m : �
   simp only [mul_one] at hC
   refine ⟨C, fun t ht x => ?_⟩
   have hpow : (√t)⁻¹ ^ m = t ^ (-(m : ℝ) / 2) := by
-    rw [sqrt_eq_rpow, ← rpow_natCast, inv_rpow (by positivity), ← rpow_mul ht.le,
-      ← rpow_neg ht.le]
-    ring_nf
+    rw [rpow_div_two_eq_sqrt _ ht.le, rpow_neg (sqrt_nonneg t), rpow_natCast, inv_pow]
   rw [iteratedFDeriv_heatKernel_eq_smul_iteratedFDeriv_heatKernel_one ht, norm_smul,
     norm_of_nonneg (by positivity), ← hpow, mul_comm 2 t,
     heatKernel_mul_eq_mul_heatKernel_smul ht two_pos, pow_add]
