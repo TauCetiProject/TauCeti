@@ -152,8 +152,11 @@ theorem range_powMonoidHom_gcd {G : Type*} [CommGroup G] {n : ℕ} (hn : ∀ y :
   refine le_antisymm ?_ ?_
   · rintro _ ⟨y, rfl⟩
     refine ⟨y ^ n.gcdB d, ?_⟩
-    rw [powMonoidHom_apply, powMonoidHom_apply, ← zpow_natCast y, Nat.gcd_eq_gcd_ab, zpow_add,
-      zpow_mul y n, zpow_natCast y, hn, one_zpow, one_mul, mul_comm, zpow_mul, zpow_natCast]
+    have ha : y ^ ((n : ℤ) * n.gcdA d) = 1 := by simp [zpow_mul, hn]
+    have hb : (y ^ n.gcdB d) ^ d = y ^ ((d : ℤ) * n.gcdB d) := by
+      rw [mul_comm, zpow_mul, zpow_natCast]
+    simp only [powMonoidHom_apply, hb, ← zpow_natCast y (n.gcd d), Nat.gcd_eq_gcd_ab, zpow_add,
+      ha, one_mul]
   · rintro _ ⟨y, rfl⟩
     refine ⟨y ^ (d / n.gcd d), ?_⟩
     rw [powMonoidHom_apply, powMonoidHom_apply, ← pow_mul,
