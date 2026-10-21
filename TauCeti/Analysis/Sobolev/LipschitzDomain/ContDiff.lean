@@ -41,9 +41,12 @@ namespace TauCeti
 open Metric Set Topology
 open scoped NNReal
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  {Omega : Set (WithLp 2 (ℝ × E))} {L : ℝ≥0}
-  {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {L : ℝ≥0}
+
+section Chart
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {Omega : Set F}
+  {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
 
 /-- A `C¹` boundary graph becomes a Lipschitz chart on a smaller tangential ball. Any constant
 strictly exceeding the derivative norm at the centre is allowed. The extended graph agrees
@@ -62,6 +65,10 @@ theorem exists_isLipschitzChartWith_of_contDiffAt (ha : 0 < a) (hb : 0 < b)
   obtain ⟨ψ, heq, hchart⟩ := exists_isLipschitzChartWith_of_lipschitzOnWith ha hb' hφ0 hφb'
     (fun z hz ↦ hgraph z (normalCylinder_mono le_rfl (min_le_left b r) hz))
   exact ⟨ψ, b', hb', min_le_left b r, heq, hchart⟩
+
+end Chart
+
+variable {Omega : Set (WithLp 2 (ℝ × E))}
 
 /-- An open set with `C¹` local boundary graphs is a Lipschitz domain whenever the derivative
 norm at every chart centre is strictly below the same constant `L`.
