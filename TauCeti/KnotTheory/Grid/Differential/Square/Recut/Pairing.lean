@@ -67,6 +67,10 @@ the recut's own side data holds.
   side column, so the involution stays inside the one-common-side terms.
 * `TauCeti.GridRectangleDecomposition.sideColumns_union_recut`: recutting preserves the three
   columns used by the composite domain.
+* `TauCeti.GridRectangleDecomposition.IsRecutOfLeftEqLeft.first_left_notMem_commonSideColumns` and
+  `TauCeti.GridRectangleDecomposition.IsRecutOfRightEqRight.first_right_notMem_commonSideColumns`:
+  the recut of a decomposition with a common initial or terminal column does not keep that column
+  as a common side.
 * `TauCeti.GridRectangleDecomposition.isRecutOfLeftEqLeft_recut` and its three siblings: the
   recut is classified by the orientation of the original decomposition's common side.
 * `TauCeti.GridRectangleDecomposition.recut_sides_of_left_eq_left_of_mem_cIoo` and
@@ -168,6 +172,17 @@ theorem recut_branch {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfLeft
         E.middle = x.swapColumns D.first.left D.second.right ∧
           E.first.left = D.first.left ∧ E.second.left = D.second.right) := h.2.2.2
 
+/-- The common initial side of `D` is not a common side column of its `left = left` recut. -/
+theorem first_left_notMem_commonSideColumns {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfLeftEqLeft E) : D.first.left ∉ E.commonSideColumns := by
+  have h₁ := D.first.left_ne_right
+  have h₂ := D.second.left_ne_right
+  have hc := h.side_eq
+  obtain ⟨hr₁, hr₂⟩ := h.recut_sides
+  rcases h.recut_branch with ⟨-, -, hl₁, hl₂⟩ | ⟨-, -, hl₁, hl₂⟩ <;>
+    simp only [mem_commonSideColumns, GridRectangleBetween.mem_sideColumns, hl₁, hl₂, hr₁,
+      hr₂] <;> grind
+
 end IsRecutOfLeftEqLeft
 
 namespace IsRecutOfRightEqRight
@@ -188,6 +203,18 @@ theorem recut_branch {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfRigh
       (D.second.left ∈ Grid.cIoo D.first.left D.first.right ∧
         E.middle = x.swapColumns D.second.left D.first.right ∧
           E.first.right = D.first.right ∧ E.second.right = D.second.left) := h.2.2.2
+
+/-- The common terminal side of `D` is not a common side column of its `right = right`
+recut. -/
+theorem first_right_notMem_commonSideColumns {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfRightEqRight E) : D.first.right ∉ E.commonSideColumns := by
+  have h₁ := D.first.left_ne_right
+  have h₂ := D.second.left_ne_right
+  have hc := h.side_eq
+  obtain ⟨hl₁, hl₂⟩ := h.recut_sides
+  rcases h.recut_branch with ⟨-, -, hr₁, hr₂⟩ | ⟨-, -, hr₁, hr₂⟩ <;>
+    simp only [mem_commonSideColumns, GridRectangleBetween.mem_sideColumns, hl₁, hl₂, hr₁,
+      hr₂] <;> grind
 
 end IsRecutOfRightEqRight
 
@@ -252,6 +279,20 @@ theorem IsRecut.isRecutOfLeftEqLeft {D E : GridRectangleDecomposition x z}
       hdata.side_eq]
   · exact (D.second.left_ne_right (hcommon.symm.trans hdata.side_eq)).elim
   · exact (D.first.left_ne_right (hcommon.trans hdata.side_eq.symm)).elim
+
+/-- A recut of a decomposition with exactly one common side, terminal for both rectangles,
+has the `right = right` side data. -/
+theorem IsRecut.isRecutOfRightEqRight {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecut E) (hone : D.HasOneCommonSide)
+    (hcommon : D.first.right = D.second.right) : D.IsRecutOfRightEqRight E := by
+  rcases h.orientation with hdata | hdata | hdata | hdata
+  · apply False.elim
+    apply D.sideColumns_ne_of_hasOneCommonSide hone
+    rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hcommon,
+      hdata.side_eq]
+  · exact hdata
+  · exact (D.first.left_ne_right (hdata.side_eq.trans hcommon.symm)).elim
+  · exact (D.second.left_ne_right (hdata.side_eq.symm.trans hcommon)).elim
 
 /-! ### Existence and uniqueness of the recut -/
 

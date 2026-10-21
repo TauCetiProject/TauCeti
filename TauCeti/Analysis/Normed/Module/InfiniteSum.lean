@@ -21,7 +21,7 @@ families form a cofinite-null family on the product index. Consequently, over a 
 module this family is summable whenever `f` and `g` are, and so is the Cauchy product induced by
 the scalar action. If the action is moreover a module structure, then completeness is not needed:
 passing to the completion shows that the double sum of two families with sums `a` and `b` is
-`a • b`, and grouping it by the antidiagonals of an additive index monoid gives the corresponding
+`a • b`, and grouping it by the antidiagonals of an additive index type gives the corresponding
 Cauchy-product formula. The `tsum` forms of these identities assume the module is Hausdorff
 (stated as `T0Space`, which is equivalent for seminormed groups).
 
@@ -66,7 +66,7 @@ theorem _root_.Summable.smul_of_nonarchimedean {α β : Type*} {f : α → R} {g
   (NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero _).mpr <|
     hf.tendsto_cofinite_zero.smul_cofinite_nhds_zero hg.tendsto_cofinite_zero
 
-variable {A : Type*} [AddCommMonoid A] [Finset.HasAntidiagonal A]
+variable {A : Type*} [Add A] [Finset.HasAntidiagonal A]
 
 private theorem summable_smul_sigma_antidiagonal_of_nonarchimedean {f : A → R} {g : A → M}
     (hf : Summable f) (hg : Summable g) :
@@ -118,7 +118,7 @@ protected theorem _root_.Summable.tsum_smul_tsum_of_nonarchimedean [T0Space M] {
 
 section CauchyProduct
 
-variable {A : Type*} [AddCommMonoid A] [Finset.HasAntidiagonal A]
+variable {A : Type*} [Add A] [Finset.HasAntidiagonal A]
 
 /-- In an ultrametric normed module, the antidiagonal Cauchy product sums to the scalar multiple
 of the original two sums. -/
@@ -130,7 +130,7 @@ theorem _root_.HasSum.sum_smul_antidiagonal_of_nonarchimedean {f : A → R} {g :
   exact hsigma.sigma fun n ↦ Finset.hasSum (Finset.antidiagonal n) fun ij ↦ f ij.1 • g ij.2
 
 /-- The Cauchy-product formula for the scalar multiple of two infinite sums, grouped over the
-antidiagonals of an additive index monoid, in a Hausdorff ultrametric normed module. -/
+antidiagonals of an additive index type, in a Hausdorff ultrametric normed module. -/
 protected theorem _root_.Summable.tsum_smul_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
     [T0Space M] {f : A → R} {g : A → M} (hf : Summable f) (hg : Summable g) :
     (∑' n, f n) • (∑' n, g n) =

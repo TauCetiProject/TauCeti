@@ -162,6 +162,17 @@ theorem arrowSum_mono [PartialOrder K] [IsOrderedAddMonoid K] {f g : Assignment 
     (S T : Finset V) : arrowSum f S T ≤ arrowSum g S T :=
   sum_le_sum fun v _ ↦ sum_le_sum fun w _ ↦ sum_le_sum fun e _ ↦ h v w e
 
+/-- A nonnegative assignment has zero total value on the arrows from `S` to `T` exactly when it
+vanishes on each of these arrows. -/
+theorem arrowSum_eq_zero_iff_of_nonneg [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
+    (hf : 0 ≤ f) {S T : Finset V} :
+    arrowSum f S T = 0 ↔ ∀ v ∈ S, ∀ w ∈ T, ∀ e : Q v w, f e = 0 := by
+  have h₃ (v w : V) : 0 ≤ ∑ e : Q v w, f e := sum_nonneg fun e _ ↦ hf v w e
+  have h₂ (v : V) : 0 ≤ ∑ w ∈ T, ∑ e : Q v w, f e := sum_nonneg fun w _ ↦ h₃ v w
+  simp only [arrowSum_def, sum_eq_zero_iff_of_nonneg fun v _ ↦ h₂ v,
+    sum_eq_zero_iff_of_nonneg fun w _ ↦ h₃ _ w, sum_eq_zero_iff_of_nonneg fun e _ ↦ hf _ _ e,
+    mem_univ, true_implies]
+
 /-- The total value entering `v` for a single arrow from `x` to `y` is `q` exactly when
 `v = y`. -/
 theorem sum_sum_single_in [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q : K) (v : V) :

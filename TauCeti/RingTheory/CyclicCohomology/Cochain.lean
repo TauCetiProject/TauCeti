@@ -12,6 +12,7 @@ import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.Algebra.BigOperators.AlternatingSum
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # The Hochschild coboundary and cyclic cochains
@@ -49,6 +50,9 @@ identities between faces and the cyclic rotation
 
 * `TauCeti.hochschildCoboundary_hochschildCoboundary`: `b (b φ) = 0`.
 * `TauCeti.hochschildCoboundary_mem_cyclicCochains`: `b` maps cyclic cochains to cyclic cochains.
+* `TauCeti.hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero`: the Hochschild
+  coboundary of a cyclic cochain vanishes on a tuple whose cyclically adjacent entries are
+  quasi-inverse.
 * `TauCeti.cyclicHochschildCoboundary_cyclicHochschildCoboundary`: the restriction of `b` to
   cyclic cochains also squares to zero.
 * `TauCeti.hochschildCoboundary_zero_eq_zero_iff`: the degree-zero cocycles are the traces.
@@ -584,6 +588,66 @@ theorem hochschildCoboundary_mem_cyclicCochains
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [add_right_comm, add_comm _ n, add_right_comm]
   · rw [← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
+
+variable {R A M} in
+/-- **The Hochschild coboundary of a cyclic cochain vanishes on quasi-inverse chains.** If the
+cyclically adjacent entries `xᵢ`, `xᵢ₊₁` (indices modulo `n + 2`) of a tuple satisfy
+`xᵢ₊₁ + xᵢ + xᵢxᵢ₊₁ = 0`, then `(bψ)(x₀, …, xₙ₊₁) = 0` for every cyclic `n`-cochain `ψ`. -/
+theorem hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero
+    {ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hψ : ψ ∈ cyclicCochains R A M n)
+    {x : Fin (n + 2) → A}
+    (hx : ∀ i, x (finRotate (n + 2) i) + x i + x i * x (finRotate (n + 2) i) = 0) :
+    hochschildCoboundary R A M n ψ x = 0 := by
+  -- A product `yz` of quasi-inverse entries in one slot splits into the values on `y` and on `z`.
+  have hsplit (r : Fin (n + 1) → A) (j : Fin (n + 1)) {y z : A} (h : z + y + y * z = 0) :
+      ψ (Function.update r j (y * z)) =
+        -(ψ (Function.update r j y) + ψ (Function.update r j z)) := by
+    have h0 := ψ.map_update_zero r j
+    rw [← h, ψ.map_update_add, ψ.map_update_add, add_comm (ψ _) (ψ (Function.update r j y))] at h0
+    exact eq_neg_of_add_eq_zero_right h0
+  -- With `g i = (-1)ⁱ ψ(x with entry i deleted)`, the inner faces contribute `g (j + 1) - g j`.
+  set g : Fin (n + 2) → M := fun i ↦ (-1 : ℤ) ^ (i : ℕ) • ψ (Fin.removeNth i x) with hg
+  have hinner (j : Fin (n + 1)) : (-1 : ℤ) ^ (j : ℕ) • ψ (Fin.contractNth j.castSucc (· * ·) x) =
+      g j.succ - g j.castSucc := by
+    have hj := hx j.castSucc
+    rw [Fin.finRotate_castSucc] at hj
+    rw [Fin.contractNth_castSucc_eq_update_removeNth_succ, hsplit _ _ hj,
+      Fin.update_removeNth_succ_eq_removeNth_castSucc,
+      Function.update_eq_self_iff.2 (by simp [Fin.removeNth_apply])]
+    simp only [hg, Fin.val_succ, Fin.val_castSucc, pow_succ, mul_neg_one, neg_smul, smul_neg,
+      smul_add]
+    abel
+  -- The last face contributes `g 0 - g (n + 1)`, by cyclicity of `ψ`.
+  have hlast : (-1 : ℤ) ^ (n + 1) •
+      ψ (Fin.cons (x (Fin.last (n + 1)) * x 0) fun k ↦ x k.castSucc.succ) =
+        g 0 - g (Fin.last (n + 1)) := by
+    have hl := hx (Fin.last (n + 1))
+    rw [finRotate_last] at hl
+    -- By definition, the inner entries `fun k ↦ x k.castSucc.succ` are `Fin.init (Fin.tail x)`
+    -- and `x (Fin.last (n + 1))` is `Fin.tail x (Fin.last n)`.
+    have hinit : (Fin.cons (x 0) fun k ↦ x k.castSucc.succ : Fin (n + 1) → A) = Fin.init x := by
+      rw [← Fin.cons_self_tail (Fin.init x), Fin.tail_init_eq_init_tail]
+      rfl
+    have htail : (Fin.cons (x (Fin.last (n + 1))) fun k ↦ x k.castSucc.succ : Fin (n + 1) → A) =
+        Fin.tail x ∘ (finRotate (n + 1)).symm := by
+      rw [← Fin.snoc_init_self (Fin.tail x), Fin.snoc_eq_cons_rotate]
+      funext k
+      rw [Function.comp_apply, Equiv.apply_symm_apply]
+      rfl
+    rw [← Fin.update_cons_zero (x (Fin.last (n + 1))), hsplit _ _ hl, Fin.update_cons_zero,
+      Fin.update_cons_zero, hinit, htail, mem_cyclicCochains_iff.1 hψ]
+    have hsign : (-1 : ℤ) ^ (n + 1) * (-1) ^ n = -1 := by
+      rw [← pow_add]
+      exact Odd.neg_one_pow ⟨n, by omega⟩
+    simp only [hg, Fin.val_zero, Fin.val_last, Fin.removeNth_zero, Fin.removeNth_last, pow_zero,
+      one_smul, smul_neg, smul_add, smul_smul, hsign, neg_one_smul]
+    abel
+  rw [hochschildCoboundary_apply_eq_sum_contractNth_add, Finset.sum_congr rfl fun j _ ↦ hinner j,
+    Finset.sum_sub_distrib, hlast]
+  have hsucc := Fin.sum_univ_succ g
+  rw [Fin.sum_univ_castSucc] at hsucc
+  rw [sub_add_sub_comm, ← sub_eq_zero_of_eq hsucc.symm]
+  abel
 
 /-- The Hochschild coboundary `b` restricted to the submodules of cyclic cochains, as a linear
 map `C_λⁿ → C_λⁿ⁺¹`. It squares to zero when the multiplication is associative. -/

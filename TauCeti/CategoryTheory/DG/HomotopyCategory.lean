@@ -42,6 +42,8 @@ preadditive and linear over the ground ring.
   Mathlib's `HomologicalComplex.homologyπ`.
 * `TauCeti.homologyMap_dgHomotopyClass`: a chain map of Hom complexes sends the class of `f` to the
   class of the image of `f`.
+* `TauCeti.DGHomotopyCategory.isZero_of_iff_dgId_mem_dgBoundaries`: an object is zero in the
+  homotopy category exactly when its identity is a coboundary.
 
 ## References
 
@@ -675,6 +677,12 @@ theorem homOf_comp {X Y Z : C} (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z)
     homOf R f hf ≫ homOf R g hg =
       homOf R (dgCompZero R f g) (dgCompZero_mem_dgCycles R hf hg) :=
   dgHomotopyComp_dgHomotopyClass R f g hf hg
+
+/-- An object is a zero object of the homotopy category exactly when it is **contractible**: its
+identity is the differential of a degree-minus-one endomorphism. -/
+theorem isZero_of_iff_dgId_mem_dgBoundaries (X : C) :
+    Limits.IsZero (of R X) ↔ dgId R X ∈ dgBoundaries R X X := by
+  rw [Limits.IsZero.iff_id_eq_zero, ← homOf_dgId, homOf_eq_zero_iff]
 
 end DGHomotopyCategory
 

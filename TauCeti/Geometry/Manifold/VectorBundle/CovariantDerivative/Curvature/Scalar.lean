@@ -198,6 +198,18 @@ theorem scalarCurvature_def (x : M) :
       (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x :=
   (rfl)
 
+/-- If the installed fibre metric is `g`, the scalar curvature of `g` is that of the Levi-Civita
+connection. This transports scalar curvature along an equality of fibre metrics, such as
+`toRiemannianMetric_ofLE`, which cannot be rewritten inside the instance-dependent arguments. -/
+theorem scalarCurvature_eq_scalarCurvature_leviCivitaConnection
+    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) (x : M) :
+    g.scalarCurvature x = (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  rfl
+
 /-- The scalar curvature of a smooth Riemannian metric is a smooth function. -/
 theorem contMDiff_scalarCurvature : ContMDiff I 𝓘(ℝ) ∞ g.scalarCurvature := by
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
