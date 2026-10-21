@@ -41,10 +41,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared reporting tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@TOOLS_CI_REVISION
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0cb5029f1fd5d14569734816e0d135d85de3778e
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: TOOLS_CI_REVISION
+          tools-ref: 0cb5029f1fd5d14569734816e0d135d85de3778e
           project-directory: .
 
       - name: Discover retained intents from this exact original run
@@ -64,7 +64,8 @@ jobs:
           data = json.loads((Path(os.environ['RUNNER_TEMP']) / 'source-status-artifacts.json').read_text())
           if not isinstance(data, dict) or not isinstance(data.get('artifacts'), list) or data.get('total_count', 101) > 100:
               raise SystemExit('Cannot safely identify the original run status artifacts')
-          names = {'ci-status-intents-sandbox', 'ci-status-intents-finalizer'}
+          attempt = os.environ['CI_STATUS_SOURCE_ATTEMPT']
+          names = {f'ci-status-intents-sandbox-{attempt}', f'ci-status-intents-finalizer-{attempt}'}
           selected, seen = [], set()
           for row in data['artifacts']:
               if row.get('name') not in names:
@@ -96,7 +97,7 @@ jobs:
       - name: Prepare scoped CI reporting credentials
         if: steps.intents.outputs.present == 'true'
         id: credentials
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@TOOLS_CI_REVISION
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0cb5029f1fd5d14569734816e0d135d85de3778e
         with:
           workflow-token: ${{ github.token }}
           owner: ${{ github.repository_owner }}
@@ -109,6 +110,8 @@ jobs:
       - name: Resume status publication without rebuilding
         if: steps.intents.outputs.present == 'true'
         env:
+          CI_STATUS_APP_ID: ${{ secrets.CI_STATUS_APP_ID }}
+          CI_STATUS_APP_PRIVATE_KEY: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
           GH_READ_TOKEN: ${{ steps.credentials.outputs.read-token }}
           GH_TOKEN: ${{ steps.credentials.outputs.status-token }}
           TAUCETI_GITHUB_READ_ROLE: ${{ steps.credentials.outputs.read-role }}
@@ -116,11 +119,11 @@ jobs:
         run: |
           set -uo pipefail
           failed=0
-          directory="$RUNNER_TEMP/ci-status-retry/ci-status-intents-sandbox"
+          directory="$RUNNER_TEMP/ci-status-retry/ci-status-intents-sandbox-$CI_STATUS_SOURCE_ATTEMPT"
           if [ -d "$directory" ]; then
             python3 scripts/ci_status.py resume "$directory" || failed=1
           fi
-          intent="$RUNNER_TEMP/ci-status-retry/ci-status-intents-finalizer/tauceti-status-intent.json"
+          intent="$RUNNER_TEMP/ci-status-retry/ci-status-intents-finalizer-$CI_STATUS_SOURCE_ATTEMPT/tauceti-status-intent.json"
           if [ -f "$intent" ]; then
             python3 scripts/finalize_batch.py --resume "$intent" || failed=1
           fi
