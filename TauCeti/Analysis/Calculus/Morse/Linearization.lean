@@ -9,9 +9,8 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Calculus.IteratedGradient
 public import TauCeti.Analysis.Calculus.Morse.Basic
--- Private: symmetry of the second derivative, strict differentiability, the
--- gradient/Fréchet-derivative norm comparison, and the mean value inequality are used only in
--- proofs below.
+-- Private: symmetry of the second derivative, strict differentiability, and the
+-- gradient/Fréchet-derivative norm comparison are used only in proofs below.
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.Gradient
@@ -53,15 +52,15 @@ results that identify the operator as the derivative of the gradient and prove s
   the nonlinear remainder has any prescribed positive Lipschitz constant.
 * `ContDiffAt.neg_gradient_sub_linearization_isLittleO`: at a `C²` critical point the nonlinear
   remainder after subtracting the linearization is little-o of the displacement.
-* `ContDiffAt.exists_norm_fderiv_le_mul_norm_sub` and
-  `ContDiffAt.exists_abs_sub_le_mul_norm_sub_sq`: local upper estimates near a critical point of a
-  function on a normed space; `ContDiffAt.exists_norm_gradient_le_mul_norm_sub` is the gradient
-  form of the first.
-* `TauCeti.IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_fderiv` and
-  `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`: local lower and
-  Łojasiewicz estimates near a nondegenerate critical point on a normed space, with gradient forms
-  `TauCeti.IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_gradient` and
-  `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_gradient_sq`.
+* `ContDiffAt.exists_norm_gradient_le_mul_norm_sub`: the gradient form of the local upper
+  estimate `ContDiffAt.exists_norm_fderiv_le_mul_norm_sub` near a critical point.
+* `TauCeti.IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_gradient` and
+  `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_gradient_sq`: the gradient forms
+  of the local lower and Łojasiewicz estimates
+  `TauCeti.IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_fderiv` and
+  `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq` near a nondegenerate
+  critical point, which hold on any normed space and are proved in
+  `TauCeti.Analysis.Calculus.Morse.Basic`.
 * `TauCeti.isNondegenerateCriticalPoint_iff_neg_gradient_linearization`: nondegenerate critical
   points are exactly the equilibria with invertible negative-gradient linearization, under `C²`
   regularity.
@@ -208,104 +207,6 @@ lemma neg_gradient_eq_neg_hessianOperator_add_negativeGradientRemainder (f : E �
 lemma negativeGradientRemainder_self (hgrad : ∇ f x = 0) :
     negativeGradientRemainder f x x = 0 := by
   simp [negativeGradientRemainder_apply, hgrad]
-
-end TauCeti
-
-/-! ### Upper and lower estimates on a normed space
-
-Near a critical point, the differential is bounded above by a multiple of the distance to the
-point, and the energy difference by a multiple of its square; at a nondegenerate critical point
-the differential is also bounded below by a multiple of the distance. These estimates use only the
-Fréchet derivative, so they hold on any real normed space. The gradient forms below are their
-Hilbert-space readings. -/
-
-namespace ContDiffAt
-
-section NormedSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
-
-/-- Near a critical point of a twice continuously differentiable function the differential is
-bounded above by a multiple of the distance to that point: it vanishes at the point and is
-differentiable there. -/
-theorem exists_norm_fderiv_le_mul_norm_sub (hf : ContDiffAt ℝ 2 f x) (hf' : fderiv ℝ f x = 0) :
-    ∃ C > 0, ∀ᶠ y in 𝓝 x, ‖fderiv ℝ f y‖ ≤ C * ‖y - x‖ := by
-  simpa only [hf', sub_zero] using
-    Asymptotics.isBigO_iff'.1 (hf.hasFDerivAt_fderiv le_rfl).isBigO_sub
-
-/-- Near a critical point of a twice continuously differentiable function the absolute energy
-difference `|f y - f x|` is bounded by a multiple of the squared distance to that point. This is
-the mean value inequality applied along the segment from `x` to `y`, on which the differential is
-bounded by a multiple of `‖y - x‖`. -/
-theorem exists_abs_sub_le_mul_norm_sub_sq (hf : ContDiffAt ℝ 2 f x) (hf' : fderiv ℝ f x = 0) :
-    ∃ C > 0, ∀ᶠ y in 𝓝 x, |f y - f x| ≤ C * ‖y - x‖ ^ 2 := by
-  obtain ⟨C, hC, hbd⟩ := hf.exists_norm_fderiv_le_mul_norm_sub hf'
-  have hdiff : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y := by
-    filter_upwards [hf.eventually (by simp)] with y hy
-    exact hy.differentiableAt (by simp)
-  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.1 (hbd.and hdiff)
-  refine ⟨C, hC, Metric.eventually_nhds_iff.2 ⟨r, hr, fun {y} hy ↦ ?_⟩⟩
-  have hyr : ‖y - x‖ < r := by rwa [← dist_eq_norm]
-  have hsub : Metric.closedBall x ‖y - x‖ ⊆ Metric.ball x r := fun z hz ↦
-    lt_of_le_of_lt (Metric.mem_closedBall.1 hz) hyr
-  have hkey : ‖f y - f x‖ ≤ C * ‖y - x‖ * ‖y - x‖ := by
-    refine Convex.norm_image_sub_le_of_norm_fderiv_le (s := Metric.closedBall x ‖y - x‖)
-      (fun z hz ↦ (hball (hsub hz)).2) (fun z hz ↦ ?_) (convex_closedBall x ‖y - x‖) ?_ ?_
-    · refine ((hball (hsub hz)).1).trans (mul_le_mul_of_nonneg_left ?_ hC.le)
-      have hz' := Metric.mem_closedBall.1 hz
-      rwa [dist_eq_norm] at hz'
-    · exact Metric.mem_closedBall_self (norm_nonneg _)
-    · simp [Metric.mem_closedBall, dist_eq_norm]
-  calc |f y - f x| = ‖f y - f x‖ := by rw [Real.norm_eq_abs]
-    _ ≤ C * ‖y - x‖ * ‖y - x‖ := hkey
-    _ = C * ‖y - x‖ ^ 2 := by ring
-
-end NormedSpace
-
-end ContDiffAt
-
-namespace TauCeti
-
-section NormedSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
-
-/-- Near a nondegenerate critical point the differential is bounded below by a multiple of the
-distance to that point: the second derivative is a linear homeomorphism onto the dual, hence
-bounded below, and the differential differs from it by a term of smaller order. -/
-theorem IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_fderiv
-    (h : IsNondegenerateCriticalPoint f x) :
-    ∃ c > 0, ∀ᶠ y in 𝓝 x, c * ‖y - x‖ ≤ ‖fderiv ℝ f y‖ := by
-  obtain ⟨A, hA⟩ := h.isInvertible
-  have hd : HasFDerivAt (fderiv ℝ f) (A : E →L[ℝ] E →L[ℝ] ℝ) x := by
-    rw [hA]
-    exact h.contDiffAt.hasFDerivAt_fderiv le_rfl
-  have hb := A.isBigO_sub_rev (𝓝 x) x
-  have he : Asymptotics.IsEquivalent (𝓝 x) (fun y ↦ fderiv ℝ f y - fderiv ℝ f x)
-      (fun y ↦ A (y - x)) :=
-    hd.isLittleO.trans_isBigO hb
-  simpa only [h.fderiv_eq_zero, sub_zero] using
-    Asymptotics.isBigO_iff''.1 (hb.trans he.isBigO_symm)
-
-/-- **The Morse form of Łojasiewicz's gradient inequality on a normed space.** Near a
-nondegenerate critical point the absolute energy difference is bounded by a multiple of the
-squared norm of the differential; equivalently the Łojasiewicz inequality holds there with
-exponent `1 / 2`. -/
-theorem IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq
-    (h : IsNondegenerateCriticalPoint f x) :
-    ∃ lam > 0, ∀ᶠ y in 𝓝 x, lam * |f y - f x| ≤ ‖fderiv ℝ f y‖ ^ 2 := by
-  obtain ⟨c, hc, h1⟩ := h.exists_mul_norm_sub_le_norm_fderiv
-  obtain ⟨C, hC, h2⟩ := h.contDiffAt.exists_abs_sub_le_mul_norm_sub_sq h.fderiv_eq_zero
-  refine ⟨c ^ 2 / C, by positivity, ?_⟩
-  filter_upwards [h1, h2] with y hy1 hy2
-  have h3 : (c * ‖y - x‖) ^ 2 ≤ ‖fderiv ℝ f y‖ ^ 2 :=
-    pow_le_pow_left₀ (by positivity) hy1 2
-  calc c ^ 2 / C * |f y - f x| ≤ c ^ 2 / C * (C * ‖y - x‖ ^ 2) :=
-        mul_le_mul_of_nonneg_left hy2 (by positivity)
-    _ = (c * ‖y - x‖) ^ 2 := by field_simp
-    _ ≤ ‖fderiv ℝ f y‖ ^ 2 := h3
-
-end NormedSpace
 
 end TauCeti
 

@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Morse.GradientFlow
 -- Private: the normed-space Łojasiewicz inequality, Grönwall's inequality and the continuity of a
 -- `C¹` metric are used only inside proofs; no declaration below exposes their APIs.
-import Mathlib.Analysis.ODE.Gronwall
-import TauCeti.Analysis.Calculus.Morse.Linearization
+import TauCeti.Analysis.Calculus.Morse.Basic
+import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
@@ -85,10 +85,10 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradien
   obtain ⟨C, hC, hbd⟩ :=
     eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) f p
   refine ⟨lam / C ^ 2, by positivity, ?_⟩
-  filter_upwards [(continuousAt_extChartAt (I := I) p).preimage_mem_nhds hloj, hbd,
+  filter_upwards [(continuousAt_extChartAt (I := I) p).eventually hloj, hbd,
     extChartAt_source_mem_nhds (I := I) p] with y hy hyb hys
-  rw [mem_preimage, mem_ofPred_eq, Function.comp_apply, Function.comp_apply,
-    (extChartAt I p).left_inv hys, (extChartAt I p).left_inv (mem_extChartAt_source p)] at hy
+  simp only [Function.comp_apply, (extChartAt I p).left_inv hys,
+    (extChartAt I p).left_inv (mem_extChartAt_source p)] at hy
   calc lam / C ^ 2 * |f y - f p| = lam * |f y - f p| / C ^ 2 := by ring
     _ ≤ ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ ^ 2 / C ^ 2 := by gcongr
     _ ≤ (C * ‖mgradient I f y‖) ^ 2 / C ^ 2 := by gcongr
@@ -121,8 +121,7 @@ theorem le_comp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2
 /-- **The energy along a trajectory converging to a nondegenerate critical point decays
 exponentially.** If the maximal integral curve `γ` of `-grad f` through `x` exists for all positive
 time and converges to a nondegenerate critical point `p`, then `f (γ t) - f p ≤ C * exp (-μ * t)`
-for some `μ, C > 0` and all large `t`. The rate `μ` is the Łojasiewicz constant of
-`TauCeti.IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradient_sq`. -/
+for some `μ, C > 0` and all large `t`. -/
 theorem exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hp : IsManifoldNondegenerateCriticalPoint I f p)
     (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x)
@@ -140,30 +139,9 @@ theorem exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff
   have hg : ∀ s ∈ Ici T, HasDerivAt g (-‖mgradient I f (γ s)‖ ^ 2) s := fun s hs ↦
     (hasDerivAt_comp_maximalIntegralCurve_neg_mgradient hf
       (hx ((hT T le_rfl).2.trans hs))).sub_const _
-  -- On `[T, ∞)` the energy `g` satisfies `g' = -‖grad f‖² ≤ -lam * g`, so Grönwall applies.
-  have hdecay : ∀ t ∈ Ici T, g t ≤ g T * Real.exp (-(lam * (t - T))) := fun t ht ↦ by
-    have h := le_gronwallBound_of_liminf_deriv_right_le (f := g)
-      (f' := fun s ↦ -‖mgradient I f (γ s)‖ ^ 2) (δ := g T) (K := -lam) (ε := 0) (a := T) (b := t)
-      (fun s hs ↦ (hg s hs.1).continuousAt.continuousWithinAt)
-      (fun s hs r hr ↦ (hg s hs.1).hasDerivWithinAt.liminf_right_slope_le hr) le_rfl
-      (fun s hs ↦ by
-        have h1 := (hT s hs.1).1
-        have h2 : lam * g s ≤ lam * |g s| := mul_le_mul_of_nonneg_left (le_abs_self _) hlam.le
-        linarith)
-      t ⟨ht, le_rfl⟩
-    simpa only [gronwallBound_ε0, neg_mul] using h
-  refine ⟨lam, hlam, (|g T| + 1) * Real.exp (lam * T), by positivity, ?_⟩
-  filter_upwards [eventually_ge_atTop T] with t ht
-  have hexp : Real.exp (-(lam * (t - T))) = Real.exp (lam * T) * Real.exp (-(lam * t)) := by
-    rw [← Real.exp_add]
-    ring_nf
-  calc g t ≤ g T * Real.exp (-(lam * (t - T))) := hdecay t ht
-    _ ≤ (|g T| + 1) * Real.exp (-(lam * (t - T))) := by
-        gcongr
-        linarith [le_abs_self (g T)]
-    _ = (|g T| + 1) * Real.exp (lam * T) * Real.exp (-(lam * t)) := by
-        rw [hexp]
-        ring
+  -- On `[T, ∞)` the energy `g` satisfies `g' = -‖grad f‖² ≤ -lam * g`, so it decays exponentially.
+  exact ⟨lam, hlam, exists_le_mul_exp_atTop_of_hasDerivAt_le_neg_mul (lam := lam) hg fun s hs ↦
+    by linarith [mul_le_mul_of_nonneg_left (le_abs_self (g s)) hlam.le, (hT s hs).1]⟩
 
 end Decay
 

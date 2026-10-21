@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -270,8 +271,9 @@ theorem eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient
     calc fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y) w
         = fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)
             (e.continuousLinearMapAt ℝ y (e.symmL ℝ y w)) := by rw [h2]
-      -- `mvfderiv` is `mfderiv` followed by `NormedSpace.fromTangentSpace`, the identity of `ℝ`.
-      _ = mvfderiv I f y (e.symmL ℝ y w) := (DFunLike.congr_fun hmf (e.symmL ℝ y w)).symm
+      _ = mvfderiv I f y (e.symmL ℝ y w) := by
+        rw [mvfderiv_apply_eq_mfderiv_apply]
+        exact (DFunLike.congr_fun hmf (e.symmL ℝ y w)).symm
   rw [norm_mgradient_eq_norm_mvfderiv]
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
   rw [hw]
