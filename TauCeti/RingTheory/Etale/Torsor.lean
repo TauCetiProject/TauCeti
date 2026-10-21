@@ -80,12 +80,12 @@ variable {G A B} [Finite G]
 
 namespace IsFiniteEtaleTorsor
 
-/-- The ring of invariants of a finite étale torsor is the base ring. An invariant `b` has
-`b ⊗ 1 = 1 ⊗ b`, because both have Galois image the constant function `b`, and faithfully flat
-descent puts such an element in the image of `A`. -/
+/-- The ring of invariants of a finite étale torsor is the base ring. -/
 instance isInvariant [h : IsFiniteEtaleTorsor G A B] : Algebra.IsInvariant A B G := by
   have := h.faithfullyFlat
   refine ⟨fun b hb ↦ ?_⟩
+  -- An invariant `b` has `b ⊗ 1 = 1 ⊗ b`, because both have Galois image the constant function
+  -- `b`, and faithfully flat descent puts such an element in the image of `A`.
   have htmul : b ⊗ₜ[A] (1 : B) = 1 ⊗ₜ[A] b :=
     h.bijective_tensorToPi.1 <| funext fun g ↦ by simp [hb g]
   obtain ⟨a, ha⟩ := (Algebra.IsEffective.of_faithfullyFlat (R := A) (S := B) b).mp
@@ -115,10 +115,11 @@ instance (priority := 100) of_subsingleton [Subsingleton A] : IsFiniteEtaleTorso
   refine isFiniteEtaleTorsor_iff.mpr ⟨⟨fun {_ _} _ ↦ Subsingleton.elim _ _⟩,
     ⟨fun b _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩, fun _ _ ↦ Subsingleton.elim _ _⟩
 
-/-- Over a nonzero ring, a finite étale torsor under `G` makes `G` a Galois group of `B` over `A`:
-the action is faithful, since a nonidentity element acting trivially would have empty fixed-point
-ideal. Over the zero ring the faithfulness fails for every nontrivial `G`. -/
+/-- Over a nonzero ring, a finite étale torsor under `G` makes `G` a Galois group of `B` over `A`.
+Over the zero ring this fails for every nontrivial `G`, whose action is then not faithful. -/
 instance isGaloisGroup [Nontrivial A] [h : IsFiniteEtaleTorsor G A B] : IsGaloisGroup G A B := by
+  -- The action is faithful: for a nonidentity element acting trivially, the differences
+  -- `g • b - b` would generate the zero ideal rather than the unit ideal.
   obtain ⟨_, _, hG⟩ := isFiniteEtaleTorsor_iff.mp h
   have : Nontrivial B := (FaithfulSMul.algebraMap_injective A B).nontrivial
   refine ⟨⟨fun {g₁ g₂} hg ↦ ?_⟩, inferInstance, inferInstance⟩
@@ -131,13 +132,14 @@ instance isGaloisGroup [Nontrivial A] [h : IsFiniteEtaleTorsor G A B] : IsGalois
   rw [h0, Ideal.span_singleton_eq_bot.mpr rfl] at hspan
   exact bot_ne_top hspan
 
-/-- A finite étale `G`-torsor is finite projective of constant rank `|G|`. Over a prime of `B`
-lying over `p`, the rank of `B` at `p` is the rank of `B ⊗[A] B ≃ (G → B)` over `B`. -/
+/-- A finite étale `G`-torsor is finite projective of constant rank `|G|`. -/
 theorem rankAtStalk_eq_card [h : IsFiniteEtaleTorsor G A B] (p : PrimeSpectrum A) :
     Module.rankAtStalk (R := A) B p = Nat.card G := by
   have := h.finite
   have := h.faithfullyFlat
   have := Fintype.ofFinite G
+  -- Over a prime of `B` lying over `p`, the rank of `B` at `p` is the rank of
+  -- `B ⊗[A] B ≃ (G → B)` over `B`.
   obtain ⟨q, rfl⟩ := PrimeSpectrum.comap_surjective_of_faithfullyFlat (A := A) (B := B) p
   have : Nontrivial B := PrimeSpectrum.nonempty_iff_nontrivial.mp ⟨q⟩
   let e : B ⊗[A] B ≃ₗ[B] (G → B) :=
@@ -153,11 +155,11 @@ section Field
 namespace IsFiniteEtaleTorsor
 
 /-- Over a field, a finite étale `G`-torsor is a nonzero finite étale algebra with bijective Galois
-map: a nonzero module over a field is free, hence faithfully flat. The algebra may be
-disconnected, and the characteristic may divide `|G|`. -/
+map. The algebra may be disconnected, and the characteristic may divide `|G|`. -/
 theorem iff_field (K : Type*) [Field K] [Algebra K B] [SMulCommClass G K B] :
     IsFiniteEtaleTorsor G K B ↔ Nontrivial B ∧ Module.Finite K B ∧ Algebra.Etale K B ∧
       Function.Bijective (MulSemiringAction.tensorToPi K B G) := by
+  -- A nonzero module over a field is free, hence faithfully flat.
   refine ⟨fun h ↦ ?_, fun ⟨_, hfin, het, hbij⟩ ↦ ⟨het, hfin, inferInstance, hbij⟩⟩
   have := h.faithfullyFlat
   exact ⟨(FaithfulSMul.algebraMap_injective K B).nontrivial, h.finite, h.etale,
@@ -167,8 +169,9 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L] [MulSemiringAction G L]
   [SMulCommClass G K L]
 
 /-- For a field extension `L / K`, `L` is a finite étale `G`-torsor over `K` exactly when `G` is a
-Galois group of `L / K`: a nonidentity element moves some `b`, and `g • b - b` is then a unit. -/
+Galois group of `L / K`. -/
 theorem iff_isGaloisGroup : IsFiniteEtaleTorsor G K L ↔ IsGaloisGroup G K L := by
+  -- A nonidentity element moves some `b`, and `g • b - b` is then a unit.
   refine ⟨fun _ ↦ inferInstance, fun h ↦ isFiniteEtaleTorsor_iff.mpr
     ⟨inferInstance, h.isInvariant, fun g hg ↦ ?_⟩⟩
   have := h.faithful
