@@ -61,6 +61,18 @@ theorem pow_injective {q : K} (hq : IsGenericQuantumParameter q) :
   by_contra hd
   exact hq.pow_ne_one (n := d) (by omega) h
 
+/-- The integer powers of a generic quantum parameter are pairwise distinct. -/
+theorem zpow_injective {q : K} (hq : IsGenericQuantumParameter q) :
+    Function.Injective (q ^ · : ℤ → K) := by
+  intro m n h
+  wlog hmn : m ≤ n generalizing m n
+  · exact (this h.symm (by omega)).symm
+  obtain ⟨d, rfl⟩ := Int.le.dest hmn
+  dsimp only at h
+  rw [zpow_add₀ hq.ne_zero, zpow_natCast, left_eq_mul₀ (zpow_ne_zero _ hq.ne_zero),
+    ← pow_zero q] at h
+  simp [hq.pow_injective h]
+
 /-- A generic quantum parameter is not equal to its inverse. -/
 theorem ne_inv {q : K} (hq : IsGenericQuantumParameter q) : q ≠ q⁻¹ := by
   intro h
