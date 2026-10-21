@@ -369,15 +369,14 @@ theorem inv_norm_le_pow_mul_house_pow_of_mem_rootSet {x : F} {b : ℕ} (hb : b �
     exact Algebra.norm_ne_zero_iff.mpr (mul_ne_zero (Nat.cast_ne_zero.mpr hb) hα0 : (b : K) * α ≠ 0)
       (by rw [← hn, map_zero])
   have hnorm := NumberField.norm_norm_le_norm_mul_house_pow ((b : K) * α) σ
-  rw [← hn, map_mul, map_natCast, norm_mul, Complex.norm_natCast, NumberField.house_nat_mul,
-    hhouse, hfin, hmin, eq_intCast, ← Rat.norm_cast_real, Rat.cast_intCast,
-    Real.norm_eq_abs] at hnorm
+  rw [← hn, NumberField.house_nat_mul, hhouse, hfin, hmin] at hnorm
   have hd : (minpoly ℚ α).natDegree = (minpoly ℚ α).natDegree - 1 + 1 :=
     (Nat.sub_add_cancel (minpoly.natDegree_pos (Algebra.IsIntegral.isIntegral α))).symm
   have hσ : 0 < ‖σ α‖ := norm_pos_iff.mpr ((map_ne_zero σ).mpr hα0)
   rw [hmin, inv_le_iff_one_le_mul₀' hσ]
   calc (1 : ℝ) ≤ |(n : ℝ)| := by exact_mod_cast Int.one_le_abs hn0
-    _ ≤ b * ‖σ α‖ * (b * house (algebraMap K F α)) ^ ((minpoly ℚ α).natDegree - 1) := hnorm
+    _ ≤ b * ‖σ α‖ * (b * house (algebraMap K F α)) ^ ((minpoly ℚ α).natDegree - 1) := by
+      simpa [Int.norm_eq_abs] using hnorm
     _ = _ := by rw [hd, pow_succ, Nat.add_sub_cancel]; ring
 
 /-- The lower bound `‖z‖⁻¹ ≤ den(x)ᵈ ⌈x⌉ᵈ⁻¹` for every complex conjugate `z` of a nonzero
