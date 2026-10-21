@@ -18,6 +18,8 @@ norm only on the scalars, and no completeness.
 
 public section
 
+namespace TauCeti
+
 variable {𝕜 A : Type*} [NormedField 𝕜]
 
 /-- The spectral radius of an element vanishes exactly when its quasispectrum is contained
@@ -33,3 +35,5 @@ theorem spectralRadius_eq_zero_iff_spectrum_subset_singleton_zero [Ring A] [Alge
     spectralRadius 𝕜 a = 0 ↔ spectrum 𝕜 a ⊆ {0} := by
   rw [spectralRadius_eq_zero_iff, quasispectrum_eq_spectrum_union_zero, Set.union_subset_iff,
     and_iff_left subset_rfl]
+
+end TauCeti
