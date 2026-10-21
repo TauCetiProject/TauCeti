@@ -131,16 +131,6 @@ end SingularMap
 
 /-! ### The submodules of a Verma module -/
 
-/-- At a generic parameter and for nonzero `μ`, the weights `q^(-2j) μ` of the vectors `v_j` are
-pairwise distinct. -/
-private theorem weight_injective (hq : IsGenericQuantumParameter q) (hμ : μ ≠ 0) :
-    Function.Injective fun j : ℕ => (q⁻¹ ^ 2) ^ j * μ := by
-  intro i j h
-  have h' : q⁻¹ ^ (2 * i) = q⁻¹ ^ (2 * j) := by
-    simpa [pow_mul, hμ] using h
-  have := hq.inv.pow_injective h'
-  omega
-
 /-- At a generic parameter and for nonzero `μ`, a submodule of `M(μ)` contains every vector `v_j`
 occurring with a nonzero coefficient in one of its elements. -/
 theorem vec_mem_of_basis_repr_ne_zero (hq : IsGenericQuantumParameter q) (hμ : μ ≠ 0)
@@ -148,7 +138,8 @@ theorem vec_mem_of_basis_repr_ne_zero (hq : IsGenericQuantumParameter q) (hμ : 
     (hj : (basis hq.ne_zero hμ).repr x j ≠ 0) : vec q μ j ∈ N := by
   have h := (basis hq.ne_zero hμ).self_mem_of_repr_ne_zero
     (f := Algebra.lsmul ℂ ℂ (VermaModule q μ) (k q)) (a := fun j => (q⁻¹ ^ 2) ^ j * μ)
-    (W := N.restrictScalars ℂ) (fun i => by simp) (weight_injective hq hμ)
+    (W := N.restrictScalars ℂ) (fun i => by simp)
+    ((hq.inv.pow two_pos).pow_mul_injective hμ)
     (fun v hv => N.smul_mem (k q) hv) hx hj
   simpa using h
 
