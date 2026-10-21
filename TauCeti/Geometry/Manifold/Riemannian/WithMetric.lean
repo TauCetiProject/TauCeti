@@ -203,6 +203,24 @@ end Charts
 
 variable {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
 
+section Diffeomorph
+
+variable (g) in
+/-- The tautological diffeomorphism, of every order, between the copy of `M` carrying `g` and
+`M`. -/
+def diffeomorph (k : ℕ∞ω) : WithMetric g ≃ₘ^k⟮I, I⟯ M :=
+  (homeomorph g).pullbackDiffeomorph I k
+
+@[simp]
+theorem coe_diffeomorph (k : ℕ∞ω) : ⇑(diffeomorph g k) = ofWithMetric :=
+  (rfl)
+
+@[simp]
+theorem coe_diffeomorph_symm (k : ℕ∞ω) : ⇑(diffeomorph g k).symm = toWithMetric g :=
+  (rfl)
+
+end Diffeomorph
+
 section Derivatives
 
 theorem continuous_ofWithMetric : Continuous (ofWithMetric : WithMetric g → M) :=
@@ -225,18 +243,14 @@ private theorem writtenInExtChartAt_toWithMetric_eventuallyEq (x : M) :
   simp only [writtenInExtChartAt, Function.comp_apply, extChartAt_apply]
   exact (extChartAt I x).right_inv hz
 
-/-- `ofWithMetric` is the identity in charts, hence smooth of every order. -/
+/-- `ofWithMetric` is a diffeomorphism, hence smooth of every order. -/
 theorem contMDiff_ofWithMetric {k : ℕ∞ω} :
-    ContMDiff I I k (ofWithMetric : WithMetric g → M) := fun x ↦
-  contMDiffAt_iff.2 ⟨continuous_ofWithMetric.continuousAt,
-    contDiffWithinAt_id.congr_of_eventuallyEq_of_mem
-      (writtenInExtChartAt_ofWithMetric_eventuallyEq x) (mem_range_self _)⟩
+    ContMDiff I I k (ofWithMetric : WithMetric g → M) :=
+  (diffeomorph g k).contMDiff
 
-/-- `toWithMetric g` is the identity in charts, hence smooth of every order. -/
-theorem contMDiff_toWithMetric {k : ℕ∞ω} : ContMDiff I I k (toWithMetric g) := fun x ↦
-  contMDiffAt_iff.2 ⟨continuous_toWithMetric.continuousAt,
-    contDiffWithinAt_id.congr_of_eventuallyEq_of_mem
-      (writtenInExtChartAt_toWithMetric_eventuallyEq x) (mem_range_self _)⟩
+/-- `toWithMetric g` is a diffeomorphism, hence smooth of every order. -/
+theorem contMDiff_toWithMetric {k : ℕ∞ω} : ContMDiff I I k (toWithMetric g) :=
+  (diffeomorph g k).symm.contMDiff
 
 /-- The differential of `ofWithMetric` is the identity of the model space. -/
 theorem hasMFDerivAt_ofWithMetric (x : WithMetric g) :
@@ -323,23 +337,7 @@ theorem mvfderiv_comp_ofWithMetric_apply {F : Type*} [NormedAddCommGroup F] [Nor
 
 end Derivatives
 
-section Diffeomorph
-
-variable (g) in
-/-- The tautological diffeomorphism, of every order, between the copy of `M` carrying `g` and
-`M`. -/
-def diffeomorph (k : ℕ∞ω) : WithMetric g ≃ₘ^k⟮I, I⟯ M where
-  toEquiv := equiv g
-  contMDiff_toFun := contMDiff_ofWithMetric
-  contMDiff_invFun := contMDiff_toWithMetric
-
-@[simp]
-theorem coe_diffeomorph (k : ℕ∞ω) : ⇑(diffeomorph g k) = ofWithMetric :=
-  (rfl)
-
-@[simp]
-theorem coe_diffeomorph_symm (k : ℕ∞ω) : ⇑(diffeomorph g k).symm = toWithMetric g :=
-  (rfl)
+section DiffeomorphWithMetric
 
 variable (g) in
 /-- The identity diffeomorphism from the copy of `M` carrying `g` to the copy carrying `g'`. -/
@@ -376,7 +374,7 @@ theorem mfderiv_diffeomorphWithMetric
     mfderiv I I (diffeomorphWithMetric g g' k) x = ContinuousLinearMap.id ℝ (TangentSpace I x) :=
   ((hasMFDerivAt_toWithMetric x.ofWithMetric).comp x (hasMFDerivAt_ofWithMetric x)).mfderiv
 
-end Diffeomorph
+end DiffeomorphWithMetric
 
 section Metric
 

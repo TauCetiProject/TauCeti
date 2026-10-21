@@ -196,6 +196,7 @@ theorem pullback_isManifold (e : N ≃ₜ M) [IsManifold I n M] :
 /-- A homeomorphism onto a charted space is a `C^n` diffeomorphism for the pulled-back structure:
 read in a pulled-back chart and in the corresponding chart of `M`, both it and its inverse are the
 identity. -/
+@[expose]
 def pullbackDiffeomorph (e : N ≃ₜ M) :
     letI := e.pullbackChartedSpace (H := H)
     N ≃ₘ^n⟮I, I⟯ M :=
