@@ -235,9 +235,9 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace R]
     isRestricted_of_forall_coeff_eq_zero (n := ω.natDegree + 1) fun m hm ↦ by
       rw [Polynomial.coeff_coe]
       exact Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
-  obtain ⟨e, r', he, hr', her'⟩ :=
-    (show IsMulDistinguished c s (ω : PowerSeries R) from
-      ⟨hωd, by rw [hωs]; exact isNormMulUnit_one⟩).exists_mul_add_eq hc hωr hfr
+  have hωmul : IsMulDistinguished c s (ω : PowerSeries R) :=
+    ⟨hωd, by rw [hωs]; exact isNormMulUnit_one⟩
+  obtain ⟨e, r', he, hr', her'⟩ := hωmul.exists_mul_add_eq hc hωr hfr
   have hself : e * q * f + r' = 1 * f + 0 := by
     rw [mul_assoc, ← hωq, her', one_mul, add_zero]
   obtain ⟨heq, hr0⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _)
