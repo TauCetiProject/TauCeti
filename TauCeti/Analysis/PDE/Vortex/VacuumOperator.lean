@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 
 /-!
@@ -153,10 +154,6 @@ theorem lineDerivOp_vacuumAdjoint (v : ℂ) (f : 𝓢(ℂ, EuclideanSpace ℝ (F
     ∂_{v} (vacuumAdjoint f) = vacuumAdjoint (∂_{v} f) :=
   lineDerivOp_firstOrder _ _ _ v f
 
-private theorem laplacian_apply_eq (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (z : ℂ) :
-    Δ f z = (∂_{(1 : ℂ)} (∂_{(1 : ℂ)} f)) z + (∂_{Complex.I} (∂_{Complex.I} f)) z := by
-  simp [laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two]
-
 /-- **Weitzenböck identity** for the vacuum vortex operator: `L₀* L₀ = -Δ + 1/4`. -/
 @[simp]
 theorem vacuumAdjoint_vacuumOperator (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
@@ -165,7 +162,8 @@ theorem vacuumAdjoint_vacuumOperator (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)))
   have hc := DFunLike.congr_fun (lineDerivOp_comm f 1 Complex.I) z
   rw [vacuumAdjoint_apply, lineDerivOp_vacuumOperator, lineDerivOp_vacuumOperator,
     vacuumOperator_apply, vacuumOperator_apply, vacuumOperator_apply]
-  fin_cases i <;> simp [laplacian_apply_eq, hc] <;> ring
+  fin_cases i <;> simp [laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two, hc] <;>
+    ring
 
 /-- **Weitzenböck identity** in the other order: `L₀ L₀* = -Δ + 1/4`. -/
 @[simp]
@@ -175,26 +173,22 @@ theorem vacuumOperator_vacuumAdjoint (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)))
   have hc := DFunLike.congr_fun (lineDerivOp_comm f 1 Complex.I) z
   rw [vacuumOperator_apply, lineDerivOp_vacuumAdjoint, lineDerivOp_vacuumAdjoint,
     vacuumAdjoint_apply, vacuumAdjoint_apply, vacuumAdjoint_apply]
-  fin_cases i <;> simp [laplacian_apply_eq, hc] <;> ring
+  fin_cases i <;> simp [laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two, hc] <;>
+    ring
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
-
-private theorem inner_toEuclideanCLM_left (A : Matrix (Fin 4) (Fin 4) ℝ)
-    (u w : EuclideanSpace ℝ (Fin 4)) :
-    ⟪Matrix.toEuclideanCLM (𝕜 := ℝ) A u, w⟫ = ⟪u, Matrix.toEuclideanCLM (𝕜 := ℝ) Aᵀ w⟫ := by
-  rw [real_inner_comm, Matrix.inner_toEuclideanCLM, Matrix.inner_toEuclideanCLM,
-    Matrix.mulVec_transpose, Matrix.dotProduct_mulVec, dotProduct_comm]
-
-private theorem integrable_inner (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    Integrable (fun z => ⟪f z, g z⟫) μ :=
-  -- The pairing of `f` and `g` under `innerSL ℝ` is the Schwartz function `z ↦ ⟪f z, g z⟫`.
-  (pairing (innerSL ℝ) f g).integrable
 
 /-- Integration by parts for `A₁ ∂₁ + A₂ ∂₂ + B`: its formal adjoint is
 `-A₁ᵀ ∂₁ - A₂ᵀ ∂₂ + Bᵀ`. -/
 private theorem integral_inner_firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) ℝ)
     (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
     ∫ z, ⟪firstOrder A₁ A₂ B f z, g z⟫ ∂μ = ∫ z, ⟪f z, firstOrder (-A₁ᵀ) (-A₂ᵀ) Bᵀ g z⟫ ∂μ := by
+  -- `Matrix.toEuclideanCLM` is a star algebra equivalence, so `Aᵀ = Aᴴ` acts as the adjoint.
+  have adj : ∀ (A : Matrix (Fin 4) (Fin 4) ℝ) (u w : EuclideanSpace ℝ (Fin 4)),
+      ⟪Matrix.toEuclideanCLM (𝕜 := ℝ) A u, w⟫ = ⟪u, Matrix.toEuclideanCLM (𝕜 := ℝ) Aᵀ w⟫ := by
+    intro A u w
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial, ← Matrix.star_eq_conjTranspose, map_star,
+      ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_right]
   have ibp : ∀ (v : ℂ) (A : Matrix (Fin 4) (Fin 4) ℝ),
       ∫ z, ⟪(∂_{v} f) z, (g.postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A)) z⟫ ∂μ =
         -∫ z, ⟪f z, ((∂_{v} g).postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A)) z⟫ ∂μ := by
@@ -209,7 +203,7 @@ private theorem integral_inner_firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) 
         ⟪(∂_{Complex.I} f) z, (g.postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A₂ᵀ)) z⟫ +
         ⟪f z, (g.postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) Bᵀ)) z⟫ := by
     funext z
-    simp only [firstOrder_apply, inner_add_left, inner_toEuclideanCLM_left, postcompCLM_apply]
+    simp only [firstOrder_apply, inner_add_left, adj, postcompCLM_apply]
   have rhs : (fun z => ⟪f z, firstOrder (-A₁ᵀ) (-A₂ᵀ) Bᵀ g z⟫) = fun z =>
       -⟪f z, ((∂_{(1 : ℂ)} g).postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A₁ᵀ)) z⟫ +
         -⟪f z, ((∂_{Complex.I} g).postcompCLM (Matrix.toEuclideanCLM (𝕜 := ℝ) A₂ᵀ)) z⟫ +
@@ -247,16 +241,13 @@ private theorem integral_inner_neg_laplacian_add (f : 𝓢(ℂ, EuclideanSpace �
     ∫ z, ⟪f z, (-Δ f + (4⁻¹ : ℝ) • f) z⟫ ∂μ =
       ∫ z, ‖(∂_{(1 : ℂ)} f) z‖ ^ 2 ∂μ + ∫ z, ‖(∂_{Complex.I} f) z‖ ^ 2 ∂μ +
         4⁻¹ * ∫ z, ‖f z‖ ^ 2 ∂μ := by
-  have h : ∫ z, ⟪f z, Δ f z⟫ ∂μ = -∑ i, ∫ z, ⟪(∂_{Complex.orthonormalBasisOneI i} f) z,
-      (∂_{Complex.orthonormalBasisOneI i} f) z⟫ ∂μ :=
-    -- `innerSL ℝ u w` unfolds to `⟪u, w⟫`.
-    integral_bilinear_laplacian_right_eq_neg_sum Complex.orthonormalBasisOneI f f (innerSL ℝ)
   have e : ∀ z, ⟪f z, (-Δ f + (4⁻¹ : ℝ) • f) z⟫ = -⟪f z, Δ f z⟫ + 4⁻¹ * ⟪f z, f z⟫ := by
     intro z
     simp [inner_add_right, inner_neg_right, inner_smul_right]
   simp_rw [e]
   rw [integral_add (by exact (integrable_inner f (Δ f)).neg)
-      (by exact (integrable_inner f f).const_mul _), integral_neg, integral_const_mul, h]
+      (by exact (integrable_inner f f).const_mul _), integral_neg, integral_const_mul,
+    integral_inner_laplacian_right_self_eq_neg_sum Complex.orthonormalBasisOneI f]
   simp [Fin.sum_univ_two]
 
 /-- **Energy identity** for the vacuum vortex operator:
@@ -297,27 +288,18 @@ theorem integral_norm_sq_le_four_mul_integral_norm_vacuumAdjoint_sq
   have h₂ : 0 ≤ ∫ z, ‖(∂_{Complex.I} f) z‖ ^ 2 ∂μ := integral_nonneg fun _ => sq_nonneg _
   linarith
 
-/-- A Schwartz field whose squared norm has nonpositive integral vanishes. -/
-private theorem eq_zero_of_integral_norm_sq_nonpos (f : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)))
-    (h : ∫ z, ‖f z‖ ^ 2 ≤ 0) : f = 0 := by
-  have hint : Integrable (fun z => ‖f z‖ ^ 2) :=
-    (integrable_inner (μ := volume) f f).congr
-      (.of_forall fun z => real_inner_self_eq_norm_sq (f z))
-  have hae := (integral_eq_zero_iff_of_nonneg (fun z => sq_nonneg ‖f z‖) hint).mp
-    (le_antisymm h (integral_nonneg fun _ => sq_nonneg _))
-  have hcont : Continuous fun z => ‖f z‖ ^ 2 := by fun_prop
-  have := (hcont.ae_eq_iff_eq volume continuous_zero).mp hae
-  refine SchwartzMap.ext fun z => ?_
-  simpa using congrFun this z
-
 /-- The vacuum vortex operator has no Schwartz kernel. -/
 theorem vacuumOperator_injective : Function.Injective vacuumOperator := by
-  refine (injective_iff_map_eq_zero _).mpr fun f hf => eq_zero_of_integral_norm_sq_nonpos f ?_
+  refine (injective_iff_map_eq_zero _).mpr fun f hf =>
+    (integral_norm_sq_eq_zero_iff (μ := volume)).mp <|
+    le_antisymm ?_ (integral_nonneg fun _ => sq_nonneg _)
   simpa [hf] using integral_norm_sq_le_four_mul_integral_norm_vacuumOperator_sq (μ := volume) f
 
 /-- The adjoint of the vacuum vortex operator has no Schwartz kernel. -/
 theorem vacuumAdjoint_injective : Function.Injective vacuumAdjoint := by
-  refine (injective_iff_map_eq_zero _).mpr fun f hf => eq_zero_of_integral_norm_sq_nonpos f ?_
+  refine (injective_iff_map_eq_zero _).mpr fun f hf =>
+    (integral_norm_sq_eq_zero_iff (μ := volume)).mp <|
+    le_antisymm ?_ (integral_nonneg fun _ => sq_nonneg _)
   simpa [hf] using integral_norm_sq_le_four_mul_integral_norm_vacuumAdjoint_sq (μ := volume) f
 
 end TauCeti.Vortex

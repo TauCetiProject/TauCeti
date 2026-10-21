@@ -24,7 +24,8 @@ the symbol of a differentiated kernel.
 Directional derivatives of a Schwartz function commute (`SchwartzMap.lineDerivOp_comm`), and
 integrating by parts along an orthonormal basis gives Green's identity
 `∫ B(f, Δg) = -∑ᵢ ∫ B(∂_{bᵢ} f, ∂_{bᵢ} g)` for a continuous bilinear map `B`
-(`SchwartzMap.integral_bilinear_laplacian_right_eq_neg_sum`).
+(`SchwartzMap.integral_bilinear_laplacian_right_eq_neg_sum`). For the inner product this reads
+`∫ ⟪f, Δf⟫ = -∑ᵢ ‖∂_{bᵢ} f‖₂²` (`SchwartzMap.integral_inner_laplacian_right_self_eq_neg_sum`).
 -/
 
 public section
@@ -113,5 +114,18 @@ theorem integral_bilinear_laplacian_right_eq_neg_sum {E F₁ F₂ F₃ ι : Type
   rw [integral_finsetSum _ hint, ← Finset.sum_neg_distrib]
   exact Finset.sum_congr rfl fun i _ =>
     integral_bilinear_lineDerivOp_right_eq_neg_left f (∂_{b i} g) B (b i)
+
+open MeasureTheory LineDeriv Laplacian RealInnerProductSpace in
+/-- Green's identity for the `L²` pairing of a Schwartz function with its Laplacian: for an
+orthonormal basis `b`, `∫ ⟪f, Δf⟫ = -∑ᵢ ∫ ‖∂_{bᵢ} f‖²`. -/
+theorem integral_inner_laplacian_right_self_eq_neg_sum {E F ι : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [Fintype ι] (b : OrthonormalBasis ι ℝ E) (f : 𝓢(E, F)) :
+    ∫ x, ⟪f x, Δ f x⟫ ∂μ = -∑ i, ∫ x, ‖∂_{b i} f x‖ ^ 2 ∂μ := by
+  have h : ∫ x, ⟪f x, Δ f x⟫ ∂μ = -∑ i, ∫ x, ⟪∂_{b i} f x, ∂_{b i} f x⟫ ∂μ :=
+    -- `innerSL ℝ u w` unfolds to `⟪u, w⟫`.
+    integral_bilinear_laplacian_right_eq_neg_sum b f f (innerSL ℝ)
+  simpa only [real_inner_self_eq_norm_sq] using h
 
 end SchwartzMap
