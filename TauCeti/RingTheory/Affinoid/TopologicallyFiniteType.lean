@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.ResidueField
 
 import TauCeti.RingTheory.Affinoid.Continuity
 import TauCeti.RingTheory.Huber.Restricted.Noetherian
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 
 /-!
 # Affinoid algebras are the algebras topologically of finite type
