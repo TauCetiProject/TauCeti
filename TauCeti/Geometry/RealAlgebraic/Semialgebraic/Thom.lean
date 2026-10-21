@@ -226,6 +226,29 @@ theorem isSemialgebraic_setOf_tarskiQuery_map_eval
   exact .biUnion (toFinite _) fun v _ => .iInter fun i =>
     isSemialgebraic_setOf_tarskiQuery_map_eval_eq P (Q i) (v i)
 
+/-- At any specialization `P.map (MvPolynomial.eval x)`, the `τ`-entry of the BKR sign-moment
+inverse applied to the Tarski queries of products of consecutive derivatives equals `1` exactly
+when `P.map (MvPolynomial.eval x)` has a distinct root with derivative signs `τ`. -/
+private theorem fullInverse_mulVec_tarskiQuery_derivative_eq_one_iff
+    (P : (MvPolynomial σ R)[X]) (x : σ → R) (τ : Fin P.natDegree → SignType) :
+    (SignDetermination.fullInverse (Fin P.natDegree) *ᵥ
+      fun e : Fin P.natDegree → Fin 3 =>
+        (tarskiQuery (P.map (MvPolynomial.eval x))
+          ((∏ j : Fin P.natDegree, (derivative^[j.val + 1] P) ^ (e j).val).map
+            (MvPolynomial.eval x)) : ℚ)) τ = 1 ↔
+      ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
+        ∀ j : Fin P.natDegree,
+          SignType.sign (((derivative^[j.val + 1] P).map
+            (MvPolynomial.eval x)).eval r) = τ j := by
+  classical
+  by_cases hp : P.map (MvPolynomial.eval x) = 0
+  · simp [hp, ← Pi.zero_def, Matrix.mulVec_zero]
+  · simp only [Polynomial.map_prod, Polynomial.map_pow, ← iterate_derivative_map,
+      fullInverse_mulVec_iterate_derivative_of_natDegree_le _
+        RealClosure.polynomialRolle_of_isRealClosed hp natDegree_map_le,
+      Multiset.mem_toFinset, Polynomial.mem_roots hp, IsRoot.def]
+    simp
+
 /-- **Uniform Thom-encoding realization.** For a prescribed sign word on the derivatives of orders
 `1, …, P.natDegree`, the parameters at which the specialized polynomial has a root with those
 derivative signs form a semialgebraic set. The family need not be monic. Where it specializes to
@@ -242,10 +265,6 @@ theorem isSemialgebraic_setOf_exists_root_derivative_signs_eq
     ∏ j : Fin P.natDegree, (derivative^[j.val + 1] P) ^ (e j).val
   let Φ : ((Fin P.natDegree → Fin 3) → ℤ) → Prop := fun v =>
     (SignDetermination.fullInverse (Fin P.natDegree) *ᵥ (fun e => (v e : ℚ))) τ = 1
-  have hQ (x : σ → R) (e : Fin P.natDegree → Fin 3) : (Q e).map (MvPolynomial.eval x) =
-      ∏ j : Fin P.natDegree,
-        (derivative^[j.val + 1] (P.map (MvPolynomial.eval x))) ^ (e j).val := by
-    simp only [Q, Polynomial.map_prod, Polynomial.map_pow, iterate_derivative_map]
   have hset : {x : σ → R | ∃ r : R,
         (P.map (MvPolynomial.eval x)).eval r = 0 ∧
           ∀ j : Fin P.natDegree,
@@ -261,10 +280,9 @@ theorem isSemialgebraic_setOf_exists_root_derivative_signs_eq
     · simp only [hx, iterate_derivative_zero, eval_zero, sign_zero, true_and,
         not_true_eq_false, false_and, or_false, funext_iff, Pi.zero_apply, exists_const,
         eq_comm (a := (0 : SignType))]
-    · simp only [hx, false_and, false_or, not_false_eq_true, true_and, Φ, hQ,
-        fullInverse_mulVec_iterate_derivative_of_natDegree_le _
-          RealClosure.polynomialRolle_of_isRealClosed hx natDegree_map_le]
-      simp
+    · simp only [hx, false_and, false_or, not_false_eq_true, true_and, Φ, Q,
+        fullInverse_mulVec_tarskiQuery_derivative_eq_one_iff, Multiset.mem_toFinset,
+        Polynomial.mem_roots hx, IsRoot.def, ← iterate_derivative_map]
   rw [hset]
   refine .union (.inter (isSemialgebraic_setOf_map_eval_eq_zero P) ?_)
     (.inter (isSemialgebraic_setOf_map_eval_eq_zero P).compl
@@ -290,29 +308,6 @@ private theorem eq_of_mem_roots_derivative_signs_eq {P : (MvPolynomial σ R)[X]}
   funext j
   simpa only [Polynomial.derivativeSign_def, iterate_derivative_map] using
     (hτ j).trans (hτ' j).symm
-
-/-- At any specialization `P.map (MvPolynomial.eval x)`, the `τ`-entry of the BKR sign-moment
-inverse applied to the Tarski queries of products of consecutive derivatives equals `1` exactly
-when `P.map (MvPolynomial.eval x)` has a distinct root with derivative signs `τ`. -/
-private theorem fullInverse_mulVec_tarskiQuery_derivative_eq_one_iff
-    (P : (MvPolynomial σ R)[X]) (x : σ → R) (τ : Fin P.natDegree → SignType) :
-    (SignDetermination.fullInverse (Fin P.natDegree) *ᵥ
-      fun e : Fin P.natDegree → Fin 3 =>
-        (tarskiQuery (P.map (MvPolynomial.eval x))
-          ((∏ j : Fin P.natDegree, (derivative^[j.val + 1] P) ^ (e j).val).map
-            (MvPolynomial.eval x)) : ℚ)) τ = 1 ↔
-      ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
-        ∀ j : Fin P.natDegree,
-          SignType.sign (((derivative^[j.val + 1] P).map
-            (MvPolynomial.eval x)).eval r) = τ j := by
-  classical
-  by_cases hp : P.map (MvPolynomial.eval x) = 0
-  · simp [hp, ← Pi.zero_def, Matrix.mulVec_zero]
-  · simp only [Polynomial.map_prod, Polynomial.map_pow, ← iterate_derivative_map,
-      fullInverse_mulVec_iterate_derivative_of_natDegree_le _
-        RealClosure.polynomialRolle_of_isRealClosed hp natDegree_map_le,
-      Multiset.mem_toFinset, Polynomial.mem_roots hp, IsRoot.def]
-    simp
 
 /-- **Uniform Thom-encoding realization.** For a prescribed sign word `τ`, the parameters at which
 the specialized polynomial is nonzero and has a root with consecutive derivative signs `τ` form a
@@ -495,9 +490,14 @@ theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_eq
     IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
       {z ∈ (P.map (MvPolynomial.eval x)).roots.toFinset | z < r}.card = i ∧
         MvPolynomial.eval x T = r} := by
-  exact isSemialgebraic_setOf_mem_roots_card_roots_lt_and P i
-    (fun x r => MvPolynomial.eval x T = r)
-    (isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_eval_eq P T)
+  convert (isSemialgebraic_setOf_map_eval_eq_zero P).compl.inter
+    ((isSemialgebraic_eval_eq_zero (P.eval T)).inter
+      (isSemialgebraic_setOf_card_roots_map_eval_lt P T i)) using 1
+  ext x
+  simp only [mem_ofPred_eq, mem_inter_iff, mem_compl_iff, ← eval_map_apply,
+    Multiset.mem_toFinset, Polynomial.mem_roots', IsRoot.def]
+  exact ⟨fun ⟨r, ⟨hp, hr⟩, hcard, h⟩ => h ▸ ⟨hp, hr, hcard⟩,
+    fun ⟨hp, hr, hcard⟩ => ⟨_, ⟨hp, hr⟩, hcard, rfl⟩⟩
 
 /-- **Region where a polynomial lies strictly below the `i`-th distinct root.** For polynomials `P`
 and `T`, the parameters `x` at which `P.map (MvPolynomial.eval x)` has an `i`-th distinct root `r`
@@ -534,13 +534,12 @@ theorem isSemialgebraic_setOf_mem_roots_card_roots_lt
     IsSemialgebraic {y : Fin (n + 1) → R |
       y 0 ∈ (P.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset ∧
         {z ∈ (P.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset | z < y 0}.card = i} := by
-  set Q := P.map (MvPolynomial.rename (R := R) Fin.succ).toRingHom
-  convert isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_eq Q (MvPolynomial.X 0) i using 1
+  convert (isSemialgebraic_setOf_isRoot_card_roots_lt P i).inter
+    (isSemialgebraic_setOf_map_eval_eq_zero P).compl.preimage_tail using 1
   ext y
-  simp only [mem_ofPred_eq, Q, map_eval_map_rename, MvPolynomial.eval_X, Fin.tail_def,
-    Function.comp_def]
-  exact ⟨fun ⟨hy, hcard⟩ => ⟨y 0, hy, hcard, rfl⟩,
-    fun ⟨_, hr, hcard, h⟩ => h ▸ ⟨hr, hcard⟩⟩
+  simp only [mem_ofPred_eq, mem_inter_iff, mem_compl_iff, mem_preimage,
+    Multiset.mem_toFinset, Polynomial.mem_roots']
+  tauto
 
 /-- **The region strictly below the `i`-th distinct root in cylinder coordinates.** The points of
 `R ^ (n + 1)` whose coordinate `0` lies strictly below the `i`-th distinct root of the
