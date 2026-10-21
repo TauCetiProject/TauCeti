@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sum
 public import TauCeti.Geometry.Manifold.Riemannian.Scaling
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Prod
 
@@ -20,7 +21,9 @@ the point, on a compact manifold such a metric has scalar curvature bounded belo
 constant. Scalar curvature is invariant under diffeomorphisms, so pulling a metric back along a
 diffeomorphism preserves and reflects positive scalar curvature. Scalar curvature is also local,
 so the restriction of a metric of positive scalar curvature to an open submanifold has positive
-scalar curvature. No assumption on the boundary is made.
+scalar curvature. No assumption on the boundary is made. The disjoint union of two metrics has
+the scalar curvature of each metric on its summand, so it has positive scalar curvature exactly
+when both metrics do.
 
 Since `Scal(c g) = c⁻¹ Scal(g)` for a constant `c > 0`, rescaling by a positive constant preserves
 and reflects positive scalar curvature. The scalar curvature of a product metric `g₁ × g₂` is the
@@ -44,6 +47,8 @@ On a compact manifold the scalar curvature of every smooth metric is bounded bel
 * `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.restrictOpenTangentSpace`: the
   restriction of a metric of positive scalar curvature to an open submanifold has positive scalar
   curvature.
+* `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_sumTangentSpace_iff`: the disjoint
+  union of two metrics has positive scalar curvature exactly when both metrics do.
 * `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_rescale_const_iff`: rescaling a
   metric by a positive constant preserves and reflects positive scalar curvature.
 * `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.prodTangentSpace_of_nonneg`: the
@@ -140,6 +145,31 @@ theorem HasPositiveScalarCurvature.restrictOpenTangentSpace (h : g.HasPositiveSc
   fun x ↦ by
     rw [scalarCurvature_restrictOpenTangentSpace]
     exact h x
+
+section Sum
+
+variable {M' : Type*} [TopologicalSpace M'] [T2Space M'] [ChartedSpace H M'] [IsManifold I ∞ M']
+
+/-- The disjoint union of two metrics has positive scalar curvature exactly when both metrics
+do. -/
+@[simp]
+theorem hasPositiveScalarCurvature_sumTangentSpace_iff
+    (g₂ : ContMDiffRiemannianMetric I ∞ E (fun y : M' ↦ TangentSpace I y)) :
+    (g.sumTangentSpace g₂).HasPositiveScalarCurvature ↔
+      g.HasPositiveScalarCurvature ∧ g₂.HasPositiveScalarCurvature := by
+  simp only [hasPositiveScalarCurvature_iff, Sum.forall, scalarCurvature_sumTangentSpace_inl,
+    scalarCurvature_sumTangentSpace_inr]
+
+variable {g} in
+/-- The disjoint union of two metrics of positive scalar curvature has positive scalar
+curvature. -/
+theorem HasPositiveScalarCurvature.sumTangentSpace
+    {g₂ : ContMDiffRiemannianMetric I ∞ E (fun y : M' ↦ TangentSpace I y)}
+    (h : g.HasPositiveScalarCurvature) (h₂ : g₂.HasPositiveScalarCurvature) :
+    (g.sumTangentSpace g₂).HasPositiveScalarCurvature :=
+  (hasPositiveScalarCurvature_sumTangentSpace_iff g g₂).2 ⟨h, h₂⟩
+
+end Sum
 
 section Rescale
 

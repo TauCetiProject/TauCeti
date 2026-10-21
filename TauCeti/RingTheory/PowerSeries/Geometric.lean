@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.RingTheory.PowerSeries.WellKnown
+import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # The geometric series in `a X`
@@ -27,6 +28,11 @@ connected oriented surface acting by `P` on its first cohomology.
 
 * `TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one`:
   `(∑ aⁿ Xⁿ) * (1 - a X) = 1`.
+* `TauCeti.powerSeries_one_sub_C_mul_X_mul_mk_sum_smul_pow`,
+  `TauCeti.powerSeries_mk_sum_smul_pow_mul_one_sub_C_mul_X`: for scalars `c k` in a commutative
+  ring `R` and an element `a` of an `R`-algebra, multiplying the series with coefficients
+  `∑ k ∈ range (m + 1), c k • a ^ (m - k)` by `1 - a X`, on either side, gives `∑ c k Xᵏ`.
+  This series is the product of `∑ c k Xᵏ` with the geometric series `∑ aⁿ Xⁿ`.
 * `PowerSeries.mk_one_sq`: `(∑ Xⁿ) ^ 2 = ∑ (n + 1) Xⁿ`.
 * `Polynomial.coeff_coe_mul_mk_one_sq`: the `a`-th coefficient of `p / (1 - X) ^ 2` is
   `(a + 1) p (1) - p' (1)` once `p` has degree at most `a + 1`.
@@ -46,6 +52,32 @@ theorem powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one {R : Type*} [Ring R] (a : 
   cases n with
   | zero => simp
   | succ n => simp [pow_succ]
+
+/-- **Convolution with the geometric series.** For scalars `c k` and an element `a` of an
+algebra, the series with coefficients `∑ k ∈ range (m + 1), c k • a ^ (m - k)` is carried by
+`1 - a X`, multiplying on the left, to the series `∑ c k Xᵏ`. -/
+theorem powerSeries_one_sub_C_mul_X_mul_mk_sum_smul_pow {R A : Type*} [CommSemiring R] [Ring A]
+    [Algebra R A] (c : ℕ → R) (a : A) :
+    (1 - PowerSeries.C a * PowerSeries.X) *
+        PowerSeries.mk (fun m ↦ ∑ k ∈ Finset.range (m + 1), c k • a ^ (m - k)) =
+      PowerSeries.map (algebraMap R A) (PowerSeries.mk c) := by
+  ext (_ | m)
+  · simp [Algebra.algebraMap_eq_smul_one]
+  · simp [sub_mul, mul_assoc, PowerSeries.coeff_succ_X_mul, sum_range_succ_smul_pow_sub,
+      Algebra.algebraMap_eq_smul_one]
+
+/-- **Convolution with the geometric series.** For scalars `c k` and an element `a` of an
+algebra, the series with coefficients `∑ k ∈ range (m + 1), c k • a ^ (m - k)` is carried by
+`1 - a X`, multiplying on the right, to the series `∑ c k Xᵏ`. -/
+theorem powerSeries_mk_sum_smul_pow_mul_one_sub_C_mul_X {R A : Type*} [CommSemiring R] [Ring A]
+    [Algebra R A] (c : ℕ → R) (a : A) :
+    PowerSeries.mk (fun m ↦ ∑ k ∈ Finset.range (m + 1), c k • a ^ (m - k)) *
+        (1 - PowerSeries.C a * PowerSeries.X) =
+      PowerSeries.map (algebraMap R A) (PowerSeries.mk c) := by
+  ext (_ | m)
+  · simp [Algebra.algebraMap_eq_smul_one]
+  · simp [mul_sub, ← mul_assoc, PowerSeries.coeff_succ_mul_X, sum_range_succ_smul_pow_sub',
+      Algebra.algebraMap_eq_smul_one]
 
 /-- The square of the geometric series: `(∑ Xⁿ) ^ 2 = ∑ (n + 1) Xⁿ`. -/
 theorem _root_.PowerSeries.mk_one_sq (R : Type*) [CommRing R] :

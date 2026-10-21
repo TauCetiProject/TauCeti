@@ -87,6 +87,17 @@ theorem christoffelFirstKind_apply (g : E → E →L[ℝ] E →L[ℝ] ℝ) (x u 
       (fderiv ℝ g x u v w + fderiv ℝ g x v u w - fderiv ℝ g x w u v) / 2 := by
   simp [christoffelFirstKind, div_eq_inv_mul]
 
+/-- At a point where `g` is differentiable, the Christoffel symbols of the first kind of `g`, with
+the last term written as the derivative of the scalar function `y ↦ g y u v`. -/
+theorem christoffelFirstKind_eq_of_differentiableAt (hg : DifferentiableAt ℝ g x) (u v : E) :
+    christoffelFirstKind g x u v =
+      (2⁻¹ : ℝ) • (fderiv ℝ g x u v + fderiv ℝ g x v u - fderiv ℝ (fun y ↦ g y u v) x) := by
+  ext w
+  rw [christoffelFirstKind_apply, smul_apply, sub_apply, add_apply,
+    fderiv_clm_apply_const_apply (hg.clm_apply (differentiableAt_const u)),
+    fderiv_clm_apply_const_apply hg, smul_eq_mul]
+  ring
+
 /-- The Christoffel symbols of the first kind of a metric are symmetric in their first two
 arguments. -/
 theorem christoffelFirstKind_comm (hsymm : ∀ᶠ y in 𝓝 x, (g y).toBilinForm.IsSymm) (u v : E) :
