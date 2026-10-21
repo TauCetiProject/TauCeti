@@ -36,6 +36,8 @@ exponent, so the graded bracket is `ℤ_p`-bilinear.
   the same statements for classes in the graded pieces.
 * `TauCeti.IsProP.gradedBracket_smul_left`, `TauCeti.IsProP.gradedBracket_smul_right`: the graded
   bracket is `ℤ_p`-linear in each variable.
+* `TauCeti.IsProP.gradedMap_smul`: the graded map of a continuous homomorphism of pro-`p` groups
+  is `ℤ_p`-linear.
 * `TauCeti.IsProP.gradedBracket_gradedMkZero_padicPow_neg_add`: the brackets `[a^{-u}, b]` and
   `[a, b^u]` of degree-zero classes cancel.
 * `TauCeti.IsProP.gradedMk_commutatorElement_inv_conj_padicPow_inv`: the commutator of the inverse
@@ -247,6 +249,20 @@ theorem IsProP.gradedBracket_smul_right (hG : IsProP p G) {q j k : ℕ} (u : ℤ
   rw [← hG.gradedMk_padicPow y u, hG.gradedBracket_padicPow_right x y u,
     gradedBracket_gradedMk]
   exact hG.gradedMk_padicPow ⟨_, commutator_mem_pLowerCentralSeries x.2 y.2⟩ u
+
+/-- The graded map of a continuous homomorphism of pro-`p` groups is `ℤ_p`-linear on every graded
+piece, because continuous homomorphisms commute with `p`-adic powers. -/
+theorem IsProP.gradedMap_smul {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    [CompactSpace H] [TotallyDisconnectedSpace H] (hG : IsProP p G) (hH : IsProP p H)
+    (f : G →* H) (hf : Continuous f) {q n : ℕ} (u : ℤ_[p]) (z : gradedPiece q G n) :
+    letI := hG.gradedPieceModule q n
+    letI := hH.gradedPieceModule q n
+    gradedMap q f hf n (u • z) = u • gradedMap q f hf n z := by
+  let _ : Module ℤ_[p] (gradedPiece q G n) := hG.gradedPieceModule q n
+  let _ : Module ℤ_[p] (gradedPiece q H n) := hH.gradedPieceModule q n
+  obtain ⟨x, rfl⟩ := gradedMk_surjective n z
+  rw [← hG.gradedMk_padicPow, gradedMap_gradedMk, gradedMap_gradedMk, ← hH.gradedMk_padicPow]
+  exact congrArg _ (Subtype.ext (hG.map_padicPow hH f hf x u))
 
 /-- **The brackets `[a^{-u}, b]` and `[a, b^u]` of degree-zero classes cancel**: both are the
 `p`-adic power, with opposite exponents, of the class of the commutator `⁅a, b⁆`. -/

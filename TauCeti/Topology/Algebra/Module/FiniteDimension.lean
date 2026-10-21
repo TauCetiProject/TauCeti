@@ -12,6 +12,11 @@ public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 /-!
 # Finite-dimensional topological vector spaces
 
+The linear-map conversion API preserves composition and recovers a continuous linear map after
+forgetting continuity. `LinearMap.toContinuousLinearMap_coe` only needs finite dimension on the
+source. `LinearMap.toContinuousLinearMap_comp` needs finite dimension on the source and
+intermediate space; the target may be any topological vector space.
+
 A multilinear map `f : MultilinearMap 𝕜 M N` on finitely many finite-dimensional Hausdorff
 topological vector spaces over a complete nontrivially normed field is continuous when addition
 and scalar multiplication are continuous in the codomain:
@@ -37,6 +42,33 @@ basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i �
 -/
 
 public section
+
+namespace LinearMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [Module 𝕜 F] [ContinuousSMul 𝕜 F]
+
+/-- Passing a continuous linear map to a linear map and back returns the original map. -/
+@[simp]
+theorem toContinuousLinearMap_coe (T : E →L[𝕜] F) :
+    (T : E →ₗ[𝕜] F).toContinuousLinearMap = T :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
+
+variable [T2Space F] [FiniteDimensional 𝕜 F]
+  {G : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+  [Module 𝕜 G] [ContinuousSMul 𝕜 G]
+
+/-- Passing a composition of linear maps to continuous linear maps preserves composition. -/
+@[simp]
+theorem toContinuousLinearMap_comp (g : F →ₗ[𝕜] G) (f : E →ₗ[𝕜] F) :
+    (g ∘ₗ f).toContinuousLinearMap =
+      g.toContinuousLinearMap ∘L f.toContinuousLinearMap :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
+
+end LinearMap
 
 namespace MultilinearMap
 
