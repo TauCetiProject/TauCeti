@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Basic
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Biproduct
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
 
 /-!
 # Duality on the Grothendieck ring of a rigid category
@@ -71,6 +71,7 @@ theorem dual_one : dual (1 : SplitK0 C) = 1 := by
   exact of_congr (rightDualIso inferInstance exactPairingUnit)
 
 /-- The duality reverses products, since `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ`. -/
+@[simp]
 theorem dual_mul (x y : SplitK0 C) : dual (x * y) = dual y * dual x := by
   -- Both sides are biadditive in `(x, y)`, so it suffices to compare them on classes of objects.
   suffices h : (mulHom C).compr₂ dual = ((mulHom C).flip.compl₂ dual).comp dual by

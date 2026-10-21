@@ -6,17 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Rigid
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
 public import TauCeti.CategoryTheory.Semisimple.GrothendieckRing
+public import TauCeti.CategoryTheory.Simple.Rigid
 
 /-!
 # Duality in a finite semisimple rigid category
 
 In a rigid monoidal abelian category with additive tensor product the right dual of a simple
 object is simple (`TauCeti.simple_rightDual`), so duality acts on the simple isomorphism classes:
-`TauCeti.SimpleClasses.dual` sends the class of `X` to the class of `Xᘁ`. This file shows that
-this action is the involution of the Grothendieck ring as a based ring, and that the fusion
-coefficients satisfy Frobenius reciprocity with respect to it.
+`TauCeti.SimpleClasses.dual` (in `TauCeti/CategoryTheory/Simple/Rigid.lean`) sends the class of
+`X` to the class of `Xᘁ`. This file shows that this action is the involution of the Grothendieck
+ring as a based ring, and that the fusion coefficients satisfy Frobenius reciprocity with respect
+to it.
 
 * **The involution.** If the category is moreover finite semisimple with simple tensor unit, then
   every simple object `X` is isomorphic to its double dual `Xᘁᘁ`. The coevaluation
@@ -35,7 +36,7 @@ No pivotal structure is used: the dual class is formed with right duals througho
 ## Main declarations
 
 * `TauCeti.nonempty_iso_rightDual_rightDual`: a simple object is isomorphic to its double dual.
-* `TauCeti.SimpleClasses.dual`: the dual simple class, with `TauCeti.SimpleClasses.dual_dual`.
+* `TauCeti.SimpleClasses.dual_dual`: duality of simple classes is an involution.
 * `TauCeti.SplitK0.dual_simpleBasis` and `TauCeti.SplitK0.dual_dual`: the duality of the
   Grothendieck ring permutes the simple basis and is an involution.
 * `TauCeti.fusionCoeff_dual_left`, `TauCeti.fusionCoeff_dual_right` and
@@ -91,25 +92,6 @@ theorem nonempty_iso_rightDual_rightDual (X : C) [Simple X] : Nonempty (X ≅ (X
 end DoubleDual
 
 namespace SimpleClasses
-
-/-- The **dual** of a simple class: the class of the right dual of its representative. -/
-def dual (S : SimpleClasses C) : SimpleClasses C :=
-  classOf S.reprᘁ
-
-/-- The representative of the dual class is isomorphic to the right dual of the representative. -/
-def dualReprIso (S : SimpleClasses C) : S.dual.repr ≅ S.reprᘁ :=
-  classOfReprIso _
-
-/-- The dual of the class of a simple object is the class of its right dual. -/
-@[simp]
-theorem dual_classOf (X : C) [Simple X] : (classOf X).dual = classOf Xᘁ :=
-  (classOf_eq_iff_nonempty_iso _ _).2 ⟨(classOfReprIso X).rightAdjointMate.symm⟩
-
-/-- A simple class is the dual of `S` exactly when its representative is isomorphic to the right
-dual of the representative of `S`. -/
-theorem eq_dual_iff (S T : SimpleClasses C) : T = S.dual ↔ Nonempty (T.repr ≅ S.reprᘁ) := by
-  rw [eq_iff_nonempty_iso]
-  exact ⟨fun ⟨e⟩ ↦ ⟨e ≪≫ dualReprIso S⟩, fun ⟨e⟩ ↦ ⟨e ≪≫ (dualReprIso S).symm⟩⟩
 
 variable [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
 
@@ -190,6 +172,7 @@ theorem fusionMatrix_dual (S : SimpleClasses C) :
 omit [IsFiniteSemisimpleCategory C] in
 /-- The multiplicity of the tensor unit in `S ⊗ T` is `1` if `S` is the dual class of `T`, and `0`
 otherwise: `N_{S T}^𝟙 = δ_{S, T*}`. -/
+@[simp]
 theorem fusionCoeff_classOf_unit [Simple (𝟙_ C)] [DecidableEq (SimpleClasses C)]
     (S T : SimpleClasses C) :
     fusionCoeff k S T (SimpleClasses.classOf (𝟙_ C)) = if S = T.dual then 1 else 0 := by

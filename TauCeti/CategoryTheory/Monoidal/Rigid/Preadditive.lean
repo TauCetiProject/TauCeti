@@ -7,15 +7,12 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
-public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
 /-!
 # Duals in a monoidal preadditive category
 
 In a monoidal preadditive category the right adjoint mate `f ↦ fᘁ` is additive, because it is
-built from whiskering and composition. Consequently the right dual of a binary biproduct is the
-biproduct of the right duals, `(X ⊞ Y)ᘁ ≅ Xᘁ ⊞ Yᘁ`: the projections of `(X ⊞ Y)ᘁ` are the mates of
-the inclusions of `X ⊞ Y`, and its inclusions are the mates of the projections.
+built from whiskering and composition.
 
 In a monoidal `k`-linear category the Frobenius reciprocity bijections `tensorLeftHomEquiv` and
 `tensorRightHomEquiv` are `k`-linear, so they compare dimensions of morphism spaces, for instance
@@ -25,8 +22,6 @@ of the multiplicity spaces of a fusion category.
 
 * `TauCeti.rightAdjointMate_zero` and `TauCeti.rightAdjointMate_add`: the right adjoint mate is
   additive;
-* `TauCeti.rightDualBiprodIso`: the right dual of a binary biproduct is the biproduct of the right
-  duals;
 * `TauCeti.tensorLeftHomLinearEquiv` and `TauCeti.tensorRightHomLinearEquiv`: Frobenius
   reciprocity as `k`-linear equivalences.
 -/
@@ -57,63 +52,6 @@ theorem rightAdjointMate_add (f g : X ⟶ Y) : (f + g)ᘁ = fᘁ + gᘁ := by
   simp [rightAdjointMate]
 
 end Mate
-
-section Biprod
-
-variable (X Y : C) [HasBinaryBiproduct X Y] [HasRightDual X] [HasRightDual Y]
-  [HasRightDual (X ⊞ Y)] [HasBinaryBiproduct Xᘁ Yᘁ]
-
-/-- The right dual of `X ⊞ Y` as a binary bicone over `Xᘁ` and `Yᘁ`: its projections are the
-mates of the inclusions of `X ⊞ Y`, and its inclusions are the mates of the projections. -/
-private noncomputable def rightDualBinaryBicone : BinaryBicone Xᘁ Yᘁ where
-  pt := (X ⊞ Y)ᘁ
-  fst := (biprod.inl : X ⟶ X ⊞ Y)ᘁ
-  snd := (biprod.inr : Y ⟶ X ⊞ Y)ᘁ
-  inl := (biprod.fst : X ⊞ Y ⟶ X)ᘁ
-  inr := (biprod.snd : X ⊞ Y ⟶ Y)ᘁ
-  inl_fst := by rw [← comp_rightAdjointMate, biprod.inl_fst, rightAdjointMate_id]
-  inl_snd := by rw [← comp_rightAdjointMate, biprod.inr_fst, rightAdjointMate_zero]
-  inr_fst := by rw [← comp_rightAdjointMate, biprod.inl_snd, rightAdjointMate_zero]
-  inr_snd := by rw [← comp_rightAdjointMate, biprod.inr_snd, rightAdjointMate_id]
-
-/-- The right dual of a binary biproduct is the biproduct of the right duals. The components of
-the isomorphism are the mates of the inclusions of `X ⊞ Y`, and the components of its inverse
-are the mates of the projections. -/
-noncomputable def rightDualBiprodIso : (X ⊞ Y)ᘁ ≅ Xᘁ ⊞ Yᘁ :=
-  biprod.uniqueUpToIso _ _ <| isBinaryBilimitOfTotal (rightDualBinaryBicone X Y) <| by
-    -- The total identity of the bicone is the mate of the total identity of `X ⊞ Y`.
-    have h := congrArg rightAdjointMate (biprod.total (X := X) (Y := Y))
-    rw [rightAdjointMate_add, comp_rightAdjointMate, comp_rightAdjointMate,
-      rightAdjointMate_id] at h
-    exact h
-
-/-- The first component of `rightDualBiprodIso` is the mate of the first inclusion. -/
-@[reassoc (attr := simp)]
-theorem rightDualBiprodIso_hom_fst :
-    (rightDualBiprodIso X Y).hom ≫ biprod.fst = (biprod.inl : X ⟶ X ⊞ Y)ᘁ := by
-  simp [rightDualBiprodIso, rightDualBinaryBicone]
-
-/-- The second component of `rightDualBiprodIso` is the mate of the second inclusion. -/
-@[reassoc (attr := simp)]
-theorem rightDualBiprodIso_hom_snd :
-    (rightDualBiprodIso X Y).hom ≫ biprod.snd = (biprod.inr : Y ⟶ X ⊞ Y)ᘁ := by
-  simp [rightDualBiprodIso, rightDualBinaryBicone]
-
-/-- The first component of the inverse of `rightDualBiprodIso` is the mate of the first
-projection. -/
-@[reassoc (attr := simp)]
-theorem inl_rightDualBiprodIso_inv :
-    biprod.inl ≫ (rightDualBiprodIso X Y).inv = (biprod.fst : X ⊞ Y ⟶ X)ᘁ := by
-  simp [rightDualBiprodIso, rightDualBinaryBicone]
-
-/-- The second component of the inverse of `rightDualBiprodIso` is the mate of the second
-projection. -/
-@[reassoc (attr := simp)]
-theorem inr_rightDualBiprodIso_inv :
-    biprod.inr ≫ (rightDualBiprodIso X Y).inv = (biprod.snd : X ⊞ Y ⟶ Y)ᘁ := by
-  simp [rightDualBiprodIso, rightDualBinaryBicone]
-
-end Biprod
 
 section Linear
 
