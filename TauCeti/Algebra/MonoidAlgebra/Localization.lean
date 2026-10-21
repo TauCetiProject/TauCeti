@@ -103,6 +103,9 @@ theorem MonoidAlgebra.isLocalization_coefficients {S : Type*} [CommSemiring S]
   let f := Finsupp.mapRange.linearMap (α := M) (Algebra.linearMap R S)
   have h' := IsLocalizedModule.of_linearEquiv U
     (f ∘ₗ (coeffLinearEquiv R).toLinearMap) (coeffLinearEquiv R).symm
+  -- Both the transported Finsupp map and the monoid-algebra algebra map apply
+  -- `algebraMap R S` to each coefficient. The coefficient equivalences only change
+  -- representation, so extensionality reduces their equality to that computation.
   convert h' using 1
   ext x m
   rfl
