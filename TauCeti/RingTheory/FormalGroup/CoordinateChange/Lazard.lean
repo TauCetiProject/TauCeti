@@ -151,10 +151,11 @@ theorem map_rightUnit :
 
 /-- The homomorphism classifying `(F, φ)` restricts along `η_R` to the homomorphism classifying
 the target `φ • F` of the strict isomorphism `φ`. -/
-theorem coordinateChangeLift_comp_rightUnit (F : FormalGroup R) [F.IsComm]
-    (φ : (FormalCoordinate.linearCoeff (R := R)).ker) :
-    (coordinateChangeLift (⟨F, inferInstance⟩, φ)).comp rightUnit =
-      lift ⟨φ.1 • F, inferInstance⟩ :=
+@[simp]
+theorem coordinateChangeLift_comp_rightUnit
+    (p : {F : FormalGroup R // F.IsComm} × (FormalCoordinate.linearCoeff (R := R)).ker) :
+    (coordinateChangeLift p).comp rightUnit =
+      lift ⟨p.2.1 • p.1.1, have := p.1.2; inferInstance⟩ :=
   hom_ext <| by
     rw [← FormalGroup.map_comp, map_rightUnit, FormalGroup.map_smul,
       map_coordinateChangeLift_universalStrictCoordinate, FormalGroup.map_comp,
@@ -183,7 +184,7 @@ theorem counit_C (r : LazardRing) : counit (C r) = r :=
 does not change a formal group law. -/
 @[simp]
 theorem counit_comp_rightUnit : counit.comp rightUnit = RingHom.id LazardRing :=
-  (coordinateChangeLift_comp_rightUnit formalGroup 1).trans <| hom_ext <| by
+  (coordinateChangeLift_comp_rightUnit _).trans <| hom_ext <| by
     rw [map_lift, FormalGroup.map_id]
     exact one_smul _ _
 
