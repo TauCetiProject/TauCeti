@@ -181,8 +181,8 @@ private theorem natCard_add_one_le_height_option {σ : Type*} [Finite σ]
 /-- **Heights of maximal ideals of Tate algebras.** Over a complete nonarchimedean field, every
 maximal ideal of the Tate algebra `K⟨X₁, …, Xₙ⟩` has height `n`, its Krull dimension. -/
 @[simp]
-theorem _root_.Ideal.height_eq_natCard_of_isMaximal_tateAlgebra {σ : Type*} [Finite σ] (M : Ideal (Tate σ))
-    [M.IsMaximal] : M.height = Nat.card σ := by
+theorem _root_.Ideal.height_eq_natCard_of_isMaximal_tateAlgebra {σ : Type*} [Finite σ]
+    (M : Ideal (Tate σ)) [M.IsMaximal] : M.height = Nat.card σ := by
   refine le_antisymm ?_ ?_
   · have := Ideal.height_le_ringKrullDim_of_ne_top (Ideal.IsPrime.ne_top' (I := M))
     rw [ringKrullDim_isRestricted_subring] at this
