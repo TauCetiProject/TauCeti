@@ -31,6 +31,9 @@ structure from the real almost complex structure. A real vector `v` decomposes a
   a real vector, with `TauCeti.AlmostComplexStructure.holomorphicPart_mem_eigenspace_baseChange_I`,
   `TauCeti.AlmostComplexStructure.antiholomorphicPart_mem_eigenspace_baseChange_neg_I` and
   `TauCeti.AlmostComplexStructure.holomorphicPart_add_antiholomorphicPart`.
+* `TauCeti.AlmostComplexStructure.baseChange_holomorphicPart` and
+  `TauCeti.AlmostComplexStructure.baseChange_antiholomorphicPart`: the complexified complex
+  structure commutes with taking the `(1,0)`- and `(0,1)`-parts.
 -/
 
 public section
@@ -73,22 +76,6 @@ theorem holomorphicPart_apply (v : V) :
 theorem antiholomorphicPart_apply (v : V) :
     J.antiholomorphicPart v = (2 : ℂ)⁻¹ • ((1 : ℂ) ⊗ₜ v + Complex.I • (1 : ℂ) ⊗ₜ J v) := (rfl)
 
-/-- The `(1,0)`-part of a real vector lies in the `i`-eigenspace of the complexified complex
-structure. -/
-theorem holomorphicPart_mem_eigenspace_baseChange_I (v : V) :
-    J.holomorphicPart v ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I := by
-  rw [Module.End.mem_eigenspace_iff, holomorphicPart_apply, map_smul, map_sub, map_smul,
-    LinearMap.baseChange_tmul, LinearMap.baseChange_tmul, apply_apply, TensorProduct.tmul_neg]
-  linear_combination (norm := module) Complex.I_mul_I • ((2 : ℂ)⁻¹ • (1 : ℂ) ⊗ₜ[ℝ] J v)
-
-/-- The `(0,1)`-part of a real vector lies in the `-i`-eigenspace of the complexified complex
-structure. -/
-theorem antiholomorphicPart_mem_eigenspace_baseChange_neg_I (v : V) :
-    J.antiholomorphicPart v ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) := by
-  rw [Module.End.mem_eigenspace_iff, antiholomorphicPart_apply, map_smul, map_add, map_smul,
-    LinearMap.baseChange_tmul, LinearMap.baseChange_tmul, apply_apply, TensorProduct.tmul_neg]
-  linear_combination (norm := module) Complex.I_mul_I • ((2 : ℂ)⁻¹ • (1 : ℂ) ⊗ₜ[ℝ] J v)
-
 /-- A real vector is the sum of its `(1,0)`- and `(0,1)`-parts. -/
 @[simp]
 theorem holomorphicPart_add_antiholomorphicPart (v : V) :
@@ -109,5 +96,34 @@ theorem antiholomorphicPart_apply_apply (v : V) :
     J.antiholomorphicPart (J v) = -Complex.I • J.antiholomorphicPart v := by
   rw [antiholomorphicPart_apply, antiholomorphicPart_apply, apply_apply, TensorProduct.tmul_neg]
   linear_combination (norm := module) Complex.I_mul_I • ((2 : ℂ)⁻¹ • (1 : ℂ) ⊗ₜ[ℝ] J v)
+
+/-- The complexified complex structure maps the `(1,0)`-part of `v` to the `(1,0)`-part of
+`J v`. -/
+@[simp]
+theorem baseChange_holomorphicPart (v : V) :
+    J.toLinearMap.baseChange ℂ (J.holomorphicPart v) = J.holomorphicPart (J v) := by
+  rw [holomorphicPart_apply, holomorphicPart_apply, map_smul, map_sub, map_smul,
+    LinearMap.baseChange_tmul, LinearMap.baseChange_tmul]
+
+/-- The complexified complex structure maps the `(0,1)`-part of `v` to the `(0,1)`-part of
+`J v`. -/
+@[simp]
+theorem baseChange_antiholomorphicPart (v : V) :
+    J.toLinearMap.baseChange ℂ (J.antiholomorphicPart v) = J.antiholomorphicPart (J v) := by
+  rw [antiholomorphicPart_apply, antiholomorphicPart_apply, map_smul, map_add, map_smul,
+    LinearMap.baseChange_tmul, LinearMap.baseChange_tmul]
+
+/-- The `(1,0)`-part of a real vector lies in the `i`-eigenspace of the complexified complex
+structure. -/
+theorem holomorphicPart_mem_eigenspace_baseChange_I (v : V) :
+    J.holomorphicPart v ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I := by
+  rw [Module.End.mem_eigenspace_iff, baseChange_holomorphicPart, holomorphicPart_apply_apply]
+
+/-- The `(0,1)`-part of a real vector lies in the `-i`-eigenspace of the complexified complex
+structure. -/
+theorem antiholomorphicPart_mem_eigenspace_baseChange_neg_I (v : V) :
+    J.antiholomorphicPart v ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) := by
+  rw [Module.End.mem_eigenspace_iff, baseChange_antiholomorphicPart,
+    antiholomorphicPart_apply_apply]
 
 end TauCeti.AlmostComplexStructure
