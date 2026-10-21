@@ -283,59 +283,28 @@ theorem geodesicReflection_image_leftHalfPlane (g : PSL(2, ℝ)) :
 
 /-! ### Conjugation by `J` -/
 
-/-- The matrix `!![a, -b; -c, d]` of the conjugate of `!![a, b; c, d] ∈ SL(2, ℝ)` by `J`. -/
-private def slConjJFun (A : SL(2, ℝ)) : SL(2, ℝ) :=
-  ⟨!![A 0 0, -A 0 1; -A 1 0, A 1 1], by
-    have h := A.det_coe
-    rw [Matrix.det_fin_two] at h
-    rw [Matrix.det_fin_two_of]
-    linarith⟩
-
-private theorem coe_slConjJFun (A : SL(2, ℝ)) :
-    (slConjJFun A : Matrix (Fin 2) (Fin 2) ℝ) = !![A 0 0, -A 0 1; -A 1 0, A 1 1] :=
-  (rfl)
-
-/-- Conjugation by `UpperHalfPlane.J = diag(-1, 1)` on `SL(2, ℝ)`. -/
-private def slConjJ : SL(2, ℝ) →* SL(2, ℝ) where
-  toFun := slConjJFun
-  map_one' := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [coe_slConjJFun]
-  map_mul' A B := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [coe_slConjJFun, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
-
-private theorem J_mul_mapGL (A : SL(2, ℝ)) :
-    J * Matrix.SpecialLinearGroup.mapGL ℝ A =
-      Matrix.SpecialLinearGroup.mapGL ℝ (slConjJ A) * J := by
+private theorem conjJ_neg_one : Matrix.SpecialLinearGroup.conjJ (-1 : SL(2, ℝ)) = -1 := by
   ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [slConjJ, coe_slConjJFun, Matrix.mul_apply, Fin.sum_univ_two,
-      Matrix.SpecialLinearGroup.mapGL_coe_matrix]
-
-private theorem slConjJ_slConjJ (A : SL(2, ℝ)) : slConjJ (slConjJ A) = A := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [slConjJ, coe_slConjJFun]
-
-private theorem slConjJ_neg_one : slConjJ (-1) = -1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [slConjJ, coe_slConjJFun]
+  fin_cases i <;> fin_cases j <;> simp
 
 private def pslConjJHom : PSL(2, ℝ) →* PSL(2, ℝ) :=
-  QuotientGroup.map _ _ slConjJ fun A hA ↦ by
-    rw [Subgroup.mem_comap]
-    rcases (Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one).1 hA with rfl | rfl
-    · rw [map_one]; exact Subgroup.one_mem _
-    · rw [slConjJ_neg_one]; exact hA
+  QuotientGroup.map _ _ (Matrix.SpecialLinearGroup.conjJMulAut : MulAut SL(2, ℝ)).toMonoidHom
+    fun A hA ↦ by
+      rw [Subgroup.mem_comap]
+      rcases (Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one).1 hA with rfl | rfl
+      · rw [map_one]; exact Subgroup.one_mem _
+      · rw [MulEquiv.coe_toMonoidHom, Matrix.SpecialLinearGroup.conjJMulAut_apply,
+          conjJ_neg_one]
+        exact hA
 
 private theorem pslConjJHom_mk (A : SL(2, ℝ)) :
-    pslConjJHom (A : PSL(2, ℝ)) = (slConjJ A : PSL(2, ℝ)) :=
-  (rfl)
+    pslConjJHom (A : PSL(2, ℝ)) = (Matrix.SpecialLinearGroup.conjJ A : PSL(2, ℝ)) := by
+  rw [pslConjJHom, QuotientGroup.map_mk, MulEquiv.coe_toMonoidHom,
+    Matrix.SpecialLinearGroup.conjJMulAut_apply]
 
 private theorem pslConjJHom_pslConjJHom (g : PSL(2, ℝ)) : pslConjJHom (pslConjJHom g) = g := by
   induction g using QuotientGroup.induction_on with | H A => ?_
-  rw [pslConjJHom_mk, pslConjJHom_mk, slConjJ_slConjJ]
+  rw [pslConjJHom_mk, pslConjJHom_mk, Matrix.SpecialLinearGroup.conjJ_conjJ]
 
 /-- Conjugation by the orientation-reversing involution `UpperHalfPlane.J : z ↦ -conj z` on
 `PSL(2, ℝ)`: the class of `!![a, b; c, d]` goes to the class of `!![a, -b; -c, d]`. It is
@@ -354,14 +323,15 @@ theorem pslConjJ_pslConjJ (g : PSL(2, ℝ)) : pslConjJ (pslConjJ g) = g :=
 theorem pslConjJ_symm : pslConjJ.symm = pslConjJ :=
   (rfl)
 
-private theorem pslConjJ_mk (A : SL(2, ℝ)) : pslConjJ (A : PSL(2, ℝ)) = (slConjJ A : PSL(2, ℝ)) :=
-  (rfl)
+private theorem pslConjJ_mk (A : SL(2, ℝ)) :
+    pslConjJ (A : PSL(2, ℝ)) = (Matrix.SpecialLinearGroup.conjJ A : PSL(2, ℝ)) :=
+  pslConjJHom_mk A
 
 /-- `J` intertwines the action of `g` on `ℍ` with that of its conjugate `pslConjJ g`. -/
 theorem J_smul_smul (g : PSL(2, ℝ)) (z : ℍ) : J • g • z = pslConjJ g • J • z := by
   induction g using QuotientGroup.induction_on with | H A => ?_
   rw [pslConjJ_mk, pslMk_smul, pslMk_smul, MulAction.compHom_smul_def,
-    MulAction.compHom_smul_def, smul_smul, smul_smul, J_mul_mapGL]
+    MulAction.compHom_smul_def, smul_smul, smul_smul, Matrix.SpecialLinearGroup.J_mul_mapGL]
 
 /-- `J` intertwines the action of `g` on the ideal boundary with that of `pslConjJ g`. -/
 theorem J_smul_smul_onePoint (g : PSL(2, ℝ)) (ξ : OnePoint ℝ) :
@@ -369,7 +339,7 @@ theorem J_smul_smul_onePoint (g : PSL(2, ℝ)) (ξ : OnePoint ℝ) :
   induction g using QuotientGroup.induction_on with | H A => ?_
   rw [pslConjJ_mk, OnePoint.pslMk_smul, OnePoint.pslMk_smul, smul_smul, smul_smul]
   congr 1
-  exact J_mul_mapGL A
+  exact Matrix.SpecialLinearGroup.J_mul_mapGL A
 
 /-- Conjugation by `J` fixes the involution `pslS : z ↦ -1/z`. -/
 @[simp]
@@ -378,7 +348,7 @@ theorem pslConjJ_pslS : pslConjJ pslS = pslS := by
     ← Matrix.ProjectiveSpecialLinearGroup.mk_neg]
   congr 1
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [slConjJ, coe_slConjJFun, ModularGroup.coe_S]
+  fin_cases i <;> fin_cases j <;> simp [ModularGroup.coe_S]
 
 /-- Conjugation by `J` fixes the dilations `z ↦ exp s * z`. -/
 @[simp]
@@ -389,7 +359,7 @@ theorem pslConjJ_dilation (s : ℝ) :
   congr 1
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [slConjJ, coe_slConjJFun, Matrix.SpecialLinearGroup.coe_dilation]
+    simp [Matrix.SpecialLinearGroup.coe_dilation]
 
 /-- `J` negates real ideal points. -/
 @[simp]
