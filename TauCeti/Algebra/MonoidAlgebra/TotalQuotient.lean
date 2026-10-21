@@ -30,7 +30,6 @@ structure. No field structure on the group ring is assumed.
 
 ## References
 
-* Mathlib's Maschke theorem and maximal-ideal decomposition `IsArtinianRing.equivPi`.
 * V. Turaev, *Introduction to Combinatorial Torsions*, Chapter I, for total quotient
   coefficients of abelian group rings.
 -/

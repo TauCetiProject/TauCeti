@@ -34,7 +34,6 @@ constant monomials, for arbitrary commutative monoids and commutative coefficien
 
 ## References
 
-* Mathlib's localization of finitely supported modules.
 * W. Fulton, *Introduction to Toric Varieties*, §§1.2–1.3.
 * D. Cox, J. Little and H. Schenck, *Toric Varieties*, §1.3.
 -/
