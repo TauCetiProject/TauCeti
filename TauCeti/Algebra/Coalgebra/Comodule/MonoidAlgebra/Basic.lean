@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Coalgebra.MonoidAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
@@ -63,6 +65,12 @@ spanning and the independence half of the decomposition.
   projection.
 * `TauCeti.Comodule.finite_setOf_weightSpace_ne_bot`: **a comodule finitely generated as a module
   has only finitely many weights.**
+* `TauCeti.Comodule.exists_basis_mem_weightSpace`: **every finite-dimensional comodule over
+  `k[G]` has a basis of weight vectors.**
+* `Module.Basis.comoduleWeightSpace_eq_span`: in a basis of weight vectors, the basis vectors of
+  weight `g` span the `g`-weight submodule.
+* `Module.Basis.finrank_comoduleWeightSpace_eq_card`: the dimension of a weight space is the
+  number of basis vectors of that weight.
 
 ## Implementation notes
 
@@ -589,3 +597,70 @@ end Points
 end Comodule
 
 end TauCeti
+
+/-! ## Bases of weight vectors -/
+
+namespace TauCeti.Comodule
+
+open Module
+
+universe u v w
+
+section WeightBasis
+
+section Semiring
+
+variable {R : Type u} {G : Type v} [CommSemiring R]
+variable {V : Type w} [AddCommMonoid V] [Module R V] [Comodule R (MonoidAlgebra R G) V]
+variable {ι : Type*} (b : Basis ι R V) (wt : ι → G) (hb : ∀ i, b i ∈ weightSpace R G V (wt i))
+include hb
+
+/-- In a basis of weight vectors, the basis vectors of weight `g` span the `g`-weight space. -/
+theorem _root_.Module.Basis.comoduleWeightSpace_eq_span (g : G) :
+    weightSpace R G V g = Submodule.span R (b '' {i | wt i = g}) := by
+  classical
+  refine le_antisymm (fun v hv ↦ ?_) (Submodule.span_le.mpr ?_)
+  · rw [← weightProj_of_mem hv, ← b.linearCombination_repr v, Finsupp.linearCombination_apply,
+      Finsupp.sum, map_sum]
+    refine Submodule.sum_mem _ fun i _ ↦ ?_
+    rw [map_smul]
+    refine Submodule.smul_mem _ _ ?_
+    by_cases hi : wt i = g
+    · rw [← hi, weightProj_of_mem (hb i)]
+      exact Submodule.subset_span ⟨i, rfl, rfl⟩
+    · rw [weightProj_of_mem_of_ne (Ne.symm hi) (hb i)]
+      exact Submodule.zero_mem _
+  · rintro _ ⟨i, hi, rfl⟩
+    rw [Set.mem_ofPred_eq] at hi
+    exact hi ▸ hb i
+
+end Semiring
+
+variable {k : Type u} {G : Type v} [Field k]
+variable {V : Type w} [AddCommGroup V] [Module k V] [Comodule k (MonoidAlgebra k G) V]
+
+variable (k G V) in
+/-- **Every finite-dimensional comodule over `k[G]` has a basis of weight vectors.** -/
+theorem exists_basis_mem_weightSpace [FiniteDimensional k V] :
+    ∃ (ι : Type (max v w)) (_ : Fintype ι) (b : Basis ι k V) (wt : ι → G),
+      ∀ i, b i ∈ weightSpace k G V (wt i) := by
+  classical
+  let b := (isInternal_weightSpace k G V).collectedBasis fun g ↦
+    Module.Free.chooseBasis k (weightSpace k G V g)
+  exact ⟨_, FiniteDimensional.fintypeBasisIndex b, b, Sigma.fst,
+    (isInternal_weightSpace k G V).collectedBasis_mem _⟩
+
+/-- **Weight multiplicities count weight basis vectors.** In a basis of weight vectors, the
+dimension of the `g`-weight space is the number of basis vectors of weight `g`. -/
+theorem _root_.Module.Basis.finrank_comoduleWeightSpace_eq_card {ι : Type*} [Finite ι]
+    (b : Basis ι k V) (wt : ι → G) (hb : ∀ i, b i ∈ weightSpace k G V (wt i)) (g : G) :
+    finrank k (weightSpace k G V g) = Nat.card {i // wt i = g} := by
+  have := Fintype.ofFinite ι
+  have := Fintype.ofFinite {i // wt i = g}
+  rw [b.comoduleWeightSpace_eq_span wt hb g, ← Subtype.range_coe_subtype, ← Set.range_comp,
+    finrank_span_eq_card (b.linearIndependent.comp _ Subtype.val_injective),
+    Nat.card_eq_fintype_card]
+
+end WeightBasis
+
+end TauCeti.Comodule

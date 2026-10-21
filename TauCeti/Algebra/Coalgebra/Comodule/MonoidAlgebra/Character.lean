@@ -31,12 +31,12 @@ products into products (weights add), and duals into the inversion `g ↦ g⁻¹
 
 The computations go through bases of weight vectors. Every finite-dimensional comodule has one
 (`TauCeti.Comodule.exists_basis_mem_weightSpace`), the dimension of each weight space counts the
-basis vectors of that weight (`TauCeti.Comodule.finrank_weightSpace_eq_card`), and the formal
+basis vectors of that weight (`Module.Basis.finrank_comoduleWeightSpace_eq_card`), and the formal
 character is the sum of the weights of the basis vectors
-(`TauCeti.Comodule.formalCharacter_eq_sum_of_basis`). Tensor products, products and duals of
+(`Module.Basis.comoduleFormalCharacter_eq_sum`). Tensor products, products and duals of
 weight bases are again weight bases. The underlying statements about weight vectors,
-`TauCeti.Comodule.tmul_mem_weightSpace_tensor` and `TauCeti.Comodule.mem_weightSpace_dual_iff`,
-hold over every commutative semiring.
+`TauCeti.Comodule.tmul_mem_weightSpace_tensor`, `TauCeti.Comodule.mem_weightSpace_dual_iff` and
+`Module.Basis.dualBasis_mem_comoduleWeightSpace`, hold over every commutative semiring.
 
 ## Main definitions
 
@@ -149,87 +149,20 @@ theorem mem_weightSpace_dual_iff {φ : Module.Dual R V} {g : G} :
     | zero => simp
     | add v₁ v₂ _ _ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
 
-end Dual
-
-/-! ### Weight bases -/
-
-section WeightBasis
-
-section Semiring
-
-variable {R : Type u} {G : Type v} [CommSemiring R]
-variable {V : Type w} [AddCommMonoid V] [Module R V] [Comodule R (MonoidAlgebra R G) V]
-variable {ι : Type*} (b : Basis ι R V) (wt : ι → G) (hb : ∀ i, b i ∈ weightSpace R G V (wt i))
-include hb
-
-/-- In a basis of weight vectors, the basis vectors of weight `g` span the `g`-weight space. -/
-theorem weightSpace_eq_span_of_basis (g : G) :
-    weightSpace R G V g = Submodule.span R (b '' {i | wt i = g}) := by
-  classical
-  refine le_antisymm (fun v hv ↦ ?_) (Submodule.span_le.mpr ?_)
-  · rw [← weightProj_of_mem hv, ← b.linearCombination_repr v, Finsupp.linearCombination_apply,
-      Finsupp.sum, map_sum]
-    refine Submodule.sum_mem _ fun i _ ↦ ?_
-    rw [map_smul]
-    refine Submodule.smul_mem _ _ ?_
-    by_cases hi : wt i = g
-    · rw [← hi, weightProj_of_mem (hb i)]
-      exact Submodule.subset_span ⟨i, rfl, rfl⟩
-    · rw [weightProj_of_mem_of_ne (Ne.symm hi) (hb i)]
-      exact Submodule.zero_mem _
-  · rintro _ ⟨i, hi, rfl⟩
-    exact (show wt i = g from hi) ▸ hb i
-
-end Semiring
-
-variable {k : Type u} {G : Type v} [Field k]
-variable {V : Type w} [AddCommGroup V] [Module k V] [Comodule k (MonoidAlgebra k G) V]
-
-variable (k G V) in
-/-- **Every finite-dimensional comodule over `k[G]` has a basis of weight vectors.** -/
-theorem exists_basis_mem_weightSpace [FiniteDimensional k V] :
-    ∃ (ι : Type (max v w)) (_ : Fintype ι) (b : Basis ι k V) (wt : ι → G),
-      ∀ i, b i ∈ weightSpace k G V (wt i) := by
-  classical
-  let b := (isInternal_weightSpace k G V).collectedBasis fun g ↦
-    Module.Free.chooseBasis k (weightSpace k G V g)
-  exact ⟨_, FiniteDimensional.fintypeBasisIndex b, b, Sigma.fst,
-    (isInternal_weightSpace k G V).collectedBasis_mem _⟩
-
-variable {ι : Type*} (b : Basis ι k V) (wt : ι → G) (hb : ∀ i, b i ∈ weightSpace k G V (wt i))
-include hb
-
-/-- **Weight multiplicities count weight basis vectors.** In a basis of weight vectors, the
-dimension of the `g`-weight space is the number of basis vectors of weight `g`. -/
-theorem finrank_weightSpace_eq_card [Finite ι] (g : G) :
-    finrank k (weightSpace k G V g) = Nat.card {i // wt i = g} := by
-  have := Fintype.ofFinite ι
-  have := Fintype.ofFinite {i // wt i = g}
-  rw [weightSpace_eq_span_of_basis b wt hb g, ← Subtype.range_coe_subtype, ← Set.range_comp,
-    finrank_span_eq_card (b.linearIndependent.comp _ Subtype.val_injective),
-    Nat.card_eq_fintype_card]
-
-section Dual
-
-variable [Group G] [FiniteDimensional k V]
-
-attribute [local instance] Comodule.dual
-
 /-- **The dual basis of a weight basis is a weight basis, with inverted weights.** -/
-theorem dualBasis_mem_weightSpace [Finite ι] [DecidableEq ι] (i : ι) :
-    b.dualBasis i ∈ weightSpace k G (Module.Dual k V) (wt i)⁻¹ := by
+theorem _root_.Module.Basis.dualBasis_mem_comoduleWeightSpace {ι : Type*} [Finite ι]
+    [DecidableEq ι] (b : Basis ι R V) (wt : ι → G) (hb : ∀ i, b i ∈ weightSpace R G V (wt i))
+    (i : ι) : b.dualBasis i ∈ weightSpace R G (Module.Dual R V) (wt i)⁻¹ := by
   rw [mem_weightSpace_dual_iff, inv_inv]
   intro h hne v hv
-  have hle : weightSpace k G V h ≤ LinearMap.ker (b.dualBasis i) := by
-    rw [weightSpace_eq_span_of_basis b wt hb h, Submodule.span_le]
+  have hle : weightSpace R G V h ≤ LinearMap.ker (b.dualBasis i) := by
+    rw [b.comoduleWeightSpace_eq_span wt hb h, Submodule.span_le]
     rintro _ ⟨j, hj, rfl⟩
     have hji : j ≠ i := fun hji ↦ hne (hji ▸ hj).symm
     simp [hji]
   exact hle hv
 
 end Dual
-
-end WeightBasis
 
 /-! ### The formal character -/
 
@@ -256,12 +189,12 @@ theorem formalCharacter_coeff (g : G) :
 
 /-- **The formal character as a sum over a weight basis.** Each vector of a basis of weight
 vectors contributes its weight. -/
-theorem formalCharacter_eq_sum_of_basis {ι : Type*} [Fintype ι] (b : Basis ι k V) (wt : ι → G)
-    (hb : ∀ i, b i ∈ weightSpace k G V (wt i)) :
+theorem _root_.Module.Basis.comoduleFormalCharacter_eq_sum {ι : Type*} [Fintype ι]
+    (b : Basis ι k V) (wt : ι → G) (hb : ∀ i, b i ∈ weightSpace k G V (wt i)) :
     formalCharacter k G V = ∑ i, MonoidAlgebra.single (wt i) 1 := by
   classical
   refine MonoidAlgebra.coeff_injective (Finsupp.ext fun g ↦ ?_)
-  rw [formalCharacter_coeff, finrank_weightSpace_eq_card b wt hb, MonoidAlgebra.coeff_sum,
+  rw [formalCharacter_coeff, b.finrank_comoduleWeightSpace_eq_card wt hb, MonoidAlgebra.coeff_sum,
     Finsupp.finsetSum_apply, Nat.card_eq_fintype_card, Fintype.card_subtype]
   simp [Finsupp.single_apply]
 
@@ -270,7 +203,7 @@ variable (k G V) in
 theorem sum_formalCharacter_coeff_eq_finrank :
     ((formalCharacter k G V).coeff.sum fun _ n ↦ n) = (finrank k V : ℤ) := by
   obtain ⟨ι, _, b, wt, hb⟩ := exists_basis_mem_weightSpace k G V
-  rw [formalCharacter_eq_sum_of_basis b wt hb, MonoidAlgebra.coeff_sum,
+  rw [b.comoduleFormalCharacter_eq_sum wt hb, MonoidAlgebra.coeff_sum,
     ← Finsupp.sum_finsetSum_index (fun _ ↦ rfl) fun _ _ _ ↦ rfl, finrank_eq_card_basis b]
   simp
 
@@ -281,8 +214,8 @@ variable {W : Type x} [AddCommGroup W] [Module k W] [Comodule k (MonoidAlgebra k
 theorem formalCharacter_congr (f : Hom k (MonoidAlgebra k G) V W) (hf : Function.Bijective f) :
     formalCharacter k G V = formalCharacter k G W := by
   obtain ⟨ι, _, b, wt, hb⟩ := exists_basis_mem_weightSpace k G V
-  rw [formalCharacter_eq_sum_of_basis b wt hb,
-    formalCharacter_eq_sum_of_basis (b.map (LinearEquiv.ofBijective f.toLinearMap hf)) wt
+  rw [b.comoduleFormalCharacter_eq_sum wt hb,
+    (b.map (LinearEquiv.ofBijective f.toLinearMap hf)).comoduleFormalCharacter_eq_sum wt
       fun i ↦ by simpa using f.map_mem_weightSpace (hb i)]
 
 section Prod
@@ -294,8 +227,8 @@ theorem formalCharacter_prod :
     formalCharacter k G (V × W) = formalCharacter k G V + formalCharacter k G W := by
   obtain ⟨ι, _, b, wt, hb⟩ := exists_basis_mem_weightSpace k G V
   obtain ⟨κ, _, c, wt', hc⟩ := exists_basis_mem_weightSpace k G W
-  rw [formalCharacter_eq_sum_of_basis b wt hb, formalCharacter_eq_sum_of_basis c wt' hc,
-    formalCharacter_eq_sum_of_basis (b.prod c) (Sum.elim wt wt') ?_, Fintype.sum_sum_type]
+  rw [b.comoduleFormalCharacter_eq_sum wt hb, c.comoduleFormalCharacter_eq_sum wt' hc,
+    (b.prod c).comoduleFormalCharacter_eq_sum (Sum.elim wt wt') ?_, Fintype.sum_sum_type]
   · simp only [Sum.elim_inl, Sum.elim_inr]
   rintro (i | j)
   · simpa [Basis.prod_apply] using (prodInl (C := MonoidAlgebra k G) (N := W)).map_mem_weightSpace
@@ -316,8 +249,8 @@ theorem formalCharacter_tensor :
     formalCharacter k G (V ⊗[k] W) = formalCharacter k G V * formalCharacter k G W := by
   obtain ⟨ι, _, b, wt, hb⟩ := exists_basis_mem_weightSpace k G V
   obtain ⟨κ, _, c, wt', hc⟩ := exists_basis_mem_weightSpace k G W
-  rw [formalCharacter_eq_sum_of_basis b wt hb, formalCharacter_eq_sum_of_basis c wt' hc,
-    formalCharacter_eq_sum_of_basis (b.tensorProduct c) (fun p ↦ wt p.1 * wt' p.2)
+  rw [b.comoduleFormalCharacter_eq_sum wt hb, c.comoduleFormalCharacter_eq_sum wt' hc,
+    (b.tensorProduct c).comoduleFormalCharacter_eq_sum (fun p ↦ wt p.1 * wt' p.2)
       fun p ↦ by
         rw [Basis.tensorProduct_apply']
         exact tmul_mem_weightSpace_tensor (hb p.1) (hc p.2),
@@ -338,8 +271,9 @@ theorem finrank_weightSpace_dual (g : G) :
     finrank k (weightSpace k G (Module.Dual k V) g) = finrank k (weightSpace k G V g⁻¹) := by
   classical
   obtain ⟨ι, _, b, wt, hb⟩ := exists_basis_mem_weightSpace k G V
-  rw [finrank_weightSpace_eq_card b.dualBasis (fun i ↦ (wt i)⁻¹)
-      (dualBasis_mem_weightSpace b wt hb) g, finrank_weightSpace_eq_card b wt hb g⁻¹]
+  rw [b.dualBasis.finrank_comoduleWeightSpace_eq_card (fun i ↦ (wt i)⁻¹)
+      (b.dualBasis_mem_comoduleWeightSpace wt hb) g,
+    b.finrank_comoduleWeightSpace_eq_card wt hb g⁻¹]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ inv_eq_iff_eq_inv)
 
 /-- **The formal character of the dual is the inverted character.** -/
