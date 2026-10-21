@@ -51,8 +51,8 @@ laws is `homOfDual h φ (T s) = φ s • T` for every `A`-linear `T`
 * `TauCeti.isotypicTensorEquivOfBijective_symm_apply` and
   `TauCeti.isotypicTensorEquivOfBijective_symm_apply_basis`: the inverse, for a finite family
   `∑ᵢ φᵢ(t) vᵢ = t` and for a finite basis.
-* `TauCeti.isotypicTensorEquivOfBijective_map` and
-  `TauCeti.isotypicTensorEquivOfBijective_symm_apply_map`: naturality in `M`.
+* `TauCeti.isotypicTensorEquivOfBijective_symm_apply_map`: naturality of the inverse in `M`;
+  naturality of evaluation itself is `TauCeti.isotypicEval_map_apply`.
 * `TauCeti.finrank_eq_finrank_mul_finrank_linearMap_of_bijective_lsmul`: over a field,
   `dim M = dim S · dim (S →ₗ[A] M)`.
 
@@ -102,8 +102,8 @@ noncomputable def homOfDual (φ : Dual k S) : M →ₗ[k] S →ₗ[A] M where
   toFun x :=
     { toFun := fun s ↦ (AlgEquiv.ofBijective _ h).symm (φ.smulRight s) • x
       map_add' := fun s t ↦ by
-        rw [show φ.smulRight (s + t) = φ.smulRight s + φ.smulRight t by ext; simp [smul_add],
-          map_add, add_smul]
+        rw [← LinearMap.smulRightₗ_apply, (LinearMap.smulRightₗ φ).map_add,
+          LinearMap.smulRightₗ_apply, LinearMap.smulRightₗ_apply, map_add, add_smul]
       map_smul' := fun a s ↦ by
         -- The rank-one endomorphism `t ↦ φ t • a • s` is `a` composed with `t ↦ φ t • s`.
         have : (AlgEquiv.ofBijective _ h).symm (φ.smulRight (a • s)) =
@@ -204,16 +204,6 @@ theorem isotypicTensorEquivOfBijective_symm_apply_basis {ι : Type*} [Fintype ι
   isotypicTensorEquivOfBijective_symm_apply h Finset.univ b.coord b
     (fun t ↦ by simp [Basis.coord_apply]) x
 
--- Not `@[simp]`: `isotypicTensorEquivOfBijective_apply` rewrites the left-hand side, after which
--- `isotypicEval_map_apply` finishes.
-/-- **Evaluation is natural in the module**: an `A`-linear map `g : M →ₗ[A] N` acts on the
-multiplicity space alone. -/
-theorem isotypicTensorEquivOfBijective_map (g : M →ₗ[A] N) (x : S ⊗[k] (S →ₗ[A] M)) :
-    isotypicTensorEquivOfBijective h
-        (AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
-          (LinearMap.compRight (M := S) k g) x) = g (isotypicTensorEquivOfBijective h x) := by
-  simp
-
 /-- **Naturality of the inverse**: through the decomposition an `A`-linear map
 `g : M →ₗ[A] N` becomes `1 ⊗ (g ∘ ·)`. -/
 @[simp]
@@ -222,8 +212,8 @@ theorem isotypicTensorEquivOfBijective_symm_apply_map (g : M →ₗ[A] N) (y : M
       AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
         (LinearMap.compRight (M := S) k g) ((isotypicTensorEquivOfBijective h).symm y) := by
   apply (isotypicTensorEquivOfBijective h (M := N)).injective
-  rw [LinearEquiv.apply_symm_apply, isotypicTensorEquivOfBijective_map,
-    LinearEquiv.apply_symm_apply]
+  rw [LinearEquiv.apply_symm_apply, isotypicTensorEquivOfBijective_apply, isotypicEval_map_apply,
+    ← isotypicTensorEquivOfBijective_apply h, LinearEquiv.apply_symm_apply]
 
 end CommRing
 
