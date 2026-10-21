@@ -44,6 +44,8 @@ small cases; the two-dimensional worked case, `GL₂(𝔽₂) ≅ S₃`, is in
 * `TauCeti.faithfulSMulNonzeroVectors`: the action on the nonzero vectors is faithful over a
   nontrivial ring.
 * `TauCeti.natCard_nonzeroVectors`: there are `|R| ^ |n| - 1` nonzero vectors.
+* `Matrix.GeneralLinearGroup.smul_single_one`: an invertible matrix sends the basis vector `eᵢ`
+  to its column `i`.
 * `TauCeti.exists_smul_eq_of_ne_zero` and `TauCeti.isPretransitive_nonzeroVectors`: over a field
   the action on the nonzero vectors is transitive.
 -/
@@ -93,6 +95,24 @@ theorem natCard_nonzeroVectors [Finite R] :
   rw [Nat.card_congr e]
   omega
 
+end TauCeti
+
+namespace Matrix.GeneralLinearGroup
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R]
+
+/-- The image of the basis vector `eᵢ` under an invertible matrix is its column `i`. -/
+theorem smul_single_one (g : GL n R) (i : n) :
+    g • (Pi.single i (1 : R) : n → R) = fun j ↦ g j i := by
+  ext j
+  simp [Units.smul_def, Matrix.smul_eq_mulVec]
+
+end Matrix.GeneralLinearGroup
+
+namespace TauCeti
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
 section Field
 
 variable {K : Type*} [Field K]
@@ -107,11 +127,10 @@ theorem exists_smul_eq_of_ne_zero {v w : n → K} (hv : v ≠ 0) (hw : w ≠ 0) 
       (LinearEquiv.toSpanNonzeroSingleton K _ w hw))
   refine ⟨GeneralLinearGroup.toLin.symm (LinearMap.GeneralLinearGroup.ofLinearEquiv f), ?_⟩
   have hfv : f v = w := by
-    rw [← hf ⟨v, Submodule.mem_span_singleton_self v⟩, LinearEquiv.trans_apply,
-      ← LinearEquiv.coord, LinearEquiv.coord_self, LinearEquiv.toSpanNonzeroSingleton_one]
-  rw [Units.smul_def, Matrix.smul_eq_mulVec, ← Matrix.mulVecLin_apply,
-    ← GeneralLinearGroup.coe_toLin, MulEquiv.apply_symm_apply,
-    LinearMap.GeneralLinearGroup.coe_ofLinearEquiv, hfv]
+    have h1 : (LinearEquiv.toSpanNonzeroSingleton K _ v hv).symm _ = 1 :=
+      LinearEquiv.coord_self K _ v hv
+    simpa [h1] using (hf ⟨v, Submodule.mem_span_singleton_self v⟩).symm
+  simpa [Units.smul_def, ← Matrix.mulVecLin_apply, ← GeneralLinearGroup.coe_toLin] using hfv
 
 /-- The action of `GL n K` on the nonzero vectors of `n → K` is transitive. -/
 instance isPretransitive_nonzeroVectors : MulAction.IsPretransitive (GL n K) (nonzeroVectors n K) :=
