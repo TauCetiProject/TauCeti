@@ -59,6 +59,9 @@ pointwise conclusion to smoothness on one open neighbourhood.
   map, as a continuous linear equivalence.
 * `HasStrictFDerivAt.implicitCoordSource`: an open neighbourhood of the base point on which the
   derivative of the coordinate map stays invertible.
+* `HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented_congr` and
+  `HasStrictFDerivAt.implicitCoordSource_congr`: both constructions depend only on the equation
+  and the base point.
 * `HasStrictFDerivAt.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem`: the
   inverse homeomorphism is `C^n` at every point of the target coming from that neighbourhood.
 * `HasStrictFDerivAt.surjective_of_mem_implicitCoordSource`: the derivative of the equation stays
@@ -266,6 +269,25 @@ theorem isOpen_implicitCoordSource (hf : HasStrictFDerivAt f f' a) (hf' : f'.ran
 theorem mem_implicitCoordSource (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
     (hker : f'.ker.ClosedComplemented) : a ∈ hf.implicitCoordSource hf' hker :=
   HasStrictFDerivAt.mem_toOpenPartialHomeomorph_source _
+
+/-- The implicit-function homeomorphism depends only on the equation and the base point, not on
+how they are written: equal equations at equal base points give equal homeomorphisms. -/
+theorem implicitToOpenPartialHomeomorphOfComplemented_congr {g : E → F} {b : E}
+    (hf : HasStrictFDerivAt f f' a) (hg : HasStrictFDerivAt g f' b) (hfg : f = g) (hab : a = b)
+    (hf' : f'.range = ⊤) (hker : f'.ker.ClosedComplemented) :
+    hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker =
+      hg.implicitToOpenPartialHomeomorphOfComplemented g f' hf' hker := by
+  subst hfg hab
+  rfl
+
+/-- The neighbourhood `HasStrictFDerivAt.implicitCoordSource` depends only on the equation and the
+base point, not on how they are written. -/
+theorem implicitCoordSource_congr {g : E → F} {b : E} (hf : HasStrictFDerivAt f f' a)
+    (hg : HasStrictFDerivAt g f' b) (hfg : f = g) (hab : a = b) (hf' : f'.range = ⊤)
+    (hker : f'.ker.ClosedComplemented) :
+    hf.implicitCoordSource hf' hker = hg.implicitCoordSource hf' hker := by
+  subst hfg hab
+  rfl
 
 /-- **The derivative of the coordinate map stays invertible on
 `HasStrictFDerivAt.implicitCoordSource`.** If `f` has derivative `A` at a point of that

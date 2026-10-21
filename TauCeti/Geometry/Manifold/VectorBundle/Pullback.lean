@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
+public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 
 /-!
 # Regularity of maps into pullback bundles
@@ -17,6 +17,9 @@ initial-topology description of a pullback bundle.
 The criterion lets a map into a pullback bundle be checked without unfolding the pulled-back
 trivializations. It is particularly useful for tangent maps whose base points agree through a
 commuting square.
+
+The criterion applies to fibre bundles with a normed model fibre; the fibres themselves need
+only be nonempty topological spaces, without an additive or vector-space structure.
 -/
 
 public section
@@ -37,7 +40,7 @@ variable {𝕜 F EM EM' EX H H' HX B B' X K : Type*} [NontriviallyNormedField �
   [TopologicalSpace B] [ChartedSpace H B]
   [TopologicalSpace B'] [ChartedSpace H' B']
   [TopologicalSpace X] [ChartedSpace HX X]
-  {E : B → Type*} [∀ x, AddCommMonoid (E x)]
+  {E : B → Type*} [∀ x, Nonempty (E x)]
   [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
   [FiberBundle F E] [FunLike K B' B] [ContinuousMapClass K B' B] {n : WithTop ℕ∞}
 

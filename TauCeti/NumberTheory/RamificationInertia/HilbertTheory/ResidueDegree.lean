@@ -17,6 +17,7 @@ maximal ideal `P` of `B`. The degree formulas are `[L : D] = e * f`, `[D : K] = 
 `[L : E] = e * fᵢ`, and `[E : D] = fₛ`, where `fₛ` and `fᵢ` are the separable and inseparable
 residue degrees. The formulas for `[L : D]` and `[L : E]` assume `B/A` is a finite flat
 extension of domains; none of them assumes finiteness or separability of the residue fields.
+When the residue extension at `P` is separable, `fᵢ = 1` and so `[L : E] = e`.
 
 When `A` is a Dedekind domain with fraction field `K` and `B` a domain with fraction field `L`,
 the prime of the decomposition ring below `P` has ramification index and inertia degree one
@@ -83,6 +84,16 @@ theorem IsInertiaField.finrank_eq_ramificationIdx_mul_finInsepDegree [IsDomain A
       P.ramificationIdx A * Field.finInsepDegree (A ⧸ P.under A) (B ⧸ P) := by
   rw [← IsGaloisGroup.card_eq_finrank (inertia Gal(L/K) P) E L]
   exact P.card_inertia_eq_ramificationIdx_mul_finInsepDegree (R := A) (G := Gal(L/K))
+
+include K P in
+/-- When the residue extension at `P` is separable, the degree above the inertia field is the
+ramification index. This is Mathlib's `IsInertiaField.rank_left` with separability assumed only at
+`P` rather than at every prime over `P.under A`, and with `B` not required to be Dedekind. -/
+theorem IsInertiaField.finrank_eq_ramificationIdx [IsDomain A] [IsDomain B] [Module.Finite A B]
+    [Module.Flat A B] [P.IsMaximal] [Algebra.IsSeparable (A ⧸ P.under A) (B ⧸ P)] :
+    Module.finrank E L = P.ramificationIdx A := by
+  rw [IsInertiaField.finrank_eq_ramificationIdx_mul_finInsepDegree A K L P E,
+    (isSeparable_iff_finInsepDegree_eq_one _ _).mp inferInstance, mul_one]
 
 include K L P in
 /-- The degree of the inertia field over the decomposition field is the separable residue

@@ -39,8 +39,8 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 
 ## Main results
 
-* `LaurentSeries.coeff_expand_mul`, `LaurentSeries.coeff_expand_of_not_dvd`: the coefficients
-  of `expand R d f`.
+* `LaurentSeries.coeff_expand_mul`, `LaurentSeries.coeff_expand_of_not_dvd`,
+  `LaurentSeries.coeff_expand_of_lt_mul_order`: the coefficients of `expand R d f`.
 * `LaurentSeries.mem_range_expand_iff`: a Laurent series is in the image of `X ↦ X ^ d` exactly
   when all its exponents are divisible by `d`.
 * `LaurentSeries.expand_coe`: `expand` extends `PowerSeries.expand`.
@@ -107,6 +107,15 @@ theorem coeff_expand_mul (d : ℕ+) (f : R⸨X⸩) (k : ℤ) :
 theorem coeff_expand_of_not_dvd (d : ℕ+) (f : R⸨X⸩) {k : ℤ} (hk : ¬ (d : ℤ) ∣ k) :
     (expand R d f).coeff k = 0 :=
   embDomain_of_notMem_range fun ⟨j, hj⟩ ↦ hk ⟨j, hj.symm⟩
+
+/-- The coefficients of `expand R d f` below `d` times the order of `f` vanish. -/
+theorem coeff_expand_of_lt_mul_order (d : ℕ+) {f : R⸨X⸩} {k : ℤ} (hk : k < d * f.order) :
+    (expand R d f).coeff k = 0 := by
+  by_cases hd : (d : ℤ) ∣ k
+  · obtain ⟨j, rfl⟩ := hd
+    rw [coeff_expand_mul]
+    exact coeff_eq_zero_of_lt_order (lt_of_mul_lt_mul_left hk (by exact_mod_cast d.pos.le))
+  · exact coeff_expand_of_not_dvd d f hd
 
 /-- Expansion sends the monomial `r X ^ k` to `r X ^ (d * k)`. -/
 @[simp]

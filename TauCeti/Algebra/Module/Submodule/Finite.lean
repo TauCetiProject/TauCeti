@@ -29,6 +29,8 @@ scalar-restriction version of Mathlib's `Module.Finite.of_submodule_quotient`.
 
 ## Main declarations
 
+* `Submodule.finite_iff_fg_restrictScalars`: an `R`-submodule is finite over a compatible scalar
+  semiring `A` exactly when its restriction of scalars to `A` is finitely generated.
 * `Module.Finite.of_restrictScalars_submodule_quotient`: finiteness of a submodule and quotient
   over a compatible semiring implies finiteness of the ambient module.
 * `iSupIndep.finite_ne_bot_of_fg`: an independent family of submodules with finitely generated
@@ -55,6 +57,15 @@ instance instModuleFiniteToAddSubgroup {M : Type*} [AddCommGroup M] (p : Submodu
   inferInstanceAs (Module.Finite ℤ p)
 
 end TauCeti
+
+/-- An `R`-submodule is a finite module over a compatible scalar semiring `A` exactly when its
+restriction of scalars to `A` is finitely generated. -/
+theorem Submodule.finite_iff_fg_restrictScalars {A R M : Type*} [Semiring A] [Semiring R]
+    [AddCommMonoid M] [Module A M] [Module R M] [SMul A R] [IsScalarTower A R M]
+    (N : Submodule R M) : Module.Finite A N ↔ (N.restrictScalars A).FG := by
+  rw [← Module.Finite.iff_fg]
+  let e := (N.restrictScalarsEquiv A).restrictScalars A
+  exact ⟨fun _ ↦ .equiv e.symm, fun _ ↦ .equiv e⟩
 
 /-- If an `R`-submodule and its quotient are finite over a compatible scalar semiring `A`,
 then so is the ambient module. The quotient is formed over the ring `R`, so `A` need not

@@ -66,7 +66,7 @@ theorem inner_mfderiv_fst_of_ricciTensor_eq_smul_inner
   have hmetric := Φ.inner_mfderiv p u v
   rw [TauCeti.Manifold.inner_tangentSpace_prod,
     TauCeti.Manifold.inner_tangentSpace_prod] at hmetric
-  have hricci := Φ.ricciTensor_mfderiv p u v
+  have hricci := Φ.isLocalRiemannianIsometry.ricciTensor_mfderiv p u v
   simp only [TauCeti.Manifold.ricciTensor_leviCivitaConnection_prod, hM, hN, hM', hN'] at hricci
   apply (mul_left_cancel₀ (sub_ne_zero.mpr hab))
   linear_combination hricci - b * hmetric

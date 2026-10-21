@@ -223,11 +223,12 @@ theorem mfderiv_vertical_iff (Φ : Isom J SL2Tilde) (p : SL2Tilde)
   rw [← ricciTensor_eq_half_inner_iff, ← ricciTensor_eq_half_inner_iff]
   constructor
   · intro h v
-    simpa only [Φ.ricciTensor_mfderiv, Φ.inner_mfderiv] using h (mfderiv J J Φ p v)
+    simpa only [Φ.isLocalRiemannianIsometry.ricciTensor_mfderiv, Φ.inner_mfderiv] using
+      h (mfderiv J J Φ p v)
   · intro h v
     obtain ⟨w, hw⟩ := (Φ.mfderivToLinearIsometryEquiv p).surjective v
     rw [RiemannianIsometry.mfderivToLinearIsometryEquiv_apply] at hw
-    rw [← hw, Φ.ricciTensor_mfderiv, Φ.inner_mfderiv]
+    rw [← hw, Φ.isLocalRiemannianIsometry.ricciTensor_mfderiv, Φ.inner_mfderiv]
     exact h w
 
 end TauCeti.SL2Tilde

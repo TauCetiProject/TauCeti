@@ -6,16 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # The de Rham complex and its cohomology
 
 The exterior derivative on smooth real-valued forms defines the nonnegative de Rham cochain
 complex. Its cohomology is Mathlib's categorical homology, with a concrete linear class map from
-closed forms. This map is surjective and its kernel consists exactly of exact forms; exact
-forms in degree zero are zero.
+closed forms, `HomologicalComplex.moduleCatHomologyClass` of their inclusion. This map is
+surjective and its kernel consists exactly of exact forms; exact forms in degree zero are zero.
 
 The construction applies to manifolds of class `C²` with corners and does not require finite
 dimensionality, separation, or completeness of the model space.
@@ -23,8 +22,7 @@ dimensionality, separation, or completeness of the model space.
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 17.
-* Mathlib's `CochainComplex.of` and `ShortComplex.moduleCatHomologyIso` provide the complex
-  and the concrete presentation of its homology.
+* Mathlib's `CochainComplex.of` provides the complex.
 -/
 
 public section
@@ -64,6 +62,14 @@ theorem deRhamComplex_d (k : ℕ) :
   dsimp +instances [deRhamComplexXIso, deRhamComplex]
   simp
 
+/-- The differential of the de Rham complex, evaluated on an element. -/
+theorem deRhamComplex_d_apply (k : ℕ) (x : (deRhamComplex I M).X k) :
+    (deRhamComplex I M).d k (k + 1) x =
+      (deRhamComplexXIso I (k + 1)).inv
+        (mextDerivₗ I (F := ℝ) k ((deRhamComplexXIso I k).hom x)) := by
+  rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d I (M := M) k), ModuleCat.comp_apply,
+    ModuleCat.comp_apply, ConcreteCategory.hom_ofHom]
+
 variable (M) in
 /-- The submodule of smooth forms whose exterior derivative vanishes. -/
 def closedForms (k : ℕ) : Submodule ℝ (SmoothForm I M ℝ k) :=
@@ -75,6 +81,11 @@ theorem mem_closedForms {k : ℕ} (φ : SmoothForm I M ℝ k) :
     φ ∈ closedForms I M k ↔ mextDeriv φ.1 = 0 := by
   simp only [closedForms, LinearMap.mem_ker, ← Subtype.val_inj, mextDerivₗ_apply,
     Submodule.coe_zero]
+
+/-- A smooth form is closed precisely when its exterior derivative, as a smooth form, vanishes. -/
+theorem mem_closedForms_iff_mextDerivₗ_eq_zero {k : ℕ} (φ : SmoothForm I M ℝ k) :
+    φ ∈ closedForms I M k ↔ mextDerivₗ I (F := ℝ) k φ = 0 :=
+  LinearMap.mem_ker
 
 variable (M) in
 /-- Exact forms are exterior derivatives of smooth forms in positive degree, and zero in
@@ -99,101 +110,76 @@ theorem exactForms_le_closedForms (k : ℕ) : exactForms I M k ≤ closedForms I
   | succ k =>
     exact LinearMap.range_le_ker_iff.mpr (mextDerivₗ_comp_mextDerivₗ I (F := ℝ) k)
 
+/-- On a manifold of finite dimension at most `k`, every smooth `k`-form is closed. -/
+theorem mem_closedForms_of_finrank_le [FiniteDimensional ℝ E] {k : ℕ}
+    (h : Module.finrank ℝ E ≤ k) (φ : SmoothForm I M ℝ k) : φ ∈ closedForms I M k :=
+  (mem_closedForms I φ).mpr (mextDeriv_eq_zero_of_finrank_le h _)
+
 variable (M) in
 /-- De Rham cohomology is the categorical homology of the de Rham complex. -/
 abbrev deRhamCohomology (k : ℕ) : Type _ :=
   (deRhamComplex I M).homology k
 
-private def closedFormsEquivKernel (k : ℕ) :
-    closedForms I M k ≃ₗ[ℝ]
-      ((deRhamComplex I M).sc' (k - 1) k (k + 1)).moduleCatLeftHomologyData.K := by
-  dsimp +instances [ShortComplex.moduleCatLeftHomologyData, deRhamComplex, HomologicalComplex.sc',
-    HomologicalComplex.shortComplexFunctor']
-  exact LinearEquiv.ofEq _ _ (by simp [closedForms])
-
-private theorem closedFormsEquivKernel_i (k : ℕ) (φ : closedForms I M k) :
-    ((deRhamComplex I M).sc' (k - 1) k (k + 1)).moduleCatLeftHomologyData.i
-        (closedFormsEquivKernel I k φ) =
-      (deRhamComplexXIso I (M := M) k).inv φ.1 := by
-  dsimp +instances [closedFormsEquivKernel, deRhamComplexXIso, deRhamComplex,
-    ShortComplex.moduleCatLeftHomologyData, HomologicalComplex.sc',
-    HomologicalComplex.shortComplexFunctor']
-  rfl
-
-private theorem mem_range_incoming_iff (k : ℕ) (φ : SmoothForm I M ℝ k) :
-    (deRhamComplexXIso I (M := M) k).inv φ ∈
-        LinearMap.range ((deRhamComplex I M).sc' (k - 1) k (k + 1)).f.hom ↔
-      φ ∈ exactForms I M k := by
-  cases k with
-  | zero =>
-    simp only [deRhamComplexXIso, deRhamComplex, HomologicalComplex.sc',
-      HomologicalComplex.shortComplexFunctor', Nat.zero_sub, CochainComplex.of.d,
-      Nat.reduceAdd, Nat.one_ne_zero, ↓reduceDIte, exactForms, Submodule.mem_bot]
-    constructor
-    · rintro ⟨ψ, hψ⟩
-      exact hψ.symm
-    · intro hφ
-      exact ⟨0, hφ.symm⟩
-  | succ k =>
-    simp [deRhamComplexXIso, deRhamComplex, HomologicalComplex.sc',
-      HomologicalComplex.shortComplexFunctor', exactForms, -LinearMap.mem_range]
-    rfl
-
-private theorem mem_range_toCycles_iff (k : ℕ) (φ : closedForms I M k) :
-    closedFormsEquivKernel I k φ ∈
-        LinearMap.range
-          ((deRhamComplex I M).sc' (k - 1) k (k + 1)).moduleCatLeftHomologyData.f'.hom ↔
-      φ.1 ∈ exactForms I M k := by
-  let S := (deRhamComplex I M).sc' (k - 1) k (k + 1)
-  have hmem : closedFormsEquivKernel I k φ ∈ LinearMap.range S.moduleCatLeftHomologyData.f'.hom ↔
-      S.moduleCatLeftHomologyData.i (closedFormsEquivKernel I k φ) ∈ LinearMap.range S.f.hom := by
-    -- Evaluate the range equation on the kernel carrier with its own module instances.
-    exact Iff.of_eq (congrArg (fun p : Submodule ℝ (LinearMap.ker S.g.hom) ↦
-      (show LinearMap.ker S.g.hom from closedFormsEquivKernel I k φ) ∈ p)
-        (LinearMap.range_codRestrict _ S.f.hom S.moduleCat_zero_apply))
-  rw [closedFormsEquivKernel_i] at hmem
-  exact hmem.trans (mem_range_incoming_iff I k φ.1)
-
-private def concreteHomologyIso (k : ℕ) :
-    ((deRhamComplex I M).sc' (k - 1) k (k + 1)).moduleCatLeftHomologyData.H ≅
-      (deRhamComplex I M).homology k :=
-  ((deRhamComplex I M).sc' (k - 1) k (k + 1)).moduleCatHomologyIso.symm ≪≫
-    ((deRhamComplex I M).homologyIsoSc' (k - 1) k (k + 1)
-      (by
-        cases k with
-        | zero => exact (ComplexShape.up ℕ).prev_eq_self' 0 (by simp)
-        | succ k => exact (ComplexShape.up ℕ).prev_eq' (ComplexShape.up_mk k (k + 1) rfl))
-      ((ComplexShape.up ℕ).next_eq' (ComplexShape.up_mk k (k + 1) rfl))).symm
+/-- A closed form, viewed in the de Rham complex, is killed by the differential. -/
+theorem deRhamComplex_d_eq_zero_of_mem_closedForms (k : ℕ) {φ : SmoothForm I M ℝ k}
+    (hφ : φ ∈ closedForms I M k) :
+    (deRhamComplex I M).d k (k + 1) ((deRhamComplexXIso I k).inv φ) = 0 := by
+  rw [deRhamComplex_d_apply]
+  simp [(mem_closedForms_iff_mextDerivₗ_eq_zero I φ).mp hφ]
 
 namespace deRhamCohomology
 
-/-- The cohomology class of a closed smooth form, using Mathlib's canonical comparison
- between categorical module homology and the quotient of cycles by boundaries. -/
+/-- The cohomology class of a closed smooth form, the homology class of the corresponding cycle
+of the de Rham complex. -/
 def mk (k : ℕ) : closedForms I M k →ₗ[ℝ] deRhamCohomology I M k :=
-  (concreteHomologyIso I k).hom.hom.comp
-    ((((deRhamComplex I M).sc' (k - 1) k (k + 1)).moduleCatLeftHomologyData.π).hom.comp
-      (closedFormsEquivKernel I k).toLinearMap)
+  (deRhamComplex I M).moduleCatHomologyClass (Z := closedForms I M k) (CochainComplex.next ℕ k)
+    ((deRhamComplexXIso I k).inv.hom ∘ₗ (closedForms I M k).subtype) fun φ ↦ by
+      rw [LinearMap.comp_apply]
+      exact deRhamComplex_d_eq_zero_of_mem_closedForms I k φ.2
+
+/-- The class map is the homology class map of the inclusion of closed forms into the de Rham
+complex. -/
+theorem mk_eq_moduleCatHomologyClass (k : ℕ) :
+    mk I (M := M) k =
+      (deRhamComplex I M).moduleCatHomologyClass (Z := closedForms I M k)
+        (CochainComplex.next ℕ k) ((deRhamComplexXIso I k).inv.hom ∘ₗ (closedForms I M k).subtype)
+        fun φ ↦ by
+          rw [LinearMap.comp_apply]
+          exact deRhamComplex_d_eq_zero_of_mem_closedForms I k φ.2 :=
+  (rfl)
 
 /-- Every de Rham cohomology class is represented by a closed smooth form. -/
 theorem mk_surjective (k : ℕ) : Function.Surjective (mk I (M := M) k) := by
-  exact ((concreteHomologyIso I k).toLinearEquiv.surjective.comp
-    (Submodule.mkQ_surjective _)).comp (closedFormsEquivKernel I k).surjective
+  rw [mk]
+  refine (deRhamComplex I M).moduleCatHomologyClass_surjective _ _ _ fun x hx ↦ ?_
+  rw [deRhamComplex_d_apply] at hx
+  refine ⟨⟨(deRhamComplexXIso I k).hom x, (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mpr
+    ((LinearEquiv.map_eq_zero_iff (deRhamComplexXIso I (M := M) (k + 1)).toLinearEquiv.symm).mp
+      hx)⟩, ?_⟩
+  simp
 
 /-- A closed form represents zero precisely when it is exact. -/
 @[simp]
 theorem mk_eq_zero_iff (k : ℕ) (φ : closedForms I M k) :
     mk I k φ = 0 ↔ φ.1 ∈ exactForms I M k := by
-  simp only [mk, LinearMap.comp_apply]
-  rw [← map_zero (concreteHomologyIso I k).hom.hom,
-    ((ModuleCat.mono_iff_injective (concreteHomologyIso I k).hom).mp inferInstance).eq_iff]
-  let h := ((deRhamComplex I M).sc' (k - 1) k (k + 1)).moduleCatLeftHomologyData
-  let T := ShortComplex.mk h.f' h.π h.f'_π
-  have ht : T.Exact := T.exact_of_g_is_cokernel h.hπ'
-  have hz : h.π.hom (closedFormsEquivKernel I k φ) = 0 ↔
-      closedFormsEquivKernel I k φ ∈ LinearMap.range h.f'.hom := by
-    rw [ht.moduleCat_range_eq_ker]
-    rfl
-  exact hz.trans (mem_range_toCycles_iff I k φ)
+  cases k with
+  | zero =>
+    rw [mk, (deRhamComplex I M).moduleCatHomologyClass_eq_zero_iff _ _ _
+        CochainComplex.prev_nat_zero, exactForms_zero, Submodule.mem_bot,
+      (deRhamComplex I M).shape 0 0 (by simp)]
+    simp only [ModuleCat.hom_zero, LinearMap.zero_apply, exists_const, LinearMap.comp_apply,
+      Submodule.subtype_apply]
+    exact ⟨fun h ↦ by simpa using congrArg (deRhamComplexXIso I (M := M) 0).hom.hom h.symm,
+      fun h ↦ by simp [h]⟩
+  | succ k =>
+    rw [mk, (deRhamComplex I M).moduleCatHomologyClass_eq_zero_iff _ _ _
+        (CochainComplex.prev_nat_succ k), exactForms_succ, LinearMap.mem_range]
+    refine ⟨fun ⟨y, hy⟩ ↦ ⟨(deRhamComplexXIso I k).hom y, ?_⟩,
+      fun ⟨ψ, hψ⟩ ↦ ⟨(deRhamComplexXIso I k).inv ψ, ?_⟩⟩
+    · rw [deRhamComplex_d_apply] at hy
+      simpa using congrArg (deRhamComplexXIso I (M := M) (k + 1)).hom.hom hy
+    · rw [deRhamComplex_d_apply]
+      simp [hψ]
 
 /-- The kernel of the cycle-class map is exactly the submodule of exact forms inside closed
  forms. -/
