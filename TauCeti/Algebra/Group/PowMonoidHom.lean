@@ -141,15 +141,14 @@ theorem powMonoidHom_range_ne_top_of_not_coprime {G : Type*} [CommGroup G] [Fini
   exact hp.one_lt.ne hx
 
 /-- In a commutative group all of whose elements satisfy `y ^ n = 1`, the `d`-th powers are
-exactly the `gcd(n, d)`-th powers. Every `d`-th power is a `gcd(n, d)`-th power since `gcd(n, d)`
-divides `d`; conversely, writing `gcd(n, d) = n * a + d * b` (Bézout),
-`y ^ gcd(n, d) = (y ^ b) ^ d` because `y ^ n = 1`. For a group of order `N` this applies with
-`n = N` (Mathlib's `pow_card_eq_one'`). -/
+exactly the `gcd(n, d)`-th powers. For a group of order `N` this applies with `n = N` (Mathlib's
+`pow_card_eq_one'`). -/
 @[to_additive /-- In an additive commutative group all of whose elements satisfy `n • y = 0`, the
 `d`-th multiples are exactly the `gcd(n, d)`-th multiples. -/]
 theorem range_powMonoidHom_gcd {G : Type*} [CommGroup G] {n : ℕ} (hn : ∀ y : G, y ^ n = 1)
     (d : ℕ) : (powMonoidHom (n.gcd d) : G →* G).range = (powMonoidHom d : G →* G).range := by
   refine le_antisymm ?_ ?_
+  -- Bézout: writing `gcd(n, d) = n * a + d * b`, `y ^ gcd(n, d) = (y ^ b) ^ d` as `y ^ n = 1`.
   · rintro _ ⟨y, rfl⟩
     refine ⟨y ^ n.gcdB d, ?_⟩
     have ha : y ^ ((n : ℤ) * n.gcdA d) = 1 := by simp [zpow_mul, hn]
@@ -157,6 +156,7 @@ theorem range_powMonoidHom_gcd {G : Type*} [CommGroup G] {n : ℕ} (hn : ∀ y :
       rw [mul_comm, zpow_mul, zpow_natCast]
     simp only [powMonoidHom_apply, hb, ← zpow_natCast y (n.gcd d), Nat.gcd_eq_gcd_ab, zpow_add,
       ha, one_mul]
+  -- Every `d`-th power is a `gcd(n, d)`-th power since `gcd(n, d)` divides `d`.
   · rintro _ ⟨y, rfl⟩
     refine ⟨y ^ (d / n.gcd d), ?_⟩
     rw [powMonoidHom_apply, powMonoidHom_apply, ← pow_mul,
