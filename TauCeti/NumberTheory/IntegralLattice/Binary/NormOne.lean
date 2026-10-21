@@ -86,7 +86,7 @@ private theorem coe_toSL (g : specialOrthogonalGroup L) :
 private theorem toSL_mem_stabilizer (g : specialOrthogonalGroup L) :
     toSL b g ∈ stabilizer SL(2, ℤ) (L.binaryNormForm b) := by
   have h := L.binaryNormForm_eq_inv_smul b (b.map (g : Isometry L L).carrierEquiv) (toSL b g)
-    (by rw [coe_toSL, LinearMap.toMatrix_eq_basisToMatrix, Basis.coe_map]; rfl)
+    (by rw [coe_toSL, LinearMap.toMatrix_eq_basisToMatrix, Basis.coe_map, LinearEquiv.coe_coe])
   rw [← Isometry.carrierBasisEquiv_apply, binaryNormForm_map_isometry] at h
   exact (Subgroup.inv_mem_iff _).mp (mem_stabilizer_iff.mpr h.symm)
 
@@ -178,16 +178,6 @@ theorem map_toMatrix_specialOrthogonalGroupEquivNormOneUnits_symm_apply (hL : L.
     specialOrthogonalGroupEquivNormOneUnits, MulEquiv.symm_trans_apply, MulEquiv.symm_trans_apply,
     toMatrix_specialOrthogonalGroupEquivStabilizer_symm_apply, MulEquiv.subgroupCongr_symm_apply]
 
-/-- A rank-two lattice with nonzero primitive discriminant has nonzero form. -/
-private theorem form_ne_zero_of_binaryDiscriminant_ne_zero (h : L.binaryDiscriminant hV ≠ 0) :
-    L.form ≠ 0 := by
-  intro hL
-  apply h
-  rw [L.binaryDiscriminant_eq_discrim_primPart
-    (finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)) hV,
-    (binaryNormForm_eq_zero_iff _ _).mpr hL]
-  simp [BinaryQuadraticForm.discrim_def, discrim]
-
 /-- **Negative discriminant.** For a rank-two lattice of negative primitive discriminant, the
 proper isometries are as many as the units of its quadratic order. The unit count is
 `QuadraticOrder.card_units_of_neg`: `6` for `Δ = -3`, `4` for `Δ = -4`, and `2` otherwise. -/
@@ -196,7 +186,7 @@ theorem card_specialOrthogonalGroup_of_binaryDiscriminant_neg
     Nat.card (specialOrthogonalGroup L) = Nat.card (L.binaryOrder hV)ˣ := by
   rw [Nat.card_congr (specialOrthogonalGroupEquivNormOneUnits
     (finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)) hV
-    (form_ne_zero_of_binaryDiscriminant_ne_zero hV hneg.ne)).toEquiv,
+    (L.form_ne_zero_of_binaryDiscriminant_ne_zero hV hneg.ne)).toEquiv,
     QuadraticOrder.normOneUnits_eq_top_of_neg _ _ hneg, Subgroup.card_top, binaryOrder_def]
 
 /-- **Positive nonsquare discriminant.** A rank-two lattice whose primitive discriminant is positive
@@ -205,7 +195,7 @@ theorem infinite_specialOrthogonalGroup_of_binaryDiscriminant_pos_of_not_isSquar
     (hpos : 0 < L.binaryDiscriminant hV) (hns : ¬ IsSquare (L.binaryDiscriminant hV)) :
     Infinite (specialOrthogonalGroup L) :=
   (specialOrthogonalGroupEquivNormOneUnits (finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV))
-    hV (form_ne_zero_of_binaryDiscriminant_ne_zero hV hpos.ne')).toEquiv.infinite_iff.mpr
+    hV (L.form_ne_zero_of_binaryDiscriminant_ne_zero hV hpos.ne')).toEquiv.infinite_iff.mpr
     (QuadraticOrder.infinite_normOneUnits_of_pos_of_not_isSquare _ _ hpos hns)
 
 /-- **Positive nonsquare discriminant.** A rank-two lattice whose primitive discriminant is positive
@@ -230,7 +220,7 @@ theorem card_specialOrthogonalGroup_of_isSquare_binaryDiscriminant
     exact QuadraticOrder.card_normOneUnits_sq s hs₀
   rw [Nat.card_congr (specialOrthogonalGroupEquivNormOneUnits
     (finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)) hV
-    (form_ne_zero_of_binaryDiscriminant_ne_zero hV h₀)).toEquiv]
+    (L.form_ne_zero_of_binaryDiscriminant_ne_zero hV h₀)).toEquiv]
   exact key _ _ (hs.trans (sq s).symm)
 
 end TauCeti.IntegralLattice

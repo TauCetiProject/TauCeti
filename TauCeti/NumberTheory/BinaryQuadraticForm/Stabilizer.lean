@@ -36,8 +36,6 @@ transport along an equality of discriminants.
 
 ## Main results
 
-* `TauCeti.BinaryQuadraticForm.stabilizer_primPart`: a form and its primitive part have the same
-  automorphs.
 * `TauCeti.BinaryQuadraticForm.stabilizerEquivNormOneUnits`: for primitive `f` of discriminant
   `D`, the automorphs of `f` are the norm-one units of the order of discriminant `D`.
 * `TauCeti.BinaryQuadraticForm.map_stabilizerEquivNormOneUnits_symm_apply`: the automorph attached
@@ -56,29 +54,9 @@ open scoped MatrixGroups
 
 namespace TauCeti.BinaryQuadraticForm
 
-/-- A form and its primitive part have the same proper automorphs. -/
-@[simp]
-theorem stabilizer_primPart (f : BinaryQuadraticForm ℤ) :
-    stabilizer SL(2, ℤ) f.primPart = stabilizer SL(2, ℤ) f := by
-  ext γ
-  simp only [mem_stabilizer_iff]
-  constructor
-  · intro h
-    rw [← content_smul_primPart f, smul_comm, h]
-  · intro h
-    rw [← primPart_smul, h]
-
 variable (f : BinaryQuadraticForm ℤ) {D : ℤ}
 
 /-! ### The regular representation of the order -/
-
-/-- The discriminant and the middle coefficient have the same parity. -/
-private theorem two_mul_ediv_two (hfD : f.discrim = D) : 2 * ((D - f.b) / 2) = D - f.b := by
-  apply Int.mul_ediv_cancel'
-  obtain ⟨k, hk⟩ := Int.even_mul_pred_self f.b
-  refine ⟨k - 2 * f.a * f.c, ?_⟩
-  rw [← hfD, discrim_def, _root_.discrim]
-  linear_combination hk
 
 /-- `f` has discriminant `D² - 4 n` for the norm `n = -(D - D²)/4` of `(D + √D)/2`. -/
 private theorem discrim_eq_sq_sub_four_mul (hfD : f.discrim = D) :
@@ -208,7 +186,7 @@ private theorem unitaryToStabilizer_surjective (hfD : f.discrim = D) (hf : f.IsP
     conv_rhs => rw [← hconj]
     rw [Matrix.mul_assoc _ _ (γ : Matrix (Fin 2) (Fin 2) ℤ), ← SpecialLinearGroup.coe_mul,
       inv_mul_cancel, SpecialLinearGroup.coe_one, Matrix.mul_one]
-  have he := two_mul_ediv_two f hfD
+  have he := two_mul_ediv_two_of_discrim_eq (discrim_eq_sq_sub_four_mul f hfD)
   rw [generatorMatrix_eq] at hcomm
   have h₀₀ := congrFun₂ hcomm 0 0
   have h₀₁ := congrFun₂ hcomm 0 1
@@ -284,7 +262,7 @@ theorem map_stabilizerEquivNormOneUnits_symm_apply (hf : f.IsPrimitive) (hfD : f
   have hsymm : ((stabilizerEquivNormOneUnits hf hfD).symm u : SL(2, ℤ)) =
       (unitaryToStabilizer f hfD z : SL(2, ℤ)) := (rfl)
   have he : (2 : ℚ) * (((D - f.b) / 2 : ℤ) : ℚ) = D - f.b := by
-    exact_mod_cast two_mul_ediv_two f hfD
+    exact_mod_cast two_mul_ediv_two_of_discrim_eq (discrim_eq_sq_sub_four_mul f hfD)
   rw [hsymm, coe_unitaryToStabilizer, regularRep_eq, hu, QuadraticOrder.lift_apply]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
