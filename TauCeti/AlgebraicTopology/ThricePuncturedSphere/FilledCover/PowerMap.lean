@@ -24,8 +24,6 @@ two of the three points.
   cyclic triple `TauCeti.PermutationTriple.cyclicTriple n`
   (`TauCeti.AnalyticBelyiPair.isoClass_monodromyTriple_eq_cyclicTriple_iff`), which is also the
   triple of `z ↦ z ^ n`. In particular the surface of such a pair is the Riemann sphere.
-* The pairs of degree one are exactly the trivial pair, the identity of the sphere
-  (`TauCeti.AnalyticBelyiPair.nonempty_iso_pow_one_iff`).
 * A pair with at most one branch value has degree one
   (`TauCeti.AnalyticBelyiPair.degree_eq_one_of_branchValues_subset_singleton`): two of the
   components of its triple are the identity, so the third is too, and a connected triple with
@@ -75,19 +73,10 @@ theorem nonempty_iso_pow_iff {P : AnalyticBelyiPair.{0}} {n : ℕ} (hn : n ≠ 0
   · rw [nonempty_iso_iff_isoClass_monodromyTriple_eq (ν.trans (finCongr hdeg)), hpow,
       (P.isoClass_monodromyTriple_eq_cyclicTriple_iff _).2 h]
 
-/-- **The analytic Belyi pairs of degree one are trivial**: they are the pairs isomorphic to the
-Riemann sphere with the identity map, the power map `z ↦ z ^ 1`. -/
-theorem nonempty_iso_pow_one_iff {P : AnalyticBelyiPair.{0}} :
-    Nonempty (P.Iso (pow one_ne_zero)) ↔ degree P.β = 1 := by
-  refine (P.nonempty_iso_pow_iff one_ne_zero).trans (and_iff_left_of_imp fun hdeg ↦ ?_)
-  obtain ⟨ν⟩ := P.nonempty_restrict_preimage_singleton_equiv basePt
-  -- In degree one every permutation, in particular `σ1`, is the identity.
-  exact (P.monodromyTriple_σ1_eq_one_iff (ν.trans (finCongr hdeg))).1 (Subsingleton.elim _ _)
-
 /-- **An analytic Belyi pair with at most one branch value has degree one**, so it is trivial
-(`TauCeti.AnalyticBelyiPair.nonempty_iso_pow_one_iff`). Its Belyi map is unramified over two of the
-three points `0`, `1` and `∞`, so two of the components of its monodromy triple are the identity,
-hence all three are, and the connected triple with trivial monodromy has one sheet. -/
+(`TauCeti.AnalyticBelyiPair.degree_β_eq_one_iff_nonempty_iso`). Its Belyi map is unramified over
+two of the three points `0`, `1` and `∞`, so two of the components of its monodromy triple are the
+identity, hence all three are, and the connected triple with trivial monodromy has one sheet. -/
 theorem degree_eq_one_of_branchValues_subset_singleton (P : AnalyticBelyiPair.{0}) {q : OnePoint ℂ}
     (hq : P.β.branchValues ⊆ {q}) : degree P.β = 1 := by
   obtain ⟨ν⟩ := P.nonempty_restrict_preimage_singleton_equiv basePt
