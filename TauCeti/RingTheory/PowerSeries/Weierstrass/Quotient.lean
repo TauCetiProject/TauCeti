@@ -16,7 +16,9 @@ polynomial with its polynomial quotient. Preparation extends this description to
 restricted series with a unit dominant coefficient. In particular, these quotients are finite free
 over the coefficient ring. This is the finite-module step in the induction proving noetherianity
 of Tate algebras: after making a series distinguished in the last variable, its quotient is finite
-over the Tate algebra in the remaining variables.
+over the Tate algebra in the remaining variables. The same comparison shows that a distinguished
+monic polynomial which is irreducible as a restricted series is irreducible as a polynomial; this
+is the step in the induction proving that Tate algebras are unique factorisation domains.
 
 The radius may be any positive real number, and the coefficients may lie in a complete ultrametric
 normed commutative ring with multiplicative norm. No noetherian or field hypothesis is required.
@@ -141,6 +143,30 @@ theorem IsDistinguished.polynomialQuotientEquiv_symm_mk_of_mul_add_eq
     rw [polynomialToRestricted_trunc_eq_of_coeff_eq_zero r hr, ← hqr, map_add, map_mul]
     simp
   rw [heq, hp.polynomialQuotientEquiv_symm_mk hc hm]
+
+/-- A distinguished monic polynomial which is irreducible as a restricted series is irreducible
+as a polynomial. -/
+theorem IsDistinguished.irreducible_of_irreducible_polynomialToRestricted
+    (hp : IsDistinguished c s (p : PowerSeries R)) (hc : 0 < c)
+    (hm : p.IsMonicOfDegree s) (h : Irreducible (polynomialToRestricted c p)) :
+    Irreducible p := by
+  -- A factor whose image is a unit of restricted series is a unit modulo `p`, by the quotient
+  -- comparison, and hence a unit, since it divides `p`.
+  have key (a b : Polynomial R) (hab : p = a * b) (ha : IsUnit (polynomialToRestricted c a)) :
+      IsUnit a := by
+    have hmk : IsUnit (Ideal.Quotient.mk (Ideal.span {p}) a) := by
+      rw [← isUnit_map_iff (hp.polynomialQuotientEquiv hc hm), polynomialQuotientEquiv_mk]
+      exact ha.map _
+    obtain ⟨y, hy⟩ := isUnit_iff_exists_inv.mp hmk
+    obtain ⟨d, rfl⟩ := Ideal.Quotient.mk_surjective y
+    rw [← map_mul, ← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq,
+      Ideal.mem_span_singleton, hab] at hy
+    exact isUnit_of_dvd_one <| (dvd_sub_right (dvd_mul_right a d)).mp
+      ((dvd_mul_right a b).trans hy)
+  refine ⟨fun hu ↦ h.not_isUnit (hu.map _), fun a b hab ↦ ?_⟩
+  rcases h.isUnit_or_isUnit (by rw [hab, map_mul]) with ha | hb
+  · exact Or.inl (key a b hab ha)
+  · exact Or.inr (key b a (hab.trans (mul_comm a b)) hb)
 
 /-- A distinguished restricted series with a unit dominant coefficient has the same quotient
 algebra as a monic polynomial of its distinguished degree. -/
