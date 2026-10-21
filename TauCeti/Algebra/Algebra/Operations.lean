@@ -18,8 +18,6 @@ elements.
 ## Main results
 
 * `Submodule.prod_mem_pow_card`: `∏_{i ∈ s} xᵢ ∈ M^{#s}` when every `xᵢ` lies in `M`.
-* `Submodule.mul_prod_erase_mem_pow_card`: `y ∏_{j ∈ s, j ≠ i} xⱼ ∈ M^{#s}` for `i ∈ s`, when `y`
-  and every `xⱼ` with `j ≠ i` lie in `M`.
 -/
 
 public section
@@ -41,13 +39,5 @@ theorem prod_mem_pow_card {s : Finset ι} {x : ι → A} (hx : ∀ i ∈ s, x i 
   | insert i s hi ih =>
     rw [prod_insert hi, card_insert_of_notMem hi, pow_succ']
     exact mul_mem_mul (hx i (mem_insert_self i s)) (ih fun j hj ↦ hx j (mem_insert_of_mem hj))
-
-/-- Replacing the factor at `i ∈ s` of a product of `#s` elements by another element `y` of `M`
-gives an element of `M^{#s}`. -/
-theorem mul_prod_erase_mem_pow_card [DecidableEq ι] {s : Finset ι} {x : ι → A} {i : ι}
-    (hi : i ∈ s) {y : A} (hy : y ∈ M) (hx : ∀ j ∈ s.erase i, x j ∈ M) :
-    y * ∏ j ∈ s.erase i, x j ∈ M ^ #s := by
-  rw [← card_erase_add_one hi, pow_succ']
-  exact mul_mem_mul hy (prod_mem_pow_card hx)
 
 end Submodule
