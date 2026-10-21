@@ -138,6 +138,11 @@ noncomputable def nestedRefinementBound (δ : ℝ) (l : ℕ) : ℕ :=
 theorem nestedRefinementBound_def (δ : ℝ) (l : ℕ) :
     nestedRefinementBound δ l = bound δ (initialBound δ 0 * l) := (rfl)
 
+/-- The complexity bound for exactly refining regularity is at least the number of parts being
+refined. -/
+theorem le_nestedRefinementBound (δ : ℝ) (l : ℕ) : l ≤ nestedRefinementBound δ l :=
+  (Nat.le_mul_of_pos_left l (initialBound_pos δ 0)).trans (le_bound δ _)
+
 /-- The complexity bound for `exists_regular_equipartition_almost_refining`: the bound of
 Szemerédi's regularity lemma with at least `⌈2 * l / ε⌉₊` initial parts. It depends only on `ε`
 and the number `l` of parts of the seed partition. -/
