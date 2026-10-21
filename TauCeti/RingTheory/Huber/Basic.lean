@@ -503,6 +503,7 @@ theorem le_powerBoundedSubring [NonarchimedeanRing A] (P : PairOfDefinition A) :
     P.ringOfDefinition ≤ powerBoundedSubring A := fun _ ha ↦
   mem_powerBoundedSubring.mpr (P.isBounded_ringOfDefinition.isPowerBounded_of_mem ha)
 
+open TauCeti in
 /-- The image of a pair of definition along an open quotient map `f : A →+* B`: its ring of
 definition is the image of `A₀` and its ideal of definition is the image of `I`. -/
 def map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
@@ -526,7 +527,7 @@ def map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
         exact hf.isOpenMap _ P.isOpen_ringOfDefinition
       idealOfDefinition := P.idealOfDefinition.map f₀
       fg_idealOfDefinition := P.fg_idealOfDefinition.map f₀
-      isAdic_idealOfDefinition := isAdic_map_of_isOpenQuotientMap P.isAdic_idealOfDefinition
+      isAdic_idealOfDefinition := P.isAdic_idealOfDefinition.map_of_isOpenQuotientMap
         f₀ ⟨hf₀_surj, hf₀_cont, hf₀_open⟩ }
 
 /-- The ring of definition of the image of a pair of definition along an open quotient map is the
