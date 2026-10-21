@@ -95,10 +95,9 @@ lemma contractTail_zero : (0 : G.DegreeDecoration).contractTail hv = 0 :=
 /-- Contracting a tail lowers the total degree by the degree of the tail. -/
 theorem totalDegree_contractTail :
     (D.contractTail hv).totalDegree + D.componentDegree v = D.totalDegree := by
-  have : ∑ w, (D.contractTail hv).componentDegree w = ∑ w : {w // w ≠ v}, D.componentDegree w :=
-    rfl
   rw [totalDegree_def, totalDegree_def, Fintype.sum_eq_add_sum_subtype_ne D.componentDegree v,
-    this, add_comm]
+    ← sum_vertex_contractTail hv D.componentDegree, add_comm]
+  simp only [componentDegree_contractTail]
 
 /-- Contracting a tail changes only the weighted log-canonical degree of its attachment, which
 changes by the number of markings on the tail minus one. -/
@@ -137,10 +136,9 @@ lemma contractBridge_zero : (0 : G.DegreeDecoration).contractBridge hv hloop hm 
 /-- Contracting a bridge lowers the total degree by the degree of the bridge. -/
 theorem totalDegree_contractBridge :
     (D.contractBridge hv hloop hm).totalDegree + D.componentDegree v = D.totalDegree := by
-  have : ∑ w, (D.contractBridge hv hloop hm).componentDegree w =
-      ∑ w : {w // w ≠ v}, D.componentDegree w := rfl
   rw [totalDegree_def, totalDegree_def, Fintype.sum_eq_add_sum_subtype_ne D.componentDegree v,
-    this, add_comm]
+    ← sum_vertex_contractBridge hv hloop hm D.componentDegree, add_comm]
+  simp only [componentDegree_contractBridge]
 
 /-- Contracting a bridge does not change any weighted log-canonical degree. -/
 @[simp]
