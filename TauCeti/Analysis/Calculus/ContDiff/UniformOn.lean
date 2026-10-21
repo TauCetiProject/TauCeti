@@ -72,7 +72,6 @@ theorem uniformContDiffOn_zero_iff : UniformContDiffOn 𝕜 0 G s ↔ UniformCon
 
 /-- Uniform `C^{n+1}` regularity: uniform continuity, and a derivative that is bounded on `s` and
 uniformly `C^n`. -/
-@[simp]
 theorem uniformContDiffOn_succ_iff {n : ℕ} :
     UniformContDiffOn 𝕜 (n + 1) G s ↔ UniformContinuousOn G s ∧
       ∃ G' : X → X →L[𝕜] Y, (∀ x ∈ s, HasFDerivAt G (G' x) x) ∧ (∃ C, ∀ x ∈ s, ‖G' x‖ ≤ C) ∧
