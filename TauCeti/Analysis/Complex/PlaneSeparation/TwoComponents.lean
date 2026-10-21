@@ -117,9 +117,8 @@ private theorem mem_connectedComponentIn_of_zerothHomotopy_mk_eq {C : Set ℂ} (
   have hcc : connectedComponent
       (⟨_, planeToSphere_mem_compl hu.2⟩ : ↥(planeToSphere '' C)ᶜ) =
         connectedComponent ⟨_, planeToSphere_mem_compl hv⟩ :=
-    -- `toConnectedComponents` sends a path class to the class of its connected component, and
-    -- equality of those classes is by definition equality of connected components
-    Quotient.exact (congrArg ZerothHomotopy.toConnectedComponents huv)
+    -- `toConnectedComponents` sends a path class to the class of its connected component
+    ConnectedComponents.coe_eq_coe.mp (congrArg ZerothHomotopy.toConnectedComponents huv)
   obtain ⟨v', hv', hvv'⟩ := (isClopen_preimage_image_planeToSphere hC hu).connectedComponent_subset
     ⟨u, mem_connectedComponentIn hu.2, rfl⟩ (hcc.symm ▸ mem_connectedComponent)
   exact isOpenEmbedding_planeToSphere.injective hvv' ▸ hv'
@@ -134,8 +133,7 @@ theorem IsJordanCurve.mem_connectedComponentIn_of_mem_filledHull_sdiff {C : Set 
   obtain ⟨w, hw⟩ := nonempty_compl_filledHull h.isCompact.isBounded
   have hwC : w ∉ C := fun hwC => hw (subset_filledHull hwC)
   have hout : ∀ {u : ℂ}, u ∈ filledHull C \ C → w ∉ connectedComponentIn Cᶜ u :=
-    fun hu hwu =>
-      hw (mem_filledHull_iff.mpr (connectedComponentIn_eq hwu ▸ mem_filledHull_iff.mp hu.1))
+    fun hu hwu => hw ((mem_filledHull_iff_of_mem_connectedComponentIn hwu).mpr hu.1)
   -- `x`, `y` and `w` lie in three different path components of the complement in the sphere
   have hsep := @mem_connectedComponentIn_of_zerothHomotopy_mk_eq C h.isClosed
   have hxy' := fun e => hxy (hsep hx hy.2 e)
@@ -158,9 +156,8 @@ Jordan curve `C ⊆ ℂ` minus `C` is the component of `Cᶜ` through any of its
 theorem IsJordanCurve.filledHull_sdiff_eq_connectedComponentIn {C : Set ℂ} (h : IsJordanCurve C)
     {x : ℂ} (hx : x ∈ filledHull C \ C) : filledHull C \ C = connectedComponentIn Cᶜ x := by
   refine Subset.antisymm (fun y hy => h.mem_connectedComponentIn_of_mem_filledHull_sdiff hx hy)
-    fun y hy => ⟨?_, connectedComponentIn_subset _ _ hy⟩
-  rw [mem_filledHull_iff, ← connectedComponentIn_eq hy]
-  exact mem_filledHull_iff.mp hx.1
+    fun y hy => ⟨(mem_filledHull_iff_of_mem_connectedComponentIn hy).mpr hx.1,
+      connectedComponentIn_subset _ _ hy⟩
 
 /-- The inside of a Jordan curve, its filled hull minus the curve, is connected. -/
 theorem IsJordanCurve.isConnected_filledHull_sdiff {C : Set ℂ} (h : IsJordanCurve C) :
@@ -205,8 +202,9 @@ theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two {C : Set ℂ} (h 
     exact Subtype.val_injective.image_injective.eq_iff.symm
   refine Nat.card_eq_two_iff.mpr
     ⟨.mk ⟨x, hx.2⟩, .mk ⟨w, hwC⟩, fun he => hw ?_, ?_⟩
-  · rw [mem_filledHull_iff, ← (hcc _ _).mp he]
-    exact mem_filledHull_iff.mp hx.1
+  · refine (mem_filledHull_iff_of_mem_connectedComponentIn (x := x) ?_).mpr hx.1
+    rw [(hcc _ _).mp he]
+    exact mem_connectedComponentIn hwC
   refine eq_univ_of_forall fun c => ?_
   obtain ⟨p, rfl⟩ := ConnectedComponents.surjective_coe c
   rcases h.connectedComponentIn_eq_filledHull_sdiff_or_compl p.2 with hp | hp

@@ -193,8 +193,6 @@ theorem IsJordanCurve.disjoint_of_isOpen_of_subset_filledHull {C U : Set ℂ} (h
   obtain ⟨u, huU, hux⟩ := _root_.mem_closure_iff.mp
     (h.subset_closure_connectedComponentIn (fun hxC => hx (subset_filledHull hxC)) hzC)
     _ hU hzU
-  refine hx ?_
-  rw [mem_filledHull_iff, connectedComponentIn_eq hux]
-  exact mem_filledHull_iff.mp (hUC huU)
+  exact hx ((mem_filledHull_iff_of_mem_connectedComponentIn hux).mp (hUC huU))
 
 end TauCeti

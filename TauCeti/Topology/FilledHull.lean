@@ -85,6 +85,11 @@ def filledHull (K : Set E) : Set E := {x | IsBounded (connectedComponentIn Kᶜ 
 theorem mem_filledHull_iff
     : x ∈ filledHull K ↔ IsBounded (connectedComponentIn Kᶜ x) := Iff.rfl
 
+/-- Membership in the filled hull is the same at every point of a component of `Kᶜ`. -/
+theorem mem_filledHull_iff_of_mem_connectedComponentIn {y : E}
+    (hy : y ∈ connectedComponentIn Kᶜ x) : y ∈ filledHull K ↔ x ∈ filledHull K := by
+  rw [mem_filledHull_iff, mem_filledHull_iff, connectedComponentIn_eq hy]
+
 /-- **A set lies in its filled hull.** For `x ∈ K` the component of `x` in `Kᶜ` is empty, and the
 empty set is bounded. -/
 theorem subset_filledHull : K ⊆ filledHull K := by
@@ -109,9 +114,8 @@ theorem _root_.IsClosed.isOpen_filledHull_sdiff
   refine Filter.mem_of_superset
     ((hK.isOpen_compl.connectedComponentIn).mem_nhds (mem_connectedComponentIn hx.2)) ?_
   intro y hy
-  refine ⟨?_, connectedComponentIn_subset Kᶜ x hy⟩
-  rw [mem_filledHull_iff, ← connectedComponentIn_eq hy]
-  exact mem_filledHull_iff.mp hx.1
+  exact ⟨(mem_filledHull_iff_of_mem_connectedComponentIn hy).mpr hx.1,
+    connectedComponentIn_subset Kᶜ x hy⟩
 
 /-- Filling a closed set preserves closedness in a locally connected space. -/
 theorem _root_.IsClosed.isClosed_filledHull [LocallyConnectedSpace E] (hK : IsClosed K) :
@@ -121,10 +125,7 @@ theorem _root_.IsClosed.isClosed_filledHull [LocallyConnectedSpace E] (hK : IsCl
   have hxK : x ∈ Kᶜ := fun h => hx (subset_filledHull h)
   refine Filter.mem_of_superset
     ((hK.isOpen_compl.connectedComponentIn).mem_nhds (mem_connectedComponentIn hxK)) ?_
-  intro y hy hyH
-  apply hx
-  rw [mem_filledHull_iff, connectedComponentIn_eq hy]
-  exact mem_filledHull_iff.mp hyH
+  exact fun y hy hyH => hx ((mem_filledHull_iff_of_mem_connectedComponentIn hy).mp hyH)
 
 /-- The frontier of the bounded complementary components of a closed set lies in the set
 itself. In particular, filling introduces no new boundary points. -/
@@ -165,9 +166,7 @@ theorem _root_.IsPreconnected.subset_filledHull (hS : IsPreconnected S) (hSK : D
   obtain ⟨x, hxS, hxH⟩ := hne
   have hScompl : S ⊆ Kᶜ := fun y hy => Set.disjoint_left.mp hSK hy
   have hScomp : S ⊆ connectedComponentIn Kᶜ x := hS.subset_connectedComponentIn hxS hScompl
-  intro y hy
-  rw [mem_filledHull_iff, ← connectedComponentIn_eq (hScomp hy)]
-  exact mem_filledHull_iff.mp hxH
+  exact fun y hy => (mem_filledHull_iff_of_mem_connectedComponentIn (hScomp hy)).mpr hxH
 
 /-- **A bounded set whose frontier lies in `K` is cut off from infinity by `K`.** A point of
 `S \ K` lies in `interior S`, since every non-interior point of `S` lies on `frontier S ⊆ K`. Its

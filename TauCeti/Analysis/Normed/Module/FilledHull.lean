@@ -239,8 +239,7 @@ theorem compl_filledHull_eq_connectedComponentIn (h : 1 < Module.rank ℝ E) (hK
   · rw [connectedComponentIn_compl_eq_of_unbounded_component h hK (mem_filledHull_iff.not.mp hx)
       (mem_filledHull_iff.not.mp hy)]
     exact mem_connectedComponentIn fun hyK => hy (subset_filledHull hyK)
-  · rw [mem_filledHull_iff, connectedComponentIn_eq hy]
-    exact mem_filledHull_iff.mp hyH
+  · exact (mem_filledHull_iff_of_mem_connectedComponentIn hy).mp hyH
 
 /-- A bounded set does not fill a nontrivial real normed space: some point lies outside its filled
 hull. -/
