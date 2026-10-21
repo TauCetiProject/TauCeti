@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.RepresentationTheory.ClassicalGroups.Symplectic
 public import TauCeti.RepresentationTheory.Spin.Representation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Symplectic
@@ -145,5 +146,20 @@ theorem
   rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, ← Matrix.GeneralLinearGroup.coe_mul,
     inv_mul_cancel, Matrix.GeneralLinearGroup.coe_one, Matrix.one_mul,
     Matrix.GeneralLinearGroup.coe_inv]
+
+/-- A nondegenerate five-dimensional quadratic space over a separably closed field of
+characteristic different from two admits polarization data identifying its Spin group with
+`Sp₄`, under which the spin representation is standard. -/
+theorem
+    exists_spinGroup_mulEquiv_symplecticGroup_and_spinRep_equiv_stdSymplecticRep_of_sepClosed
+    [NeZero (2 : K)] [IsSepClosed K] (hQ : Q.Nondegenerate) (hV : finrank K V = 5) :
+    ∃ P : SpinPolarizationData Q, ∃ f : spinGroup Q ≃* Matrix.symplecticGroup (Fin 2) K,
+      Nonempty ((spinRep Q P).Equiv ((stdSymplecticRep K 2).comp f.toMonoidHom)) := by
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let P := SpinPolarizationData.ofNondegenerate Q hQ
+  obtain ⟨f, hf⟩ :=
+    exists_spinGroup_mulEquiv_symplecticGroup_and_spinRep_equiv_stdSymplecticRep_of_finrank_eq_five
+      P hV
+  exact ⟨P, f, hf⟩
 
 end TauCeti
