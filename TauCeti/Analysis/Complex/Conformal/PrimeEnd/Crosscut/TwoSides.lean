@@ -137,9 +137,8 @@ simply connected open set `U ⊆ ℂ`, then `U \ range γ` has exactly two conne
 theorem IsCrosscut.natCard_connectedComponents_sdiff_range_eq_two (hγ : IsCrosscut γ U)
     (hUo : IsOpen U) (hUs : IsSimplyConnected U) :
     Nat.card (ConnectedComponents ↥(U \ range γ)) = 2 := by
-  have : SimplyConnectedSpace U := hUs
   have hle := hγ.enatCard_connectedComponents_sdiff_range_le_two hUo
-    (isPathConnected_iff_pathConnectedSpace.2 inferInstance).isConnected.isPreconnected
+    hUs.isPathConnected.isConnected.isPreconnected
   have : Finite (ConnectedComponents ↥(U \ range γ)) :=
     ENat.card_lt_top.1 (hle.trans_lt (by decide))
   -- By `Path.IsCrosscut.not_isPreconnected_sdiff_range`, there are at least two components.

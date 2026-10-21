@@ -28,7 +28,7 @@ the base case of the induction on dimension through the suspension isomorphism.
 * `TauCeti.zerothHomotopySphereUnique`: the path component of `-p` is the unique path component
   other than that of `p`.
 * `TauCeti.exists_continuous_injective_range_sphere_eq_pair`: two distinct points of a topological
-  space are the image of an embedding of the `0`-sphere of `ℝ`.
+  space are the image of a continuous injection of the `0`-sphere of `ℝ`.
 -/
 
 public section
@@ -102,8 +102,8 @@ lemma zerothHomotopySphereUnique_default (h : finrank ℝ E = 1) (p : sphere (0 
   rfl
 
 
-/-- Two distinct points of a topological space are the image of an embedding of the `0`-sphere
-of `ℝ`. -/
+/-- Two distinct points of a topological space are the image of a continuous injection of the
+`0`-sphere of `ℝ`. -/
 theorem exists_continuous_injective_range_sphere_eq_pair {Y : Type*} [TopologicalSpace Y]
     {p q : Y} (hpq : p ≠ q) :
     ∃ h : sphere (0 : ℝ) 1 → Y, Continuous h ∧ Function.Injective h ∧ Set.range h = {p, q} := by
