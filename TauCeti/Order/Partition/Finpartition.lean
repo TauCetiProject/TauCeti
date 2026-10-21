@@ -290,6 +290,7 @@ theorem ext_of_part (h : ∀ a ∈ s, P.part a = Q.part a) : P = Q :=
     · rw [P.part_eq_empty.2 ha, Q.part_eq_empty.2 ha]
 
 /-- Restricting a partition to a subset `t` cuts the part through each point of `t` down to `t`. -/
+@[simp]
 theorem part_restrict {t : Finset α} (P : Finpartition s) (hts : t ≤ s) {a : α} (ha : a ∈ t) :
     (P.restrict hts).part a = P.part a ∩ t := by
   have hat : a ∈ P.part a ∩ t := mem_inter.2 ⟨P.mem_part_self.2 (hts ha), ha⟩

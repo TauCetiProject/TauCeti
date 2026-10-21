@@ -27,7 +27,8 @@ ordered positions.
 * `TauCeti.NoncrossingPartition.card_eq_sum_card_mul_card` — the recurrence by the part containing
   the first position: `|NC(s)| = ∑_{x ∈ s} |NC(s_{<x})| |NC(s_{>x})|`.
 * `TauCeti.NoncrossingPartition.card_eq_catalan` — `|NC(s)| = catalan |s|`.
-* `TauCeti.NoncrossingPartition.card_fin` — `|NC(n)| = catalan n` for the positions of `Fin n`.
+* `TauCeti.NoncrossingPartition.card_fin_eq_catalan` — `|NC(n)| = catalan n` for the positions
+  of `Fin n`.
 
 ## References
 
@@ -77,6 +78,15 @@ private theorem glueKey_of_gt {y : α} (hy : x < y) :
 private theorem glueKey_snd (y : α) : (glueKey m x L R y).2 = R.part y :=
   rfl
 
+/-- In a noncrossing partition, positions `a < b < c < d` with `a, c` in a common part and `b, d`
+in a common part all lie in one part. -/
+private theorem part_eq_of_isNoncrossing {t : Finset α} {Q : Finpartition t}
+    (hQ : Q.IsNoncrossing) {a b c d : α} (ha : a ∈ t) (hb : b ∈ t) (hc : c ∈ t) (hd : d ∈ t)
+    (hac : Q.part a = Q.part c) (hbd : Q.part b = Q.part d) (hab : a < b) (hbc : b < c)
+    (hcd : c < d) : Q.part a = Q.part b :=
+  Finpartition.isNoncrossing_iff_part.1 hQ a ha b hb c (hac ▸ Q.mem_part_self.2 hc) d
+    (hbd ▸ Q.mem_part_self.2 hd) hab hbc hcd
+
 /-- The glued partition is noncrossing when its two pieces are. -/
 private theorem isNoncrossing_glue (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncrossing)
     (hR : R.IsNoncrossing) : (glue s m x L R).IsNoncrossing := by
@@ -92,27 +102,21 @@ private theorem isNoncrossing_glue (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncros
     have hcx := hcd.trans hdx
     have hbx := hbc.trans hcx
     have hax := hab.trans hbx
-    simp only [glueKey_of_lt hax, glueKey_of_lt hcx, Prod.mk.injEq, and_true] at hac
-    simp only [glueKey_of_lt hbx, glueKey_of_lt hdx, Prod.mk.injEq, and_true] at hbd
-    simp only [glueKey_of_lt hax, glueKey_of_lt hbx, Prod.mk.injEq, and_true]
-    have hmem {y : α} (hy : y ∈ s) (hyx : y < x) : y ∈ ({y ∈ s | y < x} : Finset α) :=
-      mem_filter.2 ⟨hy, hyx⟩
-    refine Finpartition.isNoncrossing_iff_part.1 hL a (hmem ha hax) b (hmem hb hbx) c ?_ d ?_
-      hab hbc hcd
-    · rw [hac]; exact L.mem_part_self.2 (hmem hc hcx)
-    · rw [hbd]; exact L.mem_part_self.2 (hmem hd hdx)
+    simp only [glueKey_of_lt hax, glueKey_of_lt hbx, glueKey_of_lt hcx, glueKey_of_lt hdx,
+      Prod.mk.injEq, and_true] at hac hbd ⊢
+    exact part_eq_of_isNoncrossing hL (mem_filter.2 ⟨ha, hax⟩) (mem_filter.2 ⟨hb, hbx⟩)
+      (mem_filter.2 ⟨hc, hcx⟩) (mem_filter.2 ⟨hd, hdx⟩) hac hbd hab hbc hcd
   · -- The last position is `x`, so `b` lies in the part of `m`.
     have hbx := hbc.trans hcd
     have hax := hab.trans hbx
-    simp only [glueKey_of_lt hbx, glueKey_self, Prod.mk.injEq, and_true] at hbd
-    simp only [glueKey_of_lt hax, glueKey_of_lt hcd, Prod.mk.injEq, and_true] at hac
-    simp only [glueKey_of_lt hax, glueKey_of_lt hbx, Prod.mk.injEq, and_true, hbd]
-    have hmb : b ∈ L.part m := by rw [← hbd]; exact L.mem_part_self.2 (mem_filter.2 ⟨hb, hbx⟩)
+    simp only [glueKey_of_lt hax, glueKey_of_lt hbx, glueKey_of_lt hcd, glueKey_self,
+      Prod.mk.injEq, and_true] at hac hbd ⊢
+    rw [hbd]
     rcases (hm a ha).eq_or_lt with rfl | hma
     · rfl
-    · refine (Finpartition.isNoncrossing_iff_part.1 hL m (L.part_nonempty.1 ⟨b, hmb⟩) a
-        (mem_filter.2 ⟨ha, hax⟩) b hmb c ?_ hma hab hbc).symm
-      rw [hac]; exact L.mem_part_self.2 (mem_filter.2 ⟨hc, hcd⟩)
+    · have hmL := L.part_nonempty.1 (hbd ▸ L.part_nonempty.2 (mem_filter.2 ⟨hb, hbx⟩))
+      exact (part_eq_of_isNoncrossing hL hmL (mem_filter.2 ⟨ha, hax⟩) (mem_filter.2 ⟨hb, hbx⟩)
+        (mem_filter.2 ⟨hc, hcd⟩) hbd.symm hac hma hab hbc).symm
   · -- The last position is after `x`, which forces all four positions after `x`.
     have hgt {y : α} (hy : y ∈ s) (hne : (glueKey m x L R y).2.Nonempty) : x < y := by
       rw [glueKey_snd, R.part_nonempty] at hne
@@ -122,15 +126,10 @@ private theorem isNoncrossing_glue (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncros
     have hcx := hbx.trans hbc
     have hax : x < a := hgt ha <| by
       rw [hac, glueKey_snd, R.part_nonempty]; exact mem_filter.2 ⟨hc, hcx⟩
-    simp only [glueKey_of_gt hax, glueKey_of_gt hcx, Prod.mk.injEq, true_and] at hac
-    simp only [glueKey_of_gt hbx, glueKey_of_gt hxd, Prod.mk.injEq, true_and] at hbd
-    simp only [glueKey_of_gt hax, glueKey_of_gt hbx, Prod.mk.injEq, true_and]
-    have hmem {y : α} (hy : y ∈ s) (hyx : x < y) : y ∈ ({y ∈ s | x < y} : Finset α) :=
-      mem_filter.2 ⟨hy, hyx⟩
-    refine Finpartition.isNoncrossing_iff_part.1 hR a (hmem ha hax) b (hmem hb hbx) c ?_ d ?_
-      hab hbc hcd
-    · rw [hac]; exact R.mem_part_self.2 (hmem hc hcx)
-    · rw [hbd]; exact R.mem_part_self.2 (hmem hd hxd)
+    simp only [glueKey_of_gt hax, glueKey_of_gt hbx, glueKey_of_gt hcx, glueKey_of_gt hxd,
+      Prod.mk.injEq, true_and] at hac hbd ⊢
+    exact part_eq_of_isNoncrossing hR (mem_filter.2 ⟨ha, hax⟩) (mem_filter.2 ⟨hb, hbx⟩)
+      (mem_filter.2 ⟨hc, hcx⟩) (mem_filter.2 ⟨hd, hxd⟩) hac hbd hab hbc hcd
 
 /-- In the glued partition, `x` lies in the part of `m`. -/
 private theorem mem_part_glue_self (hms : m ∈ s) (hxs : x ∈ s) (hmx : m ≤ x) :
@@ -149,41 +148,32 @@ private theorem le_of_mem_part_glue (hmx : m ≤ x) {y : α} (hy : y ∈ (glue s
   rw [glueKey_snd, glueKey_snd, R.part_eq_empty.2 fun h => (mem_filter.1 h).2.not_ge hmx] at h2
   exact (R.part_nonempty.2 (mem_filter.2 ⟨hys, hxy⟩)).ne_empty h2.symm
 
-/-- Restricting the glued partition to the positions before `x` recovers `L`. -/
-private theorem restrict_glue_lt : (glue s m x L R).restrict (filter_subset _ s) = L := by
+/-- Restricting the glued partition to a set `t` on which the label of each position is an
+injective function `f` of its part in `Q` recovers `Q`. -/
+private theorem restrict_glue_eq {t : Finset α} (hts : t ≤ s) {Q : Finpartition t}
+    {f : Finset α → Finset α × Finset α} (hf : Function.Injective f)
+    (hkey : ∀ y ∈ t, glueKey m x L R y = f (Q.part y)) : (glue s m x L R).restrict hts = Q := by
   refine Finpartition.ext_of_part fun a ha => ?_
-  have hax := (mem_filter.1 ha).2
-  rw [Finpartition.part_restrict _ _ ha]
   ext b
-  rw [mem_inter, mem_part_glue, glueKey_of_lt hax]
+  rw [Finpartition.part_restrict _ _ ha, mem_inter, mem_part_glue, hkey a ha]
   constructor
   · rintro ⟨⟨-, -, h⟩, hb⟩
-    rw [glueKey_of_lt (mem_filter.1 hb).2, Prod.mk.injEq] at h
-    rw [h.1]
-    exact L.mem_part_self.2 hb
+    rw [hkey b hb] at h
+    rw [hf h]
+    exact Q.mem_part_self.2 hb
   · intro hb
-    have hb' := L.part_subset a hb
-    refine ⟨⟨(mem_filter.1 ha).1, (mem_filter.1 hb').1, ?_⟩, hb'⟩
-    rw [glueKey_of_lt (mem_filter.1 hb').2,
-      (Finpartition.mem_part_iff_part_eq_part _ hb' ha).1 hb]
+    have hb' := Q.part_subset a hb
+    exact ⟨⟨hts ha, hts hb', by rw [hkey b hb', (Q.mem_part_iff_part_eq_part hb' ha).1 hb]⟩, hb'⟩
+
+/-- Restricting the glued partition to the positions before `x` recovers `L`. -/
+private theorem restrict_glue_lt : (glue s m x L R).restrict (filter_subset _ s) = L :=
+  restrict_glue_eq _ (f := (·, ∅)) (fun _ _ h => congrArg Prod.fst h) fun _ hy =>
+    glueKey_of_lt (mem_filter.1 hy).2
 
 /-- Restricting the glued partition to the positions after `x` recovers `R`. -/
-private theorem restrict_glue_gt : (glue s m x L R).restrict (filter_subset _ s) = R := by
-  refine Finpartition.ext_of_part fun a ha => ?_
-  have hxa := (mem_filter.1 ha).2
-  rw [Finpartition.part_restrict _ _ ha]
-  ext b
-  rw [mem_inter, mem_part_glue, glueKey_of_gt hxa]
-  constructor
-  · rintro ⟨⟨-, -, h⟩, hb⟩
-    rw [glueKey_of_gt (mem_filter.1 hb).2, Prod.mk.injEq] at h
-    rw [h.2]
-    exact R.mem_part_self.2 hb
-  · intro hb
-    have hb' := R.part_subset a hb
-    refine ⟨⟨(mem_filter.1 ha).1, (mem_filter.1 hb').1, ?_⟩, hb'⟩
-    rw [glueKey_of_gt (mem_filter.1 hb').2,
-      (Finpartition.mem_part_iff_part_eq_part _ hb' ha).1 hb]
+private theorem restrict_glue_gt : (glue s m x L R).restrict (filter_subset _ s) = R :=
+  restrict_glue_eq _ (f := (∅, ·)) (fun _ _ h => congrArg Prod.snd h) fun _ hy =>
+    glueKey_of_gt (mem_filter.1 hy).2
 
 end Glue
 
@@ -318,9 +308,10 @@ theorem card_eq_catalan (s : Finset α) : Fintype.card (NoncrossingPartition s) 
   have hcard {x : α} (hx : x ∈ s) : #{y ∈ s | y < x} + #{y ∈ s | x < y} = k := by
     have : {y ∈ s | ¬y < x}.erase x = {y ∈ s | x < y} := by
       ext y; simp only [mem_erase, mem_filter, not_lt]; grind
-    rw [← this, card_erase_of_mem (mem_filter.2 ⟨hx, lt_irrefl x⟩),
-      ← Nat.add_sub_assoc (card_pos.2 ⟨x, mem_filter.2 ⟨hx, lt_irrefl x⟩⟩),
-      card_filter_add_card_filter_not, hn, Nat.add_sub_cancel]
+    have h1 := card_erase_add_one (s := {y ∈ s | ¬y < x}) (mem_filter.2 ⟨hx, lt_irrefl x⟩)
+    have h2 := card_filter_add_card_filter_not (s := s) (· < x)
+    rw [this] at h1
+    omega
   have hlt {x : α} (hx : x ∈ s) : #{y ∈ s | y < x} < k + 1 := by
     have := hcard hx; omega
   have hgt {x : α} (hx : x ∈ s) : #{y ∈ s | x < y} < k + 1 := by

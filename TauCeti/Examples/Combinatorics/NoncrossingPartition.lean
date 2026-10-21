@@ -23,7 +23,7 @@ function:
   coarsening, but their join among noncrossing partitions is the partition with one part.
 
 Final examples check that `NC(0)`, on the positions of `Fin 0`, has a single element, and that
-`NC(3)` has `catalan 3 = 5` elements: every partition of three positions is noncrossing.
+`NC(3)` has `catalan 3 = 5` elements.
 -/
 
 open Finset Finpartition TauCeti
@@ -71,6 +71,6 @@ example (P Q : NoncrossingPartition (univ : Finset (Fin 4))) (hP : 2 ∈ P.1.par
 -- `NC(0)` consists of the empty partition alone.
 example : Unique (NoncrossingPartition (univ : Finset (Fin 0))) := inferInstance
 
--- `NC(3)` has `catalan 3 = 5` elements, as do all five partitions of three positions.
+-- `NC(3)` has `catalan 3 = 5` elements.
 example : Fintype.card (NoncrossingPartition (univ : Finset (Fin 3))) = 5 := by
   rw [NoncrossingPartition.card_fin_eq_catalan, catalan_three]
