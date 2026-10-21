@@ -206,6 +206,22 @@ theorem replaceBlock_of_gt {α : Type*} (x : ℕ → α) (p s : ℕ) (v : α) {i
   · exact absurd h₂ (by omega)
   · rfl
 
+/-- Replacing a nonempty block of a family of length `n` by its last entry leaves the last entry
+of the family unchanged. -/
+theorem replaceBlock_last {α : Type*} (a : ℕ → α) {n p d : ℕ} (hd : 0 < d)
+    (hpd : p + d ≤ n) :
+    replaceBlock a p d (a (p + d - 1)) (p + 1 + (n - p - d) - 1) = a (n - 1) := by
+  rcases Nat.eq_or_lt_of_le (show p ≤ p + 1 + (n - p - d) - 1 by omega) with he | hlt
+  · rw [← he, replaceBlock_self, show p + d - 1 = n - 1 by omega]
+  · rw [replaceBlock_of_gt _ _ _ _ hlt, show p + 1 + (n - p - d) - 1 + d - 1 = n - 1 by omega]
+
+/-- Replacing a block by its first entry leaves the first entry of the family unchanged. -/
+theorem replaceBlock_zero {α : Type*} (b : ℕ → α) (p d : ℕ) :
+    replaceBlock b p d (b p) 0 = b 0 := by
+  rcases Nat.eq_zero_or_pos p with rfl | hp
+  · exact replaceBlock_self _ _ _ _
+  · exact replaceBlock_of_lt _ _ _ _ hp
+
 /-- A function applied entrywise commutes with replacing a block of entries. -/
 theorem apply_replaceBlock {α β : Type*} (g : α → β) (x : ℕ → α) (p s : ℕ) (v : α) (i : ℕ) :
     g (replaceBlock x p s v i) = replaceBlock (fun j ↦ g (x j)) p s (g v) i := by

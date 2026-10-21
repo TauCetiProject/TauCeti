@@ -53,6 +53,19 @@ runs:
         if ! python3 "$TOOLING/scripts/toolchain_snapshot.py" verify "$PROJECT/lean-toolchain" --root "$SNAPSHOT"; then
           echo '::notice::toolchain snapshot absent/invalid; installing from leanprover/lean4'
           rm -rf -- "$SNAPSHOT"
-          elan toolchain install "$(cat "$PROJECT/lean-toolchain")"
+          # Retry the identical official release after transient download failures.
+          # Exhaustion stays fatal; later validation/publication must not run.
+          for toolchain_attempt in 1 2 3; do
+            if elan toolchain install "$(cat "$PROJECT/lean-toolchain")"; then
+              break
+            else
+              toolchain_status=$?
+            fi
+            if [ "$toolchain_attempt" -eq 3 ]; then
+              exit "$toolchain_status"
+            fi
+            echo "::warning::official toolchain install failed; retry $toolchain_attempt/3"
+            sleep "$((toolchain_attempt * 5))"
+          done
         fi
         ELAN_TOOLCHAIN="$(cat "$PROJECT/lean-toolchain")" lean --version

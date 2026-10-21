@@ -54,6 +54,8 @@ capacity; for residual capacities these are augmenting walks.
 * `TauCeti.positiveReachable_iff_exists_isPath` and `TauCeti.positiveReachable_iff_reflTransGen`:
   positive reachability is witnessed by a path, and is the reflexive transitive closure of being
   joined by an arrow of positive capacity.
+* `TauCeti.PositiveReachable.mem_of_mem`: a vertex set that no arrow of positive capacity leaves
+  contains every vertex positively reachable from one of its members.
 -/
 
 public section
@@ -340,6 +342,15 @@ theorem positiveReachable_iff_reflTransGen :
     induction h with
     | refl => exact .refl c s
     | tail _ he ih => exact ih.tail he.choose he.choose_spec
+
+/-- A vertex set that no arrow of positive capacity leaves is closed under positive reachability.
+-/
+theorem PositiveReachable.mem_of_mem {C : Set V} (h : PositiveReachable c s t) (hs : s ∈ C)
+    (hC : ∀ ⦃v w : V⦄ (e : Q v w), v ∈ C → 0 < c e → w ∈ C) : t ∈ C := by
+  rw [positiveReachable_iff_reflTransGen] at h
+  induction h with
+  | refl => exact hs
+  | tail _ he ih => exact hC he.choose ih he.choose_spec
 
 end PositiveReachable
 

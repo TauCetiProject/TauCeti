@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Borel.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Over
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.SmoothConnected
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
@@ -152,9 +153,7 @@ theorem exists_conjugate_definingHopfIdeal_le [IsAlgClosed k]
         GeneralLinear.pointsMulEquiv n
           (toConv (π : GeneralLinear.coordinateHopfAlgebra k n →ₐ[k] Q)) *
         Matrix.GeneralLinearGroup.map (algebraMap k Q) P := by
-    rw [HopfAlgebra.comp_pointConjugationAlgHom, map_mul, map_mul, map_inv,
-      GeneralLinear.pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, map_inv, inv_inv,
-      map_inv, Algebra.toRingHom_ofId]
+    rw [GeneralLinear.pointsMulEquiv_toConv_comp_pointConjugationAlgHom, map_inv, inv_inv]
   exact ⟨g⁻¹, HopfIdeal.conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient
     I (definingHopfIdeal k n) g
     ((mem_definingPointsSubgroup_iff k n _).mpr (by rw [hkey]; exact hP))⟩

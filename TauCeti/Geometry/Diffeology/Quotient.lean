@@ -99,9 +99,7 @@ theorem isQuotientMap_dTopology_quotient_mk :
 quotient topology. -/
 instance instIsDTopologyCompatibleQuotient [TopologicalSpace X]
     [_root_.Diffeology.IsDTopologyCompatible X] :
-    _root_.Diffeology.IsDTopologyCompatible (Quotient s) where
-  -- Mathlib's quotient topology is by definition the topology coinduced by the projection.
-  dTop_eq := (dTopology_coinducedDiffeology (Quotient.mk s)).trans
-    (congrArg (TopologicalSpace.coinduced _) (_root_.Diffeology.IsDTopologyCompatible.dTop_eq X))
+    _root_.Diffeology.IsDTopologyCompatible (Quotient s) :=
+  (isSubduction_quotient_mk s).isDTopologyCompatible isQuotientMap_quotient_mk'
 
 end TauCeti.Diffeology
