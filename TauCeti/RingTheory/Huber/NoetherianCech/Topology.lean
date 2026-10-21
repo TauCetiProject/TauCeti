@@ -237,6 +237,7 @@ noncomputable def faceFiltration (hf : Ideal.span (Set.range f) = ⊤) (N : Set 
       (mkLinearMap (.powers (∏ j ∈ S, f j)) M '' N)).toAddSubgroup
 
 /-- Membership in `faceFiltration` is membership in `Iⁱ · C[F_p / f_S] · N`. -/
+@[simp]
 theorem mem_faceFiltration (hf : Ideal.span (Set.range f) = ⊤) (N : Set M) (p : ℕ)
     (S : Finset ι) (i : ℕ) (x : LocalizedModule (.powers (∏ j ∈ S, f j)) M) :
     letI := faceTopology f P hf p S
