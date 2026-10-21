@@ -18,8 +18,9 @@ periods add under multiplication, so `U_C * U_D ⊆ U_(C + D)`
 (`TauCeti.NovikovSeries.mul_mem_periodFiltration`). Since every Novikov series lies in some `U_C`,
 multiplication is continuous for the period topology and the Novikov series form a
 nonarchimedean topological ring. Iterating the estimate, a series supported in periods `≥ C` with
-`C > 0` is topologically nilpotent; this is what makes geometric series `∑ aⁿ` and exponential
-series of positive-period series converge in the complete ring of Novikov series.
+`C > 0` is topologically nilpotent; this is what makes geometric series `∑ aⁿ` of positive-period
+series converge in the complete ring of Novikov series, and likewise exponential series when the
+coefficients form a `ℚ`-algebra.
 
 The same estimate makes products computable from finite truncations: below the cutoff `C`, the
 product of two series with periods bounded below by `A` and `B` only involves their coefficients of
@@ -169,8 +170,8 @@ theorem single_mul_mem_periodFiltration_iff (g : H) (u : Rˣ) {C : ℝ}
     single g (u : R) * a ∈ periodFiltration R N (N g + C) ↔ a ∈ periodFiltration R N C := by
   refine ⟨fun ha => ?_, mul_mem_periodFiltration (single_mem_periodFiltration g _)⟩
   have h := mul_mem_periodFiltration (single_mem_periodFiltration (-g) (↑u⁻¹ : R)) ha
-  rwa [← mul_assoc, single_mul_single, neg_add_cancel, Units.inv_mul, single_zero_one, one_mul,
-    map_neg, neg_add_cancel_left] at h
+  rw [← mul_assoc] at h
+  simpa [single_mul_single] using h
 
 end Group
 
