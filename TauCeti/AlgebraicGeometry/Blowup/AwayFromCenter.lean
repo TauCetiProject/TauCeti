@@ -24,8 +24,8 @@ isomorphism `R_a ≅ R[I/a]_a`, because `R ⊆ R[I/a] ⊆ R_a`.
 
 For instance, if `π ∈ I`, this applies to `U = D(π)`: blowing up a center contained in `V(π)`
 changes nothing over `D(π)`. When `R` is an algebra over a discrete valuation ring with
-uniformizer `π`, the open `D(π)` is the generic fibre, so such a blowup of a model is again a
-model of the same generic fibre.
+uniformizer `π`, the open `D(π)` is the generic fibre. The isomorphism over this open preserves
+the generic-fibre identification; no properness or flatness assertion is made here.
 
 ## Main results
 
@@ -127,7 +127,9 @@ private theorem isIso_morphismRestrict_of_le_basicOpen (ha : a ∈ I) {W : (Spec
     isIso_SpecMap_morphismRestrict_basicOpen_of_injective (S := Localization.Away a) a
       Subtype.val_injective
   -- Hence also over `W ⊆ D(a)`.
-  have hgW : IsIso (g ∣_ W) := isIso_morphismRestrict_of_le g hW
+  have hgW : IsIso (g ∣_ W) := (MorphismProperty.isomorphisms.iff _).mp
+    (IsZariskiLocalAtTarget.restrict_of_le (MorphismProperty.isomorphisms Scheme)
+      ((MorphismProperty.isomorphisms.iff _).mpr inferInstance) hW)
   -- Over `W`, the blowup lies in the chart of `a`, so `g ∣_ W` is `f ∣_ W` up to an isomorphism.
   have hle : f ⁻¹ᵁ W ≤ (affineBlowupι (Localization.Away a) ha).opensRange := by
     rw [opensRange_affineBlowupι]

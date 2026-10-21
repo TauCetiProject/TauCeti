@@ -8,16 +8,16 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 
 /-!
-# Restrictions of morphisms that are isomorphisms
+# Restricting local properties of scheme morphisms
 
 For a morphism of schemes `f : X ⟶ Y` and an open `U` of `Y`, Mathlib's `f ∣_ U` is the
-restriction `f ⁻¹ᵁ U ⟶ U`. This file records two ways of seeing that such a restriction is an
-isomorphism.
+restriction `f ⁻¹ᵁ U ⟶ U`. A property local on the target passes from this restriction to
+every smaller open. An open immersion restricts to an isomorphism over opens in its range.
 
 ## Main results
 
-* `AlgebraicGeometry.isIso_morphismRestrict_of_le`: if `f ∣_ U` is an isomorphism and `V ≤ U`,
-  then `f ∣_ V` is an isomorphism.
+* `AlgebraicGeometry.IsZariskiLocalAtTarget.restrict_of_le`: a property local on the target
+  passes from `f ∣_ U` to `f ∣_ V` when `V ≤ U`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_le_opensRange`: an open immersion
   restricts to an isomorphism over every open contained in its range.
 -/
@@ -32,16 +32,17 @@ namespace AlgebraicGeometry
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
-/-- If `f` restricts to an isomorphism over `U`, then it restricts to an isomorphism over every
-open `V ≤ U`. -/
-theorem isIso_morphismRestrict_of_le {U V : Y.Opens} [IsIso (f ∣_ U)] (hVU : V ≤ U) :
-    IsIso (f ∣_ V) := by
+/-- A property local on the target passes from the restriction over `U` to the restriction
+over every open `V ≤ U`. -/
+theorem IsZariskiLocalAtTarget.restrict_of_le (P : MorphismProperty Scheme.{u})
+    [IsZariskiLocalAtTarget P] {f : X ⟶ Y} {U V : Y.Opens} (h : P (f ∣_ U)) (hVU : V ≤ U) :
+    P (f ∣_ V) := by
   have himage : U.ι ''ᵁ (U.ι ⁻¹ᵁ V) = V := by
     rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
     exact inf_eq_right.mpr hVU
-  exact ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
+  exact (P.arrow_mk_iso_iff
     (morphismRestrictRestrict f _ _ ≪≫ morphismRestrictEq f himage)).mp
-    (inferInstanceAs (IsIso ((f ∣_ U) ∣_ _)))
+    (IsZariskiLocalAtTarget.restrict h _)
 
 /-- An open immersion `f` restricts to an isomorphism over every open `V` contained in its
 range. -/
