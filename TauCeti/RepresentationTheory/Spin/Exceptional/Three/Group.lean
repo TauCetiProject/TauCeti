@@ -366,7 +366,7 @@ theorem nonempty_spinGroup_mulEquiv_specialLinearGroup_of_finrank_eq_three
 polarized representation comparison, so the group equivalence can be chosen to carry the
 actual spin representation to the standard representation. -/
 theorem
-    exists_spinThree_spinGroupEquivSpecialLinear_and_spinRep_equiv_stdSLRep_of_isSepClosed
+    exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_of_isSepClosed
     [NeZero (2 : K)] [IsSepClosed K] (hQ : Q.Nondegenerate) (hV : finrank K V = 3) :
     ∃ P : SpinPolarizationData Q, ∃ f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K,
       Nonempty ((spinRep Q P).Equiv ((stdSLRep K 2).comp f.toMonoidHom)) := by
