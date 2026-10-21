@@ -53,13 +53,20 @@ namespace FiniteEtaleScheme
 
 variable {S : Scheme.{u}}
 
+-- Mathlib's `inf` instances for `IsMultiplicative` and `IsStableUnderBaseChange` are passed
+-- explicitly: instance search cannot unify the classes `@IsFinite` and `@Etale` with a
+-- `MorphismProperty Scheme` metavariable, as their types agree only after unfolding
+-- `MorphismProperty`.
 instance : (finiteEtaleSchemeProperty S).IsClosedUnderLimitsOfShape (Discrete PEmpty.{1}) := by
   rw [finiteEtaleSchemeProperty_eq_overObj]
-  infer_instance
+  exact @Over.closedUnderLimitsOfShape_discrete_empty _ _ _ _
+    MorphismProperty.IsMultiplicative.inf.toContainsIdentities
+    (@MorphismProperty.IsStableUnderBaseChange.respectsIso _ _ _ .inf)
 
 instance : (finiteEtaleSchemeProperty S).IsClosedUnderLimitsOfShape WalkingCospan := by
   rw [finiteEtaleSchemeProperty_eq_overObj]
-  infer_instance
+  exact @Over.closedUnderLimitsOfShape_pullback _ _ _ _ _
+    MorphismProperty.IsMultiplicative.inf.toIsStableUnderComposition .inf _
 
 /-- Finite étale schemes over `S` have all finite limits, computed in `Over S`: the terminal
 object is `S` itself and fibre products are fibre products of schemes. -/
