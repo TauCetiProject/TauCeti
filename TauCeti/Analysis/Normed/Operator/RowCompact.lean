@@ -56,6 +56,8 @@ and under limits in operator norm (`ContinuousLinearMap.isRowCompact_of_tendsto`
   scalars.
 * `ContinuousLinearMap.isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp`: row compactness
   is norm convergence of the output truncations.
+* `ContinuousLinearMap.IsRowCompact.tendsto_ringOpNorm_indicatorCLM_comp_sub`: the output
+  truncations of a row-compact map converge to it in operator norm.
 * `ContinuousLinearMap.IsRowCompact.isCompletelyContinuous`: row-compact maps are completely
   continuous.
 
@@ -377,6 +379,14 @@ theorem isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp
     have := ((indicatorCLM R (S : Set I)ᶜ).comp u).rowNorm_le_ringOpNorm i
     rwa [rowNorm_indicatorCLM_comp, Set.indicator_of_mem (by simpa using hiS),
       ← sub_indicatorCLM_comp] at this
+
+/-- Over ultrametric Tate scalars, the output truncations `π_S ∘ u` of a row-compact `u` converge
+to `u` in operator norm as the finite set `S` grows. -/
+theorem IsRowCompact.tendsto_ringOpNorm_indicatorCLM_comp_sub {u : C₀(J, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) :
+    Tendsto (fun S : Finset I ↦ ‖(indicatorCLM R (S : Set I)).comp u - u‖) atTop (𝓝 0) := by
+  simpa only [← neg_sub u, ringOpNorm_neg] using
+    isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp.1 hu
 
 end Truncation
 

@@ -138,9 +138,8 @@ theorem IsRowCompact.charPowerSeries_matrixCoeff_comp_comm {u : C₀(J, R) →L[
     (hu : u.IsRowCompact) (v : C₀(I, R) →L[R] C₀(J, R)) :
     (u.comp v).matrixCoeff.charPowerSeries = (v.comp u).matrixCoeff.charPowerSeries := by
   let uS := fun S : Finset I ↦ (indicatorCLM R (S : Set I)).comp u
-  have huS : Tendsto (fun S ↦ ‖uS S - u‖) atTop (𝓝 0) := by
-    simpa only [uS, ← neg_sub u, ringOpNorm_neg] using
-      isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp.1 hu
+  have huS : Tendsto (fun S ↦ ‖uS S - u‖) atTop (𝓝 0) :=
+    hu.tendsto_ringOpNorm_indicatorCLM_comp_sub
   -- Approximate `u` by its output truncations, for which cyclicity holds by the finite case.
   have hleft : Tendsto (fun S ↦ ‖(uS S).comp v - u.comp v‖) atTop (𝓝 0) :=
     squeeze_zero (fun _ ↦ ringOpNorm_nonneg _)

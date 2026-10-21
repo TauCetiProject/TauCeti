@@ -207,9 +207,8 @@ theorem IsRowCompact.fredholmDet_add_sub_mul {u v : C₀(I, R) →L[R] C₀(I, R
       ‖((P S).comp x).matrixCoeff i j‖ ≤ ‖x.matrixCoeff i j‖ := by
     by_cases hi : i ∈ S <;> simp [P, hi]
   have htrunc {x : C₀(I, R) →L[R] C₀(I, R)} (hx : x.IsRowCompact) :
-      Tendsto (fun S ↦ ‖(P S).comp x - x‖) atTop (𝓝 0) := by
-    simpa only [P, ← neg_sub x, ringOpNorm_neg] using
-      isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp.1 hx
+      Tendsto (fun S ↦ ‖(P S).comp x - x‖) atTop (𝓝 0) :=
+    hx.tendsto_ringOpNorm_indicatorCLM_comp_sub
   have htend {x : C₀(I, R) →L[R] C₀(I, R)} (hx : x.IsRowCompact) :
       Tendsto (fun S ↦ ((P S).comp x).fredholmDet) atTop (𝓝 x.fredholmDet) :=
     tendsto_fredholmDet_of_tendsto hx.tendsto_rowNorm (fun S i j ↦ (hP S x i j).trans
