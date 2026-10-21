@@ -69,10 +69,9 @@ def extendByZero {U W : Opens M} (h : U ≤ W) (k : ℕ) :
     compactlySupportedForms I U k →ₗ[ℝ] compactlySupportedForms I W k where
   toFun φ :=
     ⟨⟨RoughForm.extendByZero W φ.1.1,
-        mem_smoothForms.mpr <| (isSmoothBundleForm_def ∞ _).mpr <| (isSmoothForm_def ∞ _).mp <|
-          φ.1.isSmoothForm.extendByZero h fun _ hx ↦
-            RoughForm.eventually_extendByZero_eq_zero h ((mem_compactlySupportedForms I).mp φ.2)
-              hx⟩,
+        (φ.1.isSmoothForm.extendByZero h fun _ hx ↦
+          RoughForm.eventually_extendByZero_eq_zero h ((mem_compactlySupportedForms I).mp φ.2)
+            hx).mem_smoothForms⟩,
       (mem_compactlySupportedForms I).mpr <|
         RoughForm.isCompact_tsupport_extendByZero h ((mem_compactlySupportedForms I).mp φ.2)⟩
   map_add' φ ψ := Subtype.ext <| Subtype.ext <| RoughForm.extendByZero_add W φ.1.1 ψ.1.1

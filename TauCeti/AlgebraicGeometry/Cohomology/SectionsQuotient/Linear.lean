@@ -17,7 +17,8 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 For a cover `X = U ∪ V`, the Mayer–Vietoris boundary from sections on `U ∩ V` to
 `H¹(X, M)` is linear over global functions. If first cohomology vanishes on both
 members, it identifies `H¹(X, M)` with the module cokernel of the difference of
-restrictions from the two members. No acyclicity on the overlap is needed.
+restrictions from the two members, whose range is the sum of the ranges of the two
+restrictions. No acyclicity on the overlap is needed.
 
 This upgrades the additive computation in `SectionsQuotient.Basic` to a linear one,
 so it can be used for dimensions and extension of scalars. For quasi-coherent coefficients,
@@ -62,6 +63,18 @@ lemma mayerVietorisSectionsDifferenceLinear_apply (s : Γ(M, U)) (t : Γ(M, V)) 
     LinearMap.comp_apply, LinearMap.fst_apply, LinearMap.snd_apply,
     Scheme.Modules.sectionsRestrictionLinear_apply, mayerVietorisSectionsDifference_apply]
   rfl
+
+/-- The differences of restrictions from two opens are the sums of restrictions from the two
+opens: the range of the difference map is the sum of the ranges of the two restrictions. -/
+lemma range_mayerVietorisSectionsDifferenceLinear :
+    LinearMap.range (mayerVietorisSectionsDifferenceLinear M U V) =
+      LinearMap.range (Scheme.Modules.sectionsRestrictionLinear M (homOfLE inf_le_left)) ⊔
+        LinearMap.range (Scheme.Modules.sectionsRestrictionLinear M (homOfLE inf_le_right)) := by
+  have : mayerVietorisSectionsDifferenceLinear M U V =
+      (Scheme.Modules.sectionsRestrictionLinear M (homOfLE inf_le_left)).coprod
+        (-Scheme.Modules.sectionsRestrictionLinear M (homOfLE inf_le_right)) :=
+    LinearMap.ext fun _ ↦ sub_eq_add_neg _ _
+  rw [this, LinearMap.range_coprod, LinearMap.range_neg]
 
 /-- Restricting a global section to the two members of an open cover, linear over global
 functions. -/
