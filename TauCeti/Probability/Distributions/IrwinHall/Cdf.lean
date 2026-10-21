@@ -68,11 +68,21 @@ theorem cdf_irwinHallMeasure_eq {n : ℕ} (hn : 0 < n) (x : ℝ) :
     rw [cdf_irwinHallMeasure_succ]
     simp_rw [ih hn']
     rw [intervalIntegral.integral_div, intervalIntegral.integral_finsetSum]
-    · simp_rw [intervalIntegral.integral_const_mul, sub_right_comm x _ (↑(_ : ℕ) : ℝ),
-        intervalIntegral.integral_max_sub_zero_pow hn', sub_zero, ← mul_div_assoc]
-      rw [← Finset.sum_div, div_div, Nat.factorial_succ, Nat.cast_mul,
-        Nat.cast_add, Nat.cast_one, sum_neg_one_pow_mul_choose_succ]
-      simp only [Nat.cast_add, Nat.cast_one, sub_sub]
+    · calc
+        _ = (∑ k ∈ Finset.range (n + 1), (-1 : ℝ) ^ k * (n.choose k : ℝ) *
+            (max (x - k) 0 ^ (n + 1) - max (x - (k + 1 : ℕ)) 0 ^ (n + 1)) /
+              (n + 1)) / n.factorial := by
+          congr 1
+          apply Finset.sum_congr rfl
+          intro k _
+          rw [intervalIntegral.integral_const_mul]
+          simp_rw [sub_right_comm x _ (k : ℝ)]
+          rw [intervalIntegral.integral_max_sub_zero_pow hn']
+          simp [mul_div_assoc, sub_sub]
+        _ = _ := by
+          rw [← Finset.sum_div, sum_neg_one_pow_mul_choose_succ]
+          push_cast [Nat.factorial_succ]
+          field_simp
     · exact fun k _ ↦ hint k
 
 end TauCeti.Probability
