@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Quaternion
 public import TauCeti.GroupTheory.AlmostConjugate.Regular
-import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
 # A Gassmann pair in `S₁₆`
@@ -17,9 +16,10 @@ The groups `C₄ × C₄ = Multiplicative (ZMod 4) × Multiplicative (ZMod 4)` a
 of order `2` and twelve of order `4`. Their regular actions have the full cycle types `1^16`,
 `2^8` and `4^4`, with multiplicities `1`, `3` and `12`. (Mathlib's `Equiv.Perm.cycleType` omits
 the fixed points, so it records these as the empty multiset, `2^8` and `4^4`.) The first group is
-commutative and the second is not, so by `Equiv.almostConjugate_map_range_toPermHom` and
-`Equiv.not_exists_map_conj_map_range_toPermHom_eq` their regular images are two non-conjugate
-almost-conjugate subgroups of `Equiv.Perm (Fin 16)`.
+commutative and the second is not, so by
+`Equiv.almostConjugate_range_permutationRepresentation` and
+`Equiv.not_exists_map_conj_range_permutationRepresentation_eq` their regular images are two
+non-conjugate almost-conjugate subgroups of `Equiv.Perm (Fin 16)`.
 
 ## Main statements
 
@@ -70,12 +70,12 @@ theorem exists_S16_gassmann_pair :
     Fintype.equivFinOfCardEq (by decide)
   let f : QuaternionGroup 2 × Multiplicative (ZMod 2) ≃ Fin 16 :=
     Fintype.equivFinOfCardEq (by decide)
-  refine ⟨_, _, ?_, ?_, e.almostConjugate_map_range_toPermHom f
+  refine ⟨_, _, ?_, ?_, e.almostConjugate_range_permutationRepresentation f
       natCard_orderOf_zmod_four_prod_eq_quaternionGroup_prod,
-    e.not_exists_map_conj_map_range_toPermHom_eq f ?_⟩
-  · rw [e.natCard_map_range_toPermHom, Nat.card_eq_fintype_card]
+    e.not_exists_map_conj_range_permutationRepresentation_eq f ?_⟩
+  · rw [e.natCard_range_permutationRepresentation, Nat.card_eq_fintype_card]
     decide
-  · rw [f.natCard_map_range_toPermHom, Nat.card_eq_fintype_card]
+  · rw [f.natCard_range_permutationRepresentation, Nat.card_eq_fintype_card]
     decide
   · rw [isMulCommutative_iff]
     decide
