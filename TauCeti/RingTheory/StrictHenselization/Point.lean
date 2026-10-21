@@ -221,8 +221,6 @@ theorem TripleCategory.homMk_left (first second : TripleCategory R Ω)
     (TripleCategory.homMk R Ω first second map hpoint).hom.hom.left.hom = map := by
   rfl
 
-variable [Nontrivial Ω]
-
 /-- A morphism of triples is an algebra map preserving the prime and residue-field map. -/
 theorem tripleCategory_hom_iff (first second : TripleCategory R Ω)
     (map : first.val.carrier →ₐ[R] second.val.carrier) :
@@ -231,6 +229,7 @@ theorem tripleCategory_hom_iff (first second : TripleCategory R Ω)
         second.val.data.2.comp
           (Ideal.ResidueField.mapₐ first.val.data.1.asIdeal second.val.data.1.asIdeal map hprime) =
           first.val.data.2 := by
+  have nontrivial : Nontrivial Ω := first.property
   constructor
   · rintro ⟨morphism, equality⟩
     apply (PointData.toAlgHom_comp_iff first.val.data second.val.data map).mp
@@ -243,19 +242,19 @@ theorem tripleCategory_hom_iff (first second : TripleCategory R Ω)
 
 end CommRingTripleCategory
 
-section NontrivialTripleCategory
+section CommRingTripleCategoryExt
 
-variable (R : Type u) (Ω : Type v) [CommRing R] [CommRing Ω] [Nontrivial Ω]
-  [Algebra R Ω]
+variable (R : Type u) (Ω : Type v) [CommRing R] [CommRing Ω] [Algebra R Ω]
 
 /-- Triple-category objects agree when their pointed étale neighbourhoods agree. -/
 @[ext]
 theorem TripleCategory.ext {first second : TripleCategory R Ω}
     (equality : first.val.toNeighbourhood R Ω = second.val.toNeighbourhood R Ω) :
-    first = second :=
-  Subtype.ext (TripleNeighbourhood.ext R Ω equality)
+    first = second := by
+  have nontrivial : Nontrivial Ω := first.property
+  exact Subtype.ext (TripleNeighbourhood.ext R Ω equality)
 
-end NontrivialTripleCategory
+end CommRingTripleCategoryExt
 
 section Field
 
