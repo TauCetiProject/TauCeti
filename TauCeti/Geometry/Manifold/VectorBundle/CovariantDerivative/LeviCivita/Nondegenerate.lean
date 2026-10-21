@@ -40,6 +40,8 @@ the nondegenerate metric obtained from the bundled Riemannian metric.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.koszul`: the Koszul expression of `g`.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.IsMetricCompatible`: compatibility of a covariant
   derivative on `TM` with `g`.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetric.isMetricCompatible_iff_derivBilinearTensor_eq_zero`
+  characterizes compatibility with `g` as the vanishing of the covariant derivative `∇g` of `g`.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.IsLeviCivitaConnection`: a torsion-free covariant
   derivative compatible with `g`.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.IsLeviCivitaConnection.two_apply_eq_koszul` and
@@ -188,6 +190,22 @@ theorem isMetricCompatible_iff_of_apply_eq_inner [FiniteDimensional ℝ E]
 
 variable [FiniteDimensional ℝ E]
 
+/-- A covariant derivative on the tangent bundle is compatible with a nondegenerate metric `g`
+exactly when the covariant derivative `∇g` of `g`, as a field of bilinear forms, vanishes. -/
+theorem isMetricCompatible_iff_derivBilinearTensor_eq_zero :
+    g.IsMetricCompatible cov ↔ ∀ x, cov.derivBilinearTensor g x = 0 := by
+  have hg : ∀ x ⦃Y Z : Π x : M, TangentSpace I x⦄, MDiffAt (T% Y) x → MDiffAt (T% Z) x →
+      MDiffAt (fun y ↦ g y (Y y) (Z y)) x := fun _ _ _ ↦ g.mdifferentiableAt_apply
+  refine ⟨fun h x ↦ ?_, fun h x Y Z hY hZ v ↦ ?_⟩
+  · ext u w v
+    rw [cov.derivBilinearTensor_apply_eq_extend (hg x),
+      h.mvfderiv_eq (mdifferentiableAt_extend I E u) (mdifferentiableAt_extend I E w) v]
+    simp
+  · have := congr($(h x) (Y x) (Z x) v)
+    rw [cov.derivBilinearTensor_apply (hg x) hY hZ] at this
+    simp only [zero_apply] at this
+    linarith
+
 variable (g) in
 /-- A covariant derivative on the tangent bundle is a **Levi-Civita connection** of the
 nondegenerate metric `g` when it is torsion free and compatible with `g`. -/
@@ -197,6 +215,12 @@ structure IsLeviCivitaConnection (cov : CovariantDerivative I E (fun x : M ↦ T
   isMetricCompatible : g.IsMetricCompatible cov
   /-- A Levi-Civita connection is torsion free. -/
   torsion : cov.torsion = 0
+
+/-- The covariant derivative of a nondegenerate metric along one of its Levi-Civita connections
+vanishes. -/
+theorem IsLeviCivitaConnection.derivBilinearTensor_eq_zero (h : g.IsLeviCivitaConnection cov)
+    (x : M) : cov.derivBilinearTensor g x = 0 :=
+  isMetricCompatible_iff_derivBilinearTensor_eq_zero.mp h.isMetricCompatible x
 
 /-- **The Koszul formula**: for a Levi-Civita connection `∇` of a nondegenerate metric `g`,
 `2 g(∇_X Y, Z)` is the Koszul expression of `g`. -/
