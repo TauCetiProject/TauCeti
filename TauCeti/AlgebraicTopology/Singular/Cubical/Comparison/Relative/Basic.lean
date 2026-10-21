@@ -376,6 +376,15 @@ theorem singularCubicalHomologyIso_hom_naturality {P P' : TopPair.{u}} (f : P �
   simp only [singularCubicalHomologyIso, asIso_hom, ← HomologicalComplex.homologyMap_comp,
     singularToCubicalRel_naturality]
 
+/-- The inverse of the relative comparison isomorphism on homology is natural in the pair. -/
+@[reassoc]
+theorem singularCubicalHomologyIso_inv_naturality {P P' : TopPair.{u}} (f : P ⟶ P') (n : ℕ) :
+    HomologicalComplex.homologyMap (cubicalChainComplexMap k f) n ≫
+        (singularCubicalHomologyIso k P' n).inv =
+      (singularCubicalHomologyIso k P n).inv ≫ P.singularHomologyMap f (ModuleCat.of k k) n := by
+  rw [Iso.eq_inv_comp, singularCubicalHomologyIso_hom_naturality_assoc, Iso.hom_inv_id,
+    Category.comp_id]
+
 end TopPair
 
 namespace TopPair.Homotopy
