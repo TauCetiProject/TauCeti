@@ -65,12 +65,6 @@ namespace TauCeti.IntegralLattice
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] {L : IntegralLattice V}
 variable (b : Basis (Fin 2) ℤ L)
 
-/-- The matrix of a linear self-map in a basis is the basis matrix of the transported basis. -/
-private theorem toMatrix_eq_basis_toMatrix_map (e : L ≃ₗ[ℤ] L) :
-    LinearMap.toMatrix b b (e : L →ₗ[ℤ] L) = b.toMatrix (b.map e) := by
-  ext i j
-  simp [LinearMap.toMatrix_apply, Basis.toMatrix_apply]
-
 /-- The matrix of a proper isometry in a carrier basis, as an element of `SL(2, ℤ)`. -/
 private noncomputable def toSL : specialOrthogonalGroup L →* SL(2, ℤ) where
   toFun g := ⟨LinearMap.toMatrix b b ((g : Isometry L L).carrierEquiv : L →ₗ[ℤ] L), by
@@ -92,7 +86,7 @@ private theorem coe_toSL (g : specialOrthogonalGroup L) :
 private theorem toSL_mem_stabilizer (g : specialOrthogonalGroup L) :
     toSL b g ∈ stabilizer SL(2, ℤ) (L.binaryNormForm b) := by
   have h := L.binaryNormForm_eq_inv_smul b (b.map (g : Isometry L L).carrierEquiv) (toSL b g)
-    (by rw [coe_toSL, toMatrix_eq_basis_toMatrix_map])
+    (by rw [coe_toSL, LinearMap.toMatrix_eq_basisToMatrix, Basis.coe_map]; rfl)
   rw [← Isometry.carrierBasisEquiv_apply, binaryNormForm_map_isometry] at h
   exact (Subgroup.inv_mem_iff _).mp (mem_stabilizer_iff.mpr h.symm)
 
@@ -110,14 +104,15 @@ private theorem exists_toSL_eq {γ : SL(2, ℤ)} (hγ : γ ∈ stabilizer SL(2, 
   let φ := Matrix.toLinearEquiv b (γ : Matrix (Fin 2) (Fin 2) ℤ)
     (by rw [SpecialLinearGroup.det_coe]; exact isUnit_one)
   have hφ : b.toMatrix (b.map φ) = γ := by
-    rw [← toMatrix_eq_basis_toMatrix_map]
+    rw [Basis.coe_map, ← LinearEquiv.coe_toLinearMap, ← LinearMap.toMatrix_eq_basisToMatrix]
     exact LinearMap.toMatrix_toLin b b _
   have hN : L.binaryNormForm (b.map φ) = L.binaryNormForm b := by
     rw [L.binaryNormForm_eq_inv_smul b _ γ hφ]
     exact mem_stabilizer_iff.mp ((Subgroup.inv_mem_iff _).mpr hγ)
   obtain ⟨e, he⟩ := (exists_isometry_map_basis_iff b (b.map φ)).mpr hN
   have hm : LinearMap.toMatrix b b (e.carrierEquiv : L →ₗ[ℤ] L) = γ := by
-    rw [toMatrix_eq_basis_toMatrix_map, ← Isometry.carrierBasisEquiv_apply, he, hφ]
+    rw [LinearMap.toMatrix_eq_basisToMatrix, LinearEquiv.coe_toLinearMap, ← Basis.coe_map,
+      ← Isometry.carrierBasisEquiv_apply, he, hφ]
   have hdet : e ∈ specialOrthogonalGroup L := by
     rw [mem_specialOrthogonalGroup_iff]
     apply Units.ext

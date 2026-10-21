@@ -185,15 +185,7 @@ private theorem regularRep_injective (hfD : f.discrim = D) (hf : f ≠ 0) :
     ring
   have him : z.im = w.im := by
     have hzw : z.im • f = w.im • f := by rw [← hQ, ← hQ, h]
-    by_contra hne
-    have key {x : ℤ} (hx : z.im * x = w.im * x) : x = 0 :=
-      (mul_eq_zero.mp (by linear_combination hx : (z.im - w.im) * x = 0)).resolve_left
-        (sub_ne_zero.mpr hne)
-    apply hf
-    ext
-    · exact key (congrArg BinaryQuadraticForm.a hzw)
-    · exact key (congrArg BinaryQuadraticForm.b hzw)
-    · exact key (congrArg BinaryQuadraticForm.c hzw)
+    exact smul_left_injective ℤ hf hzw
   have hre := (htr z).symm.trans ((congrArg Matrix.trace h).trans (htr w))
   ext
   · exact mul_left_cancel₀ (two_ne_zero (α := ℤ)) (by linear_combination hre - D * him)
