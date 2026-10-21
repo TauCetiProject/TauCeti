@@ -23,19 +23,21 @@ of a finite field it decides which elements are `n`-th powers, and the kernel of
 map (of order `g`, Mathlib's `IsCyclic.card_powMonoidHom_ker`) counts their roots.
 
 The inclusion of the image in the kernel holds in any group of order `N`; it is
-`TauCeti.pow_pow_card_div_gcd_eq_one` in `TauCeti.GroupTheory.OrderOfElement.Basic`.
+`TauCeti.pow_pow_card_div_gcd_eq_one` in `TauCeti.GroupTheory.OrderOfElement.Basic`. That the
+`d`-th powers are the `gcd(N, d)`-th powers holds in any commutative group of order `N`; it is
+`TauCeti.range_powMonoidHom_gcd` in `TauCeti.Algebra.Group.PowMonoidHom`.
 
 ## Main results
 
 * `IsCyclic.range_powMonoidHom_eq_ker`: in a finite cyclic group the image of the `d`-th power
   map is the kernel of the `(N / gcd(N, d))`-th power map.
-* `IsCyclic.range_powMonoidHom_gcd`: the `d`-th powers are the `gcd(N, d)`-th powers.
 * `IsCyclic.mem_range_powMonoidHom_iff`: `a` is a `d`-th power iff `a ^ (N / gcd(N, d)) = 1`.
-* `IsCyclic.eq_range_powMonoidHom_iff`: the `d`-th powers form the unique subgroup of order
+* `Subgroup.eq_range_powMonoidHom_iff`: the `d`-th powers form the unique subgroup of order
   `N / gcd(N, d)`.
 
 Each result has an additive version, stated for `nsmulAddMonoidHom` in an additive cyclic group
-(`IsAddCyclic.mem_range_nsmulAddMonoidHom_iff`, ...).
+(`IsAddCyclic.mem_range_nsmulAddMonoidHom_iff`, `AddSubgroup.eq_range_nsmulAddMonoidHom_iff`,
+...).
 
 ## References
 
@@ -68,15 +70,6 @@ theorem range_powMonoidHom_eq_ker (d : ℕ) :
   · rw [card_powMonoidHom_ker, card_powMonoidHom_range,
       Nat.gcd_eq_right (Nat.div_dvd_of_dvd (Nat.gcd_dvd_left _ _))]
 
-/-- In a finite cyclic group of order `N`, the `d`-th powers are exactly the `gcd(N, d)`-th
-powers. -/
-@[to_additive
-/-- In a finite additive cyclic group of order `N`, the `d`-th multiples are exactly the
-`gcd(N, d)`-th multiples. -/]
-theorem range_powMonoidHom_gcd (d : ℕ) :
-    (powMonoidHom ((Nat.card G).gcd d) : G →* G).range = (powMonoidHom d : G →* G).range := by
-  rw [range_powMonoidHom_eq_ker, range_powMonoidHom_eq_ker, Nat.gcd_gcd_self_right_left]
-
 /-- **The `d`-th power criterion in a finite cyclic group.** In a finite cyclic group of order
 `N`, an element `x` is a `d`-th power exactly when `x ^ (N / gcd(N, d)) = 1`. The natural number
 `d` is arbitrary: when `d ∣ N` the exponent is `N / d`, and when `d = 0` the criterion reads
@@ -89,6 +82,12 @@ theorem mem_range_powMonoidHom_iff (d : ℕ) (x : G) :
     x ∈ (powMonoidHom d : G →* G).range ↔ x ^ (Nat.card G / (Nat.card G).gcd d) = 1 := by
   rw [range_powMonoidHom_eq_ker, MonoidHom.mem_ker, powMonoidHom_apply]
 
+end IsCyclic
+
+namespace Subgroup
+
+variable [CommGroup G] [IsCyclic G] [Finite G]
+
 /-- In a finite cyclic group of order `N`, the `d`-th powers form the unique subgroup of order
 `N / gcd(N, d)`. -/
 @[to_additive
@@ -96,9 +95,9 @@ theorem mem_range_powMonoidHom_iff (d : ℕ) (x : G) :
 subgroup of order `N / gcd(N, d)`. -/]
 theorem eq_range_powMonoidHom_iff (H : Subgroup G) (d : ℕ) :
     H = (powMonoidHom d : G →* G).range ↔ Nat.card H = Nat.card G / (Nat.card G).gcd d := by
-  rw [subgroup_eq_iff_card_eq, card_powMonoidHom_range]
+  rw [IsCyclic.subgroup_eq_iff_card_eq, IsCyclic.card_powMonoidHom_range]
 
-end IsCyclic
+end Subgroup
 
 /-! ### Examples -/
 
@@ -114,7 +113,7 @@ example {G : Type*} [CommGroup G] [IsCyclic G] [Finite G] (hG : Nat.card G = 12)
 /-- In a cyclic group of order `12`, every element is a fifth power, since `gcd(12, 5) = 1`. -/
 example {G : Type*} [CommGroup G] [IsCyclic G] [Finite G] (hG : Nat.card G = 12) :
     (powMonoidHom 5 : G →* G).range = ⊤ := by
-  refine ((IsCyclic.eq_range_powMonoidHom_iff ⊤ 5).2 ?_).symm
+  refine (((⊤ : Subgroup G).eq_range_powMonoidHom_iff 5).2 ?_).symm
   rw [Subgroup.card_top, hG]
   rfl
 

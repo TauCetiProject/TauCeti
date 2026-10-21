@@ -30,6 +30,9 @@ range of the squaring homomorphism has index at most `2 ^ S.card`.
 element of order `p`, killed by the `n`th power map, which is then not injective and so, `G` being
 finite, not surjective.
 
+*Which exponents give the same subgroup?* In a commutative group of order `N`, the `d`-th powers
+are exactly the `gcd(N, d)`-th powers, by Bézout's identity and `y ^ N = 1`.
+
 *How does it move along homomorphisms?* A homomorphism carries squares to squares, so `G²` lands
 inside the preimage of `H²`. This is the side condition that descends a homomorphism to the
 quotients by squares. In the same way `Gⁿ` lands inside the preimage of `Hⁿ`, so a subgroup with
@@ -41,6 +44,8 @@ finite image in `G ⧸ Gⁿ` has finite image in `H ⧸ Hⁿ`.
   trivial iff the unit is an `n`th power in `M`.
 * `TauCeti.powMonoidHom_range_ne_top_of_not_coprime`, and its additive counterpart: `Gⁿ ≠ G` for a
   finite `G` whose order is not prime to `n`.
+* `TauCeti.range_powMonoidHom_gcd`, and its additive counterpart: the `d`-th powers of a group of
+  order `N` are the `gcd(N, d)`-th powers.
 * `TauCeti.square_eq_range_powMonoidHom`: `G²` is the range of the squaring homomorphism.
 * `MonoidHom.square_le_comap`: `G² ≤ (H²).comap f` for a homomorphism `f : G →* H`.
 * `TauCeti.index_square_le_of_closure_eq_top`: `[G : G²] ≤ 2 ^ S.card`.
@@ -134,6 +139,25 @@ theorem powMonoidHom_range_ne_top_of_not_coprime {G : Type*} [CommGroup G] [Fini
     exact hpn
   rw [hx1, orderOf_one] at hx
   exact hp.one_lt.ne hx
+
+/-- In a commutative group of order `N`, the `d`-th powers are exactly the `gcd(N, d)`-th powers.
+Every `d`-th power is a `gcd(N, d)`-th power since `gcd(N, d)` divides `d`; conversely, writing
+`gcd(N, d) = N * a + d * b` (Bézout), `y ^ gcd(N, d) = (y ^ b) ^ d` because `y ^ N = 1`. For an
+infinite group `N = 0` and both sides are the `d`-th powers. -/
+@[to_additive /-- In an additive commutative group of order `N`, the `d`-th multiples are exactly
+the `gcd(N, d)`-th multiples. -/]
+theorem range_powMonoidHom_gcd {G : Type*} [CommGroup G] (d : ℕ) :
+    (powMonoidHom ((Nat.card G).gcd d) : G →* G).range = (powMonoidHom d : G →* G).range := by
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨y, rfl⟩
+    refine ⟨y ^ (Nat.card G).gcdB d, ?_⟩
+    rw [powMonoidHom_apply, powMonoidHom_apply, ← zpow_natCast y, Nat.gcd_eq_gcd_ab, zpow_add,
+      zpow_mul y (Nat.card G), zpow_natCast y, pow_card_eq_one', one_zpow, one_mul, mul_comm,
+      zpow_mul, zpow_natCast]
+  · rintro _ ⟨y, rfl⟩
+    refine ⟨y ^ (d / (Nat.card G).gcd d), ?_⟩
+    rw [powMonoidHom_apply, powMonoidHom_apply, ← pow_mul,
+      Nat.div_mul_cancel (Nat.gcd_dvd_right _ _)]
 
 /-- In a commutative group, Mathlib's subgroup of squares agrees with the range of the
 squaring homomorphism. -/
