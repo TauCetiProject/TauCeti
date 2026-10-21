@@ -105,7 +105,7 @@ theorem powerResidueSymbol_eq_iff (hP : (absNorm P).Coprime n) {x : 𝓞 K ⧸ P
     {μ : 𝓞 K} (hμ : μ ^ n = 1) :
     powerResidueSymbol P n x = μ ↔ Ideal.Quotient.mk P μ = x ^ ((absNorm P - 1) / n) := by
   refine ⟨fun h ↦ h ▸ mk_powerResidueSymbol hP hx, fun h ↦ ?_⟩
-  exact eq_of_pow_eq_one_of_mk_eq hP (powerResidueSymbol_pow_eq_one hP hx) hμ
+  exact eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' hP (powerResidueSymbol_pow_eq_one hP hx) hμ
     (by rw [mk_powerResidueSymbol hP hx, h])
 
 /-- **The power residue symbol of a root of unity.** If `N P` is prime to `n` and `ζ` is an
@@ -117,19 +117,6 @@ theorem powerResidueSymbol_mk_of_pow_eq_one (hP : (absNorm P).Coprime n) {ζ : �
     ((IsUnit.of_pow_eq_one hζ (NeZero.ne n)).map (Ideal.Quotient.mk P)).ne_zero
   rw [powerResidueSymbol_eq_iff hP hx (by rw [← pow_mul, mul_comm, pow_mul, hζ, one_pow]),
     map_pow]
-
-/-- The power residue symbol vanishes exactly at zero. -/
-@[simp]
-theorem powerResidueSymbol_eq_zero_iff {x : 𝓞 K ⧸ P} : powerResidueSymbol P n x = 0 ↔ x = 0 := by
-  let _ := Ideal.Quotient.field P
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ MulChar.map_zero _⟩
-  by_contra hx
-  by_cases hP : (absNorm P).Coprime n
-  · have h1 := powerResidueSymbol_pow_eq_one hP hx
-    rw [h, zero_pow (NeZero.ne n)] at h1
-    exact zero_ne_one h1
-  · rw [powerResidueSymbol_of_not_coprime hP, MulChar.one_apply (Ne.isUnit hx)] at h
-    exact one_ne_zero h
 
 /-- **Compatibility with divisors of `n`.** If `d ∣ n` and `N P` is prime to `n`, then
 `((x / P)_n) ^ (n / d) = (x / P)_d`. -/

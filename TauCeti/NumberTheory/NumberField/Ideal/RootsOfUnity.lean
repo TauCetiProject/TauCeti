@@ -22,8 +22,8 @@ unity of the residue field, such as `x ^ ((N P - 1) / n)`, lifts uniquely to `�
 ## Main results
 
 * `NumberField.dvd_absNorm_sub_one`: `n ∣ N P - 1`.
-* `Ideal.eq_of_pow_eq_one_of_mk_eq`: two `n`-th roots of unity of `𝓞 K` congruent modulo `P`
-  are equal.
+* `Ideal.eq_of_pow_eq_one_of_mk_eq`: two `n`-th roots of unity of `𝓞 K` congruent modulo a
+  proper ideal `P` with `N P` prime to `n` are equal.
 * `Ideal.rootsOfUnityEquivQuot`: reduction modulo `P` as an isomorphism between the `n`-th roots
   of unity of `𝓞 K` and those of `𝓞 K ⧸ P`.
 * `Ideal.pow_absNorm_sub_one_div_mem_rootsOfUnity`: `u ^ ((N P - 1) / n)` is an `n`-th root of
@@ -43,7 +43,8 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- **The norm of a prime not dividing `n` is one modulo `n`.** If `𝓞 K` contains a primitive
 `n`-th root of unity and the absolute norm of the prime `P` is prime to `n`, then
-`n ∣ N P - 1`. -/
+`n ∣ N P - 1`. The proof adapts Mathlib's `NumberField.torsionOrder_dvd_absNorm_sub_one`, with `n`
+in place of the torsion order. -/
 theorem NumberField.dvd_absNorm_sub_one {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity (𝓞 K) n]
     {P : Ideal (𝓞 K)} [P.IsPrime]
     (hP : (Ideal.absNorm P).Coprime n) : n ∣ Ideal.absNorm P - 1 := by
@@ -60,12 +61,12 @@ theorem NumberField.dvd_absNorm_sub_one {n : ℕ} [NeZero n] [HasEnoughRootsOfUn
 
 namespace Ideal
 
-/-- Two `n`-th roots of unity of `𝓞 K` that are congruent modulo a prime `P` with `N P` prime to
-`n` are equal. -/
-theorem eq_of_pow_eq_one_of_mk_eq {n : ℕ} [NeZero n] {P : Ideal (𝓞 K)} [P.IsPrime]
+/-- Two `n`-th roots of unity of `𝓞 K` that are congruent modulo a proper ideal `P` with `N P`
+prime to `n` are equal. -/
+theorem eq_of_pow_eq_one_of_mk_eq {n : ℕ} [NeZero n] {P : Ideal (𝓞 K)} (hP₁ : P ≠ ⊤)
     (hP : (absNorm P).Coprime n) {μ ν : 𝓞 K} (hμ : μ ^ n = 1) (hν : ν ^ n = 1)
     (h : Ideal.Quotient.mk P μ = Ideal.Quotient.mk P ν) : μ = ν := by
-  have := rootsOfUnityMapQuot_injective (I := P) n (absNorm_eq_one_iff.not.mpr IsPrime.ne_top') hP
+  have := rootsOfUnityMapQuot_injective (I := P) n (absNorm_eq_one_iff.not.mpr hP₁) hP
     (a₁ := rootsOfUnity.mkOfPowEq μ hμ) (a₂ := rootsOfUnity.mkOfPowEq ν hν) (by ext; simpa)
   simpa using congrArg (fun z : rootsOfUnity n (𝓞 K) ↦ ((z : (𝓞 K)ˣ) : 𝓞 K)) this
 
