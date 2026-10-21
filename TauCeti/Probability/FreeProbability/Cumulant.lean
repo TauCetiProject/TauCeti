@@ -40,7 +40,7 @@ No normalisation `φ 1 = 1`, positivity or traciality is assumed. For `s = ∅` 
 
 ## Main results
 
-* `TauCeti.sum_partitionCumulant_Iic` — the moment–cumulant formula
+* `TauCeti.sum_Iic_partitionCumulant` — the moment–cumulant formula
   `∑_{σ ≤ π} κ_σ(a) = φ_π(a)`, and `TauCeti.eq_partitionCumulant_of_forall_sum_Iic` — the
   cumulants are the only family satisfying it.
 * `TauCeti.apply_prod_eq_sum_partitionCumulant` and
@@ -127,7 +127,7 @@ variable (φ : A → R) (a : α → A)
 
 /-- The *moment–cumulant formula*: the block moment of a noncrossing partition `π` is the sum of
 the free cumulants of the noncrossing partitions refining `π`. -/
-theorem sum_partitionCumulant_Iic (π : NoncrossingPartition s) :
+theorem sum_Iic_partitionCumulant (π : NoncrossingPartition s) :
     ∑ σ ∈ Iic π, partitionCumulant φ a σ = partitionMoment φ a π.1 := by
   simp_rw [partitionCumulant_def]
   exact sum_Iic_sum_Iic_mu_mul (fun σ : NoncrossingPartition s => partitionMoment φ a σ.1) π
@@ -161,7 +161,7 @@ cumulants over all noncrossing partitions, `φ (a_{i₁} * ⋯ * a_{iₙ}) = ∑
 theorem apply_prod_eq_sum_partitionCumulant (hs : s.Nonempty) :
     φ ((s.sort.map a).prod) = ∑ π : NoncrossingPartition s, partitionCumulant φ a π := by
   rw [← partitionMoment_top φ a hs, ← NoncrossingPartition.coe_top, ← Iic_top,
-    sum_partitionCumulant_Iic]
+    sum_Iic_partitionCumulant]
 
 /-- The moment–cumulant formula for a word `a₁, …, aₙ` with `n ≥ 1`:
 `φ (a₁ * ⋯ * aₙ) = ∑_{π ∈ NC(n)} κ_π(a₁, …, aₙ)`. -/
