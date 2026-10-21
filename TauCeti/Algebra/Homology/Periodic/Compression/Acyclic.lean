@@ -7,12 +7,15 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import TauCeti.Algebra.Homology.Periodic.Compression.Basic
+public import TauCeti.Algebra.Homology.ShortComplex.Preadditive
 
 /-!
 # Compression detects acyclicity
 
 A strictly bounded cochain complex `K` is acyclic exactly when its `n`-periodic compression
-`Δₙ K` is acyclic (`TauCeti.PeriodicComplex.compression_acyclic_iff`). The homology of `Δₙ K` in
+`Δₙ K` is acyclic (`TauCeti.PeriodicComplex.compression_acyclic_iff`); the direction from `Δₙ K`
+to `K` holds for every complex with a compression
+(`TauCeti.PeriodicComplex.acyclic_of_compression_acyclic`). The homology of `Δₙ K` in
 residue `r` is the direct sum of the homology objects of `K` in the degrees congruent to `r`; we
 do not construct this decomposition, but only the finite sum decomposition of the identity of the
 short complex of `Δₙ K` at `r` through the short complexes of `K` that it rests on. The summand
@@ -41,87 +44,6 @@ namespace TauCeti.PeriodicComplex
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] (n : ℕ) (K : CochainComplex C ℤ)
   [HasCompression n K]
-
-/-- The projection of the term of residue `r` of the compression onto the term of degree `j`
-of `K`; it is zero when `j` does not lie in the residue class `r`. -/
-private noncomputable def πCompression (r : ZMod n) (j : ℤ) :
-    (compression n K).X r ⟶ K.X j :=
-  compressionDesc n K fun i _ ↦ if h : i = j then eqToHom (congrArg K.X h) else 0
-
-/-- The inclusion of the term of degree `j` of `K` into the term of residue `r` of the
-compression; it is zero when `j` does not lie in the residue class `r`. -/
--- This is `GradedObject.ιMapObjOrZero` for the coproducts defining the compression, restated
--- through `ιCompression` because the terms of `compression` are not exposed as those coproducts.
-private noncomputable def ιCompressionOrZero (j : ℤ) (r : ZMod n) :
-    K.X j ⟶ (compression n K).X r :=
-  if h : (j : ZMod n) = r then ιCompression n K j r h else 0
-
-private lemma ιCompressionOrZero_eq (j : ℤ) (r : ZMod n) (h : (j : ZMod n) = r) :
-    ιCompressionOrZero n K j r = ιCompression n K j r h := by
-  simp [ιCompressionOrZero, h]
-
-private lemma ιCompressionOrZero_eq_zero (j : ℤ) (r : ZMod n) (h : (j : ZMod n) ≠ r) :
-    ιCompressionOrZero n K j r = 0 := by
-  simp [ιCompressionOrZero, h]
-
-@[reassoc]
-private lemma ιCompression_πCompression (i : ℤ) (r : ZMod n) (hi : (i : ZMod n) = r) (j : ℤ) :
-    ιCompression n K i r hi ≫ πCompression n K r j =
-      if h : i = j then eqToHom (congrArg K.X h) else 0 :=
-  ιCompression_compressionDesc n K _ i hi
-
-private lemma ιCompressionOrZero_πCompression (j : ℤ) (r : ZMod n) (hj : (j : ZMod n) = r) :
-    ιCompressionOrZero n K j r ≫ πCompression n K r j = 𝟙 _ := by
-  rw [ιCompressionOrZero_eq n K j r hj]
-  exact (ιCompression_πCompression n K j r hj j).trans (by simp)
-
-/-- The projections onto the summands of degrees `i` and `j = i + 1` intertwine the differentials
-of the compression and of `K`. -/
-@[reassoc]
-private lemma d_πCompression (r s : ZMod n) (hrs : r + 1 = s) (i j : ℤ) (hij : i + 1 = j) :
-    (compression n K).d r s ≫ πCompression n K s j =
-      πCompression n K r i ≫ K.d i j := by
-  ext k hk
-  have hk' : ((k + 1 : ℤ) : ZMod n) = s := by push_cast; rw [hk, hrs]
-  rw [ιCompression_d_assoc n K k (k + 1) rfl r s hk hk',
-    ιCompression_πCompression, ιCompression_πCompression_assoc]
-  by_cases hki : k = i
-  · subst hki hij
-    simp
-  · have hkj : k + 1 ≠ j := by omega
-    simp [hki, hkj]
-
-/-- The inclusions of the summands of degrees `i` and `j = i + 1` intertwine the differentials
-of `K` and of the compression. -/
-@[reassoc]
-private lemma ιCompressionOrZero_d (r s : ZMod n) (hrs : r + 1 = s) (i j : ℤ) (hij : i + 1 = j) :
-    ιCompressionOrZero n K i r ≫ (compression n K).d r s =
-      K.d i j ≫ ιCompressionOrZero n K j s := by
-  by_cases hi : (i : ZMod n) = r
-  · have hj : (j : ZMod n) = s := by rw [← hij, ← hrs, ← hi]; push_cast; rfl
-    rw [ιCompressionOrZero_eq n K i r hi, ιCompressionOrZero_eq n K j s hj]
-    exact ιCompression_d n K i j hij r s hi hj
-  · have hj : (j : ZMod n) ≠ s := fun hj ↦ hi (by
-      rw [← hij, ← hrs] at hj
-      push_cast at hj
-      exact add_right_cancel hj)
-    rw [ιCompressionOrZero_eq_zero n K i r hi, ιCompressionOrZero_eq_zero n K j s hj, zero_comp,
-      comp_zero]
-
-/-- If every nonzero term of `K` in the residue class `r` has degree in `T`, the identity of the
-term of residue `r` of the compression is the sum over `T` of the composites of the projections
-and inclusions. -/
-private lemma sum_πCompression_ιCompressionOrZero (r : ZMod n) (T : Finset ℤ)
-    (hT : ∀ i : ℤ, (i : ZMod n) = r → i ∉ T → IsZero (K.X i)) :
-    ∑ j ∈ T, πCompression n K r j ≫ ιCompressionOrZero n K j r = 𝟙 _ := by
-  ext i hi
-  rw [Preadditive.comp_sum, Category.comp_id]
-  by_cases hiT : i ∈ T
-  · rw [Finset.sum_eq_single i (fun j _ hji ↦ by
-        simp [ιCompression_πCompression_assoc, Ne.symm hji])
-      (fun h ↦ absurd hiT h), ιCompression_πCompression_assoc, ιCompressionOrZero_eq n K i r hi]
-    simp
-  · exact (hT i hi hiT).eq_of_src _ _
 
 /-- The short complex of the compression at residue `r`, with explicit neighbouring residues. -/
 private noncomputable abbrev compressionSc (r : ZMod n) : ShortComplex C :=
@@ -156,10 +78,6 @@ private noncomputable def compressionScι (r : ZMod n) (i : ℤ) :
 private lemma sum_compressionScπ_compressionScι (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b]
     (r : ZMod n) :
     ∑ i ∈ Finset.Icc (a - 1) (b + 1), compressionScπ n K r i ≫ compressionScι n K r i = 𝟙 _ := by
-  -- Each component of a sum of morphisms of short complexes is the sum of the components.
-  have h₁ : (ShortComplex.π₁ : ShortComplex C ⥤ C).Additive := ⟨rfl⟩
-  have h₂ : (ShortComplex.π₂ : ShortComplex C ⥤ C).Additive := ⟨rfl⟩
-  have h₃ : (ShortComplex.π₃ : ShortComplex C ⥤ C).Additive := ⟨rfl⟩
   have hK (s : ZMod n) (T : Finset ℤ) (hT : ∀ i : ℤ, a ≤ i → i ≤ b → i ∈ T) :
       ∑ j ∈ T, πCompression n K s j ≫ ιCompressionOrZero n K j s = 𝟙 _ :=
     sum_πCompression_ιCompressionOrZero n K s T fun i _ hi ↦
@@ -188,37 +106,41 @@ residue of `i`. -/
 private lemma compressionScι_compressionScπ (i : ℤ) :
     compressionScι n K i i ≫ compressionScπ n K i i = 𝟙 _ := by
   ext
-  · exact ιCompressionOrZero_πCompression n K _ _ (by push_cast; rfl)
+  · exact ιCompressionOrZero_πCompression n K _ _ (by rw [Int.cast_sub, Int.cast_one])
   · exact ιCompressionOrZero_πCompression n K _ _ rfl
-  · exact ιCompressionOrZero_πCompression n K _ _ (by push_cast; rfl)
+  · exact ιCompressionOrZero_πCompression n K _ _ (by rw [Int.cast_add, Int.cast_one])
 
 variable [CategoryWithHomology C]
+
+/-- A cochain complex is acyclic when its `n`-periodic compression is acyclic. -/
+theorem acyclic_of_compression_acyclic (h : (compression n K).Acyclic) : K.Acyclic := by
+  intro i
+  rw [HomologicalComplex.exactAt_iff' _ (i - 1) i (i + 1) (by simp) (by simp),
+    ShortComplex.exact_iff_isZero_homology, IsZero.iff_id_eq_zero]
+  have hZ : IsZero ((ShortComplex.homologyFunctor C).obj (compressionSc n K i)) :=
+    (ShortComplex.exact_iff_isZero_homology _).mp
+      ((HomologicalComplex.exactAt_iff' _ _ _ _ (by simp) (by simp)).mp (h _))
+  have := congrArg (ShortComplex.homologyFunctor C).map (compressionScι_compressionScπ n K i)
+  rw [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_id,
+    hZ.eq_of_tgt ((ShortComplex.homologyFunctor C).map (compressionScι n K i i)) 0,
+    zero_comp] at this
+  exact this.symm
 
 /-- A strictly bounded cochain complex is acyclic exactly when its `n`-periodic compression is
 acyclic. -/
 theorem compression_acyclic_iff (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b] :
     (compression n K).Acyclic ↔ K.Acyclic := by
-  have hΔ (r : ZMod n) : (compression n K).ExactAt r ↔ (compressionSc n K r).Exact :=
-    HomologicalComplex.exactAt_iff' _ _ _ _ (by simp) (by simp)
-  have hK (i : ℤ) : K.ExactAt i ↔ (complexSc K i).Exact :=
-    HomologicalComplex.exactAt_iff' _ _ _ _ (by simp) (by simp)
-  refine ⟨fun h i ↦ ?_, fun h r ↦ ?_⟩
-  · rw [hK, ShortComplex.exact_iff_isZero_homology, IsZero.iff_id_eq_zero]
-    have hZ : IsZero ((ShortComplex.homologyFunctor C).obj (compressionSc n K i)) :=
-      (ShortComplex.exact_iff_isZero_homology _).mp ((hΔ _).mp (h _))
-    have := congrArg (ShortComplex.homologyFunctor C).map (compressionScι_compressionScπ n K i)
-    rw [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_id,
-      hZ.eq_of_tgt ((ShortComplex.homologyFunctor C).map (compressionScι n K i i)) 0,
-      zero_comp] at this
-    exact this.symm
-  · rw [hΔ, ShortComplex.exact_iff_isZero_homology, IsZero.iff_id_eq_zero]
-    have := (ShortComplex.homologyFunctor C).map_sum
-      (fun i ↦ compressionScπ n K r i ≫ compressionScι n K r i) (Finset.Icc (a - 1) (b + 1))
-    rw [sum_compressionScπ_compressionScι n K a b r, CategoryTheory.Functor.map_id] at this
-    refine this.trans (Finset.sum_eq_zero fun i _ ↦ ?_)
-    have hZ : IsZero ((ShortComplex.homologyFunctor C).obj (complexSc K i)) :=
-      (ShortComplex.exact_iff_isZero_homology _).mp ((hK _).mp (h _))
-    rw [CategoryTheory.Functor.map_comp,
-      hZ.eq_of_tgt ((ShortComplex.homologyFunctor C).map (compressionScπ n K r i)) 0, zero_comp]
+  refine ⟨acyclic_of_compression_acyclic n K, fun h r ↦ ?_⟩
+  rw [HomologicalComplex.exactAt_iff' _ (r - 1) r (r + 1) (by simp) (by simp),
+    ShortComplex.exact_iff_isZero_homology, IsZero.iff_id_eq_zero]
+  have := (ShortComplex.homologyFunctor C).map_sum
+    (fun i ↦ compressionScπ n K r i ≫ compressionScι n K r i) (Finset.Icc (a - 1) (b + 1))
+  rw [sum_compressionScπ_compressionScι n K a b r, CategoryTheory.Functor.map_id] at this
+  refine this.trans (Finset.sum_eq_zero fun i _ ↦ ?_)
+  have hZ : IsZero ((ShortComplex.homologyFunctor C).obj (complexSc K i)) :=
+    (ShortComplex.exact_iff_isZero_homology _).mp
+      ((HomologicalComplex.exactAt_iff' _ _ _ _ (by simp) (by simp)).mp (h _))
+  rw [CategoryTheory.Functor.map_comp,
+    hZ.eq_of_tgt ((ShortComplex.homologyFunctor C).map (compressionScπ n K r i)) 0, zero_comp]
 
 end TauCeti.PeriodicComplex

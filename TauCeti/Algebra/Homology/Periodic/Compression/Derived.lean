@@ -41,7 +41,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] (n : ℕ)
 
 /-- An object of the bounded homotopy category is acyclic exactly when its compression is
 acyclic. -/
-theorem subcategoryAcyclic_homotopyCompressionFunctor_obj_iff
+theorem homotopyCompressionFunctor_obj_mem_subcategoryAcyclic_iff
     (K : HomotopyCategory.Bounded C) :
     subcategoryAcyclic C n ((homotopyCompressionFunctor n).obj K) ↔
       HomotopyCategory.Bounded.subcategoryAcyclic C K := by
@@ -62,7 +62,7 @@ theorem quasiIso_iff_trW_homotopyCompressionFunctor_map
   obtain ⟨Z, g, h, hT⟩ := distinguished_cocone_triangle f
   rw [HomotopyCategory.Bounded.quasiIso_eq_subcategoryAcyclic_trW]
   exact ((HomotopyCategory.Bounded.subcategoryAcyclic C).trW_iff_of_distinguished _ hT).trans
-    ((subcategoryAcyclic_homotopyCompressionFunctor_obj_iff n Z).symm.trans
+    ((homotopyCompressionFunctor_obj_mem_subcategoryAcyclic_iff n Z).symm.trans
       ((subcategoryAcyclic C n).trW_iff_of_distinguished _
         ((homotopyCompressionFunctor n).map_distinguished _ hT)).symm)
 

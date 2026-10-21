@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Plus
-public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
+public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Acyclic
 
 /-!
 # The bounded derived category as a localization
@@ -46,46 +46,6 @@ namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
 
-namespace HomotopyCategory.Bounded
-
-variable (C)
-
-/-- The property of objects of `TauCeti.HomotopyCategory.Bounded C` which are acyclic. -/
-abbrev subcategoryAcyclic : ObjectProperty (HomotopyCategory.Bounded C) :=
-  (_root_.HomotopyCategory.subcategoryAcyclic C).inverseImage (ι C)
-
-variable {C} in
-/-- An object of the bounded homotopy category is acyclic exactly when it is acyclic in the
-homotopy category. -/
-lemma mem_subcategoryAcyclic_iff (K : HomotopyCategory.Bounded C) :
-    subcategoryAcyclic C K ↔ _root_.HomotopyCategory.subcategoryAcyclic C K.obj :=
-  Iff.rfl
-
-/-- The quasi-isomorphisms in the homotopy category of bounded cochain complexes. -/
-def quasiIso : MorphismProperty (HomotopyCategory.Bounded C) :=
-  (_root_.HomotopyCategory.quasiIso C (.up ℤ)).inverseImage (ι C)
-
-variable {C} in
-/-- A morphism of bounded complexes is a quasi-isomorphism when it is one in the homotopy
-category. -/
-lemma quasiIso_iff {K L : HomotopyCategory.Bounded C} (f : K ⟶ L) :
-    quasiIso C f ↔ _root_.HomotopyCategory.quasiIso C (.up ℤ) f.hom :=
-  Iff.rfl
-
-/-- A morphism of bounded complexes is a quasi-isomorphism exactly when its cone is acyclic. -/
-lemma quasiIso_eq_subcategoryAcyclic_trW : quasiIso C = (subcategoryAcyclic C).trW := by
-  ext K L f
-  rw [quasiIso_iff, _root_.HomotopyCategory.quasiIso_eq_trW_subcategoryAcyclic,
-    ObjectProperty.inverseImage_trW_iff]
-  -- The inclusion `ι C` sends `f` to its underlying morphism `f.hom`.
-  rfl
-
-instance : (quasiIso C).IsCompatibleWithShift ℤ := by
-  rw [quasiIso_eq_subcategoryAcyclic_trW]
-  infer_instance
-
-end HomotopyCategory.Bounded
-
 namespace DerivedCategory.Bounded
 
 open _root_.DerivedCategory.TStructure
@@ -95,6 +55,7 @@ variable [HasDerivedCategory.{w} C]
 variable (C) in
 /-- The localization functor `K^b(C) ⥤ D^b(C)` from the homotopy category of bounded cochain
 complexes to the bounded derived category. -/
+@[expose]
 noncomputable def Qh : HomotopyCategory.Bounded C ⥤ _root_.DerivedCategory.Bounded C :=
   t.bounded.lift (HomotopyCategory.Bounded.ι C ⋙ _root_.DerivedCategory.Qh) (by
     rintro ⟨K, hK⟩
@@ -107,6 +68,7 @@ noncomputable def Qh : HomotopyCategory.Bounded C ⥤ _root_.DerivedCategory.Bou
 variable (C) in
 /-- The functor `Qh C : K^b(C) ⥤ D^b(C)` is induced by
 `DerivedCategory.Qh : HomotopyCategory C (.up ℤ) ⥤ DerivedCategory C`. -/
+@[expose, simps! -isSimp]
 noncomputable def QhCompιIso :
     Qh C ⋙ _root_.DerivedCategory.Bounded.ι ≅
       HomotopyCategory.Bounded.ι C ⋙ _root_.DerivedCategory.Qh :=
@@ -137,7 +99,8 @@ lemma quasiIso_isInvertedBy_Qh :
     (HomotopyCategory.Bounded.quasiIso C).IsInvertedBy (Qh C) := fun _ _ f hf ↦ by
   rw [← isIso_iff_of_reflects_iso _ _root_.DerivedCategory.Bounded.ι]
   exact Localization.inverts _root_.DerivedCategory.Qh
-    (_root_.HomotopyCategory.quasiIso C (.up ℤ)) _ hf
+    (_root_.HomotopyCategory.quasiIso C (.up ℤ)) _
+    ((HomotopyCategory.Bounded.quasiIso_iff f).mp hf)
 
 section Localization
 
@@ -226,6 +189,8 @@ private instance : (toBoundedPlusLocalizerMorphism C).IsInduced where
 private instance : (toBoundedPlusLocalizerMorphism C).functor.IsEquivalence :=
   inferInstanceAs (toBoundedPlus C).IsEquivalence
 
+/-- The functor `Qh C : K^b(C) ⥤ D^b(C)` is the localization of the bounded homotopy category at
+the morphisms whose cone is acyclic. -/
 instance : (Qh C).IsLocalization (HomotopyCategory.Bounded.subcategoryAcyclic C).trW := by
   have := (toBoundedPlusLocalizerMorphism C).isLocalizedEquivalence_of_isInduced
   exact ((toBoundedPlusLocalizerMorphism C).comp
@@ -235,6 +200,8 @@ instance : (Qh C).IsLocalization (HomotopyCategory.Bounded.subcategoryAcyclic C)
       (_root_.HomotopyCategory.subcategoryAcyclic C)))).isLocalization_of_isLocalizedFullyFaithful
     (L₂ := _root_.DerivedCategory.Qh) (F := _root_.DerivedCategory.Bounded.ι) (QhCompιIso C).symm
 
+/-- **The bounded derived category is a localization of the bounded homotopy category.** The
+functor `Qh C : K^b(C) ⥤ D^b(C)` is the localization at the quasi-isomorphisms. -/
 instance : (Qh C).IsLocalization (HomotopyCategory.Bounded.quasiIso C) := by
   rw [HomotopyCategory.Bounded.quasiIso_eq_subcategoryAcyclic_trW]
   infer_instance
