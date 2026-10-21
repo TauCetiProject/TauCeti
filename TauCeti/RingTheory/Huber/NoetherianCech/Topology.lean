@@ -90,7 +90,7 @@ theorem pow_mem_numerators (p : ℕ) (i : ι) : f i ^ (p + 1) ∈ numerators f p
   ⟨fun _ ↦ i, by simp⟩
 
 /-- If the `f i` generate the unit ideal, so do the numerators in every degree. -/
-theorem span_numerators (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ) :
+theorem span_numerators_eq_top (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ) :
     Ideal.span (numerators f p) = ⊤ := by
   refine top_unique ((Ideal.span_pow_eq_top _ hf (p + 1)).symm.le.trans (Ideal.span_mono ?_))
   rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
@@ -104,7 +104,8 @@ standing hypothesis for every denominator, in particular for `f_S`. -/
 theorem hasDenominatorPower (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ) (S : Finset ι) :
     P.HasDenominatorPower (numerators f p) (∏ i ∈ S, f i)
       (Localization.Away (∏ i ∈ S, f i)) :=
-  P.hasDenominatorPower_of_isOpen_span _ _ _ (by rw [span_numerators f hf p]; exact isOpen_univ)
+  P.hasDenominatorPower_of_isOpen_span _ _ _ <| by
+    rw [span_numerators_eq_top f hf p]; exact isOpen_univ
 
 /-! ### The topology of a face -/
 
