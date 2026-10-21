@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.QuotSMulTop
+public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.RepresentationTheory.Cyclic.Automorphism
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
@@ -54,12 +56,27 @@ and `m • s = i v`, the class of the image of `s` is sent to the class of `v`, 
 by `m` is bijective on `E`, as for a real vector space, the cohomology of `E` vanishes in positive
 degrees and `δ` is an isomorphism (`TauCeti.cyclicConnectingEquiv`).
 
+The last part of the file specializes to the trivial action, given by the identity automorphism.
+Then the odd-degree cohomology of `C_m` is the `m`-torsion `T[m]`
+(`TauCeti.groupCohomologyOddEquivTorsionBy`) and its positive even-degree cohomology is `T ⧸ m T`
+(`TauCeti.groupCohomologyEvenEquivQuotSMulTop`). Through these identifications the connecting
+homomorphism of `0 → Λ → E → T → 0` becomes the snake-lemma map `TauCeti.torsionByδ` of
+multiplication by `m`, which sends `t` to the coset of `v` when `m • s = i v` for a lift `s` of
+`t` (`TauCeti.groupCohomologyEvenEquivQuotSMulTop_δ`). When multiplication by `m` is bijective on
+`E`, the snake-lemma isomorphism `T[m] ≃ Λ ⧸ m Λ` is therefore the connecting isomorphism
+(`TauCeti.torsionByδEquiv_eq_trans_cyclicConnectingEquiv`). For a torus `E ⧸ Λ` this is the
+description of its `m`-torsion points as `(1 / m) Λ ⧸ Λ ≃ Λ ⧸ m Λ`.
+
 ## Main definitions
 
 * `AddMonoidHom.cyclicRepShortComplex`: the short complex `Λ ⟶ E ⟶ T` of cyclic
   representations.
 * `TauCeti.cyclicConnectingEquiv`: the connecting isomorphism `H¹(C_m, T) ≃ H²(C_m, Λ)`
   when multiplication by `m` is bijective on `E`.
+* `TauCeti.groupCohomologyOddEquivTorsionBy`: odd-degree cohomology of the trivial action is
+  `T[m]`.
+* `TauCeti.groupCohomologyEvenEquivQuotSMulTop`: positive even-degree cohomology of the trivial
+  action is `T ⧸ m T`.
 
 ## Main results
 
@@ -75,6 +92,10 @@ degrees and `δ` is an isomorphism (`TauCeti.cyclicConnectingEquiv`).
   `TauCeti.δ_cyclicRepShortComplex_groupCohomologyπOdd_one_of_nsmul_eq`: the connecting
   homomorphism sends the class of `t` to the class of the norm of a lift of `t`, and the class of
   `v / m` to the class of `v`.
+* `TauCeti.groupCohomologyEvenEquivQuotSMulTop_δ`: for trivial actions, the connecting
+  homomorphism is the snake-lemma map `T[m] → Λ ⧸ m Λ`.
+* `TauCeti.torsionByδEquiv_eq_trans_cyclicConnectingEquiv`: for trivial actions and `m` bijective
+  on `E`, the snake-lemma isomorphism `T[m] ≃ Λ ⧸ m Λ` is the connecting isomorphism.
 
 ## References
 
@@ -232,5 +253,151 @@ theorem cyclicConnectingEquiv_apply (hm : Function.Bijective fun x : E ↦ m •
     (x : groupCohomology (AT.cyclicRep hT) 1) :
     cyclicConnectingEquiv hS hm x = δ hS 1 2 rfl x :=
   (rfl)
+
+end TauCeti
+
+/-! ### Trivial actions -/
+
+namespace TauCeti
+
+open scoped Pointwise
+
+section Trivial
+
+variable (T : Type) [AddCommGroup T] (m : ℕ) [NeZero m]
+
+/-- **Odd-degree cohomology of the trivial action.** When `C_m` acts trivially on `T`, its
+cohomology in odd degree is the `m`-torsion `T[m]`: the class of a norm-zero element `x`
+corresponds to `x` itself. -/
+noncomputable def groupCohomologyOddEquivTorsionBy (i : ℕ) (hi : Odd i) :
+    groupCohomology ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) i ≃ₗ[ℤ]
+      Submodule.torsionBy ℤ T m :=
+  let ι := (Submodule.torsionBy ℤ T m).subtype.codRestrict _ fun x ↦
+    (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 x.2
+  (LinearEquiv.ofBijective ((groupCohomologyπOdd ((AddEquiv.refl T).cyclicRep
+      (AddEquiv.iterate_refl m)) (.ofAdd 1) mem_zpowers_ofAdd_one i hi).hom ∘ₗ ι)
+    ⟨fun x y h ↦ by
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, groupCohomologyπOdd_eq_iff,
+        AddEquiv.mem_range_cyclicRep_refl_applyAsHom_sub_iff, sub_eq_zero,
+        LinearMap.codRestrict_apply, LinearMap.codRestrict_apply, Submodule.coe_subtype] at h
+      exact Subtype.ext h,
+    fun c ↦ by
+      obtain ⟨x, rfl⟩ := groupCohomologyπOdd_surjective _ _ mem_zpowers_ofAdd_one i hi c
+      -- `ι` sends `⟨x, _⟩` to `x`.
+      exact ⟨⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).1 x.2⟩, rfl⟩⟩).symm
+
+/-- The odd-degree class corresponding to `x : T[m]` is the class of `x`. -/
+theorem groupCohomologyOddEquivTorsionBy_symm_apply (i : ℕ) (hi : Odd i)
+    (x : Submodule.torsionBy ℤ T m) :
+    (groupCohomologyOddEquivTorsionBy T m i hi).symm x =
+      groupCohomologyπOdd ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) (.ofAdd 1)
+        mem_zpowers_ofAdd_one i hi ⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 x.2⟩ :=
+  (rfl)
+
+/-- The odd-degree class of a norm-zero element `x` corresponds to `x` in `T[m]`. -/
+theorem groupCohomologyOddEquivTorsionBy_groupCohomologyπOdd (i : ℕ) (hi : Odd i)
+    (x : LinearMap.ker
+      ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)).norm.asHom.hom.toLinearMap) :
+    groupCohomologyOddEquivTorsionBy T m i hi
+      (groupCohomologyπOdd ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) (.ofAdd 1)
+        mem_zpowers_ofAdd_one i hi x) =
+      ⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).1 x.2⟩ := by
+  rw [← LinearEquiv.eq_symm_apply, groupCohomologyOddEquivTorsionBy_symm_apply]
+
+/-- **Even-degree cohomology of the trivial action.** When `C_m` acts trivially on `T`, its
+cohomology in positive even degree is `T ⧸ m T`: the class of `x` corresponds to the coset of
+`x`. -/
+noncomputable def groupCohomologyEvenEquivQuotSMulTop (i : ℕ) [NeZero i] (hi : Even i) :
+    groupCohomology ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) i ≃ₗ[ℤ]
+      QuotSMulTop (m : ℤ) T :=
+  let ι := (LinearMap.id : T →ₗ[ℤ] T).codRestrict _
+    (AddEquiv.mem_ker_cyclicRep_refl_applyAsHom_sub (m := m))
+  let φ := (groupCohomologyπEven ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m))
+    (.ofAdd 1) mem_zpowers_ofAdd_one i hi).hom ∘ₗ ι
+  have hφ : Function.Surjective φ := fun c ↦ by
+    obtain ⟨x, rfl⟩ := groupCohomologyπEven_surjective _ _ mem_zpowers_ofAdd_one i hi c
+    -- `ι` sends `x` to `⟨x, _⟩`.
+    exact ⟨x, rfl⟩
+  have hker : LinearMap.ker φ = (m : ℤ) • (⊤ : Submodule ℤ T) := by
+    ext x
+    rw [LinearMap.mem_ker, LinearMap.comp_apply, groupCohomologyπEven_eq_zero_iff,
+      LinearMap.codRestrict_apply, LinearMap.id_apply, AddEquiv.mem_range_cyclicRep_refl_norm_iff,
+      Submodule.mem_smul_pointwise_iff_exists]
+    simp
+  ((Submodule.quotEquivOfEq _ _ hker).symm.trans (φ.quotKerEquivOfSurjective hφ)).symm
+
+/-- The even-degree class corresponding to the coset of `x` is the class of `x`. -/
+theorem groupCohomologyEvenEquivQuotSMulTop_symm_mk (i : ℕ) [NeZero i] (hi : Even i) (x : T) :
+    (groupCohomologyEvenEquivQuotSMulTop T m i hi).symm (Submodule.Quotient.mk x) =
+      groupCohomologyπEven ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) (.ofAdd 1)
+        mem_zpowers_ofAdd_one i hi ⟨x, AddEquiv.mem_ker_cyclicRep_refl_applyAsHom_sub x⟩ :=
+  (rfl)
+
+/-- The even-degree class of `x` corresponds to the coset of `x` in `T ⧸ m T`. -/
+theorem groupCohomologyEvenEquivQuotSMulTop_groupCohomologyπEven (i : ℕ) [NeZero i]
+    (hi : Even i)
+    (x : LinearMap.ker (applyAsHom ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m))
+      (.ofAdd 1) - 𝟙 _).hom.toLinearMap) :
+    groupCohomologyEvenEquivQuotSMulTop T m i hi
+      (groupCohomologyπEven ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) (.ofAdd 1)
+        mem_zpowers_ofAdd_one i hi x) = Submodule.Quotient.mk (x : T) := by
+  have hx : (groupCohomologyEvenEquivQuotSMulTop T m i hi).symm (Submodule.Quotient.mk x) =
+      groupCohomologyπEven ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) (.ofAdd 1)
+        mem_zpowers_ofAdd_one i hi x := by
+    rw [groupCohomologyEvenEquivQuotSMulTop_symm_mk]
+  rw [← hx, LinearEquiv.apply_symm_apply]
+
+end Trivial
+
+section TrivialConnecting
+
+variable {Λ E T : Type} [AddCommGroup Λ] [AddCommGroup E] [AddCommGroup T] {m : ℕ} [NeZero m]
+  {i : Λ →ₗ[ℤ] E} {p : E →ₗ[ℤ] T} {hΛ : (⇑(AddEquiv.refl Λ))^[m] = _root_.id}
+  {hE : (⇑(AddEquiv.refl E))^[m] = _root_.id} {hT : (⇑(AddEquiv.refl T))^[m] = _root_.id}
+  {hi : ∀ x, i.toAddMonoidHom (AddEquiv.refl Λ x) = AddEquiv.refl E (i.toAddMonoidHom x)}
+  {hp : ∀ x, p.toAddMonoidHom (AddEquiv.refl E x) = AddEquiv.refl T (p.toAddMonoidHom x)}
+  {hpi : ∀ x, p.toAddMonoidHom (i.toAddMonoidHom x) = 0}
+  (hS : (i.toAddMonoidHom.cyclicRepShortComplex p.toAddMonoidHom hΛ hE hT hi hp hpi).ShortExact)
+  (hinj : Function.Injective i) (hexact : Function.Exact i p) (hsurj : Function.Surjective p)
+
+/-- **The connecting map of trivial actions is the snake map.** For the trivial actions of `C_m`
+on an exact sequence `0 → Λ → E → T → 0`, identify `H¹(C_m, T)` with `T[m]` and `H²(C_m, Λ)`
+with `Λ ⧸ m Λ`. Then the connecting homomorphism `δ` becomes the snake-lemma connecting map
+`TauCeti.torsionByδ`, which sends `t` to the coset of `v` when `m • s = i v` for a lift `s` of
+`t`. -/
+theorem groupCohomologyEvenEquivQuotSMulTop_δ
+    (x : groupCohomology ((AddEquiv.refl T).cyclicRep hT) 1) :
+    groupCohomologyEvenEquivQuotSMulTop Λ m 2 even_two (δ hS 1 2 rfl x) =
+      torsionByδ (m : ℤ) hexact hinj hsurj (groupCohomologyOddEquivTorsionBy T m 1 odd_one x) := by
+  -- Write `x` as the class of `t ∈ T[m]`, lift `t` to `s : E` and write `m • s = i v`.
+  obtain ⟨t, rfl⟩ := (groupCohomologyOddEquivTorsionBy T m 1 odd_one).symm.surjective x
+  obtain ⟨s, hs⟩ := hsurj t
+  obtain ⟨v, hv⟩ := (hexact (m • s)).1 <| by
+    rw [map_nsmul, hs, ← natCast_zsmul]
+    exact (Submodule.mem_torsionBy_iff _ _).1 t.2
+  rw [LinearEquiv.apply_symm_apply, groupCohomologyOddEquivTorsionBy_symm_apply,
+    δ_cyclicRepShortComplex_groupCohomologyπOdd_one hS
+      ⟨t, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 t.2⟩ s
+      (by rw [LinearMap.toAddMonoidHom_coe, hs])
+      ⟨v, AddEquiv.mem_ker_cyclicRep_refl_applyAsHom_sub v⟩
+      (by rw [LinearMap.toAddMonoidHom_coe, hv]; simp),
+    groupCohomologyEvenEquivQuotSMulTop_groupCohomologyπEven,
+    torsionByδ_eq hexact hinj hsurj t hs (by rw [hv, natCast_zsmul])]
+
+/-- **`T[m] ≃ Λ ⧸ m Λ` is the connecting isomorphism.** When multiplication by `m` is bijective on
+`E`, the snake-lemma isomorphism `T[m] ≃ Λ ⧸ m Λ` is the connecting isomorphism
+`H¹(C_m, T) ≃ H²(C_m, Λ)` of the trivial actions, read through `H¹(C_m, T) ≃ T[m]` and
+`H²(C_m, Λ) ≃ Λ ⧸ m Λ`. -/
+theorem torsionByδEquiv_eq_trans_cyclicConnectingEquiv
+    (hm : Function.Bijective fun x : E ↦ m • x) :
+    torsionByδEquiv (m : ℤ) hexact hinj hsurj (by simpa only [natCast_zsmul] using hm) =
+      ((groupCohomologyOddEquivTorsionBy T m 1 odd_one).symm.trans
+        (cyclicConnectingEquiv hS hm)).trans (groupCohomologyEvenEquivQuotSMulTop Λ m 2 even_two) :=
+  LinearEquiv.ext fun t ↦ by
+    rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, cyclicConnectingEquiv_apply,
+      groupCohomologyEvenEquivQuotSMulTop_δ hS hinj hexact hsurj, LinearEquiv.apply_symm_apply,
+      torsionByδEquiv_apply]
+
+end TrivialConnecting
 
 end TauCeti
