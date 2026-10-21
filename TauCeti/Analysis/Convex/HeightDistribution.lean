@@ -34,7 +34,7 @@ The proof combines three facts, each stated in its natural generality.
   (`Convex.measure_sep_inner_le_eq_iff`). So translated height distributions shift the supporting
   half-spaces of the two bodies by the translation constant `c_e`.
 * Translated height distributions shift the first moment `∫ x in s, ⟪e, x⟫ ∂μ` by `c_e` times
-  the measure (`TauCeti.integral_inner_eq_add_mul_of_forall_measure_sep_inner_le_add_eq`). Hence
+  the measure (`MeasureTheory.Measure.integral_eq_add_mul_of_forall_measure_sep_le_add_eq`). Hence
   `c_e` is `⟪e, v⟫`, where `v` is the measure-normalized difference of the two first moments, and in
   particular depends linearly on `e`.
 * A closed convex set is determined by its supporting half-spaces in unit directions
@@ -90,45 +90,6 @@ theorem Convex.measure_sep_inner_le_eq_iff [μ.IsOpenPosMeasure] {s : Set E} (hs
 namespace TauCeti
 
 omit [OpensMeasurableSpace E] in
-/-- If the height distribution of `t` in direction `e` is that of `s` translated by `c`, then `s`
-and `t` have the same measure. -/
-theorem measure_eq_of_forall_measure_sep_inner_le_add_eq {s t : Set E} {e : E} {c : ℝ}
-    (h : ∀ r : ℝ, μ {x ∈ t | ⟪e, x⟫ ≤ r + c} = μ {x ∈ s | ⟪e, x⟫ ≤ r}) :
-    μ t = μ s := by
-  -- Each set is the increasing union of its parts below the levels `n + a`, `n : ℕ`.
-  have hU (u : Set E) (a : ℝ) : ⋃ n : ℕ, {x ∈ u | ⟪e, x⟫ ≤ n + a} = u := by
-    refine Subset.antisymm (iUnion_subset fun _ ↦ sep_subset _ _) fun x hx ↦ ?_
-    obtain ⟨n, hn⟩ := exists_nat_ge (⟪e, x⟫ - a)
-    exact mem_iUnion.2 ⟨n, hx, by linarith⟩
-  have hmono (u : Set E) (a : ℝ) : Monotone fun n : ℕ ↦ {x ∈ u | ⟪e, x⟫ ≤ n + a} :=
-    fun m n hmn x hx ↦ ⟨hx.1, hx.2.trans (by gcongr)⟩
-  calc μ t = ⨆ n : ℕ, μ {x ∈ t | ⟪e, x⟫ ≤ n + c} := by rw [← (hmono t c).measure_iUnion, hU]
-    _ = ⨆ n : ℕ, μ {x ∈ s | ⟪e, x⟫ ≤ n + 0} := by simp only [add_zero, h]
-    _ = μ s := by rw [← (hmono s 0).measure_iUnion, hU]
-
-/-- If the height distribution of `t` in direction `e` is that of `s` translated by `c`, then the
-first moment of `t` in direction `e` is that of `s` plus `c` times the measure of `s`. -/
-theorem integral_inner_eq_add_mul_of_forall_measure_sep_inner_le_add_eq {s t : Set E}
-    (ht : μ t ≠ ∞) {e : E} (hs : IntegrableOn (⟪e, ·⟫) s μ) {c : ℝ}
-    (h : ∀ r : ℝ, μ {x ∈ t | ⟪e, x⟫ ≤ r + c} = μ {x ∈ s | ⟪e, x⟫ ≤ r}) :
-    ∫ x in t, ⟪e, x⟫ ∂μ = ∫ x in s, ⟪e, x⟫ ∂μ + c * μ.real s := by
-  have hf : Measurable (⟪e, ·⟫ : E → ℝ) := (continuous_const.inner continuous_id).measurable
-  have : IsFiniteMeasure (μ.restrict s) :=
-    isFiniteMeasure_restrict.2 (measure_eq_of_forall_measure_sep_inner_le_add_eq h ▸ ht)
-  -- Both first moments are means of the height laws, which differ by the translation `c`.
-  calc ∫ x in t, ⟪e, x⟫ ∂μ = ∫ y, y ∂(μ.restrict t).map (⟪e, ·⟫) :=
-        (integral_map (f := fun y ↦ y) hf.aemeasurable aestronglyMeasurable_id).symm
-    _ = ∫ y, y + c ∂(μ.restrict s).map (⟪e, ·⟫) := by
-        rw [Measure.map_restrict_eq_map_map_add_of_forall_measure_sep_le_add_eq ht hf h,
-          integral_map (f := fun y ↦ y) (measurable_add_const c).aemeasurable
-            aestronglyMeasurable_id]
-    _ = ∫ x in s, ⟪e, x⟫ + c ∂μ :=
-        integral_map hf.aemeasurable (measurable_id.add_const c).aestronglyMeasurable
-    _ = ∫ x in s, ⟪e, x⟫ ∂μ + c * μ.real s := by
-        rw [integral_add hs (integrable_const c), integral_const, smul_eq_mul, mul_comm,
-          measureReal_restrict_apply_univ]
-
-omit [OpensMeasurableSpace E] in
 /-- Translating a set by `v` translates its height distribution in direction `e` by `⟪e, v⟫`. -/
 theorem measure_sep_inner_le_add_inner_vadd [MeasurableConstVAdd E E] [μ.IsAddLeftInvariant]
     (s : Set E) (v e : E) (t : ℝ) :
@@ -171,15 +132,15 @@ theorem ConvexBody.exists_eq_vadd_iff_forall_measure_sep_inner_le_add_eq (K L : 
   have key (e : E) (he : ‖e‖ = 1) :
       upperBounds ((⟪e, ·⟫) '' (L : Set E)) = upperBounds ((⟪e, ·⟫) '' (v +ᵥ (K : Set E))) := by
     obtain ⟨c, hc⟩ := h e he
-    have hmom := TauCeti.integral_inner_eq_add_mul_of_forall_measure_sep_inner_le_add_eq hLfin
+    have hmom := Measure.integral_eq_add_mul_of_forall_measure_sep_le_add_eq (f := (⟪e, ·⟫)) hLfin
+      (continuous_const.inner continuous_id).measurable
       ((continuous_const.inner continuous_id).continuousOn.integrableOn_compact K.isCompact) hc
     rw [integral_inner (hint L) e, integral_inner (hint K) e] at hmom
     have hcv : c = ⟪e, v⟫ := by
       rw [real_inner_smul_right, inner_sub_right, hmom]
       field_simp
       ring
-    have hLK : μ L = μ K :=
-      TauCeti.measure_eq_of_forall_measure_sep_inner_le_add_eq hc
+    have hLK : μ L = μ K := Measure.measure_eq_of_forall_measure_sep_le_add_eq hc
     have hLint : (interior (L : Set E)).Nonempty :=
       (L.convex.addHaar_pos_iff_interior_nonempty (μ := μ)).1 (hLK ▸ hK)
     have hKint : (interior (K : Set E)).Nonempty :=
