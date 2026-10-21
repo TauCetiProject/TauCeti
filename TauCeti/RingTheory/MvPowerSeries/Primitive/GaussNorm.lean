@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
 import TauCeti.Analysis.Normed.Field.NatCast
 import TauCeti.Data.Finsupp.Interval
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Termwise primitives of restricted power series
@@ -31,8 +32,6 @@ greater than `1`.
 
 ## Main results
 
-* `MvPowerSeries.prod_pow_le_prod_pow_mul`: shrinking the polyradius from `c` to `c'` divides
-  the weight of `ν` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.exists_norm_coeff_primitive_mul_prod_le`: the weighted coefficient norms of
   `∫ f dXᵢ` at `c'` are bounded by `C` times those of `f` at `c`.
 * `MvPowerSeries.exists_gaussNorm_primitive_le`: the Gauss norm bound.
@@ -63,29 +62,6 @@ variable {σ K : Type*} [NormedField K] [CharZero K] {c c' : σ → ℝ} {i : σ
 theorem norm_coeff_add_single_primitive (f : MvPowerSeries σ K) (n : σ →₀ ℕ) :
     ‖coeff (n + single i 1) (primitive i f)‖ = ‖((n i : K) + 1)⁻¹‖ * ‖coeff n f‖ := by
   simp [Rat.smul_def]
-
-/-- Decreasing the polyradius `c` to `c'`, the weight of an exponent drops at least by the factor
-`(c'ᵢ / cᵢ) ^ νᵢ` coming from the variable `Xᵢ`. -/
-theorem prod_pow_le_prod_pow_mul (hc' : ∀ j, 0 ≤ c' j) (hle : ∀ j, c' j ≤ c j)
-    (hi : 0 < c i) (n : σ →₀ ℕ) :
-    n.prod (c' · ^ ·) ≤ n.prod (c · ^ ·) * (c' i / c i) ^ n i := by
-  classical
-  calc n.prod (c' · ^ ·)
-      ≤ n.prod fun j k ↦ c j ^ k * (if j = i then (c' i / c i) ^ k else 1) := by
-        refine Finset.prod_le_prod₀ (fun j _ ↦ pow_nonneg (hc' j) _) fun j _ ↦ ?_
-        dsimp only
-        split_ifs with h
-        · subst h
-          rw [← mul_pow, mul_div_cancel₀ _ hi.ne']
-        · rw [mul_one]
-          exact pow_le_pow_left₀ (hc' j) (hle j) _
-    _ = n.prod (c · ^ ·) * (c' i / c i) ^ n i := by
-        rw [Finsupp.prod_mul]
-        congr 1
-        simp only [Finsupp.prod, Finset.prod_ite_eq', mem_support_iff]
-        split_ifs with h
-        · rfl
-        · rw [not_not.1 h, pow_zero]
 
 /-- The weighted coefficient norms of the termwise primitive at `c'` are bounded by those of `f`
 at `c`, times a factor depending on the `i`-th exponent. -/

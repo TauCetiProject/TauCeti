@@ -68,6 +68,7 @@ theorem coeff_primitive (i : σ) (f : MvPowerSeries σ R) (n : σ →₀ ℕ) :
   (rfl)
 
 /-- The termwise primitive with respect to `Xᵢ` has no terms free of `Xᵢ`. -/
+@[simp]
 theorem coeff_primitive_of_eq_zero (i : σ) (f : MvPowerSeries σ R) {n : σ →₀ ℕ} (h : n i = 0) :
     coeff n (primitive i f) = 0 := by
   simp [coeff_primitive, h]
@@ -99,6 +100,14 @@ theorem primitive_monomial (i : σ) (n : σ →₀ ℕ) (a : R) :
 theorem primitive_C (i : σ) (a : R) : primitive i (C a) = monomial (single i 1) a := by
   simpa using primitive_monomial i 0 a
 
+/-- The termwise primitive with respect to `Xᵢ` is injective. -/
+theorem primitive_injective (i : σ) : Function.Injective (primitive (R := R) (σ := σ) i) := by
+  intro f g h
+  ext n
+  have hn := congrArg (coeff (n + single i 1)) h
+  rw [coeff_add_single_primitive, coeff_add_single_primitive] at hn
+  exact (inv_ne_zero (Nat.cast_add_one_ne_zero (n i))).isUnit.smul_left_cancel.1 hn
+
 end Semiring
 
 section CommSemiring
@@ -109,11 +118,8 @@ variable {σ R : Type*} [CommSemiring R] [Algebra ℚ R]
 @[simp]
 theorem pderiv_primitive (i : σ) (f : MvPowerSeries σ R) : pderiv i (primitive i f) = f := by
   ext n
-  rw [coeff_pderiv, coeff_add_single_primitive, inv_natCast_add_one_smul_mul_natCast_add_one]
-
-/-- The termwise primitive with respect to `Xᵢ` is injective. -/
-theorem primitive_injective (i : σ) : Function.Injective (primitive (R := R) (σ := σ) i) :=
-  Function.LeftInverse.injective (g := pderiv i) (pderiv_primitive i)
+  rw [coeff_pderiv, coeff_add_single_primitive,
+    TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one]
 
 /-- **The primitive of a derivative**: `∫ (∂f/∂Xᵢ) dXᵢ` is `f` with its terms free of `Xᵢ`
 removed. -/
@@ -123,7 +129,7 @@ theorem coeff_primitive_pderiv (i : σ) (f : MvPowerSeries σ R) (n : σ →₀ 
   · exact coeff_primitive_of_eq_zero i _ h
   · obtain ⟨m, rfl⟩ : ∃ m, n = m + single i 1 := ⟨_, (sub_add_single_one_cancel h).symm⟩
     rw [coeff_add_single_primitive, coeff_pderiv, ← smul_mul_assoc,
-      inv_natCast_add_one_smul_mul_natCast_add_one]
+      TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one]
 
 /-- **Characterisation of the primitive**: `g = ∫ f dXᵢ` iff `∂g/∂Xᵢ = f` and `g` has no terms
 free of `Xᵢ`. -/

@@ -23,7 +23,7 @@ differentiation.
 
 * `IsUnit.natCast_ne_zero_of_algebra`: if `(m : K)` is a unit then `(m : L) ≠ 0`.
 * `IsUnit.neZero_natCast`: a natural number invertible in a nontrivial semiring is nonzero.
-* `inv_natCast_add_one_smul_mul_natCast_add_one`: `(k + 1)⁻¹ • a * (k + 1) = a` in a
+* `TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one`: `(k + 1)⁻¹ • a * (k + 1) = a` in a
   `ℚ`-algebra.
 -/
 
@@ -39,9 +39,13 @@ theorem IsUnit.neZero_natCast {R : Type*} [Semiring R] [Nontrivial R] {m : ℕ}
     (hm : IsUnit (m : R)) : NeZero m :=
   ⟨fun h ↦ hm.ne_zero (by rw [h, Nat.cast_zero])⟩
 
+namespace TauCeti
+
 /-- Dividing by `k + 1` and multiplying by `k + 1` cancel in a `ℚ`-algebra. -/
 theorem inv_natCast_add_one_smul_mul_natCast_add_one {R : Type*} [Semiring R] [Algebra ℚ R]
     (a : R) (k : ℕ) : ((k : ℚ) + 1)⁻¹ • a * ((k : R) + 1) = a := by
   have hcast : (k : R) + 1 = algebraMap ℚ R ((k : ℚ) + 1) := by simp
   rw [hcast, ← Algebra.commutes, ← Algebra.smul_def, smul_smul]
   simp [Nat.cast_add_one_ne_zero]
+
+end TauCeti
