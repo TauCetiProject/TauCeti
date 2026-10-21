@@ -20,8 +20,9 @@ The overlap `D.V (i, j)` maps to its two adjacent pieces, by `D.f i j` into `D.U
 `D.f j i ∘ D.t i j` into `D.U j`. The pieces and overlaps are *compatible*,
 `TopCat.GlueData.IsCompatible I n`, when both maps are `C^n` local diffeomorphisms: the atlas of
 the overlap is then compatible with the atlases of both pieces, and the second map records the
-transition between the pieces. Under this hypothesis the glued space is a `C^n` manifold and every
-canonical map is a `C^n` local diffeomorphism, hence a `C^n` diffeomorphism onto its open image.
+transition between the pieces. If moreover every piece is a `C^n` manifold, then the glued space
+is a `C^n` manifold and every canonical map is a `C^n` local diffeomorphism, hence a `C^n`
+diffeomorphism onto its open image.
 For `𝕜 = ℂ` this glues complex manifolds along holomorphic transitions.
 
 The relation identifying points of different pieces is consumed through `D.ι_eq_iff_rel`; it is
@@ -60,8 +61,9 @@ variable (D : TopCat.GlueData.{u}) {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 variable (H) in
 /-- The charted-space structure on the glued space of `D`: the chart at a point is the inverse of
-the canonical map of a piece containing it, followed by a chart of that piece. -/
-@[instance_reducible]
+the canonical map of a piece containing it, followed by a chart of that piece. Its body is exposed
+so that the lemmas about `TauCeti.chartedSpaceOfIsOpenEmbedding` apply to it directly. -/
+@[expose, instance_reducible]
 noncomputable def chartedSpace : ChartedSpace H D.toGlueData.glued :=
   TauCeti.chartedSpaceOfIsOpenEmbedding D.ι_isOpenEmbedding D.ι_jointly_surjective
 
@@ -171,11 +173,9 @@ theorem IsCompatible.coe_partialDiffeomorphι (h : D.IsCompatible I n) (i : D.J)
 /-- The canonical map of a piece into a compatible gluing is a `C^n` local diffeomorphism. -/
 theorem IsCompatible.isLocalDiffeomorph_ι (h : D.IsCompatible I n) (i : D.J) :
     letI := D.chartedSpace H
-    IsLocalDiffeomorph I I n (D.toGlueData.ι i) := by
-  let := D.chartedSpace H
-  intro x
-  have : Nonempty (D.U i) := ⟨x⟩
-  simpa using (h.partialDiffeomorphι i).isLocalDiffeomorphAt _ _ _ (x := x) (by simp)
+    IsLocalDiffeomorph I I n (D.toGlueData.ι i) :=
+  TauCeti.isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding D.ι_isOpenEmbedding
+    D.ι_jointly_surjective (fun _ _ _ _ ↦ h.exists_contMDiffAt_transition) i
 
 /-- **Smooth maps out of a compatible gluing.** A map out of the glued space is `C^n` exactly when
 its composite with the canonical map of every piece is `C^n`. -/
@@ -183,19 +183,8 @@ theorem IsCompatible.contMDiff_iff (h : D.IsCompatible I n) {E' : Type*} [Normed
     [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {g : D.toGlueData.glued → N} :
     letI := D.chartedSpace H
-    ContMDiff I I' n g ↔ ∀ i, ContMDiff I I' n (g ∘ D.toGlueData.ι i) := by
-  let := D.chartedSpace H
-  refine ⟨fun hg i ↦ hg.comp (h.contMDiff_ι i), fun hg x ↦ ?_⟩
-  obtain ⟨i, y, rfl⟩ := D.ι_jointly_surjective x
-  have : Nonempty (D.U i) := ⟨y⟩
-  have hι := D.ι_isOpenEmbedding i
-  have hrange : range (D.toGlueData.ι i) ∈ 𝓝 (D.toGlueData.ι i y) :=
-    hι.isOpen_range.mem_nhds (mem_range_self y)
-  -- Near a point of the image of `D.U i`, `g` is `g ∘ D.toGlueData.ι i` composed with the
-  -- inverse of the canonical map.
-  refine ((hg i y).comp_of_eq ((h.contMDiffOn_ι_symm i).contMDiffAt hrange)
-    (hι.toOpenPartialHomeomorph_left_inv _)).congr_of_eventuallyEq ?_
-  filter_upwards [hrange] with w hw
-  simp [hι.toOpenPartialHomeomorph_right_inv _ hw]
+    ContMDiff I I' n g ↔ ∀ i, ContMDiff I I' n (g ∘ D.toGlueData.ι i) :=
+  TauCeti.contMDiff_iff_chartedSpaceOfIsOpenEmbedding D.ι_isOpenEmbedding D.ι_jointly_surjective
+    fun _ _ _ _ ↦ h.exists_contMDiffAt_transition
 
 end TopCat.GlueData

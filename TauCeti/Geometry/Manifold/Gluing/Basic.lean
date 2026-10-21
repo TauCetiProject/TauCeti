@@ -33,6 +33,8 @@ The gluing condition has the local-deck-transformation shape of
   manifold.
 * `TauCeti.partialDiffeomorphOfIsOpenEmbedding`: each embedding of a piece is a `C^n`
   diffeomorphism onto its image.
+* `TauCeti.contMDiff_iff_chartedSpaceOfIsOpenEmbedding`: a map out of `M` is `C^n` exactly when
+  its composite with every embedding is.
 
 ## Implementation notes
 
@@ -253,5 +255,38 @@ theorem coe_partialDiffeomorphOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] (j
     [Nonempty (U j)] :
     ⇑(partialDiffeomorphOfIsOpenEmbedding hφ hcover hdeck j) = φ j :=
   (rfl)
+
+include hdeck in
+/-- The embedding of a piece is a `C^n` local diffeomorphism. -/
+theorem isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] (j : J) :
+    letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
+    IsLocalDiffeomorph I I n (φ j) := by
+  let := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
+  intro x
+  have : Nonempty (U j) := ⟨x⟩
+  simpa using (partialDiffeomorphOfIsOpenEmbedding hφ hcover hdeck j).isLocalDiffeomorphAt _ _ _
+    (x := x) (by simp)
+
+include hdeck in
+/-- **Smooth maps out of a glued space.** A map out of `M` is `C^n` exactly when its composite
+with the embedding of every piece is `C^n`. -/
+theorem contMDiff_iff_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U j)] {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
+    {I' : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+    {g : M → N} :
+    letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
+    ContMDiff I I' n g ↔ ∀ j, ContMDiff I I' n (g ∘ φ j) := by
+  let := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
+  refine ⟨fun hg j ↦ hg.comp (contMDiff_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck j),
+    fun hg x ↦ ?_⟩
+  obtain ⟨j, y, rfl⟩ := hcover x
+  have : Nonempty (U j) := ⟨y⟩
+  have hrange : range (φ j) ∈ 𝓝 (φ j y) := (hφ j).isOpen_range.mem_nhds (mem_range_self y)
+  -- Near a point of the image of `U j`, `g` is `g ∘ φ j` composed with the inverse of `φ j`.
+  refine ((hg j y).comp_of_eq
+    ((contMDiffOn_symm_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck j).contMDiffAt hrange)
+    ((hφ j).toOpenPartialHomeomorph_left_inv _)).congr_of_eventuallyEq ?_
+  filter_upwards [hrange] with w hw
+  simp [(hφ j).toOpenPartialHomeomorph_right_inv _ hw]
 
 end TauCeti
