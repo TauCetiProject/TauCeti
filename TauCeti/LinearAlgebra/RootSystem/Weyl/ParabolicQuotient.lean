@@ -169,14 +169,7 @@ theorem bruhatStep_ofIdx_mul_of_coroot'_neg (hlam : lam ∈ dominantChamber P b)
     rw [inv_smul_smul] at h
     rw [← h]
     exact coroot'_nonneg_of_mem_posRoots P b hlam ((mem_posRoots P b _).mpr hpos)
-  have hlt := (ncard_inversions_ofIdx_mul_lt_iff P b w hβ).mpr hinv
-  have hstep := (weylCoxeterSystem P b).bruhatStep_mul_left
-    (weylCoxeterSystem_isReflection_ofIdx P b β) (u := RootPairing.weylGroup.ofIdx P β * w)
-    (by
-      rw [← mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, one_mul,
-        length_weylCoxeterSystem_eq, length_weylCoxeterSystem_eq]
-      exact hlt)
-  rwa [← mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, one_mul] at hstep
+  exact (bruhatStep_ofIdx_mul_iff_mem_inversions P b w hβ).mpr hinv
 
 /-- **Reflection test, negative pairing.** Let `β` be a positive root with `⟨w λ, β^∨⟩ < 0`, and
 let `v` be the minimal coset representative of `s_β w`, so `v λ = s_β (w λ)`. Then `v < w` in the
