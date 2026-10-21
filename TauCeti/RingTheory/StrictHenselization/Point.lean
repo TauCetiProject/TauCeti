@@ -13,8 +13,8 @@ public import TauCeti.RingTheory.Spectrum.Prime.Point
 
 For a field target, the point/residue-field correspondence gives an equivalence between the
 categories of pointed étale algebras and étale algebra, prime,
-residue-embedding triples of Stacks Tag 04GW. The forward triple construction and its morphisms
-are defined for any commutative target algebra.
+residue-embedding triples of Stacks Tag 04GW. The forward triple construction is defined for any
+commutative target algebra.
 
 ## References
 
@@ -43,7 +43,7 @@ structure TripleNeighbourhood where
   [commRing : CommRing carrier]
   [algebra : Algebra R carrier]
   [etale : Algebra.Etale R carrier]
-  /-- The prime and residue-field embedding specifying the point. -/
+  /-- The prime and residue-field algebra map specifying the point. -/
   data : PointData R carrier Ω
 
 attribute [instance] TripleNeighbourhood.commRing TripleNeighbourhood.algebra
@@ -113,7 +113,7 @@ theorem TripleNeighbourhood.toNeighbourhood_toTriple (triple : TripleNeighbourho
       Equiv.symm_apply_apply (pointDataEquiv : PointData R carrier Ω ≃ _) data
 
 /-- Triples and pointed étale neighbourhoods are equivalent as objects. -/
-noncomputable def tripleNeighbourhoodEquiv :
+@[expose] noncomputable def tripleNeighbourhoodEquiv :
     TripleNeighbourhood R Ω ≃ Neighbourhood R Ω where
   toFun := TripleNeighbourhood.toNeighbourhood R Ω
   invFun := Neighbourhood.toTriple R Ω
@@ -152,14 +152,13 @@ theorem tripleNeighbourhoodEquiv_symm_apply (point : Neighbourhood R Ω) :
 
 end Field
 
-section CommRing
+section Field
 
-variable (R : Type u) (Ω : Type v) [CommRing R] [CommRing Ω] [Algebra R Ω]
+variable (R : Type u) (Ω : Type v) [CommRing R] [Field Ω] [Algebra R Ω]
 
-/-- The category of étale algebra, prime, and residue-field map triples. -/
+/-- The category of étale algebra, prime, and residue-field embedding triples. -/
 abbrev TripleCategory :=
-  InducedCategory (Neighbourhood R Ω)
-    (fun triple : TripleNeighbourhood R Ω => triple.toNeighbourhood R Ω)
+  InducedCategory (Neighbourhood R Ω) (tripleNeighbourhoodEquiv R Ω)
 
 /-- Triple morphisms agree when their underlying algebra maps agree. -/
 @[ext]
@@ -199,7 +198,7 @@ theorem TripleCategory.homMk_left (first second : TripleCategory R Ω)
 
 /-- A morphism of triples is an algebra map preserving the prime and residue-field map. -/
 theorem tripleCategory_hom_iff (first second : TripleCategory R Ω)
-    [Nontrivial Ω] (map : first.carrier →ₐ[R] second.carrier) :
+    (map : first.carrier →ₐ[R] second.carrier) :
     (∃ morphism : first ⟶ second, morphism.hom.hom.left.hom = map) ↔
       ∃ hprime : first.data.1.asIdeal = second.data.1.asIdeal.comap map.toRingHom,
         second.data.2.comp
@@ -215,18 +214,9 @@ theorem tripleCategory_hom_iff (first second : TripleCategory R Ω)
     exact ⟨TripleCategory.homMk R Ω first second map hcomp,
       TripleCategory.homMk_left R Ω first second map hcomp⟩
 
-end CommRing
-
-variable (R : Type u) (Ω : Type v) [CommRing R] [Field Ω] [Algebra R Ω]
-
-/-- Triples over a field are equivalent as objects to pointed neighbourhoods. -/
-noncomputable def tripleCategoryObjectEquiv :
-    TripleNeighbourhood R Ω ≃ Neighbourhood R Ω :=
-  tripleNeighbourhoodEquiv R Ω
-
 /-- The category of Stacks 04GW triples is equivalent to pointed étale neighbourhoods. -/
 noncomputable def tripleCategoryEquivalence : TripleCategory R Ω ≌ Neighbourhood R Ω :=
-  Equivalence.induced (tripleCategoryObjectEquiv R Ω)
+  Equivalence.induced (tripleNeighbourhoodEquiv R Ω)
 
 /-- The forward equivalence sends a triple to its pointed neighbourhood. -/
 @[simp]
@@ -247,5 +237,7 @@ theorem tripleCategoryEquivalence_functor_map {first second : TripleCategory R �
 theorem tripleCategoryEquivalence_inverse_obj (point : Neighbourhood R Ω) :
     (tripleCategoryEquivalence R Ω).inverse.obj point = point.toTriple R Ω := by
   rfl
+
+end Field
 
 end TauCeti.StrictHenselization
