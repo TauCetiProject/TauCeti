@@ -22,8 +22,8 @@ Levi-Civita connections under local isometries applies to it: a Levi-Civita conn
 differentiates the restriction of a vector field on `M` as a Levi-Civita connection of `g`
 differentiates the field itself. Since the Koszul formula can be read through the inclusion, the
 same argument shows, with no connection on all of `M`, that Levi-Civita connections of the
-restrictions of `g` to two open sets agree at every point of their intersection, so Levi-Civita
-connections constructed on the sets of an open cover are compatible on overlaps.
+restrictions of `g` to two open sets differentiate the restrictions of a vector field on `M` in
+the same way at every point of their intersection.
 
 For the metric of a smooth Riemannian bundle, restriction agrees with the restriction of the
 Riemannian bundle to `U`.
@@ -40,9 +40,11 @@ In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetric`:
 * `ofRiemannianBundle_restrictOpenTangentSpace`: the positive-definite comparison with the
   restricted Riemannian bundle.
 * `IsLeviCivitaConnection.tangentSpaceOpenEquiv_apply_mpullback`: Levi-Civita connections of `g`
-  and of `g|_U` agree on `U`.
+  and of `g|_U` differentiate restrictions of ambient vector fields in the same way at points
+  of `U`.
 * `IsLeviCivitaConnection.tangentSpaceOpenEquiv_apply_mpullback_eq`: Levi-Civita connections of
-  `g|_U` and `g|_V` agree on `U ∩ V`.
+  `g|_U` and `g|_V` differentiate restrictions of ambient vector fields in the same way at points
+  of `U ∩ V`.
 
 ## References
 
@@ -81,18 +83,14 @@ def restrictOpenTangentSpace (g : ContMDiffNondegenerateMetric (I := I) (M := M)
         exact g.apply_comm x _ _⟩
     exact key
   nondegenerate x := by
-    -- The restricted form is the ambient form precomposed with the canonical isomorphism `e`.
-    set e := tangentSpaceOpenEquiv (I := I) x with he
+    -- The restricted form is the congruence of the ambient form by the canonical isomorphism.
     have key : (restrictOpenTangentSpaceBilin (fun y ↦ g y) U x).toBilinForm.Nondegenerate := by
-      constructor
-      · intro v hv
-        refine (map_eq_zero_iff e e.injective).mp ((g.nondegenerate x).1 (e v) fun w ↦ ?_)
-        simpa only [ContinuousLinearMap.toBilinForm_apply, restrictOpenTangentSpaceBilin_apply,
-          ← he, ContinuousLinearEquiv.apply_symm_apply] using hv (e.symm w)
-      · intro v hv
-        refine (map_eq_zero_iff e e.injective).mp ((g.nondegenerate x).2 (e v) fun w ↦ ?_)
-        simpa only [ContinuousLinearMap.toBilinForm_apply, restrictOpenTangentSpaceBilin_apply,
-          ← he, ContinuousLinearEquiv.apply_symm_apply] using hv (e.symm w)
+      convert (g.nondegenerate x).congr (tangentSpaceOpenEquiv (I := I) x).symm.toLinearEquiv
+        using 1
+      ext v w
+      simp only [ContinuousLinearMap.toBilinForm_apply, restrictOpenTangentSpaceBilin_apply,
+        LinearMap.BilinForm.congr_apply, ContinuousLinearEquiv.toLinearEquiv_symm,
+        LinearEquiv.symm_symm, ContinuousLinearEquiv.coe_toLinearEquiv]
     exact key
 
 variable (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (U : Opens M)
