@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Basic
 public import TauCeti.Topology.Path.Separation
-import TauCeti.Analysis.Complex.Conformal.PrimeEnd.UnitDisc
+import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Chord
 
 /-!
 # The sides of a crosscut
