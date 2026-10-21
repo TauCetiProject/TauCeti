@@ -77,6 +77,12 @@ theorem isometryClass_surjective :
 theorem isometryClass_out (c : IsometryClass V) : c.out.isometryClass = c :=
   Quotient.out_eq c
 
+/-- An isometry between the chosen representatives of two isometry classes shows that the classes
+are equal. -/
+theorem Isometry.out_eq {c d : IsometryClass V} (e : Isometry c.out d.out) : c = d := by
+  rw [← isometryClass_out c, ← isometryClass_out d]
+  exact e.isometryClass_eq
+
 /-- Transport along a rational linear equivalence `V ≃ W` identifies the isometry classes of
 integral lattices in `V` with those in `W`. -/
 noncomputable def isometryClassEquiv (f : V ≃ₗ[ℚ] W) : IsometryClass V ≃ IsometryClass W where

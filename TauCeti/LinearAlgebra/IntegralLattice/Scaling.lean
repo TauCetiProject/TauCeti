@@ -399,6 +399,12 @@ definite. -/
 theorem isPosDef_neg_iff (L : IntegralLattice V) : (-L).IsPosDef ↔ L.IsNegDef := by
   rw [IsPosDef, IsNegDef, neg_form, LinearMap.BilinMap.toQuadraticMap_neg]
 
+/-- The form negation of a lattice is negative definite exactly when the lattice is positive
+definite. -/
+@[simp]
+theorem isNegDef_neg_iff (L : IntegralLattice V) : (-L).IsNegDef ↔ L.IsPosDef := by
+  rw [← isPosDef_neg_iff, neg_neg]
+
 /-! ## Isometries -/
 
 /-- An isometry of integral lattices is also an isometry of their scalings by a common integer. -/

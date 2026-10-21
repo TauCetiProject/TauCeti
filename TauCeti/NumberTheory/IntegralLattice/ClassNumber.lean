@@ -169,12 +169,10 @@ given rank and bounded determinant. -/
 theorem IsPosDef.finite_genusClasses {L : IntegralLattice V} (hL : L.IsPosDef) :
     L.genusClasses.Finite := by
   have hgen (c : L.genusClasses) : L.SameGenus c.1.out := mem_genusClasses_iff.mp c.2
-  refine Set.finite_coe_iff.mp <| finite_of_pairwise_isEmpty_isometry
+  exact Set.finite_coe_iff.mp <| finite_of_pairwise_isEmpty_isometry
     (fun c : L.genusClasses ↦ c.1.out) (fun c ↦ (hgen c).isPosDef_iff.mp hL)
     (fun c ↦ (hgen c).finrank_eq.symm) (fun c ↦ (hgen c).determinant_eq.symm.le)
-    fun c d hcd ↦ ⟨fun e ↦ hcd (Subtype.ext ?_)⟩
-  rw [← isometryClass_out c.1, ← isometryClass_out d.1]
-  exact e.isometryClass_eq
+    fun c d hcd ↦ ⟨fun e ↦ hcd (Subtype.ext e.out_eq)⟩
 
 /-- A positive definite lattice has positive class number. -/
 theorem IsPosDef.classNumber_pos {L : IntegralLattice V} (hL : L.IsPosDef) :
@@ -192,11 +190,10 @@ theorem IsNegDef.finite_genusClasses {L : IntegralLattice V} (hL : L.IsNegDef) :
     (fun c : L.genusClasses ↦ (⟨(-c.1.out).isometryClass,
       isometryClass_mem_genusClasses_iff.mpr (hgen c)⟩ : (-L).genusClasses)) fun c d hcd ↦ ?_
   obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp (congrArg Subtype.val hcd)
-  have e' := e.smul (-1)
-  rw [← neg_def, ← neg_def, neg_neg, neg_neg] at e'
-  apply Subtype.ext
-  rw [← isometryClass_out c.1, ← isometryClass_out d.1]
-  exact e'.isometryClass_eq
+  -- `-L` is `(-1 : ℤ) • L` by definition, so `e.smul (-1)` is an isometry of the negations.
+  have e' : Isometry (-(-c.1.out)) (-(-d.1.out)) := e.smul (-1)
+  exact Subtype.ext <| Isometry.out_eq <| (Isometry.ofEq (neg_neg c.1.out).symm).trans <|
+    e'.trans (Isometry.ofEq (neg_neg d.1.out))
 
 /-- A negative definite lattice has positive class number. -/
 theorem IsNegDef.classNumber_pos {L : IntegralLattice V} (hL : L.IsNegDef) :
