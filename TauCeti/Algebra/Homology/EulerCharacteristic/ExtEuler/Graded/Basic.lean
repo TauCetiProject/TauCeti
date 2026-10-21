@@ -450,13 +450,24 @@ theorem IsGradedExtBoundedBy.congr {N : ℕ} (h : IsGradedExtBoundedBy.{w} e X Y
   ⟨fun _ hn j ↦ haveI := h.subsingleton hn j
     (φ hn j).symm.subsingleton⟩
 
+/-- Eventual cohomological vanishing of bigraded `Ext` transports along bijections of the
+bigraded `Ext` groups in all large cohomological degrees, including between pairs in different
+graded categories. -/
+theorem IsGradedExtBounded.congr (h : IsGradedExtBounded.{w} e X Y)
+    (φ : ∀ᶠ n in Filter.atTop, ∀ j, Nonempty (GradedExt.{w} e X Y n j ≃
+      GradedExt.{w'} e' X' Y' n j)) :
+    IsGradedExtBounded.{w'} e' X' Y' := by
+  obtain ⟨N, hN⟩ := h.exists_bound
+  obtain ⟨M, hM⟩ := Filter.eventually_atTop.1 φ
+  exact ((hN.mono (le_max_left N M)).congr fun n hn j ↦
+    Classical.choice (hM n ((le_max_right N M).trans hn) j)).isGradedExtBounded
+
 /-- Graded Euler-admissibility transports along linear equivalences of the bigraded `Ext` groups,
 including between pairs in different graded categories. -/
 theorem IsGradedEulerAdmissible.congr (h : IsGradedEulerAdmissible.{w} k e X Y)
     (φ : ∀ n j, GradedExt.{w} e X Y n j ≃ₗ[k] GradedExt.{w'} e' X' Y' n j) :
     IsGradedEulerAdmissible.{w'} k e' X' Y' :=
-  ⟨h.internallyFinite.congr k φ, (h.bounded.exists_bound.choose_spec.congr
-    fun n _ j ↦ (φ n j).toEquiv).isGradedExtBounded⟩
+  ⟨h.internallyFinite.congr k φ, h.bounded.congr (.of_forall fun n j ↦ ⟨(φ n j).toEquiv⟩)⟩
 
 /-- Linear equivalences of the bigraded `Ext` groups preserve the q-Euler characteristic,
 including when the pairs lie in different graded categories. -/
