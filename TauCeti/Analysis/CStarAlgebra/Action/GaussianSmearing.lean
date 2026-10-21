@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Concentration
+import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 
 /-!
 # Gaussian smearing and density of entire analytic elements
@@ -59,6 +60,7 @@ public section
 noncomputable section
 
 open Complex MeasureTheory Filter Topology Real
+open scoped Convolution
 
 namespace TauCeti.CStarAction
 
@@ -250,61 +252,46 @@ theorem norm_gaussianSmear_le (c : ℝ) (a : A) : ‖α.gaussianSmear c a‖ ≤
   · simp
   · exact key hc
 
-/-- Up to `‖a‖` times the Gaussian mass of the complement of `[-1, 1]`, the Gaussian smearing of
-`a` is the Gaussian average of the orbit of `a` truncated to `[-1, 1]`. -/
-private theorem norm_gaussianSmear_sub_le {c : ℝ} (hc : 0 < c) (a : A) :
-    ‖α.gaussianSmear c a -
-        ∫ t, gaussianDensity c t • (Set.Icc (-1) 1).indicator
-          (fun t : ℝ => α (Multiplicative.ofAdd t) a) t‖ ≤
-      ‖a‖ * (1 - ∫ t, gaussianDensity c t • (Set.Icc (-1) 1).indicator (fun _ => (1 : ℝ)) t) := by
-  have hg : Continuous fun t : ℝ => α (Multiplicative.ofAdd t) a :=
-    α.continuous_apply continuous_ofAdd continuous_const
-  have hψ₁ := integral_gaussianDensity hc
-  have hψ : Integrable (gaussianDensity c) := integrable_of_integral_eq_one hψ₁
-  have hψs : Integrable fun t =>
-      gaussianDensity c t • (Set.Icc (-1) 1).indicator (fun _ => (1 : ℝ)) t :=
-    hψ.smul_bdd 1 (aestronglyMeasurable_const.indicator measurableSet_Icc)
-      (ae_of_all _ fun t => by by_cases ht : t ∈ Set.Icc (-1 : ℝ) 1 <;> simp [ht])
-  have hint₁ : Integrable fun t => gaussianDensity c t • α (Multiplicative.ofAdd t) a :=
-    hψ.smul_bdd ‖a‖ hg.aestronglyMeasurable (ae_of_all _ fun t => (StarAlgEquiv.norm_map _ _).le)
-  have hint₂ : Integrable fun t => gaussianDensity c t • (Set.Icc (-1) 1).indicator
-      (fun t : ℝ => α (Multiplicative.ofAdd t) a) t :=
-    hψ.smul_bdd ‖a‖ (hg.aestronglyMeasurable.indicator measurableSet_Icc) (ae_of_all _ fun t => by
-      by_cases ht : t ∈ Set.Icc (-1 : ℝ) 1 <;> simp [ht, StarAlgEquiv.norm_map])
-  have hmass : ‖a‖ * (1 - ∫ t, gaussianDensity c t •
-      (Set.Icc (-1) 1).indicator (fun _ => (1 : ℝ)) t) = ∫ t, ‖a‖ * (gaussianDensity c t -
-        gaussianDensity c t • (Set.Icc (-1) 1).indicator (fun _ => (1 : ℝ)) t) := by
-    rw [integral_const_mul, integral_sub hψ hψs, hψ₁]
-  rw [gaussianSmear_eq_integral_gaussianDensity_smul, ← integral_sub hint₁ hint₂, hmass]
-  -- outside `[-1, 1]` the orbit has norm `‖a‖`
-  refine norm_integral_le_of_norm_le ((hψ.sub hψs).const_mul _) (ae_of_all _ fun t => ?_)
-  by_cases ht : t ∈ Set.Icc (-1 : ℝ) 1
-  · simp [ht]
-  · simp [ht, norm_smul, abs_of_nonneg (gaussianDensity_nonneg hc.le t), StarAlgEquiv.norm_map,
-      mul_comm]
+/-- At positive width, Gaussian smearing is heat-kernel convolution of the reversed orbit. -/
+private theorem gaussianSmear_eq_heatKernel_convolution {c : ℝ} (hc : 0 < c) (a : A) :
+    α.gaussianSmear c a =
+      (heatKernel (1 / (4 * c ^ 2)) ⋆ fun u : ℝ => α (Multiplicative.ofAdd (-u)) a) 0 := by
+  have hvariance : 4 * π * (1 / (4 * c ^ 2)) = π / c ^ 2 := by field_simp
+  have hexponent (t : ℝ) : -t ^ 2 / (4 * (1 / (4 * c ^ 2))) = -(c * t) ^ 2 := by
+    field_simp
+  have hkernel (t : ℝ) : heatKernel (1 / (4 * c ^ 2)) t = gaussianDensity c t := by
+    rw [heatKernel_apply]
+    simp only [Module.finrank_self, Nat.cast_one, Real.norm_eq_abs, sq_abs]
+    rw [neg_div, Real.rpow_neg (by positivity), ← Real.sqrt_eq_rpow, hvariance,
+      Real.sqrt_div' _ (sq_nonneg c), Real.sqrt_sq hc.le, hexponent, gaussianDensity_def]
+    simp only [inv_div]
+    ring
+  rw [gaussianSmear_eq_integral_gaussianDensity_smul, convolution_def]
+  simp only [ContinuousLinearMap.lsmul_apply, zero_sub, neg_neg, hkernel]
 
 /-- **Convergence of Gaussian smearings.** As the width `c⁻¹` of the Gaussian tends to zero, the
 Gaussian smearing of `a` tends to `a`. -/
 theorem tendsto_gaussianSmear (a : A) :
     Tendsto (fun c : ℝ => α.gaussianSmear c a) atTop (𝓝 a) := by
-  have hg : Continuous fun t : ℝ => α (Multiplicative.ofAdd t) a :=
-    α.continuous_apply continuous_ofAdd continuous_const
-  have hs : Set.Icc (-1 : ℝ) 1 ∈ 𝓝 0 := Icc_mem_nhds (by norm_num) (by norm_num)
-  -- the orbit truncated to `[-1, 1]` and the Gaussian mass of `[-1, 1]` converge by
-  -- concentration of the Gaussian densities at `0`
-  have h₁ := tendsto_integral_gaussianDensity_smul
-    ((hg.integrableOn_Icc (a := -1) (b := 1)).integrable_indicator measurableSet_Icc)
-    (hg.continuousAt.congr (Filter.mem_of_superset hs fun t ht =>
-      (Set.indicator_of_mem ht fun t : ℝ => α (Multiplicative.ofAdd t) a).symm))
-  have h₂ := tendsto_integral_gaussianDensity_smul
-    ((continuous_const.integrableOn_Icc (a := -1) (b := 1)).integrable_indicator
-      measurableSet_Icc)
-    (continuous_const.continuousAt.congr (Filter.mem_of_superset hs fun t ht =>
-      (Set.indicator_of_mem ht fun _ => (1 : ℝ)).symm))
-  rw [Set.indicator_of_mem (mem_of_mem_nhds hs)] at h₁ h₂
-  have h₃ := squeeze_zero_norm' ((eventually_gt_atTop 0).mono fun c hc =>
-    α.norm_gaussianSmear_sub_le hc a) (by simpa using (h₂.const_sub 1).const_mul ‖a‖)
-  simpa using h₃.add h₁
+  let g : ℝ → A := fun u => α (Multiplicative.ofAdd (-u)) a
+  have hg : Continuous g := α.continuous_apply (continuous_ofAdd.comp continuous_neg)
+    continuous_const
+  have hpow : Tendsto (fun c : ℝ => c ^ 2) atTop atTop :=
+    tendsto_pow_atTop (by decide : 2 ≠ 0)
+  have htime : Tendsto (fun c : ℝ => 4 * c ^ 2) atTop atTop :=
+    hpow.const_mul_atTop (by norm_num : 0 < (4 : ℝ))
+  have ht₀ : Tendsto (fun c : ℝ => 1 / (4 * c ^ 2)) atTop (𝓝 0) := by
+    simpa only [one_div] using! htime.inv_tendsto_atTop
+  have ht : Tendsto (fun c : ℝ => 1 / (4 * c ^ 2)) atTop (𝓝[>] 0) :=
+    tendsto_nhdsWithin_iff.mpr ⟨ht₀, (eventually_gt_atTop 0).mono fun c hc =>
+      Set.mem_Ioi.mpr (by positivity)⟩
+  have h := (tendsto_heatKernel_convolution hg.aestronglyMeasurable
+    (ae_of_all _ fun u => (StarAlgEquiv.norm_map _ a).le) (x₀ := 0) hg.continuousAt).comp
+      (ht.prodMk tendsto_const_nhds)
+  have hg₀ : g 0 = a := by simp [g]
+  rw [hg₀] at h
+  exact h.congr' ((eventually_gt_atTop 0).mono fun c hc =>
+    (α.gaussianSmear_eq_heatKernel_convolution hc a).symm)
 
 /-! ### Density -/
 
