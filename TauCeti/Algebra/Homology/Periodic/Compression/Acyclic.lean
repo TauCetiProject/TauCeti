@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.Periodic.Compression.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.Preadditive
 
@@ -112,20 +112,13 @@ private lemma compressionScι_compressionScπ (i : ℤ) :
 
 variable [CategoryWithHomology C]
 
-/-- A homological complex is exact at `j` exactly when the homology of its short complex at `j`,
-with explicit neighbouring indices, is zero. -/
-private lemma exactAt_iff_isZero_homology_sc' {ι : Type*} {c : ComplexShape ι}
-    (L : HomologicalComplex C c) (i j k : ι) (hi : c.prev j = i) (hk : c.next j = k) :
-    L.ExactAt j ↔ IsZero ((ShortComplex.homologyFunctor C).obj (L.sc' i j k)) :=
-  (HomologicalComplex.exactAt_iff' L i j k hi hk).trans (ShortComplex.exact_iff_isZero_homology _)
-
 /-- A cochain complex is acyclic when its `n`-periodic compression is acyclic. -/
 theorem acyclic_of_compression_acyclic (h : (compression n K).Acyclic) : K.Acyclic := by
   intro i
-  rw [exactAt_iff_isZero_homology_sc' _ (i - 1) i (i + 1) (by simp) (by simp),
+  rw [HomologicalComplex.exactAt_iff_isZero_homology_sc' _ (i - 1) i (i + 1) (by simp) (by simp),
     IsZero.iff_id_eq_zero]
   have hZ : IsZero ((ShortComplex.homologyFunctor C).obj (compressionSc n K i)) :=
-    (exactAt_iff_isZero_homology_sc' _ _ _ _ (by simp) (by simp)).mp (h _)
+    (HomologicalComplex.exactAt_iff_isZero_homology_sc' _ _ _ _ (by simp) (by simp)).mp (h _)
   have := congrArg (ShortComplex.homologyFunctor C).map (compressionScι_compressionScπ n K i)
   rw [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_id,
     hZ.eq_of_tgt ((ShortComplex.homologyFunctor C).map (compressionScι n K i i)) 0,
@@ -137,14 +130,14 @@ acyclic. -/
 theorem compression_acyclic_iff (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b] :
     (compression n K).Acyclic ↔ K.Acyclic := by
   refine ⟨acyclic_of_compression_acyclic n K, fun h r ↦ ?_⟩
-  rw [exactAt_iff_isZero_homology_sc' _ (r - 1) r (r + 1) (by simp) (by simp),
+  rw [HomologicalComplex.exactAt_iff_isZero_homology_sc' _ (r - 1) r (r + 1) (by simp) (by simp),
     IsZero.iff_id_eq_zero]
   have := (ShortComplex.homologyFunctor C).map_sum
     (fun i ↦ compressionScπ n K r i ≫ compressionScι n K r i) (Finset.Icc (a - 1) (b + 1))
   rw [sum_compressionScπ_compressionScι n K a b r, CategoryTheory.Functor.map_id] at this
   refine this.trans (Finset.sum_eq_zero fun i _ ↦ ?_)
   have hZ : IsZero ((ShortComplex.homologyFunctor C).obj (complexSc K i)) :=
-    (exactAt_iff_isZero_homology_sc' _ _ _ _ (by simp) (by simp)).mp (h _)
+    (HomologicalComplex.exactAt_iff_isZero_homology_sc' _ _ _ _ (by simp) (by simp)).mp (h _)
   rw [CategoryTheory.Functor.map_comp,
     hZ.eq_of_tgt ((ShortComplex.homologyFunctor C).map (compressionScπ n K r i)) 0, zero_comp]
 
