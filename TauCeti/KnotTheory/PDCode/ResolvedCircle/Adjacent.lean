@@ -132,10 +132,7 @@ theorem card_circlesAt_le_two : #(D.circlesAt s c) ≤ 2 := by
 theorem card_circlesAt_eq_two_iff :
     #(D.circlesAt s c) = 2 ↔
       (⟦D.crossing c 0⟧ : D.CrossingCircle s) ≠ ⟦D.crossing c 2⟧ := by
-  rw [circlesAt_eq_pair]
-  refine ⟨fun h he ↦ ?_, card_pair⟩
-  rw [he, pair_eq_singleton, card_singleton] at h
-  exact absurd h (by decide)
+  rw [circlesAt_eq_pair, card_pair_eq_two_iff]
 
 end CirclesAt
 
@@ -157,7 +154,8 @@ theorem eqvGen_circleStep_iff_of_notMem_circlesAt {x : Fin (4 * n)}
     rintro k rfl
     exact hx (mem_circlesAt.2 ⟨k, Quotient.sound (EqvGen.symm _ _ hy)⟩)
   simp only [SymmGen, circleStep_comm D _ (x := z), or_self, circleStep_iff,
-    D.smoothingTurn_apply_eq_smoothingTurn_apply (D.smoothingChoice_eq_smoothingChoice hst) hy']
+    D.smoothingTurn_apply_eq_smoothingTurn_apply
+      (fun j hj ↦ D.smoothingChoice_eq_smoothingChoice (hst j hj)) hy']
 
 /-- A circle of `s` avoiding the crossing `c` is a circle of `t` avoiding `c`. -/
 theorem mk_notMem_circlesAt_of_notMem {x : Fin (4 * n)}
@@ -300,7 +298,7 @@ theorem card_circlesAt_add_card_circlesAt_le_three (hst : ∀ j, j ≠ c → s j
     EqvGen.mono fun y z h ↦ h.imp_right And.right
   have hrt : EqvGen r ≤ EqvGen (D.CircleStep t) := EqvGen.mono fun y z h ↦ h.imp_right
     fun h ↦ h.2.trans (D.smoothingTurn_apply_eq_smoothingTurn_apply
-      (D.smoothingChoice_eq_smoothingChoice hst) h.1)
+      (fun j hj ↦ D.smoothingChoice_eq_smoothingChoice (hst j hj)) h.1)
   let E := univ.filter (EqvGen r x)
   have hxE : x ∈ E := mem_filter.2 ⟨mem_univ _, .refl _⟩
   -- The only half-edge at `c` in `E` is `x`.
@@ -354,7 +352,7 @@ theorem eqvGen_circleStep_of_card_circlesAt_eq_one {x y : Fin (4 * n)}
     · exact .rel _ _ (.inl rfl)
     by_cases hy : ∀ k, D.crossing c k ≠ y
     · exact .rel _ _ (.inr (D.smoothingTurn_apply_eq_smoothingTurn_apply
-        (D.smoothingChoice_eq_smoothingChoice hst) hy))
+        (fun j hj ↦ D.smoothingChoice_eq_smoothingChoice (hst j hj)) hy))
     -- The two ends of a smoothing arc at `c` lie on the only circle of `t` through `c`.
     obtain ⟨k, rfl⟩ := not_forall_not.1 hy
     have h₁ := D.mk_crossing_mem_circlesAt t c k

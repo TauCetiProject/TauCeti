@@ -219,12 +219,10 @@ over-pair indicator. -/
   funext i
   simp [smoothingChoice]
 
-/-- Two states agreeing away from the crossing `c` select the same local smoothings away
-from `c`. -/
-theorem smoothingChoice_eq_smoothingChoice (D : PDCode n) {c : Fin n} {s t : Fin n → Bool}
-    (hst : ∀ j, j ≠ c → s j = t j) (j : Fin n) (hj : j ≠ c) :
-    D.smoothingChoice s j = D.smoothingChoice t j := by
-  cases hs : s j <;> have ht := (hst j hj).symm.trans hs <;> simp [hs, ht]
+/-- Two states agreeing at the crossing `j` select the same local smoothing there. -/
+theorem smoothingChoice_eq_smoothingChoice (D : PDCode n) {s t : Fin n → Bool} {j : Fin n}
+    (h : s j = t j) : D.smoothingChoice s j = D.smoothingChoice t j := by
+  simp [smoothingChoice, h]
 
 /-- Two states differing at the crossing `c` select the two different local smoothings there. -/
 theorem smoothingChoice_eq_not_smoothingChoice (D : PDCode n) {c : Fin n} {s t : Fin n → Bool}
