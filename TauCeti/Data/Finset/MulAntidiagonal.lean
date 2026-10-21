@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Data.Finset.MulAntidiagonal
+public import Mathlib.Data.Finset.SMulAntidiagonal
 
 /-!
 # Reindexing double sums over multiplication antidiagonals
@@ -18,6 +19,9 @@ reindexings underlie associativity-type identities for convolution products of H
 
 ## Main results
 
+* `Finset.smulAntidiagonal_eq_mulAntidiagonal`, `Finset.vaddAntidiagonal_eq_antidiagonal`:
+  for a monoid acting on itself, the scalar (vector) antidiagonal is the multiplication (addition)
+  antidiagonal.
 * `Finset.prod_sigma_mulAntidiagonal_assoc`, `Finset.sum_sigma_antidiagonal_assoc`:
   reassociating a double product (sum) over antidiagonals.
 * `Finset.prod_sigma_mulAntidiagonal_left_comm`, `Finset.sum_sigma_antidiagonal_left_comm`:
@@ -35,6 +39,16 @@ namespace Finset
 
 variable {α M : Type*} [CommMonoid α] [PartialOrder α] [IsOrderedCancelMonoid α] [CommMonoid M]
   {s t u : Set α}
+
+/-- For a monoid acting on itself by multiplication, the scalar antidiagonal of two partially
+well-ordered sets is their multiplication antidiagonal. -/
+@[to_additive /-- For an additive monoid acting on itself by addition, the vector antidiagonal of
+two partially well-ordered sets is their addition antidiagonal. -/]
+theorem smulAntidiagonal_eq_mulAntidiagonal (hs : s.IsPWO) (ht : t.IsPWO) (a : α) :
+    SMulAntidiagonal a (Set.SMulAntidiagonal.finite_of_isPWO hs ht a) =
+      mulAntidiagonal hs ht a := by
+  ext
+  simp
 
 /-- Reassociating a double product over antidiagonals: the products indexed by `(a, (b, c))` and
 by `((a, b), c)`, with `a * b * c = d`, agree. -/
