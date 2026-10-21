@@ -152,6 +152,7 @@ theorem inclusion_shift (h : t ≤ s) (m : ℤ) (a : CircleSobolev s E) :
 
 /-- For `s > 1/2`, the shift by `m` is multiplication by `e^{2πimx/T}` on continuous
 representatives. -/
+@[simp]
 theorem toContinuousMap_shift (T : ℝ) [Fact (0 < T)] [CompleteSpace E] (hs : 1 / 2 < s) (m : ℤ)
     (a : CircleSobolev s E) (x : AddCircle T) :
     toContinuousMap T hs (shift m a) x = fourier m x • toContinuousMap T hs a x := by
