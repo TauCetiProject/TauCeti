@@ -21,6 +21,10 @@ Mathlib's `PolynomialLaw`. Its `map_one` and `map_mul` lemmas extend this condit
 evaluation on every scalar extension, and `groundMonoidHom` gives the ground evaluation.
 The identity law is multiplicative, and multiplicative laws compose.
 
+With `open TauCeti`, use `f.IsMultiplicative` for the predicate and
+`f.toFun_rTensor_algHom` for naturality. A witness `hf : f.IsMultiplicative` provides
+`hf.map_mul`, `hf.toMonoidHom`, `hf.groundMonoidHom`, and `hf.comp`.
+
 The definition follows Chenevier, *The p-adic analytic space of pseudocharacters of a
 profinite group and pseudorepresentations over arbitrary rings*, §1.1, p. 8. We use
 Mathlib's polynomial laws and their extension to arbitrary universes, formalized by
