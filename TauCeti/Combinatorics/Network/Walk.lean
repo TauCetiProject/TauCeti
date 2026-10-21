@@ -53,7 +53,8 @@ capacity; for residual capacities these are augmenting walks.
   bottleneck is the minimum of the capacities along the walk.
 * `TauCeti.positiveReachable_iff_exists_isPath` and `TauCeti.positiveReachable_iff_reflTransGen`:
   positive reachability is witnessed by a path, and is the reflexive transitive closure of being
-  joined by an arrow of positive capacity.
+  joined by an arrow of positive capacity; `TauCeti.exists_isCycle_iff_transGen` is the
+  counterpart for cycles.
 * `TauCeti.PositiveReachable.mem_of_mem`: a vertex set that no arrow of positive capacity leaves
   contains every vertex positively reachable from one of its members.
 -/
@@ -342,6 +343,29 @@ theorem positiveReachable_iff_reflTransGen :
     induction h with
     | refl => exact .refl c s
     | tail _ he ih => exact ih.tail he.choose he.choose_spec
+
+/-- **Cycles of positive arrows.** Some cycle at `v` traverses only arrows of positive capacity
+exactly when `v` reaches itself in one or more steps along arrows of positive capacity. -/
+theorem exists_isCycle_iff_transGen {v : V} :
+    (∃ p : ArrowWalk Q v v, p.IsCycle ∧ ∀ a ∈ p.arrows, 0 < c a.2.2) ↔
+      Relation.TransGen (fun v w ↦ ∃ e : Q v w, 0 < c e) v v := by
+  constructor
+  · rintro ⟨p, hp, hpos⟩
+    cases p with
+    | nil => simp [ArrowWalk.isCycle_def] at hp
+    | cons p e =>
+      simp only [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at hpos
+      exact Relation.TransGen.tail'_iff.2 ⟨_, positiveReachable_iff_reflTransGen.1
+        ⟨p, fun a ha ↦ hpos a (.inl ha)⟩, e, hpos _ (.inr rfl)⟩
+  · intro h
+    obtain ⟨u, hvu, e, he⟩ := Relation.TransGen.tail'_iff.1 h
+    obtain ⟨p, hp⟩ := positiveReachable_iff_reflTransGen.2 hvu
+    obtain ⟨p', hp', hsub⟩ := (p.cons e).exists_isCycle_arrows_subset (by simp)
+    refine ⟨p', hp', fun a ha ↦ ?_⟩
+    have ha := hsub ha
+    rw [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at ha
+    rcases ha with ha | rfl
+    exacts [hp a ha, he]
 
 /-- A vertex set that no arrow of positive capacity leaves is closed under positive reachability.
 -/

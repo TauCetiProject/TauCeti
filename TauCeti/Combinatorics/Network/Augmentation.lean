@@ -43,6 +43,10 @@ and upper bounds and preserves every excess: this is cycle augmentation of bound
   and `-q` at `s`.
 * `TauCeti.walkAssignment_mem_Icc`: a walk repeating no arrow, weighted by `q`, lies between zero
   and any nonnegative capacities that are at least `q` along the walk.
+* `TauCeti.walkAssignment_bottleneck_le` and
+  `TauCeti.card_filter_pos_sub_walkAssignment_bottleneck_lt`: a walk repeating no arrow, weighted
+  by its bottleneck for a nonnegative assignment, is bounded by the assignment, and subtracting it
+  strictly decreases the number of arrows of positive value.
 * `TauCeti.Flow.val_augmentWalk` and `TauCeti.Flow.val_augmentBottleneck`: augmentation along a
   residual `s`–`t` walk between distinct terminals `s ≠ t` increases the value by the augmenting
   amount.
@@ -164,6 +168,20 @@ theorem walkAssignment_mem_Icc {s t : V} {p : ArrowWalk Q s t} (hp : p.arrows.No
 
 end Order
 
+section LinearOrder
+
+variable [LinearOrder K] [IsOrderedAddMonoid K]
+
+/-- A walk that traverses no arrow twice, weighted by its bottleneck for a nonnegative
+assignment `f`, is bounded by `f`. -/
+theorem walkAssignment_bottleneck_le {f : Assignment Q K} (hf : 0 ≤ f) {s t : V}
+    {p : ArrowWalk Q s t} (hp : p.arrows.Nodup) (hne : p.arrows ≠ []) :
+    walkAssignment p (p.bottleneck f hne) ≤ f :=
+  (walkAssignment_mem_Icc hp (ArrowWalk.le_bottleneck_iff.2 fun a _ ↦ hf _ _ a.2.2) hf
+    fun _ ha ↦ ArrowWalk.bottleneck_le ha).2
+
+end LinearOrder
+
 end AddCommMonoid
 
 section AddCommGroup
@@ -219,6 +237,29 @@ theorem val_walkFlow (hst : s ≠ t) : (walkFlow p hp hq hcap hle).val = q := by
   simp [BoundedFlow.val_def, hst.symm]
 
 end Order
+
+section LinearOrder
+
+variable [LinearOrder K] [IsOrderedAddMonoid K]
+
+/-- Subtracting a walk of positive arrows that traverses no arrow twice, weighted by its
+bottleneck, strictly decreases the number of arrows of positive value: the arrows of positive
+value afterwards were positive before, and an arrow attaining the bottleneck drops to zero. -/
+theorem card_filter_pos_sub_walkAssignment_bottleneck_lt {f : Assignment Q K} {s t : V}
+    {p : ArrowWalk Q s t} (hp : p.arrows.Nodup) (hne : p.arrows ≠ [])
+    (hpos : ∀ a ∈ p.arrows, 0 < f a.2.2) :
+    #{a : Σ x y, Q x y | 0 < (f - walkAssignment p (p.bottleneck f hne)) a.2.2} <
+      #{a : Σ x y, Q x y | 0 < f a.2.2} := by
+  have hle : f - walkAssignment p (p.bottleneck f hne) ≤ f := fun x y e ↦
+    sub_le_self _ (walkAssignment_nonneg p (ArrowWalk.lt_bottleneck_iff.2 hpos).le x y e)
+  obtain ⟨⟨x, y, e⟩, ha, hqa⟩ := ArrowWalk.exists_mem_bottleneck_eq (c := f) (hne := hne)
+  refine card_lt_card <| (ssubset_iff_of_subset fun b hb ↦ ?_).2 ⟨⟨x, y, e⟩, ?_, ?_⟩
+  · simp only [mem_filter_univ] at hb ⊢
+    exact hb.trans_le (hle _ _ _)
+  · simpa using hpos _ ha
+  · simp [walkAssignment_eq_of_mem hp _ ha, hqa]
+
+end LinearOrder
 
 end AddCommGroup
 

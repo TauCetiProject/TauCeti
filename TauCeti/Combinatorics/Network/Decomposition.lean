@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Submonoid.BigOperators
 public import Mathlib.Algebra.Order.Group.PosPart
 public import Mathlib.Algebra.Order.Pi
 public import TauCeti.Combinatorics.Network.Augmentation
@@ -29,7 +30,7 @@ of the flow; for a circulation there are no paths at all.
 
 ## Main definitions
 
-* `TauCeti.WeightedWalk` and `TauCeti.WeightedCycle`: directed walks and closed walks with a
+* `TauCeti.WeightedWalk` and `TauCeti.WeightedClosedWalk`: directed walks and closed walks with a
   weight, and their assignments.
 * `TauCeti.PathCycleDecomposition f`: a decomposition of `f` into positively weighted directed
   paths from supply to demand vertices and positively weighted directed cycles.
@@ -49,7 +50,8 @@ of the flow; for a circulation there are no paths at all.
   arrowwise by the decomposed assignment.
 * `TauCeti.PathCycleDecomposition.paths_eq_nil`: a decomposition of a circulation consists of
   cycles only.
-* `TauCeti.PathCycleDecomposition.source_eq`, `TauCeti.PathCycleDecomposition.target_eq` and
+* `TauCeti.PathCycleDecomposition.source_eq_of_mem_paths`,
+  `TauCeti.PathCycleDecomposition.target_eq_of_mem_paths` and
   `TauCeti.PathCycleDecomposition.sum_weight_paths_eq_val`: the decomposition of an ordinary
   `s`–`t` flow, whose paths run from `s` to `t` with total weight the value of the flow.
 
@@ -92,7 +94,7 @@ structure WeightedWalk (Q : V → V → Type v) (K : Type w) where
 
 /-- A closed directed walk along the arrow family `Q`, together with its base vertex and a
 weight. -/
-structure WeightedCycle (Q : V → V → Type v) (K : Type w) where
+structure WeightedClosedWalk (Q : V → V → Type v) (K : Type w) where
   /-- The first and last vertex of the closed walk. -/
   base : V
   /-- The closed walk itself. -/
@@ -113,10 +115,10 @@ theorem WeightedWalk.assignment_def (p : WeightedWalk Q K) :
   (rfl)
 
 /-- The assignment of a weighted closed walk: its walk weighted by its weight. -/
-noncomputable def WeightedCycle.assignment (c : WeightedCycle Q K) : Assignment Q K :=
+noncomputable def WeightedClosedWalk.assignment (c : WeightedClosedWalk Q K) : Assignment Q K :=
   walkAssignment c.walk c.weight
 
-theorem WeightedCycle.assignment_def (c : WeightedCycle Q K) :
+theorem WeightedClosedWalk.assignment_def (c : WeightedClosedWalk Q K) :
     c.assignment = walkAssignment c.walk c.weight :=
   (rfl)
 
@@ -139,11 +141,11 @@ theorem WeightedWalk.excessAt_sum_map_assignment [DecidableEq V] (l : List (Weig
       simp [hs, ht, Ne.symm] <;> abel
 
 /-- The excess of a sum of weighted closed walks vanishes. -/
-theorem WeightedCycle.isCirculation_sum_map_assignment (l : List (WeightedCycle Q K)) :
-    IsCirculation (l.map WeightedCycle.assignment).sum := by
-  induction l with
-  | nil => exact isCirculation_zero
-  | cons c l ih => exact (isCirculation_walkAssignment c.walk c.weight).add ih
+theorem WeightedClosedWalk.isCirculation_sum_map_assignment (l : List (WeightedClosedWalk Q K)) :
+    IsCirculation (l.map WeightedClosedWalk.assignment).sum :=
+  (isCirculation_iff_mem_ker _).2 <| list_sum_mem fun _ hx ↦ by
+    obtain ⟨c, -, rfl⟩ := List.mem_map.1 hx
+    exact (isCirculation_iff_mem_ker _).1 (isCirculation_walkAssignment c.walk c.weight)
 
 /-- A *path–cycle decomposition* of the arrow assignment `f`: finite lists of positively weighted
 directed paths and positively weighted directed cycles whose assignments add up to `f`, such that
@@ -154,7 +156,7 @@ structure PathCycleDecomposition [Preorder K] (f : Assignment Q K) where
   /-- The weighted paths. -/
   paths : List (WeightedWalk Q K)
   /-- The weighted cycles. -/
-  cycles : List (WeightedCycle Q K)
+  cycles : List (WeightedClosedWalk Q K)
   /-- Every path component is a directed path. -/
   isPath_walk : ∀ p ∈ paths, p.walk.IsPath
   /-- Every cycle component is a directed cycle. -/
@@ -169,7 +171,7 @@ structure PathCycleDecomposition [Preorder K] (f : Assignment Q K) where
   excessAt_target_pos : ∀ p ∈ paths, 0 < excessAt f p.target
   /-- The components add up to the decomposed assignment. -/
   sum_paths_add_sum_cycles :
-    (paths.map WeightedWalk.assignment).sum + (cycles.map WeightedCycle.assignment).sum = f
+    (paths.map WeightedWalk.assignment).sum + (cycles.map WeightedClosedWalk.assignment).sum = f
 
 namespace PathCycleDecomposition
 
@@ -183,13 +185,13 @@ noncomputable def pathAssignment : Assignment Q K :=
 
 /-- The sum of the cycle components of a decomposition. -/
 noncomputable def cycleAssignment : Assignment Q K :=
-  (D.cycles.map WeightedCycle.assignment).sum
+  (D.cycles.map WeightedClosedWalk.assignment).sum
 
 theorem pathAssignment_def : D.pathAssignment = (D.paths.map WeightedWalk.assignment).sum :=
   (rfl)
 
 theorem cycleAssignment_def :
-    D.cycleAssignment = (D.cycles.map WeightedCycle.assignment).sum :=
+    D.cycleAssignment = (D.cycles.map WeightedClosedWalk.assignment).sum :=
   (rfl)
 
 @[simp]
@@ -198,7 +200,7 @@ theorem pathAssignment_add_cycleAssignment : D.pathAssignment + D.cycleAssignmen
 
 /-- The cycle components form a circulation. -/
 theorem isCirculation_cycleAssignment : IsCirculation D.cycleAssignment :=
-  WeightedCycle.isCirculation_sum_map_assignment _
+  WeightedClosedWalk.isCirculation_sum_map_assignment _
 
 /-- The path components have the same excess as the decomposed assignment. -/
 @[simp]
@@ -242,7 +244,7 @@ theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.path
     0 ≤ p.assignment :=
   walkAssignment_nonneg _ (D.weight_pos_of_mem_paths p hp).le
 
-theorem assignment_nonneg_of_mem_cycles {c : WeightedCycle Q K} (hc : c ∈ D.cycles) :
+theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
     0 ≤ c.assignment :=
   walkAssignment_nonneg _ (D.weight_pos_of_mem_cycles c hc).le
 
@@ -273,7 +275,7 @@ theorem assignment_le_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
     (List.mem_map_of_mem hp)).trans D.pathAssignment_le
 
 /-- Every cycle component is bounded arrowwise by the decomposed assignment. -/
-theorem assignment_le_of_mem_cycles {c : WeightedCycle Q K} (hc : c ∈ D.cycles) :
+theorem assignment_le_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
     c.assignment ≤ f :=
   (List.single_le_sum (by simpa using fun c hc ↦ D.assignment_nonneg_of_mem_cycles hc) _
     (List.mem_map_of_mem hc)).trans D.cycleAssignment_le
@@ -290,7 +292,7 @@ theorem paths_eq_nil_and_cycles_eq_nil_iff : D.paths = [] ∧ D.cycles = [] ↔ 
     obtain ⟨⟨x, y, e⟩, he⟩ := List.exists_mem_of_ne_nil c.walk.arrows fun h ↦
       ((ArrowWalk.isCycle_def _).1 hcyc).1.ne' (ArrowWalk.arrows_eq_nil_iff.1 h)
     have hle := D.assignment_le_of_mem_cycles hc x y e
-    rw [WeightedCycle.assignment_def, walkAssignment_eq_of_mem hcyc.nodup_arrows _ he] at hle
+    rw [WeightedClosedWalk.assignment_def, walkAssignment_eq_of_mem hcyc.nodup_arrows _ he] at hle
     exact (D.weight_pos_of_mem_cycles c hc).not_ge hle
 
 end PartialOrder
@@ -302,7 +304,7 @@ section Flow
 variable {cap : Assignment Q K} {s t : V}
 
 /-- Every path of a decomposition of an ordinary `s`–`t` flow starts at `s`. -/
-theorem source_eq [Preorder K] {f : Flow cap s t} (D : PathCycleDecomposition f.toFun)
+theorem source_eq_of_mem_paths [Preorder K] {f : Flow cap s t} (D : PathCycleDecomposition f.toFun)
     {p : WeightedWalk Q K} (hp : p ∈ D.paths) : p.source = s := by
   by_contra h
   refine D.source_ne_of_mem_paths hp ?_ rfl
@@ -312,7 +314,7 @@ theorem source_eq [Preorder K] {f : Flow cap s t} (D : PathCycleDecomposition f.
   · exact (f.conserve _ h ht).ge
 
 /-- Every path of a decomposition of an ordinary `s`–`t` flow ends at `t`. -/
-theorem target_eq [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
+theorem target_eq_of_mem_paths [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
     (D : PathCycleDecomposition f.toFun) {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
     p.target = t := by
   by_contra h
@@ -361,7 +363,7 @@ variable {cap : Assignment Q K} {s t : V} {f : Flow cap s t} (D : PathCycleDecom
 /-- The path weights of a decomposition of an ordinary `s`–`t` flow add up to its value. -/
 theorem sum_weight_paths_eq_val : (D.paths.map WeightedWalk.weight).sum = f.val := by
   classical
-  rw [← List.filter_eq_self.2 fun p hp ↦ decide_eq_true (D.target_eq hp),
+  rw [← List.filter_eq_self.2 fun p hp ↦ decide_eq_true (D.target_eq_of_mem_paths hp),
     D.sum_weight_filter_target_eq_posPart, ← f.val_def, posPart_eq_self.2 f.val_nonneg]
 
 end LinearOrder
@@ -373,21 +375,6 @@ end PathCycleDecomposition
 section Existence
 
 variable [LinearOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
-
-omit [Fintype V] [∀ x y, Fintype (Q x y)] [IsOrderedAddMonoid K] in
-/-- A closed walk of positive arrows: some vertex reaches itself along arrows of positive value
-gives a cycle of positive arrows. -/
-private lemma exists_isCycle_of_transGen {v : V}
-    (h : TransGen (fun v w ↦ ∃ e : Q v w, 0 < f e) v v) :
-    ∃ c : ArrowWalk Q v v, c.IsCycle ∧ ∀ a ∈ c.arrows, 0 < f a.2.2 := by
-  obtain ⟨u, hvu, e, he⟩ := TransGen.tail'_iff.1 h
-  obtain ⟨p, hp⟩ := positiveReachable_def.1 (positiveReachable_iff_reflTransGen.2 hvu)
-  obtain ⟨c, hc, hsub⟩ := (p.cons e).exists_isCycle_arrows_subset (by simp)
-  refine ⟨c, hc, fun a ha ↦ ?_⟩
-  have ha := hsub ha
-  rw [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at ha
-  rcases ha with ha | rfl
-  exacts [hp a ha, he]
 
 omit [Fintype V] [∀ x y, Fintype (Q x y)] [IsOrderedAddMonoid K] in
 /-- If no vertex reaches itself along arrows of positive value, then every arrow of positive value
@@ -416,27 +403,6 @@ private lemma exists_isPath_of_acyclic [Finite V] (hf : 0 ≤ f)
   · refine le_antisymm (not_lt.1 fun h ↦ ?_) (hf _ _ e')
     exact hmax w (ht.tail ⟨e', h⟩) (.single ⟨e', h⟩)
 
-/-- Subtracting a walk of positive arrows that repeats no arrow, weighted by its bottleneck, keeps
-the assignment nonnegative and strictly decreases the number of arrows of positive value. -/
-private lemma sub_walkAssignment_bottleneck (hf : 0 ≤ f) {s t : V} {p : ArrowWalk Q s t}
-    (hnd : p.arrows.Nodup) (hne : p.arrows ≠ []) (hpos : ∀ a ∈ p.arrows, 0 < f a.2.2) :
-    0 ≤ f - walkAssignment p (p.bottleneck f hne) ∧
-      #{a : Σ x y, Q x y | 0 < (f - walkAssignment p (p.bottleneck f hne)) a.2.2} <
-        #{a : Σ x y, Q x y | 0 < f a.2.2} := by
-  have hq : 0 < p.bottleneck f hne := ArrowWalk.lt_bottleneck_iff.2 hpos
-  have hle : f - walkAssignment p (p.bottleneck f hne) ≤ f :=
-    sub_le_self _ (walkAssignment_nonneg p hq.le)
-  refine ⟨fun x y e ↦ ?_, Finset.card_lt_card ?_⟩
-  · by_cases he : ⟨x, y, e⟩ ∈ p.arrows
-    · simpa [walkAssignment_eq_of_mem hnd _ he] using ArrowWalk.bottleneck_le he
-    · simpa [walkAssignment_eq_zero_of_notMem p _ he] using hf x y e
-  obtain ⟨⟨x, y, e⟩, ha, hqa⟩ := ArrowWalk.exists_mem_bottleneck_eq (c := f) (hne := hne)
-  refine (Finset.ssubset_iff_of_subset fun b hb ↦ ?_).2 ⟨⟨x, y, e⟩, ?_, ?_⟩
-  · simp only [mem_filter_univ] at hb ⊢
-    exact hb.trans_le (hle _ _ _)
-  · simpa using hpos _ ha
-  · simp [walkAssignment_eq_of_mem hnd _ ha, hqa]
-
 /-- Subtract a walk from `s` to `t ≠ s`, weighted by `q > 0`, from a nonnegative assignment `f`
 that vanishes on the arrows entering `s` and on the arrows leaving `t`, such that the difference
 `g` is still nonnegative. Then `f` has negative excess at `s` and positive excess at `t`, and every
@@ -455,21 +421,12 @@ private lemma excessAt_sign_of_sub_walkAssignment {s t : V} (hst : s ≠ t) {p :
     simp [excessAt_sub]
   -- The difference vanishes on the arrows entering `s` and on those leaving `t`, so its excess
   -- is nonpositive at `s` and nonnegative at `t`.
-  have hgs : excessAt (f - walkAssignment p q) s ≤ 0 := by
-    rw [excessAt_eq_arrowSum_sub, (arrowSum_eq_zero_iff_of_nonneg hg).2, zero_sub, neg_nonpos]
-    · exact arrowSum_zero (Q := Q) (K := K) {s} univ ▸ arrowSum_mono hg _ _
-    · intro w _ x hx e
-      rw [mem_singleton] at hx
-      subst hx
-      exact le_antisymm ((hgf _ _ e).trans (hin w e).le) (hg _ _ e)
-  have hgt : 0 ≤ excessAt (f - walkAssignment p q) t := by
-    rw [excessAt_eq_arrowSum_sub,
-      (arrowSum_eq_zero_iff_of_nonneg (S := {t}) (T := univ) hg).2, sub_zero]
-    · exact arrowSum_zero (Q := Q) (K := K) univ {t} ▸ arrowSum_mono hg _ _
-    · intro x hx w _ e
-      rw [mem_singleton] at hx
-      subst hx
-      exact le_antisymm ((hgf _ _ e).trans (hout w e).le) (hg _ _ e)
+  have hgs : excessAt (f - walkAssignment p q) s ≤ 0 :=
+    excessAt_nonpos_of_nonneg_of_forall_in_eq_zero hg fun w e ↦
+      le_antisymm ((hgf _ _ e).trans (hin w e).le) (hg _ _ e)
+  have hgt : 0 ≤ excessAt (f - walkAssignment p q) t :=
+    excessAt_nonneg_of_nonneg_of_forall_out_eq_zero hg fun w e ↦
+      le_antisymm ((hgf _ _ e).trans (hout w e).le) (hg _ _ e)
   refine ⟨?_, ?_, fun v hv ↦ ?_, fun v hv ↦ ?_⟩
   · rw [hexc s]
     simpa [hst] using hgs.trans_lt hq
@@ -494,7 +451,7 @@ private lemma excessAt_sign_of_sub_walkAssignment {s t : V} (hst : s ≠ t) {p :
 
 /-- Adding a positively weighted cycle to a decomposed assignment. -/
 private def PathCycleDecomposition.consCycle {g : Assignment Q K} (D : PathCycleDecomposition g)
-    (c : WeightedCycle Q K) (hc : c.walk.IsCycle) (hpos : 0 < c.weight)
+    (c : WeightedClosedWalk Q K) (hc : c.walk.IsCycle) (hpos : 0 < c.weight)
     (hfg : f = g + c.assignment) : PathCycleDecomposition f where
   paths := D.paths
   cycles := c :: D.cycles
@@ -503,11 +460,11 @@ private def PathCycleDecomposition.consCycle {g : Assignment Q K} (D : PathCycle
   weight_pos_of_mem_paths := D.weight_pos_of_mem_paths
   weight_pos_of_mem_cycles := List.forall_mem_cons.2 ⟨hpos, D.weight_pos_of_mem_cycles⟩
   excessAt_source_neg p hp := by
-    rw [hfg, excessAt_add, WeightedCycle.assignment_def,
+    rw [hfg, excessAt_add, WeightedClosedWalk.assignment_def,
       (isCirculation_iff _).1 (isCirculation_walkAssignment _ _), add_zero]
     exact D.excessAt_source_neg p hp
   excessAt_target_pos p hp := by
-    rw [hfg, excessAt_add, WeightedCycle.assignment_def,
+    rw [hfg, excessAt_add, WeightedClosedWalk.assignment_def,
       (isCirculation_iff _).1 (isCirculation_walkAssignment _ _), add_zero]
     exact D.excessAt_target_pos p hp
   sum_paths_add_sum_cycles := by
@@ -569,7 +526,8 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
         ∃ D : PathCycleDecomposition (f - walkAssignment p q),
           (∀ p ∈ D.paths, p.weight ∈ H) ∧ (∀ c ∈ D.cycles, c.weight ∈ H) ∧
           D.paths.length + D.cycles.length + 1 ≤ #{a : Σ x y, Q x y | 0 < f a.2.2} := by
-    obtain ⟨hg, hcard⟩ := sub_walkAssignment_bottleneck hf hnd hne hpos
+    have hg := sub_nonneg.2 (walkAssignment_bottleneck_le hf hnd hne)
+    have hcard := card_filter_pos_sub_walkAssignment_bottleneck_lt hnd hne hpos
     have hqH : p.bottleneck f hne ∈ H := by
       obtain ⟨a, -, ha⟩ := ArrowWalk.exists_mem_bottleneck_eq (c := f) (hne := hne)
       exact ha ▸ hH _
@@ -588,7 +546,7 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
   by_cases hcyc : ∃ v, TransGen (fun v w ↦ ∃ e : Q v w, 0 < f e) v v
   · -- Some cycle consists of positive arrows: peel it off.
     obtain ⟨v, hv⟩ := hcyc
-    obtain ⟨c, hc, hpos⟩ := exists_isCycle_of_transGen hv
+    obtain ⟨c, hc, hpos⟩ := exists_isCycle_iff_transGen.2 hv
     have hne : c.arrows ≠ [] := fun h ↦
       ((ArrowWalk.isCycle_def c).1 hc).1.ne' (ArrowWalk.arrows_eq_nil_iff.1 h)
     obtain ⟨q, hq, hqH, -, D, hP, hC, hlen⟩ := peel c hc.nodup_arrows hne hpos
