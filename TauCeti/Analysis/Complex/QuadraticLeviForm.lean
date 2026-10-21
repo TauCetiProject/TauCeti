@@ -214,6 +214,14 @@ theorem _root_.ContinuousLinearMap.leviForm_mul_norm_sq_add_re_apply_self (a : �
     ((contDiff_norm_sq ℂ).const_smul a).contDiffAt
   simpa [Pi.add_def] using leviForm_add h (contDiffAt_re_apply_self q x)
 
+/-- Adding the real part of a holomorphic quadratic form to the squared norm does not change the
+Levi form: it is still the inner product. In particular `‖z‖ ^ 2 + Re (q z z)` is strictly
+plurisubharmonic. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.leviForm_norm_sq_add_re_apply_self (x : E) :
+    leviForm (fun z ↦ ‖z‖ ^ 2 + (q z z).re) x = innerₛₗ ℂ := by
+  simpa using q.leviForm_mul_norm_sq_add_re_apply_self 1 x
+
 /-- The function `a ‖z‖ ^ 2 + Re (q z z)` is `z ↦ B z z` for a continuous real bilinear form
 `B`. -/
 private theorem exists_bilinear_mul_norm_sq_add_re_apply_self (a : ℝ) :
@@ -282,6 +290,37 @@ theorem _root_.OrthonormalBasis.leviForm_mul_norm_sq_add_re_sum_mul_inner_sq
   simp_rw [← hQ]
   exact Q.leviForm_mul_norm_sq_add_re_apply_self a x
 
+/-- The real and imaginary parts of the coordinates `conj (ω j) ⟪b j, v⟫` in an orthonormal
+basis `b`, rotated by units `ω j`, as a real linear equivalence. -/
+private noncomputable def _root_.OrthonormalBasis.rotatedRealCoords (b : OrthonormalBasis ι ℂ E)
+    (ω : ι → ℂ) (hω : ∀ j, ω j * conj (ω j) = 1) : E ≃ₗ[ℝ] (ι ⊕ ι → ℝ) where
+  toFun v := Sum.elim (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).re) (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).im)
+  invFun u := ∑ j, (ω j * ⟨u (Sum.inl j), u (Sum.inr j)⟩) • b j
+  map_add' v w := by ext (j | j) <;> simp [inner_add_right, mul_add]
+  map_smul' r v := by
+    ext (j | j) <;> simp [← coe_smul, inner_smul_right, mul_left_comm _ (r : ℂ)]
+  left_inv v := by
+    conv_rhs => rw [← b.sum_repr' v]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    simp only [Sum.elim_inl, Sum.elim_inr, Complex.eta, ← mul_assoc, hω, one_mul]
+  right_inv u := by
+    have hk (k : ι) : conj (ω k) * ⟪b k, ∑ j, (ω j * ⟨u (Sum.inl j), u (Sum.inr j)⟩) • b j⟫_ℂ =
+        ⟨u (Sum.inl k), u (Sum.inr k)⟩ := by
+      rw [b.orthonormal.inner_right_fintype, ← mul_assoc, mul_comm (conj _), hω, one_mul]
+    ext (j | j) <;> simp only [hk, Sum.elim_inl, Sum.elim_inr]
+
+@[simp]
+private theorem _root_.OrthonormalBasis.rotatedRealCoords_apply_inl (b : OrthonormalBasis ι ℂ E)
+    (ω : ι → ℂ) (hω : ∀ j, ω j * conj (ω j) = 1) (v : E) (j : ι) :
+    b.rotatedRealCoords ω hω v (Sum.inl j) = (conj (ω j) * ⟪b j, v⟫_ℂ).re :=
+  rfl
+
+@[simp]
+private theorem _root_.OrthonormalBasis.rotatedRealCoords_apply_inr (b : OrthonormalBasis ι ℂ E)
+    (ω : ι → ℂ) (hω : ∀ j, ω j * conj (ω j) = 1) (v : E) (j : ι) :
+    b.rotatedRealCoords ω hω v (Sum.inr j) = (conj (ω j) * ⟪b j, v⟫_ℂ).im :=
+  rfl
+
 /-- **The Morse index of a Hermitian plus holomorphic quadratic function.** For an orthonormal
 basis `b`, the Morse index of `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` counts, for each `j`, one
 negative direction if `a < ‖c j‖` and a second one if `a < -‖c j‖`.
@@ -299,41 +338,22 @@ theorem _root_.OrthonormalBasis.morseIndex_mul_norm_sq_add_re_sum_mul_inner_sq
   choose ω hω hcω using fun j ↦ Complex.exists_norm_eq_one_mul_sq_eq_neg_norm (c j)
   have hωω (j : ι) : ω j * conj (ω j) = 1 := by
     rw [mul_conj, normSq_eq_norm_sq, hω, one_pow, ofReal_one]
-  let e : E ≃ₗ[ℝ] (ι ⊕ ι → ℝ) :=
-    { toFun := fun v ↦ Sum.elim (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).re)
-        (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).im)
-      invFun := fun u ↦ ∑ j, (ω j * ⟨u (Sum.inl j), u (Sum.inr j)⟩) • b j
-      map_add' := fun v w ↦ by ext (j | j) <;> simp [inner_add_right, mul_add]
-      map_smul' := fun r v ↦ by
-        ext (j | j) <;> simp [← coe_smul, inner_smul_right, mul_left_comm _ (r : ℂ)]
-      left_inv := fun v ↦ by
-        conv_rhs => rw [← b.sum_repr' v]
-        refine Finset.sum_congr rfl fun j _ ↦ ?_
-        simp only [Sum.elim_inl, Sum.elim_inr, Complex.eta, ← mul_assoc, hωω, one_mul]
-      right_inv := fun u ↦ by
-        have hk (k : ι) : conj (ω k) *
-            ⟪b k, ∑ j, (ω j * ⟨u (Sum.inl j), u (Sum.inr j)⟩) • b j⟫_ℂ =
-              ⟨u (Sum.inl k), u (Sum.inr k)⟩ := by
-          rw [b.orthonormal.inner_right_fintype, ← mul_assoc, mul_comm (conj _), hωω, one_mul]
-        ext (j | j) <;> simp only [hk, Sum.elim_inl, Sum.elim_inr] }
   rw [morseIndex_def, QuadraticForm.sigNeg_of_equiv_weightedSumSquares
-    (w := Sum.elim (fun j ↦ 2 * (a - ‖c j‖)) (fun j ↦ 2 * (a + ‖c j‖))) ⟨⟨e, fun v ↦ ?_⟩⟩]
-  · simp only [Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter,
-      Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, ← Finset.sum_add_distrib]
+    (w := Sum.elim (fun j ↦ 2 * (a - ‖c j‖)) (fun j ↦ 2 * (a + ‖c j‖)))
+    ⟨⟨b.rotatedRealCoords ω hωω, fun v ↦ ?_⟩⟩]
+  · have hneg (j : ι) : 2 * (a - ‖c j‖) < 0 ↔ a < ‖c j‖ := by constructor <;> intro <;> linarith
+    have hpos (j : ι) : 2 * (a + ‖c j‖) < 0 ↔ a < -‖c j‖ := by constructor <;> intro <;> linarith
+    simp only [Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter,
+      Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, ← Finset.sum_add_distrib, hneg, hpos]
+  · rw [b.hessianQuadraticForm_mul_norm_sq_add_re_sum_mul_inner_sq, ← b.sum_sq_norm_inner_right]
+    simp only [QuadraticMap.weightedSumSquares_apply, Fintype.sum_sum_type, re_sum,
+      Finset.mul_sum, ← Finset.sum_add_distrib, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe,
+      b.rotatedRealCoords_apply_inl, b.rotatedRealCoords_apply_inr]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    congr 1 <;> congr 1 <;> apply propext <;> constructor <;> intro <;> linarith
-  · rw [b.hessianQuadraticForm_mul_norm_sq_add_re_sum_mul_inner_sq, ← b.sum_sq_norm_inner_right,
-      QuadraticMap.weightedSumSquares_apply, Fintype.sum_sum_type, ← Finset.sum_add_distrib,
-      re_sum, Finset.mul_sum, ← Finset.sum_add_distrib, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    have hl : e v (Sum.inl j) = (conj (ω j) * ⟪b j, v⟫_ℂ).re := rfl
-    have hr : e v (Sum.inr j) = (conj (ω j) * ⟪b j, v⟫_ℂ).im := rfl
     have h : ⟪b j, v⟫_ℂ = ω j * (conj (ω j) * ⟪b j, v⟫_ℂ) := by rw [← mul_assoc, hωω, one_mul]
-    rw [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, hl, hr]
     generalize conj (ω j) * ⟪b j, v⟫_ℂ = z at h ⊢
-    rw [h, mul_pow, ← mul_assoc, hcω, norm_mul, hω, one_mul, ← normSq_eq_norm_sq, normSq_apply]
-    simp only [Sum.elim_inl, Sum.elim_inr, smul_eq_mul, neg_re, neg_im, ofReal_re, ofReal_im,
-      mul_re, sq]
+    simp only [h, mul_pow, ← mul_assoc, hcω, norm_mul, hω, one_mul, Complex.sq_norm]
+    simp [normSq_apply, sq]
     ring
 
 /-- **The Morse index of a Hermitian plus holomorphic quadratic function with one coefficient.**
@@ -370,7 +390,7 @@ private noncomputable def diagonalForm (a : ι → ℝ) :
 
 private theorem norm_sq_add_sum_re_sq_eq (a : ι → ℝ) :
     (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) =
-      fun z ↦ (1 : ℝ) * ‖z‖ ^ 2 + (diagonalForm a z z).re := by
+      fun z ↦ ‖z‖ ^ 2 + (diagonalForm a z z).re := by
   funext z
   simp [diagonalForm, sq]
 
@@ -379,8 +399,7 @@ inner product, for all real `a j`. -/
 @[simp]
 theorem leviForm_euclidean_norm_sq_add_sum_re_sq (a : ι → ℝ) (x : EuclideanSpace ℂ ι) :
     leviForm (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) x = innerₛₗ ℂ := by
-  rw [norm_sq_add_sum_re_sq_eq, ContinuousLinearMap.leviForm_mul_norm_sq_add_re_apply_self,
-    ofReal_one, one_smul]
+  rw [norm_sq_add_sum_re_sq_eq, ContinuousLinearMap.leviForm_norm_sq_add_re_apply_self]
 
 /-- On `ℂⁿ`, in the coordinates `z j = x j + I y j`, the Hessian quadratic form of
 `z ↦ ‖z‖ ^ 2 + ∑ j, a j * Re (z j ^ 2)` is `∑ j, (2 (1 + a j) x j ^ 2 + 2 (1 - a j) y j ^ 2)`. -/
@@ -388,8 +407,9 @@ theorem hessianQuadraticForm_euclidean_norm_sq_add_sum_re_sq (a : ι → ℝ)
     (x v : EuclideanSpace ℂ ι) :
     hessianQuadraticForm (fun z : EuclideanSpace ℂ ι ↦ ‖z‖ ^ 2 + ∑ j, a j * (z j ^ 2).re) x v =
       ∑ j, (2 * (1 + a j) * (v j).re ^ 2 + 2 * (1 - a j) * (v j).im ^ 2) := by
-  rw [norm_sq_add_sum_re_sq_eq,
-    ContinuousLinearMap.hessianQuadraticForm_mul_norm_sq_add_re_apply_self, mul_one]
+  have h := (diagonalForm a).hessianQuadraticForm_mul_norm_sq_add_re_apply_self 1 x v
+  simp only [one_mul, mul_one] at h
+  rw [norm_sq_add_sum_re_sq_eq, h]
   simp only [diagonalForm, EuclideanSpace.norm_sq_eq, Finset.mul_sum, ← Finset.sum_add_distrib,
     sum_apply, re_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
