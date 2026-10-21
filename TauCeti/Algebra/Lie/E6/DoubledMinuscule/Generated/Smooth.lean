@@ -46,7 +46,9 @@ variable (A : Type u) [CommRing A]
 
 variable (k : Type u) [Field k]
 
-private theorem isGeometricallyReduced_generatorCoordinateAlgebra :
+/-- The numbered root and weight-torus coordinate algebras are geometrically reduced over
+every field. -/
+theorem isGeometricallyReduced_generatorCoordinateAlgebra :
     ∀ j, Algebra.IsGeometricallyReduced k (generatorCoordinateAlgebra k j) := by
   intro j
   cases j with

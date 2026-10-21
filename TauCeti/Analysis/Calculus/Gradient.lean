@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 -- only inside the proofs below.
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
@@ -47,6 +48,8 @@ theorem about `‖Dφ‖`.
   `ContDiffAt.continuousAt_fderiv_gradient` and
   `ContDiffAt.eventually_differentiableAt_gradient`: the Hessian of a function `C²` at `x` is
   continuous at `x`, and its gradient is differentiable near `x`.
+* `TauCeti.hasGradientAt_mul_norm_sq_add` and `TauCeti.gradient_mul_norm_sq_add`: over `ℝ`, the
+  quadratic `y ↦ (a / 2) ‖y‖² + c` has gradient `a • y` at `y`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
@@ -143,6 +146,24 @@ theorem _root_.ContDiffAt.eventually_differentiableAt_gradient {E : Type*} [Norm
     (hf : ContDiffAt ℝ n f x) (hn : 2 ≤ n) : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (∇ f) y :=
   ((hf.gradient_right (m := 1) hn).eventually (by simp)).mono fun _ hy =>
     hy.differentiableAt one_ne_zero
+
+/-- Over `ℝ`, the quadratic `y ↦ (a / 2) ‖y‖² + c` has gradient `a • y` at `y`. -/
+theorem hasGradientAt_mul_norm_sq_add {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] (a c : ℝ) (y : E) :
+    HasGradientAt (fun y : E => a / 2 * ‖y‖ ^ 2 + c) (a • y) y := by
+  rw [hasGradientAt_iff_hasFDerivAt]
+  refine (((HasFDerivAt.norm_sq (hasFDerivAt_id y)).const_mul (a / 2)).add_const
+    c).congr_fderiv ?_
+  ext z
+  simp only [toDual_apply_apply, _root_.smul_apply,
+    ContinuousLinearMap.comp_apply, innerSL_apply_apply, ContinuousLinearMap.id_apply, id_eq,
+    smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat, real_inner_smul_left]
+  ring
+
+/-- Over `ℝ`, the gradient of the quadratic `y ↦ (a / 2) ‖y‖² + c` at `y` is `a • y`. -/
+theorem gradient_mul_norm_sq_add {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] (a c : ℝ) (y : E) : ∇ (fun y : E => a / 2 * ‖y‖ ^ 2 + c) y = a • y :=
+  (hasGradientAt_mul_norm_sq_add a c y).gradient
 
 /-- **The Hessian is symmetric.** If a real function `f` is differentiable near `x` and its
 gradient has derivative `H` at `x`, then `H` is a symmetric operator:

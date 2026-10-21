@@ -163,7 +163,7 @@ private lemma radialPushMap_of_norm_eq_one (n : ℕ) (t : I) (y : Fin n → ℝ)
 
 private lemma norm_radialPushMap_le_one (n : ℕ) (t : I) (y : Fin n → ℝ) (hy : ‖y‖ ≤ 1) :
     ‖radialPushMap n (t, y)‖ ≤ 1 :=
-  norm_radialPush_le_one (by norm_num) (by norm_num) t hy
+  norm_radialPush_le_one (by norm_num) t hy
 
 /-- Through the characteristic map of an `n`-cell, the radial push of the cells is the radial
 push of the closed unit ball. -/
@@ -274,7 +274,7 @@ lemma skeletonNeighborhoodHomotopy_mem {n : ℕ} (t : I)
     cellDeformation_radialPushMap_map t j hy.le]
   have hz : ‖y‖ ≤ ‖radialPush 2⁻¹ t y‖ :=
     norm_le_norm_radialPush (by norm_num) (by norm_num) t hy.le
-  rcases (norm_radialPush_le_one (r := 2⁻¹) (by norm_num) (by norm_num) t hy.le).lt_or_eq with
+  rcases (norm_radialPush_le_one (r := 2⁻¹) (by norm_num) t hy.le).lt_or_eq with
       hz1 | hz1
   · refine mem_skeletonNeighborhood.2 ⟨map_mem_skeletonLT_succ j hz1.le, fun i w hw h ↦ ?_⟩
     obtain ⟨-, rfl⟩ := (map_eq_map_iff (hw.trans (by norm_num)) hz1).1 h

@@ -25,6 +25,8 @@ it induces the polynomial-to-series comparisons used in Weierstrass division and
 * `TauCeti.PowerSeries.isRestricted_of_abs_le`: restrictedness passes to smaller radii, and
   `TauCeti.PowerSeries.isRestrictedSubring_le_of_abs_le` is the resulting containment of subrings.
 * `TauCeti.PowerSeries.isRestricted_polynomial`: every polynomial is restricted.
+* `PowerSeries.IsRestricted.rescale`: if `f(X)` is restricted at `‖a‖ * c`, then `f(aX)`
+  is restricted at `c`.
 * `TauCeti.PowerSeries.polynomialToRestricted`: the polynomial inclusion as an algebra map.
 -/
 
@@ -65,6 +67,19 @@ theorem isRestricted_polynomial (p : Polynomial R) : (p : PowerSeries R).IsRestr
   isRestricted_of_forall_coeff_eq_zero (n := p.natDegree + 1) fun m hm ↦ by
     rw [Polynomial.coeff_coe]
     exact Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
+
+/-- **Rescaling changes the radius.** If `f(X)` is restricted at the radius `‖a‖ * c`, then
+`f(aX)` is restricted at the radius `c`. No multiplicativity of the norm is needed: the weighted
+coefficient norms of `f(aX)` are eventually dominated by those of `f`. -/
+theorem _root_.PowerSeries.IsRestricted.rescale {R : Type*} [NormedCommRing R] {c : ℝ}
+    {f : PowerSeries R} {a : R}
+    (hf : f.IsRestricted (‖a‖ * c)) : (PowerSeries.rescale a f).IsRestricted c := by
+  rw [← PowerSeries.isRestricted_abs_iff, PowerSeries.isRestricted_iff'] at hf ⊢
+  refine squeeze_zero' (.of_forall fun n ↦ by positivity) ?_ hf
+  filter_upwards [eventually_norm_pow_le a] with n hn
+  rw [PowerSeries.coeff_rescale, abs_mul, abs_norm, mul_pow, ← mul_assoc, mul_comm _ (‖a‖ ^ n)]
+  gcongr
+  exact (norm_mul_le _ _).trans (by gcongr)
 
 section Algebra
 

@@ -156,7 +156,7 @@ theorem isBaseChange_localizationToCompletion :
   -- composite of the rationalization `L → V` and the completion `V → V_p`: both base changes.
   -- The two composites carry different (propositionally equal) `ℤ`-module structures on `V_p`,
   -- one restricted from `ℤ_p` and one from `ℚ`, so they are matched by `convert`.
-  convert (Submodule.IsLattice.isBaseChange_subtype L.carrier).comp
+  convert (Submodule.isBaseChange_subtype L.carrier).comp
     (TensorProduct.isBaseChange ℚ V ℚ_[p])
   ext x
   simp
@@ -216,7 +216,7 @@ of the integral Gram matrix of the lattice. -/
 theorem toMatrix_localIntegralForm (e : Basis ι ℤ L) :
     LinearMap.BilinForm.toMatrix (e.baseChange ℤ_[p]) (L.localIntegralForm p) =
       (L.gramMatrix e).map (Int.cast : ℤ → ℤ_[p]) := by
-  rw [localIntegralForm, bilinForm_toMatrix_baseChange, gramMatrix_eq_toMatrix,
+  rw [localIntegralForm, LinearMap.BilinForm.toMatrix_baseChange, gramMatrix_eq_toMatrix,
     algebraMap_int_eq, Int.coe_castRingHom]
 
 /-- The determinant of the localized integral form in any base-changed carrier basis is the
@@ -233,14 +233,14 @@ is. -/
 theorem nondegenerate_localIntegralForm_iff :
     (L.localIntegralForm p).Nondegenerate ↔ L.form.Nondegenerate := by
   rw [localIntegralForm,
-    nondegenerate_baseChange_iff L.integralForm (Module.Free.chooseBasis ℤ L),
+    L.integralForm.nondegenerate_baseChange_iff (Module.Free.chooseBasis ℤ L),
     nondegenerate_integralForm_iff]
 
 /-- The completed rational form is nondegenerate exactly when the rational form of the lattice
 is. -/
 theorem nondegenerate_completedRationalForm_iff :
     (L.completedRationalForm p).Nondegenerate ↔ L.form.Nondegenerate := by
-  rw [completedRationalForm, nondegenerate_baseChange_iff L.form L.rationalBasis]
+  rw [completedRationalForm, L.form.nondegenerate_baseChange_iff L.rationalBasis]
 
 namespace Isometry
 

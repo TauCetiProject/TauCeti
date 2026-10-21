@@ -57,6 +57,17 @@ theorem awayι_toSpecCoeff {f : A} {n : ℕ} (hf : f ∈ 𝒜 n) (hn : 0 < n) :
   rw [toSpecCoeff, awayι_toSpecZero_assoc, ← Spec.map_comp,
     ← CommRingCat.ofHom_comp, ← algebraMap_eq_comp]
 
+/-- `Proj.map f` lies over the coefficient ring when `f` preserves the scalars in degree zero. -/
+@[reassoc]
+theorem map_toSpecCoeff {B : Type u} [CommRing B] [Algebra R B] {ℬ : ℕ → Submodule R B}
+    [GradedAlgebra ℬ] (f : 𝒜 →+*ᵍ ℬ)
+    (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f)
+    (hR : ∀ r : R, f.gradedZeroRingHom (algebraMap R (𝒜 0) r) = algebraMap R (ℬ 0) r) :
+    map f hf ≫ toSpecCoeff 𝒜 = toSpecCoeff ℬ := by
+  rw [toSpecCoeff, map_toSpecZero_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp, toSpecCoeff]
+  congr 3
+  exact RingHom.ext hR
+
 variable (S : Type u) [CommRing S] [Algebra R S]
 
 /-- The projective projection induced by coefficient extension. Flatness is not needed to

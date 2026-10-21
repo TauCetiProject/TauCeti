@@ -41,6 +41,8 @@ whereas the competing subgroup below need not itself be a torus or connected.
   its quotient coordinate Hopf algebra is a split torus.
 * `TauCeti.GeneralLinear.quotientPointsSubgroup_diagonalTorusDefiningIdeal`: its points are the
   range of the diagonal-torus point morphism.
+* `TauCeti.GeneralLinear.mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff`: over every
+  value algebra, its points are the diagonal invertible matrices.
 * `TauCeti.GeneralLinear.eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm`: no larger reduced
   commutative closed subgroup contains the diagonal torus.
 * `TauCeti.GeneralLinear.isMaximalTorus_diagonalTorusDefiningIdeal`: the diagonal torus is a
@@ -62,7 +64,7 @@ open CategoryTheory WithConv
 
 namespace TauCeti.GeneralLinear
 
-universe u
+universe u w
 
 noncomputable section
 
@@ -153,6 +155,34 @@ theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k)
         (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range :=
   HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 
+/-- **The points of the diagonal torus are the diagonal matrices.** Over every value algebra, a
+point of `GL_n` kills `diagonalTorusDefiningIdeal` exactly when its matrix is diagonal. -/
+@[simp↓]
+theorem mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff
+    (A : Type w) [CommRing A] [Algebra k A]
+    (g : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) (CommAlgCat.of k A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
+        (diagonalTorusDefiningIdeal k n) (CommAlgCat.of k A) ↔
+      ((pointsMulEquiv n g : Matrix.GeneralLinearGroup (Fin n) A) :
+        Matrix (Fin n) (Fin n) A).IsDiag := by
+  rw [diagonalTorusDefiningIdeal_eq_ker,
+    HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor]
+  constructor
+  · rintro ⟨t, rfl⟩
+    rw [mapPointsFunctor_diagonalTorusCoordinateMap_app (CommAlgCat.of k A) t]
+    exact TauCeti.mem_diagonalTorus_iff.mp (TauCeti.mem_diagonalTorus_iff_exists_diagGL.mpr
+      ⟨_, (pointsMulEquiv_diagonalTorusPoints t).symm⟩)
+  · intro hg
+    obtain ⟨s, hs⟩ := TauCeti.mem_diagonalTorus_iff_exists_diagGL.mp
+      (TauCeti.mem_diagonalTorus_iff.mpr hg)
+    refine ⟨(SplitTorus.pointsMulEquiv (R := k) (A := A)).symm fun i ↦ s i.down,
+      (mapPointsFunctor_diagonalTorusCoordinateMap_app (CommAlgCat.of k A) _).trans ?_⟩
+    apply (pointsMulEquiv (R := k) (A := A) n).injective
+    rw [pointsMulEquiv_diagonalTorusPoints, ← hs]
+    congr 1
+    funext i
+    rw [diagonalTorusCoordinates_apply, MulEquiv.apply_symm_apply]
+
 end Ring
 
 variable (k : Type u) [Field k] (n : ℕ)
@@ -172,21 +202,6 @@ grind_pattern torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
 variable [IsAlgClosed k]
 
 omit [IsAlgClosed k] in
-private theorem pointsMulEquiv_diagonalTorusPoints_symm (t : Fin n → kˣ) :
-    pointsMulEquiv (R := k) (A := k) n
-        (diagonalTorusPoints
-          ((SplitTorus.pointsMulEquiv (R := k) (A := k)).symm
-            (fun i : ULift.{u} (Fin n) ↦ t i.down))) =
-      diagGL t := by
-  rw [pointsMulEquiv_diagonalTorusPoints]
-  congr 1
-  funext i
-  rw [diagonalTorusCoordinates_apply]
-  exact congrFun
-    ((SplitTorus.pointsMulEquiv (R := k) (A := k)).apply_symm_apply
-      (fun j : ULift.{u} (Fin n) ↦ t j.down)) (ULift.up i)
-
-omit [IsAlgClosed k] in
 /-- Every diagonal matrix is the image of a `k`-point cut out by `diagonalTorusDefiningIdeal`. -/
 private theorem diagonalTorus_le_map_quotientPointsSubgroup :
     TauCeti.diagonalTorus k n ≤
@@ -194,14 +209,10 @@ private theorem diagonalTorus_le_map_quotientPointsSubgroup :
         (diagonalTorusDefiningIdeal k n) (CommAlgCat.of k k)).map
           (pointsMulEquiv (R := k) (A := k) n).toMonoidHom := by
   intro m hm
-  obtain ⟨t, rfl⟩ := mem_diagonalTorus_iff_exists_diagGL.mp hm
-  let q : WithConv
-      (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) →ₐ[k] k) :=
-    (SplitTorus.pointsMulEquiv (R := k) (A := k)).symm fun i : ULift.{u} (Fin n) ↦ t i.down
-  refine ⟨diagonalTorusPoints (R := k) (N := n) (A := k) q, ?_,
-    pointsMulEquiv_diagonalTorusPoints_symm k n t⟩
-  rw [quotientPointsSubgroup_diagonalTorusDefiningIdeal]
-  exact ⟨q, mapPointsFunctor_diagonalTorusCoordinateMap_app (CommAlgCat.of k k) q⟩
+  refine ⟨(pointsMulEquiv (R := k) (A := k) n).symm m, ?_, MulEquiv.apply_symm_apply _ m⟩
+  refine (mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff k n k _).mpr ?_
+  rw [MulEquiv.apply_symm_apply]
+  exact TauCeti.mem_diagonalTorus_iff.mp hm
 
 /-- **The diagonal torus of `GL_n` is maximal among reduced commutative closed subgroup
 schemes over an algebraically closed field.**

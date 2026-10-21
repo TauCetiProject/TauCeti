@@ -142,6 +142,11 @@ theorem gammaMeasure_eq_withDensity_ofReal (a r : ℝ) :
     gammaMeasure a r = volume.withDensity fun x ↦ ENNReal.ofReal (gammaPDFReal a r x) :=
   (rfl)
 
+/-- A Gamma measure has null singletons for all parameter values. -/
+instance (a r : ℝ) : NullSingletonClass (gammaMeasure a r) := by
+  rw [gammaMeasure_eq_withDensity_ofReal]
+  infer_instance
+
 section Transfer
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

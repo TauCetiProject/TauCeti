@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.StrictConvexSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Convex.Mul
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 
 /-!
@@ -14,7 +15,7 @@ import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 
 In every real normed space, the `q`-th power of the norm is a convex function for every exponent
 `1 ≤ q`, as the composition of the convex norm with the convex nondecreasing function `t ↦ t ^ q`
-on `[0, ∞)`.
+on `[0, ∞)`. In particular, for `0 ≤ a` every quadratic `x ↦ (a / 2) ‖x‖² + c` is convex.
 
 In a strictly convex real normed space, the `q`-th power of the norm is a strictly convex function
 for every exponent `1 < q`. Both kinds of strictness are needed: strict convexity of `t ↦ t ^ q` on
@@ -28,6 +29,8 @@ This is the pointwise input for strict convexity of the spaces `Lᵖ(μ; E)` wit
 ## Main statements
 
 * `TauCeti.convexOn_norm_rpow` — `x ↦ ‖x‖ ^ q` is convex on a real normed space, for `1 ≤ q`.
+* `TauCeti.convexOn_mul_norm_sq_add` — `x ↦ (a / 2) ‖x‖² + c` is convex on every convex set, for
+  `0 ≤ a`.
 * `TauCeti.strictConvexOn_norm_rpow` — `x ↦ ‖x‖ ^ q` is strictly convex on a strictly convex real
   normed space, for `1 < q`.
 -/
@@ -51,6 +54,12 @@ theorem convexOn_norm_rpow {q : ℝ} (hq : 1 ≤ q) : ConvexOn ℝ univ fun x : 
     _ ≤ a * ‖x‖ ^ q + b * ‖y‖ ^ q := by
         simpa only [smul_eq_mul] using
           (convexOn_rpow hq).2 (mem_Ici.2 (norm_nonneg x)) (mem_Ici.2 (norm_nonneg y)) ha hb hab
+
+/-- For `0 ≤ a`, the quadratic `x ↦ (a / 2) ‖x‖² + c` is convex on every convex set. -/
+theorem convexOn_mul_norm_sq_add {s : Set E} (hs : Convex ℝ s) {a : ℝ} (ha : 0 ≤ a) (c : ℝ) :
+    ConvexOn ℝ s fun x : E ↦ a / 2 * ‖x‖ ^ 2 + c :=
+  (((convexOn_norm hs).pow (fun _ _ ↦ norm_nonneg _) 2).smul
+    (by positivity : 0 ≤ a / 2)).add_const c
 
 variable [StrictConvexSpace ℝ E]
 

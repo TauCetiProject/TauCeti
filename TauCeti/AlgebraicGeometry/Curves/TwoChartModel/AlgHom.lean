@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Birational.RationalMap
+public import TauCeti.AlgebraicGeometry.Birational.AlgHom
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Map
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Proper
 
@@ -22,13 +22,13 @@ Every `k`-embedding `φ : F →ₐ[k] F'` gives a `k`-morphism `Spec F' ⟶ X` f
 `X'`, through the generic point of `X`. The local rings of `X'` are valuation rings
 (`TauCeti.AlgebraicGeometry.twoChartModel.valuationRing_stalk`) and `X` is proper over `k`, so this
 morphism extends uniquely to a `k`-morphism `homOfAlgHom φ : X' ⟶ X`
-(`AlgebraicGeometry.Scheme.homOfFunctionField`). Its pullback of rational functions is `φ`, and
-since `X` is separated, a dominant `k`-morphism is determined by its pullback of rational functions:
-the construction is a bijection, and it is functorial. In particular a `k`-isomorphism `F ≃ F'`
-gives an isomorphism of the models, so **the two-chart model does not depend on the choice of the
-transcendental function**: `twoChartModel hF hx ≅ twoChartModel hF hy` for any two transcendental
-`x, y ∈ F`. When the embedding carries `x` to `x'`, the morphism is the one glued from the chart
-maps (`TauCeti.AlgebraicGeometry.twoChartModel.map`).
+(`AlgebraicGeometry.Scheme.homOfFunctionFieldAlgHom`). Its pullback of rational functions is `φ`,
+and since `X` is separated, a dominant `k`-morphism is determined by its pullback of rational
+functions: the construction is a bijection, and it is functorial. In particular a `k`-isomorphism
+`F ≃ F'` gives an isomorphism of the models, so **the two-chart model does not depend on the
+choice of the transcendental function**: `twoChartModel hF hx ≅ twoChartModel hF hy` for any two
+transcendental `x, y ∈ F`. When the embedding carries `x` to `x'`, the morphism is the one glued
+from the chart maps (`TauCeti.AlgebraicGeometry.twoChartModel.map`).
 
 This is the morphism half of the anti-equivalence between function fields of one variable and
 regular projective curves.
@@ -87,40 +87,29 @@ fields, for transcendental `x ∈ F` and `x' ∈ F'`: the unique dominant `k`-mo
 noncomputable def homOfAlgHom (hxt : Transcendental k x) (hx't : Transcendental k x')
     (φ : F →ₐ[k] F') : twoChartModel hF' hx' ⟶ twoChartModel hF hx :=
   have := isProper (hF := hF) (hx := hx) hxt
-  Scheme.homOfFunctionField (valuationRing_stalk hx't)
-    (Spec.map (CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom) ≫
-      (twoChartModel hF hx).fromSpecStalk _)
-    (Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over k _
-      (functionFieldAlgHom hxt hx't φ).commutes)
+  Scheme.homOfFunctionFieldAlgHom (valuationRing_stalk hx't) (functionFieldAlgHom hxt hx't φ)
 
 variable (φ : F →ₐ[k] F')
-
-/-- On the generic point, `homOfAlgHom φ` is `Spec` of the map of function fields given by `φ`. -/
-private theorem fromSpecStalk_homOfAlgHom :
-    (twoChartModel hF' hx').fromSpecStalk _ ≫ homOfAlgHom hF hF' hx hx' hxt hx't φ =
-      Spec.map (CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom) ≫
-        (twoChartModel hF hx).fromSpecStalk _ := by
-  have := isProper (hF := hF) (hx := hx) hxt
-  exact Scheme.fromSpecStalk_homOfFunctionField _ _ _
 
 /-- `homOfAlgHom φ` is a morphism over `k`. -/
 instance : (homOfAlgHom hF hF' hx hx' hxt hx't φ).IsOver (Spec (.of k)) := by
   have := isProper (hF := hF) (hx := hx) hxt
   rw [homOfAlgHom]
-  -- Instance search does not unify the unfolded morphism with the instance's conclusion, so the
-  -- instance is applied by name.
-  exact Scheme.isOver_homOfFunctionField _ _ _
+  infer_instance
 
 /-- `homOfAlgHom φ` is dominant: it sends the generic point to the generic point. -/
-instance : IsDominant (homOfAlgHom hF hF' hx hx' hxt hx't φ) :=
-  Scheme.Hom.isDominant_of_SpecMap_fromSpecStalk _ _ (fromSpecStalk_homOfAlgHom ..).symm
+instance : IsDominant (homOfAlgHom hF hF' hx hx' hxt hx't φ) := by
+  have := isProper (hF := hF) (hx := hx) hxt
+  rw [homOfAlgHom]
+  infer_instance
 
 /-- The pullback of rational functions along `homOfAlgHom φ` is the map of function fields given by
 `φ`. -/
 private theorem functionFieldMap_homOfAlgHom :
     (homOfAlgHom hF hF' hx hx' hxt hx't φ).functionFieldMap =
-      CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom :=
-  ((Scheme.Hom.eq_functionFieldMap_iff _ _).mpr (fromSpecStalk_homOfAlgHom ..).symm).symm
+      CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom := by
+  have := isProper (hF := hF) (hx := hx) hxt
+  exact Scheme.functionFieldMap_homOfFunctionFieldAlgHom ..
 
 /-- **The pullback of rational functions along `homOfAlgHom φ` is `φ`**: under the identifications
 `k(X) ≃ F` and `k(X') ≃ F'` of the function fields of the two models, the pullback along
@@ -140,67 +129,98 @@ theorem eq_homOfAlgHom_iff (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx)
     f = homOfAlgHom hF hF' hx hx' hxt hx't φ ↔
       ∀ z, functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
         φ z := by
-  refine ⟨fun h ↦ h ▸ functionFieldEquiv_functionFieldMap_homOfAlgHom hF hF' hx hx' φ,
-    fun h ↦ Scheme.Hom.ext_of_functionFieldMap_eq (Spec (.of k)) ?_⟩
-  rw [functionFieldMap_homOfAlgHom]
-  ext a
+  have := isProper (hF := hF) (hx := hx) hxt
+  rw [homOfAlgHom, Scheme.eq_homOfFunctionFieldAlgHom_iff]
+  refine ⟨fun h z ↦ by simp [h, functionFieldAlgHom], fun h a ↦ ?_⟩
   obtain ⟨z, rfl⟩ := (functionFieldEquiv hxt).symm.surjective a
   refine (functionFieldEquiv hx't).injective ?_
-  rw [h]
-  simp [functionFieldAlgHom]
+  simp [h, functionFieldAlgHom]
 
 /-! ### Functoriality -/
 
+variable {hF hx} in
+/-- The identity of `F` induces the identity of `k(X)`. -/
+private theorem functionFieldAlgHom_id :
+    functionFieldAlgHom (hF := hF) (hF' := hF) (hx := hx) (hx' := hx) hxt hxt (AlgHom.id k F) =
+      AlgHom.id k _ := by
+  ext a
+  simp [functionFieldAlgHom]
+
 /-- The identity of `F` induces the identity of `twoChartModel hF hx`. -/
 @[simp]
-theorem homOfAlgHom_id : homOfAlgHom hF hF hx hx hxt hxt (AlgHom.id k F) = 𝟙 _ :=
-  ((eq_homOfAlgHom_iff hF hF hx hx _ (𝟙 _)).mpr fun z ↦ by simp).symm
+theorem homOfAlgHom_id : homOfAlgHom hF hF hx hx hxt hxt (AlgHom.id k F) = 𝟙 _ := by
+  have := isProper (hF := hF) (hx := hx) hxt
+  rw [homOfAlgHom, functionFieldAlgHom_id, Scheme.homOfFunctionFieldAlgHom_id]
 
 variable {F'' : Type u} [Field F''] [Algebra k F''] (hF'' : IsFunctionField k F'') {x'' : F''}
   (hx'' : x'' ≠ 0) {hx''t : Transcendental k x''}
+
+variable {hF hF' hF'' hx hx' hx''} in
+/-- `k`-embeddings `F → F' → F''` induce the composite maps of function fields. -/
+private theorem functionFieldAlgHom_comp (φ' : F' →ₐ[k] F'') :
+    (functionFieldAlgHom (hF := hF') (hF' := hF'') (hx := hx') (hx' := hx'') hx't hx''t φ').comp
+        (functionFieldAlgHom (hF := hF) (hF' := hF') (hx := hx) (hx' := hx') hxt hx't φ) =
+      functionFieldAlgHom hxt hx''t (φ'.comp φ) := by
+  ext a
+  simp [functionFieldAlgHom]
 
 /-- `k`-embeddings `F → F' → F''` induce the composite of the morphisms of two-chart models. -/
 @[reassoc]
 theorem homOfAlgHom_comp (φ' : F' →ₐ[k] F'') :
     homOfAlgHom hF' hF'' hx' hx'' hx't hx''t φ' ≫ homOfAlgHom hF hF' hx hx' hxt hx't φ =
       homOfAlgHom hF hF'' hx hx'' hxt hx''t (φ'.comp φ) := by
-  refine (eq_homOfAlgHom_iff hF hF'' hx hx'' _ _).mpr fun z ↦ ?_
-  rw [Scheme.Hom.functionFieldMap_comp, CommRingCat.comp_apply]
-  conv_lhs => rw [← (functionFieldEquiv hx't).symm_apply_apply
-    ((homOfAlgHom hF hF' hx hx' hxt hx't φ).functionFieldMap ((functionFieldEquiv hxt).symm z))]
-  simp
+  have := isProper (hF := hF) (hx := hx) hxt
+  have := isProper (hF := hF') (hx := hx') hx't
+  rw [homOfAlgHom, homOfAlgHom, homOfAlgHom, Scheme.homOfFunctionFieldAlgHom_comp,
+    functionFieldAlgHom_comp]
 
 /-- **The isomorphism of two-chart models induced by a `k`-isomorphism `e : F ≃ₐ[k] F'`** of
 function fields, for transcendental `x ∈ F` and `x' ∈ F'`. For `F' = F` and `e` the identity, this
 says that the two-chart model does not depend on the choice of the transcendental function. -/
 noncomputable def isoOfAlgEquiv (e : F ≃ₐ[k] F') :
-    twoChartModel hF' hx' ≅ twoChartModel hF hx where
-  hom := homOfAlgHom hF hF' hx hx' hxt hx't e
-  inv := homOfAlgHom hF' hF hx' hx hx't hxt e.symm
-  hom_inv_id := by
-    rw [homOfAlgHom_comp, ← homOfAlgHom_id hF' hx' (hxt := hx't)]
-    congr 1
-    ext z
-    simp
-  inv_hom_id := by
-    rw [homOfAlgHom_comp, ← homOfAlgHom_id hF hx (hxt := hxt)]
-    congr 1
-    ext z
-    simp
+    twoChartModel hF' hx' ≅ twoChartModel hF hx :=
+  have := isProper (hF := hF) (hx := hx) hxt
+  have := isProper (hF := hF') (hx := hx') hx't
+  Scheme.isoOfFunctionFieldAlgEquiv (valuationRing_stalk hx't) (valuationRing_stalk hxt)
+    (((functionFieldEquiv hxt).trans e).trans (functionFieldEquiv hx't).symm)
+
+variable {hF hF' hx hx'} in
+/-- For a `k`-isomorphism `e`, the map of function fields is the composite of the
+identifications `k(X) ≃ F` and `k(X') ≃ F'` with `e`. -/
+private theorem functionFieldAlgHom_algEquiv (e : F ≃ₐ[k] F') :
+    functionFieldAlgHom (hF := hF) (hF' := hF') (hx := hx) (hx' := hx') hxt hx't e =
+      (((functionFieldEquiv hxt).trans e).trans (functionFieldEquiv hx't).symm).toAlgHom := by
+  ext a
+  simp [functionFieldAlgHom]
+
+variable {hF hF' hx hx'} in
+/-- For a `k`-isomorphism `e`, the map of function fields given by `e.symm` is the inverse of the
+one given by `e`. -/
+private theorem functionFieldAlgHom_algEquiv_symm (e : F ≃ₐ[k] F') :
+    functionFieldAlgHom (hF := hF') (hF' := hF) (hx := hx') (hx' := hx) hx't hxt e.symm =
+      (((functionFieldEquiv hxt).trans e).trans (functionFieldEquiv hx't).symm).symm.toAlgHom := by
+  ext a
+  simp [functionFieldAlgHom]
 
 /-- The forward morphism of `isoOfAlgEquiv e` is the morphism induced by `e`. -/
 @[simp]
 theorem isoOfAlgEquiv_hom (e : F ≃ₐ[k] F') :
     (isoOfAlgEquiv hF hF' hx hx' e (hxt := hxt) (hx't := hx't)).hom =
-      homOfAlgHom hF hF' hx hx' hxt hx't e :=
-  (rfl)
+      homOfAlgHom hF hF' hx hx' hxt hx't e := by
+  have := isProper (hF := hF) (hx := hx) hxt
+  have := isProper (hF := hF') (hx := hx') hx't
+  rw [isoOfAlgEquiv, Scheme.isoOfFunctionFieldAlgEquiv_hom, homOfAlgHom,
+    functionFieldAlgHom_algEquiv]
 
 /-- The inverse morphism of `isoOfAlgEquiv e` is the morphism induced by `e.symm`. -/
 @[simp]
 theorem isoOfAlgEquiv_inv (e : F ≃ₐ[k] F') :
     (isoOfAlgEquiv hF hF' hx hx' e (hxt := hxt) (hx't := hx't)).inv =
-      homOfAlgHom hF' hF hx' hx hx't hxt e.symm :=
-  (rfl)
+      homOfAlgHom hF' hF hx' hx hx't hxt e.symm := by
+  have := isProper (hF := hF) (hx := hx) hxt
+  have := isProper (hF := hF') (hx := hx') hx't
+  rw [isoOfAlgEquiv, Scheme.isoOfFunctionFieldAlgEquiv_inv, homOfAlgHom,
+    functionFieldAlgHom_algEquiv_symm]
 
 /-! ### Comparison with the morphism glued from the chart maps -/
 

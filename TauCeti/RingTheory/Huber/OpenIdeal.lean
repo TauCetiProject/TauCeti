@@ -63,6 +63,9 @@ the chosen pair of definition.
   is Wedhorn's Remark 7.30(1).
 * `TauCeti.Huber.isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isPrime`: a prime ideal of a
   Huber ring is open exactly when it contains every topologically nilpotent element.
+* `TauCeti.Huber.isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isPrime`: the same for a
+  prime ideal of a subring of a Huber ring, with the subspace topology, and the elements of the
+  subring topologically nilpotent in the ambient ring.
 * `TauCeti.Huber.exists_finset_subset_isOpen_span`: every neighbourhood of zero of a Huber ring
   contains a finite set generating an open ideal.
 * `TauCeti.Huber.exists_isOpen_span_forall_sub_mem_of_denseRange`: along a continuous map with
@@ -472,6 +475,27 @@ theorem isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isPrime [IsHuberRing
     [p.IsPrime] : IsOpen (p : Set A) ↔ {x : A | IsTopologicallyNilpotent x} ⊆ p := by
   rw [isOpen_iff_span_setOf_isTopologicallyNilpotent_le_radical, Ideal.IsPrime.radical ‹_›,
     Ideal.span_le]
+
+/-- **The open prime ideals of a subring of a Huber ring** are those containing every element that
+is topologically nilpotent in the ambient ring. The subring `B` carries the subspace topology; it
+need not be open, nor a Huber ring itself. -/
+theorem isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isPrime [IsHuberRing A]
+    {B : Subring A} {q : Ideal B} [q.IsPrime] :
+    IsOpen (q : Set B) ↔ {s : B | IsTopologicallyNilpotent (s : A)} ⊆ q := by
+  refine ⟨fun hq s hs ↦ ?_, fun h ↦ ?_⟩
+  · -- the powers of `s` also tend to `0` in the subspace topology, so one of them lies in `q`
+    have hs₀ : Filter.Tendsto (fun n : ℕ ↦ (s : A) ^ n) Filter.atTop (𝓝 0) := hs
+    have hs' : IsTopologicallyNilpotent s :=
+      IsInducing.subtypeVal.tendsto_nhds_iff.mpr (by simpa [Function.comp_def] using hs₀)
+    obtain ⟨n, hn⟩ := hs'.exists_pow_mem_of_mem_nhds (hq.mem_nhds q.zero_mem)
+    exact ‹q.IsPrime›.mem_of_pow_mem n hn
+  · -- `q` contains the trace on `B` of the open set of topologically nilpotent elements of `I`
+    obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+    refine AddSubgroup.isOpen_of_mem_nhds q.toAddSubgroup (g := 0) <|
+      Filter.mem_of_superset (continuous_subtype_val.continuousAt.preimage_mem_nhds
+        ((P.isOpen_idealImage 1).mem_nhds ?_))
+        fun s hs ↦ h (P.isTopologicallyNilpotent_of_mem_idealImage one_ne_zero hs)
+    simp
 
 end IsHuberRing
 

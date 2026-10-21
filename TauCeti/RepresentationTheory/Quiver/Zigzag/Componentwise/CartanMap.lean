@@ -42,11 +42,9 @@ theorem coeff_smulGradedDimension_zigzagAlgebraGradedProjective (i j : V) (d : �
       if i = j then if d = 0 ∨ d = 2 then 1 else 0
       else if G.Adj i j ∧ d = 1 then 1 else 0 := by
   let _ := zigzagAlgebraIntegerGradedAlgebra k G
-  have he : e i ∈ A 0 := by
-    simpa using (zigzagAlgebraIntegerGrade_ofNat k G 0).ge
-      (zigzagAlgebraBasis_inl_mem_grade_zero k G i)
   rw [GradedModuleCat.coeff_smulGradedDimension_ofIdeal_span_singleton
-    (isIdempotentElem_zigzagAlgebraBasis_inl k G i) he
+    (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
+    (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i)
     (isIdempotentElem_zigzagAlgebraBasis_inl k G j)
     (isHomogeneous_span_zigzagAlgebraBasis_inl k G j)]
   simpa only [Nat.cast_ite, Nat.cast_one, Nat.cast_zero] using
@@ -90,5 +88,18 @@ theorem smulGradedDimension_zigzagAlgebraGradedProjective (i j : V) :
       simp only [h, true_and]
     · rw [ite_eq_right hij, ite_eq_right h]
       simp only [h, false_and, ite_false, AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]
+
+open scoped Classical in
+/-- The graded Cartan map has diagonal coordinate `1 + q²`, edge coordinate `q`, and zero
+otherwise, for the public algebra even at isolated vertices. -/
+theorem gradedIdempotentCoordinate_gradedCartanMap_zigzagAlgebraGradedProjectiveClass
+    (i j : V) :
+    gradedIdempotentCoordinate (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
+        (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i)
+        (gradedCartanMap A (zigzagAlgebraGradedProjectiveClass k G j)) =
+      if i = j then 1 + LaurentPolynomial.T 2
+      else if G.Adj i j then LaurentPolynomial.T 1 else 0 := by
+  rw [zigzagAlgebraGradedProjectiveClass_def, gradedCartanMap_of,
+    gradedIdempotentCoordinate_of, smulGradedDimension_zigzagAlgebraGradedProjective]
 
 end TauCeti

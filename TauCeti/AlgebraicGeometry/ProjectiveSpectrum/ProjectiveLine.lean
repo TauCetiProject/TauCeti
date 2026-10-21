@@ -14,7 +14,7 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricBaseChange
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
-public import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 public import TauCeti.RingTheory.Localization.Away
 
@@ -59,7 +59,14 @@ function `X₁ / X₀` on that chart going to `X`.
 
 * `TauCeti.AlgebraicGeometry.projectiveLine.awayEquivPolynomial_mk`: the chart isomorphism
   sends `p / Xᵢⁿ` to the dehomogenization of `p`.
-* `TauCeti.AlgebraicGeometry.projectiveLine.exists_eq_awayι`: the two charts cover `ℙ¹_R`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.iSup_basicOpen_coord_eq_top`,
+  `TauCeti.AlgebraicGeometry.projectiveLine.exists_eq_awayι` and
+  `TauCeti.AlgebraicGeometry.projectiveLine.basicOpen_coord_sup_eq_top`: the two charts cover
+  `ℙ¹_R`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.chartSectionsEquiv_awayToSection`: on the chart
+  `D₊(Xᵢ)`, `chartSectionsEquiv` agrees with the chart isomorphism on the fractions
+  `Proj.awayToSection a`, and `TauCeti.AlgebraicGeometry.projectiveLine.awayToSection_algebraMap`:
+  the constants restrict to the fractions `c / 1`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isIntegral`: `ℙ¹_R` is integral over a domain.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isRegularLocalRing_stalk`: its local rings are
   regular over a regular ring.
@@ -219,28 +226,37 @@ theorem awayι_over (i : Fin 2) :
       Spec.map (CommRingCat.ofHom (algebraMap R (Away 𝒜 (coord R i)))) := by
   rw [SymmetricAlgebra.over_eq_projToSpec, SymmetricAlgebra.awayι_projToSpec]
 
+/-- **The standard charts `D₊(Xᵢ)` cover the projective line.** -/
+theorem iSup_basicOpen_coord_eq_top : ⨆ i, Proj.basicOpen 𝒜 (coord R i) = ⊤ := by
+  refine Proj.iSup_basicOpen_eq_top' 𝒜 _ (fun i ↦ ⟨1, coord_mem R i⟩) (top_unique ?_)
+  -- the homogeneous coordinates generate the symmetric algebra
+  rintro a -
+  induction a using _root_.SymmetricAlgebra.induction with
+  | algebraMap r =>
+    exact Subalgebra.algebraMap_mem _ (algebraMap R (𝒜 0) r)
+  | ι m =>
+    rw [ι_eq_smul_coord_add_smul_coord R 0 m, Algebra.smul_def, Algebra.smul_def]
+    refine add_mem (mul_mem ?_ (Algebra.subset_adjoin ⟨0, rfl⟩))
+      (mul_mem ?_ (Algebra.subset_adjoin ⟨Fin.rev 0, rfl⟩)) <;>
+    exact Subalgebra.algebraMap_mem _ (algebraMap R (𝒜 0) _)
+  | mul a b ha hb => exact mul_mem ha hb
+  | add a b ha hb => exact add_mem ha hb
+
 /-- **The two standard charts cover the projective line.** -/
 theorem exists_eq_awayι (p : projectiveLine R) : ∃ i q, awayι R i q = p := by
-  have h : ⨆ i, Proj.basicOpen 𝒜 (coord R i) = ⊤ := by
-    refine Proj.iSup_basicOpen_eq_top' 𝒜 _ (fun i ↦ ⟨1, coord_mem R i⟩) (top_unique ?_)
-    -- the homogeneous coordinates generate the symmetric algebra
-    rintro a -
-    induction a using _root_.SymmetricAlgebra.induction with
-    | algebraMap r =>
-      exact Subalgebra.algebraMap_mem _ (algebraMap R (𝒜 0) r)
-    | ι m =>
-      rw [ι_eq_smul_coord_add_smul_coord R 0 m, Algebra.smul_def, Algebra.smul_def]
-      refine add_mem (mul_mem ?_ (Algebra.subset_adjoin ⟨0, rfl⟩))
-        (mul_mem ?_ (Algebra.subset_adjoin ⟨Fin.rev 0, rfl⟩)) <;>
-      exact Subalgebra.algebraMap_mem _ (algebraMap R (𝒜 0) _)
-    | mul a b ha hb => exact mul_mem ha hb
-    | add a b ha hb => exact add_mem ha hb
   have hp : p ∈ (⊤ : (projectiveLine R).Opens) := trivial
-  rw [← h] at hp
+  rw [← iSup_basicOpen_coord_eq_top R] at hp
   obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp hp
   rw [← Proj.opensRange_awayι 𝒜 _ (coord_mem R i) one_pos] at hi
   obtain ⟨q, rfl⟩ := hi
   exact ⟨i, q, rfl⟩
+
+/-- **The standard charts `D₊(X₀)` and `D₊(X₁)` cover the projective line.** -/
+theorem basicOpen_coord_sup_eq_top :
+    Proj.basicOpen 𝒜 (coord R 0) ⊔ Proj.basicOpen 𝒜 (coord R 1) = ⊤ := by
+  refine eq_top_iff.mpr fun p _ ↦ TopologicalSpace.Opens.mem_sup.mpr ?_
+  have hp : p ∈ (⊤ : (projectiveLine R).Opens) := trivial
+  rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup, Fin.exists_fin_two] at hp
 
 /-- **The projective line over a domain is integral**: `R[X₀, X₁]` is a domain with a nonzero form
 of positive degree. -/
@@ -319,6 +335,55 @@ theorem chartSectionsEquiv_appLE (i : Fin 2) (a : Γ(Spec (.of R), ⊤)) :
   -- Then the composite of the chart with the structure morphism is `Spec` of the inclusion of `R`.
   rw [show Scheme.Hom.appLE _ ⊤ ⊤ _ = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
     awayι_over, Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+
+/-- The chart `D₊(Xᵢ)`, as the image of `awayι`, is the basic open set of `Xᵢ`. -/
+theorem image_awayι_top (i : Fin 2) : awayι R i ''ᵁ ⊤ = Proj.basicOpen 𝒜 (coord R i) := by
+  rw [Scheme.Hom.image_top_eq_opensRange, Proj.opensRange_awayι]
+
+/-- `chartSectionsEquiv` sends the function `Proj.awayToSection a` on `D₊(Xᵢ)` to the
+dehomogenization of the fraction `a`. -/
+theorem chartSectionsEquiv_awayToSection (i : Fin 2) (a : Away 𝒜 (coord R i)) :
+    chartSectionsEquiv R i ((projectiveLine R).presheaf.map (eqToHom (image_awayι_top R i)).op
+      (Proj.awayToSection 𝒜 (coord R i) a)) = awayEquivPolynomial R i a := by
+  suffices h : ∀ e, Proj.awayToSection 𝒜 (coord R i) ≫
+      (awayι R i).appLE (Proj.basicOpen 𝒜 (coord R i)) ⊤ e = (Scheme.ΓSpecIso _).inv by
+    rw [chartSectionsEquiv_apply, Scheme.Hom.appIso_hom',
+      ← CommRingCat.comp_apply ((projectiveLine R).presheaf.map _), Scheme.Hom.map_appLE',
+      ← CommRingCat.comp_apply (Proj.awayToSection 𝒜 _), h, Iso.inv_hom_id_apply]
+    rw [← image_awayι_top]
+    exact (Scheme.Hom.preimage_image_eq _ _).ge
+  -- `awayToSection` is invertible, and a left inverse is `awayι` followed by `Γ(Spec -) ≅ -`
+  intro e
+  have := (Proj.basicOpenIsoAway 𝒜 _ (coord_mem R i) one_pos).isIso_hom
+  rw [Proj.basicOpenIsoAway_hom] at this
+  rw [← IsIso.eq_inv_comp, Iso.eq_comp_inv]
+  refine IsIso.eq_inv_of_inv_hom_id ?_
+  rw [← cancel_mono (Proj.basicOpen 𝒜 (coord R i)).topIso.inv]
+  simp only [Category.assoc, Category.id_comp]
+  rw [← Proj.basicOpenToSpec_app_top, ← Proj.basicOpenIsoSpec_hom 𝒜 _ (coord_mem R i) one_pos,
+    Scheme.Hom.app_eq_appLE]
+  -- composing the chart with `D₊(Xᵢ) ≅ Spec R[X₀, X₁]_(Xᵢ)` gives the inclusion of `D₊(Xᵢ)`
+  refine (Scheme.Hom.appLE_comp_appLE _ (awayι R i) _ ⊤ _ e le_rfl).trans ?_
+  simp only [awayι, Proj.awayι, Iso.hom_inv_id_assoc]
+  rfl
+
+/-- On the chart `D₊(Xᵢ)`, the functions on `Spec R` pulled back along the structure morphism are
+the fractions `c / 1` of the constants. -/
+theorem awayToSection_algebraMap (i : Fin 2) (c : R) :
+    Proj.awayToSection 𝒜 (coord R i) (algebraMap R _ c) =
+      (projectiveLine R ↘ Spec (.of R)).appLE ⊤ _ le_top ((Scheme.ΓSpecIso (.of R)).inv c) := by
+  -- restricting to the image of the chart and applying `chartSectionsEquiv` is injective
+  have hinj : Function.Injective fun x ↦ chartSectionsEquiv R i
+      ((projectiveLine R).presheaf.map (eqToHom (image_awayι_top R i)).op x) :=
+    (chartSectionsEquiv R i).injective.comp (ConcreteCategory.bijective_of_isIso _).1
+  have h := chartSectionsEquiv_appLE R i ((Scheme.ΓSpecIso (.of R)).inv c)
+  rw [Iso.inv_hom_id_apply] at h
+  -- both sides go to the constant polynomial `c`
+  refine hinj <| (chartSectionsEquiv_awayToSection R i _).trans <|
+    ((awayEquivPolynomial R i).commutes c).trans <|
+      (congrFun (congrArg DFunLike.coe Polynomial.algebraMap_eq) c).trans <|
+        h.symm.trans (congrArg _ ?_)
+  exact (ConcreteCategory.congr_hom (Scheme.Hom.appLE_map _ _ _) _).symm
 
 /-! ### Smoothness -/
 

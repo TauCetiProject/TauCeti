@@ -19,7 +19,8 @@ surjective.
 
 Exactly the original cover lies over the unpunctured sphere, and the extension there is the
 original projection. In particular the fibre of the extension over a point of `ℂ ∖ {0, 1}` is
-the fibre of the original cover, and off the marked points the extension is a covering map.
+the fibre of the original cover, the fibre over a puncture `q` consists of the added points over
+`q`, and off the marked points the extension is a covering map.
 Continuity and density also characterize the extension uniquely.
 
 ## References
@@ -64,6 +65,28 @@ sphere. -/
     rw [mem_preimage, fillMap_center, range_toOnePoint]
     generalize (FilledPoint.sigmaEquiv p i).1 = q
     cases q <;> simp
+
+/-- The fibre of the extended projection over a puncture `q` consists of the added points, one for
+each connected component of `p ⁻¹' D_q*`. -/
+theorem fillMap_preimage_puncture (q : Puncture) :
+    fillMap p ⁻¹' {q.toOnePoint} =
+      range fun c ↦ PunctureFilling.center (chart p) ((FilledPoint.sigmaEquiv p).symm ⟨q, c⟩) := by
+  ext y
+  induction y using PunctureFilling.induction with
+  | incl x =>
+    -- A point of the original cover lies over `ℂ ∖ {0, 1}`, away from the punctures.
+    refine iff_of_false (fun h ↦ ?_) fun ⟨c, hc⟩ ↦ PunctureFilling.center_ne_incl _ _ hc
+    have hx : toOnePoint (p x) ∈ markedᶜ := range_toOnePoint ▸ mem_range_self _
+    rw [mem_preimage, fillMap_incl, mem_singleton_iff] at h
+    exact hx (h ▸ by cases q <;> simp)
+  | center i =>
+    simp only [mem_preimage, fillMap_center, mem_singleton_iff, mem_range,
+      PunctureFilling.center_inj, Equiv.symm_apply_eq]
+    obtain ⟨q', c⟩ := FilledPoint.sigmaEquiv p i
+    refine ⟨fun h ↦ ?_, fun ⟨c', hc'⟩ ↦ by rw [← hc']⟩
+    obtain rfl : q' = q := by
+      cases q <;> cases q' <;> simp_all
+    exact ⟨c, rfl⟩
 
 variable {p} (hp : IsCoveringMap p) {z₀ : ThricePuncturedSphere} (hfin : Finite (p ⁻¹' {z₀}))
 include hp hfin

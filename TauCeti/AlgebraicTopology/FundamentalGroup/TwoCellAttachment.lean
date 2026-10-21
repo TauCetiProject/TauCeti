@@ -55,6 +55,7 @@ retracted onto `X` along the radial deformation of each punctured cell onto its 
 
 * `TauCeti.TwoCellAttachment.isQuotientMap_sumElim`: the space is a quotient of
   `X ⊕ Σ _ : ι, I × I`.
+* `TauCeti.TwoCellAttachment.instPathConnectedSpace`: the space is path connected when `X` is.
 * `TauCeti.TwoCellAttachment.hom_ext`: maps out of the space are determined on `X` and the cells.
 * `TauCeti.TwoCellAttachment.exists_comp_incl_eq_iff`: a map out of `X` extends over the attached
   cells exactly when it makes every loop `γ i` nullhomotopic.
@@ -200,6 +201,24 @@ theorem isQuotientMap_sumElim :
     cases a <;> rfl
   rw [h]
   exact isQuotientMap_quot_mk
+
+/-- **Attaching 2-cells to a path-connected space gives a path-connected space**: every point of
+a cell is joined inside the cell to its edge `{1} × I`, which is collapsed to the base point. -/
+instance instPathConnectedSpace [PathConnectedSpace X] :
+    PathConnectedSpace (TwoCellAttachment γ) := by
+  have h (z : TwoCellAttachment γ) : Joined (incl γ x) z := by
+    induction z using ind with
+    | incl y => exact (PathConnectedSpace.joined x y).map (incl γ).continuous
+    | cell i q =>
+      -- The horizontal segment from `(1, q.2)` to `q` inside the square.
+      let p : Path ((1 : I), q.2) q :=
+        { toFun r := (Set.Icc.convexComb 1 q.1 r, q.2)
+          continuous_toFun := by fun_prop
+          source' := by simp
+          target' := by simp }
+      rw [← cell_apply_one i q.2]
+      exact ⟨p.map (cell γ i).continuous⟩
+  exact ⟨⟨incl γ x⟩, fun v w => (h v).symm.trans (h w)⟩
 
 section Lift
 
@@ -579,7 +598,7 @@ theorem surjective_map_incl : Function.Surjective (FundamentalGroup.map (incl γ
   intro g
   obtain ⟨p, rfl⟩ : ∃ p : Path (incl γ x) (incl γ x),
       FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p) = g :=
-    ⟨Quotient.out (FundamentalGroup.toPath g), congrArg CategoryTheory.End.of (Quotient.out_eq _)⟩
+    ⟨Quotient.out (FundamentalGroup.toPath g), FundamentalGroup.fromPath_mk_out g⟩
   -- Push the loop off the centres, through the simply connected open cells.
   obtain ⟨δ, hδ, hpδ⟩ := Path.exists_range_subset_homotopic
     (W := fun i => cell γ i '' (Ioo 0 1 ×ˢ Ioo 0 1))
