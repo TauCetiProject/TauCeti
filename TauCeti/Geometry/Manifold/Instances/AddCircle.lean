@@ -165,10 +165,20 @@ theorem orbitRel_iff {s t : PeriodLine p} :
     simp only [ofReal_symm_smul, toAdd_ofAdd, neg_smul, hk]
     abel
 
+/-- The orbit space of the action of `Multiplicative ℤ` on `PeriodLine p` is homeomorphic to
+`AddCircle p`. -/
+def quotientHomeomorph :
+    MulAction.orbitRel.Quotient (Multiplicative ℤ) (PeriodLine p) ≃ₜ AddCircle p :=
+  Homeomorph.Quotient.congr
+    { toEquiv := (ofReal p).symm
+      continuous_toFun := continuous_ofReal_symm p
+      continuous_invFun := continuous_ofReal p }
+    fun _ _ ↦ (orbitRel_iff p).trans Quotient.eq
+
 /-- The orbit space of the action of `Multiplicative ℤ` on `PeriodLine p` is `AddCircle p`: the
 orbit of `t` corresponds to the image of `t` in `AddCircle p`. -/
 def quotientEquiv : MulAction.orbitRel.Quotient (Multiplicative ℤ) (PeriodLine p) ≃ AddCircle p :=
-  Quotient.congr (ofReal p).symm fun _ _ ↦ (orbitRel_iff p).trans Quotient.eq
+  (quotientHomeomorph p).toEquiv
 
 /-- The orbit of `t` corresponds to the image of `t` in `AddCircle p`. -/
 @[simp]
@@ -179,16 +189,6 @@ theorem quotientEquiv_mk (t : PeriodLine p) :
 @[simp]
 theorem quotientEquiv_symm_coe (t : ℝ) :
     (quotientEquiv p).symm (t : AddCircle p) = Quotient.mk _ (ofReal p t) := (rfl)
-
-/-- The orbit space of the action of `Multiplicative ℤ` on `PeriodLine p` is homeomorphic to
-`AddCircle p`. -/
-def quotientHomeomorph :
-    MulAction.orbitRel.Quotient (Multiplicative ℤ) (PeriodLine p) ≃ₜ AddCircle p where
-  toEquiv := quotientEquiv p
-  continuous_toFun := continuous_quot_lift _ <|
-    continuous_quotient_mk'.comp (continuous_ofReal_symm p)
-  continuous_invFun := continuous_quot_lift _ <|
-    continuous_quotient_mk'.comp (continuous_ofReal p)
 
 /-- The underlying map of `quotientHomeomorph p` is `quotientEquiv p`. -/
 @[simp]
