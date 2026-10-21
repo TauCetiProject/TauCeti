@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 
@@ -32,9 +32,9 @@ central sign `τ = (0, -1)` (`Matrix.commutatorElement_signCover`). This is the 
 Frenkel--Kac construction of a simply laced Lie algebra over `ℤ`, whose root vectors are indexed by
 lifts of roots to `Q̂`; that bracket is not constructed here. The section
 `a ↦ (a, 1)` is a homomorphism exactly when every strictly lower entry of `B` is even
-(`Matrix.forall_canonicalSection_signFactorSet_mul_iff`), so for a simply laced diagram
-exactly when the diagram has no bonds
-(`Matrix.forall_canonicalSection_signFactorSet_mul_iff_of_simplyLaced`).
+(`Matrix.forall_canonicalSection_signFactorSet_mul_iff`); for a simply laced diagram this means
+exactly that the diagram has no bonds, which is proved in
+`TauCeti.LinearAlgebra.Matrix.OrderedSignCover.SimplyLaced`.
 
 The group structure, the inclusion of `ℤˣ`, the projection to `Multiplicative Q`, the exactness of
 `1 → ℤˣ → Q̂ → Q → 1`, the section `a ↦ (a, 1)` and the centrality of `ℤˣ` all come from the general
@@ -83,23 +83,17 @@ triangular part of `B` for the order of `I`,
 `orderedSignForm B a b = ∑_{j < i} a i * B i j * b j`. Its sign is the factor set
 `Matrix.signFactorSet B`. -/
 noncomputable def orderedSignForm : LinearMap.BilinForm ℤ (I → ℤ) :=
-  toLinearMap₂' ℤ (of fun i j => if j < i then B i j else 0)
+  toBilin' (of fun i j => if j < i then B i j else 0)
 
 theorem orderedSignForm_apply (a b : I → ℤ) :
     orderedSignForm B a b = ∑ i, ∑ j, if j < i then a i * B i j * b j else 0 := by
-  simp only [orderedSignForm, toLinearMap₂'_apply, of_apply, smul_eq_mul, mul_ite, mul_zero]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  split_ifs <;> ring
+  simp only [orderedSignForm, toBilin'_apply, of_apply, mul_ite, ite_mul, mul_zero, zero_mul]
 
 /-- On basis vectors the ordered form reads off the strictly lower triangular entries of `B`. -/
 @[simp]
 theorem orderedSignForm_single_single (i j : I) :
-    orderedSignForm B (Pi.single i 1) (Pi.single j 1) = if j < i then B i j else 0 := by
-  simp only [orderedSignForm_apply, Pi.single_apply, mul_ite, ite_mul, mul_one, one_mul, mul_zero,
-    zero_mul]
-  rw [Finset.sum_eq_single i (by intro b _ hb; simp [hb]) (by simp),
-    Finset.sum_eq_single j (by intro b _ hb; simp [hb]) (by simp)]
-  simp
+    orderedSignForm B (Pi.single i 1) (Pi.single j 1) = if j < i then B i j else 0 :=
+  toBilin'_single _ i j
 
 /-- **Symmetrizing the ordered form.** For a symmetric matrix `B`, adding the ordered form to its
 transpose recovers the Gram pairing `a ⬝ᵥ B *ᵥ b` with its diagonal terms removed: each
@@ -229,25 +223,6 @@ theorem forall_canonicalSection_signFactorSet_mul_iff :
     split_ifs with hji
     · exact ((h i j hji).mul_left _).mul_right _
     · exact Even.zero
-
-/-- **For a simply laced Gram matrix, the canonical section of the ordered sign cover is a
-homomorphism exactly when the diagram has no bonds.** Here `B` is symmetric and simply laced, with
-off-diagonal entries `0` or `-1`, the negative of the number of bonds, as for the Cartan matrix of a
-simply laced Dynkin diagram. The hypothesis `hsl` is the unfolding of Mathlib's
-`Matrix.IsSimplyLaced`, so a proof of `B.IsSimplyLaced` can be passed for it directly. -/
-theorem forall_canonicalSection_signFactorSet_mul_iff_of_simplyLaced (hB : B.IsSymm)
-    (hsl : Pairwise fun i j => B i j = 0 ∨ B i j = -1) :
-    (∀ a b : Multiplicative (I → ℤ), (signFactorSet B).canonicalSection (a * b) =
-        (signFactorSet B).canonicalSection a * (signFactorSet B).canonicalSection b) ↔
-      ∀ i j, i ≠ j → B i j = 0 := by
-  rw [forall_canonicalSection_signFactorSet_mul_iff]
-  refine ⟨fun h i j hij => ?_, fun h i j hji => by simp [h i j hji.ne']⟩
-  have key : ∀ i j, j < i → B i j = 0 := fun i j hji =>
-    (hsl hji.ne').resolve_right fun h' => by simpa [h'] using h i j hji
-  rcases lt_or_gt_of_ne hij with hlt | hlt
-  · rw [← hB.apply]
-    exact key j i hlt
-  · exact key i j hlt
 
 end Cover
 
