@@ -11,15 +11,13 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Reflexive
 /-!
 # `ℓ¹` is not reflexive
 
-For `1 ≤ p < ∞`, the coordinate basis of `ℓᵖ` is boundedly complete: bounded partial sums
-`∑ i < n, a i • eᵢ` bound the partial sums of `‖a i‖ ^ p`, so `a` lies in `ℓᵖ`.
-
 Over real or complex scalars, on an infinite index type, `ℓ¹` is not reflexive
 (`lp.not_surjective_inclusionInDoubleDual_one`). Indeed `ℓ¹` is isometric to the dual of `c₀`,
 a Banach space is reflexive exactly when its dual is, and `c₀` is not reflexive. By James's
 basis criterion the coordinate basis of `ℓ¹` is therefore not shrinking. Together with the
 coordinate basis of `c₀`, which is shrinking but not boundedly complete, this shows that the two
-conditions of James's criterion are independent.
+conditions of James's criterion are independent. The bounded completeness of the coordinate basis
+of `ℓ¹` is `lp.isBoundedlyComplete_toSchauderBasis_unconditionalBasis` in `Lp.Basis`.
 
 ## References
 
@@ -35,29 +33,6 @@ open Filter Function NormedSpace Set Topology
 open scoped ENNReal ZeroAtInfty
 
 namespace lp
-
-section Basis
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- For `1 ≤ p < ∞`, the coordinate basis of `ℓᵖ` is boundedly complete. -/
-theorem isBoundedlyComplete_toSchauderBasis_unconditionalBasis (hp : p ≠ ⊤) :
-    (unconditionalBasis (ι := ℕ) (𝕜 := 𝕜) hp).toSchauderBasis.IsBoundedlyComplete := by
-  have hp₀ : 0 < p.toReal :=
-    ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
-  rw [SchauderBasis.isBoundedlyComplete_iff]
-  rintro a ⟨C, hC⟩
-  have hsum (n : ℕ) : ∑ i ∈ Finset.range n, ‖a i‖ ^ p.toReal ≤ C ^ p.toReal := by
-    have h := hC (mem_range_self n)
-    simp only [UnconditionalSchauderBasis.coe_toSchauderBasis, unconditionalBasis_apply,
-      ← lp.single_smul, smul_eq_mul, mul_one] at h
-    rw [← lp.norm_sum_single hp₀]
-    exact Real.rpow_le_rpow (norm_nonneg _) h hp₀.le
-  have ha : Memℓp a p :=
-    (memℓp_gen_iff hp₀).2 (summable_of_sum_range_le (fun _ ↦ by positivity) hsum)
-  exact ⟨⟨a, ha⟩, fun i ↦ by simp⟩
-
-end Basis
 
 variable {𝕜 ι : Type*} [RCLike 𝕜]
 

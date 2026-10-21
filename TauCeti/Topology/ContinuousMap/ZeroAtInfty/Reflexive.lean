@@ -31,7 +31,8 @@ the unit vectors of `ℓ¹`. By James's basis criterion it is therefore not boun
 * `ZeroAtInftyContinuousMap.not_surjective_inclusionInDoubleDual`: `c₀` is not reflexive.
 * `ZeroAtInftyContinuousMap.tendsto_toWeakSpace_single_one_cofinite`: the unit coordinate vectors
   are weakly null.
-* `ZeroAtInftyContinuousMap.not_tendsto_single_cofinite`: they are not norm null.
+* `ZeroAtInftyContinuousMap.not_tendsto_single_cofinite` (in `ZeroAtInfty.Discrete`): they are
+  not norm null.
 * `ZeroAtInftyContinuousMap.isShrinking_toSchauderBasis_unconditionalBasis` and
   `ZeroAtInftyContinuousMap.not_isBoundedlyComplete_toSchauderBasis_unconditionalBasis`: the
   coordinate basis of `c₀` is shrinking but not boundedly complete.
@@ -52,15 +53,6 @@ open scoped ENNReal ZeroAtInfty
 namespace ZeroAtInftyContinuousMap
 
 variable {𝕜 ι : Type*} [TopologicalSpace ι] [DiscreteTopology ι]
-
-/-- On an infinite index type, the coordinate vectors `single i b` with a fixed nonzero value `b`
-do not tend to zero in norm along the cofinite filter. In particular the unit coordinate vectors
-of `c₀` are not norm null. -/
-theorem not_tendsto_single_cofinite {β : Type*} [NormedAddCommGroup β] [DecidableEq ι] [Infinite ι]
-    {b : β} (hb : b ≠ 0) : ¬ Tendsto (fun i : ι ↦ single i b) cofinite (𝓝 0) := fun h ↦ by
-  have h1 := h.norm
-  simp only [norm_single, norm_zero] at h1
-  exact hb (norm_eq_zero.1 (tendsto_const_nhds_iff.1 h1))
 
 variable [RCLike 𝕜]
 
