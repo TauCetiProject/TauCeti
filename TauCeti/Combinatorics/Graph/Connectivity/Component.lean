@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Simple
-public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Finite
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Order.Minimal
 
 /-!
@@ -27,9 +27,11 @@ elementary order API, follow Peter Nelson and Jun Kwon's Mathlib proposal
 * `Graph.IsConnectedComponentOf H G` says that `H` is a minimal nonempty closed subgraph of `G`.
 * `Graph.Connected G` says that `G` is its own connected component.
 * `Graph.ConnectedComponent G` is the type of connected-component subgraphs of `G`.
+* `Graph.connectedComponentOf G x hx` is the connected component containing the vertex `x`.
 * `Graph.connectedComponentEquiv` identifies these subgraphs with the connected components of
   `G.toSimpleGraph`.
-* `Graph.componentCount G` counts the components when the actual vertex set is finite.
+* `Graph.componentCount G` counts the components; it is meaningful when the actual vertex set is
+  finite.
 -/
 
 public section
@@ -43,8 +45,16 @@ namespace Graph
 /-! ### Component subgraphs and connectedness -/
 
 /-- A connected component of `G` is a minimal nonempty closed subgraph of `G`. -/
-@[expose] def IsConnectedComponentOf (H G : Graph α β) : Prop :=
+def IsConnectedComponentOf (H G : Graph α β) : Prop :=
   Minimal (fun H ↦ H ≤c G ∧ V(H).Nonempty) H
+
+/-- A connected component of `G` is a nonempty closed subgraph of `G` that contains no smaller
+nonempty closed subgraph of `G`. -/
+theorem isConnectedComponentOf_iff : H.IsConnectedComponentOf G ↔
+    H ≤c G ∧ V(H).Nonempty ∧ ∀ ⦃K⦄, K ≤c G → V(K).Nonempty → K ≤ H → K = H := by
+  rw [IsConnectedComponentOf, minimal_iff, and_assoc]
+  exact and_congr_right fun _ ↦ and_congr_right fun _ ↦
+    ⟨fun h _ hK hne hle ↦ (h ⟨hK, hne⟩ hle).symm, fun h _ hK hle ↦ (h hK.1 hK.2 hle).symm⟩
 
 namespace IsConnectedComponentOf
 
@@ -71,7 +81,11 @@ end IsConnectedComponentOf
 
 /-- A multigraph is connected when it is a connected component of itself.  In particular, the
 empty graph is not connected. -/
-@[expose] protected def Connected (G : Graph α β) : Prop := G.IsConnectedComponentOf G
+protected def Connected (G : Graph α β) : Prop := G.IsConnectedComponentOf G
+
+/-- A multigraph is connected exactly when it is a connected component of itself. -/
+theorem connected_iff_isConnectedComponentOf_self : G.Connected ↔ G.IsConnectedComponentOf G :=
+  Iff.rfl
 
 /-- A connected graph has an actual vertex. -/
 theorem Connected.nonempty (hG : G.Connected) : V(G).Nonempty :=
@@ -135,11 +149,8 @@ ambient graph whose corresponding actual vertex lies in the simple component. -/
 theorem mem_connectedComponentVertexSet_iff {C : G.toSimpleGraph.ConnectedComponent} {x : α} :
     x ∈ connectedComponentVertexSet G C ↔
       ∃ hx : x ∈ V(G), (Subtype.mk x hx : V(G)) ∈ C.supp := by
-  constructor
-  · rintro ⟨x, hxC, rfl⟩
-    exact ⟨x.property, hxC⟩
-  · rintro ⟨hx, hxC⟩
-    exact ⟨Subtype.mk x hx, hxC, rfl⟩
+  rw [connectedComponentVertexSet, Subtype.coe_image]
+  rfl
 
 /-- The multigraph induced on a component of its underlying simple graph.  It retains all loops
 and all parallel-edge identities whose endpoints lie in the component. -/
@@ -169,11 +180,16 @@ theorem edgeSet_connectedComponentSubgraph (C : G.toSimpleGraph.ConnectedCompone
         y ∈ connectedComponentVertexSet G C} := by
   simp [connectedComponentSubgraph, Graph.edgeSet_induce]
 
+/-- The component subgraph induced by a simple connected component is a subgraph of the
+multigraph. -/
+theorem connectedComponentSubgraph_le (C : G.toSimpleGraph.ConnectedComponent) :
+    G.connectedComponentSubgraph C ≤ G :=
+  G.induce_le fun _ hx ↦ (mem_connectedComponentVertexSet_iff.mp hx).1
+
 /-- The component subgraph induced by a simple connected component is closed in the multigraph. -/
 theorem connectedComponentSubgraph_isClosedSubgraph
     (C : G.toSimpleGraph.ConnectedComponent) : G.connectedComponentSubgraph C ≤c G := by
-  refine IsClosedSubgraph.mk'
-    (G.induce_le fun _ hx ↦ (mem_connectedComponentVertexSet_iff.mp hx).1) ?_
+  refine IsClosedSubgraph.mk' (G.connectedComponentSubgraph_le C) ?_
   intro e x hex hx
   obtain ⟨vx, hvxC, rfl⟩ := hx
   obtain ⟨y, hxy⟩ := hex
@@ -192,6 +208,16 @@ theorem connectedComponentVertexSet_nonempty (C : G.toSimpleGraph.ConnectedCompo
   obtain ⟨v, hv⟩ := C.nonempty_supp
   exact ⟨v, v, hv, rfl⟩
 
+/-- A closed subgraph sharing a vertex with a simple component contains the whole component
+subgraph. -/
+theorem connectedComponentSubgraph_le_of_isClosedSubgraph
+    {C : G.toSimpleGraph.ConnectedComponent} (hH : H ≤c G) {x : V(G)} (hxC : x ∈ C.supp)
+    (hxH : (x : α) ∈ V(H)) : G.connectedComponentSubgraph C ≤ H := by
+  apply hH.isInducedSubgraph.le_of_le_subset (G.connectedComponentSubgraph_le C)
+  intro y hy
+  obtain ⟨_, hyC⟩ := mem_connectedComponentVertexSet_iff.mp hy
+  exact hH.mem_vertexSet_of_toSimpleGraph_reachable hxH (C.reachable_of_mem_supp hxC hyC)
+
 /-- Lifting an underlying simple component gives a connected component of the multigraph. -/
 theorem connectedComponentSubgraph_isConnectedComponentOf
     (C : G.toSimpleGraph.ConnectedComponent) :
@@ -200,24 +226,18 @@ theorem connectedComponentSubgraph_isConnectedComponentOf
     G.connectedComponentVertexSet_nonempty C⟩, ?_⟩
   intro H hH hHG
   obtain ⟨x, hxH⟩ := hH.2
-  have hxCset : x ∈ connectedComponentVertexSet G C := hHG.vertexSet_mono hxH
-  obtain ⟨_, hxC⟩ := mem_connectedComponentVertexSet_iff.mp hxCset
-  apply hH.1.isInducedSubgraph.le_of_le_subset
-    (G.induce_le (fun _ hy ↦ (mem_connectedComponentVertexSet_iff.mp hy).1))
-  intro y hy
-  obtain ⟨_, hyC⟩ := mem_connectedComponentVertexSet_iff.mp hy
-  exact hH.1.mem_vertexSet_of_toSimpleGraph_reachable hxH
-    (C.reachable_of_mem_supp hxC hyC)
+  obtain ⟨_, hxC⟩ := mem_connectedComponentVertexSet_iff.mp (hHG.vertexSet_mono hxH)
+  exact connectedComponentSubgraph_le_of_isClosedSubgraph hH.1 hxC hxH
 
 /-- Regard an underlying simple component as a connected-component subgraph. -/
-def connectedComponentOfSimple (G : Graph α β)
-    (C : G.toSimpleGraph.ConnectedComponent) : G.ConnectedComponent :=
+def ConnectedComponent.ofSimple (C : G.toSimpleGraph.ConnectedComponent) :
+    G.ConnectedComponent :=
   ⟨G.connectedComponentSubgraph C, G.connectedComponentSubgraph_isConnectedComponentOf C⟩
 
 /-- The subgraph underlying the lifted simple component is its induced component subgraph. -/
 @[simp]
-theorem coe_connectedComponentOfSimple (C : G.toSimpleGraph.ConnectedComponent) :
-    (G.connectedComponentOfSimple C : Graph α β) = G.connectedComponentSubgraph C := (rfl)
+theorem ConnectedComponent.coe_ofSimple (C : G.toSimpleGraph.ConnectedComponent) :
+    (ConnectedComponent.ofSimple C : Graph α β) = G.connectedComponentSubgraph C := (rfl)
 
 noncomputable section
 
@@ -231,16 +251,11 @@ def ConnectedComponent.toSimple {G : Graph α β} (C : G.ConnectedComponent) :
 /-- A connected-component subgraph is the induced graph on the support of its underlying simple
 component. -/
 theorem ConnectedComponent.ofSimple_toSimple {G : Graph α β}
-    (C : G.ConnectedComponent) : G.connectedComponentOfSimple C.toSimple = C := by
-  have hle : G.connectedComponentSubgraph C.toSimple ≤ C := by
-    let x : α := Classical.choose C.property.nonempty
-    have hxC : x ∈ V(C.1) := Classical.choose_spec C.property.nonempty
-    apply C.property.isInducedSubgraph.le_of_le_subset
-      (G.induce_le (fun _ hy ↦ (mem_connectedComponentVertexSet_iff.mp hy).1))
-    intro y hy
-    obtain ⟨_, hyC⟩ := mem_connectedComponentVertexSet_iff.mp hy
-    exact C.property.isClosedSubgraph.mem_vertexSet_of_toSimpleGraph_reachable hxC
-      (SimpleGraph.ConnectedComponent.exact hyC.symm)
+    (C : G.ConnectedComponent) : ofSimple C.toSimple = C := by
+  have hle : G.connectedComponentSubgraph C.toSimple ≤ C :=
+    connectedComponentSubgraph_le_of_isClosedSubgraph C.property.isClosedSubgraph
+      SimpleGraph.ConnectedComponent.connectedComponentMk_mem
+      (Classical.choose_spec C.property.nonempty)
   apply Subtype.ext
   apply le_antisymm
   · exact hle
@@ -250,7 +265,7 @@ theorem ConnectedComponent.ofSimple_toSimple {G : Graph α β}
 
 /-- The support of the underlying simple component is exactly the actual vertex set of the
 component subgraph. -/
-theorem ConnectedComponent.mem_toSimple_iff {G : Graph α β} (C : G.ConnectedComponent)
+theorem ConnectedComponent.mem_supp_toSimple_iff {G : Graph α β} (C : G.ConnectedComponent)
     (x : V(G)) : x ∈ C.toSimple.supp ↔ (x : α) ∈ V(C.1) := by
   have hC : G.connectedComponentSubgraph C.toSimple = C.1 :=
     congrArg Subtype.val C.ofSimple_toSimple
@@ -263,18 +278,17 @@ when it is a vertex of that subgraph. -/
 theorem ConnectedComponent.connectedComponentMk_eq_toSimple_iff {G : Graph α β}
     (C : G.ConnectedComponent) (x : V(G)) :
     G.toSimpleGraph.connectedComponentMk x = C.toSimple ↔ (x : α) ∈ V(C.1) := by
-  rw [← SimpleGraph.ConnectedComponent.mem_supp_iff, C.mem_toSimple_iff]
+  rw [← SimpleGraph.ConnectedComponent.mem_supp_iff, C.mem_supp_toSimple_iff]
 
 /-- Passing from an underlying simple component to its component subgraph and back recovers the
 simple component. -/
 @[simp]
-theorem connectedComponentOfSimple_toSimple (C : G.toSimpleGraph.ConnectedComponent) :
-    (G.connectedComponentOfSimple C).toSimple = C := by
+theorem ConnectedComponent.toSimple_ofSimple (C : G.toSimpleGraph.ConnectedComponent) :
+    (ofSimple C).toSimple = C := by
   rw [ConnectedComponent.toSimple]
   apply SimpleGraph.ConnectedComponent.eq_of_common_vertex
   · exact SimpleGraph.ConnectedComponent.connectedComponentMk_mem
-  · have hx := Classical.choose_spec
-      (G.connectedComponentOfSimple C).property.nonempty
+  · have hx := Classical.choose_spec (ofSimple C).property.nonempty
     exact (mem_connectedComponentVertexSet_iff.mp hx).2
 
 /-- Connected-component subgraphs are equivalent to connected components of the underlying simple
@@ -282,9 +296,9 @@ graph. -/
 def connectedComponentEquiv (G : Graph α β) :
     G.ConnectedComponent ≃ G.toSimpleGraph.ConnectedComponent where
   toFun := ConnectedComponent.toSimple
-  invFun := G.connectedComponentOfSimple
+  invFun := ConnectedComponent.ofSimple
   left_inv := ConnectedComponent.ofSimple_toSimple
-  right_inv := connectedComponentOfSimple_toSimple
+  right_inv := ConnectedComponent.toSimple_ofSimple
 
 /-- The component equivalence sends a component subgraph to its underlying simple component. -/
 @[simp]
@@ -294,7 +308,51 @@ theorem connectedComponentEquiv_apply (C : G.ConnectedComponent) :
 /-- The inverse component equivalence induces the ambient multigraph on a simple component. -/
 @[simp]
 theorem connectedComponentEquiv_symm_apply (C : G.toSimpleGraph.ConnectedComponent) :
-    G.connectedComponentEquiv.symm C = G.connectedComponentOfSimple C := (rfl)
+    G.connectedComponentEquiv.symm C = ConnectedComponent.ofSimple C := (rfl)
+
+/-- Two connected components sharing a vertex are equal. -/
+theorem IsConnectedComponentOf.eq_of_mem_of_mem (hH : H.IsConnectedComponentOf G)
+    (hK : K.IsConnectedComponentOf G) {x : α} (hxH : x ∈ V(H)) (hxK : x ∈ V(K)) : H = K := by
+  let vx : V(G) := ⟨x, hH.le.vertexSet_mono hxH⟩
+  have h : ConnectedComponent.toSimple ⟨H, hH⟩ = ConnectedComponent.toSimple ⟨K, hK⟩ := by
+    rw [← (ConnectedComponent.connectedComponentMk_eq_toSimple_iff _ vx).mpr hxH,
+      ← (ConnectedComponent.connectedComponentMk_eq_toSimple_iff _ vx).mpr hxK]
+  exact congrArg Subtype.val (G.connectedComponentEquiv.injective h)
+
+/-- Two connected-component subgraphs sharing a vertex are equal. -/
+theorem ConnectedComponent.eq_of_mem_of_mem {C D : G.ConnectedComponent} {x : α}
+    (hxC : x ∈ V(C.1)) (hxD : x ∈ V(D.1)) : C = D :=
+  Subtype.ext (C.property.eq_of_mem_of_mem D.property hxC hxD)
+
+/-- The connected-component subgraph containing an actual vertex. -/
+def connectedComponentOf (G : Graph α β) (x : α) (hx : x ∈ V(G)) : G.ConnectedComponent :=
+  ConnectedComponent.ofSimple (G.toSimpleGraph.connectedComponentMk ⟨x, hx⟩)
+
+/-- A vertex lies in the component of `x` exactly when it is reachable from `x` in the underlying
+simple graph. -/
+theorem mem_vertexSet_connectedComponentOf_iff {x y : α} (hx : x ∈ V(G)) :
+    y ∈ V((G.connectedComponentOf x hx).1) ↔
+      ∃ hy : y ∈ V(G), G.toSimpleGraph.Reachable ⟨x, hx⟩ ⟨y, hy⟩ := by
+  rw [connectedComponentOf, ConnectedComponent.coe_ofSimple,
+    vertexSet_connectedComponentSubgraph, mem_connectedComponentVertexSet_iff]
+  simp only [SimpleGraph.ConnectedComponent.mem_supp_iff,
+    SimpleGraph.ConnectedComponent.eq]
+  exact exists_congr fun _ ↦ SimpleGraph.reachable_comm
+
+/-- A vertex lies in its own connected component. -/
+theorem mem_vertexSet_connectedComponentOf_self {x : α} (hx : x ∈ V(G)) :
+    x ∈ V((G.connectedComponentOf x hx).1) :=
+  (mem_vertexSet_connectedComponentOf_iff hx).mpr ⟨hx, SimpleGraph.Reachable.rfl⟩
+
+/-- A subgraph is a connected component exactly when it is induced on a component of the
+underlying simple graph. -/
+theorem isConnectedComponentOf_iff_exists_eq_connectedComponentSubgraph :
+    H.IsConnectedComponentOf G ↔
+      ∃ C : G.toSimpleGraph.ConnectedComponent, H = G.connectedComponentSubgraph C := by
+  refine ⟨fun h ↦ ⟨ConnectedComponent.toSimple ⟨H, h⟩, ?_⟩, ?_⟩
+  · exact (congrArg Subtype.val (ConnectedComponent.ofSimple_toSimple ⟨H, h⟩)).symm
+  · rintro ⟨C, rfl⟩
+    exact G.connectedComponentSubgraph_isConnectedComponentOf C
 
 /-! ### Connectedness and the finite component count -/
 
@@ -315,63 +373,70 @@ theorem connected_iff_toSimpleGraph_connected : G.Connected ↔ G.toSimpleGraph.
       exact u.property
     exact (mem_connectedComponentVertexSet_iff.mp hu).2
   · intro hG
-    have hne : V(G).Nonempty := by
-      let v : V(G) := Classical.choice hG.nonempty
-      exact ⟨v, v.property⟩
-    apply (connected_iff_forall_closed hne).2
-    intro H hHG hHne
-    obtain ⟨x, hxH⟩ := hHne
-    apply hHG.isInducedSubgraph.ext_of_vertexSet
-    apply Set.Subset.antisymm hHG.le.vertexSet_mono
-    intro y hyG
+    obtain ⟨v⟩ := hG.nonempty
+    refine (connected_iff_forall_closed_ge (G := G) ⟨v, v.property⟩).2
+      fun {H} hHG ⟨x, hxH⟩ ↦ ?_
     let vx : V(G) := ⟨x, hHG.le.vertexSet_mono hxH⟩
-    let vy : V(G) := ⟨y, hyG⟩
-    exact hHG.mem_vertexSet_of_toSimpleGraph_reachable hxH (hG vx vy)
+    have hle := connectedComponentSubgraph_le_of_isClosedSubgraph hHG
+      SimpleGraph.ConnectedComponent.connectedComponentMk_mem (x := vx) hxH
+    refine hHG.isInducedSubgraph.le_of_le_subset le_rfl fun y hy ↦ hle.vertexSet_mono ?_
+    exact mem_connectedComponentVertexSet_iff.mpr
+      ⟨hy, SimpleGraph.ConnectedComponent.sound (hG ⟨y, hy⟩ vx)⟩
 
 /-- Finitely many actual vertices give finitely many connected-component subgraphs. -/
-noncomputable instance instFiniteConnectedComponent (G : Graph α β) [Finite V(G)] :
-    Finite G.ConnectedComponent := by
-  apply G.connectedComponentEquiv.finite_iff.mpr
-  apply Finite.of_surjective G.toSimpleGraph.connectedComponentMk
-  intro C
-  obtain ⟨v, rfl⟩ := C.exists_rep
-  exact ⟨v, rfl⟩
+instance [Finite V(G)] : Finite G.ConnectedComponent :=
+  G.connectedComponentEquiv.finite_iff.mpr inferInstance
 
-/-- The number of connected-component subgraphs of a graph with finitely many actual vertices. -/
-noncomputable def componentCount (G : Graph α β) [Finite V(G)] : Nat :=
-  @Fintype.card G.ConnectedComponent (Fintype.ofFinite G.ConnectedComponent)
+/-- The empty graph has finitely many actual vertices. -/
+instance : Finite V((⊥ : Graph α β)) := by
+  rw [vertexSet_bot]
+  infer_instance
+
+/-- An edgeless graph on a finite set has finitely many actual vertices. -/
+instance {s : Set α} [Finite s] : Finite V(noEdge s β) := by
+  rwa [vertexSet_noEdge]
+
+/-- A graph on two vertices has finitely many actual vertices. -/
+instance {x y : α} {F : Set β} : Finite V(banana x y F) := by
+  rw [vertexSet_banana]
+  infer_instance
+
+/-- Deleting edges keeps the actual vertex set, hence its finiteness. -/
+instance {F : Set β} [Finite V(G)] : Finite V(G.deleteEdges F) := by
+  rwa [vertexSet_deleteEdges]
+
+/-- The number of connected-component subgraphs of `G`, or `0` if there are infinitely many. -/
+noncomputable def componentCount (G : Graph α β) : Nat :=
+  Nat.card G.ConnectedComponent
 
 /-- The component count is the cardinality of the native component-subgraph type. -/
-theorem componentCount_eq_natCard_connectedComponent [Finite V(G)] :
-    G.componentCount = Nat.card G.ConnectedComponent := by
-  exact (@Nat.card_eq_fintype_card G.ConnectedComponent
-    (Fintype.ofFinite G.ConnectedComponent)).symm
+theorem componentCount_eq_natCard_connectedComponent :
+    G.componentCount = Nat.card G.ConnectedComponent := (rfl)
 
 /-- The component count is the number of connected components of the underlying simple graph. -/
-theorem componentCount_eq_natCard_toSimpleGraph [Finite V(G)] :
+theorem componentCount_eq_natCard_toSimpleGraph :
     G.componentCount = Nat.card G.toSimpleGraph.ConnectedComponent := by
   rw [componentCount_eq_natCard_connectedComponent]
   exact Nat.card_congr G.connectedComponentEquiv
 
 /-- The component count of a simple graph regarded as a multigraph is its usual number of
 connected components. -/
-theorem componentCount_ofSimpleGraph [Finite α] (H : SimpleGraph α) :
+theorem componentCount_ofSimpleGraph (H : SimpleGraph α) :
     (Graph.ofSimpleGraph H).componentCount = Nat.card H.ConnectedComponent := by
   rw [componentCount_eq_natCard_toSimpleGraph]
   exact Nat.card_congr (Graph.toSimpleGraphOfSimpleGraphIso H).connectedComponentEquiv
 
-/-- A finite multigraph has no components exactly when it has no actual vertices. -/
+/-- A multigraph with finitely many actual vertices has no components exactly when it has no
+actual vertices. -/
 @[simp]
 theorem componentCount_eq_zero_iff [Finite V(G)] : G.componentCount = 0 ↔ V(G) = ∅ := by
-  rw [componentCount_eq_natCard_toSimpleGraph]
-  have hfinite : Finite G.toSimpleGraph.ConnectedComponent :=
-    G.connectedComponentEquiv.finite_iff.mp inferInstance
-  rw [Nat.card_eq_zero, or_iff_left (not_infinite_iff_finite.mpr hfinite),
+  rw [componentCount_eq_natCard_toSimpleGraph,
+    Nat.card_eq_zero, or_iff_left (not_infinite_iff_finite.mpr inferInstance),
     SimpleGraph.isEmpty_connectedComponent_iff, Set.isEmpty_coe_sort]
 
-/-- A finite multigraph has one component exactly when it is connected. -/
+/-- A multigraph has one component exactly when it is connected. -/
 @[simp]
-theorem componentCount_eq_one_iff [Finite V(G)] : G.componentCount = 1 ↔ G.Connected := by
+theorem componentCount_eq_one_iff : G.componentCount = 1 ↔ G.Connected := by
   rw [componentCount_eq_natCard_toSimpleGraph,
     SimpleGraph.card_connectedComponent_eq_one_iff, ← connected_iff_toSimpleGraph_connected]
 
@@ -379,50 +444,43 @@ theorem componentCount_eq_one_iff [Finite V(G)] : G.componentCount = 1 ↔ G.Con
 
 /-- The empty graph has no connected components. -/
 @[simp]
-theorem componentCount_bot :
-    @componentCount α β (⊥ : Graph α β) (Set.finite_coe_iff.mpr (by simp)) = 0 := by
-  apply (@componentCount_eq_zero_iff α β (⊥ : Graph α β)
-    (Set.finite_coe_iff.mpr (by simp))).2
-  rfl
+theorem componentCount_bot : (⊥ : Graph α β).componentCount = 0 :=
+  componentCount_eq_zero_iff.mpr vertexSet_bot
+
+/-- A graph with a single actual vertex is connected, whatever loops it carries. -/
+theorem connected_of_vertexSet_eq_singleton {x : α} (h : V(G) = {x}) : G.Connected := by
+  rw [connected_iff_toSimpleGraph_connected]
+  refine @SimpleGraph.Connected.mk _ _ (fun u v ↦ ?_) ⟨⟨x, h ▸ Set.mem_singleton x⟩⟩
+  have hu : (u : α) = x := by simpa [h] using u.property
+  have hv : (v : α) = x := by simpa [h] using v.property
+  rw [Subtype.ext (hu.trans hv.symm)]
+
+/-- A graph with a single actual vertex has exactly one component, whatever loops it carries. -/
+theorem componentCount_eq_one_of_vertexSet_eq_singleton {x : α} (h : V(G) = {x}) :
+    G.componentCount = 1 :=
+  componentCount_eq_one_iff.mpr (connected_of_vertexSet_eq_singleton h)
 
 /-- A single isolated vertex is one connected component. -/
 @[simp]
-theorem componentCount_noEdge_singleton (x : α) :
-    @componentCount α β (Graph.noEdge ({x} : Set α) β)
-      (Set.finite_coe_iff.mpr (by simp)) = 1 := by
-  apply (@componentCount_eq_one_iff α β (Graph.noEdge ({x} : Set α) β)
-    (Set.finite_coe_iff.mpr (by simp))).2
-  rw [connected_iff_toSimpleGraph_connected]
-  apply @SimpleGraph.Connected.mk _ _ (fun u v ↦ ?_) ⟨Subtype.mk x (by simp)⟩
-  have huv : u = v := by
-    apply Subtype.ext
-    have hu : (u : α) = x := by simpa using u.property
-    have hv : (v : α) = x := by simpa using v.property
-    exact hu.trans hv.symm
-  subst v
-  exact SimpleGraph.Reachable.rfl
+theorem componentCount_noEdge_singleton (x : α) : (noEdge {x} β).componentCount = 1 :=
+  componentCount_eq_one_of_vertexSet_eq_singleton (vertexSet_noEdge _ _)
 
-/-- A single edge joining two distinct vertices is connected. -/
+/-- Two vertices joined by a nonempty set of edges form one component.  When `x = y` the edges
+are loops at a single vertex; otherwise they are parallel edges joining `x` to `y`. -/
 @[simp]
-theorem componentCount_banana_singleton {x y : α} (hxy : x ≠ y) (e : β) :
-    @componentCount α β (Graph.banana x y {e})
-      (Set.finite_coe_iff.mpr (by simp)) = 1 := by
-  apply (@componentCount_eq_one_iff α β (Graph.banana x y {e})
-    (Set.finite_coe_iff.mpr (by simp))).2
-  rw [connected_iff_toSimpleGraph_connected]
-  apply @SimpleGraph.Connected.mk _ _ (fun u v ↦ ?_) ⟨Subtype.mk x (by simp)⟩
-  rcases u with ⟨u, hu⟩
-  rcases v with ⟨v, hv⟩
-  simp only [Graph.vertexSet_banana, Set.mem_insert_iff, Set.mem_singleton_iff] at hu hv
-  rcases hu with rfl | rfl <;> rcases hv with rfl | rfl
-  · exact SimpleGraph.Reachable.rfl
-  · exact SimpleGraph.Adj.reachable (by
-      rw [Graph.toSimpleGraph_adj]
-      exact ⟨by simpa, ⟨e, by simp⟩⟩)
-  · exact (SimpleGraph.Adj.reachable (by
-      rw [Graph.toSimpleGraph_adj]
-      exact ⟨by simpa using hxy, ⟨e, by simp⟩⟩)).symm
-  · exact SimpleGraph.Reachable.rfl
+theorem componentCount_banana {x y : α} {F : Set β} (hF : F.Nonempty) :
+    (banana x y F).componentCount = 1 := by
+  obtain ⟨e, he⟩ := hF
+  rw [componentCount_eq_one_iff, connected_iff_toSimpleGraph_connected]
+  refine @SimpleGraph.Connected.mk _ _ (fun u v ↦ ?_) ⟨⟨x, by simp⟩⟩
+  by_cases huv : u = v
+  · exact huv ▸ SimpleGraph.Reachable.rfl
+  refine SimpleGraph.Adj.reachable ⟨huv, e, ?_⟩
+  obtain ⟨u, hu⟩ := u
+  obtain ⟨v, hv⟩ := v
+  simp only [vertexSet_banana, Set.mem_insert_iff, Set.mem_singleton_iff] at hu hv
+  simp only [Subtype.mk.injEq] at huv
+  rcases hu with rfl | rfl <;> rcases hv with rfl | rfl <;> simp_all
 
 end
 
