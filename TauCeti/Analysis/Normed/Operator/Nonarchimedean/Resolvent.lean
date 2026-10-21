@@ -119,16 +119,6 @@ theorem resolventCoeff_succ' (u : C₀(I, R) →L[R] C₀(I, R)) (m : ℕ) :
   rw [resolventCoeff_def, resolventCoeff_def]
   exact TauCeti.sum_range_succ_smul_pow_sub' u.matrixCoeff.charCoeff u m
 
-omit [DiscreteTopology I] [DecidableEq I] in
-/-- A scalar multiple of an operator commuting with `w` commutes with `w`. This is
-`Commute.smul_left`, which does not apply here: instance search finds `Algebra R (C₀(I, R) →L[R]
-C₀(I, R))` but not the derived `IsScalarTower` and `SMulCommClass` instances on the operator ring,
-so the proof uses `Algebra.smul_mul_assoc` and `Algebra.mul_smul_comm` directly. -/
-private theorem commute_smul_left {v w : C₀(I, R) →L[R] C₀(I, R)} (h : Commute v w) (a : R) :
-    Commute (a • v) w :=
-  (Algebra.smul_mul_assoc a v w).trans <|
-    (congrArg (a • ·) h.eq).trans (Algebra.mul_smul_comm a w v).symm
-
 /-- Each coefficient of the Fredholm resolvent commutes with the operator. -/
 theorem commute_resolventCoeff (u : C₀(I, R) →L[R] C₀(I, R)) (m : ℕ) :
     Commute u (u.resolventCoeff m) := by
@@ -297,7 +287,7 @@ end Analytic
 
 section Evaluation
 
-variable [NormedCommRing R] [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
+variable [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
 
 open scoped TauCeti.RingOpNorm
 
@@ -312,38 +302,52 @@ The coefficients of the resolvent are operators rather than scalars, so this is 
 noncomputable def resolventAt (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) : C₀(I, R) →L[R] C₀(I, R) :=
   u.resolventSeries.evalScalar a
 
+/-- The value of the Fredholm resolvent at `a` is the evaluation of the series
+`ContinuousLinearMap.resolventSeries` at `a`. -/
+theorem resolventAt_eq_evalScalar (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
+    u.resolventAt a = u.resolventSeries.evalScalar a :=
+  (rfl)
+
 theorem resolventAt_def (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
     u.resolventAt a = ∑' m, a ^ m • u.resolventCoeff m := by
-  simp only [resolventAt, PowerSeries.evalScalar_def, coeff_resolventSeries]
+  simp only [resolventAt_eq_evalScalar, PowerSeries.evalScalar_def, coeff_resolventSeries]
 
 /-- At the scalar `0` the resolvent is the identity, its constant coefficient. -/
 @[simp]
 theorem resolventAt_zero (u : C₀(I, R) →L[R] C₀(I, R)) : u.resolventAt 0 = 1 := by
-  rw [resolventAt, PowerSeries.evalScalar_at_zero, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
-    coeff_resolventSeries, resolventCoeff_zero]
+  rw [resolventAt_eq_evalScalar, PowerSeries.evalScalar_at_zero,
+    ← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_resolventSeries, resolventCoeff_zero]
 
 /-- The value of the Fredholm resolvent at a scalar commutes with the operator. -/
 theorem commute_resolventAt (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
     Commute u (u.resolventAt a) := by
-  rw [resolventAt_def]
-  exact Commute.tsum_right u fun m ↦ (commute_smul_left (u.commute_resolventCoeff m).symm _).symm
+  -- Synthesized up front: the nested search inside `PowerSeries.commute_evalScalar` does not
+  -- find the topological ring structure of the operators.
+  have : IsTopologicalSemiring (C₀(I, R) →L[R] C₀(I, R)) := inferInstance
+  rw [resolventAt_eq_evalScalar]
+  exact PowerSeries.commute_evalScalar (fun m ↦ by
+    simpa only [coeff_resolventSeries] using u.commute_resolventCoeff m) a
 
 /-- The value of the Fredholm resolvent at a scalar lies in the operator-norm closure of the
 polynomials in `u`. -/
 theorem resolventAt_mem_closure_adjoin (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
     u.resolventAt a ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
-  have hV (m : ℕ) : a ^ m • u.resolventCoeff m ∈ Algebra.adjoin R {u} :=
-    Subalgebra.smul_mem _ (Subalgebra.sum_mem _ fun k _ ↦ Subalgebra.smul_mem _
+  have hV (m : ℕ) : a ^ m • u.resolventCoeff m ∈ Algebra.adjoin R {u} := by
+    rw [resolventCoeff_def]
+    exact Subalgebra.smul_mem _ (Subalgebra.sum_mem _ fun k _ ↦ Subalgebra.smul_mem _
       (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton R u) _) _) _
   rw [resolventAt_def]
   exact tsum_mem (Algebra.adjoin R {u}).toAddSubmonoid.isClosed_topologicalClosure
     fun m ↦ subset_closure (hV m)
 
+variable [IsUltrametricDist R]
+
 /-- **Operator-norm bound for the value of the Fredholm resolvent.** If `c ≥ 0` bounds
 `‖a‖ ^ m * ‖Vₘ‖` for every `m`, then it bounds the operator norm of `V(a)`. -/
 theorem ringOpNorm_resolventAt_le (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) {c : ℝ} (hc : 0 ≤ c)
-    (h : ∀ m, ‖a‖ ^ m * ‖u.resolventCoeff m‖ ≤ c) : ‖u.resolventAt a‖ ≤ c :=
-  PowerSeries.norm_evalScalar_le (F := u.resolventSeries) hc fun m ↦ by
+    (h : ∀ m, ‖a‖ ^ m * ‖u.resolventCoeff m‖ ≤ c) : ‖u.resolventAt a‖ ≤ c := by
+  rw [resolventAt_eq_evalScalar]
+  exact PowerSeries.norm_evalScalar_le (F := u.resolventSeries) hc fun m ↦ by
     simpa only [coeff_resolventSeries] using h m
 
 variable [CompleteSpace R]
@@ -352,9 +356,8 @@ variable [CompleteSpace R]
 series `∑ₘ aᵐ • Vₘ` converges in operator norm to `V(a)`. -/
 theorem IsRowCompact.hasSum_resolventAt {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
     (a : R) : HasSum (fun m ↦ a ^ m • u.resolventCoeff m) (u.resolventAt a) := by
-  have h := hu.isEntire_resolventSeries.hasSum_evalScalar a
-  simp only [coeff_resolventSeries] at h
-  exact h
+  rw [resolventAt_eq_evalScalar]
+  simpa only [coeff_resolventSeries] using hu.isEntire_resolventSeries.hasSum_evalScalar a
 
 /-- **The evaluated resolvent identity** `(1 - a • u) V(a) = H_u(a) • 1`, where
 `H_u(a) = det (1 - a u)` is the value at `a` of the entire Fredholm determinant of the
@@ -376,7 +379,7 @@ theorem IsRowCompact.resolventAt_mul_one_sub_smul {u : C₀(I, R) →L[R] C₀(I
     (hu : u.IsRowCompact) (a : R) :
     u.resolventAt a * (1 - a • u) = u.matrixCoeff.charPowerSeries.evalAt a • 1 := by
   have h' := Commute.sub_left (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_left _)
-    (commute_smul_left (u.commute_resolventAt a) a)
+    ((u.commute_resolventAt a).smul_left a)
   exact h'.eq.symm.trans (hu.one_sub_smul_mul_resolventAt a)
 
 /-- If `H_u(a)` is a unit, `H_u(a)⁻¹ • V(a)` is a two-sided inverse of `1 - a • u`. -/

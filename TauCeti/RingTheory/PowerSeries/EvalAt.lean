@@ -46,8 +46,10 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalScalar_monomial`, `PowerSeries.evalScalar_at_zero`,
   `PowerSeries.evalScalar_add`: evaluation at a scalar of monomials, at the scalar `0`, and of
   sums.
-* `PowerSeries.norm_evalScalar_le`: in an ultrametric ring, over scalars with `‖1‖ = 1`, a uniform
-  bound `c ≥ 0` on `‖a‖ ^ n * ‖Fₙ‖` bounds `‖F(a)‖`.
+* `PowerSeries.commute_evalScalar`: an element commuting with the coefficients of a series
+  commutes with its value at a scalar.
+* `PowerSeries.norm_evalScalar_le`: in an ultrametric ring, a uniform bound `c ≥ 0` on
+  `‖a‖ ^ n * ‖Fₙ‖` bounds `‖F(a)‖`.
 -/
 
 public section
@@ -159,6 +161,13 @@ noncomputable def evalScalar (F : A⟦X⟧) (a : R) : A :=
 theorem evalScalar_def (F : A⟦X⟧) (a : R) : F.evalScalar a = ∑' n, a ^ n • coeff n F :=
   (rfl)
 
+/-- An element commuting with every coefficient of a series commutes with its value at a
+scalar. -/
+theorem commute_evalScalar [IsTopologicalSemiring A] [T2Space A] [SMulCommClass R A A]
+    [IsScalarTower R A A] {b : A} {F : A⟦X⟧} (h : ∀ n, Commute b (coeff n F)) (a : R) :
+    Commute b (F.evalScalar a) :=
+  Commute.tsum_right _ fun n ↦ (h n).smul_right _
+
 end Scalar
 
 section ScalarAction
@@ -246,11 +255,15 @@ theorem norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A] {r : ℝ
 /-- In an ultrametric normed ring, if `c ≥ 0` bounds `‖a‖ ^ n * ‖Fₙ‖` for every `n`, then it
 bounds the value at the scalar `a` of the series `F = ∑ Fₙ Xⁿ`. This needs no convergence: the
 junk value `0` satisfies the bound too. -/
-theorem norm_evalScalar_le {R A : Type*} [SeminormedRing R] [NormOneClass R] [NormedRing A]
-    [Module R A] [IsBoundedSMul R A] [IsUltrametricDist A] {F : A⟦X⟧} {a : R} {c : ℝ}
-    (hc : 0 ≤ c) (h : ∀ n, ‖a‖ ^ n * ‖coeff n F‖ ≤ c) : ‖F.evalScalar a‖ ≤ c :=
-  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hc fun n ↦ (norm_smul_le _ _).trans <|
-    (mul_le_mul_of_nonneg_right (norm_pow_le a n) (norm_nonneg _)).trans (h n)
+theorem norm_evalScalar_le {R A : Type*} [SeminormedRing R] [NormedRing A] [Module R A]
+    [IsBoundedSMul R A] [IsUltrametricDist A] {F : A⟦X⟧} {a : R} {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ n, ‖a‖ ^ n * ‖coeff n F‖ ≤ c) : ‖F.evalScalar a‖ ≤ c := by
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hc fun n ↦ ?_
+  -- `‖aⁿ‖ ≤ ‖a‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is treated separately
+  cases n with
+  | zero => simpa using h 0
+  | succ n => exact (norm_smul_le _ _).trans <|
+      (mul_le_mul_of_nonneg_right (norm_pow_le' a n.succ_pos) (norm_nonneg _)).trans (h _)
 
 end Normed
 

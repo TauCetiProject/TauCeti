@@ -25,7 +25,8 @@ instances in the scope `TauCeti.RingOpNorm`:
 * `E →L[R] F` is complete when `F` is a complete normed group;
 * the endomorphisms `E →L[R] E` form a seminormed ring, normed when `E` is, with `‖1‖ = 1` as
   soon as `E` has a vector of nonzero norm, and composition is jointly continuous, so that they
-  form a topological ring;
+  form a topological ring; scalars move out of either factor of a composition when `R` is
+  commutative;
 * `E →L[R] F` is Hausdorff when `F` is normed.
 
 Mathlib's topology of bounded convergence on continuous linear maps is only defined over normed
@@ -149,6 +150,25 @@ scoped instance normOneClass [NontrivialTopology E] : NormOneClass (E →L[R] E)
   ⟨ringOpNorm_id⟩
 
 end Seminormed
+
+section Comm
+
+variable {R E : Type*} [SeminormedCommRing R] [NormedRing.IsTate R]
+  [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
+
+/-- Scalars move out of the left factor of a composition of operators. This is stated directly:
+for some modules, such as `C₀(I, R)`, instance search does not derive it from
+`ContinuousLinearMap.algebra` through `IsScalarTower.right` once
+`TauCeti.RingOpNorm.seminormedRing` is in scope. -/
+scoped instance isScalarTower : IsScalarTower R (E →L[R] E) (E →L[R] E) :=
+  ⟨fun a f g ↦ smul_comp a f g⟩
+
+/-- Scalars move out of the right factor of a composition of operators. As for
+`TauCeti.RingOpNorm.isScalarTower`, this is stated directly. -/
+scoped instance smulCommClass : SMulCommClass R (E →L[R] E) (E →L[R] E) :=
+  ⟨fun a f g ↦ (comp_smul f a g).symm⟩
+
+end Comm
 
 section Normed
 
