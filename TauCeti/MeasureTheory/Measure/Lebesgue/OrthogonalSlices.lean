@@ -227,10 +227,13 @@ theorem norm_measurableEquivProd_le (V : Submodule ℝ E) {p k : E} (hkp : k - p
       ‖((V.measurableEquivProd p x).2 : E)‖ ≤ ‖x - k‖ := by
   -- Both coordinates are orthogonal projections of `x - k`, since `k - p ∈ V`.
   have hx : x -ᵥ p = (x - k) + (k - p) := by rw [vsub_eq_sub]; abel
-  rw [measurableEquivProd_apply, hx, map_add, map_add,
-    V.orthogonalProjectionOnto_mem_subspace_eq_self ⟨_, hkp⟩,
-    V.orthogonalProjectionOnto_orthogonal_apply_eq_zero hkp, add_zero, coe_add, coe_mk, add_assoc,
-    sub_add_cancel, add_sub_cancel_right]
-  exact ⟨V.norm_orthogonalProjectionOnto_apply_le _, Vᗮ.norm_orthogonalProjectionOnto_apply_le _⟩
+  rw [measurableEquivProd_apply, hx]
+  simp only [map_add, V.orthogonalProjectionOnto_mem_subspace_eq_self ⟨_, hkp⟩,
+    V.orthogonalProjectionOnto_orthogonal_apply_eq_zero hkp, add_zero, coe_add]
+  refine ⟨Eq.trans_le ?_ (V.norm_orthogonalProjectionOnto_apply_le _),
+    Vᗮ.norm_orthogonalProjectionOnto_apply_le _⟩
+  rw [← norm_coe]
+  congr 1
+  abel
 
 end Submodule

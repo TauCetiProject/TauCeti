@@ -80,19 +80,17 @@ theorem euclideanHausdorffMeasure_mul_volume_closedBall_le_volume_add_smul_close
       volume (K + t • closedBall (0 : E) 1) := by
   rcases lt_or_ge t 0 with ht | ht
   · simp [closedBall_eq_empty.2 ht]
-  rcases K.eq_empty_or_nonempty with rfl | ⟨p, hp⟩
+  rcases K.eq_empty_or_nonempty with rfl | ⟨q, hq⟩
   · simp
-  let q : A := ⟨p, hKA hp⟩
+  lift q to A using hKA hq
   have : Nonempty A := ⟨q⟩
-  set Φ := A.direction.measurableEquivProd p
+  set Φ := A.direction.measurableEquivProd (q : E)
   set g := fun v : A.direction ↦ ((v +ᵥ q : A) : E)
-  have hg (v : A.direction) : g v = (v : E) + p := by
-    simp only [g, q, AffineSubspace.coe_vadd, vadd_eq_add]
   have hsub : Φ ⁻¹' ((g ⁻¹' K) ×ˢ closedBall 0 t) ⊆ K + t • closedBall (0 : E) 1 := by
     rintro x ⟨h₁, h₂⟩
-    rw [mem_preimage, hg] at h₁
+    simp only [g, mem_preimage, AffineSubspace.coe_vadd, vadd_eq_add] at h₁
     rw [mem_closedBall_zero_iff, ← Submodule.norm_coe] at h₂
-    rw [smul_unitClosedBall_of_nonneg ht, ← A.direction.measurableEquivProd_fst_add_add_snd p x]
+    rw [smul_unitClosedBall_of_nonneg ht, ← A.direction.measurableEquivProd_fst_add_add_snd q x]
     exact add_mem_add h₁ (mem_closedBall_zero_iff.2 h₂)
   calc μHE[finrank ℝ A.direction] K * volume (closedBall (0 : A.directionᗮ) t)
       = volume (Φ ⁻¹' ((g ⁻¹' K) ×ˢ closedBall 0 t)) := by
@@ -109,14 +107,12 @@ theorem volume_add_smul_closedBall_le_euclideanHausdorffMeasure_inter_mul_volume
     volume (K + t • closedBall (0 : E) 1) ≤
       μHE[finrank ℝ A.direction] ((K + t • closedBall (0 : E) 1) ∩ A) *
         volume (closedBall (0 : A.directionᗮ) t) := by
-  rcases K.eq_empty_or_nonempty with rfl | ⟨p, hp⟩
+  rcases K.eq_empty_or_nonempty with rfl | ⟨q, hq⟩
   · simp
-  let q : A := ⟨p, hKA hp⟩
+  lift q to A using hKA hq
   have : Nonempty A := ⟨q⟩
-  set Φ := A.direction.measurableEquivProd p
+  set Φ := A.direction.measurableEquivProd (q : E)
   set g := fun v : A.direction ↦ ((v +ᵥ q : A) : E)
-  have hg (v : A.direction) : g v = (v : E) + p := by
-    simp only [g, q, AffineSubspace.coe_vadd, vadd_eq_add]
   have hsub : K + t • closedBall (0 : E) 1 ⊆
       Φ ⁻¹' ((g ⁻¹' (K + t • closedBall (0 : E) 1)) ×ˢ closedBall 0 t) := by
     rw [smul_unitClosedBall_of_nonneg ht]
@@ -125,7 +121,8 @@ theorem volume_add_smul_closedBall_le_euclideanHausdorffMeasure_inter_mul_volume
       (AffineSubspace.vsub_mem_direction (hKA hk) q.2) (k + b)
     rw [add_sub_cancel_left] at h₁ h₂
     rw [mem_closedBall_zero_iff] at hb
-    rw [mem_preimage, mem_prod, mem_preimage, hg, mem_closedBall_zero_iff, ← Submodule.norm_coe]
+    simp only [g, mem_preimage, mem_prod, AffineSubspace.coe_vadd, vadd_eq_add]
+    rw [mem_closedBall_zero_iff, ← Submodule.norm_coe]
     exact ⟨⟨k, hk, _, mem_closedBall_zero_iff.2 (h₁.trans hb), add_sub_cancel k _⟩, h₂.trans hb⟩
   calc volume (K + t • closedBall (0 : E) 1)
       ≤ volume (Φ ⁻¹' ((g ⁻¹' (K + t • closedBall (0 : E) 1)) ×ˢ closedBall 0 t)) :=
@@ -159,9 +156,9 @@ theorem tendsto_volume_real_add_smul_closedBall_div {A : AffineSubspace ℝ E} {
     Tendsto (fun t : ℝ ↦ volume.real (K + t • closedBall (0 : E) 1) /
         volume.real (closedBall (0 : A.directionᗮ) t))
       (𝓝[>] 0) (𝓝 ((μHE[finrank ℝ A.direction] : Measure E).real K)) := by
-  rcases K.eq_empty_or_nonempty with rfl | ⟨p, hp⟩
+  rcases K.eq_empty_or_nonempty with rfl | ⟨q, hq⟩
   · simp
-  let q : A := ⟨p, hKA hp⟩
+  lift q to A using hKA hq
   have : Nonempty A := ⟨q⟩
   set g := fun v : A.direction ↦ ((v +ᵥ q : A) : E)
   have hKg : IsCompact (g ⁻¹' K) := (A.isometry_coe_vadd q).isClosedEmbedding.isCompact_preimage hK
