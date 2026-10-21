@@ -18,8 +18,8 @@ is a homomorphism exactly when every strictly lower entry of `B` is even
 (`Matrix.forall_canonicalSection_signFactorSet_mul_iff`), so here exactly when the diagram has no
 bonds.
 
-This is kept apart from `TauCeti.LinearAlgebra.Matrix.OrderedSignCover` because importing
-`Matrix.IsSimplyLaced` changes how the powers `(-1 : ℤˣ) ^ n` there elaborate.
+This is kept apart from `TauCeti.LinearAlgebra.Matrix.OrderedSignCover` so that the general cover
+does not import the theory of Cartan matrices.
 
 ## Main results
 

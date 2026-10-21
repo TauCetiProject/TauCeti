@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
@@ -106,42 +107,43 @@ theorem orderedSignForm_add_orderedSignForm_swap (hB : B.IsSymm) (a b : I → �
     rcases lt_trichotomy j i with h | rfl | h
     · simp [h, h.not_gt, h.ne', mul_assoc]
     · simp [mul_assoc]
-    · rw [ite_eq_right h.not_gt, ite_eq_left h, ite_eq_right h.ne, zero_add, add_zero, hB.apply i j]
+    · simp [h, h.not_gt, h.ne, hB.apply i j]
       ring
   rw [orderedSignForm_apply B b a, Finset.sum_comm]
   simp only [orderedSignForm_apply, dotProduct, mulVec, Finset.mul_sum, ← key,
     Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
 
-/-- **The ordered sign of an integer matrix**: `ε(a, b) = (-1) ^ orderedSignForm B a b`, as a map
+/-- **The ordered sign of an integer matrix**: `ε(a, b) = (-1) ^ orderedSignForm B a b`, written
+`Int.negOnePow (orderedSignForm B a b)`, as a map
 on `Multiplicative (I → ℤ)` that is multiplicative in each variable. This is the factor set of the
 ordered sign cover `Matrix.SignCover B`. -/
 noncomputable def orderedSign :
     Multiplicative (I → ℤ) →* Multiplicative (I → ℤ) →* ℤˣ where
   toFun a :=
-    { toFun b := (-1) ^ orderedSignForm B a.toAdd b.toAdd
+    { toFun b := (orderedSignForm B a.toAdd b.toAdd).negOnePow
       map_one' := by simp
-      map_mul' b c := by simp [zpow_add] }
+      map_mul' b c := by simp [Int.negOnePow_add] }
   map_one' := by ext; simp
-  map_mul' a c := by ext; simp [zpow_add]
+  map_mul' a c := by ext; simp [Int.negOnePow_add]
 
 @[simp]
 theorem orderedSign_apply (a b : Multiplicative (I → ℤ)) :
-    orderedSign B a b = (-1) ^ orderedSignForm B a.toAdd b.toAdd :=
+    orderedSign B a b = (orderedSignForm B a.toAdd b.toAdd).negOnePow :=
   (rfl)
 
 /-- **The commutator sign.** For a symmetric matrix `B` with even diagonal, the ratio of the two
 ordered signs of `a` and `b` is the sign of their Gram pairing. -/
 theorem orderedSign_div_orderedSign_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i))
     (a b : Multiplicative (I → ℤ)) :
-    orderedSign B a b / orderedSign B b a = (-1) ^ (a.toAdd ⬝ᵥ B *ᵥ b.toAdd) := by
+    orderedSign B a b / orderedSign B b a = (a.toAdd ⬝ᵥ B *ᵥ b.toAdd).negOnePow := by
   have hd : Even (2 * orderedSignForm B b.toAdd a.toAdd + ∑ i, a.toAdd i * B i i * b.toAdd i) :=
     (even_two_mul _).add (Finset.even_sum _ fun i _ => ((hdiag i).mul_left _).mul_right _)
   have hsum : a.toAdd ⬝ᵥ B *ᵥ b.toAdd = orderedSignForm B a.toAdd b.toAdd -
       orderedSignForm B b.toAdd a.toAdd +
         (2 * orderedSignForm B b.toAdd a.toAdd + ∑ i, a.toAdd i * B i i * b.toAdd i) := by
     linarith [orderedSignForm_add_orderedSignForm_swap B hB a.toAdd b.toAdd]
-  rw [orderedSign_apply, orderedSign_apply, hsum, zpow_add, hd.neg_one_zpow, mul_one, zpow_sub,
-    div_eq_mul_inv]
+  rw [orderedSign_apply, orderedSign_apply, hsum, Int.negOnePow_add, Int.negOnePow_even _ hd,
+    mul_one, Int.negOnePow_sub, div_eq_mul_inv, Int.units_inv_eq_self]
 
 section Cover
 
@@ -203,7 +205,8 @@ theorem commutatorElement_signCover (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)
     (x y : SignCover B) :
     ⁅x, y⁆ = SignCover.tau B ^ (x.right.toAdd ⬝ᵥ B *ᵥ y.right.toAdd) := by
   rw [FactorSet.commutatorElement_eq_inl _ trivialMulDistribMulAction_smul, signFactorSet_apply,
-    signFactorSet_apply, orderedSign_div_orderedSign_swap B hB hdiag, map_zpow, SignCover.tau]
+    signFactorSet_apply, orderedSign_div_orderedSign_swap B hB hdiag, Int.negOnePow_def, map_zpow,
+    SignCover.tau]
 
 /-- **The canonical section of the ordered sign cover is a homomorphism exactly when every strictly
 lower triangular entry of `B` is even**, that is, exactly when the ordered sign is trivial. -/
@@ -211,10 +214,9 @@ theorem forall_canonicalSection_signFactorSet_mul_iff :
     (∀ a b : Multiplicative (I → ℤ), (signFactorSet B).canonicalSection (a * b) =
         (signFactorSet B).canonicalSection a * (signFactorSet B).canonicalSection b) ↔
       ∀ i j, j < i → Even (B i j) := by
-  have hne : (-1 : ℤˣ) ≠ 1 := by decide
   rw [FactorSet.forall_canonicalSection_mul_iff, FactorSet.ext_iff]
-  simp only [signFactorSet_apply, orderedSign_apply, FactorSet.trivial_apply, neg_one_zpow_eq_ite,
-    ite_eq_left_iff, hne, imp_false, not_not, Prod.forall]
+  simp only [signFactorSet_apply, orderedSign_apply, FactorSet.trivial_apply,
+    Int.negOnePow_eq_one_iff, Prod.forall]
   refine ⟨fun h i j hji => ?_, fun h a b => ?_⟩
   · simpa [hji] using
       h (Multiplicative.ofAdd (Pi.single i 1)) (Multiplicative.ofAdd (Pi.single j 1))
