@@ -89,8 +89,7 @@ variable {X : Type*} [TopologicalSpace X] [Norm E] {s t : Set X} {F : ι → X �
 **locally bounded** on `s` if it is uniformly bounded — with a single constant, independent of
 the index — on every compact subset of `s`.
 
-This is the hypothesis of Montel's theorem, in the form fixed by the conformal-mapping roadmap;
-there `X = ℂ` and `E` is a complex normed space. -/
+This is the hypothesis of Montel's theorem; there `X = ℂ` and `E` is a complex normed space. -/
 def IsLocallyBoundedOn (F : ι → X → E) (s : Set X) : Prop :=
   ∀ K ⊆ s, IsCompact K → ∃ C, ∀ i, ∀ z ∈ K, ‖F i z‖ ≤ C
 
@@ -119,8 +118,8 @@ theorem IsLocallyBoundedOn.comp {κ : Type*} (hb : IsLocallyBoundedOn F s)
 
 /-- A locally bounded family is bounded at each point of the set, uniformly in the index.
 
-Together with `IsLocallyBoundedOn.equicontinuousOn`, this supplies the pointwise bounds used in
-an Arzelà--Ascoli exhaustion argument. -/
+These pointwise bounds combine with `IsLocallyBoundedOn.equicontinuousOn` in the compact-open
+Arzelà–Ascoli theorem when the target is proper. -/
 theorem IsLocallyBoundedOn.exists_forall_norm_le (hb : IsLocallyBoundedOn F s) {z : X}
     (hz : z ∈ s) : ∃ C, ∀ i, ‖F i z‖ ≤ C := by
   obtain ⟨C, hC⟩ := hb {z} (singleton_subset_iff.2 hz) isCompact_singleton
