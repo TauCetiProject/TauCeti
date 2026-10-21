@@ -55,7 +55,6 @@ variable [HasDerivedCategory.{w} C]
 variable (C) in
 /-- The localization functor `K^b(C) ⥤ D^b(C)` from the homotopy category of bounded cochain
 complexes to the bounded derived category. -/
-@[expose]
 noncomputable def Qh : HomotopyCategory.Bounded C ⥤ _root_.DerivedCategory.Bounded C :=
   t.bounded.lift (HomotopyCategory.Bounded.ι C ⋙ _root_.DerivedCategory.Qh) (by
     rintro ⟨K, hK⟩
@@ -73,20 +72,27 @@ noncomputable def QhCompιIsoιCompQh :
       HomotopyCategory.Bounded.ι C ⋙ _root_.DerivedCategory.Qh :=
   t.bounded.liftCompιIso _ _
 
-/-! The body of `QhCompιIsoιCompQh` is not exposed, so the following characterizing lemmas are
-proved with `(rfl)`, unfolding it inside this module, rather than exported as definitional
-equalities. -/
+/-! The bodies of `Qh` and `QhCompιIsoιCompQh` are not exposed, so the following characterizing
+lemmas are proved with `(rfl)`, unfolding them inside this module, rather than exported as
+definitional equalities. -/
 
-/-- The components of `QhCompιIsoιCompQh` are identities. -/
-@[simp]
-lemma QhCompιIsoιCompQh_hom_app (X : HomotopyCategory.Bounded C) :
-    (QhCompιIsoιCompQh C).hom.app X = 𝟙 (_root_.DerivedCategory.Qh.obj X.obj) :=
+/-- The underlying object in `D(C)` of the image of `X` under `Qh C` is the image of the underlying
+complex under `DerivedCategory.Qh`. -/
+lemma Qh_obj_obj (X : HomotopyCategory.Bounded C) :
+    ((Qh C).obj X).obj = _root_.DerivedCategory.Qh.obj X.obj :=
   (rfl)
 
-/-- The components of the inverse of `QhCompιIsoιCompQh` are identities. -/
+/-- The components of `QhCompιIsoιCompQh` are identities, transported along `Qh_obj_obj`. -/
+@[simp]
+lemma QhCompιIsoιCompQh_hom_app (X : HomotopyCategory.Bounded C) :
+    (QhCompιIsoιCompQh C).hom.app X = eqToHom (Qh_obj_obj X) :=
+  (rfl)
+
+/-- The components of the inverse of `QhCompιIsoιCompQh` are identities, transported along
+`Qh_obj_obj`. -/
 @[simp]
 lemma QhCompιIsoιCompQh_inv_app (X : HomotopyCategory.Bounded C) :
-    (QhCompιIsoιCompQh C).inv.app X = 𝟙 (_root_.DerivedCategory.Qh.obj X.obj) :=
+    (QhCompιIsoιCompQh C).inv.app X = eqToHom (Qh_obj_obj X).symm :=
   (rfl)
 
 noncomputable instance : (Qh C).CommShift ℤ :=
