@@ -66,6 +66,15 @@ theorem mem_edge_iff {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} �
   · rintro ⟨x, hx, hi, rfl⟩
     exact ⟨x, ⟨hx, hi⟩, rfl⟩
 
+/-- A point of `E` lies on the open edge indexed by `i` exactly when it lies over `(0, 1)`, in the
+connected component of `p ⁻¹' (0, 1)` indexed by `i`. -/
+@[simp]
+theorem incl_mem_edge_iff {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
+    (i : Fin n) (x : E) :
+    PunctureFilling.incl (chart p) x ∈ edge hp ν i ↔ ∃ hx : p x ∈ unitSegment,
+      ConnectedComponents.mk ⟨x, hx⟩ = hp.finEquivConnectedComponentsUnitSegment ν i := by
+  simp only [edge, PunctureFilling.incl_injective.mem_set_image, mem_ofPred_eq]
+
 /-- The radial sequence from `w` towards the missing centre of the punctured disc. -/
 private def radialPoint (w : 𝔻*) (k : ℕ) : 𝔻* :=
   ⟨(1 / (k + 1 : ℝ)) • (w : ℂ), by
