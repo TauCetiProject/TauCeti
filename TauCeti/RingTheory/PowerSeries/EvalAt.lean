@@ -24,6 +24,10 @@ normed ring (`TauCeti.RingTheory.PowerSeries.Entire.Eval`). This file records th
 `evalAt` that need no convergence hypothesis. In an ultrametric normed algebra, `‖f(b)‖` is
 bounded by the Gauss norm of `f` at every radius `r ≥ ‖b‖` at which that Gauss norm is defined.
 
+A power series `F = ∑ Fₙ Xⁿ` whose coefficients lie in a ring `A` acted on by `R`, such as a series
+of operators, is instead evaluated at a scalar `a : R`: `PowerSeries.evalScalar F a` is the
+infinite sum `∑ₙ aⁿ • Fₙ`.
+
 Over a field `𝕜`, the same sum is Mathlib's `FormalMultilinearSeries.ofScalarsSum`
 (`PowerSeries.evalAt_eq_ofScalarsSum`); that construction needs a field of scalars, while the
 coefficient rings here may have nilpotents.
@@ -31,6 +35,7 @@ coefficient rings here may have nilpotents.
 ## Main definitions
 
 * `PowerSeries.evalAt`: the value `∑ₙ aₙ • bⁿ` of a power series at `b`.
+* `PowerSeries.evalScalar`: the value `∑ₙ aⁿ • Fₙ` of a power series at a scalar `a`.
 
 ## Main results
 
@@ -38,6 +43,8 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
 * `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
+* `PowerSeries.norm_evalScalar_le`: a uniform bound on the terms `aⁿ • Fₙ` bounds `F(a)` in an
+  ultrametric ring.
 -/
 
 public section
@@ -133,6 +140,24 @@ theorem evalAt_neg (f : R⟦X⟧) (b : A) : (-f).evalAt b = -f.evalAt b := by
 
 end Ring
 
+section Scalar
+
+variable {R A : Type*} [Monoid R] [Semiring A] [SMul R A] [TopologicalSpace A]
+
+/-- The value `F(a) = ∑ₙ aⁿ • Fₙ` at a scalar `a : R` of a power series `F = ∑ Fₙ Xⁿ` whose
+coefficients lie in a topological semiring `A` acted on by `R`, defined as an infinite sum. Unlike
+`PowerSeries.evalAt`, the coefficients need not be scalars, so this evaluates series of operators
+at scalars. It takes the junk value `0` when the sum does not converge; for entire `F` over a
+complete normed ring it converges at every `a` (`PowerSeries.IsEntire.hasSum_evalScalar`). -/
+noncomputable def evalScalar (F : A⟦X⟧) (a : R) : A :=
+  ∑' n, a ^ n • coeff n F
+
+/-- The value `F(a)` at a scalar is the infinite sum `∑ₙ aⁿ • Fₙ`. -/
+theorem evalScalar_def (F : A⟦X⟧) (a : R) : F.evalScalar a = ∑' n, a ^ n • coeff n F :=
+  (rfl)
+
+end Scalar
+
 section Normed
 
 variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
@@ -149,6 +174,15 @@ theorem norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A] {r : ℝ
       (mul_le_mul_of_nonneg_left ((norm_pow_le b n).trans
         (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)).trans <|
       le_gaussNorm _ _ _ hf n
+
+/-- In an ultrametric normed ring, if `c ≥ 0` bounds `‖a‖ ^ n * ‖Fₙ‖` for every `n`, then it
+bounds the value at the scalar `a` of the series `F = ∑ Fₙ Xⁿ`. This needs no convergence: the
+junk value `0` satisfies the bound too. -/
+theorem norm_evalScalar_le {R A : Type*} [SeminormedRing R] [NormOneClass R] [NormedRing A]
+    [Module R A] [IsBoundedSMul R A] [IsUltrametricDist A] {F : A⟦X⟧} {a : R} {c : ℝ}
+    (hc : 0 ≤ c) (h : ∀ n, ‖a‖ ^ n * ‖coeff n F‖ ≤ c) : ‖F.evalScalar a‖ ≤ c :=
+  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hc fun n ↦ (norm_smul_le _ _).trans <|
+    (mul_le_mul_of_nonneg_right (norm_pow_le a n) (norm_nonneg _)).trans (h n)
 
 end Normed
 

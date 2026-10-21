@@ -158,14 +158,6 @@ private theorem pow_succ_smul_resolventCoeff_succ (u : C₀(I, R) →L[R] C₀(I
   simp [resolventCoeff_succ, map_smul]
   module
 
-/-- The terms `aᵐ • Vₘ` of the value at a scalar `a` of the Fredholm resolvent commute with the
-operator. -/
-private theorem commute_pow_smul_resolventCoeff (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) (m : ℕ) :
-    Commute u (a ^ m • u.resolventCoeff m) := by
-  refine ContinuousLinearMap.ext fun x ↦ ?_
-  simpa [map_smul] using
-    congrArg (a ^ m • ·) (DFunLike.congr_fun (u.commute_resolventCoeff m).eq x)
-
 end Algebraic
 
 section Analytic
@@ -304,14 +296,14 @@ the operator norm. It takes the junk value `0` when the sum does not converge; f
 `u` over a complete ring it converges at every `a`
 (`ContinuousLinearMap.IsRowCompact.hasSum_resolventAt`).
 
-The coefficients of the resolvent are operators rather than scalars, so this is not an instance
-of `PowerSeries.evalAt`. -/
+The coefficients of the resolvent are operators rather than scalars, so this is the evaluation
+`PowerSeries.evalScalar` at a scalar rather than `PowerSeries.evalAt`. -/
 noncomputable def resolventAt (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) : C₀(I, R) →L[R] C₀(I, R) :=
-  ∑' m, a ^ m • u.resolventCoeff m
+  u.resolventSeries.evalScalar a
 
 theorem resolventAt_def (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
-    u.resolventAt a = ∑' m, a ^ m • u.resolventCoeff m :=
-  (rfl)
+    u.resolventAt a = ∑' m, a ^ m • u.resolventCoeff m := by
+  simp only [resolventAt, PowerSeries.evalScalar_def, coeff_resolventSeries]
 
 /-- At the scalar `0` the Fredholm resolvent is the identity. -/
 @[simp]
@@ -325,7 +317,8 @@ theorem resolventAt_zero (u : C₀(I, R) →L[R] C₀(I, R)) : u.resolventAt 0 =
 theorem commute_resolventAt (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
     Commute u (u.resolventAt a) := by
   rw [resolventAt_def]
-  exact Commute.tsum_right u (u.commute_pow_smul_resolventCoeff a)
+  exact Commute.tsum_right u fun m ↦ (u.comp_smul _ _).trans <|
+    (congrArg (_ • ·) (u.commute_resolventCoeff m).eq).trans (smul_comp _ _ _).symm
 
 /-- The value of the Fredholm resolvent at a scalar lies in the operator-norm closure of the
 polynomials in `u`. -/
@@ -341,23 +334,12 @@ theorem resolventAt_mem_closure_adjoin (u : C₀(I, R) →L[R] C₀(I, R)) (a : 
   · rw [tsum_eq_zero_of_not_summable hs]
     exact subset_closure (Subalgebra.zero_mem _)
 
-variable [NormOneClass R]
-
-/-- The `m`-th term `aᵐ • Vₘ` of the value of the Fredholm resolvent at `a` has operator norm at
-most `‖a‖ ^ m * ‖Vₘ‖`. -/
-private theorem ringOpNorm_pow_smul_resolventCoeff_le (u : C₀(I, R) →L[R] C₀(I, R)) (a : R)
-    (m : ℕ) : ‖a ^ m • u.resolventCoeff m‖ ≤ ‖a‖ ^ m * ‖u.resolventCoeff m‖ :=
-  (ringOpNorm_smul_le _ _).trans
-    (mul_le_mul_of_nonneg_right (norm_pow_le a m) (ringOpNorm_nonneg _))
-
 /-- **Operator-norm bound for the value of the Fredholm resolvent.** If `c ≥ 0` bounds
 `‖a‖ ^ m * ‖Vₘ‖` for every `m`, then it bounds the operator norm of `V(a)`. -/
-theorem ringOpNorm_resolventAt_le (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) {c : ℝ} (hc : 0 ≤ c)
-    (h : ∀ m, ‖a‖ ^ m * ‖u.resolventCoeff m‖ ≤ c) : ‖u.resolventAt a‖ ≤ c := by
-  rw [resolventAt_def]
-  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
-    (f := fun m ↦ a ^ m • u.resolventCoeff m) hc fun m ↦ ?_
-  exact (ringOpNorm_pow_smul_resolventCoeff_le u a m).trans (h m)
+theorem ringOpNorm_resolventAt_le [NormOneClass R] (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) {c : ℝ}
+    (hc : 0 ≤ c) (h : ∀ m, ‖a‖ ^ m * ‖u.resolventCoeff m‖ ≤ c) : ‖u.resolventAt a‖ ≤ c :=
+  PowerSeries.norm_evalScalar_le (F := u.resolventSeries) hc fun m ↦ by
+    simpa only [coeff_resolventSeries] using h m
 
 variable [CompleteSpace R]
 
@@ -365,16 +347,9 @@ variable [CompleteSpace R]
 converges in operator norm at every scalar `a`. -/
 theorem IsRowCompact.hasSum_resolventAt {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
     (a : R) : HasSum (fun m ↦ a ^ m • u.resolventCoeff m) (u.resolventAt a) := by
-  have hs := hu.isEntire_resolventSeries.summable_norm_coeff_mul_pow ‖a‖
-  simp only [coeff_resolventSeries] at hs
-  have hb (m : ℕ) : ‖a ^ m • u.resolventCoeff m‖ ≤ ‖u.resolventCoeff m‖ * ‖a‖ ^ m :=
-    (ringOpNorm_pow_smul_resolventCoeff_le u a m).trans_eq (mul_comm _ _)
-  have hn : Summable fun m ↦ ‖a ^ m • u.resolventCoeff m‖ :=
-    hs.of_nonneg_of_le (fun _ ↦ ringOpNorm_nonneg _) hb
-  -- Completeness of the operator space is found through its normed group structure.
-  let _ : NormedAddCommGroup (C₀(I, R) →L[R] C₀(I, R)) := inferInstance
-  rw [resolventAt_def]
-  exact hn.of_norm.hasSum
+  have h := hu.isEntire_resolventSeries.hasSum_evalScalar a
+  simp only [coeff_resolventSeries] at h
+  exact h
 
 /-- **The evaluated resolvent identity** `(1 - a u) V(a) = det (1 - a u) • 1` for a row-compact
 `u`, where `det (1 - a u)` is the value at `a` of the Fredholm determinant `det (1 - T u)`. -/
@@ -395,11 +370,10 @@ theorem IsRowCompact.one_sub_smul_mul_resolventAt {u : C₀(I, R) →L[R] C₀(I
 theorem IsRowCompact.resolventAt_mul_one_sub_smul {u : C₀(I, R) →L[R] C₀(I, R)}
     (hu : u.IsRowCompact) (a : R) :
     u.resolventAt a * (1 - a • u) = u.matrixCoeff.charPowerSeries.evalAt a • 1 := by
-  rw [← hu.one_sub_smul_mul_resolventAt a]
-  refine ContinuousLinearMap.ext fun x ↦ ?_
-  have h : u (u.resolventAt a x) = u.resolventAt a (u x) :=
-    DFunLike.congr_fun (u.commute_resolventAt a).eq x
-  simp [map_smul, h]
+  have h : Commute (a • u) (u.resolventAt a) := (smul_comp _ _ _).trans <|
+    (congrArg (a • ·) (u.commute_resolventAt a).eq).trans (comp_smul _ _ _).symm
+  have h' := Commute.sub_left (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_left _) h
+  exact h'.eq.symm.trans (hu.one_sub_smul_mul_resolventAt a)
 
 /-- The operator `det (1 - a u)⁻¹ • V(a)` is a two-sided inverse of `1 - a u` when `det (1 - a u)`
 is a unit. -/
@@ -409,14 +383,10 @@ private theorem IsRowCompact.mul_eq_one_of_isUnit {u : C₀(I, R) →L[R] C₀(I
       (Ring.inverse (u.matrixCoeff.charPowerSeries.evalAt a) • u.resolventAt a) * (1 - a • u) =
         1 := by
   have hh := Ring.inverse_mul_cancel _ ha
-  constructor <;> refine ContinuousLinearMap.ext fun x ↦ ?_
-  · have hx := DFunLike.congr_fun (hu.one_sub_smul_mul_resolventAt a) x
-    simp only [mul_apply_eq_comp, _root_.smul_apply, map_smul, _root_.sub_apply,
-      one_apply_eq_self] at hx ⊢
-    rw [hx, smul_smul, hh, one_smul]
-  · have hx := DFunLike.congr_fun (hu.resolventAt_mul_one_sub_smul a) x
-    simp only [mul_apply_eq_comp, _root_.sub_apply, one_apply_eq_self, _root_.smul_apply] at hx ⊢
-    rw [hx, smul_smul, hh, one_smul]
+  exact ⟨(comp_smul _ _ _).trans <| (congrArg (_ • ·) (hu.one_sub_smul_mul_resolventAt a)).trans <|
+      by rw [smul_smul, hh, one_smul],
+    (smul_comp _ _ _).trans <| (congrArg (_ • ·) (hu.resolventAt_mul_one_sub_smul a)).trans <|
+      by rw [smul_smul, hh, one_smul]⟩
 
 /-- **Invertibility from the Fredholm determinant.** If `u` is row compact and the value
 `det (1 - a u)` of its Fredholm determinant at `a` is a unit, then `1 - a u` is invertible. -/
