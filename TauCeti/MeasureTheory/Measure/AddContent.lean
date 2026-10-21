@@ -15,9 +15,9 @@ This file complements Mathlib's `MeasureTheory.AddContent` with the material nee
 finitely additive probability on *all* subsets of a type, given as an
 `AddContent ℝ≥0∞ (Set.univ : Set (Set α))` of total mass one, as an ordinary real-valued
 nonnegative finitely additive set function, and to move such set functions along maps and group
-actions. Finitely additive probabilities on all subsets of a group are the set-theoretic form of
-invariant means on bounded functions; unlike measures, they cannot be replaced by countably
-additive set functions on a σ-algebra.
+actions. Finitely additive probabilities on all subsets of a type are the set-theoretic form of
+means on bounded functions, and on a group the invariant ones correspond to invariant means;
+unlike measures, they cannot be replaced by countably additive set functions on a σ-algebra.
 
 * For a ring of sets `C`, every content satisfies inclusion–exclusion, a content with values in an
   additive group satisfies the difference formula `m (t \ s) = m t - m s` for `s ⊆ t`, and a
