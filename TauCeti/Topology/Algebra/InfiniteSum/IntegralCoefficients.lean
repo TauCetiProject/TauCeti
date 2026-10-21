@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Ring.Basic
+public import TauCeti.Analysis.Normed.Ring.Ultra
+public import TauCeti.Analysis.SpecificLimits.Normed
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.Algebra.Polynomial.AlgebraMap
-import Mathlib.Analysis.Normed.Ring.Ultra
 import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
-import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 
 /-!
@@ -22,8 +22,8 @@ import Mathlib.Topology.Algebra.InfiniteSum.Ring
 Every integer has norm at most `‖1‖` in a non-archimedean seminormed ring. Thus a series with
 arbitrary integer coefficients converges at any parameter of norm below one, provided the ring is
 complete. This includes complete valued fields with nondiscrete valuations or positive
-characteristic. The summability lemmas also allow any coefficient ring homomorphism with bounded
-image, without requiring a normalized norm.
+characteristic. More generally, `TauCeti.summable_norm_mul_pow_of_norm_le` applies to any bounded
+sequence of coefficients, without requiring a normalized norm.
 
 In a complete normed commutative ring, `RingHom.evalBoundedSeries` evaluates a power series after
 applying a coefficient ring homomorphism whose image has norm at most one. For a non-archimedean
@@ -61,31 +61,6 @@ end Polynomial
 
 namespace RingHom
 
-/-- The terms of a power series are absolutely summable after applying a coefficient map with
-bounded image, provided the parameter belongs to the open unit ball. -/
-theorem summable_norm_map_coeff_mul_pow {R K : Type*} [NonAssocSemiring R]
-    [SeminormedRing K] {C : ℝ}
-    (φ : R →+* K) (hφ : ∀ r, ‖φ r‖ ≤ C) (a : ℕ → R) {q : K} (hq : ‖q‖ < 1) :
-    Summable (fun n : ℕ ↦ ‖φ (a n) * q ^ n‖) := by
-  have hC : 0 ≤ C := by simpa using hφ 0
-  -- Discard the constant term: no normalization of the target's seminorm is assumed.
-  rw [← summable_nat_add_iff 1]
-  apply Summable.of_nonneg_of_le (fun n ↦ norm_nonneg _) (fun n ↦ ?_)
-    ((summable_nat_add_iff 1).mpr
-      ((summable_geometric_of_lt_one (norm_nonneg q) hq).mul_left C))
-  calc
-    ‖φ (a (n + 1)) * q ^ (n + 1)‖ ≤ ‖φ (a (n + 1))‖ * ‖q ^ (n + 1)‖ := norm_mul_le _ _
-    _ ≤ C * ‖q‖ ^ (n + 1) :=
-      mul_le_mul (hφ _) (norm_pow_le' q n.succ_pos) (norm_nonneg _) hC
-
-/-- A power series becomes summable after applying a coefficient map with bounded image and
-evaluating at a parameter in the open unit ball. -/
-theorem summable_map_coeff_mul_pow {R K : Type*} [NonAssocSemiring R]
-    [SeminormedRing K] [CompleteSpace K] {C : ℝ}
-    (φ : R →+* K) (hφ : ∀ r, ‖φ r‖ ≤ C) (a : ℕ → R) {q : K} (hq : ‖q‖ < 1) :
-    Summable (fun n : ℕ ↦ φ (a n) * q ^ n) :=
-  (summable_norm_map_coeff_mul_pow φ hφ a hq).of_norm
-
 /-- Evaluation of a formal power series after applying a coefficient ring homomorphism whose
 image has norm at most one. The defining sum converges at every parameter of norm less than one,
 without requiring a linear topology on the target. -/
@@ -99,15 +74,15 @@ noncomputable def evalBoundedSeries {R K : Type*} [Semiring R]
     simp [PowerSeries.coeff_one]
   map_add' f g := by
     simp_rw [map_add, add_mul]
-    exact (summable_map_coeff_mul_pow φ hφ (fun n ↦ coeff n f) hq).tsum_add
-      (summable_map_coeff_mul_pow φ hφ (fun n ↦ coeff n g) hq)
+    exact (TauCeti.summable_mul_pow_of_norm_le (fun n ↦ hφ (coeff n f)) hq).tsum_add
+      (TauCeti.summable_mul_pow_of_norm_le (fun n ↦ hφ (coeff n g)) hq)
   map_mul' f g := by
     let a : ℕ → K := fun n ↦ φ (coeff n f) * q ^ n
     let b : ℕ → K := fun n ↦ φ (coeff n g) * q ^ n
     have han : Summable (fun n ↦ ‖a n‖) :=
-      summable_norm_map_coeff_mul_pow φ hφ (fun n ↦ coeff n f) hq
+      TauCeti.summable_norm_mul_pow_of_norm_le (fun n ↦ hφ (coeff n f)) hq
     have hbn : Summable (fun n ↦ ‖b n‖) :=
-      summable_norm_map_coeff_mul_pow φ hφ (fun n ↦ coeff n g) hq
+      TauCeti.summable_norm_mul_pow_of_norm_le (fun n ↦ hφ (coeff n g)) hq
     rw [tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm han hbn]
     apply tsum_congr fun n ↦ ?_
     rw [PowerSeries.coeff_mul, map_sum, Finset.sum_mul]
@@ -174,8 +149,8 @@ norm below one in a non-archimedean seminormed ring. -/
 theorem summable_norm_intCast_mul_pow {K : Type*} [SeminormedRing K]
     [IsUltrametricDist K] (a : ℕ → ℤ) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ ‖(a n : K) * q ^ n‖) :=
-  RingHom.summable_norm_map_coeff_mul_pow (Int.castRingHom K)
-    (fun r ↦ by simpa using IsUltrametricDist.norm_zsmul_le (1 : K) r) a hq
+  summable_norm_mul_pow_of_norm_le
+    (fun n ↦ IsUltrametricDist.norm_intCast_le_norm_one (a n)) hq
 
 /-- An arbitrary integer-coefficient power series converges at a parameter of norm below one in
 a complete non-archimedean seminormed ring. -/
@@ -190,17 +165,16 @@ parameters have norm below one in a non-archimedean seminormed ring. -/
 theorem summable_norm_intCast_mul_pow_mul_pow {K : Type*} [SeminormedRing K]
     [IsUltrametricDist K] (c : ℕ × ℕ → ℤ) {u v : K} (hu : ‖u‖ < 1) (hv : ‖v‖ < 1) :
     Summable (fun p : ℕ × ℕ ↦ ‖(c p : K) * u ^ p.1 * v ^ p.2‖) := by
-  have hs := (summable_norm_intCast_mul_pow (fun _ ↦ 1) hu).mul_of_nonneg
-    (summable_norm_intCast_mul_pow (fun _ ↦ 1) hv) (fun _ ↦ norm_nonneg _)
+  have hs := (summable_norm_geometric_of_norm_lt_one hu).mul_of_nonneg
+    (summable_norm_geometric_of_norm_lt_one hv) (fun _ ↦ norm_nonneg _)
     (fun _ ↦ norm_nonneg _)
-  simp only [Int.cast_one, one_mul] at hs
   apply Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun p ↦ ?_) (hs.mul_left ‖(1 : K)‖)
   calc
     ‖(c p : K) * u ^ p.1 * v ^ p.2‖ ≤ ‖(c p : K) * u ^ p.1‖ * ‖v ^ p.2‖ := norm_mul_le _ _
     _ ≤ (‖(1 : K)‖ * ‖u ^ p.1‖) * ‖v ^ p.2‖ := by
       gcongr
       exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right
-        (by simpa using IsUltrametricDist.norm_zsmul_le (1 : K) (c p)) (norm_nonneg _))
+        (IsUltrametricDist.norm_intCast_le_norm_one (c p)) (norm_nonneg _))
     _ = ‖(1 : K)‖ * (‖u ^ p.1‖ * ‖v ^ p.2‖) := mul_assoc _ _ _
 
 /-- Evaluation of an integral formal power series at a parameter of norm below one in a complete
