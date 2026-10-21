@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
 -- Private: the orthogonal-basis and volume-element computations are used only inside proofs.
-import TauCeti.Algebra.Module.Basic
+import TauCeti.Algebra.CharP.Invertible
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
@@ -267,9 +267,10 @@ variable {S : Type*} [AddCommGroup S] [Module (CliffordAlgebra Q) S]
 theorem bivectorExterior_smul_eq_zero_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = -x) {ψ : S} (hψ : chirality Q o • ψ = ψ) :
     bivectorExterior Q x • ψ = 0 := by
-  -- `2` is a unit of the real Clifford algebra, so a spinor equal to its negative is zero.
-  refine TauCeti.eq_zero_of_eq_neg_of_isUnit_two (R := CliffordAlgebra Q)
-    (map_ofNat (algebraMap ℝ (CliffordAlgebra Q)) 2 ▸ (isUnit_of_invertible _).map _) ?_
+  -- `2` is invertible in the real Clifford algebra, so a spinor equal to its negative is zero.
+  let : Invertible (2 : CliffordAlgebra Q) :=
+    (Invertible.map (algebraMap ℝ (CliffordAlgebra Q)) 2).copy 2 (map_ofNat _ 2).symm
+  refine TauCeti.eq_zero_of_eq_neg_of_invertible_two (R := CliffordAlgebra Q) ?_
   conv_lhs => rw [← hψ, smul_smul, bivectorExterior_mul_chirality_of_hodgeStar_eq_neg o hQ hkl hx]
   rw [neg_smul]
 
@@ -278,9 +279,10 @@ theorem bivectorExterior_smul_eq_zero_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank
 theorem bivectorExterior_smul_eq_zero_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = x) {ψ : S} (hψ : chirality Q o • ψ = -ψ) :
     bivectorExterior Q x • ψ = 0 := by
-  -- `2` is a unit of the real Clifford algebra, so a spinor equal to its negative is zero.
-  refine TauCeti.eq_zero_of_eq_neg_of_isUnit_two (R := CliffordAlgebra Q)
-    (map_ofNat (algebraMap ℝ (CliffordAlgebra Q)) 2 ▸ (isUnit_of_invertible _).map _) ?_
+  -- `2` is invertible in the real Clifford algebra, so a spinor equal to its negative is zero.
+  let : Invertible (2 : CliffordAlgebra Q) :=
+    (Invertible.map (algebraMap ℝ (CliffordAlgebra Q)) 2).copy 2 (map_ofNat _ 2).symm
+  refine TauCeti.eq_zero_of_eq_neg_of_invertible_two (R := CliffordAlgebra Q) ?_
   conv_lhs => rw [← bivectorExterior_mul_chirality_of_hodgeStar_eq_self o hQ hkl hx, ← smul_smul,
     hψ, smul_neg]
 

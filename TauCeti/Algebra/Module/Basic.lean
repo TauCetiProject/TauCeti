@@ -23,9 +23,6 @@ The braid relation `TauCeti.smul_add_one_sub_smul_braid_relation` compares two w
 three values pairwise by affine combinations. It is the self-distributivity of the Alexander
 quandle, and gives the invariance of the Alexander module of a link diagram under the third
 Reidemeister move.
-
-Similarly, when `2` is a unit of the scalar ring, a vector equal to its negative is zero
-(`TauCeti.eq_zero_of_eq_neg_of_isUnit_two`): the equation says `2 • x = 0`.
 -/
 
 public section
@@ -39,14 +36,6 @@ theorem _root_.IsUnit.eq_of_eq_smul_add_one_sub_smul {R M : Type*} [Ring R] [Add
     u • (x - y) = x - (u • y + (1 - u) • x) := by rw [smul_sub, sub_smul, one_smul]; abel
     _ = 0 := by rw [← h, sub_self]
   exact sub_eq_zero.1 (hu.smul_eq_zero.1 h')
-
-/-- If `2` is a unit of the scalar ring, then a vector equal to its negative is zero. -/
-theorem eq_zero_of_eq_neg_of_isUnit_two {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    (h2 : IsUnit (2 : R)) {x : M} (h : x = -x) : x = 0 := by
-  refine h2.smul_eq_zero.1 ?_
-  rw [two_smul]
-  nth_rewrite 1 [h]
-  exact neg_add_cancel x
 
 /-- **The braid relation for affine combinations.** Three strands enter a triangle with values
 `a`, `b`, `c` and cross pairwise; at a crossing of two strands with entering values `x` and `y`,
