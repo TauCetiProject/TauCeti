@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Polynomial.Taylor
 public import TauCeti.RingTheory.PowerSeries.Entire.Division
-public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 
 /-!
 # Good zeros of entire power series
@@ -111,6 +110,14 @@ theorem evalAt_hasseDeriv_coe (p : Polynomial R) (j : ℕ) :
     (hasseDeriv j (p : R⟦X⟧)).evalAt a = (Polynomial.taylor a p).coeff j := by
   rw [hasseDeriv_coe, evalAt_coe, Polynomial.coe_aeval_eq_eval, Polynomial.taylor_coeff]
 
+/-- The series `(X - a)ʰ` has a good zero of order `h` at `a`. -/
+theorem isGoodZero_X_sub_C_pow : ((X - C a) ^ h : R⟦X⟧).IsGoodZero a h := by
+  have hP : ((X - C a) ^ h : R⟦X⟧) = ((Polynomial.X - Polynomial.C a) ^ h : Polynomial R) := by
+    simp
+  simp_rw [hP, isGoodZero_iff, hasseDeriv_coe, evalAt_coe, Polynomial.coe_aeval_eq_eval,
+    Polynomial.eval_hasseDeriv_X_sub_C_pow]
+  simp +contextual [Nat.ne_of_lt]
+
 /-- **Good zeros of polynomials.** Over a nontrivial ring, a polynomial `p` has a good zero of
 order `h` at `a` exactly when `h` is the multiplicity of `a` as a root of `p` and the quotient of
 `p` by `(X - a)ʰ` is a unit at `a`. -/
@@ -197,10 +204,6 @@ theorem IsEntire.isGoodZero_iff (hf : f.IsEntire) :
   refine ⟨fun hfa ↦ ?_, fun ⟨g, hg, hfg, hga⟩ ↦ hfg ▸ hg.isGoodZero_X_sub_C_pow_mul_iff.mpr hga⟩
   obtain ⟨g, hg, rfl⟩ := hf.exists_eq_X_sub_C_pow_mul hfa.1
   exact ⟨g, hg, rfl, hg.isGoodZero_X_sub_C_pow_mul_iff.mp hfa⟩
-
-/-- The series `(X - a)ʰ` has a good zero of order `h` at `a`. -/
-theorem isGoodZero_X_sub_C_pow : ((X - C a) ^ h : R⟦X⟧).IsGoodZero a h := by
-  simpa using (isEntire_one (R := R)).isGoodZero_X_sub_C_pow_mul_iff (a := a) (h := h)
 
 /-- **Orders of good zeros add.** If entire series `f` and `g` have good zeros of orders `h` and
 `k` at `a`, then `f * g` has a good zero of order `h + k` at `a`. -/
