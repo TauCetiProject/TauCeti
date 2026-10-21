@@ -232,6 +232,39 @@ namespace Flow.IsMaximum
 
 variable {cap : Assignment Q K} {s t : V} {f : Flow cap s t}
 
+omit [IsOrderedAddMonoid K] in
+/-- Submodularity of the capacity of the arrows leaving a set, as submodularity of the cut bound
+with zero lower bounds. -/
+private theorem isSubmodular_cutBound_zero
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) :
+    IsSubmodular (cutBound 0 cap) :=
+  funext (cutBound_zero_left cap) ▸ hsub
+
+/-- The minimum cuts for the capacity of the arrows leaving a set are those for the cut bound
+with zero lower bounds. -/
+private def minimizersCutBoundZero (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ)
+    (hsub' : IsSubmodular (cutBound 0 cap)) :
+    minimizers hsub {s} {t} ≃o minimizers hsub' {s} {t} where
+  toEquiv := Equiv.subtypeEquivRight fun S ↦ by
+    rw [mem_minimizers, mem_minimizers, funext (cutBound_zero_left cap)]
+  map_rel_iff' := Iff.rfl
+
+/-- `minimizersCutBoundZero` keeps each minimum cut; this holds by its definition through
+`Equiv.subtypeEquivRight`. -/
+private theorem coe_minimizersCutBoundZero
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ)
+    (hsub' : IsSubmodular (cutBound 0 cap)) (S : minimizers hsub {s} {t}) :
+    (minimizersCutBoundZero hsub hsub' S : Finset V) = S :=
+  rfl
+
+/-- The inverse of `minimizersCutBoundZero` keeps each minimum cut; this holds by its definition
+through `Equiv.subtypeEquivRight`. -/
+private theorem coe_minimizersCutBoundZero_symm
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ)
+    (hsub' : IsSubmodular (cutBound 0 cap)) (S : minimizers hsub' {s} {t}) :
+    ((minimizersCutBoundZero hsub hsub').symm S : Finset V) = S :=
+  rfl
+
 /-- **The poset of all minimum cuts for ordinary flows.** For a maximum ordinary `s`–`t` flow `f`
 between distinct terminals, the minimum cuts for the capacity of the arrows leaving a set,
 ordered by inclusion, are order isomorphic to the upper sets of free components of the
@@ -239,11 +272,31 @@ positive-capacity residual arrows, ordered by inclusion. -/
 noncomputable def minimumCutOrderIso (hst : s ≠ t) (hf : f.IsMaximum)
     (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) :
     minimizers hsub {s} {t} ≃o (UpperSet (Free (residualCapacity 0 cap f.toFun) s t))ᵒᵈ :=
-  have hcut : cutBound 0 cap = fun S ↦ arrowSum cap S Sᶜ := funext (cutBound_zero_left cap)
-  have hsub' : IsSubmodular (cutBound 0 cap) := hcut ▸ hsub
-  ({ toEquiv := Equiv.subtypeEquivRight fun S ↦ by rw [mem_minimizers, mem_minimizers, hcut]
-     map_rel_iff' := Iff.rfl } : minimizers hsub {s} {t} ≃o minimizers hsub' {s} {t}).trans
-    (((isMaximum_toBoundedFlow f).2 hf).minimumCutOrderIso hst hsub')
+  (minimizersCutBoundZero hsub (isSubmodular_cutBound_zero hsub)).trans
+    (((isMaximum_toBoundedFlow f).2 hf).minimumCutOrderIso hst (isSubmodular_cutBound_zero hsub))
+
+/-- The ordinary-flow isomorphism sends a minimum cut to the free components that the
+bounded-assignment isomorphism assigns to the same cut. -/
+theorem minimumCutOrderIso_apply (hst : s ≠ t) (hf : f.IsMaximum)
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ)
+    (hsub' : IsSubmodular (cutBound 0 cap)) (S : minimizers hsub {s} {t}) :
+    hf.minimumCutOrderIso hst hsub S =
+      ((isMaximum_toBoundedFlow f).2 hf).minimumCutOrderIso hst hsub'
+        ⟨S, by
+          rw [mem_minimizers, funext (cutBound_zero_left cap)]
+          exact (mem_minimizers hsub _ _).1 S.2⟩ := by
+  rw [minimumCutOrderIso, OrderIso.trans_apply]
+  exact congrArg _ (Subtype.ext (coe_minimizersCutBoundZero _ _ S))
+
+/-- The inverse ordinary-flow isomorphism sends an upper set of free components to the minimum cut
+that the inverse bounded-assignment isomorphism assigns to it. -/
+theorem coe_minimumCutOrderIso_symm (hst : s ≠ t) (hf : f.IsMaximum)
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ)
+    (hsub' : IsSubmodular (cutBound 0 cap))
+    (U : (UpperSet (Free (residualCapacity 0 cap f.toFun) s t))ᵒᵈ) :
+    ((hf.minimumCutOrderIso hst hsub).symm U : Finset V) =
+      ((((isMaximum_toBoundedFlow f).2 hf).minimumCutOrderIso hst hsub').symm U : Finset V) := by
+  rw [minimumCutOrderIso, OrderIso.symm_trans_apply, coe_minimizersCutBoundZero_symm]
 
 /-- A free component corresponds to a minimum cut `S` exactly when all its vertices lie in `S`. -/
 @[simp]
@@ -251,8 +304,9 @@ theorem mem_minimumCutOrderIso (hst : s ≠ t) (hf : f.IsMaximum)
     (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) (S : minimizers hsub {s} {t})
     {C : Free (residualCapacity 0 cap f.toFun) s t} :
     C ∈ ofDual (hf.minimumCutOrderIso hst hsub S) ↔
-      ∀ v, PositiveComponent.mk (residualCapacity 0 cap f.toFun) v = C.1 → v ∈ (S : Finset V) :=
-  Iff.rfl
+      ∀ v, PositiveComponent.mk (residualCapacity 0 cap f.toFun) v = C.1 → v ∈ (S : Finset V) := by
+  rw [minimumCutOrderIso_apply hst hf hsub (isSubmodular_cutBound_zero hsub),
+    BoundedFlow.IsMaximum.mem_minimumCutOrderIso]
 
 /-- The minimum cut of an upper set `U` of free components consists of the vertices positively
 reachable from the source and the vertices of the components in `U`. -/
@@ -262,9 +316,9 @@ theorem mem_minimumCutOrderIso_symm (hst : s ≠ t) (hf : f.IsMaximum)
     (U : (UpperSet (Free (residualCapacity 0 cap f.toFun) s t))ᵒᵈ) {v : V} :
     v ∈ ((hf.minimumCutOrderIso hst hsub).symm U : Finset V) ↔
       PositiveReachable (residualCapacity 0 cap f.toFun) s v ∨
-        ∃ C ∈ ofDual U, PositiveComponent.mk (residualCapacity 0 cap f.toFun) v = C.1 :=
-  BoundedFlow.IsMaximum.mem_minimumCutOrderIso_symm hst ((isMaximum_toBoundedFlow f).2 hf)
-    (funext (cutBound_zero_left cap) ▸ hsub) U
+        ∃ C ∈ ofDual U, PositiveComponent.mk (residualCapacity 0 cap f.toFun) v = C.1 := by
+  rw [coe_minimumCutOrderIso_symm hst hf hsub (isSubmodular_cutBound_zero hsub),
+    BoundedFlow.IsMaximum.mem_minimumCutOrderIso_symm]
 
 /-- The minimum cut is unique exactly when there are no free components of the positive-capacity
 residual arrows of a maximum ordinary `s`–`t` flow. -/
