@@ -14,7 +14,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Operations
 Mathlib's `AlgHom.equalizer f g` is the subalgebra of `A` on which two algebra maps
 `f g : A →ₐ[R] B` agree. Isomorphisms `eA : A ≃ₐ[R] A'` and `eB : B ≃ₐ[R] B'` transport `f` and
 `g` to maps `A' →ₐ[R] B'`, and `eA` restricts to an isomorphism between the two equalizers
-(`TauCeti.AlgHom.equalizerCongr`). This lets an equalizer be computed after replacing the source
+(`AlgEquiv.equalizerCongr`). This lets an equalizer be computed after replacing the source
 and the target by isomorphic models.
 
 The invariant subalgebra `FixedPoints.subalgebra R S G` of a monoid `G` acting on `S` is the
@@ -25,9 +25,9 @@ therefore pass to invariant subalgebras.
 
 public section
 
-namespace TauCeti.AlgHom
+namespace AlgEquiv
 
-open _root_.AlgHom
+open AlgHom
 
 variable {R A B A' B' : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Semiring A']
   [Semiring B'] [Algebra R A] [Algebra R B] [Algebra R A'] [Algebra R B']
@@ -50,7 +50,7 @@ theorem coe_equalizerCongr_apply (eA : A ≃ₐ[R] A') (eB : B ≃ₐ[R] B') (f 
     (x : equalizer f g) : (equalizerCongr eA eB f g x : A') = eA x := by
   simp [equalizerCongr]
 
-end TauCeti.AlgHom
+end AlgEquiv
 
 namespace TauCeti.FixedPoints
 

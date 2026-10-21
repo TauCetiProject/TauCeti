@@ -167,7 +167,7 @@ private theorem etale_and_finite_equalizer_pi {ι κ : Type*} [_root_.Finite ι]
     · exact .inl (by simpa [sub_eq_self] using hfactor)
   let eι := Algebra.TensorProduct.piScalarRight T T' T' ι
   let eκ := Algebra.TensorProduct.piScalarRight T T' T' κ
-  let e := TauCeti.AlgHom.equalizerCongr eι eκ (Algebra.TensorProduct.map (AlgHom.id T' T') φ)
+  let e := eι.equalizerCongr eκ (Algebra.TensorProduct.map (AlgHom.id T' T') φ)
     (Algebra.TensorProduct.map (AlgHom.id T' T') ψ)
   obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_of_entries
     ((eκ : (T' ⊗[T] (κ → T)) →ₐ[T'] (κ → T')).comp
@@ -189,7 +189,7 @@ private theorem etale_and_finite_equalizer_of_isFiniteSplit {A B : Type*} [CommR
     Algebra.Etale T (equalizer f g) ∧ Module.Finite T (equalizer f g) := by
   obtain ⟨m, ⟨eA⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T A
   obtain ⟨n, ⟨eB⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T B
-  let e := TauCeti.AlgHom.equalizerCongr eA eB f g
+  let e := eA.equalizerCongr eB f g
   obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_pi
     ((eB : B →ₐ[T] (Fin n → T)).comp (f.comp (eA.symm : (Fin m → T) →ₐ[T] A)))
     ((eB : B →ₐ[T] (Fin n → T)).comp (g.comp (eA.symm : (Fin m → T) →ₐ[T] A)))
