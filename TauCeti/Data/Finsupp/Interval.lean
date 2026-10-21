@@ -25,7 +25,7 @@ Since the boxes `Iic m` are finite, subtracting a fixed multi-index has finite f
 
 * `Finsupp.card_le_prod_of_forall_le`: `#s ≤ ∏ᵢ (rᵢ + 1)`.
 * `Finsupp.sum_le_prod_mul_of_forall_le`: `∑ m ∈ s, f m ≤ ∏ᵢ (rᵢ + 1) C` when `f ≤ C` on `s`.
-* `Finsupp.tendsto_sub_single_cofinite`: `n ↦ n - eᵢ` maps the cofinite filter into itself.
+* `Finsupp.tendsto_sub_cofinite`: `n ↦ n - d` maps the cofinite filter into itself.
 -/
 
 public section
@@ -66,12 +66,12 @@ namespace Finsupp
 
 open Filter
 
-/-- Subtracting `eᵢ` from multi-indices has finite fibres: if `n - eᵢ = m` then `n ≤ m + eᵢ`. -/
-theorem tendsto_sub_single_cofinite {σ : Type*} (i : σ) :
-    Tendsto (fun n : σ →₀ ℕ ↦ n - single i 1) cofinite cofinite := by
+/-- Subtracting a fixed multi-index `d` has finite fibres: if `n - d = m` then `n ≤ m + d`. -/
+theorem tendsto_sub_cofinite {σ : Type*} (d : σ →₀ ℕ) :
+    Tendsto (fun n : σ →₀ ℕ ↦ n - d) cofinite cofinite := by
   classical
   exact Tendsto.cofinite_of_finite_preimage_singleton fun m ↦
-    ((Set.finite_Iic (m + single i 1)).subset fun _ hn ↦
+    ((Set.finite_Iic (m + d)).subset fun _ hn ↦
       tsub_le_iff_right.1 (le_of_eq hn)).to_subtype
 
 end Finsupp

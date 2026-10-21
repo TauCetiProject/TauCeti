@@ -135,7 +135,7 @@ theorem IsRestricted.primitive (hc' : ∀ j, 0 ≤ c' j) (hle : ∀ j, c' j ≤ 
   obtain ⟨C, -, hC⟩ := exists_norm_coeff_primitive_mul_prod_le (K := K) c c' i hc' hle hlt
   refine squeeze_zero (fun n ↦ mul_nonneg (norm_nonneg _)
     (Finset.prod_nonneg fun j _ ↦ pow_nonneg (hc' j) _)) (hC f) ?_
-  simpa using (hf.comp (tendsto_sub_single_cofinite i)).const_mul C
+  simpa using (hf.comp (tendsto_sub_cofinite (single i 1))).const_mul C
 
 end NormedField
 
