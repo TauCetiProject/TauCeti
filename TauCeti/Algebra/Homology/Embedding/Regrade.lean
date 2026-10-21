@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Homology.CochainComplexOpposite
 public import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.Tactic.Ring
-public import TauCeti.Algebra.Homology.Embedding.RestrictionHomotopy
 
 /-!
 # Regrading a chain complex as a cochain complex
@@ -42,9 +41,11 @@ of the regraded complex is the homology of `K` in degree `n - k`.
 * `ChainComplex.regradeEquivalence`: the equivalence of categories
   `ChainComplex C ℤ ≌ CochainComplex C ℤ` given by `C^k = K_(n-k)` and `d_C = d_K`.
 * `ChainComplex.regradeHomologyIso`: the homology of the regraded complex in degree `k` is the
-  homology of `K` in degree `n - k`, naturally in `K` (`regradeHomologyIso_hom_naturality`).
+  homology of `K` in degree `n - k`, naturally in `K` (`regradeHomologyIso_hom_naturality`), and
+  compatibly with the cycles and opcycles of both complexes.
 * `ChainComplex.regradeIsoShift`: the regrading is isomorphic to the composite of Mathlib's
-  `cochainComplexEquivalence` with the shift by `-n`, through the signs `(-1)^(n k)`.
+  `cochainComplexEquivalence` with the shift by `-n`, through the signs `(-1)^(n k)`
+  (`regradeIsoShift_hom_app_f`, `regradeIsoShift_inv_app_f`).
 
 ## References
 
@@ -99,7 +100,9 @@ section HasZeroMorphisms
 variable (C : Type*) [Category* C] [HasZeroMorphisms C] (n : ℤ)
 
 /-- The equivalence of categories `ChainComplex C ℤ ≌ CochainComplex C ℤ` regrading a chain
-complex `K` into the cochain complex with `C^k = K_(n-k)` and the same differential. -/
+complex `K` into the cochain complex with `C^k = K_(n-k)` and the same differential. Its body is
+exposed so that the regraded complex has `C^k = K_(n-k)` definitionally. -/
+@[expose]
 noncomputable def regradeEquivalence : ChainComplex C ℤ ≌ CochainComplex C ℤ where
   functor := (embeddingUpIntDownIntSub n).restrictionFunctor C
   inverse := (embeddingDownIntUpIntSub n).restrictionFunctor C
@@ -111,11 +114,8 @@ noncomputable def regradeEquivalence : ChainComplex C ℤ ≌ CochainComplex C �
     (fun φ ↦ by ext k; exact XIsoOfEq_hom_naturality φ (by simp))
   functor_unitIso_comp K := by
     ext k
-    -- In degree `k` both components are identifications `K.X (n - k) ≅ K.X (n - (n - (n - k)))`
-    -- of terms of `K` along equal indices.
-    have hk : (K.XIsoOfEq (show n - k = n - (n - (n - k)) by omega)).hom ≫
-        (K.XIsoOfEq (show n - (n - (n - k)) = n - k by omega)).hom = 𝟙 _ := by simp
-    exact hk
+    dsimp [Hom.isoOfComponents]
+    exact (K.XIsoOfEq_hom_comp_XIsoOfEq_hom (by simp) (by simp)).trans rfl
 
 /-- The regrading functor is the restriction along `k ↦ n - k`. -/
 @[simp] theorem regradeEquivalence_functor :
@@ -143,6 +143,49 @@ noncomputable def regradeHomologyIso (K : ChainComplex C ℤ) (k : ℤ) [K.HasHo
     (i' := n - (k - 1)) (j' := n - k) (k' := n - (k + 1)) (by simp) (by simp)
     (by simp) (by simp; omega) (by simp; omega)
 
+/-- Under `regradeHomologyIso`, the homology class of a cycle of the regraded complex is the
+homology class of the corresponding cycle of `K`. -/
+@[reassoc (attr := simp)]
+theorem homologyπ_regradeHomologyIso_hom (K : ChainComplex C ℤ) (k : ℤ)
+    [K.HasHomology (n - k)] :
+    (K.restriction (embeddingUpIntDownIntSub n)).homologyπ k ≫ (regradeHomologyIso n K k).hom =
+      (K.restrictionCyclesIso _ k (k + 1) (by simp) (by simp) (by simp)
+        (k' := n - (k + 1)) (by simp; omega)).hom ≫ K.homologyπ (n - k) :=
+  K.homologyπ_restrictionHomologyIso_hom _ _ _ _ _ _ _ _ _ _ _
+
+/-- The inverse of `regradeHomologyIso` sends the homology class of a cycle of `K` to the homology
+class of the corresponding cycle of the regraded complex. -/
+@[reassoc (attr := simp)]
+theorem homologyπ_regradeHomologyIso_inv (K : ChainComplex C ℤ) (k : ℤ)
+    [K.HasHomology (n - k)] :
+    K.homologyπ (n - k) ≫ (regradeHomologyIso n K k).inv =
+      (K.restrictionCyclesIso _ k (k + 1) (by simp) (by simp) (by simp)
+        (k' := n - (k + 1)) (by simp; omega)).inv ≫
+        (K.restriction (embeddingUpIntDownIntSub n)).homologyπ k :=
+  K.homologyπ_restrictionHomologyIso_inv _ _ _ _ _ _ _ _ _ _ _
+
+/-- The comparison `regradeHomologyIso` is compatible with the inclusions of homology into
+opcycles. -/
+@[reassoc (attr := simp)]
+theorem regradeHomologyIso_hom_homologyι (K : ChainComplex C ℤ) (k : ℤ)
+    [K.HasHomology (n - k)] :
+    (regradeHomologyIso n K k).hom ≫ K.homologyι (n - k) =
+      (K.restriction (embeddingUpIntDownIntSub n)).homologyι k ≫
+        (K.restrictionOpcyclesIso _ (k - 1) k (by simp) (i' := n - (k - 1)) (by simp) (by simp)
+          (by simp; omega)).hom :=
+  K.restrictionHomologyIso_hom_homologyι _ _ _ _ _ _ _ _ _ _ _
+
+/-- The inverse of `regradeHomologyIso` is compatible with the inclusions of homology into
+opcycles. -/
+@[reassoc (attr := simp)]
+theorem regradeHomologyIso_inv_homologyι (K : ChainComplex C ℤ) (k : ℤ)
+    [K.HasHomology (n - k)] :
+    (regradeHomologyIso n K k).inv ≫ (K.restriction (embeddingUpIntDownIntSub n)).homologyι k =
+      K.homologyι (n - k) ≫
+        (K.restrictionOpcyclesIso _ (k - 1) k (by simp) (i' := n - (k - 1)) (by simp) (by simp)
+          (by simp; omega)).inv :=
+  K.restrictionHomologyIso_inv_homologyι _ _ _ _ _ _ _ _ _ _ _
+
 /-- The identification of the homology of the regraded complex is natural. -/
 @[reassoc]
 theorem regradeHomologyIso_hom_naturality {K L : ChainComplex C ℤ} (φ : K ⟶ L) (k : ℤ)
@@ -151,8 +194,8 @@ theorem regradeHomologyIso_hom_naturality {K L : ChainComplex C ℤ} (φ : K ⟶
         (regradeHomologyIso n L k).hom =
       (regradeHomologyIso n K k).hom ≫ homologyMap φ (n - k) := by
   rw [← cancel_mono (L.homologyι (n - k))]
-  simp only [regradeHomologyIso, Category.assoc, restrictionHomologyIso_hom_homologyι,
-    homologyι_naturality, homologyι_naturality_assoc, restrictionHomologyIso_hom_homologyι_assoc]
+  simp only [Category.assoc, regradeHomologyIso_hom_homologyι, homologyι_naturality,
+    homologyι_naturality_assoc, regradeHomologyIso_hom_homologyι_assoc]
   congr 1
   rw [← cancel_epi ((K.restriction (embeddingUpIntDownIntSub n)).pOpcycles k),
     p_opcyclesMap_assoc,
@@ -197,6 +240,23 @@ noncomputable def regradeIsoShift :
         simp only [Preadditive.smul_iso_hom, Units.smul_def, Preadditive.zsmul_comp,
           Preadditive.comp_zsmul, XIsoOfEq_hom_naturality]
       exact hφ)
+
+/-- In degree `k`, the comparison `regradeIsoShift` is the identification `K_(n-k) = K_(n-k)`
+twisted by the sign `(-1)^(k n)`. -/
+@[simp]
+theorem regradeIsoShift_hom_app_f (K : ChainComplex C ℤ) (k : ℤ) :
+    ((regradeIsoShift C n).hom.app K).f k =
+      (k * n).negOnePow • (K.XIsoOfEq (show n - k = -(k + -n) by omega)).hom :=
+  (rfl)
+
+/-- In degree `k`, the inverse of `regradeIsoShift` is the identification `K_(n-k) = K_(n-k)`
+twisted by the sign `(-1)^(k n)`. -/
+@[simp]
+theorem regradeIsoShift_inv_app_f (K : ChainComplex C ℤ) (k : ℤ) :
+    ((regradeIsoShift C n).inv.app K).f k =
+      (k * n).negOnePow • (K.XIsoOfEq (show n - k = -(k + -n) by omega)).inv := by
+  rw [← Int.units_inv_eq_self (k * n).negOnePow]
+  rfl
 
 end Preadditive
 
