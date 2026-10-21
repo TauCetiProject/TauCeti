@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
 -- Private: the orthogonal-basis and volume-element computations are used only inside proofs.
+import TauCeti.Algebra.Module.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
@@ -45,21 +46,21 @@ endomorphisms of `W⁺`.
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.chirality Q o`: the chirality element `Γ` of `CliffordAlgebra Q`.
+* `CliffordAlgebra.chirality Q o`: the chirality element `Γ` of `CliffordAlgebra Q`.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.chirality_eq`: `Γ = -c(e₁) c(e₂) c(e₃) c(e₄)` for every positively
+* `CliffordAlgebra.chirality_eq`: `Γ = -c(e₁) c(e₂) c(e₃) c(e₄)` for every positively
   oriented orthonormal basis `e`.
-* `TauCeti.SeibergWitten.chirality_mul_self`: `Γ² = 1`.
-* `TauCeti.SeibergWitten.chirality_mul_ι`: `Γ c(v) = -c(v) Γ`.
-* `TauCeti.SeibergWitten.reverse_chirality`, `TauCeti.SeibergWitten.involute_chirality`: `Γ` is
+* `CliffordAlgebra.chirality_mul_self`: `Γ² = 1`.
+* `CliffordAlgebra.chirality_mul_ι`: `Γ c(v) = -c(v) Γ`.
+* `CliffordAlgebra.reverse_chirality`, `CliffordAlgebra.involute_chirality`: `Γ` is
   fixed by reversal and by the grade involution.
-* `TauCeti.SeibergWitten.commute_chirality_bivectorExterior`: two-forms commute with `Γ`.
-* `TauCeti.SeibergWitten.bivectorExterior_hodgeStar`: the self-duality relation
+* `CliffordAlgebra.commute_chirality_bivectorExterior`: two-forms commute with `Γ`.
+* `CliffordAlgebra.bivectorExterior_hodgeStar`: the self-duality relation
   `c₂(⋆α) = Γ c₂(α)`.
-* `TauCeti.SeibergWitten.bivectorExterior_smul_eq_zero_of_hodgeStar_eq_neg` and
-  `TauCeti.SeibergWitten.bivectorExterior_smul_eq_zero_of_hodgeStar_eq_self`: anti-self-dual
+* `CliffordAlgebra.bivectorExterior_smul_eq_zero_of_hodgeStar_eq_neg` and
+  `CliffordAlgebra.bivectorExterior_smul_eq_zero_of_hodgeStar_eq_self`: anti-self-dual
   two-forms annihilate `W⁺`, and self-dual two-forms annihilate `W⁻`.
 
 ## References
@@ -73,22 +74,12 @@ public section
 
 noncomputable section
 
-namespace TauCeti.SeibergWitten
+namespace CliffordAlgebra
 
-open Module CliffordAlgebra exteriorPower Set
+open Module exteriorPower Set
 open scoped RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
-
-/-- In a module over a real algebra, a vector equal to its negative is zero: act by `2⁻¹` on
-`ψ + ψ = 0`. -/
-private theorem eq_zero_of_eq_neg {A S : Type*} [Ring A] [Algebra ℝ A] [AddCommGroup S]
-    [Module A S] {ψ : S} (h : ψ = -ψ) : ψ = 0 := by
-  have h2 : algebraMap ℝ A 2 • ψ = 0 := by
-    rw [map_ofNat, two_smul]
-    nth_rewrite 1 [h]
-    exact neg_add_cancel ψ
-  simpa [smul_smul, ← map_mul] using congrArg (algebraMap ℝ A 2⁻¹ • ·) h2
 
 variable [FiniteDimensional ℝ V] [Fact (finrank ℝ V = 4)]
 
@@ -97,11 +88,11 @@ variable (Q) (o : Orientation ℝ V (Fin 4))
 /-- The chirality element `Γ` of the Clifford algebra of an oriented four-dimensional real inner
 product space: minus the quantization of the unit volume element of `⋀⁴ V`. When
 `Q v = -‖v‖²`, it equals `-c(e₁) c(e₂) c(e₃) c(e₄)` for every positively oriented orthonormal
-basis `e` (`TauCeti.SeibergWitten.chirality_eq`). -/
+basis `e` (`CliffordAlgebra.chirality_eq`). -/
 def chirality : CliffordAlgebra Q :=
   -(equivExterior Q).symm (o.volumeEquiv.symm 1 : ExteriorAlgebra ℝ V)
 
-/-- Unfolding lemma for `TauCeti.SeibergWitten.chirality`. -/
+/-- Unfolding lemma for `CliffordAlgebra.chirality`. -/
 theorem chirality_def :
     chirality Q o = -(equivExterior Q).symm (o.volumeEquiv.symm 1 : ExteriorAlgebra ℝ V) :=
   (rfl)
@@ -269,7 +260,9 @@ variable {S : Type*} [AddCommGroup S] [Module (CliffordAlgebra Q) S]
 theorem bivectorExterior_smul_eq_zero_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = -x) {ψ : S} (hψ : chirality Q o • ψ = ψ) :
     bivectorExterior Q x • ψ = 0 := by
-  refine eq_zero_of_eq_neg (A := CliffordAlgebra Q) ?_
+  -- `2` is a unit of the real Clifford algebra, so a spinor equal to its negative is zero.
+  refine TauCeti.eq_zero_of_eq_neg_of_isUnit_two (R := CliffordAlgebra Q)
+    (map_ofNat (algebraMap ℝ (CliffordAlgebra Q)) 2 ▸ (isUnit_of_invertible _).map _) ?_
   conv_lhs => rw [← hψ, smul_smul, bivectorExterior_mul_chirality_of_hodgeStar_eq_neg o hQ hkl hx]
   rw [neg_smul]
 
@@ -278,10 +271,12 @@ theorem bivectorExterior_smul_eq_zero_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank
 theorem bivectorExterior_smul_eq_zero_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = x) {ψ : S} (hψ : chirality Q o • ψ = -ψ) :
     bivectorExterior Q x • ψ = 0 := by
-  refine eq_zero_of_eq_neg (A := CliffordAlgebra Q) ?_
+  -- `2` is a unit of the real Clifford algebra, so a spinor equal to its negative is zero.
+  refine TauCeti.eq_zero_of_eq_neg_of_isUnit_two (R := CliffordAlgebra Q)
+    (map_ofNat (algebraMap ℝ (CliffordAlgebra Q)) 2 ▸ (isUnit_of_invertible _).map _) ?_
   conv_lhs => rw [← bivectorExterior_mul_chirality_of_hodgeStar_eq_self o hQ hkl hx, ← smul_smul,
     hψ, smul_neg]
 
 end Form
 
-end TauCeti.SeibergWitten
+end CliffordAlgebra
