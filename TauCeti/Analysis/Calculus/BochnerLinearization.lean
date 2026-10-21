@@ -159,7 +159,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The derivative of a Bochner average at a fixed point `x`: if every `y ↦ g • y` has strict
 derivative `L g` at `x` and `c` has strict derivative `c'` at `x`, then the average has strict
-derivative the average `|G|⁻¹ • ∑ g, ρ g⁻¹ ∘ c' ∘ L g` of the conjugates of `c'`. -/
+derivative the average `|G|⁻¹ • ∑ g, ρ g⁻¹ ∘ c' ∘ L g` of the transformed
+derivatives of `c'`. -/
 theorem hasStrictFDerivAt_bochnerAverage {L : G → E →L[𝕜] E} {c' : E →L[𝕜] F}
     (hx : x ∈ fixedPoints G E) (hL : ∀ g : G, HasStrictFDerivAt (fun y : E ↦ g • y) (L g) x)
     (hc : HasStrictFDerivAt c c' x) :
@@ -209,13 +210,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [MulAction G E] [ContinuousConstSMul G E]
   {ρ : G →* (E →L[𝕜] E)} {c : E → E} {x : E}
 
-omit [CompleteSpace E] [ContinuousConstSMul G E] in
-private theorem hasStrictFDerivAt_bochnerAverage_refl (hx : x ∈ fixedPoints G E)
-    (hρ : ∀ g : G, HasStrictFDerivAt (fun y : E ↦ g • y) (ρ g) x)
-    (hc : HasStrictFDerivAt c (ContinuousLinearMap.id 𝕜 E) x) :
-    HasStrictFDerivAt (bochnerAverage ρ c) ((ContinuousLinearEquiv.refl 𝕜 E : E →L[𝕜] E)) x := by
-  simpa using hasStrictFDerivAt_bochnerAverage_id hx hρ hc
-
 /-- The **Bochner chart** at a fixed point `x` of a finite group action. Here `ρ g` is the strict
 derivative at `x` of `y ↦ g • y` and `c` has strict derivative the identity at `x`. The chart is
 the Bochner average of `c` (`TauCeti.coe_bochnerChart`), restricted from the inverse function
@@ -225,7 +219,8 @@ action to the linear action `ρ` (`TauCeti.bochnerChart_smul`, `TauCeti.bochnerC
 def bochnerChart (hx : x ∈ fixedPoints G E)
     (hρ : ∀ g : G, HasStrictFDerivAt (fun y : E ↦ g • y) (ρ g) x)
     (hc : HasStrictFDerivAt c (ContinuousLinearMap.id 𝕜 E) x) : OpenPartialHomeomorph E E :=
-  let e := (hasStrictFDerivAt_bochnerAverage_refl hx hρ hc).toOpenPartialHomeomorph _
+  let e := (hasStrictFDerivAt_bochnerAverage_id hx hρ hc).toOpenPartialHomeomorph
+    (f' := .refl 𝕜 E) _
   e.restrOpen (⋂ g : G, (fun y : E ↦ g • y) ⁻¹' e.source)
     (isOpen_iInter_of_finite fun g ↦ e.open_source.preimage (continuous_const_smul g))
 
@@ -234,18 +229,19 @@ variable (hx : x ∈ fixedPoints G E) (hρ : ∀ g : G, HasStrictFDerivAt (fun y
 
 /-- As a map, the Bochner chart is the Bochner average. -/
 @[simp]
-theorem coe_bochnerChart : ⇑(bochnerChart hx hρ hc) = bochnerAverage ρ c := by
-  simp [bochnerChart]
+theorem coe_bochnerChart : ⇑(bochnerChart hx hρ hc) = bochnerAverage ρ c :=
+  (rfl)
 
 private theorem coe_bochnerChart_symm :
     ⇑(bochnerChart hx hρ hc).symm =
-      ((hasStrictFDerivAt_bochnerAverage_refl hx hρ hc).toOpenPartialHomeomorph _).symm := by
+      ((hasStrictFDerivAt_bochnerAverage_id hx hρ hc).toOpenPartialHomeomorph
+        (f' := .refl 𝕜 E) _).symm := by
   simp [bochnerChart]
 
 private theorem mem_bochnerChart_source_iff {y : E} :
     y ∈ (bochnerChart hx hρ hc).source ↔
-      ∀ g : G, g • y ∈ ((hasStrictFDerivAt_bochnerAverage_refl hx hρ hc).toOpenPartialHomeomorph
-        _).source := by
+      ∀ g : G, g • y ∈ ((hasStrictFDerivAt_bochnerAverage_id hx hρ hc).toOpenPartialHomeomorph
+        (f' := .refl 𝕜 E) _).source := by
   simp only [bochnerChart, OpenPartialHomeomorph.restrOpen_source, Set.mem_inter_iff,
     Set.mem_iInter, Set.mem_preimage, and_iff_right_iff_imp]
   intro h
@@ -301,8 +297,8 @@ theorem contDiffOn_bochnerChart_symm {n : WithTop ℕ∞}
   intro z hz
   have hy : e.symm z ∈ e.source := e.map_target hz
   -- the target of `e` lies in the target of the inverse function theorem's homeomorphism
-  have hz₀ : z ∈ ((hasStrictFDerivAt_bochnerAverage_refl hx hρ hc).toOpenPartialHomeomorph
-      _).target := by
+  have hz₀ : z ∈ ((hasStrictFDerivAt_bochnerAverage_id hx hρ hc).toOpenPartialHomeomorph
+      (f' := .refl 𝕜 E) _).target := by
     simp only [e, bochnerChart] at hz
     exact hz.1
   rw [coe_bochnerChart_symm hx hρ hc]
