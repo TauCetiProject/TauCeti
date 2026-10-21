@@ -112,6 +112,7 @@ private theorem isNormMulUnit_one_sub (hx : ‖x‖ < 1) : IsNormMulUnit (1 - x)
 
 /-- **Ultrametric Neumann estimate.** In a normed ring with `‖1‖ = 1`, convergent geometric
 series and an ultrametric norm, the inverse of `1 - x` has norm one whenever `‖x‖ < 1`. -/
+@[simp]
 theorem norm_inverse_one_sub (hx : ‖x‖ < 1) : ‖Ring.inverse (1 - x)‖ = 1 := by
   obtain ⟨u, hu⟩ := (isNormMulUnit_one_sub hx).isUnit
   have h1 : ‖(u : R)‖ = 1 := by
@@ -122,6 +123,7 @@ theorem norm_inverse_one_sub (hx : ‖x‖ < 1) : ‖Ring.inverse (1 - x)‖ = 1
 
 /-- **Ultrametric Neumann estimate.** In a normed ring with `‖1‖ = 1`, convergent geometric
 series and an ultrametric norm, `‖(1 - x)⁻¹ - 1‖ = ‖x‖` whenever `‖x‖ < 1`. -/
+@[simp]
 theorem norm_inverse_one_sub_sub_one (hx : ‖x‖ < 1) : ‖Ring.inverse (1 - x) - 1‖ = ‖x‖ := by
   have h1 := norm_inverse_one_sub hx
   obtain ⟨u, hu⟩ := (isNormMulUnit_one_sub hx).isUnit

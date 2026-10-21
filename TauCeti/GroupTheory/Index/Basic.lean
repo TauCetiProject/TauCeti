@@ -48,6 +48,8 @@ centre gives the `Γ.withCenter` readings.
   `K` has finite index relative to `f(H)`.
 * `Subgroup.finiteIndex_of_map_eq`: the image of a finite-index subgroup under a surjective
   homomorphism has finite index.
+* `Subgroup.finiteIndex_map_mk'`: the instance making the image of a finite-index subgroup in a
+  quotient group finite-index.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with a homomorphism of finite-index range.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
@@ -257,6 +259,13 @@ theorem finiteIndex_of_map_eq {G N : Type*} [Group G] [Group N] (H : Subgroup G)
     (f : G →* N) (hf : Function.Surjective f) {K : Subgroup N} (h : H.map f = K) :
     K.FiniteIndex :=
   ⟨h ▸ ne_zero_of_dvd_ne_zero FiniteIndex.index_ne_zero (H.index_map_dvd hf)⟩
+
+/-- The image of a finite-index subgroup in a quotient group has finite index. -/
+@[to_additive /-- The image of a finite-index additive subgroup in a quotient additive group has
+finite index. -/]
+instance finiteIndex_map_mk' {G : Type*} [Group G] (H : Subgroup G) [H.FiniteIndex]
+    (N : Subgroup G) [N.Normal] : (H.map (QuotientGroup.mk' N)).FiniteIndex :=
+  .map_of_surjective _ (QuotientGroup.mk'_surjective N)
 
 /-- `Γ` with the centre of the ambient group adjoined. For `Γ ≤ SL(2, ℤ)` the centre is
 `{±I}`, which acts trivially on `ℍ`; it is the cosets of `Γ·{±I}` — not those of `Γ` itself —

@@ -25,6 +25,8 @@ for any topology on the coefficient ring.
 
 * `isEmbedding_psl2zToPSL2R`: the natural injection from the integral projective special linear
   group to the real one is a topological embedding.
+* `Subgroup.discreteTopology_map_sl2zToPSL2R`: the image in `PSL(2, ℝ)` of any subgroup of
+  `SL(2, ℤ)` is discrete.
 * `Matrix.ProjectiveSpecialLinearGroup.continuous_upperRightHom`: projective translations depend
   continuously on their parameter.
 -/
@@ -77,6 +79,13 @@ instance : DiscreteTopology psl2zToPSL2R.range := by
   exact isEmbedding_psl2zToPSL2R.toHomeomorph.discreteTopology
 
 end TauCeti
+
+/-- The image in `PSL(2, ℝ)` of a subgroup of `SL(2, ℤ)` is discrete, as a subgroup of the
+discrete image of `PSL(2, ℤ)`. -/
+instance Subgroup.discreteTopology_map_sl2zToPSL2R (H : Subgroup SL(2, ℤ)) :
+    DiscreteTopology (H.map sl2zToPSL2R) :=
+  .of_subset (inferInstance : DiscreteTopology psl2zToPSL2R.range)
+    H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 

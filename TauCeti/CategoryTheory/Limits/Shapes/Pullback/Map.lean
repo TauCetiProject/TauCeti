@@ -15,6 +15,13 @@ changes along `f : S' ⟶ S`. Then the fibre product `X' ×_{S'} Y'` is the base
 `X ×_S Y` along `f`, through the morphism `pullback.map` induced by `X' ⟶ X` and `Y' ⟶ Y`
 (`CategoryTheory.IsPullback.pullback_map`). In other words, base change preserves fibre
 products over the base.
+
+Fibre products over a common base also commute with each other: if `T` is the fibre product of
+`T₁` and `T₂` over `S`, and `X` that of `X₁` and `X₂`, then `T ×_S X` is the fibre product of
+`T₁ ×_S X₁` and `T₂ ×_S X₂` over `S`, through the morphisms `pullback.map` induced by the
+projections (`CategoryTheory.IsPullback.pullback_map_pullback_map`). This is the
+middle-four interchange of fibre products,
+`(T₁ ×_S T₂) ×_S (X₁ ×_S X₂) ≅ (T₁ ×_S X₁) ×_S (T₂ ×_S X₂)`.
 -/
 
 public section
@@ -40,5 +47,49 @@ theorem pullback_map [HasPullback pX pY] [HasPullback pX' pY']
       (IsPullback.of_hasPullback pX pY).flip
     simpa [hX.w] using (IsPullback.of_hasPullback pX' pY').flip.paste_horiz hY.flip
   exact (top.paste_vert hX.flip).flip
+
+section Interchange
+
+variable {T T₁ T₂ X₁ X₂ : C} {t : T ⟶ S} {t₁ : T₁ ⟶ S} {t₂ : T₂ ⟶ S} {x : X ⟶ S} {x₁ : X₁ ⟶ S}
+  {x₂ : X₂ ⟶ S} {p₁ : T ⟶ T₁} {p₂ : T ⟶ T₂} {q₁ : X ⟶ X₁} {q₂ : X ⟶ X₂}
+
+/-- **Fibre products commute with fibre products.** If `T` is the fibre product of `T₁` and `T₂`
+over `S`, and `X` is the fibre product of `X₁` and `X₂` over `S`, then `T ×_S X` is the fibre
+product of `T₁ ×_S X₁` and `T₂ ×_S X₂` over `S`, with the projections induced by those of `T` and
+`X`. -/
+theorem pullback_map_pullback_map [HasPullback t x] [HasPullback t₁ x₁] [HasPullback t₂ x₂]
+    (hT : IsPullback p₁ p₂ t₁ t₂) (hX : IsPullback q₁ q₂ x₁ x₂)
+    (ht₁ : p₁ ≫ t₁ = t) (ht₂ : p₂ ≫ t₂ = t) (hx₁ : q₁ ≫ x₁ = x) (hx₂ : q₂ ≫ x₂ = x) :
+    IsPullback (pullback.map t x t₁ x₁ p₁ q₁ (𝟙 S) (by simp [ht₁]) (by simp [hx₁]))
+      (pullback.map t x t₂ x₂ p₂ q₂ (𝟙 S) (by simp [ht₂]) (by simp [hx₂]))
+      (pullback.snd t₁ x₁ ≫ x₁) (pullback.snd t₂ x₂ ≫ x₂) := by
+  have hc₁ {W : C} (a : W ⟶ pullback t₁ x₁) :
+      a ≫ pullback.fst t₁ x₁ ≫ t₁ = a ≫ pullback.snd t₁ x₁ ≫ x₁ := by
+    rw [pullback.condition]
+  have hc₂ {W : C} (b : W ⟶ pullback t₂ x₂) :
+      b ≫ pullback.fst t₂ x₂ ≫ t₂ = b ≫ pullback.snd t₂ x₂ ≫ x₂ := by
+    rw [pullback.condition]
+  -- A cone over the two factor fibre products gives compatible maps to `T` and to `X`.
+  let lT (c : PullbackCone (pullback.snd t₁ x₁ ≫ x₁) (pullback.snd t₂ x₂ ≫ x₂)) : c.pt ⟶ T :=
+    hT.lift (c.fst ≫ pullback.fst _ _) (c.snd ≫ pullback.fst _ _) <| by
+      simpa only [Category.assoc, hc₁, hc₂] using c.condition
+  let lX (c : PullbackCone (pullback.snd t₁ x₁ ≫ x₁) (pullback.snd t₂ x₂ ≫ x₂)) : c.pt ⟶ X :=
+    hX.lift (c.fst ≫ pullback.snd _ _) (c.snd ≫ pullback.snd _ _) <| by
+      simpa only [Category.assoc] using c.condition
+  refine ⟨⟨by simp [hx₁, hx₂]⟩, ⟨PullbackCone.IsLimit.mk _
+    (fun c ↦ pullback.lift (lT c) (lX c) ?_) (fun c ↦ ?_) (fun c ↦ ?_) (fun c m h₁ h₂ ↦ ?_)⟩⟩
+  · rw [← ht₁, ← hx₁, hT.lift_fst_assoc, hX.lift_fst_assoc, Category.assoc, Category.assoc,
+      pullback.condition]
+  · apply pullback.hom_ext <;> simp [lT, lX]
+  · apply pullback.hom_ext <;> simp [lT, lX]
+  · apply pullback.hom_ext
+    · apply hT.hom_ext
+      · simpa [lT] using congrArg (· ≫ pullback.fst t₁ x₁) h₁
+      · simpa [lT] using congrArg (· ≫ pullback.fst t₂ x₂) h₂
+    · apply hX.hom_ext
+      · simpa [lX] using congrArg (· ≫ pullback.snd t₁ x₁) h₁
+      · simpa [lX] using congrArg (· ≫ pullback.snd t₂ x₂) h₂
+
+end Interchange
 
 end CategoryTheory.IsPullback

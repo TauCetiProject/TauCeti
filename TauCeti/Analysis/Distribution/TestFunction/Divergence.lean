@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Normed.Module.Trace
 import Mathlib.Analysis.InnerProductSpace.Trace
@@ -31,6 +31,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
   field from `Ω'` to a larger open set `Ω`.
 * `TestFunction.divergenceCLM_apply_eq_sum`: in an orthonormal basis `b`, it is the sum of the
   derivatives of the components `⟪b i, φ⟫` in the directions `b i`.
+* `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a translated test vector field
+  is the translate of its divergence.
 -/
 
 public section
@@ -83,3 +85,21 @@ theorem divergenceCLM_apply_eq_sum {ι : Type*} [Fintype ι] (b : OrthonormalBas
 end InnerProductSpace
 
 end TestFunction
+
+namespace TauCeti
+
+open Set TestFunction TopologicalSpace
+open scoped Distributions
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {Ω V : Opens E} {h : E}
+
+/-- The divergence of a translated test vector field is the translate of its divergence. -/
+@[simp]
+theorem divergenceCLM_translateTestFunction (hVO : MapsTo (· + h) V Ω) (φ : 𝓓(V, E)) :
+    divergenceCLM (translateTestFunction hVO φ) =
+      translateTestFunction hVO (divergenceCLM φ) := by
+  ext y
+  simp only [divergenceCLM_apply, fderiv_translateTestFunction, translateTestFunction_apply]
+
+end TauCeti

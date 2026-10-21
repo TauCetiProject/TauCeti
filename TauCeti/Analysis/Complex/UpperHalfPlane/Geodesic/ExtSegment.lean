@@ -38,6 +38,9 @@ is strict unless the supporting lines coincide
 * `TauCeti.UpperHalfPlane.geodesicLine_image_Ici` and
   `TauCeti.UpperHalfPlane.geodesicLine_image_Iic`: half-lines in a geodesic parametrization are
   the canonical extended geodesic segments with one ideal endpoint.
+* `TauCeti.UpperHalfPlane.IsGeodesicFromTo.left_eq_of_extGeodesicSegment_eq` and
+  `TauCeti.UpperHalfPlane.IsGeodesicFromTo.right_eq_of_extGeodesicSegment_eq`: along one oriented
+  geodesic line, the piece determines its two endpoints.
 * `TauCeti.UpperHalfPlane.extGeodesicSegment_subset_closure_leftHalfPlane`: closed
   half-planes are convex.
 
@@ -201,6 +204,78 @@ theorem range_geodesicLine_eq_extGeodesicSegment (g : PSL(2, ℝ)) :
   rw [extGeodesicSegment_inr_inr hne]
   exact ((isGeodesicFromTo_geodesicFromTo (Sum.inr_injective.ne hne)).range_geodesicLine_eq
     (isGeodesicFromTo_inr_inr.mpr ⟨rfl, rfl⟩))
+
+/-! ### Endpoints of an extended segment along an oriented line -/
+
+/-- Along a geodesic line running from a point of `ℍ`, the points of the extended segment occur
+at or after that point. -/
+private theorem exists_le_of_mem_extGeodesicSegment {g : PSL(2, ℝ)} {s : ℝ}
+    {q : ℍ ⊕ OnePoint ℝ} (hg : IsGeodesicFromTo g (.inl (geodesicLine g s)) q) {x : ℍ}
+    (hx : x ∈ extGeodesicSegment (.inl (geodesicLine g s)) q) :
+    ∃ u, s ≤ u ∧ geodesicLine g u = x := by
+  rcases q with w | η
+  · obtain ⟨s', t, hst, hs', rfl⟩ := isGeodesicFromTo_inl_inl.1 hg
+    rw [geodesicLine_injective g hs'] at hst
+    rw [extGeodesicSegment_inl_inl, geodesicSegment_geodesicLine, Set.uIcc_of_le hst.le] at hx
+    obtain ⟨u, hu, rfl⟩ := hx
+    exact ⟨u, hu.1, rfl⟩
+  · obtain rfl := hg.smul_infty_eq
+    rw [← geodesicLine_image_Ici] at hx
+    obtain ⟨u, hu, rfl⟩ := hx
+    exact ⟨u, hu, rfl⟩
+
+/-- An extended segment from an ideal point contains a backward half of every geodesic line
+running along it. -/
+private theorem exists_image_Iic_subset_extGeodesicSegment {g : PSL(2, ℝ)} {ξ : OnePoint ℝ}
+    {q : ℍ ⊕ OnePoint ℝ} (hg : IsGeodesicFromTo g (.inr ξ) q) :
+    ∃ t, geodesicLine g '' Set.Iic t ⊆ extGeodesicSegment (.inr ξ) q := by
+  obtain rfl := hg.smul_zero_eq
+  rcases q with w | η
+  · obtain ⟨t, rfl⟩ := hg.right_mem_range
+    exact ⟨t, (geodesicLine_image_Iic g t).subset⟩
+  · obtain rfl := hg.smul_infty_eq
+    rw [← range_geodesicLine_eq_extGeodesicSegment]
+    exact ⟨0, Set.image_subset_range _ _⟩
+
+/-- The starting point of an extended geodesic segment is determined by the segment, among
+starting points of segments along one oriented geodesic line. -/
+theorem IsGeodesicFromTo.left_eq_of_extGeodesicSegment_eq {g : PSL(2, ℝ)}
+    {p q p' q' : ℍ ⊕ OnePoint ℝ} (h : IsGeodesicFromTo g p q) (h' : IsGeodesicFromTo g p' q')
+    (he : extGeodesicSegment p q = extGeodesicSegment p' q') : p = p' := by
+  -- a segment from an ideal point reaches arbitrarily far back along the line, while a segment
+  -- from a point of `ℍ` does not
+  have hmixed {z : ℍ} {ξ : OnePoint ℝ} {q q' : ℍ ⊕ OnePoint ℝ}
+      (h : IsGeodesicFromTo g (.inl z) q) (h' : IsGeodesicFromTo g (.inr ξ) q') :
+      extGeodesicSegment (.inl z) q ≠ extGeodesicSegment (.inr ξ) q' := by
+    intro he
+    obtain ⟨s, rfl⟩ := h.left_mem_range
+    obtain ⟨t, ht⟩ := exists_image_Iic_subset_extGeodesicSegment h'
+    obtain ⟨u, hu, hu'⟩ := exists_le_of_mem_extGeodesicSegment h
+      (he ▸ ht ⟨min t (s - 1), min_le_left _ _, rfl⟩)
+    have := geodesicLine_injective g hu'
+    linarith [min_le_right t (s - 1)]
+  rcases p with z | ξ <;> rcases p' with z' | ξ'
+  · obtain ⟨s, rfl⟩ := h.left_mem_range
+    obtain ⟨s', rfl⟩ := h'.left_mem_range
+    obtain ⟨u, hu, hu'⟩ := exists_le_of_mem_extGeodesicSegment h'
+      (he ▸ left_mem_extGeodesicSegment _ q)
+    obtain ⟨u', hu₂, hu₂'⟩ := exists_le_of_mem_extGeodesicSegment h
+      (he.symm ▸ left_mem_extGeodesicSegment _ q')
+    rw [geodesicLine_injective g hu'] at hu
+    rw [geodesicLine_injective g hu₂'] at hu₂
+    rw [le_antisymm hu₂ hu]
+  · exact absurd he (hmixed h h')
+  · exact absurd he.symm (hmixed h' h)
+  · rw [← h.smul_zero_eq, ← h'.smul_zero_eq]
+
+/-- The end point of an extended geodesic segment is determined by the segment, among end points
+of segments along one oriented geodesic line. -/
+theorem IsGeodesicFromTo.right_eq_of_extGeodesicSegment_eq {g : PSL(2, ℝ)}
+    {p q p' q' : ℍ ⊕ OnePoint ℝ} (h : IsGeodesicFromTo g p q) (h' : IsGeodesicFromTo g p' q')
+    (he : extGeodesicSegment p q = extGeodesicSegment p' q') : q = q' :=
+  (isGeodesicFromTo_mul_pslS_iff.2 h).left_eq_of_extGeodesicSegment_eq
+    (isGeodesicFromTo_mul_pslS_iff.2 h')
+    (by rw [extGeodesicSegment_comm, he, extGeodesicSegment_comm])
 
 /-- Translating a ray from a point of `ℍ` towards an ideal point gives the ray between the
 translated points. -/

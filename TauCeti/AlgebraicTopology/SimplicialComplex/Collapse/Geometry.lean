@@ -106,7 +106,7 @@ theorem exists_strong_deformation_retraction_simplex_deletion (K : PreAbstractSi
       (e : C(StandardSimplex τ, Convexity.StdSimplex ℝ τ)))
   have hr (x : S) : r x = x := by
     have h := Convexity.StdSimplex.hornRetraction_apply_coe a' (eS x)
-    simpa only [r, ContinuousMap.comp_apply, ContinuousMap.coe_coe,
+    simpa only [r, ContinuousMap.comp_apply, ContinuousMap.coe_ofClass,
       eS, Homeomorph.subtype_apply_coe, Homeomorph.symm_apply_apply] using congrArg eS.symm h
   let H := (Convexity.StdSimplex.hornDeformationRetraction a').compContinuousMap
     (e.symm : C(Convexity.StdSimplex ℝ τ, StandardSimplex τ))
@@ -117,13 +117,13 @@ theorem exists_strong_deformation_retraction_simplex_deletion (K : PreAbstractSi
       prop' := ?_ }
   · simpa only [ContinuousMap.comp_id] using e.symm_comp_toContinuousMap
   · ext x
-    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe,
+    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass,
       ContinuousMap.subtypeVal_apply, r, eS, Homeomorph.subtype_symm_apply_coe]
   · intro t x hx
     -- The relative-homotopy field uses `toFun`, so the application simp lemmas do not match.
     -- Express the cast and precomposition as an application of the transported homotopy.
     change H (t, e x) = x
-    simpa only [ContinuousMap.comp_apply, ContinuousMap.coe_coe,
+    simpa only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass,
       ContinuousMap.id_apply, Homeomorph.symm_apply_apply] using H.eq_fst t ((hS x).mp hx)
 
 end PreAbstractSimplicialComplex

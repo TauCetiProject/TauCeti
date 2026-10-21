@@ -7,12 +7,11 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Holder
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.PDE.ClassicalSolution
 import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -259,19 +258,6 @@ private theorem schauder_constant_le {lam Lam R K M C : ℝ} {α : ℝ≥0} (hla
         gcongr
     _ = C * (Lam / lam) ^ γ * (K / lam + R ^ (-β) * M) := by ring
 
-/-- Under a linear change of variables `e`, the `Lᵖ` norm of `Dⁱ(u ∘ e)` on `e ⁻¹' T` is at most
-`‖e‖ⁱ |det e|^(-1/p)` times the `Lᵖ` norm of `Dⁱu` on `T`. -/
-private theorem eLpNorm_iteratedFDeriv_comp_restrict_preimage_le (e : E ≃L[ℝ] E) (u : E → ℝ)
-    {T : Set E} (hT : MeasurableSet T) (i : ℕ) (p : ℝ≥0∞)
-    (hm : AEStronglyMeasurable (iteratedFDeriv ℝ i (u ∘ e)) (volume.restrict (e ⁻¹' T))) :
-    eLpNorm (iteratedFDeriv ℝ i (u ∘ e)) p (volume.restrict (e ⁻¹' T)) ≤
-      ENNReal.ofReal (‖(e : E →L[ℝ] E)‖ ^ i) *
-        (ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
-          eLpNorm (iteratedFDeriv ℝ i u) p (volume.restrict T)) := by
-  rw [← eLpNorm_comp_continuousLinearEquiv_restrict_preimage _ _ _ _ hT]
-  exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul hm
-    (ae_of_all _ fun y => e.norm_iteratedFDeriv_comp_right_le u y i) p
-
 /-- **Interior Schauder estimate for constant-coefficient operators, classical form.** Let
 `0 < α < 1`. There is a constant `C`, depending only on `n` and `α`, such that the following
 holds. Let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, let `u` be of class `C²`
@@ -361,7 +347,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv {α : �
       (ContinuousOn.continuousOn_iteratedFDeriv hv hU' le_rfl).mono
         (preimage_mono ((thickening_subset_cthickening R S).trans hSU))
     refine (eLpNorm_mono_measure _ (Measure.restrict_mono hthick le_rfl)).trans
-      ((eLpNorm_iteratedFDeriv_comp_restrict_preimage_le e u hT 2 2
+      ((e.eLpNorm_iteratedFDeriv_comp_right_restrict_preimage_le volume u 2 2
         (hcont.aestronglyMeasurable (hT.preimage e.continuous.measurable))).trans ?_)
     rw [ENNReal.ofReal_mul hLam.le, mul_assoc]
     gcongr

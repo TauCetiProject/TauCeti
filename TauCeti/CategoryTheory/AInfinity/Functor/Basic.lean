@@ -319,10 +319,20 @@ theorem id_toAInfinityHom (𝒞 : AInfinityCategory R C) :
     (AInfinityFunctor.id 𝒞).toAInfinityHom =
       (AInfinityStrictFunctor.id 𝒞).totalHom.toAInfinityHom := (rfl)
 
-@[simp]
+-- Not `@[simp]`: the codomain of `LinearMap.id` here is only definitionally its domain, so
+-- rewriting with this leaves terms `LinearMap.id f` that `LinearMap.id_apply` cannot simplify.
+-- The pointwise form `TauCeti.AInfinityFunctor.id_map_apply` is the simp lemma instead.
 theorem id_map (𝒞 : AInfinityCategory R C) (X Y : C) :
     (AInfinityFunctor.id 𝒞).map X Y = LinearMap.id :=
   (AInfinityStrictFunctor.id 𝒞).toAInfinityFunctor_map X Y
+
+/-- The identity `A∞` functor fixes every morphism.  Unlike `TauCeti.AInfinityFunctor.id_map`,
+this can be used to rewrite where the codomain of `LinearMap.id` is only definitionally its
+domain. -/
+@[simp]
+theorem id_map_apply (𝒞 : AInfinityCategory R C) {X Y : C} (f : homModule (R := R) X Y) :
+    (AInfinityFunctor.id 𝒞).map X Y f = f :=
+  LinearMap.congr_fun (id_map 𝒞 X Y) f
 
 end AInfinityFunctor
 

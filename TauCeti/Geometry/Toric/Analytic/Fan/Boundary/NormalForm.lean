@@ -127,9 +127,8 @@ theorem exists_partialDiffeomorph_analyticBoundaryComponent_normalForm
   let e := P.symm.trans (C.trans D)
   -- On the affine chart, `e` is the ambient regular chart followed by `L`.
   have hP (x' : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
-      P.symm (Φ.analyticAffineChartι hΦ σ x') = x' := by
-    rw [← Φ.analyticAffineChartPartialDiffeomorph_apply hΦ σ hB κ g n x']
-    exact P.toPartialEquiv.left_inv (by simp [P])
+      P.symm (Φ.analyticAffineChartι hΦ σ x') = x' :=
+    Φ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΦ σ hB κ g n x'
   have he (x' : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
       e (Φ.analyticAffineChartι hΦ σ x') =
         L (coneChartAmbient Φ.lattice hσ.toIsToricCone hB κ x') := by

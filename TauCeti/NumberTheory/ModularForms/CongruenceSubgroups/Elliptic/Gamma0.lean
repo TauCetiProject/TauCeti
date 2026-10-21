@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+public import TauCeti.NumberTheory.LegendreSymbol.QuadraticCongruence
 
 /-!
 # The elliptic points of `Γ₀(N)`
@@ -37,6 +38,11 @@ Substituting `x ↦ -x` turns `x² - x + 1` into the polynomial `x² + x + 1` of
   are in bijection with the roots of `x² - x + 1` in `ZMod N`.
 * `TauCeti.card_orderTwoElliptic_Gamma0`, `TauCeti.card_orderThreeElliptic_Gamma0`: the
   resulting counts `ε₂` and `ε₃`.
+* `TauCeti.card_orderTwoElliptic_Gamma0_eq_prod`, `TauCeti.card_orderThreeElliptic_Gamma0_eq_prod`:
+  the closed forms `ε₂ = ∏_{p ∣ N} (1 + χ₄(p))` unless `4 ∣ N`, and
+  `ε₃ = ∏_{p ∣ N} (1 + (p | 3))` unless `9 ∣ N`, in which cases the count is `0`. Here `χ₄` is
+  the character of `ℤ/4ℤ`, so `χ₄(p) = (-1 | p)` for odd `p` and `χ₄(2) = 0`, and `(p | 3)` is the
+  Kronecker symbol `(-3 | p)` at every prime `p`.
 
 ## References
 
@@ -283,5 +289,39 @@ theorem card_orderThreeElliptic_Gamma0 :
     Nat.card {q : orbitRel.Quotient ((Gamma0 N).map sl2zToPSL2R) ℍ //
       cardStabilizerOnOrbit q = 3} = Nat.card {x : ZMod N // x ^ 2 - x + 1 = 0} :=
   (Nat.card_congr (gamma0OrderThreeEllipticEquiv N)).symm
+
+variable (N) in
+/-- **The closed form of `ε₂(Γ₀(N))`.** The number of elliptic points of order two of `Γ₀(N)` is
+`0` if `4 ∣ N`, and otherwise `∏_{p ∣ N} (1 + χ₄(p))`, where `χ₄(p) = (-1 | p)` for odd `p` and
+`χ₄(2) = 0`. -/
+theorem card_orderTwoElliptic_Gamma0_eq_prod :
+    (Nat.card {q : orbitRel.Quotient ((Gamma0 N).map sl2zToPSL2R) ℍ //
+      cardStabilizerOnOrbit q = 2} : ℤ) =
+      if 4 ∣ N then 0 else ∏ p ∈ N.primeFactors, (1 + ZMod.χ₄ p) := by
+  rw [card_orderTwoElliptic_Gamma0, ZMod.natCard_sq_add_one_eq_zero]
+
+variable (N) in
+/-- **The closed form of `ε₃(Γ₀(N))`.** The number of elliptic points of order three of `Γ₀(N)` is
+`0` if `9 ∣ N`, and otherwise `∏_{p ∣ N} (1 + (p | 3))`, where `(p | 3)` is the Kronecker symbol
+`(-3 | p)` at every prime `p`, including `p = 2`. -/
+theorem card_orderThreeElliptic_Gamma0_eq_prod :
+    (Nat.card {q : orbitRel.Quotient ((Gamma0 N).map sl2zToPSL2R) ℍ //
+      cardStabilizerOnOrbit q = 3} : ℤ) =
+      if 9 ∣ N then 0 else ∏ p ∈ N.primeFactors, (1 + legendreSym 3 p) := by
+  rw [card_orderThreeElliptic_Gamma0, ZMod.natCard_sq_sub_self_add_one_eq_zero]
+
+/-! At the prime level `13 ≡ 1 (mod 12)`, both `-1` and `-3` are squares, so `Γ₀(13)` has two
+elliptic points of each order. -/
+
+example : (Nat.card {q : orbitRel.Quotient ((Gamma0 13).map sl2zToPSL2R) ℍ //
+    cardStabilizerOnOrbit q = 2} : ℤ) = 2 := by
+  rw [card_orderTwoElliptic_Gamma0_eq_prod, Nat.Prime.primeFactors (by decide)]
+  decide
+
+example : (Nat.card {q : orbitRel.Quotient ((Gamma0 13).map sl2zToPSL2R) ℍ //
+    cardStabilizerOnOrbit q = 3} : ℤ) = 2 := by
+  rw [card_orderThreeElliptic_Gamma0_eq_prod, Nat.Prime.primeFactors (by decide),
+    Finset.prod_singleton, Nat.cast_ofNat, legendreSym.mod]
+  norm_num
 
 end TauCeti

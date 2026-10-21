@@ -194,6 +194,15 @@ theorem primitiveMinpoly_dvd_iff {x : F} (hx : IsAlgebraic ℚ x) {P : ℤ[X]} :
     (associated_map_primitiveMinpoly hx).dvd_iff_dvd_left]
   exact minpoly.dvd ℚ x (by rw [← algebraMap_int_eq, aeval_map_algebraMap, h])
 
+/-- If the primitive minimal polynomial of an algebraic `x` vanishes at `y`, possibly in another
+field, then `x` and `y` are conjugate: they have the same minimal polynomial over `ℚ`. -/
+theorem minpoly_eq_of_aeval_primitiveMinpoly_eq_zero {x : F} {y : F'} (hx : IsAlgebraic ℚ x)
+    (h : aeval y (primitiveMinpoly x) = 0) : minpoly ℚ x = minpoly ℚ y := by
+  rw [← aeval_map_algebraMap ℚ, algebraMap_int_eq, map_primitiveMinpoly hx, aeval_mul,
+    aeval_C] at h
+  exact minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hx.isIntegral)
+    ((mul_eq_zero.1 h).resolve_left (by simp)) (minpoly.monic hx.isIntegral)
+
 /-- Reversing a primitive defining polynomial gives a multiple of the primitive
 minimal polynomial of the inverse root. -/
 theorem primitiveMinpoly_inv_dvd_reverse {x : F} (hx : IsAlgebraic ℚ x)

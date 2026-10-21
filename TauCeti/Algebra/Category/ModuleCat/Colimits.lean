@@ -9,7 +9,12 @@ public import Mathlib.Algebra.Category.ModuleCat.Kernels
 public import Mathlib.Algebra.Category.ModuleCat.Products
 
 /-!
-# Natural transformations out of modules are determined at the ring
+# Colimits of modules
+
+The point of a colimit cocone in `ModuleCat R` is spanned by the images of the legs of the cocone:
+the quotient by their span receives the zero morphism from every leg, so it vanishes by the
+uniqueness part of the universal property. This lets elementwise properties that are stable under
+linear images and finite sums pass to colimits.
 
 Every `R`-module is the cokernel of a morphism between direct sums of copies of `R`. Hence a
 natural transformation `α : F ⟶ G` between colimit-preserving functors out of `ModuleCat R` is an
@@ -22,6 +27,8 @@ product of modules is the tensor product of the associated sheaves.
 
 ## Main declarations
 
+* `TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit`: the ranges of the legs of a colimit cocone
+  span its point.
 * `TauCeti.ModuleCat.isIso_of_isIso_app_self`: a natural transformation between
   colimit-preserving functors out of `ModuleCat R` whose component at `R` is invertible is an
   isomorphism.
@@ -40,6 +47,20 @@ namespace ModuleCat
 open _root_.ModuleCat
 
 variable {R : Type u} [Ring R] {D : Type v} [Category.{w} D]
+
+-- The codomain `c.pt` is named because the leg `c.ι.app j` is typed with codomain
+-- `((Functor.const J).obj c.pt).obj j`, which depends on `j` until it is unfolded.
+/-- The ranges of the legs of a colimit cocone in `ModuleCat R` span its point. -/
+theorem iSup_range_eq_top_of_isColimit {J : Type*} [Category* J] {F : J ⥤ ModuleCat.{v} R}
+    {c : Cocone F} (hc : IsColimit c) :
+    ⨆ j, LinearMap.range (Hom.hom (B := c.pt) (c.ι.app j)) = ⊤ := by
+  set T : Submodule R c.pt := ⨆ j, LinearMap.range (Hom.hom (B := c.pt) (c.ι.app j))
+  -- The projection onto `c.pt ⧸ T` vanishes on every leg, hence is zero.
+  have h : ofHom T.mkQ = 0 := hc.hom_ext fun j ↦ by
+    ext x
+    simpa [Submodule.Quotient.mk_eq_zero] using
+      Submodule.mem_iSup_of_mem j (LinearMap.mem_range_self (c.ι.app j).hom x)
+  rw [← Submodule.ker_mkQ T, show T.mkQ = 0 from congr_arg Hom.hom h, LinearMap.ker_zero]
 
 /-- A natural transformation between colimit-preserving functors out of `ModuleCat R` is an
 isomorphism as soon as its component at `R` is. -/

@@ -1,0 +1,270 @@
+{
+  "schema": 1,
+  "verification": "fixture_replay_only",
+  "production_benefit_verified": false,
+  "issue": "TauCetiProject/TauCeti#17037",
+  "production_failure": {
+    "run_url": "https://github.com/TauCetiProject/TauCeti/actions/runs/38827433841",
+    "job_id": 116738064149,
+    "run_attempt": 1
+  },
+  "candidate": {
+    "candidate_id": 215,
+    "generation": 4,
+    "commit": "f7be37dc9072f270c2cc7b130e2a5842eb3ddc5b",
+    "base_sha": "85ed0984159b8de1ed8c11541105bb1d89c787e4",
+    "tree": "b2ba3c0b34ebd1c83bfb26827feec364995bc725",
+    "members_digest": "ad79d83c67f5b280e9cafe703f15861e51a31e0f9790a2a21ce154d1bfe176d4"
+  },
+  "ordered_heads": [
+    {
+      "pr": 15915,
+      "head_sha": "c1b1453d085b52bcd718d943ea1528cf1aee48e5"
+    },
+    {
+      "pr": 16385,
+      "head_sha": "01c28e483ad566b9c28f89559111bd958be5d092"
+    },
+    {
+      "pr": 16408,
+      "head_sha": "f95bfab3f4e6ac19763c8a114e98a1d3828f6d47"
+    },
+    {
+      "pr": 16484,
+      "head_sha": "db00b1e054077a0a3175d0043b12fb963ddd1a37"
+    },
+    {
+      "pr": 16511,
+      "head_sha": "9315f80a5a6f041cd1b63b803e5f0de0e9ad0c77"
+    },
+    {
+      "pr": 16544,
+      "head_sha": "d767df569ccd1df2e9e7f64199e17d607f9cddb4"
+    },
+    {
+      "pr": 16572,
+      "head_sha": "3689212f14a89480ddf7874a80b30d84b0875ae2"
+    },
+    {
+      "pr": 16579,
+      "head_sha": "c1b4955c7667983e25df15229655b785aa93775c"
+    },
+    {
+      "pr": 16584,
+      "head_sha": "5457ed6e273f938ffcad046783a8b62c4d23cff6"
+    },
+    {
+      "pr": 16596,
+      "head_sha": "e128f6f90aba819aa5af22a3ca0f420d16fa6f79"
+    },
+    {
+      "pr": 16607,
+      "head_sha": "4e995ae05ac802a13b1ca9863d53cd7e5d3a5e10"
+    },
+    {
+      "pr": 16617,
+      "head_sha": "0cb333e0108997bf6c29084d0bf7486338ab784a"
+    },
+    {
+      "pr": 16676,
+      "head_sha": "c9c6dc71f5ef87ce19528cef497fbb2985f1c521"
+    },
+    {
+      "pr": 16681,
+      "head_sha": "dc6003d6cc96c0bfaf89918d1b058552f08530bc"
+    },
+    {
+      "pr": 16687,
+      "head_sha": "3f3e2dd973b102fae97b9797d1238ccf52fc0359"
+    },
+    {
+      "pr": 16690,
+      "head_sha": "63f479d360f9c37889b743c2f8df90d1ab26e4f1"
+    },
+    {
+      "pr": 16692,
+      "head_sha": "4b28b758e2c5845e0526e9100543830961c650b8"
+    },
+    {
+      "pr": 16737,
+      "head_sha": "a4bd8094fe04ee3d252f889730616d068044c076"
+    },
+    {
+      "pr": 16747,
+      "head_sha": "516e1fba39b614af109deac504aa34f956bae478"
+    },
+    {
+      "pr": 16777,
+      "head_sha": "48552e83cc38b1922c6a39c2f56bee293e40d2c9"
+    },
+    {
+      "pr": 16789,
+      "head_sha": "12bad8cc235e592a444d997c4f46952e06f78de9"
+    },
+    {
+      "pr": 16802,
+      "head_sha": "ead560d025efbcd5306ea9f5ea2bed4270718e3d"
+    },
+    {
+      "pr": 16848,
+      "head_sha": "e29e545cf5a41a4f16db560ad9420df9e0e0fea3"
+    },
+    {
+      "pr": 16906,
+      "head_sha": "fd978d4033d4883f865c014765e75fb25a612077"
+    },
+    {
+      "pr": 16909,
+      "head_sha": "48fb1286e36ed42d19b3b80cb053808a38be9adb"
+    },
+    {
+      "pr": 16917,
+      "head_sha": "46dbd3fc82f9900f0cb2d3b78e3841e11fd67a6d"
+    },
+    {
+      "pr": 16935,
+      "head_sha": "255151720f3636ef586bfb153e423c8fb580f2b3"
+    },
+    {
+      "pr": 16937,
+      "head_sha": "18294e3d1e933649473c57bef9343b6dbbe7df59"
+    },
+    {
+      "pr": 16938,
+      "head_sha": "6f85952bcf110420bcd47d7803b8ebed7aeb0af9"
+    },
+    {
+      "pr": 16949,
+      "head_sha": "2af41a9e6efb9b960a682684a6637d79e6574f47"
+    },
+    {
+      "pr": 16950,
+      "head_sha": "f4fe99c4a919970578fd70a6865d31ff27f4546a"
+    },
+    {
+      "pr": 16953,
+      "head_sha": "20a0cdd09002896e2db7798550434367114eba88"
+    },
+    {
+      "pr": 16954,
+      "head_sha": "1113c9e6980a2c15b3539d4050cc571116ae0671"
+    },
+    {
+      "pr": 16955,
+      "head_sha": "3b14ba5676f218bd9507ad74affcab318f9a070c"
+    },
+    {
+      "pr": 16956,
+      "head_sha": "c689fe3dd75d4e3086515f33d57da5182e4c1940"
+    }
+  ],
+  "reproduction": {
+    "imports": [
+      "TauCeti.RingTheory.Flat.Annihilator",
+      "Mathlib.Algebra.Module.Torsion.Basic"
+    ],
+    "source_revision": "f7be37dc9072f270c2cc7b130e2a5842eb3ddc5b",
+    "full_candidate_import_closure_replayed": false,
+    "linter": "simpNF",
+    "declaration": "TauCeti.element_annihilator_flat_baseChange",
+    "simplifier": "Ideal.annihilator_span_singleton_eq_torsionOf"
+  },
+  "locations": {
+    "version": 1,
+    "complete": true,
+    "findings": [
+      {
+        "linter": "simpNF",
+        "declaration": "TauCeti.element_annihilator_flat_baseChange",
+        "path": "TauCeti/RingTheory/Flat/Annihilator.lean",
+        "line": 77,
+        "column": 9
+      }
+    ]
+  },
+  "planner": {
+    "strategy": "compiler_diagnostics",
+    "groups": [
+      [
+        16385
+      ],
+      [
+        15915,
+        16408,
+        16484,
+        16511,
+        16544,
+        16572,
+        16579,
+        16584,
+        16596,
+        16607,
+        16617,
+        16676,
+        16681,
+        16687,
+        16690,
+        16692,
+        16737,
+        16747,
+        16777,
+        16789,
+        16802,
+        16848,
+        16906,
+        16909,
+        16917,
+        16935,
+        16937,
+        16938,
+        16949,
+        16950,
+        16953,
+        16954,
+        16955,
+        16956
+      ]
+    ],
+    "candidate_id": 215,
+    "members_preserved": 35,
+    "proof_authority": false
+  },
+  "overhead": {
+    "original-driver": {
+      "wall_ms": [
+        2473.422,
+        1824.494,
+        2025.587,
+        1670.721,
+        1835.77
+      ],
+      "median_wall_ms": 1835.77,
+      "origin_elapsed_ms": []
+    },
+    "driver": {
+      "wall_ms": [
+        1949.126,
+        1729.173,
+        1713.195,
+        1787.324,
+        1727.031
+      ],
+      "median_wall_ms": 1729.173,
+      "origin_elapsed_ms": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "python_join_mean_ms": 0.109,
+    "python_process_median_ms": 17.195
+  },
+  "limits": [
+    "Origin collection timings cover one failing declaration, not a full-library benchmark.",
+    "Replay appends locally re-collected metadata to the frozen production log; production did not emit it.",
+    "All original snapshots compare equal in the pure planner replay.",
+    "The first retry and remainder require fresh authoritative full CI. A source hint does not prove guilt."
+  ]
+}

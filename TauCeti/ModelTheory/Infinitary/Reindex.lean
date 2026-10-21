@@ -44,7 +44,7 @@ carrier into `L_{ω₁ω}`.
   `346a4bd3f95e8591976c91259badc6d2c300f638`.
 * Divergences from these sources: the coded connectives are in a separate module; the body of
   `reindex` is not exposed and is used through its constructor equations; the round trip along an
-  equivalence is derived from `IndexCoding.ofEquiv_trans` and `IndexCoding.ofEquiv_refl`.
+  equivalence is derived from `IndexCoding.ofEquiv_trans_ofEquiv_symm`.
 -/
 
 public section
@@ -212,8 +212,7 @@ theorem reindex_trans (c₁ : IndexCoding ι κ) (c₂ : IndexCoding κ μ) :
 @[simp]
 theorem reindex_ofEquiv_symm_reindex_ofEquiv (e : ι ≃ κ) (φ : L.BoundedFormulaInf ι α n) :
     reindex (.ofEquiv e.symm) (reindex (.ofEquiv e) φ) = φ := by
-  rw [← reindex_trans, ← IndexCoding.ofEquiv_trans, Equiv.self_trans_symm,
-    IndexCoding.ofEquiv_refl, reindex_id]
+  rw [← reindex_trans, IndexCoding.ofEquiv_trans_ofEquiv_symm, reindex_id]
 
 /-- **A carrier equivalence is an equivalence of syntax**: transport along it and along its
 inverse are mutually inverse. -/

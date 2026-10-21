@@ -25,6 +25,8 @@ The forward implication holds at every prime and without any determinant-unit hy
 
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_imp`: integral local isometry preserves
   the rank and determinant square class at every prime.
+* `TauCeti.IntegralLattice.exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent`:
+  the signed determinants of integrally isometric localizations differ by a unit square.
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff`: for local unit determinants at an
   odd prime, these invariants classify the integral local forms.
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_of_not_dvd`: equal rank and signed
@@ -65,6 +67,19 @@ theorem localIntegralForm_equivalent_imp
   simpa only [det_toMatrix_localIntegralForm] using
     LinearMap.BilinForm.Equivalent.isSquare_det_mul_det
       h (b.baseChange ℤ_[p]) (c'.baseChange ℤ_[p])
+
+/-- Integrally isometric localizations have signed determinants differing by the square of a
+`p`-adic unit, at every prime and without any determinant-unit hypothesis. -/
+theorem exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent
+    (L : IntegralLattice V) (M : IntegralLattice W) (p : ℕ) [Fact p.Prime]
+    (h : (L.localIntegralForm p).Equivalent (M.localIntegralForm p)) :
+    ∃ u : ℤ_[p]ˣ, (L.determinant : ℤ_[p]) = (u : ℤ_[p]) ^ 2 * (M.determinant : ℤ_[p]) := by
+  classical
+  let b := Module.finBasis ℤ L
+  let c := (Module.finBasis ℤ M).reindex
+    (finCongr (L.localIntegralForm_equivalent_imp M p h).1.symm)
+  simpa only [det_toMatrix_localIntegralForm] using
+    h.exists_det_eq_unit_sq_mul_det (b.baseChange ℤ_[p]) (c.baseChange ℤ_[p])
 
 /-- Localizations unimodular at an odd prime are integrally isometric exactly when their ranks
 and determinant square classes agree. The input lattices need not be globally unimodular. -/

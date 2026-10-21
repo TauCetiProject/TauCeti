@@ -24,8 +24,8 @@ finitary formulas.
 * `FirstOrder.Language.BoundedFormulaInf.Realize`: realization with free-variable and
   bound-variable valuations.
 * `FirstOrder.Language.FormulaInf.Realize` and `FirstOrder.Language.SentenceInf.Realize`, with
-  the simp lemmas `FormulaInf.realize_def` and `SentenceInf.realize_def` reducing them to
-  bounded-formula realization.
+  the low-priority simp lemmas `FormulaInf.realize_def` and `SentenceInf.realize_def` reducing
+  them to bounded-formula realization once no formula- or sentence-level lemma applies.
 
 ## Main results
 
@@ -43,7 +43,8 @@ finitary formulas.
 * Divergences from these sources: realization laws for the added binary connectives
   (`realize_inf`, `realize_sup`, `realize_iff`); `Realize`, `FormulaInf.Realize` and
   `SentenceInf.Realize` are not exposed, with the simp bridges `FormulaInf.realize_def` and
-  `SentenceInf.realize_def` in their place; `realize_alls` and `realize_exs` are stated for
+  `SentenceInf.realize_def` (at priority `low`, so default-priority facts stated at the formula or
+  sentence level are tried first) in their place; `realize_alls` and `realize_exs` are stated for
   bounded realization at the empty valuation of the bound-variable slots, their simp-normal form.
 -/
 
@@ -177,8 +178,10 @@ def FormulaInf.Realize {M : Type w} [L.Structure M] (φ : L.FormulaInf ι α) (v
   BoundedFormulaInf.Realize φ v default
 
 /-- A formula is realized when it is realized as a bounded formula with no bound variables, so the
-realization lemmas for bounded formulas apply to formulas. -/
-@[simp]
+realization lemmas for bounded formulas apply to formulas. The priority is `low` so that `simp`
+tries default-priority facts stated at the formula level (hypotheses passed to `simp`, downstream
+simp lemmas) before descending to bounded realization. -/
+@[simp low]
 theorem FormulaInf.realize_def {M : Type w} [L.Structure M] (φ : L.FormulaInf ι α) (v : α → M) :
     φ.Realize v ↔ BoundedFormulaInf.Realize φ v default :=
   Iff.rfl
@@ -219,8 +222,9 @@ def SentenceInf.Realize (φ : L.SentenceInf ι) (M : Type w) [L.Structure M] : P
   FormulaInf.Realize (M := M) φ Empty.elim
 
 /-- A sentence is realized in a structure when it is realized as a formula under the empty
-valuation of its free variables. -/
-@[simp]
+valuation of its free variables. The priority is `low` for the same reason as
+`FormulaInf.realize_def`. -/
+@[simp low]
 theorem SentenceInf.realize_def (φ : L.SentenceInf ι) (M : Type w) [L.Structure M] :
     φ.Realize M ↔ FormulaInf.Realize (M := M) φ Empty.elim :=
   Iff.rfl

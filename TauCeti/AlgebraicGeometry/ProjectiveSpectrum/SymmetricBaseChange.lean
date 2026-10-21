@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BaseChange
 
 /-!
@@ -22,6 +23,9 @@ No finite generation or freeness is needed for the comparison of projective spec
 One side is `Proj` of the scalar-extended graded ring. Composing with `Proj.baseChangeIso`
 gives `Proj.symmetricAlgebraBaseChangeIso`, identifying the scheme fiber product over
 `Spec R` for arbitrary coefficient extensions, with lemmas for both projections.
+Stated with the structure morphisms `TauCeti.SymmetricAlgebra.projToSpec`, this says that
+`Proj(Sym(S ⊗[R] M))` is the base change of `Proj(Sym M)` along `Spec S ⟶ Spec R`
+(`Proj.isPullback_symmetricAlgebra_baseChange`).
 The construction combines `Proj.mapIso` with the graded symmetric-algebra base-change maps.
 The comparison commutes with `Proj.toSpecZero`, and the degree-zero comparison preserves
 the scalar copy of `S` in both presentations.
@@ -118,5 +122,25 @@ theorem symmetricAlgebraBaseChangeIso_inv_toSpecCoeff :
     (symmetricAlgebraBaseChangeIso R S M).inv ≫
         toSpecCoeff (homogeneousSubmodule S (S ⊗[R] M)) = pullback.snd _ _ := by
   rw [← symmetricAlgebraBaseChangeIso_hom_snd R S M, Iso.inv_hom_id_assoc]
+
+/-- The coefficient structure map of the projective spectrum of a symmetric algebra is
+`TauCeti.SymmetricAlgebra.projToSpec`. -/
+theorem toSpecCoeff_homogeneousSubmodule :
+    toSpecCoeff (homogeneousSubmodule R M) = projToSpec R M := by
+  rw [toSpecCoeff_def, projToSpec_def]
+
+/-- The projective space `Proj(Sym(S ⊗[R] M))` is the base change of `Proj(Sym M)` along
+`Spec S ⟶ Spec R`: the square formed by the coefficient projection and the structure morphisms
+`TauCeti.SymmetricAlgebra.projToSpec` is cartesian. -/
+theorem isPullback_symmetricAlgebra_baseChange :
+    IsPullback ((symmetricAlgebraScalarTensorIso R S M).hom ≫
+        baseChangeProjection (homogeneousSubmodule R M) S)
+      (projToSpec S (S ⊗[R] M)) (projToSpec R M)
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
+  rw [← toSpecCoeff_homogeneousSubmodule, ← toSpecCoeff_homogeneousSubmodule]
+  refine IsPullback.of_iso_pullback ⟨?_⟩ (symmetricAlgebraBaseChangeIso R S M)
+    (by simp) (by simp)
+  rw [Category.assoc, ← symmetricAlgebraBaseChangeIso_hom_fst_assoc,
+    ← symmetricAlgebraBaseChangeIso_hom_snd_assoc, pullback.condition]
 
 end AlgebraicGeometry.Proj

@@ -9,6 +9,7 @@ public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.NNRat.BigOperators
 public import Mathlib.Basic.ENNReal.BigOperators
 public import Mathlib.Algebra.Polynomial.RingDivision
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
@@ -42,6 +43,8 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 * `MvPolynomial.le_sum_div_of_le_weightedIndex`: a nonzero jet `∂^d P` at a point where the
   index is at least `t` has `d ≤ r` and real weight `t ≤ ∑ j, d j / r j`.
 * `MvPolynomial.weightedIndex_mul`: `Ind(P Q) = Ind(P) + Ind(Q)` without zero divisors.
+* `MvPolynomial.le_weightedIndex_det`: the index of a determinant is at least the sum over the
+  columns of lower bounds for the indices of their entries.
 * `MvPolynomial.weightedIndex_le_weightedIndex_hasseDeriv_add`:
   `Ind(P) ≤ Ind(∂^d P) + ∑ j, d j / r j`.
 * `MvPolynomial.weightedIndex_smul_weight`: the index for the weights `c • r` is the index
@@ -59,6 +62,9 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 * L. Pottmeyer, [*Diophantine Approximation*](https://esaga.uni-due.de/f/lukas.pottmeyer/DioApp.pdf)
   (2022), §2.6, Definition 2.6.2, Example 2.6.3 and Exercise 2.19; §3.4, Lemma 3.4.3 and
   §§3.4.6–3.4.7; §3.5, Lemma 3.5.7.
+* The determinant bound `MvPolynomial.le_weightedIndex_det` follows `MvPolynomial.le_index_det` in
+  `DiophantineApproximation/RothDeterminant.lean` of Ralf Stephan's `rwst/Subspace-Theorems`,
+  snapshot `c26d909dc48cf7fe` (Apache 2.0).
 -/
 
 public section
@@ -166,6 +172,16 @@ theorem min_weightedIndex_le_add (r : σ → ℕ) (a : σ → R) (P Q : MvPolyno
   have hQ := (le_weightedIndex_iff r a Q _).mp le_rfl d (hd.trans_le (min_le_right _ _))
   simp [hP, hQ]
 
+/-- The index of a finite sum is at least every common lower bound for the indices of the
+summands. -/
+theorem le_weightedIndex_sum {ι : Type*} (r : σ → ℕ) (a : σ → R) {s : Finset ι}
+    {P : ι → MvPolynomial σ R} {t : ℝ≥0∞} (h : ∀ i ∈ s, t ≤ weightedIndex r a (P i)) :
+    t ≤ weightedIndex r a (∑ i ∈ s, P i) := by
+  rw [le_weightedIndex_iff]
+  intro d hd
+  rw [map_sum, map_sum]
+  exact Finset.sum_eq_zero fun i hi ↦ (le_weightedIndex_iff r a (P i) t).mp (h i hi) d hd
+
 /-- Injective coefficient maps preserve the index when the center is mapped as well. -/
 theorem weightedIndex_map {S : Type*} [CommSemiring S] (f : R →+* S)
     (hf : Function.Injective f) (r : σ → ℕ) (a : σ → R) (P : MvPolynomial σ R) :
@@ -260,6 +276,16 @@ theorem le_weightedIndex_mul (r : σ → ℕ) (a : σ → R) (P Q : MvPolynomial
   rw [← Finset.mem_antidiagonal.mp hx, map_add]
   exact add_le_add (weightedIndex_le (left_ne_zero_of_mul hne))
     (weightedIndex_le (right_ne_zero_of_mul hne))
+
+/-- The index of a finite product is at least the sum of the indices of its factors. -/
+theorem le_weightedIndex_prod {ι : Type*} (r : σ → ℕ) (a : σ → R) (P : ι → MvPolynomial σ R)
+    (s : Finset ι) : ∑ i ∈ s, weightedIndex r a (P i) ≤ weightedIndex r a (∏ i ∈ s, P i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.sum_insert hi]
+    exact (add_le_add le_rfl ih).trans (le_weightedIndex_mul r a _ _)
 
 /-- A Hasse derivative `∂^d` lowers the index by at most the weight of `d`:
 `Ind(P) ≤ Ind(∂^d P) + ∑ j, d j / r j`. -/
@@ -401,6 +427,22 @@ end Semiring
 section Ring
 
 variable [CommRing R]
+
+@[simp]
+theorem weightedIndex_neg (r : σ → ℕ) (a : σ → R) (P : MvPolynomial σ R) :
+    weightedIndex r a (-P) = weightedIndex r a P := by
+  simp only [weightedIndex, map_neg, neg_ne_zero]
+
+/-- The index of a determinant is at least the sum over the columns of lower bounds for the
+indices of the entries of each column. -/
+theorem le_weightedIndex_det {n : Type*} [Fintype n] [DecidableEq n] (r : σ → ℕ) (a : σ → R)
+    (A : Matrix n n (MvPolynomial σ R)) {c : n → ℝ≥0∞}
+    (h : ∀ k l, c l ≤ weightedIndex r a (A k l)) : ∑ l, c l ≤ weightedIndex r a A.det := by
+  rw [Matrix.det_apply]
+  refine le_weightedIndex_sum r a fun τ _ ↦ ?_
+  -- Each term of the Leibniz expansion takes the entry in the row `τ l` from the column `l`.
+  have hτ := (Finset.sum_le_sum fun l _ ↦ h (τ l) l).trans (le_weightedIndex_prod r a _ Finset.univ)
+  rcases Int.units_eq_one_or (Equiv.Perm.sign τ) with hs | hs <;> simpa [hs] using hτ
 
 /-- A nonzero univariate polynomial placed in the coordinate `i` has as index its root
 multiplicity at `a i` divided by the weight of `i`. This includes zero weights. -/

@@ -369,7 +369,7 @@ private noncomputable def abelianFoxHom :
       Multiplicative (ι × G → ℤ_[p]) :=
   maximalProPQuotient.lift (isProP_multiplicative_pi_padicInt p (ι × G))
     (QuotientGroup.lift _ (foxHom p) (Subgroup.topologicalClosure_minimal _
-      (Abelianization.commutator_subset_ker _)
+      (Abelianization.commutator_le_ker _)
       (isClosed_singleton.preimage (continuous_foxHom p))))
     ((QuotientGroup.isQuotientMap_mk _).continuous_iff.2 (continuous_foxHom p))
 

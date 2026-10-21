@@ -24,6 +24,10 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
 * `IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing`: an idempotent of a local ring is `0`
   or `1`.
 * `TauCeti.IsLocalRing.isDedekindFiniteMonoid`: a local ring is Dedekind-finite.
+* `TauCeti.isUnit_add_of_isUnit_of_not_isUnit`: adding a nonunit to a unit in a local ring
+  yields a unit.
+* `TauCeti.isUnit_sub_of_not_isUnit_of_isUnit`: subtracting a unit from a nonunit in a local ring
+  yields a unit.
 * `TauCeti.IsLocalRing.sq_add_self_eq_zero_iff`: in characteristic two, `t² + t = 0` exactly
   when `t = 0` or `t = 1`.
 * `Nat.Coprime.isUnit_natCast`: if a natural number is not a unit, every coprime natural
@@ -63,6 +67,23 @@ instance IsLocalRing.isDedekindFiniteMonoid {R : Type*} [Ring R] [IsLocalRing R]
         simpa only [mul_assoc, hpq, mul_one, mul_zero, zero_mul] using
           congrArg (fun a ↦ p * a * q) h0)
     · exact h1
+
+/-- In a local ring, adding a nonunit to a unit yields a unit. -/
+theorem isUnit_add_of_isUnit_of_not_isUnit {R : Type*} [Ring R] [IsLocalRing R] {a b : R}
+    (ha : IsUnit a) (hb : ¬ IsUnit b) : IsUnit (a + b) := by
+  by_contra hab
+  have hsum := IsLocalRing.nonunits_add (mem_nonunits_iff.mpr hab)
+    (mem_nonunits_iff.mpr ((IsUnit.neg_iff b).not.mpr hb))
+  have ha' : a ∈ nonunits R := by
+    simpa only [add_assoc, add_neg_cancel, add_zero] using hsum
+  exact (mem_nonunits_iff.mp ha') ha
+
+/-- In a local ring, subtracting a unit from a nonunit yields a unit. -/
+theorem isUnit_sub_of_not_isUnit_of_isUnit {R : Type*} [Ring R] [IsLocalRing R] {a b : R}
+    (ha : ¬ IsUnit a) (hb : IsUnit b) : IsUnit (a - b) := by
+  have h := isUnit_add_of_isUnit_of_not_isUnit hb
+    ((IsUnit.neg_iff a).not.mpr ha)
+  simpa only [sub_eq_add_neg, neg_add_rev, neg_neg] using h.neg
 
 /-- Over a local ring of characteristic two, the zeros of `t ↦ t² + t` are `0` and `1`. -/
 @[simp]

@@ -12,15 +12,16 @@ public import TauCeti.Probability.Quantile
 /-!
 # Distributional formulas for Dirac measures
 
-This file records the cumulative distribution and quantile functions of a real Dirac measure, and
-the exponential-integrability domain and cumulant-generating function of a real-valued statistic
-under a Dirac measure. The moment-generating function is already available in Mathlib as
-`ProbabilityTheory.mgf_dirac'`.
+This file records the cumulative distribution and the lower and upper quantile functions of a real
+Dirac measure, and the exponential-integrability domain and cumulant-generating function of a
+real-valued statistic under a Dirac measure. The moment-generating function is already available in
+Mathlib as `ProbabilityTheory.mgf_dirac'`.
 
 ## Main results
 
 * `TauCeti.Probability.cdf_dirac` — the cdf of a real Dirac measure;
-* `MeasureTheory.Measure.quantile_dirac` — the quantile function of a Dirac measure;
+* `MeasureTheory.Measure.quantile_dirac` and `MeasureTheory.Measure.upperQuantile_dirac` — the
+  lower and upper quantile functions of a Dirac measure;
 * `TauCeti.Probability.integrableExpSet_dirac` — every exponential moment exists under a Dirac
   measure;
 * `TauCeti.Probability.cgf_dirac'` — the cumulant-generating function under a Dirac measure.
@@ -71,5 +72,15 @@ theorem quantile_dirac (a : ℝ) {t : ℝ} (h0 : 0 < t) (h1 : t ≤ 1) : (dirac 
   · simpa [TauCeti.Probability.cdf_dirac] using h1
   · by_contra hxa
     exact absurd hx (by simpa [TauCeti.Probability.cdf_dirac, not_le.mpr (not_le.mp hxa)] using h0)
+
+/-- At every level in `Ico 0 1`, including the endpoint level `0`, the upper quantile function of
+a Dirac law is its atom. -/
+@[simp]
+theorem upperQuantile_dirac (a : ℝ) {t : ℝ} (h0 : 0 ≤ t) (h1 : t < 1) :
+    (dirac a).upperQuantile t = a := by
+  have hset : {x : ℝ | t < cdf (dirac a) x} = Ici a := by
+    ext x
+    by_cases hx : a ≤ x <;> simp [hx, h1, h0]
+  rw [upperQuantile_def, hset, csInf_Ici]
 
 end MeasureTheory.Measure

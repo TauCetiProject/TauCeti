@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Cell
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.CharacteristicMap
 
 /-!
@@ -21,7 +22,8 @@ A linear order on the vertex type chooses one enumeration of each face.  This av
 cells and fixes the orientations of the characteristic maps.  The resulting open and closed
 cells themselves depend only on the underlying faces.  The equivalence `realizationCellEquiv`
 identifies the cells of `realizationCWComplex K` with `RealizationCell K`, through which its open
-cells, closed cells, and cell frontiers are described by barycentric supports. The CW
+cells, closed cells, and cell frontiers are described by barycentric supports.  In positive
+dimensions, each frontier is the union of its codimension-one closed cells.  The CW
 filtration stage `skeletonLT n` consists of points with at most `n` nonzero barycentric
 coordinates.
 
@@ -41,33 +43,9 @@ namespace AbstractSimplicialComplex
 
 variable {ι : Type*} [LinearOrder ι]
 
-/-- The `n`-dimensional cells of the realization of `K`: its faces with `n + 1` vertices. -/
-abbrev RealizationCell (K : AbstractSimplicialComplex ι) (n : ℕ) :=
-  {σ : TauCeti.SetLike.Face K // σ.1.card = n + 1}
-
 namespace RealizationCell
 
 variable {K : AbstractSimplicialComplex ι} {n : ℕ}
-
-/-- The increasing enumeration of the vertices of a simplicial cell. -/
-def vertexEmbedding (c : RealizationCell K n) : Fin (n + 1) ↪ ι :=
-  (c.1.1.orderEmbOfFin c.2).toEmbedding
-
-/-- The chosen vertex enumeration is strictly increasing. -/
-theorem strictMono_vertexEmbedding (c : RealizationCell K n) : StrictMono c.vertexEmbedding :=
-  (c.1.1.orderEmbOfFin c.2).strictMono
-
-/-- Every enumerated vertex belongs to the cell's face. -/
-@[simp]
-theorem vertexEmbedding_mem (c : RealizationCell K n) (i : Fin (n + 1)) :
-    c.vertexEmbedding i ∈ c.1.1 :=
-  Finset.orderEmbOfFin_mem c.1.1 c.2 i
-
-/-- The increasing enumeration has the cell's face as its image. -/
-@[simp]
-theorem image_vertexEmbedding (c : RealizationCell K n) :
-    Finset.univ.image c.vertexEmbedding = c.1.1 :=
-  Finset.image_orderEmbOfFin_univ c.1.1 c.2
 
 /-- The characteristic map of a simplicial cell, using its increasing vertex enumeration. -/
 def characteristicMap (c : RealizationCell K n) : PartialEquiv (Fin n → ℝ) (Realization K) :=
@@ -268,6 +246,20 @@ theorem cellFrontier_realizationCellEquiv_symm (K : AbstractSimplicialComplex ι
     RelCWComplex.cellFrontier n ((realizationCellEquiv K n).symm c) =
       {x : Realization K | x.1.support ⊂ c.1.1} :=
   c.image_characteristicMap_sphere
+
+/-- The frontier of a positive-dimensional realization cell is the union of the closed cells
+obtained by deleting one vertex. -/
+theorem cellFrontier_realizationCellEquiv_symm_eq_iUnion_face
+    (K : AbstractSimplicialComplex ι) (c : RealizationCell K (n + 1)) :
+    letI := realizationCWComplex K
+    RelCWComplex.cellFrontier (n + 1) ((realizationCellEquiv K (n + 1)).symm c) =
+      ⋃ j : Fin (n + 2),
+        RelCWComplex.closedCell n ((realizationCellEquiv K n).symm (c.face j)) := by
+  let := realizationCWComplex K
+  ext x
+  simp only [cellFrontier_realizationCellEquiv_symm,
+    closedCell_realizationCellEquiv_symm, Set.mem_ofPred_eq, Set.mem_iUnion]
+  exact (c.exists_subset_face_iff_ssubset x.1.support).symm
 
 /-- Stage `n` of the CW filtration consists exactly of points with at most `n` nonzero
 barycentric coordinates. Stage zero is empty and stage infinity is the whole realization. -/

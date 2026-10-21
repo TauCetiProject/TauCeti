@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.DGCategory
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Restriction.Basic
-public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.CategoryTheory.DG.Functor.Basic
 
 /-!
 # Restriction of right A-infinity modules as a DG functor

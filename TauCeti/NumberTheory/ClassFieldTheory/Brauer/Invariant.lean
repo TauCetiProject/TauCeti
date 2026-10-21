@@ -68,7 +68,8 @@ multiplication by `[L : K]` is surjective on `ℚ/ℤ`, restriction is surjectiv
 * `TauCeti.ClassFieldTheory.invMap_relBrInfl_unramified`: the same, for an unramified extension
   embedded in `Kˢ` by an arbitrary embedding.
 * `TauCeti.ClassFieldTheory.range_invMap_comp_relBrInfl`: the invariants of the classes split by a
-  finite Galois extension of degree `n` form the subgroup of `ℚ/ℤ` of order `n`.
+  finite normal extension `L/K` embedded in `Kˢ` by `σ` are the elements of `ℚ/ℤ` killed by
+  `[L : K]`.
 * `TauCeti.ClassFieldTheory.invMap_brRes`: the restriction square
   `inv_L (brRes x) = [L : K] • inv_K x`.
 * `TauCeti.ClassFieldTheory.brRes_surjective`: restriction of Brauer classes is surjective.
@@ -244,28 +245,6 @@ theorem invMap_relBrInfl_unramified (L : Type) [Field L] [ValuativeRel L] [Topol
     AlgHom.ext fun x => AlgHom.equivFieldRange_apply_coe ι x
   rw [← unramifiedInv_map K L E y, ← invMap_relBrInfl E, relBrInfl_map, hι]
 
-/-- **The degree-`n` piece of the Brauer group.** The invariants of the classes of `Br K` split by
-a finite Galois extension `E/K` of degree `n` inside `Kˢ` are the elements of `ℚ/ℤ` of order
-dividing `n`. -/
-theorem range_invMap_comp_relBrInfl (E : IntermediateField K (SeparableClosure K))
-    [FiniteDimensional K E] [Normal K E] :
-    Set.range (invMap K ∘ relBrInfl K E E.val) =
-      (AddSubgroup.torsionBy (AddCircle (1 : ℚ)) (Module.finrank K E) :
-        Set (AddCircle (1 : ℚ))) := by
-  set n := Module.finrank K E
-  have hn : n ≠ 0 := Module.finrank_pos.ne'
-  let _ := algebraicExtensionValuativeRel K (𝓤 n)
-  let _ := algebraicExtensionNormedFieldTopology K (𝓤 n)
-  have := finiteExtension_isNonarchimedeanLocalField K (𝓤 n)
-  have := algebraicExtension_valuativeExtension K (𝓤 n)
-  have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension hn
-  have h := range_unramifiedInv K (𝓤 n)
-  rw [finrank_unramifiedExtension hn] at h
-  rw [← h, Set.range_comp, ← AddMonoidHom.coe_range,
-    range_relBrInfl_eq_range_relBrInfl_unramifiedExtension K E, AddMonoidHom.coe_range,
-    ← Set.range_comp]
-  exact congrArg Set.range (funext fun y => invMap_relBrInfl (𝓤 n) y)
-
 /-! ### Restriction and corestriction -/
 
 section Restriction
@@ -314,6 +293,28 @@ theorem invMap_brRes (x : Br K) :
   rw [← brBaseChange_eq_brRes K L σ,
     brBaseChange_relBrInfl K L (𝓤 f) (𝓥 f) (𝓤 f).val (𝓥 f).val y, invMap_relBrInfl,
     invMap_relBrInfl, unramifiedInv_map_baseChange]
+
+/-- **The degree-`n` piece of the Brauer group.** For a finite normal extension `L/K` of
+nonarchimedean local fields embedded in `Kˢ` by `σ`, the invariants of the classes split by `L`
+are exactly the elements of `ℚ/ℤ` killed by `[L : K]`. -/
+theorem range_invMap_comp_relBrInfl [FiniteDimensional K L] [Normal K L] :
+    Set.range (invMap K ∘ relBrInfl K L σ) =
+      (AddSubgroup.torsionBy (AddCircle (1 : ℚ)) (Module.finrank K L) :
+        Set (AddCircle (1 : ℚ))) := by
+  ext t
+  simp only [Set.mem_range, Function.comp_apply, SetLike.mem_coe,
+    AddSubgroup.torsionBy.nsmul_iff]
+  constructor
+  · rintro ⟨x, rfl⟩
+    have hx := (mem_range_relBrInfl_iff_brBaseChange_eq_zero K L σ _).mp ⟨x, rfl⟩
+    rw [brBaseChange_eq_brRes K L σ] at hx
+    rw [← invMap_brRes K L σ, hx, map_zero]
+  · intro ht
+    have hb : brBaseChange K L ((invMap K).symm t) = 0 := by
+      apply (invMap L).injective
+      rw [brBaseChange_eq_brRes K L σ, invMap_brRes, AddEquiv.apply_symm_apply, ht, map_zero]
+    obtain ⟨y, hy⟩ := (mem_range_relBrInfl_iff_brBaseChange_eq_zero K L σ _).mpr hb
+    exact ⟨y, by rw [hy, AddEquiv.apply_symm_apply]⟩
 
 /-- **Restriction of Brauer classes along a finite extension of nonarchimedean local fields is
 surjective**, since multiplication by `[L : K]` is surjective on `ℚ/ℤ`. -/

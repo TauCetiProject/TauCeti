@@ -13,11 +13,14 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.Topology.Algebra.GroupAction.ForcedDiscrete
 public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
+public import Mathlib.GroupTheory.SpecificGroups.KleinFour
 -- Proof-only: finiteness of the torsion of an elliptic curve.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
 
 -- Non-public: the nonvanishing of `m` in `Kˢ` is used only inside proofs.
 import TauCeti.Algebra.Algebra.NatCast
+-- Proof-only: a `ZMod 2`-module of cardinality four is a Klein four-group.
+import TauCeti.Algebra.Group.ElementaryTwoQuotient.KleinFour
 
 /-!
 # The Galois coefficient modules of an elliptic curve
@@ -76,6 +79,7 @@ automorphisms of an algebraic closure are the points over the perfect closure of
   `WeierstrassCurve.torsionByCongr_pointCoeffEquiv_symm_smul` its torsion counterpart
   `WeierstrassCurve.torsionGaloisAction`.
 * `WeierstrassCurve.natCard_torsionCoeff`: `E(Kˢ)[m]` has `m²` points for `m` invertible in `K`.
+* `WeierstrassCurve.isAddKleinFour_torsionCoeff_two`: `E(Kˢ)[2]` is a Klein four-group.
 * `WeierstrassCurve.cast_pointCoeff_smul`, `WeierstrassCurve.cast_torsionCoeff_smul`: transport of
   the coefficients along an equality of curves, such as `(W⁄L)⁄M = W⁄M`, is `G_K`-equivariant.
 * `WeierstrassCurve.mem_H0_pointCoeff_iff`: a point of `E(Kˢ)` fixed by `G_K` comes from `E(K)`,
@@ -274,6 +278,13 @@ theorem natCard_torsionCoeff [W.IsElliptic] {m : ℕ} (hm : IsUnit (m : K)) :
   rw [hI, WeierstrassCurve.natCard_torsionBy (W.baseChange (SeparableClosure K)) hm',
     Int.natAbs_natCast]
 
+/-- **`E(Kˢ)[2]` is a Klein four-group** when `2` is invertible in `K`: it has `2² = 4` points,
+each killed by `2`. -/
+theorem isAddKleinFour_torsionCoeff_two [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K)) :
+    IsAddKleinFour (W.TorsionCoeff 2) :=
+  letI := AddSubgroup.torsionBy.zmodModule (A := W.PointCoeff) (n := 2)
+  TauCeti.isAddKleinFour_of_natCard_eq_four (natCard_torsionCoeff W h2)
+
 /-! ### Transport along an equality of curves -/
 
 section Cast
@@ -421,6 +432,19 @@ def baseTorsionCoeff (m : ℕ) :
 theorem coe_baseTorsionCoeff {m : ℕ} (T : AddSubgroup.torsionBy W.toAffine.Point m) :
     (W.baseTorsionCoeff m T : W.PointCoeff) = W.basePointCoeff T :=
   (rfl)
+
+open scoped Classical in
+/-- The inclusion of rational torsion agrees with transport along the base-field embedding. -/
+theorem torsionByCongr_symm_baseTorsionCoeff (m : ℕ)
+    (P : AddSubgroup.torsionBy W.toAffine.Point m) :
+    (AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm (W.baseTorsionCoeff m P) =
+      W.torsionMapAlong (algebraMap K (SeparableClosure K)) m P := by
+  apply Subtype.ext
+  simp only [AddEquiv.torsionByCongr_symm_apply_coe, WeierstrassCurve.coe_baseTorsionCoeff,
+    WeierstrassCurve.coe_torsionMapAlong_apply,
+    WeierstrassCurve.basePointCoeff_eq_pointCoeffEquiv_mapAlong]
+  -- `mapAlong` targets `W.map`, whereas the coefficient equivalence uses `W⁄Kˢ`.
+  exact W.pointCoeffEquiv.symm_apply_apply _
 
 /-- **A point of `E(K)[m]` is fixed by `G_K`** after mapping into `E(Kˢ)[m]`. -/
 @[simp]

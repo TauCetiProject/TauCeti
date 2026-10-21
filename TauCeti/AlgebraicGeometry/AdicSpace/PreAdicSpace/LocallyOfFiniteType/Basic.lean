@@ -234,13 +234,8 @@ theorem LocallyOfFiniteType.comp_of_isOpenImmersion {f : X ⟶ Y} (hf : LocallyO
   -- the open `g(V)` of `Z`, and the identification of the two restrictions
   let V' : Opens Z := g.isOpenEmbedding.isOpenMap.functor.obj V
   have hr : Set.range (Y.ofRestrict V.isOpenEmbedding ≫ g).base =
-      Set.range (Z.ofRestrict V'.isOpenEmbedding).base := by
-    ext z
-    constructor
-    · rintro ⟨⟨v, hv⟩, rfl⟩
-      exact ⟨⟨g.base v, v, hv, rfl⟩, rfl⟩
-    · rintro ⟨⟨_, v, hv, rfl⟩, rfl⟩
-      exact ⟨⟨v, hv⟩, rfl⟩
+      Set.range (Z.ofRestrict V'.isOpenEmbedding).base :=
+    IsOpenImmersion.range_ofRestrict_comp_base g V
   let e := IsOpenImmersion.isoOfRangeEq _ _ hr
   refine ⟨U, hx, V', fun y hy ↦ ⟨f.base y, hUV hy, rfl⟩, A, inferInstance, inferInstance,
     inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance, inferInstance,

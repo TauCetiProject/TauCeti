@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.UpperHalfPlane
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import TauCeti.Topology.ClusterSet
 
 import TauCeti.Analysis.Complex.Conformal.Caratheodory
+import TauCeti.Analysis.Complex.Conformal.Inverse.BoundaryCluster
 import TauCeti.Data.Set.Image
 
 /-!
@@ -21,7 +23,9 @@ boundary correspondence.
 
 The boundary point omitted by the Cayley transform is the limit at infinity.  Other points of the
 source circle can have the same boundary value, so the finite real boundary values cover the target
-frontier up to that distinguished point rather than necessarily omitting it.
+frontier up to that distinguished point rather than necessarily omitting it.  Such a repeated value
+is excluded at every boundary point where the target has preconnected approach regions: there the
+real fibre of the extension has at most one point.
 
 ## Main statement
 
@@ -30,6 +34,8 @@ frontier up to that distinguished point rather than necessarily omitting it.
 * `TauCeti.exists_continuousOn_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier` -- a
   Riemann map of a bounded simply connected domain with locally connected boundary, transported to
   the upper half-plane with a prescribed boundary limit at infinity.
+* `TauCeti.subsingleton_real_fiber_of_isPreconnectedApproachAt` -- the boundary extension is
+  injective over every boundary point at which the image has preconnected approach regions.
 
 ## References
 
@@ -124,5 +130,53 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_fro
   obtain ⟨g, hgc, hgd, hgΩ⟩ :=
     exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_frontier hΩo hΩs hΩb
   exact exists_continuousOn_bijOn_upperHalfPlaneSet_of_continuousOn_closedBall hgc hgd hgΩ hp
+
+/-- **A boundary point with preconnected approach regions has at most one real prevertex.** Let
+`F` be continuous on the closed upper half-plane, holomorphic and injective on the open
+half-plane, and have a limit at infinity. If the image `F '' upperHalfPlaneSet` has preconnected
+approach regions at a point `a`, then at most one real parameter is sent to `a`.
+
+No condition is placed at the other boundary points, so distinct real parameters can still share a
+boundary value where the image does not have preconnected approach regions. -/
+theorem subsingleton_real_fiber_of_isPreconnectedApproachAt {F : ℂ → ℂ} {p a : ℂ}
+    (hFc : ContinuousOn F {z | 0 ≤ z.im}) (hFd : DifferentiableOn ℂ F upperHalfPlaneSet)
+    (hFi : InjOn F upperHalfPlaneSet)
+    (hp : Tendsto F (cobounded ℂ ⊓ 𝓟 {z | 0 ≤ z.im}) (𝓝 p))
+    (hloc : IsPreconnectedApproachAt (F '' upperHalfPlaneSet) a) :
+    {x : ℝ | F x = a}.Subsingleton := by
+  -- Pull `F` back to the closed disc by the inverse Cayley transform `κ`, filling in `p` at the
+  -- omitted boundary point `1`, and apply the disc form of the statement.
+  set κ : ℂ → ℂ := fun w => Complex.I * (1 + w) / (1 - w)
+  have hκK : BijOn κ (closedBall 0 1 \ {1}) {z | 0 ≤ z.im} :=
+    bijOn_I_mul_one_add_div_one_sub_closedBall_sdiff
+  have hκH : BijOn κ (ball 0 1) upperHalfPlaneSet := bijOn_I_mul_one_add_div_one_sub_ball
+  have hκc {w : ℂ} (hw : w ≠ 1) : ContinuousAt κ w :=
+    (hasDerivAt_I_mul_one_add_div_one_sub hw).continuousAt
+  have hball1 {w : ℂ} (hw : w ∈ ball (0 : ℂ) 1) : w ≠ 1 :=
+    ne_of_mem_ball_of_norm_eq_one hw norm_one
+  have hGc : ContinuousOn (update (F ∘ κ) 1 p) (closedBall 0 1) := by
+    refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
+    · exact (hFc _ (hκK.mapsTo hw)).comp (hκc hw.2).continuousWithinAt hκK.mapsTo
+    · exact hp.comp tendsto_I_mul_one_add_div_one_sub_nhdsWithin_closedBall_sdiff_one
+  have hfd : DifferentiableOn ℂ (F ∘ κ) (ball 0 1) :=
+    hFd.comp (fun w hw => (hasDerivAt_I_mul_one_add_div_one_sub
+      (hball1 hw)).differentiableAt.differentiableWithinAt) hκH.mapsTo
+  have hsub := subsingleton_sphere_fiber_of_isPreconnectedApproachAt one_pos hfd
+    (hFi.comp hκH.injOn hκH.mapsTo) hGc (fun w hw => update_of_ne (hball1 hw) _ _)
+    (by rwa [image_comp, hκH.image_eq])
+  -- A real parameter `x` sits on the circle at its Cayley image, where the pulled-back map takes
+  -- the value `F x`.
+  have hreal (x : ℝ) (hx : F x = a) : ((x : ℂ) - Complex.I) / ((x : ℂ) + Complex.I) ∈
+      {w | w ∈ sphere (0 : ℂ) 1 ∧ update (F ∘ κ) 1 p w = a} := by
+    have hx0 : (0 : ℝ) ≤ (x : ℂ).im := by simp
+    have hnorm := norm_sub_I_div_norm_add_I_ofReal x
+    rw [← norm_div] at hnorm
+    refine ⟨mem_sphere_zero_iff_norm.mpr hnorm, ?_⟩
+    rw [update_of_ne (bijOn_sub_I_div_add_I_im_nonneg.mapsTo hx0).2, comp_apply]
+    exact (congrArg F (I_mul_one_add_sub_I_div_add_I_div_one_sub
+      (add_I_ne_zero_of_im_nonneg hx0))).trans hx
+  intro x hx y hy
+  exact_mod_cast injOn_sub_I_div_add_I (add_I_ne_zero_of_im_nonneg (by simp))
+    (add_I_ne_zero_of_im_nonneg (by simp)) (hsub (hreal x hx) (hreal y hy))
 
 end TauCeti

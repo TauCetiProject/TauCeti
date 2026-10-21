@@ -151,11 +151,19 @@ instance affineFunctions_isEquivalence : (affineFunctions X).IsEquivalence := by
   exact (relativeSpecEquiv X).isEquivalence_inverse
 
 /-- The algebraic triangle identity for the canonical relative-Spec comparisons. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma affineFunctions_unit_counit (V : AffineSchemeOver X) :
     (relativeSpecUnit X).hom.app ((affineFunctions X).obj V) ≫
         (affineFunctions X).map ((relativeSpecCounit X).hom.app V) =
       𝟙 ((affineFunctions X).obj V) :=
   (relativeSpecEquiv X).unit_inverse_comp V
+
+/-- The algebraic triangle identity, inverted: on function algebras, the relative-Spec counit
+is the inverse of the relative-Spec unit. -/
+@[simp]
+lemma affineFunctions_map_relativeSpecCounit_hom_app (V : AffineSchemeOver X) :
+    (affineFunctions X).map ((relativeSpecCounit X).hom.app V) =
+      (relativeSpecUnit X).inv.app ((affineFunctions X).obj V) :=
+  ((relativeSpecEquiv X).unitInv_app_inverse V).symm
 
 end TauCeti.AlgebraicGeometry

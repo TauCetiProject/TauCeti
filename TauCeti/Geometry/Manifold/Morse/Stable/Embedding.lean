@@ -124,8 +124,7 @@ variable (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘
     fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
   {r : ℝ} (hrT : ∀ z, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target)
   {δ : ℝ} (hδr : ∀ w : φ.stableSubspace, ‖w‖ < δ → ‖φ.coord w‖ < r / 2)
-include hφ hrT hδr
-
+include hφ hrT hδr in
 /-- **The flow contracts the stable subspace.** For small `w` in the stable subspace and `s ≥ 0`,
 the flow moves `φ⁻¹ w` to `φ⁻¹ (e^{-s} w)`. -/
 theorem flow_toChart_symm_stableSubspace {w : φ.stableSubspace} (hw : ‖w‖ < δ) {s : ℝ}
@@ -133,6 +132,7 @@ theorem flow_toChart_symm_stableSubspace {w : φ.stableSubspace} (hw : ‖w‖ <
   simpa using hX.flow_toChart_symm_of_forall_coord_eq_zero φ hφ hrT (hδr w hw)
     (φ.mem_stableSubspace.1 w.2) hs
 
+include hφ hrT hδr in
 /-- Small vectors of the stable subspace parametrize points of the stable manifold. -/
 theorem toChart_symm_mem_stableSet {w : φ.stableSubspace} (hw : ‖w‖ < δ) :
     φ.toChart.symm w ∈ hX.flow.stableSet x := by
@@ -142,6 +142,7 @@ theorem toChart_symm_mem_stableSet {w : φ.stableSubspace} (hw : ‖w‖ < δ) :
   · exact hδr w hw
   · exact φ.mem_stableSubspace.1 w.2
 
+include hφ hrT hδr in
 /-- **Flowing along the stable subspace adds times.** If `e^{-T} ‖v‖ < δ`, the flow for a time
 `s ≥ 0` moves `φ⁻¹ (e^{-T} v)` to `φ⁻¹ (e^{-(T + s)} v)`. -/
 theorem flow_toChart_symm_exp_smul {v : φ.stableSubspace} {T s : ℝ}
@@ -153,6 +154,7 @@ theorem flow_toChart_symm_exp_smul {v : φ.stableSubspace} {T s : ℝ}
   rw [← Submodule.coe_smul, hX.flow_toChart_symm_stableSubspace φ hφ hrT hδr hw hs,
     Submodule.coe_smul, smul_smul, ← Real.exp_add, neg_add, add_comm]
 
+include hφ hrT hδr in
 /-- Two admissible times give the same point. -/
 theorem flow_neg_toChart_symm_eq {v : φ.stableSubspace} {T T' : ℝ} (hTT' : T ≤ T')
     (hT : Real.exp (-T) * ‖v‖ < δ) :
@@ -162,6 +164,7 @@ theorem flow_neg_toChart_symm_eq {v : φ.stableSubspace} {T T' : ℝ} (hTT' : T 
   rw [add_sub_cancel] at h
   rw [← h, ← Flow.map_add, neg_add_eq_sub, sub_sub_cancel_left]
 
+include hφ hrT hδr in
 /-- **The parametrization does not depend on the time.** For every time `T` with
 `e^{-T} ‖v‖ < δ`, the parametrization of `v` is `Φ_{-T} (φ⁻¹ (e^{-T} v))`. -/
 theorem stableParam_eq (hδ : 0 < δ) {v : φ.stableSubspace} {T : ℝ}
@@ -173,6 +176,7 @@ theorem stableParam_eq (hδ : 0 < δ) {v : φ.stableSubspace} {T : ℝ}
   · exact (hX.flow_neg_toChart_symm_eq φ hφ hrT hδr h hT).symm
   · exact hX.flow_neg_toChart_symm_eq φ hφ hrT hδr h hτ
 
+include hφ hrT hδr in
 /-- Near `0`, the parametrization is the inverse of the chart. -/
 theorem stableParam_of_norm_lt {v : φ.stableSubspace} (hv : ‖v‖ < δ) :
     hX.stableParam φ δ v = φ.toChart.symm v := by
@@ -180,11 +184,13 @@ theorem stableParam_of_norm_lt {v : φ.stableSubspace} (hv : ‖v‖ < δ) :
   rw [hX.stableParam_eq φ hφ hrT hδr hδ (T := 0) (by simpa using hv)]
   simp
 
+include hφ hrT hδr in
 /-- The parametrization sends `0` to the critical point. -/
 theorem stableParam_zero (hδ : 0 < δ) : hX.stableParam φ δ 0 = x := by
   rw [hX.stableParam_of_norm_lt φ hφ hrT hδr (by simpa using hδ), ZeroMemClass.coe_zero,
     ← φ.apply_self, φ.toChart.left_inv φ.mem_source]
 
+include hφ hrT hδr in
 /-- **The tangent space of the stable manifold at the critical point.** Read in the Morse chart,
 the derivative of the parametrization at `0` is the inclusion of the stable subspace. -/
 theorem mfderiv_toChart_comp_stableParam_zero (hδ : 0 < δ) :
@@ -201,6 +207,7 @@ theorem mfderiv_toChart_comp_stableParam_zero (hδ : 0 < δ) :
   -- The identifications of the tangent spaces with the model spaces are identities.
   rfl
 
+include hφ hrT hδr in
 /-- **The parametrization intertwines the scaling with the flow.** Scaling `v` by `e^{-s}` moves its
 image by the time-`s` map of the flow. -/
 theorem stableParam_smul (hδ : 0 < δ) (v : φ.stableSubspace) (s : ℝ) :
@@ -215,6 +222,7 @@ theorem stableParam_smul (hδ : 0 < δ) (v : φ.stableSubspace) (s : ℝ) :
   rw [hX.stableParam_eq φ hφ hrT hδr hδ hτs, hX.stableParam_eq φ hφ hrT hδr hδ hτ,
     ← Flow.map_add, Submodule.coe_smul, smul_smul, hexp, neg_sub, sub_eq_add_neg]
 
+include hφ hrT hδr in
 /-- The parametrization takes values in the stable manifold. -/
 theorem stableParam_mem_stableSet (hδ : 0 < δ) (v : φ.stableSubspace) :
     hX.stableParam φ δ v ∈ hX.flow.stableSet x := by
@@ -222,6 +230,7 @@ theorem stableParam_mem_stableSet (hδ : 0 < δ) (v : φ.stableSubspace) :
     Flow.apply_mem_stableSet_iff, ← Submodule.coe_smul]
   exact hX.toChart_symm_mem_stableSet φ hφ hrT hδr (φ.norm_exp_neg_log_smul_lt hδ v)
 
+include hφ hrT hδr in
 /-- The parametrization is injective. -/
 theorem stableParam_injective (hδ : 0 < δ) : Injective (hX.stableParam φ δ) := by
   intro v v' h
@@ -244,6 +253,7 @@ theorem stableParam_injective (hδ : 0 < δ) : Injective (hX.stableParam φ δ) 
     (by simpa using φ.coe_mem_target_of_norm_lt hrT hδr (hsmall hT')) h1
   exact Subtype.ext (smul_right_injective E (Real.exp_pos _).ne' h2)
 
+include hφ hrT hδr in
 /-- **Points of the stable manifold near the critical point.** Let `y ∈ W^s(x)` reach, at time
 `T`, a point of the small cube of the chart in which `W^s(x)` is the stable subspace. Then the
 coordinates `u` of that point lie in the stable subspace, and `y` is the image of `e^T u`. -/
@@ -265,6 +275,7 @@ theorem exists_eq_stableParam {ε : ℝ}
     inv_smul_smul₀ (Real.exp_ne_zero T), Submodule.coe_mk, φ.toChart.left_inv hTs,
     ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
 
+include hφ hrT hδr in
 /-- **The parametrization covers the stable manifold.** Its image is `W^s(x)`. -/
 theorem range_stableParam (hδ : 0 < δ) {ε : ℝ} (hε0 : 0 < ε)
     (hε : ∀ y ∈ φ.toChart.source, ‖φ.coord (φ.toChart y)‖ < ε →
@@ -278,6 +289,7 @@ theorem range_stableParam (hδ : 0 < δ) {ε : ℝ} (hε0 : 0 < ε)
   obtain ⟨u, -, hyu⟩ := hX.exists_eq_stableParam φ hφ hrT hδr hε hy hTs hTε hTδ
   exact ⟨_, hyu.symm⟩
 
+include hφ hrT hδr in
 /-- Near `0`, the parametrization is an immersion. -/
 theorem isImmersionAt_stableParam_of_norm_lt {v : φ.stableSubspace}
     (hv : ‖v‖ < δ) : IsImmersionAt 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) ∞ (hX.stableParam φ δ) v := by
@@ -302,6 +314,7 @@ theorem isImmersionAt_stableParam_of_norm_lt {v : φ.stableSubspace}
     simp [hX.stableParam_of_norm_lt φ hφ hrT hδr hu',
       φ.toChart.right_inv (φ.coe_mem_target_of_norm_lt hrT hδr hu')]
 
+include hφ hrT hδr in
 /-- **The chart inverts the derivative of the parametrization at `0`.** The derivative of the
 Morse chart at `x` sends the tangent vector `dι₀ u` of `W^s(x)` back to `u`. -/
 theorem mfderiv_toChart_mfderiv_stableParam_zero (hδ : 0 < δ) (u : φ.stableSubspace) :
@@ -314,6 +327,7 @@ theorem mfderiv_toChart_mfderiv_stableParam_zero (hδ : 0 < δ) (u : φ.stableSu
   rw [hX.mfderiv_toChart_comp_stableParam_zero φ hφ hrT hδr hδ] at h
   exact h.symm
 
+include hφ hrT hδr in
 /-- **The parametrization is an immersion.** -/
 theorem isImmersion_stableParam (hδ : 0 < δ) :
     IsImmersion 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) ∞ (hX.stableParam φ δ) := by
@@ -330,6 +344,7 @@ theorem isImmersion_stableParam (hδ : 0 < δ) :
   rw [hcomp, isImmersionAt_diffeomorph_comp_iff, isImmersionAt_comp_diffeomorph_iff, he]
   exact hX.isImmersionAt_stableParam_of_norm_lt φ hφ hrT hδr (φ.norm_exp_neg_log_smul_lt hδ v)
 
+include hφ hrT hδr in
 /-- **The parametrization is a topological embedding.** -/
 theorem isEmbedding_stableParam (hδ : 0 < δ) {ε : ℝ} (hεδ : ∀ w : φ.stableSubspace, ‖w‖ < δ →
       ‖φ.coord w‖ < ε)
@@ -373,6 +388,7 @@ theorem isEmbedding_stableParam (hδ : 0 < δ) {ε : ℝ} (hεδ : ∀ w : φ.st
   rw [Topology.IsInducing.subtypeVal.nhds_eq_comap, ← tendsto_iff_comap]
   exact (hh.comp tendsto_comap).congr' (mem_of_superset (preimage_mem_comap hV) hinv)
 
+include hφ hrT hδr in
 /-- **The parametrization is a smooth embedding.** -/
 theorem isSmoothEmbedding_stableParam (hδ : 0 < δ) {ε : ℝ} (hεδ : ∀ w : φ.stableSubspace,
       ‖w‖ < δ → ‖φ.coord w‖ < ε)
@@ -381,8 +397,6 @@ theorem isSmoothEmbedding_stableParam (hδ : 0 < δ) {ε : ℝ} (hεδ : ∀ w :
     IsSmoothEmbedding 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) ∞ (hX.stableParam φ δ) :=
   ⟨hX.isImmersion_stableParam φ hφ hrT hδr hδ,
     hX.isEmbedding_stableParam φ hφ hrT hδr hδ hεδ hε⟩
-
-omit hφ hrT hδr
 
 /-- **The parametrization of the stable manifold, with its chart.** For a critical point `x`, there
 are a Morse chart `φ` at `x` and a scale `δ` for which `stableParam φ δ` is a smooth embedding of

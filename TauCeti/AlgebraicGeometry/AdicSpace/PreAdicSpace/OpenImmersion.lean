@@ -185,6 +185,21 @@ theorem isoOfRangeEq_inv_comp : (isoOfRangeEq f g e).inv ≫ f = g :=
 
 end IsoOfRangeEq
 
+/-- Restricting the source of an open immersion to an open `U` has the same image as the
+inclusion of the image of `U` in the target. -/
+theorem range_ofRestrict_comp_base (g : X ⟶ Y) [IsOpenImmersion g] (U : Opens X) :
+    Set.range (X.ofRestrict U.isOpenEmbedding ≫ g).base =
+      Set.range (Y.ofRestrict
+        (g.isOpenEmbedding.isOpenMap.functor.obj U).isOpenEmbedding).base := by
+  -- Compare subtype witnesses directly: rewriting the bases under `Set.range` would require
+  -- identifying the carrier of a restriction with its defining open at default transparency.
+  ext y
+  constructor
+  · rintro ⟨⟨x, hx⟩, rfl⟩
+    exact ⟨⟨g.base x, x, hx, rfl⟩, rfl⟩
+  · rintro ⟨⟨_, x, hx, rfl⟩, rfl⟩
+    exact ⟨⟨x, hx⟩, rfl⟩
+
 section IsoRestrict
 
 variable (f : X ⟶ Y) [IsOpenImmersion f]
@@ -364,23 +379,6 @@ section Restrict
 
 variable {U : TopCat.{u}} (X : PreAdicSpace.{u}) {f : U ⟶ X.toTopCat} (h : IsOpenEmbedding f)
 
--- Both bases are the inclusion of a subtype followed by `f`, so a point lies in either range
--- exactly when it is the image of a point of `V`. The identifications of the two bases with
--- `f ∘ Subtype.val` are the `rfl`-lemmas `comp_base` and `ofRestrict_base`, which cannot be
--- rewritten inside `Set.range`: the source of the right-hand side of `ofRestrict_base` is the open
--- `(Opens.toTopCat _).obj V`, while the source of the left-hand side is the carrier of a
--- restriction, which unfolds to it only at default transparency, so the rewritten composite is
--- ill-typed for `rw`. The two sets are compared pointwise instead.
-private theorem range_ofRestrict_comp_ofRestrict_base (V : Opens (X.restrict h)) :
-    Set.range ((X.restrict h).ofRestrict V.isOpenEmbedding ≫ X.ofRestrict h).base =
-      Set.range (X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding).base := by
-  ext y
-  constructor
-  · rintro ⟨⟨v, hv⟩, rfl⟩
-    exact ⟨⟨f v, v, hv, rfl⟩, rfl⟩
-  · rintro ⟨⟨_, v, hv, rfl⟩, rfl⟩
-    exact ⟨⟨v, hv⟩, rfl⟩
-
 /-- Restricting a restriction is restricting to the image: `X` restricted to `U` and then to an
 open `V` of `U` is isomorphic in `𝒱^pre` to `X` restricted to the image of `V` in `X`, both being
 open subspaces of `X` with the same image. The isomorphism is compatible with the canonical
@@ -390,7 +388,7 @@ noncomputable def restrictRestrictIso (V : Opens (X.restrict h)) :
       X.restrict (h.isOpenMap.functor.obj V).isOpenEmbedding :=
   IsOpenImmersion.isoOfRangeEq ((X.restrict h).ofRestrict V.isOpenEmbedding ≫ X.ofRestrict h)
     (X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding)
-    (range_ofRestrict_comp_ofRestrict_base X h V)
+    (IsOpenImmersion.range_ofRestrict_comp_base (X.ofRestrict h) V)
 
 @[reassoc (attr := simp)]
 theorem restrictRestrictIso_hom_ofRestrict (V : Opens (X.restrict h)) :

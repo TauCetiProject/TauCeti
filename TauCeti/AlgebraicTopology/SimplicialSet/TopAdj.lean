@@ -121,7 +121,7 @@ private lemma δ_zero_simplex₁_eq_δ_one_simplex₁ (g : C(I, X)) (i : Fin 2) 
   apply (X.toSSetObjEquiv _).injective
   ext w
   rw [TopCat.toSSetObjEquiv_δ_apply, toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply,
-    ContinuousMap.coe_coe, ht, TopCat.toSSetObj₀Equiv_symm_apply, Equiv.apply_symm_apply]
+    ContinuousMap.coe_ofClass, ht, TopCat.toSSetObj₀Equiv_symm_apply, Equiv.apply_symm_apply]
   -- The right-hand side is the constant map at `g t`, written as a structure.
   rfl
 
@@ -163,20 +163,20 @@ def path₁ (s : (TopCat.toSSet.obj X) _⦋1⦌) : Path (source₁ s) (target₁
 
 lemma path₁_apply (s : (TopCat.toSSet.obj X) _⦋1⦌) (t : I) :
     path₁ s t = X.toSSetObjEquiv _ s (StdSimplex.homeomorphI.symm t) := by
-  rw [path₁, ← Path.coe_toContinuousMap, ContinuousMap.comp_apply, ContinuousMap.coe_coe]
+  rw [path₁, ← Path.coe_toContinuousMap, ContinuousMap.comp_apply, ContinuousMap.coe_ofClass]
 
 /-- The first vertex of the singular `1`-simplex of a map from the unit interval is its value
 at `0`. -/
 @[simp]
 lemma source₁_simplex₁ (g : C(I, X)) : source₁ (simplex₁ g) = g 0 := by
-  rw [source₁, toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply, ContinuousMap.coe_coe,
+  rw [source₁, toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply, ContinuousMap.coe_ofClass,
     StdSimplex.homeomorphI_single_zero]
 
 /-- The last vertex of the singular `1`-simplex of a map from the unit interval is its value
 at `1`. -/
 @[simp]
 lemma target₁_simplex₁ (g : C(I, X)) : target₁ (simplex₁ g) = g 1 := by
-  rw [target₁, toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply, ContinuousMap.coe_coe,
+  rw [target₁, toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply, ContinuousMap.coe_ofClass,
     StdSimplex.homeomorphI_single_one]
 
 @[simp]

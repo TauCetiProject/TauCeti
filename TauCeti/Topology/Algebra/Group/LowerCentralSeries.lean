@@ -169,7 +169,7 @@ instance pVerbalStep_normal (H K : Subgroup G) [H.Normal] [K.Normal] :
   have : (Subgroup.closure ((· ^ p) '' (H : Set G))).Normal := by
     refine closure_normal_of_forall_conj_mem ?_
     rintro g _ ⟨x, hx, rfl⟩
-    exact ⟨g * x * g⁻¹, Normal.conj_mem ‹H.Normal› x hx g, conj_pow⟩
+    exact ⟨g * x * g⁻¹, Normal.conj_mem x hx g, conj_pow⟩
   exact is_normal_topologicalClosure _
 
 variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
@@ -232,8 +232,9 @@ theorem pLowerCentralStep_def (H : Subgroup G) :
 
 variable {p}
 
-/-- One step of the lower `p`-series is a closed subgroup. -/
-theorem isClosed_pLowerCentralStep (H : Subgroup G) :
+/-- One step of the lower `p`-series is a closed subgroup. This is an instance, so that together
+with `Subgroup.isClosed_subgroupOf` instance search finds `N ⧸ Nᵖ[N, G]` to be Hausdorff. -/
+instance isClosed_pLowerCentralStep (H : Subgroup G) :
     IsClosed (pLowerCentralStep p H : Set G) := by
   rw [pLowerCentralStep_eq_pVerbalStep]
   exact isClosed_pVerbalStep H ⊤
@@ -285,12 +286,6 @@ theorem normal_of_pLowerCentralStep_le_of_le {R K : Subgroup G} (hRK : pLowerCen
     (hKR : K ≤ R) : K.Normal :=
   commutator_top_right_le_iff.mp
     ((commutator_mono_left hKR).trans ((commutator_le_pLowerCentralStep R).trans hRK))
-
-/-- One step of the lower `p`-series of a subgroup `N`, read inside `N`, is a closed subgroup of
-`N`. -/
-theorem isClosed_pLowerCentralStep_subgroupOf (N : Subgroup G) :
-    IsClosed ((pLowerCentralStep p N).subgroupOf N : Set N) :=
-  (isClosed_pLowerCentralStep N).preimage continuous_subtype_val
 
 /-- `N ⧸ Nᵖ[N, G]` is commutative: the commutators `⁅N, G⁆` lie in `pLowerCentralStep p N`. -/
 instance instIsMulCommutativeQuotientPLowerCentralStep (N : Subgroup G) [N.Normal] :
@@ -424,8 +419,10 @@ instance pLowerCentralSeries_normal (k : ℕ) : (pLowerCentralSeries p G k).Norm
   | zero => rw [pLowerCentralSeries_zero]; infer_instance
   | succ k _ => rw [pLowerCentralSeries_succ]; infer_instance
 
-/-- Every term of the lower `p`-series is closed. -/
-theorem isClosed_pLowerCentralSeries (k : ℕ) : IsClosed (pLowerCentralSeries p G k : Set G) := by
+/-- Every term of the lower `p`-series is closed. This is an instance, so that together with
+`Subgroup.isClosed_subgroupOf` instance search finds every graded piece `λ_k ⧸ λ_{k+1}` to be
+Hausdorff, compact when `G` is, and so a profinite abelian group when `G` is profinite. -/
+instance isClosed_pLowerCentralSeries (k : ℕ) : IsClosed (pLowerCentralSeries p G k : Set G) := by
   cases k with
   | zero => rw [pLowerCentralSeries_zero, coe_top]; exact isClosed_univ
   | succ k => rw [pLowerCentralSeries_succ]; exact isClosed_pLowerCentralStep _

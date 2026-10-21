@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Projection.Lazard.Product
+public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Coordinate
+public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.IrreducibleBasis
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Lifting
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Product
+import Mathlib.Algebra.MvPolynomial.Nilpotent
 
 /-!
-# Common Lazard lifting of noncoordinate basis members
+# Lazard lifting of irreducible bases and families
 
 On a preconnected analytic submanifold, invariance of the Lazard projection gives a common
 Lazard delineation of any subfamily of an irreducible basis whose members have nonzero formal
@@ -23,9 +26,20 @@ its factors gives simultaneous root membership, multiplicities and removed base 
 Pairwise resultants enter through the discriminant of the product; separate delineations of
 the members would not by themselves supply this common stack.
 
-The excluded irreducible factors are associates of the distinguished coordinate. They require
-adjoining the zero section separately; this theorem supplies the complementary subfamily,
-including the empty subfamily, without imposing a condition on the rest of the basis.
+The excluded irreducible factors are associates of the distinguished coordinate; by
+pairwise nonassociation there is at most one. Its delineation is the zero section. The trailing
+coefficients in the projection decide uniformly whether `0` is a root of the Lazard evaluations
+of the other members, so the zero section can be adjoined to their common stack. This gives a
+Lazard delineation of the whole basis, and, since the contents lie in the projection, of the
+original family.
+
+## Main results
+
+* `TauCeti.nonempty_lazardDelineation_subfamily_of_lazardProjection`: a common Lazard
+  delineation of the basis members with nonzero constant coefficient.
+* `TauCeti.nonempty_lazardDelineation_basis_of_lazardProjection`: a Lazard delineation of the
+  whole irreducible basis.
+* `TauCeti.nonempty_lazardDelineation_of_lazardProjection`: a Lazard delineation of the family.
 
 ## References
 
@@ -85,5 +99,65 @@ theorem nonempty_lazardDelineation_subfamily_of_lazardProjection
     rw [← congrFun hfamily ()]
     exact (map_ne_zero_iff _ (rename_injective _ finSuccEquivLast.symm.injective)).mpr
       (EmbeddingLike.map_ne_zero_iff.mpr hp))⟩
+
+/-- **Lazard lifting of an irreducible basis.** Over a preconnected analytic submanifold on which
+the Lazard projection is valuation-invariant, an irreducible basis has a Lazard delineation.
+
+The members with nonzero constant coefficient are lifted together through their product. The
+remaining member, if any, is an associate of the distinguished coordinate; it contributes the zero
+section. Invariance of the constant coefficients of the other members makes `0` a root of their
+Lazard evaluations either over every base point or over none. -/
+theorem nonempty_lazardDelineation_basis_of_lazardProjection (hB : F.IsIrreducibleBasis B)
+    (hS : IsAnalyticSubmanifold d S) (hconn : IsPreconnected S)
+    (hproj : ∀ q ∈ F.lazardProjection B, ∀ x ∈ S, ∀ y ∈ S,
+      q.lazardValuation x = q.lazardValuation y) :
+    Nonempty (LazardDelineation
+      (fun b : B ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.1)) S) := by
+  classical
+  let A := B.filter fun b ↦ b.coeff 0 ≠ 0
+  have hAB : A ⊆ B := Finset.filter_subset _ _
+  obtain ⟨D⟩ := nonempty_lazardDelineation_subfamily_of_lazardProjection hB hAB
+    (fun b hb ↦ (Finset.mem_filter.1 hb).2) hS hconn hproj
+  -- Putting the distinguished variable last and moving it back into the coefficients is the
+  -- coefficient swap of the two `Option` equivalences.
+  have hswap (b : Polynomial (MvPolynomial (Fin n) ℝ)) :
+      optionEquivRight ℝ (Fin n) (rename finSuccEquivLast
+        (rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b))) =
+        ((optionEquivLeft ℝ (Fin n)).symm.trans (optionEquivRight ℝ (Fin n))) b := by
+    rw [rename_rename, Equiv.self_comp_symm, rename_id_apply, AlgEquiv.trans_apply]
+  refine nonempty_lazardDelineation_of_comp (f := fun b : A ↦ ⟨b.1, hAB b.2⟩) D hconn ?_ ?_
+  · -- A basis member with zero constant coefficient is a nonzero multiple of the coordinate.
+    rintro ⟨b, hb⟩ hbA
+    have h0 : b.coeff 0 = 0 := not_not.1 fun h ↦ hbA ⟨⟨b, Finset.mem_filter.2 ⟨hb, h⟩⟩, rfl⟩
+    obtain ⟨u, hu⟩ := Polynomial.irreducible_X.associated_of_dvd (hB.irreducible b hb)
+      (Polynomial.X_dvd_iff.2 h0)
+    obtain ⟨c, hc, hcu⟩ := Polynomial.isUnit_iff.1 u.isUnit
+    obtain ⟨a, ha, rfl⟩ := MvPolynomial.isUnit_iff_eq_C_of_isReduced.1 hc
+    have hbX : b = Polynomial.C (MvPolynomial.C a) * Polynomial.X := by
+      rw [← hu, ← hcu, mul_comm]
+    exact ⟨a, ha.ne_zero, by simp [hbX]⟩
+  · -- Constancy of the constant-coefficient valuation decides the root `0` uniformly.
+    rintro ⟨b, hbA⟩ x y hx
+    have hb0 := (Finset.mem_filter.1 hbA).2
+    have hval := hproj _ (Finset.trailingCoeff_mem_lazardProjection (hAB hbA)) x x.2 y y.2
+    rw [trailingCoeff_eq_coeff_zero hb0,
+      ← map_constantCoeff_optionEquivRight_optionEquivLeft_symm] at hval
+    have hexp := (D.lazardExponent_eq ⟨b, hbA⟩ x).trans (D.lazardExponent_eq ⟨b, hbA⟩ y).symm
+    simp only [hswap] at hx hexp ⊢
+    by_contra hy
+    rw [← lazardValuation_map_constantCoeff_eq_iff] at hy
+    exact (lazardValuation_map_constantCoeff_eq_iff _ _).1 (by rw [hval, hy, hexp]) hx
+
+/-- **Lazard lifting of a family.** Over a preconnected analytic submanifold on which the Lazard
+projection of a family with respect to an irreducible basis is valuation-invariant, the family has
+a Lazard delineation. Its members may be nullified at points of the base. -/
+theorem nonempty_lazardDelineation_of_lazardProjection (hB : F.IsIrreducibleBasis B)
+    (hS : IsAnalyticSubmanifold d S) (hconn : IsPreconnected S)
+    (hproj : ∀ q ∈ F.lazardProjection B, ∀ x ∈ S, ∀ y ∈ S,
+      q.lazardValuation x = q.lazardValuation y) :
+    Nonempty (LazardDelineation
+      (fun f : F ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm f.1)) S) :=
+  (nonempty_lazardDelineation_basis_of_lazardProjection hB hS hconn hproj).map fun D ↦
+    D.ofIrreducibleBasis hB fun _ hf ↦ hproj _ (Finset.content_mem_lazardProjection hf)
 
 end TauCeti

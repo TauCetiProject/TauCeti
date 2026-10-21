@@ -58,6 +58,8 @@ theorem mem_universalOneForms {t : Unitization k A ⊗[k] Unitization k A} :
 
 namespace UniversalOneForms
 
+instance instAddCommGroup : AddCommGroup (UniversalOneForms k A) := inferInstance
+
 /-- Left multiplication on the first factor of the tensor model for universal one-forms. -/
 def leftAction (a : Unitization k A) :
     Unitization k A ⊗[k] Unitization k A →ₗ[k] Unitization k A ⊗[k] Unitization k A :=

@@ -86,6 +86,8 @@ multiplicity the sum omits is zero.
   decomposition** `M ≃ ⨁_λ L(λ)^{m λ}`.
 * `TauCeti.isotypicMultiplicity_irreducibleQuotient_eq_zero_of_not_isDominantIntegral`: `L(λ)` of
   a non-dominant weight `λ` has multiplicity zero in every finite-dimensional module.
+* `TauCeti.genWeightSpace_ne_bot_of_isotypicMultiplicity_irreducibleQuotient_ne_zero`:
+  an irreducible with nonzero multiplicity has its highest weight among the weights of `M`.
 * `TauCeti.irreducibleFormalCharacter_ne_zero`: **the character of `L(lam)` is nonzero.**
 * `TauCeti.formalCharacter_eq_finsum_isotypicMultiplicity_smul`: **the character of a
   finite-dimensional module is the multiplicity-weighted sum of the irreducible characters.**
@@ -308,5 +310,26 @@ theorem formalCharacter_eq_finsum_isotypicMultiplicity_smul [FiniteDimensional K
   rw [Finset.sum_comp (fun lam ↦ irreducibleFormalCharacter b lam) d]
   refine Finset.sum_congr rfl fun lam _ ↦ ?_
   rw [← Nat.cast_smul_eq_nsmul ℤ, hcard lam]
+
+variable (b) in
+/-- **Any irreducible `L(lam)` occurring with nonzero multiplicity in `M` has `lam` as a weight of
+`M`.** A nonzero morphism `L(lam) →ₗ⁅K,L⁆ M` cannot kill the canonical generator (which spans
+`L(lam)` over `L`), so it sends that generator to a highest weight vector of weight `lam` in `M`
+(`TauCeti.IsHighestWeightVector.map`). -/
+theorem genWeightSpace_ne_bot_of_isotypicMultiplicity_irreducibleQuotient_ne_zero
+    {lam : Dual K H}
+    (h : LieModule.isotypicMultiplicity K L M (irreducibleQuotient b lam) ≠ 0) :
+    genWeightSpace M (lam : H → K) ≠ ⊥ := by
+  have hsub : ¬ Subsingleton (irreducibleQuotient b lam →ₗ⁅K,L⁆ M) := fun hsub ↦
+    h (by rw [LieModule.isotypicMultiplicity_def]; exact finrank_zero_of_subsingleton)
+  obtain ⟨f, hf⟩ : ∃ f : irreducibleQuotient b lam →ₗ⁅K,L⁆ M, f ≠ 0 := by
+    rw [not_subsingleton_iff_nontrivial] at hsub
+    exact exists_ne 0
+  have hfv : f (irreducibleQuotientGenerator b lam) ≠ 0 := fun h0 ↦ by
+    have htop : f.ker = ⊤ := top_unique <| by
+      rw [← lieSpan_irreducibleQuotientGenerator_eq_top b lam, LieSubmodule.lieSpan_le]
+      exact Set.singleton_subset_iff.mpr h0
+    exact hf (LieModuleHom.ext fun x ↦ (htop ▸ LieSubmodule.mem_top x : x ∈ f.ker))
+  exact ((isHighestWeightVector_irreducibleQuotientGenerator b lam).map f hfv).genWeightSpace_ne_bot
 
 end TauCeti

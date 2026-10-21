@@ -37,6 +37,8 @@ computation appears; inverses come from the group of points.
   `g ⋆ d ⋆ g⁻¹`, the form the algebraic manipulations use.
 * `Derivation.snd_conjugate_tangentPoint`: conjugation on dual-number tangent points
   induces the adjoint action on their infinitesimal coefficients.
+* `Derivation.adDerivation_eq_self_iff_commute_tangentPoint`: a point fixes a tangent
+  vector exactly when its constant lift commutes with the tangent point.
 * `Derivation.adDerivation_eq_self_of_isCentralPoint`: universally central points
   act trivially on tangent vectors.
 * `Derivation.adRepresentation`: the adjoint action, as a representation of
@@ -267,6 +269,52 @@ namespace Derivation
 
 universe u v w
 
+section Fixed
+
+variable {R : Type u} {H : Type v} {B : Type w}
+  [CommSemiring R] [CommSemiring H] [HopfAlgebra R H] [CommSemiring B] [Algebra R B]
+
+/-- A point fixes a tangent vector under the adjoint action exactly when its constant
+dual-number lift commutes with the vector's tangent point. -/
+theorem adDerivation_eq_self_iff_commute_tangentPoint
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H B))
+    (g : WithConv (H →ₐ[R] Bialgebra.CounitAlgebra R H B)) :
+    adDerivation B g d = d ↔
+      Commute (AlgHom.mapValue
+        (inlAlgHom R (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)) g)
+        (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val := by
+  let p := derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)
+  let q := AlgHom.mapValue
+    (inlAlgHom R (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)) g
+  let _ : (tangentKer R H B).Normal := by
+    rw [tangentKer_def]
+    infer_instance
+  have hmem : q * p.val * q⁻¹ ∈ tangentKer R H B :=
+    Subgroup.Normal.conj_mem p.val p.property q
+  constructor
+  · intro h
+    have he : q * p.val * q⁻¹ = p.val := by
+      apply ofConv_injective
+      apply AlgHom.ext
+      intro a
+      apply TrivSqZeroExt.ext
+      · exact (fst_apply_of_mem_tangentKer hmem a).trans
+          (fst_apply_of_mem_tangentKer p.property a).symm
+      · exact (snd_conjugate_tangentPoint d g a).trans
+          ((DFunLike.congr_fun h a).trans
+            (derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) a).symm)
+    exact (mul_inv_eq_iff_eq_mul (G := WithConv (H →ₐ[R] DualNumber
+      (Bialgebra.CounitAlgebra R H B)))).mp he
+  · intro h
+    ext a
+    have he := congrArg (fun z ↦ snd (z.ofConv a))
+      (Commute.mul_inv_cancel (G := WithConv (H →ₐ[R] DualNumber
+      (Bialgebra.CounitAlgebra R H B))) h)
+    exact (snd_conjugate_tangentPoint d g a).symm.trans
+      (he.trans (derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) a))
+
+end Fixed
+
 variable {R : Type u} {H : Type v} {B : Type (max v w)} [CommRing R] [CommRing H] [HopfAlgebra R H]
   [CommRing B] [Algebra R B]
 
@@ -277,14 +325,8 @@ theorem adDerivation_eq_self_of_isCentralPoint
     (hg : HopfAlgebra.IsCentralPoint g) : adDerivation B g d = d := by
   let C := Bialgebra.CounitAlgebra R H B
   let p := (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val
-  let q := AlgHom.mapValue (H := H) (inlAlgHom R C C) g
   rw [HopfAlgebra.isCentralPoint_def] at hg
-  have hc : q * p * q⁻¹ = p := by
-    have hq : Commute q p := hg (inlAlgHom R C C) p
-    exact Commute.mul_inv_cancel (G := WithConv (H →ₐ[R] DualNumber C)) hq
-  ext a
-  have ha := congrArg (fun z ↦ snd (z.ofConv a)) hc
-  rw [snd_conjugate_tangentPoint, derivationMulEquivTangentKer_apply_snd] at ha
-  exact ha
+  exact (adDerivation_eq_self_iff_commute_tangentPoint d g).mpr
+    (hg (inlAlgHom R C C) p)
 
 end Derivation

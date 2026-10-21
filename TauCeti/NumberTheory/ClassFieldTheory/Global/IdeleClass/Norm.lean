@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbsoluteArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Level
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Galois
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Norm
 import TauCeti.NumberTheory.ClassFieldTheory.ClassField
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.GroundNorm
 
@@ -32,16 +33,24 @@ through their restrictions to `E`; these restrictions run through `Gal(E/K)` onc
 (`TauCeti.prod_restrictNormal_out`). The product of the Galois conjugates of `a` is the idele norm
 `N_{E/K}(a)` extended back to `E` (`TauCeti.GlobalNumberFields.ideleExtension_ideleNormMap`).
 
-The same holds for an arbitrary layer `V ◁ U` of `globalFormation K`, whose ground subgroup `U` is
-any open subgroup of `G_K`. If `F` and `L` are the fixed fields of `U` and `V`, then `L/F` is a
-finite Galois extension of number fields, the ground and top levels of the layer are `C_F` and
-`C_L` (`ideleClassLevelEquiv`), and the norm of the layer is `N_{L/F} : C_L → C_F`
-(`NormalLayer.norm_ideleClassLevelEquiv`): restriction to `L` identifies the classes of `U` modulo
-`V` with `Gal(L/F)` (`NormalLayer.galEquivOfFixedField`), and `N_{L/F}(a)` is the product of the
-`Gal(L/F)`-conjugates of `a`. So the norm quotient of the layer is `C_F / N_{L/F}(C_L)`
-(`NormalLayer.ideleClassNormQuotientEquiv`). This is the form in which statements about the layers
-of prime degree inside a given layer, whose ground fields need not be `K`, are read on number
-fields.
+More generally, let `W' ≤ W` be any open subgroups of `G_K`, with fixed fields `F ⊆ L`; neither
+`W'` need be normal in `W` nor `L/F` normal. The levels of `W` and `W'` are `C_F` and `C_L`
+(`ideleClassLevelEquiv`), and the norm `Formation.levelNorm` between them is the norm map of idele
+classes `N_{L/F} : C_L → C_F` (`levelNorm_ideleClassLevelEquiv`). The cosets of `W'` in `W` are
+the `F`-embeddings of `L` into `Kˢ`, so `N_{L/F}(y)` is the product of the translates of `y ∈ L`
+by their representatives (`TauCeti.coe_norm_eq_prod_quotient_out`); read in the normal closure `M`
+of `L/K`, this product formula transfers to the ideles of `L`
+(`TauCeti.GlobalNumberFields.ideleExtension_ideleNormMap_of_algebraMap_norm_eq_prod`), which is
+the identity of the two norms. This is the form in which norms from finite extensions that are not
+Galois, such as the extension cut out by an open subgroup of `G_K` that is not normal, are read on
+idele class groups.
+
+In particular, for an arbitrary layer `V ◁ U` of `globalFormation K`, whose ground subgroup `U` is
+any open subgroup of `G_K`, with fixed fields `F` and `L`, the norm of the layer is
+`N_{L/F} : C_L → C_F` (`NormalLayer.norm_ideleClassLevelEquiv`), and its norm quotient is
+`C_F / N_{L/F}(C_L)` (`NormalLayer.ideleClassNormQuotientEquiv`). This is the form in which
+statements about the layers of prime degree inside a given layer, whose ground fields need not be
+`K`, are read on number fields.
 
 This identifies the abstract norm quotient that the class formation axioms and the Artin map are
 stated on with the concrete quotient `C_K / N_{E/K}(C_E)` that the fundamental inequalities and
@@ -64,6 +73,8 @@ global reciprocity are about.
   in the norm subgroup of the layer of `E` exactly when it is a norm from `C_E`.
 * `TauCeti.ClassFieldTheory.globalGroundEquiv_mem_layerNormSubgroup_iff`: the same for the layer
   of a finite Galois extension `L/K` and norms from `C_L`.
+* `TauCeti.ClassFieldTheory.levelNorm_ideleClassLevelEquiv`: the norm between the levels of two
+  open subgroups `W' ≤ W` with fixed fields `F ⊆ L` is the norm map of idele classes `N_{L/F}`.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm_ideleClassLevelEquiv`: the norm of a layer whose
   ground and top subgroups have fixed fields `F` and `L` is the norm map of idele classes
   `N_{L/F}`.
@@ -252,35 +263,45 @@ section FixedField
 variable {F L : IntermediateField K (SeparableClosure K)} [NumberField F] [NumberField L]
   [Algebra F L] [IsScalarTower F L (SeparableClosure K)] (Lay : NormalLayer (AbsoluteGaloisGroup K))
 
-/-- For `L/F` Galois, the norm `N_{L/F}(a)` of an idele of `L`, read in the ideles of `Kˢ`, is the
-sum of the `Gal(L/F)`-conjugates of `a`. -/
-private theorem ideleCoeffOfIntermediateField_ideleNormMap [IsGalois F L]
-    (a : IdeleGroup (𝓞 L) L) :
-    ideleCoeffOfIntermediateField K F (.ofMul (GlobalNumberFields.ideleNormMap F L a)) =
-      ∑ σ : Gal(L/F), ideleCoeffOfIntermediateField K L
-        (.ofMul (Units.map (GlobalNumberFields.adeleGaloisAction F L σ) a)) := by
-  rw [← ideleCoeffOfIntermediateField_ideleExtension (E := L),
-    GlobalNumberFields.ideleExtension_ideleNormMap, ofMul_prod, map_sum]
-
-omit [NumberField F] in
-/-- An element `u` of the ground subgroup of a layer acts on the idele classes of the fixed field
-`L` of its top subgroup through its restriction to `Gal(L/F)`. -/
-private theorem coe_rep_ρ_ideleClassLevelEquiv (hF : fixedField Lay.ground.toSubgroup = F)
-    (hL : fixedField Lay.top.toSubgroup = L) (u : Lay.ground) (a : IdeleGroup (𝓞 L) L) :
-    (((Lay.rep (globalFormation K)).ρ (u : Lay.Gal)
-        (ideleClassLevelEquiv hL (.ofMul (a : IdeleClassGroup (𝓞 L) L))) :
-          (globalFormation K).level Lay.top) : (globalFormation K).toRep.V) =
-      ideleClassCoeffEquivGlobalFormation K (ideleClassMk K (ideleCoeffOfIntermediateField K L
-        (.ofMul (Units.map (GlobalNumberFields.adeleGaloisAction F L
-          (Lay.galEquivOfFixedField hF hL (u : Lay.Gal))) a)))) := by
-  rw [NormalLayer.rep_ρ_mk_apply_coe]
-  refine (ideleClassLevelEquiv_units_map_adeleEquiv hL (u : AbsoluteGaloisGroup K)
-    (Lay.galEquivOfFixedField hF hL (u : Lay.Gal)).toRingEquiv
-      (Lay.coe_galEquivOfFixedField_mk_apply hF hL u) a).symm.trans
-    ((ideleClassLevelEquiv_mk hL _).trans ?_)
-  exact congrArg (fun b ↦ ideleClassCoeffEquivGlobalFormation K
-    (ideleClassMk K (ideleCoeffOfIntermediateField K L (.ofMul b))))
-    (Units.ext (GlobalNumberFields.adeleGaloisAction_apply F L _ a).symm)
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex in
+/-- **The norm between two levels of the idele-class formation is the idele-class norm**: if the
+open subgroups `W' ≤ W` of `G_K` have fixed fields `F ⊆ L`, then under the identifications of the
+levels of `W` and `W'` with `C_F` and `C_L` (`ideleClassLevelEquiv`), the norm
+`Formation.levelNorm` from the level of `W'` to that of `W` is the norm map of idele classes
+`N_{L/F} : C_L → C_F`. The extension `L/F` need not be normal, nor `W'` normal in `W`. -/
+theorem levelNorm_ideleClassLevelEquiv {W W' : OpenSubgroup (AbsoluteGaloisGroup K)}
+    (h : W' ≤ W) (hF : fixedField W.toSubgroup = F) (hL : fixedField W'.toSubgroup = L)
+    (c : IdeleClassGroup (𝓞 L) L) :
+    (globalFormation K).levelNorm h (ideleClassLevelEquiv hL (.ofMul c)) =
+      ideleClassLevelEquiv hF (.ofMul (GlobalNumberFields.ideleClassNormMap F L c)) := by
+  refine Subtype.ext ?_
+  induction c using QuotientGroup.induction_on with | H a => ?_
+  -- Compute in the ideles of the normal closure `M` of `L/K`, which contains `F`.
+  let M : Ω := FiniteGaloisIntermediateField.normalClosure K L
+  have hLM : L ≤ M := FiniteGaloisIntermediateField.le_normalClosure K L
+  have hFM : F ≤ M := (IntermediateField.le_of_isScalarTower (E := F) (E' := L)).trans hLM
+  let := (IntermediateField.inclusion hLM).toRingHom.toAlgebra
+  let := (IntermediateField.inclusion hFM).toRingHom.toAlgebra
+  -- Read in `M`, the norm of `L/F` is the product of the conjugates by the coset representatives
+  -- of `W'` in `W`, so the same holds for the idele norm.
+  have hσ (y : L) : algebraMap F M (Algebra.norm F y) =
+      ∏ q : W.toSubgroup ⧸ W'.toSubgroup.subgroupOf W.toSubgroup,
+        ((q.out : AbsoluteGaloisGroup K).restrictNormal M).toRingEquiv (algebraMap L M y) := by
+    refine Subtype.ext ((coe_norm_eq_prod_quotient_out hF hL y).trans ?_)
+    rw [IntermediateField.coe_prod]
+    exact Finset.prod_congr rfl fun q _ ↦
+      (AlgEquiv.restrictNormal_commutes (q.out : AbsoluteGaloisGroup K) M (algebraMap L M y)).symm
+  rw [Formation.levelNorm_apply_coe, finsum_eq_sum_of_fintype, ideleClassLevelEquiv_mk,
+    GlobalNumberFields.ideleClassNormMap_mk, ideleClassLevelEquiv_mk,
+    ← ideleCoeffOf_ideleExtension M hFM,
+    GlobalNumberFields.ideleExtension_ideleNormMap_of_algebraMap_norm_eq_prod F L M _ hσ,
+    ofMul_prod, map_sum, map_sum, map_sum]
+  -- Each coset representative acts on the ideles of `M` through its restriction to `M`.
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [← ideleCoeffOf_ideleExtension M hLM, ← ideleClassCoeffEquivGlobalFormation_smul,
+    ← map_smul (ideleClassMk K), smul_ideleCoeffOf]
+  exact congrArg (fun b ↦ ideleClassCoeffEquivGlobalFormation K (ideleClassMk K
+    (ideleCoeffOf K M (.ofMul b)))) (Units.ext (GlobalNumberFields.adeleGaloisAction_apply K M _ _))
 
 namespace NormalLayer
 
@@ -293,14 +314,8 @@ theorem norm_ideleClassLevelEquiv (hF : fixedField Lay.ground.toSubgroup = F)
     (hL : fixedField Lay.top.toSubgroup = L) (c : IdeleClassGroup (𝓞 L) L) :
     Lay.norm (globalFormation K) (ideleClassLevelEquiv hL (.ofMul c)) =
       ideleClassLevelEquiv hF (.ofMul (GlobalNumberFields.ideleClassNormMap F L c)) := by
-  have := Lay.isGalois_of_fixedField hF hL
-  refine Subtype.ext ?_
-  induction c using QuotientGroup.induction_on with | H a => ?_
-  rw [NormalLayer.norm_apply_coe, GlobalNumberFields.ideleClassNormMap_mk, ideleClassLevelEquiv_mk,
-    ideleCoeffOfIntermediateField_ideleNormMap, map_sum, map_sum]
-  -- The classes of the ground subgroup modulo the top one run through `Gal(L/F)`.
-  exact Fintype.sum_equiv (Lay.galEquivOfFixedField hF hL).toEquiv _ _ fun γ ↦
-    QuotientGroup.induction_on γ fun u ↦ coe_rep_ρ_ideleClassLevelEquiv Lay hF hL u a
+  rw [← LinearMap.toAddMonoidHom_coe, NormalLayer.toAddMonoidHom_norm]
+  exact levelNorm_ideleClassLevelEquiv Lay.top_le_ground hF hL c
 
 /-- **The norm subgroup of an arbitrary layer is `N_{L/F}(C_L)`**: if the ground and top subgroups
 of a layer of `globalFormation K` have fixed fields `F` and `L`, an idele class of `F` lies in the

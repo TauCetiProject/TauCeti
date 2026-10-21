@@ -101,7 +101,6 @@ theorem inv_mul_apply_mem_pLowerCentralSeries {k : ℕ} {g : G} (hg : g ∈ pLow
     -- subgroup `K`, which contains the `p`-th powers and the commutators generating `λ_{k+1}` by
     -- the induction hypothesis on `λ_k`.
     set N := pLowerCentralSeries p G (m + k + 1)
-    have : IsClosed (N : Set G) := isClosed_pLowerCentralSeries _
     set K : Subgroup G := (QuotientGroup.mk' N).eqLocus ((QuotientGroup.mk' N).comp θ)
     have hmem : ∀ x, x ∈ K ↔ ((x : G) : G ⧸ N) = θ x := fun x ↦ Iff.rfl
     have hKc : IsClosed (K : Set G) :=

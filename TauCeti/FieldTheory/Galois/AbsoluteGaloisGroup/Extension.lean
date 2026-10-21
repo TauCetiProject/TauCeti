@@ -174,7 +174,7 @@ private theorem continuous_fixingSubgroupMulEquiv : Continuous (fixingSubgroupMu
         (separableClosureRingEquiv K L σ).symm y :=
       (IntermediateField.mem_fixingSubgroup_iff _ _).mp hg _ (subset_adjoin L _ ⟨y, hy, rfl⟩)
     rw [fixingSubgroupMulEquiv_apply, hgy, RingEquiv.apply_symm_apply]
-  refine (le_iff_le (K := adjoin K t)
+  refine (le_fixedField_iff_le_fixingSubgroup (K := adjoin K t)
     (H := fixingSubgroup (AbsoluteGaloisGroup K) t)).mp ?_ fun y ↦ ?_
   · exact adjoin_le_iff.mpr fun y hy ↦ (mem_fixedField_iff
       (H := fixingSubgroup (AbsoluteGaloisGroup K) t) y).mpr fun f hf ↦ hf ⟨y, hy⟩

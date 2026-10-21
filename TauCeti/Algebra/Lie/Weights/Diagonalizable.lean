@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
+public import TauCeti.Algebra.Lie.Weights.Semisimple
 public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
 /-!
@@ -213,11 +214,9 @@ a Killing-semisimple Lie algebra, `LieModule.genWeightSpace M χ` is the simulta
 Mathlib's `LieModule.weightSpace_le_genWeightSpace` is the inclusion that holds always; this is the
 reverse one, and it is exactly the diagonalizability of the Cartan action. -/
 @[simp]
-theorem genWeightSpace_eq_weightSpace (χ : H → K) : genWeightSpace M χ = weightSpace M χ := by
-  refine LieSubmodule.toSubmodule_injective ?_
-  rw [genWeightSpace, LieSubmodule.iInf_toSubmodule]
-  simp only [genWeightSpaceOf_eq_eigenspace]
-  rfl
+theorem genWeightSpace_eq_weightSpace (χ : H → K) : genWeightSpace M χ = weightSpace M χ :=
+  genWeightSpace_eq_weightSpace_of_isFinitelySemisimple
+    (fun x ↦ (isSemisimple_toEnd_cartan x).isFinitelySemisimple) χ
 
 /-- **Membership of a weight space is the eigenvector equation.** An element of a
 finite-dimensional module lies in the `χ`-weight space exactly when every `x : H` acts on it by the

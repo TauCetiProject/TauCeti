@@ -198,7 +198,8 @@ theorem torusCorestrict_eq_ofWeights :
     coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
     GeneralLinear.hom_weightTorusBaseChangeCoordinateMap, weightTable_weight]
 
-private theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
+/-- Distinct minuscule weight vectors have distinct characters of the weight torus. -/
+theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
   intro a b h
   apply DynkinType.e6MinusculeWeight_injective
   funext i

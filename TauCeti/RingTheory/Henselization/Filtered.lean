@@ -43,19 +43,14 @@ theorem parallel_equalization {B C : Neighbourhood.{u, v} I} (f g : B ⟶ C) :
   have : Algebra.Etale R B.obj := ((isNeighbourhood_iff I _).mp B.property).1
   obtain ⟨e, he, hker⟩ :=
     TauCeti.Algebra.FormallyUnramified.exists_isIdempotentElem_ker_lmul_eq_span R B.obj
-  -- Modulo `J`, the map `d` factors through multiplication, which kills `e`.
-  have hprod : (Ideal.Quotient.mkₐ R J).comp d =
-      ((Ideal.Quotient.mkₐ R J).comp f').comp (Algebra.TensorProduct.lmul' R) := by
-    ext b
-    · simp [d]
-    · simpa [d] using quotient_mk_eq_of_reducedMap_surjective I
-        ((isNeighbourhood_iff I _).mp B.property).2.2 g' f' b
-  have heker : Algebra.TensorProduct.lmul' R e = 0 :=
-    RingHom.mem_ker.mp (hker ▸ Ideal.mem_span_singleton_self e)
+  have hde : d e ∈ J :=
+    TauCeti.Algebra.FormallyUnramified.productMap_mem_of_comp_eq
+      (RingHom.mem_ker.mp (hker ▸ Ideal.mem_span_singleton_self e)) J (by
+        ext b
+        exact quotient_mk_eq_of_reducedMap_surjective I
+          ((isNeighbourhood_iff I _).mp B.property).2.2 f' g' b)
   have hs : IsUnit (Ideal.Quotient.mk J (1 - d e)) := by
-    have hdzero := DFunLike.congr_fun hprod e
-    simp only [AlgHom.comp_apply, heker, map_zero, Ideal.Quotient.mkₐ_eq_mk] at hdzero
-    rw [map_sub, map_one, hdzero, sub_zero]
+    rw [map_sub, map_one, Ideal.Quotient.eq_zero_iff_mem.mpr hde, sub_zero]
     exact isUnit_one
   -- Localizing at the complement of `d e` gives a neighbourhood equalizing `f` and `g`.
   let D : Neighbourhood.{u, v} I :=

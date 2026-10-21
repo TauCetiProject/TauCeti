@@ -15,7 +15,8 @@ The scalar multiplication equivalence `S ⊗[R] R ≃ₗ[S] S` identifies the ba
 an ideal with its extension along `algebraMap R S`. This permits kernel computations
 on tensor products to be read as membership statements in extended ideals.
 The extension of a module annihilator is contained in its annihilator after arbitrary
-scalar extension, without a flatness hypothesis.
+scalar extension, without a flatness hypothesis. The coefficient algebra `S` need not be
+commutative; extended ideals are left ideals.
 -/
 
 public section
@@ -24,7 +25,7 @@ open TensorProduct
 
 namespace Ideal
 
-variable {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+variable {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
 
 /-- The extended ideal is the image of its tensor base change under scalar multiplication. -/
 theorem map_eq_baseChange_map_rid (I : Ideal R) :
@@ -40,7 +41,7 @@ end Ideal
 
 namespace LinearMap
 
-variable {R S M : Type*} [CommRing R] [CommRing S] [Algebra R S]
+variable {R S M : Type*} [CommRing R] [Ring S] [Algebra R S]
   [AddCommGroup M] [Module R M]
 
 /-- Flatness tests membership in an extended scalar-source kernel on `s ⊗ₜ 1`. -/
@@ -55,7 +56,7 @@ namespace TauCeti
 
 section Semiring
 
-variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+variable {R S M : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
   [AddCommMonoid M] [Module R M]
 
 /-- Extension of the annihilator is contained in the annihilator after arbitrary base change. -/

@@ -249,7 +249,8 @@ def intermediateFieldEquivClosedSubgroup :
       ((IntermediateField.gc_map_comap _).monotone_l h)⟩
     have h₁ : IntermediateField.lift M₁ ≤ IntermediateField.lift M₂ := by
       rw [← IntermediateField.fixedField_fixingSubgroup_lift_inf_separableClosure M₂]
-      exact le_inf ((IntermediateField.le_iff_le _ _).mpr h) (IntermediateField.lift_le M₁)
+      exact le_inf ((IntermediateField.le_fixedField_iff_le_fixingSubgroup _ _).mpr h)
+        (IntermediateField.lift_le M₁)
     exact IntermediateField.lift_le_lift_iff.mp h₁
 
 /-- The correspondence sends an intermediate field to the fixing subgroup of its lift. -/

@@ -15,7 +15,8 @@ public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Characterizat
 A surjective shift of a partial linear map that is bounded below has a bounded two-sided
 inverse. The inverse bound does not require completeness or closedness of the operator.
 This criterion turns domainwise estimates into resolvent existence and operator-norm bounds,
-in particular for nonreal shifts of self-adjoint operators.
+in particular for nonreal shifts of self-adjoint operators. Conversely, a resolvent bound
+`‖R‖ ≤ c⁻¹` is the same as the lower bound `c * ‖x‖ ≤ ‖z • x - A x‖` on the domain.
 -/
 
 public section
@@ -38,6 +39,17 @@ theorem _root_.LinearPMap.IsResolventAt.norm_le_inv {R : E →L[𝕜] E} (hR : I
   have h := hbound ⟨R y, hR.mem_domain y⟩
   rw [hR.smul_sub_apply] at h
   exact (le_inv_mul_iff₀ hc).mpr h
+
+/-- A resolvent of a shift is bounded by `c⁻¹` exactly when the shift is bounded below by `c` on
+the domain: `‖R‖ ≤ c⁻¹ ↔ ∀ x ∈ D(A), c * ‖x‖ ≤ ‖z • x - A x‖`. -/
+theorem _root_.LinearPMap.IsResolventAt.norm_le_inv_iff {R : E →L[𝕜] E}
+    (hR : IsResolventAt A z R) (hc : 0 < c) :
+    ‖R‖ ≤ c⁻¹ ↔ ∀ x : A.domain, c * ‖(x : E)‖ ≤ ‖z • (x : E) - A x‖ := by
+  refine ⟨fun hRnorm x => ?_, hR.norm_le_inv hc⟩
+  rw [← le_inv_mul_iff₀ hc]
+  calc ‖(x : E)‖ = ‖R (z • (x : E) - A x)‖ := by rw [hR.apply_smul_sub]
+    _ ≤ ‖R‖ * ‖z • (x : E) - A x‖ := R.le_opNorm _
+    _ ≤ c⁻¹ * ‖z • (x : E) - A x‖ := by gcongr
 
 /-- A surjective shift bounded below by a positive constant has a bounded two-sided inverse. -/
 theorem _root_.LinearPMap.mem_resolventSet_of_surjective_of_norm_le

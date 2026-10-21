@@ -114,14 +114,14 @@ theorem locSubring_map_awayMap_quotientMk :
         (by rw [quotient_ringOfDefinition]; exact Subring.mem_map.mpr ⟨a, ha, rfl⟩)
     · rw [Subring.mem_comap, RingHom.awayMap_divBy]
       exact divBy_mem_locSubring _ _ _ _ (by
-        rw [← Finset.mem_coe, hT']; exact Set.mem_image_of_mem _ ht)
+        rw [hT']; exact Set.mem_image_of_mem _ ht)
   · rw [locSubring_le_iff]
     refine ⟨fun b hb ↦ ?_, fun t' ht' ↦ ?_⟩
     · rw [quotient_ringOfDefinition] at hb
       obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hb
       exact ⟨_, algebraMap_mem_locSubring P T s S ha,
         IsLocalization.map_eq _ a⟩
-    · rw [← Finset.mem_coe, hT'] at ht'
+    · rw [hT'] at ht'
       obtain ⟨t, ht, rfl⟩ := ht'
       exact ⟨_, divBy_mem_locSubring P T s S ht, RingHom.awayMap_divBy _ s t⟩
 

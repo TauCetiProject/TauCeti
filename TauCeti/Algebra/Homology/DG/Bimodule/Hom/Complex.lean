@@ -68,13 +68,10 @@ def dgBimoduleCochains (p : ℤ) :
 
 namespace dgBimoduleCochains
 
-section Elementary
-
 omit [GradedAlgebra 𝒜] [IsScalarTower R A M]
   [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ N]
   [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
-  [SetLike.GradedSMul 𝒜 ℳ] [SetLike.GradedSMul 𝒜 𝒩]
-
+  [SetLike.GradedSMul 𝒜 ℳ] [SetLike.GradedSMul 𝒜 𝒩] in
 /-- Membership is the signed left-action law; right linearity and degree are supplied by
 the ambient right-module cochain. -/
 @[simp, grind =]
@@ -85,26 +82,36 @@ theorem mem_iff {p : ℤ}
         f.1 (a • x) = (p * r).negOnePow • (a • f.1 x) :=
   (Iff.rfl)
 
+omit [GradedAlgebra 𝒜] [IsScalarTower R A M]
+  [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ N]
+  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+  [SetLike.GradedSMul 𝒜 ℳ] [SetLike.GradedSMul 𝒜 𝒩] in
 /-- Two bimodule cochains agree if their underlying functions agree. -/
 @[ext]
 theorem ext {p : ℤ} {f g : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p}
     (hfg : ∀ x, f.1.1 x = g.1.1 x) : f = g :=
   Subtype.ext (Subtype.ext (LinearMap.ext hfg))
 
+omit [GradedAlgebra 𝒜] [IsScalarTower R A M]
+  [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ N]
+  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+  [SetLike.GradedSMul 𝒜 ℳ] [SetLike.GradedSMul 𝒜 𝒩] in
 /-- A degree-`p` bimodule cochain raises degree by `p`. -/
 theorem map_mem {p q : ℤ}
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p)
     {x : M} (hx : x ∈ ℳ q) : f.1.1 x ∈ 𝒩 (q + p) :=
   dgRightModuleCochains.map_mem f.1 hx
 
+omit [GradedAlgebra 𝒜] [IsScalarTower R A M]
+  [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ N]
+  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+  [SetLike.GradedSMul 𝒜 ℳ] [SetLike.GradedSMul 𝒜 𝒩] in
 /-- Evaluating a cochain on the left action of a homogeneous algebra element. -/
 theorem map_smul_left {p r : ℤ}
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p)
     {a : A} (ha : a ∈ 𝒜 r) (x : M) :
     f.1.1 (a • x) = (p * r).negOnePow • (a • f.1.1 x) :=
   mem_iff.mp f.2 ha x
-
-end Elementary
 
 omit [IsScalarTower R A M] [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ N]
   [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]

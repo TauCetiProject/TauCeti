@@ -16,6 +16,7 @@ public import TauCeti.AlgebraicTopology.UniversalCover.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
 public import TauCeti.Topology.Circle.AddCircle
 public import TauCeti.Topology.Circle.Degree
+public import TauCeti.Topology.Circle.Loop
 
 /-!
 # Fundamental groups of additive and complex circles
@@ -57,6 +58,8 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
 * `Circle.expLoop` and `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `t ↦ exp(2πit)`,
   going once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
+* `Circle.mapOfEq_toCircle_expLoop`: a loop `γ`, read as a map from the circle, sends the class
+  of `Circle.expLoop` to the class of `γ`.
 * `Circle.fundamentalGroupMulEquiv_fromPath`: the class of a loop is sent to its degree
   `Circle.degree`, computed from angle lifts.
 * `Circle.fundamentalGroupMulEquiv_map_pow`: the `n`-th power map of the circle acts on the
@@ -398,6 +401,20 @@ theorem fundamentalGroupMulEquiv_expLoop :
   rw [fundamentalGroupMulEquiv_fromPath,
     degree_eq_of_sub_eq expLoop (θ := fun t => 2 * Real.pi * t) (by fun_prop) (fun _ => rfl)
       (n := 1) (by simp)]
+
+/-- A loop `γ`, read as a map from the circle by `Path.toCircle`, sends the class of the
+counterclockwise loop `expLoop` to the class of `γ`. So every element of a fundamental group is
+the image of the generator of `π₁(S¹)` under a based map from the circle. -/
+theorem mapOfEq_toCircle_expLoop {X : Type*} [TopologicalSpace X] {x : X} (γ : Path x x) :
+    FundamentalGroup.mapOfEq γ.toCircle γ.toCircle_one
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) =
+      FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ) := by
+  have h : (expLoop.map γ.toCircle.continuous).cast γ.toCircle_one.symm γ.toCircle_one.symm =
+      γ := by
+    ext t
+    exact γ.toCircle_exp t
+  conv_rhs => rw [← h, Path.Homotopic.Quotient.mk_cast, Path.Homotopic.Quotient.mk_map]
+  exact FundamentalGroup.mapOfEq_apply _ _ _
 
 /-- **The `n`-th power map of the circle acts on `π₁(S¹) ≅ ℤ` as multiplication by `n`.** The
 isomorphism `fundamentalGroupMulEquiv` sends the image of a loop class under `z ↦ z ^ n` to the

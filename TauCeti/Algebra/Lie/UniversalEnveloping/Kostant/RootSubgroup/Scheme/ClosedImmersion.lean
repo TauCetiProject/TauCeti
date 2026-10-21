@@ -430,7 +430,7 @@ include hc hstep hsq in
 /-- A root subgroup is a monomorphism of group schemes over `ℤ`. -/
 theorem mono_kostantRootSubgroup : Mono (kostantRootSubgroup e h ρ M hM i hnil b) :=
   have := isClosedImmersion_kostantRootSubgroup e h ρ M hM i hnil b hc hstep hsq
-  mono_of_isClosedImmersion_underlying (kostantRootSubgroup e h ρ M hM i hnil b)
+  Grp.mono_of_mono_left (kostantRootSubgroup e h ρ M hM i hnil b)
 
 /-- **The root subgroup as a closed subgroup scheme of `GLₙ`.** This is the subgroup `U_αᵢ` that a
 pinning carries: a closed subgroup scheme which the root-subgroup morphism identifies with `𝔾ₐ`. -/

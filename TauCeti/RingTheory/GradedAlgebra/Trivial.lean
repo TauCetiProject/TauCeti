@@ -33,12 +33,25 @@ open DirectSum MulOpposite
 
 namespace TauCeti
 
-variable (R A : Type*) [CommSemiring R]
+section GradedSMul
 
+variable (R : Type*) [Semiring R]
+
+/-- Scalar multiplication by the trivially graded base ring preserves every homogeneous piece of
+a graded module. -/
+instance instGradedSMulTrivialGrading {M : Type*} [AddCommMonoid M] [Module R M]
+    (ℳ : ℤ → Submodule R M) : SetLike.GradedSMul (trivialGrading R R) ℳ where
+  smul_mem := by
+    intro p q r m hr hm
+    rcases (mem_trivialGrading_iff R R).mp hr with rfl | rfl
+    · simpa using (ℳ q).smul_mem r hm
+    · simp
+
+end GradedSMul
 
 section Algebra
 
-variable [Semiring A] [Algebra R A]
+variable (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A]
 
 /-- The trivial grading is an internal grading: an element is its own degree-zero component, and
 all higher components vanish. -/
@@ -50,16 +63,6 @@ instance instGradedAlgebraTrivialGrading : GradedAlgebra (trivialGrading R A) wh
     · rcases (mem_trivialGrading_iff R A).mp hb with rfl | rfl <;> simp
     · simp
   __ := instDecompositionTrivialGrading R A
-
-/-- Scalar multiplication by the trivially graded base ring preserves every homogeneous piece of
-an internally graded algebra. -/
-instance instGradedSMulTrivialGrading (𝒜 : ℤ → Submodule R A) :
-    SetLike.GradedSMul (trivialGrading R R) 𝒜 where
-  smul_mem := by
-    intro p q r a hr ha
-    rcases (mem_trivialGrading_iff R R).mp hr with rfl | rfl
-    · simpa using (𝒜 q).smul_mem r ha
-    · simp
 
 /-- The opposite of a trivially graded algebra acts on a trivially graded module compatibly with
 the gradings, whatever the action is: everything sits in degree zero. -/

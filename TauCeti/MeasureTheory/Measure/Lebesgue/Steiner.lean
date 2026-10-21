@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
+public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Real
+public import Mathlib.Analysis.Convex.Measure
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 
@@ -24,6 +26,15 @@ idempotent, and contracts the volume of symmetric differences, equivalently the 
 distance between indicators. The contraction permits approximation of arbitrary measurable
 sets before iterating symmetrizations.
 
+Membership has a coordinate-free form: `x` lies in the symmetral exactly when `|⟪e, x⟫|` is
+less than half the length of the line section through `x`. From it we obtain the covariance
+laws. Translating the input translates the symmetral by the component of the translation
+orthogonal to `e`, so translations along `e` have no effect. Nonzero dilations commute with
+symmetrization, and a linear isometric equivalence carries the symmetral in direction `e` to
+the symmetral of the image in the image direction. Finally, symmetrization preserves
+convexity: by the one-dimensional Brunn–Minkowski inequality, section lengths of a convex
+set are concave along segments joining points with nonempty sections.
+
 The normalization uses `Real.volume_eball` and the measure-preserving orthogonal coordinates
 from `TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices`.
 -/
@@ -31,11 +42,12 @@ from `TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices`.
 public noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal symmDiff
+open scoped ENNReal Pointwise RealInnerProductSpace symmDiff
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- Steiner symmetrization along the unit direction `e`, centered on its orthogonal hyperplane.
 The section of length `ℓ` is the open centered interval of radius `ℓ / 2`; this includes
@@ -113,6 +125,118 @@ theorem steinerSymmetrization_univ (e : E) (he : ‖e‖ = 1) :
     steinerSymmetrization e he univ = univ := by
   ext x
   simp [steinerSymmetrization, ENNReal.top_div_of_ne_top (by norm_num : (2 : ℝ≥0∞) ≠ ∞)]
+
+/-- Moving the base point along the direction does not change the length of a line section. -/
+theorem volume_lineSection_add_smul (e : E) (s : Set E) (x : E) (c : ℝ) :
+    volume {t : ℝ | x + c • e + t • e ∈ s} = volume {t : ℝ | x + t • e ∈ s} := by
+  have h : {t : ℝ | x + c • e + t • e ∈ s} = (fun t ↦ t + c) ⁻¹' {t : ℝ | x + t • e ∈ s} := by
+    ext t
+    simp [add_smul, add_assoc, add_comm (t • e)]
+  rw [h, measure_preimage_add_right]
+
+/-- Coordinate-free membership in a Steiner symmetral: the longitudinal coordinate `⟪e, x⟫`
+lies in the centered interval whose length is that of the line section through `x`. -/
+theorem mem_steinerSymmetrization_iff (e : E) (he : ‖e‖ = 1) (s : Set E) (x : E) :
+    x ∈ steinerSymmetrization e he s ↔
+      ⟪e, x⟫ ∈ Metric.eball (0 : ℝ) (volume {t : ℝ | x + t • e ∈ s} / 2) := by
+  rw [steinerSymmetrization_def, mem_ofPred_eq, orthogonalLineEquiv_symm_snd,
+    orthogonalLineEquiv_symm_fst, sub_eq_add_neg, ← neg_smul, volume_lineSection_add_smul]
+
+/-- Translating the input translates the symmetral by the component of the translation
+orthogonal to the direction. -/
+theorem steinerSymmetrization_vadd (e : E) (he : ‖e‖ = 1) (v : E) (s : Set E) :
+    steinerSymmetrization e he (v +ᵥ s) =
+      (v - ⟪e, v⟫ • e) +ᵥ steinerSymmetrization e he s := by
+  ext x
+  have hinner : ⟪e, -(v - ⟪e, v⟫ • e) + x⟫ = ⟪e, x⟫ := by
+    simp [inner_add_right, inner_sub_right, inner_smul_right, he]
+  rw [mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, mem_steinerSymmetrization_iff,
+    mem_steinerSymmetrization_iff, hinner]
+  simp_rw [mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add]
+  have h : ∀ t : ℝ, -v + (x + t • e) = -(v - ⟪e, v⟫ • e) + x + -⟪e, v⟫ • e + t • e := by
+    intro t; module
+  simp_rw [h, volume_lineSection_add_smul]
+
+/-- Translation along the direction of symmetrization does not change the symmetral. -/
+@[simp]
+theorem steinerSymmetrization_smul_vadd (e : E) (he : ‖e‖ = 1) (c : ℝ) (s : Set E) :
+    steinerSymmetrization e he ((c • e) +ᵥ s) = steinerSymmetrization e he s := by
+  rw [steinerSymmetrization_vadd]
+  simp [inner_smul_right, he]
+
+/-- Translation orthogonal to the direction of symmetrization commutes with symmetrization. -/
+theorem steinerSymmetrization_vadd_of_inner_eq_zero (e : E) (he : ‖e‖ = 1) {v : E}
+    (hv : ⟪e, v⟫ = 0) (s : Set E) :
+    steinerSymmetrization e he (v +ᵥ s) = v +ᵥ steinerSymmetrization e he s := by
+  rw [steinerSymmetrization_vadd, hv, zero_smul, sub_zero]
+
+/-- Steiner symmetrization commutes with nonzero dilations. -/
+theorem steinerSymmetrization_smul (e : E) (he : ‖e‖ = 1) {c : ℝ} (hc : c ≠ 0) (s : Set E) :
+    steinerSymmetrization e he (c • s) = c • steinerSymmetrization e he s := by
+  ext x
+  rw [mem_smul_set_iff_inv_smul_mem₀ hc, mem_steinerSymmetrization_iff,
+    mem_steinerSymmetrization_iff]
+  have h : {t : ℝ | x + t • e ∈ c • s} = (fun t ↦ c⁻¹ * t) ⁻¹' {t : ℝ | c⁻¹ • x + t • e ∈ s} := by
+    ext t
+    simp only [mem_ofPred_eq, mem_preimage, mem_smul_set_iff_inv_smul_mem₀ hc, smul_add, smul_smul]
+  rw [h, Real.volume_preimage_mul_left (inv_ne_zero hc), inv_inv, inner_smul_right]
+  simp only [Metric.mem_eball, edist_zero_right, Real.enorm_eq_ofReal_abs, abs_mul, abs_inv]
+  rw [inv_mul_eq_div, ENNReal.ofReal_div_of_pos (abs_pos.2 hc),
+    ENNReal.div_lt_iff (.inl (by simpa using hc)) (.inl ENNReal.ofReal_ne_top),
+    mul_comm (_ / 2), ← mul_div_assoc]
+
+/-- Steiner symmetrization is equivariant under linear isometric equivalences, which move the
+direction of symmetrization along with the set. -/
+theorem steinerSymmetrization_image_linearIsometryEquiv (e : E) (he : ‖e‖ = 1)
+    (L : E ≃ₗᵢ[ℝ] F) (s : Set E) :
+    steinerSymmetrization (L e) ((L.norm_map e).trans he) (L '' s) =
+      L '' steinerSymmetrization e he s := by
+  ext x
+  rw [L.image_eq_preimage_symm, L.image_eq_preimage_symm, mem_preimage,
+    mem_steinerSymmetrization_iff, mem_steinerSymmetrization_iff, L.inner_map_eq_flip]
+  simp only [mem_preimage, map_add, map_smul, LinearIsometryEquiv.symm_apply_apply]
+
+/-- Steiner symmetrization preserves convexity. -/
+theorem convex_steinerSymmetrization (e : E) (he : ‖e‖ = 1) {s : Set E}
+    (hs : Convex ℝ s) : Convex ℝ (steinerSymmetrization e he s) := by
+  refine convex_iff_forall_pos.2 fun x hx y hy a b ha hb hab ↦ ?_
+  rw [mem_steinerSymmetrization_iff, Metric.mem_eball, edist_zero_right,
+    Real.enorm_eq_ofReal_abs] at hx hy ⊢
+  -- The weighted sum of the two sections lies in the section through the weighted point.
+  have hsub : a • {t : ℝ | x + t • e ∈ s} + b • {t : ℝ | y + t • e ∈ s} ⊆
+      {t : ℝ | a • x + b • y + t • e ∈ s} := by
+    rintro _ ⟨_, ⟨t, ht, rfl⟩, _, ⟨u, hu, rfl⟩, rfl⟩
+    have h := hs ht hu ha.le hb.le hab
+    simp only [mem_ofPred_eq] at h ⊢
+    convert h using 1
+    module
+  have hne (z : E) (hz : ENNReal.ofReal |⟪e, z⟫| < volume {t : ℝ | z + t • e ∈ s} / 2) :
+      {t : ℝ | z + t • e ∈ s}.Nonempty := by
+    refine nonempty_iff_ne_empty.2 fun h ↦ ?_
+    simp [h] at hz
+  have hconv (z : E) : Convex ℝ {t : ℝ | z + t • e ∈ s} := by
+    convert hs.affine_preimage (AffineMap.lineMap z (z + e)) using 1
+    ext t
+    simp [AffineMap.lineMap_apply_module', add_comm]
+  have hlength := (Real.mul_volume_add_mul_volume_le (hne x hx)
+    ((hconv x).nullMeasurableSet volume) (hne y hy) ((hconv y).nullMeasurableSet volume)
+    ha.le hb.le).trans (measure_mono hsub)
+  calc ENNReal.ofReal |⟪e, a • x + b • y⟫|
+      ≤ ENNReal.ofReal a * ENNReal.ofReal |⟪e, x⟫| +
+          ENNReal.ofReal b * ENNReal.ofReal |⟪e, y⟫| := by
+        rw [← ENNReal.ofReal_mul ha.le, ← ENNReal.ofReal_mul hb.le,
+          ← ENNReal.ofReal_add (by positivity) (by positivity)]
+        refine ENNReal.ofReal_le_ofReal ?_
+        rw [inner_add_right, inner_smul_right, inner_smul_right]
+        exact (abs_add_le _ _).trans (by simp [abs_mul, abs_of_pos ha, abs_of_pos hb])
+    _ < ENNReal.ofReal a * (volume {t : ℝ | x + t • e ∈ s} / 2) +
+        ENNReal.ofReal b * (volume {t : ℝ | y + t • e ∈ s} / 2) :=
+        ENNReal.add_lt_add
+          (ENNReal.mul_lt_mul_right (by simpa using ha) ENNReal.ofReal_ne_top hx)
+          (ENNReal.mul_lt_mul_right (by simpa using hb) ENNReal.ofReal_ne_top hy)
+    _ ≤ volume {t : ℝ | a • x + b • y + t • e ∈ s} / 2 := by
+        rw [← mul_div_assoc, ← mul_div_assoc, ← ENNReal.add_div]
+        exact ENNReal.div_le_div_right hlength 2
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
