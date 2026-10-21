@@ -511,6 +511,12 @@ theorem isoLift_hom_app (he : ∀ X : D, F.map (periodicity.hom.app X) ≫ e.hom
     (isoLift F e he).hom.app ⟨X⟩ = e.hom.app X := by
   rfl
 
+@[simp]
+theorem isoLift_inv_app (he : ∀ X : D, F.map (periodicity.hom.app X) ≫ e.hom.app X =
+    e.hom.app (X⟦n⟧) ≫ φ.hom.app X) (X : D) :
+    (isoLift F e he).inv.app ⟨X⟩ = e.inv.app X := by
+  rfl
+
 end Uniqueness
 
 end Lift
