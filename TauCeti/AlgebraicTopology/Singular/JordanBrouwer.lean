@@ -243,11 +243,11 @@ theorem natCard_zerothHomotopy_sphere_compl_range_eq_two (hEF : finrank ℝ F = 
 
 /-- **The Jordan–Brouwer separation theorem, connected form.** The complement of the image of a
 continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the unit
-sphere of a real normed space of dimension `dim E + 1` is not preconnected: the sphere is a
-manifold, so the complement is open and locally path connected, and its two path components are its
-connected components. -/
+sphere of a real normed space of dimension `dim E + 1` is not preconnected. -/
 theorem not_isPreconnected_compl_range_sphere (hEF : finrank ℝ F = finrank ℝ E + 1)
     (hc : Continuous h) (hi : Function.Injective h) : ¬ IsPreconnected (range h)ᶜ := by
+  -- The sphere is a manifold, so the complement is open and locally path connected, and its two
+  -- path components are its connected components.
   intro hconn
   -- The unit sphere of `F` is homeomorphic to the Euclidean one, which is a manifold.
   have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
