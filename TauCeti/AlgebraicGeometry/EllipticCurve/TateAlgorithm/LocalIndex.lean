@@ -89,7 +89,7 @@ public section
 namespace WeierstrassCurve
 
 open IsLocalRing Polynomial TauCeti
-open TauCeti.IsLocalRing (dvd_iff_residue_eq_zero)
+open TauCeti.IsLocalRing (mem_maximalIdeal_iff_dvd)
 
 section CommRing
 
@@ -278,7 +278,7 @@ omit [IsDomain R] in
 private theorem exists_dvd_iff_exists_residue_eq_zero [IsLocalRing R]
     (hϖ : maximalIdeal R = Ideal.span {ϖ}) {f : R → R} {g : ResidueField R → ResidueField R}
     (hfg : ∀ s, residue R (f s) = g (residue R s)) : (∃ s, ϖ ∣ f s) ↔ ∃ t, g t = 0 := by
-  simp_rw [dvd_iff_residue_eq_zero hϖ, hfg]
+  simp_rw [← Ideal.mem_span_singleton, ← hϖ, ← residue_eq_zero_iff, hfg]
   exact (residue_surjective.exists (p := fun t ↦ g t = 0)).symm
 
 /-- **The quadratic test in `y` is a root condition over the residue field.** If the maximal ideal
@@ -363,9 +363,9 @@ theorem natCard_tateCubicRoots_eq [IsLocalRing R] (hϖ : maximalIdeal R = Ideal.
       t ^ 3 + residue R b₂ * t ^ 2 + residue R b₄ * t + residue R b₆ = 0} := by
   refine Nat.card_congr ((Ideal.quotEquivOfEq hϖ.symm).toEquiv.subtypeEquiv fun t ↦ ?_)
   obtain ⟨t, rfl⟩ := Ideal.Quotient.mk_surjective t
+  rw [mk_mem_tateCubicRoots_iff hϖ0 h₂ h₄ h₆, ← mem_maximalIdeal_iff_dvd hϖ, ← residue_eq_zero_iff]
   -- the equivalence `R ⧸ (ϖ) ≃ R ⧸ 𝔪` sends the class of `t` to its residue (`residue_def`)
-  simp [Ideal.quotEquivOfEq_mk, ← residue_def, mk_mem_tateCubicRoots_iff hϖ0 h₂ h₄ h₆,
-    dvd_iff_residue_eq_zero hϖ]
+  simp [Ideal.quotEquivOfEq_mk, ← residue_def]
 
 /-- **The residue cubic has at most three roots** when `ϖ` is prime and `ϖ ∣ a₂`, `ϖ² ∣ a₄`,
 `ϖ³ ∣ a₆`, as on the normal form of Step 6. -/
@@ -461,12 +461,12 @@ theorem hasTateTangentRoot_iff_splits (hϖ : Irreducible ϖ) :
   constructor
   · rintro ⟨t, ht⟩
     refine ⟨residue R t, ?_⟩
-    rw [dvd_iff_residue_eq_zero hϖ.maximalIdeal_eq] at ht
+    rw [← Ideal.mem_span_singleton, ← hϖ.maximalIdeal_eq, ← residue_eq_zero_iff] at ht
     simpa [sub_eq_add_neg] using ht
   · rintro ⟨x, hx⟩
     obtain ⟨t, rfl⟩ := residue_surjective x
     refine ⟨t, ?_⟩
-    rw [dvd_iff_residue_eq_zero hϖ.maximalIdeal_eq]
+    rw [← Ideal.mem_span_singleton, ← hϖ.maximalIdeal_eq, ← residue_eq_zero_iff]
     simpa [sub_eq_add_neg] using hx
 
 /-- **At split multiplicative reduction, the local index of `Iₙ` is `n`.** On an equation
