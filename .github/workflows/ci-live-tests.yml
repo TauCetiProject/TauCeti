@@ -33,4 +33,4 @@ jobs:
         with:
           node-version: "24"
       - run: node --test scripts/test_ci_live_browser.mjs
-      - run: python3 -m unittest scripts/test_ci_live_summary.py
+      - run: python3 -m unittest discover -s scripts -p test_ci_live_summary.py

@@ -63,7 +63,7 @@ jobs:
         run: |
           python3 scripts/test_cancel_bors_candidate.py
           PYTHONPATH=scripts python3 scripts/test_ci_graphs.py
-          python3 -m unittest scripts/test_ci_live_summary.py
+          python3 -m unittest discover -s scripts -p test_ci_live_summary.py
           PYTHONPATH=scripts python3 scripts/test_loc_graph.py
           PYTHONPATH=scripts python3 scripts/test_roadmap_completion.py
           PYTHONPATH=scripts python3 scripts/test_loc_roadmap_graph.py
