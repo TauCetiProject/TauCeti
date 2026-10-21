@@ -59,6 +59,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `ℤ_[p]`.
 * `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
   valuation.
+* `Padic.valuation_p_pow`, `Padic.valuation_p_pow_mul_intCast`: the valuations of `p ^ n` and of
+  `p ^ n m` for an integer `m` prime to `p` are `n`.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
   `1 / m`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
@@ -205,6 +207,19 @@ theorem valuation_p_zpow_mul (α : ℤ) {x : ℚ_[p]} (hx : x ≠ 0) :
     ((p : ℚ_[p]) ^ α * x).valuation = α + x.valuation := by
   rw [Padic.valuation_mul (zpow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)) hx,
     Padic.valuation_zpow, Padic.valuation_p, mul_one]
+
+/-- The valuation of `p ^ n` in `ℚ_[p]` is `n`. -/
+theorem valuation_p_pow (n : ℕ) : ((p : ℚ_[p]) ^ n).valuation = n := by
+  rw [Padic.valuation_pow, Padic.valuation_p, mul_one]
+
+/-- The valuation of `p ^ n m` in `ℚ_[p]`, for an integer `m` prime to `p`, is `n`: the case
+`v(m) = 0` of `Padic.valuation_p_zpow_mul`. -/
+theorem valuation_p_pow_mul_intCast (n : ℕ) {m : ℤ} (hm : ¬(p : ℤ) ∣ m) :
+    ((p : ℚ_[p]) ^ n * m).valuation = n := by
+  have h := valuation_p_zpow_mul (p := p) n
+    (Int.cast_ne_zero.mpr (by rintro rfl; exact hm (dvd_zero _)) : (m : ℚ_[p]) ≠ 0)
+  rwa [Padic.valuation_intCast, padicValInt.eq_zero_of_not_dvd hm, Nat.cast_zero, add_zero,
+    zpow_natCast] at h
 
 /-- The `p`-adic norm of a positive integer `m` is at least `1 / m`. -/
 theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ ‖(m : ℚ_[p])‖ := by

@@ -50,21 +50,6 @@ open ValuativeRel
 
 namespace TauCeti
 
-/-- The `2`-adic valuation of `2 ^ k` is `k`. -/
-private theorem valuation_two_pow (k : ℕ) : Padic.valuation ((2 : ℚ_[2]) ^ k) = k := by
-  rw [Padic.valuation_pow, Padic.valuation_ofNat, padicValNat_self, Nat.cast_one, mul_one]
-
-/-- The `2`-adic valuation of `2 ^ k m`, for an odd integer `m`, is `k`: the case `p = 2` of
-`Padic.valuation_p_zpow_mul`, with `v(m) = 0`. -/
-private theorem valuation_two_pow_mul_intCast {k : ℕ} {m : ℤ} (hm : Odd m) :
-    Padic.valuation ((2 : ℚ_[2]) ^ k * (m : ℚ_[2])) = k := by
-  have h := Padic.valuation_p_zpow_mul (p := 2) k
-    (Int.cast_ne_zero.mpr (by rintro rfl; simp at hm) : (m : ℚ_[2]) ≠ 0)
-  rw [Padic.valuation_intCast,
-    padicValInt.eq_zero_of_not_dvd (by simpa [← even_iff_two_dvd] using hm), Nat.cast_zero,
-    add_zero] at h
-  exact_mod_cast h
-
 /-- An element `1 + x` of `ℚ_2` with `v(x) = 1` has defect exponent `1`. -/
 private theorem defectExponent_padicTwo_of_eq_one_add {a x : ℚ_[2]ˣ}
     (hx : (x : ℚ_[2]).valuation = 1) (ha : (a : ℚ_[2]) = 1 + x) : defectExponent a = 1 := by
@@ -84,14 +69,16 @@ private theorem defectExponent_padicTwo_of_eq_one_add {a x : ℚ_[2]ˣ}
 /-- The defect exponent of `-1` over `ℚ_2` is `1`: `-1 = 1 + (-2)`. -/
 private theorem defectExponent_padicTwo_of_coe_eq_neg_one {a : ℚ_[2]ˣ} (ha : (a : ℚ_[2]) = -1) :
     defectExponent a = 1 :=
-  defectExponent_padicTwo_of_eq_one_add (x := Units.mk0 (2 ^ 1 * ((-1 : ℤ) : ℚ_[2])) (by simp))
-    (valuation_two_pow_mul_intCast (by decide)) (by rw [ha]; norm_num)
+  defectExponent_padicTwo_of_eq_one_add
+    (x := Units.mk0 (((2 : ℕ) : ℚ_[2]) ^ 1 * ((-1 : ℤ) : ℚ_[2])) (by simp))
+    (Padic.valuation_p_pow_mul_intCast 1 (by decide)) (by rw [ha]; norm_num)
 
 /-- The defect exponent of `-5` over `ℚ_2` is `1`: `-5 = 1 + (-6)`. -/
 private theorem defectExponent_padicTwo_of_coe_eq_neg_five {a : ℚ_[2]ˣ} (ha : (a : ℚ_[2]) = -5) :
     defectExponent a = 1 :=
-  defectExponent_padicTwo_of_eq_one_add (x := Units.mk0 (2 ^ 1 * ((-3 : ℤ) : ℚ_[2])) (by simp))
-    (valuation_two_pow_mul_intCast (by decide)) (by rw [ha]; norm_num)
+  defectExponent_padicTwo_of_eq_one_add
+    (x := Units.mk0 (((2 : ℕ) : ℚ_[2]) ^ 1 * ((-3 : ℤ) : ℚ_[2])) (by simp))
+    (Padic.valuation_p_pow_mul_intCast 1 (by decide)) (by rw [ha]; norm_num)
 
 /-- The defect exponent of `5` over `ℚ_2` is `2 = 2 v(2)`: `5 - 1 = 4` gives the lower bound, and
 the local square theorem the upper bound. -/
@@ -108,8 +95,9 @@ private theorem defectExponent_padicTwo_of_coe_eq_five {a : ℚ_[2]ˣ} (ha : (a 
       simp
     simpa [Padic.natCastValuation_self (p := 2)] using
       defectExponent_le_two_mul_natCastValuation h2 hv hsq
-  · have h := le_defectExponent a 1 (Units.mk0 (2 ^ 2) (by simp)) (by rw [ha]; norm_num)
-    rwa [Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, valuation_two_pow] at h
+  · have h := le_defectExponent a 1 (Units.mk0 (((2 : ℕ) : ℚ_[2]) ^ 2) (by simp))
+      (by rw [ha]; norm_num)
+    rwa [Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, Padic.valuation_p_pow] at h
 
 /-- The defect exponent of a unit `u` of `ℤ_2`, read in `ℚ_2`: it is `1` when `u ≡ 3 mod 4`, `2`
 when `u ≡ 5 mod 8`, and `⊤` when `u ≡ 1 mod 8`. -/
@@ -185,18 +173,19 @@ values `⊤, 1, 2, 1, 1, 1, 1, 1`. -/
 @[simp]
 theorem defectExponent_padicTwoSquareClassRep (i : Fin 8) :
     defectExponent (padicTwoSquareClassRep i) = ![⊤, 1, 2, 1, 1, 1, 1, 1] i := by
-  have hodd : ∀ {a : ℚ_[2]ˣ} {m : ℤ}, Odd m → (a : ℚ_[2]) = 2 ^ 1 * (m : ℚ_[2]) →
-      defectExponent a = 1 := fun {a} {m} hm ha ↦ by
+  have hodd : ∀ {a : ℚ_[2]ˣ} {m : ℤ}, ¬((2 : ℕ) : ℤ) ∣ m →
+      (a : ℚ_[2]) = ((2 : ℕ) : ℚ_[2]) ^ 1 * (m : ℚ_[2]) → defectExponent a = 1 :=
+    fun {a} {m} hm ha ↦ by
     have hv : (normalizedValuation ℚ_[2] a).toAdd = 1 := by
-      rw [Padic.toAdd_normalizedValuation_eq_valuation, ha, valuation_two_pow_mul_intCast hm,
-        Nat.cast_one]
+      rw [Padic.toAdd_normalizedValuation_eq_valuation, ha,
+        Padic.valuation_p_pow_mul_intCast 1 hm, Nat.cast_one]
     rw [defectExponent_of_odd (hv ▸ odd_one), hv, WithTop.coe_one]
   fin_cases i
   · exact defectExponent_eq_top_iff.mpr (isSquare_units_val_iff.mp ⟨1, by simp⟩)
   · exact defectExponent_padicTwo_of_coe_eq_neg_one (by simp)
   · exact defectExponent_padicTwo_of_coe_eq_five (by simp)
   · exact defectExponent_padicTwo_of_coe_eq_neg_five (by simp)
-  · exact hodd (m := 1) odd_one (by simp)
+  · exact hodd (m := 1) (by decide) (by simp)
   · exact hodd (m := -1) (by decide) (by simp)
   · exact hodd (m := 5) (by decide) (by simp; norm_num)
   · exact hodd (m := -5) (by decide) (by simp; norm_num)
@@ -210,9 +199,9 @@ theorem quadraticDefect_padicTwoSquareClassRep (i : Fin 8) :
     quadraticDefect (padicTwoSquareClassRep i) =
       FractionalIdeal.spanSingleton _ (![0, 2, 4, 2, 2, 2, 2, 2] i) := by
   -- `2` and `4` as units of `ℚ_2`, with valuations `1` and `2`.
-  let c : ℕ → ℚ_[2]ˣ := fun k ↦ Units.mk0 (2 ^ k) (by simp)
+  let c : ℕ → ℚ_[2]ˣ := fun k ↦ Units.mk0 (((2 : ℕ) : ℚ_[2]) ^ k) (by simp)
   have hc : ∀ k, (normalizedValuation ℚ_[2] (c k)).toAdd = k := fun k ↦ by
-    rw [Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, valuation_two_pow]
+    rw [Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, Padic.valuation_p_pow]
   fin_cases i
   · simp [quadraticDefect_eq_zero_iff, ← defectExponent_eq_top_iff]
   case «2» =>
@@ -237,10 +226,10 @@ theorem quadraticDefect_neg_one_mul_five_ne_padicTwo :
   norm_num at h
   -- Comparing valuations, `2 ℤ_2 = 8 ℤ_2` would give `v(8) ≤ v(2)`.
   have h28 := (toAdd_normalizedValuation_le_iff_valuation_le
-    (Units.mk0 ((2 : ℚ_[2]) ^ 3) (by simp)) (Units.mk0 (2 ^ 1) (by simp))).mpr
+    (Units.mk0 (((2 : ℕ) : ℚ_[2]) ^ 3) (by simp)) (Units.mk0 (((2 : ℕ) : ℚ_[2]) ^ 1) (by simp))).mpr
     (spanSingleton_le_spanSingleton_iff_valuation_le.mp (by norm_num [h.le]))
   rw [Padic.toAdd_normalizedValuation_eq_valuation, Padic.toAdd_normalizedValuation_eq_valuation,
-    Units.val_mk0, Units.val_mk0, valuation_two_pow, valuation_two_pow] at h28
+    Units.val_mk0, Units.val_mk0, Padic.valuation_p_pow, Padic.valuation_p_pow] at h28
   norm_num at h28
 
 end TauCeti
