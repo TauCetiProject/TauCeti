@@ -54,38 +54,38 @@ variable {β γ 𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGro
   (b : UnconditionalSchauderBasis β 𝕜 X)
 
 /-- The rearrangement of an unconditional basis along an equivalence of index types. -/
-protected def reindex (e : γ ≃ β) : UnconditionalSchauderBasis γ 𝕜 X where
-  basis := b ∘ e
-  coord := b.coord ∘ e
+protected def reindex (e : β ≃ γ) : UnconditionalSchauderBasis γ 𝕜 X where
+  basis := b ∘ e.symm
+  coord := b.coord ∘ e.symm
   ortho i j := by
     classical
     simp only [Function.comp_apply, b.ortho, Pi.single_apply]
-    exact if_congr e.injective.eq_iff rfl rfl
-  expansion x := (e.hasSum_iff (f := fun i ↦ b.coord i x • b i)).2 (b.expansion x)
+    exact if_congr e.symm.injective.eq_iff rfl rfl
+  expansion x := (e.symm.hasSum_iff (f := fun i ↦ b.coord i x • b i)).2 (b.expansion x)
 
 /-- The basis vectors of a rearranged basis are the rearranged basis vectors. -/
 @[simp]
-theorem coe_reindex (e : γ ≃ β) : ⇑(b.reindex e) = b ∘ e :=
+theorem coe_reindex (e : β ≃ γ) : ⇑(b.reindex e) = b ∘ e.symm :=
   (rfl)
 
 /-- The coordinate functionals of a rearranged basis are the rearranged coordinate functionals. -/
 @[simp]
-theorem reindex_coord (e : γ ≃ β) : (b.reindex e).coord = b.coord ∘ e :=
+theorem coord_reindex (e : β ≃ γ) : (b.reindex e).coord = b.coord ∘ e.symm :=
   (rfl)
 
 /-- The projection of a rearranged basis onto `A` is the projection onto the image of `A`. -/
 @[simp]
-theorem proj_reindex (e : γ ≃ β) (A : Finset γ) :
-    (b.reindex e).proj A = b.proj (A.map e.toEmbedding) := by
+theorem proj_reindex (e : β ≃ γ) (A : Finset γ) :
+    (b.reindex e).proj A = b.proj (A.map e.symm.toEmbedding) := by
   ext x
   simp
 
 /-- Rearranging an unconditional basis preserves its basis constant. -/
 @[simp]
-theorem nnnormProjBound_reindex (e : γ ≃ β) :
+theorem nnnormProjBound_reindex (e : β ≃ γ) :
     (b.reindex e).nnnormProjBound = b.nnnormProjBound := by
   simp only [nnnormProjBound, proj_reindex, ← Equiv.finsetCongr_apply]
-  exact e.finsetCongr.iSup_comp (g := fun A ↦ ‖b.proj A‖₊)
+  exact e.symm.finsetCongr.iSup_comp (g := fun A ↦ ‖b.proj A‖₊)
 
 end Reindex
 
