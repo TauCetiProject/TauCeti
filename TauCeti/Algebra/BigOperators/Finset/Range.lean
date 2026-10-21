@@ -52,6 +52,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 * `Finset.prod_card_filter_lt_card_filter_gt`, `Finset.sum_card_filter_lt_card_filter_gt`: reindex
   a product or sum over a finite subset `s` of a linear order by the number of elements of `s`
   before each element.
+* `Finset.prod_range_mul_eq_prod_prod`, `Finset.sum_range_mul_eq_sum_sum`: split a product or
+  sum over `range (n * q)` into `q` consecutive blocks of `n` terms.
 -/
 
 public section
@@ -113,6 +115,15 @@ theorem prod_card_filter_lt_card_filter_gt {α M : Type*} [LinearOrder α] [Comm
       (by rw [card_range, card_image_of_injOn hinj])
   rw [← himage, prod_image hinj]
   exact prod_congr rfl fun x hx => by rw [hcard hx]
+
+/-- A product over `range (n * q)` is the product of `q` consecutive blocks of `n` factors. -/
+@[to_additive sum_range_mul_eq_sum_sum
+  /-- A sum over `range (n * q)` is the sum of `q` consecutive blocks of `n` terms. -/]
+theorem prod_range_mul_eq_prod_prod {M : Type*} [CommMonoid M] (f : ℕ → M) (n q : ℕ) :
+    ∏ l ∈ range (n * q), f l = ∏ j ∈ range q, ∏ l ∈ range n, f (n * j + l) := by
+  induction q with
+  | zero => simp
+  | succ q ih => rw [Nat.mul_succ, prod_range_add, ih, prod_range_succ]
 
 end Finset
 
