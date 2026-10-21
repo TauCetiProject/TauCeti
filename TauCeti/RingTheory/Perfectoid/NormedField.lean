@@ -64,13 +64,13 @@ theorem isPerfectoidTateRing_iff_exists_norm :
   constructor
   · rintro ⟨ϖ, ⟨hϖ0, hϖ1⟩, hdvd, hs⟩
     refine ⟨ϖ, hϖ0, hϖ1, hdvd, fun x hx ↦ ?_⟩
-    obtain ⟨y, hy⟩ := hs ⟨x, mem_powerBoundedSubring.mpr (isPowerBounded_iff_norm_le_one.mpr hx)⟩
-    exact ⟨y, isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp y.2), hy⟩
+    obtain ⟨y, hy⟩ := hs ⟨x, mem_powerBoundedSubring_iff_norm_le_one.mpr hx⟩
+    exact ⟨y, mem_powerBoundedSubring_iff_norm_le_one.mp y.2, hy⟩
   · rintro ⟨ϖ, hϖ0, hϖ1, hdvd, hs⟩
-    refine ⟨⟨ϖ, mem_powerBoundedSubring.mpr (isPowerBounded_iff_norm_le_one.mpr hϖ1.le)⟩,
+    refine ⟨⟨ϖ, mem_powerBoundedSubring_iff_norm_le_one.mpr hϖ1.le⟩,
       ⟨hϖ0, hϖ1⟩, hdvd, fun x ↦ ?_⟩
-    obtain ⟨y, hy1, hy⟩ := hs x (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.2))
-    exact ⟨⟨y, mem_powerBoundedSubring.mpr (isPowerBounded_iff_norm_le_one.mpr hy1)⟩, hy⟩
+    obtain ⟨y, hy1, hy⟩ := hs x (mem_powerBoundedSubring_iff_norm_le_one.mp x.2)
+    exact ⟨⟨y, mem_powerBoundedSubring_iff_norm_le_one.mpr hy1⟩, hy⟩
 
 /-- **`ℚ_[p]` is not a perfectoid Tate ring** (Scholze, *Étale cohomology of diamonds*,
 Remark 3.3). A pseudouniformiser `ϖ` has `‖ϖ‖ ≤ p⁻¹`, so `‖ϖ‖ ^ p < p⁻¹ = ‖p‖` and `ϖ ^ p` does
@@ -111,9 +111,6 @@ theorem IsPerfectoidTateRing.of_isAlgClosed [IsAlgClosed K] (hpK : ‖(p : K)‖
 /-- **`ℂ_[p]` is a perfectoid Tate ring**: it is algebraically closed and `‖p‖ = p⁻¹ < 1`. -/
 instance isPerfectoidTateRing_padicComplex : IsPerfectoidTateRing p ℂ_[p] :=
   IsPerfectoidTateRing.of_isAlgClosed p ℂ_[p] <| by
-    rw [← PadicComplex.coe_natCast, PadicComplex.norm_extends,
-      ← map_natCast (algebraMap ℚ_[p] (PadicAlgCl p)), PadicAlgCl.norm_extends,
-      Padic.norm_p]
-    exact inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.out.one_lt)
+    simpa using (PadicComplex.norm_extends' p p).trans_lt Padic.norm_p_lt_one
 
 end TauCeti.Perfectoid

@@ -50,8 +50,9 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   than one is a pseudouniformiser.
 * `TauCeti.Huber.isPseudoUniformizer_iff_norm_lt_one`: in a normed division ring the
   pseudouniformisers are the nonzero elements of norm less than one.
-* `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall`: in an ultrametric normed field `K°` is the
-  closed unit ball.
+* `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall` and
+  `TauCeti.Huber.mem_powerBoundedSubring_iff_norm_le_one`: in an ultrametric normed field `K°` is
+  the closed unit ball.
 * `TauCeti.Huber.dvd_iff_norm_le`: divisibility in `K°` is comparison of norms.
 * `TauCeti.Huber.IsTateRing.of_isUnit_norm_lt_one`: an ultrametric seminormed commutative ring
   with `‖1‖ = 1` and a unit of norm less than one is a Tate ring.
@@ -231,19 +232,23 @@ theorem coe_powerBoundedSubring_eq_closedBall :
   simp
 
 variable {K} in
+/-- **The power-bounded subring of an ultrametric normed field is its closed unit ball**, stated
+elementwise. -/
+theorem mem_powerBoundedSubring_iff_norm_le_one {x : K} : x ∈ powerBoundedSubring K ↔ ‖x‖ ≤ 1 :=
+  mem_powerBoundedSubring.trans isPowerBounded_iff_norm_le_one
+
+variable {K} in
 /-- **Divisibility in `K°` is comparison of norms**: in the closed unit ball of an ultrametric
 normed field, `a ∣ b` exactly when `‖b‖ ≤ ‖a‖`. -/
 theorem dvd_iff_norm_le {a b : powerBoundedSubring K} : a ∣ b ↔ ‖(b : K)‖ ≤ ‖(a : K)‖ := by
   refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ ?_⟩
   · rw [hc, Subring.coe_mul, norm_mul]
-    exact mul_le_of_le_one_right (norm_nonneg _)
-      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2))
+    exact mul_le_of_le_one_right (norm_nonneg _) (mem_powerBoundedSubring_iff_norm_le_one.mp c.2)
   · by_cases ha : (a : K) = 0
     · rw [ha, norm_zero, norm_le_zero_iff, ← Subring.coe_zero, Subtype.coe_inj] at h
       rw [h]
       exact dvd_zero a
-    · refine ⟨⟨b / a, mem_powerBoundedSubring.mpr (isPowerBounded_iff_norm_le_one.mpr ?_)⟩,
-        Subtype.ext ?_⟩
+    · refine ⟨⟨b / a, mem_powerBoundedSubring_iff_norm_le_one.mpr ?_⟩, Subtype.ext ?_⟩
       · rw [norm_div]
         exact div_le_one_of_le₀ h (norm_nonneg _)
       · rw [Subring.coe_mul, mul_div_cancel₀ _ ha]

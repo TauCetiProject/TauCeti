@@ -15,8 +15,8 @@ public import Mathlib.RingTheory.Ideal.Span
 Let `p` be a prime and `I, J` ideals of a commutative ring `A` with `p ∈ J` and `x ^ p ∈ J` for
 every `x ∈ I`. Then `x ↦ x ^ p` descends to a ring homomorphism `A ⧸ I →+* A ⧸ J`: it is
 multiplicative, and additive because `(x + y) ^ p - x ^ p - y ^ p` is a multiple of `p`. Unlike
-Mathlib's `frobenius`, the source and target are different rings, and neither needs to have
-characteristic `p` (both may be zero).
+Mathlib's `frobenius`, the source and target are different rings, and the source need not have
+characteristic `p` (only the target, where `p = 0`, does).
 
 The case of interest is `I = (ϖ)` and `J = (ϖ ^ p)` for an element `ϖ` with `ϖ ^ p ∣ p`: the map
 `A ⧸ ϖ →+* A ⧸ ϖ ^ p` whose bijectivity on the ring of power-bounded elements is the defining
@@ -75,23 +75,13 @@ open Ideal
 
 variable {A : Type*} [CommRing A]
 
-/-- `p` lies in `(ϖ ^ p)` when `ϖ ^ p ∣ p`. -/
-private theorem natCast_mem_span_pow {ϖ : A} {p : ℕ} (h : ϖ ^ p ∣ (p : A)) :
-    (p : A) ∈ span {ϖ ^ p} :=
-  mem_span_singleton.mpr h
-
-/-- The `p`-th power of a multiple of `ϖ` is a multiple of `ϖ ^ p`. -/
-private theorem pow_mem_span_pow (ϖ : A) (p : ℕ) : ∀ x ∈ span {ϖ}, x ^ p ∈ span {ϖ ^ p} := by
-  intro x hx
-  obtain ⟨c, rfl⟩ := mem_span_singleton.mp hx
-  exact mem_span_singleton.mpr ⟨c ^ p, mul_pow ϖ c p⟩
-
 /-- **Frobenius modulo `ϖ`.** For a prime `p` and `ϖ` with `ϖ ^ p ∣ p`, the ring homomorphism
 `A ⧸ ϖ →+* A ⧸ ϖ ^ p`, `[x] ↦ [x ^ p]`; this is `Ideal.frobeniusQuot` for `I = (ϖ)` and
 `J = (ϖ ^ p)`. -/
 noncomputable def frobeniusModPow (ϖ : A) (p : ℕ) [Fact p.Prime] (h : ϖ ^ p ∣ (p : A)) :
     A ⧸ span {ϖ} →+* A ⧸ span {ϖ ^ p} :=
-  frobeniusQuot _ _ p (natCast_mem_span_pow h) (pow_mem_span_pow ϖ p)
+  frobeniusQuot _ _ p (mem_span_singleton.mpr h) fun _ hx ↦
+    span_singleton_pow ϖ p ▸ pow_mem_pow hx p
 
 variable (ϖ : A) (p : ℕ) [Fact p.Prime] (h : ϖ ^ p ∣ (p : A))
 

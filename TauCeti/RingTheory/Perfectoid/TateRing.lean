@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Uniform
 public import TauCeti.RingTheory.Ideal.Quotient.Frobenius
-public import TauCeti.RingTheory.IntegralClosure.Divisibility
+public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.Topology.Algebra.IsUniformGroup.Defs
 
 /-!
@@ -94,7 +94,7 @@ some pseudouniformiser `ϖ ∈ R°` has `ϖ ^ p ∣ p` in `R°` and Frobenius
 class IsPerfectoidTateRing (p : ℕ) (R : Type*) [CommRing R] [UniformSpace R] [IsUniformAddGroup R]
     [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T2Space R] : Prop where
   /-- A perfectoid Tate ring is uniform: its ring `R°` of power-bounded elements is bounded. -/
-  isBounded_powerBoundedSubring : IsBounded (powerBoundedSubring R : Set R)
+  isUniform : IsUniform R
   /-- Some pseudouniformiser `ϖ ∈ R°` has `ϖ ^ p ∣ p` in `R°`, every element of `R°` is a `p`-th
   power modulo `ϖ ^ p`, and `ϖ ^ p ∣ y ^ p` forces `ϖ ∣ y` in `R°`. -/
   exists_pseudoUniformizer : ∃ ϖ : powerBoundedSubring R, IsPseudoUniformizer (ϖ : R) ∧
@@ -107,15 +107,10 @@ variable {p : ℕ} {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup 
 namespace IsPerfectoidTateRing
 
 variable (p) in
-/-- **A perfectoid Tate ring is uniform.** -/
-theorem isUniform [IsPerfectoidTateRing p R] : IsUniform R :=
-  isUniform_iff_isBounded_powerBoundedSubring.mpr (isBounded_powerBoundedSubring p)
-
-variable (p) in
 /-- **A perfectoid Tate ring is reduced**, being a Hausdorff uniform Tate ring
 (Scholze, *Perfectoid spaces*, Proposition 5.8). -/
 theorem isReduced [IsPerfectoidTateRing p R] : IsReduced R :=
-  have := isUniform p (R := R)
+  have := isUniform (p := p) (R := R)
   IsUniform.isReduced
 
 variable [Fact p.Prime]
@@ -136,7 +131,7 @@ a uniform Tate ring with a pseudouniformiser `ϖ ∈ R°` such that `ϖ ^ p ∣ 
 theorem of_surjective [IsUniform R] (ϖ : powerBoundedSubring R) (hϖ : IsPseudoUniformizer (ϖ : R))
     (h : ϖ ^ p ∣ (p : powerBoundedSubring R)) (hs : Surjective (frobeniusModPow ϖ p h)) :
     IsPerfectoidTateRing p R where
-  isBounded_powerBoundedSubring := IsUniform.isBounded_powerBoundedSubring
+  isUniform := ‹_›
   exists_pseudoUniformizer := ⟨ϖ, hϖ, h, (surjective_frobeniusModPow_iff ϖ p h).mp hs,
     (injective_frobeniusModPow_iff ϖ p h).mp (injective_frobeniusModPow hϖ.isUnit h)⟩
 
@@ -149,7 +144,7 @@ theorem isPerfectoidTateRing_iff [Fact p.Prime] :
     IsPerfectoidTateRing p R ↔ IsUniform R ∧ ∃ ϖ : powerBoundedSubring R,
       IsPseudoUniformizer (ϖ : R) ∧
         ∃ h : ϖ ^ p ∣ (p : powerBoundedSubring R), Surjective (frobeniusModPow ϖ p h) := by
-  refine ⟨fun hR ↦ ⟨IsPerfectoidTateRing.isUniform p, ?_⟩, fun ⟨_, ϖ, hϖ, h, hs⟩ ↦
+  refine ⟨fun hR ↦ ⟨IsPerfectoidTateRing.isUniform (p := p), ?_⟩, fun ⟨_, ϖ, hϖ, h, hs⟩ ↦
     IsPerfectoidTateRing.of_surjective ϖ hϖ h hs⟩
   obtain ⟨ϖ, hϖ, h, hb⟩ := IsPerfectoidTateRing.exists_bijective_frobeniusModPow (p := p) (R := R)
   exact ⟨ϖ, hϖ, h, hb.surjective⟩
@@ -158,7 +153,7 @@ variable (p) in
 /-- **The zero ring is a perfectoid Tate ring**: `0` is a topologically nilpotent unit, and all
 quotients vanish. -/
 theorem isPerfectoidTateRing_of_subsingleton [Subsingleton R] : IsPerfectoidTateRing p R where
-  isBounded_powerBoundedSubring := isBounded_of_discreteTopology _
+  isUniform := inferInstance
   exists_pseudoUniformizer :=
     ⟨0, isPseudoUniformizer_iff.mpr ⟨isUnit_of_subsingleton _, .zero⟩,
       ⟨0, Subsingleton.elim _ _⟩, fun _ ↦ ⟨0, ⟨0, Subsingleton.elim _ _⟩⟩,
@@ -173,9 +168,7 @@ variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [IsTopo
 restricts to `R° ≃+* S°` and carries a pseudouniformiser to a pseudouniformiser. -/
 theorem IsPerfectoidTateRing.of_ringEquiv [IsPerfectoidTateRing p R] (e : R ≃+* S)
     (he : Continuous e) (he' : Continuous e.symm) : IsPerfectoidTateRing p S where
-  isBounded_powerBoundedSubring :=
-    have := (isUniform p (R := R)).of_ringEquiv e he he'
-    IsUniform.isBounded_powerBoundedSubring
+  isUniform := (IsPerfectoidTateRing.isUniform (p := p) (R := R)).of_ringEquiv e he he'
   exists_pseudoUniformizer := by
     obtain ⟨ϖ, hϖ, h, hs, hi⟩ := exists_pseudoUniformizer (p := p) (R := R)
     set f := powerBoundedSubringEquiv e he he'
