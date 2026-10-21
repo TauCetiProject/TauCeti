@@ -368,9 +368,8 @@ jobs:
           # Comparing blob SHAs at two immutable commits has neither problem, and asking the
           # merge base rather than the branch tip keeps the question "did this pull request
           # change the pins" rather than "have the pins moved since this branch was cut".
-          # A merge group's head descends from its base_sha, so the fallback below is exact
-          # there. For an ordinary pull request it is a guess, and the pin question cannot be
-          # answered against a guess.
+          # ci_git.py resolve supplies the exact merge base or fails setup. This
+          # guard preserves an unknown pin state if setup did not produce that identity.
           if [ "${{ env.IS_BATCH }}" != "true" ] && [ "${{ env.MERGEBASE_EXACT }}" != "1" ]; then
             pins_known=0
             echo "::warning::merge base unresolved — pin state unknown"
@@ -1262,18 +1261,10 @@ jobs:
           # pr-build without a push, so no event ever corrects it. That wedged PR #1358 for seven
           # days, invisible to both the author path and the review path.
           #
-          # So: retry each POST, always attempt all three whatever the others did, and surface a
-          # persistent failure loudly at the end rather than silently dropping a status.
-          # The scope, size and new-file guards above read the pull request's CURRENT state
-          # from the API rather than from the immutable head, so it can move underneath a run.
-          # Fail closed: an unreadable answer is not a passing one. A status is keyed only by
-          # commit, so a green posted while the pull request has moved on can outlive the state
-          # it was about -- the same SHA can become the head again, two pull requests can share
-          # a head, and retargeting does not change the head at all.
-          # ci_status.py checks the current run attempt and PR head/base once
-          # for the group immediately before publication, and again after waits.
-          # Obsolete results are discarded rather than written onto a new head.
-          head_moved=0
+          # Record all three intents before ci_status.py resume publishes them.
+          # Publication rechecks the run attempt, PR head/base, and any scope
+          # approval; it discards obsolete results and refreshes checks after waits.
+          # retry-ci-status.yml replays retained intents without rebuilding.
 
           identity_ok=0
           if python3 gate/scripts/prepare_pr_integration.py verify \
@@ -1338,9 +1329,7 @@ jobs:
           # a useful build because all harness code is workflow-pinned. A lakefile edit or invalid
           # pin is never executed and therefore reports a required failure rather than pretending
           # that a different configuration built.
-          if [ "$head_moved" = 1 ]; then
-            state=failure; desc="the pull request changed during this build — the run for its current state statuses it"
-          elif [ "${{ env.INTEGRATION_CONFLICT }}" = "1" ]; then
+          if [ "${{ env.INTEGRATION_CONFLICT }}" = "1" ]; then
             state=failure; desc="integration with captured main conflicts — human resolution required; see H/B in run"
           elif [ "${{ env.INTEGRATION_BAD }}" = "1" ]; then
             state=failure; desc="build not run — integration preparation failed; see H/B diagnostics in run"
