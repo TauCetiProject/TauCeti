@@ -26,10 +26,11 @@ map.
 
 The shape operator controls the squared-distance function `ρ_a(y) = ‖i y - a‖²`. At a critical
 point `x`, where `a - i x` is normal, the Hessian of `ρ_a` is `2 g((1 - S_{a - i x}) v, w)`, so its
-null space is the `1`-eigenspace of `S_{a - i x}`. Along the normal line `a = i x + t ν` this is
-the `t⁻¹`-eigenspace of `S_ν`: the point `i x + t ν` is a focal point of `i` at `x` exactly when
-`t⁻¹` is an eigenvalue of `S_ν`, with multiplicity the dimension of that eigenspace. A zero
-eigenvalue of `S_ν` gives no focal point, and `i x` itself is never one.
+null space is the `1`-eigenspace of `S_{a - i x}`. Along the normal line `a = i x + t ν` with
+`t ≠ 0` this is the `t⁻¹`-eigenspace of `S_ν`: such a point `i x + t ν` is a focal point of `i`
+at `x` exactly when `t⁻¹` is an eigenvalue of `S_ν`, with multiplicity the dimension of that
+eigenspace. A zero eigenvalue of `S_ν` gives no focal point, and `i x` itself (`t = 0`) is never
+one.
 
 For a holomorphic immersion into a complex inner product space, with the real inner product
 `re ⟪x, y⟫`, the complex identities of the second fundamental form give
@@ -55,7 +56,7 @@ distances `t` and `-t` have the same multiplicity.
 * `TauCeti.ker_fderiv_fderiv_norm_sq_sub_comp`: the null space of that Hessian is the
   `1`-eigenspace of `S_{a - i x}`.
 * `TauCeti.ker_fderiv_fderiv_norm_sq_sub_add_smul_comp`: at the point `i x + t ν` of a normal
-  line, this is the `t⁻¹`-eigenspace of `S_ν`.
+  line with `t ≠ 0`, this is the `t⁻¹`-eigenspace of `S_ν`.
 * `ContDiffAt.shapeOperator_apply_I_smul`, `ContDiffAt.shapeOperator_I_smul_apply`: the identities
   `S_ν J = -J S_ν` and `S_{Jν} = J S_ν` for a holomorphic immersion.
 * `ContDiffAt.finrank_genEigenspace_shapeOperator_neg`: the paired principal curvatures.
