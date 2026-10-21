@@ -51,46 +51,6 @@ namespace TauCeti
 
 variable {K E : Type*} [NontriviallyNormedField K] [NormedAddCommGroup E] [NormedSpace K E]
 
-/-- If each `e N` is `T (N + 1) / T N`-orthogonal to the span of the previous vectors, for a
-strictly decreasing sequence `T` of positive constants at most one, then in an ultrametric space
-the vectors `e i` with `i < N` are `T N`-orthogonal. -/
-private theorem mul_sup_nnnorm_le_of_forall_lt [IsUltrametricDist E] {e : ℕ → E}
-    {T : ℕ → ℝ≥0} (hT : StrictAnti T) (hT' : ∀ n, 0 < T n ∧ T n ≤ 1)
-    (he : ∀ N, ∀ z ∈ span K (e '' Iio N), T (N + 1) / T N * ‖e N‖₊ ≤ ‖e N - z‖₊) (N : ℕ) :
-    ∀ s : Finset ℕ, (∀ i ∈ s, i < N) → ∀ a : ℕ → K,
-      T N * s.sup (fun i ↦ ‖a i • e i‖₊) ≤ ‖∑ i ∈ s, a i • e i‖₊ := by
-  induction N with
-  | zero =>
-    intro s hs a
-    rw [Finset.eq_empty_of_forall_notMem fun i hi ↦ Nat.not_lt_zero i (hs i hi)]
-    simp
-  | succ N ih =>
-    intro s hs a
-    have hs' (i : ℕ) (hi : i ∈ s) (hiN : i ≠ N) : i < N :=
-      lt_of_le_of_ne (Nat.lt_succ_iff.1 (hs i hi)) hiN
-    by_cases hN : N ∈ s
-    · -- Split off the last term `a N • e N`; the others lie in the span of the previous vectors.
-      rw [← Finset.insert_erase hN, Finset.sum_insert (Finset.notMem_erase N s),
-        Finset.sup_insert]
-      have hlt (i : ℕ) (hi : i ∈ s.erase N) : i < N :=
-        hs' i (Finset.mem_of_mem_erase hi) (Finset.ne_of_mem_erase hi)
-      have hz : ∑ i ∈ s.erase N, a i • e i ∈ span K (e '' Iio N) :=
-        sum_mem fun i hi ↦ smul_mem _ _ (subset_span ⟨i, hlt i hi, rfl⟩)
-      have hTN : T (N + 1) = T (N + 1) / T N * T N := (div_mul_cancel₀ _ (hT' N).1.ne').symm
-      calc T (N + 1) * max ‖a N • e N‖₊ ((s.erase N).sup fun i ↦ ‖a i • e i‖₊)
-          = T (N + 1) / T N * max (T N * ‖a N • e N‖₊)
-              (T N * (s.erase N).sup fun i ↦ ‖a i • e i‖₊) := by
-            rw [← mul_max_of_nonneg _ _ zero_le, ← mul_assoc, ← hTN]
-        _ ≤ T (N + 1) / T N * max ‖a N • e N‖₊ ‖∑ i ∈ s.erase N, a i • e i‖₊ := by
-            gcongr
-            · exact mul_le_of_le_one_left zero_le (hT' N).2
-            · exact ih _ hlt a
-        _ ≤ ‖a N • e N + ∑ i ∈ s.erase N, a i • e i‖₊ :=
-            mul_max_nnnorm_le_nnnorm_smul_add
-              (div_le_one_of_le₀ (hT N.lt_succ_self).le zero_le) (he N) (a N) hz
-    · exact (mul_le_mul_of_nonneg_right (hT N.lt_succ_self).le zero_le).trans
-        (ih s (fun i hi ↦ hs' i hi fun h ↦ hN (h ▸ hi)) a)
-
 variable [CompleteSpace K] [IsUltrametricDist E]
 
 /-- **Approximate Gram–Schmidt process**: over a complete nontrivially normed field, every sequence
