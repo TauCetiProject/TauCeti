@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Homogenize
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
+public import TauCeti.Algebra.Polynomial.Homogenize
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Polynomial
 
@@ -169,7 +169,8 @@ theorem lTensor_coact_X_one_pow (d : ℕ) :
   simp only [← Comodule.coefficientMatrix_apply, hS₁₀, hS₁₁, map_pow, map_add,
     Algebra.TensorProduct.map_tmul, AlgHom.id_apply, map_neg, BialgHom.coe_toAlgHom, q]
   rw [coefficientMatrix_basisFun, Matrix.map_apply,
-    UpperTriangular.coordinateMap_coordinateMap_genericMatrix_of_lt (by decide : (0 : Fin 2) < 1),
+    UpperTriangular.coordinateMap_coordinateMap_genericMatrix_eq_zero_of_lt
+      (by decide : (0 : Fin 2) < 1),
     neg_zero, TensorProduct.tmul_zero, zero_add,
     Algebra.TensorProduct.tmul_pow]
 
@@ -180,72 +181,6 @@ end HighestLine
 section Uniqueness
 
 open Polynomial
-
-/-- A binary form of degree `d` over a domain that is semi-invariant under the universal
-unipotent substitution `x ↦ x - t y` is a multiple of `y ^ d`. -/
-private theorem mem_span_X_one_pow_of_aeval_eq_smul [IsDomain R] {d : ℕ}
-    {f : MvPolynomial (Fin 2) R} (hf : f.IsHomogeneous d) (c : R[X])
-    (h : MvPolynomial.aeval ![MvPolynomial.X 0 - MvPolynomial.C X * MvPolynomial.X 1,
-      MvPolynomial.X 1] f = c • MvPolynomial.map (algebraMap R R[X]) f) :
-    f ∈ R ∙ (MvPolynomial.X 1 ^ d : MvPolynomial (Fin 2) R) := by
-  -- The dehomogenization `p = f(x, 1)` and the value `a = f(0, 1)`.
-  set p : R[X] := MvPolynomial.aeval ![(X : R[X]), 1] f with hp
-  set a : R := MvPolynomial.aeval ![(0 : R), 1] f with ha
-  -- Evaluate the semi-invariance at `(x, y) = (t, 1)` and at `(x, y) = (0, 1)`.
-  -- The two evaluations, as `R`-algebra homomorphisms out of `MvPolynomial (Fin 2) R[t]`.
-  let ev₁ : MvPolynomial (Fin 2) R[X] →ₐ[R] R[X] :=
-    (MvPolynomial.aeval (R := R[X]) ![X, 1]).restrictScalars R
-  let ev₀ : MvPolynomial (Fin 2) R[X] →ₐ[R] R[X] :=
-    (MvPolynomial.aeval (R := R[X]) ![0, 1]).restrictScalars R
-  let σ : MvPolynomial (Fin 2) R →ₐ[R] MvPolynomial (Fin 2) R[X] := MvPolynomial.aeval
-    ![MvPolynomial.X 0 - MvPolynomial.C X * MvPolynomial.X 1, MvPolynomial.X 1]
-  let ι := MvPolynomial.mapAlgHom (σ := Fin 2) (Algebra.ofId R R[X])
-  have k₁ : ev₁.comp σ = (Algebra.ofId R R[X]).comp (MvPolynomial.aeval ![(0 : R), 1]) :=
-    MvPolynomial.algHom_ext fun i ↦ by fin_cases i <;> simp [ev₁, σ]
-  have k₁' : ev₁.comp ι = MvPolynomial.aeval ![(X : R[X]), 1] :=
-    MvPolynomial.algHom_ext fun i ↦ by fin_cases i <;> simp [ev₁, ι]
-  have k₀ : ev₀.comp σ = MvPolynomial.aeval ![(-X : R[X]), 1] :=
-    MvPolynomial.algHom_ext fun i ↦ by fin_cases i <;> simp [ev₀, σ]
-  have k₀' : ev₀.comp ι = (Algebra.ofId R R[X]).comp (MvPolynomial.aeval ![(0 : R), 1]) :=
-    MvPolynomial.algHom_ext fun i ↦ by fin_cases i <;> simp [ev₀, ι]
-  have hι : ι f = MvPolynomial.map (algebraMap R R[X]) f := by simp [ι]
-  have h1 : C a = c * p := by
-    have e := congrArg (MvPolynomial.aeval (R := R[X]) ![(X : R[X]), 1]) h
-    rw [map_smul, smul_eq_mul, ← hι] at e
-    have eL := DFunLike.congr_fun k₁ f
-    have eR := DFunLike.congr_fun k₁' f
-    simp only [AlgHom.comp_apply] at eL eR
-    rw [hp, ha, ← eR, ← Polynomial.algebraMap_eq, ← Algebra.ofId_apply, ← eL]
-    exact e
-  have h2 : aeval (-X) p = c * C a := by
-    have e := congrArg (MvPolynomial.aeval (R := R[X]) ![(0 : R[X]), 1]) h
-    rw [map_smul, smul_eq_mul, ← hι] at e
-    have eL := DFunLike.congr_fun k₀ f
-    have eR := DFunLike.congr_fun k₀' f
-    simp only [AlgHom.comp_apply] at eL eR
-    have hcomp : aeval (-X) p = MvPolynomial.aeval ![(-X : R[X]), 1] f := by
-      rw [hp, MvPolynomial.comp_aeval_apply]
-      refine congrArg (MvPolynomial.aeval · f) (funext fun i ↦ ?_)
-      fin_cases i <;> simp
-    rw [hcomp, ← eL, ha, ← Polynomial.algebraMap_eq, ← Algebra.ofId_apply, ← eR]
-    exact e
-  have hdeg : p.natDegree = 0 := by
-    rcases eq_or_ne p 0 with hp0 | hp0
-    · rw [hp0, natDegree_zero]
-    rcases eq_or_ne c 0 with hc0 | hc0
-    · rw [hc0, zero_mul, ← Polynomial.comp_eq_aeval, comp_eq_zero_iff] at h2
-      rcases h2 with h2 | ⟨-, h2⟩
-      · exact absurd h2 hp0
-      · have := congrArg natDegree h2
-        simp at this
-    · have := congrArg natDegree h1
-      rw [natDegree_C, natDegree_mul hc0 hp0] at this
-      omega
-  -- `f` is the homogenization of its dehomogenization `p`, which is constant.
-  have hf' : f = MvPolynomial.C (p.coeff 0) * MvPolynomial.X 1 ^ d := by
-    rw [← homogenize_C, ← eq_C_of_natDegree_eq_zero hdeg,
-      homogenize_eq_of_isHomogeneous hf hp.symm]
-  exact Submodule.mem_span_singleton.mpr ⟨p.coeff 0, by rw [hf', MvPolynomial.smul_eq_C_mul]⟩
 
 /-- **`R yᵈ` is the unique line of binary forms of degree `d` stable under the upper-triangular
 subgroup.** Over a domain, a binary form `f` of degree `d` spans a stable line, that is, its
@@ -286,7 +221,7 @@ theorem exists_lTensor_coact_eq_tmul_iff_mem_span [IsDomain R] {d : ℕ} {f : Mv
     rw [algebraTensorAlgEquiv_endOfPoint_binaryForm g hg, map_smul,
       MvPolynomial.algebraTensorAlgEquiv_tmul, one_smul] at hpoly
     simp only [map_one, one_mul, map_zero, zero_mul, sub_zero] at hpoly
-    exact mem_span_X_one_pow_of_aeval_eq_smul (mem_binaryForms.mp hf) _ hpoly
+    exact (mem_binaryForms.mp hf).mem_span_X_one_pow_of_aeval_eq_smul _ hpoly
   · obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hmem
     exact ⟨_, by rw [map_smul, map_smul, lTensor_coact_X_one_pow, TensorProduct.smul_tmul']⟩
 
