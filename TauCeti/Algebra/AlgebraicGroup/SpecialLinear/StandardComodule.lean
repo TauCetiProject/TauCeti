@@ -28,6 +28,10 @@ theory.
 ## Main declarations
 
 * `TauCeti.SpecialLinear.standardComodule`: the standard `O(SL_n)`-comodule on `R^n`.
+* `TauCeti.SpecialLinear.coefficientMatrix_basisFun`: its coefficient matrix is the generic
+  matrix of `SL_n`; `map_antipode_coefficientMatrix` identifies its antipode with the adjugate.
+* `TauCeti.SpecialLinear.ofConv_coefficientMatrix`: a point evaluates the coefficient matrix to
+  its matrix.
 * `TauCeti.SpecialLinear.isFaithful_standardComodule`: the standard representation is faithful.
 * `TauCeti.SpecialLinear.mulVec_mem`: a standard subcomodule is stable under every determinant-one
   matrix.
@@ -87,6 +91,32 @@ theorem standardComodule_coact :
   rw [Comodule.corestrictCoact_apply, LinearMap.comp_apply,
     GeneralLinear.standardComodule_coact]
 
+/-- The coefficient matrix of the standard comodule of `SL_n` is the image of the generic matrix
+of `GL_n` in `O(SL_n)`. -/
+theorem coefficientMatrix_basisFun :
+    Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n)) =
+      (GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom := by
+  rw [standardComodule, Comodule.coefficientMatrix_corestrict,
+    GeneralLinear.coefficientMatrix_basisFun]
+  ext i j
+  simp [BialgHom.toCoalgHom_apply]
+
+/-- The coefficient matrix of the standard comodule of `SL_n` has determinant one. -/
+theorem det_coefficientMatrix_basisFun :
+    (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))).det =
+      1 := by
+  rw [coefficientMatrix_basisFun, det_map_genericMatrix_coordinateMap]
+
+/-- In `O(SL_n)` the antipode of the coefficient matrix of the standard comodule is its adjugate:
+the inverse of a determinant-one matrix. -/
+theorem map_antipode_coefficientMatrix :
+    (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))).map
+        (HopfAlgebra.antipode R) =
+      (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n)
+        (Pi.basisFun R (Fin n))).adjugate := by
+  rw [← Matrix.inv_eq_left_inv (Comodule.map_antipode_mul_coefficientMatrix _), Matrix.inv_def,
+    det_coefficientMatrix_basisFun, Ring.inverse_one, one_smul]
+
 /-- **The standard comodule of `SL_n` is faithful.** -/
 theorem isFaithful_standardComodule :
     Comodule.IsFaithful (k := R) (H := coordinateHopfAlgebra R n) (V := Fin n → R) := by
@@ -127,6 +157,19 @@ theorem piScalarRight_comp_endOfPoint
     rw [← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_toGL]
   rw [← hmatrix]
   exact GeneralLinear.piScalarRight_comp_endOfPoint R n q
+
+variable {R n} in
+/-- A point of `SL_n` takes the coefficient matrix of the standard comodule to its matrix. -/
+theorem ofConv_coefficientMatrix (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A))
+    (i j : Fin n) :
+    g.ofConv (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n)
+        (Pi.basisFun R (Fin n)) i j) =
+      (pointsMulEquiv (R := R) (A := A) n g : Matrix (Fin n) (Fin n) A) i j := by
+  rw [← Matrix.SpecialLinearGroup.coe_GL_coe_matrix, ← pointsMulEquiv_toGL,
+    GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply,
+    CommHopfAlgCat.quotientPointsHom_apply, ofConv_toConv, AlgHom.comp_apply,
+    ← GeneralLinear.genericMatrix_apply, coefficientMatrix_basisFun, Matrix.map_apply,
+    BialgHom.coe_toAlgHom]
 
 end PointAction
 
