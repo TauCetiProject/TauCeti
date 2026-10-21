@@ -326,26 +326,23 @@ theorem lazardGcd_nsmul_aeval_lazardCocycle {A : Type*} [CommRing A] [Algebra R 
 /-- The diagonal `C_n(X, X)` of the Lazard cocycle is `((2ⁿ - 2) / d_n) • Xⁿ`: the coefficients
 `n.choose i`, `0 < i < n`, of `(X + Y)ⁿ - Xⁿ - Yⁿ` sum to `2ⁿ - 2`. For `n < 2` both sides
 vanish. -/
+@[simp]
 theorem aeval_X_X_lazardCocycle (n : ℕ) :
     aeval ![Polynomial.X, Polynomial.X] (lazardCocycle n R) =
       ((2 ^ n - 2) / lazardGcd n) • (Polynomial.X : Polynomial R) ^ n := by
   -- The coefficient is the sum of the coefficients `n.choose i / d_n` of `C_n`.
   have hsum : (2 ^ n - 2) / lazardGcd n = ∑ i ∈ Icc 1 (n - 1), n.choose i / lazardGcd n := by
-    rcases lt_or_ge n 2 with hn | hn
-    · rw [lazardGcd_eq_zero_of_lt_two hn, Icc_eq_empty (by omega)]
-      simp
-    · refine Nat.div_eq_of_eq_mul_right (Nat.pos_of_ne_zero (lazardGcd_ne_zero hn)) ?_
-      rw [Finset.mul_sum, ← Nat.sum_Icc_choose_eq_two_pow_sub_two]
-      refine Finset.sum_congr rfl fun i hi => ?_
-      rw [mem_Icc] at hi
-      exact (lazardGcd_mul_choose_div_lazardGcd (by omega) (by omega)).symm
+    rw [← Nat.sum_Icc_choose_eq_two_pow_sub_two]
+    refine Nat.sum_div fun i hi => ?_
+    rw [mem_Icc] at hi
+    exact lazardGcd_dvd_choose (by omega) (by omega)
   rw [hsum, Finset.sum_smul, lazardCocycle, map_sum]
   refine Finset.sum_congr rfl fun i hi => ?_
   rw [mem_Icc] at hi
   rw [aeval_monomial, Finsupp.prod_add_index' (by simp) (by simp [pow_add]),
     Finsupp.prod_single_index (by simp), Finsupp.prod_single_index (by simp)]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, ← pow_add,
-    show i + (n - i) = n by omega, nsmul_eq_mul, Polynomial.algebraMap_eq, map_natCast]
+    Nat.add_sub_cancel' (by omega : i ≤ n), nsmul_eq_mul, Polynomial.algebraMap_eq, map_natCast]
 
 /-- `C_n` is homogeneous of degree `n`. -/
 theorem isHomogeneous_lazardCocycle (n : ℕ) : (lazardCocycle n R).IsHomogeneous n :=

@@ -27,8 +27,9 @@ greatest common divisor `d_n` of the binomial coefficients `n.choose i`, `0 < i 
   `(2X)ⁿ - 2Xⁿ` vanishes, so the diagonal condition holds automatically and is not assumed.
 * If `n = 2ᵏ` with `k ≥ 1`, then `d_n = 2`, the polynomial `(X + Y)ⁿ - Xⁿ - Yⁿ` vanishes in `R`,
   and the integral cocycle `C_n = ((X + Y)ⁿ - Xⁿ - Yⁿ) / 2` reduced mod `2` has diagonal
-  `C_n(X, X) = (2ⁿ⁻¹ - 1) • Xⁿ = Xⁿ`, as `2ⁿ⁻¹ - 1` is odd. This nonzero diagonal excludes it, so
-  a homogeneous symmetric additive 2-cocycle of degree `n` with zero diagonal is `0`.
+  `C_n(X, X) = (2ⁿ⁻¹ - 1) • Xⁿ = Xⁿ`, as `2ⁿ⁻¹ - 1` is odd. Hence the diagonal of `r • C_n` is
+  `r • Xⁿ`, whose coefficient of `Xⁿ` is `r`, so its vanishing forces `r = 0` (also over the zero
+  ring), and a homogeneous symmetric additive 2-cocycle of degree `n` with zero diagonal is `0`.
 
 No coefficient field and no division by two is used: everything is deduced from the
 classification over an arbitrary commutative ring and binomial-coefficient arithmetic.
@@ -79,6 +80,8 @@ theorem lazardCocycle_eq_of_two_eq_zero (h2 : (2 : R) = 0) {n : ℕ} (hn0 : n �
 
 /-- If `2 = 0` in `R` and `k ≠ 0`, the diagonal of the Lazard cocycle of degree `2ᵏ` is
 `C_{2ᵏ}(X, X) = X^{2ᵏ}`: its integral coefficient `(2^{2ᵏ} - 2) / 2` is odd. -/
+-- High priority, so that `simp` tries this before the general `aeval_X_X_lazardCocycle`.
+@[simp high]
 theorem aeval_X_X_lazardCocycle_two_pow (h2 : (2 : R) = 0) {k : ℕ} (hk : k ≠ 0) :
     aeval ![Polynomial.X, Polynomial.X] (lazardCocycle (2 ^ k) R) =
       (Polynomial.X : Polynomial R) ^ 2 ^ k := by
@@ -88,7 +91,8 @@ theorem aeval_X_X_lazardCocycle_two_pow (h2 : (2 : R) = 0) {k : ℕ} (hk : k ≠
   obtain ⟨a, ha, ha'⟩ : ∃ a, 1 ≤ a ∧ 2 ^ 2 ^ k = 4 * a := by
     refine ⟨2 ^ (2 ^ k - 2), Nat.one_le_two_pow, ?_⟩
     have : 2 ≤ 2 ^ k := Nat.le_self_pow hk 2
-    rw [show 4 = 2 ^ 2 from rfl, ← pow_add, Nat.add_sub_cancel' this]
+    have h4 : (4 : ℕ) = 2 ^ 2 := by norm_num
+    rw [h4, ← pow_add, Nat.add_sub_cancel' this]
   rw [ha']
   exact ⟨a - 1, by omega⟩
 
