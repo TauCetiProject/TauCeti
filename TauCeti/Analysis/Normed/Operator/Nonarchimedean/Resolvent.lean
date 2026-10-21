@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Cyclicity
 public import TauCeti.RingTheory.PowerSeries.Entire.Eval
+import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.RingTheory.PowerSeries.Geometric
 
@@ -306,22 +307,15 @@ theorem IsRowCompact.hasSum_resolventAt {u : C₀(I, R) →L[R] C₀(I, R)} (hu 
   exact (ringOpNorm_smul_le _ _).trans
     (mul_le_mul_of_nonneg_right (norm_pow_le a m) (ringOpNorm_nonneg _))
 
-/-- The series `∑ₘ aᵐ • Vₘ x` converges to `V(a) x` at every vector `x`. -/
-private theorem IsRowCompact.hasSum_resolventAt_apply {u : C₀(I, R) →L[R] C₀(I, R)}
-    (hu : u.IsRowCompact) (a : R) (x : C₀(I, R)) :
-    HasSum (fun m ↦ a ^ m • u.resolventCoeff m x) (u.resolventAt a x) :=
-  (hu.hasSum_resolventAt a).map
-    ({ toFun := fun T ↦ T x, map_zero' := rfl, map_add' := fun _ _ ↦ rfl } :
-      (C₀(I, R) →L[R] C₀(I, R)) →+ C₀(I, R)) (continuous_eval_const x)
-
 /-- The values of the resolvent of a row-compact operator commute with the operator. -/
 theorem IsRowCompact.commute_resolventAt {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
     (a : R) : Commute u (u.resolventAt a) := by
   ext1 x
   rw [mul_apply_eq_comp, mul_apply_eq_comp]
-  refine ((hu.hasSum_resolventAt_apply a x).mapL u).unique
-    ((hu.hasSum_resolventAt_apply a (u x)).congr_fun fun m ↦ ?_)
-  rw [map_smul, ← mul_apply_eq_comp u, (u.commute_resolventCoeff m).eq, mul_apply_eq_comp]
+  refine ((hasSum_apply (hu.hasSum_resolventAt a) x).mapL u).unique
+    ((hasSum_apply (hu.hasSum_resolventAt a) (u x)).congr_fun fun m ↦ ?_)
+  rw [_root_.smul_apply, _root_.smul_apply, map_smul, ← mul_apply_eq_comp u,
+    (u.commute_resolventCoeff m).eq, mul_apply_eq_comp]
 
 /-- **The evaluated resolvent identity** `(1 - a • u) V(a) = H_u(a) • 1`, where
 `H_u(a) = det (1 - a u)` is the value at `a` of the entire Fredholm determinant of the
@@ -333,7 +327,7 @@ theorem IsRowCompact.one_sub_smul_mul_resolventAt {u : C₀(I, R) →L[R] C₀(I
   ext1 x
   set c := u.matrixCoeff.charCoeff
   set g : ℕ → C₀(I, R) := fun m ↦ a ^ m • u.resolventCoeff m x
-  have hg : HasSum g (u.resolventAt a x) := hu.hasSum_resolventAt_apply a x
+  have hg : HasSum g (u.resolventAt a x) := hasSum_apply (hu.hasSum_resolventAt a) x
   -- The tail `∑ₘ g (m + 1)` sums to `V(a) x - x`.
   have hg₁ : HasSum (fun m ↦ g (m + 1)) (u.resolventAt a x - x) := by
     simpa [g] using (hasSum_nat_add_iff' 1).2 hg
@@ -402,6 +396,7 @@ theorem IsRowCompact.resolventAt_mem_closure_adjoin {u : C₀(I, R) →L[R] C₀
     u.resolventAt a ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
   refine mem_closure_of_tendsto (hu.hasSum_resolventAt a) (.of_forall fun s ↦ ?_)
   refine Subalgebra.sum_mem _ fun m _ ↦ Subalgebra.smul_mem _ ?_ _
+  rw [resolventCoeff_def]
   exact Subalgebra.sum_mem _ fun k _ ↦ Subalgebra.smul_mem _
     (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton R u) _) _
 
