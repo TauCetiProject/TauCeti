@@ -29,15 +29,18 @@ one-form whose periods are recorded by `N`.
 Neither injectivity nor discreteness of `N` is assumed: finitely many nonzero coefficients may
 share a period value, and the periods of an infinite support tend to `+∞`.
 
-This file sets up the carrier and its additive structure, and the finiteness facts on which the
-convolution product rests. The design of the additive API follows that of Mathlib's `HahnSeries`
-in `Mathlib/RingTheory/HahnSeries/Addition.lean`; no code is copied from there.
+This file sets up the carrier and its additive structure, the monomials, and the finiteness facts
+on which the convolution product of `TauCeti.RingTheory.NovikovSeries.Multiplication` rests. The
+design of the additive API follows that of Mathlib's `HahnSeries` in
+`Mathlib/RingTheory/HahnSeries/Addition.lean`; no code is copied from there.
 
 ## Main definitions
 
 * `TauCeti.NovikovSeries R H N`: Novikov series over `R` on `H` for the period map `N`.
 * `TauCeti.NovikovSeries.ofFinsupp`: a finitely supported coefficient function as a Novikov
   series.
+* `TauCeti.NovikovSeries.single`: the monomial `r e^h`, with coefficient `r` at `h` and `0`
+  elsewhere.
 
 ## Main results
 
@@ -357,6 +360,83 @@ theorem mem_range_ofFinsupp_iff {a : NovikovSeries R H N} :
   simp
 
 end ofFinsupp
+
+section Single
+
+variable {R H : Type*} [AddZeroClass H] {N : H →+ ℝ}
+
+section Zero
+
+variable [Zero R]
+
+open scoped Classical in
+/-- The monomial `r e^h`: the Novikov series with coefficient `r` at `h` and `0` elsewhere. -/
+def single (h : H) (r : R) : NovikovSeries R H N where
+  coeff := Pi.single h r
+  finite_lt _ := (finite_singleton h).subset fun _ hg => mem_singleton_iff.2 <| by
+    by_contra hgh
+    exact hg.1 (by simp [hgh])
+
+theorem coeff_single [DecidableEq H] (h : H) (r : R) :
+    (single h r : NovikovSeries R H N).coeff = Pi.single h r := by
+  ext g
+  simp only [single, Pi.single_apply]
+  congr
+
+@[simp]
+theorem coeff_single_same (h : H) (r : R) : (single h r : NovikovSeries R H N).coeff h = r := by
+  classical
+  rw [coeff_single, Pi.single_eq_same]
+
+@[simp]
+theorem coeff_single_of_ne {g h : H} (hgh : g ≠ h) (r : R) :
+    (single h r : NovikovSeries R H N).coeff g = 0 := by
+  classical
+  rw [coeff_single, Pi.single_eq_of_ne hgh]
+
+theorem support_single_subset (h : H) (r : R) :
+    (single h r : NovikovSeries R H N).support ⊆ {h} := fun g hg => by
+  by_contra hgh
+  exact hg (coeff_single_of_ne hgh r)
+
+@[simp]
+theorem single_zero (h : H) : (single h 0 : NovikovSeries R H N) = 0 := by
+  ext g
+  by_cases hgh : g = h
+  · rw [hgh, coeff_single_same, coeff_zero]
+  · rw [coeff_single_of_ne hgh, coeff_zero]
+
+theorem single_injective (h : H) : Injective (single h : R → NovikovSeries R H N) :=
+  fun r s hrs => by rw [← coeff_single_same (N := N) h r, hrs, coeff_single_same]
+
+@[simp]
+theorem single_eq_zero_iff {h : H} {r : R} : (single h r : NovikovSeries R H N) = 0 ↔ r = 0 :=
+  ⟨fun hr => single_injective h (hr.trans (single_zero h).symm), fun hr => hr ▸ single_zero h⟩
+
+end Zero
+
+theorem single_add [AddZeroClass R] (h : H) (r s : R) :
+    (single h (r + s) : NovikovSeries R H N) = single h r + single h s := by
+  ext g
+  by_cases hgh : g = h
+  · rw [hgh, coeff_add, coeff_single_same, coeff_single_same, coeff_single_same]
+  · rw [coeff_add, coeff_single_of_ne hgh, coeff_single_of_ne hgh, coeff_single_of_ne hgh, add_zero]
+
+theorem smul_single {S : Type*} [Zero R] [SMulZeroClass S R] (s : S) (h : H) (r : R) :
+    s • (single h r : NovikovSeries R H N) = single h (s • r) := by
+  ext g
+  by_cases hgh : g = h
+  · rw [hgh, coeff_smul, coeff_single_same, coeff_single_same]
+  · rw [coeff_smul, coeff_single_of_ne hgh, coeff_single_of_ne hgh, smul_zero]
+
+@[simp]
+theorem ofFinsupp_single [AddMonoid R] (h : H) (r : R) :
+    ofFinsupp (N := N) (Finsupp.single h r) = single h r := by
+  classical
+  ext g
+  rw [coeff_ofFinsupp, coeff_single, Finsupp.single_eq_pi_single]
+
+end Single
 
 section Surjective
 
