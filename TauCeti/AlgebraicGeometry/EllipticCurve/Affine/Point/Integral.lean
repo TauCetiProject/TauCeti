@@ -465,13 +465,10 @@ theorem exists_not_surjOn_equivVariableChange_hasIntegralCoordinates :
   -- `4x = 1` in `ℤ`.
   rw [WeierstrassCurve.Affine.Point.equivVariableChange_some,
     WeierstrassCurve.Affine.Point.some.injEq] at hP
-  simp only [twoChange, Units.val_mk0] at hP
-  norm_num at hP
+  obtain ⟨hx, -⟩ := hP
   have h4 : (4 : ℤ) * x = 1 := by
-    have h : ((4 : ℤ) * x : ℚ) = 1 := by
-      push_cast
-      linarith [hP.1]
-    exact_mod_cast h
+    norm_num [twoChange] at hx
+    exact_mod_cast hx
   omega
 
 end TauCeti
