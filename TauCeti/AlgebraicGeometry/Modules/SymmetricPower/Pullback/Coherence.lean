@@ -106,56 +106,48 @@ theorem pushforwardSymmetricPowerComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
   apply SheafOfModules.symmetricPower_hom_ext (R := Z.sheaf) n
     ((Scheme.Modules.pushforward g).obj ((Scheme.Modules.pushforward f).obj M))
   intro U x
-  let cf := SheafOfModules.pushforwardSymmetricPowerComparison (S := Y.sheaf) (R := X.sheaf)
-    f.toRingCatSheafHom n
-  let cg := SheafOfModules.pushforwardSymmetricPowerComparison (S := Z.sheaf) (R := Y.sheaf)
-    g.toRingCatSheafHom n
-  let cfg := SheafOfModules.pushforwardSymmetricPowerComparison (S := Z.sheaf) (R := X.sheaf)
-    (f ≫ g : X ⟶ Z).toRingCatSheafHom n
-  let e := Scheme.Modules.pushforwardComp f g
-  let ι := (_root_.SheafOfModules.symmetricPowerIso n
-      ((Scheme.Modules.pushforward g).obj ((Scheme.Modules.pushforward f).obj M))).inv.val.app U
-  let η := ((PresheafOfModules.sheafificationAdjunction
-      (𝟙 (SheafOfModules.ringCatSheaf Z.sheaf).obj)).unit.app
-        ((PresheafOfModulesOfCommRing.symmetricPower n).obj
-          ((Scheme.Modules.pushforward g).obj ((Scheme.Modules.pushforward f).obj M)).val)).app U
   -- Display evaluation of the composites: rewriting their projections searches through the
   -- scheme-module wrappers, whereas composition on sections is function composition.
-  change (e.hom.app ((_root_.SheafOfModules.symmetricPower X.sheaf n).obj M)).val.app U
-      (((Scheme.Modules.pushforward g).map (cf.app M)).val.app U
-        ((cg.app ((Scheme.Modules.pushforward f).obj M)).val.app U (ι (η x)))) =
-    (cfg.app M).val.app U
-      (((_root_.SheafOfModules.symmetricPower Z.sheaf n).map (e.hom.app M)).val.app U (ι (η x)))
-  -- Evaluate the comparisons along `g` and then `f` on the left, and the symmetric power of
-  -- `e` and then the comparison along `f ≫ g` on the right; `e` is the identity on sections.
-  refine ((congrArg (fun y ↦ (e.hom.app ((_root_.SheafOfModules.symmetricPower X.sheaf n).obj
-      M)).val.app U (((Scheme.Modules.pushforward g).map (cf.app M)).val.app U y))
-    (SheafOfModules.pushforwardSymmetricPowerComparison_app_val_app_unit
-      (S := Z.sheaf) (R := Y.sheaf) g.toRingCatSheafHom n
-        ((Scheme.Modules.pushforward f).obj M) U x)).trans ?_).trans
-    ((congrArg (fun y ↦ (cfg.app M).val.app U y)
-      (_root_.SheafOfModules.symmetricPower_map_val_app_unit (R := Z.sheaf) n
-        (e.hom.app M) U x)).trans
-    (SheafOfModules.pushforwardSymmetricPowerComparison_app_val_app_unit
-      (S := Z.sheaf) (R := X.sheaf) (f ≫ g : X ⟶ Z).toRingCatSheafHom n M U
-        (ModuleCat.symmetricPower.map ((e.hom.app M).val.app' U) n x))).symm
-  refine (congrArg (fun y ↦ (e.hom.app ((_root_.SheafOfModules.symmetricPower X.sheaf n).obj
-      M)).val.app U y)
-    (SheafOfModules.pushforwardSymmetricPowerComparison_app_val_app_unit
-      (S := Y.sheaf) (R := X.sheaf) f.toRingCatSheafHom n M
-        ((TopologicalSpace.Opens.map g.base).op.obj U) _)).trans
-    (congrArg (fun y ↦ (_root_.SheafOfModules.symmetricPowerIso n M).inv.val.app
-      ((TopologicalSpace.Opens.map (f ≫ g).base).op.obj U)
-      (((PresheafOfModules.sheafificationAdjunction
-        (𝟙 (SheafOfModules.ringCatSheaf X.sheaf).obj)).unit.app
-          ((PresheafOfModulesOfCommRing.symmetricPower n).obj M.val)).app _ y)) (Subtype.ext ?_))
-  -- It remains to compare the induced maps of symmetric algebras.
-  have he := ModuleCat.symmetricPower.coe_map_apply_eq_mapₛₗ ((e.hom.app M).val.app' U) n x
-  refine ((TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n _).trans
-    ((congrArg (_root_.SymmetricAlgebra.mapₛₗ _)
-      (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x)).trans ?_)).trans
-    ((TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n _).trans
-      (congrArg (_root_.SymmetricAlgebra.mapₛₗ _) he)).symm
+  change ((Scheme.Modules.pushforwardComp f g).hom.app
+      ((_root_.SheafOfModules.symmetricPower X.sheaf n).obj M)).val.app U
+      (((Scheme.Modules.pushforward g).map
+        ((SheafOfModules.pushforwardSymmetricPowerComparison (S := Y.sheaf) (R := X.sheaf)
+          f.toRingCatSheafHom n).app M)).val.app U
+        (((SheafOfModules.pushforwardSymmetricPowerComparison (S := Z.sheaf) (R := Y.sheaf)
+          g.toRingCatSheafHom n).app ((Scheme.Modules.pushforward f).obj M)).val.app U _)) =
+    ((SheafOfModules.pushforwardSymmetricPowerComparison (S := Z.sheaf) (R := X.sheaf)
+      (f ≫ g : X ⟶ Z).toRingCatSheafHom n).app M).val.app U
+      (((_root_.SheafOfModules.symmetricPower Z.sheaf n).map
+        ((Scheme.Modules.pushforwardComp f g).hom.app M)).val.app U _)
+  -- Evaluate the comparisons along `g` and then `f` on the left; `pushforwardComp` is the
+  -- identity on sections. As in `pushforwardSymmetricPowerComparison_id`, `erw` is needed
+  -- because the evaluation lemma is stated for `SheafOfModules.pushforward`.
+  erw [SheafOfModules.pushforwardSymmetricPowerComparison_app_val_app_unit
+    (S := Z.sheaf) (R := Y.sheaf) g.toRingCatSheafHom n
+    ((Scheme.Modules.pushforward f).obj M) U x]
+  erw [SheafOfModules.pushforwardSymmetricPowerComparison_app_val_app_unit
+    (S := Y.sheaf) (R := X.sheaf) f.toRingCatSheafHom n M
+    ((TopologicalSpace.Opens.map g.base).op.obj U)]
+  -- Evaluate the symmetric power of `pushforwardComp` and then the comparison along `f ≫ g` on
+  -- the right. The two sides are now indexed by `(Opens.map f.base).op.obj ((Opens.map
+  -- g.base).op.obj U)` and `(Opens.map (f ≫ g).base).op.obj U`; rewriting the whole goal makes
+  -- the motive compare these indexings and times out, so rewrite the right side alone.
+  conv_rhs =>
+    erw [_root_.SheafOfModules.symmetricPower_map_val_app_unit (R := Z.sheaf) n
+      ((Scheme.Modules.pushforwardComp f g).hom.app M) U x]
+    erw [SheafOfModules.pushforwardSymmetricPowerComparison_app_val_app_unit
+      (S := Z.sheaf) (R := X.sheaf) (f ≫ g : X ⟶ Z).toRingCatSheafHom n M U]
+  -- Both sides sheafify a symmetric tensor of the same sections; it remains to compare the
+  -- induced maps of symmetric algebras. Each step is a `refine` because `rw` here builds a motive
+  -- that compares the two indexings again and times out.
+  congr 2
+  apply Subtype.ext
+  refine (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n _).trans ?_
+  refine (congrArg (_root_.SymmetricAlgebra.mapₛₗ _)
+    (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x)).trans ?_
+  refine Eq.trans ?_ (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n _).symm
+  refine Eq.trans ?_ (congrArg (_root_.SymmetricAlgebra.mapₛₗ _)
+    (ModuleCat.symmetricPower.coe_map_apply_eq_mapₛₗ _ n x)).symm
   -- The coefficient maps and the maps of sections compose on the nose.
   apply _root_.SymmetricAlgebra.mapₛₗ_mapₛₗ_eq <;> intro <;> rfl
 
