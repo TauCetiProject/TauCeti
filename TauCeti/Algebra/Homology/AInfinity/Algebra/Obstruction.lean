@@ -46,6 +46,9 @@ transformation adds `[m_𝒜, φ]` to the Taylor map, and `[m_𝒜, φ]` agrees 
 
 ## Main results
 
+* `TauCeti.AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq`: two `A∞` structures with the same
+  grading and the same operations of arity at most `n` have the same Taylor map on the words of
+  length at most `n`.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_taylor_sub_taylor`: the Maurer--Cartan
   equation `[m_ℋ, D] = -D{D}` for the difference of two `A∞` structures.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_eq_add_gerstenhaberBracket`: the Hochschild
@@ -82,6 +85,22 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
   {𝒜 ℋ : AInfinityAlgebra R A}
 
 /-! ### The difference of two `A∞` structures -/
+
+/-- Two `A∞` structures with the same grading whose operations of positive arity at most `n` agree
+have Taylor maps agreeing on the words of length at most `n`. -/
+theorem taylor_apply_eq_of_forall_m_eq (hG : 𝒜.grading = ℋ.grading) {n : ℕ}
+    (hm : ∀ k, 0 < k → k ≤ n → 𝒜.m k = ℋ.m k) {z : ReducedTensorWords R A}
+    (hz : z ∈ filtration R A n) :
+    𝒜.taylor z = ℋ.taylor z := by
+  have h : filtration R A n ≤ LinearMap.eqLocus 𝒜.taylor ℋ.taylor := by
+    rw [filtration_le_iff]
+    rintro k hk _ ⟨x, rfl⟩
+    rw [LinearMap.mem_eqLocus]
+    induction x using PiTensorProduct.induction_on with
+    | smul_tprod c x =>
+        rw [map_smul, map_smul, map_smul, taylor_of_tprod, taylor_of_tprod, hG, hm k k.2 hk]
+    | add u v hu hv => rw [map_add, map_add, map_add, hu, hv]
+  exact h hz
 
 /-- **The difference of two `A∞` structures is a Maurer--Cartan element** of the Hochschild
 complex: for `A∞` structures `𝒜` and `ℋ` on the same graded module, the difference
