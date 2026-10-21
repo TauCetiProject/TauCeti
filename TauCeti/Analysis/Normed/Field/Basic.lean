@@ -14,7 +14,11 @@ import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import Mathlib.Topology.Order.IntermediateValue
 
 /-!
-# Separating radii by norms of a nontrivially normed field, and solving norm equations
+# Elementary norm bounds, separating radii, and solving norm equations
+
+In a normed field, if multiplying an element by both a unit and its inverse gives norm less
+than one, then the element itself has norm less than one. This recovers a bound on the parameter
+from annulus conditions.
 
 In a nontrivially normed field `𝕜` the norms need not be dense, so two radii `0 < r < s` need not
 be separated by the norm of an element of `𝕜`. They are separated after raising to a power:
@@ -142,3 +146,17 @@ theorem exists_prod_map_max_norm_eq_of_isAlgClosed {𝕜 : Type*} [NormedField �
   exact ⟨d, by rw [hdr]; exact hφr⟩
 
 end NormedField
+
+namespace TauCeti
+
+/-- If multiplying by both a unit and its inverse has norm less than one, the original
+element has norm less than one. -/
+theorem norm_lt_one_of_norm_mul_lt_one_of_norm_mul_inv_lt_one {K : Type*} [NormedField K]
+    {q : K} (u : Kˣ)
+    (hqu : ‖q * (u : K)‖ < 1) (hqui : ‖q * (u : K)⁻¹‖ < 1) : ‖q‖ < 1 := by
+  have h := (mul_le_of_le_one_right (norm_nonneg _) hqui.le).trans_lt hqu
+  rw [← norm_mul, mul_mul_mul_comm, mul_inv_cancel₀ u.ne_zero, mul_one,
+    ← pow_two, norm_pow] at h
+  exact (sq_lt_one_iff₀ (norm_nonneg _)).mp h
+
+end TauCeti

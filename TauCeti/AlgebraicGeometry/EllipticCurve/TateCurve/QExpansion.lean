@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Coordinates
-import TauCeti.Analysis.Normed.Ring.Basic
+import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 import Mathlib.Data.Nat.Choose.Bounds

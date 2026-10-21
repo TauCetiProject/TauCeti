@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.TsumDivisorsAntidiagonal
+import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
