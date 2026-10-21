@@ -154,7 +154,7 @@ theorem extendedCharacterRingHom_dirac (x : G) :
 include hjc in
 /-- If a scalar-valued character is obtained by applying `j` to an `O`-valued character, its
 extended integral is `j` applied to the original character integral. -/
-theorem extendedCharacterRingHom_eq_of_forall_eq (κ : G →ₜ* O)
+theorem extendedCharacterRingHom_apply_eq_characterIntegralAlgHom (κ : G →ₜ* O)
     (hχ : ∀ x, χ x = j (κ x)) (μ : D(G, O)) :
     extendedCharacterRingHom χ j hj μ = j (κ.characterIntegralAlgHom μ) := by
   have htest : (χ : C(G, K)) = (⟨j, hjc⟩ : C(O, K)).comp κ := by
