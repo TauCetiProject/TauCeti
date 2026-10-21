@@ -19,7 +19,8 @@ This compares the full scheme image, which can contain nonclosed points, with th
 rational points. No reducedness, smoothness or separability hypothesis is needed.
 
 Constructible subsets of a locally finite-type scheme are determined by their rational
-points. For morphisms between finite-type schemes, Chevalley's theorem therefore detects
+points; in particular a nonempty locally closed subset contains a rational point. For
+morphisms between finite-type schemes, Chevalley's theorem therefore detects
 image inclusions and surjectivity on rational points. These comparisons allow rational orbit
 calculations to control the full constructible image of an algebraic orbit morphism.
 
@@ -95,6 +96,17 @@ theorem _root_.Topology.IsConstructible.eq_iff_forall_rationalPoint
     ht.subset_iff_forall_rationalPoint π hs]
   exact ⟨fun h p hp ↦ ⟨h.1 p hp, h.2 p hp⟩,
     fun h ↦ ⟨fun p hp ↦ (h p hp).mp, fun p hp ↦ (h p hp).mpr⟩⟩
+
+/-- A nonempty locally closed subset of a locally finite-type scheme over an algebraically
+closed field contains a rational point. -/
+theorem _root_.IsLocallyClosed.exists_rationalPoint_mem {s : Set Y} (hs : IsLocallyClosed s)
+    (π : Y ⟶ Spec (.of k)) [LocallyOfFiniteType π] (hne : s.Nonempty) :
+    ∃ p : Spec (.of k) ⟶ Y, p ≫ π = 𝟙 _ ∧ p (IsLocalRing.closedPoint k) ∈ s := by
+  let : JacobsonSpace Y := LocallyOfFiniteType.jacobsonSpace π
+  obtain ⟨y, hys, hyc⟩ := nonempty_inter_closedPoints hne hs
+  have hyclosed : IsClosed {y} := mem_closedPoints_iff.mp hyc
+  exact ⟨pointOfClosedPoint π y hyclosed, pointOfClosedPoint_comp π y hyclosed,
+    (pointOfClosedPoint_apply π y hyclosed _).symm ▸ hys⟩
 
 section FiniteType
 
