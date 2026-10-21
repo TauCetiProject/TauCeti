@@ -221,7 +221,13 @@ theorem IsRowCompact.fredholmDet_add_sub_mul {u v : C₀(I, R) →L[R] C₀(I, R
       (hu.tendsto_rowNorm.mul_const ‖v‖)
   have hdet := tendsto_fredholmDet_of_tendsto hr (fun (S : Finset I) i j ↦ ?_)
     (norm_matrixCoeff_add_sub_mul_le u v v v.norm_matrixCoeff_le)
-    (tendsto_ringOpNorm_add_sub_mul (htrunc hu) (htrunc hv))
+    (by
+      -- The scoped operator ring is named explicitly: its continuity instances are not found on
+      -- `C₀(I, R) →L[R] C₀(I, R)` without it.
+      let := (TauCeti.RingOpNorm.seminormedRing : SeminormedRing (C₀(I, R) →L[R] C₀(I, R)))
+      have hu' := tendsto_iff_norm_sub_tendsto_zero.2 (htrunc hu)
+      have hv' := tendsto_iff_norm_sub_tendsto_zero.2 (htrunc hv)
+      exact tendsto_iff_norm_sub_tendsto_zero.1 ((hu'.add hv').sub (hu'.mul hv')))
   · exact tendsto_nhds_unique (hdet.congr (fredholmDet_indicatorCLM_comp_add_sub_mul · u v))
       ((htend hu).mul (htend hv))
   · rw [indicatorCLM_comp_add_sub_mul]

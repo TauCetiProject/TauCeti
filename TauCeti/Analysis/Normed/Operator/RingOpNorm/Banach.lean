@@ -50,8 +50,6 @@ isometries, so the inverse has operator norm one on a module with a vector of no
 
 * `TauCeti.RingOpNorm.completeSpace`: the operator space is complete when the target is.
 * `TauCeti.RingOpNorm.isUltrametricDist`: the operator norm is ultrametric when the target is.
-* `ContinuousLinearMap.tendsto_ringOpNorm_add_sub_mul`: `f + g - f g` is continuous in operator
-  norm.
 * `ContinuousLinearMap.coe_oneSub_symm`: the inverse of `1 - t` is `Ring.inverse (1 - t)`,
   the sum of the Neumann series.
 * `ContinuousLinearMap.norm_oneSub_apply`, `ContinuousLinearMap.norm_oneSub_symm_apply` and
@@ -210,24 +208,6 @@ theorem seminormedAddCommGroup_eq {K E F : Type*} [NontriviallyNormedField K]
 end TauCeti.RingOpNorm
 
 namespace ContinuousLinearMap
-
-section Seminormed
-
-variable {R E : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
-  [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
-
-/-- If `f a → f₀` and `g a → g₀` in operator norm, then `f a + g a - f a g a` converges in
-operator norm to `f₀ + g₀ - f₀ g₀`, by continuity of the ring operations of
-`TauCeti.RingOpNorm.seminormedRing`. -/
-theorem tendsto_ringOpNorm_add_sub_mul {α : Type*} {l : Filter α} {f g : α → E →L[R] E}
-    {f₀ g₀ : E →L[R] E} (hf : Tendsto (fun a ↦ ‖f a - f₀‖) l (𝓝 0))
-    (hg : Tendsto (fun a ↦ ‖g a - g₀‖) l (𝓝 0)) :
-    Tendsto (fun a ↦ ‖f a + g a - f a * g a - (f₀ + g₀ - f₀ * g₀)‖) l (𝓝 0) := by
-  have hf' := tendsto_iff_norm_sub_tendsto_zero.2 hf
-  have hg' := tendsto_iff_norm_sub_tendsto_zero.2 hg
-  exact tendsto_iff_norm_sub_tendsto_zero.1 ((hf'.add hg').sub (hf'.mul hg'))
-
-end Seminormed
 
 variable {R E : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
   [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] [CompleteSpace E]
