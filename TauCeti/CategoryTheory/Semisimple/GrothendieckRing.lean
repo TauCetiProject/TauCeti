@@ -35,7 +35,8 @@ duality involution.
 multiplicities needs the endomorphisms of each simple object to be `k`. Over a field that is not
 algebraically closed this fails: for the real representations of a cyclic group of order three, the
 two-dimensional rotation representation `V` has `End V ≅ ℂ`, so `finrank ℝ (𝟙 ⊗ V ⟶ V) = 2` while
-`V` occurs once in `𝟙 ⊗ V`. The multiplicity form of the structure constants needs no field at all.
+`V` occurs once in `𝟙 ⊗ V`. The multiplicity form of the structure constants
+(`TauCeti.SplitK0.simpleBasis_mul_simpleBasis`) needs no field at all.
 
 ## Main definitions
 
@@ -55,7 +56,9 @@ two-dimensional rotation representation `V` has `End V ≅ ℂ`, so `finrank ℝ
 * `TauCeti.fusionCoeff_eq_simpleMultiplicities` and `TauCeti.fusionCoeff_eq_finrank_hom`: the
   fusion coefficient is the multiplicity of `U` in `S ⊗ T`, and the dimension of `U ⟶ S ⊗ T`.
 * `TauCeti.SplitK0.simpleBasis_mul_simpleBasis`: the product of two basis elements is the sum of
-  the basis elements weighted by the fusion coefficients.
+  the basis elements weighted by the multiplicities of the simple objects in their tensor product.
+* `TauCeti.SplitK0.simpleBasis_mul_simpleBasis_eq_sum_fusionCoeff`: the same expansion, weighted
+  by the fusion coefficients.
 
 ## References
 
@@ -175,6 +178,29 @@ theorem one_eq_simpleBasis [Simple (𝟙_ C)] :
 
 end Unit
 
+section Mul
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [IsFiniteSemisimpleCategory C]
+  [EssentiallySmall.{w} C] [MonoidalCategory C] [MonoidalPreadditive C]
+
+/-- The coordinates of the product of two basis elements of the Grothendieck ring are the
+multiplicities of the simple objects in the tensor product of the representatives. -/
+theorem simpleBasis_repr_simpleBasis_mul_simpleBasis (S T U : SimpleClasses C) :
+    (simpleBasis C).repr (simpleBasis C S * simpleBasis C T) U =
+      simpleMultiplicities (S.repr ⊗ T.repr) U := by
+  simp
+
+/-- The product of two basis elements of the Grothendieck ring of a finite semisimple category
+with finitely many simple classes is the sum of the basis elements weighted by the multiplicities
+of the simple objects in the tensor product of the representatives. -/
+theorem simpleBasis_mul_simpleBasis [Fintype (SimpleClasses C)] (S T : SimpleClasses C) :
+    simpleBasis C S * simpleBasis C T =
+      ∑ U, (simpleMultiplicities (S.repr ⊗ T.repr) U : ℤ) • simpleBasis C U := by
+  conv_lhs => rw [← (simpleBasis C).sum_repr (simpleBasis C S * simpleBasis C T)]
+  simp_rw [simpleBasis_repr_simpleBasis_mul_simpleBasis]
+
+end Mul
+
 end SplitK0
 
 section Fusion
@@ -216,17 +242,17 @@ variable [EssentiallySmall.{w} C] [MonoidalPreadditive C]
 
 /-- The coordinates of the product of two basis elements of the Grothendieck ring are the fusion
 coefficients. -/
-theorem simpleBasis_repr_simpleBasis_mul_simpleBasis (S T U : SimpleClasses C) :
+theorem simpleBasis_repr_simpleBasis_mul_simpleBasis_eq_fusionCoeff (S T U : SimpleClasses C) :
     (simpleBasis C).repr (simpleBasis C S * simpleBasis C T) U = fusionCoeff k S T U := by
-  simp [fusionCoeff_eq_simpleMultiplicities]
+  rw [simpleBasis_repr_simpleBasis_mul_simpleBasis, fusionCoeff_eq_simpleMultiplicities]
 
 /-- The product of two basis elements of the Grothendieck ring of a finite semisimple category
 with finitely many simple classes is the sum of the basis elements weighted by the fusion
 coefficients: `[S] * [T] = ∑ U, N_{ST}^U [U]`. -/
-theorem simpleBasis_mul_simpleBasis [Fintype (SimpleClasses C)] (S T : SimpleClasses C) :
+theorem simpleBasis_mul_simpleBasis_eq_sum_fusionCoeff [Fintype (SimpleClasses C)]
+    (S T : SimpleClasses C) :
     simpleBasis C S * simpleBasis C T = ∑ U, (fusionCoeff k S T U : ℤ) • simpleBasis C U := by
-  conv_lhs => rw [← (simpleBasis C).sum_repr (simpleBasis C S * simpleBasis C T)]
-  simp_rw [simpleBasis_repr_simpleBasis_mul_simpleBasis k]
+  simp_rw [simpleBasis_mul_simpleBasis, fusionCoeff_eq_simpleMultiplicities]
 
 end SplitK0
 
