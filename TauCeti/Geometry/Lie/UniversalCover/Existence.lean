@@ -47,6 +47,8 @@ theorem exists_universalCover [IsTopologicalGroup G] [LocallyPathConnectedSpace 
   let Gt := UniversalCover (1 : G)
   let p : Gt →* G := (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
   have hp : IsCoveringMap (p : Gt → G) := by
+    -- The endpoint projection has distinct monoid-hom and continuous-map coercions;
+    -- select the native coercion expected by its covering theorem.
     change IsCoveringMap (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
     exact UniversalCover.isCoveringMap_projHom
   exact ⟨Gt, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, p,
