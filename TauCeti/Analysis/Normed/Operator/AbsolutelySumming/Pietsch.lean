@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Basic
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import Mathlib.Analysis.LocallyConvex.Separation
+import TauCeti.Analysis.Normed.Module.RCLike.Rpow
 import Mathlib.Topology.ContinuousMap.Compact
 
 /-!
@@ -142,12 +143,6 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
         (by positivity)
     _ = C * W := by rw [one_div, Real.rpow_rpow_inv (mul_nonneg hC hW) hq.ne']
 
-private theorem norm_apply_smul_rpow {G : Type*} [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
-    (g : E →L[𝕜] G) {a q : ℝ} (ha : 0 ≤ a) (hq : 0 < q) (v : E) :
-    ‖g (((a ^ q⁻¹ : ℝ) : 𝕜) • v)‖ ^ q = a * ‖g v‖ ^ q := by
-  rw [map_smul, norm_smul, RCLike.norm_ofReal, abs_of_nonneg (Real.rpow_nonneg ha _),
-    Real.mul_rpow (Real.rpow_nonneg ha _) (norm_nonneg _), Real.rpow_inv_rpow ha hq.ne']
-
 /-- The summing inequality rules out a nonnegative combination of the functions
 `f ↦ ‖T x‖ ^ p - C ^ p * ‖f x‖ ^ p` that is bounded below on the dual ball by some `δ > 0`. -/
 private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[𝕜] F} {C : ℝ}
@@ -164,7 +159,7 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
   have hA : ‖WithLp.toLp p (fun i ↦ T (y i))‖ = A ^ (1 / p.toReal) := by
     rw [PiLp.norm_eq_sum hq]
     have hy (x : s) : ‖T (y x)‖ ^ p.toReal = w x * ‖T x‖ ^ p.toReal :=
-      norm_apply_smul_rpow T (hw x) hq x
+      by rw [map_smul, norm_ofReal_rpow_inv_smul_rpow (hw x) hq]
     rw [Finset.sum_congr rfl fun x _ ↦ hy x,
       Finset.sum_coe_sort s fun x ↦ w x * ‖T x‖ ^ p.toReal]
   have hge' (f : dualBall 𝕜 E) :
@@ -189,7 +184,7 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
       _ = ∑ x : s, C ^ p.toReal * (w x * ‖g x‖ ^ p.toReal) := by
         refine Finset.sum_congr rfl fun x _ ↦ ?_
         have hy : ‖g (y x)‖ ^ p.toReal = w x * ‖g x‖ ^ p.toReal :=
-          norm_apply_smul_rpow g (hw x) hq x
+          by rw [map_smul, norm_ofReal_rpow_inv_smul_rpow (hw x) hq]
         simp only [Pi.smul_apply, map_smul, norm_smul, RCLike.norm_ofReal,
           abs_of_nonneg hC]
         rw [Real.mul_rpow hC (norm_nonneg _), hy]
@@ -264,8 +259,8 @@ private theorem exists_separating_functional (hp : p ≠ ∞) {T : E →L[𝕜] 
     have hmem : h + (L h / -L 1) • (1 : C(dualBall 𝕜 E, ℝ)) ∈ P :=
       ⟨_, hε, fun f ↦ by simpa using hh f⟩
     have hlt := (hLP _ hmem).trans_le hu
-    rw [map_add, map_smul, smul_eq_mul, div_mul_eq_mul_div, div_neg, mul_div_cancel_right₀ _
-      hL1.ne] at hlt
+    rw [map_add, map_smul, smul_eq_mul] at hlt
+    have hcancel : L h / -L 1 * L 1 = -L h := by field_simp [hL1.ne]
     linarith
   · -- `t • g x ∈ Q` for every `t ≥ 0`, so `u ≤ t L (g x)`, which forces `L (g x) ≥ 0`.
     have hgx : 0 ≤ L (g x) := by
@@ -274,8 +269,8 @@ private theorem exists_separating_functional (hp : p ≠ ∞) {T : E →L[𝕜] 
       have hmem : Φ ((u / L (g x) + 1) • Finsupp.single x 1) ∈ Q :=
         ⟨_, fun y ↦ mul_nonneg (by linarith) (Finsupp.single_nonneg.2 zero_le_one y), rfl⟩
       have hle := hLQ _ hmem
-      rw [map_smul, Finsupp.linearCombination_single, one_smul, map_smul, smul_eq_mul, add_mul,
-        div_mul_cancel₀ _ hneg.ne, one_mul] at hle
+      rw [map_smul, Finsupp.linearCombination_single, one_smul, map_smul, smul_eq_mul] at hle
+      have hcancel : (u / L (g x) + 1) * L (g x) = u + L (g x) := by field_simp [hneg.ne]
       linarith
     simpa [g, sub_nonneg] using hgx
 
