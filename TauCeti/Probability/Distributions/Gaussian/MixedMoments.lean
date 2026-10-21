@@ -62,15 +62,18 @@ variable [CompleteSpace E] [SecondCountableTopology E]
 the square of its variance, expressed by the covariance bilinear form. -/
 theorem integral_pow_four_sub_dual (μ : Measure E) [IsGaussian μ] (L : StrongDual ℝ E) :
     (∫ x, L (x - μ[id]) ^ 4 ∂μ) = 3 * covarianceBilinDual μ L L ^ 2 := by
-  have h := TauCeti.Probability.centralMoment_id_two_mul_gaussianReal
-    μ[L] (Var[L; μ].toNNReal) 2
-  norm_num [centralMoment, integral_id_gaussianReal] at h
-  rw [← IsGaussian.map_eq_gaussianReal L, integral_map (by fun_prop) (by fun_prop)] at h
   rw [covarianceBilinDual_self_eq_variance IsGaussian.memLp_two_id]
   have hmean : μ[L] = L μ[id] :=
     L.integral_comp_comm (IsGaussian.integrable_id (μ := μ))
-  rw [hmean] at h
-  simpa only [map_sub, Real.coe_toNNReal _ (variance_nonneg L μ), mul_comm] using h
+  calc
+    _ = ∫ x, (x - μ[L]) ^ (2 * 2) ∂gaussianReal μ[L] (Var[L; μ].toNNReal) := by
+      rw [← IsGaussian.map_eq_gaussianReal L, integral_map (by fun_prop) (by fun_prop)]
+      simp only [hmean, map_sub]
+    _ = _ := by
+      rw [TauCeti.Probability.integral_sub_pow_two_mul_gaussianReal,
+        Real.coe_toNNReal _ (variance_nonneg L μ)]
+      norm_num
+      ring
 
 /-- The fourth centered mixed moment of four linear observables of a Gaussian measure
 is the sum over their three pairings. No independence or nondegeneracy is assumed. -/
@@ -149,7 +152,7 @@ theorem integral_mul_mul_mul_sub_multivariateGaussian
   have hcov (i j : ι) : covarianceBilinDual (multivariateGaussian m S)
       (EuclideanSpace.proj i) (EuclideanSpace.proj j) = S i j := by
     rw [covarianceBilinDual_eq_covariance IsGaussian.memLp_two_id]
-    exact covariance_eval_multivariateGaussian hS i j
+    simpa only [EuclideanSpace.coe_proj] using covariance_eval_multivariateGaussian hS i j
   simp only [hcov] at h
   simpa using h
 
