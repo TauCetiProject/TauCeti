@@ -14,7 +14,6 @@ public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 -- only inside proofs.
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 -- The Gram-determinant formula `LinearMap.BilinForm.bilinForm_ιMulti_ιMulti` for the induced
 -- bilinear form on an exterior power is private to its file, and the body of

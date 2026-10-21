@@ -7,11 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
-public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.LinearAlgebra.Trace
--- Private: the exterior algebra basis is used only inside the proof of
--- `Set.powersetCard.sign_mul_sign_compl`.
-import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 
 /-!
 # Action and trace formulas in exterior-power bases
@@ -38,16 +34,12 @@ ring. When the ring is nontrivial, `n` is the module's rank and this is its top 
 * `Module.Basis.trace_map_exteriorPower_of_apply` sums those eigenvalues to compute the trace.
 * `Module.Basis.exteriorPower_ιMulti_eq_det_smul` expands a degree-`n` exterior product in terms
   of the wedge of a basis indexed by `Fin n`.
-* `Module.Basis.topVector_eq_ιMulti` identifies Mathlib's top exterior product
-  `Module.Basis.topVector` of a basis indexed by `Fin n` with the wedge of the basis vectors.
 * `Module.Basis.map_exteriorPower_top_eq_det_smul` gives the degree-`n` action as its determinant
   for a basis indexed by `Fin n`.
 * `LinearMap.map_exteriorPower_finrank_eq_det_smul` gives the action in degree `Module.finrank`
   as its determinant.
 * `Module.Basis.trace_map_exteriorPower_top` gives the degree-`n` trace as the determinant
   for a basis indexed by `Fin n`.
-* `Set.powersetCard.sign_mul_sign_compl`: the shuffle signs of a set of `k` indices and of its
-  complement of `l` indices multiply to `(-1) ^ (k * l)`.
 
 ## References
 
@@ -146,21 +138,6 @@ theorem _root_.Module.Basis.exteriorPower_ιMulti_eq_det_smul (b : Module.Basis 
     _ = b.det v * (b.exteriorPower n).repr (ιMulti R n ⇑b) s := by
         rw [← hφ_apply ⇑b, mul_comm]
     _ = (b.exteriorPower n).repr (b.det v • ιMulti R n ⇑b) s := by simp
-
-/-- The top exterior product of a basis indexed by `Fin n` is the wedge of the basis vectors in
-their given order, read in the degree `finrank R M = n`. -/
-theorem _root_.Module.Basis.topVector_eq_ιMulti [Nontrivial R] (h : Module.finrank R M = n)
-    (b : Module.Basis (Fin n) R M) :
-    b.topVector = ιMulti R _ (b ∘ finCongr h) := by
-  -- The increasing enumeration of `Finset.univ` is the unique order embedding into `Fin n`.
-  set s : Set.powersetCard (Fin n) (Module.finrank R M) :=
-    ⟨Finset.univ, by simp [Module.finrank_eq_card_basis b]⟩
-  have he : Set.powersetCard.ofFinEmbEquiv.symm s = (Fin.castOrderIso h).toOrderEmbedding := by
-    refine OrderEmbedding.eq_of_range_eq ?_
-    ext i
-    simpa using (Set.powersetCard.mem_range_ofFinEmbEquiv_symm_iff_mem s i).2 (Finset.mem_univ i)
-  rw [← b.topVector_eq_exteriorPower s, basis_apply, ιMulti_family, he]
-  simp [Function.comp_def]
 
 /-- For a basis indexed by `Fin n`, an endomorphism acts on the degree-`n` exterior power as
 multiplication by its determinant. -/
@@ -278,42 +255,3 @@ theorem map_toMatrix_exteriorPower (φ : R →+* S) (n : ℕ) (A : Matrix I I R)
   rfl
 
 end RingHom
-
-namespace Set.powersetCard
-
-/-- **The shuffle signs of complementary index sets**: for a set `s` of `k` indices whose
-complement has `l` indices, `sign s * sign sᶜ = (-1) ^ (k * l)`. The two shuffles differ by moving
-the block `sᶜ` past the block `s`. -/
-theorem sign_mul_sign_compl {I : Type*} [LinearOrder I] [Fintype I] {k l : ℕ}
-    (h : l + k = Fintype.card I) (s : powersetCard I k) :
-    powersetCard.sign s * powersetCard.sign (compl h s) = (-1) ^ (k * l) := by
-  -- Compare `e_s ∧ e_{sᶜ}` and `e_{sᶜ} ∧ e_s` in the exterior algebra of `I → ℤ`, where they are
-  -- `sign s` and `sign sᶜ` times the top basis vector.
-  set t := compl h s
-  have h' : k + l = Fintype.card I := by omega
-  have hst : Disjoint s.val t.val :=
-    (disjoint_iff_eq_compl h').2 ((compl h).symm_apply_apply s).symm
-  set b := Pi.basisFun ℤ I
-  -- Both products of `e_s` and `e_t` are signed copies of the top basis vector `e_univ`.
-  have hmul : ∀ {m n : ℕ} (hmn : m + n = Fintype.card I) (u : powersetCard I m)
-      (v : powersetCard I n) (huv : Disjoint u.val v.val),
-      b.ExteriorAlgebra u * b.ExteriorAlgebra v =
-        powersetCard.sign u • b.ExteriorAlgebra Finset.univ := fun hmn u v huv ↦ by
-    have hunion : (disjUnion huv : Finset I) = Finset.univ :=
-      Finset.eq_univ_of_card _ <| by
-        rw [coe_disjUnion, Finset.card_disjUnion, mem_iff.1 u.2, mem_iff.1 v.2, hmn]
-    rw [ExteriorAlgebra.basis_mul_of_disjoint b u v huv,
-      ← sign_eq_permOfDisjoint_sign hmn u v huv, hunion]
-  -- Exterior products of degrees `k` and `l` commute up to `(-1) ^ (l * k)`.
-  have hcomm : b.ExteriorAlgebra s * b.ExteriorAlgebra t =
-      (-1 : ℤˣ) ^ (l * k) • (b.ExteriorAlgebra t * b.ExteriorAlgebra s) := by
-    simp only [ExteriorAlgebra.basis_apply_powersetCard, ExteriorAlgebra.ιMulti_family]
-    exact ExteriorAlgebra.ιMulti_mul_ιMulti_anticomm (R := ℤ) _ _
-  rw [hmul h' s t hst, hmul h t s hst.symm, smul_smul] at hcomm
-  -- Comparing the coefficients of `e_univ` gives `sign s = (-1) ^ (l * k) * sign t`.
-  have hcoef := congrArg (fun x ↦ b.ExteriorAlgebra.repr x Finset.univ) hcomm
-  simp only [Units.smul_def, map_zsmul, Finsupp.smul_apply, Module.Basis.repr_self,
-    Finsupp.single_eq_same, smul_eq_mul, mul_one] at hcoef
-  rw [Units.ext hcoef, mul_assoc, Int.units_mul_self, mul_one, mul_comm]
-
-end Set.powersetCard
