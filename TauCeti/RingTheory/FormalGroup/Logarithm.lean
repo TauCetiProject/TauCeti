@@ -294,8 +294,7 @@ theorem subst_subst_toPowerSeries_log {σ : Type*} {f₀ f₁ : MvPowerSeries σ
     (h₀ : PowerSeries.HasSubst f₀) (h₁ : PowerSeries.HasSubst f₁) :
     PowerSeries.subst (subst ![f₀, f₁] F.toPowerSeries) F.log =
       PowerSeries.subst f₀ F.log + PowerSeries.subst f₁ F.log := by
-  have hf : HasSubst ![f₀, f₁] :=
-    hasSubst_of_constantCoeff_nilpotent fun s ↦ by fin_cases s <;> simpa
+  have hf : HasSubst ![f₀, f₁] := hasSubst_finTwo h₀ h₁
   have := congrArg (subst ![f₀, f₁]) F.subst_toPowerSeries_log
   rwa [subst_add hf, subst_powerSeriesSubst hf (PowerSeries.HasSubst.X _),
     subst_powerSeriesSubst hf (PowerSeries.HasSubst.X _),

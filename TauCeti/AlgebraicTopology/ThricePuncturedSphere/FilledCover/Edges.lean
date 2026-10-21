@@ -7,9 +7,10 @@ module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Basic
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.SegmentComponents
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.UpperHalfPlaneComponents
 
 /-!
-# Edges in a filled cover
+# Edges and positive triangles in a filled cover
 
 For a finite cover of the thrice-punctured sphere, the connected components over the open
 segment `(0, 1)` are the open edges of its dessin. This file regards those components as subsets
@@ -17,9 +18,15 @@ of the filled cover and identifies their black and white endpoints. In particula
 point over a component at `0` or `1` lies in the closure of an edge exactly when the corresponding
 monodromy cycle contains that edge.
 
+The connected components over the open upper half-plane, the positive triangles of the dessin, are
+likewise regarded as subsets of the filled cover. They are the cells that turn around the added
+points over `∞`, which no edge reaches.
+
 ## Main definitions
 
 * `FilledCover.edge`: the open edge indexed by a sheet, included in the filled cover.
+* `FilledCover.upperTriangle`: the open positive triangle indexed by a sheet, included in the
+  filled cover.
 
 ## Main results
 
@@ -29,6 +36,8 @@ monodromy cycle contains that edge.
   by the cycles of `σ0`.
 * `FilledCover.center_overOne_mem_closure_edge_iff`: the white endpoints of an edge are described
   by the cycles of `σ1`.
+* `FilledCover.center_notMem_edge`, `FilledCover.center_notMem_upperTriangle`: the added points
+  lie on no edge and in no positive triangle.
 -/
 
 public section
@@ -76,6 +85,52 @@ theorem incl_mem_edge_iff {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {baseP
     PunctureFilling.incl (chart p) x ∈ edge hp ν i ↔ ∃ hx : p x ∈ unitSegment,
       ConnectedComponents.mk ⟨x, hx⟩ = hp.finEquivConnectedComponentsUnitSegment ν i := by
   simp only [edge, PunctureFilling.incl_injective.mem_set_image, mem_ofPred_eq]
+
+/-- The added points of the filled cover lie on no edge. -/
+theorem center_notMem_edge {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
+    (i : FilledPoint p) (m : Fin n) : PunctureFilling.center (chart p) i ∉ edge hp ν m := by
+  intro h
+  obtain ⟨x, -, -, hx⟩ := (mem_edge_iff hp ν m _).1 h
+  exact PunctureFilling.incl_ne_center x i hx
+
+/-- The open positive triangle of the filled cover indexed by `i`: the connected component indexed
+by `i` of the preimage of the upper half-plane, included into the filled surface. -/
+def upperTriangle {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
+    (i : Fin n) : Set (FilledCover p) :=
+  PunctureFilling.incl (chart p) ''
+    {x | ∃ hx : p x ∈ upperHalfPlane,
+      ConnectedComponents.mk ⟨x, hx⟩ = hp.finEquivConnectedComponentsUpperHalfPlane ν i}
+
+/-- Membership in an open positive triangle, expressed using its connected-component label before
+inclusion in the filled cover. -/
+theorem mem_upperTriangle_iff {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
+    (i : Fin n) (z : FilledCover p) :
+    z ∈ upperTriangle hp ν i ↔ ∃ (x : E) (hx : p x ∈ upperHalfPlane),
+      ConnectedComponents.mk ⟨x, hx⟩ = hp.finEquivConnectedComponentsUpperHalfPlane ν i ∧
+        PunctureFilling.incl (chart p) x = z := by
+  simp only [upperTriangle, mem_image, mem_ofPred_eq]
+  constructor
+  · rintro ⟨x, ⟨hx, hi⟩, rfl⟩
+    exact ⟨x, hx, hi, rfl⟩
+  · rintro ⟨x, hx, hi, rfl⟩
+    exact ⟨x, ⟨hx, hi⟩, rfl⟩
+
+/-- A point of `E` lies in the open positive triangle indexed by `i` exactly when it lies over the
+upper half-plane, in the connected component of its preimage indexed by `i`. -/
+@[simp]
+theorem incl_mem_upperTriangle_iff {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
+    (i : Fin n) (x : E) :
+    PunctureFilling.incl (chart p) x ∈ upperTriangle hp ν i ↔ ∃ hx : p x ∈ upperHalfPlane,
+      ConnectedComponents.mk ⟨x, hx⟩ = hp.finEquivConnectedComponentsUpperHalfPlane ν i := by
+  simp only [upperTriangle, PunctureFilling.incl_injective.mem_set_image, mem_ofPred_eq]
+
+/-- The added points of the filled cover lie in no positive triangle. -/
+theorem center_notMem_upperTriangle {n : ℕ} (hp : IsCoveringMap p)
+    (ν : p ⁻¹' {basePt} ≃ Fin n) (i : FilledPoint p) (m : Fin n) :
+    PunctureFilling.center (chart p) i ∉ upperTriangle hp ν m := by
+  intro h
+  obtain ⟨x, -, -, hx⟩ := (mem_upperTriangle_iff hp ν m _).1 h
+  exact PunctureFilling.incl_ne_center x i hx
 
 /-- The radial sequence from `w` towards the missing centre of the punctured disc. -/
 private def radialPoint (w : 𝔻*) (k : ℕ) : 𝔻* :=
