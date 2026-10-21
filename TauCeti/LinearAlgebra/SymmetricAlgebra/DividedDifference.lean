@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
-public import TauCeti.RingTheory.GradedAlgebra.Regular
+public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Divided-difference operators on a symmetric algebra

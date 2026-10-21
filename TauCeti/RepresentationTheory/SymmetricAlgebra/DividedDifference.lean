@@ -50,7 +50,7 @@ namespace Representation
 
 section CommRing
 
-variable {R G M : Type*} [CommRing R] [Group G] [AddCommGroup M] [Module R M]
+variable {R G M : Type*} [CommRing R] [Monoid G] [AddCommGroup M] [Module R M]
 variable (ρ : Representation R G M) (g : G) (ℓ : M)
 
 /-- The divided-difference operator `p ↦ (p - g • p) / ℓ` of `g` on `Sym M`, bundled as a linear
