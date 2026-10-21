@@ -18,6 +18,10 @@ are derived from `SmoothForm`.
 
 The degree-two specialization supplies the bilinear view used by the symplectic modules while
 retaining the generic form's alternating-map and smooth-section structure.
+
+The module also provides the identity linear equivalence `legacySmoothTwoFormEquiv` from
+`SmoothTwoForm` to `SmoothForm I M ℝ 2`, its forward and inverse simp laws, and its ordered-pair
+evaluation law via `SmoothForm.eval₂`.
 -/
 
 public section
@@ -37,6 +41,34 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 abbrev SmoothTwoForm (I : ModelWithCorners ℝ E H) (M : Type*)
     [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] : Type _ :=
   SmoothForm I M ℝ 2
+
+/-- The identity linear equivalence from `SmoothTwoForm I M` to the generic carrier
+`SmoothForm I M ℝ 2`. The chartwise closedness description is given by
+`legacySmoothTwoFormEquiv_isClosed_iff`. -/
+noncomputable def legacySmoothTwoFormEquiv :
+    TauCeti.SmoothTwoForm I M ≃ₗ[ℝ] SmoothForm I M ℝ 2 :=
+  LinearEquiv.refl ℝ _
+
+/-- Applying the identity equivalence leaves a degree-two smooth form unchanged. -/
+@[simp]
+theorem legacySmoothTwoFormEquiv_apply_eq
+    (φ : TauCeti.SmoothTwoForm I M) :
+    legacySmoothTwoFormEquiv φ = φ :=
+  by simp only [legacySmoothTwoFormEquiv, LinearEquiv.refl_apply]
+
+/-- Applying the inverse identity equivalence leaves a degree-two smooth form unchanged. -/
+@[simp]
+theorem legacySmoothTwoFormEquiv_symm_apply
+    (φ : SmoothForm I M ℝ 2) :
+    legacySmoothTwoFormEquiv.symm φ = φ :=
+  by simp only [legacySmoothTwoFormEquiv, LinearEquiv.refl_symm, LinearEquiv.refl_apply]
+
+/-- Evaluating the identity equivalence on an ordered pair gives the two-form evaluation. -/
+theorem legacySmoothTwoFormEquiv_apply
+    (φ : TauCeti.SmoothTwoForm I M) (x : M) (v w : TangentSpace I x) :
+    (legacySmoothTwoFormEquiv φ : RoughForm I M ℝ 2) x ![v, w] = φ.eval₂ x v w := by
+  rw [legacySmoothTwoFormEquiv_apply_eq]
+  exact (SmoothForm.eval₂_apply φ x v w).symm
 
 namespace SmoothTwoForm
 
