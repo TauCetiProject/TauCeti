@@ -165,7 +165,7 @@ theorem _root_.CategoryTheory.Equivalence.inverseCommIso_inv_app
 /-- Precomposing `CategoryTheory.Equivalence.inverseCommIso σ` with the unit of `e` and
 postcomposing with `σ` and the inverse unit of `e'` gives the identity: this is the step from the
 power `-1` to the power `0` of `CategoryTheory.Equivalence.powCommIso_succ_hom_app`. -/
-private theorem _root_.CategoryTheory.Equivalence.inverseCommIso_hom_app_unit
+theorem _root_.CategoryTheory.Equivalence.inverseCommIso_hom_app_unit
     (σ : e.functor ⋙ F ≅ F ⋙ e'.functor) (X : C) :
     F.map (e.unitIso.hom.app X) ≫ (Equivalence.inverseCommIso σ).hom.app (e.functor.obj X) ≫
       e'.inverse.map (σ.hom.app X) ≫ e'.unitIso.inv.app (F.obj X) = 𝟙 _ := by
