@@ -108,8 +108,7 @@ theorem vanDerPutTerm_natCast (a : E) (n m : ℕ) :
 theorem vanDerPutTerm_zero_right (a : E) :
     vanDerPutTerm (p := p) a 0 = ContinuousMap.const ℤ_[p] a := by
   ext x
-  have h0 : x.appr 0 = 0 := by simpa using appr_lt x 0
-  simp [vanDerPutTerm_apply, h0]
+  simp [vanDerPutTerm_apply]
 
 /-- The van der Put term with value `0` vanishes. -/
 @[simp]
@@ -124,6 +123,37 @@ theorem vanDerPutTerm_natCast_self (a : E) (n : ℕ) : vanDerPutTerm (p := p) a 
     ite_eq_left rfl]
 
 end Term
+
+section TermAlgebra
+
+variable {E : Type*} [TopologicalSpace E]
+
+/-- The van der Put term is additive in its value. -/
+@[simp]
+theorem vanDerPutTerm_add [AddZeroClass E] [ContinuousAdd E] (a b : E) (n : ℕ) :
+    vanDerPutTerm (p := p) (a + b) n = vanDerPutTerm a n + vanDerPutTerm b n := by
+  ext x
+  simp only [vanDerPutTerm_apply, ContinuousMap.add_apply]
+  split_ifs <;> simp
+
+/-- The van der Put term commutes with negation of its value. -/
+@[simp]
+theorem vanDerPutTerm_neg [NegZeroClass E] [ContinuousNeg E] (a : E) (n : ℕ) :
+    vanDerPutTerm (p := p) (-a) n = -vanDerPutTerm a n := by
+  ext x
+  simp only [vanDerPutTerm_apply, ContinuousMap.neg_apply]
+  split_ifs <;> simp
+
+/-- The van der Put term commutes with scalar multiplication of its value. -/
+@[simp]
+theorem vanDerPutTerm_smul {S : Type*} [Zero E] [SMulZeroClass S E] [ContinuousConstSMul S E]
+    (c : S) (a : E) (n : ℕ) :
+    vanDerPutTerm (p := p) (c • a) n = c • vanDerPutTerm a n := by
+  ext x
+  simp only [vanDerPutTerm_apply, ContinuousMap.smul_apply]
+  split_ifs <;> simp
+
+end TermAlgebra
 
 section Coeff
 
@@ -145,6 +175,38 @@ theorem vanDerPutCoeff_of_ne_zero [Sub E] (f : ℤ_[p] → E) {n : ℕ} (hn : n 
     vanDerPutCoeff f n = f n - f (n % p ^ Nat.log p n : ℕ) :=
   ite_eq_right hn
 
+/-- The van der Put coefficients are additive in the function. -/
+@[simp]
+theorem vanDerPutCoeff_add [SubtractionCommMonoid E] (f g : ℤ_[p] → E) (n : ℕ) :
+    vanDerPutCoeff (f + g) n = vanDerPutCoeff f n + vanDerPutCoeff g n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · simp only [vanDerPutCoeff_of_ne_zero _ hn, Pi.add_apply, add_sub_add_comm]
+
+/-- The van der Put coefficients commute with negation of the function. -/
+@[simp]
+theorem vanDerPutCoeff_neg [SubtractionCommMonoid E] (f : ℤ_[p] → E) (n : ℕ) :
+    vanDerPutCoeff (-f) n = -vanDerPutCoeff f n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · simp only [vanDerPutCoeff_of_ne_zero _ hn, Pi.neg_apply, neg_sub_neg, neg_sub]
+
+/-- The van der Put coefficients commute with subtraction of functions. -/
+@[simp]
+theorem vanDerPutCoeff_sub [SubtractionCommMonoid E] (f g : ℤ_[p] → E) (n : ℕ) :
+    vanDerPutCoeff (f - g) n = vanDerPutCoeff f n - vanDerPutCoeff g n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · simp only [vanDerPutCoeff_of_ne_zero _ hn, Pi.sub_apply, sub_sub_sub_comm]
+
+/-- The van der Put coefficients commute with scalar multiplication of the function. -/
+@[simp]
+theorem vanDerPutCoeff_smul {S : Type*} [AddGroup E] [DistribSMul S E] (c : S) (f : ℤ_[p] → E)
+    (n : ℕ) : vanDerPutCoeff (c • f) n = c • vanDerPutCoeff f n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · simp only [vanDerPutCoeff_of_ne_zero _ hn, Pi.smul_apply, smul_sub]
+
 /-- The van der Put coefficient of a nonzero `n` is a difference of values at two natural
 numbers congruent modulo `p ^ Nat.log p n`. -/
 private theorem vanDerPutCoeff_of_ne_zero_eq_sub_appr [Sub E] (f : ℤ_[p] → E) {n : ℕ} (hn : n ≠ 0) :
@@ -157,9 +219,7 @@ theorem sum_vanDerPutTerm_vanDerPutCoeff_apply [AddCommGroup E] [TopologicalSpac
     (x : ℤ_[p]) (k : ℕ) :
     ∑ n ∈ Finset.range (p ^ k), vanDerPutTerm (vanDerPutCoeff f n) n x = f (x.appr k) := by
   induction k with
-  | zero =>
-    have h0 : x.appr 0 = 0 := by simpa using appr_lt x 0
-    simp [h0]
+  | zero => simp
   | succ k ih =>
     have hpk : p ^ k ≤ p ^ (k + 1) := Nat.pow_le_pow_right hp.out.pos k.le_succ
     rw [← Finset.sum_range_add_sum_Ico _ hpk, ih]
@@ -243,9 +303,8 @@ theorem tendsto_vanDerPutCoeff (f : C(ℤ_[p], E)) :
   refine ⟨p ^ k, fun n hn ↦ ?_⟩
   have hn0 : n ≠ 0 := (pow_pos hp.out.pos k).trans_le hn |>.ne'
   rw [dist_zero_right, vanDerPutCoeff_of_ne_zero_eq_sub_appr _ hn0, ← dist_eq_norm]
-  refine hf ((dist_eq_norm _ _).trans_lt ((norm_sub_appr_le _ _).trans_lt (lt_of_le_of_lt ?_ hk)))
-  exact zpow_le_zpow_right₀ (mod_cast hp.out.one_lt.le)
-    (neg_le_neg (mod_cast (Nat.le_log_iff_pow_le hp.out.one_lt hn0).mpr hn))
+  exact hf ((dist_eq_norm _ _).trans_lt ((norm_sub_appr_le_of_le _
+    ((Nat.le_log_iff_pow_le hp.out.one_lt hn0).mpr hn)).trans_lt hk))
 
 /-- Over an ultrametric group, the van der Put coefficients of a continuous function are bounded by
 its sup norm. -/
@@ -329,30 +388,22 @@ sending a function to its van der Put coefficients. It is linear over any scalar
 continuously on `E`. -/
 noncomputable def vanDerPutEquiv [Semiring S] [Module S E] [ContinuousConstSMul S E] :
     C(ℤ_[p], E) ≃ₗᵢ[S] C₀(ℕ, E) where
-  toFun f := ⟨⟨vanDerPutCoeff f, continuous_of_discreteTopology⟩,
-    cocompact_eq_atTop (α := ℕ) ▸ tendsto_vanDerPutCoeff f⟩
+  toFun f := ZeroAtInftyContinuousMap.mkOfDiscrete (vanDerPutCoeff f)
+    (Nat.cofinite_eq_atTop ▸ tendsto_vanDerPutCoeff f)
   invFun a := vanDerPutSeries a
   map_add' f g := by
     ext n
-    simp only [vanDerPutCoeff, ContinuousMap.coe_add, Pi.add_apply,
-      ZeroAtInftyContinuousMap.coe_mk, ZeroAtInftyContinuousMap.coe_add]
-    split_ifs
-    · rfl
-    · abel
+    simp
   map_smul' c f := by
     ext n
-    simp only [vanDerPutCoeff, ContinuousMap.coe_smul, Pi.smul_apply, RingHom.id_apply,
-      ZeroAtInftyContinuousMap.coe_mk, ZeroAtInftyContinuousMap.coe_smul]
-    split_ifs
-    · rfl
-    · rw [smul_sub]
-  left_inv := vanDerPutSeries_vanDerPutCoeff
-  right_inv a := ZeroAtInftyContinuousMap.ext <|
-    vanDerPutCoeff_vanDerPutSeries (cocompact_eq_atTop (α := ℕ) ▸ zero_at_infty a)
+    simp
+  left_inv f := by simpa using vanDerPutSeries_vanDerPutCoeff f
+  right_inv a := ZeroAtInftyContinuousMap.ext fun n ↦ by
+    simpa using vanDerPutCoeff_vanDerPutSeries (Nat.cofinite_eq_atTop ▸ a.tendsto_cofinite) n
   norm_map' f := by
     simp only [LinearEquiv.coe_mk, ← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]
-    refine le_antisymm (BoundedContinuousFunction.norm_le_of_nonempty.mpr
-      (norm_vanDerPutCoeff_le f)) ?_
+    refine le_antisymm (BoundedContinuousFunction.norm_le_of_nonempty.mpr fun n ↦ ?_) ?_
+    · simpa using norm_vanDerPutCoeff_le f n
     conv_lhs => rw [← vanDerPutSeries_vanDerPutCoeff f]
     refine (IsUltrametricDist.norm_tsum_le _).trans (ciSup_le fun n ↦ ?_)
     rw [norm_vanDerPutTerm]
@@ -365,7 +416,7 @@ variable [Semiring S] [Module S E] [ContinuousConstSMul S E]
 @[simp]
 theorem vanDerPutEquiv_apply (f : C(ℤ_[p], E)) (n : ℕ) :
     vanDerPutEquiv S E f n = vanDerPutCoeff f n :=
-  (rfl)
+  congrFun (ZeroAtInftyContinuousMap.coe_mkOfDiscrete _ _) n
 
 /-- The inverse of `vanDerPutEquiv S E` sums the van der Put series. -/
 theorem vanDerPutEquiv_symm_apply (a : C₀(ℕ, E)) :

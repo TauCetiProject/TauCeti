@@ -48,11 +48,13 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   ring operations, modulo `p ^ n`.
 * `PadicInt.appr_natCast_pow_of_le`: the truncation of `p ^ m` modulo `p ^ n` is `0` for
   `n ≤ m`.
-* `PadicInt.appr_natCast`, `PadicInt.appr_mod_pow`: the truncation of a natural number is its
-  remainder, and reducing a finer truncation gives the coarser one.
-* `PadicInt.norm_sub_appr_le`, `PadicInt.appr_eq_iff_norm_sub_le`, `PadicInt.tendsto_appr`: `x` is
-  within `p ^ (-n)` of its truncation modulo `p ^ n`, the fibres of the truncation are closed
-  balls, and the truncations converge to `x`.
+* `PadicInt.appr_zero_right`, `PadicInt.appr_natCast`, `PadicInt.appr_mod_pow`: the truncation
+  modulo `1` is `0`, the truncation of a natural number is its remainder, and reducing a finer
+  truncation gives the coarser one.
+* `PadicInt.norm_sub_appr_le`, `PadicInt.norm_sub_appr_le_of_le`,
+  `PadicInt.appr_eq_iff_norm_sub_le`, `PadicInt.tendsto_appr`: `x` is within `p ^ (-m)` of its
+  truncation modulo `p ^ n` for `m ≤ n`, the fibres of the truncation are closed balls, and the
+  truncations converge to `x`.
 * `PadicInt.continuous_appr`: the truncation modulo `p ^ n` is locally constant.
 * `PadicInt.pow_appr_eq_pow_appr`: raising an element of `p`-power order to the truncated
   exponent is independent of the truncation level, once that level is large enough.
@@ -196,6 +198,11 @@ theorem appr_natCast_pow_of_le {m n : ℕ} (h : n ≤ m) : ((p : ℤ_[p]) ^ m).a
     (Nat.modEq_zero_iff_dvd.mp (hm.trans (Nat.modEq_zero_iff_dvd.mpr (pow_dvd_pow p h))))
     (appr_lt _ n)
 
+/-- The truncation modulo `p ^ 0 = 1` is `0`. -/
+@[simp]
+theorem appr_zero_right (x : ℤ_[p]) : x.appr 0 = 0 := by
+  simpa using appr_lt x 0
+
 /-- The truncation of a natural number `k` modulo `p ^ n` is its remainder `k % p ^ n`. -/
 @[simp]
 theorem appr_natCast (k n : ℕ) : ((k : ℤ_[p])).appr n = k % p ^ n := by
@@ -211,6 +218,12 @@ theorem appr_mod_pow (x : ℤ_[p]) {m n : ℕ} (h : m ≤ n) : x.appr n % p ^ m 
 theorem norm_sub_appr_le (x : ℤ_[p]) (n : ℕ) : ‖x - x.appr n‖ ≤ (p : ℝ) ^ (-(n : ℤ)) :=
   (norm_le_pow_iff_mem_span_pow _ n).mpr (appr_spec n x)
 
+/-- For `m ≤ n`, a `p`-adic integer is within `p ^ (-m)` of its truncation modulo `p ^ n`. -/
+theorem norm_sub_appr_le_of_le (x : ℤ_[p]) {m n : ℕ} (h : m ≤ n) :
+    ‖x - x.appr n‖ ≤ (p : ℝ) ^ (-(m : ℤ)) :=
+  (norm_sub_appr_le x n).trans
+    (zpow_le_zpow_right₀ (mod_cast hp.out.one_lt.le) (neg_le_neg (mod_cast h)))
+
 /-- For `k < p ^ n`, the truncation of `x` modulo `p ^ n` is `k` exactly when `x` lies in the
 closed ball of radius `p ^ (-n)` around `k`. -/
 theorem appr_eq_iff_norm_sub_le (x : ℤ_[p]) {k n : ℕ} (hk : k < p ^ n) :
@@ -225,8 +238,7 @@ theorem tendsto_appr (x : ℤ_[p]) :
   obtain ⟨k, hk⟩ := exists_pow_neg_lt p hε
   refine ⟨k, fun n hn ↦ ?_⟩
   rw [dist_eq_norm, norm_sub_rev]
-  refine (norm_sub_appr_le x n).trans_lt (lt_of_le_of_lt ?_ hk)
-  exact zpow_le_zpow_right₀ (mod_cast hp.out.one_lt.le) (neg_le_neg (mod_cast hn))
+  exact (norm_sub_appr_le_of_le x hn).trans_lt hk
 
 /-- The truncation modulo `p ^ n` is locally constant, `ℕ` carrying the discrete topology. -/
 theorem continuous_appr (n : ℕ) : Continuous fun x : ℤ_[p] ↦ x.appr n := by
