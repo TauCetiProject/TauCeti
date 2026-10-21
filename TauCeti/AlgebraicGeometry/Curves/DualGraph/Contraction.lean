@@ -628,8 +628,7 @@ theorem exists_stabilizationStep_of_not_isStable
     simpa [isStable_iff, not_forall, not_lt] using hG
   have hw : ∃ w, w ≠ v := by
     by_contra! h
-    have := G.sum_logCanonicalDegree
-    rw [Fintype.sum_eq_single v fun w hw ↦ absurd (h w) hw] at this
+    have := G.logCanonicalDegree_eq_of_forall_eq h
     omega
   rcases isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos hv hw with
     ⟨ht, hm⟩ | ⟨hb, hm⟩

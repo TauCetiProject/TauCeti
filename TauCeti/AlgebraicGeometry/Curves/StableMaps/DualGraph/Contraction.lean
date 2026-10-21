@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Contraction
-public import TauCeti.AlgebraicGeometry.Curves.StableMaps.DualGraph
+public import TauCeti.AlgebraicGeometry.Curves.StableMaps.DualGraph.Basic
 
 /-!
 # Map-aware stabilization of degree-decorated dual graphs
@@ -95,9 +95,10 @@ lemma contractTail_zero : (0 : G.DegreeDecoration).contractTail hv = 0 :=
 /-- Contracting a tail lowers the total degree by the degree of the tail. -/
 theorem totalDegree_contractTail :
     (D.contractTail hv).totalDegree + D.componentDegree v = D.totalDegree := by
+  have : ∑ w, (D.contractTail hv).componentDegree w = ∑ w : {w // w ≠ v}, D.componentDegree w :=
+    rfl
   rw [totalDegree_def, totalDegree_def, Fintype.sum_eq_add_sum_subtype_ne D.componentDegree v,
-    add_comm]
-  rfl
+    this, add_comm]
 
 /-- Contracting a tail changes only the weighted log-canonical degree of its attachment, which
 changes by the number of markings on the tail minus one. -/
@@ -136,9 +137,10 @@ lemma contractBridge_zero : (0 : G.DegreeDecoration).contractBridge hv hloop hm 
 /-- Contracting a bridge lowers the total degree by the degree of the bridge. -/
 theorem totalDegree_contractBridge :
     (D.contractBridge hv hloop hm).totalDegree + D.componentDegree v = D.totalDegree := by
+  have : ∑ w, (D.contractBridge hv hloop hm).componentDegree w =
+      ∑ w : {w // w ≠ v}, D.componentDegree w := rfl
   rw [totalDegree_def, totalDegree_def, Fintype.sum_eq_add_sum_subtype_ne D.componentDegree v,
-    add_comm]
-  rfl
+    this, add_comm]
 
 /-- Contracting a bridge does not change any weighted log-canonical degree. -/
 @[simp]
@@ -222,10 +224,8 @@ theorem IsStable.not_stabilizationStep (hx : x.2.IsStable) : ¬ StabilizationSte
 
 /-- Iterated stabilization steps preserve the arithmetic genus. -/
 theorem arithmeticGenus_eq_of_reflTransGen (h : Relation.ReflTransGen StabilizationStep x y) :
-    y.1.arithmeticGenus = x.1.arithmeticGenus := by
-  induction h with
-  | refl => rfl
-  | tail _ hstep ih => exact hstep.arithmeticGenus_eq.trans ih
+    y.1.arithmeticGenus = x.1.arithmeticGenus :=
+  DualGraph.arithmeticGenus_eq_of_reflTransGen (h.lift Sigma.fst fun _ _ ↦ StabilizationStep.fst)
 
 /-- Iterated stabilization steps preserve the total degree. -/
 theorem totalDegree_eq_of_reflTransGen (h : Relation.ReflTransGen StabilizationStep x y) :
@@ -245,8 +245,7 @@ theorem exists_stabilizationStep_of_not_isStable
     simpa [isStable_iff, not_forall, not_lt] using hD
   have hw : ∃ w, w ≠ v := by
     by_contra! h
-    have hsum := G.sum_logCanonicalDegree
-    rw [Fintype.sum_eq_single v fun w hw ↦ absurd (h w) hw] at hsum
+    have := G.logCanonicalDegree_eq_of_forall_eq h
     have htot : D.totalDegree = 0 := by
       rw [totalDegree_def, Fintype.sum_eq_single v fun w hw ↦ absurd (h w) hw, hd]
     omega

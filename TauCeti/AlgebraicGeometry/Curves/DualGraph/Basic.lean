@@ -310,6 +310,11 @@ theorem sum_logCanonicalDegree [Fintype ι] :
     card_univ, nsmul_eq_mul]
   linarith
 
+/-- The log-canonical degree of the only vertex of a graph is `2pₐ - 2 + n`. -/
+theorem logCanonicalDegree_eq_of_forall_eq [Fintype ι] {v : G.Vertex} (h : ∀ w, w = v) :
+    G.logCanonicalDegree v = 2 * G.arithmeticGenus - 2 + Fintype.card ι := by
+  rw [← G.sum_logCanonicalDegree, Fintype.sum_eq_single v fun w hw ↦ absurd (h w) hw]
+
 /-- A vertex has nonpositive log-canonical degree exactly when it is a rational component with at
 most two special points, or a component of genus one with none. -/
 theorem logCanonicalDegree_nonpos_iff [Fintype ι] {v : G.Vertex} :
