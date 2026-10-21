@@ -74,8 +74,6 @@ Frobenius.
 * `Rep.FiniteCyclicGroup.groupCohomologyπEven_two`,
   `Rep.FiniteCyclicGroup.groupCohomologyπEven_two_apply`: in degree `2`, `groupCohomologyπEven`
   sends a fixed element to the class of its carry cocycle.
-* `Rep.FiniteCyclicGroup.norm_apply_eq_sum_range_pow`: the norm is the ordered sum of the powers
-  of a generator.
 * `Rep.FiniteCyclicGroup.partialNormCocycle_apply`,
   `Rep.FiniteCyclicGroup.partialNormCocycle_apply_pow`: the values of the partial norm cocycle.
 * `Rep.FiniteCyclicGroup.groupCohomologyπOdd_one`,
@@ -384,17 +382,6 @@ private theorem partialNormCochain_apply (a : A) (x : G) :
   simp only [partialNormCochain, LinearMap.pi_apply, LinearMap.sum_apply]
 
 include hg in
-/-- The norm of a finite cyclic group is the ordered sum `a + g a + ⋯ + gⁿ⁻¹ a` of the powers of a
-generator `g` of order `n`. -/
-theorem norm_apply_eq_sum_range_pow (a : A) :
-    A.ρ.norm a = ∑ l ∈ Finset.range (orderOf g), A.ρ (g ^ l) a := by
-  rw [Representation.norm, LinearMap.sum_apply]
-  refine (Finset.sum_nbij' (fun l => g ^ l) (cyclicLog g hg) (fun _ _ => Finset.mem_univ _)
-    (fun x _ => Finset.mem_range.2 (cyclicLog_lt g hg x))
-    (fun l hl => by rw [cyclicLog_pow, Nat.mod_eq_of_lt (Finset.mem_range.1 hl)])
-    (fun x _ => pow_cyclicLog g hg x) (fun _ _ => rfl)).symm
-
-include hg in
 /-- Reducing the length `i + j` of a partial norm modulo `n` loses a full norm exactly when
 `i + j` carries: this is `geomSum_add_sub_geomSum_mod` acting on `a`. -/
 private theorem sum_range_add_mod_orderOf (a : A) (i j : ℕ) (hi : i < orderOf g)
@@ -543,8 +530,7 @@ otherwise. -/
 theorem groupCohomologyπEven_two_apply
     (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) :
     groupCohomologyπEven A g hg 2 even_two x = H2π A (carryCocycle A g hg x) := by
-  rw [groupCohomologyπEven_two]
-  rfl
+  rw [groupCohomologyπEven_two, ConcreteCategory.comp_apply, ModuleCat.ofHom_apply]
 
 /-! ### The classes in degree one -/
 
@@ -589,8 +575,7 @@ theorem groupCohomologyπOdd_one :
 @[simp]
 theorem groupCohomologyπOdd_one_apply (x : LinearMap.ker A.norm.asHom.hom.toLinearMap) :
     groupCohomologyπOdd A g hg 1 odd_one x = H1π A (partialNormCocycle A g hg x) := by
-  rw [groupCohomologyπOdd_one]
-  rfl
+  rw [groupCohomologyπOdd_one, ConcreteCategory.comp_apply, ModuleCat.ofHom_apply]
 
 /-! ### The connecting homomorphism from degree one to degree two -/
 

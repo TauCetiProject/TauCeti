@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.RepresentationTheory.FiniteIndex
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Shapiro
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
 
 /-!
 # Corestriction in group cohomology
@@ -453,25 +454,19 @@ over any coefficient ring. -/
 theorem subsingleton_of_bijective_nsmul (A : Rep k G)
     (h : Function.Bijective fun a : A ↦ Nat.card G • a) (n : ℕ) :
     Subsingleton (groupCohomology A (n + 1)) := by
-  -- Division by `#G` is a `G`-equivariant endomorphism `ψ` of `A` with `#G • ψ = 𝟙 A`.
-  let e := LinearEquiv.ofBijective (Nat.card G • LinearMap.id : A →ₗ[k] A) h
-  have he (a : A) : Nat.card G • e.symm a = a := e.apply_symm_apply a
-  let ψ : A ⟶ A := ConcreteCategory.ofHom (C := Rep k G)
-    { toLinearMap := e.symm.toLinearMap
-      isIntertwining' := fun g ↦ LinearMap.ext fun a ↦ h.1 <| by
-        dsimp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-        rw [he, ← map_nsmul, he] }
-  have hψ : Nat.card G • ψ = 𝟙 A := by
-    ext a
-    exact he a
+  have := Fintype.ofFinite G
+  -- Multiplication by `#G` is injective on Tate cohomology, which is group cohomology in
+  -- positive degree.
+  have hinj : Function.Injective fun x : tateCohomology A (n + 1 : ℕ) ↦ Nat.card G • x := by
+    simpa only [Nat.cast_smul_eq_nsmul] using
+      (TauCeti.TateCohomology.smul_bijective (Nat.card G : k) A
+        (by simpa only [Nat.cast_smul_eq_nsmul] using h) _).1
+  let e : tateCohomology A (n + 1 : ℕ) ≅ groupCohomology A (n + 1) :=
+    (TateCohomology.isoGroupCohomology (n + 1)).app A
   refine subsingleton_of_forall_eq 0 fun x ↦ ?_
-  -- The functor `Hⁿ⁺¹(G, -)` is additive, so it sends `#G • ψ = 𝟙 A` to `#G • ψ_*`.
-  have hF : map (MonoidHom.id G) (𝟙 A) (n + 1) = Nat.card G • map (MonoidHom.id G) ψ (n + 1) := by
-    rw [← hψ]
-    exact (cochainsFunctor k G ⋙ HomologicalComplex.homologyFunctor _ _ (n + 1)).map_nsmul
-  calc x = (map (MonoidHom.id G) (𝟙 A) (n + 1)).hom x := by rw [map_id]; rfl
-    _ = Nat.card G • (map (MonoidHom.id G) ψ (n + 1)).hom x := by rw [hF]; rfl
-    _ = 0 := natCard_nsmul_eq_zero _
+  have hx : e.inv.hom x = 0 :=
+    hinj <| by beta_reduce; rw [← map_nsmul, natCard_nsmul_eq_zero, map_zero, smul_zero]
+  rw [← e.inv_hom_id_apply x, hx, map_zero]
 
 /-- Positive-degree cohomology of a finite group vanishes when the order of the group is a unit
 of the coefficient ring. -/
