@@ -293,10 +293,12 @@ def coeffHom {F : Type*} [FunLike F G H] [MonoidHomClass F G H] (c : A → G) (d
         exact HomClass.map_fun φ f x
       · cases n with
         | zero =>
-          -- the constant symbol `Sum.inr f` is `Language.group.con f`
-          rw [Unique.eq_default (φ ∘ x), Unique.eq_default x]
-          exact (congrArg φ (coe_con_constantsOn c f)).trans
-            ((h f).trans (coe_con_constantsOn d f).symm)
+          -- `f : (constantsOn A).Functions 0` is the coefficient name `f : A`
+          have hG := withConstants_funMap_sumInr (L := Language.group) (α := A) (a := f) (x := x)
+          have hH :=
+            withConstants_funMap_sumInr (L := Language.group) (α := A) (a := f) (x := φ ∘ x)
+          exact (congrArg φ (hG.trans (coe_con_constantsOn c f))).trans
+            ((h f).trans (hH.trans (coe_con_constantsOn d f)).symm)
         | succ n => exact isEmptyElim f
     map_rel' := fun {n} r => by
       rcases r with r | r <;> exact isEmptyElim r }
