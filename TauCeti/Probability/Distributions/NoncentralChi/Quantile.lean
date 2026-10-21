@@ -96,15 +96,25 @@ theorem continuousOn_quantile_noncentralChiMeasure (hk : 0 ≤ k) (hs : 0 < s) :
     (continuousOn_quantile_noncentralChiSquaredMeasure hk (δ ^ 2)) |>.congr fun u hu ↦ ?_
   exact quantile_noncentralChiMeasure hk hs hu
 
-/-- Every valid noncentral chi law has lower quantile endpoint zero. -/
-theorem tendsto_quantile_noncentralChiMeasure_nhdsGT_zero (hk : 0 ≤ k) (hs : 0 < s) :
-    Tendsto (fun u ↦ ((noncentralChiMeasure k δ s).quantile u : EReal)) (𝓝[>] 0) (𝓝 0) := by
-  have hlim := (((by fun_prop : Continuous fun x : ℝ ↦ s * √x).tendsto 0).comp
-    (EReal.tendsto_coe.1 (tendsto_quantile_noncentralChiSquaredMeasure_nhdsGT_zero hk (δ ^ 2))))
+/-- Noncentral chi quantiles tend to zero along every filter on the open unit interval along
+which the noncentral chi-squared quantiles do. -/
+private theorem tendsto_quantile_noncentralChiMeasure_zero {l : Filter ℝ}
+    (hl : l ≤ 𝓟 (Ioo 0 1)) (hk : 0 ≤ k) (hs : 0 < s)
+    (h : Tendsto (fun u ↦ ((noncentralChiSquaredMeasure k (δ ^ 2)).quantile u : EReal)) l
+      (𝓝 0)) :
+    Tendsto (fun u ↦ ((noncentralChiMeasure k δ s).quantile u : EReal)) l (𝓝 0) := by
+  have hlim := ((by fun_prop : Continuous fun x : ℝ ↦ s * √x).tendsto 0).comp
+    (EReal.tendsto_coe.1 h)
   simp only [sqrt_zero, mul_zero] at hlim
   apply (EReal.tendsto_coe.2 hlim).congr'
-  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+  filter_upwards [le_principal_iff.1 hl] with u hu
   exact congrArg (fun x : ℝ ↦ (x : EReal)) (quantile_noncentralChiMeasure hk hs hu).symm
+
+/-- Every valid noncentral chi law has lower quantile endpoint zero. -/
+theorem tendsto_quantile_noncentralChiMeasure_nhdsGT_zero (hk : 0 ≤ k) (hs : 0 < s) :
+    Tendsto (fun u ↦ ((noncentralChiMeasure k δ s).quantile u : EReal)) (𝓝[>] 0) (𝓝 0) :=
+  tendsto_quantile_noncentralChiMeasure_zero (le_principal_iff.2 (Ioo_mem_nhdsGT zero_lt_one))
+    hk hs (tendsto_quantile_noncentralChiSquaredMeasure_nhdsGT_zero hk (δ ^ 2))
 
 /-- Away from the double-zero Dirac law, quantiles tend to infinity as the level tends to one;
 for the Dirac law they remain zero. -/
@@ -115,12 +125,8 @@ theorem tendsto_quantile_noncentralChiMeasure_nhdsLT_one (hk : 0 ≤ k) (hs : 0 
   simp only [pow_eq_zero_iff two_ne_zero] at hlim
   by_cases h : k = 0 ∧ δ = 0
   · rw [ite_eq_left h] at hlim ⊢
-    have hreal := ((by fun_prop : Continuous fun x : ℝ ↦ s * √x).tendsto 0).comp
-      (EReal.tendsto_coe.1 hlim)
-    simp only [sqrt_zero, mul_zero] at hreal
-    apply (EReal.tendsto_coe.2 hreal).congr'
-    filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-    exact congrArg (fun x : ℝ ↦ (x : EReal)) (quantile_noncentralChiMeasure hk hs hu).symm
+    exact tendsto_quantile_noncentralChiMeasure_zero
+      (le_principal_iff.2 (Ioo_mem_nhdsLT zero_lt_one)) hk hs hlim
   · rw [ite_eq_right h] at hlim ⊢
     rw [EReal.tendsto_coe_nhds_top_iff] at hlim ⊢
     apply ((tendsto_sqrt_atTop.comp hlim).const_mul_atTop hs).congr'

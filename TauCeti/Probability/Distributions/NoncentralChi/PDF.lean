@@ -87,6 +87,39 @@ theorem toReal_noncentralChiPDF (k : ℝ) (δ : ℝ≥0) (s x : ℝ) :
     (noncentralChiPDF k δ s x).toReal = noncentralChiPDFReal k δ s x :=
   ENNReal.toReal_ofReal (noncentralChiPDFReal_nonneg k δ s x)
 
+/-- At zero noncentrality the continuous density is the central chi density. -/
+@[simp]
+theorem noncentralChiPDFReal_zero_noncentrality (k s x : ℝ) :
+    noncentralChiPDFReal k 0 s x = chiPDFReal k s x := by
+  by_cases hsx : 0 < s ∧ 0 < x
+  swap
+  · rw [noncentralChiPDFReal, ite_eq_right hsx, chiPDFReal_of_not_pos fun h ↦ hsx h.2]
+  obtain ⟨hs, hx⟩ := hsx
+  rw [noncentralChiPDFReal_of_pos hs hx, zero_pow two_ne_zero,
+    noncentralChiSquaredPDFReal_zero_noncentrality]
+  by_cases hk : 0 < k
+  swap
+  · rw [chiPDFReal_of_not_pos fun h ↦ hk h.1]
+    split_ifs with h
+    · rw [le_antisymm (not_lt.mp hk) h.1, chiSquaredPDFReal_zero_degree, Pi.zero_apply,
+        mul_zero]
+    · rw [mul_zero]
+  have hxs : 0 < x / s := div_pos hx hs
+  have hpow : (x / s) ^ (k - 1) = ((x / s) ^ 2) ^ (k / 2 - 1) * (x / s) := by
+    rw [← rpow_natCast, ← rpow_mul hxs.le, ← rpow_add_one hxs.ne']
+    congr 1
+    push_cast
+    ring
+  rw [ite_eq_left ⟨hk.le, by positivity⟩, chiSquaredPDFReal_of_nonneg (by positivity),
+    chiPDFReal_of_pos hk hs hx, hpow, rpow_sub two_pos, rpow_one]
+  field_simp
+
+/-- At zero noncentrality the extended continuous density is the central chi density. -/
+@[simp]
+theorem noncentralChiPDF_zero_noncentrality (k s x : ℝ) :
+    noncentralChiPDF k 0 s x = chiPDF k s x := by
+  rw [noncentralChiPDF_eq_ofReal, chiPDF_eq_ofReal, noncentralChiPDFReal_zero_noncentrality]
+
 /-- Every valid law other than the double-zero Dirac law has strictly positive continuous density
 at positive arguments. -/
 theorem noncentralChiPDFReal_pos (hk : 0 ≤ k) (hne : k ≠ 0 ∨ δ ≠ 0) (hs : 0 < s) (hx : 0 < x) :

@@ -174,11 +174,11 @@ theorem noncentralChiMeasure_singleton_of_ne_zero (hx : x ≠ 0) (k : ℝ) (δ :
   refine measure_mono_null (fun y hy ↦ ?_)
     (noncentralChiSquaredMeasure_singleton_of_ne_zero (x := (x / s) ^ 2)
       (pow_ne_zero 2 (div_ne_zero hx hs.ne')) k (δ ^ 2))
-  have hy : s * √y = x := hy
-  have hsqrt : √y = x / s := by rw [← hy]; field_simp
-  have hypos : 0 < y := sqrt_pos.1 (hsqrt ▸ (sqrt_nonneg y).lt_of_ne fun h ↦ by
-    rw [← hy, ← h, mul_zero] at hx; exact hx rfl)
-  rw [mem_singleton_iff, ← hsqrt, sq_sqrt hypos.le]
+  rw [mem_preimage, mem_singleton_iff] at hy
+  -- A negative `y` has `√y = 0`, which would force `x = 0`.
+  have hy0 : 0 ≤ y :=
+    le_of_not_gt fun hneg ↦ hx (by rw [← hy, sqrt_eq_zero'.2 hneg.le, mul_zero])
+  rw [mem_singleton_iff, ← hy, mul_div_cancel_left₀ _ hs.ne', sq_sqrt hy0]
 
 /-- The scaled square root sends exactly the nonpositive half-line to zero, so the noncentral
 chi atom at zero is the noncentral chi-squared atom at zero. -/
@@ -219,21 +219,8 @@ coordinate on the nonnegative half-line, and zero below it. -/
 theorem cdf_noncentralChiMeasure_eq (hk : 0 ≤ k) (hs : 0 < s) (x : ℝ) :
     cdf (noncentralChiMeasure k δ s) x =
       if x < 0 then 0 else cdf (noncentralChiSquaredMeasure k (δ ^ 2)) ((x / s) ^ 2) := by
-  have := isProbabilityMeasure_noncentralChiMeasure (δ := δ) hk hs
   have := isProbabilityMeasure_noncentralChiSquaredMeasure hk (δ ^ 2)
-  rw [cdf_eq_real, noncentralChiMeasure_of_scale_pos hs,
-    map_measureReal_apply (by fun_prop) measurableSet_Iic]
-  by_cases hx : x < 0
-  · have hpre : (fun y : ℝ ↦ s * √y) ⁻¹' Iic x = ∅ := by
-      ext y
-      simp only [mem_preimage, mem_Iic, mem_empty_iff_false, iff_false]
-      exact not_le_of_gt (lt_of_lt_of_le hx (mul_nonneg hs.le (sqrt_nonneg y)))
-    simp [hpre, hx]
-  · have hpre : (fun y : ℝ ↦ s * √y) ⁻¹' Iic x = Iic ((x / s) ^ 2) := by
-      ext y
-      simp only [mem_preimage, mem_Iic, ← le_div_iff₀' hs, sqrt_le_iff,
-        div_nonneg (le_of_not_gt hx) hs.le, true_and]
-    rw [hpre, ← cdf_eq_real, ite_eq_right hx]
+  rw [noncentralChiMeasure_of_scale_pos hs, Measure.cdf_map_const_mul_sqrt _ hs]
 
 /-- At positive degree and nonnegative argument, the noncentral chi cdf is the Poisson-weighted
 series of regularized incomplete Gamma functions at the squared standardized coordinate. -/
