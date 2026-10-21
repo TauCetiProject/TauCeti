@@ -32,12 +32,6 @@ groupings agree.
 * `DiscreteConvolution.ringConvolution_assoc` and its additive version
   `DiscreteConvolution.addRingConvolution_assoc`: ring convolution is associative when the triple
   family and the inner convolutions are summable.
-* `DiscreteConvolution.AddConvolutionExistsAt.smul_addConvolution` and
-  `DiscreteConvolution.AddConvolutionExistsAt.addConvolution_smul`: scalars pull out of an existing
-  additive convolution sum. These are the additive forms of Mathlib's
-  `DiscreteConvolution.ConvolutionExistsAt.smul_convolution` and
-  `DiscreteConvolution.ConvolutionExistsAt.convolution_smul`, whose generated additive versions
-  are statements about `+ᵥ`.
 * `DiscreteConvolution.addFiberEquivSub`: on an additive group, `y ↦ (x - y, y)` identifies `M`
   with the fibre `addFiber x` of addition at `x`.
 * `DiscreteConvolution.addConvolution_eq_tsum_sub` and its ring version
@@ -135,26 +129,6 @@ theorem ringConvolution_assoc {f g h : M → R} (hfg : ConvolutionExists (.mul �
   exacts [(hfg p.1.1).hasSum.mul_right (h p.1.2), (hgh p.1.2).hasSum.mul_left (f p.1.1)]
 
 end Assoc
-
-section SMul
-
-variable {M S E E' F : Type*} [AddMonoid M] [CommSemiring S] [AddCommMonoid E] [AddCommMonoid E']
-  [AddCommMonoid F] [Module S E] [Module S E'] [Module S F] [TopologicalSpace F]
-  [ContinuousConstSMul S F] [T2Space F]
-
-/-- Scalars on the left factor pull out of an existing additive convolution sum. -/
-theorem AddConvolutionExistsAt.smul_addConvolution {c : S} {f : M → E} {g : M → E'} {x : M}
-    (L : E →ₗ[S] E' →ₗ[S] F) (hfg : AddConvolutionExistsAt L f g x) :
-    ((c • f) ⋆₊[L] g) x = c • (f ⋆₊[L] g) x := by
-  simpa [addConvolution] using hfg.tsum_const_smul c
-
-/-- Scalars on the right factor pull out of an existing additive convolution sum. -/
-theorem AddConvolutionExistsAt.addConvolution_smul {c : S} {f : M → E} {g : M → E'} {x : M}
-    (L : E →ₗ[S] E' →ₗ[S] F) (hfg : AddConvolutionExistsAt L f g x) :
-    (f ⋆₊[L] (c • g)) x = c • (f ⋆₊[L] g) x := by
-  simpa [addConvolution] using hfg.tsum_const_smul c
-
-end SMul
 
 section AddGroup
 

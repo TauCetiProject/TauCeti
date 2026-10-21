@@ -131,12 +131,12 @@ def convolution (hs : 1 / 2 < s) (L : E →L[ℂ] E' →L[ℂ] F) :
         ((addConvolutionExists_and_memℓp hs L a b).1.add_distrib _
           (addConvolutionExists_and_memℓp hs L a' b).1))
       (fun _ a b ↦ CircleSobolev.ext <| funext fun n ↦
-        ((addConvolutionExists_and_memℓp hs L a b).1 n).smul_addConvolution _)
+        ((addConvolutionExists_and_memℓp hs L a b).1 n).vadd_convolution _)
       (fun a b b' ↦ CircleSobolev.ext <|
         ((addConvolutionExists_and_memℓp hs L a b).1.distrib_add _
           (addConvolutionExists_and_memℓp hs L a b').1))
       (fun _ a b ↦ CircleSobolev.ext <| funext fun n ↦
-        ((addConvolutionExists_and_memℓp hs L a b).1 n).addConvolution_smul _))
+        ((addConvolutionExists_and_memℓp hs L a b).1 n).convolution_vadd _))
     (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n) * ‖L‖) (norm_convolutionAux_le hs L)
 
 @[simp]
