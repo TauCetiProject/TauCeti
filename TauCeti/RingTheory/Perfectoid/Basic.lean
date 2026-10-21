@@ -167,9 +167,9 @@ end TateRing
 
 section Examples
 
-/-- **A complete algebraically closed nonarchimedean field with `‖p‖ < 1` is perfectoid.** For
-`ϖ` take a `p`-th root of `p` (or, if `p = 0` in `K`, of any element of norm in `(0, 1)`); every
-element of the closed unit ball is an exact `p`-th power of an element of the closed unit ball. -/
+/-- **A complete algebraically closed nonarchimedean field with `‖p‖ < 1` is perfectoid.** If
+`K` is a complete algebraically closed ultrametric nontrivially normed field and `p ≠ 0` is a
+natural number with `‖(p : K)‖ < 1`, then `K` is a perfectoid Tate ring at `p`. -/
 theorem isPerfectoidTateRing_of_isAlgClosed {K : Type*} [NontriviallyNormedField K]
     [IsUltrametricDist K] [CompleteSpace K] [IsAlgClosed K] {p : ℕ} (hp : p ≠ 0)
     (hpK : ‖(p : K)‖ < 1) : IsPerfectoidTateRing p K := by
