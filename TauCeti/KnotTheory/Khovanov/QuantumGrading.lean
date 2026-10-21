@@ -175,10 +175,12 @@ theorem isHomogeneous_mul' :
       (-1) := by
   rw [TauCeti.LinearMap.isHomogeneous_def]
   intro p x hx
-  rw [InternalGrading.tensorProduct_piece_eq_iSup] at hx
-  refine (iSup_le fun q ↦ Submodule.map₂_le.2 fun a ha b hb ↦ ?_ :
-    _ ≤ ((quantumGrading R).piece (p + -1)).comap (LinearMap.mul' R R[ε])) hx
-  simpa [sub_eq_add_neg] using mul_mem_quantumGrading_piece ha hb
+  refine (quantumGrading R).tensorProduct_piece_le (quantumGrading R)
+    (C := ((quantumGrading R).piece (p + -1)).comap (LinearMap.mul' R R[ε]))
+    (fun q a ha b hb ↦ ?_) hx
+  rw [Submodule.mem_comap, LinearMap.mul'_apply]
+  convert mul_mem_quantumGrading_piece ha hb using 2
+  ring
 
 /-- **The split map `Δ : V → V ⊗ V` has quantum degree `-1`**, for the total-degree grading of
 `V ⊗ V`. -/
