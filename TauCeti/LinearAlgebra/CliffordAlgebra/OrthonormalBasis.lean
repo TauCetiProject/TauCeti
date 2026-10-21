@@ -70,12 +70,10 @@ theorem pairwise_isOrtho_map {l : List ι} (hl : l.Nodup) : (l.map b).Pairwise Q
 /-- For `Q v = -‖v‖²`, `Q` takes the value `-1` at every member of a list of orthonormal basis
 vectors. -/
 theorem prod_map_map_eq_neg_one_pow (l : List ι) : ((l.map b).map Q).prod = (-1) ^ l.length := by
-  have h : (l.map b).map Q = List.replicate l.length (-1) := by
-    refine List.eq_replicate_iff.2 ⟨by simp, fun x hx ↦ ?_⟩
-    simp only [List.map_map, List.mem_map, Function.comp_apply] at hx
-    obtain ⟨i, -, rfl⟩ := hx
-    simp [hQ, b.orthonormal.1 i]
-  rw [h, List.prod_replicate]
+  refine (List.prod_eq_pow_length _ (-1) fun x hx ↦ ?_).trans (by simp)
+  simp only [List.map_map, List.mem_map, Function.comp_apply] at hx
+  obtain ⟨i, -, rfl⟩ := hx
+  simp [hQ, b.orthonormal.1 i]
 
 end OrthonormalBasis
 

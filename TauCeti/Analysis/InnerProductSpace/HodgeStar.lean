@@ -51,6 +51,8 @@ self-dual and anti-self-dual two-forms are the `±1` eigenvectors of `⋆` on `�
   basis is `1`.
 * `Orientation.inner_hodgeStar_apply`: the characterization `⟪⋆x, y⟫ = vol (x ∧ y)`.
 * `Orientation.hodgeStar_basis`: the formula `⋆ e_I = ε(I) e_{Iᶜ}` on an orthonormal basis.
+* `Orientation.hodgeStar_hodgeStar`: `⋆⋆x = (-1) ^ (k * l) x`, and
+  `Orientation.hodgeStar_hodgeStar_of_even`: `⋆⋆x = x` in an even middle degree.
 
 ## References
 
@@ -135,12 +137,28 @@ def hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V) : ⋀[ℝ]^k V ≃ₗ[�
 /-- **The characterization of the Hodge star**: `⟪⋆x, y⟫ = vol (x ∧ y)`. -/
 theorem inner_hodgeStar_apply {k l : ℕ} (hkl : k + l = finrank ℝ V) (x : ⋀[ℝ]^k V)
     (y : ⋀[ℝ]^l V) : ⟪o.hodgeStar hkl x, y⟫ = wedgePairing o.volumeEquiv hkl x y := by
-  rw [← innerₗ_apply_apply, ← TauCeti.exteriorPower_innerₗ, hodgeStar,
-    exteriorPower.hodgeStar_apply]
-  have h := (LinearEquiv.ofBijective _ (LinearMap.BilinForm.bijective_exteriorPower (innerₗ V) l
-    TauCeti.bijective_innerₗ)).apply_symm_apply (wedgePairing o.volumeEquiv hkl x)
-  rw [LinearEquiv.ofBijective_apply] at h
-  exact LinearMap.congr_fun h y
+  rw [← innerₗ_apply_apply, ← TauCeti.exteriorPower_innerₗ, hodgeStar]
+  simp
+
+/-- On the basis of `⋀ᵏ V` induced by any orthonormal basis `e`, `⋆ e_I = vol(e) ε(I) e_{Iᶜ}`,
+where `vol(e) = ±1` is the volume form of `e` and `ε(I)` is the shuffle sign of `I`. -/
+private theorem hodgeStar_orthonormalBasis (b : OrthonormalBasis (Fin n) ℝ V) {k l : ℕ}
+    (hkl : k + l = finrank ℝ V) (s : powersetCard (Fin n) k) :
+    o.hodgeStar hkl (b.toBasis.exteriorPower k s) =
+      o.volumeForm b • powersetCard.sign s • b.toBasis.exteriorPower l
+        (powersetCard.compl (by rw [Fintype.card_fin, ← _i.out]; omega) s) := by
+  -- Pair both sides with the orthonormal basis of `⋀ˡ V`.
+  refine InnerProductSpace.ext_inner_right_basis (b.toBasis.exteriorPower l) fun t ↦ ?_
+  rw [inner_hodgeStar_apply, wedgePairing_exteriorPower_apply, volumeEquiv,
+    LinearEquiv.ofBijective_apply, volumeLinearMap_topVector,
+    ← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis]
+  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left,
+    OrthonormalBasis.inner_eq_ite, smul_eq_mul]
+  -- `s` and `t` are disjoint exactly when `t` is the complement of `s`.
+  have hcard : l + k = Fintype.card (Fin n) := by rw [Fintype.card_fin, ← _i.out]; omega
+  rw [if_congr (disjoint_comm.trans (powersetCard.disjoint_iff_eq_compl hcard) |>.trans eq_comm)
+    rfl rfl]
+  ring
 
 /-- **The Hodge star on an orthonormal basis**: if `e` is a positively oriented orthonormal basis,
 then `⋆ e_I = ε(I) e_{Iᶜ}`, where `e_I` is the increasing wedge of the `eᵢ` with `i ∈ I` and
@@ -150,14 +168,40 @@ theorem hodgeStar_basis (b : OrthonormalBasis (Fin n) ℝ V) (hb : b.toBasis.ori
     o.hodgeStar hkl (b.toBasis.exteriorPower k s) =
       powersetCard.sign s • b.toBasis.exteriorPower l
         (powersetCard.compl (by rw [Fintype.card_fin, ← _i.out]; omega) s) := by
-  -- Pair both sides with the orthonormal basis of `⋀ˡ V`.
-  refine InnerProductSpace.ext_inner_right_basis (b.toBasis.exteriorPower l) fun t ↦ ?_
-  rw [inner_hodgeStar_apply, wedgePairing_exteriorPower_apply, volumeEquiv_topVector o b hb,
-    one_smul, ← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis]
-  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left,
-    OrthonormalBasis.inner_eq_ite, smul_eq_mul]
-  -- `s` and `t` are disjoint exactly when `t` is the complement of `s`.
-  exact congrArg _ <| if_congr
-    (disjoint_comm.trans (powersetCard.disjoint_iff_eq_compl _) |>.trans eq_comm) rfl rfl
+  rw [hodgeStar_orthonormalBasis, o.volumeForm_robust b hb, ← OrthonormalBasis.coe_toBasis,
+    Basis.det_self, one_smul]
+
+/-- **The square of the Hodge star**: `⋆⋆x = (-1) ^ (k * l) x` for `x ∈ ⋀ᵏ V` and
+`k + l = finrank ℝ V`. -/
+theorem hodgeStar_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V) (hlk : l + k = finrank ℝ V)
+    (x : ⋀[ℝ]^k V) : o.hodgeStar hlk (o.hodgeStar hkl x) = (-1 : ℝ) ^ (k * l) • x := by
+  -- Compare both sides on the basis of `⋀ᵏ V` induced by an orthonormal basis `e`; with
+  -- `vol(e) = ±1` and `ε(I) ε(Iᶜ) = (-1) ^ (k * l)`, this is `hodgeStar_orthonormalBasis` twice.
+  set b : OrthonormalBasis (Fin n) ℝ V := (stdOrthonormalBasis ℝ V).reindex (finCongr _i.out)
+  refine LinearMap.congr_fun ((b.toBasis.exteriorPower k).ext
+    (f₁ := (o.hodgeStar hlk).toLinearMap ∘ₗ (o.hodgeStar hkl).toLinearMap)
+    (f₂ := (-1 : ℝ) ^ (k * l) • LinearMap.id) fun s ↦ ?_) x
+  have hcard : l + k = Fintype.card (Fin n) := by rw [Fintype.card_fin, ← _i.out, hlk]
+  have hs : powersetCard.compl (by rw [Fintype.card_fin, ← _i.out]; omega)
+      (powersetCard.compl hcard s) = s := (powersetCard.compl hcard).symm_apply_apply s
+  have hvol : o.volumeForm b * o.volumeForm b = 1 := by
+    rw [← abs_mul_abs_self, o.abs_volumeForm_apply_of_orthonormal, one_mul]
+  have hsign := congrArg (fun u : ℤˣ ↦ ((u : ℤ) : ℝ)) (powersetCard.sign_mul_sign_compl hcard s)
+  push_cast at hsign
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.smul_apply, LinearMap.id_apply]
+  rw [hodgeStar_orthonormalBasis, map_smul, map_zsmul_unit, hodgeStar_orthonormalBasis, hs]
+  simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, smul_smul]
+  congr 1
+  set ε := powersetCard.sign s
+  set ε' := powersetCard.sign (powersetCard.compl hcard s)
+  linear_combination ((ε : ℤ) * (ε' : ℤ) : ℝ) * hvol + hsign
+
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the Hodge star is an
+involution, `⋆⋆x = x`. This covers two-forms in dimension four, where the self-dual and
+anti-self-dual two-forms are the `±1` eigenspaces of `⋆`. -/
+@[simp]
+theorem hodgeStar_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (x : ⋀[ℝ]^k V) : o.hodgeStar hkk (o.hodgeStar hkk x) = x := by
+  rw [hodgeStar_hodgeStar, (hk.mul_right k).neg_one_pow, one_smul]
 
 end Orientation

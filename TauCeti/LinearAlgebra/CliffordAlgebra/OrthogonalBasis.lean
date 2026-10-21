@@ -105,9 +105,10 @@ theorem basis_mul_basis_eq_symm_equivExterior (hb : (QuadraticMap.associated Q).
     rintro i hi _ hj rfl
     exact Finset.disjoint_left.1 h ((Finset.mem_sort _).1 hi) ((Finset.mem_sort _).1 hj)
   rw [LinearEquiv.eq_symm_apply, basis_eq_prod_map_sort hb, basis_eq_prod_map_sort hb,
-    ← List.prod_append, ← List.map_append, ← List.map_append,
-    equivExterior_prod_map_ι_of_pairwise_isOrtho Q hl, b.exteriorAlgebra_eq_prod_map_sort,
-    b.exteriorAlgebra_eq_prod_map_sort, List.map_append, List.map_append, List.prod_append]
+    b.exteriorAlgebra_eq_prod_map_sort, b.exteriorAlgebra_eq_prod_map_sort]
+  -- The concatenated list of generators is transported factorwise.
+  simpa only [List.map_append, List.prod_append] using
+    equivExterior_prod_map_ι_of_pairwise_isOrtho Q hl
 
 /-- **The multiplication rule for basis vectors with disjoint index sets**: for an orthogonal basis,
 `e_s * e_t = ε • e_{s ∪ t}`, where `ε` is the sign of the shuffle listing `s` before `t`. This is

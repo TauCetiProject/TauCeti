@@ -154,14 +154,21 @@ theorem chirality_mul_ι (v : V) : chirality Q o * ι Q v = -(ι Q v * chirality
     prod_map_ι_mul_ι_of_even_length ((frame o).pairwise_isOrtho_map hQ (List.nodup_finRange 4))
       (by simp [Nat.even_iff]) hspan]
 
+omit hQ in
 /-- The chirality element is fixed by reversal. Together with `involute_chirality`, it is fixed by
 the Clifford conjugation `involute ∘ reverse`. -/
 @[simp]
 theorem reverse_chirality : reverse (chirality Q o) = chirality Q o := by
-  rw [chirality_eq_neg_prod o hQ (frame o) (frame_orientation o), map_neg,
-    reverse_prod_map_ι_of_pairwise_isOrtho
-      ((frame o).pairwise_isOrtho_map hQ (List.nodup_finRange 4))]
-  norm_num [Nat.choose_two_right]
+  -- In the exterior algebra every pair of vectors is orthogonal for the zero form, so reversal
+  -- multiplies the wedge of four vectors by `(-1) ^ (4.choose 2) = 1`.
+  have h : reverse (basis Q (frame o).toBasis Finset.univ) =
+      basis Q (frame o).toBasis Finset.univ := by
+    apply (equivExterior Q).injective
+    rw [equivExterior_reverse, CliffordAlgebra.basis_apply, LinearEquiv.apply_symm_apply,
+      Module.Basis.exteriorAlgebra_eq_prod_map_sort, reverse_prod_map_ι_of_pairwise_isOrtho
+        (List.pairwise_of_forall fun _ _ ↦ by simp [QuadraticMap.isOrtho_def])]
+    norm_num [Nat.choose_two_right]
+  rw [chirality_eq_neg_basis_univ o (frame o) (frame_orientation o), map_neg, h]
 
 omit hQ in
 /-- The chirality element is even: it is fixed by the grade involution. -/
