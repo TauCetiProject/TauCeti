@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
 public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
+public import Mathlib.AlgebraicGeometry.Restrict
 
 /-!
 # Finite étale covers of a punctured local spectrum
@@ -43,7 +44,8 @@ noncomputable def restrictPunctured :
     ((TauCeti.finiteEtaleSchemeProperty _).ι ⋙ Over.pullback (puncturedSpectrum R).ι)
     (fun X ↦ by
       rw [TauCeti.finiteEtaleSchemeProperty_iff]
-      -- The over-object map of the pullback is its second projection.
+      -- `Over.pullback` defines the over-object map as the second pullback projection,
+      -- so `change` exposes exactly the map on which finiteness and étaleness are inferred.
       change IsFinite (Limits.pullback.snd X.obj.hom (puncturedSpectrum R).ι) ∧
         Etale (Limits.pullback.snd X.obj.hom (puncturedSpectrum R).ι)
       exact ⟨inferInstance, inferInstance⟩)
