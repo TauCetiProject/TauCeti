@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Derivation.Basic
-public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import Mathlib.LinearAlgebra.JordanChevalley
+public import TauCeti.LinearAlgebra.Eigenspace.Minpoly
 
 /-!
 # Jordan–Chevalley decomposition of Lie derivations
@@ -151,25 +151,8 @@ theorem exists_isNilpotent_isSemisimple_of_iSup_maxGenEigenspace_eq_top (D : Lie
   set T := (finite_hasEigenvalue (D : Module.End K L)).toFinset
   have hsep : (∏ μ ∈ T, (X - C μ)).Separable :=
     separable_prod_X_sub_C_iff'.mpr fun _ _ _ _ ↦ id
-  have hdvd : minpoly K (D : Module.End K L) ∣ (∏ μ ∈ T, (X - C μ)) ^ Module.finrank K L := by
-    refine minpoly.dvd K _ (LinearMap.ext fun z ↦ ?_)
-    have hz : z ∈ ⨆ μ, maxGenEigenspace (D : Module.End K L) μ := hD ▸ Submodule.mem_top
-    induction hz using Submodule.iSup_induction' with
-    | mem μ z hz =>
-      rw [maxGenEigenspace_eq_genEigenspace_finrank] at hz
-      by_cases hμ : HasEigenvalue (D : Module.End K L) μ
-      · rw [← prod_erase_mul _ _ ((Set.Finite.mem_toFinset _).2 hμ), mul_pow, map_mul,
-          Module.End.mul_apply, map_pow (aeval _) (X - C μ), map_sub, aeval_X, aeval_C,
-          Algebra.algebraMap_eq_smul_one, LinearMap.mem_ker.1 (mem_genEigenspace_nat.1 hz),
-          map_zero, LinearMap.zero_apply]
-      · obtain rfl : z = 0 := by
-          by_contra h
-          exact hμ (hasEigenvalue_of_hasGenEigenvalue
-            ((Submodule.ne_bot_iff _).2 ⟨z, hz, h⟩))
-        simp
-    | zero => simp
-    | add _ _ _ _ h h' => simp only [map_add, h, h', add_zero,
-        LinearMap.zero_apply]
+  have hdvd : minpoly K (D : Module.End K L) ∣ (∏ μ ∈ T, (X - C μ)) ^ Module.finrank K L :=
+    minpoly_dvd_prod_X_sub_C_pow_of_iSup_maxGenEigenspace_eq_top hD
   obtain ⟨n, hn, s, hs, hn_nil, hs_ss, hDns⟩ :=
     exists_isNilpotent_isSemisimple_of_separable_of_dvd_pow hsep hdvd
   have hDs : Commute (D : Module.End K L) s := Algebra.commute_of_mem_adjoin_self hs
