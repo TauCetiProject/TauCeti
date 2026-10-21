@@ -30,6 +30,8 @@ matrix, which is how the dual of a lattice is described in coordinates.
   exactly when `n` is empty.
 * `LinearMap.BilinForm.toMatrix_dualBasis`: the Gram matrix of a nondegenerate form in a `B`-dual
   basis is the inverse transpose of its Gram matrix in the original basis.
+* `LinearMap.BilinForm.det_toMatrix_dualBasis_mul_det_toMatrix`: the Gram determinants of a
+  nondegenerate form in a basis and in its `B`-dual basis are inverse to each other.
 -/
 
 public section
@@ -65,5 +67,12 @@ theorem toMatrix_dualBasis (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate) 
     _ = (1 : Matrix ι ι K) i j := by
         rw [(B.dualBasis hB b).sum_repr, apply_dualBasis_left, Matrix.one_apply]
         simp only [eq_comm]
+
+/-- The Gram determinants of a nondegenerate bilinear form in a basis and in its `B`-dual basis
+are inverse to each other. -/
+theorem det_toMatrix_dualBasis_mul_det_toMatrix (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
+    (b : Basis ι K V) : (toMatrix (B.dualBasis hB b) B).det * (toMatrix b B).det = 1 := by
+  rw [toMatrix_dualBasis, det_nonsing_inv, det_transpose,
+    Ring.inverse_mul_cancel _ (isUnit_iff_ne_zero.mpr ((nondegenerate_iff_det_ne_zero b).mp hB))]
 
 end LinearMap.BilinForm

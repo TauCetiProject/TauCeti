@@ -74,9 +74,9 @@ theorem quasiIso_normalizedCubicalChainComplex_map (hf : f.IsWeakHomotopyEquival
   -- deform into the bottom face, and the other two factors are homotopy equivalences, whose
   -- forward maps are `ψ` (by definition) and `proj f`.
   have D := (nonempty_subspaceCubeDeformation_of_relHomotopyGroup
-    (X := TopCat.of (MappingCylinder f)) (A := A)
+    (X := TopCat.of (MappingCylinder f)) (A := A) (n := ⊤)
     (exists_mem_range_incl_joined hf.exists_joined)
-    fun n ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder (Fin n)).some
+    fun k _ ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder (Fin k)).some
   have := D.quasiIso_normalizedCubicalChainComplex_map k
   have : QuasiIso ((normalizedCubicalChainComplex k).map (TopCat.ofHom (ψ : C(X, A)))) :=
     ψ.toHomotopyEquiv.quasiIso_normalizedCubicalChainComplex_map

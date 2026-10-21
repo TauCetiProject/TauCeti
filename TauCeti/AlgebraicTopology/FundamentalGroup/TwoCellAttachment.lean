@@ -598,7 +598,7 @@ theorem surjective_map_incl : Function.Surjective (FundamentalGroup.map (incl γ
   intro g
   obtain ⟨p, rfl⟩ : ∃ p : Path (incl γ x) (incl γ x),
       FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p) = g :=
-    ⟨Quotient.out (FundamentalGroup.toPath g), congrArg CategoryTheory.End.of (Quotient.out_eq _)⟩
+    ⟨Quotient.out (FundamentalGroup.toPath g), FundamentalGroup.fromPath_mk_out g⟩
   -- Push the loop off the centres, through the simply connected open cells.
   obtain ⟨δ, hδ, hpδ⟩ := Path.exists_range_subset_homotopic
     (W := fun i => cell γ i '' (Ioo 0 1 ×ˢ Ioo 0 1))

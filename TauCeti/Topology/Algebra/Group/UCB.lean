@@ -174,6 +174,13 @@ theorem isClosed_ucb : IsClosed (ucb G : Set (G →ᵇ ℝ)) := by
         · exact (BoundedContinuousFunction.dist_coe_le_dist _).trans_lt (by rwa [dist_comm])
     _ = ε := by ring
 
+/-- `UCB G` is a real normed group for the supremum norm of `G →ᵇ ℝ`. This inherited instance is
+restated so that typeclass search finds it directly when `UCB G` occurs inside another type, such
+as the continuous dual `UCB G →L[ℝ] ℝ`; the search through `Subalgebra` and `G →ᵇ ℝ` fails
+there. -/
+instance : NormedAddCommGroup (UCB G) :=
+  inferInstance
+
 /-- `UCB G` is a real Banach space. -/
 instance : CompleteSpace (UCB G) :=
   isClosed_ucb.completeSpace_coe
@@ -231,6 +238,10 @@ theorem le_def {f g : UCB G} : f ≤ g ↔ ∀ x, (f : G →ᵇ ℝ) x ≤ (g : 
 /-- Each value of an element of `UCB G` is bounded by its supremum norm. -/
 theorem abs_apply_le_norm (f : UCB G) (x : G) : |(f : G →ᵇ ℝ) x| ≤ ‖f‖ :=
   (f : G →ᵇ ℝ).norm_coe_le_norm x
+
+/-- Every element of `UCB G` lies below the constant function with value its supremum norm. -/
+theorem le_norm_smul_one (f : UCB G) : f ≤ ‖f‖ • 1 :=
+  le_def.2 fun x => by simpa using (f : G →ᵇ ℝ).apply_le_norm x
 
 end UCB
 

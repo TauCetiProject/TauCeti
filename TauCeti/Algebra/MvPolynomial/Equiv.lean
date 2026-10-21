@@ -201,8 +201,7 @@ theorem finSuccEquiv_rename_finRotate (f : MvPolynomial (Fin (n + 1)) R) :
     intro i
     refine Fin.lastCases ?_ (fun j ↦ ?_) i
     · simp [finSuccEquiv_X_zero, optionEquivLeft_X_none]
-    · have hrot : finRotate (n + 1) j.castSucc = j.succ := finRotate_of_lt j.isLt
-      simp [hrot, finSuccEquiv_X_succ, optionEquivLeft_X_some]
+    · simp [finSuccEquiv_X_succ, optionEquivLeft_X_some]
   exact DFunLike.congr_fun h f
 
 /-- Moving the polynomial variable into the coefficient ring maps a constant multivariate

@@ -52,9 +52,9 @@ multiplicity. In particular, slope data of length zero has the empty slope multi
 def slopeMultiset (d : FiniteSlopeData Γ) : Multiset Γ :=
   List.ofFn d.slope
 
-/-- The slope multiset consists of the slopes indexed by the unit edges. -/
-theorem slopeMultiset_def (d : FiniteSlopeData Γ) :
-    d.slopeMultiset = (List.ofFn d.slope : Multiset Γ) := (rfl)
+/-- The slope multiset lists the slopes of the unit edges from left to right. -/
+theorem slopeMultiset_def (d : FiniteSlopeData Γ) : d.slopeMultiset = List.ofFn d.slope :=
+  (rfl)
 
 /-- A nondecreasing unit-slope presentation is determined by its anchor and slope multiset.
 In particular, different subdivisions of equal slopes do not give different unit data. -/
