@@ -44,6 +44,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   scalar part.
 * `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the basis vector indexed by
   `s` is the product of the generators of `s` in increasing order.
+* `CliffordAlgebra.basis_mul_basis_of_disjoint`: for an orthogonal basis, basis vectors with
+  disjoint index sets multiply to the signed basis vector of the union.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul_basis`: the pairing of two basis vectors.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul`: pairing against a basis vector extracts a
   coordinate, `τ (reverse e_s * x) = (∏ i ∈ s, Q (b i)) * xₛ`.
@@ -89,6 +91,34 @@ theorem basis_eq_prod_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (
   rw [basis_apply, LinearEquiv.symm_apply_eq,
     equivExterior_prod_map_ι_of_pairwise_isOrtho Q (pairwise_isOrtho_map_sort hb s),
     Module.Basis.exteriorAlgebra_eq_prod_map_sort]
+
+/-- **For an orthogonal basis, multiplying basis vectors with disjoint index sets is transported
+from the exterior algebra**: the Clifford product of `e_s` and `e_t` is the image of the exterior
+product of the corresponding exterior basis vectors, since no generator meets itself. -/
+theorem basis_mul_basis_eq_symm_equivExterior (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    {s t : Finset I} (h : Disjoint s t) :
+    basis Q b s * basis Q b t =
+      (equivExterior Q).symm (b.ExteriorAlgebra s * b.ExteriorAlgebra t) := by
+  have hl : ((s.sort ++ t.sort).map b).Pairwise Q.IsOrtho := by
+    refine List.pairwise_map.mpr <| (List.nodup_append.2 ⟨s.sort_nodup _, t.sort_nodup _, ?_⟩).imp
+      fun hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij)
+    rintro i hi _ hj rfl
+    exact Finset.disjoint_left.1 h ((Finset.mem_sort _).1 hi) ((Finset.mem_sort _).1 hj)
+  rw [LinearEquiv.eq_symm_apply, basis_eq_prod_map_sort hb, basis_eq_prod_map_sort hb,
+    b.exteriorAlgebra_eq_prod_map_sort, b.exteriorAlgebra_eq_prod_map_sort]
+  -- The concatenated list of generators is transported factorwise.
+  simpa only [List.map_append, List.prod_append] using
+    equivExterior_prod_map_ι_of_pairwise_isOrtho Q hl
+
+/-- **The multiplication rule for basis vectors with disjoint index sets**: for an orthogonal basis,
+`e_s * e_t = ε • e_{s ∪ t}`, where `ε` is the sign of the shuffle listing `s` before `t`. This is
+the Clifford counterpart of Mathlib's `ExteriorAlgebra.basis_mul_of_disjoint`. -/
+theorem basis_mul_basis_of_disjoint (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {m n : ℕ}
+    {s : Set.powersetCard I m} {t : Set.powersetCard I n} (h : Disjoint s.val t.val) :
+    basis Q b s * basis Q b t =
+      (Set.powersetCard.permOfDisjoint h).sign • basis Q b (Set.powersetCard.disjUnion h) := by
+  rw [basis_mul_basis_eq_symm_equivExterior hb h, ExteriorAlgebra.basis_mul_of_disjoint b s t h,
+    map_zsmul_unit, basis_apply]
 
 /-- The scalar part of a product of generators of an orthogonal basis vanishes as soon as one index
 occurs exactly once. -/
