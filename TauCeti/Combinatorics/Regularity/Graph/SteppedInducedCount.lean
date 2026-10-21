@@ -136,18 +136,6 @@ theorem steppedInducedGraphCount3_le_coarseInducedGraphEstimate3_add
         simp only [Fintype.card_fin, card_univ] at this
         exact_mod_cast this
 
-omit [Fintype V] [DecidableEq V] in
-/-- An edge or nonedge density changes by exactly as much as the edge density. -/
-private lemma abs_patternDensity_sub (e : Prop) [Decidable e] (s t s' t' : Finset V) :
-    |(G.patternDensity e s t : ℝ) - G.patternDensity e s' t'| =
-      |(G.edgeDensity s t : ℝ) - G.edgeDensity s' t'| := by
-  rw [patternDensity_def, patternDensity_def]
-  split_ifs
-  · rfl
-  · rw [abs_sub_comm (G.edgeDensity s t : ℝ)]
-    congr 1
-    ring
-
 /-- **Energy transfer.** For a refinement `Q ≤ P` whose size-weighted energy exceeds that of `P` by
 at most `ε`, the stepped predictions of `Q` and `P` differ by at most `3 √ε (card V) ^ 3`. No
 equitability or regularity is assumed. -/
@@ -166,7 +154,7 @@ theorem abs_steppedInducedGraphCount3_sub_le {P Q : Finpartition (univ : Finset 
         refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun g _ ↦ ?_)
         exact (TauCeti.abs_prod_sub_prod_le_sum_abs_sub _ (fun p _ ↦ habs _ _ _)
           (fun p _ ↦ habs _ _ _)).trans_eq
-            (sum_congr rfl fun p _ ↦ abs_patternDensity_sub G _ _ _ _ _)
+            (sum_congr rfl fun p _ ↦ G.abs_patternDensity_sub _ _ _ _ _)
     _ = ∑ _p : {p : Fin 3 × Fin 3 // p.1 < p.2}, Fintype.card V • ∑ x, ∑ y, D x y := by
         rw [sum_comm]
         exact sum_congr rfl fun p _ ↦ by

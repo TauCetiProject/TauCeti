@@ -22,7 +22,7 @@ two finsets splits along the traces of the parts of finite partitions on them. T
 
 For graphs, `SimpleGraph.patternDensity G e s t` is the edge density of `(s, t)` if `e` holds and
 the nonedge density `1 - d(s, t)` otherwise: the density factor of a pair in the predicted count
-of an induced pattern. It lies in `[0, 1]`.
+of an induced pattern. It lies in `[0, 1]` and changes by exactly as much as the edge density.
 -/
 
 public section
@@ -134,6 +134,18 @@ theorem patternDensity_def [DivisionRing 𝕜] (e : Prop) [Decidable e] (s t : F
     (G.patternDensity e s t : 𝕜) = if e then (G.edgeDensity s t : 𝕜) else 1 - G.edgeDensity s t :=
   (rfl)
 
+/-- Where the pattern has an edge, its density factor is the edge density. -/
+@[simp]
+theorem patternDensity_of_pos [DivisionRing 𝕜] {e : Prop} [Decidable e] (he : e)
+    (s t : Finset V) : (G.patternDensity e s t : 𝕜) = G.edgeDensity s t :=
+  ite_eq_left he
+
+/-- Where the pattern has no edge, its density factor is the nonedge density. -/
+@[simp]
+theorem patternDensity_of_neg [DivisionRing 𝕜] {e : Prop} [Decidable e] (he : ¬e)
+    (s t : Finset V) : (G.patternDensity e s t : 𝕜) = 1 - G.edgeDensity s t :=
+  ite_eq_right he
+
 variable [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
 
 /-- An edge or nonedge density is nonnegative. -/
@@ -151,6 +163,18 @@ theorem patternDensity_le_one (e : Prop) [Decidable e] (s t : Finset V) :
   split_ifs
   · exact_mod_cast G.edgeDensity_le_one s t
   · exact sub_le_self _ (mod_cast G.edgeDensity_nonneg s t)
+
+omit [IsStrictOrderedRing 𝕜] in
+/-- An edge or nonedge density changes by exactly as much as the edge density. -/
+theorem abs_patternDensity_sub (e : Prop) [Decidable e] (s t s' t' : Finset V) :
+    |(G.patternDensity e s t : 𝕜) - G.patternDensity e s' t'| =
+      |(G.edgeDensity s t : 𝕜) - G.edgeDensity s' t'| := by
+  by_cases he : e
+  · simp only [patternDensity_of_pos G he]
+  · rw [patternDensity_of_neg G he, patternDensity_of_neg G he,
+      abs_sub_comm (G.edgeDensity s t : 𝕜)]
+    congr 1
+    ring
 
 end patternDensity
 
