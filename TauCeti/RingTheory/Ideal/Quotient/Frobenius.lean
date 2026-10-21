@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Lemmas
+public import TauCeti.Algebra.CharP.Frobenius.PowRingHom
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Ideal.Span
 
@@ -48,24 +48,20 @@ variable {A : Type*} [CommRing A]
 
 /-- **Frobenius between quotients.** For a prime `p` and ideals `I, J` with `p ∈ J` and
 `x ^ p ∈ J` for all `x ∈ I`, the ring homomorphism `A ⧸ I →+* A ⧸ J`, `[x] ↦ [x ^ p]`. -/
-noncomputable def frobeniusQuot (I J : Ideal A) (p : ℕ) [hp : Fact p.Prime] (hpJ : (p : A) ∈ J)
+noncomputable def frobeniusQuot (I J : Ideal A) (p : ℕ) [Fact p.Prime] (hpJ : (p : A) ∈ J)
     (hIJ : ∀ x ∈ I, x ^ p ∈ J) : A ⧸ I →+* A ⧸ J :=
-  Quotient.lift I
-    { toFun x := Quotient.mk J (x ^ p)
-      map_one' := by rw [one_pow, map_one]
-      map_mul' x y := by rw [mul_pow, map_mul]
-      map_zero' := by rw [zero_pow hp.out.ne_zero, map_zero]
-      map_add' x y := by
-        obtain ⟨r, hr⟩ := exists_add_pow_prime_eq hp.out x y
-        have hmem : (p : A) * x * y * r ∈ J :=
-          J.mul_mem_right _ (J.mul_mem_right _ (J.mul_mem_right _ hpJ))
-        rw [hr, map_add, Quotient.eq_zero_iff_mem.mpr hmem, add_zero, map_add] }
-    fun x hx ↦ Quotient.eq_zero_iff_mem.mpr (hIJ x hx)
+  Quotient.lift I ((TauCeti.powRingHom (A ⧸ J) p (by
+      rw [← map_natCast (Quotient.mk J)]; exact Quotient.eq_zero_iff_mem.mpr hpJ)).comp
+      (Quotient.mk J))
+    fun x hx ↦ by
+      rw [RingHom.comp_apply, TauCeti.powRingHom_apply, ← map_pow]
+      exact Quotient.eq_zero_iff_mem.mpr (hIJ x hx)
 
 @[simp]
 theorem frobeniusQuot_mk (I J : Ideal A) (p : ℕ) [Fact p.Prime] (hpJ : (p : A) ∈ J)
     (hIJ : ∀ x ∈ I, x ^ p ∈ J) (x : A) :
-    frobeniusQuot I J p hpJ hIJ (Quotient.mk I x) = Quotient.mk J (x ^ p) := (rfl)
+    frobeniusQuot I J p hpJ hIJ (Quotient.mk I x) = Quotient.mk J (x ^ p) := by
+  simp [frobeniusQuot]
 
 end Ideal
 
@@ -87,7 +83,8 @@ variable (ϖ : A) (p : ℕ) [Fact p.Prime] (h : ϖ ^ p ∣ (p : A))
 
 @[simp]
 theorem frobeniusModPow_mk (x : A) :
-    frobeniusModPow ϖ p h (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (x ^ p) := (rfl)
+    frobeniusModPow ϖ p h (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (x ^ p) :=
+  frobeniusQuot_mk ..
 
 /-- **Frobenius modulo `ϖ` is surjective** exactly when every element is a `p`-th power modulo
 `ϖ ^ p`. -/
