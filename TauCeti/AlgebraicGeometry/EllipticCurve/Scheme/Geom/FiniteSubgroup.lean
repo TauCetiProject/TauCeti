@@ -133,7 +133,7 @@ private theorem exists_sectionCover_pointsDivisor
 
 /-- A fibrewise injective finite family of torsion sections cuts out a subgroup scheme.
 The torsion level is required to be invertible on the base. -/
-theorem IsFiberwiseInjective.exists_grpObj_pointsDivisor (hφ : E.IsFiberwiseInjective φ)
+theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFiberwiseInjective φ)
     {N : ℕ} (hN : ∀ s : S, (N : S.residueField s) ≠ 0) (hkill : ∀ a, φ a ^ N = 1) :
     ∃ _ : GrpObj (Over.mk ((E.pointsDivisor φ).subschemeι ≫ E.structureMap)),
       IsMonHom (Over.homMk (E.pointsDivisor φ).subschemeι :

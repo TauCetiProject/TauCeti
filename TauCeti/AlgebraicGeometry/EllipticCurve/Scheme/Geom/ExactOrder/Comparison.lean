@@ -48,7 +48,7 @@ theorem IsOfNaiveExactOrder.isOfExactOrder
     rw [← map_pow]
     have : a ^ N = 1 := Multiplicative.toAdd.injective (by simp [nsmul_eq_mul])
     rw [this, map_one]
-  have hgrp := hφ.exists_grpObj_pointsDivisor hN hkill
+  have hgrp := hφ.exists_grpObj_isMonHom_pointsDivisor hN hkill
   have hI : E.multiplesDivisor P N = E.pointsDivisor φ := by
     rw [multiplesDivisor_eq_pointsDivisor]
     let e : Fin N ≃ Multiplicative (ZMod N) :=

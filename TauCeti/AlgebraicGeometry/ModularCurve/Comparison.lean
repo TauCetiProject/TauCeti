@@ -128,6 +128,16 @@ theorem naiveLevelEquiv_gammaOneToGammaOneNaive_app_apply (X : EllObj B)
       (gammaOneEquiv X α).1 ^ a.val := by
   simp [gammaOneToGammaOneNaive]
 
+/-- The naive level structure associated to a Drinfeld point sends `1` to that point,
+including when `N = 1`. -/
+theorem naiveLevelEquiv_gammaOneToGammaOneNaive_app_one (X : EllObj B)
+    (α : (gammaOne B N).obj (op X)) :
+    (naiveLevelEquiv X ((gammaOneToGammaOneNaive B N hN).app (op X) α)).1 (.ofAdd 1) =
+      (gammaOneEquiv X α).1 := by
+  simp only [gammaOneToGammaOneNaive, TypeCat.hom_ofHom, TypeCat.Fun.coe_mk,
+    Equiv.apply_symm_apply]
+  rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+
 /-- Where `N` is invertible, the comparison from Drinfeld to naive `[Γ₁(N)]` is an
 isomorphism of moduli problems. -/
 instance isIso_gammaOneToGammaOneNaive : IsIso (gammaOneToGammaOneNaive B N hN) := by
@@ -138,7 +148,9 @@ instance isIso_gammaOneToGammaOneNaive : IsIso (gammaOneToGammaOneNaive B N hN) 
       apply (gammaOneEquiv X.unop).injective
       apply Subtype.ext
       have := congrArg (fun γ ↦ (naiveLevelEquiv X.unop γ).1 (.ofAdd 1)) hαβ
-      simpa [gammaOneToGammaOneNaive, ← coe_zmodMonoidHomEquiv_apply] using this
+      rw [naiveLevelEquiv_gammaOneToGammaOneNaive_app_one,
+        naiveLevelEquiv_gammaOneToGammaOneNaive_app_one] at this
+      exact this
     let φ := (naiveLevelEquiv X.unop α).1
     have hφ := (naiveLevelEquiv X.unop α).2
     have hP := EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mp hφ
@@ -150,8 +162,10 @@ instance isIso_gammaOneToGammaOneNaive : IsIso (gammaOneToGammaOneNaive B N hN) 
     apply Subtype.ext
     apply (zmodMonoidHomEquiv N _).injective
     apply Subtype.ext
-    simp only [coe_zmodMonoidHomEquiv_apply]
-    simp [gammaOneToGammaOneNaive, β, φ, ← coe_zmodMonoidHomEquiv_apply]
+    rw [coe_zmodMonoidHomEquiv_apply, coe_zmodMonoidHomEquiv_apply,
+      naiveLevelEquiv_gammaOneToGammaOneNaive_app_one]
+    dsimp only [β]
+    rw [Equiv.apply_symm_apply]
   exact NatIso.isIso_of_isIso_app _
 
 /-- The inverse comparison retains the point given by the image of `1` under the naive level
@@ -166,7 +180,8 @@ theorem gammaOneEquiv_inv_gammaOneToGammaOneNaive_app (X : EllObj B)
     exact congrArg (fun k : gammaOneNaive B N ⟶ gammaOneNaive B N ↦ k.app (op X) α)
       (IsIso.inv_hom_id (gammaOneToGammaOneNaive B N hN))
   have hp := congrArg (fun β ↦ (naiveLevelEquiv X β).1 (Multiplicative.ofAdd 1)) h
-  simpa [gammaOneToGammaOneNaive, ← coe_zmodMonoidHomEquiv_apply] using hp
+  simpa only [NatIso.isIso_inv_app,
+    naiveLevelEquiv_gammaOneToGammaOneNaive_app_one] using hp
 
 /-- For `N ≥ 4` invertible on `B`, the existing fine curve `Y₁(N)` also represents the
 integral Drinfeld `[Γ₁(N)]` problem restricted to `B`. -/
