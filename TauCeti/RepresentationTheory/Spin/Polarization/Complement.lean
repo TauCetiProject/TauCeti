@@ -113,7 +113,8 @@ noncomputable def ofIsCompl (hQ : Q.Nondegenerate) (hWW' : IsCompl W W')
   pairingEquiv := (polarPairing Q W W').linearEquivOfInjective
     (polarPairing_injective hQ hWW' hW')
     (by rw [Subspace.dual_finrank_eq, finrank_eq_of_isCompl hQ hWW' hW hW'])
-  pairingEquiv_apply y x := polarPairing_apply y x
+  pairingEquiv_apply y x := by
+    rw [LinearMap.linearEquivOfInjective_apply, polarPairing_apply]
   pairing_separatingLeft x hx := Subtype.ext <|
     eq_zero_of_polar_eq_zero hQ hWW'.symm hW x.2 fun y hy => by
       rw [polar_comm]
