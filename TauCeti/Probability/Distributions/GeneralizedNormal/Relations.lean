@@ -33,12 +33,10 @@ theorem generalizedNormalMeasure_one (m s : ℝ) :
   rw [generalizedNormalMeasure_eq_withDensity, laplaceMeasure_eq_withDensity]
   congr 1
   ext x
-  rw [generalizedNormalPDF_eq_ofReal, laplacePDF_eq_ofReal]
-  congr 1
   by_cases hs : 0 < s
-  · rw [generalizedNormalPDFReal_of_pos hs one_pos, laplacePDFReal_of_pos hs, inv_one,
-      Real.Gamma_one, Real.rpow_one, abs_div, abs_of_pos hs, mul_one, one_div, neg_div]
-  · rw [generalizedNormalPDFReal_of_not (fun h => hs h.1), laplacePDFReal_of_nonpos (not_lt.mp hs)]
+  · rw [generalizedNormalPDF_of_pos hs one_pos, laplacePDF_of_pos hs]
+    simp [abs_div, abs_of_pos hs, neg_div]
+  · rw [generalizedNormalPDF_of_not_pos (fun h => hs h.1), laplacePDF_of_nonpos (not_lt.mp hs)]
 
 /-- **Shape two is Gaussian.** For positive scale `s`, the generalized normal law of shape `2` is
 the Gaussian law with the same mean and variance `s ^ 2 / 2`. -/

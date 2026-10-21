@@ -39,7 +39,7 @@ theorem integrable_pow_sub_generalizedNormalMeasure (m s p : ℝ) (n : ℕ) :
     simp_rw [Real.norm_eq_abs, abs_pow, ← Real.rpow_natCast]
     exact (integrable_rpow_abs_sub_generalizedNormalMeasure_iff h.1 h.2 m).mpr
       (by linarith [n.cast_nonneg (α := ℝ)])
-  · rw [generalizedNormalMeasure_of_not h]
+  · rw [generalizedNormalMeasure_of_not_pos h]
     exact integrable_zero_measure
 
 /-- **Odd central moments vanish.** By the symmetry of a generalized normal law about its

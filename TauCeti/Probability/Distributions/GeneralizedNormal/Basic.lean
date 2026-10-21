@@ -76,9 +76,22 @@ theorem generalizedNormalPDFReal_of_pos (hs : 0 < s) (hp : 0 < p) (m x : ℝ) :
 
 /-- Outside the valid parameter range the density vanishes. -/
 @[simp]
-theorem generalizedNormalPDFReal_of_not (h : ¬ (0 < s ∧ 0 < p)) (m x : ℝ) :
+theorem generalizedNormalPDFReal_of_not_pos (h : ¬ (0 < s ∧ 0 < p)) (m x : ℝ) :
     generalizedNormalPDFReal m s p x = 0 := by
   rw [generalizedNormalPDFReal, ite_eq_right h]
+
+/-- For positive scale and shape the `ℝ≥0∞`-valued density is the exponential power formula. -/
+@[simp]
+theorem generalizedNormalPDF_of_pos (hs : 0 < s) (hp : 0 < p) (m x : ℝ) :
+    generalizedNormalPDF m s p x =
+      ENNReal.ofReal (p / (2 * s * Real.Gamma p⁻¹) * Real.exp (-|(x - m) / s| ^ p)) := by
+  rw [generalizedNormalPDF_eq_ofReal, generalizedNormalPDFReal_of_pos hs hp]
+
+/-- Outside the valid parameter range the `ℝ≥0∞`-valued density vanishes. -/
+@[simp]
+theorem generalizedNormalPDF_of_not_pos (h : ¬ (0 < s ∧ 0 < p)) (m x : ℝ) :
+    generalizedNormalPDF m s p x = 0 := by
+  rw [generalizedNormalPDF_eq_ofReal, generalizedNormalPDFReal_of_not_pos h, ENNReal.ofReal_zero]
 
 /-- The normalizing constant of the density is positive. -/
 private lemma generalizedNormal_const_pos (hs : 0 < s) (hp : 0 < p) :
@@ -91,7 +104,7 @@ theorem generalizedNormalPDFReal_nonneg (m s p x : ℝ) : 0 ≤ generalizedNorma
   by_cases h : 0 < s ∧ 0 < p
   · rw [generalizedNormalPDFReal_of_pos h.1 h.2]
     exact mul_nonneg (generalizedNormal_const_pos h.1 h.2).le (Real.exp_pos _).le
-  · rw [generalizedNormalPDFReal_of_not h]
+  · rw [generalizedNormalPDFReal_of_not_pos h]
 
 /-- For positive scale and shape the density is strictly positive everywhere. -/
 theorem generalizedNormalPDFReal_pos (hs : 0 < s) (hp : 0 < p) (m x : ℝ) :
@@ -174,7 +187,7 @@ theorem integrable_generalizedNormalPDFReal (m s p : ℝ) :
   · simpa using (integrable_generalizedNormalPDFReal_mul_rpow_abs_sub_iff (q := 0) h.1 h.2 m).mpr
       (by norm_num)
   · rw [show generalizedNormalPDFReal m s p = 0 from
-      funext fun x => generalizedNormalPDFReal_of_not h m x]
+      funext fun x => generalizedNormalPDFReal_of_not_pos h m x]
     exact integrable_zero _ _ _
 
 /-- For positive scale and shape the density integrates to `1`. -/
@@ -206,11 +219,9 @@ theorem generalizedNormalMeasure_eq_withDensity (m s p : ℝ) :
 
 /-- Outside the valid parameter range the generalized normal law is the zero measure. -/
 @[simp]
-theorem generalizedNormalMeasure_of_not (h : ¬ (0 < s ∧ 0 < p)) (m : ℝ) :
+theorem generalizedNormalMeasure_of_not_pos (h : ¬ (0 < s ∧ 0 < p)) (m : ℝ) :
     generalizedNormalMeasure m s p = 0 := by
-  have h0 : generalizedNormalPDF m s p = 0 := funext fun x => by
-    rw [generalizedNormalPDF_eq_ofReal, generalizedNormalPDFReal_of_not h, ENNReal.ofReal_zero,
-      Pi.zero_apply]
+  have h0 : generalizedNormalPDF m s p = 0 := funext (generalizedNormalPDF_of_not_pos h m)
   rw [generalizedNormalMeasure_eq_withDensity, h0, withDensity_zero]
 
 /-- For positive scale and shape the generalized normal law is a probability measure. -/
@@ -226,7 +237,7 @@ theorem isProbabilityMeasure_generalizedNormalMeasure_iff :
     IsProbabilityMeasure (generalizedNormalMeasure m s p) ↔ 0 < s ∧ 0 < p := by
   refine ⟨fun h => ?_, fun h => isProbabilityMeasure_generalizedNormalMeasure h.1 h.2 m⟩
   by_contra hsp
-  rw [generalizedNormalMeasure_of_not hsp] at h
+  rw [generalizedNormalMeasure_of_not_pos hsp] at h
   exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
 
 /-- The generalized normal law is a finite measure at every parameter. -/
@@ -234,7 +245,7 @@ instance (m s p : ℝ) : IsFiniteMeasure (generalizedNormalMeasure m s p) := by
   by_cases h : 0 < s ∧ 0 < p
   · have := isProbabilityMeasure_generalizedNormalMeasure h.1 h.2 m
     infer_instance
-  · rw [generalizedNormalMeasure_of_not h]
+  · rw [generalizedNormalMeasure_of_not_pos h]
     infer_instance
 
 /-! ### Transfer to the density -/

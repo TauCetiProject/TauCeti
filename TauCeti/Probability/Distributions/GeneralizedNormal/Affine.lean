@@ -41,13 +41,14 @@ theorem generalizedNormalPDFReal_affine (m s p a c x : ℝ) :
       field_simp
       ring
     have habs : |(x - (a + c * m)) / (|c| * s)| = |((x - a) / c - m) / s| := by
-      rw [harg, abs_div, abs_div, abs_div, abs_mul, abs_abs, div_div]
+      rw [harg]
+      simp [abs_div, abs_mul, div_div]
     rw [generalizedNormalPDFReal_of_pos (mul_pos hc' h.1) h.2,
       generalizedNormalPDFReal_of_pos h.1 h.2, habs]
     field_simp
   · have h' : ¬ (0 < |c| * s ∧ 0 < p) := fun h'' =>
       h ⟨pos_of_mul_pos_right h''.1 hc'.le, h''.2⟩
-    rw [generalizedNormalPDFReal_of_not h', generalizedNormalPDFReal_of_not h, mul_zero]
+    rw [generalizedNormalPDFReal_of_not_pos h', generalizedNormalPDFReal_of_not_pos h, mul_zero]
 
 /-- Applying `affineDensity` to a generalized normal density yields the generalized normal
 density at the transformed location and scale. This also holds at slope zero, where both sides
