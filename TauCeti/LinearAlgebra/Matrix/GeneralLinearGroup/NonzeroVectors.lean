@@ -15,6 +15,9 @@ public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.SetTheory.Cardinal.Finite
 -- Non-public: `Equiv.optionSubtypeNe` splits off the zero vector, inside the count only.
 import Mathlib.Logic.Equiv.Option
+-- Non-public: extending an isomorphism of lines to the whole space, inside the transitivity proof.
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 
 /-!
 # The general linear group permuting the nonzero vectors
@@ -41,6 +44,8 @@ small cases; the two-dimensional worked case, `GL₂(𝔽₂) ≅ S₃`, is in
 * `TauCeti.faithfulSMulNonzeroVectors`: the action on the nonzero vectors is faithful over a
   nontrivial ring.
 * `TauCeti.natCard_nonzeroVectors`: there are `|R| ^ |n| - 1` nonzero vectors.
+* `TauCeti.exists_smul_eq_of_ne_zero` and `TauCeti.isPretransitive_nonzeroVectors`: over a field
+  the action on the nonzero vectors is transitive.
 -/
 
 public section
@@ -87,5 +92,31 @@ theorem natCard_nonzeroVectors [Finite R] :
   rw [Finite.card_option, Nat.card_fun] at key
   rw [Nat.card_congr e]
   omega
+
+section Field
+
+variable {K : Type*} [Field K]
+
+/-- **Invertible matrices act transitively on the nonzero vectors** over a field: any nonzero
+vector of `n → K` is carried to any other by some element of `GL n K`. -/
+theorem exists_smul_eq_of_ne_zero {v w : n → K} (hv : v ≠ 0) (hw : w ≠ 0) :
+    ∃ g : GL n K, g • v = w := by
+  -- Extend the isomorphism of lines `K ∙ v ≃ K ∙ w` sending `v` to `w` to all of `n → K`.
+  obtain ⟨f, hf⟩ := Submodule.exists_linearEquiv_restrict_eq
+    ((LinearEquiv.toSpanNonzeroSingleton K _ v hv).symm.trans
+      (LinearEquiv.toSpanNonzeroSingleton K _ w hw))
+  refine ⟨GeneralLinearGroup.toLin.symm (LinearMap.GeneralLinearGroup.ofLinearEquiv f), ?_⟩
+  have hfv : f v = w := by
+    rw [← hf ⟨v, Submodule.mem_span_singleton_self v⟩, LinearEquiv.trans_apply,
+      ← LinearEquiv.coord, LinearEquiv.coord_self, LinearEquiv.toSpanNonzeroSingleton_one]
+  rw [Units.smul_def, Matrix.smul_eq_mulVec, ← Matrix.mulVecLin_apply,
+    ← GeneralLinearGroup.coe_toLin, MulEquiv.apply_symm_apply,
+    LinearMap.GeneralLinearGroup.coe_ofLinearEquiv, hfv]
+
+/-- The action of `GL n K` on the nonzero vectors of `n → K` is transitive. -/
+instance isPretransitive_nonzeroVectors : MulAction.IsPretransitive (GL n K) (nonzeroVectors n K) :=
+  ⟨fun v w ↦ (exists_smul_eq_of_ne_zero v.2 w.2).imp fun _ hg ↦ Subtype.ext hg⟩
+
+end Field
 
 end TauCeti
