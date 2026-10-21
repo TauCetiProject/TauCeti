@@ -35,10 +35,13 @@ example : graphonPartitionEnergy volume (⊥ : Finpartition (univ : Finset (Fin 
   simp only [Finpartition.parts_bot, sum_map, Fin.sum_univ_two, Function.Embedding.coeFn_mk,
     card_singleton, Fintype.card_fin]
   simp only [SimpleGraph.edgeDensity_def, card_singleton]
-  rw [show #((⊤ : SimpleGraph (Fin 2)).interedges {0} {0}) = 0 by decide,
-    show #((⊤ : SimpleGraph (Fin 2)).interedges {0} {1}) = 1 by decide,
-    show #((⊤ : SimpleGraph (Fin 2)).interedges {1} {0}) = 1 by decide,
-    show #((⊤ : SimpleGraph (Fin 2)).interedges {1} {1}) = 0 by decide]
+  -- The edge counts are natural numbers, decided by evaluation; the rational arithmetic that
+  -- remains is left to `norm_num`, since `decide` cannot evaluate rational division.
+  have h00 : #((⊤ : SimpleGraph (Fin 2)).interedges {0} {0}) = 0 := by decide
+  have h01 : #((⊤ : SimpleGraph (Fin 2)).interedges {0} {1}) = 1 := by decide
+  have h10 : #((⊤ : SimpleGraph (Fin 2)).interedges {1} {0}) = 1 := by decide
+  have h11 : #((⊤ : SimpleGraph (Fin 2)).interedges {1} {1}) = 0 := by decide
+  rw [h00, h01, h10, h11]
   norm_num
 
 example : graphonPartitionEnergy volume
@@ -48,8 +51,10 @@ example : graphonPartitionEnergy volume
   rw [SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon, SimpleGraph.weightedEnergy_def]
   simp only [Finpartition.indiscrete_parts, sum_singleton, SimpleGraph.edgeDensity_def,
     Fintype.card_fin]
-  rw [show #((⊤ : SimpleGraph (Fin 2)).interedges univ univ) = 2 by decide,
-    show #(univ : Finset (Fin 2)) = 2 by decide]
+  -- Natural-number counts by evaluation, then rational arithmetic by `norm_num`.
+  have hedges : #((⊤ : SimpleGraph (Fin 2)).interedges univ univ) = 2 := by decide
+  have hcard : #(univ : Finset (Fin 2)) = 2 := by decide
+  rw [hedges, hcard]
   norm_num
 
 example :
@@ -63,13 +68,17 @@ example :
       (finiteGraphGraphon (⊤ : SimpleGraph (Fin 3))) = 5 / 9 := by
   intro P
   rw [SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon, SimpleGraph.weightedEnergy_def]
-  simp only [P, sum_pair (show ({0} : Finset (Fin 3)) ≠ {1, 2} by decide),
-    SimpleGraph.edgeDensity_def, Fintype.card_fin]
-  rw [show #((⊤ : SimpleGraph (Fin 3)).interedges {0} {0}) = 0 by decide,
-    show #((⊤ : SimpleGraph (Fin 3)).interedges {0} {1, 2}) = 2 by decide,
-    show #((⊤ : SimpleGraph (Fin 3)).interedges {1, 2} {0}) = 2 by decide,
-    show #((⊤ : SimpleGraph (Fin 3)).interedges {1, 2} {1, 2}) = 2 by decide,
-    show #({0} : Finset (Fin 3)) = 1 by decide, show #({1, 2} : Finset (Fin 3)) = 2 by decide]
+  -- The two parts are distinct, so the sum over parts is a sum over the pair.
+  have hne : ({0} : Finset (Fin 3)) ≠ {1, 2} := by decide
+  simp only [P, sum_pair hne, SimpleGraph.edgeDensity_def, Fintype.card_fin]
+  -- Natural-number counts by evaluation, then rational arithmetic by `norm_num`.
+  have h00 : #((⊤ : SimpleGraph (Fin 3)).interedges {0} {0}) = 0 := by decide
+  have h0B : #((⊤ : SimpleGraph (Fin 3)).interedges {0} {1, 2}) = 2 := by decide
+  have hB0 : #((⊤ : SimpleGraph (Fin 3)).interedges {1, 2} {0}) = 2 := by decide
+  have hBB : #((⊤ : SimpleGraph (Fin 3)).interedges {1, 2} {1, 2}) = 2 := by decide
+  have hA : #({0} : Finset (Fin 3)) = 1 := by decide
+  have hB : #({1, 2} : Finset (Fin 3)) = 2 := by decide
+  rw [h00, h0B, hB0, hBB, hA, hB]
   norm_num
 
 -- The part of the lifted partition containing a point, selected by the canonical index, is the
@@ -77,9 +86,10 @@ example :
 example {m : ℕ} [NeZero m] (P : Finpartition (univ : Finset (Fin m))) (x : unitInterval) :
     (P.cellPartition.indexedPartition.index x : Set unitInterval) =
       TauCeti.unitInterval.cellFin m ⁻¹'
-        (P.part (TauCeti.unitInterval.cellFin m x) : Set (Fin m)) :=
-  congrArg Subtype.val (P.cellPartition.indexedPartition.mem_iff_index_eq.1
-    (show x ∈ ((⟨_, P.preimage_part_cellFin_mem x⟩ : P.cellPartition.parts) : Set unitInterval)
-      from P.mem_part (mem_univ _)))
+        (P.part (TauCeti.unitInterval.cellFin m x) : Set (Fin m)) := by
+  -- `x` lies in the part through it, so the canonical index selects that part.
+  have hx : x ∈ ((⟨_, P.preimage_part_cellFin_mem x⟩ : P.cellPartition.parts) :
+      Set unitInterval) := P.mem_part (mem_univ _)
+  exact congrArg Subtype.val (P.cellPartition.indexedPartition.mem_iff_index_eq.1 hx)
 
 end TauCeti.DenseGraphLimits
