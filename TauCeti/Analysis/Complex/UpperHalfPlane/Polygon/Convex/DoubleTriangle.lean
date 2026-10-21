@@ -215,6 +215,22 @@ theorem carrier_doubleTriangle :
 
 /-! ### Interior angles -/
 
+/-- Reflection in side `0` preserves the triangle angle at either end of that side. -/
+private theorem vertexAngle_sideZero_reflected_vertex {i : Fin 3} (hi : i = 0 ∨ i = 1) :
+    vertexAngle (P.vertex i) (extGeodesicReflection (P.sideGeodesic 0) (P.vertex 2))
+      (P.vertex (1 - i)) = P.interiorAngle i := by
+  have hfix (j : Fin 3) (hj : j = 0 ∨ j = 1) :
+      extGeodesicReflection (P.sideGeodesic 0) (P.vertex j) = P.vertex j := by
+    rcases hj with rfl | rfl
+    · exact P.extGeodesicReflection_sideGeodesic_vertex 0
+    · exact P.extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq (i := 0) rfl
+  have hρ := vertexAngle_extGeodesicReflection (P.sideGeodesic 0)
+    (P.vertex_injective.ne (show i ≠ 2 by rcases hi with rfl | rfl <;> decide))
+    (P.vertex_injective.ne (show i ≠ 1 - i by rcases hi with rfl | rfl <;> decide))
+  rw [hfix i hi, hfix (1 - i) (by rcases hi with rfl | rfl <;> decide)] at hρ
+  rw [hρ, interiorAngle_def]
+  rcases hi with rfl | rfl <;> simp [show (-1 : Fin 3) = 2 by decide, vertexAngle_comm]
+
 /-- **The angle of the double at `P 0` is twice that of `P`**: the ray towards `P 1` bisects it,
 the reflection in side `0` exchanging its two halves. -/
 @[simp]
@@ -234,17 +250,11 @@ theorem interiorAngle_doubleTriangle_zero :
         P.orientedAngle_rayToward_vertex_eq_interiorAngle hz
     -- the angle between the mirror image of `P 2` and `P 1` is that of `P` at `P 0`
     have habs : |(orientedAngle z D' C).toReal| = P.interiorAngle 0 := by
-      have hρ := vertexAngle_extGeodesicReflection (P.sideGeodesic 0)
-        (P.vertex_injective.ne (by decide : (0 : Fin 3) ≠ 2))
-        (P.vertex_injective.ne (by decide : (0 : Fin 3) ≠ 1))
-      rw [extGeodesicReflection_sideGeodesic_vertex,
-        extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq _ (i := 0) (j := 1) rfl, hz] at hρ
-      rw [← interiorAngle_eq_abs_toReal_orientedAngle, ← vertexAngle_inl_eq_interiorAngle, hρ,
-        interiorAngle_def, hz]
-      simp [show (-1 : Fin 3) = 2 by decide]
+      rw [← interiorAngle_eq_abs_toReal_orientedAngle, ← vertexAngle_inl_eq_interiorAngle]
+      simpa [hz] using vertexAngle_sideZero_reflected_vertex (P := P) (i := 0) (.inl rfl)
     refine Real.Angle.eq_two_mul_of_abs_toReal_eq habs ?_
       (Q.interiorAngle_pos_of_isLeft_vertex (by simp [hQz]))
-      (Q.interiorAngle_lt_pi 0) (by linarith)
+      (Q.interiorAngle_lt_pi 0)
     rw [← hP, orientedAngle_add, hQ]
   · have hQξ : Q.vertex 0 = .inr ξ := by simp [Q, hz]
     rw [Q.interiorAngle_eq_zero_of_vertex_eq_inr hQξ, P.interiorAngle_eq_zero_of_vertex_eq_inr hz,
@@ -268,17 +278,12 @@ theorem interiorAngle_doubleTriangle_two :
       simpa using P.orientedAngle_rayToward_vertex_eq_interiorAngle hz
     -- the angle between `P 0` and the mirror image of `P 2` is that of `P` at `P 1`
     have habs : |(orientedAngle z C D').toReal| = P.interiorAngle 1 := by
-      have hρ := vertexAngle_extGeodesicReflection (P.sideGeodesic 0)
-        (P.vertex_injective.ne (by decide : (1 : Fin 3) ≠ 0))
-        (P.vertex_injective.ne (by decide : (1 : Fin 3) ≠ 2))
-      rw [extGeodesicReflection_sideGeodesic_vertex,
-        extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq _ (i := 0) (j := 1) rfl, hz] at hρ
-      rw [← interiorAngle_eq_abs_toReal_orientedAngle, ← vertexAngle_inl_eq_interiorAngle, hρ,
-        interiorAngle_def, hz]
-      simp
+      rw [← interiorAngle_eq_abs_toReal_orientedAngle, ← vertexAngle_inl_eq_interiorAngle]
+      simpa [hz, vertexAngle_comm] using
+        vertexAngle_sideZero_reflected_vertex (P := P) (i := 1) (.inr rfl)
     refine Real.Angle.eq_two_mul_of_abs_toReal_eq habs ?_
       (Q.interiorAngle_pos_of_isLeft_vertex (by simp [hQz]))
-      (Q.interiorAngle_lt_pi 2) (by linarith)
+      (Q.interiorAngle_lt_pi 2)
     rw [← hP, add_comm, orientedAngle_add, hQ]
   · have hQξ : Q.vertex 2 = .inr ξ := by simp [Q, hz]
     rw [Q.interiorAngle_eq_zero_of_vertex_eq_inr hQξ, P.interiorAngle_eq_zero_of_vertex_eq_inr hz,
