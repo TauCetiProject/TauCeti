@@ -11,8 +11,8 @@ public import TauCeti.KnotTheory.Grid.Homology.Basic
 /-!
 # The commutation map on fully blocked grid homology
 
-The fully blocked pentagon chain map induces a specified map on `GH̃`: the class of a cycle
-is sent to the class of its pentagon image. This uses `LinearMap.homologyMap` through the existing
+The fully blocked pentagon chain map induces a specified map on fully blocked homology: the class
+of a cycle is sent to the class of its pentagon image. This uses `LinearMap.homologyMap` through the
 identification with the kernel modulo the image of the differential. The hexagon homotopy
 identities are additionally needed to show that the map is invertible.
 
