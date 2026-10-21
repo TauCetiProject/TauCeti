@@ -315,6 +315,44 @@ theorem mem_minimumCutOrderIso_symm (hst : s ≠ t) (hf : f.IsMaximum)
         ∃ C ∈ ofDual U, PositiveComponent.mk (residualCapacity 0 cap f.toFun) v = C.1 := by
   rw [coe_minimumCutOrderIso_symm hst hf hsub, BoundedFlow.IsMaximum.mem_minimumCutOrderIso_symm]
 
+/-- The free components contained in the union of two minimum cuts are those contained in one of
+them. -/
+theorem coe_ofDual_minimumCutOrderIso_sup (hst : s ≠ t) (hf : f.IsMaximum)
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) (S T : minimizers hsub {s} {t}) :
+    SetLike.coe (ofDual (hf.minimumCutOrderIso hst hsub (S ⊔ T))) =
+      SetLike.coe (ofDual (hf.minimumCutOrderIso hst hsub S)) ∪
+        SetLike.coe (ofDual (hf.minimumCutOrderIso hst hsub T)) := by
+  rw [map_sup, _root_.ofDual_sup, UpperSet.coe_inf]
+
+/-- The free components contained in the intersection of two minimum cuts are those contained in
+both. -/
+theorem coe_ofDual_minimumCutOrderIso_inf (hst : s ≠ t) (hf : f.IsMaximum)
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) (S T : minimizers hsub {s} {t}) :
+    SetLike.coe (ofDual (hf.minimumCutOrderIso hst hsub (S ⊓ T))) =
+      SetLike.coe (ofDual (hf.minimumCutOrderIso hst hsub S)) ∩
+        SetLike.coe (ofDual (hf.minimumCutOrderIso hst hsub T)) := by
+  rw [map_inf, _root_.ofDual_inf, UpperSet.coe_sup]
+
+/-- The empty upper set of free components gives the smallest minimum cut. -/
+theorem coe_minimumCutOrderIso_symm_bot (hst : s ≠ t) (hf : f.IsMaximum)
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) :
+    ((hf.minimumCutOrderIso hst hsub).symm ⊥ : Finset V) =
+      smallest hsub (disjoint_singleton.2 hst) := by
+  ext v
+  have hf' := (isMaximum_toBoundedFlow f).2 hf
+  rw [coe_minimumCutOrderIso_symm hst hf hsub, hf'.coe_minimumCutOrderIso_symm_bot hst,
+    hf'.mem_smallest_iff hst, hf.mem_smallest_iff hst hsub]
+
+/-- The full upper set of free components gives the largest minimum cut. -/
+theorem coe_minimumCutOrderIso_symm_top (hst : s ≠ t) (hf : f.IsMaximum)
+    (hsub : IsSubmodular fun S : Finset V ↦ arrowSum cap S Sᶜ) :
+    ((hf.minimumCutOrderIso hst hsub).symm ⊤ : Finset V) =
+      largest hsub (disjoint_singleton.2 hst) := by
+  ext v
+  have hf' := (isMaximum_toBoundedFlow f).2 hf
+  rw [coe_minimumCutOrderIso_symm hst hf hsub, hf'.coe_minimumCutOrderIso_symm_top hst,
+    hf'.mem_largest_iff hst, hf.mem_largest_iff hst hsub]
+
 /-- The minimum cut is unique exactly when there are no free components of the positive-capacity
 residual arrows of a maximum ordinary `s`–`t` flow. -/
 theorem existsUnique_isMinimum_iff_isEmpty (hst : s ≠ t) (hf : f.IsMaximum) :
