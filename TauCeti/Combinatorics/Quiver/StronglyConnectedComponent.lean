@@ -53,6 +53,7 @@ instance instPartialOrder : PartialOrder (StronglyConnectedComponent V) where
 
 /-- The component of `a` is below the component of `b` exactly when there is a path from `a` to
 `b`. -/
+@[simp]
 theorem mk_le_mk {a b : V} :
     StronglyConnectedComponent.mk a ≤ StronglyConnectedComponent.mk b ↔ Nonempty (Path a b) :=
   Iff.rfl

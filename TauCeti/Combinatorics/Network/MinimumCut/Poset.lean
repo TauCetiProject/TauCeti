@@ -95,7 +95,7 @@ abbrev ResidualComponent : Type u :=
   @Quiver.StronglyConnectedComponent V ⟨PositiveHom (residualCapacity lo hi f.toFun)⟩
 
 /-- The residual component of `f` containing a vertex. -/
-abbrev residualComponent (v : V) : f.ResidualComponent :=
+@[expose] def residualComponent (v : V) : f.ResidualComponent :=
   @Quiver.StronglyConnectedComponent.mk V ⟨PositiveHom (residualCapacity lo hi f.toFun)⟩ v
 
 /-- The *free* residual components of `f`: those not reachable from the component of the source
