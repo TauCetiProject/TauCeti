@@ -32,9 +32,11 @@ are treated in `TauCeti.NumberTheory.Height.Arakelov.IntMatrix`. The examples at
 file compute the minor gcd and Gram determinant of the row `[2, 2]` and of a matrix before and
 after a unimodular shear.
 
-The Gram determinant `det (A * Aᵀ)` is not treated here: its behaviour under `A ↦ B * A` and its
-independence criterion are in `TauCeti.LinearAlgebra.Matrix.Gram`, and its positivity, a
-consequence of the Cauchy–Binet formula, is in `TauCeti.LinearAlgebra.ExteriorPower.Plucker`.
+The Gram determinant `det (A * Aᵀ)` is mostly treated elsewhere: its behaviour under
+`A ↦ B * A` and its independence criterion are in `TauCeti.LinearAlgebra.Matrix.Gram`, and its
+positivity, a consequence of the Cauchy–Binet formula, is in
+`TauCeti.LinearAlgebra.ExteriorPower.Plucker`. Only its integer case under independence over `ℚ`,
+`Matrix.det_mul_transpose_pos`, is stated here, next to the matching `Matrix.one_le_minorGcd`.
 
 ## Main definitions
 
@@ -50,9 +52,10 @@ consequence of the Cauchy–Binet formula, is in `TauCeti.LinearAlgebra.Exterior
   multiplies the minor gcd by `normalize (det B)`, and leaves it unchanged for `B` invertible.
 * `Matrix.minorGcd_eq_gcd_plucker`: the minor gcd is the gcd of the Plücker coordinates
   `TauCeti.plucker A.row` of the rows.
-* `Matrix.linearIndependent_rat_row_iff`: the rows of an integer matrix are linearly independent
-  over `ℚ` exactly when they are over `ℤ`; `Matrix.one_le_minorGcd` takes independence over `ℚ`
-  as its hypothesis.
+* `Matrix.linearIndependent_map_algebraMap_row_iff`: the rows of a matrix over `R` are linearly
+  independent over a domain `S` containing `R` exactly when they are over `R`.
+* `Matrix.linearIndependent_rat_row_iff`: its case `ℤ → ℚ`; `Matrix.one_le_minorGcd` and
+  `Matrix.det_mul_transpose_pos` take independence over `ℚ` as their hypothesis.
 
 ## References
 
@@ -93,17 +96,22 @@ private theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field 
     exact LinearIndependent.of_comp (LinearMap.funLeft K K e)
       (linearIndependent_rows_of_det_ne_zero he)
 
+omit [Fintype m] [DecidableEq m] in
+/-- The rows of a matrix over `R` are linearly independent over a domain `S` containing `R`
+exactly when they are linearly independent over `R`. -/
+theorem linearIndependent_map_algebraMap_row_iff {S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] [FaithfulSMul R S] [IsDomain S] {A : Matrix m n R} :
+    LinearIndependent S (A.map (algebraMap R S)).row ↔ LinearIndependent R A.row :=
+  -- The rows of `A.map (algebraMap R S)` are the rows of `A` mapped entrywise (`row_map`).
+  linearIndependent_algebraMap_comp_iff
+
 /-- Over an integral domain, the rows of a matrix are linearly independent exactly when some
 maximal minor is nonzero. -/
 theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero [CommRing R] [IsDomain R]
     {A : Matrix m n R} :
     LinearIndependent R A.row ↔ ∃ e : m ↪ n, (A.submatrix id e).det ≠ 0 := by
   let K := FractionRing R
-  -- `linearIndependent_algebraMap_comp_iff` maps each row entrywise; these are the rows of the
-  -- matrix `A.map (algebraMap R K)`, to which the field case applies.
-  have hrow : (fun i ↦ algebraMap R K ∘ A.row i) = (A.map (algebraMap R K)).row :=
-    funext fun i ↦ (row_map A _ i).symm
-  rw [← linearIndependent_algebraMap_comp_iff (S := K), hrow,
+  rw [← linearIndependent_map_algebraMap_row_iff (S := K),
     linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field]
   simp only [submatrix_map, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
     map_ne_zero_iff _ (IsFractionRing.injective R K)]
@@ -112,9 +120,8 @@ omit [Fintype m] [DecidableEq m] in
 /-- The rows of an integer matrix are linearly independent over `ℚ` exactly when they are linearly
 independent over `ℤ`. -/
 theorem linearIndependent_rat_row_iff {A : Matrix m n ℤ} :
-    LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row ↔ LinearIndependent ℤ A.row := by
-  rw [← linearIndependent_algebraMap_comp_iff (R := ℤ) (S := ℚ) (v := A.row), algebraMap_int_eq,
-    Int.coe_castRingHom, ← funext (row_map A _)]
+    LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row ↔ LinearIndependent ℤ A.row :=
+  linearIndependent_map_algebraMap_row_iff
 
 end LinearIndependent
 
@@ -223,6 +230,12 @@ least `1`. -/
 theorem one_le_minorGcd {A : Matrix m n ℤ} (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
     1 ≤ A.minorGcd :=
   minorGcd_pos_iff.2 (linearIndependent_rat_row_iff.1 hA)
+
+/-- The Gram determinant of an integer matrix whose rows are linearly independent over `ℚ` is
+positive. -/
+theorem det_mul_transpose_pos {A : Matrix m n ℤ}
+    (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) : 0 < (A * A.transpose).det :=
+  det_mul_transpose_pos_iff.2 (linearIndependent_rat_row_iff.1 hA)
 
 end Int
 
