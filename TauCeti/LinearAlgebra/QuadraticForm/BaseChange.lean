@@ -357,6 +357,12 @@ theorem not_anisotropic_baseChange [FaithfulSMul R A] [Module.Flat R M]
   apply Module.Flat.tensorProduct_mk_injective R M A
   simpa using hzero
 
+/-- A quadratic form taking a unit value still takes a unit value after base change. -/
+theorem exists_isUnit_baseChange {Q : _root_.QuadraticForm R M} (hQ : ∃ v, IsUnit (Q v)) :
+    ∃ v, IsUnit (Q.baseChange A v) :=
+  hQ.imp' (1 ⊗ₜ ·) fun _ hv ↦ by
+    simpa [baseChange_tmul, Algebra.smul_def] using hv.map (algebraMap R A)
+
 end QuadraticForm
 
 /-- Representation of one quadratic form by another is preserved by flat base change. -/
