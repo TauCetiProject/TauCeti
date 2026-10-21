@@ -22,8 +22,7 @@ In a finite additive group with one, the cardinality casts to `0`, as Mathlib's
 `Nat.cast_card_eq_zero` records, so the cardinality minus one casts to `-1`.
 
 An `n`-th root of unity `x` is determined by its powers `x ^ (n / ℓ ^ v_ℓ(n))` at the primes
-`ℓ ∣ n`, the projections of `x` to its `ℓ`-primary parts: its order divides all of them, and no
-prime does.
+`ℓ ∣ n`, the projections of `x` to its `ℓ`-primary parts.
 
 By Euler's theorem, raising an `n`-th root of unity to the power `q ^ φ(n)`, for `q` prime to `n`,
 does nothing.
@@ -115,7 +114,7 @@ theorem pow_pow_totient_eq_self {M : Type*} [Monoid M] {q n : ℕ} (hq : q.Copri
   rw [pow_eq_pow_mod _ hx, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hx, pow_one]
 
 /-- If `x ^ n = 1` with `n ≠ 0`, and `x ^ ordCompl[ℓ] n = 1` for every prime `ℓ ∣ n`, then
-`x = 1`: a prime dividing the order of `x` would divide `ordCompl[ℓ] n`. -/
+`x = 1`. -/
 theorem eq_one_of_pow_ordCompl_eq_one {M : Type*} [Monoid M] {x : M} {n : ℕ} (hn : n ≠ 0)
     (hx : x ^ n = 1) (h : ∀ ℓ : ℕ, ℓ.Prime → ℓ ∣ n → x ^ ordCompl[ℓ] n = 1) : x = 1 := by
   by_contra hne

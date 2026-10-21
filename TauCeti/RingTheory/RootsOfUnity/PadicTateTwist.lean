@@ -522,9 +522,11 @@ noncomputable def continuousMulEquivPiPadicTateTwist :
     simpa only [Function.comp_def, coe_proj_ofPi] using isLocallyConstant_piLevel m
 
 /-- The `ℓ`-th member of the decomposition is the `ℓ`-adic component. -/
-theorem continuousMulEquivPiPadicTateTwist_apply {ℓ : ℕ} [NeZero ℓ] (hℓ : ℓ.Prime)
-    (hℓp : ℓ.Coprime p) (x : PrimeToPTateModule p E) :
-    continuousMulEquivPiPadicTateTwist p E x ⟨ℓ, hℓ, hℓp⟩ = toPadicTateTwist ℓ hℓp x := by
+@[simp]
+theorem continuousMulEquivPiPadicTateTwist_apply {ℓ : ℕ} (hℓ : ℓ.Prime ∧ ℓ.Coprime p)
+    (x : PrimeToPTateModule p E) :
+    continuousMulEquivPiPadicTateTwist p E x ⟨ℓ, hℓ⟩ =
+      haveI : NeZero ℓ := ⟨hℓ.1.ne_zero⟩; toPadicTateTwist ℓ hℓ.2 x := by
   unfold continuousMulEquivPiPadicTateTwist
   rfl
 
@@ -535,9 +537,9 @@ theorem proj_continuousMulEquivPiPadicTateTwist_apply (x : PrimeToPTateModule p 
     (ℓ : {ℓ : ℕ // ℓ.Prime ∧ ℓ.Coprime p}) (n : ℕ) :
     PadicTateTwist.proj n (continuousMulEquivPiPadicTateTwist p E x ℓ).toAdd =
       .ofMul (proj ⟨ℓ ^ n, pow_ne_zero n ℓ.2.1.ne_zero, ℓ.2.2.pow_left n⟩ x) := by
-  obtain ⟨ℓ, hℓ, hℓp⟩ := ℓ
-  have : NeZero ℓ := ⟨hℓ.ne_zero⟩
-  rw [continuousMulEquivPiPadicTateTwist_apply hℓ hℓp, proj_toPadicTateTwist]
+  obtain ⟨ℓ, hℓ⟩ := ℓ
+  have : NeZero ℓ := ⟨hℓ.1.ne_zero⟩
+  rw [continuousMulEquivPiPadicTateTwist_apply hℓ, proj_toPadicTateTwist]
 
 /-- The level-`ℓ ^ n` component of the point with `ℓ`-adic components `y` is the level-`n`
 component of `y ℓ`. -/
