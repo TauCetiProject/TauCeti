@@ -62,8 +62,9 @@ def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
     (W.baseChange ℚ).toAffine.Point :=
   .mk (W.integral_equation_baseChange x y h)
 
-/-- The point built from an integral solution is the affine point with those coordinates. -/
-@[simp]
+/-- The point built from an integral solution is the affine point with those coordinates. Not a
+`simp` lemma: it would rewrite the left-hand sides of `pointOfIntegralSolution_mem` and the
+`pointEquiv` lemmas, which are themselves in `simp` normal form. -/
 private theorem pointOfIntegralSolution_eq_some (x y : ℤ) (h : W.toAffine.Equation x y) :
     W.pointOfIntegralSolution x y h =
       .some (x : ℚ) (y : ℚ)
