@@ -276,6 +276,11 @@ theorem IsSmoothForm.fun_smul [IsManifold I 1 M] {n : WithTop ℕ∞}
   rw [isSmoothForm_def]
   exact hf.smul_section hφ.contMDiff
 
+/-- A `C^n` form is `C^m` for every `m ≤ n`. -/
+theorem IsSmoothForm.of_le [IsManifold I 1 M] {m n : WithTop ℕ∞} {φ : RoughForm I M F k}
+    (hφ : IsSmoothForm I n φ) (hmn : m ≤ n) : IsSmoothForm I m φ :=
+  (isSmoothForm_def m φ).mpr (hφ.contMDiff.of_le hmn)
+
 /-- The submodule of smooth fixed-coefficient `F`-valued rough forms. -/
 def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
@@ -291,6 +296,11 @@ def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
       IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (k := k) (n := ∞) φ :=
   Iff.rfl
 
+/-- A smooth fixed-coefficient rough form lies in `smoothForms`. -/
+theorem IsSmoothForm.mem_smoothForms [IsManifold I 1 M] {φ : RoughForm I M F k}
+    (hφ : IsSmoothForm I ∞ φ) : φ ∈ smoothForms I M F k :=
+  TauCeti.mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ φ).mpr ((isSmoothForm_def ∞ φ).mp hφ))
+
 /-- A smooth fixed-coefficient differential `k`-form. -/
 abbrev SmoothForm (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
@@ -300,6 +310,37 @@ abbrev SmoothForm (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M
 namespace SmoothForm
 
 variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
+
+/-- The underlying rough form of a smooth form is a smooth bundle section. -/
+theorem isSmoothBundleForm (φ : SmoothForm I M F k) :
+    IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (n := ∞) φ.1 :=
+  mem_smoothForms.mp φ.2
+
+/-- The section underlying a smooth form is smooth. -/
+theorem contMDiff (φ : SmoothForm I M F k) :
+    ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) ∞
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.1 x)) :=
+  (isSmoothBundleForm_def ∞ φ.1).mp φ.isSmoothBundleForm
+
+/-- The underlying rough form of a smooth form is a smooth fixed-coefficient form. -/
+theorem isSmoothForm (φ : SmoothForm I M F k) : IsSmoothForm I ∞ φ.1 :=
+  (isSmoothForm_def ∞ φ.1).mpr φ.contMDiff
+
+/-- The section underlying a smooth form is differentiable. -/
+theorem mdifferentiable (φ : SmoothForm I M F k) :
+    MDiff (fun x ↦
+      (TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.1 x) :
+        TotalSpace (E [⋀^Fin k]→L[ℝ] F)
+          (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Bundle.Trivial M F x))) :=
+  φ.contMDiff.mdifferentiable (by simp)
+
+/-- The section underlying a smooth form is differentiable at every point. -/
+theorem mdifferentiableAt (φ : SmoothForm I M F k) (x : M) :
+    MDiffAt (fun x ↦
+      (TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.1 x) :
+        TotalSpace (E [⋀^Fin k]→L[ℝ] F)
+          (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Bundle.Trivial M F x))) x :=
+  φ.contMDiff.mdifferentiableAt (by simp)
 
 /-- The smooth section underlying a fixed-coefficient smooth form. -/
 def toContMDiffSection {k : ℕ} (φ : SmoothForm I M F k) :

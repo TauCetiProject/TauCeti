@@ -46,8 +46,7 @@ on `E` is the exterior derivative of a smooth form. -/
 theorem exactForms_succ_eq_closedForms_normedSpace (k : ℕ) :
     exactForms 𝓘(ℝ, E) E (k + 1) = closedForms 𝓘(ℝ, E) E (k + 1) := by
   refine le_antisymm (exactForms_le_closedForms _ _) fun φ hφ ↦ ?_
-  have hsmooth : ContDiff ℝ ∞ φ.1 := isSmoothForm_modelSpace_iff.mp <|
-    (isSmoothForm_def ∞ φ.1).mpr ((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2))
+  have hsmooth : ContDiff ℝ ∞ φ.1 := isSmoothForm_modelSpace_iff.mp φ.isSmoothForm
   have hclosed (y : E) (_ : y ∈ Set.univ) : extDeriv φ.1 y = 0 := by
     rw [← mextDeriv_eq_extDeriv, (mem_closedForms _ φ).mp hφ]
     -- The two zeros differ only through the identification `TangentSpace 𝓘(ℝ, E) y = E`.
@@ -57,8 +56,7 @@ theorem exactForms_succ_eq_closedForms_normedSpace (k : ℕ) :
   have hαs : IsSmoothForm 𝓘(ℝ, E) ∞ (α : RoughForm 𝓘(ℝ, E) E ℝ k) :=
     isSmoothForm_modelSpace_iff.mpr (contDiffOn_univ.mp hα)
   rw [exactForms_succ]
-  refine ⟨⟨α, mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ _).mpr
-    ((isSmoothForm_def ∞ _).mp hαs))⟩, Subtype.ext (funext fun x ↦ ?_)⟩
+  refine ⟨⟨α, hαs.mem_smoothForms⟩, Subtype.ext (funext fun x ↦ ?_)⟩
   rw [mextDerivₗ_apply, mextDeriv_eq_extDeriv]
   exact hdα x (Set.mem_univ x)
 

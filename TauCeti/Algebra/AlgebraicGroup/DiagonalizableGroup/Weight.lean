@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Corestrict
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
 
 /-!
@@ -46,6 +48,13 @@ specialization to the adjoint representation.
 * `TauCeti.DiagonalizableGroup.endOfPoint_tmul_of_mem_weightSpace`: a monoid-algebra point acts on
   the `x`-weight submodule by multiplication by its value on `x`; for a commutative group `X`,
   this is the corresponding action of a point of `D(X)`.
+* `TauCeti.DiagonalizableGroup.map_matrixCoefficient_of_mem_weightSpace`: the matrix coefficients
+  of an `x`-weight vector restrict to multiples of `x`.
+* `TauCeti.DiagonalizableGroup.map_matrixCoefficient_mem_span_single`: every matrix coefficient
+  restricts into the span of the occurring weights.
+* `TauCeti.DiagonalizableGroup.map_det_coefficientMatrix_of_forall_mem_weightSpace`: the
+  determinant of a finite free comodule of pure weight `x` restricts to `x ^ n`, where `n` is the
+  rank.
 
 ## References
 
@@ -170,6 +179,67 @@ theorem endOfPoint_tmul_of_mem_weightSpace (π : C →ₐc[R] MonoidAlgebra R X)
   simp [TensorProduct.smul_tmul']
 
 end Points
+
+section MatrixCoefficient
+
+variable {R C X W : Type*} [CommRing R]
+
+/-- Under `π`, a matrix coefficient of an `x`-weight vector `w` becomes the multiple `φ w • x` of
+the basis element `x` of `R[X]`. -/
+theorem map_matrixCoefficient_of_mem_weightSpace [AddCommMonoid C] [Module R C] [Coalgebra R C]
+    [AddCommMonoid W] [Module R W] [Comodule R C W] (π : C →ₗc[R] MonoidAlgebra R X)
+    {x : X} {w : W} (hw : w ∈ weightSpace W π x) (φ : Module.Dual R W) :
+    π (Comodule.matrixCoefficient (R := R) (C := C) φ w) = φ w • MonoidAlgebra.single x 1 := by
+  rw [mem_weightSpace] at hw
+  let _ : Comodule R (MonoidAlgebra R X) W := Comodule.Corestrict π
+  rw [← CoalgHom.matrixCoefficient_corestrict, Comodule.matrixCoefficient_def,
+    Comodule.corestrict_coact_apply, hw]
+  simp
+
+/-- Under `π`, every matrix coefficient lies in the span of the weights whose weight spaces are
+nonzero. -/
+theorem map_matrixCoefficient_mem_span_single [AddCommMonoid C] [Module R C] [Coalgebra R C]
+    [AddCommMonoid W] [Module R W] [Comodule R C W] (π : C →ₗc[R] MonoidAlgebra R X)
+    (φ : Module.Dual R W) (w : W) :
+    π (Comodule.matrixCoefficient (R := R) (C := C) φ w) ∈
+      Submodule.span R
+        ((fun x ↦ MonoidAlgebra.single x (1 : R)) '' {x | weightSpace W π x ≠ ⊥}) := by
+  have hw : w ∈ ⨆ x, weightSpace W π x := by
+    rw [(isInternal_weightSpace W π).submodule_iSup_eq_top]
+    trivial
+  refine Submodule.iSup_induction (weightSpace W π)
+    (motive := fun w ↦ π (Comodule.matrixCoefficient (R := R) (C := C) φ w) ∈ _) hw
+    (fun x w hw ↦ ?_) (by simp [Comodule.matrixCoefficient_def]) (fun w w' hw hw' ↦ ?_)
+  · by_cases hx : weightSpace W π x = ⊥
+    · have hw0 : w = 0 := by simpa [hx] using hw
+      simp [hw0, Comodule.matrixCoefficient_def]
+    · rw [map_matrixCoefficient_of_mem_weightSpace π hw]
+      exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_image_of_mem _ hx))
+  · rw [Comodule.matrixCoefficient_add, map_add]
+    exact add_mem hw hw'
+
+/-- If every vector of a finite free comodule has weight `x`, the determinant of its coefficient
+matrix restricts to the character `x ^ n`, where `n` is the rank. -/
+theorem map_det_coefficientMatrix_of_forall_mem_weightSpace [CommRing C] [Bialgebra R C]
+    [CommMonoid X] [AddCommMonoid W] [Module R W] [Comodule R C W] {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (π : C →ₐc[R] MonoidAlgebra R X) {x : X}
+    (hW : ∀ w : W, w ∈ weightSpace W π.toCoalgHom x) (b : Module.Basis ι R W) :
+    π (Comodule.coefficientMatrix (C := C) b).det =
+      MonoidAlgebra.single (x ^ Fintype.card ι) 1 := by
+  have hmap : (Comodule.coefficientMatrix (C := C) b).map π.toAlgHom =
+      Matrix.diagonal fun _ ↦ MonoidAlgebra.single x 1 := Matrix.ext fun i j ↦ by
+    have h := map_matrixCoefficient_of_mem_weightSpace π.toCoalgHom (hW (b j)) (b.coord i)
+    rw [BialgHom.toCoalgHom_apply] at h
+    rw [Matrix.map_apply, Comodule.coefficientMatrix_apply, BialgHom.coe_toAlgHom, h,
+      Module.Basis.coord_apply, Module.Basis.repr_self, Matrix.diagonal_apply,
+      Finsupp.single_apply]
+    rcases eq_or_ne i j with rfl | hij
+    · simp
+    · simp [hij, hij.symm]
+  rw [← BialgHom.coe_toAlgHom, AlgHom.map_det, AlgHom.mapMatrix_apply, hmap, Matrix.det_diagonal,
+    Finset.prod_const, Finset.card_univ, MonoidAlgebra.single_pow, one_pow]
+
+end MatrixCoefficient
 
 end DiagonalizableGroup
 

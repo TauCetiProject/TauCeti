@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.Order.OrderClosed
 import Mathlib.Data.Finset.Sort
 
@@ -20,6 +21,10 @@ This keeps the original functions, rather than sorting their values independentl
 parameter, so any additional regularity of the functions survives the selection. In particular,
 it is useful for turning analytic root labellings with persistent collisions into distinct
 ordered root sections.
+
+Over a preconnected space, finitely many continuous functions whose values never coincide are
+ordered globally: their order at one point is their order everywhere. They can then be listed as
+a stack strictly increasing at every point.
 -/
 
 public section
@@ -75,5 +80,38 @@ theorem exists_eventually_strictMono_range_eq {B Y ι : Type*} [TopologicalSpace
     exact mem_range_self (e i)
   · rintro ⟨j, rfl⟩
     exact hm j
+
+/-- On a nonempty preconnected space, a finite set `G` of continuous functions into a linear
+order, no two of which take the same value at any point, can be listed as `θ₀, θ₁, …, θₖ₋₁`
+with `θ₀ x < θ₁ x < ⋯ < θₖ₋₁ x` at every point `x`. -/
+theorem exists_strictMono_range_eq {B Y : Type*} [TopologicalSpace B] [PreconnectedSpace B]
+    [Nonempty B] [LinearOrder Y] [TopologicalSpace Y] [OrderClosedTopology Y] {G : Set (B → Y)}
+    (hG : G.Finite) (hc : ∀ g ∈ G, Continuous g) (hne : G.Pairwise fun f g ↦ ∀ x, f x ≠ g x) :
+    ∃ k, ∃ θ : Fin k → B → Y, range θ = G ∧ ∀ x, StrictMono fun i ↦ θ i x := by
+  classical
+  obtain ⟨x₀⟩ := ‹Nonempty B›
+  -- Two members are ordered everywhere as they are at `x₀`.
+  have hlt {f g : B → Y} (hf : f ∈ G) (hg : g ∈ G) (h : f x₀ < g x₀) (x : B) : f x < g x := by
+    have hfg : f ≠ g := by
+      rintro rfl
+      exact h.false
+    refine ((isPreconnected_univ.subset_or_subset (isOpen_lt (hc f hf) (hc g hg))
+      (isOpen_lt (hc g hg) (hc f hf)) (disjoint_left.2 fun _ h₁ h₂ ↦ lt_asymm h₁ h₂)
+      fun x _ ↦ (hne hf hg hfg x).lt_or_gt).resolve_right fun h' ↦ ?_) (mem_univ x)
+    exact lt_asymm h (h' (mem_univ x₀))
+  -- List the members in increasing order of their values at `x₀`.
+  set V := hG.toFinset.image fun g ↦ g x₀
+  set v := V.orderEmbOfFin rfl
+  have hV (i : Fin V.card) : ∃ g ∈ G, g x₀ = v i := by
+    have h := V.orderEmbOfFin_mem rfl i
+    simpa only [V, Finset.mem_image, Set.Finite.mem_toFinset] using h
+  choose θ hθG hθv using hV
+  refine ⟨V.card, θ, Subset.antisymm (range_subset_iff.2 hθG) fun g hg ↦ ?_,
+    fun x i j hij ↦ hlt (hθG i) (hθG j) (by simpa only [hθv] using v.strictMono hij) x⟩
+  obtain ⟨i, hi⟩ : g x₀ ∈ range v := by
+    rw [Finset.range_orderEmbOfFin]
+    exact Finset.mem_image.2 ⟨g, hG.mem_toFinset.2 hg, rfl⟩
+  by_contra hgi
+  exact hne (hθG i) hg (fun h ↦ hgi ⟨i, h⟩) x₀ ((hθv i).trans hi)
 
 end TauCeti

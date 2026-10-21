@@ -51,7 +51,11 @@ space `W^{1,p}` on an interval by difference quotients.
 
 ## Main results
 
-* `AbsolutelyContinuousOnInterval.edist_rpow_le_mul_curveAction`: the Hölder estimate.
+* `AbsolutelyContinuousOnInterval.edist_rpow_le_mul_curveAction`: the Hölder estimate, with
+  its real-valued form `AbsolutelyContinuousOnInterval.dist_rpow_le_mul_toReal_curveAction` and its
+  case `AbsolutelyContinuousOnInterval.edist_rpow_le_curveAction` between the ends of `[0, 1]`,
+  also stated for paths in `C([0, 1], X)` as
+  `AbsolutelyContinuousOnInterval.edist_rpow_le_curveAction_IccExtend`.
 * `TauCeti.curveAction_eq_sum_range`: the action splits over the cells of a uniform grid.
 * `TauCeti.sum_edist_rpow_mul_rpow_one_sub_le_curveAction`: the discrete action of the samples at
   the grid times is at most the action.
@@ -222,6 +226,36 @@ theorem _root_.AbsolutelyContinuousOnInterval.edist_rpow_le_mul_curveAction
     _ = edist s u ^ (p - 1) * curveAction p γ s u := by
         rw [Measure.restrict_apply_univ, Real.volume_uIoc, curveAction_def, edist_dist s u,
           Real.dist_eq, abs_sub_comm]
+
+/-- The Hölder estimate with real distances: if `γ` is absolutely continuous on `[a, b]`, `1 ≤ p`,
+and `s ≤ u` are points of `[a, b]` such that the `p`-action of `γ` on `[s, u]` is finite, then
+`dist (γ s) (γ u) ^ p ≤ (u - s) ^ (p - 1) * A_p(γ; s, u)`. -/
+theorem _root_.AbsolutelyContinuousOnInterval.dist_rpow_le_mul_toReal_curveAction
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hp : 1 ≤ p) {s u : ℝ} (hs : s ∈ uIcc a b)
+    (hu : u ∈ uIcc a b) (hsu : s ≤ u) (hfin : curveAction p γ s u ≠ ∞) :
+    dist (γ s) (γ u) ^ p ≤ (u - s) ^ (p - 1) * (curveAction p γ s u).toReal := by
+  -- Apply `toReal` to the extended Hölder estimate; `simp` then removes the casts.
+  have h := ENNReal.toReal_mono
+    (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by linarith) (edist_ne_top s u)) hfin)
+    (hγ.edist_rpow_le_mul_curveAction hp hs hu)
+  simpa [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, edist_dist, Real.dist_eq,
+    abs_of_nonpos (sub_nonpos.2 hsu), sub_nonneg.2 hsu] using h
+
+/-- The Hölder estimate between the ends of `[0, 1]`: for `1 ≤ p`, the `p`-action of a curve
+absolutely continuous on `[0, 1]` is at least `d(γ 0, γ 1) ^ p`. -/
+theorem _root_.AbsolutelyContinuousOnInterval.edist_rpow_le_curveAction
+    (hγ : AbsolutelyContinuousOnInterval γ 0 1) (hp : 1 ≤ p) :
+    edist (γ 0) (γ 1) ^ p ≤ curveAction p γ 0 1 := by
+  have h := hγ.edist_rpow_le_mul_curveAction hp (left_mem_uIcc (a := (0 : ℝ)) (b := 1))
+    right_mem_uIcc
+  rwa [show edist (0 : ℝ) 1 = 1 by simp [edist_dist], ENNReal.one_rpow, one_mul] at h
+
+/-- The Hölder estimate along a path `c : C([0, 1], X)`: for `1 ≤ p`, if the extension of `c` to `ℝ`
+is absolutely continuous on `[0, 1]`, then its `p`-action is at least `d(c 0, c 1) ^ p`. -/
+theorem _root_.AbsolutelyContinuousOnInterval.edist_rpow_le_curveAction_IccExtend
+    {c : C(unitInterval, X)} (hc : AbsolutelyContinuousOnInterval (IccExtend zero_le_one c) 0 1)
+    (hp : 1 ≤ p) : edist (c 0) (c 1) ^ p ≤ curveAction p (IccExtend zero_le_one c) 0 1 := by
+  simpa using hc.edist_rpow_le_curveAction hp
 
 /-- **The discrete action of grid samples is at most the action.** For `1 ≤ p` and a curve `γ`
 absolutely continuous on `[a, a + N * h]` with `h > 0`, the samples at the grid times `a + k * h`

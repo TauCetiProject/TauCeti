@@ -57,6 +57,7 @@ series of a profinite group.
 * `Subgroup.instIsClosedTopologicalClosure`: the topological closure of a subgroup is closed.
 * `Subgroup.isClosed_center`: the center of a Hausdorff group with separately continuous
   multiplication is closed.
+* `Subgroup.isClosed_subgroupOf`: a closed subgroup read inside another subgroup is closed there.
 * `Subgroup.dense_iff_topologicalClosure_eq_top`: a subgroup is dense exactly when its topological
   closure is everything; `IsClosed.subgroup_topologicalClosure_eq`: a closed subgroup is its own
   topological closure.
@@ -157,6 +158,13 @@ instance isClosed_center [SeparatelyContinuousMul G] [T2Space G] :
     IsClosed (center G : Set G) := by
   simpa only [coe_center, Set.centralizer_univ] using
     Set.isClosed_centralizer (Set.univ : Set G)
+
+/-- A closed subgroup `H`, read inside another subgroup `K` as `H.subgroupOf K`, is closed in `K`.
+As an instance, it lets instance search find the separation and compactness properties of
+quotients `K ⧸ H.subgroupOf K` such as the graded pieces of a closed central series. -/
+instance isClosed_subgroupOf (H K : Subgroup G) [IsClosed (H : Set G)] :
+    IsClosed (H.subgroupOf K : Set K) :=
+  IsClosed.preimage continuous_subtype_val ‹_›
 
 /-- The inclusion of `U ⊓ D` into `U`, where `U ⊓ D` is presented as the subgroup `U.subgroupOf D`
 of `D`, is continuous. -/

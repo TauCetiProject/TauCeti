@@ -81,6 +81,14 @@ cokernel of the map of normalized cubical chains induced by the inclusion `A →
 abbrev cubicalChainComplex (P : TopPair.{u}) : ChainComplex (ModuleCat.{u} k) ℕ :=
   cokernel ((normalizedCubicalChainComplex k).map P.map)
 
+/-- The chains of the subspace vanish degreewise in the relative normalized cubical chains of a
+pair. -/
+@[reassoc (attr := simp)]
+theorem cubicalChainComplex_condition_f (P : TopPair.{u}) (n : ℕ) :
+    ((normalizedCubicalChainComplex k).map P.map).f n ≫
+      (cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n = 0 := by
+  simp [← HomologicalComplex.comp_f]
+
 /-- The sequence `N(A) ⟶ N(X) ⟶ N(X, A)` of normalized cubical chain complexes of a pair. -/
 abbrev cubicalChainComplexShortComplex (P : TopPair.{u}) :
     ShortComplex (ChainComplex (ModuleCat.{u} k) ℕ) :=

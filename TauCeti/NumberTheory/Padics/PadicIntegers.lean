@@ -9,10 +9,12 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+public import TauCeti.Analysis.Normed.Ring.Units
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import Mathlib.Data.Finset.Max
 import Mathlib.Data.Int.Associated
 import Mathlib.Data.Nat.Factorization.Basic
+import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
 
 /-!
@@ -47,10 +49,18 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
+* `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`.
+* `PadicInt.inv_eq_inverse`, `PadicInt.continuous_inverse`: Mathlib's `PadicInt.inv` is
+  `Ring.inverse`, the inverse on units extended by `0`, and it is continuous because the nonunits
+  `pℤ_p` form an open set.
 * `Int.associated_iff_forall_associated_padicInt`: two integers have equal absolute values
   exactly when they are associated in every `ℤ_[p]`.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
+* `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
+  valuation.
+* `Padic.valuation_p_pow_mul_intCast`: the valuation of `p ^ n m`, for an integer `m` prime to
+  `p`, is `n`.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
   `1 / m`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
@@ -103,6 +113,22 @@ theorem units_neg_one_ne_one : (-1 : ℤ_[p]ˣ) ≠ 1 := fun h ↦ by
 theorem range_units_val : Set.range (Units.val : ℤ_[p]ˣ → ℤ_[p]) = {x | ‖x‖ = 1} :=
   -- `IsUnit x` is by definition `∃ u : ℤ_[p]ˣ, ↑u = x`, that is `x ∈ Set.range Units.val`.
   Set.ext fun _ ↦ isUnit_iff
+
+/-- Mathlib's `PadicInt.inv` is the ring inverse: the inverse on units and `0` on nonunits. -/
+theorem inv_eq_inverse (z : ℤ_[p]) : z.inv = Ring.inverse z := by
+  by_cases hz : IsUnit z
+  · lift z to ℤ_[p]ˣ using hz
+    rw [Ring.inverse_unit]
+    exact Units.eq_inv_of_mul_eq_one_left (mul_inv (isUnit_iff.mp z.isUnit))
+  · simp [Ring.inverse_non_unit z hz, PadicInt.inv, mt isUnit_iff.mpr hz]
+
+/-- An element of `ℤ_p` is a nonunit exactly when it is divisible by `p`. -/
+theorem not_isUnit_iff_dvd {z : ℤ_[p]} : ¬IsUnit z ↔ (p : ℤ_[p]) ∣ z := by
+  rw [not_isUnit_iff, norm_lt_one_iff_dvd]
+
+/-- The ring inverse of `ℤ_p`, extended by `0` on the nonunits, is continuous. -/
+theorem continuous_inverse : Continuous (Ring.inverse : ℤ_[p] → ℤ_[p]) :=
+  NormedRing.continuous_inverse_of_isOpen_nonunits (IsLocalRing.isOpen_maximalIdeal ℤ_[p])
 
 /-- `ℤ_pˣ` is compact: it is the closed unit sphere of the compact space `ℤ_p`, and the topology
 on the units of the complete normed ring `ℤ_p` is the subspace topology. -/
@@ -175,6 +201,21 @@ theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
       neg_neg, ← zpow_add₀ hp', neg_add_cancel, zpow_zero]
   refine ⟨PadicInt.mkUnits hy, ?_⟩
   rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, zpow_zero, mul_one]
+
+/-- Multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its valuation. -/
+theorem valuation_p_zpow_mul (α : ℤ) {x : ℚ_[p]} (hx : x ≠ 0) :
+    ((p : ℚ_[p]) ^ α * x).valuation = α + x.valuation := by
+  rw [Padic.valuation_mul (zpow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)) hx,
+    Padic.valuation_zpow, Padic.valuation_p, mul_one]
+
+/-- The valuation of `p ^ n m` in `ℚ_[p]`, for an integer `m` prime to `p`, is `n`: the case
+`v(m) = 0` of `Padic.valuation_p_zpow_mul`. -/
+theorem valuation_p_pow_mul_intCast (n : ℕ) {m : ℤ} (hm : ¬(p : ℤ) ∣ m) :
+    ((p : ℚ_[p]) ^ n * m).valuation = n := by
+  have h := valuation_p_zpow_mul (p := p) n
+    (Int.cast_ne_zero.mpr (by rintro rfl; exact hm (dvd_zero _)) : (m : ℚ_[p]) ≠ 0)
+  rwa [Padic.valuation_intCast, padicValInt.eq_zero_of_not_dvd hm, Nat.cast_zero, add_zero,
+    zpow_natCast] at h
 
 /-- The `p`-adic norm of a positive integer `m` is at least `1 / m`. -/
 theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ ‖(m : ℚ_[p])‖ := by

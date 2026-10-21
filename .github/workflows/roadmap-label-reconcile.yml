@@ -1,0 +1,113 @@
+name: Roadmap label recovery
+
+# Repair missed/cancelled/limited event runs without requiring another author edit.
+# Successful input hashes skip unrelated comment/status churn. Per-PR failures
+# use bounded retries; global quota/transport failures retain the time window.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      full-scan:
+        description: Reclassify every open PR (also use after roadmap changes)
+        type: boolean
+        default: false
+      sync-labels:
+        description: Maintain roadmap label colours and descriptions
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+concurrency:
+  group: roadmap-label-recovery
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Manual dispatch must also execute only trusted default-branch code.
+          ref: main
+          persist-credentials: false
+
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
+      - uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiRoadmap
+          path: roadmap
+          persist-credentials: false
+
+      # State contains only input hashes, canonical labels, and bounded retries.
+      # Prefer the newest completed run with an artifact; cancelled pending runs
+      # may have none. Fork PR runs can also have a head branch named main;
+      # only scheduled/manual runs from this repository may supply trusted state.
+      - name: Restore recovery state
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          ids=$(gh api "repos/$REPO/actions/workflows/roadmap-label-reconcile.yml/runs?status=completed&branch=main&per_page=10" \
+            --jq '.workflow_runs[] | select((.event == "schedule" or .event == "workflow_dispatch") and .head_branch == "main" and .head_repository.full_name == "TauCetiProject/TauCeti") | .id')
+          mkdir -p "$RUNNER_TEMP/roadmap-state-in"
+          for id in $ids; do
+            if gh run download "$id" -R "$REPO" -n roadmap-label-state -D "$RUNNER_TEMP/roadmap-state-in" 2>/dev/null; then
+              break
+            fi
+          done
+
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: Reconcile missed roadmap labels and structure nudges
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+          GH_COMMENT_AUTHOR: ${{ steps.app-token.outputs.app-slug }}[bot]
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          FULL_SCAN: ${{ inputs.full-scan && '1' || '' }}
+          SYNC_LABELS: ${{ inputs.sync-labels && '1' || '' }}
+        run: |
+          set -euo pipefail
+          extra=()
+          if [[ "$FULL_SCAN" == 1 ]]; then
+            extra+=(--since 1970-01-01T00:00:00Z --retry-exhausted)
+          fi
+          if [[ "$SYNC_LABELS" == 1 ]]; then
+            extra+=(--sync-labels)
+          fi
+          python3 scripts/roadmap_label.py \
+            --repo "$REPO" --roadmap-dir roadmap --reconcile-open \
+            --apply --structure-nudge \
+            --state-in "$RUNNER_TEMP/roadmap-state-in/state.json" \
+            --state-out "$RUNNER_TEMP/roadmap-state-out/state.json" "${extra[@]}"
+
+      - name: Save recovery progress and retries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: roadmap-label-state
+          path: ${{ runner.temp }}/roadmap-state-out/state.json
+          retention-days: 7
+          overwrite: true
+          if-no-files-found: ignore

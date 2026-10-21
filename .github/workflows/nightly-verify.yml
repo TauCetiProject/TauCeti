@@ -124,6 +124,13 @@ jobs:
           # reference workspace below.
           fetch-depth: 100
 
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: fresh
+
       - name: Resolve the commit under test
         id: rev
         run: |

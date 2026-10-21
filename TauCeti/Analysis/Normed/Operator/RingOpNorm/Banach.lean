@@ -24,7 +24,10 @@ instances in the scope `TauCeti.RingOpNorm`:
 * evaluation `(f, x) ↦ f x` is jointly continuous;
 * `E →L[R] F` is complete when `F` is a complete normed group;
 * the endomorphisms `E →L[R] E` form a seminormed ring, normed when `E` is, with `‖1‖ = 1` as
-  soon as `E` has a vector of nonzero norm.
+  soon as `E` has a vector of nonzero norm, and composition is jointly continuous, so that they
+  form a topological ring; scalars move out of either factor of a composition when `R` is
+  commutative;
+* `E →L[R] F` is Hausdorff when `F` is normed.
 
 Mathlib's topology of bounded convergence on continuous linear maps is only defined over normed
 fields, so over other scalar rings these instances introduce no diamond. Over a nontrivially
@@ -130,11 +133,42 @@ noncomputable scoped instance seminormedRing : SeminormedRing (E →L[R] E) :=
   { seminormedAddCommGroup, ContinuousLinearMap.ring with
     norm_mul_le := ringOpNorm_comp_le }
 
+/-- Composition of operators is jointly continuous for the operator norm. This is the continuity
+of multiplication in `TauCeti.RingOpNorm.seminormedRing`, stated directly for the multiplication of
+continuous linear maps so that instance search need not unfold the ring structure. -/
+scoped instance continuousMul : ContinuousMul (E →L[R] E) :=
+  (NonUnitalSeminormedRing.toIsTopologicalRing (α := E →L[R] E)).toContinuousMul
+
+/-- The operators form a topological ring for the operator norm. As for
+`TauCeti.RingOpNorm.continuousMul`, this is stated directly for continuous linear maps so that
+instance search need not unfold the ring structure. -/
+scoped instance isTopologicalRing : IsTopologicalRing (E →L[R] E) :=
+  NonUnitalSeminormedRing.toIsTopologicalRing (α := E →L[R] E)
+
 /-- The identity has operator norm one on a module with a vector of nonzero norm. -/
 scoped instance normOneClass [NontrivialTopology E] : NormOneClass (E →L[R] E) :=
   ⟨ringOpNorm_id⟩
 
 end Seminormed
+
+section Comm
+
+variable {R E : Type*} [SeminormedCommRing R] [NormedRing.IsTate R]
+  [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
+
+/-- Scalars move out of the left factor of a composition of operators. This is stated directly:
+for some modules, such as `C₀(I, R)`, instance search does not derive it from
+`ContinuousLinearMap.algebra` through `IsScalarTower.right` once
+`TauCeti.RingOpNorm.seminormedRing` is in scope. -/
+scoped instance isScalarTower : IsScalarTower R (E →L[R] E) (E →L[R] E) :=
+  ⟨fun a f g ↦ smul_comp a f g⟩
+
+/-- Scalars move out of the right factor of a composition of operators. As for
+`TauCeti.RingOpNorm.isScalarTower`, this is stated directly. -/
+scoped instance smulCommClass : SMulCommClass R (E →L[R] E) (E →L[R] E) :=
+  ⟨fun a f g ↦ (comp_smul f a g).symm⟩
+
+end Comm
 
 section Normed
 
@@ -147,6 +181,14 @@ operator norm. -/
 noncomputable scoped instance normedAddCommGroup : NormedAddCommGroup (E →L[R] F) :=
   NormedAddCommGroup.ofSeparation fun f hf ↦ ContinuousLinearMap.ext fun x ↦
     norm_le_zero_iff.mp <| by simpa [hf] using le_ringOpNorm f x
+
+/-- Over Tate scalars, continuous linear maps into a normed module form a Hausdorff space for the
+operator norm. This is stated directly, since instance search does not find it through
+`TauCeti.RingOpNorm.normedAddCommGroup`, whose metric is not reducibly the one of
+`TauCeti.RingOpNorm.seminormedAddCommGroup`. -/
+scoped instance t2Space : T2Space (E →L[R] F) := by
+  let _ : MetricSpace (E →L[R] F) := normedAddCommGroup.toMetricSpace
+  infer_instance
 
 /-- Over Tate scalars the continuous endomorphisms of a normed module form a normed ring for the
 operator norm. -/

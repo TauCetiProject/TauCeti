@@ -27,6 +27,8 @@ charts used to verify it.
 * `OpenPartialHomeomorph.isInvertible_fderiv`: a chart that is
   differentiable at a point, with inverse differentiable at the image point, has an invertible
   derivative there.
+* `TauCeti.image_tangentConeAt_eq_tangentConeAt_preimage_symm`: the invertible derivative `A` of a
+  chart at a point carries the tangent cone of a set there onto the tangent cone of its image.
 * `TauCeti.IsSliceChart.tangentConeAt_eq_preimage`: the tangent cone of a set flattened onto a
   closed subspace is the preimage of that subspace under the derivative of the chart.
 * `TauCeti.IsSliceChart.span_tangentConeAt_eq_comap`: hence the span of the tangent cone is that
@@ -71,6 +73,29 @@ end OpenPartialHomeomorph
 
 namespace TauCeti
 
+/-- **A chart transports tangent cones.** If the chart `e` has invertible derivative `A` at a point
+`y` of its source, then `A` maps the tangent cone of `S` at `y` onto the tangent cone at `e y` of
+the image of `S` read through `e`. -/
+theorem image_tangentConeAt_eq_tangentConeAt_preimage_symm {e : OpenPartialHomeomorph E F}
+    {S : Set E} {y : E} {A : E ≃L[𝕜] F} (hy : y ∈ e.source)
+    (hA : HasFDerivAt e (A : E →L[𝕜] F) y) :
+    A '' tangentConeAt 𝕜 S y = tangentConeAt 𝕜 (e.symm ⁻¹' S) (e y) := by
+  have hyt : e y ∈ e.target := e.map_source hy
+  refine Subset.antisymm ?_ fun w hw ↦ ⟨A.symm w, ?_, A.apply_symm_apply w⟩
+  · rintro _ ⟨v, hv, rfl⟩
+    rw [← tangentConeAt_inter_nhds (e.open_source.mem_nhds hy)] at hv
+    refine tangentConeAt_mono ?_ (hA.hasFDerivWithinAt.mapsTo_tangent_cone hv)
+    rintro _ ⟨z, ⟨hzS, hz⟩, rfl⟩
+    rwa [mem_preimage, e.left_inv hz]
+  · have hAs : HasFDerivAt e.symm (A.symm : F →L[𝕜] E) (e y) :=
+      e.hasFDerivAt_symm hyt (by rwa [e.left_inv hy])
+    rw [← tangentConeAt_inter_nhds (e.open_target.mem_nhds hyt)] at hw
+    have hmaps := hAs.hasFDerivWithinAt.mapsTo_tangent_cone hw
+    rw [e.left_inv hy] at hmaps
+    refine tangentConeAt_mono ?_ hmaps
+    rintro _ ⟨w, ⟨hwS, -⟩, rfl⟩
+    exact hwS
+
 namespace IsSliceChart
 
 variable {e : OpenPartialHomeomorph E F} {L : Submodule 𝕜 F} {S : Set E} {y : E}
@@ -83,26 +108,14 @@ theorem tangentConeAt_eq_preimage (h : IsSliceChart e (L : Set F) S) (hL : IsClo
     (hy : y ∈ e.source) (hyS : y ∈ S) (hA : HasFDerivAt e (A : E →L[𝕜] F) y) :
     tangentConeAt 𝕜 S y = A ⁻¹' L := by
   have hey : e y ∈ L := (h.mem_iff hy).1 hyS
-  refine Subset.antisymm (fun v hv ↦ ?_) fun v hv ↦ ?_
-  · rw [← tangentConeAt_inter_nhds (e.open_source.mem_nhds hy)] at hv
-    have hmaps := hA.hasFDerivWithinAt.mapsTo_tangent_cone hv
-    rw [← L.tangentConeAt_eq hL hey]
-    refine tangentConeAt_mono ?_ hmaps
-    rintro _ ⟨z, ⟨hzS, hz⟩, rfl⟩
-    exact (h.mem_iff hz).1 hzS
-  · have hyt : e y ∈ e.target := e.map_source hy
-    have hAs : HasFDerivAt e.symm (A.symm : F →L[𝕜] E) (e y) :=
-      e.hasFDerivAt_symm hyt (by rwa [e.left_inv hy])
-    have hv' : A v ∈ tangentConeAt 𝕜 ((L : Set F) ∩ e.target) (e y) := by
-      rw [tangentConeAt_inter_nhds (e.open_target.mem_nhds hyt), L.tangentConeAt_eq hL hey]
-      exact hv
-    have hmaps := hAs.hasFDerivWithinAt.mapsTo_tangent_cone hv'
-    rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply,
-      e.left_inv hy] at hmaps
-    refine tangentConeAt_mono ?_ hmaps
-    rintro _ ⟨w, ⟨hwL, hw⟩, rfl⟩
-    rw [h.mem_iff (e.map_target hw), e.right_inv hw]
-    exact hwL
+  have ht : e.target ∈ 𝓝 (e y) := e.open_target.mem_nhds (e.map_source hy)
+  have hS : e.symm ⁻¹' S ∩ e.target = (L : Set F) ∩ e.target := by
+    ext w
+    refine and_congr_left fun hw ↦ ?_
+    rw [mem_preimage, h.mem_iff (e.map_target hw), e.right_inv hw, SetLike.mem_coe]
+  rw [← preimage_image_eq (tangentConeAt 𝕜 S y) A.injective,
+    image_tangentConeAt_eq_tangentConeAt_preimage_symm hy hA, ← tangentConeAt_inter_nhds ht, hS,
+    tangentConeAt_inter_nhds ht, L.tangentConeAt_eq hL hey]
 
 /-- The span of the tangent cone of a set flattened onto a closed subspace `L`, at a point where
 the chart has invertible derivative `A`, is the subspace `A⁻¹ L`. -/

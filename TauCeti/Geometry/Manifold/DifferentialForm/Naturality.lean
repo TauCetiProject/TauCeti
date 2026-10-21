@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
@@ -215,6 +216,22 @@ theorem mpullback_mextDeriv {f : M → M'} (hf : ContMDiff I I' 2 f)
   funext x
   exact mpullback_mextDeriv_at hf.contMDiffAt
     ((isSmoothBundleForm_def 1 φ).mp hφ).contMDiffAt
+
+namespace SmoothForm
+
+/-- The bundled exterior derivative commutes with smooth pullback. -/
+theorem mextDerivₗ_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ)
+    (φ : SmoothForm I' M' F k) :
+    mextDerivₗ I k (mpullback f hf φ) =
+      mpullback f hf (mextDerivₗ I' k φ) := by
+  apply Subtype.ext
+  rw [coe_mpullback, mextDerivₗ_apply, mextDerivₗ_apply]
+  rw [coe_mpullback]
+  have hφ : IsSmoothBundleForm (I := I') (F := F) (V := Trivial M' F) 1 φ.1 :=
+    (isSmoothBundleForm_def 1 φ.1).mpr (φ.contMDiff.of_le (by simp))
+  exact (TauCeti.mpullback_mextDeriv (hf.of_le (by simp)) hφ).symm
+
+end SmoothForm
 
 end TauCeti
 

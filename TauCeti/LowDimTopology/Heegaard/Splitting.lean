@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import TauCeti.Analysis.InnerProductSpace.Hemisphere
-public import TauCeti.LowDimTopology.Handlebody
+public import TauCeti.LowDimTopology.Handlebody.Basic
 
 /-!
 # Heegaard splittings and Heegaard genus

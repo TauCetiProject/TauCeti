@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -182,6 +183,22 @@ theorem eq_curvatureTensor_iff (x : M)
     obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
     rw [curvatureTensor_apply cov x hX hY hσ]
     exact h X Y σ hX hY hσ
+
+/-- Two smooth connections which agree on every smooth section have the same curvature tensor.
+A connection is unconstrained on sections which are not differentiable, so this is the form in
+which two connections determined by the same data, such as two Levi-Civita connections of one
+metric, are compared. -/
+theorem curvatureTensor_congr {cov' : CovariantDerivative I F V}
+    [ContMDiffCovariantDerivative cov' ∞]
+    (h : ∀ σ : Π y : M, V y, CMDiff ∞ (T% σ) → ∀ y, cov σ y = cov' σ y) (x : M) :
+    cov.curvatureTensor x = cov'.curvatureTensor x := by
+  refine (eq_curvatureTensor_iff cov' x _).2 fun X Y σ hX hY hσ ↦ ?_
+  have hinner (Z : Π y : M, TangentSpace I y) :
+      (fun y ↦ cov σ y (Z y)) = fun y ↦ cov' σ y (Z y) :=
+    funext fun y ↦ by rw [h σ hσ y]
+  rw [curvatureTensor_apply cov x hX hY hσ, curvatureOperator_apply, curvatureOperator_apply,
+    hinner Y, hinner X, h σ hσ x, h _ (cov'.contMDiff_apply hY hσ) x,
+    h _ (cov'.contMDiff_apply hX hσ) x]
 
 /-- Swapping the two tangent-vector arguments negates the curvature endomorphism. -/
 theorem curvatureTensor_antisymm (x : M) (u v : TangentSpace I x) :

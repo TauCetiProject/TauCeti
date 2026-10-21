@@ -91,7 +91,7 @@ theorem ContractableLaw.map_prefixProj_of_strictMono {ρ : Measure (ℕ → α)}
   obtain ⟨φ, hφ, hφ_eq⟩ := hk.exists_strictMono_nat_extending_fin
   have hmap := congrArg (fun ν : Measure (ℕ → α) => ν.map (prefixProj α n))
     (hρ.map_reindex hφ)
-  rw [map_reindex_prefixProj] at hmap
+  rw [MeasureTheory.Measure.map_reindex_prefixProj] at hmap
   have hidx :
       (fun x : ℕ → α => fun i : Fin n => x (φ i.val)) =
         fun x : ℕ → α => fun i : Fin n => x (k i) := by
@@ -117,7 +117,7 @@ theorem contractableLaw_iff_forall_map_prefixProj_of_strictMono {ρ : Measure (�
       infer_instance
     refine measure_eq_of_prefixProj_map_eq ?_
     intro n
-    rw [map_reindex_prefixProj]
+    rw [MeasureTheory.Measure.map_reindex_prefixProj]
     exact hρ n (fun i : Fin n => φ i.val) (hφ.comp Fin.val_strictMono)
 
 /-- A contractable path law is preserved by the one-sided shift. -/

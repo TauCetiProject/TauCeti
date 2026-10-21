@@ -11,13 +11,21 @@
     last;
   var status = root.querySelector("[data-ci-status]");
   var counts = root.querySelector("[data-ci-counts]");
-  var builds = root.querySelector("[data-ci-builds]");
-  var freshness = root.querySelector("[data-ci-freshness]");
-  function stamp(value) {
-    var date = new Date(value);
-    return Number.isFinite(date.getTime())
-      ? date.toISOString().replace("T", " ").slice(0, 19) + " UTC"
-      : "unknown";
+  var backlog = root.querySelector("[data-ci-backlog]");
+  function age(value) {
+    var seconds = Math.max(0, (Date.now() - Date.parse(value)) / 1000);
+    if (!Number.isFinite(seconds)) return "at an unknown time";
+    if (seconds < 60) return "just now";
+    var amount = Math.floor(seconds / 60), unit = "minute";
+    if (seconds >= 3600) {
+      amount = Math.floor(seconds / 3600);
+      unit = "hour";
+    }
+    if (seconds >= 86400) {
+      amount = Math.floor(seconds / 86400);
+      unit = "day";
+    }
+    return amount + " " + unit + (amount === 1 ? "" : "s") + " ago";
   }
   function group(file) {
     if (file.indexOf("ci-fleet-") === 0) return "fleet";
@@ -27,117 +35,86 @@
       return "details";
     return "daily";
   }
-  function list(target, values) {
-    target.replaceChildren();
-    values.forEach(function (value) {
-      var li = document.createElement("li");
-      if (
-        value.url &&
-        /^https:\/\/github\.com\/TauCetiProject\/[\w.-]+\/actions\/runs\/\d+$/.test(
-          value.url,
-        )
-      ) {
-        var a = document.createElement("a");
-        a.href = value.url;
-        a.textContent = value.text;
-        li.append(a);
-      } else li.textContent = value.text;
-      target.append(li);
-    });
+  function chartNote(image, manifest) {
+    var file = new URL(image.src, document.baseURI).pathname.split("/").pop();
+    var asset = (manifest.assets || {})[file];
+    if (!asset || image.src !== origin + asset.url) return;
+    var figure = image.closest("figure");
+    if (!figure) return;
+    var note = figure.querySelector("[data-ci-chart-age]");
+    if (!note) {
+      note = document.createElement("p");
+      note.dataset.ciChartAge = "";
+      note.className = "ci-chart-age";
+      figure.append(note);
+    }
+    var name = group(file), data = (manifest.groups || {})[name] || {};
+    var text = "Updated " + age(data.published_at) + ".";
+    if (data.status === "stale" || data.status === "error")
+      text = "Last available chart. " + text;
+    if (name === "daily" || name === "details") text += " Today is provisional.";
+    if (data.pending) text += " Some build details are still arriving.";
+    if (data.gaps) text += " Some source data is unavailable.";
+    note.textContent = text;
+    note.title = "Published: " + (data.published_at || "unknown") +
+      "; inventory checked through: " + (data.source_through || "unknown");
   }
   function report(manifest, disconnected) {
     var current = manifest.current || {};
-    var stale =
-      !current.as_of || Date.now() - Date.parse(current.as_of) > 30 * 60 * 1000;
+    var updated = current.computed_at || manifest.generated_at || current.as_of;
+    var delayed = !Number.isFinite(Date.parse(updated)) ||
+      Date.now() - Date.parse(updated) > 3 * 60 * 1000;
+    var incomplete = current.truncated || !Number.isFinite(Date.parse(current.as_of)) ||
+      Date.now() - Date.parse(current.as_of) > 30 * 60 * 1000;
     status.textContent =
       (disconnected
-        ? "Updates unavailable. Last successful snapshot: "
-        : stale
-          ? "Snapshot is stale: "
-          : "Observed at ") + stamp(current.as_of);
-    root.dataset.stale = String(disconnected || stale);
+        ? "Updates paused · last updated "
+        : delayed
+          ? "Updates delayed · last updated "
+          : incomplete
+            ? "Counts may be incomplete · updated "
+            : "Updated ") + age(updated);
+    status.title = "Counts refreshed: " + (updated || "unknown") +
+      "; inventory checked through: " + (current.as_of || "unknown");
+    root.dataset.stale = String(!!(disconnected || delayed || incomplete));
     var names = {
       github: "GitHub-hosted",
       namespace: "Namespace",
-      "self-hosted": "self-hosted",
-      unknown: "runner unassigned",
+      "self-hosted": "Self-hosted",
+      unknown: "Unassigned",
     };
     var kinds = new Set(
-      Object.keys(current.running || {}).concat(
+      ["github", "namespace", "self-hosted"].concat(
+        Object.keys(current.running || {}),
         Object.keys(current.queued || {}),
       ),
     );
-    counts.textContent =
-      Array.from(kinds)
-        .map(function (kind) {
-          return (
-            (names[kind] || kind) +
-            ": " +
-            ((current.running || {})[kind] || 0) +
-            " running, " +
-            ((current.queued || {})[kind] || 0) +
-            " queued"
-          );
-        })
-        .join(" · ") || "No active jobs observed.";
-    if (current.ready_to_merge && current.ready_to_merge.complete)
-      counts.textContent +=
-        " · Ready-to-merge backlog: " +
-        current.ready_to_merge.count +
-        " PRs (observed " +
-        stamp(current.ready_to_merge.at) +
-        ")";
-    list(
-      builds,
-      (current.builds || [])
-        .slice(0, 100)
-        .map(function (job) {
-          return {
-            text:
-              (job.repo || "") +
-              " #" +
-              job.run +
-              " attempt " +
-              job.attempt +
-              ": " +
-              job.status,
-            url: "https://github.com/" + job.repo + "/actions/runs/" + job.run,
-          };
-        })
-        .concat(
-          (current.staging || []).map(function (run) {
-            return {
-              text:
-                "Staging batch " +
-                (run.batch || "unknown") +
-                ": " +
-                run.status +
-                (run.members ? ", " + run.members.length + " PRs" : ""),
-              url: run.url,
-            };
-          }),
-        ),
-    );
-    list(
-      freshness,
-      Object.keys(manifest.groups || {}).map(function (name) {
-        var data = manifest.groups[name];
-        return {
-          text:
-            name +
-            ": " +
-            data.status +
-            "; source through " +
-            stamp(data.source_through) +
-            "; published " +
-            stamp(data.published_at) +
-            (data.pending ? "; " + data.pending + " details pending" : "") +
-            (data.gaps ? "; " + data.gaps + " source gaps" : ""),
-        };
-      }),
-    );
-    if (current.truncated)
-      counts.textContent += " · Active inventory is incomplete.";
+    counts.replaceChildren();
+    kinds.forEach(function (kind) {
+      var cell = document.createElement("div");
+      cell.dataset.runner = kind;
+      var label = document.createElement("dt");
+      label.textContent = names[kind] || "Other runners";
+      var value = document.createElement("dd");
+      var running = document.createElement("strong");
+      running.textContent = String((current.running || {})[kind] || 0);
+      var caption = document.createElement("span");
+      caption.textContent = " running";
+      var waiting = document.createElement("span");
+      waiting.className = "ci-live-waiting";
+      waiting.textContent = " " + ((current.queued || {})[kind] || 0) + " waiting";
+      value.append(running, caption, waiting);
+      cell.append(label, value);
+      counts.append(cell);
+    });
+    var ready = current.ready_to_merge;
+    backlog.hidden = !ready || !ready.complete ||
+      !Number.isFinite(Date.parse(ready.at)) || Date.now() - Date.parse(ready.at) > 30 * 60 * 1000;
+    backlog.textContent = backlog.hidden ? "" : ready.count +
+      " pull request" + (ready.count === 1 ? "" : "s") + " ready to merge.";
+    document.querySelectorAll("img.loc-graph").forEach(function (image) {
+      chartNote(image, manifest);
+    });
   }
   function preload(url) {
     return new Promise(function (resolve, reject) {
@@ -159,9 +136,8 @@
       throw new Error("Unknown manifest");
     if (manifest.mode !== "live") {
       last = null;
-      counts.textContent = "";
-      builds.replaceChildren();
-      freshness.replaceChildren();
+      counts.replaceChildren();
+      backlog.hidden = true;
       status.textContent =
         "Live reporting is being validated. Historical charts remain available below.";
       return;
@@ -184,22 +160,7 @@
         if (image.src === url) return;
         await preload(url);
         image.src = url;
-        var figure = image.closest("figure");
-        if (!figure) return;
-        var note = figure.querySelector("[data-ci-chart-age]");
-        if (!note) {
-          note = document.createElement("p");
-          note.dataset.ciChartAge = "";
-          note.className = "ci-chart-age";
-          figure.append(note);
-        }
-        var data = (manifest.groups || {})[group(file)] || {};
-        note.textContent =
-          "Chart through " +
-          stamp(data.published_through || data.source_through) +
-          " · " +
-          (data.status || "unknown") +
-          " · Today is provisional.";
+        chartNote(image, manifest);
       }),
     );
   }
@@ -226,7 +187,7 @@
       if (last) report(last, true);
       else
         status.textContent =
-          "Live updates are unavailable. Historical charts remain available below.";
+          "Live counts are unavailable. Charts remain available.";
     } finally {
       pending = false;
       schedule();

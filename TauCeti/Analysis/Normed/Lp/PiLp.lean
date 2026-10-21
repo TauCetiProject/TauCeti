@@ -37,12 +37,12 @@ open scoped ENNReal
 
 namespace PiLp
 
-variable {ι : Type*} [Fintype ι] {p : ℝ≥0∞}
-  {E F : ι → Type*} [∀ i, SeminormedAddCommGroup (E i)]
-  [∀ i, SeminormedAddCommGroup (F i)]
+variable {ι : Type*} [Fintype ι] {p : ℝ≥0∞} {E F : ι → Type*}
 
-/-- Coordinatewise domination of norms implies domination of finite `Lᵖ` norms. -/
-theorem norm_mono {x : PiLp p E} {y : PiLp p F}
+/-- Coordinatewise domination of norms implies domination of finite `Lᵖ` norms.
+The dominating family only needs a norm: the coordinate bounds ensure its nonnegativity. -/
+theorem norm_mono [∀ i, SeminormedAddGroup (E i)] [∀ i, Norm (F i)]
+    {x : PiLp p E} {y : PiLp p F}
     (h : ∀ i, ‖x i‖ ≤ ‖y i‖) : ‖x‖ ≤ ‖y‖ := by
   rcases eq_or_ne p 0 with rfl | hp0
   · rw [norm_eq_card, norm_eq_card]
@@ -58,6 +58,8 @@ theorem norm_mono {x : PiLp p E} {y : PiLp p F}
     gcongr
     · exact Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _
     · exact h _
+
+variable [∀ i, SeminormedAddCommGroup (E i)]
 
 /-- Taking coordinate norms preserves the finite `Lᵖ` norm. -/
 @[simp]
