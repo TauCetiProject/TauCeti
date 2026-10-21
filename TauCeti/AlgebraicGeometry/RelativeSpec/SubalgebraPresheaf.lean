@@ -72,6 +72,15 @@ namespace SubalgebraPresheaf
 
 variable {A : CommMon X.Modules} (S : A.SubalgebraPresheaf)
 
+/-- Two presheaves of subalgebras are equal when they have the same sections over every open. -/
+@[ext]
+lemma ext {S T : A.SubalgebraPresheaf}
+    (h : ∀ (U : X.Opens) (x : Γ(A.X, U)), x ∈ S.sections U ↔ x ∈ T.sections U) : S = T := by
+  obtain ⟨S, _⟩ := S
+  obtain ⟨T, _⟩ := T
+  congr
+  exact funext fun U ↦ Subalgebra.ext (h U)
+
 /-- The presheaf of rings `U ↦ S.sections U`. -/
 @[expose]
 def sectionsPresheaf : X.Opensᵒᵖ ⥤ CommRingCat.{u} where
