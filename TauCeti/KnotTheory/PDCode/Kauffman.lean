@@ -91,11 +91,6 @@ namespace PDCode
 
 variable {n : ℕ}
 
-/-- The two local smoothings at a crossing are distinct. -/
-theorem slotSmoothing_ne_slotSmoothing_not (b : Bool) : slotSmoothing b ≠ slotSmoothing !b := by
-  cases b <;> simp only [Bool.not_false, Bool.not_true, slotSmoothing_false, slotSmoothing_true] <;>
-    decide
-
 /-- Smooth every crossing of a PD-code, using at crossing `i` the local smoothing
 `slotSmoothing (b i)`. This is the smoothing counterpart of `TauCeti.PDCode.crossingTurn`, which
 instead follows a local strand through a crossing. -/

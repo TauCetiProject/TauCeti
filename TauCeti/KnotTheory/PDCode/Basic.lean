@@ -177,6 +177,11 @@ theorem slotSmoothing_ne (b : Bool) (slot : Fin 4) : slotSmoothing b slot ≠ sl
   revert slot
   cases b <;> decide
 
+/-- The two local smoothings at a crossing are distinct. -/
+theorem slotSmoothing_ne_slotSmoothing_not (b : Bool) : slotSmoothing b ≠ slotSmoothing !b := by
+  cases b <;> simp only [Bool.not_false, Bool.not_true, slotSmoothing_false, slotSmoothing_true] <;>
+    decide
+
 /-- Each local smoothing is a perfect matching of the four crossing slots. -/
 theorem isPerfectMatching_slotSmoothing (b : Bool) : IsPerfectMatching (slotSmoothing b) :=
   isPerfectMatching_iff.mpr ⟨slotSmoothing_apply_apply b, slotSmoothing_ne b⟩

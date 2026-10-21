@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.PDCode.Kauffman
+public import TauCeti.KnotTheory.PDCode.Basic
 
 /-!
 # Four-endpoint closures of a smoothing
@@ -66,17 +66,18 @@ theorem orbitCount_slotSmoothing_not_mul_div_two_add_one_eq_iff (b : Bool) (p : 
 
 /-- The opposite-slot exterior pairing is exactly the one-to-one case: the two smoothing
 closures have equal circle counts. -/
-theorem orbitCount_slotSmoothing_true_mul_div_two_eq_false_iff (p : Perm (Fin 4))
+theorem orbitCount_slotSmoothing_not_mul_div_two_eq_iff (b : Bool) (p : Perm (Fin 4))
     (hp : IsPerfectMatching p) :
-    orbitCount (slotSmoothing true * p) / 2 =
-      orbitCount (slotSmoothing false * p) / 2 ↔ p = oppositeCrossingSlot := by
+    orbitCount (slotSmoothing (!b) * p) / 2 =
+      orbitCount (slotSmoothing b * p) / 2 ↔ p = oppositeCrossingSlot := by
   have hcases := (isPerfectMatching_iff_eq_slotSmoothing_or_eq_oppositeCrossingSlot p).mp hp
   have hne := slotSmoothing_ne_slotSmoothing_not false
   have hfalse := slotSmoothing_ne_oppositeCrossingSlot_perm false
   have htrue := slotSmoothing_ne_oppositeCrossingSlot_perm true
   simp only [Bool.not_false] at hne
-  rw [orbitCount_slotSmoothing_mul_div_two _ _ hp,
-    orbitCount_slotSmoothing_mul_div_two _ _ hp]
-  split_ifs <;> grind
+  cases b <;>
+    rw [orbitCount_slotSmoothing_mul_div_two _ _ hp,
+      orbitCount_slotSmoothing_mul_div_two _ _ hp] <;>
+    split_ifs <;> grind
 
 end TauCeti.PDCode
