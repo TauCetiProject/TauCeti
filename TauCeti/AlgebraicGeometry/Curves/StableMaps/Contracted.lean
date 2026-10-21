@@ -31,8 +31,9 @@ forms (the map `F` itself is always locally of finite type, as the source curve 
   (`TauCeti.AlgebraicGeometry.PrestableMap.const`) is.
 
 Postcomposition with a morphism of targets can only contract more components, and contracts the
-same components when the morphism of targets is an immersion, for instance an isomorphism or a
-closed immersion. A constant map contracts every component of a curve over a one-point base.
+same components when the morphism of targets is injective on points, for instance an
+immersion such as an isomorphism or a closed immersion. A constant map contracts every component
+of a curve over a one-point base.
 
 ## Main definitions
 
@@ -49,8 +50,9 @@ In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
   restriction through the residue field of a point.
 * `isContractedComponent_iff_exists_subschemeι_comp_eq_section`: over an algebraically closed
   field, contraction is constancy through a rational point.
-* `isContractedComponent_postcomp_iff`: postcomposition with an immersion of targets contracts the
-  same components.
+* `isContractedComponent_postcomp_iff_of_injective`: postcomposition with a morphism of targets
+  that is injective on points contracts the same components; `isContractedComponent_postcomp_iff`
+  is the case of an immersion.
 * `isContractedComponent_const_iff`: a constant map over a one-point base contracts every
   component.
 
@@ -166,14 +168,20 @@ theorem IsContractedComponent.postcomp {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r
     (F.postcomp h hh).IsContractedComponent E :=
   ⟨hF.1, (F.image_postcomp_map h hh E).symm ▸ hF.2.image _⟩
 
+/-- Postcomposition with a morphism of targets that is injective on points contracts the same
+components. -/
+theorem isContractedComponent_postcomp_iff_of_injective {r : W ⟶ S} (h : V ⟶ W)
+    (hinj : Function.Injective h) (hh : h ≫ r = q) {E : Set F.curve.total} :
+    (F.postcomp h hh).IsContractedComponent E ↔ F.IsContractedComponent E :=
+  and_congr Iff.rfl <| by rw [image_postcomp_map, hinj.subsingleton_image_iff]
+
 /-- Postcomposition with an immersion of targets, for instance an isomorphism or a closed
 immersion, contracts the same components. -/
 @[simp]
 theorem isContractedComponent_postcomp_iff {r : W ⟶ S} (h : V ⟶ W) [IsPreimmersion h]
     (hh : h ≫ r = q) {E : Set F.curve.total} :
     (F.postcomp h hh).IsContractedComponent E ↔ F.IsContractedComponent E :=
-  and_congr Iff.rfl <| by
-    rw [image_postcomp_map, h.isEmbedding.injective.subsingleton_image_iff]
+  F.isContractedComponent_postcomp_iff_of_injective h h.isEmbedding.injective hh
 
 /-- A constant prestable map over a one-point base, for instance the spectrum of a field,
 contracts every irreducible component of its source curve. -/
