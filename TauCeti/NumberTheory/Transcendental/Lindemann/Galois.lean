@@ -96,7 +96,9 @@ private theorem expEval_ne_zero_of_forall_galConj_eq_of_isIntegral {x : K[K]} (h
   set τ := σ.toRatAlgHom.restrictNormal' K
   have hτ : σ a = algebraMap K ℂ (auxValue x m.natAbs p (τ γ₀)) := by
     rw [← hfix τ, auxValue_galConj]
-    exact (σ.toRatAlgHom.restrictNormal_commutes K a).symm
+    simpa only [τ, AlgHom.restrictNormal', AlgEquiv.ofBijective_apply, Algebra.algebraMap_self,
+      RingHom.id_apply, RingHom.toRatAlgHom_apply] using
+      (σ.toRatAlgHom.restrictNormal_commutes K a).symm
   exact (hp₀ p (le_of_max_le_left hp_ge) _ (hτS τ)).not_ge (hτ ▸ hσ)
 
 /-- **The weak Lindemann–Weierstrass theorem.** Let `K` be a number field, Galois over `ℚ` and
@@ -129,8 +131,8 @@ theorem expEval_injective : Function.Injective (expEval K) := by
     (prod_ne_zero_iff.2 fun τ _ ↦ (map_ne_zero_iff _ (galConj τ).injective).2 hx)
     (fun σ ↦ galConj_prod_galConj σ x) ?_
   rw [map_prod]
-  have h1 : galConj (1 : K ≃ₐ[ℚ] K) x = x :=
-    DFunLike.congr_fun (galConj_refl (K := K) (F := ℚ)) x
+  have h1 : galConj (1 : K ≃ₐ[ℚ] K) x = x := by
+    rw [AlgEquiv.aut_one, galConj_refl, AlgEquiv.coe_refl, id_eq]
   exact prod_eq_zero (mem_univ 1) (by rwa [h1])
 
 end TauCeti.LindemannWeierstrass
