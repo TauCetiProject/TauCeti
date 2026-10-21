@@ -20,14 +20,14 @@ algebra. Every `f : T` attains its Gauss norm at a classical point: there is a m
 of `T` with `|f(x)| = ‖f‖`, where `|f(x)|` is the absolute value on the finite residue field
 `T ⧸ x`. Consequently the supremum seminorm of `T` is its Gauss norm.
 
-After scaling, `‖f‖ = 1`, so the reduction `f̃ ∈ 𝓀[K][X₁, …, Xₙ]` is nonzero. It need not have a
-nonzero value at a point of `𝓀[K]ⁿ` (for example `X ^ p - X` over `ℚ_p`), but it has one at a
-point of a finite simple extension `𝓀[K][Y] ⧸ (g̃)`, with coordinates `q̃ᵢ(Y)`. Lift `g̃` to a monic
-`g` over `𝒪[K]` and the `q̃ᵢ` to `qᵢ`, and let `α` be a root of `g` in a finite extension `L` of
-`K` with its spectral norm. Then `‖α‖ ≤ 1`, and evaluating at `xᵢ = qᵢ(α)` gives a `K`-algebra map
-`T → L` whose kernel is a maximal ideal. The value `f(x)` has norm one: modulo the open unit ball
-it is computed by a polynomial `h` over `𝒪[K]` whose reduction is coprime to the irreducible `g̃`,
-and a Bézout relation `u g + v h ≡ 1` evaluated at `α` shows `‖h(α)‖ ≥ 1`.
+After scaling, `‖f‖ = 1`, so the reduction `red f ∈ 𝓀[K][X₁, …, Xₙ]` is nonzero. It need not have a
+nonzero value at a point of `𝓀[K]ⁿ` (for example `X ^ p - X` over `ℚ_p`), but it has one at a point
+of a finite simple extension `𝓀[K][Y] ⧸ (red g)`, with coordinates `red qᵢ(Y)`. Lift `red g` to a
+monic `g` over `𝒪[K]` and the `red qᵢ` to `qᵢ`, and let `α` be a root of `g` in a finite extension
+`L` of `K` with its spectral norm. Then `‖α‖ ≤ 1`, and evaluating at `xᵢ = qᵢ(α)` gives a
+`K`-algebra map `T → L` whose kernel is a maximal ideal. The value `f(x)` has norm one: modulo the
+open unit ball it is computed by a polynomial `h` over `𝒪[K]` whose reduction is coprime to the
+irreducible `red g`, and a Bézout relation `u g + v h ≡ 1` evaluated at `α` shows `‖h(α)‖ ≥ 1`.
 
 The coefficient field is not assumed algebraically closed, and its residue field may be finite;
 this is why the maximizing point cannot always be chosen `K`-rational.
@@ -88,14 +88,15 @@ private theorem norm_eval₂_lt_one {α : L} (hα : ‖α‖ ≤ 1) {p : 𝒪[K]
     _ < 1 := by rwa [mul_one]
 
 /-- **Residue nonvanishing at a lifted point.** Let `α` in the closed unit ball of `L` be a root of
-`g` over `𝒪[K]` whose reduction `g̃` is irreducible. If `g̃` does not divide the reduction of `h`,
-then `‖h(α)‖ ≥ 1`: the residue of `h(α)` is the nonzero value of `h̃` at a root of `g̃`. -/
+`g` over `𝒪[K]` whose reduction `red g` is irreducible. If `red g` does not divide the reduction of
+`h`, then `‖h(α)‖ ≥ 1`: its residue is the nonzero value of `red h` at a root of `red g`. -/
 private theorem one_le_norm_eval₂ {α : L} (hα : ‖α‖ ≤ 1) {g h : 𝒪[K][X]}
     (hg : g.eval₂ ((algebraMap K L).comp (𝒪[K]).subtype) α = 0)
     (hirr : Irreducible (g.map (residue 𝒪[K])))
     (hdvd : ¬ g.map (residue 𝒪[K]) ∣ h.map (residue 𝒪[K])) :
     1 ≤ ‖h.eval₂ ((algebraMap K L).comp (𝒪[K]).subtype) α‖ := by
-  -- Lift a Bézout relation `u₀ g̃ + v₀ h̃ = 1` and evaluate it at `α`, where `g` vanishes.
+  -- Lift a Bézout relation `u₀ * red g + v₀ * red h = 1` and evaluate it at `α`,
+  -- where `g` vanishes.
   obtain ⟨u₀, v₀, huv⟩ := (hirr.coprime_iff_not_dvd).mpr hdvd
   obtain ⟨u, rfl⟩ := map_surjective _ residue_surjective u₀
   obtain ⟨v, rfl⟩ := map_surjective _ residue_surjective v₀
@@ -135,9 +136,9 @@ private theorem restrictedReduction_coe_map (P : MvPolynomial (Fin n) 𝒪[K])
 
 
 /-- **Nonvanishing at a lifted point.** Let `α` in the closed unit ball of `L` be a root of `g`
-over `𝒪[K]` with irreducible reduction `g̃`, and evaluate at `xᵢ = qᵢ(α)` for polynomials `qᵢ`
-over `𝒪[K]`. If `g̃` does not divide `f̃(q̃)`, where `f̃` is the reduction of `f` in the Gauss unit
-ball, then `‖f(x)‖ ≥ 1`. -/
+over `𝒪[K]` with irreducible reduction `red g`, and evaluate at `xᵢ = qᵢ(α)` for polynomials `qᵢ`
+over `𝒪[K]`. If `red g` does not divide `(red f)(red q)`, where `red f` is the reduction of `f` in
+the Gauss unit ball, then `‖f(x)‖ ≥ 1`. -/
 private theorem one_le_norm_restrictedEval₂ {L : Type*} [NormedField L] [IsUltrametricDist L]
     [NormedAlgebra K L] [CompleteSpace L] {α : L} (hα : ‖α‖ ≤ 1) {g : 𝒪[K][X]}
     (hg : g.eval₂ ((algebraMap K L).comp (𝒪[K]).subtype) α = 0)
@@ -163,7 +164,7 @@ private theorem one_le_norm_restrictedEval₂ {L : Type*} [NormedField L] [IsUlt
   have hR : ‖restrictedEval₂ (algebraMap K L) x hφ hx ((f - P₁ : T°) : T)‖ < 1 :=
     (norm_restrictedEval₂_le _ _ hφ hx _).trans_lt (restrictedReduction_eq_zero_iff.mp (by
       rw [map_sub, restrictedReduction_coe_map, hP, sub_self]))
-  -- The value at `P₁` is `h(α)` for `h = P(q)`, and `g̃` does not divide the reduction of `h`.
+  -- The value at `P₁` is `h(α)` for `h = P(q)`, and `red g` does not divide the reduction of `h`.
   have hP₁α : restrictedEval₂ (algebraMap K L) x hφ hx (P₁ : T) =
       (MvPolynomial.aeval q P).eval₂ j α := by
     rw [restrictedEval₂_coe, MvPolynomial.eval₂_map, ← coe_eval₂RingHom, MvPolynomial.map_aeval]
