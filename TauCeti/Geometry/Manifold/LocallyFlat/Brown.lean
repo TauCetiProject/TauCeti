@@ -46,8 +46,6 @@ theorem brownBicollaring (n : ℕ) : BrownBicollaring n := by
       (X := sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)
     exact hf.isLocallyBicollared.isBicollared_of_finite hf.injective
   · apply hf.isBicollared_of_not_isPreconnected_compl_range hn
-    have := ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin (n + 1)))
-      (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)
     exact not_isPreconnected_compl_range_sphere
       (by simp : Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 2))) =
         Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) + 1) hf.continuous hf.injective

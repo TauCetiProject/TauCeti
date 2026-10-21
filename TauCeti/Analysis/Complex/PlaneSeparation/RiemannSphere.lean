@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import TauCeti.Topology.JordanCurve.Basic
-import Mathlib.Geometry.Manifold.Instances.Sphere
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Compactification.OnePoint.Sphere
 import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
@@ -53,12 +52,10 @@ theorem IsJordanCurve.not_isPreconnected_compl_onePoint {J : Set (OnePoint ℂ)}
     (hJ : IsJordanCurve J) : ¬ IsPreconnected Jᶜ := by
   intro hconn
   obtain ⟨e⟩ := isJordanCurve_iff.mp hJ
-  -- stereographic projection carries `J` to an embedded circle of the sphere, a manifold
+  -- stereographic projection carries `J` to an embedded circle of the sphere
   let Φ : OnePoint ℂ ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 :=
     onePointEquivSphereOfFinrankEq (by simp)
   let φ := sphereCircleHomeomorph (0 : ℂ) one_pos
-  have := ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 2))
-    (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)
   refine not_isPreconnected_compl_range_sphere (h := Φ ∘ jordanParam e ∘ φ) (by simp)
     (Φ.continuous.comp ((continuous_jordanParam e).comp φ.continuous))
     (Φ.injective.comp ((jordanParam_injective e).comp φ.injective)) ?_
