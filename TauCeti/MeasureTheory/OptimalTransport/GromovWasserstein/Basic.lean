@@ -186,6 +186,17 @@ theorem aestronglyMeasurable_edist_comp {γ : Measure Ω} [SFinite γ] {f : Ω �
     (hωX.comp_quasiMeasurePreserving (hf.prod hf).quasiMeasurePreserving)
     (hωY.comp_quasiMeasurePreserving (hg.prod hg).quasiMeasurePreserving)
 
+/-- The pair of kernel values `((x, y), (x', y')) ↦ (ωX (x, x'), ωY (y, y'))` is
+almost-everywhere strongly measurable for the square of a coupling. -/
+theorem IsCoupling.aestronglyMeasurable_kernel_prodMk [SFinite π] (hπ : IsCoupling π μ ν)
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
+    AEStronglyMeasurable (fun q : (X × Y) × (X × Y) ↦ (ωX (q.1.1, q.2.1), ωY (q.1.2, q.2.2)))
+      (π.prod π) :=
+  (hωX.comp_quasiMeasurePreserving
+    (hπ.measurePreserving_fst.prod hπ.measurePreserving_fst).quasiMeasurePreserving).prodMk
+    (hωY.comp_quasiMeasurePreserving
+      (hπ.measurePreserving_snd.prod hπ.measurePreserving_snd).quasiMeasurePreserving)
+
 /-- The kernel discrepancy integrated in the distortion of a coupling is almost-everywhere
 strongly measurable for the square of the coupling. -/
 theorem IsCoupling.aestronglyMeasurable_edist [SFinite π] (hπ : IsCoupling π μ ν)
