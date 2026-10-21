@@ -44,6 +44,7 @@ namespace TauCeti
 
 /-- The `L^∞` seminorm only sees the null sets of the measure, so it does not change when an
 s-finite measure is replaced by the equivalent finite measure `Measure.toFinite`. -/
+@[simp]
 theorem eLpNorm_exponent_top_toFinite [ENorm ε] [SFinite ν] (g : β → ε) :
     eLpNorm g ∞ ν.toFinite = eLpNorm g ∞ ν := by
   by_cases hg : AEStronglyMeasurable g ν
