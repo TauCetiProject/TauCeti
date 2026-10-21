@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Algebra.Module.ZLattice.Family.Basic
+public import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The global trivialization of a continuous family of tori
@@ -18,7 +18,8 @@ normed space `E`, as in `TauCeti.Algebra.Module.ZLattice.Family.Basic`, and let 
 (`TauCeti.periodBasis`), whose coordinate map `F_y⁻¹ : E ≃ ℝ^ι` carries the lattice
 `LinearMap.range (P y)` onto the standard lattice `ℤ^ι = span ℤ (range (Pi.basisFun ℝ ι))`.
 Both `F_y` and `F_y⁻¹` depend continuously on `y` in the operator norm, as does any family of
-bases whose vectors depend continuously on the parameter.
+bases whose vectors depend continuously on the parameter
+(`Module.Basis.continuous_equivFunL_of_continuous`).
 
 Consequently `[y, v] ↦ (y, [F_y⁻¹ v])` descends to a homeomorphism
 `(Y × E)/Λ ≃ₜ Y × ℝ^ι/ℤ^ι` over `Y` (`TauCeti.torusFamilyHomeomorphProd`), from the orbit space of
@@ -31,9 +32,6 @@ period ratio varies is not holomorphically a product.
 
 ## Main results
 
-* `Module.Basis.continuous_equivFunL_symm_of_continuous`,
-  `Module.Basis.continuous_equivFunL_of_continuous`: a family of bases whose vectors depend
-  continuously on a parameter has continuously varying frame and coordinate maps.
 * `TauCeti.periodBasis_equivFun_mem_span_iff`: the coordinates of `v` in the period basis at `y` are
   integers exactly when `v` is a period at `y`.
 * `TauCeti.continuous_periodBasis_equivFunL_symm`, `TauCeti.continuous_periodBasis_equivFunL`:
@@ -50,42 +48,6 @@ period ratio varies is not holomorphically a product.
 public section
 
 open Module Set Function Submodule
-
-namespace Module.Basis
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {Y : Type*} [TopologicalSpace Y] {ι : Type*} [Finite ι] {B : Y → Basis ι 𝕜 F}
-
-/-- **Continuity of a family of frames.** If every vector of a family of bases depends continuously
-on the parameter, then so does the frame `x ↦ ∑ i, x i • B y i`, in the operator norm. -/
-theorem continuous_equivFunL_symm_of_continuous (h : ∀ i, Continuous fun y ↦ B y i) :
-    Continuous fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F) := by
-  have := Fintype.ofFinite ι
-  refine continuous_clm_apply.2 fun x ↦ ?_
-  change Continuous fun y ↦ (B y).equivFun.symm x
-  simp only [Basis.equivFun_symm_apply]
-  exact continuous_finsetSum _ fun i _ ↦ continuous_const.smul (h i)
-
-/-- **Continuity of a family of coordinate maps.** If every vector of a family of bases depends
-continuously on the parameter, then so does the coordinate map `F → ι → 𝕜`, in the operator
-norm. -/
-theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y i) :
-    Continuous fun y ↦ ((B y).equivFunL : F →L[𝕜] ι → 𝕜) := by
-  have := Fintype.ofFinite ι
-  have h' : (fun y ↦ ((B y).equivFunL : F →L[𝕜] ι → 𝕜)) =
-      fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F).inverse := by
-    ext1 y
-    rw [ContinuousLinearMap.inverse_equiv, ContinuousLinearEquiv.symm_symm]
-  rw [h', continuous_iff_continuousAt]
-  intro y
-  have := (B y).finiteDimensional_of_finite
-  have := FiniteDimensional.complete 𝕜 F
-  exact ContinuousAt.comp (g := ContinuousLinearMap.inverse)
-    (contDiffAt_map_inverse (n := 0) (B y).equivFunL.symm).continuousAt
-    (continuous_equivFunL_symm_of_continuous h).continuousAt
-
-end Module.Basis
 
 namespace TauCeti
 
