@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Localization
 public import TauCeti.Analysis.Sobolev.Trace.Epigraph.Basic
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Sobolev.LipschitzDomain.PartitionOfUnity
 import TauCeti.Analysis.Sobolev.Trace.Continuous
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -25,7 +27,9 @@ trace gives `W1p.lipschitzChartTrace`, of norm at most `2 M (1 + L)`. Functions 
 zero local trace. Equality of the cutoff products suffices for equality of local traces. For a
 function continuous up to the boundary, the local trace is the classical boundary value of the
 cutoff product at the graph point (`W1p.lipschitzChartTrace_apply_ae_of_continuousOn`).
-These are the local operators used when assembling a boundary trace by a partition of unity.
+These are the local operators used when assembling a boundary trace by a partition of unity;
+`Set.IsLipschitzDomainWith.exists_lipschitzChart_cutoffs` provides such a partition, with
+cutoffs satisfying the hypotheses of `W1p.lipschitzChartTrace`, on a bounded Lipschitz domain.
 
 Unlike reflection extension, taking a trace requires no shortening of the chart cylinder:
 the support need only lie inside the original cylinder.
@@ -188,5 +192,35 @@ theorem W1p.lipschitzChartTrace_apply_ae_of_continuousOn
     (f := G) (by simpa using hG) hv] with y hy
   rw [W1p.lipschitzChartTrace_apply, hy]
   simp only [G, ContinuousMap.coe_mk]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- **Chart cutoffs on a bounded Lipschitz domain.** A bounded Lipschitz domain `Omega` has
+finitely many Lipschitz boundary charts `e i`, `φ i` with radii `a i`, `b i`, smooth boundary
+cutoffs `ψ i` bounded together with their gradients by `M i` and supported in the chart
+cylinders, as `TauCeti.W1p.lipschitzChartTrace` requires, and a smooth interior cutoff `ψ₀`
+compactly supported in `Omega`, such that `ψ₀ + ∑ i, ψ i = 1` on the closure of `Omega`. -/
+theorem _root_.Set.IsLipschitzDomainWith.exists_lipschitzChart_cutoffs
+    {Omega : Set (WithLp 2 (ℝ × E))} (hΩ : Omega.IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded Omega) :
+    ∃ (t : Finset (WithLp 2 (ℝ × E))) (e : t → WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+      (φ : t → E → ℝ) (a b : t → ℝ) (ψ₀ : WithLp 2 (ℝ × E) → ℝ)
+      (ψ : t → WithLp 2 (ℝ × E) → ℝ) (M : t → ℝ),
+      (∀ i, Omega.IsLipschitzChartWith L (e i) (φ i) (a i) (b i)) ∧
+      (ContDiff ℝ ∞ ψ₀ ∧ HasCompactSupport ψ₀ ∧ tsupport ψ₀ ⊆ Omega) ∧
+      (∀ i, ContDiff ℝ ∞ (ψ i) ∧ 0 ≤ M i ∧ (∀ x, |ψ i x| ≤ M i) ∧ (∀ x, ‖∇ (ψ i) x‖ ≤ M i) ∧
+        tsupport (ψ i) ⊆ e i ⁻¹' normalCylinder (a i) (b i)) ∧
+      ∀ x ∈ closure Omega, ψ₀ x + ∑ i, ψ i x = 1 := by
+  obtain ⟨t, e, φ, a, b, ψ₀, ψ, hchart, ⟨hψ₀, -, hψ₀c, hψ₀Ω⟩, hψ, hsum⟩ :=
+    hΩ.exists_contDiff_partitionOfUnity hb
+  choose M hM hψM hgM using fun i : t =>
+    ((hψ i i.2).1.of_le (by simp)).exists_abs_le_and_norm_gradient_le (hψ i i.2).2.2.1
+  refine ⟨t, fun i => e i, fun i => φ i, fun i => a i, fun i => b i, ψ₀, fun i => ψ i, M,
+    fun i => (hchart i i.2).2.2.1, ⟨hψ₀, hψ₀c, hψ₀Ω⟩,
+    fun i => ⟨(hψ i i.2).1, hM i, hψM i, hgM i, ?_⟩,
+    fun x hx => by rw [← hsum x hx, Finset.sum_coe_sort t (fun i => ψ i x)]⟩
+  -- The shortened cylinder of the partition lies inside the full chart cylinder.
+  exact (hψ i i.2).2.2.2.trans (preimage_mono (normalCylinder_mono (by
+    nlinarith [(hchart i i.2).2.2.2, L.coe_nonneg,
+      ((Set.isLipschitzChartWith_iff ..).1 (hchart i i.2).2.2.1).2.1]) le_rfl))
 
 end TauCeti

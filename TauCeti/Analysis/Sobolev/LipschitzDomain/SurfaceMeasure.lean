@@ -49,6 +49,26 @@ noncomputable section
 open MeasureTheory Module Set
 open scoped ENNReal NNReal
 
+namespace TauCeti
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The part of the frontier of a set lying in the preimage of a chart cylinder is measurable. -/
+theorem measurableSet_frontier_inter_preimage_normalCylinder (Omega : Set F)
+    (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (a b : ℝ) :
+    MeasurableSet (frontier Omega ∩ e ⁻¹' normalCylinder a b) :=
+  isClosed_frontier.measurableSet.inter
+    ((isOpen_normalCylinder a b).preimage e.continuous).measurableSet
+
+/-- The tangential coordinate `x ↦ (e x).snd` read through a chart map is measurable. -/
+theorem _root_.AffineIsometryEquiv.measurable_snd_apply (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) :
+    Measurable fun x ↦ (e x).snd :=
+  ((WithLp.continuous_snd _ _ _).comp e.continuous).measurable
+
+end TauCeti
+
 namespace Set.IsLipschitzChartWith
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -142,8 +162,7 @@ theorem map_snd_euclideanHausdorffMeasure_frontier_inter_le
         (frontier Omega ∩ e ⁻¹' TauCeti.normalCylinder a b)).map (fun x ↦ (e x).snd) ≤
       ((L + 1 : ℝ≥0) : ℝ≥0∞) ^ finrank ℝ E • volume := by
   refine Measure.le_iff.2 fun S hS ↦ ?_
-  have hm : Measurable fun x : F ↦ (e x).snd :=
-    (WithLp.continuous_snd _ _ _ |>.comp e.continuous).measurable
+  have hm := e.measurable_snd_apply
   rw [Measure.map_apply hm hS, Measure.restrict_apply (hm hS), Measure.smul_apply, smul_eq_mul]
   calc
     _ ≤ μHE[finrank ℝ E] ((fun y ↦ e.symm (TauCeti.normalGraphEmbedding phi y)) '' S) := by

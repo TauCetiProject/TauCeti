@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
-public import TauCeti.Analysis.Sobolev.LipschitzDomain.PartitionOfUnity
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.SurfaceMeasure
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # The boundary trace of a bounded Lipschitz domain
@@ -79,12 +77,10 @@ def W1p.lipschitzChartFrontierTrace
     W1p volume Ω 2 →L[ℝ] Lp ℝ 2 ((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
       (frontier (Ω : Set (WithLp 2 (ℝ × E))))) :=
   (extendByZeroLpₗᵢ ℝ (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E)))
-      (isClosed_frontier.measurableSet.inter
-        ((isOpen_normalCylinder a b).preimage e.continuous).measurableSet)
+      (measurableSet_frontier_inter_preimage_normalCylinder _ e a b)
       inter_subset_left).toContinuousLinearMap.comp <|
     ((Lp.compMeasurePreservingₗᵢ ℝ (fun x => (e x).snd)
-        (((WithLp.continuous_snd _ _ _).comp e.continuous).measurable.measurePreserving
-          _)).toContinuousLinearMap.comp
+        (e.measurable_snd_apply.measurePreserving _)).toContinuousLinearMap.comp
       (Lp.LpToLpOfMeasureLeSMul (by simp)
         h.map_snd_euclideanHausdorffMeasure_frontier_inter_le)).comp
     (W1p.lipschitzChartTrace h ψ hψ hM hψM hgM hs)
@@ -101,12 +97,8 @@ theorem W1p.lipschitzChartFrontierTrace_ae_eq
         (frontier (Ω : Set (WithLp 2 (ℝ × E))))]
       (frontier (Ω : Set (WithLp 2 (ℝ × E))) ∩ e ⁻¹' normalCylinder a b).indicator
         fun x => W1p.lipschitzChartTrace h ψ hψ hM hψM hgM hs u (e x).snd := by
-  have hpatch : MeasurableSet
-      (frontier (Ω : Set (WithLp 2 (ℝ × E))) ∩ e ⁻¹' normalCylinder a b) :=
-    isClosed_frontier.measurableSet.inter
-      ((isOpen_normalCylinder a b).preimage e.continuous).measurableSet
-  have hm : Measurable fun x : WithLp 2 (ℝ × E) => (e x).snd :=
-    ((WithLp.continuous_snd _ _ _).comp e.continuous).measurable
+  have hpatch := measurableSet_frontier_inter_preimage_normalCylinder (Ω : Set _) e a b
+  have hm := e.measurable_snd_apply
   set g := W1p.lipschitzChartTrace h ψ hψ hM hψM hgM hs u
   set g' := Lp.LpToLpOfMeasureLeSMul (by simp)
     h.map_snd_euclideanHausdorffMeasure_frontier_inter_le g
@@ -136,10 +128,7 @@ theorem W1p.lipschitzChartFrontierTrace_ae_eq_of_continuousOn
     W1p.lipschitzChartFrontierTrace h ψ hψ hM hψM hgM hs u =ᵐ[
       (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
         (frontier (Ω : Set (WithLp 2 (ℝ × E))))] fun x => ψ x * f x := by
-  have hpatch : MeasurableSet
-      (frontier (Ω : Set (WithLp 2 (ℝ × E))) ∩ e ⁻¹' normalCylinder a b) :=
-    isClosed_frontier.measurableSet.inter
-      ((isOpen_normalCylinder a b).preimage e.continuous).measurableSet
+  have hpatch := measurableSet_frontier_inter_preimage_normalCylinder (Ω : Set _) e a b
   filter_upwards [W1p.lipschitzChartFrontierTrace_ae_eq h hψ hM hψM hgM hs u,
     ae_restrict_of_ae ((ae_restrict_iff' hpatch).1
       (W1p.lipschitzChartTrace_comp_snd_ae_of_continuousOn h hψ hM hψM hgM hs hf hu)),
@@ -192,22 +181,16 @@ theorem W1p.exists_frontierTrace (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipsc
         W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f →
         T u =ᵐ[(μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
           (frontier (Ω : Set (WithLp 2 (ℝ × E))))] f := by
-  obtain ⟨t, e, φ, a, b, ψ₀, ψ, hchart, ⟨-, -, -, hψ₀Ω⟩, hψ, hsum⟩ :=
-    hΩ.exists_contDiff_partitionOfUnity hb
-  choose M hM hψM hgM using fun i : t =>
-    ((hψ i i.2).1.of_le (by simp)).exists_abs_le_and_norm_gradient_le (hψ i i.2).2.2.1
-  have hs (i : t) : tsupport (ψ i) ⊆ e i ⁻¹' normalCylinder (a i) (b i) :=
-    (hψ i i.2).2.2.2.trans (preimage_mono (normalCylinder_mono (by
-      nlinarith [(hchart i i.2).2.2.2, L.coe_nonneg,
-        ((Set.isLipschitzChartWith_iff ..).1 (hchart i i.2).2.2.1).2.1]) le_rfl))
+  obtain ⟨t, e, φ, a, b, ψ₀, ψ, M, hchart, ⟨-, -, hψ₀Ω⟩, hψ, hsum⟩ :=
+    hΩ.exists_lipschitzChart_cutoffs hb
+  choose hψ hM hψM hgM hs using hψ
   -- The interior cutoff `ψ₀` vanishes on the frontier, so the boundary cutoffs sum to one there.
-  have hsumF : ∀ x ∈ frontier (Ω : Set (WithLp 2 (ℝ × E))), ∑ i : t, ψ i x = 1 := by
+  have hsumF : ∀ x ∈ frontier (Ω : Set (WithLp 2 (ℝ × E))), ∑ i, ψ i x = 1 := by
     intro x hx
     have hx₀ : ψ₀ x = 0 := image_eq_zero_of_notMem_tsupport fun hxs =>
       (Ω.isOpen.frontier_eq ▸ hx).2 (hψ₀Ω hxs)
-    rw [Finset.sum_coe_sort t (fun i => ψ i x), ← hsum x (frontier_subset_closure hx), hx₀,
-      zero_add]
-  exact ⟨∑ i : t, W1p.lipschitzChartFrontierTrace (hchart i i.2).2.2.1 (ψ i) (hψ i i.2).1 (hM i)
+    rw [← hsum x (frontier_subset_closure hx), hx₀, zero_add]
+  exact ⟨∑ i, W1p.lipschitzChartFrontierTrace (hchart i) (ψ i) (hψ i) (hM i)
       (fun x _ => hψM i x) (fun x _ => hgM i x) (hs i),
     fun u f hf hu => W1p.sum_lipschitzChartFrontierTrace_ae_eq_of_continuousOn _ _ _ _ _ _
       hsumF hf hu⟩
@@ -252,12 +235,9 @@ theorem W1p.eq_frontierTrace (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitz
       T.continuous (W1p.frontierTrace hΩ hb).continuous (funext fun φ => ?_)
   refine Lp.ext ((hT φ).trans (W1p.frontierTrace_ae_eq_of_continuousOn hΩ hb
     φ.continuous.continuousOn ?_).symm)
-  have hφ : W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =ᵐ[volume.restrict
-      ((⊤ : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E)))] φ := by
-    rw [W1p.value_ofTestFunctionₗ]
-    exact testFunctionLp_apply_ae _ φ
   exact (W1p.value_restrictL_ae (le_top : Ω ≤ ⊤) _).trans
-    (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 le_top) hφ)
+    (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 le_top)
+      (W1p.value_ofTestFunctionₗ_ae φ))
 
 /-- **Functions in `H¹₀(Ω)` have zero trace.** -/
 theorem W1p.w1p0Submodule_le_ker_frontierTrace
@@ -274,19 +254,12 @@ theorem W1p.w1p0Submodule_le_ker_frontierTrace
   rintro _ ⟨φ, rfl⟩
   rw [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
   refine Lp.ext ((W1p.frontierTrace_ae_eq_of_continuousOn hΩ hb φ.continuous.continuousOn
-    (by rw [W1p.value_ofTestFunctionₗ]; exact testFunctionLp_apply_ae _ φ)).trans ?_)
+    (W1p.value_ofTestFunctionₗ_ae φ)).trans ?_)
   -- A test function supported in the open set `Ω` vanishes on its frontier.
   filter_upwards [ae_restrict_mem isClosed_frontier.measurableSet,
     (Lp.coeFn_zero ℝ 2 _).symm] with x hxF hx0
   rw [← hx0]
   exact image_eq_zero_of_notMem_tsupport fun hxs =>
     (Ω.isOpen.frontier_eq ▸ hxF).2 (φ.tsupport_subset hxs)
-
-/-- **Elements of `H¹₀(Ω)` have zero trace.** -/
-theorem W1p.frontierTrace_eq_zero_of_mem_w1p0Submodule
-    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {u : W1p volume Ω 2}
-    (hu : u ∈ w1p0Submodule volume Ω 2) : W1p.frontierTrace hΩ hb u = 0 :=
-  W1p.w1p0Submodule_le_ker_frontierTrace hΩ hb hu
 
 end TauCeti
