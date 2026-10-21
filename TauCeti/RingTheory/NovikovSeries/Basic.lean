@@ -411,6 +411,12 @@ theorem trunc_sub [AddGroup R] (C : ℝ) (a b : NovikovSeries R H N) :
   ext h
   by_cases hh : N h < C <;> simp [hh]
 
+@[simp]
+theorem trunc_smul {S : Type*} [Zero R] [SMulZeroClass S R] (C : ℝ) (s : S)
+    (a : NovikovSeries R H N) : trunc C (s • a) = s • trunc C a := by
+  ext h
+  by_cases hh : N h < C <;> simp [hh]
+
 end Truncation
 
 section Surjective
