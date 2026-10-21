@@ -51,6 +51,7 @@ preimages in `R`, so the identity is a finite dual basis of `A` over `R` and `A`
 The map `tensorToPi` and its elementary identities also apply to monoid actions on commutative
 semirings. The freeness criterion, bijectivity, module finiteness and projectivity allow a
 commutative semiring as the base, while the algebra carrying the action is a commutative ring.
+The invariant tensor identity `mul_tmul_eq_tmul_mul` also allows a noncommutative semiring target.
 
 ## Main definitions
 
@@ -125,14 +126,14 @@ end Semiring
 
 section InvariantTensor
 
-variable {R A G : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [Group G]
+variable {R A G : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Group G]
   [MulSemiringAction G A] [Algebra.IsInvariant R A G]
 
 /-- An invariant element of `A` passes through the tensor product over the invariant ring. -/
 theorem mul_tmul_eq_tmul_mul {c : A} (hc : ∀ g : G, g • c = c) (a b : A) :
     (a * c) ⊗ₜ[R] b = a ⊗ₜ[R] (c * b) := by
   obtain ⟨r, rfl⟩ := Algebra.IsInvariant.isInvariant (A := R) (G := G) c hc
-  rw [mul_comm a, ← Algebra.smul_def, ← Algebra.smul_def, smul_tmul]
+  rw [← Algebra.commutes, ← Algebra.smul_def, ← Algebra.smul_def, smul_tmul]
 
 end InvariantTensor
 
