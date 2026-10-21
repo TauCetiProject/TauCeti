@@ -19,6 +19,8 @@ import Mathlib.Tactic.LinearCombination
 -- Proof-only: Bézout's identity and faithfulness of scalars, for uniqueness of the multiple.
 import TauCeti.Algebra.GCDMonoid.Finset
 import TauCeti.Algebra.MvPolynomial.Coeff
+-- Proof-only: the coefficients of the four terms of the cocycle identity.
+import TauCeti.Algebra.MvPolynomial.Fin.Three
 
 /-!
 # The Lazard symmetric 2-cocycles `C_n(X, Y)`
@@ -43,7 +45,9 @@ additive 2-cocycle of degree `n`, compatible with every change of coefficients, 
 coefficients generate the unit ideal of `ℤ`. Consequently `r • C_n = 0` forces `r = 0` in *every*
 commutative ring `R`, including rings with torsion: the multiple of `C_n` representing a cocycle
 is unique. The converse, existence, is the symmetric 2-cocycle lemma: every homogeneous symmetric
-additive 2-cocycle of degree `n` is a multiple of `C_n`.
+additive 2-cocycle of degree `n` is a multiple of `C_n`
+(`TauCeti.exists_eq_smul_lazardCocycle`, in
+`TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification`).
 
 ## Main definitions
 
@@ -53,6 +57,11 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`.
 
 ## Main results
 
+* `MvPolynomial.IsAddCocycle₂.coeff_eq`: the cocycle identity at the coefficient of `XⁱYʲZᵏ`,
+  `[k = 0] c_{i,j} + (i + j).choose i * c_{i+j,k} = (j + k).choose j * c_{i,j+k} + [i = 0] c_{j,k}`
+  where `c_{a,b}` is the coefficient of `XᵃYᵇ` in `f`.
+* `MvPolynomial.IsAddCocycle₂.coeff_single_one_eq_zero`: the coefficient of `Yⁿ` in an additive
+  2-cocycle vanishes for `n ≠ 0`.
 * `TauCeti.lazardGcd_eq_minFac_of_isPrimePow`, `TauCeti.lazardGcd_eq_one_of_not_isPrimePow`:
   `d_n` is `p` for `n = pᵏ`, and `1` for `n ≥ 2` not a prime power.
 * `TauCeti.gcd_choose_div_lazardGcd_eq_one`: for `n ≥ 2`, the coefficients `n.choose i / d_n`
@@ -129,6 +138,23 @@ theorem map (hf : f.IsAddCocycle₂) (φ : R →+* S) : (MvPolynomial.map φ f).
   have h := congrArg (MvPolynomial.map φ) hf
   rw [isAddCocycle₂_iff]
   simpa only [map_add, hmap, map_X] using h
+
+/-- The cocycle identity at the coefficient of `XⁱYʲZᵏ`. -/
+theorem coeff_eq (hf : f.IsAddCocycle₂) (i j k : ℕ) :
+    (if k = 0 then f.coeff (Finsupp.single 0 i + Finsupp.single 1 j) else 0) +
+        (i + j).choose i * f.coeff (Finsupp.single 0 (i + j) + Finsupp.single 1 k) =
+      (j + k).choose j * f.coeff (Finsupp.single 0 i + Finsupp.single 1 (j + k)) +
+        if i = 0 then f.coeff (Finsupp.single 0 j + Finsupp.single 1 k) else 0 := by
+  have h := congrArg (fun p : MvPolynomial (Fin 3) R =>
+    p.coeff (Finsupp.single 0 i + Finsupp.single 1 j + Finsupp.single 2 k)) (isAddCocycle₂_iff.1 hf)
+  -- `aeval_eq_bind₁` would turn the four substitutions into `bind₁` before they are computed.
+  simpa [-aeval_eq_bind₁, coeff_aeval_X_add_X_X, coeff_aeval_X_X_add_X, coeff_aeval_X_zero_X_one,
+    coeff_aeval_X_one_X_two, Finsupp.single_apply] using h
+
+/-- The coefficient of `Yⁿ` in an additive 2-cocycle vanishes for `n ≠ 0`. -/
+theorem coeff_single_one_eq_zero (hf : f.IsAddCocycle₂) {n : ℕ} (hn : n ≠ 0) :
+    f.coeff (Finsupp.single 1 n) = 0 := by
+  simpa [hn] using hf.coeff_eq 0 0 n
 
 end IsAddCocycle₂
 
