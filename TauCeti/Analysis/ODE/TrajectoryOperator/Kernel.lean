@@ -172,25 +172,6 @@ section SquareIntegrable
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {A : ℝ → F →L[ℝ] F}
 
-/-- The projection `prev` is additive. -/
-private theorem prev_add
-    (u w : WeakDerivStep volume ⊤ 2
-      (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
-    prev _ (u + w) = prev _ u + prev _ w := by
-  simp only [← prevL_apply, map_add]
-
-/-- The projection `prev` commutes with scalar multiplication. -/
-private theorem prev_smul (c : ℝ)
-    (u : WeakDerivStep volume ⊤ 2
-      (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
-    prev _ (c • u) = c • prev _ u := by
-  simp only [← prevL_apply, map_smul]
-
-/-- The projection `prev` vanishes at zero. -/
-private theorem prev_zero :
-    prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) 0 = 0 := by
-  simp only [← prevL_apply, map_zero]
-
 /-- The continuous representative of an element of the kernel of `D_A`, a classical solution of
 `v' = -A v`. -/
 private def kerSolution (hA : Continuous A)
