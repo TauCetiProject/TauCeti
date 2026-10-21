@@ -91,26 +91,24 @@ theorem _root_.Real.Angle.eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β :
   have hα₀ : 0 ≤ α := hθ ▸ abs_nonneg _
   have hαπ : α ≤ Real.pi := hθ ▸ θ.abs_toReal_le_pi
   have hπ := Real.pi_pos
+  have hβrep : (β : Real.Angle).toReal = β :=
+    Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, hβπ.le⟩
   have hsum : ((θ.toReal + α : ℝ) : Real.Angle) = β := by
     rw [Real.Angle.coe_add, θ.coe_toReal, hβ]
   rcases (abs_eq hα₀).1 hθ with hpos | hneg
   · rw [hpos] at hsum
-    obtain ⟨k, hk⟩ := Real.Angle.angle_eq_iff_two_pi_dvd_sub.mp hsum
-    -- The difference lies strictly between `-2π` and `2π`, so its period is zero.
-    have hk₀ : k = 0 := by
-      by_contra hk₀
-      rcases lt_or_gt_of_ne hk₀ with hkneg | hkpos
-      · have hk' : (k : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hkneg
-        have := mul_le_mul_of_nonneg_left hk' Real.two_pi_pos.le
-        nlinarith
-      · have hk' : (1 : ℝ) ≤ k := by exact_mod_cast Int.add_one_le_of_lt hkpos
-        have := mul_le_mul_of_nonneg_left hk' Real.two_pi_pos.le
-        nlinarith
-    simp only [hk₀, Int.cast_zero, mul_zero] at hk
-    linarith
-  · have h := congrArg Real.Angle.toReal hsum
-    rw [show θ.toReal + α = 0 by linarith, Real.Angle.coe_zero, Real.Angle.toReal_zero,
-      Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, hβπ.le⟩] at h
+    by_cases hα : α = 0
+    · have h := congrArg Real.Angle.toReal hsum
+      rw [hα, zero_add, Real.Angle.coe_zero, Real.Angle.toReal_zero, hβrep] at h
+      linarith
+    · have hαpos : 0 < α := lt_of_le_of_ne hα₀ (Ne.symm hα)
+      letI : Fact (0 < 2 * Real.pi) := ⟨Real.two_pi_pos⟩
+      have h := (AddCircle.coe_eq_coe_iff_of_mem_Ioc (p := 2 * Real.pi) (a := 0)
+        (x := α + α) (y := β) ⟨by linarith, by linarith⟩ ⟨hβ₀, by linarith⟩).1 hsum
+      linarith
+  · have hzero : θ.toReal + α = 0 := by linarith
+    have h := congrArg Real.Angle.toReal hsum
+    rw [hzero, Real.Angle.coe_zero, Real.Angle.toReal_zero, hβrep] at h
     linarith
 
 end TauCeti

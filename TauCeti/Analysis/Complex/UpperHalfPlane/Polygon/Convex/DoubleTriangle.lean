@@ -224,12 +224,15 @@ private theorem vertexAngle_sideZero_reflected_vertex {i : Fin 3} (hi : i = 0 �
     rcases hj with rfl | rfl
     · exact P.extGeodesicReflection_sideGeodesic_vertex 0
     · exact P.extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq (i := 0) rfl
+  have hi₂ : i ≠ 2 := by rcases hi with rfl | rfl <;> decide
+  have hiOpp : i ≠ 1 - i := by rcases hi with rfl | rfl <;> decide
+  have hOther : 1 - i = 0 ∨ 1 - i = 1 := by rcases hi with rfl | rfl <;> decide
+  have hnegOne : (-1 : Fin 3) = 2 := by decide
   have hρ := vertexAngle_extGeodesicReflection (P.sideGeodesic 0)
-    (P.vertex_injective.ne (show i ≠ 2 by rcases hi with rfl | rfl <;> decide))
-    (P.vertex_injective.ne (show i ≠ 1 - i by rcases hi with rfl | rfl <;> decide))
-  rw [hfix i hi, hfix (1 - i) (by rcases hi with rfl | rfl <;> decide)] at hρ
+    (P.vertex_injective.ne hi₂) (P.vertex_injective.ne hiOpp)
+  rw [hfix i hi, hfix (1 - i) hOther] at hρ
   rw [hρ, interiorAngle_def]
-  rcases hi with rfl | rfl <;> simp [show (-1 : Fin 3) = 2 by decide, vertexAngle_comm]
+  rcases hi with rfl | rfl <;> simp [hnegOne, vertexAngle_comm]
 
 /-- **The angle of the double at `P 0` is twice that of `P`**: the ray towards `P 1` bisects it,
 the reflection in side `0` exchanging its two halves. -/
@@ -246,7 +249,8 @@ theorem interiorAngle_doubleTriangle_zero :
     have hQ : orientedAngle z D' D = Q.interiorAngle 0 := by
       simpa [Q] using Q.orientedAngle_rayToward_vertex_eq_interiorAngle hQz
     have hP : orientedAngle z C D = P.interiorAngle 0 := by
-      simpa [show (-1 : Fin 3) = 2 by decide] using
+      have hnegOne : (-1 : Fin 3) = 2 := by decide
+      simpa [hnegOne] using
         P.orientedAngle_rayToward_vertex_eq_interiorAngle hz
     -- the angle between the mirror image of `P 2` and `P 1` is that of `P` at `P 0`
     have habs : |(orientedAngle z D' C).toReal| = P.interiorAngle 0 := by
