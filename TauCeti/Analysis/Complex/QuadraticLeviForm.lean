@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.Calculus.Morse.NormSq
 public import TauCeti.Analysis.Complex.LeviForm
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
@@ -222,31 +223,22 @@ theorem _root_.ContinuousLinearMap.leviForm_norm_sq_add_re_apply_self (x : E) :
     leviForm (fun z ↦ ‖z‖ ^ 2 + (q z z).re) x = innerₛₗ ℂ := by
   simpa using q.leviForm_mul_norm_sq_add_re_apply_self 1 x
 
-/-- The function `a ‖z‖ ^ 2 + Re (q z z)` is `z ↦ B z z` for a continuous real bilinear form
-`B`. -/
-private theorem exists_bilinear_mul_norm_sq_add_re_apply_self (a : ℝ) :
-    ∃ B : E →L[ℝ] E →L[ℝ] ℝ, ∀ v w, B v w = a * RCLike.re (inner ℂ v w) + (q v w).re := by
-  let _ : InnerProductSpace ℝ E := InnerProductSpace.complexToReal
-  let J : E →L[ℝ] E →L[ℝ] ℝ := innerSL ℝ
-  refine ⟨a • J + (ContinuousLinearMap.compL ℝ E ℂ ℝ reCLM).comp (q.bilinearRestrictScalars ℝ),
-    fun v w ↦ ?_⟩
-  simp only [J, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.compL_apply, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
-    reCLM_apply, smul_eq_mul]
-  rw [innerSL_apply_apply, real_inner_eq_re_inner ℂ]
-
 /-- The Hessian quadratic form of `z ↦ a ‖z‖ ^ 2 + Re (q z z)` is
 `v ↦ 2 a ‖v‖ ^ 2 + 2 Re (q v v)`, at every point. -/
 theorem _root_.ContinuousLinearMap.hessianQuadraticForm_mul_norm_sq_add_re_apply_self (a : ℝ)
     (x v : E) :
     hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (q z z).re) x v =
       2 * a * ‖v‖ ^ 2 + 2 * (q v v).re := by
-  obtain ⟨B, hB⟩ := exists_bilinear_mul_norm_sq_add_re_apply_self q a
-  have hf : (fun z ↦ a * ‖z‖ ^ 2 + (q z z).re) = fun z ↦ B z z := by
-    funext z
-    rw [hB, inner_self_eq_norm_sq]
-  rw [hf, hessianQuadraticForm_apply, B.fderiv_fderiv_apply_self]
-  simp only [add_apply, ContinuousLinearMap.flip_apply, hB, inner_self_eq_norm_sq]
+  have h : ContDiffAt ℝ 2 (a • fun z : E ↦ ‖z‖ ^ 2) x :=
+    ((contDiff_norm_sq ℂ).const_smul a).contDiffAt
+  have h2 : fderiv ℝ (fderiv ℝ (a • fun z : E ↦ ‖z‖ ^ 2)) x =
+      a • fderiv ℝ (fderiv ℝ fun z : E ↦ ‖z‖ ^ 2) x := by
+    rw [fderiv_const_smul_field,
+      fderiv_const_smul_field (𝕜 := ℝ) (f := fderiv ℝ fun z : E ↦ ‖z‖ ^ 2), Pi.smul_apply]
+  have hadd := congr($(hessianQuadraticForm_add h (contDiffAt_re_apply_self q x)) v)
+  simp only [Pi.add_def, Pi.smul_apply, smul_eq_mul] at hadd
+  simp [hadd, q.hessianQuadraticForm_re_apply_self, hessianQuadraticForm_apply, h2,
+    fderiv_fderiv_norm_sq_apply_complex, inner_self_eq_norm_sq_to_K, ← ofReal_pow]
   ring
 
 end NormSq
@@ -260,13 +252,6 @@ open scoped InnerProductSpace
 
 variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [Fintype ι]
 
-/-- The holomorphic quadratic form `∑ⱼ c j ⟪b j, z⟫²` is `z ↦ Q z z` for a continuous complex
-bilinear form `Q`. -/
-private theorem exists_apply_self_eq_sum_mul_inner_sq (b : OrthonormalBasis ι ℂ E) (c : ι → ℂ) :
-    ∃ Q : E →L[ℂ] E →L[ℂ] ℂ, ∀ v, Q v v = ∑ j, c j * ⟪b j, v⟫_ℂ ^ 2 :=
-  ⟨∑ j, c j • (ContinuousLinearMap.mul ℂ ℂ).bilinearComp (innerSL ℂ (b j)) (innerSL ℂ (b j)),
-    fun v ↦ by simp [sq]⟩
-
 /-- **The Hessian of a Hermitian plus holomorphic quadratic function.** For an orthonormal
 basis `b`, the Hessian quadratic form of `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` is
 `v ↦ 2 (a ‖v‖² + Re (∑ⱼ c j ⟪b j, v⟫²))` at every point. -/
@@ -274,7 +259,7 @@ theorem _root_.OrthonormalBasis.hessianQuadraticForm_mul_norm_sq_add_re_sum_mul_
     (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ι → ℂ) (x v : E) :
     hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) x v =
       2 * (a * ‖v‖ ^ 2 + (∑ j, c j * ⟪b j, v⟫_ℂ ^ 2).re) := by
-  obtain ⟨Q, hQ⟩ := exists_apply_self_eq_sum_mul_inner_sq b c
+  obtain ⟨Q, hQ⟩ := b.exists_apply_self_eq_sum_mul_inner_sq c
   simp_rw [← hQ]
   rw [Q.hessianQuadraticForm_mul_norm_sq_add_re_apply_self]
   ring
@@ -286,40 +271,9 @@ theorem _root_.OrthonormalBasis.leviForm_mul_norm_sq_add_re_sum_mul_inner_sq
     (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ι → ℂ) (x : E) :
     leviForm (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) x =
       (a : ℂ) • innerₛₗ ℂ := by
-  obtain ⟨Q, hQ⟩ := exists_apply_self_eq_sum_mul_inner_sq b c
+  obtain ⟨Q, hQ⟩ := b.exists_apply_self_eq_sum_mul_inner_sq c
   simp_rw [← hQ]
   exact Q.leviForm_mul_norm_sq_add_re_apply_self a x
-
-/-- The real and imaginary parts of the coordinates `conj (ω j) ⟪b j, v⟫` in an orthonormal
-basis `b`, rotated by units `ω j`, as a real linear equivalence. -/
-private noncomputable def _root_.OrthonormalBasis.rotatedRealCoords (b : OrthonormalBasis ι ℂ E)
-    (ω : ι → ℂ) (hω : ∀ j, ω j * conj (ω j) = 1) : E ≃ₗ[ℝ] (ι ⊕ ι → ℝ) where
-  toFun v := Sum.elim (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).re) (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).im)
-  invFun u := ∑ j, (ω j * ⟨u (Sum.inl j), u (Sum.inr j)⟩) • b j
-  map_add' v w := by ext (j | j) <;> simp [inner_add_right, mul_add]
-  map_smul' r v := by
-    ext (j | j) <;> simp [← coe_smul, inner_smul_right, mul_left_comm _ (r : ℂ)]
-  left_inv v := by
-    conv_rhs => rw [← b.sum_repr' v]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    simp only [Sum.elim_inl, Sum.elim_inr, Complex.eta, ← mul_assoc, hω, one_mul]
-  right_inv u := by
-    have hk (k : ι) : conj (ω k) * ⟪b k, ∑ j, (ω j * ⟨u (Sum.inl j), u (Sum.inr j)⟩) • b j⟫_ℂ =
-        ⟨u (Sum.inl k), u (Sum.inr k)⟩ := by
-      rw [b.orthonormal.inner_right_fintype, ← mul_assoc, mul_comm (conj _), hω, one_mul]
-    ext (j | j) <;> simp only [hk, Sum.elim_inl, Sum.elim_inr]
-
-@[simp]
-private theorem _root_.OrthonormalBasis.rotatedRealCoords_apply_inl (b : OrthonormalBasis ι ℂ E)
-    (ω : ι → ℂ) (hω : ∀ j, ω j * conj (ω j) = 1) (v : E) (j : ι) :
-    b.rotatedRealCoords ω hω v (Sum.inl j) = (conj (ω j) * ⟪b j, v⟫_ℂ).re :=
-  rfl
-
-@[simp]
-private theorem _root_.OrthonormalBasis.rotatedRealCoords_apply_inr (b : OrthonormalBasis ι ℂ E)
-    (ω : ι → ℂ) (hω : ∀ j, ω j * conj (ω j) = 1) (v : E) (j : ι) :
-    b.rotatedRealCoords ω hω v (Sum.inr j) = (conj (ω j) * ⟪b j, v⟫_ℂ).im :=
-  rfl
 
 /-- **The Morse index of a Hermitian plus holomorphic quadratic function.** For an orthonormal
 basis `b`, the Morse index of `a ‖z‖² + Re (∑ⱼ c j ⟪b j, z⟫²)` counts, for each `j`, one

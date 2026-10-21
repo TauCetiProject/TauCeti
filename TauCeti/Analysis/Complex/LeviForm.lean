@@ -178,8 +178,8 @@ theorem leviForm_smul (a : ℝ) (f : V → ℝ) (x : V) :
   have h2 : fderiv ℝ (fderiv ℝ (a • f)) x = a • fderiv ℝ (fderiv ℝ f) x := by
     rw [fderiv_const_smul_field, fderiv_const_smul_field (𝕜 := ℝ) (f := fderiv ℝ f),
       Pi.smul_apply]
-  ext v w
-  apply Complex.ext <;> simp [h2] <;> ring
+  rw [leviForm_def, leviForm_def, h2, ← LinearMap.BilinForm.leviForm_smul]
+  exact congrArg _ (map_smul ContinuousLinearMap.toLinearMap₁₂ a _)
 
 /-- **The product rule** for the Levi form. Writing `∂f` for the complex-linear extension
 `StrongDual.extendRCLike` of the real differential `Df(x)`, the Levi form of `f g` at `x` is
