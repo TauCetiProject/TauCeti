@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
+public import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Homomorphisms and isomorphisms of formal group laws
@@ -49,21 +50,52 @@ namespace FormalGroupHom
 theorem hasSubst (f : FormalGroupHom F G) : PowerSeries.HasSubst f.toPowerSeries :=
   .of_constantCoeff_zero' f.zero_constantCoeff
 
-/-- The homomorphism equation at any two substitutable power series. -/
-theorem hom_subst (f : FormalGroupHom F G) {σ : Type*} {a b : MvPowerSeries σ R}
-    (ha : PowerSeries.HasSubst a) (hb : PowerSeries.HasSubst b) :
-    PowerSeries.subst (subst ![a, b] F.toPowerSeries) f.toPowerSeries =
-      subst ![PowerSeries.subst a f.toPowerSeries, PowerSeries.subst b f.toPowerSeries]
-        G.toPowerSeries := by
-  have hab : HasSubst ![a, b] := hasSubst_of_constantCoeff_nilpotent fun i => by
-    fin_cases i <;> simpa
-  have h := congrArg (subst ![a, b]) f.hom
-  rw [subst_powerSeriesSubst hab (.of_constantCoeff_zero F.zero_constantCoeff),
-    subst_comp_subst_apply (.toMvPowerSeries f.zero_constantCoeff) hab] at h
-  simp only [PowerSeries.subst_toMvPowerSeries hab] at h
-  convert h using 2
-  funext i
-  fin_cases i <;> rfl
+/-- The homomorphism equation after substituting any admissible coordinate family. -/
+theorem hom_subst (f : FormalGroupHom F G) {σ : Type*}
+    {a : Fin 2 → MvPowerSeries σ R} (ha : HasSubst a) :
+    PowerSeries.subst (subst a F.toPowerSeries) f.toPowerSeries =
+      subst (fun i => PowerSeries.subst (a i) f.toPowerSeries) G.toPowerSeries := by
+  have h := congrArg (subst a) f.hom
+  rw [subst_powerSeriesSubst ha (.of_constantCoeff_zero F.zero_constantCoeff),
+    subst_comp_subst_apply (.toMvPowerSeries f.zero_constantCoeff) ha] at h
+  simpa only [PowerSeries.subst_toMvPowerSeries ha] using h
+
+/-- The homomorphism equation into the additive formal group is the additivity equation. -/
+theorem hom_additive_iff {g : PowerSeries R} (hg : g.constantCoeff = 0) :
+    (PowerSeries.subst F.toPowerSeries g =
+      subst (fun i => g.toMvPowerSeries i) (FormalGroup.𝔾ₐ (R := R)).toPowerSeries) ↔
+    PowerSeries.subst F.toPowerSeries g =
+      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g := by
+  rw [FormalGroup.𝔾ₐ_toPowerSeries, subst_add (.toMvPowerSeries hg),
+    subst_X (.toMvPowerSeries hg), subst_X (.toMvPowerSeries hg)]
+  simp only [PowerSeries.toMvPowerSeries_eq_subst]
+
+/-- A substitution inverse of a formal group homomorphism is a homomorphism. -/
+noncomputable def ofInverse (f : FormalGroupHom F G) (g : PowerSeries R)
+    (hg : g.constantCoeff = 0)
+    (hfg : PowerSeries.subst g f.toPowerSeries = PowerSeries.X)
+    (hgf : PowerSeries.subst f.toPowerSeries g = PowerSeries.X) : FormalGroupHom G F where
+  toPowerSeries := g
+  zero_constantCoeff := hg
+  hom := by
+    have hE := MvPowerSeries.HasSubst.toMvPowerSeries (σ := Fin 2) hg
+    have hcoords (i : Fin 2) : PowerSeries.subst (g.toMvPowerSeries i) f.toPowerSeries =
+        X i := by
+      rw [PowerSeries.toMvPowerSeries_eq_subst,
+        ← PowerSeries.subst_comp_subst_apply (.of_constantCoeff_zero' hg)
+          (PowerSeries.HasSubst.X i), hfg, PowerSeries.subst_X (PowerSeries.HasSubst.X i)]
+    have hF : PowerSeries.HasSubst (subst (fun i : Fin 2 => g.toMvPowerSeries i)
+        F.toPowerSeries) := IsNilpotent_subst hE (F.zero_constantCoeff ▸ IsNilpotent.zero)
+    have h := congrArg (fun a => PowerSeries.subst a g) (f.hom_subst hE)
+    rw [← PowerSeries.subst_comp_subst_apply f.hasSubst hF, hgf,
+      PowerSeries.subst_X hF] at h
+    simpa only [hcoords, subst_self, id_eq] using h.symm
+
+@[simp]
+theorem ofInverse_toPowerSeries (f : FormalGroupHom F G) (g : PowerSeries R)
+    (hg : g.constantCoeff = 0) (hfg : PowerSeries.subst g f.toPowerSeries = PowerSeries.X)
+    (hgf : PowerSeries.subst f.toPowerSeries g = PowerSeries.X) :
+    (f.ofInverse g hg hfg hgf).toPowerSeries = g := (rfl)
 
 /-- The identity homomorphism has underlying series `X`. -/
 noncomputable def id (F : FormalGroup R) : FormalGroupHom F F where
@@ -86,13 +118,10 @@ noncomputable def comp (g : FormalGroupHom G H) (f : FormalGroupHom F G) :
     rw [PowerSeries.subst_comp_subst_apply f.hasSubst
       (.of_constantCoeff_zero F.zero_constantCoeff), f.hom]
     have hf := MvPowerSeries.HasSubst.toMvPowerSeries (σ := Fin 2) f.zero_constantCoeff
-    have h := congrArg (subst (fun i : Fin 2 => f.toPowerSeries.toMvPowerSeries i)) g.hom
-    rw [subst_powerSeriesSubst hf (.of_constantCoeff_zero G.zero_constantCoeff),
-      subst_comp_subst_apply (.toMvPowerSeries g.zero_constantCoeff) hf] at h
+    have h := g.hom_subst hf
     rw [h]
     congr 1
     funext i
-    rw [PowerSeries.subst_toMvPowerSeries hf]
     simp only [PowerSeries.toMvPowerSeries_eq_subst,
       PowerSeries.subst_comp_subst_apply f.hasSubst (PowerSeries.HasSubst.X i)]
 
@@ -116,6 +145,13 @@ theorem comp_assoc (h : FormalGroupHom H K) (g : FormalGroupHom G H)
   ext
   simp only [comp_toPowerSeries, PowerSeries.subst_comp_subst_apply g.hasSubst f.hasSubst]
 
+/-- Linear coefficients multiply under composition. -/
+theorem coeff_one_comp (g : FormalGroupHom G H) (f : FormalGroupHom F G) :
+    PowerSeries.coeff 1 (g.comp f).toPowerSeries =
+      PowerSeries.coeff 1 g.toPowerSeries * PowerSeries.coeff 1 f.toPowerSeries := by
+  simp only [comp_toPowerSeries, PowerSeries.coeff_one_subst f.zero_constantCoeff,
+    Algebra.algebraMap_self_apply]
+
 /-- Apply a homomorphism to a native formal power-series point by substitution. -/
 noncomputable def applyPoint (f : FormalGroupHom F G) {σ : Type*} (x : F.Point σ) : G.Point σ :=
   ⟨PowerSeries.subst x.val f.toPowerSeries, by
@@ -135,7 +171,14 @@ theorem applyPoint_zero (f : FormalGroupHom F G) {σ : Type*} :
 theorem applyPoint_add (f : FormalGroupHom F G) {σ : Type*} (x y : F.Point σ) :
     f.applyPoint (x + y) = f.applyPoint x + f.applyPoint y := by
   apply Subtype.ext
-  simpa only [applyPoint_val, FormalGroup.add_apply] using f.hom_subst x.prop y.prop
+  have hxy : HasSubst ![x.val, y.val] := hasSubst_of_constantCoeff_nilpotent fun i => by
+    fin_cases i
+    · exact x.prop
+    · exact y.prop
+  simp only [applyPoint_val, FormalGroup.add_apply]
+  convert f.hom_subst hxy using 2
+  funext i
+  fin_cases i <;> simp
 
 /-- The induced additive map on native power-series points. -/
 noncomputable def toAddMonoidHom (f : FormalGroupHom F G) (σ : Type*) :
@@ -178,16 +221,44 @@ structure FormalGroupIso (F G : FormalGroup R) where
 
 namespace FormalGroupIso
 
+/-- Construct an isomorphism from the two series substitution identities. -/
+noncomputable def ofSubstEqX (f : FormalGroupHom F G) (g : FormalGroupHom G F)
+    (hfg : PowerSeries.subst g.toPowerSeries f.toPowerSeries = PowerSeries.X)
+    (hgf : PowerSeries.subst f.toPowerSeries g.toPowerSeries = PowerSeries.X) :
+    FormalGroupIso F G where
+  toHom := f
+  invHom := g
+  left_inv := by
+    funext a
+    simp only [Function.comp_apply, PowerSeries.subst_comp_subst_apply f.hasSubst g.hasSubst,
+      hfg, PowerSeries.X_subst, id_eq]
+  right_inv := by
+    funext a
+    simp only [Function.comp_apply, PowerSeries.subst_comp_subst_apply g.hasSubst f.hasSubst,
+      hgf, PowerSeries.X_subst, id_eq]
+
+@[simp]
+theorem ofSubstEqX_toHom (f : FormalGroupHom F G) (g : FormalGroupHom G F)
+    (hfg : PowerSeries.subst g.toPowerSeries f.toPowerSeries = PowerSeries.X)
+    (hgf : PowerSeries.subst f.toPowerSeries g.toPowerSeries = PowerSeries.X) :
+    (ofSubstEqX f g hfg hgf).toHom = f := (rfl)
+
+@[simp]
+theorem ofSubstEqX_invHom (f : FormalGroupHom F G) (g : FormalGroupHom G F)
+    (hfg : PowerSeries.subst g.toPowerSeries f.toPowerSeries = PowerSeries.X)
+    (hgf : PowerSeries.subst f.toPowerSeries g.toPowerSeries = PowerSeries.X) :
+    (ofSubstEqX f g hfg hgf).invHom = g := (rfl)
+
 /-- The forward series evaluated at the inverse series is `X`. -/
 @[simp]
-theorem toHom_subst_invHom (f : FormalGroupIso F G) :
+theorem subst_invHom_toHom (f : FormalGroupIso F G) :
     PowerSeries.subst f.invHom.toPowerSeries f.toHom.toPowerSeries = PowerSeries.X := by
   have h := congrFun f.left_inv PowerSeries.X
   simpa [PowerSeries.subst_X f.toHom.hasSubst] using h
 
 /-- The inverse series evaluated at the forward series is `X`. -/
 @[simp]
-theorem invHom_subst_toHom (f : FormalGroupIso F G) :
+theorem subst_toHom_invHom (f : FormalGroupIso F G) :
     PowerSeries.subst f.toHom.toPowerSeries f.invHom.toPowerSeries = PowerSeries.X := by
   have h := congrFun f.right_inv PowerSeries.X
   simpa [PowerSeries.subst_X f.invHom.hasSubst] using h
@@ -201,12 +272,12 @@ theorem ext {f g : FormalGroupIso F G} (h : f.toHom = g.toHom) : f = g := by
       f.invHom.toPowerSeries = PowerSeries.subst
           (PowerSeries.subst g.invHom.toPowerSeries g.toHom.toPowerSeries)
           f.invHom.toPowerSeries := by
-        rw [g.toHom_subst_invHom, PowerSeries.X_subst]
+        rw [g.subst_invHom_toHom, PowerSeries.X_subst]
       _ = PowerSeries.subst g.invHom.toPowerSeries
           (PowerSeries.subst g.toHom.toPowerSeries f.invHom.toPowerSeries) :=
         (PowerSeries.subst_comp_subst_apply g.toHom.hasSubst g.invHom.hasSubst _).symm
       _ = g.invHom.toPowerSeries := by
-        rw [← h, f.invHom_subst_toHom, PowerSeries.subst_X g.invHom.hasSubst]
+        rw [← h, f.subst_toHom_invHom, PowerSeries.subst_X g.invHom.hasSubst]
   cases f
   cases g
   cases h
@@ -236,6 +307,96 @@ theorem symm_symm (f : FormalGroupIso F G) : f.symm.symm = f := by
   ext
   rfl
 
+/-- The identity formal group isomorphism. -/
+noncomputable def refl (F : FormalGroup R) : FormalGroupIso F F :=
+  .ofSubstEqX (.id F) (.id F) (by simp [PowerSeries.X_subst])
+    (by simp [PowerSeries.X_subst])
+
+@[simp]
+theorem refl_toHom (F : FormalGroup R) : (refl F).toHom = FormalGroupHom.id F := (rfl)
+
+@[simp]
+theorem refl_invHom (F : FormalGroup R) : (refl F).invHom = FormalGroupHom.id F := (rfl)
+
+/-- The inverse followed by the forward map is the identity homomorphism. -/
+@[simp]
+theorem toHom_comp_invHom (f : FormalGroupIso F G) :
+    f.toHom.comp f.invHom = FormalGroupHom.id G := by
+  apply FormalGroupHom.ext
+  exact f.subst_invHom_toHom
+
+/-- The forward map followed by the inverse is the identity homomorphism. -/
+@[simp]
+theorem invHom_comp_toHom (f : FormalGroupIso F G) :
+    f.invHom.comp f.toHom = FormalGroupHom.id F := by
+  apply FormalGroupHom.ext
+  exact f.subst_toHom_invHom
+
+/-- Compose formal group isomorphisms, applying the first argument first. -/
+noncomputable def trans (f : FormalGroupIso F G) (g : FormalGroupIso G H) :
+    FormalGroupIso F H :=
+  .ofSubstEqX (g.toHom.comp f.toHom) (f.invHom.comp g.invHom)
+    (by
+      rw [← FormalGroupHom.comp_toPowerSeries, ← FormalGroupHom.comp_assoc,
+        FormalGroupHom.comp_assoc g.toHom,
+        toHom_comp_invHom, FormalGroupHom.comp_id, toHom_comp_invHom]
+      rfl)
+    (by
+      rw [← FormalGroupHom.comp_toPowerSeries, ← FormalGroupHom.comp_assoc,
+        FormalGroupHom.comp_assoc f.invHom,
+        invHom_comp_toHom, FormalGroupHom.comp_id, invHom_comp_toHom]
+      rfl)
+
+@[simp]
+theorem trans_toHom (f : FormalGroupIso F G) (g : FormalGroupIso G H) :
+    (f.trans g).toHom = g.toHom.comp f.toHom := (rfl)
+
+@[simp]
+theorem trans_invHom (f : FormalGroupIso F G) (g : FormalGroupIso G H) :
+    (f.trans g).invHom = f.invHom.comp g.invHom := (rfl)
+
+@[simp]
+theorem refl_trans (f : FormalGroupIso F G) : (refl F).trans f = f := by
+  ext
+  simp
+
+@[simp]
+theorem trans_refl (f : FormalGroupIso F G) : f.trans (refl G) = f := by
+  ext
+  simp
+
+@[simp]
+theorem self_trans_symm (f : FormalGroupIso F G) : f.trans f.symm = refl F := by
+  ext
+  simp
+
+@[simp]
+theorem symm_trans_self (f : FormalGroupIso F G) : f.symm.trans f = refl G := by
+  ext
+  simp
+
+/-- Composition of formal group isomorphisms is associative. -/
+theorem trans_assoc (f : FormalGroupIso F G) (g : FormalGroupIso G H)
+    (h : FormalGroupIso H K) : (f.trans g).trans h = f.trans (g.trans h) := by
+  ext
+  simp only [trans_toHom, FormalGroupHom.comp_assoc]
+
+instance (F : FormalGroup R) : (refl F).IsStrict where
+  coeff_one := by simp
+
+instance (f : FormalGroupIso F G) [f.IsStrict] : f.symm.IsStrict where
+  coeff_one := by
+    have h := congrArg (PowerSeries.coeff 1) f.subst_invHom_toHom
+    simpa only [PowerSeries.coeff_one_subst f.invHom.zero_constantCoeff,
+      Algebra.algebraMap_self_apply, IsStrict.coeff_one (f := f), one_mul,
+      PowerSeries.coeff_X, ↓reduceIte, symm_toHom] using h
+
+instance (f : FormalGroupIso F G) (g : FormalGroupIso G H) [f.IsStrict] [g.IsStrict] :
+    (f.trans g).IsStrict where
+  coeff_one := by
+    simp only [trans_toHom, FormalGroupHom.coeff_one_comp,
+      IsStrict.coeff_one (f := f), IsStrict.coeff_one (f := g), mul_one]
+
 /-- The additive equivalence induced on native power-series points. -/
 noncomputable def toAddEquiv (f : FormalGroupIso F G) (σ : Type*) : F.Point σ ≃+ G.Point σ where
   toFun := f.toHom.applyPoint
@@ -244,12 +405,12 @@ noncomputable def toAddEquiv (f : FormalGroupIso F G) (σ : Type*) : F.Point σ 
     apply Subtype.ext
     simp only [FormalGroupHom.applyPoint_val,
       ← PowerSeries.subst_comp_subst_apply f.toHom.hasSubst x.prop,
-      invHom_subst_toHom, PowerSeries.subst_X x.prop]
+      subst_toHom_invHom, PowerSeries.subst_X x.prop]
   right_inv x := by
     apply Subtype.ext
     simp only [FormalGroupHom.applyPoint_val,
       ← PowerSeries.subst_comp_subst_apply f.invHom.hasSubst x.prop,
-      toHom_subst_invHom, PowerSeries.subst_X x.prop]
+      subst_invHom_toHom, PowerSeries.subst_X x.prop]
   map_add' := f.toHom.applyPoint_add
 
 @[simp]
@@ -259,6 +420,22 @@ theorem toAddEquiv_apply (f : FormalGroupIso F G) {σ : Type*} (x : F.Point σ) 
 @[simp]
 theorem toAddEquiv_symm_apply (f : FormalGroupIso F G) {σ : Type*} (x : G.Point σ) :
     (f.toAddEquiv σ).symm x = f.invHom.applyPoint x := (rfl)
+
+@[simp]
+theorem toAddEquiv_refl (F : FormalGroup R) (σ : Type*) :
+    (refl F).toAddEquiv σ = AddEquiv.refl (F.Point σ) := by
+  ext x
+  exact FormalGroupHom.id_applyPoint x
+
+@[simp]
+theorem toAddEquiv_trans (f : FormalGroupIso F G) (g : FormalGroupIso G H) (σ : Type*) :
+    (f.trans g).toAddEquiv σ = (f.toAddEquiv σ).trans (g.toAddEquiv σ) := by
+  ext x
+  exact FormalGroupHom.comp_applyPoint g.toHom f.toHom x
+
+@[simp]
+theorem toAddEquiv_symm (f : FormalGroupIso F G) (σ : Type*) :
+    f.symm.toAddEquiv σ = (f.toAddEquiv σ).symm := (rfl)
 
 end FormalGroupIso
 
