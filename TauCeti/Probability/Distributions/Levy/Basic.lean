@@ -161,6 +161,23 @@ theorem levyPDFReal_nonneg (m c x : ℝ) : 0 ≤ levyPDFReal m c x := by
 theorem toReal_levyPDF (m c x : ℝ) : (levyPDF m c x).toReal = levyPDFReal m c x := by
   rw [levyPDF_eq_ofReal, ENNReal.toReal_ofReal (levyPDFReal_nonneg m c x)]
 
+/-- The Lévy density has its usual formula above the location at positive scale. -/
+@[simp]
+theorem levyPDF_of_lt (hc : 0 < c) (hx : m < x) :
+    levyPDF m c x =
+      ENNReal.ofReal (√(c / (2 * π)) * (x - m) ^ (-(3 / 2 : ℝ)) * exp (-c / (2 * (x - m)))) := by
+  rw [levyPDF_eq_ofReal, levyPDFReal_of_lt hc hx]
+
+/-- The `ℝ≥0∞`-valued Lévy density vanishes at and below the location. -/
+@[simp]
+theorem levyPDF_of_le (hx : x ≤ m) (c : ℝ) : levyPDF m c x = 0 := by
+  rw [levyPDF_eq_ofReal, levyPDFReal_of_le hx, ENNReal.ofReal_zero]
+
+/-- The `ℝ≥0∞`-valued Lévy density vanishes for a nonpositive scale. -/
+@[simp]
+theorem levyPDF_of_nonpos (hc : c ≤ 0) (m x : ℝ) : levyPDF m c x = 0 := by
+  rw [levyPDF_eq_ofReal, levyPDFReal_of_nonpos hc, ENNReal.ofReal_zero]
+
 /-- The real Lévy density is measurable in the sample point. -/
 @[fun_prop]
 theorem measurable_levyPDFReal (m c : ℝ) : Measurable (levyPDFReal m c) := by

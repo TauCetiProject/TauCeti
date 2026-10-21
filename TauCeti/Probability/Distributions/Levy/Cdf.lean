@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Levy.Basic
 public import TauCeti.Analysis.SpecialFunctions.Erf
 public import Mathlib.Probability.CDF
 import TauCeti.Analysis.SpecialFunctions.IncompleteGamma
+import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.InverseGamma.Cdf
 
 /-!
@@ -39,13 +40,11 @@ variable {m c : ℝ}
 location `m` and zero at or below it. -/
 theorem cdf_levyMeasure_eq (hc : 0 < c) (m x : ℝ) :
     cdf (levyMeasure m c) x = if x ≤ m then 0 else Real.erfc (√(c / (2 * (x - m)))) := by
-  let _ := isProbabilityMeasure_levyMeasure hc m
   let _ := isProbabilityMeasure_inverseGammaMeasure one_half_pos (half_pos hc)
-  have hpre : (m + ·) ⁻¹' Iic x = Iic (x - m) := by
-    ext y
-    simp [le_sub_iff_add_le']
-  rw [cdf_eq_real, levyMeasure_def,
-    map_measureReal_apply (measurable_const_add m) measurableSet_Iic, hpre, ← cdf_eq_real,
+  have hmap : levyMeasure m c = (inverseGammaMeasure (1 / 2) (c / 2)).map (fun y ↦ m + 1 * y) := by
+    simp_rw [one_mul]
+    exact levyMeasure_def m c
+  rw [hmap, cdf_map_affine_of_pos one_pos, div_one,
     cdf_inverseGammaMeasure_eq one_half_pos (half_pos hc)]
   by_cases hx : x ≤ m
   · rw [ite_eq_left (sub_nonpos.mpr hx), ite_eq_left hx]
