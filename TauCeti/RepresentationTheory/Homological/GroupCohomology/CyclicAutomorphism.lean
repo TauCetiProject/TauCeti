@@ -321,13 +321,16 @@ noncomputable def groupCohomologyEvenEquivQuotSMulTop (i : ℕ) [NeZero i] (hi :
     rw [LinearMap.mem_ker, LinearMap.comp_apply, groupCohomologyπEven_eq_zero_iff,
       AddEquiv.mem_range_cyclicRep_refl_norm_iff]
     simp [ι, Submodule.mem_smul_pointwise_iff_exists]
-  ((Submodule.quotEquivOfEq _ _ hker).symm.trans (φ.quotKerEquivOfSurjective hφ)).symm
+  ((Submodule.quotEquivOfEq _ _ hker.symm).trans (φ.quotKerEquivOfSurjective hφ)).symm
 
 /-- The even-degree class corresponding to the coset of `x` is the class of `x`. -/
 theorem groupCohomologyEvenEquivQuotSMulTop_symm_mk (i : ℕ) [NeZero i] (hi : Even i) (x : T) :
     (groupCohomologyEvenEquivQuotSMulTop T m i hi).symm (Submodule.Quotient.mk x) =
       groupCohomologyπEven ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) (.ofAdd 1)
         mem_zpowers_ofAdd_one i hi ⟨x, AddEquiv.mem_ker_cyclicRep_refl_applyAsHom_sub x⟩ :=
+  -- Each step holds by `rfl` in Mathlib: `LinearEquiv.symm_symm`, `Submodule.quotEquivOfEq_mk`
+  -- and `LinearMap.quotKerEquivOfSurjective_apply_mk`. Rewriting with them is not possible here:
+  -- once the definition is unfolded, the goal is not type-correct at implicit transparency.
   (rfl)
 
 /-- The even-degree class of `x` corresponds to the coset of `x` in `T ⧸ m T`. -/
@@ -349,12 +352,11 @@ end Trivial
 section TrivialConnecting
 
 variable {Λ E T : Type} [AddCommGroup Λ] [AddCommGroup E] [AddCommGroup T] {m : ℕ} [NeZero m]
-  {i : Λ →ₗ[ℤ] E} {p : E →ₗ[ℤ] T} {hΛ : (⇑(AddEquiv.refl Λ))^[m] = _root_.id}
-  {hE : (⇑(AddEquiv.refl E))^[m] = _root_.id} {hT : (⇑(AddEquiv.refl T))^[m] = _root_.id}
+  {i : Λ →ₗ[ℤ] E} {p : E →ₗ[ℤ] T} {hE : (⇑(AddEquiv.refl E))^[m] = _root_.id}
+  {hT : (⇑(AddEquiv.refl T))^[m] = _root_.id}
   {hi : ∀ x, i.toAddMonoidHom (AddEquiv.refl Λ x) = AddEquiv.refl E (i.toAddMonoidHom x)}
   {hp : ∀ x, p.toAddMonoidHom (AddEquiv.refl E x) = AddEquiv.refl T (p.toAddMonoidHom x)}
   {hpi : ∀ x, p.toAddMonoidHom (i.toAddMonoidHom x) = 0}
-  (hS : (i.toAddMonoidHom.cyclicRepShortComplex p.toAddMonoidHom hΛ hE hT hi hp hpi).ShortExact)
   (hinj : Function.Injective i) (hexact : Function.Exact i p) (hsurj : Function.Surjective p)
 
 /-- **The connecting map of trivial actions is the snake map.** For the trivial actions of `C_m`
@@ -364,7 +366,9 @@ with `Λ ⧸ m Λ`. Then the connecting homomorphism `δ` becomes the snake-lemm
 `t`. -/
 theorem groupCohomologyEvenEquivQuotSMulTop_δ
     (x : groupCohomology ((AddEquiv.refl T).cyclicRep hT) 1) :
-    groupCohomologyEvenEquivQuotSMulTop Λ m 2 even_two (δ hS 1 2 rfl x) =
+    groupCohomologyEvenEquivQuotSMulTop Λ m 2 even_two
+        (δ (i.toAddMonoidHom.shortExact_cyclicRepShortComplex p.toAddMonoidHom (hE := hE)
+          (hi := hi) (hp := hp) (hpi := hpi) hinj hexact hsurj) 1 2 rfl x) =
       torsionByδ (m : ℤ) hexact hinj hsurj (groupCohomologyOddEquivTorsionBy T m 1 odd_one x) := by
   -- Write `x` as the class of `t ∈ T[m]`, lift `t` to `s : E` and write `m • s = i v`.
   obtain ⟨t, rfl⟩ := (groupCohomologyOddEquivTorsionBy T m 1 odd_one).symm.surjective x
@@ -373,7 +377,10 @@ theorem groupCohomologyEvenEquivQuotSMulTop_δ
     rw [map_nsmul, hs, ← natCast_zsmul]
     exact (Submodule.mem_torsionBy_iff _ _).1 t.2
   -- `δ` sends the class of `t` to the class of `v`, and so does the snake map.
-  have hδ := δ_cyclicRepShortComplex_groupCohomologyπOdd_one hS
+  have hδ := δ_cyclicRepShortComplex_groupCohomologyπOdd_one
+    (i.toAddMonoidHom.shortExact_cyclicRepShortComplex p.toAddMonoidHom
+      (hΛ := AddEquiv.iterate_refl m) (hE := hE) (hT := hT) (hi := hi) (hp := hp) (hpi := hpi)
+      hinj hexact hsurj)
     ⟨t, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 t.2⟩ s (by simpa using hs)
     ⟨v, AddEquiv.mem_ker_cyclicRep_refl_applyAsHom_sub v⟩ (by simp [hv])
   rw [LinearEquiv.apply_symm_apply, groupCohomologyOddEquivTorsionBy_symm_apply, hδ,
@@ -388,9 +395,11 @@ theorem torsionByδEquiv_eq_trans_cyclicConnectingEquiv
     (hm : Function.Bijective fun x : E ↦ m • x) :
     torsionByδEquiv (m : ℤ) hexact hinj hsurj (by simpa only [natCast_zsmul] using hm) =
       ((groupCohomologyOddEquivTorsionBy T m 1 odd_one).symm.trans
-        (cyclicConnectingEquiv hS hm)).trans (groupCohomologyEvenEquivQuotSMulTop Λ m 2 even_two) :=
+        (cyclicConnectingEquiv (i.toAddMonoidHom.shortExact_cyclicRepShortComplex
+          p.toAddMonoidHom (hE := hE) (hi := hi) (hp := hp) (hpi := hpi) hinj hexact hsurj)
+          hm)).trans (groupCohomologyEvenEquivQuotSMulTop Λ m 2 even_two) :=
   LinearEquiv.ext fun t ↦ by
-    simp [groupCohomologyEvenEquivQuotSMulTop_δ hS hinj hexact hsurj]
+    simp [groupCohomologyEvenEquivQuotSMulTop_δ hinj hexact hsurj]
 
 end TrivialConnecting
 
