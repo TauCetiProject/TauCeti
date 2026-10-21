@@ -125,13 +125,13 @@ noncomputable def ofIsCompl (hQ : Q.Nondegenerate) (hWW' : IsCompl W W')
     (hW : Q.IsTotallyIsotropic W) (hW' : Q.IsTotallyIsotropic W') : SpinPolarizationData Q :=
   ofIsComplOfPairing hWW' hW hW'
     (((polarBilin Q).compl₁₂ W.subtype W'.subtype).flip.linearEquivOfInjective
-      (hW'.polarBilin_compl₁₂_flip_injective hQ hWW')
-      (by rw [Subspace.dual_finrank_eq, hW.finrank_eq_of_isCompl hW' hQ hWW']))
+      (hW'.polarBilin_compl₁₂_flip_injective hQ hWW'.codisjoint)
+      (by rw [Subspace.dual_finrank_eq, hW.finrank_eq_of_codisjoint hW' hQ hWW'.codisjoint]))
     (fun y x => by
       rw [LinearMap.linearEquivOfInjective_apply, LinearMap.flip_apply, LinearMap.compl₁₂_apply,
         polarBilin_apply_apply, Submodule.subtype_apply, Submodule.subtype_apply])
     (fun x hx => Subtype.ext <|
-      hW.eq_zero_of_polar_eq_zero hQ hWW'.symm x.2 fun y hy => by
+      hW.eq_zero_of_polar_eq_zero hQ hWW'.symm.codisjoint x.2 fun y hy => by
         rw [polar_comm]
         exact hx ⟨y, hy⟩)
 

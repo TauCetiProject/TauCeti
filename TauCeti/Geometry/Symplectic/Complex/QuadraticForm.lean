@@ -68,6 +68,7 @@ theorem toIsometry_apply (hQJ : ∀ v, Q (J v) = Q v) (v : V) : J.toIsometry hQJ
 
 /-- The polar form of a quadratic form is preserved by a `Q`-preserving almost complex
 structure. -/
+@[simp]
 theorem polar_apply_apply (hQJ : ∀ v, Q (J v) = Q v) (v w : V) :
     polar Q (J v) (J w) = polar Q v w := by
   simpa using (J.toIsometry hQJ).polar_apply v w
@@ -82,6 +83,7 @@ theorem polar_apply_left_eq_neg_polar_apply_right (hQJ : ∀ v, Q (J v) = Q v) (
 
 /-- The complexification of a `Q`-preserving almost complex structure preserves the
 base-changed form. -/
+@[simp]
 theorem baseChange_apply_baseChange (hQJ : ∀ v, Q (J v) = Q v) (w : ℂ ⊗[ℝ] V) :
     Q.baseChange ℂ (J.toLinearMap.baseChange ℂ w) = Q.baseChange ℂ w := by
   have h := ((J.toIsometry hQJ).baseChange ℂ).map_app w
