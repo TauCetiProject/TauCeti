@@ -23,7 +23,7 @@ by `1` (`false`) and `X` (`true`), and its quantum grading, in which a labelling
 For a state `s` of a PD-code `D`, the labellings `D.ResolvedCircle s → Bool` are exactly the
 enhanced states over `s` (`TauCeti.PDCode.EnhancedState`), and the quantum degree of an enhanced
 state is the quantum shift of its state plus the degree of its labelling
-(`TauCeti.OrientedPDCode.enhancedQuantumDegree_eq_add_labellingQuantumDegree`). So the basis
+(`TauCeti.OrientedPDCode.enhancedQuantumDegree_eq_add_labelingQuantumDegree`). So the basis
 `TauCeti.Khovanov.circleBasis` identifies the circle tensor of a resolution with the free module on
 the enhanced states over it, its `Finsupp` model.
 
@@ -40,7 +40,7 @@ any ordering of the circles or parenthesization of the tensor product, and it is
 * `TauCeti.Khovanov.labelBasis`: the basis `1, ε` of `R[ε]` indexed by the labels `false, true`.
 * `TauCeti.Khovanov.CircleTensor`: the tensor product of one copy of `R[ε]` per circle.
 * `TauCeti.Khovanov.circleBasis`: its basis indexed by labellings.
-* `TauCeti.Khovanov.labellingQuantumDegree`: the quantum degree of a labelling.
+* `TauCeti.Khovanov.labelingQuantumDegree`: the quantum degree of a labelling.
 * `TauCeti.Khovanov.circleQuantumGrading`: the quantum grading of the circle tensor.
 
 ## Main results
@@ -190,18 +190,18 @@ variable {ι : Type*} [Fintype ι]
 variable (ι) in
 /-- The quantum degree of a labelling of the circles: `+1` for each circle labelled `1` and `-1`
 for each circle labelled `X`. -/
-def labellingQuantumDegree (l : ι → Bool) : ℤ :=
+def labelingQuantumDegree (l : ι → Bool) : ℤ :=
   ∑ i, bif l i then -1 else 1
 
 /-- The defining sum of the quantum degree of a labelling. -/
-theorem labellingQuantumDegree_def (l : ι → Bool) :
-    labellingQuantumDegree ι l = ∑ i, bif l i then -1 else 1 := (rfl)
+theorem labelingQuantumDegree_def (l : ι → Bool) :
+    labelingQuantumDegree ι l = ∑ i, bif l i then -1 else 1 := (rfl)
 
 /-- The quantum degree of a labelling is the number of circles minus twice the number of
 `X`-labels. -/
-theorem labellingQuantumDegree_eq (l : ι → Bool) :
-    labellingQuantumDegree ι l = Fintype.card ι - 2 * #{i | l i = true} := by
-  rw [labellingQuantumDegree_def, Finset.natCast_card_filter, Finset.mul_sum, Fintype.card,
+theorem labelingQuantumDegree_eq (l : ι → Bool) :
+    labelingQuantumDegree ι l = Fintype.card ι - 2 * #{i | l i = true} := by
+  rw [labelingQuantumDegree_def, Finset.natCast_card_filter, Finset.mul_sum, Fintype.card,
     Finset.cast_card, ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl fun i _ ↦ by cases l i <;> simp
 
@@ -209,10 +209,10 @@ variable {σ τ : Type*} [Fintype σ] [Fintype τ] [DecidableEq τ]
 
 /-- When no fibre of `f` carries two `X`-labels of `l`, merging along `f` changes the quantum degree
 of `l` by `|τ| - |σ|`. -/
-theorem labellingQuantumDegree_merge {f : σ → τ} {l : σ → Bool}
+theorem labelingQuantumDegree_merge {f : σ → τ} {l : σ → Bool}
     (h : ∀ j, #{i | f i = j ∧ l i = true} ≤ 1) :
-    labellingQuantumDegree τ (fun j ↦ decide (∃ i, f i = j ∧ l i = true)) =
-      labellingQuantumDegree σ l + (Fintype.card τ - Fintype.card σ) := by
+    labelingQuantumDegree τ (fun j ↦ decide (∃ i, f i = j ∧ l i = true)) =
+      labelingQuantumDegree σ l + (Fintype.card τ - Fintype.card σ) := by
   -- The circles of `τ` labelled `X` are the images of those of `σ`, on which `f` is injective.
   have himage : ({j | decide (∃ i, f i = j ∧ l i = true) = true} : Finset τ) =
       Finset.image f {i | l i = true} := by
@@ -222,7 +222,7 @@ theorem labellingQuantumDegree_merge {f : σ → τ} {l : σ → Bool}
     intro i hi i' hi' hii'
     exact Finset.card_le_one.mp (h (f i)) i (by simpa using hi) i'
       (by simpa [hii'] using hi')
-  rw [labellingQuantumDegree_eq, labellingQuantumDegree_eq, himage,
+  rw [labelingQuantumDegree_eq, labelingQuantumDegree_eq, himage,
     Finset.card_image_of_injOn hinj]
   ring
 
@@ -233,10 +233,10 @@ section Grading
 variable (R : Type u) [CommRing R] (ι : Type*) [Fintype ι]
 
 /-- The **quantum grading** of the circle tensor: the basis vector of a labelling `l` spans its
-degree `TauCeti.Khovanov.labellingQuantumDegree ι l`. It is the grading of the free module on the
+degree `TauCeti.Khovanov.labelingQuantumDegree ι l`. It is the grading of the free module on the
 labellings, transported along `TauCeti.Khovanov.circleBasis`. -/
 noncomputable def circleQuantumGrading : InternalGrading R (CircleTensor R ι) :=
-  (InternalGrading.finsupp R (labellingQuantumDegree ι)).map (circleBasis R ι).repr.symm
+  (InternalGrading.finsupp R (labelingQuantumDegree ι)).map (circleBasis R ι).repr.symm
 
 variable {R ι}
 
@@ -244,13 +244,13 @@ variable {R ι}
 labellings of other degrees vanish. -/
 theorem mem_circleQuantumGrading_piece_iff {p : ℤ} {x : CircleTensor R ι} :
     x ∈ (circleQuantumGrading R ι).piece p ↔
-      ∀ l, (circleBasis R ι).repr x l ≠ 0 → labellingQuantumDegree ι l = p := by
+      ∀ l, (circleBasis R ι).repr x l ≠ 0 → labelingQuantumDegree ι l = p := by
   rw [circleQuantumGrading, InternalGrading.mem_map_piece_iff, LinearEquiv.symm_symm,
     InternalGrading.mem_finsupp_piece_iff]
 
 /-- The basis vector of a labelling is homogeneous of the degree of the labelling. -/
 theorem circleBasis_mem_circleQuantumGrading_piece (l : ι → Bool) :
-    circleBasis R ι l ∈ (circleQuantumGrading R ι).piece (labellingQuantumDegree ι l) := by
+    circleBasis R ι l ∈ (circleQuantumGrading R ι).piece (labelingQuantumDegree ι l) := by
   rw [← Module.Basis.repr_symm_single_one, circleQuantumGrading,
     InternalGrading.apply_mem_map_piece_iff]
   exact InternalGrading.single_mem_finsupp_piece _ _
@@ -259,7 +259,7 @@ theorem circleBasis_mem_circleQuantumGrading_piece (l : ι → Bool) :
 This is the simp-normal form of `TauCeti.Khovanov.circleBasis_mem_circleQuantumGrading_piece`. -/
 @[simp]
 theorem tprod_labelBasis_mem_circleQuantumGrading_piece (l : ι → Bool) :
-    (⨂ₜ[R] i, labelBasis R (l i)) ∈ (circleQuantumGrading R ι).piece (labellingQuantumDegree ι l) :=
+    (⨂ₜ[R] i, labelBasis R (l i)) ∈ (circleQuantumGrading R ι).piece (labelingQuantumDegree ι l) :=
   circleBasis_apply (R := R) l ▸ circleBasis_mem_circleQuantumGrading_piece l
 
 /-- **A tensor of homogeneous elements is homogeneous**: if each factor `x i` of `R[ε]` has quantum
@@ -297,7 +297,7 @@ theorem isHomogeneous_fiberwiseMul (f : σ → τ) :
   refine Submodule.smul_mem _ _ ?_
   rw [AlgHom.toLinearMap_apply, fiberwiseMul_circleBasis]
   split_ifs with h
-  · rw [← hx l hl, ← labellingQuantumDegree_merge h]
+  · rw [← hx l hl, ← labelingQuantumDegree_merge h]
     exact circleBasis_mem_circleQuantumGrading_piece _
   · exact zero_mem _
 
@@ -307,10 +307,10 @@ end Khovanov
 
 /-- The quantum degree of an enhanced state is the quantum shift of its state plus the quantum
 degree of its labelling of the resolved circles. -/
-theorem OrientedPDCode.enhancedQuantumDegree_eq_add_labellingQuantumDegree {n : ℕ}
+theorem OrientedPDCode.enhancedQuantumDegree_eq_add_labelingQuantumDegree {n : ℕ}
     (D : OrientedPDCode n) (e : D.toPDCode.EnhancedState) :
     D.enhancedQuantumDegree e =
-      D.stateQuantumShift e.1 + Khovanov.labellingQuantumDegree _ e.2 := by
-  rw [enhancedQuantumDegree_def, Khovanov.labellingQuantumDegree_def]
+      D.stateQuantumShift e.1 + Khovanov.labelingQuantumDegree _ e.2 := by
+  rw [enhancedQuantumDegree_def, Khovanov.labelingQuantumDegree_def]
 
 end TauCeti
