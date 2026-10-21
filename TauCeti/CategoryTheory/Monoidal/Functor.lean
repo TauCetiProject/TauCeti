@@ -262,17 +262,15 @@ def ofRetract (e : Retract G F)
         (η F ▷ F.obj X) ≫ (𝟙_ D ◁ e.r.app X) := by
       rw [tensorHom_comp_whiskerRight, hη, tensorHom_def]
     simp only [Category.assoc]
-    rw [h, e.i.naturality_assoc, ← left_unitality_assoc, leftUnitor_inv_naturality_assoc,
-      ← MonoidalCategory.whiskerLeft_comp, ← NatTrans.comp_app, e.retract]
-    simp
+    rw [h, e.i.naturality_assoc, ← left_unitality_assoc]
+    simp [← NatTrans.comp_app_assoc]
   oplax_right_unitality X := by
     have h : (e.r.app X ⊗ₘ e.r.app (𝟙_ C)) ≫ G.obj X ◁ (e.i.app (𝟙_ C) ≫ η F) =
         (F.obj X ◁ η F) ≫ (e.r.app X ▷ 𝟙_ D) := by
       rw [tensorHom_comp_whiskerLeft, hη, tensorHom_def']
     simp only [Category.assoc]
-    rw [h, e.i.naturality_assoc, ← right_unitality_assoc, rightUnitor_inv_naturality_assoc,
-      ← MonoidalCategory.comp_whiskerRight, ← NatTrans.comp_app, e.retract]
-    simp
+    rw [h, e.i.naturality_assoc, ← right_unitality_assoc]
+    simp [← NatTrans.comp_app_assoc]
 
 variable (e : Retract G F)
   (hδ : ∀ X Y : C, e.r.app (X ⊗ Y) ≫ e.i.app (X ⊗ Y) ≫ δ F X Y ≫ (e.r.app X ⊗ₘ e.r.app Y) =

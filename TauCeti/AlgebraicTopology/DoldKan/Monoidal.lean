@@ -239,13 +239,22 @@ lemma inclusionN_app_comp_PInfty (X : SimplicialObject C) :
 /-- The normalized chain functor is a retract of the alternating face map complex functor, with
 inclusion `CategoryTheory.Idempotents.DoldKan.inclusionN` and projection
 `CategoryTheory.Idempotents.DoldKan.PInftyToN`. -/
-@[expose, simps]
 def retractN : Retract (N : SimplicialObject C ⥤ _) (alternatingFaceMapComplex C) where
   i := inclusionN
   r := PInftyToN
   retract := by
     ext X : 2
     exact inclusionN_app_comp_PInftyToN_app X
+
+/-- The inclusion of the normalized chains retract. -/
+@[simp]
+lemma retractN_i : (retractN (C := C)).i = inclusionN :=
+  (rfl)
+
+/-- The projection of the normalized chains retract. -/
+@[simp]
+lemma retractN_r : (retractN (C := C)).r = PInftyToN :=
+  (rfl)
 
 section Monoidal
 
