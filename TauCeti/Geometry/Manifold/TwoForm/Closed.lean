@@ -11,9 +11,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 /-!
 # Closed smooth differential two-forms
 
-This module supplies the degree-two migration closedness comparison and constant-form convenience
-theorem. The generic closedness predicate and chartwise API are defined in
-`DifferentialForm.Closed`.
+This module characterizes closed smooth two-forms by vanishing of their chartwise exterior
+derivatives and proves that constant two-forms on a model space are closed. The generic
+closedness predicate and chartwise API are defined in `DifferentialForm.Closed`.
 -/
 
 public section
@@ -28,7 +28,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 
-/-- A migrated degree-two form is closed exactly when each chart expression has vanishing exterior
+/-- A smooth two-form is closed exactly when each chart expression has vanishing exterior
 derivative within the model range on the chart target. -/
 theorem legacySmoothTwoFormEquiv_isClosed_iff
     (φ : TauCeti.SmoothTwoForm I M) :
