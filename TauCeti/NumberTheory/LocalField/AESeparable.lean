@@ -15,7 +15,6 @@ import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Analysis.Polynomial.GCD
 import TauCeti.MeasureTheory.Group.BoundedLineSections
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
-import TauCeti.Topology.Algebra.Polynomial.Basic
 
 /-!
 # Almost every monic polynomial over a local field is separable
@@ -44,10 +43,6 @@ inseparable `f + C t` shares a root `β` with `f'` in an algebraic closure, whic
 
 * `MeasureTheory.Measure.ae_separable_monicOfCoeff`: almost every monic polynomial over `K` is
   separable.
-* `TauCeti.Polynomial.continuous_resultant_derivative_monicOfCoeff` and
-  `TauCeti.Polynomial.resultant_derivative_monicOfCoeff_eq_zero_iff`: the resultant of
-  `monicOfCoeff a` and its derivative is continuous in `a` and vanishes exactly on the inseparable
-  locus.
 
 ## References
 
@@ -59,37 +54,7 @@ public section
 
 open Polynomial MeasureTheory Set
 open TauCeti.Polynomial (monicOfCoeff monic_monicOfCoeff natDegree_monicOfCoeff
-  coeff_monicOfCoeff monicOfCoeff_add_single_zero continuous_coeff_monicOfCoeff)
-
-namespace TauCeti.Polynomial
-
-/-- The resultant of `monicOfCoeff a` and its derivative, taken with the formal degrees `n` and
-`n - 1`, is a continuous function of the coefficient tuple `a`. It is the subresultant coefficient
-of index `0 0`, a determinant of the Sylvester matrix. -/
-theorem continuous_resultant_derivative_monicOfCoeff {R : Type*} [CommRing R]
-    [TopologicalSpace R] [IsTopologicalRing R] {n : ℕ} :
-    Continuous fun a : Fin n → R ↦
-      resultant (monicOfCoeff a) (derivative (monicOfCoeff a)) n (n - 1) :=
-  continuous_iff_continuousAt.2 fun a ↦ by
-    simpa only [subresultantCoeff_self, psc_zero] using TauCeti.continuousAt_subresultantCoeff
-      (fun i _ ↦ (continuous_coeff_monicOfCoeff i).continuousAt)
-      (fun i _ ↦ by
-        simp only [coeff_derivative]
-        exact ((continuous_coeff_monicOfCoeff (i + 1)).mul continuous_const).continuousAt)
-      (x₀ := a) (m := n) (n := n - 1) 0 0
-
-/-- Over a field, the resultant of `monicOfCoeff a` and its derivative, taken with the formal
-degrees `n` and `n - 1`, vanishes exactly when `monicOfCoeff a` is not separable. -/
-theorem resultant_derivative_monicOfCoeff_eq_zero_iff {K : Type*} [Field K] {n : ℕ}
-    (a : Fin n → K) :
-    resultant (monicOfCoeff a) (derivative (monicOfCoeff a)) n (n - 1) = 0 ↔
-      ¬ (monicOfCoeff a).Separable := by
-  have h := (monic_monicOfCoeff a).resultant_deriv
-  rw [natDegree_monicOfCoeff] at h
-  rw [← (monic_monicOfCoeff a).discr_ne_zero_iff, not_not, h]
-  simp
-
-end TauCeti.Polynomial
+  coeff_monicOfCoeff monicOfCoeff_add_single_zero)
 
 namespace TauCeti
 
