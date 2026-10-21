@@ -37,8 +37,8 @@ are *defined* to vanish (`asymmetricLaplaceMeasure_of_nonpos_left`,
 ## Main results
 
 * `isProbabilityMeasure_asymmetricLaplaceMeasure` — it is a probability measure for positive rates;
-* `IndepFun.hasLaw_asymmetricLaplaceMeasure` — `m + X - Y` has this law for independent
-  exponential variables `X` and `Y`;
+* `ProbabilityTheory.IndepFun.hasLaw_asymmetricLaplaceMeasure` — `m + X - Y` has this law
+  for independent exponential variables `X` and `Y`;
 * `charFun_asymmetricLaplaceMeasure` — the characteristic function
   `exp (i m t) * r * l / ((r - i t) * (l + i t))`;
 * `asymmetricLaplaceMeasure_eq_withDensity` — the law is Lebesgue measure weighted by
@@ -305,19 +305,6 @@ theorem isProbabilityMeasure_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) 
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
-/-- **The exponential construction.** For independent exponential variables `X` of rate `r` and
-`Y` of rate `l`, the variable `m + X - Y` has the asymmetric Laplace law with left rate `l` and
-right rate `r`. -/
-theorem IndepFun.hasLaw_asymmetricLaplaceMeasure {X Y : Ω → ℝ} (hindep : IndepFun X Y P)
-    (hl : 0 < l) (hr : 0 < r) (hX : HasLaw X (expMeasure r) P) (hY : HasLaw Y (expMeasure l) P)
-    (m : ℝ) : HasLaw (fun ω => m + X ω - Y ω) (asymmetricLaplaceMeasure m l r) P := by
-  have := isProbabilityMeasure_expMeasure hr
-  have := hX.isProbabilityMeasure
-  have hXY : HasLaw (fun ω => (X ω, Y ω)) ((expMeasure r).prod (expMeasure l)) P :=
-    (indepFun_iff_hasLaw_prodMk_prod hX hY).1 hindep
-  rw [asymmetricLaplaceMeasure_of_pos hl hr]
-  exact (hasLaw_map (X := fun z : ℝ × ℝ => m + z.1 - z.2) (by fun_prop)).fun_comp hXY
-
 /-! ### The characteristic function -/
 
 /-- **The characteristic function of the asymmetric Laplace law**, read off the exponential
@@ -372,7 +359,7 @@ private lemma integral_Iic_asymmetricLaplacePDFReal_smul_exp (hl : 0 < l) (hr : 
     ring
   rw [setIntegral_congr_fun measurableSet_Iic hL, integral_const_mul,
     integral_exp_mul_complex_Iic hre, mul_assoc, mul_div_assoc', hexp,
-    show (l : ℂ) + t * Complex.I = l + Complex.I * t by ring]
+    mul_comm (t : ℂ) Complex.I]
   exact (mul_div_assoc _ _ _).symm
 
 /-- The Fourier integral of the density over the upper half-line starting at the location. -/
@@ -399,7 +386,7 @@ private lemma integral_Ioi_asymmetricLaplacePDFReal_smul_exp (hl : 0 < l) (hr : 
     ring
   rw [setIntegral_congr_fun measurableSet_Ioi hR, integral_const_mul,
     integral_exp_mul_complex_Ioi hre, mul_assoc, mul_div_assoc', mul_neg, hexp,
-    show -(r : ℂ) + t * Complex.I = -(r - Complex.I * t) by ring, neg_div_neg_eq]
+    mul_comm (t : ℂ) Complex.I, neg_add_eq_sub, ← neg_sub (r : ℂ), neg_div_neg_eq]
   exact (mul_div_assoc _ _ _).symm
 
 /-- The characteristic function of Lebesgue measure weighted by the asymmetric Laplace density. -/
@@ -618,3 +605,23 @@ theorem measurable_asymmetricLaplaceMeasure :
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory.IndepFun
+
+open TauCeti.Probability
+
+/-- **The exponential construction.** For independent exponential variables `X` of rate `r` and
+`Y` of rate `l`, the variable `m + X - Y` has the asymmetric Laplace law with left rate `l` and
+right rate `r`. -/
+theorem hasLaw_asymmetricLaplaceMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X Y : Ω → ℝ} {l r : ℝ} (hindep : IndepFun X Y P) (hl : 0 < l) (hr : 0 < r)
+    (hX : HasLaw X (expMeasure r) P) (hY : HasLaw Y (expMeasure l) P) (m : ℝ) :
+    HasLaw (fun ω => m + X ω - Y ω) (asymmetricLaplaceMeasure m l r) P := by
+  have := isProbabilityMeasure_expMeasure hr
+  have := hX.isProbabilityMeasure
+  have hXY : HasLaw (fun ω => (X ω, Y ω)) ((expMeasure r).prod (expMeasure l)) P :=
+    (indepFun_iff_hasLaw_prodMk_prod hX hY).1 hindep
+  rw [asymmetricLaplaceMeasure_of_pos hl hr]
+  exact (hasLaw_map (X := fun z : ℝ × ℝ => m + z.1 - z.2) (by fun_prop)).fun_comp hXY
+
+end ProbabilityTheory.IndepFun
