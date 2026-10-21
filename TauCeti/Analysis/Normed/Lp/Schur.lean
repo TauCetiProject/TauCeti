@@ -101,7 +101,7 @@ private theorem two_mul_sum_norm_sub_norm_le_of_hasSum {y : lp (fun _ : ι ↦ �
 
 /-- **Schur's theorem**, in the weakly null sequential form: a sequence in ℓ¹ on which every
 continuous linear functional tends to zero tends to zero in norm. -/
-private theorem tendsto_zero_of_forall_tendsto_apply {x : ℕ → lp (fun _ : ι ↦ 𝕜) 1}
+private theorem tendsto_zero_of_forall_eval_tendsto {x : ℕ → lp (fun _ : ι ↦ 𝕜) 1}
     (hx : ∀ f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) 1), Tendsto (fun n ↦ f (x n)) atTop (𝓝 0)) :
     Tendsto x atTop (𝓝 0) := by
   -- If `ε ≤ ‖x n‖` for infinitely many `n`, the gliding hump gives a subsequence `x (m k)` with
@@ -159,9 +159,9 @@ theorem tendsto_of_tendsto_toWeakSpace_one {α : Type*} {l : Filter α} [l.IsCou
   rw [tendsto_iff_seq_tendsto]
   intro u hu
   rw [← tendsto_sub_nhds_zero_iff]
-  refine tendsto_zero_of_forall_tendsto_apply fun f ↦ ?_
+  refine tendsto_zero_of_forall_eval_tendsto fun f ↦ ?_
   have hf : Tendsto (fun n ↦ f (x (u n))) atTop (𝓝 (f y)) :=
-    TauCeti.tendsto_toWeakSpace_iff_forall_tendsto_apply.1 (hx.comp hu) f
+    TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.1 (hx.comp hu) f
   simpa only [map_sub, Function.comp_apply] using tendsto_sub_nhds_zero_iff.2 hf
 
 /-- Along a countably generated filter, weak and norm convergence agree in ℓ¹. -/

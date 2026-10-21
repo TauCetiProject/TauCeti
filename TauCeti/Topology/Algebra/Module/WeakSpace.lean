@@ -11,7 +11,7 @@ public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 # Convergence in the weak topology
 
 A family converges in `WeakSpace 𝕜 E` exactly when its values under every continuous linear
-functional converge (`TauCeti.tendsto_toWeakSpace_iff_forall_tendsto_apply`). This lets
+functional converge (`TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto`). This lets
 weak convergence be used without unfolding the definition of `WeakSpace` as a `WeakBilin` space.
 No injectivity of the duality pairing is needed, since the weak topology is induced by the
 evaluations.
@@ -28,7 +28,7 @@ variable {𝕜 E : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [Continuou
 
 /-- A family converges weakly exactly when its values under every continuous linear functional
 converge. -/
-theorem tendsto_toWeakSpace_iff_forall_tendsto_apply {α : Type*} {l : Filter α} {u : α → E}
+theorem tendsto_toWeakSpace_iff_forall_eval_tendsto {α : Type*} {l : Filter α} {u : α → E}
     {x : E} :
     Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) l (𝓝 (toWeakSpace 𝕜 E x)) ↔
       ∀ f : StrongDual 𝕜 E, Tendsto (fun n ↦ f (u n)) l (𝓝 (f x)) :=
