@@ -31,8 +31,9 @@ The proof inverts about `q`. Writing `w = (z - q)⁻¹`, the Borsuk map becomes 
 `w ↦ 1 + (q - p) * w`, whose only zero `(p - q)⁻¹` is the image of `p`. The image `A` of
 `closure C \ {q}` under the inversion is closed by
 `TauCeti.isClosed_setOf_ne_zero_and_add_inv_mem`. The image of `C` is preconnected, unbounded
-because `q ∈ closure C`, and dense in `A`, so every connected component of `A` is unbounded. Thus
-the complement of `A` has no holes, and the affine function has a holomorphic logarithm there by
+by `TauCeti.not_isBounded_image_sub_inv_of_mem_closure`, and dense in `A`, so every connected
+component of `A` is unbounded. Thus the complement of `A` has no holes, and the affine function
+has a holomorphic logarithm there by
 `TauCeti.Contour.exists_differentiableOn_eqOn_exp_comp_of_filledHull_subset`.
 
 ## References
@@ -67,18 +68,7 @@ theorem hasContinuousLogOn_sub_div_sub_compl_closure (hCc : IsPreconnected C)
     exact ⟨inv_ne_zero (hqz z hz), by simpa using subset_closure hz⟩
   have hDc : IsPreconnected D :=
     hCc.image _ ((continuousOn_id.sub continuousOn_const).inv₀ hqz)
-  have hDb : ¬ IsBounded D := by
-    rw [isBounded_iff_forall_norm_le]
-    rintro ⟨M, hM⟩
-    obtain ⟨z, hzC, hzq⟩ := Metric.mem_closure_iff.mp hqC (max M 1 + 1)⁻¹ (by positivity)
-    have hz0 : 0 < ‖z - q‖ := norm_pos_iff.mpr (hqz z hzC)
-    have hlt : ‖z - q‖ < (max M 1 + 1)⁻¹ := by rwa [dist_comm, dist_eq_norm] at hzq
-    have hle : ‖(z - q)⁻¹‖ ≤ M := hM _ ⟨z, hzC, rfl⟩
-    rw [norm_inv] at hle
-    have : max M 1 + 1 < ‖z - q‖⁻¹ := by
-      rw [lt_inv_comm₀ (by positivity) hz0]
-      exact hlt
-    linarith [le_max_left M 1]
+  have hDb : ¬ IsBounded D := not_isBounded_image_sub_inv_of_mem_closure hqC hqC'
   have hfill : filledHull Aᶜ ⊆ Aᶜ := by
     intro w hw hwA
     have hwD : w ∈ closure D := by
