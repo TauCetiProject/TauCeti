@@ -97,14 +97,8 @@ theorem mpullback_vectorBundleTranslateDiffeomorph_liouvilleForm (α : SmoothFor
   funext z
   ext v
   rw [mpullback_liouvilleForm_apply_of_proj_eq (vectorBundleTranslateDiffeomorph _ _).contMDiff
-      (fun _ ↦ by rw [vectorBundleTranslateDiffeomorph_apply]), SmoothForm.add_toRoughForm,
-    Pi.add_apply, ContinuousAlternatingMap.add_apply, SmoothForm.mpullback_apply,
-    liouvilleForm_apply, vectorBundleTranslateDiffeomorph_apply, add_apply,
-    SmoothForm.degreeOneEquiv_apply_apply]
-  -- A one-form on a single vector only sees its first entry.
-  congr 2
-  funext i
-  rw [Fin.fin_one_eq_zero i]
+      (fun _ ↦ by simp), vectorBundleTranslateDiffeomorph_apply]
+  simp [Fin.fin_one_eq_zero]
 
 /-- **Fibre dilation rescales the Liouville form.** Multiplying the fibres of the cotangent bundle
 by a nonzero real number `c` pulls the Liouville form back to `c • λ`. -/
@@ -118,9 +112,8 @@ theorem mpullback_vectorBundleScalarDiffeomorph_liouvilleForm {c : ℝ} (hc : c 
   funext z
   ext v
   rw [mpullback_liouvilleForm_apply_of_proj_eq (vectorBundleScalarDiffeomorph _ _ _).contMDiff
-      (fun _ ↦ by rw [vectorBundleScalarDiffeomorph_apply]), SmoothForm.smul_toRoughForm,
-    Pi.smul_apply, ContinuousAlternatingMap.smul_apply, liouvilleForm_apply,
-    vectorBundleScalarDiffeomorph_apply, smul_apply]
+      (fun _ ↦ by simp), vectorBundleScalarDiffeomorph_apply]
+  simp
 
 end Liouville
 
