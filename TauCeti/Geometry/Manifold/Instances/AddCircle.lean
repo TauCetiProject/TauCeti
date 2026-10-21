@@ -175,30 +175,15 @@ def quotientHomeomorph :
       continuous_invFun := continuous_ofReal p }
     fun _ _ ↦ (orbitRel_iff p).trans Quotient.eq
 
-/-- The orbit space of the action of `Multiplicative ℤ` on `PeriodLine p` is `AddCircle p`: the
-orbit of `t` corresponds to the image of `t` in `AddCircle p`. -/
-def quotientEquiv : MulAction.orbitRel.Quotient (Multiplicative ℤ) (PeriodLine p) ≃ AddCircle p :=
-  (quotientHomeomorph p).toEquiv
-
 /-- The orbit of `t` corresponds to the image of `t` in `AddCircle p`. -/
 @[simp]
-theorem quotientEquiv_mk (t : PeriodLine p) :
-    quotientEquiv p (Quotient.mk _ t) = ((ofReal p).symm t : AddCircle p) := (rfl)
+theorem quotientHomeomorph_mk (t : PeriodLine p) :
+    quotientHomeomorph p (Quotient.mk _ t) = ((ofReal p).symm t : AddCircle p) := (rfl)
 
 /-- The image of `t` in `AddCircle p` corresponds to the orbit of `t`. -/
 @[simp]
-theorem quotientEquiv_symm_coe (t : ℝ) :
-    (quotientEquiv p).symm (t : AddCircle p) = Quotient.mk _ (ofReal p t) := (rfl)
-
-/-- The underlying map of `quotientHomeomorph p` is `quotientEquiv p`. -/
-@[simp]
-theorem coe_quotientHomeomorph : ⇑(quotientHomeomorph p) = quotientEquiv p := (rfl)
-
-/-- The underlying map of the inverse of `quotientHomeomorph p` is the inverse of
-`quotientEquiv p`. -/
-@[simp]
-theorem coe_quotientHomeomorph_symm : ⇑(quotientHomeomorph p).symm = (quotientEquiv p).symm :=
-  (rfl)
+theorem quotientHomeomorph_symm_coe (t : ℝ) :
+    (quotientHomeomorph p).symm (t : AddCircle p) = Quotient.mk _ (ofReal p t) := (rfl)
 
 variable [hp : Fact (0 < p)]
 
@@ -262,19 +247,18 @@ noncomputable def quotientDiffeomorph (n : ℕ∞ω) :
       AddCircle p :=
   ((quotientHomeomorph p).symm.pullbackDiffeomorph 𝓘(ℝ) n).symm
 
-/-- The underlying map of `quotientDiffeomorph p n` is `quotientEquiv p`. -/
+/-- The underlying map of `quotientDiffeomorph p n` is `quotientHomeomorph p`. -/
 @[simp]
-theorem coe_quotientDiffeomorph (n : ℕ∞ω) : ⇑(quotientDiffeomorph p n) = quotientEquiv p := by
+theorem coe_quotientDiffeomorph (n : ℕ∞ω) :
+    ⇑(quotientDiffeomorph p n) = quotientHomeomorph p := by
   simp [quotientDiffeomorph]
 
 /-- The underlying map of the inverse of `quotientDiffeomorph p n` is the inverse of
-`quotientEquiv p`. -/
+`quotientHomeomorph p`. -/
 @[simp]
 theorem coe_quotientDiffeomorph_symm (n : ℕ∞ω) :
-    ⇑(quotientDiffeomorph p n).symm = (quotientEquiv p).symm := by
-  have h : (quotientDiffeomorph p n).toEquiv = quotientEquiv p :=
-    Equiv.ext (congrFun (coe_quotientDiffeomorph p n))
-  rw [← Diffeomorph.coe_toEquiv, Diffeomorph.symm_toEquiv, h]
+    ⇑(quotientDiffeomorph p n).symm = (quotientHomeomorph p).symm :=
+  (quotientHomeomorph p).symm.coe_pullbackDiffeomorph 𝓘(ℝ) n
 
 end TauCeti.PeriodLine
 
