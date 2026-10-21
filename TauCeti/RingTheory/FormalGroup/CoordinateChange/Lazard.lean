@@ -118,6 +118,15 @@ theorem coordinateChangeLift_comp_C
     (coordinateChangeLift p).comp C = lift p.1 :=
   RingHom.ext (eval₂Hom_C _ _)
 
+/-- The homomorphism classifying `(F, φ)` agrees on constants with the homomorphism classifying the
+source `F`. -/
+@[simp]
+theorem coordinateChangeLift_C
+    (p : {F : FormalGroup R // F.IsComm} × (FormalCoordinate.linearCoeff (R := R)).ker)
+    (r : LazardRing) :
+    coordinateChangeLift p (C r) = lift p.1 r :=
+  RingHom.congr_fun (coordinateChangeLift_comp_C p) r
+
 /-- The homomorphism classifying `(F, φ)` sends `bᵢ` to the coefficient of `X^(i + 1)` in `φ`. -/
 @[simp]
 theorem coordinateChangeLift_X
