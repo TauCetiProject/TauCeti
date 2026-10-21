@@ -186,13 +186,6 @@ section Conjugacy
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
   [LieAlgebra ℚ L]
 
-omit [CharZero K] [FiniteDimensional K L] in
-/-- A rational multiple of an element of a `K`-submodule stays in it, whatever `ℚ`-module structure
-is used: there is only one. -/
-private theorem rat_smul_mem (S : Submodule K L) (q : ℚ) {x : L} (hx : x ∈ S) : q • x ∈ S := by
-  rw [← Rat.cast_id q, ← ratCast_smul_eq K ℚ]
-  exact S.smul_mem _ hx
-
 omit [FiniteDimensional K L] in
 /-- If `y` lies in the `k`-th step of the filtration of the centralizer of `e`, with `k ≥ 1`, and
 `⁅y, v⁆` does too, then `exp (ad y) v = v + ⁅y, v⁆` up to the `2k`-th step. -/
@@ -221,7 +214,7 @@ private theorem expAd_apply_sub_sub_mem {e y v : L} {k : ℕ} (hy : IsNilpotent 
   simp only [Nat.factorial_zero, Nat.factorial_one, Nat.cast_one, inv_one, pow_zero, pow_one,
     one_smul, Module.End.one_apply, ad_apply, zero_add]
   rw [add_sub_cancel_right, add_sub_cancel_right]
-  exact Submodule.sum_mem _ fun m _ => rat_smul_mem _ _ (hpow₂ m)
+  exact Submodule.sum_mem _ fun m _ => Submodule.smul_of_tower_mem _ _ (hpow₂ m)
 
 variable {h e : L}
 
