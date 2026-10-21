@@ -17,11 +17,11 @@ import Mathlib.Tactic.Ring
 
 This file records arithmetic identities involving natural-number binomial coefficients.
 
-Besides three identities for the second binomial coefficient, it develops Vandermonde's convolution
-`∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a law
-supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of the
-summation index. The weighted sum is again a single binomial coefficient,
-`(A)ₘ * C(A + B - m, r - m)`, because `(i)ₘ` lowers both indices of `C(A, i)` at once.
+Besides three identities for the second binomial coefficient and the parity of `C(2ᵐ, 2)`, it
+develops Vandermonde's convolution `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape
+taken by factorial moments of a law supported on such a convolution: each summand is weighted by
+the falling factorial `(i)ₘ` of the summation index. The weighted sum is again a single binomial
+coefficient, `(A)ₘ * C(A + B - m, r - m)`, because `(i)ₘ` lowers both indices of `C(A, i)` at once.
 
 ## Main results
 
@@ -29,6 +29,7 @@ summation index. The weighted sum is again a single binomial coefficient,
   the triangular number is the corresponding square.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
+* `Nat.two_dvd_two_pow_choose_two`: `C(2ᵐ, 2)` is even for `m ≥ 2`.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
   `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)`.
 * `Nat.sum_range_descFactorial_mul_choose_mul_choose`: Vandermonde's convolution weighted by a
@@ -85,6 +86,14 @@ theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
       ring
     rw [h]
     exact Nat.sub_eq_of_eq_add (by ring)
+
+/-- `C(2ᵐ, 2) = 2ᵐ⁻¹ (2ᵐ - 1)` is even for `m ≥ 2`. The hypothesis is needed: `C(2, 2) = 1`. -/
+theorem two_dvd_two_pow_choose_two {m : ℕ} (hm : 2 ≤ m) : 2 ∣ (2 ^ m).choose 2 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hm
+  refine ⟨2 ^ k * (2 ^ (k + 2) - 1), ?_⟩
+  rw [Nat.choose_two_right]
+  refine Nat.div_eq_of_eq_mul_left two_pos ?_
+  ring
 
 /-- **A falling factorial of the lower index lowers both indices of a binomial coefficient:**
 `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)` for `m ≤ i`.

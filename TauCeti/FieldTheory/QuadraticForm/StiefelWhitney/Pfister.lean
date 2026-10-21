@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Hasse
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Pfister.Basic
+import TauCeti.Data.Nat.Choose.Basic
 
 /-!
 # The Stiefel–Whitney classes of Pfister forms
@@ -90,13 +91,6 @@ section SecondClass
 
 variable {K : Type} [Field K] [Invertible (2 : K)]
 
-/-- `C(2ᵐ, 2)` is even for `m ≥ 2`, so it kills every `𝔽₂`-module. -/
-private theorem two_pow_choose_two_nsmul_eq_zero {M : Type*} [AddCommGroup M]
-    [Module (ZMod 2) M] {m : ℕ} (hm : 2 ≤ m) (y : M) : (2 ^ m).choose 2 • y = 0 := by
-  obtain ⟨k, hk⟩ := Nat.Prime.dvd_choose_pow Nat.prime_two two_ne_zero
-    (show 2 ≠ 2 ^ m from fun h => by have := Nat.pow_le_pow_right two_pos hm; omega)
-  rw [hk, two_mul, add_nsmul, ZModModule.add_self]
-
 /-- **`w₂⟨⟨a⟩⟩ = 0`**: the one-fold Pfister form `⟨1, -a⟩` has trivial second class. -/
 theorem sw2Class_pfisterFormClass_one (a : Fin 1 → Kˣ) : sw2Class (pfisterFormClass a) = 0 := by
   rw [pfisterFormClass_one, sw2Class_mk_binary]
@@ -129,9 +123,10 @@ theorem sw2Class_pfisterFormClass_two (a b : Kˣ) :
 theorem sw2Class_pfisterFormClass_of_three_le {n : ℕ} (a : Fin n → Kˣ) (hn : 3 ≤ n) :
     sw2Class (pfisterFormClass a) = 0 := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (show 1 ≤ n by omega)
+  obtain ⟨k, hk⟩ := Nat.two_dvd_two_pow_choose_two (show 2 ≤ m by omega)
   rw [← Fin.cons_self_tail a, pfisterFormClass_cons, add_mul, one_mul,
     sw2Class_add_mk_rankOne_mul, rank_pfisterFormClass, sw1Class_pfisterFormClass _ (by omega),
-    two_pow_choose_two_nsmul_eq_zero (by omega)]
+    hk, two_mul, add_nsmul, ZModModule.add_self]
   simp
 
 /-- **Scaling a Pfister form of fold at least two does not change its second class**:
@@ -141,8 +136,9 @@ theorem sw2Class_mk_rankOne_mul_pfisterFormClass (c : Kˣ) {n : ℕ} (a : Fin n 
     (hn : 2 ≤ n) :
     sw2Class (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => c⟩ * pfisterFormClass a) =
       sw2Class (pfisterFormClass a) := by
-  rw [sw2Class_mk_rankOne_mul, rank_pfisterFormClass, sw1Class_pfisterFormClass a hn,
-    two_pow_choose_two_nsmul_eq_zero hn]
+  obtain ⟨k, hk⟩ := Nat.two_dvd_two_pow_choose_two hn
+  rw [sw2Class_mk_rankOne_mul, rank_pfisterFormClass, sw1Class_pfisterFormClass a hn, hk,
+    two_mul, add_nsmul, ZModModule.add_self]
   simp
 
 end SecondClass
