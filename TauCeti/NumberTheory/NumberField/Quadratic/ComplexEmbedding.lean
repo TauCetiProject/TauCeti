@@ -50,23 +50,20 @@ namespace QuadraticAlgebra
 
 variable {a : ℚ}
 
-/-- For `a ≤ 0`, the complex number `√(-a) · i` squares to `a`, in the form required by
-`QuadraticAlgebra.lift`. -/
+/-- For `a ≤ 0`, the complex number `√(-a) · i` squares to `a`. -/
 private theorem sqrt_mul_I_mul_self (ha : a ≤ 0) :
-    ((√(-(a : ℝ)) : ℂ) * I) * ((√(-(a : ℝ)) : ℂ) * I) =
-      a • (1 : ℂ) + (0 : ℚ) • ((√(-(a : ℝ)) : ℂ) * I) := by
+    ((√(-(a : ℝ)) : ℂ) * I) * ((√(-(a : ℝ)) : ℂ) * I) = a := by
   have h : ((√(-(a : ℝ)) : ℂ)) * (√(-(a : ℝ)) : ℂ) = -(a : ℂ) := by
     rw [← ofReal_mul, Real.mul_self_sqrt (by simpa using ha)]
     push_cast
     ring
-  simp only [zero_smul, add_zero, Rat.smul_def, mul_one]
   linear_combination (I * I) * h - I_mul_I * (a : ℂ)
 
 /-- **The distinguished complex embedding of `ℚ(√a)`** for `a ≤ 0`: the `ℚ`-algebra map
 `QuadraticAlgebra ℚ a 0 →ₐ[ℚ] ℂ` sending `ω` to `√(-a) · i`, the square root of `a` with
 nonnegative imaginary part. -/
 noncomputable def complexEmbedding (ha : a ≤ 0) : QuadraticAlgebra ℚ a 0 →ₐ[ℚ] ℂ :=
-  lift ⟨(√(-(a : ℝ)) : ℂ) * I, sqrt_mul_I_mul_self ha⟩
+  lift ⟨(√(-(a : ℝ)) : ℂ) * I, by simpa [Rat.smul_def] using sqrt_mul_I_mul_self ha⟩
 
 @[simp] theorem complexEmbedding_omega (ha : a ≤ 0) :
     complexEmbedding ha ω = (√(-(a : ℝ)) : ℂ) * I := by
@@ -95,11 +92,9 @@ quadratic involution, since it sends `ω` to a square root of `a`. -/
 theorem algHom_eq_or_eq_comp_starAe (ha : a ≤ 0) (φ : QuadraticAlgebra ℚ a 0 →ₐ[ℚ] ℂ) :
     φ = complexEmbedding ha ∨ φ = (complexEmbedding ha).comp (starAe : _ ≃ₐ[ℚ] _).toAlgHom := by
   have hφ : φ ω * φ ω = a := by
-    rw [← map_mul, omega_mul_omega_eq_algebraMap, map_zero, zero_mul, add_zero, AlgHom.commutes,
-      eq_ratCast]
-  have hu := sqrt_mul_I_mul_self ha
-  simp only [zero_smul, add_zero, Rat.smul_def, mul_one] at hu
-  rw [← hu] at hφ
+    rw [← map_mul]
+    simp [omega_mul_omega_eq_algebraMap]
+  rw [← sqrt_mul_I_mul_self ha] at hφ
   rcases mul_self_eq_mul_self_iff.mp hφ with h | h
   · exact Or.inl (algHom_ext (by simp [h]))
   · exact Or.inr (algHom_ext (by simp [h]))
