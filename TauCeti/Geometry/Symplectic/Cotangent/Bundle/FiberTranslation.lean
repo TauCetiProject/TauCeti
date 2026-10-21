@@ -116,43 +116,30 @@ theorem fiberTranslation_symm (α : SmoothForm I M ℝ 1) :
     (fiberTranslation α).symm = fiberTranslation (-α) :=
   Diffeomorph.ext fun z ↦ (fiberTranslation α).toEquiv.symm_apply_eq.mpr (by simp)
 
-/-- Fibre negation of the cotangent bundle is smooth, being fibrewise multiplication by `-1`. -/
-private theorem fiberNeg_contMDiff :
-    ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
-      fun z : CotangentBundle I M ↦
-        (TotalSpace.mk' (E →L[ℝ] ℝ) z.proj (-z.2) : CotangentBundle I M) :=
-  (ContMDiff.smul_totalSpace (V := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (I := I)
-      (contMDiff_const (c := (-1 : ℝ))) contMDiff_id).congr fun z ↦
-    (congrArg (TotalSpace.mk' (E →L[ℝ] ℝ) z.proj) (neg_one_smul ℝ z.2)).symm
-
 /-- **Fibre negation** of the cotangent bundle: the involutive diffeomorphism of `T*M` sending a
-covector `p` to `-p`. -/
+covector `p` to `-p`, as fibrewise multiplication by `-1`. -/
 def fiberNeg :
     CotangentBundle I M ≃ₘ^∞⟮I.prod 𝓘(ℝ, E →L[ℝ] ℝ), I.prod 𝓘(ℝ, E →L[ℝ] ℝ)⟯
-      CotangentBundle I M where
-  toFun z := TotalSpace.mk' (E →L[ℝ] ℝ) z.proj (-z.2)
-  invFun z := TotalSpace.mk' (E →L[ℝ] ℝ) z.proj (-z.2)
-  left_inv z := by simp
-  right_inv z := by simp
-  contMDiff_toFun := fiberNeg_contMDiff
-  contMDiff_invFun := fiberNeg_contMDiff
+      CotangentBundle I M :=
+  vectorBundleScalarDiffeomorph (V := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (fun _ ↦ (-1 : ℝ))
+    contMDiff_const fun _ ↦ by norm_num
 
 /-- Fibre negation negates a covector. -/
 @[simp]
 theorem fiberNeg_apply (z : CotangentBundle I M) :
-    fiberNeg z = TotalSpace.mk' (E →L[ℝ] ℝ) z.proj (-z.2) :=
-  (rfl)
+    fiberNeg z = TotalSpace.mk' (E →L[ℝ] ℝ) z.proj (-z.2) := by
+  simp [fiberNeg]
 
 /-- Fibre negation covers the identity of the base. -/
-theorem proj_fiberNeg (z : CotangentBundle I M) : (fiberNeg z).proj = z.proj :=
-  (rfl)
+theorem proj_fiberNeg (z : CotangentBundle I M) : (fiberNeg z).proj = z.proj := by
+  rw [fiberNeg_apply]
 
 /-- Fibre negation is an involution. -/
 @[simp]
 theorem fiberNeg_symm :
     (fiberNeg : CotangentBundle I M ≃ₘ^∞⟮I.prod 𝓘(ℝ, E →L[ℝ] ℝ), I.prod 𝓘(ℝ, E →L[ℝ] ℝ)⟯
       CotangentBundle I M).symm = fiberNeg :=
-  (rfl)
+  Diffeomorph.ext fun z ↦ by simp [fiberNeg]
 
 end Diffeomorph
 
@@ -187,9 +174,8 @@ theorem mpullback_fiberTranslation_liouvilleForm (α : SmoothForm I M ℝ 1) :
   ext v
   rw [SmoothForm.coe_mpullback, mpullback_liouvilleForm_apply_of_proj_eq
       (proj_fiberTranslation α) ((fiberTranslation α).mdifferentiable (by simp) z),
-    SmoothForm.add_toRoughForm, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    liouvilleForm_apply, SmoothForm.mpullback_apply_degreeOne, fiberTranslation_apply,
-    add_apply]
+    fiberTranslation_apply]
+  simp [liouvilleForm_apply, SmoothForm.mpullback_apply_degreeOne, -SmoothForm.coe_mpullback]
 
 /-- **Fibre negation reverses the sign of the Liouville form.** -/
 theorem mpullback_fiberNeg_liouvilleForm :
@@ -198,9 +184,8 @@ theorem mpullback_fiberNeg_liouvilleForm :
   funext z
   ext v
   rw [SmoothForm.coe_mpullback, mpullback_liouvilleForm_apply_of_proj_eq proj_fiberNeg
-      (fiberNeg.mdifferentiable (by simp) z), NegMemClass.coe_neg, Pi.neg_apply,
-    ContinuousAlternatingMap.neg_apply, liouvilleForm_apply, fiberNeg_apply,
-    neg_apply]
+      (fiberNeg.mdifferentiable (by simp) z), fiberNeg_apply]
+  simp [liouvilleForm_apply]
 
 end Liouville
 
@@ -228,7 +213,7 @@ theorem mpullback_fiberTranslation_symplecticForm_eq_self_iff (α : SmoothForm I
   have hinj := SmoothForm.mpullback_injective (F := ℝ) (k := 2)
     (Bundle.contMDiff_zeroSection ℝ (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (F := E →L[ℝ] ℝ)
       (IB := I))
-    (Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) fun _ ↦ rfl
+    (Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) (zeroSection_proj _ _)
   rw [mpullback_fiberTranslation_symplecticForm, sub_eq_self, map_eq_zero_iff _ hinj,
     SmoothForm.isClosed_def, ← mextDerivₗ_apply I, ZeroMemClass.coe_eq_zero]
 
