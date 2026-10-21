@@ -18,9 +18,9 @@ basic model: the real diameter of the unit disc. The two components of the cut d
 its open upper and lower half-discs.
 
 The definition records membership in the cut domain as well as inequality of components. This
-makes separation false for points on the crosscut or outside the domain and gives a stable API for
-null chains of crosscuts, whose nesting condition compares the sides selected by successive
-crosscuts. Reversing the path does not change the relation, and ambient homeomorphisms preserve it.
+makes separation false for points on the crosscut or outside the domain. `Path.SeparatesIn` states
+Pommerenke's separation condition, which null chains satisfy by `TauCeti.IsNullChain.separatesIn`.
+Reversing the path does not change the relation, and ambient homeomorphisms preserve it.
 
 The real diameter is the chord of the unit disc perpendicular to `I` (or to `-I`) at level `0`,
 so its two sides are the caps of `TauCeti.connectedComponentIn_ball_sdiff_unitDiscChord`.
@@ -53,9 +53,10 @@ theorem connectedComponentIn_unitDisc_diff_realDiameter_eq_upper {z : ℂ}
     (hz : z ∈ ball 0 1 ∩ {w : ℂ | 0 < w.im}) :
     connectedComponentIn (ball 0 1 \ range (Path.segment (-1 : ℂ) 1)) z =
       ball 0 1 ∩ {w : ℂ | 0 < w.im} := by
-  have h := connectedComponentIn_ball_sdiff_unitDiscChord (ζ := Complex.I) (t := 0) (by simp)
-    (z := z) (by simpa [Complex.inner] using hz)
-  simpa [Complex.inner, unitDiscChord_def, Path.range_segment] using h
+  have hI : {w : ℂ | 0 < w.im} = {w | 0 < inner ℝ Complex.I w} := by ext; simp [Complex.inner]
+  rw [hI] at hz ⊢
+  rw [← unitDiscChord_I_zero]
+  exact connectedComponentIn_ball_sdiff_unitDiscChord (by simp) hz
 
 /-- The connected component of a point in the open lower half of the unit disc, after removing
 the real diameter, is exactly that lower half-disc. -/
@@ -63,9 +64,11 @@ theorem connectedComponentIn_unitDisc_diff_realDiameter_eq_lower {z : ℂ}
     (hz : z ∈ ball 0 1 ∩ {w : ℂ | w.im < 0}) :
     connectedComponentIn (ball 0 1 \ range (Path.segment (-1 : ℂ) 1)) z =
       ball 0 1 ∩ {w : ℂ | w.im < 0} := by
-  have h := connectedComponentIn_ball_sdiff_unitDiscChord (ζ := -Complex.I) (t := 0) (by simp)
-    (z := z) (by simpa [Complex.inner] using hz)
-  simpa [Complex.inner, unitDiscChord_def, Path.range_segment, segment_symm] using h
+  have hI : {w : ℂ | w.im < 0} = {w | 0 < inner ℝ (-Complex.I) w} := by
+    ext; simp [Complex.inner]
+  rw [hI] at hz ⊢
+  rw [← unitDiscChord_neg_I_zero]
+  exact connectedComponentIn_ball_sdiff_unitDiscChord (by simp) hz
 
 /-- The real diameter separates `I / 2` from `-I / 2` in the unit disc. Together with
 `Path.isCrosscut_segment_ball`, this is the basic nondegenerate crosscut model for the side

@@ -26,8 +26,7 @@ visited again in the interior. For an open `U`, it follows that the path meets `
 exactly at its two endpoints.
 
 Crosscuts are unoriented objects geometrically. Accordingly, reversing a path preserves the
-predicate. The oriented path is nevertheless retained: a prime-end chain will use the order only
-to choose and compare the components of `U` cut off by its crosscuts.
+predicate.
 
 ## Main declarations
 

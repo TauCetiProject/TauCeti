@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Basic
+import TauCeti.Analysis.Complex.Inner
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Topology.ConnectedComponents
 import Mathlib.Analysis.InnerProductSpace.Continuous
 
@@ -26,6 +28,8 @@ theorem, and is not proved here.
 
 * `TauCeti.unitDiscChord` -- the chord of the unit disc perpendicular to `ζ` at level `t`.
 * `TauCeti.unitDiscChord_eq` -- the chord is the level set `⟪ζ, z⟫_ℝ = t` of the closed disc.
+* `TauCeti.unitDiscChord_I_zero`, `TauCeti.unitDiscChord_neg_I_zero` -- the real diameter is the
+  chord perpendicular to `I` (or to `-I`) at level `0`.
 * `TauCeti.connectedComponentIn_ball_sdiff_unitDiscChord` -- the cap beyond a chord is a
   connected component of the cut disc.
 * `TauCeti.isNullChain_unitDiscRadialChain` -- the chords at levels `1 - 1 / (n + 2)` form a
@@ -57,14 +61,17 @@ theorem unitDiscChord_def (ζ : ℂ) (t : ℝ) :
     unitDiscChord ζ t = segment ℝ (ζ * (t + √(1 - t ^ 2) * I)) (ζ * (t - √(1 - t ^ 2) * I)) :=
   (rfl)
 
-variable {ζ : ℂ} {t : ℝ}
-
-private lemma mul_conj_eq_one (hζ : ‖ζ‖ = 1) : ζ * (starRingEnd ℂ) ζ = 1 := by
-  rw [RCLike.mul_conj, hζ]
+/-- The chord perpendicular to `I` at level `0` is the real diameter. -/
+theorem unitDiscChord_I_zero : unitDiscChord I 0 = range (Path.segment (-1 : ℂ) 1) := by
+  rw [Path.range_segment, unitDiscChord_def]
   norm_num
 
-private lemma inner_mul_left (hζ : ‖ζ‖ = 1) (w : ℂ) : inner ℝ ζ (ζ * w) = w.re := by
-  rw [Complex.inner, mul_comm ζ w, mul_assoc, mul_conj_eq_one hζ, mul_one]
+/-- The chord perpendicular to `-I` at level `0` is the real diameter. -/
+theorem unitDiscChord_neg_I_zero : unitDiscChord (-I) 0 = range (Path.segment (-1 : ℂ) 1) := by
+  rw [Path.range_segment, unitDiscChord_def, segment_symm]
+  norm_num
+
+variable {ζ : ℂ} {t : ℝ}
 
 private lemma mul_add_mul_I_mem_sphere (hζ : ‖ζ‖ = 1) (s : ℝ)
     (hs : s ^ 2 = 1 - t ^ 2) : ζ * (t + s * I) ∈ sphere (0 : ℂ) 1 := by
@@ -95,7 +102,7 @@ private lemma chord_endpoints_ne (hζ : ‖ζ‖ = 1) (ht : |t| < 1) :
 private lemma inner_eq_of_mem_unitDiscChord (hζ : ‖ζ‖ = 1) {z : ℂ}
     (hz : z ∈ unitDiscChord ζ t) : inner ℝ ζ z = t := by
   refine (convex_hyperplane (innerₗ ℂ ζ).isLinear t).segment_subset ?_ ?_ hz <;>
-    exact (inner_mul_left hζ _).trans (by simp)
+    exact (inner_mul_left_of_norm_eq_one hζ _).trans (by simp)
 
 private lemma unitDiscChord_subset_closedBall (hζ : ‖ζ‖ = 1) (ht : |t| ≤ 1) :
     unitDiscChord ζ t ⊆ closedBall 0 1 :=
@@ -106,8 +113,8 @@ private lemma unitDiscChord_subset_closedBall (hζ : ‖ζ‖ = 1) (ht : |t| ≤
 private lemma mem_unitDiscChord_of_inner_eq (hζ : ‖ζ‖ = 1) (ht : |t| < 1) {z : ℂ}
     (hz : ‖z‖ ≤ 1) (hzt : inner ℝ ζ z = t) : z ∈ unitDiscChord ζ t := by
   set w := (starRingEnd ℂ) ζ * z with hw
-  have hzw : z = ζ * w := by rw [hw, ← mul_assoc, mul_conj_eq_one hζ, one_mul]
-  have hre : w.re = t := by rw [← hzt, hzw, inner_mul_left hζ]
+  have hzw : z = ζ * w := by rw [hw, ← mul_assoc, mul_conj_eq_one_of_norm_eq_one hζ, one_mul]
+  have hre : w.re = t := by rw [← hzt, hzw, inner_mul_left_of_norm_eq_one hζ]
   have hwn : ‖w‖ ≤ 1 := by rwa [hw, norm_mul, Complex.norm_conj, hζ, one_mul]
   have hwsq : w.re ^ 2 + w.im ^ 2 ≤ 1 := by
     have h := Complex.sq_norm w
@@ -173,13 +180,6 @@ private lemma norm_sub_sq_le (hζ : ‖ζ‖ = 1) {z : ℂ} (hz : ‖z‖ ≤ 1)
   rw [norm_sub_sq_real, hζ, real_inner_comm]
   nlinarith [norm_nonneg z]
 
-/-- The squared triangle inequality through an intermediate point `c`. -/
-private lemma norm_sub_sq_le_two_mul (a b c : ℂ) :
-    ‖a - b‖ ^ 2 ≤ 2 * (‖a - c‖ ^ 2 + ‖b - c‖ ^ 2) :=
-  (pow_le_pow_left₀ (norm_nonneg _)
-    ((norm_sub_le_norm_sub_add_norm_sub a c b).trans_eq (by rw [norm_sub_rev c b])) 2).trans
-    add_sq_le
-
 /-- The chords of the unit disc perpendicular to `ζ` at the levels `1 - 1 / (n + 2)`. -/
 def unitDiscRadialChain (ζ : ℂ) (n : ℕ) : Set ℂ :=
   unitDiscChord ζ (1 - 1 / ((n : ℝ) + 2))
@@ -240,7 +240,7 @@ theorem nullChainDomain_unitDiscRadialChain (hζ : ‖ζ‖ = 1) (n : ℕ) :
     have hmid : ζ * t' ∈ ball (0 : ℂ) 1 := by
       rw [mem_ball_zero_iff, norm_mul, hζ, one_mul, Complex.norm_real, Real.norm_eq_abs]
       exact abs_level_lt_one (n + 1)
-    have hmidt : inner ℝ ζ (ζ * t') = t' := by simp [inner_mul_left hζ]
+    have hmidt : inner ℝ ζ (ζ * t') = t' := by simp [inner_mul_left_of_norm_eq_one hζ]
     refine ⟨ζ * t', mem_unitDiscChord_of_mem_ball hζ hmid hmidt, ?_⟩
     rwa [connectedComponentIn_ball_sdiff_unitDiscChord hζ ⟨hmid, lt_of_lt_of_eq htt' hmidt.symm⟩]
 
@@ -282,9 +282,16 @@ def unitDiscPrimeEnd (ζ : sphere (0 : ℂ) 1) : PrimeEnd (ball 0 1) :=
   PrimeEnd.mk (unitDiscRadialChain ζ)
     (isNullChain_unitDiscRadialChain (mem_sphere_zero_iff_norm.mp ζ.2))
 
+/-- The prime end of the unit disc at `ζ` is the class of the radial chain at `ζ`. -/
+theorem unitDiscPrimeEnd_def (ζ : sphere (0 : ℂ) 1) :
+    unitDiscPrimeEnd ζ = PrimeEnd.mk (unitDiscRadialChain ζ)
+      (isNullChain_unitDiscRadialChain (mem_sphere_zero_iff_norm.mp ζ.2)) :=
+  (rfl)
+
 /-- **Distinct points of the circle give distinct prime ends of the disc.** -/
 theorem unitDiscPrimeEnd_injective : Function.Injective unitDiscPrimeEnd := by
   rintro ⟨ζ, hζ⟩ ⟨ζ', hζ'⟩ h
+  rw [unitDiscPrimeEnd_def, unitDiscPrimeEnd_def] at h
   rw [mem_sphere_zero_iff_norm] at hζ hζ'
   by_contra hne
   have hd : 0 < ‖ζ - ζ'‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h' => hne (by simp [h']))
@@ -307,7 +314,7 @@ theorem unitDiscPrimeEnd_injective : Function.Injective unitDiscPrimeEnd := by
     rw [norm_mul, hζ', one_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by linarith)]
     linarith
   have hqt : t < inner ℝ ζ' q := by
-    rw [inner_mul_left hζ', Complex.ofReal_re]
+    rw [inner_mul_left_of_norm_eq_one hζ', Complex.ofReal_re]
     linarith
   have hqζ : q ∈ ball (0 : ℂ) 1 ∩ {z | u < inner ℝ ζ z} :=
     hn ⟨mem_ball_zero_iff.mpr hqn, lt_of_le_of_lt hnt hqt⟩
