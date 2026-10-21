@@ -6,17 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Torsor.Defs
-public import Mathlib.GroupTheory.GroupAction.Defs
-public import Mathlib.GroupTheory.QuotientGroup.Defs
-public import Mathlib.Tactic.Group
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Quotients of torsors by normal subgroups
 
 Let `G` be a group acting on `P` and let `H` be a normal subgroup of `G`. The space
 `MulAction.orbitRel.Quotient H P` of `H`-orbits in `P` carries an action of the quotient group
-`G ⧸ H`, given on representatives by `(g : G ⧸ H) • ⟦p⟧ = ⟦g • p⟧`. If `P` is a torsor under
-`G`, then the orbit space is a torsor under `G ⧸ H`, with `⟦p⟧ /ₛ ⟦q⟧ = (p /ₛ q : G ⧸ H)`.
+`G ⧸ H` (`MulAction.orbitRel.Quotient.instMulActionQuotientGroup`), given on representatives by
+`(g : G ⧸ H) • ⟦p⟧ = ⟦g • p⟧`. If `P` is a torsor under `G`, then the orbit space is a torsor
+under `G ⧸ H`, with `⟦p⟧ /ₛ ⟦q⟧ = (p /ₛ q : G ⧸ H)`.
 
 Additively: if `P` is an `AddTorsor` under `G` and `H` is a normal additive subgroup, then the
 space of `H`-orbits is an `AddTorsor` under `G ⧸ H`. This is how a torsor under a group of
@@ -24,8 +23,6 @@ classes descends to a torsor under a quotient of that group.
 
 ## Main definitions
 
-* `MulAction.orbitRel.Quotient.instMulActionQuotientGroup`: the action of `G ⧸ H` on the space
-  of `H`-orbits, and its additive version.
 * `MulAction.orbitRel.Quotient.instTorsorQuotientGroup`: the space of `H`-orbits of a
   `G`-torsor is a `G ⧸ H`-torsor, and its additive version.
 
@@ -33,8 +30,8 @@ classes descends to a torsor under a quotient of that group.
 
 * `MulAction.orbitRel.Quotient.mk_eq_mk_iff_sdiv_mem`: two points of a torsor lie in the same
   `H`-orbit exactly when their difference lies in `H`.
-* `MulAction.orbitRel.Quotient.mk_smul_mk`, `MulAction.orbitRel.Quotient.mk_sdiv_mk`: the action
-  and the difference on the orbit space are computed on representatives.
+* `MulAction.orbitRel.Quotient.mk_sdiv_mk`: the difference on the orbit space is computed on
+  representatives.
 -/
 
 public section
@@ -42,52 +39,6 @@ public section
 namespace MulAction.orbitRel.Quotient
 
 variable {G P : Type*} [Group G] (H : Subgroup G)
-
-section Action
-
-variable [MulAction G P] [H.Normal]
-
-/-- Translating by elements of `G` that agree modulo the normal subgroup `H` sends points in the
-same `H`-orbit to points in the same `H`-orbit. -/
-@[to_additive /-- Translating by elements of `G` that agree modulo the normal subgroup `H` sends
-points in the same `H`-orbit to points in the same `H`-orbit. -/]
-theorem orbitRel_smul_smul {g g' : G} {p q : P} (hg : g⁻¹ * g' ∈ H)
-    (hpq : orbitRel H P p q) : orbitRel H P (g • p) (g' • q) := by
-  rw [orbitRel_apply, mem_orbit_iff] at hpq ⊢
-  obtain ⟨⟨h, hh⟩, rfl⟩ := hpq
-  refine ⟨⟨g * h * g'⁻¹, ?_⟩, ?_⟩
-  · have hk : g * (h * (g⁻¹ * g')⁻¹) * g⁻¹ ∈ H :=
-      ‹H.Normal›.conj_mem _ (H.mul_mem hh (H.inv_mem hg)) g
-    simpa [mul_assoc] using hk
-  · simp [subgroup_smul_def, smul_smul, mul_assoc]
-
-/-- The quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives. -/
-@[to_additive /-- The quotient group `G ⧸ H` acts on the space of `H`-orbits by translating
-representatives. -/]
-instance instSMulQuotientGroup : SMul (G ⧸ H) (orbitRel.Quotient H P) where
-  smul := Quotient.map₂ (· • ·) fun _ _ hg _ _ hpq =>
-    orbitRel_smul_smul H (QuotientGroup.leftRel_apply.1 hg) hpq
-
-/-- The action of `G ⧸ H` on `H`-orbits is computed on representatives. -/
-@[to_additive (attr := simp) /-- The action of `G ⧸ H` on `H`-orbits is computed on
-representatives. -/]
-theorem mk_smul_mk (g : G) (p : P) :
-    (g : G ⧸ H) • (Quotient.mk'' p : orbitRel.Quotient H P) = Quotient.mk'' (g • p) :=
-  rfl
-
-/-- The quotient group `G ⧸ H` acts on the space of `H`-orbits. -/
-@[to_additive /-- The quotient group `G ⧸ H` acts on the space of `H`-orbits. -/]
-instance instMulActionQuotientGroup : MulAction (G ⧸ H) (orbitRel.Quotient H P) where
-  one_smul x := by
-    induction x using Quotient.inductionOn' with
-    | h p => rw [← QuotientGroup.mk_one, mk_smul_mk, one_smul]
-  mul_smul g g' x := by
-    induction g using QuotientGroup.induction_on with | H g =>
-    induction g' using QuotientGroup.induction_on with | H g' =>
-    induction x using Quotient.inductionOn' with
-    | h p => rw [← QuotientGroup.mk_mul, mk_smul_mk, mk_smul_mk, mk_smul_mk, mul_smul]
-
-end Action
 
 section Torsor
 
@@ -120,12 +71,12 @@ variable [H.Normal]
 theorem mk_sdiv_eq_mk_sdiv {p p' q q' : P} (hp : orbitRel H P p p')
     (hq : orbitRel H P q q') : ((p /ₛ q : G) : G ⧸ H) = (p' /ₛ q' : G) := by
   rw [orbitRel_iff_sdiv_mem] at hp hq
-  rw [QuotientGroup.eq]
-  have hk : (p /ₛ q)⁻¹ * (p /ₛ p')⁻¹ * (p /ₛ q)⁻¹⁻¹ * (q /ₛ q') ∈ H :=
-    H.mul_mem (‹H.Normal›.conj_mem _ (H.inv_mem hp) (p /ₛ q)⁻¹) hq
-  rw [← sdiv_mul_sdiv_cancel p' p q', ← sdiv_mul_sdiv_cancel p q q', ← inv_sdiv_eq_sdiv_rev p p']
-  convert hk using 1
-  group
+  -- `(p /ₛ q)⁻¹ * (p' /ₛ q')` is the conjugate of `p' /ₛ p ∈ H` by `(p /ₛ q)⁻¹`, times
+  -- `q /ₛ q' ∈ H`, since `p' /ₛ q' = (p' /ₛ p) * (p /ₛ q) * (q /ₛ q')`.
+  rw [QuotientGroup.eq, ← sdiv_mul_sdiv_cancel p' p q', ← sdiv_mul_sdiv_cancel p q q']
+  have hp' : p' /ₛ p ∈ H := inv_sdiv_eq_sdiv_rev p p' ▸ H.inv_mem hp
+  have hk := H.mul_mem (‹H.Normal›.conj_mem _ hp' (p /ₛ q)⁻¹) hq
+  rwa [inv_inv, mul_assoc, mul_assoc] at hk
 
 /-- The difference of two `H`-orbits in a torsor, as an element of `G ⧸ H`. -/
 @[to_additive /-- The difference of two `H`-orbits in an additive torsor, as an element of

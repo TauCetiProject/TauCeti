@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Torsor.Quotient
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 public import Mathlib.Tactic.Abel
 public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.Ring
 
 /-!
 # Caps of contractible orbits as torsors over the period group
@@ -102,23 +101,6 @@ theorem mk_eq_mk_iff {p q : P} :
   rw [AddAction.orbitRel.Quotient.mk_eq_mk_iff_vsub_mem, AddMonoidHom.mem_ker,
     AddMonoidHom.prod_apply, Prod.mk_eq_zero]
 
-/-- Two raw caps have the same class exactly when they have the same action and the same grading,
-for functions `a` and `m` on raw caps obeying the recapping laws for area and twice the first
-Chern number. -/
-theorem mk_eq_mk_iff_action_eq_and_index_eq {a : P → ℝ} {m : P → ℤ}
-    (ha : ∀ (g : S) (p : P), a (g +ᵥ p) = ω g + a p)
-    (hm : ∀ (g : S) (p : P), m (g +ᵥ p) = 2 * c g + m p) {p q : P} :
-    (Quotient.mk'' p : CapClass ω c P) = Quotient.mk'' q ↔ a p = a q ∧ m p = m q := by
-  have harea := ha (p -ᵥ q) q
-  have hchern := hm (p -ᵥ q) q
-  rw [vsub_vadd] at harea hchern
-  rw [mk_eq_mk_iff]
-  constructor
-  · rintro ⟨hω, hc⟩
-    exact ⟨by linarith, by omega⟩
-  · rintro ⟨haq, hmq⟩
-    exact ⟨by linarith, by omega⟩
-
 variable {A : Type*} [AddMonoid A]
 
 /-- A function `f` on raw caps that changes by `φ g` under recapping by `g`, for a homomorphism
@@ -170,6 +152,27 @@ theorem eq_iff_action_eq_and_index_eq {a : C → ℝ} {m : C → ℤ}
     omega
 
 end Torsor
+
+namespace CapClass
+
+variable {ω c} {P : Type*} [AddTorsor S P]
+
+/-- Two raw caps have the same class exactly when they have the same action and the same grading,
+for functions `a` and `m` on raw caps obeying the recapping laws for area and twice the first
+Chern number. -/
+theorem mk_eq_mk_iff_action_eq_and_index_eq {a : P → ℝ} {m : P → ℤ}
+    (ha : ∀ (g : S) (p : P), a (g +ᵥ p) = ω g + a p)
+    (hm : ∀ (g : S) (p : P), m (g +ᵥ p) = 2 * c g + m p) {p q : P} :
+    (Quotient.mk'' p : CapClass ω c P) = Quotient.mk'' q ↔ a p = a q ∧ m p = m q := by
+  have ha' : ∀ (g : S) (p : P), a (g +ᵥ p) = PeriodGroup.area ω c g + a p := by
+    simpa only [PeriodGroup.area_mk] using ha
+  have hm' : ∀ (g : S) (p : P), m (g +ᵥ p) = ((2 : ℤ) • PeriodGroup.chern ω c) g + m p := by
+    simpa only [AddMonoidHom.zsmul_apply, PeriodGroup.chern_mk, smul_eq_mul] using hm
+  -- `lift_mk` holds by definition, so the torsor statement for the lifts is the claim.
+  exact eq_iff_action_eq_and_index_eq (lift_vadd _ a ha')
+    (fun γ D => by simpa only [AddMonoidHom.zsmul_apply, smul_eq_mul] using lift_vadd _ m hm' γ D)
+
+end CapClass
 
 section Product
 
