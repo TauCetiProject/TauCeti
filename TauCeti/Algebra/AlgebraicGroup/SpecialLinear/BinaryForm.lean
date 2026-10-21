@@ -156,23 +156,16 @@ theorem lTensor_coact_X_one_pow (d : ℕ) :
           (Pi.basisFun R (Fin 2)) 0 0) ^ d) := by
   let q := (UpperTriangular.coordinateMap R 2).hom
   -- Restriction to the upper-triangular subgroup is an algebra homomorphism.
-  have hq : q.toLinearMap = (q : _ →ₐ[R] _).toLinearMap :=
-    LinearMap.ext fun x ↦ by simp [BialgHom.toCoalgHom_apply]
-  have hS := map_antipode_coefficientMatrix R 2
-  rw [Matrix.adjugate_fin_two] at hS
-  have hS₁₀ := congrFun (congrFun hS 1) 0
-  have hS₁₁ := congrFun (congrFun hS 1) 1
-  simp only [Matrix.map_apply, Matrix.of_apply, Matrix.cons_val_one, Matrix.cons_val_zero,
-    Matrix.cons_val', Matrix.empty_val', Matrix.cons_val_fin_one] at hS₁₀ hS₁₁
-  rw [polynomialComodule, Comodule.polynomial_coact_apply, map_pow,
-    Comodule.polynomialCoact_X, Fin.sum_univ_two, hq, AlgHom.lTensor_toLinearMap_apply]
-  simp only [← Comodule.coefficientMatrix_apply, hS₁₀, hS₁₁, map_pow, map_add,
-    Algebra.TensorProduct.map_tmul, AlgHom.id_apply, map_neg, BialgHom.coe_toAlgHom, q]
-  rw [coefficientMatrix_basisFun, Matrix.map_apply,
+  have hq : q.toLinearMap = (q : _ →ₐ[R] _).toLinearMap := (BialgHom.toAlgHom_toLinearMap q).symm
+  rw [polynomialComodule, Comodule.polynomial_coact_apply, map_pow, Comodule.polynomialCoact_X,
+    Fin.sum_univ_two, hq, AlgHom.lTensor_toLinearMap_apply]
+  simp only [← Comodule.coefficientMatrix_apply, map_pow, map_add,
+    Algebra.TensorProduct.map_tmul, AlgHom.id_apply, BialgHom.coe_toAlgHom, q]
+  rw [antipode_coefficientMatrix_one_zero, antipode_coefficientMatrix_one_one, map_neg,
+    coefficientMatrix_basisFun, Matrix.map_apply,
     UpperTriangular.coordinateMap_coordinateMap_genericMatrix_eq_zero_of_lt
       (by decide : (0 : Fin 2) < 1),
-    neg_zero, TensorProduct.tmul_zero, zero_add,
-    Algebra.TensorProduct.tmul_pow]
+    neg_zero, TensorProduct.tmul_zero, zero_add, Algebra.TensorProduct.tmul_pow]
 
 end HighestLine
 

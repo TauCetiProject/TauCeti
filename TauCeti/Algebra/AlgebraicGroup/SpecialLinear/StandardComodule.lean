@@ -29,7 +29,8 @@ theory.
 
 * `TauCeti.SpecialLinear.standardComodule`: the standard `O(SL_n)`-comodule on `R^n`.
 * `TauCeti.SpecialLinear.coefficientMatrix_basisFun`: its coefficient matrix is the generic
-  matrix of `SL_n`; `map_antipode_coefficientMatrix` identifies its antipode with the adjugate.
+  matrix of `SL_n`; `map_antipode_coefficientMatrix` identifies its antipode with the adjugate,
+  and `antipode_coefficientMatrix_zero_zero` and its siblings spell this out for `SL₂`.
 * `TauCeti.SpecialLinear.ofConv_coefficientMatrix`: a point evaluates the coefficient matrix to
   its matrix.
 * `TauCeti.SpecialLinear.isFaithful_standardComodule`: the standard representation is faithful.
@@ -116,6 +117,38 @@ theorem map_antipode_coefficientMatrix :
         (Pi.basisFun R (Fin n))).adjugate := by
   rw [← Matrix.inv_eq_left_inv (Comodule.map_antipode_mul_coefficientMatrix _), Matrix.inv_def,
     det_coefficientMatrix_basisFun, Ring.inverse_one, one_smul]
+
+/-- In `O(SL₂)` the antipode sends the coordinate `a` of `[[a, b], [c, d]]` to `d`. -/
+theorem antipode_coefficientMatrix_zero_zero :
+    HopfAlgebra.antipode R
+        (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 0 0) =
+      Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 1 1 := by
+  simpa [Matrix.adjugate_fin_two] using
+    congrFun (congrFun (map_antipode_coefficientMatrix R 2) 0) 0
+
+/-- In `O(SL₂)` the antipode sends the coordinate `b` of `[[a, b], [c, d]]` to `-b`. -/
+theorem antipode_coefficientMatrix_zero_one :
+    HopfAlgebra.antipode R
+        (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 0 1) =
+      -Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 0 1 := by
+  simpa [Matrix.adjugate_fin_two] using
+    congrFun (congrFun (map_antipode_coefficientMatrix R 2) 0) 1
+
+/-- In `O(SL₂)` the antipode sends the coordinate `c` of `[[a, b], [c, d]]` to `-c`. -/
+theorem antipode_coefficientMatrix_one_zero :
+    HopfAlgebra.antipode R
+        (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 1 0) =
+      -Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 1 0 := by
+  simpa [Matrix.adjugate_fin_two] using
+    congrFun (congrFun (map_antipode_coefficientMatrix R 2) 1) 0
+
+/-- In `O(SL₂)` the antipode sends the coordinate `d` of `[[a, b], [c, d]]` to `a`. -/
+theorem antipode_coefficientMatrix_one_one :
+    HopfAlgebra.antipode R
+        (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 1 1) =
+      Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 0 0 := by
+  simpa [Matrix.adjugate_fin_two] using
+    congrFun (congrFun (map_antipode_coefficientMatrix R 2) 1) 1
 
 /-- **The standard comodule of `SL_n` is faithful.** -/
 theorem isFaithful_standardComodule :
