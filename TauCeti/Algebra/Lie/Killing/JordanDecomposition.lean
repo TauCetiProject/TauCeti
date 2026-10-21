@@ -11,10 +11,10 @@ public import TauCeti.Algebra.Lie.Derivation.JordanChevalley
 /-!
 # Abstract Jordan decomposition in Killing Lie algebras
 
-Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over a perfect
-field `K`. Every element `x : L` whose adjoint action `ad x` is split (its generalized
-eigenspaces span `L`, which is automatic when `K` is algebraically closed) decomposes as
-`x = n + s` with `⁅n, s⁆ = 0`, `ad n` nilpotent and `ad s` semisimple, and these parts are
+Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over a field `K`.
+Every element `x : L` whose adjoint action `ad x` is split (its generalized eigenspaces span `L`,
+which is automatic when `K` is algebraically closed) decomposes as `x = n + s` with
+`⁅n, s⁆ = 0`, `ad n` nilpotent and `ad s` semisimple. When `K` is perfect these parts are
 unique. This is the abstract (or internal) Jordan decomposition: the
 Jordan–Chevalley decomposition of the endomorphism `ad x` does not a priori have its parts
 in the image of `ad`, and the decomposition here reconstructs them inside `L`.
@@ -24,12 +24,13 @@ The proof applies the Jordan–Chevalley decomposition of derivations
 derivation `ad x`: both parts are derivations, hence inner because every derivation of a Killing
 Lie algebra is inner (`LieDerivation.IsKilling.exists_eq_ad`), and `ad` is injective because the
 center is trivial. Uniqueness is the uniqueness of the Jordan–Chevalley decomposition of `ad x`
-together with injectivity of `ad`; it only needs `L` to act faithfully on itself.
+together with injectivity of `ad`; it only needs `L` to act faithfully on itself and `K` to be
+perfect.
 
 ## Main results
 
-* `TauCeti.exists_isNilpotent_ad_isSemisimple_ad_of_iSup_maxGenEigenspace_eq_top`: over a
-  perfect field, existence of the decomposition for an element whose adjoint action is split.
+* `TauCeti.exists_isNilpotent_ad_isSemisimple_ad_of_iSup_maxGenEigenspace_eq_top`: existence of
+  the decomposition for an element whose adjoint action is split.
 * `TauCeti.exists_isNilpotent_ad_isSemisimple_ad`: existence over an algebraically closed field.
 * `TauCeti.isNilpotent_ad_isSemisimple_ad_unique`: uniqueness, for a finite-dimensional Lie
   algebra with trivial center over a perfect field.
@@ -50,12 +51,12 @@ variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional
 
 section Existence
 
-variable [IsKilling K L] [PerfectField K]
+variable [IsKilling K L]
 
 /-- **Abstract Jordan decomposition, existence for split elements.** In a finite-dimensional
-Lie algebra with nondegenerate Killing form over a perfect field, an element `x` whose adjoint
-action has spanning generalized eigenspaces is a sum `n + s` of commuting elements with `ad n`
-nilpotent and `ad s` semisimple. Both `ad n` and `ad s` are polynomials in `ad x`. -/
+Lie algebra with nondegenerate Killing form, an element `x` whose adjoint action has spanning
+generalized eigenspaces is a sum `n + s` of commuting elements with `ad n` nilpotent and `ad s`
+semisimple. Both `ad n` and `ad s` are polynomials in `ad x`. -/
 theorem exists_isNilpotent_ad_isSemisimple_ad_of_iSup_maxGenEigenspace_eq_top (x : L)
     (hx : ⨆ μ, maxGenEigenspace (ad K L x) μ = ⊤) :
     ∃ n s : L, ad K L n ∈ Algebra.adjoin K {ad K L x} ∧ ad K L s ∈ Algebra.adjoin K {ad K L x} ∧

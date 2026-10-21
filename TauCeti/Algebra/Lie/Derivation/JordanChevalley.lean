@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Derivation.Basic
+public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import Mathlib.LinearAlgebra.JordanChevalley
 
@@ -23,6 +24,11 @@ derivation is in general not a derivation. The proof goes through generalized ei
   Hence `S` satisfies the Leibniz rule on pairs of generalized eigenvectors, and so everywhere
   once the generalized eigenspaces of `D` span, for instance over an algebraically closed field.
   The nilpotent part `N = D - S` is then a derivation by subtraction.
+
+The second step adapts the argument in Mathlib's proof of
+`LieAlgebra.IsKilling.isSemisimple_ad_of_mem_isCartanSubalgebra`, which shows the same way that
+the semisimple part of `ad x` is a derivation, with root spaces of a Cartan subalgebra in place of
+the generalized eigenspaces of `D`.
 
 This is the derivation-level input for the abstract Jordan decomposition of elements of a Lie
 algebra all of whose derivations are inner.
@@ -128,19 +134,44 @@ theorem apply_lie_eq_add_of_isNilpotent_sub (D : LieDerivation K L L)
   | zero => simp
   | add _ _ _ _ h h' => simp only [add_lie, map_add, h, h']; abel
 
-variable [FiniteDimensional K L] [PerfectField K]
+variable [FiniteDimensional K L]
 
-/-- **Jordan–Chevalley decomposition of a split derivation.** Over a perfect field, if the
-generalized eigenspaces of a derivation `D` of a finite-dimensional Lie algebra span, then the
-nilpotent and semisimple parts of `D` are derivations. They are polynomials in `D`. -/
+open Polynomial in
+/-- **Jordan–Chevalley decomposition of a split derivation.** If the generalized eigenspaces of
+a derivation `D` of a finite-dimensional Lie algebra span, then the nilpotent and semisimple parts
+of `D` are derivations. They are polynomials in `D`. No perfectness of the field is needed: `D`
+is annihilated by a power of the separable polynomial whose simple roots are its eigenvalues. -/
 theorem exists_isNilpotent_isSemisimple_of_iSup_maxGenEigenspace_eq_top (D : LieDerivation K L L)
     (hD : ⨆ μ, maxGenEigenspace (D : Module.End K L) μ = ⊤) :
     ∃ N S : LieDerivation K L L,
       (N : Module.End K L) ∈ Algebra.adjoin K {(D : Module.End K L)} ∧
       (S : Module.End K L) ∈ Algebra.adjoin K {(D : Module.End K L)} ∧
       IsNilpotent (N : Module.End K L) ∧ IsSemisimple (S : Module.End K L) ∧ D = N + S := by
+  classical
+  set T := (finite_hasEigenvalue (D : Module.End K L)).toFinset
+  have hsep : (∏ μ ∈ T, (X - C μ)).Separable :=
+    separable_prod_X_sub_C_iff'.mpr fun _ _ _ _ ↦ id
+  have hdvd : minpoly K (D : Module.End K L) ∣ (∏ μ ∈ T, (X - C μ)) ^ Module.finrank K L := by
+    refine minpoly.dvd K _ (LinearMap.ext fun z ↦ ?_)
+    have hz : z ∈ ⨆ μ, maxGenEigenspace (D : Module.End K L) μ := hD ▸ Submodule.mem_top
+    induction hz using Submodule.iSup_induction' with
+    | mem μ z hz =>
+      rw [maxGenEigenspace_eq_genEigenspace_finrank] at hz
+      by_cases hμ : HasEigenvalue (D : Module.End K L) μ
+      · rw [← prod_erase_mul _ _ ((Set.Finite.mem_toFinset _).2 hμ), mul_pow, map_mul,
+          Module.End.mul_apply, map_pow (aeval _) (X - C μ), map_sub, aeval_X, aeval_C,
+          Algebra.algebraMap_eq_smul_one, LinearMap.mem_ker.1 (mem_genEigenspace_nat.1 hz),
+          map_zero, LinearMap.zero_apply]
+      · obtain rfl : z = 0 := by
+          by_contra h
+          exact hμ (hasEigenvalue_of_hasGenEigenvalue
+            ((Submodule.ne_bot_iff _).2 ⟨z, hz, h⟩))
+        simp
+    | zero => simp
+    | add _ _ _ _ h h' => simp only [map_add, h, h', add_zero,
+        LinearMap.zero_apply]
   obtain ⟨n, hn, s, hs, hn_nil, hs_ss, hDns⟩ :=
-    Module.End.exists_isNilpotent_isSemisimple (f := (D : Module.End K L))
+    exists_isNilpotent_isSemisimple_of_separable_of_dvd_pow hsep hdvd
   have hDs : Commute (D : Module.End K L) s := Algebra.commute_of_mem_adjoin_self hs
   have hsub : (D : Module.End K L) - s = n := by rw [hDns, add_sub_cancel_right]
   have hleib := D.apply_lie_eq_add_of_isNilpotent_sub hD hDs hs_ss.isFinitelySemisimple
