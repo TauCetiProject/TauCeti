@@ -40,6 +40,8 @@ equivalence of chains visibly an equivalence relation.
 * `TauCeti.IsNullChain` -- the null-chain predicate.
 * `TauCeti.IsNullChain.nullChainDomain_eq_connectedComponentIn` -- each domain is the component
   of the cut set containing the next crosscut.
+* `TauCeti.IsNullChain.subset_nullChainDomain` -- a preconnected set off a crosscut that meets
+  its domain lies in it.
 * `TauCeti.IsNullChain.separatesIn` -- Pommerenke's separation condition.
 * `TauCeti.NullChainEquivalent` -- equivalence of chains, an equivalence relation.
 * `TauCeti.PrimeEnd` -- the prime ends of a plane set.
@@ -123,6 +125,17 @@ theorem nullChainDomain_eq_connectedComponentIn (hC : IsNullChain U C) {z : ℂ}
   obtain ⟨w, hw, hqw⟩ := mem_nullChainDomain_iff.mp hq
   have hwU : w ∈ U := (connectedComponentIn_nonempty_iff.mp ⟨q, hqw⟩).1
   rwa [connectedComponentIn_eq (hsub ⟨hw, hwU⟩)]
+
+/-- A preconnected subset of `U \ C n` that meets the domain cut off by the `n`-th crosscut of a
+null chain lies in that domain. -/
+theorem subset_nullChainDomain (hC : IsNullChain U C) {S : Set ℂ} (hS : IsPreconnected S)
+    (hSC : S ⊆ U \ C n) (hSD : (S ∩ nullChainDomain U C n).Nonempty) :
+    S ⊆ nullChainDomain U C n := by
+  obtain ⟨q, hqS, hqD⟩ := hSD
+  obtain ⟨w, hw⟩ := (hC.isConnected_inter (n + 1)).nonempty
+  rw [hC.nullChainDomain_eq_connectedComponentIn hw] at hqD ⊢
+  rw [connectedComponentIn_eq hqD]
+  exact hS.subset_connectedComponentIn hqS hSC
 
 /-- Every domain cut off by a null chain is nonempty. -/
 theorem nonempty_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
