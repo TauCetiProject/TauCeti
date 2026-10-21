@@ -44,9 +44,9 @@ operator into `C^n` dependence of its fixed points on parameters.
 
 * `BoundedContinuousFunction.exists_eq_comp`: along a function with values in `s`, the
   derivatives `t ↦ G' (f t)` form a bounded continuous family.
-* `BoundedContinuousFunction.hasFDerivAt_of_forall_apply_eq` and
-  `BoundedContinuousFunction.continuousAt_of_forall_apply_eq`: an operator given near `f₀` by
-  `Θ f t = G (f t)` is differentiable, respectively continuous, at `f₀`.
+* `BoundedContinuousFunction.hasFDerivAt_of_forall_apply_eq`: an operator given near `f₀` by
+  `Θ f t = G (f t)` is differentiable at `f₀` (its continuity is
+  `BoundedContinuousFunction.continuousAt_of_forall_apply_eq`).
 * `BoundedContinuousFunction.hasFDerivAt_comp`: the superposition operator is differentiable at
   `f₀`, with derivative `h ↦ (t ↦ G' (f₀ t) (h t))`.
 * `BoundedContinuousFunction.hasStrictFDerivAt_comp`: the derivative is strict.
@@ -74,8 +74,8 @@ namespace BoundedContinuousFunction
 
 section PseudoMetricSpace
 
-variable {α X Y : Type*} [TopologicalSpace α] [PseudoMetricSpace X] [PseudoMetricSpace Y]
-  {s : Set X} {f₀ : α →ᵇ X} {δ : ℝ} {G : X → Y} {Θ : (α →ᵇ X) → α →ᵇ Y}
+variable {α X : Type*} [TopologicalSpace α] [PseudoMetricSpace X] {s : Set X} {f₀ : α →ᵇ X}
+  {δ : ℝ}
 
 /-- If the values of `f₀` stay `δ > 0` inside `s`, then so do the values of every function
 uniformly within `δ / 2` of `f₀`, with the margin `δ / 2`. -/
@@ -83,27 +83,6 @@ private theorem ball_half_subset_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, b
     (hf : f ∈ ball f₀ (δ / 2)) (t : α) : ball (f t) (δ / 2) ⊆ s :=
   (ball_subset_ball' (by linarith [dist_coe_le_dist (f := f) (g := f₀) t, mem_ball.1 hf])).trans
     (hf₀ t)
-
-/-- If the values of `f₀` stay `δ > 0` inside `s`, then every function in the `δ`-ball about `f₀`
-has its values in `s`. -/
-theorem apply_mem_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
-    (hf : f ∈ ball f₀ δ) (t : α) : f t ∈ s :=
-  hf₀ t (mem_ball.2 ((dist_coe_le_dist t).trans_lt (mem_ball.1 hf)))
-
-/-- A locally defined superposition operator is continuous when `G` is uniformly continuous: if
-`Θ f t = G (f t)` on the ball of radius `δ` about `f₀`, and the values of `f₀` stay a distance `δ`
-inside `s`, where `G` is uniformly continuous. -/
-theorem continuousAt_of_forall_apply_eq (hG : UniformContinuousOn G s) (hδ : 0 < δ)
-    (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) (hΘ : ∀ f ∈ ball f₀ δ, ∀ t, Θ f t = G (f t)) :
-    ContinuousAt Θ f₀ := by
-  refine Metric.continuousAt_iff.2 fun ε hε ↦ ?_
-  obtain ⟨η, hη, hGη⟩ := Metric.uniformContinuousOn_iff_le.1 hG (ε / 2) (half_pos hε)
-  refine ⟨min δ η, lt_min hδ hη, fun f hf ↦ ?_⟩
-  have hfδ : f ∈ ball f₀ δ := mem_ball.2 (hf.trans_le (min_le_left _ _))
-  refine lt_of_le_of_lt ((dist_le (half_pos hε).le).2 fun t ↦ ?_) (half_lt_self hε)
-  rw [hΘ f hfδ, hΘ f₀ (mem_ball_self hδ)]
-  exact hGη _ (apply_mem_of_mem_ball hf₀ hfδ t) _
-    (hf₀ t (mem_ball_self hδ)) ((dist_coe_le_dist t).trans (hf.le.trans (min_le_right _ _)))
 
 end PseudoMetricSpace
 
