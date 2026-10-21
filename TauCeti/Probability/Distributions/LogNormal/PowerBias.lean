@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.PowerBias
 public import TauCeti.Probability.Distributions.LogNormal.Basic
 import TauCeti.MeasureTheory.Measure.Tilted
+import TauCeti.Probability.Distributions.Tilted
 
 /-!
 # Power biasing of log-normal laws
@@ -24,20 +25,8 @@ open MeasureTheory ProbabilityTheory Real Set
 
 namespace TauCeti.Probability
 
-private lemma gaussianPDFReal_mul_exp_div_mgf {m q y : ℝ} {v : ℝ≥0} (hv : v ≠ 0) :
-    gaussianPDFReal m v y *
-        (Real.exp (q * y) / Real.exp (q * m + q ^ 2 * (v : ℝ) / 2)) =
-      gaussianPDFReal (m + q * v) v y := by
-  have hvpos : 0 < (v : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hv)
-  have hsqrt : √(2 * π * (v : ℝ)) ≠ 0 := by positivity
-  rw [gaussianPDFReal, gaussianPDFReal]
-  field_simp [hsqrt, Real.exp_ne_zero]
-  rw [← Real.exp_add, ← Real.exp_add]
-  congr 1
-  field_simp
-  ring
-
 /-- Power biasing a log-normal law shifts its log-mean by `q * v`. -/
+@[simp]
 theorem powerBias_logNormalMeasure (m : ℝ) (v : ℝ≥0) (q : ℝ) :
     (logNormalMeasure m v).powerBias q = logNormalMeasure (m + q * v) v := by
   rw [Measure.powerBias_eq_tilted (ae_pos_logNormalMeasure m v) q]
@@ -66,6 +55,7 @@ theorem powerBias_logNormalMeasure (m : ℝ) (v : ℝ≥0) (q : ℝ) :
       ← ENNReal.ofReal_mul
         (mul_nonneg (inv_nonneg.mpr hx.le) (gaussianPDFReal_nonneg m v (Real.log x)))]
     congr 1
-    rw [mul_assoc, gaussianPDFReal_mul_exp_div_mgf hv]
+    rw [mul_assoc, show q * m + q ^ 2 * (v : ℝ) / 2 = m * q + v * q ^ 2 / 2 by ring,
+      gaussianPDFReal_mul_exp_div_mgf, mul_comm (v : ℝ) q]
 
 end TauCeti.Probability
