@@ -134,6 +134,7 @@ noncomputable def pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factori
     (SymmetricPower.equivHomogeneous (R := R) (M := L) n).symm.toLinearMap
 
 /-- Homogeneous symmetrization is tensor symmetrization after the inverse comparison. -/
+@[simp low] -- Prefer cancelling the homogeneous comparison before expanding.
 theorem pbwHomogeneousSymmetrization_apply (n : ℕ) (hn : IsUnit (n.factorial : R))
     (p : homogeneousSubmodule R L n) :
     pbwHomogeneousSymmetrization R L n hn p =
@@ -156,6 +157,7 @@ theorem pbwHomogeneousSymmetrization_mem_pbwFiltration (n : ℕ) (hn : IsUnit (n
   exact pbwSymmetrization_mem_pbwFiltration R L n hn _
 
 /-- Taking the leading PBW symbol of symmetrization recovers the canonical PBW image. -/
+@[simp↓] -- Take the symbol before expanding homogeneous symmetrization.
 theorem mk_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R))
     (p : homogeneousSubmodule R L n) :
     Submodule.Quotient.mk
