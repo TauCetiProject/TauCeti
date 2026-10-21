@@ -6,6 +6,7 @@ Authors: Ryan Shin, The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import TauCeti.Topology.OpenPartialHomeomorph.Composition
 
 /-!
 # Pulling back charted-space and groupoid structures along a homeomorphism
@@ -75,13 +76,6 @@ variable {H : Type*} [TopologicalSpace H] {M : Type*} [TopologicalSpace M] [Char
   {N : Type*} [TopologicalSpace N] {P : Type*} [TopologicalSpace P]
 
 namespace Homeomorph
-
-/-- Precomposing an open partial homeomorphism with the identity homeomorphism leaves it
-unchanged. -/
-@[simp, mfld_simps]
-theorem refl_transOpenPartialHomeomorph {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    (c : OpenPartialHomeomorph X Y) : (Homeomorph.refl X).transOpenPartialHomeomorph c = c := by
-  simp [transOpenPartialHomeomorph_eq_trans]
 
 /-- The charted-space structure on `N` pulled back along a homeomorphism `e : N ≃ₜ M`: the atlas
 is `{e.transOpenPartialHomeomorph c | c ∈ atlas H M}` and the chart at `x` is the chart of `M` at
@@ -196,7 +190,6 @@ theorem pullback_isManifold (e : N ≃ₜ M) [IsManifold I n M] :
 /-- A homeomorphism onto a charted space is a `C^n` diffeomorphism for the pulled-back structure:
 read in a pulled-back chart and in the corresponding chart of `M`, both it and its inverse are the
 identity. -/
-@[expose]
 def pullbackDiffeomorph (e : N ≃ₜ M) :
     letI := e.pullbackChartedSpace (H := H)
     N ≃ₘ^n⟮I, I⟯ M :=

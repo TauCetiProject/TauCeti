@@ -213,11 +213,11 @@ def diffeomorph (k : ℕ∞ω) : WithMetric g ≃ₘ^k⟮I, I⟯ M :=
 
 @[simp]
 theorem coe_diffeomorph (k : ℕ∞ω) : ⇑(diffeomorph g k) = ofWithMetric :=
-  (rfl)
+  (homeomorph g).coe_pullbackDiffeomorph I k
 
 @[simp]
 theorem coe_diffeomorph_symm (k : ℕ∞ω) : ⇑(diffeomorph g k).symm = toWithMetric g :=
-  (rfl)
+  (homeomorph g).coe_pullbackDiffeomorph_symm I k
 
 end Diffeomorph
 
@@ -246,11 +246,11 @@ private theorem writtenInExtChartAt_toWithMetric_eventuallyEq (x : M) :
 /-- `ofWithMetric` is a diffeomorphism, hence smooth of every order. -/
 theorem contMDiff_ofWithMetric {k : ℕ∞ω} :
     ContMDiff I I k (ofWithMetric : WithMetric g → M) :=
-  (diffeomorph g k).contMDiff
+  coe_diffeomorph (g := g) k ▸ (diffeomorph g k).contMDiff
 
 /-- `toWithMetric g` is a diffeomorphism, hence smooth of every order. -/
 theorem contMDiff_toWithMetric {k : ℕ∞ω} : ContMDiff I I k (toWithMetric g) :=
-  (diffeomorph g k).symm.contMDiff
+  coe_diffeomorph_symm (g := g) k ▸ (diffeomorph g k).symm.contMDiff
 
 /-- The differential of `ofWithMetric` is the identity of the model space. -/
 theorem hasMFDerivAt_ofWithMetric (x : WithMetric g) :
@@ -350,29 +350,31 @@ def diffeomorphWithMetric
 theorem diffeomorphWithMetric_apply
     (g' : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (k : ℕ∞ω)
     (x : WithMetric g) :
-    diffeomorphWithMetric g g' k x = toWithMetric g' x.ofWithMetric :=
-  (rfl)
+    diffeomorphWithMetric g g' k x = toWithMetric g' x.ofWithMetric := by
+  simp [diffeomorphWithMetric]
 
 @[simp]
 theorem diffeomorphWithMetric_symm
     (g' : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (k : ℕ∞ω) :
     (diffeomorphWithMetric g g' k).symm = diffeomorphWithMetric g' g k :=
-  Diffeomorph.ext fun _ ↦ rfl
+  Diffeomorph.ext fun _ ↦ (diffeomorphWithMetric g g' k).injective (by simp)
 
 @[simp]
 theorem diffeomorphWithMetric_trans
     (g' g'' : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (k : ℕ∞ω) :
     (diffeomorphWithMetric g g' k).trans (diffeomorphWithMetric g' g'' k) =
       diffeomorphWithMetric g g'' k :=
-  Diffeomorph.ext fun _ ↦ rfl
+  Diffeomorph.ext fun _ ↦ by simp
 
 /-- The differential of the identity diffeomorphism between two copies of `M` is the identity of
 the model space. -/
 theorem mfderiv_diffeomorphWithMetric
     (g' : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (k : ℕ∞ω)
     (x : WithMetric g) :
-    mfderiv I I (diffeomorphWithMetric g g' k) x = ContinuousLinearMap.id ℝ (TangentSpace I x) :=
-  ((hasMFDerivAt_toWithMetric x.ofWithMetric).comp x (hasMFDerivAt_ofWithMetric x)).mfderiv
+    mfderiv I I (diffeomorphWithMetric g g' k) x = ContinuousLinearMap.id ℝ (TangentSpace I x) := by
+  rw [show ⇑(diffeomorphWithMetric g g' k) = toWithMetric g' ∘ ofWithMetric from
+    funext (diffeomorphWithMetric_apply g' k)]
+  exact ((hasMFDerivAt_toWithMetric x.ofWithMetric).comp x (hasMFDerivAt_ofWithMetric x)).mfderiv
 
 end DiffeomorphWithMetric
 
