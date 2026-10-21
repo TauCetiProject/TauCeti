@@ -78,6 +78,14 @@ theorem equivalent_weightedSumSquares_of_toZModPow_eq {ι : Type*} [Fintype ι]
   choose t ht using fun i ↦ exists_eq_mul_sq_of_toZModPow_eq (hv i) (h i)
   exact ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares t fun i ↦ (ht i).symm⟩
 
+/-- A congruence modulo `4`, read on residues modulo `8`, is divisibility by `4`. -/
+private theorem four_dvd_sub_of_two_mul_sub_eq_zero {x y : ℤ_[2]}
+    (h : 2 * (toZModPow 3 x - toZModPow 3 y) = 0) : (4 : ℤ_[2]) ∣ x - y := by
+  have h8 : ((2 : ℕ) : ℤ_[2]) ^ 3 ∣ 2 * (x - y) := by
+    rw [← toZModPow_eq_zero_iff_dvd, map_mul, map_sub, map_ofNat, h]
+  rw [show ((2 : ℕ) : ℤ_[2]) ^ 3 = 2 * 4 by norm_num] at h8
+  exact (mul_dvd_mul_iff_left two_ne_zero).mp h8
+
 /-- Two odd residues modulo `8` are congruent modulo `4` up to sign. -/
 private theorem two_mul_add_eq_zero_of_ne {x y : ZMod (2 ^ 3)} (hx : x * x = 1) (hy : y * y = 1)
     (h : 2 * (x - y) ≠ 0) : 2 * (x + y) = 0 := by
@@ -111,7 +119,7 @@ private theorem equivalent_binary_of_two_mul_sub_eq_zero {x y z : ℤ_[2]}
     linear_combination key (toZModPow 3 m) (toZModPow 3 x) hx
   -- `z - 4 x m²` is `y` times the square of a unit.
   obtain ⟨t, ht⟩ := exists_eq_mul_sq_of_toZModPow_eq hy hr
-  have hzu := isUnit_of_toZModPow_three_mul_self hz
+  have hzu := isUnit_iff_toZModPow_three_mul_self.mpr hz
   have e : (weightedSumSquares ℤ_[2] ![x, y]).Equivalent
       (weightedSumSquares ℤ_[2] ![(hzu.unit : ℤ_[2]), x * y * hzu.unit]) :=
     ⟨(isometryEquivBinaryNormalForm x y (2 * m) t hzu.unit
@@ -291,7 +299,7 @@ private theorem equivalent_of_rank_four (ih : Classified 3) {w v : Fin 4 → ℤ
       linear_combination
         (-(toZModPow 3 b * toZModPow 3 c * toZModPow 3 a * toZModPow 3 d * toZModPow 3 a)) * ha
   have e₄ := equivalent_weightedSumSquares_four a (a * (b * c * a * d * a))
-    (isUnit_of_toZModPow_three_mul_self (by
+    (isUnit_iff_toZModPow_three_mul_self.mpr (by
       simp only [map_mul, map_add, map_one, map_ofNat]
       exact hdet))
   refine e₁.trans (e₂.trans (e₃.trans (e₄.trans ?_)))
