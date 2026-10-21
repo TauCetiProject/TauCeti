@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.IZPow
 public import TauCeti.Geometry.Hodge.WeilOperator
-public import TauCeti.Geometry.Symplectic.Complex.Complexification
+public import TauCeti.Geometry.Symplectic.Complex.Projection
 public import TauCeti.LinearAlgebra.Eigenspace.Transport
 
 /-!
@@ -326,6 +326,48 @@ theorem hodgeStructure_piece_eq_bot (J : AlmostComplexStructure V) {p : ℤ}
   by_cases hp : p < 0
   · exact J.isEffective_hodgeStructure.piece_eq_bot_of_neg hp
   · exact J.isEffective_hodgeStructure.piece_eq_bot_of_weight_lt (by omega)
+
+/-- The degree-one Hodge projection of `J` is its holomorphic type projection. -/
+@[simp]
+theorem hodgeStructure_proj_one (J : AlmostComplexStructure V) :
+    J.hodgeStructure.proj 1 = J.holomorphicProjection := by
+  apply J.hodgeStructure.addHom_ext_of_piece
+  intro p x hx
+  by_cases hpone : p = 1
+  · subst p
+    rw [J.hodgeStructure.proj_apply_of_mem hx, holomorphicProjection_def]
+    exact (Submodule.projection_apply_of_mem_left _
+      (J.hodgeStructure_piece_one ▸ hx)).symm
+  by_cases hpzero : p = 0
+  · subst p
+    rw [J.hodgeStructure.proj_apply_eq_zero_of_mem_of_ne hx (by norm_num),
+      holomorphicProjection_def]
+    exact (Submodule.projection_apply_of_mem_right _
+      (J.hodgeStructure_piece_zero ▸ hx)).symm
+  rw [J.hodgeStructure_piece_eq_bot hpzero hpone, Submodule.mem_bot] at hx
+  subst x
+  simp
+
+/-- The degree-zero Hodge projection of `J` is its antiholomorphic type projection. -/
+@[simp]
+theorem hodgeStructure_proj_zero (J : AlmostComplexStructure V) :
+    J.hodgeStructure.proj 0 = J.antiholomorphicProjection := by
+  apply J.hodgeStructure.addHom_ext_of_piece
+  intro p x hx
+  by_cases hpzero : p = 0
+  · subst p
+    rw [J.hodgeStructure.proj_apply_of_mem hx, antiholomorphicProjection_def]
+    exact (Submodule.projection_apply_of_mem_left _
+      (J.hodgeStructure_piece_zero ▸ hx)).symm
+  by_cases hpone : p = 1
+  · subst p
+    rw [J.hodgeStructure.proj_apply_eq_zero_of_mem_of_ne hx (by norm_num),
+      antiholomorphicProjection_def]
+    exact (Submodule.projection_apply_of_mem_right _
+      (J.hodgeStructure_piece_one ▸ hx)).symm
+  rw [J.hodgeStructure_piece_eq_bot hpzero hpone, Submodule.mem_bot] at hx
+  subst x
+  simp
 
 /-- The Weil operator of the Hodge structure associated with `J` is the complex-linear scalar
 extension of `J`. Thus the construction recovers the original almost complex structure after

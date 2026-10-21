@@ -14,15 +14,17 @@ public import Mathlib.LinearAlgebra.Projection
 
 This file records the eigenspace decomposition of a complex-linear endomorphism whose square is
 negative one. The decomposition produces the two complementary pieces used in complex-structure
-and Hodge decompositions. The projection onto the `i`-eigenspace is explicitly `(1 - i f) / 2`,
-fixing the normalization used in complex tangent type decompositions.
+and Hodge decompositions. The projections onto the `i`- and `-i`-eigenspaces are explicitly
+`(1 - i f) / 2` and `(1 + i f) / 2`, fixing the normalization used in complex tangent type
+decompositions.
 
 ## Main declarations
 
 * `Module.End.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id`: the `i`- and `-i`-eigenspaces of an
   endomorphism squaring to `-1` are complementary.
-* `Module.End.projection_eigenspace_I_neg_I_apply`: the explicit formula for the native
-  projection onto the `i`-eigenspace.
+* `TauCeti.projection_eigenspace_I_neg_I_apply` and
+  `TauCeti.projection_eigenspace_neg_I_I_apply`: the explicit formulas for the native
+  projections onto the two eigenspaces.
 -/
 
 public section
@@ -76,6 +78,14 @@ theorem isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id (f : Module.End ℂ W)
     rw [hdecomp]
     exact Submodule.add_mem_sup hxplus hxminus
 
+end Module.End
+
+namespace TauCeti
+
+open Module.End
+
+variable {W : Type*} [AddCommGroup W] [Module ℂ W]
+
 /-- The projection onto the `i`-eigenspace of a complex structure along its `-i`-eigenspace
 is the explicit operator `(1 - i f) / 2`. -/
 theorem projection_eigenspace_I_neg_I_apply (f : Module.End ℂ W)
@@ -103,4 +113,16 @@ theorem projection_eigenspace_I_neg_I_apply (f : Module.End ℂ W)
       module
     _ = (2 : ℂ)⁻¹ • (x - Complex.I • f x) := by rw [hsum, hfx]
 
-end Module.End
+/-- The projection onto the `-i`-eigenspace of a complex structure along its `i`-eigenspace
+is the explicit operator `(1 + i f) / 2`. -/
+theorem projection_eigenspace_neg_I_I_apply (f : Module.End ℂ W)
+    (hf : f.comp f = -LinearMap.id) (x : W) :
+    (eigenspace f (-Complex.I)).projection (eigenspace f Complex.I)
+        (f.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id hf).symm x =
+      (2 : ℂ)⁻¹ • (x + Complex.I • f x) := by
+  rw [Submodule.projection_eq_self_sub_projection
+    (f.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id hf),
+    projection_eigenspace_I_neg_I_apply f hf]
+  module
+
+end TauCeti

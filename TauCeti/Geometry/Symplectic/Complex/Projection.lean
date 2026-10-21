@@ -75,20 +75,14 @@ theorem holomorphicProjection_apply (J : AlmostComplexStructure V) (u : ℂ ⊗[
     J.holomorphicProjection u =
       (2 : ℂ)⁻¹ • (u - Complex.I • J.toLinearMap.baseChange ℂ u) := by
   rw [holomorphicProjection_def]
-  apply Module.End.projection_eigenspace_I_neg_I_apply
-  simpa only [LinearMap.baseChange_comp, LinearMap.baseChange_neg,
-    LinearMap.baseChange_id] using congrArg (LinearMap.baseChange ℂ) J.square_neg
+  exact projection_eigenspace_I_neg_I_apply _ J.baseChange_comp_self u
 
 /-- The explicit `(0,1)` projection is `(u + i J u) / 2`. -/
 theorem antiholomorphicProjection_apply (J : AlmostComplexStructure V) (u : ℂ ⊗[ℝ] V) :
     J.antiholomorphicProjection u =
       (2 : ℂ)⁻¹ • (u + Complex.I • J.toLinearMap.baseChange ℂ u) := by
-  have h := J.holomorphicProjection_add_antiholomorphicProjection u
-  rw [holomorphicProjection_apply] at h
-  apply add_left_cancel (a := (2 : ℂ)⁻¹ • (u - Complex.I • J.toLinearMap.baseChange ℂ u))
-  calc
-    _ = u := h
-    _ = _ := by module
+  rw [antiholomorphicProjection_def]
+  exact projection_eigenspace_neg_I_I_apply _ J.baseChange_comp_self u
 
 @[simp]
 theorem range_holomorphicProjection (J : AlmostComplexStructure V) :
@@ -166,13 +160,13 @@ theorem antiholomorphicProjection_holomorphicProjection (J : AlmostComplexStruct
   rw [holomorphicProjection_def, antiholomorphicProjection_def]
   exact Submodule.projection_apply_of_mem_right _ (Submodule.projection_apply_mem _ u)
 
-/-- The type projection on pure tensors fixes the normalization on embedded real vectors. -/
+/-- On a pure tensor, the `(1,0)` projection is `(c ⊗ v - (i c) ⊗ J v) / 2`. -/
 theorem holomorphicProjection_tmul (J : AlmostComplexStructure V) (c : ℂ) (v : V) :
     J.holomorphicProjection (c ⊗ₜ[ℝ] v) =
       (2 : ℂ)⁻¹ • (c ⊗ₜ[ℝ] v - (Complex.I * c) ⊗ₜ[ℝ] J v) := by
   simp [holomorphicProjection_apply, TensorProduct.smul_tmul', smul_eq_mul]
 
-/-- The conjugate type projection on pure tensors. -/
+/-- On a pure tensor, the `(0,1)` projection is `(c ⊗ v + (i c) ⊗ J v) / 2`. -/
 theorem antiholomorphicProjection_tmul (J : AlmostComplexStructure V) (c : ℂ) (v : V) :
     J.antiholomorphicProjection (c ⊗ₜ[ℝ] v) =
       (2 : ℂ)⁻¹ • (c ⊗ₜ[ℝ] v + (Complex.I * c) ⊗ₜ[ℝ] J v) := by
@@ -210,10 +204,11 @@ theorem baseChange_antiholomorphicProjection (J : AlmostComplexStructure V)
     (u : ℂ ⊗[ℝ] V) :
     f.baseChange ℂ (J.antiholomorphicProjection u) =
       K.antiholomorphicProjection (f.baseChange ℂ u) := by
-  have h := congrArg (f.baseChange ℂ) (J.holomorphicProjection_add_antiholomorphicProjection u)
-  rw [map_add, baseChange_holomorphicProjection J K f hf] at h
-  exact add_left_cancel (h.trans
-    (K.holomorphicProjection_add_antiholomorphicProjection (f.baseChange ℂ u)).symm)
+  rw [antiholomorphicProjection_def, antiholomorphicProjection_def,
+    Submodule.projection_eq_self_sub_projection J.isCompl_eigenspace_baseChange_I_neg_I,
+    Submodule.projection_eq_self_sub_projection K.isCompl_eigenspace_baseChange_I_neg_I, map_sub,
+    ← holomorphicProjection_def, ← holomorphicProjection_def,
+    baseChange_holomorphicProjection J K f hf]
 
 /-- Projection to `(1,0)` vectors is injective on the embedded real vector space. -/
 theorem holomorphicProjection_one_tmul_injective (J : AlmostComplexStructure V) :
