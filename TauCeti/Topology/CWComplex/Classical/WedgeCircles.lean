@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.Topology.WedgeSum
-import TauCeti.Analysis.Normed.Group.Pi
+import TauCeti.Topology.MetricSpace.Pseudo.Pi
 import TauCeti.Topology.Separation.InvFunOn
 
 /-!
