@@ -142,6 +142,7 @@ private abbrev frame (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V
   (stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)
 
 /-- The volume element is fixed by reversal up to the sign `(-1) ^ (n.choose 2)`. -/
+@[simp]
 theorem reverse_volumeElement :
     reverse (volumeElement Q o) = (-1 : ℝ) ^ n.choose 2 • volumeElement Q o := by
   -- In the exterior algebra every pair of vectors is orthogonal for the zero form, so reversal
@@ -159,6 +160,7 @@ theorem reverse_volumeElement :
 
 /-- The volume element is homogeneous of degree `n`: the grade involution multiplies it by
 `(-1) ^ n`. -/
+@[simp]
 theorem involute_volumeElement :
     involute (volumeElement Q o) = (-1 : ℝ) ^ n • volumeElement Q o := by
   have h : involute (basis Q (frame V n).toBasis Finset.univ) =
@@ -172,6 +174,7 @@ theorem involute_volumeElement :
     simp only [h', map_neg, h, smul_neg]
 
 /-- Clifford conjugation multiplies the volume element by `(-1) ^ ((n + 1).choose 2)`. -/
+@[simp]
 theorem star_volumeElement :
     star (volumeElement Q o) = (-1 : ℝ) ^ (n + 1).choose 2 • volumeElement Q o := by
   rw [star_def, involute_volumeElement, map_smul, reverse_volumeElement, smul_smul, ← pow_add,
