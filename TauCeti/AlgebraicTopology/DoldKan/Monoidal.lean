@@ -140,6 +140,26 @@ namespace CategoryTheory.Idempotents.DoldKan
 variable {C : Type u} [Category.{v} C] [Preadditive C] [IsIdempotentComplete C]
   [HasFiniteCoproducts C]
 
+omit [HasFiniteCoproducts C] in
+/-- The counit of `toKaroubiEquivalence` at `N₁.obj X` lands in the summand cut out by
+`PInfty`. -/
+private lemma counitIso_hom_app_N₁_obj_f_comp_PInfty (X : SimplicialObject C) :
+    ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X)).f ≫ PInfty =
+      ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X)).f := by
+  have h := Karoubi.comp_p ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X))
+  simp only [Functor.id_obj, N₁_obj_p] at h
+  exact h
+
+omit [HasFiniteCoproducts C] in
+/-- The inverse counit of `toKaroubiEquivalence` at `N₁.obj X` only depends on the summand cut
+out by `PInfty`. -/
+private lemma PInfty_comp_counitIso_inv_app_N₁_obj_f (X : SimplicialObject C) :
+    PInfty ≫ ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj X)).f =
+      ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj X)).f := by
+  have h := Karoubi.p_comp ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj X))
+  simp only [Functor.id_obj, N₁_obj_p] at h
+  exact h
+
 /-- The inclusion of the normalized chains `N X` of the pseudoabelian Dold–Kan correspondence
 into the alternating face map complex of `X`, as the direct summand cut out by `PInfty`.
 
@@ -153,14 +173,8 @@ def inclusionN : (N : SimplicialObject C ⥤ _) ⟶ alternatingFaceMapComplex C 
   naturality X Y f := by
     have h := congrArg Karoubi.Hom.f
       ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.naturality (N₁.map f))
-    have hp : ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X)).f ≫
-        PInfty = ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X)).f := by
-      have h := Karoubi.comp_p
-        ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X))
-      simp only [Functor.id_obj, N₁_obj_p] at h
-      exact h
     simp only [Karoubi.comp_f, Functor.comp_map, Functor.id_map, N₁_map_f,
-      reassoc_of% hp] at h
+      reassoc_of% (counitIso_hom_app_N₁_obj_f_comp_PInfty X)] at h
     exact h
 
 /-- The projection of the alternating face map complex of `X` onto the normalized chains `N X`
@@ -170,20 +184,13 @@ def PInftyToN : alternatingFaceMapComplex C ⟶ (N : SimplicialObject C ⥤ _) w
   naturality X Y f := by
     have h := congrArg Karoubi.Hom.f
       ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.naturality (N₁.map f))
-    have hp : PInfty ≫
-        ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj Y)).f =
-          ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj Y)).f := by
-      have h := Karoubi.p_comp
-        ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj Y))
-      simp only [Functor.id_obj, N₁_obj_p] at h
-      exact h
     have hn : PInfty ≫ AlternatingFaceMapComplex.map f =
         AlternatingFaceMapComplex.map f ≫ PInfty := by
       have h := ((natTransPInfty C).naturality f).symm
       simp only [natTransPInfty_app] at h
       exact h
     simp only [Karoubi.comp_f, Functor.comp_map, Functor.id_map, N₁_map_f, hn, Category.assoc,
-      hp] at h
+      PInfty_comp_counitIso_inv_app_N₁_obj_f Y] at h
     exact h
 
 private lemma inclusionN_app (X : SimplicialObject C) :
@@ -219,22 +226,14 @@ lemma PInftyToN_app_comp_inclusionN_app (X : SimplicialObject C) :
 /-- The projection onto normalized chains is unchanged by first applying `PInfty`. -/
 @[reassoc (attr := simp)]
 lemma PInfty_comp_PInftyToN_app (X : SimplicialObject C) :
-    PInfty ≫ PInftyToN.app X = PInftyToN.app X := by
-  rw [PInftyToN_app]
-  have h :=
-    Karoubi.p_comp ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.inv.app (N₁.obj X))
-  simp only [Functor.id_obj, N₁_obj_p] at h
-  exact h
+    PInfty ≫ PInftyToN.app X = PInftyToN.app X :=
+  PInfty_comp_counitIso_inv_app_N₁_obj_f X
 
 /-- Normalized chains are fixed by `PInfty`. -/
 @[reassoc (attr := simp)]
 lemma inclusionN_app_comp_PInfty (X : SimplicialObject C) :
-    inclusionN.app X ≫ PInfty = inclusionN.app X := by
-  rw [inclusionN_app]
-  have h :=
-    Karoubi.comp_p ((toKaroubiEquivalence (ChainComplex C ℕ)).counitIso.hom.app (N₁.obj X))
-  simp only [Functor.id_obj, N₁_obj_p] at h
-  exact h
+    inclusionN.app X ≫ PInfty = inclusionN.app X :=
+  counitIso_hom_app_N₁_obj_f_comp_PInfty X
 
 /-- The normalized chain functor is a retract of the alternating face map complex functor, with
 inclusion `CategoryTheory.Idempotents.DoldKan.inclusionN` and projection
