@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Trigonometric
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
 public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
-import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Real.Sqrt
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Endpoint
 import TauCeti.GroupTheory.JorgensenSequence
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -124,7 +124,7 @@ private theorem exists_dilation_conj_le {s : ℝ} (hs : 0 < s) {X : SL(2, ℝ)} 
     (hX : |X 0 1 * X 1 0| ≤ ρ ^ 2) :
     ∃ k : ℤ, |(dilation (k * s) * X * (dilation (k * s))⁻¹) 0 1| ≤ Real.exp s * ρ ∧
       |(dilation (k * s) * X * (dilation (k * s))⁻¹) 1 0| ≤ Real.exp s * ρ := by
-  simp only [dilation_conj_apply_zero_one, dilation_conj_apply_one_zero]
+  simp only [dilation_inv, dilation_conj_apply_zero_one, dilation_conj_apply_one_zero]
   generalize X 0 1 = x, X 1 0 = y at hX ⊢
   have hes : 1 ≤ Real.exp s := Real.one_le_exp hs.le
   have hρle : ρ ≤ Real.exp s * ρ := le_mul_of_one_le_left hρ.le hes
@@ -212,8 +212,8 @@ private theorem exists_tendsto_dilation_conj (hs : 0 < s) {M : ℕ → SL(2, ℝ
     simpa only [C, Real.norm_eq_abs] using (hk n).2
   refine ⟨k, tendsto_iff_tendsto_apply.mpr (Fin.forall_fin_two.mpr
     ⟨Fin.forall_fin_two.mpr ⟨?_, h01⟩, Fin.forall_fin_two.mpr ⟨h10, ?_⟩⟩)⟩
-  · simpa only [C, dilation_conj_apply_zero_zero] using h00
-  · simpa only [C, dilation_conj_apply_one_one] using h11
+  · simpa only [C, dilation_inv, dilation_conj_apply_zero_zero] using h00
+  · simpa only [C, dilation_inv, dilation_conj_apply_one_one] using h11
 
 /-- **Convergence.** If Jørgensen's inequality fails for the dilation `D` with `s > 0`, some
 iterate `Bₙ₊₁` is diagonal: suitable conjugates of the iterates by powers of `D` converge to `D`
@@ -259,7 +259,7 @@ private theorem exists_jorgensenSeq_diag [DiscreteTopology Γ] (hs : 0 < s)
       have hd01 : (dilation s : SL(2, ℝ)) 0 1 = 0 := by simp
       have hd10 : (dilation s : SL(2, ℝ)) 1 0 = 0 := by simp
       exact ⟨by linarith, by linarith⟩
-  simp only [dilation_conj_apply_zero_one, dilation_conj_apply_one_zero, mul_eq_zero,
+  simp only [dilation_inv, dilation_conj_apply_zero_one, dilation_conj_apply_one_zero, mul_eq_zero,
     Real.exp_ne_zero, false_or] at hoff
   exact ⟨n, hoff⟩
 
@@ -324,9 +324,8 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
       4 * Real.sinh (s / 2) ^ 2 * (1 + |(P⁻¹ * B * P) 0 1 * (P⁻¹ * B * P) 1 0|) := by
   have trace_conj (M : SL(2, ℝ)) : ((P * M * P⁻¹ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace =
       (M : Matrix (Fin 2) (Fin 2) ℝ).trace := by
-    rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
-      Matrix.trace_mul_cycle, ← Matrix.SpecialLinearGroup.coe_mul, inv_mul_cancel,
-      Matrix.SpecialLinearGroup.coe_one, Matrix.one_mul]
+    rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul]
+    exact Matrix.trace_units_conj (Matrix.SpecialLinearGroup.toGL P) M
   -- `A` is `± P D P⁻¹` in `SL(2, ℝ)`
   replace hA : A = P * dilation s * P⁻¹ ∨ A = -(P * dilation s * P⁻¹) :=
     Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff.1 hA.symm

@@ -10,6 +10,7 @@ public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.FixedPoints
 
 /-!
 # The ideal endpoints of a geodesic line
@@ -38,8 +39,9 @@ point at parameter `0` and the forward endpoint
 (`eq_of_geodesicLine_zero_eq_of_smul_infty_eq`). Dually, an element fixing both endpoints of a
 geodesic line is a conjugate of a dilation, translating along that line
 (`exists_eq_conj_dilation_of_smul_eq_self`). Every hyperbolic element, the class of a matrix whose
-trace has absolute value greater than `2`, fixes two distinct ideal points and so is of this form
-(`exists_eq_conj_dilation_of_two_lt_abs_trace`).
+trace has absolute value greater than `2`, fixes two distinct ideal points
+(`Matrix.ProjectiveSpecialLinearGroup.exists_ne_smul_eq_self_of_two_lt_abs_trace`) and so is of
+this form (`exists_eq_conj_dilation_of_two_lt_abs_trace`).
 
 ## Main declarations
 
@@ -53,8 +55,6 @@ trace has absolute value greater than `2`, fixes two distinct ideal points and s
   ideal points are the endpoints of a geodesic line.
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq_and_smul_infty_eq`: a geodesic line from any
   point of `ℍ` to any ideal point.
-* `TauCeti.UpperHalfPlane.exists_ne_smul_eq_self_of_two_lt_abs_trace`: a hyperbolic element fixes
-  two distinct ideal points.
 * `TauCeti.UpperHalfPlane.exists_eq_conj_dilation_of_two_lt_abs_trace`: the hyperbolic normal form,
   every hyperbolic element of `PSL(2, ℝ)` is conjugate to a nontrivial dilation.
 * `TauCeti.UpperHalfPlane.strictMono_re_geodesicLine`: along a semicircle from `e₀` to `e₁ > e₀`,
@@ -409,56 +409,6 @@ theorem exists_eq_conj_dilation_of_smul_eq_self {k g : PSL(2, ℝ)}
     (by rw [mul_smul, mul_smul, h₀, inv_smul_smul]) (by rw [mul_smul, mul_smul, h₁, inv_smul_smul])
   exact ⟨s, by rw [← hs]; group⟩
 
-/-- The two fixed ideal points of the class of a matrix of `SL(2, ℝ)` whose trace has absolute
-value greater than `2`: the roots of its fixed-point polynomial. -/
-theorem exists_ne_smul_eq_self_of_two_lt_abs_trace {A : SL(2, ℝ)}
-    (h : 2 < |(A : Matrix (Fin 2) (Fin 2) ℝ).trace|) :
-    ∃ ξ η : OnePoint ℝ, ξ ≠ η ∧ (A : PSL(2, ℝ)) • ξ = ξ ∧ (A : PSL(2, ℝ)) • η = η := by
-  have hdet := det_mk A
-  rw [Matrix.trace_fin_two] at h
-  have h4 : 4 < (A 0 0 + A 1 1) ^ 2 := by
-    have := sq_abs (A 0 0 + A 1 1)
-    nlinarith
-  have hfix (x : ℝ) (hx : A 1 0 * (x * x) + (A 1 1 - A 0 0) * x - A 0 1 = 0) :
-      (A : PSL(2, ℝ)) • (x : OnePoint ℝ) = x := by
-    rw [OnePoint.pslMk_smul, ← Matrix.GeneralLinearGroup.fixpointPolynomial_aeval_eq_zero_iff]
-    simpa [Matrix.GeneralLinearGroup.fixpointPolynomial, sq] using hx
-  by_cases hc : A 1 0 = 0
-  · -- the class fixes `∞` and one real point
-    have hda : A 1 1 - A 0 0 ≠ 0 := by
-      intro hda
-      rw [hc, mul_zero, sub_zero] at hdet
-      have : (A 0 0 + A 1 1) ^ 2 = 4 := by
-        linear_combination (4 : ℝ) * hdet + (A 1 1 - A 0 0) * hda
-      linarith
-    refine ⟨((A 0 1 / (A 1 1 - A 0 0) : ℝ) : OnePoint ℝ), ∞, OnePoint.coe_ne_infty _,
-      hfix _ ?_, (mk_smul_infty_eq_infty_iff A).2 hc⟩
-    rw [hc]
-    field_simp
-    ring
-  · -- the class fixes the two real roots of its fixed-point polynomial
-    set r := √((A 0 0 + A 1 1) ^ 2 - 4)
-    have hr : r * r = (A 0 0 + A 1 1) ^ 2 - 4 := Real.mul_self_sqrt (by linarith)
-    have hr0 : r ≠ 0 := (Real.sqrt_pos.2 (by linarith)).ne'
-    have hroot (ε : ℝ) (hε : ε * ε = 1) :
-        A 1 0 * ((A 0 0 - A 1 1 + ε * r) / (2 * A 1 0) * ((A 0 0 - A 1 1 + ε * r) / (2 * A 1 0))) +
-          (A 1 1 - A 0 0) * ((A 0 0 - A 1 1 + ε * r) / (2 * A 1 0)) - A 0 1 = 0 := by
-      have hpoly : A 1 0 * ((A 0 0 - A 1 1 + ε * r) / (2 * A 1 0) *
-            ((A 0 0 - A 1 1 + ε * r) / (2 * A 1 0))) +
-          (A 1 1 - A 0 0) * ((A 0 0 - A 1 1 + ε * r) / (2 * A 1 0)) - A 0 1 =
-          ((ε * ε) * (r * r) - (A 0 0 - A 1 1) ^ 2 - 4 * A 0 1 * A 1 0) / (4 * A 1 0) := by
-        field_simp
-        ring
-      rw [hpoly, div_eq_zero_iff]
-      left
-      linear_combination (r * r) * hε + hr + (4 : ℝ) * hdet
-    refine ⟨((A 0 0 - A 1 1 + 1 * r) / (2 * A 1 0) : ℝ),
-      ((A 0 0 - A 1 1 + -1 * r) / (2 * A 1 0) : ℝ), ?_, hfix _ (hroot 1 (by norm_num)),
-      hfix _ (hroot (-1) (by norm_num))⟩
-    rw [Ne, OnePoint.coe_eq_coe, div_left_inj' (mul_ne_zero two_ne_zero hc)]
-    intro h'
-    exact hr0 (by linarith)
-
 /-- **Hyperbolic normal form.** The class in `PSL(2, ℝ)` of a matrix of `SL(2, ℝ)` whose trace has
 absolute value greater than `2` is conjugate to a nontrivial dilation: it fixes two distinct ideal
 points and translates along the geodesic line joining them. -/
@@ -466,7 +416,8 @@ theorem exists_eq_conj_dilation_of_two_lt_abs_trace {A : SL(2, ℝ)}
     (h : 2 < |(A : Matrix (Fin 2) (Fin 2) ℝ).trace|) :
     ∃ (g : PSL(2, ℝ)) (s : ℝ), s ≠ 0 ∧
       (A : PSL(2, ℝ)) = g * ((dilation s : SL(2, ℝ)) : PSL(2, ℝ)) * g⁻¹ := by
-  obtain ⟨ξ, η, hne, hξ, hη⟩ := exists_ne_smul_eq_self_of_two_lt_abs_trace h
+  obtain ⟨ξ, η, hne, hξ, hη⟩ :=
+    Matrix.ProjectiveSpecialLinearGroup.exists_ne_smul_eq_self_of_two_lt_abs_trace h
   obtain ⟨g, rfl, rfl⟩ := exists_smul_zero_eq_and_smul_infty_eq hne
   obtain ⟨s, hs⟩ := exists_eq_conj_dilation_of_smul_eq_self hξ hη
   refine ⟨g, s, ?_, hs⟩

@@ -32,8 +32,7 @@ variable {n R α : Type*} [Fintype n] [DecidableEq n] [CommRing R] [TopologicalS
 theorem tendsto_iff_tendsto_apply {l : Filter α} {M : α → SpecialLinearGroup n R}
     {D : SpecialLinearGroup n R} :
     Tendsto M l (𝓝 D) ↔ ∀ i j, Tendsto (fun x ↦ M x i j) l (𝓝 (D i j)) := by
-  have hind : IsInducing ((↑) : SpecialLinearGroup n R → Matrix n n R) := ⟨rfl⟩
-  exact hind.tendsto_nhds_iff.trans <|
+  exact (IsInducing.subtypeVal (t := {A : Matrix n n R | A.det = 1})).tendsto_nhds_iff.trans <|
     tendsto_pi_nhds.trans <| forall_congr' fun _ ↦ tendsto_pi_nhds
 
 end Matrix.SpecialLinearGroup
