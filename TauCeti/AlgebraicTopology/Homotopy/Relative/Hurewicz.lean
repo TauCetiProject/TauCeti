@@ -98,16 +98,16 @@ lemma cubeBoundaryPairHom_fst_apply {P : TopPair.{w}} {m : ℕ} (c : C(I^(Fin m)
   (rfl)
 
 /-- Split a point of `Iⁿ⁺¹` into its first coordinate and the remaining ones. -/
-def cubeSplit (n : ℕ) : C(ULift.{w} (I^(Fin (n + 1))), I × (I^(Fin n))) :=
+private def cubeSplit (n : ℕ) : C(ULift.{w} (I^(Fin (n + 1))), I × (I^(Fin n))) :=
   (cubeSplitHomeomorph n : C(_, _)).comp ⟨ULift.down, continuous_uliftDown⟩
 
 @[simp]
-lemma cubeSplit_apply {n : ℕ} (z : ULift.{w} (I^(Fin (n + 1)))) :
+private lemma cubeSplit_apply {n : ℕ} (z : ULift.{w} (I^(Fin (n + 1)))) :
     cubeSplit n z = (z.down 0, Fin.tail z.down) :=
   cubeSplitHomeomorph_apply z.down
 
 /-- `cubeSplit` sends the boundary of `Iⁿ⁺¹` to the boundary of `I × Iⁿ`. -/
-lemma cubeSplit_mem_prodBoundary {n : ℕ} {z : ULift.{w} (I^(Fin (n + 1)))}
+private lemma cubeSplit_mem_prodBoundary {n : ℕ} {z : ULift.{w} (I^(Fin (n + 1)))}
     (hz : z.down ∈ Cube.boundary (Fin (n + 1))) : cubeSplit n z ∈ Cube.prodBoundary (Fin n) :=
   cubeSplitHomeomorph_mem_prodBoundary_iff.2 hz
 

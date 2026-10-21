@@ -209,7 +209,7 @@ theorem homologyπ_mem_of_cube {m : ℕ} (hm : (m : ℕ∞) < n)
       ((P.cubicalChainComplex R).iCycles (m + 1) z)
   have hz : z = (P.cubicalChainComplex R).moduleCatCyclesMk
       ((P.cubicalChainComplex R).iCycles (m + 1) z) m (by simp)
-      (by rw [← ModuleCat.comp_apply, (P.cubicalChainComplex R).iCycles_d]; rfl) :=
+      (by rw [← ModuleCat.comp_apply, (P.cubicalChainComplex R).iCycles_d]; simp) :=
     (P.cubicalChainComplex R).moduleCat_iCycles_injective _ (by simp)
   have hid := congr(ModuleCat.Hom.hom $((D.relEndHomotopy R).homologyMap_eq (m + 1))
     ((P.cubicalChainComplex R).homologyπ (m + 1) z))

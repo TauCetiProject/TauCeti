@@ -188,7 +188,10 @@ theorem exists_hurewicz_apply_one_eq_singularHomologyMap (b : B) (hB : IsPathCon
   refine ⟨(k • Additive.ofMul a).toMul, ?_⟩
   rw [← hurewiczHom_apply, map_zsmul, ModuleCat.hom_zsmul, map_zsmul, hurewiczHom_apply,
     toMul_ofMul, ha]
-  rfl
+  -- An integer multiple of a linear map is computed pointwise.
+  refine (AddMonoidHom.zsmul_apply (e.inv ≫ TopPair.singularHomologyMap (cubeBoundaryPairHom c hc)
+    R (n + 2)).hom.toAddMonoidHom k 1).trans ?_
+  rw [LinearMap.toAddMonoidHom_coe, ModuleCat.hom_comp, LinearMap.comp_apply]
 
 /-- **The relative Hurewicz map is surjective.** Let `B` be a path-connected subset of `Y` and
 `b ∈ B`. If every point of `Y` is joined by a path to a point of `B`, and the relative homotopy set
@@ -220,7 +223,9 @@ theorem surjective_hurewicz (b : B) {n : ℕ} (h₀ : ∀ y : Y, ∃ a ∈ B, Jo
   let iso := TopPair.singularCubicalHomologyIso ℤ (TopPair.ofSubset B) (n + 2)
   obtain ⟨z, hz⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ _ (iso.hom y)
   -- The preimage of the image of the relative Hurewicz homomorphism, as a submodule of relative
-  -- cubical homology.
+  -- cubical homology. `AddSubgroup.toIntSubmodule` would use the `ℤ`-action
+  -- `AddCommGroup.toIntModule`, which is not definitionally the `ModuleCat ℤ` action, so
+  -- `smul_mem'` rewrites the latter (`Int.cast_smul_eq_zsmul`) into the `zsmul` of `zsmul_mem`.
   let T : Submodule ℤ (((TopPair.ofSubset B).cubicalChainComplex ℤ).homology (n + 2)) :=
     { φ.range.comap iso.inv.hom.toAddMonoidHom with
       smul_mem' k x hx := by
