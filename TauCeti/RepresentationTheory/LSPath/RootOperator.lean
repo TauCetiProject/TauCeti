@@ -298,6 +298,7 @@ theorem sum_reflectRecords (c : 𝕜) (l : List V) :
       module
 
 omit [IsStrictOrderedRing 𝕜] in
+@[simp]
 theorem listLower_eq_none_iff : listLower f x l = none ↔ f l.sum - listMinHeight f l < 1 := by
   rw [listLower_def]
   split_ifs with h <;> simpa using h
@@ -535,10 +536,12 @@ theorem lower_reverse (p : PLPath 𝕜 V) : lower f x p.reverse = (raise f x p).
 
 /-- The lowering operator is defined exactly when the final height exceeds the minimal height by
 at least `1`. -/
+@[simp]
 theorem lower_eq_none_iff : lower f x p = none ↔ f p.endpoint - p.minHeight f < 1 := by
   rw [lower, Option.map_eq_none_iff, listLower_eq_none_iff, endpoint_def, minHeight]
 
 /-- The raising operator is defined exactly when the minimal height is at most `-1`. -/
+@[simp]
 theorem raise_eq_none_iff : raise f x p = none ↔ -1 < p.minHeight f := by
   rw [raise_def, Option.map_eq_none_iff, lower_eq_none_iff, minHeight_reverse, endpoint_reverse,
     map_neg]
