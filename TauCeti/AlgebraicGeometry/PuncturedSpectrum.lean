@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Noetherian
-public import Mathlib.AlgebraicGeometry.Restrict
-public import Mathlib.RingTheory.Spectrum.Prime.Noetherian
+public import Mathlib.AlgebraicGeometry.Scheme
+public import Mathlib.RingTheory.Spectrum.Prime.Topology
+import Mathlib.Algebra.Module.SpanRank
 
 /-!
 # Punctured spectra of local rings
@@ -34,16 +34,20 @@ variable (R : Type u) [CommRing R] [IsLocalRing R]
 /-- The complement of the closed point in the spectrum of a local ring. -/
 @[stacks 0BM7 "the punctured spectrum"]
 def puncturedSpectrum : (Spec (.of R)).Opens :=
+  -- `Spec (.of R)` has `PrimeSpectrum R` as its underlying topological space by definition.
   show TopologicalSpace.Opens (PrimeSpectrum R) from
     { carrier := {IsLocalRing.closedPoint R}ᶜ
       is_open' := (IsLocalRing.isClosed_singleton_closedPoint R).isOpen_compl }
 
+/-- A point lies in the punctured spectrum exactly when it differs from the closed point. -/
 @[simp]
 theorem mem_puncturedSpectrum_iff (x : PrimeSpectrum R) :
     x ∈ puncturedSpectrum R ↔ x ≠ IsLocalRing.closedPoint R := by
+  -- Membership reduces to the complement in the underlying prime spectrum.
   change x ∉ ({IsLocalRing.closedPoint R} : Set (PrimeSpectrum R)) ↔ _
   simp
 
+/-- The deleted closed point lies outside the punctured spectrum. -/
 theorem closedPoint_notMem_puncturedSpectrum :
     IsLocalRing.closedPoint R ∉ puncturedSpectrum R := by
   simp
@@ -53,6 +57,8 @@ radical. -/
 theorem puncturedSpectrum_eq_iSup_basicOpen {s : Set R}
     (hs : (Ideal.span s).radical = IsLocalRing.maximalIdeal R) :
     puncturedSpectrum R = ⨆ x : s, PrimeSpectrum.basicOpen x.1 := by
+  -- Both sides are opens of the definitionally identical spaces `Spec (.of R)` and
+  -- `PrimeSpectrum R`; this exposes the latter to use the basic-open API.
   change (show TopologicalSpace.Opens (PrimeSpectrum R) from puncturedSpectrum R) =
     ⨆ x : s, PrimeSpectrum.basicOpen x.1
   apply SetLike.ext'
@@ -81,9 +87,21 @@ theorem puncturedSpectrum_eq_iSup_basicOpen {s : Set R}
     rw [hp]
     exact hxm
 
-/-- The punctured spectrum of a Noetherian local ring is quasi-compact. -/
-theorem isCompact_puncturedSpectrum [IsNoetherianRing R] :
-    IsCompact (puncturedSpectrum R).1 :=
-  NoetherianSpace.isCompact _
+/-- The punctured spectrum is quasi-compact when the maximal ideal is finitely generated.
+In particular, this holds for a Noetherian local ring. -/
+theorem isCompact_puncturedSpectrum (hfg : (IsLocalRing.maximalIdeal R).FG) :
+    IsCompact (puncturedSpectrum R).1 := by
+  obtain ⟨s, _, hs⟩ := Submodule.FG.exists_span_finset_card_eq_spanFinrank hfg
+  have hs' : (Ideal.span (s : Set R)).radical = IsLocalRing.maximalIdeal R := by
+    calc
+      (Ideal.span (s : Set R)).radical = (IsLocalRing.maximalIdeal R).radical :=
+        congrArg Ideal.radical hs
+      _ = _ := (IsLocalRing.maximalIdeal.isMaximal R).isPrime.radical
+  rw [puncturedSpectrum_eq_iSup_basicOpen R hs']
+  -- The open of `Spec (.of R)` is an open of `PrimeSpectrum R` by definition.
+  change IsCompact ((⨆ x : (s : Set R), PrimeSpectrum.basicOpen x.1 :
+    TopologicalSpace.Opens (PrimeSpectrum R)) : Set (PrimeSpectrum R))
+  simpa only [TopologicalSpace.Opens.coe_iSup] using
+    (isCompact_iUnion fun x : (s : Set R) ↦ PrimeSpectrum.isCompact_basicOpen x.1)
 
 end IsLocalRing
