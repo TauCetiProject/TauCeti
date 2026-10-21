@@ -340,6 +340,13 @@ theorem lift_mk_X (F : {F : FormalGroup R // F.IsComm}) (ij : ℕ+ × ℕ+) :
       coeff (single 0 (ij.1 : ℕ) + single 1 (ij.2 : ℕ)) F.1.toPowerSeries := by
   simp [lift, liftHom_mk, coeffHom]
 
+/-- On polynomials in the `aᵢⱼ`, the homomorphism `lift F` evaluates `aᵢⱼ` at the coefficient of
+`Xⁱ Yʲ` in `F`. -/
+theorem lift_comp_mk (F : {F : FormalGroup R // F.IsComm}) :
+    (lift F).comp mk = (MvPolynomial.aeval fun ij : ℕ+ × ℕ+ ↦
+      coeff (single 0 (ij.1 : ℕ) + single 1 (ij.2 : ℕ)) F.1.toPowerSeries).toRingHom :=
+  MvPolynomial.ringHom_ext (fun r ↦ by simp) fun ij ↦ by simp
+
 /-- The universal formal group law base-changes along `lift F` to `F`. -/
 @[simp]
 theorem map_lift (F : {F : FormalGroup R // F.IsComm}) : formalGroup.map (lift F) = F.1 :=
@@ -382,8 +389,9 @@ theorem isHomogeneous_relations :
     lift ⟨(formalGroup.map Polynomial.C).rescale (Polynomial.X ^ 2), inferInstance⟩
   have hφ : φ.comp mk = (Polynomial.mapRingHom mk).comp (MvPolynomial.aeval
       fun ij ↦ Polynomial.C (MvPolynomial.X ij) * Polynomial.X ^ degree ij).toRingHom := by
+    rw [show φ.comp mk = _ from lift_comp_mk _]
     refine MvPolynomial.ringHom_ext (fun r ↦ by simp) fun ⟨i, j⟩ ↦ ?_
-    simp [φ]
+    simp [FormalGroup.coeff_rescale]
     ring
   intro n p hp
   have key : MvPolynomial.weightedHomogeneousComponent degree n p ∈ relations := by
@@ -455,15 +463,12 @@ theorem lift_mem_iff {ι : Type*} [AddCommMonoid ι] {𝒜 : ι → σ} [SetLike
   · rw [← map_lift F, FormalGroup.map_toPowerSeries, coeff_map]
     exact h (coeff_formalGroup_mem_grading d)
   · obtain ⟨p, hp, rfl⟩ := mem_grading_iff.1 hx
-    have hlift : (lift F).comp mk = (MvPolynomial.aeval fun ij : ℕ+ × ℕ+ ↦
-        coeff (single 0 (ij.1 : ℕ) + single 1 (ij.2 : ℕ)) F.1.toPowerSeries).toRingHom :=
-      MvPolynomial.ringHom_ext (fun r ↦ by simp) fun ij ↦ by simp
     -- Pushing the degrees forward along `e` preserves weighted homogeneity.
     have hpe : p.IsWeightedHomogeneous (e ∘ degree) (e n) := fun d hd ↦ by
       simp only [← hp hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
     -- The pieces are closed under the `ℤ`-action, as `IsWeightedHomogeneous.aeval_mem` requires.
     have := AddSubgroupClass.zsmulMemClass (S := σ) (M := A)
-    rw [← RingHom.comp_apply, hlift]
+    rw [← RingHom.comp_apply, lift_comp_mk]
     refine hpe.aeval_mem fun ⟨i, j⟩ ↦ ?_
     have hd := h (single 0 (i : ℕ) + single 1 (j : ℕ))
     rwa [map_add, Finsupp.degree_single, Finsupp.degree_single, ← degree_apply] at hd
