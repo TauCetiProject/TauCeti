@@ -103,6 +103,7 @@ theorem fundamentalDiscriminantChar_natCast_eq_legendreSym {D : ℤ}
 /-- **The fundamental-discriminant character at `2` is `χ₈` of the discriminant.** It vanishes
 for even `D`, and for odd `D`, which is `1` modulo `4`, it is `1` when `D ≡ 1 (mod 8)` and `-1`
 when `D ≡ 5 (mod 8)`. This is the value of the Kronecker symbol `(D / 2)`. -/
+@[simp]
 theorem fundamentalDiscriminantChar_two {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
     fundamentalDiscriminantChar D hD 2 = ZMod.χ₈ (D : ZMod 8) := by
   obtain ⟨s, hs, _, hprod⟩ := hD.exists_finset_primeDiscriminant

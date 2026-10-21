@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
+import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.SplitPrime
 import TauCeti.NumberTheory.NumberField.Quadratic.Splitting
 
 /-!
@@ -22,11 +23,11 @@ decomposition law of `K` in terms of `χ_D`. For every rational prime `p`:
 * `χ_D(p) = -1` exactly when `p` is inert in `K`: it is unramified and there is a single prime of
   `𝓞 K` above `p`.
 
-The prime `2` is included. Write `K = ℚ(√d)` with `d` squarefree. At an odd prime the value of
-`χ_D` is the Legendre symbol `(d / p)`, and the splitting law is
-`NumberField.ncard_primesOver_quadratic_iff`. At `2` the value is `χ₈(D)`
-(`fundamentalDiscriminantChar_two`), and when `2` is unramified `D = d ≡ 1 (mod 4)`, so the
-splitting law at `2` (`NumberField.ncard_primesOver_two_of_mod_four_eq_one`) applies. The ramified
+The prime `2` is included. Write `K = ℚ(√d)` with `d` squarefree. At an odd prime the splitting law
+in genus-character form (`ncard_primesOver_eq_finrank_iff_genusCharFun_eq_one`) transports to
+`χ_D`. At `2` the value is `χ₈(D)` (`fundamentalDiscriminantChar_two`), and when `2` is
+unramified `D = d ≡ 1 (mod 4)`, so the splitting law at `2`
+(`NumberField.ncard_primesOver_two_of_mod_four_eq_one`) applies. The ramified
 primes are those dividing `D`, where `χ_D` vanishes.
 
 These values determine the local factors in the factorization `ζ_K(s) = ζ(s) L(s, χ_D)` of the
@@ -89,20 +90,16 @@ private theorem fundamentalDiscriminantChar_discr_of_notMem_ramifiedPrimes
     rw [fundamentalDiscriminantChar_two, h8,
       NumberField.ncard_primesOver_two_of_mod_four_eq_one hmin hgen hd4]
     split_ifs <;> simp
-  · -- At an odd prime: `χ_D(p) = (d / p)`, which decides the splitting of `p`.
+  · -- At an odd prime: the genus-character splitting law, transported to `χ_D`.
     obtain ⟨s, hs, _, hprod⟩ := (isFundamentalDiscr_discr hK).exists_finset_primeDiscriminant
-    have hchar : fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p
-        = legendreSym p d := by
-      rw [← Int.cast_natCast, fundamentalDiscriminantChar_apply_int _ hs hprod,
-        genusCharFun_natCast_eq_legendreSym hs (hprod.trans hD) hp2]
-    have hcop : ¬ (p : ℤ) ∣ d := fun h => hndvd <| h.trans <| by
-      obtain ⟨c, -, hc⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
-      exact ⟨c ^ 2, by rw [← hc, mul_comm]⟩
-    have hsplit := NumberField.ncard_primesOver_quadratic_iff hmin hgen hp2 hcop
-    rw [hK] at hsplit
-    rw [hchar]
-    rcases legendreSym.eq_one_or_neg_one p
-        (by rwa [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]) with h | h
+    have hsplit := ncard_primesOver_eq_finrank_iff_genusCharFun_eq_one hs (hprod.trans hD) hmin
+      hgen hsf hp2
+    rw [hK, ← fundamentalDiscriminantChar_apply_int (isFundamentalDiscr_discr hK) hs hprod,
+      Int.cast_natCast] at hsplit
+    have h0 :
+        fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p ≠ 0 :=
+      mt (fundamentalDiscriminantChar_discr_eq_zero_iff hK p).mp hram
+    rcases (fundamentalDiscriminantChar_isQuadratic _ p).resolve_left h0 with h | h
     · exact Or.inl ⟨h, hsplit.mpr h⟩
     · refine Or.inr ⟨h, (NumberField.ncard_primesOver_eq_one_or_eq_two hK p).resolve_right
         fun h2 => ?_⟩
