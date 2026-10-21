@@ -31,8 +31,7 @@ the cup of the classes constructed in `TauCeti.FieldTheory.GaloisCohomology.MuTw
 
 ## Main results
 
-* `TauCeti.kummerCup_comm` and `TauCeti.cup_kummerClass_comm`: the Kummer cup pairing is
-  symmetric.
+* `TauCeti.kummerCup_comm`: the Kummer cup pairing is symmetric.
 
 ## References
 
@@ -90,13 +89,5 @@ theorem kummerCup_squareClass_squareClass (a b : Kˣ) :
 theorem kummerCup_comm (x y : SquareClassGroup K) : kummerCup K x y = kummerCup K y x := by
   rw [kummerCup_apply, trivialF2TopPairing_cup_comm, ContinuousCohomology.degreeCast_rfl,
     CategoryTheory.Iso.refl_hom, CategoryTheory.ConcreteCategory.id_apply, ← kummerCup_apply]
-
-variable {K} in
-/-- **The cup product of two Kummer classes is symmetric**: `(a) ∪ (b) = (b) ∪ (a)`. -/
-theorem cup_kummerClass_comm (a b : Kˣ) :
-    (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass b) =
-      (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass b) (kummerClass a) := by
-  simpa only [kummerCup_squareClass_squareClass] using
-    kummerCup_comm K (squareClass a) (squareClass b)
 
 end TauCeti

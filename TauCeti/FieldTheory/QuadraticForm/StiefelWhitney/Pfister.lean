@@ -20,21 +20,21 @@ second Stiefel–Whitney classes in every fold:
 * `w₁` and `w₂` vanish on every Pfister form of fold at least three.
 
 The vanishing of `w₁` from fold two on is the triviality of the discriminant
-(`TauCeti.discr_pfisterFormClass`). For `w₂`, the computation rests on one general formula,
+(`TauCeti.discr_pfisterFormClass`). For `w₂`, the two-fold value comes from the general formula
 `TauCeti.sw2Class_add_mk_rankOne_mul`: for a form `q` of rank `n`,
 
 `w₂(q ⊥ ⟨c⟩ ⊗ q) = C(n, 2) · (c) ∪ (-1) + (c) ∪ w₁(q) + w₁(q) ∪ (-1)`,
 
-so `w₂` of `⟨1, c⟩ ⊗ q` depends on `q` only through its rank and its discriminant. Since
-`⟨⟨a₁, …, aₙ⟩⟩ = ⟨1, -a₁⟩ ⊗ ⟨⟨a₂, …, aₙ⟩⟩`, the three folds above follow. The two-fold value is
-consistent with the Clifford invariant: Lam's comparison
-`TauCeti.brauer2EquivH2_cliffordInvariant` in rank `4` and trivial discriminant reads
+applied to `⟨⟨a, b⟩⟩ = ⟨1, -a⟩ ⊗ ⟨⟨b⟩⟩`. It is consistent with the Clifford invariant: Lam's
+comparison `TauCeti.brauer2EquivH2_cliffordInvariant` in rank `4` and trivial discriminant reads
 `ι(c(q)) = w₂(q) + (-1) ∪ (-1)`, and `c⟨⟨a, b⟩⟩ = [(a, b)]`.
 
 Multiplying a Pfister form of fold at least two by a scalar does not change its `w₂`
-(`TauCeti.sw2Class_mk_rankOne_mul_pfisterFormClass`), so the two-fold value and the vanishing from
-fold three on hold on every form similar to such a Pfister form. In fold one this fails:
-`w₂(⟨c⟩ ⊗ ⟨⟨a⟩⟩) = (c) ∪ (-ca)` need not vanish.
+(`TauCeti.sw2Class_mk_rankOne_mul_pfisterFormClass`, a case of
+`TauCeti.sw2Class_mk_rankOne_mul_of_four_dvd`). Writing `⟨⟨a₁, …, aₙ⟩⟩ = q ⊥ ⟨-a₁⟩ ⊗ q` with
+`q = ⟨⟨a₂, …, aₙ⟩⟩`, this gives `w₂⟨⟨a₁, …, aₙ⟩⟩ = w₂(q) + w₂(q) = 0` from fold three on. So the
+two-fold value and the vanishing from fold three on hold on every form similar to such a Pfister
+form. In fold one scaling invariance fails: `w₂(⟨c⟩ ⊗ ⟨⟨a⟩⟩) = (c) ∪ (-ca)` need not vanish.
 
 ## Main results
 
@@ -108,7 +108,7 @@ theorem sw2Class_pfisterFormClass_two (a b : Kˣ) :
     pow_one, Nat.choose_self, one_smul]
   rw [← neg_one_mul a, ← neg_one_mul b]
   simp only [kummerClass_mul, map_add, LinearMap.add_apply]
-  rw [cup_kummerClass_comm (-1) b]
+  rw [trivialF2TopPairing_cup_one_one_comm _ (kummerClass (-1)) (kummerClass b)]
   set N := (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
     (kummerClass (-1)) (kummerClass (-1))
   set A := (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass (-1))
@@ -117,31 +117,27 @@ theorem sw2Class_pfisterFormClass_two (a b : Kˣ) :
   calc _ = C + N + (N + N) + (A + A) + (B + B) := by abel
     _ = _ := by simp only [ZModModule.add_self, add_zero]
 
-/-- **`w₂` vanishes on Pfister forms of fold at least three.** -/
-@[simp]
-theorem sw2Class_pfisterFormClass_of_three_le {n : ℕ} (a : Fin n → Kˣ) (hn : 3 ≤ n) :
-    sw2Class (pfisterFormClass a) = 0 := by
-  have hn1 : 1 ≤ n := by omega
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn1
-  have hm : 2 ≠ 2 ^ m := (Nat.pow_lt_pow_right one_lt_two (by omega : 1 < m)).ne
-  obtain ⟨k, hk⟩ := Nat.prime_two.dvd_choose_pow two_ne_zero hm
-  rw [← Fin.cons_self_tail a, pfisterFormClass_cons, add_mul, one_mul,
-    sw2Class_add_mk_rankOne_mul, rank_pfisterFormClass, sw1Class_pfisterFormClass _ (by omega),
-    hk, two_mul, add_nsmul, ZModModule.add_self]
-  simp
-
 /-- **Scaling a Pfister form of fold at least two does not change its second class**:
 `w₂(⟨c⟩ ⊗ ⟨⟨a₁, …, aₙ⟩⟩) = w₂⟨⟨a₁, …, aₙ⟩⟩` for `n ≥ 2`. -/
 @[simp]
 theorem sw2Class_mk_rankOne_mul_pfisterFormClass (c : Kˣ) {n : ℕ} (a : Fin n → Kˣ)
     (hn : 2 ≤ n) :
     sw2Class (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => c⟩ * pfisterFormClass a) =
-      sw2Class (pfisterFormClass a) := by
-  have hn' : 2 ≠ 2 ^ n := (Nat.pow_lt_pow_right one_lt_two (by omega : 1 < n)).ne
-  obtain ⟨k, hk⟩ := Nat.prime_two.dvd_choose_pow two_ne_zero hn'
-  rw [sw2Class_mk_rankOne_mul, rank_pfisterFormClass, sw1Class_pfisterFormClass a hn, hk,
-    two_mul, add_nsmul, ZModModule.add_self]
-  simp
+      sw2Class (pfisterFormClass a) :=
+  sw2Class_mk_rankOne_mul_of_four_dvd c
+    (by rw [rank_pfisterFormClass]; exact pow_dvd_pow 2 hn) (sw1Class_pfisterFormClass a hn)
+
+/-- **`w₂` vanishes on Pfister forms of fold at least three**: writing
+`⟨⟨a₁, …, aₙ⟩⟩ = q ⊥ ⟨-a₁⟩ ⊗ q` with `q = ⟨⟨a₂, …, aₙ⟩⟩`, scaling invariance gives
+`w₂ = w₂(q) + w₂(q) = 0`. -/
+@[simp]
+theorem sw2Class_pfisterFormClass_of_three_le {n : ℕ} (a : Fin n → Kˣ) (hn : 3 ≤ n) :
+    sw2Class (pfisterFormClass a) = 0 := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (by omega : 1 ≤ n)
+  have hm : 2 ≤ m := by omega
+  rw [← Fin.cons_self_tail a, pfisterFormClass_cons, add_mul, one_mul, sw2Class_add,
+    sw2Class_mk_rankOne_mul_pfisterFormClass _ _ hm, sw1Class_pfisterFormClass _ hm, map_zero,
+    LinearMap.zero_apply, add_zero, ZModModule.add_self]
 
 end SecondClass
 
