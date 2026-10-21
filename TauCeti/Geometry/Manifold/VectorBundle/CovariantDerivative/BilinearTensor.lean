@@ -29,6 +29,8 @@ For the inner product of a Riemannian bundle the tensor is Mathlib's
 * `CovariantDerivative.derivBilinearTensor`: the covariant derivative `∇b` of a field of
   bilinear forms `b`, as a map `V x →L[ℝ] V x →L[ℝ] (T_x M →L[ℝ] ℝ)`.
 * `CovariantDerivative.derivBilinearTensor_apply`: its value on differentiable sections.
+* `CovariantDerivative.derivBilinearTensor_eq_zero_iff`: `∇b` vanishes exactly when `∇` satisfies
+  the product rule `v (b(σ, τ)) = b(∇_v σ, τ) + b(σ, ∇_v τ)`.
 * `CovariantDerivative.derivBilinearTensor_apply_comm`: `∇b` is symmetric when `b` is.
 * `CovariantDerivative.derivBilinearTensor_eq_derivMetricTensor`: for the inner product of a
   Riemannian bundle, `∇b` is `CovariantDerivative.derivMetricTensor`.
@@ -156,6 +158,14 @@ theorem derivBilinearTensor_apply
   rw [derivBilinearTensor, dite_eq_left hb, TensorialAt.mkHom₂_apply _ _ hσ hτ,
     derivBilinearTensorAux_apply]
 
+/-- The covariant derivative of a field of bilinear forms `b` is zero at `x` when `b` does not pair
+sections differentiable at `x` to a function differentiable at `x`. -/
+theorem derivBilinearTensor_eq_zero_of_not
+    (hb : ¬ ∀ ⦃σ τ : Π x : M, V x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
+      MDiffAt (fun y ↦ b y (σ y) (τ y)) x) :
+    cov.derivBilinearTensor b x = 0 := by
+  simp [derivBilinearTensor, hb]
+
 /-- The covariant derivative of a field of bilinear forms `b`, evaluated on arbitrary vectors in
 the fibre, through their extensions to sections by `FiberBundle.extend`. -/
 theorem derivBilinearTensor_apply_eq_extend
@@ -182,7 +192,28 @@ theorem derivBilinearTensor_apply_comm (hsymm : ∀ y (v w : V y), b y v w = b y
     rw [cov.derivBilinearTensor_apply_eq_extend hb, cov.derivBilinearTensor_apply_eq_extend hb,
       hpair, hsymm x σ₀, hsymm x (cov (extend F σ₀) x v)]
     ring
-  · simp [derivBilinearTensor, hb]
+  · simp [cov.derivBilinearTensor_eq_zero_of_not hb]
+
+/-- The covariant derivative of a field of bilinear forms `b` vanishes everywhere exactly when `∇`
+satisfies the product rule `v (b(σ, τ)) = b(∇_v σ, τ) + b(σ, ∇_v τ)` for all sections `σ`, `τ`
+differentiable at the base point. -/
+theorem derivBilinearTensor_eq_zero_iff
+    (hb : ∀ x ⦃σ τ : Π x : M, V x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
+      MDiffAt (fun y ↦ b y (σ y) (τ y)) x) :
+    (∀ x, cov.derivBilinearTensor b x = 0) ↔
+      ∀ ⦃x : M⦄ ⦃σ τ : Π x : M, V x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
+        ∀ v : TangentSpace I x,
+          mvfderiv I (fun y ↦ b y (σ y) (τ y)) x v =
+            b x (cov σ x v) (τ x) + b x (σ x) (cov τ x v) := by
+  refine ⟨fun h x σ τ hσ hτ v ↦ ?_, fun h x ↦ ?_⟩
+  · have := congr($(h x) (σ x) (τ x) v)
+    rw [cov.derivBilinearTensor_apply (hb x) hσ hτ] at this
+    simp only [zero_apply] at this
+    linarith
+  · ext σ₀ τ₀ v
+    rw [cov.derivBilinearTensor_apply_eq_extend (hb x),
+      h (mdifferentiableAt_extend I F σ₀) (mdifferentiableAt_extend I F τ₀) v]
+    simp
 
 end General
 
@@ -211,17 +242,14 @@ the covariant derivative of the inner product, viewed as a field of bilinear for
 theorem isMetricCompatible_iff_derivBilinearTensor_eq_zero [IsManifold I 1 M]
     (hb : ∀ x (v w : V x), b x v w = inner ℝ v w) :
     cov.IsMetricCompatible ↔ ∀ x, cov.derivBilinearTensor b x = 0 := by
-  rw [cov.derivBilinearTensor_eq_derivMetricTensor hb, isMetricCompatible_iff]
-  refine ⟨fun h x ↦ ?_, fun h x X σ τ hX hσ hτ ↦ ?_⟩
-  · ext σ₀ τ₀ v
-    have := h (mdifferentiableAt_extend I E v) (mdifferentiableAt_extend I F σ₀)
-      (mdifferentiableAt_extend I F τ₀)
-    simp only [extend_apply_self] at this
-    simp [derivMetricTensor_apply_eq_extend, this]
-  · have := congr($(h x) (σ x) (τ x) (X x))
-    rw [derivMetricTensor_apply _ _ hσ hτ] at this
-    simp only [zero_apply] at this
-    linarith
+  have hpair (σ τ : Π x : M, V x) :
+      (fun y ↦ b y (σ y) (τ y)) = fun y ↦ inner ℝ (σ y) (τ y) :=
+    funext fun y ↦ hb y _ _
+  rw [cov.derivBilinearTensor_eq_zero_iff fun _ σ τ hσ hτ ↦ hpair σ τ ▸ hσ.inner_bundle hτ,
+    isMetricCompatible_iff]
+  simp only [hb]
+  exact ⟨fun h x σ τ hσ hτ v ↦ by simpa using h (mdifferentiableAt_extend I E v) hσ hτ,
+    fun h x X σ τ _ hσ hτ ↦ h hσ hτ (X x)⟩
 
 end Riemannian
 
