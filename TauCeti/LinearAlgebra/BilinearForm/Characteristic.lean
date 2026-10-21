@@ -67,6 +67,7 @@ theorem isCharacteristic_iff : B.IsCharacteristic w ↔ ∀ x, (2 : R) ∣ B w x
   Iff.rfl
 
 /-- Zero is characteristic exactly when every self-pairing is even. -/
+@[simp]
 theorem isCharacteristic_zero_iff : B.IsCharacteristic 0 ↔ ∀ x, (2 : R) ∣ B x x := by
   simp [isCharacteristic_iff]
 
@@ -193,21 +194,21 @@ variable {ι : Type*} [Fintype ι]
 
 /-- **The sum of an orthogonal basis is characteristic** when `c ^ 2 ≡ c` modulo `2` for every
 `c : R`. -/
-theorem iIsOrtho.isCharacteristic_sum (hB : B.IsSymm) (h2 : ∀ c : R, (2 : R) ∣ c ^ 2 - c)
+theorem iIsOrtho.isCharacteristic_sum (h2 : ∀ c : R, (2 : R) ∣ c ^ 2 - c)
     {b : Basis ι R M} (hb : B.iIsOrtho b) : B.IsCharacteristic (∑ i, b i) := by
   classical
-  refine (hB.isCharacteristic_iff_forall_basis h2 b).2 fun i ↦ ?_
+  refine (hb.isSymm.isCharacteristic_iff_forall_basis h2 b).2 fun i ↦ ?_
   rw [map_sum, LinearMap.sum_apply,
     Finset.sum_eq_single i (fun j _ hji ↦ (iIsOrtho_def.mp hb) j i hji) (by simp), sub_self]
   exact dvd_zero _
 
 /-- **The trace of a diagonal Gram matrix modulo `8` is an isometry invariant.** Let `c ^ 2 ≡ c`
-modulo `2` for every `c : R`, as over `ℤ` and `ℤ_[2]`. If a perfect symmetric form `B` is isometric
-to `C`, and `b` and `c` are orthogonal bases for `B` and `C`, then the traces
+modulo `2` for every `c : R`, as over `ℤ` and `ℤ_[2]`. If a perfect form `B` is isometric to
+`C`, and `b` and `c` are orthogonal bases for `B` and `C`, then the traces
 `∑ i, B (b i) (b i)` and `∑ j, C (c j) (c j)` agree modulo `8`. Over `ℤ_[2]` this is the invariance
 of the oddity of an odd unimodular form. -/
 theorem Equivalent.eight_dvd_sum_apply_self_sub_sum_apply_self {C : BilinForm R M'}
-    (h : B.Equivalent C) (hB : B.IsSymm) [B.IsPerfPair] (h2 : ∀ c : R, (2 : R) ∣ c ^ 2 - c)
+    (h : B.Equivalent C) [B.IsPerfPair] (h2 : ∀ c : R, (2 : R) ∣ c ^ 2 - c)
     {κ : Type*} [Fintype κ] {b : Basis ι R M} {c : Basis κ R M'} (hb : B.iIsOrtho b)
     (hc : C.iIsOrtho c) :
     (8 : R) ∣ ∑ j, C (c j) (c j) - ∑ i, B (b i) (b i) := by
@@ -219,8 +220,8 @@ theorem Equivalent.eight_dvd_sum_apply_self_sub_sum_apply_self {C : BilinForm R 
   have hc' : B.iIsOrtho c' := iIsOrtho_def.mpr fun j k hjk ↦ by
     rw [hc'apply]
     exact iIsOrtho_def.mp hc j k hjk
-  have key := (hb.isCharacteristic_sum hB h2).eight_dvd_apply_self_sub_apply_self hB
-    (hc'.isCharacteristic_sum hB h2)
+  have key := (hb.isCharacteristic_sum h2).eight_dvd_apply_self_sub_apply_self hb.isSymm
+    (hc'.isCharacteristic_sum h2)
   rwa [hb.apply_sum_sum, hc'.apply_sum_sum, Finset.sum_congr rfl fun j _ ↦ hc'apply j j] at key
 
 end Orthogonal

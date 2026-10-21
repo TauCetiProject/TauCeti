@@ -68,18 +68,18 @@ theorem not_equivalent_toBilin'_diagonal_one_one_three_three_padicInt_two :
     simp [b, Matrix.toBilin'_single, Matrix.diagonal_apply]
   have hortho (d : Fin 2 → ℤ_[2]) : (Matrix.toBilin' (Matrix.diagonal d)).iIsOrtho b :=
     LinearMap.BilinForm.iIsOrtho_def.mpr fun i j hij ↦ by simp [hdiag, hij]
-  have hsymm : (Matrix.toBilin' (Matrix.diagonal ![(1 : ℤ_[2]), 1])).IsSymm :=
-    Matrix.isSymm_toBilin'_iff_isSymm.mpr (Matrix.isSymm_diagonal _)
   have : (Matrix.toBilin' (Matrix.diagonal ![(1 : ℤ_[2]), 1])).IsPerfPair :=
     b.isPerfPair_of_apply_eq_ite _ 1 fun i j ↦ by
       fin_cases i <;> fin_cases j <;> simp [hdiag]
-  have h8 := h.eight_dvd_sum_apply_self_sub_sum_apply_self hsymm PadicInt.two_dvd_sq_sub_self
+  have h8 := h.eight_dvd_sum_apply_self_sub_sum_apply_self PadicInt.two_dvd_sq_sub_self
     (hortho _) (hortho _)
   simp only [hdiag, ↓reduceIte, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one] at h8
-  rw [show (3 + 3 - (1 + 1) : ℤ_[2]) = 4 by norm_num] at h8
+  norm_num at h8
   have h8' := map_dvd (PadicInt.toZModPow 3) h8
-  rw [map_ofNat, map_ofNat, show (8 : ZMod (2 ^ 3)) = 0 by decide, zero_dvd_iff] at h8'
-  exact absurd h8' (by decide)
+  simp only [map_ofNat] at h8'
+  obtain ⟨k, hk⟩ := h8'
+  revert k
+  decide
 
 end TauCeti

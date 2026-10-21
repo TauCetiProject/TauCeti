@@ -39,6 +39,7 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   disjoint sets of indices are orthogonal.
 * `LinearMap.BilinForm.iIsOrtho.apply_sum_sum`: the self-pairing of the sum of a finite
   orthogonal family is the sum of the self-pairings.
+* `LinearMap.BilinForm.iIsOrtho.isSymm`: a form with an orthogonal basis is symmetric.
 * `LinearMap.BilinForm.equivalent_of_isInternal`: orthogonal internal direct sums of isometric
   forms are isometric.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
@@ -112,6 +113,14 @@ theorem iIsOrtho.apply_sum_sum {B : LinearMap.BilinForm K V} {ι : Type*} [Finty
   simp only [map_sum, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_eq_single i (fun j _ hji ↦ ?_) (by simp)
   exact (iIsOrtho_def.mp hv) j i hji
+
+/-- A form admitting an orthogonal basis is symmetric. -/
+theorem iIsOrtho.isSymm {B : LinearMap.BilinForm K V} {ι : Type*} {b : Module.Basis ι K V}
+    (hb : B.iIsOrtho b) : B.IsSymm := by
+  refine (isSymm_iff_basis b).2 fun i j ↦ ?_
+  rcases eq_or_ne i j with rfl | hij
+  · rfl
+  · rw [iIsOrtho_def.mp hb i j hij, iIsOrtho_def.mp hb j i hij.symm]
 
 /-- **Orthogonal sums of isometric forms are isometric.** If two modules are internal direct sums
 of pairwise orthogonal families of submodules indexed by the same type, and the restrictions of the
