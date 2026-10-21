@@ -9,8 +9,8 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Quantile
 -- Proof-only: weighted AM-GM with its equality case, the one-dimensional change of variables,
 -- and functions with equal derivatives on an interval.
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.MeanInequalities
 import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.Analysis.MeanInequalities
 
 /-!
 # Equality in Brunn–Minkowski for convex sets: matching height quantiles
@@ -62,62 +62,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-/-- Splitting a weighted geometric mean through positive normalizers `a` and `b`. -/
-private theorem rpow_mul_rpow_eq {A B a b θ : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B) (ha : 0 < a)
-    (hb : 0 < b) :
-    A ^ (1 - θ) * B ^ θ = (A / a) ^ (1 - θ) * (B / b) ^ θ * (a ^ (1 - θ) * b ^ θ) := by
-  rw [mul_mul_mul_comm, ← Real.mul_rpow (div_nonneg hA ha.le) ha.le,
-    ← Real.mul_rpow (div_nonneg hB hb.le) hb.le, div_mul_cancel₀ A ha.ne',
-    div_mul_cancel₀ B hb.ne']
-
-/-- Weighted AM-GM in the form used to compare section volumes at matching quantiles: for positive
-section volumes `a` and `b`, the weighted geometric mean of `A` and `B` is at most the weighted
-arithmetic mean of `A / a` and `B / b` times the weighted geometric mean of `a` and `b`. -/
-private theorem rpow_mul_rpow_le_mul {A B a b θ : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B) (ha : 0 < a)
-    (hb : 0 < b) (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1) :
-    A ^ (1 - θ) * B ^ θ ≤ ((1 - θ) * (A / a) + θ * (B / b)) * (a ^ (1 - θ) * b ^ θ) := by
-  rw [rpow_mul_rpow_eq hA hB ha hb]
-  exact mul_le_mul_of_nonneg_right (Real.geom_mean_le_arith_mean2_weighted (by linarith) hθ₀
-    (div_nonneg hA ha.le) (div_nonneg hB hb.le) (by ring))
-    (mul_nonneg (Real.rpow_nonneg ha.le _) (Real.rpow_nonneg hb.le _))
-
-/-- The strict form of `rpow_mul_rpow_le_mul` when `A / a ≠ B / b`. -/
-private theorem rpow_mul_rpow_lt_mul {A B a b θ : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B) (ha : 0 < a)
-    (hb : 0 < b) (hθ₀ : 0 < θ) (hθ₁ : θ < 1) (hne : A / a ≠ B / b) :
-    A ^ (1 - θ) * B ^ θ < ((1 - θ) * (A / a) + θ * (B / b)) * (a ^ (1 - θ) * b ^ θ) := by
-  rw [rpow_mul_rpow_eq hA hB ha hb]
-  exact mul_lt_mul_of_pos_right ((Real.geom_mean_lt_arith_mean2_weighted_iff_of_pos
-    (by linarith) hθ₀ (div_nonneg hA ha.le) (div_nonneg hB hb.le) (by ring)).2 hne)
-    (mul_pos (Real.rpow_pos_of_pos ha _) (Real.rpow_pos_of_pos hb _))
-
-variable {e : E} {K : Set E}
-
-/-- The volume of the hyperplane section of a convex set at its height quantile is continuous on
-the levels in `Ioo 0 1`. -/
-private theorem continuousOn_volume_real_hyperplaneSection_quantile (hK : Convex ℝ K)
-    (hKb : Bornology.IsBounded K) (hK0 : volume K ≠ 0) (he : ‖e‖ = 1) :
-    ContinuousOn (fun τ ↦ volume.real {y : (ℝ ∙ e)ᗮ |
-      (y : E) + ((volume[|K]).map fun x ↦ ⟪e, x⟫).quantile τ • e ∈ K}) (Ioo 0 1) := by
-  have hKi : volume K ≠ ∞ := hKb.measure_lt_top.ne
-  refine (hK.continuousOn_volume_real_hyperplaneSection he
-    fun t ↦ (hKb.volume_hyperplaneSection_lt_top e t).ne).comp
-    (continuousOn_quantile _ (continuous_cdf_map_inner_cond he hK0 hKi)
-      (hK.strictMonoOn_cdf_map_inner_cond he hK0 hKi)) fun τ hτ ↦ ?_
-  exact interior_maximal (image_mono interior_subset) (isOpen_image_inner_interior he K)
-    (hK.quantile_map_inner_cond_mem_image_interior he hK0 hKi hτ)
-
-/-- The hyperplane section of a bounded convex set of positive volume at its height quantile has
-positive finite volume at every level in `Ioo 0 1`. -/
-private theorem volume_real_hyperplaneSection_quantile_pos (hK : Convex ℝ K)
-    (hKb : Bornology.IsBounded K) (hK0 : volume K ≠ 0) (he : ‖e‖ = 1) {τ : ℝ}
-    (hτ : τ ∈ Ioo 0 1) :
-    0 < volume.real {y : (ℝ ∙ e)ᗮ |
-      (y : E) + ((volume[|K]).map fun x ↦ ⟪e, x⟫).quantile τ • e ∈ K} :=
-  ENNReal.toReal_pos (volume_hyperplaneSection_pos e he
-    (hK.quantile_map_inner_cond_mem_image_interior he hK0 hKb.measure_lt_top.ne hτ)).ne'
-    (hKb.volume_hyperplaneSection_lt_top e _).ne
-
-variable {L : Set E}
+variable {e : E} {K L : Set E}
 
 /-- **The Kneser–Süss integral inequality.** Along the weighted height quantile
 `z = (1 - θ) z_K + θ z_L`, the derivative `z'` times the weighted geometric mean of the section
@@ -143,9 +88,9 @@ private theorem setLIntegral_ofReal_le_volume_smul_add_smul (hK : Convex ℝ K)
   set b : ℝ → ℝ := fun τ ↦ volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + zL τ • e ∈ L}
   set M := (1 - θ) • K + θ • L
   have ha (τ : ℝ) (hτ : τ ∈ Ioo 0 1) : 0 < a τ :=
-    volume_real_hyperplaneSection_quantile_pos hK hKb hK0 he hτ
+    hK.volume_real_hyperplaneSection_quantile_pos hKb hK0 he hτ
   have hb (τ : ℝ) (hτ : τ ∈ Ioo 0 1) : 0 < b τ :=
-    volume_real_hyperplaneSection_quantile_pos hL hLb hL0 he hτ
+    hL.volume_real_hyperplaneSection_quantile_pos hLb hL0 he hτ
   -- The weighted quantile `z` is strictly increasing with positive derivative `z'`.
   set z : ℝ → ℝ := fun τ ↦ (1 - θ) * zK τ + θ * zL τ
   set z' : ℝ → ℝ := fun τ ↦ (1 - θ) * (volume.real K / a τ) + θ * (volume.real L / b τ)
@@ -208,12 +153,13 @@ private theorem div_volume_real_hyperplaneSection_quantile_eq (hK : Convex ℝ K
   set g : ℝ → ℝ := fun τ ↦ ((1 - θ) * (volume.real K / a τ) + θ * (volume.real L / b τ)) *
     (a τ ^ (1 - θ) * b τ ^ θ)
   have ha (τ : ℝ) (hτ : τ ∈ Ioo 0 1) : 0 < a τ :=
-    volume_real_hyperplaneSection_quantile_pos hK hKb hK0 he hτ
+    hK.volume_real_hyperplaneSection_quantile_pos hKb hK0 he hτ
   have hb (τ : ℝ) (hτ : τ ∈ Ioo 0 1) : 0 < b τ :=
-    volume_real_hyperplaneSection_quantile_pos hL hLb hL0 he hτ
+    hL.volume_real_hyperplaneSection_quantile_pos hLb hL0 he hτ
   -- By weighted AM-GM, `g` is at least the weighted geometric mean `c` of the volumes.
   have hcg (τ : ℝ) (hτ : τ ∈ Ioo 0 1) : c ≤ g τ :=
-    rpow_mul_rpow_le_mul measureReal_nonneg measureReal_nonneg (ha τ hτ) (hb τ hτ) hθ₀.le hθ₁.le
+    Real.geom_mean_le_arith_mean2_weighted_div_mul measureReal_nonneg measureReal_nonneg (ha τ hτ)
+      (hb τ hτ) hθ₀.le hθ₁.le
   have hc : 0 ≤ c := mul_nonneg (Real.rpow_nonneg measureReal_nonneg _)
     (Real.rpow_nonneg measureReal_nonneg _)
   have hvol' : volume ((1 - θ) • K + θ • L) ≤ ENNReal.ofReal c := by
@@ -223,8 +169,8 @@ private theorem div_volume_real_hyperplaneSection_quantile_eq (hK : Convex ℝ K
       ENNReal.ofReal_rpow_of_nonneg measureReal_nonneg hθ₀.le, ← ENNReal.ofReal_mul
         (Real.rpow_nonneg measureReal_nonneg _)]
   have hgc : ContinuousOn g (Ioo 0 1) := by
-    have hac := continuousOn_volume_real_hyperplaneSection_quantile hK hKb hK0 he
-    have hbc := continuousOn_volume_real_hyperplaneSection_quantile hL hLb hL0 he
+    have hac := hK.continuousOn_volume_real_hyperplaneSection_quantile hKb hK0 he
+    have hbc := hL.continuousOn_volume_real_hyperplaneSection_quantile hLb hL0 he
     refine (((continuousOn_const.div hac fun τ hτ ↦ (ha τ hτ).ne').const_smul (1 - θ)).add
       ((continuousOn_const.div hbc fun τ hτ ↦ (hb τ hτ).ne').const_smul θ)).mul
       ((hac.rpow_const fun τ hτ ↦ Or.inl (ha τ hτ).ne').mul
@@ -245,8 +191,8 @@ private theorem div_volume_real_hyperplaneSection_quantile_eq (hK : Convex ℝ K
   have hgτ : g τ = c := eqOn_open_of_ae_eq hae isOpen_Ioo hgc continuousOn_const hτ
   -- Equality in weighted AM-GM forces the two ratios to agree.
   by_contra hne
-  exact (rpow_mul_rpow_lt_mul measureReal_nonneg measureReal_nonneg (ha τ hτ) (hb τ hτ) hθ₀ hθ₁
-    hne).ne' hgτ
+  exact (Real.geom_mean_lt_arith_mean2_weighted_div_mul measureReal_nonneg measureReal_nonneg
+    (ha τ hτ) (hb τ hτ) hθ₀ hθ₁ hne).ne' hgτ
 
 /-- **Matching height quantiles under Brunn–Minkowski equality.** Let `K` and `L` be bounded Borel
 convex sets of positive volume, `0 < θ < 1`, and `e` a unit vector. If the volume of
