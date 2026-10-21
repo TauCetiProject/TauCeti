@@ -25,7 +25,8 @@ It also records that the canonical reindexing and shift functors are additive an
 evaluation in a single degree preserves finite limits and colimits, so that a short exact sequence
 of graded objects is short exact in every degree, and that totalizing a graded object,
 `X ↦ ∐ᵢ Xᵢ`, is left adjoint to the constant graded object
-(`TauCeti.gradedObjectTotalAdjunction`). Totalizing is therefore additive and preserves finite
+(`TauCeti.gradedObjectTotalAdjunction`), and is the colimit functor of the corresponding discrete
+diagram (`TauCeti.gradedObjectTotalIso`). Totalizing is therefore additive and preserves finite
 colimits; it also preserves finite limits when coproducts in `C` are exact, as for modules, so that
 it is an exact functor.
 
@@ -187,7 +188,7 @@ noncomputable def gradedObjectTotalAdjunction (β : Type) (C : Type u) [Category
 
 /-- `GradedObject.total β C` is the colimit functor of the corresponding diagram
 `Discrete β ⥤ C`. -/
-private noncomputable def gradedObjectTotalIso (β : Type) (C : Type u) [Category.{v} C]
+noncomputable def gradedObjectTotalIso (β : Type) (C : Type u) [Category.{v} C]
     [HasCoproducts.{0} C] :
     (piEquivalenceFunctorDiscrete β C).functor ⋙ colim ≅ GradedObject.total β C :=
   -- Both functors send `X` to `∐ᵢ Xᵢ` and `f` to `Sigma.map f`, by their definitions.

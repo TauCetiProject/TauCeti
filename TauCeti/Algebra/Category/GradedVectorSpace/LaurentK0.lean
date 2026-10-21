@@ -35,6 +35,10 @@ K₀^gr ≃ ℤ[q,q⁻¹],    [V] ↦ gdim V,    [M{n}] ↦ qⁿ.
 Since `[M{n}] = qⁿ[M]`, the shifts of `M` have pairwise distinct classes, although forgetting the
 grading sends all of them to the same vector space `k`.
 
+Consequently the specialization of `K₀^gr` at any `q = ε` is still free of rank one on the class of
+`M`, with coordinate `gdim V` evaluated at `q = ε`. In particular, at `q = -1` the sign
+`[M{1}] = -[M]` produced by a single shift is a genuine change of class.
+
 ## Main definitions
 
 * `TauCeti.GradedVectorSpace.finite`: the finite graded vector spaces.
@@ -43,6 +47,8 @@ grading sends all of them to the same vector space `k`.
 * `TauCeti.GradedVectorSpace.unitFinite`: the one-dimensional space `M = k` in degree `0`.
 * `TauCeti.GradedVectorSpace.laurentK0Equiv`: the graded dimension
   `K₀^gr ≃ ℤ[q,q⁻¹]` of finite graded vector spaces.
+* `TauCeti.GradedVectorSpace.laurentSpecializationBasis`: the basis `[M]` of `K₀^gr` specialized
+  at `q = ε`.
 
 ## Main results
 
@@ -52,6 +58,8 @@ grading sends all of them to the same vector space `k`.
 * `TauCeti.GradedVectorSpace.laurentK0Equiv_of`: the graded dimension of the class `[V]` is
   `gdim V`.
 * `TauCeti.GradedVectorSpace.of_eq_gradedDimension_smul`: `[V] = gdim V · [M]`.
+* `TauCeti.GradedVectorSpace.mk_neg_one_of_shift_unitFinite_ne`: at `q = -1` the classes of `M{1}`
+  and `M` differ.
 
 ## References
 
@@ -377,6 +385,42 @@ theorem laurentK0Equiv_of (V : (finite k).FullSubcategory) :
 theorem laurentK0Equiv_symm_apply (p : LaurentPolynomial ℤ) :
     (laurentK0Equiv k).symm p = p • LaurentK0.of.{u} (finiteExactStructure k) (unitFinite k) := by
   simp [laurentK0Equiv]
+
+/-! ### Specializations of the graded Grothendieck group -/
+
+/-- The specialization of the graded Grothendieck group of finite graded vector spaces at `q = ε`
+is free of rank one, on the class of `M = k` placed in degree `0`. -/
+noncomputable def laurentSpecializationBasis (ε : ℤˣ) :
+    Module.Basis Unit ℤ (LaurentSpecialization ε (LaurentK0.{u} (finiteExactStructure k))) :=
+  LaurentSpecialization.basis ε
+    ((Module.Basis.singleton Unit (LaurentPolynomial ℤ)).map (laurentK0Equiv k).symm)
+
+/-- The vector of `TauCeti.GradedVectorSpace.laurentSpecializationBasis` is the specialized class
+of `M`. -/
+@[simp]
+theorem laurentSpecializationBasis_apply (ε : ℤˣ) (i : Unit) :
+    laurentSpecializationBasis k ε i =
+      LaurentSpecialization.mk ε (LaurentK0.of.{u} (finiteExactStructure k) (unitFinite k)) := by
+  simp [laurentSpecializationBasis]
+
+/-- The coordinate of a specialized class is its graded dimension evaluated at `q = ε`. -/
+@[simp]
+theorem laurentSpecializationBasis_repr_mk (ε : ℤˣ)
+    (x : LaurentK0.{u} (finiteExactStructure k)) (i : Unit) :
+    (laurentSpecializationBasis k ε).repr (LaurentSpecialization.mk ε x) i =
+      laurentEval ε (laurentK0Equiv k x) := by
+  simp [laurentSpecializationBasis]
+
+/-- **At `q = -1` a single shift changes the class**: the specialized class of `M{1}`, which is
+`-[M]` by `TauCeti.LaurentK0.mk_of_shift_functor_obj`, differs from that of `M`. -/
+theorem mk_neg_one_of_shift_unitFinite_ne :
+    LaurentSpecialization.mk (-1 : ℤˣ) (LaurentK0.of.{u} (finiteExactStructure k)
+        ((finiteExactStructure k).shift.functor.obj (unitFinite k))) ≠
+      LaurentSpecialization.mk (-1 : ℤˣ)
+        (LaurentK0.of.{u} (finiteExactStructure k) (unitFinite k)) := by
+  intro h
+  have := congrArg (fun x ↦ (laurentSpecializationBasis k (-1 : ℤˣ)).repr x ()) h
+  simp at this
 
 end GradedVectorSpace
 
