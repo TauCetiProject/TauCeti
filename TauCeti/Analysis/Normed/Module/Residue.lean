@@ -115,8 +115,8 @@ theorem mk_surjective : Function.Surjective (mk : unitClosedBallSubmodule R M �
 the residue of `a` times the residue of `m` is the residue of `a • m`. -/
 @[simp]
 theorem smul_mk (a : Subring.unitClosedBall R) (m : unitClosedBallSubmodule R M) :
-    Ideal.Quotient.mk (unitBallIdeal R) a • mk m = mk (a • m) :=
-  (rfl)
+    Ideal.Quotient.mk (unitBallIdeal R) a • mk m = mk (a • m) := by
+  rw [mk_apply, mk_apply, Module.Quotient.mk_smul_mk]
 
 end ResidueModule
 
