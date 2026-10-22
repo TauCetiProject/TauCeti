@@ -42,6 +42,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   map.
 * `TauCeti.Huber.PairOfDefinition.quotient`: the image of a pair of definition in a quotient
   ring `A ⧸ J`.
+* `TauCeti.Huber.PairOfDefinition.comap`: the pullback of a pair of definition along an
+  embedding whose image contains the ring of definition.
 
 ## Main results
 
@@ -609,6 +611,49 @@ theorem quotient_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (J : 
     (n : ℕ) :
     (P.quotient J).idealImage n = (P.idealImage n).map (Ideal.Quotient.mk J).toAddMonoidHom :=
   P.map_idealImage _ _ n
+
+/-- The pullback of a pair of definition along an embedding `f : B →+* A` whose image
+contains the ring of definition: its ring of definition is `f⁻¹(A₀)`, which `f` identifies with
+`A₀` as a topological ring, and its ideal of definition is the preimage of `I` under that
+identification (`TauCeti.Huber.PairOfDefinition.mem_comap_idealOfDefinition`). -/
+noncomputable def comap [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A) (hf : IsEmbedding f)
+    (hP : P.ringOfDefinition ≤ f.range) : PairOfDefinition B :=
+  let e : P.ringOfDefinition.comap f ≃+* P.ringOfDefinition :=
+    RingEquiv.ofBijective (f.restrict _ _ fun _ hb ↦ hb)
+      ⟨fun _ _ h ↦ Subtype.ext (hf.injective (congrArg Subtype.val h)), fun ⟨a, ha⟩ ↦ by
+        obtain ⟨b, rfl⟩ := hP ha
+        exact ⟨⟨b, ha⟩, rfl⟩⟩
+  have he : IsInducing e :=
+    (hf.isInducing.comp IsInducing.subtypeVal).codRestrict fun b ↦ b.2
+  { ringOfDefinition := P.ringOfDefinition.comap f
+    isOpen_ringOfDefinition := P.isOpen_ringOfDefinition.preimage hf.continuous
+    idealOfDefinition := P.idealOfDefinition.comap e
+    fg_idealOfDefinition := by
+      rw [← Ideal.map_symm]
+      exact P.fg_idealOfDefinition.map e.symm.toRingHom
+    isAdic_idealOfDefinition := IsAdic.comap e he P.isAdic_idealOfDefinition }
+
+/-- The ring of definition of the pullback pair of definition is the preimage of the original
+one. -/
+@[simp]
+theorem comap_ringOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A)
+    (hf : IsEmbedding f) (hP : P.ringOfDefinition ≤ f.range) :
+    (P.comap f hf hP).ringOfDefinition = P.ringOfDefinition.comap f :=
+  (rfl)
+
+/-- An element of the ring of definition of the pullback pair of definition lies in its ideal of
+definition exactly when its image lies in the original ideal of definition. -/
+@[simp]
+theorem mem_comap_idealOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A)
+    (hf : IsEmbedding f) (hP : P.ringOfDefinition ≤ f.range)
+    {b : (P.comap f hf hP).ringOfDefinition} :
+    b ∈ (P.comap f hf hP).idealOfDefinition ↔
+      (⟨f b, Subring.mem_comap.mp (P.comap_ringOfDefinition f hf hP ▸ b.2)⟩ :
+        P.ringOfDefinition) ∈ P.idealOfDefinition :=
+  (Iff.rfl)
 
 
 end PairOfDefinition
