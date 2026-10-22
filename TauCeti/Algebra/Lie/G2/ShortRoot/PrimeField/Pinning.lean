@@ -24,6 +24,10 @@ The intrinsic simple roots are numbered by the Bourbaki nodes through
 numbered root subgroup `x_{αᵢ}` at parameter zero. The carrier is not identified here with an
 independently constructed pinned group scheme of type `G₂`.
 
+The structure of the construction and its characteristic lemmas follows the pinning
+`TauCeti.SlStd.pinning` of the standard special linear carrier in
+`TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.SpecialLinear.Pinning`.
+
 ## Main declarations
 
 * `TauCeti.G2ShortRoot.PrimeField.pinning`: the pinning of the carrier.

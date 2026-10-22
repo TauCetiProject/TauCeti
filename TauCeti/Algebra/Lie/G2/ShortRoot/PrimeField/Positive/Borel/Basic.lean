@@ -32,6 +32,12 @@ containment of subgroup schemes. Testing the universal point rather than rationa
 this identification of the carrier's upper-triangular intersection with the positive subgroup
 scheme-theoretic, over every such `𝔽₃`-algebra.
 
+The transport from the scalar extension back to `𝔽₃`, through
+`HopfIdeal.IsBorelOverAlgClosed.of_map_eq` and
+`CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective`, follows the general-linear Borel argument
+in `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Borel` and the type-`E₆`
+base-change comparison in `TauCeti.Algebra.Lie.E6.Minuscule.Generated.Positive.BaseChange`.
+
 ## Main declarations
 
 * `TauCeti.G2ShortRoot.PrimeField.Positive.generatedPositiveDefiningIdeal_le_of_upperTriangular_le`:
