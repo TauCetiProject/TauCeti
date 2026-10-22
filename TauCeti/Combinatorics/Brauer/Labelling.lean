@@ -140,6 +140,13 @@ the one that comes first along `finSumFinEquiv`. -/
 def arcTransversal (D : BrauerDiagram k) : Finset (Fin k ⊕ Fin k) :=
   Finset.univ.filter fun p => finSumFinEquiv p < finSumFinEquiv (D.val p)
 
+/-- A boundary point lies in the arc transversal exactly when it comes before its partner along
+`finSumFinEquiv`. -/
+@[simp]
+theorem mem_arcTransversal {D : BrauerDiagram k} {p : Fin k ⊕ Fin k} :
+    p ∈ D.arcTransversal ↔ finSumFinEquiv p < finSumFinEquiv (D.val p) := by
+  simp [arcTransversal]
+
 /-- The arc transversal contains exactly one end of every arc of `D`. -/
 theorem isInvolutionTransversal_arcTransversal (D : BrauerDiagram k) :
     IsInvolutionTransversal D.val Finset.univ D.arcTransversal where
@@ -147,8 +154,7 @@ theorem isInvolutionTransversal_arcTransversal (D : BrauerDiagram k) :
   mem_iff_notMem p _ := by
     have hne : finSumFinEquiv p ≠ finSumFinEquiv (D.val p) :=
       fun h => D.apply_ne p (finSumFinEquiv.injective h).symm
-    simp only [arcTransversal, Finset.mem_filter, Finset.mem_univ, true_and, D.apply_apply,
-      not_lt]
+    simp only [mem_arcTransversal, D.apply_apply, not_lt]
     exact ⟨le_of_lt, fun h => lt_of_le_of_ne h hne⟩
 
 /-- An end of an arc lies outside the arc transversal exactly when its partner lies in it. -/
@@ -187,13 +193,21 @@ def isConstantOnArcsEquiv (D : BrauerDiagram k) :
     · simpa [hp] using ℓ.2 p
   right_inv z := funext fun s => by simp [s.2]
 
+/-- The free labelling of the arc transversal attached to a labelling constant on arcs is its
+restriction to the arc transversal. -/
+@[simp]
+theorem isConstantOnArcsEquiv_apply (D : BrauerDiagram k)
+    (ℓ : {ℓ : Fin k ⊕ Fin k → ι // D.IsConstantOnArcs ℓ}) (s : D.arcTransversal) :
+    D.isConstantOnArcsEquiv ℓ s = ℓ.1 s := by
+  rfl
+
 /-- The labelling constant on arcs with labels `z` on the arc transversal carries the label
 `z s` at the transversal point `s`. -/
 @[simp]
 theorem isConstantOnArcsEquiv_symm_apply_coe (D : BrauerDiagram k)
     (z : D.arcTransversal → ι) (s : D.arcTransversal) :
     (D.isConstantOnArcsEquiv.symm z).1 s = z s := by
-  simp [isConstantOnArcsEquiv, s.2]
+  simp [isConstantOnArcsEquiv, mem_arcTransversal.1 s.2]
 
 /-- The labelling constant on arcs with labels `z` on the arc transversal carries the label
 `z s` at the partner of the transversal point `s`. -/
