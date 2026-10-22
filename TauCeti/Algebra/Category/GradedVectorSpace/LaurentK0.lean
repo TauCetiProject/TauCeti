@@ -185,11 +185,6 @@ private noncomputable def shiftObjApplyIso (V : (finite k).FullSubcategory) (j :
     ((finiteExactStructure k).shift.functor.obj V).obj j ≅ V.obj (j - 1) :=
   Pi.isoApp (shiftObjIso k V) j ≪≫ eqToIso (congrArg V.obj (by simp [sub_eq_add_neg]))
 
-/-- The pieces of the one-dimensional space `M = k` in degree `0` have finite Laurent support. -/
-theorem hasFiniteLaurentSupport_unit : HasFiniteLaurentSupport k fun j ↦ (unit k j : Type u) :=
-  HasFiniteLaurentSupport.of_finset (finiteDimensional_unit_obj k) {0} fun _ hj ↦
-    ModuleCat.subsingleton_of_isZero (isZero_unit_obj k (by simpa using hj))
-
 /-- A finite-dimensional vector space placed in a single degree `j` is a finite graded vector
 space. -/
 theorem finite_single (j : ℤ) (Y : ModuleCat.{u} k) [Module.Finite k Y] :
@@ -206,7 +201,11 @@ theorem finite_single (j : ℤ) (Y : ModuleCat.{u} k) [Module.Finite k Y] :
 
 /-- The one-dimensional space `M = k` in degree `0` is finite. -/
 theorem finite_unit : finite k (unit k) :=
-  hasFiniteLaurentSupport_unit k
+  finite_single k 0 (ModuleCat.of k k)
+
+/-- The pieces of the one-dimensional space `M = k` in degree `0` have finite Laurent support. -/
+theorem hasFiniteLaurentSupport_unit : HasFiniteLaurentSupport k fun j ↦ (unit k j : Type u) :=
+  (finite_iff _).1 (finite_unit k)
 
 /-- The one-dimensional space `M = k` in degree `0`, as a finite graded vector space. -/
 noncomputable abbrev unitFinite : (finite k).FullSubcategory :=

@@ -98,7 +98,7 @@ theorem nonempty_iso_shift_pow_obj (j : ℤ) (V : GradedVectorSpace k) (i : ℤ)
 
 /-- The **graded vector space `k` placed in degree `0`**, defined as Mathlib's canonical
 single-degree graded object. It is characterized by `unitObjZeroIso` and `isZero_unit_obj`. -/
-noncomputable def unit : GradedVectorSpace k :=
+@[expose] noncomputable def unit : GradedVectorSpace k :=
   (GradedObject.single₀ ℤ).obj (ModuleCat.of k k)
 
 /-- The piece of `unit k` in degree `0` is the field `k`, as an object of `ModuleCat k`. -/
