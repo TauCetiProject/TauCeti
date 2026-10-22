@@ -304,8 +304,9 @@ theorem wedgeWith_smul_left_of_map_smul {S S' : Type*} [Monoid S] [DistribMulAct
     [ContinuousConstSMul S' F₃] [SMulCommClass ℝ S' F₃] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     {c : S} {d : S'} (hcd : ∀ a b, μ (c • a) b = d • μ a b)
     (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
-    (c • φ).wedgeWith μ ψ = d • φ.wedgeWith μ ψ :=
-  bundleWedgeWith_smul_left_of_map_smul (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) (fun _ ↦ hcd) φ ψ
+    (c • φ).wedgeWith μ ψ = d • φ.wedgeWith μ ψ := by
+  simpa only [wedgeWith] using
+    (bundleWedgeWith_smul_left_of_map_smul (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) (fun _ ↦ hcd) φ ψ)
 
 /-- If the pairing turns multiplication by `c` in its second argument into multiplication by
 `d`, then so does the paired rough-form wedge in its second form. For a complex-bilinear pairing
@@ -315,8 +316,9 @@ theorem wedgeWith_smul_right_of_map_smul {S S' : Type*} [Monoid S] [DistribMulAc
     [ContinuousConstSMul S' F₃] [SMulCommClass ℝ S' F₃] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     {c : S} {d : S'} (hcd : ∀ a b, μ a (c • b) = d • μ a b)
     (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
-    φ.wedgeWith μ (c • ψ) = d • φ.wedgeWith μ ψ :=
-  bundleWedgeWith_smul_right_of_map_smul (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) (fun _ ↦ hcd) φ ψ
+    φ.wedgeWith μ (c • ψ) = d • φ.wedgeWith μ ψ := by
+  simpa only [wedgeWith] using
+    (bundleWedgeWith_smul_right_of_map_smul (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) (fun _ ↦ hcd) φ ψ)
 
 /-- The paired rough-form wedge vanishes when its first form is zero. -/
 @[simp]
