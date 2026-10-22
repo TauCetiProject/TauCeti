@@ -44,7 +44,8 @@ correspondence is the one describing `A∞` morphisms through their components `
   `TauCeti.ReducedTensorWords.letter_comp_coalgHom`: `coalgHom f` is a coalgebra morphism with
   Taylor components `f`.
 * `TauCeti.ReducedTensorWords.IsCoalgHom.eq_of_letter_comp_eq`: a coalgebra morphism is determined
-  by its Taylor components.
+  by its Taylor components, and on the words of length at most `n` by its Taylor components on
+  those words (`TauCeti.ReducedTensorWords.IsCoalgHom.apply_eq_of_mem_filtration`).
 * `TauCeti.ReducedTensorWords.coalgHom_comp_letter`: the letterwise map of a linear map is the
   coalgebra morphism whose only nonzero Taylor component is that map in arity one.
 * `TauCeti.ReducedTensorWords.IsCoalgHom.mem_filtration`: a coalgebra morphism does not increase
@@ -238,33 +239,40 @@ theorem isCoalgHom_coalgHom (f : ReducedTensorWords R M →ₗ[R] N) :
   rw [LinearMap.comp_apply, LinearMap.comp_apply, of_tprod_eq_subword R n.2]
   exact key x n.1 0
 
+/-- Two coalgebra morphisms of reduced tensor coalgebras whose Taylor components agree on the words
+of length at most `n` agree on those words: the value on a word is determined by its letter and
+its deconcatenation, which only involves shorter words. -/
+theorem IsCoalgHom.apply_eq_of_mem_filtration
+    {F₁ F₂ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} (h₁ : IsCoalgHom R F₁)
+    (h₂ : IsCoalgHom R F₂) {n : ℕ}
+    (hl : ∀ z ∈ filtration R M n, letter R N (F₁ z) = letter R N (F₂ z))
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M n) : F₁ z = F₂ z := by
+  induction n generalizing z with
+  | zero =>
+      rw [filtration_zero] at hz
+      rw [(Submodule.mem_bot R).1 hz, map_zero, map_zero]
+  | succ n ih =>
+      have ih' : ∀ u ∈ filtration R M n, F₁ u = F₂ u := fun u hu ↦
+        ih (fun w hw ↦ hl w (filtration_monotone R M n.le_succ hw)) hu
+      refine eq_of_deconcatenation_eq_of_letter_eq R N ?_ (hl z hz)
+      obtain ⟨w, hw⟩ := map_deconcatenation_filtration_succ_le R M n ⟨z, hz, rfl⟩
+      rw [h₁.deconcatenation_apply, h₂.deconcatenation_apply, ← hw]
+      clear hw
+      induction w using TensorProduct.inductionOn with
+      | tmul u v =>
+          simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype]
+          rw [ih' _ u.2, ih' _ v.2]
+      | add u v hu hv => simp only [map_add, hu, hv]
+
 /-- A coalgebra morphism of reduced tensor coalgebras is determined by its Taylor components, that
 is by its composite with the projection onto single letters.  Two coalgebra morphisms agreeing
 there agree on every tensor word, by induction along the conilpotence filtration. -/
 theorem IsCoalgHom.eq_of_letter_comp_eq
     {F₁ F₂ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} (h₁ : IsCoalgHom R F₁)
     (h₂ : IsCoalgHom R F₂) (hl : letter R N ∘ₗ F₁ = letter R N ∘ₗ F₂) : F₁ = F₂ := by
-  have key : ∀ n : ℕ, ∀ z ∈ filtration R M n, F₁ z = F₂ z := by
-    intro n
-    induction n with
-    | zero =>
-        intro z hz
-        rw [filtration_zero] at hz
-        rw [(Submodule.mem_bot R).1 hz, map_zero, map_zero]
-    | succ n ih =>
-        intro z hz
-        refine eq_of_deconcatenation_eq_of_letter_eq R N ?_ (LinearMap.congr_fun hl z)
-        obtain ⟨w, hw⟩ := map_deconcatenation_filtration_succ_le R M n ⟨z, hz, rfl⟩
-        rw [h₁.deconcatenation_apply, h₂.deconcatenation_apply, ← hw]
-        clear hw
-        induction w using TensorProduct.inductionOn with
-        | tmul u v =>
-            simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype]
-            rw [ih _ u.2, ih _ v.2]
-        | add u v hu hv => simp only [map_add, hu, hv]
   refine LinearMap.ext fun z ↦ ?_
   obtain ⟨n, hn⟩ := exists_mem_filtration R M z
-  exact key n z hn
+  exact h₁.apply_eq_of_mem_filtration h₂ (fun w _ ↦ LinearMap.congr_fun hl w) hn
 
 /-- A coalgebra morphism is the Taylor expansion of its own Taylor components. -/
 theorem IsCoalgHom.eq_coalgHom {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}

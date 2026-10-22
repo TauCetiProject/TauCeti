@@ -28,6 +28,8 @@ univariate polynomial in the variable `Xᵢ`, on monomials.
   `MvPolynomial.sum_monomial_ne_zero`: the coefficients, partial degrees and nonvanishing of the
   polynomial `∑_{μ ∈ s} x_μ X^μ` whose coefficient vector `x` is indexed by a finite set `s` of
   exponents.
+* `MvPolynomial.eval₂_monomial_sumElim_of_eq_one`: evaluating `c X^a Y^e` with every `X`
+  variable set to `1` gives the value of `c Y^e`.
 * `Polynomial.toMvPolynomial_monomial`: a univariate monomial placed in `Xᵢ` is the multivariate
   monomial with exponent `n eᵢ`.
 -/
@@ -89,6 +91,14 @@ theorem sum_monomial_ne_zero [Finite ι] {s : Finset (ι → ℕ)} {x : s → A}
   refine ne_of_apply_ne (fun Q : MvPolynomial ι A ↦ Q.coeff (Finsupp.equivFunOnFinite.symm μ.1)) ?_
   rw [coeff_sum_monomial]
   simpa [μ.2] using hμ
+
+/-- Evaluating the monomial `c X^a Y^e` in the variables `τ ⊕ σ` at a point whose `.inl`
+coordinates are all `1` gives the value of `c Y^e` at the `.inr` coordinates. -/
+theorem eval₂_monomial_sumElim_of_eq_one {σ τ R T : Type*} [CommSemiring R] [CommSemiring T]
+    (φ : R →+* T) (x : τ ⊕ σ → T) (hx : ∀ h, x (.inl h) = 1) (a : τ →₀ ℕ) (e : σ →₀ ℕ)
+    (c : R) :
+    eval₂ φ x (monomial (a.sumElim e) c) = eval₂ φ (x ∘ Sum.inr) (monomial e c) := by
+  simp [eval₂_monomial, Finsupp.prod_sumElim, Function.comp_def, hx]
 
 end MvPolynomial
 
