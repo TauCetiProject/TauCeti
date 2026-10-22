@@ -27,12 +27,6 @@ This file proves that unequal radii work. For every `g` as above there are radii
 `∑ₘ gₘ Yᵐ` is distinguished of degree `s` at radius `r` over the series restricted at `ρ`, with
 `g_s` a unit there.
 
-The proof scales nothing: with `N = ‖g_s‖ = ‖g_s(0)‖`, the unit-radius hypotheses say that every
-coefficient of `g` has norm at most `N`, and strictly less than `N` in `Y`-degrees above `s` and
-at the nonconstant terms of `g_s`. The strict bounds persist to a radius `r > 1`
-(`TauCeti.Dagger.exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt`). The coefficients in
-`Y`-degrees below `s` are then made smaller than `N r`, at a radius `ρ ≤ r` chosen after `r`.
-
 ## Main results
 
 * `TauCeti.Dagger.exists_isDistinguished_isUnit_of_isDistinguished_one`: radius selection for a
@@ -124,6 +118,11 @@ theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlge
         (∀ m, (↑(PowerSeries.coeff m G) : MvPowerSeries σ K) =
           PowerSeries.coeff m (optionEquivLeft σ K (g : MvPowerSeries (Option σ) K))) ∧
         PowerSeries.IsDistinguished r s G ∧ IsUnit (PowerSeries.coeff s G) := by
+  -- The proof scales nothing: with `N = ‖g_s‖ = ‖g_s(0)‖`, the unit-radius hypotheses say that
+  -- every coefficient of `g` has norm at most `N`, and strictly less than `N` in `Y`-degrees
+  -- above `s` and at the nonconstant terms of `g_s`. The strict bounds persist to a radius
+  -- `r > 1`. The coefficients in `Y`-degrees below `s` are then made smaller than `N r`, at a
+  -- radius `ρ ≤ r` chosen after `r`.
   obtain ⟨hN, hle, hlt⟩ := norm_coeff_le_of_isDistinguished_one hg hu
   set N := ‖coeff ((0 : σ →₀ ℕ).optionElim s) (g : MvPowerSeries (Option σ) K)‖
   -- First choice: the strict bounds persist to a radius `ρ₁ > 1`.
