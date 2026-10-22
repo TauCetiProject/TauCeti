@@ -75,16 +75,6 @@ section Mul
 
 variable [AddZeroClass H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ}
 
-/-- If `φ` rescales periods by a positive constant, then for two Novikov series only finitely many
-pairs of support exponents have images under `φ` adding up to a given exponent. -/
-theorem finite_setOf_map_add_eq [Zero R] [Zero S] (a : NovikovSeries R H N)
-    (b : NovikovSeries S H N) {φ : H →+ H'} (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (h' : H') :
-    {p : H × H | φ p.1 + φ p.2 = h' ∧ a.coeff p.1 ≠ 0 ∧ b.coeff p.2 ≠ 0}.Finite := by
-  obtain ⟨c, hc, hcφ⟩ := hφ
-  refine (finite_setOf_period_add_lt a b (N' h' / c + 1)).subset fun p hp => ⟨?_, hp.2⟩
-  rw [← hp.1, ← map_add, hcφ, mul_div_cancel_left₀ _ hc.ne']
-  exact lt_add_one _
-
 variable [NonUnitalNonAssocSemiring R] [NonUnitalNonAssocSemiring S] {F : Type*} [FunLike F R S]
   [NonUnitalRingHomClass F R S] (ρ : F) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
 
@@ -181,8 +171,8 @@ def mapRingHom (ρ : R →+* S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ
     NovikovSeries R H N →+* NovikovSeries S H' N' where
   __ := map (ρ : R →+ S) φ hφ
   map_one' := by
-    rw [AddMonoidHom.toFun_eq_coe, one_def, map_single, map_zero, AddMonoidHom.coe_ofClass, map_one,
-      one_def]
+    rw [AddMonoidHom.toFun_eq_coe, one_def, map_single]
+    simp
   map_mul' := map_mul ρ φ hφ
 
 variable (ρ : R →+* S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
@@ -224,8 +214,8 @@ def mapAlgHom (ρ : R →ₐ[A] S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' 
     NovikovSeries R H N →ₐ[A] NovikovSeries S H' N' where
   __ := mapRingHom (ρ : R →+* S) φ hφ
   commutes' s := by
-    rw [RingHom.toFun_eq_coe, mapRingHom_apply, algebraMap_apply, algebraMap_apply, map_single,
-      map_zero, AddMonoidHom.coe_ofClass, RingHom.coe_coe, AlgHom.commutes]
+    rw [RingHom.toFun_eq_coe, mapRingHom_apply, algebraMap_apply, algebraMap_apply, map_single]
+    simp
 
 @[simp]
 theorem mapAlgHom_apply (ρ : R →ₐ[A] S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
