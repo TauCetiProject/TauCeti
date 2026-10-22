@@ -148,9 +148,9 @@ theorem integral_norm_deriv_sq_add_mul_integral_norm_sq_le (hA : ContDiff ℝ 1 
 private theorem eventually_energy_bounds {l : Filter ℝ} {B : E →L[ℝ] E} {α : ℝ}
     (hα : 0 < α) (hB : ∀ v, α * ‖v‖ ≤ ‖B v‖)
     (hlim : Tendsto A l (𝓝 B)) (hdlim : Tendsto (deriv A) l (𝓝 0)) :
-    ∀ᶠ s in l, (∀ v, α / 2 * ‖v‖ ≤ ‖A s v‖) ∧ ‖deriv A s‖ ≤ α ^ 2 / 8 := by
-  have h₁ := hlim (Metric.ball_mem_nhds B (by positivity : 0 < α / 2))
-  have h₂ := hdlim (Metric.ball_mem_nhds 0 (by positivity : 0 < α ^ 2 / 8))
+    ∀ᶠ s in l, (∀ v, (3 * α / 4) * ‖v‖ ≤ ‖A s v‖) ∧ ‖deriv A s‖ ≤ α ^ 2 / 16 := by
+  have h₁ := hlim (Metric.ball_mem_nhds B (by positivity : 0 < α / 4))
+  have h₂ := hdlim (Metric.ball_mem_nhds 0 (by positivity : 0 < α ^ 2 / 16))
   filter_upwards [h₁, h₂] with s hs hd
   simp only [mem_preimage, Metric.mem_ball, dist_eq_norm, sub_zero] at hs hd
   refine ⟨fun v ↦ ?_, hd.le⟩
@@ -172,18 +172,18 @@ theorem exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
     (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0)) :
     ∃ R > 0, ∀ (u : ℝ → E), ContDiff ℝ 1 u → HasCompactSupport u →
       Function.support u ⊆ {s | R ≤ |s|} →
-      (∫ s, ‖deriv u s‖ ^ 2) + (α ^ 2 / 8) * (∫ s, ‖u s‖ ^ 2) ≤
+      (∫ s, ‖deriv u s‖ ^ 2) + (α ^ 2 / 2) * (∫ s, ‖u s‖ ^ 2) ≤
         ∫ s, ‖deriv u s + A s (u s)‖ ^ 2 := by
-  have hhalf : 0 < α / 2 := by positivity
+  have hgap : 0 < 3 * α / 4 := by positivity
   have hpos := eventually_energy_bounds hα hplus htop hdtop
   have hneg := eventually_energy_bounds hα hminus hbot hdbot
   obtain ⟨rplus, hrplus⟩ := eventually_atTop.mp hpos
   obtain ⟨rminus, hrminus⟩ := eventually_atBot.mp hneg
   let R := max 1 (max rplus (-rminus))
   have hRpos : 0 < R := lt_of_lt_of_le zero_lt_one (le_max_left _ _)
-  -- The two limiting gaps persist under an operator-norm perturbation of size `α / 2`.
+  -- The two limiting gaps persist under an operator-norm perturbation of size `α / 4`.
   have htail : ∀ s, R ≤ |s| →
-      (∀ v, α / 2 * ‖v‖ ≤ ‖A s v‖) ∧ ‖deriv A s‖ ≤ α ^ 2 / 8 := by
+      (∀ v, (3 * α / 4) * ‖v‖ ≤ ‖A s v‖) ∧ ‖deriv A s‖ ≤ α ^ 2 / 16 := by
     intro s hs
     rcases le_or_gt 0 s with hsign | hsign
     · have hsp : rplus ≤ s := by
@@ -196,13 +196,13 @@ theorem exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
         rw [abs_of_neg hsign] at hs
         linarith
       exact hrminus s hsm
-  -- Apply the energy estimate with gap `α / 2` and derivative bound `α² / 8`.
+  -- Apply the energy estimate with gap `3α / 4` and derivative bound `α² / 16`.
   refine ⟨R, hRpos, fun u hu hc hs ↦ ?_⟩
   have hest := integral_norm_deriv_sq_add_mul_integral_norm_sq_le hA (fun s _ ↦ hsym s)
-    hu hc hhalf.le
+    hu hc hgap.le
     (fun s hu ↦ (htail s (hs hu)).1 (u s))
-    (β := α ^ 2 / 8) (fun s hu ↦ ?_)
-  · have hcoeff : (α / 2) ^ 2 - α ^ 2 / 8 = α ^ 2 / 8 := by ring
+    (β := α ^ 2 / 16) (fun s hu ↦ ?_)
+  · have hcoeff : (3 * α / 4) ^ 2 - α ^ 2 / 16 = α ^ 2 / 2 := by ring
     rwa [hcoeff] at hest
   · grw [real_inner_le_norm, (deriv A s).le_opNorm, (htail s (hs hu)).2]
     ring_nf

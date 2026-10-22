@@ -126,8 +126,10 @@ theorem exists_pos_forall_integral_norm_neg_deriv_add_sq_add_mul_integral_norm_s
   obtain ⟨R, hR, hest⟩ :=
     exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
       hB hBsym hα hBminus hBplus hbot.neg htop.neg hdBbot hdBtop
-  exact ⟨R, hR, fun w hw hcw hsupport ↦ by
-    simpa only [norm_deriv_add_neg_apply] using hest w hw hcw hsupport⟩
+  refine ⟨R, hR, fun w hw hcw hsupport ↦ ?_⟩
+  have hbound := hest w hw hcw hsupport
+  simp only [norm_deriv_add_neg_apply] at hbound
+  nlinarith [mul_nonneg (sq_nonneg α) (integral_nonneg (μ := volume) fun s ↦ sq_nonneg ‖w s‖)]
 
 end TauCeti
 
