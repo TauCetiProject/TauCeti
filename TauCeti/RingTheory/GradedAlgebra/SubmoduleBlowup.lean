@@ -216,77 +216,57 @@ theorem monomialDegreeOne_mul_monomialProd_erase_mem_gradedRing [DecidableEq B]
 
 variable [IsLocalization.Away (∏ g ∈ S, g) L] [IsScalarTower C B L]
 
-/-- Every element `j` of `J = span C F` is `g` times an element of `C[F/S]`, for `g ∈ S`. -/
-private theorem exists_mem_mul_eq_of_mem_span {g : B} (hg : g ∈ S) {j : B}
-    (hj : j ∈ Submodule.span C F) :
-    ∃ z ∈ fractionSubalgebra C F S L, algebraMap B L g * z = algebraMap B L j := by
-  induction hj using Submodule.span_induction with
-  | mem f hf =>
-    obtain ⟨u, hu⟩ := IsLocalization.Away.isUnit_of_dvd (S := L) _ (dvd_prod_of_mem (fun g ↦ g) hg)
-    have : algebraMap B L g * (↑u⁻¹ * algebraMap B L f) = algebraMap B L f := by
-      rw [← hu, Units.mul_inv_cancel_left]
-    exact ⟨_, mem_fractionSubalgebra_of_mul_eq hf hg this, this⟩
-  | zero => exact ⟨0, zero_mem _, by simp⟩
-  | add x y _ _ hx hy =>
-    obtain ⟨z, hz, hzx⟩ := hx
-    obtain ⟨z', hz', hzy⟩ := hy
-    exact ⟨z + z', add_mem hz hz', by rw [mul_add, hzx, hzy, map_add]⟩
-  | smul c x _ hx =>
-    obtain ⟨z, hz, hzx⟩ := hx
-    refine ⟨algebraMap C L c * z, mul_mem (Subalgebra.algebraMap_mem _ c) hz, ?_⟩
-    rw [Algebra.smul_def, map_mul, ← hzx, IsScalarTower.algebraMap_apply C B L]
-    ring
+omit [IsLocalization.Away (∏ g ∈ S, g) L] in
+variable (C F S L) in
+/-- The `C`-submodule of the elements `y` of `B` that are `a` times an element of `C[F/S]`. -/
+private def mulFractionSubmodule (a : L) : Submodule C B where
+  carrier := {y | ∃ z ∈ fractionSubalgebra C F S L, a * z = algebraMap B L y}
+  add_mem' := fun ⟨z, hz, hzx⟩ ⟨z', hz', hzy⟩ ↦
+    ⟨z + z', add_mem hz hz', by rw [mul_add, hzx, hzy, map_add]⟩
+  zero_mem' := ⟨0, zero_mem _, by simp⟩
+  smul_mem' c x := fun ⟨z, hz, hzx⟩ ↦
+    ⟨algebraMap C L c * z, mul_mem (Subalgebra.algebraMap_mem _ c) hz, by
+      rw [Algebra.smul_def, map_mul, ← hzx, IsScalarTower.algebraMap_apply C B L]
+      ring⟩
 
-/-- Every element `y` of `Jⁿ` is `gⁿ` times an element of `C[F/S]`, for `g ∈ S`. -/
-private theorem exists_mem_pow_mul_eq_of_mem_pow {g : B} (hg : g ∈ S) {n : ℕ} {y : B}
-    (hy : y ∈ Submodule.span C F ^ n) :
-    ∃ z ∈ fractionSubalgebra C F S L, algebraMap B L g ^ n * z = algebraMap B L y := by
-  induction n generalizing y with
-  | zero =>
-    obtain ⟨c, rfl⟩ := Submodule.mem_one.mp (pow_zero (Submodule.span C F) ▸ hy)
-    exact ⟨algebraMap C L c, Subalgebra.algebraMap_mem _ c, by
-      rw [pow_zero, one_mul, ← IsScalarTower.algebraMap_apply]⟩
-  | succ n ih =>
-    rw [pow_succ'] at hy
-    induction hy using Submodule.mul_induction_on' with
-    | mem_mul_mem j hj y hy =>
-      obtain ⟨z, hz, hzj⟩ := exists_mem_mul_eq_of_mem_span (L := L) hg hj
-      obtain ⟨z', hz', hzy⟩ := ih hy
-      exact ⟨z * z', mul_mem hz hz', by rw [map_mul, ← hzj, ← hzy]; ring⟩
-    | add y _ y' _ hy hy' =>
-      obtain ⟨z, hz, hzy⟩ := hy
-      obtain ⟨z', hz', hzy'⟩ := hy'
-      exact ⟨z + z', add_mem hz hz', by rw [mul_add, hzy, hzy', map_add]⟩
+omit [IsLocalization.Away (∏ g ∈ S, g) L] in
+/-- A finite product of the submodules `mulFractionSubmodule (a i)` lies in
+`mulFractionSubmodule (∏ i, a i)`. -/
+private theorem prod_le_mulFractionSubmodule {ι : Type*} (s : Finset ι) (a : ι → L) :
+    ∏ i ∈ s, mulFractionSubmodule C F S L (a i) ≤
+      mulFractionSubmodule C F S L (∏ i ∈ s, a i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact Submodule.one_le.mpr ⟨1, one_mem _, by simp⟩
+  | insert i s hi ih =>
+    rw [prod_insert hi, prod_insert hi]
+    refine (mul_le_mul' le_rfl ih).trans (Submodule.mul_le.mpr ?_)
+    rintro _ ⟨z, hz, hzx⟩ _ ⟨z', hz', hzy⟩
+    exact ⟨z * z', mul_mem hz hz', by rw [map_mul, ← hzx, ← hzy]; ring⟩
+
+/-- Every element `j` of `J = span C F` is `g` times an element of `C[F/S]`, for `g ∈ S`. -/
+private theorem span_le_mulFractionSubmodule {g : B} (hg : g ∈ S) :
+    Submodule.span C F ≤ mulFractionSubmodule C F S L (algebraMap B L g) := by
+  refine Submodule.span_le.mpr fun f hf ↦ ?_
+  obtain ⟨u, hu⟩ := IsLocalization.Away.isUnit_of_dvd (S := L) _ (dvd_prod_of_mem (fun g ↦ g) hg)
+  have : algebraMap B L g * (↑u⁻¹ * algebraMap B L f) = algebraMap B L f := by
+    rw [← hu, Units.mul_inv_cancel_left]
+  exact ⟨_, mem_fractionSubalgebra_of_mul_eq hf hg this, this⟩
 
 /-- Every element `y` of `Jⁿᵏ`, with `k = #S`, is `tⁿ` times an element of `C[F/S]`. -/
 private theorem exists_mem_prod_pow_mul_eq {n : ℕ} {y : B}
     (hy : y ∈ Submodule.span C F ^ (n * #S)) :
     ∃ z ∈ fractionSubalgebra C F S L, algebraMap B L (∏ g ∈ S, g) ^ n * z = algebraMap B L y := by
-  classical
-  suffices h : ∀ U ⊆ S, ∀ y ∈ Submodule.span C F ^ (n * #U),
-      ∃ z ∈ fractionSubalgebra C F S L, algebraMap B L (∏ g ∈ U, g) ^ n * z = algebraMap B L y from
-    h S subset_rfl y hy
-  intro U
-  induction U using Finset.induction_on with
-  | empty =>
-    intro _ y hy
-    obtain ⟨c, rfl⟩ := Submodule.mem_one.mp (by simpa using hy)
-    exact ⟨algebraMap C L c, Subalgebra.algebraMap_mem _ c, by
-      rw [prod_empty, map_one, one_pow, one_mul, ← IsScalarTower.algebraMap_apply]⟩
-  | insert g U hg ih =>
-    intro hU y hy
-    rw [card_insert_of_notMem hg, mul_add_one, pow_add, mul_comm] at hy
-    induction hy using Submodule.mul_induction_on' with
-    | mem_mul_mem j hj y hy =>
-      obtain ⟨z, hz, hzj⟩ := exists_mem_pow_mul_eq_of_mem_pow (L := L) (hU (mem_insert_self g U)) hj
-      obtain ⟨z', hz', hzy⟩ := ih ((subset_insert g U).trans hU) y hy
-      refine ⟨z * z', mul_mem hz hz', ?_⟩
-      rw [prod_insert hg, map_mul, mul_pow, map_mul, ← hzj, ← hzy]
-      ring
-    | add y _ y' _ hy hy' =>
-      obtain ⟨z, hz, hzy⟩ := hy
-      obtain ⟨z', hz', hzy'⟩ := hy'
-      exact ⟨z + z', add_mem hz hz', by rw [mul_add, hzy, hzy', map_add]⟩
+  -- `Jⁿᵏ` is the product of the copies of `J` indexed by `range n ×ˢ S`.
+  have h : Submodule.span C F ^ (n * #S) ≤
+      mulFractionSubmodule C F S L (algebraMap B L (∏ g ∈ S, g) ^ n) :=
+    calc Submodule.span C F ^ (n * #S) = ∏ _ ∈ range n ×ˢ S, Submodule.span C F := by
+          rw [prod_const, card_product, card_range]
+      _ ≤ ∏ x ∈ range n ×ˢ S, mulFractionSubmodule C F S L (algebraMap B L x.2) :=
+          prod_le_prod fun x hx ↦ span_le_mulFractionSubmodule (mem_product.mp hx).2
+      _ ≤ _ := prod_le_mulFractionSubmodule _ _
+      _ = _ := by simp only [prod_product, prod_const, card_range, map_prod]
+  exact h hy
 
 omit [Algebra C L] [IsScalarTower C B L] in
 /-- Evaluation at `T = 1` followed by the localization map inverts `t T^{#S}`. -/
@@ -354,7 +334,8 @@ private theorem awayToLocalization_mk_monomialDegreeOne_mul [DecidableEq B]
   -- The numerator is `(f ∏_{g ≠ f'} g) T^{#S}`, and `t = f' ∏_{g ≠ f'} g`.
   simp only [MulMemClass.coe_mul, coe_monomialDegreeOne, coe_monomialProd, monomial_mul_monomial,
     ← card_erase_add_one hf', add_comm 1, coeff_monomial_same, ← mul_prod_erase S (fun g ↦ g) hf',
-    map_mul, mul_right_comm, hz]
+    map_mul]
+  rw [mul_right_comm, hz]
 
 private theorem range_awayToLocalization (hS : (S : Set B) ⊆ F) :
     (awayToLocalization (F := F) C L hS).range = fractionSubalgebra C F S L := by
