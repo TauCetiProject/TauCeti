@@ -43,9 +43,8 @@ module is constant when the base change sees the elements cutting out the rank l
   module is the basic open set of an idempotent.
 * `Module.exists_rankAtStalk_prod_quotient_eq_max`: adding the complement of that support gives a
   module of positive rank at every prime.
-* `TauCeti.Module.exists_rankAtStalk_tensorProduct_eq`: a finite flat module whose rank loci are
-  cut out by elements that a base change sees uniformly acquires constant rank after that base
-  change.
+* `TauCeti.Module.exists_rankAtStalk_tensorProduct_eq`: a finite flat module whose rank is
+  constant on the primes under a base change acquires constant rank after that base change.
 
 ## References
 
@@ -180,27 +179,17 @@ namespace TauCeti.Module
 open _root_.Module
 
 open scoped TensorProduct in
-/-- Let the loci where a finite flat module `M` has rank `k ≤ N` be the basic open sets of
-elements `ε k`. If, for each `k`, whether `ε k` lies in the prime of `R` below a prime of `T'` does
-not depend on that prime, then the base change of `M` to `T'` has constant rank. -/
+/-- If a finite flat module `M` has the same rank at all primes of `R` lying under primes of `T'`,
+then the base change of `M` to `T'` has constant rank. -/
 theorem exists_rankAtStalk_tensorProduct_eq {R T' M : Type*} [CommRing R] [CommRing T']
-    [Algebra R T'] [AddCommGroup M] [Module R M] [Module.Flat R M] [Module.Finite R M] {N : ℕ}
-    (ε : Fin (N + 1) → R) (hM : ∀ p, rankAtStalk (R := R) M p ≤ N)
-    (hε : ∀ k : Fin (N + 1), rankAtStalk (R := R) M ⁻¹' {(k : ℕ)} =
-      (PrimeSpectrum.basicOpen (ε k) : Set (PrimeSpectrum R)))
-    (hT' : ∀ (q q' : PrimeSpectrum T') k, ε k ∉ (q.comap (algebraMap R T')).asIdeal ↔
-      ε k ∉ (q'.comap (algebraMap R T')).asIdeal) :
+    [Algebra R T'] [AddCommGroup M] [Module R M] [Module.Flat R M] [Module.Finite R M]
+    (h : ∀ q q' : PrimeSpectrum T', rankAtStalk (R := R) M (q.comap (algebraMap R T')) =
+      rankAtStalk (R := R) M (q'.comap (algebraMap R T'))) :
     ∃ m : ℕ, rankAtStalk (R := T') (T' ⊗[R] M) = m := by
-  have hmem (p : PrimeSpectrum R) (k : Fin (N + 1)) : rankAtStalk M p = k ↔ ε k ∉ p.asIdeal := by
-    simpa [PrimeSpectrum.mem_basicOpen] using congrArg (p ∈ ·) (hε k)
-  have key (q q' : PrimeSpectrum T') : rankAtStalk M (q'.comap (algebraMap R T')) =
-      rankAtStalk M (q.comap (algebraMap R T')) := by
-    let k : Fin (N + 1) := ⟨_, Nat.lt_succ_of_le (hM (q.comap (algebraMap R T')))⟩
-    exact (hmem _ k).mpr ((hT' q q' k).mp ((hmem _ k).mp rfl))
   by_cases hne : Nonempty (PrimeSpectrum T')
   · obtain ⟨q₀⟩ := hne
     exact ⟨rankAtStalk M (q₀.comap (algebraMap R T')), funext fun q ↦ by
-      rw [rankAtStalk_baseChange, Pi.natCast_apply, key q₀ q, Nat.cast_id]⟩
+      rw [rankAtStalk_baseChange, Pi.natCast_apply, h q₀ q, Nat.cast_id]⟩
   · exact ⟨0, funext fun q ↦ (hne ⟨q⟩).elim⟩
 
 end TauCeti.Module

@@ -264,10 +264,21 @@ private theorem etale_and_finite_equalizer {R A B : Type u} [CommRing R] [CommRi
       Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self _)
     exact fun x ↦ TauCeti.notMem_iff_of_one_sub_prod_ite_mem σ
       (Ideal.mem_comap.mpr (h0 ▸ q.asIdeal.zero_mem)) (ha x)
-  obtain ⟨m, hm⟩ := TauCeti.Module.exists_rankAtStalk_tensorProduct_eq (T' := T') εA hNA hεA'
-    fun q q' k ↦ (hσ q (.inl k)).trans (hσ q' (.inl k)).symm
-  obtain ⟨n, hn⟩ := TauCeti.Module.exists_rankAtStalk_tensorProduct_eq (T' := T') εB hNB hεB'
-    fun q q' k ↦ (hσ q (.inr k)).trans (hσ q' (.inr k)).symm
+  -- A rank bounded by `N` whose fibres are the basic open sets of elements `ε k` that every prime
+  -- of `T'` sees uniformly is the same at all primes under primes of `T'`.
+  have hconst (r : PrimeSpectrum R → ℕ) (ε : Fin (N + 1) → R) (hN : ∀ p, r p ≤ N)
+      (hε : ∀ k : Fin (N + 1), r ⁻¹' {(k : ℕ)} = (PrimeSpectrum.basicOpen (ε k) : Set _))
+      (hT' : ∀ (q q' : PrimeSpectrum T') k, ε k ∉ (q.comap (algebraMap R T')).asIdeal ↔
+        ε k ∉ (q'.comap (algebraMap R T')).asIdeal) (q q' : PrimeSpectrum T') :
+      r (q.comap (algebraMap R T')) = r (q'.comap (algebraMap R T')) := by
+    have hmem (p : PrimeSpectrum R) (k : Fin (N + 1)) : r p = k ↔ ε k ∉ p.asIdeal := by
+      simpa [PrimeSpectrum.mem_basicOpen] using congrArg (p ∈ ·) (hε k)
+    let k : Fin (N + 1) := ⟨_, Nat.lt_succ_of_le (hN (q.comap (algebraMap R T')))⟩
+    exact ((hmem _ k).mpr ((hT' q q' k).mp ((hmem _ k).mp rfl))).symm
+  obtain ⟨m, hm⟩ := TauCeti.Module.exists_rankAtStalk_tensorProduct_eq (M := A) (T' := T') <|
+    hconst _ εA hNA hεA' fun q q' k ↦ (hσ q (.inl k)).trans (hσ q' (.inl k)).symm
+  obtain ⟨n, hn⟩ := TauCeti.Module.exists_rankAtStalk_tensorProduct_eq (M := B) (T' := T') <|
+    hconst _ εB hNB hεB' fun q q' k ↦ (hσ q (.inr k)).trans (hσ q' (.inr k)).symm
   exact etale_and_finite_equalizer_of_rankAtStalk_eq hm hn _ _
 
 section
