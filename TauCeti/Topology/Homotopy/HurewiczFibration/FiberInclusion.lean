@@ -75,6 +75,13 @@ namespace FiberInclusionPathFiber
 
 variable {p : C(E, B)} {e₀ : E}
 
+/-- A point of the homotopy fibre of a fibre inclusion is determined by its path. -/
+@[ext]
+theorem ext {x y : FiberInclusionPathFiber p e₀}
+    (h : ∀ t, x.val.2 t = y.val.2 t) : x = y := by
+  refine Subtype.ext (Prod.ext (Subtype.ext ?_) (ContinuousMap.ext h))
+  exact x.property.1.symm.trans ((h 0).trans y.property.1)
+
 /-- The path of a point of the homotopy fibre of the fibre inclusion starts in the fibre. -/
 theorem apply_path_zero (x : FiberInclusionPathFiber p e₀) : p (x.val.2 0) = p e₀ :=
   x.property.1 ▸ x.val.1.property
@@ -145,9 +152,8 @@ theorem isHurewiczFibration_loop (hp : IsHurewiczFibration.{w} p) :
     (fun y ↦ (congrArg p (hG₀ y)).trans (f y.2).val.1.property) hG₁
   refine ⟨L, funext fun y ↦ Path.ext (funext fun t ↦ ?_), fun a ↦ ?_⟩
   · simpa [L, H'] using congrFun hG (y.2, (t, y.1))
-  · refine Subtype.ext (Prod.ext (Subtype.ext ?_) (ContinuousMap.ext fun t ↦ ?_))
-    · simpa [L] using hG₀ (0, a)
-    · simpa [L, g] using hGg a (t, 0) (Or.inl rfl)
+  · ext t
+    simpa [L, g] using hGg a (t, 0) (Or.inl rfl)
 
 /-- The lift of the reversed loop `t ↦ β (1 - t)` from `e₀`, a family of paths parametrized by
 the loop space and lying over the reversed loops. -/
@@ -220,12 +226,10 @@ theorem loopSection_comp_loop_homotopicWith (hp : IsHurewiczFibration.{v} p)
       (y.1.2, (y.1.1, σ y.2)), by fun_prop⟩)
     (fun y ↦ by simpa [γ, apply_path_zero] using hpG y.2 y.1 1) (fun y ↦ by simpa using hG' y.2 y.1)
   refine ⟨⟨⟨K, fun x ↦ ?_, fun x ↦ ?_⟩, fun s ↦ ContinuousMap.ext fun x ↦ ?_⟩⟩
-  · refine Subtype.ext (Prod.ext (Subtype.ext ?_) (ContinuousMap.ext fun t ↦ ?_))
-    · simpa [K, α, (loopSection e₀ hp _).property.1] using hG₀ x 1
-    · simpa [K, α] using hG₀ x (σ t)
-  · refine Subtype.ext (Prod.ext (Subtype.ext ?_) (ContinuousMap.ext fun t ↦ ?_))
-    · simpa [K, α', x.property.1] using hG₁ x 1
-    · simpa [K, α'] using hG₁ x (σ t)
+  · ext t
+    simpa [K, α] using hG₀ x (σ t)
+  · ext t
+    simpa [K, α'] using hG₁ x (σ t)
   · ext t
     simpa [K, γ] using hpG x s (σ t)
 
