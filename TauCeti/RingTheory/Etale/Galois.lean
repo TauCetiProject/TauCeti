@@ -12,8 +12,10 @@ public import Mathlib.RingTheory.Etale.Finite
 public import TauCeti.Algebra.GroupAction.AlgHom
 import Mathlib.FieldTheory.Galois.Infinite
 import TauCeti.Algebra.Algebra.Pi
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.Algebra.TensorProduct.Galois
 import TauCeti.FieldTheory.Normal.Embeddings
+import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.KrullTopology
 import TauCeti.RingTheory.Etale.Field
 import TauCeti.RingTheory.TotallySplit
@@ -331,7 +333,7 @@ choice of `σ` because the stabilizer of `x` fixes its factor. -/
 
 section EssSurj
 
-open MulAction
+open _root_.MulAction
 
 variable {K : Type*} {Ω : Type v} {X : Type w} [Field K] [Field Ω] [Algebra K Ω]
   [MulAction Gal(Ω/K) X]
@@ -342,29 +344,12 @@ the fields fixed by the stabilizer of the representative `ω.out`. -/
 private abbrev GaloisSetAlgebra :=
   Π ω : orbitRel.Quotient Gal(Ω/K) X, IntermediateField.fixedField (stabilizer Gal(Ω/K) ω.out)
 
-/-- Every point of `X` is a translate of the chosen representative of its orbit. -/
-private theorem exists_smul_out_eq {y : X} {ω : orbitRel.Quotient Gal(Ω/K) X}
-    (h : (Quotient.mk'' y : orbitRel.Quotient Gal(Ω/K) X) = ω) :
-    ∃ σ : Gal(Ω/K), σ • ω.out = y := by
-  obtain ⟨g, hg⟩ : ω.out ∈ orbit Gal(Ω/K) y := by
-    rw [← orbitRel.Quotient.orbit_mk, h]
-    exact orbitRel.Quotient.mem_orbit.2 ω.out_eq'
-  exact ⟨g⁻¹, by rw [← hg, inv_smul_smul]⟩
-
-/-- Two automorphisms with the same effect on `x` agree on the field fixed by its stabilizer. -/
-private theorem apply_eq_of_smul_eq {x : X} {σ τ : Gal(Ω/K)} (h : σ • x = τ • x)
-    (l : IntermediateField.fixedField (stabilizer Gal(Ω/K) x)) : σ l = τ l := by
-  have hl : (τ⁻¹ * σ) (l : Ω) = l :=
-    l.2 ⟨_, by rw [mem_stabilizer_iff, mul_smul, h, inv_smul_smul]⟩
-  conv_rhs => rw [← hl]
-  rw [AlgEquiv.mul_apply, AlgEquiv.aut_inv, AlgEquiv.apply_symm_apply]
-
 variable (K Ω X) in
 /-- The point of `GaloisSetAlgebra K Ω X` attached to `y : X`: projection to the factor of the
 orbit `ω` of `y`, followed by an automorphism carrying `ω.out` to `y`. -/
 private noncomputable def galoisSetPoint (y : X) : GaloisSetAlgebra K Ω X →ₐ[K] Ω :=
-  ((exists_smul_out_eq (rfl : (Quotient.mk'' y : orbitRel.Quotient Gal(Ω/K) X) = _)).choose :
-      Ω →ₐ[K] Ω).comp
+  ((MulAction.exists_smul_out_eq
+      (rfl : (Quotient.mk'' y : orbitRel.Quotient Gal(Ω/K) X) = _)).choose : Ω →ₐ[K] Ω).comp
     ((IntermediateField.val _).comp (Pi.evalAlgHom K _ (Quotient.mk'' y)))
 
 /-- The point attached to `y` may be computed with any automorphism carrying the representative
@@ -373,12 +358,13 @@ private theorem galoisSetPoint_apply {y : X} {ω : orbitRel.Quotient Gal(Ω/K) X
     (h : (Quotient.mk'' y : orbitRel.Quotient Gal(Ω/K) X) = ω) {σ : Gal(Ω/K)}
     (hσ : σ • ω.out = y) (a : GaloisSetAlgebra K Ω X) : galoisSetPoint K Ω X y a = σ (a ω) := by
   subst h
-  exact apply_eq_of_smul_eq ((exists_smul_out_eq
+  exact IntermediateField.apply_eq_apply_of_smul_eq_smul ((MulAction.exists_smul_out_eq
     (rfl : (Quotient.mk'' y : orbitRel.Quotient Gal(Ω/K) X) = _)).choose_spec.trans hσ.symm) _
 
 private theorem galoisSetPoint_smul (ρ : Gal(Ω/K)) (y : X) :
     galoisSetPoint K Ω X (ρ • y) = ρ • galoisSetPoint K Ω X y := by
-  obtain ⟨σ, hσ⟩ := exists_smul_out_eq (rfl : (Quotient.mk'' y : orbitRel.Quotient Gal(Ω/K) X) = _)
+  obtain ⟨σ, hσ⟩ :=
+    MulAction.exists_smul_out_eq (rfl : (Quotient.mk'' y : orbitRel.Quotient Gal(Ω/K) X) = _)
   ext a
   rw [galoisSetPoint_apply orbitRel.Quotient.quotient_smul_eq (σ := ρ * σ) (by rw [mul_smul, hσ]),
     AlgEquiv.smul_algHom_apply, galoisSetPoint_apply rfl hσ, AlgEquiv.mul_apply]
@@ -388,9 +374,10 @@ private theorem galoisSetPoint_injective [IsGalois K Ω]
     Function.Injective (galoisSetPoint K Ω X) := by
   classical
   intro y y' h
-  obtain ⟨σ, hσ⟩ := exists_smul_out_eq (rfl : (Quotient.mk'' y : orbitRel.Quotient Gal(Ω/K) X) = _)
+  obtain ⟨σ, hσ⟩ :=
+    MulAction.exists_smul_out_eq (rfl : (Quotient.mk'' y : orbitRel.Quotient Gal(Ω/K) X) = _)
   obtain ⟨σ', hσ'⟩ :=
-    exists_smul_out_eq (rfl : (Quotient.mk'' y' : orbitRel.Quotient Gal(Ω/K) X) = _)
+    MulAction.exists_smul_out_eq (rfl : (Quotient.mk'' y' : orbitRel.Quotient Gal(Ω/K) X) = _)
   set ω : orbitRel.Quotient Gal(Ω/K) X := Quotient.mk'' y
   -- The idempotent of the factor of `ω` takes the value `1` at `y`, so `y'` lies in `ω` too.
   have h1 := DFunLike.congr_fun h (Pi.single ω 1)
