@@ -19,7 +19,7 @@ unchanged.  This file develops the generic construction and its basic normalizat
 * `LinearPMap.subScalar`: the operator `A - omega I` on the domain of `A`.
 * `LinearPMap.subScalar_domain`: scalar shifts preserve the domain.
 * `LinearPMap.subScalar_apply`: pointwise evaluation of a scalar shift.
-* `TauCeti.LinearPMap.vadd_subScalar` and `TauCeti.LinearPMap.subScalar_vadd`: scalar shifts
+* `LinearPMap.vadd_subScalar` and `LinearPMap.subScalar_vadd`: scalar shifts
   commute with adding a globally defined map, and absorb into it.
 -/
 
@@ -63,32 +63,25 @@ theorem subScalar_subScalar (A : X →ₗ.[R] X) (omega mu : R) :
   simp only [subScalar_apply]
   module
 
-end LinearPMap
-
-namespace TauCeti.LinearPMap
-
-variable {R X : Type*} [CommRing R] [AddCommGroup X] [Module R X]
-
 /-- A globally defined linear summand and a scalar shift commute: adding the map to `A` and then
 subtracting `omega I` gives the same operator either way round. -/
 @[simp]
 theorem vadd_subScalar {A : X →ₗ.[R] X} (f : X →ₗ[R] X) (omega : R) :
-    f +ᵥ LinearPMap.subScalar A omega = LinearPMap.subScalar (f +ᵥ A) omega := by
+    f +ᵥ subScalar A omega = subScalar (f +ᵥ A) omega := by
   refine LinearPMap.ext rfl fun x hf hg => ?_
-  rw [LinearPMap.vadd_apply, LinearPMap.subScalar_apply, LinearPMap.subScalar_apply,
-    LinearPMap.vadd_apply]
+  rw [vadd_apply, subScalar_apply, subScalar_apply, vadd_apply]
   module
 
 /-- A scalar shift of a globally defined linear perturbation absorbs into the perturbing map.
 This is the form in which the domain of a shifted perturbation is visibly the domain of `A`. -/
 @[simp]
 theorem subScalar_vadd {A : X →ₗ.[R] X} (f : X →ₗ[R] X) (omega : R) :
-    LinearPMap.subScalar (f +ᵥ A) omega = (f - omega • LinearMap.id) +ᵥ A := by
+    subScalar (f +ᵥ A) omega = (f - omega • LinearMap.id) +ᵥ A := by
   refine LinearPMap.ext rfl fun x hf hg => ?_
-  rw [LinearPMap.subScalar_apply, LinearPMap.vadd_apply, LinearPMap.vadd_apply,
+  rw [subScalar_apply, vadd_apply, vadd_apply,
     LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply]
   module
 
-end TauCeti.LinearPMap
+end LinearPMap
 
 end
