@@ -76,12 +76,12 @@ theorem IsEven.mono {L M : Submodule ℤ E} (hM : IsEven M) (h : L ≤ M) : IsEv
 
 /-- The lattice spanned by a single vector `v` is even if and only if `‖v‖²` is an even
 integer. -/
-theorem isEven_span_singleton_iff [NormedSpace ℝ E] {v : E} :
+theorem isEven_span_singleton_iff [NormSMulClass ℤ E] {v : E} :
     IsEven (span ℤ {v}) ↔ ∃ m : ℤ, ‖v‖ ^ 2 = 2 * m := by
   refine ⟨fun h ↦ h v (mem_span_singleton_self v), fun ⟨m, hm⟩ x hx ↦ ?_⟩
   obtain ⟨n, rfl⟩ := mem_span_singleton.mp hx
   refine ⟨n ^ 2 * m, ?_⟩
-  simp [← Int.cast_smul_eq_zsmul ℝ, norm_smul, mul_pow, hm]
+  simp [norm_smul, mul_pow, Int.norm_eq_abs, hm]
   ring
 
 end Seminormed
