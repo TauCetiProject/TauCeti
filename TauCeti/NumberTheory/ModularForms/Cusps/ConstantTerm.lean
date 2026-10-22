@@ -374,27 +374,30 @@ end ModularForm
 
 namespace TauCeti
 
-variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
+variable {N : ℕ}
+
+/-- The integral matrix representing the divisor cusp `1/d` of `Γ₀(N)`. -/
+def divisorCuspRep (d : N.divisors) : SL(2, ℤ) :=
+  ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩
+
+/-- The matrix entries of the representative of the divisor cusp `1/d`. -/
+@[simp]
+theorem coe_divisorCuspRep (d : N.divisors) :
+    (divisorCuspRep d : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; (d.val : ℤ), 1] :=
+  (rfl)
+
+variable [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
 
 /-- The constant terms at the cusps `1/d` indexed by the divisors of `N`. -/
 def constantTermsAtDivisors :
     ModularForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ] (N.divisors → ℂ) :=
-  (LinearMap.funLeft ℂ ℂ fun d : N.divisors ↦
-    (⟨!![1, 0; (d.val : ℤ), 1], by simp⟩ : SL(2, ℤ))) ∘ₗ ModularForm.constantTerms
-
-/-- The divisor-indexed map is the restriction of the full constant-term map to `1/d`. -/
-theorem constantTermsAtDivisors_eq_comp :
-    constantTermsAtDivisors (N := N) (k := k) =
-      (LinearMap.funLeft ℂ ℂ fun d : N.divisors ↦
-        (⟨!![1, 0; (d.val : ℤ), 1], by simp⟩ : SL(2, ℤ))) ∘ₗ ModularForm.constantTerms :=
-  (rfl)
+  (LinearMap.funLeft ℂ ℂ divisorCuspRep) ∘ₗ ModularForm.constantTerms
 
 /-- Evaluation of the divisor-indexed constant-term map. -/
 @[simp]
 theorem constantTermsAtDivisors_apply
     (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) (d : N.divisors) :
-    constantTermsAtDivisors f d =
-      _root_.ModularForm.constantTermAt ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩ f :=
+    constantTermsAtDivisors f d = _root_.ModularForm.constantTermAt (divisorCuspRep d) f :=
   (rfl)
 
 /-- Inside `M_k(N, χ)`, the common kernel of the cusp constant terms is precisely the image of

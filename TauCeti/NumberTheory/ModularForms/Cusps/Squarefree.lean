@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Cusps.Residue
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Count
-import Mathlib.Data.Nat.Squarefree
 
 /-!
 # Constant terms at squarefree level
@@ -42,26 +41,7 @@ theorem constantTermAt_eq_of_gcd_eq_of_squarefree
     (hN : Squarefree N) (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k)
     {γ γ' : SL(2, ℤ)} (h : Int.gcd (γ 1 0) N = Int.gcd (γ' 1 0) N) :
     constantTermAt γ f = constantTermAt γ' f := by
-  have hmod (g : N.divisors) : Nat.gcd g.val (N / g.val) = 1 := by
-    apply Nat.coprime_iff_gcd_eq_one.mp
-    apply Nat.coprime_of_squarefree_mul
-    rwa [Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors g.property)]
-  have hlabel : TauCeti.gamma0CuspLabel N γ = TauCeti.gamma0CuspLabel N γ' := by
-    have hfst : (TauCeti.gamma0CuspLabel N γ).1 = (TauCeti.gamma0CuspLabel N γ').1 :=
-      Subtype.ext (by simpa only [coe_gamma0CuspLabel_fst] using h)
-    apply Sigma.ext hfst
-    -- Once the divisor is fixed, its residue label lives in the trivial unit group modulo one.
-    generalize hγ : TauCeti.gamma0CuspLabel N γ = a
-    generalize hγ' : TauCeti.gamma0CuspLabel N γ' = b
-    rw [hγ, hγ'] at hfst
-    obtain ⟨a, x⟩ := a
-    obtain ⟨b, y⟩ := b
-    dsimp only at hfst
-    subst b
-    have : Subsingleton (ZMod (Nat.gcd a.val (N / a.val)))ˣ := by
-      rw [hmod a]
-      infer_instance
-    exact heq_of_eq (Subsingleton.elim _ _)
+  have hlabel := (gamma0CuspLabel_eq_iff_gcd_eq_of_squarefree hN γ γ').mpr h
   obtain ⟨j, hj⟩ := (TauCeti.gamma0CuspLabel_eq_iff_exists_dvd γ γ').mp hlabel
   let δ := γ * T ^ (-j) * γ'⁻¹
   have hδ : δ ∈ Gamma0 N := by
