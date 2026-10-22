@@ -145,6 +145,18 @@ lemma fiberEquivalence_functor (p : Γ) :
 noncomputable def jointMapId (p : Γ) : L.jointMap (𝟙 p) ≅ 𝟭 (L.jointFiber p) :=
   Cat.Hom.toNatIso (L.joint.mapId' (𝟙 p ×ₘ 𝟙 (SingleObj.star H)).toLoc)
 
+lemma jointMapId_hom_app (p : Γ) (Y : L.jointFiber p) :
+    (L.jointMapId p).hom.app Y =
+      (L.joint.mapId' (𝟙 p ×ₘ 𝟙 (SingleObj.star H)).toLoc).hom.toNatTrans.app Y := by
+  rw [jointMapId]
+  rfl
+
+lemma jointMapId_inv_app (p : Γ) (Y : L.jointFiber p) :
+    (L.jointMapId p).inv.app Y =
+      (L.joint.mapId' (𝟙 p ×ₘ 𝟙 (SingleObj.star H)).toLoc).inv.toNatTrans.app Y := by
+  rw [jointMapId]
+  rfl
+
 /-- The composition comparison `F (gh, 1) ≅ F (g, 1) ⋙ F (h, 1)` of the joint pseudofunctor,
 for `g ≫ h = gh`. -/
 noncomputable def jointMapComp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r) (gh : p ⟶ r)
@@ -153,12 +165,44 @@ noncomputable def jointMapComp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r) (gh : p 
     (h ×ₘ 𝟙 (SingleObj.star H)).toLoc (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc
     (by simp [← Quiver.Hom.comp_toLoc, hgh]))
 
+lemma jointMapComp_hom_app {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r) (gh : p ⟶ r) (hgh : g ≫ h = gh)
+    (Y : L.jointFiber p) :
+    (L.jointMapComp g h gh hgh).hom.app Y =
+      (L.joint.mapComp' (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ 𝟙 (SingleObj.star H)).toLoc
+        (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc
+        (by simp [← Quiver.Hom.comp_toLoc, hgh])).hom.toNatTrans.app Y := by
+  rw [jointMapComp]
+  rfl
+
+lemma jointMapComp_inv_app {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r) (gh : p ⟶ r) (hgh : g ≫ h = gh)
+    (Y : L.jointFiber p) :
+    (L.jointMapComp g h gh hgh).inv.app Y =
+      (L.joint.mapComp' (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ 𝟙 (SingleObj.star H)).toLoc
+        (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc
+        (by simp [← Quiver.Hom.comp_toLoc, hgh])).inv.toNatTrans.app Y := by
+  rw [jointMapComp]
+  rfl
+
 /-- The naturality isomorphism `F (𝟙 p, a) ⋙ e_p ≅ e_p ⋙ T_a` of the fiber comparison at
 `a : H`. -/
 noncomputable def comparisonNaturality (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H) :
     L.jointAct p a ⋙ (L.fiberEquivalence p).functor ≅
       (L.fiberEquivalence p).functor ⋙ act actions p a :=
   Cat.Hom.toNatIso ((L.comparison p).naturality a.toLoc)
+
+lemma comparisonNaturality_hom_app (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H)
+    (Y : L.jointFiber p) :
+    (L.comparisonNaturality p a).hom.app Y =
+      ((L.comparison p).naturality a.toLoc).hom.toNatTrans.app Y := by
+  rw [comparisonNaturality]
+  rfl
+
+lemma comparisonNaturality_inv_app (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H)
+    (Y : L.jointFiber p) :
+    (L.comparisonNaturality p a).inv.app Y =
+      ((L.comparison p).naturality a.toLoc).inv.toNatTrans.app Y := by
+  rw [comparisonNaturality]
+  rfl
 
 /-- The joint functors `F (𝟙 p, a)` and `F (g, 1)` commute up to the isomorphism comparing the
 two factorizations `(𝟙 p, a) ≫ (g, 1) = (g, a) = (g, 1) ≫ (𝟙 q, a)` of `(g, a)`. -/
@@ -175,6 +219,18 @@ lemma jointActCommIso_hom_app {p q : Γ} (g : p ⟶ q) (a : SingleObj.star H ⟶
       (L.joint.mapComp' (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (g ×ₘ a).toLoc
           (by simp [← Quiver.Hom.comp_toLoc])).inv.toNatTrans.app Y ≫
         (L.joint.mapComp' (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 q ×ₘ a).toLoc (g ×ₘ a).toLoc
+          (by simp [← Quiver.Hom.comp_toLoc])).hom.toNatTrans.app Y := by
+  rw [jointActCommIso, Pseudofunctor.isoMapOfCommSq_eq _ _ (g ×ₘ a).toLoc
+    (by simp [← Quiver.Hom.comp_toLoc])]
+  rfl
+
+@[simp]
+lemma jointActCommIso_inv_app {p q : Γ} (g : p ⟶ q) (a : SingleObj.star H ⟶ SingleObj.star H)
+    (Y : L.jointFiber p) :
+    (L.jointActCommIso g a).inv.app Y =
+      (L.joint.mapComp' (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 q ×ₘ a).toLoc (g ×ₘ a).toLoc
+          (by simp [← Quiver.Hom.comp_toLoc])).inv.toNatTrans.app Y ≫
+        (L.joint.mapComp' (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (g ×ₘ a).toLoc
           (by simp [← Quiver.Hom.comp_toLoc])).hom.toNatTrans.app Y := by
   rw [jointActCommIso, Pseudofunctor.isoMapOfCommSq_eq _ _ (g ×ₘ a).toLoc
     (by simp [← Quiver.Hom.comp_toLoc])]
@@ -344,11 +400,32 @@ lemma transportComp_right_unitality {p q : Γ} (g : p ⟶ q) (hg : g ≫ 𝟙 q 
 
 /-- For an isomorphism `g : p ≅ q` of `Γ`, the transport functor `E_g` is an equivalence
 `C p ≌ C q` with inverse `E_(g⁻¹)`; its unit and counit come from `transportId` and
-`transportComp`. -/
-noncomputable def transportEquivalence {p q : Γ} (g : p ≅ q) : fiber actions p ≌ fiber actions q :=
-  .mk (L.transport g.hom) (L.transport g.inv)
-    ((L.transportId p).symm ≪≫ (L.transportComp g.hom g.inv (𝟙 p)).symm)
-    (L.transportComp g.inv g.hom (𝟙 q) ≪≫ L.transportId q)
+`transportComp`, and the triangle identity follows from `transportComp_associativity` and the
+unitality of `transportComp`. -/
+@[expose] noncomputable def transportEquivalence {p q : Γ} (g : p ≅ q) :
+    fiber actions p ≌ fiber actions q where
+  functor := L.transport g.hom
+  inverse := L.transport g.inv
+  unitIso := (L.transportId p).symm ≪≫ (L.transportComp g.hom g.inv (𝟙 p)).symm
+  counitIso := L.transportComp g.inv g.hom (𝟙 q) ≪≫ L.transportId q
+  functor_unitIso_comp X := by
+    have h := L.transportComp_associativity g.hom g.inv g.hom (𝟙 p) (𝟙 q) g.hom
+      (by simp) (by simp) (by simp) X
+    rw [L.transportComp_left_unitality, L.transportComp_right_unitality] at h
+    simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Category.assoc, ← h,
+      ← Functor.map_comp, Iso.inv_hom_id_app_assoc, Iso.inv_hom_id_app]
+    exact (L.transport g.hom).map_id X
+
+@[simp]
+lemma transportEquivalence_unitIso {p q : Γ} (g : p ≅ q) :
+    (L.transportEquivalence g).unitIso =
+      (L.transportId p).symm ≪≫ (L.transportComp g.hom g.inv (𝟙 p)).symm :=
+  rfl
+
+@[simp]
+lemma transportEquivalence_counitIso {p q : Γ} (g : p ≅ q) :
+    (L.transportEquivalence g).counitIso = L.transportComp g.inv g.hom (𝟙 q) ≪≫ L.transportId q :=
+  rfl
 
 @[simp]
 lemma transportEquivalence_functor {p q : Γ} (g : p ≅ q) :
@@ -384,6 +461,17 @@ lemma actInverseIso_hom_app (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H)
         ((L.jointAct p a).obj ((L.fiberEquivalence p).inverse.obj X)) := by
   simp [actInverseIso, act]
 
+@[simp]
+lemma actInverseIso_inv_app (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H)
+    (X : fiber actions p) :
+    (L.actInverseIso p a).inv.app X =
+      (L.fiberEquivalence p).unit.app
+          ((L.jointAct p a).obj ((L.fiberEquivalence p).inverse.obj X)) ≫
+        (L.fiberEquivalence p).inverse.map
+          ((L.comparisonNaturality p a).hom.app ((L.fiberEquivalence p).inverse.obj X) ≫
+            (act actions p a).map ((L.fiberEquivalence p).counit.app X)) := by
+  simp [actInverseIso, act]
+
 /-- Transport commutes with the prescribed actions: `T_a ⋙ E_g ≅ E_g ⋙ T_a`. It combines the
 naturality of the fiber comparisons at `p` and `q` with `jointActCommIso`. -/
 noncomputable def transportCommIso {p q : Γ} (g : p ⟶ q)
@@ -402,6 +490,17 @@ lemma transportCommIso_hom_app {p q : Γ} (g : p ⟶ q) (a : SingleObj.star H �
           (L.jointActCommIso g a).hom.app ((L.fiberEquivalence p).inverse.obj X)) ≫
         (L.comparisonNaturality q a).hom.app
           ((L.jointMap g).obj ((L.fiberEquivalence p).inverse.obj X)) := by
+  simp [transportCommIso, transport]
+
+@[simp]
+lemma transportCommIso_inv_app {p q : Γ} (g : p ⟶ q) (a : SingleObj.star H ⟶ SingleObj.star H)
+    (X : fiber actions p) :
+    (L.transportCommIso g a).inv.app X =
+      (L.comparisonNaturality q a).inv.app
+          ((L.jointMap g).obj ((L.fiberEquivalence p).inverse.obj X)) ≫
+        (L.fiberEquivalence q).functor.map
+          ((L.jointActCommIso g a).inv.app ((L.fiberEquivalence p).inverse.obj X) ≫
+            (L.jointMap g).map ((L.actInverseIso p a).inv.app X)) := by
   simp [transportCommIso, transport]
 
 end EquivariantGroupoidLift
