@@ -28,10 +28,16 @@ is obtained by inserting the first entry into the corresponding image for the ta
   appending and then reindexing along the extension of `g` that fixes the last position.
 * `Fin.tail_contractNth_succ`, `Fin.init_contractNth_castSucc`: contracting two adjacent entries
   away from the first (last) one commutes with dropping the first (last) entry.
+* `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
+* `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
+  entries of a tuple `Fin.snoc a x`.
 * `Fin.init_contractNth_castSucc_last`: contracting the last two entries and dropping the last
   one drops the last two entries.
+* `Fin.contractNth_last`: contracting at the last position drops the last entry.
+* `Fin.contractNth_castSucc_castSucc_apply_last` and `Fin.contractNth_castSucc_last_apply_last`:
+  the last entry of a contraction.
 * `Fin.contractNth_castSucc_eq_update_removeNth_succ`: contracting the entries `j` and `j + 1`
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
@@ -80,6 +86,11 @@ theorem snoc_comp_snoc_castSucc_comp {n : ℕ} (c : Fin n → α) (z : α) (g : 
   funext i
   exact lastCases (by simp) (fun j => by simp) i
 
+/-- Dropping the first entry of `Fin.snoc a x` is appending `x` to the tail of `a`. -/
+theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
+    tail (snoc a x : Fin (n + 2) → α) = snoc (tail a) x := by
+  conv_lhs => rw [← cons_self_tail a, ← cons_snoc_eq_snoc_cons, tail_cons]
+
 section ContractNth
 
 variable {n : ℕ} (op : α → α → α)
@@ -117,6 +128,38 @@ theorem init_contractNth_castSucc_last (a : Fin (n + 2) → α) :
     init (contractNth (last n).castSucc op a) = init (init a) := by
   funext k
   simp only [init, contractNth, val_castSucc, val_last, k.is_lt, ↓reduceIte]
+
+/-- Contracting at the last position, which has no successor, drops the last entry. -/
+@[simp]
+theorem contractNth_last (a : Fin (n + 1) → α) : contractNth (last n) op a = init a := by
+  funext k
+  rw [contractNth_apply_of_lt _ _ _ _ (by simp), init]
+
+/-- A contraction not involving the last entry keeps the last entry. -/
+@[simp]
+theorem contractNth_castSucc_castSucc_apply_last (j : Fin n) (a : Fin (n + 2) → α) :
+    contractNth j.castSucc.castSucc op a (last n) = a (last (n + 1)) := by
+  rw [contractNth_apply_of_gt _ _ _ _ (by simp [j.isLt]), succ_last]
+
+/-- Contracting the last two entries makes their product the last entry. -/
+@[simp]
+theorem contractNth_castSucc_last_apply_last (a : Fin (n + 2) → α) :
+    contractNth (last n).castSucc op a (last n) = op (a (last n).castSucc) (a (last (n + 1))) := by
+  rw [contractNth_apply_of_eq _ _ _ _ (by simp), succ_last]
+
+/-- Contracting two entries of `Fin.snoc a x` other than the last contracts `a`. -/
+theorem contractNth_castSucc_castSucc_snoc (j : Fin n) (a : Fin (n + 1) → α) (x : α) :
+    contractNth j.castSucc.castSucc op (snoc a x) = snoc (contractNth j.castSucc op a) x := by
+  rw [← snoc_init_self (contractNth j.castSucc.castSucc op (snoc a x)),
+    init_contractNth_castSucc, init_snoc, contractNth_castSucc_castSucc_apply_last, snoc_last]
+
+/-- Contracting the last two entries of `Fin.snoc a x` combines the last entry of `a` with `x`
+under `op`. -/
+theorem contractNth_castSucc_last_snoc (a : Fin (n + 1) → α) (x : α) :
+    contractNth (last n).castSucc op (snoc a x) = snoc (init a) (op (a (last n)) x) := by
+  rw [← snoc_init_self (contractNth (last n).castSucc op (snoc a x)),
+    init_contractNth_castSucc_last, init_snoc, contractNth_castSucc_last_apply_last,
+    snoc_castSucc, snoc_last]
 
 /-- Contracting the entries `j` and `j + 1` is deleting entry `j + 1` and then overwriting
 entry `j` by the contraction. -/

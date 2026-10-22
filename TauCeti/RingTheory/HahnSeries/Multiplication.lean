@@ -39,6 +39,11 @@ series on Hahn modules, and for Hahn series through their algebra structure; but
 algebra structure on Laurent series `R⸨X⸩` comes from `R⟦X⟧` and is not definitionally the
 coefficientwise one, so for instance the `R⸨X⸩`-module structure on `R`-derivations of `R⸨X⸩`
 needs this instance.
+
+Finally, `HahnModule.of_symm_smul'` reads the coefficientwise action of `R` on `HahnModule Γ R V`
+through `HahnModule.of`, for the action instance underlying the `R`-module structure.
+`HahnModule.ofLinearEquiv` bundles this coefficient-preserving comparison as an `R`-linear
+equivalence.
 -/
 
 public section
@@ -79,3 +84,32 @@ theorem hahnSeries_orderTop_pow [Nontrivial R] (n : ℕ) {f : HahnSeries Γ R} :
   | succ n ih => simp [pow_succ, ih, add_nsmul]
 
 end TauCeti
+
+namespace HahnModule
+
+/-- The coefficientwise scalar action underlying the `R`-module structure, read through `of`.
+Mathlib's `HahnModule.of_symm_smul` is stated for a different, though propositionally equal,
+scalar action instance, so it does not rewrite this one. -/
+@[simp]
+theorem of_symm_smul' {Γ R V : Type*} [PartialOrder Γ] [Monoid R] [AddMonoid V]
+    [DistribMulAction R V] (r : R) (x : HahnModule Γ R V) :
+    (of R).symm (r • x) = r • (of R).symm x :=
+  rfl
+
+/-- The coefficient-preserving comparison between Hahn series and Hahn modules, linear for the
+coefficientwise action of `R`. -/
+noncomputable def ofLinearEquiv (R : Type*) {Γ V : Type*} [PartialOrder Γ] [Semiring R]
+    [AddCommMonoid V] [Module R V] : HahnSeries Γ V ≃ₗ[R] HahnModule Γ R V where
+  __ := of R
+  map_add' := of_add
+  map_smul' r f := (of R).symm.injective <| by simp
+
+@[simp]
+theorem ofLinearEquiv_apply {Γ R V : Type*} [PartialOrder Γ] [Semiring R] [AddCommMonoid V]
+    [Module R V] (f : HahnSeries Γ V) : ofLinearEquiv R f = of R f := (rfl)
+
+@[simp]
+theorem ofLinearEquiv_symm_apply {Γ R V : Type*} [PartialOrder Γ] [Semiring R] [AddCommMonoid V]
+    [Module R V] (f : HahnModule Γ R V) : (ofLinearEquiv R).symm f = (of R).symm f := (rfl)
+
+end HahnModule

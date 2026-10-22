@@ -20,7 +20,9 @@ to the identity. Its support is exactly the inverse of the original support.
 The operation is named rather than installed as a `Star` instance: compactly supported
 continuous maps already carry a different, pointwise star operation. These functions and
 this involution are the dense coefficient space for crossed-product convolution algebras.
-This file does not assert compatibility with a convolution product or an L¹ norm.
+Compatibility with twisted convolution is proved in
+`TauCeti.Analysis.CStarAlgebra.Action.Convolution.Algebra`; this file says nothing about the
+`L¹` norm.
 
 The convention follows Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2:
 Mathlib's `c(s)` is Williams's `Δ(s)⁻¹`.

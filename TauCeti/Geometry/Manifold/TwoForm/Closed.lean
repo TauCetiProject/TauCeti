@@ -11,8 +11,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 /-!
 # Closed smooth differential two-forms
 
-This module supplies the degree-two constant-form convenience theorem. The generic closedness
-predicate and API are defined in `DifferentialForm.Closed`.
+This module supplies the constant-form convenience theorem for smooth two-forms. The generic
+closedness predicate and its chartwise API are defined in `DifferentialForm.Closed`.
 -/
 
 public section

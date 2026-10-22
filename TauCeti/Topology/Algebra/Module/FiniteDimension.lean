@@ -10,7 +10,12 @@ public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 
 /-!
-# Multilinear maps and seminorms on finite-dimensional spaces are continuous
+# Finite-dimensional topological vector spaces
+
+The linear-map conversion API preserves composition and recovers a continuous linear map after
+forgetting continuity. `LinearMap.toContinuousLinearMap_coe` only needs finite dimension on the
+source. `LinearMap.toContinuousLinearMap_comp` needs finite dimension on the source and
+intermediate space; the target may be any topological vector space.
 
 A multilinear map `f : MultilinearMap 𝕜 M N` on finitely many finite-dimensional Hausdorff
 topological vector spaces over a complete nontrivially normed field is continuous when addition
@@ -29,9 +34,41 @@ continuous: `Seminorm.continuous_of_finiteDimensional`. Such a seminorm is domin
 of the sup norm of the coordinates in a basis, and those coordinates are continuous. This is how a
 norm defined by algebra, such as the spectral norm of a finite field extension, is compared with a
 topology given in advance.
+
+The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of a finite
+basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
+`Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
+`Module.Basis.equivFun_symm_apply`.
 -/
 
 public section
+
+namespace LinearMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [Module 𝕜 F] [ContinuousSMul 𝕜 F]
+
+/-- Passing a continuous linear map to a linear map and back returns the original map. -/
+@[simp]
+theorem toContinuousLinearMap_coe (T : E →L[𝕜] F) :
+    (T : E →ₗ[𝕜] F).toContinuousLinearMap = T :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
+
+variable [T2Space F] [FiniteDimensional 𝕜 F]
+  {G : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+  [Module 𝕜 G] [ContinuousSMul 𝕜 G]
+
+/-- Passing a composition of linear maps to continuous linear maps preserves composition. -/
+@[simp]
+theorem toContinuousLinearMap_comp (g : F →ₗ[𝕜] G) (f : E →ₗ[𝕜] F) :
+    (g ∘ₗ f).toContinuousLinearMap =
+      g.toContinuousLinearMap ∘L f.toContinuousLinearMap :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
+
+end LinearMap
 
 namespace MultilinearMap
 
@@ -94,3 +131,18 @@ theorem continuous_of_finiteDimensional (p : Seminorm 𝕜 E) : Continuous p := 
   simpa using hc.tendsto 0
 
 end Seminorm
+
+namespace Module.Basis
+
+variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup E]
+  [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [T2Space E]
+  [Fintype ι]
+
+/-- The inverse of the continuous coordinate equivalence of a finite basis `v` sends a coordinate
+vector `x` to the linear combination `∑ i, x i • v i`. -/
+@[simp] theorem equivFunL_symm_apply (v : Basis ι 𝕜 E) (x : ι → 𝕜) :
+    v.equivFunL.symm x = ∑ i, x i • v i :=
+  v.equivFunL.symm_apply_eq.2 <| funext fun i ↦ by
+    rw [equivFunL_apply, ← equivFun_apply, ← v.equivFun_symm_apply, LinearEquiv.apply_symm_apply]
+
+end Module.Basis

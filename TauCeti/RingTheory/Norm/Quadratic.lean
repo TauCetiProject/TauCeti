@@ -42,6 +42,9 @@ algebra `K × K`, and the non-reduced `K[X]/(X²)`:
 * `discrim_eq_zero_of_mem_range_algebraMap`, the easy half of the characterisation: a scalar
   `θ = c` has `t = 2c` and `n = c²`, so `t² - 4n = 0`.
 
+`Module.Basis.norm_eq_of_apply_zero_eq_one` reads the norm formula in the coordinates of a basis
+`(1, θ)`: the norm of `x + y θ` is the binary form `x² + x y Tr(θ) + y² N(θ)`.
+
 Separability is genuinely needed for the other half, and hence for `discrim_ne_zero` and
 `exists_discrim_ne_zero`: over a purely inseparable quadratic extension the trace form vanishes,
 so `t = 0` and `t² - 4n = 0` for *every* `θ`. In characteristic two `discrim_ne_zero` says
@@ -129,21 +132,31 @@ end Algebra.IsQuadraticExtension
 
 end CommRing
 
+namespace Module.Basis
+
+variable {K L : Type*} [CommRing K] [Nontrivial K] [CommRing L] [Algebra K L]
+
+/-- **The norm form of a basis `(1, θ)`.** For a basis `B` of a commutative algebra `L` over a
+nontrivial commutative ring `K` with `B 0 = 1` and `θ = B 1`, the norm of `w = x + y θ` is
+`x² + x y Tr(θ) + y² N(θ)`. -/
+theorem norm_eq_of_apply_zero_eq_one (B : Module.Basis (Fin 2) K L) (hB : B 0 = 1) (w : L) :
+    Algebra.norm K w = B.repr w 0 ^ 2 + B.repr w 0 * B.repr w 1 * Algebra.trace K L (B 1) +
+      B.repr w 1 ^ 2 * Algebra.norm K (B 1) := by
+  have : Algebra.IsQuadraticExtension K L :=
+    { toFree := .of_basis B
+      finrank_eq_two' := by rw [Module.finrank_eq_card_basis B, Fintype.card_fin] }
+  conv_lhs => rw [← B.sum_repr w]
+  rw [Fin.sum_univ_two, hB, Algebra.smul_def, Algebra.smul_def, mul_one,
+    Algebra.IsQuadraticExtension.norm_algebraMap_add_algebraMap_mul]
+  ring
+
+end Module.Basis
+
 section SquareRoot
 
 variable {K L : Type*} [Field K] [CommRing L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
 
 namespace Algebra.IsQuadraticExtension
-
-/-- In a commutative quadratic algebra over a field, the characteristic equation of a square root
-`x` of `d` with `x ∉ K` reads `Tr x · x = d + N x`. -/
-private theorem algebraMap_trace_mul_eq_of_sq_eq {x : L} {d : K}
-    (hx2 : x ^ 2 = algebraMap K L d) :
-    algebraMap K L (Algebra.trace K L x) * x = algebraMap K L (d + Algebra.norm K x) := by
-  have h := sq_eq_trace_smul_sub_norm K x
-  rw [Algebra.smul_def, hx2] at h
-  rw [map_add]
-  linear_combination -h
 
 /-- A square root `x` of an element of the base field, lying outside the base field, has trace
 zero. This holds in every commutative quadratic algebra over a field, including split and
@@ -153,19 +166,18 @@ theorem trace_eq_zero_of_sq_eq {x : L} {d : K} (hx : x ∉ Set.range (algebraMap
     (hx2 : x ^ 2 = algebraMap K L d) : Algebra.trace K L x = 0 := by
   by_contra h
   refine hx ⟨(Algebra.trace K L x)⁻¹ * (d + Algebra.norm K x), ?_⟩
-  rw [map_mul, ← algebraMap_trace_mul_eq_of_sq_eq hx2, ← mul_assoc, ← map_mul, inv_mul_cancel₀ h,
-    map_one, one_mul]
+  rw [map_mul, ← Algebra.smul_def, inv_smul_eq_iff₀ h]
+  simpa only [map_add, ← eq_sub_iff_add_eq, ← hx2] using sq_eq_trace_smul_sub_norm K x
 
 /-- A square root `x` of `d`, lying outside the base field, has norm `-d`: its characteristic
 polynomial `X² - Tr x · X + N x` is `X² - d`. -/
 theorem norm_eq_neg_of_sq_eq {x : L} {d : K} (hx : x ∉ Set.range (algebraMap K L))
     (hx2 : x ^ 2 = algebraMap K L d) : Algebra.norm K x = -d := by
-  have : Nontrivial L :=
-    Module.nontrivial_of_finrank_pos (R := K) (by rw [finrank_eq_two K L]; norm_num)
-  have h := algebraMap_trace_mul_eq_of_sq_eq hx2
-  rw [trace_eq_zero_of_sq_eq hx hx2, map_zero, zero_mul, eq_comm,
-    map_eq_zero_iff _ (algebraMap K L).injective] at h
-  linear_combination h
+  have := Module.nontrivial_of_finrank_eq_succ (finrank_eq_two K L)
+  apply FaithfulSMul.algebraMap_injective K L
+  rw [map_neg, ← neg_eq_iff_eq_neg]
+  simpa only [trace_eq_zero_of_sq_eq hx hx2, zero_smul, zero_sub, hx2] using
+    (sq_eq_trace_smul_sub_norm K x).symm
 
 /-- The trace in square-root coordinates: if `x² = d` with `x ∉ K`, then
 `Tr (b + a x) = 2 b`. -/

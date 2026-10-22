@@ -25,7 +25,8 @@ submodule is equivalent to vanishing of all lower coefficients. These descriptio
 make the filtration independent of a choice of basis. No finite-dimensionality is
 needed for these statements: in infinite dimension, the tensor product still only
 contains finite sums of scalar series times vectors. It need not contain every
-`L`-valued Laurent series.
+`L`-valued Laurent series. When `L` is finite, free or not, every coefficient family vanishing
+below some order is the coefficient family of a current.
 
 Polynomial currents embed through `LieAlgebra.ExtendScalars.map` and the existing
 Laurent-polynomial inclusion. Their coefficients agree with Mathlib's
@@ -113,9 +114,32 @@ theorem ext [Module.Free R L] {u v : currentAlgebra R L}
   ext i n
   simp only [coeff_equivFinsuppOfBasisRight, h]
 
+/-- Over a finite coefficient module, every coefficient family vanishing below some order is the
+coefficient family of a formal current. Freeness is not needed. -/
+theorem exists_forall_coeff_eq [Module.Finite R L] (c : ℤ → L) {a : ℤ}
+    (hc : ∀ n < a, c n = 0) : ∃ u : currentAlgebra R L, ∀ n, coeff R L n u = c n := by
+  classical
+  obtain ⟨k, s, hs⟩ := Module.Finite.exists_fin (R := R) (M := L)
+  have hmem (n : ℤ) : ∃ r : Fin k → R, ∑ i, r i • s i = c n :=
+    (Submodule.mem_span_range_iff_exists_fun R).mp (hs ▸ Submodule.mem_top)
+  -- Choose zero coordinates for zero coefficients, so that each coordinate is bounded below.
+  let r (n : ℤ) : Fin k → R := if c n = 0 then 0 else (hmem n).choose
+  have hbdd (i : Fin k) : BddBelow (Function.support fun n ↦ r n i) :=
+    ⟨a, fun n hn ↦ not_lt.mp fun h ↦ hn (by simp [r, hc n h])⟩
+  refine ⟨∑ i, HahnSeries.ofSuppBddBelow _ (hbdd i) ⊗ₜ s i, fun n ↦ ?_⟩
+  simp only [map_sum, coeff_tmul, HahnSeries.coeff_ofSuppBddBelow]
+  by_cases h : c n = 0
+  · simp [r, h]
+  · simpa [r, h] using (hmem n).choose_spec
+
 /-- Currents of order at least `N`, expressed without choosing a basis. -/
 def orderSubmodule (N : ℤ) : Submodule R (currentAlgebra R L) :=
   Submodule.span R {u | ∃ f : R⸨X⸩, ∃ x : L, (N : WithTop ℤ) ≤ f.orderTop ∧ u = f ⊗ₜ x}
+
+/-- The order submodule is spanned by the tensors whose scalar series have order at least `N`. -/
+theorem orderSubmodule_def (N : ℤ) : orderSubmodule R L N =
+    Submodule.span R {u | ∃ f : R⸨X⸩, ∃ x : L, (N : WithTop ℤ) ≤ f.orderTop ∧ u = f ⊗ₜ x} :=
+  (rfl)
 
 /-- A tensor has order at least the order of its scalar series. -/
 theorem tmul_mem_orderSubmodule (N : ℤ) {f : R⸨X⸩}
