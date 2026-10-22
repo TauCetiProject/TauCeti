@@ -15,8 +15,8 @@ import Mathlib.Tactic.Ring.NamePowerVars
 
 Over a commutative ring killed by a prime `p`, the identity `f(X + Y) = f(X) + f(Y)`
 holds exactly when the coefficients of `f` vanish outside the degrees `p ^ k`.
-No reducedness or field hypothesis is needed. The series `frobeniusSeries p a`
-parametrizes these additive series by the sequence of their Frobenius coefficients.
+No reducedness or field hypothesis is needed. The series `linearizedSeries p a`
+parametrizes these additive series by the sequence of their coefficients in degrees `p ^ k`.
 Here `X₀` and `X₁` are the two variables of `MvPowerSeries (Fin 2) R`, so
 `f.subst (X₀ + X₁)` expresses `f(X + Y)`.
 The proof uses Mathlib’s `PowerSeries.coeff_subst_X_zero_add_X_one` and the
@@ -27,10 +27,11 @@ coefficients in degrees `2 ^ k`, with coefficient one in degree one.
 
 ## Main results
 
-* `subst_add_eq_iff_choose_mul_coeff`: the coefficient criterion over an arbitrary ring.
+* `subst_add_eq_iff_constantCoeff_eq_zero_and_choose_mul_coeff_eq_zero`:
+  the coefficient criterion over an arbitrary ring.
 * `subst_add_eq_iff_coeff_eq_zero`: the prime-characteristic support criterion.
-* `eq_frobeniusSeries_of_subst_add`: the canonical Frobenius expansion of an additive series.
-* `subst_add_eq_iff_existsUnique_frobeniusSeries`: the unique Frobenius expansion.
+* `eq_linearizedSeries_of_subst_add`: the canonical linearized expansion of an additive series.
+* `subst_add_eq_iff_existsUnique_linearizedSeries`: the unique linearized expansion.
 
 ## References
 
@@ -53,7 +54,7 @@ variable [CommRing R]
 
 /-- A series is additive precisely when its constant term is zero and each mixed
 binomial coefficient annihilates the corresponding coefficient of the series. -/
-theorem subst_add_eq_iff_choose_mul_coeff (f : PowerSeries R) :
+theorem subst_add_eq_iff_constantCoeff_eq_zero_and_choose_mul_coeff_eq_zero (f : PowerSeries R) :
     f.subst (X₀ + X₁) = f.subst X₀ + f.subst X₁ ↔
       f.constantCoeff = 0 ∧ ∀ i j : ℕ, 0 < i → 0 < j →
         ((i + j).choose i : R) * f.coeff (i + j) = 0 := by
@@ -91,7 +92,7 @@ theorem subst_add_eq_iff_coeff_eq_zero (f : PowerSeries R) {p : ℕ} (hp : p.Pri
     (hR : (p : R) = 0) :
     f.subst (X₀ + X₁) = f.subst X₀ + f.subst X₁ ↔
       ∀ n : ℕ, (¬ ∃ k : ℕ, n = p ^ k) → f.coeff n = 0 := by
-  rw [subst_add_eq_iff_choose_mul_coeff]
+  rw [subst_add_eq_iff_constantCoeff_eq_zero_and_choose_mul_coeff_eq_zero]
   constructor
   · rintro ⟨hc, h⟩ n hn
     by_cases hn0 : n = 0
@@ -130,52 +131,52 @@ variable [Semiring R]
 
 /-- The formal sum `∑ₖ aₖ X^(p^k)`, defined coefficientwise.
 The intended bases satisfy `1 < p`; no topology on the coefficient ring is required. -/
-noncomputable def frobeniusSeries (p : ℕ) (a : ℕ → R) : PowerSeries R :=
+noncomputable def linearizedSeries (p : ℕ) (a : ℕ → R) : PowerSeries R :=
   PowerSeries.mk fun n => if n = p ^ Nat.log p n then a (Nat.log p n) else 0
 
-/-- The coefficients of the Frobenius expansion, including its vanishing coefficients. -/
-theorem coeff_frobeniusSeries (p : ℕ) (a : ℕ → R) (n : ℕ) :
-    (frobeniusSeries p a).coeff n =
+/-- The coefficients of the linearized expansion, including its vanishing coefficients. -/
+theorem coeff_linearizedSeries (p : ℕ) (a : ℕ → R) (n : ℕ) :
+    (linearizedSeries p a).coeff n =
       if n = p ^ Nat.log p n then a (Nat.log p n) else 0 := by
-  simp [frobeniusSeries]
+  simp [linearizedSeries]
 
 /-- The coefficient in degree `p ^ k` is the prescribed `k`th coefficient. -/
 @[simp]
-theorem coeff_frobeniusSeries_pow {p : ℕ} (hp : 1 < p) (a : ℕ → R) (k : ℕ) :
-    (frobeniusSeries p a).coeff (p ^ k) = a k := by
-  simp [coeff_frobeniusSeries, Nat.log_pow hp]
+theorem coeff_pow_linearizedSeries {p : ℕ} (hp : 1 < p) (a : ℕ → R) (k : ℕ) :
+    (linearizedSeries p a).coeff (p ^ k) = a k := by
+  simp [coeff_linearizedSeries, Nat.log_pow hp]
 
 /-- Coefficients outside the powers of `p` vanish. -/
-theorem coeff_frobeniusSeries_eq_zero {p n : ℕ} (a : ℕ → R)
-    (hn : ¬ ∃ k : ℕ, n = p ^ k) : (frobeniusSeries p a).coeff n = 0 := by
-  rw [coeff_frobeniusSeries, ite_eq_right (fun h => hn ⟨_, h⟩)]
+theorem coeff_linearizedSeries_eq_zero {p n : ℕ} (a : ℕ → R)
+    (hn : ¬ ∃ k : ℕ, n = p ^ k) : (linearizedSeries p a).coeff n = 0 := by
+  rw [coeff_linearizedSeries, ite_eq_right (fun h => hn ⟨_, h⟩)]
 
-/-- A Frobenius expansion has zero constant term. -/
+/-- A linearized expansion has zero constant term. -/
 @[simp]
-theorem constantCoeff_frobeniusSeries (p : ℕ) (a : ℕ → R) :
-    (frobeniusSeries p a).constantCoeff = 0 := by
-  simp [← coeff_zero_eq_constantCoeff, coeff_frobeniusSeries]
+theorem constantCoeff_linearizedSeries (p : ℕ) (a : ℕ → R) :
+    (linearizedSeries p a).constantCoeff = 0 := by
+  simp [← coeff_zero_eq_constantCoeff, coeff_linearizedSeries]
 
-/-- The linear coefficient of a Frobenius expansion is its zeroth parameter; thus
+/-- The linear coefficient of a linearized expansion is its zeroth parameter; thus
 strict additive coordinates have `a 0 = 1`. -/
 @[simp]
-theorem coeff_one_frobeniusSeries (p : ℕ) (a : ℕ → R) :
-    (frobeniusSeries p a).coeff 1 = a 0 := by
-  simp [coeff_frobeniusSeries]
+theorem coeff_one_linearizedSeries (p : ℕ) (a : ℕ → R) :
+    (linearizedSeries p a).coeff 1 = a 0 := by
+  simp [coeff_linearizedSeries]
 
-/-- The sequence of Frobenius coefficients uniquely determines its expansion. -/
-theorem frobeniusSeries_injective {p : ℕ} (hp : 1 < p) :
-    Function.Injective (frobeniusSeries (R := R) p) := by
+/-- For `1 < p`, a linearized expansion determines its coefficient sequence. -/
+theorem linearizedSeries_injective {p : ℕ} (hp : 1 < p) :
+    Function.Injective (linearizedSeries (R := R) p) := by
   intro a b h
   funext k
-  simpa [coeff_frobeniusSeries_pow hp] using congrArg (PowerSeries.coeff (p ^ k)) h
+  simpa [coeff_pow_linearizedSeries hp] using congrArg (PowerSeries.coeff (p ^ k)) h
 
-/-- Changing coefficients commutes with a Frobenius expansion. -/
+/-- Changing coefficients commutes with a linearized expansion. -/
 @[simp]
-theorem map_frobeniusSeries {S : Type*} [Semiring S] (φ : R →+* S) (p : ℕ) (a : ℕ → R) :
-    PowerSeries.map φ (frobeniusSeries p a) = frobeniusSeries p (φ ∘ a) := by
+theorem map_linearizedSeries {S : Type*} [Semiring S] (φ : R →+* S) (p : ℕ) (a : ℕ → R) :
+    PowerSeries.map φ (linearizedSeries p a) = linearizedSeries p (φ ∘ a) := by
   ext n
-  simp only [PowerSeries.coeff_map, coeff_frobeniusSeries, Function.comp_apply]
+  simp only [PowerSeries.coeff_map, coeff_linearizedSeries, Function.comp_apply]
   split_ifs <;> simp
 
 end Semiring
@@ -184,40 +185,40 @@ section CommRing
 
 variable [CommRing R]
 
-/-- Frobenius expansions are additive over every ring killed by `p`. -/
-theorem subst_add_frobeniusSeries {p : ℕ} (hp : p.Prime) (hR : (p : R) = 0) (a : ℕ → R) :
-    (frobeniusSeries p a).subst (X₀ + X₁) =
-      (frobeniusSeries p a).subst X₀ + (frobeniusSeries p a).subst X₁ := by
+/-- Linearized expansions are additive over every ring killed by the prime `p`. -/
+theorem subst_add_linearizedSeries {p : ℕ} (hp : p.Prime) (hR : (p : R) = 0) (a : ℕ → R) :
+    (linearizedSeries p a).subst (X₀ + X₁) =
+      (linearizedSeries p a).subst X₀ + (linearizedSeries p a).subst X₁ := by
   exact (subst_add_eq_iff_coeff_eq_zero _ hp hR).mpr fun _ hn =>
-    coeff_frobeniusSeries_eq_zero a hn
+    coeff_linearizedSeries_eq_zero a hn
 
 /-- Over a commutative ring killed by a prime `p`, an additive series equals the
-Frobenius expansion of its coefficients in degrees `p ^ k`. -/
-theorem eq_frobeniusSeries_of_subst_add (f : PowerSeries R) {p : ℕ}
+linearized expansion of its coefficients in degrees `p ^ k`. -/
+theorem eq_linearizedSeries_of_subst_add (f : PowerSeries R) {p : ℕ}
     (hp : p.Prime) (hR : (p : R) = 0)
     (h : f.subst (X₀ + X₁) = f.subst X₀ + f.subst X₁) :
-    f = frobeniusSeries p (fun k => f.coeff (p ^ k)) := by
+    f = linearizedSeries p (fun k => f.coeff (p ^ k)) := by
   have hcoeff := (subst_add_eq_iff_coeff_eq_zero f hp hR).mp h
   ext n
-  rw [coeff_frobeniusSeries]
+  rw [coeff_linearizedSeries]
   split_ifs with hn
   · rw [← hn]
   · exact hcoeff n (by rintro ⟨k, rfl⟩; exact hn (by rw [Nat.log_pow hp.one_lt]))
 
 /-- Over a commutative ring killed by a prime `p`, a series is additive if and only if
-it has a unique Frobenius expansion. -/
-theorem subst_add_eq_iff_existsUnique_frobeniusSeries (f : PowerSeries R) {p : ℕ}
+it has a unique linearized expansion. -/
+theorem subst_add_eq_iff_existsUnique_linearizedSeries (f : PowerSeries R) {p : ℕ}
     (hp : p.Prime) (hR : (p : R) = 0) :
     f.subst (X₀ + X₁) = f.subst X₀ + f.subst X₁ ↔
-      ∃! a : ℕ → R, f = frobeniusSeries p a := by
+      ∃! a : ℕ → R, f = linearizedSeries p a := by
   constructor
   · intro h
-    have hf := eq_frobeniusSeries_of_subst_add f hp hR h
+    have hf := eq_linearizedSeries_of_subst_add f hp hR h
     refine ⟨fun k => f.coeff (p ^ k), hf, ?_⟩
     intro a ha
-    exact frobeniusSeries_injective hp.one_lt (ha.symm.trans hf)
+    exact linearizedSeries_injective hp.one_lt (ha.symm.trans hf)
   · rintro ⟨a, rfl, _⟩
-    exact subst_add_frobeniusSeries hp hR a
+    exact subst_add_linearizedSeries hp hR a
 
 end CommRing
 
