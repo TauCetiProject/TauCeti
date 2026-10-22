@@ -100,12 +100,15 @@ theorem Scheme.Hom.span_range_appTop_sub_eq_top_iff {X : Scheme.{u}} [IsAffine X
 `g • a = (σ g⁻¹)^*(a)`. Pullback reverses composition, so pulling back along inverses makes this a
 left action. For affine `X`, this is the ring action whose invariant quotient
 `TauCeti.AffineInvariantQuotient` forms. -/
-noncomputable abbrev Scheme.globalSectionsMulSemiringAction {X : Scheme.{u}} {G : Type*} [Group G]
+@[instance_reducible]
+noncomputable def Scheme.globalSectionsMulSemiringAction {X : Scheme.{u}} {G : Type*} [Group G]
     (σ : G →* Aut X) : MulSemiringAction G Γ(X, ⊤) where
   smul g a := (σ g⁻¹).asIso.hom.appTop a
-  one_smul a := by simp [HSMul.hSMul]
-  mul_smul g h a := by
-    change (σ (g * h)⁻¹).asIso.hom.appTop a = (σ g⁻¹).asIso.hom.appTop ((σ h⁻¹).asIso.hom.appTop a)
+  -- In the two proofs below, `g • a` is `(σ g⁻¹)^*(a)` by the `smul` field above, and `show`
+  -- states the goal in that form.
+  one_smul a := show (σ 1⁻¹).asIso.hom.appTop a = a by simp
+  mul_smul g h a := show (σ (g * h)⁻¹).asIso.hom.appTop a =
+      (σ g⁻¹).asIso.hom.appTop ((σ h⁻¹).asIso.hom.appTop a) by
     simp only [mul_inv_rev, map_mul, Aut.mul_asIso, Iso.trans_hom, Scheme.Hom.comp_appTop,
       CommRingCat.comp_apply]
   smul_zero g := map_zero _
@@ -115,11 +118,12 @@ noncomputable abbrev Scheme.globalSectionsMulSemiringAction {X : Scheme.{u}} {G 
 
 /-- Under `Scheme.globalSectionsMulSemiringAction σ`, `g` acts on a global function by pullback
 along `σ g⁻¹`. -/
+@[simp]
 theorem Scheme.globalSectionsMulSemiringAction_smul_def {X : Scheme.{u}} {G : Type*} [Group G]
     (σ : G →* Aut X) (g : G) (a : Γ(X, ⊤)) :
     letI := Scheme.globalSectionsMulSemiringAction σ
     g • a = (σ g⁻¹).asIso.hom.appTop a :=
-  rfl
+  (rfl)
 
 /-- **`Spec` of an intermediate ring of a localization.** Let `S` be a localization of `R` away
 from `a`, and let `B` be an `R`-algebra whose map to `S` is injective, for instance an

@@ -194,16 +194,18 @@ variable {G : Type*} [Group G] (ρ : G →* Aut Q)
 and `V` represents `(𝒫, 𝒬)`, then `G` acts on the ring of functions `Γ(𝕄(𝒫, 𝒬), ⊤)` by pullback
 along inverses, `g • a = σ_{g⁻¹}^*(a)` (`simultaneousSectionsAction_smul_def`). For finite `G`
 and affine `𝕄(𝒫, 𝒬)`, `TauCeti.AffineInvariantQuotient` forms the quotient by this action. -/
-noncomputable abbrev simultaneousSectionsAction : MulSemiringAction G Γ(V.base, ⊤) :=
+@[instance_reducible]
+noncomputable def simultaneousSectionsAction : MulSemiringAction G Γ(V.base, ⊤) :=
   Scheme.globalSectionsMulSemiringAction
     (((EllObj.forget B ⋙ Over.forget B).mapAut V).comp (simultaneousAction R ρ))
 
 /-- Under `simultaneousSectionsAction R ρ`, `g` acts on a function on `𝕄(𝒫, 𝒬)` by pullback along
 the automorphism of `𝕄(𝒫, 𝒬)` induced by `σ_{g⁻¹}`. -/
+@[simp]
 theorem simultaneousSectionsAction_smul_def (g : G) (a : Γ(V.base, ⊤)) :
     letI := simultaneousSectionsAction R ρ
     g • a = (simultaneousAction R ρ g⁻¹).asIso.hom.base.appTop a :=
-  rfl
+  Scheme.globalSectionsMulSemiringAction_smul_def _ g a
 
 /-- **Freeness on an affine simultaneous moduli scheme, for the action on functions.** Let `𝒫` be
 rigid, let a group `G` act on `𝒬` freely over nonempty bases, and let `V` represent `(𝒫, 𝒬)` with
@@ -216,8 +218,9 @@ theorem IsRigid.span_range_smul_sub_eq_top (hP : P.IsRigid)
       (ρ g).asIso.hom.app (op X) β = β → g = 1)
     [IsAffine V.base] {g : G} (hg : g ≠ 1) :
     letI := simultaneousSectionsAction R ρ
-    Ideal.span (Set.range fun a : Γ(V.base, ⊤) ↦ g • a - a) = ⊤ :=
-  hP.span_range_appTop_simultaneousAction_sub_eq_top R ρ hρ (inv_ne_one.2 hg)
+    Ideal.span (Set.range fun a : Γ(V.base, ⊤) ↦ g • a - a) = ⊤ := by
+  simpa only [simultaneousSectionsAction_smul_def] using
+    hP.span_range_appTop_simultaneousAction_sub_eq_top R ρ hρ (inv_ne_one.2 hg)
 
 /-- **`GL₂(ℤ/Nℤ)` acts freely on the functions of an affine `𝕄(𝒫, [Γ(N)])`** for every rigid `𝒫`.
 Let `V` represent the simultaneous problem `(𝒫, [Γ(N)])` with `V.base` affine. For a matrix
