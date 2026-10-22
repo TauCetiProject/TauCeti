@@ -244,6 +244,7 @@ def ConnectedComponent.toSimple {G : Graph α β} (C : G.ConnectedComponent) :
 
 /-- A connected-component subgraph is the induced graph on the support of its underlying simple
 component. -/
+@[simp]
 theorem ConnectedComponent.ofSimple_toSimple {G : Graph α β}
     (C : G.ConnectedComponent) : ofSimple C.toSimple = C := by
   have hle : G.connectedComponentSubgraph C.toSimple ≤ C :=
