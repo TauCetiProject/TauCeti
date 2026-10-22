@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
-public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.Normed.Module.TensorProduct.ProjectiveSeminorm
@@ -122,13 +121,18 @@ theorem injectiveSeminorm_le_iff {u : E ⊗[𝕜] F} {C : ℝ} (hC : 0 ≤ C) :
   ⟨fun h f ↦ (norm_contractStrongDual_apply_le u f).trans (by gcongr),
     fun h ↦ (contractStrongDual 𝕜 E F u).opNorm_le_bound hC h⟩
 
+/-- On a pure tensor `x ⊗ₜ y`, the injective seminorm is the norm of `x` in the double dual
+times the norm of `y`. -/
+private theorem injectiveSeminorm_tmul_eq (x : E) (y : F) :
+    injectiveSeminorm 𝕜 E F (x ⊗ₜ y) = ‖NormedSpace.inclusionInDoubleDual 𝕜 E x‖ * ‖y‖ :=
+  ContinuousLinearMap.norm_smulRight_apply _ y
+
 /-- The injective seminorm of a pure tensor is at most the product of the norms. -/
 theorem injectiveSeminorm_tmul_le (x : E) (y : F) :
     injectiveSeminorm 𝕜 E F (x ⊗ₜ y) ≤ ‖x‖ * ‖y‖ := by
-  refine (injectiveSeminorm_le_iff (by positivity)).2 fun f ↦ ?_
-  rw [contractStrongDual_tmul, norm_smul]
-  calc ‖f x‖ * ‖y‖ ≤ (‖f‖ * ‖x‖) * ‖y‖ := by gcongr; exact f.le_opNorm x
-    _ = ‖x‖ * ‖y‖ * ‖f‖ := by ring
+  rw [injectiveSeminorm_tmul_eq]
+  gcongr
+  exact NormedSpace.double_dual_bound 𝕜 E x
 
 /-- The injective seminorm is bounded by the projective seminorm. -/
 theorem injectiveSeminorm_le_projectiveSeminorm :
@@ -171,12 +175,9 @@ theorem injectiveSeminorm_le_iff_forall_norm_le_one {u : E ⊗[𝕜] F} {C : ℝ
 @[simp]
 theorem injectiveSeminorm_tmul (x : E) (y : F) :
     injectiveSeminorm 𝕜 E F (x ⊗ₜ y) = ‖x‖ * ‖y‖ := by
-  refine le_antisymm (injectiveSeminorm_tmul_le x y) ?_
-  obtain ⟨f, hf, hfx⟩ := exists_dual_vector'' 𝕜 x
-  calc ‖x‖ * ‖y‖ = ‖contractStrongDual 𝕜 E F (x ⊗ₜ y) f‖ := by simp [hfx, norm_smul]
-    _ ≤ injectiveSeminorm 𝕜 E F (x ⊗ₜ y) * ‖f‖ := norm_contractStrongDual_apply_le _ f
-    _ ≤ injectiveSeminorm 𝕜 E F (x ⊗ₜ y) * 1 := by gcongr
-    _ = injectiveSeminorm 𝕜 E F (x ⊗ₜ y) := mul_one _
+  -- `inclusionInDoubleDualLi 𝕜 x` is `inclusionInDoubleDual 𝕜 E x` bundled as an isometry.
+  rw [injectiveSeminorm_tmul_eq]
+  exact congrArg (· * ‖y‖) ((NormedSpace.inclusionInDoubleDualLi 𝕜).norm_map x)
 
 /-- The projective seminorm is a cross norm: its value on `x ⊗ₜ y` is `‖x‖ * ‖y‖`. -/
 @[simp]
