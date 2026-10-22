@@ -14,7 +14,9 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 
 For `‖q‖ < 1` in a complete normed field, the product `∏_{n ≥ 1} (1 - qⁿ w)` (the q-Pochhammer
 symbol `(q w; q)_∞`) converges absolutely. This file records its convergence, the shift identity
-obtained by splitting off the first factor, and its nonvanishing. With `q = e^{2π i τ}` and `w`
+obtained by splitting off the first factor, and its nonvanishing. It also introduces the theta
+product `θ_q(w) = (w; q)_∞ (q w⁻¹; q)_∞ = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` and proves its
+quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)`. With `q = e^{2π i τ}` and `w`
 depending continuously on `τ`, the product converges locally uniformly on the upper half-plane,
 and is holomorphic there when `w` is entire.
 
@@ -24,6 +26,8 @@ and is holomorphic there when `w` is entire.
   converges.
 * `TauCeti.tprod_one_sub_pow_mul_eq`: `∏_{n ≥ 1} (1 - qⁿ w) = (1 - q w) ∏_{n ≥ 1} (1 - qⁿ (q w))`.
 * `TauCeti.tprod_one_sub_pow_mul_ne_zero`: the product is nonzero when all of its factors are.
+* `TauCeti.qTheta`: the theta product `θ_q(w) = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`.
+* `TauCeti.qTheta_mul_left`: its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)` for `‖q‖ < 1`.
 * `TauCeti.hasProdLocallyUniformlyOn_one_sub_pow_mul`: for continuous `w`, the product
   `∏_{n ≥ 1} (1 - e^{2π i n τ} w(τ))` converges locally uniformly on the upper half-plane.
 * `TauCeti.differentiableOn_tprod_one_sub_pow_mul`: for entire `w`, this product is holomorphic on
@@ -47,6 +51,18 @@ theorem summable_norm_pow_succ_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     Summable fun n : ℕ ↦ ‖q ^ (n + 1) * w‖ := by
   simpa [norm_pow, pow_succ, mul_assoc] using
     (summable_geometric_of_lt_one (norm_nonneg q) hq).mul_right (‖q‖ * ‖w‖)
+
+/-- The **theta product** `θ_q(w) = (w; q)_∞ (q w⁻¹; q)_∞`, written as
+`(1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`. The product converges for `‖q‖ < 1`; otherwise the
+value is a junk value. With `q = e^{2π i τ}` and `w = e^{2π i (r₁ τ + r₂)}` it is the product in
+the Siegel function `g_r(τ)`. -/
+noncomputable def qTheta (q w : 𝕜) : 𝕜 :=
+  (1 - w) * ∏' n : ℕ, (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹)
+
+/-- The defining product of the theta product `θ_q(w)`. -/
+theorem qTheta_def (q w : 𝕜) :
+    qTheta q w = (1 - w) * ∏' n : ℕ, (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹) :=
+  (rfl)
 
 variable [CompleteSpace 𝕜]
 
@@ -78,6 +94,17 @@ theorem tprod_one_sub_pow_mul_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) {w : 𝕜}
     (h : ∀ n : ℕ, 1 - q ^ (n + 1) * w ≠ 0) : ∏' n : ℕ, (1 - q ^ (n + 1) * w) ≠ 0 := by
   simp_rw [sub_eq_add_neg] at h ⊢
   exact tprod_one_add_ne_zero_of_summable h (by simpa using summable_norm_pow_succ_mul hq w)
+
+/-- **Quasi-periodicity of the theta product**: `θ_q(q w) = -w⁻¹ θ_q(w)` for `0 < ‖q‖ < 1` and
+`w ≠ 0`. -/
+theorem qTheta_mul_left {q : 𝕜} (hq : ‖q‖ < 1) (hq₀ : q ≠ 0) {w : 𝕜} (hw : w ≠ 0) :
+    qTheta q (q * w) = -w⁻¹ * qTheta q w := by
+  rw [qTheta_def, qTheta_def,
+    (multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _),
+    (multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _),
+    tprod_one_sub_pow_mul_inv_eq hq hq₀, tprod_one_sub_pow_mul_eq hq w]
+  field_simp
+  ring
 
 end NormedField
 

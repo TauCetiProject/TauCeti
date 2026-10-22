@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ZetaValues
 public import TauCeti.Analysis.SpecialFunctions.QPochhammer
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Basic
 
 /-!
 # Siegel functions
@@ -76,32 +77,12 @@ theorem siegelFunction_def (r : Fin 2 → ℝ) (τ : ℂ) :
           (1 - cexp (2 * π * I * τ) ^ (n + 1) * cexp (-(2 * π * I * (r 0 * τ + r 1)))) :=
   (rfl)
 
-section Product
-
-/-! ### The product `P_q(w)` -/
-
-/-- The product `P_q(w) = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` in the Siegel function. -/
-private noncomputable def siegelProd (q w : ℂ) : ℂ :=
-  (1 - w) * ∏' n : ℕ, (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹)
-
-/-- The product `P_q` is quasi-periodic: `P_q(q w) = -w⁻¹ P_q(w)`. -/
-private theorem siegelProd_mul_left {q : ℂ} (hq : ‖q‖ < 1) (hq₀ : q ≠ 0) {w : ℂ} (hw : w ≠ 0) :
-    siegelProd q (q * w) = -w⁻¹ * siegelProd q w := by
-  rw [siegelProd, siegelProd,
-    (multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _),
-    (multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _),
-    tprod_one_sub_pow_mul_inv_eq hq hq₀, tprod_one_sub_pow_mul_eq hq w]
-  field_simp
-  ring
-
-end Product
-
-/-- The Siegel function as a phase times the product `P_q(w)`. -/
-private theorem siegelFunction_eq_siegelProd (r : Fin 2 → ℝ) (τ : ℂ) :
+/-- The Siegel function as a phase times the theta product `θ_q(w)`. -/
+private theorem siegelFunction_eq_qTheta (r : Fin 2 → ℝ) (τ : ℂ) :
     siegelFunction r τ =
       -cexp (π * I * bernoulliFun 2 (r 0) * τ) * cexp (π * I * r 1 * (r 0 - 1)) *
-        siegelProd (cexp (2 * π * I * τ)) (cexp (2 * π * I * (r 0 * τ + r 1))) := by
-  rw [siegelFunction_def, siegelProd, Complex.exp_neg]
+        qTheta (cexp (2 * π * I * τ)) (cexp (2 * π * I * (r 0 * τ + r 1))) := by
+  rw [siegelFunction_def, qTheta_def, Complex.exp_neg]
   ring
 
 section Analytic
@@ -185,10 +166,6 @@ section Translation
 
 /-! ### Translations of `r` and of `τ` -/
 
-/-- `(-1)ⁿ = e^{-π i n}` for an integer `n`. -/
-private theorem neg_one_zpow_eq_cexp (n : ℤ) : (-1 : ℂ) ^ n = cexp (n * -(π * I)) := by
-  rw [exp_int_mul, Complex.exp_neg, exp_pi_mul_I, inv_neg, inv_one]
-
 /-- **Translating `r₂` by an integer**: `g_{(r₁, r₂ + n)} = (-1)ⁿ e^{π i n r₁} g_{(r₁, r₂)}`. -/
 private theorem siegelFunction_add_zero_intCast (r : Fin 2 → ℝ) (n : ℤ) (τ : ℂ) :
     siegelFunction (r + ![0, (n : ℝ)]) τ =
@@ -198,8 +175,8 @@ private theorem siegelFunction_add_zero_intCast (r : Fin 2 → ℝ) (n : ℤ) (�
     rw [show 2 * π * I * (r 0 * τ + ((r 1 + n : ℝ) : ℂ)) =
       2 * π * I * (r 0 * τ + r 1) + n * (2 * π * I) by push_cast; ring,
       Complex.exp_add, exp_int_mul_two_pi_mul_I, mul_one]
-  simp only [siegelFunction_eq_siegelProd, Pi.add_apply, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one, add_zero, hw, neg_one_zpow_eq_cexp]
+  simp only [siegelFunction_eq_qTheta, Pi.add_apply, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, add_zero, hw, Complex.neg_one_zpow_eq_exp]
   have h : cexp (π * I * ((r 1 + n : ℝ) : ℂ) * (r 0 - 1)) =
       cexp (n * -(π * I)) * cexp (π * I * n * r 0) * cexp (π * I * r 1 * (r 0 - 1)) := by
     simp only [← Complex.exp_add]
@@ -220,9 +197,9 @@ private theorem siegelFunction_add_one_zero (r : Fin 2 → ℝ) {τ : ℂ} (hτ 
     congr 1
     push_cast
     ring
-  simp only [siegelFunction_eq_siegelProd, Pi.add_apply, Matrix.cons_val_zero,
+  simp only [siegelFunction_eq_qTheta, Pi.add_apply, Matrix.cons_val_zero,
     Matrix.cons_val_one, Matrix.cons_val_fin_one, add_zero, hw,
-    siegelProd_mul_left hq (exp_ne_zero _) (exp_ne_zero _), ← Complex.exp_neg]
+    qTheta_mul_left hq (exp_ne_zero _) (exp_ne_zero _), ← Complex.exp_neg]
   have h : cexp (π * I * bernoulliFun 2 (r 0 + 1) * τ) * cexp (π * I * r 1 * ((r 0 + 1 : ℝ) - 1)) *
       cexp (-(2 * π * I * (r 0 * τ + r 1))) =
       cexp (-(π * I * r 1)) * cexp (π * I * bernoulliFun 2 (r 0) * τ) *
@@ -231,7 +208,7 @@ private theorem siegelFunction_add_one_zero (r : Fin 2 → ℝ) {τ : ℂ} (hτ 
     congr 1
     push_cast
     ring
-  linear_combination (siegelProd (cexp (2 * π * I * τ)) (cexp (2 * π * I * (r 0 * τ + r 1)))) * h
+  linear_combination (qTheta (cexp (2 * π * I * τ)) (cexp (2 * π * I * (r 0 * τ + r 1)))) * h
 
 /-- Translating `r₁` by a natural number `m`. -/
 private theorem siegelFunction_add_natCast_zero (r : Fin 2 → ℝ) (m : ℕ) {τ : ℂ} (hτ : 0 < τ.im) :
@@ -294,7 +271,7 @@ theorem siegelFunction_add_intCast (r : Fin 2 → ℝ) (s : Fin 2 → ℤ) {τ :
       cexp (-(π * I * s 0 * s 1)) * (-1) ^ s 0 * (-1) ^ s 1 := by
     rw [zpow_add₀ (by norm_num), zpow_add₀ (by norm_num),
       show -(π * I * s 0 * s 1) = ((s 0 * s 1 : ℤ) : ℂ) * -(π * I) by push_cast; ring,
-      ← neg_one_zpow_eq_cexp]
+      ← Complex.neg_one_zpow_eq_exp]
   have hexp : cexp (-(π * I * s 0 * ((r 1 + s 1 : ℝ) : ℂ))) * cexp (π * I * s 1 * r 0) =
       cexp (-(π * I * s 0 * s 1)) * cexp (-(π * I * (s 0 * r 1 - s 1 * r 0))) := by
     simp only [← Complex.exp_add]
@@ -310,7 +287,7 @@ theorem siegelFunction_apply_add_one (r : Fin 2 → ℝ) (τ : ℂ) :
     siegelFunction r (τ + 1) = cexp (π * I / 6) * siegelFunction ![r 0, r 0 + r 1] τ := by
   have hq : cexp (2 * π * I * (τ + 1)) = cexp (2 * π * I * τ) := by
     rw [mul_add, mul_one, Complex.exp_add, exp_two_pi_mul_I, mul_one]
-  simp only [siegelFunction_eq_siegelProd, Matrix.cons_val_zero, Matrix.cons_val_one,
+  simp only [siegelFunction_eq_qTheta, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one, hq]
   have hw : cexp (2 * π * I * (r 0 * (τ + 1) + r 1)) =
       cexp (2 * π * I * (r 0 * τ + ((r 0 + r 1 : ℝ) : ℂ))) := by
@@ -325,7 +302,7 @@ theorem siegelFunction_apply_add_one (r : Fin 2 → ℝ) (τ : ℂ) :
     push_cast
     ring
   rw [hw]
-  linear_combination (-siegelProd (cexp (2 * π * I * τ))
+  linear_combination (-qTheta (cexp (2 * π * I * τ))
     (cexp (2 * π * I * (r 0 * τ + ((r 0 + r 1 : ℝ) : ℂ))))) * h
 
 end Translation
