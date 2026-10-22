@@ -221,6 +221,21 @@ theorem productClass_vadd_snd [AddTorsor (PeriodGroup ω c) C₂]
 
 variable [AddTorsor (PeriodGroup ω c) C₁] [AddTorsor (PeriodGroup ω c) C₂]
 
+/-- Change of reference caps: if gluing is equivariant in each input, the product class for caps
+`Dᵢ` is the product class for reference caps `rᵢ`, plus the recapping class of the output, minus
+the recapping classes of the inputs. -/
+theorem productClass_eq_add_sub
+    (hglue₁ : ∀ (γ : PeriodGroup ω c) D₁ D₂, glue (γ +ᵥ D₁) D₂ = γ +ᵥ glue D₁ D₂)
+    (hglue₂ : ∀ (γ : PeriodGroup ω c) D₁ D₂, glue D₁ (γ +ᵥ D₂) = γ +ᵥ glue D₁ D₂)
+    (D₁ r₁ : C₁) (D₂ r₂ : C₂) (D₀ r₀ : C₀) :
+    productClass glue D₁ D₂ D₀ =
+      productClass glue r₁ r₂ r₀ + (D₀ -ᵥ r₀) - (D₁ -ᵥ r₁) - (D₂ -ᵥ r₂) := by
+  conv_lhs => rw [← vsub_vadd D₁ r₁, ← vsub_vadd D₂ r₂, ← vsub_vadd D₀ r₀]
+  rw [productClass_vadd_out, productClass_vadd_fst hglue₁, productClass_vadd_snd hglue₂]
+  -- `PeriodGroup ω c` has no commutative instance for a general `S`, so compare areas and
+  -- Chern numbers.
+  refine PeriodGroup.ext ?_ ?_ <;> simp only [map_add, map_sub] <;> abel
+
 /-- Cap independence of `f₁ D₁ + f₂ D₂ − f₀ D₀ + φ(A)`: if gluing is equivariant in each input
 and the functions `fᵢ` change by `φ γ` under recapping by `γ`, then this quantity takes the same
 value for all choices of caps. With `φ = PeriodGroup.area ω c` and the action functionals as
@@ -260,26 +275,5 @@ theorem add_sub_add_two_mul_chern_productClass_eq {m₁ : C₁ → ℤ} {m₂ : 
 end Product
 
 end Group
-
-section Reference
-
-variable {S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ} {C₁ C₂ C₀ : Type*}
-  [AddTorsor (PeriodGroup ω c) C₁] [AddTorsor (PeriodGroup ω c) C₂]
-  [AddTorsor (PeriodGroup ω c) C₀] {glue : C₁ → C₂ → C₀}
-
-/-- Change of reference caps: if gluing is equivariant in each input, the product class for caps
-`Dᵢ` is the product class for reference caps `rᵢ`, plus the recapping class of the output, minus
-the recapping classes of the inputs. -/
-theorem productClass_eq_add_sub
-    (hglue₁ : ∀ (γ : PeriodGroup ω c) D₁ D₂, glue (γ +ᵥ D₁) D₂ = γ +ᵥ glue D₁ D₂)
-    (hglue₂ : ∀ (γ : PeriodGroup ω c) D₁ D₂, glue D₁ (γ +ᵥ D₂) = γ +ᵥ glue D₁ D₂)
-    (D₁ r₁ : C₁) (D₂ r₂ : C₂) (D₀ r₀ : C₀) :
-    productClass glue D₁ D₂ D₀ =
-      productClass glue r₁ r₂ r₀ + (D₀ -ᵥ r₀) - (D₁ -ᵥ r₁) - (D₂ -ᵥ r₂) := by
-  conv_lhs => rw [← vsub_vadd D₁ r₁, ← vsub_vadd D₂ r₂, ← vsub_vadd D₀ r₀]
-  rw [productClass_vadd_out, productClass_vadd_fst hglue₁, productClass_vadd_snd hglue₂]
-  abel
-
-end Reference
 
 end TauCeti.Floer
