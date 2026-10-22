@@ -367,7 +367,7 @@ private theorem lintegral_perimeter_le_of_isCompact_closure (hum : Measurable u)
   have hlim : Tendsto (fun n => ∫⁻ x in K, ‖w n x - u x‖ₑ ∂μ) atTop (𝓝 0) :=
     (tendsto_setLIntegral_enorm_normed_convolution_sub hφ hu' hK).congr fun n =>
       setLIntegral_congr_fun hK.measurableSet fun x hx => by rw [hu'u x hx]
-  obtain ⟨ns, hns, hae⟩ := exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt (μ.restrict K)
+  obtain ⟨ns, hns, hae⟩ := (μ.restrict K).exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt
     (fun n => (hw n).continuous.aemeasurable) hum.aemeasurable hlim
   have hsmall : ∀ᶠ j in atTop, (φ (ns j)).rOut ≤ δ / 4 :=
     (hφ.comp hns.tendsto_atTop).eventually (ge_mem_nhds (by positivity))

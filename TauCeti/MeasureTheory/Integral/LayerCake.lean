@@ -46,8 +46,9 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
   nonnegative functions, as a double integral of intersections of superlevel sets;
 * `TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff` — the `L¹` distance of two real
   functions, level by level;
-* `TauCeti.exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt` — along a subsequence of an
-  `L¹`-convergent sequence, the superlevel sets converge in measure at almost every level;
+* `MeasureTheory.Measure.exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt` — along a
+  subsequence of an `L¹`-convergent sequence, the superlevel sets converge in measure at almost
+  every level;
 * `TauCeti.lintegral_ofReal_sub_eq_lintegral_measure` — the integral of a positive part
   `(g - f)⁺`, level by level;
 * `TauCeti.lintegral_sub_eq_lintegral_measure_sdiff` — the integral of a truncated difference
@@ -212,6 +213,12 @@ theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff (m : Measure α) [SFin
       simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
       rw [hfa, hga]
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+variable {α : Type*} [MeasurableSpace α]
+
 open Filter Topology in
 /-- **Superlevel sets along an `L¹`-convergent sequence.** If `f n → g` in `L¹(m)`, then along a
 subsequence the strict superlevel sets `{f n > s}` converge in measure to `{g > s}` at almost every
@@ -224,7 +231,7 @@ theorem exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt (m : Measure α) 
   -- The defect `F n s` at level `s` is measurable in `s` and integrates to `∫ |f n - g|`.
   set F : ℕ → ℝ → ℝ≥0∞ := fun n s ↦ m ({a | s < f n a} ∆ {a | s < g a})
   have hF (n : ℕ) : ∫⁻ s, F n s = ∫⁻ a, ‖f n a - g a‖ₑ ∂m := by
-    rw [lintegral_enorm_sub_eq_lintegral_measure_symmDiff m (hf n) hg]
+    rw [TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff m (hf n) hg]
     refine lintegral_congr fun s ↦ ?_
     simp only [F, ← compl_symmDiff_compl (a := {a | s < f n a}), compl_ofPred, not_lt]
   have hFm (n : ℕ) : Measurable (F n) := by
@@ -248,6 +255,12 @@ theorem exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt (m : Measure α) 
     exact ((ENNReal.tsum_le_tsum fun j ↦ (hlt j).le).trans_lt (by simp)).ne
   filter_upwards [ae_lt_top (Measurable.tsum fun j ↦ hFm (ns j)) hsum] with s hs
   exact ENNReal.tendsto_atTop_zero_of_tsum_ne_top hs.ne
+
+end MeasureTheory.Measure
+
+namespace TauCeti
+
+variable {α : Type*} [MeasurableSpace α]
 
 private theorem lintegral_ofReal_sub_eq_lintegral_measure_of_measurable (m : Measure α) [SFinite m]
     {f g : α → ℝ} (hf : Measurable f) (hg : Measurable g) :
