@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.Cat
+public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
-public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import Mathlib.CategoryTheory.Products.Basic
+public import Mathlib.CategoryTheory.SingleObj
 
 /-!
 # Equivariant groupoid lifts of categorical group actions
@@ -64,6 +66,21 @@ product `b * a`, so the commuting isomorphisms compare the two factorizations
 public section
 
 universe w v u₂ v₁ u₁
+
+namespace CategoryTheory.Pseudofunctor
+
+open Bicategory
+
+variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
+
+/-- The restriction of a pseudofunctor `F` out of `LocallyDiscrete (Γ × SingleObj H)` to the
+fiber `{p} × SingleObj H`, that is, its composite with `Prod.sectR p (SingleObj H)`. Its value
+at the unique object is `F.obj ⟨(p, ⋆)⟩` and its value at `a : H` is `F.map (𝟙 p, a)`. -/
+abbrev restrictFiber {B : Type*} [Bicategory B] (F : LocallyDiscrete (Γ × SingleObj H) ⥤ᵖ B)
+    (p : Γ) : LocallyDiscrete (SingleObj H) ⥤ᵖ B :=
+  (Prod.sectR p (SingleObj H)).toPseudofunctor.comp F
+
+end CategoryTheory.Pseudofunctor
 
 namespace TauCeti
 
