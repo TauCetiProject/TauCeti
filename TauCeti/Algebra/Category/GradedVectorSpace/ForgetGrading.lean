@@ -107,6 +107,27 @@ noncomputable def finiteTotalObjLinearEquiv (V : (finite k).FullSubcategory) :
     (finiteTotal k).obj V ≃ₗ[k] ⨁ j, (V.obj j : Type u) :=
   ((finiteTotalCompιIso k).app V ≪≫ ModuleCat.coprodIsoDirectSum V.obj).toLinearEquiv
 
+/-- **Naturality of `finiteTotalObjLinearEquiv`**: under the identifications with direct sums,
+forgetting the grading of a morphism `f` is the direct sum of its components `fⱼ`. -/
+@[simp]
+theorem finiteTotalObjLinearEquiv_map {V W : (finite k).FullSubcategory} (f : V ⟶ W)
+    (x : (finiteTotal k).obj V) :
+    finiteTotalObjLinearEquiv k W (((finiteTotal k).map f).hom.hom x) =
+      DirectSum.lmap (fun j ↦ (f.hom j).hom) (finiteTotalObjLinearEquiv k V x) := by
+  obtain ⟨y, rfl⟩ := (finiteTotalObjLinearEquiv k V).symm.surjective x
+  rw [LinearEquiv.apply_symm_apply]
+  induction y using DirectSum.induction_on with
+  | zero => simp
+  | add y z hy hz => simp only [map_add, hy, hz]
+  | of j y =>
+    have h₁ := ModuleCat.lof_coprodIsoDirectSum_inv_apply V.obj j y
+    have h₂ := ModuleCat.ι_coprodIsoDirectSum_hom_apply W.obj j ((f.hom j).hom y)
+    have h₃ := ConcreteCategory.congr_hom (Sigma.ι_map (fun j ↦ f.hom j) j) y
+    simp only [ConcreteCategory.comp_apply] at h₁ h₂ h₃
+    rw [DirectSum.lmap_of]
+    -- `finiteTotal k` maps `f` to `Sigma.map f`, by `ObjectProperty.lift` and `GradedObject.total`.
+    exact (congrArg _ (congrArg _ h₁)).trans ((congrArg _ h₃).trans h₂)
+
 /-- The dimension of the vector space underlying `V` is the sum of the dimensions of its pieces. -/
 @[simp]
 theorem finrank_finiteTotal_obj (V : (finite k).FullSubcategory) :
