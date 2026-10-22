@@ -227,14 +227,6 @@ theorem commute_chirality_bivectorExterior (x : ⋀[ℝ]^2 V) :
     rw [bivector_def, mul_smul_comm, smul_mul_assoc, mul_sub, sub_mul, hι, hι]
   exact (Subalgebra.mem_centralizer_iff ℝ).1 hmem _ rfl
 
-omit hQ in
-/-- The Clifford bivector map sends the exterior basis vector `e_u` of `⋀² V` to the Clifford
-basis vector `e_u`. -/
-private theorem bivectorExterior_exteriorPower_basis (u : powersetCard (Fin 4) 2) :
-    bivectorExterior Q ((frame o).toBasis.exteriorPower 2 u) = basis Q (frame o).toBasis u := by
-  rw [LinearEquiv.eq_symm_apply _ |>.2 (equivExterior_bivectorExterior Q _),
-    ← ExteriorAlgebra.basis_eq_coe_basis, ← CliffordAlgebra.basis_apply]
-
 /-- For a two-element set `s` of frame indices, `e_s e_{sᶜ} = -ε Γ`, where `ε` is the shuffle
 sign of `s`. -/
 private theorem basis_mul_basis_compl (hcard : 2 + 2 = Fintype.card (Fin 4))
@@ -342,41 +334,27 @@ private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V
     rw [← OrthonormalBasis.coe_toBasis, basis_mul_ι_of_notMem hb hi, powersetCard.mem_iff.1 s.2]
     simp
   set A := basis Q (frame o).toBasis s
-  by_cases hk : k ∈ s.val <;> by_cases hl : l ∈ s.val
+  by_cases hts : t.val ⊆ s.val
   · -- `t ⊆ s`, so `t = s` and `e_s² = -1`.
-    have hts : t = s := Subtype.ext <| Finset.eq_of_subset_of_card_le
-      (fun i hi ↦ by rcases (hmem i).1 hi with rfl | rfl <;> assumption)
+    have hts : t = s := Subtype.ext <| Finset.eq_of_subset_of_card_le hts
       (by rw [powersetCard.mem_iff.1 s.2, powersetCard.mem_iff.1 t.2])
     subst hts
+    have hk : k ∈ t.val := (hmem k).2 (Or.inl rfl)
     have hne : powersetCard.compl hcard t ≠ t := fun h ↦ by
       have hk' : k ∈ powersetCard.compl hcard t := by rw [h]; exact hk
       exact powersetCard.mem_compl.1 hk' hk
-    rw [ite_eq_left rfl, ite_eq_right hne, basis_mul_self_of_orthonormal hQ,
-      powersetCard.mem_iff.1 t.2, Algebra.algebraMap_eq_smul_one]
-    norm_num
-    rw [two_smul, one_add_one_eq_two]
-  · -- `e_s` anticommutes with `c(e_k)` and commutes with `c(e_l)`, so with `e_t` it anticommutes.
-    have hst : s ≠ t := fun h ↦ hl (h ▸ (hmem l).2 (Or.inr rfl))
-    have hct : powersetCard.compl hcard s ≠ t := fun h ↦
-      powersetCard.mem_compl.1 (h ▸ (hmem k).2 (Or.inl rfl) : k ∈ powersetCard.compl hcard s) hk
-    have h : A * basis Q (frame o).toBasis t = -(basis Q (frame o).toBasis t * A) := by
-      rw [ht, ← mul_assoc, hmem_s hk, neg_mul, mul_assoc,
-        hnotMem_s hl, ← mul_assoc]
-    rw [ite_eq_right hst, ite_eq_right hct, h]
-    simp
-  · have hst : s ≠ t := fun h ↦ hk (h ▸ (hmem k).2 (Or.inl rfl))
-    have hct : powersetCard.compl hcard s ≠ t := fun h ↦
-      powersetCard.mem_compl.1 (h ▸ (hmem l).2 (Or.inr rfl) : l ∈ powersetCard.compl hcard s) hl
-    have h : A * basis Q (frame o).toBasis t = -(basis Q (frame o).toBasis t * A) := by
-      rw [ht, ← mul_assoc, hnotMem_s hk, mul_assoc,
-        hmem_s hl, mul_neg, ← mul_assoc]
-    rw [ite_eq_right hst, ite_eq_right hct, h]
-    simp
+    have hAA : A * A = -1 := by
+      rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 t.2]
+      norm_num
+    rw [ite_eq_left rfl, ite_eq_right hne, hAA, Algebra.algebraMap_eq_smul_one]
+    module
+  by_cases hdisj : Disjoint s.val t.val
   · -- `t` is disjoint from `s`, so `t = sᶜ`, and `e_s` commutes with `e_t`.
+    have hk : k ∉ s.val := Finset.disjoint_right.1 hdisj ((hmem k).2 (Or.inl rfl))
+    have hl : l ∉ s.val := Finset.disjoint_right.1 hdisj ((hmem l).2 (Or.inr rfl))
     have hst : s ≠ t := fun h ↦ hk (h ▸ (hmem k).2 (Or.inl rfl))
-    have hct : t = powersetCard.compl hcard s := (powersetCard.disjoint_iff_eq_compl hcard).1 <|
-      Finset.disjoint_left.2 fun i hi his ↦ by
-        rcases (hmem i).1 hi with rfl | rfl <;> contradiction
+    have hct : t = powersetCard.compl hcard s :=
+      (powersetCard.disjoint_iff_eq_compl hcard).1 hdisj.symm
     have h : basis Q (frame o).toBasis t * A = A * basis Q (frame o).toBasis t := by
       rw [ht, mul_assoc, ← hnotMem_s hl, ← mul_assoc,
         ← hnotMem_s hk, mul_assoc]
@@ -384,6 +362,25 @@ private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V
       Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ]
     simp only [mul_zero, map_zero, zero_sub, mul_one, smul_neg]
     module
+  -- `t` shares exactly one index `i` with `s`; let `j` be the other one. Then `e_s` anticommutes
+  -- with `c(e_i)` and commutes with `c(e_j)`, so it anticommutes with `e_t`.
+  obtain ⟨j, hjt, hjs⟩ := Finset.not_subset.1 hts
+  obtain ⟨i, his, hit⟩ := Finset.not_disjoint_iff.1 hdisj
+  have hst : s ≠ t := fun h ↦ hjs (h ▸ hjt)
+  have hct : powersetCard.compl hcard s ≠ t := fun h ↦
+    powersetCard.mem_compl.1 (h ▸ hit : i ∈ powersetCard.compl hcard s) his
+  have hi : SemiconjBy A (ι Q (frame o i)) (-ι Q (frame o i)) := by
+    rw [SemiconjBy, hmem_s his, neg_mul]
+  have hj : SemiconjBy A (ι Q (frame o j)) (ι Q (frame o j)) := hnotMem_s hjs
+  have h : A * basis Q (frame o).toBasis t = -(basis Q (frame o).toBasis t * A) := by
+    rw [ht]
+    rcases (hmem i).1 hit with rfl | rfl <;> rcases (hmem j).1 hjt with rfl | rfl
+    · exact absurd his hjs
+    · rw [(hi.mul_right hj).eq, neg_mul, neg_mul]
+    · rw [(hj.mul_right hi).eq, mul_neg, neg_mul]
+    · exact absurd his hjs
+  rw [ite_eq_right hst, ite_eq_right hct, h]
+  simp
 
 /-- **The anticommutator of two two-forms** in the Clifford algebra of an oriented four-space:
 `c₂(α) c₂(β) + c₂(β) c₂(α) = -2 ⟪α, β⟫ - 2 ⟪⋆α, β⟫ Γ`. Since `α ∧ β = ⟪⋆α, β⟫ vol`, the
