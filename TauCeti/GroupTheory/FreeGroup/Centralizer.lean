@@ -41,16 +41,20 @@ a fixed nonzero exponent, transporting Mathlib's instance for `FreeGroup α` alo
   (centralizers of nontrivial elements of a free group are cyclic).
 -/
 
+/- Acknowledgment: the statements of the centre and centralizer results here follow the shape of
+the interface proposed in Mathlib PR #42677 (`FreeGroup/Center.lean`, centre and centralizers of
+free groups). No proofs from that PR are used. -/
+
 public section
 
 namespace FreeGroup
 
 variable {α : Type*}
 
-/-- If a generator of a free group is the `m`-th power of some element, then `m = ±1`: the
-exponent-sum homomorphism to `ℤ` sends `of a` to `1`. -/
+/-- If a generator of a free group is the `m`-th power of some element, then `m = ±1`. -/
 theorem natAbs_eq_one_of_of_eq_zpow {a : α} {r : FreeGroup α} {m : ℤ} (h : of a = r ^ m) :
     m.natAbs = 1 := by
+  -- The exponent-sum homomorphism to `ℤ` sends `of a` to `1`.
   let d : FreeGroup α →* Multiplicative ℤ := FreeGroup.lift fun _ ↦ Multiplicative.ofAdd 1
   have hd : (1 : ℤ) = m * (d r).toAdd := by
     simpa [d, mul_comm] using congrArg (fun g ↦ (d g).toAdd) h
