@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Relative
-public import TauCeti.Topology.Sheaves.Flasque
+public import TauCeti.Topology.Sheaves.Flasque.Basic
 
 /-!
 # Sheaf cohomology with closed supports
