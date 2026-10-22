@@ -202,7 +202,8 @@ private theorem convex_uniformlyPositive {X : Type*} [TopologicalSpace X] :
     min δ₁ δ₂ = a * min δ₁ δ₂ + b * min δ₁ δ₂ := by rw [← add_mul, hab, one_mul]
     _ ≤ a * h₁ f + b * h₂ f := by gcongr
 
-/-- Uniform positivity is open in the uniform topology on continuous functions on a compact space. -/
+/-- Uniform positivity is open in the uniform topology on continuous functions
+on a compact space. -/
 private theorem isOpen_uniformlyPositive {X : Type*} [TopologicalSpace X] [CompactSpace X] :
     IsOpen {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
   refine Metric.isOpen_iff.2 ?_
