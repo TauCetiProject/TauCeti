@@ -63,6 +63,11 @@ namespace ZLattice
 
 variable {E : Type*} [NormedAddCommGroup E]
 
+/-- `exp (π i a) = exp (π i b)` whenever `a - b` is an even integer. -/
+private theorem cexp_pi_mul_I_mul_eq_of_sub_eq {a b : ℂ} {m : ℤ} (h : a - b = 2 * m) :
+    cexp (π * I * a) = cexp (π * I * b) :=
+  exp_eq_exp_iff_exists_int.mpr ⟨m, by linear_combination (π * I) * h⟩
+
 /-- If `(‖γ + v‖² - ‖γ‖²) t` is an even integer for every `v ∈ L`, then translating `τ` by `t`
 multiplies the theta series of `γ + L` by `exp (π i ‖γ‖² t)`. -/
 theorem thetaCoset_vadd_eq_mul (L : Submodule ℤ E) (γ : E) {t : ℝ}
@@ -71,14 +76,11 @@ theorem thetaCoset_vadd_eq_mul (L : Submodule ℤ E) (γ : E) {t : ℝ}
   rw [thetaCoset_apply, thetaCoset_apply, ← tsum_mul_left]
   refine tsum_congr fun v ↦ ?_
   obtain ⟨m, hm⟩ := h v v.2
-  have hm' : ((‖γ + (v : E)‖ ^ 2 : ℝ) : ℂ) * t = ((‖γ‖ ^ 2 : ℝ) : ℂ) * t + 2 * m := by
-    rw [← sub_eq_iff_eq_add', ← sub_mul]
-    exact_mod_cast hm
-  have he : π * I * ((‖γ + (v : E)‖ ^ 2 : ℝ) : ℂ) * (t + τ) =
-      π * I * ((‖γ‖ ^ 2 : ℝ) : ℂ) * t + π * I * ((‖γ + (v : E)‖ ^ 2 : ℝ) : ℂ) * τ +
-        m * (2 * π * I) := by
-    linear_combination (π * I) * hm'
-  rw [coe_vadd, he, exp_add, exp_int_mul_two_pi_mul_I, mul_one, exp_add]
+  have ht : cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * t) = cexp (π * I * (‖γ‖ ^ 2 : ℝ) * t) := by
+    simpa only [mul_assoc] using cexp_pi_mul_I_mul_eq_of_sub_eq
+      (a := ((‖γ + (v : E)‖ ^ 2 : ℝ) : ℂ) * t) (b := ((‖γ‖ ^ 2 : ℝ) : ℂ) * t)
+      (by rw [← sub_mul]; exact_mod_cast hm)
+  rw [coe_vadd, mul_add, exp_add, ht]
 
 variable {L : Submodule ℤ E}
 
@@ -127,12 +129,7 @@ translation law depends only on the coset `γ + L`. -/
 theorem cexp_pi_mul_I_mul_norm_add_sq (hL : IsEven L) (hγ : γ ∈ dual L) {v : E} (hv : v ∈ L) :
     cexp (π * I * (‖γ + v‖ ^ 2 : ℝ)) = cexp (π * I * (‖γ‖ ^ 2 : ℝ)) := by
   obtain ⟨m, hm⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
-  have hm' : ((‖γ + v‖ ^ 2 : ℝ) : ℂ) = ((‖γ‖ ^ 2 : ℝ) : ℂ) + 2 * m := by
-    rw [← sub_eq_iff_eq_add']
-    exact_mod_cast hm
-  have he : π * I * ((‖γ + v‖ ^ 2 : ℝ) : ℂ) = π * I * ((‖γ‖ ^ 2 : ℝ) : ℂ) + m * (2 * π * I) := by
-    linear_combination (π * I) * hm'
-  rw [he, exp_add, exp_int_mul_two_pi_mul_I, mul_one]
+  exact cexp_pi_mul_I_mul_eq_of_sub_eq (by exact_mod_cast hm)
 
 /-- The translation law of the theta series of a coset of an even lattice: for `γ ∈ L^∨` and an
 integer `n`, `θ_{γ+L}(τ + n) = exp (π i n ‖γ‖²) θ_{γ+L}(τ)`. -/
@@ -171,10 +168,10 @@ theorem thetaCoset_slash_T_zpow_eq_self (hL : IsEven L) (hγ : γ ∈ dual L) (k
     (hN : ∃ m : ℤ, N * ‖γ‖ ^ 2 = 2 * m) :
     thetaCoset L γ ∣[k] (ModularGroup.T ^ N) = thetaCoset L γ := by
   obtain ⟨m, hm⟩ := hN
-  have hm' : π * I * ((‖γ‖ ^ 2 : ℝ) : ℂ) * N = m * (2 * π * I) := by
-    have : (N : ℂ) * ((‖γ‖ ^ 2 : ℝ) : ℂ) = 2 * m := by exact_mod_cast hm
-    linear_combination (π * I) * this
-  rw [hL.thetaCoset_slash_T_zpow hγ, hm', exp_int_mul_two_pi_mul_I, one_smul]
+  have h1 : cexp (π * I * (‖γ‖ ^ 2 : ℝ) * N) = 1 := by
+    simpa only [mul_zero, exp_zero, mul_assoc] using cexp_pi_mul_I_mul_eq_of_sub_eq
+      (a := ((‖γ‖ ^ 2 : ℝ) : ℂ) * N) (b := 0) (by rw [sub_zero, mul_comm]; exact_mod_cast hm)
+  rw [hL.thetaCoset_slash_T_zpow hγ, h1, one_smul]
 
 end IsEven
 
@@ -207,10 +204,8 @@ theorem thetaCoset_slash_T_zpow_two_mul (hL : IsIntegral L) (hγ : γ ∈ dual L
     thetaCoset L γ ∣[k] (ModularGroup.T ^ (2 * n)) =
       cexp (2 * π * I * (‖γ‖ ^ 2 : ℝ) * n) • thetaCoset L γ := by
   ext τ
-  rw [TauCeti.ModularForm.slash_T_zpow_apply, Pi.smul_apply, smul_eq_mul,
-    ← hL.thetaCoset_two_mul_intCast_vadd hγ]
-  push_cast
-  rfl
+  rw [TauCeti.ModularForm.slash_T_zpow_apply, Pi.smul_apply, smul_eq_mul, Int.cast_mul,
+    Int.cast_ofNat, hL.thetaCoset_two_mul_intCast_vadd hγ]
 
 /-- The theta series of an integral lattice is invariant under `T ^ 2`, in every weight:
 `Θ_L ∣[k] T ^ 2 = Θ_L`. -/
