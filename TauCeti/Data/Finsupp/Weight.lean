@@ -27,6 +27,8 @@ lexicographic order and weighted degree.
 
 On a product `ι × κ` of blocks indexed by `ι`, the weight given by the indicator of block `b`
 sums the coefficients in that block. For natural-valued exponents, this is the degree in block `b`.
+More generally, for a block map `b : σ → τ`, the indicator weight of the fibre over `h` is the value
+at `h` of the pushforward `Finsupp.mapDomain b`.
 
 ## Main results
 
@@ -44,6 +46,10 @@ sums the coefficients in that block. For natural-valued exponents, this is the d
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
 * `Finsupp.weight_ite_fst_eq_sum`: the indicator weight of a block sums its coefficients; for
   natural-valued exponents, this is the degree in that block.
+* `Finsupp.weight_ite_eq_mapDomain_apply`: the indicator weight of a fibre of `b : σ → τ` is the
+  corresponding value of `Finsupp.mapDomain b`.
+* `Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply`: for the block map `Sum.elim id b` on
+  `τ ⊕ σ`, the indicator weight of block `h` of `a.sumElim e` is `a h + e.mapDomain b h`.
 -/
 
 public section
@@ -151,5 +157,33 @@ theorem weight_ite_fst_eq_sum {ι κ R : Type*} [Fintype κ] [DecidableEq ι] [S
       classical
       simp [Finsupp.weight_single, Finsupp.single_apply]
     · simp [Finsupp.weight_single, hb]
+
+end Finsupp
+
+namespace Finsupp
+
+/-- The indicator weight of the fibre of `b` over `h` is the value at `h` of the pushforward of
+`e` along `b`, that is, the sum of the coefficients of `e` at the indices lying over `h`. -/
+theorem weight_ite_eq_mapDomain_apply {σ τ R : Type*} [DecidableEq τ] [Semiring R]
+    (b : σ → τ) (e : σ →₀ R) (h : τ) :
+    weight (fun j ↦ if b j = h then (1 : R) else 0) e = e.mapDomain b h := by
+  induction e using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [map_add, hf, hg, mapDomain_add, Finsupp.add_apply]
+  | single j n => by_cases hj : b j = h <;> simp [weight_single, mapDomain_single, hj]
+
+end Finsupp
+
+namespace Finsupp
+
+/-- On `τ ⊕ σ`, with the block map `Sum.elim id b` that puts the coordinate `.inl h` into block
+`h`, the indicator weight of block `h` of `a.sumElim e` is `a h + e.mapDomain b h`. -/
+theorem weight_ite_sumElim_eq_add_mapDomain_apply {σ τ R : Type*} [DecidableEq τ] [Semiring R]
+    (b : σ → τ) (a : τ →₀ R) (e : σ →₀ R) (h : τ) :
+    weight (fun v ↦ if Sum.elim id b v = h then (1 : R) else 0) (a.sumElim e) =
+      a h + e.mapDomain b h := by
+  rw [weight_ite_eq_mapDomain_apply, sumElim_eq_add, mapDomain_add, ← mapDomain_comp,
+    ← mapDomain_comp]
+  simp
 
 end Finsupp
