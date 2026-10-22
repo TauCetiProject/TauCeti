@@ -74,7 +74,7 @@ def quantumBinomial (q : K) : ℕ → ℕ → K
   cases n <;> simp [quantumBinomial]
 
 /-- `[0 choose k + 1]_q = 0`. -/
-@[simp] theorem quantumBinomial_zero_succ (q : K) (k : ℕ) : quantumBinomial q 0 (k + 1) = 0 := by
+theorem quantumBinomial_zero_succ (q : K) (k : ℕ) : quantumBinomial q 0 (k + 1) = 0 := by
   simp [quantumBinomial]
 
 /-- The defining Pascal rule
@@ -90,7 +90,7 @@ theorem quantumBinomial_succ_succ (q : K) (n k : ℕ) :
   induction n generalizing k with
   | zero =>
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero h.ne'
-    simp
+    exact quantumBinomial_zero_succ q k
   | succ n ih =>
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : k ≠ 0)
     rw [quantumBinomial_succ_succ, ih (by omega), ih (by omega)]
