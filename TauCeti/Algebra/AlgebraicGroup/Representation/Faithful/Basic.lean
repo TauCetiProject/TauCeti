@@ -37,6 +37,8 @@ is equivalent to generation of the coordinate ring by matrix coefficients and th
 
 * `TauCeti.Comodule.coordinateBialgHom_range`: the exact range of the coordinate morphism.
 * `TauCeti.Comodule.IsFaithful`: the basis-independent predicate for a faithful comodule.
+* `TauCeti.Comodule.coordinateBialgHom_surjective_iff_isFaithful`: faithfulness is surjectivity
+  of the coordinate morphism for any basis.
 * `TauCeti.Comodule.isFaithful_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top`: the
   matrix-coefficient criterion for faithfulness.
 * `TauCeti.Comodule.isFaithful_corestrict_of_surjective`: corestriction along a surjective
@@ -266,6 +268,14 @@ theorem isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom
     exact (isClosedImmersion_coordinateGroupSchemeHom_iff_of_bases c b).mp hc
   · intro hb
     exact ⟨d, b, hb⟩
+
+/-- A finite basis witnesses faithfulness exactly when its coordinate morphism
+`O(GL_d) ⟶ H` is surjective. -/
+theorem coordinateBialgHom_surjective_iff_isFaithful (b : Basis (Fin d) k V) :
+    Function.Surjective (coordinateBialgHom (H := H) b) ↔
+      IsFaithful (k := k) (H := H) (V := V) := by
+  rw [isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b,
+    isClosedImmersion_coordinateGroupSchemeHom_iff]
 
 /-- Corestricting a faithful finite free comodule along a surjective bialgebra morphism gives a
 faithful comodule over the codomain. Geometrically, restricting a faithful representation to a
