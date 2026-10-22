@@ -20,7 +20,7 @@ of the point chosen along that traversal.
 an explicit bijection of crossing-free labels. It preserves identities and composition;
 `relabelComponentEquiv` and `mirrorComponentEquiv` apply it to the native diagram operations.
 
-`CrossinglessLabelling` decorates the crossing-free labels by the prescribed orientation
+`CrossinglessLabeling` decorates the crossing-free labels by the prescribed orientation
 multiset. Such labellings exist and any two differ by a permutation, so choosing labels does
 not lose multiplicities or distinguish circles with equal orientation artificially.
 
@@ -176,55 +176,55 @@ def mirrorComponentEquiv (D : OrientedPDCode n) : D.Component ≃ D.mirror.Compo
 
 /-- A labelling of the crossing-free circles by orientations with the prescribed multiset.
 Repeated orientations still occupy distinct labels. -/
-abbrev CrossinglessLabelling (D : OrientedPDCode n) :=
+abbrev CrossinglessLabeling (D : OrientedPDCode n) :=
   {o : Fin D.crossinglessComponentCount → Bool //
     Finset.univ.val.map o = D.crossinglessComponents}
 
-namespace CrossinglessLabelling
+namespace CrossinglessLabeling
 
 /-- Crossing-free circles admit orientation labels, including when there are no such circles. -/
-instance (D : OrientedPDCode n) : Nonempty D.CrossinglessLabelling := by
+instance (D : OrientedPDCode n) : Nonempty D.CrossinglessLabeling := by
   obtain ⟨o, ho⟩ := exists_map_univ_eq (X := Fin D.crossinglessComponentCount)
     D.crossinglessComponents (by simp)
   exact ⟨⟨o, ho⟩⟩
 
 /-- Reindex the crossing-free labels, keeping their orientation multiset unchanged. -/
-def reindex {D : OrientedPDCode n} (o : D.CrossinglessLabelling)
-    (e : Equiv.Perm (Fin D.crossinglessComponentCount)) : D.CrossinglessLabelling :=
+def reindex {D : OrientedPDCode n} (o : D.CrossinglessLabeling)
+    (e : Equiv.Perm (Fin D.crossinglessComponentCount)) : D.CrossinglessLabeling :=
   ⟨o.val ∘ e, by
     rw [← Multiset.map_map, Multiset.map_univ_val_equiv]
     exact o.property⟩
 
 /-- The reindexed orientation at a label is the old orientation at its image. -/
-@[simp] theorem reindex_apply {D : OrientedPDCode n} (o : D.CrossinglessLabelling)
+@[simp] theorem reindex_apply {D : OrientedPDCode n} (o : D.CrossinglessLabeling)
     (e : Equiv.Perm (Fin D.crossinglessComponentCount))
     (i : Fin D.crossinglessComponentCount) :
     (o.reindex e).val i = o.val (e i) := (rfl)
 
 /-- Reindexing by the identity changes no orientation labels. -/
-@[simp] theorem reindex_refl {D : OrientedPDCode n} (o : D.CrossinglessLabelling) :
+@[simp] theorem reindex_refl {D : OrientedPDCode n} (o : D.CrossinglessLabeling) :
     o.reindex (Equiv.refl _) = o := by
   apply Subtype.ext
   rfl
 
 /-- Reindexing composes contravariantly, as precomposition of the orientation function. -/
-theorem reindex_trans {D : OrientedPDCode n} (o : D.CrossinglessLabelling)
+theorem reindex_trans {D : OrientedPDCode n} (o : D.CrossinglessLabeling)
     (e f : Equiv.Perm (Fin D.crossinglessComponentCount)) :
     o.reindex (e.trans f) = (o.reindex f).reindex e := by
   apply Subtype.ext
   rfl
 
 /-- The number of labels of a given orientation is its multiplicity in the native multiset. -/
-@[simp] theorem occCount_val {D : OrientedPDCode n} (o : D.CrossinglessLabelling) (b : Bool) :
+@[simp] theorem occCount_val {D : OrientedPDCode n} (o : D.CrossinglessLabeling) (b : Bool) :
     Function.occCount o.val b = D.crossinglessComponents.count b := by
   rw [occCount_eq_count_map_univ, o.property]
 
 /-- Any two choices of orientation labels differ by a permutation of the individual circles. -/
-theorem exists_reindex_eq {D : OrientedPDCode n} (o p : D.CrossinglessLabelling) :
+theorem exists_reindex_eq {D : OrientedPDCode n} (o p : D.CrossinglessLabeling) :
     ∃ e : Equiv.Perm (Fin D.crossinglessComponentCount), p.reindex e = o := by
   obtain ⟨e, he⟩ := exists_perm_of_map_univ_eq (o.property.trans p.property.symm)
   exact ⟨e, Subtype.ext he⟩
 
-end CrossinglessLabelling
+end CrossinglessLabeling
 
 end TauCeti.OrientedPDCode
