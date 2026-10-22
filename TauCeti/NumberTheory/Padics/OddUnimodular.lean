@@ -14,9 +14,7 @@ import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
-import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.QuadraticForm.Binary
-import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.SquareClass
 import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.NumberTheory.Padics.RingHoms
 
