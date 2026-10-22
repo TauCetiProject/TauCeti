@@ -60,9 +60,9 @@ supported in `S` glues with zero on `W ∖ S` to a unique section over `W` suppo
 * `CategoryTheory.Sheaf.relativeH'.subsingleton_succ_of_isFlasque`: a flasque sheaf has no relative
   cohomology in positive degrees for an inclusion of opens; in particular it has no cohomology with
   supports in positive degrees.
-* `CategoryTheory.Sheaf.relativeH'.bijective_extClass_postcomp`: dimension shifting, the connecting
-  maps `Hⁿ⁺¹(V, U; F₃) ⟶ Hⁿ⁺²(V, U; F₁)` of a short exact sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with
-  `F₂` flasque are bijective;
+* `CategoryTheory.Sheaf.relativeH'.extClass_postcomp_bijective_of_isFlasque`: dimension
+  shifting, the connecting maps `Hⁿ⁺¹(V, U; F₃) ⟶ Hⁿ⁺²(V, U; F₁)` of a short exact sequence
+  `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with `F₂` flasque are bijective;
 * `CategoryTheory.Sheaf.supportedHRestrict`: the restriction map `H_Sⁿ(W, F) ⟶ H_Sⁿ(W', F)` for
   `W' ≤ W`, and `CategoryTheory.Sheaf.supportedHPresheaf F S n`, the presheaf `W ↦ H_Sⁿ(W, F)`;
 * `CategoryTheory.Sheaf.existsUnique_mem_supportedSections_map_eq`: excision for sections
@@ -449,7 +449,7 @@ instance subsingleton_succ_of_isFlasque [TopCat.Presheaf.IsFlasque F.obj]
 sequence of sheaves with `F₂` flasque, the connecting map `Hⁿ⁺¹(V, U; F₃) ⟶ Hⁿ⁺²(V, U; F₁)` is
 bijective. In particular this applies to cohomology with supports
 `H_Sⁿ⁺¹(W, F₃) ⟶ H_Sⁿ⁺²(W, F₁)`. -/
-theorem bijective_extClass_postcomp
+theorem extClass_postcomp_bijective_of_isFlasque
     {T : ShortComplex (Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
     (hT : T.ShortExact) [TopCat.Presheaf.IsFlasque T.X₂.obj] {U V : Opens X} (i : U ⟶ V)
     (n : ℕ) :

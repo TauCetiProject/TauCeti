@@ -274,13 +274,6 @@ section functor
 
 variable {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
 
-/-- The image of a section supported in `S` under a morphism of sheaves is supported in `S`, stated
-for the composite of a morphism `F ⟶ G` with the inclusion `Γ_S(F) ⟶ F`. -/
-lemma supportedSectionsι_comp_hom_app_mem (f : F ⟶ G) (W : (Opens X)ᵒᵖ)
-    (s : (F.supportedSectionsSheaf S).obj.obj W) :
-    (F.supportedSectionsι S ≫ f).hom.app W s ∈ G.supportedSections S W.unop :=
-  map_mem_supportedSections f s.2
-
 /-- The supported-section functor `Γ_S`, sending a sheaf `F` to the sheaf `Γ_S(F)` of sections
 supported in the closed subset `S`, and a morphism of sheaves to its restriction to supported
 sections. -/
@@ -290,7 +283,8 @@ abbrev supportedSectionsFunctor :
       Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u} where
   obj F := F.supportedSectionsSheaf S
   map {F G} f :=
-    supportedSectionsLift (F.supportedSectionsι S ≫ f) (supportedSectionsι_comp_hom_app_mem S f)
+    supportedSectionsLift (F.supportedSectionsι S ≫ f) fun W s ↦ map_mem_supportedSections f
+      (range_supportedSectionsι_hom_app F S W ▸ AddMonoidHom.mem_range.2 ⟨s, rfl⟩)
   map_id F := by
     rw [← cancel_mono (F.supportedSectionsι S)]
     simp
@@ -367,9 +361,9 @@ theorem epi_supportedSectionsFunctor_map_g (hT : T.ShortExact)
   obtain ⟨y, rfl⟩ := (T.X₃.supportedHZeroEquiv S W).surjective s
   obtain ⟨V, hVW, hxV, hV⟩ := (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff _).1 h x W
     (y.comp hT.extClass (zero_add 1)) hx
-  -- `hV` is stated with the restriction maps of `supportedHPresheaf`, which are by definition
-  -- the maps `supportedHRestrict`
+  -- the restriction maps of `supportedHPresheaf` are the maps `supportedHRestrict`
   replace hV : (T.X₃.supportedHRestrict S hVW 0 y).comp hT.extClass (zero_add 1) = 0 := by
+    simp only [supportedHPresheaf_map] at hV
     rw [← supportedHRestrict_comp]
     exact hV
   -- so near `x` the class `y` comes from a section of `F₂` supported in `S`
@@ -396,9 +390,10 @@ theorem isZero_supportedHSheaf_X₃_of_shortExact (hT : T.ShortExact)
   refine (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff _).2 fun x W c hx ↦ ?_
   obtain ⟨V, hVW, hxV, hV⟩ := (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff _).1 h x W
     (c.comp hT.extClass rfl) hx
-  -- the connecting map commutes with restriction to `V`, where it is injective; as above, the
-  -- restriction maps of `supportedHPresheaf` are by definition the maps `supportedHRestrict`
-  exact ⟨V, hVW, hxV, (relativeH'.bijective_extClass_postcomp hT (S.complInclusion V) n).1
+  simp only [supportedHPresheaf_map] at hV
+  -- the connecting map commutes with restriction to `V`, where it is injective
+  exact ⟨V, hVW, hxV, (relativeH'.extClass_postcomp_bijective_of_isFlasque hT
+    (S.complInclusion V) n).1
     (((T.X₃.supportedHRestrict_comp S hVW c hT.extClass rfl).symm.trans hV).trans
       (map_zero _).symm)⟩
 
@@ -414,8 +409,8 @@ theorem subsingleton_supportedH_one_of_shortExact (hT : T.ShortExact)
   -- because `Γ_S(F₂) ⟶ Γ_S(F₃)` is surjective on sections, `Γ_S(F₁)` being flasque
   obtain ⟨y, rfl⟩ := Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) (zero_add 1)
   have hΓ := shortExact_map_supportedSectionsFunctor S hT h
-  have : TopCat.Sheaf.IsFlasque (T.map (supportedSectionsFunctor S)).X₁ :=
-    ‹TopCat.Presheaf.IsFlasque (T.X₁.supportedSectionsSheaf S).obj›
+  have : TopCat.Sheaf.IsFlasque (T.map (supportedSectionsFunctor S)).X₁ := by
+    rwa [ShortComplex.map_X₁, supportedSectionsFunctor_obj]
   obtain ⟨t, ht⟩ := (AddCommGrpCat.epi_iff_surjective _).1
     (TopCat.Sheaf.IsFlasque.epi_of_shortExact hΓ (U := W)) (T.X₃.supportedHZeroEquiv S W y)
   obtain ⟨z, rfl⟩ := (T.X₂.supportedHZeroEquiv S W).surjective t
@@ -438,10 +433,11 @@ theorem subsingleton_supportedH_succ_of_isZero_supportedHSheaf_succ
     have hT : T.ShortExact := TauCeti.injectiveCokernelSequence_shortExact F
     have h₁ : IsZero (T.X₁.supportedHSheaf S 1) := h 0 (by omega)
     -- `Γ_S(F₃)` is flasque, as the quotient of the flasque sheaf `Γ_S(F₂)` by `Γ_S(F)`
-    have : TopCat.Sheaf.IsFlasque (T.map (supportedSectionsFunctor S)).X₁ :=
-      ‹TopCat.Presheaf.IsFlasque (F.supportedSectionsSheaf S).obj›
-    have : TopCat.Sheaf.IsFlasque (T.map (supportedSectionsFunctor S)).X₂ :=
-      isFlasque_supportedSectionsSheaf T.X₂ S
+    have : TopCat.Sheaf.IsFlasque (T.map (supportedSectionsFunctor S)).X₁ := by
+      rwa [ShortComplex.map_X₁, supportedSectionsFunctor_obj]
+    have : TopCat.Sheaf.IsFlasque (T.map (supportedSectionsFunctor S)).X₂ := by
+      rw [ShortComplex.map_X₂, supportedSectionsFunctor_obj]
+      infer_instance
     have : TopCat.Presheaf.IsFlasque (T.X₃.supportedSectionsSheaf S).obj :=
       TopCat.Sheaf.IsFlasque.of_shortExact_of_isFlasque₁₂
         (shortExact_map_supportedSectionsFunctor S hT h₁)
@@ -449,7 +445,8 @@ theorem subsingleton_supportedH_succ_of_isZero_supportedHSheaf_succ
     · exact subsingleton_supportedH_one_of_shortExact S hT h₁ W
     · have := ih T.X₃ (fun q hq ↦ isZero_supportedHSheaf_X₃_of_shortExact S hT (h (q + 1)
         (by omega))) (q := q) (by omega)
-      exact (relativeH'.bijective_extClass_postcomp hT (S.complInclusion W) q).2.subsingleton
+      exact (relativeH'.extClass_postcomp_bijective_of_isFlasque hT (S.complInclusion W)
+        q).2.subsingleton
 
 /-- **Support truncation.** If the local cohomology sheaves `𝓗_S^q(F)` vanish for all `q < n`,
 then the cohomology groups `H_S^q(W, F)` with supports in `S` vanish for all `q < n` and every
