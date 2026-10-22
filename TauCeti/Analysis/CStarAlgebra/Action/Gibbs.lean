@@ -9,24 +9,23 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Analysis.CStarAlgebra.Action.Inner
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS
+public import TauCeti.Analysis.Matrix.Exponential
+public import TauCeti.LinearAlgebra.Matrix.Trace.Duality
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
-import Mathlib.Analysis.Matrix.PosDef
-import Mathlib.Analysis.Normed.Algebra.MatrixExponential
-import TauCeti.LinearAlgebra.Matrix.Trace.Duality
 
 /-!
 # Gibbs states of matrix Hamiltonians
 
 Let `K` be a Hermitian complex `m × m` matrix, the Hamiltonian of a finite quantum system, and
 let `τ_t a = exp (itK) a exp (-itK)` be its time evolution, the inner dynamics
-`TauCeti.CStarAction.ofSelfAdjoint` of `K` on the C⋆-algebra of complex matrices.
+`selfAdjoint.cstarAction` of `K` on the C⋆-algebra of complex matrices.
 
 For a real inverse temperature `β`, the *Gibbs state* is
-`x ↦ Tr (exp (-βK) x) / Tr (exp (-βK))`, `TauCeti.CStarAction.gibbsState`. It is a β-KMS state
-of `τ`, `TauCeti.CStarAction.isKMSState_gibbsState`, and it is the only one: a state is β-KMS
-for `τ` exactly when it is the Gibbs state, `TauCeti.CStarAction.isKMSState_iff_eq_gibbsState`.
-This holds for every real `β`. At `β = 0` the Gibbs state is the normalised trace
-`x ↦ Tr x / m`, `TauCeti.CStarAction.gibbsState_zero_apply`.
+`x ↦ Tr (exp (-βK) x) / Tr (exp (-βK))`, `Matrix.gibbsState`. It is a β-KMS state of `τ`,
+`Matrix.IsHermitian.isKMSState_gibbsState`, and it is the only one: a state is β-KMS for `τ`
+exactly when it is the Gibbs state, `Matrix.IsHermitian.isKMSState_iff_eq_gibbsState`. This holds
+for every real `β`. At `β = 0` the Gibbs state is the normalised trace `x ↦ Tr x / m`,
+`Matrix.IsHermitian.gibbsState_zero_apply`.
 
 The matrices carry the C⋆-algebra structure of operators on Euclidean space and the order by
 positive semidefiniteness, from the scoped instances `Matrix.Norms.L2Operator` and
@@ -43,120 +42,110 @@ public section
 noncomputable section
 
 open Complex NormedSpace
-open scoped MatrixOrder ComplexOrder Matrix.Norms.L2Operator
+open TauCeti CStarAction
+open scoped ComplexOrder Matrix.Norms.L2Operator MatrixOrder
 
-namespace TauCeti.CStarAction
+namespace Matrix
 
-variable {m : Type*} [Fintype m] [DecidableEq m] {K : Matrix m m ℂ}
+variable {m : Type*} [Fintype m] [DecidableEq m] [Nonempty m]
 
-/-- `exp ((s + t)K) = exp (sK) exp (tK)`. -/
-private theorem exp_add_smul (K : Matrix m m ℂ) (s t : ℝ) :
-    exp ((s + t) • K) = exp (s • K) * exp (t • K) := by
-  rw [add_smul, Matrix.exp_add_of_commute _ _ (((Commute.refl K).smul_left _).smul_right _)]
-
-/-- `exp (βK) exp (-βK) = 1`. -/
-private theorem exp_smul_mul_exp_neg_smul (K : Matrix m m ℂ) (β : ℝ) :
-    exp (β • K) * exp (-β • K) = 1 := by
-  rw [← exp_add_smul, add_neg_cancel, zero_smul, NormedSpace.exp_zero]
-
-/-- For Hermitian `K`, `exp (βK)` is Hermitian. -/
-private theorem isHermitian_exp_smul (hK : K.IsHermitian) (β : ℝ) :
-    (exp (β • K)).IsHermitian :=
-  Matrix.IsHermitian.exp ((IsSelfAdjoint.all β).smul hK)
-
-/-- At imaginary time `iβ` the time evolution is `τ_{iβ} b = exp (-βK) b exp (βK)`. -/
-private theorem entireExtension_ofSelfAdjoint_mul_I (hK : K.IsHermitian) (b : Matrix m m ℂ)
-    (β : ℝ) :
-    (ofSelfAdjoint ⟨K, hK⟩).entireExtension b (β * I) = exp (-β • K) * b * exp (β • K) := by
-  have h : I * (β * I) = -β := by rw [mul_left_comm, I_mul_I, mul_neg_one]
-  simp only [entireExtension_ofSelfAdjoint, h, neg_neg, ← Complex.coe_smul, ofReal_neg]
-
-/-- For Hermitian `K`, `x ↦ Tr (exp (βK) x)` is a positive functional. -/
-private theorem trace_exp_smul_mul_nonneg (hK : K.IsHermitian) (β : ℝ) {x : Matrix m m ℂ}
-    (hx : 0 ≤ x) : 0 ≤ (exp (β • K) * x).trace := by
-  have hF : star (exp ((β / 2) • K)) = exp ((β / 2) • K) := (isHermitian_exp_smul hK _).eq
-  rw [← add_halves β, exp_add_smul, Matrix.mul_assoc, Matrix.trace_mul_comm, Matrix.mul_assoc]
-  refine Matrix.PosSemidef.trace_nonneg (Matrix.nonneg_iff_posSemidef.mp ?_)
-  simpa [hF, Matrix.mul_assoc] using star_left_conjugate_nonneg hx (exp ((β / 2) • K))
-
-variable [Nonempty m]
-
-/-- For Hermitian `K`, `Tr (exp (βK))` is positive. -/
-private theorem trace_exp_smul_pos (hK : K.IsHermitian) (β : ℝ) : 0 < (exp (β • K)).trace := by
-  have h := Matrix.PosDef.conjTranspose_mul_self (exp ((β / 2) • K))
-    (Matrix.mulVec_injective_iff_isUnit.mpr (Matrix.isUnit_exp _))
-  rw [(isHermitian_exp_smul hK _).eq, ← exp_add_smul, add_halves] at h
-  exact h.trace_pos
-
-/-- The *Gibbs state* `x ↦ Tr (exp (-βK) x) / Tr (exp (-βK))` of a Hermitian matrix `K` at
-inverse temperature `β`. -/
+/-- The *Gibbs state* `x ↦ Tr (exp (-(β • K)) * x) / Tr (exp (-(β • K)))` of a Hermitian matrix `K`
+at inverse temperature `β`. -/
 def gibbsState (K : Matrix m m ℂ) (hK : K.IsHermitian) (β : ℝ) : Matrix m m ℂ →P[ℂ] ℂ :=
-  .mk₀ (LinearMap.toContinuousLinearMap ((exp (-β • K)).trace⁻¹ •
-      (Matrix.traceLinearMap m ℂ ℂ ∘ₗ LinearMap.mulLeft ℂ (exp (-β • K)))))
+  .mk₀ (LinearMap.toContinuousLinearMap ((exp (-(β • K))).trace⁻¹ •
+      (Matrix.traceLinearMap m ℂ ℂ ∘ₗ LinearMap.mulLeft ℂ (exp (-(β • K))))))
     fun x hx => by
-      simpa using mul_nonneg (inv_nonneg.mpr (trace_exp_smul_pos hK (-β)).le)
-        (trace_exp_smul_mul_nonneg hK (-β) hx)
+      simpa using mul_nonneg (inv_nonneg.mpr (hK.trace_exp_smul_pos (-β)).le)
+        (hK.trace_exp_smul_mul_nonneg (-β) hx)
 
-/-- The Gibbs state is `x ↦ Tr (exp (-βK) x) / Tr (exp (-βK))`. -/
+end Matrix
+
+variable {m : Type*} [Fintype m] [DecidableEq m] [Nonempty m] {K : Matrix m m ℂ}
+
+/-- The Gibbs state is `x ↦ Tr (exp (-(β • K)) * x) / Tr (exp (-(β • K)))`. -/
 @[simp]
-theorem gibbsState_apply (hK : K.IsHermitian) (β : ℝ) (x : Matrix m m ℂ) :
-    gibbsState K hK β x = (exp (-β • K) * x).trace / (exp (-β • K)).trace := by
-  simp [gibbsState, div_eq_inv_mul]
+theorem Matrix.IsHermitian.gibbsState_apply (hK : K.IsHermitian) (β : ℝ) (x : Matrix m m ℂ) :
+    Matrix.gibbsState K hK β x =
+      (NormedSpace.exp (-(β • K)) * x).trace / (NormedSpace.exp (-(β • K))).trace := by
+  simp [Matrix.gibbsState, div_eq_inv_mul]
 
 /-- At inverse temperature `0` the Gibbs state is the normalised trace `x ↦ Tr x / m`. -/
-theorem gibbsState_zero_apply (hK : K.IsHermitian) (x : Matrix m m ℂ) :
-    gibbsState K hK 0 x = x.trace / Fintype.card m := by
+theorem Matrix.IsHermitian.gibbsState_zero_apply (hK : K.IsHermitian) (x : Matrix m m ℂ) :
+    Matrix.gibbsState K hK 0 x = x.trace / Fintype.card m := by
   simp [Matrix.trace_one]
 
 /-- **The Gibbs state is a KMS state** for the time evolution generated by a Hermitian matrix,
 at every real inverse temperature. -/
-theorem isKMSState_gibbsState (hK : K.IsHermitian) (β : ℝ) :
-    (ofSelfAdjoint ⟨K, hK⟩).IsKMSState β (gibbsState K hK β) := by
-  have htr := (trace_exp_smul_pos hK (-β)).ne'
-  refine (isKMSState_iff_of_forall_isEntireAnalytic (isEntireAnalytic_ofSelfAdjoint _)).mpr
-    ⟨?_, fun a b => ?_⟩
-  · have h1 := PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one (gibbsState K hK β)
-    rw [gibbsState_apply, Matrix.mul_one, div_self htr] at h1
+theorem Matrix.IsHermitian.isKMSState_gibbsState (hK : K.IsHermitian) (β : ℝ) :
+    (selfAdjoint.cstarAction ⟨K, hK⟩).IsKMSState β (Matrix.gibbsState K hK β) := by
+  have htr : (NormedSpace.exp (-(β • K))).trace ≠ 0 := by
+    simpa only [neg_smul] using (hK.trace_exp_smul_pos (-β)).ne'
+  refine (isKMSState_iff_of_forall_isEntireAnalytic
+    (selfAdjoint.isEntireAnalytic_cstarAction _)).mpr ⟨?_, fun a b => ?_⟩
+  · -- the state is normalised: `‖ω‖ = ω 1` for a positive functional
+    have h1 := PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one (Matrix.gibbsState K hK β)
+    rw [hK.gibbsState_apply, Matrix.mul_one, div_self htr] at h1
     exact_mod_cast h1
-  rw [entireExtension_ofSelfAdjoint_mul_I, gibbsState_apply, gibbsState_apply]
-  congr 1
-  rw [Matrix.trace_mul_comm, Matrix.mul_assoc, Matrix.mul_assoc, Matrix.mul_assoc,
-    exp_smul_mul_exp_neg_smul, Matrix.mul_one, Matrix.trace_mul_comm, Matrix.mul_assoc]
+  · -- the KMS identity reduces to the invariance of the trace under conjugation
+    rw [selfAdjoint.entireExtension_cstarAction_mul_I, hK.gibbsState_apply,
+      hK.gibbsState_apply]
+    -- normalise the scalar negation in the imaginary-time evolution
+    simp only [neg_smul]
+    congr 1
+    -- trace cyclicity for `P = exp (-βK)` and `Q = exp (βK)`
+    calc (NormedSpace.exp (-(β • K)) * (a * (NormedSpace.exp (-(β • K)) * b *
+            NormedSpace.exp (β • K)))).trace
+        = (NormedSpace.exp (-(β • K)) * (a * (NormedSpace.exp (-(β • K)) * b)) *
+            NormedSpace.exp (β • K)).trace := by simp only [Matrix.mul_assoc]
+      _ = (a * (NormedSpace.exp (-(β • K)) * b)).trace :=
+          trace_exp_neg_smul_mul_exp_smul K β _
+      _ = (NormedSpace.exp (-(β • K)) * (b * a)).trace := by
+          rw [Matrix.trace_mul_comm a (NormedSpace.exp (-(β • K)) * b), Matrix.mul_assoc]
 
 /-- **Uniqueness of the KMS state.** A state is a β-KMS state for the time evolution generated
 by a Hermitian matrix `K` exactly when it is the Gibbs state, for every real `β`. -/
-theorem isKMSState_iff_eq_gibbsState (hK : K.IsHermitian) (β : ℝ) {ω : Matrix m m ℂ →P[ℂ] ℂ} :
-    (ofSelfAdjoint ⟨K, hK⟩).IsKMSState β ω ↔ ω = gibbsState K hK β := by
-  refine ⟨fun hω => ?_, fun h => h ▸ isKMSState_gibbsState hK β⟩
-  obtain ⟨hnorm, hkms⟩ :=
-    (isKMSState_iff_of_forall_isEntireAnalytic (isEntireAnalytic_ofSelfAdjoint _)).mp hω
-  obtain ⟨ρ, hρ, -⟩ := Matrix.existsUnique_trace_mul_eq ω.toLinearMap
+theorem Matrix.IsHermitian.isKMSState_iff_eq_gibbsState (hK : K.IsHermitian) (β : ℝ)
+    {ω : Matrix m m ℂ →P[ℂ] ℂ} :
+    (selfAdjoint.cstarAction ⟨K, hK⟩).IsKMSState β ω ↔ ω = Matrix.gibbsState K hK β := by
+  refine ⟨fun hω => ?_, fun h => h ▸ hK.isKMSState_gibbsState β⟩
+  obtain ⟨hnorm, hkms⟩ := (isKMSState_iff_of_forall_isEntireAnalytic
+    (selfAdjoint.isEntireAnalytic_cstarAction _)).mp hω
+  -- write `ω = Tr (ρ ·)` and turn the KMS identity into a cyclicity statement for `exp (βK) ρ`
+  obtain ⟨ρ, hρ, -⟩ := ω.toLinearMap.existsUnique_trace_mul_eq
   replace hρ (x : Matrix m m ℂ) : ω x = (ρ * x).trace := by simpa using hρ x
-  have hinv (x : Matrix m m ℂ) : exp (β • K) * (exp (-β • K) * x) = x := by
-    rw [← Matrix.mul_assoc, exp_smul_mul_exp_neg_smul, Matrix.one_mul]
-  have hinv' : exp (-β • K) * exp (β • K) = 1 := by
-    simpa using exp_smul_mul_exp_neg_smul K (-β)
-  -- the KMS identity says that `exp (βK) ρ` is central, hence scalar
+  have hcentral (a b : Matrix m m ℂ) :
+      (NormedSpace.exp (β • K) * ρ * a * b).trace =
+        (NormedSpace.exp (β • K) * ρ * b * a).trace := by
+    -- the KMS identity with the first factor multiplied by `exp (β • K)`
+    have h := hkms (a * NormedSpace.exp (β • K)) b
+    rw [selfAdjoint.entireExtension_cstarAction_mul_I, hρ, hρ] at h
+    -- cancel the exponential weights in the middle of the product
+    simp only [Matrix.mul_assoc, neg_smul, exp_smul_mul_exp_neg_smul_mul] at h
+    -- cycle the exponential weight to the end of each product and read off `h`
+    simp only [Matrix.mul_assoc]
+    calc (NormedSpace.exp (β • K) * (ρ * (a * b))).trace
+        = ((ρ * (a * b)) * NormedSpace.exp (β • K)).trace := Matrix.trace_mul_comm _ _
+      _ = (ρ * (a * (b * NormedSpace.exp (β • K)))).trace := by simp only [Matrix.mul_assoc]
+      _ = (ρ * (b * (a * NormedSpace.exp (β • K)))).trace := h
+      _ = ((ρ * (b * a)) * NormedSpace.exp (β • K)).trace := by simp only [Matrix.mul_assoc]
+      _ = (NormedSpace.exp (β • K) * (ρ * (b * a))).trace := Matrix.trace_mul_comm _ _
   obtain ⟨c, hc⟩ := (Matrix.mem_range_scalar_iff_trace_mul_mul_comm
-    (M := exp (β • K) * ρ)).mpr fun a b => by
-      have := hkms (a * exp (β • K)) b
-      rw [entireExtension_ofSelfAdjoint_mul_I, hρ, hρ] at this
-      simp only [Matrix.mul_assoc, hinv] at this ⊢
-      rw [Matrix.trace_mul_comm (exp (β • K)), Matrix.trace_mul_comm (exp (β • K))]
-      simpa only [Matrix.mul_assoc] using this
-  have hEρ : ρ = c • exp (-β • K) := by
-    calc ρ = exp (-β • K) * exp (β • K) * ρ := by rw [hinv', Matrix.one_mul]
-      _ = c • exp (-β • K) := by
-        rw [Matrix.mul_assoc, ← hc, Matrix.scalar_apply, ← Matrix.smul_one_eq_diagonal,
-          Matrix.mul_smul, Matrix.mul_one]
+    (M := NormedSpace.exp (β • K) * ρ)).mpr hcentral
+  -- a scalar `exp (βK) ρ` forces `ρ` to be a multiple of `exp (-βK)`
+  have hQρ : NormedSpace.exp (β • K) * ρ = c • 1 := by
+    rw [← hc, Matrix.scalar_apply, ← Matrix.smul_one_eq_diagonal]
+  have hEρ : ρ = c • NormedSpace.exp (-(β • K)) := by
+    calc ρ = NormedSpace.exp (-(β • K)) * NormedSpace.exp (β • K) * ρ := by
+          rw [exp_neg_smul_mul_exp_smul, Matrix.one_mul]
+      _ = c • NormedSpace.exp (-(β • K)) := by
+          rw [Matrix.mul_assoc, hQρ, Matrix.mul_smul, Matrix.mul_one]
   have hω1 : ω 1 = 1 := by
     have h1 := PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one ω
     rw [hnorm] at h1
     exact_mod_cast h1.symm
-  have hc1 : c * (exp (-β • K)).trace = 1 := by
+  have hc1 : c * (NormedSpace.exp (-(β • K))).trace = 1 := by
     rw [← hω1, hρ, Matrix.mul_one, hEρ, Matrix.trace_smul, smul_eq_mul]
   ext x
-  rw [gibbsState_apply, hρ, hEρ, Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul,
-    eq_inv_of_mul_eq_one_left hc1, div_eq_inv_mul]
-
-end TauCeti.CStarAction
+  rw [hK.gibbsState_apply, hρ, hEρ, Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul]
+  -- the normalisation constant is `(Tr (exp (-βK)))⁻¹`
+  rw [eq_inv_of_mul_eq_one_left hc1, div_eq_inv_mul]
