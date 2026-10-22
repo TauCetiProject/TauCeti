@@ -30,7 +30,7 @@ as `Q` varies. Here `Δ_L` is the product over the places of the determinants of
 The local factors are `TauCeti.twistedLocalHeight`. The usual hypotheses on the data are that the
 forms at each place are linearly independent, that only finitely many distinct systems of forms
 occur, and that the weights `c v` vanish at all but finitely many places; under them the local
-factors are `1` at all but finitely many places
+factors at a nonzero point are `1` at all but finitely many places
 (`TauCeti.hasFiniteMulSupport_twistedLocalHeight`), so that the twisted height is a genuine finite
 product. The definition does not assume these hypotheses: the product over the places is Mathlib's
 `finprod`, which is `1` when infinitely many local factors differ from `1`.

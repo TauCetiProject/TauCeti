@@ -89,10 +89,10 @@ theorem finprod_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (f : 
     _ = ∏ᶠ a, f a := (finprod_eq_prod f hf).symm
 
 /-- Multiplying a family by a finitely supported family whose product is `1` does not change its
-product. The first family need not have finite multiplicative support: if it does not, neither
+product. The other family need not have finite multiplicative support: if it does not, neither
 does the product family, and both products are `1`. -/
 @[to_additive /-- Adding a finitely supported family whose sum is `0` to a family does not change
-its sum. The first family need not have finite support: if it does not, neither does the sum
+its sum. The other family need not have finite support: if it does not, neither does the sum
 family, and both sums are `0`. -/]
 theorem finprod_mul_eq_right_of_finprod_eq_one {ι : Type*} {f g : ι → M}
     (hf : HasFiniteMulSupport f) (hf1 : ∏ᶠ i, f i = 1) : ∏ᶠ i, f i * g i = ∏ᶠ i, g i := by
