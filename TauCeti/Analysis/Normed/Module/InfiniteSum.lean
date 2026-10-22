@@ -98,7 +98,7 @@ Additivity of the map is not needed for this assertion. -/
 theorem summable_sum_bilinear_antidiagonal_of_nonarchimedean [CompleteSpace G]
     {f : A → E} {g : A → F} (hf : Summable f) (hg : Summable g) :
     Summable fun n ↦ ∑ ij ∈ Finset.antidiagonal n, B (f ij.1) (g ij.2) := by
-  simp_rw [← Finset.tsum_subtype]
+  simp_rw [← Finset.tsum_subtype (L := .unconditional _)]
   have hsigma := Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.summable_iff.mpr
     (summable_bilinear_of_nonarchimedean B hB hf hg)
   exact hsigma.sigma' fun n ↦ (hasSum_fintype _).summable

@@ -127,7 +127,7 @@ theorem tsum_eq_tsum_div_natCard_algEquiv_mul (hR : IsRepresentativeSet n R)
     rintro L ⟨hL, ⟨e⟩⟩ ⟨-, ⟨e'⟩⟩
     obtain ⟨_, -, huniq⟩ := hR.existsUnique hL
     exact hne ((huniq M ⟨hM, ⟨e.symm⟩⟩).trans (huniq M' ⟨hM', ⟨e'.symm⟩⟩).symm)
-  rw [hU, ENNReal.tsum_biUnion' hdisj]
+  rw [hU, ENNReal.tsum_biUnion hdisj]
   refine tsum_congr fun M ↦ ?_
   have hcard := ncard_isomorphic_mul_natCard_algEquiv (hR.subset M.2)
   have hAut : Nat.card (M ≃ₐ[K] M) ≠ 0 := by
