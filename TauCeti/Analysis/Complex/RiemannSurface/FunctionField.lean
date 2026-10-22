@@ -244,6 +244,15 @@ theorem ofMeromorphic_apply_of_continuousAt (hc : ContinuousAt h x) :
     ofMeromorphic hh x = h x :=
   sphereMap_of_continuousAt hc
 
+/-- `TauCeti.RiemannSurface.MeromorphicFunction.ofMeromorphic hh` depends only on the values of `h`
+on a punctured neighbourhood of every point. -/
+theorem ofMeromorphic_congr {k : X → ℂ} (hk : ∀ x, MeromorphicAt k x)
+    (hhk : ∀ x, h =ᶠ[𝓝[≠] x] k) : ofMeromorphic hh = ofMeromorphic hk :=
+  eq_of_eventually_apply_eq fun x ↦ by
+    filter_upwards [eventually_sphereMap_eq (hh x), eventually_sphereMap_eq (hk x), hhk x]
+      with y hhy hky hy
+    rw [coe_ofMeromorphic, coe_ofMeromorphic, hhy, hky, hy]
+
 /-- A meromorphic function `k` equals `TauCeti.RiemannSurface.MeromorphicFunction.ofMeromorphic hh`
 if and only if it agrees with `h` at the points satisfying a property `p` which holds on a
 punctured neighbourhood of every point and at which `h` is continuous. -/
@@ -466,6 +475,50 @@ theorem coe_algebraMap (c : ℂ) :
 theorem finitePart_algebraMap (c : ℂ) :
     (algebraMap ℂ (MeromorphicFunction X) c).finitePart = fun _ ↦ c :=
   funext fun _ ↦ finitePart_of_eq_coe (congrFun (coe_algebraMap c) _)
+
+/-! ### `ofMeromorphic` and the operations
+
+On a connected Riemann surface, `TauCeti.RiemannSurface.MeromorphicFunction.ofMeromorphic` sends
+constants, sums, products, negatives, differences, inverses and powers of functions `X → ℂ` to the
+corresponding operations on meromorphic functions. Apart from the constants, these lemmas are not
+simp lemmas: their left-hand sides do not determine the meromorphy proofs of the operands, so `simp`
+could not discharge them. Instantiate them instead, as in `simp [ofMeromorphic_add hh hk]`. -/
+
+section OfMeromorphicOperations
+
+variable {h k : X → ℂ} (hh : ∀ x, MeromorphicAt h x) (hk : ∀ x, MeromorphicAt k x)
+
+@[simp]
+theorem ofMeromorphic_const (c : ℂ) :
+    ofMeromorphic (fun _ ↦ meromorphicAt_const c _) = algebraMap ℂ (MeromorphicFunction X) c :=
+  rfl
+
+theorem ofMeromorphic_add :
+    ofMeromorphic (fun x ↦ (hh x).add (hk x)) = ofMeromorphic hh + ofMeromorphic hk :=
+  ofMeromorphic_congr _ _ fun x ↦ ((finitePart_ofMeromorphic_eventuallyEq hh x).add
+    (finitePart_ofMeromorphic_eventuallyEq hk x)).symm
+
+theorem ofMeromorphic_mul :
+    ofMeromorphic (fun x ↦ (hh x).mul (hk x)) = ofMeromorphic hh * ofMeromorphic hk :=
+  ofMeromorphic_congr _ _ fun x ↦ ((finitePart_ofMeromorphic_eventuallyEq hh x).mul
+    (finitePart_ofMeromorphic_eventuallyEq hk x)).symm
+
+theorem ofMeromorphic_neg : ofMeromorphic (fun x ↦ (hh x).neg) = -ofMeromorphic hh :=
+  ofMeromorphic_congr _ _ fun x ↦ (finitePart_ofMeromorphic_eventuallyEq hh x).neg.symm
+
+theorem ofMeromorphic_sub :
+    ofMeromorphic (fun x ↦ (hh x).sub (hk x)) = ofMeromorphic hh - ofMeromorphic hk :=
+  ofMeromorphic_congr _ _ fun x ↦ ((finitePart_ofMeromorphic_eventuallyEq hh x).sub
+    (finitePart_ofMeromorphic_eventuallyEq hk x)).symm
+
+theorem ofMeromorphic_inv : ofMeromorphic (fun x ↦ (hh x).inv) = (ofMeromorphic hh)⁻¹ :=
+  ofMeromorphic_congr _ _ fun x ↦ (finitePart_ofMeromorphic_eventuallyEq hh x).inv.symm
+
+theorem ofMeromorphic_pow (n : ℕ) :
+    ofMeromorphic (fun x ↦ (hh x).pow n) = ofMeromorphic hh ^ n :=
+  ofMeromorphic_congr _ _ fun x ↦ ((finitePart_ofMeromorphic_eventuallyEq hh x).pow_const n).symm
+
+end OfMeromorphicOperations
 
 end MeromorphicFunction
 
