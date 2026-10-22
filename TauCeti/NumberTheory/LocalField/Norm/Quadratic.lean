@@ -37,8 +37,6 @@ with trace `-t` and norm `c`.
 
 ## Main results
 
-* `TauCeti.sq_sub_trace_mul_add_norm`: every `ω ∈ 𝒪[L]` is a root of `X² - Tr(ω) X + N(ω)` over
-  `𝒪[K]`.
 * `TauCeti.exists_integerRing_eq_div_of_sq_eq`: the element `(x - b)/s` above lies in `𝒪[L]`,
   with trace `-t` and norm `c`.
 * `Module.Basis.exists_norm_eq_iff_of_integerRing`: the unit norms are exactly the two
@@ -60,18 +58,6 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
   [Algebra.IsQuadraticExtension K L]
-
-/-- Every `ω ∈ 𝒪[L]` is a root of `X² - Tr(ω) X + N(ω)`, with trace and norm taken in `𝒪[K]`. -/
-theorem sq_sub_trace_mul_add_norm (ω : 𝒪[L]) :
-    ω ^ 2 - algebraMap 𝒪[K] 𝒪[L] (Algebra.trace 𝒪[K] 𝒪[L] ω) * ω +
-      algebraMap 𝒪[K] 𝒪[L] (Algebra.norm 𝒪[K] ω) = 0 := by
-  apply Subtype.ext
-  have h := Algebra.IsQuadraticExtension.sq_eq_trace_smul_sub_norm K (ω : L)
-  rw [Algebra.smul_def] at h
-  simp only [ZeroMemClass.coe_zero, AddMemClass.coe_add, AddSubgroupClass.coe_sub,
-    MulMemClass.coe_mul, SubmonoidClass.coe_pow, coe_algebraMap_integerRing,
-    coe_trace_integerRing, coe_norm_integerRing]
-  linear_combination h
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 open Polynomial in

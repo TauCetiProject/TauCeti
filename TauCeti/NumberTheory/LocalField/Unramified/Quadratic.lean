@@ -16,11 +16,11 @@ import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 Let `L/K` be a quadratic extension of nonarchimedean local fields and let `ω ∈ 𝒪[L]`. If the
 discriminant `Tr(ω)² - 4 N(ω)` of `ω` is a unit of `𝒪[K]`, then `L/K` is unramified and
 `(1, ω)` is a basis of `𝒪[L]` over `𝒪[K]`. Indeed `ω` is a root of `X² - Tr(ω) X + N(ω)`
-(`TauCeti.sq_sub_trace_mul_add_norm`), whose
-reduction modulo `𝓂[K]` is separable. A root of that reduction in `𝓀[K]` would be simple, so by
-Hensel's lemma it would lift to a root in `𝒪[K]`, and `ω` would lie in `K`, where its
-discriminant vanishes. So the residue of `ω` lies outside `𝓀[K]`, the residue degree of `L/K`
-is two, and `(1, ω)` lifts the residue basis `(1, residue 𝒪[L] ω)`.
+(`Algebra.IsQuadraticExtension.sq_sub_trace_smul_add_norm_eq_zero`), whose reduction modulo
+`𝓂[K]` is separable. A root of that reduction in `𝓀[K]` would be simple, so by Hensel's lemma
+it would lift to a root in `𝒪[K]`, and `ω` would lie in `K`, where its discriminant vanishes.
+So the residue of `ω` lies outside `𝓀[K]`, the residue degree of `L/K` is two, and
+`(1, ω)` lifts the residue basis `(1, residue 𝒪[L] ω)`.
 
 The typical generator is `ω = (x - b)/s` for a square root `x ∉ K` of `a ∈ K`, when `2b = s t`
 and `b² - a = s² c` with `t, c ∈ 𝒪[K]`. Its discriminant is `t² - 4c = 4a/s²`. With `b = 0` and
@@ -79,7 +79,8 @@ discriminant is a unit, and Hensel's lemma would lift it to a root in `𝒪[K]`,
 private theorem residue_notMem_range_of_isUnit_discrim
     (hω : IsUnit (Algebra.trace 𝒪[K] 𝒪[L] ω ^ 2 - 4 * Algebra.norm 𝒪[K] ω)) :
     residue 𝒪[L] ω ∉ Set.range (algebraMap 𝓀[K] 𝓀[L]) := by
-  have hroot := sq_sub_trace_mul_add_norm (K := K) ω
+  have hroot := Algebra.IsQuadraticExtension.sq_sub_trace_smul_add_norm_eq_zero 𝒪[K] ω
+  rw [Algebra.smul_def] at hroot
   set T := Algebra.trace 𝒪[K] 𝒪[L] ω
   set N := Algebra.norm 𝒪[K] ω
   rintro ⟨r₀, hr₀⟩

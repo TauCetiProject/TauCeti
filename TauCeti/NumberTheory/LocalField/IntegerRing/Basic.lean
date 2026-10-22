@@ -36,6 +36,8 @@ inverting only the nonzero elements of `𝒪[K]`.
 * `TauCeti.isLocalization_integerRing`: `L` is the localization of `𝒪[L]` at the image of the
   nonzero elements of `𝒪[K]`.
 * `TauCeti.finrank_integerRing`: the rank of `𝒪[L]` over `𝒪[K]` is `[L : K]`.
+* `TauCeti.integerRingIsQuadraticExtension`: `𝒪[L]` is a quadratic extension of `𝒪[K]` when
+  `L/K` is quadratic.
 * `TauCeti.finite_of_valuativeExtension`: `L` is a finite extension of `K`.
 
 ## References
@@ -181,6 +183,13 @@ theorem finrank_integerRing : Module.finrank 𝒪[K] 𝒪[L] = Module.finrank K 
     (isLocalizedModule_iff_isLocalization ..).2 this
   exact (Module.finrank_of_isLocalizedModule_of_free K (nonZeroDivisors 𝒪[K])
     (IsScalarTower.toAlgHom 𝒪[K] 𝒪[L] L).toLinearMap).symm
+
+/-- The ring of integers of a quadratic extension of nonarchimedean local fields is a quadratic
+extension of the ring of integers of the base. -/
+instance integerRingIsQuadraticExtension [Algebra.IsQuadraticExtension K L] :
+    Algebra.IsQuadraticExtension 𝒪[K] 𝒪[L] where
+  finrank_eq_two' :=
+    (finrank_integerRing K L).trans (Algebra.IsQuadraticExtension.finrank_eq_two K L)
 
 /-- An extension of nonarchimedean local fields with compatible valuations is finite. -/
 theorem finite_of_valuativeExtension : Module.Finite K L :=
