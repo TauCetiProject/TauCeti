@@ -75,6 +75,7 @@ theorem multivariateLogNormalPDF_of_not_pos (m : EuclideanSpace ℝ ι) (S : Mat
   simp [multivariateLogNormalPDF_def, hx]
 
 /-- The explicit density formula on the positive orthant. -/
+@[simp]
 theorem multivariateLogNormalPDFReal_of_pos (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
     {x : EuclideanSpace ℝ ι} (hx : ∀ i, 0 < x i) :
     multivariateLogNormalPDFReal m S x =
