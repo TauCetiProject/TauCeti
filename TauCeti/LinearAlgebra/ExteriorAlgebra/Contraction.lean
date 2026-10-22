@@ -497,8 +497,6 @@ theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] {f : M →ₗ
   induction x using CliffordAlgebra.left_induction with
   | algebraMap r => rw [AlgHom.commutes, contractLeft_algebraMap, contractLeft_algebraMap, map_zero]
   | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
-  | ι_mul x m hx =>
-    rw [map_mul, ExteriorAlgebra.map_apply_ι, contractLeft_ι_mul, contractLeft_ι_mul, hx, map_sub,
-      map_smul, map_mul, ExteriorAlgebra.map_apply_ι, ← h, LinearMap.comp_apply]
+  | ι_mul x m hx => simp [contractLeft_ι_mul, hx, ← h]
 
 end ExteriorAlgebra

@@ -41,6 +41,14 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
 ## References
 
 * [The Stacks Project, Tags 0622, 0623 and 0624](https://stacks.math.columbia.edu/tag/0621)
+
+The interface (the Koszul complex of a linear functional with exterior-power terms, the
+alternating-deletion differential, `koszulComplex.map` along `ψ ∘ g = φ`, and the homotopy
+`d(m ∧ v) + m ∧ d(v) = φ(m) v`) follows the design proposed by Nailin Guan in the open Mathlib pull
+requests [mathlib4#43708](https://github.com/leanprover-community/mathlib4/pull/43708) (definition
+of the Koszul complex) and
+[mathlib4#43706](https://github.com/leanprover-community/mathlib4/pull/43706) (homotopy of the
+Koszul complex). No code from those pull requests is vendored here.
 -/
 
 public section
@@ -88,6 +96,12 @@ theorem koszulDifferential_comp_koszulDifferential (n : ℕ) :
     koszulDifferential φ n ∘ₗ koszulDifferential φ (n + 1) = 0 :=
   LinearMap.ext fun x ↦ Subtype.ext (contractLeft_contractLeft φ x.1)
 
+/-- The Koszul differential squares to zero, elementwise. -/
+@[simp]
+theorem koszulDifferential_koszulDifferential (n : ℕ) (x : ⋀[R]^(n + 2) M) :
+    koszulDifferential φ n (koszulDifferential φ (n + 1) x) = 0 :=
+  LinearMap.congr_fun (koszulDifferential_comp_koszulDifferential φ n) x
+
 /-- **The first Koszul differential is `φ`**: under the identifications `⋀⁰ M ≅ R` and
 `⋀¹ M ≅ M`, the differential `⋀¹ M → ⋀⁰ M` is `φ`. -/
 theorem zeroEquiv_comp_koszulDifferential_zero :
@@ -117,6 +131,15 @@ theorem koszulDifferential_comp_map {N : Type*} [AddCommGroup N] [Module R N]
     koszulDifferential ψ n ∘ₗ exteriorPower.map (n + 1) g =
       exteriorPower.map n g ∘ₗ koszulDifferential φ n :=
   LinearMap.ext fun x ↦ Subtype.ext <| by simp [ExteriorAlgebra.contractLeft_map h]
+
+/-- The Koszul differential is natural, elementwise: `⋀ g` carries the Koszul differential of
+`ψ ∘ g` to that of `ψ`. -/
+@[simp]
+theorem koszulDifferential_map {N : Type*} [AddCommGroup N] [Module R N]
+    (ψ : Module.Dual R N) (g : M →ₗ[R] N) (n : ℕ) (x : ⋀[R]^(n + 1) M) :
+    koszulDifferential ψ n (exteriorPower.map (n + 1) g x) =
+      exteriorPower.map n g (koszulDifferential (ψ ∘ₗ g) n x) :=
+  LinearMap.congr_fun (koszulDifferential_comp_map _ rfl n) x
 
 /-- The Koszul homotopy identity in degree zero: `d(m ∧ r) = φ(m) r` for `r ∈ ⋀⁰ M`. -/
 theorem koszulDifferential_comp_wedgeLeft_zero (m : M) :
@@ -229,12 +252,29 @@ end Homotopy
 
 section HomologyZero
 
+/-- `H₀(K(φ))` is the cokernel of the first differential `⋀¹ M → ⋀⁰ M`. -/
+private def homologyZeroIso :
+    (koszulComplex φ).homology 0 ≅
+      ModuleCat.of R (⋀[R]^0 M ⧸ LinearMap.range (koszulDifferential φ 0)) :=
+  (koszulComplex φ).isoHomologyι₀ ≪≫
+    (koszulComplex φ).opcyclesIsoSc' 1 0 0 (by simp) (by simp) ≪≫
+      ((koszulComplex φ).sc' 1 0 0).moduleCatOpcyclesIso
+
+private theorem pOpcycles_comp_homologyZeroIso_hom :
+    (koszulComplex φ).pOpcycles 0 ≫ (koszulComplex φ).isoHomologyι₀.inv ≫
+        (homologyZeroIso φ).hom =
+      ModuleCat.ofHom (LinearMap.range (koszulDifferential φ 0)).mkQ := by
+  have h := ((koszulComplex φ).pOpcycles_opcyclesIsoSc'_hom_assoc 1 0 0 (by simp) (by simp)
+    ((koszulComplex φ).sc' 1 0 0).moduleCatOpcyclesIso.hom).trans
+      ((koszulComplex φ).sc' 1 0 0).pOpcycles_comp_moduleCatOpcyclesIso_hom
+  simp only [homologyZeroIso, Iso.trans_hom, Iso.inv_hom_id_assoc]
+  -- The codomain of `homologyZeroIso` is that of `moduleCatOpcyclesIso` with `sc'` unfolded.
+  exact h
+
 /-- **Zeroth Koszul homology**: `H₀(K(φ)) ≃ R ⧸ φ(M)`. It is the cokernel of the first
 differential, transported along `⋀⁰ M ≅ R`; see `homologyZeroEquiv_apply`. -/
 def homologyZeroEquiv : (koszulComplex φ).homology 0 ≃ₗ[R] R ⧸ LinearMap.range φ :=
-  ((koszulComplex φ).isoHomologyι₀ ≪≫
-      (koszulComplex φ).opcyclesIsoSc' 1 0 0 (by simp) (by simp) ≪≫
-        ((koszulComplex φ).sc' 1 0 0).moduleCatOpcyclesIso).toLinearEquiv ≪≫ₗ
+  (homologyZeroIso φ).toLinearEquiv ≪≫ₗ
     Submodule.Quotient.equiv _ _ (exteriorPower.zeroEquiv R M)
       (map_zeroEquiv_range_koszulDifferential_zero φ)
 
@@ -244,22 +284,13 @@ theorem homologyZeroEquiv_apply (x : ⋀[R]^0 M) :
     homologyZeroEquiv φ
         ((koszulComplex φ).isoHomologyι₀.inv.hom (((koszulComplex φ).pOpcycles 0).hom x)) =
       Ideal.Quotient.mk _ (exteriorPower.zeroEquiv R M x) := by
-  have h : (koszulComplex φ).pOpcycles 0 ≫ (koszulComplex φ).isoHomologyι₀.inv ≫
-      ((koszulComplex φ).isoHomologyι₀ ≪≫ (koszulComplex φ).opcyclesIsoSc' 1 0 0 (by simp)
-        (by simp) ≪≫ ((koszulComplex φ).sc' 1 0 0).moduleCatOpcyclesIso).hom =
-      ModuleCat.ofHom (LinearMap.range ((koszulComplex φ).sc' 1 0 0).f.hom).mkQ := by
-    simp only [Iso.trans_hom, Iso.inv_hom_id_assoc,
-      HomologicalComplex.pOpcycles_opcyclesIsoSc'_hom_assoc,
-      ShortComplex.pOpcycles_comp_moduleCatOpcyclesIso_hom]
-  -- `hx` is `h` evaluated at `x`, after unfolding the composites of `ModuleCat.Hom.hom`.
-  have hx : ((koszulComplex φ).isoHomologyι₀ ≪≫ (koszulComplex φ).opcyclesIsoSc' 1 0 0 (by simp)
-        (by simp) ≪≫ ((koszulComplex φ).sc' 1 0 0).moduleCatOpcyclesIso).toLinearEquiv
-        ((koszulComplex φ).isoHomologyι₀.inv.hom (((koszulComplex φ).pOpcycles 0).hom x)) =
-      (LinearMap.range ((koszulComplex φ).sc' 1 0 0).f.hom).mkQ x :=
-    congr(($h).hom x)
-  rw [homologyZeroEquiv, LinearEquiv.trans_apply]
-  -- `Submodule.Quotient.equiv` sends `mkQ x` to the class of `zeroEquiv x` by definition.
-  exact congrArg (Submodule.Quotient.equiv _ _ _ _) hx
+  have hx : (homologyZeroIso φ).hom.hom
+      ((koszulComplex φ).isoHomologyι₀.inv.hom (((koszulComplex φ).pOpcycles 0).hom x)) =
+      (LinearMap.range (koszulDifferential φ 0)).mkQ x :=
+    congr(($(pOpcycles_comp_homologyZeroIso_hom φ)).hom x)
+  rw [homologyZeroEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, hx,
+    Submodule.Quotient.equiv_apply, Submodule.mkQ_apply, Submodule.mapQ_apply,
+    Ideal.Quotient.mk_eq_mk, LinearEquiv.coe_coe]
 
 /-- **Zeroth Koszul homology of a finite sequence**: for `x = (xᵢ)` in `R`, the Koszul complex of
 the functional `v ↦ ∑ᵢ vᵢ xᵢ` has `H₀ ≃ R ⧸ (xᵢ)`. -/
@@ -277,8 +308,8 @@ theorem homologyZeroEquivSpan_apply {ι : Type*} [Fintype ι] (x : ι → R)
         ((koszulComplex (Fintype.linearCombination R x)).isoHomologyι₀.inv.hom
           (((koszulComplex (Fintype.linearCombination R x)).pOpcycles 0).hom y)) =
       Ideal.Quotient.mk _ (exteriorPower.zeroEquiv R (ι → R) y) := by
-  rw [homologyZeroEquivSpan, LinearEquiv.trans_apply, homologyZeroEquiv_apply]
-  exact Submodule.quotEquivOfEq_mk _ _ _ _
+  rw [homologyZeroEquivSpan, LinearEquiv.trans_apply, homologyZeroEquiv_apply,
+    ← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk]
 
 end HomologyZero
 
