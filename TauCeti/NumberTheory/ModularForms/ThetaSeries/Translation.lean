@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.SlashActions
 public import TauCeti.Algebra.Module.ZLattice.Integral
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
 /-!
@@ -63,11 +64,6 @@ namespace ZLattice
 
 variable {E : Type*} [NormedAddCommGroup E]
 
-/-- `exp (π i a) = exp (π i b)` whenever `a - b` is an even integer. -/
-private theorem cexp_pi_mul_I_mul_eq_of_sub_eq {a b : ℂ} {m : ℤ} (h : a - b = 2 * m) :
-    cexp (π * I * a) = cexp (π * I * b) :=
-  exp_eq_exp_iff_exists_int.mpr ⟨m, by linear_combination (π * I) * h⟩
-
 /-- If `(‖γ + v‖² - ‖γ‖²) t` is an even integer for every `v ∈ L`, then translating `τ` by `t`
 multiplies the theta series of `γ + L` by `exp (π i ‖γ‖² t)`. -/
 theorem thetaCoset_vadd_eq_mul (L : Submodule ℤ E) (γ : E) {t : ℝ}
@@ -77,7 +73,7 @@ theorem thetaCoset_vadd_eq_mul (L : Submodule ℤ E) (γ : E) {t : ℝ}
   refine tsum_congr fun v ↦ ?_
   obtain ⟨m, hm⟩ := h v v.2
   have ht : cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * t) = cexp (π * I * (‖γ‖ ^ 2 : ℝ) * t) := by
-    simpa only [mul_assoc] using cexp_pi_mul_I_mul_eq_of_sub_eq
+    simpa only [mul_assoc] using exp_pi_mul_I_mul_eq_of_sub_eq
       (a := ((‖γ + (v : E)‖ ^ 2 : ℝ) : ℂ) * t) (b := ((‖γ‖ ^ 2 : ℝ) : ℂ) * t)
       (by rw [← sub_mul]; exact_mod_cast hm)
   rw [coe_vadd, mul_add, exp_add, ht]
@@ -129,7 +125,7 @@ translation law depends only on the coset `γ + L`. -/
 theorem cexp_pi_mul_I_mul_norm_add_sq (hL : IsEven L) (hγ : γ ∈ dual L) {v : E} (hv : v ∈ L) :
     cexp (π * I * (‖γ + v‖ ^ 2 : ℝ)) = cexp (π * I * (‖γ‖ ^ 2 : ℝ)) := by
   obtain ⟨m, hm⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
-  exact cexp_pi_mul_I_mul_eq_of_sub_eq (by exact_mod_cast hm)
+  exact exp_pi_mul_I_mul_eq_of_sub_eq (by exact_mod_cast hm)
 
 /-- The translation law of the theta series of a coset of an even lattice: for `γ ∈ L^∨` and an
 integer `n`, `θ_{γ+L}(τ + n) = exp (π i n ‖γ‖²) θ_{γ+L}(τ)`. -/
@@ -169,7 +165,7 @@ theorem thetaCoset_slash_T_zpow_eq_self (hL : IsEven L) (hγ : γ ∈ dual L) (k
     thetaCoset L γ ∣[k] (ModularGroup.T ^ N) = thetaCoset L γ := by
   obtain ⟨m, hm⟩ := hN
   have h1 : cexp (π * I * (‖γ‖ ^ 2 : ℝ) * N) = 1 := by
-    simpa only [mul_zero, exp_zero, mul_assoc] using cexp_pi_mul_I_mul_eq_of_sub_eq
+    simpa only [mul_zero, exp_zero, mul_assoc] using exp_pi_mul_I_mul_eq_of_sub_eq
       (a := ((‖γ‖ ^ 2 : ℝ) : ℂ) * N) (b := 0) (by rw [sub_zero, mul_comm]; exact_mod_cast hm)
   rw [hL.thetaCoset_slash_T_zpow hγ, h1, one_smul]
 
