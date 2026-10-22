@@ -20,12 +20,13 @@ with matrix `[[a, b], [c, d]]` acts by `(g • f)(x, y) = f(d x - b y, a y - c x
 `xⁱ yʲ` has weight `j - i` for the diagonal torus, and `yᵈ` spans a line stable under the
 upper-triangular subgroup `B⁺`, which acts on it through the character `aᵈ`.
 
-Over a domain, `R yᵈ` is the only `B⁺`-stable line of binary forms of degree `d`, in every
-characteristic. Stability is meant scheme-theoretically: restricted to `B⁺`, the coaction sends
-`f` to `f ⊗ h` for some function `h` on `B⁺`. It is tested on the universal unitriangular point
-`[[1, t], [0, 1]]` over `R[t]`, which sends `f(x, y)` to `f(x - t y, y)`; comparing the values at
-`(x, y) = (t, 1)` and `(0, 1)` shows that the dehomogenization `f(x, 1)` is constant. Over a finite
-field, invariance under the rational points of `B⁺` alone would not suffice.
+Over a domain, every `B⁺`-stable line of binary forms of degree `d` is contained in `R yᵈ`, in
+every characteristic; over a field, `R yᵈ` is therefore the unique such line. Stability is meant
+scheme-theoretically: restricted to `B⁺`, the coaction sends `f` to `f ⊗ h` for some function `h`
+on `B⁺`. It is tested on the universal unitriangular point `[[1, t], [0, 1]]` over `R[t]`, which
+sends `f(x, y)` to `f(x - t y, y)`; comparing the values at `(x, y) = (t, 1)` and `(0, 1)` shows
+that the dehomogenization `f(x, 1)` is constant. Over a finite field, invariance under the rational
+points of `B⁺` alone would not suffice.
 
 ## Main declarations
 
@@ -38,8 +39,8 @@ field, invariance under the rational points of `B⁺` alone would not suffice.
   `SL₂` on binary forms.
 * `TauCeti.SpecialLinear.endOfPoint_binaryForm_monomial_of_diagonal`: torus weights of monomials.
 * `TauCeti.SpecialLinear.lTensor_coact_X_one_pow`: `yᵈ` spans a `B⁺`-stable line of weight `d`.
-* `TauCeti.SpecialLinear.exists_lTensor_coact_eq_tmul_iff_mem_span`: the `B⁺`-stable lines of
-  binary forms are exactly the multiples of `yᵈ`.
+* `TauCeti.SpecialLinear.exists_lTensor_coact_eq_tmul_iff_mem_span`: a binary form spans a
+  `B⁺`-stable line iff it is a multiple of `yᵈ`.
 
 ## References
 
@@ -175,10 +176,12 @@ section Uniqueness
 
 open Polynomial
 
-/-- **`R yᵈ` is the unique line of binary forms of degree `d` stable under the upper-triangular
-subgroup.** Over a domain, a binary form `f` of degree `d` spans a stable line, that is, its
+/-- **A binary form spans a line stable under the upper-triangular subgroup iff it is a multiple
+of `yᵈ`.** Over a domain, a binary form `f` of degree `d` spans a stable line, that is, its
 coaction restricted to the upper-triangular subgroup is `f ⊗ h` for some function `h`, exactly
-when `f` is a multiple of `yᵈ`. This holds in every characteristic. -/
+when `f` is a multiple of `yᵈ`. This holds in every characteristic. So every stable line is
+contained in `R yᵈ`; over a field, `R yᵈ` is the unique stable line, while over `ℤ`, for example,
+`ℤ (2 yᵈ)` is a different stable line. -/
 theorem exists_lTensor_coact_eq_tmul_iff_mem_span [IsDomain R] {d : ℕ} {f : MvPolynomial (Fin 2) R}
     (hf : f ∈ binaryForms R d) :
     letI := polynomialComodule R 2
