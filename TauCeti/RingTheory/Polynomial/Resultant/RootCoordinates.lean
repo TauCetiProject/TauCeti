@@ -111,11 +111,8 @@ private theorem discr_reverse_of_splits {K : Type*} [Field K] {f : K[X]}
   have hf0 : f ≠ 0 := fun h ↦ h0 (by simp [h])
   obtain ⟨r, hr⟩ := (exists_isRootEnumeration_iff_splits
     (R := K) (f := f) (L := K) (ι := Fin f.natDegree) (by simp)).2 (by simpa using hf)
-  have hroots : f.roots = univ.val.map r := by simpa [isRootEnumeration_iff] using hr
   have hfac : f = C f.leadingCoeff * ∏ i, (X - C (r i)) := by
-    conv_lhs => rw [hf.eq_prod_roots, hroots, Multiset.map_map,
-      ← prod_eq_multiset_prod]
-    rfl
+    simpa using hr.eq_C_mul_prod_X_sub_C (by simp)
   have hr0 (i : Fin f.natDegree) : r i ≠ 0 := by
     intro hi
     have hz : f.eval 0 = 0 := by

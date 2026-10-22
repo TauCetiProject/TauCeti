@@ -53,6 +53,8 @@ coefficients of `f`.
   the roots of a nonzero `g` with `g.natDegree` entries is injective if and only if `g` is
   separable.
 * `Polynomial.IsRootEnumeration.range_eq_rootSet`: the entries of an enumeration are the roots.
+* `Polynomial.IsRootEnumeration.eq_C_mul_prod_X_sub_C`: an enumeration with enough entries
+  gives a complete linear factorization of the mapped polynomial.
 * `Polynomial.IsRootEnumeration.aeval_esymm_eq_coeff`: Vieta's formulas, read through an
   enumeration of the roots of a monic polynomial.
 -/
@@ -117,6 +119,17 @@ theorem splits (hx : IsRootEnumeration f x)
     (hdeg : (f.map (algebraMap R L)).natDegree ≤ Fintype.card ι) :
     (f.map (algebraMap R L)).Splits :=
   splits_iff_card_roots.mpr (hx.card_roots.trans (hx.natDegree_map_eq_card hdeg).symm)
+
+/-- An enumeration with at least as many entries as the degree of the mapped polynomial gives
+its complete linear factorization, including the leading coefficient. -/
+theorem eq_C_mul_prod_X_sub_C (hx : IsRootEnumeration f x)
+    (hdeg : (f.map (algebraMap R L)).natDegree ≤ Fintype.card ι) :
+    f.map (algebraMap R L) =
+      C (f.map (algebraMap R L)).leadingCoeff * ∏ i, (X - C (x i)) := by
+  conv_lhs =>
+    rw [(hx.splits hdeg).eq_prod_roots, isRootEnumeration_iff.mp hx,
+      Multiset.map_map, ← prod_eq_multiset_prod]
+  rfl
 
 /-- An enumeration with at least as many entries as the degree of the image of `f` in `L` is
 carried by an injective algebra morphism to an enumeration in the target. -/
