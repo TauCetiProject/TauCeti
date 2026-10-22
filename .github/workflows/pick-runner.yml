@@ -4,41 +4,32 @@ name: pick-runner
 # GitHub-hosted runners and Namespace for ordinary builds. Called by pr-build.yml and
 # nightly-verify.yml; callers interpret the explicit fleet/github outputs in their runs-on.
 #
-# With fleet-staging=true, the picker runs on a small priority Namespace runner rather than
-# waiting for a GitHub-hosted slot. FLEET_CI_ENABLED, a complete inventory from the configured
-# runner group, and an online idle matching runner are all required to answer fleet=true.
-# Disabled routing, missing credentials, unavailable capacity, and subsequent run attempts
-# retain Namespace. The picker reserves no capacity; GitHub makes the actual assignment.
+# Both selectors run on GitHub, avoiding Namespace build queues before fleet selection.
+# They can still wait for a GitHub slot when all hosted capacity is occupied.
+# FLEET_CI_ENABLED, a complete configured-group inventory, and an online idle matching
+# runner are required for fleet=true. Disabled routing, missing credentials, unavailable
+# capacity and subsequent staging attempts retain Namespace. Selection reserves no slot.
 #
-# The organisation's free plan runs at most 20 GitHub-hosted jobs at once, across every repository
-# in it; the 21st sits queued until a slot frees. Standard GitHub-hosted runners are not billed for
-# public repositories (the monthly minute allowance applies only to private ones), while Namespace
-# bills every minute, so a build takes a GitHub slot when one is free and goes to Namespace when
-# they are all taken. This stops being free if a repository goes private or a job moves to a
-# GitHub "larger runner", which is billed even for public repositories.
+# Ordinary placement first tries the existing state service's complete organization
+# capacity snapshot when its scoped token is configured. It must match this organization,
+# be at most 60 seconds old and remain within its validity period. A missing token or
+# unusable snapshot falls back to direct counting. A valid snapshot needs no direct
+# GitHub inventory requests or quota preflight, and uses the same hosted budget below.
 #
-# There is no API for the plan's current usage, so this counts it: every running hosted job
-# in every repository of the organisation, excluding Namespace and self-hosted jobs. The picker
-# for ordinary builds occupies one counted slot; its build becomes eligible after it ends. No slot is reserved
-# or transferred, and another job may take the freed slot. A build goes to GitHub only while the
-# count is at most `vars.HOSTED_RUNNER_BUDGET` (default 18). The budget sits below 20 for two
-# reasons: pickers running at the same moment each see the same count and can all choose GitHub,
-# and a slot held by an hour-long build is a slot the short label, merge and notification jobs
-# cannot use. Set the variable to 20 to use every slot.
+# The free plan permits 20 concurrent GitHub-hosted jobs across the organization.
+# Standard hosted runners are free for public repositories; Namespace bills its runners.
+# Count running hosted jobs, excluding Namespace and self-hosted runners. Both selectors
+# occupy a hosted slot; a cached observation can predate their start. Builds choose GitHub
+# at or below vars.HOSTED_RUNNER_BUDGET (default 18; production uses 12).
+# Concurrent selectors can choose the same remaining capacity, and cached observations
+# widen that race. Headroom also preserves capacity for short control jobs. No capacity
+# is reserved or transferred when a selector finishes; GitHub makes actual assignments.
 #
-# The App-token path preserves `vars.PICKER_API_RESERVE` requests (default 1500) for merge
-# and review automation. At the reserve, the picker tries the separate per-repository
-# `github.token` budget before falling back to Namespace. Rejected or unavailable
-# App inventory requests also get one complete scan with that alternative token. That repository budget also serves
-# required CI status publication, so preserve `vars.PICKER_REPOSITORY_API_RESERVE` (default 250) there.
-# A failed complete scan on both available credential pools answers Namespace,
-# and a caller whose picker did not produce an answer at all also falls back to Namespace. The job is
-# `continue-on-error`, so even a picker that crashes leaves the caller's run green: review.yml and
-# auto-merge key off pr-build's overall conclusion. This job can delay a build by its own runtime
-# but can never stop one.
-#
-# The ordinary-build picker itself needs a GitHub slot. When all 20 are taken it waits for one,
-# and then answers Namespace; the budget's headroom and churn of short jobs keep that wait short.
+# Direct discovery preserves vars.PICKER_API_RESERVE (default 1500) for App automation
+# and vars.PICKER_REPOSITORY_API_RESERVE (default 250) for the repository token, which
+# also publishes required CI statuses. Failure to complete direct discovery selects
+# Namespace. Missing picker outputs also retain Namespace; continue-on-error prevents
+# a picker failure from stopping the caller's build.
 
 on:
   workflow_call:
@@ -52,6 +43,8 @@ on:
       # `github.token`, which pr-build.yml's volume would exhaust. Without it, the picker
       # uses `github.token`.
       FLEET_READ_TOKEN: { required: false }
+      # Optional scoped state-service bearer token; absent means direct discovery.
+      TAUCETI_GITHUB_STATE_TOKEN: { required: false }
       APP_ID: { required: false }
       APP_PRIVATE_KEY: { required: false }
     outputs:
@@ -70,8 +63,7 @@ on:
 
 jobs:
   pick:
-    runs-on: >-
-      ${{ inputs.fleet-staging && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     continue-on-error: true
     outputs:
@@ -130,6 +122,8 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
           FALLBACK_TOKEN: ${{ github.token }}
+          GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
+          CAPACITY_REPOSITORY: ${{ github.repository }}
           ORG: ${{ github.repository_owner }}
           BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
           API_RESERVE: ${{ steps.app-token.outputs.token && (vars.PICKER_API_RESERVE || '1500') || (vars.PICKER_REPOSITORY_API_RESERVE || '250') }}
@@ -223,6 +217,41 @@ jobs:
               || { reason=job_inventory_failed; return 1; }
             busy=$(printf '%s\n' "$counts" | awk '{ s += $1 } END { print s + 0 }')
           }
+          # The existing state service coalesces organization discovery. This is
+          # advisory capacity; GitHub still makes the final slot assignment.
+          if [ -n "${GITHUB_STATE_TOKEN:-}" ]; then
+            if snapshot=$(python3 - <<'PY_SHARED'
+          import json,os,time,urllib.request,urllib.parse
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs):return None
+          repo=os.environ['CAPACITY_REPOSITORY']
+          try:
+              request=urllib.request.Request('https://github-state.taucetiproject.org/v1/runner-capacity?'+urllib.parse.urlencode({'repository':repo}),headers={
+                  'Authorization':'Bearer '+os.environ['GITHUB_STATE_TOKEN'],
+                  'User-Agent':'TauCetiWorker/1.0 (+https://github.com/TauCetiProject/TauCetiWorker)'})
+              with urllib.request.build_opener(NoRedirect()).open(request,timeout=10) as response:
+                  raw=response.read(16385)
+              if len(raw)>16384:raise ValueError('oversized capacity response')
+              value=json.loads(raw);now=time.time()*1000
+              if value.get('complete') is not True or value.get('organization')!=repo.split('/')[0]:raise ValueError('invalid coverage')
+              if type(value.get('busy')) is not int or not 0<=value['busy']<=10000:raise ValueError('invalid count')
+              if not isinstance(value.get('observed_at'),(int,float)) or not -5000<=now-value['observed_at']<=60000:raise ValueError('stale observation')
+              if not isinstance(value.get('retry_at'),(int,float)) or value['retry_at']<=now:raise ValueError('expired observation')
+              print(json.dumps({k:value[k] for k in ('busy','observed_at','cached','requests')}))
+          except Exception:
+              raise SystemExit(1)
+          PY_SHARED
+            ); then
+              busy=$(printf '%s' "$snapshot" | python3 -c 'import json,sys;print(json.load(sys.stdin)["busy"])')
+              echo "Shared capacity observation: $snapshot" >> "$GITHUB_STEP_SUMMARY"
+              api_pool=shared_state
+              reason=shared_capacity_available
+              if [ "$busy" -le "$BUDGET" ]; then decide true "$busy hosted jobs observed by shared discovery (budget $BUDGET): using GitHub."; fi
+              reason=shared_capacity_busy
+              decide false "$busy hosted jobs observed by shared discovery (budget $BUDGET): using Namespace."
+            fi
+            echo "Shared capacity unavailable; using bounded direct discovery." >> "$GITHUB_STEP_SUMMARY"
+          fi
           if ! scan; then
             # A low quota preflight, a rejected request, and an unreadable quota endpoint
             # all get the same single alternative. Restart the complete scan; discard partial counts.
