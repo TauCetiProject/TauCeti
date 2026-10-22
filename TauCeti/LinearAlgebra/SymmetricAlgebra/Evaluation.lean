@@ -38,7 +38,7 @@ time.
 
 ## Main results
 
-* `TauCeti.SymmetricAlgebra.lift_apply_eq_eval_equivMvPolynomial`: in the coordinates of a basis,
+* `SymmetricAlgebra.lift_apply_eq_eval_equivMvPolynomial`: in the coordinates of a basis,
   the evaluation at a linear form is the evaluation of a polynomial at the values of the form on
   the basis.
 * `SymmetricAlgebra.exists_polynomial_eval_eq_lift_add_smul`: along an affine line of
@@ -52,6 +52,24 @@ time.
 public section
 
 namespace SymmetricAlgebra
+
+section CommSemiring
+
+variable {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- **Evaluation in coordinates.** Through the polynomial algebra structure induced by a basis `b`,
+evaluating an element of the symmetric algebra at the linear form `f` is evaluating the
+corresponding polynomial at the values of `f` on `b`. -/
+theorem lift_apply_eq_eval_equivMvPolynomial (b : Module.Basis ι R M) (f : M →ₗ[R] R)
+    (p : SymmetricAlgebra R M) :
+    SymmetricAlgebra.lift f p =
+      MvPolynomial.eval (fun i ↦ f (b i)) (SymmetricAlgebra.equivMvPolynomial b p) := by
+  have h : SymmetricAlgebra.lift f = (MvPolynomial.aeval fun i ↦ f (b i)).comp
+      (SymmetricAlgebra.equivMvPolynomial b : SymmetricAlgebra R M →ₐ[R] MvPolynomial ι R) :=
+    SymmetricAlgebra.algHom_ext <| b.ext fun i ↦ by simp
+  rw [h, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ← MvPolynomial.aeval_eq_eval]
+
+end CommSemiring
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
@@ -77,24 +95,6 @@ end SymmetricAlgebra
 
 namespace TauCeti.SymmetricAlgebra
 
-section CommSemiring
-
-variable {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-
-/-- **Evaluation in coordinates.** Through the polynomial algebra structure induced by a basis `b`,
-evaluating an element of the symmetric algebra at the linear form `f` is evaluating the
-corresponding polynomial at the values of `f` on `b`. -/
-theorem lift_apply_eq_eval_equivMvPolynomial (b : Module.Basis ι R M) (f : M →ₗ[R] R)
-    (p : SymmetricAlgebra R M) :
-    SymmetricAlgebra.lift f p =
-      MvPolynomial.eval (fun i ↦ f (b i)) (SymmetricAlgebra.equivMvPolynomial b p) := by
-  have h : SymmetricAlgebra.lift f = (MvPolynomial.aeval fun i ↦ f (b i)).comp
-      (SymmetricAlgebra.equivMvPolynomial b : SymmetricAlgebra R M →ₐ[R] MvPolynomial ι R) :=
-    SymmetricAlgebra.algHom_ext <| b.ext fun i ↦ by simp
-  rw [h, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ← MvPolynomial.aeval_eq_eval]
-
-end CommSemiring
-
 variable {R M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M] [Module R M]
 
 /-- **An element of the symmetric algebra vanishing on a box of linear forms is zero.** Let `b` be
@@ -110,7 +110,7 @@ theorem eq_zero_of_forall_lift_eq_zero {ι : Type*} (b : Module.Basis ι R M) {s
   -- the point `x` is the coordinate vector of the linear form `b.constr R x`
   have hfx : ∀ i, b.constr R x (b i) ∈ s i := fun i ↦ by
     simpa only [Module.Basis.constr_basis] using hx i (Set.mem_univ i)
-  have hcoord := lift_apply_eq_eval_equivMvPolynomial b (b.constr R x) p
+  have hcoord := SymmetricAlgebra.lift_apply_eq_eval_equivMvPolynomial b (b.constr R x) p
   simp only [Module.Basis.constr_basis] at hcoord
   rw [← hcoord, h _ hfx, map_zero]
 
