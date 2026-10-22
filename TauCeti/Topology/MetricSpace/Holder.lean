@@ -11,7 +11,7 @@ import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.UniformSpace.UniformEmbedding
 
 /-!
-# Hölder functions: a `dist` criterion and extension from a dense set
+# Hölder functions: a `dist` criterion, extension from a dense set, and finite sums
 
 A Hölder bound stated with `dist` is equivalent to `HolderOnWith`, which Mathlib phrases with
 `edist`.
@@ -26,6 +26,10 @@ Hölder inequality passes from `s × s` to its closure because both of its sides
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
+Finally, finite sums of Hölder functions are Hölder, and a Lipschitz function of bounded
+oscillation is Hölder with every exponent at most one; these are the bookkeeping steps for Hölder
+constants of products with cutoffs.
+
 ## Main declarations
 
 * `HolderOnWith.of_dist_le`: a Hölder bound stated with `dist` gives `HolderOnWith`; the converse
@@ -35,6 +39,9 @@ of full measure for a measure that is positive on open sets is dense.
   constant `C` and exponent `r` stays within `C ρ^r` of its value at the centre.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
   function on the whole space.
+* `LipschitzWith.holderWith_of_dist_le`: a Lipschitz function of bounded oscillation is Hölder
+  with every exponent at most one.
+* `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 -/
 
 public section
@@ -97,3 +104,31 @@ theorem HolderOnWith.dist_le_mul_rpow_of_mem_ball {X Y : Type*} [PseudoMetricSpa
   calc dist (f x) (f x₀) ≤ C * dist x x₀ ^ (r : ℝ) :=
         hf.dist_le hx (Metric.mem_ball_self (dist_nonneg.trans_lt hx'))
     _ ≤ C * ρ ^ (r : ℝ) := by gcongr
+
+/-- A Lipschitz function whose values lie within distance `D` of one another is Hölder continuous
+with every exponent `r ≤ 1`, with constant `K ^ r * D ^ (1 - r)`. This interpolates between the
+Lipschitz bound (`r = 1`) and the oscillation bound (`r = 0`). -/
+theorem LipschitzWith.holderWith_of_dist_le {X Y : Type*} [PseudoEMetricSpace X]
+    [PseudoMetricSpace Y] {K D r : ℝ≥0} {f : X → Y} (hf : LipschitzWith K f)
+    (hD : ∀ x y, dist (f x) (f y) ≤ D) (hr : r ≤ 1) :
+    HolderWith (K ^ (r : ℝ) * D ^ ((1 - r : ℝ≥0) : ℝ)) r f := by
+  have h₀ : HolderWith D 0 f := fun x y => by
+    rw [NNReal.coe_zero, ENNReal.rpow_zero, mul_one, edist_dist]
+    exact ENNReal.ofReal_le_of_le_toReal (by simpa using hD x y)
+  simpa using (holderWith_one.2 hf).interpolate h₀ (add_tsub_cancel_of_le hr)
+
+/-- A finite sum of Hölder functions with a common exponent is Hölder, with the sum of the
+constants. -/
+theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {s : Finset ι} {C : ι → ℝ≥0} {r : ℝ≥0} {f : ι → X → Y}
+    (hf : ∀ i ∈ s, HolderWith (C i) r (f i)) :
+    HolderWith (∑ i ∈ s, C i) r (fun x => ∑ i ∈ s, f i x) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simp only [Finset.sum_empty]
+    exact HolderWith.const
+  | insert a s ha ih =>
+    simp_rw [Finset.sum_insert ha]
+    exact (hf a (Finset.mem_insert_self a s)).add
+      (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)) (g := fun x => ∑ i ∈ s, f i x)

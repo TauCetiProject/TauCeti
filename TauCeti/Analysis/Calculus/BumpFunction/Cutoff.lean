@@ -24,7 +24,9 @@ compact exhaustions in domain arguments. Taking differences of consecutive cutof
 exhaustion gives a decomposition of unity (not necessarily nonnegative) of an open set by
 compactly supported smooth functions, together with cutoffs equal to one on their supports which
 are locally finite in the open set (`IsOpen.exists_contDiff_decomposition_cutoff`); this is the
-gluing device for global approximation on a domain. Locally finite sums of smooth functions are
+gluing device for global approximation on a domain. Multiplying by a cutoff turns a function which
+is `C^k` on an open set containing its support into a `C^k` function on the whole space
+(`ContDiffOn.contDiff_mul_of_tsupport_subset`). Locally finite sums of smooth functions are
 smooth (`contDiffAt_tsum_of_eventually_eq_zero`).
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
@@ -120,6 +122,21 @@ theorem _root_.ContDiff.exists_abs_le_and_norm_gradient_le [InnerProductSpace �
     exact (hC ⟨x, rfl⟩).trans ((le_max_left _ _).trans (le_max_right _ _))
   · rw [_root_.gradient, LinearIsometryEquiv.norm_map]
     exact (hD ⟨x, rfl⟩).trans ((le_max_right _ _).trans (le_max_right _ _))
+
+/-- A product `ψ * g` is `C^k` on the whole space when `ψ` and `g` are `C^k` on an open set `s`
+containing the topological support of `ψ`: this is how a cutoff `ψ` globalizes a function given
+on `s`. -/
+theorem _root_.ContDiffOn.contDiff_mul_of_tsupport_subset {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] {k : WithTop ℕ∞} {ψ g : E → 𝕜} {s : Set E}
+    (hg : ContDiffOn 𝕜 k g s) (hs : IsOpen s) (hψ : ContDiffOn 𝕜 k ψ s)
+    (hψs : tsupport ψ ⊆ s) : ContDiff 𝕜 k (ψ * g) := by
+  refine contDiff_iff_contDiffAt.2 fun x => ?_
+  by_cases hx : x ∈ s
+  · exact (hψ.contDiffAt (hs.mem_nhds hx)).mul (hg.contDiffAt (hs.mem_nhds hx))
+  · have h0 : ψ * g =ᶠ[𝓝 x] 0 := by
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h => hx (hψs h)] with y hy
+      simp [hy]
+    exact contDiffAt_const.congr_of_eventuallyEq h0
 
 /-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
 the next term. -/
