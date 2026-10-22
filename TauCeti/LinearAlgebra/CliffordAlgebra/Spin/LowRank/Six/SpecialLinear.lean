@@ -1143,6 +1143,60 @@ theorem coe_hyperbolicSixSpinEquivSpecialLinear_apply (s : spinGroup (splitEvenF
       hyperbolicSixEvenEquivMatrixProd_apply,
       evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
 
+/-- The even half-spin basis made from the canonical exterior monomials. -/
+noncomputable abbrev spinSixHalfSpinMonomialBasis :
+    Basis (Fin 4) K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
+  (splitEvenBasis K 3).spinSixEvenMonomialBasis (spinPlus_def _)
+
+/-- The finite-dimensional basis used by the split Spin-to-`SL₄` matrix equivalence. -/
+noncomputable abbrev spinSixHalfSpinStandardBasis :
+    Basis (Fin 4) K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
+  Module.finBasisOfFinrankEq K _ (finrank_hyperbolicSixSpinPlus K)
+
+/-- Conjugating the fixed `SL₄` coordinates by the canonical basis change gives the
+monomial-basis matrix of the Spin half-spin action. -/
+theorem spinSixBasisChange_conjugate_spinPlusAction
+    (s : spinGroup (splitEvenForm K 3)) :
+    (spinSixHalfSpinMonomialBasis K).toMatrix (spinSixHalfSpinStandardBasis K) *
+        (hyperbolicSixSpinEquivSpecialLinear K s : Matrix (Fin 4) (Fin 4) K) *
+        (spinSixHalfSpinStandardBasis K).toMatrix (spinSixHalfSpinMonomialBasis K) =
+      LinearMap.toMatrix (spinSixHalfSpinMonomialBasis K) (spinSixHalfSpinMonomialBasis K)
+        (spinPlusAction (splitEvenForm K 3) (splitEvenPolarization K 3)
+          (splitEvenPolarization_line K 3) (spinGroupToEven _ s)) := by
+  let P := splitEvenPolarization K 3
+  let hline := splitEvenPolarization_line K 3
+  let hW := splitEvenPolarization_W_ne_bot K (by norm_num : (3 : ℕ) ≠ 0)
+  let hplus := finrank_hyperbolicSixSpinPlus K
+  let hV := finrank_splitEvenSpace K 3
+  let F := spinSixHalfSpinStandardBasis K
+  have hmatrix : (hyperbolicSixSpinEquivSpecialLinear K s : Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix F F
+        (spinPlusAction (splitEvenForm K 3) P hline (spinGroupToEven _ s)) := by
+    exact coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply P hline
+      (by simp [P]) hW hplus hV F rfl s
+  rw [hmatrix]
+  exact basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix
+    (b := spinSixHalfSpinMonomialBasis K) (b' := spinSixHalfSpinStandardBasis K)
+    (c := spinSixHalfSpinMonomialBasis K) (c' := spinSixHalfSpinStandardBasis K)
+    (f := spinPlusAction (splitEvenForm K 3) (splitEvenPolarization K 3)
+      (splitEvenPolarization_line K 3) (spinGroupToEven _ s))
+
+/-- The conjugated fixed-coordinate matrix of a canonical Spin lift is the elementary
+transvection it lifts. -/
+theorem spinSixBasisChange_transvection {i j : Fin 4} (hij : i ≠ j) (c : K) :
+    (spinSixHalfSpinMonomialBasis K).toMatrix (spinSixHalfSpinStandardBasis K) *
+        (hyperbolicSixSpinEquivSpecialLinear K
+          (spinSixTransvectionLift (splitEvenPolarization K 3)
+            (splitEvenPolarization_line K 3) (splitEvenBasis K 3) hij c) :
+          Matrix (Fin 4) (Fin 4) K) *
+        (spinSixHalfSpinStandardBasis K).toMatrix (spinSixHalfSpinMonomialBasis K) =
+      Matrix.transvection i j c := by
+  rw [spinSixBasisChange_conjugate_spinPlusAction]
+  exact toMatrix_spinPlusAction_spinSixTransvectionLift
+    (P := splitEvenPolarization K 3) (hline := splitEvenPolarization_line K 3)
+    (b := splitEvenBasis K 3) hij c
+
+
 /-- The inverse Spin equivalence is the inverse general linear equivalence on determinant-one
 matrices. -/
 @[simp]

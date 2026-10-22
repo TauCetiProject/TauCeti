@@ -226,6 +226,24 @@ theorem prevL_apply (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (u : WeakDerivStep mu Omega p base) : prevL base u = prev base u := by
   rw [prev]
 
+/-- The projection `prev` is additive. -/
+@[simp]
+theorem prev_add (base : X →L[ℝ] Lp F p (mu.restrict Omega))
+    (u w : WeakDerivStep mu Omega p base) : prev base (u + w) = prev base u + prev base w := by
+  simp only [← prevL_apply, map_add]
+
+/-- The projection `prev` commutes with scalar multiplication. -/
+@[simp]
+theorem prev_smul (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (c : ℝ)
+    (u : WeakDerivStep mu Omega p base) : prev base (c • u) = c • prev base u := by
+  simp only [← prevL_apply, map_smul]
+
+/-- The projection `prev` vanishes at zero. -/
+@[simp]
+theorem prev_zero (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :
+    prev base (0 : WeakDerivStep mu Omega p base) = 0 := by
+  simp only [← prevL_apply, map_zero]
+
 theorem prev_coe (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (u : WeakDerivStep mu Omega p base) : prev base u = WithLp.fst u.1 := by
   simp [prev, prevL]

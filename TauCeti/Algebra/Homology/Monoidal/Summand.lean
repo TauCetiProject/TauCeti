@@ -34,6 +34,9 @@ evaluation on pure tensors, `HomologicalComplex.ι_tensorHom_apply`, is specific
   on a homogeneous summand.
 * `HomologicalComplex.leftUnitor_inv_f` and `HomologicalComplex.rightUnitor_inv_f`: the degreewise
   components of the inverse unitors.
+* `HomologicalComplex.mapBifunctor₁₂.ι_eq_whiskerRight` and
+  `HomologicalComplex.mapBifunctor₂₃.ι_eq_whiskerLeft`: the inclusions of the summand
+  `X.X p ⊗ Y.X q ⊗ Z.X r` into `(X ⊗ Y) ⊗ Z` and `X ⊗ (Y ⊗ Z)` via whiskered `ιTensorObj`.
 * `HomologicalComplex.ι_ι_associator_hom` and `HomologicalComplex.ι_ι_associator_inv`: the
   associator and its inverse on the summand `X.X p ⊗ Y.X q ⊗ Z.X r`, with arbitrary intermediate
   degrees.
@@ -136,6 +139,32 @@ lemma rightUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
   simp only [Hom.isoOfComponents_hom_f, Functor.mapIso_hom, Iso.symm_hom]
   rfl
 
+/-- The inclusion `HomologicalComplex.mapBifunctor₁₂.ι` of the summand `X.X p ⊗ Y.X q ⊗ Z.X r`
+into `(X ⊗ Y) ⊗ Z`, written with the monoidal whiskering and `HomologicalComplex.ιTensorObj`.
+Mathlib's `HomologicalComplex.mapBifunctor₁₂.ι_eq` states it for the raw totalization. -/
+@[reassoc]
+lemma mapBifunctor₁₂.ι_eq_whiskerRight (X Y Z : HomologicalComplex C c) (p q r pq j : I)
+    (hpq : p + q = pq) (h : pq + r = j) :
+    mapBifunctor₁₂.ι (curriedTensor C) (curriedTensor C) X Y Z c c p q r j
+        (by rw [← h, ← hpq]; rfl) =
+      (ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫ ιTensorObj (X ⊗ Y) Z pq r j h := by
+  rw [mapBifunctor₁₂.ι_eq (curriedTensor C) (curriedTensor C) X Y Z c c p q r pq j hpq h]
+  -- `(curriedTensor C).map f).app W` is `f ▷ W` and `ιMapBifunctor` is `ιTensorObj`, by definition.
+  rfl
+
+/-- The inclusion `HomologicalComplex.mapBifunctor₂₃.ι` of the summand `X.X p ⊗ Y.X q ⊗ Z.X r`
+into `X ⊗ (Y ⊗ Z)`, written with the monoidal whiskering and `HomologicalComplex.ιTensorObj`.
+Mathlib's `HomologicalComplex.mapBifunctor₂₃.ι_eq` states it for the raw totalization. -/
+@[reassoc]
+lemma mapBifunctor₂₃.ι_eq_whiskerLeft (X Y Z : HomologicalComplex C c) (p q r qr j : I)
+    (hqr : q + r = qr) (h : p + qr = j) :
+    mapBifunctor₂₃.ι (curriedTensor C) (curriedTensor C) X Y Z c c c p q r j
+        (by rw [← h, ← hqr]; exact add_assoc p q r) =
+      (X.X p ◁ ιTensorObj Y Z q r qr hqr) ≫ ιTensorObj X (Y ⊗ Z) p qr j h := by
+  rw [mapBifunctor₂₃.ι_eq (curriedTensor C) (curriedTensor C) X Y Z c c c p q r qr j hqr h]
+  -- `(curriedTensor C).obj W).map f` is `W ◁ f` and `ιMapBifunctor` is `ιTensorObj`, by definition.
+  rfl
+
 /-- The associator of homological complexes, restricted to the summand indexed by the
 degrees `p`, `q` and `r`, is the associator of the three summands. The intermediate
 degrees `pq` and `qr` may be any degrees equal to `p + q` and `q + r`. -/
@@ -146,19 +175,8 @@ lemma ι_ι_associator_hom (X Y Z : HomologicalComplex C c) (p q r pq qr j : I)
         ιTensorObj (X ⊗ Y) Z pq r j h ≫ (α_ X Y Z).hom.f j =
       (α_ (X.X p) (Y.X q) (Z.X r)).hom ≫ (X.X p ◁ ιTensorObj Y Z q r qr hqr) ≫
         ιTensorObj X (Y ⊗ Z) p qr j h' := by
-  -- The totalization index of a triple tensor product is definitionally the sum of the three
-  -- degrees; naming the reindexed hypothesis keeps every later term type-correct.
-  have hr : ComplexShape.r c c c c c (p, q, r) = j :=
-    show p + q + r = j by rw [hpq, h]
-  have e₁ : mapBifunctor₁₂.ι (curriedTensor C) (curriedTensor C) X Y Z c c p q r j hr =
-      (ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫ ιTensorObj (X ⊗ Y) Z pq r j h := by
-    rw [mapBifunctor₁₂.ι_eq (curriedTensor C) (curriedTensor C) X Y Z c c p q r pq j hpq h]
-    rfl
-  have e₂ : mapBifunctor₂₃.ι (curriedTensor C) (curriedTensor C) X Y Z c c c p q r j hr =
-      (X.X p ◁ ιTensorObj Y Z q r qr hqr) ≫ ιTensorObj X (Y ⊗ Z) p qr j h' := by
-    rw [mapBifunctor₂₃.ι_eq (curriedTensor C) (curriedTensor C) X Y Z c c c p q r qr j hqr h']
-    rfl
-  rw [← Category.assoc, ← e₁, ← e₂]
+  rw [← Category.assoc, ← mapBifunctor₁₂.ι_eq_whiskerRight X Y Z p q r pq j hpq h,
+    ← mapBifunctor₂₃.ι_eq_whiskerLeft X Y Z p q r qr j hqr h']
   -- Mathlib assembles the associator of homological complexes from
   -- `HomologicalComplex.mapBifunctorAssociatorX`, but states no component lemma for `α_`.
   have ha : (α_ X Y Z).hom.f j =

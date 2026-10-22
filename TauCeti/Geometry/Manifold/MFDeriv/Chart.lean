@@ -67,6 +67,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   derivative after an inverse chart, including derivatives within the model range.
 * `HasMFDerivAt.hasFDerivAt_extChartAt_comp`: read the coordinate derivative of a map from
   a normed source by composing its manifold derivative with the tangent chart.
+* `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: within a subset of the chart target with
+  unique derivatives, the derivative of the inverse chart is its derivative within the model range.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
@@ -393,6 +395,15 @@ theorem hasFDerivWithinAt_extChartAt_coordChange (α β : M) {s : Set M}
     exact extChartAt_target_subset_range α ((extChartAt I α).map_source (hsub hz).1)
 
 end ChartOverlap
+
+/-- On a subset of the chart target with unique derivatives, the derivative of the inverse chart
+within the subset is its derivative within the model range. -/
+theorem mfderivWithin_extChartAt_symm_of_subset (x₀ : M) {s : Set E}
+    (hs : s ⊆ (extChartAt I x₀).target) (hsu : UniqueDiffOn 𝕜 s) {y : E} (hy : y ∈ s) :
+    mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm s y =
+      mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (range I) y :=
+  mfderivWithin_subset (fun _ hz ↦ extChartAt_target_subset_range x₀ (hs hz))
+    (hsu y hy).uniqueMDiffWithinAt (mdifferentiableWithinAt_extChartAt_symm (hs hy))
 
 end TauCeti
 

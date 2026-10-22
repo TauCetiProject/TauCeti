@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Associativity
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Braiding
 public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
 public import TauCeti.AlgebraicTopology.Singular.KoszulBraiding
@@ -34,6 +36,15 @@ cross products `Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₙ(X × Y; k)` is an isomorphism,
 corresponding statement for the direct sum of the algebraic cross products of the singular chain
 complexes.
 
+The cross product is associative: the map induced by the associators of the spaces and of the
+coefficients sends `(a × b) × c` to `a × (b × c)`, with no sign
+(`TopCat.singularHomologyCross_assoc`).  Under the Eilenberg–Zilber isomorphisms this is the
+coassociativity of the Alexander–Whitney map (`TopCat.alexanderWhitney_coassoc`) together with
+the associativity of the algebraic cross product (`HomologicalComplex.homologyCross_assoc`).
+Since it involves the cross products of the intermediate complexes `C(X; R) ⊗ C(Y; S)` and
+`C(Y; S) ⊗ C(Z; T)`, this statement assumes that tensoring with any object preserves cokernels,
+as in `ModuleCat`.  It makes iterated cross products independent of the bracketing.
+
 In a braided coefficient category the cross product is graded commutative: the swap
 `X × Y ⟶ Y × X`, together with the coefficient braiding `R ⊗ S ⟶ S ⊗ R`, sends `a × b` to
 `(-1)^(p * q) b × a` for `a ∈ Hₚ(X; R)` and `b ∈ H_q(Y; S)`
@@ -54,6 +65,7 @@ with `𝟙_ C` through the left unitor, the statement needs no coefficient braid
   coefficients.
 * `TopCat.singularHomologyCross_comp_homologyMap_alexanderWhitney`: under the Eilenberg–Zilber
   isomorphism, the homology cross product is the cross product of the singular chain complexes.
+* `TopCat.singularHomologyCross_assoc`: associativity of the homology cross product.
 * `TopCat.singularHomologyCross_comp_map_braiding` and
   `TopCat.singularHomologyCross_comp_map_leftUnitor_comp_map_braiding`: graded commutativity of
   the homology cross product.
@@ -210,9 +222,106 @@ lemma singularHomologyCross_comp_homologyMap_alexanderWhitney (X Y : TopCat.{w})
     singularHomologyCross X Y R S p q n h ≫ homologyMap (alexanderWhitney X Y R S) n =
       homologyCross ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S) p q n h :=
   (Category.assoc _ _ _).trans <| (homologyCross _ _ p q n h ≫=
-    ((homologyMap_comp _ _ n).symm.trans
-      (((shuffleAlexanderWhitneyHomotopy X Y R S).homologyMap_eq n).trans
-        (homologyMap_id _ n)))).trans (Category.comp_id _)
+    homologyMap_shuffle_comp_homologyMap_alexanderWhitney X Y R S n).trans (Category.comp_id _)
+
+section Associativity
+
+variable [∀ T : C, PreservesColimitsOfShape WalkingParallelPair (tensorLeft T)]
+  [∀ T : C, PreservesColimitsOfShape WalkingParallelPair (tensorRight T)]
+
+variable (X Y Z : TopCat.{w}) (R S T : C) (p q r pq qr n : ℕ)
+  (hpq : p + q = pq) (hqr : q + r = qr) (hn : pq + r = n) (hn' : p + qr = n)
+
+/-- `singularHomologyCross_assoc` followed by the map induced on homology by `AW_{X, Y × Z}` and
+`C(X) ◁ AW_{Y, Z}`, with the singular homology objects and maps unfolded to the homology of the
+singular chain complexes.  Both sides become iterated algebraic cross products. -/
+private lemma singularHomologyCross_assoc_comp_homologyMap :
+    ((homologyCross _ _ p q pq hpq ≫ homologyMap (shuffle X Y R S) pq) ▷
+        ((toSSet.obj Z).chainComplex T).homology r ≫
+      (homologyCross _ _ pq r n hn ≫ homologyMap (shuffle (X ⊗ Y) Z (R ⊗ S) T) n) ≫
+      homologyMap (((SSet.chainComplexFunctor C).map (α_ R S T).hom).app
+        (toSSet.obj ((X ⊗ Y) ⊗ Z))) n ≫
+      homologyMap (SSet.chainComplexMap (toSSet.map (α_ X Y Z).hom) (R ⊗ S ⊗ T)) n) ≫
+        homologyMap (alexanderWhitney X (Y ⊗ Z) R (S ⊗ T) ≫
+          (toSSet.obj X).chainComplex R ◁ alexanderWhitney Y Z S T) n =
+      ((α_ _ _ _).hom ≫
+        ((toSSet.obj X).chainComplex R).homology p ◁
+          (homologyCross _ _ q r qr hqr ≫ homologyMap (shuffle Y Z S T) qr) ≫
+        (homologyCross _ _ p qr n hn' ≫ homologyMap (shuffle X (Y ⊗ Z) R (S ⊗ T)) n)) ≫
+        homologyMap (alexanderWhitney X (Y ⊗ Z) R (S ⊗ T) ≫
+          (toSSet.obj X).chainComplex R ◁ alexanderWhitney Y Z S T) n := by
+  -- naturality of the algebraic cross product in each factor; the whiskerings of complexes are
+  -- by definition the tensor products with identities
+  have hR : homologyCross ((toSSet.obj X).chainComplex R)
+      ((toSSet.obj (Y ⊗ Z)).chainComplex (S ⊗ T)) p qr n hn' ≫
+        homologyMap ((toSSet.obj X).chainComplex R ◁ alexanderWhitney Y Z S T) n =
+        _ ◁ homologyMap (alexanderWhitney Y Z S T) qr ≫ homologyCross _ _ p qr n hn' := by
+    have := homologyCross_naturality (𝟙 ((toSSet.obj X).chainComplex R))
+      (alexanderWhitney Y Z S T) p qr n hn'
+    rw [homologyMap_id, id_tensorHom] at this
+    exact this.symm
+  have hL : homologyCross ((toSSet.obj (X ⊗ Y)).chainComplex (R ⊗ S))
+      ((toSSet.obj Z).chainComplex T) pq r n hn ≫
+        homologyMap (alexanderWhitney X Y R S ▷ (toSSet.obj Z).chainComplex T) n =
+        homologyMap (alexanderWhitney X Y R S) pq ▷ _ ≫ homologyCross _ _ pq r n hn := by
+    have := homologyCross_naturality (alexanderWhitney X Y R S)
+      (𝟙 ((toSSet.obj Z).chainComplex T)) pq r n hn
+    rw [homologyMap_id, tensorHom_id] at this
+    exact this.symm
+  -- the coassociativity of the Alexander–Whitney map, on homology
+  have hA : homologyMap (((SSet.chainComplexFunctor C).map (α_ R S T).hom).app
+        (toSSet.obj ((X ⊗ Y) ⊗ Z))) n ≫
+      homologyMap (SSet.chainComplexMap (toSSet.map (α_ X Y Z).hom) (R ⊗ S ⊗ T)) n ≫
+      homologyMap (alexanderWhitney X (Y ⊗ Z) R (S ⊗ T)) n ≫
+      homologyMap ((toSSet.obj X).chainComplex R ◁ alexanderWhitney Y Z S T) n =
+        homologyMap (alexanderWhitney (X ⊗ Y) Z (R ⊗ S) T) n ≫
+          homologyMap (alexanderWhitney X Y R S ▷ (toSSet.obj Z).chainComplex T) n ≫
+          homologyMap (α_ ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S)
+            ((toSSet.obj Z).chainComplex T)).hom n := by
+    simp only [← homologyMap_comp, alexanderWhitney_coassoc]
+  simp only [homologyMap_comp, Category.assoc, comp_whiskerRight, whiskerLeft_comp]
+  rw [hA, homologyMap_shuffle_comp_homologyMap_alexanderWhitney_assoc, reassoc_of% hL,
+    homologyMap_shuffle_comp_homologyMap_alexanderWhitney_assoc, hR,
+    ← comp_whiskerRight_assoc, ← comp_whiskerRight_assoc, ← whiskerLeft_comp_assoc,
+    ← whiskerLeft_comp_assoc]
+  simp only [Category.assoc, homologyMap_shuffle_comp_homologyMap_alexanderWhitney]
+  -- `homologyCross` lands in the homology of `HomologicalComplex.tensorObj`, which is the
+  -- monoidal tensor product of complexes only up to unfolding
+  erw [Category.comp_id, Category.comp_id]
+  exact homologyCross_assoc ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S)
+    ((toSSet.obj Z).chainComplex T) p q r pq qr n hpq hqr hn hn'
+
+/-- **Associativity of the homology cross product**: the map induced by the associator
+`(X × Y) × Z ⟶ X × (Y × Z)` and the coefficient associator `(R ⊗ S) ⊗ T ⟶ R ⊗ (S ⊗ T)` sends
+`(a × b) × c` to `a × (b × c)`, with no sign. -/
+@[reassoc]
+lemma singularHomologyCross_assoc :
+    singularHomologyCross X Y R S p q pq hpq ▷ ((singularHomologyFunctor C r).obj T).obj Z ≫
+        singularHomologyCross (X ⊗ Y) Z (R ⊗ S) T pq r n hn ≫
+        ((singularHomologyFunctor C n).map (α_ R S T).hom).app ((X ⊗ Y) ⊗ Z) ≫
+        ((singularHomologyFunctor C n).obj (R ⊗ S ⊗ T)).map (α_ X Y Z).hom =
+      (α_ _ _ _).hom ≫
+        ((singularHomologyFunctor C p).obj R).obj X ◁ singularHomologyCross Y Z S T q r qr hqr ≫
+        singularHomologyCross X (Y ⊗ Z) R (S ⊗ T) p qr n hn' := by
+  -- `AW_{X, Y × Z}` followed by `C(X) ◁ AW_{Y, Z}` is a homotopy equivalence, so the map it
+  -- induces on homology is an isomorphism and can be cancelled
+  let e : HomotopyEquiv ((toSSet.obj (X ⊗ Y ⊗ Z)).chainComplex (R ⊗ S ⊗ T))
+      ((toSSet.obj X).chainComplex R ⊗
+        ((toSSet.obj Y).chainComplex S ⊗ (toSSet.obj Z).chainComplex T)) :=
+    (eilenbergZilberHomotopyEquiv X (Y ⊗ Z) R (S ⊗ T)).trans
+      (HomotopyEquiv.mapBifunctor (curriedTensor C) (ComplexShape.down ℕ) (HomotopyEquiv.refl _)
+        (eilenbergZilberHomotopyEquiv Y Z S T))
+  have he : e.hom = alexanderWhitney X (Y ⊗ Z) R (S ⊗ T) ≫
+      (toSSet.obj X).chainComplex R ◁ alexanderWhitney Y Z S T := by
+    simp [e, whiskerLeft_eq_mapBifunctorMap]
+  have : IsIso (homologyMap e.hom n) := (e.toHomologyIso n).isIso_hom
+  rw [he] at this
+  -- the singular homology objects and maps are by definition those of the singular chains
+  exact (cancel_mono (homologyMap (alexanderWhitney X (Y ⊗ Z) R (S ⊗ T) ≫
+    (toSSet.obj X).chainComplex R ◁ alexanderWhitney Y Z S T) n)).1
+    (singularHomologyCross_assoc_comp_homologyMap X Y Z R S T p q r pq qr n hpq hqr hn hn')
+
+end Associativity
 
 section Braided
 

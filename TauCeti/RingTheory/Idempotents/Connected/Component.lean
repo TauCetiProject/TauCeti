@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Connected.LocallyConnected
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 
+import TauCeti.Topology.Homeomorph.SetCongr
+
 /-!
 # The idempotent cutting out a connected component
 
@@ -100,36 +102,6 @@ theorem eq_connectedComponentIdempotent_iff {e : R} (he : IsIdempotentElem e)
     exact TopologicalSpace.Opens.ext
       (h.trans (basicOpen_connectedComponentIdempotent x).symm)
 
-omit [LocallyConnectedSpace (PrimeSpectrum R)] in
-/-- Unfolding `homeomorphOfRingEquiv` identifies its action with contraction along the inverse
-ring equivalence. This isolates the definitional equality used below. -/
-private theorem homeomorphOfRingEquiv_apply (e : R ≃+* R) (x : PrimeSpectrum R) :
-    homeomorphOfRingEquiv e x = comap e.symm.toRingHom x :=
-  rfl
-
-omit [LocallyConnectedSpace (PrimeSpectrum R)] in
-/-- The inverse of `homeomorphOfRingEquiv` acts by contraction along the original ring
-equivalence. This isolates the definitional equality used below. -/
-private theorem homeomorphOfRingEquiv_symm_apply (e : R ≃+* R) (x : PrimeSpectrum R) :
-    (homeomorphOfRingEquiv e).symm x = comap e.toRingHom x :=
-  rfl
-
-omit [LocallyConnectedSpace (PrimeSpectrum R)] in
-/-- If contraction along a ring automorphism fixes a prime, contraction along its inverse fixes
-the same prime. -/
-private theorem comap_symm_eq_self_of_comap_eq_self (e : R ≃+* R) (x : PrimeSpectrum R)
-    (hx : comap (e : R →+* R) x = x) :
-    comap (e.symm : R →+* R) x = x := by
-  let h : PrimeSpectrum R ≃ₜ PrimeSpectrum R := homeomorphOfRingEquiv e.symm
-  have hfix : h x = x := by
-    rw [homeomorphOfRingEquiv_apply, RingEquiv.symm_symm]
-    exact hx
-  have hfix_symm : h.symm x = x := by
-    apply h.injective
-    rw [h.apply_symm_apply, hfix]
-  rw [homeomorphOfRingEquiv_symm_apply] at hfix_symm
-  exact hfix_symm
-
 /-- A ring equivalence transports the component idempotent along its inverse action on the
 prime spectrum. -/
 theorem map_connectedComponentIdempotent [LocallyConnectedSpace (PrimeSpectrum S)]
@@ -158,12 +130,12 @@ component idempotent of `x`. -/
 theorem map_connectedComponentIdempotent_eq_self (e : R ≃+* R) (x : PrimeSpectrum R)
     (hx : comap (e : R →+* R) x = x) :
     e (connectedComponentIdempotent x) = connectedComponentIdempotent x := by
-  rw [map_connectedComponentIdempotent,
-    comap_symm_eq_self_of_comap_eq_self e x hx]
+  apply e.symm.injective
+  rw [e.symm_apply_apply, map_connectedComponentIdempotent, RingEquiv.symm_symm, hx]
 
-/-- If the whole prime spectrum is connected, its component idempotent is one. -/
+/-- If the whole prime spectrum is preconnected, its component idempotent is one. -/
 @[simp]
-theorem connectedComponentIdempotent_eq_one [ConnectedSpace (PrimeSpectrum R)]
+theorem connectedComponentIdempotent_eq_one [PreconnectedSpace (PrimeSpectrum R)]
     (x : PrimeSpectrum R) : connectedComponentIdempotent x = 1 := by
   symm
   apply (eq_connectedComponentIdempotent_iff IsIdempotentElem.one x).mpr
@@ -189,8 +161,8 @@ cutting out the connected component of `x`. -/
 theorem map_connectedComponentIdeal_eq_self (e : R ≃+* R) (x : PrimeSpectrum R)
     (hx : comap (e : R →+* R) x = x) :
     Ideal.map e (connectedComponentIdeal x) = connectedComponentIdeal x := by
-  rw [map_connectedComponentIdeal,
-    comap_symm_eq_self_of_comap_eq_self e x hx]
+  simp only [connectedComponentIdeal, Ideal.map_span, Set.image_singleton, map_sub, map_one,
+    map_connectedComponentIdempotent_eq_self e x hx]
 
 /-- Applying a ring equivalence transports membership to the component ideal at the inverse
 image of the point. -/
@@ -206,8 +178,8 @@ component of `x`. -/
 theorem apply_mem_connectedComponentIdeal_iff_of_comap_eq_self (e : R ≃+* R)
     (x : PrimeSpectrum R) (hx : comap (e : R →+* R) x = x) {r : R} :
     e r ∈ connectedComponentIdeal x ↔ r ∈ connectedComponentIdeal x := by
-  simpa only [comap_symm_eq_self_of_comap_eq_self e x hx] using
-    apply_mem_connectedComponentIdeal_iff e x (r := r)
+  simpa only [map_connectedComponentIdeal_eq_self e x hx] using
+    (Ideal.apply_mem_of_equiv_iff (I := connectedComponentIdeal x) (f := e) (x := r))
 
 /-- Membership in the component ideal means being a multiple of its complementary idempotent. -/
 theorem mem_connectedComponentIdeal_iff {x : PrimeSpectrum R} {r : R} :
@@ -257,10 +229,10 @@ noncomputable instance connectedSpace_quotient_connectedComponentIdeal
     (Subtype.connectedSpace isConnected_connectedComponent)
 
 /-- The quotient by the component ideal is nontrivial. -/
-noncomputable instance nontrivial_quotient_connectedComponentIdeal
+instance nontrivial_quotient_connectedComponentIdeal
     (x : PrimeSpectrum R) : Nontrivial (R ⧸ connectedComponentIdeal x) :=
-  (Classical.choice
-    (inferInstance : Nonempty (PrimeSpectrum (R ⧸ connectedComponentIdeal x)))).nontrivial
+  Ideal.Quotient.nontrivial_iff.mpr
+    (ne_top_of_le_ne_top x.isPrime.ne_top (connectedComponentIdeal_le_asIdeal x))
 
 /-- After coercion to `PrimeSpectrum R`, the quotient-spectrum homeomorphism sends a point to its
 contraction along the quotient map. -/
@@ -269,8 +241,7 @@ theorem primeSpectrumQuotientHomeomorphConnectedComponent_apply_coe
     (x : PrimeSpectrum R) (y : PrimeSpectrum (R ⧸ connectedComponentIdeal x)) :
     (primeSpectrumQuotientHomeomorphConnectedComponent x y : PrimeSpectrum R) =
       comap (Ideal.Quotient.mk (connectedComponentIdeal x)) y := by
-  rw [primeSpectrumQuotientHomeomorphConnectedComponent, Homeomorph.trans_apply]
-  change (quotientHomeomorphZeroLocus (connectedComponentIdeal x) y : PrimeSpectrum R) = _
-  exact quotientHomeomorphZeroLocus_apply_coe _ y
+  simp only [primeSpectrumQuotientHomeomorphConnectedComponent, Homeomorph.trans_apply,
+    Homeomorph.setCongr_apply, quotientHomeomorphZeroLocus_apply_coe]
 
 end PrimeSpectrum
