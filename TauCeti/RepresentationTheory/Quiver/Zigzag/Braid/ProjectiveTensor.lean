@@ -10,7 +10,6 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Factors
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Adjacent
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Projective
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 
 /-!
@@ -149,18 +148,6 @@ theorem zigzagBraidProjectiveTensorCornerEquiv_symm_tmul (i j : V)
 
 /-! ### Inserting shifted vertex projectives -/
 
-/-- The degree-zero generator `e_i ⊗ e_i` of the vertex bimodule. -/
-private def vertexGenerator (i : V) : U i :=
-  (zigzagBraidBimoduleFactorsEquiv k G i).symm
-    (spanSingletonGenerator (e i) ⊗ₜ[k] spanSingletonGenerator (op (e i)))
-
-private theorem vertexGenerator_mem (i : V) :
-    vertexGenerator k G i ∈ (U i).grading.piece 0 := by
-  have he := zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i
-  refine mem_zigzagBraidBimoduleGrade_iff.mpr ?_
-  rw [vertexGenerator, coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul]
-  simpa using tmul_mem_zigzagEnvelopingGrading he he
-
 /-- A corner element `c ∈ e_i Z e_j`, read in the vertex projective `P_j = Z e_j`. -/
 private def cornerToProjective {i j : V} (c : cornerSubmodule k (e i) (e j)) : L j :=
   ⟨c, mem_span_singleton_of_mem_cornerSubmodule
@@ -169,16 +156,17 @@ private def cornerToProjective {i j : V} (c : cornerSubmodule k (e i) (e j)) : L
 /-- Insert `P_i` into `U_i ⊗_Z P_j` along a corner element `c`: `z ↦ (z ⊗ e_i) ⊗ c`. -/
 private def insertCorner {i j : V} (c : cornerSubmodule k (e i) (e j)) : P i →ₗ[Z] T i j :=
   (LinearMap.toSpanSingleton Z (T i j)
-    (GradedModuleCat.bimoduleModuleTensorTmul Γ Γ (U i) (P j) (vertexGenerator k G i)
+    (GradedModuleCat.bimoduleModuleTensorTmul Γ Γ (U i) (P j)
+      (zigzagBraidBimoduleVertexGenerator k G i)
       (cornerToProjective k G c))).comp (L i).subtype
 
 /-- The insertion along `c` is the inverse corner extraction of `c ⊗ z`. -/
 private theorem insertCorner_apply {i j : V} (c : cornerSubmodule k (e i) (e j)) (z : L i) :
     insertCorner k G c z = (zigzagBraidProjectiveTensorCornerEquiv k G i j).symm (c ⊗ₜ[k] z) := by
   have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
-  rw [zigzagBraidProjectiveTensorCornerEquiv_symm_tmul, insertCorner, LinearMap.comp_apply,
-    LinearMap.toSpanSingleton_apply, Submodule.subtype_apply,
-    GradedModuleCat.smul_bimoduleModuleTensorTmul, vertexGenerator,
+  simp only [zigzagBraidProjectiveTensorCornerEquiv_symm_tmul, insertCorner,
+    LinearMap.comp_apply, LinearMap.toSpanSingleton_apply, Submodule.subtype_apply,
+    GradedModuleCat.smul_bimoduleModuleTensorTmul, zigzagBraidBimoduleVertexGenerator_def,
     zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul, one_smul, smul_spanSingletonGenerator he]
   rfl
 
@@ -189,7 +177,7 @@ private def insertCornerHom {i j : V} {d : ℤ} (c : cornerSubmodule k (e i) (e 
   GradedModuleCat.ofHom (insertCorner k G c) <| LinearMap.isHomogeneous_def.2 fun p z hz ↦ by
     have hz' := (zigzagAlgebraGradedProjective k G i |>.mem_shiftObj_piece_iff d p z).mp hz
     have ht := GradedModuleCat.bimoduleModuleTensorTmul_mem Γ Γ (U i) (P j)
-      (vertexGenerator_mem k G i)
+      (zigzagBraidBimoduleVertexGenerator_mem k G i)
       ((mem_zigzagAlgebraGradedProjective_piece_iff k G j d (x := cornerToProjective k G c)).2 hc)
     have hdeg : p - d + (0 + d) = p + 0 := by omega
     simpa only [insertCorner, LinearMap.comp_apply, LinearMap.toSpanSingleton_apply,
@@ -346,18 +334,9 @@ theorem isZero_zigzagBraidProjectiveTensor {i j : V} (hij : i ≠ j) (hadj : ¬ 
 
 /-- **`Z ⊗_Z P_j ≅ P_j`**: the regular bimodule acts as the identity on the vertex projective. -/
 def zigzagBraidProjectiveUnitTensorIso (j : V) :
-    GradedModuleCat.bimoduleModuleTensorObj Γ Γ (zigzagGradedBimodule k G) (P j) ≅ P j where
-  hom := GradedModuleCat.bimoduleModuleTensorMap Γ Γ (zigzagGradedBimoduleUnitIso k G).inv (𝟙 _) ≫
-    (GradedModuleCat.bimoduleModuleTensorLeftUnitor.{w} Γ (P j)).hom
-  inv := (GradedModuleCat.bimoduleModuleTensorLeftUnitor.{w} Γ (P j)).inv ≫
-    GradedModuleCat.bimoduleModuleTensorMap Γ Γ (zigzagGradedBimoduleUnitIso k G).hom (𝟙 _)
-  hom_inv_id := by
-    rw [Category.assoc, Iso.hom_inv_id_assoc, ← GradedModuleCat.bimoduleModuleTensorMap_comp,
-      Iso.inv_hom_id, Category.id_comp, GradedModuleCat.bimoduleModuleTensorMap_id]
-  inv_hom_id := by
-    rw [Category.assoc, ← Category.assoc (GradedModuleCat.bimoduleModuleTensorMap Γ Γ _ _),
-      ← GradedModuleCat.bimoduleModuleTensorMap_comp, Iso.hom_inv_id, Category.id_comp,
-      GradedModuleCat.bimoduleModuleTensorMap_id, Category.id_comp, Iso.inv_hom_id]
+    GradedModuleCat.bimoduleModuleTensorObj Γ Γ (zigzagGradedBimodule k G) (P j) ≅ P j :=
+  ((GradedModuleCat.bimoduleModuleTensor Γ Γ).mapIso (zigzagGradedBimoduleUnitIso k G).symm).app
+      (P j) ≪≫ GradedModuleCat.bimoduleModuleTensorLeftUnitor.{w} Γ (P j)
 
 /-- The identification `Z ⊗_Z P_j ≅ P_j` is the action of `Z` on `P_j`. -/
 @[simp]
@@ -366,7 +345,10 @@ theorem zigzagBraidProjectiveUnitTensorIso_hom_tmul (j : V) (x : zigzagGradedBim
     (zigzagBraidProjectiveUnitTensorIso k G j).hom.hom
         (GradedModuleCat.bimoduleModuleTensorTmul Γ Γ (zigzagGradedBimodule k G) (P j) x n) =
       (Bimodule.of (AlgHom.id k Z)).symm x • n := by
-  simp only [zigzagBraidProjectiveUnitTensorIso, GradedModuleCat.hom_comp, LinearMap.comp_apply,
+  have h : (zigzagBraidProjectiveUnitTensorIso k G j).hom =
+      GradedModuleCat.bimoduleModuleTensorMap Γ Γ (zigzagGradedBimoduleUnitIso k G).inv (𝟙 _) ≫
+        (GradedModuleCat.bimoduleModuleTensorLeftUnitor.{w} Γ (P j)).hom := (rfl)
+  simp only [h, GradedModuleCat.hom_comp, LinearMap.comp_apply,
     GradedModuleCat.bimoduleModuleTensorMap_tmul, GradedModuleCat.hom_id, LinearMap.id_apply,
     GradedModuleCat.bimoduleModuleTensorLeftUnitor_hom]
   rw [GradedModuleCat.bimoduleModuleTensorLeftUnitorHom_tmul.{w} Γ (P j),

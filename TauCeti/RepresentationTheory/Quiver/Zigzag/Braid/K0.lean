@@ -57,7 +57,7 @@ open CategoryTheory CategoryTheory.Limits
 
 universe u w
 
-variable (k : Type w) [Field k] {V : Type u} [Finite V] (G : SimpleGraph V)
+variable (k : Type w) {V : Type u} [Finite V] (G : SimpleGraph V)
 
 local notation "A" => zigzagAlgebraIntegerGrade k G
 local notation "Γ" => zigzagAlgebraInternalGrading k G
@@ -65,6 +65,10 @@ local notation "U" => zigzagGradedBraidBimodule k G
 local notation "P" => zigzagAlgebraGradedProjective k G
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
+
+section CommRing
+
+variable [CommRing k]
 
 /-! ### The terms of `B_i ⊗_Z P_j` are finite graded projectives -/
 
@@ -126,22 +130,25 @@ theorem laurentK0_of_zigzagBraidProjectiveTensor [DecidableEq V] (i j : V) :
         ((gradedFiniteProjectiveModules A).ι.mapBiprod Q Q₂).symm)
     rw [LaurentK0.of_congr.{max u w} _ e, LaurentK0.of_conflation.{max u w} _
       (ExactStructure.conflation_biprodShortComplex
-        (gradedFiniteProjectiveModulesExactStructure A).toExactStructure Q Q₂),
-      hshift 2, G.deformedCartanEntry_self, LaurentPolynomial.T_pow, add_smul, one_smul]
-    simp only [Nat.cast_ofNat, mul_one]
+        (gradedFiniteProjectiveModulesExactStructure A).toExactStructure Q Q₂), hshift 2]
+    simp [LaurentPolynomial.T_pow, add_smul]
   by_cases hadj : G.Adj i j
   · rw [LaurentK0.of_congr.{max u w} _ (ObjectProperty.isoMk _
       (Y := ⟨(P i).shiftObj 1, gradedFiniteProjectiveModules_shiftObj hP 1⟩)
       (zigzagBraidProjectiveTensorAdjIso k G hadj.symm)),
       G.deformedCartanEntry_of_adj _ hadj]
     exact hshift 1
-  · rw [G.deformedCartanEntry_of_not_adj _ hij hadj, zero_smul,
-      ← LaurentK0.ofExactK0_exactK0_of.{max u w}, ExactK0.of_eq_zero_of_isZero.{max u w}
-        (IsZero.of_full_of_faithful_of_isZero (gradedFiniteProjectiveModules A).ι
-          ⟨_, gradedFiniteProjectiveModules_zigzagBraidProjectiveTensor k G i j⟩
-          (isZero_zigzagBraidProjectiveTensor k G hij hadj)), map_zero]
+  · have hZ := IsZero.of_full_of_faithful_of_isZero (gradedFiniteProjectiveModules A).ι
+      ⟨_, gradedFiniteProjectiveModules_zigzagBraidProjectiveTensor k G i j⟩
+      (isZero_zigzagBraidProjectiveTensor k G hij hadj)
+    rw [← LaurentK0.ofExactK0_exactK0_of.{max u w}, ExactK0.of_eq_zero_of_isZero.{max u w} hZ]
+    simp [G.deformedCartanEntry_of_not_adj _ hij hadj]
+
+end CommRing
 
 /-! ### The Artin group action -/
+
+variable [Field k]
 
 /-- Conjugation by the coordinates in the vertex-projective basis. -/
 private def coordinateConj :
@@ -200,11 +207,10 @@ theorem zigzagBraidK0Action_gen_zigzagAlgebraGradedProjectiveClass (i j : V) :
     rw [← zigzagAlgebraGradedProjectiveClassBasis_apply]
     funext l
     simp only [Module.Basis.equivFun_self, Pi.single_apply, eq_comm]
-  rw [zigzagBraidK0Action_gen_apply, hj, SimpleGraph.deformedReflection_apply,
-    SimpleGraph.deformedCartanRow_single, map_sub, map_smul,
-    Basis.equivFun_symm_single, Basis.equivFun_symm_single,
-    zigzagAlgebraGradedProjectiveClassBasis_apply, zigzagAlgebraGradedProjectiveClassBasis_apply,
-    laurentK0_of_zigzagBraidProjectiveUnitTensor, laurentK0_of_zigzagBraidProjectiveTensor,
+  rw [zigzagBraidK0Action_gen_apply, hj, laurentK0_of_zigzagBraidProjectiveUnitTensor,
+    laurentK0_of_zigzagBraidProjectiveTensor]
+  simp only [SimpleGraph.deformedReflection_apply, SimpleGraph.deformedCartanRow_single,
+    map_sub, map_smul, Basis.equivFun_symm_single, zigzagAlgebraGradedProjectiveClassBasis_apply,
     IsUnit.unit_spec]
 
 end TauCeti

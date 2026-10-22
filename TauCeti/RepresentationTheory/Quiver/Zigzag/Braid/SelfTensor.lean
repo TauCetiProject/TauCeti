@@ -79,10 +79,6 @@ private theorem selfTensorEquiv_tmul (i : V) (l : L i) (r : R i)
   rw [zigzagBraidTensorCornerEquiv_tmul]
   simp [TensorProduct.congr_tmul, LinearEquiv.prodCongr_apply]
 
-private def vertexGenerator (i : V) : U i :=
-  ⟨e i ⊗ₜ[k] op (e i), by
-    simpa using tmul_mem_zigzagBraidBimodule i (1 : Z) (1 : Z)⟩
-
 private def vertexVolumeTensor (i : V) : U i :=
   ⟨zigzagAlgebraBasis k G (.inr (.inr i)) ⊗ₜ[k] op (e i), by
     simpa using tmul_mem_zigzagBraidBimodule i
@@ -99,20 +95,12 @@ private def selfTensorInsert (i : V) (z : GradedModuleCat.bimoduleTensorObj Γ �
 private def selfTensorInsertZero (i : V) :
     U i →ₗ[E] GradedModuleCat.bimoduleTensorObj Γ Γ Γ (U i) (U i) :=
   selfTensorInsert k G i (GradedModuleCat.bimoduleTensorTmul Γ Γ Γ (U i) (U i)
-    (vertexGenerator k G i) (vertexGenerator k G i))
+    (zigzagBraidBimoduleVertexGenerator k G i) (zigzagBraidBimoduleVertexGenerator k G i))
 
 private def selfTensorInsertTwo (i : V) :
     U i →ₗ[E] GradedModuleCat.bimoduleTensorObj Γ Γ Γ (U i) (U i) :=
   selfTensorInsert k G i (GradedModuleCat.bimoduleTensorTmul Γ Γ Γ (U i) (U i)
-    (vertexGenerator k G i) (vertexVolumeTensor k G i))
-
-private theorem vertexGenerator_mem (i : V) :
-    vertexGenerator k G i ∈ (U i).grading.piece 0 := by
-  have he : e i ∈ zigzagAlgebraIntegerGrade k G 0 :=
-    (zigzagAlgebraIntegerGrade_ofNat k G 0).ge
-      (zigzagAlgebraBasis_inl_mem_grade_zero k G i)
-  exact mem_zigzagBraidBimoduleGrade_iff.mpr
-    (tmul_mem_zigzagEnvelopingGrading he he)
+    (zigzagBraidBimoduleVertexGenerator k G i) (vertexVolumeTensor k G i))
 
 private theorem vertexVolumeTensor_mem (i : V) :
     vertexVolumeTensor k G i ∈ (U i).grading.piece 2 := by
@@ -129,14 +117,6 @@ private def volumeInIdeal (i : V) : L i :=
   ⟨zigzagAlgebraBasis k G (.inr (.inr i)),
     (mem_span_singleton_iff_mul_eq_self
       (isIdempotentElem_zigzagAlgebraBasis_inl k G i)).mpr (by simp)⟩
-
-private theorem vertexGenerator_eq (i : V) :
-    vertexGenerator k G i = (zigzagBraidBimoduleFactorsEquiv k G i).symm
-      ((spanSingletonGenerator (e i)) ⊗ₜ[k] (spanSingletonGenerator (op (e i)))) := by
-  apply Subtype.ext
-  simpa only [coe_spanSingletonGenerator, vertexGenerator] using
-    (coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul k G i
-      (spanSingletonGenerator (e i)) (spanSingletonGenerator (op (e i)))).symm
 
 private theorem vertexVolumeTensor_eq (i : V) :
     vertexVolumeTensor k G i = (zigzagBraidBimoduleFactorsEquiv k G i).symm
@@ -159,7 +139,7 @@ private theorem selfTensorInsertZero_factors (i : V) (l : L i) (r : R i) :
       zigzagBraidBimodule k G i).val = (l : Z) ⊗ₜ[k] (r : Zᵐᵒᵖ) :=
     coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul k G i l r
   rw [hu, GradedModuleCat.tmul_smul_bimoduleTensorTmul Γ Γ Γ (U i) (U i),
-    vertexGenerator_eq]
+    zigzagBraidBimoduleVertexGenerator_def]
   simp only [zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul,
     one_smul,
     smul_spanSingletonGenerator he, smul_spanSingletonGenerator heop]
@@ -176,7 +156,7 @@ private theorem selfTensorInsertTwo_factors (i : V) (l : L i) (r : R i) :
       zigzagBraidBimodule k G i).val = (l : Z) ⊗ₜ[k] (r : Zᵐᵒᵖ) :=
     coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul k G i l r
   rw [hu, GradedModuleCat.tmul_smul_bimoduleTensorTmul Γ Γ Γ (U i) (U i),
-    vertexGenerator_eq, vertexVolumeTensor_eq]
+    zigzagBraidBimoduleVertexGenerator_def, vertexVolumeTensor_eq]
   simp only [zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul,
     one_smul,
     smul_spanSingletonGenerator he, smul_spanSingletonGenerator heop]
@@ -215,7 +195,8 @@ def zigzagBraidSelfTensorInl (i : V) :
   GradedModuleCat.ofHom (selfTensorInsertZero k G i) <|
     LinearMap.isHomogeneous_def.2 fun p u hu ↦ by
       have hz := GradedModuleCat.bimoduleTensorTmul_mem Γ Γ Γ (U i) (U i)
-        (vertexGenerator_mem k G i) (vertexGenerator_mem k G i)
+        (zigzagBraidBimoduleVertexGenerator_mem k G i)
+        (zigzagBraidBimoduleVertexGenerator_mem k G i)
       simpa only [selfTensorInsertZero, selfTensorInsert_apply, vadd_eq_add, add_zero] using
         SetLike.GradedSMul.smul_mem (mem_zigzagBraidBimoduleGrade_iff.mp hu) hz
 
@@ -226,7 +207,7 @@ def zigzagBraidSelfTensorInr (i : V) :
     LinearMap.isHomogeneous_def.2 fun p u hu ↦ by
       have hu' := (GradedModuleCat.mem_shiftObj_piece_iff (U i) 2 p u).mp hu
       have hz := GradedModuleCat.bimoduleTensorTmul_mem Γ Γ Γ (U i) (U i)
-        (vertexGenerator_mem k G i) (vertexVolumeTensor_mem k G i)
+        (zigzagBraidBimoduleVertexGenerator_mem k G i) (vertexVolumeTensor_mem k G i)
       have hdeg : (p - 2) + (0 + 2) = p + 0 := by omega
       simpa only [selfTensorInsertTwo, selfTensorInsert_apply, vadd_eq_add, hdeg] using
         SetLike.GradedSMul.smul_mem (mem_zigzagBraidBimoduleGrade_iff.mp hu') hz

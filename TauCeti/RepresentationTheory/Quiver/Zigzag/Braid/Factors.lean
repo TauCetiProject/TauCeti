@@ -128,6 +128,25 @@ theorem zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul (i : V) (a : Z) (b : Zᵐ
   simpa only [TensorProduct.map_tmul, Algebra.lsmul_apply, op_unop] using
     (zigzagBraidBimoduleFactorsEquiv_symm_map_smul k G i a (unop b) (x ⊗ₜ[k] y)).symm
 
+/-- The generator `e_i ⊗ e_i` of the vertex bimodule, given by the generators of its two
+idempotent-ideal factors. -/
+def zigzagBraidBimoduleVertexGenerator (i : V) : U i :=
+  (zigzagBraidBimoduleFactorsEquiv k G i).symm
+    (spanSingletonGenerator (e i) ⊗ₜ[k] spanSingletonGenerator (op (e i)))
+
+/-- The vertex generator is the inverse factor identification of the two ideal generators. -/
+theorem zigzagBraidBimoduleVertexGenerator_def (i : V) :
+    zigzagBraidBimoduleVertexGenerator k G i = (zigzagBraidBimoduleFactorsEquiv k G i).symm
+      (spanSingletonGenerator (e i) ⊗ₜ[k] spanSingletonGenerator (op (e i))) := (rfl)
+
+/-- The vertex generator has internal degree zero. -/
+theorem zigzagBraidBimoduleVertexGenerator_mem (i : V) :
+    zigzagBraidBimoduleVertexGenerator k G i ∈ (U i).grading.piece 0 := by
+  have he := zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i
+  refine mem_zigzagBraidBimoduleGrade_iff.mpr ?_
+  rw [zigzagBraidBimoduleVertexGenerator_def, coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul]
+  simpa using tmul_mem_zigzagEnvelopingGrading he he
+
 private local instance tensorFactorsRightModule (i : V) : Module Zᵐᵒᵖ (U i) :=
   TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) (U i)
 private local instance tensorFactorsLeftModule (i : V) : Module Z (U i) :=
