@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.End
-public import Mathlib.Algebra.Group.Equiv.Basic
-public import Mathlib.Algebra.Group.TypeTags.Basic
-public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.GroupTheory.OrderOfElement
+public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
 # Proper powers in groups
@@ -120,5 +118,24 @@ namespace Group
 @[simp] theorem isProperPower_conj_iff {G : Type*} [Group G] (g x : G) :
     IsProperPower (g * x * g⁻¹) ↔ IsProperPower x :=
   MulEquiv.isProperPower_map_iff (MulAut.conj g)
+
+/-- A generator of the centralizer of a nontrivial element in a torsion-free group is not a
+proper power. -/
+theorem not_isProperPower_of_zpowers_eq_centralizer {G : Type*} [Group G]
+    [IsMulTorsionFree G] {x r : G} (hx : x ≠ 1)
+    (hr : Subgroup.zpowers r = Subgroup.centralizer {x}) : ¬IsProperPower r := by
+  rw [isProperPower_iff]
+  rintro ⟨s, n, hn, rfl⟩
+  obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.1
+    (hr ▸ Subgroup.mem_centralizer_singleton_iff.2 rfl : x ∈ _)
+  have hs : s ∈ Subgroup.zpowers (s ^ n) :=
+    hr ▸ Subgroup.mem_centralizer_singleton_iff.2 ((Commute.self_pow s n).zpow_right m).eq
+  have hs1 : s ≠ 1 := by
+    rintro rfl
+    simp at hx
+  have hn1 : n = 1 := by
+    simpa only [orderOf_eq_zero (not_isOfFinOrder_of_isMulTorsionFree hs1),
+      Nat.gcd_zero_right] using mem_zpowers_pow_iff.mp hs
+  omega
 
 end Group
