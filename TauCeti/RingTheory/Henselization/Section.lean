@@ -38,6 +38,10 @@ Nakayama's lemma gives `e C = S e`. Flatness then makes `S → C ⧸ (1 - e)` an
   quasi-finite `S`-algebra `C` with `S ⧸ J ≅ C ⧸ JC` has an `S`-algebra map to `S`.
 * `TauCeti.Henselization.nonempty_unique_algHom_of_isNeighbourhood`: an étale neighbourhood of a
   Henselian pair has exactly one `S`-algebra map to `S`.
+* `TauCeti.Henselization.IsNeighbourhood.nonempty_algHom` and
+  `TauCeti.Henselization.IsNeighbourhood.algHom_ext`: an étale neighbourhood of `(R, I)` has an
+  `R`-algebra map to every Henselian pair `(S, J)` with `IS ⊆ J`, and such maps are unique once
+  `IS` lies in the Jacobson radical of `S`.
 
 ## References
 
@@ -49,7 +53,7 @@ public section
 
 open Filter
 
-universe u v
+universe u v w
 
 namespace TauCeti.Henselization
 
@@ -297,5 +301,37 @@ theorem nonempty_unique_algHom_of_isNeighbourhood [HenselianRing S J] {C : CommA
   have h := quotient_mk_eq_of_reducedMap_surjective J hbij.2 τ σ c
   rw [Ideal.Quotient.eq, Algebra.algebraMap_self, Ideal.map_id] at h
   simpa using Ideal.Quotient.eq.mpr h
+
+end TauCeti.Henselization
+
+namespace TauCeti.Henselization
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+
+/-- Two `R`-algebra maps out of an étale neighbourhood of `(R, I)` agree as soon as `I`
+generates an ideal of the target inside its Jacobson radical. -/
+theorem IsNeighbourhood.algHom_ext {B : CommAlgCat.{v} R} (hB : IsNeighbourhood I B)
+    {S : Type*} [CommRing S] [Algebra R S] (hI : I.map (algebraMap R S) ≤ Ideal.jacobson ⊥)
+    {f g : B →ₐ[R] S} : f = g := by
+  obtain ⟨hEtale, hBij⟩ := (isNeighbourhood_iff I B).mp hB
+  -- Both maps agree modulo `IS` because `B ⧸ IB ≅ R ⧸ I`, hence agree outright.
+  refine Algebra.FormallyUnramified.ext_of_quotient_eq R B _ hI (AlgHom.ext fun b ↦ ?_)
+  simpa only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk] using
+    quotient_mk_eq_of_reducedMap_surjective I hBij.2 f g b
+
+open TensorProduct in
+/-- An étale neighbourhood of `(R, I)` has an `R`-algebra map to every henselian pair `(S, J)`
+receiving a map of pairs from `(R, I)`: the base change `S ⊗[R] B` is an étale neighbourhood of
+`(S, J)`, and so has a section. -/
+theorem IsNeighbourhood.nonempty_algHom {B : CommAlgCat.{w} R} (hB : IsNeighbourhood I B)
+    {S : Type*} [CommRing S] [Algebra R S] {J : Ideal S} [HenselianRing S J]
+    (hIJ : I.map (algebraMap R S) ≤ J) : Nonempty (B →ₐ[R] S) := by
+  obtain ⟨hEtale, hBij⟩ := (isNeighbourhood_iff I B).mp hB
+  -- Record the base-changed étale structure, from which instance search finds the flatness,
+  -- finite presentation and quasi-finiteness that sections over `(S, J)` need.
+  have : Algebra.Etale S (S ⊗[R] B) := inferInstance
+  obtain ⟨σ⟩ := nonempty_algHom_of_bijective_reducedMap J (C := S ⊗[R] B)
+    (reducedMap_bijective_of_le _ hIJ _ (reducedMap_bijective_baseChange I S B hBij))
+  exact ⟨(σ.restrictScalars R).comp Algebra.TensorProduct.includeRight⟩
 
 end TauCeti.Henselization
