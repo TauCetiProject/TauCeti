@@ -537,27 +537,44 @@ end OfMeromorphicOperations
 /-! ### Values of the operations
 
 At a point where the operands are finite, the operations on meromorphic functions are computed
-pointwise. At a pole of `f`, its inverse vanishes. -/
+pointwise. Each operation has two forms: one for operands known to be finite, in terms of their
+finite parts, and one (`_of_eq_coe`) for operands with known finite values. At a pole of `f`, its
+inverse vanishes. -/
 
 /-- At a point where `f` and `g` are finite, `f + g` takes the sum of their values. -/
 theorem add_apply (hf : f x ≠ ∞) (hg : g x ≠ ∞) :
     (f + g) x = ↑(f.finitePart x + g.finitePart x) :=
   eq_add_iff.1 rfl x hf hg
 
+/-- If `f` and `g` take the values `a` and `b` at `x`, then `f + g` takes the value `a + b`. -/
+theorem add_apply_of_eq_coe {a b : ℂ} (hf : f x = a) (hg : g x = b) : (f + g) x = ↑(a + b) := by
+  rw [add_apply (by simp [hf]) (by simp [hg]), finitePart_of_eq_coe hf, finitePart_of_eq_coe hg]
+
 /-- At a point where `f` and `g` are finite, `f * g` takes the product of their values. -/
 theorem mul_apply (hf : f x ≠ ∞) (hg : g x ≠ ∞) :
     (f * g) x = ↑(f.finitePart x * g.finitePart x) :=
   eq_mul_iff.1 rfl x hf hg
 
+/-- If `f` and `g` take the values `a` and `b` at `x`, then `f * g` takes the value `a * b`. -/
+theorem mul_apply_of_eq_coe {a b : ℂ} (hf : f x = a) (hg : g x = b) : (f * g) x = ↑(a * b) := by
+  rw [mul_apply (by simp [hf]) (by simp [hg]), finitePart_of_eq_coe hf, finitePart_of_eq_coe hg]
+
 /-- At a point where `f` is finite, `-f` takes the negative of its value. -/
 theorem neg_apply (hf : f x ≠ ∞) : (-f) x = ↑(-f.finitePart x) :=
   eq_neg_iff.1 rfl x hf
 
+/-- If `f` takes the value `a` at `x`, then `-f` takes the value `-a`. -/
+theorem neg_apply_of_eq_coe {a : ℂ} (hf : f x = a) : (-f) x = ↑(-a) := by
+  rw [neg_apply (by simp [hf]), finitePart_of_eq_coe hf]
+
+/-- If `f` and `g` take the values `a` and `b` at `x`, then `f - g` takes the value `a - b`. -/
+theorem sub_apply_of_eq_coe {a b : ℂ} (hf : f x = a) (hg : g x = b) : (f - g) x = ↑(a - b) := by
+  rw [sub_eq_add_neg, add_apply_of_eq_coe hf (neg_apply_of_eq_coe hg), sub_eq_add_neg]
+
 /-- At a point where `f` and `g` are finite, `f - g` takes the difference of their values. -/
 theorem sub_apply (hf : f x ≠ ∞) (hg : g x ≠ ∞) :
-    (f - g) x = ↑(f.finitePart x - g.finitePart x) := by
-  have hng : (-g) x ≠ ∞ := by simp [neg_apply hg]
-  rw [sub_eq_add_neg, add_apply hf hng, finitePart_of_eq_coe (neg_apply hg), sub_eq_add_neg]
+    (f - g) x = ↑(f.finitePart x - g.finitePart x) :=
+  sub_apply_of_eq_coe (coe_finitePart hf).symm (coe_finitePart hg).symm
 
 /-- At a point where `f` is finite and nonzero, `f⁻¹` takes the inverse of its value. -/
 theorem inv_apply (hf : f x ≠ ∞) (hf0 : f x ≠ ((0 : ℂ) : OnePoint ℂ)) :
@@ -565,35 +582,53 @@ theorem inv_apply (hf : f x ≠ ∞) (hf0 : f x ≠ ((0 : ℂ) : OnePoint ℂ)) 
   refine (eq_inv_iff (fun h ↦ hf0 ?_)).1 rfl x hf hf0
   rw [h, coe_zero]
 
-/-- At a point where `f` is finite, `f ^ n` takes the `n`-th power of its value. -/
-theorem pow_apply (hf : f x ≠ ∞) (n : ℕ) : (f ^ n) x = ↑(f.finitePart x ^ n) := by
+/-- If `f` takes a nonzero value `a` at `x`, then `f⁻¹` takes the value `a⁻¹`. -/
+theorem inv_apply_of_eq_coe {a : ℂ} (hf : f x = a) (ha : a ≠ 0) : f⁻¹ x = ↑a⁻¹ := by
+  rw [inv_apply (by simp [hf]) (by simpa [hf] using ha), finitePart_of_eq_coe hf]
+
+/-- If `f` takes the value `a` at `x`, then `f ^ n` takes the value `a ^ n`. -/
+theorem pow_apply_of_eq_coe {a : ℂ} (hf : f x = a) (n : ℕ) : (f ^ n) x = ↑(a ^ n) := by
   induction n with
   | zero => simp
-  | succ n ih => rw [pow_succ, mul_apply (by simp [ih]) hf, finitePart_of_eq_coe ih, pow_succ]
+  | succ n ih => rw [pow_succ, mul_apply_of_eq_coe ih hf, pow_succ]
+
+/-- At a point where `f` is finite, `f ^ n` takes the `n`-th power of its value. -/
+theorem pow_apply (hf : f x ≠ ∞) (n : ℕ) : (f ^ n) x = ↑(f.finitePart x ^ n) :=
+  pow_apply_of_eq_coe (coe_finitePart hf).symm n
+
+/-- If `f` takes a nonzero value `a` at `x`, then `f ^ n` takes the value `a ^ n`, for every
+integer `n`. -/
+theorem zpow_apply_of_eq_coe {a : ℂ} (hf : f x = a) (ha : a ≠ 0) (n : ℤ) :
+    (f ^ n) x = ↑(a ^ n) := by
+  obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
+  · simpa using pow_apply_of_eq_coe hf m
+  · rw [zpow_neg, zpow_natCast, inv_apply_of_eq_coe (pow_apply_of_eq_coe hf m) (pow_ne_zero _ ha),
+      zpow_neg, zpow_natCast]
 
 /-- At a point where `f` is finite and nonzero, `f ^ n` takes the `n`-th power of its value, for
 every integer `n`. -/
 theorem zpow_apply (hf : f x ≠ ∞) (hf0 : f x ≠ ((0 : ℂ) : OnePoint ℂ)) (n : ℤ) :
-    (f ^ n) x = ↑(f.finitePart x ^ n) := by
-  obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
-  · simpa using pow_apply hf m
-  · have h := pow_apply hf m
-    have hne : f.finitePart x ^ m ≠ 0 :=
-      pow_ne_zero _ fun h0 ↦ hf0 (by rw [← coe_finitePart hf, h0])
-    rw [zpow_neg, zpow_natCast, inv_apply (by simp [h]) (by simpa [h] using hne),
-      finitePart_of_eq_coe h, zpow_neg, zpow_natCast]
+    (f ^ n) x = ↑(f.finitePart x ^ n) :=
+  zpow_apply_of_eq_coe (coe_finitePart hf).symm
+    (fun h0 ↦ hf0 (by rw [← coe_finitePart hf, h0])) n
 
-/-- At a point where each `f i` is finite, the product of the `f i` takes the product of their
-values. -/
-theorem prod_apply {ι : Type*} {s : Finset ι} {f : ι → MeromorphicFunction X}
-    (hf : ∀ i ∈ s, f i x ≠ ∞) : (∏ i ∈ s, f i) x = ↑(∏ i ∈ s, (f i).finitePart x) := by
+/-- If each `f i` takes the value `a i` at `x`, then the product of the `f i` takes the product of
+the `a i`. -/
+theorem prod_apply_of_eq_coe {ι : Type*} {s : Finset ι} {f : ι → MeromorphicFunction X}
+    {a : ι → ℂ} (hf : ∀ i ∈ s, f i x = a i) : (∏ i ∈ s, f i) x = ↑(∏ i ∈ s, a i) := by
   classical
   induction s using Finset.induction_on with
   | empty => simp
   | insert i s hi ih =>
-    have hs := ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)
     rw [Finset.prod_insert hi, Finset.prod_insert hi,
-      mul_apply (hf i (Finset.mem_insert_self i s)) (by simp [hs]), finitePart_of_eq_coe hs]
+      mul_apply_of_eq_coe (hf i (Finset.mem_insert_self i s))
+        (ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj))]
+
+/-- At a point where each `f i` is finite, the product of the `f i` takes the product of their
+values. -/
+theorem prod_apply {ι : Type*} {s : Finset ι} {f : ι → MeromorphicFunction X}
+    (hf : ∀ i ∈ s, f i x ≠ ∞) : (∏ i ∈ s, f i) x = ↑(∏ i ∈ s, (f i).finitePart x) :=
+  prod_apply_of_eq_coe fun i hi ↦ (coe_finitePart (hf i hi)).symm
 
 /-- **The inverse vanishes at the poles.** At a pole of `f`, the meromorphic function `f⁻¹`
 takes the value `0`. -/
