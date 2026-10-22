@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.Quotient
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
 
 /-!
@@ -78,10 +79,7 @@ instance Submodule.instLieAddGroupOrbitRelQuotient :
       (hτ.comp (a, b) contMDiffAt_snd))).congr_of_eventuallyEq ?_
     filter_upwards [hσa.prodMk_nhds hτb] with p hp
     simp [hp.1, hp.2]
-  contMDiff_neg a := by
-    obtain ⟨σ, hσ, hσa⟩ := exists_contMDiffAt_section (𝕜 := 𝕜) L (n := n) a
-    have hq := (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, E)) (n := n) (G := L)
-      (M := E)).contMDiff
-    refine (hq.contMDiffAt.comp a hσ.neg).congr_of_eventuallyEq ?_
-    filter_upwards [hσa] with b hb
-    simp [hb]
+  contMDiff_neg := by
+    have hq := TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, E)) (n := n) (G := L) (M := E)
+    refine (hq.contMDiff_comp_iff _root_.Quotient.mk_surjective le_rfl).1 ?_
+    simpa [Function.comp_def] using hq.contMDiff.comp contDiff_neg.contMDiff
