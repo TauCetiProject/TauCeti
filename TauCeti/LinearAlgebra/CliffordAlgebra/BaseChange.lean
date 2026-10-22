@@ -26,6 +26,7 @@ extension of scalars.
 * `CliffordAlgebra.ofBaseChangeAux_involute` proves naturality of the grade involution.
 * `CliffordAlgebra.ofBaseChangeAux_reverse` proves naturality of Clifford reversal.
 * `CliffordAlgebra.ofBaseChangeAux_star` proves naturality of Clifford conjugation.
+* `CliffordAlgebra.ofBaseChangeAux_smul` turns scalars of `R` into scalars of `A`.
 * `CliffordAlgebra.ofBaseChangeAux_mem_even` proves preservation of the even subalgebra.
 * `CliffordAlgebra.ofBaseChangeAux_injective` proves injectivity for faithful flat extensions.
 * `CliffordAlgebra.ofBaseChangeAux_baseChange` identifies direct and successive scalar extension.
@@ -81,6 +82,13 @@ conjugation. -/
 theorem ofBaseChangeAux_star (Q : QuadraticForm R M) (x : CliffordAlgebra Q) :
     ofBaseChangeAux A Q (star x) = star (ofBaseChangeAux A Q x) := by
   simp only [star_def, ofBaseChangeAux_reverse, ofBaseChangeAux_involute]
+
+/-- The canonical map to the Clifford algebra after extension of scalars turns a scalar of `R`
+into the corresponding scalar of `A`. -/
+theorem ofBaseChangeAux_smul (Q : QuadraticForm R M) (r : R) (x : CliffordAlgebra Q) :
+    ofBaseChangeAux A Q (r • x) = algebraMap R A r • ofBaseChangeAux A Q x := by
+  rw [Algebra.smul_def, map_mul, AlgHom.commutes, Algebra.smul_def,
+    IsScalarTower.algebraMap_apply R A]
 
 /-- The canonical map to the Clifford algebra after extension of scalars sends even elements to
 even elements. -/

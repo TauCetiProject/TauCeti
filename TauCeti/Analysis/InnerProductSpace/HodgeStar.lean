@@ -127,6 +127,22 @@ theorem volumeEquiv_topVector (b : OrthonormalBasis (Fin n) ℝ V)
   rw [volumeEquiv, LinearEquiv.ofBijective_apply, volumeLinearMap_topVector,
     o.volumeForm_robust b hb, ← OrthonormalBasis.coe_toBasis, Basis.det_self]
 
+/-- Reversing the orientation negates the volume. -/
+@[simp]
+theorem volumeEquiv_neg_orientation (x : ⋀[ℝ]^(finrank ℝ V) V) :
+    (-o).volumeEquiv x = -o.volumeEquiv x := by
+  have h : ((-o).volumeEquiv : ⋀[ℝ]^(finrank ℝ V) V →ₗ[ℝ] ℝ) = -(o.volumeEquiv : _ →ₗ[ℝ] ℝ) := by
+    ext v
+    simp [volumeEquiv_ιMulti, volumeForm_neg_orientation]
+  exact LinearMap.congr_fun h x
+
+/-- Reversing the orientation negates the unit volume element of the top exterior power. -/
+@[simp]
+theorem volumeEquiv_symm_neg_orientation (t : ℝ) :
+    (-o).volumeEquiv.symm t = -o.volumeEquiv.symm t := by
+  rw [LinearEquiv.symm_apply_eq, volumeEquiv_neg_orientation, map_neg, neg_neg,
+    LinearEquiv.apply_symm_apply]
+
 /-- The Hodge star `⋀ᵏ V ≃ ⋀ˡ V`, `k + l = finrank ℝ V`, of an oriented real inner product space:
 Mathlib's `exteriorPower.hodgeStar` for the inner product and `Orientation.volumeEquiv`. It is
 characterized by `⟪⋆x, y⟫ = vol (x ∧ y)` (`Orientation.inner_hodgeStar_apply`). -/

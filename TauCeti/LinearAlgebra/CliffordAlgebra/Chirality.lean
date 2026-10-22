@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+public import TauCeti.LinearAlgebra.CliffordAlgebra.ComplexVolume
 -- Private: the orthogonal-basis and volume-element computations are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
@@ -50,6 +51,8 @@ endomorphisms of `W⁺`.
 
 ## Main results
 
+* `CliffordAlgebra.chirality_eq_neg_volumeElement`: `Γ` is minus the volume element
+  `CliffordAlgebra.volumeElement Q o` of the oriented four-space.
 * `CliffordAlgebra.chirality_eq`: `Γ = -c(e₁) c(e₂) c(e₃) c(e₄)` for every positively
   oriented orthonormal basis `e`.
 * `CliffordAlgebra.chirality_mul_self`: `Γ² = 1`.
@@ -99,6 +102,10 @@ def chirality : CliffordAlgebra Q :=
 theorem chirality_def :
     chirality Q o = -(equivExterior Q).symm (o.volumeEquiv.symm 1 : ExteriorAlgebra ℝ V) :=
   (rfl)
+
+/-- The chirality element is minus the volume element of the oriented four-space. -/
+theorem chirality_eq_neg_volumeElement : chirality Q o = -volumeElement Q o := by
+  rw [chirality_def, volumeElement_def]
 
 variable {Q}
 
