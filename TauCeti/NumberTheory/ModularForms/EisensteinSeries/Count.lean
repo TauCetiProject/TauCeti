@@ -19,7 +19,9 @@ by `TauCeti.EisensteinSeries.CharIndex N k`: primitive characters `ψ` modulo `u
 these indices. Away from the levels `1`, `2` and `4` there are exactly as many as there are
 cusps of `Γ₁(N)`:
 
-`2 · #CharIndex N k = ∑_{g ∣ N} φ(g) φ(N / g) = 2 ε∞(Γ₁(N))`.
+`2 · #CharIndex N k = ∑_{g ∣ N} totient(g) totient(N / g) = 2 ε∞(Γ₁(N))`,
+
+where `totient` is Euler's function `Nat.totient`.
 
 The series are linearly independent, so in weight `k ≥ 3` the Eisenstein subspaces
 `TauCeti.eisensteinSubspace` of the spaces `M_k(N, χ)` have dimensions summing to this number
@@ -33,7 +35,7 @@ sends an index to a divisor `g ∣ N` and a pair of characters modulo `g` and `N
 product parity `(-1)^k`; conversely, `u` and `v` are the conductors of such a pair, `ψ` and `φ`
 their primitive characters, and `t = g / u`. This gives the count `card_eq_sum` at every
 level. When `g` or `N / g` exceeds `2`, an odd character at that level exchanges the two
-parities, so exactly half of the `φ(g) φ(N / g)` pairs have parity `(-1)^k`
+parities, so exactly half of the `totient(g) totient(N / g)` pairs have parity `(-1)^k`
 (`DirichletCharacter.two_mul_card_apply_neg_one_mul_apply_neg_one_eq`). Every divisor `g` of
 `N ∉ {1, 2, 4}` has this property.
 
@@ -42,8 +44,8 @@ parities, so exactly half of the `φ(g) φ(N / g)` pairs have parity `(-1)^k`
 * `TauCeti.EisensteinSeries.CharIndex.card_eq_sum`: the number of indices as a sum over the
   divisors `g` of `N` of the number of character pairs modulo `g` and `N / g` with product
   parity `(-1)^k`.
-* `TauCeti.EisensteinSeries.CharIndex.two_mul_card`: `2 · #CharIndex N k = ∑_{g ∣ N} φ(g) φ(N/g)`
-  for `N ∉ {1, 2, 4}`.
+* `TauCeti.EisensteinSeries.CharIndex.two_mul_card`:
+  `2 · #CharIndex N k = ∑_{g ∣ N} totient(g) totient(N / g)` for `N ∉ {1, 2, 4}`.
 * `TauCeti.EisensteinSeries.CharIndex.card_eq_card_cuspOrbit_Gamma1`: for `N ∉ {1, 2, 4}`, the
   indices are as many as the cusps of `Γ₁(N)`.
 
@@ -85,9 +87,7 @@ private theorem toLevel_injective : Function.Injective (toLevel (N := N) (k := k
   have hg : a.t * a.u = b.t * b.u := congrArg (fun x ↦ (x.1 : ℕ)) h
   have hpsi : a.psi.changeLevel a.u_dvd = b.psi.changeLevel b.u_dvd :=
     congrArg (fun x ↦ x.2.1.1) h
-  have hu : a.u = b.u := by
-    have h := congrArg conductor hpsi
-    rwa [conductor_changeLevel, conductor_changeLevel, a.psi_primitive, b.psi_primitive] at h
+  have hu := u_eq_of_changeLevel_eq hpsi
   have hu₀ : 0 < b.u := Nat.pos_of_dvd_of_pos b.u_dvd (NeZero.pos N)
   exact eq_of_changeLevel_eq (Nat.eq_of_mul_eq_mul_right hu₀ (hu ▸ hg)) hpsi
     (congrArg (fun x ↦ x.2.1.2) h)
@@ -109,26 +109,24 @@ private theorem toLevel_surjective : Function.Surjective (toLevel (N := N) (k :=
       (Prod.ext (changeLevel_primitiveCharacter χ₁) (changeLevel_primitiveCharacter χ₂))
 
 /-- The pairs of characters at level `N` factoring through `g` and `N / g` are the raises of the
-pairs of characters modulo `g` and `N / g`, with the same parity. -/
+pairs of characters modulo `g` and `N / g` (`DirichletCharacter.factorsThroughEquiv`), with the
+same parity. -/
 private theorem card_factorsThrough {g : ℕ} (hg : g ∣ N) :
     Nat.card {p : DirichletCharacter ℂ N × DirichletCharacter ℂ N //
       p.1.FactorsThrough g ∧ p.2.FactorsThrough (N / g) ∧
         p.1 (-1) * p.2 (-1) = (-1) ^ (k : ℤ)} =
     Nat.card {q : DirichletCharacter ℂ g × DirichletCharacter ℂ (N / g) //
       q.1 (-1) * q.2 (-1) = (-1) ^ (k : ℤ)} := by
-  have hg' : N / g ∣ N := Nat.div_dvd_of_dvd hg
-  refine (Nat.card_eq_of_bijective (fun q ↦ ⟨(q.1.1.changeLevel hg, q.1.2.changeLevel hg'),
-    ⟨hg, q.1.1, rfl⟩, ⟨hg', q.1.2, rfl⟩,
-    by rw [changeLevel_apply_neg_one, changeLevel_apply_neg_one]; exact q.2⟩) ⟨?_, ?_⟩).symm
-  · intro q q' h
-    have h := congrArg Subtype.val h
-    exact Subtype.ext (Prod.ext (changeLevel_injective hg (congrArg Prod.fst h))
-      (changeLevel_injective hg' (congrArg Prod.snd h)))
-  · rintro ⟨⟨χ₁, χ₂⟩, h₁, h₂, hpar⟩
-    refine ⟨⟨(h₁.χ₀, h₂.χ₀), ?_⟩, ?_⟩
-    · rwa [← changeLevel_apply_neg_one h₁.dvd, ← changeLevel_apply_neg_one h₂.dvd,
-        ← h₁.eq_changeLevel, ← h₂.eq_changeLevel]
-    · exact Subtype.ext (Prod.ext h₁.eq_changeLevel.symm h₂.eq_changeLevel.symm)
+  have : NeZero (N / g) := ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_dvd_of_div_eq_zero hg h)⟩
+  refine Nat.card_congr (((Equiv.subtypeEquivRight fun _ ↦ and_assoc.symm).trans
+    (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm).trans
+    ((Equiv.subtypeProdEquivProd.trans ((factorsThroughEquiv hg).prodCongr
+      (factorsThroughEquiv (Nat.div_dvd_of_dvd hg)))).subtypeEquiv fun p ↦ ?_))
+  obtain ⟨⟨χ₁, χ₂⟩, h₁, h₂⟩ := p
+  dsimp only at h₁ h₂
+  change χ₁ (-1) * χ₂ (-1) = _ ↔ h₁.χ₀ (-1) * h₂.χ₀ (-1) = _
+  rw [← changeLevel_apply_neg_one h₁.dvd, ← changeLevel_apply_neg_one h₂.dvd,
+    ← h₁.eq_changeLevel, ← h₂.eq_changeLevel]
 
 /-- At a nonzero level there are finitely many Eisenstein indices. -/
 instance : Finite (CharIndex N k) :=
@@ -147,8 +145,8 @@ theorem card_eq_sum :
 
 end NeZero
 
-/-- **Twice the number of Eisenstein indices** is `∑_{g ∣ N} φ(g) φ(N / g)` away from the levels
-`1`, `2` and `4`. -/
+/-- **Twice the number of Eisenstein indices** is `∑_{g ∣ N} totient(g) totient(N / g)` away from
+the levels `1`, `2` and `4`. -/
 theorem two_mul_card (hN : 2 < N) (hN4 : N ≠ 4) :
     2 * Nat.card (CharIndex N k) = ∑ g ∈ N.divisors, g.totient * (N / g).totient := by
   have : NeZero N := ⟨by omega⟩

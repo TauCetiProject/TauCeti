@@ -92,8 +92,8 @@ theorem two_mul_card_apply_neg_one_mul_apply_neg_one_eq {a b : ℕ} [NeZero a] [
       q.1 (-1) * q.2 (-1) = 1} = Nat.card {q : DirichletCharacter R a × DirichletCharacter R b //
       q.1 (-1) * q.2 (-1) = -1} := by
     refine Nat.card_congr ((Equiv.mulLeft x).subtypeEquiv fun q ↦ ?_)
-    rw [Equiv.coe_mulLeft, Prod.fst_mul, Prod.snd_mul, MulChar.mul_apply, MulChar.mul_apply,
-      mul_mul_mul_comm, hx, neg_one_mul, neg_inj]
+    simp only [Equiv.coe_mulLeft, Prod.fst_mul, Prod.snd_mul, MulChar.mul_apply]
+    grind
   -- Every pair has parity `1` or `-1`.
   have htot : Nat.card {q : DirichletCharacter R a × DirichletCharacter R b //
       q.1 (-1) * q.2 (-1) = 1} + Nat.card {q : DirichletCharacter R a × DirichletCharacter R b //

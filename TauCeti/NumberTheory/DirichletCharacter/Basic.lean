@@ -34,6 +34,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   specialisation, from `L N / p` to `N / p`.
 * `DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`: a factorisation of
   `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`.
+* `DirichletCharacter.factorsThroughEquiv`: the characters at level `N` factoring through
+  `d ∣ N` correspond to the characters modulo `d`.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
   at naturals prime to the new level.
 * `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
@@ -169,6 +171,31 @@ theorem exists_eq_comp_unitsMap_of_factorsThrough {R : Type*} [CommMonoidWithZer
   have h := congrArg MulChar.toUnitHom hfac.eq_changeLevel
   rw [changeLevel_toUnitHom] at h
   simpa using h
+
+/-- **Characters factoring through a divisor.** For `d ∣ N`, the Dirichlet characters at level
+`N` which factor through `d` are exactly the raises of the characters modulo `d`:
+`FactorsThrough.χ₀` and `changeLevel` are inverse bijections. -/
+@[expose] noncomputable def factorsThroughEquiv {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
+    [NeZero N] (h : d ∣ N) :
+    {χ : DirichletCharacter R N // χ.FactorsThrough d} ≃ DirichletCharacter R d where
+  toFun χ := χ.2.χ₀
+  invFun ψ := ⟨changeLevel h ψ, changeLevel_factorsThrough ψ h⟩
+  left_inv χ := Subtype.ext χ.2.eq_changeLevel.symm
+  right_inv ψ := (changeLevel_injective h (changeLevel_factorsThrough ψ h).eq_changeLevel).symm
+
+/-- `factorsThroughEquiv` sends a character to the character modulo `d` it factors through. -/
+@[simp]
+theorem factorsThroughEquiv_apply {R : Type*} [CommMonoidWithZero R] {N d : ℕ} [NeZero N]
+    (h : d ∣ N) (χ : {χ : DirichletCharacter R N // χ.FactorsThrough d}) :
+    factorsThroughEquiv h χ = χ.2.χ₀ :=
+  rfl
+
+/-- The inverse of `factorsThroughEquiv` raises a character modulo `d` to level `N`. -/
+@[simp]
+theorem coe_factorsThroughEquiv_symm_apply {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
+    [NeZero N] (h : d ∣ N) (ψ : DirichletCharacter R d) :
+    ((factorsThroughEquiv h).symm ψ : DirichletCharacter R N) = changeLevel h ψ :=
+  rfl
 
 /-- Raising the level of a Dirichlet character does not change its value at a natural number
 prime to the new level. -/
