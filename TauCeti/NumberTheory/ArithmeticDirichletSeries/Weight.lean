@@ -43,9 +43,10 @@ into good primes; this is the engine behind both
   values at the height-one primes;
 * `TauCeti.MultiplicativeIdealWeight.ofBadPrimes`, the pointwise `CommMonoid` structure (whose
   unit is the trivial weight), `TauCeti.MultiplicativeIdealWeight.restrictAway`,
-  `TauCeti.MultiplicativeIdealWeight.conj` and
-  `TauCeti.MultiplicativeIdealWeight.normTwist`: the constructors and operations;
-* `TauCeti.MultiplicativeIdealWeight.badPrimes_pow`, `TauCeti.MultiplicativeIdealWeight.conj_pow`,
+  `TauCeti.MultiplicativeIdealWeight.conj` (the `star` of a `StarMul` structure, so Mathlib's `star`
+  lemmas apply to it) and `TauCeti.MultiplicativeIdealWeight.normTwist`: the constructors and
+  operations;
+* `TauCeti.MultiplicativeIdealWeight.badPrimes_pow`,
   `TauCeti.MultiplicativeIdealWeight.normTwist_pow` and
   `TauCeti.MultiplicativeIdealWeight.restrictAway_pow`, with their unitary counterparts: powers, in
   particular the pointwise square `χ ^ 2` used by the `3-4-1` argument, keep the bad primes and
@@ -420,19 +421,6 @@ instance : StarMul (MultiplicativeIdealWeight K) where
 /-- The `star` of a weight is its conjugate; `χ.conj` is the simp normal form. -/
 @[simp]
 theorem star_eq_conj (χ : MultiplicativeIdealWeight K) : star χ = χ.conj := rfl
-
-/-- The trivial weight is its own conjugate: `star_one` stated with `conj`, the simp normal form of
-`star` (`TauCeti.MultiplicativeIdealWeight.star_eq_conj`). -/
-@[simp]
-theorem conj_one : (1 : MultiplicativeIdealWeight K).conj = 1 :=
-  star_one _
-
-/-- Conjugation commutes with powers: `star_pow` stated with `conj`, the simp normal form of
-`star` (`TauCeti.MultiplicativeIdealWeight.star_eq_conj`). In particular the conjugate of the
-pointwise square is the square of the conjugate. -/
-@[simp]
-theorem conj_pow (χ : MultiplicativeIdealWeight K) (n : ℕ) : (χ ^ n).conj = χ.conj ^ n :=
-  star_pow χ n
 
 /-- The **norm twist** `I ↦ χ I * N(I) ^ (-z)`. For general `z` this leaves the unitary
 carrier; only the purely imaginary twists preserve it
@@ -1032,19 +1020,6 @@ instance : StarMul (UnitaryIdealWeight K) where
 /-- The `star` of a unitary weight is its conjugate; `conj χ` is the simp normal form. -/
 @[simp]
 theorem star_eq_conj (χ : UnitaryIdealWeight K) : star χ = conj χ := rfl
-
-/-- The trivial unitary weight is its own conjugate: `star_one` stated with `conj`, the simp
-normal form of `star` (`TauCeti.UnitaryIdealWeight.star_eq_conj`). -/
-@[simp]
-theorem conj_one : conj (1 : UnitaryIdealWeight K) = 1 :=
-  star_one _
-
-/-- Conjugation of unitary weights commutes with powers: `star_pow` stated with `conj`, the simp
-normal form of `star` (`TauCeti.UnitaryIdealWeight.star_eq_conj`). In particular it commutes with
-the pointwise square. -/
-@[simp]
-theorem conj_pow (χ : UnitaryIdealWeight K) (n : ℕ) : conj (χ ^ n) = conj χ ^ n :=
-  star_pow χ n
 
 /-- Restricting a unitary weight away from a finite set of primes keeps it unitary: the
 restricted weight is unchanged at the primes that are good for it. -/
