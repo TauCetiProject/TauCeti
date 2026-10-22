@@ -11,7 +11,7 @@ import TauCeti.Analysis.Contour.Dixon.H2.Bound
 import TauCeti.Analysis.Contour.Dixon.H2.Diff
 import TauCeti.Analysis.Contour.Dixon.FunctionDiff
 import Mathlib.Analysis.Complex.Liouville
-import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
 
 /-!
 # The homology Cauchy theorem for contour cycles
