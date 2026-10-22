@@ -480,6 +480,9 @@ private noncomputable def sectionsRestrictionAlgHom
     Γ(projectiveLine R, V) →ₐ[Γ(projectiveLine R, ⊤)] Γ(projectiveLine R, U) :=
   { ((projectiveLine R).presheaf.map (homOfLE h).op).hom with
     commutes' := fun r ↦ by
+      simp only [RingHom.algebraMap_toAlgebra]
+      -- The inherited ring hom retains `toFun` coercions; `comp_apply` instead matches
+      -- categorical applications. Normalize these wrappers to use presheaf functoriality.
       change (projectiveLine R).presheaf.map (homOfLE h).op
           ((projectiveLine R).presheaf.map V.leTop.op r) =
         (projectiveLine R).presheaf.map U.leTop.op r
