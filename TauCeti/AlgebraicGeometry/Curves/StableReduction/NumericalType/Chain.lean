@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Top
 import TauCeti.Algebra.BigOperators.Finset.Range
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
@@ -537,6 +538,75 @@ theorem IsSelfIntersectionMinusTwoChain.right_sum_eq {t : ℕ} {c : ℕ → T.Co
       rw [T.intersection_comm,
         hc.intersection_eq_zero hcard hj (by omega) (by omega) (by omega) (by omega), zero_mul])
     rfl
+
+/-- At a constant-weight interior triple of a proper chain, a fibre relation with an
+external contribution `w * b` gives the unweighted multiplicity recurrence. The coefficients
+`y` may be any integers satisfying that relation. -/
+lemma IsSelfIntersectionMinusTwoChain.interior_relation_of_weight_eq
+    {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hcard : t < Fintype.card T.Component) {i : ℕ} (hi : 0 < i) (hit : i + 1 < t)
+    {w : ℕ+} (hprev : (T.weight (c (i - 1)) : ℤ) = w)
+    (hself : (T.weight (c i) : ℤ) = w) (hnext : (T.weight (c (i + 1)) : ℤ) = w)
+    {y : ℕ → ℤ} {b : ℤ}
+    (hfib : ∑ j ∈ range t, T.intersection (c i) (c j) * y j + w * b = 0) :
+    y (i - 1) + y (i + 1) + b = 2 * y i := by
+  have hleft := T.intersection_eq_max_weight (by omega)
+    (hc.intersection_self (i - 1) (by omega)) (hc.intersection_self i (by omega))
+    (hc.intersection_pos (by omega) (by omega))
+  have hright := T.intersection_eq_max_weight (by omega)
+    (hc.intersection_self i (by omega)) (hc.intersection_self (i + 1) hit)
+    (hc.intersection_succ_pos i hit)
+  rw [hprev, hself, max_self] at hleft
+  rw [hself, hnext, max_self] at hright
+  rw [hc.interior_sum_eq hcard y hi hit, T.intersection_comm (c i) (c (i - 1)),
+    hleft, hc.intersection_self i (by omega), hself, hright] at hfib
+  exact mul_left_cancel₀ (show (w : ℤ) ≠ 0 by positivity) (by linear_combination hfib)
+
+/-- At the right end of a proper chain, constant weights on the preceding two components
+and one of the three allowed terminal weight ratios force one of two relations between their
+coefficients. Only the last two fibre relations are needed. -/
+lemma IsSelfIntersectionMinusTwoChain.right_end_relation_of_weight_eq
+    {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hcard : t < Fintype.card T.Component) (ht : 3 ≤ t) {w : ℕ+}
+    (hprev : (T.weight (c (t - 3)) : ℤ) = w)
+    (hpen : (T.weight (c (t - 2)) : ℤ) = w)
+    (hright : (T.weight (c (t - 1)) : ℤ) = w ∨
+      (T.weight (c (t - 1)) : ℤ) = 2 * w ∨ 2 * (T.weight (c (t - 1)) : ℤ) = w)
+    {y : ℕ → ℤ}
+    (hfib_pen : ∑ j ∈ range t, T.intersection (c (t - 2)) (c j) * y j = 0)
+    (hfib_last : ∑ j ∈ range t, T.intersection (c (t - 1)) (c j) * y j = 0) :
+    2 * y (t - 3) = 3 * y (t - 2) ∨ y (t - 3) = y (t - 2) := by
+  have hprev_index : t - 2 - 1 = t - 3 := by omega
+  have hnext_index : t - 2 + 1 = t - 1 := by omega
+  have hedge := T.intersection_eq_max_weight (by omega)
+    (hc.intersection_self (t - 3) (by omega))
+    (hc.intersection_self (t - 2) (by omega))
+    (hc.intersection_pos (by omega) (by omega))
+  rw [hprev, hpen, max_self] at hedge
+  have hlast_edge := T.intersection_eq_max_weight (by omega)
+    (hc.intersection_self (t - 2) (by omega))
+    (hc.intersection_self (t - 1) (by omega))
+    (hc.intersection_pos (by omega) (by omega))
+  rw [hpen] at hlast_edge
+  rw [hc.interior_sum_eq hcard y (by omega) (by omega), hprev_index, hnext_index,
+    T.intersection_comm (c (t - 2)) (c (t - 3)), hedge,
+    hc.intersection_self (t - 2) (by omega), hpen] at hfib_pen
+  rw [hc.right_sum_eq hcard (by omega) y, T.intersection_comm (c (t - 1)) (c (t - 2)),
+    hc.intersection_self (t - 1) (by omega)] at hfib_last
+  have hw_ne : (w : ℤ) ≠ 0 := by positivity
+  have hwpos : (0 : ℤ) < w := by positivity
+  rcases hright with hright | hright | hright
+  · left
+    rw [hlast_edge, hright, max_self] at hfib_pen hfib_last
+    exact mul_left_cancel₀ hw_ne (by linear_combination 2 * hfib_pen + hfib_last)
+  · right
+    rw [hlast_edge, hright, max_eq_right (by omega)] at hfib_pen hfib_last
+    exact mul_left_cancel₀ (show 2 * (w : ℤ) ≠ 0 by positivity)
+      (by linear_combination 2 * hfib_pen + hfib_last)
+  · right
+    rw [hlast_edge, max_eq_left (by omega)] at hfib_pen hfib_last
+    exact mul_left_cancel₀ hw_ne
+      (by linear_combination hfib_pen + hfib_last + y (t - 1) * hright)
 
 /-- For a sequence of components which are distinct below `t` and exhaust a numerical type, the
 fibre relation at any position is a sum over the positions below `t`. -/

@@ -16,6 +16,7 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Gen
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.LongFork
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.LongPath
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.Star
+import Mathlib.Tactic.ITauto
 import Mathlib.Tactic.IntervalCases
 
 /-!
@@ -226,8 +227,9 @@ theorem isGenusOneMinimalShape_iff : T.IsGenusOneMinimalShape ↔
 /-- Introduce the singleton family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_singleton
     (hshape : Fintype.card T.Component = 1 ∧ ∀ i, T.genus i = 1 ∧ T.intersection i i = 0) :
-    T.IsGenusOneMinimalShape :=
-  Or.inl hshape
+    T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the cycle family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_cycle
@@ -235,35 +237,35 @@ lemma IsGenusOneMinimalShape.of_cycle
     (hshape : 0 < T.topologicalGenus ∧
         (∀ i j, T.weight i = T.weight j ∧ T.multiplicity i = T.multiplicity j) ∧
         (∀ i, (T.intersectionGraph.neighborSet i).ncard = 2) ∧
-        ∀ i j, T.Adj i j → T.intersection i j = T.weight i) : T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inl hshape⟩
+        ∀ i j, T.Adj i j → T.intersection i j = T.weight i) : T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the pair family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_pair
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
     (hshape : Fintype.card T.Component = 2 ∧ ∃ x y, x ≠ y ∧ T.IsGenusOnePairShape x y) :
-    T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inl hshape⟩
+    T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the chain family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_chain
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
     (hshape : Fintype.card T.Component = 3 ∧
         ∃ x j z, x ≠ j ∧ x ≠ z ∧ j ≠ z ∧ T.intersection x z = 0 ∧
-          T.IsGenusOneChainShape x j z) : T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inl hshape⟩
+          T.IsGenusOneChainShape x j z) : T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the four-component path family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_fourPath
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
     (hshape : Fintype.card T.Component = 4 ∧ ∃ c, T.IsSelfIntersectionMinusTwoChain 4 c ∧
         (∀ i < 4, ∀ j < 4, i ≠ j → i + 1 ≠ j → j + 1 ≠ i → T.intersection (c i) (c j) = 0) ∧
-        T.IsGenusOneFourPathShape (c 0) (c 1) (c 2) (c 3)) : T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inr <| .inl hshape⟩
+        T.IsGenusOneFourPathShape (c 0) (c 1) (c 2) (c 3)) : T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the four-component star family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_fourStar
@@ -271,18 +273,18 @@ lemma IsGenusOneMinimalShape.of_fourStar
     (hshape : Fintype.card T.Component = 4 ∧ ∃ c₀ x y z,
         ({c₀, x, y, z} : Finset T.Component) = univ ∧
         T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
-        T.IsGenusOneFourStarShape c₀ x y z) : T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inr <| .inr <| .inl hshape⟩
+        T.IsGenusOneFourStarShape c₀ x y z) : T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the five-component path family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_fivePath
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
     (hshape : Fintype.card T.Component = 5 ∧ ∃ c, T.IsSelfIntersectionMinusTwoChain 5 c ∧
         (∀ i < 5, ∀ j < 5, i ≠ j → i + 1 ≠ j → j + 1 ≠ i → T.intersection (c i) (c j) = 0) ∧
-        T.IsGenusOneFivePathShape (c 0) (c 1) (c 2) (c 3) (c 4)) : T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inr <| .inr <| .inr <| .inl hshape⟩
+        T.IsGenusOneFivePathShape (c 0) (c 1) (c 2) (c 3) (c 4)) : T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the four-leaf star family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_fourLeafStar
@@ -295,9 +297,9 @@ lemma IsGenusOneMinimalShape.of_fourLeafStar
         (∀ v w, T.intersection (e v) (e w) =
           if v = w then -(2 * (T.weight (e none) : ℤ))
           else if v = none ∨ w = none then T.weight (e none) else 0)) :
-    T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inl hshape⟩
+    T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the five-component fork family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_fiveFork
@@ -318,27 +320,27 @@ lemma IsGenusOneMinimalShape.of_fiveFork
                2 * w, -4 * w, 2 * w, 0, 0;
                0, 2 * w, -4 * w, 2 * w, 2 * w;
                0, 0, 2 * w, -4 * w, 0;
-               0, 0, 2 * w, 0, -4 * w] i j))) : T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inl hshape⟩
+               0, 0, 2 * w, 0, -4 * w] i j))) : T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the long path family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_longPath
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
     (hshape : ∃ n c, 6 ≤ n ∧ Fintype.card T.Component = n ∧ T.IsSelfIntersectionMinusTwoChain n c ∧
         (∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i → T.intersection (c i) (c j) = 0) ∧
-        T.IsGenusOneLongPathShape n c) : T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inl hshape⟩
+        T.IsGenusOneLongPathShape n c) : T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the long fork family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_longFork
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
     (hshape : ∃ t c b, 5 ≤ t ∧ Fintype.card T.Component = t + 1 ∧
         T.IsSelfIntersectionMinusTwoFork t c b ∧ T.IsGenusOneLongForkShape t c b) :
-    T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inl hshape⟩
+    T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the affine D family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_affineD
@@ -346,9 +348,9 @@ lemma IsGenusOneMinimalShape.of_affineD
     (hshape : ∃ t c left right, 4 ≤ t ∧ Fintype.card T.Component = t + 2 ∧
         T.IsSelfIntersectionMinusTwoFork t c right ∧
         T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left ∧
-        T.IsGenusOneAffineDShape t c left right) : T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inl hshape⟩
+        T.IsGenusOneAffineDShape t c left right) : T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the affine E₆ family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_affineE6
@@ -359,10 +361,9 @@ lemma IsGenusOneMinimalShape.of_affineE6
           (T.multiplicity (e 2) : ℤ) * AffineDynkinType.E6.marks i) ∧
         (∀ i j, T.intersection (e i) (e j) =
           -(T.weight (e 0) : ℤ) * AffineDynkinType.E6.cartanMatrix i j)) :
-    T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <|
-      .inr <| .inl hshape⟩
+    T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the affine E₇ family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_affineE7
@@ -373,10 +374,9 @@ lemma IsGenusOneMinimalShape.of_affineE7
           AffineDynkinType.E7.marks i * T.multiplicity (e 4)) ∧
         (∀ i j, T.intersection (e i) (e j) =
           -(T.weight (e 0) : ℤ) * AffineDynkinType.E7.cartanMatrix i j)) :
-    T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <|
-      .inr <| .inr <| .inl hshape⟩
+    T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- Introduce the affine E₈ family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_affineE8
@@ -387,10 +387,9 @@ lemma IsGenusOneMinimalShape.of_affineE8
           AffineDynkinType.E8.marks i * T.multiplicity (e 8)) ∧
         (∀ i j, T.intersection (e i) (e j) =
           -(T.weight (e 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j)) :
-    T.IsGenusOneMinimalShape :=
-  Or.inr ⟨hindices,
-    .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <| .inr <|
-      .inr <| .inr <| .inr <| hshape⟩
+    T.IsGenusOneMinimalShape := by
+  rw [isGenusOneMinimalShape_iff]
+  itauto
 
 /-- **Classification of minimal numerical types of genus one**
 ([Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T)). Every minimal numerical type

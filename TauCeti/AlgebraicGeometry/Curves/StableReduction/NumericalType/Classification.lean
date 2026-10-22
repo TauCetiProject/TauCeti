@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Branch
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.E8
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Exceptional
+import Mathlib.Combinatorics.SimpleGraph.Star
 import Mathlib.Tactic.ITauto
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
@@ -288,9 +289,6 @@ lemma card_ne_add_one_of_branch_two (hc : T.IsSelfIntersectionMinusTwoChain t c)
     rw [T.intersection_eq_max_weight (by omega) (hc.intersection_self i (by omega))
       (hc.intersection_self (i + 1) (by omega)) (hc.intersection_succ_pos i (by omega)),
       hw i (by omega), hw (i + 1) (by omega), max_self]
-  have hedge_prev (i : ℕ) (hi0 : 0 < i) (hi : i < t - 1) :
-      T.intersection (c (i - 1)) (c i) = w := by
-    simpa [Nat.sub_add_cancel hi0] using hedge (i - 1) (by omega)
   have hfib (z : T.Component) :
       ∑ j ∈ range t, T.intersection z (c j) * T.multiplicity (c j) +
         T.intersection z x * T.multiplicity x = 0 := by
@@ -312,64 +310,28 @@ lemma card_ne_add_one_of_branch_two (hc : T.IsSelfIntersectionMinusTwoChain t c)
       hw 0 (by omega), hedge 0 (by omega), hx_zero 0 (by omega) (by omega), zero_mul,
       add_zero] at h
     exact mul_left_cancel₀ hw_ne (by linear_combination h)
-  -- Interior fibre relation at `c i` (`0 < i` and `i + 1 < t - 1`).
-  have hint (i : ℕ) (hi0 : 0 < i) (hit : i + 1 < t - 1) :
-      (w : ℤ) * T.multiplicity (c (i - 1)) - 2 * w * T.multiplicity (c i) +
-        w * T.multiplicity (c (i + 1)) + T.intersection (c i) x * T.multiplicity x = 0 := by
-    have h := hfib (c i)
-    rw [hc.interior_sum_eq hchainCard _ hi0 (by omega),
-      T.intersection_comm (c i) (c (i - 1)), hedge_prev i hi0 (by omega),
-      hc.intersection_self i (by omega), hw i (by omega), hedge i hit] at h
-    linear_combination h
+  -- At each constant-weight triple, the chain API cancels the common weight.
   have hm2 : (T.multiplicity (c 0) : ℤ) + T.multiplicity (c 2) = 2 * T.multiplicity (c 1) := by
-    have h := hint 1 (by omega) (by omega)
-    rw [hx_zero 1 (by omega) (by omega), zero_mul, add_zero] at h
-    exact mul_left_cancel₀ hw_ne (by linear_combination h)
+    have h := hc.interior_relation_of_weight_eq hchainCard (i := 1) (by omega) (by omega)
+      (hw _ (by omega)) (hw _ (by omega)) (hw _ (by omega)) (b := 0) (by
+        simpa [hx_zero 1 (by omega) (by omega)] using hfib (c 1))
+    simpa using h
   have hm3 : (T.multiplicity (c 1) : ℤ) + T.multiplicity (c 3) + T.multiplicity x =
-      2 * T.multiplicity (c 2) := by
-    have h := hint 2 (by omega) (by omega)
-    rw [h2x] at h
-    exact mul_left_cancel₀ hw_ne (by linear_combination h)
+      2 * T.multiplicity (c 2) :=
+    hc.interior_relation_of_weight_eq hchainCard (i := 2) (by omega) (by omega)
+      (hw _ (by omega)) (hw _ (by omega)) (hw _ (by omega)) (by
+        simpa only [h2x] using hfib (c 2))
   have hrec (i : ℕ) (hi2 : 2 < i) (hit : i + 1 < t - 1) :
       (T.multiplicity (c (i - 1)) : ℤ) + T.multiplicity (c (i + 1)) =
         2 * T.multiplicity (c i) := by
-    have h := hint i (by omega) hit
-    rw [hx_zero i (by omega) (by omega), zero_mul, add_zero] at h
-    exact mul_left_cancel₀ hw_ne (by linear_combination h)
-  -- Fibre relations at `c (t - 2)` and `c (t - 1)`.
-  have hprev : t - 2 - 1 = t - 3 := by omega
-  have hnext : t - 2 + 1 = t - 1 := by omega
-  have hpen := hfib (c (t - 2))
-  rw [hc.interior_sum_eq hchainCard _ (by omega) (by omega),
-    T.intersection_comm (c (t - 2)) (c (t - 2 - 1)), hedge_prev (t - 2) (by omega) (by omega),
-    hprev, hnext,
-    hc.intersection_self (t - 2) (by omega), hw (t - 2) (by omega),
-    hx_zero (t - 2) (by omega) (by omega), zero_mul, add_zero] at hpen
-  have hlast := hfib (c (t - 1))
-  rw [hc.right_sum_eq hchainCard (by omega), T.intersection_comm (c (t - 1)) (c (t - 2)),
-    hc.intersection_self (t - 1) (by omega), hx_zero (t - 1) (by omega) (by omega),
-    zero_mul, add_zero] at hlast
-  have ha_last : T.intersection (c (t - 2)) (c (t - 1)) =
-      max (w : ℤ) (T.weight (c (t - 1)) : ℤ) := by
-    have h := T.intersection_eq_max_weight (by omega)
-      (hc.intersection_self (t - 2) (by omega)) (hc.intersection_self (t - 1) (by omega))
-      (hc.intersection_pos (by omega) (by omega))
-    rwa [hw (t - 2) (by omega)] at h
-  have hendRel : 2 * (T.multiplicity (c (t - 3)) : ℤ) = 3 * T.multiplicity (c (t - 2)) ∨
-      (T.multiplicity (c (t - 3)) : ℤ) = T.multiplicity (c (t - 2)) := by
-    have hwpos : (0 : ℤ) < w := by positivity
-    have h2w_ne : (2 * (w : ℤ)) ≠ 0 := by positivity
-    rcases hright with hright | hright | hright
-    · left
-      rw [ha_last, hright, max_self] at hpen hlast
-      exact mul_left_cancel₀ hw_ne (by linear_combination 2 * hpen + hlast)
-    · right
-      rw [ha_last, hright, max_eq_right (by omega)] at hpen hlast
-      exact mul_left_cancel₀ h2w_ne (by linear_combination 2 * hpen + hlast)
-    · right
-      rw [ha_last, max_eq_left (by omega)] at hpen hlast
-      exact mul_left_cancel₀ hw_ne
-        (by linear_combination hpen + hlast + (T.multiplicity (c (t - 1)) : ℤ) * hright)
+    have h := hc.interior_relation_of_weight_eq hchainCard (by omega) (by omega)
+      (hw (i - 1) (by omega)) (hw i (by omega)) (hw (i + 1) hit) (b := 0) (by
+        simpa [hx_zero i (by omega) (by omega)] using hfib (c i))
+    simpa using h
+  have hendRel := hc.right_end_relation_of_weight_eq hchainCard (by omega)
+    (hw (t - 3) (by omega)) (hw (t - 2) (by omega)) hright
+    (by simpa [hx_zero (t - 2) (by omega) (by omega)] using hfib (c (t - 2)))
+    (by simpa [hx_zero (t - 1) (by omega) (by omega)] using hfib (c (t - 1)))
   have hm0 : (0 : ℤ) < T.multiplicity (c 0) := by simp
   interval_cases t
   · norm_num only at hendRel
@@ -551,6 +513,26 @@ private lemma intersection_pos_sumElim (hc : T.IsSelfIntersectionMinusTwoChain t
   · simpa only [Sum.elim_inr, Sum.elim_inl, T.intersection_comm] using h
   · exact h
 
+/-- Embed a finite graph by selecting chain positions and extra vertices. Only increasing
+adjacent pairs need to be checked; injectivity and symmetry are handled uniformly. -/
+private lemma exists_graph_map_sumElim (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    {ι : Type*} (b : ι → T.Component) (hb : Function.Injective b)
+    (hb_ne : ∀ j i, i < t → b j ≠ c i) {n : ℕ} {G : SimpleGraph (Fin n)}
+    (p : Fin n → Fin t ⊕ ι) (hp : Function.Injective p)
+    (h : ∀ u v, u < v → G.Adj u v →
+      match p u, p v with
+      | .inl i, .inl j => (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i
+      | .inl i, .inr j => 0 < T.intersection (c i) (b j)
+      | .inr i, .inl j => 0 < T.intersection (c j) (b i)
+      | .inr i, .inr j => 0 < T.intersection (b i) (b j)) :
+    ∃ l : Fin n → T.Component, Function.Injective l ∧
+      ∀ i j, G.Adj i j → T.Adj (l i) (l j) := by
+  let l := Sum.elim (fun i : Fin t ↦ c i) b ∘ p
+  have hl : Function.Injective l := (hc.injective_sumElim hb hb_ne).comp hp
+  refine ⟨l, hl, fun i j hij ↦ T.adj_iff.mpr ⟨hl.ne hij.ne, ?_⟩⟩
+  exact T.intersection_pos_of_adj_of_forall_lt
+    (fun u v huv huv_adj ↦ hc.intersection_pos_sumElim b (p u) (p v) (h u v huv huv_adj)) hij
+
 /-- A chain component `c r` (`0 < r` and `r + 1 < t`) meeting two distinct components `x` and `y`
 outside the chain forms a four-leaf star with leaves `c (r - 1)`, `c (r + 1)`, `x` and `y`. -/
 private lemma exists_fourLeafStar (hc : T.IsSelfIntersectionMinusTwoChain t c) {r : ℕ}
@@ -559,32 +541,24 @@ private lemma exists_fourLeafStar (hc : T.IsSelfIntersectionMinusTwoChain t c) {
     (hx : 0 < T.intersection (c r) x) (hy : 0 < T.intersection (c r) y) :
     ∃ c₀ : T.Component, ∃ l : Fin 4 → T.Component,
       Function.Injective l ∧ ∀ i, T.Adj c₀ (l i) := by
-  let p : Fin 4 → Fin t ⊕ Fin 2 :=
-    ![.inl ⟨r - 1, by omega⟩, .inl ⟨r + 1, by omega⟩,
+  let p : Fin 5 → Fin t ⊕ Fin 2 :=
+    ![.inl ⟨r, by omega⟩, .inl ⟨r - 1, by omega⟩, .inl ⟨r + 1, by omega⟩,
       .inr 0, .inr 1]
-  let l : Fin 4 → T.Component := Sum.elim (fun i : Fin t ↦ c i) (![x, y]) ∘ p
   have hp : Function.Injective p := by
     intro i j hij
-    fin_cases i <;> fin_cases j <;> simp [p] at hij ⊢; omega
-  have hl : Function.Injective l := by
-    apply (hc.injective_sumElim (b := (![x, y])) ?_ ?_).comp hp
-    · intro i j hij
-      fin_cases i <;> fin_cases j <;> simp_all
-    · intro j i hi
-      fin_cases j
-      · exact hx_ne i hi
-      · exact hy_ne i hi
-  refine ⟨c r, l, hl, ?_⟩
-  intro i
-  fin_cases i <;>
-    simp only [Nat.succ_eq_add_one, Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
-      Function.comp_apply, cons_val_zero, cons_val_one, cons_val_fin_one, Matrix.cons_val,
-      Sum.elim_inl, Sum.elim_inr, T.adj_iff, ne_eq, l, p]
-  · exact ⟨hc.ne (by omega) (by omega) (by omega),
-      by rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega)⟩
-  · exact ⟨hc.ne (by omega) (by omega) (by omega), hc.intersection_succ_pos r hrt⟩
-  · exact ⟨(hx_ne r (by omega)).symm, hx⟩
-  · exact ⟨(hy_ne r (by omega)).symm, hy⟩
+    fin_cases i <;> fin_cases j <;> simp [p] at hij ⊢ <;> omega
+  obtain ⟨l, hl, hadj⟩ := hc.exists_graph_map_sumElim (![x, y])
+    (by intro i j hij; fin_cases i <;> fin_cases j <;> simp_all)
+    (by intro j i hi; fin_cases j; exacts [hx_ne i hi, hy_ne i hi])
+    (G := SimpleGraph.starGraph (0 : Fin 5)) p hp (by
+      intro u v huv h
+      fin_cases u <;> fin_cases v
+      all_goals norm_num [Fin.lt_def] at huv
+      all_goals norm_num [SimpleGraph.starGraph_adj] at h
+      all_goals simp [p]
+      all_goals omega)
+  exact ⟨l 0, fun i ↦ l i.succ, hl.comp (Fin.succ_injective 4),
+    fun i ↦ hadj 0 i.succ (SimpleGraph.starGraph_center_adj (Fin.succ_ne_zero i).symm)⟩
 
 /-- A chain component `c r` (`2 ≤ r` and `r + 3 ≤ t`) meeting `x` outside the chain, which in turn
 meets `y` outside the chain, produces the seven-component affine `E₆` configuration. -/
@@ -599,23 +573,14 @@ private lemma exists_affineE6 (hc : T.IsSelfIntersectionMinusTwoChain t c) {r : 
       .inl ⟨r - 2, by omega⟩, .inl ⟨r + 1, by omega⟩,
       .inl ⟨r + 2, by omega⟩, .inr 0,
       .inr 1]
-  let l : Fin 7 → T.Component := Sum.elim (fun i : Fin t ↦ c i) (![x, y]) ∘ p
   have hp : Function.Injective p := by
     intro i j hij
     fin_cases i <;> fin_cases j <;> simp [p] at hij ⊢ <;> omega
-  have hl : Function.Injective l := by
-    apply (hc.injective_sumElim (b := (![x, y])) ?_ ?_).comp hp
-    · intro i j hij
-      fin_cases i <;> fin_cases j <;> simp_all
-    · intro j i hi
-      fin_cases j
-      · exact hx_ne i hi
-      · exact hy_ne i hi
-  refine ⟨l, hl, fun i j hadj ↦ T.adj_iff.mpr ⟨hl.ne hadj.ne, ?_⟩⟩
-  apply T.intersection_pos_of_adj_of_forall_lt (G := AffineDynkinType.E6.graph)
-    (l := l) ?_ hadj
+  apply hc.exists_graph_map_sumElim (![x, y])
+    (by intro i j hij; fin_cases i <;> fin_cases j <;> simp_all)
+    (by intro j i hi; fin_cases j; exacts [hx_ne i hi, hy_ne i hi])
+    (G := AffineDynkinType.E6.graph) p hp
   intro u v huv h
-  apply hc.intersection_pos_sumElim (![x, y]) (p u) (p v)
   fin_cases u <;> fin_cases v
   all_goals norm_num [Fin.lt_def] at huv
   all_goals norm_num [AffineDynkinType.graph_E6_adj] at h
@@ -634,19 +599,17 @@ private lemma exists_affineE7 (hc : T.IsSelfIntersectionMinusTwoChain t c) {r : 
       .inl ⟨r - 1, by omega⟩, .inl ⟨r - 2, by omega⟩,
       .inl ⟨r - 3, by omega⟩, .inl ⟨r + 1, by omega⟩,
       .inl ⟨r + 2, by omega⟩, .inl ⟨r + 3, by omega⟩]
-  let l : Fin 8 → T.Component := Sum.elim (fun i : Fin t ↦ c i) (fun _ : Fin 1 ↦ x) ∘ p
   have hp : Function.Injective p := by
     intro i j hij
     fin_cases i <;> fin_cases j <;> simp [p] at hij ⊢ <;> omega
-  have hl : Function.Injective l := by
-    apply (hc.injective_sumElim (b := (fun _ : Fin 1 ↦ x)) ?_ ?_).comp hp
-    · exact Function.injective_of_subsingleton _
-    · exact fun _ i hi ↦ hx_ne i hi
-  refine ⟨l, hl, fun i j hadj ↦ ?_⟩
-  apply T.intersection_pos_of_adj_of_forall_lt (G := AffineDynkinType.E7.graph)
-    (l := l) ?_ hadj
+  suffices h : ∃ l : Fin 8 → T.Component, Function.Injective l ∧
+      ∀ i j, AffineDynkinType.E7.graph.Adj i j → T.Adj (l i) (l j) by
+    obtain ⟨l, hl, hadj⟩ := h
+    exact ⟨l, hl, fun i j hij ↦ (T.adj_iff.mp (hadj i j hij)).2⟩
+  apply hc.exists_graph_map_sumElim (fun _ : Fin 1 ↦ x)
+    (Function.injective_of_subsingleton _)
+    (fun _ i hi ↦ hx_ne i hi) (G := AffineDynkinType.E7.graph) p hp
   intro u v huv h
-  apply hc.intersection_pos_sumElim (fun _ : Fin 1 ↦ x) (p u) (p v)
   fin_cases u <;> fin_cases v
   all_goals norm_num [Fin.lt_def] at huv
   all_goals norm_num [AffineDynkinType.graph_E7_adj] at h
@@ -665,19 +628,17 @@ private lemma exists_affineE8 (hc : T.IsSelfIntersectionMinusTwoChain t c) (ht :
       .inl ⟨3, by omega⟩, .inl ⟨4, by omega⟩,
       .inl ⟨5, by omega⟩, .inl ⟨6, by omega⟩,
       .inl ⟨7, by omega⟩]
-  let l : Fin 9 → T.Component := Sum.elim (fun i : Fin t ↦ c i) (fun _ : Fin 1 ↦ x) ∘ p
   have hp : Function.Injective p := by
     intro i j hij
     fin_cases i <;> fin_cases j <;> simp [p] at hij ⊢
-  have hl : Function.Injective l := by
-    apply (hc.injective_sumElim (b := (fun _ : Fin 1 ↦ x)) ?_ ?_).comp hp
-    · exact Function.injective_of_subsingleton _
-    · exact fun _ i hi ↦ hx_ne i hi
-  refine ⟨l, hl, fun i j hadj ↦ ?_⟩
-  apply T.intersection_pos_of_adj_of_forall_lt (G := AffineDynkinType.E8.graph)
-    (l := l) ?_ hadj
+  suffices h : ∃ l : Fin 9 → T.Component, Function.Injective l ∧
+      ∀ i j, AffineDynkinType.E8.graph.Adj i j → T.Adj (l i) (l j) by
+    obtain ⟨l, hl, hadj⟩ := h
+    exact ⟨l, hl, fun i j hij ↦ (T.adj_iff.mp (hadj i j hij)).2⟩
+  apply hc.exists_graph_map_sumElim (fun _ : Fin 1 ↦ x)
+    (Function.injective_of_subsingleton _)
+    (fun _ i hi ↦ hx_ne i hi) (G := AffineDynkinType.E8.graph) p hp
   intro u v huv h
-  apply hc.intersection_pos_sumElim (fun _ : Fin 1 ↦ x) (p u) (p v)
   fin_cases u <;> fin_cases v
   all_goals norm_num [Fin.lt_def] at huv
   all_goals norm_num [AffineDynkinType.graph_E8_adj] at h
