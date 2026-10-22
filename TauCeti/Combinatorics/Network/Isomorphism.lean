@@ -109,6 +109,15 @@ theorem trans_homEquiv_apply (e : N ≃ₙ N') (f : N' ≃ₙ N'') (x y : V)
         f.homEquiv _ _ (e.homEquiv x y a) :=
   (rfl)
 
+/-- Arrow transport commutes with transporting the arrow endpoints. -/
+theorem homEquiv_homOfEq (e : N ≃ₙ N') {x y x' y' : V} (a : N.Hom x y) (hx : x = x')
+    (hy : y = y') :
+    e.homEquiv x' y' (@Quiver.homOfEq V ⟨N.Hom⟩ x y x' y' a hx hy) =
+      @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ (e.homEquiv x y a) (congrArg e.vertexEquiv hx)
+        (congrArg e.vertexEquiv hy) := by
+  subst x' y'
+  rfl
+
 /-- The inverse arrow equivalence over arbitrary vertices of the target network. -/
 def inverseHomEquiv (e : N ≃ₙ N') (x y : W) :
     N'.Hom x y ≃ N.Hom (e.vertexEquiv.symm x) (e.vertexEquiv.symm y) where
@@ -120,28 +129,29 @@ def inverseHomEquiv (e : N ≃ₙ N') (x y : W) :
   left_inv a := by simp
   right_inv a := by simp
 
+/-- The inverse arrow equivalence transports the arrow endpoints and then inverts the forward
+arrow equivalence. -/
+theorem inverseHomEquiv_apply (e : N ≃ₙ N') (x y : W) (a : N'.Hom x y) :
+    e.inverseHomEquiv x y a = (e.homEquiv _ _).symm
+      (@Quiver.homOfEq W ⟨N'.Hom⟩ x y _ _ a (e.vertexEquiv.apply_symm_apply x).symm
+        (e.vertexEquiv.apply_symm_apply y).symm) :=
+  (rfl)
+
+/-- An assignment pair related by forward arrow transport is also related by inverse arrow
+transport. -/
+private theorem apply_inverseHomEquiv {R : Type w'} (e : N ≃ₙ N') (g : N.Assignment R)
+    (g' : N'.Assignment R) (hg : ∀ {x y} (a : N.Hom x y), g' (e.homEquiv x y a) = g a)
+    {x y : W} (a : N'.Hom x y) : g (e.inverseHomEquiv x y a) = g' a := by
+  rw [inverseHomEquiv_apply, ← hg]
+  simp only [Equiv.apply_symm_apply]
+  exact assignment_homOfEq g' a _ _
+
 /-- Reverse a bounded-network isomorphism. -/
 @[symm] def symm (e : N ≃ₙ N') : N' ≃ₙ N where
   vertexEquiv := e.vertexEquiv.symm
   homEquiv := e.inverseHomEquiv
-  map_lower := by
-    intro x y a
-    let a' := @Quiver.homOfEq W ⟨N'.Hom⟩ x y _ _ a
-      (e.vertexEquiv.apply_symm_apply x).symm (e.vertexEquiv.apply_symm_apply y).symm
-    calc
-      N.lower ((e.homEquiv _ _).symm a') = N'.lower a' :=
-        (e.map_lower ((e.homEquiv _ _).symm a')).symm.trans
-          (congrArg (fun b : N'.Hom _ _ ↦ N'.lower b) ((e.homEquiv _ _).apply_symm_apply a'))
-      _ = N'.lower a := assignment_homOfEq N'.lower a _ _
-  map_upper := by
-    intro x y a
-    let a' := @Quiver.homOfEq W ⟨N'.Hom⟩ x y _ _ a
-      (e.vertexEquiv.apply_symm_apply x).symm (e.vertexEquiv.apply_symm_apply y).symm
-    calc
-      N.upper ((e.homEquiv _ _).symm a') = N'.upper a' :=
-        (e.map_upper ((e.homEquiv _ _).symm a')).symm.trans
-          (congrArg (fun b : N'.Hom _ _ ↦ N'.upper b) ((e.homEquiv _ _).apply_symm_apply a'))
-      _ = N'.upper a := assignment_homOfEq N'.upper a _ _
+  map_lower := e.apply_inverseHomEquiv N.lower N'.lower e.map_lower
+  map_upper := e.apply_inverseHomEquiv N.upper N'.upper e.map_upper
 
 /-- The inverse isomorphism uses the inverse vertex equivalence. -/
 theorem symm_vertexEquiv (e : N ≃ₙ N') :
@@ -179,27 +189,9 @@ theorem symm_homEquiv_apply_homEquiv (e : N ≃ₙ N') (x y : V) (a : N.Hom x y)
     @Quiver.homOfEq V ⟨N.Hom⟩ _ _ x y
       (e.symm.homEquiv (e.vertexEquiv x) (e.vertexEquiv y) (e.homEquiv x y a))
       (symm_vertexEquiv_apply_vertexEquiv e x) (symm_vertexEquiv_apply_vertexEquiv e y) = a := by
-  apply eq_of_heq
-  refine (@Quiver.homOfEq_heq_left_iff V ⟨N.Hom⟩ _ _ _ _ _ _
-    (symm_vertexEquiv_apply_vertexEquiv e x) (symm_vertexEquiv_apply_vertexEquiv e y)).2 ?_
-  change (e.homEquiv _ _).symm
-    (@Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ (e.homEquiv x y a) _ _) ≍ a
-  have hp :
-      (e.vertexEquiv.symm (e.vertexEquiv x), e.vertexEquiv.symm (e.vertexEquiv y)) =
-        (x, y) := by simp
-  have hz :
-      (⟨(e.vertexEquiv.symm (e.vertexEquiv x), e.vertexEquiv.symm (e.vertexEquiv y)),
-          @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ (e.homEquiv x y a) _ _⟩ :
-          Σ p : V × V, N'.Hom (e.vertexEquiv p.1) (e.vertexEquiv p.2)) =
-        ⟨(x, y), e.homEquiv x y a⟩ :=
-    Sigma.ext hp
-      (@Quiver.homOfEq_heq W ⟨N'.Hom⟩ _ _ _ _
-        (e.vertexEquiv.apply_symm_apply (e.vertexEquiv x)).symm
-        (e.vertexEquiv.apply_symm_apply (e.vertexEquiv y)).symm (e.homEquiv x y a))
-  exact (congr_arg_heq
-      (fun z : Σ p : V × V, N'.Hom (e.vertexEquiv p.1) (e.vertexEquiv p.2) ↦
-        (e.homEquiv z.1.1 z.1.2).symm z.2) hz).trans
-    ((e.homEquiv x y).symm_apply_apply a).heq
+  have h := symm_homEquiv_apply e _ _ (e.homEquiv x y a)
+  rw [@Quiver.homOfEq_eq_iff V ⟨N.Hom⟩] at h
+  simp [h, inverseHomEquiv_apply, ← homEquiv_homOfEq]
 
 /-- Applying forward arrow transport after inverse transport fixes an arrow after transporting
 its endpoints along the inverse laws. -/
@@ -208,13 +200,9 @@ theorem homEquiv_apply_symm_homEquiv (e : N ≃ₙ N') (x y : W) (a : N'.Hom x y
     @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ x y
       (e.homEquiv _ _ (e.symm.homEquiv x y a))
       (vertexEquiv_apply_symm_vertexEquiv e x) (vertexEquiv_apply_symm_vertexEquiv e y) = a := by
-  apply eq_of_heq
-  refine (@Quiver.homOfEq_heq_left_iff W ⟨N'.Hom⟩ _ _ _ _ _ _
-    (vertexEquiv_apply_symm_vertexEquiv e x) (vertexEquiv_apply_symm_vertexEquiv e y)).2 ?_
-  change e.homEquiv _ _ ((e.homEquiv _ _).symm
-    (@Quiver.homOfEq W ⟨N'.Hom⟩ x y _ _ a _ _)) ≍ a
-  exact ((e.homEquiv _ _).apply_symm_apply _).heq.trans
-    (@Quiver.homOfEq_heq W ⟨N'.Hom⟩ _ _ _ _ _ _ a)
+  have h := symm_homEquiv_apply e x y a
+  rw [@Quiver.homOfEq_eq_iff V ⟨N.Hom⟩] at h
+  simp [h, homEquiv_homOfEq, inverseHomEquiv_apply]
 
 /-- Transport assignments along a bounded-network isomorphism. -/
 def assignmentEquiv (e : N ≃ₙ N') (R : Type w') : N.Assignment R ≃ N'.Assignment R :=
@@ -406,41 +394,6 @@ def mapPath (e : N ≃ₙ N') {x y : V} (p : N.Path x y) :
     N'.Path (e.vertexEquiv x) (e.vertexEquiv y) :=
   @Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x y p
 
-/-- The identity network isomorphism fixes every path. -/
-@[simp]
-theorem mapPath_refl (N : Network K V) {x y : V} (p : N.Path x y) :
-    @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ _ _ x y ((refl N).mapPath p)
-      (refl_vertexEquiv_apply N x) (refl_vertexEquiv_apply N y) = p := by
-  apply eq_of_heq
-  refine (@Quiver.homOfEq_heq_left_iff V ⟨fun x y ↦ N.Path x y⟩ _ _ _ _
-    ((refl N).mapPath p) p (refl_vertexEquiv_apply N x)
-      (refl_vertexEquiv_apply N y)).2 ?_
-  change @Prefunctor.mapPath V (Quiver.mk N.Hom) V (Quiver.mk N.Hom)
-    (refl N).toPrefunctor x y p ≍ p
-  exact (toPrefunctor_refl N).symm ▸
-    (@Prefunctor.mapPath_id V (Quiver.mk N.Hom) x y p).heq
-
-/-- Transport along a composite isomorphism applies the two path transports in order. -/
-@[simp]
-theorem mapPath_trans {N'' : Network K X} (e : N ≃ₙ N') (f : N' ≃ₙ N'')
-    {x y : V} (p : N.Path x y) :
-    @Quiver.homOfEq X ⟨fun x y ↦ N''.Path x y⟩ _ _ _ _ ((e.trans f).mapPath p)
-      (trans_vertexEquiv_apply e f x) (trans_vertexEquiv_apply e f y) =
-        f.mapPath (e.mapPath p) := by
-  apply eq_of_heq
-  refine (@Quiver.homOfEq_heq_left_iff X ⟨fun x y ↦ N''.Path x y⟩ _ _ _ _
-    ((e.trans f).mapPath p) (f.mapPath (e.mapPath p)) (trans_vertexEquiv_apply e f x)
-      (trans_vertexEquiv_apply e f y)).2 ?_
-  change @Prefunctor.mapPath V (Quiver.mk N.Hom) X (Quiver.mk N''.Hom)
-    (e.trans f).toPrefunctor x y p ≍
-      @Prefunctor.mapPath W (Quiver.mk N'.Hom) X (Quiver.mk N''.Hom) f.toPrefunctor
-        (e.vertexEquiv x) (e.vertexEquiv y)
-        (@Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom)
-          e.toPrefunctor x y p)
-  exact (toPrefunctor_trans e f).symm ▸
-    (@Prefunctor.mapPath_comp_apply V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom)
-      e.toPrefunctor X (Quiver.mk N''.Hom) f.toPrefunctor x y p).heq
-
 /-- Path transport preserves the empty path. -/
 @[simp]
 theorem mapPath_nil (e : N ≃ₙ N') (x : V) :
@@ -455,65 +408,87 @@ theorem mapPath_cons (e : N ≃ₙ N') {x y z : V} (p : N.Path x y) (a : N.Hom y
   @Prefunctor.mapPath_cons V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor
     x y z p a
 
+end Iso
+
+/-- Transporting the endpoints of an empty path gives the empty path. -/
+private theorem homOfEq_path_nil {N : Network K V} {x x' : V} (hx : x = x') :
+    @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ x x x' x'
+      (@Quiver.Path.nil V ⟨N.Hom⟩ x) hx hx = @Quiver.Path.nil V ⟨N.Hom⟩ x' := by
+  subst x'
+  rfl
+
+/-- Transporting the endpoints of a path ending in an arrow transports the shorter path and the
+arrow separately. -/
+private theorem homOfEq_path_cons {N : Network K V} {x y z x' y' z' : V} (q : N.Path x y)
+    (a : N.Hom y z) (hx : x = x') (hy : y = y') (hz : z = z') :
+    @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ x z x' z'
+        (@Quiver.Path.cons V ⟨N.Hom⟩ x y z q a) hx hz =
+      @Quiver.Path.cons V ⟨N.Hom⟩ x' y' z'
+        (@Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ x y x' y' q hx hy)
+        (@Quiver.homOfEq V ⟨N.Hom⟩ y z y' z' a hy hz) := by
+  subst x' y' z'
+  rfl
+
+namespace Iso
+
+/-- The identity network isomorphism fixes every path. -/
+@[simp]
+theorem mapPath_refl (N : Network K V) {x y : V} (p : N.Path x y) :
+    @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ _ _ x y ((refl N).mapPath p)
+      (refl_vertexEquiv_apply N x) (refl_vertexEquiv_apply N y) = p := by
+  induction p with
+  | nil =>
+      rw [mapPath_nil]
+      exact homOfEq_path_nil (refl_vertexEquiv_apply N x)
+  | @cons y z p a ih =>
+      rw [mapPath_cons, homOfEq_path_cons _ _ (refl_vertexEquiv_apply N x)
+        (refl_vertexEquiv_apply N y) (refl_vertexEquiv_apply N z), ih, refl_homEquiv_apply]
+
+/-- Transport along a composite isomorphism applies the two path transports in order. -/
+@[simp]
+theorem mapPath_trans {N'' : Network K X} (e : N ≃ₙ N') (f : N' ≃ₙ N'')
+    {x y : V} (p : N.Path x y) :
+    @Quiver.homOfEq X ⟨fun x y ↦ N''.Path x y⟩ _ _ _ _ ((e.trans f).mapPath p)
+      (trans_vertexEquiv_apply e f x) (trans_vertexEquiv_apply e f y) =
+        f.mapPath (e.mapPath p) := by
+  induction p with
+  | nil =>
+      rw [mapPath_nil, mapPath_nil, mapPath_nil]
+      exact homOfEq_path_nil (trans_vertexEquiv_apply e f x)
+  | @cons y z p a ih =>
+      rw [mapPath_cons, mapPath_cons, mapPath_cons, homOfEq_path_cons _ _
+        (trans_vertexEquiv_apply e f x) (trans_vertexEquiv_apply e f y)
+        (trans_vertexEquiv_apply e f z), ih, trans_homEquiv_apply]
+
+/-- Path transport along a pair of isomorphisms that is inverse on vertices and on arrows fixes
+every path. -/
+private theorem homOfEq_mapPath_mapPath (e : N ≃ₙ N') (f : N' ≃ₙ N)
+    (hv : ∀ x, f.vertexEquiv (e.vertexEquiv x) = x)
+    (ha : ∀ x y (a : N.Hom x y),
+      @Quiver.homOfEq V ⟨N.Hom⟩ _ _ x y (f.homEquiv _ _ (e.homEquiv x y a)) (hv x) (hv y) = a)
+    {x y : V} (p : N.Path x y) :
+    @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ _ _ x y (f.mapPath (e.mapPath p)) (hv x) (hv y) =
+      p := by
+  induction p with
+  | nil =>
+      rw [mapPath_nil, mapPath_nil]
+      exact homOfEq_path_nil (hv x)
+  | @cons y z p a ih =>
+      rw [mapPath_cons, mapPath_cons, homOfEq_path_cons _ _ (hv x) (hv y) (hv z), ih, ha]
+
 /-- Mapping a path forward and then along the inverse isomorphism fixes it. -/
 @[simp]
 theorem mapPath_symm_mapPath (e : N ≃ₙ N') {x y : V} (p : N.Path x y) :
     @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ _ _ x y (e.symm.mapPath (e.mapPath p))
-      (symm_vertexEquiv_apply_vertexEquiv e x) (symm_vertexEquiv_apply_vertexEquiv e y) = p := by
-  have hnil (x x' : V) (hx : x = x') :
-      @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ x x x' x'
-        (@Quiver.Path.nil V ⟨N.Hom⟩ x) hx hx = @Quiver.Path.nil V ⟨N.Hom⟩ x' := by
-    subst x'
-    rfl
-  have hcons {x y z x' y' z' : V} (q : N.Path x y) (a : N.Hom y z)
-      (hx : x = x') (hy : y = y') (hz : z = z') :
-      @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ x z x' z'
-          (@Quiver.Path.cons V ⟨N.Hom⟩ x y z q a) hx hz =
-        @Quiver.Path.cons V ⟨N.Hom⟩ x' y' z'
-          (@Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ x y x' y' q hx hy)
-          (@Quiver.homOfEq V ⟨N.Hom⟩ y z y' z' a hy hz) := by
-    subst x' y' z'
-    rfl
-  induction p with
-  | nil =>
-      rw [mapPath_nil, mapPath_nil]
-      exact hnil _ _ (symm_vertexEquiv_apply_vertexEquiv e x)
-  | @cons y z p a ih =>
-      rw [mapPath_cons, mapPath_cons]
-      rw [hcons _ _ (symm_vertexEquiv_apply_vertexEquiv e x)
-        (symm_vertexEquiv_apply_vertexEquiv e y)
-        (symm_vertexEquiv_apply_vertexEquiv e z), ih,
-        symm_homEquiv_apply_homEquiv]
+      (symm_vertexEquiv_apply_vertexEquiv e x) (symm_vertexEquiv_apply_vertexEquiv e y) = p :=
+  homOfEq_mapPath_mapPath e e.symm _ e.symm_homEquiv_apply_homEquiv p
 
 /-- Mapping a path along the inverse and then forward fixes it. -/
 @[simp]
 theorem mapPath_mapPath_symm (e : N ≃ₙ N') {x y : W} (p : N'.Path x y) :
     @Quiver.homOfEq W ⟨fun x y ↦ N'.Path x y⟩ _ _ x y (e.mapPath (e.symm.mapPath p))
-      (vertexEquiv_apply_symm_vertexEquiv e x) (vertexEquiv_apply_symm_vertexEquiv e y) = p := by
-  have hnil (x x' : W) (hx : x = x') :
-      @Quiver.homOfEq W ⟨fun x y ↦ N'.Path x y⟩ x x x' x'
-        (@Quiver.Path.nil W ⟨N'.Hom⟩ x) hx hx = @Quiver.Path.nil W ⟨N'.Hom⟩ x' := by
-    subst x'
-    rfl
-  have hcons {x y z x' y' z' : W} (q : N'.Path x y) (a : N'.Hom y z)
-      (hx : x = x') (hy : y = y') (hz : z = z') :
-      @Quiver.homOfEq W ⟨fun x y ↦ N'.Path x y⟩ x z x' z'
-          (@Quiver.Path.cons W ⟨N'.Hom⟩ x y z q a) hx hz =
-        @Quiver.Path.cons W ⟨N'.Hom⟩ x' y' z'
-          (@Quiver.homOfEq W ⟨fun x y ↦ N'.Path x y⟩ x y x' y' q hx hy)
-          (@Quiver.homOfEq W ⟨N'.Hom⟩ y z y' z' a hy hz) := by
-    subst x' y' z'
-    rfl
-  induction p with
-  | nil =>
-      rw [mapPath_nil, mapPath_nil]
-      exact hnil _ _ (vertexEquiv_apply_symm_vertexEquiv e x)
-  | @cons y z p a ih =>
-      rw [mapPath_cons, mapPath_cons]
-      rw [hcons _ _ (vertexEquiv_apply_symm_vertexEquiv e x)
-        (vertexEquiv_apply_symm_vertexEquiv e y)
-        (vertexEquiv_apply_symm_vertexEquiv e z), ih,
-        homEquiv_apply_symm_homEquiv]
+      (vertexEquiv_apply_symm_vertexEquiv e x) (vertexEquiv_apply_symm_vertexEquiv e y) = p :=
+  homOfEq_mapPath_mapPath e.symm e _ e.homEquiv_apply_symm_homEquiv p
 
 /-- Path transport preserves length. -/
 @[simp]
