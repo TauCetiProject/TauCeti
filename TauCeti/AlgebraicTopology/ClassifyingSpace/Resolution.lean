@@ -12,7 +12,6 @@ public import TauCeti.RepresentationTheory.Rep.OfMulAction
 public import TauCeti.AlgebraicTopology.Cellular.Resolution
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.WeakContractibility
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
 
 /-!
 # Projective resolutions from Milnor's countable join
@@ -41,8 +40,8 @@ along the orbit map to a CW structure on the countable join whose cells `G` perm
 the countable join has vanishing singular homology in positive degrees
 (`TauCeti.isZero_singularHomology_universalGSpace`), since all its homotopy groups vanish. So
 its cellular chains are a projective resolution of the trivial representation as well
-(`TauCeti.classifyingSpaceCellularResolution`), by the general statement for acyclic free
-`G`-CW complexes, `TauCeti.cellularResolution`.
+(`TauCeti.classifyingSpaceCellularResolution`), by the general statement for the CW structure
+lifted along a quotient covering map with acyclic total space, `TauCeti.cellularResolution`.
 
 ## Main definitions
 
@@ -59,8 +58,9 @@ its cellular chains are a projective resolution of the trivial representation as
 * `TauCeti.universalGSpaceChainComplexForget₂Iso`: forgetting the action gives the ordered
   simplicial chain complex of the countable join.
 * `TauCeti.quasiIso_universalGSpaceAugmentation`: the augmentation is a quasi-isomorphism.
-* `TauCeti.isZero_singularHomology_universalGSpace`: the singular homology of the countable join
-  vanishes in positive degrees.
+* `TauCeti.classifyingSpaceCellularResolution_complex` and
+  `TauCeti.classifyingSpaceCellularResolution_π`: the complex and the augmentation of the cellular
+  resolution.
 
 ## References
 
@@ -254,25 +254,16 @@ end Resolution
 
 section Cellular
 
-/-- **The singular homology of Milnor's countable join vanishes in positive degrees**, since all
-its homotopy groups vanish. -/
-theorem isZero_singularHomology_universalGSpace (k : Type u) [Ring k] (G : Type u) [Nonempty G]
-    (n : ℕ) :
-    Limits.IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) (n + 1)).obj
-      (ModuleCat.of k k)).obj (TopCat.of (universalGSpace G))) := by
-  obtain ⟨x⟩ : Nonempty (universalGSpace G) := inferInstance
-  refine isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup (n := n + 2)
-    (X := TopCat.of (universalGSpace G)) (x := x) (fun m _ ↦ ?_) k (by lia) (by lia)
-  rcases m with _ | m
-  · exact HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
-  · exact subsingleton_homotopyGroup_universalGSpace G m x
-
 variable (k : Type u) [CommRing k] (G : Type u) [Group G]
 
 /-- **The cellular chains of Milnor's countable join are a projective resolution** of the trivial
 representation of `G`, for the CW structure lifted from the classifying space
 `TauCeti.instCWComplexClassifyingSpace` along the orbit map, whose cells are permuted freely by
 `G`. -/
+-- The body is exposed, as for `TauCeti.cellularResolution`, so that the complex of the
+-- resolution is the cellular chain complex by definition: even stating
+-- `classifyingSpaceCellularResolution_π` needs this.
+@[expose]
 def classifyingSpaceCellularResolution : ProjectiveResolution (Rep.trivial k G k) :=
   haveI : PathConnectedSpace (classifyingSpaceProj G ⁻¹' (Set.univ : Set (classifyingSpace G))) :=
     isPathConnected_iff_pathConnectedSpace.1 (pathConnectedSpace_iff_univ.1 inferInstance)
@@ -280,6 +271,23 @@ def classifyingSpaceCellularResolution : ProjectiveResolution (Rep.trivial k G k
     (isZero_singularHomology_universalGSpace k G n).of_iso
       (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) (n + 1)).obj
         (ModuleCat.of k k)).mapIso (TopCat.isoOfHomeo (Homeomorph.Set.univ _)))
+
+/-- The complex of the cellular resolution is the cellular chain complex of the CW structure
+lifted from the classifying space. -/
+@[simp]
+theorem classifyingSpaceCellularResolution_complex :
+    (classifyingSpaceCellularResolution k G).complex =
+      cellularChainComplexRep Set.univ (isQuotientCoveringMap_classifyingSpaceProj G) k :=
+  (rfl)
+
+/-- The augmentation of the cellular resolution is the augmentation of the lifted cellular
+chains. -/
+@[simp]
+theorem classifyingSpaceCellularResolution_π :
+    (classifyingSpaceCellularResolution k G).π =
+      cellularChainComplexRepAugmentation Set.univ (isQuotientCoveringMap_classifyingSpaceProj G)
+        k :=
+  (rfl)
 
 end Cellular
 

@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
 public import Mathlib.RepresentationTheory.Rep.Iso
 
 /-!
-# The cellular chains of an acyclic free `G`-CW complex are a projective resolution
+# The cellular chains of an acyclic lifted CW complex are a projective resolution
 
 Let `p : E → B` be the quotient covering map of a free action of a group `G` on `E`
 (`IsQuotientCoveringMap p G`), and let `C` be a CW complex in the Hausdorff space `B`. The lifted
@@ -167,10 +167,11 @@ instance projective_cellularChainComplexRep_X (n : ℕ) :
   rw [cellularChainComplexRep_X]
   exact Projective.of_iso (cellularChainRepIsoFree C hG R s hs).symm inferInstance
 
-/-- **The cellular chains of an acyclic free `G`-CW complex are a projective resolution** of the
-trivial representation: if the lift `p ⁻¹' C` is path connected and its singular homology vanishes
-in positive degrees, its cellular chain complex of free representations, augmented by
-`TauCeti.cellularChainComplexRepAugmentation`, resolves the trivial representation `R`. -/
+/-- **The cellular chains of an acyclic lifted CW complex are a projective resolution** of the
+trivial representation, for the CW structure lifted along a quotient covering map: if the lift
+`p ⁻¹' C` is path connected and its singular homology vanishes in positive degrees, its cellular
+chain complex of free representations, augmented by `TauCeti.cellularChainComplexRepAugmentation`,
+resolves the trivial representation `R`. -/
 -- The body is exposed, as for Mathlib's `standardResolution`, so that the complex of the
 -- resolution is the cellular chain complex by definition: even stating `cellularResolution_π`
 -- needs this, its augmentation having source `cellularChainComplexRep C hG R`.

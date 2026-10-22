@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CountableJoin
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.WeakContractibility
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
 
 /-!
 # Weak contractibility of the countable join
@@ -21,6 +22,8 @@ all nonempty as soon as `G` is.
 * `TauCeti.instSimplyConnectedSpaceUniversalGSpace`: simple connectedness of the countable join.
 * `TauCeti.subsingleton_homotopyGroup_universalGSpace`: all its positive-dimensional homotopy
   groups vanish.
+* `TauCeti.isZero_singularHomology_universalGSpace`: its singular homology vanishes in positive
+  degrees.
 * `ContinuousMap.nullhomotopic_to_universalGSpace`: every map from a compact space to it is
   nullhomotopic.
 -/
@@ -47,6 +50,19 @@ theorem subsingleton_homotopyGroup_universalGSpace (G : Type u) [Nonempty G]
     Subsingleton (π_ (n + 1) (universalGSpace G) x) :=
   subsingleton_homotopyGroup_realization_indexedJoin
     (Set.infinite_univ.mono fun _ _ => ‹Nonempty G›) (Fin (n + 1)) x
+
+/-- **The singular homology of Milnor's countable join vanishes in positive degrees**, since all
+its homotopy groups vanish. -/
+theorem isZero_singularHomology_universalGSpace (k : Type u) [Ring k] (G : Type u) [Nonempty G]
+    (n : ℕ) :
+    CategoryTheory.Limits.IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k)
+      (n + 1)).obj (ModuleCat.of k k)).obj (TopCat.of (universalGSpace G))) := by
+  obtain ⟨x⟩ : Nonempty (universalGSpace G) := inferInstance
+  refine isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup (n := n + 2)
+    (X := TopCat.of (universalGSpace G)) (x := x) (fun m _ ↦ ?_) k (by lia) (by lia)
+  rcases m with _ | m
+  · exact HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
+  · exact subsingleton_homotopyGroup_universalGSpace G m x
 
 end TauCeti
 

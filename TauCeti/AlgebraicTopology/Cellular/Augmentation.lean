@@ -32,9 +32,9 @@ followed by the singular augmentation
 (`TauCeti.homologyMap_cellularChainComplexAugmentation_zero`). So when `C` is path connected and
 its singular homology vanishes in positive degrees, the augmented cellular chain complex is exact:
 the augmentation is a quasi-isomorphism
-(`TauCeti.quasiIso_cellularChainComplexAugmentation`). Applied to a free action of a group on an
-acyclic CW complex, this makes its cellular chains a projective resolution of the trivial
-representation (`TauCeti.cellularResolution`).
+(`TauCeti.quasiIso_cellularChainComplexAugmentation`). Applied to the CW structure lifted along
+a quotient covering map with acyclic total space, this makes its cellular chains a projective
+resolution of the trivial representation (`TauCeti.cellularResolution`).
 
 Coefficients are an object of an abelian category with coproducts exact for the cell sets, as for
 modules. The comparison of cellular with singular homology must hold in the degrees used, through
