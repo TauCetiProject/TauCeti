@@ -274,13 +274,13 @@ theorem OnOpenDisc.subring_antitone : Antitone (OnOpenDisc.subring R) :=
   fun _ _ h _ hf ↦ OnOpenDisc.mono hf h
 
 /-- Entire series lie in the subring of series on every open disc. -/
-theorem IsEntire.subring_le_onOpenDisc_subring (R₀ : ℝ) :
+theorem IsEntire.subring_le_onOpenDiscSubring (R₀ : ℝ) :
     IsEntire.subring R ≤ OnOpenDisc.subring R R₀ :=
   fun _ hf ↦ (IsEntire.mem_subring.mp hf).onOpenDisc R₀
 
 /-- Over an ultrametric ring, the subring of series restricted at `R₀` lies in the subring of
 series on the open disc of radius `R₀`. -/
-theorem IsRestricted.subring_le_onOpenDisc_subring [IsUltrametricDist R] (R₀ : ℝ) :
+theorem IsRestricted.subring_le_onOpenDiscSubring [IsUltrametricDist R] (R₀ : ℝ) :
     IsRestricted.subring R₀ ≤ OnOpenDisc.subring R R₀ :=
   fun _ hf ↦ IsRestricted.onOpenDisc hf
 
