@@ -34,6 +34,7 @@ specialization.
 * `TauCeti.GridChainHat`: the free module underlying the one-variable specialization.
 * `TauCeti.simplyBlockedRingHom`: setting `V_i` to zero, as a ring homomorphism.
 * `TauCeti.simplyBlockedSpecialization`: coefficientwise specialization of `GC⁻` at `V_i = 0`.
+* `TauCeti.simplyBlockedRenameEquiv`: rename surviving variables and transport the blocked column.
 * `TauCeti.GridDiagram.simplyBlockedRectangles`: the empty, `X`-avoiding rectangles which also
   avoid the chosen `O`-marking.
 * `TauCeti.GridDiagram.simplyBlockedCoefficient`: the matrix coefficient of the specialized map.
@@ -42,6 +43,8 @@ specialization.
 
 ## Main results
 
+* `TauCeti.simplyBlockedRingHom_rename`: blocking commutes with column renaming when the
+  blocked column is transported.
 * `TauCeti.simplyBlockedSpecialization_surjective` and
   `TauCeti.exact_X_smul_simplyBlockedSpecialization`: specialization presents the specialized
   chain module as the quotient of `GC⁻` by the multiples of `V_i`, which
@@ -128,6 +131,46 @@ theorem simplyBlockedSpecialization_single {n : ℕ} (R : Type*) [CommSemiring R
   classical
   rw [simplyBlockedSpecialization, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single,
     RingHom.coe_toSemilinearMap, simplyBlockedRingHom_apply]
+
+/-- Renaming the unblocked columns also renames the surviving variables, carrying the blocked
+column `i` to `e i`. -/
+noncomputable def simplyBlockedRenameEquiv {n m : ℕ} (R : Type*) [CommSemiring R]
+    (e : Fin n ≃ Fin m) (i : Fin n) :
+    MvPolynomial {c : Fin n // c ≠ i} R ≃ₐ[R]
+      MvPolynomial {c : Fin m // c ≠ e i} R :=
+  renameEquiv R (e.subtypeEquiv fun _ => not_congr e.injective.eq_iff.symm)
+
+/-- A surviving variable is renamed by the underlying column equivalence. -/
+@[simp]
+theorem simplyBlockedRenameEquiv_X {n m : ℕ} (R : Type*) [CommSemiring R]
+    (e : Fin n ≃ Fin m) (i : Fin n) (c : {c : Fin n // c ≠ i}) :
+    simplyBlockedRenameEquiv R e i (X c) = X ⟨e c, fun h => c.2 (e.injective h)⟩ := by
+  simp [simplyBlockedRenameEquiv, Equiv.subtypeEquiv]
+
+/-- Blocking a column and then renaming the surviving variables agrees with renaming all
+columns first and blocking the image column. -/
+theorem simplyBlockedRingHom_rename {n m : ℕ} (R : Type*) [CommSemiring R]
+    (e : Fin n ≃ Fin m) (i : Fin n) (p : MvPolynomial (Fin n) R) :
+    simplyBlockedRingHom R (e i) (rename e p) =
+      simplyBlockedRenameEquiv R e i (simplyBlockedRingHom R i p) := by
+  have h : (killCompl (R := R) (f := (Subtype.val : {c : Fin m // c ≠ e i} → Fin m))
+      Subtype.val_injective).comp (rename e) =
+      (simplyBlockedRenameEquiv R e i).toAlgHom.comp
+        (killCompl (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+          Subtype.val_injective) := by
+    ext c
+    by_cases hc : c = i
+    · subst c
+      simp
+    · have hec : e c ≠ e i := fun h => hc (e.injective h)
+      have hX : X c = rename Subtype.val (X (R := R) (⟨c, hc⟩ : {c // c ≠ i})) := by
+        simp
+      have heX : X (e c) = rename Subtype.val
+          (X (R := R) (⟨e c, hec⟩ : {c // c ≠ e i})) := by simp
+      simp only [AlgHom.comp_apply, rename_X]
+      rw [hX, killCompl_rename_app, heX, killCompl_rename_app]
+      simp
+  exact DFunLike.congr_fun h p
 
 /-! ### Specialization as a quotient map -/
 
