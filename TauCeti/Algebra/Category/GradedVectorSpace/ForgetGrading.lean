@@ -158,7 +158,7 @@ finite graded vector space: place it in degree `0`. -/
 private theorem exists_finiteTotal_obj_iso (Y : FGModuleCat.{u} k) :
     ∃ V : (finite k).FullSubcategory, Nonempty ((finiteTotal k).obj V ≅ Y) :=
   have : Module.Finite k Y.obj := Y.property
-  ⟨⟨_, finite_single k Y.obj⟩, ⟨(ModuleCat.isFG k).fullyFaithfulι.preimageIso
+  ⟨⟨_, finite_single k 0 Y.obj⟩, ⟨(ModuleCat.isFG k).fullyFaithfulι.preimageIso
     ((finiteTotalCompιIso k).app _ ≪≫ gradedObjectTotalSingleIso _ 0 Y.obj)⟩⟩
 
 /-- **Short exact sequences of vector spaces lift along forgetting the grading**: every short exact
