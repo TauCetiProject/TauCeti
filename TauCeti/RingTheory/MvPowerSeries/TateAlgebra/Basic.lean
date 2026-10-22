@@ -38,6 +38,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
+* `MvPowerSeries.norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le`: a constant coefficient
+  dominating every other weighted coefficient attains the Gauss norm.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
   largest norm-achieving exponent for any monomial order, and
   `MvPowerSeries.IsRestricted.norm_coeff_mul_norm_coeff_lt`: the product of the coefficients at
@@ -156,6 +158,19 @@ theorem norm_le_iff {f : IsRestricted.subring (R := R) c} {r : ℝ}
   refine ⟨fun h t ↦ (norm_coeff_mul_prod_le f t).trans h, fun h ↦ ?_⟩
   rw [norm_eq_gaussNorm, gaussNorm]
   exact Real.iSup_le (by simpa using h) hr
+
+/-- A constant coefficient dominating the weighted norm of every other coefficient attains the
+Gauss norm. -/
+theorem norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le
+    {f : IsRestricted.subring (R := R) c}
+    (h : ∀ t ≠ 0, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
+      ‖constantCoeff (f : MvPowerSeries σ R)‖) :
+    ‖f‖ = ‖constantCoeff (f : MvPowerSeries σ R)‖ := by
+  refine le_antisymm ((norm_le_iff (norm_nonneg _)).2 fun t ↦ ?_) ?_
+  · rcases eq_or_ne t 0 with rfl | ht
+    · simp [coeff_zero_eq_constantCoeff_apply]
+    · exact h t ht
+  · simpa [coeff_zero_eq_constantCoeff_apply] using norm_coeff_mul_prod_le f 0
 
 /-- **The norm gap of a restricted series.** The weighted coefficient norms of a nonzero
 restricted series that are smaller than its norm are bounded by a constant smaller than its
