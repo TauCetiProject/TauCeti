@@ -141,6 +141,20 @@ urllib.request.OpenerDirector.open=urlopen
             self.assertIn('Shared capacity unavailable',summary)
             self.assertTrue(calls)
 
+    def test_two_minute_capacity_cache_is_accepted_while_unexpired(self):
+        import time
+        good=dict(complete=True, organization='Test', busy=0, cached=True, requests=52)
+        fixture={'_shared':{**good,'observed_at':time.time()*1000-110000,
+                            'retry_at':time.time()*1000+10000}}
+        output,summary,calls=self.pick(fixture,state_token='state-client')
+        self.assertEqual(output['github'],'true')
+        self.assertEqual(calls,[])
+        fixture['_shared']['observed_at']=time.time()*1000-160000
+        fixture.update(self.fixture())
+        output,summary,calls=self.pick(fixture,state_token='state-client')
+        self.assertIn('Shared capacity unavailable',summary)
+        self.assertTrue(calls)
+
     def test_shared_http_errors_and_redirects_use_direct_discovery(self):
         for status in (302,401,429,503):
             fixture=self.fixture();fixture['_shared_http']=status

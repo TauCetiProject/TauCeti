@@ -235,7 +235,7 @@ jobs:
               value=json.loads(raw);now=time.time()*1000
               if value.get('complete') is not True or value.get('organization')!=repo.split('/')[0]:raise ValueError('invalid coverage')
               if type(value.get('busy')) is not int or not 0<=value['busy']<=10000:raise ValueError('invalid count')
-              if not isinstance(value.get('observed_at'),(int,float)) or not -5000<=now-value['observed_at']<=60000:raise ValueError('stale observation')
+              if not isinstance(value.get('observed_at'),(int,float)) or not -5000<=now-value['observed_at']<=150000:raise ValueError('stale observation')
               if not isinstance(value.get('retry_at'),(int,float)) or value['retry_at']<=now:raise ValueError('expired observation')
               print(json.dumps({k:value[k] for k in ('busy','observed_at','cached','requests')}))
           except Exception:
