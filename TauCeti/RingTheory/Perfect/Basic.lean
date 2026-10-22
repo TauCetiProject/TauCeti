@@ -23,6 +23,8 @@ relations because Frobenius is injective.
   of `x` is its `p ^ n`-th root.
 * `TauCeti.iterateFrobeniusEquiv_symm_dvd_of_le`: deeper roots of `x` divide shallower ones.
 * `TauCeti.mul_eq_zero_of_mul_pow_p_eq_zero`: `a * b ^ p = 0` implies `a * b = 0`.
+* `TauCeti.mul_iterateFrobeniusEquiv_symm_succ_eq_zero`: an element killing the `p ^ n`-th root
+  of `x` also kills its `p ^ (n + 1)`-th root.
 -/
 
 public section
@@ -56,5 +58,21 @@ theorem mul_eq_zero_of_mul_pow_p_eq_zero {a b : R} (h : a * b ^ p = 0) : a * b =
   apply injective_frobenius R p
   rw [frobenius_def, map_zero, mul_pow, ← pow_sub_one_mul (expChar_ne_zero R p) a, mul_assoc, h,
     mul_zero]
+
+/-- If `c` kills the `p ^ n`-th root of `x`, then it kills the `p ^ (n + 1)`-th root of `x`: the
+`p ^ n`-th root is the `p`-th power of the `p ^ (n + 1)`-th root. -/
+theorem mul_iterateFrobeniusEquiv_symm_succ_eq_zero {x c : R} {n : ℕ}
+    (h : c * (iterateFrobeniusEquiv R p n).symm x = 0) :
+    c * (iterateFrobeniusEquiv R p (n + 1)).symm x = 0 := by
+  rw [← iterateFrobeniusEquiv_symm_succ_pow x n] at h
+  exact mul_eq_zero_of_mul_pow_p_eq_zero h
+
+/-- If `c` kills the `p ^ n`-th root of `x`, then it kills every positive power of the
+`p ^ (n + 1)`-th root of `x`. -/
+theorem mul_iterateFrobeniusEquiv_symm_succ_pow_eq_zero {x c : R} {n k : ℕ} (hk : k ≠ 0)
+    (h : c * (iterateFrobeniusEquiv R p n).symm x = 0) :
+    c * (iterateFrobeniusEquiv R p (n + 1)).symm x ^ k = 0 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
+  rw [pow_succ', ← mul_assoc, mul_iterateFrobeniusEquiv_symm_succ_eq_zero h, zero_mul]
 
 end TauCeti

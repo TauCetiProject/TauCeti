@@ -138,17 +138,6 @@ theorem isIdempotentElem_frobeniusRootIdeal (f : R) :
   exact Ideal.pow_mem_of_mem _ (iterateFrobeniusEquiv_symm_mem_frobeniusRootIdeal f _) _
     (Nat.sub_pos_of_lt hp.out.one_lt)
 
-/-- If `c` kills the `p ^ n`-th root of `f`, then it kills the `(p - 1)`-st power of the
-`p ^ (n + 1)`-th root of `f`: the `p ^ n`-th root is the `p`-th power of the `p ^ (n + 1)`-th root,
-so `c` already kills the `p ^ (n + 1)`-th root by `mul_eq_zero_of_mul_pow_p_eq_zero`. -/
-private theorem mul_root_succ_pow_eq_zero {f c : R} {n : ℕ}
-    (h : c * (iterateFrobeniusEquiv R p n).symm f = 0) :
-    c * (iterateFrobeniusEquiv R p (n + 1)).symm f ^ (p - 1) = 0 := by
-  rw [← iterateFrobeniusEquiv_symm_succ_pow f n] at h
-  have hc := mul_eq_zero_of_mul_pow_p_eq_zero h
-  obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt hp.out.one_lt
-  rw [show p - 1 = k + 1 by omega, pow_succ', ← mul_assoc, hc, zero_mul]
-
 /-- **Frobenius-root ideals are flat**, also when `R` has zero divisors. -/
 instance flat_frobeniusRootIdeal (f : R) : Module.Flat R (frobeniusRootIdeal R p f) := by
   refine Module.Flat.of_forall_isTrivialRelation fun {l g x} hgx ↦ ?_
@@ -168,7 +157,8 @@ instance flat_frobeniusRootIdeal (f : R) : Module.Flat R (frobeniusRootIdeal R p
       Submodule.coe_smul, smul_eq_mul, hb, ← iterateFrobeniusEquiv_symm_succ_pow f n]
     rw [← pow_sub_one_mul hp.out.ne_zero]
     ring
-  · have := mul_root_succ_pow_eq_zero hrel
+  · have := mul_iterateFrobeniusEquiv_symm_succ_pow_eq_zero
+      (Nat.sub_ne_zero_of_lt hp.out.one_lt) hrel
     rw [Finset.sum_mul] at this
     refine (Finset.sum_congr rfl fun i _ ↦ ?_).trans this
     ring
@@ -249,7 +239,8 @@ private theorem bijective_directLimitLift (f : R) :
       rw [← directLimitLift_of, hz, ZeroMemClass.coe_zero]
     have hstep : frobeniusRootTransition R p f n (n + 1) n.le_succ a = 0 := by
       rw [frobeniusRootTransition_apply, Nat.add_sub_cancel_left, pow_one, mul_comm]
-      exact mul_root_succ_pow_eq_zero ha
+      exact mul_iterateFrobeniusEquiv_symm_succ_pow_eq_zero (Nat.sub_ne_zero_of_lt hp.out.one_lt)
+        ha
     rw [← Module.DirectLimit.of_f (hij := n.le_succ), hstep, map_zero]
   · obtain ⟨n, c, rfl⟩ := mem_frobeniusRootIdeal.mp hy
     exact ⟨Module.DirectLimit.of R ℕ (fun _ ↦ R) _ n c,
