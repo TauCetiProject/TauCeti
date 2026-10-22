@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.KullbackLeibler.Variational
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Moment
 
 /-!

@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Positive.Basic
 public import TauCeti.Algebra.Lie.E6.Minuscule.StandardComodule
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.StandardComodule
 
 /-!
 # Invariant subspaces of the positive E₆ minuscule subgroup
@@ -132,46 +132,37 @@ private theorem stable_of_raising_closed (s : Set (Fin 27))
     (Pi.basisFun R (Fin 27)).coordinateSpanIsStable (C := coordinateHopfAlgebra R) s := by
   classical
   let w : Fin 27 → ℤ := fun a ↦ if a ∈ s then 1 else 0
-  have hle : GeneralLinear.weightParabolicDefiningHopfIdeal R w ≤ definingIdeal R := by
-    rw [le_definingIdeal_iff]
-    constructor
-    · intro i
-      apply GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker
-      intro a b hab
-      have ha : a ∉ s := by
-        intro ha
-        by_cases hb : b ∈ s <;> simp [w, ha, hb] at hab
-      have hb : b ∈ s := by
-        by_contra hb
-        simp [w, ha, hb] at hab
-      let A := CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)
-      let q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A :=
-        toConv (AlgHom.id R _)
-      have hm := congrArg (fun g : Matrix.GeneralLinearGroup (Fin 27) A ↦
-        (g : Matrix (Fin 27) (Fin 27) A) a b) (rootPoint_matrix R i A q)
-      rw [← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear] at hm
-      simp only [Matrix.map_apply, GeneralLinear.genericMatrix_apply, q,
-        AlgHom.id_comp, generator_inl] at hm
-      rw [hm, coe_rootSubgroupPoints_inl]
-      have hab' : a ≠ b := fun h ↦ ha (h ▸ hb)
-      have hedge : ¬(e6MinusculeWeight b i = -1 ∧ a = e6MinusculeReflection i b) := by
-        rintro ⟨hbi, rfl⟩
-        exact ha (hs i b hb hbi)
-      simp [Matrix.add_apply, hab', Matrix.smul_apply, Matrix.map_apply, hedge]
-    · apply GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker
-      intro a b hab
-      have hab' : a ≠ b := by intro h; simp [h] at hab
-      rw [generatorCoordinateMap_inr, GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-      simpa only [hab', ↓reduceIte, BialgHom.coe_toAlgHom] using
-        GeneralLinear.weightTorusCoordinateBialgHom_X (S := R) weightTable.weight a b
-  rw [Module.Basis.coordinateSpanIsStable_iff]
-  intro a ha b hb
-  rw [coefficientMatrix_basisFun, Matrix.map_apply, GeneralLinear.genericMatrix_apply]
-  apply (CommHopfAlgCat.mkQuotient_eq_zero_iff _ (definingIdeal R) _).mpr
-  apply hle
-  rw [← HopfIdeal.mem_toIdeal, GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal]
-  exact Ideal.subset_span (GeneralLinear.X_mem_weightParabolicRelationSet R w
-    (by simp [w, ha, hb]))
+  refine GeneralLinear.coordinateSpanIsStable_of_weightParabolicDefiningHopfIdeal_le (w := w) ?_
+    fun a ha b hb ↦ by simp [w, ha, hb]
+  rw [le_definingIdeal_iff]
+  constructor
+  · intro i
+    apply GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker
+    intro a b hab
+    have ha : a ∉ s := by
+      intro ha
+      by_cases hb : b ∈ s <;> simp [w, ha, hb] at hab
+    have hb : b ∈ s := by
+      by_contra hb
+      simp [w, ha, hb] at hab
+    let A := CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)
+    let q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A :=
+      toConv (AlgHom.id R _)
+    have hm := congrArg (fun g : Matrix.GeneralLinearGroup (Fin 27) A ↦
+      (g : Matrix (Fin 27) (Fin 27) A) a b) (rootPoint_matrix R i A q)
+    rw [← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear] at hm
+    simp only [Matrix.map_apply, GeneralLinear.genericMatrix_apply, q,
+      AlgHom.id_comp, generator_inl] at hm
+    rw [hm, coe_rootSubgroupPoints_inl]
+    have hab' : a ≠ b := fun h ↦ ha (h ▸ hb)
+    have hedge : ¬(e6MinusculeWeight b i = -1 ∧ a = e6MinusculeReflection i b) := by
+      rintro ⟨hbi, rfl⟩
+      exact ha (hs i b hb hbi)
+    simp [Matrix.add_apply, hab', Matrix.smul_apply, Matrix.map_apply, hedge]
+  · rw [generatorCoordinateMap_inr, GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
+    exact
+      GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker_weightTorusCoordinateBialgHom
+        w weightTable.weight
 
 /-- A coordinate span is invariant exactly when its weight indices are closed under raising.
 This criterion uses the universal coaction, rather than just the action of rational points. -/

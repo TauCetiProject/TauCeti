@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ProjectiveDimension
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.ProjectiveDimension
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.ForgetGrading
+import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Specialization
 import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Dimension
 
 /-!
@@ -22,11 +23,11 @@ are the inputs of `TauCeti.cartanEquiv` and `TauCeti.gradedCartanEquiv`, whose i
 module to the alternating class of a finite projective resolution.
 
 Forgetting the grading identifies graded `G₀` specialized at `q = 1` with ordinary `G₀`
-(`TauCeti.PathAlgebra.gradedFiniteModulesForgetK0Equiv`). Through the two Cartan isomorphisms the
-same holds for the Grothendieck groups of finitely generated projectives: forgetting the grading
-identifies `K₀^gr(proj kQ)` specialized at `q = 1` with `K₀(proj kQ)`. No grading of an arbitrary
-ungraded projective is constructed; bijectivity is transported along the commuting square of
-`TauCeti.gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized`.
+(`TauCeti.PathAlgebra.gradedFiniteModulesForgetK0Equiv`). The same holds for the Grothendieck
+groups of finitely generated projectives: forgetting the grading identifies `K₀^gr(proj kQ)`
+specialized at `q = 1` with `K₀(proj kQ)`. This is the instance of
+`TauCeti.gradedIdempotentProjectiveForgetK0Equiv` for the vertex idempotents, which span the
+degree-zero part of the path-length grading.
 
 ## Main results
 
@@ -93,15 +94,6 @@ theorem gradedCartanMap_bijective : Function.Bijective (gradedCartanMap (integer
   let _ := integerGradedAlgebra k Q
   TauCeti.gradedCartanMap_bijective _ (gradedFiniteModules_le_admitsFiniteResolution k Q)
 
-/-- Forgetting the path-length grading is bijective on projective `K₀` after specialization at
-`q = 1`. -/
-theorem gradedFiniteProjectiveModulesForgetK0_bijective :
-    Function.Bijective (gradedFiniteProjectiveModulesForgetK0 (integerGrade k Q)) := by
-  rw [gradedFiniteProjectiveModulesForgetK0_bijective_iff _ (cartanMap_bijective k Q)
-    (gradedCartanMap_bijective k Q), ← gradedFiniteModulesForgetK0Equiv_toLinearMap k Q,
-    LinearEquiv.coe_coe]
-  exact (gradedFiniteModulesForgetK0Equiv k Q).bijective
-
 /-- **Forgetting grading is an isomorphism on projective `K₀` after specialization at `q = 1`**,
 for a finite quiver whose path algebra is finite-dimensional. The forward map sends the
 specialized class of a finite graded projective to the class of its underlying module. -/
@@ -109,7 +101,11 @@ def gradedFiniteProjectiveModulesForgetK0Equiv :
     LaurentSpecialization (1 : ℤˣ)
         (LaurentK0.{max u v} (gradedFiniteProjectiveModulesExactStructure (integerGrade k Q)))
       ≃ₗ[ℤ] ExactK0.{max u v} (finiteProjectiveModulesExactStructure (pathAlgebra k Q)) :=
-  LinearEquiv.ofBijective _ (gradedFiniteProjectiveModulesForgetK0_bijective k Q)
+  let _ := integerGradedAlgebra k Q
+  let _ := Fintype.ofFinite Q
+  gradedIdempotentProjectiveForgetK0Equiv (completeOrthogonalIdempotents_vertexIdempotent k Q)
+    (vertexIdempotent_mem_integerGrade_zero k Q) (fun _ => integerGrade_eq_bot_of_neg k Q)
+    (integerGrade_zero_eq_span_range_vertexIdempotent k Q).le vertexIdempotent_ne_zero
 
 /-- The forward map of the projective comparison equivalence is the map induced by forgetting
 grading. -/
@@ -117,7 +113,16 @@ grading. -/
 theorem gradedFiniteProjectiveModulesForgetK0Equiv_toLinearMap :
     (gradedFiniteProjectiveModulesForgetK0Equiv k Q).toLinearMap =
       gradedFiniteProjectiveModulesForgetK0 (integerGrade k Q) :=
-  LinearMap.ext fun x ↦ LinearEquiv.ofBijective_apply _ x
+  let _ := integerGradedAlgebra k Q
+  let _ := Fintype.ofFinite Q
+  gradedIdempotentProjectiveForgetK0Equiv_toLinearMap _ _ _ _ _
+
+/-- Forgetting the path-length grading is bijective on projective `K₀` after specialization at
+`q = 1`. -/
+theorem gradedFiniteProjectiveModulesForgetK0_bijective :
+    Function.Bijective (gradedFiniteProjectiveModulesForgetK0 (integerGrade k Q)) := by
+  rw [← gradedFiniteProjectiveModulesForgetK0Equiv_toLinearMap, LinearEquiv.coe_coe]
+  exact (gradedFiniteProjectiveModulesForgetK0Equiv k Q).bijective
 
 /-- On a specialized graded projective class the equivalence returns its underlying ungraded
 class. -/

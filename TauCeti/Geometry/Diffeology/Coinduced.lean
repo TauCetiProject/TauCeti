@@ -21,10 +21,15 @@ quotient diffeology: its plots are the maps that locally lift through `q`. The s
 then a subduction, and a diffeology on `Q` makes `q` a subduction exactly when it is the coinduced
 diffeology.
 
+The D-topology of the coinduced diffeology is the topology coinduced by `q` from the D-topology of
+`X`. In particular, every subduction is a quotient map for the D-topologies, so a subduction that
+is also a quotient map for given topologies carries compatibility of the topology with the
+D-topology from its source to its target.
+
 ## References
 
 * P. Iglesias-Zemmour, *Diffeology*, Mathematical Surveys and Monographs **185**, American
-  Mathematical Society (2013), Articles 1.43--1.51.
+  Mathematical Society (2013), Articles 1.43--1.51, and Chapter 2 for the D-topology.
 -/
 
 public noncomputable section
@@ -203,5 +208,52 @@ theorem isSubduction_iff_eq_coinducedDiffeology [d : DiffeologicalSpace Q] {q : 
     fun ⟨hq, hd⟩ ↦ hd ▸ isSubduction_coinducedDiffeology hq⟩
   exact DiffeologicalSpace.le_iff'.mpr fun n p hp ↦
     (isPlot_coinducedDiffeology_iff_locallyLifts h.surjective).mpr (h.locallyLifts hp)
+
+/-! ### D-topologies -/
+
+/-- The D-topology of the coinduced diffeology is the topology coinduced from the D-topology of
+the source. -/
+theorem dTopology_coinducedDiffeology (q : X → Q) :
+    @_root_.Diffeology.dTopology Q (coinducedDiffeology q) =
+      TopologicalSpace.coinduced q _root_.Diffeology.dTopology := by
+  let := coinducedDiffeology q
+  ext s
+  rw [isOpen_coinduced, _root_.Diffeology.isOpen_iff_preimages_plots,
+    _root_.Diffeology.isOpen_iff_preimages_plots]
+  refine ⟨fun hs n p hp ↦ hs n (q ∘ p) (dSmooth_coinducedDiffeology_rng q n p hp),
+    fun hs n p hp ↦ isOpen_iff_forall_mem_open.mpr fun z hz ↦ ?_⟩
+  obtain ⟨v, hv, hzv, -, hl | ⟨y, hy⟩⟩ := (isPlot_coinducedDiffeology_iff q).mp hp z (mem_univ z)
+  · -- Near `z`, the plot is `q ∘ lift`, so its preimage of `s` is the preimage of `q ⁻¹' s`.
+    obtain ⟨w, hw, hzw, -, lift, hlift, hq⟩ := locallyLifts_iff.mp hl z hzv
+    let : TopologicalSpace X := _root_.Diffeology.dTopology
+    refine ⟨w ∩ lift ⁻¹' (q ⁻¹' s), fun x hx ↦ ?_, (hlift.continuousOn hw).isOpen_inter_preimage hw
+      (_root_.Diffeology.isOpen_iff_preimages_plots.mpr hs), hzw, ?_⟩
+    · rw [mem_preimage, ← hq hx.1]
+      exact hx.2
+    · rw [mem_preimage, mem_preimage, ← comp_apply (f := q), hq hzw]
+      exact hz
+  · refine ⟨v, fun x hx ↦ ?_, hv, hzv⟩
+    rw [mem_preimage, (hy hx).trans (hy hzv).symm]
+    exact hz
+
+/-- A subduction is a quotient map for the D-topologies. -/
+theorem IsSubduction.isQuotientMap_dTopology [DiffeologicalSpace Q] {q : X → Q}
+    (hq : IsSubduction q) :
+    @Topology.IsQuotientMap X Q _root_.Diffeology.dTopology _root_.Diffeology.dTopology q := by
+  obtain ⟨hs, hd⟩ := isSubduction_iff_eq_coinducedDiffeology.mp hq
+  let : TopologicalSpace X := _root_.Diffeology.dTopology
+  let : TopologicalSpace Q := _root_.Diffeology.dTopology
+  exact ⟨⟨hd ▸ dTopology_coinducedDiffeology q⟩, hs⟩
+
+/-- If the topology of the source of a subduction is its D-topology and the subduction is a
+quotient map for given topologies, then the topology of the target is its D-topology. -/
+theorem IsSubduction.isDTopologyCompatible [TopologicalSpace X]
+    [_root_.Diffeology.IsDTopologyCompatible X] [TopologicalSpace Q] [DiffeologicalSpace Q]
+    {q : X → Q} (hq : IsSubduction q) (h : Topology.IsQuotientMap q) :
+    _root_.Diffeology.IsDTopologyCompatible Q where
+  dTop_eq := by
+    obtain ⟨-, rfl⟩ := isSubduction_iff_eq_coinducedDiffeology.mp hq
+    rw [dTopology_coinducedDiffeology, _root_.Diffeology.IsDTopologyCompatible.dTop_eq X,
+      h.eq_coinduced]
 
 end TauCeti.Diffeology

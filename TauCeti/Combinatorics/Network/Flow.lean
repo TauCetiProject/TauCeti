@@ -45,6 +45,7 @@ flows is assembled.
 * `TauCeti.BoundedFlow.val_le_cutBound` and `TauCeti.BoundedFlow.neg_cutBound_compl_le_val`:
   weak duality for bounded `s`–`t` assignments, from above and from below.
 * `TauCeti.Flow.val_le_arrowSum`: weak duality for ordinary flows.
+* `TauCeti.map_cutBound`: cut bounds commute with additive coefficient maps.
 * `TauCeti.BoundedFlow.cutBound_sub_val` and `TauCeti.BoundedFlow.val_eq_cutBound_iff`: the gap
   between a cut bound and the value is the residual capacity leaving the cut, so the value attains
   the cut bound exactly when no residual arrow of positive capacity leaves the cut.
@@ -100,6 +101,12 @@ theorem cutBound_def [DecidableEq V] (lo hi : Assignment Q K) (S : Finset V) :
 theorem cutBound_zero_left [DecidableEq V] (hi : Assignment Q K) (S : Finset V) :
     cutBound 0 hi S = arrowSum hi S Sᶜ := by
   rw [cutBound_def, arrowSum_zero, sub_zero]
+
+/-- Cut bounds commute with additive coefficient maps. -/
+theorem map_cutBound [DecidableEq V] {L F : Type*} [AddCommGroup L] [FunLike F K L]
+    [AddMonoidHomClass F K L] (φ : F) (lo hi : Assignment Q K) (S : Finset V) :
+    φ (cutBound lo hi S) = cutBound (lo.map φ) (hi.map φ) S := by
+  rw [cutBound_def, cutBound_def, map_sub, map_arrowSum, map_arrowSum]
 
 namespace BoundedFlow
 

@@ -9,6 +9,7 @@ module
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 -- `Commute.units_val_iff` transports commutation between units and their values.
 public import Mathlib.Algebra.Group.Commute.Units
+import TauCeti.Algebra.Group.Torsion
 
 /-!
 # Centralizers and maximal commutative subgroups
@@ -25,6 +26,8 @@ which is the form every concrete centralizer computation in a matrix group start
   exactly when the two commute as elements of the monoid.
 * `Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative`: a self-centralizing subgroup is
   maximal among commutative subgroups.
+* `Subgroup.centralizer_zpow_eq` and `Subgroup.centralizer_pow_eq`: nonzero powers have the same
+  centralizer as their base in groups with unique roots.
 -/
 
 public section
@@ -52,5 +55,27 @@ theorem eq_of_centralizer_eq_self_of_le_of_isMulCommutative {G : Type*} [Group G
       exact (Subgroup.le_centralizer (H := H)).trans
         (Subgroup.centralizer_le (SetLike.coe_subset_coe.mpr hle)))
     hle
+
+end Subgroup
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] [HasUniqueRoots G] (x : G)
+
+/-- Taking a nonzero integer power does not change the centralizer of an element in a group
+with unique roots. -/
+@[simp]
+theorem centralizer_zpow_eq {n : ℤ} (hn : n ≠ 0) :
+    centralizer {x ^ n} = centralizer {x} := by
+  ext y
+  simp only [mem_centralizer_singleton_iff, ← commute_iff_eq, Commute.zpow_right_iff hn]
+
+/-- Taking a nonzero natural power does not change the centralizer of an element in a group
+with unique roots. -/
+@[simp]
+theorem centralizer_pow_eq {n : ℕ} (hn : n ≠ 0) :
+    centralizer {x ^ n} = centralizer {x} := by
+  have hn' : (n : ℤ) ≠ 0 := by exact_mod_cast hn
+  simpa only [zpow_natCast] using centralizer_zpow_eq x hn'
 
 end Subgroup

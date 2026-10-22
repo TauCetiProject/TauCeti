@@ -28,8 +28,9 @@ That dichotomy is the input a *multiplicity* count needs: in a decomposition of 
 irreducibles, each summand contributes `1` to `dim_K (S →ₗ⁅K,L⁆ M)` when it is equivalent to `S`
 and `0` when it is not. Reading the multiplicity off `dim_K (S →ₗ⁅K,L⁆ M)` needs one further
 ingredient, additivity of the morphism space over a direct sum; that is
-`TauCeti.LieModule.lieModuleHomDirectSumEquiv` of `TauCeti/Algebra/Lie/DirectSum.lean`, and this
-file goes no further than the two-irreducible dimension count.
+`TauCeti.LieModule.lieModuleHomDirectSumEquiv` of
+`TauCeti/Algebra/Lie/Submodule/DirectSum.lean`, and this file goes no further than the
+two-irreducible dimension count.
 
 ## Main results
 
@@ -40,11 +41,13 @@ file goes no further than the two-irreducible dimension count.
   Lie modules admit only the zero morphism.
 * `TauCeti.LieModule.nonempty_lieModuleEquiv_iff_exists_ne_zero`: two irreducible Lie modules are
   equivalent exactly when some morphism between them is nonzero.
+* `TauCeti.LieModule.finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv`: inequivalent
+  irreducible Lie modules have a zero-dimensional morphism space over any commutative ring.
+* `TauCeti.LieModule.finite_lieModuleHom_of_isIrreducible`: the morphism space from an irreducible
+  Lie module that is Noetherian over the base ring to any irreducible is finitely generated.
 * `TauCeti.LieModule.finrank_lieModuleHom_self`: **the endomorphisms of a finite-dimensional
   irreducible Lie module over an algebraically closed field are the scalars**, so the
   endomorphism space is a line.
-* `TauCeti.LieModule.finiteDimensional_lieModuleHom_of_isIrreducible`: the morphism space from a
-  finite-dimensional irreducible to any irreducible is finite-dimensional.
 * `TauCeti.LieModule.finrank_lieModuleHom_eq_one_iff`,
   `TauCeti.LieModule.finrank_lieModuleHom_eq_zero_iff` and
   `TauCeti.LieModule.finrank_lieModuleHom_le_one`: the dimension of the morphism space is `1` when
@@ -57,18 +60,6 @@ Schur's lemma itself, `TauCeti.exists_forall_apply_eq_smul`, stays in
 `TauCeti/Algebra/Lie/Weights/Central.lean`, where it is proved and where the central weight of an
 irreducible module consumes it. This file is its consequence for whole morphism *spaces*, which
 needs the morphism-space linear structure and nothing about weights.
-
-## Roadmap
-
-This is the uniqueness input for the multiplicity `m_λ = dim Hom_L(L(λ), M)` of the decomposition
-toolkit in Layer 6 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`
-(the `isotypicMultiplicity` target of its `Suggested.lean`, whose "`Hom` definition is the one that
-makes uniqueness automatic"): the morphism space between irreducibles has dimension `1` or `0`
-according as they are equivalent. The multiplicity theorem itself is
-`LieModule.isotypicMultiplicity_eq_ncard_of_isInternal` of
-`TauCeti/Algebra/Lie/Multiplicity.lean`, which adds to this file the additivity of the morphism
-space over a direct-sum decomposition; the `L(λ)`-indexed form additionally needs the irreducible
-quotient `L(λ)`.
 
 ## References
 
@@ -91,14 +82,11 @@ universe u v w w₁
 section CommRing
 
 variable {R : Type u} {L : Type v} {M : Type w} {N : Type w₁}
-variable [CommRing R] [LieRing L] [LieAlgebra R L]
-variable [AddCommGroup M] [Module R M] [LieRingModule L M] [_root_.LieModule R L M]
-variable [AddCommGroup N] [Module R N] [LieRingModule L N] [_root_.LieModule R L N]
+variable [CommRing R] [LieRing L]
+variable [AddCommGroup M] [Module R M] [LieRingModule L M]
+variable [AddCommGroup N] [Module R N] [LieRingModule L N]
 variable [_root_.LieModule.IsIrreducible R L M] [_root_.LieModule.IsIrreducible R L N]
 
--- The `LieAlgebra` and `LieModule` instances above are needed only to state the irreducibility
--- hypotheses; the results themselves are about the underlying `LieRingModule` structure.
-omit [LieAlgebra R L] [_root_.LieModule R L M] [_root_.LieModule R L N] in
 /-- **Schur's lemma for Lie modules, in its bijectivity form**: a nonzero morphism between
 irreducible Lie modules is bijective. Its kernel is a Lie submodule of `M` other than `⊤` and its
 range is a Lie submodule of `N` other than `⊥`, and irreducibility leaves no other option. -/
@@ -115,25 +103,21 @@ theorem bijective_of_ne_zero {f : M →ₗ⁅R,L⁆ N} (hf : f ≠ 0) : Function
     rw [h, LieSubmodule.mem_bot] at hmem
     simpa using hmem
 
-omit [LieAlgebra R L] [_root_.LieModule R L M] [_root_.LieModule R L N] in
 /-- A nonzero morphism between irreducible Lie modules makes them equivalent. -/
 theorem nonempty_lieModuleEquiv_of_ne_zero {f : M →ₗ⁅R,L⁆ N} (hf : f ≠ 0) :
     Nonempty (M ≃ₗ⁅R,L⁆ N) :=
   ⟨LieModuleEquiv.ofBijective f (bijective_of_ne_zero hf)⟩
 
-omit [LieAlgebra R L] [_root_.LieModule R L M] [_root_.LieModule R L N] in
 /-- **Inequivalent irreducible Lie modules admit only the zero morphism.** -/
 theorem eq_zero_of_isEmpty_lieModuleEquiv (h : IsEmpty (M ≃ₗ⁅R,L⁆ N)) (f : M →ₗ⁅R,L⁆ N) : f = 0 :=
   by_contra fun hf ↦ (nonempty_lieModuleEquiv_of_ne_zero hf).elim h.elim
 
-omit [LieAlgebra R L] [_root_.LieModule R L M] [_root_.LieModule R L N] in
 /-- The morphism space between inequivalent irreducible Lie modules is trivial. -/
 theorem subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv (h : IsEmpty (M ≃ₗ⁅R,L⁆ N)) :
     Subsingleton (M →ₗ⁅R,L⁆ N) :=
   ⟨fun f g ↦ by
     rw [eq_zero_of_isEmpty_lieModuleEquiv h f, eq_zero_of_isEmpty_lieModuleEquiv h g]⟩
 
-omit [LieAlgebra R L] [_root_.LieModule R L M] [_root_.LieModule R L N] in
 /-- **Two irreducible Lie modules are equivalent exactly when they admit a nonzero morphism.** -/
 theorem nonempty_lieModuleEquiv_iff_exists_ne_zero :
     Nonempty (M ≃ₗ⁅R,L⁆ N) ↔ ∃ f : M →ₗ⁅R,L⁆ N, f ≠ 0 := by
@@ -142,6 +126,31 @@ theorem nonempty_lieModuleEquiv_iff_exists_ne_zero :
   have _i : Nontrivial M := _root_.LieModule.nontrivial_of_isIrreducible R L M
   obtain ⟨m, hm⟩ := exists_ne (0 : M)
   exact hm (e.injective (by simpa using congrArg (fun g : M →ₗ⁅R,L⁆ N ↦ g m) h))
+
+variable [LieAlgebra R L] [_root_.LieModule R L N]
+
+/-- Inequivalent irreducible Lie modules have a zero-dimensional morphism space over any
+commutative ring. -/
+theorem finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv (h : IsEmpty (M ≃ₗ⁅R,L⁆ N)) :
+    finrank R (M →ₗ⁅R,L⁆ N) = 0 := by
+  have := subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv h
+  have := _root_.LieModule.nontrivial_of_isIrreducible R L M
+  have := Module.nontrivial R M
+  exact Module.finrank_zero_of_subsingleton
+
+variable [_root_.LieModule R L M]
+
+/-- The morphism space from an irreducible Lie module that is Noetherian over the base ring to
+any irreducible Lie module is finitely generated. In particular, this applies to a finitely
+generated source over a Noetherian commutative ring. -/
+theorem finite_lieModuleHom_of_isIrreducible [IsNoetherian R M] :
+    Module.Finite R (M →ₗ⁅R,L⁆ N) := by
+  by_cases h : Nonempty (M ≃ₗ⁅R,L⁆ N)
+  · exact Module.Finite.equiv (LieModuleEquiv.congrRight (M := M) h.some)
+  · have : Subsingleton (M →ₗ⁅R,L⁆ N) :=
+      subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv (not_nonempty_iff.mp h)
+    exact Module.Finite.of_surjective (0 : R →ₗ[R] (M →ₗ⁅R,L⁆ N))
+      fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
 
 end CommRing
 
@@ -179,51 +188,31 @@ theorem finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv (h : Nonempty (M 
 
 variable [_root_.LieModule.IsIrreducible K L N]
 
-omit [IsAlgClosed K] [_root_.LieModule K L M] [FiniteDimensional K M] in
-/-- Inequivalent irreducible Lie modules have a zero-dimensional morphism space. -/
-theorem finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv (h : IsEmpty (M ≃ₗ⁅K,L⁆ N)) :
-    finrank K (M →ₗ⁅K,L⁆ N) = 0 :=
-  have := subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv h
-  Module.finrank_zero_of_subsingleton
-
-omit [IsAlgClosed K] in
-/-- The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
-module is finite-dimensional: it is either trivial, when the two modules are inequivalent, or,
-transported along an equivalence, the endomorphism space of the finite-dimensional `M`. -/
-theorem finiteDimensional_lieModuleHom_of_isIrreducible :
-    FiniteDimensional K (M →ₗ⁅K,L⁆ N) := by
-  by_cases h : Nonempty (M ≃ₗ⁅K,L⁆ N)
-  · have hend : FiniteDimensional K (M →ₗ⁅K,L⁆ M) := inferInstance
-    exact Module.Finite.equiv (LieModuleEquiv.congrRight (M := M) h.some)
-  · have : Subsingleton (M →ₗ⁅K,L⁆ N) :=
-      subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv (not_nonempty_iff.mp h)
-    exact Module.Finite.of_surjective (0 : K →ₗ[K] (M →ₗ⁅K,L⁆ N))
-      fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
-
-/-- **The morphism space of two finite-dimensional irreducible Lie modules is one-dimensional
-exactly when they are equivalent.** -/
+/-- **The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
+module is one-dimensional exactly when they are equivalent.** -/
 theorem finrank_lieModuleHom_eq_one_iff :
     finrank K (M →ₗ⁅K,L⁆ N) = 1 ↔ Nonempty (M ≃ₗ⁅K,L⁆ N) := by
   refine ⟨fun h ↦ ?_, finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv K L⟩
   rw [← not_isEmpty_iff]
   intro hempty
-  rw [finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv K L hempty] at h
+  rw [finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv hempty] at h
   exact zero_ne_one h
 
-/-- **The morphism space of two finite-dimensional irreducible Lie modules vanishes exactly when
-they are inequivalent.** -/
+/-- **The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
+module vanishes exactly when they are inequivalent.** -/
 theorem finrank_lieModuleHom_eq_zero_iff :
     finrank K (M →ₗ⁅K,L⁆ N) = 0 ↔ IsEmpty (M ≃ₗ⁅K,L⁆ N) := by
-  refine ⟨fun h ↦ ?_, finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv K L⟩
+  refine ⟨fun h ↦ ?_, finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv⟩
   rw [← not_nonempty_iff]
   intro hne
   rw [finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv K L hne] at h
   exact one_ne_zero h
 
-/-- **The morphism space of two finite-dimensional irreducible Lie modules is at most a line.** -/
+/-- **The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
+module is at most a line.** -/
 theorem finrank_lieModuleHom_le_one : finrank K (M →ₗ⁅K,L⁆ N) ≤ 1 := by
   rcases isEmpty_or_nonempty (M ≃ₗ⁅K,L⁆ N) with h | h
-  · exact le_of_eq_of_le (finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv K L h) zero_le_one
+  · exact le_of_eq_of_le (finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv h) zero_le_one
   · exact le_of_eq (finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv K L h)
 
 open scoped Classical in
@@ -237,7 +226,7 @@ theorem finrank_lieModuleHom :
     finrank K (M →ₗ⁅K,L⁆ N) = if Nonempty (M ≃ₗ⁅K,L⁆ N) then 1 else 0 := by
   split
   · exact finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv K L ‹_›
-  · exact finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv K L (not_nonempty_iff.1 ‹_›)
+  · exact finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv (not_nonempty_iff.1 ‹_›)
 
 end IsAlgClosed
 

@@ -13,10 +13,11 @@ import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Coordinates
 /-!
 # Convergence of graphons through homomorphism densities
 
-A sequence in the cut-distance quotient of graphons on a fixed probability carrier converges
-exactly when the homomorphism density of every finite simple graph converges to that of the limit
-(`tendsto_graphonSpace_iff_forall_homDensity`), and it is Cauchy exactly when every homomorphism
-density is Cauchy (`cauchySeq_graphonSpace_iff_forall_homDensity_cauchySeq`). Thus finite-graph
+A sequence in the cut-distance quotient of graphons on a fixed probability carrier, or more
+generally a family along any filter, converges exactly when the homomorphism density of every
+finite simple graph converges to that of the limit (`tendsto_graphonSpace_iff_forall_homDensity`),
+and a sequence is Cauchy exactly when every homomorphism density is Cauchy
+(`cauchySeq_graphonSpace_iff_forall_homDensity_cauchySeq`). Thus finite-graph
 densities give all the coordinates needed to test convergence of dense graph limits. Whenever the
 graphon space is complete -- on the unit interval, or on any atomless standard Borel carrier -- a
 sequence has a limit in graphon space as soon as all its homomorphism densities converge
@@ -74,14 +75,15 @@ section FixedCarrier
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
-/-- **Convergence in graphon space is convergence of all homomorphism densities.** A sequence in
-the graphon space over any probability carrier converges in cut distance if and only if the
-homomorphism density of every finite simple graph converges to that of the limit. -/
-theorem tendsto_graphonSpace_iff_forall_homDensity
-    (Ws : ℕ → GraphonSpace Ω μ) (W : GraphonSpace Ω μ) :
-    Tendsto Ws atTop (𝓝 W) ↔
+/-- **Convergence in graphon space is convergence of all homomorphism densities.** A family in
+the graphon space over any probability carrier, indexed by any type and taken along any filter,
+converges in cut distance if and only if the homomorphism density of every finite simple graph
+converges to that of the limit. Sequences are the case of `atTop` on `ℕ`. -/
+theorem tendsto_graphonSpace_iff_forall_homDensity {ι : Type*} {l : Filter ι}
+    (Ws : ι → GraphonSpace Ω μ) (W : GraphonSpace Ω μ) :
+    Tendsto Ws l (𝓝 W) ↔
       ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj],
-        Tendsto (fun k => homDensityOnSpace F (Ws k)) atTop
+        Tendsto (fun k => homDensityOnSpace F (Ws k)) l
           (𝓝 (homDensityOnSpace F W)) := by
   rw [isInducing_homDensityCoords.tendsto_nhds_iff, tendsto_pi_nhds]
   refine ⟨fun h n F _ => ?_, fun h ⟨n, F, _⟩ => ?_⟩
