@@ -28,9 +28,9 @@ a surjection `G_S →* G_{R(S)}` compatible with the coefficients. When `ι` is 
 a solution in `H`, both coefficient maps are injective, so `G_{R(S)}` is a `G`-group.
 
 The radical genuinely depends on the group `H` in which the solutions are taken, and differs from
-the normal closure: over a torsion-free `H`, the radical of the one-variable system `x ^ n = 1`
-(`n ≠ 0`) is the normal closure of `x`, which does not lie in the normal closure of `x ^ n` when
-`n ≠ 1`.
+the normal closure: over a torsion-free `H` with injective coefficients, the radical of the
+one-variable system `x ^ n = 1` (`n ≠ 0`) is the normal closure of `x`, which does not lie in the
+normal closure of `x ^ n` when `n ≠ 1`.
 
 ## Main definitions
 
@@ -49,11 +49,14 @@ the normal closure: over a torsion-free `H`, the radical of the one-variable sys
 * `TauCeti.GroupAlgGeom.V_I_V`: `V(I(V(S))) = V(S)`.
 * `TauCeti.GroupAlgGeom.I_singleton_comp`: the ideal of a point with coordinates `ι (g x)` is the
   normal closure of the equations `x (g x)⁻¹`, for injective `ι`.
+* `TauCeti.GroupAlgGeom.coordGroup.homEquiv`, `TauCeti.GroupAlgGeom.systemGroup.homEquiv`:
+  `G`-homomorphisms from `G_{R(S)}` or from `G_S` to `H` correspond to the solutions of `S` in `H`.
 * `TauCeti.GroupAlgGeom.coordGroup.coeff_injective`: `G_{R(S)}` is a `G`-group when `S` has a
   solution in a `G`-group.
 * `TauCeti.GroupAlgGeom.Rad_pow_eq_normalClosure`,
-  `TauCeti.GroupAlgGeom.normalClosure_pow_ne_normalClosure`: the radical of `x ^ n` over a
-  torsion-free group is the normal closure of `x`, which strictly contains that of `x ^ n`.
+  `TauCeti.GroupAlgGeom.normalClosure_pow_ne_normalClosure`: over a torsion-free `H` with
+  injective coefficients, the radical of `x ^ n` (`n ≠ 0`) is the normal closure of `x`, which
+  strictly contains that of `x ^ n` when `n ≠ 1`.
 
 ## References
 
@@ -178,6 +181,7 @@ def Rad (S : Set (GX G X)) : Subgroup (GX G X) :=
 
 theorem Rad_def (S : Set (GX G X)) : Rad ι S = I ι (V ι S) := (rfl)
 
+@[simp]
 theorem mem_Rad : w ∈ Rad ι S ↔ ∀ v ∈ V ι S, eval ι v w = 1 := Iff.rfl
 
 instance (S : Set (GX G X)) : (Rad ι S).Normal :=
@@ -235,6 +239,15 @@ theorem I_singleton_comp (hι : Function.Injective ι) (g : X → G) :
 
 /-! ### Coordinate groups and the group of a system -/
 
+/-- A homomorphism out of a quotient of `G[X]` that restricts to `ι` on the coefficients is
+evaluation at the images of the variables. -/
+private theorem eval_mk {N : Subgroup (GX G X)} [N.Normal] (φ : GX G X ⧸ N →* H)
+    (hφ : φ.comp ((QuotientGroup.mk' N).comp inl) = ι) (w : GX G X) :
+    eval ι (fun x => φ (inr (FreeGroup.of x) : GX G X)) w = φ w := by
+  have := eq_eval (φ.comp (QuotientGroup.mk' N))
+  rw [MonoidHom.comp_assoc, hφ] at this
+  exact (DFunLike.congr_fun this w).symm
+
 variable (ι) in
 /-- The coordinate group `G_{R(S)} = G[X] ⧸ Rad_H(S)` of a system `S` over `H`. -/
 abbrev coordGroup (S : Set (GX G X)) : Type _ :=
@@ -251,17 +264,46 @@ def coeff (S : Set (GX G X)) : G →* coordGroup ι S :=
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff ι S g = ((inl g : GX G X) : coordGroup ι S) := (rfl)
 
+variable (v) in
+/-- Evaluation at a solution `v` of `S` in `H`, as a `G`-homomorphism `G_{R(S)} → H`. -/
+def evalGHom (hv : v ∈ V ι S) : GHom (coeff ι S) ι where
+  toMonoidHom := QuotientGroup.lift _ (eval ι v) fun _ hw => mem_Rad.1 hw v hv
+  map_coeff' := eval_inl ι v
+
+@[simp]
+theorem evalGHom_mk (hv : v ∈ V ι S) (w : GX G X) :
+    evalGHom v hv (w : coordGroup ι S) = eval ι v w := (rfl)
+
+variable (ι S) in
+/-- The universal property of the coordinate group: `G`-homomorphisms `G_{R(S)} → H` correspond
+to the solutions of `S` in `H`, by restriction to the variables and by evaluation. -/
+def homEquiv : GHom (coeff ι S) ι ≃ V ι S where
+  toFun φ := ⟨fun x => φ (inr (FreeGroup.of x) : GX G X), fun s hs =>
+    (eval_mk _ φ.comp_coeff s).trans <| by
+      rw [(QuotientGroup.eq_one_iff s).2 (subset_Rad S hs), map_one]⟩
+  invFun v := evalGHom v v.2
+  left_inv φ := by
+    refine GHom.ext fun q => ?_
+    obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
+    exact eval_mk _ φ.comp_coeff w
+  right_inv v := Subtype.ext (funext fun x => eval_inr_of ι v.1 x)
+
+@[simp]
+theorem homEquiv_apply_coe (φ : GHom (coeff ι S) ι) (x : X) :
+    (homEquiv ι S φ : X → H) x = φ (inr (FreeGroup.of x) : GX G X) := (rfl)
+
+@[simp]
+theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v.2 := (rfl)
+
 /-- If `ι` is injective and the system `S` has a solution in `H`, the coefficients embed in the
 coordinate group `G_{R(S)}`. -/
 theorem coeff_injective (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
     Function.Injective (coeff ι S) := by
   obtain ⟨v, hv⟩ := hS
-  -- Evaluation at the solution `v` factors through `G_{R(S)}`.
-  let f : coordGroup ι S →* H := QuotientGroup.lift _ (eval ι v) fun _ hw => mem_Rad.1 hw v hv
-  refine Function.Injective.of_comp (f := f) ?_
+  refine Function.Injective.of_comp (f := evalGHom v hv) ?_
   convert hι using 1
   ext g
-  exact (QuotientGroup.lift_mk _ _ (inl g)).trans (eval_inl ι v g)
+  simp
 
 variable (ι) in
 /-- The coordinate group `G_{R(S)}` of a system with a solution in a `G`-group `H`, as a
@@ -295,6 +337,38 @@ variable (ι) in
 def toCoordGroup (S : Set (GX G X)) : GHom (coeff S) (coordGroup.coeff ι S) where
   toMonoidHom := QuotientGroup.map _ _ (.id _) (by simpa using normalClosure_le_Rad S)
   map_coeff' _ := (rfl)
+
+variable (v) in
+/-- Evaluation at a solution `v` of `S` in `H`, as a `G`-homomorphism `G_S → H`. -/
+def evalGHom (hv : v ∈ V ι S) : GHom (coeff S) ι where
+  toMonoidHom := QuotientGroup.lift _ (eval ι v) <|
+    normalClosure_le_normal (N := (eval ι v).ker) fun s hs => hv s hs
+  map_coeff' := eval_inl ι v
+
+@[simp]
+theorem evalGHom_mk (hv : v ∈ V ι S) (w : GX G X) :
+    evalGHom v hv (w : systemGroup G S) = eval ι v w := (rfl)
+
+variable (ι S) in
+/-- The universal property of `G_S`: `G`-homomorphisms `G_S → H` correspond to the solutions of
+`S` in `H`, by restriction to the variables and by evaluation. -/
+def homEquiv : GHom (coeff S) ι ≃ V ι S where
+  toFun φ := ⟨fun x => φ (inr (FreeGroup.of x) : GX G X), fun s hs =>
+    (eval_mk _ φ.comp_coeff s).trans <| by
+      rw [(QuotientGroup.eq_one_iff s).2 (subset_normalClosure hs), map_one]⟩
+  invFun v := evalGHom v v.2
+  left_inv φ := by
+    refine GHom.ext fun q => ?_
+    obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
+    exact eval_mk _ φ.comp_coeff w
+  right_inv v := Subtype.ext (funext fun x => eval_inr_of ι v.1 x)
+
+@[simp]
+theorem homEquiv_apply_coe (φ : GHom (coeff S) ι) (x : X) :
+    (homEquiv ι S φ : X → H) x = φ (inr (FreeGroup.of x) : GX G X) := (rfl)
+
+@[simp]
+theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v.2 := (rfl)
 
 @[simp]
 theorem toCoordGroup_mk (S : Set (GX G X)) (w : GX G X) :
@@ -347,6 +421,7 @@ theorem inr_of_notMem_normalClosure_pow {n : ℕ} (hn : n ≠ 1) (x : X) :
   have : (Multiplicative.ofAdd 1 : Multiplicative (ZMod n)) = 1 := by simpa [f] using hle h
   exact hn (ZMod.one_eq_zero_iff.1 this)
 
+/-- For `n ≠ 1`, the normal closure of `x ^ n` differs from the normal closure of `x`. -/
 theorem normalClosure_pow_ne_normalClosure {n : ℕ} (hn : n ≠ 1) (x : X) :
     normalClosure {(inr (of x) : GX G X) ^ n} ≠ normalClosure {inr (of x)} := fun h =>
   inr_of_notMem_normalClosure_pow hn x (by rw [h]; exact subset_normalClosure rfl)
