@@ -40,6 +40,9 @@ a primitive vector of a complete `sl₂` triple acting on a Noetherian module. H
   number.
 * `TauCeti.Sl2.exists_mem_ker_apply_sub_smul_eq`: for `a` not a natural number, `H - a` maps
   `ker E` onto itself.
+* `TauCeti.Sl2.apply_sub_smul_mem_ker_inf_range_pow_succ` and its adjoint form
+  `TauCeti.lie_sub_smul_mem_ker_inf_range_pow_succ`: `H - k` maps the `k`-th step of the filtration
+  `ker E ⊓ range (E ^ k)` into the next one.
 * `TauCeti.exists_eq_natCast_of_lie_eq_smul`: an eigenvalue of `ad h` on the centralizer of `e` is
   a natural number.
 * `TauCeti.existsUnique_lie_eq_and_lie_eq_neg_two_nsmul`: Morozov's lemma, with uniqueness of the
@@ -82,7 +85,7 @@ private theorem apply_pow_apply_sub_smul_mem_range_pow_succ (hEZ : E * Z - Z * E
   linear_combination (norm := module) hinv • ((E ^ k) (H y) + (k : K) • (E ^ k) y)
 
 /-- `H - k` maps the `k`-th step `ker E ⊓ range (E ^ k)` of the filtration into the next one. -/
-private theorem apply_sub_smul_mem_ker_inf_range_pow_succ (hEZ : E * Z - Z * E = H)
+theorem apply_sub_smul_mem_ker_inf_range_pow_succ (hEZ : E * Z - Z * E = H)
     (hHE : H * E - E * H = 2 • E) {k : ℕ} {c : V}
     (hc : c ∈ LinearMap.ker E ⊓ LinearMap.range (E ^ k)) :
     H c - (k : K) • c ∈ LinearMap.ker E ⊓ LinearMap.range (E ^ (k + 1)) := by
@@ -183,6 +186,17 @@ theorem exists_eq_natCast_of_lie_eq_smul (he : IsNilpotent (ad K L e)) (hhe : �
   obtain ⟨hEZ, hHE⟩ := ad_relations (K := K) hhe hz
   exact Sl2.exists_eq_natCast_of_apply_eq_smul he hEZ hHE (by simpa using hc) hc0
     (by simpa using hhc)
+
+/-- Let `⁅h, e⁆ = 2 • e` and `h ∈ [e, L]`. Then `ad h - k` maps the `k`-th step
+`ker (ad e) ⊓ range ((ad e) ^ k)` of the filtration of the centralizer of `e` into the next one. -/
+theorem lie_sub_smul_mem_ker_inf_range_pow_succ (hhe : ⁅h, e⁆ = 2 • e)
+    (hh : h ∈ LinearMap.range (ad K L e)) {k : ℕ} {c : L}
+    (hc : c ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ k)) :
+    ⁅h, c⁆ - (k : K) • c ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ (k + 1)) := by
+  obtain ⟨z, hz⟩ := hh
+  rw [ad_apply] at hz
+  obtain ⟨hEZ, hHE⟩ := ad_relations (K := K) hhe hz
+  simpa using Sl2.apply_sub_smul_mem_ker_inf_range_pow_succ hEZ hHE hc
 
 /-- **Morozov's lemma**. Let `ad e` be nilpotent, `⁅h, e⁆ = 2 • e` and `h ∈ [e, L]`, over a field
 of characteristic zero. Then there is a unique `f` with `⁅e, f⁆ = h` and `⁅h, f⁆ = -(2 • f)`.

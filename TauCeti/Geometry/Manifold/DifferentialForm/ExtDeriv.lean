@@ -93,8 +93,11 @@ theorem inChartAt_add (φ η : RoughForm I M F k) (x₀ : M) :
     (φ + η).inChartAt x₀ = φ.inChartAt x₀ + η.inChartAt x₀ :=
   bundleMpullbackWithin_add _ _ φ η
 
+/-- The coordinate expression commutes with scalar multiplication of the coefficients, by any
+scalars acting continuously on the coefficient space and commuting with the real action. -/
 @[simp]
-theorem inChartAt_smul (c : ℝ) (φ : RoughForm I M F k) (x₀ : M) :
+theorem inChartAt_smul {S : Type*} [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
+    [SMulCommClass ℝ S F] (c : S) (φ : RoughForm I M F k) (x₀ : M) :
     (c • φ).inChartAt x₀ = c • φ.inChartAt x₀ :=
   bundleMpullbackWithin_smul _ _ c φ
 
@@ -244,16 +247,23 @@ theorem mextDeriv_add
   simp only [← mextDerivWithin_univ]
   exact mextDerivWithin_add (uniqueMDiffWithinAt_univ I) (by simpa using hφ) (by simpa using hη)
 
-/-- The exterior derivative commutes with real scalars wherever derivatives within the set are
-unique; no differentiability of the form is needed. -/
+/-- The exterior derivative commutes with scalar multiplication of the coefficients wherever
+derivatives within the set are unique; no differentiability of the form is needed. The scalars
+are those of a division semiring acting continuously on the coefficient space and commuting with
+the real action, such as `ℝ` itself or `ℂ` on complex coefficients. -/
 @[simp]
-theorem mextDerivWithin_smul (c : ℝ) (hs : UniqueMDiffWithinAt I s x) :
+theorem mextDerivWithin_smul {R : Type*} [DivisionSemiring R] [Module R F]
+    [SMulCommClass ℝ R F] [ContinuousConstSMul R F] (c : R) (hs : UniqueMDiffWithinAt I s x) :
     mextDerivWithin (c • φ) s x = c • mextDerivWithin φ s x := by
   rw [mextDerivWithin_def, RoughForm.inChartAt_smul]
-  exact extDerivWithin_smul c _ hs
+  exact extDerivWithin_smul_field c _ hs
 
+/-- The exterior derivative commutes with scalar multiplication of the coefficients by a
+division semiring acting continuously and commuting with the real action. -/
 @[simp]
-theorem mextDeriv_smul (c : ℝ) (φ : RoughForm I M F k) : mextDeriv (c • φ) = c • mextDeriv φ :=
+theorem mextDeriv_smul {R : Type*} [DivisionSemiring R] [Module R F]
+    [SMulCommClass ℝ R F] [ContinuousConstSMul R F] (c : R) (φ : RoughForm I M F k) :
+    mextDeriv (c • φ) = c • mextDeriv φ :=
   funext fun _ ↦ mextDerivWithin_smul c (uniqueMDiffWithinAt_univ I)
 
 @[simp]

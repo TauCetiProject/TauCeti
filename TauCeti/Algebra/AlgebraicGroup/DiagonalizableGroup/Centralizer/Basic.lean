@@ -36,6 +36,11 @@ trivially on the character group `X`, that is, the kernel of
 Since `D(X)` is commutative, it lies in its own centralizer; and the centralizer is the whole
 group exactly when `D(X)` is a central closed subgroup of `G`.
 
+A homomorphism `D(Y) → D(X)` with coordinate map `ψ : R[X] → R[Y]` makes `ψ ∘ π` the coordinate
+map of the composite `D(Y) → D(X) → G`. The centralizer of this composite contains that of `D(X)`,
+and contains `D(X)` itself. The main instance is the common kernel `D(X ⧸ S) → D(X)` of a subgroup
+`S` of characters, with `ψ` induced by the quotient map.
+
 ## Main declarations
 
 * `BialgHom.centralizerDefect`: the conjugation defect of a coordinate, in `H ⊗[R] R[X]`.
@@ -56,6 +61,12 @@ group exactly when `D(X)` is a central closed subgroup of `G`.
   centralizer.
 * `BialgHom.centralizerHopfIdeal_eq_bot_iff_isCentral`: the centralizer is the whole group exactly
   when the diagonalizable subgroup is central.
+* `BialgHom.centralizerHopfIdeal_comp_le`: the centralizer of a composite `D(Y) → D(X) → G`
+  contains the centralizer of `D(X)`.
+* `BialgHom.centralizerHopfIdeal_comp_le_kerOfSurjective`: the centralizer of a composite
+  `D(Y) → D(X) → G` contains `D(X)`.
+* `BialgHom.centralizerHopfIdeal_mapDomainBialgHom_mk'_comp_anti`: the centralizer of the common
+  kernel `D(X ⧸ S)` of a subgroup `S` of characters grows with `S`.
 
 ## References
 
@@ -426,5 +437,50 @@ theorem centralizerHopfIdeal_eq_bot_iff_isCentral (hπ : Function.Surjective π)
     intro x hx
     rw [HopfIdeal.mem_bot]
     exact RingHom.mem_ker.mp (hid (HopfIdeal.mem_toIdeal.mpr hx))
+
+/-! ## Composites `D(Y) → D(X) → G` -/
+
+section Smaller
+
+variable {Y : Type*} [CommGroup Y]
+
+/-- **A smaller diagonalizable subgroup has a larger centralizer.** If `D(Y) → G` factors through
+`D(X) → G` along the homomorphism `D(Y) → D(X)` with coordinate map `ψ`, then every point of `G`
+centralizing `D(X)` centralizes `D(Y)`. -/
+theorem centralizerHopfIdeal_comp_le (ψ : MonoidAlgebra R X →ₐc[R] MonoidAlgebra R Y) :
+    centralizerHopfIdeal (ψ.comp π) ≤ centralizerHopfIdeal π := by
+  -- Test on the quotient point of `H` by the centralizer ideal of `D(X)`.
+  let g : WithConv (H →ₐ[R] H ⧸ (centralizerHopfIdeal π).toIdeal) :=
+    toConv (Ideal.Quotient.mkₐ R (centralizerHopfIdeal π).toIdeal)
+  have hker : RingHom.ker g.ofConv = (centralizerHopfIdeal π).toIdeal :=
+    Ideal.Quotient.mkₐ_ker R _
+  have hg : (centralizerHopfIdeal π).toIdeal ≤ RingHom.ker g.ofConv := hker.ge
+  have hg' : (centralizerHopfIdeal (ψ.comp π)).toIdeal ≤ RingHom.ker g.ofConv := by
+    rw [centralizerHopfIdeal_le_ker_iff]
+    intro B _ _ φ t
+    rw [BialgHom.mapDomain_comp, MonoidHom.comp_apply]
+    exact commute_mapValue_mapDomain_of_centralizerHopfIdeal_le_ker π hg φ _
+  rwa [hker, HopfIdeal.toIdeal_le_toIdeal] at hg'
+
+/-- **The diagonalizable subgroup `D(X)` lies in the centralizer of any composite
+`D(Y) → D(X) → G`**, being commutative. -/
+theorem centralizerHopfIdeal_comp_le_kerOfSurjective (hπ : Function.Surjective π)
+    (ψ : MonoidAlgebra R X →ₐc[R] MonoidAlgebra R Y) :
+    centralizerHopfIdeal (ψ.comp π) ≤ HopfIdeal.kerOfSurjective π hπ :=
+  (centralizerHopfIdeal_comp_le π ψ).trans (centralizerHopfIdeal_le_kerOfSurjective π hπ)
+
+/-- The centralizer of the diagonalizable subgroup `D(X ⧸ S)` of `D(X)`, the common kernel of the
+characters in `S`, grows with `S`. -/
+theorem centralizerHopfIdeal_mapDomainBialgHom_mk'_comp_anti {S S' : Subgroup X} (h : S ≤ S') :
+    centralizerHopfIdeal ((MonoidAlgebra.mapDomainBialgHom R (QuotientGroup.mk' S')).comp π) ≤
+      centralizerHopfIdeal ((MonoidAlgebra.mapDomainBialgHom R (QuotientGroup.mk' S)).comp π) := by
+  have hmk : QuotientGroup.mk' S' = (QuotientGroup.map S S' (MonoidHom.id X) h).comp
+      (QuotientGroup.mk' S) := by
+    ext x
+    exact (QuotientGroup.map_mk' S S' (MonoidHom.id X) h x).symm
+  rw [hmk, MonoidAlgebra.mapDomainBialgHom_comp, BialgHom.comp_assoc]
+  exact centralizerHopfIdeal_comp_le _ _
+
+end Smaller
 
 end BialgHom

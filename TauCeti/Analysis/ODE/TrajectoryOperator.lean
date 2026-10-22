@@ -194,6 +194,34 @@ theorem trajectoryOperator_eq_iff_hasWeakLineDerivOn
     rw [hs, hd']
     exact sub_add_cancel _ _
 
+/-- **Weak solutions are values of graph elements.** If an `Lᵖ` path `x` has weak derivative
+`f - A x`, then `x` is the value of an element `u` of the weak-derivative graph with
+`D_A u = f`. This is the converse of `trajectoryOperator_eq_iff_hasWeakLineDerivOn`: there the
+element `u` is given, here it is constructed from `x`. -/
+theorem exists_prev_eq_and_trajectoryOperator_eq_of_hasWeakLineDerivOn
+    (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega)) {x f : Lp F p (mu.restrict Omega)}
+    (h : HasWeakLineDerivOn mu Omega (x : ℝ → F) (fun s ↦ f s - A s (x s)) 1) :
+    ∃ u, prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u = x ∧
+      trajectoryOperator A u = f := by
+  let g := f - (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A x
+  -- The weak derivative `g` as an `Lᵖ` path of linear maps `ℝ →L[ℝ] F`.
+  let lift := (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap
+  have hg : (fun s ↦ f s - A s (x s)) =ᵐ[mu.restrict Omega] g := by
+    filter_upwards [Lp.coeFn_sub f ((ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A x),
+      (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).coeFn_holder (r := p) A x] with s hs hAs
+    simp only [g, hs, Pi.sub_apply, hAs, ContinuousLinearMap.id_apply]
+  have hD : HasWeakFDerivOn mu Omega (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)) x)
+      (lift.compLp g) := by
+    rw [hasWeakFDerivOn_iff]
+    intro r
+    refine (by simpa using (h.congr_ae_deriv hg).smul_direction r :
+      HasWeakLineDerivOn _ _ _ _ r).congr_ae_deriv ?_
+    filter_upwards [lift.coeFn_compLp g] with s hs
+    simp [lift, hs]
+  refine ⟨mk _ x _ hD, prev_mk _ _ _ _, ?_⟩
+  rw [trajectoryOperator_eq_iff_hasWeakLineDerivOn, prev_mk]
+  exact h
+
 end TauCeti.WeakDerivStep
 
 namespace TauCeti.WeakDerivStep

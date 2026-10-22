@@ -29,9 +29,15 @@ is therefore an algebraic Hecke character whose infinity type is not that of any
 `AlgebraicInfinityType`: algebraicity of type `A₀` sees infinity types only on the identity
 component.
 
+The sign can also be read off directly. The idele that is `-1` at the real place and `1`
+elsewhere has the ray class of `-1 ∈ (ZMod n)ˣ`, so the component of the Hecke character at the
+real place takes the value `ψ (-1)` there. Hence the infinity type of an odd character is the
+sign at the real place.
+
 The construction uses `ratDirichletEquiv` and `HeckeCharacter.ofRayClassCharacter`; the
 conductor and parity comparisons use the ray-class dictionary in
-`TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet`.
+`TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet`, and the infinity type
+is computed through `rayClassQuotient_ofCompletion_neg_one`.
 
 ## References
 
@@ -197,5 +203,50 @@ theorem exists_isAlgebraic_infinityType_notMem_range_toContinuous :
     isAlgebraic_of_isFiniteOrder (isFiniteOrder_ofDirichletCharacter ψ), ?_⟩
   rw [infinityType_ofDirichletCharacter_mem_range_toContinuous_iff]
   exact hψ.not_even
+
+/-! ### The sign at the real place -/
+
+/-- **The archimedean sign of a Dirichlet character.**  The Hecke character attached to a
+Dirichlet character `ψ` takes the value `ψ (-1)` on the idele that is `-1` at the real place
+and `1` elsewhere. -/
+theorem coe_infiniteComponent_ofDirichletCharacter_neg_one (ψ : DirichletCharacter ℂ n)
+    (w : InfinitePlace ℚ) :
+    ((ofDirichletCharacter n hn ψ).infiniteComponent w (-1) : ℂ) = ψ (-1) := by
+  obtain rfl := Subsingleton.elim w Rat.infinitePlace
+  have hw : (⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩ : {w : InfinitePlace ℚ // w.IsReal}) ∈
+      (ratModulus n hn).infinitePart := by
+    rw [ratModulus_infinitePart]
+    exact Finset.mem_singleton_self _
+  -- The modulus `(n)·∞` has a single real place, so the sign pattern is constant.
+  have hsign : (Pi.mulSingle ⟨_, hw⟩ (-1) : (ratModulus n hn).infinitePart → ℤˣ) = fun _ ↦ -1 :=
+    funext fun w' ↦ by
+      rw [Subtype.ext (Subtype.ext (Subsingleton.elim w'.1.1 _)), Pi.mulSingle_eq_same]
+  rw [infiniteComponent_apply, ofDirichletCharacter_eq_ofRayClassCharacter,
+    ofRayClassCharacter_apply, rayClassQuotient_ofCompletion_neg_one (ratModulus n hn) ⟨_, hw⟩,
+    hsign, ← ratDirichletEquiv_neg_one, MulEquiv.apply_symm_apply]
+
+/-- **Parity is the real parity.**  The infinity type of the Hecke character attached to a
+Dirichlet character has parity zero at the real place exactly when the Dirichlet character is
+even. -/
+@[simp]
+theorem realParity_infinityType_ofDirichletCharacter_eq_zero_iff (ψ : DirichletCharacter ℂ n)
+    (w : {w : InfinitePlace ℚ // w.IsReal}) :
+    (ofDirichletCharacter n hn ψ).infinityType.realParity w = 0 ↔ ψ.Even := by
+  rw [← infiniteComponent_neg_one_eq_one_iff, ← Units.val_eq_one,
+    coe_infiniteComponent_ofDirichletCharacter_neg_one, DirichletCharacter.Even]
+
+/-- The Hecke character attached to an odd Dirichlet character has the nontrivial sign at the
+real place as its infinity type. -/
+@[simp]
+theorem infinityType_ofDirichletCharacter_of_odd {ψ : DirichletCharacter ℂ n} (hψ : ψ.Odd) :
+    (ofDirichletCharacter n hn ψ).infinityType = FiniteOrderInfinityType.toContinuous 1 := by
+  rw [infinityType_eq_toContinuous_realParity (isFiniteOrder_ofDirichletCharacter ψ)]
+  refine congrArg _ (funext fun w ↦ ?_)
+  have h := (realParity_infinityType_ofDirichletCharacter_eq_zero_iff (hn := hn) ψ w).not.mpr
+    hψ.not_even
+  generalize (ofDirichletCharacter n hn ψ).infinityType.realParity w = ε at h ⊢
+  fin_cases ε
+  · exact absurd rfl h
+  · rfl
 
 end TauCeti.GlobalNumberFields.HeckeCharacter

@@ -28,8 +28,8 @@ objects in tensor products of simple objects. Over an algebraically closed field
 finite-dimensional morphism spaces, these are the **fusion coefficients**
 `N_{ST}^U = finrank k (S ⊗ T ⟶ U)` (`TauCeti.fusionCoeff`), which can equally be computed from
 `U ⟶ S ⊗ T`. If the tensor unit is simple, the unit of the ring is a basis element. This is the
-based ring of a fusion category in the sense of Etingof–Gelaki–Nikshych–Ostrik, apart from the
-duality involution.
+based ring of a fusion category in the sense of Etingof–Gelaki–Nikshych–Ostrik; its duality
+involution is in `TauCeti/CategoryTheory/Semisimple/Rigid.lean`.
 
 ⚠ The fusion coefficients are computed by a `k`-dimension, so their identification with
 multiplicities needs the endomorphisms of each simple object to be `k`. Over a field that is not
@@ -44,6 +44,8 @@ two-dimensional rotation representation `V` has `End V ≅ ℂ`, so `finrank ℝ
   representatives.
 * `TauCeti.fusionCoeff k S T U`: the fusion coefficient `finrank k (S ⊗ T ⟶ U)` of three simple
   classes.
+* `TauCeti.fusionMatrix k S`: the fusion matrix of `S`, with entry `N_{ST}^U` in row `T` and
+  column `U`.
 
 ## Main results
 
@@ -59,6 +61,7 @@ two-dimensional rotation representation `V` has `End V ≅ ℂ`, so `finrank ℝ
   the basis elements weighted by the multiplicities of the simple objects in their tensor product.
 * `TauCeti.SplitK0.simpleBasis_mul_simpleBasis_eq_sum_fusionCoeff`: the same expansion, weighted
   by the fusion coefficients.
+* `TauCeti.fusionMatrix_classOf_unit`: the fusion matrix of a simple tensor unit is the identity.
 
 ## References
 
@@ -221,6 +224,20 @@ theorem fusionCoeff_def {C : Type u} [Category.{v} C] [Preadditive C] [Linear k 
     fusionCoeff k S T U = Module.finrank k (S.repr ⊗ T.repr ⟶ U.repr) :=
   (rfl)
 
+/-- The **fusion matrix** of a simple class `S`: the matrix of fusion coefficients `N_{ST}^U`,
+indexed by `T` (row) and `U` (column). Over an algebraically closed field, with
+finite-dimensional morphism spaces, its row `T` lists the coordinates of `[S] * [T]` in the basis
+of simple classes (`TauCeti.SplitK0.simpleBasis_mul_simpleBasis_eq_sum_fusionCoeff`). -/
+def fusionMatrix {C : Type u} [Category.{v} C] [Preadditive C] [Linear k C] [MonoidalCategory C]
+    (S : SimpleClasses C) : Matrix (SimpleClasses C) (SimpleClasses C) ℕ :=
+  Matrix.of fun T U ↦ fusionCoeff k S T U
+
+/-- The entry `(T, U)` of the fusion matrix of `S` is the fusion coefficient `N_{ST}^U`. -/
+@[simp]
+theorem fusionMatrix_apply {C : Type u} [Category.{v} C] [Preadditive C] [Linear k C]
+    [MonoidalCategory C] (S T U : SimpleClasses C) : fusionMatrix k S T U = fusionCoeff k S T U :=
+  (rfl)
+
 variable [IsAlgClosed k] {C : Type u} [Category.{v} C] [Abelian C] [Linear k C]
   [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] [MonoidalCategory C]
 
@@ -235,6 +252,21 @@ theorem fusionCoeff_eq_finrank_hom (S T U : SimpleClasses C) :
     fusionCoeff k S T U = Module.finrank k (U.repr ⟶ S.repr ⊗ T.repr) := by
   rw [fusionCoeff_eq_simpleMultiplicities, finrank_hom_simple_eq_simpleMultiplicities,
     SimpleClasses.classOf_repr]
+
+omit [IsFiniteSemisimpleCategory C] in
+/-- When the tensor unit is simple, its fusion matrix is the identity matrix:
+`N_{𝟙 T}^U = 1` if `T = U` and `0` otherwise. -/
+@[simp]
+theorem fusionMatrix_classOf_unit [Simple (𝟙_ C)] [DecidableEq (SimpleClasses C)] :
+    fusionMatrix k (SimpleClasses.classOf (𝟙_ C)) = 1 := by
+  ext T U
+  rw [fusionMatrix_apply, fusionCoeff_def,
+    (Linear.homCongr k (whiskerRightIso (SimpleClasses.classOfReprIso (𝟙_ C)) T.repr ≪≫ λ_ T.repr)
+      (Iso.refl U.repr)).finrank_eq, finrank_hom_simple_simple, Matrix.one_apply]
+  by_cases h : T = U
+  · subst h
+    rw [ite_eq_left ⟨Iso.refl _⟩, ite_eq_left rfl]
+  · rw [ite_eq_right (mt (SimpleClasses.eq_iff_nonempty_iso T U).2 h), ite_eq_right h]
 
 namespace SplitK0
 

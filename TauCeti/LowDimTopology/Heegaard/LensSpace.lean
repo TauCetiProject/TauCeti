@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.LowDimTopology.Heegaard.CurveHomology
+public import TauCeti.LowDimTopology.Heegaard.Nice
 import TauCeti.Data.ZMod.Units
 import TauCeti.GroupTheory.Perm.Basic
+import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Algebra.Group.Pi.Units
 import Mathlib.GroupTheory.OrderOfElement
@@ -64,6 +66,9 @@ complex itself is not constructed here.
 * `TauCeti.HeegaardRegionSystem.periodicDomains_lensSpace` and
   `TauCeti.HeegaardRegionSystem.weaklyAdmissible_lensSpace`: the only periodic domain is zero, so
   the diagram is weakly admissible.
+* `TauCeti.HeegaardRegionSystem.cornerCount_lensSpace` and
+  `TauCeti.HeegaardRegionSystem.isNice_lensSpace`: every region is a square, so with all region
+  Euler characteristics one the diagram is nice.
 
 ## References
 
@@ -373,6 +378,19 @@ theorem periodicDomains_lensSpace : (lensSpace p q r).periodicDomains = ⊥ := b
 /-- The lens space diagram is weakly admissible. -/
 theorem weaklyAdmissible_lensSpace : (lensSpace p q r).WeaklyAdmissible :=
   weaklyAdmissible_iff.mpr fun P hP _ => by simpa using hP
+
+/-- Each region `R_j` has four corners, at the points `x_j`, `x_{j+1}`, `x_{j+q}` and
+`x_{j+q+1}`. -/
+@[simp]
+theorem cornerCount_lensSpace (s : ZMod p) : (lensSpace p q r).cornerCount s = 4 := by
+  rw [cornerCount_eq_card, Finset.card_filter, Fintype.sum_prod_type_right]
+  simp only [Fin.sum_univ_four, cornerRegion_eq, Matrix.cons_val]
+  simp [sub_eq_iff_eq_add]
+
+/-- Every region of the lens space diagram is a parallelogram, a disk with four corners, so the
+diagram is nice for the region Euler characteristics `1`. -/
+theorem isNice_lensSpace : (lensSpace p q r).IsNice 1 :=
+  isNice_iff.mpr fun s _ => ⟨rfl, Or.inr (cornerCount_lensSpace s)⟩
 
 end HeegaardRegionSystem
 
