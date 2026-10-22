@@ -76,12 +76,12 @@ structure GridSignAssignment (n : ℕ) where
     sign E.first hE₁ * sign E.second hE₂ = -(sign D.first hD₁ * sign D.second hD₂)
   /-- The vertical annulus rule: an empty rectangle followed by an empty rectangle back along the
   same initial side covers a vertical annulus, and the two signs multiply to `-1`. -/
-  sign_mul_sign_of_left_eq_left : ∀ {x y : GridState n} (r : GridRectangleBetween x y)
+  sign_mul_sign_eq_neg_one_of_left_eq_left : ∀ {x y : GridState n} (r : GridRectangleBetween x y)
     (s : GridRectangleBetween y x) (hr : r.IsEmpty) (hs : s.IsEmpty), s.left = r.left →
     sign r hr * sign s hs = -1
   /-- The horizontal annulus rule: an empty rectangle followed by an empty rectangle back from
   its terminal side covers a horizontal annulus, and the two signs multiply to `1`. -/
-  sign_mul_sign_of_left_eq_right : ∀ {x y : GridState n} (r : GridRectangleBetween x y)
+  sign_mul_sign_eq_one_of_left_eq_right : ∀ {x y : GridState n} (r : GridRectangleBetween x y)
     (s : GridRectangleBetween y x) (hr : r.IsEmpty) (hs : s.IsEmpty), s.left = r.right →
     sign r hr * sign s hs = 1
 
@@ -151,17 +151,17 @@ def gauge (f : GridState n → ℤˣ) : GridSignAssignment n where
           rw [h, Int.units_mul_self, Int.units_mul_self, mul_neg]
       _ = -(f x * f D.middle * S.sign D.first hD₁ *
             (f D.middle * f z * S.sign D.second hD₂)) := by congr 1; ac_rfl
-  sign_mul_sign_of_left_eq_left {x y} r s hr hs hleft := by
+  sign_mul_sign_eq_neg_one_of_left_eq_left {x y} r s hr hs hleft := by
     calc f x * f y * S.sign r hr * (f y * f x * S.sign s hs)
         = (f x * f x) * (f y * f y) * (S.sign r hr * S.sign s hs) := by ac_rfl
       _ = -1 := by
-          rw [S.sign_mul_sign_of_left_eq_left r s hr hs hleft, Int.units_mul_self,
+          rw [S.sign_mul_sign_eq_neg_one_of_left_eq_left r s hr hs hleft, Int.units_mul_self,
             Int.units_mul_self, one_mul, one_mul]
-  sign_mul_sign_of_left_eq_right {x y} r s hr hs hright := by
+  sign_mul_sign_eq_one_of_left_eq_right {x y} r s hr hs hright := by
     calc f x * f y * S.sign r hr * (f y * f x * S.sign s hs)
         = (f x * f x) * (f y * f y) * (S.sign r hr * S.sign s hs) := by ac_rfl
       _ = 1 := by
-          rw [S.sign_mul_sign_of_left_eq_right r s hr hs hright, Int.units_mul_self,
+          rw [S.sign_mul_sign_eq_one_of_left_eq_right r s hr hs hright, Int.units_mul_self,
             Int.units_mul_self, one_mul, one_mul]
 
 /-- The sign of an empty rectangle in a gauge transform. -/

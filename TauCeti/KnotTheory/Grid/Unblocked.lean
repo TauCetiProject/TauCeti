@@ -282,7 +282,8 @@ theorem gaugeEquiv_apply (f : GridState n → ℤˣ) (c : GridChainMinus R n) (y
 /-- The gauge automorphism is its own inverse. -/
 @[simp]
 theorem gaugeEquiv_symm (f : GridState n → ℤˣ) : (gaugeEquiv R f).symm = gaugeEquiv R f :=
-  (rfl)
+  LinearEquiv.ext fun c => (gaugeEquiv R f).symm_apply_eq.mpr <| by
+    rw [gaugeEquiv, LinearEquiv.coe_ofInvolutive, gaugeMap_involutive R f c]
 
 end GridChain
 
