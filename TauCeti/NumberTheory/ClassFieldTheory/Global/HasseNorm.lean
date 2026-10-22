@@ -148,6 +148,7 @@ theorem subsingleton_groupCohomology_one_ideleClassRep_iff_forall_mem_normGroup_
     have hb0 : cyclicClass hg' b = 0 := h b.toMul ⟨d, hb.symm⟩
     rw [← ha, ← hb, ha0, hb0]
 
+variable (K L) in
 /-- **The cyclic Hasse norm theorem.** For a cyclic extension `L/K` of number fields, an element
 `a ∈ Kˣ` lies in `N_{L/K}(Lˣ)` exactly when its principal idele is the norm of an idele of `L`. -/
 theorem cyclicHasseNorm [IsCyclic (L ≃ₐ[K] L)] (a : Kˣ) :
@@ -155,18 +156,19 @@ theorem cyclicHasseNorm [IsCyclic (L ≃ₐ[K] L)] (a : Kˣ) :
       IdeleGroup.unitEmbedding (𝓞 K) K a ∈ (ideleNormMap K L).toMonoidHom.range := by
   refine ⟨fun ha ↦ ?_,
     subsingleton_groupCohomology_one_ideleClassRep_iff_forall_mem_normGroup_of_mem_range.1
-      (subsingleton_groupCohomology_one_ideleClassRep L) a⟩
+      (subsingleton_groupCohomology_one_ideleClassRep K L) a⟩
   -- A global norm `N(y)` is the idele norm of the principal idele of `y`.
   obtain ⟨y, hy⟩ := mem_normGroup_iff.1 ha
   refine ⟨IdeleGroup.unitEmbedding (𝓞 L) L y, (ideleNormMap_unitEmbedding K L y).trans ?_⟩
   exact congrArg _ (Units.ext ((Algebra.coe_normUnits K y).trans hy))
 
+variable (K L) in
 /-- **The cyclic Hasse norm theorem, placewise.** For a cyclic extension `L/K` of number fields,
 an element `a ∈ Kˣ` lies in `N_{L/K}(Lˣ)` exactly when, at every finite place `v` and every
 infinite place `w` of `K`, it is a norm from the local étale algebra `K_v ⊗_K L`, respectively
 `K_w ⊗_K L`. -/
 theorem isGlobalNorm_iff_isLocalNormEverywhere [IsCyclic (L ≃ₐ[K] L)] (a : Kˣ) :
     a ∈ normGroup K L ↔ IsLocalNormEverywhere K L a :=
-  (cyclicHasseNorm a).trans (unitEmbedding_mem_range_ideleNormMap_iff a)
+  (cyclicHasseNorm K L a).trans (unitEmbedding_mem_range_ideleNormMap_iff a)
 
 end TauCeti.ClassFieldTheory

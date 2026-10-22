@@ -195,6 +195,7 @@ theorem subsingleton_h1_globalFormation
     (fun F L _ _ _ _ _ _ p _ _ hfin ↦
       index_range_ideleClassNormMap_le_of_finrank_prime F L p hfin) Lay
 
+variable (K) in
 /-- **`H¹` of the idele classes of a finite Galois extension vanishes.** For every finite Galois
 extension `L/K` of number fields, `H¹(Gal(L/K), C_L)` is trivial. -/
 theorem subsingleton_groupCohomology_one_ideleClassRep (L : Type) [Field L] [NumberField L]
