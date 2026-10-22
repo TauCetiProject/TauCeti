@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Finance.BlackScholes.Greeks
+import TauCeti.Analysis.SpecialFunctions.Exp
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Gaussian.Cdf
@@ -134,12 +135,6 @@ theorem tendsto_callPrice_sub_spot_atTop (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < 
 -- tend to `+∞`, to `-∞`, or to `0`. Joint convergence in `(s, τ)` then follows because the call
 -- is `1`-Lipschitz in the spot, its delta `Φ(d₊)` lying in `(0, 1)`.
 
-/-- As the remaining maturity tends to `0⁺`, the discounted strike `K e^{-rτ}` tends to `K`. -/
-private theorem tendsto_discount_nhdsGT_zero :
-    Tendsto (fun u => K * exp (-r * u)) (𝓝[>] 0) (𝓝 K) := by
-  have h : Continuous fun u => K * exp (-r * u) := by fun_prop
-  simpa using h.continuousWithinAt.tendsto (s := Ioi 0) (x := 0)
-
 /-- For a positive maturity, `d₊ = log (s / K) / (σ √τ) + (r + σ² / 2) √τ / σ`. -/
 theorem dPlus_eq_add (hσ : σ ≠ 0) (hτ : 0 < τ) :
     dPlus s r σ K τ = log (s / K) * (σ * √τ)⁻¹ + (r + σ ^ 2 / 2) * √τ / σ := by
@@ -206,7 +201,8 @@ private theorem tendsto_callPrice_maturity_of_tendsto_cdf {a : ℝ}
     (hp : Tendsto (fun u => cdf (gaussianReal 0 1) (dPlus s r σ K u)) (𝓝[>] 0) (𝓝 a))
     (hm : Tendsto (fun u => cdf (gaussianReal 0 1) (dMinus s r σ K u)) (𝓝[>] 0) (𝓝 a)) :
     Tendsto (callPrice s r σ K) (𝓝[>] 0) (𝓝 (s * a - K * a)) :=
-  ((hp.const_mul s).sub (tendsto_discount_nhdsGT_zero.mul hm)).congr fun u =>
+  ((hp.const_mul s).sub
+    (((tendsto_mul_exp_mul_nhds_zero K (-r)).mono_left nhdsWithin_le_nhds).mul hm)).congr fun u =>
     (callPrice_def s r σ K u).symm
 
 /-- **Call payoff at maturity.** For a fixed spot `s > 0`, as the remaining maturity tends to
@@ -262,7 +258,7 @@ put price tends to the payoff `(K - s₀)⁺`. -/
 theorem tendsto_putPrice_terminal (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) :
     Tendsto (fun p : ℝ × ℝ => putPrice p.1 r σ K p.2) (𝓝 s ×ˢ 𝓝[>] 0) (𝓝 (K - s)⁺) := by
   have h := ((tendsto_callPrice_terminal (r := r) hs hσ hK).sub tendsto_fst).add
-    ((tendsto_discount_nhdsGT_zero (K := K) (r := r)).comp tendsto_snd)
+    (((tendsto_mul_exp_mul_nhds_zero K (-r)).mono_left nhdsWithin_le_nhds).comp tendsto_snd)
   have hpay : (s - K)⁺ - s + K = (K - s)⁺ := by
     rw [show K - s = -(s - K) by ring, posPart_neg]
     linear_combination posPart_sub_negPart (s - K)
