@@ -194,6 +194,11 @@ end Bilinear
 
 variable {R M : Type*}
 
+private theorem norm_smul_le_one_mul [SeminormedAddGroup R] [SeminormedAddGroup M]
+    [SMulZeroClass R M] [IsBoundedSMul R M] (x : R) (y : M) :
+    ‖x • y‖ ≤ 1 * ‖x‖ * ‖y‖ := by
+  simpa only [one_mul] using norm_smul_le x y
+
 /-- If two normed families tend to zero cofinitely, then their pointwise scalar multiples, indexed
 by pairs, also tend to zero cofinitely. -/
 theorem _root_.Filter.Tendsto.smul_cofinite_nhds_zero [SeminormedAddGroup R] [SeminormedAddGroup M]
@@ -201,7 +206,7 @@ theorem _root_.Filter.Tendsto.smul_cofinite_nhds_zero [SeminormedAddGroup R] [Se
     (hf : Tendsto f cofinite (𝓝 0)) (hg : Tendsto g cofinite (𝓝 0)) :
     Tendsto (fun ij : α × β ↦ f ij.1 • g ij.2) cofinite (𝓝 0) :=
   tendsto_bilinear_cofinite_nhds_zero (· • ·) (C := 1)
-    (fun x y ↦ by simpa using norm_smul_le x y) hf hg
+    norm_smul_le_one_mul hf hg
 
 variable [SeminormedAddCommGroup M] [IsUltrametricDist M]
 
@@ -215,7 +220,7 @@ theorem _root_.Summable.smul_of_nonarchimedean {α β : Type*} {f : α → R} {g
     (hf : Summable f) (hg : Summable g) :
     Summable fun ij : α × β ↦ f ij.1 • g ij.2 :=
   summable_bilinear_of_nonarchimedean (· • ·) (C := 1)
-    (fun x y ↦ by simpa using norm_smul_le x y) hf hg
+    norm_smul_le_one_mul hf hg
 
 variable {A : Type*} [Add A] [Finset.HasAntidiagonal A]
 
@@ -225,7 +230,7 @@ theorem _root_.Summable.sum_smul_antidiagonal_of_nonarchimedean {f : A → R} {g
     (hf : Summable f) (hg : Summable g) :
     Summable fun n ↦ ∑ ij ∈ Finset.antidiagonal n, f ij.1 • g ij.2 :=
   summable_sum_bilinear_antidiagonal_of_nonarchimedean (· • ·) (C := 1)
-    (fun x y ↦ by simpa using norm_smul_le x y) hf hg
+    norm_smul_le_one_mul hf hg
 
 /-- In a complete ultrametric normed group with a bounded scalar action, the usual natural-number
 Cauchy product of two summable families is summable. -/
@@ -233,7 +238,7 @@ theorem _root_.Summable.sum_smul_range_of_nonarchimedean {f : ℕ → R} {g : �
     (hf : Summable f) (hg : Summable g) :
     Summable fun n ↦ ∑ k ∈ Finset.range (n + 1), f k • g (n - k) :=
   summable_sum_bilinear_range_of_nonarchimedean (· • ·) (C := 1)
-    (fun x y ↦ by simpa using norm_smul_le x y) hf hg
+    norm_smul_le_one_mul hf hg
 
 end SMul
 
