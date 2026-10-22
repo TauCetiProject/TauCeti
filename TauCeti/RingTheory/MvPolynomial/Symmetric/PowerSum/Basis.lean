@@ -185,10 +185,7 @@ private theorem linearIndependent_psumPartVec {n : ℕ} (hn : n ≤ Fintype.card
     LinearIndependent R (psumPartVec σ R (n := n)) := by
   classical
   -- in at least `n` letters every partition of `n` indexes a monomial basis vector
-  have hcard (μ : n.Partition) : μ.parts.card ≤ Fintype.card σ := by
-    have h := μ.parts.card_nsmul_le_sum (a := 1) fun x hx => μ.parts_pos hx
-    rw [smul_eq_mul, mul_one, μ.parts_sum] at h
-    exact h.trans hn
+  have hcard (μ : n.Partition) : μ.parts.card ≤ Fintype.card σ := μ.card_parts_le.trans hn
   nontriviality R
   refine linearIndependent_of_top_le_span_of_card_eq_finrank (top_le_span_psumPartVec σ R n) ?_
   rw [Module.finrank_eq_card_basis ((msymmBasis σ R n).reindex (Equiv.subtypeUnivEquiv hcard))]
