@@ -39,8 +39,9 @@ maps.
 
 The geometric series `∑ aⁿ Xⁿ` lies on the open disc of radius `‖a‖⁻¹`
 (`PowerSeries.onOpenDisc_mk_pow`), but for `a ≠ 0` and a multiplicative norm it is not
-restricted at that radius (`TauCeti.PowerSeries.not_isRestricted_mk_pow`). Similarly `∑ Xⁿ` lies
-on the open unit disc without being restricted at the radius `1`
+restricted at that radius (`TauCeti.PowerSeries.not_isRestricted_mk_pow`). Similarly,
+over a nontrivial normed ring, `∑ Xⁿ` lies on the open unit disc without being restricted at the
+radius `1`
 (`PowerSeries.onOpenDisc_mk_one`, `TauCeti.PowerSeries.not_isRestricted_mk_one`).
 
 ## Main definitions
