@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.BlockSum
+public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Diagonal
 public import TauCeti.Analysis.OperatorIdeal.Family.SymmetricGauge
 
 /-!
@@ -18,8 +20,8 @@ computes the induced gauge `Φ(T₁ ⊕ T₂) = Φ∞(n ↦ aₙ(T₁ ⊕ T₂))
 
 `max Φ(T₁) Φ(T₂) ≤ Φ(T₁ ⊕ T₂) ≤ Φ(T₁) + Φ(T₂)`.
 
-In particular, for maps from Hilbert spaces into inner product spaces, `T₁ ⊕ T₂` has finite gauge,
-that is, lies in the operator ideal attached to `Φ`, exactly when both blocks do.
+In particular, `T₁ ⊕ T₂` has finite gauge, that is, lies in the operator ideal attached to `Φ`,
+exactly when both blocks do.
 
 * **Block formula.** On Hilbert blocks, the approximation numbers of `T₁ ⊕ T₂` are the generalized
   decreasing merge `a(T₁) ⊔↓ a(T₂)` of those of the blocks
@@ -29,9 +31,12 @@ that is, lies in the operator ideal attached to `Φ`, exactly when both blocks d
   factor and the contractive projection onto a factor, so its gauge is at most `Φ(T₁ ⊕ T₂)` by the
   ideal inequality. This holds for bounded maps between arbitrary seminormed spaces, as does the
   identity `Φ(T₁ ⊕ 0) = Φ(T₁)`.
-* **Upper bound.** For `p = 2`, the block sum is the sum `(T₁ ⊕ 0) + (0 ⊕ T₂)` of maps between
-  Hilbert spaces, so subadditivity of the induced gauge applies; the block formula transfers the
-  bound to every `p`.
+* **Upper bound.** For decreasing sequences, `Φ∞(a ⊔↓ b) ≤ Φ∞(a) + Φ∞(b)`: realising `a` and `b`
+  as the approximation numbers of diagonal operators on `ℓ²`, the orthogonal block sum of these
+  is the sum `(D₁ ⊕ 0) + (0 ⊕ D₂)` of maps between Hilbert spaces, so subadditivity of the induced
+  gauge applies. As the approximation numbers of `T₁ ⊕ T₂` are always at most the merge of those
+  of the blocks, the bound `Φ(T₁ ⊕ T₂) ≤ Φ(T₁) + Φ(T₂)` holds for bounded maps between arbitrary
+  seminormed spaces.
 
 ## Main results
 
@@ -41,6 +46,7 @@ that is, lies in the operator ideal attached to `Φ`, exactly when both blocks d
 * `TauCeti.SymmetricGauge.opGauge_withLpProdMap_zero_right`,
   `TauCeti.SymmetricGauge.opGauge_withLpProdMap_zero_left`: `Φ(T₁ ⊕ 0) = Φ(T₁)` and
   `Φ(0 ⊕ T₂) = Φ(T₂)`.
+* `TauCeti.SymmetricGauge.extend_decreasingMerge_le`: `Φ∞(a ⊔↓ b) ≤ Φ∞(a) + Φ∞(b)`.
 * `TauCeti.SymmetricGauge.opGauge_withLpProdMap_le_add`: `Φ(T₁ ⊕ T₂) ≤ Φ(T₁) + Φ(T₂)`.
 
 ## References
@@ -54,7 +60,7 @@ that is, lies in the operator ideal attached to `Φ`, exactly when both blocks d
 public section
 
 open ContinuousLinearMap
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal lp
 
 namespace TauCeti
 
@@ -149,27 +155,52 @@ theorem opGauge_withLpProdMap {F₁ F₂ : Type*}
       Φ.extend fun n ↦ (decreasingMerge T₁.singularValue T₂.singularValue n : ℝ≥0∞) := by
   simp only [opGauge_def, singularValue_withLpProdMap]
 
-variable {F₁ F₂ : Type*}
-  [NormedAddCommGroup F₁] [InnerProductSpace 𝕜 F₁] [NormedAddCommGroup F₂] [InnerProductSpace 𝕜 F₂]
-
-/-- **Upper bound for block sums.** For bounded maps from Hilbert spaces into inner product spaces,
-the gauge of the block sum is at most the sum of the gauges of the blocks:
-`Φ(T₁ ⊕ T₂) ≤ Φ(T₁) + Φ(T₂)`. -/
-theorem opGauge_withLpProdMap_le_add (T₁ : E₁ →L[𝕜] F₁) (T₂ : E₂ →L[𝕜] F₂) :
-    Φ.opGauge (T₁.withLpProdMap p T₂) ≤ Φ.opGauge T₁ + Φ.opGauge T₂ := by
-  -- By the block formula the gauge does not depend on `p`, so it suffices to treat the orthogonal
-  -- block sum `p = 2`, which is a sum of two maps between Hilbert spaces.
-  rw [Φ.opGauge_withLpProdMap, ← Φ.opGauge_withLpProdMap (p := 2)]
-  calc Φ.opGauge (T₁.withLpProdMap 2 T₂)
-      = Φ.opGauge (T₁.withLpProdMap 2 (0 : E₂ →L[𝕜] F₂) +
-          (0 : E₁ →L[𝕜] F₁).withLpProdMap 2 T₂) := by
+/-- **Extended gauge of a decreasing merge.** For decreasing sequences `a` and `b`, the extended
+gauge of their generalized decreasing merge is at most the sum of their extended gauges:
+`Φ∞(a ⊔↓ b) ≤ Φ∞(a) + Φ∞(b)`. -/
+theorem extend_decreasingMerge_le {a b : ℕ → ℝ≥0} (ha : Antitone a) (hb : Antitone b) :
+    Φ.extend (fun n ↦ (decreasingMerge a b n : ℝ≥0∞)) ≤
+      Φ.extend (fun n ↦ (a n : ℝ≥0∞)) + Φ.extend (fun n ↦ (b n : ℝ≥0∞)) := by
+  -- Realise `a` and `b` as the approximation numbers of diagonal operators on real `ℓ²`.
+  have diag {c : ℕ → ℝ≥0} (hc : Antitone c) :
+      ∃ D : ℓ²(ℕ, ℝ) →L[ℝ] ℓ²(ℕ, ℝ), D.singularValue = c := by
+    let d : ℓ^∞(ℕ, ℝ) := ⟨fun n ↦ (c n : ℝ), memℓp_infty ⟨c 0, by
+      rintro _ ⟨n, rfl⟩
+      simpa using hc (Nat.zero_le n)⟩⟩
+    refine ⟨lp.diagonalCLM d, funext fun n ↦ ?_⟩
+    rw [lp.singularValue_diagonalCLM d fun m k hmk ↦ by simpa [d] using hc hmk]
+    simp [d]
+  obtain ⟨D₁, rfl⟩ := diag ha
+  obtain ⟨D₂, rfl⟩ := diag hb
+  -- The orthogonal block sum of the diagonal operators is the sum `(D₁ ⊕ 0) + (0 ⊕ D₂)` of maps
+  -- between Hilbert spaces, so subadditivity of the induced gauge applies.
+  rw [← Φ.opGauge_withLpProdMap (p := 2), ← opGauge_def, ← opGauge_def]
+  calc Φ.opGauge (D₁.withLpProdMap 2 D₂)
+      = Φ.opGauge (D₁.withLpProdMap 2 (0 : ℓ²(ℕ, ℝ) →L[ℝ] ℓ²(ℕ, ℝ)) +
+          (0 : ℓ²(ℕ, ℝ) →L[ℝ] ℓ²(ℕ, ℝ)).withLpProdMap 2 D₂) := by
         rw [← withLpProdMap_add, add_zero, zero_add]
-    _ ≤ Φ.opGauge (T₁.withLpProdMap 2 (0 : E₂ →L[𝕜] F₂)) +
-          Φ.opGauge ((0 : E₁ →L[𝕜] F₁).withLpProdMap 2 T₂) :=
+    _ ≤ Φ.opGauge (D₁.withLpProdMap 2 (0 : ℓ²(ℕ, ℝ) →L[ℝ] ℓ²(ℕ, ℝ))) +
+          Φ.opGauge ((0 : ℓ²(ℕ, ℝ) →L[ℝ] ℓ²(ℕ, ℝ)).withLpProdMap 2 D₂) :=
         Φ.opGauge_add_le _ _
-    _ = Φ.opGauge T₁ + Φ.opGauge T₂ := by simp
+    _ = Φ.opGauge D₁ + Φ.opGauge D₂ := by simp
 
 end InnerProductSpace
+
+section UpperBound
+
+variable {𝕜 E₁ E₂ F₁ F₂ : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [SeminormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
+  [SeminormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [SeminormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+
+/-- **Upper bound for block sums.** The gauge of the block sum is at most the sum of the gauges of
+the blocks: `Φ(T₁ ⊕ T₂) ≤ Φ(T₁) + Φ(T₂)`. -/
+theorem opGauge_withLpProdMap_le_add (T₁ : E₁ →L[𝕜] F₁) (T₂ : E₂ →L[𝕜] F₂) :
+    Φ.opGauge (T₁.withLpProdMap p T₂) ≤ Φ.opGauge T₁ + Φ.opGauge T₂ := by
+  simp only [opGauge_def]
+  exact (Φ.extend_mono fun n ↦ ENNReal.coe_le_coe.2 (singularValue_withLpProdMap_le T₁ T₂ n)).trans
+    (Φ.extend_decreasingMerge_le T₁.antitone_singularValue T₂.antitone_singularValue)
+
+end UpperBound
 
 end SymmetricGauge
 
