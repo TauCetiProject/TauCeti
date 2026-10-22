@@ -254,10 +254,44 @@ def autPullbackExtension :
   range_inl_eq_ker_rightHom := Subgroup.range_subtype _
   rightHom_surjective := F.restrictAut_surjective h
 
+/-- The kernel inclusion of the automorphism extension is the subgroup inclusion. -/
+@[simp]
+theorem autPullbackExtension_inl :
+    (F.autPullbackExtension h).inl = (F.restrictAut h).ker.subtype :=
+  (rfl)
+
+/-- The quotient map of the automorphism extension is restriction along the section. -/
+@[simp]
+theorem autPullbackExtension_rightHom :
+    (F.autPullbackExtension h).rightHom = F.restrictAut h :=
+  (rfl)
+
 /-- Base change along `p` splits the extension `autPullbackExtension`. -/
 def autPullbackSplitting : (F.autPullbackExtension h).Splitting where
   toMonoidHom := F.pullbackAut p
   rightInverse_rightHom := F.restrictAut_pullbackAut h
+
+/-- The splitting homomorphism is base change of automorphisms. -/
+@[simp]
+theorem autPullbackSplitting_toMonoidHom :
+    (F.autPullbackSplitting h).toMonoidHom = F.pullbackAut p :=
+  (rfl)
+
+/-- Applying the splitting is base change of an automorphism. -/
+@[simp]
+theorem autPullbackSplitting_apply (g : Aut F) :
+    (F.autPullbackSplitting h) g = F.pullbackAut p g :=
+  (rfl)
+
+/-- The action on the restriction kernel is conjugation by the base-changed automorphism. -/
+@[simp]
+theorem autPullbackSplitting_conjAct_apply_coe (g : Aut F) (x : (F.restrictAut h).ker) :
+    ((F.autPullbackSplitting h).conjAct g x : Aut (F.pullback p)) =
+      F.pullbackAut p g * (x : Aut (F.pullback p)) * (F.pullbackAut p g)⁻¹ := by
+  simpa only [GroupExtension.Splitting.conjAct, MonoidHom.comp_apply,
+    MonoidHom.coe_ofClass, autPullbackSplitting_apply,
+    autPullbackExtension_inl, Subgroup.subtype_apply] using
+    (F.autPullbackExtension h).inl_conjAct_comm (e := F.pullbackAut p g) (n := x)
 
 /-- The automorphism group of `F.pullback p` is the semidirect product of the automorphisms
 restricting to the identity along the section and the base changes of the automorphisms of `F`,
