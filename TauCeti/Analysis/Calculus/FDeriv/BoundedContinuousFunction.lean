@@ -72,20 +72,6 @@ open scoped NNReal BoundedContinuousFunction
 
 namespace BoundedContinuousFunction
 
-section PseudoMetricSpace
-
-variable {α X : Type*} [TopologicalSpace α] [PseudoMetricSpace X] {s : Set X} {f₀ : α →ᵇ X}
-  {δ : ℝ}
-
-/-- If the values of `f₀` stay `δ > 0` inside `s`, then so do the values of every function
-uniformly within `δ / 2` of `f₀`, with the margin `δ / 2`. -/
-private theorem ball_half_subset_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
-    (hf : f ∈ ball f₀ (δ / 2)) (t : α) : ball (f t) (δ / 2) ⊆ s :=
-  (ball_subset_ball' (by linarith [dist_coe_le_dist (f := f) (g := f₀) t, mem_ball.1 hf])).trans
-    (hf₀ t)
-
-end PseudoMetricSpace
-
 variable {α 𝕜 X Y : Type*} [TopologicalSpace α] [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
   {G : X → Y} {C : ℝ≥0} {G' : X → X →L[𝕜] Y} {s : Set X} {f₀ : α →ᵇ X} {δ : ℝ}

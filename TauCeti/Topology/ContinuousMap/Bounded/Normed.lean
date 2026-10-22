@@ -31,8 +31,8 @@ The derivative of a superposition operator `f ↦ G ∘ f` at `f` is `applyCLM` 
 
 `BoundedContinuousFunction.continuousAt_of_forall_apply_eq` says that an operator that is given
 near `f₀` by `Θ f t = G (f t)`, with `G` uniformly continuous on a set containing a tube around the
-range of `f₀`, is continuous at `f₀` (`BoundedContinuousFunction.apply_mem_of_mem_ball` is the
-membership fact about the tube).
+range of `f₀`, is continuous at `f₀` (`BoundedContinuousFunction.apply_mem_of_mem_ball` and
+`BoundedContinuousFunction.ball_half_subset_of_mem_ball` are the facts about the tube).
 -/
 
 public section
@@ -101,6 +101,13 @@ has its values in `s`. -/
 theorem apply_mem_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
     (hf : f ∈ ball f₀ δ) (t : α) : f t ∈ s :=
   hf₀ t (mem_ball.2 ((dist_coe_le_dist t).trans_lt (mem_ball.1 hf)))
+
+/-- If the values of `f₀` stay `δ > 0` inside `s`, then so do the values of every function
+uniformly within `δ / 2` of `f₀`, with the margin `δ / 2`. -/
+theorem ball_half_subset_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
+    (hf : f ∈ ball f₀ (δ / 2)) (t : α) : ball (f t) (δ / 2) ⊆ s :=
+  (ball_subset_ball' (by linarith [dist_coe_le_dist (f := f) (g := f₀) t, mem_ball.1 hf])).trans
+    (hf₀ t)
 
 /-- If `G` is uniformly continuous on `s`, the values of `f₀` stay a distance `δ > 0` inside `s`,
 and `Θ f t = G (f t)` on the ball of radius `δ` about `f₀`, then `Θ` is continuous at `f₀`. -/
