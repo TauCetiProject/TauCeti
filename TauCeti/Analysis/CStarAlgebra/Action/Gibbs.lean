@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Analysis.CStarAlgebra.Action.Inner
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS
 public import TauCeti.LinearAlgebra.Matrix.Trace.Duality
-import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 

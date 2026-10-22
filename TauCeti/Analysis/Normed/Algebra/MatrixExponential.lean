@@ -14,7 +14,7 @@ public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Analysis.Calculus.FDeriv.Det
 
 /-!
-# The determinant of a matrix exponential
+# The matrix exponential
 
 For a square matrix `A` over `ℝ` or `ℂ` (any `RCLike` field),
 
@@ -52,6 +52,8 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 
 ## References
 
+* Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second edition,
+  Section 5.3.1, for the exponential of a Hamiltonian as an unnormalised Gibbs weight.
 * B. C. Hall, *Lie Groups, Lie Algebras, and Representations*, 2nd ed., Springer GTM 222 (2015),
   Chapter 2, where the identity is proved by triangularizing `A`; the differential argument used
   here avoids any normal form.
@@ -102,10 +104,10 @@ end Matrix
 
 /-! ### Exponential identities for matrices
 
-These are the matrix restatements used by the Gibbs-state development. The reciprocal laws and
-the trace identity hold for an arbitrary matrix over commutative entries, not only for scalar
-multiples; the real half-multiple identity and the Hermitian results need an `RCLike` field, and
-the positivity statements use the order on the entries.
+These are the matrix restatements used by the Gibbs-state development. The reciprocal laws hold
+for an arbitrary matrix over a normed entry ring, not only for scalar multiples, and the trace
+identity likewise over a commutative entry ring; the real half-multiple identity and the Hermitian
+results need an `RCLike` field, and the positivity statements use the order on the entries.
 -/
 
 namespace Matrix
@@ -120,23 +122,21 @@ theorem exp_smul_eq_mul_exp_half {𝕜 : Type*} [RCLike 𝕜] (K : Matrix m m �
   conv_lhs => rw [← add_halves β, add_smul]
   exact Matrix.exp_add_of_commute _ _ (((Commute.refl K).smul_left _).smul_right _)
 
-section CommutativeEntries
+section Ring
 
-variable {𝔸 : Type*} [NormedCommRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
 
 /-- The exponential weights of an arbitrary matrix are mutually inverse. -/
 @[simp]
 theorem exp_mul_exp_neg (A : Matrix m m 𝔸) :
     NormedSpace.exp A * NormedSpace.exp (-A) = 1 := by
-  rw [Matrix.exp_neg, Matrix.nonsing_inv_eq_ringInverse]
-  exact Ring.mul_inverse_cancel _ (Matrix.isUnit_exp A)
+  simpa using (Matrix.exp_add_of_commute (A := A) (B := -A) (Commute.refl A).neg_right).symm
 
 /-- The exponential weights of an arbitrary matrix are mutually inverse. -/
 @[simp]
 theorem exp_neg_mul_exp (A : Matrix m m 𝔸) :
     NormedSpace.exp (-A) * NormedSpace.exp A = 1 := by
-  rw [Matrix.exp_neg, Matrix.nonsing_inv_eq_ringInverse]
-  exact Ring.inverse_mul_cancel _ (Matrix.isUnit_exp A)
+  simpa using (Matrix.exp_add_of_commute (A := -A) (B := A) (Commute.refl A).neg_left).symm
 
 /-- The exponential of a negative matrix cancels against an arbitrary factor. -/
 @[simp]
@@ -144,12 +144,18 @@ theorem exp_mul_exp_neg_mul (A x : Matrix m m 𝔸) :
     NormedSpace.exp A * (NormedSpace.exp (-A) * x) = x := by
   rw [← Matrix.mul_assoc, exp_mul_exp_neg, Matrix.one_mul]
 
+end Ring
+
+section CommutativeEntries
+
+variable {𝔸 : Type*} [NormedCommRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+
 /-- Conjugating by the two exponential weights preserves the trace. -/
 @[simp]
 theorem trace_exp_neg_mul_exp (A x : Matrix m m 𝔸) :
     (NormedSpace.exp (-A) * x * NormedSpace.exp A).trace = x.trace := by
   rw [Matrix.trace_mul_comm (NormedSpace.exp (-A) * x) (NormedSpace.exp A),
-    Matrix.exp_mul_exp_neg_mul]
+    exp_mul_exp_neg_mul]
 
 end CommutativeEntries
 

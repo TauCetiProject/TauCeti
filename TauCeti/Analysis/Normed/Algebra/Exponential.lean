@@ -8,13 +8,14 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 
 /-!
-# The quadratic truncation and Taylor estimate for the exponential
+# The normed-algebra exponential
 
 For an algebra `A` over a field, with `A` a topological ring, the third partial sum of
 `NormedSpace.expSeries` is `1 + x + 2⁻¹ • x ^ 2`. This identity needs no norm or completeness
 assumption.
 In a complete normed algebra, the exponential agrees with this quadratic truncation to third
-order at the origin. This file records that estimate in `Asymptotics.IsBigO` form.
+order at the origin, and it is multiplicative on scalar multiples of a fixed element
+(`NormedSpace.exp_add_smul`). This file records that estimate in `Asymptotics.IsBigO` form.
 
 The exponential is analytic at `0` with power series `NormedSpace.expSeries`, so the statement is
 the Taylor formula `HasFPowerSeriesAt.isBigO_sub_partialSum_pow` at `n = 3`, once the third partial
@@ -28,8 +29,6 @@ Baker--Campbell--Hausdorff expansion.
 * `NormedSpace.isBigO_exp_sub_quadratic`: `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` at the
   origin.
 * `NormedSpace.exp_add_smul`: `exp` is multiplicative on scalar multiples of a fixed element.
-* `NormedSpace.exp_mul_exp_neg`, `NormedSpace.exp_neg_mul_exp` and
-  `NormedSpace.exp_mul_exp_neg_mul`: the reciprocal laws for `exp` in a complete normed algebra.
 -/
 
 public section
@@ -78,24 +77,6 @@ variable {𝕂 A : Type*} [RCLike 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A] [N
 theorem exp_add_smul (a : A) (s t : 𝕂) :
     exp ((s + t) • a) = exp (s • a) * exp (t • a) := by
   rw [add_smul, exp_add_of_commute (((Commute.refl a).smul_left _).smul_right _)]
-
-/-- `exp a` and `exp (-a)` are mutually inverse. -/
-@[simp]
-theorem exp_mul_exp_neg (a : A) : exp a * exp (-a) = 1 := by
-  simpa using
-    SemiconjBy.exp_neg_mul_mul_exp_eq_self (x := (1 : A)) (a := -a) (b := -a)
-      (by simp [SemiconjBy])
-
-/-- `exp (-a)` and `exp a` are mutually inverse. -/
-@[simp]
-theorem exp_neg_mul_exp (a : A) : exp (-a) * exp a = 1 := by
-  simpa using
-    SemiconjBy.exp_neg_mul_mul_exp_eq_self (x := (1 : A)) (a := a) (b := a) (by simp [SemiconjBy])
-
-/-- The exponential of a negative cancels against an arbitrary factor. -/
-@[simp]
-theorem exp_mul_exp_neg_mul (a x : A) : exp a * (exp (-a) * x) = x := by
-  rw [← mul_assoc, exp_mul_exp_neg, one_mul]
 
 end Normed
 
