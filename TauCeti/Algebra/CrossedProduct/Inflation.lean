@@ -26,16 +26,16 @@ The multiplicative-to-additive conversion is `Additive.ofMul`. Continuity follow
 restriction has finite discrete target. Inflation turns products of cocycles into sums of
 classes, cohomologous finite cocycles determine the same continuous class, and passing to a larger
 finite Galois subextension, along any compatible pair agreeing with the inclusions into `Kˢ`, does
-not change the class.
+not change the class. `TwoCocycle.refine` is the refinement along the inclusion `L ⊆ M`.
 
 Conversely, strict finite-quotient descent of continuous `2`-cocycles, followed by the infinite
 Galois correspondence, realizes every continuous cocycle as the inflation of a cocycle on a finite
 Galois subextension. Consequently every continuous cohomology class is the inflated class of a
 bundled `GaloisCocycle`. Coboundaries descend in the same way: the inflation of a cocycle of
 `Gal(L/K)` is a continuous coboundary exactly when the cocycle becomes a coboundary over some
-finite Galois `M ⊇ L` (`TwoCocycle.inflateZ2_mem_B2_iff`). The continuous primitive takes only
-finitely many values, which lie in `Mˣ` for the fixed field `M` of an open normal subgroup on
-whose cosets it is constant.
+finite Galois `M ⊇ L`, after refinement (`TwoCocycle.inflateZ2_mem_B2_iff`). The continuous
+primitive takes only finitely many values, which lie in `Mˣ` for the fixed field `M` of an open
+normal subgroup on whose cosets it is constant.
 
 Every statement about the explicit cocycle groups `Z²` and `B²` and the explicit `H²` holds for a
 field `K` in an arbitrary universe. Only the comparison with `continuousCohomology`, which is built
@@ -179,6 +179,44 @@ theorem inflateZ2_comap (c : TwoCocycle K L) :
 
 end Refinement
 
+section Inclusion
+
+variable {L} {M : IntermediateField K (SeparableClosure K)} [Normal K L]
+
+/-- The refinement of a cocycle of `Gal(L/K)` to `Gal(M/K)` for `L ≤ M` inside `Kˢ`: its
+`comap` along restriction `Gal(M/K) → Gal(L/K)` and the inclusion `L ⊆ M`. -/
+def refine (hLM : L ≤ M) (c : TwoCocycle K L) : TwoCocycle K M :=
+  c.comap (inclusion hLM).restrictNormalHom (inclusion hLM)
+    (inclusion hLM).restrictNormalHom_commutes
+
+/-- `refine` is `comap` along restriction and the inclusion. -/
+theorem refine_def (hLM : L ≤ M) (c : TwoCocycle K L) :
+    c.refine hLM = c.comap (inclusion hLM).restrictNormalHom (inclusion hLM)
+      (inclusion hLM).restrictNormalHom_commutes :=
+  (rfl)
+
+/-- On restrictions of automorphisms of `Kˢ`, the refinement of `c` to `M ⊇ L` takes the values
+of `c`, read in `Kˢ`. -/
+theorem val_refine_toFun_restrictNormalHom [Normal K M] (hLM : L ≤ M) (c : TwoCocycle K L)
+    (g k : Gal(SeparableClosure K/K)) :
+    M.val ((c.refine hLM).toFun (AlgEquiv.restrictNormalHom M g)
+        (AlgEquiv.restrictNormalHom M k)) =
+      L.val (c.toFun (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k)) := by
+  rw [refine_def, comap_toFun,
+    restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
+      (coe_inclusion hLM),
+    restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
+      (coe_inclusion hLM),
+    Units.coe_map, MonoidHom.coe_ofClass, coe_val, coe_val, coe_inclusion]
+
+/-- Refining a cocycle to a larger finite normal subextension does not change its inflated
+continuous cocycle. -/
+theorem inflateZ2_refine [Normal K M] [FiniteDimensional K L] [FiniteDimensional K M] (hLM : L ≤ M)
+    (c : TwoCocycle K L) : (c.refine hLM).inflateZ2 M = c.inflateZ2 L :=
+  inflateZ2_comap _ _ _ (coe_inclusion hLM) c
+
+end Inclusion
+
 section Coboundary
 
 variable [Normal K L]
@@ -186,27 +224,14 @@ variable [Normal K L]
 /-- If, on restrictions of automorphisms of `Kˢ`, the values of `c` are the coboundary of a
 cochain `B : Gal(M/K) → Mˣ`, then the refinement of `c` to `M ⊇ L` along the inclusion is a
 coboundary. -/
-private theorem one_cohomologous_comap_inclusion {M : IntermediateField K (SeparableClosure K)}
+private theorem one_cohomologous_refine {M : IntermediateField K (SeparableClosure K)}
     [Normal K M] (hLM : L ≤ M) (c : TwoCocycle K L) (B : Gal(M/K) → Mˣ)
     (hB : ∀ g k : Gal(SeparableClosure K/K),
       L.val (c.toFun (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k)) =
         g (M.val (B (AlgEquiv.restrictNormalHom M k))) *
           (M.val (B (AlgEquiv.restrictNormalHom M g * AlgEquiv.restrictNormalHom M k)))⁻¹ *
             M.val (B (AlgEquiv.restrictNormalHom M g))) :
-    (1 : TwoCocycle K M).Cohomologous (c.comap (inclusion hLM).restrictNormalHom
-      (inclusion hLM) (inclusion hLM).restrictNormalHom_commutes) := by
-  -- on restrictions of automorphisms of `Kˢ`, the refinement takes the values of `c`
-  have hval (g k : Gal(SeparableClosure K/K)) :
-      M.val ((c.comap (inclusion hLM).restrictNormalHom (inclusion hLM)
-          (inclusion hLM).restrictNormalHom_commutes).toFun (AlgEquiv.restrictNormalHom M g)
-          (AlgEquiv.restrictNormalHom M k)) =
-        L.val (c.toFun (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k)) := by
-    rw [comap_toFun,
-      restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
-        (fun _ ↦ rfl),
-      restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes
-        (fun _ ↦ rfl)]
-    rfl
+    (1 : TwoCocycle K M).Cohomologous (c.refine hLM) := by
   have hsurj := AlgEquiv.restrictNormalHom_surjective (F := K) (K₁ := M) (SeparableClosure K)
   refine cohomologous_iff.2 ⟨B, fun σ τ ↦ ?_⟩
   obtain ⟨g, rfl⟩ := hsurj σ
@@ -215,28 +240,26 @@ private theorem one_cohomologous_comap_inclusion {M : IntermediateField K (Separ
   simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
   have hr (x : M) : M.val (AlgEquiv.restrictNormalHom M g x) = g (M.val x) :=
     AlgEquiv.restrictNormal_commutes g M x
-  rw [hval, hB, toFun_one, Units.val_one, one_mul, map_mul, map_mul, hr,
-    Units.val_inv_eq_inv_val, map_inv₀]
+  rw [val_refine_toFun_restrictNormalHom, hB, toFun_one, Units.val_one, one_mul, map_mul,
+    map_mul, hr, Units.val_inv_eq_inv_val, map_inv₀]
 
 variable [FiniteDimensional K L]
 
 /-- A cocycle whose inflation is a continuous coboundary becomes a coboundary over a finite Galois
 `M ⊇ L`: the continuous primitive descends to `M`, with values in `Mˣ`. -/
-private theorem exists_one_cohomologous_comap_inclusion_of_inflateZ2_mem_B2 {c : TwoCocycle K L}
+private theorem exists_one_cohomologous_refine_of_inflateZ2_mem_B2 {c : TwoCocycle K L}
     (h : (c.inflateZ2 L : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K) ∈
       B2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
     ∃ (M : IntermediateField K (SeparableClosure K)) (_ : FiniteDimensional K M)
       (_ : IsGalois K M) (hLM : L ≤ M),
-      (1 : TwoCocycle K M).Cohomologous (c.comap (inclusion hLM).restrictNormalHom
-        (inclusion hLM) (inclusion hLM).restrictNormalHom_commutes) := by
+      (1 : TwoCocycle K M).Cohomologous (c.refine hLM) := by
   obtain ⟨b, hb, hd⟩ := mem_B2_iff.1 h
   -- the continuous primitive `b` descends to a finite Galois level `M ⊇ L`
   obtain ⟨V, hVU, bV, -, hbV⟩ :=
     exists_openNormalSubgroup_descendContinuous (galoisOpenNormalSubgroup K L L.val) b hb
   obtain ⟨M, _, _, rfl⟩ := exists_galoisOpenNormalSubgroup_eq V
   have hLM : L ≤ M := by
-    have h : (galoisOpenNormalSubgroup K M M.val).toSubgroup ≤
-        (galoisOpenNormalSubgroup K L L.val).toSubgroup := hVU
+    have h := OpenNormalSubgroup.toSubgroup_le.2 hVU
     rw [galoisOpenNormalSubgroup_toSubgroup, galoisOpenNormalSubgroup_toSubgroup,
       fieldRange_val, fieldRange_val] at h
     rw [← InfiniteGalois.fixedField_fixingSubgroup M, le_fixedField_iff_le_fixingSubgroup]
@@ -258,7 +281,7 @@ private theorem exists_one_cohomologous_comap_inclusion_of_inflateZ2_mem_B2 {c :
     congrArg Units.val ((hb' _).trans (congrArg _ (hconst _ _ (Function.surjInv_eq hsurj _))))
   -- so `B` exhibits the refinement of `c` to `M` as a coboundary
   refine ⟨M, inferInstance, inferInstance, hLM, ?_⟩
-  refine one_cohomologous_comap_inclusion L hLM c B fun g k ↦ ?_
+  refine one_cohomologous_refine L hLM c B fun g k ↦ ?_
   rw [← map_mul, hB, hB, hB]
   simpa [AlgEquiv.smul_units_def, div_eq_mul_inv] using (congrArg
     (fun x : UnitsCoeff K ↦ ((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K))
@@ -272,12 +295,11 @@ theorem inflateZ2_mem_B2_iff {c : TwoCocycle K L} :
         B2 (AbsoluteGaloisGroup K) (UnitsCoeff K) ↔
       ∃ (M : IntermediateField K (SeparableClosure K)) (_ : FiniteDimensional K M)
         (_ : IsGalois K M) (hLM : L ≤ M),
-        (1 : TwoCocycle K M).Cohomologous (c.comap (inclusion hLM).restrictNormalHom
-          (inclusion hLM) (inclusion hLM).restrictNormalHom_commutes) := by
-  refine ⟨exists_one_cohomologous_comap_inclusion_of_inflateZ2_mem_B2 L, ?_⟩
+        (1 : TwoCocycle K M).Cohomologous (c.refine hLM) := by
+  refine ⟨exists_one_cohomologous_refine_of_inflateZ2_mem_B2 L, ?_⟩
   rintro ⟨M, _, _, hLM, hc⟩
   have h := inflateZ2_sub_mem_B2 M hc
-  rw [inflateZ2_one, inflateZ2_comap _ _ _ fun _ ↦ rfl] at h
+  rw [inflateZ2_one, inflateZ2_refine] at h
   simpa using neg_mem h
 
 end Coboundary
@@ -602,6 +624,13 @@ theorem inflateClass_comap (c : TwoCocycle K L) :
   exact Subtype.ext (by rw [coe_inflateZ2, coe_inflateZ2, inflate_comap π ι hπι hι])
 
 end Refinement
+
+/-- Refining a cocycle to a larger finite normal subextension does not change its inflated
+continuous class. -/
+theorem inflateClass_refine {L M : IntermediateField K (SeparableClosure K)} [Normal K L]
+    [Normal K M] [FiniteDimensional K L] [FiniteDimensional K M] (hLM : L ≤ M)
+    (c : TwoCocycle K L) : (c.refine hLM).inflateClass M = c.inflateClass L :=
+  inflateClass_comap _ _ _ (coe_inclusion hLM) c
 
 end ContinuousClass
 

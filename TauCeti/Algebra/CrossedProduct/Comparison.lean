@@ -73,33 +73,14 @@ open ContCohomology IntermediateField
 
 variable {K : Type} [Field K]
 
-/-! ### Refining a cocycle to a larger subextension -/
-
-namespace TwoCocycle
-
-variable {L M : IntermediateField K (SeparableClosure K)} [Normal K L] [Normal K M]
-
-/-- The refinement of a cocycle of `Gal(L/K)` to `Gal(M/K)` for `L ≤ M` inside `Kˢ`: the
-inflation along restriction `Gal(M/K) → Gal(L/K)` and the inclusion `L ⊆ M`. -/
-private def refine (hLM : L ≤ M) (c : TwoCocycle K L) : TwoCocycle K M :=
-  c.comap (inclusion hLM).restrictNormalHom (inclusion hLM)
-    (inclusion hLM).restrictNormalHom_commutes
-
-/-- Refining a cocycle to a larger finite normal subextension does not change its inflated
-continuous class. -/
-private theorem inflateClass_refine [FiniteDimensional K L] [FiniteDimensional K M] (hLM : L ≤ M)
-    (c : TwoCocycle K L) : (c.refine hLM).inflateClass M = c.inflateClass L :=
-  c.inflateClass_comap _ _ _ fun _ ↦ rfl
-
-end TwoCocycle
-
 namespace BrauerGroup
 
 /-- Refining a cocycle to a larger finite Galois subextension does not change its Brauer class. -/
-private theorem crossedProductClass_refine {L M : IntermediateField K (SeparableClosure K)}
+theorem crossedProductClass_refine {L M : IntermediateField K (SeparableClosure K)}
     [FiniteDimensional K L] [IsGalois K L] [FiniteDimensional K M] [IsGalois K M] (hLM : L ≤ M)
-    (c : TwoCocycle K L) : crossedProductClass (c.refine hLM) = crossedProductClass c :=
-  crossedProductClass_comap _ _ _ c
+    (c : TwoCocycle K L) : crossedProductClass (c.refine hLM) = crossedProductClass c := by
+  rw [TwoCocycle.refine_def]
+  exact crossedProductClass_comap _ _ _ c
 
 variable {L : IntermediateField K (SeparableClosure K)} [FiniteDimensional K L] [IsGalois K L]
 
