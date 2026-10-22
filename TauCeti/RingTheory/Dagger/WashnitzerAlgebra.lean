@@ -122,6 +122,10 @@ theorem isRestricted_of_mem_washnitzerAlgebra {f : MvPowerSeries σ R}
   obtain ⟨ρ', hρ', hf⟩ := hf
   exact isRestricted_of_le hf (fun _ ↦ h0) fun _ ↦ h1.trans hρ'.le
 
+/-- Constant series are overconvergent. -/
+theorem C_mem_washnitzerAlgebra (a : R) : C a ∈ washnitzerAlgebra σ R :=
+  ⟨2, one_lt_two, isRestricted_C _ a⟩
+
 /-- Polynomials are overconvergent. -/
 theorem coe_mem_washnitzerAlgebra (p : MvPolynomial σ R) :
     (p : MvPowerSeries σ R) ∈ washnitzerAlgebra σ R :=
@@ -389,8 +393,7 @@ theorem isUnit_washnitzerAlgebra_iff (f : washnitzerAlgebra σ K) :
   obtain ⟨h0, -⟩ := hf0
   set a := constantCoeff (f : MvPowerSeries σ K)
   have hmem : (f : MvPowerSeries σ K) - C a ∈ washnitzerAlgebra σ K :=
-    sub_mem f.2 (by simpa [MvPowerSeries.algebraMap_apply] using
-      (washnitzerAlgebra σ K).algebraMap_mem a)
+    sub_mem f.2 (C_mem_washnitzerAlgebra a)
   obtain ⟨ρ, hρ, hsubρ, hρt⟩ := exists_isRestricted_forall_norm_coeff_mul_pow_lt hmem hsub
   obtain ⟨ρ', hρ', hf⟩ := f.2
   -- At the radius `min ρ ρ' > 1`, `f` is a unit of the restricted series by the Tate-algebra
