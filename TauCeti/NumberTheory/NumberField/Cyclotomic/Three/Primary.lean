@@ -25,7 +25,7 @@ already satisfies the closure property `IsPrimaryEisenstein.neg_mul`. Its conten
   `TauCeti.isPrimaryEisenstein_ofNat_iff` for natural numbers and numerals;
 * `IsPrimitiveRoot.existsUnique_isPrimaryEisenstein_unit_mul`: an element not divisible by
   `ω - 1` has exactly one primary multiple by a unit of `ℤ[ω]`;
-* `TauCeti.existsUnique_associated_isPrimaryEisenstein`: a prime of `ℤ[ω]` of norm different
+* `Prime.existsUnique_associated_isPrimaryEisenstein`: a prime of `ℤ[ω]` of norm different
   from `3` has exactly one primary associate.
 
 The uniqueness of the primary associate uses Mathlib's special case of Kummer's lemma,
@@ -111,40 +111,6 @@ open TauCeti
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {3} ℚ K] {ζ : K}
   (hζ : IsPrimitiveRoot ζ 3)
 
-/-- The integral basis `1, ζ` of `𝓞 K`, indexed by `Fin 2`. -/
-private noncomputable def basisThree : Module.Basis (Fin 2) ℤ (𝓞 K) :=
-  hζ.integralPowerBasis.basis.reindex (finCongr
-    (hζ.integralPowerBasis.finrank.symm.trans finrank_ringOfIntegers_three))
-
-private theorem basisThree_apply (i : Fin 2) : basisThree hζ i = hζ.toInteger ^ (i : ℕ) := by
-  simp [basisThree, PowerBasis.coe_basis]
-
-private theorem intCast_add_intCast_mul_eq (a b : ℤ) :
-    (a : 𝓞 K) + b * hζ.toInteger = a • basisThree hζ 0 + b • basisThree hζ 1 := by
-  simp [basisThree_apply]
-
-/-- Every element of `𝓞 K = ℤ[ζ]` is `a + b ζ` for integers `a` and `b`. -/
-theorem exists_intCast_add_intCast_mul_toInteger_eq (x : 𝓞 K) :
-    ∃ a b : ℤ, (a : 𝓞 K) + b * hζ.toInteger = x := by
-  refine ⟨(basisThree hζ).repr x 0, (basisThree hζ).repr x 1, ?_⟩
-  rw [intCast_add_intCast_mul_eq]
-  conv_rhs => rw [← (basisThree hζ).sum_repr x]
-  simp [Fin.sum_univ_two]
-
-/-- An integer `m` divides `a + b ζ` in `𝓞 K = ℤ[ζ]` exactly when it divides both coordinates. -/
-@[simp]
-theorem intCast_dvd_intCast_add_intCast_mul_toInteger_iff {m a b : ℤ} :
-    (m : 𝓞 K) ∣ a + b * hζ.toInteger ↔ m ∣ a ∧ m ∣ b := by
-  refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun ⟨ha, hb⟩ ↦ ?_⟩
-  · have hy' : a • basisThree hζ 0 + b • basisThree hζ 1 = m • y := by
-      rw [← intCast_add_intCast_mul_eq, hy, zsmul_eq_mul]
-    have h0 := congrArg (fun z ↦ (basisThree hζ).repr z 0) hy'
-    have h1 := congrArg (fun z ↦ (basisThree hζ).repr z 1) hy'
-    simp only [map_add, map_zsmul, Module.Basis.repr_self, Finsupp.coe_add, Finsupp.coe_smul,
-      Pi.add_apply, Pi.smul_apply, Finsupp.single_apply, smul_eq_mul] at h0 h1
-    exact ⟨⟨_, by simpa using h0⟩, ⟨_, by simpa using h1⟩⟩
-  · exact dvd_add (Int.cast_dvd_cast _ _ ha) (dvd_mul_of_dvd_left (Int.cast_dvd_cast _ _ hb) _)
-
 /-- **The coordinate criterion for primary Eisenstein integers.** For integers `a` and `b`, the
 element `a + b ζ` of `𝓞 K = ℤ[ζ]` is primary if and only if `a ≡ 2` and `b ≡ 0` modulo `3`. -/
 @[simp]
@@ -220,35 +186,11 @@ theorem existsUnique_isPrimaryEisenstein_unit_mul {x : 𝓞 K} (hx : ¬ hζ.toIn
 
 end IsPrimitiveRoot
 
-namespace TauCeti
+namespace Prime
+
+open TauCeti
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {3} ℚ K]
-
-/-- In the third cyclotomic field, the norm of every unit of the ring of integers is `1`. -/
-theorem norm_unit_eq_one_of_isCyclotomicExtension_three (u : (𝓞 K)ˣ) :
-    Algebra.norm ℤ (u : 𝓞 K) = 1 := by
-  have hζ := IsCyclotomicExtension.zeta_spec 3 ℚ K
-  have hη : Algebra.norm ℤ hζ.toInteger = 1 := by
-    have h := congrArg (Algebra.norm ℤ) hζ.toInteger_cube_eq_one
-    rw [map_pow, map_one, ← one_pow 3] at h
-    exact (Odd.strictMono_pow (by decide : Odd 3)).injective h
-  have hneg : Algebra.norm ℤ (-1 : 𝓞 K) = 1 := by
-    have h := Algebra.norm_algebraMap (R := ℤ) (S := 𝓞 K) (-1)
-    rw [map_neg, map_one] at h
-    simp [h, finrank_ringOfIntegers_three]
-  have key (k : ℕ) : Algebra.norm ℤ (hζ.toInteger ^ k) = 1 ∧
-      Algebra.norm ℤ (-hζ.toInteger ^ k) = 1 := by
-    rw [neg_eq_neg_one_mul, map_mul, map_pow, hneg, hη]
-    simp
-  have hmem := IsCyclotomicExtension.Rat.Three.Units.mem hζ u
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hmem
-  rcases hmem with rfl | rfl | rfl | rfl | rfl | rfl
-  · simp
-  · simpa using (key 0).2
-  · simpa using (key 1).1
-  · simpa using (key 1).2
-  · simpa using (key 2).1
-  · simpa using (key 2).2
 
 /-- **Primary associates of Eisenstein primes.** A prime of `𝓞 K = ℤ[ω]` whose norm is not `3`
 has exactly one primary associate. -/
@@ -261,12 +203,18 @@ theorem existsUnique_associated_isPrimaryEisenstein {π : 𝓞 K} (hπ : Prime �
       hζ.zeta_sub_one_prime'.not_isUnit
     apply hN
     rw [hc, map_mul, hζ.norm_toInteger_sub_one_of_prime_ne_two' (by decide),
-      ← hc'.unit_spec, norm_unit_eq_one_of_isCyclotomicExtension_three]
+      ← hc'.unit_spec, hc'.unit.norm_eq_one_of_isCyclotomicExtension_three]
     norm_num
   obtain ⟨u, hu, huniq⟩ := hζ.existsUnique_isPrimaryEisenstein_unit_mul hx
   refine ⟨u * π, ⟨⟨u, mul_comm _ _⟩, hu⟩, ?_⟩
   rintro ρ ⟨⟨v, rfl⟩, hρ⟩
   rw [mul_comm, huniq v (by simpa only [mul_comm π] using hρ)]
+
+end Prime
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {3} ℚ K]
 
 section Examples
 
