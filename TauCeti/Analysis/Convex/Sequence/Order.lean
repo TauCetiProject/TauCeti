@@ -49,13 +49,13 @@ namespace TauCeti
 
 /-- With the value `⊤` outside finite domains, a smaller height sequence has a larger finite
 domain. -/
-theorem setOf_ne_top_subset_of_le {α : Type*} [Preorder α] {h g : ℕ → WithTop α}
+theorem setOf_ne_top_subset_of_le {α : Type*} [LE α] {h g : ℕ → WithTop α}
     (hhg : h ≤ g) : {n | g n ≠ ⊤} ⊆ {n | h n ≠ ⊤} :=
   fun n (hn : g n ≠ ⊤) (hh : h n = ⊤) => hn (WithTop.top_le_iff.mp (hh ▸ hhg n))
 
 /-- Adding a common finite-valued function to two height sequences does not change how they
 compare. -/
-theorem add_coe_le_add_coe_iff {Γ : Type*} [AddCommMonoid Γ] [PartialOrder Γ]
+theorem add_coe_le_add_coe_iff {Γ : Type*} [AddCommMonoid Γ] [Preorder Γ]
     [IsOrderedCancelAddMonoid Γ] {h g : ℕ → WithTop Γ} (f : ℕ → Γ) :
     ((fun n => h n + (f n : WithTop Γ)) ≤ fun n => g n + (f n : WithTop Γ)) ↔ h ≤ g :=
   by simp only [Pi.le_def, WithTop.add_le_add_iff_right WithTop.coe_ne_top]
@@ -110,7 +110,7 @@ theorem heights_le_iff [Preorder Γ] {d : FiniteSlopeData Γ} {a : ℕ → WithT
   · rw [hout n (by omega)]
     exact le_top
 
-variable [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
+variable [Preorder Γ] [IsOrderedCancelAddMonoid Γ]
 
 /-- **Partial-sum criterion.** For finite slope data with the same anchor and length,
 `d.heights ≤ e.heights` exactly when each partial sum of `d`'s slopes is at most the corresponding
@@ -156,7 +156,7 @@ theorem heights_le_iff [Preorder Γ] {d : InfiniteSlopeData Γ} {a : ℕ → Wit
   · rw [hout n (by omega)]
     exact le_top
 
-variable [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
+variable [Preorder Γ] [IsOrderedCancelAddMonoid Γ]
 
 /-- **Partial-sum criterion.** For infinite slope data with the same anchor,
 `d.heights ≤ e.heights` exactly when each partial sum of `d`'s slopes is at most the corresponding
