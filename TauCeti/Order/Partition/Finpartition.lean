@@ -117,19 +117,22 @@ theorem bind_mono {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] 
   obtain ⟨c, hc, hbc⟩ := h A hA hb
   exact ⟨c, mem_bind.2 ⟨A, hA, hc⟩, hbc⟩
 
+/-- A sum over the parts of the juxtaposition `P.bind Q` is the sum, over the parts `A` of `P`,
+of the sums over the parts of `Q A`. -/
+theorem sum_parts_bind {α M : Type*} [Lattice α] [OrderBot α] [IsModularLattice α]
+    [DecidableEq α] [AddCommMonoid M] {a : α} (P : Finpartition a)
+    (Q : ∀ i ∈ P.parts, Finpartition i) (g : α → M) :
+    ∑ b ∈ (P.bind Q).parts, g b = ∑ A ∈ P.parts.attach, ∑ b ∈ (Q A.1 A.2).parts, g b :=
+  sum_combine (fun A : P.parts => Q A.1 A.2) P.supIndep.attach g
+
 /-- A product over the parts of the juxtaposition `P.bind Q` is the product, over the parts `A`
 of `P`, of the products over the parts of `Q A`. -/
-@[to_additive /-- A sum over the parts of the juxtaposition `P.bind Q` is the sum, over the parts
-`A` of `P`, of the sums over the parts of `Q A`. -/]
+@[to_additive existing]
 theorem prod_parts_bind {α M : Type*} [Lattice α] [OrderBot α] [IsModularLattice α]
     [DecidableEq α] [CommMonoid M] {a : α} (P : Finpartition a)
     (Q : ∀ i ∈ P.parts, Finpartition i) (g : α → M) :
-    ∏ b ∈ (P.bind Q).parts, g b = ∏ A ∈ P.parts.attach, ∏ b ∈ (Q A.1 A.2).parts, g b := by
-  rw [bind_parts, Finset.prod_biUnion]
-  rintro ⟨b, hb⟩ - ⟨c, hc⟩ - hbc
-  refine Finset.disjoint_left.2 fun d hdb hdc => (Q b hb).ne_bot hdb <| eq_bot_iff.2 <|
-    (le_inf ((Q b hb).le hdb) ((Q c hc).le hdc)).trans
-      (P.disjoint hb hc (Subtype.coe_injective.ne hbc)).le_bot
+    ∏ b ∈ (P.bind Q).parts, g b = ∏ A ∈ P.parts.attach, ∏ b ∈ (Q A.1 A.2).parts, g b :=
+  sum_parts_bind (M := Additive M) P Q (Additive.ofMul ∘ g)
 
 /-- If `Q` refines `P`, then each part of `P` is the union of the parts of `Q` it contains. -/
 theorem biUnion_filter_subset_eq_of_le {ι : Type*} [DecidableEq ι] {s B : Finset ι}

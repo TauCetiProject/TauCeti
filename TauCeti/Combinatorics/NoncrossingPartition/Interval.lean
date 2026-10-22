@@ -30,8 +30,6 @@ free cumulant of a noncrossing partition the product of the free cumulants of it
 
 ## Main results
 
-* `Finpartition.IsNoncrossing.bind` — juxtaposing noncrossing partitions of the parts of a
-  noncrossing partition gives a noncrossing partition.
 * `TauCeti.NoncrossingPartition.sum_Iic_prod_parts_eq_prod_sum` —
   `∑_{σ ≤ π} ∏_{C ∈ σ} g C = ∏_{B ∈ π} ∑_{τ ∈ NC(B)} ∏_{C ∈ τ} g C`.
 
@@ -45,23 +43,6 @@ free cumulant of a noncrossing partition the product of the free cumulants of it
 public section
 
 open Finset
-
-namespace Finpartition
-
-variable {α : Type*} [LinearOrder α] {s : Finset α} {P : Finpartition s}
-
-/-- Juxtaposing noncrossing partitions of the parts of a noncrossing partition gives a noncrossing
-partition. -/
-theorem IsNoncrossing.bind {Q : ∀ B ∈ P.parts, Finpartition B} (hP : P.IsNoncrossing)
-    (hQ : ∀ B hB, (Q B hB).IsNoncrossing) : (P.bind Q).IsNoncrossing := by
-  refine isNoncrossing_iff.2 fun X hX Y hY a ha b hb c hc d hd hab hbc hcd => ?_
-  obtain ⟨B, hB, hXB⟩ := mem_bind.1 hX
-  obtain ⟨C, hC, hYC⟩ := mem_bind.1 hY
-  obtain rfl := isNoncrossing_iff.1 hP B hB C hC a ((Q B hB).le hXB ha) b ((Q C hC).le hYC hb) c
-    ((Q B hB).le hXB hc) d ((Q C hC).le hYC hd) hab hbc hcd
-  exact isNoncrossing_iff.1 (hQ B hB) X hXB Y hYC a ha b hb c hc d hd hab hbc hcd
-
-end Finpartition
 
 namespace TauCeti.NoncrossingPartition
 
