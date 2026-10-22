@@ -40,6 +40,10 @@ cochain `ψ` the alternating sum of these terms telescopes, so `(bψ)(x₀, …,
 * `TauCeti.cyclicCohomology.oddPairing_matrixExtension_mk`: Connes' formula
   `⟨[u], [φ]⟩ = (1 + i)⁻¹ 2⁻ⁿ Γ(n/2 + 1)⁻¹ (φ#Tr)(u⁻¹ - 1, u - 1, …, u⁻¹ - 1, u - 1)` for an
   invertible matrix `u`.
+* `TauCeti.cyclicCohomology.oddPairing_matrixExtension_of_val_eq_fromBlocks`: the pairing is
+  additive on direct sums, `⟨[u ⊕ v], [φ]⟩ = ⟨[u], [φ]⟩ + ⟨[v], [φ]⟩`.
+* `TauCeti.cyclicCohomology.oddPairing_matrixExtension_of_val_eq_fromBlocks_one`: the pairing is
+  unchanged by stabilization `u ↦ u ⊕ 1`.
 
 ## References
 
@@ -161,6 +165,42 @@ theorem oddPairing_matrixExtension_mk {ι : Type*} [Fintype ι] [DecidableEq ι]
             MultilinearMap ℂ (fun _ : Fin (2 * m + 2) ↦ A) M)
           fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1 := by
   rw [matrixExtension_mk, oddPairing_mk, coe_matrixCyclicCochainExtension_apply]
+
+/-- **Additivity of the odd pairing on direct sums**: the odd pairing of an invertible matrix `w`
+which is block diagonal with diagonal blocks `u` and `v` is the sum of the odd pairings of `u`
+and `v`. -/
+theorem oddPairing_matrixExtension_of_val_eq_fromBlocks {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] [DecidableEq κ] {w : (Matrix (ι ⊕ κ) (ι ⊕ κ) A)ˣ} {u : (Matrix ι ι A)ˣ}
+    {v : (Matrix κ κ A)ˣ} (hw : (w : Matrix (ι ⊕ κ) (ι ⊕ κ) A) = Matrix.fromBlocks u 0 0 v)
+    (m : ℕ) (c : cyclicCohomology ℂ A M (2 * m + 1)) :
+    oddPairing w m (matrixExtension M (ι ⊕ κ) (2 * m + 1) c) =
+      oddPairing u m (matrixExtension M ι (2 * m + 1) c) +
+        oddPairing v m (matrixExtension M κ (2 * m + 1) c) := by
+  obtain ⟨φ, rfl⟩ := mk_surjective ℂ A M (2 * m + 1) c
+  have hw' : ((w⁻¹ : (Matrix (ι ⊕ κ) (ι ⊕ κ) A)ˣ) : Matrix (ι ⊕ κ) (ι ⊕ κ) A) =
+      Matrix.fromBlocks ↑u⁻¹ 0 0 ↑v⁻¹ :=
+    Units.inv_eq_of_mul_eq_one_left (by simp [hw, Matrix.fromBlocks_multiply])
+  -- Both entries `w⁻¹ - 1` and `w - 1` of the pairing are block diagonal.
+  have hx : (fun k : Fin (2 * m + 2) ↦
+        if Even (k : ℕ) then (↑w⁻¹ - 1 : Matrix (ι ⊕ κ) (ι ⊕ κ) A) else ↑w - 1) =
+      fun k : Fin (2 * m + 2) ↦
+        Matrix.fromBlocks (if Even (k : ℕ) then (↑u⁻¹ - 1 : Matrix ι ι A) else ↑u - 1) 0 0
+        (if Even (k : ℕ) then (↑v⁻¹ - 1 : Matrix κ κ A) else ↑v - 1) := by
+    funext k
+    ext (i | i) (j | j) <;> split_ifs <;> simp [hw, hw', Matrix.one_apply]
+  simp only [oddPairing_matrixExtension_mk, hx, matrixCochainExtension_fromBlocks_zero₁₂_zero₂₁,
+    smul_add]
+
+/-- **Stabilization of the odd pairing**: enlarging an invertible matrix `u` to the block diagonal
+matrix `u ⊕ 1` does not change its odd pairing. -/
+theorem oddPairing_matrixExtension_of_val_eq_fromBlocks_one {ι κ : Type*} [Fintype ι]
+    [DecidableEq ι] [Fintype κ] [DecidableEq κ] {w : (Matrix (ι ⊕ κ) (ι ⊕ κ) A)ˣ}
+    {u : (Matrix ι ι A)ˣ} (hw : (w : Matrix (ι ⊕ κ) (ι ⊕ κ) A) = Matrix.fromBlocks u 0 0 1)
+    (m : ℕ) (c : cyclicCohomology ℂ A M (2 * m + 1)) :
+    oddPairing w m (matrixExtension M (ι ⊕ κ) (2 * m + 1) c) =
+      oddPairing u m (matrixExtension M ι (2 * m + 1) c) := by
+  rw [oddPairing_matrixExtension_of_val_eq_fromBlocks (v := 1) hw, oddPairing_one,
+    LinearMap.zero_apply, add_zero]
 
 end cyclicCohomology
 

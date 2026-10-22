@@ -14,7 +14,9 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Assoc
 Iterated paired wedges agree when their fibrewise coefficient pairings have equal composites.
 This holds on any charted space, including manifolds with boundary or corners, without regularity
 assumptions on the forms or pairings in the base variable. The tangent fibres and value fibres
-need no chosen norm. Fixed-coefficient forms and the ordinary real-valued wedge are special cases.
+need no chosen norm. On intermediate and final value fibres, multiplication need only be
+continuous for each fixed scalar. Fixed-coefficient forms and the ordinary real-valued wedge
+are special cases.
 
 These identities supply the algebraic associativity underlying products of smooth forms and
 cohomology classes. Degrees are identified by the canonical reassociation of finite tuples.
@@ -38,11 +40,11 @@ variable {V₁ V₂ V₃ V₁₂ V₂₃ W : M → Type*}
   [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
   [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℝ (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
   [∀ x, AddCommGroup (V₁₂ x)] [∀ x, Module ℝ (V₁₂ x)] [∀ x, TopologicalSpace (V₁₂ x)]
-  [∀ x, IsTopologicalAddGroup (V₁₂ x)] [∀ x, ContinuousSMul ℝ (V₁₂ x)]
+  [∀ x, IsTopologicalAddGroup (V₁₂ x)] [∀ x, ContinuousConstSMul ℝ (V₁₂ x)]
   [∀ x, AddCommGroup (V₂₃ x)] [∀ x, Module ℝ (V₂₃ x)] [∀ x, TopologicalSpace (V₂₃ x)]
-  [∀ x, IsTopologicalAddGroup (V₂₃ x)] [∀ x, ContinuousSMul ℝ (V₂₃ x)]
+  [∀ x, IsTopologicalAddGroup (V₂₃ x)] [∀ x, ContinuousConstSMul ℝ (V₂₃ x)]
   [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousConstSMul ℝ (W x)]
 
 /-- The bundle-valued paired wedge is associative when the two fibrewise composites of its
 pairings agree. No smoothness or trivialization of the value bundles is required. -/

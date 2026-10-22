@@ -226,6 +226,13 @@ theorem measureReal_Ioc_eq_cdf_sub (ν : Measure ℝ) [IsProbabilityMeasure ν] 
   rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 hab) measurableSet_Iic, cdf_eq_real,
     cdf_eq_real]
 
+/-- A probability measure with no mass below `c` has cdf zero at every point strictly below `c`. -/
+theorem cdf_eq_zero_of_lt_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    {c x : ℝ}
+    (hc : ν (Iio c) = 0) (hx : x < c) : cdf ν x = 0 := by
+  rw [cdf_eq_real]
+  exact measureReal_mono_null (Iic_subset_Iio.mpr hx) (by simp [Measure.real, hc])
+
 /-- An atomless law that gives no mass to the open half-line below `c` has cdf zero at `c`. -/
 theorem cdf_eq_zero_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] {c : ℝ} (hc : ν (Iio c) = 0) : cdf ν c = 0 := by

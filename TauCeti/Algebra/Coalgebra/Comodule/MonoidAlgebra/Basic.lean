@@ -7,8 +7,13 @@ module
 
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 public import Mathlib.RingTheory.Coalgebra.MonoidAlgebra
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
+public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 import TauCeti.Algebra.Module.Submodule.Finite
 import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
@@ -33,6 +38,10 @@ says that the `h`-coefficient of `v g` is `v g` when `h = g` and `0` otherwise. 
 maps are therefore orthogonal idempotents with images the weight submodules, which gives both the
 spanning and the independence half of the decomposition.
 
+The file also shows that every finite-dimensional comodule over a field has a basis of weight
+vectors, whose vectors of a given weight span that weight space, and that a tensor product of
+weight vectors is a weight vector whose weight is the product of their weights.
+
 ## Main definitions
 
 * `TauCeti.Comodule.tensorCoeffEquiv`: the coefficients of an element of `V ⊗[R] R[G]`, as a
@@ -55,6 +64,10 @@ spanning and the independence half of the decomposition.
   direct sum of its weight submodules.**
 * `TauCeti.Comodule.endOfPoint_tmul_of_mem_weightSpace`: an algebra map out of `R[G]` acts on the
   `g`-weight submodule by multiplication by its value at the group-like element `single g 1`.
+* `TauCeti.Comodule.tmul_mem_weightSpace_tensor`: a tensor product of weight vectors of weights
+  `g` and `h` is a weight vector of weight `g * h`.
+* `TauCeti.Comodule.matrixCoefficient_of_mem_weightSpace`: the matrix coefficients of a vector of
+  weight `g` are multiples of `g`.
 * `TauCeti.Comodule.Hom.map_mem_weightSpace`: a comodule morphism preserves the weight
   submodules.
 * `TauCeti.Comodule.weightProj_mem_subcomodule`: every subcomodule is stable under the weight
@@ -63,15 +76,23 @@ spanning and the independence half of the decomposition.
   projection.
 * `TauCeti.Comodule.finite_setOf_weightSpace_ne_bot`: **a comodule finitely generated as a module
   has only finitely many weights.**
+* `TauCeti.Comodule.exists_basis_mem_weightSpace`: **every finite-dimensional comodule over
+  `k[G]` has a basis of weight vectors.**
+* `Module.Basis.comoduleWeightSpace_eq_span`: in a basis of weight vectors, the basis vectors of
+  weight `g` span the `g`-weight submodule.
+* `Module.Basis.finrank_comoduleWeightSpace_eq_card`: the dimension of a weight space is the
+  number of basis vectors of that weight.
 
 ## Implementation notes
 
-Only the coalgebra structure of `R[G]` is used, so `G` is an arbitrary type: no multiplication on
-`G` and no algebra structure on `R[G]` enter the argument. That `R[G]` is free on `G` is used
-through `TensorProduct.finsuppScalarRight`, which presents `V ⊗[R] R[G]` as the finitely supported
-functions `G →₀ V` and so supplies the finite support of the weight decomposition for free; this is
-also the only place where decidable equality on `G` is used internally, and it is discharged
-classically.
+The weight decomposition uses only the coalgebra structure of `R[G]`, so there `G` is an
+arbitrary type: no multiplication on `G` and no algebra structure on `R[G]` enter the argument.
+Only the sections on algebra maps out of `R[G]` and on tensor products of weight vectors assume a
+monoid structure on `G`; the latter uses the bialgebra structure of `R[G]`. That `R[G]` is free on
+`G` is used through `TensorProduct.finsuppScalarRight`, which presents `V ⊗[R] R[G]` as the
+finitely supported functions `G →₀ V` and so supplies the finite support of the weight
+decomposition for free; this is also the only place where decidable equality on `G` is used
+internally, and it is discharged classically.
 
 ## References
 
@@ -164,7 +185,7 @@ theorem tensorComponent_monoidCoeff_comul (g : G) (a : MonoidAlgebra R G) :
       (monoidCoeff R G g).smulRight (MonoidAlgebra.single g (1 : R)) := by
     refine MonoidAlgebra.lhom_ext' fun h ↦ ?_
     ext r
-    by_cases hh : h = g <;> simp [MonoidAlgebra.comul_single, hh]
+    by_cases hh : h = g <;> simp [hh]
   simpa only [LinearMap.comp_apply, LinearMap.smulRight_apply, monoidCoeff_apply] using
     LinearMap.congr_fun h a
 
@@ -586,6 +607,109 @@ theorem endOfPoint_tmul_of_mem_weightSpace (f : MonoidAlgebra R G →ₐ[R] A) (
 
 end Points
 
+/-! ## Weights of tensor products and matrix coefficients of weight vectors -/
+
+section Tensor
+
+variable [Monoid G] [Comodule R (MonoidAlgebra R G) V]
+variable {W : Type*} [AddCommMonoid W] [Module R W] [Comodule R (MonoidAlgebra R G) W]
+
+attribute [local instance] Comodule.tensor
+
+variable {R G V}
+
+/-- **Weights add in a tensor product.** For the diagonal coaction on `V ⊗ W`, the tensor product
+of a vector of weight `g` and a vector of weight `h` has weight `g * h`. -/
+theorem tmul_mem_weightSpace_tensor {g h : G} {v : V} {w : W}
+    (hv : v ∈ weightSpace R G V g) (hw : w ∈ weightSpace R G W h) :
+    v ⊗ₜ[R] w ∈ weightSpace R G (V ⊗[R] W) (g * h) := by
+  rw [mem_weightSpace, tensor_coact, tensorCoact_tmul, mem_weightSpace.mp hv, mem_weightSpace.mp hw]
+  simp [MonoidAlgebra.single_mul_single]
+
+end Tensor
+
+section MatrixCoefficient
+
+variable [Comodule R (MonoidAlgebra R G) V]
+
+variable {R G V}
+
+/-- The matrix coefficients of a vector of weight `g` are multiples of `g`. -/
+theorem matrixCoefficient_of_mem_weightSpace {g : G} {v : V} (hv : v ∈ weightSpace R G V g)
+    (φ : Module.Dual R V) :
+    matrixCoefficient (C := MonoidAlgebra R G) φ v = MonoidAlgebra.single g (φ v) := by
+  rw [matrixCoefficient_def, mem_weightSpace.mp hv]
+  simp
+
+end MatrixCoefficient
+
 end Comodule
 
 end TauCeti
+
+/-! ## Bases of weight vectors -/
+
+namespace TauCeti.Comodule
+
+open Module
+
+universe u v w
+
+section WeightBasis
+
+section Semiring
+
+variable {R : Type u} {G : Type v} [CommSemiring R]
+variable {V : Type w} [AddCommMonoid V] [Module R V] [Comodule R (MonoidAlgebra R G) V]
+variable {ι : Type*} (b : Basis ι R V) (wt : ι → G) (hb : ∀ i, b i ∈ weightSpace R G V (wt i))
+include hb
+
+/-- In a basis of weight vectors, the basis vectors of weight `g` span the `g`-weight space. -/
+theorem _root_.Module.Basis.comoduleWeightSpace_eq_span (g : G) :
+    weightSpace R G V g = Submodule.span R (b '' {i | wt i = g}) := by
+  classical
+  refine le_antisymm (fun v hv ↦ ?_) (Submodule.span_le.mpr ?_)
+  · rw [← weightProj_of_mem hv, ← b.linearCombination_repr v, Finsupp.linearCombination_apply,
+      Finsupp.sum, map_sum]
+    refine Submodule.sum_mem _ fun i _ ↦ ?_
+    rw [map_smul]
+    refine Submodule.smul_mem _ _ ?_
+    by_cases hi : wt i = g
+    · rw [← hi, weightProj_of_mem (hb i)]
+      exact Submodule.subset_span ⟨i, rfl, rfl⟩
+    · rw [weightProj_of_mem_of_ne (Ne.symm hi) (hb i)]
+      exact Submodule.zero_mem _
+  · rintro _ ⟨i, hi, rfl⟩
+    rw [Set.mem_ofPred_eq] at hi
+    exact hi ▸ hb i
+
+end Semiring
+
+variable {k : Type u} {G : Type v} [Field k]
+variable {V : Type w} [AddCommGroup V] [Module k V] [Comodule k (MonoidAlgebra k G) V]
+
+variable (k G V) in
+/-- **Every finite-dimensional comodule over `k[G]` has a basis of weight vectors.** -/
+theorem exists_basis_mem_weightSpace [FiniteDimensional k V] :
+    ∃ (ι : Type (max v w)) (_ : Fintype ι) (b : Basis ι k V) (wt : ι → G),
+      ∀ i, b i ∈ weightSpace k G V (wt i) := by
+  classical
+  let b := (isInternal_weightSpace k G V).collectedBasis fun g ↦
+    Module.Free.chooseBasis k (weightSpace k G V g)
+  exact ⟨_, FiniteDimensional.fintypeBasisIndex b, b, Sigma.fst,
+    (isInternal_weightSpace k G V).collectedBasis_mem _⟩
+
+/-- **Weight multiplicities count weight basis vectors.** In a basis of weight vectors, the
+dimension of the `g`-weight space is the number of basis vectors of weight `g`. -/
+theorem _root_.Module.Basis.finrank_comoduleWeightSpace_eq_card {ι : Type*} [Finite ι]
+    (b : Basis ι k V) (wt : ι → G) (hb : ∀ i, b i ∈ weightSpace k G V (wt i)) (g : G) :
+    finrank k (weightSpace k G V g) = Nat.card {i // wt i = g} := by
+  have := Fintype.ofFinite ι
+  have := Fintype.ofFinite {i // wt i = g}
+  rw [b.comoduleWeightSpace_eq_span wt hb g, ← Subtype.range_coe_subtype, ← Set.range_comp,
+    finrank_span_eq_card (b.linearIndependent.comp _ Subtype.val_injective),
+    Nat.card_eq_fintype_card]
+
+end WeightBasis
+
+end TauCeti.Comodule

@@ -44,10 +44,10 @@ attribute [local instance] TauCeti.normedAlgebraRatOfReal
 `0` to `-ad x`. -/
 theorem banachDexpFactor_eq_integral_exp (x : R) :
     banachDexpFactor x =
-      ∫ t in (0 : ℝ)..1, exp (-(t • continuousCommutator x)) := by
+      ∫ t in (0 : ℝ)..1, exp (-(t • continuousCommutator ℝ x)) := by
   rw [banachDexpFactor_eq_oneSubExpNegDivSelf]
   simpa only [smul_neg] using oneSubExpNegDivSelf_eq_integral_exp
-    (A := R →L[ℝ] R) (continuousCommutator x)
+    (A := R →L[ℝ] R) (continuousCommutator ℝ x)
 
 /-- Applied to an algebra element, the Banach dexp factor is the integral of conjugation by
 `exp (-t x)`. -/
@@ -56,17 +56,17 @@ theorem banachDexpFactor_apply_eq_integral (x y : R) :
       ∫ t in (0 : ℝ)..1, exp (-(t • x)) * y * exp (t • x) := by
   rw [banachDexpFactor_eq_integral_exp]
   have hint : IntervalIntegrable
-      (fun t : ℝ ↦ exp (-(t • continuousCommutator x))) volume 0 1 :=
+      (fun t : ℝ ↦ exp (-(t • continuousCommutator ℝ x))) volume 0 1 :=
     Continuous.intervalIntegrable (μ := volume) (by fun_prop) 0 1
   rw [ContinuousLinearMap.intervalIntegral_apply (μ := volume) hint y]
   apply intervalIntegral.integral_congr
   intro t _ht
   dsimp only
   have hscale :
-      -(t • continuousCommutator x) = continuousCommutator ((-t) • x) := by
+      -(t • continuousCommutator ℝ x) = continuousCommutator ℝ ((-t) • x) := by
     calc
-      -(t • continuousCommutator x) = (-t) • continuousCommutator x := (neg_smul _ _).symm
-      _ = continuousCommutator ((-t) • x) := (map_smul _ _ _).symm
+      -(t • continuousCommutator ℝ x) = (-t) • continuousCommutator ℝ x := (neg_smul _ _).symm
+      _ = continuousCommutator ℝ ((-t) • x) := (map_smul _ _ _).symm
   rw [hscale, exp_continuousCommutator_apply]
   simp
 
