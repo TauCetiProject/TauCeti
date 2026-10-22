@@ -244,14 +244,20 @@ theorem mul_max_nnnorm_le_nnnorm_smul_add [NormedField K] [NormedAddCommGroup M]
 
 /-- If each `e N` is `T (N + 1) / T N`-orthogonal to the span of the previous vectors, for a
 strictly decreasing sequence `T` of positive constants at most one, then in an ultrametric space
-the vectors `e i` with `i < N` are `T N`-orthogonal. -/
-theorem mul_sup_nnnorm_le_of_forall_lt [NormedField K] [NormedAddCommGroup M] [NormedSpace K M]
-    [IsUltrametricDist M] {e : ℕ → M} {T : ℕ → ℝ≥0} (hT : StrictAnti T)
-    (hT' : ∀ n, 0 < T n ∧ T n ≤ 1)
+the vectors `e i` with `i < N` form a `T N`-orthogonal family. -/
+theorem isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub [NormedField K]
+    [NormedAddCommGroup M] [NormedSpace K M] [IsUltrametricDist M] {e : ℕ → M} {T : ℕ → ℝ≥0}
+    (hT : StrictAnti T) (hT' : ∀ n, 0 < T n ∧ T n ≤ 1)
     (he : ∀ N, ∀ z ∈ Submodule.span K (e '' Set.Iio N), T (N + 1) / T N * ‖e N‖₊ ≤ ‖e N - z‖₊)
-    (N : ℕ) :
-    ∀ s : Finset ℕ, (∀ i ∈ s, i < N) → ∀ a : ℕ → K,
-      T N * s.sup (fun i ↦ ‖a i • e i‖₊) ≤ ‖∑ i ∈ s, a i • e i‖₊ := by
+    (N : ℕ) : IsTOrthogonalFamily K (T N) (fun i : Set.Iio N ↦ e i) := by
+  -- Reduce to finite combinations of the `e i`, `i < N`, indexed by finite sets of naturals.
+  suffices key : ∀ s : Finset ℕ, (∀ i ∈ s, i < N) → ∀ a : ℕ → K,
+      T N * s.sup (fun i ↦ ‖a i • e i‖₊) ≤ ‖∑ i ∈ s, a i • e i‖₊ by
+    intro s a
+    have hN (i : Set.Iio N) : (i : ℕ) < N := i.2
+    have h := key (s.map (Function.Embedding.subtype _)) (by simp +contextual)
+      fun i ↦ if h : i < N then a ⟨i, h⟩ else 0
+    simpa [Finset.sup_map, Finset.sum_map, Function.comp_def, hN] using h
   induction N with
   | zero =>
     intro s hs a

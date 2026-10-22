@@ -87,14 +87,16 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq (w : ℕ → E) {t : ℝ≥
         exact add_mem (mem_sup_left (mem_span_singleton_self _)) (mem_sup_right (hyF n))
   -- Each `e n` is `T (n + 1) / T n`-orthogonal to the previous vectors, so for every `N` the
   -- vectors `e i` with `i < N` are `T N`-orthogonal, and `t ≤ T N`.
-  have key := mul_sup_nnnorm_le_of_forall_lt (K := K) hT (fun n ↦ ⟨(hT' n).1, (hT' n).2.2⟩)
-    fun N z hz ↦ by
+  have key := isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub (K := K) hT
+    (fun n ↦ ⟨(hT' n).1, (hT' n).2.2⟩) fun N z hz ↦ by
       rw [hspan] at hz
       exact_mod_cast hy N z hz
   refine ⟨e, isTOrthogonalFamily_def.2 fun s a ↦ ?_, hspan⟩
-  have hs (i : ℕ) (hi : i ∈ s) : i < s.sup id + 1 :=
+  have hs (i : ℕ) (hi : i ∈ s) : i ∈ Iio (s.sup id + 1) :=
     Nat.lt_succ_of_le (Finset.le_sup (f := id) hi)
-  exact (mul_le_mul_of_nonneg_right (hT' _).2.1 zero_le).trans (key _ s hs a)
+  rw [← Finset.subtype_map_of_mem hs, Finset.sup_map, Finset.sum_map]
+  exact (mul_le_mul_of_nonneg_right (hT' _).2.1 zero_le).trans
+    (isTOrthogonalFamily_def.1 (key _) _ fun i ↦ a i)
 
 /-- **`t`-orthogonal bases of spaces of countable type**: over a complete nontrivially normed
 field, if a sequence `v` has dense span in an ultrametric normed space `E`, then for every `t < 1`
