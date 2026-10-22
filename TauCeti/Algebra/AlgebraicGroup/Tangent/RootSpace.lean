@@ -157,10 +157,10 @@ spaces.** The `n`-weight space for `D(N) → D(M) → G` is the sum of the `m`-w
 theorem adjointWeightSpace_mapDomainBialgHom_comp {N : Type*} [CommGroup N]
     (π : H →ₐc[R] MonoidAlgebra R M) (q : M →* N) (n : N) :
     adjointWeightSpace ((MonoidAlgebra.mapDomainBialgHom R q).comp π) n =
-      ⨆ m ∈ q ⁻¹' {n}, adjointWeightSpace π m :=
-  letI : Comodule R H (Module.Dual R (Bialgebra.CotangentSpace R H)) :=
-    adjointComodule (R := R) (H := H)
-  DiagonalizableGroup.weightSpace_mapDomainBialgHom_comp _ (π : H →ₗc[R] MonoidAlgebra R M) q n
+      ⨆ m ∈ q ⁻¹' {n}, adjointWeightSpace π m := by
+  simp only [adjointWeightSpace, BialgHom.comp_toCoalgHom]
+  exact DiagonalizableGroup.weightSpace_mapDomainBialgHom_comp _ (π : H →ₗc[R] MonoidAlgebra R M)
+    q n
 
 /-- Membership in an adjoint weight space can be tested on the universal point of the
 diagonalizable group. The universal point acts on a weight vector of weight `alpha` by the
