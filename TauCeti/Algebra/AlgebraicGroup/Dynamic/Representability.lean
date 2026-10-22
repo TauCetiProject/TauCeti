@@ -85,19 +85,7 @@ private def negativeCoefficientIdeal (l : H →ₐc[R] LaurentPolynomial R) : Id
 private theorem negativeCoefficientIdeal_le_ker_iff
     (l : H →ₐc[R] LaurentPolynomial R) (g : WithConv (H →ₐ[R] A)) :
     negativeCoefficientIdeal l ≤ RingHom.ker g.ofConv ↔ g ∈ parabolic A l := by
-  rw [negativeCoefficientIdeal, Ideal.span_le, mem_parabolic_iff]
-  have hext : (∃ F : WithConv (H →ₐ[R] Polynomial A), ofPolyPoint A F = conjugate A l g) ↔
-      ∀ h : H, ∀ n : ℤ, n < 0 → ((conjugate A l g).ofConv h).coeff n = 0 := by
-    rw [← exists_algHom_toLaurent_comp_eq_iff]
-    constructor
-    · rintro ⟨F, hF⟩
-      rw [ofPolyPoint_apply] at hF
-      exact ⟨F.ofConv, congrArg ofConv hF⟩
-    · rintro ⟨F, hF⟩
-      refine ⟨toConv F, ?_⟩
-      rw [ofPolyPoint_apply]
-      exact congrArg toConv hF
-  rw [hext]
+  rw [negativeCoefficientIdeal, Ideal.span_le, mem_parabolic_iff_forall_coeff_conjugate_eq_zero]
   constructor
   · intro hg h n hn
     rw [coeff_conjugate]

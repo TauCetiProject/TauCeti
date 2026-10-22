@@ -192,7 +192,7 @@ theorem homShiftDirectSumEquiv_symm_apply_hom [Module.Finite A M] (f : M →ₗ[
 support** when the source is finitely generated. A surjection from a finite graded free module
 `⨁ᵢ A{dᵢ}` embeds `Hom(P, M{j})` into `∏ᵢ M_{dᵢ-j}`, and `M` has only finitely many nonzero
 pieces. -/
-theorem hasFiniteLaurentSupport_hom_shiftObj (P M : GradedModuleCat.{uA} 𝒜)
+theorem hasFiniteLaurentSupport_hom_shiftObj (P M : GradedModuleCat.{max uA v} 𝒜)
     [Module.Finite A P] [Module.Finite k M] :
     HasFiniteLaurentSupport k fun j : ℤ ↦ P ⟶ M.shiftObj j := by
   classical

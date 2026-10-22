@@ -139,21 +139,9 @@ theorem minorGcd_eq_gcd_plucker {ι : Type*} [Fintype ι] [LinearOrder ι] {p : 
     (TauCeti.plucker_apply A.row s).symm
   refine dvd_antisymm_of_normalize_eq (normalize_minorGcd A) Finset.normalize_gcd
     (Finset.dvd_gcd fun s _ ↦ hp s ▸ minorGcd_dvd A _) (dvd_minorGcd_iff.2 fun e ↦ ?_)
-  -- The embedding `e` lists the columns of its range `s` in the order of a permutation `σ` of
-  -- the increasing enumeration `t` of `s`, so its minor is `sign σ` times the Plücker coordinate
-  -- at `s`.
-  set s := Set.powersetCard.ofFinEmb p ι e
-  set t := Set.powersetCard.ofFinEmbEquiv.symm s
-  have hrange : Set.range t = Set.range e := Set.ext fun i ↦ by
-    rw [Set.powersetCard.mem_range_ofFinEmbEquiv_symm_iff_mem,
-      Set.powersetCard.mem_ofFinEmb_iff_mem_range]
-  let σ : Equiv.Perm (Fin p) := (Equiv.ofInjective e e.injective).trans
-    ((Set.equivOfEq hrange.symm).trans (Equiv.ofInjective t t.injective).symm)
-  have he : A.submatrix id e = (A.submatrix id t).submatrix id σ := by
-    ext i j
-    simp [σ, Equiv.apply_ofInjective_symm]
-  rw [he, det_permute', hp]
-  exact (Finset.gcd_dvd (Finset.mem_univ s)).mul_left _
+  obtain ⟨σ, hσ⟩ := A.exists_det_submatrix_eq_sign_mul_plucker e
+  rw [hσ]
+  exact (Finset.gcd_dvd (Finset.mem_univ _)).mul_left _
 
 end Gcd
 
