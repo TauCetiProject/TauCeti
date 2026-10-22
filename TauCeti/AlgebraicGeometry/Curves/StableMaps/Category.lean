@@ -44,6 +44,7 @@ canonically isomorphic to the chosen base change.
   automorphism group of a prestable map to that of its pointed source curve.
 * `TauCeti.AlgebraicGeometry.PrestableMap.postcompFunctor`: postcomposition as a functor.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctor`: base change as a functor.
+* `TauCeti.AlgebraicGeometry.PrestableMap.pullbackAut`: base change of automorphisms.
 * `TauCeti.AlgebraicGeometry.PrestableMap.reindexFunctor`: reindexing as a functor.
 * `TauCeti.AlgebraicGeometry.PrestableMap.isoPullback`: the canonical isomorphism from a prestable
   map over `T` presented by fibre products to the chosen base change.
@@ -271,6 +272,16 @@ def pullbackFunctor (g : T ⟶ S) :
   map_comp f f' := by
     ext1
     exact (PointedPrestableFamily.pullbackFunctor g).map_comp f.curve f'.curve
+
+/-- Base change along `g : T ⟶ S`, as a group homomorphism from the automorphisms of a prestable
+map to the automorphisms of its base change. -/
+def pullbackAut (F : PrestableMap q n) (g : T ⟶ S) : Aut F →* Aut (F.pullback g) :=
+  (pullbackFunctor g).mapAut F
+
+@[simp]
+theorem pullbackAut_apply_asIso_hom (F : PrestableMap q n) (g : T ⟶ S) (e : Aut F) :
+    (F.pullbackAut g e).asIso.hom = pullbackMap g e.asIso.hom :=
+  (rfl)
 
 /-- Reindexing the markings along an injection `e : Fin m ↪ Fin n` as a functor; a morphism of
 prestable maps preserves in particular the reindexed markings. -/

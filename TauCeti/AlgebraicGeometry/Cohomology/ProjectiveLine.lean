@@ -23,10 +23,10 @@ Let `ℙ¹_R = Proj R[X₀, X₁]` be the projective line over a commutative rin
 (`TauCeti.AlgebraicGeometry.projectiveLine`). This file computes the cohomology of its structure
 sheaf: `H⁰(ℙ¹_R, 𝒪) = R` over any ring, and `Hⁿ(ℙ¹_R, 𝒪) = 0` for `n ≥ 1` when `R` is
 Noetherian. This is the case `m = 0` of the computation of `Hⁿ(ℙ¹_R, 𝒪(m))` (Hartshorne,
-Theorem III.5.1). Over a Noetherian ring it also shows that the higher cohomology `Hⁿ(ℙ¹_R, M)`,
-`n ≥ 1`, of every quasi-coherent sheaf `M` of finite type is a finitely generated `R`-module, the
-projective line case in positive degrees of the finiteness of cohomology of coherent sheaves on
-proper schemes (Stacks, Tag 02O6).
+Theorem III.5.1). Over a Noetherian ring it also shows that the cohomology `Hⁿ(ℙ¹_R, M)` of every
+quasi-coherent sheaf `M` of finite type is a finitely generated `R`-module in every degree, the
+projective line case of the finiteness of cohomology of coherent sheaves on proper schemes
+(Stacks, Tag 02O6).
 
 The computation uses the cover of `ℙ¹_R` by the standard charts `D₊(X₀)` and `D₊(X₁)`, with
 overlap `D₊(X₀X₁)`. Their rings of functions are the degree-zero homogeneous localizations, which
@@ -48,6 +48,16 @@ carries each of them into `P`, because `N` is the localization at `t` of the sec
 finitely generated `R`-module
 (`TauCeti.Algebra.finite_quotient_sup_of_mul_eq_one`).
 
+The global sections `H⁰(ℙ¹_R, M)` are the pairs of sections over the two charts that agree on the
+overlap. Restriction to the overlap sends them into `P ∩ Q`, with kernel made of pairs of sections
+vanishing on the overlap. The sections over `D₊(X₀)` are `R[t]`-combinations of finitely many
+generators, and those over `D₊(X₁)` are `R[t⁻¹]`-combinations of finitely many generators, so
+`P ∩ Q` is a finitely generated `R`-module (`TauCeti.Algebra.fg_inf_of_mul_eq_one`). A section
+over `D₊(X₀)` vanishing on the overlap is killed by a power of `t`, since restriction to the overlap
+is localization at `t`; the sections vanishing on the overlap thus form a finitely generated
+`R[t]`-module killed by a power of `t`, which is finitely generated over `R`
+(`TauCeti.Algebra.fg_restrictScalars_of_forall_pow_smul_eq_zero`).
+
 ## Main results
 
 All in the namespace `TauCeti.AlgebraicGeometry.projectiveLine`:
@@ -57,9 +67,9 @@ All in the namespace `TauCeti.AlgebraicGeometry.projectiveLine`:
 * `subsingleton_cohomology_one_trivial`: `H¹(ℙ¹_R, 𝒪) = 0` over a Noetherian ring.
 * `subsingleton_cohomology_of_two_le`: `Hⁿ(ℙ¹_R, M) = 0` for `n ≥ 2` and `M` quasi-coherent, over
   a Noetherian ring.
-* `finite_cohomology_one`: `H¹(ℙ¹_R, M)` is a finitely generated `R`-module for `M`
-  quasi-coherent of finite type, over a Noetherian ring.
-* `finite_cohomology_succ`: the same for `Hⁿ(ℙ¹_R, M)` with `n ≥ 1`.
+* `finite_cohomology_zero`, `finite_cohomology_one`: `H⁰(ℙ¹_R, M)` and `H¹(ℙ¹_R, M)` are finitely
+  generated `R`-modules for `M` quasi-coherent of finite type, over a Noetherian ring.
+* `finite_cohomology`: the same for `Hⁿ(ℙ¹_R, M)` in every degree `n`.
 * `genus_eq_zero`: the projective line over a field has genus zero.
 
 ## References
@@ -422,38 +432,76 @@ private theorem overlapCoord_zero_mul_overlapCoord_one :
     map_awayToSection_ρ₁, ← map_mul]
   exact (congrArg _ (ψ₀_X_mul_ψ₁_X R)).trans (map_one _)
 
-/-- The functions on the overlap are an algebra over the global functions, by restriction. -/
-private noncomputable abbrev overlapAlgebra :
-    Algebra Γ(projectiveLine R, ⊤) Γ(projectiveLine R, W₀₁) :=
-  ((projectiveLine R).presheaf.map (TopologicalSpace.Opens.leTop W₀₁).op).hom.toAlgebra
+/-- The functions on an open are an algebra over the global functions, by restriction. -/
+private noncomputable abbrev sectionsAlgebra (U : (projectiveLine R).Opens) :
+    Algebra Γ(projectiveLine R, ⊤) Γ(projectiveLine R, U) :=
+  ((projectiveLine R).presheaf.map U.leTop.op).hom.toAlgebra
 
-attribute [local instance] overlapAlgebra
+attribute [local instance] sectionsAlgebra
 
-/-- Restricted to the overlap, the constant fraction `c / 1` on the chart `D₊(Xᵢ)` is the image
-of the global constant function `c`. -/
-private theorem map_awayToSection_algebraMap (i : Fin 2) (c : R) :
-    (projectiveLine R).presheaf.map (homOfLE (overlap_le_basicOpen_coord R i)).op
-        (Proj.awayToSection 𝒜 (coord R i) (algebraMap R _ c)) =
-      algebraMap Γ(projectiveLine R, ⊤) Γ(projectiveLine R, W₀₁)
-        (baseRingToGlobalSections R (projectiveLine R) c) := by
-  rw [awayToSection_algebraMap_eq_map, ← CommRingCat.comp_apply, ← Functor.map_comp,
-    RingHom.algebraMap_toAlgebra]
-  exact congrArg (fun f ↦ ((projectiveLine R).presheaf.map f).hom _) (Subsingleton.elim _ _)
+/-- Global functions act on the sections of a sheaf of modules over an open through their
+restrictions to the open. -/
+private theorem isScalarTower_restrict (M : (projectiveLine R).Modules)
+    (U : (projectiveLine R).Opens) :
+    IsScalarTower Γ(projectiveLine R, ⊤) Γ(projectiveLine R, U) Γ(M, U) :=
+  .of_algebraMap_smul fun r x ↦ (sectionsGlobal_smul M _ r x).symm
 
-/-- Restricted to the overlap, a polynomial in the affine coordinate of a chart is a polynomial in
-the restricted coordinate with coefficients restricted from the global functions. -/
-private theorem map_awayToSection_symm_mem_adjoin (i : Fin 2) (p : R[X]) :
-    (projectiveLine R).presheaf.map (homOfLE (overlap_le_basicOpen_coord R i)).op
-        (Proj.awayToSection 𝒜 (coord R i) ((awayEquivPolynomial R i).symm p)) ∈
-      Algebra.adjoin Γ(projectiveLine R, ⊤) {overlapCoord R i} := by
+attribute [local instance] isScalarTower_restrict
+
+/-- On the chart `D₊(Xᵢ)`, a polynomial in the affine coordinate is a polynomial in the coordinate
+with coefficients restricted from the global functions. -/
+private theorem awayToSection_symm_mem_adjoin (i : Fin 2) (p : R[X]) :
+    Proj.awayToSection 𝒜 (coord R i) ((awayEquivPolynomial R i).symm p) ∈
+      Algebra.adjoin Γ(projectiveLine R, ⊤) {chartCoord R i} := by
   induction p using Polynomial.induction_on' with
-  | add p q hp hq => rw [map_add, map_add, map_add]; exact Subalgebra.add_mem _ hp hq
+  | add p q hp hq => rw [map_add, map_add]; exact Subalgebra.add_mem _ hp hq
   | monomial n c =>
     rw [← C_mul_X_pow_eq_monomial, ← Polynomial.algebraMap_eq]
     simp only [map_mul, map_pow, AlgEquiv.commutes]
-    rw [map_awayToSection_algebraMap]
+    rw [awayToSection_algebraMap_eq_map]
     exact Subalgebra.mul_mem _ (Subalgebra.algebraMap_mem _ _)
       (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton _ _) n)
+
+/-- **The functions on a standard chart are generated by its affine coordinate** over the global
+functions. -/
+private theorem adjoin_chartCoord_eq_top (i : Fin 2) :
+    Algebra.adjoin Γ(projectiveLine R, ⊤) {chartCoord R i} = ⊤ := by
+  have hσ : Function.Surjective (Proj.awayToSection 𝒜 (coord R i)) :=
+    (Proj.basicOpenIsoAway 𝒜 _ (coord_mem R i) one_pos).commRingCatIsoToRingEquiv.surjective
+  rw [eq_top_iff]
+  rintro a -
+  obtain ⟨b, rfl⟩ := hσ a
+  obtain ⟨p, rfl⟩ := (awayEquivPolynomial R i).symm.surjective b
+  exact awayToSection_symm_mem_adjoin R i p
+
+/-- Restriction of functions respects the algebra structures given by global sections. -/
+private noncomputable def sectionsRestrictionAlgHom
+    {U V : (projectiveLine R).Opens} (h : U ≤ V) :
+    Γ(projectiveLine R, V) →ₐ[Γ(projectiveLine R, ⊤)] Γ(projectiveLine R, U) :=
+  { ((projectiveLine R).presheaf.map (homOfLE h).op).hom with
+    commutes' := fun r ↦ by
+      simp only [RingHom.algebraMap_toAlgebra]
+      -- The inherited ring hom retains `toFun` coercions; `comp_apply` instead matches
+      -- categorical applications. Normalize these wrappers to use presheaf functoriality.
+      change (projectiveLine R).presheaf.map (homOfLE h).op
+          ((projectiveLine R).presheaf.map V.leTop.op r) =
+        (projectiveLine R).presheaf.map U.leTop.op r
+      rw [← CommRingCat.comp_apply, ← Functor.map_comp]
+      exact congrArg (fun f ↦ ((projectiveLine R).presheaf.map f).hom r)
+        (Subsingleton.elim _ _) }
+
+/-- Every function on a standard chart restricts to a polynomial in its overlap coordinate. -/
+private theorem map_mem_adjoin_overlapCoord (i : Fin 2)
+    (a : Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i))) :
+    (projectiveLine R).presheaf.map (homOfLE (overlap_le_basicOpen_coord R i)).op a ∈
+      Algebra.adjoin Γ(projectiveLine R, ⊤) {overlapCoord R i} := by
+  let ρ := sectionsRestrictionAlgHom R (overlap_le_basicOpen_coord R i)
+  have ha : a ∈ Algebra.adjoin Γ(projectiveLine R, ⊤) {chartCoord R i} :=
+    adjoin_chartCoord_eq_top R i ▸ Algebra.mem_top
+  have hmap : ρ a ∈ (Algebra.adjoin Γ(projectiveLine R, ⊤)
+      {chartCoord R i}).map ρ := ⟨a, ha, rfl⟩
+  rw [AlgHom.map_adjoin, Set.image_singleton] at hmap
+  exact hmap
 
 /-- **The functions on the overlap are generated by the two affine coordinates** over the global
 functions: every Laurent polynomial in `X₁ / X₀` is a polynomial in `X₁ / X₀` plus a polynomial in
@@ -466,13 +514,11 @@ private theorem adjoin_overlapCoord_eq_top :
   rintro b -
   obtain ⟨c, rfl⟩ := hσ b
   obtain ⟨a₀, a₁, rfl⟩ := exists_ρ₀_sub_ρ₁_eq R c
-  obtain ⟨p, rfl⟩ := (awayEquivPolynomial R 0).symm.surjective a₀
-  obtain ⟨q, rfl⟩ := (awayEquivPolynomial R 1).symm.surjective a₁
   rw [map_sub, ← map_awayToSection_ρ₀ R (overlap_le_basicOpen_coord R 0),
     ← map_awayToSection_ρ₁ R (overlap_le_basicOpen_coord R 1)]
   exact Subalgebra.sub_mem _
-    (Algebra.adjoin_mono (by simp) (map_awayToSection_symm_mem_adjoin R 0 p))
-    (Algebra.adjoin_mono (by simp) (map_awayToSection_symm_mem_adjoin R 1 q))
+    (Algebra.adjoin_mono (by simp) (map_mem_adjoin_overlapCoord R 0 _))
+    (Algebra.adjoin_mono (by simp) (map_mem_adjoin_overlapCoord R 1 _))
 
 /-- Generators of the sections over the chart `D₊(X₁)` restrict to generators of the sections over
 the overlap, as a module over the functions on the overlap. -/
@@ -514,8 +560,6 @@ private theorem finite_sectionsQuotient (M : (projectiveLine R).Modules) [M.IsQu
           LinearMap.range (sectionsRestrictionLinear M (homOfLE h₁)))) from
     h _ (Proj.basicOpen_mul _ _ _) inf_le_left inf_le_right
   rintro W rfl h₀ h₁
-  have : IsScalarTower Γ(projectiveLine R, ⊤) Γ(projectiveLine R, W₀₁) Γ(M, W₀₁) :=
-    .of_algebraMap_smul fun r x ↦ (sectionsGlobal_smul M _ r x).symm
   have hU (i : Fin 2) : IsAffineOpen (Proj.basicOpen 𝒜 (coord R i)) :=
     Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R i) one_pos
   -- the sections over `D₊(X₁)` are finitely generated, and their generators generate the
@@ -539,6 +583,18 @@ private theorem finite_sectionsQuotient (M : (projectiveLine R).Modules) [M.IsQu
   · rintro _ ⟨y, _, rfl⟩
     exact ⟨y, sectionsRestrictionLinear_apply _ _ _⟩
 
+/-- Cohomology of a sheaf on the projective line that is finitely generated over the global
+functions is finitely generated over the base ring, which maps onto them. -/
+private theorem finite_cohomology_of_finite (M : (projectiveLine R).Modules) (n : ℕ)
+    [Module.Finite Γ(projectiveLine R, ⊤) (Cohomology M n)] : Module.Finite R (Cohomology M n) := by
+  let : Algebra R Γ(projectiveLine R, ⊤) :=
+    (((projectiveLine R).baseRingToStructurePresheaf R).app (.op ⊤)).hom.toAlgebra
+  have := isScalarTower_cohomology R (projectiveLine R) M n
+  have : Module.Finite R Γ(projectiveLine R, ⊤) :=
+    Module.Finite.of_surjective (Algebra.linearMap R Γ(projectiveLine R, ⊤))
+      (bijective_baseRingToStructurePresheaf_app_top R).surjective
+  exact Module.Finite.trans Γ(projectiveLine R, ⊤) (Cohomology M n)
+
 /-- **The first cohomology of a quasi-coherent sheaf of finite type on the projective line is a
 finitely generated module** over a Noetherian base ring `R`. -/
 theorem finite_cohomology_one [IsNoetherianRing R] (M : (projectiveLine R).Modules)
@@ -551,21 +607,159 @@ theorem finite_cohomology_one [IsNoetherianRing R] (M : (projectiveLine R).Modul
   have : Module.Finite Γ(projectiveLine R, ⊤) (Cohomology M 1) := Module.Finite.equiv
     (sectionsQuotientLinearEquivCohomologyOne M _ _ (basicOpen_coord_sup_eq_top R) (hacyclic 0)
       (hacyclic 1))
-  -- `R` maps onto the global functions, which act on cohomology compatibly with `R`
-  let : Algebra R Γ(projectiveLine R, ⊤) :=
-    (((projectiveLine R).baseRingToStructurePresheaf R).app (.op ⊤)).hom.toAlgebra
-  have := isScalarTower_cohomology R (projectiveLine R) M 1
-  have : Module.Finite R Γ(projectiveLine R, ⊤) := by
-    exact Module.Finite.of_surjective (Algebra.linearMap R Γ(projectiveLine R, ⊤))
-      (bijective_baseRingToStructurePresheaf_app_top R).surjective
-  exact Module.Finite.trans Γ(projectiveLine R, ⊤) (Cohomology M 1)
+  exact finite_cohomology_of_finite R M 1
 
-/-- **The higher cohomology of a quasi-coherent sheaf of finite type on the projective line is
-finitely generated** over a Noetherian base ring `R`: it is `H¹`, or zero in degrees at least
-two. -/
-instance finite_cohomology_succ [IsNoetherianRing R] (M : (projectiveLine R).Modules)
-    [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) : Module.Finite R (Cohomology M (n + 1)) := by
-  rcases n with _ | n
+/-! ### Finiteness of global sections -/
+
+/-- A section over the chart `D₊(Xᵢ)` that vanishes on the overlap is killed by a power of the
+affine coordinate of the chart. -/
+private theorem exists_pow_smul_eq_zero (M : (projectiveLine R).Modules) [M.IsQuasicoherent]
+    (i : Fin 2) {y : Γ(M, Proj.basicOpen 𝒜 (coord R i))}
+    (hy : M.presheaf.map (homOfLE (overlap_le_basicOpen_coord R i)).op y = 0) :
+    ∃ k : ℕ, chartCoord R i ^ k • y = 0 := by
+  -- the overlap is the basic open of the affine coordinate, where restriction is a localization
+  suffices h : ∀ (V : (projectiveLine R).Opens)
+      (_ : (projectiveLine R).basicOpen (chartCoord R i) = V)
+      (hV : V ≤ Proj.basicOpen 𝒜 (coord R i)),
+      M.presheaf.map (homOfLE hV).op y = 0 → ∃ k : ℕ, chartCoord R i ^ k • y = 0 from
+    h _ (basicOpen_chartCoord R i) _ hy
+  rintro _ rfl _ hy
+  have := M.isLocalizedModule_basicOpenRestrict
+    (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R i) one_pos) (chartCoord R i)
+  obtain ⟨⟨_, k, rfl⟩, hk⟩ := (IsLocalizedModule.eq_zero_iff (.powers (chartCoord R i))
+    (M.basicOpenRestrict (chartCoord R i))).mp (by rwa [Scheme.Modules.basicOpenRestrict_apply])
+  exact ⟨k, hk⟩
+
+/-- The sections over the chart `D₊(Xᵢ)` that vanish on the overlap form a finitely generated
+module over the global functions, for `M` quasi-coherent of finite type: they are a finitely
+generated module over the functions on the chart, killed by a power of its affine coordinate. -/
+private theorem fg_ker_sectionsRestrictionLinear [IsNoetherianRing R]
+    (M : (projectiveLine R).Modules) [M.IsQuasicoherent] [M.IsFiniteType] (i : Fin 2) :
+    (LinearMap.ker (sectionsRestrictionLinear M
+      (homOfLE (overlap_le_basicOpen_coord R i)))).FG := by
+  have := isNoetherianRing_basicOpen_coord R i
+  have := M.finite_sections_of_isAffineOpen _
+    (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R i) one_pos)
+  -- the same sections, as a submodule over the functions on the chart
+  let K : Submodule Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i))
+      Γ(M, Proj.basicOpen 𝒜 (coord R i)) :=
+    { carrier := {y | M.presheaf.map (homOfLE (overlap_le_basicOpen_coord R i)).op y = 0}
+      add_mem' := fun hy hz ↦ by simp_all
+      zero_mem' := by simp
+      smul_mem' := fun a y hy ↦ by simp_all }
+  have hK := TauCeti.Algebra.fg_restrictScalars_of_forall_pow_smul_eq_zero
+    (adjoin_chartCoord_eq_top R i) (IsNoetherian.noetherian K) fun y hy ↦
+      exists_pow_smul_eq_zero R M i hy
+  convert hK using 1
+  ext y
+  simp only [LinearMap.mem_ker, sectionsRestrictionLinear_apply, Submodule.restrictScalars_mem]
+  exact Iff.rfl
+
+/-- The restrictions to the overlap of the sections over the chart `D₊(Xᵢ)` are combinations, with
+coefficients polynomial in the restricted affine coordinate, of the restrictions of generators of
+the sections over the chart. -/
+private theorem range_le_span_adjoin (M : (projectiveLine R).Modules) (i : Fin 2)
+    {S : Set Γ(M, Proj.basicOpen 𝒜 (coord R i))}
+    (hS : Submodule.span Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) S = ⊤) :
+    LinearMap.range (sectionsRestrictionLinear M (homOfLE (overlap_le_basicOpen_coord R i))) ≤
+      (Submodule.span (Algebra.adjoin Γ(projectiveLine R, ⊤) {overlapCoord R i})
+        (M.presheaf.map (homOfLE (overlap_le_basicOpen_coord R i)).op '' S)).restrictScalars
+          Γ(projectiveLine R, ⊤) := by
+  rintro _ ⟨y, rfl⟩
+  have hy : y ∈ Submodule.span _ S := hS ▸ Submodule.mem_top
+  rw [sectionsRestrictionLinear_apply, Submodule.restrictScalars_mem]
+  induction hy using Submodule.span_induction with
+  | mem s hs => exact Submodule.subset_span ⟨s, hs, rfl⟩
+  | zero => rw [map_zero]; exact zero_mem _
+  | add y z _ _ hy hz => rw [map_add]; exact add_mem hy hz
+  | smul a y _ hy =>
+    rw [M.map_smul]
+    exact Submodule.smul_mem _ ⟨_, map_mem_adjoin_overlapCoord R i a⟩ hy
+
+/-- Over a Noetherian ring, the global functions on the projective line form a Noetherian ring. -/
+private theorem isNoetherianRing_globalSections [IsNoetherianRing R] :
+    IsNoetherianRing Γ(projectiveLine R, ⊤) :=
+  isNoetherianRing_of_ringEquiv R (RingEquiv.ofBijective _ (bijective_baseRingToGlobalSections R))
+
+/-- The sections over the overlap that extend to both standard charts form a finitely generated
+module over the global functions, for `M` quasi-coherent of finite type. -/
+private theorem fg_range_inf_range [IsNoetherianRing R] (M : (projectiveLine R).Modules)
+    [M.IsQuasicoherent] [M.IsFiniteType] :
+    (LinearMap.range (sectionsRestrictionLinear M (homOfLE (overlap_le_basicOpen_coord R 0))) ⊓
+      LinearMap.range (sectionsRestrictionLinear M
+        (homOfLE (overlap_le_basicOpen_coord R 1)))).FG := by
+  have := isNoetherianRing_globalSections R
+  -- generators of the sections over the two charts
+  have hgen (i : Fin 2) : ∃ S : Set Γ(M, Proj.basicOpen 𝒜 (coord R i)), S.Finite ∧
+      Submodule.span Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) S = ⊤ := by
+    have := M.finite_sections_of_isAffineOpen _
+      (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R i) one_pos)
+    obtain ⟨S, hS⟩ := Module.Finite.fg_top
+      (R := Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)))
+      (M := Γ(M, Proj.basicOpen 𝒜 (coord R i)))
+    exact ⟨S, S.finite_toSet, hS⟩
+  choose S hSfin hS using hgen
+  exact (TauCeti.Algebra.fg_inf_of_mul_eq_one (overlapCoord_zero_mul_overlapCoord_one R)
+    (((hSfin 0).image _).union ((hSfin 1).image _))).of_le
+    (inf_le_inf ((range_le_span_adjoin R M 0 (hS 0)).trans
+      (Submodule.restrictScalars_mono _ (Submodule.span_mono Set.subset_union_left)))
+      ((range_le_span_adjoin R M 1 (hS 1)).trans
+      (Submodule.restrictScalars_mono _ (Submodule.span_mono Set.subset_union_right))))
+
+/-- **The global sections of a quasi-coherent sheaf of finite type on the projective line form a
+finitely generated module** over the global functions, over a Noetherian base ring. -/
+theorem finite_globalSections [IsNoetherianRing R] (M : (projectiveLine R).Modules)
+    [M.IsQuasicoherent] [M.IsFiniteType] : Module.Finite Γ(projectiveLine R, ⊤) Γ(M, ⊤) := by
+  have := isNoetherianRing_globalSections R
+  -- global sections are the pairs of sections over the charts that agree on the overlap
+  suffices h : (LinearMap.ker (mayerVietorisSectionsDifferenceLinear M
+      (Proj.basicOpen 𝒜 (coord R 0)) (Proj.basicOpen 𝒜 (coord R 1)))).FG by
+    rw [LinearMap.exact_iff.mp
+      (exact_mayerVietorisSectionsRestrictionLinear M _ _ (basicOpen_coord_sup_eq_top R))] at h
+    have := Module.Finite.iff_fg.mpr h
+    exact Module.Finite.equiv (LinearEquiv.ofInjective _
+      (mayerVietorisSectionsRestrictionLinear_injective M _ _ (basicOpen_coord_sup_eq_top R))).symm
+  -- the overlap is `D₊(X₀X₁)`, where the affine coordinates of the charts are defined
+  suffices h : ∀ (W : (projectiveLine R).Opens) (_ : W₀₁ = W)
+      (h₀ : W ≤ Proj.basicOpen 𝒜 (coord R 0)) (h₁ : W ≤ Proj.basicOpen 𝒜 (coord R 1)),
+      (LinearMap.ker ((sectionsRestrictionLinear M (homOfLE h₀)).comp (LinearMap.fst _ _ _) -
+        (sectionsRestrictionLinear M (homOfLE h₁)).comp (LinearMap.snd _ _ _))).FG by
+    convert h _ (Proj.basicOpen_mul _ _ _) inf_le_left inf_le_right using 1
+    ext ⟨s, t⟩
+    simp only [LinearMap.mem_ker, mayerVietorisSectionsDifferenceLinear_apply,
+      mayerVietorisSectionsDifference_apply, LinearMap.sub_apply, LinearMap.comp_apply,
+      LinearMap.fst_apply, LinearMap.snd_apply, sectionsRestrictionLinear_apply]
+    -- `M.presheaf` is the underlying presheaf `M.val` of the sheaf of modules
+    exact Iff.rfl
+  rintro W rfl h₀ h₁
+  -- a pair agreeing on the overlap is determined by the common restriction, which extends to
+  -- both charts, up to sections vanishing on the overlap
+  refine Submodule.fg_of_fg_map_of_fg_inf_ker
+    ((sectionsRestrictionLinear M (homOfLE h₀)).comp (LinearMap.fst _ _ _))
+    ((fg_range_inf_range R M).of_le ?_)
+    (((fg_ker_sectionsRestrictionLinear R M 0).prod
+      (fg_ker_sectionsRestrictionLinear R M 1)).of_le ?_)
+  · rintro _ ⟨⟨a, b⟩, hab, rfl⟩
+    exact ⟨⟨a, rfl⟩, ⟨b, (sub_eq_zero.mp hab).symm⟩⟩
+  · rintro ⟨a, b⟩ ⟨hab, ha⟩
+    exact ⟨ha, (sub_eq_zero.mp hab).symm.trans ha⟩
+
+/-- **The global sections of a quasi-coherent sheaf of finite type on the projective line form a
+finitely generated module** over a Noetherian base ring `R`: `H⁰(ℙ¹_R, M)` is finite over `R`. -/
+theorem finite_cohomology_zero [IsNoetherianRing R] (M : (projectiveLine R).Modules)
+    [M.IsQuasicoherent] [M.IsFiniteType] : Module.Finite R (Cohomology M 0) := by
+  have := finite_globalSections R M
+  have : Module.Finite Γ(projectiveLine R, ⊤) (Cohomology M 0) :=
+    Module.Finite.equiv (cohomologyZeroLinearEquiv M).symm
+  exact finite_cohomology_of_finite R M 0
+
+/-- **The cohomology of a quasi-coherent sheaf of finite type on the projective line is finitely
+generated** over a Noetherian base ring `R`, in every degree: `H⁰` and `H¹` are finite, and the
+higher cohomology vanishes. -/
+instance finite_cohomology [IsNoetherianRing R] (M : (projectiveLine R).Modules)
+    [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) : Module.Finite R (Cohomology M n) := by
+  rcases n with _ | _ | n
+  · exact finite_cohomology_zero R M
   · exact finite_cohomology_one R M
   · have := subsingleton_cohomology_of_two_le R M (n + 2) (by omega)
     infer_instance

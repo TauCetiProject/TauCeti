@@ -15,7 +15,8 @@ public import Mathlib.RingTheory.Artinian.Module
 
 The coordinatewise scalar action on dual numbers commutes with multiplication. These
 instances make bilinear multiplication and convolution available with that module structure.
-Dual numbers over an Artinian ring are also Artinian, using their product module structure.
+Dual numbers over an Artinian ring are also Artinian, using their product module structure, and
+they are a finite module over their coefficient ring.
 Multiplication by `ε` is exact over a commutative ring.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
 their value on `ε`. The dual numbers are free of rank two on the basis `1, ε`, so linear maps
@@ -107,6 +108,10 @@ theorem dualNumberBasis_zero : dualNumberBasis R 0 = 1 :=
 @[simp]
 theorem dualNumberBasis_one : dualNumberBasis R 1 = eps :=
   Module.Basis.finTwoProd_one R
+
+/-- The dual numbers are a finite module over their coefficient ring, with basis `1, ε`. -/
+instance dualNumberModuleFinite : Module.Finite R (DualNumber R) :=
+  Module.Finite.of_basis (dualNumberBasis R)
 
 variable {R}
 

@@ -33,11 +33,15 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 
 ## Main results
 
+* `MvPowerSeries.uniformContinuous_coeff_isRestrictedSubring`: coefficient maps are uniformly
+  continuous for the Gauss norm at arbitrary positive polyradii.
 * `MvPowerSeries.norm_eq_gaussNorm`: the norm is the Gauss norm at the chosen polyradii.
 * `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
+* `MvPowerSeries.norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le`: a constant coefficient
+  dominating every other weighted coefficient attains the Gauss norm.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
   largest norm-achieving exponent for any monomial order, and
   `MvPowerSeries.IsRestricted.norm_coeff_mul_norm_coeff_lt`: the product of the coefficients at
@@ -150,12 +154,40 @@ theorem norm_coeff_mul_prod_le (f : IsRestricted.subring (R := R) c) (t : σ →
     ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ ‖f‖ :=
   le_gaussNorm norm c _ f.2.hasGaussNorm t
 
+/-- Coefficient maps are uniformly continuous for the Gauss norm, with bound `(cᵗ)⁻¹`. -/
+theorem uniformContinuous_coeff_isRestrictedSubring (t : σ →₀ ℕ) :
+    UniformContinuous fun f : IsRestricted.subring (R := R) c ↦ coeff t (f : MvPowerSeries σ R) :=
+  AddMonoidHomClass.uniformContinuous_of_bound
+    ((coeff t).toAddMonoidHom.comp (IsRestricted.subring (R := R) c).subtype.toAddMonoidHom)
+    (t.prod (c · ^ ·))⁻¹ fun f ↦ by
+      rw [inv_mul_eq_div, le_div_iff₀ (prod_pow_pos t)]
+      exact norm_coeff_mul_prod_le f t
+
+/-- **Coefficients are continuous for the Gauss norm**: the coefficient of `Xᵗ` is bounded by
+`(cᵗ)⁻¹` times the Gauss norm. -/
+theorem continuous_coeff_isRestrictedSubring (t : σ →₀ ℕ) :
+    Continuous fun f : IsRestricted.subring (R := R) c ↦ coeff t (f : MvPowerSeries σ R) :=
+  (uniformContinuous_coeff_isRestrictedSubring t).continuous
+
 /-- A nonnegative bound on the norm is exactly a bound on every weighted coefficient norm. -/
 theorem norm_le_iff {f : IsRestricted.subring (R := R) c} {r : ℝ}
     (hr : 0 ≤ r) : ‖f‖ ≤ r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ r := by
   refine ⟨fun h t ↦ (norm_coeff_mul_prod_le f t).trans h, fun h ↦ ?_⟩
   rw [norm_eq_gaussNorm, gaussNorm]
   exact Real.iSup_le (by simpa using h) hr
+
+/-- A constant coefficient dominating the weighted norm of every other coefficient attains the
+Gauss norm. -/
+theorem norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le
+    {f : IsRestricted.subring (R := R) c}
+    (h : ∀ t ≠ 0, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
+      ‖constantCoeff (f : MvPowerSeries σ R)‖) :
+    ‖f‖ = ‖constantCoeff (f : MvPowerSeries σ R)‖ := by
+  refine le_antisymm ((norm_le_iff (norm_nonneg _)).2 fun t ↦ ?_) ?_
+  · rcases eq_or_ne t 0 with rfl | ht
+    · simp [coeff_zero_eq_constantCoeff_apply]
+    · exact h t ht
+  · simpa [coeff_zero_eq_constantCoeff_apply] using norm_coeff_mul_prod_le f 0
 
 /-- **The norm gap of a restricted series.** The weighted coefficient norms of a nonzero
 restricted series that are smaller than its norm are bounded by a constant smaller than its
@@ -284,14 +316,8 @@ instance [NormOneClass R] : NormOneClass
 instance [CompleteSpace R] : CompleteSpace
     (IsRestricted.subring (R := R) c) := by
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
-  have hcoeff (t : σ →₀ ℕ) : CauchySeq fun k ↦ coeff t (F k : MvPowerSeries σ R) := by
-    let coeffHom : IsRestricted.subring (R := R) c →+ R :=
-      (coeff t).toAddMonoidHom.comp
-        (IsRestricted.subring (R := R) c).subtype.toAddMonoidHom
-    refine (AddMonoidHomClass.uniformContinuous_of_bound coeffHom (t.prod (c · ^ ·))⁻¹
-      fun f ↦ ?_).comp_cauchySeq hF
-    rw [← div_eq_inv_mul, le_div_iff₀ (prod_pow_pos t)]
-    exact norm_coeff_mul_prod_le f t
+  have hcoeff (t : σ →₀ ℕ) : CauchySeq fun k ↦ coeff t (F k : MvPowerSeries σ R) :=
+    (uniformContinuous_coeff_isRestrictedSubring t).comp_cauchySeq hF
   -- Multivariate power series are coefficient functions; `a` is their coefficientwise limit.
   choose a ha using fun t ↦ cauchySeq_tendsto_of_complete (hcoeff t)
   have hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t,
