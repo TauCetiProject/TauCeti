@@ -128,19 +128,24 @@ theorem betaNegativeBinomialMeasure_zero {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
   let _ : IsProbabilityMeasure (betaMeasure a b) := isProbabilityMeasureBeta ha hb
   simp
 
+/-- At positive shape the real mass is positive at every natural number. -/
+theorem betaNegativeBinomialWeightReal_pos_of_pos {r a b : ℝ} (hr : 0 < r) (ha : 0 < a)
+    (hb : 0 < b) (k : ℕ) : 0 < betaNegativeBinomialWeightReal r a b k := by
+  rw [betaNegativeBinomialWeightReal_of_ne_zero hr.ne']
+  exact div_pos
+    (mul_pos
+      (div_pos (Real.Gamma_pos_of_pos (by positivity))
+        (mul_pos (Real.Gamma_pos_of_pos hr) (by positivity)))
+      (beta_pos (add_pos ha hr) (add_pos_of_pos_of_nonneg hb (Nat.cast_nonneg k))))
+    (beta_pos ha hb)
+
 /-- The real mass is nonnegative throughout the valid parameter range. -/
 theorem betaNegativeBinomialWeightReal_nonneg {r a b : ℝ} (hr : 0 ≤ r) (ha : 0 < a)
     (hb : 0 < b) (k : ℕ) : 0 ≤ betaNegativeBinomialWeightReal r a b k := by
   rcases hr.eq_or_lt with rfl | hr
   · rw [betaNegativeBinomialWeightReal_zero]
     split_ifs <;> norm_num
-  rw [betaNegativeBinomialWeightReal_of_ne_zero hr.ne']
-  exact div_nonneg
-    (mul_nonneg
-      (div_nonneg (Real.Gamma_pos_of_pos (by positivity)).le
-        (mul_nonneg (Real.Gamma_pos_of_pos hr).le (Nat.cast_nonneg _)))
-      (beta_pos (add_pos ha hr) (add_pos_of_pos_of_nonneg hb (Nat.cast_nonneg k))).le)
-    (beta_pos ha hb).le
+  exact (betaNegativeBinomialWeightReal_pos_of_pos hr ha hb k).le
 
 /-- The real-valued and extended beta-negative-binomial masses agree. -/
 @[simp]
@@ -175,8 +180,8 @@ theorem betaNegativeBinomialMeasure_real_singleton {r a b : ℝ} (hr : 0 ≤ r) 
         fun p => Real.Gamma (r + k) / (Real.Gamma r * k.factorial) * p ^ r * (1 - p) ^ k := by
       filter_upwards [ae_mem_Ioo_betaMeasure a b] with p hp
       rw [negativeBinomialMeasure_real_singleton hr.le hp.1 hp.2.le,
-        negativeBinomialWeightReal_eq_gamma hr.ne' k, Real.rpow_eq_pow]
-      ring_nf
+        negativeBinomialWeightReal_eq_gamma hr.ne' k, Real.rpow_eq_pow, add_comm (k : ℝ) r,
+        mul_comm (k.factorial : ℝ)]
     rw [integral_congr_ae hpointwise, betaNegativeBinomialWeightReal_of_ne_zero hr.ne']
     simp_rw [mul_assoc]
     rw [integral_const_mul]
@@ -187,7 +192,7 @@ theorem betaNegativeBinomialMeasure_real_singleton {r a b : ℝ} (hr : 0 ≤ r) 
       simpa only [Real.rpow_natCast] using
         integral_rpow_mul_one_sub_rpow_betaMeasure ha hb har hbk
     rw [hint]
-    ring_nf
+    ring
   · filter_upwards [ae_mem_Ioo_betaMeasure a b] with p hp
     let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp.1 hp.2.le
     exact measure_lt_top _ _
@@ -219,15 +224,7 @@ theorem betaNegativeBinomialWeightReal_pos_iff {r a b : ℝ} (hr : 0 ≤ r) (ha 
     0 < betaNegativeBinomialWeightReal r a b k ↔ k = 0 ∨ 0 < r := by
   rcases hr.eq_or_lt with rfl | hr
   · by_cases hk : k = 0 <;> simp [hk]
-  · rw [betaNegativeBinomialWeightReal_of_ne_zero hr.ne']
-    constructor
-    · exact fun _ => Or.inr hr
-    · exact fun _ => div_pos
-        (mul_pos
-          (div_pos (Real.Gamma_pos_of_pos (by positivity))
-            (mul_pos (Real.Gamma_pos_of_pos hr) (by positivity)))
-          (beta_pos (add_pos ha hr) (add_pos_of_pos_of_nonneg hb (Nat.cast_nonneg k))))
-        (beta_pos ha hb)
+  · exact ⟨fun _ => Or.inr hr, fun _ => betaNegativeBinomialWeightReal_pos_of_pos hr ha hb k⟩
 
 /-- The `ℝ≥0∞` mass is nonzero at every natural number at positive shape; at shape zero only at
 zero. -/
