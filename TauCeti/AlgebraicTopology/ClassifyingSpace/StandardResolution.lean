@@ -97,6 +97,9 @@ def universalGSpaceChainComplexToStandardComplex :
   comm' i j (h : j + 1 = i) := by
     subst i
     rw [universalGSpaceChainComplex_d]
+    -- Expand the chain-map components in the commutativity goal. Composition in `Rep`
+    -- is definitionally associative; the displayed source objects are the permutation
+    -- representations underlying `universalGSpaceChainComplex_X`.
     change (universalGSpaceToStandardHom k G (j + 1) ≫
         (Rep.standardComplex.xIso k G (j + 1)).inv) ≫
           (Rep.standardComplex k G).d (j + 1) j =
@@ -107,11 +110,17 @@ def universalGSpaceChainComplexToStandardComplex :
     dsimp only [Rep.standardComplex.xIso]
     simp only [Rep.hom_comp_toLinearMap]
     rw [Rep.standardComplex.d_eq]
+    -- After morphism extensionality, the comparison homomorphism is its defining linear
+    -- map: coefficient conversion from `MonoidAlgebra` followed by the simplex comparison.
+    -- The identity coordinate isomorphisms contribute no further map on either side.
     change (Rep.standardComplex.d k G (j + 1))
         ((universalGSpaceToStandard k (j + 1)) (MonoidAlgebra.coeffLinearEquiv k x)) =
       (universalGSpaceToStandard k j)
         (MonoidAlgebra.coeffLinearEquiv k ((universalGSpaceBoundary k G j).hom x))
     have hb := congr(ModuleCat.Hom.hom $(universalGSpaceBoundary_comp_coeff k G j) x)
+    -- Evaluating the transported `ModuleCat` morphism equality at `x` unfolds composition
+    -- of the underlying linear maps. The forgetful image of the representation boundary
+    -- acts by `(universalGSpaceBoundary k G j).hom`, giving the coefficient identity below.
     change MonoidAlgebra.coeffLinearEquiv k ((universalGSpaceBoundary k G j).hom x) =
       OrderedSimplicialChain.boundary k j (MonoidAlgebra.coeffLinearEquiv k x) at hb
     rw [hb]
