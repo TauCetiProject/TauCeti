@@ -162,6 +162,20 @@ theorem exists_algebraMap_eq_of_forall_coe_ne {f : MeromorphicFunction (OnePoint
       | infty => exact hf
       | coe z => exact hinf z
 
+/-- Near a finite point of the one-point compactification, the punctured neighbourhoods are the
+images of the punctured neighbourhoods of the point. -/
+private theorem nhdsNE_coe {Y : Type*} [TopologicalSpace Y] (y : Y) :
+    𝓝[≠] (y : OnePoint Y) = map (↑) (𝓝[≠] y) := by
+  rw [nhdsWithin_coe]
+  congr 2
+  ext
+  simp
+
+/-- The inclusion into the one-point compactification maps punctured neighbourhoods to punctured
+neighbourhoods. -/
+private theorem tendsto_coe_nhdsNE {Y : Type*} [TopologicalSpace Y] (y : Y) :
+    Tendsto ((↑) : Y → OnePoint Y) (𝓝[≠] y) (𝓝[≠] (y : OnePoint Y)) :=
+  tendsto_map.mono_right (nhdsNE_coe y).ge
 
 /-- The finite part of a meromorphic function on the Riemann sphere, read on `ℂ`. -/
 private abbrev finitePartCoe (f : MeromorphicFunction (OnePoint ℂ)) : ℂ → ℂ :=
@@ -194,8 +208,7 @@ private theorem finite_support_divisor_finitePartCoe {f : MeromorphicFunction (O
 vanish identically near any point. -/
 private theorem meromorphicOrderAt_finitePartCoe_ne_top {f : MeromorphicFunction (OnePoint ℂ)}
     (hf : f ≠ 0) (u : ℂ) : _root_.meromorphicOrderAt (finitePartCoe f) u ≠ ⊤ := fun h ↦ by
-  obtain ⟨y, hy⟩ := (((continuous_coe.continuousWithinAt.tendsto_nhdsWithin
-    (x := u) fun _ hy ↦ by simpa using hy).eventually
+  obtain ⟨y, hy⟩ := (((tendsto_coe_nhdsNE u).eventually
     (eventually_finitePart_ne_zero hf (u : OnePoint ℂ))).and
     (meromorphicOrderAt_eq_top_iff.1 h)).exists
   exact hy.1 hy.2
@@ -228,8 +241,7 @@ private theorem mul_inv_prod_coordinate_sub_zpow_apply {f : MeromorphicFunction 
       filter_upwards [(s.finite_toSet.sdiff (t := {z})).isClosed.compl_mem_nhds
         (fun h ↦ h.2 rfl) |> nhdsWithin_le_nhds, self_mem_nhdsWithin] with y hy hyz
       exact fun h ↦ hy ⟨h, hyz⟩
-    filter_upwards [hs', (continuous_coe.continuousWithinAt.tendsto_nhdsWithin
-      (x := z) fun _ hy ↦ by simpa using hy).eventually (f.eventually_ne_infty z),
+    filter_upwards [hs', (tendsto_coe_nhdsNE z).eventually (f.eventually_ne_infty z),
       eventually_codiscrete_iff_forall_eventually_nhdsNE.1 hfg z] with y hy hfy hFy
     have hφy := prod_coordinate_sub_zpow_apply s d hy
     have hinv : (∏ u ∈ s, (coordinate - algebraMap ℂ _ u) ^ d u)⁻¹ (y : OnePoint ℂ) =
@@ -238,13 +250,15 @@ private theorem mul_inv_prod_coordinate_sub_zpow_apply {f : MeromorphicFunction 
         finitePart_of_eq_coe hφy]
     rw [mul_apply hfy (by simp [hinv]), finitePart_of_eq_coe hinv]
     congr 1
-    rw [show f.finitePart y = _ from hFy, Pi.smul_apply', smul_eq_mul,
-      finprod_sub_zpow_apply hd, ← hs]
+    simp only [finitePartCoe] at hFy
+    rw [hFy, Pi.smul_apply', smul_eq_mul, finprod_sub_zpow_apply hd, ← hs]
     field_simp [prod_sub_zpow_ne_zero d hy]
-  exact tendsto_nhds_unique_of_eventuallyEq
-    ((G.continuous.tendsto _).comp (continuous_coe.tendsto z) |>.mono_left nhdsWithin_le_nhds)
-    ((continuous_coe.tendsto _).comp (hg z (mem_univ z)).continuousAt |>.mono_left
-      nhdsWithin_le_nhds) hev
+  refine apply_eq_of_tendsto (φ := fun y ↦ ↑(g (affineChart y))) ?_ ?_
+  · rw [nhdsNE_coe, tendsto_map'_iff]
+    simpa [comp_def, affineChart_coe] using ((continuous_coe.tendsto _).comp
+      (hg z (mem_univ z)).continuousAt).mono_left nhdsWithin_le_nhds
+  · rw [nhdsNE_coe, eventually_map]
+    simpa [affineChart_coe] using hev
 
 /-- **Every meromorphic function on the Riemann sphere is a rational function of the
 coordinate.** -/

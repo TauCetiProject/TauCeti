@@ -158,13 +158,18 @@ theorem coe_finitePart (h : f x ≠ ∞) : (f.finitePart x : OnePoint ℂ) = f x
 theorem continuousAt_finitePart (h : f x ≠ ∞) : ContinuousAt f.finitePart x :=
   (affineChart.continuousAt (by simpa using h)).comp f.continuous.continuousAt
 
-/-- **Uniqueness of meromorphic functions.** Two meromorphic functions which agree on a punctured
-neighbourhood of every point are equal. -/
-theorem eq_of_eventually_apply_eq (h : ∀ x, ∀ᶠ y in 𝓝[≠] x, f y = g y) : f = g := by
-  ext x
+/-- The value of a meromorphic function at `x` is the limit at `x`, along the punctured
+neighbourhoods of `x`, of any map to the sphere that agrees with it near `x`. -/
+theorem apply_eq_of_tendsto {φ : X → OnePoint ℂ} {c : OnePoint ℂ} (hφ : Tendsto φ (𝓝[≠] x) (𝓝 c))
+    (h : ∀ᶠ y in 𝓝[≠] x, f y = φ y) : f x = c := by
   have := (chartAt ℂ x).nhdsNE_neBot (mem_chart_source ℂ x)
   exact tendsto_nhds_unique_of_eventuallyEq (f.continuous.continuousAt.mono_left
-    nhdsWithin_le_nhds) (g.continuous.continuousAt.mono_left nhdsWithin_le_nhds) (h x)
+    nhdsWithin_le_nhds) hφ h
+
+/-- **Uniqueness of meromorphic functions.** Two meromorphic functions which agree on a punctured
+neighbourhood of every point are equal. -/
+theorem eq_of_eventually_apply_eq (h : ∀ x, ∀ᶠ y in 𝓝[≠] x, f y = g y) : f = g :=
+  ext fun x ↦ apply_eq_of_tendsto (g.continuous.continuousAt.mono_left nhdsWithin_le_nhds) (h x)
 
 /-- To show that `f` equals `g`, it suffices to compare their values at the points satisfying a
 property `p` which holds on a punctured neighbourhood of every point, such as being a pole of
@@ -593,7 +598,6 @@ theorem prod_apply {ι : Type*} {s : Finset ι} {f : ι → MeromorphicFunction 
 /-- **The inverse vanishes at the poles.** At a pole of `f`, the meromorphic function `f⁻¹`
 takes the value `0`. -/
 theorem inv_apply_of_eq_infty (hf : f x = ∞) : f⁻¹ x = ((0 : ℂ) : OnePoint ℂ) := by
-  have := (chartAt ℂ x).nhdsNE_neBot (mem_chart_source ℂ x)
   -- Near the pole, `f⁻¹` is `f` read in the inverted chart of the sphere, which is continuous
   -- at `∞` with value `0`.
   have hinv : ContinuousAt (fun y ↦ invChart (f y)) x := by
@@ -606,8 +610,7 @@ theorem inv_apply_of_eq_infty (hf : f x = ∞) : f⁻¹ x = ((0 : ℂ) : OnePoin
     rwa [comp_apply, hf, invChart_infty] at h
   have hne0 : ∀ᶠ y in 𝓝 x, f y ≠ ((0 : ℂ) : OnePoint ℂ) :=
     f.continuous.continuousAt.eventually_ne (by simp [hf])
-  refine tendsto_nhds_unique_of_eventuallyEq (l := 𝓝[≠] x) (f⁻¹.continuous.continuousAt.mono_left
-    nhdsWithin_le_nhds) (hcont.mono_left nhdsWithin_le_nhds) ?_
+  refine apply_eq_of_tendsto (hcont.mono_left nhdsWithin_le_nhds) ?_
   filter_upwards [f.eventually_ne_infty x, nhdsWithin_le_nhds hne0] with y hy hy0
   rw [inv_apply hy hy0, finitePart_def, ← inv_invChart, inv_inv]
 
