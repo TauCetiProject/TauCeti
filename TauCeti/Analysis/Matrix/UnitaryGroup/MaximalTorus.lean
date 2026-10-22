@@ -76,7 +76,7 @@ theorem exists_map_conj_eq_unitaryTorus {T : Subgroup (unitaryGroup n ℂ)}
   have := hT.isTorus.isMulCommutative
   obtain ⟨u, hu⟩ := exists_map_conj_le_unitaryTorus (H := T)
   let e := ContinuousAut.conj u
-  have he : e.toMulEquiv = MulAut.conj u := ContinuousAut.coe_conj u
+  have he : e.toMulEquiv = MulAut.conj u := ContinuousAut.toMulEquiv_conj u
   refine ⟨u, ?_⟩
   rw [← he] at hu ⊢
   exact (hT.map_mulEquiv e.toMulEquiv e.continuous e.symm.continuous).eq_of_le
@@ -90,7 +90,7 @@ theorem isMaximalTorus_iff_exists_map_conj_eq_unitaryTorus
   refine ⟨exists_map_conj_eq_unitaryTorus, ?_⟩
   rintro ⟨u, hu⟩
   let e := ContinuousAut.conj u
-  have he : e.toMulEquiv = MulAut.conj u := ContinuousAut.coe_conj u
+  have he : e.toMulEquiv = MulAut.conj u := ContinuousAut.toMulEquiv_conj u
   rw [← he] at hu
   have h := isMaximalTorus_unitaryTorus.map_mulEquiv e.toMulEquiv.symm
     e.symm.continuous e.continuous

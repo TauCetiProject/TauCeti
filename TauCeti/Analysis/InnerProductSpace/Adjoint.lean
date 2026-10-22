@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 
 /-!
-# Adjoints of isometric isomorphisms, of `L²` coordinate projections, and norm bounds
+# Adjoints of finite-dimensional linear maps
 
 Two families of adjoints of linear maps between finite-dimensional inner product spaces:
 
@@ -25,6 +25,10 @@ Finally, a pointwise bound `‖C x‖ ≤ c * ‖x‖` passes to the adjoint
 form for algebraic linear maps, deduced from Mathlib's isometry `ContinuousLinearMap.adjoint`.
 If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 (`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`).
+
+Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
+(`TauCeti.toContinuousLinearMap_star`) and its normality
+(the instance `TauCeti.isStarNormal_toContinuousLinearMap`).
 -/
 
 public section
@@ -88,3 +92,25 @@ theorem adjoint_apply_mem_of_forall_mem_orthogonal {A : E →ₗ[𝕜] F} {T : S
     (A.orthogonal_ker ▸ mem_range_self _ y)
 
 end LinearMap
+
+namespace TauCeti
+
+/-- Passing a finite-dimensional operator to continuous linear maps preserves its adjoint. -/
+theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →ₗ[𝕜] E) :
+    (star T).toContinuousLinearMap = star T.toContinuousLinearMap := by
+  rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
+    LinearMap.adjoint_toContinuousLinearMap]
+
+/-- A finite-dimensional linear operator remains normal when regarded as continuous. -/
+instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →ₗ[𝕜] E) [IsStarNormal T] :
+    IsStarNormal T.toContinuousLinearMap where
+  star_comm_self := by
+    rw [← toContinuousLinearMap_star]
+    ext x
+    exact congrArg (fun f : E →ₗ[𝕜] E => f x) (star_comm_self (x := T)).eq
+
+end TauCeti

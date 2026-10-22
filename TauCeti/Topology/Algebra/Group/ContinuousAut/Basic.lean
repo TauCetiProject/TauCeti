@@ -205,7 +205,7 @@ theorem toMulAut_conj (g : G) : toMulAut (conj g) = MulAut.conj g :=
 
 /-- Forgetting continuity of an inner automorphism gives abstract conjugation. -/
 @[simp]
-theorem coe_conj (g : G) : (conj g : G ≃* G) = MulAut.conj g := by
+theorem toMulEquiv_conj (g : G) : (conj g : G ≃* G) = MulAut.conj g := by
   ext x
   exact (conj_apply g x).trans (MulAut.conj_apply g x).symm
 
