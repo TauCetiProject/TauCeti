@@ -22,7 +22,7 @@ Interval integrals of elementary functions in closed form or as series, continui
   `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
-* `TauCeti.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
+* `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
 -/
 
@@ -102,6 +102,9 @@ theorem integral_cos_pow_mul_cexp (k : ℕ) (n : ℤ) :
   refine Finset.sum_congr rfl fun m _ => ?_
   rw [intervalIntegral.integral_const_mul, integral_exp_int_mul_mul_I]
 
+end TauCeti
+
+namespace Real
 
 /-- Termwise integration of the exponential series `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` against the
 Fourier character `exp (n θ i)` over `[-π, π]`. -/
@@ -134,4 +137,4 @@ theorem hasSum_integral_exp_mul_cos_mul_cexp (κ : ℝ) (n : ℤ) :
     push_cast
     ring
 
-end TauCeti
+end Real

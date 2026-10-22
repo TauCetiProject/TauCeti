@@ -54,13 +54,6 @@ von Mises–Fisher laws.
   `∫_{-π}^{π} e^{κ cos θ} e^{i n θ} dθ = 2π I_{|n|}(κ)` for integer `n`, so the Fourier coefficients
   of `θ ↦ e^{κ cos θ}` are the values `I_{|n|}(κ)`.
 
-## Implementation notes
-
-The circle integral is computed termwise. Expanding `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` and
-`cosᵏ θ = 2⁻ᵏ ∑ₘ (k choose m) e^{i (2m - k) θ}`, orthogonality of the characters `e^{i j θ}` on
-`[-π, π]` leaves only the terms `k = 2 l + n`, `m = l`, which are the terms of the power series of
-`I_n(κ)`.
-
 ## References
 
 * *NIST Digital Library of Mathematical Functions*, §10.25 (definition and power series),
@@ -243,7 +236,10 @@ open Complex (I)
 
 private theorem integral_exp_mul_cos_mul_cexp_natCast (κ : ℝ) (n : ℕ) :
     ∫ θ in -π..π, (exp (κ * cos θ) : ℂ) * Complex.exp (n * θ * I) = 2 * π * besselI n κ := by
-  have h := TauCeti.hasSum_integral_exp_mul_cos_mul_cexp κ n
+  -- Integrate `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` termwise and expand
+  -- `cosᵏ θ = 2⁻ᵏ ∑ₘ (k choose m) e^{i (2m - k) θ}`; orthogonality of the characters on `[-π, π]`
+  -- leaves only the terms `k = 2 l + n`, `m = l`, which are those of the series of `I_n(κ)`.
+  have h := hasSum_integral_exp_mul_cos_mul_cexp κ n
   simp only [TauCeti.integral_cos_pow_mul_cexp] at h
   rw [Int.cast_natCast] at h
   -- Only the exponents `k = 2 l + n` contribute.
