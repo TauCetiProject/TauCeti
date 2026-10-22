@@ -189,6 +189,28 @@ theorem spinSixWedgeIsometryEquivPolarSplit_symm_apply_inr (i : Fin 3) :
   -- Bilinear isometry inversion is defined using the underlying linear equivalence.
   exact (spinSixWedgeIsometryEquivPolarSplit K).toLinearEquiv.symm_apply_apply _
 
+/-- The wedge basis transported to the split six-dimensional quadratic space. -/
+noncomputable def spinSixWedgeBasisInSplit :
+    Basis (Fin 3 ⊕ Fin 3) K (SplitEvenSpace K 3) :=
+  (spinSixWedgeBasis K).map (spinSixWedgeIsometryEquivPolarSplit K).toLinearEquiv
+
+@[simp]
+theorem spinSixWedgeBasisInSplit_inl (i : Fin 3) :
+    spinSixWedgeBasisInSplit K (Sum.inl i) =
+      ((Pi.basisFun K (Fin 3)).coord i, 0) := by
+  rw [spinSixWedgeBasisInSplit, Basis.map_apply]
+  rw [LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
+    spinSixWedgeIsometryEquivPolarSplit_apply_inl]
+
+@[simp]
+theorem spinSixWedgeBasisInSplit_inr (i : Fin 3) :
+    spinSixWedgeBasisInSplit K (Sum.inr i) =
+      (0, Pi.single i 1) := by
+  rw [spinSixWedgeBasisInSplit, Basis.map_apply]
+  rw [LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
+    spinSixWedgeIsometryEquivPolarSplit_apply_inr]
+
+
 variable [Invertible (2 : K)]
 
 /-- The quadratic form whose un-halved polar form is the volume pairing on `⋀²(K⁴)`.
