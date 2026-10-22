@@ -175,7 +175,7 @@ theorem exists_eq_comp_unitsMap_of_factorsThrough {R : Type*} [CommMonoidWithZer
 /-- **Characters factoring through a divisor.** For `d ∣ N`, the Dirichlet characters at level
 `N` which factor through `d` are exactly the raises of the characters modulo `d`:
 `FactorsThrough.χ₀` and `changeLevel` are inverse bijections. -/
-@[expose] noncomputable def factorsThroughEquiv {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
+noncomputable def factorsThroughEquiv {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
     [NeZero N] (h : d ∣ N) :
     {χ : DirichletCharacter R N // χ.FactorsThrough d} ≃ DirichletCharacter R d where
   toFun χ := χ.2.χ₀
@@ -188,14 +188,14 @@ theorem exists_eq_comp_unitsMap_of_factorsThrough {R : Type*} [CommMonoidWithZer
 theorem factorsThroughEquiv_apply {R : Type*} [CommMonoidWithZero R] {N d : ℕ} [NeZero N]
     (h : d ∣ N) (χ : {χ : DirichletCharacter R N // χ.FactorsThrough d}) :
     factorsThroughEquiv h χ = χ.2.χ₀ :=
-  rfl
+  (rfl)
 
 /-- The inverse of `factorsThroughEquiv` raises a character modulo `d` to level `N`. -/
 @[simp]
 theorem coe_factorsThroughEquiv_symm_apply {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
     [NeZero N] (h : d ∣ N) (ψ : DirichletCharacter R d) :
     ((factorsThroughEquiv h).symm ψ : DirichletCharacter R N) = changeLevel h ψ :=
-  rfl
+  (rfl)
 
 /-- Raising the level of a Dirichlet character does not change its value at a natural number
 prime to the new level. -/

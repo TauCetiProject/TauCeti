@@ -124,7 +124,8 @@ private theorem card_factorsThrough {g : ℕ} (hg : g ∣ N) :
       (factorsThroughEquiv (Nat.div_dvd_of_dvd hg)))).subtypeEquiv fun p ↦ ?_))
   obtain ⟨⟨χ₁, χ₂⟩, h₁, h₂⟩ := p
   dsimp only at h₁ h₂
-  change χ₁ (-1) * χ₂ (-1) = _ ↔ h₁.χ₀ (-1) * h₂.χ₀ (-1) = _
+  simp only [Equiv.trans_apply, Equiv.subtypeProdEquivProd, Equiv.coe_fn_mk,
+    Equiv.prodCongr_apply, Prod.map, factorsThroughEquiv_apply]
   rw [← changeLevel_apply_neg_one h₁.dvd, ← changeLevel_apply_neg_one h₂.dvd,
     ← h₁.eq_changeLevel, ← h₂.eq_changeLevel]
 
