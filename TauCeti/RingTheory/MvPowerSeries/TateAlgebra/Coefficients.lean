@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 
@@ -12,7 +13,8 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 # The coefficient model of the unit-radius Tate algebra
 
 At unit polyradius, restrictedness says exactly that the coefficient family tends to zero along
-the cofinite filter. This identifies the native restricted-series module with the model space
+the cofinite filter; at a constant radius `ρ`, it says that `‖aₜ‖ ρ^|t|` tends to zero. The
+unit-radius case identifies the native restricted-series module with the model space
 `C₀(WithDiscreteTopology (σ →₀ ℕ), R)`. The identification is linear and isometric for the Gauss
 norm, and it sends a restricted monomial to the corresponding coordinate vector.
 
@@ -38,12 +40,19 @@ open scoped Topology ZeroAtInfty
 
 namespace MvPowerSeries
 
-variable {σ R : Type*} [NormedCommRing R]
+variable {σ R : Type*} [NormedRing R]
 
 /-- Restrictedness at unit polyradius is convergence of the coefficient norms to zero. -/
 theorem isRestricted_one_iff {f : MvPowerSeries σ R} :
     IsRestricted (fun _ ↦ 1) f ↔ Tendsto (fun t ↦ ‖coeff t f‖) cofinite (𝓝 0) := by
   simp [IsRestricted]
+
+/-- Restrictedness at a constant radius `ρ`: the weighted coefficient norms `‖aᵥ‖ ρ^|ν|` tend to
+zero. The case `ρ = 1` is `isRestricted_one_iff`. -/
+theorem isRestricted_const_iff {f : MvPowerSeries σ R} {ρ : ℝ} :
+    IsRestricted (fun _ : σ ↦ ρ) f ↔
+      Tendsto (fun t : σ →₀ ℕ ↦ ‖coeff t f‖ * ρ ^ t.degree) cofinite (𝓝 0) := by
+  simp only [IsRestricted, Finsupp.prod_pow_eq_pow_degree]
 
 end MvPowerSeries
 

@@ -88,6 +88,18 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_unitEmbedding
     rw [HeightOneSpectrum.coe_ideleFiniteCoord]
     rfl
 
+/-- The distance from one of the coordinate at `v` of a principal idele is measured by the
+`v`-adic valuation of `x - 1`. -/
+theorem IsDedekindDomain.HeightOneSpectrum.valued_ideleFiniteCoord_unitEmbedding_sub_one
+    (v : HeightOneSpectrum R) (x : Kˣ) :
+    Valued.v ((v.ideleFiniteCoord (IdeleGroup.unitEmbedding R K x) :
+        v.adicCompletion K) - 1) = v.valuation K ((x : K) - 1) := by
+  rw [HeightOneSpectrum.ideleFiniteCoord_unitEmbedding, Units.coe_map]
+  simp only [MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe]
+  rw [← map_one (algebraMap K (v.adicCompletion K)), ← map_sub]
+  simp only [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+    Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation']
+
 /-- The infinite coordinate of a principal idele is the image of the global element. -/
 @[simp]
 theorem NumberField.InfinitePlace.ideleInfiniteCoord_unitEmbedding

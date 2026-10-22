@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Real.Sqrt
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Standard
 public import TauCeti.Data.SignType.Cardinality
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
@@ -36,6 +37,11 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
 
 * `QuadraticForm.anisotropic_iff_posDef_or_negDef`: real anisotropic forms are exactly the
   positive and negative definite forms, including forms on the zero space.
+* `QuadraticForm.anisotropic_iff_sigNeg_eq_zero_or_sigPos_eq_zero`: a real form with trivial
+  radical on a finite-dimensional space is anisotropic exactly when one of its two indices of
+  inertia vanishes.
+* `QuadraticMap.anisotropic_weightedSumSquares_iff`: a real diagonal form is anisotropic exactly
+  when its coefficients are all positive or all negative.
 * `QuadraticMap.map_inv_sqrt_smul_eq_one`: a vector of positive quadratic value can be
   normalized to value one by inverse-square-root scaling. This normalization feeds the
   reflection-pair construction for compact real Clifford forms.
@@ -132,6 +138,24 @@ theorem anisotropic_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ M) :
   · rintro (hQ | hQ)
     · exact hQ.anisotropic
     · exact fun x hx ↦ hQ.anisotropic x (by simpa using hx)
+
+/-- A real quadratic form with trivial radical on a finite-dimensional space is anisotropic if and
+only if one of its two indices of inertia vanishes: an indefinite regular real form is isotropic. -/
+theorem anisotropic_iff_sigNeg_eq_zero_or_sigPos_eq_zero [FiniteDimensional ℝ M]
+    {Q : _root_.QuadraticForm ℝ M} (hQ : Q.radical = ⊥) :
+    Q.Anisotropic ↔ sigNeg Q = 0 ∨ sigPos Q = 0 := by
+  rw [anisotropic_iff_posDef_or_negDef, posDef_iff_sigNeg_eq_zero_and_radical_eq_bot,
+    posDef_iff_sigNeg_eq_zero_and_radical_eq_bot, sigNeg_neg, radical_neg]
+  simp [hQ]
+
+/-- A real diagonal form `⟨b₁, …, bₙ⟩` is anisotropic exactly when its coefficients are all
+positive or all negative. No nonvanishing hypothesis is needed: a zero coefficient makes the
+corresponding basis vector isotropic and rules out both alternatives. -/
+theorem _root_.QuadraticMap.anisotropic_weightedSumSquares_iff {ι : Type*} [Fintype ι]
+    (b : ι → ℝ) : (weightedSumSquares ℝ b).Anisotropic ↔ (∀ i, 0 < b i) ∨ ∀ i, b i < 0 := by
+  rw [anisotropic_iff_posDef_or_negDef, neg_weightedSumSquares, posDef_weightedSumSquares_iff,
+    posDef_weightedSumSquares_iff]
+  simp only [Pi.neg_apply, Left.neg_pos_iff]
 
 end Definiteness
 

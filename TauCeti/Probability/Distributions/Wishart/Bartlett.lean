@@ -15,6 +15,7 @@ public import Mathlib.Probability.Independence.Basic
 
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.LinearAlgebra.Matrix.Cholesky.Coordinates
+import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.MeasureTheory.Measure.PiWithDensity
 
 /-!
@@ -61,6 +62,8 @@ Jacobian `2 ^ p * ∏ i, (L i i) ^ (p - i)` of the Cholesky change of variables
   `TauCeti.Probability.isProbabilityMeasure_bartlettCoordinateMeasure` — the square of a diagonal
   coordinate
   is chi-squared, and every coordinate law is normalized.
+* `TauCeti.Probability.map_diagonal_sq_pi_bartlettCoordinateMeasure` — the diagonal squares
+  of independent Bartlett coordinates have the product of their chi-squared laws.
 * `TauCeti.Probability.nonsingularWishartMeasure_one_eq_map_lowerTriangleGram` — the standard
   Wishart law is
   the Gram image of the product of the coordinate laws.
@@ -349,6 +352,33 @@ theorem isProbabilityMeasure_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n)
       (bartlett_degreesOfFreedom_pos hn ij.1.1)
   · rw [bartlettCoordinateMeasure_of_ne n h]
     infer_instance
+
+/-- The diagonal squares of independent Bartlett coordinates form a product of chi-squared
+laws, with the degrees decreasing along the diagonal. -/
+theorem map_diagonal_sq_pi_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n) :
+    (Measure.pi (bartlettCoordinateMeasure (p := p) n)).map
+        (fun x i ↦ x ⟨(i, i), le_rfl⟩ ^ 2) =
+      Measure.pi (fun i : Fin p ↦ chiSquaredMeasure (n - i.1)) := by
+  classical
+  let _ := isProbabilityMeasure_bartlettCoordinateMeasure (p := p) hn
+  let e : Fin p ↪ lowerTriangle p :=
+    ⟨fun i ↦ ⟨(i, i), le_rfl⟩, fun _ _ h ↦ congrArg (fun ij ↦ ij.1.1) h⟩
+  have hmap := (measurePreserving_pi_comp_embedding
+    (bartlettCoordinateMeasure (p := p) n) e).map_eq
+  calc
+    _ = ((Measure.pi (bartlettCoordinateMeasure (p := p) n)).map
+          (fun x i ↦ x (e i))).map (fun x i ↦ x i ^ 2) := by
+      rw [Measure.map_map (by fun_prop) (by fun_prop)]
+      -- The local embedding `e` sends `i` to `(i, i)`, so the composite is definitionally
+      -- the diagonal-square map.
+      rfl
+    _ = (Measure.pi (fun i ↦ bartlettCoordinateMeasure n (e i))).map
+          (fun x i ↦ x i ^ 2) := by rw [hmap]
+    _ = _ := by
+      rw [Measure.pi_map_pi (f := fun _ (x : ℝ) ↦ x ^ 2) (fun _ ↦ by fun_prop)]
+      congr 1
+      funext i
+      exact map_sq_bartlettCoordinateMeasure_of_eq hn rfl
 
 /-- The product of the coordinate laws gives no mass to a nonpositive diagonal coordinate. -/
 theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion (hn : (p : ℝ) - 1 < n) :

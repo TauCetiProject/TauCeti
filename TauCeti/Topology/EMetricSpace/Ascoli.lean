@@ -13,8 +13,8 @@ public import TauCeti.Order.Filter.AtTopBot
 # A refined Arzelà–Ascoli theorem for maps with an asymptotic modulus
 
 Let `v k : T → X` be a sequence of maps from a separable topological space `T` to an extended
-metric space `X`. The maps need not be continuous: they are only asked to be *asymptotically*
-equicontinuous, in the sense that
+metric space `X`, or more generally a weak extended metric space. The maps need not be
+continuous: they are only asked to be *asymptotically* equicontinuous, in the sense that
 
 `limsup_k d(v k s, v k t) ≤ ω s t`
 
@@ -55,12 +55,14 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {T X : Type*} [TopologicalSpace T] [EMetricSpace X] {l : X → Filter X}
+variable {T X : Type*} [TopologicalSpace T] [TopologicalSpace X] [WeakEMetricSpace X]
+  {l : X → Filter X}
 
 /-- **A refined Arzelà–Ascoli theorem** (Ambrosio–Gigli–Savaré, Proposition 3.3.1). Let `l y` be
-the filter of an auxiliary convergence `y_n ⇀ y` on an extended metric space `X`, for which the
-distance is jointly sequentially lower semicontinuous. Let `v k : T → X` be maps on a separable
-space `T` such that
+the filter of an auxiliary convergence `y_n ⇀ y` on a weak extended metric space `X`, for which
+the distance is jointly sequentially lower semicontinuous. The topology of `X` need not be
+induced by its extended distance; the auxiliary convergence is specified only by `l`. Let
+`v k : T → X` be maps on a separable space `T` such that
 
 * at each time `t`, the values `v k t` lie in a set `K t` in which every sequence has a
   `⇀`-convergent subsequence;
@@ -104,13 +106,12 @@ theorem tendsto_subseq_of_limsup_edist_le [TopologicalSpace.SeparableSpace T]
       refine (edist_triangle _ (y j) _).trans (add_le_add (hlim hΨ₁ hz₁ ((hy j).comp h₁)) ?_)
       rw [edist_comm]
       exact hlim hΨ₂ hz₂ ((hy j).comp h₂)
-    refine edist_eq_zero.1 (le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_)
-      bot_le)
-    have hε2 : (0 : ℝ≥0∞) < ε / 2 := ENNReal.half_pos (by exact_mod_cast hε.ne')
-    obtain ⟨_, ⟨j, rfl⟩, hjε⟩ := hD.inter_nhds_nonempty ((hω t).eventually (gt_mem_nhds hε2))
-    calc edist z₁ z₂ ≤ ω t (e j) + ω t (e j) := hj j
-      _ ≤ ε / 2 + ε / 2 := add_le_add hjε.le hjε.le
-      _ = 0 + ε := by rw [ENNReal.add_halves, zero_add]
+    apply edist_le_zero.1
+    have hbound : ∃ᶠ s in 𝓝 t, edist z₁ z₂ ≤ ω t s + ω t s :=
+      (mem_closure_iff_frequently.1 (hD t)).mono <| by
+        rintro _ ⟨j, rfl⟩
+        exact hj j
+    simpa using ge_of_tendsto_of_frequently ((hω t).add (hω t)) hbound
   -- The limit `u t` along some subsequence of `Ψ` is the limit along `Ψ` itself.
   choose u ψ' hψ' hu using fun t ↦ hK t (w := fun n ↦ v (Ψ n) t) fun n ↦ hvK _ _
   have htend t : Tendsto (fun n ↦ v (Ψ n) t) atTop (l (u t)) :=
