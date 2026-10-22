@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Polynomial.Reverse
+public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
@@ -43,6 +45,9 @@ operators, whose Fredholm determinants are entire series.
 * `PowerSeries.divByMonic`: the quotient `q` above, given by the explicit coefficient formula.
 * `PowerSeries.modByMonic`: the remainder `f - p * q`, truncated to a polynomial of degree less
   than `d`.
+* `PowerSeries.IsEntire.mkAdjoinRoot`: over an ultrametric ring with `‖1‖ = 1`, reduction of entire
+  series modulo `p`, as a surjective ring homomorphism to `AdjoinRoot p` whose kernel consists of
+  the multiples of `p` by entire series.
 
 ## Main results
 
@@ -491,6 +496,66 @@ theorem IsEntire.modByMonic_eq_zero_iff (hf : f.IsEntire) (hp : p.Monic) :
   · simpa [h] using (hf.modByMonic_add_divByMonic hp).symm
   · rw [hfq]
     exact hq.coe_mul_modByMonic hp
+
+/-- **Reduction of entire series modulo a monic polynomial.** Over a complete ultrametric ring
+with `‖1‖ = 1`, sending an entire series `F` to the class of its remainder `F.modByMonic p` in
+`AdjoinRoot p` is a ring homomorphism. It is surjective, with kernel the multiples of `p` by entire
+series. -/
+noncomputable def IsEntire.mkAdjoinRoot (hp : p.Monic) : IsEntire.subring R →+* AdjoinRoot p where
+  toFun F := AdjoinRoot.mk p ((F : R⟦X⟧).modByMonic p)
+  map_one' := by
+    rw [Subring.coe_one, ← Polynomial.coe_one, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic hp,
+      map_one]
+  map_mul' F G := by
+    have hF := IsEntire.mem_subring.mp F.2
+    have hG := IsEntire.mem_subring.mp G.2
+    -- Write `F = r + p * q` and `G = r' + p * q'`; then `F * G = r * r' + p * Q` with `Q` entire.
+    have hdivF := hF.modByMonic_add_divByMonic hp
+    have hdivG := hG.modByMonic_add_divByMonic hp
+    set r := (F : R⟦X⟧).modByMonic p
+    set r' := (G : R⟦X⟧).modByMonic p
+    set q := (F : R⟦X⟧).divByMonic p
+    set q' := (G : R⟦X⟧).divByMonic p
+    have hQ : (q * r' + r * q' + p * q * q' : R⟦X⟧).IsEntire :=
+      (((hF.divByMonic p).mul (isEntire_coe r')).add
+        ((isEntire_coe r).mul (hG.divByMonic p))).add
+        (((isEntire_coe p).mul (hF.divByMonic p)).mul (hG.divByMonic p))
+    have hFG : ((F * G : IsEntire.subring R) : R⟦X⟧) =
+        ((r * r' : Polynomial R) : R⟦X⟧) + p * (q * r' + r * q' + p * q * q') := by
+      rw [Subring.coe_mul, ← hdivF, ← hdivG, Polynomial.coe_mul]
+      ring
+    rw [hFG, hQ.modByMonic_coe_add_coe_mul hp, AdjoinRoot.mk_modByMonic hp, map_mul]
+  map_zero' := by simp
+  map_add' F G := by
+    rw [Subring.coe_add, (IsEntire.mem_subring.mp F.2).add_modByMonic
+      (IsEntire.mem_subring.mp G.2), map_add]
+
+/-- Reduction modulo `p` sends an entire series to the class of its remainder. -/
+@[simp]
+theorem IsEntire.mkAdjoinRoot_apply (hp : p.Monic) (F : IsEntire.subring R) :
+    IsEntire.mkAdjoinRoot hp F = AdjoinRoot.mk p ((F : R⟦X⟧).modByMonic p) :=
+  (rfl)
+
+/-- On polynomials, reduction modulo `p` is `AdjoinRoot.mk p`. -/
+theorem IsEntire.mkAdjoinRoot_coe (hp : p.Monic) (g : Polynomial R) :
+    IsEntire.mkAdjoinRoot hp ⟨g, IsEntire.mem_subring.mpr (isEntire_coe g)⟩ =
+      AdjoinRoot.mk p g := by
+  rw [IsEntire.mkAdjoinRoot_apply, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic hp]
+
+/-- Reduction of entire series modulo `p` is surjective: polynomials already reach every class. -/
+theorem IsEntire.mkAdjoinRoot_surjective (hp : p.Monic) :
+    Function.Surjective (IsEntire.mkAdjoinRoot hp) := fun a ↦ by
+  obtain ⟨g, rfl⟩ := AdjoinRoot.mk_surjective a
+  exact ⟨_, IsEntire.mkAdjoinRoot_coe hp g⟩
+
+/-- An entire series reduces to zero modulo `p` exactly when it is `p` times an entire series. -/
+theorem IsEntire.mkAdjoinRoot_eq_zero_iff (hp : p.Monic) {F : IsEntire.subring R} :
+    IsEntire.mkAdjoinRoot hp F = 0 ↔ ∃ q : R⟦X⟧, q.IsEntire ∧ (F : R⟦X⟧) = p * q := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  rw [IsEntire.mkAdjoinRoot_apply, AdjoinRoot.mk_eq_zero,
+    ← Polynomial.modByMonic_eq_zero_iff_dvd hp,
+    (Polynomial.modByMonic_eq_self_iff hp).mpr (degree_modByMonic_lt _ hp.ne_zero),
+    (IsEntire.mem_subring.mp F.2).modByMonic_eq_zero_iff hp]
 
 end Ultrametric
 

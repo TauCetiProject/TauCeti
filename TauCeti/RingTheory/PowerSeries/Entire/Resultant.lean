@@ -24,7 +24,8 @@ values of `F` at the roots of `P`.
 
 Over an ultrametric ring with `‖1‖ = 1`, division is unique, so reduction modulo `P` is a ring
 homomorphism from entire series onto `AdjoinRoot P` with kernel `P` times the entire series
-(`PowerSeries.IsEntire.mkAdjoinRoot`). The entire resultant is then multiplicative in `F`, depends
+(`PowerSeries.IsEntire.mkAdjoinRoot`, in `TauCeti.RingTheory.PowerSeries.Entire.Division`), and
+the entire resultant is the norm of this reduction. It is then multiplicative in `F`, depends
 only on `F` modulo `P`, and is a unit exactly when `P` and `F` are coprime in the ring of entire
 series. It satisfies a Bézout identity `Res(P, F) = P * G + H * F` with `G` entire and `H` a
 polynomial of degree less than `d`.
@@ -35,8 +36,6 @@ determinants of compact operators, are reduced modulo polynomial factors.
 ## Main definitions
 
 * `Polynomial.entireResultant`: the resultant `Res(P, F)` of a polynomial and a power series.
-* `PowerSeries.IsEntire.mkAdjoinRoot`: reduction of entire series modulo a monic polynomial, as a
-  ring homomorphism to `AdjoinRoot P`.
 
 ## Main results
 
@@ -184,84 +183,15 @@ theorem exists_C_entireResultant_eq (hP : P.Monic) (hF : F.IsEntire) :
 
 end Normed
 
-end Polynomial
-
-namespace PowerSeries
-
-variable {R : Type*} [NormedCommRing R] [CompleteSpace R] [IsUltrametricDist R] [NormOneClass R]
-  {P : Polynomial R}
-
-/-- **Reduction of entire series modulo a monic polynomial.** Over a complete ultrametric ring
-with `‖1‖ = 1`, sending an entire series `F` to the class of its remainder `F.modByMonic P` in
-`AdjoinRoot P` is a ring homomorphism. It is surjective, with kernel the multiples of `P` by entire
-series. -/
-noncomputable def IsEntire.mkAdjoinRoot (hP : P.Monic) : IsEntire.subring R →+* AdjoinRoot P where
-  toFun F := AdjoinRoot.mk P ((F : R⟦X⟧).modByMonic P)
-  map_one' := by
-    rw [Subring.coe_one, ← Polynomial.coe_one, modByMonic_coe _ hP, AdjoinRoot.mk_modByMonic hP,
-      map_one]
-  map_mul' F G := by
-    have hF := IsEntire.mem_subring.mp F.2
-    have hG := IsEntire.mem_subring.mp G.2
-    -- Write `F = r + P * q` and `G = r' + P * q'`; then `F * G = r * r' + P * Q` with `Q` entire.
-    have hdivF := hF.modByMonic_add_divByMonic hP
-    have hdivG := hG.modByMonic_add_divByMonic hP
-    set r := (F : R⟦X⟧).modByMonic P
-    set r' := (G : R⟦X⟧).modByMonic P
-    set q := (F : R⟦X⟧).divByMonic P
-    set q' := (G : R⟦X⟧).divByMonic P
-    have hQ : (q * r' + r * q' + P * q * q' : R⟦X⟧).IsEntire :=
-      (((hF.divByMonic P).mul (isEntire_coe r')).add
-        ((isEntire_coe r).mul (hG.divByMonic P))).add
-        (((isEntire_coe P).mul (hF.divByMonic P)).mul (hG.divByMonic P))
-    have hFG : ((F * G : IsEntire.subring R) : R⟦X⟧) =
-        ((r * r' : Polynomial R) : R⟦X⟧) + P * (q * r' + r * q' + P * q * q') := by
-      rw [Subring.coe_mul, ← hdivF, ← hdivG, Polynomial.coe_mul]
-      ring
-    rw [hFG, hQ.modByMonic_coe_add_coe_mul hP, AdjoinRoot.mk_modByMonic hP, map_mul]
-  map_zero' := by simp
-  map_add' F G := by
-    rw [Subring.coe_add, (IsEntire.mem_subring.mp F.2).add_modByMonic
-      (IsEntire.mem_subring.mp G.2), map_add]
-
-/-- Reduction modulo `P` sends an entire series to the class of its remainder. -/
-@[simp]
-theorem IsEntire.mkAdjoinRoot_apply (hP : P.Monic) (F : IsEntire.subring R) :
-    IsEntire.mkAdjoinRoot hP F = AdjoinRoot.mk P ((F : R⟦X⟧).modByMonic P) :=
-  (rfl)
-
-/-- On polynomials, reduction modulo `P` is `AdjoinRoot.mk P`. -/
-theorem IsEntire.mkAdjoinRoot_coe (hP : P.Monic) (g : Polynomial R) :
-    IsEntire.mkAdjoinRoot hP ⟨g, IsEntire.mem_subring.mpr (isEntire_coe g)⟩ =
-      AdjoinRoot.mk P g := by
-  rw [IsEntire.mkAdjoinRoot_apply, modByMonic_coe _ hP, AdjoinRoot.mk_modByMonic hP]
-
-/-- Reduction of entire series modulo `P` is surjective: polynomials already reach every class. -/
-theorem IsEntire.mkAdjoinRoot_surjective (hP : P.Monic) :
-    Function.Surjective (IsEntire.mkAdjoinRoot hP) := fun a ↦ by
-  obtain ⟨g, rfl⟩ := AdjoinRoot.mk_surjective a
-  exact ⟨_, IsEntire.mkAdjoinRoot_coe hP g⟩
-
-/-- An entire series reduces to zero modulo `P` exactly when it is `P` times an entire series. -/
-theorem IsEntire.mkAdjoinRoot_eq_zero_iff (hP : P.Monic) {F : IsEntire.subring R} :
-    IsEntire.mkAdjoinRoot hP F = 0 ↔ ∃ q : R⟦X⟧, q.IsEntire ∧ (F : R⟦X⟧) = P * q := by
-  have : Nontrivial R := NormOneClass.nontrivial
-  rw [IsEntire.mkAdjoinRoot_apply, AdjoinRoot.mk_eq_zero,
-    ← Polynomial.modByMonic_eq_zero_iff_dvd hP,
-    (Polynomial.modByMonic_eq_self_iff hP).mpr (degree_modByMonic_lt _ hP.ne_zero),
-    (IsEntire.mem_subring.mp F.2).modByMonic_eq_zero_iff hP]
-
-end PowerSeries
-
-namespace Polynomial
+section Ultrametric
 
 variable {R : Type*} [NormedCommRing R] [CompleteSpace R] [IsUltrametricDist R] [NormOneClass R]
   {P : R[X]} {F G : R⟦X⟧}
 
 /-- The entire resultant of `P` and `F` is the norm of the reduction of `F` modulo `P`. -/
 theorem entireResultant_eq_norm_mkAdjoinRoot (hP : P.Monic) (F : IsEntire.subring R) :
-    entireResultant P F = Algebra.norm R (IsEntire.mkAdjoinRoot hP F) :=
-  (rfl)
+    entireResultant P F = Algebra.norm R (IsEntire.mkAdjoinRoot hP F) := by
+  rw [IsEntire.mkAdjoinRoot_apply, entireResultant_def]
 
 /-- **Invariance modulo `P`.** The entire resultant `Res(P, F)` depends only on `F` modulo `P`. -/
 theorem entireResultant_add_mul (hP : P.Monic) (hF : F.IsEntire) (hG : G.IsEntire) :
@@ -301,5 +231,7 @@ theorem isUnit_entireResultant_iff (hP : P.Monic) (hF : F.IsEntire) :
       mul_zero, zero_add] at hred
     rw [entireResultant_eq_norm_mkAdjoinRoot hP ⟨F, IsEntire.mem_subring.mpr hF⟩]
     exact (IsUnit.of_mul_eq_one_right _ hred).map (Algebra.norm R)
+
+end Ultrametric
 
 end Polynomial
