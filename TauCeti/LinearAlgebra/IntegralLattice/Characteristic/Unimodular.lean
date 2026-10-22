@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
+import TauCeti.Data.Int.MulPred
 
 /-!
 # Characteristic vectors in unimodular lattices
@@ -30,23 +31,12 @@ variable {V : Type u} [AddCommGroup V] [Module ℚ V]
 
 namespace IntegralLattice
 
-/-- The integral form of a unimodular lattice is a perfect pairing. -/
-private theorem IsUnimodular.isPerfPair_integralForm {L : IntegralLattice V}
-    (hL : L.IsUnimodular) : L.integralForm.IsPerfPair :=
-  let _ : L.IsNondegenerate := ⟨hL.nondegenerate⟩
-  .of_bijective _ (L.isUnimodular_iff_integralForm_bijective.mp hL)
-
-/-- Every integer satisfies `c ^ 2 ≡ c` modulo `2`. -/
-private theorem two_dvd_sq_sub_self (c : ℤ) : (2 : ℤ) ∣ c ^ 2 - c := by
-  rw [sq, ← mul_sub_one]
-  exact (Int.even_mul_pred_self c).two_dvd
-
 /-- Every unimodular integral lattice has a characteristic vector. -/
 theorem IsUnimodular.exists_isCharacteristicVector {L : IntegralLattice V}
     (hL : L.IsUnimodular) : ∃ w : L, L.IsCharacteristicVector w := by
   have := hL.isPerfPair_integralForm
   simpa only [isCharacteristicVector_iff_isCharacteristic] using
-    L.isSymm_integralForm.exists_isCharacteristic two_dvd_sq_sub_self
+    L.isSymm_integralForm.exists_isCharacteristic Int.two_dvd_sq_sub_self
 
 /-- Two characteristic vectors of a unimodular lattice differ by twice a lattice vector. -/
 theorem IsUnimodular.exists_characteristicVector_sub_eq_two_smul {L : IntegralLattice V}
