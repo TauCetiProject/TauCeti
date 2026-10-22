@@ -248,6 +248,14 @@ noncomputable def restrictedTranslate (a : Fin k → R) (ha : ∀ i, ‖a i‖ �
       IsRestricted.subring (R := R) r) + algebraMap R _ (a i))
     fun i ↦ norm_X_add_algebraMap_le (ha i)
 
+/-- Translation by `a` is the analytic substitution `Xᵢ ↦ Xᵢ + aᵢ`, so the substitution API
+(coefficient formula, evaluation, coefficient maps) applies to it. -/
+theorem restrictedTranslate_def (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ r i) :
+    restrictedTranslate a ha = restrictedAnalyticSubst (s := r)
+      (fun i ↦ (⟨X i, isRestricted_monomial r (Finsupp.single i 1) 1⟩ :
+        IsRestricted.subring (R := R) r) + algebraMap R _ (a i))
+      (fun i ↦ norm_X_add_algebraMap_le (ha i)) := (rfl)
+
 /-- Translation sends `Xᵢ` to `Xᵢ + aᵢ`. -/
 @[simp]
 theorem restrictedTranslate_X (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ r i) (i : Fin k) :
