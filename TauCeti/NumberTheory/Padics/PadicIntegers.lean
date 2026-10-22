@@ -63,6 +63,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `p`, is `n`.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
   `1 / m`.
+* `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
+* `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 -/
@@ -224,6 +226,23 @@ theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ �
   gcongr
   · exact pow_pos (by exact_mod_cast (Fact.out : p.Prime).pos) _
   · exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero (NeZero.ne m)) pow_padicValNat_dvd
+
+/-- The `p`-adic norm of a nonzero natural number `m` is `p ^ (-v_p(m))`. -/
+theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
+    ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
+  rw [Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm), Padic.valuation_natCast]
+
+open Nat in
+/-- The factorial of `p k` has `p`-adic norm `p ^ (-k) ‖k!‖`: by Legendre's formula, passing from
+`k!` to `(p k)!` raises the valuation by `k`. -/
+theorem norm_factorial_mul (k : ℕ) :
+    ‖((p * k)! : ℚ_[p])‖ = (p : ℝ) ^ (-(k : ℤ)) * ‖(k ! : ℚ_[p])‖ := by
+  have hp : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  rw [norm_natCast_eq_zpow (factorial_ne_zero _), norm_natCast_eq_zpow (factorial_ne_zero _),
+    padicValNat_factorial_mul, ← zpow_add₀ hp]
+  congr 1
+  push_cast
+  ring
 
 end Padic
 

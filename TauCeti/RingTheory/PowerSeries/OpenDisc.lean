@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+import TauCeti.Analysis.Normed.Field.NatCast
 
 /-!
 # Power series on an open disc
@@ -42,7 +44,9 @@ The geometric series `∑ aⁿ Xⁿ` lies on the open disc of radius `‖a‖⁻
 restricted at that radius (`TauCeti.PowerSeries.not_isRestricted_mk_pow`). Similarly,
 over a nontrivial normed ring, `∑ Xⁿ` lies on the open unit disc without being restricted at the
 radius `1`
-(`PowerSeries.onOpenDisc_mk_one`, `TauCeti.PowerSeries.not_isRestricted_mk_one`).
+(`PowerSeries.onOpenDisc_mk_one`, `TauCeti.PowerSeries.not_isRestricted_mk_one`). Over a normed
+field of characteristic zero, the logarithm series `log (1 + X) = ∑ (-1) ^ (n + 1) Xⁿ / n` lies
+on the open unit disc (`PowerSeries.onOpenDisc_log`).
 
 ## Main definitions
 
@@ -67,6 +71,8 @@ radius `1`
 * `PowerSeries.OnOpenDisc.hasseDeriv`, `PowerSeries.OnOpenDisc.derivative` and
   `PowerSeries.OnOpenDisc.map`: the condition is preserved by Hasse derivatives and bounded
   coefficient maps.
+* `PowerSeries.onOpenDisc_log`: over a normed field of characteristic zero, `log (1 + X)` lies on
+  the open unit disc.
 
 ## References
 
@@ -297,5 +303,26 @@ theorem OnOpenDisc.derivative (hf : f.OnOpenDisc R₀) : (d⁄dX f).OnOpenDisc R
   exact hf.hasseDeriv 1
 
 end NormedCommRing
+
+section NormedField
+
+variable {K : Type*} [NormedField K] [CharZero K]
+
+/-- The coefficients `(-1) ^ (n + 1) / n` of `log (1 + X)` are dominated by `‖1 / n‖`. -/
+theorem norm_coeff_log_le (n : ℕ) : ‖coeff n (log K)‖ ≤ ‖(n : K)⁻¹‖ := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · simp [coeff_log, hn, div_eq_mul_inv]
+
+/-- Over a normed field of characteristic zero, the logarithm series `log (1 + X)` lies on the
+open unit disc. -/
+theorem onOpenDisc_log : (log K).OnOpenDisc 1 := by
+  refine onOpenDisc_iff.mpr fun r hr hr1 ↦ ?_
+  rw [isRestricted_iff']
+  exact squeeze_zero (fun n ↦ by positivity)
+    (fun n ↦ mul_le_mul_of_nonneg_right (norm_coeff_log_le n) (pow_nonneg hr.le n))
+    (NormedField.tendsto_norm_inv_natCast_mul_pow K hr.le hr1)
+
+end NormedField
 
 end PowerSeries

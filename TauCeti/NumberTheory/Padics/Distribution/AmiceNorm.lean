@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.PowerSeries.Exp
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.NumberTheory.Padics.Measure.MahlerDuality
 public import TauCeti.RingTheory.PowerSeries.OpenDisc
-import TauCeti.Analysis.Normed.Field.NatCast
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The dual stage norms and the disc norms of Amice transforms
@@ -39,9 +39,10 @@ exactly when `F` converges on the open unit disc, that is, is restricted at ever
 `0 < ρ < 1` (`PowerSeries.OnOpenDisc`). By Amice's theorem these are the coefficient conditions
 for `F` to be the Amice transform of a distribution. A bound at a single level does not
 suffice: the moments `1 / n!` of the exponential series have finite level-zero norm but infinite
-level-one norm. The derivative at zero, whose transform is `log (1 + T)`, has moments
-`(-1) ^ (n + 1) / n`: they are unbounded, so it is not a measure, yet the series lies on the open
-unit disc.
+level-one norm. The series `log (1 + T)`, with coefficients `(-1) ^ (n + 1) / n`, lies on the
+open unit disc (`PowerSeries.onOpenDisc_log`), but its coefficients are unbounded, so it is not
+the Amice transform of a measure. Informally, it is the transform of the derivative at zero, a
+distribution that is not a measure.
 
 The supremum `amiceDualNorm` is a real `iSup`, so its value is meaningful only for bounded
 families; every statement assumes the relevant boundedness. The disc norm `S_h` is Mathlib's
@@ -50,7 +51,8 @@ families; every statement assumes the relevant boundedness. The disc norm `S_h` 
 ## Main definitions
 
 * `TauCeti.amiceRadius p h`: the radius `p ^ (-1 / ((p - 1) pʰ))`.
-* `TauCeti.amiceDualNorm p h F`: the dual stage norm `supₙ ‖coeff n F‖ ‖⌊n / pʰ⌋!‖`.
+* `TauCeti.amiceDualNorm p h F`: the dual stage norm `supₙ ‖coeff n F‖ ‖⌊n / pʰ⌋!‖`, with the
+  basic API `TauCeti.le_amiceDualNorm` and `TauCeti.amiceDualNorm_le`.
 
 ## Main results
 
@@ -63,8 +65,9 @@ families; every statement assumes the relevant boundedness. The disc norm `S_h` 
   stage norms, are finite exactly when the series lies on the open unit disc.
 * `TauCeti.bddAbove_amiceDual_zero_exp` and `TauCeti.not_bddAbove_amiceDual_one_exp`: the
   exponential series has finite dual stage norm at level zero but not at level one.
-* `TauCeti.onOpenDisc_one_log` and `TauCeti.log_notMem_range_amiceTransform`: `log (1 + T)`
-  lies on the open unit disc but is not the Amice transform of a measure.
+* `TauCeti.not_bddAbove_norm_coeff_log` and `TauCeti.log_notMem_range_amiceTransform`: the
+  coefficients of `log (1 + T)` are unbounded in `ℚ_p`, so it is not the Amice transform of a
+  measure.
 
 ## References
 
@@ -90,6 +93,12 @@ norm of an Amice transform at this radius is comparable with its dual stage norm
 noncomputable def amiceRadius (h : ℕ) : ℝ :=
   (p : ℝ) ^ (-(1 / (((p : ℝ) - 1) * (p : ℝ) ^ h)))
 
+omit hp in
+/-- The closed form of the radius `r_h`. -/
+theorem amiceRadius_def (h : ℕ) :
+    amiceRadius p h = (p : ℝ) ^ (-(1 / (((p : ℝ) - 1) * (p : ℝ) ^ h))) :=
+  (rfl)
+
 variable {p}
 
 private theorem one_lt_natCast : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
@@ -113,7 +122,7 @@ omit hp in
 /-- The `n`-th power of `r_h` is `p ^ (-n / ((p - 1) pʰ))`. -/
 theorem amiceRadius_pow (h n : ℕ) :
     amiceRadius p h ^ n = (p : ℝ) ^ (-((n : ℝ) / (((p : ℝ) - 1) * (p : ℝ) ^ h))) := by
-  rw [amiceRadius, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
+  rw [amiceRadius_def, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
   congr 1
   ring
 
@@ -140,14 +149,14 @@ theorem tendsto_amiceRadius : Tendsto (amiceRadius p) atTop (𝓝 1) := by
 /-- The norm in `ℚ_p` of a nonzero natural number `m` is `p ^ (-v_p(m))`, as a real power. -/
 private theorem norm_natCast_eq_rpow {m : ℕ} (hm : m ≠ 0) :
     ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℝ)) := by
-  rw [Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm), Padic.valuation_natCast,
-    ← Real.rpow_intCast]
+  rw [Padic.norm_natCast_eq_zpow hm, ← Real.rpow_intCast]
   simp
 
-/-- **Lower weight bound.** `r_hⁿ ≤ ‖⌊n / pʰ⌋!‖`: by Legendre's formula
-`(p - 1) v_p(m!) ≤ m`, and `m pʰ ≤ n` for `m = ⌊n / pʰ⌋`. -/
+/-- **Lower weight bound.** `r_hⁿ ≤ ‖⌊n / pʰ⌋!‖`: the weight `r_hⁿ` of the Gauss norm at the
+radius `r_h` is at most the weight of the dual stage norm at level `h`. -/
 theorem amiceRadius_pow_le_norm_factorial (h n : ℕ) :
     amiceRadius p h ^ n ≤ ‖((n / p ^ h)! : ℚ_[p])‖ := by
+  -- Legendre's formula gives `(p - 1) v_p(m!) ≤ m`, and `m pʰ ≤ n` for `m = ⌊n / pʰ⌋`.
   rw [amiceRadius_pow, norm_natCast_eq_rpow (factorial_ne_zero _)]
   refine Real.rpow_le_rpow_of_exponent_le one_lt_natCast.le (neg_le_neg ?_)
   have hsub := sub_one_pos (p := p)
@@ -165,13 +174,14 @@ theorem amiceRadius_pow_le_norm_factorial (h n : ℕ) :
         push_cast [hcast]; ring
     _ ≤ n := by exact_mod_cast hle
 
-/-- **Upper weight bound.** `‖⌊n / pʰ⌋!‖ ≤ p r_{h+1}ⁿ`: with `k = ⌊n / p^(h+1)⌋`, the valuation
-`v_p(⌊n / pʰ⌋!)` is at least `k`, while `n < p^(h+1) (k + 1)`. -/
+/-- **Upper weight bound.** `‖⌊n / pʰ⌋!‖ ≤ p r_{h+1}ⁿ`: the weight of the dual stage norm at
+level `h` is at most `p` times the weight `r_{h+1}ⁿ` of the Gauss norm at the radius `r_{h+1}`. -/
 theorem norm_factorial_le_mul_amiceRadius_succ_pow (h n : ℕ) :
     ‖((n / p ^ h)! : ℚ_[p])‖ ≤ p * amiceRadius p (h + 1) ^ n := by
   rw [amiceRadius_pow, norm_natCast_eq_rpow (factorial_ne_zero _)]
   have hp0 := natCast_pos (p := p)
   have hp2 : (2 : ℝ) ≤ p := by exact_mod_cast hp.out.two_le
+  -- Compare both sides through `k = ⌊n / p^(h+1)⌋`.
   set k := n / p ^ (h + 1)
   -- `v_p(⌊n / pʰ⌋!) ≥ ⌊⌊n / pʰ⌋ / p⌋ = k`
   have hk : k ≤ padicValNat p (n / p ^ h)! := by
@@ -205,13 +215,37 @@ supremum it is meaningful only when the family is bounded above. -/
 noncomputable def amiceDualNorm (h : ℕ) (F : PowerSeries K) : ℝ :=
   ⨆ n, ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖
 
+variable {p} in
+/-- The dual stage norm is the supremum of the terms `‖coeff n F‖ ‖⌊n / pʰ⌋!‖`. -/
+theorem amiceDualNorm_def (h : ℕ) (F : PowerSeries K) :
+    amiceDualNorm p h F = ⨆ n, ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖ :=
+  (rfl)
+
 variable {p} {F : PowerSeries K}
+
+/-- The lower weight bound, multiplied by the norm of a coefficient: the term of the Gauss norm at
+the radius `r_h` is at most the term of the dual stage norm at level `h`. -/
+theorem norm_coeff_mul_amiceRadius_pow_le (F : PowerSeries K) (h n : ℕ) :
+    ‖F.coeff n‖ * amiceRadius p h ^ n ≤ ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖ :=
+  mul_le_mul_of_nonneg_left (amiceRadius_pow_le_norm_factorial h n) (norm_nonneg _)
+
+/-- The upper weight bound, multiplied by the norm of a coefficient: the term of the dual stage
+norm at level `h` is at most `p` times the term of the Gauss norm at the radius `r_{h+1}`. -/
+theorem norm_coeff_mul_norm_factorial_le (F : PowerSeries K) (h n : ℕ) :
+    ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖ ≤ p * (‖F.coeff n‖ * amiceRadius p (h + 1) ^ n) :=
+  (mul_le_mul_of_nonneg_left (norm_factorial_le_mul_amiceRadius_succ_pow h n)
+    (norm_nonneg _)).trans_eq (mul_left_comm _ _ _)
 
 /-- Each term of a bounded family is at most the dual stage norm. -/
 theorem le_amiceDualNorm {h : ℕ}
     (hF : BddAbove (Set.range fun n ↦ ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖)) (n : ℕ) :
     ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖ ≤ amiceDualNorm p h F :=
   le_ciSup hF n
+
+/-- A common bound on the terms bounds the dual stage norm. -/
+theorem amiceDualNorm_le {h : ℕ} {C : ℝ}
+    (hC : ∀ n, ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖ ≤ C) : amiceDualNorm p h F ≤ C :=
+  ciSup_le hC
 
 /-- The dual stage norm is nonnegative. -/
 theorem amiceDualNorm_nonneg (h : ℕ) (F : PowerSeries K) : 0 ≤ amiceDualNorm p h F :=
@@ -222,8 +256,8 @@ theorem hasGaussNorm_amiceRadius_of_bddAbove {h : ℕ}
     (hF : BddAbove (Set.range fun n ↦ ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖)) :
     F.HasGaussNorm norm (amiceRadius p h) := by
   obtain ⟨B, hB⟩ := hF
-  refine ⟨B, Set.forall_mem_range.mpr fun n ↦ (hB ⟨n, rfl⟩).trans' ?_⟩
-  exact mul_le_mul_of_nonneg_left (amiceRadius_pow_le_norm_factorial h n) (norm_nonneg _)
+  exact ⟨B, Set.forall_mem_range.mpr fun n ↦
+    (hB ⟨n, rfl⟩).trans' (norm_coeff_mul_amiceRadius_pow_le F h n)⟩
 
 /-- A bounded Gauss norm at the radius `r_{h+1}` bounds the dual stage norm at level `h`. -/
 theorem bddAbove_amiceDual_of_hasGaussNorm {h : ℕ}
@@ -231,12 +265,8 @@ theorem bddAbove_amiceDual_of_hasGaussNorm {h : ℕ}
     BddAbove (Set.range fun n ↦ ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖) := by
   obtain ⟨B, hB⟩ := hF
   have := natCast_pos (p := p)
-  refine ⟨p * B, Set.forall_mem_range.mpr fun n ↦ ?_⟩
-  calc ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖
-      ≤ ‖F.coeff n‖ * (p * amiceRadius p (h + 1) ^ n) :=
-        mul_le_mul_of_nonneg_left (norm_factorial_le_mul_amiceRadius_succ_pow h n) (norm_nonneg _)
-    _ = p * (‖F.coeff n‖ * amiceRadius p (h + 1) ^ n) := by ring
-    _ ≤ p * B := mul_le_mul_of_nonneg_left (hB ⟨n, rfl⟩) (by positivity)
+  exact ⟨p * B, Set.forall_mem_range.mpr fun n ↦ (norm_coeff_mul_norm_factorial_le F h n).trans
+    (mul_le_mul_of_nonneg_left (hB ⟨n, rfl⟩) (by positivity))⟩
 
 /-- **`S_h ≤ D_h`.** The Gauss norm at the radius `r_h` is at most the dual stage norm at level
 `h`, provided the latter is the supremum of a bounded family. -/
@@ -244,22 +274,15 @@ theorem gaussNorm_amiceRadius_le_amiceDualNorm {h : ℕ}
     (hF : BddAbove (Set.range fun n ↦ ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖)) :
     F.gaussNorm norm (amiceRadius p h) ≤ amiceDualNorm p h F := by
   rw [PowerSeries.gaussNorm_eq]
-  exact ciSup_le fun n ↦ (mul_le_mul_of_nonneg_left
-    (amiceRadius_pow_le_norm_factorial h n) (norm_nonneg _)).trans (le_amiceDualNorm hF n)
+  exact ciSup_le fun n ↦ (norm_coeff_mul_amiceRadius_pow_le F h n).trans (le_amiceDualNorm hF n)
 
 /-- **`D_h ≤ p S_{h+1}`.** The dual stage norm at level `h` is at most `p` times the Gauss norm at
 the radius `r_{h+1}`, provided the latter is the supremum of a bounded family. -/
 theorem amiceDualNorm_le_mul_gaussNorm_amiceRadius_succ {h : ℕ}
     (hF : F.HasGaussNorm norm (amiceRadius p (h + 1))) :
     amiceDualNorm p h F ≤ p * F.gaussNorm norm (amiceRadius p (h + 1)) :=
-  ciSup_le fun n ↦
-    calc ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖
-        ≤ ‖F.coeff n‖ * (p * amiceRadius p (h + 1) ^ n) :=
-          mul_le_mul_of_nonneg_left (norm_factorial_le_mul_amiceRadius_succ_pow h n)
-            (norm_nonneg _)
-      _ = p * (‖F.coeff n‖ * amiceRadius p (h + 1) ^ n) := by ring
-      _ ≤ p * F.gaussNorm norm (amiceRadius p (h + 1)) :=
-          mul_le_mul_of_nonneg_left (PowerSeries.le_gaussNorm _ _ _ hF n) (by positivity)
+  amiceDualNorm_le fun n ↦ (norm_coeff_mul_norm_factorial_le F h n).trans
+    (mul_le_mul_of_nonneg_left (PowerSeries.le_gaussNorm _ _ _ hF n) natCast_pos.le)
 
 /-! ### Finiteness at every level -/
 
@@ -290,71 +313,48 @@ theorem onOpenDisc_one_iff_forall_bddAbove_amiceDual :
 
 /-! ### Examples: the exponential and the logarithm -/
 
-private theorem norm_coeff_exp (n : ℕ) :
-    ‖(PowerSeries.exp ℚ_[p]).coeff n‖ = ‖(n ! : ℚ_[p])‖⁻¹ := by
-  simp [PowerSeries.coeff_exp]
+/-- A family taking every value `pᵏ` is unbounded. -/
+private theorem not_bddAbove_range_of_eq_pow {f : ℕ → ℝ} (g : ℕ → ℕ)
+    (hf : ∀ k, f (g k) = (p : ℝ) ^ k) : ¬ BddAbove (Set.range f) := by
+  refine fun hB ↦ not_bddAbove_of_tendsto_atTop
+    (tendsto_pow_atTop_atTop_of_one_lt (one_lt_natCast (p := p))) (hB.mono ?_)
+  rintro _ ⟨k, rfl⟩
+  exact ⟨g k, hf k⟩
 
 /-- The moments `1 / n!` of the exponential series have a finite dual stage norm at level zero:
 every term `‖1 / n!‖ ‖n!‖` is `1`. -/
 theorem bddAbove_amiceDual_zero_exp :
     BddAbove (Set.range fun n ↦
-      ‖(PowerSeries.exp ℚ_[p]).coeff n‖ * ‖((n / p ^ 0)! : ℚ_[p])‖) := by
-  refine ⟨1, Set.forall_mem_range.mpr fun n ↦ ?_⟩
-  rw [norm_coeff_exp, pow_zero, Nat.div_one,
-    inv_mul_cancel₀ (norm_ne_zero_iff.mpr (by exact_mod_cast factorial_ne_zero n))]
+      ‖(PowerSeries.exp ℚ_[p]).coeff n‖ * ‖((n / p ^ 0)! : ℚ_[p])‖) :=
+  ⟨1, Set.forall_mem_range.mpr fun n ↦ by simp [PowerSeries.coeff_exp, factorial_ne_zero]⟩
 
 /-- **A bound at one level does not suffice.** The moments `1 / n!` of the exponential series have
 an infinite dual stage norm at level one: the term at `n = p k` is `‖k!‖ / ‖(p k)!‖ = pᵏ`. -/
 theorem not_bddAbove_amiceDual_one_exp :
     ¬ BddAbove (Set.range fun n ↦
-      ‖(PowerSeries.exp ℚ_[p]).coeff n‖ * ‖((n / p ^ 1)! : ℚ_[p])‖) := by
-  rintro ⟨B, hB⟩
-  have hterm (k : ℕ) : ‖(PowerSeries.exp ℚ_[p]).coeff (p * k)‖ *
-      ‖(((p * k) / p ^ 1)! : ℚ_[p])‖ = (p : ℝ) ^ k := by
-    rw [norm_coeff_exp, pow_one, Nat.mul_div_cancel_left _ hp.out.pos,
-      norm_natCast_eq_rpow (factorial_ne_zero _), norm_natCast_eq_rpow (factorial_ne_zero _),
-      padicValNat_factorial_mul, ← Real.rpow_neg (by positivity), neg_neg,
-      ← Real.rpow_add (zero_lt_one.trans one_lt_natCast), Nat.cast_add, ← Real.rpow_natCast]
-    ring_nf
-  obtain ⟨k, hk⟩ :=
-    ((tendsto_pow_atTop_atTop_of_one_lt (one_lt_natCast (p := p))).eventually_gt_atTop B).exists
-  exact hk.not_ge ((hterm k).symm.trans_le (hB ⟨p * k, rfl⟩))
+      ‖(PowerSeries.exp ℚ_[p]).coeff n‖ * ‖((n / p ^ 1)! : ℚ_[p])‖) :=
+  not_bddAbove_range_of_eq_pow (p := p) (p * ·) fun k ↦ by
+    have hk : ‖(k ! : ℚ_[p])‖ ≠ 0 := by simp [factorial_ne_zero]
+    simp [PowerSeries.coeff_exp, Nat.mul_div_cancel_left _ hp.out.pos, Padic.norm_factorial_mul]
+    field_simp
 
 /-- The exponential series does not lie on the open unit disc of `ℚ_p`: its dual stage norm at
 level one is infinite. -/
 theorem not_onOpenDisc_one_exp : ¬ (PowerSeries.exp ℚ_[p]).OnOpenDisc 1 := fun h ↦
   not_bddAbove_amiceDual_one_exp ((onOpenDisc_one_iff_forall_bddAbove_amiceDual (p := p)).mp h 1)
 
-/-- The coefficients `(-1) ^ (n + 1) / n` of `log (1 + T)` are dominated by `‖1 / n‖`. -/
-private theorem norm_coeff_log_le (n : ℕ) :
-    ‖(PowerSeries.log ℚ_[p]).coeff n‖ ≤ ‖(n : ℚ_[p])⁻¹‖ := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  · simp [PowerSeries.coeff_log, hn, div_eq_mul_inv]
-
-/-- **The derivative at zero is a distribution.** Its Amice transform `log (1 + T)` lies on the
-open unit disc, so all its dual stage norms are finite. -/
-theorem onOpenDisc_one_log : (PowerSeries.log ℚ_[p]).OnOpenDisc 1 := by
-  refine PowerSeries.onOpenDisc_iff.mpr fun r hr hr1 ↦ ?_
-  rw [PowerSeries.isRestricted_iff']
-  exact squeeze_zero (fun n ↦ by positivity)
-    (fun n ↦ mul_le_mul_of_nonneg_right (norm_coeff_log_le n) (pow_nonneg hr.le n))
-    (NormedField.tendsto_norm_inv_natCast_mul_pow ℚ_[p] hr.le hr1)
-
-/-- The coefficients of `log (1 + T)` are unbounded: the coefficient of `T ^ (p ^ k)` has norm
-`pᵏ`. -/
+/-- The coefficients of `log (1 + T)` are unbounded in `ℚ_p`: the coefficient of `T ^ (p ^ k)`
+has norm `pᵏ`. By contrast, `log (1 + T)` lies on the open unit disc
+(`PowerSeries.onOpenDisc_log`). -/
 theorem not_bddAbove_norm_coeff_log :
-    ¬ BddAbove (Set.range fun n ↦ ‖(PowerSeries.log ℚ_[p]).coeff n‖) := by
-  rintro ⟨B, hB⟩
-  have hterm (k : ℕ) : ‖(PowerSeries.log ℚ_[p]).coeff (p ^ k)‖ = (p : ℝ) ^ k := by
+    ¬ BddAbove (Set.range fun n ↦ ‖(PowerSeries.log ℚ_[p]).coeff n‖) :=
+  not_bddAbove_range_of_eq_pow (p := p) (p ^ ·) fun k ↦ by
     simp [PowerSeries.coeff_log, hp.out.ne_zero]
-  obtain ⟨k, hk⟩ :=
-    ((tendsto_pow_atTop_atTop_of_one_lt (one_lt_natCast (p := p))).eventually_gt_atTop B).exists
-  exact hk.not_ge ((hterm k).symm.trans_le (hB ⟨p ^ k, rfl⟩))
 
-/-- **The derivative at zero is not a measure.** The series `log (1 + T)` is not the Amice
-transform of a bounded measure on `ℤ_p` with values in `ℚ_p`, its coefficients being
-unbounded. -/
+/-- **`log (1 + T)` is not the Amice transform of a measure.** The series `log (1 + T)` is not the
+Amice transform of a bounded measure on `ℤ_p` with values in `ℚ_p`, its coefficients being
+unbounded. Informally, it is the transform of the derivative at zero, which is therefore a
+distribution but not a measure. -/
 theorem log_notMem_range_amiceTransform :
     PowerSeries.log ℚ_[p] ∉
       LinearMap.range (AbstractMeasure.amiceTransform (p := p) (R := ℚ_[p])) := fun h ↦
