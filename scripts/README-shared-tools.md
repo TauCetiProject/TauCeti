@@ -19,7 +19,10 @@ pins, runner selection and merge policy are retained by this migration.
 The complete installation inventory is in the [setup manual](https://github.com/TauCetiProject/TauCetiTools/blob/main/docs/project-setup.md).
 
 The no-stacking workflow pins its batching implementation separately in
-`.github/workflows/stack-policy.yml`. Use that workflow's Tools revision for local
-checkpointed no-stacking commands. The project default and other workflow pins
-remain independent. The policy workflow runs its full unit-test suite under that
-pin; main CI avoids duplicating its workflow-shape test under an older default.
+`.github/workflows/stack-policy.yml`. Before local no-stacking commands or tests,
+materialize the helpers using that workflow's Tools revision. The project default
+and other workflow pins remain independent. The full no-stacking source-policy
+suite runs in `stack-policy.yml` under its own pin, rather than being duplicated
+in main CI under the older default whose workflow contract assumes the former
+layout. Checkpoint-restoration fault tests run in both workflows independently of
+the Tools pin.
