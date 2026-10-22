@@ -50,7 +50,11 @@ a presheaf of subalgebras, which also gives the relative spectrum of an equalize
 
 * `CommMon.sectionsAction ρ U`: the action of `G` on `Γ(A.X, U)` by `Γ(X, U)`-algebra
   automorphisms.
-* `CommMon.invariantSections ρ U`: the invariant sections over `U`.
+* `CommMon.sectionsMulSemiringAction ρ U`: the same action as a `MulSemiringAction`, not an
+  instance since it depends on `ρ`.
+* `CommMon.invariantSections ρ U`: the invariant sections over `U`, which are
+  `FixedPoints.subalgebra Γ(X, U) Γ(A.X, U) G` for that action
+  (`CommMon.invariantSections_eq_fixedPoints`).
 * `CommMon.invariantSubalgebraPresheaf ρ`: the presheaf of invariant subalgebras, whose relative
   spectrum is the relative invariant quotient `Spec_X(A)/G` and whose `relativeSpecπ` is the
   quotient projection.
@@ -104,6 +108,25 @@ lemma sectionsAction_apply (U : X.Opens) (g : G) (x : Γ(A.X, U)) :
     sectionsAction ρ U g x = sectionsAlgHom (ρ g).asIso.hom U x :=
   sectionsAlgEquiv_apply _ U x
 
+/-- The action of `G` on the sections of `A` over `U` through `ρ`, as a `MulSemiringAction`.
+It is not an instance, since `ρ` does not occur in the type `Γ(A.X, U)`. -/
+@[instance_reducible]
+def sectionsMulSemiringAction (U : X.Opens) : MulSemiringAction G Γ(A.X, U) :=
+  MulSemiringAction.compHom _ (sectionsAction ρ U)
+
+@[simp]
+lemma sectionsMulSemiringAction_smul (U : X.Opens) (g : G) (x : Γ(A.X, U)) :
+    letI := sectionsMulSemiringAction ρ U
+    g • x = sectionsAlgHom (ρ g).asIso.hom U x :=
+  sectionsAction_apply ρ U g x
+
+/-- The action of `G` on the sections over `U` commutes with the action of `Γ(X, U)`. -/
+lemma smulCommClass_sectionsMulSemiringAction (U : X.Opens) :
+    letI := sectionsMulSemiringAction ρ U
+    SMulCommClass G Γ(X, U) Γ(A.X, U) :=
+  letI := sectionsMulSemiringAction ρ U
+  ⟨fun g r x ↦ by simp only [sectionsMulSemiringAction_smul, map_smul]⟩
+
 /-- The `Γ(X, U)`-subalgebra of sections of `A` over `U` fixed by every element of `G`. -/
 def invariantSections (U : X.Opens) : Subalgebra Γ(X, U) Γ(A.X, U) :=
   ⨅ g, CommMon.equalizerSections (ρ g).asIso.hom (𝟙 A) U
@@ -113,6 +136,17 @@ variable {ρ} in
 lemma mem_invariantSections {U : X.Opens} {x : Γ(A.X, U)} :
     x ∈ invariantSections ρ U ↔ ∀ g, sectionsAlgHom (ρ g).asIso.hom U x = x := by
   simp [invariantSections]
+
+/-- The invariant sections over `U` are the fixed points of `sectionsMulSemiringAction ρ U`, the
+form in which the affine invariant quotient `AffineInvariantQuotient` is stated. -/
+lemma invariantSections_eq_fixedPoints (U : X.Opens) :
+    letI := sectionsMulSemiringAction ρ U
+    haveI := smulCommClass_sectionsMulSemiringAction ρ U
+    invariantSections ρ U = FixedPoints.subalgebra Γ(X, U) Γ(A.X, U) G := by
+  let _ := sectionsMulSemiringAction ρ U
+  have := smulCommClass_sectionsMulSemiringAction ρ U
+  ext x
+  simp [FixedPoints.mem_subalgebra]
 
 /-- Restriction of sections preserves invariant sections. -/
 lemma restrictSections_mem_invariantSections {U V : X.Opens} (i : V ⟶ U) {x : Γ(A.X, U)}
@@ -170,15 +204,9 @@ instance isCoequifibered_invariantSubalgebraPresheaf [Finite G] [A.X.IsQuasicohe
 /-- The sections of `A` are integral over the invariant sections, since `G` is finite. -/
 instance isIntegral_invariantSections [Finite G] (U : X.Opens) :
     Algebra.IsIntegral (invariantSections ρ U) Γ(A.X, U) := by
-  let _ : MulSemiringAction G Γ(A.X, U) := MulSemiringAction.compHom _ (sectionsAction ρ U)
-  -- Through `MulSemiringAction.compHom`, `g • x` is `sectionsAction ρ U g x`; invariant sections
-  -- act on `Γ(A.X, U)` by multiplication.
-  have : SMulCommClass G (invariantSections ρ U) Γ(A.X, U) :=
-    ⟨fun g a x ↦ (map_mul (sectionsAction ρ U g) (a : Γ(A.X, U)) x).trans
-      (congrArg (· * _) ((sectionsAction_apply ρ U g a).trans (mem_invariantSections.mp a.2 g)))⟩
-  have : Algebra.IsInvariant (invariantSections ρ U) Γ(A.X, U) G :=
-    ⟨fun x hx ↦ ⟨⟨x, mem_invariantSections.mpr fun g ↦ (sectionsAction_apply ρ U g x).symm.trans
-      (hx g)⟩, rfl⟩⟩
+  let _ := sectionsMulSemiringAction ρ U
+  have := smulCommClass_sectionsMulSemiringAction ρ U
+  rw [invariantSections_eq_fixedPoints]
   exact Algebra.IsInvariant.isIntegral _ _ G
 
 variable [Finite G] [A.X.IsQuasicoherent]
