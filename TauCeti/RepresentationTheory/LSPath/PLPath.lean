@@ -63,6 +63,8 @@ reparametrizations of a common one exactly when their normal forms agree, are in
   is the concatenation of the straight paths along `v` and along `w`.
 * `TauCeti.PLPath.straight_smul_mul_straight_smul`, `TauCeti.PLPath.ofSegments_smul_cons_smul_cons`:
   subdividing a straight path, or a segment of a segment list, along a ray.
+* `TauCeti.PLPath.ofSegments_div_smul_cons_sub_div_smul_cons`: subdividing a segment of a segment
+  list at a fraction `d / e` with `0 ≤ d ≤ e`.
 
 ## References
 
@@ -549,6 +551,14 @@ theorem ofSegments_smul_cons_smul_cons {a b : 𝕜} (ha : 0 ≤ a) (hb : 0 ≤ b
     (l : List V) : ofSegments 𝕜 (a • w :: b • w :: l) = ofSegments 𝕜 ((a + b) • w :: l) := by
   rw [ofSegments_cons, ofSegments_cons, ← mul_assoc, straight_smul_mul_straight_smul ha hb,
     ofSegments_cons]
+
+/-- Subdividing a segment `w` at the fraction `d / e`, for `0 ≤ d ≤ e` and `0 < e`, into the
+segments `(d / e) • w` and `((e - d) / e) • w` does not change the presented path. -/
+theorem ofSegments_div_smul_cons_sub_div_smul_cons [PosMulReflectLT 𝕜] {d e : 𝕜} (hd : 0 ≤ d)
+    (hde : d ≤ e) (he : 0 < e) (w : V) (l : List V) :
+    ofSegments 𝕜 ((d / e) • w :: ((e - d) / e) • w :: l) = ofSegments 𝕜 (w :: l) := by
+  rw [ofSegments_smul_cons_smul_cons (div_nonneg hd he.le) (div_nonneg (sub_nonneg.2 hde) he.le),
+    ← add_div, add_sub_cancel, div_self he.ne', one_smul]
 
 end PLPath
 

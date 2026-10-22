@@ -269,14 +269,6 @@ theorem evalTimed_cons_eq_evalTimed_cons_cons_sub (hd : 0 ≤ d) (hde : d ≤ e)
     evalTimed ((e, w) :: p) t = evalTimed ((d, (d / e) • w) :: (e - d, ((e - d) / e) • w) :: p) t :=
   evalTimed_cons_eq_evalTimed_cons_cons hd (sub_nonneg.2 hde) (add_sub_cancel d e) rfl rfl p t
 
-/-- Subdividing a segment `w` at the fraction `d / e`, for `0 ≤ d ≤ e` and `0 < e`, into the
-segments `(d / e) • w` and `((e - d) / e) • w` does not change the presented path. -/
-theorem ofSegments_div_smul_cons_sub_div_smul_cons (hd : 0 ≤ d) (hde : d ≤ e) (he : 0 < e)
-    (w : V) (l : List V) :
-    ofSegments 𝕜 ((d / e) • w :: ((e - d) / e) • w :: l) = ofSegments 𝕜 (w :: l) := by
-  rw [ofSegments_smul_cons_smul_cons (div_nonneg hd he.le) (div_nonneg (sub_nonneg.2 hde) he.le),
-    ← add_div, add_sub_cancel, div_self he.ne', one_smul]
-
 /-! ### Timed presentations in `𝕜` -/
 
 /-- A timed presentation in `𝕜` with nonnegative segments has a nonnegative parametrized path. -/
