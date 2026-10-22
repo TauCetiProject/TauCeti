@@ -193,6 +193,7 @@ theorem productClass_def (D₁ : C₁) (D₂ : C₂) (D₀ : C₀) :
   (rfl)
 
 /-- The product class vanishes exactly when the output cap is the glued cap. -/
+@[simp]
 theorem productClass_eq_zero_iff {D₁ : C₁} {D₂ : C₂} {D₀ : C₀} :
     productClass glue D₁ D₂ D₀ = 0 ↔ D₀ = glue D₁ D₂ := by
   rw [productClass_def, vsub_eq_zero_iff_eq]
