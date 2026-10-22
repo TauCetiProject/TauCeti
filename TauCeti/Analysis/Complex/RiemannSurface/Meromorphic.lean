@@ -224,6 +224,7 @@ variable {f g : X → E}
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- A constant function is meromorphic at every point of a Riemann surface. -/
+@[simp]
 theorem meromorphicAt_const (c : E) (x : X) : MeromorphicAt (fun _ ↦ c) x :=
   _root_.MeromorphicAt.const c _
 
@@ -286,6 +287,7 @@ theorem MeromorphicAt.smul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- A constant multiple of a function meromorphic at a point is meromorphic there. -/
+@[to_fun]
 theorem MeromorphicAt.const_smul (hg : MeromorphicAt g x) (c : ℂ) : MeromorphicAt (c • g) x := by
   rw [meromorphicAt_def] at hg ⊢
   rw [Pi.smul_comp]

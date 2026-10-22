@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Field.Defs
 public import TauCeti.Analysis.Complex.RiemannSurface.SphereMap
 import Mathlib.Algebra.Ring.InjSurj
 import Mathlib.Order.Filter.Germ.Basic
-import TauCeti.Analysis.Complex.RiemannSurface.IdentityTheorem
+import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -244,6 +244,17 @@ theorem ofMeromorphic_apply_of_continuousAt (hc : ContinuousAt h x) :
     ofMeromorphic hh x = h x :=
   sphereMap_of_continuousAt hc
 
+/-- A meromorphic function `k` equals `TauCeti.RiemannSurface.MeromorphicFunction.ofMeromorphic hh`
+if and only if it agrees with `h` at the points satisfying a property `p` which holds on a
+punctured neighbourhood of every point and at which `h` is continuous. -/
+theorem eq_ofMeromorphic_iff {p : X → Prop} (hp : ∀ x, ∀ᶠ y in 𝓝[≠] x, p y)
+    (hc : ∀ x, p x → ContinuousAt h x) {k : MeromorphicFunction X} :
+    k = ofMeromorphic hh ↔ ∀ x, p x → k x = h x := by
+  refine ⟨?_, fun hk ↦ eq_of_forall_apply_eq hp fun y hy ↦ ?_⟩
+  · rintro rfl x hx
+    exact ofMeromorphic_apply_of_continuousAt hh (hc x hx)
+  · exact (hk y hy).trans (ofMeromorphic_apply_of_continuousAt hh (hc y hy)).symm
+
 /-- On a connected Riemann surface, a meromorphic function is the one defined by its finite
 part. -/
 @[simp]
@@ -351,8 +362,10 @@ instance instCommRing : CommRing (MeromorphicFunction X) :=
     funext fun x ↦ Germ.coe_eq.2 (finitePart_ofMeromorphic_eventuallyEq hh x)
   hinj.commRing _ (hof _) (hof _) (fun _ _ ↦ hof _) (fun _ _ ↦ hof _) (fun _ ↦ hof _)
     (fun _ _ ↦ hof _)
-    (fun n _ ↦ (hof _).trans (funext fun _ ↦ by rw [Nat.cast_smul_eq_nsmul]; rfl))
-    (fun n _ ↦ (hof _).trans (funext fun _ ↦ by rw [Int.cast_smul_eq_zsmul]; rfl))
+    (fun n _ ↦ (hof _).trans (funext fun _ ↦ by
+      rw [Nat.cast_smul_eq_nsmul, Germ.coe_smul, Pi.smul_apply]))
+    (fun n _ ↦ (hof _).trans (funext fun _ ↦ by
+      rw [Int.cast_smul_eq_zsmul, Germ.coe_smul, Pi.smul_apply]))
     (fun _ _ ↦ hof _) (fun _ ↦ hof _) (fun _ ↦ hof _)
 
 /-! ### The field structure -/
@@ -394,57 +407,37 @@ instance instField : Field (MeromorphicFunction X) where
 meromorphic function whose value at every point where `f` and `g` are both finite is the sum of
 their values. -/
 theorem eq_add_iff {k : MeromorphicFunction X} :
-    k = f + g ↔ ∀ x, f x ≠ ∞ → g x ≠ ∞ → k x = ↑(f.finitePart x + g.finitePart x) := by
-  refine ⟨?_, fun h ↦ eq_of_forall_apply_eq (p := fun y ↦ f y ≠ ∞ ∧ g y ≠ ∞)
-    (fun x ↦ (f.eventually_ne_infty x).and (g.eventually_ne_infty x)) fun y hy ↦ ?_⟩
-  · rintro rfl x hf hg
-    exact ofMeromorphic_apply_of_continuousAt _
-      ((continuousAt_finitePart hf).add (continuousAt_finitePart hg))
-  · rw [h y hy.1 hy.2]
-    exact (ofMeromorphic_apply_of_continuousAt _
-      ((continuousAt_finitePart hy.1).add (continuousAt_finitePart hy.2))).symm
+    k = f + g ↔ ∀ x, f x ≠ ∞ → g x ≠ ∞ → k x = ↑(f.finitePart x + g.finitePart x) :=
+  (eq_ofMeromorphic_iff _ (fun x ↦ (f.eventually_ne_infty x).and (g.eventually_ne_infty x))
+    fun _ hy ↦ (continuousAt_finitePart hy.1).add (continuousAt_finitePart hy.2)).trans
+    (forall_congr' fun _ ↦ and_imp)
 
 /-- **The defining property of multiplication.** On a connected Riemann surface, `f * g` is the
 unique meromorphic function whose value at every point where `f` and `g` are both finite is the
 product of their values. -/
 theorem eq_mul_iff {k : MeromorphicFunction X} :
-    k = f * g ↔ ∀ x, f x ≠ ∞ → g x ≠ ∞ → k x = ↑(f.finitePart x * g.finitePart x) := by
-  refine ⟨?_, fun h ↦ eq_of_forall_apply_eq (p := fun y ↦ f y ≠ ∞ ∧ g y ≠ ∞)
-    (fun x ↦ (f.eventually_ne_infty x).and (g.eventually_ne_infty x)) fun y hy ↦ ?_⟩
-  · rintro rfl x hf hg
-    exact ofMeromorphic_apply_of_continuousAt _
-      ((continuousAt_finitePart hf).mul (continuousAt_finitePart hg))
-  · rw [h y hy.1 hy.2]
-    exact (ofMeromorphic_apply_of_continuousAt _
-      ((continuousAt_finitePart hy.1).mul (continuousAt_finitePart hy.2))).symm
+    k = f * g ↔ ∀ x, f x ≠ ∞ → g x ≠ ∞ → k x = ↑(f.finitePart x * g.finitePart x) :=
+  (eq_ofMeromorphic_iff _ (fun x ↦ (f.eventually_ne_infty x).and (g.eventually_ne_infty x))
+    fun _ hy ↦ (continuousAt_finitePart hy.1).mul (continuousAt_finitePart hy.2)).trans
+    (forall_congr' fun _ ↦ and_imp)
 
 /-- **The defining property of negation.** On a connected Riemann surface, `-f` is the unique
 meromorphic function whose value at every point where `f` is finite is the negative of the value of
 `f`. -/
 theorem eq_neg_iff {k : MeromorphicFunction X} :
-    k = -f ↔ ∀ x, f x ≠ ∞ → k x = ↑(-f.finitePart x) := by
-  refine ⟨?_, fun h ↦ eq_of_forall_apply_eq f.eventually_ne_infty fun y hy ↦ ?_⟩
-  · rintro rfl x hf
-    exact ofMeromorphic_apply_of_continuousAt _ (continuousAt_finitePart hf).neg
-  · rw [h y hy]
-    exact (ofMeromorphic_apply_of_continuousAt _ (continuousAt_finitePart hy).neg).symm
+    k = -f ↔ ∀ x, f x ≠ ∞ → k x = ↑(-f.finitePart x) :=
+  eq_ofMeromorphic_iff _ f.eventually_ne_infty fun _ hy ↦ (continuousAt_finitePart hy).neg
 
 /-- **The defining property of the inverse.** On a connected Riemann surface, the inverse of a
 nonzero meromorphic function `f` is the unique meromorphic function whose value at every point
 where `f` is finite and nonzero is the inverse of the value of `f`. -/
 theorem eq_inv_iff (hf : f ≠ 0) {k : MeromorphicFunction X} :
     k = f⁻¹ ↔ ∀ x, f x ≠ ∞ → f x ≠ ((0 : ℂ) : OnePoint ℂ) → k x = ↑(f.finitePart x)⁻¹ := by
-  have hcont {y : X} (hy : f y ≠ ∞) (hy0 : f y ≠ ((0 : ℂ) : OnePoint ℂ)) :
-      ContinuousAt f.finitePart⁻¹ y :=
-    (continuousAt_finitePart hy).inv₀ fun h ↦ hy0 (by rw [← coe_finitePart hy, h])
-  refine ⟨?_, fun h ↦ eq_of_forall_apply_eq (p := fun y ↦ f y ≠ ∞ ∧ f y ≠ ((0 : ℂ) : OnePoint ℂ))
-    (fun x ↦ ?_) fun y hy ↦ ?_⟩
-  · rintro rfl x hf hf0
-    exact ofMeromorphic_apply_of_continuousAt _ (hcont hf hf0)
+  refine (eq_ofMeromorphic_iff _ (p := fun y ↦ f y ≠ ∞ ∧ f y ≠ ((0 : ℂ) : OnePoint ℂ))
+    (fun x ↦ ?_) fun y hy ↦ ?_).trans (forall_congr' fun _ ↦ and_imp)
   · filter_upwards [f.eventually_ne_infty x, eventually_finitePart_ne_zero hf x] with y hy hy0
     exact ⟨hy, fun h ↦ hy0 (finitePart_of_eq_coe h)⟩
-  · rw [h y hy.1 hy.2]
-    exact (ofMeromorphic_apply_of_continuousAt _ (hcont hy.1 hy.2)).symm
+  · exact (continuousAt_finitePart hy.1).inv₀ fun h ↦ hy.2 (by rw [← coe_finitePart hy.1, h])
 
 /-! ### The `ℂ`-algebra structure -/
 

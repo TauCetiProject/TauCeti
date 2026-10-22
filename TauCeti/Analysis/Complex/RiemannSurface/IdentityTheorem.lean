@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Geometry.Manifold.Complex.Chart
-import TauCeti.Geometry.Manifold.ChartedSpace
 
 /-!
 # The identity theorem for Riemann surfaces
@@ -27,11 +25,6 @@ The contrapositive form `TauCeti.RiemannSurface.not_eventuallyConst_of_ne` turns
 that `f` takes two distinct values into the pointwise nonconstancy `∀ x, ¬ EventuallyConst f (𝓝 x)`
 under which the local fibre count, the open mapping theorem and the degree are stated.
 
-The same comparison of chart representatives, through the isolated zeros of analytic functions,
-shows that a holomorphic map not constant near `x` takes the value `f x` at no other point near
-`x`. On a connected `X`, every fibre of a nonconstant holomorphic map is therefore discrete
-(`TauCeti.RiemannSurface.eventually_apply_ne_of_ne_const`).
-
 ## Main declarations
 
 * `TauCeti.RiemannSurface.eventually_not_eventuallyConst`: near a point at which a holomorphic map
@@ -39,11 +32,6 @@ shows that a holomorphic map not constant near `x` takes the value `f x` at no o
 * `TauCeti.RiemannSurface.apply_eq_of_eventuallyConst`: the identity theorem.
 * `TauCeti.RiemannSurface.not_eventuallyConst_of_ne`: a holomorphic map on a connected Riemann
   surface taking two distinct values is constant near no point.
-* `TauCeti.RiemannSurface.eventually_apply_ne_of_not_eventuallyConst`: a holomorphic map not
-  constant near `x` takes the value `f x` at no other point near `x`.
-* `TauCeti.RiemannSurface.eventually_apply_ne_of_ne_const`: on a connected Riemann surface, a
-  holomorphic map other than the constant map with value `y₀` takes the value `y₀` only at isolated
-  points.
 
 ## References
 
@@ -121,46 +109,6 @@ near no point. -/
 theorem not_eventuallyConst_of_ne [PreconnectedSpace X] (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
     {x₁ x₂ : X} (h : f x₁ ≠ f x₂) (x : X) : ¬ EventuallyConst f (𝓝 x) := fun hx ↦
   h ((apply_eq_of_eventuallyConst hf hx x₁).trans (apply_eq_of_eventuallyConst hf hx x₂).symm)
-
-/-- **Isolated points of a fibre.** A map holomorphic near `x` and not constant near `x` takes the
-value `f x` at no point of a punctured neighbourhood of `x`. -/
-theorem eventually_apply_ne_of_not_eventuallyConst {x : X}
-    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) (hne : ¬ EventuallyConst f (𝓝 x)) :
-    ∀ᶠ y in 𝓝[≠] x, f y ≠ f x := by
-  set c := chartAt ℂ x
-  set c' := chartAt ℂ (f x)
-  have hcx : x ∈ c.source := mem_chart_source ℂ x
-  have hc'fx : f x ∈ c'.source := mem_chart_source ℂ (f x)
-  have hfc : ∀ᶠ y in 𝓝 x, f y ∈ c'.source :=
-    hf.self_of_nhds.continuousAt.eventually (c'.open_source.mem_nhds hc'fx)
-  have hFa : AnalyticAt ℂ (fun z ↦ c' (f (c.symm z))) (c x) :=
-    analyticAt_chartAt_comp_comp_chartAt_symm hf
-  rcases hFa.eventually_eq_or_eventually_ne (analyticAt_const (v := c' (f x))) with hF | hF
-  · -- The representative is constant near `c x`, so `f` is constant near `x`.
-    refine absurd ?_ hne
-    refine ((eventuallyConst_iff_exists_eventuallyEq.2 ⟨_, hF⟩).comp_tendsto
-      (c.continuousAt hcx)).comp c'.symm |>.congr ?_
-    filter_upwards [c.open_source.mem_nhds hcx, hfc] with y hy hy'
-    simp [c.left_inv hy, c'.left_inv hy']
-  · -- The representative differs from `c' (f x)` off `c x`, so `f` differs from `f x` off `x`.
-    filter_upwards [(tendsto_chartAt_nhdsNE (H := ℂ) x : Tendsto c _ _).eventually hF,
-      nhdsWithin_le_nhds (c.open_source.mem_nhds hcx), nhdsWithin_le_nhds hfc] with y hy hyc _ hfy
-    exact hy (by rw [c.left_inv hyc, hfy])
-
-/-- **Discreteness of the fibres.** On a connected Riemann surface, a holomorphic map other than the
-constant map with value `y₀` takes the value `y₀` at no point of a punctured neighbourhood of any
-point. -/
-theorem eventually_apply_ne_of_ne_const [PreconnectedSpace X]
-    (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) {y₀ : Y} (h : f ≠ fun _ ↦ y₀) (x : X) :
-    ∀ᶠ y in 𝓝[≠] x, f y ≠ y₀ := by
-  have := ChartedSpace.t1Space ℂ Y
-  rcases eq_or_ne (f x) y₀ with hx | hx
-  · obtain ⟨x₁, hx₁⟩ : ∃ x₁, f x₁ ≠ f x := by
-      by_contra! hc
-      exact h (funext fun y ↦ (hc y).trans hx)
-    exact hx ▸ eventually_apply_ne_of_not_eventuallyConst (.of_forall hf)
-      (not_eventuallyConst_of_ne hf hx₁ x)
-  · exact nhdsWithin_le_nhds ((hf x).continuousAt.eventually (isOpen_ne.mem_nhds hx))
 
 end TauCeti.RiemannSurface
 
