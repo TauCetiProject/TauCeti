@@ -20,8 +20,9 @@ import Mathlib.Tactic.NormNum
 The unit equation theorem says that for nonzero coefficients `α₁, …, αₙ` in a field of
 characteristic zero and a finitely generated subgroup `Γ` of its multiplicative group, the equation
 `α₁ x₁ + ⋯ + αₙ xₙ = 1` has only finitely many solutions `x ∈ Γⁿ` for which no nonempty subsum
-`∑ i ∈ I, αᵢ xᵢ` vanishes.  The restriction is necessary: once a subsum vanishes, every element
-of `Γ` can be inserted on the vanishing part.  The homogeneous form of the theorem treats
+`∑ i ∈ I, αᵢ xᵢ` vanishes.  The restriction is necessary: once a subsum vanishes, multiplying all
+of its coordinates by a common element of `Γ` gives another solution, so an infinite `Γ` yields
+infinitely many.  The homogeneous form of the theorem treats
 `∑ αᵢ xᵢ = 0` with no vanishing proper nonempty subsum, up to scaling.
 
 This file defines both nondegeneracy conditions, over an arbitrary semiring so that they can be
