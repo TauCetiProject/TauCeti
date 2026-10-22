@@ -47,7 +47,8 @@ for `s > 0` and `t < T` (`TauCeti.BlackScholes.callPrice_pde`,
 * `TauCeti.BlackScholes.hasDerivAt_callPrice_volatility` — the call vega.
 * `TauCeti.BlackScholes.deriv_callPrice_spot_mem_Ioo` — `0 < ∂C/∂s < 1`.
 * The corresponding `putPrice` statements.
-* `TauCeti.BlackScholes.abs_callPrice_sub_callPrice_le` — the call is `1`-Lipschitz in the spot.
+* `TauCeti.BlackScholes.abs_callPrice_sub_callPrice_le` — the call is `1`-Lipschitz in the spot
+  on `s > 0` (for `τ > 0`, `σ ≠ 0`, `K > 0`).
 * `TauCeti.BlackScholes.callPrice_pde`, `TauCeti.BlackScholes.putPrice_pde` — the Black–Scholes
   equation.
 
@@ -117,7 +118,8 @@ theorem deriv_callPrice_spot_mem_Ioo (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) 
   exact ⟨cdf_gaussianReal_pos 0 one_ne_zero _,
     cdf_gaussianReal_lt_one 0 one_ne_zero _⟩
 
-/-- The Black–Scholes call price is `1`-Lipschitz in the spot. -/
+/-- The Black–Scholes call price is `1`-Lipschitz in the spot on `s > 0`, for `τ > 0`, `σ ≠ 0`
+and `K > 0`. -/
 theorem abs_callPrice_sub_callPrice_le {x : ℝ} (hx : 0 < x) (hs : 0 < s) (hK : 0 < K)
     (hσ : σ ≠ 0) (hτ : 0 < τ) :
     |callPrice x r σ K τ - callPrice s r σ K τ| ≤ |x - s| := by
