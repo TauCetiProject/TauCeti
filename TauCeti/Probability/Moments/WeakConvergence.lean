@@ -59,15 +59,6 @@ private theorem eventually_forall_le_natDegree_integrable {μs : ι → Measure 
     ∀ᶠ i in l, ∀ k ≤ p.natDegree, Integrable (fun x : ℝ => x ^ k) (μs i) :=
   (eventually_all_finite (Set.finite_Iic p.natDegree)).2 fun n _ => hμs n
 
-/-- Every monomial is integrable against a finite measure that is almost everywhere concentrated
-on `[-R, R]`. -/
-private theorem integrable_pow_of_ae_abs_le {μ : Measure ℝ} [IsFiniteMeasure μ] {R : ℝ}
-    (h : ∀ᵐ x ∂μ, |x| ≤ R) (n : ℕ) : Integrable (fun x : ℝ => x ^ n) μ :=
-  .of_bound (continuous_pow n).aestronglyMeasurable (R ^ n) <| by
-    filter_upwards [h] with x hx
-    rw [norm_pow, Real.norm_eq_abs]
-    exact pow_le_pow_left₀ (abs_nonneg x) hx n
-
 /-- If every moment `∫ xⁿ dμᵢ` converges to `∫ xⁿ dμ`, then so does the integral of every real
 polynomial. The moments must be genuine: each monomial is assumed integrable against `μ` and,
 eventually, against `μᵢ`. -/

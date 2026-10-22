@@ -20,6 +20,8 @@ against any measure on `ℝ` whose polynomial moments are finite (up to the rele
   combination of moments;
 * `integrable_eval_of_forall_integrable_pow` — the all-moments corollary: every polynomial is
   integrable when every monomial is;
+* `integrable_pow_of_ae_abs_le` — every monomial is integrable against a finite measure
+  concentrated on a bounded interval, so such measures satisfy the moment hypothesis;
 * `memLp_two_eval_of_forall_integrable_pow` — a polynomial is in `L²`, since the square of a
   polynomial is again a polynomial (hence integrable), and `memLp_two_iff_integrable_sq`.
 
@@ -67,6 +69,15 @@ theorem integrable_eval_of_forall_integrable_pow
     (hmom : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) μ) (q : ℝ[X]) :
     Integrable (fun x : ℝ => q.eval x) μ :=
   integrable_eval_of_forall_le_natDegree fun k _ => hmom k
+
+/-- Every monomial is integrable against a finite measure that is almost everywhere concentrated
+on `[-R, R]`, so such a measure satisfies the moment hypothesis of the results above. -/
+theorem integrable_pow_of_ae_abs_le [IsFiniteMeasure μ] {R : ℝ}
+    (h : ∀ᵐ x ∂μ, |x| ≤ R) (n : ℕ) : Integrable (fun x : ℝ => x ^ n) μ :=
+  .of_bound (continuous_pow n).aestronglyMeasurable (R ^ n) <| by
+    filter_upwards [h] with x hx
+    rw [norm_pow, Real.norm_eq_abs]
+    exact pow_le_pow_left₀ (abs_nonneg x) hx n
 
 /-- A real polynomial is in `L²` against any measure all of whose polynomial moments are finite.
 The square of a polynomial is again a polynomial, hence integrable by
