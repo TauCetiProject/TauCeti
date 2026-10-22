@@ -325,6 +325,14 @@ theorem IsPrCompact.tendsto_ringOpNorm_comp_indicatorCLM_comp_sub {I : Type*}
   exact (ringOpNorm_comp_le _ _).trans
     (mul_le_mul_of_nonneg_left (ringOpNorm_comp_le _ _) (ringOpNorm_nonneg _))
 
+end Bounded
+
+section Ultrametric
+
+variable {R : Type w} [NormedRing R] [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
+  {M : Type u} {N : Type v} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+  [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
+
 /-- Over ultrametric Tate scalars, row-compact maps between (Pr) modules are completely
 continuous. -/
 theorem IsPrCompact.isCompletelyContinuous {u : M →L[R] N} (hu : u.IsPrCompact) :
@@ -337,7 +345,7 @@ theorem IsPrCompact.isCompletelyContinuous {u : M →L[R] N} (hu : u.IsPrCompact
   rw [hu]
   exact (h.isCompletelyContinuous.comp_clm iM).clm_comp rN
 
-end Bounded
+end Ultrametric
 
 section Finite
 
@@ -378,6 +386,13 @@ theorem isPrCompact_of_finite [Module.Finite R M] (hM : HasPr R M) {L : Type v}
     u.IsPrCompact := by
   simpa using (isPrCompact_id_iff.2 ⟨hM, ‹_›⟩).comp_clm u hL
 
+end Finite
+
+section FiniteUltrametric
+
+variable {R : Type w} [NormedRing R] [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
+  [CompleteSpace R] {M : Type u} [NormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+
 /-- **The finiteness germ**: over complete ultrametric Tate scalars, a row-compact endomorphism
 `u` of a (Pr) module with `(1 - u) ^ n = 0` forces the module to be finitely generated. -/
 theorem IsPrCompact.finite_of_one_sub_pow_eq_zero {u : M →L[R] M} (hu : u.IsPrCompact) {n : ℕ}
@@ -392,6 +407,6 @@ theorem IsPrCompact.projective_of_one_sub_pow_eq_zero {u : M →L[R] M} (hu : u.
   have := hu.finite_of_one_sub_pow_eq_zero hn
   hu.hasPr_source.projective
 
-end Finite
+end FiniteUltrametric
 
 end ContinuousLinearMap
