@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.Polynomial.FieldDivision
+import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.Tactic.ByContra
 import Mathlib.Tactic.Ring
 
@@ -27,7 +29,11 @@ constant term and factors the polynomial. This works over noncommutative rings, 
 factor on the left.
 
 Factoring out the full multiplicity of a root of a nonzero polynomial leaves a cofactor
-that does not vanish at the root.
+that does not vanish at the root. Over a field, a monic polynomial of degree `m` without a term
+of degree `m - 1` is a single power `(X - a) ^ m` only for `a = 0`, provided `m` is nonzero in the
+field, since the coefficient of `X ^ (m - 1)` in `(X - a) ^ m` is `-m * a`. So unless it is `X ^ m`,
+the full power of the linear factor at any of its roots is a proper factor, coprime to its
+cofactor. This is the splitting step of the Newton–Puiseux algorithm.
 
 ## Main results
 
@@ -39,6 +45,9 @@ that does not vanish at the root.
 * `Polynomial.derivative_root_factors`: factor the derivative of a polynomial with two root powers.
 * `Polynomial.IsRoot.exists_eq_pow_succ_mul`: factor out a positive power of `X - C x`, leaving a
   cofactor nonzero at `x`.
+* `Polynomial.Monic.exists_eq_X_sub_C_pow_mul_of_nextCoeff_eq_zero`: a monic polynomial with no
+  term of degree `m - 1`, other than `X ^ m`, factors as `(X - a) ^ r * h` at any root `a`, with
+  `0 < r < m` and `h` monic and coprime to `(X - a) ^ r`.
 * `Polynomial.rootMultiplicity_add_eq_left_of_dvd`: adding a multiple of a higher power of
   `X - C x` leaves the root multiplicity at `x` unchanged.
 
@@ -84,6 +93,34 @@ theorem IsRoot.exists_eq_pow_succ_mul {A : Type*} [CommRing A] {p : A[X]} {a : A
   obtain ⟨q, hq, hn⟩ := p.exists_eq_pow_rootMultiplicity_mul_and_not_dvd hp a
   obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero ((rootMultiplicity_pos hp).mpr ha).ne'
   exact ⟨m, q, by simpa only [hm] using hq, fun h => hn (dvd_iff_isRoot.mpr h)⟩
+
+/-- Over a field, let `g` be monic of degree `m`, with `m ≠ 0` in the field, no term of degree
+`m - 1`, and `g ≠ X ^ m`. At any root `a`, `g = (X - a) ^ r * h` with `0 < r < m`, `h` monic, and
+`(X - a) ^ r` coprime to `h`. -/
+theorem Monic.exists_eq_X_sub_C_pow_mul_of_nextCoeff_eq_zero {K : Type*} [Field K] {g : K[X]}
+    (hg : g.Monic) (hm : (g.natDegree : K) ≠ 0) (hnext : g.nextCoeff = 0)
+    (hX : g ≠ X ^ g.natDegree) {a : K} (ha : g.IsRoot a) :
+    ∃ r : ℕ, ∃ h : K[X], 0 < r ∧ r < g.natDegree ∧ h.Monic ∧ IsCoprime ((X - C a) ^ r) h ∧
+      g = (X - C a) ^ r * h := by
+  obtain ⟨h, hgh, hdvd⟩ := g.exists_eq_pow_rootMultiplicity_mul_and_not_dvd hg.ne_zero a
+  set r := g.rootMultiplicity a
+  have hXa : ((X - C a) ^ r).Monic := (monic_X_sub_C a).pow r
+  have hh : h.Monic := hXa.of_mul_monic_left (hgh ▸ hg)
+  have hdeg : g.natDegree = r + h.natDegree := by
+    rw [hgh, hXa.natDegree_mul hh, (monic_X_sub_C a).natDegree_pow, natDegree_X_sub_C, mul_one]
+  refine ⟨r, h, (rootMultiplicity_pos hg.ne_zero).2 ha, ?_, hh,
+    ((irreducible_X_sub_C a).coprime_iff_not_dvd.2 hdvd).pow_left, hgh⟩
+  -- If `r = m`, then `g = (X - a) ^ m`, whose coefficient of `X ^ (m - 1)` is `-m * a`.
+  by_contra hr
+  have hrm : g.natDegree = r := by omega
+  have h1 : h = 1 := hh.natDegree_eq_zero.1 (by omega)
+  rw [h1, mul_one] at hgh
+  have : (r : K) * a = 0 := by
+    have := (monic_X_sub_C a).nextCoeff_pow r
+    rw [← hgh, hnext, nextCoeff_X_sub_C, nsmul_eq_mul, mul_neg, eq_comm, neg_eq_zero] at this
+    exact this
+  obtain rfl : a = 0 := (mul_eq_zero.1 this).resolve_left (hrm ▸ hm)
+  exact hX (by rw [hrm, hgh, map_zero, sub_zero])
 
 /-- Adding a multiple of a higher power of `X - C a` does not change the root multiplicity
 at `a` of a nonzero polynomial. -/
