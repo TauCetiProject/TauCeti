@@ -61,7 +61,7 @@ private theorem exists_primitive_inChartAt [IsManifold I ∞ M] {r : ℕ∞} (hr
   have : IsManifold I ((r : WithTop ℕ∞) + 1) M :=
     IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
   have hφ₁ : IsSmoothForm I 1 φ :=
-    (isSmoothForm_def _ _).mpr (hφ.contMDiff.of_le (by exact_mod_cast hr))
+    hφ.of_le (by exact_mod_cast hr)
   obtain ⟨ε, hε, hsub⟩ : ∃ ε > 0, ball (extChartAt I x x) ε ∩ range I ⊆
       (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' {y | mextDeriv φ y = 0} := by
     rw [← Metric.mem_nhdsWithin_iff]
@@ -131,7 +131,7 @@ theorem exists_mextDeriv_eq_nhds [FiniteDimensional ℝ E] [T2Space M] [IsManifo
     exact (χ.contMDiff.of_le (by exact_mod_cast le_top)).contMDiffOn.smul_section_of_tsupport hu
       hχu fun y hy ↦ (hpu y hy).contMDiffWithinAt
   have hψ₁ : IsSmoothForm I 1 (fun y ↦ χ y • p y) :=
-    (isSmoothForm_def _ _).mpr (hψ.contMDiff.of_le (by exact_mod_cast hr))
+    hψ.of_le (by exact_mod_cast hr)
   refine ⟨interior {y | χ y = 1}, interior_mem_nhds.mpr χ.eventuallyEq_one, _, hψ, ?_⟩
   intro y hy
   have hχy : χ y = 1 := interior_subset hy

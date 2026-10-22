@@ -17,8 +17,9 @@ A monoid `M` acts on a category `C` in the categorical sense when we are given a
 `MonoidalLeftAction (Discrete M) C` of the discrete monoidal category on `M`. Equivalently, such
 an action is a pseudofunctor `LocallyDiscrete (SingleObj M) ⥤ᵖ Cat` out of the one-object
 bicategory of `M` whose value at the unique object is `C`. This file constructs both directions
-of this comparison. It is the case of a discrete monoidal category of the comparison between
-actions and pseudofunctors listed as a TODO in `Mathlib.CategoryTheory.Monoidal.Action.Basic`.
+of this comparison and shows that they are mutually inverse. It is the case of a discrete
+monoidal category of the comparison between actions and pseudofunctors listed as a TODO in
+`Mathlib.CategoryTheory.Monoidal.Action.Basic`.
 
 Composition order: in `SingleObj M` the composite `g ≫ h` is the product `h * g`, while a left
 action satisfies `T (h * g) ≅ T g ⋙ T h`. Thus the pseudofunctor sends `g` to the action
@@ -36,7 +37,12 @@ pseudofunctor is exactly the associativity and unit axioms of the action, and co
   pseudofunctor;
 * `CategoryTheory.MonoidalCategory.MonoidalLeftAction.monoidalLeftAction_pseudofunctor`:
   the action recovered from `pseudofunctor M C` is the original action, including its
-  associator and unitor.
+  associator and unitor;
+* `CategoryTheory.Pseudofunctor.pseudofunctor_monoidalLeftAction`: conversely, the pseudofunctor
+  recovered from `F.monoidalLeftAction` is `F`, including its unit and composition comparisons;
+* `CategoryTheory.MonoidalCategory.MonoidalLeftAction.pseudofunctorEquiv`: the resulting
+  bijection between categories equipped with a left action of `Discrete M` and pseudofunctors
+  `LocallyDiscrete (SingleObj M) ⥤ᵖ Cat`.
 -/
 
 @[expose] public section
@@ -223,6 +229,50 @@ theorem monoidalLeftAction_pseudofunctor [inst : MonoidalLeftAction (Discrete M)
   · funext c c' X
     apply Iso.ext
     exact hAssoc c c' X
+
+end MonoidalCategory.MonoidalLeftAction
+
+namespace Pseudofunctor
+
+variable {M : Type u} [Monoid M]
+
+/-- The pseudofunctor recovered from the action `F.monoidalLeftAction` is `F` itself: the
+comparison transports the action functors, the unit comparison and the composition comparison
+unchanged. -/
+theorem pseudofunctor_monoidalLeftAction (F : LocallyDiscrete (SingleObj M) ⥤ᵖ Cat.{v, w}) :
+    letI := F.monoidalLeftAction
+    MonoidalLeftAction.pseudofunctor M (F.obj ⟨SingleObj.star M⟩) = F := by
+  rcases F with ⟨⟨⟨⟨obj, map⟩, map₂⟩, map₂_id, map₂_comp⟩, mapId, mapComp, _, _, _, _, _⟩
+  unfold MonoidalLeftAction.pseudofunctor LocallyDiscrete.mkPseudofunctor
+    pseudofunctorOfIsLocallyDiscrete
+  -- The values on objects and `1`-morphisms and the unit comparisons agree definitionally; the
+  -- remaining goals are the `2`-morphisms, the composition comparisons and the coherence proofs.
+  congr
+  · funext a b f g φ
+    exact (PrelaxFunctor.map₂_eq_eqToHom ⟨⟨⟨obj, map⟩, map₂⟩, map₂_id, map₂_comp⟩ φ).symm
+  · funext a b c f g
+    ext X
+    -- After destructuring `F`, the action `monoidalLeftAction _` is not an instance in scope.
+    exact @actionLeftTensorIso_hom_app _ _ _ _ _ (monoidalLeftAction _) _ _ X
+  all_goals exact proof_irrel_heq _ _
+
+end Pseudofunctor
+
+namespace MonoidalCategory.MonoidalLeftAction
+
+variable (M : Type u) [Monoid M]
+
+/-- Left actions of `Discrete M` on categories correspond bijectively to pseudofunctors
+`LocallyDiscrete (SingleObj M) ⥤ᵖ Cat`: an action on `C` is sent to `pseudofunctor M C`, and a
+pseudofunctor `F` to the action `F.monoidalLeftAction` on its value at the unique object. -/
+@[simps]
+def pseudofunctorEquiv :
+    (Σ C : Cat.{v, w}, MonoidalLeftAction (Discrete M) C) ≃
+      (LocallyDiscrete (SingleObj M) ⥤ᵖ Cat.{v, w}) where
+  toFun C := letI := C.2; pseudofunctor M C.1
+  invFun F := ⟨F.obj ⟨SingleObj.star M⟩, F.monoidalLeftAction⟩
+  left_inv C := Sigma.ext rfl (heq_of_eq (letI := C.2; monoidalLeftAction_pseudofunctor M C.1))
+  right_inv := Pseudofunctor.pseudofunctor_monoidalLeftAction
 
 end MonoidalCategory.MonoidalLeftAction
 

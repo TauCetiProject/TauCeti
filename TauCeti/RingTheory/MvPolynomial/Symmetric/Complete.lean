@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
 import Mathlib.Data.Finset.Sym
 import TauCeti.Data.Sym.Basic
+import TauCeti.RingTheory.MvPolynomial.Homogeneous
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 
 /-!
 # Evaluating the complete homogeneous symmetric polynomial
@@ -26,7 +28,12 @@ In two variables the unordered `d`-tuples are the `d + 1` splittings counted by
 Reading the unordered tuples as their multiplicity functions instead writes `h_d` as the sum of the
 monomials of degree `d`, indexed by `Finset.piAntidiag`: `TauCeti.hsymm_eq_sum_piAntidiag`.  Summed
 over all degrees, this is the generating function `∑ₙ hₙ tⁿ = ∏ᵢ ∑ₙ xᵢⁿ tⁿ`, the product over the
-variables of the geometric series `(1 - xᵢ t)⁻¹`: `TauCeti.mk_hsymm_eq_prod_mk_pow`.
+variables of the geometric series `(1 - xᵢ t)⁻¹`: `TauCeti.mk_hsymm_eq_prod_mk_pow`, and
+`TauCeti.mk_aeval_hsymm_eq_prod_mk_pow` at an arbitrary family of values.  On the alphabet
+`σ × τ`, evaluated at products `fᵢ gⱼ`, the factors with a fixed first index multiply to
+`∑ₘ fᵢᵐ hₘ(g) tᵐ`, so `hₙ(fᵢ gⱼ)` is the sum of `∏ᵢ fᵢ^{lᵢ} h_{lᵢ}(g)` over the exponent vectors
+`l` on `σ` of total degree `n`: `TauCeti.aeval_hsymm_prod_eq_sum_finsuppAntidiag`.  This is the
+first step of the Cauchy identity for Schur polynomials.
 
 Determinantal formulas such as Jacobi--Trudi index `h` by integers, `h_m` being `0` for `m < 0`;
 reading a negative index as `0` through a truncated subtraction of natural numbers would silently
@@ -39,7 +46,9 @@ polynomial.
   unordered `d`-tuples of indices.
 * `TauCeti.eval_hsymm_fin_two` reads that off in two variables: `h_d(x, y) = ∑_{i ≤ d} xⁱ y^{d-i}`.
 * `TauCeti.hsymm_eq_sum_piAntidiag` writes `h_d` as the sum of the monomials of degree `d`.
-* `TauCeti.mk_hsymm_eq_prod_mk_pow`: the generating function of the `h_d`.
+* `TauCeti.mk_hsymm_eq_prod_mk_pow`: the generating function of the `h_d`, and
+  `TauCeti.mk_aeval_hsymm_eq_prod_mk_pow`, the same evaluated at an arbitrary family.
+* `TauCeti.aeval_hsymm_prod_eq_sum_finsuppAntidiag`: `hₙ(fᵢ gⱼ) = ∑_l ∏ᵢ fᵢ^{lᵢ} h_{lᵢ}(g)`.
 * `TauCeti.hsymmInt`: the complete homogeneous symmetric polynomial `h_m` of an integer degree `m`,
   which is `0` for `m < 0`.
 -/
@@ -96,6 +105,41 @@ theorem mk_hsymm_eq_prod_mk_pow {σ : Type*} [Fintype σ] [DecidableEq σ] (R : 
   rw [PowerSeries.coeff_mk, PowerSeries.coeff_prod, hsymm_eq_sum_piAntidiag, Finset.finsuppAntidiag,
     Finset.sum_map, ← Finset.sum_attach (Finset.piAntidiag Finset.univ d)]
   simp
+
+/-- **The generating function of the complete homogeneous symmetric polynomials, evaluated**:
+`∑ₙ hₙ(ψ) tⁿ = ∏ᵢ ∑ₙ ψᵢⁿ tⁿ` for a family `ψ` in a commutative `R`-algebra `S`, as power series
+over `S`.  This is `TauCeti.mk_hsymm_eq_prod_mk_pow` with the variables evaluated at `ψ`. -/
+theorem mk_aeval_hsymm_eq_prod_mk_pow {σ R S : Type*} [Fintype σ] [DecidableEq σ]
+    [CommSemiring R] [CommSemiring S] [Algebra R S] (ψ : σ → S) :
+    PowerSeries.mk (fun n => MvPolynomial.aeval ψ (MvPolynomial.hsymm σ R n)) =
+      ∏ i, PowerSeries.mk fun n => ψ i ^ n := by
+  ext d
+  have h := congrArg (fun F => MvPolynomial.aeval ψ (PowerSeries.coeff d F))
+    (mk_hsymm_eq_prod_mk_pow (σ := σ) R)
+  simpa only [PowerSeries.coeff_mk, PowerSeries.coeff_prod, map_sum, map_prod, map_pow,
+    MvPolynomial.aeval_X] using h
+
+/-- **`hₙ` of the products `fᵢ gⱼ`, grouped by the first index**: substituting `fᵢ gⱼ` for the
+variable indexed by `(i, j)` in `hₙ` on the alphabet `σ × τ` gives `∑_l ∏ᵢ fᵢ^{lᵢ} h_{lᵢ}(g)`,
+the sum running over the exponent vectors `l` on `σ` of total degree `n`.  In generating-function
+form, the product of the geometric series `(1 - fᵢ gⱼ t)⁻¹` over all pairs is computed one `i` at a
+time, the factors with a fixed `i` multiplying to `∑ₘ fᵢᵐ hₘ(g) tᵐ`. -/
+theorem aeval_hsymm_prod_eq_sum_finsuppAntidiag {σ τ R S : Type*} [Fintype σ] [DecidableEq σ]
+    [Fintype τ] [DecidableEq τ] [CommSemiring R] [CommSemiring S] [Algebra R S] (f : σ → S)
+    (g : τ → S) (n : ℕ) :
+    MvPolynomial.aeval (fun p : σ × τ => f p.1 * g p.2) (MvPolynomial.hsymm (σ × τ) R n) =
+      ∑ l ∈ Finset.finsuppAntidiag Finset.univ n,
+        ∏ i, f i ^ l i * MvPolynomial.aeval g (MvPolynomial.hsymm τ R (l i)) := by
+  have hscale (i : σ) (m : ℕ) : f i ^ m * MvPolynomial.aeval g (MvPolynomial.hsymm τ R m) =
+      MvPolynomial.aeval (fun j => f i * g j) (MvPolynomial.hsymm τ R m) := by
+    simpa only [MvPolynomial.aeval_def] using
+      ((MvPolynomial.isHomogeneous_hsymm m).eval₂_const_mul (algebraMap R S) g (f i)).symm
+  have h : PowerSeries.mk (fun m => MvPolynomial.aeval (fun p : σ × τ => f p.1 * g p.2)
+      (MvPolynomial.hsymm (σ × τ) R m)) =
+      ∏ i, PowerSeries.mk fun m => f i ^ m * MvPolynomial.aeval g (MvPolynomial.hsymm τ R m) := by
+    simp only [hscale, mk_aeval_hsymm_eq_prod_mk_pow, Fintype.prod_prod_type]
+  simpa only [PowerSeries.coeff_mk, PowerSeries.coeff_prod] using
+    congrArg (PowerSeries.coeff n) h
 
 section hsymmInt
 

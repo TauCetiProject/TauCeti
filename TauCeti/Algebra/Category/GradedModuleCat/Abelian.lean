@@ -55,6 +55,8 @@ graded abelian category, whose canonical exact structure is
   respectively.
 * `TauCeti.GradedModuleCat.isIso_biprod_desc_of_bijective`: a map out of a binary biproduct is an
   isomorphism when the induced map out of the product of underlying modules is bijective.
+* `TauCeti.GradedModuleCat.shortExact_cokernelπ`: a monomorphism and the projection onto its
+  cokernel form a short exact sequence.
 -/
 
 public section
@@ -365,5 +367,12 @@ theorem exact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)} :
   rw [← S.exact_map_iff_of_faithful toModuleCat,
     ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
   rfl
+
+/-- A monomorphism of graded modules followed by the projection onto its cokernel is a short
+exact sequence. -/
+theorem shortExact_cokernelπ [Mono f] :
+    (ShortComplex.mk f (cokernelπ f) (comp_cokernelπ f)).ShortExact where
+  exact := exact_iff.mpr (LinearMap.exact_map_mkQ_range f.hom)
+  epi_g := (epi_iff_surjective _).mpr (Submodule.mkQ_surjective _)
 
 end TauCeti.GradedModuleCat

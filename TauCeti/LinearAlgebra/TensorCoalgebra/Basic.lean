@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Data.Stream.Defs
 public import Mathlib.LinearAlgebra.TensorProduct.Map
 public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.Algebra.BigOperators.Finset.Range
@@ -317,6 +318,18 @@ theorem prepend_of_tprod (a : N) (k : {n : ℕ // 0 < n}) (y : Fin k.1 → N) :
     Fin.append_left_eq_cons]
   exact of_tprod_congr R N _ (Nat.add_comm 1 k.1) fun _ ↦ rfl
 
+/-- Prepending a letter to a pure word of a natural-indexed string conses it onto the string. -/
+theorem prepend_of_tprod_cons (u : N) {n : ℕ} (hn : 0 < n) (z : ℕ → N) :
+    prepend R N u (of R N ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ z i)) =
+      of R N ⟨n + 1, by omega⟩
+        (PiTensorProduct.tprod R fun i : Fin (n + 1) ↦ Stream'.cons u z i) := by
+  rw [prepend_of_tprod]
+  congr 2
+  funext i
+  induction i using Fin.cases with
+  | zero => rfl
+  | succ i => rfl
+
 /-- Prepending the letter at position `a` to the block that starts right after it extends the
 block by that letter. -/
 theorem prepend_subword {n : ℕ} (z : Fin n → N) {a b : ℕ} (ha : a < n) (hb : 0 < b) :
@@ -411,6 +424,18 @@ theorem map_bijective (e : M ≃ₗ[R] N) :
     Function.Bijective (ReducedTensorWords.map (R := R) e.toLinearMap) :=
   Function.bijective_iff_has_inverse.2
     ⟨ReducedTensorWords.map (R := R) e.symm.toLinearMap, map_symm_map R e, map_map_symm R e⟩
+
+/-- Mapping a word with a letter prepended prepends the image of the letter to the mapped word. -/
+theorem map_prepend (f : M →ₗ[R] N) (a : M) (w : ReducedTensorWords R M) :
+    ReducedTensorWords.map (R := R) f (prepend R M a w) =
+      prepend R N (f a) (ReducedTensorWords.map (R := R) f w) := by
+  suffices h : ReducedTensorWords.map (R := R) f ∘ₗ prepend R M a =
+      prepend R N (f a) ∘ₗ ReducedTensorWords.map (R := R) f from LinearMap.congr_fun h w
+  refine linearMap_ext R M fun n x ↦ ?_
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, prepend_of_tprod, map_of_tprod, map_of_tprod,
+    prepend_of_tprod]
+  refine of_tprod_congr R N _ rfl fun i ↦ ?_
+  induction i using Fin.cases <;> simp
 
 /-- Reduced deconcatenation is natural with respect to linear maps of the letters. -/
 theorem deconcatenation_natural (f : M →ₗ[R] N) :

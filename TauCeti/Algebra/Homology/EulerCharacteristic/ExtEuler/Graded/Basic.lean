@@ -58,6 +58,12 @@ the polynomial.
   extensions in the second and the first variable.
 * `TauCeti.gradedExtEuler_of_iso`: the q-Euler characteristic depends only on the isomorphism
   classes of the two objects.
+* `TauCeti.IsGradedEulerAdmissible.congr` and `TauCeti.gradedExtEuler_congr`: admissibility and
+  the q-Euler characteristic transport along linear equivalences of the bigraded `Ext` groups,
+  also between different graded categories.
+* `TauCeti.IsGradedEulerAdmissible.of_isZero_left` and
+  `TauCeti.IsGradedEulerAdmissible.of_isZero_right`: a pair with a zero entry is graded
+  Euler-admissible.
 * `TauCeti.isGradedEulerAdmissible_of_projective` and `TauCeti.gradedExtEuler_projective`:
   **graded projective evaluation**, `χ_q(P, Y) = ∑ j, q⁻ʲ dim_k Hom(P, Y{j})` for projective `P`.
 
@@ -76,7 +82,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Abelian LaurentPolynomial
 
-universe w v u t
+universe w w' v v' u u' t
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
   (k : Type t) [Field k] [Linear k C] [HasExt.{w} C]
@@ -424,6 +430,93 @@ theorem gradedExtEuler_of_iso (h : IsGradedEulerAdmissible.{w} k e X Y)
   obtain ⟨N, hN⟩ := h.bounded.exists_bound
   rw [gradedExtEuler_eq k e h hN, gradedExtEuler_eq k e h' (hN.of_iso i j)]
   exact truncatedGradedExtEuler_of_iso k h.internallyFinite h'.internallyFinite i j N
+
+/-! ### Invariance under linear equivalences -/
+
+section congr
+
+variable {D : Type u'} [Category.{v'} D] [Abelian D] [Linear k D] [HasExt.{w'} D] {e' : D ≌ D}
+  {X' Y' : D}
+
+/-- Finite internal support of bigraded `Ext` transports along linear equivalences of the bigraded
+`Ext` groups, including between pairs in different graded categories. -/
+theorem IsGradedExtInternallyFinite.congr (h : IsGradedExtInternallyFinite.{w} k e X Y)
+    (φ : ∀ n j, GradedExt.{w} e X Y n j ≃ₗ[k] GradedExt.{w'} e' X' Y' n j) :
+    IsGradedExtInternallyFinite.{w'} k e' X' Y' :=
+  ⟨fun n ↦ (h.finiteLaurentSupport n).of_equiv (φ n)⟩
+
+/-- A cohomological vanishing bound for bigraded `Ext` transports along bijections of the bigraded
+`Ext` groups from that degree on, including between pairs in different graded categories. -/
+theorem IsGradedExtBoundedBy.congr {N : ℕ} (h : IsGradedExtBoundedBy.{w} e X Y N)
+    (φ : ∀ ⦃n⦄, N ≤ n → ∀ j, GradedExt.{w} e X Y n j ≃ GradedExt.{w'} e' X' Y' n j) :
+    IsGradedExtBoundedBy.{w'} e' X' Y' N :=
+  ⟨fun _ hn j ↦ haveI := h.subsingleton hn j
+    (φ hn j).symm.subsingleton⟩
+
+/-- Eventual cohomological vanishing of bigraded `Ext` transports along bijections of the
+bigraded `Ext` groups in all large cohomological degrees, including between pairs in different
+graded categories. -/
+theorem IsGradedExtBounded.congr (h : IsGradedExtBounded.{w} e X Y)
+    (φ : ∀ᶠ n in Filter.atTop, ∀ j, Nonempty (GradedExt.{w} e X Y n j ≃
+      GradedExt.{w'} e' X' Y' n j)) :
+    IsGradedExtBounded.{w'} e' X' Y' := by
+  obtain ⟨N, hN⟩ := h.exists_bound
+  obtain ⟨M, hM⟩ := Filter.eventually_atTop.1 φ
+  exact ((hN.mono (le_max_left N M)).congr fun n hn j ↦
+    Classical.choice (hM n ((le_max_right N M).trans hn) j)).isGradedExtBounded
+
+/-- Graded Euler-admissibility transports along linear equivalences of the bigraded `Ext` groups,
+including between pairs in different graded categories. -/
+theorem IsGradedEulerAdmissible.congr (h : IsGradedEulerAdmissible.{w} k e X Y)
+    (φ : ∀ n j, GradedExt.{w} e X Y n j ≃ₗ[k] GradedExt.{w'} e' X' Y' n j) :
+    IsGradedEulerAdmissible.{w'} k e' X' Y' :=
+  ⟨h.internallyFinite.congr k φ, h.bounded.congr (.of_forall fun n j ↦ ⟨(φ n j).toEquiv⟩)⟩
+
+/-- Linear equivalences of the bigraded `Ext` groups preserve the q-Euler characteristic,
+including when the pairs lie in different graded categories. -/
+theorem gradedExtEuler_congr
+    (φ : ∀ n j, GradedExt.{w} e X Y n j ≃ₗ[k] GradedExt.{w'} e' X' Y' n j)
+    (h : IsGradedEulerAdmissible.{w} k e X Y) :
+    gradedExtEuler k e' (h.congr k φ) = gradedExtEuler k e h := by
+  obtain ⟨N, hN⟩ := h.bounded.exists_bound
+  rw [gradedExtEuler_eq k e h hN,
+    gradedExtEuler_eq k e' (h.congr k φ) (hN.congr fun n _ j ↦ (φ n j).toEquiv)]
+  exact Finset.sum_congr rfl fun n _ ↦ by
+    rw [gradedExtDimension_eq_targetShiftGradedDimension,
+      gradedExtDimension_eq_targetShiftGradedDimension,
+      targetShiftGradedDimension_congr _ _ fun j ↦ (φ n j).finrank_eq.symm]
+
+end congr
+
+/-! ### Zero entries -/
+
+section Zero
+
+variable (e)
+
+/-- A pair whose first entry is zero is graded Euler-admissible: every bigraded `Ext` group out
+of it vanishes. -/
+theorem IsGradedEulerAdmissible.of_isZero_left {X Y : C} (hX : Limits.IsZero X) :
+    IsGradedEulerAdmissible.{w} k e X Y := by
+  have hsub (n : ℕ) (j : ℤ) : Subsingleton (GradedExt.{w} e X Y n j) :=
+    subsingleton_ext_of_isZero_left hX ((e ^ j).functor.obj Y) n
+  refine ⟨⟨fun n ↦ HasFiniteLaurentSupport.of_finset (fun j ↦ ?_) ∅ fun j _ ↦ hsub n j⟩,
+    ⟨0, ⟨fun n _ j ↦ hsub n j⟩⟩⟩
+  have := hsub n j
+  infer_instance
+
+/-- A pair whose second entry is zero is graded Euler-admissible: every shift of the target is
+zero, so every bigraded `Ext` group vanishes. -/
+theorem IsGradedEulerAdmissible.of_isZero_right {X Y : C} (hY : Limits.IsZero Y) :
+    IsGradedEulerAdmissible.{w} k e X Y := by
+  have hsub (n : ℕ) (j : ℤ) : Subsingleton (GradedExt.{w} e X Y n j) :=
+    subsingleton_ext_of_isZero_right X ((e ^ j).functor.map_isZero hY) n
+  refine ⟨⟨fun n ↦ HasFiniteLaurentSupport.of_finset (fun j ↦ ?_) ∅ fun j _ ↦ hsub n j⟩,
+    ⟨0, ⟨fun n _ j ↦ hsub n j⟩⟩⟩
+  have := hsub n j
+  infer_instance
+
+end Zero
 
 /-! ### Projective evaluation -/
 

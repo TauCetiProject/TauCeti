@@ -74,7 +74,7 @@ private structure Coords (A B : Type*) [CommSemiring A] [AddCommMonoid B] [Modul
   φ : Fin n → Module.Dual A B
   sum_smul (x : B) : ∑ j, φ j x • b j = x
 
-variable (A B : Type*) [CommRing A] [CommRing B] [Algebra A B]
+variable (A B : Type*) [CommSemiring A] [AddCommMonoid B] [Module A B]
 
 private theorem nonempty_coords [Module.Finite A B] [Module.Projective A B] :
     Nonempty (Coords A B) := by
@@ -84,11 +84,11 @@ private theorem nonempty_coords [Module.Finite A B] [Module.Projective A B] :
   simpa only [LinearMap.comp_apply, LinearMap.proj_apply, LinearMap.id_apply, ← map_smul,
     ← map_sum, ← pi_eq_sum_univ'] using LinearMap.congr_fun hs x
 
--- The chosen coordinate system on a finite projective algebra.
+-- The chosen coordinate system on a finite projective module.
 private def coords [Module.Finite A B] [Module.Projective A B] : Coords A B :=
   (nonempty_coords A B).some
 
-variable {A B} (T : Type*) [CommRing T] [Algebra A T]
+variable {A B} (T : Type*) [AddCommMonoid T] [Module A T]
 
 -- The `j`-th coordinate `B ⊗[A] T → T`, sending `x ⊗ t` to `φ j x • t`.
 private def Coords.coord (K : Coords A B) (j : Fin K.n) : B ⊗[A] T →ₗ[A] T :=
@@ -105,23 +105,40 @@ private lemma Coords.sum_tmul_coord (K : Coords A B) (z : B ⊗[A] T) :
   | tmul x t => simp [coord_tmul, smul_tmul', ← sum_tmul, K.sum_smul]
   | add z w hz hw => simp [tmul_add, Finset.sum_add_distrib, hz, hw]
 
-private lemma Coords.coord_lTensor (K : Coords A B) {T' : Type*} [CommRing T'] [Algebra A T']
+-- The family `i ↦ ∑ j, b j ⊗ X (i, j)` in `B ⊗[A] A[X]`, where `A[X]` is the polynomial ring in
+-- the variables `X (i, j)`. For a commutative `A`-algebra `T`, every family `ι → B ⊗[A] T` is its
+-- image under `B ⊗[A] g` for some `g : A[X] →ₐ[A] T`.
+private def pt {ι : Type*} (K : Coords A B) (i : ι) : B ⊗[A] MvPolynomial (ι × Fin K.n) A :=
+  ∑ j, K.b j ⊗ₜ X (i, j)
+
+-- The coordinates of a family of elements of `B ⊗[A] T`.
+private def coordsOf {ι : Type*} (K : Coords A B) (z : ι → B ⊗[A] T) : ι × Fin K.n → T :=
+  fun ij ↦ K.coord T ij.2 (z ij.1)
+
+end Coordinates
+
+section Points
+
+variable {A B : Type*} [CommSemiring A] [CommSemiring B] [Algebra A B]
+
+private lemma Coords.coord_lTensor {T T' : Type*} [Semiring T] [Algebra A T]
+    [Semiring T'] [Algebra A T'] (K : Coords A B)
     (g : T →ₐ[A] T') (j : Fin K.n) (z : B ⊗[A] T) :
     K.coord T' j (Algebra.TensorProduct.lTensor (S := B) B g z) = g (K.coord T j z) := by
   induction z <;> simp [coord_tmul, *]
 
-end Coordinates
+variable {ι : Type*} {T : Type*} [CommSemiring T] [Algebra A T]
+
+private lemma lTensor_aeval_coordsOf_pt (K : Coords A B) (z : ι → B ⊗[A] T) (i : ι) :
+    Algebra.TensorProduct.lTensor (S := B) B (aeval (coordsOf K z)) (pt K i) = z i := by
+  simp [pt, coordsOf, K.sum_tmul_coord]
+
+end Points
 
 section Construction
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C] [Algebra A B] [Algebra B C]
   {ι σ : Type*} {T : Type*} [CommRing T] [Algebra A T]
-
--- The family `i ↦ ∑ j, b j ⊗ X (i, j)` in `B ⊗[A] A[X]`, where `A[X]` is the polynomial ring in
--- the variables `X (i, j)`. For a commutative `A`-algebra `T`, every family `ι → B ⊗[A] T` is its
--- image under `B ⊗[A] g` for some `g : A[X] →ₐ[A] T`.
-private def pt (K : Coords A B) (i : ι) : B ⊗[A] MvPolynomial (ι × Fin K.n) A :=
-  ∑ j, K.b j ⊗ₜ X (i, j)
 
 -- The defining relations of the representing algebra. For `(i, k)`: the `k`-th coordinate of
 -- `pt K i` is `X (i, k)`, i.e. the vector `X (i, ·)` is fixed by the idempotent
@@ -136,14 +153,6 @@ private def relation (P : Presentation B C ι σ) (K : Coords A B) :
 -- coordinates `K`: polynomials in the coordinates of the generators of `P`, modulo `relation P K`.
 private abbrev RepresentingAlgebra (P : Presentation B C ι σ) (K : Coords A B) :=
   MvPolynomial (ι × Fin K.n) A ⧸ Ideal.span (Set.range (relation P K))
-
--- The coordinates of a family of elements of `B ⊗[A] T`.
-private def coordsOf (K : Coords A B) (z : ι → B ⊗[A] T) : ι × Fin K.n → T :=
-  fun ij ↦ K.coord T ij.2 (z ij.1)
-
-private lemma lTensor_aeval_coordsOf_pt (K : Coords A B) (z : ι → B ⊗[A] T) (i : ι) :
-    Algebra.TensorProduct.lTensor (S := B) B (aeval (coordsOf K z)) (pt K i) = z i := by
-  simp [pt, coordsOf, K.sum_tmul_coord]
 
 private lemma aeval_coordsOf_relation (P : Presentation B C ι σ) (K : Coords A B)
     (h : C →ₐ[B] B ⊗[A] T) (q : (ι × Fin K.n) ⊕ (σ × Fin K.n)) :

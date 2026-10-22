@@ -112,14 +112,12 @@ theorem integral_abs_sub_pow_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
       rw [integral_abs_pow_mul_exp_neg_mul_sq n (inv_pos.mpr (mul_pos two_pos hv'))]
     _ = _ := gaussian_absolute_moment_algebra n hv'
 
-/-- The `2n`th centered moment of a real Gaussian distribution is
+/-- The integral of the `2n`th power about the mean of a real Gaussian distribution is
 `vⁿ (2n - 1)‼`. -/
 @[simp]
-theorem centralMoment_id_two_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
-    centralMoment id (2 * n) (gaussianReal m v) =
+theorem integral_sub_pow_two_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
+    (∫ x, (x - m) ^ (2 * n) ∂gaussianReal m v) =
       (v : ℝ) ^ n * (2 * n - 1 : ℕ)‼ := by
-  simp only [centralMoment, Pi.sub_apply, Pi.pow_apply, id_eq]
-  rw [integral_id_gaussianReal]
   have heven_abs : (∫ x, (x - m) ^ (2 * n) ∂gaussianReal m v) =
       ∫ x, |x - m| ^ (2 * n) ∂gaussianReal m v := by
     congr with x
@@ -133,6 +131,15 @@ theorem centralMoment_id_two_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) 
   rw [hhalf_even, Real.rpow_natCast, hhalf_succ, Real.Gamma_nat_add_half]
   field_simp [Real.sqrt_ne_zero'.mpr pi_pos]
   simp only [mul_pow]
+
+/-- The `2n`th centered moment of a real Gaussian distribution is
+`vⁿ (2n - 1)‼`. -/
+@[simp]
+theorem centralMoment_id_two_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
+    centralMoment id (2 * n) (gaussianReal m v) =
+      (v : ℝ) ^ n * (2 * n - 1 : ℕ)‼ := by
+  simpa only [centralMoment, Pi.sub_apply, Pi.pow_apply, id_eq, integral_id_gaussianReal]
+    using integral_sub_pow_two_mul_gaussianReal m v n
 
 /-- Every odd centered moment of a real Gaussian distribution vanishes. -/
 @[simp]

@@ -8,9 +8,10 @@ module
 public import Mathlib.Algebra.GCDMonoid.Finset
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
-import Mathlib.Algebra.Field.ZMod
 import Mathlib.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
+import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Submodule.Primitive
 
 /-!
 # Plücker coordinates
@@ -40,9 +41,10 @@ factor and signs, the coordinate of `y` at a `q`-element subset `t` is the coord
 the complement of `t`. This is what makes the height of a subspace equal to the height of its
 orthogonal complement.
 
-All results hold over an arbitrary commutative ring except the comparison with linear
-independence and the complementary minors, which are over a field. The empty family has a single
-Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has none.
+The determinant identities hold over an arbitrary commutative ring. The comparison with linear
+independence and the complementary minors are over a field, while the coprimality theorem for
+saturated submodules holds over a principal ideal domain with a normalized gcd. The empty family
+has a single Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has none.
 
 ## Main definitions
 
@@ -56,6 +58,9 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
   multiplies the Plücker coordinates by the determinant of that matrix.
 * `TauCeti.det_mul_transpose_eq_sum_plucker_mul`: the Cauchy–Binet formula.
 * `Matrix.det_mul_transpose_eq_sum_plucker_sq`: its Gram-determinant form for a matrix.
+* `Matrix.det_mul_transpose_nonneg` and `Matrix.det_mul_transpose_pos_iff`: over a linearly
+  ordered commutative ring, the Gram determinant of a matrix is nonnegative, and positive exactly
+  when the rows are linearly independent.
 * `TauCeti.det_mul_conjTranspose_eq_sum_plucker_mul_star`: its Hermitian form.
 * `TauCeti.plucker_ne_zero_iff`: over a field, the Plücker coordinates of a family are not all
   zero exactly when the family is linearly independent.
@@ -63,9 +68,7 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
   complementary orthogonal families are complementary minors, up to a common nonzero factor and
   signs.
 * `TauCeti.gcd_plucker_eq_one`: the Plücker coordinates of a basis of a saturated submodule of
-  `ℤ^ι` are coprime.
-* `Matrix.gcd_plucker_row_eq_zero_iff`: the maximal minors of an integer matrix have greatest
-  common divisor `0` exactly when its rows are linearly dependent over `ℚ`.
+  `R^ι` over a principal ideal domain are coprime.
 
 ## References
 
@@ -76,10 +79,12 @@ Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has n
 
 The proofs use Mathlib's exterior-power basis `Module.Basis.exteriorPower` and its coordinate
 formula `exteriorPower.ιMultiDual_apply_ιMulti`, by Sophie Morel and Daniel Morrison. The
-reduction modulo a prime in `TauCeti.gcd_plucker_eq_one` is adapted from Ralf Stephan's
+statement of `TauCeti.gcd_plucker_eq_one` is adapted from Ralf Stephan's
 `Submodule.gcd_plucker_eq_one` in `ArithmeticHeights/RationalLattice.lean` of
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/9894a1c4baf805296b249e95575f0e16e8e1afa3/ArithmeticHeights/RationalLattice.lean),
-commit `9894a1c4baf805296b249e95575f0e16e8e1afa3` (Apache 2.0).
+commit `9894a1c4baf805296b249e95575f0e16e8e1afa3` (Apache 2.0); the proof here instead uses a
+projection onto the saturated submodule and the Cauchy–Binet formula, so it works over any
+principal ideal domain with a normalized gcd.
 -/
 
 public section
@@ -184,6 +189,28 @@ the squares of the maximal minors of `A`, the Plücker coordinates of its rows. 
 theorem _root_.Matrix.det_mul_transpose_eq_sum_plucker_sq [Fintype ι] (A : Matrix (Fin p) ι R) :
     (A * A.transpose).det = ∑ s, plucker A.row s ^ 2 := by
   simpa [sq, Matrix.row_eq_self] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
+
+/-- Over a linearly ordered commutative ring, the Gram determinant `det (A * Aᵀ)` of the rows of a
+matrix is nonnegative: by the Cauchy–Binet formula it is a sum of squares. -/
+theorem _root_.Matrix.det_mul_transpose_nonneg {R m n : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Fintype m] [DecidableEq m] [Fintype n] (A : Matrix m n R) :
+    0 ≤ (A * A.transpose).det := by
+  -- Reindex the rows and columns by `Fin`, where the Cauchy–Binet formula applies.
+  set e := Fintype.equivFin m
+  set f := Fintype.equivFin n
+  set B := A.submatrix e.symm f.symm
+  have h : A * A.transpose = (B * B.transpose).submatrix e e := by
+    simp [B, Matrix.transpose_submatrix]
+  rw [h, Matrix.det_submatrix_equiv_self, Matrix.det_mul_transpose_eq_sum_plucker_sq]
+  exact Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+
+/-- Over a linearly ordered commutative ring, the Gram determinant `det (A * Aᵀ)` of the rows of a
+matrix is positive exactly when the rows are linearly independent. -/
+theorem _root_.Matrix.det_mul_transpose_pos_iff {R m n : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Fintype m] [DecidableEq m] [Fintype n] {A : Matrix m n R} :
+    0 < (A * A.transpose).det ↔ LinearIndependent R A.row := by
+  rw [← Matrix.det_mul_transpose_ne_zero_iff, (Matrix.det_mul_transpose_nonneg A).lt_iff_ne',
+    ne_eq]
 
 /-- **The Cauchy–Binet formula, Hermitian form.** Over a commutative star ring, the determinant
 of the Hermitian Gram matrix `∑ₖ x i k * star (x j k)` of a family is the sum of the products of
@@ -315,65 +342,31 @@ theorem exists_plucker_eq_mul_plucker_compl_or_eq_neg (hm : p + q = Fintype.card
 
 end Field
 
-/-- **The Plücker coordinates of a saturated integral basis are coprime.** Let `N` be a saturated
-submodule of `ℤ^ι`: it contains every `z` of which it contains a nonzero multiple. Then the
-Plücker coordinates of any basis of `N` have greatest common divisor `1`. -/
-theorem gcd_plucker_eq_one [Fintype ι] {N : Submodule ℤ (ι → ℤ)}
-    (hN : ∀ (c : ℤ) (z : ι → ℤ), c ≠ 0 → c • z ∈ N → z ∈ N) (b : Module.Basis (Fin p) ℤ N) :
-    Finset.univ.gcd (plucker fun i ↦ (b i : ι → ℤ)) = 1 := by
-  set y : Fin p → ι → ℤ := fun i ↦ (b i : ι → ℤ)
-  have hg0 : 0 ≤ Finset.univ.gcd (plucker y) := by
-    rw [← Finset.normalize_gcd, ← Int.abs_eq_normalize]
-    exact abs_nonneg _
-  set g := Finset.univ.gcd (plucker y)
-  by_contra hg
-  -- Some prime `q` divides every Plücker coordinate of `y`.
-  have hg1 : g.natAbs ≠ 1 := fun h ↦ hg <| by rw [← Int.natAbs_of_nonneg hg0, h, Nat.cast_one]
-  obtain ⟨q, hq, hqg⟩ := Nat.exists_prime_and_dvd hg1
-  have : Fact q.Prime := ⟨hq⟩
-  have hqp (s : powersetCard ι p) : (q : ℤ) ∣ plucker y s :=
-    (Int.ofNat_dvd_left.2 hqg).trans (Finset.gcd_dvd (Finset.mem_univ s))
-  -- Hence the reductions of the `y i` modulo `q` are linearly dependent.
-  have hdep : ¬LinearIndependent (ZMod q) fun i j ↦ (y i j : ZMod q) := by
-    intro h
-    refine (plucker_ne_zero_iff (K := ZMod q) _).2 h (funext fun s ↦ ?_)
-    have hmap := plucker_map (Int.castRingHom (ZMod q)) y s
-    simp only [eq_intCast] at hmap
-    rw [hmap, Pi.zero_apply, ZMod.intCast_zmod_eq_zero_iff_dvd]
-    exact hqp s
-  obtain ⟨c, hc, i₀, hi₀⟩ := Fintype.not_linearIndependent_iff.1 hdep
-  -- Lift the relation to `ℤ`: the integral combination `v` of the `y i` is divisible by `q`.
-  set c' : Fin p → ℤ := fun i ↦ ((c i).val : ℤ)
-  have hc' (i : Fin p) : (c' i : ZMod q) = c i := by simp [c']
-  set v : ι → ℤ := ∑ i, c' i • y i
-  have hv (j : ι) : (q : ℤ) ∣ v j := by
-    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
-    simpa [v, hc'] using congrFun hc j
-  choose z hz using hv
-  have hvz : v = (q : ℤ) • z := funext fun j ↦ by simp [hz j]
-  have hvN : v ∈ N := N.sum_mem fun i _ ↦ N.smul_mem _ (b i).2
-  have hzN : z ∈ N := hN q z (by exact_mod_cast hq.ne_zero) (hvz ▸ hvN)
-  -- By saturation `z` is an integral combination of the `y i`, so `q` divides every `c' i`.
-  have hli : LinearIndependent ℤ y := b.linearIndependent.map' N.subtype N.ker_subtype
-  have hzsum : z = ∑ i, b.repr ⟨z, hzN⟩ i • y i := by
-    have h := congrArg Subtype.val (b.sum_repr ⟨z, hzN⟩)
-    simp only [Submodule.coe_sum, Submodule.coe_smul] at h
-    exact h.symm
-  have hrel : ∑ i, (c' i - q * b.repr ⟨z, hzN⟩ i) • y i = 0 := by
-    simp only [sub_smul, Finset.sum_sub_distrib, mul_smul, ← Finset.smul_sum, ← hzsum]
-    rw [← hvz, sub_self]
-  have h0 := Fintype.linearIndependent_iff.1 hli _ hrel i₀
-  apply hi₀
-  rw [← hc', sub_eq_zero.1 h0]
-  simp
-
-/-- The greatest common divisor of the maximal minors of an integer matrix vanishes exactly when
-its rows are linearly dependent over `ℚ`. -/
-theorem _root_.Matrix.gcd_plucker_row_eq_zero_iff [Fintype ι] (A : Matrix (Fin p) ι ℤ) :
-    Finset.univ.gcd (plucker A.row) = 0 ↔ ¬LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row := by
-  have h := Matrix.plucker_row_map (Int.castRingHom ℚ) A
-  rw [Int.coe_castRingHom] at h
-  rw [Finset.gcd_eq_zero_iff, ← plucker_ne_zero_iff, not_not, h, funext_iff]
-  simp
+/-- **The Plücker coordinates of a saturated basis over a PID are coprime.** Let `N` be a
+saturated submodule of `R^ι`: it contains every `z` of which it contains a nonzero multiple. Then
+the Plücker coordinates of any basis of `N` have normalized greatest common divisor `1`. -/
+theorem gcd_plucker_eq_one [IsDomain R] [IsPrincipalIdealRing R] [NormalizedGCDMonoid R]
+    [Fintype ι] {N : Submodule R (ι → R)}
+    (hN : ∀ (c : R) (z : ι → R), c ≠ 0 → c • z ∈ N → z ∈ N) (b : Module.Basis (Fin p) R N) :
+    Finset.univ.gcd (plucker fun i ↦ (b i : ι → R)) = 1 := by
+  classical
+  -- Saturation makes the finitely generated quotient torsion-free, hence free over the PID.
+  have : Module.IsTorsionFree R ((ι → R) ⧸ N) := N.isTorsionFree_quotient_of_smul_mem hN
+  obtain ⟨P, hP⟩ := N.exists_isCompl_iff_isTorsionFree_quotient.mpr inferInstance
+  let π := b.repr.toLinearMap ∘ₗ N.projectionOnto P hP
+  let y : Fin p → ι → R := fun i j ↦ π (Pi.single j 1) i
+  have hπ (v : ι → R) (i : Fin p) : π v i = ∑ j, v j * y i j := by
+    conv_lhs => rw [← (Pi.basisFun R ι).sum_repr v]
+    simp [y]
+  -- The projected basis coordinates give a right inverse to the matrix of basis vectors.
+  have hxy : Matrix.of (fun i ↦ (b i : ι → R)) * (Matrix.of y).transpose = 1 := by
+    ext i j
+    rw [Matrix.mul_apply]
+    simpa [π, Matrix.one_apply, Finsupp.single_apply, eq_comm] using (hπ (b i) j).symm
+  -- Cauchy–Binet expresses 1 as a linear combination of the maximal minors.
+  have hdvd : Finset.univ.gcd (plucker fun i ↦ (b i : ι → R)) ∣ (1 : R) := by
+    rw [← Matrix.det_one (n := Fin p), ← hxy, det_mul_transpose_eq_sum_plucker_mul]
+    exact Finset.dvd_sum fun s hs ↦ dvd_mul_of_dvd_left (Finset.gcd_dvd hs) _
+  simpa only [Finset.normalize_gcd] using normalize_eq_one.mpr (isUnit_of_dvd_one hdvd)
 
 end TauCeti
