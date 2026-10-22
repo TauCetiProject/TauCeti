@@ -358,9 +358,8 @@ private lemma integral_Iic_asymmetricLaplacePDFReal_smul_exp (hl : 0 < l) (hr : 
     congr 1
     ring
   rw [setIntegral_congr_fun measurableSet_Iic hL, integral_const_mul,
-    integral_exp_mul_complex_Iic hre, mul_assoc, mul_div_assoc', hexp,
-    mul_comm (t : ℂ) Complex.I]
-  exact (mul_div_assoc _ _ _).symm
+    integral_exp_mul_complex_Iic hre, ← hexp]
+  ring
 
 /-- The Fourier integral of the density over the upper half-line starting at the location. -/
 private lemma integral_Ioi_asymmetricLaplacePDFReal_smul_exp (hl : 0 < l) (hr : 0 < r)
@@ -384,10 +383,13 @@ private lemma integral_Ioi_asymmetricLaplacePDFReal_smul_exp (hl : 0 < l) (hr : 
     rw [← Complex.exp_add]
     congr 1
     ring
+  have hden : (-r : ℂ) + t * Complex.I ≠ 0 := fun h => by simp [h] at hre
+  have hden' : (r : ℂ) - t * Complex.I ≠ 0 := fun h => by
+    simpa [hr.ne'] using congrArg Complex.re h
   rw [setIntegral_congr_fun measurableSet_Ioi hR, integral_const_mul,
-    integral_exp_mul_complex_Ioi hre, mul_assoc, mul_div_assoc', mul_neg, hexp,
-    mul_comm (t : ℂ) Complex.I, neg_add_eq_sub, ← neg_sub (r : ℂ), neg_div_neg_eq]
-  exact (mul_div_assoc _ _ _).symm
+    integral_exp_mul_complex_Ioi hre, ← hexp]
+  field_simp
+  ring
 
 /-- The characteristic function of Lebesgue measure weighted by the asymmetric Laplace density. -/
 private lemma charFun_withDensity_asymmetricLaplacePDF (hl : 0 < l) (hr : 0 < r) (m t : ℝ) :
