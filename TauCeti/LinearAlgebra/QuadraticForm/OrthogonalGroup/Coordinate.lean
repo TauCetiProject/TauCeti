@@ -31,13 +31,6 @@ universe u v
 variable {R : Type u} [CommRing R] [Invertible (2 : R)] {V : Type v} [AddCommGroup V] [Module R V]
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-private theorem toMatrix_injective (b : Basis n R V) :
-    Function.Injective (QuadraticForm.toMatrix b : QuadraticForm R V → Matrix n n R) := by
-  intro Q₁ Q₂ h
-  apply (QuadraticMap.associated_rightInverse R).injective
-  apply (LinearMap.toMatrix₂ b b).injective
-  simpa only [QuadraticForm.toMatrix] using h
-
 /-- In a basis, an automorphism preserves a quadratic form exactly when its matrix
 satisfies the usual Gram-matrix congruence equation. -/
 theorem mem_orthogonalGroup_iff_toMatrix (Q : QuadraticForm R V) (b : Basis n R V)
@@ -45,29 +38,16 @@ theorem mem_orthogonalGroup_iff_toMatrix (Q : QuadraticForm R V) (b : Basis n R 
     g ∈ orthogonalGroup Q ↔
       (LinearMap.toMatrix b b g.toLinearMap)ᵀ * (QuadraticForm.toMatrix b Q) *
           LinearMap.toMatrix b b g.toLinearMap = QuadraticForm.toMatrix b Q := by
+  rw [show QuadraticForm.toMatrix b Q = LinearMap.BilinForm.toMatrix b Q.associated from rfl,
+    ← TauCeti.BilinForm.isIsometry_iff_toMatrix b, TauCeti.BilinForm.isIsometry_iff,
+    mem_orthogonalGroup_iff_polar ((isUnit_of_invertible (2 : R)).isSMulRegular R)]
   constructor
-  · intro hg
-    have hcomp : Q.comp g.toLinearMap = Q := by
-      exact QuadraticMap.ext fun x => mem_orthogonalGroup_iff.mp hg x
-    calc
-      (LinearMap.toMatrix b b g.toLinearMap)ᵀ * (QuadraticForm.toMatrix b Q) *
-          LinearMap.toMatrix b b g.toLinearMap =
-          QuadraticForm.toMatrix b (Q.comp g.toLinearMap) :=
-        (QuadraticForm.toMatrix_comp b b Q g.toLinearMap).symm
-      _ = QuadraticForm.toMatrix b Q := congrArg (fun q : QuadraticForm R V => q.toMatrix b) hcomp
-  · intro hmatrix
-    apply mem_orthogonalGroup_iff.mpr
-    intro x
-    have hmatrix' :
-        QuadraticForm.toMatrix b (Q.comp g.toLinearMap) = QuadraticForm.toMatrix b Q := by
-      calc
-        QuadraticForm.toMatrix b (Q.comp g.toLinearMap) =
-            (LinearMap.toMatrix b b g.toLinearMap)ᵀ * (QuadraticForm.toMatrix b Q) *
-              LinearMap.toMatrix b b g.toLinearMap :=
-          QuadraticForm.toMatrix_comp b b Q g.toLinearMap
-        _ = QuadraticForm.toMatrix b Q := hmatrix
-    have hcomp : Q.comp g.toLinearMap = Q := toMatrix_injective b hmatrix'
-    exact congrArg (fun q : QuadraticForm R V => q x) hcomp
+  · intro h x y
+    simpa [QuadraticMap.associated_apply, QuadraticMap.polar] using
+      congrArg (fun z : R => (⅟2 : R) • z) (h x y)
+  · intro h x y
+    apply (isUnit_of_invertible (⅟2 : R)).smul_left_cancel.mp
+    simpa [QuadraticMap.associated_apply, QuadraticMap.polar] using h x y
 
 /-- In a basis, a linear automorphism belongs to the special orthogonal group
 exactly when its Gram-matrix congruence and determinant equations both hold. -/
