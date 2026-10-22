@@ -451,6 +451,10 @@ theorem single_injective (h : H) : Injective (single h : R → NovikovSeries R H
 theorem single_eq_zero_iff {h : H} {r : R} : (single h r : NovikovSeries R H N) = 0 ↔ r = 0 :=
   ⟨fun hr => single_injective h (hr.trans (single_zero h).symm), fun hr => hr ▸ single_zero h⟩
 
+instance [Nontrivial R] : Nontrivial (NovikovSeries R H N) := by
+  obtain ⟨r, hr⟩ := exists_ne (0 : R)
+  exact ⟨⟨single 0 r, 0, single_eq_zero_iff.not.2 hr⟩⟩
+
 end Zero
 
 @[simp]
