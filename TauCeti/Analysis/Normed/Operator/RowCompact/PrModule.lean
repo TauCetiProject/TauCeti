@@ -29,10 +29,11 @@ which is row compact because row-compact maps form a two-sided operator ideal
 range of `iM` is presumed.
 
 The ideal, closedness and approximation properties of row-compact maps transport to (Pr)
-modules. Every map from a module with (Pr) into a finitely generated module with (Pr) is row
-compact, and the identity of a module with (Pr) is row compact exactly when the module is finitely
-generated. Hence a row-compact endomorphism `u` with `(1 - u) ^ n = 0` lives on a finitely
-generated projective module.
+modules. Over complete ultrametric Tate scalars, let `M` be a normed module with a bounded scalar
+action (`IsBoundedSMul`). If `M` is finitely generated with (Pr), every map into `M` from a module
+with (Pr) is row compact. The identity of `M` is row compact exactly when `M` has (Pr) and is
+finitely generated. Hence a row-compact endomorphism `u` of `M` with `(1 - u) ^ n = 0` forces `M`
+to be finitely generated projective.
 
 ## Main definitions
 
