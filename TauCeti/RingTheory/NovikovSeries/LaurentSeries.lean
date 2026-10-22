@@ -40,6 +40,8 @@ Mathlib.
 * `TauCeti.NovikovSeries.toLaurentSeries_single` and
   `TauCeti.NovikovSeries.toLaurentSeries_ofAddMonoidAlgebra`: the comparison sends monomials to
   monomials and restricts to the inclusion of Laurent polynomials.
+* `TauCeti.NovikovSeries.toLaurentSeries_algebraMap`: for an `S`-algebra `R`, the comparison
+  commutes with `algebraMap S`.
 * `TauCeti.NovikovSeries.valuation_toLaurentSeries_le_exp_iff`: the period filtration corresponds
   to the valuation filtration.
 * `TauCeti.NovikovSeries.tendsto_toLaurentSeries_iff`: the comparison and its inverse preserve
@@ -111,6 +113,14 @@ theorem toLaurentSeries_single (n : ℤ) (r : R) :
   split_ifs with hk
   · rw [hk, coeff_single_same]
   · exact coeff_single_of_ne hk r
+
+/-- For an `S`-algebra `R`, the comparison is compatible with the `S`-algebra structures: it
+sends the constant series `algebraMap S _ s` to the constant Laurent series. -/
+theorem toLaurentSeries_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    toLaurentSeries (algebraMap S (NovikovSeries R ℤ (Int.castAddHom ℝ)) s) =
+      algebraMap S R⸨X⸩ s := by
+  rw [NovikovSeries.algebraMap_apply, toLaurentSeries_single, HahnSeries.algebraMap_apply,
+    HahnSeries.C_apply]
 
 /-- On the group ring `R[ℤ] = R[T;T⁻¹]`, the comparison restricts to the inclusion of Laurent
 polynomials into Laurent series. -/
