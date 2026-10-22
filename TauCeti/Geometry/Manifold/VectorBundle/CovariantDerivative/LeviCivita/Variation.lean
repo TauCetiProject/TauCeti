@@ -251,9 +251,9 @@ private theorem two_mul_apply_eq_koszulBilinear_extend
   rw [ContMDiffNondegenerateMetric.koszul_apply, ← koszulBilinear_apply] at h
   simpa using h
 
-/-- The curve `s ↦ ∇ˢ_v Y` differs by a constant from the curve `s ↦ ∇ˢ_v Ỹ` for the extension `Ỹ`
-of `Y x`: the difference `∇ˢ - ∇ᵗ` is tensorial, so `∇ˢ_v Y - ∇ᵗ_v Y` depends on `Y` only through
-`Y x`. -/
+/-- The curve `s ↦ ∇ˢ_v Y` differs by a constant from the curve `s ↦ ∇ˢ_v Y₀` for the extension
+`Y₀` of `Y x`: the difference `∇ˢ - ∇ᵗ` is tensorial, so `∇ˢ_v Y - ∇ᵗ_v Y` depends on `Y` only
+through `Y x`. -/
 private theorem apply_eq_apply_extend_add (hY : MDiffAt (T% Y) x) (s : ℝ) (v : TangentSpace I x) :
     cov s Y x v = cov s (extend E (Y x)) x v + (cov t Y x v - cov t (extend E (Y x)) x v) := by
   have hd {Z : Π x : M, TangentSpace I x} (hZ : MDiffAt (T% Z) x) :=
@@ -344,7 +344,7 @@ private theorem two_mul_apply_deriv_eq_of_contMDiffAt
   exact key
 
 /-- For a vector field `Y` differentiable at `x`, the curve `s ↦ ∇ˢ_v Y` has the same derivative at
-`t` as the curve `s ↦ ∇ˢ_v Ỹ` for the extension `Ỹ` of `Y x`. -/
+`t` as the curve `s ↦ ∇ˢ_v Y₀` for the extension `Y₀` of `Y x`. -/
 private theorem hasDerivAt_apply_of_extend
     (hcov : ∀ s, (g s).IsLeviCivitaConnection (cov s))
     (hg : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 2
@@ -353,7 +353,7 @@ private theorem hasDerivAt_apply_of_extend
       (t, x))
     (hY : MDiffAt (T% Y) x) (v : TangentSpace I x) :
     HasDerivAt (fun s ↦ cov s Y x v) (deriv (fun s ↦ cov s (extend E (Y x)) x v) t) t := by
-  -- `s ↦ ∇ˢ_v Y` and `s ↦ ∇ˢ_v Ỹ` for the extension `Ỹ` of `Y x` differ by a constant.
+  -- `s ↦ ∇ˢ_v Y` and `s ↦ ∇ˢ_v Y₀` for the extension `Y₀` of `Y x` differ by a constant.
   set u : ℝ → E := fun s ↦ cov s (extend E (Y x)) x v
   set c : E := cov t Y x v - cov t (extend E (Y x)) x v
   have hu : DifferentiableAt ℝ u t := differentiableAt_covariantDerivative_apply_of_contMDiffAt
