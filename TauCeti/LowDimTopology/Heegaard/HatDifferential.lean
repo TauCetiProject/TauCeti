@@ -19,21 +19,28 @@ The hat chain group `\widehat{CF}` of a pointed Heegaard diagram is the `𝔽₂
 generators. Its differential sends a generator `x` to the sum over generators `y` of the number,
 modulo two, of holomorphic disks from `x` to `y` of Maslov index one avoiding the basepoints. The
 domain of such a disk is a nonnegative domain from `x` to `y` with multiplicity zero at every
-basepoint and Maslov index one. In a nice diagram (`TauCeti.HeegaardRegionSystem.IsNice`) every
-such domain is an empty embedded bigon or an empty embedded rectangle, and each of those is the
-domain of exactly one holomorphic disk modulo translation (Sarkar–Wang). So in a nice diagram
-the differential counts these domains themselves, which is the combinatorial chain complex of
-Sarkar–Wang and Ozsváth–Stipsicz–Szabó.
+basepoint and Maslov index one. Sarkar and Wang show that in a genuine nice Heegaard diagram,
+one on a surface in which every region containing no basepoint is an embedded disk with two or
+four corners, every such domain is an empty embedded bigon or an empty embedded rectangle, and
+each of those is the domain of exactly one holomorphic disk modulo translation. So in a genuine
+nice diagram the differential counts these domains themselves, which is the combinatorial chain
+complex of Sarkar–Wang and Ozsváth–Stipsicz–Szabó.
 
 This file defines that count for the abstract region incidence data
 `TauCeti.HeegaardRegionSystem` with region Euler characteristics `χ`. The counted domains from
 `x` to `y` form the set `H.hatDomains χ x y`. It is finite when the diagram is weakly admissible,
 and the matrix coefficient `H.hatCoefficient χ x y` is its cardinality modulo two. The linear
-map `H.hatDifferential χ` on `H.Generator →₀ ZMod 2` has these coefficients. In a diagram that is
-not nice the count of domains is not the count of holomorphic disks, and in a diagram that is not
-weakly admissible the set can be infinite, in which case the coefficient is `0` by the
-convention of `Set.ncard`; the results below carry the hypotheses under which the count means
-what it should. That the differential squares to zero on nice diagrams is not proved here.
+map `H.hatDifferential χ` on `H.Generator →₀ ZMod 2` has these coefficients. The abstract
+condition `TauCeti.HeegaardRegionSystem.IsNice` only records that every region containing no
+basepoint has Euler characteristic one and two or four corners; it does not say that `H` and `χ`
+come from regions of an actual surface. The agreement of this count with the holomorphic
+differential therefore applies only to incidence data realized by a genuine nice Heegaard
+diagram with these region Euler characteristics, and neither that realization nor the agreement
+is formalized here. Otherwise the count of domains need not be the count of holomorphic disks.
+In a diagram that is not weakly admissible the set can be infinite, in which case the
+coefficient is `0` by the convention of `Set.ncard`; the results below carry the combinatorial
+hypotheses under which the count is finite and has the properties listed next. That the
+differential squares to zero on nice diagrams is not proved here.
 
 The basic properties of the count are the following. In a weakly admissible diagram nothing is
 counted from a generator to itself, since a nonnegative periodic domain vanishes. Without nonzero
@@ -74,9 +81,9 @@ singly pointed diagram with a well-defined relative grading, the differential lo
   three-manifolds*, Ann. of Math. **159** (2004),
   [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §4.1 (the hat chain complex).
 * S. Sarkar and J. Wang, *An algorithm for computing some Heegaard Floer homologies*, Ann. of
-  Math. **171** (2010), [arXiv:math/0607777](https://arxiv.org/abs/math/0607777), §3 (in a nice
-  diagram the differential counts the positive index-one domains avoiding the basepoints, each of
-  which is an empty embedded bigon or rectangle).
+  Math. **171** (2010), [arXiv:math/0607777](https://arxiv.org/abs/math/0607777), §3 (in a genuine
+  nice diagram the differential counts the positive index-one domains avoiding the basepoints,
+  each of which is an empty embedded bigon or rectangle).
 * P. Ozsváth, A. Stipsicz and Z. Szabó, *Combinatorial Heegaard Floer homology and nice Heegaard
   diagrams*, Adv. Math. **231** (2012), [arXiv:0912.0830](https://arxiv.org/abs/0912.0830)
   (the combinatorial chain complex of a nice diagram with several basepoints).
