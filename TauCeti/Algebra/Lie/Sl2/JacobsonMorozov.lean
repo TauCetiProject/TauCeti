@@ -86,8 +86,7 @@ theorem exists_isSl2Triple_of_isNilpotent_ad {e : L} (he : IsNilpotent (ad K L e
     ∃ h f : L, IsSl2Triple h e f := by
   obtain ⟨h, hh, hhe⟩ := exists_mem_range_ad_lie_eq_two_nsmul_of_isNilpotent_ad he
   obtain ⟨f, hf, -⟩ := existsUnique_isSl2Triple_of_isNilpotent_ad he hhe hh
-    (left_ne_zero_of_lie_eq_smul (t := (2 : K)) (by rw [hhe, two_nsmul, two_smul]) two_ne_zero
-      he0)
+    (left_ne_zero_of_lie_eq_nsmul K hhe two_ne_zero he0)
   exact ⟨h, f, hf⟩
 
 /-- In a finite-dimensional Lie algebra with nondegenerate Killing form over a field of
@@ -231,7 +230,7 @@ private theorem exists_lieEquiv_apply_eq_of_sub_mem (hhe : ⁅h, e⁆ = 2 • e)
     intro k hNk hk h' hh'
     set z := h' - h
     have hyU : (k : K)⁻¹ • z ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e) :=
-      Submodule.smul_mem _ _ (antitone_ker_inf_range_pow e hk (pow_one (ad K L e) ▸ hh'))
+      Submodule.smul_mem _ _ ((ker_inf_range_pow_one e).le (antitone_ker_inf_range_pow e hk hh'))
     have hy := isNilpotent_ad_of_mem_ker_inf_range hyU
     obtain ⟨ψ, hψ, hψh⟩ := ih (k + 1) (by omega) (by omega) _
       (expAd_add_sub_mem hhe hh hk hh' hy)
@@ -277,8 +276,7 @@ theorem exists_isSl2Triple_iff_sub_mem (t : IsSl2Triple h e f) {h' : L} :
       exact add_mem hrange ⟨f, by rw [ad_apply, t.lie_e_f]⟩
     obtain ⟨f', hf', -⟩ := existsUnique_isSl2Triple_of_isNilpotent_ad
       (t.isNilpotent_toEnd_e (K := K) (M := L)) hhe hh
-      (left_ne_zero_of_lie_eq_smul (t := (2 : K)) (by rw [hhe, two_nsmul, two_smul]) two_ne_zero
-        t.e_ne_zero)
+      (left_ne_zero_of_lie_eq_nsmul K hhe two_ne_zero t.e_ne_zero)
     exact ⟨f', hf'⟩
 
 variable [LieAlgebra ℚ L]
@@ -294,7 +292,7 @@ theorem exists_lieEquiv_apply_eq (t : IsSl2Triple h e f) {h' f' : L} (t' : IsSl2
   have he := t.isNilpotent_toEnd_e (K := K) (M := L)
   have hh : h ∈ LinearMap.range (ad K L e) := ⟨f, by rw [ad_apply, t.lie_e_f]⟩
   obtain ⟨φ, hφ, hφh⟩ := exists_lieEquiv_apply_eq_of_sub_mem t.lie_h_e_nsmul hh he le_rfl
-    (by simpa using (t.exists_isSl2Triple_iff_sub_mem (K := K)).1 ⟨f', t'⟩)
+    ((ker_inf_range_pow_one e).ge ((t.exists_isSl2Triple_iff_sub_mem (K := K)).1 ⟨f', t'⟩))
   have hφe : φ e = e := apply_eq_self_of_mem_expAdSubgroup hφ
   refine ⟨φ, hφ, hφe, hφh, ?_⟩
   -- `(h', e, φ f)` is a triple, so `φ f = f'` by the uniqueness half of Morozov's lemma.

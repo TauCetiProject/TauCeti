@@ -25,6 +25,7 @@ representation.
 ## Main results
 
 * `TauCeti.antitone_ker_inf_range_pow`: the filtration is decreasing.
+* `TauCeti.ker_inf_range_pow_one`: its first step is `ker (ad e) ⊓ [e, L]`.
 * `TauCeti.lie_mem_ker_inf_range_pow_add`: the filtration is compatible with brackets.
 * `TauCeti.isNilpotent_ad_lie_of_lie_lie_eq_zero`: Jacobson's lemma for the adjoint
   representation.
@@ -48,6 +49,13 @@ namespace TauCeti
 theorem antitone_ker_inf_range_pow {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
     (e : L) : Antitone fun k : ℕ => LinearMap.ker (ad R L e) ⊓ LinearMap.range (ad R L e ^ k) :=
   fun _ _ hkl => inf_le_inf_left _ ((ad R L e).iterateRange.monotone hkl)
+
+/-- The first step `ker (ad e) ⊓ range ((ad e) ^ 1)` of the filtration is
+`ker (ad e) ⊓ [e, L]`. -/
+theorem ker_inf_range_pow_one {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] (e : L) :
+    LinearMap.ker (ad R L e) ⊓ LinearMap.range (ad R L e ^ 1) =
+      LinearMap.ker (ad R L e) ⊓ LinearMap.range (ad R L e) := by
+  rw [pow_one]
 
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
 
