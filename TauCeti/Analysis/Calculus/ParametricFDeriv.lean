@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import TauCeti.Analysis.Calculus.SecondDerivative
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.TangentCone.Prod
 
 /-!
 # Mixed derivatives of a parametric map
@@ -42,6 +43,8 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 * `TauCeti.hasFDerivAt_spatialFDeriv`: mixed derivatives for a normed parameter space.
 * `hasDerivAt_spatialFDeriv`: the spatial Jacobian differentiates to the spatial derivative of the
   parameter velocity.
+* `TauCeti.hasDerivAt_fderivWithin_slice`: the same commutation for spatial derivatives within a
+  set accumulated by its interior, such as the range of a model with corners.
 * `deriv_spatialFDeriv_apply`: the parameter derivative of the spatial Jacobian equals the
   derivative of the parameter-velocity field.
 * `deriv_deriv_comm`: for a map of two scalar variables, the two iterated partial derivatives
@@ -184,6 +187,75 @@ theorem hasFDerivAt_spatialFDeriv {P : Type*} [NormedAddCommGroup P] [NormedSpac
   ext h w
   simpa only [comp_apply, compL_apply, flip_apply, inl_apply, inr_apply] using
     ((hF.isSymmSndFDerivAt le_rfl).eq (h, 0) (0, w)).symm
+
+/-- **Mixed derivatives within a set.** Let `F : 𝕜 × E → F'` be sufficiently smooth within
+`univ ×ˢ s` at `(t, x)`, where `s` has unique derivatives and `x ∈ s` is accumulated by the interior
+of `s`. Then differentiating in the parameter the spatial derivative within `s` of the slices
+`y ↦ F (r, y)` gives the spatial derivative within `s` of the parameter derivative at `t`.
+
+Over `ℝ` or `ℂ` the required smoothness is `C²`. The set `s` is typically the range of a model with
+corners, so that this computes mixed derivatives of maps read in charts of manifolds with
+boundary. -/
+theorem hasDerivAt_fderivWithin_slice {F : 𝕜 × E → F'} {s : Set E} {t : 𝕜} {x : E}
+    (hF : ContDiffWithinAt 𝕜 (minSmoothness 𝕜 2) F (Set.univ ×ˢ s) (t, x))
+    (hs : UniqueDiffOn 𝕜 s) (hx : x ∈ closure (interior s)) (h'x : x ∈ s) :
+    HasDerivAt (fun r ↦ fderivWithin 𝕜 (fun y ↦ F (r, y)) s x)
+      (fderivWithin 𝕜 (fun y ↦ _root_.deriv (fun r ↦ F (r, y)) t) s x) t := by
+  set S : Set (𝕜 × E) := Set.univ ×ˢ s
+  have hS : UniqueDiffOn 𝕜 S := UniqueDiffOn.prod uniqueDiffOn_univ hs
+  have htx : (t, x) ∈ S := ⟨Set.mem_univ t, h'x⟩
+  have htx' : (t, x) ∈ closure (interior S) := by
+    simp only [S, interior_prod_eq, interior_univ, closure_prod_eq, closure_univ]
+    exact ⟨Set.mem_univ t, hx⟩
+  -- `D` is the derivative of `F` within `S`; it is differentiable within `S` at `(t, x)`, with
+  -- symmetric derivative.
+  set D := fderivWithin 𝕜 F S
+  have h2 : (1 : WithTop ℕ∞) + 1 ≤ minSmoothness 𝕜 2 :=
+    le_trans (by norm_num) le_minSmoothness
+  obtain ⟨u, hu, hxu, hFu⟩ := hF.contDiffOn' (m := 1 + 1) h2 (by simp)
+  rw [Set.insert_eq_of_mem htx] at hFu
+  have hdiff : ∀ z ∈ S ∩ u, HasFDerivWithinAt F (D z) S z := fun z hz ↦
+    (((hFu.differentiableOn (by simp)) z hz).mono_of_mem_nhdsWithin
+      (inter_mem_nhdsWithin S (hu.mem_nhds hz.2))).hasFDerivWithinAt
+  have hD : HasFDerivWithinAt D (fderivWithin 𝕜 D S (t, x)) S (t, x) :=
+    ((hF.fderivWithin_right (m := 1) hS h2 htx).differentiableWithinAt
+      one_ne_zero).hasFDerivWithinAt
+  have hsymm := hF.isSymmSndFDerivWithinAt le_rfl hS htx' htx
+  have hcurve (y : E) : HasDerivAt (fun r : 𝕜 ↦ (r, y)) (1, 0) t :=
+    (hasDerivAt_id t).prodMk (hasDerivAt_const t y)
+  -- Near `t`, the spatial derivative of the slice through `(r, x)` is read off from `D (r, x)`.
+  have hslice : (fun r ↦ fderivWithin 𝕜 (fun y ↦ F (r, y)) s x) =ᶠ[𝓝 t]
+      fun r ↦ (D (r, x)).comp (inr 𝕜 𝕜 E) := by
+    filter_upwards [(continuous_id.prodMk continuous_const).continuousAt.preimage_mem_nhds
+      (hu.mem_nhds hxu)] with r hr
+    exact ((hdiff (r, x) ⟨⟨Set.mem_univ r, h'x⟩, hr⟩).comp x
+      (hasFDerivAt_prodMk_right r x).hasFDerivWithinAt
+      (fun y hy ↦ ⟨Set.mem_univ r, hy⟩)).fderivWithin (hs x h'x)
+  have hleft : HasDerivAt (fun r ↦ (D (r, x)).comp (inr 𝕜 𝕜 E))
+      ((fderivWithin 𝕜 D S (t, x) (1, 0)).comp (inr 𝕜 𝕜 E)) t := by
+    have h := hasDerivWithinAt_univ.mp
+      (hD.comp_hasDerivWithinAt t (hcurve x).hasDerivWithinAt
+        (fun r _ ↦ Set.mk_mem_prod (Set.mem_univ r) h'x))
+    simpa using h.clm_comp (hasDerivAt_const t (inr 𝕜 𝕜 E))
+  -- Near `x` in `s`, the parameter derivative at `t` is read off from `D (t, y)`.
+  have hvel : (fun y ↦ _root_.deriv (fun r ↦ F (r, y)) t) =ᶠ[𝓝[s] x]
+      fun y ↦ D (t, y) (1, 0) := by
+    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds
+      ((continuous_const.prodMk continuous_id).continuousAt.preimage_mem_nhds
+        (hu.mem_nhds hxu))] with y hy hyu
+    exact (hasDerivWithinAt_univ.mp ((hdiff (t, y) ⟨⟨Set.mem_univ t, hy⟩, hyu⟩
+      ).comp_hasDerivWithinAt t (hcurve y).hasDerivWithinAt
+        (fun r _ ↦ Set.mk_mem_prod (Set.mem_univ r) hy))).deriv
+  have hright : HasFDerivWithinAt (fun y ↦ D (t, y) (1, 0))
+      ((apply 𝕜 F' ((1 : 𝕜), (0 : E))).comp ((fderivWithin 𝕜 D S (t, x)).comp (inr 𝕜 𝕜 E)))
+      s x :=
+    (apply 𝕜 F' ((1 : 𝕜), (0 : E))).hasFDerivAt.comp_hasFDerivWithinAt x
+      (hD.comp x (hasFDerivAt_prodMk_right t x).hasFDerivWithinAt fun _ hy ↦
+        ⟨Set.mem_univ t, hy⟩)
+  rw [hvel.fderivWithin_eq (mem_of_mem_nhdsWithin h'x hvel), hright.fderivWithin (hs x h'x)]
+  refine (hleft.congr_of_eventuallyEq hslice).congr_deriv ?_
+  ext w
+  simpa using hsymm (1, 0) (0, w)
 
 end TauCeti
 
