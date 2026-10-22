@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
-public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.Algebra.Polynomial.DivX
 public import TauCeti.RingTheory.Adjoin.Polynomial.Basic
@@ -37,23 +36,17 @@ power `Fᵐ` that clears the denominators of the `vᵢ(G) = vᵢ(F⁻¹)` gives 
 to constants. The relations form a finitely generated module over the Noetherian ring `R[X]`,
 so the parts of high degree of all relations lie in a single finitely generated `R`-module. On
 the projective line this bounds the global sections of a quasi-coherent sheaf of finite type by
-their restrictions to the two charts. Along the way, a finitely generated `R[c]`-module whose
-elements are killed by powers of `c` is shown to be finitely generated over `R`.
+their restrictions to the two charts.
 
 ## Main results
 
 * `TauCeti.Algebra.toSubmodule_adjoin_pair_eq_sup_of_mul_eq_one`: if `F * G = 1`, then
   `R[F, G] = R[F] + R[G]` as `R`-submodules.
-* `TauCeti.Algebra.smul_mem_of_mem_adjoin_singleton`: an `R`-submodule stable under `F` is stable
-  under `R[F]`.
 * `TauCeti.Algebra.finite_quotient_sup_of_mul_eq_one`: if `F * G = 1` and `R[F, G] = B`, then
   `N / (P + Q)` is a finite `R`-module, for `P` and `Q` as above.
 * `TauCeti.Algebra.fg_inf_of_mul_eq_one`: if `F * G = 1` and `R` is Noetherian, the
   intersection of the `R[F]`-span and the `R[G]`-span of a finite set is a finitely generated
   `R`-module.
-* `TauCeti.Algebra.fg_restrictScalars_of_forall_pow_smul_eq_zero`: over `A = R[c]`, a finitely
-  generated `A`-submodule whose elements are killed by powers of `c` is finitely generated over
-  `R`.
 -/
 
 public section
@@ -86,18 +79,6 @@ theorem toSubmodule_adjoin_pair_eq_sup_of_mul_eq_one (hFG : F * G = 1) :
 end Semiring
 
 section Module
-
-/-- An `R`-submodule of a `B`-module that is stable under multiplication by `F` is stable under
-multiplication by every element of the subalgebra `R[F]`. -/
-theorem smul_mem_of_mem_adjoin_singleton {R B N : Type*} [CommSemiring R] [Semiring B]
-    [Algebra R B] [AddCommMonoid N] [Module R N] [Module B N] [IsScalarTower R B N] {F : B}
-    {P : Submodule R N} (hP : ∀ x ∈ P, F • x ∈ P) {b : B} (hb : b ∈ Algebra.adjoin R {F}) {x : N}
-    (hx : x ∈ P) : b • x ∈ P := by
-  induction hb using Algebra.adjoin_induction generalizing x with
-  | mem y hy => rw [Set.mem_singleton_iff.mp hy]; exact hP x hx
-  | algebraMap a => rw [algebraMap_smul]; exact P.smul_mem a hx
-  | add y z _ _ hy hz => rw [add_smul]; exact P.add_mem (hy hx) (hz hx)
-  | mul y z _ _ hy hz => rw [mul_smul]; exact hy (hz hx)
 
 variable {R B N : Type*} [CommRing R] [CommSemiring B] [Algebra R B] [AddCommGroup N]
   [Module R N] [Module B N] [IsScalarTower R B N] {F G : B}
@@ -287,61 +268,5 @@ theorem fg_inf_of_mul_eq_one [IsNoetherianRing R] (hFG : F * G = 1) {S : Set N}
     (Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span i.2))
 
 end Intersection
-
-section Torsion
-
-variable {R A N : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [AddCommMonoid N]
-  [Module R N] [Module A N] [IsScalarTower R A N] {c : A}
-
-/-- **Finiteness of torsion over `R[c]`.** Let `A = R[c]` be generated as an `R`-algebra by a
-single element `c`. A finitely generated `A`-submodule of an `A`-module whose elements are killed
-by powers of `c` is finitely generated over `R`: it is spanned by the `cʲ • y` with `y` running
-over its generators and `j` below the exponent killing `y`. -/
-theorem fg_restrictScalars_of_forall_pow_smul_eq_zero (hc : Algebra.adjoin R {c} = ⊤)
-    {K : Submodule A N} (hK : K.FG) (htors : ∀ y ∈ K, ∃ k : ℕ, c ^ k • y = 0) :
-    (K.restrictScalars R).FG := by
-  classical
-  obtain ⟨t, rfl⟩ := hK
-  choose! k hk using fun y (hy : y ∈ t) ↦ htors y (Submodule.subset_span hy)
-  -- the `cʲ • y` with `y ∈ t` and `j < k y`
-  let T : Submodule R N := Submodule.span R
-    ((fun p : ℕ × N ↦ c ^ p.1 • p.2) '' {p | p.2 ∈ t ∧ p.1 < k p.2})
-  have hfin : {p : ℕ × N | p.2 ∈ t ∧ p.1 < k p.2}.Finite :=
-    ((Set.finite_Iio (t.sup k)).prod t.finite_toSet).subset fun p ⟨hp, hpk⟩ ↦
-      ⟨hpk.trans_le (Finset.le_sup hp), hp⟩
-  -- `T` is stable under `c`, hence under `R[c] = A`
-  have hcT : ∀ x ∈ T, c • x ∈ T := by
-    intro x hx
-    induction hx using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨⟨j, y⟩, ⟨hy, hj⟩, rfl⟩ := hx
-      dsimp only at hy hj ⊢
-      rw [← mul_smul, ← pow_succ']
-      rcases (Nat.add_one_le_of_lt hj).lt_or_eq with h | h
-      · exact Submodule.subset_span ⟨(j + 1, y), ⟨hy, h⟩, rfl⟩
-      · rw [h, hk y hy]
-        exact T.zero_mem
-    | zero => rw [smul_zero]; exact T.zero_mem
-    | add x x' _ _ h h' => rw [smul_add]; exact T.add_mem h h'
-    | smul r x _ h => rw [smul_comm]; exact T.smul_mem r h
-  have heq : (Submodule.span A (t : Set N)).restrictScalars R = T := by
-    refine le_antisymm (fun x hx ↦ ?_) (Submodule.span_le.mpr ?_)
-    · induction hx using Submodule.span_induction with
-      | mem y hy =>
-        rcases Nat.eq_zero_or_pos (k y) with h | h
-        · have hy0 := hk y hy
-          rw [h, pow_zero, one_smul] at hy0
-          rw [hy0]
-          exact T.zero_mem
-        · exact Submodule.subset_span ⟨(0, y), ⟨hy, h⟩, by simp⟩
-      | zero => exact T.zero_mem
-      | add _ _ _ _ h h' => exact T.add_mem h h'
-      | smul a x _ h => exact smul_mem_of_mem_adjoin_singleton hcT (hc ▸ Algebra.mem_top) h
-    · rintro _ ⟨⟨j, y⟩, ⟨hy, -⟩, rfl⟩
-      exact Submodule.smul_mem _ _ (Submodule.subset_span hy)
-  rw [heq]
-  exact Submodule.fg_span (hfin.image _)
-
-end Torsion
 
 end TauCeti.Algebra

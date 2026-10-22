@@ -711,7 +711,7 @@ private theorem fg_range_inf_range [IsNoetherianRing R] (M : (projectiveLine R).
 
 /-- **The global sections of a quasi-coherent sheaf of finite type on the projective line form a
 finitely generated module** over the global functions, over a Noetherian base ring. -/
-private theorem finite_globalSections [IsNoetherianRing R] (M : (projectiveLine R).Modules)
+theorem finite_globalSections [IsNoetherianRing R] (M : (projectiveLine R).Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] : Module.Finite Γ(projectiveLine R, ⊤) Γ(M, ⊤) := by
   have := isNoetherianRing_globalSections R
   -- global sections are the pairs of sections over the charts that agree on the overlap
