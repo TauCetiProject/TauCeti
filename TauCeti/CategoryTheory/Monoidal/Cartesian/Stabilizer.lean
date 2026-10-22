@@ -144,6 +144,11 @@ theorem incl_orbitMap : incl G x y ≫ orbitMap G x = toUnit (orbitFiber G x y) 
   (pullback.condition (f := orbitMap G x) (g := y)).trans <|
     congrArg (· ≫ y) (toUnit_unique _ _)
 
+/-- The defining pullback square of an orbit fibre, with its canonical map to the unit. -/
+theorem isPullback : IsPullback (incl G x y) (toUnit (orbitFiber G x y)) (orbitMap G x) y := by
+  have he : pullback.snd (orbitMap G x) y = toUnit (orbitFiber G x y) := toUnit_unique _ _
+  simpa only [orbitFiber, incl, he] using IsPullback.of_hasPullback (orbitMap G x) y
+
 /-- The inclusion acts on the base point as the defining point of the fiber. -/
 @[simp]
 theorem incl_smul :
