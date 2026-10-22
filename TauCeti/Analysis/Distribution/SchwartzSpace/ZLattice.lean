@@ -31,9 +31,11 @@ the plain form for a complete codomain, so that each side can be manipulated on 
 
 * `ZLattice.summable_norm_poisson_left`, `ZLattice.summable_poisson_left`: the translates of a
   Schwartz function are (absolutely) summable over a discrete subgroup `L`.
-* `ZLattice.summable_norm_poisson_right`, `ZLattice.summable_poisson_right`: the Fourier
-  transform of a Schwartz function, twisted by the phases `exp (2πi ⟪v, m⟫)`, is (absolutely)
-  summable over the dual `L^∨` of a full lattice `L`.
+* `ZLattice.summable_norm_poisson_right_smul`, `ZLattice.summable_poisson_right_smul`: the
+  Fourier transform of a Schwartz function, twisted by the phases `exp (2πi ⟪v, m⟫)`, is
+  (absolutely) summable over the dual `L^∨` of a full lattice `L`.
+* `ZLattice.summable_norm_poisson_right`, `ZLattice.summable_poisson_right`: the same for a
+  complex-valued Schwartz function, with the summand `𝓕 f m * exp (2πi ⟪v, m⟫)`.
 -/
 
 public section
@@ -54,10 +56,8 @@ theorem summable_norm_poisson_left (f : 𝓢(E, F)) (v : E) :
     Summable fun ℓ : L ↦ ‖f (v + ℓ)‖ := by
   obtain ⟨r, hr⟩ : ∃ r : ℝ, r < -finrank ℤ L := ⟨-finrank ℤ L - 1, by linarith⟩
   -- The points `v + ℓ` leave every compact set of `E`, because `L` is closed and discrete.
-  have hL : Tendsto ((↑) : L → E) cofinite (cocompact E) := by
-    rw [← cocompact_eq_cofinite L]
-    exact (L.toAddSubgroup.isClosed_of_discreteTopology.isClosedEmbedding_subtypeVal
-      ).tendsto_cocompact
+  have hL : Tendsto ((↑) : L → E) cofinite (cocompact E) :=
+    L.toAddSubgroup.tendsto_coe_cofinite_of_isDiscrete (isDiscrete_iff_discreteTopology.mpr ‹_›)
   have ht : Tendsto (fun ℓ : L ↦ v + (ℓ : E)) cofinite (cocompact E) :=
     (Homeomorph.addLeft v).isClosedEmbedding.tendsto_cocompact.comp hL
   refine summable_of_isBigO ((summable_norm_sub_rpow L r hr (-v)).congr fun ℓ ↦ ?_)
@@ -81,7 +81,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 /-- The Fourier transform of a Schwartz function, twisted by the phases `exp (2πi ⟪v, m⟫)`, is
 absolutely summable over the dual `L^∨` of a full lattice `L`: the dual side of Poisson
 summation. -/
-theorem summable_norm_poisson_right (f : 𝓢(E, F)) (v : E) :
+theorem summable_norm_poisson_right_smul (f : 𝓢(E, F)) (v : E) :
     Summable fun m : dual L ↦ ‖cexp (2 * π * I * ⟪v, (m : E)⟫) • 𝓕 (f : E → F) m‖ := by
   have hphase (m : dual L) : ‖cexp (2 * π * I * ⟪v, (m : E)⟫)‖ = 1 := by
     rw [norm_exp]
@@ -91,8 +91,21 @@ theorem summable_norm_poisson_right (f : 𝓢(E, F)) (v : E) :
 
 /-- The Fourier transform of a Schwartz function with values in a complex Banach space, twisted by
 the phases `exp (2πi ⟪v, m⟫)`, is summable over the dual `L^∨` of a full lattice `L`. -/
-theorem summable_poisson_right [CompleteSpace F] (f : 𝓢(E, F)) (v : E) :
+theorem summable_poisson_right_smul [CompleteSpace F] (f : 𝓢(E, F)) (v : E) :
     Summable fun m : dual L ↦ cexp (2 * π * I * ⟪v, (m : E)⟫) • 𝓕 (f : E → F) m :=
+  (summable_norm_poisson_right_smul L f v).of_norm
+
+/-- The Fourier transform of a complex-valued Schwartz function, times the phases
+`exp (2πi ⟪v, m⟫)`, is absolutely summable over the dual `L^∨` of a full lattice `L`. -/
+theorem summable_norm_poisson_right (f : 𝓢(E, ℂ)) (v : E) :
+    Summable fun m : dual L ↦ ‖𝓕 (f : E → ℂ) m * cexp (2 * π * I * ⟪v, (m : E)⟫)‖ :=
+  (summable_norm_poisson_right_smul L f v).congr fun m ↦ by rw [smul_eq_mul, mul_comm]
+
+/-- The Fourier transform of a complex-valued Schwartz function, times the phases
+`exp (2πi ⟪v, m⟫)`, is summable over the dual `L^∨` of a full lattice `L`: the dual side of
+Poisson summation. -/
+theorem summable_poisson_right (f : 𝓢(E, ℂ)) (v : E) :
+    Summable fun m : dual L ↦ 𝓕 (f : E → ℂ) m * cexp (2 * π * I * ⟪v, (m : E)⟫) :=
   (summable_norm_poisson_right L f v).of_norm
 
 end Right
