@@ -200,6 +200,7 @@ theorem principalMinor_smul (c : R) (A : Matrix ι ι R) (s : Finset ι) :
 
 /-- Scaling each row `i` of a matrix by `v i` scales its principal minor on `s` by
 `∏ i ∈ s, v i`. -/
+@[simp]
 theorem principalMinor_mul_column (v : ι → R) (A : Matrix ι ι R) (s : Finset ι) :
     (of fun i j ↦ v i * A i j).principalMinor s = (∏ i ∈ s, v i) * A.principalMinor s := by
   rw [principalMinor_def, principalMinor_def, ← Finset.prod_coe_sort s v, ← det_mul_column]

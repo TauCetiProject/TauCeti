@@ -50,27 +50,7 @@ open Filter Finset Topology
 
 namespace Matrix
 
-variable {K : Type*} [NormedField K]
-
-/-- **Minors of a normalised matrix.** If the matrix with entries `(d i)⁻¹ * A i j` has a principal
-minor of norm one on `s`, and the `d i` with `i ∈ s` are nonzero, then the principal minor of `A`
-on `s` has norm `∏ i ∈ s, ‖d i‖`. -/
-theorem norm_principalMinor_eq_prod {ι : Type*} [DecidableEq ι] {A : Matrix ι ι K} {d : ι → K}
-    {s : Finset ι} (hd : ∀ i ∈ s, d i ≠ 0)
-    (hminor : ‖(of fun i j ↦ (d i)⁻¹ * A i j).principalMinor s‖ = 1) :
-    ‖A.principalMinor s‖ = ∏ i ∈ s, ‖d i‖ := by
-  -- On `s` the matrix `A` is the normalised matrix with row `i` scaled back by `d i`.
-  have hA : (of fun i j ↦ d i * (of fun i j ↦ (d i)⁻¹ * A i j) i j).principalMinor s =
-      A.principalMinor s := by
-    rw [principalMinor_def, principalMinor_def]
-    congr 1
-    ext i j
-    simp [mul_inv_cancel_left₀ (hd i i.2)]
-  rw [← hA, principalMinor_mul_column, norm_mul, hminor, mul_one, norm_prod]
-
-variable {A : Matrix ℕ ℕ K} {d : ℕ → K}
-
-variable [IsUltrametricDist K]
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] {A : Matrix ℕ ℕ K} {d : ℕ → K}
 
 /-- Every principal minor of size `n + 1` other than the leading one on `range (n + 1)` has norm
 at most `(∏ i ∈ range n, ‖d i‖) * ‖d (n + 1)‖`, when `‖A i j‖ ≤ ‖d i‖` and the norms of `d`

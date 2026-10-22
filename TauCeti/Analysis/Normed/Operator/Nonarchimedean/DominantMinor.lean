@@ -41,10 +41,11 @@ namespace ContinuousLinearMap
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] {u : C₀(ℕ, K) →L[K] C₀(ℕ, K)}
   {d : ℕ → K}
 
-/-- If the entries of row `i` of a row-compact `u` are bounded by `‖d i‖` for `i < n`, the `d i`
-with `i ≤ n` are nonzero, and the normalised matrix `(d i)⁻¹ aᵢⱼ` has a leading principal minor
-of norm one on `range (n + 1)`, then `‖d n‖` is at most the row norm `rₙ(u)`. -/
-theorem norm_le_rowNorm_of_norm_principalMinor_eq_one (hu : u.IsRowCompact) {n : ℕ}
+/-- If row `n` of the matrix of `u` is bounded, the entries of row `i` are bounded by `‖d i‖` for
+`i < n`, the `d i` with `i ≤ n` are nonzero, and the normalised matrix `(d i)⁻¹ aᵢⱼ` has a leading
+principal minor of norm one on `range (n + 1)`, then `‖d n‖` is at most the row norm `rₙ(u)`. -/
+theorem norm_le_rowNorm_of_norm_principalMinor_eq_one {n : ℕ} {C : ℝ}
+    (hn : ∀ j, ‖u.matrixCoeff n j‖ ≤ C)
     (hd : ∀ i ∈ range (n + 1), d i ≠ 0) (hb : ∀ i < n, ∀ j, ‖u.matrixCoeff i j‖ ≤ ‖d i‖)
     (hminor : ‖(Matrix.of fun i j ↦ (d i)⁻¹ * u.matrixCoeff i j).principalMinor
       (range (n + 1))‖ = 1) :
@@ -53,7 +54,7 @@ theorem norm_le_rowNorm_of_norm_principalMinor_eq_one (hu : u.IsRowCompact) {n :
   let r : ℕ → ℝ := Function.update (fun i ↦ ‖d i‖) n (u.rowNorm n)
   have hr (i j : ℕ) (hi : i ∈ range (n + 1)) : ‖u.matrixCoeff i j‖ ≤ r i := by
     rcases eq_or_ne i n with rfl | hin
-    · simpa [r] using hu.norm_matrixCoeff_le_rowNorm i j
+    · simpa [r] using norm_matrixCoeff_le_rowNorm_of_le hn j
     · simpa [r, hin] using hb i (by grind) j
   have hle : ‖u.matrixCoeff.principalMinor (range (n + 1))‖ ≤ ∏ i ∈ range (n + 1), r i := by
     rw [Matrix.principalMinor_def, ← prod_coe_sort]
@@ -79,9 +80,10 @@ theorem IsRowCompact.norm_charCoeff_matrixCoeff_eq_prod [CompleteSpace K] (hu : 
   have hd (i : ℕ) : d i ≠ 0 := norm_pos_iff.1 ((norm_nonneg _).trans_lt (hdec i.lt_succ_self))
   -- The norms of `d` are squeezed between zero and the null row norms of `u`.
   have hd₀ : Tendsto (fun i ↦ ‖d i‖) atTop (𝓝 0) := by
+    obtain ⟨C, hC⟩ := (isRowCompact_iff.1 hu).1
     refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun i ↦ ?_)
       (Nat.cofinite_eq_atTop ▸ hu.tendsto_rowNorm)
-    exact norm_le_rowNorm_of_norm_principalMinor_eq_one hu (fun i _ ↦ hd i)
+    exact norm_le_rowNorm_of_norm_principalMinor_eq_one (hC i) (fun i _ ↦ hd i)
       (fun i _ ↦ hb i) (hminor (i + 1))
   exact Matrix.norm_charCoeff_eq_prod_of_norm_principalMinor_eq_one hdec hd₀ hb (hminor n)
 

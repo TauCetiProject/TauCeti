@@ -28,6 +28,10 @@ Taking `d = 1` gives the bound of a determinant by the product of row bounds
 (`Matrix.norm_coeff_charpolyRev_le`). These are the estimates from which convergence and growth of
 Fredholm determinants of compact operators on nonarchimedean Banach spaces are derived.
 
+Over a normed field, with no ultrametric assumption, a principal minor whose rows are rescaled by
+nonzero `(d i)⁻¹` to a minor of norm one has norm exactly `∏ i ∈ s, ‖d i‖`
+(`Matrix.norm_principalMinor_eq_prod`).
+
 Two-sided entry bounds also control each principal minor by the product of the diagonal
 factors `c i * d i` (`Matrix.norm_principalMinor_le_prod_mul`).
 The two-sided form `‖A i j‖ ≤ σ ^ (w i - w' j)`, with integer weights `w`, `w'` and
@@ -43,6 +47,8 @@ bounds compare a row weight with an unrelated column weight.
 * `Matrix.norm_det_le_prod_mul_prod`, `Matrix.norm_det_le_prod_of_norm_le`,
   `Matrix.norm_principalMinor_le`, `Matrix.norm_principalMinor_le_prod_mul`,
   `Matrix.norm_principalMinor_le_zpow`: determinant and principal-minor bounds.
+* `Matrix.norm_principalMinor_eq_prod`: the exact norm of a principal minor from a normalised
+  minor of norm one.
 * `TauCeti.norm_coeff_charpolyRev_le_of_principalMinor_le`,
   `Matrix.norm_coeff_charpolyRev_le`, `Matrix.norm_coeff_charpolyRev_le_of_norm_le`,
   `Matrix.norm_coeff_charpolyRev_le_zpow`: coefficient bounds for `det (1 - X A)`.
@@ -206,6 +212,28 @@ theorem norm_sum_coeff_charpolyRev_smul_pow_apply_le {A : Matrix ι ι R} {r : �
   · split_ifs <;> compute_degree!
   · split_ifs <;> simp
   · split_ifs <;> simp [coeff_one, (norm_nonneg _).trans (hA k l), hA k l]
+
+section NormedField
+
+variable {K : Type*} [NormedField K]
+
+/-- **Minors of a normalised matrix.** If the matrix with entries `(d i)⁻¹ * A i j` has a principal
+minor of norm one on `s`, and the `d i` with `i ∈ s` are nonzero, then the principal minor of `A`
+on `s` has norm `∏ i ∈ s, ‖d i‖`. -/
+theorem norm_principalMinor_eq_prod {ι : Type*} [DecidableEq ι] {A : Matrix ι ι K} {d : ι → K}
+    {s : Finset ι} (hd : ∀ i ∈ s, d i ≠ 0)
+    (hminor : ‖(of fun i j ↦ (d i)⁻¹ * A i j).principalMinor s‖ = 1) :
+    ‖A.principalMinor s‖ = ∏ i ∈ s, ‖d i‖ := by
+  -- On `s` the matrix `A` is the normalised matrix with row `i` scaled back by `d i`.
+  have hA : (of fun i j ↦ d i * (of fun i j ↦ (d i)⁻¹ * A i j) i j).principalMinor s =
+      A.principalMinor s := by
+    rw [principalMinor_def, principalMinor_def]
+    congr 1
+    ext i j
+    simp [mul_inv_cancel_left₀ (hd i i.2)]
+  rw [← hA, principalMinor_mul_column, norm_mul, hminor, mul_one, norm_prod]
+
+end NormedField
 
 end Matrix
 
