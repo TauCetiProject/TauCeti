@@ -71,8 +71,14 @@ representing object: it sends `homEquiv f` to `homEquiv (f ≫ s)`. -/
 private def postcompIso (s : Aut Y) : F ≅ F :=
   NatIso.ofComponents
     (fun X ↦ Equiv.toIso ((R.homEquiv.symm.trans s.asIso.homToEquiv).trans R.homEquiv))
-    -- both sides are `homEquiv_homEquiv_symm_comp_naturality` after unfolding `Equiv.toIso`
-    (fun f ↦ by ext x; exact R.homEquiv_homEquiv_symm_comp_naturality s.asIso.hom f.unop x)
+    (fun f ↦ by
+      ext x
+      simpa using R.homEquiv_homEquiv_symm_comp_naturality s.asIso.hom f.unop x)
+
+/-- `postcompIso s` sends `x = homEquiv f` to `homEquiv (f ≫ s)`. -/
+private theorem postcompIso_hom_app (s : Aut Y) {X : C} (x : F.obj (op X)) :
+    (R.postcompIso s).hom.app (op X) x = R.homEquiv (R.homEquiv.symm x ≫ s.asIso.hom) := by
+  simp [postcompIso]
 
 /-- The automorphism of `Y` attached to an automorphism `σ` of `F`: by uniqueness of representing
 objects, it compares the representation `R` with its transport along `σ`. -/
@@ -88,9 +94,8 @@ theorem homEquiv_uniqueUpToIso_hom {Y' : C} (R' : F.RepresentableBy Y') :
   exact R'.homEquiv.apply_symm_apply _
 
 private theorem homEquiv_toAutObj_hom (σ : Aut F) :
-    R.homEquiv (R.toAutObj σ).asIso.hom = σ.asIso.hom.app (op Y) (R.homEquiv (𝟙 Y)) :=
-  -- the universal element of `R.ofIso σ.asIso` is `σ (homEquiv (𝟙 Y))` by definition
-  (R.ofIso σ.asIso).homEquiv_uniqueUpToIso_hom R
+    R.homEquiv (R.toAutObj σ).asIso.hom = σ.asIso.hom.app (op Y) (R.homEquiv (𝟙 Y)) := by
+  simpa [toAutObj, RepresentableBy.ofIso] using (R.ofIso σ.asIso).homEquiv_uniqueUpToIso_hom R
 
 private theorem homEquiv_comp_toAutObj_hom (σ : Aut F) {X : C} (f : X ⟶ Y) :
     R.homEquiv (f ≫ (R.toAutObj σ).asIso.hom) = σ.asIso.hom.app (op X) (R.homEquiv f) := by
@@ -106,19 +111,13 @@ def autMulEquiv : Aut F ≃* Aut Y where
   toFun := R.toAutObj
   invFun s := .of (R.postcompIso s)
   left_inv σ := by
-    ext X x
+    ext ⟨X⟩ x
     obtain ⟨f, rfl⟩ := R.homEquiv.surjective x
-    -- the left side is `homEquiv (homEquiv.symm (homEquiv f) ≫ s)` after unfolding `Equiv.toIso`
-    exact (congrArg (fun g ↦ R.homEquiv (g ≫ _)) (R.homEquiv.symm_apply_apply f)).trans
-      (R.homEquiv_comp_toAutObj_hom σ f)
+    simp [postcompIso_hom_app, homEquiv_comp_toAutObj_hom]
   right_inv s := by
     ext
     refine R.homEquiv.injective ?_
-    rw [homEquiv_toAutObj_hom]
-    -- the left side is `homEquiv (homEquiv.symm (homEquiv (𝟙 Y)) ≫ s)` after unfolding
-    -- `Equiv.toIso`
-    exact (congrArg (fun g ↦ R.homEquiv (g ≫ s.asIso.hom)) (R.homEquiv.symm_apply_apply _)).trans
-      (by rw [Category.id_comp])
+    simp [homEquiv_toAutObj_hom, postcompIso_hom_app]
   map_mul' σ τ := by
     ext
     refine R.homEquiv.injective ?_
@@ -156,6 +155,6 @@ theorem homEquiv_autMulEquiv_inv (σ : Aut F) :
 @[simp]
 theorem autMulEquiv_symm_hom_app (s : Aut Y) {X : C} (x : F.obj (op X)) :
     (R.autMulEquiv.symm s).asIso.hom.app (op X) x = R.homEquiv (R.homEquiv.symm x ≫ s.asIso.hom) :=
-  (rfl)
+  R.postcompIso_hom_app s x
 
 end CategoryTheory.Functor.RepresentableBy
