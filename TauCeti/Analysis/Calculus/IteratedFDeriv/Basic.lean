@@ -18,6 +18,8 @@ derivative fields.
 
 public section
 
+namespace TauCeti
+
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
@@ -43,3 +45,5 @@ theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
       (fderiv 𝕜 (iteratedFDeriv 𝕜 m f)) x i
     rw [← h] at he
     rw [he, norm_iteratedFDeriv_fderiv, ih, Nat.add_right_comm, Nat.add_assoc]
+
+end TauCeti

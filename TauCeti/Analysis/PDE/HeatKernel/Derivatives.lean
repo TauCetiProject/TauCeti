@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+public import TauCeti.Analysis.Calculus.Deriv.RescaledProfile
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 public import TauCeti.Analysis.PDE.HeatKernel.Bounds
 
@@ -109,8 +110,7 @@ private theorem GaussianDecay.sub {Ψ Φ : E → F} (hΨ : GaussianDecay Ψ) (h�
   obtain ⟨C₁, hC₁⟩ := hΨ.2 i p
   obtain ⟨C₂, hC₂⟩ := hΦ.2 i p
   refine ⟨C₁ + C₂, fun y => ?_⟩
-  rw [show (fun y => Ψ y - Φ y) = Ψ - Φ from funext fun y => (Pi.sub_apply Ψ Φ y).symm,
-    iteratedFDeriv_sub_apply (hΨ.1.contDiffAt.of_le (by exact_mod_cast le_top))
+  rw [fun_iteratedFDeriv_sub_apply (hΨ.1.contDiffAt.of_le (by exact_mod_cast le_top))
       (hΦ.1.contDiffAt.of_le (by exact_mod_cast le_top))]
   calc (1 + ‖y‖) ^ p * ‖iteratedFDeriv ℝ i Ψ y - iteratedFDeriv ℝ i Φ y‖
       ≤ (1 + ‖y‖) ^ p * ‖iteratedFDeriv ℝ i Ψ y‖ + (1 + ‖y‖) ^ p * ‖iteratedFDeriv ℝ i Φ y‖ := by
@@ -179,32 +179,6 @@ private theorem gaussianDecay_iteratedFDeriv_heatKernel_one (m : ℕ) :
         rw [mul_one, heatKernel_apply]
         ring_nf
 
-/-- The time derivative of a parabolically rescaled profile:
-`∂ₛ (s^(-a) Ψ(s^(-1/2) x)) = s^(-(a + 1)) (-a Ψ(y) - (1/2) DΨ(y) y)` with `y = s^(-1/2) x`. -/
-private theorem hasDerivAt_rpow_smul_comp_rpow_smul {Ψ : E → F} (hΨ : Differentiable ℝ Ψ)
-    (a : ℝ) (x : E) {s : ℝ} (hs : 0 < s) :
-    HasDerivAt (fun s : ℝ => s ^ (-a) • Ψ (s ^ (-1 / 2 : ℝ) • x))
-      (s ^ (-(a + 1)) • (-a • Ψ (s ^ (-1 / 2 : ℝ) • x) -
-        (1 / 2 : ℝ) • fderiv ℝ Ψ (s ^ (-1 / 2 : ℝ) • x) (s ^ (-1 / 2 : ℝ) • x))) s := by
-  have h1 : HasDerivAt (fun s : ℝ => s ^ (-a)) (-a * s ^ (-a - 1)) s :=
-    hasDerivAt_rpow_const (Or.inl hs.ne')
-  have h2 : HasDerivAt (fun s : ℝ => s ^ (-1 / 2 : ℝ) • x)
-      ((-1 / 2 * s ^ (-1 / 2 - 1 : ℝ)) • x) s :=
-    (hasDerivAt_rpow_const (Or.inl hs.ne')).smul_const x
-  have h3 : HasDerivAt (fun s : ℝ => Ψ (s ^ (-1 / 2 : ℝ) • x))
-      (fderiv ℝ Ψ (s ^ (-1 / 2 : ℝ) • x) ((-1 / 2 * s ^ (-1 / 2 - 1 : ℝ)) • x)) s :=
-    (hΨ (s ^ (-1 / 2 : ℝ) • x)).hasFDerivAt.comp_hasDerivAt s h2
-  convert h1.smul h3 using 1
-  -- Collect the powers of `s`: `s^(-a) s^(-3/2) = s^(-(a+1)) s^(-1/2)`.
-  have hpow : s ^ (-a) * s ^ (-1 / 2 - 1 : ℝ) = s ^ (-(a + 1)) * s ^ (-1 / 2 : ℝ) := by
-    rw [← rpow_add hs, ← rpow_add hs]
-    ring_nf
-  have hpow' : s ^ (-a - 1) = s ^ (-(a + 1)) := by ring_nf
-  simp only [map_smul, smul_smul, smul_sub, hpow']
-  rw [show s ^ (-a) * (-1 / 2 * s ^ (-1 / 2 - 1 : ℝ)) =
-    -(s ^ (-(a + 1)) * (1 / 2) * s ^ (-1 / 2 : ℝ)) by linear_combination (-1 / 2 : ℝ) * hpow]
-  module
-
 /-- Iterated time derivatives of a parabolically rescaled profile with Gaussian decay are again
 rescaled profiles with Gaussian decay. -/
 private theorem exists_gaussianDecay_iteratedDeriv_rpow_smul (j : ℕ) :
@@ -223,7 +197,8 @@ private theorem exists_gaussianDecay_iteratedDeriv_rpow_smul (j : ℕ) :
         fun s : ℝ => s ^ (-(a + 1)) • (-a • Ψ (s ^ (-1 / 2 : ℝ) • x) -
           (1 / 2 : ℝ) • fderiv ℝ Ψ (s ^ (-1 / 2 : ℝ) • x) (s ^ (-1 / 2 : ℝ) • x)) :=
       (eventually_gt_nhds hs).mono fun s' hs' =>
-        (hasDerivAt_rpow_smul_comp_rpow_smul (hΨ.1.differentiable (by simp)) a x hs').deriv
+        ((hasDerivAt_rpow_smul_comp_rpow_smul (hΨ.1.differentiable (by simp)) a (-1 / 2) x
+          hs').congr_deriv (by module)).deriv
     rw [iteratedDeriv_succ', hderiv.iteratedDeriv_eq, h x s hs]
     push_cast
     ring_nf
