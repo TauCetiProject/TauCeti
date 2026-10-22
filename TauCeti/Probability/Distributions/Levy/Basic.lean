@@ -68,7 +68,6 @@ theorem levyMeasure_def (m c : ℝ) :
     levyMeasure m c = (inverseGammaMeasure (1 / 2) (c / 2)).map (m + ·) := (rfl)
 
 /-- At location zero the Lévy law is the inverse-gamma law of shape `1 / 2` and scale `c / 2`. -/
-@[simp]
 theorem levyMeasure_zero_left (c : ℝ) :
     levyMeasure 0 c = inverseGammaMeasure (1 / 2) (c / 2) := by
   simp [levyMeasure_def]
