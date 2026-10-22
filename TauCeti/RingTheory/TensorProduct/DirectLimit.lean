@@ -18,8 +18,8 @@ For an `A`-algebra `M`, the base changes `B i ⊗[A] M` form a directed system o
 
 This is the algebra version of Mathlib's linear equivalence `TensorProduct.directLimitLeft`
 (`Mathlib/LinearAlgebra/TensorProduct/DirectLimit.lean`), stated for the generic `DirectLimit`
-of algebras rather than `Module.DirectLimit`, and carries the same name. The two directions are
-built separately from the universal properties of `DirectLimit.Algebra.lift` and
+of algebras rather than `Module.DirectLimit`, and carries the same final name component. The two
+directions are built separately from the universal properties of `DirectLimit.Algebra.lift` and
 `Algebra.TensorProduct.lift`, so that the equivalence is one of `A`-algebras.
 
 ## Main declarations
@@ -27,7 +27,7 @@ built separately from the universal properties of `DirectLimit.Algebra.lift` and
 * `TauCeti.DirectLimit.Algebra.of_comp_f`: the canonical maps into a direct limit of algebras are
   compatible with the transition maps.
 * `TauCeti.DirectedSystem.algebraRTensor`: the directed system `B i ⊗[A] M`.
-* `Algebra.TensorProduct.directLimitLeft`:
+* `TauCeti.directLimitLeft`:
   `(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)`, with `directLimitLeft_of_tmul` and
   `directLimitLeft_symm_of`.
 -/
@@ -72,15 +72,9 @@ instance DirectedSystem.algebraRTensor :
     | tmul b m => simp [DirectedSystem.map_map' f]
     | add x y hx hy => simp_all
 
-end TauCeti
+variable [IsDirectedOrder ι] [Nonempty ι]
 
-namespace Algebra.TensorProduct
-
-variable {A ι : Type*} [CommSemiring A] [Preorder ι] {B : ι → Type*} [∀ i, CommSemiring (B i)]
-  [∀ i, Algebra A (B i)] {f : ∀ i j, i ≤ j → B i →ₐ[A] B j} [DirectedSystem B (f · · ·)]
-  (M : Type*) [CommSemiring M] [Algebra A M] [IsDirectedOrder ι] [Nonempty ι]
-
-open DirectLimit.Algebra TauCeti.DirectLimit.Algebra
+open _root_.Algebra.TensorProduct _root_.DirectLimit.Algebra TauCeti.DirectLimit.Algebra
 
 /-- The map `colim (B i ⊗[A] M) → (colim B i) ⊗[A] M` induced by the base changes of the
 canonical maps `B i → colim B i`. -/
@@ -145,4 +139,4 @@ theorem directLimitLeft_symm_of (i : ι) (x : B i ⊗[A] M) :
   rw [directLimitLeft, AlgEquiv.ofAlgHom_symm]
   exact fromDirectLimit_of (f := f) M i x
 
-end Algebra.TensorProduct
+end TauCeti

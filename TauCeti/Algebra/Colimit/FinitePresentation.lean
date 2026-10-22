@@ -21,7 +21,7 @@ This file shows that `Hom_A(S, -)` commutes with this colimit when `S` is finite
   colimit already agree at a later stage.
 
 Combining these with the equivalence `(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)` of
-`Algebra.TensorProduct.directLimitLeft`, maps from a finitely presented
+`TauCeti.directLimitLeft`, maps from a finitely presented
 `A`-algebra `S` into `(colim B i) ⊗[A] M` descend to some `B i ⊗[A] M`, uniquely up to passing to
 a later stage. In base change form, every `R`-algebra map `R ⊗[A] S → R ⊗[A] M`, for
 `R = colim B i`, is the base change of a `B i`-algebra map `B i ⊗[A] S → B i ⊗[A] M`, and two such
