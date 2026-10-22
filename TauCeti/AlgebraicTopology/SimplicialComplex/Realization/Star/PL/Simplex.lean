@@ -99,6 +99,46 @@ private theorem isPLOn_geometricLink_of_homeomorph {κ : Type*} {L : AbstractSim
   refine ⟨hL ▸ hf, hT ▸ hg, fun y => ?_, hT⟩
   rw [hfe (toLink y), hge, e.symm_apply_apply]
 
+/-- Pseudo-radial projection of the closed star of `v` onto a join of the image of the link with a
+point `b`, when that join fills the standard `(n + 1)`-simplex, read as a homeomorphism onto the
+realization of the full complex on `Fin (n + 2)`. The vertex goes to `b`, the height formula `h`
+recovers the coordinate at `v`, and the piecewise-linear coordinate formulas carry over. -/
+private theorem exists_homeomorph_top_of_convexJoin {F : (ι → ℝ) → (Fin (n + 2) → ℝ)}
+    {G : (Fin (n + 2) → ℝ) → (ι → ℝ)} {h : (Fin (n + 2) → ℝ) → ℝ} {b : Fin (n + 2) → ℝ}
+    (hK : IsCompact (closedStarRealization K {v}))
+    (hF : IsPLOn F (range fun y : geometricLink K v => (y.1.1 : ι → ℝ)))
+    (hG : IsPLOn G (range fun y : geometricLink K v => F (y.1.1 : ι → ℝ)))
+    (hGF : ∀ y : geometricLink K v, G (F (y.1.1 : ι → ℝ)) = y.1.1) (hh : IsPLOn h univ)
+    (hhF : ∀ y : geometricLink K v, ∀ t ∈ Icc (0 : ℝ) 1,
+      h ((1 - t) • F (y.1.1 : ι → ℝ) + t • b) = t)
+    (hS : convexJoin ℝ (range fun y : geometricLink K v => F (y.1.1 : ι → ℝ)) {b} =
+      range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
+        (y.1 : Fin (n + 2) → ℝ)) :
+    ∃ φ : closedStarRealization K {v} ≃ₜ
+        Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))),
+      ((φ (starApex K v)).1 : Fin (n + 2) → ℝ) = b ∧ (∀ x, h (φ x).1 = x.1.1 v) ∧
+      ∃ F' : (ι → ℝ) → (Fin (n + 2) → ℝ), ∃ G' : (Fin (n + 2) → ℝ) → (ι → ℝ),
+        IsPLOn F' (range fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ)) ∧
+        IsPLOn G' (range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
+          (y.1 : Fin (n + 2) → ℝ)) ∧
+        (∀ x, F' (x.1.1 : ι → ℝ) = (φ x).1) ∧ ∀ x, G' (φ x).1 = (x.1.1 : ι → ℝ) := by
+  -- The join is the nonempty simplex, so the link is nonempty.
+  have hb : ⇑(Convexity.StdSimplex.single (0 : Fin (n + 2)) : Convexity.StdSimplex ℝ _).weights ∈
+      convexJoin ℝ (range fun y : geometricLink K v => F (y.1.1 : ι → ℝ)) {b} := by
+    rw [hS, range_realization_coe_top]
+    exact mem_range_self _
+  obtain ⟨-, ⟨y, -⟩, -⟩ := mem_convexJoin.mp hb
+  obtain ⟨φ, hapex, hheight, -, F', G', hF', hG', hFφ, hGφ⟩ :=
+    exists_homeomorph_closedStarRealization_convexJoin hK ⟨y.1, y.2⟩ hF hG hGF
+      (hh.mono (subset_univ _)) hhF
+  -- Identify the join with the realization of the full complex through its coordinates.
+  let ψ := φ.trans ((Homeomorph.setCongr hS).trans
+    ((⊤ : AbstractSimplicialComplex (Fin (n + 2))).realizationHomeomorphRange (toFinite _)).symm)
+  have hψ (x : closedStarRealization K {v}) : ((ψ x).1 : Fin (n + 2) → ℝ) = φ x :=
+    coe_realizationHomeomorphRange_symm_apply _ _ _
+  refine ⟨ψ, by rw [hψ, hapex], fun x => by rw [hψ]; exact hheight x, F', G', hF',
+    by rw [← hS]; exact hG', fun x => by rw [hψ]; exact hFφ x, fun x => by rw [hψ]; exact hGφ x⟩
+
 /-- **Simplex model of a closed vertex star with a spherical link.** If the link of `v` is a
 combinatorial `n`-sphere, the closed star of `v` is homeomorphic to the standard `(n + 1)`-simplex,
 the realization of the full complex on `Fin (n + 2)`, with piecewise-linear ambient coordinate
@@ -123,11 +163,6 @@ theorem IsCombinatorialSphere.exists_homeomorph_closedStarRealization_top
   obtain ⟨hf, hg, hgf, hT⟩ := isPLOn_geometricLink_of_homeomorph e hf hg hfe hge
   rw [range_realization_coe_standardSuccSimplexBoundary] at hT
   have hK := K.isCompact_closedStarRealization (finite_faces_closedStar_iff.mpr h.finite_faces)
-  have hne : (geometricLink K v).Nonempty := by
-    obtain ⟨_, y, -⟩ : (range fun y : geometricLink K v => f (y.1.1 : ι → ℝ)).Nonempty := by
-      rw [hT]
-      exact ⟨_, mem_range_self (Convexity.StdSimplex.single 0), 1, by simp⟩
-    exact ⟨y.1, y.2⟩
   -- Pseudo-radial projection from the barycentre, with height `c` times the least coordinate.
   let c : ℝ := Fintype.card (Fin (n + 2))
   let hgt : (Fin (n + 2) → ℝ) → ℝ := fun z => c * Finset.univ.inf' Finset.univ_nonempty z
@@ -149,20 +184,13 @@ theorem IsCombinatorialSphere.exists_homeomorph_closedStarRealization_top
       range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
         (y.1 : Fin (n + 2) → ℝ) := by
     rw [hT, convexJoin_boundary_stdSimplex_barycenter, range_realization_coe_top]
-  obtain ⟨φ, hapex, hheight, -, F, G, hF, hG, hFφ, hGφ⟩ :=
-    exists_homeomorph_closedStarRealization_convexJoin hK hne hf hg hgf
-      (hh.mono (subset_univ _)) hhF
-  -- Identify the join with the realization of the full complex through its coordinates.
-  let ψ := φ.trans ((Homeomorph.setCongr hS).trans
-    ((⊤ : AbstractSimplicialComplex (Fin (n + 2))).realizationHomeomorphRange (toFinite _)).symm)
-  have hψ (x : closedStarRealization K {v}) : ((ψ x).1 : Fin (n + 2) → ℝ) = φ x :=
-    coe_realizationHomeomorphRange_symm_apply _ _ _
+  obtain ⟨φ, hapex, hheight, hPL⟩ :=
+    exists_homeomorph_top_of_convexJoin hK hf hg hgf hh hhF hS
   have hc : c = (n : ℝ) + 2 := by simp [c]
-  refine ⟨ψ, ?_, fun x => ?_, F, G, hF, by rw [← hS]; exact hG,
-    fun x => by rw [hψ]; exact hFφ x, fun x => by rw [hψ]; exact hGφ x⟩
-  · rw [hψ, hapex, ← hc]
+  refine ⟨φ, ?_, fun x => ?_, hPL⟩
+  · rw [hapex, ← hc]
     exact funext Convexity.StdSimplex.weights_barycenter_apply
-  · rw [hψ, ← hc]
+  · rw [← hc]
     exact hheight x
 
 /-- **Simplex model of a closed vertex star with a ball link.** If the link of `v` is a
@@ -187,11 +215,6 @@ theorem IsCombinatorialBall.exists_homeomorph_closedStarRealization_top
   obtain ⟨hf, hg, hgf, hT⟩ := isPLOn_geometricLink_of_homeomorph e hf hg hfe hge
   rw [range_realization_coe_top] at hT
   have hK := K.isCompact_closedStarRealization (finite_faces_closedStar_iff.mpr h.finite_faces)
-  have hne : (geometricLink K v).Nonempty := by
-    obtain ⟨_, y, -⟩ : (range fun y : geometricLink K v => f (y.1.1 : ι → ℝ)).Nonempty := by
-      rw [hT]
-      exact range_nonempty _
-    exact ⟨y.1, y.2⟩
   -- Place the link model on the facet opposite the last vertex, by appending a zero coordinate,
   -- an affine map with affine left inverse `Fin.init`.
   let E : (Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 2) → ℝ) :=
@@ -225,16 +248,7 @@ theorem IsCombinatorialBall.exists_homeomorph_closedStarRealization_top
       range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
         (y.1 : Fin (n + 2) → ℝ) := by
     rw [hT', convexJoin_facet_stdSimplex_single, range_realization_coe_top]
-  obtain ⟨φ, hapex, hheight, -, F, G, hF, hG, hFφ, hGφ⟩ :=
-    exists_homeomorph_closedStarRealization_convexJoin (b := b) hK hne hF hG
-      (fun y => by simp only [Fin.init_snoc, hgf]) (hh.mono (subset_univ _))
-      (fun y t _ => by simp [b])
-  -- Identify the join with the realization of the full complex through its coordinates.
-  let ψ := φ.trans ((Homeomorph.setCongr hS).trans
-    ((⊤ : AbstractSimplicialComplex (Fin (n + 2))).realizationHomeomorphRange (toFinite _)).symm)
-  have hψ (x : closedStarRealization K {v}) : ((ψ x).1 : Fin (n + 2) → ℝ) = φ x :=
-    coe_realizationHomeomorphRange_symm_apply _ _ _
-  refine ⟨ψ, by rw [hψ, hapex], fun x => by rw [hψ]; exact hheight x, F, G, hF,
-    by rw [← hS]; exact hG, fun x => by rw [hψ]; exact hFφ x, fun x => by rw [hψ]; exact hGφ x⟩
+  exact exists_homeomorph_top_of_convexJoin (b := b) hK hF hG
+    (fun y => by simp only [Fin.init_snoc, hgf]) hh (fun y t _ => by simp [b]) hS
 
 end PreAbstractSimplicialComplex
