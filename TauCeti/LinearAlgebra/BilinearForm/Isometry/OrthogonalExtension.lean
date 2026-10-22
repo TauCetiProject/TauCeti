@@ -33,9 +33,9 @@ preserve the lattice itself.
 ## Main results
 
 * `LinearMap.BilinForm.Isometry.apply_orthogonalProjection`: `B' (π v) w = B v (ι w)`.
-* `LinearMap.BilinForm.Isometry.orthogonalProjection_apply`: `π (ι w) = w`.
+* `LinearMap.BilinForm.Isometry.orthogonalProjection_apply_left`: `π (ι w) = w`.
 * `LinearMap.BilinForm.Isometry.isometryGroupExtend_apply`: the formula for the extension.
-* `LinearMap.BilinForm.Isometry.isometryGroupExtend_apply_apply` and
+* `LinearMap.BilinForm.Isometry.isometryGroupExtend_apply_left` and
   `LinearMap.BilinForm.Isometry.isometryGroupExtend_apply_of_forall_eq_zero`: the extension acts
   as `g` on the image of `ι` and fixes its orthogonal complement.
 * `LinearMap.BilinForm.Isometry.isometryGroupExtend_injective`: the extension is injective.
@@ -74,7 +74,7 @@ theorem eq_orthogonalProjection_iff (ι : B' →bᵢ B) (hB' : B'.Nondegenerate)
 
 /-- The orthogonal projection is a left inverse of the embedding. -/
 @[simp]
-theorem orthogonalProjection_apply (ι : B' →bᵢ B) (hB' : B'.Nondegenerate) (w : W) :
+theorem orthogonalProjection_apply_left (ι : B' →bᵢ B) (hB' : B'.Nondegenerate) (w : W) :
     ι.orthogonalProjection hB' (ι w) = w :=
   ((ι.eq_orthogonalProjection_iff hB' (ι w) w).mpr fun _ ↦ (ι.map_app _ _).symm).symm
 
@@ -83,11 +83,6 @@ theorem orthogonalProjection_eq_zero_iff (ι : B' →bᵢ B) (hB' : B'.Nondegene
     ι.orthogonalProjection hB' v = 0 ↔ ∀ w, B v (ι w) = 0 := by
   rw [eq_comm, eq_orthogonalProjection_iff]
   exact ⟨fun h w ↦ by simpa using (h w).symm, fun h w ↦ by simp [h w]⟩
-
-/-- An isometric embedding of a nondegenerate space is injective. -/
-theorem injective_of_nondegenerate (ι : B' →bᵢ B) (hB' : B'.Nondegenerate) :
-    Function.Injective ι :=
-  Function.LeftInverse.injective (ι.orthogonalProjection_apply hB')
 
 /-! ## The extension -/
 
@@ -105,7 +100,7 @@ private theorem extendAux_apply (ι : B' →bᵢ B) (hB' : B'.Nondegenerate) (g 
 private theorem orthogonalProjection_extendAux (ι : B' →bᵢ B) (hB' : B'.Nondegenerate)
     (g : W →ₗ[K] W) (v : V) :
     ι.orthogonalProjection hB' (extendAux ι hB' g v) = g (ι.orthogonalProjection hB' v) := by
-  rw [extendAux_apply, map_add, orthogonalProjection_apply, add_sub_cancel]
+  rw [extendAux_apply, map_add, orthogonalProjection_apply_left, add_sub_cancel]
 
 private theorem extendAux_comp (ι : B' →bᵢ B) (hB' : B'.Nondegenerate) (f g : W →ₗ[K] W) :
     extendAux ι hB' f ∘ₗ extendAux ι hB' g = extendAux ι hB' (f ∘ₗ g) := by
@@ -139,8 +134,7 @@ private theorem isIsometry_extendAux (ι : B' →bᵢ B) (hB : B.IsSymm) (hB' : 
 private theorem extendAux_mul (ι : B' →bᵢ B) (hB' : B'.Nondegenerate) (g h : isometryGroup B') :
     extendAux ι hB' ((g * h : isometryGroup B') : W ≃ₗ[K] W) =
       extendAux ι hB' (g : W ≃ₗ[K] W) ∘ₗ extendAux ι hB' (h : W ≃ₗ[K] W) := by
-  rw [extendAux_comp]
-  rfl
+  rw [extendAux_comp, Subgroup.coe_mul, LinearEquiv.mul_eq_trans, LinearEquiv.coe_trans]
 
 private theorem extendAux_one (ι : B' →bᵢ B) (hB' : B'.Nondegenerate) :
     extendAux ι hB' ((1 : isometryGroup B') : W ≃ₗ[K] W) = LinearMap.id :=
@@ -173,10 +167,10 @@ theorem isometryGroupExtend_apply (ι : B' →bᵢ B) (hB : B.IsSymm) (hB' : B'.
 
 /-- On the image of `ι`, the extension of `g` acts as `g`. -/
 @[simp]
-theorem isometryGroupExtend_apply_apply (ι : B' →bᵢ B) (hB : B.IsSymm) (hB' : B'.Nondegenerate)
+theorem isometryGroupExtend_apply_left (ι : B' →bᵢ B) (hB : B.IsSymm) (hB' : B'.Nondegenerate)
     (g : isometryGroup B') (w : W) :
     (ι.isometryGroupExtend hB hB' g : V ≃ₗ[K] V) (ι w) = ι ((g : W ≃ₗ[K] W) w) := by
-  rw [isometryGroupExtend_apply, orthogonalProjection_apply, map_sub, add_sub_cancel]
+  rw [isometryGroupExtend_apply, orthogonalProjection_apply_left, map_sub, add_sub_cancel]
 
 /-- On the orthogonal complement of the image of `ι`, the extension of `g` is the identity. -/
 theorem isometryGroupExtend_apply_of_forall_eq_zero (ι : B' →bᵢ B) (hB : B.IsSymm)
@@ -190,7 +184,7 @@ theorem isometryGroupExtend_injective (ι : B' →bᵢ B) (hB : B.IsSymm) (hB' :
     Function.Injective (ι.isometryGroupExtend hB hB') := by
   intro g h hgh
   ext w
-  apply ι.injective_of_nondegenerate hB'
-  rw [← isometryGroupExtend_apply_apply ι hB hB', hgh, isometryGroupExtend_apply_apply]
+  apply ι.injective hB'.1
+  rw [← isometryGroupExtend_apply_left ι hB hB', hgh, isometryGroupExtend_apply_left]
 
 end LinearMap.BilinForm.Isometry
