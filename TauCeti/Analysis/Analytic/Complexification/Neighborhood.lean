@@ -73,22 +73,6 @@ private theorem eqOn_inter_ball_of_forall_real {E : Type*} [NormedAddCommGroup E
     ⟨hwa', hwb'⟩ ((hF _ hwa').eventuallyEq_of_eventually_real (hG _ hwb') ?_)
   filter_upwards [(isOpen_ball.inter isOpen_ball).mem_nhds ⟨hwa, hwb⟩] with v hv using hFG v hv
 
-/-- A union of polydiscs centred at the real points of `U` whose real points lie in `U` is open,
-invariant under conjugation, and has real points exactly those of `U`. -/
-private theorem iUnion_ball_ofReal {U : Set (ι → ℝ)} {s : U → ℝ} (hs : ∀ x, 0 < s x)
-    (hsU : ∀ x : U, ball (x : ι → ℝ) (s x) ⊆ U) :
-    IsOpen (⋃ x : U, ball (fun i ↦ ((x : ι → ℝ) i : ℂ)) (s x)) ∧
-      (∀ y : ι → ℝ, (fun i ↦ (y i : ℂ)) ∈ ⋃ x : U, ball (fun i ↦ ((x : ι → ℝ) i : ℂ)) (s x) ↔
-        y ∈ U) ∧
-      ∀ z, star z ∈ ⋃ x : U, ball (fun i ↦ ((x : ι → ℝ) i : ℂ)) (s x) ↔
-        z ∈ ⋃ x : U, ball (fun i ↦ ((x : ι → ℝ) i : ℂ)) (s x) := by
-  refine ⟨isOpen_iUnion fun _ ↦ isOpen_ball, fun y ↦ ⟨fun hy ↦ ?_, fun hy ↦ ?_⟩, fun z ↦ ?_⟩
-  · obtain ⟨x, hx⟩ := mem_iUnion.1 hy
-    simpa using hsU x (Complex.pi_re_mem_ball hx)
-  · exact mem_iUnion.2 ⟨⟨y, hy⟩, mem_ball_self (hs _)⟩
-  · simp only [mem_iUnion]
-    exact exists_congr fun x ↦ Complex.pi_star_mem_ball_iff
-
 /-- Holomorphic extensions of a function `g` from real-centred polydiscs around the points of an
 open set `U`, each commuting with conjugation, glue to a holomorphic extension on a
 conjugation-invariant open neighborhood of the real points of `U`. -/
@@ -116,8 +100,8 @@ private theorem exists_complexification_of_local {E : Type*} [NormedAddCommGroup
   have hagree (x y : U) : EqOn (F x) (F y)
       (ball (fun i ↦ ((x : ι → ℝ) i : ℂ)) (r x) ∩ ball (fun i ↦ ((y : ι → ℝ) i : ℂ)) (r y)) :=
     eqOn_inter_ball_of_forall_real (hF x) (hF y) fun v hv ↦ by rw [hFg x v hv.1, hFg y v hv.2]
-  obtain ⟨hWopen, hWreal, hWstar⟩ := iUnion_ball_ofReal hr hrU
   set W := ⋃ x : U, ball (fun i ↦ ((x : ι → ℝ) i : ℂ)) (r x)
+  have hWstar (z : ι → ℂ) : star z ∈ W ↔ z ∈ W := Complex.pi_star_mem_iUnion_ball_iff
   -- the glued extension, using any polydisc containing the point
   let G : (ι → ℂ) → E := fun z ↦ if h : z ∈ W then F (mem_iUnion.1 h).choose z else 0
   have hG (x : U) {z : ι → ℂ} (hz : z ∈ ball (fun i ↦ ((x : ι → ℝ) i : ℂ)) (r x)) :
@@ -125,7 +109,9 @@ private theorem exists_complexification_of_local {E : Type*} [NormedAddCommGroup
     have h : z ∈ W := mem_iUnion.2 ⟨x, hz⟩
     simp only [G, h, ↓reduceDIte]
     exact hagree _ _ ⟨(mem_iUnion.1 h).choose_spec, hz⟩
-  refine ⟨W, hWopen, hWreal, hWstar, G, fun z hz ↦ ?_, fun x hx ↦ ?_, fun z ↦ ?_⟩
+  refine ⟨W, isOpen_iUnion fun _ ↦ isOpen_ball,
+    fun _ ↦ Complex.pi_ofReal_mem_iUnion_ball_iff hr hrU, hWstar, G, fun z hz ↦ ?_,
+    fun x hx ↦ ?_, fun z ↦ ?_⟩
   · obtain ⟨x, hx⟩ := mem_iUnion.1 hz
     exact (hF x z hx).congr (eventually_of_mem (isOpen_ball.mem_nhds hx) fun z' hz' ↦
       (hG x hz').symm)
@@ -184,8 +170,9 @@ theorem exists_eqOn_of_forall_real {E : Type*} [NormedAddCommGroup E] [NormedSpa
     exact ⟨min ε δ, lt_min hε hδ, (ball_subset_ball (min_le_left _ _)).trans hεW,
       (ball_subset_ball (min_le_right _ _)).trans hδU⟩
   choose s hs hsW hsU using hball
-  obtain ⟨hVopen, hVreal, hVstar⟩ := iUnion_ball_ofReal hs hsU
-  refine ⟨_, iUnion_subset hsW, hVopen, hVreal, hVstar, fun z hz ↦ ?_⟩
+  refine ⟨_, iUnion_subset hsW, isOpen_iUnion fun _ ↦ isOpen_ball,
+    fun _ ↦ Complex.pi_ofReal_mem_iUnion_ball_iff hs hsU,
+    fun _ ↦ Complex.pi_star_mem_iUnion_ball_iff, fun z hz ↦ ?_⟩
   obtain ⟨x, hx⟩ := mem_iUnion.1 hz
   exact eqOn_inter_ball_of_forall_real (hF.mono (hsW x)) (hG.mono (hsW x))
     (fun y hy ↦ hFG y (hsU x hy.1)) ⟨hx, hx⟩
