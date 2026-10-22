@@ -126,9 +126,8 @@ theorem hasSum_integral_exp_mul_cos_mul_cexp (κ : ℝ) (n : ℤ) :
     have hcos : ‖(Real.cos θ : ℂ)‖ ≤ 1 := by
       rw [Complex.norm_real, Real.norm_eq_abs]
       exact Real.abs_cos_le_one θ
-    rw [norm_mul, norm_mul, norm_pow, hexp, mul_one, Complex.norm_real, Real.norm_eq_abs, abs_div,
-      abs_pow, Nat.abs_cast]
-    exact mul_le_of_le_one_right (by positivity) (pow_le_one₀ (norm_nonneg _) hcos)
+    simpa [hexp, abs_div] using
+      mul_le_of_le_one_right (by positivity : 0 ≤ |κ| ^ k / k !) (pow_le_one₀ (norm_nonneg _) hcos)
   · have h := (Complex.hasSum_ofReal.mpr
       (NormedSpace.expSeries_div_hasSum_exp (κ * Real.cos θ))).mul_right
         (Complex.exp (n * θ * Complex.I))
