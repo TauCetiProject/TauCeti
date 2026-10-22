@@ -159,8 +159,8 @@ private theorem insertCorner_apply {i j : V} (c : cornerSubmodule k (e i) (e j))
   simp only [zigzagBraidProjectiveTensorCornerEquiv_symm_tmul, insertCorner,
     LinearMap.comp_apply, LinearMap.toSpanSingleton_apply, Submodule.subtype_apply,
     GradedModuleCat.smul_bimoduleModuleTensorTmul, zigzagBraidBimoduleVertexGenerator_def,
-    zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul, one_smul, smul_spanSingletonGenerator he]
-  rfl
+    zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul, one_smul, smul_spanSingletonGenerator he,
+    cornerToProjective]
 
 /-- The insertion along a corner element of internal degree `d` is a graded map
 `P_i{d} ⟶ U_i ⊗_Z P_j`. -/
@@ -339,7 +339,10 @@ theorem zigzagBraidProjectiveUnitTensorIso_hom_tmul (j : V) (x : zigzagGradedBim
       (Bimodule.of (AlgHom.id k Z)).symm x • n := by
   have h : (zigzagBraidProjectiveUnitTensorIso k G j).hom =
       GradedModuleCat.bimoduleModuleTensorMap Γ Γ (zigzagGradedBimoduleUnitIso k G).inv (𝟙 _) ≫
-        (GradedModuleCat.bimoduleModuleTensorLeftUnitor.{w} Γ (P j)).hom := (rfl)
+        (GradedModuleCat.bimoduleModuleTensorLeftUnitor.{w} Γ (P j)).hom := by
+    simp only [zigzagBraidProjectiveUnitTensorIso, Iso.trans_hom, Iso.app_hom,
+      Functor.mapIso_hom, GradedModuleCat.bimoduleModuleTensor_map_app, eqToHom_refl,
+      Category.id_comp, Category.comp_id, Iso.symm_hom]
   simp only [h, GradedModuleCat.hom_comp, LinearMap.comp_apply,
     GradedModuleCat.bimoduleModuleTensorMap_tmul, GradedModuleCat.hom_id, LinearMap.id_apply,
     GradedModuleCat.bimoduleModuleTensorLeftUnitor_hom]

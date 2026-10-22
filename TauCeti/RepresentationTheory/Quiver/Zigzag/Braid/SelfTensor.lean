@@ -221,44 +221,16 @@ private theorem selfTensorEquiv_insertPair (i : V) (uv : (U i) × (U i)) :
     selfTensorEquiv k G i (insertPair k G i uv) = uv := by
   simp [insertPair, selfTensorEquiv_insertZero, selfTensorEquiv_insertTwo]
 
-private def insertPairEquiv (i : V) :
-    ((U i) × (U i)) ≃ₗ[E] GradedModuleCat.bimoduleTensorObj Γ Γ Γ (U i) (U i) :=
-  LinearEquiv.ofBijective (insertPair k G i) ⟨fun x y h ↦ by
+private theorem bijective_insertPair (i : V) : Function.Bijective (insertPair k G i) :=
+  ⟨fun x y h ↦ by
     simpa only [selfTensorEquiv_insertPair] using congrArg (selfTensorEquiv k G i) h,
     fun z ↦ ⟨selfTensorEquiv k G i z, by
       apply (selfTensorEquiv k G i).injective
       exact selfTensorEquiv_insertPair k G i _⟩⟩
 
 private theorem isIso_insertDesc (i : V) :
-    IsIso (biprod.desc (zigzagBraidSelfTensorInl k G i) (zigzagBraidSelfTensorInr k G i)) := by
-  let F := GradedModuleCat.toModuleCat (𝒜 := (zigzagEnvelopingGrading k G).piece)
-  let M := U i
-  let N := (U i).shiftObj 2
-  let p := ModuleCat.biprodIsoProd (F.obj M) (F.obj N)
-  let q : ModuleCat.of E ((F.obj M) × (F.obj N)) ≅
-      F.obj (GradedModuleCat.bimoduleTensorObj Γ Γ Γ (U i) (U i)) :=
-    (insertPairEquiv k G i).toModuleIso
-  have h : p.inv ≫ biprod.desc (F.map (zigzagBraidSelfTensorInl k G i))
-        (F.map (zigzagBraidSelfTensorInr k G i)) =
-      q.hom := by
-    rw [biprod.desc_eq]
-    simp only [p, Preadditive.comp_add, ← Category.assoc, ModuleCat.biprodIsoProd_inv_comp_fst,
-      ModuleCat.biprodIsoProd_inv_comp_snd]
-    apply ModuleCat.hom_ext
-    apply LinearMap.ext
-    intro uv
-    rfl
-  have : IsIso q.hom := inferInstance
-  have : IsIso (biprod.desc (F.map (zigzagBraidSelfTensorInl k G i))
-      (F.map (zigzagBraidSelfTensorInr k G i))) := IsIso.of_isIso_fac_left h
-  have : PreservesBinaryBiproduct M N F :=
-    preservesBinaryBiproduct_of_preservesBiproduct F M N
-  have hf := biprod.mapBiprod_hom_desc F M N (zigzagBraidSelfTensorInl k G i)
-    (zigzagBraidSelfTensorInr k G i)
-  have : IsIso (F.map (biprod.desc (zigzagBraidSelfTensorInl k G i)
-      (zigzagBraidSelfTensorInr k G i))) :=
-    hf ▸ inferInstance
-  exact isIso_of_reflects_iso _ F
+    IsIso (biprod.desc (zigzagBraidSelfTensorInl k G i) (zigzagBraidSelfTensorInr k G i)) :=
+  GradedModuleCat.isIso_biprod_desc_of_bijective _ _ (bijective_insertPair k G i)
 
 /-- The graded vertex-bimodule self-tensor splits into the vertex and volume summands. -/
 def zigzagBraidSelfTensorIso (i : V) :

@@ -187,9 +187,8 @@ theorem zigzagBraidK0Action_gen_zigzagAlgebraGradedProjectiveClass (i j : V) :
           ⟨_, gradedFiniteProjectiveModules_zigzagBraidProjectiveTensor k G i j⟩ := by
   have hj : (zigzagAlgebraGradedProjectiveClassBasis k G).equivFun
       (zigzagAlgebraGradedProjectiveClass k G j) = Pi.single j 1 := by
-    rw [← zigzagAlgebraGradedProjectiveClassBasis_apply]
-    funext l
-    simp only [Module.Basis.equivFun_self, Pi.single_apply, eq_comm]
+    rw [Module.Basis.equivFun_apply, zigzagAlgebraGradedProjectiveClassBasis_repr_class,
+      Finsupp.single_eq_pi_single]
   rw [zigzagBraidK0Action_gen_apply, hj, laurentK0_of_zigzagBraidProjectiveUnitTensor,
     laurentK0_of_zigzagBraidProjectiveTensor]
   simp only [SimpleGraph.deformedReflection_apply, SimpleGraph.deformedCartanRow_single,

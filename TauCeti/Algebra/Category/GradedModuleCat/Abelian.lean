@@ -340,7 +340,11 @@ theorem isIso_biprod_desc_of_bijective {Q : GradedModuleCat.{v} 𝒜} (f : M ⟶
     rw [biprod.desc_eq]
     simp only [Preadditive.comp_add, ← Category.assoc, ModuleCat.biprodIsoProd_inv_comp_fst,
       ModuleCat.biprodIsoProd_inv_comp_snd]
-    rfl
+    refine ModuleCat.hom_ext (LinearMap.ext fun ⟨x, y⟩ ↦ ?_)
+    simp only [ModuleCat.hom_add, ModuleCat.hom_comp, LinearMap.add_apply, LinearMap.comp_apply,
+      ModuleCat.hom_ofHom, LinearMap.fst_apply, LinearMap.snd_apply]
+    -- `toModuleCat` leaves underlying linear maps unchanged: both sides are `coprod` at `(x, y)`.
+    exact (LinearMap.coprod_apply f.hom g.hom (x, y)).symm
   have : IsIso (biprod.desc (F.map f) (F.map g)) := IsIso.of_isIso_fac_left hq
   have : PreservesBinaryBiproduct M N F := preservesBinaryBiproduct_of_preservesBiproduct F M N
   have : IsIso (F.map (biprod.desc f g)) := biprod.mapBiprod_hom_desc F M N f g ▸ inferInstance
