@@ -38,7 +38,6 @@ topological groups.
   homomorphisms.
 * `ContinuousMulEquiv.amenable_iff`: amenability is invariant under isomorphisms of topological
   groups.
-* Groups with at most one element are amenable.
 
 ## References
 
@@ -136,10 +135,6 @@ theorem Amenable.of_surjective [Amenable G] (φ : G →ₜ* H) (hφ : Function.S
     Amenable H :=
   have ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   ⟨⟨m.map φ, hm.map hφ⟩⟩
-
-/-- A topological group with at most one element is amenable. -/
-instance (priority := 100) Amenable.of_subsingleton [Subsingleton G] : Amenable G :=
-  ⟨⟨Mean.eval G 1, fun g f => by simp [Subsingleton.elim g 1]⟩⟩
 
 end TauCeti
 
