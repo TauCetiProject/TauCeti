@@ -123,6 +123,7 @@ theorem WeaklyAdmissible.finite_hatDomains (hW : H.WeaklyAdmissible) (χ : Regio
 /-- In a weakly admissible diagram no domain is counted by the hat differential from a generator
 to itself: such a domain is a nonnegative periodic domain, hence zero, and the zero domain has
 Maslov index zero. -/
+@[simp]
 theorem WeaklyAdmissible.hatDomains_self (hW : H.WeaklyAdmissible) (χ : Region → ℤ)
     (x : H.Generator) : H.hatDomains χ x x = ∅ := by
   refine Set.eq_empty_of_forall_notMem fun D ⟨hD, hz, hD0, hμ⟩ => ?_
@@ -169,6 +170,7 @@ theorem nonempty_hatDomains_of_hatCoefficient_ne_zero (h : H.hatCoefficient χ x
   Set.nonempty_iff_ne_empty.mpr fun he => h (hatCoefficient_eq_zero_of_hatDomains_eq_empty he)
 
 /-- In a weakly admissible diagram the hat differential has no diagonal terms. -/
+@[simp]
 theorem WeaklyAdmissible.hatCoefficient_self (hW : H.WeaklyAdmissible) (χ : Region → ℤ)
     (x : H.Generator) : H.hatCoefficient χ x x = 0 :=
   hatCoefficient_eq_zero_of_hatDomains_eq_empty (hW.hatDomains_self χ x)

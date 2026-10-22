@@ -399,6 +399,7 @@ theorem hatDomains_circleTimesSphere_zero_zero_one :
 /-- With the basepoint in the annulus, no domain is counted by the hat differential from `p₁` to
 `p₀`: such a domain plus the bigon `B₁` would be a nonnegative periodic domain that is nonzero on
 `B₁`, while it must vanish on the annulus. -/
+@[simp]
 theorem hatDomains_circleTimesSphere_zero_one_zero :
     (circleTimesSphere 0).hatDomains ![0, 1, 1] (circleTimesSphereGenerator 0 1)
       (circleTimesSphereGenerator 0 0) = ∅ := by
@@ -418,6 +419,7 @@ theorem hatDomains_circleTimesSphere_zero_one_zero :
 `S¹ × S²` vanishes: it counts the two bigons from `p₀` to `p₁`, which cancel modulo two, and
 nothing else. So the hat chain complex on the two generators `p₀` and `p₁` has zero
 differential. -/
+@[simp]
 theorem hatDifferential_circleTimesSphere_zero :
     (circleTimesSphere 0).hatDifferential ![0, 1, 1] = 0 := by
   refine hatDifferential_eq_zero_iff.mpr fun x y => ?_

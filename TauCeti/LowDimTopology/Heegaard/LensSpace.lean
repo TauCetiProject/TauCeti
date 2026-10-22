@@ -397,6 +397,7 @@ theorem isNice_lensSpace : (lensSpace p q r).IsNice 1 :=
 /-- No domain is counted by the hat differential of the lens space diagram: distinct generators
 are joined by no domain, and in a weakly admissible diagram no index-one domain avoiding the
 basepoint runs from a generator to itself. -/
+@[simp]
 theorem hatDomains_lensSpace (x y : (lensSpace p q r).Generator) :
     (lensSpace p q r).hatDomains 1 x y = ∅ := by
   obtain rfl | hxy := eq_or_ne x y
@@ -406,6 +407,7 @@ theorem hatDomains_lensSpace (x y : (lensSpace p q r).Generator) :
 
 /-- The hat differential of the genus-one diagram of `L(p, q)` vanishes, so its hat chain complex,
 on the `p` generators `x_a` (`lensSpaceGenerator_bijective`), has zero differential. -/
+@[simp]
 theorem hatDifferential_lensSpace : (lensSpace p q r).hatDifferential 1 = 0 :=
   hatDifferential_eq_zero_iff.mpr fun x y =>
     hatCoefficient_eq_zero_of_hatDomains_eq_empty (hatDomains_lensSpace x y)
