@@ -17,8 +17,9 @@ A line bundle is globally generated if every point has a global section which ge
 stalk. Equivalently, the nonvanishing loci of its global sections cover the scheme. A morphism
 to the residue skyscraper detects a generating section whenever its image is nonzero. This
 criterion turns surjectivity of restriction to a point into generation of the line bundle there.
-Global generation supplies Mathlib's `SheafOfModules.GeneratingSections`, including the
-epimorphism from a free sheaf onto the line bundle.
+Global generation is equivalent to the existence of Mathlib's
+`SheafOfModules.GeneratingSections`, including the epimorphism from a free sheaf onto the
+line bundle.
 
 ## References
 
@@ -37,6 +38,57 @@ open _root_.AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}} {M : X.Modules}
   [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X M]
+
+/-- An invertible sheaf has a nonzero morphism to the residue skyscraper at every point. -/
+theorem exists_skyscraperResidueFieldHom_ne_zero (x : X) :
+    ∃ φ : M ⟶ Scheme.skyscraperResidueField x, φ ≠ 0 := by
+  classical
+  obtain ⟨e⟩ := nonempty_linearEquiv_stalk_of_isInvertible M x
+  let ρ (U : X.Opens) (hx : x ∈ U) : Γ(M, U) →+ X.residueField x :=
+    ((X.residue x).hom.toAddMonoidHom.comp e.symm.toAddMonoidHom).comp
+      (M.presheaf.germ U x hx).hom
+  let f (U : X.Opens) : Γ(M, U) →+ Γ(Scheme.skyscraperResidueField x, U) :=
+    if hx : x ∈ U then
+      (Scheme.skyscraperResidueFieldEquiv x hx).symm.toAddMonoidHom.comp (ρ U hx)
+    else 0
+  have hf {U : X.Opens} (hx : x ∈ U) (s : Γ(M, U)) :
+      Scheme.skyscraperResidueFieldEquiv x hx (f U s) =
+        X.residue x (e.symm (M.presheaf.germ U x hx s)) := by
+    simp [f, ρ, hx]
+  have hnat {U V : X.Opens} (i : V ⟶ U) (s : Γ(M, U)) :
+      f V (M.presheaf.map i.op s) =
+        (Scheme.skyscraperResidueField x).presheaf.map i.op (f U s) := by
+    by_cases hx : x ∈ V
+    · apply (Scheme.skyscraperResidueFieldEquiv x hx).injective
+      rw [hf hx, Scheme.skyscraperResidueFieldEquiv_map, hf (i.le hx),
+        TopCat.Presheaf.germ_res_apply]
+    · have := Scheme.subsingleton_skyscraperResidueField x hx
+      exact Subsingleton.elim _ _
+  have hsmul (U : X.Opens) (r : Γ(X, U)) (s : Γ(M, U)) :
+      f U (r • s) = r • f U s := by
+    by_cases hx : x ∈ U
+    · apply (Scheme.skyscraperResidueFieldEquiv x hx).injective
+      rw [hf hx, Scheme.skyscraperResidueFieldEquiv_smul, hf hx, germ_smul,
+        e.symm.map_smul, smul_eq_mul, map_mul]
+      exact congrArg (· * X.residue x (e.symm (M.presheaf.germ U x hx s)))
+        (ConcreteCategory.congr_hom (X.germ_residue x hx) r)
+    · have := Scheme.subsingleton_skyscraperResidueField x hx
+      exact Subsingleton.elim _ _
+  -- Send a germ to its coordinate in the local ring, then to its residue.
+  let φ : M ⟶ Scheme.skyscraperResidueField x :=
+    ⟨PresheafOfModules.homMk
+      { app U := AddCommGrpCat.ofHom (f U.unop)
+        naturality {U V} i := by
+          ext s
+          exact hnat i.unop s }
+      (fun U r s ↦ hsmul U.unop r s)⟩
+  -- A local section representing the basis germ has residue one.
+  obtain ⟨U, hx, s, hs⟩ := M.presheaf.exists_germ_eq (e 1)
+  refine ⟨φ, fun hφ ↦ ?_⟩
+  have hz : f U s = 0 := congrArg (fun q : M ⟶ Scheme.skyscraperResidueField x ↦ q.app U s) hφ
+  have := congrArg (Scheme.skyscraperResidueFieldEquiv x hx) hz
+  rw [hf hx, hs, e.symm_apply_apply, map_one, map_zero] at this
+  exact one_ne_zero this
 
 /-- A section of an invertible sheaf generates at `x` if some morphism to the residue
 skyscraper at `x` sends it to a nonzero element. -/
@@ -179,5 +231,44 @@ theorem IsGloballyGenerated.nonempty_generatingSections {L : InvertibleSheaf X}
       ← TopCat.Presheaf.germ_res_apply N.presheaf i x hxV]
     exact congrArg _ heq
   exact ⟨{ I := Γ(L.obj, ⊤), s := σ, epi := ⟨fun {N} ↦ hcancel N⟩ }⟩
+
+/-- Global generation of a line bundle is equivalent to the existence of Mathlib's
+family of generating global sections. -/
+theorem isGloballyGenerated_iff_nonempty_generatingSections {L : InvertibleSheaf X} :
+    L.IsGloballyGenerated ↔ Nonempty L.obj.GeneratingSections := by
+  refine ⟨IsGloballyGenerated.nonempty_generatingSections, fun ⟨σ⟩ x ↦ ?_⟩
+  classical
+  obtain ⟨φ, hφ⟩ := exists_skyscraperResidueFieldHom_ne_zero (M := L.obj) x
+  by_contra hx
+  have htop (s : Γ(L.obj, ⊤)) : φ.app ⊤ s = 0 := by
+    by_contra hs
+    exact hx ⟨s, mem_nonvanishingLocus_of_skyscraperResidueFieldHom_ne_zero
+      (Opens.mem_top x) φ s hs⟩
+  -- Vanishing on the generating family forces the entire residue morphism to vanish.
+  apply hφ
+  have : Epi σ.π := σ.epi
+  apply (cancel_epi σ.π).mp
+  apply (Scheme.skyscraperResidueField x).freeHomEquiv.injective
+  funext i
+  have hp (p : L.obj ⟶ Scheme.skyscraperResidueField x) :
+      (Scheme.skyscraperResidueField x).freeHomEquiv (σ.π ≫ p) i =
+        SheafOfModules.sectionsMap p (σ.s i) :=
+    (SheafOfModules.freeHomEquiv_comp_apply σ.π p i).trans
+      (congrArg (fun t : σ.I → L.obj.sections ↦ SheafOfModules.sectionsMap p (t i))
+        (L.obj.freeHomEquiv.apply_symm_apply σ.s))
+  have heq : SheafOfModules.sectionsMap φ (σ.s i) =
+      SheafOfModules.sectionsMap (0 : L.obj ⟶ Scheme.skyscraperResidueField x) (σ.s i) := by
+    apply PresheafOfModules.sections_ext
+    intro U
+    have hnat : φ.app U.unop (L.obj.presheaf.map U.unop.leTop.op ((σ.s i).val (op ⊤))) =
+        (Scheme.skyscraperResidueField x).presheaf.map U.unop.leTop.op
+          (φ.app ⊤ ((σ.s i).val (op ⊤))) :=
+      φ.mapPresheaf.naturality_apply U.unop.leTop.op ((σ.s i).val (op ⊤))
+    have hsection : L.obj.presheaf.map U.unop.leTop.op ((σ.s i).val (op ⊤)) = (σ.s i).val U :=
+      PresheafOfModules.sections_property (σ.s i) U.unop.leTop.op
+    have hz : φ.app U.unop ((σ.s i).val U) = 0 := by
+      rw [← hsection, hnat, htop ((σ.s i).val (op ⊤)), map_zero]
+    exact hz
+  exact (hp φ).trans (heq.trans (hp 0).symm)
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf
