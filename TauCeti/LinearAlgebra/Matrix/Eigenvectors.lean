@@ -148,9 +148,9 @@ theorem eigenvectors_inv (g : GL n K) :
     eigenvectors (g : Matrix n n K)⁻¹ = eigenvectors (g : Matrix n n K) := by
   ext v
   rw [← coe_units_inv, mem_eigenvectors_iff, mem_eigenvectors_iff]
-  refine and_congr_right fun hv ↦ ?_
+  refine and_congr_right fun _ ↦ ?_
   have key (h : GL n K) : h • (K ∙ v) = K ∙ v ↔ ∃ c : K, h • v = c • v :=
-    Submodule.smul_span_singleton_eq_iff hv
+    Submodule.smul_span_singleton_eq_iff
   rw [← key, ← key, inv_smul_eq_iff, eq_comm]
 
 end GeneralLinearGroup

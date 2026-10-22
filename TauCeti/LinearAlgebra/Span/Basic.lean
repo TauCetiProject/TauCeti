@@ -15,8 +15,8 @@ import Mathlib.Algebra.Module.Torsion.Field
 A generator with a unit coefficient in a linear combination can be replaced by that combination
 without changing the span. Over a division semiring, a nonzero vector in a singleton span can be
 used to recover the generator's membership in any submodule. Acting on a line gives the line
-through the image of its generator, so a group element stabilizes the line through a nonzero
-vector exactly when that vector is an eigenvector of it.
+through the image of its generator, so a group element stabilizes the line through a vector
+exactly when it sends that vector to a multiple of itself.
 -/
 
 public section
@@ -76,10 +76,11 @@ open Pointwise
 variable {D W G : Type*} [DivisionRing D] [AddCommGroup W] [Module D W] [Group G]
   [DistribMulAction G W] [SMulCommClass G D W]
 
-/-- A group element stabilizes the line through a nonzero vector exactly when that vector is an
-eigenvector of it. -/
-theorem smul_span_singleton_eq_iff {g : G} {v : W} (hv : v ≠ 0) :
+/-- A group element stabilizes the line through `v` exactly when `g • v` is a multiple of `v`. -/
+theorem smul_span_singleton_eq_iff {g : G} {v : W} :
     g • (D ∙ v) = D ∙ v ↔ ∃ c : D, g • v = c • v := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
   rw [smul_span_singleton, span_singleton_eq_span_singleton]
   constructor
   · rintro ⟨z, hz⟩
