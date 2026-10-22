@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
+import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.RingTheory.FiniteType
 
 /-!
@@ -30,7 +31,7 @@ Graded by degree, generation says that the power-sum products `p_μ = ∏ᵢ p_{
 `μ` of `n` span the symmetric polynomials of degree `n`. When the alphabet has at least `n` letters
 there are exactly as many of them as there are monomial symmetric polynomials of degree `n`, and a
 spanning family of that size in a free module over a commutative ring is a basis
-(`OrzechProperty.injective_of_surjective_endomorphism`). This is the **power-sum basis**, in
+(`linearIndependent_of_top_le_span_of_card_eq_finrank`). This is the **power-sum basis**, in
 which the Frobenius characteristic `(1 / n!) ∑_π f(π) p_{ρ(π)}` of a class function `f` of `Sₙ` is
 expanded; by spanning, two linear maps out of the symmetric polynomials of degree `n` agree as soon
 as they agree on every `p_μ`.
@@ -176,16 +177,9 @@ private noncomputable def psumPartVec {n : ℕ} (μ : n.Partition) :
     ⟨psumPart_isSymmetric R μ, isHomogeneous_psumPart R μ⟩⟩
 
 private theorem top_le_span_psumPartVec (n : ℕ) :
-    ⊤ ≤ Submodule.span R (Set.range (psumPartVec σ R (n := n))) := by
-  rintro ⟨p, hp⟩ -
-  rw [← span_psumPart_eq_symmetricHomogeneousSubmodule] at hp
-  have h : (Set.range (psumPart σ R : n.Partition → MvPolynomial σ R)) =
-      (symmetricHomogeneousSubmodule σ R n).subtype '' Set.range (psumPartVec σ R) := by
-    rw [← Set.range_comp]
-    rfl
-  rw [h, ← Submodule.map_span] at hp
-  obtain ⟨q, hq, rfl⟩ := hp
-  exact hq
+    ⊤ ≤ Submodule.span R (Set.range (psumPartVec σ R (n := n))) :=
+  ((Submodule.span_range_subtype_eq_top_iff _ _).mpr
+    (span_psumPart_eq_symmetricHomogeneousSubmodule σ R n)).ge
 
 private theorem linearIndependent_psumPartVec {n : ℕ} (hn : n ≤ Fintype.card σ) :
     LinearIndependent R (psumPartVec σ R (n := n)) := by
@@ -195,16 +189,9 @@ private theorem linearIndependent_psumPartVec {n : ℕ} (hn : n ≤ Fintype.card
     have h := μ.parts.card_nsmul_le_sum (a := 1) fun x hx => μ.parts_pos hx
     rw [smul_eq_mul, mul_one, μ.parts_sum] at h
     exact h.trans hn
-  let e := ((msymmBasis σ R n).reindex (Equiv.subtypeUnivEquiv hcard)).equivFun
-  let L := Fintype.linearCombination R (psumPartVec σ R (n := n))
-  have hL : Function.Surjective L := by
-    rw [← LinearMap.range_eq_top, Fintype.range_linearCombination, eq_top_iff]
-    exact top_le_span_psumPartVec σ R n
-  -- a surjective endomorphism of `R ^ (partitions of n)` is injective
-  have hinj := OrzechProperty.injective_of_surjective_endomorphism (e.toLinearMap ∘ₗ L)
-    (e.surjective.comp hL)
-  rw [linearIndependent_iff_injective_fintypeLinearCombination]
-  exact Function.Injective.of_comp (f := e) hinj
+  nontriviality R
+  refine linearIndependent_of_top_le_span_of_card_eq_finrank (top_le_span_psumPartVec σ R n) ?_
+  rw [Module.finrank_eq_card_basis ((msymmBasis σ R n).reindex (Equiv.subtypeUnivEquiv hcard))]
 
 /-- **The power-sum basis**: over a `ℚ`-algebra and in an alphabet of at least `n` letters, the
 power-sum products `p_μ` of the partitions `μ` of `n` form a basis of the symmetric polynomials of
