@@ -239,69 +239,7 @@ section IsBaseChange
 variable {S} {B : Type u} [CommRing B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
   {ℬ : ℕ → Submodule S B} [GradedAlgebra ℬ] (f : 𝒜 →+*ᵍ ℬ)
   (hfR : ∀ r : R, f (algebraMap R A r) = algebraMap R B r)
-
-/-- The graded comparison map `S ⊗[R] A → B`, `s ⊗ a ↦ s • f a`, of a graded ring homomorphism
-`f` over the coefficient extension `R → S`. -/
-private noncomputable def baseChangeLift : (fun n ↦ (𝒜 n).baseChange S) →+*ᵍ ℬ where
-  __ := (Algebra.TensorProduct.lift (Algebra.ofId S B) ⟨f.toRingHom, hfR⟩
-    fun _ _ ↦ .all _ _).toRingHom
-  map_mem {n x} hx := by
-    rw [Submodule.baseChange_eq_span] at hx
-    induction hx using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨a, ha, rfl⟩ := hx
-      simpa using f.map_mem ha
-    | zero => simp
-    | add x y _ _ hx hy => simpa using add_mem hx hy
-    | smul s x _ hx => simpa using Submodule.smul_mem _ s hx
-
-omit [GradedAlgebra 𝒜] [GradedAlgebra ℬ] in
-private theorem baseChangeLift_tmul (s : S) (a : A) :
-    baseChangeLift 𝒜 f hfR (s ⊗ₜ[R] a) = s • f a := by
-  simp [baseChangeLift, Algebra.smul_def]
-
-omit [GradedAlgebra 𝒜] [GradedAlgebra ℬ] in
-private theorem baseChangeLift_comp_baseChangeMap :
-    (baseChangeLift 𝒜 f hfR).comp (baseChangeMap S 𝒜) = f :=
-  GradedRingHom.ext fun a ↦ by simp [baseChangeLift_tmul]
-
-variable (hf : IsBaseChange S (AlgHom.mk f.toRingHom hfR).toLinearMap)
-include hf
-
-omit [GradedAlgebra 𝒜] [GradedAlgebra ℬ] in
-private theorem bijective_baseChangeLift : Function.Bijective (baseChangeLift 𝒜 f hfR) := by
-  have h : ⇑(baseChangeLift 𝒜 f hfR) = hf.equiv := by
-    funext x
-    induction x using TensorProduct.inductionOn with
-    | tmul s a => simp [baseChangeLift_tmul, IsBaseChange.equiv_tmul]
-    | add x y hx hy => simp [hx, hy]
-  rw [h]
-  exact hf.equiv.bijective
-
-/-- The inverse of the graded comparison map `S ⊗[R] A → B`, which is graded as well. -/
-private noncomputable def baseChangeLiftInv : ℬ →+*ᵍ (fun n ↦ (𝒜 n).baseChange S) where
-  __ := (RingEquiv.ofBijective _ (bijective_baseChangeLift 𝒜 f hfR hf)).symm.toRingHom
-  map_mem {n b} hb := (baseChangeLift 𝒜 f hfR).mem_of_map_mem
-    (bijective_baseChangeLift 𝒜 f hfR hf).injective (by
-      simpa [← RingEquiv.ofBijective_apply _ (bijective_baseChangeLift 𝒜 f hfR hf)] using hb)
-
-private theorem baseChangeLift_baseChangeLiftInv :
-    Function.RightInverse (baseChangeLiftInv 𝒜 f hfR hf) (baseChangeLift 𝒜 f hfR) :=
-  (RingEquiv.ofBijective _ (bijective_baseChangeLift 𝒜 f hfR hf)).apply_symm_apply
-
-private theorem baseChangeLiftInv_baseChangeLift :
-    Function.LeftInverse (baseChangeLiftInv 𝒜 f hfR hf) (baseChangeLift 𝒜 f hfR) :=
-  (RingEquiv.ofBijective _ (bijective_baseChangeLift 𝒜 f hfR hf)).symm_apply_apply
-
-/-- If a graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ` over `R → S` exhibits `B` as the base change
-`S ⊗[R] A`, then `ℬ₊ ≤ 𝒜₊.map f`, so that `f` induces a morphism `Proj ℬ ⟶ Proj 𝒜`. -/
-theorem _root_.HomogeneousIdeal.irrelevant_le_map_of_isBaseChange :
-    HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f := by
-  rw [← baseChangeLift_comp_baseChangeMap 𝒜 f hfR]
-  exact HomogeneousIdeal.irrelevant_le_map_comp
-    (HomogeneousIdeal.irrelevant_le_map_baseChangeMap S 𝒜)
-    (HomogeneousIdeal.irrelevant_le_map_of_surjective _
-      (bijective_baseChangeLift 𝒜 f hfR hf).surjective)
+  (hf : IsBaseChange S (AlgHom.mk f.toRingHom hfR).toLinearMap)
 
 /-- **`Proj` commutes with base change.** If a graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ` over the
 coefficient extension `R → S` exhibits `B` as the base change `S ⊗[R] A`, then the square
@@ -326,7 +264,7 @@ theorem isPullback_map_of_isBaseChange :
       toSpecCoeff ℬ := by
     rw [mapIso_hom]
     exact map_toSpecCoeff _ _ _ fun r ↦ Subtype.ext (by
-      simp [baseChangeLift_tmul, Algebra.smul_def])
+      simp [Algebra.smul_def])
   refine (isPullback_baseChange 𝒜 S).of_iso (mapIso _ _ hfg hgf).symm (.refl _) (.refl _)
     (.refl _) ?_ ?_ ?_ ?_
   · simp [hmap, -mapIso_hom, -mapIso_inv]
