@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
 
 import TauCeti.Algebra.Order.Field.HalfInteger
+import TauCeti.Data.Int.SumSquares
 
 /-!
 # Shortest vectors in the discriminant cosets of `Dₙ`
@@ -100,23 +101,17 @@ private theorem exists_eq_single_of_form_self_eq_one [NeZero n] {x : Fin n → �
     (hx : x - checkerboardVector n ∈ checkerboardCarrier n)
     (hnorm : (checkerboardLattice n).form x x = 1) :
     ∃ i, x = Pi.single i 1 ∨ x = -Pi.single i 1 := by
-  obtain ⟨z, hz, i, hone⟩ := exists_int_of_sub_checkerboardVector_mem hx
-  have hsum : ∑ j, z j * z j = 1 := by
+  obtain ⟨z, hz, -⟩ := exists_int_of_sub_checkerboardVector_mem hx
+  have hsum : ∑ j, z j ^ 2 = 1 := by
     rw [checkerboardLattice_form_apply] at hnorm
-    have : ((∑ j, z j * z j : ℤ) : ℚ) = 1 := by
+    have : ((∑ j, z j ^ 2 : ℤ) : ℚ) = 1 := by
       push_cast
       rw [← hnorm]
-      exact Finset.sum_congr rfl fun j _ ↦ by rw [hz j]
+      exact Finset.sum_congr rfl fun j _ ↦ by rw [hz j, sq]
     exact_mod_cast this
-  rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i)] at hsum
-  have hrest : ∑ j ∈ univ.erase i, z j * z j = 0 :=
-    le_antisymm (by linarith) (Finset.sum_nonneg fun j _ ↦ mul_self_nonneg (z j))
-  have hzero (j : Fin n) (hj : j ≠ i) : z j = 0 :=
-    mul_self_eq_zero.mp <| (Finset.sum_eq_zero_iff_of_nonneg fun k _ ↦ mul_self_nonneg (z k)).mp
-      hrest j (Finset.mem_erase.mpr ⟨hj, Finset.mem_univ j⟩)
-  refine ⟨i, ?_⟩
-  rcases Int.eq_one_or_neg_one_of_mul_eq_one (by linarith : z i * z i = 1) with h | h <;>
-    [left; right] <;> funext j <;> rcases eq_or_ne j i with rfl | hj <;> simp [*]
+  obtain ⟨i, h | h⟩ := exists_eq_single_or_neg_single_of_sum_sq_eq_one z hsum <;>
+    refine ⟨i, ?_⟩ <;> [left; right] <;> funext j <;> rw [hz j, h] <;>
+    rcases eq_or_ne j i with rfl | hj <;> simp [*]
 
 /-- **The minimal vectors of the vector coset.**  A vector `x` with `x - v ∈ Dₙ` has norm one
 exactly when it is one of the `2n` vectors `±eᵢ`. -/
@@ -195,9 +190,9 @@ private theorem form_self_eq_div_four_iff {x : Fin n → ℚ}
     ring
   rw [checkerboardLattice_form_apply, hconst, eq_comm,
     Finset.sum_eq_sum_iff_of_le fun i _ ↦ Int.quarter_le_mul_self_of_eq_cast_add_half (hx i)]
+  have hquarter : (1 / 4 : ℚ) = 1 / 2 * (1 / 2) := by norm_num
   refine forall_congr' fun i ↦ ?_
-  rw [imp_iff_right (Finset.mem_univ i), eq_comm, show (1 / 4 : ℚ) = 1 / 2 * (1 / 2) by norm_num,
-    mul_self_eq_mul_self_iff]
+  rw [imp_iff_right (Finset.mem_univ i), eq_comm, hquarter, mul_self_eq_mul_self_iff]
 
 /-- For a vector with all coordinates `±1/2`, the coordinates of `x - s` are `0` or `-1`, and
 their sum is minus the number of negative coordinates. -/
