@@ -49,7 +49,8 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
   set of pairs containing the pairs of support exponents.
 * `TauCeti.NovikovSeries.support_mul_subset`: the support of a product lies in the sum of the
   supports.
-* `TauCeti.NovikovSeries.single_mul_single`: monomials multiply by adding exponents.
+* `TauCeti.NovikovSeries.single_mul_single` and `TauCeti.NovikovSeries.single_pow`: monomials
+  multiply by adding exponents.
 * `TauCeti.NovikovSeries.unitsSingle`, `TauCeti.NovikovSeries.isUnit_single`: over an additive
   group, a monomial `u e^g` with unit coefficient is a unit, with inverse `u⁻¹ e^(-g)`.
 * `TauCeti.NovikovSeries.ofAddMonoidAlgebra_injective`: the group ring embeds into Novikov series.
@@ -390,6 +391,14 @@ instance instNonUnitalRing [NonUnitalRing R] :
     NonUnitalRing (NovikovSeries R H N) where
 
 instance instRing [Ring R] : Ring (NovikovSeries R H N) where
+
+/-- The powers of a monomial: `(r e^g) ^ n = r ^ n e^(n • g)`. -/
+@[simp]
+theorem single_pow [Semiring R] (g : H) (r : R) (n : ℕ) :
+    (single g r : NovikovSeries R H N) ^ n = single (n • g) (r ^ n) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, ih, single_mul_single, succ_nsmul, pow_succ]
 
 end AddMonoid
 

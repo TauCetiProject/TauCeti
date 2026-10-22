@@ -5,17 +5,19 @@ Authors: Codex
 -/
 module
 
-import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import TauCeti.Combinatorics.DenseGraphLimits.AEEqFun.Basic
+import TauCeti.MeasureTheory.Function.Lp.Complete
 
 /-!
 # Limits of L¹-Cauchy graphon sequences
 
 A sequence of graphons whose kernels have an `L¹` Cauchy modulus tending to zero converges in cut
-distance to a graphon. A summably fast subsequence and Mathlib's completeness machinery for
-`eLpNorm` produce an almost-everywhere pointwise limit. The pointwise limit remains symmetric and
-`[0, 1]`-valued, so `exists_graphon_repr` turns its almost-everywhere class back into a strict
-graphon. Finally, the cut norm is bounded by the `L¹` norm.
+distance to a graphon. The uncurried kernels converge in `L¹` by the general completeness result
+`TauCeti.exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound`, and a subsequence converges almost
+everywhere. The pointwise limit remains symmetric and `[0, 1]`-valued, so `exists_graphon_repr`
+turns its almost-everywhere class back into a strict graphon. Finally, the cut norm is bounded by
+the `L¹` norm.
 
 This form is designed for graphon compactness arguments: after representatives of a Cauchy
 subsequence have been realigned, this result supplies the limiting strict graphon.
@@ -49,9 +51,9 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasu
 /-- A graphon sequence with an `L¹` Cauchy modulus tending to zero has a strict graphon limit in
 `L¹`.
 
-The bound `B N` controls every pair of terms whose indices are at least `N`. A summably fast
-subsequence gives an almost-everywhere pointwise limit through Mathlib's `Lp` completeness
-machinery; the closed conditions of symmetry and range `[0, 1]` pass to that limit. -/
+The bound `B N` controls every pair of terms whose indices are at least `N`. This is the graphon
+form of `TauCeti.exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound`: the limit is again symmetric and
+`[0, 1]`-valued, and so is represented by a strict graphon. -/
 theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
     (W : ℕ → Graphon Ω μ) {B : ℕ → ℝ≥0∞} (hB : Tendsto B atTop (𝓝 0))
     (hCauchy : ∀ N n m, N ≤ n → N ≤ m →
@@ -64,60 +66,28 @@ theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
           ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ Wlim z.1 z.2)
           1 (μ.prod μ)) atTop (𝓝 0) := by
   let f : ℕ → Ω × Ω → ℝ := fun n z ↦ W n z.1 z.2
-  have hf : ∀ n, AEStronglyMeasurable (f n) (μ.prod μ) :=
-    fun n ↦ (W n).measurable.aestronglyMeasurable
-  have hCauchy' : ∀ N n m, N ≤ n → N ≤ m →
-      eLpNorm (f n - f m) 1 (μ.prod μ) ≤ B N := by
-    simpa only [f] using hCauchy
-  let Bfast : ℕ → ℝ≥0∞ := fun n ↦ 2⁻¹ ^ n
-  have hBfast : ∑' n, Bfast n ≠ ∞ := by simp [Bfast]
-  have hB_eventually : ∀ n, ∀ᶠ k in atTop, B k < Bfast n := by
-    intro n
-    exact (tendsto_order.1 hB).2 _
-      (ENNReal.pow_pos (ENNReal.inv_pos.2 ENNReal.ofNat_ne_top) n)
-  obtain ⟨φ, hφ, hφB⟩ := Filter.extraction_forall_of_eventually hB_eventually
-  let fSub : ℕ → Ω × Ω → ℝ := fun n ↦ f (φ n)
-  have hfSub : ∀ n, AEStronglyMeasurable (fSub n) (μ.prod μ) := fun n ↦ hf (φ n)
-  have hCauchySub : ∀ N n m, N ≤ n → N ≤ m →
-      eLpNorm (fSub n - fSub m) 1 (μ.prod μ) < Bfast N := by
-    intro N n m hn hm
-    exact (hCauchy' (φ N) (φ n) (φ m) (hφ.monotone hn) (hφ.monotone hm)).trans_lt
-      (hφB N)
-  have haeLimit : ∀ᵐ z ∂(μ.prod μ), ∃ a : ℝ, Tendsto (fun n ↦ fSub n z) atTop (𝓝 a) :=
-    Lp.ae_tendsto_of_cauchy_eLpNorm hfSub le_rfl hBfast hCauchySub
-  obtain ⟨fLim, hfLimMeas, hfLim⟩ :=
-    exists_stronglyMeasurable_limit_of_tendsto_ae hfSub haeLimit
-  have hLp : Tendsto (fun n ↦ eLpNorm (f n - fLim) 1 (μ.prod μ)) atTop (𝓝 0) := by
-    rw [ENNReal.tendsto_atTop_zero]
-    intro ε hε
-    obtain ⟨N, hN⟩ := (ENNReal.tendsto_atTop_zero.mp hB) ε hε
-    refine ⟨N, fun n hn ↦ ?_⟩
-    have hliminf : eLpNorm (f n - fLim) 1 (μ.prod μ) ≤
-        atTop.liminf fun m ↦ eLpNorm (f n - fSub m) 1 (μ.prod μ) := by
-      refine Lp.eLpNorm_lim_le_liminf_eLpNorm (fun m ↦ (hf n).sub (hfSub m)) (f n - fLim)
-        ((hf n).sub hfLimMeas.aestronglyMeasurable) ?_
-      refine hfLim.mono fun z hz ↦ ?_
-      simpa only [Pi.sub_apply] using tendsto_const_nhds.sub hz
-    refine hliminf.trans ((liminf_le_of_frequently_le' ?_).trans (hN N le_rfl))
-    apply Eventually.frequently
-    filter_upwards [hφ.tendsto_atTop (eventually_ge_atTop N)] with m hm
-    exact hCauchy' N n (φ m) hn hm
+  obtain ⟨fLim, hfLimMeas, hLp⟩ := exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound le_rfl
+    (fun n ↦ (W n).measurable.aestronglyMeasurable) hB (f := f) hCauchy
+  -- A subsequence converges almost everywhere; along it, symmetry and the range `[0, 1]` pass to
+  -- the limit.
+  obtain ⟨φ, -, hfLim⟩ :=
+    (tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero hLp).exists_seq_tendsto_ae
   have hfLimRange : ∀ᵐ z ∂(μ.prod μ), fLim z ∈ Set.Icc (0 : ℝ) 1 := by
     filter_upwards [hfLim] with z hz
     exact isClosed_Icc.mem_of_tendsto hz
       (Eventually.of_forall fun n ↦ (W (φ n)).mem_Icc z.1 z.2)
   have hfLimSwap : ∀ᵐ z ∂(μ.prod μ),
-      Tendsto (fun n ↦ fSub n z.swap) atTop (𝓝 (fLim z.swap)) :=
+      Tendsto (fun n ↦ f (φ n) z.swap) atTop (𝓝 (fLim z.swap)) :=
     (Measure.measurePreserving_swap (μ := μ) (ν := μ)).quasiMeasurePreserving.ae hfLim
   have hfLimSymm : ∀ᵐ z ∂(μ.prod μ), fLim z = fLim z.swap := by
     filter_upwards [hfLim, hfLimSwap] with z hz hzswap
     rcases z with ⟨x, y⟩
-    have hzswap' : Tendsto (fun n ↦ fSub n (y, x)) atTop (𝓝 (fLim (y, x))) := by
+    have hzswap' : Tendsto (fun n ↦ f (φ n) (y, x)) atTop (𝓝 (fLim (y, x))) := by
       simpa only [Prod.swap_prod_mk] using hzswap
-    have hz' : Tendsto (fun n ↦ fSub n (x, y)) atTop (𝓝 (fLim (y, x))) := by
+    have hz' : Tendsto (fun n ↦ f (φ n) (x, y)) atTop (𝓝 (fLim (y, x))) := by
       convert hzswap' using 1
       funext n
-      simpa only [fSub, f, Prod.swap_prod_mk] using (W (φ n)).symm x y
+      simpa only [f, Prod.swap_prod_mk] using (W (φ n)).symm x y
     simpa only [Prod.swap_prod_mk] using tendsto_nhds_unique hz hz'
   let fLimAE : (Ω × Ω) →ₘ[μ.prod μ] ℝ := AEEqFun.mk fLim hfLimMeas.aestronglyMeasurable
   have hfLimAE_coe : ⇑fLimAE =ᵐ[μ.prod μ] fLim := AEEqFun.coeFn_mk _ _

@@ -64,6 +64,9 @@ is acute; this is the convexity condition for gluing a triangle to its mirror im
   element of `PSL(2, ℝ)` (`geodesicReflectionComp_smul`), composing by
   `geodesicReflectionComp_mul_geodesicReflectionComp` and moving equivariantly by
   `mul_geodesicReflectionComp_mul_inv`.
+* `TauCeti.UpperHalfPlane.isParabolic_geodesicReflectionComp_iff`: the product of the
+  reflections in two lines with a common ideal endpoint is parabolic exactly when the lines are
+  distinct; for vertical lines it is a translation (`geodesicReflectionComp_upperRightHom`).
 * `TauCeti.UpperHalfPlane.extGeodesicReflection_mem_extLeftHalfPlane_geodesicFromTo_left` and
   `TauCeti.UpperHalfPlane.extGeodesicReflection_mem_extLeftHalfPlane_geodesicFromTo_right`:
   reflecting across a side with an acute angle at one end.
@@ -79,6 +82,9 @@ public section
 noncomputable section
 
 open UpperHalfPlane
+open Matrix.ProjectiveSpecialLinearGroup (IsParabolic isParabolic_conj_iff
+  isParabolic_upperRightHom_iff upperRightHom upperRightHom_smul_coe)
+open Matrix.SpecialLinearGroup (dilation)
 open scoped MatrixGroups Pointwise OnePoint Real ComplexConjugate
 
 namespace TauCeti.UpperHalfPlane
@@ -619,6 +625,39 @@ theorem geodesicReflectionComp_mul_dilation_right (g h : PSL(2, ℝ)) (s : ℝ) 
     geodesicReflectionComp g (h * ↑(Matrix.SpecialLinearGroup.dilation s)) =
       geodesicReflectionComp g h := by
   simp [geodesicReflectionComp, mul_assoc]
+
+/-! ### Two geodesic lines with a common ideal endpoint -/
+
+/-- The product of the reflections in the vertical lines `Re z = a` and `Re z = b`, the geodesic
+lines of the translations by `a` and by `b`, is the translation by `2 (a - b)`. -/
+@[simp]
+theorem geodesicReflectionComp_upperRightHom (a b : ℝ) :
+    geodesicReflectionComp (upperRightHom a) (upperRightHom b) = upperRightHom (2 * (a - b)) := by
+  simp only [geodesicReflectionComp, ← AddChar.map_neg_eq_inv, ← AddChar.map_add_eq_mul,
+    pslConjJ_upperRightHom]
+  congr 1
+  ring
+
+/-- **Reflections in two lines with a common ideal endpoint.** If the geodesic lines of `g` and
+`h` have the same forward endpoint, the product of the reflections in them is parabolic exactly
+when their backward endpoints differ, that is, when the lines are distinct. -/
+theorem isParabolic_geodesicReflectionComp_iff {g h : PSL(2, ℝ)}
+    (hgh : g • (∞ : OnePoint ℝ) = h • ∞) :
+    IsParabolic (geodesicReflectionComp g h) ↔
+      g • ((0 : ℝ) : OnePoint ℝ) ≠ h • ((0 : ℝ) : OnePoint ℝ) := by
+  -- move the common endpoint to `∞`, where both lines are vertical
+  obtain ⟨k, hk⟩ := MulAction.exists_smul_eq PSL(2, ℝ) (g • (∞ : OnePoint ℝ)) ∞
+  obtain ⟨a, s, hs⟩ := exists_eq_upperRightHom_mul_dilation (g := k * g) (by rw [mul_smul, hk])
+  obtain ⟨b, t, ht⟩ := exists_eq_upperRightHom_mul_dilation (g := k * h)
+    (by rw [mul_smul, ← hgh, hk])
+  have h₀ {x : PSL(2, ℝ)} {c u : ℝ} (hx : k * x = upperRightHom c * ↑(dilation u)) :
+      x • ((0 : ℝ) : OnePoint ℝ) = k⁻¹ • (c : OnePoint ℝ) := by
+    rw [eq_inv_smul_iff, ← mul_smul, hx, mul_smul, dilation_smul_zero, upperRightHom_smul_coe,
+      zero_add]
+  rw [← isParabolic_conj_iff k, mul_geodesicReflectionComp_mul_inv, hs, ht,
+    geodesicReflectionComp_mul_dilation_left, geodesicReflectionComp_mul_dilation_right,
+    geodesicReflectionComp_upperRightHom, isParabolic_upperRightHom_iff, h₀ hs, h₀ ht]
+  simp [sub_eq_zero]
 
 /-! ### Reflecting a vertex across a side with acute angles -/
 

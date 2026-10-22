@@ -47,7 +47,12 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 
 * `LaurentPolynomial.T_sum`: the monomial of a finite sum of exponents is the product of the
   monomials.
+* `LaurentPolynomial.mapDomainAlgHom_mulRight_T` and
+  `LaurentPolynomial.mapDomainAlgHom_mulRight_comp_toAlgHom`: the substitution `T ↦ Tⁿ` sends
+  `Tᵐ` to `T^{mn}` and fixes constants.
 * `TauCeti.laurentEval_unique`: an algebra map out of `R[T;T⁻¹]` is determined by its value at `T`.
+* `TauCeti.laurentEval_comp_mapDomainAlgHom_mulRight`: evaluating after `T ↦ Tⁿ` is evaluating
+  at the `n`-th power.
 * `TauCeti.laurentEval_eq_eval₂`: over a commutative target, this evaluation is Mathlib's
   `LaurentPolynomial.eval₂`.
 * `TauCeti.eval₂_C_injective_of_val_eq_T`: the substitution `T ↦ Tᵏ` is injective for `k ≠ 0`.
@@ -84,6 +89,21 @@ theorem T_sum {ι : Type*} (s : Finset ι) (f : ι → ℤ) :
     (T (∑ i ∈ s, f i) : LaurentPolynomial R) = ∏ i ∈ s, T (f i) := by
   simpa only [single_eq_C_mul_T, Finset.prod_const_one, map_one, one_mul] using
     (AddMonoidAlgebra.prod_single s f (fun _ ↦ (1 : R))).symm
+
+/-- The substitution `T ↦ Tⁿ` sends the Laurent monomial `Tᵐ` to `T^{mn}`. -/
+theorem mapDomainAlgHom_mulRight_T (n m : ℤ) :
+    AddMonoidAlgebra.mapDomainAlgHom R A (AddMonoidHom.mulRight n) (T m) = T (m * n) := by
+  simp only [AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidHom.coe_mulRight, T,
+    AddMonoidAlgebra.mapDomain_single]
+
+/-- The substitution `T ↦ Tⁿ` fixes the constant Laurent polynomials. -/
+@[simp]
+theorem mapDomainAlgHom_mulRight_comp_toAlgHom {S : Type*} [CommSemiring S] [Algebra R S]
+    (n : ℤ) :
+    (AddMonoidAlgebra.mapDomainAlgHom R S (AddMonoidHom.mulRight n)).comp
+        (IsScalarTower.toAlgHom R S (LaurentPolynomial S)) =
+      IsScalarTower.toAlgHom R S (LaurentPolynomial S) :=
+  AlgHom.ext fun a ↦ (AddMonoidAlgebra.mapDomainAlgHom S S (AddMonoidHom.mulRight n)).commutes a
 
 end LaurentPolynomial
 
@@ -188,6 +208,15 @@ theorem laurentEval_invert (u : Aˣ) (p : R[T;T⁻¹]) :
   rw [← AlgEquiv.coe_toAlgHom, ← AlgHom.comp_apply,
     laurentEval_unique u⁻¹ ((laurentEval u).comp invert.toAlgHom) (by simp)]
 
+/-- **Evaluating after the substitution `T ↦ Tⁿ` is evaluating at the `n`-th power.** -/
+@[simp]
+theorem laurentEval_comp_mapDomainAlgHom_mulRight (u : Aˣ) (n : ℤ) :
+    (laurentEval (R := R) u).comp
+        (AddMonoidAlgebra.mapDomainAlgHom R R (AddMonoidHom.mulRight n)) =
+      laurentEval (u ^ n) :=
+  laurentEval_unique _ _ <| by
+    rw [AlgHom.comp_apply, mapDomainAlgHom_mulRight_T, one_mul, laurentEval_T]
+
 /-- **Over a commutative target this is Mathlib's `LaurentPolynomial.eval₂`.**  The two
 constructions are separate only because `LaurentPolynomial.eval₂` is built by localization and so
 needs a commutative codomain. -/
@@ -202,14 +231,13 @@ unit of `R[T;T⁻¹]` whose value is `T k` substitutes `Tᵏ` for `T`; for `k �
 monomials to distinct monomials, so it loses no information. -/
 theorem eval₂_C_injective_of_val_eq_T {u : R[T;T⁻¹]ˣ} {k : ℤ} (hu : (u : R[T;T⁻¹]) = T k)
     (hk : k ≠ 0) : Function.Injective (eval₂ C u) := by
-  have h : ⇑(eval₂ C u) = ⇑(AddMonoidAlgebra.mapDomainAlgHom R R (AddMonoidHom.mulLeft k)) := by
-    rw [laurentEval_unique u (AddMonoidAlgebra.mapDomainAlgHom R R (AddMonoidHom.mulLeft k))
-      (by rw [AddMonoidAlgebra.mapDomainAlgHom_apply, hu, T, T, AddMonoidAlgebra.mapDomain_single,
-        AddMonoidHom.coe_mulLeft, mul_one])]
+  have h : ⇑(eval₂ C u) = ⇑(AddMonoidAlgebra.mapDomainAlgHom R R (AddMonoidHom.mulRight k)) := by
+    rw [laurentEval_unique u (AddMonoidAlgebra.mapDomainAlgHom R R (AddMonoidHom.mulRight k))
+      (by rw [mapDomainAlgHom_mulRight_T, one_mul, hu])]
     funext p
     rw [laurentEval_eq_eval₂, ← RingHom.ext C_eq_algebraMap]
   rw [h]
-  exact AddMonoidAlgebra.mapDomain_injective (mul_right_injective₀ hk)
+  exact AddMonoidAlgebra.mapDomain_injective (mul_left_injective₀ hk)
 
 /-- The `k`-th power of the inverse of the unit `T n` is the monomial `T (-(n * k))`. -/
 theorem val_isUnit_T_unit_inv_pow {R : Type*} [Semiring R] (n : ℤ) (k : ℕ) :

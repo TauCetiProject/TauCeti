@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.CharP.Lemmas
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
@@ -30,6 +31,10 @@ a pole of order prime to `p` rules out a root in the base field.
 `TauCeti.ne_pow_sub_self_of_exists_reduced_artinSchreier_pole` applies this criterion
 when a translated representative has such a pole.
 
+The order computations hold for a `ℤᵐ⁰`-valued valuation on any ring; only the two
+Artin–Schreier statements, which expand `(a - b) ^ p`, assume commutativity. The order has
+its junk value zero on the valuation support.
+
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
@@ -42,31 +47,27 @@ open scoped WithZero
 
 namespace Valuation
 
-variable {F : Type*} [Field F] (v : Valuation F ℤᵐ⁰)
+variable {R : Type*} [Ring R] (v : Valuation R ℤᵐ⁰)
 
 /-- At a pole, the power term dominates `y ^ n - y` when `n > 1`. -/
-theorem ord_pow_sub_self_of_ord_neg {n : ℕ} (hn : 1 < n) {y : F}
+theorem ord_pow_sub_self_of_ord_neg {n : ℕ} (hn : 1 < n) {y : R}
     (hy : v.ord y < 0) : v.ord (y ^ n - y) = (n : ℤ) * v.ord y := by
-  have hy0 : y ≠ 0 := by
-    rintro rfl
-    simp at hy
+  have hy0 : v y ≠ 0 := v.valuation_ne_zero_of_ord_ne_zero hy.ne
   have hlt : (n : ℤ) * v.ord y < v.ord y := by
     have _ : (1 : ℤ) < n := by exact_mod_cast hn
     nlinarith
-  rw [sub_eq_add_neg, ord_add_eq_min_of_ord_ne v (v.ne_zero_iff.mpr (pow_ne_zero _ hy0))
-    (v.ne_zero_iff.mpr (neg_ne_zero.mpr hy0))
-    (by rw [ord_pow, ord_neg]; omega), ord_pow, ord_neg, min_eq_left hlt.le]
+  rw [sub_eq_add_neg, ord_add_eq_min_of_ord_ne v (by rw [map_pow]; exact pow_ne_zero _ hy0)
+    (by rwa [v.map_neg]) (by rw [ord_pow, ord_neg]; omega), ord_pow, ord_neg,
+    min_eq_left hlt.le]
 
 /-- For `n > 1`, `y ^ n - y` has a pole exactly when `y` has a pole. -/
 @[simp]
-theorem ord_pow_sub_self_neg_iff {n : ℕ} (hn : 1 < n) (y : F) :
+theorem ord_pow_sub_self_neg_iff {n : ℕ} (hn : 1 < n) (y : R) :
     v.ord (y ^ n - y) < 0 ↔ v.ord y < 0 := by
   constructor
   · intro h
-    have hne : y ^ n - y ≠ 0 := by
-      intro hzero
-      simp [hzero] at h
-    have hmin := v.min_ord_le_ord_add (v.ne_zero_iff.mpr (by simpa [sub_eq_add_neg] using hne))
+    have hne : v (y ^ n - y) ≠ 0 := v.valuation_ne_zero_of_ord_ne_zero h.ne
+    have hmin := v.min_ord_le_ord_add (by rwa [← sub_eq_add_neg])
     rw [ord_pow, ord_neg, ← sub_eq_add_neg] at hmin
     by_contra hy
     have hnonneg : 0 ≤ v.ord y := by omega
@@ -79,8 +80,8 @@ theorem ord_pow_sub_self_neg_iff {n : ℕ} (hn : 1 < n) (y : F) :
 
 /-- A pole whose order is not divisible by `n` cannot be a value of `y ↦ y ^ n - y`.
 For prime `n` in characteristic `n`, this proves nontriviality of the Artin–Schreier class. -/
-theorem ne_pow_sub_self_of_ord_neg_of_not_dvd {n : ℕ} (hn : 1 < n) {u : F}
-    (hu : v.ord u < 0) (hdiv : ¬(n : ℤ) ∣ v.ord u) (y : F) : u ≠ y ^ n - y := by
+theorem ne_pow_sub_self_of_ord_neg_of_not_dvd {n : ℕ} (hn : 1 < n) {u : R}
+    (hu : v.ord u < 0) (hdiv : ¬(n : ℤ) ∣ v.ord u) (y : R) : u ≠ y ^ n - y := by
   intro heq
   have hy : v.ord y < 0 := (v.ord_pow_sub_self_neg_iff hn y).mp (heq ▸ hu)
   apply hdiv
@@ -91,115 +92,126 @@ end Valuation
 
 namespace TauCeti
 
-variable {F : Type*} [Field F] {v : _root_.Valuation F ℤᵐ⁰}
+section Ring
 
-/-- A supplied reduced Artin–Schreier pole makes the class of `u` nontrivial.
-Only exponential characteristic `p > 1` is needed; no perfection or function-field
-hypothesis is needed. -/
-theorem ne_pow_sub_self_of_exists_reduced_artinSchreier_pole
-    (p : ℕ) (hp : 1 < p) [ExpChar F p] {u : F}
-    (hpole : ∃ w₀ : F, v.ord (u - (w₀ ^ p - w₀)) < 0 ∧
-      ¬ (p : ℤ) ∣ v.ord (u - (w₀ ^ p - w₀))) :
-    ∀ w : F, w ^ p - w ≠ u := by
-  obtain ⟨w₀, hneg, hdiv⟩ := hpole
-  intro w hw
-  apply v.ne_pow_sub_self_of_ord_neg_of_not_dvd
-    hp hneg hdiv (w - w₀)
-  rw [← hw, sub_pow_expChar]
-  ring
+variable {R : Type*} [Ring R] {v : _root_.Valuation R ℤᵐ⁰}
 
 /-- If `n` does not divide the order of `u`, then no `n`-th power agrees with `u` beyond the
 leading order of `u`. -/
-theorem ord_sub_pow_le_of_not_dvd {n : ℕ} {u : F} (hdiv : ¬(n : ℤ) ∣ v.ord u) (y : F) :
+theorem ord_sub_pow_le_of_not_dvd {n : ℕ} {u : R} (hdiv : ¬(n : ℤ) ∣ v.ord u) (y : R) :
     v.ord (u - y ^ n) ≤ v.ord u := by
-  have hu0 : u ≠ 0 := by
-    rintro rfl
-    simp at hdiv
-  rcases eq_or_ne (y ^ n) 0 with hy | hy
-  · simp [hy]
-  rw [sub_eq_add_neg, v.ord_add_eq_min_of_ord_ne (v.ne_zero_iff.mpr hu0)
-    (v.ne_zero_iff.mpr (neg_ne_zero.mpr hy))
+  have hu0 : v u ≠ 0 := v.valuation_ne_zero_of_ord_ne_zero (by
+    intro h
+    simp [h] at hdiv)
+  rcases eq_or_ne (v (y ^ n)) 0 with hy | hy
+  · rw [v.ord_sub_of_map_right_eq_zero hy]
+  rw [sub_eq_add_neg, v.ord_add_eq_min_of_ord_ne hu0 (by rwa [v.map_neg])
     (by rw [v.ord_neg, v.ord_pow]; exact fun h ↦ hdiv ⟨v.ord y, h⟩)]
   exact min_le_left _ _
 
-/-- Let `u` have a pole, and suppose that no `n`-th power `y ^ n` agrees with `u` beyond the
-leading order of `u`. Then for `n > 1` every representative `u - (w ^ n - w)` has order
-`min (ord u) (n * ord w)`. A substitution cannot cancel the pole of `u`; it can only replace it
-by the deeper pole of `w ^ n`. No characteristic hypothesis is needed. -/
-theorem ord_sub_pow_sub_self_eq_min {n : ℕ} (hn : 1 < n) {u : F} (hu : v.ord u < 0)
-    (hroot : ∀ y : F, v.ord (u - y ^ n) ≤ v.ord u) (w : F) :
+/-- Let `u` have a pole, and suppose that `w ^ n` does not agree with `u` beyond the
+leading order of `u`. Then for `n > 1` the representative `u - (w ^ n - w)` has order
+`min (ord u) (n * ord w)`. This substitution cannot cancel the pole of `u`; it can only replace
+it by the deeper pole of `w ^ n`. No characteristic hypothesis is needed. -/
+theorem ord_sub_pow_sub_self_eq_min {n : ℕ} (hn : 1 < n) {u : R} (hu : v.ord u < 0)
+    (w : R) (hroot : v.ord (u - w ^ n) ≤ v.ord u) :
     v.ord (u - (w ^ n - w)) = min (v.ord u) (n * v.ord w) := by
-  rcases eq_or_ne w 0 with rfl | hw0
-  · simp [zero_pow (by omega : n ≠ 0), hu.le]
-  have hu0 : u ≠ 0 := by
-    rintro rfl
-    simp at hu
-  have hwn : w ^ n ≠ 0 := pow_ne_zero _ hw0
-  have ha0 : u - w ^ n ≠ 0 := by
-    intro h
-    have := hroot w
-    rw [h, v.ord_zero] at this
-    omega
+  have hu0 : v u ≠ 0 := v.valuation_ne_zero_of_ord_ne_zero hu.ne
+  rcases eq_or_ne (v w) 0 with hw0 | hw0
+  · have hsub : v (w ^ n - w) = 0 := by
+      rw [v.map_sub_of_right_eq_zero hw0, map_pow, hw0, zero_pow (by omega)]
+    rw [v.ord_eq_zero_of_map_eq_zero hw0, mul_zero, min_eq_left hu.le,
+      v.ord_sub_of_map_right_eq_zero hsub]
+  have hwn : v (w ^ n) ≠ 0 := by
+    rw [map_pow]
+    exact pow_ne_zero _ hw0
+  have ha0 : v (u - w ^ n) ≠ 0 :=
+    v.valuation_ne_zero_of_ord_ne_zero (hroot.trans_lt hu).ne
   -- The power term: `u - w ^ n` has order `min (ord u) (n * ord w)`.
   have ha : v.ord (u - w ^ n) = min (v.ord u) (n * v.ord w) := by
     rcases lt_or_ge ((n : ℤ) * v.ord w) (v.ord u) with hlt | hge
-    · rw [sub_eq_add_neg, v.ord_add_eq_min_of_ord_ne (v.ne_zero_iff.mpr hu0)
-        (v.ne_zero_iff.mpr (neg_ne_zero.mpr hwn))
+    · rw [sub_eq_add_neg, v.ord_add_eq_min_of_ord_ne hu0 (by rwa [v.map_neg])
         (by rw [v.ord_neg, v.ord_pow]; omega), v.ord_neg, v.ord_pow]
     · have hmin := v.min_ord_le_ord_add (f := u) (g := -w ^ n)
-        (v.ne_zero_iff.mpr (by rwa [← sub_eq_add_neg]))
+        (by rwa [← sub_eq_add_neg])
       rw [v.ord_neg, v.ord_pow, ← sub_eq_add_neg, min_eq_left hge] at hmin
       rw [min_eq_left hge]
-      exact le_antisymm (hroot w) hmin
+      exact le_antisymm hroot hmin
   -- The linear term `w` has strictly larger order, so it does not change the order.
   have hlt : min (v.ord u) (n * v.ord w) < v.ord w := by
     rcases lt_or_ge (v.ord w) 0 with hneg | hnonneg
     · have : (1 : ℤ) < n := by exact_mod_cast hn
       exact (min_le_right _ _).trans_lt (by nlinarith)
     · exact (min_le_left _ _).trans_lt (hu.trans_le hnonneg)
-  rw [show u - (w ^ n - w) = (u - w ^ n) + w by ring,
-    v.ord_add_eq_min_of_ord_ne (v.ne_zero_iff.mpr ha0) (v.ne_zero_iff.mpr hw0)
-      (by rw [ha]; exact hlt.ne), ha, min_eq_left hlt.le]
+  -- Expose the additive regrouping so abel can normalize it in a noncommutative ring.
+  rw [show u - (w ^ n - w) = (u - w ^ n) + w by abel,
+    v.ord_add_eq_min_of_ord_ne ha0 hw0 (by rw [ha]; exact hlt.ne), ha, min_eq_left hlt.le]
 
 /-- A negative order not divisible by `n > 1` is maximal among all representatives
 `u - (w ^ n - w)`. No perfection or characteristic hypothesis is needed for this
 obstruction to improving a pole. -/
-theorem ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd {n : ℕ} (hn : 1 < n) {u : F}
-    (hu : v.ord u < 0) (hdiv : ¬(n : ℤ) ∣ v.ord u) (w : F) :
+theorem ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd {n : ℕ} (hn : 1 < n) {u : R}
+    (hu : v.ord u < 0) (hdiv : ¬(n : ℤ) ∣ v.ord u) (w : R) :
     v.ord (u - (w ^ n - w)) ≤ v.ord u :=
-  (ord_sub_pow_sub_self_eq_min hn hu (ord_sub_pow_le_of_not_dvd hdiv) w).trans_le
+  (ord_sub_pow_sub_self_eq_min hn hu w (ord_sub_pow_le_of_not_dvd hdiv w)).trans_le
     (min_le_left _ _)
 
-/-- Let `n > 1` divide the negative order of `u`, and suppose that no `n`-th power agrees
-with `u` beyond the leading order of `u`. Then every representative `u - (w ^ n - w)` has a
-pole whose order is divisible by `n`: no substitution makes `u` integral or produces a pole of
-order prime to `n`. -/
-theorem ord_sub_pow_sub_self_neg_and_dvd {n : ℕ} (hn : 1 < n) {u : F} (hu : v.ord u < 0)
-    (hdvd : (n : ℤ) ∣ v.ord u) (hroot : ∀ y : F, v.ord (u - y ^ n) ≤ v.ord u) (w : F) :
+/-- Let `n > 1` divide the negative order of `u`, and suppose that `w ^ n` does not agree
+with `u` beyond the leading order of `u`. Then the representative `u - (w ^ n - w)` has a pole
+whose order is divisible by `n`: this substitution neither makes `u` integral nor produces a
+pole of order prime to `n`. -/
+theorem ord_sub_pow_sub_self_neg_and_dvd {n : ℕ} (hn : 1 < n) {u : R} (hu : v.ord u < 0)
+    (hdvd : (n : ℤ) ∣ v.ord u) (w : R) (hroot : v.ord (u - w ^ n) ≤ v.ord u) :
     v.ord (u - (w ^ n - w)) < 0 ∧ (n : ℤ) ∣ v.ord (u - (w ^ n - w)) := by
-  rw [ord_sub_pow_sub_self_eq_min hn hu hroot w]
+  rw [ord_sub_pow_sub_self_eq_min hn hu w hroot]
   refine ⟨(min_le_left _ _).trans_lt hu, ?_⟩
   rcases min_choice (v.ord u) (n * v.ord w) with h | h <;> rw [h]
   · exact hdvd
   · exact dvd_mul_right _ _
 
+end Ring
+
+section CommRing
+
+variable {R : Type*} [CommRing R] {v : _root_.Valuation R ℤᵐ⁰}
+
+/-- A supplied reduced Artin–Schreier pole makes the class of `u` nontrivial.
+Only exponential characteristic `p` is needed; the pole hypothesis forces `p > 1`.
+No perfection or function-field hypothesis is needed. -/
+theorem ne_pow_sub_self_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [ExpChar R p] {u : R}
+    (hpole : ∃ w₀ : R, v.ord (u - (w₀ ^ p - w₀)) < 0 ∧
+      ¬ (p : ℤ) ∣ v.ord (u - (w₀ ^ p - w₀))) :
+    ∀ w : R, w ^ p - w ≠ u := by
+  obtain ⟨w₀, hneg, hdiv⟩ := hpole
+  have hp := one_lt_expChar_of_not_dvd R hdiv
+  intro w hw
+  apply v.ne_pow_sub_self_of_ord_neg_of_not_dvd
+    hp hneg hdiv (w - w₀)
+  rw [← hw, sub_pow_expChar]
+  ring
+
 /-- Two representatives of an Artin–Schreier class with prime-to-`p` poles have the
 same order. Thus the reduced pole order is independent of the substitution used to
-obtain it. This uniqueness statement does not need a perfect residue field. -/
-theorem ord_reduced_artinSchreier_representative_eq (p : ℕ) [Fact p.Prime] [CharP F p]
-    {u w z : F} (hw : v.ord (u - (w ^ p - w)) < 0)
+obtain it. Only exponential characteristic `p` is needed; the pole hypothesis forces `p > 1`.
+No perfect residue field hypothesis is needed. -/
+theorem ord_reduced_artinSchreier_representative_eq (p : ℕ) [ExpChar R p]
+    {u w z : R} (hw : v.ord (u - (w ^ p - w)) < 0)
     (hwdiv : ¬(p : ℤ) ∣ v.ord (u - (w ^ p - w)))
     (hz : v.ord (u - (z ^ p - z)) < 0)
     (hzdiv : ¬(p : ℤ) ∣ v.ord (u - (z ^ p - z))) :
     v.ord (u - (w ^ p - w)) = v.ord (u - (z ^ p - z)) := by
-  have heq (a b : F) : (u - (a ^ p - a)) - ((b - a) ^ p - (b - a)) =
+  have hp := one_lt_expChar_of_not_dvd R hwdiv
+  have heq (a b : R) : (u - (a ^ p - a)) - ((b - a) ^ p - (b - a)) =
       u - (b ^ p - b) := by
-    rw [sub_pow_char]
+    rw [sub_pow_expChar]
     ring
   apply le_antisymm
   · simpa only [heq] using ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd
-      (Fact.out : p.Prime).one_lt hz hzdiv (w - z)
+      hp hz hzdiv (w - z)
   · simpa only [heq] using ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd
-      (Fact.out : p.Prime).one_lt hw hwdiv (z - w)
+      hp hw hwdiv (z - w)
+
+end CommRing
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Factorial.Basic
+public import TauCeti.Data.Matrix.Block
 public import TauCeti.RingTheory.CyclicCohomology.Matrix
 
 /-!
@@ -34,6 +35,8 @@ cyclicity in odd degree forces `ψ(e, …, e) = -ψ(e, …, e)`.
 * `TauCeti.cyclicCohomology.evenPairing_mk`: the pairing evaluated on the class of a cocycle.
 * `TauCeti.cyclicCohomology.evenPairing_matrixExtension_mk`: Connes' formula
   `⟨[e], [φ]⟩ = (m!)⁻¹ (φ#Tr)(e, …, e)` for an idempotent matrix `e`.
+* `TauCeti.cyclicCohomology.evenPairing_fromBlocks_matrixExtension`: the pairing is additive on
+  direct sums, `⟨[e ⊕ f], [φ]⟩ = ⟨[e], [φ]⟩ + ⟨[f], [φ]⟩`.
 
 ## References
 
@@ -119,6 +122,19 @@ theorem evenPairing_matrixExtension_mk {ι : Type*} [Fintype ι] [DecidableEq ι
         ((φ : cyclicCochains R A M (2 * m)) :
           MultilinearMap R (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
   rw [matrixExtension_mk, evenPairing_mk, coe_matrixCyclicCochainExtension_apply]
+
+/-- **Additivity of the even pairing on direct sums**: the even pairing of the block-diagonal
+idempotent matrix `e ⊕ f` is the sum of the even pairings of `e` and `f`. -/
+theorem evenPairing_fromBlocks_matrixExtension {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] [DecidableEq κ] {e : Matrix ι ι A} {f : Matrix κ κ A} (he : IsIdempotentElem e)
+    (hf : IsIdempotentElem f) (m : ℕ) (c : cyclicCohomology R A M (2 * m)) :
+    evenPairing (Matrix.fromBlocks e 0 0 f) (he.fromBlocks_zero₁₂_zero₂₁ hf) m
+        (matrixExtension M (ι ⊕ κ) (2 * m) c) =
+      evenPairing e he m (matrixExtension M ι (2 * m) c) +
+        evenPairing f hf m (matrixExtension M κ (2 * m) c) := by
+  obtain ⟨φ, rfl⟩ := mk_surjective R A M (2 * m) c
+  simp only [evenPairing_matrixExtension_mk, matrixCochainExtension_fromBlocks_zero₁₂_zero₂₁,
+    smul_add]
 
 end cyclicCohomology
 
