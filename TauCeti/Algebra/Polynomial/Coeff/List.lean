@@ -102,6 +102,18 @@ theorem ofCoeffList_reverse_zero_cons (l : List R) :
     ofCoeffList ((0 : R) :: l).reverse = ofCoeffList l.reverse := by
   rw [ofCoeffList_reverse_cons, map_zero, zero_mul, zero_add]
 
+/-- Dropping leading zeros from a descending coefficient list does not change the polynomial. -/
+theorem ofCoeffList_reverse_dropWhile_beq_zero [BEq R] [LawfulBEq R] (l : List R) :
+    ofCoeffList (l.dropWhile (· == 0)).reverse = ofCoeffList l.reverse := by
+  induction l with
+  | nil => simp
+  | cons a t ih =>
+    by_cases ha : a = 0
+    · subst ha
+      rw [ofCoeffList_reverse_zero_cons]
+      simpa [List.dropWhile_cons] using ih
+    · simp [ha]
+
 /-- A list of zeros defines the zero polynomial. -/
 @[simp]
 theorem ofCoeffList_replicate_zero (n : ℕ) :

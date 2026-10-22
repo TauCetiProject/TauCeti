@@ -74,18 +74,6 @@ genuine `def`: `cyclotomicCoeffs 12 = [1, 0, -1, 0, 1]`, the coefficients of `X 
 `Polynomial.cyclotomic n ℤ`. -/
 @[expose] def cyclotomicCoeffs (n : ℕ) : List ℤ := cyclotomicCoeffsAux n n
 
-/-- Dropping leading zeros from a coefficient list does not change the polynomial. -/
-private theorem ofCoeffList_reverse_dropWhile_beq_zero (l : List ℤ) :
-    ofCoeffList (l.dropWhile (· == 0)).reverse = ofCoeffList l.reverse := by
-  induction l with
-  | nil => simp
-  | cons a t ih =>
-    by_cases ha : a = 0
-    · subst ha
-      rw [ofCoeffList_reverse_zero_cons]
-      simpa [List.dropWhile_cons] using ih
-    · simp [ha]
-
 /-- The computed coefficient list never starts with a zero: it is either `[1]` or the result of
 dropping the leading zeros. -/
 private theorem headD_cyclotomicCoeffsAux_ne_zero (fuel n : ℕ)
