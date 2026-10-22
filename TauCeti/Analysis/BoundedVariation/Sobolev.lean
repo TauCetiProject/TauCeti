@@ -25,8 +25,8 @@ where `|Du|(E)` is the variational total variation `TauCeti.totalVariationOn μ 
 infinite, and `C = MeasureTheory.eLpNormLESNormFDerivOneConst μ p` is the constant of Mathlib's
 inequality `MeasureTheory.eLpNorm_le_eLpNorm_fderiv_one` for compactly supported `C¹` functions.
 No compact support and no differentiability are assumed. Applied to indicators, it gives the
-nonsharp **isoperimetric inequality** `μ(s) ^ (1 - 1/n) ≤ C P(s; E)` for every set of finite
-measure; finiteness of the perimeter is not assumed either.
+nonsharp **isoperimetric inequality** `μ(s) ^ (1 - 1/n) ≤ C P(s; E)` for every null-measurable
+set of finite measure; finiteness of the perimeter is not assumed either.
 
 The proof mollifies `u`. The mollifications `ρ_ε ⋆ u` are smooth and integrable, so they satisfy
 the inequality `‖ρ_ε ⋆ u‖_p ≤ C ‖D(ρ_ε ⋆ u)‖₁` for integrable `C¹` functions
