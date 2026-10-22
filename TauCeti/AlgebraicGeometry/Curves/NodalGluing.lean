@@ -564,15 +564,6 @@ theorem isOpen_compl_nodeSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpa
     [∀ i, T1Space (X i)] [Finite Flag] : IsOpen (nodeSet d)ᶜ :=
   (isClosed_nodeSet d).isOpen_compl
 
-/-- **The preimage of the complement of the node set.**  The quotient map sends a point of the
-disjoint union to a non-node exactly when that point is not a flag point: the preimage of the
-complement of the node set is the disjoint union of the normalization components minus the flag
-points. -/
-theorem preimage_compl_nodeSet (d : FlagPairData ι Flag X) :
-    (Quotient.mk (gluedRelSetoid d)) ⁻¹' (nodeSet d)ᶜ = (flagPointSet d)ᶜ := by
-  ext x
-  simp [preimage_nodeSet]
-
 /-- **The image of the components minus their flag points.**  The quotient map sends the disjoint
 union of the normalization components minus their flag points onto the complement of the node set
 in the glued curve. -/
