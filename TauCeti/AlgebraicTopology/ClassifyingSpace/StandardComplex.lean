@@ -22,8 +22,8 @@ complex of the countable join and as target the underlying module complex of Mat
 complex. Its degreewise maps are equivariant for translation and preserve the augmentations.
 This is an explicit comparison of complexes of modules; its equivariant form, a homotopy
 equivalence of projective resolutions, is in
-`TauCeti.AlgebraicTopology.ClassifyingSpace.BarResolution`. For a nonzero coefficient ring it is
-not an isomorphism: even for the trivial group, the join has countably many vertices and the
+`TauCeti.AlgebraicTopology.ClassifyingSpace.StandardResolution`. For a nonzero coefficient ring
+it is not an isomorphism: even for the trivial group, the join has countably many vertices and the
 standard complex has just one.
 
 The source orientation agrees with the CW structure on `universalGSpace`: its characteristic
