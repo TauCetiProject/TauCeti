@@ -19,9 +19,8 @@ import TauCeti.Analysis.SpecialFunctions.Log.MulExpLtOne
 
 For `r ≥ 0` and `0 < q < 1`, a Poisson number of logarithmic-series jumps with parameter `q`
 and intensity `-r * log (1 - q)` has negative-binomial law with shape `r` and success
-probability `1 - q`. The measure identity is accompanied by the independent product-space
-construction and a random-variable version. Shape zero includes the empty sum and gives
-Dirac mass at zero.
+probability `1 - q`. The measure identity is accompanied by a random-variable version.
+Shape zero includes the empty sum and gives Dirac mass at zero.
 
 The identification uses the existing compound Poisson and logarithmic-series mgfs and
 moment-generating-function uniqueness near zero.
@@ -97,17 +96,6 @@ theorem compoundPoissonMeasure_logarithmicSeriesMeasure {r q : ℝ} (hr : 0 ≤ 
     rw [hcp, mgf_id_map_cast_negativeBinomialMeasure hr.le (by linarith : 0 < 1 - q)
       (by linarith) (by simpa using (mul_exp_lt_one_iff hq0).2 ht)]
     simp
-
-/-- Independently draw a Poisson count and a sequence of logarithmic-series jumps. Their
-random prefix sum has negative-binomial law, including shape zero. -/
-theorem map_sum_range_prod_poissonMeasure_logarithmicSeriesMeasure {r q : ℝ} (hr : 0 ≤ r)
-    (hq0 : 0 < q) (hq1 : q < 1) :
-    ((poissonMeasure (Real.toNNReal (-(r * log (1 - q))))).prod
-        (Measure.infinitePi fun _ : ℕ => logarithmicSeriesMeasure q)).map
-        (fun z => ∑ i ∈ Finset.range z.1, z.2 i) = negativeBinomialMeasure r (1 - q) := by
-  have := isProbabilityMeasure_logarithmicSeriesMeasure hq0 hq1
-  rw [map_sum_range_prod_poissonMeasure, compoundPoissonMeasure_logarithmicSeriesMeasure
-    hr hq0 hq1]
 
 end TauCeti.Probability
 
