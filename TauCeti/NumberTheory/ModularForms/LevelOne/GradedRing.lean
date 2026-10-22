@@ -38,8 +38,9 @@ factor — finishes.
 * [J.-P. Serre, *A Course in Arithmetic*][serre1973], VII.3.2.
 * [Mathlib PR #39258](https://github.com/leanprover-community/mathlib4/pull/39258) and
   [Mathlib PR #38813](https://github.com/leanprover-community/mathlib4/pull/38813)
-  (Chris Birkbeck) — the upstream drafts (surjectivity, resp. freeness); this file ports the
-  freeness argument onto the current Mathlib pin.
+  (Chris Birkbeck): generation of the graded ring by `E₄` and `E₆`, resp. their algebraic
+  independence via weighted-homogeneous components and division by the discriminant
+  polynomial, the argument followed here.
 -/
 
 public noncomputable section
