@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
+import TauCeti.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.Normed.Lp.lpSpace
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
@@ -174,11 +175,7 @@ theorem weakLpNorm_eq_sSup (x : ι → E) :
     weakLpNorm (𝕜 := 𝕜) p x =
       sSup ((fun f : StrongDual 𝕜 E ↦ ‖WithLp.toLp p (fun i ↦ f (x i))‖) ''
         Metric.closedBall 0 1) := by
-  -- Mathlib's normed dual instance requires a normed source; scalar evaluations still separate.
-  let : NormedAddCommGroup (StrongDual 𝕜 E) :=
-    NormedAddCommGroup.ofSeparation fun f hf ↦ by
-      ext v
-      exact norm_le_zero_iff.mp (by simpa only [hf, zero_mul] using f.le_opNorm v)
+  let : NormedAddCommGroup (StrongDual 𝕜 E) := ContinuousLinearMap.normedAddCommGroup
   simpa only [weakLpNorm_apply, dualEvalLp_apply] using
     (dualEvalLp (𝕜 := 𝕜) p x).sSup_unitClosedBall_eq_norm.symm
 

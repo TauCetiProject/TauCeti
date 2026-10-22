@@ -76,6 +76,25 @@ theorem gradedCoderiv_filtration_lowering (G : InternalGrading R M)
     Submodule.map (gradedCoderiv G F q) (filtration R M (n + 1)) ≤ filtration R M n :=
   gradedCoderiv_filtration_add_le G F q (apply_eq_zero_of_mem_filtration_one R M hF) n
 
+/-- A graded coderivation does not increase tensor length. -/
+theorem gradedCoderiv_mem_filtration (G : InternalGrading R M)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} {z : ReducedTensorWords R M}
+    (hz : z ∈ filtration R M n) : gradedCoderiv G F q z ∈ filtration R M n :=
+  gradedCoderiv_filtration_add_le G F q (apply_eq_zero_of_mem_filtration_zero R M F) n
+    ⟨z, hz, rfl⟩
+
+/-- Graded coderivations whose Taylor maps agree on the words of length at most `n` agree on those
+words: each summand of the graded Taylor expansion of such a word applies the Taylor map to a
+block of it. -/
+theorem gradedCoderiv_apply_eq_of_mem_filtration {R : Type uR} {M : Type uM} [CommRing R]
+    [AddCommGroup M] [Module R M] (G : InternalGrading R M) {F F' : ReducedTensorWords R M →ₗ[R] M}
+    (q : ℤ) {n : ℕ} (h : ∀ z ∈ filtration R M n, F z = F' z) {z : ReducedTensorWords R M}
+    (hz : z ∈ filtration R M n) : gradedCoderiv G F q z = gradedCoderiv G F' q z := by
+  have hz' := gradedCoderiv_filtration_add_le G (F - F') q
+    (fun w hw ↦ by rw [LinearMap.sub_apply, h w hw, sub_self]) 0 ⟨z, by rwa [zero_add], rfl⟩
+  rw [filtration_zero, Submodule.mem_bot] at hz'
+  rw [← add_sub_cancel F' F, gradedCoderiv_add, LinearMap.add_apply, hz', add_zero]
+
 /-- A brace `F{g}` vanishes on the words of length at most `k + j` when `F` vanishes on the words
 of length at most `k` and `g` on those of length at most `j`: the coderivation of `g` shortens
 such a word to length at most `k`. -/

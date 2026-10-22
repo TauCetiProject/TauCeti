@@ -69,7 +69,7 @@ env:
 
 jobs:
   # Bors prefers the dedicated pool only when explicitly enabled and idle. Merge groups and
-  # all unavailable/retried bors placements retain Namespace, without waiting for a GitHub slot.
+  # all unavailable/retried bors build placements retain Namespace.
   # Skipping the picker leaves its answer empty, which `sandboxed-build` reads as Namespace.
   # Bors staging uses 16CPU/32GB, scheduling priority over PR overflow and a run-specific assignment.
   # Other Namespace builds retain 8CPU/16GB; rollback is the staging shape expression below.
@@ -84,6 +84,7 @@ jobs:
       contents: read  # immutable fleet selector checkout
     secrets:
       FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
+      TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
 
@@ -1124,9 +1125,9 @@ jobs:
         run: |
           export PATH="$HOME/.elan/bin:$PATH"
           # The sandboxed build/audit/lint body comes from the separately mounted, workflow-pinned
-          # gate checkout; candidate scripts are never invoked. Keeping the bwrap bash payload
-          # a fixed, comment-free one-liner
-          # is deliberate: a comment's apostrophe once closed this single-quoted string
+          # gate checkout; candidate scripts are never invoked. Bulk extraction is a temporary
+          # workaround until the pinned toolchain includes leanprover/lean4#15868.
+          # Keeping the bwrap bash payload a fixed, comment-free one-liner is deliberate: a comment's apostrophe once closed this single-quoted string
           # early and reddened every PR build (#694). All prose now lives in the script.
           export TAUCETI_PROJECT_ROOT="$PWD/pr"
           export TAUCETI_TRUSTED_SCRIPTS="$PWD/gate/scripts"
@@ -1177,7 +1178,7 @@ jobs:
             --chdir "$PWD/pr" \
             --unshare-user --unshare-ipc --unshare-pid --unshare-net --unshare-uts \
             --unshare-cgroup --disable-userns --die-with-parent --new-session \
-            -- bash -euxo pipefail -c 'exec bash ../gate/scripts/sandbox-build.sh'
+            -- bash -euxo pipefail -c 'python3 ../gate/scripts/bulk-unpack-cache.py; exec bash ../gate/scripts/sandbox-build.sh'
 
       - name: Prepare merge-group cache artifact metadata
         id: cache_stage

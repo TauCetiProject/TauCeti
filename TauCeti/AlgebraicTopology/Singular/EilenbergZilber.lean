@@ -21,7 +21,8 @@ its homotopy to the identity (`TopCat.alexanderWhitneyShuffleHomotopy`) is the s
 `SSet.alexanderWhitneyShuffleHomotopy`, transported along this isomorphism.  The composite
 `AW ∘ shuffle` is the simplicial composite itself (`TopCat.shuffle_alexanderWhitney`), so its
 homotopy to the identity (`TopCat.shuffleAlexanderWhitneyHomotopy`) is
-`SSet.shuffleAlexanderWhitneyHomotopy`.
+`SSet.shuffleAlexanderWhitneyHomotopy`. On homology the composite `AW ∘ shuffle` is therefore the
+identity (`TopCat.homologyMap_shuffle_comp_homologyMap_alexanderWhitney`).
 
 ## References
 
@@ -90,5 +91,15 @@ lemma eilenbergZilberHomotopyEquiv_hom (X Y : TopCat.{w}) (R S : C) :
 lemma eilenbergZilberHomotopyEquiv_inv (X Y : TopCat.{w}) (R S : C) :
     (eilenbergZilberHomotopyEquiv X Y R S).inv = shuffle X Y R S :=
   (rfl)
+
+/-- On homology, the shuffle map followed by the Alexander–Whitney map is the identity of
+`Hₙ(C(X; R) ⊗ C(Y; S))`. -/
+@[reassoc (attr := simp)]
+lemma homologyMap_shuffle_comp_homologyMap_alexanderWhitney (X Y : TopCat.{w}) (R S : C) (n : ℕ)
+    [((toSSet.obj X).chainComplex R ⊗ (toSSet.obj Y).chainComplex S).HasHomology n]
+    [((toSSet.obj (X ⊗ Y)).chainComplex (R ⊗ S)).HasHomology n] :
+    HomologicalComplex.homologyMap (shuffle X Y R S) n ≫
+        HomologicalComplex.homologyMap (alexanderWhitney X Y R S) n = 𝟙 _ :=
+  ((eilenbergZilberHomotopyEquiv X Y R S).toHomologyIso n).inv_hom_id
 
 end TopCat

@@ -161,20 +161,13 @@ theorem orthogonal_range_trajectoryOperator_le_map_ker
           : _ →ₗ[ℝ] _) := by
   intro v hv
   have h := hasWeakLineDerivOn_of_mem_orthogonal_range_trajectoryOperator hsym hv
-  -- The weak derivative `A v` as an `L²` path of linear maps `ℝ →L[ℝ] E`.
-  let lift := (ContinuousLinearMap.toSpanSingletonLIE ℝ E).toLinearIsometry.toContinuousLinearMap
-  let D := lift.compLp ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).holder 2 AL v)
-  have hD : HasWeakFDerivOn volume ⊤
-      (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) v) D := by
-    rw [hasWeakFDerivOn_iff]
-    intro r
-    refine (by simpa using h.smul_direction r : HasWeakLineDerivOn _ _ _ _ r).congr_ae_deriv ?_
-    filter_upwards [lift.coeFn_compLp ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).holder 2 AL v),
-      (ContinuousLinearMap.id ℝ (E →L[ℝ] E)).coeFn_holder (r := 2) AL v] with s hs hAs
-    simp [D, lift, hs, hAs]
-  exact ⟨mk _ v D hD,
-    LinearMap.mem_ker.mpr ((trajectoryOperator_neg_eq_zero_iff AL _).mpr (by simpa using h)),
-    by simp⟩
+  obtain ⟨z, hzv, hz⟩ := exists_prev_eq_and_trajectoryOperator_eq_of_hasWeakLineDerivOn (F := E)
+    (-AL) (f := 0) <| h.congr_ae_deriv <| by
+      filter_upwards [Lp.coeFn_zero E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
+        Lp.coeFn_neg AL] with s h0 hneg
+      rw [h0, hneg]
+      simp
+  exact ⟨z, hz, by simpa using hzv⟩
 
 /-- **The kernel of the formal adjoint is orthogonal to the range.** If the coefficient of
 `D_A u = u' + A u` is almost everywhere symmetric and `E` is finite dimensional, the value of

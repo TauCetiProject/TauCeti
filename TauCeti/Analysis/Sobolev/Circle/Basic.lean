@@ -40,8 +40,12 @@ product when `E` has them.
 
 ## Main statements
 
+* `TauCeti.CircleSobolev.weight_add_le`: Peetre's inequality
+  `(1 + |m + n|) ^ s ≤ (1 + |m|) ^ |s| (1 + |n|) ^ s`, for every real `s`.
 * `TauCeti.CircleSobolev.hasSum_single`: the Fourier series of an element converges to it in
   `H^s`, so trigonometric polynomials are dense (`CircleSobolev.dense_finite_support_coeff`).
+  Continuous linear maps out of `H^s` are therefore determined by their values on Fourier
+  monomials (`CircleSobolev.continuousLinearMap_ext_single`).
 * `TauCeti.CircleSobolev.isCompactOperator_inclusion`: for `t < s` and finite-dimensional `E`,
   the inclusion `H^s → H^t` is compact (Rellich's theorem).
 * `TauCeti.CircleSobolev.tsum_norm_coeff_le`: for `s > 1/2`, the Fourier coefficients are
@@ -100,8 +104,40 @@ theorem weight_neg (s : ℝ) (n : ℤ) : weight (-s) n = (weight s n)⁻¹ :=
 theorem weight_mul_weight_neg (s : ℝ) (n : ℤ) : weight s n * weight (-s) n = 1 := by
   rw [weight_neg, mul_inv_cancel₀ (weight_pos s n).ne']
 
+theorem one_le_weight {s : ℝ} (hs : 0 ≤ s) (n : ℤ) : 1 ≤ weight s n :=
+  Real.one_le_rpow (one_le_one_add_abs n) hs
+
 theorem weight_le_weight {s t : ℝ} (h : t ≤ s) (n : ℤ) : weight t n ≤ weight s n :=
   Real.rpow_le_rpow_of_exponent_le (one_le_one_add_abs n) h
+
+@[simp]
+theorem weight_neg_right (s : ℝ) (n : ℤ) : weight s (-n) = weight s n := by
+  simp [weight_def]
+
+private theorem weight_add_le_of_nonneg {s : ℝ} (hs : 0 ≤ s) (m n : ℤ) :
+    weight s (m + n) ≤ weight s m * weight s n := by
+  simp only [weight_def]
+  rw [← Real.mul_rpow (by positivity) (by positivity)]
+  refine Real.rpow_le_rpow (by positivity) ?_ hs
+  push_cast
+  nlinarith [abs_add_le (m : ℝ) n, abs_nonneg (m : ℝ), abs_nonneg (n : ℝ)]
+
+/-- **Peetre's inequality**: `(1 + |m + n|) ^ s ≤ (1 + |m|) ^ |s| (1 + |n|) ^ s` for every real
+`s`. Shifting frequencies by `m` therefore changes the weights of every order `s` by at most the
+factor `(1 + |m|) ^ |s|`. -/
+theorem weight_add_le (s : ℝ) (m n : ℤ) : weight s (m + n) ≤ weight |s| m * weight s n := by
+  rcases le_or_gt 0 s with hs | hs
+  · rw [abs_of_nonneg hs]
+    exact weight_add_le_of_nonneg hs m n
+  · rw [abs_of_neg hs]
+    have h := weight_add_le_of_nonneg (neg_nonneg.2 hs.le) (-m) (m + n)
+    rw [neg_add_cancel_left, weight_neg_right, weight_neg, weight_neg s (m + n)] at h
+    have hmn := weight_pos s (m + n)
+    have hn := weight_pos s n
+    rw [inv_le_iff_one_le_mul₀ hn] at h
+    calc weight s (m + n) ≤ weight (-s) m * (weight s (m + n))⁻¹ * weight s n *
+        weight s (m + n) := le_mul_of_one_le_left hmn.le h
+      _ = weight (-s) m * weight s n := by field_simp
 
 /-- For `s ≤ 0`, the weight at a frequency `|n| ≥ N` is at most `(1 + N) ^ s`. -/
 theorem weight_le_of_le_abs {s : ℝ} (hs : s ≤ 0) {N : ℕ} {n : ℤ} (hn : (N : ℝ) ≤ |(n : ℝ)|) :
@@ -421,6 +457,13 @@ theorem hasSum_single (a : CircleSobolev s E) : HasSum (fun n ↦ single n (a.co
     simp only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
       coe_toℓ2ₗᵢ_symm, LinearEquiv.apply_symm_apply, toℓ2_apply, toℓ2_single]
   · simp
+
+/-- Continuous linear maps out of `H^s` are determined by their values on the Fourier monomials. -/
+theorem continuousLinearMap_ext_single {F : Type*} [AddCommMonoid F] [Module ℂ F]
+    [TopologicalSpace F] [T2Space F] {f g : CircleSobolev s E →L[ℂ] F}
+    (h : ∀ n x, f (single n x) = g (single n x)) : f = g :=
+  ContinuousLinearMap.ext fun a ↦
+    ((hasSum_single a).mapL f).unique (by simpa only [h] using (hasSum_single a).mapL g)
 
 /-- Trigonometric polynomials, the elements of `H^s` with finitely many nonzero Fourier
 coefficients, are dense in `H^s`. -/

@@ -98,6 +98,12 @@ theorem marking_comp_map (i : Fin n) : F.curve.marking i ≫ F.map = F.ev i :=
 theorem ev_comp (i : Fin n) : F.ev i ≫ q = 𝟙 S := by
   rw [← marking_comp_map, Category.assoc, w, PointedPrestableFamily.marking_comp_toBase]
 
+/-- The map of a prestable map is locally of finite type: its composite with the target is the
+structure morphism of the source curve, which is proper. -/
+instance locallyOfFiniteType_map : LocallyOfFiniteType F.map :=
+  have : LocallyOfFiniteType (F.map ≫ q) := F.w ▸ inferInstance
+  locallyOfFiniteType_of_comp F.map q
+
 /-- The base change of a prestable map along `g : T ⟶ S`. Its source is the base change of
 the pointed source curve, its target is the second projection `V ×_S T ⟶ T`, and its map is
 the base change `C ×_S T ⟶ V ×_S T` of the map. -/
