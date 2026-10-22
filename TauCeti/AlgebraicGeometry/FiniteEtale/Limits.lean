@@ -24,6 +24,8 @@ the remaining half of (G2), are not treated here.
 
 ## Main results
 
+* `TauCeti.FiniteEtaleScheme.isInitial_iff_isEmpty`: a finite étale scheme is initial exactly
+  when its underlying scheme is empty.
 * `TauCeti.FiniteEtaleScheme.isOpenImmersion_hom_left`,
   `TauCeti.FiniteEtaleScheme.isClosedImmersion_hom_left`: the underlying morphism of a
   monomorphism of finite étale schemes is an open and closed immersion.
@@ -108,6 +110,22 @@ instance : PreservesFiniteLimits (finiteEtaleSchemeProperty S).ι :=
 /-- The inclusion of finite étale schemes over `S` into `Over S` preserves finite coproducts. -/
 instance : PreservesFiniteCoproducts (finiteEtaleSchemeProperty S).ι :=
   ⟨fun _ ↦ inferInstance⟩
+
+/-- A finite étale `S`-scheme whose underlying scheme is empty is initial. -/
+noncomputable def isInitialOfIsEmpty (X : FiniteEtaleScheme S) [IsEmpty X.obj.left] :
+    IsInitial X :=
+  IsInitial.ofUniqueHom
+    (fun _ ↦ ObjectProperty.homMk (Over.homMk (AlgebraicGeometry.isInitialOfIsEmpty.to _)
+      (AlgebraicGeometry.isInitialOfIsEmpty.hom_ext _ _)))
+    fun _ _ ↦ ObjectProperty.hom_ext _
+      (Over.OverMorphism.ext (AlgebraicGeometry.isInitialOfIsEmpty.hom_ext _ _))
+
+/-- A finite étale `S`-scheme is initial exactly when its underlying scheme is empty. -/
+theorem isInitial_iff_isEmpty {X : FiniteEtaleScheme S} :
+    Nonempty (IsInitial X) ↔ IsEmpty X.obj.left :=
+  ⟨fun ⟨h⟩ ↦ AlgebraicGeometry.isInitial_iff_isEmpty.mp
+      ⟨(h.isInitialObj (finiteEtaleSchemeProperty S).ι).isInitialObj (Over.forget S)⟩,
+    fun _ ↦ ⟨isInitialOfIsEmpty X⟩⟩
 
 variable {X Y : FiniteEtaleScheme S}
 
