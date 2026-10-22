@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Weak derivatives pass to `L¹` limits
@@ -36,7 +36,7 @@ public section
 
 namespace TauCeti
 
-open Filter MeasureTheory TopologicalSpace
+open Filter _root_.MeasureTheory TopologicalSpace
 open scoped Distributions ENNReal Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -66,15 +66,17 @@ theorem hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub [OpensMeasurableSpace 
   rw [hdφ] at hK'
   have h1 : Tendsto (fun i => ∫ x, lineDeriv ℝ (φ : E → ℝ) x v • u i x ∂μ) l
       (𝓝 (∫ x, lineDeriv ℝ (φ : E → ℝ) x v • w x ∂μ)) :=
-    tendsto_integral_smul_of_tendsto_lintegral_enorm_sub hK'
-      (fun x hx => lineDeriv_of_notMem_tsupport (fun hm => hx (φ.tsupport_subset hm)) v)
+    MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (ae_of_all _ hK')
+      (ae_of_all _ fun x hx =>
+        lineDeriv_of_notMem_tsupport (fun hm => hx (φ.tsupport_subset hm)) v)
       (Eventually.of_forall fun i =>
         integrable_lineDeriv_smul_of_locallyIntegrableOn (h i).locallyIntegrableOn φ v)
       (integrable_lineDeriv_smul_of_locallyIntegrableOn hw φ v).aestronglyMeasurable hu
   have h2 : Tendsto (fun i => ∫ x, (φ : E → ℝ) x • u' i x ∂μ) l
       (𝓝 (∫ x, (φ : E → ℝ) x • w' x ∂μ)) :=
-    tendsto_integral_smul_of_tendsto_lintegral_enorm_sub hK
-      (fun x hx => image_eq_zero_of_notMem_tsupport fun hm => hx (φ.tsupport_subset hm))
+    MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (ae_of_all _ hK)
+      (ae_of_all _ fun x hx =>
+        image_eq_zero_of_notMem_tsupport fun hm => hx (φ.tsupport_subset hm))
       (Eventually.of_forall fun i =>
         integrable_smul_of_locallyIntegrableOn (h i).locallyIntegrableOn_deriv φ)
       (integrable_smul_of_locallyIntegrableOn hw' φ).aestronglyMeasurable hu'
