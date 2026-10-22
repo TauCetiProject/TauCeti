@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
 
+import TauCeti.Algebra.Order.Field.HalfInteger
+
 /-!
 # Shortest vectors in the discriminant cosets of `Dₙ`
 
@@ -57,10 +59,11 @@ variable {n : ℕ}
 
 /-! ## The vector coset -/
 
-/-- A vector of the vector coset has integral coordinates, not all zero: their sum is odd. -/
+/-- A vector of the vector coset has integral coordinates, not all zero since their sum is odd;
+a nonzero coordinate has square at least one. -/
 private theorem exists_int_of_sub_checkerboardVector_mem [NeZero n] {x : Fin n → ℚ}
     (hx : x - checkerboardVector n ∈ checkerboardCarrier n) :
-    ∃ z : Fin n → ℤ, (∀ i, x i = (z i : ℚ)) ∧ ∃ i, z i ≠ 0 := by
+    ∃ z : Fin n → ℤ, (∀ i, x i = (z i : ℚ)) ∧ ∃ i, 1 ≤ z i * z i := by
   choose w hw using ((mem_checkerboardCarrier_iff _).mp hx).1
   have hx_eq (i : Fin n) :
       x i = ((w i + if i = checkerboardLastIndex n then 1 else 0 : ℤ) : ℚ) := by
@@ -72,19 +75,22 @@ private theorem exists_int_of_sub_checkerboardVector_mem [NeZero n] {x : Fin n �
   have hodd : Odd (∑ i, (w i + if i = checkerboardLastIndex n then 1 else 0)) := by
     rw [Finset.sum_add_distrib, Fintype.sum_ite_eq']
     exact ((mem_checkerboardCarrier_iff_even_sum w hw).mp hx).add_one
-  by_contra! h
-  simp [h] at hodd
+  obtain ⟨i, hi⟩ : ∃ i, (w i + if i = checkerboardLastIndex n then 1 else 0) ≠ 0 := by
+    by_contra! h
+    simp [h] at hodd
+  refine ⟨i, ?_⟩
+  rw [← abs_mul_abs_self]
+  exact one_le_mul_of_one_le_of_one_le (Int.one_le_abs hi) (Int.one_le_abs hi)
 
 /-- **Vectors of the vector coset have norm at least one.**  Their coordinates are integers with
 odd sum, so at least one of them is nonzero. -/
 theorem one_le_checkerboardLattice_form_self_of_sub_checkerboardVector_mem [NeZero n]
     {x : Fin n → ℚ} (hx : x - checkerboardVector n ∈ checkerboardCarrier n) :
     1 ≤ (checkerboardLattice n).form x x := by
-  obtain ⟨z, hz, i, hi⟩ := exists_int_of_sub_checkerboardVector_mem hx
+  obtain ⟨z, hz, i, hone⟩ := exists_int_of_sub_checkerboardVector_mem hx
   rw [checkerboardLattice_form_apply]
   have hle : x i * x i ≤ ∑ j, x j * x j :=
     Finset.single_le_sum (fun j _ ↦ mul_self_nonneg (x j)) (Finset.mem_univ i)
-  have hone : (1 : ℤ) ≤ z i * z i := by nlinarith [Int.one_le_abs hi, abs_mul_abs_self (z i)]
   have hone' : (1 : ℚ) ≤ x i * x i := by rw [hz i]; exact_mod_cast hone
   linarith
 
@@ -94,7 +100,7 @@ private theorem exists_eq_single_of_form_self_eq_one [NeZero n] {x : Fin n → �
     (hx : x - checkerboardVector n ∈ checkerboardCarrier n)
     (hnorm : (checkerboardLattice n).form x x = 1) :
     ∃ i, x = Pi.single i 1 ∨ x = -Pi.single i 1 := by
-  obtain ⟨z, hz, i, hi⟩ := exists_int_of_sub_checkerboardVector_mem hx
+  obtain ⟨z, hz, i, hone⟩ := exists_int_of_sub_checkerboardVector_mem hx
   have hsum : ∑ j, z j * z j = 1 := by
     rw [checkerboardLattice_form_apply] at hnorm
     have : ((∑ j, z j * z j : ℤ) : ℚ) = 1 := by
@@ -103,22 +109,14 @@ private theorem exists_eq_single_of_form_self_eq_one [NeZero n] {x : Fin n → �
       exact Finset.sum_congr rfl fun j _ ↦ by rw [hz j]
     exact_mod_cast this
   rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i)] at hsum
-  have hone : 1 ≤ z i * z i := by nlinarith [Int.one_le_abs hi, abs_mul_abs_self (z i)]
   have hrest : ∑ j ∈ univ.erase i, z j * z j = 0 :=
     le_antisymm (by linarith) (Finset.sum_nonneg fun j _ ↦ mul_self_nonneg (z j))
   have hzero (j : Fin n) (hj : j ≠ i) : z j = 0 :=
     mul_self_eq_zero.mp <| (Finset.sum_eq_zero_iff_of_nonneg fun k _ ↦ mul_self_nonneg (z k)).mp
       hrest j (Finset.mem_erase.mpr ⟨hj, Finset.mem_univ j⟩)
   refine ⟨i, ?_⟩
-  rcases Int.eq_one_or_neg_one_of_mul_eq_one (by linarith : z i * z i = 1) with h | h
-  · refine Or.inl (funext fun j ↦ ?_)
-    rcases eq_or_ne j i with rfl | hj
-    · simp [hz, h]
-    · simp [hz, hzero j hj, hj]
-  · refine Or.inr (funext fun j ↦ ?_)
-    rcases eq_or_ne j i with rfl | hj
-    · simp [hz, h]
-    · simp [hz, hzero j hj, hj]
+  rcases Int.eq_one_or_neg_one_of_mul_eq_one (by linarith : z i * z i = 1) with h | h <;>
+    [left; right] <;> funext j <;> rcases eq_or_ne j i with rfl | hj <;> simp [*]
 
 /-- **The minimal vectors of the vector coset.**  A vector `x` with `x - v ∈ Dₙ` has norm one
 exactly when it is one of the `2n` vectors `±eᵢ`. -/
@@ -160,15 +158,13 @@ theorem isLeast_form_self_checkerboardVectorClass [NeZero n] :
 
 /-! ## The spinor and cospinor cosets -/
 
-/-- A rational number in `ℤ + 1/2` has square at least `1 / 4`. -/
+/-- A rational number in `ℤ + 1/2` has square at least `1 / 4`: the coordinatewise form of
+`Int.quarter_le_cast_add_half_sq`. -/
 private theorem one_div_four_le_mul_self {y : ℚ} (hy : ∃ z : ℤ, y = z + 1 / 2) :
     1 / 4 ≤ y * y := by
   obtain ⟨z, rfl⟩ := hy
-  rcases le_or_gt 0 z with h | h
-  · have h' : (0 : ℚ) ≤ z := by exact_mod_cast h
-    nlinarith
-  · have h' : (z : ℚ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt h
-    nlinarith
+  rw [← sq]
+  exact Int.quarter_le_cast_add_half_sq z
 
 /-- **Vectors with all coordinates in `ℤ + 1/2` have norm at least `n / 4`**, since each
 coordinate has square at least `1 / 4`. -/
@@ -207,8 +203,8 @@ private theorem form_self_eq_div_four_iff {x : Fin n → ℚ}
   rw [checkerboardLattice_form_apply, hconst, eq_comm,
     Finset.sum_eq_sum_iff_of_le fun i _ ↦ one_div_four_le_mul_self (hx i)]
   refine forall_congr' fun i ↦ ?_
-  rw [imp_iff_right (Finset.mem_univ i), eq_comm, ← sq_eq_sq_iff_eq_or_eq_neg, sq, ← sq]
-  norm_num
+  rw [imp_iff_right (Finset.mem_univ i), eq_comm, show (1 / 4 : ℚ) = 1 / 2 * (1 / 2) by norm_num,
+    mul_self_eq_mul_self_iff]
 
 /-- For a vector with all coordinates `±1/2`, the coordinates of `x - s` are `0` or `-1`, and
 their sum is minus the number of negative coordinates. -/
@@ -218,18 +214,13 @@ private theorem sub_checkerboardSpinor_eq {x : Fin n → ℚ}
   rw [Pi.sub_apply, checkerboardSpinor_apply]
   rcases hx i with h | h <;> rw [h] <;> norm_num
 
-/-- The number of negative coordinates of a `±1/2` vector, as an integer sum. -/
-private theorem sum_ite_eq_card {x : Fin n → ℚ} :
-    ∑ i, (if x i = -(1 / 2) then (1 : ℤ) else 0) = #{i | x i = -(1 / 2)} := by
-  rw [Finset.sum_ite, Finset.sum_const_zero, add_zero, Finset.sum_const, nsmul_eq_mul, mul_one]
-
 /-- A `±1/2` vector lies in the spinor coset exactly when it has an even number of negative
 coordinates. -/
 private theorem sub_checkerboardSpinor_mem_iff {x : Fin n → ℚ}
     (hx : ∀ i, x i = 1 / 2 ∨ x i = -(1 / 2)) :
     x - checkerboardSpinor n ∈ checkerboardCarrier n ↔ Even #{i | x i = -(1 / 2)} := by
   rw [mem_checkerboardCarrier_iff_even_sum _ (sub_checkerboardSpinor_eq hx), Finset.sum_neg_distrib,
-    even_neg, sum_ite_eq_card, Int.even_coe_nat]
+    even_neg, Finset.sum_boole, Int.even_coe_nat]
 
 /-- A `±1/2` vector lies in the cospinor coset exactly when it has an odd number of negative
 coordinates. -/
@@ -246,7 +237,7 @@ private theorem sub_checkerboardCospinor_mem_iff [NeZero n] {x : Fin n → ℚ}
     linarith
   rw [mem_checkerboardCarrier_iff_even_sum _ hcoord, Finset.sum_add_distrib,
     Finset.sum_neg_distrib, Fintype.sum_ite_eq',
-    sum_ite_eq_card, even_add_one, odd_neg, Int.odd_coe_nat]
+    Finset.sum_boole, even_add_one, odd_neg, Int.odd_coe_nat]
 
 /-- **Vectors of the spinor coset have norm at least `n / 4`.** -/
 theorem div_four_le_checkerboardLattice_form_self_of_sub_checkerboardSpinor_mem
