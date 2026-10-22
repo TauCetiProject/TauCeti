@@ -16,8 +16,9 @@ import TauCeti.Analysis.Normed.Algebra.Basic
 In a real Banach algebra, exponentiating the continuous commutator operator
 `y ↦ x * y - y * x` gives conjugation by `exp x`. This is the Banach-algebra shadow of the Lie-group
 identity `Ad (lieExp X) = exp (ad X)`. The underlying linear map of the bounded commutator is
-Mathlib's `LieAlgebra.ad` for the associative-ring Lie bracket. This identification and the
-commutator itself only require a seminormed real algebra, without completeness.
+Mathlib's `LieAlgebra.ad` for the associative-ring Lie bracket. The commutator itself works in
+compatible nonunital seminormed algebras over any nontrivially normed field; the identification
+with `LieAlgebra.ad` uses a unital seminormed algebra. Neither requires completeness.
 
 ## Main definitions
 
@@ -44,20 +45,27 @@ namespace TauCeti.Lie
 
 open NormedSpace
 
-section Seminormed
+section NonUnital
 
-variable {R : Type*} [SeminormedRing R] [NormedAlgebra ℝ R]
+variable (𝕜 : Type*) {R : Type*} [NontriviallyNormedField 𝕜]
+  [NonUnitalSeminormedRing R] [NormedSpace 𝕜 R]
+  [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
 
 /-- The continuous-linear family of endomorphisms `y ↦ x * y - y * x`. -/
-def continuousCommutator : R →L[ℝ] R →L[ℝ] R :=
-  ContinuousLinearMap.mul ℝ R - (ContinuousLinearMap.mul ℝ R).flip
+def continuousCommutator : R →L[𝕜] R →L[𝕜] R :=
+  ContinuousLinearMap.mul 𝕜 R - (ContinuousLinearMap.mul 𝕜 R).flip
 
 @[simp]
 theorem continuousCommutator_apply (x y : R) :
-    continuousCommutator x y = x * y - y * x := by
+    continuousCommutator 𝕜 x y = x * y - y * x := by
   simp [continuousCommutator]
 
+end NonUnital
+
 section AlgebraicAdjoint
+
+variable (𝕜 : Type*) {R : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedRing R] [NormedAlgebra 𝕜 R]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -65,14 +73,12 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 the ring-commutator bracket supplied by `LieRing.ofAssociativeRing`. Callers who restate the
 right-hand side should enable that instance locally. -/
 theorem continuousCommutator_toLinearMap (x : R) :
-    (continuousCommutator x).toLinearMap = LieAlgebra.ad ℝ R x := by
+    (continuousCommutator 𝕜 x).toLinearMap = LieAlgebra.ad 𝕜 R x := by
   rw [LieAlgebra.ad_eq_lmul_left_sub_lmul_right]
   ext y
   simp [continuousCommutator]
 
 end AlgebraicAdjoint
-
-end Seminormed
 
 section Complete
 
@@ -123,14 +129,14 @@ theorem exp_mulRight (x : R) :
 exponential. -/
 @[simp]
 theorem exp_continuousCommutator_apply (x y : R) :
-    exp (continuousCommutator x) y = exp x * y * exp (-x) := by
+    exp (continuousCommutator ℝ x) y = exp x * y * exp (-x) := by
   let L := ContinuousLinearMap.mul ℝ R x
   let R' := (ContinuousLinearMap.mul ℝ R).flip x
   have hcomm : Commute L R' := by
     ext z
     simp only [L, R', mul_apply_eq_comp, ContinuousLinearMap.mul_apply',
       ContinuousLinearMap.flip_apply, mul_assoc]
-  have hcommutator : continuousCommutator x = L - R' := by
+  have hcommutator : continuousCommutator ℝ x = L - R' := by
     rw [continuousCommutator, sub_apply]
   rw [hcommutator, sub_eq_add_neg, exp_add_of_commute hcomm.neg_right,
     mul_apply_eq_comp]
@@ -140,7 +146,7 @@ theorem exp_continuousCommutator_apply (x y : R) :
 
 /-- Exponentiating the continuous commutator gives the bounded conjugation operator. -/
 theorem exp_continuousCommutator (x : R) :
-    exp (continuousCommutator x) =
+    exp (continuousCommutator ℝ x) =
       ContinuousLinearMap.mulLeftRight ℝ R (exp x) (exp (-x)) := by
   ext y
   simp
