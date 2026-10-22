@@ -42,6 +42,7 @@ and with `c` circles has sum `(q + q⁻¹) ^ c` (`TauCeti.OrientedPDCode.enhance
 ## Main definitions
 
 * `TauCeti.PDCode.EnhancedState`: a state with a `1`/`X` label on every resolved circle.
+* `TauCeti.Khovanov.labelingQuantumDegree`: the quantum degree contributed by the circle labels.
 * `TauCeti.OrientedPDCode.stateCochainDegree`: the cochain degree `|S| - n₋` of a state.
 * `TauCeti.OrientedPDCode.stateQuantumShift`: the quantum shift `|S| + n₊ - 2 n₋` of a state.
 * `TauCeti.OrientedPDCode.enhancedQuantumDegree`: the quantum degree of an enhanced state.
@@ -86,6 +87,22 @@ abbrev EnhancedState (D : PDCode n) : Type :=
 
 end PDCode
 
+namespace Khovanov
+
+variable {ι : Type*} [Fintype ι]
+
+variable (ι) in
+/-- The quantum degree of a labelling of the circles: `+1` for each circle labelled `1` and `-1`
+for each circle labelled `X`. -/
+def labelingQuantumDegree (l : ι → Bool) : ℤ :=
+  ∑ i, bif l i then -1 else 1
+
+/-- The defining sum of the quantum degree of a labelling. -/
+theorem labelingQuantumDegree_def (l : ι → Bool) :
+    labelingQuantumDegree ι l = ∑ i, bif l i then -1 else 1 := (rfl)
+
+end Khovanov
+
 namespace OrientedPDCode
 
 variable {n : ℕ}
@@ -112,11 +129,11 @@ theorem stateQuantumShift_def (D : OrientedPDCode n) (s : Fin n → Bool) :
 /-- The quantum degree of an enhanced state: the quantum shift of its state, plus `1` for each
 circle labelled `1` and minus `1` for each circle labelled `X`. -/
 def enhancedQuantumDegree (D : OrientedPDCode n) (e : D.toPDCode.EnhancedState) : ℤ :=
-  D.stateQuantumShift e.1 + ∑ c, bif e.2 c then -1 else 1
+  D.stateQuantumShift e.1 + Khovanov.labelingQuantumDegree _ e.2
 
 /-- The defining formula of the quantum degree of an enhanced state. -/
 theorem enhancedQuantumDegree_def (D : OrientedPDCode n) (e : D.toPDCode.EnhancedState) :
-    D.enhancedQuantumDegree e = D.stateQuantumShift e.1 + ∑ c, bif e.2 c then -1 else 1 := (rfl)
+    D.enhancedQuantumDegree e = D.stateQuantumShift e.1 + Khovanov.labelingQuantumDegree _ e.2 := (rfl)
 
 /-- **The enhanced state sum** of an oriented code: the sum of `(-1) ^ i q ^ j` over all enhanced
 states, where `i` is the cochain degree and `j` the quantum degree, with `q = T`; that is, the
@@ -134,9 +151,9 @@ theorem enhancedStateSum_def (D : OrientedPDCode n) :
 /-- Labelling the `k` circles of a state by `1` or `X` in all possible ways contributes
 `(q + q⁻¹) ^ k`. -/
 private theorem sum_T_labelDegree (D : PDCode n) (s : Fin n → Bool) :
-    ∑ l : D.ResolvedCircle s → Bool, (T (∑ c, bif l c then -1 else 1) : ℤ[T;T⁻¹]) =
+    ∑ l : D.ResolvedCircle s → Bool, (T (Khovanov.labelingQuantumDegree _ l) : ℤ[T;T⁻¹]) =
       (T 1 + T (-1)) ^ D.stateLoopCount s := by
-  simp_rw [T_sum]
+  simp_rw [Khovanov.labelingQuantumDegree_def, T_sum]
   rw [← Fintype.prod_sum fun _ (b : Bool) ↦ (T (bif b then -1 else 1) : ℤ[T;T⁻¹]),
     ← PDCode.card_resolvedCircle, ← Finset.card_univ, ← Finset.prod_const]
   simp [add_comm]

@@ -23,7 +23,7 @@ by `1` (`false`) and `X` (`true`), and its quantum grading, in which a labelling
 For a state `s` of a PD-code `D`, the labellings `D.ResolvedCircle s → Bool` are exactly the
 enhanced states over `s` (`TauCeti.PDCode.EnhancedState`), and the quantum degree of an enhanced
 state is the quantum shift of its state plus the degree of its labelling
-(`TauCeti.OrientedPDCode.enhancedQuantumDegree_eq_add_labelingQuantumDegree`). So the basis
+(`TauCeti.OrientedPDCode.enhancedQuantumDegree_def`). So the basis
 `TauCeti.Khovanov.circleBasis` identifies the circle tensor of a resolution with the free module on
 the enhanced states over it, its `Finsupp` model.
 
@@ -40,7 +40,6 @@ any ordering of the circles or parenthesization of the tensor product, and it is
 * `TauCeti.Khovanov.labelBasis`: the basis `1, ε` of `R[ε]` indexed by the labels `false, true`.
 * `TauCeti.Khovanov.CircleTensor`: the tensor product of one copy of `R[ε]` per circle.
 * `TauCeti.Khovanov.circleBasis`: its basis indexed by labellings.
-* `TauCeti.Khovanov.labelingQuantumDegree`: the quantum degree of a labelling.
 * `TauCeti.Khovanov.circleQuantumGrading`: the quantum grading of the circle tensor.
 
 ## Main results
@@ -187,16 +186,6 @@ section Degree
 
 variable {ι : Type*} [Fintype ι]
 
-variable (ι) in
-/-- The quantum degree of a labelling of the circles: `+1` for each circle labelled `1` and `-1`
-for each circle labelled `X`. -/
-def labelingQuantumDegree (l : ι → Bool) : ℤ :=
-  ∑ i, bif l i then -1 else 1
-
-/-- The defining sum of the quantum degree of a labelling. -/
-theorem labelingQuantumDegree_def (l : ι → Bool) :
-    labelingQuantumDegree ι l = ∑ i, bif l i then -1 else 1 := (rfl)
-
 /-- The quantum degree of a labelling is the number of circles minus twice the number of
 `X`-labels. -/
 theorem labelingQuantumDegree_eq (l : ι → Bool) :
@@ -270,6 +259,7 @@ theorem tprod_mem_circleQuantumGrading_piece {d : ι → ℤ} {x : ι → R[ε]}
   rw [mem_circleQuantumGrading_piece_iff]
   intro l hl
   rw [circleBasis_repr_tprod] at hl
+  rw [labelingQuantumDegree_def]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hi := mem_quantumGrading_piece_iff.mp (hx i)
   have hli : (labelBasis R).repr (x i) (l i) ≠ 0 := fun h ↦ hl (Finset.prod_eq_zero (mem_univ i) h)
@@ -304,13 +294,5 @@ theorem isHomogeneous_fiberwiseMul (f : σ → τ) :
 end Grading
 
 end Khovanov
-
-/-- The quantum degree of an enhanced state is the quantum shift of its state plus the quantum
-degree of its labelling of the resolved circles. -/
-theorem OrientedPDCode.enhancedQuantumDegree_eq_add_labelingQuantumDegree {n : ℕ}
-    (D : OrientedPDCode n) (e : D.toPDCode.EnhancedState) :
-    D.enhancedQuantumDegree e =
-      D.stateQuantumShift e.1 + Khovanov.labelingQuantumDegree _ e.2 := by
-  rw [enhancedQuantumDegree_def, Khovanov.labelingQuantumDegree_def]
 
 end TauCeti
