@@ -114,18 +114,6 @@ theorem le_positiveEDist {φ : V → ℕ∞} (hs : φ s = 0)
       _ ≤ (ArrowWalk.length p : ℕ∞) + 1 := by gcongr; exact ih fun a ha ↦ hp a (.inl ha)
       _ = ArrowWalk.length (ArrowWalk.cons p e) := by simp [ArrowWalk.length]
 
-/-- The target of every arrow on a walk from `s` along arrows of positive capacity is positively
-reachable from `s`. -/
-theorem positiveReachable_of_mem_arrows {p : ArrowWalk Q s t} (hp : ∀ a ∈ p.arrows, 0 < c a.2.2)
-    {a : Σ x y, Q x y} (ha : a ∈ p.arrows) : PositiveReachable c s a.2.1 := by
-  induction p with
-  | nil => simp at ha
-  | cons p e ih =>
-    simp only [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at hp ha
-    rcases ha with ha | rfl
-    · exact ih (fun a ha ↦ hp a (.inl ha)) ha
-    · exact positiveReachable_def.2 ⟨ArrowWalk.cons p e, fun a ha ↦ hp a (by simpa using ha)⟩
-
 /-- The last arrow of a shortest walk along arrows of positive capacity raises the positive
 distance by one, and the rest of the walk is again a shortest walk. -/
 private theorem length_eq_positiveEDist_of_cons {p : ArrowWalk Q s t} {e : Q t x}

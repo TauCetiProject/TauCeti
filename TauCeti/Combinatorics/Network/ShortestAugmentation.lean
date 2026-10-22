@@ -106,17 +106,6 @@ theorem shortestAugmentationStep_def {f g : BoundedFlow lo hi s t} :
   Iff.rfl
 
 omit [IsOrderedAddMonoid K] in
-/-- A bounded assignment whose terminals coincide has value zero. -/
-private theorem val_eq_zero_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.val = 0 := by
-  subst hst
-  rw [val_def, ← sum_excessAt f.toFun, Fintype.sum_eq_single s fun v hv ↦ f.conserve v hv hv]
-
-omit [IsOrderedAddMonoid K] in
-/-- When the terminals coincide, every bounded assignment is maximum. -/
-private theorem isMaximum_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.IsMaximum :=
-  isMaximum_iff.2 fun g ↦ (val_eq_zero_of_eq hst g).trans_le (val_eq_zero_of_eq hst f).ge
-
-omit [IsOrderedAddMonoid K] in
 /-- A step of shortest-path augmentation traverses at least one arrow, so its terminals are
 distinct. -/
 private theorem ShortestAugmentationStep.source_ne_sink {f g : BoundedFlow lo hi s t}
