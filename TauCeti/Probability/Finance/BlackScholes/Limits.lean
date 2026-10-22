@@ -142,15 +142,11 @@ theorem tendsto_callPrice_sub_spot_atTop (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < 
 
 /-! ### Limits at maturity -/
 
-/-- A continuous function tends to its value at `0` as its argument tends to `0⁺`. -/
-private theorem tendsto_nhdsGT_zero_of_continuous {f : ℝ → ℝ} (hf : Continuous f) :
-    Tendsto f (𝓝[>] 0) (𝓝 (f 0)) :=
-  (hf.tendsto 0).mono_left nhdsWithin_le_nhds
-
 /-- As the remaining maturity tends to `0⁺`, the discounted strike `K e^{-rτ}` tends to `K`. -/
 private theorem tendsto_discount_nhdsGT_zero :
     Tendsto (fun u => K * exp (-r * u)) (𝓝[>] 0) (𝓝 K) := by
-  simpa using tendsto_nhdsGT_zero_of_continuous (f := fun u => K * exp (-r * u)) (by fun_prop)
+  have h : Continuous fun u => K * exp (-r * u) := by fun_prop
+  simpa using h.continuousWithinAt.tendsto (s := Ioi 0) (x := 0)
 
 /-- For a positive maturity, `d₊ = log (s / K) / (σ √τ) + (r + σ² / 2) √τ / σ`. -/
 theorem dPlus_eq_add (hσ : σ ≠ 0) (hτ : 0 < τ) :
@@ -165,8 +161,8 @@ theorem dPlus_eq_add (hσ : σ ≠ 0) (hτ : 0 < τ) :
 tends to `0`. -/
 theorem tendsto_dPlus_sub (hσ : 0 < σ) :
     Tendsto (fun u => dPlus s r σ K u - log (s / K) * (σ * √u)⁻¹) (𝓝[>] 0) (𝓝 0) := by
-  refine ((tendsto_nhdsGT_zero_of_continuous (f := fun u => (r + σ ^ 2 / 2) * √u / σ)
-    (by fun_prop)).congr' ?_).trans (by simp)
+  have h : Continuous fun u => (r + σ ^ 2 / 2) * √u / σ := by fun_prop
+  refine ((h.continuousWithinAt.tendsto (s := Ioi 0) (x := 0)).congr' ?_).trans (by simp)
   filter_upwards [self_mem_nhdsWithin] with u hu
   rw [dPlus_eq_add hσ.ne' hu, add_sub_cancel_left]
 
@@ -195,28 +191,23 @@ theorem tendsto_dPlus_maturity_strike (hσ : 0 < σ) (hK : 0 < K) :
     Tendsto (dPlus K r σ K) (𝓝[>] 0) (𝓝 0) := by
   simpa [div_self hK.ne'] using tendsto_dPlus_sub (s := K) (r := r) (K := K) hσ
 
-/-- As the maturity tends to `0⁺`, `σ √τ → 0`, so `d₋ = d₊ - σ √τ` has the same limit as `d₊`. -/
-private theorem tendsto_mul_sqrt_nhds_zero (hσ : 0 < σ) :
-    Tendsto (fun u => σ * √u) (𝓝[>] 0) (𝓝 0) :=
-  (tendsto_mul_sqrt_nhdsGT_zero hσ).mono_right nhdsWithin_le_nhds
-
 /-- As the maturity tends to `0⁺`, `d₋ → +∞` in the money. -/
 theorem tendsto_dMinus_maturity_atTop (hσ : 0 < σ) (hK : 0 < K) (hsK : K < s) :
     Tendsto (dMinus s r σ K) (𝓝[>] 0) atTop :=
-  ((tendsto_dPlus_maturity_atTop hσ hK hsK).atTop_add (tendsto_mul_sqrt_nhds_zero hσ).neg).congr
+  ((tendsto_dPlus_maturity_atTop hσ hK hsK).atTop_add (tendsto_mul_sqrt_nhds_zero σ).neg).congr
     fun u => by rw [dMinus_def, sub_eq_add_neg]
 
 /-- As the maturity tends to `0⁺`, `d₋ → -∞` out of the money. -/
 theorem tendsto_dMinus_maturity_atBot (hσ : 0 < σ) (hs : 0 < s) (hsK : s < K) :
     Tendsto (dMinus s r σ K) (𝓝[>] 0) atBot :=
-  ((tendsto_dPlus_maturity_atBot hσ hs hsK).atBot_add (tendsto_mul_sqrt_nhds_zero hσ).neg).congr
+  ((tendsto_dPlus_maturity_atBot hσ hs hsK).atBot_add (tendsto_mul_sqrt_nhds_zero σ).neg).congr
     fun u => by rw [dMinus_def, sub_eq_add_neg]
 
 /-- As the maturity tends to `0⁺`, `d₋ → 0` at the money. -/
 theorem tendsto_dMinus_maturity_strike (hσ : 0 < σ) (hK : 0 < K) :
     Tendsto (dMinus K r σ K) (𝓝[>] 0) (𝓝 0) := by
   simpa only [sub_zero] using ((tendsto_dPlus_maturity_strike (r := r) hσ hK).sub
-    (tendsto_mul_sqrt_nhds_zero hσ)).congr fun u => (dMinus_def K r σ K u).symm
+    (tendsto_mul_sqrt_nhds_zero σ)).congr fun u => (dMinus_def K r σ K u).symm
 
 /-- If `Φ(d₊)` and `Φ(d₋)` both tend to `a` at maturity, the call price tends to `s a - K a`. -/
 private theorem tendsto_callPrice_maturity_of_tendsto_cdf {a : ℝ}
@@ -307,7 +298,7 @@ theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hσ : 0 <
     linarith [div_pos hs hK]
   have hA : Tendsto (fun u => s * (log (s / K) + (r + σ ^ 2 / 2) * u)) (𝓝[>] 0)
       (𝓝 (s * (log (s / K) + (r + σ ^ 2 / 2) * 0))) :=
-    tendsto_nhdsGT_zero_of_continuous (by fun_prop)
+    (Continuous.continuousWithinAt (by fun_prop)).tendsto
   rw [mul_zero, add_zero] at hA
   have hd : Tendsto (dPlus s r σ K) (𝓝[>] 0) (cocompact ℝ) := by
     rcases hsK.lt_or_gt with hsK | hsK
