@@ -159,7 +159,7 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
   have hA : ‖WithLp.toLp p (fun i ↦ T (y i))‖ = A ^ (1 / p.toReal) := by
     rw [PiLp.norm_eq_sum hq]
     have hy (x : s) : ‖T (y x)‖ ^ p.toReal = w x * ‖T x‖ ^ p.toReal :=
-      by rw [map_smul, norm_ofReal_rpow_inv_smul_rpow (hw x) hq]
+      by rw [map_smul, norm_ofReal_rpow_inv_smul_rpow (hw x) hq.ne']
     rw [Finset.sum_congr rfl fun x _ ↦ hy x,
       Finset.sum_coe_sort s fun x ↦ w x * ‖T x‖ ^ p.toReal]
   have hge' (f : dualBall 𝕜 E) :
@@ -184,7 +184,7 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
       _ = ∑ x : s, C ^ p.toReal * (w x * ‖g x‖ ^ p.toReal) := by
         refine Finset.sum_congr rfl fun x _ ↦ ?_
         have hy : ‖g (y x)‖ ^ p.toReal = w x * ‖g x‖ ^ p.toReal :=
-          by rw [map_smul, norm_ofReal_rpow_inv_smul_rpow (hw x) hq]
+          by rw [map_smul, norm_ofReal_rpow_inv_smul_rpow (hw x) hq.ne']
         simp only [Pi.smul_apply, map_smul, norm_smul, RCLike.norm_ofReal,
           abs_of_nonneg hC]
         rw [Real.mul_rpow hC (norm_nonneg _), hy]
