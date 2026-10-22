@@ -21,6 +21,19 @@ The construction combines `Proj.map` for coefficient inclusion, the homogeneous 
 comparison `HomogeneousLocalization.Away.baseChangeEquiv`, and Mathlib's
 `pullbackSpecIso` and local criterion `Scheme.isPullback_of_openCover`.
 
+The base change need not be presented as the tensor product itself: a graded ring homomorphism
+`f : 𝒜 →+*ᵍ ℬ` over `R → S` exhibiting `B` as the base change of `A` (`IsBaseChange S f`) also
+gives a cartesian square of projective spectra (`Proj.isPullback_map_of_isBaseChange`). This is the
+form in which affine-local `Proj` constructions, such as the charts of a relative `Proj`, are
+compared over a localization of the base.
+
+## Main results
+
+* `AlgebraicGeometry.Proj.isPullback_baseChange`: `Proj` of `S ⊗[R] A` is the base change of
+  `Proj A` along `Spec S ⟶ Spec R`.
+* `AlgebraicGeometry.Proj.isPullback_map_of_isBaseChange`: the same for a graded ring homomorphism
+  exhibiting `B` as the base change of `A`.
+
 ## References
 
 * [Stacks Project, Lemma 27.11.6](https://stacks.math.columbia.edu/tag/01N2),
@@ -220,5 +233,108 @@ theorem baseChangeIso_hom_snd :
     (baseChangeIso 𝒜 S).hom ≫ pullback.snd _ _ =
       toSpecCoeff (fun n ↦ (𝒜 n).baseChange S) :=
   (isPullback_baseChange 𝒜 S).isoPullback_hom_snd
+
+section IsBaseChange
+
+variable {S} {B : Type u} [CommRing B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
+  {ℬ : ℕ → Submodule S B} [GradedAlgebra ℬ] (f : 𝒜 →+*ᵍ ℬ)
+  (hfR : ∀ r : R, f (algebraMap R A r) = algebraMap R B r)
+
+/-- The graded comparison map `S ⊗[R] A → B`, `s ⊗ a ↦ s • f a`, of a graded ring homomorphism
+`f` over the coefficient extension `R → S`. -/
+private noncomputable def baseChangeLift : (fun n ↦ (𝒜 n).baseChange S) →+*ᵍ ℬ where
+  __ := (Algebra.TensorProduct.lift (Algebra.ofId S B) ⟨f.toRingHom, hfR⟩
+    fun _ _ ↦ .all _ _).toRingHom
+  map_mem {n x} hx := by
+    rw [Submodule.baseChange_eq_span] at hx
+    induction hx using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨a, ha, rfl⟩ := hx
+      simpa using f.map_mem ha
+    | zero => simp
+    | add x y _ _ hx hy => simpa using add_mem hx hy
+    | smul s x _ hx => simpa using Submodule.smul_mem _ s hx
+
+omit [GradedAlgebra 𝒜] [GradedAlgebra ℬ] in
+private theorem baseChangeLift_tmul (s : S) (a : A) :
+    baseChangeLift 𝒜 f hfR (s ⊗ₜ[R] a) = s • f a := by
+  simp [baseChangeLift, Algebra.smul_def]
+
+omit [GradedAlgebra 𝒜] [GradedAlgebra ℬ] in
+private theorem baseChangeLift_comp_baseChangeMap :
+    (baseChangeLift 𝒜 f hfR).comp (baseChangeMap S 𝒜) = f :=
+  GradedRingHom.ext fun a ↦ by simp [baseChangeLift_tmul]
+
+variable (hf : IsBaseChange S (AlgHom.mk f.toRingHom hfR).toLinearMap)
+include hf
+
+omit [GradedAlgebra 𝒜] [GradedAlgebra ℬ] in
+private theorem bijective_baseChangeLift : Function.Bijective (baseChangeLift 𝒜 f hfR) := by
+  have h : ⇑(baseChangeLift 𝒜 f hfR) = hf.equiv := by
+    funext x
+    induction x using TensorProduct.inductionOn with
+    | tmul s a => simp [baseChangeLift_tmul, IsBaseChange.equiv_tmul]
+    | add x y hx hy => simp [hx, hy]
+  rw [h]
+  exact hf.equiv.bijective
+
+/-- The inverse of the graded comparison map `S ⊗[R] A → B`, which is graded as well. -/
+private noncomputable def baseChangeLiftInv : ℬ →+*ᵍ (fun n ↦ (𝒜 n).baseChange S) where
+  __ := (RingEquiv.ofBijective _ (bijective_baseChangeLift 𝒜 f hfR hf)).symm.toRingHom
+  map_mem {n b} hb := (baseChangeLift 𝒜 f hfR).mem_of_map_mem
+    (bijective_baseChangeLift 𝒜 f hfR hf).injective (by
+      rwa [← RingEquiv.ofBijective_apply _ (bijective_baseChangeLift 𝒜 f hfR hf),
+        RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.apply_symm_apply])
+
+private theorem baseChangeLift_baseChangeLiftInv :
+    Function.RightInverse (baseChangeLiftInv 𝒜 f hfR hf) (baseChangeLift 𝒜 f hfR) :=
+  (RingEquiv.ofBijective _ (bijective_baseChangeLift 𝒜 f hfR hf)).apply_symm_apply
+
+private theorem baseChangeLiftInv_baseChangeLift :
+    Function.LeftInverse (baseChangeLiftInv 𝒜 f hfR hf) (baseChangeLift 𝒜 f hfR) :=
+  (RingEquiv.ofBijective _ (bijective_baseChangeLift 𝒜 f hfR hf)).symm_apply_apply
+
+/-- If a graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ` over `R → S` exhibits `B` as the base change
+`S ⊗[R] A`, then `ℬ₊ ≤ 𝒜₊.map f`, so that `f` induces a morphism `Proj ℬ ⟶ Proj 𝒜`. -/
+theorem _root_.HomogeneousIdeal.irrelevant_le_map_of_isBaseChange :
+    HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f := by
+  rw [← baseChangeLift_comp_baseChangeMap 𝒜 f hfR]
+  exact HomogeneousIdeal.irrelevant_le_map_comp
+    (HomogeneousIdeal.irrelevant_le_map_baseChangeMap S 𝒜)
+    (HomogeneousIdeal.irrelevant_le_map_of_surjective _
+      (bijective_baseChangeLift 𝒜 f hfR hf).surjective)
+
+/-- **`Proj` commutes with base change.** If a graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ` over the
+coefficient extension `R → S` exhibits `B` as the base change `S ⊗[R] A`, then the square
+
+`Proj ℬ ⟶ Proj 𝒜`, `Spec S ⟶ Spec R`
+
+formed by `Proj.map f` and the coefficient projections is cartesian. This is
+`Proj.isPullback_baseChange` for an arbitrary presentation of the base change. -/
+theorem isPullback_map_of_isBaseChange :
+    IsPullback (map f (HomogeneousIdeal.irrelevant_le_map_of_isBaseChange 𝒜 f hfR hf))
+      (toSpecCoeff ℬ) (toSpecCoeff 𝒜) (Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
+  have hfg := baseChangeLift_baseChangeLiftInv 𝒜 f hfR hf
+  have hgf := baseChangeLiftInv_baseChangeLift 𝒜 f hfR hf
+  have hmap : map f (HomogeneousIdeal.irrelevant_le_map_of_isBaseChange 𝒜 f hfR hf) =
+      (mapIso _ _ hfg hgf).hom ≫ baseChangeProjection 𝒜 S := by
+    rw [map_congr (baseChangeLift_comp_baseChangeMap 𝒜 f hfR).symm _
+      (HomogeneousIdeal.irrelevant_le_map_comp
+        (HomogeneousIdeal.irrelevant_le_map_baseChangeMap S 𝒜)
+        (HomogeneousIdeal.irrelevant_le_map_of_surjective _ hfg.surjective)),
+      map_comp, mapIso_hom, baseChangeProjection]
+  have hcoeff : (mapIso _ _ hfg hgf).hom ≫ toSpecCoeff (fun n ↦ (𝒜 n).baseChange S) =
+      toSpecCoeff ℬ := by
+    rw [mapIso_hom]
+    exact map_toSpecCoeff _ _ _ fun r ↦ Subtype.ext (by
+      simp [baseChangeLift_tmul, Algebra.smul_def])
+  refine (isPullback_baseChange 𝒜 S).of_iso (mapIso _ _ hfg hgf).symm (.refl _) (.refl _)
+    (.refl _) ?_ ?_ ?_ ?_
+  · rw [hmap, Iso.symm_hom, Iso.inv_hom_id_assoc, Iso.refl_hom, Category.comp_id]
+  · rw [← hcoeff, Iso.symm_hom, Iso.inv_hom_id_assoc, Iso.refl_hom, Category.comp_id]
+  · simp
+  · simp
+
+end IsBaseChange
 
 end AlgebraicGeometry.Proj

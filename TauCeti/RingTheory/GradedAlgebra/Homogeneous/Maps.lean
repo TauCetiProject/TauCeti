@@ -29,9 +29,28 @@ This is the form needed for homogeneous localizations and projective coefficient
 * `HomogeneousIdeal.irrelevant_le_map_of_surjective`: `ℬ₊ ≤ 𝒜₊.map f` for a surjective `f`.
 * `HomogeneousIdeal.irrelevant_le_map_baseChangeMap`: the same containment for extension
   of the coefficient ring.
+* `GradedRingHom.mem_of_map_mem`: an injective graded ring homomorphism reflects homogeneity, so
+  the inverse of a bijective one is again graded.
 -/
 
 public section
+
+namespace GradedRingHom
+
+variable {ι A B σ τ : Type*} [Semiring A] [Semiring B] [SetLike σ A] [SetLike τ B]
+  [AddSubmonoidClass σ A] [AddSubmonoidClass τ B] [DecidableEq ι] [AddMonoid ι]
+  {𝒜 : ι → σ} {ℬ : ι → τ} [GradedRing 𝒜] [GradedRing ℬ]
+
+/-- An injective graded ring homomorphism reflects homogeneity: if `f a` lies in `ℬ i`, then `a`
+lies in `𝒜 i`. In particular, the inverse of a bijective graded ring homomorphism is graded. -/
+theorem mem_of_map_mem (f : 𝒜 →+*ᵍ ℬ) (hf : Function.Injective f) {a : A} {i : ι}
+    (ha : f a ∈ ℬ i) : a ∈ 𝒜 i := by
+  -- `f` carries the degree-`i` component of `a` to that of `f a`, which is `f a` itself
+  have h : f (DirectSum.decompose 𝒜 a i) = f a := by
+    rw [f.map_directSumDecompose, DirectSum.decompose_of_mem_same ℬ ha]
+  exact hf h ▸ SetLike.coe_mem _
+
+end GradedRingHom
 
 namespace HomogeneousIdeal
 
