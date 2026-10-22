@@ -29,7 +29,8 @@ Its group cohomology is read off in
   generator acts by `A`.
 * `AddEquiv.cyclicRep A hA`: the same representation, as an object of `Rep ℤ C_m`.
 * `AddMonoidHom.cyclicRepHom f hA hB hf`: an additive map `f` with `f ∘ A = B ∘ f`, as a morphism
-  of cyclic representations.
+  of cyclic representations; it is compatible with composition
+  (`AddMonoidHom.cyclicRepHom_comp`).
 
 ## Main results
 
@@ -165,6 +166,18 @@ theorem coe_cyclicRepHom_hom :
       (f.cyclicRepHom hA hB hf).hom = f := by
   ext x
   simp [cyclicRepHom]
+
+open CategoryTheory in
+/-- The morphism of cyclic representations defined by a composite `g ∘ f` is the composite of the
+morphisms defined by `f` and `g`. -/
+theorem cyclicRepHom_comp {N : Type u} [AddCommGroup N] {C : N ≃+ N} (g : M →+ N)
+    (hC : (⇑C)^[m] = _root_.id) (hg : ∀ x, g (B x) = C (g x)) :
+    (g.comp f).cyclicRepHom hA hC (fun x ↦ (congrArg g (hf x)).trans (hg (f x))) =
+      f.cyclicRepHom hA hB hf ≫ g.cyclicRepHom hB hC hg := by
+  ext x
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap, LinearMap.coe_comp,
+    Function.comp_apply, Representation.IntertwiningMap.coe_toLinearMap, coe_cyclicRepHom_hom,
+    coe_comp]
 
 end AddMonoidHom
 

@@ -10,6 +10,7 @@ public import Mathlib.Data.Sym.NatCard
 public import TauCeti.Data.Sym.Finsupp
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 public import TauCeti.RingTheory.MvPolynomial.Finrank
+import TauCeti.Algebra.MvPolynomial.Monomial
 
 /-!
 # Homogeneous symmetric polynomials in a basis
@@ -28,6 +29,8 @@ the polynomial ring.
 * `SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff`: the degreewise form of that comparison.
 * `Module.Basis.symmetricAlgebraHomogeneous`: the monomial basis of a homogeneous component of a
   symmetric algebra induced by a basis of the generating module.
+* `Module.Basis.coe_symmetricAlgebraHomogeneous_apply`: the monomial basis vector indexed by a
+  multiset of basis indices is the product of the corresponding generators.
 * `TauCeti.SymmetricAlgebra.instModuleFreeHomogeneousSubmodule`,
   `TauCeti.SymmetricAlgebra.instModuleFiniteHomogeneousSubmodule`: the homogeneous components of
   the symmetric algebra of a finite free module are finite free.
@@ -119,6 +122,19 @@ theorem equivMvPolynomial_symmetricAlgebraHomogeneous_apply {ι : Type w}
   classical
   rw [← coe_homogeneousSubmoduleEquivMvPolynomial_apply R M b n]
   simp [Module.Basis.symmetricAlgebraHomogeneous]
+
+variable {R M} in
+/-- The monomial basis vector of `Symⁿ M` indexed by a degree-`n` multiset `s` of basis indices
+is the product of the generators `ι (b i)` for `i ∈ s`, counted with multiplicity. -/
+theorem _root_.Module.Basis.coe_symmetricAlgebraHomogeneous_apply {ι : Type w}
+    (b : Basis ι R M) (n : ℕ) (s : Sym ι n) :
+    (b.symmetricAlgebraHomogeneous n s : SymmetricAlgebra R M) =
+      ((s : Multiset ι).map fun i ↦ SymmetricAlgebra.ι R M (b i)).prod := by
+  classical
+  apply (SymmetricAlgebra.equivMvPolynomial b).injective
+  rw [equivMvPolynomial_symmetricAlgebraHomogeneous_apply, map_multiset_prod, Multiset.map_map]
+  simp only [Function.comp_def, SymmetricAlgebra.equivMvPolynomial_ι_apply]
+  rw [TauCeti.prod_map_X_eq_monomial, TauCeti.coe_symEquivFinsuppDegree_apply]
 
 section Semilinear
 

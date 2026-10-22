@@ -94,6 +94,16 @@ theorem X_subst_toPowerSeries (φ : FormalCoordinate R) :
     (X : R⟦X⟧).subst φ.toPowerSeries = φ.toPowerSeries :=
   subst_X φ.hasSubst
 
+/-- Over a nontrivial ring a formal coordinate has order one. -/
+@[simp]
+theorem order_toPowerSeries [Nontrivial R] (φ : FormalCoordinate R) : φ.toPowerSeries.order = 1 :=
+  order_eq_nat.mpr ⟨φ.isUnit_coeff_one.ne_zero, fun i hi ↦ by
+    simp [Nat.lt_one_iff.mp hi]⟩
+
+/-- Over a nontrivial ring a formal coordinate is a nonzero power series. -/
+theorem toPowerSeries_ne_zero [Nontrivial R] (φ : FormalCoordinate R) : φ.toPowerSeries ≠ 0 :=
+  fun h ↦ by simpa [h] using φ.isUnit_coeff_one
+
 /-- The product `φ * ψ` of formal coordinates is the composite `φ ∘ ψ`, the series `φ (ψ)`. -/
 noncomputable instance : Mul (FormalCoordinate R) where
   mul φ ψ :=
@@ -143,6 +153,14 @@ noncomputable instance : Group (FormalCoordinate R) where
   inv_mul_cancel φ := by
     ext1
     simp [subst_substInvOfIsUnit_left _ φ.constantCoeff_toPowerSeries]
+
+/-- A formal coordinate composed with its inverse is `X`. -/
+theorem toPowerSeries_mul_inv (φ : FormalCoordinate R) : (φ * φ⁻¹).toPowerSeries = X := by
+  rw [mul_inv_cancel, toPowerSeries_one]
+
+/-- The inverse of a formal coordinate composed with it is `X`. -/
+theorem toPowerSeries_inv_mul (φ : FormalCoordinate R) : (φ⁻¹ * φ).toPowerSeries = X := by
+  rw [inv_mul_cancel, toPowerSeries_one]
 
 section Points
 
