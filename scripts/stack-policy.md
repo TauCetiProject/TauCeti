@@ -255,7 +255,9 @@ saved individually. A runner loss before artifact publication can repeat work.
 
 Restore and publish inside the job holding the shared mutation lock. The
 `stack-policy-progress` artifact is retained for 14 days. Restore it only from
-verified runs of this exact main-defined workflow. Missing, expired, invalid or
+runs whose repository and workflow path match this workflow and whose event is
+`pull_request_target`, or `workflow_run`/`schedule`/`workflow_dispatch` with main as
+the head branch and TauCeti as the head repository. Missing, expired, invalid or
 unreadable state triggers a full recovery sweep of current open PRs, never an
 assumed empty queue. Unavailable artifact-index, producer-metadata or download
 reads emit a notice and leave no input state, so enforcement can recover without
