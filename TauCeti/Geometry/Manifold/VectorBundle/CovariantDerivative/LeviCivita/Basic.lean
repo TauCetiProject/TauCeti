@@ -259,7 +259,7 @@ theorem koszulBilinear_add_first
   ring
 
 /-- The Koszul expression is tensorial in its first argument: replacing `X` by `f • X` multiplies
-it by `f x`. This follows from the second-slot Leibniz rule and the swap identity. -/
+it by `f x`. -/
 theorem koszulBilinear_smul_first
     (hb : ∀ x v w, b x v w = b x w v) (hf : MDiffAt f x) (hX : MDiffAt (T% X) x)
     (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
@@ -507,7 +507,7 @@ theorem koszul_add_first (hX : MDiffAt (T% X) x) (hX' : MDiffAt (T% X') x)
       (fun hU hV ↦ mdifferentiableAt_inner hU hV) hX hX' hY hZ)
 
 /-- The Koszul expression is tensorial in its first argument: replacing `X` by `f • X` multiplies
-it by `f x`. This follows from the second-slot Leibniz rule and the swap identity. -/
+it by `f x`. -/
 theorem koszul_smul_first (hf : MDiffAt f x) (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
     (hZ : MDiffAt (T% Z) x) : koszul I (f • X) Y Z x = f x * koszul I X Y Z x := by
   simpa only [koszul, innerSL_apply_apply ℝ] using
