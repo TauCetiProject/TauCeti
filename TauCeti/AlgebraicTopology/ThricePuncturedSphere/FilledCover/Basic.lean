@@ -183,7 +183,8 @@ private theorem exists_isFillingChart (i : FilledPoint p) : ∃ φ, IsFillingCha
   have : Nonempty (component p i) := ⟨⟨x, hx ▸ mem_connectedComponent⟩⟩
   have hfinC : Finite ((component p i).domRestrict f ⁻¹' {puncturedDiscBasepoint}) :=
     ((hffin _).preimage Subtype.val_injective.injOn).to_subtype
-  have := pathConnectedSpace_ball_diff_singleton (0 : ℂ) one_pos
+  have := pathConnectedSpace_ball_diff_singleton (0 : ℂ)
+    (by simp [Complex.rank_real_complex]) one_pos
   obtain ⟨y, hy⟩ := hcov.surjective puncturedDiscBasepoint
   have he : degree p i ≠ 0 := Nat.card_ne_zero.2 ⟨⟨⟨y, hy⟩⟩, hfinC⟩
   obtain ⟨h, hh⟩ := (hcov.exists_homeomorph_puncturedDiscPow_comp_eq_iff he _).2 rfl

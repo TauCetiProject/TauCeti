@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Basic
 public import TauCeti.Analysis.Polynomial.Conjugation
 
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+
 /-!
 # Conjugation-compatible nonmonic Puiseux branches
 
@@ -103,7 +105,8 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
       F (q (κ b)) = (F (q b)).map (starRingEnd ℂ) := by
     simpa only [q, κ, map_pow] using hconj _ (hq hb)
   -- Distinct punctured roots determine the permutation, without requiring extensions there.
-  let := pathConnectedSpace_ball_diff_singleton (0 : ℂ) hR'
+  let := pathConnectedSpace_ball_diff_singleton (0 : ℂ)
+    (by simp [Complex.rank_real_complex]) hR'
   have hSc : IsPreconnected S :=
     (isPreconnected_iff_preconnectedSpace.2 inferInstance).prod
       (isPreconnected_iff_preconnectedSpace.2 inferInstance)

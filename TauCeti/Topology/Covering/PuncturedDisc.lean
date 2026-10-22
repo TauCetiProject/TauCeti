@@ -229,7 +229,8 @@ theorem isCycleOn_monodromyPerm_puncturedDiscCircle (he : e ≠ 0) :
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk puncturedDiscCircle))).IsCycleOn
         Set.univ := by
   let hp := isCoveringMap_puncturedDiscPow he
-  let _ := pathConnectedSpace_ball_diff_singleton (0 : ℂ) one_pos
+  let _ := pathConnectedSpace_ball_diff_singleton (0 : ℂ)
+    (by simp [Complex.rank_real_complex]) one_pos
   have htransitive : MulAction.IsPretransitive
       (hp.monodromyPerm puncturedDiscBasepoint).range
       (puncturedDiscPow he ⁻¹' {puncturedDiscBasepoint}) := by
@@ -269,7 +270,8 @@ Under this isomorphism a root of unity acts by rotation
 noncomputable def puncturedDiscPowDeckMulEquiv (he : e ≠ 0) :
     rootsOfUnity e ℂ ≃* deck (puncturedDiscPow he) :=
   letI : NeZero e := ⟨he⟩
-  letI := pathConnectedSpace_ball_diff_singleton (0 : ℂ) one_pos
+  letI := pathConnectedSpace_ball_diff_singleton (0 : ℂ)
+    (by simp [Complex.rank_real_complex]) one_pos
   have : Nonempty ↥(ball (0 : ℂ) 1 \ {0}) :=
     ⟨⟨(1 / 2 : ℂ), by norm_num [mem_ball_zero_iff]⟩⟩
   Deck.IsQuotientCoveringMap.deckMulEquiv
@@ -334,7 +336,8 @@ theorem _root_.IsCoveringMap.exists_homeomorph_puncturedDiscPow_comp_eq (hp : Is
     (he : e ≠ 0) {w : ↥(ball (0 : ℂ) 1 \ {0})} (hcard : Nat.card (p ⁻¹' {w}) = e)
     (y₀ : p ⁻¹' {w}) (z₀ : puncturedDiscPow he ⁻¹' {w}) :
     ∃ h : E ≃ₜ ↥(ball (0 : ℂ) 1 \ {0}), h y₀ = z₀ ∧ puncturedDiscPow he ∘ h = p := by
-  have := pathConnectedSpace_ball_diff_singleton (0 : ℂ) one_pos
+  have := pathConnectedSpace_ball_diff_singleton (0 : ℂ)
+    (by simp [Complex.rank_real_complex]) one_pos
   have : LocallyPathConnectedSpace ↥(ball (0 : ℂ) 1 \ {0}) :=
     (isOpen_ball.sdiff isClosed_singleton).locallyPathConnectedSpace
   have : LocallyPathConnectedSpace E := hp.isLocalHomeomorph.locallyPathConnectedSpace

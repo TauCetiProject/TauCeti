@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Analytic.Rotation
 public import TauCeti.Analysis.Polynomial.Puiseux.Multiplicity
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Topology.Connected.FiniteFamily
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 import Mathlib.RingTheory.RootsOfUnity.Complex
@@ -61,7 +62,8 @@ theorem existsUnique_root_rotation_perm {E : Type*} [TopologicalSpace E]
     simpa only [κ, mem_ball_zero_iff, norm_mul, hζnorm, one_mul] using hb.2
   have hκS : MapsTo κ S S := fun b hb ↦
     ⟨(hκT ⟨hb.1, hb.2.1⟩).1, (hκT ⟨hb.1, hb.2.1⟩).2, mul_ne_zero hζ0 hb.2.2⟩
-  let := pathConnectedSpace_ball_diff_singleton (0 : ℂ) hR
+  let := pathConnectedSpace_ball_diff_singleton (0 : ℂ)
+    (by simp [Complex.rank_real_complex]) hR
   have hSc : IsPreconnected S :=
     hU.prod (isPreconnected_iff_preconnectedSpace.2 inferInstance)
   let := Subtype.preconnectedSpace hSc
