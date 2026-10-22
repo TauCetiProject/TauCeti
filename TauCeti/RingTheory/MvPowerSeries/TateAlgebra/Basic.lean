@@ -34,6 +34,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 ## Main results
 
 * `MvPowerSeries.norm_eq_gaussNorm`: the norm is the Gauss norm at the chosen polyradii.
+* `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
+  monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
@@ -79,6 +81,30 @@ theorem IsRestricted.hasGaussNorm {c : σ → ℝ} {f : MvPowerSeries σ R}
 /-- The weights `∏ i, |c i| ^ t i` of the absolute polyradii are nonnegative. -/
 theorem prod_abs_pow_nonneg {c : σ → ℝ} (t : σ →₀ ℕ) : 0 ≤ t.prod (|c| · ^ ·) :=
   Finset.prod_nonneg fun _ _ ↦ pow_nonneg (abs_nonneg _) _
+
+/-- Decreasing the polyradius `c` to `c'`, the weight of an exponent drops at least by the factor
+`(c'ᵢ / cᵢ) ^ νᵢ` coming from the variable `Xᵢ`. -/
+theorem _root_.Finsupp.prod_pow_le_prod_pow_mul {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {c c' : σ → K} {i : σ} (hc' : ∀ j, 0 ≤ c' j)
+    (hle : ∀ j, c' j ≤ c j) (hi : 0 < c i) (n : σ →₀ ℕ) :
+    n.prod (c' · ^ ·) ≤ n.prod (c · ^ ·) * (c' i / c i) ^ n i := by
+  classical
+  calc n.prod (c' · ^ ·)
+      ≤ n.prod fun j k ↦ c j ^ k * (if j = i then (c' i / c i) ^ k else 1) := by
+        refine Finset.prod_le_prod₀ (fun j _ ↦ pow_nonneg (hc' j) _) fun j _ ↦ ?_
+        dsimp only
+        split_ifs with h
+        · subst h
+          rw [← mul_pow, mul_div_cancel₀ _ hi.ne']
+        · rw [mul_one]
+          exact pow_le_pow_left₀ (hc' j) (hle j) _
+    _ = n.prod (c · ^ ·) * (c' i / c i) ^ n i := by
+        rw [Finsupp.prod_mul]
+        congr 1
+        simp only [Finsupp.prod, Finset.prod_ite_eq', Finsupp.mem_support_iff]
+        split_ifs with h
+        · rfl
+        · rw [not_not.1 h, pow_zero]
 
 variable [IsUltrametricDist R] {c : σ → ℝ} [hc : ∀ i, Fact (0 < c i)]
 
