@@ -338,7 +338,7 @@ theorem Flow.exists_augment_eq [Lattice K] [IsOrderedAddMonoid K] {cap : Assignm
 
 /-- For `0 < d`, an ordinary flow with arrow values in `zmultiples d` has value `n • d` for a
 natural number `n`. -/
-theorem Flow.exists_nsmul_eq_val [LinearOrder K] [IsOrderedAddMonoid K] {cap : Assignment Q K}
+theorem Flow.exists_nsmul_eq_val [PartialOrder K] [IsOrderedAddMonoid K] {cap : Assignment Q K}
     {s t : V} {d : K} (hd : 0 < d) {f : Flow cap s t}
     (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ AddSubgroup.zmultiples d) :
     ∃ n : ℕ, n • d = f.val := by
