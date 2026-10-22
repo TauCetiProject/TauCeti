@@ -24,10 +24,10 @@ and no slope when `α = 0`. No completeness of the valuation is used. Applied af
 of coefficients compatible with the valuations, this gives the slopes of a polynomial in terms
 of its roots in any valued extension in which it splits.
 
-When `v` comes from an absolute value with `‖x‖ = b ^ (-v x)`, the root `α` has norm `b ^ m`
-exactly when `-v α = m`. Hence the endpoints of the finite face of slope `σ` count the roots,
-with multiplicity and including the root zero, in the open and closed balls of radius `b ^ σ`,
-and the width of the face counts those on the sphere of that radius.
+When `v` comes from an absolute value with `‖x‖ = b ^ (-v x)` for a base `1 < b`, the root `α`
+has norm `b ^ m` exactly when `-v α = m`. Hence the endpoints of the finite face of slope `σ`
+count the roots, with multiplicity and including the root zero, in the open and closed balls of
+radius `b ^ σ`, and the width of the face counts those on the sphere of that radius.
 
 ## Main results
 
@@ -128,8 +128,8 @@ private theorem card_filter_newtonSlopes_eq [DecidableEq R] (hv : ∀ x, v x = �
 
 /-- If only zero has infinite valuation and `f` splits, the left endpoint of the finite face of
 slope `σ` of the Newton polygon is the number of roots `α` with `-σ < v α`, counted with
-multiplicity and including the root zero. For a valuation `‖x‖ = b ^ (-v x)` these are the
-roots in the open ball of radius `b ^ σ`. -/
+multiplicity and including the root zero. For a valuation `‖x‖ = b ^ (-v x)` with `1 < b`, these
+are the roots in the open ball of radius `b ^ σ`. -/
 theorem card_filter_roots_lt_addValuation (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]}
     (hf : f.Splits) {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     (f.roots.filter fun α => ((-σ : ℝ) : WithTop ℝ) < v α).card = l := by
@@ -143,8 +143,8 @@ theorem card_filter_roots_lt_addValuation (hv : ∀ x, v x = ⊤ → x = 0) {f :
 
 /-- If only zero has infinite valuation and `f` splits, the right endpoint of the finite face of
 slope `σ` of the Newton polygon is the number of roots `α` with `-σ ≤ v α`, counted with
-multiplicity and including the root zero. For a valuation `‖x‖ = b ^ (-v x)` these are the
-roots in the closed ball of radius `b ^ σ`. -/
+multiplicity and including the root zero. For a valuation `‖x‖ = b ^ (-v x)` with `1 < b`, these
+are the roots in the closed ball of radius `b ^ σ`. -/
 theorem card_filter_roots_le_addValuation (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]}
     (hf : f.Splits) {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     (f.roots.filter fun α => ((-σ : ℝ) : WithTop ℝ) ≤ v α).card = u := by
@@ -158,8 +158,8 @@ theorem card_filter_roots_le_addValuation (hv : ∀ x, v x = ⊤ → x = 0) {f :
 
 /-- If only zero has infinite valuation and `f` splits, the width `u - l` of the finite face of
 slope `σ` of the Newton polygon is the number of roots `α` with `v α = -σ`, counted with
-multiplicity. For a valuation `‖x‖ = b ^ (-v x)` these are the roots on the sphere of radius
-`b ^ σ`. -/
+multiplicity. For a valuation `‖x‖ = b ^ (-v x)` with `1 < b`, these are the roots on the sphere
+of radius `b ^ σ`. -/
 theorem card_filter_roots_addValuation_eq (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]}
     (hf : f.Splits) {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     (f.roots.filter fun α => v α = ((-σ : ℝ) : WithTop ℝ)).card = u - l := by
