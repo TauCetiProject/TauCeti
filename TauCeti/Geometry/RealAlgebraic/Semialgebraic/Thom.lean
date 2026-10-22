@@ -69,6 +69,36 @@ open scoped Matrix
 
 namespace TauCeti
 
+section Domain
+
+variable {σ R : Type*} [CommRing R] [IsDomain R] [LinearOrder R]
+
+/-- **Equality with a Thom-encoded root.** For a polynomial `T` and sign word `τ`, the parameters
+`x` at which `P.map (MvPolynomial.eval x)` has a root `r ∈ roots.toFinset` with derivative signs
+`τ` and `MvPolynomial.eval x T = r` form a semialgebraic set. -/
+theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_eval_eq
+    (P : (MvPolynomial σ R)[X]) (T : MvPolynomial σ R) (τ : Fin P.natDegree → SignType) :
+    IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
+      (∀ j : Fin P.natDegree,
+        SignType.sign (((derivative^[j.val + 1] P).map
+          (MvPolynomial.eval x)).eval r) = τ j) ∧
+        MvPolynomial.eval x T = r} := by
+  convert (isSemialgebraic_setOf_map_eval_eq_zero P).compl.inter
+    ((isSemialgebraic_eval_eq_zero (P.eval T)).inter
+      (isSemialgebraic_setOf_sign_eval
+        (fun j : Fin P.natDegree => (derivative^[j.val + 1] P).eval T) (· = τ))) using 1
+  ext x
+  simp only [mem_ofPred_eq, mem_inter_iff, mem_compl_iff, Multiset.mem_toFinset,
+    ← eval_map_apply, funext_iff]
+  constructor
+  · rintro ⟨r, hr, hτ, rfl⟩
+    have hp : P.map (MvPolynomial.eval x) ≠ 0 := Polynomial.ne_zero_of_mem_roots hr
+    exact ⟨hp, (Polynomial.mem_roots hp).mp hr, hτ⟩
+  · rintro ⟨hp, hr, hτ⟩
+    exact ⟨MvPolynomial.eval x T, (Polynomial.mem_roots hp).mpr hr, hτ, rfl⟩
+
+end Domain
+
 variable {σ R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- On the parameters where `P` specializes to a nonzero polynomial of degree `d`, its Tarski
@@ -308,31 +338,6 @@ private theorem eq_of_mem_roots_derivative_signs_eq {P : (MvPolynomial σ R)[X]}
     (Polynomial.isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr')) ?_
   funext j
   simpa only [sign_eval_map_iterate_derivative] using (hτ j).trans (hτ' j).symm
-
-omit [IsStrictOrderedRing R] [IsRealClosed R] in
-/-- **Equality with a Thom-encoded root.** For a polynomial `T` and sign word `τ`, the parameters
-`x` at which `P.map (MvPolynomial.eval x)` has a root `r ∈ roots.toFinset` with derivative signs
-`τ` and `MvPolynomial.eval x T = r` form a semialgebraic set. -/
-theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_eval_eq
-    (P : (MvPolynomial σ R)[X]) (T : MvPolynomial σ R) (τ : Fin P.natDegree → SignType) :
-    IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
-      (∀ j : Fin P.natDegree,
-        SignType.sign (((derivative^[j.val + 1] P).map
-          (MvPolynomial.eval x)).eval r) = τ j) ∧
-        MvPolynomial.eval x T = r} := by
-  convert (isSemialgebraic_setOf_map_eval_eq_zero P).compl.inter
-    ((isSemialgebraic_eval_eq_zero (P.eval T)).inter
-      (isSemialgebraic_setOf_sign_eval
-        (fun j : Fin P.natDegree => (derivative^[j.val + 1] P).eval T) (· = τ))) using 1
-  ext x
-  simp only [mem_ofPred_eq, mem_inter_iff, mem_compl_iff, Multiset.mem_toFinset,
-    ← eval_map_apply, funext_iff]
-  constructor
-  · rintro ⟨r, hr, hτ, rfl⟩
-    have hp : P.map (MvPolynomial.eval x) ≠ 0 := Polynomial.ne_zero_of_mem_roots hr
-    exact ⟨hp, (Polynomial.mem_roots hp).mp hr, hτ⟩
-  · rintro ⟨hp, hr, hτ⟩
-    exact ⟨MvPolynomial.eval x T, (Polynomial.mem_roots hp).mpr hr, hτ, rfl⟩
 
 /-- Combine realization of a Thom word with a comparison determined by derivative signs. -/
 private theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and
