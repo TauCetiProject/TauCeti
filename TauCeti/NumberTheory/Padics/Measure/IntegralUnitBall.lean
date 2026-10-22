@@ -21,7 +21,8 @@ describes that ball on the side of the Amice transform:
 * extension of coefficients along a continuous `ℤ_[p]`-algebra map `j` applies `j` to the
   coefficients of the Amice transform (`AbstractMeasure.amiceTransform_extendCoefficients`). For
   `ℤ_p ⊆ ℚ_p` this is the compatibility of Mathlib's integral Amice equivalence
-  `AbstractMeasure.amiceTransformEquiv` with extension to `ℚ_p`;
+  `AbstractMeasure.amiceTransformEquiv` with extension to `ℚ_p`
+  (`AbstractMeasure.amiceTransform_extendCoefficients_coe_ringHom`);
 * a `ℚ_p`-valued measure has operator norm at most `1` exactly when it is the unique extension of
   a `ℤ_p`-valued measure (`AbstractMeasure.existsUnique_integral_iff_norm_le_one`), and exactly when
   its Amice transform has coefficients in `ℤ_p`
@@ -64,22 +65,18 @@ theorem amiceTransform_extendCoefficients {O K : Type*} [CommRing O] [Topologica
   ext x
   simp
 
-/-! The inclusion `ℤ_p → ℚ_p` is an isometric embedding onto the closed unit ball, and it is the
-structure map of the `ℤ_[p]`-algebra `ℚ_[p]`. -/
-
-private lemma norm_coe_ringHom_le_one (a : ℤ_[p]) : ‖PadicInt.Coe.ringHom a‖ ≤ 1 := by
-  simpa using a.norm_le_one
-
-private lemma isEmbedding_coe_ringHom : Topology.IsEmbedding (PadicInt.Coe.ringHom (p := p)) :=
-  isometry_subtype_coe.isEmbedding
-
-private lemma closedBall_subset_range_coe_ringHom :
-    Metric.closedBall (0 : ℚ_[p]) 1 ⊆ Set.range (PadicInt.Coe.ringHom (p := p)) :=
-  fun x hx ↦ ⟨⟨x, mem_closedBall_zero_iff.mp hx⟩, rfl⟩
-
-private lemma coe_ofId_eq_coe_ringHom :
-    (Algebra.ofId ℤ_[p] ℚ_[p] : ℤ_[p] →+* ℚ_[p]) = PadicInt.Coe.ringHom :=
-  RingHom.ext PadicInt.algebraMap_apply
+/-- Extension of coefficients from `ℤ_p` to `ℚ_p` applies the inclusion to the coefficients of the
+Amice transform. -/
+@[simp]
+theorem amiceTransform_extendCoefficients_coe_ringHom (μ : D(ℤ_[p], ℤ_[p])) :
+    (extendCoefficients PadicInt.Coe.ringHom PadicInt.norm_coe_ringHom_le_one μ).amiceTransform =
+      PowerSeries.map PadicInt.Coe.ringHom μ.amiceTransform := by
+  have hjc : Continuous (Algebra.ofId ℤ_[p] ℚ_[p]) := by
+    rw [← RingHom.coe_coe, Algebra.toRingHom_ofId, PadicInt.algebraMap_eq_coe_ringHom]
+    exact PadicInt.isEmbedding_coe_ringHom.continuous
+  simpa only [Algebra.toRingHom_ofId, PadicInt.algebraMap_eq_coe_ringHom] using
+    amiceTransform_extendCoefficients (Algebra.ofId ℤ_[p] ℚ_[p]) hjc
+      (by simpa using PadicInt.norm_le_one) μ
 
 /-- **The integral dual unit ball.** A `ℚ_p`-valued measure on `ℤ_p` has operator norm at most `1`
 exactly when there is a unique `ℤ_p`-valued measure `μ` with `ν (f) = μ (f)` for every
@@ -89,8 +86,8 @@ theorem existsUnique_integral_iff_norm_le_one (ν : D(ℤ_[p], ℚ_[p])) :
       ν ((⟨fun x : ℤ_[p] ↦ (x : ℚ_[p]), continuous_subtype_val⟩ : C(ℤ_[p], ℚ_[p])).comp f) =
         (μ f : ℚ_[p])) ↔ ‖toCLMEquiv ν‖ ≤ 1 :=
   -- The roadmap's test map `fun x ↦ (x : ℚ_[p])` is `PadicInt.Coe.ringHom` by definition.
-  existsUnique_apply_comp_eq_iff_norm_le_one norm_coe_ringHom_le_one isEmbedding_coe_ringHom
-    closedBall_subset_range_coe_ringHom ν
+  existsUnique_apply_comp_eq_iff_norm_le_one PadicInt.norm_coe_ringHom_le_one
+    PadicInt.isEmbedding_coe_ringHom PadicInt.closedBall_subset_range_coe_ringHom ν
 
 /-- A `ℚ_p`-valued measure on `ℤ_p` has operator norm at most `1` exactly when its Amice transform
 has coefficients in `ℤ_p`. -/
@@ -98,14 +95,9 @@ theorem norm_toCLMEquiv_le_one_iff_exists_amiceTransform_eq_map (ν : D(ℤ_[p],
     ‖toCLMEquiv ν‖ ≤ 1 ↔
       ∃ F : ℤ_[p]⟦X⟧, ν.amiceTransform = PowerSeries.map PadicInt.Coe.ringHom F := by
   refine ⟨fun hν ↦ ?_, fun ⟨F, hF⟩ ↦ ?_⟩
-  · obtain ⟨μ, rfl⟩ := (mem_range_extendCoefficients_iff norm_coe_ringHom_le_one
-      isEmbedding_coe_ringHom closedBall_subset_range_coe_ringHom).mpr hν
-    have hjc : Continuous (Algebra.ofId ℤ_[p] ℚ_[p]) := by
-      rw [← RingHom.coe_coe, coe_ofId_eq_coe_ringHom]
-      exact isEmbedding_coe_ringHom.continuous
-    refine ⟨μ.amiceTransform, ?_⟩
-    simpa only [coe_ofId_eq_coe_ringHom] using amiceTransform_extendCoefficients
-      (Algebra.ofId ℤ_[p] ℚ_[p]) hjc (by simpa using PadicInt.norm_le_one) μ
+  · obtain ⟨μ, rfl⟩ := (mem_range_extendCoefficients_iff PadicInt.norm_coe_ringHom_le_one
+      PadicInt.isEmbedding_coe_ringHom PadicInt.closedBall_subset_range_coe_ringHom).mpr hν
+    exact ⟨μ.amiceTransform, amiceTransform_extendCoefficients_coe_ringHom μ⟩
   · rw [norm_toCLMEquiv_le_iff_forall_norm_coeff_le, hF]
     intro n
     simpa using (F.coeff n).norm_le_one
