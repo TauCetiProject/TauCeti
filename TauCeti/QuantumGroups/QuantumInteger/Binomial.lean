@@ -85,7 +85,7 @@ theorem quantumBinomial_succ_succ (q : K) (n k : ℕ) :
   rw [quantumBinomial]
 
 /-- `[n choose k]_q = 0` for `n < k`. -/
-theorem quantumBinomial_eq_zero_of_lt (q : K) {n k : ℕ} (h : n < k) :
+@[simp] theorem quantumBinomial_eq_zero_of_lt (q : K) {n k : ℕ} (h : n < k) :
     quantumBinomial q n k = 0 := by
   induction n generalizing k with
   | zero =>
@@ -164,11 +164,6 @@ theorem quantumBinomial_succ_right_eq (q : K) (n k : ℕ) :
       linear_combination q ^ ((n : ℤ) - k) * ih₀ + q ^ (-((k : ℤ) + 1 + 1)) * ih₁ -
         quantumBinomial q n (k + 1) * (h₂ - h₁)
 
-/-- `(q - q⁻¹) [n]_q = q^n - q^(-n)` for natural `n`. -/
-private theorem sub_inv_mul_quantumInteger_natCast {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
-    (q - q⁻¹) * quantumInteger q n = q ^ n - q⁻¹ ^ n := by
-  rw [quantumInteger_def, mul_div_cancel₀ _ hq, zpow_neg, zpow_natCast, inv_pow]
-
 /-- The second Pascal rule
 `[n+1 choose k+1]_q = q^(-(n-k)) [n choose k]_q + q^(k+1) [n choose k+1]_q`, the image of the
 defining rule under `q ↦ q⁻¹`. -/
@@ -229,7 +224,7 @@ private theorem pow_mul_quantumBinomial_add_pow_mul_quantumBinomial {q : K} (hq 
   rw [quantumBinomial_succ_succ]
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hk
   rcases m with _ | j
-  · simp [quantumBinomial_eq_zero_of_lt q (Nat.lt_succ_self k)]
+  · simp
   have e₁ : k + (j + 1) - k = j + 1 := by omega
   have e₂ : k + (j + 1) - (k + 1) = j := by omega
   have hinv : q ^ (k + 1) * q⁻¹ ^ (k + 1) = 1 := by
@@ -265,7 +260,7 @@ theorem add_pow_of_mul_eq_smul_mul {A : Type*} [Semiring A] [Algebra K A] {q : K
       (g := fun k => (q ^ (k * (n - k)) * quantumBinomial q n k) • (x ^ k * y ^ (n + 1 - k)))
       (h := fun k => (q ^ (k * (n - k)) * quantumBinomial q n k * (q ^ 2) ^ (n - k)) •
         (x ^ (k + 1) * y ^ (n - k)))]
-    · simp [quantumBinomial_eq_zero_of_lt q (Nat.lt_succ_self n), add_comm]
+    · simp [add_comm]
     · simp
     · -- The two contributions to index `k + 1` combine by the Pascal rule.
       intro k hk
