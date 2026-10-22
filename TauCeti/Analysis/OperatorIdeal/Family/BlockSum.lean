@@ -85,9 +85,8 @@ theorem opGauge_le_opGauge_withLpProdMap_left (T₁ : E₁ →L[𝕜] F₁) (T�
     ext x
     simp
   conv_lhs => rw [h]
-  exact Φ.opGauge_comp_comp_le_self
-    (opNorm_le_bound _ zero_le_one fun y ↦ by simpa using WithLp.norm_fst_le (x := y)) _
-    (opNorm_le_bound _ zero_le_one fun x ↦ by simp)
+  exact Φ.opGauge_comp_comp_le_self (WithLp.norm_fstL_le_one ..) _
+    (WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one ..)
 
 /-- **Lower bound by the second block.** The gauge of the second block is at most that of the block
 sum: `Φ(T₂) ≤ Φ(T₁ ⊕ T₂)`. -/
@@ -100,9 +99,8 @@ theorem opGauge_le_opGauge_withLpProdMap_right (T₁ : E₁ →L[𝕜] F₁) (T�
     ext x
     simp
   conv_lhs => rw [h]
-  exact Φ.opGauge_comp_comp_le_self
-    (opNorm_le_bound _ zero_le_one fun y ↦ by simpa using WithLp.norm_snd_le (x := y)) _
-    (opNorm_le_bound _ zero_le_one fun x ↦ by simp)
+  exact Φ.opGauge_comp_comp_le_self (WithLp.norm_sndL_le_one ..) _
+    (WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one ..)
 
 /-- A block sum with a zero second block has the gauge of its first block:
 `Φ(T₁ ⊕ 0) = Φ(T₁)`. -/
@@ -117,8 +115,8 @@ theorem opGauge_withLpProdMap_zero_right (T₁ : E₁ →L[𝕜] F₁) :
     ext x
     simp
   rw [h]
-  exact Φ.opGauge_comp_comp_le_self (opNorm_le_bound _ zero_le_one fun y ↦ by simp) _
-    (opNorm_le_bound _ zero_le_one fun x ↦ by simpa using WithLp.norm_fst_le (x := x))
+  exact Φ.opGauge_comp_comp_le_self
+    (WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one ..) _ (WithLp.norm_fstL_le_one ..)
 
 /-- A block sum with a zero first block has the gauge of its second block:
 `Φ(0 ⊕ T₂) = Φ(T₂)`. -/
@@ -133,8 +131,8 @@ theorem opGauge_withLpProdMap_zero_left (T₂ : E₂ →L[𝕜] F₂) :
     ext x
     simp
   rw [h]
-  exact Φ.opGauge_comp_comp_le_self (opNorm_le_bound _ zero_le_one fun y ↦ by simp) _
-    (opNorm_le_bound _ zero_le_one fun x ↦ by simpa using WithLp.norm_snd_le (x := x))
+  exact Φ.opGauge_comp_comp_le_self
+    (WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one ..) _ (WithLp.norm_sndL_le_one ..)
 
 end Seminormed
 
