@@ -448,6 +448,13 @@ theorem coe_wedgeLeft_apply (m : M) (n : ℕ) (x : ⋀[R]^n M) :
     (wedgeLeft m n x : ExteriorAlgebra R M) = ExteriorAlgebra.ι R m * x :=
   (rfl)
 
+/-- `wedgeLeft m n` prepends `m` to a wedge product of vectors: `m ∧ (v₀ ∧ ⋯ ∧ vₙ₋₁)`. -/
+@[simp]
+theorem wedgeLeft_ιMulti (m : M) (n : ℕ) (v : Fin n → M) :
+    wedgeLeft m n (exteriorPower.ιMulti R n v) = exteriorPower.ιMulti R (n + 1) (Fin.cons m v) := by
+  ext
+  simp [ExteriorAlgebra.ιMulti_succ_apply, Matrix.vecTail]
+
 /-- **Contraction of a wedge product of vectors** is the alternating sum of the contractions of
 its factors: `d ⌋ (v₀ ∧ ⋯ ∧ vₙ) = ∑ᵢ (-1) ^ i d(vᵢ) v₀ ∧ ⋯ ∧ v̂ᵢ ∧ ⋯ ∧ vₙ`. -/
 theorem contractLeft_ιMulti (d : Module.Dual R M) {n : ℕ} (v : Fin (n + 1) → M) :

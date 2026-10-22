@@ -288,9 +288,9 @@ theorem homologyZeroEquiv_apply (x : ⋀[R]^0 M) :
       ((koszulComplex φ).isoHomologyι₀.inv.hom (((koszulComplex φ).pOpcycles 0).hom x)) =
       (LinearMap.range (koszulDifferential φ 0)).mkQ x :=
     congr(($(pOpcycles_comp_homologyZeroIso_hom φ)).hom x)
-  rw [homologyZeroEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, hx,
-    Submodule.Quotient.equiv_apply, Submodule.mkQ_apply, Submodule.mapQ_apply,
-    Ideal.Quotient.mk_eq_mk, LinearEquiv.coe_coe]
+  -- `simp` does not rewrite with `Iso.toLinearEquiv_apply` here, so expose `hx` by `rw` first.
+  rw [homologyZeroEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, hx]
+  simp
 
 /-- **Zeroth Koszul homology of a finite sequence**: for `x = (xᵢ)` in `R`, the Koszul complex of
 the functional `v ↦ ∑ᵢ vᵢ xᵢ` has `H₀ ≃ R ⧸ (xᵢ)`. -/
@@ -308,8 +308,8 @@ theorem homologyZeroEquivSpan_apply {ι : Type*} [Fintype ι] (x : ι → R)
         ((koszulComplex (Fintype.linearCombination R x)).isoHomologyι₀.inv.hom
           (((koszulComplex (Fintype.linearCombination R x)).pOpcycles 0).hom y)) =
       Ideal.Quotient.mk _ (exteriorPower.zeroEquiv R (ι → R) y) := by
-  rw [homologyZeroEquivSpan, LinearEquiv.trans_apply, homologyZeroEquiv_apply,
-    ← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk]
+  simpa [homologyZeroEquivSpan] using Submodule.quotEquivOfEq_mk _ _
+    (Fintype.range_linearCombination R x) (exteriorPower.zeroEquiv R (ι → R) y)
 
 end HomologyZero
 
