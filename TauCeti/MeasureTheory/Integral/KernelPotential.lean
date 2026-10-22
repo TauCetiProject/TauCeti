@@ -7,15 +7,16 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.Lp.Translation
+import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # `L¹` continuity of kernel potentials
 
-A strongly measurable, integrable kernel translated by a measurable family of shifts can be
-integrated against integrable weights. Almost everywhere convergence of the shifts and `L¹`
-convergence of the weights imply `L¹` convergence of these potentials. A quantitative estimate
+An integrable kernel translated by a measurable family of shifts can be integrated against
+integrable weights. Almost everywhere convergence of the shifts and `L¹` convergence of the
+weights imply `L¹` convergence of these potentials. A quantitative estimate
 separates the weight error from the kernel translation error. The convergence results hold along
 any filter with a countable basis; the quantitative estimates need no topology on the shift group.
 -/
@@ -97,15 +98,13 @@ variable {K : Type*} {α : Type*} [MeasurableSpace α] {μ : Measure α}
 /-- An integrable kernel with integrable weights and a.e.-measurable shifts gives a jointly
 integrable function `(t, z) ↦ k (z - c t) * v t` for the product measure. -/
 theorem integrable_prod_comp_sub_mul [NormedRing K] {k : G → K}
-    (hk : Integrable k ν) (hmk : StronglyMeasurable k)
+    (hk : Integrable k ν)
     {c : α → G} {v : α → K} (hc : AEMeasurable c μ)
     (hv : Integrable v μ) :
     Integrable (fun p : α × G ↦ k (p.2 - c p.1) * v p.1) (μ.prod ν) := by
   have hm : AEStronglyMeasurable (fun p : α × G ↦ k (p.2 - c p.1) * v p.1)
       (μ.prod ν) :=
-    (hmk.aestronglyMeasurable.comp_aemeasurable
-      (measurable_snd.aemeasurable.sub hc.comp_fst)).mul
-      (hv.aestronglyMeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst)
+    (hk.aestronglyMeasurable.comp_prod_sub hc).mul hv.aestronglyMeasurable.comp_fst
   have hi (t : α) : Integrable (fun z ↦ k (z - c t)) ν := hk.comp_sub_right (c t)
   apply (integrable_prod_iff hm).2
   constructor
@@ -123,14 +122,14 @@ theorem integrable_prod_comp_sub_mul [NormedRing K] {k : G → K}
 /-- An integrable kernel with integrable weights and measurable shifts has an integrable
 weighted potential after integrating over the shifts. -/
 theorem integral_comp_sub_mul [NormedRing K] [NormedSpace ℝ K] [SFinite μ] {k : G → K}
-    (hk : Integrable k ν) (hmk : StronglyMeasurable k)
+    (hk : Integrable k ν)
     {c : α → G} {v : α → K} (hc : AEMeasurable c μ) (hv : Integrable v μ) :
     Integrable (fun z ↦ ∫ t, k (z - c t) * v t ∂μ) ν :=
-  (hk.integrable_prod_comp_sub_mul hmk hc hv).integral_prod_right
+  (hk.integrable_prod_comp_sub_mul hc hv).integral_prod_right
 
 /-- The translation error weighted by an integrable function is integrable. -/
 theorem integrable_integral_norm_comp_sub_sub_mul_norm [NormedAddCommGroup K] {V : Type*}
-    [NormedAddCommGroup V] {k : G → K} (hk : Integrable k ν) (hmk : StronglyMeasurable k)
+    [NormedAddCommGroup V] {k : G → K} (hk : Integrable k ν)
     {a b : α → G} {v : α → V} (ha : AEMeasurable a μ) (hb : AEMeasurable b μ)
     (hv : Integrable v μ) :
     Integrable (fun t ↦ (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖) μ := by
@@ -138,10 +137,8 @@ theorem integrable_integral_norm_comp_sub_sub_mul_norm [NormedAddCommGroup K] {V
       (fun t ↦ (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖) μ := by
     have hprod : AEStronglyMeasurable
         (fun p : α × G ↦ ‖k (p.2 - a p.1) - k (p.2 - b p.1)‖) (μ.prod ν) :=
-      ((hmk.aestronglyMeasurable.comp_aemeasurable
-        (measurable_snd.aemeasurable.sub ha.comp_fst)).sub
-        (hmk.aestronglyMeasurable.comp_aemeasurable
-          (measurable_snd.aemeasurable.sub hb.comp_fst))).norm
+      ((hk.aestronglyMeasurable.comp_prod_sub ha).sub
+        (hk.aestronglyMeasurable.comp_prod_sub hb)).norm
     exact hprod.integral_prod_right'.mul hv.aestronglyMeasurable.norm
   apply (hv.norm.const_mul (2 * ∫ z : G, ‖k z‖ ∂ν)).mono' hm
   filter_upwards with t
@@ -150,16 +147,16 @@ theorem integrable_integral_norm_comp_sub_sub_mul_norm [NormedAddCommGroup K] {V
 /-- A kernel potential difference is bounded by the weight discrepancy and a translation error. -/
 theorem integral_norm_kernel_potential_sub_le [NormedRing K] [NormedSpace ℝ K]
     [SFinite μ] {k : G → K}
-    (hk : Integrable k ν) (hmk : StronglyMeasurable k)
+    (hk : Integrable k ν)
     {a b : α → G} {u v : α → K} (ha : AEMeasurable a μ) (hb : AEMeasurable b μ)
     (hu : Integrable u μ) (hv : Integrable v μ) :
     (∫ z : G, ‖(∫ t, k (z - a t) * u t ∂μ) - (∫ t, k (z - b t) * v t ∂μ)‖ ∂ν) ≤
       (∫ z : G, ‖k z‖ ∂ν) * (∫ t, ‖u t - v t‖ ∂μ) +
       ∫ t, (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖ ∂μ := by
-  have hA := integrable_prod_comp_sub_mul hk hmk ha hu
-  have hB := integrable_prod_comp_sub_mul hk hmk hb hv
+  have hA := integrable_prod_comp_sub_mul hk ha hu
+  have hB := integrable_prod_comp_sub_mul hk hb hv
   have hD := hA.sub hB
-  have hweighted := integrable_integral_norm_comp_sub_sub_mul_norm hk hmk ha hb hv
+  have hweighted := integrable_integral_norm_comp_sub_sub_mul_norm hk ha hb hv
   have hweight : Integrable (fun t ↦ (∫ z : G, ‖k z‖ ∂ν) * ‖u t - v t‖) μ := by
     simpa only [Pi.sub_apply] using (hu.sub hv).norm.const_mul (∫ z : G, ‖k z‖ ∂ν)
   calc
@@ -193,14 +190,14 @@ variable {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
 
 /-- Almost everywhere convergence of shifts gives weighted `L¹` translation convergence. -/
 theorem tendsto_integral_weighted_kernel_translation_sub [NormedAddCommGroup K] {V : Type*}
-    [NormedAddCommGroup V] {k : G → K} (hk : Integrable k ν) (hmk : StronglyMeasurable k)
+    [NormedAddCommGroup V] {k : G → K} (hk : Integrable k ν)
     {cn : ι → α → G} {c : α → G} {v : α → V} (hcn : ∀ n, AEMeasurable (cn n) μ)
     (hc : AEMeasurable c μ) (hv : Integrable v μ)
     (hlim : ∀ᵐ t ∂μ, Tendsto (fun n ↦ cn n t) l (𝓝 (c t))) :
     Tendsto (fun n ↦ ∫ t, (∫ z : G, ‖k (z - cn n t) - k (z - c t)‖ ∂ν) * ‖v t‖ ∂μ)
       l (𝓝 0) := by
   have hm (n : ι) :=
-    (integrable_integral_norm_comp_sub_sub_mul_norm hk hmk (hcn n) hc hv).aestronglyMeasurable
+    (integrable_integral_norm_comp_sub_sub_mul_norm hk (hcn n) hc hv).aestronglyMeasurable
   have hpointwise : ∀ᵐ t ∂μ, Tendsto
       (fun n ↦ (∫ z : G, ‖k (z - cn n t) - k (z - c t)‖ ∂ν) * ‖v t‖)
       l (𝓝 (0 : ℝ)) := by
@@ -217,7 +214,7 @@ theorem tendsto_integral_weighted_kernel_translation_sub [NormedAddCommGroup K] 
 convergence of the corresponding kernel potentials. -/
 theorem tendsto_integral_norm_kernel_potential_sub [NormedRing K] [NormedSpace ℝ K]
     [SFinite μ] {k : G → K}
-    (hk : Integrable k ν) (hmk : StronglyMeasurable k)
+    (hk : Integrable k ν)
     {cn : ι → α → G} {vn : ι → α → K} {c : α → G} {v : α → K}
     (hcn : ∀ n, AEMeasurable (cn n) μ) (hc : AEMeasurable c μ)
     (hvn : ∀ n, Integrable (vn n) μ) (hv : Integrable v μ)
@@ -227,9 +224,9 @@ theorem tendsto_integral_norm_kernel_potential_sub [NormedRing K] [NormedSpace �
       ‖(∫ t, k (z - cn n t) * vn n t ∂μ) - (∫ t, k (z - c t) * v t ∂μ)‖ ∂ν)
       l (𝓝 0) := by
   have hbound := (hvlim.const_mul (∫ z : G, ‖k z‖ ∂ν)).add
-    (tendsto_integral_weighted_kernel_translation_sub hk hmk hcn hc hv hclim)
+    (tendsto_integral_weighted_kernel_translation_sub hk hcn hc hv hclim)
   apply squeeze_zero (fun n ↦ integral_nonneg (fun _ ↦ norm_nonneg _))
-    (fun n ↦ integral_norm_kernel_potential_sub_le hk hmk (hcn n) hc (hvn n) hv)
+    (fun n ↦ integral_norm_kernel_potential_sub_le hk (hcn n) hc (hvn n) hv)
   simpa using hbound
 
 end Convergence
