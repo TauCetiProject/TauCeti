@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Ring.Basic
-public import TauCeti.Analysis.Normed.Ring.Ultra
-public import TauCeti.Analysis.SpecificLimits.Normed
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.Algebra.Polynomial.AlgebraMap
+import TauCeti.Analysis.Normed.Ring.Ultra
+import TauCeti.Analysis.SpecificLimits.Normed
 import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
