@@ -46,7 +46,7 @@ commutator by its exponent. -/
 theorem tangentAd_expUnit (x y : R) :
     tangentAd (I := 𝓘(ℝ, R)) (TauCeti.expUnit x)
         (y : GroupLieAlgebra 𝓘(ℝ, R) Rˣ) =
-      exp (continuousCommutator x) y := by
+      exp (continuousCommutator ℝ x) y := by
   rw [tangentAd_units, exp_continuousCommutator_apply,
     ← TauCeti.expUnit_neg]
   simp only [TauCeti.expUnit_coe]

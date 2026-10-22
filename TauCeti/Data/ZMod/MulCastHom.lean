@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Data.ZMod.Basic
+public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Multiplication by `k` from `ZMod m` to `ZMod (m * k)`
@@ -38,6 +40,11 @@ characters.
 * `ZMod.mulCastHom_mulCastHom`: two successive multiplications compose to one.
 * `ZMod.castHom_mulCastHom_eq_mulCastHom_castHom`: the reductions commute with the
   multiplications.
+* `ZMod.natCard_ker_castHom`: for `k ≠ 0` the kernel of the reduction `ZMod n → ZMod k` has
+  `Nat.card` equal to `m`; for `m ≠ 0` it has `m` elements.
+* `ZMod.ker_castHom_sq_eq_bot`: for `m ∣ k` that kernel is a square-zero ideal, so that
+  `ZMod n → ZMod k` is a square-zero extension; for `pʳ⁺¹ → pʳ` with `r ≥ 1` this is the step
+  in which Hensel-type lifting arguments over `ℤ/pʳ` take place.
 -/
 
 public section
@@ -141,5 +148,30 @@ theorem castHom_mulCastHom_eq_mulCastHom_castHom {m' n' : ℕ} (h' : m' * k = n'
     castHom hn (ZMod n') (mulCastHom k h a) = mulCastHom k h' (castHom hm (ZMod m') a) := by
   obtain ⟨a, rfl⟩ := intCast_surjective a
   rw [mulCastHom_intCast, map_mul, map_intCast, map_natCast, map_intCast, mulCastHom_intCast]
+
+/-- **The kernel of the reduction `ZMod n → ZMod k` has `Nat.card` equal to `m`** for
+`n = m * k` and `k ≠ 0`: by exactness it is the image of the injective multiplication by `k` on
+`ZMod m`. For `m ≠ 0` the kernel therefore has exactly `m` elements; for `m = 0` it is infinite
+and both sides are `0`. -/
+theorem natCard_ker_castHom (hk : k ≠ 0) :
+    Nat.card (RingHom.ker (castHom (Dvd.intro_left m h) (ZMod k))) = m := by
+  refine (Nat.card_congr ((Equiv.ofInjective _ (mulCastHom_injective k h hk)).trans
+    (Equiv.subtypeEquivRight fun y => ?_))).symm.trans (Nat.card_zmod m)
+  rw [RingHom.mem_ker]
+  exact ((exact_mulCastHom_castHom k h) y).symm
+
+/-- **The kernel of the reduction `ZMod n → ZMod k` squares to zero** for `n = m * k` with
+`m ∣ k`: the product of two multiples of `k` is a multiple of `k * k`, which `n` divides. -/
+theorem ker_castHom_sq_eq_bot (hmk : m ∣ k) :
+    RingHom.ker (castHom (Dvd.intro_left m h) (ZMod k)) ^ 2 = ⊥ := by
+  rw [eq_bot_iff, pow_two, Ideal.mul_le]
+  intro x hx y hy
+  obtain ⟨a, rfl⟩ := ((exact_mulCastHom_castHom k h) x).mp hx
+  obtain ⟨b, rfl⟩ := ((exact_mulCastHom_castHom k h) y).mp hy
+  have hkk : ((k * k : ℕ) : ZMod n) = 0 := by
+    rw [natCast_eq_zero_iff, ← h]
+    exact mul_dvd_mul_right hmk k
+  rw [Ideal.mem_bot, mulCastHom_apply, mulCastHom_apply, mul_mul_mul_comm, ← Nat.cast_mul, hkk,
+    mul_zero]
 
 end ZMod

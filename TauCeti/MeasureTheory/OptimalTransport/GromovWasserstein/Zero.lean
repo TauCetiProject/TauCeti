@@ -87,12 +87,9 @@ theorem gromovWassersteinEDist_eq_zero_iff [EMetricSpace Z]
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hωX : AEStronglyMeasurable ωX (μ.prod μ))
     (hωY : AEStronglyMeasurable ωY (ν.prod ν)) (hp : p ≠ 0) :
-    gromovWassersteinEDist p μ ωX ν ωY = 0 ↔ AreWeaklyIsomorphicKernels μ ωX ν ωY := by
-  -- Attainment uses topology, but both its conclusion and the kernels use only measurable data.
-  let := upgradeStandardBorel X
-  let := upgradeStandardBorel Y
-  exact gromovWassersteinEDist_eq_zero_iff_of_isTightMeasureSet
-    isTightMeasureSet_singleton isTightMeasureSet_singleton hωX hωY hp
+    gromovWassersteinEDist p μ ωX ν ωY = 0 ↔ AreWeaklyIsomorphicKernels μ ωX ν ωY :=
+  gromovWassersteinEDist_eq_zero_iff_of_exists_optimal_coupling
+    (exists_isCoupling_gromovWassersteinDistortion_eq_of_standardBorelSpace μ ν hωX hωY p) hp
 
 section Invariance
 

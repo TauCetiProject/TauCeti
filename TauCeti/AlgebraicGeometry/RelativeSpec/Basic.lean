@@ -31,6 +31,8 @@ This is exactly the input of Mathlib's relative gluing on the small affine Zaris
 
 * `CategoryTheory.CommMon.sectionsAlgHom` and `CategoryTheory.CommMon.sectionsPresheafMap`:
   algebra morphisms on sections and their compatibility with restriction and structure maps;
+* `CategoryTheory.CommMon.sectionsAlgEquiv`: the algebra isomorphism on sections induced by an
+  isomorphism of algebras;
 * `CategoryTheory.CommMon.isLocalization_basicOpen`: for quasi-coherent `A`, an affine open `U`
   and `f ∈ Γ(X, U)`, `Γ(A.X, X.basicOpen f)` is the localization of `Γ(A.X, U)` away from `f`;
 * `AlgebraicGeometry.Scheme.AffineZariskiSite.isPullback_relativeGluingData_cover` and
@@ -120,6 +122,26 @@ lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_comp {A B C : CommMon X.Modul
   -- requires first presenting them as the map of the composite functor `F`.
   change (F.map (f ≫ g)).hom = (F.map g).hom.comp (F.map f).hom
   simpa only [AlgCat.hom_comp] using congrArg AlgCat.Hom.hom (F.map_comp f g)
+
+/-- The `Γ(X, U)`-algebra isomorphism of sections over `U` induced by an isomorphism of
+commutative `𝒪ₓ`-algebras. -/
+def _root_.CategoryTheory.CommMon.sectionsAlgEquiv {A B : CommMon X.Modules} (e : A ≅ B)
+    (U : X.Opens) : Γ(A.X, U) ≃ₐ[Γ(X, U)] Γ(B.X, U) :=
+  AlgEquiv.ofAlgHom (CommMon.sectionsAlgHom e.hom U) (CommMon.sectionsAlgHom e.inv U)
+    (by rw [← CommMon.sectionsAlgHom_comp, e.inv_hom_id, CommMon.sectionsAlgHom_id])
+    (by rw [← CommMon.sectionsAlgHom_comp, e.hom_inv_id, CommMon.sectionsAlgHom_id])
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsAlgEquiv_apply {A B : CommMon X.Modules} (e : A ≅ B)
+    (U : X.Opens) (x : Γ(A.X, U)) :
+    CommMon.sectionsAlgEquiv e U x = CommMon.sectionsAlgHom e.hom U x :=
+  (rfl)
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsAlgEquiv_symm_apply {A B : CommMon X.Modules}
+    (e : A ≅ B) (U : X.Opens) (x : Γ(B.X, U)) :
+    (CommMon.sectionsAlgEquiv e U).symm x = CommMon.sectionsAlgHom e.inv U x :=
+  (rfl)
 
 /-- A morphism of commutative sheaf algebras induces a morphism of their presheaves of rings. -/
 def _root_.CategoryTheory.CommMon.sectionsPresheafMap {A B : CommMon X.Modules}

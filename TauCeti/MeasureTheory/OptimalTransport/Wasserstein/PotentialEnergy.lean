@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeod
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Data.EReal.Operations
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 
 /-!
@@ -64,6 +65,8 @@ Jordan–Kinderlehrer–Otto step is unique.
   measurable potential is integrable exactly when its potential energy is finite.
 * `TauCeti.potentialEnergy_mono`: the potential energy is monotone in the potential.
 * `TauCeti.potentialEnergy_add_of_integrable`: adding an integrable function adds its integral.
+* `TauCeti.potentialEnergy_le_mul_add_mul`: a potential bounded by a convex combination of two
+  potentials has at most the same convex combination of their potential energies.
 * `TauCeti.potentialEnergy_dirac`: the potential energy of a Dirac mass at `x` is `V x`.
 * `TauCeti.potentialEnergy_ne_bot_of_hasFiniteMoment`: a potential with at most quadratic negative
   part has potential energy `≠ ⊥` against every finite measure with finite second moment.
@@ -234,6 +237,45 @@ theorem potentialEnergy_add_of_integrable (hV : AEStronglyMeasurable V μ) (hW :
     exact hVWi ((integrable_iff_potentialEnergy_ne_top_and_ne_bot
       (hV.add hW.aestronglyMeasurable)).2 ⟨mt htop.1 hT, hB'⟩)
   rw [hB, hB', EReal.bot_add]
+
+/-- Two potentials whose positive parts, and whose negative parts, have the same integrals have the
+same potential energy. -/
+theorem potentialEnergy_eq_of_lintegral_eq
+    (hpos : ∫⁻ x, ENNReal.ofReal (V x) ∂μ = ∫⁻ x, ENNReal.ofReal (W x) ∂μ)
+    (hneg : ∫⁻ x, ENNReal.ofReal (-V x) ∂μ = ∫⁻ x, ENNReal.ofReal (-W x) ∂μ) :
+    potentialEnergy V μ = potentialEnergy W μ := by
+  by_cases h : ∫⁻ x, ENNReal.ofReal (V x) ∂μ = ∞
+  · rw [potentialEnergy_eq_top_iff.2 h, potentialEnergy_eq_top_iff.2 (hpos ▸ h)]
+  · rw [potentialEnergy_of_lintegral_ne_top h, potentialEnergy_of_lintegral_ne_top (hpos ▸ h),
+      hpos, hneg]
+
+/-- **The potential energy of a pointwise convex combination.** If `V ≤ (1 - t) V₀ + t V₁` almost
+everywhere for some `t ∈ [0, 1]`, then the potential energy of `V` is at most the same convex
+combination of the potential energies of `V₀` and `V₁`, provided neither of them is `⊥`. -/
+theorem potentialEnergy_le_mul_add_mul {V₀ V₁ : X → ℝ} (hV₀ : AEStronglyMeasurable V₀ μ)
+    (hV₁ : AEStronglyMeasurable V₁ μ) (h₀ : potentialEnergy V₀ μ ≠ ⊥)
+    (h₁ : potentialEnergy V₁ μ ≠ ⊥) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
+    (h : ∀ᵐ x ∂μ, V x ≤ (1 - t) * V₀ x + t * V₁ x) :
+    potentialEnergy V μ ≤
+      ((1 - t : ℝ) : EReal) * potentialEnergy V₀ μ + (t : EReal) * potentialEnergy V₁ μ := by
+  rcases ht.1.eq_or_lt with rfl | ht₀
+  · simpa using potentialEnergy_mono (h.mono fun x hx ↦ by simpa using hx)
+  rcases ht.2.eq_or_lt with rfl | ht₁
+  · simpa using potentialEnergy_mono (h.mono fun x hx ↦ by simpa using hx)
+  by_cases hfin : potentialEnergy V₀ μ ≠ ⊤ ∧ potentialEnergy V₁ μ ≠ ⊤
+  · obtain ⟨hfin₀, hfin₁⟩ := hfin
+    have hi₀ := (integrable_iff_potentialEnergy_ne_top_and_ne_bot hV₀).2 ⟨hfin₀, h₀⟩
+    have hi₁ := (integrable_iff_potentialEnergy_ne_top_and_ne_bot hV₁).2 ⟨hfin₁, h₁⟩
+    refine (potentialEnergy_mono h).trans_eq ?_
+    rw [potentialEnergy_of_integrable (V := fun x ↦ (1 - t) * V₀ x + t * V₁ x)
+      ((hi₀.const_mul _).add (hi₁.const_mul _)), potentialEnergy_of_integrable hi₀,
+      potentialEnergy_of_integrable hi₁,
+      integral_add (hi₀.const_mul _) (hi₁.const_mul _), integral_const_mul, integral_const_mul]
+    norm_cast
+  -- One of the two energies is `⊤`, and neither is `⊥`, so the right side is `⊤`.
+  rw [EReal.coe_mul_add_coe_mul_eq_top (sub_pos.2 ht₁) ht₀ h₀ h₁
+    (by simpa only [not_and_or, not_not] using hfin)]
+  exact le_top
 
 /-- The potential energy of the zero measure is `0`. -/
 @[simp]
@@ -451,18 +493,8 @@ theorem _root_.StrongConvexOn.potentialEnergy_map_le (hV : StrongConvexOn univ m
   by_cases hfin : potentialEnergy V π.fst ≠ ⊤ ∧ potentialEnergy V π.snd ≠ ⊤
   swap
   · -- One endpoint has energy `⊤`, so the right-hand side is `⊤`.
-    have h₀' : ((1 - t : ℝ) : EReal) * potentialEnergy V π.fst ≠ ⊥ :=
-      (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr h₀, .inl (EReal.coe_ne_top _),
-        .inl (EReal.coe_nonneg.2 (sub_nonneg.2 ht.2))⟩
-    have h₁' : (t : EReal) * potentialEnergy V π.snd ≠ ⊥ :=
-      (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr h₁, .inl (EReal.coe_ne_top _),
-        .inl (EReal.coe_nonneg.2 ht.1)⟩
-    have htop : ((1 - t : ℝ) : EReal) * potentialEnergy V π.fst +
-        (t : EReal) * potentialEnergy V π.snd = ⊤ := by
-      rcases not_and_or.1 hfin with h | h <;> rw [not_not] at h <;> rw [h]
-      · rw [EReal.coe_mul_top_of_pos (sub_pos.2 ht₁), EReal.top_add_of_ne_bot h₁']
-      · rw [EReal.coe_mul_top_of_pos ht₀, EReal.add_top_of_ne_bot h₀']
-    rw [htop, EReal.top_sub_coe]
+    rw [EReal.coe_mul_add_coe_mul_eq_top (sub_pos.2 ht₁) ht₀ h₀ h₁
+      (by simpa only [not_and_or, not_not] using hfin), EReal.top_sub_coe]
     exact le_top
   obtain ⟨hfin₀, hfin₁⟩ := hfin
   have hi₀ : Integrable V π.fst :=

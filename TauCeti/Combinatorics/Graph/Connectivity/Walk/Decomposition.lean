@@ -214,6 +214,25 @@ protected theorem IsPath.dropUntil {p : G.Walk x y} (hp : p.IsPath)
 
 end Split
 
+/-- An edge identity occurs on a walk exactly when the walk can be split around one traversal of
+that edge. -/
+theorem mem_edges_iff_exists_append {p : G.Walk x y} {e : β} :
+    e ∈ p.edges ↔ ∃ (u v : α) (h : G.IsLink e u v) (q : G.Walk x u) (r : G.Walk v y),
+      p = q.append (cons e h r) := by
+  constructor
+  · intro he
+    induction p with
+    | nil => simp at he
+    | @cons x z y f hf p ih =>
+      by_cases hfe : f = e
+      · subst f
+        exact ⟨x, z, hf, nil, p, (nil_append _).symm⟩
+      · have he' : e ∈ p.edges := by simpa [Ne.symm hfe] using he
+        obtain ⟨u, v, h, q, r, rfl⟩ := ih he'
+        exact ⟨u, v, h, cons f hf q, r, (cons_append ..).symm⟩
+  · rintro ⟨u, v, h, q, r, rfl⟩
+    simp [edges_append]
+
 section Extraction
 
 variable [DecidableEq α]

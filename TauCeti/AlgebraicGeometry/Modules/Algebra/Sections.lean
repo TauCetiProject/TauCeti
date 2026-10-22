@@ -145,6 +145,17 @@ lemma _root_.CategoryTheory.CommMon.toSectionsPresheaf_app (U : X.Opensᵒᵖ) :
     A.toSectionsPresheaf.app U = CommRingCat.ofHom (algebraMap Γ(X, U.unop) Γ(A.X, U.unop)) :=
   (rfl)
 
+/-- Restriction of sections commutes with the structure maps from regular functions. -/
+-- Not a simp lemma: `restrictSections_apply` already simplifies its left-hand side, so adding
+-- `[simp]` would violate `simpNF`.
+lemma _root_.CategoryTheory.CommMon.restrictSections_algebraMap {U V : X.Opens} (i : V ⟶ U)
+    (r : Γ(X, U)) :
+    A.restrictSections i (algebraMap Γ(X, U) Γ(A.X, U) r) =
+      algebraMap Γ(X, V) Γ(A.X, V) (X.presheaf.map i.op r) := by
+  have h := A.toSectionsPresheaf.naturality i.op
+  rw [CommMon.toSectionsPresheaf_app, CommMon.toSectionsPresheaf_app] at h
+  exact congr($h r).symm
+
 /-- The presheaf of section rings of a commutative `𝒪ₓ`-algebra is a sheaf: its underlying
 presheaf of sets is that of the sheaf of modules `A.X`. -/
 lemma _root_.CategoryTheory.CommMon.isSheaf_sectionsPresheaf :

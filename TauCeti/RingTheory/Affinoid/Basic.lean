@@ -21,7 +21,7 @@ public section
 
 namespace TauCeti
 
-open MvPowerSeries
+open _root_.MvPowerSeries
 
 variable (K : Type*) [NormedField K] [IsUltrametricDist K] (A : Type*) [CommRing A] [Algebra K A]
 

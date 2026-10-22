@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.Finsupp.Multiset
+public import Mathlib.Data.Finsupp.Option
 public import TauCeti.Data.Finsupp.Order
 
 /-!
@@ -26,10 +27,16 @@ lexicographic order and weighted degree.
 
 On a product `ι × κ` of blocks indexed by `ι`, the weight given by the indicator of block `b`
 sums the coefficients in that block. For natural-valued exponents, this is the degree in block `b`.
+More generally, for a block map `b : σ → τ`, the indicator weight of the fibre over `h` is the value
+at `h` of the pushforward `Finsupp.mapDomain b`.
 
 ## Main results
 
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
+* `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
+* `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
+* `Finsupp.pow_degree_le_pow_degree_optionElim`: `a ^ degree f ≤ b ^ degree (f.optionElim m)`
+  for `0 ≤ a ≤ b` and `1 ≤ b`.
 * `Finsupp.weight_le_degree_nsmul`: if `w s ≤ c` for all `s`, then `weight w f ≤ degree f • c`.
 * `Finsupp.weight_le_degree_nsmul_of_mem_support`: the same bound, assuming `w s ≤ c` only for
   the variables `s` occurring in `f`.
@@ -39,6 +46,10 @@ sums the coefficients in that block. For natural-valued exponents, this is the d
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
 * `Finsupp.weight_ite_fst_eq_sum`: the indicator weight of a block sums its coefficients; for
   natural-valued exponents, this is the degree in that block.
+* `Finsupp.weight_ite_eq_mapDomain_apply`: the indicator weight of a fibre of `b : σ → τ` is the
+  corresponding value of `Finsupp.mapDomain b`.
+* `Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply`: for the block map `Sum.elim id b` on
+  `τ ⊕ σ`, the indicator weight of block `h` of `a.sumElim e` is `a h + e.mapDomain b h`.
 -/
 
 public section
@@ -56,6 +67,29 @@ theorem weight_toFinsupp {σ M : Type*} [DecidableEq σ] [AddCommMonoid M]
     rw [← Multiset.singleton_add, Multiset.toFinsupp_add,
       Multiset.toFinsupp_singleton, map_add, weight_single]
     simpa using congrArg (w i + ·) ih
+
+/-- A product of powers of one fixed element `a`, with exponents given by `t`, is `a` raised to
+the degree of `t`. -/
+theorem prod_pow_eq_pow_degree {σ M : Type*} [CommMonoid M] (t : σ →₀ ℕ) (a : M) :
+    (t.prod fun _ n ↦ a ^ n) = a ^ t.degree := by
+  rw [Finsupp.prod, Finset.prod_pow_eq_pow_sum, degree_apply]
+
+/-- Extending `f` to `Option σ` by the value `y` at `none` adds `y` to the degree. -/
+@[simp]
+theorem degree_optionElim {σ R : Type*} [AddCommMonoid R] (f : σ →₀ R) (y : R) :
+    (f.optionElim y).degree = y + f.degree := by
+  have h (g : Option σ →₀ R) : g.degree = g.sum fun _ e ↦ e := degree_apply g
+  rw [h, sum_option_index _ _ (fun _ ↦ rfl) fun _ _ _ ↦ rfl, optionElim_apply_none,
+    some_optionElim, degree_apply, Finsupp.sum]
+
+/-- A power `a ^ degree f` is bounded by the power `b ^ degree (f.optionElim m)` of a larger
+base `b ≥ 1`, for any value `m` at `none`. -/
+theorem pow_degree_le_pow_degree_optionElim {σ R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {a b : R} (ha : 0 ≤ a) (hab : a ≤ b) (hb : 1 ≤ b) (f : σ →₀ ℕ) (m : ℕ) :
+    a ^ f.degree ≤ b ^ (f.optionElim m).degree := by
+  rw [degree_optionElim, pow_add]
+  exact (pow_le_pow_left₀ ha hab _).trans (le_mul_of_one_le_left (pow_nonneg (ha.trans hab) _)
+    (one_le_pow₀ hb))
 
 end Finsupp
 
@@ -123,5 +157,33 @@ theorem weight_ite_fst_eq_sum {ι κ R : Type*} [Fintype κ] [DecidableEq ι] [S
       classical
       simp [Finsupp.weight_single, Finsupp.single_apply]
     · simp [Finsupp.weight_single, hb]
+
+end Finsupp
+
+namespace Finsupp
+
+/-- The indicator weight of the fibre of `b` over `h` is the value at `h` of the pushforward of
+`e` along `b`, that is, the sum of the coefficients of `e` at the indices lying over `h`. -/
+theorem weight_ite_eq_mapDomain_apply {σ τ R : Type*} [DecidableEq τ] [Semiring R]
+    (b : σ → τ) (e : σ →₀ R) (h : τ) :
+    weight (fun j ↦ if b j = h then (1 : R) else 0) e = e.mapDomain b h := by
+  induction e using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [map_add, hf, hg, mapDomain_add, Finsupp.add_apply]
+  | single j n => by_cases hj : b j = h <;> simp [weight_single, mapDomain_single, hj]
+
+end Finsupp
+
+namespace Finsupp
+
+/-- On `τ ⊕ σ`, with the block map `Sum.elim id b` that puts the coordinate `.inl h` into block
+`h`, the indicator weight of block `h` of `a.sumElim e` is `a h + e.mapDomain b h`. -/
+theorem weight_ite_sumElim_eq_add_mapDomain_apply {σ τ R : Type*} [DecidableEq τ] [Semiring R]
+    (b : σ → τ) (a : τ →₀ R) (e : σ →₀ R) (h : τ) :
+    weight (fun v ↦ if Sum.elim id b v = h then (1 : R) else 0) (a.sumElim e) =
+      a h + e.mapDomain b h := by
+  rw [weight_ite_eq_mapDomain_apply, sumElim_eq_add, mapDomain_add, ← mapDomain_comp,
+    ← mapDomain_comp]
+  simp
 
 end Finsupp
