@@ -1,0 +1,264 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.QuantumGroups.QuantumInteger.Basic
+public import Mathlib.Algebra.Algebra.Defs
+
+import Mathlib.Tactic
+
+/-!
+# Symmetric quantum binomial coefficients
+
+This file defines the symmetric quantum binomial coefficient `[n choose k]_q` in a field by the
+Pascal recursion
+`[n+1 choose k+1]_q = q^(n-k) [n choose k]_q + q^(-(k+1)) [n choose k+1]_q`,
+with `[n choose 0]_q = 1` and `[0 choose k+1]_q = 0`, and proves the noncommutative
+`q`-binomial theorem: if two elements of an algebra satisfy `y x = q² x y`, then
+`(x + y)^n = ∑_k q^(k(n-k)) [n choose k]_q x^k y^(n-k)`.
+
+The symmetric normalization makes `[n choose k]_q` invariant under `q ↦ q⁻¹` and under
+`k ↦ n - k`, gives `[n choose 1]_q = [n]_q`, and specializes to `Nat.choose` at `q = 1`. The
+`q`-binomial theorem computes the coproducts of the powers of the root generators of
+`U_q(sl₂)`.
+
+## Main definitions
+
+* `TauCeti.quantumBinomial q n k`: the symmetric quantum binomial coefficient `[n choose k]_q`.
+
+## Main results
+
+* `TauCeti.quantumBinomial_succ_succ` and `TauCeti.quantumBinomial_succ_succ'`: the two Pascal
+  rules, obtained from each other by `q ↦ q⁻¹`.
+* `TauCeti.quantumBinomial_succ_right_eq`: the absorption identity
+  `[n choose k + 1]_q [k + 1]_q = [n choose k]_q [n - k]_q`.
+* `TauCeti.quantumBinomial_inv` and `TauCeti.quantumBinomial_symm`: invariance under `q ↦ q⁻¹`
+  and `k ↦ n - k`.
+* `TauCeti.quantumBinomial_one_right` and `TauCeti.quantumBinomial_one`: `[n choose 1]_q = [n]_q`
+  and the classical specialization `[n choose k]_1 = n.choose k`.
+* `TauCeti.add_pow_of_mul_eq_smul_mul`: the `q`-binomial theorem for `y x = q² x y`.
+
+## References
+
+* C. Kassel, *Quantum Groups*, Graduate Texts in Mathematics 155, Section IV.2, for Gaussian
+  binomial coefficients and the `q`-binomial formula for `y x = q x y`.
+* J. C. Jantzen, *Lectures on Quantum Groups*, Graduate Studies in Mathematics 6, Chapter 0, for
+  the symmetric normalization.
+-/
+
+public section
+
+open Finset
+
+namespace TauCeti
+
+variable {K : Type*} [Field K]
+
+/-- The symmetric quantum binomial coefficient `[n choose k]_q`, defined by `[n choose 0]_q = 1`,
+`[0 choose k+1]_q = 0` and the Pascal rule
+`[n+1 choose k+1]_q = q^(n-k) [n choose k]_q + q^(-(k+1)) [n choose k+1]_q`. -/
+def quantumBinomial (q : K) : ℕ → ℕ → K
+  | _, 0 => 1
+  | 0, _ + 1 => 0
+  | n + 1, k + 1 =>
+    q ^ (n - k) * quantumBinomial q n k + q⁻¹ ^ (k + 1) * quantumBinomial q n (k + 1)
+
+/-- `[n choose 0]_q = 1`. -/
+@[simp] theorem quantumBinomial_zero_right (q : K) (n : ℕ) : quantumBinomial q n 0 = 1 := by
+  cases n <;> simp [quantumBinomial]
+
+/-- `[0 choose k + 1]_q = 0`. -/
+@[simp] theorem quantumBinomial_zero_succ (q : K) (k : ℕ) : quantumBinomial q 0 (k + 1) = 0 := by
+  simp [quantumBinomial]
+
+/-- The defining Pascal rule
+`[n+1 choose k+1]_q = q^(n-k) [n choose k]_q + q^(-(k+1)) [n choose k+1]_q`. -/
+theorem quantumBinomial_succ_succ (q : K) (n k : ℕ) :
+    quantumBinomial q (n + 1) (k + 1) =
+      q ^ (n - k) * quantumBinomial q n k + q⁻¹ ^ (k + 1) * quantumBinomial q n (k + 1) := by
+  rw [quantumBinomial]
+
+/-- `[n choose k]_q = 0` for `n < k`. -/
+theorem quantumBinomial_eq_zero_of_lt (q : K) {n k : ℕ} (h : n < k) :
+    quantumBinomial q n k = 0 := by
+  induction n generalizing k with
+  | zero =>
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero h.ne'
+    simp
+  | succ n ih =>
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : k ≠ 0)
+    rw [quantumBinomial_succ_succ, ih (by omega), ih (by omega)]
+    simp
+
+/-- `[n choose n]_q = 1`. -/
+@[simp] theorem quantumBinomial_self (q : K) (n : ℕ) : quantumBinomial q n n = 1 := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [quantumBinomial_succ_succ, ih, quantumBinomial_eq_zero_of_lt q (Nat.lt_succ_self n)]
+    simp
+
+/-- At `q = 1` the quantum binomial coefficients are the ordinary binomial coefficients. -/
+@[simp] theorem quantumBinomial_one (n k : ℕ) : quantumBinomial (1 : K) n k = n.choose k := by
+  induction n generalizing k with
+  | zero => cases k <;> simp
+  | succ n ih =>
+    cases k with
+    | zero => simp
+    | succ k => simp [quantumBinomial_succ_succ, ih, Nat.choose_succ_succ]
+
+/-- `[n choose 1]_q = [n]_q` whenever the quantum integers are defined by a nonzero
+denominator. -/
+theorem quantumBinomial_one_right {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
+    quantumBinomial q n 1 = quantumInteger q n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [quantumBinomial_succ_succ, ih, Nat.cast_succ, quantumInteger_natCast_succ hq]
+    simp only [Nat.sub_zero, quantumBinomial_zero_right, zero_add, pow_one]
+    ring
+
+/-- The absorption identity `[n choose k + 1]_q [k + 1]_q = [n choose k]_q [n - k]_q`. At a
+generic parameter it determines `[n choose k]_q` from `[n choose 0]_q = 1`. -/
+theorem quantumBinomial_succ_right_eq (q : K) (n k : ℕ) :
+    quantumBinomial q n (k + 1) * quantumInteger q (k + 1) =
+      quantumBinomial q n k * quantumInteger q (n - k) := by
+  by_cases hq : q - q⁻¹ = 0
+  · simp [quantumInteger_def, hq]
+  induction n generalizing k with
+  | zero => cases k <;> simp
+  | succ n ih =>
+    cases k with
+    | zero => simp [quantumBinomial_one_right hq, quantumInteger_one hq]
+    | succ k =>
+      rcases lt_or_ge k n with hk | hk
+      swap
+      · rw [quantumBinomial_eq_zero_of_lt q (by omega : n + 1 < k + 1 + 1)]
+        rcases eq_or_lt_of_le hk with rfl | hk
+        · simp
+        · simp [quantumBinomial_eq_zero_of_lt q (by omega : n + 1 < k + 1)]
+      -- Both sides reduce, by the induction hypothesis at `k` and `k + 1`, to multiples of
+      -- `[n choose k + 1]_q`; the coefficients agree by the addition formula for `[n + 1]_q`.
+      have ih₀ := ih k
+      have ih₁ := ih (k + 1)
+      have h₁ := quantumInteger_add q ((n : ℤ) - k) ((k : ℤ) + 1)
+      have h₂ := quantumInteger_add q ((n : ℤ) - (k + 1)) ((k : ℤ) + 1 + 1)
+      rw [show (n : ℤ) - k + (k + 1) = n + 1 by ring] at h₁
+      rw [show (n : ℤ) - (k + 1) + (k + 1 + 1) = n + 1 by ring] at h₂
+      have p₁ : q ^ (n - k) = q ^ ((n : ℤ) - k) := by rw [← Nat.cast_sub hk.le, zpow_natCast]
+      have p₂ : q ^ (n - (k + 1)) = q ^ ((n : ℤ) - (k + 1)) := by
+        rw [← zpow_natCast, Nat.cast_sub hk]
+        push_cast
+        rfl
+      have p₃ : ∀ m : ℕ, q⁻¹ ^ m = q ^ (-(m : ℤ)) := fun m => by
+        rw [zpow_neg, zpow_natCast, inv_pow]
+      rw [quantumBinomial_succ_succ, quantumBinomial_succ_succ, p₁, p₂, p₃, p₃]
+      push_cast at ih₁ ⊢
+      rw [show (n : ℤ) + 1 - (k + 1) = n - k by ring]
+      linear_combination q ^ ((n : ℤ) - k) * ih₀ + q ^ (-((k : ℤ) + 1 + 1)) * ih₁ -
+        quantumBinomial q n (k + 1) * (h₂ - h₁)
+
+/-- `(q - q⁻¹) [n]_q = q^n - q^(-n)` for natural `n`. -/
+private theorem sub_inv_mul_quantumInteger_natCast {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
+    (q - q⁻¹) * quantumInteger q n = q ^ n - q⁻¹ ^ n := by
+  rw [quantumInteger_def, mul_div_cancel₀ _ hq, zpow_neg, zpow_natCast, inv_pow]
+
+/-- The second Pascal rule
+`[n+1 choose k+1]_q = q^(-(n-k)) [n choose k]_q + q^(k+1) [n choose k+1]_q`, the image of the
+defining rule under `q ↦ q⁻¹`. -/
+theorem quantumBinomial_succ_succ' (q : K) (n k : ℕ) :
+    quantumBinomial q (n + 1) (k + 1) =
+      q⁻¹ ^ (n - k) * quantumBinomial q n k + q ^ (k + 1) * quantumBinomial q n (k + 1) := by
+  rw [quantumBinomial_succ_succ]
+  rcases lt_or_ge n k with h | h
+  · simp [quantumBinomial_eq_zero_of_lt q h,
+      quantumBinomial_eq_zero_of_lt q (h.trans k.lt_succ_self)]
+  by_cases hq : q - q⁻¹ = 0
+  · rw [← sub_eq_zero.mp hq]
+  have habs := congrArg ((q - q⁻¹) * ·) (quantumBinomial_succ_right_eq q n k)
+  simp only [mul_left_comm (q - q⁻¹), ← Nat.cast_sub h, ← Nat.cast_add_one,
+    sub_inv_mul_quantumInteger_natCast hq] at habs
+  linear_combination -habs
+
+/-- The quantum binomial coefficients are invariant under `q ↦ q⁻¹`. -/
+@[simp] theorem quantumBinomial_inv (q : K) (n k : ℕ) :
+    quantumBinomial q⁻¹ n k = quantumBinomial q n k := by
+  induction n generalizing k with
+  | zero => cases k <;> simp
+  | succ n ih =>
+    cases k with
+    | zero => simp
+    | succ k => rw [quantumBinomial_succ_succ, ih, ih, inv_inv, quantumBinomial_succ_succ']
+
+/-- The symmetry `[n choose n - k]_q = [n choose k]_q` for `k ≤ n`. -/
+theorem quantumBinomial_symm (q : K) {n k : ℕ} (h : k ≤ n) :
+    quantumBinomial q n (n - k) = quantumBinomial q n k := by
+  induction n generalizing k with
+  | zero =>
+    obtain rfl : k = 0 := by omega
+    rfl
+  | succ n ih =>
+    cases k with
+    | zero => simp
+    | succ k =>
+      rcases eq_or_lt_of_le (Nat.le_of_succ_le_succ h) with rfl | hk
+      · simp
+      rw [show n + 1 - (k + 1) = n - (k + 1) + 1 by omega, quantumBinomial_succ_succ',
+        quantumBinomial_succ_succ, show n - (n - (k + 1)) = k + 1 by omega,
+        show n - (k + 1) + 1 = n - k by omega, ih hk, ih hk.le]
+      ring
+
+/-- The **`q`-binomial theorem**: if `y x = q² x y` for a nonzero scalar `q`, then
+`(x + y)^n = ∑_k q^(k(n-k)) [n choose k]_q x^k y^(n-k)`. -/
+theorem add_pow_of_mul_eq_smul_mul {A : Type*} [Semiring A] [Algebra K A] {q : K} (hq : q ≠ 0)
+    {x y : A} (h : y * x = q ^ 2 • (x * y)) (n : ℕ) :
+    (x + y) ^ n = ∑ k ∈ range (n + 1),
+      (q ^ (k * (n - k)) * quantumBinomial q n k) • (x ^ k * y ^ (n - k)) := by
+  -- Moving `x` to the left across `y ^ m` produces the factor `(q ^ 2) ^ m`.
+  have hpow (m : ℕ) : y ^ m * x = (q ^ 2) ^ m • (x * y ^ m) := by
+    have hxy : SemiconjBy x (q ^ 2 • y) y := by rw [SemiconjBy, mul_smul_comm, h]
+    rw [← (hxy.pow_right m).eq, smul_pow, mul_smul_comm]
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    -- Multiply the expansion of `(x + y)^n` on the right by `x + y`.
+    have hterm : ∀ k ∈ range (n + 1),
+        (q ^ (k * (n - k)) * quantumBinomial q n k) • (x ^ k * y ^ (n - k)) * (x + y) =
+          (q ^ (k * (n - k)) * quantumBinomial q n k * (q ^ 2) ^ (n - k)) •
+              (x ^ (k + 1) * y ^ (n - k)) +
+            (q ^ (k * (n - k)) * quantumBinomial q n k) • (x ^ k * y ^ (n + 1 - k)) := by
+      intro k hk
+      have hk : k ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hk)
+      rw [smul_mul_assoc, mul_add, mul_assoc, hpow, mul_smul_comm, ← mul_assoc,
+        ← pow_succ, mul_assoc, ← pow_succ, show n - k + 1 = n + 1 - k by omega, smul_add, smul_smul]
+    -- The second sum, extended by its vanishing top term, is shifted down by one index.
+    have hshift : ∑ k ∈ range (n + 1),
+        (q ^ (k * (n - k)) * quantumBinomial q n k) • (x ^ k * y ^ (n + 1 - k)) =
+          ∑ k ∈ range (n + 1), (q ^ ((k + 1) * (n - (k + 1))) * quantumBinomial q n (k + 1)) •
+              (x ^ (k + 1) * y ^ (n + 1 - (k + 1))) +
+            (q ^ (0 * (n - 0)) * quantumBinomial q n 0) • (x ^ 0 * y ^ (n + 1 - 0)) := by
+      refine Eq.trans ?_ (sum_range_succ' (fun k => (q ^ (k * (n - k)) * quantumBinomial q n k) •
+        (x ^ k * y ^ (n + 1 - k))) (n + 1))
+      rw [sum_range_succ _ (n + 1)]
+      simp [quantumBinomial_eq_zero_of_lt q (Nat.lt_succ_self n)]
+    rw [pow_succ, ih, sum_mul, sum_congr rfl hterm, sum_add_distrib, hshift, ← add_assoc,
+      ← sum_add_distrib, sum_range_succ' _ (n + 1)]
+    congr 1
+    · -- Each remaining coefficient is matched by the defining Pascal rule.
+      refine sum_congr rfl fun k hk => ?_
+      have hk : k ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hk)
+      rw [Nat.add_sub_add_right, ← add_smul, quantumBinomial_succ_succ]
+      congr 1
+      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hk
+      rcases m with _ | j
+      · simp [quantumBinomial_eq_zero_of_lt q (Nat.lt_succ_self k)]
+      · rw [show k + (j + 1) - k = j + 1 by omega, show k + (j + 1) - (k + 1) = j by omega]
+        have hinv : q ^ (k + 1) * q⁻¹ ^ (k + 1) = 1 := by
+          rw [← mul_pow, mul_inv_cancel₀ hq, one_pow]
+        linear_combination (-(q ^ ((k + 1) * j) * quantumBinomial q (k + (j + 1)) (k + 1))) * hinv
+    · simp
+
+end TauCeti

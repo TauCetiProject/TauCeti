@@ -209,6 +209,16 @@ theorem quantumInteger_add_one (q : K) (r : ℤ) :
   field_simp [hq0, hq]
   ring
 
+/-- The addition formula `[a + b]_q = q^a [b]_q + q^(-b) [a]_q`. -/
+theorem quantumInteger_add (q : K) (a b : ℤ) :
+    quantumInteger q (a + b) = q ^ a * quantumInteger q b + q ^ (-b) * quantumInteger q a := by
+  by_cases hq : q - q⁻¹ = 0
+  · simp [quantumInteger, hq]
+  have hq0 := ne_zero_of_sub_inv_ne_zero hq
+  simp only [quantumInteger, neg_add, zpow_add₀ hq0]
+  field_simp
+  ring
+
 /-- The difference of two quantum integers as a determinant of neighbouring quantum integers:
 `[a - b]_q = [a]_q [b + 1]_q - [a + 1]_q [b]_q`. -/
 theorem quantumInteger_sub (q : K) (a b : ℤ) :
