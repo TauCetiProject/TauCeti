@@ -8,7 +8,6 @@ module
 public import TauCeti.GroupTheory.FreeGroup.Commuting
 public import TauCeti.GroupTheory.FreeGroup.ProperPower
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
-public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
 # Centralizers in free groups
@@ -51,11 +50,6 @@ public section
 namespace FreeGroup
 
 variable {α : Type*}
-
-/-- If a generator of a free group is the `m`-th power of some element, then `m = ±1`. -/
-theorem natAbs_eq_one_of_of_eq_zpow {a : α} {r : FreeGroup α} {m : ℤ} (h : of a = r ^ m) :
-    m.natAbs = 1 :=
-  Group.natAbs_eq_one_of_not_isProperPower_zpow (h ▸ FreeGroup.not_isProperPower_of a)
 
 /-- An element of a free group commuting with a generator `of a` is a power of `of a`. -/
 theorem mem_zpowers_of_of_commute {a : α} {z : FreeGroup α} (h : Commute z (of a)) :
