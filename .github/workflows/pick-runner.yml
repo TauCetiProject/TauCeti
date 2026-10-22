@@ -31,10 +31,6 @@ on:
         value: ${{ jobs.pick.outputs.pool }}
       attempt:
         value: ${{ jobs.pick.outputs.attempt }}
-      fleet:
-        value: ${{ jobs.pick.outputs.fleet }}
-      github:
-        value: ${{ jobs.pick.outputs.github }}
       busy:
         value: ${{ jobs.pick.outputs.busy }}
       budget:
@@ -57,8 +53,6 @@ jobs:
       runner: ${{ steps.pick.outputs.runner }}
       pool: ${{ steps.pick.outputs.pool }}
       attempt: ${{ steps.pick.outputs.attempt }}
-      fleet: ${{ steps.pick.outputs.fleet }}
-      github: ${{ steps.pick.outputs.github }}
       busy: ${{ steps.pick.outputs.busy }}
       budget: ${{ steps.pick.outputs.budget }}
       namespace_busy: ${{ steps.pick.outputs.namespace_busy }}
