@@ -132,6 +132,7 @@ theorem exists_intCast_add_intCast_mul_toInteger_eq (x : 𝓞 K) :
   simp [Fin.sum_univ_two]
 
 /-- An integer `m` divides `a + b ζ` in `𝓞 K = ℤ[ζ]` exactly when it divides both coordinates. -/
+@[simp]
 theorem intCast_dvd_intCast_add_intCast_mul_toInteger_iff {m a b : ℤ} :
     (m : 𝓞 K) ∣ a + b * hζ.toInteger ↔ m ∣ a ∧ m ∣ b := by
   refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun ⟨ha, hb⟩ ↦ ?_⟩
@@ -146,6 +147,7 @@ theorem intCast_dvd_intCast_add_intCast_mul_toInteger_iff {m a b : ℤ} :
 
 /-- **The coordinate criterion for primary Eisenstein integers.** For integers `a` and `b`, the
 element `a + b ζ` of `𝓞 K = ℤ[ζ]` is primary if and only if `a ≡ 2` and `b ≡ 0` modulo `3`. -/
+@[simp]
 theorem isPrimaryEisenstein_add_mul_iff {a b : ℤ} :
     IsPrimaryEisenstein ((a : 𝓞 K) + b * hζ.toInteger) ↔ a ≡ 2 [ZMOD 3] ∧ b ≡ 0 [ZMOD 3] := by
   have h : (a : 𝓞 K) + b * hζ.toInteger - 2 = ((a - 2 : ℤ) : 𝓞 K) + b * hζ.toInteger := by
