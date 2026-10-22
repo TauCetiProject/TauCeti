@@ -15,6 +15,7 @@ import TauCeti.Algebra.Algebra.Pi
 import TauCeti.Algebra.TensorProduct.Galois
 import TauCeti.FieldTheory.Normal.Embeddings
 import TauCeti.FieldTheory.KrullTopology
+import TauCeti.RingTheory.Etale.Field
 import TauCeti.RingTheory.TotallySplit
 
 /-!
@@ -86,7 +87,6 @@ theory, the `Ω`-valued points of a finite product of fields are the points of i
 * `TauCeti.faithful_fiber`: the fibre functor at a separably closed field is faithful.
 * `TauCeti.galoisFiberFullyFaithful`: for a separable closure `Ω` of `K`, `galoisFiber K Ω` is
   fully faithful.
-* `Algebra.Etale.of_isSeparable`: a finite separable field extension is étale.
 * `TauCeti.exists_mulActionHom_algHom_bijective`: for a Galois extension `Ω/K`, every finite
   `Gal(Ω/K)`-set with open stabilizers is equivariantly the set of `Ω`-valued points of a finite
   étale `K`-algebra.
@@ -110,11 +110,6 @@ open scoped TensorProduct
 universe u v w
 
 namespace Algebra.Etale
-
-/-- **A finite separable field extension is étale.** -/
-theorem of_isSeparable (K L : Type*) [Field K] [Field L] [Algebra K L] [Module.Finite K L]
-    [Algebra.IsSeparable K L] : Algebra.Etale K L :=
-  ⟨FormallyEtale.of_isSeparable K L, FinitePresentation.of_finiteType.mp inferInstance⟩
 
 variable (K Ω A : Type*) [Field K] [Field Ω] [Algebra K Ω] [CommRing A] [Algebra K A]
 
