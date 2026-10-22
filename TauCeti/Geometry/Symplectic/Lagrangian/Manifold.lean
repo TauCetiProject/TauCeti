@@ -20,6 +20,8 @@ Let `σ` be a fiberwise nondegenerate smooth two-form on `M`, so that every tang
 **isotropic**, **coisotropic** or **Lagrangian** when, at every point `x` of `N`, its tangent
 image `df_x(T_x N)`, the range of the differential, is an isotropic, coisotropic or Lagrangian
 subspace of `T_(f x) M` in the sense of `TauCeti.SymplecticForm.IsIsotropic` and its siblings.
+The differential is `mfderiv`, which is `0` where `f` is not differentiable; there the tangent
+image is zero, which is isotropic, so the predicates are only meaningful for differentiable maps.
 The source is an arbitrary charted space and `f` need not be injective, so these predicates apply
 to embedded and immersed submanifolds alike, through any parametrization.
 
@@ -30,7 +32,7 @@ The predicates are invariant under the natural operations:
 * a diffeomorphism `ψ : M → M₂` pulling a nondegenerate two-form `σ₂` back to `σ` carries
   isotropic, coisotropic and Lagrangian maps for `σ` to those for `σ₂`, and conversely.
 
-A map is isotropic exactly when it pulls `σ` back to zero
+A smooth map is isotropic exactly when it pulls `σ` back to zero
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero`), which is the
 form in which isotropy of graphs and sections is usually checked.
 
@@ -39,9 +41,9 @@ isotropic maps and `2 dim N = dim M` for Lagrangian ones, and an isotropic immer
 manifold of half the dimension is Lagrangian. Coisotropic maps satisfy `dim M ≤ 2 dim N` without
 any injectivity.
 
-A **Lagrangian immersion** (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianImmersion`) is a
-smooth immersion with isotropic tangent images from a manifold of half the dimension; it is
-equivalently an immersion which is a Lagrangian map
+A **Lagrangian immersion** (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianImmersion`)
+into a finite-dimensional manifold is a smooth immersion with isotropic tangent images from a
+manifold of half the dimension; it is equivalently an immersion which is a Lagrangian map
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianImmersion_iff`). It is a separate notion from
 an embedded Lagrangian submanifold: its image may have self-intersections.
 
@@ -96,7 +98,12 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 variable (J)
 
 /-- A map `f : N → M` is **isotropic** for a nondegenerate two-form `σ` when every tangent image
-`df_x(T_x N)` is an isotropic subspace of `(T_(f x) M, σ_(f x))`. -/
+`df_x(T_x N)` is an isotropic subspace of `(T_(f x) M, σ_(f x))`.
+
+The tangent image is taken with `mfderiv`, which is `0` at points where `f` is not
+differentiable, so there the condition holds trivially: a nowhere-differentiable map counts as
+isotropic. Isotropy is meaningful for differentiable maps, and the statements relating it to the
+pulled-back form assume `f` smooth. -/
 def IsIsotropicMap (f : N → M) : Prop :=
   ∀ x, (hσ.symplecticFormAt (f x)).IsIsotropic (LinearMap.range (mfderiv J I f x).toLinearMap)
 
@@ -283,10 +290,10 @@ end Dimension
 /-! ### Lagrangian immersions -/
 
 variable (J hσ) in
-/-- A **Lagrangian immersion** for a nondegenerate two-form `σ` on `M` is a smooth immersion
-`f : N → M` with isotropic tangent images from a manifold of half the dimension of `M`. Its image
-may have self-intersections. -/
-structure IsLagrangianImmersion (f : N → M) : Prop where
+/-- A **Lagrangian immersion** for a nondegenerate two-form `σ` on a finite-dimensional manifold
+`M` is a smooth immersion `f : N → M` with isotropic tangent images from a manifold of half the
+dimension of `M`. Its image may have self-intersections. -/
+structure IsLagrangianImmersion [FiniteDimensional ℝ E] (f : N → M) : Prop where
   /-- A Lagrangian immersion is a smooth immersion. -/
   isImmersion : IsImmersion J I ∞ f
   /-- A Lagrangian immersion has isotropic tangent images. -/
