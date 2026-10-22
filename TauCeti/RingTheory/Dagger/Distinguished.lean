@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.WashnitzerAlgebra
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Iterate
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
 
 /-!
 # Radius selection for distinguished overconvergent series
@@ -54,68 +54,11 @@ open TauCeti.MvPowerSeries (isRestricted_of_le)
 
 variable {σ K : Type*}
 
-section Slices
-
-variable [NormedCommRing K]
-
-/-- A constant weight in the variables `σ` is bounded by a larger constant weight in all the
-variables `Option σ`. -/
-private theorem pow_degree_le_pow_degree_optionElim {ρ ρ' : ℝ} (hρ : 0 ≤ ρ) (hρρ' : ρ ≤ ρ')
-    (hρ' : 1 ≤ ρ') (t : σ →₀ ℕ) (m : ℕ) :
-    ρ ^ t.degree ≤ ρ' ^ (t.optionElim m).degree := by
-  rw [Finsupp.degree_optionElim, pow_add]
-  exact (pow_le_pow_left₀ hρ hρρ' _).trans (le_mul_of_one_le_left (by positivity)
-    (one_le_pow₀ hρ'))
-
-/-- At a constant radius `ρ > 0`, each coefficient slice obtained by separating the variable
-`none` from a restricted series is restricted. -/
-private theorem isRestricted_const_coeff_optionEquivLeft {ρ : ℝ} (hρ : 0 < ρ)
-    {g : MvPowerSeries (Option σ) K} (hg : IsRestricted (fun _ ↦ ρ) g) (m : ℕ) :
-    IsRestricted (fun _ ↦ ρ) (PowerSeries.coeff m (optionEquivLeft σ K g)) := by
-  have hi : Function.Injective (fun t : σ →₀ ℕ ↦ t.optionElim m) := fun t u h ↦ by
-    simpa using congrArg Finsupp.some h
-  have h := ((isRestricted_const_iff.1 hg).comp hi.tendsto_cofinite).const_mul (ρ ^ m)⁻¹
-  rw [mul_zero] at h
-  refine isRestricted_const_iff.2 (h.congr fun t ↦ ?_)
-  rw [Function.comp_apply, coeff_coeff_optionEquivLeft, Finsupp.degree_optionElim, pow_add]
-  field_simp
-
-end Slices
-
 section Field
 
 variable [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 local notation "Tate" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
-
-/-- A series over a ring of restricted series is distinguished of degree `s` at radius `r > 0`,
-with a unit coefficient in degree `s`, when the constant term `a` of that coefficient strictly
-dominates: the other weighted coefficient norms of the coefficient in degree `s` are below `‖a‖`,
-and those of the coefficient in every other degree `m`, multiplied by `r ^ m`, are below
-`‖a‖ r ^ s`. -/
-private theorem isDistinguished_isUnit_of_norm_coeff_lt {c : σ → ℝ} [∀ i, Fact (0 < c i)]
-    {r : ℝ} (hr : 0 < r) {s : ℕ} {G : PowerSeries (IsRestricted.subring (R := K) c)}
-    (h0 : constantCoeff (↑(PowerSeries.coeff s G) : MvPowerSeries σ K) ≠ 0)
-    (hs : ∀ t ≠ 0, ‖coeff t (↑(PowerSeries.coeff s G) : MvPowerSeries σ K)‖ * t.prod (c · ^ ·) <
-      ‖constantCoeff (↑(PowerSeries.coeff s G) : MvPowerSeries σ K)‖)
-    (hm : ∀ m ≠ s, ∀ t, ‖coeff t (↑(PowerSeries.coeff m G) : MvPowerSeries σ K)‖ *
-      t.prod (c · ^ ·) * r ^ m < ‖constantCoeff (↑(PowerSeries.coeff s G) : MvPowerSeries σ K)‖ *
-        r ^ s) :
-    PowerSeries.IsDistinguished r s G ∧ IsUnit (PowerSeries.coeff s G) := by
-  set N := ‖constantCoeff (↑(PowerSeries.coeff s G) : MvPowerSeries σ K)‖
-  have hGs : ‖PowerSeries.coeff s G‖ = N :=
-    norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le fun t ht ↦ (hs t ht).le
-  have hGm (m : ℕ) (hm' : m ≠ s) : ‖PowerSeries.coeff m G‖ * r ^ m < N * r ^ s := by
-    have hrm : 0 < r ^ m := pow_pos hr _
-    rw [← lt_div_iff₀ hrm, MvPowerSeries.norm_lt_iff]
-    exact fun t ↦ (lt_div_iff₀ hrm).2 (hm m hm' t)
-  have hgauss : G.gaussNorm norm r = N * r ^ s := by
-    rw [TauCeti.PowerSeries.gaussNorm_eq_of_forall_le fun m ↦ ?_, hGs]
-    rcases eq_or_ne m s with rfl | hm'
-    · exact le_rfl
-    · exact (hGm m hm').le.trans_eq (by rw [hGs])
-  exact ⟨⟨by rw [hGs, hgauss], fun m hm' ↦ hgauss ▸ hGm m hm'.ne'⟩,
-    (isUnit_iff_constantCoeff_ne_zero_and_norm_coeff_mul_prod_lt _).2 ⟨h0, hs⟩⟩
 
 /-- The unit-radius hypotheses of radius selection as bounds on the coefficients of `g`. Let `N`
 be the norm of the constant term of `g_s`. Then `N > 0`, every coefficient of `g` has norm at
@@ -199,7 +142,7 @@ theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlge
   have hgρ : IsRestricted (fun _ ↦ ρ) (g : MvPowerSeries (Option σ) K) :=
     isRestricted_of_le hgρ₁ (fun _ ↦ hρ0.le) fun _ ↦ hρr.trans (min_le_left _ _)
   let G : PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)) :=
-    PowerSeries.mk fun m ↦ ⟨_, isRestricted_const_coeff_optionEquivLeft hρ0 hgρ m⟩
+    PowerSeries.mk fun m ↦ ⟨_, Huber.isRestricted_coeff_optionEquivLeft hρ0 hgρ m⟩
   have hG (m : ℕ) : (↑(PowerSeries.coeff m G) : MvPowerSeries σ K) =
       PowerSeries.coeff m (optionEquivLeft σ K (g : MvPowerSeries (Option σ) K)) := by
     simp [G]
@@ -215,7 +158,8 @@ theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlge
     rw [hGcoeff, Finsupp.prod_pow_eq_pow_degree]
     refine lt_of_le_of_lt (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
       (hρ₁S _ (Or.inr ⟨by simp, by simpa using ht⟩))
-    exact pow_degree_le_pow_degree_optionElim hρ0.le (hρr.trans (min_le_left _ _)) hρ₁.le t s
+    exact Finsupp.pow_degree_le_pow_degree_optionElim hρ0.le (hρr.trans (min_le_left _ _)) hρ₁.le
+      t s
   -- In every other `Y`-degree `m` the weighted coefficients are below `N r ^ s`.
   have hm (m : ℕ) (hm : m ≠ s) (t : σ →₀ ℕ) :
       ‖coeff t (↑(PowerSeries.coeff m G) : MvPowerSeries σ K)‖ * t.prod (fun _ n ↦ ρ ^ n) *
@@ -226,7 +170,7 @@ theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlge
     · have hw : w * ρ ^ t.degree < N * r := by
         refine lt_of_le_of_lt (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
           (by simpa using hρ₂S _ (by simpa using hm))
-        exact pow_degree_le_pow_degree_optionElim hρ0.le (min_le_left _ _) hρ₂.le t m
+        exact Finsupp.pow_degree_le_pow_degree_optionElim hρ0.le (min_le_left _ _) hρ₂.le t m
       calc w * ρ ^ t.degree * r ^ m < N * r * r ^ m :=
             mul_lt_mul_of_pos_right hw (pow_pos (zero_lt_one.trans hr) _)
         _ = N * r ^ (m + 1) := by ring
@@ -241,7 +185,7 @@ theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlge
             exact mul_le_mul_of_nonneg_left hρ₁w (norm_nonneg _)
         _ < N := hρ₁S _ (Or.inl (by simpa using hm))
         _ ≤ N * r ^ s := le_mul_of_one_le_right hN.le (one_le_pow₀ hr.le)
-  obtain ⟨hd, hunit⟩ := isDistinguished_isUnit_of_norm_coeff_lt (zero_lt_one.trans hr)
+  obtain ⟨hd, hunit⟩ := MvPowerSeries.isDistinguished_isUnit_of_norm_coeff_lt (zero_lt_one.trans hr)
     (by rw [hGs0]; exact norm_pos_iff.1 hN) (by rw [hGs0]; exact hs) (by rw [hGs0]; exact hm)
   exact ⟨ρ, this, r, hρ, hρr, min_le_right _ _,
     isRestricted_of_le hgρ₁ (fun _ ↦ (zero_lt_one.trans hr).le) fun _ ↦ min_le_left _ _, G, hG,
