@@ -21,9 +21,10 @@ import TauCeti.LinearAlgebra.Span.Basic
 Let `K` be a field and `n` a finite index type. In `GL n K`, acting on `n → K` by
 `Matrix.mulVec`, consider the stabilizer `P` of the coordinate line `K ∙ eᵢ` and the stabilizer
 `Q` of the coordinate hyperplane `{v | v i = 0}`. In matrix entries, `P` consists of the invertible
-matrices whose column `i` vanishes off the diagonal, and `Q` of those whose row `i` does. These are
-the maximal parabolic subgroups of `GLₙ` of block shapes `(1, n - 1)` and `(n - 1, 1)`, and both
-contain the block-diagonal subgroup `GL₁ × GLₙ₋₁` as a common Levi factor.
+matrices whose column `i` vanishes off the diagonal, and `Q` of those whose row `i` does. When `n`
+has at least two elements, these are the maximal parabolic subgroups of `GLₙ` of block shapes
+`(1, n - 1)` and `(n - 1, 1)`, and both contain the block-diagonal subgroup `GL₁ × GLₙ₋₁` as a
+common Levi factor. When `n` has one element, both are the whole group.
 
 Inverse transpose `g ↦ (g⁻¹)ᵀ` is an automorphism of `GL n K` carrying `P` onto `Q`. Over a finite
 field the two subgroups are **almost conjugate**: they meet every conjugacy class in the same
