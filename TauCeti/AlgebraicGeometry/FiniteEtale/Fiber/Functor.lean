@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
+public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Limits
 public import TauCeti.CategoryTheory.Limits.Preserves.Over
 
@@ -131,9 +131,7 @@ private theorem isIso_of_isColimit_binaryCofanMk [PreconnectedSpace S] (x : Spec
         (isColimitOfPreserves (fiber x ⋙ FintypeCat.incl) hc)⟩
     have hsurj := (ConcreteCategory.bijective_of_isIso ((fiber x).map i)).2
     exact ⟨fun z ↦ Set.disjoint_left.mp hcompl.disjoint (hsurj ((fiber x).map u z)) ⟨z, rfl⟩⟩
-  let hZ := isInitialOfIsEmpty Z
-  have h : i ≫ hc.desc (BinaryCofan.mk (𝟙 X) (hZ.to X)) = 𝟙 X := hc.fac _ ⟨.left⟩
-  exact ⟨_, h, BinaryCofan.IsColimit.hom_ext hc (by simp [reassoc_of% h]) (hZ.hom_ext _ _)⟩
+  exact (BinaryCofan.isColimit_iff_isIso_inl (isInitialOfIsEmpty Z) (BinaryCofan.mk i u)).mp ⟨hc⟩
 
 /-- Over a preconnected base, the geometric fibre functor reflects isomorphisms: a morphism of
 finite étale schemes which is bijective on the geometric fibre at one geometric point is an

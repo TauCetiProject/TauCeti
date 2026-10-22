@@ -114,11 +114,8 @@ instance : PreservesFiniteCoproducts (finiteEtaleSchemeProperty S).ι :=
 /-- A finite étale `S`-scheme whose underlying scheme is empty is initial. -/
 noncomputable def isInitialOfIsEmpty (X : FiniteEtaleScheme S) [IsEmpty X.obj.left] :
     IsInitial X :=
-  IsInitial.ofUniqueHom
-    (fun _ ↦ ObjectProperty.homMk (Over.homMk (AlgebraicGeometry.isInitialOfIsEmpty.to _)
-      (AlgebraicGeometry.isInitialOfIsEmpty.hom_ext _ _)))
-    fun _ _ ↦ ObjectProperty.hom_ext _
-      (Over.OverMorphism.ext (AlgebraicGeometry.isInitialOfIsEmpty.hom_ext _ _))
+  (AlgebraicGeometry.isInitialOfIsEmpty (X := X.obj.left)).isInitialOfObj
+    ((finiteEtaleSchemeProperty S).ι ⋙ Over.forget S) X
 
 /-- A finite étale `S`-scheme is initial exactly when its underlying scheme is empty. -/
 theorem isInitial_iff_isEmpty {X : FiniteEtaleScheme S} :
