@@ -32,7 +32,8 @@ forms at each place are linearly independent, that only finitely many distinct s
 occur, and that the weights `c v` vanish at all but finitely many places; under them the local
 factors are `1` at all but finitely many places
 (`TauCeti.hasFiniteMulSupport_twistedLocalHeight`), so that the twisted height is a genuine finite
-product.
+product. The definition does not assume these hypotheses: the product over the places is Mathlib's
+`finprod`, which is `1` when infinitely many local factors differ from `1`.
 
 ## Main definitions
 
@@ -160,7 +161,11 @@ theorem hasFiniteMulSupport_twistedLocalHeight (hL : ∀ v, LinearIndependent K 
 open Classical in
 /-- The twisted height `H_{L,c,Q}(x) = ∏_v max_i |L v i ⬝ᵥ x|_v * Q ^ (-c v i)` of a point
 `x ≠ 0` of `K ^ n`, for linear forms `L v i` and weights `c v i` indexed by the places `v` of `K`.
-The twisted height of `0` is `0`. -/
+The twisted height of `0` is `0`.
+
+The product is Mathlib's `finprod`. It is the true product over the places when the local factors
+are `1` at all but finitely many places, as under the usual hypotheses on the data
+(`hasFiniteMulSupport_twistedLocalHeight`), and it is `1` otherwise. -/
 def twistedHeight (L : Place K → Fin n → Fin n → K) (c : Place K → Fin n → ℝ) (Q : ℝ)
     (x : Fin n → K) : ℝ :=
   if x = 0 then 0 else ∏ᶠ v, twistedLocalHeight L c Q v x
