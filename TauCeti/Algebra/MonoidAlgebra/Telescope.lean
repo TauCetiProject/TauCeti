@@ -21,20 +21,22 @@ algebra of a weight lattice.
 
 ## Main statements
 
-* `MonoidAlgebra.one_sub_single_inv_mul_sum_div`: the descending string telescopes; its additive
-  form is `AddMonoidAlgebra.one_sub_single_neg_mul_sum_sub`.
-* `MonoidAlgebra.one_sub_single_inv_mul_sum_mul`: the ascending string telescopes; its additive
-  form is `AddMonoidAlgebra.one_sub_single_neg_mul_sum_add`.
+* `TauCeti.one_sub_single_inv_mul_sum_div`: the descending string telescopes; its additive
+  form is `TauCeti.one_sub_single_neg_mul_sum_sub`.
+* `TauCeti.one_sub_single_inv_mul_sum_mul`: the ascending string telescopes; its additive
+  form is `TauCeti.one_sub_single_neg_mul_sum_add`.
 -/
 
 public section
 
-namespace MonoidAlgebra
+namespace TauCeti
+
+open _root_.MonoidAlgebra
 
 variable {R : Type*} [Ring R] {G : Type*} [CommGroup G]
 
 /-- Multiplying the descending string `y + y g⁻¹ + ⋯ + y g⁻⁽ⁿ⁻¹⁾` by `1 - g⁻¹` telescopes. -/
-@[to_additive (dont_translate := R) AddMonoidAlgebra.one_sub_single_neg_mul_sum_sub
+@[to_additive (dont_translate := R) one_sub_single_neg_mul_sum_sub
   /-- Multiplying the descending string `e^y + e^{y - α} + ⋯ + e^{y - (n - 1) α}` by
   `1 - e^{-α}` telescopes. -/]
 theorem one_sub_single_inv_mul_sum_div (g y : G) (n : ℕ) :
@@ -49,7 +51,7 @@ theorem one_sub_single_inv_mul_sum_div (g y : G) (n : ℕ) :
   rw [sub_mul, one_mul, single_mul_single, mul_one, hj]
 
 /-- Multiplying the ascending string `y g + ⋯ + y gⁿ` by `1 - g⁻¹` telescopes. -/
-@[to_additive (dont_translate := R) AddMonoidAlgebra.one_sub_single_neg_mul_sum_add
+@[to_additive (dont_translate := R) one_sub_single_neg_mul_sum_add
   /-- Multiplying the ascending string `e^{y + α} + ⋯ + e^{y + n α}` by `1 - e^{-α}`
   telescopes. -/]
 theorem one_sub_single_inv_mul_sum_mul (g y : G) (n : ℕ) :
@@ -63,4 +65,4 @@ theorem one_sub_single_inv_mul_sum_mul (g y : G) (n : ℕ) :
     rw [pow_succ', mul_left_comm, inv_mul_cancel_left]
   rw [sub_mul, one_mul, single_mul_single, mul_one, hj]
 
-end MonoidAlgebra
+end TauCeti

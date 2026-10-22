@@ -137,12 +137,12 @@ private lemma one_sub_single_neg_root_mul_demazureOperator_single (x : M) :
     · exact ⟨(-P.coroot' i x - 1).toNat, .inr (by omega)⟩
   · have hx : -P.root i + (x - (n : ℤ) • P.root i) = x - (n + 1) • P.root i := by
       rw [natCast_zsmul, succ_nsmul]; abel
-    rw [P.demazureOperator_single_of_coroot'_eq_natCast i hn, one_sub_single_neg_mul_sum_sub, hn,
-      hx]
+    rw [P.demazureOperator_single_of_coroot'_eq_natCast i hn,
+      TauCeti.one_sub_single_neg_mul_sum_sub, hn, hx]
   · have hx : -P.root i + (x - (-(n : ℤ) - 1) • P.root i) = x + n • P.root i := by
       rw [sub_smul, neg_smul, natCast_zsmul, one_smul]; abel
     rw [P.demazureOperator_single_of_coroot'_eq_neg_natCast_sub_one i hn, mul_neg,
-      one_sub_single_neg_mul_sum_add, neg_sub, hn, hx]
+      TauCeti.one_sub_single_neg_mul_sum_add, neg_sub, hn, hx]
 
 /-- **The localization identity** of the Demazure operator:
 `(1 - e^{-αᵢ}) Dᵢ(f) = f - e^{-αᵢ} sᵢ(f)`, where `sᵢ` reindexes `ℤ[M]` along the reflection of
@@ -170,7 +170,7 @@ private lemma eq_of_one_sub_single_neg_root_mul_eq {f g : AddMonoidAlgebra ℤ M
       nsmul_eq_mul, neg_eq_zero] at this
     omega
   rw [← sub_eq_zero]
-  refine AddMonoidAlgebra.eq_zero_of_mul_single_eq_self hα ?_
+  refine TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder hα ?_
   linear_combination -h
 
 /-- The localization identity characterizes the Demazure operator: `Dᵢ f` is the unique `g` with
