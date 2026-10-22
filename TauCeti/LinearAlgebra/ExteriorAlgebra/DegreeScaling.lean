@@ -30,20 +30,20 @@ creation–annihilation anticommutator.
 
 * `TauCeti.ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`: the degree scaling acts on the
   `n`-th exterior power by `r ^ n`.
-* `TauCeti.ExteriorAlgebra.degreeScaling_ι`, `TauCeti.ExteriorAlgebra.degreeScaling_involute` and
-  `TauCeti.ExteriorAlgebra.degreeScaling_contractLeft`: its interaction with the generators, the
+* `TauCeti.ExteriorAlgebra.degreeScaling_ι`, `ExteriorAlgebra.degreeScaling_involute` and
+  `ExteriorAlgebra.degreeScaling_contractLeft`: its interaction with the generators, the
   grade involution and contraction.
 -/
 
 public section
 
-open CliffordAlgebra
-
-namespace TauCeti.ExteriorAlgebra
+open CliffordAlgebra ExteriorAlgebra
 
 universe u v
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
+namespace TauCeti.ExteriorAlgebra
 
 /-- **The degree scaling of an exterior algebra** by a unit `r`: the algebra automorphism of
 `⋀ M` induced by the scalar multiplication `r • id` of `M`. It multiplies the `n`-th exterior power
@@ -53,10 +53,20 @@ noncomputable def degreeScaling (r : Rˣ) : ExteriorAlgebra R M ≃ₐ[R] Exteri
     (_root_.ExteriorAlgebra.map (((r⁻¹ : Rˣ) : R) • LinearMap.id))
     (by ext; simp [smul_smul]) (by ext; simp [smul_smul])
 
+end TauCeti.ExteriorAlgebra
+
+namespace ExteriorAlgebra
+
+open TauCeti.ExteriorAlgebra
+
 /-- The degree scaling is the exterior-algebra map induced by `r • id`. -/
 theorem degreeScaling_apply (r : Rˣ) (x : ExteriorAlgebra R M) :
     degreeScaling r x = _root_.ExteriorAlgebra.map ((r : R) • LinearMap.id) x :=
   (rfl)
+
+end ExteriorAlgebra
+
+namespace TauCeti.ExteriorAlgebra
 
 /-- The degree scaling by `r` multiplies a generator by `r`. -/
 @[simp]
@@ -88,6 +98,12 @@ theorem degreeScaling_of_mem_exteriorPower (r : Rˣ) {n : ℕ} {x : ExteriorAlge
     obtain ⟨v, rfl⟩ := hm
     rw [map_mul, ih, degreeScaling_ι, smul_mul_smul_comm, pow_succ']
 
+end TauCeti.ExteriorAlgebra
+
+namespace ExteriorAlgebra
+
+open TauCeti.ExteriorAlgebra
+
 /-- The degree scaling commutes with the grade involution. -/
 @[simp]
 theorem degreeScaling_involute (r : Rˣ) (x : ExteriorAlgebra R M) :
@@ -115,4 +131,4 @@ theorem degreeScaling_contractLeft (r : Rˣ) (d : Module.Dual R M) (x : Exterior
       { (r : R) • LinearMap.id with map_app' := fun _ => rfl }
       (((r⁻¹ : Rˣ) : R) • d) x).symm
 
-end TauCeti.ExteriorAlgebra
+end ExteriorAlgebra
