@@ -135,16 +135,6 @@ variable {K L : Type*} [Field K] [CommRing L] [Algebra K L] [Algebra.IsQuadratic
 
 namespace Algebra.IsQuadraticExtension
 
-/-- In a commutative quadratic algebra over a field, the characteristic equation of a square root
-`x` of `d` with `x ∉ K` reads `Tr x · x = d + N x`. -/
-private theorem algebraMap_trace_mul_eq_of_sq_eq {x : L} {d : K}
-    (hx2 : x ^ 2 = algebraMap K L d) :
-    algebraMap K L (Algebra.trace K L x) * x = algebraMap K L (d + Algebra.norm K x) := by
-  have h := sq_eq_trace_smul_sub_norm K x
-  rw [Algebra.smul_def, hx2] at h
-  rw [map_add]
-  linear_combination -h
-
 /-- A square root `x` of an element of the base field, lying outside the base field, has trace
 zero. This holds in every commutative quadratic algebra over a field, including split and
 nonreduced ones; for field extensions of any finite degree it is
@@ -153,19 +143,18 @@ theorem trace_eq_zero_of_sq_eq {x : L} {d : K} (hx : x ∉ Set.range (algebraMap
     (hx2 : x ^ 2 = algebraMap K L d) : Algebra.trace K L x = 0 := by
   by_contra h
   refine hx ⟨(Algebra.trace K L x)⁻¹ * (d + Algebra.norm K x), ?_⟩
-  rw [map_mul, ← algebraMap_trace_mul_eq_of_sq_eq hx2, ← mul_assoc, ← map_mul, inv_mul_cancel₀ h,
-    map_one, one_mul]
+  rw [map_mul, ← Algebra.smul_def, inv_smul_eq_iff₀ h]
+  simpa only [map_add, ← eq_sub_iff_add_eq, ← hx2] using sq_eq_trace_smul_sub_norm K x
 
 /-- A square root `x` of `d`, lying outside the base field, has norm `-d`: its characteristic
 polynomial `X² - Tr x · X + N x` is `X² - d`. -/
 theorem norm_eq_neg_of_sq_eq {x : L} {d : K} (hx : x ∉ Set.range (algebraMap K L))
     (hx2 : x ^ 2 = algebraMap K L d) : Algebra.norm K x = -d := by
-  have : Nontrivial L :=
-    Module.nontrivial_of_finrank_pos (R := K) (by rw [finrank_eq_two K L]; norm_num)
-  have h := algebraMap_trace_mul_eq_of_sq_eq hx2
-  rw [trace_eq_zero_of_sq_eq hx hx2, map_zero, zero_mul, eq_comm,
-    map_eq_zero_iff _ (algebraMap K L).injective] at h
-  linear_combination h
+  have := Module.nontrivial_of_finrank_eq_succ (finrank_eq_two K L)
+  apply FaithfulSMul.algebraMap_injective K L
+  rw [map_neg, ← neg_eq_iff_eq_neg]
+  simpa only [trace_eq_zero_of_sq_eq hx hx2, zero_smul, zero_sub, hx2] using
+    (sq_eq_trace_smul_sub_norm K x).symm
 
 /-- The trace in square-root coordinates: if `x² = d` with `x ∉ K`, then
 `Tr (b + a x) = 2 b`. -/
