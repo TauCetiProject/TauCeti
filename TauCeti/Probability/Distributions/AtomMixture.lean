@@ -19,11 +19,11 @@ public import TauCeti.Probability.Distributions.Dirac
 This file develops the real distribution formulas for `MeasureTheory.Measure.atomMixture`, whose
 generic measure and integration API is in `TauCeti.MeasureTheory.Measure.AtomMixture`. For a
 probability measure, the results compute the cdf, mean, variance, moment-generating function, and
-characteristic function. When the base law has no mass below the atom, they also compute the
-quantile: it stays at the atom through the combined mass there, and above that mass it is the base
-quantile at the level obtained by removing and rescaling the added weight. These formulas allow
-atomic and continuous parts to be handled without pretending that the whole mixture has a
-density.
+characteristic function. They also compute the quantile: above the mixture's cdf at the atom it is
+the base quantile at the level obtained by removing and rescaling the added weight, and when the
+base law has no mass below the atom, it stays at the atom through the combined mass there. These
+formulas allow atomic and continuous parts to be handled without pretending that the whole
+mixture has a density.
 
 The formulas live in `MeasureTheory.Measure` and support dot notation on the base measure,
 for example `μ.cdf_atomMixture` and `μ.mgf_id_atomMixture`.
@@ -206,10 +206,10 @@ theorem quantile_atomMixture_eq_atom (hμ : μ (Iio c) = 0)
             cdf_atomMixture_of_lt μ c hμ w (lt_of_not_ge hx)]
     _ = c := quantile_dirac c hu hu_one
 
-/-- Above the combined atom at a lower support boundary, remove the added weight and rescale the
-probability level to obtain the quantile of the base law. -/
-theorem quantile_atomMixture_of_lt (hμ : μ (Iio c) = 0) (hu : u ≤ 1)
-    (hlt : (w : ℝ) + (1 - (w : ℝ)) * μ.real {c} < u) :
+/-- Above the mixture's cdf at the added atom, remove the added weight and rescale the probability
+level to obtain the quantile of the base law. -/
+theorem quantile_atomMixture_of_lt (hu : u ≤ 1)
+    (hlt : (w : ℝ) + (1 - (w : ℝ)) * cdf μ c < u) :
     (μ.atomMixture c w).quantile u =
       μ.quantile ((u - (w : ℝ)) / (1 - (w : ℝ))) := by
   have hw : w ≠ 1 := by
@@ -217,24 +217,17 @@ theorem quantile_atomMixture_of_lt (hμ : μ (Iio c) = 0) (hu : u ≤ 1)
     subst w
     norm_num at hlt
     exact (not_lt_of_ge hu) hlt
-  have hwlt : (w : ℝ) < 1 := unitInterval.lt_one_iff_ne_one.mpr hw
-  have hden : 0 < 1 - (w : ℝ) := sub_pos.mpr hwlt
-  have hw_le_u : (w : ℝ) < u := by
-    have hnonneg : 0 ≤ (1 - (w : ℝ)) * μ.real {c} :=
-      mul_nonneg (sub_nonneg.mpr (unitInterval.le_one w)) measureReal_nonneg
-    linarith
-  have hu0 : 0 < u := (unitInterval.nonneg w).trans_lt hw_le_u
-  have hv0 : 0 < (u - (w : ℝ)) / (1 - (w : ℝ)) := div_pos (sub_pos.mpr hw_le_u) hden
+  have hden : 0 < 1 - (w : ℝ) := sub_pos.mpr (unitInterval.lt_one_iff_ne_one.mpr hw)
   apply quantile_eq_of_le_cdf_iff
   intro x
+  rw [μ.cdf_atomMixture, div_le_iff₀ hden]
   by_cases hx : c ≤ x
-  · rw [μ.cdf_atomMixture, ite_eq_left hx, mul_one,
-      div_le_iff₀ hden]
+  · rw [ite_eq_left hx, mul_one]
     constructor <;> intro h <;> nlinarith
-  · have hx' : x < c := lt_of_not_ge hx
-    rw [cdf_atomMixture_of_lt μ c hμ w hx',
-      cdf_eq_zero_of_lt_of_measure_Iio_eq_zero μ hμ hx']
-    exact iff_of_false (not_le_of_gt hu0) (not_le_of_gt hv0)
+  · have hFx : cdf μ x ≤ cdf μ c := monotone_cdf μ (lt_of_not_ge hx).le
+    rw [ite_eq_right hx, mul_zero, zero_add]
+    have := unitInterval.nonneg w
+    constructor <;> intro h <;> nlinarith
 
 /-- The quantile of an atom mixture at a lower support boundary: it is the boundary point through
 the combined atom there and otherwise is the rescaled quantile of the base law. This includes the
@@ -246,7 +239,8 @@ theorem quantile_atomMixture (hμ : μ (Iio c) = 0) (w : unitInterval)
       else μ.quantile ((u - (w : ℝ)) / (1 - (w : ℝ))) := by
   split_ifs with h
   · exact quantile_atomMixture_eq_atom hμ hu.1 h
-  · exact quantile_atomMixture_of_lt hμ hu.2 (lt_of_not_ge h)
+  · have hcdf : cdf μ c = μ.real {c} := by simpa using cdf_atomMixture_atom μ c hμ 0
+    exact quantile_atomMixture_of_lt hu.2 (hcdf ▸ lt_of_not_ge h)
 
 end Quantile
 
