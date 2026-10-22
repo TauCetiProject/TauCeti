@@ -30,16 +30,6 @@ variable {α : Type*} [AddCommGroup α] [LinearOrder α] [IsOrderedAddMonoid α]
 time `t - a` to `[0, b]`. -/
 theorem max_zero_min_add {a b : α} (ha : 0 ≤ a) (hb : 0 ≤ b) (t : α) :
     max 0 (min t (a + b)) = max 0 (min t a) + max 0 (min (t - a) b) := by
-  rcases le_total t 0 with ht | ht
-  · rw [max_eq_left (min_le_of_left_le ht), max_eq_left (min_le_of_left_le ht),
-      max_eq_left (min_le_of_left_le (sub_nonpos.2 (ht.trans ha))), zero_add]
-  rcases le_total t a with hta | hat
-  · rw [min_eq_left (hta.trans (le_add_of_nonneg_right hb)), min_eq_left hta, max_eq_right ht,
-      max_eq_left (min_le_of_left_le (sub_nonpos.2 hta)), add_zero]
-  rw [min_eq_right hat, max_eq_right ha, max_eq_right (le_min ht (add_nonneg ha hb)),
-    max_eq_right (le_min (sub_nonneg.2 hat) hb)]
-  rcases le_total t (a + b) with htb | hbt
-  · rw [min_eq_left htb, min_eq_left (sub_le_iff_le_add'.2 htb), add_sub_cancel]
-  · rw [min_eq_right hbt, min_eq_right (le_sub_iff_add_le'.2 hbt)]
+  grind
 
 end TauCeti

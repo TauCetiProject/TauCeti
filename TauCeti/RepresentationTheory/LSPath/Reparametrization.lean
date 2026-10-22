@@ -28,10 +28,11 @@ from `[0, duration φ]` onto `[0, s]`, where `s` is the sum of its segments. So 
 `[0, duration q]`; for presentations of duration `1` these are Littelmann's nondecreasing
 surjective piecewise-linear reparametrizations of `[0, 1]`.
 
-The main result is that the segment-list model is faithful: two timed presentations present the
-same `TauCeti.PLPath` exactly when they are reparametrizations of a common timed presentation,
-which may be chosen of any prescribed positive duration. All constructions use only the field
-operations of `𝕜`, so over `ℚ` every subdivision time and every reparametrization stays rational.
+The main result is that the segment-list model is faithful: two timed presentations of positive
+duration present the same `TauCeti.PLPath` exactly when they are reparametrizations of a common
+timed presentation, which may be chosen of any prescribed positive duration. All constructions
+use only the field operations of `𝕜`, so over `ℚ` every subdivision time and every
+reparametrization stays rational.
 
 ## Main definitions
 
@@ -55,8 +56,9 @@ operations of `𝕜`, so over `ℚ` every subdivision time and every reparametri
   parametrized path present the same `TauCeti.PLPath`.
 * `TauCeti.PLPath.IsReparam.trans`, `TauCeti.PLPath.IsReparam.ofSegments_map_snd_eq`:
   reparametrization is transitive and does not change the presented `TauCeti.PLPath`.
-* `TauCeti.PLPath.ofSegments_map_snd_eq_iff_exists_isReparam`: two timed presentations present the
-  same `TauCeti.PLPath` exactly when they are reparametrizations of a common timed presentation.
+* `TauCeti.PLPath.ofSegments_map_snd_eq_iff_exists_isReparam`: two timed presentations of positive
+  duration present the same `TauCeti.PLPath` exactly when they are reparametrizations of a common
+  timed presentation.
 
 ## References
 
@@ -131,6 +133,11 @@ theorem IsTimed.nonneg [Zero 𝕜] [Preorder 𝕜] {p : List (𝕜 × V)} (hp : 
     ∀ x ∈ p, 0 ≤ x.1 :=
   fun x hx ↦ (hp x hx).le
 
+/-- A timed presentation with nonnegative segments has nonnegative durations and segments. -/
+theorem IsTimed.and_nonneg {W : Type*} [Zero 𝕜] [Preorder 𝕜] [Zero W] [LE W]
+    {p : List (𝕜 × W)} (hp : IsTimed p) (hp' : ∀ x ∈ p, 0 ≤ x.2) : ∀ x ∈ p, 0 ≤ x.1 ∧ 0 ≤ x.2 :=
+  fun x hx ↦ ⟨(hp x hx).le, hp' x hx⟩
+
 section Eval
 
 variable [Field 𝕜] [LinearOrder 𝕜] [AddCommGroup V] [Module 𝕜 V]
@@ -147,6 +154,7 @@ def evalTimed : List (𝕜 × V) → 𝕜 → V
 theorem evalTimed_nil (t : 𝕜) : evalTimed ([] : List (𝕜 × V)) t = 0 :=
   (rfl)
 
+@[simp]
 theorem evalTimed_cons (d : 𝕜) (v : V) (p : List (𝕜 × V)) (t : 𝕜) :
     evalTimed ((d, v) :: p) t = (max 0 (min t d) / d) • v + evalTimed p (t - d) :=
   (rfl)
@@ -375,7 +383,7 @@ theorem isReparam_of_map_snd_eq (hp : IsTimed p) (hq : IsTimed q)
     refine ⟨(d, e) :: φ, isTimed_cons.2 ⟨hd, hφ⟩, List.forall_mem_cons.2 ⟨he.le, hφ'⟩,
       by simp [hφp], by simp [hφq], ?_⟩
     · exact evalTimed_cons_comp hd he.le (fun h ↦ absurd h he.ne')
-        (fun x hx ↦ ⟨(hφ x hx).le, hφ' x hx⟩) hq.nonneg hφe
+        (hφ.and_nonneg hφ') hq.nonneg hφe
 
 /-- A timed presentation is a reparametrization of itself, through the identity timing. -/
 theorem IsReparam.refl (hp : IsTimed p) : IsReparam p p :=
@@ -388,7 +396,7 @@ theorem IsReparam.cons (h : IsReparam p q) (hd : 0 < d) (hq : ∀ x ∈ q, 0 ≤
   refine ⟨(d, d) :: φ, isTimed_cons.2 ⟨hd, hφ⟩, List.forall_mem_cons.2 ⟨hd.le, hφ'⟩,
     by simp [hφp], by simp [hφq], ?_⟩
   exact evalTimed_cons_comp hd hd.le (fun h ↦ absurd h hd.ne')
-    (fun x hx ↦ ⟨(hφ x hx).le, hφ' x hx⟩) hq hφe
+    (hφ.and_nonneg hφ') hq hφe
 
 /-- Merging two adjacent segments pointing in the same direction, run during the sum of their
 durations, is a reparametrization. -/
@@ -412,7 +420,7 @@ theorem isReparam_cons_cons_add (hd : 0 < d) (he : 0 < e) (hvw : SameRay 𝕜 v 
     linear_combination (d + e) * hab
   · intro t
     rw [hsplit]
-    have hψ₂ : ∀ x ∈ ψ, 0 ≤ x.1 ∧ 0 ≤ x.2 := fun x hx ↦ ⟨(hψ x hx).le, hψ' x hx⟩
+    have hψ₂ : ∀ x ∈ ψ, 0 ≤ x.1 ∧ 0 ≤ x.2 := hψ.and_nonneg hψ'
     refine evalTimed_cons_comp hd (mul_nonneg ha hde.le)
       (fun h ↦ by rw [hva, (mul_eq_zero.1 h).resolve_right hde.ne', zero_smul])
       (List.forall_mem_cons.2 ⟨⟨he.le, mul_nonneg hb hde.le⟩, hψ₂⟩)
@@ -430,14 +438,6 @@ private theorem timedComp_split_aux {a : 𝕜} (hd : 0 < d) (he : 0 < e) (hae : 
   have hea := (not_lt.1 hae).lt_of_ne' hae'
   have ha := he.trans hea
   exact ⟨hea, div_pos (mul_pos hd he) ha, (div_lt_iff₀ ha).2 (mul_lt_mul_of_pos_left hea hd)⟩
-
-/-- Subdividing a segment `w` at the fraction `a / e` does not change the presented path. -/
-private theorem ofSegments_div_smul_cons_sub_div_smul_cons {a : 𝕜} (he : 0 < e) (ha : 0 ≤ a)
-    (hae : a ≤ e) (w : V) (l : List V) :
-    ofSegments 𝕜 ((a / e) • w :: ((e - a) / e) • w :: l) = ofSegments 𝕜 (w :: l) := by
-  rw [ofSegments_cons, ofSegments_cons, ← mul_assoc, straight_smul_mul_straight_smul
-    (div_nonneg ha he.le) (div_nonneg (sub_nonneg.2 hae) he.le), ← add_div, add_sub_cancel,
-    div_self he.ne', one_smul, ofSegments_cons]
 
 /-- A list of `(duration, segment)` pairs presenting the composite `evalTimed q ∘ evalTimed φ` of
 the parametrized path of `q` with a timing `φ` in `𝕜` (see
@@ -472,14 +472,14 @@ theorem evalTimed_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q) (hφ : I
     rw [evalTimed_cons_eq_evalTimed_cons_cons (D := e) (v := w) ha
       (sub_pos.2 hae).le (add_sub_cancel a e) rfl rfl q]
     exact evalTimed_cons_comp hd ha (fun h ↦ by rw [h, zero_div, zero_smul])
-      (fun x hx ↦ ⟨(hφ x hx).le, hφ' x hx⟩) hq₂.nonneg (ih hq₂ hφ hφ') t
+      (hφ.and_nonneg hφ') hq₂.nonneg (ih hq₂ hφ hφ') t
   | case4 w q d a φ _ ih =>
     obtain ⟨ha, hq⟩ := isTimed_cons.1 hq
     obtain ⟨hd, hφ⟩ := isTimed_cons.1 hφ
     obtain ⟨-, hφ'⟩ := List.forall_mem_cons.1 hφ'
     simp only [timedComp.eq_3, lt_self_iff_false, ↓reduceIte]
     exact evalTimed_cons_comp hd ha.le (fun h ↦ absurd h ha.ne')
-      (fun x hx ↦ ⟨(hφ x hx).le, hφ' x hx⟩) hq.nonneg (ih hq hφ hφ') t
+      (hφ.and_nonneg hφ') hq.nonneg (ih hq hφ hφ') t
   | case5 e w q d a φ hae hae' ih =>
     obtain ⟨he, hq⟩ := isTimed_cons.1 hq
     obtain ⟨hd, hφ⟩ := isTimed_cons.1 hφ
@@ -495,7 +495,7 @@ theorem evalTimed_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q) (hφ : I
       (d₁ := d * e / a) (d₂ := d - d * e / a) hpos.le (sub_pos.2 hlt).le
       (add_sub_cancel _ d) (by rw [smul_eq_mul]; field_simp) (by rw [smul_eq_mul]; field_simp) φ]
     exact evalTimed_cons_comp hpos he.le (fun h ↦ absurd h he.ne')
-      (fun x hx ↦ ⟨(hφ₂ x hx).le, hφ₂' x hx⟩) hq.nonneg (ih hq hφ₂ hφ₂') t
+      (hφ₂.and_nonneg hφ₂') hq.nonneg (ih hq hφ₂ hφ₂') t
 
 theorem isTimed_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q) (hφ : IsTimed φ) :
     IsTimed (timedComp q φ) := by
@@ -579,7 +579,8 @@ theorem ofSegments_map_snd_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q)
     rw [List.map_cons, ofSegments_cons,
       ih (isTimed_cons.2 ⟨sub_pos.2 hae, hq⟩) hφ' (by simp only [duration_cons]; linarith),
       ← ofSegments_cons, List.map_cons, List.map_cons,
-      ofSegments_div_smul_cons_sub_div_smul_cons he ha hae.le]
+      ofSegments_smul_cons_smul_cons (div_nonneg ha he.le) (div_nonneg (sub_pos.2 hae).le he.le),
+      ← add_div, add_sub_cancel, div_self he.ne', one_smul]
   | case4 w q d a φ _ ih =>
     simp only [duration_cons, List.map_cons, List.sum_cons] at h
     simp only [timedComp.eq_3, lt_self_iff_false, ↓reduceIte]
@@ -639,7 +640,8 @@ theorem ofSegments_map_snd_eq_of_evalTimed_eq (hp : IsTimed p) (hq : IsTimed q)
       (sub_pos.2 hde).le (add_sub_cancel d e) rfl rfl q t
     rw [same hd hp (isTimed_cons.2 ⟨sub_pos.2 hde, hq⟩) (by simp only [List.length_cons]; omega)
       fun t ↦ (h t).trans (hsplit t), List.map_cons,
-      ofSegments_div_smul_cons_sub_div_smul_cons he hd.le hde.le]
+      ofSegments_smul_cons_smul_cons (div_nonneg hd.le he.le) (div_nonneg (sub_pos.2 hde).le he.le),
+      ← add_div, add_sub_cancel, div_self he.ne', one_smul]
   -- An empty presentation has the parametrized path of a single stationary segment.
   have nil_left : ∀ {e : 𝕜} {w : V} {q : List (𝕜 × V)}, 0 < e → IsTimed q →
       q.length + 1 = n → (∀ t, evalTimed ((e, w) :: q) t = 0) →

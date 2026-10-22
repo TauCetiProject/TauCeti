@@ -61,7 +61,8 @@ reparametrizations of a common one exactly when their normal forms agree, are in
   the endpoint is additive and reversal is an involutive anti-automorphism.
 * `TauCeti.PLPath.straight_add`: a straight path along `v + w`, for `v` and `w` in the same ray,
   is the concatenation of the straight paths along `v` and along `w`.
-* `TauCeti.PLPath.straight_smul_mul_straight_smul`: subdividing a straight path along a ray.
+* `TauCeti.PLPath.straight_smul_mul_straight_smul`, `TauCeti.PLPath.ofSegments_smul_cons_smul_cons`:
+  subdividing a straight path, or a segment of a segment list, along a ray.
 
 ## References
 
@@ -540,6 +541,14 @@ the straight path along `b • w` is the straight path along `(a + b) • w`. -/
 theorem straight_smul_mul_straight_smul {a b : 𝕜} (ha : 0 ≤ a) (hb : 0 ≤ b) (w : V) :
     straight 𝕜 (a • w) * straight 𝕜 (b • w) = straight 𝕜 ((a + b) • w) := by
   rw [add_smul, straight_add ((SameRay.sameRay_nonneg_smul_left w ha).nonneg_smul_right hb)]
+
+/-- Subdividing a segment along its ray does not change the presented path: for `0 ≤ a` and
+`0 ≤ b`, the segments `a • w` and `b • w` present the same path as the single segment
+`(a + b) • w`. -/
+theorem ofSegments_smul_cons_smul_cons {a b : 𝕜} (ha : 0 ≤ a) (hb : 0 ≤ b) (w : V)
+    (l : List V) : ofSegments 𝕜 (a • w :: b • w :: l) = ofSegments 𝕜 ((a + b) • w :: l) := by
+  rw [ofSegments_cons, ofSegments_cons, ← mul_assoc, straight_smul_mul_straight_smul ha hb,
+    ofSegments_cons]
 
 end PLPath
 
