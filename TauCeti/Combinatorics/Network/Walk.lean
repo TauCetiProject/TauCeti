@@ -418,9 +418,9 @@ theorem positiveReachable_map_iff_of_strictMono {K L : Type*} [Zero K] [LinearOr
   positiveReachable_map_iff fun x ↦ by rw [← hφ₀, hφ.lt_iff_lt]
 
 open Relation in
-/-- If no vertex reaches itself along arrows of positive value, then every arrow of positive value
-lies on a walk of positive arrows from a vertex that no positive arrow enters to a vertex that no
-positive arrow leaves; this walk contains a path between distinct vertices. -/
+/-- If no vertex reaches itself along positive arrows and some arrow is positive, there is a
+positive path between distinct vertices, with no positive arrow entering its initial vertex and no
+positive arrow leaving its final vertex. -/
 lemma exists_isPath_of_acyclic {K : Type w} [Zero K] [LinearOrder K] [Finite V]
     {f : Assignment Q K} (hf : 0 ≤ f)
     (hacyc : ∀ v, ¬ TransGen (fun v w ↦ ∃ e : Q v w, 0 < f e) v v) {x y : V} (e : Q x y)

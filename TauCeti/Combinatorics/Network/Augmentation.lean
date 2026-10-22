@@ -260,6 +260,12 @@ theorem card_filter_pos_sub_walkAssignment_bottleneck_lt {f : Assignment Q K} {s
   · simpa using hpos _ ha
   · simp [walkAssignment_eq_of_mem hp _ ha, hqa]
 
+end LinearOrder
+
+section PartialOrder
+
+variable [PartialOrder K] [IsOrderedAddMonoid K]
+
 /-- Subtract a walk from `s` to `t ≠ s`, weighted by `q > 0`, from a nonnegative assignment `f`
 that vanishes on the arrows entering `s` and on the arrows leaving `t`, such that the difference
 `g` is still nonnegative. Then `f` has negative excess at `s` and positive excess at `t`, and every
@@ -307,8 +313,7 @@ lemma excessAt_sign_of_sub_walkAssignment {f : Assignment Q K} {s t : V}
     · exact add_pos hv hq
     · simpa using hv
 
-
-end LinearOrder
+end PartialOrder
 
 end AddCommGroup
 
