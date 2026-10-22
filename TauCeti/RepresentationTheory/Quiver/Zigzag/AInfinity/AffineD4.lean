@@ -299,9 +299,8 @@ the backtrack cochain of `(β₁, α₄)` and `(β₄, α₁)`, scaled by `c`
 (`TauCeti.zigzagBacktrackAInfinityHom`). -/
 theorem exists_isIso_liuWangAffineD4AInfinityAlgebra (c : k) :
     ∃ f : AInfinityHom (liuWangAffineD4AInfinityAlgebra k c)
-        (zigzagLoopAInfinityAlgebra (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))
-          (0 : (Fin 4 → (AffineDynkinType.D 4).graph.Dart) →₀ k)
-          fun w hw ↦ absurd hw (by rw [Finsupp.support_zero]; exact Finset.notMem_empty w)),
+        (zigzagStrictAInfinityAlgebra k
+          (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))),
       f.IsIso ∧ f.linearPart = LinearMap.id := by
   have hcongr : ∀ (c₁ c₂ : (Fin 4 → (AffineDynkinType.D 4).graph.Dart) →₀ k) (h : c₁ = c₂) hc₁ hc₂,
       zigzagLoopAInfinityAlgebra (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide)) c₁

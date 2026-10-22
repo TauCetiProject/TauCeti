@@ -48,6 +48,8 @@ Nontriviality of such a deformation modulo `A∞` isomorphism is not addressed h
 * `TauCeti.zigzagLoopOperation`: the quartic operation of four darts.
 * `TauCeti.zigzagLoopAInfinityAlgebra`: the `A∞` algebra with `m₂` the product and `m₄` a
   linear combination of loop operations of closed walks.
+* `TauCeti.zigzagStrictAInfinityAlgebra`: the strict zigzag algebra, the loop deformation with
+  zero coefficients.
 
 ## Main results
 
@@ -59,8 +61,9 @@ Nontriviality of such a deformation modulo `A∞` isomorphism is not addressed h
   volume classes.
 * `TauCeti.zigzagLoopAInfinityAlgebra_grading_eq`: the grading does not depend on the
   coefficients.
-* `TauCeti.zigzagLoopAInfinityAlgebra_zero_m_eq_zero`: with zero coefficients, the strict zigzag
-  algebra, every operation besides `m₂` vanishes.
+* `TauCeti.zigzagStrictAInfinityAlgebra_m_two_apply` and
+  `TauCeti.zigzagStrictAInfinityAlgebra_m_eq_zero`: the strict zigzag algebra has no operation
+  besides the product `m₂`.
 * `TauCeti.isMinimal_zigzagLoopAInfinityAlgebra` and
   `TauCeti.strictUnit_one_zigzagLoopAInfinityAlgebra`: the algebra is minimal and strictly unital.
 * `TauCeti.isHomogeneous_zigzagLoopAInfinityAlgebra_m_adams`: the Adams degree of `m n` is
@@ -343,14 +346,6 @@ theorem zigzagLoopAInfinityAlgebra_m_eq_zero {n : ℕ} (h₂ : n ≠ 2) (h₄ : 
     (zigzagLoopAInfinityAlgebra hns c hc).m n = 0 := by
   rw [zigzagLoopAInfinityAlgebra_m, loopOps_eq_zero c h₂ h₄]
 
-/-- The strict zigzag algebra, the loop deformation with zero coefficients, has no operation
-besides the product. -/
-theorem zigzagLoopAInfinityAlgebra_zero_m_eq_zero {n : ℕ} (hn : n ≠ 2) :
-    (zigzagLoopAInfinityAlgebra hns (0 : (Fin 4 → G.Dart) →₀ k) (by simp)).m n = 0 := by
-  rcases eq_or_ne n 4 with rfl | h₄
-  · rw [zigzagLoopAInfinityAlgebra_m_four, _root_.map_zero]
-  · exact zigzagLoopAInfinityAlgebra_m_eq_zero _ _ hn h₄
-
 /-- **The quartic operation on arrows**: on the arrows of four darts `d`, the quartic operation of
 the loop deformation is the coefficient `c d` times the volume class at the head of `d 0`. -/
 theorem zigzagLoopAInfinityAlgebra_m_four_ofArrow (d : Fin 4 → G.Dart) :
@@ -405,5 +400,50 @@ theorem isHomogeneous_zigzagLoopAInfinityAlgebra_m_adams (n : ℕ) :
   rw [Finset.sum_neg_distrib] at h
   convert h using 2
   ring
+
+/-! ### The strict zigzag algebra -/
+
+variable (k hns) in
+/-- **The strict zigzag algebra** as an `A∞` algebra: the loop deformation with zero coefficients,
+graded by path length, with `m₂` the product and every other operation zero. -/
+noncomputable def zigzagStrictAInfinityAlgebra :
+    AInfinityAlgebra k (nonisolatedZigzagQuotient k G) :=
+  zigzagLoopAInfinityAlgebra hns 0 (by simp)
+
+/-- The strict zigzag algebra is the loop deformation with zero coefficients. -/
+theorem zigzagStrictAInfinityAlgebra_def :
+    zigzagStrictAInfinityAlgebra k hns =
+      zigzagLoopAInfinityAlgebra hns (0 : (Fin 4 → G.Dart) →₀ k) (by simp) := by
+  rw [zigzagStrictAInfinityAlgebra]
+
+/-- The strict zigzag algebra is graded by path length. -/
+@[simp]
+theorem zigzagStrictAInfinityAlgebra_grading_piece :
+    (zigzagStrictAInfinityAlgebra k hns).grading.piece = zigzagIntegerGrade k G :=
+  zigzagLoopAInfinityAlgebra_grading_piece _ _
+
+/-- A loop deformation has the grading of the strict zigzag algebra. -/
+theorem zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading :
+    (zigzagLoopAInfinityAlgebra hns c hc).grading = (zigzagStrictAInfinityAlgebra k hns).grading :=
+  zigzagLoopAInfinityAlgebra_grading_eq _ _ _ _
+
+/-- The binary operation of the strict zigzag algebra is the product. -/
+@[simp]
+theorem zigzagStrictAInfinityAlgebra_m_two_apply (x : Fin 2 → nonisolatedZigzagQuotient k G) :
+    (zigzagStrictAInfinityAlgebra k hns).m 2 x = x 0 * x 1 :=
+  zigzagLoopAInfinityAlgebra_m_two_apply _ _ x
+
+/-- The strict zigzag algebra has no operation besides the product. -/
+theorem zigzagStrictAInfinityAlgebra_m_eq_zero {n : ℕ} (hn : n ≠ 2) :
+    (zigzagStrictAInfinityAlgebra k hns).m n = 0 := by
+  rw [zigzagStrictAInfinityAlgebra_def]
+  rcases eq_or_ne n 4 with rfl | h₄
+  · rw [zigzagLoopAInfinityAlgebra_m_four, _root_.map_zero]
+  · exact zigzagLoopAInfinityAlgebra_m_eq_zero _ _ hn h₄
+
+/-- The strict zigzag algebra is minimal. -/
+theorem isMinimal_zigzagStrictAInfinityAlgebra :
+    (zigzagStrictAInfinityAlgebra k hns).IsMinimal :=
+  isMinimal_zigzagLoopAInfinityAlgebra _ _
 
 end TauCeti
