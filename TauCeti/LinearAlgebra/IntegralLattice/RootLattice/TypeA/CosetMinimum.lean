@@ -115,29 +115,6 @@ theorem dotProduct_self_eq_mul_sub_div_iff {k : ℤ} {x : Fin (n + 1) → ℚ} (
 
 /-! ## The discriminant classes of the root lattice -/
 
-/-- The classical coordinates of a dual vector in the class `k ω₁` lie in `ℤ - k / (n + 1)`. -/
-private theorem exists_intCast_sub_of_mk_eq {k : ℤ} (x : (typeARootLattice n).dualCarrier)
-    (hx : (Submodule.Quotient.mk x : (typeARootLattice n).DiscriminantGroup) =
-      k • typeAFundamentalWeightClass n) (j : Fin (n + 1)) :
-    ∃ m : ℤ, (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) j = m - k / (n + 1) := by
-  rw [mk_eq_zsmul_typeAFundamentalWeightClass_iff,
-    ← (typeAIsometryZeroSumLattice n).apply_mem_carrier_iff, mem_zeroSumLattice_carrier_iff] at hx
-  obtain ⟨m, hm⟩ := hx j
-  refine ⟨m + k * if j = 0 then 1 else 0, ?_⟩
-  rw [map_sub, map_zsmul, Submodule.coe_sub, Submodule.coe_smul_of_tower, Pi.sub_apply,
-    Pi.smul_apply, typeAIsometryZeroSumLattice_typeAFundamentalWeight_apply, zsmul_eq_mul,
-    mul_sub, mul_one_div] at hm
-  push_cast
-  split_ifs at hm ⊢ <;> linarith
-
-/-- The norm of a vector of the `Aₙ` root lattice's ambient space is the norm of its classical
-coordinates. -/
-private theorem typeARootLattice_form_self_eq_dotProduct (x : Fin n → ℚ) :
-    (typeARootLattice n).form x x =
-      (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) ⬝ᵥ
-        (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) := by
-  rw [← (typeAIsometryZeroSumLattice n).map_app, zeroSumLattice_form, zeroSumForm_apply]
-
 /-- **The minimum norm of the discriminant class `k ω₁` of `Aₙ` is `k (n + 1 - k) / (n + 1)`**,
 for `0 ≤ k ≤ n + 1`.  It is attained by the dual vector whose classical coordinates are
 `(n + 1 - k) / (n + 1)` in the first `k` places and `-k / (n + 1)` in the others, and it bounds the
@@ -193,7 +170,8 @@ theorem isLeast_form_self_nsmul_typeAFundamentalWeightClass {k : ℕ} (hk : k �
     rw [← natCast_zsmul] at hx
     rw [typeARootLattice_form_self_eq_dotProduct]
     have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).2
-    simpa using mul_sub_div_le_dotProduct_self (k := k) hsum (exists_intCast_sub_of_mk_eq x hx)
+    simpa using mul_sub_div_le_dotProduct_self (k := k) hsum
+      (exists_typeAIsometryZeroSumLattice_apply_eq_intCast_sub_of_mk_eq x hx)
 
 /-- **The minimum norm of the discriminant class labelled `a : ZMod (n + 1)`.**  The class
 `typeADiscriminantGroupEquiv n a = a.val • ω₁` of `Aₙ` has minimum norm
