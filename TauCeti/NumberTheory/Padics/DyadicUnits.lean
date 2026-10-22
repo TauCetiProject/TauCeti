@@ -59,6 +59,12 @@ or `4`, with `1` exactly for `A = 1` and `4` exactly for `A = V^(f)`.
   `TauCeti.relIndex_map_powMonoidHom_two_unitsPlusMinus`: `(V^(f) : (V^(f))²) = 4`.
 * `TauCeti.unitsPrincipal_three_eq_range_powMonoidHom_two`: the squares of `ℤ_2ˣ` are
   `U^(3) = 1 + 8ℤ_2`.
+* `TauCeti.exists_eq_mul_sq_of_toZModPow_eq`: elements of `ℤ_2` with the same odd residue
+  modulo `8` differ by the square of a unit; `TauCeti.isUnit_iff_toZModPow_three_mul_self`:
+  units of `ℤ_2` are exactly the elements whose residue modulo `8` squares to one, with the
+  unit-valued form `TauCeti.toZModPow_three_mul_self`;
+  `TauCeti.four_dvd_sub_iff_two_mul_toZModPow_sub_eq_zero`: congruence modulo `4` read on
+  residues modulo `8`.
 * `TauCeti.relIndex_map_powMonoidHom_two_eq_one_or_two_or_four`: `(A : A²) ∈ {1, 2, 4}` for
   closed `A`;
   `TauCeti.relIndex_map_powMonoidHom_two_eq_four_iff` and
@@ -472,5 +478,54 @@ theorem relIndex_map_powMonoidHom_two_eq_one_or_two_or_four {A : Subgroup ℤ_[2
     h2 | ⟨f, hf, rfl⟩
   · exact Or.inr (Or.inl h2)
   · exact Or.inr (Or.inr (relIndex_map_powMonoidHom_two_unitsPlusMinus hf))
+
+
+/-! ### Square classes read on residues modulo `8` -/
+
+open PadicInt
+
+/-- **Units of `ℤ₂` are read on residues modulo `8`.** A `2`-adic integer is a unit exactly when
+its residue modulo `8` squares to one. -/
+theorem isUnit_iff_toZModPow_three_mul_self {x : ℤ_[2]} :
+    IsUnit x ↔ toZModPow 3 x * toZModPow 3 x = 1 := by
+  refine ⟨fun hx ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨u, rfl⟩ := hx
+    have key : ∀ a b : ZMod (2 ^ 3), a * b = 1 → a * a = 1 := by decide
+    exact key _ (toZModPow 3 ((u⁻¹ : ℤ_[2]ˣ) : ℤ_[2])) (by rw [← map_mul, Units.mul_inv, map_one])
+  have hdvd : ((2 : ℕ) : ℤ_[2]) ^ 3 ∣ x * x - 1 := by
+    rw [← toZModPow_eq_zero_iff_dvd, map_sub, map_mul, h, map_one, sub_self]
+  have hu : IsUnit (1 + (x * x - 1)) :=
+    isUnit_one_add_of_dvd ((dvd_pow_self _ three_ne_zero).trans hdvd)
+  rw [add_sub_cancel] at hu
+  exact isUnit_of_mul_isUnit_left hu
+
+/-- The residue modulo `8` of a unit of `ℤ₂` squares to one. -/
+theorem toZModPow_three_mul_self (u : ℤ_[2]ˣ) :
+    toZModPow 3 (u : ℤ_[2]) * toZModPow 3 (u : ℤ_[2]) = 1 :=
+  isUnit_iff_toZModPow_three_mul_self.mp u.isUnit
+
+/-- **Congruence modulo `4` is read on residues modulo `8`.** Two `2`-adic integers are congruent
+modulo `4` exactly when twice the difference of their residues modulo `8` vanishes. -/
+theorem four_dvd_sub_iff_two_mul_toZModPow_sub_eq_zero {x y : ℤ_[2]} :
+    (4 : ℤ_[2]) ∣ x - y ↔ 2 * (toZModPow 3 x - toZModPow 3 y) = 0 := by
+  rw [← map_sub, ← map_ofNat (toZModPow 3) 2, ← map_mul, toZModPow_eq_zero_iff_dvd,
+    show ((2 : ℕ) : ℤ_[2]) ^ 3 = 2 * 4 by norm_num, mul_dvd_mul_iff_left two_ne_zero]
+
+/-- **Square classes of `ℤ₂ˣ` are residues modulo `8`.** An element of `ℤ₂` with the same odd
+residue modulo `8` as `y` is `y` times the square of a unit. -/
+theorem exists_eq_mul_sq_of_toZModPow_eq {r y : ℤ_[2]}
+    (hy : toZModPow 3 y * toZModPow 3 y = 1) (h : toZModPow 3 r = toZModPow 3 y) :
+    ∃ t : ℤ_[2]ˣ, r = y * (t : ℤ_[2]) ^ 2 := by
+  have hyu := isUnit_iff_toZModPow_three_mul_self.mpr hy
+  have hru := isUnit_iff_toZModPow_three_mul_self.mpr (h ▸ hy)
+  have hmem : hru.unit / hyu.unit ∈ unitsPrincipal 2 3 := by
+    rw [mem_unitsPrincipal_iff_toZModPow, div_eq_mul_inv, Units.val_mul, map_mul,
+      IsUnit.unit_spec, h, ← map_mul, IsUnit.mul_val_inv, map_one]
+  rw [unitsPrincipal_three_eq_range_powMonoidHom_two] at hmem
+  obtain ⟨t, ht⟩ := hmem
+  rw [powMonoidHom_apply, eq_div_iff_mul_eq'] at ht
+  refine ⟨t, ?_⟩
+  rw [← IsUnit.unit_spec hru, ← ht, Units.val_mul, Units.val_pow_eq_pow_val, IsUnit.unit_spec,
+    mul_comm]
 
 end TauCeti

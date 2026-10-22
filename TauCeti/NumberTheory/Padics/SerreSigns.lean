@@ -232,22 +232,14 @@ the square of a unit. -/
 theorem exists_eq_neg_one_pow_mul_five_pow_mul_sq (u : ℤ_[2]ˣ) :
     ∃ w : ℤ_[2]ˣ, (u : ℤ_[2]) = (-1) ^ (serreEps u).val * 5 ^ (serreOmega u).val * w ^ 2 := by
   set r : ℤ_[2] := (-1) ^ (serreEps u).val * 5 ^ (serreOmega u).val
-  have hr : IsUnit r := ((isUnit_neg_one.pow _).mul (isUnit_five_padicInt.pow _))
   have key : ∀ x : ZMod (2 ^ 3), (∃ y, x * y = 1) →
       x = (-1) ^ (if x = 3 ∨ x = 7 then (1 : ZMod 2) else 0).val *
         5 ^ (if x = 3 ∨ x = 5 then (1 : ZMod 2) else 0).val := by
     decide
-  -- `u` and `r` have the same residue modulo `8`, so `u r⁻¹ ∈ U^(3)` is a square.
+  -- `u` and `r` have the same residue modulo `8`, so they lie in the same square class.
   have hres : PadicInt.toZModPow 3 (u : ℤ_[2]) = PadicInt.toZModPow 3 r := by
     simpa [r, serreEps, serreOmega, map_ofNat] using key _ (exists_toZModPow_three_mul_eq_one u)
-  have hmem : u * hr.unit⁻¹ ∈ unitsPrincipal 2 3 := by
-    rw [mem_unitsPrincipal_iff_toZModPow, Units.val_mul, map_mul, hres, ← map_mul,
-      IsUnit.mul_val_inv, map_one]
-  rw [unitsPrincipal_three_eq_range_powMonoidHom_two] at hmem
-  obtain ⟨w, hw⟩ := hmem
-  refine ⟨w, ?_⟩
-  rw [powMonoidHom_apply, eq_mul_inv_iff_mul_eq] at hw
-  rw [← hw, Units.val_mul, Units.val_pow_eq_pow_val, IsUnit.unit_spec, mul_comm]
+  exact exists_eq_mul_sq_of_toZModPow_eq (hres ▸ toZModPow_three_mul_self u) hres
 
 /-- **Squares of `2`-adic units in `ℚ_2`.** A unit of `ℤ_2` is a square in `ℚ_2` exactly when it is
 `1 mod 8`. -/
