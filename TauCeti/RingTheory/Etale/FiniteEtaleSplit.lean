@@ -23,6 +23,7 @@ import Mathlib.RingTheory.TensorProduct.Pi
 import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.AdjoinRoot.Separable
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Pi
 
 /-!
@@ -160,9 +161,6 @@ theorem quotient_span_singleton (h : IsTotallySplit R T) {ε : T} (hε : IsIdemp
   let ε' := φ ε
   have hε' : IsIdempotentElem ε' := hε.map φ
   choose a ha using fun j ↦ Ideal.Quotient.mk_surjective (ε' j)
-  have hmk (j : Fin m) : Ideal.Quotient.mk (Ideal.span {1 - e j}) (e j) = 1 := by
-    rw [← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq]
-    exact Ideal.mem_span_singleton'.mpr ⟨-1, by ring⟩
   -- The lift `a j` is idempotent modulo `1 - e j`, which `e j` annihilates.
   have hsq (j : Fin m) : e j * (a j * a j - a j) = 0 := by
     have hmem : a j * a j - a j ∈ Ideal.span {1 - e j} := by
@@ -185,7 +183,7 @@ theorem quotient_span_singleton (h : IsTotallySplit R T) {ε : T} (hε : IsIdemp
       Ideal.Quotient.piFactorₐ_apply]
     refine forall_congr' fun j ↦ ?_
     rw [← RingHom.mem_ker, Ideal.Quotient.factor_ker, Ideal.map_span, Set.image_singleton]
-    simp [e', hmk, ha]
+    simp [e', ha]
   exact ⟨m, e', he', ⟨(Ideal.quotientEquivAlg _ (Ideal.span {ε'}) φ
     (by simp [ε', Ideal.map_span])).trans ((Ideal.quotientEquivAlgOfEq R hker.symm).trans
       (Ideal.quotientKerAlgEquivOfSurjective (Ideal.Quotient.piFactorₐ_surjective R hle)))⟩⟩
