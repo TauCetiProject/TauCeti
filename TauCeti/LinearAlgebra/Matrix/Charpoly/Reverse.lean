@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.LinearAlgebra.Matrix.Block
+import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # The reversed characteristic polynomial `det (1 - X A)` of a square matrix
@@ -42,6 +45,8 @@ the dimension.
   `det (1 - X A)`.
   Thus `adjugate (1 - X A) = det (1 - X A) • (1 - X A)⁻¹` is the finite-dimensional *Fredholm
   resolvent*, whose coefficients are these polynomials in `A`.
+* `Module.Basis.reverse_charpoly_of_apply`: for an endomorphism diagonal in a finite basis with
+  eigenvalues `aᵢ`, the reverse of its characteristic polynomial is `∏ᵢ (1 - aᵢ X)`.
 * `Matrix.charpolyRev_mul_comm`: `det (1 - X A B) = det (1 - X B A)` for rectangular matrices `A`
   and `B` of transposed shapes. Unlike `Matrix.charpoly_mul_comm'`, no power of `X` corrects for
   the different sizes of `A B` and `B A`.
@@ -277,3 +282,19 @@ theorem charpolyRev_of_isUpperTriangular [LinearOrder ι] {A : Matrix ι ι R}
   exact Finset.prod_congr rfl fun i _ ↦ by simp [mul_comm (X : R[X])]
 
 end Matrix
+
+namespace Module.Basis
+
+variable {κ R M : Type*} [Fintype κ] [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M]
+  [Module.Finite R M]
+
+/-- **`det(1 - X f)` of an endomorphism diagonal in a finite basis** is the product of the linear
+factors `1 - aᵢ X` over its eigenvalues `aᵢ`. -/
+theorem reverse_charpoly_of_apply (b : Basis κ R M) (f : M →ₗ[R] M) (a : κ → R)
+    (hf : ∀ i, f (b i) = a i • b i) :
+    f.charpoly.reverse = ∏ i, (1 - C (a i) * X) := by
+  classical
+  rw [← LinearMap.charpoly_toMatrix f b, Matrix.reverse_charpoly,
+    (b.toMatrix_eq_diagonal_iff b f a).2 hf, Matrix.charpolyRev_diagonal]
+
+end Module.Basis

@@ -32,9 +32,13 @@ groupings agree.
 * `DiscreteConvolution.ringConvolution_assoc` and its additive version
   `DiscreteConvolution.addRingConvolution_assoc`: ring convolution is associative when the triple
   family and the inner convolutions are summable.
+* `DiscreteConvolution.addFiberEquivSub`: on an additive group, `y ↦ (x - y, y)` identifies `M`
+  with the fibre `addFiber x` of addition at `x`.
 * `DiscreteConvolution.addConvolution_eq_tsum_sub` and its ring version
   `DiscreteConvolution.addRingConvolution_eq_tsum_sub`: on an additive group,
   `(f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y)`.
+* `DiscreteConvolution.AddConvolutionExistsAt.hasSum_sub`: when the convolution exists at `x`,
+  the series `∑' y, L (f (x - y)) (g y)` converges to `(f ⋆₊[L] g) x`.
 * `DiscreteConvolution.addConvolution_eq_tsum_neg_add` and its ring version
   `DiscreteConvolution.addRingConvolution_eq_tsum_neg_add`: on an additive group,
   `(f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x))`.
@@ -130,6 +134,23 @@ section AddGroup
 
 variable {M S E E' F R : Type*} [AddGroup M]
 
+/-- On an additive group, the fibre of addition at `x` is parametrised by its second
+coordinate. -/
+def addFiberEquivSub (x : M) : M ≃ addFiber x where
+  toFun y := ⟨(x - y, y), mem_addFiber.2 (sub_add_cancel x y)⟩
+  invFun ab := ab.1.2
+  left_inv _ := rfl
+  right_inv ab := Subtype.ext <| Prod.ext (eq_sub_of_add_eq (mem_addFiber.1 ab.2)).symm rfl
+
+@[simp]
+theorem coe_addFiberEquivSub_apply (x y : M) : (addFiberEquivSub x y : M × M) = (x - y, y) :=
+  (rfl)
+
+@[simp]
+theorem addFiberEquivSub_symm_apply (x : M) (ab : addFiber x) :
+    (addFiberEquivSub x).symm ab = ab.1.2 :=
+  (rfl)
+
 /-- On an additive group, the fibre of addition at `x` is parametrised by its second coordinate,
 so additive convolution is the familiar sum `(f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y)`. -/
 @[simp]
@@ -137,13 +158,18 @@ theorem addConvolution_eq_tsum_sub [CommSemiring S] [AddCommMonoid E] [AddCommMo
     [AddCommMonoid F] [Module S E] [Module S E'] [Module S F] [TopologicalSpace F]
     (L : E →ₗ[S] E' →ₗ[S] F) (f : M → E) (g : M → E') (x : M) :
     (f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y) := by
-  let e : M ≃ addFiber x :=
-    { toFun y := ⟨(x - y, y), mem_addFiber.2 (sub_add_cancel x y)⟩
-      invFun ab := ab.1.2
-      left_inv _ := rfl
-      right_inv ab := Subtype.ext <| Prod.ext (eq_sub_of_add_eq (mem_addFiber.1 ab.2)).symm rfl }
   rw [addConvolution]
-  exact (e.tsum_eq fun ab ↦ L (f ab.1.1) (g ab.1.2)).symm
+  exact ((addFiberEquivSub x).tsum_eq fun ab ↦ L (f ab.1.1) (g ab.1.2)).symm
+
+/-- On an additive group, when the convolution of `f` and `g` exists at `x`, the series
+`∑' y, L (f (x - y)) (g y)` converges to `(f ⋆₊[L] g) x`. -/
+theorem AddConvolutionExistsAt.hasSum_sub [CommSemiring S] [AddCommMonoid E] [AddCommMonoid E']
+    [AddCommMonoid F] [Module S E] [Module S E'] [Module S F] [TopologicalSpace F]
+    {L : E →ₗ[S] E' →ₗ[S] F} {f : M → E} {g : M → E'} {x : M}
+    (hfg : AddConvolutionExistsAt L f g x) :
+    HasSum (fun y ↦ L (f (x - y)) (g y)) ((f ⋆₊[L] g) x) := by
+  rw [addConvolution_eq_tsum_sub]
+  exact ((addFiberEquivSub x).summable_iff.2 hfg).hasSum
 
 /-- On an additive group, `(f ⋆ᵣ₊ g) x = ∑' y, f (x - y) * g y`. -/
 theorem addRingConvolution_eq_tsum_sub [NonUnitalNonAssocSemiring R] [TopologicalSpace R]

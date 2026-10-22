@@ -9,6 +9,9 @@ public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Order.Partition.Finpartition
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Tactic.GRewrite
+import Mathlib.Tactic.Ring
+import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Maps into the parts of a finite partition
@@ -26,6 +29,8 @@ supplies both facts.
 ## Main results
 
 * `Finpartition.sum_sum_piFinset_parts`: a sum over maps `ι → s` splits along cell assignments.
+* `Finpartition.sum_piFinset_apply_part`: a sum over maps `ι → s` of a function of their cell
+  assignments weights each cell assignment by the size of its box.
 * `Finpartition.injective_of_mem_piFinset_parts`: a map in the box of an injective cell assignment
   is injective.
 * `Finpartition.card_filter_not_injective_part_le`: at most
@@ -33,6 +38,8 @@ supplies both facts.
   non-injective cell assignment.
 * `Finpartition.sum_prod_card_of_not_injective_le`: the same bound for the total size of the boxes
   of non-injective cell assignments.
+* `Finpartition.sum_prod_card_of_not_injective_le_of_card_le`: when all parts have size at most
+  `m`, these boxes have total size at most `(card ι).choose 2 * m * #s ^ (card ι - 1)`.
 -/
 
 public section
@@ -85,6 +92,16 @@ theorem injective_of_mem_piFinset_parts {φ : ι → P.parts} (hφ : Injective �
 theorem part_eq_of_mem_piFinset_parts {φ : ι → P.parts} {g : ι → α}
     (hg : g ∈ Fintype.piFinset fun i ↦ (φ i : Finset α)) (i : ι) : P.part (g i) = φ i :=
   P.part_eq_of_mem (φ i).2 (Fintype.mem_piFinset.1 hg i)
+
+/-- A sum over the maps `ι → s` of a function of their cell assignments counts each cell
+assignment `φ` with the size `∏ i, #(φ i)` of its box. -/
+theorem sum_piFinset_apply_part {M : Type*} [AddCommMonoid M] (f : (ι → Finset α) → M) :
+    ∑ g ∈ Fintype.piFinset (fun _ : ι ↦ s), f (fun i ↦ P.part (g i)) =
+      ∑ φ : ι → P.parts, (∏ i, #(φ i : Finset α)) • f (fun i ↦ φ i) := by
+  rw [← P.sum_sum_piFinset_parts]
+  refine sum_congr rfl fun φ _ ↦ ?_
+  rw [sum_congr rfl fun g hg ↦ by rw [funext (P.part_eq_of_mem_piFinset_parts hg)], sum_const,
+    Fintype.card_piFinset]
 
 /-- At most `#s ^ (card ι - 2) * ∑ A ∈ P.parts, #A ^ 2` maps `ι → s` send two given distinct
 coordinates to a common part. -/
@@ -163,5 +180,20 @@ theorem sum_prod_card_of_not_injective_le :
   split_ifs with hφ
   · rw [filter_false_of_mem fun g hg ↦ by rwa [hpart hg, ← hinj, not_not], card_empty]
   · rw [filter_true_of_mem fun g hg ↦ by rwa [hpart hg, ← hinj], Fintype.card_piFinset]
+
+/-- If every part of `P` has at most `m` elements, the boxes of the non-injective cell assignments
+have total size at most `(card ι).choose 2 * m * #s ^ (card ι - 1)`. -/
+theorem sum_prod_card_of_not_injective_le_of_card_le {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
+    ∑ φ : ι → P.parts with ¬Injective φ, ∏ i, #(φ i : Finset α) ≤
+      (Fintype.card ι).choose 2 * m * #s ^ (Fintype.card ι - 1) := by
+  refine P.sum_prod_card_of_not_injective_le.trans ?_
+  rcases lt_or_ge (Fintype.card ι) 2 with hι | hι
+  · simp [Nat.choose_eq_zero_of_lt hι]
+  · calc (Fintype.card ι).choose 2 * #s ^ (Fintype.card ι - 2) * ∑ A ∈ P.parts, #A ^ 2
+        ≤ (Fintype.card ι).choose 2 * #s ^ (Fintype.card ι - 2) * (m * #s) := by
+          grw [P.sum_sq_card_parts_le hm]
+      _ = (Fintype.card ι).choose 2 * m * #s ^ (Fintype.card ι - 1) := by
+          rw [show Fintype.card ι - 1 = Fintype.card ι - 2 + 1 by omega, pow_succ]
+          ring
 
 end Finpartition

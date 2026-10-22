@@ -50,6 +50,11 @@ reductivity, or base-change theorem is asserted here.
   determinant one, and its entries generate `O(SLₙ)`.
 * `TauCeti.SpecialLinear.pointsMulEquiv`: the natural multiplicative equivalence between quotient
   Hopf points and `Matrix.SpecialLinearGroup`.
+* `TauCeti.SpecialLinear.ofConv_pointsMulEquiv_symm_genericMatrix` and
+  `TauCeti.SpecialLinear.coe_pointsMulEquiv_apply`: a point takes the value of its matrix entry
+  on the corresponding generic entry.
+* `TauCeti.SpecialLinear.mapValue_pointsMulEquiv_symm_apply`: naturality of the inverse point
+  equivalence in the value algebra.
 * `TauCeti.SpecialLinear.pointsNatIso`: the corresponding natural isomorphism of group-valued
   functors.
 
@@ -280,6 +285,31 @@ theorem quotientPointsHom_pointsMulEquiv_symm
   apply (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).injective
   rw [pointsMulEquiv_toGL, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
 
+/-- The point of `SLₙ` attached to a determinant-one matrix takes the value `M i j` on the
+`(i, j)` entry of the generic matrix. -/
+theorem ofConv_pointsMulEquiv_symm_genericMatrix (M : Matrix.SpecialLinearGroup (Fin n) A)
+    (i j : Fin n) :
+    ((pointsMulEquiv (R := R) (A := A) n).symm M).ofConv
+        ((GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom i j) = M i j := by
+  have h := pointsMulEquiv_toGL R n ((pointsMulEquiv (R := R) (A := A) n).symm M)
+  rw [MulEquiv.apply_symm_apply] at h
+  have hij := congrArg (fun g : Matrix.GeneralLinearGroup (Fin n) A ↦ (g : Matrix _ _ A) i j) h
+  simp only [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply] at hij
+  rw [Matrix.map_apply, coordinateMap_apply, GeneralLinear.genericMatrix_apply,
+    ← CommHopfAlgCat.quotientPointsHom_apply_apply, hij,
+    Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
+
+/-- The `(i, j)` entry of the matrix of a point of `SLₙ` is its value on the `(i, j)` entry of the
+generic matrix. -/
+@[simp]
+theorem coe_pointsMulEquiv_apply
+    (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) (CommAlgCat.of R A))
+    (i j : Fin n) :
+    (pointsMulEquiv (R := R) (A := A) n g : Matrix (Fin n) (Fin n) A) i j =
+      g.ofConv ((GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom i j) := by
+  rw [← ofConv_pointsMulEquiv_symm_genericMatrix R n (pointsMulEquiv (R := R) (A := A) n g),
+    MulEquiv.symm_apply_apply]
+
 variable {B : Type v} [CommRing B] [Algebra R B]
 
 /-- The special-linear point equivalence is natural in the value algebra: postcomposition of Hopf
@@ -295,6 +325,16 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
   rw [← pointsMulEquiv_toGL, ← CommHopfAlgCat.mapValue_quotientPointsHom]
   rw [GeneralLinear.pointsMulEquiv_mapValue, pointsMulEquiv_toGL,
     Matrix.SpecialLinearGroup.toGL_map, AlgHom.toRingHom_eq_coe]
+
+/-- Naturality of the inverse special-linear point equivalence in the value algebra. -/
+theorem mapValue_pointsMulEquiv_symm_apply (phi : A →ₐ[R] B)
+    (s : Matrix.SpecialLinearGroup (Fin n) A) :
+    AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi
+        ((pointsMulEquiv (R := R) (A := A) n).symm s) =
+      (pointsMulEquiv (R := R) (A := B) n).symm
+        (Matrix.SpecialLinearGroup.map phi.toRingHom s) := by
+  apply (pointsMulEquiv (R := R) (A := B) n).injective
+  rw [pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
 
 /-- Conjugating an `SLₙ` point by the point attached to the inverse of `s` becomes ordinary
 matrix conjugation after extension of scalars and inclusion into `GLₙ`. -/
