@@ -252,25 +252,30 @@ theorem mem_posIdeal {a : nonnegSubring R N} :
     a ∈ posIdeal R N ↔ ∀ h, N h ≤ 0 → (a : NovikovSeries R H N).coeff h = 0 :=
   Iff.rfl
 
+/-- The positive ideal is two-sided, also for noncommutative coefficients. -/
+instance : (posIdeal R N).IsTwoSided where
+  mul_mem_of_left b ha := by
+    obtain ⟨C, hC, haC⟩ := exists_pos_mem_periodFiltration_iff.2 ha
+    exact exists_pos_mem_periodFiltration_iff.1
+      ⟨C + 0, by rwa [add_zero], mul_mem_periodFiltration haC b.2⟩
+
 /-- A series of the positive ideal is topologically nilpotent. -/
 theorem isTopologicallyNilpotent_of_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posIdeal R N) :
     IsTopologicallyNilpotent (a : NovikovSeries R H N) := by
   obtain ⟨C, hC, haC⟩ := exists_pos_mem_periodFiltration_iff.2 ha
   exact isTopologicallyNilpotent_of_mem_periodFiltration hC haC
 
-/-- For `a` in the positive ideal, the geometric series `∑ aⁿ` lies in the nonnegative
+/-- For `a` in the nonnegative subring, the geometric series `∑ aⁿ` lies in the nonnegative
 subring. -/
-theorem tsum_pow_mem_nonnegSubring {a : nonnegSubring R N} (ha : a ∈ posIdeal R N) :
+theorem tsum_pow_mem_nonnegSubring (a : nonnegSubring R N) :
     ∑' n : ℕ, (a : NovikovSeries R H N) ^ n ∈ nonnegSubring R N :=
-  isClosed_nonnegSubring.mem_of_tendsto
-    (isTopologicallyNilpotent_of_mem_posIdeal ha).summable_pow.hasSum.tendsto_sum_nat
-    (Eventually.of_forall fun _ => Subring.sum_mem _ fun n _ => Subring.pow_mem _ a.2 n)
+  tsum_mem isClosed_nonnegSubring fun n => Subring.pow_mem _ a.2 n
 
 /-- For `a` in the positive ideal, `1 - a` as a unit of the nonnegative subring. Its inverse is
 the geometric series `∑ aⁿ` (`TauCeti.NovikovSeries.coe_inv_unitsOneSub`). -/
 def unitsOneSub {a : nonnegSubring R N} (ha : a ∈ posIdeal R N) : (nonnegSubring R N)ˣ where
   val := 1 - a
-  inv := ⟨∑' n : ℕ, (a : NovikovSeries R H N) ^ n, tsum_pow_mem_nonnegSubring ha⟩
+  inv := ⟨∑' n : ℕ, (a : NovikovSeries R H N) ^ n, tsum_pow_mem_nonnegSubring a⟩
   val_inv := Subtype.ext <| by
     simpa using (isTopologicallyNilpotent_of_mem_posIdeal ha).summable_pow.one_sub_mul_tsum_pow
   inv_val := Subtype.ext <| by
