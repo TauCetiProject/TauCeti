@@ -39,6 +39,9 @@ with the algebra that holds in each range of degrees.
 * `TauCeti.RelHomotopyGroup.abelianizationFunctor`: the abelianization of `π_{n+1}(X, A, a₀)` as
   a functor to `ModuleCat ℤ`, with the quotient map `TauCeti.RelHomotopyGroup.toAbelianization`
   and its universal property `TauCeti.RelHomotopyGroup.abelianizationLift`.
+* `TauCeti.RelHomotopyGroup.toAbelianization_bijective_of_subsingleton`: the quotient map onto the
+  abelianization is bijective when `π_n(A, a₀)` is trivial, in particular for `π_2(X, A, a₀)` when
+  `A` is simply connected.
 * `TauCeti.RelHomotopyGroup.moduleFunctor`: `π_{n+1}(X, A, a₀)` as a functor to `ModuleCat ℤ`
   for `n ≥ 2`, and `TauCeti.RelHomotopyGroup.moduleFunctorIsoAbelianizationFunctor`.
 
@@ -172,6 +175,15 @@ of `π_{n+1}(X, A, a₀)` is represented by an element of `π_{n+1}(X, A, a₀)`
 theorem toAbelianization_surjective :
     Function.Surjective (toAbelianization : RelHomotopyGroup N X → _) :=
   Additive.ofMul.surjective.comp QuotientGroup.mk_surjective
+
+/-- If `π_n(A, a₀)` is trivial, then the quotient map from `π_{n+1}(X, A, a₀)` onto its
+abelianization is bijective. In degree two this applies when `A` is simply connected, where
+`π_2(X, A, a₀)` is commutative (`TauCeti.RelHomotopyGroup.mul_comm_of_subsingleton`). -/
+theorem toAbelianization_bijective_of_subsingleton
+    (hA : Subsingleton (HomotopyGroup N X.pair.snd X.basepoint)) :
+    Function.Bijective (toAbelianization : RelHomotopyGroup N X → _) :=
+  letI : CommGroup (RelHomotopyGroup N X) := { mul_comm := mul_comm_of_subsingleton hA }
+  Additive.ofMul.bijective.comp Abelianization.equivOfComm.bijective
 
 /-- The quotient map onto the abelianization is natural in the based pair. -/
 @[simp]
