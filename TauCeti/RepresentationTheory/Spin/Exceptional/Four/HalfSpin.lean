@@ -123,4 +123,29 @@ theorem
       exact LinearMap.toMatrix_mulVec_repr bminus bminus
         (spinMinusAction Q P hline (spinGroupToEven Q g)) s
 
+/-! The arbitrary-form endpoint below supplies the polarization used by the preceding theorem.
+It is kept here, beside the representation comparison, so callers do not need to reproduce the
+finite-dimensional and separably-closed reduction. -/
+
+/-- A nondegenerate four-dimensional quadratic space over a separably closed field of
+characteristic different from two admits polarization data identifying its Spin group with
+`SL₂ × SL₂`; the two half-spin representations are the standard representations of the two
+factors. The choices are noncanonical. -/
+theorem
+    exists_spinGroup_mulEquiv_specialLinearGroup_prod_and_halfSpin_equiv_stdSLRep_of_isSepClosed
+    [NeZero (2 : K)] [IsSepClosed K] (hQ : Q.Nondegenerate) (hV : finrank K V = 4) :
+    ∃ P : SpinPolarizationData Q, ∃ hline : P.line = ⊥,
+      ∃ f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K ×
+        Matrix.SpecialLinearGroup (Fin 2) K,
+        Nonempty ((spinPlusSubrep P hline).toRepresentation.Equiv
+          ((stdSLRep K 2).comp ((MonoidHom.fst _ _).comp f.toMonoidHom))) ∧
+        Nonempty ((spinMinusSubrep P hline).toRepresentation.Equiv
+          ((stdSLRep K 2).comp ((MonoidHom.snd _ _).comp f.toMonoidHom))) := by
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let P := SpinPolarizationData.ofNondegenerate Q hQ
+  obtain ⟨hline, f, hplus, hminus⟩ :=
+    exists_spinGroup_mulEquiv_specialLinearGroup_prod_and_halfSpin_equiv_stdSLRep_of_finrank_eq_four
+      P hV
+  exact ⟨P, hline, f, hplus, hminus⟩
+
 end TauCeti
