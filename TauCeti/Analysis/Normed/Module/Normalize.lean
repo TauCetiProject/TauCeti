@@ -6,15 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Normalize
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 
 /-!
 # Radial projection to the unit sphere
 
 This file packages pointwise normalization of a continuous nowhere-zero map as a continuous map
 to the unit sphere. It also defines the direction map `sphereDirection e`, which sends a nonzero
-vector `x` to `‖x‖⁻¹ • x` and the origin to an assigned point `e` of the unit sphere, and proves
-that it is measurable.
+vector `x` to `‖x‖⁻¹ • x` and the origin to an assigned point `e` of the unit sphere.
 
 ## Main definitions
 
@@ -92,14 +90,6 @@ theorem sphereDirection_smul_of_pos {r : ℝ} (hr : 0 < r) (u : sphere (0 : E) 1
 @[simp]
 theorem sphereDirection_coe (u : sphere (0 : E) 1) : sphereDirection e (u : E) = u := by
   simpa using sphereDirection_smul_of_pos e one_pos u
-
-/-- The direction map is measurable. -/
-@[fun_prop]
-theorem measurable_sphereDirection [MeasurableSpace E] [BorelSpace E] :
-    Measurable (sphereDirection e) := by
-  unfold sphereDirection NormedSpace.normalize
-  refine Measurable.subtype_mk (Measurable.ite (measurableSet_singleton 0) measurable_const ?_)
-  fun_prop
 
 end Direction
 
