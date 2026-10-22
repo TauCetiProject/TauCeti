@@ -36,17 +36,27 @@ namespace Compactification
 noncomputable section
 
 /-- The open interior map induced on the pullbacks of a compactification. -/
-@[expose] def baseChangeJ (C : Compactification f) (g : T ⟶ S) :
+def baseChangeJ (C : Compactification f) (g : T ⟶ S) :
     pullback f g ⟶ pullback C.p g :=
   pullback.lift (pullback.fst f g ≫ C.j) (pullback.snd f g)
     (by simp [← pullback.condition])
+
+@[reassoc (attr := simp)]
+theorem baseChangeJ_fst (C : Compactification f) (g : T ⟶ S) :
+    baseChangeJ C g ≫ pullback.fst C.p g = pullback.fst f g ≫ C.j :=
+  pullback.lift_fst _ _ _
+
+@[reassoc (attr := simp)]
+theorem baseChangeJ_snd (C : Compactification f) (g : T ⟶ S) :
+    baseChangeJ C g ≫ pullback.snd C.p g = pullback.snd f g :=
+  pullback.lift_snd _ _ _
 
 /-- The square relating the original and pulled-back interiors is cartesian. -/
 theorem isPullback_baseChange (C : Compactification f) (g : T ⟶ S) :
     IsPullback (pullback.fst f g) (baseChangeJ C g) C.j (pullback.fst C.p g) := by
   apply IsPullback.of_bot (t := IsPullback.of_hasPullback C.p g)
-  · simpa [baseChangeJ] using (IsPullback.of_hasPullback f g)
-  · simp [baseChangeJ]
+  · simpa using (IsPullback.of_hasPullback f g)
+  · simp
 
 instance (C : Compactification f) (g : T ⟶ S) :
     IsOpenImmersion (baseChangeJ C g) :=
@@ -64,11 +74,15 @@ open immersion induced by `pullback.lift`, and proper map `pullback.snd C.p g`. 
 -- Exposure and implicit reducibility keep dependent projection formulas usable across modules.
 @[expose, implicit_reducible] def baseChange (C : Compactification f) (g : T ⟶ S) :
     Compactification (pullback.snd f g) :=
-  ofHom (baseChangeJ C g) (pullback.snd C.p g) (pullback.lift_snd _ _ _)
+  ofHom (baseChangeJ C g) (pullback.snd C.p g) (baseChangeJ_snd C g)
 
 @[simp]
 theorem baseChange_Xbar (C : Compactification f) (g : T ⟶ S) :
     (C.baseChange g).Xbar = pullback C.p g :=
+  (rfl)
+
+theorem baseChange_j (C : Compactification f) (g : T ⟶ S) :
+    (C.baseChange g).j = baseChangeJ C g :=
   (rfl)
 
 @[simp]
@@ -80,13 +94,13 @@ theorem baseChange_p (C : Compactification f) (g : T ⟶ S) :
 @[reassoc (attr := simp)]
 theorem baseChange_j_fst (C : Compactification f) (g : T ⟶ S) :
     (C.baseChange g).j ≫ pullback.fst C.p g = pullback.fst f g ≫ C.j :=
-  pullback.lift_fst _ _ _
+  baseChangeJ_fst C g
 
 /-- The base-changed interior lies over the new base. -/
 @[reassoc (attr := simp)]
 theorem baseChange_j_snd (C : Compactification f) (g : T ⟶ S) :
     (C.baseChange g).j ≫ pullback.snd C.p g = pullback.snd f g :=
-  pullback.lift_snd _ _ _
+  baseChangeJ_snd C g
 
 /-- Flat base change preserves scheme-theoretic density of the interior. -/
 instance baseChange_isSchemeTheoreticallyDominant (C : Compactification f)

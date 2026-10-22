@@ -18,6 +18,8 @@ A compactification of a scheme morphism is a factorization through a quasi-compa
 immersion followed by a proper morphism. Morphisms fix the source and lie over the base.
 We realize this category as a full subcategory of Mathlib's `CategoryTheory.Factorisation`,
 so its morphisms and category laws are inherited rather than reconstructed.
+As in the Stacks Project's category of compactifications, density is not required.
+These definitions impose no quasi-compactness or quasi-separatedness condition on the base.
 
 The dense compactifications form the further full subcategory where the open immersion is
 scheme-theoretically dominant. This condition retains the scheme structure, including
@@ -117,6 +119,11 @@ specified open immersion. -/
 noncomputable def isInitialIdentity [IsProper f] : Limits.IsInitial (identity f) := by
   apply Limits.IsInitial.isInitialOfObj (compactificationProperty f).ι
   exact Factorisation.IsInitial_initial (f := f)
+
+@[simp]
+theorem isInitialIdentity_to_hom_h [IsProper f] (C : Compactification f) :
+    ((isInitialIdentity f).to C).hom.h = C.j := by
+  simpa using ((isInitialIdentity f).to C).hom.ι_h
 
 end Compactification
 
