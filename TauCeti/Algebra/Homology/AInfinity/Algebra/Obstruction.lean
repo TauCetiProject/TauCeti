@@ -52,6 +52,8 @@ transformation adds `[m_𝒜, φ]` to the Taylor map, and `[m_𝒜, φ]` agrees 
   differentials of two `A∞` structures differ by the bracket with `D`.
 * `TauCeti.AInfinityAlgebra.IsMinimal.taylor_comp_lengthProj_two`: a graded algebra has its
   Taylor map concentrated on the words of length two.
+* `TauCeti.AInfinityAlgebra.IsMinimal.taylor_coalgHom_of_tprod`: after a coalgebra morphism, the
+  Taylor map of a graded algebra only sees the cuts of a word into two blocks.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_comp_lengthProj`: the Hochschild differential
   of a graded algebra raises the arity of a cochain concentrated in one arity by one.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_obstruction`: the first obstruction to the
@@ -179,6 +181,34 @@ theorem IsMinimal.taylor_comp_lengthProj_two (hℋ : ℋ.IsMinimal) (hm : ∀ k,
       (of_mem_filtration R A (k := ⟨1, hk⟩) le_rfl _)).symm
   · exact (LinearMap.congr_fun (ℋ.taylor_comp_of_eq_zero_of_m_eq_zero ⟨k, hk⟩
       (hm k (by omega))) (PiTensorProduct.tprod R x)).symm
+
+/-- The Taylor map of an `A∞` algebra without operations above arity two vanishes on words obtained
+by prepending two letters to a nonempty word. -/
+private theorem taylor_prepend_prepend (hm : ∀ k, 3 ≤ k → ℋ.m k = 0) (u v : A)
+    (W : ReducedTensorWords R A) : ℋ.taylor (prepend R A u (prepend R A v W)) = 0 := by
+  have h : ℋ.taylor ∘ₗ prepend R A u ∘ₗ prepend R A v = 0 := by
+    refine linearMap_ext R A fun n y ↦ ?_
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, prepend_of_tprod, prepend_of_tprod,
+      ℋ.taylor_of_tprod, hm _ (by have := n.2; simp only; omega), LinearMap.zero_apply,
+      _root_.zero_apply]
+  exact LinearMap.congr_fun h W
+
+/-- **The Taylor map of a graded algebra after a coalgebra morphism.**  For a minimal `A∞` algebra
+`ℋ` without operations above arity two, the Taylor map after the coalgebra morphism with Taylor
+components `f` only sees the cuts of a word into two blocks: on `x₁ ⋯ xₙ` it is the sum over the
+cuts of `m₂(τ f(x₁ ⋯ x_d), f(x_{d+1} ⋯ xₙ))`, with `τ` the degree-one Koszul twist carrying the
+suspension sign of `m₂`. -/
+theorem IsMinimal.taylor_coalgHom_of_tprod (hℋ : ℋ.IsMinimal) (hm : ∀ k, 3 ≤ k → ℋ.m k = 0)
+    (f : ReducedTensorWords R A →ₗ[R] A) {n : ℕ} (hn : 0 < n) (x : Fin n → A) :
+    ℋ.taylor (coalgHom R f (of R A ⟨n, hn⟩ (PiTensorProduct.tprod R x))) =
+      ∑ d ∈ Finset.range n,
+        ℋ.m 2 ![ℋ.grading.koszulTwist 1 (f (subword R x 0 d)), f (subword R x d (n - d))] := by
+  rw [of_tprod_eq_subword R hn, coalgHom_subword, map_add, map_sum, taylor_ofLetter, hℋ.m_one,
+    zero_add]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [coalgHom_subword, map_add, map_sum, map_add, map_sum, prepend_ofLetter, taylor_of_two,
+    zero_add]
+  simp [taylor_prepend_prepend hm]
 
 /-- **The Hochschild differential of a graded algebra raises arity by one.**  If the Taylor map of
 `ℋ` is concentrated on the words of length two, the Hochschild differential of `ℋ` sends a cochain
