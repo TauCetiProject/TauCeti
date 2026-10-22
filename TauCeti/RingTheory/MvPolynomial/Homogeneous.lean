@@ -24,9 +24,7 @@ degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient van
 positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitution of
 polynomials of degree at most one, and `hp.homogeneousComponent_mul_right` records that
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
-by `d`. In finitely many variables, `hp.support_subset_finsuppAntidiag` places the exponents
-of `p` among those of total degree `n`, and `hp.as_sum_finsuppAntidiag` expands `p` as a sum
-of monomials over that finite set.
+by `d`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
@@ -151,26 +149,6 @@ theorem aeval_eq_sum_finsuppAntidiag {σ R S : Type*} [Fintype σ] [DecidableEq 
   · rw [← Finsupp.degree_eq_sum]
     exact (hp.degree_eq_sum_deg_support hl).symm
   · rw [notMem_support_iff.mp hl, map_zero, zero_mul]
-
-/-- In finitely many variables, the exponents of a homogeneous polynomial of degree `n` lie in the
-finite set of exponents of total degree `n`. -/
-theorem support_subset_finsuppAntidiag {σ R : Type*} [Fintype σ] [DecidableEq σ]
-    [CommSemiring R] {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) :
-    p.support ⊆ (Finset.univ : Finset σ).finsuppAntidiag n := fun d hd ↦ by
-  have hdeg : d.degree = n := by
-    rw [Finsupp.degree_eq_weight_one]
-    exact hp (mem_support_iff.mp hd)
-  rw [Finsupp.degree_eq_sum] at hdeg
-  exact Finset.mem_finsuppAntidiag.mpr ⟨hdeg, Finset.subset_univ _⟩
-
-/-- In finitely many variables, a homogeneous polynomial of degree `n` is the sum of its
-monomials over the finite set of exponents of total degree `n`. -/
-theorem as_sum_finsuppAntidiag {σ R : Type*} [Fintype σ] [DecidableEq σ] [CommSemiring R]
-    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) :
-    p = ∑ d ∈ (Finset.univ : Finset σ).finsuppAntidiag n, monomial d (p.coeff d) := by
-  conv_lhs => rw [p.as_sum]
-  exact Finset.sum_subset hp.support_subset_finsuppAntidiag fun d _ hd ↦ by
-    rw [notMem_support_iff.mp hd, monomial_zero]
 
 end MvPolynomial.IsHomogeneous
 

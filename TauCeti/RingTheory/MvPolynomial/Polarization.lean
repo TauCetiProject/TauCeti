@@ -70,9 +70,11 @@ theorem span_sum_smul_X_pow_eq_homogeneousSubmodule (S : Set (σ → K))
   -- on homogeneous polynomials of degree `n`, `φ` is determined by its values on monomials
   have hφ {p : MvPolynomial σ K} (hp : p ∈ homogeneousSubmodule σ K n) :
       φ p = ∑ d ∈ D, p.coeff d * φ (monomial d 1) := by
-    conv_lhs => rw [((mem_homogeneousSubmodule n p).mp hp).as_sum_finsuppAntidiag, map_sum]
+    conv_lhs => rw [← aeval_X_left_apply p,
+      ((mem_homogeneousSubmodule n p).mp hp).aeval_eq_sum_finsuppAntidiag, map_sum]
     refine Finset.sum_congr rfl fun d _ ↦ ?_
-    rw [← smul_eq_mul, ← map_smul, smul_monomial, smul_eq_mul, mul_one]
+    rw [← Algebra.smul_def, map_smul, smul_eq_mul, monomial_eq, C_1, one_mul,
+      Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
   -- the polynomial in the coordinates whose value at `x` is `φ ((∑ i, x i • X i) ^ n)`
   set Q : MvPolynomial σ K := ∑ d ∈ D, monomial d ((d.multinomial : K) * φ (monomial d 1))
   have hQ (x : σ → K) : eval x Q = φ ((∑ i, x i • X i : MvPolynomial σ K) ^ n) := by
