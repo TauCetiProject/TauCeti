@@ -69,6 +69,14 @@ noncomputable def polynomialComodule :
     Comodule R (coordinateHopfAlgebra R n) (MvPolynomial (Fin n) R) :=
   Comodule.polynomial (coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))
 
+/-- The coaction on polynomial functions on the standard representation of `SLₙ` is the algebra
+homomorphism `Comodule.polynomialCoact` of the standard basis. -/
+theorem polynomialComodule_coact :
+    letI := polynomialComodule R n
+    Comodule.coact (R := R) (C := coordinateHopfAlgebra R n) (M := MvPolynomial (Fin n) R) =
+      (Comodule.polynomialCoact (coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))).toLinearMap :=
+  Comodule.polynomial_coact _
+
 variable {R n} {A : Type v} [CommRing A] [Algebra R A]
 
 /-- **Points of `SLₙ` act on polynomial functions contragrediently.** Under
