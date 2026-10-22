@@ -23,7 +23,8 @@ behaviour of theta series under the translations `T ^ n : τ ↦ τ + n` of the 
   `θ_{γ+L}(τ + n) = exp (π i n ‖γ‖²) θ_{γ+L}(τ)`. In the notation `e(x) = exp (2 π i x)` and
   `q_L(γ) = ‖γ‖² / 2 mod ℤ`, this is `θ_{γ+L}(τ + 1) = e(q_L(γ)) θ_{γ+L}(τ)`. In particular
   `Θ_L(τ + 1) = Θ_L(τ)`, that is `Θ_L ∣[k] T = Θ_L` in every weight `k`, and `θ_{γ+L}` is invariant
-  under `T ^ N` as soon as `N ‖γ‖² / 2 ∈ ℤ`; the least such `N > 0` for all `γ ∈ L^∨` is the level
+  under `T ^ N` as soon as `N ‖γ‖² / 2 ∈ ℤ`; when some `N > 0` works for every `γ ∈ L^∨` (for
+  instance when `L` is a full lattice in a finite-dimensional space), the least one is the level
   of `L`.
 * If `L` is only **integral** and `γ ∈ L^∨`, then `‖γ + v‖² ≡ ‖γ‖² (mod 1)`, which gives the same
   statements for even translations: `θ_{γ+L}(τ + 2) = exp (2 π i ‖γ‖²) θ_{γ+L}(τ)` and
@@ -112,11 +113,13 @@ theorem thetaCoset_one_vadd (hL : IsEven L) (hγ : γ ∈ dual L) (τ : ℍ) :
   simpa using hL.thetaCoset_intCast_vadd hγ 1 τ
 
 /-- The theta series of an even lattice has period `1`. -/
+@[simp]
 theorem thetaSeries_intCast_vadd (hL : IsEven L) (n : ℤ) (τ : ℍ) :
     thetaSeries L ((n : ℝ) +ᵥ τ) = thetaSeries L τ := by
   simpa using hL.thetaCoset_intCast_vadd (zero_mem (dual L)) n τ
 
 /-- The theta series of an even lattice has period `1`: `Θ_L(τ + 1) = Θ_L(τ)`. -/
+@[simp]
 theorem thetaSeries_one_vadd (hL : IsEven L) (τ : ℍ) :
     thetaSeries L ((1 : ℝ) +ᵥ τ) = thetaSeries L τ := by
   simpa using hL.thetaSeries_intCast_vadd 1 τ
@@ -151,12 +154,14 @@ theorem thetaCoset_slash_T_zpow_eq_self (hL : IsEven L) (hγ : γ ∈ dual L) (k
 
 /-- The theta series of an even lattice is invariant under every power of `T`, in every
 weight. -/
+@[simp]
 theorem thetaSeries_slash_T_zpow (hL : IsEven L) (k n : ℤ) :
     thetaSeries L ∣[k] (ModularGroup.T ^ n) = thetaSeries L := by
   simpa using hL.thetaCoset_slash_T_zpow (zero_mem (dual L)) k n
 
 /-- The theta series of an even lattice is invariant under `T`, in every weight:
 `Θ_L ∣[k] T = Θ_L`. -/
+@[simp]
 theorem thetaSeries_slash_T (hL : IsEven L) (k : ℤ) :
     thetaSeries L ∣[k] ModularGroup.T = thetaSeries L := by
   simpa using hL.thetaSeries_slash_T_zpow k 1
@@ -180,6 +185,7 @@ theorem thetaCoset_two_mul_intCast_vadd (hL : IsIntegral L) (hγ : γ ∈ dual L
     exact ⟨m * n, by rw [hm]; push_cast; ring⟩
 
 /-- The theta series of an integral lattice has period `2`. -/
+@[simp]
 theorem thetaSeries_two_mul_intCast_vadd (hL : IsIntegral L) (n : ℤ) (τ : ℍ) :
     thetaSeries L ((2 * n : ℝ) +ᵥ τ) = thetaSeries L τ := by
   simpa using hL.thetaCoset_two_mul_intCast_vadd (zero_mem (dual L)) n τ
@@ -198,6 +204,7 @@ theorem thetaCoset_slash_T_zpow_two_mul (hL : IsIntegral L) (hγ : γ ∈ dual L
 
 /-- The theta series of an integral lattice is invariant under `T ^ 2`, in every weight:
 `Θ_L ∣[k] T ^ 2 = Θ_L`. -/
+@[simp]
 theorem thetaSeries_slash_T_sq (hL : IsIntegral L) (k : ℤ) :
     thetaSeries L ∣[k] (ModularGroup.T ^ 2) = thetaSeries L := by
   ext τ
