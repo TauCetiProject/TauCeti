@@ -521,7 +521,8 @@ private theorem isClosed_isJetGraph : IsClosed {J : Jet k α E F | IsJetGraph J}
     simp [IsJetGraph]
   rw [hset]
   exact isClosed_iInter fun j ↦
-    (isClosed_setOf_hasFDerivAt_comp (curryLeftL E F j)).preimage
+    (isClosed_setOf_hasFDerivAt_comp (curryLeftL E F j)
+      (curryLeftL E F j).uniformContinuous).preimage
       ((fieldL (k := k) (α := α) (E := E) (F := F) _).continuous.prodMk
         (fieldL (k := k) (α := α) (E := E) (F := F) _).continuous)
 
