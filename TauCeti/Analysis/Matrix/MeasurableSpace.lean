@@ -43,7 +43,7 @@ theorem measurable_matrix_vec {m n α : Type*} [MeasurableSpace α] :
 /-- The column-stacking vectorization `Matrix.vec` as a measurable equivalence onto the `L^p` copy
 of functions on the transposed index type. Its inverse reads entry `(i, j)` from coordinate
 `(j, i)`. -/
-@[expose] def matrixVecMeasurableEquiv {m n α : Type*} [MeasurableSpace α] (p : ENNReal) :
+def matrixVecMeasurableEquiv {m n α : Type*} [MeasurableSpace α] (p : ENNReal) :
     Matrix m n α ≃ᵐ WithLp p (n × m → α) where
   toFun A := WithLp.toLp p A.vec
   invFun x := Matrix.of fun i j => x.ofLp (j, i)
@@ -51,19 +51,21 @@ of functions on the transposed index type. Its inverse reads entry `(i, j)` from
   right_inv _ := rfl
   measurable_toFun := (WithLp.measurable_toLp p _).comp measurable_matrix_vec
   measurable_invFun := by
+    -- The goal is stated for the coercion of the bundled `Equiv.symm`, which `fun_prop` cannot
+    -- see through, so restate it for the underlying function.
     change Measurable fun x : WithLp p (n × m → α) => Matrix.of fun i j => x.ofLp (j, i)
     fun_prop
 
 @[simp]
 theorem matrixVecMeasurableEquiv_apply {m n α : Type*} [MeasurableSpace α] (p : ENNReal)
     (A : Matrix m n α) : matrixVecMeasurableEquiv p A = WithLp.toLp p A.vec :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem matrixVecMeasurableEquiv_symm_apply {m n α : Type*} [MeasurableSpace α] (p : ENNReal)
     (x : WithLp p (n × m → α)) :
     (matrixVecMeasurableEquiv p).symm x = Matrix.of fun i j => x.ofLp (j, i) :=
-  rfl
+  (rfl)
 
 variable {m : Type*} [Fintype m] [DecidableEq m] {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
   [IsTopologicalRing 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SecondCountableTopology 𝕜]

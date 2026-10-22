@@ -97,8 +97,10 @@ theorem map_vec_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ
     (hU : U.PosSemidef) (hV : V.PosSemidef) :
     (matrixNormalMeasure M U V).map (fun X => WithLp.toLp 2 X.vec) =
       multivariateGaussian (WithLp.toLp 2 M.vec) (V ⊗ₖ U) := by
-  rw [matrixNormalMeasure_of_posSemidef M hU hV]
-  exact MeasurableEquiv.map_map_symm (matrixVecMeasurableEquiv (m := ι) (n := κ) (α := ℝ) 2)
+  rw [matrixNormalMeasure_of_posSemidef M hU hV,
+    show (fun X : Matrix ι κ ℝ => WithLp.toLp 2 X.vec) = matrixVecMeasurableEquiv 2 from
+      funext fun X => (matrixVecMeasurableEquiv_apply 2 X).symm]
+  exact MeasurableEquiv.map_map_symm _
 
 /-- A zero row covariance gives the point mass at the mean. -/
 @[simp]
@@ -107,7 +109,7 @@ theorem matrixNormalMeasure_zero_left (M : Matrix ι κ ℝ) (V : Matrix κ κ �
   by_cases hV : V.PosSemidef
   · rw [matrixNormalMeasure_of_posSemidef M Matrix.PosSemidef.zero hV, Matrix.kronecker_zero,
       multivariateGaussian_zero_right, Measure.map_dirac' (MeasurableEquiv.measurable _)]
-    exact congrArg Measure.dirac ((matrixVecMeasurableEquiv 2).symm_apply_apply M)
+    rw [← matrixVecMeasurableEquiv_apply, MeasurableEquiv.symm_apply_apply]
   · exact matrixNormalMeasure_of_not_posSemidef M fun h => hV h.2
 
 /-- A zero column covariance gives the point mass at the mean. -/
@@ -117,7 +119,7 @@ theorem matrixNormalMeasure_zero_right (M : Matrix ι κ ℝ) (U : Matrix ι ι 
   by_cases hU : U.PosSemidef
   · rw [matrixNormalMeasure_of_posSemidef M hU Matrix.PosSemidef.zero, Matrix.zero_kronecker,
       multivariateGaussian_zero_right, Measure.map_dirac' (MeasurableEquiv.measurable _)]
-    exact congrArg Measure.dirac ((matrixVecMeasurableEquiv 2).symm_apply_apply M)
+    rw [← matrixVecMeasurableEquiv_apply, MeasurableEquiv.symm_apply_apply]
   · exact matrixNormalMeasure_of_not_posSemidef M fun h => hU h.1
 
 /-- When there is only one matrix, as for an empty row or column type, the matrix normal law is
@@ -260,7 +262,8 @@ theorem map_mul_mul_add_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix �
       ← Matrix.mul_kronecker_mul]
   have hmap := map_affine_multivariateGaussian (matrixVecMeasurableEquiv 2 M) (hV.kronecker hU)
     (Bᵀ ⊗ₖ A) (matrixVecMeasurableEquiv 2 C)
-  rw [← hL M, hcov] at hmap
+  rw [← hL M, hcov, matrixVecMeasurableEquiv_apply 2 M,
+    matrixVecMeasurableEquiv_apply 2 (A * M * B + C)] at hmap
   -- Under vectorization, `X ↦ A * X * B + C` becomes the affine map of `hmap`.
   have hcomm : (fun X => A * X * B + C) ∘ (matrixVecMeasurableEquiv 2).symm =
       (matrixVecMeasurableEquiv 2).symm ∘
