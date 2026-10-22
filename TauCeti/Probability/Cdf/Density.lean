@@ -23,6 +23,8 @@ continuity point of the density.
 
 * `TauCeti.Probability.cdf_sub_cdf_eq_integral_of_eq_withDensity` identifies cdf increments with
   density integrals;
+* `TauCeti.Probability.strictMono_cdf_of_eq_withDensity` proves strict increase for an
+  everywhere positive density;
 * `TauCeti.Probability.absolutelyContinuousOnInterval_cdf_of_eq_withDensity` proves absolute
   continuity of the cdf;
 * `TauCeti.Probability.ae_hasDerivAt_cdf_of_eq_withDensity` identifies its derivative almost
@@ -50,6 +52,21 @@ theorem cdf_sub_cdf_eq_integral_of_eq_withDensity
   rw [← Measure.measureReal_Ioc_eq_cdf_sub μ hab, intervalIntegral.integral_of_le hab, hμ]
   exact measureReal_withDensity_ofReal (ae_restrict_of_ae hnn) measurableSet_Ioc
     (integrable_of_eq_withDensity hμ hfm hnn).integrableOn
+
+/-- A real probability law with an everywhere positive density has a strictly increasing cdf. -/
+theorem strictMono_cdf_of_eq_withDensity
+    (hμ : μ = volume.withDensity fun t ↦ ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
+    (hpos : ∀ t, 0 < f t) : StrictMono (cdf μ) := by
+  intro x y hxy
+  have hnn := ae_of_all volume fun t ↦ (hpos t).le
+  have hsupport : Function.support f = univ :=
+    eq_univ_iff_forall.mpr fun t ↦ (hpos t).ne'
+  rw [← sub_pos, cdf_sub_cdf_eq_integral_of_eq_withDensity hμ hfm hnn,
+    intervalIntegral.integral_of_le hxy.le,
+    setIntegral_pos_iff_support_of_nonneg_ae (ae_restrict_of_ae hnn)
+      (integrable_of_eq_withDensity hμ hfm hnn).integrableOn,
+    hsupport, univ_inter, Real.volume_Ioc, ENNReal.ofReal_pos]
+  exact sub_pos.mpr hxy
 
 private theorem cdf_eq_add_integral_of_eq_withDensity
     (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)

@@ -15,8 +15,8 @@ import Mathlib.Topology.Instances.EReal.Lemmas
 For positive scale and shape, the generalized normal quantile is a signed power
 of the inverse regularized Gamma function, centered at the location `m`. The
 median is handled separately because the inverse Gamma formula uses an interior
-probability level. Quantiles are continuous and strictly increasing on `(0, 1)`,
-with limits minus infinity and plus infinity at its endpoints.
+probability level. Quantiles are continuous on `(0, 1)`, with limits minus infinity
+and plus infinity at its endpoints.
 
 ## References
 
@@ -34,14 +34,26 @@ namespace TauCeti.Probability
 
 variable {m s p u x : ℝ}
 
+/-- Every interior probability level has a unique generalized normal cdf root. -/
+theorem quantile_generalizedNormalMeasure_eq_iff (hs : 0 < s) (hp : 0 < p)
+    (hu : u ∈ Ioo 0 1) :
+    (generalizedNormalMeasure m s p).quantile u = x ↔
+      (1 + sign (x - m) * regularizedGamma p⁻¹ (|(x - m) / s| ^ p)) / 2 = u := by
+  rw [← cdf_generalizedNormalMeasure_eq hs hp]
+  constructor
+  · rintro rfl
+    exact Measure.cdf_quantile _ (continuous_cdf_generalizedNormalMeasure hs hp) hu.1 hu.2
+  · intro h
+    rw [← h]
+    exact Measure.quantile_cdf _ ((strictMono_cdf_generalizedNormalMeasure hs hp).strictMonoOn _)
+      (by rw [h]; exact hu)
+
 /-- The median quantile of a valid generalized normal law is its location. -/
 @[simp]
 theorem quantile_generalizedNormalMeasure_half (hs : 0 < s) (hp : 0 < p) :
     (generalizedNormalMeasure m s p).quantile (2⁻¹) = m := by
-  have hF : cdf (generalizedNormalMeasure m s p) m = 2⁻¹ := by simp [hs, hp]
-  rw [← hF]
-  exact Measure.quantile_cdf _ ((strictMono_cdf_generalizedNormalMeasure hs hp).strictMonoOn _)
-    (by rw [hF]; norm_num)
+  apply (quantile_generalizedNormalMeasure_eq_iff hs hp (by norm_num)).mpr
+  simp
 
 private theorem cdf_generalizedNormalMeasure_signed_inverse (hs : 0 < s) (hp : 0 < p)
     (hu : u ∈ Ioo 0 1) (hne : u ≠ 1 / 2) :
@@ -57,17 +69,11 @@ private theorem cdf_generalizedNormalMeasure_signed_inverse (hs : 0 < s) (hp : 0
     regularizedGamma_inverseRegularizedGamma (inv_pos.mpr hp) hv
   rw [cdf_generalizedNormalMeasure_eq hs hp]
   rcases lt_or_gt_of_ne ht with ht | ht
-  · rw [sign_of_neg ht]
-    have hsub : m + s * (-1) * b ^ p⁻¹ - m = -(s * b ^ p⁻¹) := by ring
-    rw [hsub, sign_of_neg (neg_neg_of_pos (mul_pos hs hpow)), neg_div, abs_neg,
-      abs_of_pos (div_pos (mul_pos hs hpow) hs), mul_div_cancel_left₀ _ hs.ne',
+  · simp [sign_of_neg ht, sign_neg, sign_of_pos (mul_pos hs hpow),
+      abs_mul, abs_div, abs_of_pos hs, abs_of_pos hpow, hs.ne',
       rpow_inv_rpow hbpos.le hp.ne', hG, abs_of_neg ht]
-    ring
-  · rw [sign_of_pos ht]
-    have hsub : m + s * 1 * b ^ p⁻¹ - m = s * b ^ p⁻¹ := by ring
-    rw [hsub, sign_of_pos (mul_pos hs hpow), abs_of_pos (div_pos (mul_pos hs hpow) hs),
-      mul_div_cancel_left₀ _ hs.ne', rpow_inv_rpow hbpos.le hp.ne', hG, abs_of_pos ht]
-    ring
+  · simp [sign_of_pos ht, sign_of_pos (mul_pos hs hpow), abs_of_pos hpow, hs.ne',
+      rpow_inv_rpow hbpos.le hp.ne', hG, abs_of_pos ht]
 
 /-- The generalized normal quantile at an interior probability level. Away from
 the median it is the signed `p⁻¹` power of an inverse regularized Gamma value. -/
@@ -78,24 +84,9 @@ theorem quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) (hu : u ∈ 
         m + s * sign (2 * u - 1) * inverseRegularizedGamma p⁻¹ |2 * u - 1| ^ p⁻¹ := by
   split_ifs with hhalf
   · rw [hhalf, one_div, quantile_generalizedNormalMeasure_half hs hp]
-  · have hF := cdf_generalizedNormalMeasure_signed_inverse (m := m) hs hp hu hhalf
-    conv_lhs => rw [← hF]
-    exact Measure.quantile_cdf _ ((strictMono_cdf_generalizedNormalMeasure hs hp).strictMonoOn _)
-      (by rw [hF]; exact hu)
-
-/-- Every interior probability level has a unique generalized normal cdf root. -/
-theorem quantile_generalizedNormalMeasure_eq_iff (hs : 0 < s) (hp : 0 < p)
-    (hu : u ∈ Ioo 0 1) :
-    (generalizedNormalMeasure m s p).quantile u = x ↔
-      (1 + sign (x - m) * regularizedGamma p⁻¹ (|(x - m) / s| ^ p)) / 2 = u := by
-  rw [← cdf_generalizedNormalMeasure_eq hs hp]
-  constructor
-  · rintro rfl
-    exact Measure.cdf_quantile _ (continuous_cdf_generalizedNormalMeasure hs hp) hu.1 hu.2
-  · intro h
-    rw [← h]
-    exact Measure.quantile_cdf _ ((strictMono_cdf_generalizedNormalMeasure hs hp).strictMonoOn _)
-      (by rw [h]; exact hu)
+  · apply (quantile_generalizedNormalMeasure_eq_iff hs hp hu).mpr
+    rw [← cdf_generalizedNormalMeasure_eq hs hp]
+    exact cdf_generalizedNormalMeasure_signed_inverse hs hp hu hhalf
 
 /-- Generalized normal quantiles vary continuously with interior probability levels. -/
 theorem continuousOn_quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) :

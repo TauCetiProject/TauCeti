@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.GeneralizedNormal.Gamma
 public import TauCeti.Probability.Distributions.GeneralizedGamma.Cdf
 public import Mathlib.Basic.Real.Sign
+import TauCeti.Probability.Cdf.Density
 
 /-!
 # Generalized normal cumulative distribution functions
@@ -87,23 +88,11 @@ theorem cdf_generalizedNormalMeasure_eq (hs : 0 < s) (hp : 0 < p) (x : ℝ) :
 theorem strictMono_cdf_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) :
     StrictMono (cdf (generalizedNormalMeasure m s p)) := by
   let _ := isProbabilityMeasure_generalizedNormalMeasure hs hp m
-  intro x y hxy
-  have hpos : 0 < ∫ z in Ioc x y, generalizedNormalPDFReal m s p z := by
-    rw [setIntegral_pos_iff_support_of_nonneg_ae
-      (ae_of_all _ (generalizedNormalPDFReal_nonneg m s p))
-      (integrable_generalizedNormalPDFReal m s p).integrableOn]
-    have hsupport : Function.support (generalizedNormalPDFReal m s p) = univ :=
-      eq_univ_iff_forall.mpr fun z ↦ (generalizedNormalPDFReal_pos hs hp m z).ne'
-    rw [hsupport, univ_inter, Real.volume_Ioc, ENNReal.ofReal_pos]
-    exact sub_pos.mpr hxy
-  have hreal : (generalizedNormalMeasure m s p).real (Ioc x y) =
-      ∫ z in Ioc x y, generalizedNormalPDFReal m s p z := by
-    rw [generalizedNormalMeasure_eq_withDensity,
-      funext (generalizedNormalPDF_eq_ofReal m s p)]
-    exact measureReal_withDensity_ofReal
-      (ae_of_all _ (generalizedNormalPDFReal_nonneg m s p)) measurableSet_Ioc
-      (integrable_generalizedNormalPDFReal m s p).integrableOn
-  rwa [← hreal, Measure.measureReal_Ioc_eq_cdf_sub _ hxy.le, sub_pos] at hpos
+  exact strictMono_cdf_of_eq_withDensity
+    (by rw [generalizedNormalMeasure_eq_withDensity,
+      funext (generalizedNormalPDF_eq_ofReal m s p)])
+    (measurable_generalizedNormalPDFReal m s p).aemeasurable
+    (generalizedNormalPDFReal_pos hs hp m)
 
 /-- The cdf of a valid generalized normal law is continuous on the whole real line. -/
 theorem continuous_cdf_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) :
