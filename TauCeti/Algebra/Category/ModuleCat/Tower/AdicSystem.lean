@@ -68,9 +68,12 @@ include hF
 
 /-- `I^{n+1}` kills the `n`-th term of an `I`-adic system. -/
 theorem pow_smul_top_eq_bot (n : ℕ) : I ^ (n + 1) • (⊤ : Submodule A (F.obj (op n))) = ⊥ := by
-  rw [← LinearMap.range_eq_top.2 (hF.transition_surjective n), LinearMap.range_eq_map,
-    ← Submodule.map_smul'', ← hF.ker_transition n, eq_bot_iff, Submodule.map_le_iff_le_comap,
-    Submodule.comap_bot]
+  -- `Mₙ` is the image of `Mₙ₊₁`, so `I^{n+1} Mₙ` is the image of `I^{n+1} Mₙ₊₁`, the kernel.
+  have himage : I ^ (n + 1) • (⊤ : Submodule A (F.obj (op n))) =
+      (LinearMap.ker (F.transition n)).map (F.transition n) := by
+    simp [hF.ker_transition n, Submodule.map_smul'',
+      LinearMap.range_eq_top.2 (hF.transition_surjective n)]
+  rw [himage, ← LinearMap.le_ker_iff_map]
 
 /-- Every linear map into the `n`-th term of an `I`-adic system kills `I^{n+1}`. -/
 theorem pow_smul_top_le_ker {P : Type*} [AddCommGroup P] [Module A P] {n : ℕ}
@@ -91,8 +94,9 @@ private theorem surjective_limπ_comp (hφ : Function.Surjective (F.limπ 0 ∘�
   | succ n ih =>
     -- The image `N` of `P` in `Mₙ₊₁` maps onto `Mₙ`, so `N + I^{n+1} Mₙ₊₁ = Mₙ₊₁`.
     have hN : ⊤ ≤ LinearMap.range (F.limπ (n + 1) ∘ₗ φ) ⊔ I ^ (n + 1) • ⊤ := by
-      rw [← hF.ker_transition n, ← Submodule.comap_map_eq, ← LinearMap.range_comp,
-        ← LinearMap.comp_assoc, transition_comp_limπ, ih, Submodule.comap_top]
+      have hmap : (LinearMap.range (F.limπ (n + 1) ∘ₗ φ)).map (F.transition n) = ⊤ := by
+        rw [← LinearMap.range_comp, ← LinearMap.comp_assoc, transition_comp_limπ, ih]
+      rw [← hF.ker_transition n, ← Submodule.comap_map_eq, hmap, Submodule.comap_top]
     -- Substituting this into itself gives `N + I^{2n+2} Mₙ₊₁`, and `I^{n+2}` kills `Mₙ₊₁`.
     have hsq : I ^ (n + 1) • I ^ (n + 1) • (⊤ : Submodule A (F.obj (op (n + 1)))) = ⊥ := by
       rw [← Submodule.mul_smul, ← pow_add, eq_bot_iff, ← hF.pow_smul_top_eq_bot (n + 1)]
@@ -119,7 +123,7 @@ private theorem exists_mem_pow_smul_top_limπ_sub_eq_zero
   obtain ⟨c, hc, hcz⟩ := hmem
   exact ⟨c, hc, by rw [map_sub, sub_eq_zero]; exact hcz.symm⟩
 
-/-- Successive approximation: if `A` is `I`-adically precomplete, an element of `L` vanishing in
+/-- Successive approximation: if `P` is `I`-adically precomplete, an element of `L` vanishing in
 `Mₙ` is the image of an element of `I^{n+1} P`. -/
 private theorem exists_mem_pow_smul_top_eq [IsPrecomplete I P]
     (hφ : ∀ n, Function.Surjective (F.limπ n ∘ₗ φ)) {n : ℕ} {z : F.lim}
@@ -130,12 +134,11 @@ private theorem exists_mem_pow_smul_top_eq [IsPrecomplete I P]
   let w : ∀ j, {w : F.lim // F.limπ (n + j) w = 0} := fun j ↦
     Nat.rec ⟨z, hz⟩ (fun j wj ↦ ⟨wj.1 - φ (c (n + j) wj), hcz (n + j) wj⟩) j
   let s : ℕ → P := fun j ↦ ∑ i ∈ Finset.range j, c (n + i) (w i)
+  have hs_succ (j : ℕ) : s (j + 1) = s j + c (n + j) (w j) := Finset.sum_range_succ _ _
   have hs (j : ℕ) : z - φ (s j) = (w j).1 := by
     induction j with
     | zero => simp [s, w]
-    | succ j ih =>
-      rw [show s (j + 1) = s j + c (n + j) (w j) from Finset.sum_range_succ _ _, map_add,
-        ← sub_sub, ih]
+    | succ j ih => rw [hs_succ, map_add, ← sub_sub, ih]
   have hsub {j j' : ℕ} (hjj' : j ≤ j') : s j' - s j ∈ I ^ (n + 1 + j) • (⊤ : Submodule A P) := by
     rw [← Finset.sum_Ico_eq_sub _ hjj']
     refine Submodule.sum_mem _ fun i hi ↦ Submodule.smul_mono_left ?_ (hc (n + i) (w i))
@@ -158,9 +161,10 @@ private theorem exists_mem_pow_smul_top_eq [IsPrecomplete I P]
   have h₂ : F.limπ m (z - φ (s (m + 1))) = 0 := by
     rw [hs, ← LinearMap.congr_fun (F.transitionOfLE_comp_limπ (by omega : m ≤ n + (m + 1))),
       LinearMap.comp_apply, (w (m + 1)).2, map_zero]
+  have hdiff : φ a - z = φ (a - s (m + 1)) - (z - φ (s (m + 1))) := by
+    rw [map_sub]; abel
   have h : F.limπ m (φ a) = F.limπ m z := by
-    rw [← sub_eq_zero, ← map_sub, show φ a - z = φ (a - s (m + 1)) - (z - φ (s (m + 1))) by
-      rw [map_sub]; abel, map_sub, h₁, h₂, sub_zero]
+    rw [← sub_eq_zero, ← map_sub, hdiff, map_sub, h₁, h₂, sub_zero]
   simpa using h
 
 /-- A finite free module mapping onto every term of an adic system with finite `M₀`. -/
