@@ -19,6 +19,12 @@ assignment on `κ` to the coordinates in the image of `e` has the corresponding 
 `ι`. This is the finite-family form of the fact that a subfamily of independent coordinates is
 still independent.
 
+**Currying.** A product measure over the pairs `⟨i, j⟩` of a sigma type is the product over `i`
+of the product measures over `j`: `MeasurableEquiv.piCurry` carries one to the other. Mathlib has
+this for products of probability measures (`MeasureTheory.Measure.infinitePi_map_piCurry`); here
+the factors are σ-finite. It regroups the coordinates of a product of products, for instance when
+an orthonormal basis is chosen in each factor of a Euclidean product.
+
 **Reading off a pair of coordinates.** The evaluation map `x ↦ (x a, x b)` at two distinct indices
 pushes `Measure.pi μ` forward to `μ a ⊗ μ b`: distinct coordinates of a product measure are
 independent, and each single coordinate has law `μ a` (Mathlib's `measurePreserving_eval`). This
@@ -62,6 +68,8 @@ where one side is a product measure.
 
 * `TauCeti.measurePreserving_pi_comp_embedding` — restricting a product assignment along an
   embedding is measure preserving;
+* `TauCeti.measurePreserving_piCurry` — currying a product measure over a sigma type is measure
+  preserving;
 * `TauCeti.measurePreserving_eval_pair` — reading off two distinct coordinates is measure
   preserving;
 * `TauCeti.measurePreserving_piSplitAt` — separating the coordinate `i₀` from the rest is
@@ -116,6 +124,25 @@ theorem measurePreserving_pi_comp_embedding {ι κ : Type*} [Fintype ι] [Fintyp
   congr 1
   funext i
   exact (measurePreserving_eval μ (e i)).map_eq
+
+/-- **Currying a finite product measure.** A product measure indexed by the pairs `⟨i, j⟩` with
+`j : κ i` is carried by `MeasurableEquiv.piCurry` to the product over `i` of the product measures
+over `j`.
+
+Mathlib's `MeasureTheory.Measure.infinitePi_map_piCurry` is the corresponding statement for
+products of probability measures; here the factors are only σ-finite. -/
+theorem measurePreserving_piCurry {ι : Type*} {κ : ι → Type*} [Fintype ι] [∀ i, Fintype (κ i)]
+    {X : ∀ i, κ i → Type*} [∀ i j, MeasurableSpace (X i j)] (μ : ∀ i j, Measure (X i j))
+    [∀ i j, SigmaFinite (μ i j)] :
+    MeasurePreserving (MeasurableEquiv.piCurry X)
+      (Measure.pi fun p : (i : ι) × κ i => μ p.1 p.2) (Measure.pi fun i => Measure.pi (μ i)) := by
+  refine MeasurePreserving.symm _ ⟨(MeasurableEquiv.piCurry X).symm.measurable,
+    (Measure.pi_eq fun s _ => ?_).symm⟩
+  have hpre : Sigma.uncurry ⁻¹' univ.pi s = univ.pi fun i => univ.pi fun j => s ⟨i, j⟩ := by
+    simpa using uncurry_preimage_sigma_pi univ (fun _ => univ) s
+  rw [MeasurableEquiv.map_apply, MeasurableEquiv.coe_piCurry_symm, hpre, Measure.pi_pi,
+    ← Finset.univ_sigma_univ, Finset.prod_sigma]
+  exact Finset.prod_congr rfl fun i _ => Measure.pi_pi _ _
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
   [∀ i, MeasurableSpace (α i)]

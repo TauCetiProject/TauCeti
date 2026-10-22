@@ -94,7 +94,7 @@ theorem PresentationComplex.circleFundamentalGroupMulEquiv_attachingLoop (w : Fr
     circleFundamentalGroupMulEquiv S
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (attachingLoop w))) = w := by
   rw [← MulEquiv.eq_symm_apply]
-  exact congrArg CategoryTheory.End.of (Quotient.out_eq _)
+  exact FundamentalGroup.fromPath_mk_out _
 
 /-- The **presentation complex** of the presentation `⟨S | R⟩`: the wedge of circles indexed by
 the generators `S`, with a 2-cell attached along the loop `attachingLoop r` for each relator
@@ -168,7 +168,7 @@ theorem exists_mapOfEq_comp_fundamentalGroupHom {Z : Type v} [TopologicalSpace Z
     Quotient.out (FundamentalGroup.toPath (ψ (PresentedGroup.mk R (FreeGroup.of s))))
   have hδ (s : S) : FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (δ s)) =
       ψ (PresentedGroup.mk R (FreeGroup.of s)) :=
-    congrArg CategoryTheory.End.of (Quotient.out_eq _)
+    FundamentalGroup.fromPath_mk_out _
   let f₀ := WedgeSum.lift (fun s => (δ s).toCircle) z fun s => (δ s).toCircle_one
   have hf₀ : f₀ (base _) = z := WedgeSum.lift_base _ _ _
   -- On the wedge of circles, `f₀` induces `ψ` composed with the quotient map of the free group.

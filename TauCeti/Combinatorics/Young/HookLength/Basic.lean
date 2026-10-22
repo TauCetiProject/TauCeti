@@ -185,6 +185,22 @@ theorem hookLength_le_card (h : c ∈ μ) : hookLength μ c ≤ μ.card := by
   rw [← card_hook]
   exact Finset.card_le_card (hook_subset_cells h)
 
+variable (μ) in
+/-- The first row and the first column of a diagram together have at most one more cell than the
+diagram: they overlap in the cell `(0, 0)`, whose hook they form. -/
+theorem rowLen_zero_add_colLen_zero_le : μ.rowLen 0 + μ.colLen 0 ≤ μ.card + 1 := by
+  by_cases h : (0, 0) ∈ μ
+  · have hrow : 0 < μ.rowLen 0 := mem_iff_lt_rowLen.mp h
+    have hcol : 0 < μ.colLen 0 := mem_iff_lt_colLen.mp h
+    have := hookLength_le_card h
+    simp only [hookLength_def, armLength_def, legLength_def] at this
+    omega
+  · rw [mem_iff_lt_rowLen, not_lt, Nat.le_zero] at h
+    have hcol : μ.colLen 0 = 0 := by
+      rw [← Nat.le_zero, ← not_lt, ← mem_iff_lt_colLen, mem_iff_lt_rowLen, h]
+      exact Nat.lt_irrefl 0
+    omega
+
 /-! ### Transposition -/
 
 variable (μ c)

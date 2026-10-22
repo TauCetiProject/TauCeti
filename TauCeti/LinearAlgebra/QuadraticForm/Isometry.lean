@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
+import Mathlib.Algebra.GroupWithZero.Action.Regular
+
 /-!
 # Isometries of quadratic maps
 
@@ -21,6 +23,8 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 * `QuadraticMap.Isometry.polar_apply`: an isometry preserves polarization.
 * `QuadraticForm.isIsometry_polarBilin_of_forall_map_app`: a form-preserving linear map preserves
   the polar bilinear form.
+* `QuadraticMap.apply_eq_zero_of_apply_eq_smul`: an eigenvector of a form-preserving endomorphism
+  whose eigenvalue does not square to `1` (in the sense of regularity of `μ² - 1`) is isotropic.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
@@ -61,6 +65,17 @@ theorem _root_.QuadraticForm.isIsometry_polarBilin_of_forall_map_app
   have hp : polar Q (f x) (f y) = polar Q x y :=
     (⟨f, hf⟩ : Q →qᵢ Q).polar_apply x y
   simpa only [QuadraticMap.polarBilin_apply_apply] using hp
+
+/-- An eigenvector of a form-preserving endomorphism is isotropic as soon as `μ² - 1` is a regular
+scalar for its eigenvalue `μ`: from `f v = μ • v` and `Q (f v) = Q v` one gets `μ² • Q v = Q v`.
+Over a field it suffices that `μ² ≠ 1`. -/
+theorem _root_.QuadraticMap.apply_eq_zero_of_apply_eq_smul {R : Type u} {M : Type v}
+    {N : Type w} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    {Q : QuadraticMap R M N} {f : Module.End R M} (hf : ∀ x, Q (f x) = Q x) {μ : R}
+    (hμ : IsSMulRegular N (μ * μ - 1)) {v : M} (hv : f v = μ • v) : Q v = 0 := by
+  have h := hf v
+  rw [hv, QuadraticMap.map_smul] at h
+  exact hμ.right_eq_zero_of_smul (by rw [sub_smul, h, one_smul, sub_self])
 
 /-- An isometric equivalence preserves the polarization of a quadratic map. -/
 @[simp]

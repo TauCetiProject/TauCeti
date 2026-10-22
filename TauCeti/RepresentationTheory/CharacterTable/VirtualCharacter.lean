@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Span.IntegralDescent
 public import TauCeti.RepresentationTheory.CharacterTable.Table
-public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.RepresentationTheory.FDRep.Basic
 import Mathlib.RepresentationTheory.Maschke
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Irreducible

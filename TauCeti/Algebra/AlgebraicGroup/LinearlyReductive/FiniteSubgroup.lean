@@ -92,7 +92,7 @@ theorem natCast_card_ne_zero_of_isLinearlyReductive [Algebra.FiniteType k H]
     rfl
   -- Translation by `γ ≠ 1` fixes no geometric point, so some function has orbit sum `1`.
   obtain ⟨c, hc⟩ := MulSemiringAction.exists_sum_smul_eq_one
-    (R := FixedPoints.subalgebra k H Γ) (G := Γ) fun γ hγ ↦
+    (G := Γ) fun γ hγ ↦
       (MulSemiringAction.span_range_smul_sub_eq_top_iff (k := k) (K := AlgebraicClosure k)
         γ).mpr fun x hx ↦ hγ <| by
           have hfix : x.comp (leftTranslationAlgEquiv

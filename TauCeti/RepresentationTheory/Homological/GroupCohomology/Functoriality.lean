@@ -10,11 +10,13 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoria
 /-!
 # Functoriality of group cohomology
 
-This file evaluates Mathlib's pullback `groupCohomology.mapCocycles₂` of a `2`-cocycle along a
-compatible pair `(f, φ)` at a pair of group elements, without unfolding the cochain map.
+This file evaluates Mathlib's pullbacks `groupCohomology.mapCocycles₁` and
+`groupCohomology.mapCocycles₂` of a `1`-cocycle and a `2`-cocycle along a compatible pair
+`(f, φ)` at group elements, without unfolding the cochain map.
 
 ## Main statements
 
+* `TauCeti.groupCohomology.mapCocycles₁_apply`: the value of a pulled-back `1`-cocycle.
 * `TauCeti.groupCohomology.mapCocycles₂_apply`: the value of a pulled-back `2`-cocycle.
 -/
 
@@ -29,6 +31,14 @@ namespace TauCeti.groupCohomology
 open _root_.groupCohomology
 
 variable {k G : Type u} [CommRing k] [Group G]
+
+/-- The pullback of a `1`-cocycle `c` along a compatible pair `(f, φ)` takes the value
+`φ (c (f g))` at `g`. Not `@[simp]`: `simp` first rewrites the left-hand side by Mathlib's
+`groupCohomology.coe_mapCocycles₁`. -/
+theorem mapCocycles₁_apply {H : Type u} [Group H] {A : Rep k H} {B : Rep k G}
+    (f : G →* H) (φ : res f A ⟶ B) (c : cocycles₁ A) (g : G) :
+    (mapCocycles₁ f φ c : G → B) g = φ.hom (c (f g)) :=
+  (rfl)
 
 /-- The pullback of a `2`-cocycle `c` along a compatible pair `(f, φ)` takes the value
 `φ (c (f g₁, f g₂))` at `(g₁, g₂)`. Not `@[simp]`: `simp` first rewrites the left-hand side by

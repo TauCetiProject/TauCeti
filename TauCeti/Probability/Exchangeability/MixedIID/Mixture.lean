@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.MixedIID.Implications
 -- Non-public: used only inside the proof below.
 import TauCeti.Probability.Process.PathLaw.FiniteMarginals
-import TauCeti.MeasureTheory.Measure.MixtureInjective
+import TauCeti.MeasureTheory.Measure.Mixture.Injective
 
 /-!
 # The path law of a mixed i.i.d. process

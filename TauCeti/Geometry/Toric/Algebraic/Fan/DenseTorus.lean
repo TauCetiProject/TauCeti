@@ -26,6 +26,8 @@ obtained on every affine chart by the face localization from the zero cone.
   affine chart.
 * `TauCeti.Toric.Fan.denseTorusι_eq_affineToricChartι`: the inclusion is the chart inclusion of
   the zero cone.
+* `TauCeti.Toric.Fan.isIso_denseTorusι_ofCone_bot`: the toric scheme of the fan of the zero cone
+  is its dense torus.
 * `TauCeti.Toric.FanHom.denseTorusι_comp_algebraicMap`: a toric map restricts on dense tori to
   the torus morphism induced by its lattice map.
 
@@ -91,6 +93,14 @@ theorem denseTorusι_eq_affineToricChartι (Φ : Fan i) (hΦ₀ : Nonempty Φ.co
     Φ.denseTorusι hΦ₀ = Φ.affineToricChartι ⟨⊥, h⟩ := by
   rw [Φ.denseTorusι_eq hΦ₀ (Nonempty.intro ⟨⊥, h⟩), denseTorusι_face Φ ⟨⊥, h⟩,
     faceAffineToricSchemeMap_id, Category.id_comp]
+
+/-- The toric scheme of the fan of the zero cone is the dense torus: its dense-torus inclusion is
+an isomorphism. -/
+instance isIso_denseTorusι_ofCone_bot (hi : IsIntegralLattice i)
+    (h : Nonempty (ofCone hi (isToricCone_bot i)).cones) :
+    IsIso ((ofCone hi (isToricCone_bot i)).denseTorusι h) := by
+  rw [denseTorusι_eq_affineToricChartι _ h ((mem_ofCone_cones hi _).2 (.refl ⊥))]
+  infer_instance
 
 end TauCeti.Toric.Fan
 

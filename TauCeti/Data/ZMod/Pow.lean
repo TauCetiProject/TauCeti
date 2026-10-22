@@ -20,6 +20,8 @@ and the residue `-1` gives the inverse of `x`.
 * `TauCeti.pow_val_add`: `x ^ (a + b).val = x ^ a.val * x ^ b.val` when `x ^ n = 1`.
 * `TauCeti.pow_val_natCast`: `x ^ (c : ZMod n).val = x ^ c` when `x ^ n = 1`.
 * `TauCeti.pow_val_neg_one`: `x ^ (-1 : ZMod n).val = x⁻¹` when `x ^ n = 1` and `n ≠ 0`.
+* `TauCeti.pow_mul_val_inv`: `x ^ (k * (k⁻¹ : ZMod n).val) = x` when `x ^ n = 1` and `k` is prime
+  to `n`.
 -/
 
 public section
@@ -44,5 +46,12 @@ theorem pow_val_neg_one {G : Type*} [DivisionMonoid G] {n : ℕ} [NeZero n] {x :
   have h := pow_val_add hx (-1) 1
   rw [neg_add_cancel, ZMod.val_zero, pow_zero, h1] at h
   exact eq_inv_of_mul_eq_one_left h.symm
+
+/-- If `x ^ n = 1` and `k` is prime to `n`, then raising `x` to the power `k` and then to the
+representative of the inverse of `k` modulo `n` gives back `x`. -/
+theorem pow_mul_val_inv {M : Type*} [Monoid M] {n k : ℕ} {x : M} (hx : x ^ n = 1)
+    (hk : k.Coprime n) : x ^ (k * (k⁻¹ : ZMod n).val) = x := by
+  rw [← pow_val_natCast hx, Nat.cast_mul, ZMod.mul_val_inv hk, ← Nat.cast_one, pow_val_natCast hx,
+    pow_one]
 
 end TauCeti

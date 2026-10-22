@@ -144,6 +144,20 @@ theorem integral_id_dirichletMeasure (ha : ∀ i, 0 < a i) :
   simp only [EuclideanSpace.coe_proj, id_eq] at h
   simpa [← h] using integral_eval_dirichletMeasure ha i
 
+omit [Nonempty ι] in
+/-- The product moment of two Dirichlet coordinates is their covariance plus the product
+of their means. -/
+theorem integral_mul_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i j : ι) :
+    ∫ x, x i * x j ∂dirichletMeasure a =
+      cov[fun x ↦ x i, fun x ↦ x j; dirichletMeasure a] +
+        (a i / ∑ l, a l) * (a j / ∑ l, a l) := by
+  let : Nonempty ι := ⟨i⟩
+  have _ : IsProbabilityMeasure (dirichletMeasure a) := isProbabilityMeasure_dirichletMeasure ha
+  have hprod := covariance_eq_sub (memLp_eval_dirichletMeasure (a := a) i 2)
+    (memLp_eval_dirichletMeasure (a := a) j 2)
+  simp only [Pi.mul_apply, integral_eval_dirichletMeasure ha] at hprod
+  linarith
+
 /-! ### Variances and covariances -/
 
 /-- The total of a block of Dirichlet coordinates has the variance of the Beta law of the block
