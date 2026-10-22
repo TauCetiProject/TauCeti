@@ -64,11 +64,7 @@ theorem eventually_orthogonal_le_integralOrthogonalSubgroup (hQ : Q.Nondegenerat
       isOrtho_def.mp (hc i j hij), add_smul]
   · have heq : reflectionOrthogonal (Q.baseChange ℚ_[p]) (c.baseChange ℚ_[p] i) =
         orthogonalGroupBaseChange (A := ℚ_[p]) Q (reflectionOrthogonal Q (c i)) := by
-      let : Invertible (Q.baseChange ℚ_[p] (1 ⊗ₜ c i)) :=
-        hi.copy _ (by rw [Basis.baseChange_apply])
-      apply Subtype.ext
-      rw [coe_reflectionOrthogonal, coe_orthogonalGroupBaseChange, coe_reflectionOrthogonal]
-      convert reflection_baseChange (A := ℚ_[p]) Q (c i) using 1
+      rw [orthogonalGroupBaseChange_reflectionOrthogonal]
       -- The vector equation also transports the dependent inverse-of-norm instance.
       congr 1
       · exact Basis.baseChange_apply ℚ_[p] c i

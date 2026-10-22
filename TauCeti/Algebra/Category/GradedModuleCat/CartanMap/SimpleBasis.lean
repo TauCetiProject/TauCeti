@@ -98,10 +98,7 @@ private theorem exists_laurentK0_of_eq_add (M : (gradedFiniteModules 𝒜).FullS
       (ObjectProperty.homMk f) (ObjectProperty.homMk (GradedModuleCat.cokernelπ f))
       ((gradedFiniteModules 𝒜).ι.map_injective (by simp))
   have hT : (gradedFiniteModulesExactStructure 𝒜).Conflation T :=
-    (gradedFiniteModulesExactStructure_conflation_iff T).2
-      { exact := GradedModuleCat.exact_iff.2 (LinearMap.exact_map_mkQ_range f.hom)
-        mono_f := hf
-        epi_g := (GradedModuleCat.epi_iff_surjective _).2 (Submodule.mkQ_surjective _) }
+    (gradedFiniteModulesExactStructure_conflation_iff T).2 (GradedModuleCat.shortExact_cokernelπ f)
   exact ⟨T.X₁, T.X₃, hYdim, hCdim, LaurentK0.of_conflation.{uA} _ hT⟩
 
 private theorem laurentK0_of_mem_span (hS : IsExhaustiveGradedSimpleFamily S)

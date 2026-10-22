@@ -14,11 +14,19 @@ A continuous map into a manifold is `C^n` if its composite with a `C^n` local di
 `C^n`. This file provides pointwise-within, on-set, and global versions of this cancellation
 principle.
 
+Dually, a map out of a manifold is `C^m` at the image of a point at which `p` is a `C^n` local
+diffeomorphism, for `m ≤ n`, exactly when its precomposite with `p` is `C^m` at that point. For a
+surjective local diffeomorphism, such as the orbit projection of a free properly discontinuous
+action, this characterises the `C^m` maps out of its target.
+
 ## Main results
 
 * `ContMDiffWithinAt.of_comp_isLocalDiffeomorph`: pointwise-within cancellation.
 * `ContMDiffOn.of_comp_isLocalDiffeomorph`: on-set cancellation.
 * `ContMDiff.of_comp_isLocalDiffeomorph`: global cancellation.
+* `IsLocalDiffeomorphAt.contMDiffAt_comp_iff`: pointwise cancellation on the source side.
+* `IsLocalDiffeomorph.contMDiff_comp_iff`: global cancellation on the source side, for a
+  surjective local diffeomorphism.
 -/
 
 public section
@@ -65,5 +73,26 @@ theorem _root_.ContMDiff.of_comp_isLocalDiffeomorph (hp : IsLocalDiffeomorph I J
     (hf : Continuous f) (hpf : ContMDiff I' J n (p ∘ f)) : ContMDiff I' I n f := by
   rw [← contMDiffOn_univ]
   exact hpf.contMDiffOn.of_comp_isLocalDiffeomorph hp hf.continuousOn
+
+/-- If `p` is a `C^n` local diffeomorphism at `x` and `m ≤ n`, a map `g` is `C^m` at `p x`
+exactly when `g ∘ p` is `C^m` at `x`. -/
+theorem _root_.IsLocalDiffeomorphAt.contMDiffAt_comp_iff {m : ℕ∞ω} {x : M} {g : B → N}
+    (hp : IsLocalDiffeomorphAt I J n p x) (hm : m ≤ n) :
+    ContMDiffAt I I' m (g ∘ p) x ↔ ContMDiffAt J I' m g (p x) := by
+  refine ⟨fun hg ↦ ?_, fun hg ↦ hg.comp x (hp.contMDiffAt.of_le hm)⟩
+  -- near `p x`, the map `g` agrees with `(g ∘ p) ∘ q` for the local inverse `q` of `p`
+  have hcomp : ContMDiffAt J I' m ((g ∘ p) ∘ hp.localInverse) (p x) :=
+    hg.comp_of_eq (hp.contMDiffAt_localInverse.of_le hm)
+      (hp.localInverse_left_inv hp.localInverse_mem_target)
+  exact hcomp.congr_of_eventuallyEq (hp.localInverse_eventuallyEq_right.fun_comp g).symm
+
+/-- If `p` is a surjective `C^n` local diffeomorphism and `m ≤ n`, a map `g` out of its target is
+`C^m` exactly when `g ∘ p` is `C^m`. -/
+theorem _root_.IsLocalDiffeomorph.contMDiff_comp_iff {m : ℕ∞ω} {g : B → N}
+    (hp : IsLocalDiffeomorph I J n p) (hsurj : Function.Surjective p) (hm : m ≤ n) :
+    ContMDiff I I' m (g ∘ p) ↔ ContMDiff J I' m g := by
+  refine ⟨fun hg y ↦ ?_, fun hg ↦ hg.comp (hp.contMDiff.of_le hm)⟩
+  obtain ⟨x, rfl⟩ := hsurj y
+  exact ((hp x).contMDiffAt_comp_iff hm).1 (hg x)
 
 end TauCeti

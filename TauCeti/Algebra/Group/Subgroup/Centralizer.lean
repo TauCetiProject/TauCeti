@@ -9,6 +9,7 @@ module
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 -- `Commute.units_val_iff` transports commutation between units and their values.
 public import Mathlib.Algebra.Group.Commute.Units
+public import Mathlib.Order.Zorn
 import TauCeti.Algebra.Group.Torsion
 
 /-!
@@ -26,6 +27,7 @@ which is the form every concrete centralizer computation in a matrix group start
   exactly when the two commute as elements of the monoid.
 * `Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative`: a self-centralizing subgroup is
   maximal among commutative subgroups.
+* `Subgroup.exists_maximal_isMulCommutative`: every commutative subgroup lies in a maximal one.
 * `Subgroup.centralizer_zpow_eq` and `Subgroup.centralizer_pow_eq`: nonzero powers have the same
   centralizer as their base in groups with unique roots.
 -/
@@ -43,6 +45,20 @@ theorem mem_centralizer_singleton_iff_commute_val {M : Type*} [Monoid M] {g h : 
 end TauCeti
 
 namespace Subgroup
+
+/-- Every abelian subgroup is contained in a maximal abelian subgroup. -/
+theorem exists_maximal_isMulCommutative {G : Type*} [Group G] (H : Subgroup G)
+    (hH : IsMulCommutative H) :
+    ∃ M : Subgroup G, H ≤ M ∧ Maximal (fun K : Subgroup G => IsMulCommutative K) M := by
+  classical
+  apply zorn_le_nonempty₀ {K : Subgroup G | IsMulCommutative K} ?_ H hH
+  intro c hc hcc y hy
+  have : ∀ K : c, IsMulCommutative (K : Subgroup G) := fun K => hc K.2
+  have hcomm : IsMulCommutative (sSup c : Subgroup G) := by
+    rw [sSup_eq_iSup']
+    have : Nonempty c := ⟨⟨y, hy⟩⟩
+    exact Subgroup.isMulCommutative_iSup hcc.directedOn.directed_val
+  exact ⟨sSup c, hcomm, fun K hK => le_sSup hK⟩
 
 /-- A self-centralizing subgroup is maximal among commutative subgroups. -/
 theorem eq_of_centralizer_eq_self_of_le_of_isMulCommutative {G : Type*} [Group G]

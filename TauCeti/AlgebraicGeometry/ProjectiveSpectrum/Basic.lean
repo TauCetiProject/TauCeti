@@ -22,9 +22,11 @@ of `Spec` of `HomogeneousLocalization.Away.lift φ` with the standard chart `Pro
 depend on the chart: any other homogeneous `g` of positive degree with `φ g` a unit gives the same
 morphism. It also proves that `Proj.map` of a graded ring homomorphism lies over the induced map on
 `Spec` of the degree-zero parts, and packages `Proj.map` of a graded ring isomorphism as an
-isomorphism of schemes. Finally, it computes the locus where a function `g / fⁿ` on a standard
+isomorphism of schemes. It computes the locus where a function `g / fⁿ` on a standard
 chart `D₊(f)` is invertible: it is `D₊(fg)`, so the restriction of sections from `D₊(f)` to
-`D₊(fg)` is a localization at `g / fⁿ`.
+`D₊(fg)` is a localization at `g / fⁿ`. Finally, it identifies the inverse image under
+`Proj A ⟶ Spec A₀` of the basic open of a degree-zero element `r` with the standard open `D₊(r)`,
+so that the structure map to `Spec A₀` can be studied through homogeneous prime ideals.
 
 ## Main definitions
 
@@ -39,6 +41,8 @@ chart `D₊(f)` is invertible: it is `D₊(fg)`, so the restriction of sections 
   of `f`.
 * `AlgebraicGeometry.Proj.basicOpen_awayToSection_mk`: on the chart `D₊(f)`, the function `g / fⁿ`
   is invertible exactly on `D₊(fg)`.
+* `AlgebraicGeometry.Proj.toSpecZero_preimage_basicOpen`: the inverse image of the basic open
+  `D(r)` of a degree-zero element under `Proj A ⟶ Spec A₀` is the standard open `D₊(r)`.
 * `ProjectiveSpectrum.ext_of_mem_pos`: positive-degree homogeneous elements determine a
   projective point, allowing comparison through its positive-degree coordinate opens.
 -/
@@ -147,6 +151,47 @@ theorem basicOpen_awayToSection_mk {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (n : �
     exact ⟨fun h ↦ ⟨hp, h⟩, And.right⟩
   · simp only [hp, false_and, iff_false]
     exact fun h ↦ hp ((Proj 𝒜).basicOpen_le _ h)
+
+variable (𝒜) in
+/-- **Degree-zero basic opens.** The inverse image under `Proj A ⟶ Spec A₀` of the basic open
+`D(r)` of a degree-zero element `r` is the standard open `D₊(r)` of `Proj A`: the points `x` with
+`r ∉ x`. -/
+@[simp]
+theorem toSpecZero_preimage_basicOpen (r : 𝒜 0) :
+    toSpecZero 𝒜 ⁻¹ᵁ PrimeSpectrum.basicOpen r = basicOpen 𝒜 (r : A) := by
+  ext x
+  -- `x` lies in some standard chart `D₊(f)` with `f` homogeneous of positive degree.
+  obtain ⟨i, hi, f, f_deg, hfx⟩ : ∃ i > 0, ∃ f ∈ 𝒜 i, f ∉ x.asHomogeneousIdeal := by
+    by_contra! h
+    exact x.not_irrelevant_le (toIdeal_le_toIdeal_iff.mp
+      ((HomogeneousIdeal.toIdeal_irrelevant_le 𝒜).mpr h))
+  obtain ⟨z, rfl⟩ : x ∈ (awayι 𝒜 f f_deg hi).opensRange := by rwa [opensRange_awayι]
+  have h₁ : awayι 𝒜 f f_deg hi z ∈ toSpecZero 𝒜 ⁻¹ᵁ PrimeSpectrum.basicOpen r ↔
+      z ∈ (PrimeSpectrum.basicOpen (fromZeroRingHom 𝒜 _ r) : (Spec (.of (Away 𝒜 f))).Opens) := by
+    have h := Scheme.Hom.comp_preimage (awayι 𝒜 f f_deg hi) (toSpecZero 𝒜)
+      (PrimeSpectrum.basicOpen r)
+    rw [awayι_toSpecZero, SpecMap_preimage_basicOpen] at h
+    rw [← Scheme.Hom.mem_preimage, ← h, CommRingCat.ofHom_apply]
+    -- the sides differ only in typing `D(r / 1)` as an open of `Spec` or of the prime spectrum
+    rfl
+  -- On `D₊(f)`, the standard open `D₊(r) = D₊(r f)` is cut out by `(r f)ⁱ / fⁱ = (r / 1)ⁱ`.
+  have hrf : (r : A) * f ∈ 𝒜 i := by simpa using SetLike.mul_mem_graded r.2 f_deg
+  have helem : Away.isLocalizationElem f_deg hrf = fromZeroRingHom 𝒜 _ r ^ i := by
+    apply val_injective
+    -- `fromZeroRingHom` sends `r` to the fraction `r / 1`
+    have hr : (fromZeroRingHom 𝒜 (Submonoid.powers f) r).val = Localization.mk (r : A) 1 := by
+      simp only [fromZeroRingHom]
+      exact val_mk _
+    rw [Away.val_mk, val_pow, hr, Localization.mk_pow, Localization.mk_eq_mk_iff,
+      Localization.r_iff_exists]
+    exact ⟨1, by simp [mul_pow, mul_comm]⟩
+  have h₂ : awayι 𝒜 f f_deg hi z ∈ basicOpen 𝒜 (r : A) ↔
+      z ∈ (PrimeSpectrum.basicOpen (fromZeroRingHom 𝒜 _ r) : (Spec (.of (Away 𝒜 f))).Opens) := by
+    have hzf : awayι 𝒜 f f_deg hi z ∈ basicOpen 𝒜 f := opensRange_awayι 𝒜 f f_deg hi ▸ ⟨z, rfl⟩
+    rw [← PrimeSpectrum.basicOpen_pow _ i hi, ← helem,
+      ← awayι_preimage_basicOpen 𝒜 f_deg hi hrf hi]
+    exact ⟨fun h ↦ (basicOpen_mul 𝒜 _ _).ge ⟨h, hzf⟩, fun h ↦ ((basicOpen_mul 𝒜 _ _).le h).1⟩
+  exact h₁.trans h₂.symm
 
 end AlgebraicGeometry.Proj
 
