@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.Localization
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Artinian.Module
+public import Mathlib.RingTheory.Finiteness.Finsupp
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.RepresentationTheory.Maschke
 public import Mathlib.RingTheory.Jacobson.Semiprimary
@@ -22,6 +23,7 @@ need not be a domain: all its nonzerodivisors become units after rationalization
 
 For a finite abelian group whose order is nonzero in the coefficient fraction field, the
 total quotient ring is a finite product of finite-dimensional field extensions of that field.
+The components are the quotients by the maximal ideals of the coefficient-field group algebra.
 The decomposition respects coefficient scalars. In characteristic zero, all component fields
 have characteristic zero.
 
@@ -39,6 +41,17 @@ public section
 namespace TauCeti
 
 open scoped AlgebraMonoidAlgebra
+
+-- Mathlib declares the multiplicative and additive finiteness instances separately.
+attribute [to_additive existing] _root_.MonoidAlgebra.moduleFinite
+
+/-- A monoid algebra over an Artinian coefficient ring is Artinian when the monoid is finite. -/
+@[to_additive (dont_translate := R) AddMonoidAlgebra.isArtinianRing_of_finite
+/-- An additive monoid algebra over an Artinian coefficient ring is Artinian when the
+additive monoid is finite. -/]
+instance MonoidAlgebra.isArtinianRing_of_finite (R M : Type*) [Ring R]
+    [IsArtinianRing R] [Monoid M] [Finite M] : IsArtinianRing (MonoidAlgebra R M) :=
+  isArtinian_of_tower R inferInstance
 
 /-- For a finite commutative monoid, extension to a fraction field of the coefficients is
 already the total quotient ring of the monoid algebra. -/
@@ -59,76 +72,60 @@ theorem MonoidAlgebra.isFractionRing_of_finite (R K M : Type*) [CommRing R] [Fie
     intro x hx
     exact isRegular_iff_mem_nonZeroDivisors.mp
       ((IsLocalization.injective_iff_isRegular U).mp hinj ⟨x, hx⟩)
-  have : Module.Finite K (MonoidAlgebra K M) :=
-    Module.Finite.of_basis (_root_.MonoidAlgebra.basis M K)
-  have : IsArtinianRing (MonoidAlgebra K M) := isArtinian_of_tower K inferInstance
   refine IsLocalization.of_le U (nonZeroDivisors (MonoidAlgebra R M)) hU ?_
   intro x hx
   exact IsArtinianRing.isUnit_of_mem_nonZeroDivisors
     (a := algebraMap (MonoidAlgebra R M) (MonoidAlgebra K M) x)
     (IsLocalization.nonZeroDivisors_le_comap U (MonoidAlgebra K M) hx)
 
-universe u v w q
-
-/-- If the order of a finite abelian group is nonzero in the coefficient fraction field,
-every total quotient ring of its group algebra admits a compatible coefficient-field algebra
-structure and is a finite product of finite-dimensional field extensions. Compatibility means
-that the coefficient-field action extends the original coefficient map from `R`. -/
-theorem AddMonoidAlgebra.exists_totalQuotient_algEquiv_pi_field
-    (R : Type u) (K : Type v) (H : Type w) (Q : Type q)
-    [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
-    [AddCommGroup H] [Finite H] [NeZero (Nat.card H : K)]
-    [CommRing Q] [Algebra (AddMonoidAlgebra R H) Q]
+/-- The canonical identification of a total quotient ring of a finite additive monoid algebra
+with its coefficient fraction-field extension. It preserves the original monoid-algebra
+scalars. -/
+noncomputable def AddMonoidAlgebra.totalQuotientAlgEquiv
+    (R K H Q : Type*) [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+    [AddCommMonoid H] [Finite H] [CommRing Q] [Algebra (AddMonoidAlgebra R H) Q]
     [IsFractionRing (AddMonoidAlgebra R H) Q] :
-    ∃ (_ : Algebra K Q)
-      (_ : ∀ r : R, algebraMap K Q (algebraMap R K r) =
-        algebraMap (AddMonoidAlgebra R H) Q (algebraMap R (AddMonoidAlgebra R H) r))
-      (ι : Type (max v w)) (_ : Finite ι) (F : ι → Type (max v w))
-      (_ : ∀ i, Field (F i)) (_ : ∀ i, Algebra K (F i))
-      (_ : ∀ i, Module.Finite K (F i)), Nonempty (Q ≃ₐ[K] ∀ i, F i) := by
-  let A := AddMonoidAlgebra K H
-  have : Module.Finite K A := Module.Finite.of_basis (_root_.AddMonoidAlgebra.basis H K)
-  have : IsArtinianRing A := isArtinian_of_tower K inferInstance
-  have : IsFractionRing (AddMonoidAlgebra R H) A :=
-    AddMonoidAlgebra.isFractionRing_of_finite R K H
-  let e := IsLocalization.algEquiv (nonZeroDivisors (AddMonoidAlgebra R H)) Q A
-  let : Algebra K Q := (e.symm.toRingHom.comp (algebraMap K A)).toAlgebra
-  let F (I : MaximalSpectrum A) := A ⧸ I.asIdeal
-  let (I : MaximalSpectrum A) : Field (F I) := Ideal.Quotient.field I.asIdeal
-  let eK : Q ≃ₐ[K] A :=
-    { e.toRingEquiv with commutes' := fun k ↦ e.apply_symm_apply (algebraMap K A k) }
-  refine ⟨inferInstance, ?_, MaximalSpectrum A, inferInstance, F,
-    inferInstance, inferInstance, inferInstance, ?_⟩
-  · intro r
-    exact (congrArg e.symm
-      ((IsScalarTower.algebraMap_apply R K A r).symm.trans
-        (IsScalarTower.algebraMap_apply R (AddMonoidAlgebra R H) A r))).trans
-      (e.symm.commutes _)
-  · exact ⟨eK.trans ((IsArtinianRing.equivPi A).restrictScalars K)⟩
+    Q ≃ₐ[AddMonoidAlgebra R H] AddMonoidAlgebra K H := by
+  have := AddMonoidAlgebra.isFractionRing_of_finite R K H
+  exact IsLocalization.algEquiv (nonZeroDivisors (AddMonoidAlgebra R H)) Q _
 
-/-- In characteristic zero, every total quotient ring of a finite abelian group algebra is
-a finite product of characteristic-zero fields, finite-dimensional over the coefficient
-fraction field. The returned algebra structure extends the original coefficient map. -/
-theorem AddMonoidAlgebra.exists_totalQuotient_algEquiv_pi_field_charZero
-    (R : Type u) (K : Type v) (H : Type w) (Q : Type q)
-    [CommRing R] [Field K] [CharZero K] [Algebra R K] [IsFractionRing R K]
-    [AddCommGroup H] [Finite H] [CommRing Q] [Algebra (AddMonoidAlgebra R H) Q]
-    [IsFractionRing (AddMonoidAlgebra R H) Q] :
-    ∃ (_ : Algebra K Q)
-      (_ : ∀ r : R, algebraMap K Q (algebraMap R K r) =
-        algebraMap (AddMonoidAlgebra R H) Q (algebraMap R (AddMonoidAlgebra R H) r))
-      (ι : Type (max v w)) (_ : Finite ι) (F : ι → Type (max v w))
-      (_ : ∀ i, Field (F i)) (_ : ∀ i, Algebra K (F i))
-      (_ : ∀ i, Module.Finite K (F i)) (_ : ∀ i, CharZero (F i)),
-      Nonempty (Q ≃ₐ[K] ∀ i, F i) := by
-  have : NeZero (Nat.card H : K) := ⟨by simp [Nat.card_pos.ne']⟩
-  obtain ⟨a, ha, ι, hι, F, hF, hA, hfin, e⟩ :=
-    AddMonoidAlgebra.exists_totalQuotient_algEquiv_pi_field R K H Q
-  let := a
-  let := hF
-  let := hA
-  refine ⟨a, ha, ι, hι, F, hF, hA, hfin, ?_, e⟩
-  intro i
-  exact charZero_of_injective_algebraMap (algebraMap K (F i)).injective
+/-- The canonical total-quotient identification sends a fraction to the same fraction
+in the coefficient extension. -/
+@[simp]
+theorem AddMonoidAlgebra.totalQuotientAlgEquiv_mk'
+    (R K H Q : Type*) [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+    [AddCommMonoid H] [Finite H] [CommRing Q] [Algebra (AddMonoidAlgebra R H) Q]
+    [IsFractionRing (AddMonoidAlgebra R H) Q]
+    (x : AddMonoidAlgebra R H) (s : nonZeroDivisors (AddMonoidAlgebra R H)) :
+    letI := AddMonoidAlgebra.isFractionRing_of_finite R K H
+    AddMonoidAlgebra.totalQuotientAlgEquiv R K H Q (IsLocalization.mk' Q x s) =
+      IsLocalization.mk' (AddMonoidAlgebra K H) x s := by
+  have := AddMonoidAlgebra.isFractionRing_of_finite R K H
+  exact IsLocalization.algEquiv_mk' _ _
+
+/-- Maximal-ideal field components of an additive monoid algebra over a characteristic-zero
+field have characteristic zero. -/
+instance AddMonoidAlgebra.charZeroQuotientMaximalSpectrum
+    (K H : Type*) [Field K] [CharZero K] [AddCommMonoid H]
+    (I : MaximalSpectrum (AddMonoidAlgebra K H)) :
+    CharZero (AddMonoidAlgebra K H ⧸ I.asIdeal) :=
+  charZero_of_injective_algebraMap (algebraMap K _).injective
+
+/-- A finite abelian group algebra whose group order is nonzero in the coefficient field is
+the product of its maximal-ideal field components, as an algebra over the coefficient field.
+The index set is finite, and each component is finite-dimensional over that field. -/
+noncomputable def AddMonoidAlgebra.algEquivPiField
+    (K H : Type*) [Field K] [AddCommGroup H] [Finite H] [NeZero (Nat.card H : K)] :
+    AddMonoidAlgebra K H ≃ₐ[K]
+      ∀ I : MaximalSpectrum (AddMonoidAlgebra K H), AddMonoidAlgebra K H ⧸ I.asIdeal :=
+  (IsArtinianRing.equivPi (AddMonoidAlgebra K H)).restrictScalars K
+
+/-- Evaluation of the field decomposition is the quotient map at the chosen maximal ideal. -/
+@[simp]
+theorem AddMonoidAlgebra.algEquivPiField_apply
+    (K H : Type*) [Field K] [AddCommGroup H] [Finite H] [NeZero (Nat.card H : K)]
+    (x : AddMonoidAlgebra K H) (I : MaximalSpectrum (AddMonoidAlgebra K H)) :
+    AddMonoidAlgebra.algEquivPiField K H x I = Ideal.Quotient.mk I.asIdeal x :=
+  IsArtinianRing.equivPi_apply _ x I
 
 end TauCeti

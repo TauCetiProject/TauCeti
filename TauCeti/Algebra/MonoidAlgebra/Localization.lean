@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
-public import Mathlib.Algebra.MonoidAlgebra.Module
+public import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
 
 /-!
 # Localizations of monoid algebras
@@ -97,16 +97,7 @@ at the constant monomials of the denominators. -/]
 theorem MonoidAlgebra.isLocalization_coefficients {S : Type*} [CommSemiring S]
     [Algebra R S] (U : Submonoid R) [IsLocalization U S] :
     IsLocalization (Algebra.algebraMapSubmonoid (MonoidAlgebra R M) U)
-      (MonoidAlgebra S M) := by
-  apply isLocalizedModule_iff_isLocalization.mp
-  let f := Finsupp.mapRange.linearMap (α := M) (Algebra.linearMap R S)
-  have h' := IsLocalizedModule.of_linearEquiv U
-    (f ∘ₗ (coeffLinearEquiv R).toLinearMap) (coeffLinearEquiv R).symm
-  -- Both the transported Finsupp map and the monoid-algebra algebra map apply
-  -- `algebraMap R S` to each coefficient. The coefficient equivalences only change
-  -- representation, so extensionality reduces their equality to that computation.
-  convert h' using 1
-  ext x m
-  rfl
+      (MonoidAlgebra S M) :=
+  (Algebra.isLocalization_iff_isPushout U S).mpr inferInstance
 
 end TauCeti
