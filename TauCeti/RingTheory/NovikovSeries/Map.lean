@@ -57,6 +57,8 @@ vanishing below `C`. Restricting a pushforward along an injective `φ` gives bac
   laws of the pushforward.
 * `TauCeti.NovikovSeries.map_ofFinsupp`: the pushforward of a finitely supported series is the
   group-ring pushforward.
+* `TauCeti.NovikovSeries.map_single`: the pushforward of the monomial `r e^g` is the monomial
+  `ρ r e^(φ g)`.
 * `TauCeti.NovikovSeries.coeff_map_eq_zero_of_lt` and
   `TauCeti.NovikovSeries.coeff_comap_eq_zero_of_lt`: the pushforward moves the period cutoff `C`
   to `c * C`, and the restriction moves `c * C` back to `C`.
@@ -265,6 +267,12 @@ theorem map_ofFinsupp (f : H →₀ R) :
         Finset.sum_empty]
       rintro g ⟨hg, hφg⟩
       exact absurd (by rw [← mem_singleton_iff.1 (hs hg)]; exact hφg) hh
+
+/-- The pushforward of the monomial `r e^g` is the monomial `ρ r e^(φ g)`. -/
+@[simp]
+theorem map_single (g : H) (r : R) : map ρ φ hφ (single g r) = single (φ g) (ρ r) := by
+  rw [← ofFinsupp_single, map_ofFinsupp, Finsupp.mapRange_single, Finsupp.mapDomain_single,
+    ofFinsupp_single]
 
 end Map
 
