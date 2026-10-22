@@ -16,8 +16,9 @@ For an affine scheme `X`, Mathlib's `AlgebraicGeometry.Scheme.isoSpec` is the is
 inverse of Mathlib's `AlgebraicGeometry.Scheme.ΓSpecIso`. It is the scheme-level companion of
 Mathlib's `AlgebraicGeometry.IsAffineOpen.isoSpec_inv_appTop` for an affine open.
 
-It also shows that if `R ⊆ B ⊆ R_a`, then `Spec B ⟶ Spec R` is an isomorphism over the basic open
-`D(a)`. This is the local reason why an affine blowup changes nothing away from its center.
+It also shows that for a compatible tower `R → B ↪ R_a`, localizing `B` at `a` gives `R_a`,
+so `Spec B ⟶ Spec R` is an isomorphism over the basic open `D(a)`. The map from `R` need not
+be injective. This is the local reason why an affine blowup changes nothing away from its center.
 
 ## Main results
 

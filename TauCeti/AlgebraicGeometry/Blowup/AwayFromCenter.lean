@@ -20,7 +20,8 @@ open subset of `Spec R` disjoint from `V(I)` it restricts to an isomorphism.
 
 Locally this is explicit. For `a ∈ I`, the part of the blowup lying over the basic open `D(a)`
 is the basic open `D(a)` of the chart `Spec R[I/a]`, and over it the chart is `Spec` of the
-isomorphism `R_a ≅ R[I/a]_a`, because `R ⊆ R[I/a] ⊆ R_a`.
+isomorphism `R_a ≅ R[I/a]_a`: the compatible tower `R → R[I/a] ↪ R_a` identifies the
+localization of the intermediate algebra at `a` with `R_a`; the map from `R` need not be injective.
 
 For instance, if `π ∈ I`, this applies to `U = D(π)`: blowing up a center contained in `V(π)`
 changes nothing over `D(π)`. When `R` is an algebra over a discrete valuation ring with
@@ -122,7 +123,8 @@ private theorem isIso_morphismRestrict_of_le_basicOpen (ha : a ∈ I) {W : (Spec
       Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) ∣_ W) := by
   set f := Proj.toSpecZero (grade I) ≫ Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom
   set g := Spec.map (CommRingCat.ofHom (algebraMap R (I.affineBlowup a (Localization.Away a))))
-  -- Over `D(a)`, the chart `Spec R[I/a] ⟶ Spec R` is an isomorphism, as `R ⊆ R[I/a] ⊆ R_a`.
+  -- The tower `R → R[I/a] ↪ R_a` identifies the localization of the chart algebra at `a`
+  -- with `R_a`, so the chart is an isomorphism over `D(a)`.
   have hga : IsIso (g ∣_ PrimeSpectrum.basicOpen a) :=
     isIso_SpecMap_morphismRestrict_basicOpen_of_injective (S := Localization.Away a) a
       Subtype.val_injective
