@@ -23,10 +23,10 @@ arbitrary parameters. The sets `A` and `B` are arbitrary, and may be empty or ov
 A `σ`–`τ` cut `S` is determined by its original vertices `S.toLeft`, and its capacity is the
 capacity of the new arrows it crosses plus the original capacity leaving `S.toLeft`. A minimum
 `σ`–`τ` cut need not contain all of `A`, so `S.toLeft` need not be a cut between `A` and `B`. When
-`A` and `B` are disjoint, the vertex set `(S.toLeft ∪ A) \ B` contains `A` and avoids `B`; if each
-arrow `σ → a` has capacity at least the total capacity leaving `a`, and each arrow `b → τ` at
-least the total capacity entering `b`, then this *normalization* of `S` has original cut capacity
-at most the capacity of `S`.
+`A` and `B` are disjoint, the vertex set `(S.toLeft ∪ A) \ B` contains `A` and avoids `B`; if the
+original capacities are nonnegative, each arrow `σ → a` has capacity at least the total capacity
+leaving `a`, and each arrow `b → τ` at least the total capacity entering `b`, then this
+*normalization* of `S` has original cut capacity at most the capacity of `S`.
 
 ## Main definitions
 
@@ -172,16 +172,18 @@ variable {Q A B} {K : Type w}
 /-- The capacities on the arrow family with auxiliary terminals: `cap e` on an original arrow
 `e`, `cσ a` on the arrow from the fresh source to `a`, and `cτ b` on the arrow from `b` to the
 fresh sink. -/
-def auxTerminalCapacity [Zero K] (cap : Assignment Q K) (cσ cτ : V → K) :
+def auxTerminalCapacity (cap : Assignment Q K) (cσ cτ : V → K) :
     Assignment (AuxTerminalHom Q A B) K
   | inl _, inl _, e => cap e
   | inr false, inl a, _ => cσ a
   | inl b, inr true, _ => cτ b
-  | _, _, _ => 0
+  | inl _, inr false, e => e.elim
+  | inr false, inr _, e => e.elim
+  | inr true, _, e => e.elim
 
-section Zero
+section Capacity
 
-variable [Zero K] (cap : Assignment Q K) (cσ cτ : V → K)
+variable (cap : Assignment Q K) (cσ cτ : V → K)
 
 @[simp]
 theorem auxTerminalCapacity_original {v w : V} (e : Q v w) :
@@ -200,13 +202,13 @@ theorem auxTerminalCapacity_sink {b : V} (hb : b ∈ B) :
 
 /-- The capacities with auxiliary terminals are nonnegative when the original capacities and the
 capacities of the new arrows are. -/
-theorem auxTerminalCapacity_nonneg [Preorder K] {cap : Assignment Q K} {cσ cτ : V → K}
+theorem auxTerminalCapacity_nonneg [Zero K] [Preorder K] {cap : Assignment Q K} {cσ cτ : V → K}
     (hcap : 0 ≤ cap) (hσ : ∀ a ∈ A, 0 ≤ cσ a) (hτ : ∀ b ∈ B, 0 ≤ cτ b) :
     0 ≤ auxTerminalCapacity (A := A) (B := B) cap cσ cτ := by
   rintro (v | (_ | _)) (w | (_ | _)) e
   all_goals first | exact hcap _ _ e | exact e.elim | exact hτ _ e.2 | exact hσ _ e.2
 
-end Zero
+end Capacity
 
 section Cut
 
@@ -268,9 +270,10 @@ theorem TerminalCut.IsAdmissible.arrowSum_auxTerminalCapacity {R : Finset V}
     (by simp), sdiff_eq_empty_iff_subset.mpr hR.subset,
     disjoint_iff_inter_eq_empty.mp hR.disjoint.symm]
 
-/-- **Normalization of auxiliary cuts.** Let `A` and `B` be disjoint, and suppose that the arrow
-from the fresh source to each `a ∈ A` has capacity at least the total capacity leaving `a`, and the
-arrow from each `b ∈ B` to the fresh sink has capacity at least the total capacity entering `b`.
+/-- **Normalization of auxiliary cuts.** Let `A` and `B` be disjoint and the original capacities
+nonnegative, and suppose that the arrow from the fresh source to each `a ∈ A` has capacity at least
+the total capacity leaving `a`, and the arrow from each `b ∈ B` to the fresh sink has capacity at
+least the total capacity entering `b`.
 Then for every cut `S` separating the fresh source from the fresh sink, the vertex set
 `(S.toLeft ∪ A) \ B`, which is admissible by `TerminalCut.isAdmissible_union_sdiff`, has original
 cut capacity at most the capacity of `S`. -/
