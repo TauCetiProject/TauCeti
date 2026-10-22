@@ -50,6 +50,9 @@ places.
   `K(E[m])`.
 * `WeierstrassCurve.mem_fixingSubgroup_divisionField_iff`: an element of `G_K` fixes `K(E[m])`
   exactly when it fixes every point of `E(Kˢ)[m]`.
+* `WeierstrassCurve.forall_smul_torsionCoeff_eq_self_iff`: for `W` elliptic and `m` invertible in
+  `K`, an automorphism of `K^{alg}` fixes `E(K^{alg})[m]` exactly when its restriction to `Kˢ`
+  fixes `E(Kˢ)[m]`.
 * `WeierstrassCurve.isGalois_divisionField`: `K(E[m])` is Galois over `K`.
 * `WeierstrassCurve.finiteDimensional_divisionField`: for `W` elliptic and `m ≠ 0`, `K(E[m])` is
   finite over `K`.
@@ -180,6 +183,63 @@ theorem mem_fixingSubgroup_divisionField_iff {σ : AbsoluteGaloisGroup K} :
       W.pointCoeffEquiv.injective.eq_iff, Affine.Point.map_eq_self_iff] at hσ
   · exact hσ.1
   · exact hσ.2
+
+open scoped Classical in
+/-- **The action on `E[m]` over `Kˢ` and over `K^{alg}`.** For `W` elliptic and `m` invertible in
+`K`, an automorphism `σ` of `K^{alg}` fixes every point of `E(K^{alg})[m]` exactly when its
+restriction to `Kˢ` fixes every point of `E(Kˢ)[m]`: both groups have `m²` elements, so every
+point of `E(K^{alg})[m]` is already defined over `Kˢ`. -/
+theorem forall_smul_torsionCoeff_eq_self_iff [W.IsElliptic] (hm : (m : K) ≠ 0)
+    (σ : Gal(AlgebraicClosure K/K)) :
+    (∀ P : W.TorsionCoeff m, absoluteGaloisGroupRestrictEquiv K σ • P = P) ↔
+      ∀ P : (W⁄(AlgebraicClosure K)).toAffine.Point, m • P = 0 →
+        Affine.Point.map σ.toAlgHom P = P := by
+  set ι := (separableClosure K (AlgebraicClosure K)).val
+  set τ := absoluteGaloisGroupRestrictEquiv K σ
+  have hinj := Affine.Point.map_injective (W' := W) ι
+  -- `σ` acts on the image of a point of `E(Kˢ)` as `τ` acts on that point.
+  have hcomm (Q : (W⁄(SeparableClosure K)).toAffine.Point) :
+      Affine.Point.map σ.toAlgHom (Affine.Point.map ι Q) =
+        Affine.Point.map ι (Affine.Point.map τ.toAlgHom Q) := by
+    have h : σ.toAlgHom.comp ι = ι.comp τ.toAlgHom :=
+      AlgHom.ext fun x ↦ (coe_absoluteGaloisGroupRestrictEquiv_apply K σ x).symm
+    rw [Affine.Point.map_map, h, ← Affine.Point.map_map]
+  -- The point map carries `E(Kˢ)[m]` onto `E(K^{alg})[m]`, both having `m²` elements.
+  have hmap : (AddSubgroup.torsionBy (W⁄(SeparableClosure K)).toAffine.Point m).map
+      (Affine.Point.map ι) = AddSubgroup.torsionBy (W⁄(AlgebraicClosure K)).toAffine.Point m := by
+    have hsep : Nat.card (AddSubgroup.torsionBy (W⁄(SeparableClosure K)).toAffine.Point m) =
+        m ^ 2 := by
+      have h := (W⁄(SeparableClosure K)).natCard_torsionBy (n := (m : ℤ))
+        (by simpa using (map_ne_zero (algebraMap K (SeparableClosure K))).2 hm)
+      rw [Int.natAbs_natCast] at h
+      -- `h` is stated with the classical decidable equality on `Kˢ`; the group laws agree.
+      convert h with P
+      simp only [AddSubgroup.torsionBy.nsmul_iff]
+      convert Iff.rfl
+    have halg := (W⁄(AlgebraicClosure K)).natCard_torsionBy (n := (m : ℤ))
+      (by simpa using (map_ne_zero (algebraMap K (AlgebraicClosure K))).2 hm)
+    rw [Int.natAbs_natCast] at halg
+    have : Finite (AddSubgroup.torsionBy (W⁄(AlgebraicClosure K)).toAffine.Point m) :=
+      Nat.finite_of_card_ne_zero (by rw [halg]; exact pow_ne_zero 2 (by rintro rfl; simp at hm))
+    refine AddSubgroup.eq_of_le_of_card_ge ?_ ?_
+    · rintro _ ⟨Q, hQ, rfl⟩
+      simp only [SetLike.mem_coe, AddSubgroup.torsionBy.nsmul_iff] at hQ ⊢
+      rw [← map_nsmul, hQ, map_zero]
+    · rw [AddSubgroup.card_map_of_injective hinj, hsep, halg]
+  refine ⟨fun h P hP ↦ ?_, fun h P ↦ Subtype.ext ?_⟩
+  · obtain ⟨Q, hQ, rfl⟩ := hmap.ge (AddSubgroup.torsionBy.nsmul_iff.2 hP)
+    -- `τ` fixes `Q`, by the hypothesis applied to the image of `Q` in `E(Kˢ)[m]`.
+    have hτ := congrArg Subtype.val (h (AddEquiv.torsionByCongr W.pointCoeffEquiv m ⟨Q, hQ⟩))
+    rw [coe_smul_torsionCoeff, AddEquiv.torsionByCongr_apply_coe, smul_pointCoeffEquiv,
+      W.pointCoeffEquiv.injective.eq_iff] at hτ
+    rw [hcomm, hτ]
+  · -- `P` is the image of a point `Q` of `E(Kˢ)[m]`, whose image in `E(K^{alg})` `σ` fixes.
+    set Q := (AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm P
+    have hQ : W.pointCoeffEquiv Q = P := by simp [Q]
+    rw [coe_smul_torsionCoeff, ← hQ, smul_pointCoeffEquiv]
+    congr 1
+    refine hinj ?_
+    rw [← hcomm, h _ (by rw [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 Q.2, map_zero])]
 
 variable (W m)
 
