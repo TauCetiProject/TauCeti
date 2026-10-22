@@ -115,6 +115,12 @@ theorem signOf_of_isEmpty {x y : GridState n} {r : GridRectangleBetween x y} (hr
     S.signOf r = S.sign r hr := by
   simp [signOf, hr]
 
+/-- On a nonempty rectangle `signOf` is `1`. -/
+@[simp]
+theorem signOf_of_not_isEmpty {x y : GridState n} {r : GridRectangleBetween x y}
+    (hr : ¬ r.IsEmpty) : S.signOf r = 1 := by
+  simp [signOf, hr]
+
 /-- The square rule for `signOf`: two distinct two-step decompositions of the same domain, made of
 empty rectangles, carry opposite products of signs. -/
 theorem signOf_mul_signOf_eq_neg {x z : GridState n} {D E : GridRectangleDecomposition x z}
@@ -164,7 +170,7 @@ theorem gauge_sign (f : GridState n → ℤˣ) {x y : GridState n} (r : GridRect
     (hr : r.IsEmpty) : (S.gauge f).sign r hr = f x * f y * S.sign r hr :=
   (rfl)
 
-/-- The sign of an arbitrary rectangle in a gauge transform. -/
+/-- The sign of an empty rectangle in a gauge transform, in terms of `signOf`. -/
 theorem signOf_gauge (f : GridState n → ℤˣ) {x y : GridState n} {r : GridRectangleBetween x y}
     (hr : r.IsEmpty) : (S.gauge f).signOf r = f x * f y * S.signOf r := by
   rw [signOf_of_isEmpty _ hr, signOf_of_isEmpty _ hr, gauge_sign]
@@ -184,10 +190,11 @@ theorem gauge_one : S.gauge 1 = S := by
 
 /-- A gauge transform is undone by the same gauge, since every sign squares to `1`. -/
 theorem gauge_gauge_self (f : GridState n → ℤˣ) : (S.gauge f).gauge f = S := by
-  ext x y r hr
+  ext x y r hr : 1
   simp only [gauge_sign]
-  rw [show f x * f y * (f x * f y * S.sign r hr) = (f x * f x) * (f y * f y) * S.sign r hr by
-    ac_rfl, Int.units_mul_self, Int.units_mul_self, one_mul, one_mul]
+  calc f x * f y * (f x * f y * S.sign r hr)
+      = (f x * f x) * (f y * f y) * S.sign r hr := by ac_rfl
+    _ = S.sign r hr := by rw [Int.units_mul_self, Int.units_mul_self, one_mul, one_mul]
 
 end GridSignAssignment
 
