@@ -55,11 +55,8 @@ instance projective_kernel_homologyπ_of_hasProjectiveDimensionLE_one [Projectiv
 /-- If every object has projective dimension at most one, the quotient of a term by its cycles is
 projective when the next term is projective. Consequently the cycles split off the term. -/
 instance projective_cokernel_iCycles_of_hasProjectiveDimensionLE_one
-    [Projective (K.X (c.next i))] : Projective (cokernel (K.iCycles i)) := by
-  let δ := cokernel.desc (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _)
-  have : Mono δ := (ShortComplex.exact_of_f_is_kernel
-    (ShortComplex.mk (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _))
-    (K.cyclesIsKernel i (c.next i) rfl)).mono_cokernelDesc
-  exact projective_of_mono_of_hasProjectiveDimensionLE_one δ
+    [Projective (K.X (c.next i))] : Projective (cokernel (K.iCycles i)) :=
+  projective_of_mono_of_hasProjectiveDimensionLE_one
+    (cokernel.desc (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _))
 
 end HomologicalComplex
