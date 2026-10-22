@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Submonoid.BigOperators
-public import Mathlib.Algebra.Order.Pi
 public import TauCeti.Combinatorics.Network.Augmentation
 
 /-!
@@ -378,79 +377,6 @@ end PathCycleDecomposition
 section Existence
 
 variable [LinearOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
-
-omit [Fintype V] [∀ x y, Fintype (Q x y)] [IsOrderedAddMonoid K] in
-/-- If no vertex reaches itself along arrows of positive value, then every arrow of positive value
-lies on a walk of positive arrows from a vertex that no positive arrow enters to a vertex that no
-positive arrow leaves; this walk contains a path between distinct vertices. -/
-private lemma exists_isPath_of_acyclic [Finite V] (hf : 0 ≤ f)
-    (hacyc : ∀ v, ¬ TransGen (fun v w ↦ ∃ e : Q v w, 0 < f e) v v) {x y : V} (e : Q x y)
-    (he : 0 < f e) :
-    ∃ (s t : V) (p : ArrowWalk Q s t), p.IsPath ∧ s ≠ t ∧ (∀ a ∈ p.arrows, 0 < f a.2.2) ∧
-      (∀ w (e : Q w s), f e = 0) ∧ ∀ w (e : Q t w), f e = 0 := by
-  set R : V → V → Prop := fun v w ↦ ∃ e : Q v w, 0 < f e
-  have : IsTrans V (TransGen R) := ⟨fun _ _ _ ↦ TransGen.trans⟩
-  have : IsTrans V (flip (TransGen R)) := ⟨fun _ _ _ h₁ h₂ ↦ TransGen.trans h₂ h₁⟩
-  have : Std.Irrefl (TransGen R) := ⟨hacyc⟩
-  have : Std.Irrefl (flip (TransGen R)) := ⟨hacyc⟩
-  obtain ⟨s, hs, hmin⟩ := (Finite.wellFounded_of_trans_of_irrefl (TransGen R)).has_min
-    {s | ReflTransGen R s x} ⟨x, .refl⟩
-  obtain ⟨t, ht, hmax⟩ := (Finite.wellFounded_of_trans_of_irrefl (flip (TransGen R))).has_min
-    {t | ReflTransGen R y t} ⟨y, .refl⟩
-  have hst : TransGen R s t := (TransGen.tail' hs ⟨e, he⟩).trans_left ht
-  obtain ⟨p, hp, hpos⟩ :=
-    positiveReachable_iff_exists_isPath.1 (positiveReachable_iff_reflTransGen.2 hst.to_reflTransGen)
-  refine ⟨s, t, p, hp, fun h ↦ hacyc s (h ▸ hst), hpos, fun w e' ↦ ?_, fun w e' ↦ ?_⟩
-  · refine le_antisymm (not_lt.1 fun h ↦ ?_) (hf _ _ e')
-    exact hmin w (ReflTransGen.head ⟨e', h⟩ hs) (.single ⟨e', h⟩)
-  · refine le_antisymm (not_lt.1 fun h ↦ ?_) (hf _ _ e')
-    exact hmax w (ht.tail ⟨e', h⟩) (.single ⟨e', h⟩)
-
-/-- Subtract a walk from `s` to `t ≠ s`, weighted by `q > 0`, from a nonnegative assignment `f`
-that vanishes on the arrows entering `s` and on the arrows leaving `t`, such that the difference
-`g` is still nonnegative. Then `f` has negative excess at `s` and positive excess at `t`, and every
-vertex of negative, respectively positive, excess for `g` has negative, respectively positive,
-excess for `f`. -/
-private lemma excessAt_sign_of_sub_walkAssignment {s t : V} (hst : s ≠ t) {p : ArrowWalk Q s t}
-    {q : K} (hq : 0 < q) (hg : 0 ≤ f - walkAssignment p q) (hin : ∀ w (e : Q w s), f e = 0)
-    (hout : ∀ w (e : Q t w), f e = 0) :
-    excessAt f s < 0 ∧ 0 < excessAt f t ∧
-      (∀ v, excessAt (f - walkAssignment p q) v < 0 → excessAt f v < 0) ∧
-      ∀ v, 0 < excessAt (f - walkAssignment p q) v → 0 < excessAt f v := by
-  classical
-  have hgf : f - walkAssignment p q ≤ f := sub_le_self _ (walkAssignment_nonneg p hq.le)
-  have hexc (v : V) : excessAt f v = excessAt (f - walkAssignment p q) v +
-      ((if v = t then q else 0) - if v = s then q else 0) := by
-    simp [excessAt_sub]
-  -- The difference vanishes on the arrows entering `s` and on those leaving `t`, so its excess
-  -- is nonpositive at `s` and nonnegative at `t`.
-  have hgs : excessAt (f - walkAssignment p q) s ≤ 0 :=
-    excessAt_nonpos_of_nonneg_of_forall_in_eq_zero hg fun w e ↦
-      le_antisymm ((hgf _ _ e).trans (hin w e).le) (hg _ _ e)
-  have hgt : 0 ≤ excessAt (f - walkAssignment p q) t :=
-    excessAt_nonneg_of_nonneg_of_forall_out_eq_zero hg fun w e ↦
-      le_antisymm ((hgf _ _ e).trans (hout w e).le) (hg _ _ e)
-  refine ⟨?_, ?_, fun v hv ↦ ?_, fun v hv ↦ ?_⟩
-  · rw [hexc s]
-    simpa [hst] using hgs.trans_lt hq
-  · rw [hexc t]
-    simpa [hst.symm] using add_pos_of_nonneg_of_pos hgt hq
-  · have hvt : v ≠ t := by
-      rintro rfl
-      exact hv.not_ge hgt
-    rw [hexc v]
-    simp only [hvt, ↓reduceIte, zero_sub]
-    split_ifs
-    · exact add_neg hv (neg_neg_of_pos hq)
-    · simpa using hv
-  · have hvs : v ≠ s := by
-      rintro rfl
-      exact hv.not_ge hgs
-    rw [hexc v]
-    simp only [hvs, ↓reduceIte, sub_zero]
-    split_ifs
-    · exact add_pos hv hq
-    · simpa using hv
 
 /-- Adding a positively weighted cycle to a decomposed assignment. -/
 private def PathCycleDecomposition.consCycle {g : Assignment Q K} (D : PathCycleDecomposition g)

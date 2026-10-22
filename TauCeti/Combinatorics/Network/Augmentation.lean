@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Pi
 public import TauCeti.Combinatorics.Network.Flow
 public import TauCeti.Combinatorics.Network.Walk
 
@@ -258,6 +259,53 @@ theorem card_filter_pos_sub_walkAssignment_bottleneck_lt {f : Assignment Q K} {s
     exact hb.trans_le (hle _ _ _)
   · simpa using hpos _ ha
   · simp [walkAssignment_eq_of_mem hp _ ha, hqa]
+
+/-- Subtract a walk from `s` to `t ≠ s`, weighted by `q > 0`, from a nonnegative assignment `f`
+that vanishes on the arrows entering `s` and on the arrows leaving `t`, such that the difference
+`g` is still nonnegative. Then `f` has negative excess at `s` and positive excess at `t`, and every
+vertex of negative, respectively positive, excess for `g` has negative, respectively positive,
+excess for `f`. -/
+lemma excessAt_sign_of_sub_walkAssignment {f : Assignment Q K} {s t : V} (hst : s ≠ t) {p : ArrowWalk Q s t}
+    {q : K} (hq : 0 < q) (hg : 0 ≤ f - walkAssignment p q) (hin : ∀ w (e : Q w s), f e = 0)
+    (hout : ∀ w (e : Q t w), f e = 0) :
+    excessAt f s < 0 ∧ 0 < excessAt f t ∧
+      (∀ v, excessAt (f - walkAssignment p q) v < 0 → excessAt f v < 0) ∧
+      ∀ v, 0 < excessAt (f - walkAssignment p q) v → 0 < excessAt f v := by
+  classical
+  have hgf : f - walkAssignment p q ≤ f := sub_le_self _ (walkAssignment_nonneg p hq.le)
+  have hexc (v : V) : excessAt f v = excessAt (f - walkAssignment p q) v +
+      ((if v = t then q else 0) - if v = s then q else 0) := by
+    simp [excessAt_sub]
+  -- The difference vanishes on the arrows entering `s` and on those leaving `t`, so its excess
+  -- is nonpositive at `s` and nonnegative at `t`.
+  have hgs : excessAt (f - walkAssignment p q) s ≤ 0 :=
+    excessAt_nonpos_of_nonneg_of_forall_in_eq_zero hg fun w e ↦
+      le_antisymm ((hgf _ _ e).trans (hin w e).le) (hg _ _ e)
+  have hgt : 0 ≤ excessAt (f - walkAssignment p q) t :=
+    excessAt_nonneg_of_nonneg_of_forall_out_eq_zero hg fun w e ↦
+      le_antisymm ((hgf _ _ e).trans (hout w e).le) (hg _ _ e)
+  refine ⟨?_, ?_, fun v hv ↦ ?_, fun v hv ↦ ?_⟩
+  · rw [hexc s]
+    simpa [hst] using hgs.trans_lt hq
+  · rw [hexc t]
+    simpa [hst.symm] using add_pos_of_nonneg_of_pos hgt hq
+  · have hvt : v ≠ t := by
+      rintro rfl
+      exact hv.not_ge hgt
+    rw [hexc v]
+    simp only [hvt, ↓reduceIte, zero_sub]
+    split_ifs
+    · exact add_neg hv (neg_neg_of_pos hq)
+    · simpa using hv
+  · have hvs : v ≠ s := by
+      rintro rfl
+      exact hv.not_ge hgs
+    rw [hexc v]
+    simp only [hvs, ↓reduceIte, sub_zero]
+    split_ifs
+    · exact add_pos hv hq
+    · simpa using hv
+
 
 end LinearOrder
 

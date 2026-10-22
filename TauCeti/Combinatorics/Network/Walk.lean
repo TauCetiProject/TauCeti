@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Path.Vertices
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Order.WellFounded
 public import Mathlib.Data.List.Nodup
 public import TauCeti.Combinatorics.Network.Basic
 
@@ -261,7 +263,7 @@ variable {c : Assignment Q K} {s t : V} {p : ArrowWalk Q s t} {hne : p.arrows �
 /-- A value is at most the bottleneck exactly when it is at most every capacity along the walk. -/
 theorem le_bottleneck_iff {x : K} :
     x ≤ p.bottleneck c hne ↔ ∀ a ∈ p.arrows, x ≤ c a.2.2 := by
-  simp [bottleneck, List.le_min_iff]
+  simp only [bottleneck, List.le_min_iff, List.forall_mem_map]
 
 theorem bottleneck_le {a : Σ x y, Q x y} (ha : a ∈ p.arrows) : p.bottleneck c hne ≤ c a.2.2 :=
   le_bottleneck_iff.1 le_rfl a ha
@@ -414,5 +416,33 @@ theorem positiveReachable_map_iff_of_strictMono {K L : Type*} [Zero K] [LinearOr
     [Preorder L] {c : Assignment Q K} {φ : K → L} (hφ : StrictMono φ) (hφ₀ : φ 0 = 0) {s t : V} :
     PositiveReachable (c.map φ) s t ↔ PositiveReachable c s t :=
   positiveReachable_map_iff fun x ↦ by rw [← hφ₀, hφ.lt_iff_lt]
+
+open Relation in
+/-- If no vertex reaches itself along arrows of positive value, then every arrow of positive value
+lies on a walk of positive arrows from a vertex that no positive arrow enters to a vertex that no
+positive arrow leaves; this walk contains a path between distinct vertices. -/
+lemma exists_isPath_of_acyclic {K : Type w} [Zero K] [LinearOrder K] [Finite V]
+    {f : Assignment Q K} (hf : 0 ≤ f)
+    (hacyc : ∀ v, ¬ TransGen (fun v w ↦ ∃ e : Q v w, 0 < f e) v v) {x y : V} (e : Q x y)
+    (he : 0 < f e) :
+    ∃ (s t : V) (p : ArrowWalk Q s t), p.IsPath ∧ s ≠ t ∧ (∀ a ∈ p.arrows, 0 < f a.2.2) ∧
+      (∀ w (e : Q w s), f e = 0) ∧ ∀ w (e : Q t w), f e = 0 := by
+  set R : V → V → Prop := fun v w ↦ ∃ e : Q v w, 0 < f e
+  have : IsTrans V (TransGen R) := ⟨fun _ _ _ ↦ TransGen.trans⟩
+  have : IsTrans V (flip (TransGen R)) := ⟨fun _ _ _ h₁ h₂ ↦ TransGen.trans h₂ h₁⟩
+  have : Std.Irrefl (TransGen R) := ⟨hacyc⟩
+  have : Std.Irrefl (flip (TransGen R)) := ⟨hacyc⟩
+  obtain ⟨s, hs, hmin⟩ := (Finite.wellFounded_of_trans_of_irrefl (TransGen R)).has_min
+    {s | ReflTransGen R s x} ⟨x, .refl⟩
+  obtain ⟨t, ht, hmax⟩ := (Finite.wellFounded_of_trans_of_irrefl (flip (TransGen R))).has_min
+    {t | ReflTransGen R y t} ⟨y, .refl⟩
+  have hst : TransGen R s t := (TransGen.tail' hs ⟨e, he⟩).trans_left ht
+  obtain ⟨p, hp, hpos⟩ :=
+    positiveReachable_iff_exists_isPath.1 (positiveReachable_iff_reflTransGen.2 hst.to_reflTransGen)
+  refine ⟨s, t, p, hp, fun h ↦ hacyc s (h ▸ hst), hpos, fun w e' ↦ ?_, fun w e' ↦ ?_⟩
+  · refine le_antisymm (not_lt.1 fun h ↦ ?_) (hf _ _ e')
+    exact hmin w (ReflTransGen.head ⟨e', h⟩ hs) (.single ⟨e', h⟩)
+  · refine le_antisymm (not_lt.1 fun h ↦ ?_) (hf _ _ e')
+    exact hmax w (ht.tail ⟨e', h⟩) (.single ⟨e', h⟩)
 
 end TauCeti
