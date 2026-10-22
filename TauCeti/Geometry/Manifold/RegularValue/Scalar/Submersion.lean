@@ -127,41 +127,51 @@ private noncomputable abbrev coordChart : OpenPartialHomeomorph E E :=
 private noncomputable abbrev modelChart : OpenPartialHomeomorph (BoundarylessModel I M) E :=
   (chartAt E (BoundarylessModel.homeomorph I M x)).trans (coordChart hf hx)
 
+private theorem coe_coordChart :
+    ⇑(coordChart hf hx) = (coordEquiv hx).symm ∘ implicitChart hf hx := by
+  rw [OpenPartialHomeomorph.transHomeomorph_apply, OpenPartialHomeomorph.coe_restrOpen,
+    ContinuousLinearEquiv.coe_toHomeomorph]
+
+private theorem coe_coordChart_symm :
+    ⇑(coordChart hf hx).symm = (implicitChart hf hx).symm ∘ coordEquiv hx := by
+  rw [OpenPartialHomeomorph.transHomeomorph_symm_apply, OpenPartialHomeomorph.coe_restrOpen_symm,
+    ContinuousLinearEquiv.coe_symm_toHomeomorph, ContinuousLinearEquiv.symm_symm]
+
 private theorem modelChart_apply (y : BoundarylessModel I M) :
     modelChart hf hx y = (coordEquiv hx).symm
       (implicitChart hf hx (extChartAt I x ((BoundarylessModel.homeomorph I M).symm y))) := by
-  rw [OpenPartialHomeomorph.coe_trans, comp_apply, BoundarylessModel.chartAt_apply,
-    Homeomorph.symm_apply_apply, OpenPartialHomeomorph.transHomeomorph_apply, comp_apply,
-    OpenPartialHomeomorph.coe_restrOpen, ContinuousLinearEquiv.coe_toHomeomorph]
+  simp only [OpenPartialHomeomorph.coe_trans, coe_coordChart, comp_apply,
+    BoundarylessModel.chartAt_apply, Homeomorph.symm_apply_apply]
 
 private theorem modelChart_symm_apply (v : E) :
     (BoundarylessModel.homeomorph I M).symm ((modelChart hf hx).symm v) =
       (extChartAt I x).symm ((implicitChart hf hx).symm (coordEquiv hx v)) := by
-  rw [OpenPartialHomeomorph.coe_trans_symm, comp_apply, BoundarylessModel.chartAt_symm_apply,
-    Homeomorph.symm_apply_apply, OpenPartialHomeomorph.transHomeomorph_symm_apply, comp_apply,
-    OpenPartialHomeomorph.coe_restrOpen_symm, ← ContinuousLinearEquiv.toHomeomorph_symm,
-    ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.coe_toHomeomorph]
+  simp only [OpenPartialHomeomorph.coe_trans_symm, coe_coordChart_symm, comp_apply,
+    BoundarylessModel.chartAt_symm_apply, Homeomorph.symm_apply_apply]
+
+/-- The source of the restricted implicit-function chart is the domain, which lies in the source of
+the implicit-function chart. -/
+private theorem coordChart_source : (coordChart hf hx).source = domain hf hx := by
+  rw [OpenPartialHomeomorph.transHomeomorph_source, OpenPartialHomeomorph.restrOpen_source]
+  exact inter_eq_right.2 fun _ hp ↦ hp.1.1
 
 private theorem mem_modelChart_source_iff (y : BoundarylessModel I M) :
     y ∈ (modelChart hf hx).source ↔
       (BoundarylessModel.homeomorph I M).symm y ∈ (chartAt H x).source ∧
         extChartAt I x ((BoundarylessModel.homeomorph I M).symm y) ∈ domain hf hx := by
-  rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage,
-    BoundarylessModel.chartAt_apply, Homeomorph.symm_apply_apply, BoundarylessModel.chartAt_eq,
-    BoundarylessModel.chart_source, mem_preimage, Homeomorph.symm_apply_apply]
-  simp only [OpenPartialHomeomorph.transHomeomorph_source, OpenPartialHomeomorph.restrOpen_source,
-    mem_inter_iff, domain]
-  tauto
+  simp only [OpenPartialHomeomorph.trans_source, coordChart_source, BoundarylessModel.chartAt_eq,
+    BoundarylessModel.chart_source, BoundarylessModel.chart_apply, Homeomorph.symm_apply_apply,
+    extChartAt_coe, comp_apply, mem_inter_iff, mem_preimage]
 
 private theorem mem_modelChart_target_iff (v : E) :
     v ∈ (modelChart hf hx).target ↔
       coordEquiv hx v ∈ (implicitChart hf hx).target ∧
         (implicitChart hf hx).symm (coordEquiv hx v) ∈ domain hf hx := by
-  rw [OpenPartialHomeomorph.trans_target, mem_inter_iff, mem_preimage, BoundarylessModel.chartAt_eq,
-    BoundarylessModel.chart_target, Homeomorph.symm_apply_apply,
-    OpenPartialHomeomorph.transHomeomorph_target, OpenPartialHomeomorph.restrOpen_toPartialEquiv,
-    PartialEquiv.restr_target, ← ContinuousLinearEquiv.toHomeomorph_symm,
-    ContinuousLinearEquiv.symm_symm, preimage_inter, mem_inter_iff]
+  simp only [OpenPartialHomeomorph.trans_target, OpenPartialHomeomorph.transHomeomorph_target,
+    OpenPartialHomeomorph.restrOpen_toPartialEquiv, PartialEquiv.restr_target,
+    ContinuousLinearEquiv.coe_symm_toHomeomorph, ContinuousLinearEquiv.symm_symm,
+    coe_coordChart_symm, BoundarylessModel.chartAt_eq, BoundarylessModel.chart_target,
+    Homeomorph.symm_apply_apply, comp_apply, mem_inter_iff, mem_preimage]
   -- The target of the restricted implicit-function chart is cut out by the domain, which lies over
   -- the preferred chart target.
   exact and_iff_left_of_imp fun h ↦ domain_subset hf hx h.2
@@ -187,7 +197,8 @@ private theorem contMDiffAt_modelChart {n : ℕ∞ω} [IsManifold I n M] {y : Bo
       hfy).sub contDiffAt_const
   have hcoord : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) n (coordChart hf hx)
       (chartAt E (BoundarylessModel.homeomorph I M x) y) := by
-    rw [contMDiffAt_iff_contDiffAt, BoundarylessModel.chartAt_apply, Homeomorph.symm_apply_apply]
+    rw [contMDiffAt_iff_contDiffAt, coe_coordChart, BoundarylessModel.chartAt_apply,
+      Homeomorph.symm_apply_apply]
     exact (coordEquiv hx).symm.contDiff.contDiffAt.comp _
       ((hasStrictFDerivAt_coord hf).contDiffAt_implicitToOpenPartialHomeomorphOfComplemented hg _ _)
   have hchart : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) n (chartAt E (BoundarylessModel.homeomorph I M x)) y :=
@@ -212,7 +223,7 @@ private theorem contMDiffAt_modelChart_symm {n : ℕ∞ω} [IsManifold I n M] (h
       hp).1 hfv).sub (contDiffAt_const (c := f x))
     rwa [← extChartAt, (extChartAt I x).right_inv hvD.1.2] at h
   have hcoord : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) n (coordChart hf hx).symm v := by
-    rw [contMDiffAt_iff_contDiffAt]
+    rw [contMDiffAt_iff_contDiffAt, coe_coordChart_symm]
     exact (HasStrictFDerivAt.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem
       (hasStrictFDerivAt_coord hf) _ _ hvΦ hvD.2
       ((hg.differentiableAt (zero_lt_one.trans_le hn).ne').hasFDerivAt) hg).comp v
@@ -359,15 +370,14 @@ theorem scalarSubmersionChartAt_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n 
     (hfn : ∀ y ∈ (scalarSubmersionChartAt hf hx).source, ContMDiffAt I 𝓘(ℝ) n f y) :
     scalarSubmersionChartAt hf hx ∈ IsManifold.maximalAtlas I n M := by
   rw [scalarSubmersionChartAt, BoundarylessModel.originalChart_mem_maximalAtlas_iff]
-  have h := restrOpen_modelChart_mem_maximalAtlas hf hx hn (modelChart hf hx).open_source
-    fun y hy ↦ hfn _ (by
-      rw [scalarSubmersionChartAt, BoundarylessModel.originalChart_source, mem_preimage,
-        Homeomorph.apply_symm_apply]
-      exact hy)
-  rwa [show (modelChart hf hx).restrOpen _ (modelChart hf hx).open_source = modelChart hf hx from
-    OpenPartialHomeomorph.toPartialEquiv_injective <|
-      ((modelChart hf hx).restrOpen_toPartialEquiv _ _).trans
-        (PartialEquiv.restr_eq_of_source_subset subset_rfl)] at h
+  have hfy : ∀ y ∈ (modelChart hf hx).source,
+      ContMDiffAt I 𝓘(ℝ) n f ((BoundarylessModel.homeomorph I M).symm y) := fun y hy ↦ hfn _ <| by
+    rwa [scalarSubmersionChartAt, BoundarylessModel.originalChart_source, mem_preimage,
+      Homeomorph.apply_symm_apply]
+  refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ (fun y hy ↦ ?_) fun v hv ↦ ?_
+  · exact (contMDiffAt_modelChart hf hx hy (hfy y hy)).contMDiffWithinAt
+  · exact (contMDiffAt_modelChart_symm hf hx hn hv
+      (hfy _ ((modelChart hf hx).map_target hv))).contMDiffWithinAt
 
 /-- **A regular point of a scalar function is a submersion point.** If `f` is `C^n` near a regular
 point `x`, with `1 ≤ n`, then `f` is a `C^n` submersion at `x` with complement the kernel of the
