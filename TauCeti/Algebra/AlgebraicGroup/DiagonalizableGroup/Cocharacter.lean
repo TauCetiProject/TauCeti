@@ -1,0 +1,127 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.Cocharacter
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Points
+
+/-!
+# Cocharacters through a diagonalizable subgroup
+
+Let `π : H →ₐc[R] R[X]` present a group morphism `D(X) → G = Spec H` from the diagonalizable
+group of a commutative group `X`, for instance a chosen split maximal torus. A cocharacter
+`ψ : X →* Multiplicative ℤ` of `D(X)` gives the cocharacter `λ = π.cocharacter ψ` of `G`, the
+composite `𝔾ₘ → D(X) → G`. On points it sends a unit `u` to the image in `G` of the point of
+`D(X)` whose character is `χ ↦ u ^ ⟨χ, ψ⟩`.
+
+## Main declarations
+
+* `BialgHom.cocharacter`: the cocharacter `𝔾ₘ → D(X) → G` of a cocharacter of `D(X)`, with
+  point formula `BialgHom.pointsHom_cocharacter`.
+* `BialgHom.pointsHom_cocharacter_mul` and `BialgHom.cocharacter_pow`: products and powers of
+  cocharacters of `D(X)`.
+
+## References
+
+* B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, §2.1.
+-/
+
+public section
+
+open WithConv
+
+namespace BialgHom
+
+open TauCeti
+
+universe u v w x
+
+variable {R : Type u} {H : Type v} {X : Type w} [CommRing R] [CommRing H] [Bialgebra R H]
+  [CommGroup X] (π : H →ₐc[R] MonoidAlgebra R X)
+
+/-- The cocharacter `𝔾ₘ → D(X) → G` given by a cocharacter `ψ` of the diagonalizable group
+`D(X)`, where `π` presents the group morphism `D(X) → G`. -/
+noncomputable def cocharacter (ψ : X →* Multiplicative ℤ) : H →ₐc[R] LaurentPolynomial R :=
+  (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).symm.toBialgHom.comp
+    ((MonoidAlgebra.mapDomainBialgHom R ψ).comp π)
+
+/-- In the group-algebra presentation of `𝔾ₘ`, the cocharacter of `ψ` is `π` followed by the map
+of group algebras induced by `ψ`. -/
+@[simp]
+theorem toMultiplicativeBialgEquiv_comp_cocharacter (ψ : X →* Multiplicative ℤ) :
+    (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ :
+        LaurentPolynomial R →ₐc[R] MonoidAlgebra R (Multiplicative ℤ)).comp (π.cocharacter ψ) =
+      (MonoidAlgebra.mapDomainBialgHom R ψ).comp π := by
+  ext h
+  simp [cocharacter]
+
+/-! ### Points -/
+
+section Points
+
+variable {A : Type x} [CommRing A] [Algebra R A]
+
+/-- The cocharacter of `ψ` sends a unit `u` to the image in `G` of the point
+`DiagonalizableGroup.cocharPoints ψ` of `D(X)` at `u`, whose character is `χ ↦ u ^ ⟨χ, ψ⟩`. -/
+theorem pointsHom_cocharacter (ψ : X →* Multiplicative ℤ) (u : Aˣ) :
+    Cocharacter.pointsHom A (π.cocharacter ψ) u =
+      BialgHom.mapDomain π
+        (DiagonalizableGroup.cocharPoints ψ
+          ((DiagonalizableGroup.pointsMulEquiv (R := R)).symm (zpowersHom Aˣ u))) := by
+  have hT (m : Multiplicative ℤ) : (AddMonoidAlgebra.toMultiplicativeAlgEquiv R R ℤ).symm
+      (MonoidAlgebra.single m 1) = LaurentPolynomial.T m.toAdd := by
+    rw [AlgEquiv.symm_apply_eq, LaurentPolynomial.T,
+      AddMonoidAlgebra.toMultiplicativeAlgEquiv_single, ofAdd_toAdd]
+  have hQ : DiagonalizableGroup.cocharPoints ψ
+      ((DiagonalizableGroup.pointsMulEquiv (R := R)).symm (zpowersHom Aˣ u)) =
+        toConv (((laurentEval (R := R) u).comp
+          (AddMonoidAlgebra.toMultiplicativeAlgEquiv R R ℤ).symm.toAlgHom).comp
+            (MonoidAlgebra.mapDomainAlgHom R R ψ)) := by
+    apply (DiagonalizableGroup.pointsMulEquiv (R := R) (A := A)).injective
+    refine MonoidHom.ext fun χ ↦ Units.ext ?_
+    rw [DiagonalizableGroup.pointsMulEquiv_cocharPoints, MulEquiv.apply_symm_apply,
+      DiagonalizableGroup.pointsMulEquiv_apply, DiagonalizableGroup.charOfPoint_apply_coe]
+    simp [hT]
+  rw [hQ, Cocharacter.pointsHom_apply, BialgHom.mapDomain_apply, BialgHom.mapDomain_apply]
+  rfl
+
+/-- The product of two cocharacters of `D(X)` acts on points as the product of their actions. -/
+theorem pointsHom_cocharacter_mul (ψ ψ' : X →* Multiplicative ℤ) (u : Aˣ) :
+    Cocharacter.pointsHom A (π.cocharacter (ψ * ψ')) u =
+      Cocharacter.pointsHom A (π.cocharacter ψ) u *
+        Cocharacter.pointsHom A (π.cocharacter ψ') u := by
+  rw [pointsHom_cocharacter, pointsHom_cocharacter, pointsHom_cocharacter, ← map_mul]
+  congr 1
+  apply (DiagonalizableGroup.pointsMulEquiv (R := R) (A := A)).injective
+  refine MonoidHom.ext fun χ ↦ ?_
+  simp only [map_mul, MonoidHom.mul_apply, DiagonalizableGroup.pointsMulEquiv_cocharPoints,
+    toAdd_mul, zpow_add]
+
+end Points
+
+/-- The `n`-th power of a cocharacter of `D(X)` gives the `n`-th power `t ↦ λ(tⁿ)` of its
+cocharacter. -/
+theorem cocharacter_pow (ψ : X →* Multiplicative ℤ) (n : ℤ) :
+    π.cocharacter (ψ ^ n) = (π.cocharacter ψ).powCocharacter n := by
+  have hs (m : Multiplicative ℤ) (a : R) :
+      (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).symm (MonoidAlgebra.single m a) =
+        AddMonoidAlgebra.single m.toAdd a := by
+    apply EquivLike.injective (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ)
+    rw [BialgEquiv.apply_symm_apply, AddMonoidAlgebra.toMultiplicativeBialgEquiv_single,
+      ofAdd_toAdd]
+  ext h : 1
+  rw [BialgHom.powCocharacter_apply]
+  simp only [cocharacter, BialgHom.comp_apply]
+  induction π h using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => simp only [map_add, hx, hy, AddMonoidAlgebra.mapDomain_add]
+  | single χ a =>
+    simp only [MonoidAlgebra.mapDomainBialgHom_single, BialgEquiv.toBialgHom_eq_coe,
+      BialgEquiv.coe_toBialgHom, hs, MonoidHom.zpow_apply, AddMonoidAlgebra.mapDomain_single,
+      toAdd_zpow, smul_eq_mul]
+    rw [mul_comm]
+
+end BialgHom
