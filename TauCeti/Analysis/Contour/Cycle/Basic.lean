@@ -34,7 +34,7 @@ contribution to every additive invariant.
 * `TauCeti.Contour.Cycle.trace` — the geometric trace of a cycle.
 * `TauCeti.Contour.Cycle.integral` — the additive extension of the contour integral.
 * `TauCeti.Contour.Cycle.integral_comp_comm`: continuous linear maps commute with the integral
-  of a vector-valued function over a cycle.
+  of a vector-valued function over a cycle, when its contour integrand is integrable.
 * `TauCeti.Contour.Cycle.norm_integral_le_of_norm_le_const`: a bound for the integrand on the
   trace, times the length of the cycle, bounds the integral.
 * `TauCeti.Contour.Cycle.windingNumber` — the additive extension of the winding number.
@@ -347,14 +347,19 @@ theorem intervalIntegrable_of_mem_support {E : Type*} [NormedAddCommGroup E] [No
     fun t ht ↦ mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩
 
 /-- A continuous linear map between complex Banach spaces commutes with the integral over a cycle
-of a function continuous on its trace. -/
+of a function whose contour integrand is interval-integrable along every curve in the support of
+the cycle. For `f` continuous on the trace, this integrability is
+`TauCeti.Contour.Cycle.intervalIntegrable_of_mem_support`. -/
 theorem integral_comp_comm {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {f : ℂ → E}
-    {C : Cycle} (hf : ContinuousOn f (trace C)) (L : E →L[ℂ] F) :
+    {C : Cycle}
+    (hf : ∀ γ ∈ FreeAbelianGroup.support C,
+      IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume γ.a γ.b)
+    (L : E →L[ℂ] F) :
     integral (fun z ↦ L (f z)) C = L (integral f C) := by
   rw [integral_eq_sum_support, integral_eq_sum_support, map_sum]
   refine Finset.sum_congr rfl fun γ hγ ↦ ?_
-  rw [map_zsmul, ← L.intervalIntegral_comp_comm (intervalIntegrable_of_mem_support hf hγ)]
+  rw [map_zsmul, ← L.intervalIntegral_comp_comm (hf γ hγ)]
   simp only [map_smul]
 
 /-- **Norm bound for a cycle integral.** If `‖f‖ ≤ M` on the trace of `C`, then the integral of

@@ -239,8 +239,8 @@ theorem cauchyIntegralFormula_iteratedDeriv_smul_nullHomologous {f : ℂ → E} 
       pow_ne_zero _ (sub_ne_zero.mpr (by rintro rfl; exact hoff hw))).smul
         (hf.continuousOn.mono (isIn_iff.mp hCU))
   refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ ?_
-  rw [← integral_comp_comm hcont, map_smul, ← ℓ.iteratedDeriv_comp_left
-    ((hf.contDiffOn (n := k) hU).contDiffAt (hU.mem_nhds hz)) le_rfl]
+  rw [← integral_comp_comm (fun _ ↦ intervalIntegrable_of_mem_support hcont), map_smul,
+    ← ℓ.iteratedDeriv_comp_left ((hf.contDiffOn (n := k) hU).contDiffAt (hU.mem_nhds hz)) le_rfl]
   simp only [map_smul, smul_eq_mul, ← div_eq_inv_mul, Function.comp_def]
   rw [cauchyIntegralFormula_iteratedDeriv_nullHomologous (f := fun w ↦ ℓ (f w)) hU
     (ℓ.differentiable.comp_differentiableOn hf) hCU hnull hz hoff k]

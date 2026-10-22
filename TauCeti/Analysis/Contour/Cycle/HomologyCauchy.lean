@@ -259,7 +259,8 @@ theorem homologyCauchyTheorem {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   by_cases hE : CompleteSpace E
   · -- Continuous linear functionals separate points, and each one reduces to the scalar case.
     refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℂ) fun ℓ ↦ ?_
-    rw [← integral_comp_comm (hf.continuousOn.mono (isIn_iff.mp hCU))]
+    rw [← integral_comp_comm fun _ ↦
+      intervalIntegrable_of_mem_support (hf.continuousOn.mono (isIn_iff.mp hCU))]
     exact homologyCauchyTheorem_complex hU hCU (ℓ.differentiable.comp_differentiableOn hf) hnull
   · -- Without completeness every Bochner integral valued in `E` vanishes.
     rw [integral_eq_sum_support]
