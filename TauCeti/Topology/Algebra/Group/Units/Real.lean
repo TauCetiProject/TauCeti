@@ -40,7 +40,7 @@ theorem isPreconnected_posSubgroup_real :
       apply ContinuousAt.congr_of_eventuallyEq
         ((continuousAt_inv₀ x.2.ne').comp continuous_subtype_val.continuousAt)
       filter_upwards [] with y
-      rfl
+      simp [f, Units.val_inv_eq_inv_val]
   let hpreIoi : PreconnectedSpace (Set.Ioi (0 : ℝ)) :=
     Subtype.preconnectedSpace isPreconnected_Ioi
   have himage : f '' (Set.univ : Set (Set.Ioi (0 : ℝ))) =
@@ -56,13 +56,10 @@ theorem isPreconnected_posSubgroup_real :
       refine ⟨x, mem_univ _, ?_⟩
       apply Subtype.ext
       simp [f, x]
-  let hprePos : PreconnectedSpace (Units.posSubgroup ℝ) := by
-    refine ⟨?_⟩
-    have h := (@PreconnectedSpace.isPreconnected_univ (Set.Ioi (0 : ℝ)) _ hpreIoi).image
-      f hf.continuousOn
-    rw [himage] at h
-    exact h
-  exact isPreconnected_iff_preconnectedSpace.mpr hprePos
+  exact isPreconnected_iff_preconnectedSpace.mpr ⟨by
+    rw [← himage]
+    exact (@PreconnectedSpace.isPreconnected_univ (Set.Ioi (0 : ℝ)) _ hpreIoi).image
+      f hf.continuousOn⟩
 
 /-- The positive real units are the identity component of the real unit group. -/
 theorem connectedComponentOfOne_real :

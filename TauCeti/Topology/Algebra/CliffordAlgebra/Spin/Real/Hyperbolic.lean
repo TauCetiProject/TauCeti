@@ -32,16 +32,7 @@ theorem range_spinToSpecialOrthogonal_hyperbolicPlane_real :
     (CliffordAlgebra.spinToSpecialOrthogonal (hyperbolicPlane ℝ)).range =
       Subgroup.connectedComponentOfOne (specialOrthogonalGroup (hyperbolicPlane ℝ)) := by
   rw [CliffordAlgebra.range_spinToSpecialOrthogonal_hyperbolicPlane,
-    connectedComponentOfOne_specialOrthogonalGroup_hyperbolicPlane]
-  ext g
-  constructor
-  · intro hg
-    rw [Subgroup.mem_map] at hg ⊢
-    obtain ⟨t, ht, rfl⟩ := hg
-    exact ⟨t, (Units.isSquare_iff_pos t).mp ht, rfl⟩
-  · intro hg
-    rw [Subgroup.mem_map] at hg ⊢
-    obtain ⟨t, ht, rfl⟩ := hg
-    exact ⟨t, (Units.isSquare_iff_pos t).mpr ht, rfl⟩
+    connectedComponentOfOne_specialOrthogonalGroup_hyperbolicPlane,
+    Units.square_eq_posSubgroup_real]
 
 end TauCeti

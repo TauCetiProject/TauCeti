@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.Group.Subgroup
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 
 import Mathlib.Topology.Algebra.OpenSubgroup
 
@@ -155,6 +156,20 @@ theorem _root_.Subgroup.map_connectedComponentOfOne_le {G' : Type*} [Group G']
   rintro _ ⟨g, hg, rfl⟩
   have h := hf.mapsTo_connectedComponent 1 hg
   rwa [map_one] at h
+
+/-- A continuous multiplicative equivalence maps identity components onto each other. -/
+theorem _root_.ContinuousMulEquiv.map_connectedComponentOfOne {G' : Type*} [Group G']
+    [TopologicalSpace G'] [IsTopologicalGroup G'] (e : G ≃ₜ* G') :
+    (Subgroup.connectedComponentOfOne G).map e.toMulEquiv.toMonoidHom =
+      Subgroup.connectedComponentOfOne G' := by
+  apply le_antisymm
+  · exact Subgroup.map_connectedComponentOfOne_le e.continuous_toFun
+  · intro g hg
+    have h := e.continuous_invFun.mapsTo_connectedComponent 1 hg
+    refine ⟨e.invFun g, ?_, ?_⟩
+    · change e.invFun g ∈ connectedComponent (1 : G)
+      simpa using h
+    · exact e.apply_symm_apply g
 
 open scoped Pointwise in
 /-- The quotient of a topological group by its identity component is totally disconnected. -/

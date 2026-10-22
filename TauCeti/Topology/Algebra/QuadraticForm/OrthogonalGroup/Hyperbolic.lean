@@ -130,25 +130,13 @@ theorem connectedComponentOfOne_specialOrthogonalGroup_hyperbolicPlane :
     Subgroup.connectedComponentOfOne (specialOrthogonalGroup (hyperbolicPlane ℝ)) =
       (Units.posSubgroup ℝ).map (hyperbolicTorus ℝ) := by
   let e := hyperbolicTorusContinuousMulEquiv ℝ
-  apply le_antisymm
-  · intro g hg
-    have hback := Subgroup.map_connectedComponentOfOne_le
-      (f := e.symm.toMulEquiv.toMonoidHom) e.continuous_invFun
-    have hu : e.symm g ∈ Subgroup.connectedComponentOfOne ℝˣ := by
-      apply hback
-      refine ⟨g, hg, ?_⟩
-      exact rfl
-    rw [Units.connectedComponentOfOne_real] at hu
-    refine ⟨e.symm g, hu, ?_⟩
-    simpa [e] using e.apply_symm_apply g
-  · intro g hg
-    obtain ⟨u, hu, rfl⟩ := hg
-    have hforward := Subgroup.map_connectedComponentOfOne_le
-      (f := e.toMulEquiv.toMonoidHom) e.continuous_toFun
-    rw [Units.connectedComponentOfOne_real] at hforward
-    apply hforward
-    refine ⟨u, hu, ?_⟩
-    simp [e]
+  rw [← ContinuousMulEquiv.map_connectedComponentOfOne e, Units.connectedComponentOfOne_real]
+  ext g
+  constructor
+  · rintro ⟨u, hu, rfl⟩
+    exact ⟨u, hu, by simp [e]⟩
+  · rintro ⟨u, hu, rfl⟩
+    exact ⟨u, hu, by simp [e]⟩
 
 /-! ### Worked examples over `ℝ` -/
 
