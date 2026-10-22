@@ -38,7 +38,7 @@ with every multivector: `ι m * x = involute x * ι m`.  Together with the grade
 `CliffordAlgebra.contractLeft_mul`, these say that a contraction is an odd derivation of degree
 `-1` of the graded-commutative exterior algebra. On a wedge product of vectors it is the alternating
 sum of deletions (`TauCeti.ExteriorAlgebra.contractLeft_ιMulti`), and it is natural along
-`ExteriorAlgebra.map` (`TauCeti.ExteriorAlgebra.contractLeft_map`). Dually, exterior
+`ExteriorAlgebra.map` (`ExteriorAlgebra.contractLeft_map`). Dually, exterior
 multiplication by a vector raises the degree by one (`TauCeti.ExteriorAlgebra.wedgeLeft`). These
 are the differential and the homotopy of the Koszul complex.
 -/
@@ -469,19 +469,6 @@ theorem contractLeft_ιMulti (d : Module.Dual R M) {n : ℕ} (v : Fin (n + 1) �
     simp [hrem, pow_succ, sub_eq_add_neg, Matrix.vecTail, Fin.tail,
       Function.comp_def]
 
-/-- **Contraction is natural in the module**: if `d' ∘ f = d`, then contracting by `d'` after
-`ExteriorAlgebra.map f` is `ExteriorAlgebra.map f` after contracting by `d`. -/
-theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] {f : M →ₗ[R] N}
-    {d : Module.Dual R M} {d' : Module.Dual R N} (h : d' ∘ₗ f = d) (x : ExteriorAlgebra R M) :
-    contractLeft (Q := (0 : QuadraticForm R N)) d' (ExteriorAlgebra.map f x) =
-      ExteriorAlgebra.map f (contractLeft (Q := (0 : QuadraticForm R M)) d x) := by
-  induction x using CliffordAlgebra.left_induction with
-  | algebraMap r => rw [AlgHom.commutes, contractLeft_algebraMap, contractLeft_algebraMap, map_zero]
-  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
-  | ι_mul x m hx =>
-    rw [map_mul, ExteriorAlgebra.map_apply_ι, contractLeft_ι_mul, contractLeft_ι_mul, hx, map_sub,
-      map_smul, map_mul, ExteriorAlgebra.map_apply_ι, ← h, LinearMap.comp_apply]
-
 end TauCeti.ExteriorAlgebra
 
 namespace ExteriorAlgebra
@@ -500,5 +487,18 @@ theorem ι_mul_eq_involute_mul (m : M) (x : ExteriorAlgebra R M) :
     exact ExteriorAlgebra.ι_add_mul_swap m v
   | mul x y hx hy => rw [← mul_assoc, hx, mul_assoc, hy, map_mul, mul_assoc]
   | add x y hx hy => rw [mul_add, hx, hy, map_add, add_mul]
+
+/-- **Contraction is natural in the module**: if `d' ∘ f = d`, then contracting by `d'` after
+`ExteriorAlgebra.map f` is `ExteriorAlgebra.map f` after contracting by `d`. -/
+theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] {f : M →ₗ[R] N}
+    {d : Module.Dual R M} {d' : Module.Dual R N} (h : d' ∘ₗ f = d) (x : ExteriorAlgebra R M) :
+    contractLeft (Q := (0 : QuadraticForm R N)) d' (ExteriorAlgebra.map f x) =
+      ExteriorAlgebra.map f (contractLeft (Q := (0 : QuadraticForm R M)) d x) := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r => rw [AlgHom.commutes, contractLeft_algebraMap, contractLeft_algebraMap, map_zero]
+  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
+  | ι_mul x m hx =>
+    rw [map_mul, ExteriorAlgebra.map_apply_ι, contractLeft_ι_mul, contractLeft_ι_mul, hx, map_sub,
+      map_smul, map_mul, ExteriorAlgebra.map_apply_ι, ← h, LinearMap.comp_apply]
 
 end ExteriorAlgebra
