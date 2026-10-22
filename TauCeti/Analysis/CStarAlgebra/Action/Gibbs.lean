@@ -89,18 +89,20 @@ theorem Matrix.IsHermitian.isKMSState_gibbsState (hK : K.IsHermitian) (β : ℝ)
   · -- the KMS identity reduces to the invariance of the trace under conjugation
     rw [selfAdjoint.entireExtension_cstarAction_mul_I, hK.gibbsState_apply,
       hK.gibbsState_apply]
-    -- normalise the scalar negation in the imaginary-time evolution
+    -- normalise the scalar negation, then read the real scalars as complex ones
     simp only [neg_smul]
+    rw [← Complex.coe_smul]
     congr 1
     -- trace cyclicity for `P = exp (-βK)` and `Q = exp (βK)`
-    calc (NormedSpace.exp (-(β • K)) * (a * (NormedSpace.exp (-(β • K)) * b *
-            NormedSpace.exp (β • K)))).trace
-        = (NormedSpace.exp (-(β • K)) * (a * (NormedSpace.exp (-(β • K)) * b)) *
-            NormedSpace.exp (β • K)).trace := by simp only [Matrix.mul_assoc]
-      _ = (a * (NormedSpace.exp (-(β • K)) * b)).trace :=
-          trace_exp_neg_smul_mul_exp_smul K β _
-      _ = (NormedSpace.exp (-(β • K)) * (b * a)).trace := by
-          rw [Matrix.trace_mul_comm a (NormedSpace.exp (-(β • K)) * b), Matrix.mul_assoc]
+    calc (NormedSpace.exp (-((β : ℂ) • K)) * (a * (NormedSpace.exp (-((β : ℂ) • K)) * b *
+            NormedSpace.exp ((β : ℂ) • K)))).trace
+        = (NormedSpace.exp (-((β : ℂ) • K)) *
+            (a * (NormedSpace.exp (-((β : ℂ) • K)) * b)) *
+            NormedSpace.exp ((β : ℂ) • K)).trace := by simp only [Matrix.mul_assoc]
+      _ = (a * (NormedSpace.exp (-((β : ℂ) • K)) * b)).trace :=
+          trace_exp_neg_smul_mul_exp_smul K (β : ℂ) _
+      _ = (NormedSpace.exp (-((β : ℂ) • K)) * (b * a)).trace := by
+          rw [Matrix.trace_mul_comm a (NormedSpace.exp (-((β : ℂ) • K)) * b), Matrix.mul_assoc]
 
 /-- **Uniqueness of the KMS state.** A state is a β-KMS state for the time evolution generated
 by a Hermitian matrix `K` exactly when it is the Gibbs state, for every real `β`. -/
@@ -114,38 +116,43 @@ theorem Matrix.IsHermitian.isKMSState_iff_eq_gibbsState (hK : K.IsHermitian) (β
   obtain ⟨ρ, hρ, -⟩ := ω.toLinearMap.existsUnique_trace_mul_eq
   replace hρ (x : Matrix m m ℂ) : ω x = (ρ * x).trace := by simpa using hρ x
   have hcentral (a b : Matrix m m ℂ) :
-      (NormedSpace.exp (β • K) * ρ * a * b).trace =
-        (NormedSpace.exp (β • K) * ρ * b * a).trace := by
+      (NormedSpace.exp ((β : ℂ) • K) * ρ * a * b).trace =
+        (NormedSpace.exp ((β : ℂ) • K) * ρ * b * a).trace := by
     -- the KMS identity with the first factor multiplied by `exp (β • K)`
     have h := hkms (a * NormedSpace.exp (β • K)) b
     rw [selfAdjoint.entireExtension_cstarAction_mul_I, hρ, hρ] at h
-    -- cancel the exponential weights in the middle of the product
-    simp only [Matrix.mul_assoc, neg_smul, exp_smul_mul_exp_neg_smul_mul] at h
+    -- read the real scalars as complex ones, then cancel the weights in the middle
+    simp only [neg_smul] at h
+    rw [← Complex.coe_smul] at h
+    simp only [Matrix.mul_assoc, exp_smul_mul_exp_neg_smul_mul] at h
     -- cycle the exponential weight to the end of each product and read off `h`
     simp only [Matrix.mul_assoc]
-    calc (NormedSpace.exp (β • K) * (ρ * (a * b))).trace
-        = ((ρ * (a * b)) * NormedSpace.exp (β • K)).trace := Matrix.trace_mul_comm _ _
-      _ = (ρ * (a * (b * NormedSpace.exp (β • K)))).trace := by simp only [Matrix.mul_assoc]
-      _ = (ρ * (b * (a * NormedSpace.exp (β • K)))).trace := h
-      _ = ((ρ * (b * a)) * NormedSpace.exp (β • K)).trace := by simp only [Matrix.mul_assoc]
-      _ = (NormedSpace.exp (β • K) * (ρ * (b * a))).trace := Matrix.trace_mul_comm _ _
+    calc (NormedSpace.exp ((β : ℂ) • K) * (ρ * (a * b))).trace
+        = ((ρ * (a * b)) * NormedSpace.exp ((β : ℂ) • K)).trace := Matrix.trace_mul_comm _ _
+      _ = (ρ * (a * (b * NormedSpace.exp ((β : ℂ) • K)))).trace := by
+          simp only [Matrix.mul_assoc]
+      _ = (ρ * (b * (a * NormedSpace.exp ((β : ℂ) • K)))).trace := h
+      _ = ((ρ * (b * a)) * NormedSpace.exp ((β : ℂ) • K)).trace := by
+          simp only [Matrix.mul_assoc]
+      _ = (NormedSpace.exp ((β : ℂ) • K) * (ρ * (b * a))).trace := Matrix.trace_mul_comm _ _
   obtain ⟨c, hc⟩ := (Matrix.mem_range_scalar_iff_trace_mul_mul_comm
-    (M := NormedSpace.exp (β • K) * ρ)).mpr hcentral
+    (M := NormedSpace.exp ((β : ℂ) • K) * ρ)).mpr hcentral
   -- a scalar `exp (βK) ρ` forces `ρ` to be a multiple of `exp (-βK)`
-  have hQρ : NormedSpace.exp (β • K) * ρ = c • 1 := by
+  have hQρ : NormedSpace.exp ((β : ℂ) • K) * ρ = c • 1 := by
     rw [← hc, Matrix.scalar_apply, ← Matrix.smul_one_eq_diagonal]
-  have hEρ : ρ = c • NormedSpace.exp (-(β • K)) := by
-    calc ρ = NormedSpace.exp (-(β • K)) * NormedSpace.exp (β • K) * ρ := by
+  have hEρ : ρ = c • NormedSpace.exp (-((β : ℂ) • K)) := by
+    calc ρ = NormedSpace.exp (-((β : ℂ) • K)) * NormedSpace.exp ((β : ℂ) • K) * ρ := by
           rw [exp_neg_smul_mul_exp_smul, Matrix.one_mul]
-      _ = c • NormedSpace.exp (-(β • K)) := by
+      _ = c • NormedSpace.exp (-((β : ℂ) • K)) := by
           rw [Matrix.mul_assoc, hQρ, Matrix.mul_smul, Matrix.mul_one]
   have hω1 : ω 1 = 1 := by
     have h1 := PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one ω
     rw [hnorm] at h1
     exact_mod_cast h1.symm
-  have hc1 : c * (NormedSpace.exp (-(β • K))).trace = 1 := by
+  have hc1 : c * (NormedSpace.exp (-((β : ℂ) • K))).trace = 1 := by
     rw [← hω1, hρ, Matrix.mul_one, hEρ, Matrix.trace_smul, smul_eq_mul]
   ext x
-  rw [hK.gibbsState_apply, hρ, hEρ, Matrix.smul_mul, Matrix.trace_smul, smul_eq_mul]
+  rw [hK.gibbsState_apply, ← Complex.coe_smul, hρ, hEρ, Matrix.smul_mul, Matrix.trace_smul,
+    smul_eq_mul]
   -- the normalisation constant is `(Tr (exp (-βK)))⁻¹`
   rw [eq_inv_of_mul_eq_one_left hc1, div_eq_inv_mul]

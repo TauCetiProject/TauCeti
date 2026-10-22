@@ -11,16 +11,16 @@ public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.LinearAlgebra.Matrix.Trace
 
 /-!
-# The exponential of a Hermitian complex matrix
+# The exponential of a matrix
 
-Real multiples of a fixed complex matrix commute, so their exponential is multiplicative,
-`Matrix.exp_add_smul`, and `exp (β • K)` is the inverse of `exp (-(β • K))`,
-`Matrix.exp_smul_mul_exp_neg_smul`. These cancellation laws also hold against an arbitrary factor,
-`Matrix.exp_smul_mul_exp_neg_smul_mul`, and conjugating by the two weights does not change the
-trace, `Matrix.trace_exp_neg_smul_mul_exp_smul`.
+Over an `RCLike` field `𝕜`, scalar multiples of a fixed matrix commute, so their exponential is
+multiplicative, `Matrix.exp_add_smul`, and `exp (β • K)` is the inverse of `exp (-(β • K))`,
+`Matrix.exp_smul_mul_exp_neg_smul`, also against an arbitrary factor,
+`Matrix.exp_smul_mul_exp_neg_smul_mul`. Conjugating by the two weights does not change the trace,
+`Matrix.trace_exp_neg_smul_mul_exp_smul`.
 
-For a Hermitian matrix `K` the exponential `exp (β • K)` of a real multiple is again Hermitian,
-`Matrix.IsHermitian.exp_smul`, and has positive trace,
+For a Hermitian complex matrix `K`, the exponential `exp (β • K)` of a real multiple is again
+Hermitian, `Matrix.IsHermitian.exp_smul`, and has positive trace,
 `Matrix.IsHermitian.trace_exp_smul_pos`. Hence `x ↦ Tr (exp (β • K) * x)` is a positive
 functional, `Matrix.IsHermitian.trace_exp_smul_mul_nonneg`, the unnormalised Gibbs functional of
 a matrix Hamiltonian at inverse temperature `-β`.
@@ -48,42 +48,56 @@ public section
 
 noncomputable section
 
-open Complex NormedSpace
+open NormedSpace
 open scoped ComplexOrder MatrixOrder
 
 namespace Matrix
 
 variable {m : Type*} [Fintype m] [DecidableEq m]
 
-/-- The exponential of real multiples of a fixed matrix is multiplicative:
+section RCLike
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+
+/-- The exponential of multiples of a fixed matrix is multiplicative:
 `exp ((s + t) • K) = exp (s • K) * exp (t • K)`. -/
-theorem exp_add_smul (K : Matrix m m ℂ) (s t : ℝ) :
+theorem exp_add_smul (K : Matrix m m 𝕜) (s t : 𝕜) :
     exp ((s + t) • K) = exp (s • K) * exp (t • K) := by
   rw [add_smul, exp_add_of_commute _ _ (((Commute.refl K).smul_left _).smul_right _)]
 
 /-- The exponential weight `exp (β • K)` cancels against `exp (-(β • K))`. -/
 @[simp]
-theorem exp_smul_mul_exp_neg_smul (K : Matrix m m ℂ) (β : ℝ) :
+theorem exp_smul_mul_exp_neg_smul (K : Matrix m m 𝕜) (β : 𝕜) :
     exp (β • K) * exp (-(β • K)) = 1 := by
   rw [← neg_smul, ← exp_add_smul, add_neg_cancel, zero_smul, NormedSpace.exp_zero]
 
 /-- The exponential weight `exp (-(β • K))` cancels against `exp (β • K)`. -/
 @[simp]
-theorem exp_neg_smul_mul_exp_smul (K : Matrix m m ℂ) (β : ℝ) :
+theorem exp_neg_smul_mul_exp_smul (K : Matrix m m 𝕜) (β : 𝕜) :
     exp (-(β • K)) * exp (β • K) = 1 := by
   rw [← neg_smul, ← exp_add_smul, neg_add_cancel, zero_smul, NormedSpace.exp_zero]
 
 /-- Cancellation of the exponential weights against an arbitrary factor. -/
 @[simp]
-theorem exp_smul_mul_exp_neg_smul_mul (K : Matrix m m ℂ) (β : ℝ) (x : Matrix m m ℂ) :
+theorem exp_smul_mul_exp_neg_smul_mul (K : Matrix m m 𝕜) (β : 𝕜) (x : Matrix m m 𝕜) :
     exp (β • K) * (exp (-(β • K)) * x) = x := by
   rw [← Matrix.mul_assoc, exp_smul_mul_exp_neg_smul, Matrix.one_mul]
 
 /-- Conjugating by the exponential weights preserves the trace. -/
 @[simp]
-theorem trace_exp_neg_smul_mul_exp_smul (K : Matrix m m ℂ) (β : ℝ) (x : Matrix m m ℂ) :
+theorem trace_exp_neg_smul_mul_exp_smul (K : Matrix m m 𝕜) (β : 𝕜) (x : Matrix m m 𝕜) :
     (exp (-(β • K)) * x * exp (β • K)).trace = x.trace := by
   rw [Matrix.trace_mul_comm (exp (-(β • K)) * x) (exp (β • K)), exp_smul_mul_exp_neg_smul_mul]
+
+end RCLike
+
+/-- The real-scalar form of `Matrix.exp_add_smul` for complex matrices, used by the Hermitian
+lemmas below: `exp (β • K)` is the square of `exp ((β / 2) • K)`. -/
+private theorem exp_smul_eq_mul_exp_half (K : Matrix m m ℂ) (β : ℝ) :
+    NormedSpace.exp (β • K) =
+      NormedSpace.exp ((β / 2) • K) * NormedSpace.exp ((β / 2) • K) := by
+  conv_lhs => rw [← add_halves β, add_smul]
+  exact Matrix.exp_add_of_commute _ _ (((Commute.refl K).smul_left _).smul_right _)
 
 namespace IsHermitian
 
@@ -98,8 +112,7 @@ theorem trace_exp_smul_mul_nonneg (hK : K.IsHermitian) (β : ℝ) {x : Matrix m 
     (hx : 0 ≤ x) : 0 ≤ (NormedSpace.exp (β • K) * x).trace := by
   have hF : star (NormedSpace.exp ((β / 2) • K)) = NormedSpace.exp ((β / 2) • K) :=
     (exp_smul hK _).eq
-  rw [← add_halves β, Matrix.exp_add_smul, Matrix.mul_assoc, Matrix.trace_mul_comm,
-    Matrix.mul_assoc]
+  rw [exp_smul_eq_mul_exp_half K β, Matrix.mul_assoc, Matrix.trace_mul_comm, Matrix.mul_assoc]
   refine Matrix.PosSemidef.trace_nonneg (Matrix.nonneg_iff_posSemidef.mp ?_)
   simpa [hF, Matrix.mul_assoc] using
     star_left_conjugate_nonneg hx (NormedSpace.exp ((β / 2) • K))
@@ -112,7 +125,7 @@ theorem trace_exp_smul_pos (hK : K.IsHermitian) (β : ℝ) :
     0 < (NormedSpace.exp (β • K)).trace := by
   have h := Matrix.PosDef.conjTranspose_mul_self (NormedSpace.exp ((β / 2) • K))
     (Matrix.mulVec_injective_iff_isUnit.mpr (Matrix.isUnit_exp _))
-  rw [(exp_smul hK _).eq, ← Matrix.exp_add_smul, add_halves] at h
+  rw [(exp_smul hK _).eq, ← exp_smul_eq_mul_exp_half K β] at h
   exact h.trace_pos
 
 end IsHermitian
