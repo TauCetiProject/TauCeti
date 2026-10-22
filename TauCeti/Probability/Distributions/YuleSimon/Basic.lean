@@ -70,6 +70,10 @@ def yuleSimonWeight (ρ : ℝ) (k : ℕ) : ℝ≥0∞ :=
 theorem yuleSimonWeightReal_def (ρ : ℝ) (k : ℕ) :
     yuleSimonWeightReal ρ k = ρ * beta k (ρ + 1) := (rfl)
 
+/-- The `ℝ≥0∞`-valued Yule–Simon mass is the `ENNReal.ofReal` of the real mass. -/
+theorem yuleSimonWeight_def (ρ : ℝ) (k : ℕ) :
+    yuleSimonWeight ρ k = ENNReal.ofReal (yuleSimonWeightReal ρ k) := (rfl)
+
 /-- Every Yule–Simon mass is finite. -/
 @[simp]
 theorem yuleSimonWeight_ne_top (ρ : ℝ) (k : ℕ) : yuleSimonWeight ρ k ≠ ∞ :=
