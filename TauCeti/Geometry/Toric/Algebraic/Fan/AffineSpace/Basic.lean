@@ -25,6 +25,7 @@ character `b.coord j` is nonnegative on the orthant but negative at `-b j`.
 ## Main declarations
 
 * `TauCeti.Toric.Fan.affineSpace`: the fan of affine space.
+* `TauCeti.Toric.Fan.affineSpaceMaximalCone`: its maximal cone, the positive orthant.
 * `TauCeti.Toric.Fan.isRegular_affineSpace`: it is regular.
 * `TauCeti.Toric.Fan.affineSpace_eq_subfan`: it is the open subfan of the fan of projective
   space formed by the faces of the maximal cone omitting the extra ray.
@@ -55,6 +56,11 @@ noncomputable abbrev affineSpace (hi : IsIntegralLattice i) : Fan i :=
 theorem mem_affineSpace_cones (hi : IsIntegralLattice i) {σ : PointedCone ℝ V} :
     σ ∈ (affineSpace b hi).cones ↔ σ.IsFaceOf (PointedCone.hull ℝ (range fun j ↦ i (b j))) := by
   rw [mem_ofCone_cones, projectiveSpaceCone_compl_none]
+
+/-- The positive orthant, as the maximal cone of the fan of affine space: every cone of the fan
+is a face of it. -/
+noncomputable abbrev affineSpaceMaximalCone (hi : IsIntegralLattice i) : (affineSpace b hi).cones :=
+  ⟨projectiveSpaceCone b i {none}ᶜ, (mem_ofCone_cones hi _).2 (.refl _)⟩
 
 /-- The support of the fan of affine space is the positive orthant. -/
 theorem support_affineSpace (hi : IsIntegralLattice i) :
