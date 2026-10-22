@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.Spectrum
 public import TauCeti.Analysis.Sobolev.Circle.Algebra
 public import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 public import Mathlib.Analysis.Normed.Algebra.Spectrum
@@ -176,6 +177,24 @@ private theorem algHom_single_one (φ : CircleSobolev s A →ₐ[ℂ] ℂ) (n : 
     rw [map_mul, sub_add_cancel, mul_one, ih] at h
     rw [zpow_sub_one₀ hne, ← h, mul_inv_cancel_right₀ hne]
 
+/-- A real number whose natural powers grow at most polynomially is at most `1`: otherwise
+`r ^ x = exp (log r * x)` with `log r > 0` outgrows every power of `1 + x`. -/
+private theorem le_one_of_forall_pow_le_mul_rpow {r C s : ℝ}
+    (h : ∀ n : ℕ, r ^ n ≤ C * (1 + n) ^ s) : r ≤ 1 := by
+  by_contra! h1
+  have h0 : 0 < r := zero_lt_one.trans h1
+  have hlim : Tendsto (fun n : ℕ ↦ C * r * ((1 + n) ^ s / r ^ (1 + (n : ℝ)))) atTop (𝓝 0) := by
+    simpa [Real.rpow_def_of_pos h0] using
+      (((isLittleO_rpow_exp_pos_mul_atTop s (Real.log_pos h1)).comp_tendsto
+        (tendsto_atTop_add_const_left _ 1 tendsto_natCast_atTop_atTop)).tendsto_div_nhds_zero
+          ).const_mul (C * r)
+  obtain ⟨n, hn⟩ := (hlim.eventually (gt_mem_nhds one_pos)).exists
+  refine hn.not_ge ?_
+  rw [Real.rpow_add h0, Real.rpow_one, Real.rpow_natCast, mul_div_assoc',
+    le_div_iff₀ (by positivity), one_mul]
+  calc r * r ^ n ≤ r * (C * (1 + n) ^ s) := by gcongr; exact h n
+    _ = C * r * (1 + n) ^ s := by ring
+
 /-- An algebra homomorphism `φ : H^s(A) → ℂ` takes a value of modulus one on `e^{iθ}`: `φ` is
 bounded, while the norms `‖e^{inθ}‖ = (1 + |n|) ^ s` of the monomials grow only polynomially in
 `n ∈ ℤ`. -/
@@ -188,26 +207,8 @@ private theorem norm_algHom_single_one (φ : CircleSobolev s A →ₐ[ℂ] ℂ) 
           rw [← norm_zpow, algHomCLM_apply, algHom_single_one]
       _ ≤ ‖algHomCLM φ‖ * ‖single (s := s) n (1 : A)‖ := (algHomCLM φ).le_opNorm _
       _ = _ := by rw [norm_single, weight_def]; ring
-  -- A number whose powers grow at most polynomially is at most `1`: otherwise `r ^ n = e ^ (b n)`
-  -- with `b = log r > 0`, which outgrows `C (1 + n) ^ s`.
-  have hle {r : ℝ} (h : ∀ n : ℕ, r ^ n ≤ C * (1 + n) ^ s) : r ≤ 1 := by
-    by_contra! h1
-    set b := Real.log r
-    have hb : 0 < b := Real.log_pos h1
-    have hlim : Tendsto (fun n : ℕ ↦ C * Real.exp b * ((1 + n) ^ s * Real.exp (-b * (1 + n))))
-        atTop (𝓝 0) := by
-      simpa using ((tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero s b hb).comp
-        (tendsto_atTop_add_const_left _ 1 tendsto_natCast_atTop_atTop)).const_mul (C * Real.exp b)
-    obtain ⟨n, hn⟩ := (hlim.eventually (gt_mem_nhds one_pos)).exists
-    refine hn.not_ge ?_
-    calc (1 : ℝ) = r ^ n * Real.exp (-b * n) := by
-          rw [← Real.exp_log (pow_pos (zero_lt_one.trans h1) n), Real.log_pow, ← Real.exp_add,
-            show (n : ℝ) * b + -b * n = 0 by ring, Real.exp_zero]
-      _ ≤ C * (1 + n) ^ s * Real.exp (-b * n) := by gcongr; exact h n
-      _ = C * Real.exp b * ((1 + n) ^ s * Real.exp (-b * (1 + n))) := by
-          rw [show -b * (n : ℝ) = b + -b * (1 + n) by ring, Real.exp_add]; ring
-  refine le_antisymm (hle fun n ↦ by simpa using hbound n) ?_
-  have := hle (r := ‖w‖⁻¹) fun n ↦ by simpa using hbound (-n)
+  refine le_antisymm (le_one_of_forall_pow_le_mul_rpow fun n ↦ by simpa using hbound n) ?_
+  have := le_one_of_forall_pow_le_mul_rpow (r := ‖w‖⁻¹) fun n ↦ by simpa using hbound (-n)
   exact (inv_le_one₀ (norm_pos_iff.2 (algHom_single_one_ne_zero φ))).1 this
 
 variable (T : ℝ) [Fact (0 < T)]
@@ -302,11 +303,9 @@ theorem toContinuousMap_ringInverse (a : CircleSobolev s A) :
 /-- An element of `H^s(A)` and its continuous representative have the same spectrum. -/
 @[simp]
 theorem spectrum_toContinuousMap (a : CircleSobolev s A) :
-    spectrum ℂ (toContinuousMap T hs.out a) = spectrum ℂ a := by
-  ext z
-  have hz := (toContinuousMapAlgHom (s := s) (A := A) T).commutes z
-  rw [coe_toContinuousMapAlgHom] at hz
-  simp only [spectrum.mem_iff, ← isUnit_toContinuousMap_iff T, map_sub, hz]
+    spectrum ℂ (toContinuousMap T hs.out a) = spectrum ℂ a :=
+  coe_toContinuousMapAlgHom (s := s) (A := A) T ▸
+    AlgHom.spectrum_apply_eq (toContinuousMapAlgHom T) a
 
 end NormedCommRing
 
