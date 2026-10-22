@@ -110,17 +110,9 @@ theorem Connected.isBond_edgeCut_iff (hG : G.Connected) (hS : S ⊆ V(G)) :
 that subgraph. -/
 theorem IsBond.subset_edgeSet_of_isClosedSubgraph (hB : G.IsBond B) (hHG : H ≤c G)
     (heB : e ∈ B) (heH : e ∈ E(H)) : B ⊆ E(H) := by
-  obtain ⟨S, -, rfl⟩ := hB.isEdgeCut.exists_edgeCut
-  have hsub : G.edgeCut (S ∩ V(H)) ⊆ G.edgeCut S := by
-    intro f hf
-    obtain ⟨x, y, hxy, ⟨hxS, hxH⟩, hy⟩ := mem_edgeCut_iff.mp hf
-    exact mem_edgeCut_iff.mpr
-      ⟨x, y, hxy, hxS, fun hyS ↦ hy ⟨hyS, (hHG.mem_iff_of_isLink hxy).mp hxH⟩⟩
-  obtain ⟨x, y, hxy, hxS, hyS⟩ := mem_edgeCut_iff.mp heB
-  have hne : (G.edgeCut (S ∩ V(H))).Nonempty := ⟨e, mem_edgeCut_iff.mpr
-    ⟨x, y, hxy, ⟨hxS, ((hHG.le.isLink_iff heH).mpr hxy).left_mem⟩, fun h ↦ hyS h.1⟩⟩
-  rw [← hB.eq_of_subset ⟨isEdgeCut_edgeCut _ _, hne⟩ hsub]
-  exact hHG.edgeCut_subset_edgeSet inter_subset_right
+  have h := hB.eq_of_subset ⟨(hB.isEdgeCut.inter_edgeSet_of_le hHG.le).of_isClosedSubgraph hHG,
+    e, heH, heB⟩ inter_subset_right
+  exact h ▸ inter_subset_left
 
 /-- A bond of `G` whose edges lie in a closed subgraph `H` is a bond of `H`. -/
 theorem IsBond.anti_of_isClosedSubgraph (hHG : H ≤c G) (hBH : B ⊆ E(H)) (hB : G.IsBond B) :
