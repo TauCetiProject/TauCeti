@@ -153,6 +153,7 @@ theorem evalAt_neg (f : R⟦X⟧) (b : A) : (-f).evalAt b = -f.evalAt b := by
 
 /-- The Hasse derivative of order `i` of `(X - a) ^ m` is `1` at `a` if `i = m`, and `0`
 otherwise. -/
+@[simp]
 theorem evalAt_hasseDeriv_X_sub_C_pow [TopologicalSpace R] (a : R) (i m : ℕ) :
     (hasseDeriv i ((X - C a) ^ m : R⟦X⟧)).evalAt a = if i = m then 1 else 0 := by
   have hP : ((X - C a) ^ m : R⟦X⟧) = ((Polynomial.X - Polynomial.C a) ^ m : Polynomial R) := by
