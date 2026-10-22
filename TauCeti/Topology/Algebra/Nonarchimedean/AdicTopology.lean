@@ -264,9 +264,7 @@ theorem map_of_isOpenQuotientMap {R S : Type*} [CommRing R] [CommRing S]
     IsAdic (I.map f) := by
   have hmap (n : ℕ) : (((I.map f) ^ n : Ideal S) : Set S) =
       f '' ((I ^ n : Ideal R) : Set R) := by
-    rw [← Ideal.map_pow]
-    ext y
-    exact Ideal.mem_map_iff_of_surjective f hf.surjective
+    rw [← Ideal.map_pow, Ideal.map_eq_image_of_surjective f hf.surjective]
   refine isAdic_iff.mpr ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
   · rw [hmap]
     exact hf.isOpenMap _ (hI.isOpen_pow n)
