@@ -23,9 +23,6 @@ Radon–Nikodym derivative against Euclidean volume.
 The density formula is totalized at every covariance parameter, but the density-measure
 identity requires positive definiteness. In particular, a zero log-covariance gives a Dirac
 law rather than a Lebesgue density in positive dimension.
-
-The proof uses Mathlib's `map_withDensity_abs_det_fderiv_eq_addHaar` and the weight-transport
-lemma `MeasureTheory.Measure.map_withDensity_eq_withDensity`.
 -/
 
 public section
@@ -173,6 +170,8 @@ against Euclidean volume. -/
 theorem multivariateLogNormalMeasure_eq_withDensity (m : EuclideanSpace ℝ ι)
     {S : Matrix ι ι ℝ} (hS : S.PosDef) :
     multivariateLogNormalMeasure m S = volume.withDensity (multivariateLogNormalPDF m S) := by
+  -- The proof uses Mathlib's `map_withDensity_abs_det_fderiv_eq_addHaar` and the weight-transport
+  -- lemma `MeasureTheory.Measure.map_withDensity_eq_withDensity`.
   let e : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι :=
     fun x ↦ WithLp.toLp 2 (fun i ↦ Real.exp (x i))
   have he : Measurable e := by fun_prop
