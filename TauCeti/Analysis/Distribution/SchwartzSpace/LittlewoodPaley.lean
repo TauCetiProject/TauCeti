@@ -25,9 +25,9 @@ of order `N` with constant `A`,
 
 then each piece is supported in `closedBall 0 (2^j φ.rOut)` and its derivatives satisfy the
 scale-invariant bounds `‖D^k (ψⱼ • m) ξ‖ ≤ C A 2^{-jk}` for `k ≤ N`, with `C` depending only on
-`φ` and `N`. On the annulus carrying `ψⱼ`, the Leibniz rule pairs the factor `2^{-ji}` from `i`
-derivatives of `ψⱼ` with the factor `‖ξ‖^{-(k-i)} ≈ 2^{-j(k-i)}` from the remaining derivatives
-of `m`.
+`φ` and `N`, uniformly over the normed real codomain of `m`. On the annulus carrying `ψⱼ`, the
+Leibniz rule pairs the factor `2^{-ji}` from `i` derivatives of `ψⱼ` with the factor
+`‖ξ‖^{-(k-i)} ≈ 2^{-j(k-i)}` from the remaining derivatives of `m`.
 
 This is the decomposition at the start of the proof of the Mihlin–Hörmander multiplier theorem:
 each piece is band-limited at scale `2^j` with derivative bounds independent of `j`, which is the
@@ -99,11 +99,13 @@ theorem coe_littlewoodPaleyPiece (hm : ContDiffOn ℝ ∞ m {0}ᶜ) (j : ℤ) :
     ⇑(φ.littlewoodPaleyPiece hm j) = fun ξ ↦ φ.littlewoodPaley j ξ • m ξ :=
   (rfl)
 
-/-- The piece `ψⱼ • m` is supported in the closed ball of radius `2^j φ.rOut`. -/
+/-- The piece `ψⱼ • m` is supported in the closed annulus
+`2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut`. -/
 theorem tsupport_littlewoodPaleyPiece_subset (hm : ContDiffOn ℝ ∞ m {0}ᶜ) (j : ℤ) :
-    tsupport (φ.littlewoodPaleyPiece hm j) ⊆ closedBall 0 (2 ^ j * φ.rOut) := by
-  refine (tsupport_smul_subset_left _ _).trans ((φ.tsupport_littlewoodPaley_subset j).trans ?_)
-  exact fun ξ hξ ↦ mem_closedBall_zero_iff.2 hξ.2
+    tsupport (φ.littlewoodPaleyPiece hm j) ⊆
+      {ξ | 2 ^ (j - 1) * φ.rIn ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ 2 ^ j * φ.rOut} := by
+  rw [coe_littlewoodPaleyPiece]
+  exact (tsupport_smul_subset_left _ _).trans (φ.tsupport_littlewoodPaley_subset j)
 
 /-- The partial sums of the pieces are the truncations
 `∑_{a < j ≤ b} ψⱼ • m = (φ (2^{-b} ·) - φ (2^{-a} ·)) • m`. -/
@@ -190,9 +192,10 @@ private lemma norm_iteratedFDeriv_littlewoodPaleyPiece_le (hm : ContDiffOn ℝ �
 Mihlin's condition of order `N` with constant `A ≥ 0`: `‖D^k m ξ‖ ≤ A / ‖ξ‖^k` for `k ≤ N` and
 `ξ ≠ 0`. Then every Littlewood–Paley piece `ψⱼ • m`, which is supported in
 `closedBall 0 (2^j φ.rOut)`, satisfies `‖D^k (ψⱼ • m) ξ‖ ≤ C A / 2^{jk}` for `k ≤ N`, where `C`
-depends only on `φ` and `N`. -/
+depends only on `φ` and `N`, uniformly over the normed real codomain of `m`. -/
 theorem exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le (N : ℕ) :
-    ∃ C, 0 ≤ C ∧ ∀ {m : E → F} (hm : ContDiffOn ℝ ∞ m {0}ᶜ) {A : ℝ}, 0 ≤ A →
+    ∃ C, 0 ≤ C ∧ ∀ {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+      {m : E → F} (hm : ContDiffOn ℝ ∞ m {0}ᶜ) {A : ℝ}, 0 ≤ A →
       (∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k m ξ‖ ≤ A / ‖ξ‖ ^ k) →
         ∀ (j : ℤ), ∀ k ≤ N, ∀ ξ,
           ‖iteratedFDeriv ℝ k (φ.littlewoodPaleyPiece hm j) ξ‖ ≤ C * A / (2 ^ j) ^ k := by
@@ -203,7 +206,7 @@ theorem exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le (N : ℕ) :
     have := φ.rIn_pos
     exact Finset.sum_nonneg fun i _ ↦ by have := hB0 i; positivity
   refine ⟨∑ k ∈ Finset.range (N + 1), c k, Finset.sum_nonneg fun k _ ↦ hc0 k,
-    fun hm A hA hmA j k hk ξ ↦ ?_⟩
+    fun {F} _ _ {m} hm {A} hA hmA j k hk ξ ↦ ?_⟩
   refine (φ.norm_iteratedFDeriv_littlewoodPaleyPiece_le hm hB0 hB hA
     (fun l hl ↦ hmA l (hl.trans hk)) j ξ).trans ?_
   gcongr
