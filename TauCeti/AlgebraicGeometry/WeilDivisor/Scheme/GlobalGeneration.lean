@@ -33,7 +33,7 @@ universe u
 noncomputable section
 
 variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
-  [IsIntegral X] [IsNoetherian X] [IsProper (X ↘ Spec (.of k))]
+  [IsIntegral X] [IsProper (X ↘ Spec (.of k))]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   (hdim : ∀ x : X, coheight x ≤ 1)
   (hF : IsFunctionField k X.functionField) (hk : IsIntegrallyClosedIn k X.functionField)
@@ -47,8 +47,16 @@ theorem exists_section_mem_nonvanishingLocus_of_high_degree (D : SchemeWeilDivis
     (y : CodimensionOnePoint X)
     (hD : 2 * (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) : ℤ) - 2 <
       relativeDegree (X ↘ Spec (.of k)) D - (X ↘ Spec (.of k)).residueDegree y) :
+    letI : IsLocallyNoetherian X :=
+      LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+    letI : CompactSpace X := compactSpace_of_universallyClosed (X ↘ Spec (.of k))
+    letI : IsNoetherian X := {}
     ∃ s : Γ((toInvertibleSheaf hdim D).obj, ⊤),
       (y : X) ∈ (toInvertibleSheaf hdim D).obj.nonvanishingLocus s := by
+  let : IsLocallyNoetherian X :=
+    LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have : CompactSpace X := compactSpace_of_universallyClosed (X ↘ Spec (.of k))
+  have : IsNoetherian X := {}
   let E := D - WeilDivisor.ofPoint y
   obtain ⟨g, hg⟩ := exists_orderAt_eq y (WeilDivisor.coeff E y + 1)
   rw [orderAt_apply] at hg
