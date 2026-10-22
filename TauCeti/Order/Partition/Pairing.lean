@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Group.Even
 public import Mathlib.Order.Partition.Finpartition
-import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
 /-!
 # Pair partitions
