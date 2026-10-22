@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Tan
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Levi.Centralizer
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Tangent.Weights
+public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Maximal
 
 /-!
 # Dynamic subgroups of cocharacters through a diagonalizable subgroup
@@ -39,6 +40,8 @@ maximality of the diagonalizable subgroup.
   `P_G(λ)`, `U_G(λ)` and `Z_G(λ)` in `D(X)`-weight spaces.
 * `BialgHom.leviDefiningHopfIdeal_cocharacter_le_kerOfSurjective`: a closed diagonalizable
   subgroup lies in `Z_G(λ)`.
+* `TauCeti.SplitMaximalTorus.leviDefiningHopfIdeal_cocharacter_le_definingIdeal`: the case of a
+  chosen split maximal torus `T`, with `π = T.coordinateMap.hom`.
 
 ## References
 
@@ -170,3 +173,19 @@ theorem lieSubalgebra_leviDefiningHopfIdeal_cocharacter_toSubmodule
 end LeviTangent
 
 end BialgHom
+
+namespace TauCeti.SplitMaximalTorus
+
+universe u
+
+variable {R : Type u} [CommRing R] {H : CommHopfAlgCat.{u} R} [Algebra.FiniteType R H] {r : ℕ}
+
+/-- A chosen split maximal torus lies in the dynamic Levi subgroup of each of its
+cocharacters. -/
+theorem leviDefiningHopfIdeal_cocharacter_le_definingIdeal (T : SplitMaximalTorus R H r)
+    (ψ : Multiplicative (ULift.{u} (Fin r) →₀ ℤ) →* Multiplicative ℤ) :
+    Cocharacter.leviDefiningHopfIdeal (T.coordinateMap.hom.cocharacter ψ) ≤ T.definingIdeal :=
+  fun _ hx ↦ (T.mem_definingIdeal _).mpr <| (HopfIdeal.mem_kerOfSurjective _ T.surjective).mp <|
+    BialgHom.leviDefiningHopfIdeal_cocharacter_le_kerOfSurjective _ T.surjective ψ hx
+
+end TauCeti.SplitMaximalTorus

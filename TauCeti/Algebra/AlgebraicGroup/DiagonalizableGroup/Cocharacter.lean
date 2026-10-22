@@ -72,22 +72,25 @@ theorem pointsHom_cocharacter (ψ : X →* Multiplicative ℤ) (u : Aˣ) :
       BialgHom.mapDomain π
         (DiagonalizableGroup.cocharPoints ψ
           ((DiagonalizableGroup.pointsMulEquiv (R := R)).symm (zpowersHom Aˣ u))) := by
-  have hQ : DiagonalizableGroup.cocharPoints ψ
-      ((DiagonalizableGroup.pointsMulEquiv (R := R)).symm (zpowersHom Aˣ u)) =
-        toConv (((laurentEval (R := R) u).comp
-          (AddMonoidAlgebra.toMultiplicativeAlgEquiv R R ℤ).symm.toAlgHom).comp
-            (MonoidAlgebra.mapDomainAlgHom R R ψ)) := by
+  -- The Laurent point `T ↦ u` of `𝔾ₘ` is the group-algebra point with character `zpowersHom u`.
+  have hG : BialgHom.mapDomain (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).symm.toBialgHom
+      (toConv (laurentEval (R := R) u)) =
+        (DiagonalizableGroup.pointsMulEquiv (R := R)).symm (zpowersHom Aˣ u) := by
     apply (DiagonalizableGroup.pointsMulEquiv (R := R) (A := A)).injective
-    refine MonoidHom.ext fun χ ↦ Units.ext ?_
-    rw [DiagonalizableGroup.pointsMulEquiv_cocharPoints, MulEquiv.apply_symm_apply,
-      DiagonalizableGroup.pointsMulEquiv_apply, DiagonalizableGroup.charOfPoint_apply_coe]
+    refine MonoidHom.ext_mint (Units.ext ?_)
+    simp [BialgHom.mapDomain_apply]
+  -- The cocharacter `ψ` of `D(X)` acts on points by precomposition with `R[ψ]`.
+  have hP : DiagonalizableGroup.cocharPoints ψ
+      ((DiagonalizableGroup.pointsMulEquiv (R := R)).symm (zpowersHom Aˣ u)) =
+        BialgHom.mapDomain (MonoidAlgebra.mapDomainBialgHom R ψ)
+          ((DiagonalizableGroup.pointsMulEquiv (R := R)).symm (zpowersHom Aˣ u)) := by
+    apply (DiagonalizableGroup.pointsMulEquiv (R := R) (A := A)).injective
+    refine MonoidHom.ext fun χ ↦ ?_
+    rw [DiagonalizableGroup.pointsMulEquiv_cocharPoints, ← DiagonalizableGroup.pointsMap,
+      DiagonalizableGroup.pointsMulEquiv_pointsMap]
     simp
-  rw [hQ, Cocharacter.pointsHom_apply, BialgHom.mapDomain_apply, BialgHom.mapDomain_apply]
-  -- Forgetting the bialgebra structure in `cocharacter` gives this same algebra composite:
-  -- `mapDomainBialgHom` retains `mapDomainAlgHom`, and `toMultiplicativeBialgEquiv` retains
-  -- `toMultiplicativeAlgEquiv`, including its inverse. Only the association of composition
-  -- differs, and both composites evaluate to the same function under `toConv`.
-  rfl
+  rw [Cocharacter.pointsHom_apply, cocharacter, BialgHom.mapDomain_comp, BialgHom.mapDomain_comp,
+    MonoidHom.comp_apply, MonoidHom.comp_apply, hG, hP]
 
 /-- The product of two cocharacters of `D(X)` acts on points as the product of their actions. -/
 theorem pointsHom_cocharacter_mul (ψ ψ' : X →* Multiplicative ℤ) (u : Aˣ) :
