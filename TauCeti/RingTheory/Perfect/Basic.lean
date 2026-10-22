@@ -52,18 +52,19 @@ theorem iterateFrobeniusEquiv_symm_dvd_of_le (x : R) {m n : ℕ} (h : m ≤ n) :
   rw [← iterateFrobeniusEquiv_symm_add_pow x m k]
   exact dvd_pow_self _ (pow_ne_zero _ (expChar_ne_zero R p))
 
-/-- In a perfect ring of exponential characteristic `p`, if `a` kills `b ^ p` then `a` kills `b`:
-the `p`-th power of `a * b` is a multiple of `a * b ^ p`, and Frobenius is injective. -/
+/-- In a perfect ring of exponential characteristic `p`, if `a` kills `b ^ p` then `a` kills
+`b`. -/
 theorem mul_eq_zero_of_mul_pow_p_eq_zero {a b : R} (h : a * b ^ p = 0) : a * b = 0 := by
+  -- The `p`-th power of `a * b` is a multiple of `a * b ^ p`, and Frobenius is injective.
   apply injective_frobenius R p
   rw [frobenius_def, map_zero, mul_pow, ← pow_sub_one_mul (expChar_ne_zero R p) a, mul_assoc, h,
     mul_zero]
 
-/-- If `c` kills the `p ^ n`-th root of `x`, then it kills the `p ^ (n + 1)`-th root of `x`: the
-`p ^ n`-th root is the `p`-th power of the `p ^ (n + 1)`-th root. -/
+/-- If `c` kills the `p ^ n`-th root of `x`, then it kills the `p ^ (n + 1)`-th root of `x`. -/
 theorem mul_iterateFrobeniusEquiv_symm_succ_eq_zero {x c : R} {n : ℕ}
     (h : c * (iterateFrobeniusEquiv R p n).symm x = 0) :
     c * (iterateFrobeniusEquiv R p (n + 1)).symm x = 0 := by
+  -- The `p ^ n`-th root is the `p`-th power of the `p ^ (n + 1)`-th root.
   rw [← iterateFrobeniusEquiv_symm_succ_pow x n] at h
   exact mul_eq_zero_of_mul_pow_p_eq_zero h
 
