@@ -36,6 +36,8 @@ exponent, so the graded bracket is `ℤ_p`-bilinear.
   the same statements for classes in the graded pieces.
 * `TauCeti.IsProP.gradedBracket_smul_left`, `TauCeti.IsProP.gradedBracket_smul_right`: the graded
   bracket is `ℤ_p`-linear in each variable.
+* `TauCeti.IsProP.gradedMap_smul`: the graded map of a continuous homomorphism of pro-`p` groups
+  is `ℤ_p`-linear.
 * `TauCeti.IsProP.gradedBracket_gradedMkZero_padicPow_neg_add`: the brackets `[a^{-u}, b]` and
   `[a, b^u]` of degree-zero classes cancel.
 * `TauCeti.IsProP.gradedMk_commutatorElement_inv_conj_padicPow_inv`: the commutator of the inverse
@@ -80,24 +82,16 @@ theorem IsProP.mk_padicPow_eq_of_pow_dvd_sub (hG : IsProP p G) (g : G) (k : ℕ)
 group. It is the module structure on the abelian pro-`p` quotient `λ_n / λ_{n+1}`. -/
 @[instance_reducible]
 noncomputable def IsProP.gradedPieceModule (hG : IsProP p G) (q n : ℕ) :
-    Module ℤ_[p] (gradedPiece q G n) := by
-  let R := pLowerCentralSeries q G n
-  let N := (pLowerCentralSeries q G (n + 1)).subgroupOf R
-  let _ : IsClosed (R : Set G) := isClosed_pLowerCentralSeries n
-  let _ : IsClosed (N : Set R) := by
-    rw [isClosed_induced_iff]
-    exact ⟨pLowerCentralSeries q G (n + 1), isClosed_pLowerCentralSeries (n + 1), rfl⟩
-  exact ((hG.subgroup R).quotient N).module
+    Module ℤ_[p] (gradedPiece q G n) :=
+  ((hG.subgroup (pLowerCentralSeries q G n)).quotient
+    ((pLowerCentralSeries q G (n + 1)).subgroupOf (pLowerCentralSeries q G n))).module
 
 /-- The graded-piece module is the canonical module on its underlying abelian pro-`p` quotient. -/
 theorem IsProP.gradedPieceModule_def (hG : IsProP p G) (q n : ℕ) :
     hG.gradedPieceModule q n =
-      let R := pLowerCentralSeries q G n
-      let N := (pLowerCentralSeries q G (n + 1)).subgroupOf R
-      letI : IsClosed (R : Set G) := isClosed_pLowerCentralSeries n
-      letI : IsClosed (N : Set R) :=
-        (isClosed_pLowerCentralSeries (n + 1)).preimage continuous_subtype_val
-      ((hG.subgroup R).quotient N).module := (rfl)
+      ((hG.subgroup (pLowerCentralSeries q G n)).quotient
+        ((pLowerCentralSeries q G (n + 1)).subgroupOf (pLowerCentralSeries q G n))).module :=
+  (rfl)
 
 /-- In a pro-`p` group, the class of a `p`-adic power in a graded piece of the lower `q`-series is
 the corresponding `ℤ_p`-scalar multiple. -/
@@ -110,10 +104,6 @@ theorem IsProP.gradedMk_padicPow (hG : IsProP p G) {q n : ℕ}
       u • gradedMk q G n x := by
   let R := pLowerCentralSeries q G n
   let N := (pLowerCentralSeries q G (n + 1)).subgroupOf R
-  let _ : IsClosed (R : Set G) := isClosed_pLowerCentralSeries n
-  let _ : IsClosed (N : Set R) := by
-    rw [isClosed_induced_iff]
-    exact ⟨pLowerCentralSeries q G (n + 1), isClosed_pLowerCentralSeries (n + 1), rfl⟩
   let hR : IsProP p R := hG.subgroup R
   let xuR : R := ⟨hG.padicPow (x : G) u, hG.padicPow_mem (isClosed_pLowerCentralSeries n) x.2 u⟩
   have hpow : hR.padicPow x u = xuR := by
@@ -144,7 +134,6 @@ theorem IsProP.mk_commutatorElement_padicPow_left (hG : IsProP p G) {q j k : ℕ
       ((hG.padicPow ⁅(x : G), (y : G)⁆ u : G) :
         G ⧸ pLowerCentralSeries q G (j + k + 1 + 1)) := by
   let N := pLowerCentralSeries q G (j + k + 1 + 1)
-  let _ : IsClosed (N : Set G) := isClosed_pLowerCentralSeries _
   have hpow (z : G) : Continuous fun a : ℤ_[p] ↦ hG.padicPow z a :=
     hG.continuous_padicPow.comp (continuous_id.prodMk continuous_const)
   have hleft : Continuous fun a : ℤ_[p] ↦
@@ -178,7 +167,6 @@ theorem IsProP.mk_commutatorElement_padicPow_right (hG : IsProP p G) {q j k : �
       ((hG.padicPow ⁅(x : G), (y : G)⁆ u : G) :
         G ⧸ pLowerCentralSeries q G (j + k + 1 + 1)) := by
   let N := pLowerCentralSeries q G (j + k + 1 + 1)
-  let _ : IsClosed (N : Set G) := isClosed_pLowerCentralSeries _
   have hpow (z : G) : Continuous fun a : ℤ_[p] ↦ hG.padicPow z a :=
     hG.continuous_padicPow.comp (continuous_id.prodMk continuous_const)
   have hleft : Continuous fun a : ℤ_[p] ↦
@@ -261,6 +249,20 @@ theorem IsProP.gradedBracket_smul_right (hG : IsProP p G) {q j k : ℕ} (u : ℤ
   rw [← hG.gradedMk_padicPow y u, hG.gradedBracket_padicPow_right x y u,
     gradedBracket_gradedMk]
   exact hG.gradedMk_padicPow ⟨_, commutator_mem_pLowerCentralSeries x.2 y.2⟩ u
+
+/-- The graded map of a continuous homomorphism of pro-`p` groups is `ℤ_p`-linear on every graded
+piece, because continuous homomorphisms commute with `p`-adic powers. -/
+theorem IsProP.gradedMap_smul {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    [CompactSpace H] [TotallyDisconnectedSpace H] (hG : IsProP p G) (hH : IsProP p H)
+    (f : G →* H) (hf : Continuous f) {q n : ℕ} (u : ℤ_[p]) (z : gradedPiece q G n) :
+    letI := hG.gradedPieceModule q n
+    letI := hH.gradedPieceModule q n
+    gradedMap q f hf n (u • z) = u • gradedMap q f hf n z := by
+  let _ : Module ℤ_[p] (gradedPiece q G n) := hG.gradedPieceModule q n
+  let _ : Module ℤ_[p] (gradedPiece q H n) := hH.gradedPieceModule q n
+  obtain ⟨x, rfl⟩ := gradedMk_surjective n z
+  rw [← hG.gradedMk_padicPow, gradedMap_gradedMk, gradedMap_gradedMk, ← hH.gradedMk_padicPow]
+  exact congrArg _ (Subtype.ext (hG.map_padicPow hH f hf x u))
 
 /-- **The brackets `[a^{-u}, b]` and `[a, b^u]` of degree-zero classes cancel**: both are the
 `p`-adic power, with opposite exponents, of the class of the commutator `⁅a, b⁆`. -/

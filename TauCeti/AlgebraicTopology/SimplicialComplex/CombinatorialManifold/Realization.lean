@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.PL
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.BoundarySphere
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.PL
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
 
 /-!
@@ -24,10 +24,10 @@ subpolyhedron of an arbitrary ambient realization, so unused ambient vertices co
 points.
 
 Intrinsic stellar equivalence supplies the PL homeomorphism to a simplex or simplex boundary, and
-the standard models supply the Euclidean closed ball or sphere. Injective relabeling changes the
-ambient realization without changing the topology of the polyhedron. No finiteness assumption on
-the ambient complex or its vertex type is required; finiteness follows from the combinatorial ball
-or sphere hypothesis.
+injective relabeling replaces its arbitrary finite vertex labels by canonical `Fin` labels while
+preserving ambient PL coordinate formulas. The standard models then supply the Euclidean closed
+ball or sphere. No finiteness assumption on the ambient complex or its vertex type is required;
+finiteness follows from the combinatorial ball or sphere hypothesis.
 
 ## References
 
@@ -62,6 +62,98 @@ theorem IsCombinatorialSphere.exists_plHomeomorphic_simplexBoundary
   have hfin := h.finite_faces
   obtain ⟨V, hV, hPV⟩ := isCombinatorialSphere_iff.mp h
   exact ⟨V, hV, hPV.plHomeomorphic hfin⟩
+
+/-- A combinatorial ball has the PL homeomorphism type of the simplex on a canonical finite
+vertex type. This removes the arbitrary labels from `exists_plHomeomorphic_simplex`, which is
+useful when transporting the standard simplex charts. -/
+theorem IsCombinatorialBall.plHomeomorphic_standardSimplex
+    [DecidableEq ι] (h : IsCombinatorialBall P n) :
+    PLHomeomorphic P (simplex (Finset.univ : Finset (Fin (n + 1)))) := by
+  obtain ⟨V, hV, hP⟩ := h.exists_plHomeomorphic_simplex
+  let e : V ≃ Fin (n + 1) := Finset.equivFinOfCardEq hV
+  let j : V ↪ ι := Function.Embedding.subtype (· ∈ V)
+  let S : PreAbstractSimplicialComplex V := simplex Finset.univ
+  have hj : S.map j = simplex V := by
+    simp only [S, map_simplex]
+    congr 1
+    ext v
+    simp [j]
+  have he : S.map e.toEmbedding = simplex (Finset.univ : Finset (Fin (n + 1))) := by
+    simp only [S, map_simplex]
+    congr 1
+    exact Finset.image_univ_equiv e
+  have hleft : PLHomeomorphic (simplex V) S := by
+    rw [← hj]
+    exact (PLHomeomorphic.relabeling S j).symm
+  have hright : PLHomeomorphic S (simplex (Finset.univ : Finset (Fin (n + 1)))) := by
+    rw [← he]
+    exact PLHomeomorphic.relabeling S e.toEmbedding
+  exact hP.trans (hleft.trans hright)
+
+/-- A combinatorial sphere has the PL homeomorphism type of the boundary of the simplex on a
+canonical finite vertex type. This is the standard link model used by PL vertex charts. -/
+theorem IsCombinatorialSphere.plHomeomorphic_standardSimplexBoundary
+    [DecidableEq ι] (h : IsCombinatorialSphere P n) :
+    PLHomeomorphic P (simplexBoundary (Finset.univ : Finset (Fin (n + 2)))) := by
+  obtain ⟨V, hV, hP⟩ := h.exists_plHomeomorphic_simplexBoundary
+  let e : V ≃ Fin (n + 2) := Finset.equivFinOfCardEq hV
+  let j : V ↪ ι := Function.Embedding.subtype (· ∈ V)
+  let S : PreAbstractSimplicialComplex V := simplexBoundary Finset.univ
+  have hj : S.map j = simplexBoundary V := by
+    simp only [S, map_simplexBoundary]
+    congr 1
+    ext v
+    simp [j]
+  have he : S.map e.toEmbedding =
+      simplexBoundary (Finset.univ : Finset (Fin (n + 2))) := by
+    simp only [S, map_simplexBoundary]
+    congr 1
+    exact Finset.image_univ_equiv e
+  have hleft : PLHomeomorphic (simplexBoundary V) S := by
+    rw [← hj]
+    exact (PLHomeomorphic.relabeling S j).symm
+  have hright : PLHomeomorphic S
+      (simplexBoundary (Finset.univ : Finset (Fin (n + 2)))) := by
+    rw [← he]
+    exact PLHomeomorphic.relabeling S e.toEmbedding
+  exact hP.trans (hleft.trans hright)
+
+/-- A combinatorial ball has a PL homeomorphism to the realization of the standard simplex,
+with ambient PL coordinate formulas in both directions. -/
+theorem IsCombinatorialBall.exists_homeomorph_standardSimplex
+    [DecidableEq ι] (h : IsCombinatorialBall P n)
+    (hA : P ≤ A.toPreAbstractSimplicialComplex) :
+    ∃ e : {x : Realization A // x.1.support ∈ P} ≃ₜ
+        Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))),
+      ∃ f : (ι → ℝ) → (Fin (n + 1) → ℝ), ∃ g : (Fin (n + 1) → ℝ) → (ι → ℝ),
+        TauCeti.IsPLOn f (Set.range fun x : {x : Realization A // x.1.support ∈ P} =>
+          (x.1.1 : ι → ℝ)) ∧
+        TauCeti.IsPLOn g (Set.range fun y :
+          Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) =>
+            (y.1 : Fin (n + 1) → ℝ)) ∧
+        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1) ∧
+        ∀ y, g (y.1 : Fin (n + 1) → ℝ) = (e.symm y).1.1 := by
+  have hPL := h.plHomeomorphic_standardSimplex
+  rw [simplex_univ, ← top_toPreAbstractSimplicialComplex] at hPL
+  exact hPL.exists_homeomorph_realization hA
+
+/-- A combinatorial sphere has a PL homeomorphism to the realization of the standard simplex
+boundary, with ambient PL coordinate formulas in both directions. -/
+theorem IsCombinatorialSphere.exists_homeomorph_standardSimplexBoundary
+    [DecidableEq ι] (h : IsCombinatorialSphere P n)
+    (hA : P ≤ A.toPreAbstractSimplicialComplex) :
+    ∃ e : {x : Realization A // x.1.support ∈ P} ≃ₜ
+        Realization (standardSuccSimplexBoundary n),
+      ∃ f : (ι → ℝ) → (Fin (n + 2) → ℝ), ∃ g : (Fin (n + 2) → ℝ) → (ι → ℝ),
+        TauCeti.IsPLOn f (Set.range fun x : {x : Realization A // x.1.support ∈ P} =>
+          (x.1.1 : ι → ℝ)) ∧
+        TauCeti.IsPLOn g (Set.range fun y : Realization (standardSuccSimplexBoundary n) =>
+          (y.1 : Fin (n + 2) → ℝ)) ∧
+        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1) ∧
+        ∀ y, g (y.1 : Fin (n + 2) → ℝ) = (e.symm y).1.1 := by
+  have hPL := h.plHomeomorphic_standardSimplexBoundary
+  rw [← standardSuccSimplexBoundary_toPreAbstractSimplicialComplex] at hPL
+  exact hPL.exists_homeomorph_realization hA
 
 /-! ### Topological standard models -/
 

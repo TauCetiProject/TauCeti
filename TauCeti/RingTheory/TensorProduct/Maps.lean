@@ -11,9 +11,10 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 # Maps between tensor products of algebras
 
 The base change `Algebra.TensorProduct.map (AlgHom.id R S) f : S ⊗[R] B → S ⊗[R] C` of an
-algebra map `f : B →ₐ[R] C` agrees with `LinearMap.lTensor S` applied to the underlying linear
-map of `f`. This lets results about base change of linear maps, such as flatness preserving
-injectivity and exactness, be applied to base change of algebra maps.
+algebra map `f : B →ₐ[R] C` agrees with `LinearMap.lTensor S` applied to the underlying
+linear map of `f`, and similarly on the right with `LinearMap.rTensor S`. This lets results
+about base change of linear maps, such as flatness preserving injectivity and exactness, be
+applied to base change of algebra maps.
 
 For an `S`-algebra `B` over `R` which need not be commutative, the multiplication maps
 `S ⊗[R] B → B` and `B ⊗[R] S → B` are `S`-algebra maps, because `S` acts through its central
@@ -21,19 +22,22 @@ image in `B`. Mathlib's `Algebra.TensorProduct.lmul''` and `Algebra.TensorProduc
 require a commutative target.
 
 For commutative `R`-algebras `A` and `B`, the tensor product `A ⊗[R] B` is the pushout of
-`A ← R → B` in commutative rings. Mathlib's `Algebra.TensorProduct.productMap` expresses this
+`A ← R → B` in commutative semirings. Mathlib's `Algebra.TensorProduct.productMap` expresses this
 universal property for algebra homomorphisms into an `R`-algebra, and
 `Algebra.TensorProduct.ringHom_ext` is its uniqueness half for ring homomorphisms.
 `Algebra.TensorProduct.liftRingHom` is the existence half for ring homomorphisms: ring
-homomorphisms `x : A →+* T` and `y : B →+* T` into a commutative ring `T` which agree on `R` induce
-`a ⊗ b ↦ x a * y b`, with no `R`-algebra structure on `T` involved. This is the form needed when
-`T` already carries an `R`-algebra structure which `x` and `y` do not respect, for instance when
-`T` is itself a tensor product over `R` and `x` twists the first factor by a ring automorphism.
+homomorphisms `x : A →+* T` and `y : B →+* T` into a commutative semiring `T` which agree on `R`
+induce `a ⊗ b ↦ x a * y b`, even for noncommutative `A` and `B`, with no `R`-algebra structure
+on `T` involved. This is the form needed when `T` already carries an `R`-algebra structure which
+`x` and `y` do not respect, for instance when `T` is itself a tensor product over `R` and `x`
+twists the first factor by a ring automorphism.
 
 ## Main declarations
 
 * `AlgHom.lTensor_toLinearMap_apply`: `f.toLinearMap.lTensor S` is
   `Algebra.TensorProduct.map (AlgHom.id R S) f`.
+* `AlgHom.rTensor_toLinearMap_apply`: `f.toLinearMap.rTensor S` is
+  `Algebra.TensorProduct.map f (AlgHom.id R S)`.
 * `Algebra.TensorProduct.mulLeft`, `Algebra.TensorProduct.mulRight`: the
   multiplication maps `s ⊗ b ↦ s • b` and `b ⊗ t ↦ b * t`.
 * `Algebra.TensorProduct.liftRingHom x y h`: the ring homomorphism `a ⊗ b ↦ x a * y b`.
@@ -54,24 +58,34 @@ open TensorProduct
 
 /-- Base change of the underlying linear map of an algebra map is the base change of the
 algebra map. -/
-theorem AlgHom.lTensor_toLinearMap_apply {R B C : Type*} (S : Type*) [CommRing R] [Ring S]
-    [Algebra R S] [Ring B] [Algebra R B] [Ring C] [Algebra R C] (f : B →ₐ[R] C)
-    (x : S ⊗[R] B) :
+theorem AlgHom.lTensor_toLinearMap_apply {R B C : Type*} (S : Type*) [CommSemiring R]
+    [Semiring S] [Algebra R S] [Semiring B] [Algebra R B] [Semiring C] [Algebra R C]
+    (f : B →ₐ[R] C) (x : S ⊗[R] B) :
     f.toLinearMap.lTensor S x = Algebra.TensorProduct.map (AlgHom.id R S) f x := by
   induction x using TensorProduct.inductionOn with
   | tmul s b => simp
+  | add x y hx hy => simp [hx, hy]
+
+/-- Right base change of the underlying linear map of an algebra map is the right base change of
+the algebra map. -/
+theorem AlgHom.rTensor_toLinearMap_apply {R B C : Type*} (S : Type*) [CommSemiring R]
+    [Semiring S] [Algebra R S] [Semiring B] [Algebra R B] [Semiring C] [Algebra R C]
+    (f : B →ₐ[R] C) (x : B ⊗[R] S) :
+    f.toLinearMap.rTensor S x = Algebra.TensorProduct.map f (AlgHom.id R S) x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul b s => simp
   | add x y hx hy => simp [hx, hy]
 
 namespace Algebra.TensorProduct
 
 section LiftRingHom
 
-variable {R A B T : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [CommSemiring B]
+variable {R A B T : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Semiring B]
   [Algebra R B] [CommSemiring T]
 
 /-- The ring homomorphism `A ⊗[R] B →+* T`, `a ⊗ b ↦ x a * y b`, induced by ring homomorphisms
-`x : A →+* T` and `y : B →+* T` which agree on `R`. Unlike `Algebra.TensorProduct.productMap`, no
-`R`-algebra structure on `T` is involved. -/
+`x : A →+* T` and `y : B →+* T` which agree on `R`. The sources `A` and `B` need not be
+commutative, and no `R`-algebra structure on `T` is involved. -/
 noncomputable def liftRingHom (x : A →+* T) (y : B →+* T)
     (h : x.comp (algebraMap R A) = y.comp (algebraMap R B)) : A ⊗[R] B →+* T :=
   letI : Algebra R T := (x.comp (algebraMap R A)).toAlgebra

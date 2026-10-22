@@ -6,6 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Topology.EMetricSpace.Lipschitz
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The smooth transition function and cutoffs near zero
@@ -14,7 +20,10 @@ Mathlib's `Analysis/SpecialFunctions/SmoothTransition.lean` proves that
 `Real.smoothTransition` is smooth and equals one on `[1, ∞)`, but states no derivative values.
 This file records that its derivative vanishes on the open rays `(-∞, 0)` and `(1, ∞)`, where the
 function is locally constant, so that the derivative is compactly supported. Being continuous, it
-is then bounded, which bounds the gradients of cutoffs built from `Real.smoothTransition`.
+is then bounded, which bounds the gradients of cutoffs built from `Real.smoothTransition`. It is
+also integrable with integral one, so its rescalings `t ↦ c ψ'(c (a - t))` are approximate
+identities; together with the chain rule and local Lipschitz continuity of `ψ (c (u - t))`, this
+is what is needed to smooth the indicator of a superlevel set `{u > t}`.
 
 It also uses the smooth transition to cut a function off near zero. For `m > 0` and a function
 `g : ℝ → ℝ`, `TauCeti.positiveCutoff m g` is the product of `g` with a smooth transition from `0`
@@ -29,6 +38,11 @@ of chain rules for Sobolev functions.
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
+* `Real.smoothTransition.integral_deriv`: the derivative has integral one.
+* `Real.smoothTransition.lintegral_ofReal_mul_deriv`: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`.
+* `HasFDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
+* `LocallyLipschitzOn.smoothTransition_mul_sub`: `ψ (c (u - t))` is locally Lipschitz on `s`
+  when `u` is.
 * `TauCeti.positiveCutoff`: the cutoff of `g` near zero.
 * `TauCeti.contDiff_positiveCutoff`: the cutoff of a function that is `C¹` on `(0, ∞)` is `C¹`.
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
@@ -39,7 +53,7 @@ public section
 
 noncomputable section
 
-open Filter Set
+open Filter Set MeasureTheory
 open scoped ContDiff NNReal Topology
 
 namespace Real.smoothTransition
@@ -65,7 +79,57 @@ theorem hasCompactSupport_deriv : HasCompactSupport (deriv smoothTransition) :=
     · exact deriv_of_neg (not_le.1 h)
     · exact deriv_of_one_lt (not_le.1 h)
 
+/-- The derivative of the smooth transition function is integrable. -/
+theorem integrable_deriv : Integrable (deriv smoothTransition) :=
+  ((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).integrable_of_hasCompactSupport
+    hasCompactSupport_deriv
+
+/-- The derivative of the smooth transition function has integral one, the total increase of the
+function from `0` to `1`. -/
+@[simp]
+theorem integral_deriv : ∫ x, deriv smoothTransition x = 1 := by
+  have hdiff : Differentiable ℝ smoothTransition :=
+    (smoothTransition.contDiff (n := 1)).differentiable (by simp)
+  have := integral_of_hasDerivAt_of_tendsto (fun x => (hdiff x).hasDerivAt) integrable_deriv
+    ((tendsto_const_nhds (x := (0 : ℝ))).congr' ?_)
+    ((tendsto_const_nhds (x := (1 : ℝ))).congr' ?_)
+  · simpa using this
+  · filter_upwards [eventually_le_atBot 0] with x hx
+    exact (zero_of_nonpos hx).symm
+  · filter_upwards [eventually_ge_atTop 1] with x hx
+    exact (one_of_one_le hx).symm
+
+/-- The rescaled derivatives `t ↦ c ψ'(c (a - t))` of the smooth transition function `ψ`
+integrate to one: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`. -/
+@[simp]
+theorem lintegral_ofReal_mul_deriv (a : ℝ) {c : ℝ} (hc : 0 < c) :
+    ∫⁻ t, ENNReal.ofReal (c * deriv smoothTransition (c * (a - t))) = 1 := by
+  have hint : Integrable fun t => c * deriv smoothTransition (c * (a - t)) :=
+    ((integrable_deriv.comp_mul_left' hc.ne').comp_sub_left a).const_mul c
+  rw [← ofReal_integral_eq_lintegral_ofReal hint
+    (.of_forall fun t => mul_nonneg hc.le smoothTransition.monotone.deriv_nonneg)]
+  simp [integral_const_mul, integral_sub_left_eq_self (fun s => deriv smoothTransition (c * s)),
+    Measure.integral_comp_mul_left, abs_of_pos hc, hc.ne']
+
 end Real.smoothTransition
+
+/-- The chain rule for the smooth transition function `ψ`: if `f` has derivative `f'` at `x`,
+then `ψ ∘ f` has derivative `ψ'(f x) • f'` there. -/
+theorem HasFDerivAt.smoothTransition {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : E → ℝ} {f' : E →L[ℝ] ℝ} {x : E} (hf : HasFDerivAt f f' x) :
+    HasFDerivAt (fun y => Real.smoothTransition (f y))
+      (deriv Real.smoothTransition (f x) • f') x :=
+  (((Real.smoothTransition.contDiff (n := 1)).differentiable (by simp)
+    (f x)).hasDerivAt).comp_hasFDerivAt x hf
+
+/-- If `u` is locally Lipschitz on `s`, then so is `ψ (c (u - t))` for the smooth transition
+function `ψ`. -/
+theorem LocallyLipschitzOn.smoothTransition_mul_sub {α : Type*} [PseudoEMetricSpace α]
+    {s : Set α} {u : α → ℝ} (hu : LocallyLipschitzOn s u) (c t : ℝ) :
+    LocallyLipschitzOn s fun x => Real.smoothTransition (c * (u x - t)) :=
+  ((Real.smoothTransition.contDiff (n := 1)).comp
+    (contDiff_const.mul (contDiff_id.sub contDiff_const))).locallyLipschitz
+    |>.comp_locallyLipschitzOn hu
 
 namespace TauCeti
 

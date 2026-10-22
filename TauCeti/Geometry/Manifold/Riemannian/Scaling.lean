@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
@@ -12,7 +13,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 
 /-!
-# Curvature under constant rescaling of a metric
+# Curvature and the Laplacian under constant rescaling of a metric
 
 Let `g` be a Riemannian metric on `M` and `c` a positive constant, and let `c g` be the rescaled
 metric `Bundle.ContMDiffRiemannianMetric.rescale` by the constant function `c`. The Koszul formula
@@ -22,6 +23,10 @@ Scalar curvature is the metric trace of the Ricci tensor, and the trace for `c g
 the trace for `g`, so
 
 `Scal(c g) = c⁻¹ Scal(g)`.
+
+The gradient of a function is the dual of its differential through the metric, so
+`grad_{c g} f = c⁻¹ grad_g f`; since the Levi-Civita connections agree, the Laplace–Beltrami
+operator `Δ = div ∘ grad` scales in the same way, `Δ_{c g} = c⁻¹ Δ_g`.
 
 Both metrics are installed in turn as the `RiemannianBundle` instance of the tangent bundle of
 `M`. Connections and curvature tensors do not depend on the metric, so they are compared directly
@@ -40,8 +45,10 @@ differentiable fields; this determines the curvature tensor.
 * `Bundle.ContMDiffRiemannianMetric.curvatureTensor_leviCivitaConnection_rescale_const` and
   `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_rescale_const`: the curvature
   and Ricci tensors of `c g` and `g` coincide.
-* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_leviCivitaConnection_rescale_const`:
-  `Scal(c g) = c⁻¹ Scal(g)`.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_const`: `Scal(c g) = c⁻¹ Scal(g)`.
+* `Bundle.ContMDiffRiemannianMetric.mgradient_rescale_const` and
+  `Bundle.ContMDiffRiemannianMetric.laplaceBeltrami_rescale_const`: `grad_{c g} = c⁻¹ grad_g`
+  and `Δ_{c g} = c⁻¹ Δ_g`.
 
 ## References
 
@@ -168,6 +175,73 @@ theorem leviCivitaConnection_rescale_const_apply
 
 end LeviCivita
 
+section Laplacian
+
+variable {n : ℕ∞ω}
+
+/-- Multiplying a metric by a positive constant `c` multiplies the gradient of every function by
+`c⁻¹`. -/
+theorem mgradient_rescale_const [IsManifold I 1 M]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    {c : ℝ} (hc : 0 < c) (f : M → ℝ) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      TauCeti.Manifold.mgradient I f x) =
+    c⁻¹ • (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      TauCeti.Manifold.mgradient I f x) := by
+  have hg (v : TangentSpace I x) :
+      g.inner x (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.toRiemannianMetric⟩; TauCeti.Manifold.mgradient I f x) v = mvfderiv I f x v := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    exact TauCeti.Manifold.inner_mgradient v
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
+  refine (TauCeti.Manifold.eq_mgradient_iff.2 fun v ↦ ?_).symm
+  rw [inner_riemannianBundle, rescale_inner, map_smul, smul_apply, hg, smul_eq_mul,
+    ← mul_assoc, mul_inv_cancel₀ hc.ne', one_mul]
+
+/-- **Scaling of the Laplacian.** Multiplying a `C¹` metric by a positive constant `c` multiplies
+the Laplace–Beltrami operator of every `C²` function by `c⁻¹`. -/
+theorem laplaceBeltrami_rescale_const [IsManifold I 2 M]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
+    {c : ℝ} (hc : 0 < c) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+        IsContMDiffRiemannianBundle.of_le hn;
+      TauCeti.Manifold.laplaceBeltrami I f x) =
+    c⁻¹ * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+        IsContMDiffRiemannianBundle.of_le hn;
+      TauCeti.Manifold.laplaceBeltrami I f x) := by
+  -- The gradient field of `f` for `g` is differentiable, so the Levi-Civita connections of `g`
+  -- and `c g` agree on its multiples.
+  have hY : MDiffAt (T% (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨g.toRiemannianMetric⟩; TauCeti.Manifold.mgradient I f)) x := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+      IsContMDiffRiemannianBundle.of_le hn
+    exact TauCeti.Manifold.mdifferentiable_mgradient (I := I) hf x
+  have hY' : MDiffAt (T% (c⁻¹ • (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨g.toRiemannianMetric⟩; TauCeti.Manifold.mgradient I f))) x :=
+    mdifferentiableAt_const.smul_section hY
+  have hgrad : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      TauCeti.Manifold.mgradient I f) =
+      c⁻¹ • (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+        TauCeti.Manifold.mgradient I f) :=
+    funext fun y ↦ mgradient_rescale_const g hc f y
+  simp only [TauCeti.Manifold.laplaceBeltrami_def, TauCeti.Manifold.divergence_def]
+  rw [hgrad, leviCivitaConnection_rescale_const_apply g hn hc hY']
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le hn
+  rw [(CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const
+    c⁻¹ hY]
+  simp
+
+end Laplacian
+
 section Curvature
 
 variable [T2Space M] [IsManifold I ∞ M]
@@ -198,46 +272,14 @@ theorem ricciTensor_leviCivitaConnection_rescale_const (x : M) :
 
 /-- **Scaling of scalar curvature.** Multiplying a smooth metric by a positive constant `c`
 multiplies its scalar curvature by `c⁻¹`. -/
-theorem scalarCurvature_leviCivitaConnection_rescale_const (x : M) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-      (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) =
-    c⁻¹ * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) := by
-  -- A `g`-orthonormal basis, recorded through the inner products of `g` itself.
-  obtain ⟨d, b, hb, hs⟩ : ∃ (d : ℕ) (b : Module.Basis (Fin d) ℝ (TangentSpace I x)),
-      (∀ i j, g.inner x (b i) (b j) = if i = j then 1 else 0) ∧
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) =
-      ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).ricciTensor x) (b j) (b j) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-    refine ⟨_, b.toBasis, fun i j ↦ ?_, ?_⟩
-    · rw [b.coe_toBasis, ← inner_riemannianBundle]
-      exact orthonormal_iff_ite.1 b.orthonormal i j
-    · rw [b.coe_toBasis]
-      exact CovariantDerivative.scalarCurvature_eq_sum _ x b
-  set s := Real.sqrt c
-  have hs0 : 0 < s := Real.sqrt_pos.2 hc
-  have hss : s⁻¹ * s⁻¹ = c⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt hc.le]
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
-  -- Dividing it by `√c` gives a basis orthonormal for the rescaled metric.
-  have hon : Orthonormal ℝ (b.unitsSMul fun _ ↦ Units.mk0 s⁻¹ (inv_ne_zero hs0.ne')) := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    simp only [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0,
-      inner_riemannianBundle, rescale_inner, map_smul, smul_apply, smul_eq_mul, hb]
-    split_ifs
-    · field_simp
-      exact (Real.sq_sqrt hc.le).symm
-    · simp
-  rw [CovariantDerivative.scalarCurvature_eq_sum _ x ((b.unitsSMul _).toOrthonormalBasis hon),
-    ricciTensor_leviCivitaConnection_rescale_const g hc x, hs, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp only [Module.Basis.coe_toOrthonormalBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
-    Units.val_mk0, map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, hss]
+@[simp]
+theorem scalarCurvature_rescale_const (x : M) :
+    (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).scalarCurvature x =
+      c⁻¹ * g.scalarCurvature x := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [scalarCurvature_rescale_eq_sum g _ _ b, ricciTensor_leviCivitaConnection_rescale_const g hc x,
+    scalarCurvature_def, CovariantDerivative.scalarCurvature_eq_sum _ x b]
 
 end Curvature
 

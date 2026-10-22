@@ -26,7 +26,8 @@ characteristic, genus, orders, geometry type, monodromy group and automorphism g
 * `TauCeti.PermutationTriple.cyclicTriple n`: for `n ≠ 0`, the monodromy of `z ↦ zⁿ`, totally
   ramified over `0` and `∞` and unramified over `1`. For `n ≠ 0` it is connected of genus zero,
   with cyclic monodromy of order `n`, hence regular, and its automorphism group is that monodromy
-  group; it is spherical in every degree.
+  group; it is spherical in every degree. Up to isomorphism it is the only connected triple whose
+  component over `1` is the identity.
   `cyclicTriple 0` is the formal empty triple, which is not connected, and `cyclicTriple 1` is
   the trivial triple, the identity cover of the sphere. Disjoint sums of two such triples are
   disconnected, with Euler characteristic `4`. Relabeling `cyclicTriple 4` by `swap 0 1` gives
@@ -151,6 +152,20 @@ theorem orderTriple_cyclicTriple (hn : n ≠ 0) : (cyclicTriple n).orderTriple =
   have hinf : (0 : ℚ) < (orderOf (cyclicTriple n).σinf : ℚ)⁻¹ :=
     inv_pos.mpr (Nat.cast_pos.mpr (orderOf_pos _))
   linarith
+
+/-- **The connected triples unramified over `1` are the cyclic triples**: a connected triple is
+isomorphic to `cyclicTriple n` exactly when its component over `1` is the identity. -/
+theorem equivalent_cyclicTriple_iff {t : PermutationTriple n} (ht : t.IsConnected) :
+    t.Equivalent (cyclicTriple n) ↔ t.σ1 = 1 := by
+  refine ⟨fun h => ?_, fun h1 => ?_⟩
+  · obtain ⟨τ, hτ⟩ := equivalent_iff_exists_smul_eq.1 h
+    simpa using congrArg PermutationTriple.σ1 hτ
+  -- `σ0` alone generates the transitive monodromy group, so it is one cycle through all the sheets.
+  have := ht.isPretransitive
+  rw [← closure_pair_eq_monodromyGroup, h1, Set.pair_comm, Subgroup.closure_insert_one,
+    ← Subgroup.zpowers_eq_closure] at this
+  obtain ⟨τ, hτ⟩ := isConj_iff.1 (isPretransitive_zpowers_iff_isConj_finRotate.1 this)
+  exact equivalent_iff_exists_smul_eq.2 ⟨τ, ext_of_two (by simpa using hτ) (by simp [h1])⟩
 
 /-! ### Triples built from powers of cyclic rotation -/
 

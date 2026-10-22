@@ -223,14 +223,6 @@ end BaseChange
 
 /-! ### Comparison with injectivity on fibres -/
 
-/-- **Where an `S`-point meets the zero section.** For an `S`-point `Q` of `E`, the image of the
-equalizer of `Q` and the zero section is the set of points of `S` at which `Q` meets the zero
-section. -/
-theorem range_equalizer_ι_left_one (Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
-    Set.range (equalizer.ι Q 1).left = {s | Q.left s = E.zero s} := by
-  rw [range_equalizer_ι_left_of_section, hom_one_left]
-  rfl
-
 /-- An `S`-point `Q` of `E` has empty equalizer with the zero section exactly when it meets the
 zero section at no point of `S`. -/
 theorem isEmpty_equalizer_one_iff (Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :

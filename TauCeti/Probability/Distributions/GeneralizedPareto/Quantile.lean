@@ -102,7 +102,7 @@ theorem tendsto_quantile_generalizedParetoMeasure_nhdsGT_zero (hs : 0 < s) (ξ :
   rw [quantile_generalizedParetoMeasure_eq_generalizedParetoMap hs ξ hu, Function.comp_apply]
 
 /-- Negative-shape generalized Pareto quantiles tend to the finite upper support endpoint. -/
-theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_neg (hs : 0 < s)
+private theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_neg (hs : 0 < s)
     (hξ : ξ < 0) :
     Tendsto (fun u => ((generalizedParetoMeasure s ξ).quantile u : EReal))
       (𝓝[<] 1) (𝓝 ((-s / ξ : ℝ) : EReal)) := by
@@ -117,7 +117,7 @@ theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_neg (hs : 0 < s)
   rw [quantile_generalizedParetoMeasure_of_shape_ne_zero hs hξ.ne hu]
 
 /-- Nonnegative-shape generalized Pareto quantiles tend to positive infinity. -/
-theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_nonneg (hs : 0 < s)
+private theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_nonneg (hs : 0 < s)
     (hξ : 0 ≤ ξ) :
     Tendsto (fun u => ((generalizedParetoMeasure s ξ).quantile u : EReal))
       (𝓝[<] 1) (𝓝 ⊤) := by
@@ -136,5 +136,16 @@ theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_nonneg (hs : 0 <
   apply hlim.congr'
   filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
   rw [quantile_generalizedParetoMeasure_of_shape_ne_zero hs hξ.ne' hu]
+
+/-- Generalized Pareto quantiles tend at the upper endpoint to `-s / ξ` for negative shape
+and to positive infinity for nonnegative shape. -/
+theorem tendsto_quantile_generalizedParetoMeasure_nhdsLT_one (hs : 0 < s) (ξ : ℝ) :
+    Tendsto (fun u => ((generalizedParetoMeasure s ξ).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 (if ξ < 0 then ((-s / ξ : ℝ) : EReal) else ⊤)) := by
+  by_cases hξ : ξ < 0
+  · rw [ite_eq_left hξ]
+    exact tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_neg hs hξ
+  · rw [ite_eq_right hξ]
+    exact tendsto_quantile_generalizedParetoMeasure_nhdsLT_one_of_nonneg hs (not_lt.mp hξ)
 
 end TauCeti.Probability

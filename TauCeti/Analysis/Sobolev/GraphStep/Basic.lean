@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Sobolev.TestFunctionLp
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Function.Holder
 
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+
 /-!
 # The closed-graph step for weak Sobolev spaces
 
@@ -187,8 +189,7 @@ theorem mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn
       HasWeakFDerivOn mu Omega (base (WithLp.fst J))
         (WithLp.snd J : Lp (E →L[ℝ] F) p (mu.restrict Omega)) := by
   have hbase : LocallyIntegrableOn (base (WithLp.fst J)) Omega mu :=
-    locallyIntegrableOn_of_locallyIntegrable_restrict
-      ((Lp.memLp (base (WithLp.fst J))).locallyIntegrable Fact.out)
+    Lp.locallyIntegrableOn (base (WithLp.fst J)) Fact.out
   have hderiv (v : E) : LocallyIntegrableOn (fun x => WithLp.snd J x v) Omega mu := by
     apply locallyIntegrableOn_of_locallyIntegrable_restrict
     exact (((Lp.memLp (WithLp.snd J)).continuousLinearMap_comp
@@ -224,6 +225,24 @@ def prev (base : X →L[ℝ] Lp F p (mu.restrict Omega))
 theorem prevL_apply (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (u : WeakDerivStep mu Omega p base) : prevL base u = prev base u := by
   rw [prev]
+
+/-- The projection `prev` is additive. -/
+@[simp]
+theorem prev_add (base : X →L[ℝ] Lp F p (mu.restrict Omega))
+    (u w : WeakDerivStep mu Omega p base) : prev base (u + w) = prev base u + prev base w := by
+  simp only [← prevL_apply, map_add]
+
+/-- The projection `prev` commutes with scalar multiplication. -/
+@[simp]
+theorem prev_smul (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (c : ℝ)
+    (u : WeakDerivStep mu Omega p base) : prev base (c • u) = c • prev base u := by
+  simp only [← prevL_apply, map_smul]
+
+/-- The projection `prev` vanishes at zero. -/
+@[simp]
+theorem prev_zero (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :
+    prev base (0 : WeakDerivStep mu Omega p base) = 0 := by
+  simp only [← prevL_apply, map_zero]
 
 theorem prev_coe (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (u : WeakDerivStep mu Omega p base) : prev base u = WithLp.fst u.1 := by

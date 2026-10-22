@@ -9,10 +9,11 @@ public import Mathlib.Probability.Moments.CovarianceBilin
 import Mathlib.Analysis.Matrix.Hermitian
 
 /-!
-# Covariance matrices of Euclidean-valued measures
+# Covariances and covariance matrices
 
-This file packages the coordinate covariances of a measure on a finite-dimensional Euclidean
-space as a matrix and connects that matrix to Mathlib's basis-free `covarianceBilin`.
+Covariance is unchanged by almost-everywhere changes to either observable. This file also
+packages the coordinate covariances of a measure on a finite-dimensional Euclidean space as a
+matrix and connects that matrix to Mathlib's basis-free `covarianceBilin`.
 
 The `MemLp id 2 μ` hypothesis in the comparison theorem is essential. Mathlib deliberately sets
 `covarianceBilin μ` to zero when this hypothesis fails, whereas its scalar `covariance` is
@@ -43,6 +44,15 @@ open MeasureTheory ProbabilityTheory
 open scoped RealInnerProductSpace
 
 namespace TauCeti
+
+/-- Covariance is unchanged by almost-everywhere changes to either observable. -/
+theorem covariance_congr_ae {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {X X' Y Y' : Ω → ℝ} (hX : X =ᵐ[μ] X') (hY : Y =ᵐ[μ] Y') :
+    cov[X, Y; μ] = cov[X', Y'; μ] := by
+  simp only [covariance, integral_congr_ae hX, integral_congr_ae hY]
+  apply integral_congr_ae
+  filter_upwards [hX, hY] with x hx hy
+  rw [hx, hy]
 
 variable {ι : Type*}
 

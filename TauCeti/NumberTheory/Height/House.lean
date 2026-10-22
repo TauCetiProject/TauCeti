@@ -51,6 +51,8 @@ of bounded degree and bounded house.
 * `TauCeti.one_le_house`, `TauCeti.house_eq_one_iff`: a nonzero algebraic integer has house at
   least `1`, and Kronecker's theorem, an algebraic integer has house `1` exactly when it is a root
   of unity.
+* `TauCeti.exists_algEquiv_one_le_norm`: a nonzero algebraic integer of a finite normal subfield
+  `L` of `ℂ` has a Galois conjugate over `ℚ` of modulus at least `1`.
 * `TauCeti.house_le_mahlerMeasure`,
   `TauCeti.mahlerMeasure_le_leadingCoeff_mul_max_one_house_pow`: the comparisons
   `⌈x⌉ ≤ M(x) ≤ a₀ max(1, ⌈x⌉)ᵈ` with the Mahler measure.
@@ -66,7 +68,7 @@ of bounded degree and bounded house.
 ## References
 
 * J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 3, §3.4 and
-  Exercises 3.5, 3.6.
+  Exercises 3.5, 3.6; ch. 3, Lemma 3.6, p. 42, for the Galois conjugate of modulus at least `1`.
 * C. Smyth, *The Mahler measure of algebraic numbers: a survey* (2008), §3.
 -/
 
@@ -219,6 +221,24 @@ theorem one_le_house {x : F} (hx : IsIntegral ℤ x) (h0 : x ≠ 0) : 1 ≤ hous
   rw [house_coe]
   rw [← IntermediateField.algebraMap_apply, isIntegral_algebraMap_iff] at hx
   exact NumberField.one_le_house_of_isIntegral hx (by simpa using h0)
+
+/-- **A Galois conjugate of modulus at least `1`.** A nonzero algebraic integer `x` of a finite
+normal subfield `L` of `ℂ` has a Galois conjugate `τ x`, for some `τ ∈ Gal(L/ℚ)`, of modulus at
+least `1`. This is the form of `NumberField.exists_conjugate_one_le_norm` for a field embedded in
+`ℂ`, with its complex embeddings replaced by its automorphisms. -/
+theorem exists_algEquiv_one_le_norm {L : IntermediateField ℚ ℂ} [FiniteDimensional ℚ L]
+    [Normal ℚ L] {x : L} (hx : IsIntegral ℤ x) (h0 : x ≠ 0) :
+    ∃ τ : Gal(L/ℚ), 1 ≤ ‖((τ x : L) : ℂ)‖ := by
+  have : NumberField L := ⟨⟩
+  obtain ⟨σ, hσ⟩ := NumberField.exists_conjugate_one_le_norm (α := ⟨x, hx⟩)
+    fun h ↦ h0 congr($h.1)
+  refine ⟨σ.toRatAlgHom.restrictNormal' L, ?_⟩
+  -- `σ` restricted to the normal field `L` and followed by the inclusion is `σ` again.
+  have hτ := σ.toRatAlgHom.restrictNormal_commutes L x
+  rw [Algebra.algebraMap_self, RingHom.id_apply] at hτ
+  rw [AlgHom.restrictNormal', AlgEquiv.ofBijective_apply, ← IntermediateField.algebraMap_apply,
+    hτ]
+  exact hσ
 
 /-- **Kronecker's theorem.** An algebraic integer has house `1` exactly when it is a root of
 unity. -/

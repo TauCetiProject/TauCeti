@@ -36,23 +36,18 @@ theorem _root_.Polynomial.isPrimitive_reverse_iff {R : Type*} [CommSemiring R] (
 /-- A primitive polynomial divisible by a polynomial of at least its degree
 is the latter times a constant unit. -/
 theorem _root_.Polynomial.IsPrimitive.exists_eq_mul_C_unit_of_dvd_of_natDegree_le
-    {R : Type*} [CommSemiring R] [IsDomain R] {p q : R[X]} (hp : p.IsPrimitive)
+    {R : Type*} [CommSemiring R] [NoZeroDivisors R] {p q : R[X]} (hp : p.IsPrimitive)
     (hdvd : q ∣ p) (hdeg : p.natDegree ≤ q.natDegree) :
     ∃ u : Rˣ, p = q * C (u : R) := by
-  have hq : q ≠ 0 := ne_zero_of_dvd_ne_zero hp.ne_zero hdvd
-  obtain ⟨r, hr⟩ := hdvd
-  have hr0 : r ≠ 0 := by
-    intro h
-    apply hp.ne_zero
-    rw [hr, h, mul_zero]
+  nontriviality R
+  obtain ⟨r, rfl⟩ := hdvd
+  have hq : q ≠ 0 := left_ne_zero_of_mul hp.ne_zero
+  have hr : r ≠ 0 := right_ne_zero_of_mul hp.ne_zero
   have hrdeg : r.natDegree = 0 := by
-    rw [hr, natDegree_mul hq hr0] at hdeg
+    rw [natDegree_mul hq hr] at hdeg
     omega
-  have hrC : r = C (r.coeff 0) := eq_C_of_natDegree_eq_zero hrdeg
-  have hu : IsUnit (r.coeff 0) :=
-    (isPrimitive_iff_isUnit_of_C_dvd.mp hp) _
-      ⟨q, hr.trans ((mul_comm q r).trans (congrArg (· * q) hrC))⟩
-  obtain ⟨u, hu⟩ := hu
-  exact ⟨u, hr.trans (congrArg (q * ·) (hrC.trans (congrArg C hu.symm)))⟩
+  rw [eq_C_of_natDegree_eq_zero hrdeg] at hp ⊢
+  obtain ⟨u, hu⟩ := (isPrimitive_iff_isUnit_of_C_dvd.mp hp) _ (dvd_mul_left _ _)
+  exact ⟨u, by rw [hu]⟩
 
 end TauCeti

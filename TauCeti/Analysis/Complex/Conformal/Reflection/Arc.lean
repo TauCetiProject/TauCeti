@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
+import TauCeti.Analysis.Complex.Conformal.LocalDegree
+import TauCeti.Analysis.Complex.Conformal.Reflection.Injective
 
 /-!
 # The Schwarz reflection principle across an analytic arc
@@ -23,12 +25,15 @@ arc with `e`, applies `d` to the values, uses real-axis reflection in the two co
 and then maps back with `d.symm`. The coordinate domains are assumed invariant under conjugation.
 The main theorem proves that this explicit extension is holomorphic throughout `e.source`; its
 packaged form also records agreement with the original branch and the induced reflection
-symmetry.
+symmetry. If the original branch is injective up to the source arc and maps the positive side of
+that arc to the positive side of the target arc, the extension is injective, so its derivative
+vanishes nowhere on `e.source`, the points of the source arc included.
 
 This proves the analytic-arc part of layer L4 in the conformal-mapping roadmap. It follows the
 standard reduction of reflection across an analytic arc to reflection across the real axis; see
-Ahlfors, *Complex Analysis*, Chapters 4--6. The underlying real-axis theorem is
-`TauCeti.differentiableOn_schwarzReflection_of_symmetric`.
+Ahlfors, *Complex Analysis*, Chapters 4--6. The underlying real-axis theorems are
+`TauCeti.differentiableOn_schwarzReflection_of_symmetric` and
+`TauCeti.injOn_schwarzReflection_of_symmetric`.
 -/
 
 public section
@@ -226,5 +231,61 @@ theorem exists_differentiableOn_eqOn_chartedReflection_of_symmetric
     exact chartedSchwarzReflection_of_coord_im_nonneg e d f hf_maps hz.1 hz.2
   · intro z hz
     exact chartedSchwarzReflection_sourceReflection e d f he_symm hd_symm hf_maps hf_real hz
+
+/-- **Charted Schwarz reflection of an injective branch is injective.** Suppose that `f` maps the
+closed positive side of the source arc into the source of `d`, maps the open positive side into the
+open positive side of the target arc and the source arc into the closed positive side, and is
+injective on the closed positive side. Then its charted Schwarz-reflection extension is injective
+on the whole source of `e`. -/
+theorem injOn_chartedSchwarzReflection_of_symmetric
+    (he_symm : MapsTo (starRingEnd ℂ) e.target e.target)
+    (hd_symm : MapsTo (starRingEnd ℂ) d.target d.target)
+    (hf_maps : MapsTo f (e.source ∩ {z : ℂ | 0 ≤ (e z).im}) d.source)
+    (hf_upper : ∀ z ∈ e.source, 0 < (e z).im → 0 < (d (f z)).im)
+    (hf_axis : ∀ z ∈ e.source, (e z).im = 0 → 0 ≤ (d (f z)).im)
+    (hf_inj : InjOn f (e.source ∩ {z : ℂ | 0 ≤ (e z).im})) :
+    InjOn (chartedSchwarzReflection e d f) e.source := by
+  let g := fun w => d (f (e.symm w))
+  -- In the two charts the branch is injective on the closed upper part of `e.target`.
+  have hg_inj : InjOn g (e.target ∩ {w : ℂ | 0 ≤ w.im}) := by
+    intro w hw w' hw' h
+    have hz := mapsTo_symm_inter_im e hw
+    have hz' := mapsTo_symm_inter_im e hw'
+    exact e.symm.injOn hw.1 hw'.1 (hf_inj hz hz' (d.injOn (hf_maps hz) (hf_maps hz') h))
+  have hg_upper : MapsTo g (e.target ∩ {w : ℂ | 0 < w.im}) {w : ℂ | 0 < w.im} := by
+    rintro w ⟨hw, him : 0 < w.im⟩
+    exact hf_upper (e.symm w) (e.map_target hw) (by rwa [e.right_inv hw])
+  have hg_axis : ∀ w ∈ e.target, w.im = 0 → 0 ≤ (g w).im := fun w hw him =>
+    hf_axis (e.symm w) (e.map_target hw) (by rwa [e.right_inv hw])
+  have hS : InjOn (schwarzReflection g) e.target :=
+    injOn_schwarzReflection_of_symmetric he_symm hg_upper hg_axis hg_inj
+  -- The extension is `d.symm ∘ schwarzReflection g ∘ e`, a composite of three injections.
+  have hmaps := mapsTo_schwarzReflection e d f he_symm hd_symm hf_maps
+  intro z hz z' hz' h
+  rw [chartedSchwarzReflection_def, chartedSchwarzReflection_def] at h
+  exact e.injOn hz hz' (hS (e.map_source hz) (e.map_source hz')
+    (d.symm.injOn (hmaps (e.map_source hz)) (hmaps (e.map_source hz')) h))
+
+/-- **Charted Schwarz reflection of an injective branch has nonvanishing derivative.** Under the
+hypotheses of `differentiableOn_chartedSchwarzReflection_of_symmetric` and
+`injOn_chartedSchwarzReflection_of_symmetric`, the derivative of the extension vanishes nowhere on
+the source of `e`. This includes the points of the source arc, where `f` itself is only assumed
+continuous from the positive side. -/
+theorem deriv_chartedSchwarzReflection_ne_zero
+    (he : DifferentiableOn ℂ e e.source) (hd : DifferentiableOn ℂ d d.source)
+    (he_symm : MapsTo (starRingEnd ℂ) e.target e.target)
+    (hd_symm : MapsTo (starRingEnd ℂ) d.target d.target)
+    (hf_maps : MapsTo f (e.source ∩ {z : ℂ | 0 ≤ (e z).im}) d.source)
+    (hf_cont : ContinuousOn f (e.source ∩ {z : ℂ | 0 ≤ (e z).im}))
+    (hf_diff : DifferentiableOn ℂ f (e.source ∩ {z : ℂ | 0 < (e z).im}))
+    (hf_real : ∀ z ∈ e.source, (e z).im = 0 → (d (f z)).im = 0)
+    (hf_upper : ∀ z ∈ e.source, 0 < (e z).im → 0 < (d (f z)).im)
+    (hf_inj : InjOn f (e.source ∩ {z : ℂ | 0 ≤ (e z).im})) {z : ℂ} (hz : z ∈ e.source) :
+    deriv (chartedSchwarzReflection e d f) z ≠ 0 :=
+  deriv_ne_zero_of_injOn
+    (differentiableOn_chartedSchwarzReflection_of_symmetric e d f he hd he_symm hd_symm hf_maps
+      hf_cont hf_diff hf_real) e.open_source
+    (injOn_chartedSchwarzReflection_of_symmetric e d f he_symm hd_symm hf_maps hf_upper
+      (fun z hz him => (hf_real z hz him).ge) hf_inj) hz
 
 end TauCeti

@@ -50,6 +50,8 @@ localization is.
   so that `ψ a = cⁿ φ a` on the degree-`n` part, does not change `lift`.
 * `HomogeneousLocalization.awayMap_injective`: the restriction `awayMap` from `A_{(f)}` to
   `A_{(fg)}` is injective when `g` is a nonzerodivisor of `A`.
+* `HomogeneousLocalization.awayMap_algebraMap`: the restriction `awayMap` respects the
+  coefficients of a graded algebra.
 * `HomogeneousLocalization.isReduced`: a homogeneous localization is reduced whenever the
   corresponding localization is, in particular for any reduced graded ring.
 
@@ -248,6 +250,12 @@ instance isScalarTower :
     exact (val_algebraMap 𝒜 P r).symm)
 
 variable {𝒜}
+
+/-- The restriction `awayMap` from `A_{(f)}` to `A_{(fg)}` respects coefficients. -/
+@[simp]
+theorem awayMap_algebraMap {e : ι} {f g x : A} (hg : g ∈ 𝒜 e) (hx : x = f * g) (r : R) :
+    awayMap 𝒜 hg hx (algebraMap R (Away 𝒜 f) r) = algebraMap R (Away 𝒜 x) r := by
+  simp only [algebraMap_eq_comp, RingHom.comp_apply, awayMap_fromZeroRingHom]
 
 /-- Fractions with a fixed homogeneous denominator depend linearly on the numerator. -/
 noncomputable def Away.mkLinearMap {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ) :

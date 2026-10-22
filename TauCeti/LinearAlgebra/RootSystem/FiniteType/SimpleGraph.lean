@@ -40,8 +40,10 @@ simple graph has a positive definite form `2I - A` exactly when it is a Dynkin d
   `TauCeti.DynkinType.isBipartite_diagramGraph_cartanMatrix`: every standard Dynkin diagram is
   acyclic and bipartite.
 * `SimpleGraph.exists_pos_two_mul_le_sum_of_not_exists_dynkinType_iso`: a connected graph which is
-  not a Dynkin diagram carries a positive weight `δ` with `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex.
-* `SimpleGraph.exists_adj_of_not_exists_dynkinType_iso`: such a graph has no isolated vertex.
+  not a Dynkin diagram carries a positive weight `δ` with `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex;
+  such a graph has no isolated vertex
+  (`SimpleGraph.exists_adj_of_pos_two_mul_le_sum`,
+  in `Combinatorics/SimpleGraph/AdditiveFunction.lean`).
 
 ## References
 
@@ -261,19 +263,5 @@ theorem exists_pos_two_mul_le_sum_of_not_exists_dynkinType_iso [Fintype V] (hG :
       (isFiniteType_graphCartanMatrix_of_posDef h)
     exact ⟨t, ht, hφ⟩
   exact hG.exists_pos_smul_le_sum (c := (2 : ℝ)) hδ0 hδ hδle
-
-omit [DecidableEq V] [DecidableRel G.Adj] in
-/-- **A connected non-Dynkin graph has no isolated vertex.** If a connected finite simple graph `G`
-is not isomorphic to the diagram of any valid Dynkin type, then every vertex has a neighbour. -/
-theorem exists_adj_of_not_exists_dynkinType_iso (hG : G.Connected)
-    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) (i : V) :
-    ∃ j, G.Adj i j := by
-  classical
-  have := Fintype.ofFinite V
-  obtain ⟨δ, hδ, hδle⟩ := exists_pos_two_mul_le_sum_of_not_exists_dynkinType_iso hG hD
-  -- The weight at `i` is positive, so the sum of the weights of its neighbours is nonzero.
-  obtain ⟨j, hj, -⟩ :=
-    Finset.exists_ne_zero_of_sum_ne_zero ((mul_pos two_pos (hδ i)).trans_le (hδle i)).ne'
-  exact ⟨j, (G.mem_neighborFinset i j).1 hj⟩
 
 end SimpleGraph

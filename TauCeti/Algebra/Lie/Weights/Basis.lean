@@ -6,18 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Weights.FormalCharacter
-import TauCeti.Algebra.Lie.Weights.Semisimple
 import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
-import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
 /-!
 # Formal characters from a weight basis
 
-A basis of simultaneous eigenvectors makes every acting endomorphism diagonalizable, so its
-honest and generalized weight spaces agree over the original field. The formal character is
-the sum of the corresponding group-algebra basis elements, counting repeated weights with
-their multiplicities. If the basis weights are pairwise distinct, each occurring weight space
-is a line and each weight has coefficient one.
+For a nilpotent Lie algebra over a reduced commutative ring, a basis of simultaneous
+eigenvectors makes honest and generalized weight spaces agree. Over a field, a finite such
+basis expresses the formal character as the sum of the corresponding group-algebra basis
+elements, counting repeated weights with their multiplicities. If these weights are pairwise
+distinct, each occurring weight space is a line and each weight has coefficient one.
 
 These results connect explicit diagonal actions, such as the exterior model of spinors, to
 `TauCeti.formalCharacter` without requiring algebraic closedness or characteristic zero.
@@ -31,6 +29,55 @@ namespace Module.Basis
 
 universe u v w t
 
+section Reduced
+
+variable {R : Type u} [CommRing R] [IsReduced R] {L : Type v} [LieRing L] [LieAlgebra R L]
+  [LieRing.IsNilpotent L] {M : Type w} [AddCommGroup M] [Module R M]
+  [LieRingModule L M] [LieModule R L M] {ι : Type t}
+  (b : Module.Basis ι R M) {μ : ι → Module.Dual R L}
+  (hb : ∀ i x, ⁅x, b i⁆ = μ i x • b i)
+
+include hb
+
+/-- For a nilpotent Lie algebra over a reduced commutative ring, a basis of weight vectors
+makes generalized weight spaces equal to honest weight spaces. -/
+theorem genWeightSpace_eq_weightSpace_of_weight_basis (χ : L → R) :
+    genWeightSpace M χ = weightSpace M χ := by
+  refine le_antisymm (fun m hm => ?_) (weightSpace_le_genWeightSpace M χ)
+  rw [mem_genWeightSpace] at hm
+  rw [mem_weightSpace]
+  intro x
+  let f := toEnd R L M x - χ x • 1
+  have hf (i : ι) : f (b i) = (μ i x - χ x) • b i := by
+    simp [f, hb, sub_smul]
+  have hpow (n : ℕ) (m : M) (i : ι) :
+      b.repr ((f ^ n) m) i = (μ i x - χ x) ^ n * b.repr m i := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [pow_succ', Module.End.mul_apply, b.repr_apply_of_apply_basis hf, ih,
+        pow_succ', mul_assoc]
+  obtain ⟨n, hn⟩ := hm x
+  have hcoord (i : ι) : (μ i x - χ x) * b.repr m i = 0 := by
+    have hz : (μ i x - χ x) ^ n * b.repr m i = 0 := by
+      rw [← hpow, hn, map_zero, Finsupp.zero_apply]
+    apply eq_zero_of_pow_eq_zero (n := n + 1)
+    calc
+      ((μ i x - χ x) * b.repr m i) ^ (n + 1) =
+          ((μ i x - χ x) ^ n * b.repr m i) *
+            ((μ i x - χ x) * b.repr m i ^ n) := by
+              rw [mul_pow, pow_succ, pow_succ]
+              ring
+      _ = 0 := by rw [hz, zero_mul]
+  have hfm : f m = 0 := by
+    apply b.repr.injective
+    ext i
+    simpa only [pow_one, map_zero, Finsupp.zero_apply] using
+      (hpow 1 m i).trans (by simpa only [pow_one] using hcoord i)
+  simpa [f, sub_eq_zero] using hfm
+
+end Reduced
+
 variable {K : Type u} [Field K] {L : Type v} [LieRing L] [LieAlgebra K L]
   [LieRing.IsNilpotent L] {M : Type w} [AddCommGroup M] [Module K M]
   [LieRingModule L M] [LieModule K L M] {ι : Type t}
@@ -38,17 +85,6 @@ variable {K : Type u} [Field K] {L : Type v} [LieRing L] [LieAlgebra K L]
   (hb : ∀ i x, ⁅x, b i⁆ = μ i x • b i)
 
 include hb
-
-/-- A basis of weight vectors makes generalized weight spaces equal to honest weight spaces. -/
-theorem genWeightSpace_eq_weightSpace_of_weight_basis (χ : L → K) :
-    genWeightSpace M χ = weightSpace M χ := by
-  have hss (x : L) : (toEnd K L M x).IsSemisimple := by
-    apply TauCeti.isSemisimple_of_iSup_eigenspace_eq_top
-    rw [eq_top_iff, ← b.span_eq, Submodule.span_le]
-    rintro _ ⟨i, rfl⟩
-    exact Submodule.mem_iSup_of_mem (μ i x) (Module.End.mem_eigenspace_iff.mpr (hb i x))
-  exact TauCeti.genWeightSpace_eq_weightSpace_of_isFinitelySemisimple
-    (fun x ↦ (hss x).isFinitelySemisimple) χ
 
 omit [LieRing.IsNilpotent L] in
 /-- With distinct basis weights, the weight space at a basis weight is its basis-vector line. -/
