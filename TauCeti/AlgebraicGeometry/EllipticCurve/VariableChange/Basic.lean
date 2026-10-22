@@ -25,7 +25,8 @@ automorphism fixes it) and `map_smul_baseChange_eq` (the conjugate of an isomorp
 changes is again one). Comparing an isomorphism with its conjugate via the last of these is what
 produces the Galois cocycle used by the twist classification. A change of variables over an
 extension descends to the base field exactly when its four coefficients do
-(`VariableChange.mem_range_baseChange_iff`).
+(`VariableChange.mem_range_baseChange_iff`). Conjugation by algebra automorphisms is an action
+(`VariableChange.map_map_algEquiv`).
 
 That cocycle comparison lands on a product `C * [-1]`, whose four components are read off here as
 `mul_negVariableChange_u/_r/_s/_t` rather than by unfolding `VariableChange.mul_def` against the

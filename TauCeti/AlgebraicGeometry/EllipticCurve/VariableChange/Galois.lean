@@ -16,7 +16,6 @@ under the Krull topology. This gives continuity for the cocycles attached to poi
 of Weierstrass curves. Descent is developed in
 `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisDescent.lean`.
 
-Conjugation by algebra automorphisms is an action (`VariableChange.map_map_algEquiv`).
 -/
 
 public section
