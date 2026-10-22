@@ -46,10 +46,10 @@ homogeneous of degree one and multiplicative is exactly the polynomial law of an
 * `PolynomialLaw.algHomEquiv`: `A →ₐ[R] B` is identified with the multiplicative laws
   `A →ₚₗ[R] B` homogeneous of degree one.
 
-The namespace `TauCeti.PolynomialLaw.IsMultiplicative` bundles evaluations as monoid
-homomorphisms: `toMonoidHom` evaluates over a scalar algebra in any universe, and
-`groundMonoidHom` evaluates over the base ring. With `open TauCeti`, a multiplicativity
-witness `hf : f.IsMultiplicative` provides `hf.toMonoidHom` and `hf.groundMonoidHom`.
+The definitions `TauCeti.polynomialLawMonoidHom` and `TauCeti.polynomialLawGroundMonoidHom`
+bundle evaluations as monoid homomorphisms. Given `hf : f.IsMultiplicative`,
+`TauCeti.polynomialLawMonoidHom hf S` evaluates over a scalar algebra in any universe, and
+`TauCeti.polynomialLawGroundMonoidHom hf` evaluates over the base ring.
 
 ## References
 
@@ -256,29 +256,30 @@ theorem algHomEquiv_symm_apply
 
 end PolynomialLaw
 
-namespace TauCeti.PolynomialLaw.IsMultiplicative
+namespace TauCeti
 
 variable {R : Type u} [CommSemiring R] {A B : Type*} [Semiring A] [Algebra R A]
   [Semiring B] [Algebra R B] {f : A →ₚₗ[R] B} (hf : f.IsMultiplicative)
 
 /-- The component of a multiplicative law, bundled as a monoid homomorphism. -/
-def toMonoidHom (S : Type*) [CommSemiring S] [Algebra R S] :
+def polynomialLawMonoidHom (S : Type*) [CommSemiring S] [Algebra R S] :
     (S ⊗[R] A) →* (S ⊗[R] B) where
   toFun := f.toFun S
   map_one' := hf.toFun_one S
   map_mul' := hf.toFun_mul
 
 @[simp]
-theorem toMonoidHom_apply (S : Type*) [CommSemiring S] [Algebra R S] (x : S ⊗[R] A) :
-    toMonoidHom hf S x = f.toFun S x := (rfl)
+theorem polynomialLawMonoidHom_apply (S : Type*) [CommSemiring S] [Algebra R S]
+    (x : S ⊗[R] A) : polynomialLawMonoidHom hf S x = f.toFun S x := (rfl)
 
 /-- The ground evaluation of a multiplicative polynomial law is multiplicative. -/
-def groundMonoidHom : A →* B where
+def polynomialLawGroundMonoidHom : A →* B where
   toFun := f.ground
   map_one' := hf.ground_one
   map_mul' := hf.ground_mul
 
 @[simp]
-theorem groundMonoidHom_apply (a : A) : groundMonoidHom hf a = f.ground a := (rfl)
+theorem polynomialLawGroundMonoidHom_apply (a : A) :
+    polynomialLawGroundMonoidHom hf a = f.ground a := (rfl)
 
-end TauCeti.PolynomialLaw.IsMultiplicative
+end TauCeti
