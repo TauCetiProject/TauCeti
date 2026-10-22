@@ -25,3 +25,11 @@ and other workflow pins remain independent. `test_stack_policy.py` runs in
 `stack-policy.yml` against that workflow's Tools pin.
 `test_stack_checkpoint_restore.py` runs in both the policy workflow and main CI
 and does not depend on the Tools pin.
+
+The batch finalizer, CI status retry workflow, and main CI build/test job pin
+Tools separately for confirmed-withdrawal reporting. A successful build whose
+requested Bors batch is explicitly canceled finishes with `batch withdrawn; no
+verdict posted`, removes its pending intent, and posts neither a red nor green
+`build` status. Genuine build/cache failures (including an unfinished canceled
+build) and invalid or unavailable Bors observations retain their existing behavior.
+For local finalizer tests, materialize the helpers using that job's Tools revision.
