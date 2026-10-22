@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Points
+public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Equiv
 
 /-!
 # Cocharacters through a diagonalizable subgroup
@@ -71,10 +72,6 @@ theorem pointsHom_cocharacter (ψ : X →* Multiplicative ℤ) (u : Aˣ) :
       BialgHom.mapDomain π
         (DiagonalizableGroup.cocharPoints ψ
           ((DiagonalizableGroup.pointsMulEquiv (R := R)).symm (zpowersHom Aˣ u))) := by
-  have hT (m : Multiplicative ℤ) : (AddMonoidAlgebra.toMultiplicativeAlgEquiv R R ℤ).symm
-      (MonoidAlgebra.single m 1) = LaurentPolynomial.T m.toAdd := by
-    rw [AlgEquiv.symm_apply_eq, LaurentPolynomial.T,
-      AddMonoidAlgebra.toMultiplicativeAlgEquiv_single, ofAdd_toAdd]
   have hQ : DiagonalizableGroup.cocharPoints ψ
       ((DiagonalizableGroup.pointsMulEquiv (R := R)).symm (zpowersHom Aˣ u)) =
         toConv (((laurentEval (R := R) u).comp
@@ -84,8 +81,12 @@ theorem pointsHom_cocharacter (ψ : X →* Multiplicative ℤ) (u : Aˣ) :
     refine MonoidHom.ext fun χ ↦ Units.ext ?_
     rw [DiagonalizableGroup.pointsMulEquiv_cocharPoints, MulEquiv.apply_symm_apply,
       DiagonalizableGroup.pointsMulEquiv_apply, DiagonalizableGroup.charOfPoint_apply_coe]
-    simp [hT]
+    simp
   rw [hQ, Cocharacter.pointsHom_apply, BialgHom.mapDomain_apply, BialgHom.mapDomain_apply]
+  -- Forgetting the bialgebra structure in `cocharacter` gives this same algebra composite:
+  -- `mapDomainBialgHom` retains `mapDomainAlgHom`, and `toMultiplicativeBialgEquiv` retains
+  -- `toMultiplicativeAlgEquiv`, including its inverse. Only the association of composition
+  -- differs, and both composites evaluate to the same function under `toConv`.
   rfl
 
 /-- The product of two cocharacters of `D(X)` acts on points as the product of their actions. -/
@@ -106,12 +107,6 @@ end Points
 cocharacter. -/
 theorem cocharacter_pow (ψ : X →* Multiplicative ℤ) (n : ℤ) :
     π.cocharacter (ψ ^ n) = (π.cocharacter ψ).powCocharacter n := by
-  have hs (m : Multiplicative ℤ) (a : R) :
-      (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).symm (MonoidAlgebra.single m a) =
-        AddMonoidAlgebra.single m.toAdd a := by
-    apply EquivLike.injective (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ)
-    rw [BialgEquiv.apply_symm_apply, AddMonoidAlgebra.toMultiplicativeBialgEquiv_single,
-      ofAdd_toAdd]
   ext h : 1
   rw [BialgHom.powCocharacter_apply]
   simp only [cocharacter, BialgHom.comp_apply]
@@ -120,7 +115,8 @@ theorem cocharacter_pow (ψ : X →* Multiplicative ℤ) (n : ℤ) :
   | add x y hx hy => simp only [map_add, hx, hy, AddMonoidAlgebra.mapDomain_add]
   | single χ a =>
     simp only [MonoidAlgebra.mapDomainBialgHom_single, BialgEquiv.toBialgHom_eq_coe,
-      BialgEquiv.coe_toBialgHom, hs, MonoidHom.zpow_apply, AddMonoidAlgebra.mapDomain_single,
+      BialgEquiv.coe_toBialgHom, AddMonoidAlgebra.toMultiplicativeBialgEquiv_symm_single,
+      MonoidHom.zpow_apply, AddMonoidAlgebra.mapDomain_single,
       toAdd_zpow, smul_eq_mul]
     rw [mul_comm]
 
