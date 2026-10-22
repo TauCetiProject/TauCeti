@@ -283,8 +283,7 @@ private noncomputable def baseChangeLiftInv : ℬ →+*ᵍ (fun n ↦ (𝒜 n).b
   __ := (RingEquiv.ofBijective _ (bijective_baseChangeLift 𝒜 f hfR hf)).symm.toRingHom
   map_mem {n b} hb := (baseChangeLift 𝒜 f hfR).mem_of_map_mem
     (bijective_baseChangeLift 𝒜 f hfR hf).injective (by
-      rwa [← RingEquiv.ofBijective_apply _ (bijective_baseChangeLift 𝒜 f hfR hf),
-        RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.apply_symm_apply])
+      simpa [← RingEquiv.ofBijective_apply _ (bijective_baseChangeLift 𝒜 f hfR hf)] using hb)
 
 private theorem baseChangeLift_baseChangeLiftInv :
     Function.RightInverse (baseChangeLiftInv 𝒜 f hfR hf) (baseChangeLift 𝒜 f hfR) :=
@@ -330,8 +329,8 @@ theorem isPullback_map_of_isBaseChange :
       simp [baseChangeLift_tmul, Algebra.smul_def])
   refine (isPullback_baseChange 𝒜 S).of_iso (mapIso _ _ hfg hgf).symm (.refl _) (.refl _)
     (.refl _) ?_ ?_ ?_ ?_
-  · rw [hmap, Iso.symm_hom, Iso.inv_hom_id_assoc, Iso.refl_hom, Category.comp_id]
-  · rw [← hcoeff, Iso.symm_hom, Iso.inv_hom_id_assoc, Iso.refl_hom, Category.comp_id]
+  · simp [hmap, -mapIso_hom, -mapIso_inv]
+  · simp [← hcoeff, -mapIso_hom, -mapIso_inv]
   · simp
   · simp
 

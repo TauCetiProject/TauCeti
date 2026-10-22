@@ -7,13 +7,14 @@ module
 
 public import Mathlib.Algebra.DirectSum.Algebra
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # The external direct sum of a graded algebra as an internally graded algebra
 
 Let `M : ι → Type*` be a family of `R`-modules. Its external direct sum `⨁ i, M i` is the
 internal direct sum of its summands: the copies `DirectSum.lof R ι M i` of the `M i`, as
-`R`-submodules `TauCeti.DirectSum.summand R M i`. When `M` is a graded `R`-algebra, that is
+`R`-submodules `DirectSum.summand R M i`. When `M` is a graded `R`-algebra, that is
 `[DirectSum.GSemiring M] [DirectSum.GAlgebra R M]`, these submodules make `⨁ i, M i` an internally
 graded algebra in the sense of `GradedAlgebra`.
 
@@ -25,10 +26,11 @@ of a graded algebra on a scheme.
 
 ## Main definitions
 
-* `TauCeti.DirectSum.summand R M i`: the `i`-th summand of `⨁ i, M i`, as an `R`-submodule.
-* `TauCeti.DirectSum.instDecompositionSummand`: `⨁ i, M i` decomposes as the direct sum of its
-  summands, with `i`-th component `lof R ι M i (x i)` (`TauCeti.DirectSum.coe_decompose_summand`).
-* `TauCeti.DirectSum.instGradedAlgebraSummand`: for a graded `R`-algebra `M`, the summands are a
+* `DirectSum.summand R M i`: the `i`-th summand of `⨁ i, M i`, as an `R`-submodule.
+* `DirectSum.instDecompositionSummand`: `⨁ i, M i` decomposes as the direct sum of its
+  summands, which form an internal direct sum (`DirectSum.isInternal_summand`), with `i`-th
+  component `lof R ι M i (x i)` (`DirectSum.coe_decompose_summand`).
+* `DirectSum.instGradedAlgebraSummand`: for a graded `R`-algebra `M`, the summands are a
   grading of the algebra `⨁ i, M i`.
 -/
 
@@ -36,7 +38,7 @@ public section
 
 open scoped DirectSum
 
-namespace TauCeti.DirectSum
+namespace DirectSum
 
 section Module
 
@@ -53,8 +55,8 @@ variable {R M}
 /-- An element of `⨁ i, M i` lies in the `i`-th summand exactly when it is `DirectSum.of M i m`
 for some `m : M i`. -/
 theorem mem_summand {i : ι} {x : ⨁ i, M i} :
-    x ∈ summand R M i ↔ ∃ m : M i, DirectSum.of M i m = x :=
-  LinearMap.mem_range
+    x ∈ summand R M i ↔ ∃ m : M i, DirectSum.of M i m = x := by
+  simp [summand, DirectSum.lof_eq_of]
 
 /-- The element `DirectSum.lof R ι M i m` lies in the `i`-th summand. -/
 theorem lof_mem_summand (i : ι) (m : M i) : DirectSum.lof R ι M i m ∈ summand R M i :=
@@ -62,28 +64,18 @@ theorem lof_mem_summand (i : ι) (m : M i) : DirectSum.lof R ι M i m ∈ summan
 
 /-- The element `DirectSum.of M i m` lies in the `i`-th summand. -/
 theorem of_mem_summand (i : ι) (m : M i) : DirectSum.of M i m ∈ summand R M i :=
-  lof_mem_summand i m
+  mem_summand.mpr ⟨m, rfl⟩
+
+/-- The summands of the external direct sum form an internal direct sum: they are the ranges of
+the inclusions `DirectSum.lof R ι M i`. -/
+theorem isInternal_summand : DirectSum.IsInternal (summand R M) :=
+  TauCeti.DirectSum.isInternal_of_lof
+    (e := fun i ↦ LinearEquiv.ofInjective (DirectSum.lof R ι M i) (DirectSum.of_injective i))
+    (E := LinearEquiv.refl R _) fun _ _ ↦ rfl
 
 /-- The external direct sum decomposes as the direct sum of its summands. -/
-instance instDecompositionSummand : DirectSum.Decomposition (summand R M) where
-  decompose' := DirectSum.map fun i ↦
-    ((DirectSum.lof R ι M i).codRestrict (summand R M i) (lof_mem_summand i)).toAddMonoidHom
-  left_inv x := by
-    induction x using DirectSum.induction_on with
-    | zero => simp
-    | of i m =>
-      rw [DirectSum.map_of, DirectSum.coeAddMonoidHom_of, LinearMap.toAddMonoidHom_coe,
-        LinearMap.codRestrict_apply, DirectSum.lof_eq_of]
-    | add x y hx hy => rw [map_add, map_add, hx, hy]
-  right_inv y := by
-    induction y using DirectSum.induction_on with
-    | zero => simp
-    | of i m =>
-      obtain ⟨m, hm⟩ := m
-      obtain ⟨m, rfl⟩ := mem_summand.mp hm
-      rw [DirectSum.coeAddMonoidHom_of, DirectSum.map_of]
-      exact congrArg _ (Subtype.ext (LinearMap.codRestrict_apply _ _ _))
-    | add x y hx hy => rw [map_add, map_add, hx, hy]
+noncomputable instance instDecompositionSummand : DirectSum.Decomposition (summand R M) :=
+  isInternal_summand.chooseDecomposition
 
 /-- The `i`-th component of an element `x` of `⨁ i, M i` for the summand decomposition is the
 summand `x i`. -/
@@ -115,6 +107,6 @@ instance instGradedMonoidSummand : SetLike.GradedMonoid (summand R M) where
     simpa [DirectSum.lof_eq_of, DirectSum.of_mul_of] using of_mem_summand (R := R) _ _
 
 /-- **The direct sum of a graded algebra is internally graded by its summands.** -/
-instance instGradedAlgebraSummand : GradedAlgebra (summand R M) where
+noncomputable instance instGradedAlgebraSummand : GradedAlgebra (summand R M) where
 
-end TauCeti.DirectSum
+end DirectSum
