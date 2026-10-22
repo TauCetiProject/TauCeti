@@ -40,12 +40,6 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
 
 variable (hA : IsDGAlgebra 𝒜 dA)
 
-private theorem mem_ulift_grading_iff (p : ℤ) (x : ULift.{v} A) :
-    x ∈ ((InternalGrading.ofDecomposition 𝒜).map
-      (ULift.moduleEquiv : ULift.{v} A ≃ₗ[R] A).symm).piece p ↔ x.down ∈ 𝒜 p := by
-  rw [InternalGrading.mem_map_piece_iff, LinearEquiv.symm_symm, ULift.moduleEquiv_apply,
-    InternalGrading.ofDecomposition_piece]
-
 /-- The universe-lifted regular DG bimodule of a DG algebra. -/
 @[expose]
 def tensorUnit : DGBimoduleCat.{uR, uA, uA, max v uA} hA hA := by
@@ -53,9 +47,7 @@ def tensorUnit : DGBimoduleCat.{uR, uA, uA, max v uA} hA hA := by
   let G₀ := InternalGrading.ofDecomposition 𝒜
   let G := G₀.map E
   have mem_G_iff (p : ℤ) (x : ULift.{v} A) : x ∈ G.piece p ↔ x.down ∈ 𝒜 p := by
-    rw [G₀.mem_map_piece_iff]
-    simp only [E, G₀, LinearEquiv.symm_symm, ULift.moduleEquiv_apply,
-      InternalGrading.ofDecomposition_piece]
+    rw [G₀.mem_map_ulift_piece_iff, InternalGrading.ofDecomposition_piece]
   letI : SMulCommClass A Aᵐᵒᵖ (ULift.{v} A) :=
     ⟨fun a b x ↦ by
       apply ULift.ext
@@ -105,19 +97,22 @@ def tensorUnit : DGBimoduleCat.{uR, uA, uA, max v uA} hA hA := by
       hA.isDGRightModule.leibniz hx a
 
 /-- The regular DG-bimodule carrier is linearly equivalent to the algebra. -/
-@[expose]
 def tensorUnitEquiv : A ≃ₗ[R] tensorUnit.{v} hA :=
   (ULift.moduleEquiv : ULift.{v} A ≃ₗ[R] A).symm
 
 /-- The carrier equivalence sends an algebra element to its universe lift. -/
 @[simp]
 theorem tensorUnitEquiv_apply (a : A) :
-    tensorUnitEquiv.{v} hA a = ULift.up a := rfl
+    tensorUnitEquiv.{v} hA a = ULift.up a := by
+  rw [tensorUnitEquiv]
+  exact ULift.moduleEquiv_symm_apply a
 
 /-- The inverse carrier equivalence lowers a regular-bimodule element. -/
 @[simp]
 theorem tensorUnitEquiv_symm_apply (x : tensorUnit.{v} hA) :
-    (tensorUnitEquiv.{v} hA).symm x = x.down := rfl
+    (tensorUnitEquiv.{v} hA).symm x = x.down := by
+  rw [LinearEquiv.symm_apply_eq, tensorUnitEquiv_apply]
+  exact (ULift.up_down x).symm
 
 /-- The grading of the regular DG bimodule is the transported algebra grading. -/
 theorem tensorUnit_grading : (tensorUnit.{v} hA).grading =
@@ -129,7 +124,8 @@ theorem tensorUnit_grading : (tensorUnit.{v} hA).grading =
 theorem mem_tensorUnit_grading_iff (p : ℤ) (x : tensorUnit.{v} hA) :
     x ∈ (tensorUnit.{v} hA).grading p ↔ x.down ∈ 𝒜 p := by
   rw [tensorUnit_grading]
-  exact mem_ulift_grading_iff p x
+  exact ((InternalGrading.ofDecomposition 𝒜).mem_map_ulift_piece_iff p x).trans <| by
+    rw [InternalGrading.ofDecomposition_piece]
 
 /-- Lowering converts the regular bimodule's left action to multiplication. -/
 @[simp]
