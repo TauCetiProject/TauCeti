@@ -31,7 +31,7 @@ complex is exact (`TauCeti.quasiIso_cellularChainComplexAugmentation`), so the c
 This applies to the universal cover of a `K(G, 1)` CW complex: if `B` carries a CW structure on
 the whole space and is aspherical, and `E` is simply connected, then `E` is weakly contractible, and
 since it has CW type, it is contractible by Whitehead's theorem
-(`IsQuotientCoveringMap.contractibleSpace_preimage_univ`, in
+(`IsCoveringMap.contractibleSpace_preimage_univ`, in
 `TauCeti.AlgebraicTopology.EilenbergMacLane.Contractible`). The group acting is `G`, acting on `E`
 by the given action; Mathlib's `IsQuotientCoveringMap.fundamentalGroupEquiv` identifies `G` with
 the opposite of the fundamental group of `B`. This resolution is the input for identifying the
@@ -96,16 +96,6 @@ lemma cellularAugmentationRep_hom_toLinearMap :
       (cellularAugmentation (p ⁻¹' C) (ModuleCat.of R R)).hom :=
   (rfl)
 
-/-- Forgetting the action, `TauCeti.cellularAugmentationRep` is the augmentation of the
-cellular chains of `p ⁻¹' C`. Not a simp lemma: `Rep.forget₂_moduleCat_map` and
-`TauCeti.cellularAugmentationRep_hom_toLinearMap` already prove it. -/
-lemma forget₂_map_cellularAugmentationRep :
-    letI := cwComplexPreimage C hG.isCoveringMap
-    haveI := hG.isCoveringMap.t2Space
-    (forget₂ (Rep R G) (ModuleCat R)).map (cellularAugmentationRep C hG R) =
-      cellularAugmentation (p ⁻¹' C) (ModuleCat.of R R) :=
-  (rfl)
-
 /-- The equivariant augmentation vanishes on the boundaries of lifted `1`-cells. -/
 @[reassoc (attr := simp)]
 lemma cellularDifferentialRep_comp_cellularAugmentationRep :
@@ -151,10 +141,13 @@ theorem quasiIso_cellularChainComplexRepAugmentation [ContractibleSpace (p ⁻¹
       ((HomologicalComplex.singleMapHomologicalComplex _ _ 0).app _) ?_
     -- In degree `0` both sides are `TauCeti.cellularAugmentation` after transports along
     -- equalities of objects. `Rep.forget₂_moduleCat_map` is excluded so that `forget₂` stays
-    -- visible on the transport, where `eqToHom_map` applies, and on the augmentation, where
-    -- `TauCeti.forget₂_map_cellularAugmentationRep` applies.
+    -- visible on the transport, where `eqToHom_map` applies, and on the augmentation, where `h`
+    -- applies.
+    have h : (forget₂ (Rep R G) (ModuleCat R)).map (cellularAugmentationRep C hG R) =
+        cellularAugmentation (p ⁻¹' C) (ModuleCat.of R R) := by
+      rw [Rep.forget₂_moduleCat_map, cellularAugmentationRep_hom_toLinearMap, ModuleCat.ofHom_hom]
     ext : 1
-    simp [-Rep.forget₂_moduleCat_map, eqToHom_map, forget₂_map_cellularAugmentationRep]
+    simp [-Rep.forget₂_moduleCat_map, eqToHom_map, h]
 
 /-- The terms of the lifted cellular chain complex are projective representations: each is free
 over the group ring, with basis one chosen lift of each cell of `C`. -/
@@ -170,10 +163,6 @@ instance projective_cellularChainComplexRep_X (n : ℕ) :
 trivial representation of `G` over `R`: if the lift `p ⁻¹' C` of the CW complex `C` is
 contractible, its cellular chain complex, on which `G` acts through translation of the lifted
 cells, is a complex of free representations whose augmentation is a quasi-isomorphism. -/
--- The body is exposed, as for Mathlib's `Rep.standardResolution`, so that the complex of the
--- resolution is the lifted cellular chain complex by definition: even stating
--- `TauCeti.cellularResolution_π` needs this.
-@[expose]
 def cellularResolution [ContractibleSpace (p ⁻¹' C)] :
     ProjectiveResolution (Rep.trivial R G R) where
   complex := cellularChainComplexRep C hG R
@@ -190,7 +179,8 @@ lemma cellularResolution_complex [ContractibleSpace (p ⁻¹' C)] :
 complex. -/
 @[simp]
 lemma cellularResolution_π [ContractibleSpace (p ⁻¹' C)] :
-    (cellularResolution C hG R).π = cellularChainComplexRepAugmentation C hG R :=
-  (rfl)
+    (cellularResolution C hG R).π =
+      eqToHom (cellularResolution_complex C hG R) ≫ cellularChainComplexRepAugmentation C hG R :=
+  (Category.id_comp _).symm
 
 end TauCeti
