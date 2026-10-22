@@ -28,8 +28,9 @@ The variable `NAMESPACE_BUILD_CAP` overrides the default in the configuration.
 Concurrent picker decisions can admit jobs above this snapshot-based cap. When Namespace is
 full, staging falls through to GitHub; if all eligible destinations are full or
 unknown, the build waits for a GitHub-hosted slot. A failed picker uses that same
-GitHub fallback. The existing GitHub budget defaults to 18 busy jobs (production currently uses
-12), including the picker, preserving headroom for short control jobs under the provider's 20-job limit.
+GitHub fallback. `HOSTED_RUNNER_BUDGET` defaults to 18 running GitHub-hosted jobs,
+including the picker. Set it below the provider's total job limit to preserve
+headroom for short control jobs.
 
 Capacity scans preserve the existing App API reserve (default 1,500 requests),
 then try one complete scan using the repository token (reserve 250). Incomplete
@@ -57,8 +58,14 @@ peak of 32 and p99 of 19; concurrency exceeded 20 for about 2.18 hours. These ar
 actual execution intervals, excluding control jobs; queued builds are included
 in the dispatcher's admission count as an additional precaution.
 
-This workflow change does not enroll or reconfigure either server. Deploy the
-Fleet broker and release with class/slot support before enabling these host
-capacities. Drain tauchonki before updating it. For Chris, issue or extend an
-unused invitation with `--name chris-server --ci both --max-jobs 2`, then follow
-the [Fleet enrollment instructions](https://github.com/TauCetiProject/TauCetiFleet/blob/main/services/ci-broker/README.md).
+Routing policy and host configuration are managed separately. Follow the
+[Fleet enrollment instructions](https://github.com/TauCetiProject/TauCetiFleet/blob/main/services/ci-broker/README.md)
+to issue a machine's invitation with its allowed CI classes and shared slot limit.
+Run `enroll HOST` and `prepare HOST`, then explicitly activate CI with `enable HOST`,
+choosing `--ci pr`, `--ci staging`, or `--ci both`, `--max-jobs`, and the per-job
+`--ci-vcpus` and `--ci-memory-gib` settings.
+
+Before updating a host's installed Fleet release or changing its CI classes,
+slot limit, or guest shape, run `drain HOST` and wait for every guest to finish.
+Drain pauses new worker and CI admissions. After maintenance, explicitly
+re-enable every previously enabled role.

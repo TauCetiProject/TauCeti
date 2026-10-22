@@ -10,12 +10,15 @@ on:
   workflow_call:
     inputs:
       fleet-staging:
+        description: Use staging preferences and eligible dedicated machines; takes precedence over fleet-pr
         type: boolean
         default: false
       fleet-pr:
+        description: Use PR preferences and eligible dedicated machines when pr-head is supplied
         type: boolean
         default: false
       pr-head:
+        description: Immutable 40-character PR head; empty disables dedicated PR placement and recovery
         type: string
         default: ""
     secrets:
@@ -25,19 +28,25 @@ on:
       APP_PRIVATE_KEY: { required: false }
     outputs:
       runner:
-        description: JSON runs-on target, bound to this picker attempt
+        description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
         value: ${{ jobs.pick.outputs.runner }}
       pool:
+        description: "Destination key: github, namespace, or a machine name from services.fleet; valid only for the matching attempt"
         value: ${{ jobs.pick.outputs.pool }}
       attempt:
+        description: Picker's github.run_attempt; callers must compare it with their current attempt before using runner or pool
         value: ${{ jobs.pick.outputs.attempt }}
       busy:
+        description: Observed running GitHub-hosted jobs, including control jobs; empty when unknown
         value: ${{ jobs.pick.outputs.busy }}
       budget:
+        description: GitHub-hosted running-job budget used for this selection
         value: ${{ jobs.pick.outputs.budget }}
       namespace_busy:
+        description: Observed queued or running Namespace build jobs, excluding control jobs; empty when unknown
         value: ${{ jobs.pick.outputs.namespace_busy }}
       namespace_cap:
+        description: Approximate shared Namespace build-job cap used for this selection
         value: ${{ jobs.pick.outputs.namespace_cap }}
 
 jobs:
