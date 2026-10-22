@@ -47,12 +47,14 @@ private theorem half_generalizedGammaPDF_eq (hs : 0 < s) (hp : 0 < p) {x : ℝ}
   have hcoef : (1 / 2 : ℝ≥0∞) = ENNReal.ofReal (1 / 2 : ℝ) := by
     rw [ENNReal.ofReal_div_of_pos (by norm_num)]
     norm_num
-  rw [hcoef, generalizedGammaPDF_eq_ofReal, generalizedGammaPDF_eq_ofReal,
-    ← ENNReal.ofReal_mul (by norm_num), ← ENNReal.ofReal_mul (by norm_num),
+  rw [hcoef, generalizedNormalPDF_of_pos hs hp]
+  simp only [generalizedGammaPDF_eq_ofReal,
+    ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 1 / 2),
     ← ENNReal.ofReal_add
-      (mul_nonneg (by norm_num) (generalizedGammaPDFReal_nonneg _ _ _ _))
-      (mul_nonneg (by norm_num) (generalizedGammaPDFReal_nonneg _ _ _ _)),
-    generalizedNormalPDF_of_pos hs hp]
+      (mul_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)
+        (generalizedGammaPDFReal_nonneg _ _ _ _))
+      (mul_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)
+        (generalizedGammaPDFReal_nonneg _ _ _ _))]
   congr 1
   rcases lt_or_gt_of_ne hx with hx | hx
   · rw [generalizedGammaPDFReal_of_nonpos hx.le,
@@ -109,12 +111,9 @@ theorem map_rademacher_prod_gammaMeasure_generalizedNormalMeasure (m : ℝ)
   have hcenter :
       (rademacherMeasure.prod (gammaMeasure p⁻¹ 1)).map
           (fun z : ℝ × ℝ ↦ s * z.1 * z.2 ^ p⁻¹) = generalizedNormalMeasure 0 s p := by
-    rw [rademacherMeasure_eq, Measure.add_prod, Measure.prod_smul_left,
-      Measure.prod_smul_left, Measure.map_add _ _ (by fun_prop),
-      Measure.map_smul _ (by fun_prop), Measure.map_smul _ (by fun_prop),
-      Measure.dirac_prod, Measure.dirac_prod,
-      Measure.map_map (by fun_prop) (by fun_prop),
-      Measure.map_map (by fun_prop) (by fun_prop)]
+    rw [rademacherMeasure_eq]
+    simp (disch := fun_prop) only [Measure.add_prod, Measure.prod_smul_left,
+      Measure.map_add, Measure.map_smul, Measure.dirac_prod, Measure.map_map]
     have hneg : (fun z : ℝ × ℝ ↦ s * z.1 * z.2 ^ p⁻¹) ∘ Prod.mk (-1) =
         (fun x : ℝ ↦ -x) ∘ (fun x : ℝ ↦ s * x ^ p⁻¹) := by
       ext x
