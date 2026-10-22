@@ -59,16 +59,21 @@ namespace OnePoint
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜]
 
-/-! ### The charts in homogeneous coordinates -/
+/-! ### The charts in homogeneous coordinates
+
+These lemmas are `simp↓` (pre-simp) lemmas: as ordinary simp lemmas they would never fire, since
+`simp` first rewrites the inner point with Mathlib's `equivProjectivization_symm_apply_mk`. -/
 
 /-- The point `[v₀ : v₁]` of the projective line lies in the source of the affine chart exactly
 when `v₁ ≠ 0`. -/
+@[simp↓]
 theorem equivProjectivization_symm_mk_mem_affineChart_source_iff {v : Fin 2 → 𝕜} (hv : v ≠ 0) :
     (equivProjectivization 𝕜).symm (.mk 𝕜 v hv) ∈ affineChart.source ↔ v 1 ≠ 0 := by
   by_cases h : v 1 = 0 <;> simp [h]
 
 /-- The affine chart reads the point `[v₀ : v₁]` of the projective line as `v₀ / v₁`. Off its
 source, where `v₁ = 0`, both sides are `0`. -/
+@[simp↓]
 theorem affineChart_equivProjectivization_symm_mk {v : Fin 2 → 𝕜} (hv : v ≠ 0) :
     affineChart ((equivProjectivization 𝕜).symm (.mk 𝕜 v hv)) = v 0 / v 1 := by
   by_cases h : v 1 = 0 <;> simp [h, div_eq_inv_mul]
@@ -79,6 +84,7 @@ variable [ProperSpace 𝕜]
 
 /-- The point `[v₀ : v₁]` of the projective line lies in the source of the inverted chart exactly
 when `v₀ ≠ 0`. -/
+@[simp↓]
 theorem equivProjectivization_symm_mk_mem_invChart_source_iff {v : Fin 2 → 𝕜} (hv : v ≠ 0) :
     (equivProjectivization 𝕜).symm (.mk 𝕜 v hv) ∈ invChart.source ↔ v 0 ≠ 0 := by
   by_cases h : v 1 = 0
@@ -88,6 +94,7 @@ theorem equivProjectivization_symm_mk_mem_invChart_source_iff {v : Fin 2 → �
 
 /-- The inverted chart reads the point `[v₀ : v₁]` of the projective line as `v₁ / v₀`. Off its
 source, where `v₀ = 0`, both sides are `0`. -/
+@[simp↓]
 theorem invChart_equivProjectivization_symm_mk {v : Fin 2 → 𝕜} (hv : v ≠ 0) :
     invChart ((equivProjectivization 𝕜).symm (.mk 𝕜 v hv)) = v 1 / v 0 := by
   by_cases h1 : v 1 = 0 <;> simp [h1, div_eq_inv_mul]
