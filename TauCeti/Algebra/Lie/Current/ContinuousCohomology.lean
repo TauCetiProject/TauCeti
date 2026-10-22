@@ -139,10 +139,19 @@ theorem smul_residueClass_eq_zero_iff [IsDomain R] [CharZero R] {Φ : LinearMap.
   refine (TauCeti.LieAlgebra.LoopAlgebra.smul_twoCochainOfBilinear_mem_range_d₁₂_iff hΦs hΦ0 t).mp
     ⟨(eP.symm.toLinearMap ∘ₗ eC.toLinearMap) ∘ₗ f ∘ₗ (ofLoop R L).toLinearMap, ?_⟩
   refine Subtype.ext (LinearMap.ext₂ fun u v ↦ eP.injective ?_)
-  rw [twoCochain_val_apply, twoCochain_val_apply, d₁₂_comp_lieHom_apply_apply_ofTrivial, hf,
-    Submodule.coe_smul, smul_apply_apply, smul_apply_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, map_smul, map_smul,
-    Submodule.coe_mk, twoCochainOfBilinear_ofLoop]
+  -- The differential of the restricted cochain is the restriction of `t • c_Φ`.
+  have hd : eP (d₁₂ R _ _ ((eP.symm.toLinearMap ∘ₗ eC.toLinearMap) ∘ₗ f ∘ₗ
+      (ofLoop R L).toLinearMap) u v) =
+      t • eC (twoCochainOfBilinear R L Φ hΦs (ofLoop R L u) (ofLoop R L v)) := by
+    rw [d₁₂_comp_lieHom_apply_apply_ofTrivial, hf]
+    simp only [Submodule.coe_smul, smul_apply_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      LinearEquiv.apply_symm_apply, map_smul]
+  -- On polynomial currents, `c_Φ` is the residue cocycle of the loop algebra.
+  have hres : eC (twoCochainOfBilinear R L Φ hΦs (ofLoop R L u) (ofLoop R L v)) =
+      eP (_root_.LieAlgebra.LoopAlgebra.twoCochainOfBilinear R ℤ L Φ hΦs u v) :=
+    twoCochainOfBilinear_ofLoop R L Φ hΦs u v
+  simpa only [twoCochain_val_apply, Submodule.coe_smul, LinearMap.smul_apply, map_smul, hres]
+    using hd
 
 /-- The residue class of a nonzero invariant symmetric form over a characteristic-zero domain is
 nonzero. -/
