@@ -19,6 +19,10 @@ under coefficient maps.
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
 and every scalar multiple of it is locally nilpotent.
 
+For a polynomial `p` with coefficients in an `R`-algebra `S`, possibly noncommutative, evaluating
+`p` or `p′` at the central element `algebraMap R S t` expands as a sum of the coefficients of `p`
+weighted by scalars depending on `t`.
+
 A coefficient map can lower the degree of a polynomial, and in positive characteristic it can
 lower the degree of a derivative even when it preserves the degree of the polynomial itself.
 Over an additively torsion-free target the second phenomenon cannot occur: preserving the degree
@@ -88,6 +92,30 @@ theorem _root_.Polynomial.derivative_eval_one_of_reflect_eq [CommRing R] {p : R[
   · simp only [Finset.mem_range]
     omega
   · omega
+
+section AlgebraMap
+
+variable [CommSemiring R] [Semiring S] [Algebra R S]
+
+/-- Evaluating a polynomial at the image of a scalar `t` combines its coefficients with the powers
+of `t`. -/
+theorem _root_.Polynomial.eval_algebraMap_eq_sum_range (p : S[X]) (t : R) :
+    p.eval (algebraMap R S t) = ∑ i ∈ Finset.range (p.natDegree + 1), t ^ i • p.coeff i := by
+  rw [eval_eq_sum_range]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← map_pow, Algebra.smul_def, Algebra.commutes]
+
+/-- Evaluating the derivative of a polynomial at the image of a scalar `t`, with the same range of
+coefficients as `Polynomial.eval_algebraMap_eq_sum_range`. -/
+theorem _root_.Polynomial.derivative_eval_algebraMap_eq_sum_range (p : S[X]) (t : R) :
+    p.derivative.eval (algebraMap R S t) =
+      ∑ i ∈ Finset.range (p.natDegree + 1), ((i : R) * t ^ (i - 1)) • p.coeff i := by
+  rw [derivative_eval, sum_over_range _ fun n ↦ by simp]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Algebra.smul_def, Algebra.commutes]
+  simp [mul_assoc]
+
+end AlgebraMap
 
 variable [Semiring R] [Semiring S] [HasUniqueDiv S]
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.RingTheory.CyclicCohomology.EvenPairing.Basic
 import Mathlib.Algebra.Polynomial.Derivative
-import Mathlib.Algebra.Ring.GeomSum
+import TauCeti.Algebra.Group.Idempotent
 import TauCeti.LinearAlgebra.Multilinear.Polynomial
 
 /-!
@@ -25,7 +25,8 @@ The argument has three steps.
   that is `e y + y e = y`, then `φ(e, …, y, …, e) = 0` in every slot. Indeed `y = x e - e x` for
   `x = y e - e y`, and evaluating `bφ = 0` on `(x, e, …, e)` gives
   `φ(x e, e, …, e) = φ(e x, e, …, e)` in even degree; cyclicity moves the distinguished entry to
-  any slot.
+  any slot. This is `TauCeti.apply_update_const_eq_zero_of_isIdempotentElem`, proved in
+  `TauCeti.RingTheory.CyclicCohomology.Cochain`.
 * **Polynomial homotopy invariance.** For an idempotent `e(X)` with coefficients in `A`, the
   derivative of `t ↦ φ(e(t), …, e(t))` is a sum of such infinitesimal terms, because
   `e′ = e e′ + e′ e`. By the zero-derivative principle of
@@ -40,8 +41,6 @@ matrices by invertible matrices.
 
 ## Main results
 
-* `TauCeti.apply_update_const_eq_zero_of_isIdempotentElem`: an even-degree cyclic cocycle vanishes
-  on `(e, …, y, …, e)` when `y` is tangent to the idempotents at `e`.
 * `TauCeti.apply_const_eval_algebraMap_eq`: invariance of `φ(e, …, e)` along polynomial paths of
   idempotents.
 * `TauCeti.apply_const_units_conj`: invariance of `φ(e, …, e)` under conjugation by a unit.
@@ -62,80 +61,6 @@ noncomputable section
 namespace TauCeti
 
 open Polynomial
-
-section Rotation
-
-variable {R A M : Type*} [Semiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M] [Module R M]
-  [SMulCommClass R R M]
-
-/-- In even degree, a cyclic cochain takes the same value when the single distinguished entry of
-an otherwise constant tuple moves to the first slot. -/
-private theorem apply_update_const_eq_apply_update_const_zero {n : ℕ} (hn : Even n)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
-    (e z : A) (k : Fin (n + 1)) :
-    φ (Function.update (fun _ ↦ e) k z) = φ (Function.update (fun _ ↦ e) 0 z) := by
-  induction k using Fin.induction with
-  | zero => rfl
-  | succ k ih =>
-    have h := mem_cyclicCochains_iff.1 hφ (Function.update (fun _ ↦ e) k.castSucc z)
-    rw [Function.update_comp_equiv, Equiv.symm_symm, hn.neg_one_pow, one_smul] at h
-    rw [← ih, ← h]
-    congr 2
-    exact Fin.ext (by simp)
-
-end Rotation
-
-section Infinitesimal
-
-variable {R A M : Type*} [CommRing R] [NonUnitalRing A] [Module R A] [IsScalarTower R A A]
-  [SMulCommClass R A A] [AddCommGroup M] [Module R M]
-
-/-- **Infinitesimal invariance of the even pairing.** Let `φ` be a cyclic cocycle of even degree
-and `e` an idempotent. If `y` is tangent to the idempotents at `e`, that is `e y + y e = y`, then
-`φ` vanishes on the tuple `(e, …, e)` with one entry replaced by `y`. -/
-theorem apply_update_const_eq_zero_of_isIdempotentElem {n : ℕ} (hn : Even n)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
-    (hbφ : hochschildCoboundary R A M n φ = 0) {e y : A} (he : IsIdempotentElem e)
-    (hy : e * y + y * e = y) (k : Fin (n + 1)) :
-    φ (Function.update (fun _ ↦ e) k y) = 0 := by
-  rw [apply_update_const_eq_apply_update_const_zero hn hφ]
-  -- Tangency forces `e y e = 0`, so `y = x e - e x` for `x = y e - e y`.
-  have hey : e * y * e = 0 := by
-    have h : e * y * e + e * y * e = e * y * e := by
-      calc e * y * e + e * y * e = e * (e * y + y * e) * e := by
-            rw [mul_add, add_mul, ← mul_assoc e e y, he.eq, ← mul_assoc e y e,
-              mul_assoc (e * y) e e, he.eq]
-        _ = e * y * e := by rw [hy]
-    simpa using h
-  set x := y * e - e * y
-  have hxy : x * e - e * x = y := by
-    simp only [x, sub_mul, mul_sub, mul_assoc, he.eq]
-    rw [← mul_assoc e y e, hey, ← mul_assoc, he.eq, sub_zero, zero_sub, sub_neg_eq_add, add_comm,
-      hy]
-  -- Evaluate `bφ = 0` on `(x, e, …, e)`: the middle faces cancel in even degree.
-  have hb := congrArg (fun ψ ↦ ψ (Fin.cons x fun _ ↦ e)) hbφ
-  simp only [hochschildCoboundary_apply_eq_sum_contractNth_add, Fin.sum_univ_succ] at hb
-  have h0 : Fin.contractNth (0 : Fin (n + 1)).castSucc (· * ·)
-      (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) = Function.update (fun _ ↦ e) 0 (x * e) := by
-    funext k
-    cases k using Fin.cases <;> simp [Fin.contractNth]
-  have hj (j : Fin n) : Fin.contractNth j.succ.castSucc (· * ·)
-      (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) = Function.update (fun _ ↦ e) 0 x := by
-    funext k
-    cases k using Fin.cases <;> simp [Fin.contractNth, he.eq]
-  have hl : (Fin.cons ((Fin.cons x fun _ ↦ e : Fin (n + 2) → A) (Fin.last (n + 1)) *
-      (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) 0)
-      fun k : Fin n ↦ (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) k.castSucc.succ) =
-      Function.update (fun _ ↦ e) 0 (e * x) := by
-    funext k
-    cases k using Fin.cases <;> simp
-  simp only [Fin.val_zero, pow_zero, one_smul, Fin.val_succ, h0, hj, hl, zero_apply] at hb
-  rw [← Finset.sum_smul, Fin.sum_univ_eq_sum_range (fun i ↦ (-1 : ℤ) ^ (i + 1)) n] at hb
-  simp only [pow_succ, mul_neg_one, Finset.sum_neg_distrib, neg_one_geom_sum, hn, ↓reduceIte,
-    neg_zero, zero_smul, add_zero, (hn.add_one).neg_one_pow, neg_one_smul] at hb
-  rwa [← hxy, φ.map_update_sub, sub_eq_add_neg]
-
-end Infinitesimal
 
 section Homotopy
 
@@ -162,17 +87,6 @@ theorem apply_const_eval_algebraMap_eq {n : ℕ} (hn : Even n)
   refine apply_update_const_eq_zero_of_isIdempotentElem hn hφ hbφ (e := ev e) (he.map ev) ?_ k
   rw [← hev, ← map_mul, ← map_mul, ← map_add, add_comm, ← hd]
 
-/-- Conjugating an idempotent by a square-zero unipotent `1 + N`, whose inverse is `1 - N`, gives an
-idempotent. -/
-private theorem isIdempotentElem_one_add_mul_mul_one_sub {B : Type*} [Ring B] {E N : B}
-    (hE : IsIdempotentElem E) (hN : N * N = 0) : IsIdempotentElem ((1 + N) * E * (1 - N)) := by
-  have hinv : (1 - N) * (1 + N) = 1 := by
-    rw [sub_mul, mul_add, mul_add, one_mul, mul_one, one_mul, hN, add_zero, add_sub_cancel_right]
-  rw [IsIdempotentElem]
-  calc (1 + N) * E * (1 - N) * ((1 + N) * E * (1 - N))
-      = (1 + N) * E * ((1 - N) * (1 + N)) * E * (1 - N) := by simp only [mul_assoc]
-    _ = (1 + N) * E * (1 - N) := by rw [hinv, mul_one, mul_assoc _ E E, hE.eq]
-
 /-- Conjugating an idempotent by a square-zero unipotent `1 + N` preserves the value of an
 even-degree cyclic cocycle on constant tuples. -/
 private theorem apply_const_one_add_mul_mul_one_sub_eq {n : ℕ} (hn : Even n)
@@ -181,14 +95,12 @@ private theorem apply_const_one_add_mul_mul_one_sub_eq {n : ℕ} (hn : Even n)
     (hN : N * N = 0) :
     IsIdempotentElem ((1 + N) * e * (1 - N)) ∧
       φ (fun _ ↦ (1 + N) * e * (1 - N)) = φ (fun _ ↦ e) := by
-  refine ⟨isIdempotentElem_one_add_mul_mul_one_sub he hN, ?_⟩
+  refine ⟨he.mul_mul_of_mul_eq_one (by simp [sub_mul, mul_add, hN]), ?_⟩
   -- The polynomial path `t ↦ (1 + tN) e (1 - tN)` of idempotents joins `e` to `(1 + N) e (1 - N)`.
   have hX : C N * X * (C N * X) = (0 : A[X]) := by
-    rw [mul_assoc, ← mul_assoc X, (commute_X (C N)).eq, ← mul_assoc, ← mul_assoc, ← C_mul, hN,
-      C_0, zero_mul, zero_mul]
-  have hP : IsIdempotentElem ((1 + C N * X) * C e * (1 - C N * X)) := by
-    refine isIdempotentElem_one_add_mul_mul_one_sub ?_ hX
-    rw [IsIdempotentElem, ← C_mul, he.eq]
+    rw [(commute_X (C N)).mul_mul_mul_comm, ← C_mul, hN, C_0, zero_mul]
+  have hP : IsIdempotentElem ((1 + C N * X) * C e * (1 - C N * X)) :=
+    (he.map C).mul_mul_of_mul_eq_one (by simp [sub_mul, mul_add, hX])
   have h := apply_const_eval_algebraMap_eq hn hφ hbφ hP 1 0
   let ev (r : R) : A[X] →+* A :=
     eval₂RingHom' (RingHom.id A) (algebraMap R A r) fun a ↦ Algebra.commute_algebraMap_right r a

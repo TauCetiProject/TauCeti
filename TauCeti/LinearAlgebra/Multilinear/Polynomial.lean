@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Multilinear.Basic
 import Mathlib.Algebra.CharZero.Infinite
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.Polynomial.Derivative
 
 /-!
 # Multilinear maps along polynomial paths
@@ -38,32 +39,8 @@ open Polynomial
 
 namespace MultilinearMap
 
-variable {R A M ι : Type*} [Fintype ι] [DecidableEq ι]
-
-section Expansion
-
-variable [CommSemiring R] [Semiring A] [Algebra R A]
-
-/-- Evaluating a polynomial at a scalar combines its coefficients with the powers of the scalar. -/
-private theorem eval_algebraMap_eq_sum (p : A[X]) (t : R) :
-    p.eval (algebraMap R A t) = ∑ i ∈ Finset.range (p.natDegree + 1), t ^ i • p.coeff i := by
-  rw [eval_eq_sum_range]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← map_pow, Algebra.smul_def, Algebra.commutes]
-
-/-- Evaluating the derivative of a polynomial at a scalar, with the same range of coefficients as
-`eval_algebraMap_eq_sum`. -/
-private theorem derivative_eval_algebraMap_eq_sum (p : A[X]) (t : R) :
-    p.derivative.eval (algebraMap R A t) =
-      ∑ i ∈ Finset.range (p.natDegree + 1), ((i : R) * t ^ (i - 1)) • p.coeff i := by
-  rw [derivative_eval, sum_over_range _ fun n ↦ by simp]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Algebra.smul_def, map_mul, map_natCast, map_pow, ← Nat.cast_comm, mul_assoc, mul_assoc,
-    ((Algebra.commute_algebraMap_left t (p.coeff i)).pow_left (i - 1)).eq]
-
-end Expansion
-
-variable [Field R] [CharZero R] [Semiring A] [Algebra R A] [AddCommGroup M] [Module R M]
+variable {R A M ι : Type*} [Fintype ι] [DecidableEq ι] [Field R] [CharZero R]
+  [Semiring A] [Algebra R A] [AddCommGroup M] [Module R M]
 
 /-- **Zero-derivative principle for multilinear maps along polynomial paths.** If the Leibniz
 derivative `∑ₖ φ((p 0)(t), …, (p k)′(t), …)` of `t ↦ φ((p l)(t))` vanishes at every scalar `t`,
@@ -80,7 +57,7 @@ theorem apply_eval_algebraMap_eq_of_sum_update_derivative_eq_zero
   let c : (ι → ℕ) → R := fun σ ↦ ℓ (φ fun l ↦ (p l).coeff (σ l))
   let P : R[X] := ∑ σ ∈ S, C (c σ) * ∏ l, X ^ σ l
   have hP (r : R) : P.eval r = ℓ (φ fun l ↦ (p l).eval (algebraMap R A r)) := by
-    simp_rw [eval_algebraMap_eq_sum, φ.map_sum_finset, φ.map_smul_univ]
+    simp_rw [eval_algebraMap_eq_sum_range, φ.map_sum_finset, φ.map_smul_univ]
     simp only [P, S, c, _root_.map_sum, _root_.map_smul, smul_eq_mul, eval_finsetSum, eval_mul,
       eval_C, eval_prod, eval_pow, eval_X]
     exact Finset.sum_congr rfl fun σ _ ↦ mul_comm _ _
@@ -94,8 +71,8 @@ theorem apply_eval_algebraMap_eq_of_sum_update_derivative_eq_zero
       funext l
       by_cases hl : l = k
       · subst hl
-        simp [derivative_eval_algebraMap_eq_sum]
-      · simp [hl, eval_algebraMap_eq_sum]
+        simp [derivative_eval_algebraMap_eq_sum_range]
+      · simp [hl, eval_algebraMap_eq_sum_range]
     have hprod (k : ι) (σ : ι → ℕ) :
         ∏ l, (if l = k then (σ l : R) * r ^ (σ l - 1) else r ^ σ l) =
           (σ k * r ^ (σ k - 1)) * ∏ l ∈ Finset.univ.erase k, r ^ σ l := by
