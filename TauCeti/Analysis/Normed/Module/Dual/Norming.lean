@@ -16,9 +16,10 @@ countably many continuous linear functionals of norm at most one:
 `‖x‖ = ⨆ n, ‖f n x‖` for every `x ∈ s`. The functionals are Hahn–Banach norming functionals of
 the points of a countable set whose closure contains `s`.
 
-A norming sequence for a separable subspace separates its points. This is the separable
-reduction used in weak-topology arguments: such a sequence separates the points of a weakly
-compact subset of a separable closed subspace, so that subset is weakly metrizable.
+In a normed space, a norming sequence for a subspace separates its points
+(`TauCeti.eq_of_forall_norming_seq_eq`). This is the separable reduction used in weak-topology
+arguments: a norming sequence for the span of a separable set separates the points of a weakly
+compact subset of that set, so that subset is weakly metrizable.
 
 ## References
 
@@ -62,3 +63,15 @@ theorem exists_norming_seq {s : Set E} (hs : IsSeparable s) :
     _ ≤ (⨆ n, ‖f n x‖) + ε := by grw [le_ciSup hbdd n]
 
 end TopologicalSpace.IsSeparable
+
+namespace TauCeti
+
+/-- In a normed space, a norming sequence for a subspace separates its points: two points of the
+subspace on which every functional of the sequence agrees are equal. -/
+theorem eq_of_forall_norming_seq_eq {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {S : Submodule 𝕜 F} {f : ℕ → StrongDual 𝕜 F} (hf : ∀ x ∈ S, ‖x‖ = ⨆ n, ‖f n x‖) {a b : F}
+    (ha : a ∈ S) (hb : b ∈ S) (h : ∀ n, f n a = f n b) : a = b := by
+  rw [← sub_eq_zero, ← norm_eq_zero, hf (a - b) (S.sub_mem ha hb)]
+  simp [h]
+
+end TauCeti

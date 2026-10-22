@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.LocallyConvex.WeakSpace
 public import TauCeti.Analysis.Normed.Module.Dual.Norming
 public import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
-public import Mathlib.Topology.Compactness.CountablyCompact
 public import Mathlib.Topology.MetricSpace.PiNat
 
 /-!
@@ -23,11 +22,14 @@ The proof reduces to a separable subspace. The closed linear span `S` of the seq
 separable, and it is weakly closed since it is convex and norm closed. So the given compact set
 meets `S` in a weakly compact set containing the sequence. A norming sequence `(fₙ)` for `S`
 is a countable family of weakly continuous functions separating the points of this compact set,
-which is therefore metrizable (`TopologicalSpace.MetrizableSpace.of_countable_separating`), and
-so sequentially compact.
+which is therefore metrizable
+(`Metric.PiNatEmbed.TopologicalSpace.MetrizableSpace.of_countable_separating`), and so
+sequentially compact.
 
 ## Main results
 
+* `WeakSpace.metrizableSpace_of_isCompact_of_isSeparable`: a weakly compact subset of a
+  norm-separable set is weakly metrizable.
 * `WeakSpace.isSeqCompact_of_isCompact`: weakly compact sets are weakly sequentially compact.
 * `WeakSpace.tendsto_subseq_of_isCompact_closure`: the relative version; every sequence in a
   relatively weakly compact set has a weakly convergent subsequence, whose limit lies in the
@@ -48,6 +50,26 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜
 
 namespace WeakSpace
 
+/-- A weakly compact subset of a norm-separable set in a normed space is weakly metrizable. -/
+theorem metrizableSpace_of_isCompact_of_isSeparable {s : Set E} (hs : IsSeparable s)
+    {K : Set (WeakSpace 𝕜 E)} (hK : IsCompact K) (hKs : K ⊆ toWeakSpace 𝕜 E '' s) :
+    MetrizableSpace K := by
+  have : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  -- A norming sequence for the span of `s` separates the points of `K`.
+  obtain ⟨f, -, hf⟩ := (hs.span (R := 𝕜)).exists_norming_seq 𝕜
+  -- The weak topology is induced by the pairing `(topDualPairing 𝕜 E).flip`, whose
+  -- evaluation at `f n` is by definition `x ↦ f n x`.
+  refine Metric.PiNatEmbed.TopologicalSpace.MetrizableSpace.of_countable_separating
+    (fun n (x : K) ↦ f n ((toWeakSpace 𝕜 E).symm x)) (fun n ↦
+      (WeakBilin.eval_continuous (topDualPairing 𝕜 E).flip (f n)).comp continuous_subtype_val) ?_
+  intro x y hne
+  by_contra! hxy
+  obtain ⟨a, ha, hax⟩ := hKs x.2
+  obtain ⟨b, hb, hby⟩ := hKs y.2
+  refine hne (Subtype.ext ?_)
+  rw [← hax, ← hby, TauCeti.eq_of_forall_norming_seq_eq hf (Submodule.subset_span ha)
+    (Submodule.subset_span hb) fun n ↦ by simpa [← hax, ← hby] using hxy n]
+
 /-- **Šmulian's theorem**: a weakly compact subset of a normed space is weakly sequentially
 compact. -/
 theorem isSeqCompact_of_isCompact {s : Set (WeakSpace 𝕜 E)} (hs : IsCompact s) :
@@ -65,25 +87,12 @@ theorem isSeqCompact_of_isCompact {s : Set (WeakSpace 𝕜 E)} (hs : IsCompact s
     have hconv : Convex ℝ (S : Set E) := (S.restrictScalars ℝ).convex
     rw [← (Submodule.isClosed_topologicalClosure _).closure_eq, hconv.toWeakSpace_closure 𝕜]
     exact isClosed_closure
-  -- A norming sequence for `S` separates the points of the weakly compact set `s ∩ S`,
-  -- which is therefore metrizable.
-  obtain ⟨f, -, hf⟩ := hSsep.exists_norming_seq 𝕜
+  -- The weakly compact set `s ∩ S` is metrizable, hence sequentially compact.
   let K := s ∩ toWeakSpace 𝕜 E '' S
-  have : CompactSpace K := isCompact_iff_compactSpace.mp (hs.inter_right hSclosed)
-  have : MetrizableSpace K := by
-    -- The weak topology is induced by the pairing `(topDualPairing 𝕜 E).flip`, whose
-    -- evaluation at `f n` is by definition `x ↦ f n x`.
-    refine Metric.PiNatEmbed.TopologicalSpace.MetrizableSpace.of_countable_separating
-      (fun n (x : K) ↦ f n ((toWeakSpace 𝕜 E).symm x)) (fun n ↦
-        (WeakBilin.eval_continuous (topDualPairing 𝕜 E).flip (f n)).comp continuous_subtype_val)
-      ?_
-    rintro ⟨_, _, a, ha, rfl⟩ ⟨_, _, b, hb, rfl⟩ hne
-    by_contra! hab
-    replace hab (n : ℕ) : f n a = f n b := by simpa using hab n
-    refine hne (Subtype.ext (?_ : toWeakSpace 𝕜 E a = toWeakSpace 𝕜 E b))
-    rw [← sub_eq_zero, ← map_sub, LinearEquiv.map_eq_zero_iff, ← norm_eq_zero,
-      hf (a - b) (S.sub_mem ha hb)]
-    simp [hab]
+  have hK : IsCompact K := hs.inter_right hSclosed
+  have : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  have : MetrizableSpace K :=
+    metrizableSpace_of_isCompact_of_isSeparable hSsep hK inter_subset_right
   obtain ⟨a, φ, hφ, h⟩ := SeqCompactSpace.tendsto_subseq fun n ↦ (⟨u n, hu n, _,
     Submodule.le_topologicalClosure _ (Submodule.subset_span (mem_range_self n)),
     (toWeakSpace 𝕜 E).apply_symm_apply (u n)⟩ : K)
