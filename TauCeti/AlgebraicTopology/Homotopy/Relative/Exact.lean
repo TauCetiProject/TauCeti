@@ -61,7 +61,10 @@ Theorem 4.3.
 * `TauCeti.RelHomotopyGroup.mem_range_boundary_iff`: exactness at `π_n(A, a₀)`.
 * `TauCeti.RelHomotopyGroup.subsingleton_of_injective_of_surjective`: `π_{n+1}(X, A, a₀)` is
   trivial when `π_n(A, a₀) → π_n(X, a₀)` is injective and `π_{n+1}(A, a₀) → π_{n+1}(X, a₀)` is
-  surjective.
+  surjective, and `TauCeti.RelHomotopyGroup.subsingleton_of_subsingleton_homotopyGroup` in
+  particular when `π_n(A, a₀)` and `π_{n+1}(X, a₀)` are trivial.
+* `TauCeti.RelHomotopyGroup.surjective_ofHomotopyGroup_of_subsingleton`: every class of
+  `π_{n+1}(X, A, a₀)` comes from `π_{n+1}(X, a₀)` when `π_n(A, a₀)` is trivial.
 -/
 
 public section
@@ -402,6 +405,21 @@ theorem subsingleton_of_injective_of_surjective
   obtain ⟨c, rfl⟩ := mem_range_ofHomotopyGroup_iff.2 hb
   obtain ⟨d, rfl⟩ := hsurj c
   exact ofHomotopyGroup_homotopyGroupMap d
+
+/-- If `π_n(A, a₀)` and `π_{n+1}(X, a₀)` are trivial, then so is `π_{n+1}(X, A, a₀)`. -/
+theorem subsingleton_of_subsingleton_homotopyGroup
+    (hA : Subsingleton (HomotopyGroup N X.pair.snd X.basepoint))
+    (hX : Subsingleton (HomotopyGroup (Option N) X.pair.fst (X.pair.map X.basepoint))) :
+    Subsingleton (RelHomotopyGroup N X) :=
+  subsingleton_of_injective_of_surjective (fun _ _ _ => Subsingleton.elim _ _)
+    fun _ => ⟨⟦GenLoop.const⟧, Subsingleton.elim _ _⟩
+
+/-- If `π_n(A, a₀)` is trivial, then every class of `π_{n+1}(X, A, a₀)` comes from
+`π_{n+1}(X, a₀)`. -/
+theorem surjective_ofHomotopyGroup_of_subsingleton
+    (hA : Subsingleton (HomotopyGroup N X.pair.snd X.basepoint)) :
+    Function.Surjective (ofHomotopyGroup : _ → RelHomotopyGroup N X) :=
+  fun _ => mem_range_ofHomotopyGroup_iff.2 (Subsingleton.elim _ _)
 
 end RelHomotopyGroup
 
