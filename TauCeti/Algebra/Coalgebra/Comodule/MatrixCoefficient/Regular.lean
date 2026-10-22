@@ -31,6 +31,8 @@ generated-coefficient condition.
   whole coalgebra.
 * `TauCeti.Comodule.regular_matrixCoefficientSubalgebra_eq_top`: for a bialgebra or algebra
   coalgebra, regular coefficients generate the whole algebra.
+* `TauCeti.Subcomodule.toSubmodule_le_matrixCoefficientSubmodule`: a subcomodule of the
+  regular comodule is contained in the coefficient space of the comodule it carries.
 * `TauCeti.Subcoalgebra.le_matrixCoefficientSubalgebra_toRegularSubcomodule`: a subcoalgebra is
   contained in the coefficient algebra of its restricted regular comodule.
 
@@ -153,6 +155,23 @@ theorem regularObj_matrixCoefficientSubalgebra_eq_top :
 end Algebra
 
 end Comodule
+
+namespace Subcomodule
+
+variable {R : Type u} {C : Type v}
+variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Flat R C]
+
+/-- A subcomodule of the regular comodule, that is a right coideal, is contained in the space of
+matrix coefficients of the comodule it carries: each of its elements `c` is the coefficient of
+`c` against the restricted counit. -/
+theorem toSubmodule_le_matrixCoefficientSubmodule (S : Subcomodule R C C) :
+    S.toSubmodule ≤ Comodule.matrixCoefficientSubmodule (R := R) (C := C) (M := S) := by
+  intro c hc
+  have h := Comodule.matrixCoefficient_mem_submodule (R := R) (C := C) (M := S)
+    (Coalgebra.counit ∘ₗ SMulMemClass.subtype S) ⟨c, hc⟩
+  rwa [Comodule.matrixCoefficient_counit_comp_subtype] at h
+
+end Subcomodule
 
 namespace Subcoalgebra
 

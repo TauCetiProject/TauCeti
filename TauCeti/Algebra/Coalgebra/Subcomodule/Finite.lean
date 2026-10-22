@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.Order.SupClosed
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
+import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 
 /-!
 # Finite subcomodules
@@ -35,6 +36,8 @@ No flatness or noetherian hypothesis is needed.
   directed family.
 * `TauCeti.Subcomodule.sSup_finiteSubcomodules_eq_top`: for a free coefficient coalgebra,
   the finite subcomodules have supremum `⊤`.
+* `TauCeti.Subcomodule.exists_finite_le_of_mem`: every element of a subcomodule belongs to a
+  finite subcomodule contained in it.
 
 ## References
 
@@ -294,6 +297,16 @@ theorem iUnion_finiteSubcomodules_eq_univ [Module.Free R C] :
       Set.univ := by
   simpa only [Set.iUnion_coe_set, mem_finiteSubcomodules] using
     iUnion_finiteSubcomodules_eq_univ_of_exists_mem exists_finite_subcomodule_mem
+
+/-- If the coefficient coalgebra is free, every element of a subcomodule `Q` belongs to a finite
+subcomodule contained in `Q`: apply `exists_finite_subcomodule_mem` to the comodule `Q` and
+include the result back. -/
+theorem exists_finite_le_of_mem [Module.Free R C] {Q : Subcomodule R C M} {m : M}
+    (hm : m ∈ Q) : ∃ N : Subcomodule R C M, N ≤ Q ∧ Module.Finite R N.toSubmodule ∧ m ∈ N := by
+  obtain ⟨N, hN, hmN⟩ := exists_finite_subcomodule_mem (R := R) (C := C) (⟨m, hm⟩ : Q)
+  have : Module.Finite R N := hN
+  exact ⟨N.map (subtype Q), map_le_iff.mpr fun n _ ↦ by simp, map_finite (subtype Q) N,
+    by simpa using mem_map_of_mem (subtype Q) hmN⟩
 
 end General
 
