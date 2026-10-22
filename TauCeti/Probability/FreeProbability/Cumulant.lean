@@ -228,13 +228,11 @@ theorem partitionCumulant_eq_prod_freeCumulant (π : NoncrossingPartition s) :
     obtain ⟨B, hB, hnB⟩ : ∃ B ∈ π.1.parts, n ≤ #B := by simpa using hlt
     have hBs : B = s := eq_of_subset_of_card_le (π.1.le hB) (hn ▸ hnB)
     subst hBs
-    have hparts : π.1.parts = {B} := eq_singleton_iff_unique_mem.2 ⟨hB, fun C hC => by
-      obtain ⟨x, hx⟩ := π.1.nonempty_of_mem_parts hC
-      exact π.1.eq_of_mem_parts hC hB hx (π.1.le hC hx)⟩
-    have hπ : π = ⊤ := Subtype.ext <| Finpartition.ext <| by
-      rw [hparts, NoncrossingPartition.coe_top,
-        Finpartition.parts_top (π.1.nonempty_of_mem_parts hB).ne_empty]
-    rw [hparts, prod_singleton, hπ, freeCumulant_def]
+    have hπ : π = ⊤ :=
+      Subtype.ext <| (π.1.eq_top_of_mem_parts hB).trans NoncrossingPartition.coe_top.symm
+    rw [hπ, NoncrossingPartition.coe_top,
+      Finpartition.parts_top (π.1.nonempty_of_mem_parts hB).ne_empty, prod_singleton,
+      freeCumulant_def]
 
 /-- The *moment–cumulant formula* in multiplicative form: the block moment of a noncrossing
 partition `π` is the sum, over the noncrossing partitions `σ` refining `π`, of the products of
