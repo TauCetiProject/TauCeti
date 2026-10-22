@@ -29,8 +29,8 @@ coordinate families; reconstructed measures use Mathlib's `AbstractMeasure` carr
 existing `AbstractMeasure.finiteProjection`.
 
 The reconstruction API is in `TauCeti`. In particular,
-`TauCeti.ext_unitsToZModPow μ ν h` proves uniqueness,
-`TauCeti.unitCoordinates_compatible μ` supplies compatibility, and
+`TauCeti.finiteProjection_unitsToZModPow_ext μ ν h` proves uniqueness,
+`TauCeti.mapDomain_finiteProjection_unitsToZModPow μ` supplies compatibility, and
 `TauCeti.ofUnitCoordinates_finiteProjection μ` reconstructs a measure.
 
 ## References
@@ -49,7 +49,7 @@ namespace TauCeti
 variable {p : ℕ} [Fact p.Prime]
 
 /-- Measures on the p-adic units are determined by their finite unit coordinates. -/
-theorem ext_unitsToZModPow {R : Type*} [NormedCommRing R]
+theorem finiteProjection_unitsToZModPow_ext {R : Type*} [NormedCommRing R]
     (μ ν : D(ℤ_[p]ˣ, R))
     (h : ∀ n, finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n) :
       C(ℤ_[p]ˣ, (ZMod (p ^ n))ˣ)) μ =
@@ -254,7 +254,7 @@ theorem existsUnique_finiteProjection_unitsToZModPow_eq :
     ∃! μ : D(ℤ_[p]ˣ, ℤ_[p]),
       ∀ n, finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ = c n := by
   refine ⟨ofUnitCoordinates c hc, finiteProjection_ofUnitCoordinates c hc, fun μ hμ ↦ ?_⟩
-  exact ext_unitsToZModPow μ _ fun n ↦ (hμ n).trans
+  exact finiteProjection_unitsToZModPow_ext μ _ fun n ↦ (hμ n).trans
     (finiteProjection_ofUnitCoordinates c hc n).symm
 
 /-- The total mass is the sole coefficient at depth zero. -/
@@ -270,7 +270,7 @@ theorem ofUnitCoordinates_apply_one : ofUnitCoordinates c hc 1 = c 0 1 := by
   simpa only [Fintype.sum_subsingleton _ (1 : (ZMod (p ^ 0))ˣ)] using h.symm
 
 /-- The finite unit coordinates of a measure satisfy the transition compatibility. -/
-theorem unitCoordinates_compatible {R : Type*} [TopologicalSpace R] [CommRing R]
+theorem mapDomain_finiteProjection_unitsToZModPow {R : Type*} [TopologicalSpace R] [CommRing R]
     [IsTopologicalRing R] (μ : D(ℤ_[p]ˣ, R)) (m n : ℕ) (h : m ≤ n) :
     (finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ).mapDomain
       (ZMod.unitsMap (pow_dvd_pow p h)) =
@@ -289,8 +289,8 @@ theorem unitCoordinates_compatible {R : Type*} [TopologicalSpace R] [CommRing R]
 @[simp]
 theorem ofUnitCoordinates_finiteProjection (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
     ofUnitCoordinates (fun n ↦ finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ)
-      (unitCoordinates_compatible μ) = μ := by
-  apply ext_unitsToZModPow
+      (mapDomain_finiteProjection_unitsToZModPow μ) = μ := by
+  apply finiteProjection_unitsToZModPow_ext
   intro n
   exact finiteProjection_ofUnitCoordinates _ _ n
 
@@ -298,7 +298,7 @@ theorem ofUnitCoordinates_finiteProjection (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
 @[simp]
 theorem ofUnitCoordinates_zero :
     ofUnitCoordinates (p := p) (fun _ ↦ 0) (by intros; simp) = 0 := by
-  apply ext_unitsToZModPow
+  apply finiteProjection_unitsToZModPow_ext
   intro n
   simp
 
@@ -310,7 +310,7 @@ theorem ofUnitCoordinates_add (d : ∀ n : ℕ, (ZMod (p ^ n))ˣ →₀ ℤ_[p])
     ofUnitCoordinates (fun n ↦ c n + d n) (by
       intro m n h; simp [Finsupp.mapDomain_add, hc m n h, hd m n h]) =
         ofUnitCoordinates c hc + ofUnitCoordinates d hd := by
-  apply ext_unitsToZModPow
+  apply finiteProjection_unitsToZModPow_ext
   intro n
   simp
 
@@ -319,7 +319,7 @@ theorem ofUnitCoordinates_add (d : ∀ n : ℕ, (ZMod (p ^ n))ˣ →₀ ℤ_[p])
 theorem ofUnitCoordinates_single (u : ℤ_[p]ˣ) (a : ℤ_[p]) :
     ofUnitCoordinates (fun n ↦ Finsupp.single (PadicInt.unitsToZModPow n u) a)
       (by intros; simp) = a • dirac ℤ_[p] u := by
-  apply ext_unitsToZModPow
+  apply finiteProjection_unitsToZModPow_ext
   intro n
   simp
 
