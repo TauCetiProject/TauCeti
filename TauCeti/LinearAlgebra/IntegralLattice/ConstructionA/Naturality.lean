@@ -35,7 +35,7 @@ open Matrix
 
 variable {ι κ : Type*}
 
-variable {m : ℕ+}
+variable {m : ℕ}
 
 /-- Construction A commutes with a signed coordinate change.  The carrier equality is stated in
 the common rational ambient space, and is the carrier part of the lattice isometry below. -/
@@ -118,6 +118,8 @@ theorem reindex_le_euclideanDual (C : AdditiveCode (ZMod m) ι)
   rw [AdditiveCode.reindex_eq_map_funCongrLeft]
   simpa only [signedEquiv_one, Equiv.symm_symm] using
     map_signedEquiv_le_euclideanDual C hC (1 : ι → ℤˣ) e.symm
+
+variable [NeZero m]
 
 /-- The signed coordinate change is an isometry from the Construction A lattice of a code to the
 lattice of the signed, reindexed code. -/

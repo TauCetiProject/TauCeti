@@ -64,6 +64,8 @@ setting the roadmap works in.
 * `TauCeti.weylModuleOfShape`: the Weyl module of a shape, namely that of its row-superstandard
   tableau, with `weylRepOfShape` the action of `GL n k` on it and `weylFDRepOfShape` its bundled
   form in `FDRep`, over a Noetherian base ring.
+* `TauCeti.weylRepOfShapeProjection`: the surjective intertwining map from the tensor power onto
+  the Weyl module of a shape, given by its Young symmetrizer.
 * `TauCeti.schurFunctor`: the roadmap-pinned name, `weylFDRepOfShape` at `k = ℂ`.
 
 ## Main results
@@ -460,6 +462,45 @@ theorem weylRepOfShape_apply_coe (μ : YoungDiagram) (g : GL (Fin n) k)
     ((weylRepOfShape k n μ g x : (weylModuleOfShape k n μ).toSubmodule) :
         ⨂[k]^μ.card (Fin n → k)) = tensorPowerRep k n μ.card g x :=
   (rfl)
+
+/-- **The projection onto the Weyl module of a shape**: the Young symmetrizer of the
+row-superstandard tableau acting on the tensor power, corestricted to its image.  It intertwines
+the action of `GL n k`, and is onto (`TauCeti.weylRepOfShapeProjection_surjective`). -/
+noncomputable def weylRepOfShapeProjection (μ : YoungDiagram) :
+    Representation.IntertwiningMap (tensorPowerRep k n μ.card) (weylRepOfShape k n μ) where
+  toLinearMap := (permTensorActionAlgHom k n μ.card (YoungTableau.youngSymmetrizerOver k
+      (StandardYoungTableau.rowSuperstandard μ).toTableau)).codRestrict
+    (weylModuleOfShape k n μ).toSubmodule fun v => by
+      rw [weylModuleOfShape_toSubmodule]
+      exact LinearMap.mem_range_self _ v
+  isIntertwining' g := by
+    apply LinearMap.ext
+    intro v
+    apply Subtype.ext
+    simp only [LinearMap.comp_apply, LinearMap.codRestrict_apply, weylRepOfShape_apply_coe]
+    exact congrArg (fun f : Module.End k _ => f v)
+      (commute_permTensorActionAlgHom_tensorPowerRep k n μ.card _ g).eq
+
+/-- The projection onto the Weyl module of a shape is the Young symmetrizer of its
+row-superstandard tableau. -/
+@[simp]
+theorem weylRepOfShapeProjection_apply_coe (μ : YoungDiagram) (v : ⨂[k]^μ.card (Fin n → k)) :
+    ((weylRepOfShapeProjection k n μ v : (weylModuleOfShape k n μ).toSubmodule) :
+        ⨂[k]^μ.card (Fin n → k)) =
+      permTensorActionAlgHom k n μ.card (YoungTableau.youngSymmetrizerOver k
+        (StandardYoungTableau.rowSuperstandard μ).toTableau) v :=
+  (rfl)
+
+/-- The projection onto the Weyl module of a shape is surjective. -/
+theorem weylRepOfShapeProjection_surjective (μ : YoungDiagram) :
+    Function.Surjective (weylRepOfShapeProjection k n μ) := by
+  intro w
+  have hw : (w : ⨂[k]^μ.card (Fin n → k)) ∈ LinearMap.range (permTensorActionAlgHom k n μ.card
+      (YoungTableau.youngSymmetrizerOver k
+        (StandardYoungTableau.rowSuperstandard μ).toTableau)) := by
+    simpa only [weylModuleOfShape_toSubmodule] using w.property
+  obtain ⟨v, hv⟩ := hw
+  exact ⟨v, Subtype.ext hv⟩
 
 /-- The Weyl module of any `μ`-tableau is isomorphic, as a representation of `GL n k`, to the
 Weyl module of the shape `μ`. -/

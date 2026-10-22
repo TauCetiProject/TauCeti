@@ -7,7 +7,6 @@ module
 
 public import TauCeti.CategoryTheory.AlmostSplit.Uniqueness
 import TauCeti.CategoryTheory.Exact.Abelian
-import TauCeti.CategoryTheory.Exact.BaseChange
 
 /-!
 # Minimal morphisms and almost-split sequences
@@ -22,8 +21,7 @@ This agrees with the convention in `TauCeti.CategoryTheory.AlmostSplit.Irreducib
 No finite-length or locality hypothesis is needed for either criterion. Conversely, the maps
 of an almost-split sequence are minimal when the opposite end has a local endomorphism ring.
 
-The pushout argument uses `TauCeti.ExactStructure.conflation_cobaseChange` for the
-canonical exact structure of an abelian category.
+The pushout argument uses `TauCeti.shortExact_cobaseChange`.
 
 ## References
 
@@ -54,11 +52,7 @@ theorem IsRightAlmostSplit.isLeftAlmostSplit_of_minimal (hg : IsRightAlmostSplit
         (retraction S.f) (IsSplitMono.id S.f) inferInstance).isSplitEpi_g
   · let sq := IsPushout.of_hasPushout S.f h
     let q := cobaseChangeπ S sq
-    have hT : (cobaseChange S sq).ShortExact :=
-      (ExactStructure.abelian_conflation _).mp
-        ((ExactStructure.abelian C).conflation_cobaseChange
-          ((ExactStructure.abelian_conflation S).mpr hS) sq)
-    rw [cobaseChange_def] at hT
+    have hT := shortExact_cobaseChange hS sq
     -- If the pushout splits, its retraction extends `h` across `S.f`.
     by_cases hq : IsSplitEpi q
     · let s := ShortComplex.Splitting.ofExactOfSection _ hT.exact

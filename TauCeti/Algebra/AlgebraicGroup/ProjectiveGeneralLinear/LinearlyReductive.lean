@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.LinearlyReductive
 public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Basic
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.CentralIsogeny
-import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.LinearlyReductive
+import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.LinearlyReductive.Basic
 
 /-!
 # Complete reducibility for projective general linear groups in characteristic zero

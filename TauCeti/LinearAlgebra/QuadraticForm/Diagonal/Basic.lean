@@ -27,8 +27,11 @@ of squares.
 * `QuadraticMap.nondegenerate_weightedSumSquares`: over a ring in which two is invertible, a
   diagonal form with regular weights is nondegenerate.
 * `QuadraticMap.weightedSumSquares_units`: unit weights may be replaced by the scalars they name.
-* `QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zero`: a ternary solution with
-  a nonzero third coordinate gives a nonzero isotropic vector in a diagonal form.
+* `QuadraticMap.neg_weightedSumSquares`: negating a diagonal form negates its weights.
+* `QuadraticMap.weightedSumSquares_apply_three_single` and
+  `QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zero`: evaluating a diagonal form
+  on a linear combination of three distinct basis vectors, and deducing that a ternary solution with
+  a nonzero third coordinate gives a nonzero isotropic vector.
 * `TauCeti.isSquare_prod_mul_prod_of_equivalent`: isometric diagonal forms with unit weights have
   weight products differing by a square.
 -/
@@ -41,26 +44,28 @@ universe u v w
 
 open QuadraticMap
 
+variable {R : Type u} {ι : Type v} {κ : Type w}
+
 section PairExtension
 
-variable {R : Type u} [CommSemiring R] {ι : Type v} [Fintype ι] [DecidableEq ι]
-variable {w w' : ι → R} {i j : ι}
+variable {i j : ι}
+
+section
+
+variable [DecidableEq ι]
 
 private def replacePair (f : (Fin 2 → R) → (Fin 2 → R)) (i j : ι)
     (x : ι → R) (k : ι) : R :=
   if k = i then f ![x i, x j] 0 else if k = j then f ![x i, x j] 1 else x k
 
-omit [CommSemiring R] [Fintype ι] in
 private theorem replacePair_apply_left (f : (Fin 2 → R) → (Fin 2 → R))
     (i j : ι) (x : ι → R) : replacePair f i j x i = f ![x i, x j] 0 := by
   simp [replacePair]
 
-omit [CommSemiring R] [Fintype ι] in
 private theorem replacePair_apply_right (f : (Fin 2 → R) → (Fin 2 → R))
     (hij : i ≠ j) (x : ι → R) : replacePair f i j x j = f ![x i, x j] 1 := by
   simp [replacePair, hij.symm]
 
-omit [CommSemiring R] [Fintype ι] in
 private theorem replacePair_comp (f g : (Fin 2 → R) → (Fin 2 → R))
     (hfg : Function.LeftInverse f g) (hij : i ≠ j) (x : ι → R) :
     replacePair f i j (replacePair g i j x) = x := by
@@ -80,7 +85,11 @@ private theorem replacePair_comp (f g : (Fin 2 → R) → (Fin 2 → R))
     rfl
   · simp [replacePair, hki, hkj]
 
-private def pairLinearEquiv (hij : i ≠ j)
+end
+
+variable [CommSemiring R] [Fintype ι] {w w' : ι → R}
+
+private def pairLinearEquiv [DecidableEq ι] (hij : i ≠ j)
     (e : (weightedSumSquares R ![w i, w j]).IsometryEquiv
       (weightedSumSquares R ![w' i, w' j])) :
     (ι → R) ≃ₗ[R] (ι → R) where
@@ -111,7 +120,7 @@ private def pairLinearEquiv (hij : i ≠ j)
         congrFun (map_smul e a ![x i, x j]) 1
     · simp [replacePair, hki, hkj]
 
-private def pairIsometryEquiv (hij : i ≠ j)
+private def pairIsometryEquiv [DecidableEq ι] (hij : i ≠ j)
     (e : (weightedSumSquares R ![w i, w j]).IsometryEquiv
       (weightedSumSquares R ![w' i, w' j]))
     (hrest : ∀ k, k ≠ i → k ≠ j → w k = w' k) :
@@ -139,7 +148,6 @@ private def pairIsometryEquiv (hij : i ≠ j)
     have hkj : k ≠ j := (Finset.mem_erase.mp hk).1
     simp [replacePair, hki, hkj, hrest k hki hkj]
 
-omit [DecidableEq ι] in
 /-- Replacing two distinct coefficients by an equivalent binary form, while fixing all other
 coefficients, produces an equivalent diagonal form. -/
 theorem equivalent_weightedSumSquares_of_pair (hij : i ≠ j)
@@ -153,7 +161,9 @@ theorem equivalent_weightedSumSquares_of_pair (hij : i ≠ j)
 
 end PairExtension
 
-variable {R : Type u} [CommSemiring R] {ι : Type v} {κ : Type w} [Fintype ι] [Fintype κ]
+section CommSemiring
+
+variable [CommSemiring R] [Fintype ι] [Fintype κ]
 
 /-- Reindexing the coefficients of a diagonal form does not change its equivalence class. -/
 theorem equivalent_weightedSumSquares_comp (w : ι → R) (σ : κ ≃ ι) :
@@ -176,7 +186,7 @@ theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
 -- Apply before the generic `weightedSumSquares_apply` expansion.
 @[simp high]
 theorem _root_.QuadraticMap.weightedSumSquares_apply_three_single
-    {R : Type*} [CommSemiring R] {ι : Type*} [Fintype ι] [DecidableEq ι] (a : ι → R)
+    [DecidableEq ι] (a : ι → R)
     {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (x y z : R) :
     QuadraticMap.weightedSumSquares R a
       (Pi.single i x + Pi.single j y + Pi.single k z) =
@@ -192,8 +202,7 @@ theorem _root_.QuadraticMap.weightedSumSquares_apply_three_single
 /-- A ternary solution with a nonzero third coordinate gives a nonzero isotropic vector in a
 diagonal quadratic form. -/
 theorem _root_.QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zero
-    {R : Type*} [CommSemiring R] {ι : Type*} [Fintype ι] (a : ι → R)
-    {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k)
+    (a : ι → R) {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k)
     {x y z : R} (hz : z ≠ 0)
     (h : a i * x ^ 2 + a j * y ^ 2 + a k * z ^ 2 = 0) :
     ¬ (QuadraticMap.weightedSumSquares R a).Anisotropic := by
@@ -205,10 +214,24 @@ theorem _root_.QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zer
   have hz0 : z = 0 := by simpa [f, hik.symm, hjk.symm] using congrFun hf k
   exact hz hz0
 
+end CommSemiring
+
+section CommRing
+
+variable [CommRing R] [Fintype ι]
+
+/-- Negating a weighted sum of squares negates its weights. -/
+theorem _root_.QuadraticMap.neg_weightedSumSquares {S : Type*} [Ring S] [Module S R]
+    [SMulCommClass S R R] (w : ι → S) :
+    -QuadraticMap.weightedSumSquares R w = QuadraticMap.weightedSumSquares R (-w) := by
+  ext x
+  simp [Finset.sum_neg_distrib]
+
+end CommRing
+
 section Discriminant
 
-variable {R : Type u} [CommRing R] [Invertible (2 : R)]
-variable {ι : Type v} {κ : Type w} [Fintype ι] [Fintype κ]
+variable [CommRing R] [Invertible (2 : R)] [Fintype ι] [Fintype κ]
 
 /-- The bilinear form associated with a diagonal quadratic form pairs the coordinates
 diagonally: it is the weighted dot product. -/
@@ -249,7 +272,7 @@ theorem _root_.QuadraticForm.discr'_weightedSumSquares [DecidableEq ι] (w : ι 
     QuadraticForm.discr' (QuadraticMap.weightedSumSquares R w) = ∏ i, w i := by
   rw [QuadraticForm.discr', QuadraticForm.toMatrix'_weightedSumSquares, Matrix.det_diagonal]
 
-/-- **A diagonal form with regular weights is nondegenerate** when two is invertible. Over a
+/-- A diagonal form with regular weights is nondegenerate when two is invertible. Over a
 domain the hypothesis is that every weight is nonzero (`isRegular_iff_ne_zero`). -/
 theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares {w : ι → R}
     (hw : ∀ i, IsRegular (w i)) : (QuadraticMap.weightedSumSquares R w).Nondegenerate := by
@@ -264,7 +287,7 @@ theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares {w : ι → R}
   simpa [QuadraticMap.associated_weightedSumSquares, Pi.single_apply,
     (hw i).left.mul_left_eq_zero_iff] using hx (Pi.single i 1)
 
-/-- **Isometric diagonal forms with unit weights have weight products differing by a square.** An
+/-- Isometric diagonal forms with unit weights have weight products differing by a square. An
 isometry of the coordinate spaces changes the Gram matrix of a diagonal form by a congruence, so
 it changes its determinant — the product of the weights — by the square of the determinant of that
 isometry. -/

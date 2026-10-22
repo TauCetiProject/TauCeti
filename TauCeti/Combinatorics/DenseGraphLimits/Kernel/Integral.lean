@@ -204,12 +204,8 @@ theorem integrable_testIntegrand [IsFiniteMeasure μ] (K : SymmKernel Ω μ) {u 
     (((hu.comp measurable_fst).mul (hv.comp measurable_snd)).mul
       K.measurable).aestronglyMeasurable (ae_of_all _ fun p => ?_)
   rw [Real.norm_eq_abs, abs_mul, abs_mul]
-  calc |u p.1| * |v p.2| * |K p.1 p.2|
-      ≤ 1 * 1 * |K p.1 p.2| := by
-        gcongr
-        · exact abs_le.2 (hu1 p.1)
-        · exact abs_le.2 (hv1 p.2)
-    _ = |K p.1 p.2| := by ring
+  exact mul_le_of_le_one_left (abs_nonneg _)
+    ((mul_le_of_le_one_left (abs_nonneg _) (abs_le.2 (hu1 p.1))).trans (abs_le.2 (hv1 p.2)))
 
 /-- Every `[-1,1]`-test integral is bounded by the `L¹` norm of the kernel.  This is the bound that
 makes the signed cut norm's supremum a supremum of a bounded set. -/
@@ -222,12 +218,8 @@ theorem abs_testIntegral_le_integral_abs [IsFiniteMeasure μ] (K : SymmKernel Ω
   refine integral_mono (K.integrable_testIntegrand μ hu hv hu1 hv1).abs
     K.integrable_uncurry.abs fun p => ?_
   rw [abs_mul, abs_mul]
-  calc |u p.1| * |v p.2| * |K p.1 p.2|
-      ≤ 1 * 1 * |K p.1 p.2| := by
-        gcongr
-        · exact abs_le.2 (hu1 p.1)
-        · exact abs_le.2 (hv1 p.2)
-    _ = |K p.1 p.2| := by ring
+  exact mul_le_of_le_one_left (abs_nonneg _)
+    ((mul_le_of_le_one_left (abs_nonneg _) (abs_le.2 (hu1 p.1))).trans (abs_le.2 (hv1 p.2)))
 
 /-- Testing against two indicator functions recovers the rectangle integral.  This is what makes
 the set form of the cut norm a special case of the signed form. -/

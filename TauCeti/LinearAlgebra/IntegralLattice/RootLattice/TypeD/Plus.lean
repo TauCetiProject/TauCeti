@@ -20,6 +20,9 @@ Lagrangian; the general gluing theorem therefore proves unimodularity.
 In particular, the construction supplies `D₁₆⁺`, while at rank eight it is the
 coordinate model of `E₈`. The rank-zero lattice is included as well.
 
+Beyond rank eight the spinor coset has minimal norm `n / 4 > 2`, so every root of `Dₙ⁺` lies in
+`Dₙ` and the roots do not span `Dₙ⁺`; at rank eight the spinor coset contains roots of `E₈`.
+
 The subgroup and intermediate carrier are defined in every rank. The two-coset
 description needs even rank,
 and the index-two description needs even positive rank; quadratic isotropy needs
@@ -229,6 +232,55 @@ theorem discriminant_checkerboardPlusLattice (hn : 8 ∣ n) :
     (checkerboardPlusLattice n hn).discriminant = 1 :=
   (checkerboardPlusLattice n hn).isUnimodular_iff_discriminant_eq_one.mp
     (isUnimodular_checkerboardPlusLattice n hn)
+
+/-- **Beyond rank eight, the roots of `Dₙ⁺` lie in `Dₙ`.** A vector of the spinor coset has
+every coordinate in `ℤ + 1/2`, hence norm at least `n / 4 > 2`. At `n = 8` the spinor coset
+does contain roots, those of the coordinate model of `E₈`. -/
+theorem mem_checkerboardLattice_carrier_of_mem_vectorsOfNorm_two (hn : 8 ∣ n) (hn8 : 8 < n)
+    {x : checkerboardPlusLattice n hn}
+    (hx : x ∈ (checkerboardPlusLattice n hn).vectorsOfNorm 2) :
+    (x : Fin n → ℚ) ∈ (checkerboardLattice n).carrier := by
+  have hmem : (x : Fin n → ℚ) ∈ (checkerboardPlusCarrier n).1 :=
+    checkerboardPlusLattice_carrier n hn ▸ x.2
+  rw [mem_checkerboardPlusCarrier_iff n (even_iff_two_dvd.mpr (dvd_trans (by decide) hn))] at hmem
+  refine hmem.resolve_right fun hs ↦ ?_
+  -- Every coordinate is an integer plus one half, so its square is at least one quarter.
+  have hquarter (i : Fin n) : 1 / 4 ≤ (x : Fin n → ℚ) i ^ 2 := by
+    obtain ⟨z, hz⟩ := ((mem_checkerboardLattice_carrier_iff _).mp hs).1 i
+    rw [Pi.sub_apply, checkerboardSpinor_apply, sub_eq_iff_eq_add] at hz
+    rw [hz]
+    rcases le_or_gt 0 z with h | h
+    · have h' : (0 : ℚ) ≤ z := by exact_mod_cast h
+      nlinarith
+    · have h' : (z : ℚ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt h
+      nlinarith
+  have hnorm : ∑ i, (x : Fin n → ℚ) i ^ 2 = 2 := by
+    rw [mem_vectorsOfNorm, norm_apply, checkerboardPlusLattice_form,
+      checkerboardLattice_form_apply] at hx
+    simpa only [sq] using hx
+  have hsum := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦ hquarter i
+  rw [hnorm, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
+  have hn8' : (8 : ℚ) < n := by exact_mod_cast hn8
+  linarith
+
+/-- **Beyond rank eight, the roots of `Dₙ⁺` do not span it.** They span at most `Dₙ`, which
+misses the spinor vector. -/
+theorem span_vectorsOfNorm_two_checkerboardPlusLattice_ne_top (hn : 8 ∣ n) (hn8 : 8 < n) :
+    Submodule.span ℤ ((checkerboardPlusLattice n hn).vectorsOfNorm 2) ≠ ⊤ := by
+  have : NeZero n := ⟨by omega⟩
+  intro htop
+  have hs : checkerboardSpinor n ∈ (checkerboardPlusLattice n hn).carrier := by
+    rw [checkerboardPlusLattice_carrier,
+      mem_checkerboardPlusCarrier_iff n (even_iff_two_dvd.mpr (dvd_trans (by decide) hn)),
+      sub_self]
+    exact Or.inr (zero_mem _)
+  have hle : Submodule.span ℤ ((checkerboardPlusLattice n hn).vectorsOfNorm 2) ≤
+      (checkerboardLattice n).carrier.comap (checkerboardPlusLattice n hn).carrier.subtype :=
+    Submodule.span_le.mpr fun x hx ↦
+      mem_checkerboardLattice_carrier_of_mem_vectorsOfNorm_two n hn hn8 hx
+  have hmem := hle (htop ▸ Submodule.mem_top (x := (⟨_, hs⟩ : checkerboardPlusLattice n hn)))
+  rw [Submodule.mem_comap, Submodule.subtype_apply, checkerboardLattice_carrier] at hmem
+  exact checkerboardSpinor_notMem_checkerboardCarrier n hmem
 
 /-- The rank of `Dₙ⁺` is `n`. -/
 @[simp]

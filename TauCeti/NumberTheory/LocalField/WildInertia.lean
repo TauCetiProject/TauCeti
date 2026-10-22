@@ -716,7 +716,7 @@ private theorem le_maximalTameExtension_iff_of_isGalois :
   -- inclusion-reversing.
   have hT : T ≤ separableClosure K (AlgebraicClosure K) := le_separableClosure _ _ T
   rw [← lift_restrict hT, ← fixedField_fixingSubgroup_lift_inf_separableClosure, lift_restrict]
-  exact le_inf ((le_iff_le _ _).2 h) (le_separableClosure _ _ L)
+  exact le_inf ((le_fixedField_iff_le_fixingSubgroup _ _).2 h) (le_separableClosure _ _ L)
 
 omit [IsGalois K L] in
 /-- **The tame criterion at finite level.** A finite separable subextension of the algebraic

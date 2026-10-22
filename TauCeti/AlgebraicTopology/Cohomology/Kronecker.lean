@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.Relative
 
 /-!
 # The Kronecker map of singular cohomology
@@ -36,6 +37,9 @@ the case where its `Ext¹`-term vanishes.
   `k`-linear equivalence.
 * `TopCat.singularKronecker_bijective_zero`: in degree zero the Kronecker map is bijective for
   every coefficient object.
+* `TopPair.singularKronecker`: the Kronecker map `Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` of
+  relative singular cohomology, the Kronecker map of the relative singular chain complex, with
+  `TopPair.singularKronecker_homologyπ` and `TopPair.singularKronecker_naturality`.
 
 ## References
 
@@ -111,3 +115,43 @@ lemma singularKroneckerEquiv_apply (X : TopCat.{w}) (k : Type*) [Ring k] [Linear
   TauCeti.ChainComplex.kroneckerEquiv_apply n α
 
 end TopCat
+
+namespace TopPair
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] {R M : C}
+
+/-- **The Kronecker map of relative singular cohomology** `Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)`
+of a topological pair: it sends the class of a relative singular cocycle `φ` to the morphism
+which on the class of a relative singular cycle is `φ` evaluated on that cycle
+(`TopPair.singularKronecker_homologyπ`). -/
+def singularKronecker (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C] (n : ℕ) :
+    P.singularCohomology R k M n →ₗ[k] (P.singularHomology R n ⟶ M) :=
+  TauCeti.ChainComplex.kronecker k (P.singularChainComplex R) M n
+
+/-- The Kronecker map of relative singular cohomology is the Kronecker map of the relative singular
+chain complex. -/
+lemma singularKronecker_def (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C] (n : ℕ) :
+    P.singularKronecker (R := R) (M := M) k n =
+      TauCeti.ChainComplex.kronecker k (P.singularChainComplex R) M n :=
+  (rfl)
+
+/-- The relative Kronecker map on the classes of a relative singular cocycle and a relative
+singular cycle is the cocycle evaluated on the cycle. -/
+@[simp, reassoc]
+lemma singularKronecker_homologyπ (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C] (n : ℕ)
+    (φ : (P.singularCochainComplex R k M).cycles n) :
+    (P.singularChainComplex R).homologyπ n ≫
+        P.singularKronecker k n ((P.singularCochainComplex R k M).homologyπ n φ) =
+      (P.singularChainComplex R).iCycles n ≫ (P.singularCochainComplex R k M).iCycles n φ :=
+  TauCeti.ChainComplex.kronecker_homologyπ n φ
+
+/-- **Naturality of the relative Kronecker map**, `⟨f^*α, x⟩ = ⟨α, f_*x⟩`: for a map of
+topological pairs `f : P ⟶ P'`, evaluating the pull-back of a relative class of `P'` is evaluating
+the class after pushing forward along `f`. -/
+lemma singularKronecker_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (k : Type*) [Ring k]
+    [Linear k C] (n : ℕ) (α : P'.singularCohomology R k M n) :
+    P.singularKronecker k n (TopPair.singularCohomologyMap f n α) =
+      P.singularHomologyMap f R n ≫ P'.singularKronecker k n α :=
+  TauCeti.ChainComplex.kronecker_naturality (singularChainComplexMap f R) n α
+
+end TopPair

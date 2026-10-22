@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
+public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 
 /-!
 # Kneser neighbors
@@ -15,7 +16,8 @@ Two integral lattices `L` and `M` on the same rational quadratic space are `p`-n
 their intersection `L ∩ M` has index `p` in each of them. Neighbor steps are the moves of
 Kneser's method for exploring a genus. This file defines the relation, proves that it is
 symmetric, that `1`-neighbors are equal, and that neighbors have equal determinants: the
-determinant of `L ∩ M` is both `p² det L` and `p² det M`.
+determinant of `L ∩ M` is both `p² det L` and `p² det M`. In particular a neighbor of a unimodular
+lattice is unimodular.
 
 The intersection `L ∩ M` is the integral lattice `TauCeti.IntegralLattice.inf` from
 `TauCeti.LinearAlgebra.IntegralLattice.Restriction`, carrying the form of `L`.
@@ -29,6 +31,7 @@ The intersection `L ∩ M` is the integral lattice `TauCeti.IntegralLattice.inf`
 * `TauCeti.IntegralLattice.IsNeighbor.symm`: the neighbor relation is symmetric.
 * `TauCeti.IntegralLattice.isNeighbor_one_iff`: `1`-neighbors are equal.
 * `TauCeti.IntegralLattice.IsNeighbor.determinant_eq`: neighbors have equal determinants.
+* `TauCeti.IntegralLattice.IsNeighbor.isUnimodular_iff`: neighbors are unimodular together.
 
 ## References
 
@@ -99,5 +102,19 @@ theorem IsNeighbor.determinant_eq (h : L.IsNeighbor M p) : L.determinant = M.det
 /-- Neighbors have equal discriminants. -/
 theorem IsNeighbor.discriminant_eq (h : L.IsNeighbor M p) : L.discriminant = M.discriminant := by
   rw [discriminant_def, discriminant_def, h.determinant_eq]
+
+/-- **Neighbors of unimodular lattices are unimodular**, since neighbors have equal
+discriminants. -/
+theorem IsNeighbor.isUnimodular (h : L.IsNeighbor M p) (hL : L.IsUnimodular) :
+    M.IsUnimodular := by
+  let : L.IsNondegenerate := ⟨hL.nondegenerate⟩
+  let : M.IsNondegenerate := ⟨h.form_eq ▸ hL.nondegenerate⟩
+  rw [M.isUnimodular_iff_discriminant_eq_one, ← h.discriminant_eq,
+    ← L.isUnimodular_iff_discriminant_eq_one]
+  exact hL
+
+/-- Two neighbors are unimodular together. -/
+theorem IsNeighbor.isUnimodular_iff (h : L.IsNeighbor M p) : L.IsUnimodular ↔ M.IsUnimodular :=
+  ⟨h.isUnimodular, h.symm.isUnimodular⟩
 
 end TauCeti.IntegralLattice

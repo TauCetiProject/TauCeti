@@ -111,26 +111,6 @@ private theorem ker_projection_eq_augmentation
     himageSmoothUnipotent
   exact h
 
-private theorem restriction_eq_counit
-    {H L M : FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k)}
-    (i : H ⟶ L) (g : L ⟶ M) (f : H ⟶ M) (hcomp : i ≫ g = f)
-    (hf : HopfIdeal.ker (FiniteTypeCommHopfAlgCat.toBialgHom f) =
-      HopfIdeal.augmentation (AlgebraicClosure k) H) :
-    (FiniteTypeCommHopfAlgCat.toBialgHom g).toAlgHom.comp
-        (FiniteTypeCommHopfAlgCat.toBialgHom i).toAlgHom =
-      (Algebra.ofId (AlgebraicClosure k) M).comp
-        (Bialgebra.counitAlgHom (AlgebraicClosure k) H) := by
-  apply AlgHom.ext
-  intro x
-  have h := congrArg (fun φ : H ⟶ M ↦ FiniteTypeCommHopfAlgCat.toBialgHom φ x) hcomp
-  rw [FiniteTypeCommHopfAlgCat.toBialgHom_comp, BialgHom.comp_apply] at h
-  exact h.trans (_root_.AlgHom.apply_eq_counit_of_augmentation_le_ker
-    (FiniteTypeCommHopfAlgCat.toBialgHom f).toAlgHom
-      (fun y hy ↦ by
-        rw [HopfIdeal.mem_toIdeal, ← hf, HopfIdeal.mem_ker] at hy
-        exact RingHom.mem_ker.mpr hy)
-      x)
-
 /-- **A direct product of reductive finite-type affine groups is reductive.** -/
 theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hH : reductiveCommHopfAlgProperty k H)
@@ -177,89 +157,35 @@ theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
       (FiniteTypeCommHopfAlgCat.toBialgHom (fK ≫ q)) =
         HopfIdeal.augmentation (AlgebraicClosure k) Kbar := by
     exact ker_projection_eq_augmentation hK fK hfK I hI hsourceConnected hU
-  -- Both restrictions are counits, so the tensor-product universal property identifies the
-  -- quotient map itself with the counit.
-  let g : P →ₐ[AlgebraicClosure k] (FiniteTypeCommHopfAlgCat.quotient P₀ I) :=
-    (FiniteTypeCommHopfAlgCat.toBialgHom (e.inv ≫ q)).toAlgHom
-  let ε : P →ₐ[AlgebraicClosure k] (FiniteTypeCommHopfAlgCat.quotient P₀ I) :=
-    (Algebra.ofId (AlgebraicClosure k) (FiniteTypeCommHopfAlgCat.quotient P₀ I)).comp
-      (Bialgebra.counitAlgHom (AlgebraicClosure k) P)
+  -- Transport the subgroup to the product of the geometric fibres. Its two projection
+  -- images are trivial, so the shared product criterion makes the subgroup trivial.
+  let J := I.comap (FiniteTypeCommHopfAlgCat.toBialgHom e.inv)
   have hleftComp : FiniteTypeCommHopfAlgCat.includeLeft Hbar Kbar ≫ e.inv ≫ q = fH ≫ q := by
     rw [← FiniteTypeCommHopfAlgCat.baseChangeMap_includeLeft_comp_baseChangeTensorProductIso_hom
         (AlgebraicClosure k) H K, Category.assoc, e.hom_inv_id_assoc]
   have hrightComp : FiniteTypeCommHopfAlgCat.includeRight Hbar Kbar ≫ e.inv ≫ q = fK ≫ q := by
     rw [← FiniteTypeCommHopfAlgCat.baseChangeMap_includeRight_comp_baseChangeTensorProductIso_hom
         (AlgebraicClosure k) H K, Category.assoc, e.hom_inv_id_assoc]
-  have hleftMap : g.comp Algebra.TensorProduct.includeLeft =
-      (Algebra.ofId (AlgebraicClosure k) (FiniteTypeCommHopfAlgCat.quotient P₀ I)).comp
-        (Bialgebra.counitAlgHom (AlgebraicClosure k) Hbar) := by
-    have h := restriction_eq_counit (FiniteTypeCommHopfAlgCat.includeLeft Hbar Kbar)
-      (e.inv ≫ q) (fH ≫ q) hleftComp hleft
-    have hi : (FiniteTypeCommHopfAlgCat.toBialgHom
-        (FiniteTypeCommHopfAlgCat.includeLeft Hbar Kbar)).toAlgHom =
-        Algebra.TensorProduct.includeLeft := by
-      change (Bialgebra.TensorProduct.includeLeft (R := AlgebraicClosure k)
-        (H₁ := Hbar) (H₂ := Kbar)).toAlgHom = Algebra.TensorProduct.includeLeft
-      exact Bialgebra.TensorProduct.includeLeft_toAlgHom
-    rw [hi] at h
-    apply AlgHom.ext
-    intro x
-    simpa only [g] using DFunLike.congr_fun h x
-  have hrightMap : g.comp Algebra.TensorProduct.includeRight =
-      (Algebra.ofId (AlgebraicClosure k) (FiniteTypeCommHopfAlgCat.quotient P₀ I)).comp
-        (Bialgebra.counitAlgHom (AlgebraicClosure k) Kbar) := by
-    have h := restriction_eq_counit (FiniteTypeCommHopfAlgCat.includeRight Hbar Kbar)
-      (e.inv ≫ q) (fK ≫ q) hrightComp hright
-    have hi : (FiniteTypeCommHopfAlgCat.toBialgHom
-        (FiniteTypeCommHopfAlgCat.includeRight Hbar Kbar)).toAlgHom =
-        Algebra.TensorProduct.includeRight := by
-      change (Bialgebra.TensorProduct.includeRight (R := AlgebraicClosure k)
-        (H₁ := Hbar) (H₂ := Kbar)).toAlgHom = Algebra.TensorProduct.includeRight
-      exact Bialgebra.TensorProduct.includeRight_toAlgHom
-    rw [hi] at h
-    apply AlgHom.ext
-    intro x
-    simpa only [g] using DFunLike.congr_fun h x
-  have hg : g = ε := by
-    rw [← _root_.AlgHom.productMap_comp_includeLeft_includeRight g, hleftMap, hrightMap]
-    apply Algebra.TensorProduct.ext'
-    intro h l
-    rw [Algebra.TensorProduct.productMap_apply_tmul]
-    simp only [ε, AlgHom.comp_apply, Algebra.ofId_apply, Bialgebra.counitAlgHom_apply]
-    rw [← map_mul]
-    congr 1
-    have hcounit := DFunLike.congr_fun
-      (Bialgebra.TensorProduct.counitAlgHom_def (AlgebraicClosure k)
-        (AlgebraicClosure k) Hbar Kbar) (h ⊗ₜ[AlgebraicClosure k] l)
-    simpa only [P, Bialgebra.counitAlgHom_apply, AlgHom.comp_apply,
-      Algebra.TensorProduct.map_tmul, AlgEquiv.toAlgHom_apply, Algebra.TensorProduct.rid_tmul,
-      smul_eq_mul, mul_comm] using hcounit.symm
-  have hq' (x : P) :
-      FiniteTypeCommHopfAlgCat.toBialgHom (e.inv ≫ q) x =
-        algebraMap (AlgebraicClosure k) (FiniteTypeCommHopfAlgCat.quotient P₀ I)
-          (Coalgebra.counit x) := by
-    exact DFunLike.congr_fun hg x
-  have hq (x : P₀) :
-      FiniteTypeCommHopfAlgCat.toBialgHom q x =
-        algebraMap (AlgebraicClosure k) (FiniteTypeCommHopfAlgCat.quotient P₀ I)
-          (Coalgebra.counit x) := by
-    have h := hq' (FiniteTypeCommHopfAlgCat.toBialgHom e.hom x)
-    rw [← e.hom_inv_id_assoc q]
-    simpa only [FiniteTypeCommHopfAlgCat.toBialgHom_comp, BialgHom.comp_apply,
-      CoalgHomClass.counit_comp_apply] using h
-  apply SetLike.ext
-  intro x
-  rw [HopfIdeal.mem_augmentation]
-  rw [← FiniteTypeCommHopfAlgCat.mkQuotient_eq_zero_iff P₀ I]
-  rw [hq]
-  constructor
-  · intro hx
-    have h := congrArg
-      (Coalgebra.counit (R := AlgebraicClosure k)
-        (A := FiniteTypeCommHopfAlgCat.quotient P₀ I)) hx
-    simpa using h
-  · intro hx
-    simp [hx]
+  have hJ : J = HopfIdeal.augmentation (AlgebraicClosure k) P := by
+    apply J.eq_augmentation_of_comap_includeLeft_of_comap_includeRight
+    · rw [← hleft, ← hleftComp]
+      ext x
+      simp only [J, HopfIdeal.mem_comap, HopfIdeal.mem_ker,
+        FiniteTypeCommHopfAlgCat.toBialgHom_comp, BialgHom.comp_apply]
+      exact (FiniteTypeCommHopfAlgCat.mkQuotient_eq_zero_iff P₀ I _).symm
+    · rw [← hright, ← hrightComp]
+      ext x
+      simp only [J, HopfIdeal.mem_comap, HopfIdeal.mem_ker,
+        FiniteTypeCommHopfAlgCat.toBialgHom_comp, BialgHom.comp_apply]
+      exact (FiniteTypeCommHopfAlgCat.mkQuotient_eq_zero_iff P₀ I _).symm
+  ext x
+  have h := SetLike.ext_iff.mp hJ (FiniteTypeCommHopfAlgCat.toBialgHom e.hom x)
+  have hinv : FiniteTypeCommHopfAlgCat.toBialgHom e.inv
+      (FiniteTypeCommHopfAlgCat.toBialgHom e.hom x) = x := by
+    rw [← BialgHom.comp_apply, ← FiniteTypeCommHopfAlgCat.toBialgHom_comp, e.hom_inv_id]
+    rw [FiniteTypeCommHopfAlgCat.toBialgHom_id, BialgHom.id_apply]
+  simpa only [J, HopfIdeal.mem_comap, hinv, HopfIdeal.mem_augmentation,
+    CoalgHomClass.counit_comp_apply] using h
 
 end reductiveCommHopfAlgProperty
 

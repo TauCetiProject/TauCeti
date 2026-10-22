@@ -158,7 +158,7 @@ private theorem conjOp_comp_weightFamily {f : C(G, 𝕜)} (hf : ∀ g h : G, f (
   have hclass : f (h⁻¹ * (g * h)) = f g := by
     have := hf g h⁻¹
     rwa [inv_inv, mul_assoc] at this
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe, conjOp_apply,
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, conjOp_apply,
     ContinuousLinearMap.comp_apply, weightFamily_apply, conjMap_apply, hclass, smul_apply,
     map_smul, map_mul π, mul_apply_eq_comp]
 
@@ -235,7 +235,7 @@ theorem integratedOperator_apply (f : C(G, 𝕜)) (v : V) :
     (weightFamily π hπ f)
   simp only [ContinuousLinearMap.apply_apply] at h
   rw [integratedOperator, ← h, haarAverage_apply]
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe, ContinuousLinearMap.apply_apply,
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, ContinuousLinearMap.apply_apply,
     weightFamily_apply, smul_apply]
 
 section Naturality
@@ -334,7 +334,7 @@ theorem trace_integratedOperator (f : C(G, 𝕜)) :
       = ∫ g, f g * character π hπ g ∂haarProb G := by
   have h := (traceCLM 𝕜 V).haarAverage_comp_comm (G := G) (weightFamily π hπ f)
   rw [← traceCLM_apply, integratedOperator, ← h, haarAverage_apply]
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_coe, weightFamily_apply, map_smul,
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, weightFamily_apply, map_smul,
     traceCLM_apply, smul_eq_mul, character_apply]
 
 variable [IsAlgClosed 𝕜] {f : C(G, 𝕜)}

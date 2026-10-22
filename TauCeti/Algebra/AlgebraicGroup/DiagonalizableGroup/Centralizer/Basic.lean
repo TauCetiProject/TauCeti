@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer.Character
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Representability
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
 import TauCeti.Algebra.TensorProduct.MapLinear

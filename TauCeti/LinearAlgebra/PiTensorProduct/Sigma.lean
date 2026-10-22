@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
-import Mathlib.Logic.Equiv.Sum
+import TauCeti.LinearAlgebra.PiTensorProduct.Option
 import Mathlib.Data.Fintype.Option
 import Mathlib.LinearAlgebra.TensorProduct.Map
 
@@ -62,38 +62,34 @@ private theorem exists_sigmaEquiv (ι : Type w) [Finite ι] :
     simp
   | @h_option α _ ih =>
     intro κ M _ _
-    let e : Option α ≃ α ⊕ PUnit.{w + 1} := Equiv.optionEquivSumPUnit α
-    obtain ⟨f, hf⟩ := ih (fun i ↦ κ (e.symm (.inl i))) (fun i j ↦ M (e.symm (.inl i)) j)
-    let p : (Σ i : α, κ (e.symm (.inl i))) ⊕ κ (e.symm (.inr PUnit.unit)) ≃ Σ o, κ o :=
-      ((Equiv.refl _).sumCongr (Equiv.uniqueSigma fun u ↦ κ (e.symm (.inr u))).symm).trans
-        ((Equiv.sumSigmaDistrib fun z ↦ κ (e.symm z)).symm.trans (Equiv.sigmaCongrLeft e.symm))
-    let A := reindex R (fun o ↦ ⨂[R] j : κ o, M o j) e
-    let T := tmulEquivDep R (fun z ↦ ⨂[R] j : κ (e.symm z), M (e.symm z) j)
-    let C := TensorProduct.congr f (subsingletonEquiv (R := R)
-      (s := fun u ↦ ⨂[R] j : κ (e.symm (.inr u)), M (e.symm (.inr u)) j) PUnit.unit)
+    obtain ⟨f, hf⟩ := ih (fun i ↦ κ (some i)) (fun i j ↦ M (some i) j)
+    let p : (Σ i : α, κ (some i)) ⊕ κ none ≃ Σ o, κ o :=
+      { toFun := Sum.elim (fun q ↦ ⟨some q.1, q.2⟩) (fun j ↦ ⟨none, j⟩)
+        invFun := fun
+          | ⟨none, j⟩ => .inr j
+          | ⟨some i, j⟩ => .inl ⟨i, j⟩
+        left_inv := by rintro (⟨i, j⟩ | j) <;> rfl
+        right_inv := by rintro ⟨_ | i, j⟩ <;> rfl }
+    let C := TensorProduct.congr f (LinearEquiv.refl R (⨂[R] j : κ none, M none j))
     let D := tmulEquivDep R (fun z ↦ M (p z).1 (p z).2)
     let B := reindex R (fun q : Σ o, κ o ↦ M q.1 q.2) p.symm
-    refine ⟨A.trans (T.symm.trans (C.trans (D.trans B.symm))), fun m ↦ ?_⟩
-    have h₁ : T.symm (A (tprod R fun o ↦ tprod R (m o))) =
-        (tprod R fun i ↦ tprod R (m (e.symm (.inl i)))) ⊗ₜ
-          (tprod R fun u ↦ tprod R (m (e.symm (.inr u)))) := by
-      rw [reindex_tprod, tmulEquivDep_symm_apply]
-    have h₂ : C ((tprod R fun i ↦ tprod R (m (e.symm (.inl i)))) ⊗ₜ
-          (tprod R fun u ↦ tprod R (m (e.symm (.inr u))))) =
-        (tprod R fun q : Σ i, κ (e.symm (.inl i)) ↦ m (e.symm (.inl q.1)) q.2) ⊗ₜ
-          tprod R (m (e.symm (.inr PUnit.unit))) := by
-      rw [TensorProduct.congr_tmul, hf, subsingletonEquiv_apply_tprod]
-    have h₃ : D ((tprod R fun q : Σ i, κ (e.symm (.inl i)) ↦ m (e.symm (.inl q.1)) q.2) ⊗ₜ
-          tprod R (m (e.symm (.inr PUnit.unit)))) = tprod R fun z ↦ m (p z).1 (p z).2 := by
+    refine ⟨(optionEquiv fun o ↦ ⨂[R] j : κ o, M o j).trans (C.trans (D.trans B.symm)),
+      fun m ↦ ?_⟩
+    have h₁ : D ((tprod R fun q : Σ i, κ (some i) ↦ m (some q.1) q.2) ⊗ₜ tprod R (m none)) =
+        tprod R fun z ↦ m (p z).1 (p z).2 := by
       refine (tmulEquivDep_apply R (fun z ↦ M (p z).1 (p z).2)
         (fun q ↦ m (p (.inl q)).1 (p (.inl q)).2) (fun j ↦ m (p (.inr j)).1 (p (.inr j)).2)).trans
           (congrArg _ (funext fun z ↦ ?_))
       cases z <;> rfl
-    have h₄ : B (tprod R fun q ↦ m q.1 q.2) = tprod R fun z ↦ m (p z).1 (p z).2 :=
+    have h₂ : B (tprod R fun q ↦ m q.1 q.2) = tprod R fun z ↦ m (p z).1 (p z).2 :=
       reindex_tprod _ _
-    exact (congrArg (fun x ↦ B.symm (D (C x))) h₁).trans
-      ((congrArg (fun x ↦ B.symm (D x)) h₂).trans
-        ((congrArg B.symm h₃).trans (B.symm_apply_eq.2 h₄.symm)))
+    have h₃ : C ((tprod R fun i ↦ tprod R (m (some i))) ⊗ₜ tprod R (m none)) =
+        (tprod R fun q : Σ i, κ (some i) ↦ m (some q.1) q.2) ⊗ₜ tprod R (m none) := by
+      rw [TensorProduct.congr_tmul, hf, LinearEquiv.refl_apply]
+    exact (congrArg (fun x ↦ B.symm (D (C x)))
+      (optionEquiv_tprod (fun o ↦ ⨂[R] j : κ o, M o j) fun o ↦ tprod R (m o))).trans
+      ((congrArg (fun x ↦ B.symm (D x)) h₃).trans
+        ((congrArg B.symm h₁).trans (B.symm_apply_eq.2 h₂.symm)))
 
 /-- Regroup a tensor product indexed by a dependent sum into the tensor product of the tensor
 products over its fibres.  Only the outer index must be finite. -/

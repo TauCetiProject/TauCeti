@@ -1,0 +1,41 @@
+name: Cancel withdrawn Bors candidate
+run-name: Cancel Bors intent ${{ github.event.client_payload.intent_id }} run ${{ github.event.client_payload.run_id }}
+on:
+  repository_dispatch:
+    types: [tauceti-bors-cancel]
+permissions: {}
+concurrency:
+  group: bors-cancel-${{ github.repository_id }}-${{ github.event.client_payload.intent_id }}
+  cancel-in-progress: false
+jobs:
+  cancel:
+    if: >-
+      github.repository == 'TauCetiProject/TauCeti' &&
+      github.event.sender.id == 337246530 &&
+      github.event.sender.login == 'tau-ceti-bors[bot]' &&
+      github.event.sender.type == 'Bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Check out trusted workflow tools
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            tauceti.toml
+            scripts/cancel_bors_candidate.py
+          sparse-checkout-cone-mode: false
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
+      - name: Request normal cancellation after fresh exact authority checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/cancel_bors_candidate.py

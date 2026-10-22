@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.Basic
+public import Mathlib.RingTheory.Ideal.Height
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.RingHom
 public import TauCeti.Order.Catenary
+
+import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 
 /-!
 # Catenary rings
@@ -30,8 +34,15 @@ transports along the order isomorphisms that Mathlib provides between prime spec
 * `Submonoid.isCatenary_of_isLocalization`: a localization of a catenary ring is catenary
   (Stacks, Lemma 10.105.4 (00NJ)).
 * `TauCeti.Excellence.isCatenary_iff_forall_isMaximal`: a ring is catenary if and only if its
-  localizations at all maximal ideals are (Stacks, Lemma 10.105.6 (0AUN)).
+  localizations at all maximal ideals are (Stacks, Lemma 10.105.6 (0AUN)); equivalently, its
+  localizations at all prime ideals are (`TauCeti.Excellence.isCatenary_iff_forall_isPrime`).
 * A ring of Krull dimension at most one, such as a field, `ℤ` or a Dedekind domain, is catenary.
+* `PrimeSpectrum.krullDim_Icc`: the Krull dimension of the interval `[p, q]` of `Spec R` is the
+  height of `q / p` in `R / p`.
+* `TauCeti.Excellence.isCatenary_iff_height_add`: a ring is catenary if and only if, for primes
+  `p ⊆ q ⊆ r`, the heights `ht (q / p)` are finite and `ht (r / p) = ht (q / p) + ht (r / q)`;
+  for Noetherian rings the finiteness is automatic
+  (`TauCeti.Excellence.isCatenary_iff_height_add_of_isNoetherianRing`).
 -/
 
 public section
@@ -109,6 +120,33 @@ instance isCatenary_localization [CommSemiring R] [TauCeti.Excellence.IsCatenary
 
 end Submonoid
 
+namespace PrimeSpectrum
+
+variable {R : Type*} [CommRing R]
+
+/-- The Krull dimension of the interval `[p, q]` of prime ideals of `R` is the height of the
+prime ideal `q / p` of `R / p`. -/
+theorem krullDim_Icc {p q : PrimeSpectrum R} (hpq : p ≤ q) :
+    Order.krullDim (Set.Icc p q) = (q.asIdeal.map (Ideal.Quotient.mk p.asIdeal)).height := by
+  let e := p.asIdeal.primeSpectrumQuotientOrderIsoZeroLocus
+  have hmem {x : PrimeSpectrum R} : x ∈ zeroLocus (p.asIdeal : Set R) ↔ p ≤ x :=
+    (mem_zeroLocus _ _).trans SetLike.coe_subset_coe
+  let Q := e.symm ⟨q, hmem.2 hpq⟩
+  -- By construction, the inverse of `e` sends `q` to its image `q / p` in `R / p`.
+  have hQ : Q.asIdeal = q.asIdeal.map (Ideal.Quotient.mk p.asIdeal) := rfl
+  -- The primes of `R / p` below `q / p` correspond to the primes of `R` between `p` and `q`.
+  let f : Set.Icc p q ≃o Set.Iic Q :=
+    { toFun x := ⟨e.symm ⟨x, hmem.2 (Set.mem_Icc.1 x.2).1⟩,
+        e.symm.monotone (Subtype.mk_le_mk.2 (Set.mem_Icc.1 x.2).2)⟩
+      invFun y := ⟨e y, hmem.1 (e y).2, Subtype.coe_le_coe.2 ((e.monotone y.2).trans_eq
+        (by simp [Q]) : e y ≤ ⟨q, hmem.2 hpq⟩)⟩
+      left_inv x := by simp
+      right_inv y := by simp
+      map_rel_iff' := e.symm.le_iff_le }
+  rw [← hQ, height_eq_orderHeight, Order.height_eq_krullDim_Iic, Order.krullDim_eq_of_orderIso f]
+
+end PrimeSpectrum
+
 namespace TauCeti.Excellence
 
 /-- A ring is catenary if and only if its localizations at all maximal ideals are catenary. A
@@ -138,6 +176,47 @@ theorem isCatenary_iff_forall_minimalPrimes {R : Type*} [CommRing R] :
   exact ⟨_, this, (PrimeSpectrum.mem_zeroLocus _ _).2 hp₀p,
     (PrimeSpectrum.mem_zeroLocus _ _).2 (hp₀p.trans hpq),
     (Ideal.primeSpectrumQuotientOrderIsoZeroLocus p₀).symm.isCatenary⟩
+
+/-- A ring is catenary if and only if its localizations at all prime ideals are catenary.
+Stacks, Lemma 10.105.6 (0AUN). -/
+theorem isCatenary_iff_forall_isPrime {R : Type*} [CommSemiring R] :
+    IsCatenary R ↔ ∀ (q : Ideal R) [q.IsPrime], IsCatenary (Localization.AtPrime q) :=
+  ⟨fun _ _ _ => inferInstance, fun h => isCatenary_iff_forall_isMaximal.2 fun m _ => h m⟩
+
+/-- A ring is catenary if and only if, for all primes `p ⊆ q ⊆ r`, the height of `q / p` in `R / p`
+is finite and heights are additive: `ht (r / p) = ht (q / p) + ht (r / q)`. This is the
+characterisation of catenary spaces by additivity of codimension (Stacks, Lemma 5.11.6 (02I6))
+applied to `Spec R`, using that `R` is catenary if and only if `Spec R` is (Stacks, Lemma 10.105.2
+(02IH)). -/
+theorem isCatenary_iff_height_add {R : Type*} [CommRing R] :
+    IsCatenary R ↔ (∀ p q : PrimeSpectrum R, p ≤ q →
+        (q.asIdeal.map (Ideal.Quotient.mk p.asIdeal)).height ≠ ⊤) ∧
+      ∀ p q r : PrimeSpectrum R, p ≤ q → q ≤ r →
+        (r.asIdeal.map (Ideal.Quotient.mk p.asIdeal)).height =
+          (q.asIdeal.map (Ideal.Quotient.mk p.asIdeal)).height +
+            (r.asIdeal.map (Ideal.Quotient.mk q.asIdeal)).height := by
+  rw [IsCatenary, Order.isCatenary_iff_krullDim_Icc_add]
+  refine and_congr (forall₃_congr fun p q hpq => ?_)
+    (forall_congr' fun p => forall₄_congr fun q r hpq hqr => ?_)
+  · rw [PrimeSpectrum.krullDim_Icc hpq, ← WithBot.coe_top, Ne, Ne, WithBot.coe_inj]
+  · rw [PrimeSpectrum.krullDim_Icc (hpq.trans hqr), PrimeSpectrum.krullDim_Icc hpq,
+      PrimeSpectrum.krullDim_Icc hqr, ← WithBot.coe_add, WithBot.coe_inj]
+
+/-- A Noetherian ring is catenary if and only if, for all primes `p ⊆ q ⊆ r`, the heights of the
+quotient primes are additive: `ht (r / p) = ht (q / p) + ht (r / q)`. The finiteness required by
+`isCatenary_iff_height_add` is automatic, prime ideals of a Noetherian ring having finite height.
+Stacks, Lemma 10.105.2 (02IH) and Topology, Lemma 5.11.6 (02I6). -/
+theorem isCatenary_iff_height_add_of_isNoetherianRing {R : Type*} [CommRing R]
+    [IsNoetherianRing R] :
+    IsCatenary R ↔ ∀ p q r : PrimeSpectrum R, p ≤ q → q ≤ r →
+      (r.asIdeal.map (Ideal.Quotient.mk p.asIdeal)).height =
+        (q.asIdeal.map (Ideal.Quotient.mk p.asIdeal)).height +
+          (r.asIdeal.map (Ideal.Quotient.mk q.asIdeal)).height := by
+  rw [isCatenary_iff_height_add, and_iff_right_iff_imp]
+  intro _ p q hpq
+  have : (q.asIdeal.map (Ideal.Quotient.mk p.asIdeal)).IsPrime :=
+    Ideal.map_isPrime_of_surjective Ideal.Quotient.mk_surjective (by rwa [Ideal.mk_ker])
+  exact Ideal.height_ne_top_of_isPrime
 
 example : IsCatenary ℤ := inferInstance
 

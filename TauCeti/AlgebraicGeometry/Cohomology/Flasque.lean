@@ -116,18 +116,13 @@ connecting map `H^{n₀}(X, M₃) ⟶ H^{n₁}(X, M₁)` is surjective. -/
 theorem cohomologyδ_surjective_of_isFlasque (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     Function.Surjective (cohomologyδ hS n₀ n₁ h) := by
   subst h
-  intro x
-  exact (exact_cohomologyδ_cohomologyMap hS n₀ (n₀ + 1) rfl x).mp
-    (Subsingleton.elim _ _)
+  exact cohomologyδ_surjective hS n₀ (n₀ + 1) rfl inferInstance
 
 /-- If the middle term of a short exact sequence of sheaves of modules is flasque, then the
 connecting map `Hⁿ⁺¹(X, M₃) ⟶ Hⁿ⁺²(X, M₁)` is injective. -/
 theorem cohomologyδ_injective_of_isFlasque (n : ℕ) :
-    Function.Injective (cohomologyδ hS (n + 1) (n + 2) rfl) := by
-  rw [injective_iff_map_eq_zero]
-  intro x hx
-  obtain ⟨y, rfl⟩ := (exact_cohomologyMap_cohomologyδ hS (n + 1) (n + 2) rfl x).mp hx
-  rw [Subsingleton.elim y 0, map_zero]
+    Function.Injective (cohomologyδ hS (n + 1) (n + 2) rfl) :=
+  (cohomologyδ_bijective hS (n + 1) (n + 2) rfl inferInstance inferInstance).1
 
 end ShortExact
 

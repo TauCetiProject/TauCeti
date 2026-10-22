@@ -11,11 +11,14 @@ public import TauCeti.RingTheory.Valuation.Discrete.Order
 /-!
 # Orders of Frobenius powers under a discrete valuation
 
-Let `F` be a field of exponential characteristic `p`, and let `v : Valuation F ℤᵐ⁰`. Every
-element in the image of the `n`-fold Frobenius has order under `v` divisible by `p ^ n`: if
+Let `R` be a commutative ring of exponential characteristic `p`, and let `v : Valuation R ℤᵐ⁰`.
+Every element in the image of the `n`-fold Frobenius has order under `v` divisible by `p ^ n`: if
 `z = y ^ (p ^ n)`, then
 
 `ord_v(z) = p ^ n * ord_v(y)`.
+
+The order has its junk value zero on the valuation support, where these divisibility assertions
+remain valid.
 
 Consequently, an element whose order under a discrete valuation is not divisible by `p ^ n`
 cannot lie in the image of the `n`-fold Frobenius. Applied to the valuation of a function-field
@@ -47,17 +50,31 @@ namespace Valuation
 
 universe u
 
-variable {F : Type u} [Field F]
-variable (v : _root_.Valuation F ℤᵐ⁰) (p : ℕ) [ExpChar F p]
+section CommRing
+
+variable {R : Type u} [CommRing R]
+variable (v : _root_.Valuation R ℤᵐ⁰) (p : ℕ) [ExpChar R p]
 
 /-- The order under a discrete valuation of an `n`-fold Frobenius image is multiplied by
 `p ^ n`. -/
 @[simp]
-theorem ord_iterateFrobenius (n : ℕ) (z : F) :
-    _root_.Valuation.ord v (iterateFrobenius F p n z) =
+theorem ord_iterateFrobenius (n : ℕ) (z : R) :
+    _root_.Valuation.ord v (iterateFrobenius R p n z) =
       (p ^ n : ℤ) * _root_.Valuation.ord v z := by
-  rw [iterateFrobenius_def, _root_.Valuation.ord_pow]
-  norm_num
+  simp [iterateFrobenius_def]
+
+/-- The order of a difference of `p`-th powers under a discrete valuation is divisible by `p`. -/
+theorem natCast_dvd_ord_pow_sub_pow (z b : R) :
+    (p : ℤ) ∣ _root_.Valuation.ord v (z ^ p - b ^ p) := by
+  rw [← sub_pow_expChar, _root_.Valuation.ord_pow]
+  exact dvd_mul_right _ _
+
+end CommRing
+
+section Field
+
+variable {F : Type u} [Field F]
+variable (v : _root_.Valuation F ℤᵐ⁰) (p : ℕ) [ExpChar F p]
 
 /-- Membership in the image of the `n`-fold Frobenius forces the order under every discrete
 valuation to be divisible by `p ^ n`. -/
@@ -75,12 +92,7 @@ theorem not_mem_fieldRange_iterateFrobenius_of_not_natCast_pow_dvd_ord (n : ℕ)
     z ∉ RingHom.fieldRange (iterateFrobenius F p n) := fun h =>
   hz (natCast_pow_dvd_ord_of_mem_fieldRange_iterateFrobenius v p n h)
 
-/-- A difference of `p`-th powers is the `p`-th power of the difference, so its order under a
-discrete valuation is divisible by `p`. -/
-theorem natCast_dvd_ord_pow_sub_pow (z b : F) :
-    (p : ℤ) ∣ _root_.Valuation.ord v (z ^ p - b ^ p) := by
-  rw [← sub_pow_expChar, _root_.Valuation.ord_pow]
-  exact dvd_mul_right _ _
+end Field
 
 end Valuation
 

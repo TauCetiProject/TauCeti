@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import Mathlib.RingTheory.RootsOfUnity.Basic
 import Mathlib.Data.Nat.Choose.Dvd
 import Mathlib.Data.Nat.Factorization.Induction
 

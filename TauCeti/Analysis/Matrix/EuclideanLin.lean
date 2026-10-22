@@ -80,6 +80,12 @@ theorem rank_coe_toEuclideanCLM (A : Matrix ι ι 𝕜) :
   rw [LinearMap.rank, coe_toEuclideanCLM_eq_toEuclideanLin, ← Module.finrank_eq_rank,
     rank_eq_finrank_range_toEuclideanLin]
 
+/-- The continuous linear map of a matrix acts as its Euclidean linear map. -/
+@[simp]
+theorem toEuclideanCLM_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι) :
+    toEuclideanCLM (𝕜 := 𝕜) A x = toEuclideanLin A x := by
+  rw [← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
+
 section Invertible
 
 /-- **The continuous linear equivalence of an invertible matrix** on Euclidean space, defined
@@ -96,14 +102,14 @@ noncomputable def toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
 theorem toEuclideanCLE_apply (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) (x : EuclideanSpace 𝕜 ι) :
     A.toEuclideanCLE hA x = A.toEuclideanLin x := by
   rw [toEuclideanCLE, ContinuousLinearMap.toContinuousLinearEquivOfDetNeZero_apply,
-    ← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
+    toEuclideanCLM_apply]
 
 /-- The inverse of the equivalence is the map of the inverse matrix. -/
 @[simp]
 theorem toEuclideanCLE_symm_apply (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0)
     (y : EuclideanSpace 𝕜 ι) : (A.toEuclideanCLE hA).symm y = A⁻¹.toEuclideanLin y := by
   rw [ContinuousLinearEquiv.symm_apply_eq, toEuclideanCLE_apply]
-  simp only [← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
+  simp only [← toEuclideanCLM_apply]
   rw [← mul_apply_eq_comp, ← map_mul, mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hA), map_one,
     one_apply_eq_self]
 

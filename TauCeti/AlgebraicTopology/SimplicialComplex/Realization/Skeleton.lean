@@ -116,7 +116,7 @@ theorem card_support_realizationMap_of_injOn
     (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
     (x : Realization K) (hf : InjOn f (x.1.support : Set ι)) :
     (f.realizationMap x).1.support.card = x.1.support.card := by
-  rw [realizationMap_val, Finsupp.mapDomain_support_of_injOn x.1 hf]
+  rw [TauCeti.PreAbstractSimplicialComplex.SimplicialMap.support_realizationMap_of_injOn f x hf]
   exact Finset.card_image_of_injOn hf
 
 /-- A simplicial map injective on each face reflects skeletal membership as well as preserving

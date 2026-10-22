@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Basic
 public import TauCeti.MeasureTheory.Group.DirichletDomain.Faces
+public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
 import Mathlib.Topology.Order.Compact
+import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Intersection
 
 /-!
 # Geodesic faces of hyperbolic Dirichlet domains
@@ -59,6 +61,15 @@ theorem geodesicSegment_subset_dirichletFace {p z w : ℍ} {g : G}
   have huD := geodesicSegment_subset_dirichletDomain G hzD hwD hu
   exact mem_dirichletFace.mpr ⟨huD, le_antisymm (mem_dirichletDomain.mp huD g)
     (geodesicSegment_subset_setOf_dist_le_dist hzE.ge hwE.ge hu)⟩
+
+/-- Two faces indexed by elements moving the centre and sharing two distinct points have the
+same orbit point: a nondegenerate face determines the translate of the centre across it. -/
+theorem smul_eq_of_nontrivial_dirichletFace_inter {p : ℍ} {g g' : G} (hg : g • p ≠ p)
+    (hg' : g' • p ≠ p) (h : (dirichletFace p g ∩ dirichletFace p g').Nontrivial) :
+    g • p = g' • p := by
+  obtain ⟨x, hx, y, hy, hxy⟩ := h
+  exact eq_of_dist_eq_dist_of_dist_eq_dist hg.symm hg'.symm hxy (mem_dirichletFace.mp hx.1).2
+    (mem_dirichletFace.mp hy.1).2 (mem_dirichletFace.mp hx.2).2 (mem_dirichletFace.mp hy.2).2
 
 /-- On its supporting bisector the face imposes just the Dirichlet-domain inequalities. -/
 @[simp]
@@ -136,5 +147,22 @@ theorem mem_interior_dirichletDomain_iff {p z : ℍ} :
   have hzD := interior_subset hz
   refine lt_of_le_of_ne (mem_dirichletDomain.mp hzD g) fun he ↦ ?_
   exact (dirichletFace_subset_frontier hg (mem_dirichletFace.mpr ⟨hzD, he⟩)).2 hz
+
+end TauCeti.UpperHalfPlane
+
+namespace TauCeti.UpperHalfPlane
+
+variable {G : Type*} [Group G] [MulAction G ℍ]
+
+/-- For a centre with trivial stabilizer, two nonidentity elements whose Dirichlet faces share
+two distinct points are equal. -/
+theorem eq_of_nontrivial_dirichletFace_inter {p : ℍ}
+    (hp : p ∈ TauCeti.freeLocus G ℍ) {g g' : G} (hg : g ≠ 1) (hg' : g' ≠ 1)
+    (h : (dirichletFace p g ∩ dirichletFace p g').Nontrivial) : g = g' := by
+  have he := smul_eq_of_nontrivial_dirichletFace_inter
+    (TauCeti.smul_ne_of_ne_one G ℍ hp hg) (TauCeti.smul_ne_of_ne_one G ℍ hp hg') h
+  by_contra hne
+  exact TauCeti.smul_ne_of_ne_one G ℍ hp (g := g'⁻¹ * g)
+    (fun h' ↦ hne (inv_mul_eq_one.1 h').symm) (by rw [mul_smul, he, inv_smul_smul])
 
 end TauCeti.UpperHalfPlane

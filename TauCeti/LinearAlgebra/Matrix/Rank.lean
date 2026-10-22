@@ -7,14 +7,22 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Matrix.ColumnRowPartitioned
+import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 
 /-!
 # Matrix rank
 
-This file records general results relating matrix rank to the corresponding linear maps.
+This file records general results relating matrix rank to the corresponding linear maps,
+maximal minors and change of scalars. In particular, over an integral domain a finite family of
+rows is linearly independent exactly when one of its maximal minors is nonzero.
 
 ## Main results
 
+* `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: over an integral domain, the
+  rows are linearly independent exactly when some maximal minor is nonzero.
+* `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
+  scalar extension to a domain.
+* `Matrix.linearIndependent_rat_row_iff`: the case of integer matrices extended to `ℚ`.
 * `Matrix.rank_eq_card_iff_vecMul_injective` characterizes full row rank by injectivity of right
   multiplication by the matrix.
 * `Matrix.rank_eq_card_iff_mulVec_injective` characterizes full column rank by injectivity of
@@ -32,6 +40,61 @@ This file records general results relating matrix rank to the corresponding line
 public section
 
 namespace Matrix
+
+section LinearIndependent
+
+variable {m n R : Type*} [Fintype m] [DecidableEq m] [Finite n]
+
+/-- The field case of `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: a family
+of independent columns of the size of the row rank exists. -/
+private theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field {K : Type*}
+    [Field K] {A : Matrix m n K} :
+    LinearIndependent K A.row ↔ ∃ e : m ↪ n, (A.submatrix id e).det ≠ 0 := by
+  have : Fintype n := Fintype.ofFinite n
+  refine ⟨fun h ↦ ?_, fun ⟨e, he⟩ ↦ ?_⟩
+  · obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K A.col
+    have : Finite κ := Finite.of_injective a ha
+    have : Fintype κ := Fintype.ofFinite κ
+    have hcard : Fintype.card m = Fintype.card κ := by
+      rw [linearIndependent_iff_card_eq_finrank_span.1 hli, Set.finrank, hspan,
+        ← rank_eq_finrank_span_cols, h.rank_matrix]
+    let e : m ↪ n := (Fintype.equivOfCardEq hcard).toEmbedding.trans ⟨a, ha⟩
+    -- The columns of the square submatrix are the columns `A.col (e j)` (`col_submatrix_eq_comp`).
+    have hcol : LinearIndependent K (A.submatrix id e).col :=
+      hli.comp _ (Fintype.equivOfCardEq hcard).injective
+    exact ⟨e, ((isUnit_iff_isUnit_det _).1 (linearIndependent_col_iff_isUnit.1 hcol)).ne_zero⟩
+  · -- The rows of the square submatrix are the rows of `A` restricted to the columns `e`.
+    exact LinearIndependent.of_comp (LinearMap.funLeft K K e)
+      (linearIndependent_rows_of_det_ne_zero he)
+
+omit [Fintype m] [DecidableEq m] in
+/-- The rows of a matrix over `R` are linearly independent over a domain `S` containing `R`
+exactly when they are linearly independent over `R`. -/
+theorem linearIndependent_map_algebraMap_row_iff {S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] [FaithfulSMul R S] [IsDomain S] {A : Matrix m n R} :
+    LinearIndependent S (A.map (algebraMap R S)).row ↔ LinearIndependent R A.row :=
+  -- The rows of `A.map (algebraMap R S)` are the rows of `A` mapped entrywise (`row_map`).
+  linearIndependent_algebraMap_comp_iff
+
+/-- Over an integral domain, the rows of a matrix are linearly independent exactly when some
+maximal minor is nonzero. -/
+theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero [CommRing R] [IsDomain R]
+    {A : Matrix m n R} :
+    LinearIndependent R A.row ↔ ∃ e : m ↪ n, (A.submatrix id e).det ≠ 0 := by
+  let K := FractionRing R
+  rw [← linearIndependent_map_algebraMap_row_iff (S := K),
+    linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field]
+  simp only [submatrix_map, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
+    map_ne_zero_iff _ (IsFractionRing.injective R K)]
+
+omit [Fintype m] [DecidableEq m] in
+/-- The rows of an integer matrix are linearly independent over `ℚ` exactly when they are linearly
+independent over `ℤ`. -/
+theorem linearIndependent_rat_row_iff {A : Matrix m n ℤ} :
+    LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row ↔ LinearIndependent ℤ A.row :=
+  linearIndependent_map_algebraMap_row_iff
+
+end LinearIndependent
 
 section FullColumnRank
 
@@ -82,7 +145,11 @@ theorem range_left_factor_eq {ι : Type*} [Fintype ι]
 
 end ExactRankFactorRange
 
-variable {K : Type*} [Field K] {m n : Type*} [Fintype m] [Fintype n]
+variable {K : Type*} [Field K] {m n : Type*} [Fintype n]
+
+section
+
+variable [Fintype m]
 
 /-- A matrix has full row rank exactly when right multiplication by it is injective. -/
 theorem rank_eq_card_iff_vecMul_injective (B : Matrix m n K) :
@@ -90,7 +157,8 @@ theorem rank_eq_card_iff_vecMul_injective (B : Matrix m n K) :
   rw [vecMul_injective_iff, rank_eq_finrank_span_row,
     linearIndependent_iff_card_eq_finrank_span, Set.finrank, eq_comm]
 
-omit [Fintype m] in
+end
+
 /-- Every matrix with finitely many columns over a field factors through a space whose dimension
 is its rank. The factorization also applies to a rank-zero matrix, with inner index type `Fin 0`. -/
 theorem exists_eq_mul_fin_rank (A : Matrix m n K) :
@@ -106,7 +174,6 @@ theorem exists_eq_mul_fin_rank (A : Matrix m n K) :
   refine ⟨LinearMap.toMatrix' l, LinearMap.toMatrix' r, ?_⟩
   rw [← LinearMap.toMatrix'_comp, h, ← Matrix.toLin'_apply', LinearMap.toMatrix'_toLin']
 
-omit [Fintype m] in
 /-- A rank bound gives a factorization through `Fin r`, padding an exact-rank factorization
 with zero columns and rows when necessary. -/
 theorem exists_eq_mul_of_rank_le (A : Matrix m n K) {r : ℕ} (h : A.rank ≤ r) :
@@ -120,7 +187,6 @@ theorem exists_eq_mul_of_rank_le (A : Matrix m n K) {r : ℕ} (h : A.rank ≤ r)
   simpa only [submatrix_mul_equiv, fromCols_mul_fromRows, Matrix.zero_mul, add_zero,
     submatrix_id_id] using hA
 
-omit [Fintype m] in
 /-- Matrix rank is at most `r` if and only if the matrix is a product with inner index `Fin r`.
 In particular, rank is the least possible inner dimension of a factorization. -/
 theorem rank_le_iff_exists_eq_mul (A : Matrix m n K) (r : ℕ) :
@@ -129,7 +195,6 @@ theorem rank_le_iff_exists_eq_mul (A : Matrix m n K) (r : ℕ) :
   rintro ⟨L, R, rfl⟩
   exact (rank_mul_le_left L R).trans (by simpa using L.rank_le_card_width)
 
-omit [Fintype m] in
 /-- **Sylvester's rank inequality**: for an `m × n` matrix `A` and an `n × o` matrix `B` over a
 field, `rank A + rank B ≤ rank (A * B) + n`. Equivalently, multiplying by `A` lowers the rank of
 `B` by at most the nullity of `A`. -/

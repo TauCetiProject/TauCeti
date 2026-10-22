@@ -8,7 +8,11 @@ module
 public import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
 
 /-!
-# The mapping cone of a homotopy equivalence is contractible
+# Mapping cones and homotopy equivalences
+
+The standard null-homotopy of `f ≫ mappingCone.inr f` has components given by
+`mappingCone.inl f`. This file exposes that homotopy and the component formulas relating
+Mathlib's mapping-cone API to its underlying homotopy-cofiber construction.
 
 A morphism of cochain complexes `f : K ⟶ L` sits in the distinguished triangle
 `K ⟶ L ⟶ cone f ⟶ K⟦1⟧` of the homotopy category. In a pretriangulated category the third
@@ -19,6 +23,8 @@ that the identity is null-homotopic, which is the form in which this file record
 
 ## Main results
 
+* `CochainComplex.mappingCone.inrCompHomotopy`: the standard null-homotopy of the composite of
+  `f` with the right inclusion into its mapping cone.
 * `CochainComplex.mappingCone.nonempty_homotopy_id_zero_of_isIso_quotient_map`: the mapping cone
   of a morphism inverted by the homotopy category is contractible.
 * `CochainComplex.mappingCone.nonempty_homotopy_id_zero_of_homotopyEquiv`: the mapping cone of a
@@ -27,18 +33,37 @@ that the identity is null-homotopic, which is the form in which this file record
 
 public section
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated
+open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated HomologicalComplex
 
 universe v u
 
 namespace CochainComplex.mappingCone
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
-  {K L : CochainComplex C ℤ}
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
+  {K L : CochainComplex C ℤ} (f : K ⟶ L)
+
+/-- The components of `mappingCone.inl` are the left inclusions of the underlying homotopy
+cofiber. -/
+lemma inl_v_eq_inlX (i j : ℤ) (hij : j + 1 = i) :
+    (inl f).v i j (by omega) = homotopyCofiber.inlX f i j hij :=
+  rfl
+
+/-- The standard null-homotopy of `f ≫ mappingCone.inr f`, whose components are those of
+`mappingCone.inl f`. -/
+noncomputable def inrCompHomotopy : Homotopy (f ≫ inr f) 0 :=
+  homotopyCofiber.inrCompHomotopy f fun j ↦ ⟨j - 1, by simp⟩
+
+/-- The components of the standard null-homotopy of `f ≫ mappingCone.inr f`. -/
+lemma inrCompHomotopy_hom (i j : ℤ) (hij : j + 1 = i) :
+    (inrCompHomotopy f).hom i j = (inl f).v i j (by omega) := by
+  rw [inl_v_eq_inlX f i j hij]
+  exact homotopyCofiber.inrCompHomotopy_hom f _ i j hij
+
+variable [HasZeroObject C]
 
 /-- The mapping cone of a morphism which becomes an isomorphism in the homotopy category is
 contractible. -/
-theorem nonempty_homotopy_id_zero_of_isIso_quotient_map (f : K ⟶ L)
+theorem nonempty_homotopy_id_zero_of_isIso_quotient_map
     [IsIso ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).map f)] :
     Nonempty (Homotopy (𝟙 (mappingCone f)) 0) :=
   (HomotopyCategory.isZero_quotient_obj_iff _).1

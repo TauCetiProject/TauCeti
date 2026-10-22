@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.OpenMap
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.Norm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 import Mathlib.Analysis.Normed.Field.ProperSpace
+import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # The spinor kernel is open
@@ -31,6 +32,12 @@ over `ℝ` the squares are the positive reals, while over `ℚ_p` it is the loca
 units deep enough in the unit filtration are squares. Discreteness of the square-class group alone
 would only show that a *continuous* map into it is locally constant.
 
+Nor does the module topology supply openness on its own. Over a field with the indiscrete
+topology, every module topology is indiscrete and so is `O(Q)`, whose only open subgroup is
+therefore `O(Q)` itself. The spinor kernel is then not open as soon as `Q` takes a nonsquare
+value, for instance for `Q x = a * x ^ 2` with `a` a nonsquare, where `O(Q) = {1, -1}` and
+`θ(-1) = [a]`. In that example the squares are not open in `Kˣ` either.
+
 ## Main results
 
 * `CliffordAlgebra.isOpen_ker_orthogonalSpinorNorm`: the kernel of the spinor norm on `O(Q)` is
@@ -40,6 +47,9 @@ would only show that a *continuous* map into it is locally constant.
   is open.
 * `CliffordAlgebra.continuous_orthogonalSpinorNorm`,
   `CliffordAlgebra.continuous_spinorNorm`: the spinor norms on `O(Q)` and `SO(Q)` are continuous.
+* `CliffordAlgebra.not_isOpen_ker_orthogonalSpinorNorm_of_indiscreteTopology`: over a field with
+  the indiscrete topology, the spinor kernel of `O(Q)` is not open once `Q` takes a nonsquare
+  value.
 
 ## References
 
@@ -113,5 +123,29 @@ theorem continuous_spinorNorm (hQ : Q.Nondegenerate)
     (hsq : IsOpen (Subgroup.square Kˣ : Set Kˣ)) :
     Continuous (spinorNorm Q hQ) :=
   (spinorNorm Q hQ).continuous_of_isOpen_ker (isOpen_ker_spinorNorm Q hQ hsq)
+
+section Indiscrete
+
+variable {K V : Type*} [Field K] [TopologicalSpace K] [IndiscreteTopology K]
+  [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- Over a field with the indiscrete topology, the kernel of the spinor norm on `O(Q)` is not open
+as soon as `Q` takes a nonsquare value `Q v`: the orthogonal group is indiscrete, and the kernel is
+a nonempty subgroup missing the reflection in `v`, whose spinor norm is `[Q v]`. -/
+theorem not_isOpen_ker_orthogonalSpinorNorm_of_indiscreteTopology (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) {v : V} (hv : ¬ IsSquare (Q v)) :
+    ¬ IsOpen ((orthogonalSpinorNorm Q hQ).ker : Set (QuadraticMap.orthogonalGroup Q)) := by
+  have : Invertible (Q v) := invertibleOfNonzero fun h ↦ hv (h ▸ IsSquare.zero)
+  have : IndiscreteTopology (QuadraticMap.orthogonalGroup Q) :=
+    Topology.IsInducing.subtypeVal.indiscreteTopology
+  rw [IndiscreteTopology.isOpen_iff, not_or]
+  refine ⟨Set.Nonempty.ne_empty ⟨1, one_mem _⟩, fun h ↦ hv ?_⟩
+  have hmem : QuadraticMap.reflectionOrthogonal Q v ∈ (orthogonalSpinorNorm Q hQ).ker :=
+    SetLike.mem_coe.mp (h ▸ Set.mem_univ _)
+  rw [MonoidHom.mem_ker, orthogonalSpinorNorm_reflectionOrthogonal, squareClassHom_apply,
+    ofAdd_eq_one, squareClass_eq_zero_iff] at hmem
+  simpa using isSquare_units_val_iff.mpr hmem
+
+end Indiscrete
 
 end CliffordAlgebra

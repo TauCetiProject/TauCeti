@@ -38,6 +38,9 @@ Fields and Codes*, 2nd ed., Definition 1.4.4 through Definition 1.4.10.
 
 * `TauCeti.one_mem_riemannRochSpace_iff`: `1 ∈ L(D)` exactly when `D` is effective.
 * `TauCeti.mul_mem_riemannRochSpace_add`: multiplication maps `L(A) × L(B)` into `L(A + B)`.
+* `TauCeti.riemannRochSpace_mul_le_riemannRochSpace_add` and
+  `TauCeti.riemannRochSpace_pow_le_riemannRochSpace_nsmul`: as products of subspaces,
+  `L(A) · L(B) ⊆ L(A + B)` and `L(A)ⁿ ⊆ L(n A)`.
 * `TauCeti.riemannRochSpace_zero`: `L(0)` is the field of constants `algebraicClosure k F` — over
   an exact constant field, `L(0) = k` (`TauCeti.riemannRochSpace_zero_of_isIntegrallyClosedIn`,
   Lemma 1.4.7(a)).
@@ -145,6 +148,18 @@ theorem riemannRochSpace_monotone :
     Monotone (riemannRochSpace : Divisor k F → Submodule k F) :=
   fun _ _ ↦ riemannRochSpace_mono
 
+/-- Taking the minimum of two pole bounds intersects their Riemann–Roch spaces. -/
+@[simp]
+theorem riemannRochSpace_inf (D E : Divisor k F) :
+    riemannRochSpace (D ⊓ E) = riemannRochSpace D ⊓ riemannRochSpace E := by
+  ext f
+  by_cases hf : f = 0
+  · simp [hf]
+  rw [Submodule.mem_inf, mem_riemannRochSpace_iff_neg_le_ord hf,
+    mem_riemannRochSpace_iff_neg_le_ord hf, mem_riemannRochSpace_iff_neg_le_ord hf]
+  simp only [WeilDivisor.coeff_inf, ← forall_and]
+  exact forall_congr' fun P ↦ by omega
+
 /-- If removing any single place of a finite set `T` leaves `L(D)` unchanged, then so does
 removing all of `T` at once: `L(D - ∑_{P ∈ T} P) = L(D)`. -/
 theorem riemannRochSpace_sub_ofFinset_eq {D : Divisor k F} {T : Finset (Place k F)}
@@ -192,6 +207,20 @@ theorem pow_mem_riemannRochSpace_zsmul {A : Divisor k F} {f : F} (hf : f ∈ rie
   | succ n ih =>
     rw [pow_succ, Nat.cast_succ, add_smul, one_smul]
     exact mul_mem_riemannRochSpace_add ih hf
+
+/-- Products of sections of `L(A)` and `L(B)` span a subspace of `L(A + B)`. -/
+theorem riemannRochSpace_mul_le_riemannRochSpace_add (A B : Divisor k F) :
+    riemannRochSpace A * riemannRochSpace B ≤ riemannRochSpace (A + B) :=
+  Submodule.mul_le.mpr fun _ hf _ hg ↦ mul_mem_riemannRochSpace_add hf hg
+
+/-- Products of `n` sections of `L(A)` span a subspace of `L(n A)`. -/
+theorem riemannRochSpace_pow_le_riemannRochSpace_nsmul (A : Divisor k F) (n : ℕ) :
+    riemannRochSpace A ^ n ≤ riemannRochSpace (n • A) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, succ_nsmul]
+    exact (mul_le_mul_left ih _).trans (riemannRochSpace_mul_le_riemannRochSpace_add _ _)
 
 namespace Divisor
 

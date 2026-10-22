@@ -19,7 +19,10 @@ through public statements only:
   type, and has density `1`;
 * the complete `2`-uniform hypergraph on two vertices is a single edge, as is the complete
   `3`-uniform hypergraph on three vertices;
-* the bridge to Mathlib's `Hypergraph` has the coerced edges.
+* the bridge to Mathlib's `Hypergraph` has the coerced edges;
+* block densities: defined for finite blocks of an infinite vertex type, `0` in a block with fewer
+  than `r` vertices, `1` for the complete hypergraph, including the empty block when `r = 0`, and
+  equal to the edge density on the whole vertex type.
 -/
 
 open Finset TauCeti TauCeti.UniformHypergraph
@@ -68,3 +71,27 @@ example : #(complete 3 (Fin 3)).edges = 1 := by
 example : ((univ : Finset (Fin 2)) : Set (Fin 2)) ∈ (complete 2 (Fin 2)).toHypergraph.edgeSet := by
   rw [coe_mem_toHypergraph_edgeSet, mem_edges_complete]
   simp
+
+/-! ### Block density -/
+
+-- Block densities are defined, and lie in `[0, 1]`, for finite blocks of an infinite vertex type.
+example (H : UniformHypergraph 2 ℕ) (s : Finset ℕ) :
+    0 ≤ H.blockDensity s ∧ H.blockDensity s ≤ 1 :=
+  ⟨H.blockDensity_nonneg s, H.blockDensity_le_one s⟩
+
+-- A block with fewer than `r` vertices has density `0`: here the empty block with `r = 2`.
+example (H : UniformHypergraph 2 (Fin 3)) : H.blockDensity ∅ = 0 :=
+  H.blockDensity_eq_zero_of_card_lt (by simp)
+
+-- When `r = 0`, the empty edge of the complete hypergraph lies inside every block, even the empty
+-- one, so the block density is `1`.
+example : (complete 0 (Fin 3)).blockDensity ∅ = 1 :=
+  blockDensity_complete (Nat.zero_le _)
+
+-- The complete `2`-uniform hypergraph has density `1` in a block of three of its five vertices.
+example : (complete 2 (Fin 5)).blockDensity {0, 1, 2} = 1 :=
+  blockDensity_complete (by decide)
+
+-- On the whole vertex type, the block density is the edge density.
+example (H : UniformHypergraph 2 (Fin 4)) : H.blockDensity univ = H.edgeDensity :=
+  blockDensity_univ H

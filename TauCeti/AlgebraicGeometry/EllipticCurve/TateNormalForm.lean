@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 
 /-!
@@ -67,6 +68,8 @@ the base ring (`WeierstrassCurve.UniversalTate.comp_lift`).
 * `WeierstrassCurve.existsUnique_variableChange_tateNormalForm`: existence and uniqueness together.
 * `WeierstrassCurve.exists_variableChange_tateNormalForm_iff`: for elliptic `W`, such a change of
   variables exists exactly when `(x, y)` lies on `W` and `ψ₂` and `Ψ₃` are units there.
+* The instance `Algebra.Smooth ℤ WeierstrassCurve.UniversalTate.Ring`: the ring `ℤ[A, B][Δ⁻¹]` is
+  smooth over `ℤ`.
 
 ## Provenance
 
@@ -333,6 +336,14 @@ noncomputable abbrev polyCurve : WeierstrassCurve (MvPolynomial (Fin 2) ℤ) :=
 /-- The ring `ℤ[A, B][Δ⁻¹]`: the polynomial ring `ℤ[A, B]` localised away from the discriminant of
 the Tate normal form with coefficients `A` and `B`. -/
 abbrev Ring : Type := Localization.Away polyCurve.Δ
+
+/-- The ring `ℤ[A, B][Δ⁻¹]` is smooth over `ℤ`: it is a localisation of a polynomial ring in two
+variables. -/
+instance : Algebra.Smooth ℤ Ring :=
+  haveI : Algebra.Smooth ℤ (MvPolynomial (Fin 2) ℤ) := ⟨inferInstance, inferInstance⟩
+  haveI : Algebra.Smooth (MvPolynomial (Fin 2) ℤ) Ring :=
+    Algebra.Smooth.of_isLocalization_Away polyCurve.Δ
+  Algebra.Smooth.comp ℤ (MvPolynomial (Fin 2) ℤ) Ring
 
 /-- The **universal elliptic Tate normal form**, over `ℤ[A, B][Δ⁻¹]`. Every elliptic Tate normal
 form over a commutative ring is its base change along exactly one ring homomorphism (`map_lift`,

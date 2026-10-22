@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Green.Examples.CurveArea.Ellipse
 public import TauCeti.Analysis.Green.Examples.CurveArea.DoubleTraversal
 public import TauCeti.Analysis.Green.Examples.CurveArea.SqrtReparam
 public import TauCeti.Analysis.Green.Examples.CurveArea.Annulus
+public import TauCeti.Analysis.Green.Examples.CurveArea.Winding
 
 /-!
 # Green's theorem on circles, ellipses, repeated traversals, and annuli
@@ -33,8 +34,12 @@ private theorem green_area_form {γ : ℝ → ℂ} {a b : ℝ} (hab : a < b)
     IntervalIntegrable (circulationFun areaP areaQ γ) volume a b ∧
       Integrable (windingWeight γ a b) ∧
       (∫ t in a..b, circulationFun areaP areaQ γ t) = ∫ z : ℂ, windingWeight γ a b z := by
-  simpa only [curl_area, mul_one] using
-    green_ac hab hγ hclosed (contDiff_areaP (n := 1)) (contDiff_areaQ (n := 1))
+  exact ⟨hγ.intervalIntegrable_circulationFun
+      ((contDiff_areaP (n := 1)).continuous.continuousOn)
+      ((contDiff_areaQ (n := 1)).continuous.continuousOn),
+    hγ.integrable_windingWeight hclosed,
+    (signedArea_eq_integral_circulationFun γ a b).symm.trans
+      (signedArea_eq_integral_windingWeight hab hγ hclosed)⟩
 
 /-- Full Green's theorem gives both integrability conclusions and disc area for a circle. -/
 theorem green_circle_area (R : ℝ) :

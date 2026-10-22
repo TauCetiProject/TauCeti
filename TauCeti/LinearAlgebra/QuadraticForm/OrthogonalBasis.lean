@@ -28,6 +28,8 @@ pairwise orthogonal vectors that the Clifford-algebra API asks for.
 
 ## Main results
 
+* `QuadraticMap.exists_list_pairwise_isOrtho`: every quadratic form on a finite-dimensional space
+  has a spanning list of pairwise orthogonal vectors.
 * `QuadraticMap.Nondegenerate.exists_orthogonal_basis`: a nondegenerate quadratic form on a
   finite-dimensional space has an orthogonal basis none of whose members is isotropic.
 * `QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`: the same basis read as a spanning list
@@ -48,6 +50,22 @@ variable {F V : Type*} [Field F] [AddCommGroup V] [Module F V] {Q : QuadraticFor
 section FiniteDimensional
 
 variable [Invertible (2 : F)] [FiniteDimensional F V]
+
+variable (Q) in
+/-- **Every quadratic form has an orthogonal spanning list**: Mathlib's
+`LinearMap.BilinForm.exists_orthogonal_basis` for the associated bilinear form, read as a list of
+pairwise orthogonal vectors spanning the space. This is the shape in which the Clifford-algebra API
+consumes an orthogonal family. -/
+theorem exists_list_pairwise_isOrtho :
+    ∃ l : List V, l.Pairwise Q.IsOrtho ∧ Submodule.span F {x : V | x ∈ l} = ⊤ := by
+  obtain ⟨b, hb⟩ := LinearMap.BilinForm.exists_orthogonal_basis
+    (B := QuadraticMap.associated Q) (QuadraticForm.associated_isSymm F Q)
+  refine ⟨List.ofFn b, List.pairwise_ofFn.mpr fun _ _ hij =>
+    associated_isOrtho.mp (hb (Fin.ne_of_lt hij)), ?_⟩
+  have hset : {x : V | x ∈ List.ofFn b} = Set.range b := by
+    ext x
+    simp
+  rw [hset, b.span_eq]
 
 /-- **A nondegenerate quadratic form has an anisotropic orthogonal basis.** Mathlib's
 `LinearMap.BilinForm.exists_orthogonal_basis` supplies the orthogonality, and

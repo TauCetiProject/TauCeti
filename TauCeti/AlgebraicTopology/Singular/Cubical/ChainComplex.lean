@@ -74,6 +74,42 @@ theorem normalizedCubicalChainComplex_obj_d_apply (X : TopCat.{u}) (n : ℕ)
   simp only [normalizedCubicalChainComplex, normalizedCubicalChainComplexObj, ChainComplex.of_d]
   rfl
 
+/-- The concrete identification of a term of the normalized cubical chain complex with the
+corresponding module of normalized cubical chains. -/
+def normalizedCubicalChainComplexXEquiv (X : TopCat.{u}) (n : ℕ) :
+    ((normalizedCubicalChainComplex R).obj X).X n ≃ₗ[R] NormalizedCubicalChain X R n :=
+  LinearEquiv.refl R _
+
+/-- The concrete identification of a chain-complex term acts as the identity on elements. -/
+@[simp]
+theorem normalizedCubicalChainComplexXEquiv_apply (X : TopCat.{u}) (n : ℕ)
+    (g : ((normalizedCubicalChainComplex R).obj X).X n) :
+    normalizedCubicalChainComplexXEquiv X n g = g :=
+  rfl
+
+/-- The inverse concrete identification acts as the identity on normalized cubical chains. -/
+@[simp]
+theorem normalizedCubicalChainComplexXEquiv_symm_apply (X : TopCat.{u}) (n : ℕ)
+    (g : NormalizedCubicalChain X R n) :
+    (normalizedCubicalChainComplexXEquiv X n).symm g = g :=
+  rfl
+
+/-- Under the concrete identification, the chain-complex differential is the cubical boundary. -/
+theorem normalizedCubicalChainComplexXEquiv_d_apply (X : TopCat.{u}) (n : ℕ)
+    (g : ((normalizedCubicalChainComplex R).obj X).X (n + 1)) :
+    normalizedCubicalChainComplexXEquiv X n
+        (((normalizedCubicalChainComplex R).obj X).d (n + 1) n g) =
+      NormalizedCubicalChain.boundary X R n
+        (normalizedCubicalChainComplexXEquiv X (n + 1) g) :=
+  normalizedCubicalChainComplex_obj_d_apply X n g
+
+/-- In each degree, the map of normalized cubical chain complexes induced by a map of spaces is
+the push-forward of normalized cubical chains. -/
+theorem normalizedCubicalChainComplex_map_f {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
+    ((normalizedCubicalChainComplex R).map f).f n =
+      ModuleCat.ofHom (NormalizedCubicalChain.map R f.hom n) :=
+  (rfl)
+
 @[simp]
 theorem normalizedCubicalChainComplex_map_f_apply {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
     (x : NormalizedCubicalChain X R n) :

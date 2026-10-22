@@ -195,6 +195,11 @@ It is an Atkin–Lehner matrix for every exact divisor `Q` of `N`
 def atkinLiMatrix (N Q : ℕ) : Matrix (Fin 2) (Fin 2) ℤ :=
   !![(Q : ℤ), 1; -(N : ℤ) * Nat.gcdB Q (N / Q), (Q : ℤ) * Nat.gcdA Q (N / Q)]
 
+/-- Defining equation for `atkinLiMatrix`, for reading off its entries. -/
+theorem atkinLiMatrix_def (N Q : ℕ) :
+    atkinLiMatrix N Q =
+      !![(Q : ℤ), 1; -(N : ℤ) * Nat.gcdB Q (N / Q), (Q : ℤ) * Nat.gcdA Q (N / Q)] := (rfl)
+
 /-- **The Atkin–Li matrix is an Atkin–Lehner matrix**, for every exact divisor `Q` of `N`. -/
 theorem isAtkinLehnerMatrix_atkinLiMatrix (h : Q ∥ N) :
     IsAtkinLehnerMatrix N Q (atkinLiMatrix N Q) := by

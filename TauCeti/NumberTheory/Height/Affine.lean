@@ -7,6 +7,8 @@ module
 
 public import Mathlib.NumberTheory.Height.NumberField
 
+import all Mathlib.NumberTheory.Height.Basic
+
 /-!
 # The affine height of a tuple
 
@@ -39,13 +41,19 @@ drop under re-indexing.
 ## Main results
 
 * `Height.mulHeightAff_eq`: for finite `ι`, the affine height as a product of the local factors
-  `max (⨆ i, v (x i)) 1`.
+  `max (⨆ i, v (x i)) 1`; `Height.prod_mulHeightAff_eq` splits a finite product of affine heights
+  into the products of these local factors place by place.
+* `Height.hasFiniteMulSupport_max_iSup_nonarchAbsVal`: the nonarchimedean local factors are `1`
+  at all but finitely many places.
 * `Height.mulHeight_le_mulHeightAff`, `Height.mulHeight₁_le_mulHeightAff`: for finite `ι`, the
   affine height dominates the projective height of the tuple and the height of each coordinate.
   The second fails for `Height.mulHeight`.
 * `Height.mulHeightAff_comp_le`, `Height.mulHeightAff_comp_equiv`: monotonicity under
   re-indexing between finite index types, and equality for a bijection between arbitrary ones.
-* `Height.mulHeightAff_zero`: for finite `ι`, the zero tuple has affine height `1`.
+* `Height.mulHeight_cons_one`: for `x : Fin n → K`, prepending the coordinate `1` with
+  `Fin.cons` instead of appending it gives the same height.
+* `Height.mulHeightAff_zero`, `Height.mulHeightAff_one`: the zero tuple and the
+  tuple of ones have affine height `1`.
 * `Height.mulHeightAff_unique`, `Height.mulHeightAff_fin_one`: on a one-element tuple the
   affine height is `Height.mulHeight₁`.
 * `Height.exists_mulHeightAff_smul_ne`: the affine height is not invariant under scaling.
@@ -54,6 +62,11 @@ drop under re-indexing.
 
 The appended coordinate is indexed by `none : Option ι`. The type `Option ι` is finite when `ι`
 is, and re-indexing along `f : ι → ι'` becomes re-indexing along `Option.map f`.
+
+The finiteness of the multiplicative support of the nonarchimedean local factors rests on
+`Height.hasFiniteMulSupport_iSup_nonarchAbsVal`, which is `private` in
+`Mathlib/NumberTheory/Height/Basic.lean`; it is reached by `import all`, as Mathlib's own
+`Mathlib/NumberTheory/Height/MvPolynomial.lean` does.
 
 ## References
 
@@ -105,11 +118,60 @@ lemma mulHeightAff_comp_equiv (e : ι ≃ ι') (x : ι' → K) :
     cases o <;> rfl
   rw [mulHeightAff_def, mulHeightAff_def, h, mulHeight_comp_equiv]
 
+/-- The tuple of ones has affine height `1`: appending a coordinate `1` gives the tuple of ones
+on `Option ι`. -/
+@[simp]
+lemma mulHeightAff_one : mulHeightAff (1 : ι → K) = 1 := by
+  have h : (fun o : Option ι ↦ o.elim 1 (1 : ι → K)) = 1 := by
+    funext o
+    cases o <;> rfl
+  rw [mulHeightAff_def, h, mulHeight_one]
+
+/-- The tuple of ones has affine logarithmic height `0`. -/
+@[simp]
+lemma logHeightAff_one : logHeightAff (1 : ι → K) = 0 := by
+  simp [logHeightAff_eq_log_mulHeightAff]
+
 /-- The logarithmic form of `Height.mulHeightAff_comp_equiv`. -/
 lemma logHeightAff_comp_equiv (e : ι ≃ ι') (x : ι' → K) :
     logHeightAff (x ∘ e) = logHeightAff x := by
   rw [logHeightAff_eq_log_mulHeightAff, logHeightAff_eq_log_mulHeightAff,
     mulHeightAff_comp_equiv]
+
+/-- The affine height may equally be computed by prepending the coordinate `1` to a tuple
+indexed by `Fin n`: the projective height of `Fin.cons 1 x` is `Height.mulHeightAff x`. -/
+@[simp]
+lemma mulHeight_cons_one {n : ℕ} (x : Fin n → K) :
+    mulHeight (Fin.cons 1 x : Fin (n + 1) → K) = mulHeightAff x := by
+  have h : (Fin.cons 1 x : Fin (n + 1) → K) = (fun o : Option (Fin n) ↦ o.elim 1 x) ∘
+      finSuccEquiv n := by
+    funext i
+    cases i using Fin.cases <;> simp
+  rw [h, mulHeight_comp_equiv, mulHeightAff_def]
+
+/-- The logarithmic form of `Height.mulHeight_cons_one`. -/
+@[simp]
+lemma logHeight_cons_one {n : ℕ} (x : Fin n → K) :
+    logHeight (Fin.cons 1 x : Fin (n + 1) → K) = logHeightAff x := by
+  rw [logHeight_eq_log_mulHeight, mulHeight_cons_one, logHeightAff_eq_log_mulHeightAff]
+
+/-- The zero tuple has affine height `1`, with no finiteness assumption on its index type. -/
+@[simp]
+lemma mulHeightAff_zero : mulHeightAff (0 : ι → K) = 1 := by
+  have key (v : AbsoluteValue K ℝ) :
+      (⨆ o : Option ι, v (o.elim 1 (0 : ι → K))) = 1 := by
+    apply ciSup_eq_of_forall_le_of_forall_lt_exists_gt
+    · intro o
+      cases o <;> simp
+    · exact fun b hb ↦ ⟨none, by simpa using hb⟩
+  have hx : (fun o : Option ι ↦ o.elim 1 (0 : ι → K)) ≠ 0 :=
+    fun h ↦ one_ne_zero (congrFun h none)
+  simp [mulHeightAff_def, mulHeight_eq hx, key]
+
+/-- The zero tuple has affine logarithmic height `0`. -/
+@[simp]
+lemma logHeightAff_zero : logHeightAff (0 : ι → K) = 0 := by
+  simp [logHeightAff_eq_log_mulHeightAff]
 
 section Finite
 
@@ -132,6 +194,23 @@ lemma mulHeightAff_eq (x : ι → K) :
     · exact Finite.le_ciSup_of_le none (by simp)
   have hx : (fun o : Option ι ↦ o.elim 1 x) ≠ 0 := fun h ↦ one_ne_zero (congrFun h none)
   simp only [mulHeightAff_def, mulHeight_eq hx, key]
+
+/-- The nonarchimedean local factor `max (⨆ i, v (x i)) 1` of the affine height is `1` at all
+but finitely many places. -/
+lemma hasFiniteMulSupport_max_iSup_nonarchAbsVal (x : ι → K) :
+    (fun v : nonarchAbsVal ↦ max (⨆ i, v.val (x i)) 1).HasFiniteMulSupport := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [Function.HasFiniteMulSupport]
+  fun_prop (disch := exact hx)
+
+/-- A finite product of affine heights, split place by place: the local factor at `v` is the
+product `∏ k, max (⨆ i, v (y k i)) 1` of the local factors of the tuples `y k`. -/
+lemma prod_mulHeightAff_eq {κ : Type*} [Fintype κ] (y : κ → ι → K) :
+    ∏ k, mulHeightAff (y k) = (archAbsVal.map fun v ↦ ∏ k, max (⨆ i, v (y k i)) 1).prod *
+      ∏ᶠ v : nonarchAbsVal, ∏ k, max (⨆ i, v.val (y k i)) 1 := by
+  simp only [mulHeightAff_eq]
+  rw [Finset.prod_mul_distrib, Multiset.prod_map_prod,
+    finprod_prod_comm _ _ fun k _ ↦ hasFiniteMulSupport_max_iSup_nonarchAbsVal (y k)]
 
 /-- The affine height of a tuple is at least `1`. -/
 lemma one_le_mulHeightAff (x : ι → K) : 1 ≤ mulHeightAff x :=
@@ -171,16 +250,6 @@ lemma mulHeightAff_comp_le (f : ι → ι') (x : ι' → K) :
 lemma logHeightAff_comp_le (f : ι → ι') (x : ι' → K) :
     logHeightAff (x ∘ f) ≤ logHeightAff x :=
   log_le_log (mulHeightAff_pos _) (mulHeightAff_comp_le f x)
-
-/-- The zero tuple has affine height `1`. -/
-@[simp]
-lemma mulHeightAff_zero : mulHeightAff (0 : ι → K) = 1 := by
-  simp [mulHeightAff_eq]
-
-/-- The zero tuple has affine logarithmic height `0`. -/
-@[simp]
-lemma logHeightAff_zero : logHeightAff (0 : ι → K) = 0 := by
-  simp [logHeightAff_eq_log_mulHeightAff]
 
 end Finite
 

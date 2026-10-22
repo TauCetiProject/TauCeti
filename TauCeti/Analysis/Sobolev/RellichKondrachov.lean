@@ -28,7 +28,8 @@ increment by `‖h‖ ‖∇u‖ₚ`.  Restriction back to `Ω` then gives compa
 map `TauCeti.W1p0.valueL`.
 
 The corresponding statement for all of `W^{1,p}(Ω)` requires a boundary-regular extension
-operator and is not claimed here.
+operator; for bounded Lipschitz domains it is
+`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`.
 
 ## Main declaration
 
@@ -118,7 +119,7 @@ private theorem W1p0.isCompactOperator_valueExtendByZeroL (hp : p ≠ ∞)
     intro epsilon hepsilon
     obtain ⟨delta, hdelta, hbound⟩ :=
       W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_norm_le
-        (S := ball (0 : W1p0 mu Omega p) 1) (C := 1) hp
+        (S := ball (0 : W1p0 mu Omega p) 1) (C := 1)
         (fun u hu => (mem_ball_zero_iff.1 hu).le) hepsilon
     refine ⟨delta, hdelta, fun f hf h hh => ?_⟩
     obtain ⟨u, hu, rfl⟩ := hf

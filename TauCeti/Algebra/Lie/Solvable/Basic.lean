@@ -178,7 +178,7 @@ private theorem restrictIncl_injective (I J : LieIdeal R L) :
 
 private theorem restrictIncl_surjective {I J : LieIdeal R L} (h : J ≤ I) :
     Function.Surjective (restrictIncl I J) :=
-  fun x => ⟨⟨⟨(x : L), h x.2⟩, x.2⟩, rfl⟩
+  fun x => ⟨⟨⟨(x : L), h x.2⟩, x.2⟩, Subtype.ext (I.incl.coe_lieIdealComap_apply J _)⟩
 
 /-- Read inside an ideal, a solvable ideal stays solvable. -/
 instance isSolvable_restrict (I J : LieIdeal R L) [IsSolvable ↥J] :

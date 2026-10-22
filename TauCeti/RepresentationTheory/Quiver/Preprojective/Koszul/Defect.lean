@@ -401,6 +401,41 @@ theorem exists_forall_finrank_preprojectiveCorner_inf_iInf_ker_eq [DecidableEq Q
     · exact Or.inr (Or.inl fun hiu => h ⟨hmn, hiu⟩)
     · exact Or.inl hmn
 
+/-- A nonzero homogeneous element of the left Koszul kernel identifies its unique nonzero graded
+piece. -/
+theorem finrank_preprojectiveCorner_inf_iInf_ker_eq_of_mem [DecidableEq Q]
+    [FiniteDimensional k Π] {v u : Q} {n : ℕ} {y : Π}
+    (hy : y ∈ preprojectiveCorner k Q n (Symmetrify.of.obj u) (Symmetrify.of.obj v))
+    (hy0 : y ≠ 0)
+    (hyb : ∀ (w : Symmetrify Q) (b : w ⟶ Symmetrify.of.obj v),
+      π (ofArrow (Quiver.reverse b)) * y = 0) (m : ℕ) (i : Q) :
+    Module.finrank k ↥(preprojectiveCorner k Q m (Symmetrify.of.obj i) (Symmetrify.of.obj v) ⊓
+      ⨅ (w : Symmetrify Q) (b : w ⟶ Symmetrify.of.obj v),
+        LinearMap.ker (LinearMap.mulLeft k (π (ofArrow (Quiver.reverse b))))) =
+      if m = n ∧ i = u then 1 else 0 := by
+  obtain ⟨n', u', hdim⟩ :=
+    exists_forall_finrank_preprojectiveCorner_inf_iInf_ker_eq k v
+  let K := preprojectiveCorner k Q n (Symmetrify.of.obj u) (Symmetrify.of.obj v) ⊓
+    ⨅ (w : Symmetrify Q) (b : w ⟶ Symmetrify.of.obj v),
+      LinearMap.ker (LinearMap.mulLeft k (π (ofArrow (Quiver.reverse b))))
+  have hyK : y ∈ K := by
+    refine Submodule.mem_inf.2 ⟨hy, ?_⟩
+    refine (Submodule.mem_iInf _).2 fun w => (Submodule.mem_iInf _).2 fun b => ?_
+    exact LinearMap.mem_ker.2 (hyb w b)
+  have hK : K ≠ ⊥ := by
+    rw [Submodule.ne_bot_iff]
+    exact ⟨y, hyK, hy0⟩
+  have hdim_ne : Module.finrank k K ≠ 0 := by
+    intro hzero
+    exact hK (Submodule.finrank_eq_zero.mp hzero)
+  have hnu : n' = n ∧ u' = u := by
+    by_contra hne
+    have hpair : ¬ (n = n' ∧ u = u') := fun h' => hne ⟨h'.1.symm, h'.2.symm⟩
+    apply hdim_ne
+    simpa only [K, hpair, ↓reduceIte] using hdim n u
+  obtain ⟨rfl, rfl⟩ := hnu
+  exact hdim m i
+
 /-- **The dimension recursion of a finite-dimensional preprojective algebra.** For every vertex `v`
 there is a single pair `(n, u)` such that
 

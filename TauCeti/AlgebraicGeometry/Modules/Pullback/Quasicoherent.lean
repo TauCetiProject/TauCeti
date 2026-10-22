@@ -60,6 +60,15 @@ def restrictRingCatSheafHom :
   letI α : U.presheaf ⟶ j.opensFunctor.op ⋙ Y.presheaf := { app W := (j.appIso W.unop).inv }
   ⟨Functor.whiskerRight α (forget₂ CommRingCat RingCat)⟩
 
+/-- The coefficient map for restriction along an open immersion is an isomorphism: on
+each open it is the inverse of the structure-sheaf isomorphism. -/
+instance isIso_restrictRingCatSheafHom : IsIso (restrictRingCatSheafHom j) := by
+  have : IsIso ((TopCat.Sheaf.forget RingCat U).map (restrictRingCatSheafHom j)) := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro W
+    exact inferInstanceAs (IsIso ((forget₂ CommRingCat RingCat).map (j.appIso W.unop).inv))
+  exact isIso_of_reflects_iso (restrictRingCatSheafHom j) (TopCat.Sheaf.forget RingCat U)
+
 /-- Restriction of modules along an open immersion `j` is lax monoidal, as the pushforward of
 sheaves of modules along the functor of opens `j.opensFunctor`
 (`TauCeti.SheafOfModules.pushforwardLaxMonoidal`). -/

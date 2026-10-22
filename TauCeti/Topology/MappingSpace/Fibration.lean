@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.Extension.Prod
-public import TauCeti.Topology.Homotopy.HurewiczFibration
+public import TauCeti.Topology.Homotopy.HurewiczFibration.Basic
 
 /-!
 # Restriction fibrations of mapping spaces

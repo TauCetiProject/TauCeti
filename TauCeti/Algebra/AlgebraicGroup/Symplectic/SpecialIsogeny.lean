@@ -183,6 +183,14 @@ def specialIsogenyHom : groupScheme 𝔽₂ 2 ⟶ groupScheme 𝔽₂ 2 :=
     (AlgebraicGeometry.hopfSpec (CommRingCat.of 𝔽₂)).map specialIsogenyCoordinateMap.op ≫
       eqToHom (groupScheme_def 𝔽₂ 2).symm
 
+/-- The exceptional group-scheme endomorphism is relative spectrum of its coordinate map. -/
+theorem specialIsogenyHom_def :
+    specialIsogenyHom =
+      eqToHom (groupScheme_def 𝔽₂ 2) ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of 𝔽₂)).map specialIsogenyCoordinateMap.op ≫
+          eqToHom (groupScheme_def 𝔽₂ 2).symm :=
+  (rfl)
+
 /-- The square relation as an equality of group-scheme morphisms. -/
 theorem specialIsogenyHom_comp_self :
     specialIsogenyHom ≫ specialIsogenyHom =

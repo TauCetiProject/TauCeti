@@ -67,6 +67,11 @@ the zigzag algebra of that graph evaluated at `q = -t`.
   intersection of the degree-`n` piece with the corner `e_j Π e_i`.
 * `TauCeti.finrank_preprojectiveCorner_zero` and `TauCeti.finrank_preprojectiveCorner_one`: the
   dimensions in degrees `0` and `1`.
+* `TauCeti.exists_eq_sum_preprojectiveMk_ofArrow_mul_of_mem_preprojectiveCorner` and
+  `TauCeti.exists_mem_preprojectiveCorner_of_sum_preprojectiveMk_ofArrow_mul_eq_zero`: exactness of
+  the Koszul complex at its two right-hand terms, degree by degree.
+* `TauCeti.eq_zero_of_forall_mem_preprojectiveCorner`: exactness at the left end may be checked on
+  the graded corners.
 * `TauCeti.finrank_preprojectiveCorner_add_two_add_finrank_preprojectiveCorner`: **the Koszul
   defect formula.**
 * `TauCeti.sum_card_mul_finrank_preprojectiveCorner_eq_iff`: the dimension recursion holds in
@@ -397,6 +402,65 @@ private theorem finrank_koszulSum_domain (n : ℕ) (i : Symmetrify Q) (v : Q) :
         Module.finrank k (preprojectiveCorner k Q n i w) := by
   simp [Module.finrank_pi_fintype]
 
+/-- **Every element of `e_v Π_{n+1} e_i` is a sum of arrow multiples** `∑_b b z_b` with
+`z_b ∈ e_w Π_n e_i`, the sum running over the arrows `b : w ⟶ v` of the doubled quiver. This is the
+exactness of the Koszul complex at `e_v Π` in one degree, cut down on the right by `e_i`. -/
+theorem exists_eq_sum_preprojectiveMk_ofArrow_mul_of_mem_preprojectiveCorner {n : ℕ}
+    {i : Symmetrify Q} {v : Q} {x : preprojectiveAlgebra k Q}
+    (hx : x ∈ preprojectiveCorner k Q (n + 1) i (Symmetrify.of.obj v)) :
+    ∃ z : (w : Symmetrify Q) → (w ⟶ Symmetrify.of.obj v) → preprojectiveAlgebra k Q,
+      (∀ w b, z w b ∈ preprojectiveCorner k Q n i w) ∧
+        x = ∑ w, ∑ b, preprojectiveMk k Q (ofArrow b) * z w b := by
+  rw [← range_koszulSum] at hx
+  obtain ⟨z, rfl⟩ := hx
+  exact ⟨fun w b => z w b, fun w b => (z w b).2, koszulSum_apply n i v z⟩
+
+/-- **Exactness of the Koszul complex at its middle term, in one degree and cut down by `e_i`.**
+If `z_b ∈ e_w Π_{m+1} e_i` for the arrows `b : w ⟶ v` of the doubled quiver and `∑_b b z_b = 0`,
+then there is a single `y ∈ e_v Π_m e_i` with `z_b = ε_b b* y` for every `b`. -/
+theorem exists_mem_preprojectiveCorner_of_sum_preprojectiveMk_ofArrow_mul_eq_zero {m : ℕ}
+    {i : Symmetrify Q} {v : Q}
+    {z : (w : Symmetrify Q) → (w ⟶ Symmetrify.of.obj v) → preprojectiveAlgebra k Q}
+    (hz : ∀ w b, z w b ∈ preprojectiveCorner k Q (m + 1) i w)
+    (hsum : ∑ w, ∑ b, preprojectiveMk k Q (ofArrow b) * z w b = 0) :
+    ∃ y ∈ preprojectiveCorner k Q m i (Symmetrify.of.obj v), ∀ w b,
+      z w b = doubledArrowSign k b • (preprojectiveMk k Q (ofArrow (Quiver.reverse b)) * y) := by
+  have hker : (fun w b => (⟨z w b, hz w b⟩ : preprojectiveCorner k Q (m + 1) i w)) ∈
+      LinearMap.ker (koszulSum (k := k) (m + 1) i v) := by
+    rw [LinearMap.mem_ker, koszulSum_apply]
+    exact hsum
+  rw [ker_koszulSum_succ] at hker
+  obtain ⟨y, hy⟩ := hker
+  refine ⟨y, y.2, fun w b => ?_⟩
+  have h := congrArg (fun f => (f w b : preprojectiveAlgebra k Q)) hy
+  rw [koszulDiff_apply] at h
+  exact h.symm
+
+/-- **Exactness of the Koszul complex at its left end can be checked in each degree.** If for every
+degree `m` and every vertex `i` the only `y ∈ e_v Π_m e_i` killed by the reverse `b*` of every
+arrow `b` of the doubled quiver into `v` is `0`, then the only such `y ∈ e_v Π` is `0`. -/
+theorem eq_zero_of_forall_mem_preprojectiveCorner {v : Q}
+    (h : ∀ (m : ℕ) (i : Symmetrify Q), ∀ y ∈ preprojectiveCorner k Q m i (Symmetrify.of.obj v),
+      (∀ (w : Symmetrify Q) (b : w ⟶ Symmetrify.of.obj v),
+        preprojectiveMk k Q (ofArrow (Quiver.reverse b)) * y = 0) → y = 0)
+    {y : preprojectiveAlgebra k Q} (hy : preprojectiveMk k Q (doubledVertexIdempotent k v) * y = y)
+    (hb : ∀ (w : Symmetrify Q) (b : w ⟶ Symmetrify.of.obj v),
+      preprojectiveMk k Q (ofArrow (Quiver.reverse b)) * y = 0) : y = 0 := by
+  classical
+  -- Every homogeneous component, cut down on the right by a vertex idempotent, is such an element.
+  have hm : ∀ (m : ℕ) (u : Symmetrify Q),
+      (DirectSum.decompose (preprojectiveGrade k Q) y m : preprojectiveAlgebra k Q) *
+        preprojectiveMk k Q (vertexIdempotent k u) = 0 := by
+    intro m u
+    refine h m u _ (decompose_mul_mem_preprojectiveCorner k hy m u) fun w b => ?_
+    rw [← mul_assoc, preprojectiveMk_ofArrow_mul_decompose, hb w b, DirectSum.decompose_zero,
+      DirectSum.zero_apply, ZeroMemClass.coe_zero, zero_mul]
+  rw [← DirectSum.sum_support_decompose (preprojectiveGrade k Q) y]
+  refine Finset.sum_eq_zero fun m _ => ?_
+  rw [← mul_one (DirectSum.decompose (preprojectiveGrade k Q) y m : preprojectiveAlgebra k Q),
+    ← map_one (preprojectiveMk k Q), one_def, map_sum, Finset.mul_sum]
+  exact Finset.sum_eq_zero fun u _ => hm m u
+
 variable (k Q)
 
 /-- **The graded corners in degree `0`**: `e_j Π_0 e_i` is the line spanned by `e_i` when `i = j`,
@@ -406,20 +470,16 @@ theorem finrank_preprojectiveCorner_zero [DecidableEq Q] (i j : Symmetrify Q) :
   have hle : Module.finrank k (preprojectiveCorner k Q 0 i j) ≤
       Nat.card (PathBetween (Symmetrify Q) 0 i j) :=
     (Submodule.finrank_map_le _ _).trans (finrank_pathsBetween k 0 i j).le
-  split_ifs with h
+  rw [card_pathBetween_zero] at hle
+  split_ifs at hle ⊢ with h
   · subst h
-    have hcard : Nat.card (PathBetween (Symmetrify Q) 0 i i) = 1 := by
-      refine Nat.card_eq_one_iff_exists.2 ⟨⟨Path.nil, rfl⟩, fun p => Subtype.ext ?_⟩
-      exact Path.eq_nil_of_length_zero p.1 p.2
-    refine le_antisymm (hcard ▸ hle)
+    refine le_antisymm hle
       (Submodule.one_le_finrank_iff.2 ((Submodule.ne_bot_iff _).2 ?_))
     refine ⟨preprojectiveMk k Q (vertexIdempotent k i), mem_preprojectiveCorner_iff.2 ⟨
       preprojectiveMk_mem_preprojectiveGrade k Q (vertexIdempotent_mem_grade_zero i), ?_⟩,
       preprojectiveMk_vertexIdempotent_ne_zero k i⟩
     rw [preprojectiveMk_vertexIdempotent_mul_self, preprojectiveMk_vertexIdempotent_mul_self]
-  · have hcard : Nat.card (PathBetween (Symmetrify Q) 0 i j) = 0 :=
-      Nat.card_eq_zero.2 (Or.inl ⟨fun p => h (Path.eq_of_length_zero p.1 p.2)⟩)
-    omega
+  · omega
 
 /-- **The graded corners in degree `1`**: `e_j Π_1 e_i` has the arrows `i ⟶ j` of the doubled
 quiver as a basis. -/
@@ -620,19 +680,8 @@ theorem mul_preprojectiveHilbertSeries_eq_one_iff :
     rw [h0, sub_eq_zero, Nat.cast_inj, eq_comm]
   constructor
   · intro h v y hy hb
-    have hm : ∀ (m : ℕ) (u : Symmetrify Q),
-        (DirectSum.decompose (preprojectiveGrade k Q) y m : preprojectiveAlgebra k Q) *
-          preprojectiveMk k Q (vertexIdempotent k u) = 0 := by
-      intro m u
-      refine (hdeg m v u).1 (congrArg (fun M => coeff (m + 2) (M v u)) h) _
-        (decompose_mul_mem_preprojectiveCorner k hy m u) fun w b => ?_
-      rw [← mul_assoc, preprojectiveMk_ofArrow_mul_decompose, hb w b, DirectSum.decompose_zero,
-        DirectSum.zero_apply, ZeroMemClass.coe_zero, zero_mul]
-    rw [← DirectSum.sum_support_decompose (preprojectiveGrade k Q) y]
-    refine Finset.sum_eq_zero fun m _ => ?_
-    rw [← mul_one (DirectSum.decompose (preprojectiveGrade k Q) y m : preprojectiveAlgebra k Q),
-      ← map_one (preprojectiveMk k Q), one_def, map_sum, Finset.mul_sum]
-    exact Finset.sum_eq_zero fun u _ => hm m u
+    exact eq_zero_of_forall_mem_preprojectiveCorner
+      (fun m u => (hdeg m v u).1 (congrArg (fun M => coeff (m + 2) (M v u)) h)) hy hb
   · intro h
     refine Matrix.ext fun v i => PowerSeries.ext fun n => ?_
     obtain _ | _ | m := n

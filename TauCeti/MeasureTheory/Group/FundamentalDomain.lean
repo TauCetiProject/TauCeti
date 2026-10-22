@@ -47,6 +47,8 @@ only along a null frontier, is itself a fundamental domain.
   translated frontiers, whose translates cover almost everything and have pairwise disjoint
   interiors, is a fundamental domain. This is how a closed tile of a tessellation, such
   as a fundamental polygon, becomes a measurable fundamental domain.
+* `MeasureTheory.IsFundamentalDomain.measure_le_of_disjoint_smul`: a set disjoint from its
+  nonidentity translates has measure at most that of a fundamental domain.
 * `MeasureTheory.covolume_pos`, `MeasureTheory.covolume_conjAct_smul`,
   `MeasureTheory.covolume_eq_card_mul_covolume`: for an invariant measure the covolume is
   positive, invariant under conjugation, and multiplied by the index on passing to a subgroup.
@@ -334,6 +336,22 @@ theorem IsFundamentalDomain.of_disjoint_smul_interior {G α : Type*} [Group G] [
       rw [mem_smul_set_iff_inv_smul_mem, mul_inv_rev, inv_inv, mul_smul, smul_inv_smul]
       exact hint hxg hx.1
     exact measure_mono_null hsub (measure_union_null (h_frontier g) (h_frontier h))
+
+/-- **A set disjoint from its translates is no larger than a fundamental domain.** If a
+null-measurable set `t` is disjoint from each of its translates by nonidentity elements, so that
+it embeds in the orbit space, then its measure is at most that of any fundamental domain. -/
+@[to_additive /-- **A set disjoint from its translates is no larger than a fundamental domain.**
+If a null-measurable set `t` is disjoint from each of its translates by nonzero elements, then its
+measure is at most that of any fundamental domain. -/]
+theorem IsFundamentalDomain.measure_le_of_disjoint_smul {G α : Type*} [Group G] [MulAction G α]
+    [MeasurableSpace α] [Countable G] [MeasurableConstSMul G α] {μ : Measure α}
+    [SMulInvariantMeasure G α μ] {s t : Set α} (hs : IsFundamentalDomain G s μ)
+    (ht : NullMeasurableSet t μ) (hd : ∀ g : G, g ≠ 1 → Disjoint (g • t) t) : μ t ≤ μ s := by
+  refine hs.measure_le_of_pairwise_disjoint ht fun g h hgh ↦ ?_
+  refine Disjoint.aedisjoint <| Disjoint.mono inter_subset_left inter_subset_left ?_
+  have hgt : g • t = h • ((h⁻¹ * g) • t) := by rw [smul_smul, mul_inv_cancel_left]
+  rw [hgt]
+  exact Set.disjoint_smul_set.2 <| hd _ <| by rwa [Ne, inv_mul_eq_one, eq_comm]
 
 /-- **Covolume is positive**: a countable group acting with a fundamental domain for a nonzero
 invariant measure has positive covolume. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Excision
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Basic
 
 /-!
 # The long exact sequence and excision for cubical singular chains

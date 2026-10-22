@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Connected.TotallyDisconnected
 public import Mathlib.Topology.Connected.Clopen
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Irreducible
@@ -23,6 +25,10 @@ space by them.
 
 ## Main declarations
 
+* `ConnectedComponents.instMulActionOfContinuousConstSMul`: an action by continuous maps descends
+  to connected components.
+* `ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq`: points of a set lie in the same
+  connected component of the subspace exactly when they have the same component in the set.
 * `Homeomorph.image_connectedComponent`: a homeomorphism maps a connected component onto
   the connected component of the image point.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
@@ -40,6 +46,8 @@ space by them.
   to the disjoint union of its connected components.
 * `TauCeti.finite_connectedComponents_of_finite_irreducibleComponents`: finiteness of the
   irreducible components implies finiteness of the connected components.
+* `TauCeti.isClopen_of_finite_pairwiseDisjoint_closed_cover`: each member of a finite pairwise
+  disjoint closed cover is clopen.
 * `TauCeti.natCard_connectedComponents_eq_of_iUnion_eq_univ`: a space covered by finitely many
   pairwise disjoint closed connected sets has exactly as many connected components as sets.
 -/
@@ -51,6 +59,46 @@ open Function Set Topology
 universe u
 
 variable {X : Type u} [TopologicalSpace X]
+
+namespace ConnectedComponents
+
+variable {G X : Type*} [Monoid G] [TopologicalSpace X] [MulAction G X]
+  [ContinuousConstSMul G X]
+
+/-- An action by continuous maps induces an action on connected components. -/
+noncomputable instance instMulActionOfContinuousConstSMul :
+    MulAction G (ConnectedComponents X) where
+  smul g := (continuous_const_smul g : Continuous (fun x : X ↦ g • x)).connectedComponentsMap
+  one_smul x := by
+    obtain ⟨x, rfl⟩ := surjective_coe x
+    exact congrArg ConnectedComponents.mk (one_smul G x)
+  mul_smul g h x := by
+    obtain ⟨x, rfl⟩ := surjective_coe x
+    exact congrArg ConnectedComponents.mk (mul_smul g h x)
+
+/-- The action on components sends the component of a point to that of its translate. -/
+@[simp]
+theorem smul_mk (g : G) (x : X) :
+    g • ConnectedComponents.mk x = ConnectedComponents.mk (g • x) := (rfl)
+
+/-- Each fixed element still acts continuously on the quotient space of components. -/
+instance : ContinuousConstSMul G (ConnectedComponents X) where
+  continuous_const_smul g :=
+    (continuous_const_smul g : Continuous (fun x : X ↦ g • x)).connectedComponentsMap_continuous
+
+end ConnectedComponents
+
+namespace ConnectedComponents
+
+/-- Two points of a set `F` define the same connected component of the subspace `F` exactly when
+they have the same connected component in `F`. -/
+theorem coe_eq_coe_iff_connectedComponentIn_eq {F : Set X} {a b : X} (ha : a ∈ F) (hb : b ∈ F) :
+    ((⟨a, ha⟩ : F) : ConnectedComponents F) = (⟨b, hb⟩ : F) ↔
+      connectedComponentIn F a = connectedComponentIn F b := by
+  rw [connectedComponentIn_eq_image ha, connectedComponentIn_eq_image hb,
+    Subtype.val_injective.image_injective.eq_iff, coe_eq_coe]
+
+end ConnectedComponents
 
 namespace Homeomorph
 
@@ -265,24 +313,25 @@ theorem finite_connectedComponents_of_finite_irreducibleComponents
     exact Set.mem_biUnion (irreducibleComponent_mem_irreducibleComponents x)
       ⟨x, mem_irreducibleComponent, rfl⟩
 
+/-- Every member of a finite pairwise disjoint closed cover is clopen. -/
+theorem isClopen_of_finite_pairwiseDisjoint_closed_cover {ι : Type*} [Finite ι] {U : ι → Set X}
+    (hclosed : ∀ i, IsClosed (U i)) (hdisj : Pairwise (Disjoint on U))
+    (hunion : ⋃ i, U i = univ) (i : ι) : IsClopen (U i) := by
+  refine ⟨hclosed i, ?_⟩
+  rw [← isClosed_compl_iff, compl_eq_univ_sdiff, ← hunion, iUnion_sdiff]
+  refine isClosed_iUnion_of_finite fun j ↦ ?_
+  rcases eq_or_ne j i with rfl | hne
+  · simp
+  · simpa only [(hdisj hne).sdiff_eq_left] using hclosed j
+
 /-- A space covered by finitely many pairwise disjoint closed connected sets has exactly as many
 connected components as sets: the sets are its connected components. -/
 theorem natCard_connectedComponents_eq_of_iUnion_eq_univ {ι : Type*} [Finite ι] {U : ι → Set X}
     (hclosed : ∀ i, IsClosed (U i)) (hdisj : Pairwise (Disjoint on U))
     (hunion : ⋃ i, U i = univ) (hconn : ∀ i, IsConnected (U i)) :
     Nat.card (ConnectedComponents X) = Nat.card ι := by
-  -- Each set is open, its complement being the finite union of the other sets.
-  have hclopen (i : ι) : IsClopen (U i) := by
-    refine ⟨hclosed i, ?_⟩
-    have : (U i)ᶜ = ⋃ j : {j // j ≠ i}, U j := by
-      ext x
-      obtain ⟨k, hk⟩ := mem_iUnion.1 (hunion ▸ mem_univ x)
-      simp only [mem_compl_iff, mem_iUnion, Subtype.exists, exists_prop]
-      refine ⟨fun hx ↦ ⟨k, fun h ↦ hx (h ▸ hk), hk⟩, ?_⟩
-      rintro ⟨j, hji, hj⟩ hi
-      exact disjoint_left.1 (hdisj hji) hj hi
-    rw [← isClosed_compl_iff, this]
-    exact isClosed_iUnion_of_finite fun j ↦ hclosed j
+  have hclopen : ∀ i, IsClopen (U i) :=
+    isClopen_of_finite_pairwiseDisjoint_closed_cover hclosed hdisj hunion
   have (i : ι) : Unique (ConnectedComponents (U i)) :=
     have := isPreconnected_iff_preconnectedSpace.1 (hconn i).isPreconnected
     have := (hconn i).nonempty.to_subtype

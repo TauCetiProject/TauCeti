@@ -449,8 +449,8 @@ finitely many equations per index rather than a condition on quadruples.
 
 Under these hypotheses, therefore, being an elliptic net and being an elliptic sequence are the
 same condition. They are not the same condition in general: `normEDS b c d` at arbitrary
-parameters need not have `W 2 = b` a nonzerodivisor, and `NormEDS.lean` obtains the net there
-without this equivalence. -/
+parameters need not have `W 2 = b` a nonzerodivisor, and Mathlib's `IsEllipticNet.normEDS`
+obtains the net there without this equivalence. -/
 theorem isEllipticNet_iff {R : Type*} [CommRing R] {W : ℤ → R} (odd : W.Odd) (zero : W 0 = 0)
     (one : W 1 ∈ nonZeroDivisors R) (two : W 2 ∈ nonZeroDivisors R) :
     IsEllipticNet W ↔

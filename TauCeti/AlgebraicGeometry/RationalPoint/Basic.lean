@@ -35,6 +35,8 @@ fields and global functions over a field.
 * `comp_eq_comp_iff_of_section`: two sections agree at a point of the base with values in a
   field exactly when they take the same value at its underlying point; the general statement is
   `hom_ext_of_isIso_residueFieldMap`.
+* `eq_comp_comp_iff_of_section`: a field-valued point of `X` factors through a section exactly
+  when its underlying point lies on the section.
 * `isClosed_singleton_of_section`: over `Spec K`, the section gives a closed point of `X`.
 * `appTop_bijective_of_section`: if moreover `X` is integral and universally closed over `Spec K`,
   a `K`-rational point forces the global functions of `X` to be the constants, that is,
@@ -211,6 +213,24 @@ theorem comp_eq_comp_iff_of_section {s₁ s₂ : S ⟶ X} (h₁ : s₁ ≫ f = �
   have : IsIso (f.residueFieldMap ((t ≫ s₁) (IsLocalRing.closedPoint K))) :=
     isIso_residueFieldMap_of_section h₁ _
   exact hom_ext_of_isIso_residueFieldMap (f := f) (by simp [h₁, h₂]) h
+
+/-- **Field-valued points on a section.** A point `a` of `X` with values in a field `K` factors
+through the section `s` of `f : X ⟶ S`, as `a = (a ≫ f) ≫ s`, if and only if its underlying point
+`a p` lies on `s`, that is, `a p = s (f (a p))`: the section induces an isomorphism of residue
+fields there. -/
+theorem eq_comp_comp_iff_of_section (hs : s ≫ f = 𝟙 S) {K : Type u} [Field K]
+    (a : Spec (.of K) ⟶ X) (p : Spec (.of K)) : a = (a ≫ f) ≫ s ↔ a p = s (f (a p)) := by
+  obtain rfl : p = IsLocalRing.closedPoint K := Subsingleton.elim _ _
+  refine ⟨fun h ↦ congrArg (fun b : Spec (.of K) ⟶ X ↦ b (IsLocalRing.closedPoint K)) h,
+    fun h ↦ ?_⟩
+  have : IsIso (f.residueFieldMap (a (IsLocalRing.closedPoint K))) := by
+    -- the residue field map at a point of the section is an isomorphism; the point is
+    -- generalized since the type of `f.residueFieldMap y` depends on `y`
+    have key : ∀ y, y = s (f (a (IsLocalRing.closedPoint K))) → IsIso (f.residueFieldMap y) := by
+      rintro _ rfl
+      exact isIso_residueFieldMap_of_section hs _
+    exact key _ h
+  exact hom_ext_of_isIso_residueFieldMap (f := f) (by simp [hs]) h
 
 /-! ### Stalk evaluation over a local ring -/
 

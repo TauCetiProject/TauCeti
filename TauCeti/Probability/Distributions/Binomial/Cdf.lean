@@ -31,6 +31,21 @@ open MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti.Probability
 
+/-- The cumulative mass of a binomial law is one at and beyond its upper support endpoint,
+and otherwise is a regularized incomplete beta value. -/
+theorem binomial_real_Iic (n k : ℕ) (p : unitInterval) :
+    Bin(n, p).real (Iic k) =
+      if n ≤ k then 1 else
+        regularizedIncompleteBeta ((n : ℝ) - k) ((k : ℝ) + 1) (1 - (p : ℝ)) := by
+  by_cases hnk : n ≤ k
+  · rw [ite_eq_left hnk]
+    have hfull : Iic k =ᵐ[Bin(n, p)] (Set.univ : Set ℕ) := by
+      filter_upwards [ae_le_of_hasLaw_binomial (P := Bin(n, p)) HasLaw.id] with j hj
+      exact propext ⟨fun _ ↦ trivial, fun _ ↦ hj.trans hnk⟩
+    rw [measureReal_congr hfull, probReal_univ]
+  · rw [ite_eq_right hnk]
+    exact binomial_cumulative_eq_regularizedIncompleteBeta (Nat.le_of_lt (lt_of_not_ge hnk)) p
+
 /-- The cdf of a real binomial law is the regularized incomplete beta value at the natural
 floor of the cutoff inside its support, zero below the support, and one above it. -/
 @[simp]

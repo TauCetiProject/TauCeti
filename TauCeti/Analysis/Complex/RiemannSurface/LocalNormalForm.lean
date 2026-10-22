@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 public import TauCeti.Analysis.Complex.LocalNormalForm
+public import TauCeti.Topology.Covering.LocalPower
 
 /-!
 # Local power coordinates for holomorphic maps of Riemann surfaces
@@ -20,7 +21,9 @@ neighbourhood of the source point.
 
 This supplies actual biholomorphic coordinates at ramification points, rather than just a count
 of nearby fibres. They are the local models used to remove and replace branch discs in the
-branched-cover Euler-characteristic argument.
+branched-cover Euler-characteristic argument. The theorem
+`TauCeti.RiemannSurface.isLocalPowerAt_localMultiplicity` packages the same coordinates in the
+topological `TauCeti.IsLocalPowerAt` vocabulary used by branched covers.
 
 ## References
 
@@ -102,5 +105,33 @@ theorem exists_chart_eq_pow_localMultiplicity
     have h := hpow (c y) hy.2
     simpa only [F, c.left_inv hy.1, c.left_inv hx, b,
       OpenPartialHomeomorph.trans_apply] using h
+
+/-- A holomorphic map that is nonconstant near `x` is locally the power map whose exponent is
+its local multiplicity. This is the topological local-power formulation of
+`exists_chart_eq_pow_localMultiplicity`. -/
+theorem isLocalPowerAt_localMultiplicity
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    (hne : ¬ EventuallyConst f (𝓝 x)) : IsLocalPowerAt f x (localMultiplicity f x) := by
+  let e' := chartAt ℂ (f x)
+  let τ := Homeomorph.addRight (-e' (f x))
+  let ψ := e'.trans τ.toOpenPartialHomeomorph
+  obtain ⟨e, -, hxe, hex, -, hpow⟩ := exists_chart_eq_pow_localMultiplicity hf hne
+    (chart_mem_maximalAtlas (f x)) (mem_chart_source ℂ (f x)) univ_mem
+  have hψ (y) : ψ y = e' y - e' (f x) := by
+    rw [OpenPartialHomeomorph.trans_apply, sub_eq_add_neg]
+    rfl
+  have hψ_source : ψ.source = e'.source := by
+    rw [OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
+      preimage_univ, inter_univ]
+  rw [isLocalPowerAt_iff]
+  refine ⟨e, ψ, hxe, ?_, hex, ?_, ?_⟩
+  · intro y hy
+    rw [hψ_source]
+    exact (hpow y hy).1
+  · rw [hψ, sub_self]
+  · intro w hw
+    have hy : e.symm w ∈ e.source := e.map_target hw
+    rw [hψ]
+    simpa only [e.right_inv hw] using (hpow _ hy).2
 
 end TauCeti.RiemannSurface

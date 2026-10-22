@@ -73,7 +73,7 @@ theorem hasGaloisLabel_X_pow_five_sub_C {a : ℤ} (hirr : Irreducible (X ^ 5 - C
   have hf : (X ^ 5 - C a : ℤ[X]).Monic := monic_X_pow_sub_C a (by norm_num)
   rw [← hmap] at hirr ⊢
   refine hasGaloisLabel_five_two_of_not_isSquare_discr_of_hasSexticRoot hf hirr
-    natDegree_X_pow_sub_C (hf.isSquare_discr_map_rat_iff.not.mp ?_)
+    (natDegree_X_pow_sub_C a) (hf.isSquare_discr_map_rat_iff.not.mp ?_)
     (hasSexticRoot_X_pow_five_sub_C ha)
   rw [hmap]
   exact not_isSquare_discr_X_pow_five_sub_C (by exact_mod_cast ha)

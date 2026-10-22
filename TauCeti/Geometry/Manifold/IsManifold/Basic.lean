@@ -9,15 +9,18 @@ public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
-# Dimension of tangent spaces
+# Basic facts about tangent spaces
 
 The tangent space `TangentSpace I x` of a manifold modelled on `I : ModelWithCorners 𝕜 E H` is
-linearly equivalent to the model vector space `E`, so its dimension is that of `E`.
+linearly equivalent to the model vector space `E`, so its dimension is that of `E`. Tangent spaces
+at propositionally equal points are identified by `tangentSpaceCast`.
 
 ## Main results
 
 * `TauCeti.finrank_tangentSpace`: the tangent space at any point has the dimension of the model
   vector space.
+* `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
+  the identity.
 -/
 
 public section
@@ -33,5 +36,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 @[simp]
 theorem finrank_tangentSpace (x : M) : Module.finrank 𝕜 (TangentSpace I x) = Module.finrank 𝕜 E :=
   (tangentSpaceCastModel I x).toLinearEquiv.finrank_eq
+
+/-- Over equal base points, `tangentSpaceCast` is heterogeneously the identity. This identifies
+tangent vectors over base points that agree only propositionally, for instance when comparing
+points of tangent bundles with `Bundle.TotalSpace.ext`. -/
+theorem heq_tangentSpaceCast {x y : M} (hxy : x = y) (w : TangentSpace I x) :
+    HEq (tangentSpaceCast I x y w) w := by
+  subst hxy
+  rfl
 
 end TauCeti

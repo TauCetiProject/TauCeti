@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Curved.Module.Right.ClosedCategory
 public import TauCeti.Algebra.Module.GradedModule.Shift
 public import TauCeti.Algebra.Ring.NegOnePow
-public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.CategoryTheory.DG.Functor.Basic
 public import Mathlib.CategoryTheory.Shift.Induced
 
 /-!

@@ -43,7 +43,7 @@ theorem isSimpleModule_quotient_jacobson_smul_top_of_isLocalRing_end
     [IsSemisimpleRing (R ⧸ Ring.jacobson R)] [IsCoatomic (Submodule R P)]
     [Module.Projective R P] [IsLocalRing (Module.End R P)] :
     IsSimpleModule R (P ⧸ Ring.jacobson R • (⊤ : Submodule R P)) := by
-  have := nontrivial_of_isLocalRing_end (A := R) (M := P)
+  have := nontrivial_of_nontrivial_end (R := R) (M := P)
   have : Nontrivial (P ⧸ Ring.jacobson R • (⊤ : Submodule R P)) :=
     Submodule.Quotient.nontrivial_iff.mpr (Submodule.jacobson_smul_lt_top ⊤).ne
   have := isSemisimpleModule_quotient_smul_top R (Ring.jacobson R) P

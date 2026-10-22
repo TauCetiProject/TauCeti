@@ -30,6 +30,21 @@ If `1 ≤ C`, `D < n` and `C ^ (D / (n - D)) < B + 1`, then `(⌊C B⌋₊ + 1) 
 is the counting step of Siegel's lemma: it compares the integer points of a box with the cells
 of a partition of the image of that box under `D` linear forms.
 
+For `t > 0` and every natural `k`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`: the Japanese bracket
+decays at least as fast as `t ^ (-1)`. This converts symbol estimates of order `0` into Mihlin's
+condition.
+
+If `0 < d` and `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`: an approximation of quality
+`d ^ (-p)` meets the hypothesis of Legendre's theorem `Real.exists_rat_eq_convergent`.
+
+If `2 ≤ q ≤ q'` and `q ^ p < q (q + q')`, then `q ^ (p - 1) < 2 q'`, so
+`(p - 1) log q < log 2 + log q'`. Hence `t < log q' / log q` once `log 2 < (p - 1 - t) log q`.
+This reads off the growth of consecutive continued-fraction denominators from the lower error
+bound `1 / (q (q + q')) < |ξ - p / q|`.
+
+For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditive up to the constant
+`2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces.
+
 ## Main results
 
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
@@ -39,6 +54,12 @@ of a partition of the image of that box under `D` linear forms.
 * `Real.one_sub_rpow_add_rpow_pos`: `0 < (1 - t) ^ r + t ^ r` for `t ∈ [0, 1]`.
 * `Real.floor_mul_add_one_pow_lt`: `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n` for `1 ≤ C`, `D < n` and
   `C ^ (D / (n - D)) < B + 1`.
+* `Real.one_add_sq_rpow_neg_le`: `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k` for `0 < t`.
+* `Real.rpow_neg_le_one_div_two_mul_sq`: `d ^ (-p) ≤ 1 / (2 d ^ 2)` for `2 ≤ d ^ (p - 2)`.
+* `Real.lt_log_div_log_of_rpow_lt`: `t < log q' / log q` for `2 ≤ q ≤ q'`,
+  `q ^ p < q (q + q')` and `log 2 < (p - 1 - t) log q`.
+* `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
+  for `0 ≤ s`.
 -/
 
 public section
@@ -122,4 +143,67 @@ theorem floor_mul_add_one_pow_lt {C : ℝ} (hC : 1 ≤ C) {D n B : ℕ} (hDn : D
     _ = (B + 1) ^ n := by
         rw [← rpow_natCast _ D, ← rpow_add (by positivity), sub_add_cancel, rpow_natCast]
 
+/-- For `t > 0`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`. -/
+theorem one_add_sq_rpow_neg_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
+    (1 + t ^ 2) ^ (-(k : ℝ) / 2) ≤ 1 / t ^ k := by
+  have hpow : t ^ k ≤ (1 + t ^ 2) ^ ((k : ℝ) / 2) := by
+    calc t ^ k = (t ^ 2) ^ ((k : ℝ) / 2) := by
+          rw [← rpow_natCast, ← rpow_natCast, ← rpow_mul ht.le]
+          ring_nf
+      _ ≤ _ := rpow_le_rpow (by positivity) (by linarith) (by positivity)
+  rw [neg_div, rpow_neg (by positivity), ← one_div]
+  exact one_div_le_one_div_of_le (by positivity) hpow
+
+/-- If `0 < d` and `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. -/
+theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (hd : 0 < d) (h2 : 2 ≤ d ^ (p - 2)) :
+    d ^ (-p) ≤ 1 / (2 * d ^ 2) := by
+  have hsplit : d ^ (-p) = (d ^ (p - 2))⁻¹ * (d ^ 2)⁻¹ := by
+    rw [← rpow_neg hd.le, ← rpow_natCast, ← rpow_neg hd.le, ← rpow_add hd]
+    congr 1
+    push_cast
+    ring
+  rw [hsplit, one_div, mul_inv]
+  gcongr
+
+/-- The logarithmic form of `q ^ p < q (q + q')`: if moreover `2 ≤ q ≤ q'` and
+`log 2 < (p - 1 - t) log q`, then `t < log q' / log q`. -/
+theorem lt_log_div_log_of_rpow_lt {q q' p t : ℝ} (hq : 2 ≤ q) (hqq' : q ≤ q')
+    (hpow : q ^ p < q * (q + q')) (hlog2 : log 2 < (p - 1 - t) * log q) :
+    t < log q' / log q := by
+  have hq0 : 0 < q := by linarith
+  have hlog : 0 < log q := log_pos (by linarith)
+  have hpow' : q ^ (p - 1) < 2 * q' := by
+    rw [rpow_sub_one hq0.ne', div_lt_iff₀ hq0]
+    nlinarith
+  have hlogs : (p - 1) * log q < log 2 + log q' := by
+    rw [← log_rpow hq0, ← log_mul two_ne_zero (by linarith)]
+    exact log_lt_log (rpow_pos_of_pos hq0 _) hpow'
+  rw [lt_div_iff₀ hlog]
+  nlinarith
+
 end Real
+
+namespace TauCeti
+
+/-- The weight `(1 + ‖x‖) ^ s` is subadditive up to a constant: for `s ≥ 0`,
+`(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`. -/
+theorem one_add_norm_add_rpow_le {E : Type*} [SeminormedAddGroup E] {s : ℝ} (hs : 0 ≤ s)
+    (x y : E) :
+    (1 + ‖x + y‖) ^ s ≤ 2 ^ s * ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s) := by
+  have hx : 0 ≤ 1 + ‖x‖ := by positivity
+  have hy : 0 ≤ 1 + ‖y‖ := by positivity
+  calc (1 + ‖x + y‖) ^ s ≤ (2 * max (1 + ‖x‖) (1 + ‖y‖)) ^ s := by
+        gcongr
+        linarith [norm_add_le x y, le_max_left (1 + ‖x‖) (1 + ‖y‖),
+          le_max_right (1 + ‖x‖) (1 + ‖y‖)]
+    _ = 2 ^ s * max (1 + ‖x‖) (1 + ‖y‖) ^ s :=
+        Real.mul_rpow zero_le_two (hx.trans (le_max_left _ _))
+    _ ≤ 2 ^ s * ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s) := by
+        gcongr
+        rcases le_total (1 + ‖x‖) (1 + ‖y‖) with h | h
+        · rw [max_eq_right h]
+          exact le_add_of_nonneg_left (Real.rpow_nonneg hx s)
+        · rw [max_eq_left h]
+          exact le_add_of_nonneg_right (Real.rpow_nonneg hy s)
+
+end TauCeti

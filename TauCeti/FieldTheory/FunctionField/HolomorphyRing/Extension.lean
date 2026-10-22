@@ -140,10 +140,9 @@ theorem coe_integralClosure_integers_subset_integers_iff (hF' : IsFunctionField 
 
 section Map
 
-omit [Algebra.IsIntegral k k']
-
 variable {S : Set (Place k F)} {S' : Set (Place k' F')}
 
+omit [Algebra.IsIntegral k k'] in
 /-- If every place of `S'` lies over a place of `S`, then `F → F'` sends functions regular on `S`
 to functions regular on `S'`. -/
 theorem algebraMap_mem_holomorphyRing (hS : ∀ P' ∈ S', P'.restrict k F ∈ S) {z : F}
@@ -151,6 +150,7 @@ theorem algebraMap_mem_holomorphyRing (hS : ∀ P' ∈ S', P'.restrict k F ∈ S
   mem_holomorphyRing_iff.mpr fun P' hP' ↦
     (Place.mem_integers_restrict_iff k F P' z).mp (mem_holomorphyRing_iff.mp hz _ (hS P' hP'))
 
+omit [Algebra.IsIntegral k k'] in
 /-- **The map of holomorphy rings induced by `F → F'`**: if every place of `S'` lies over a place
 of `S`, then `F → F'` restricts to a ring homomorphism `𝒪_S → 𝒪_{S'}`. -/
 noncomputable def holomorphyRingMap (hS : ∀ P' ∈ S', P'.restrict k F ∈ S) :
@@ -158,11 +158,13 @@ noncomputable def holomorphyRingMap (hS : ∀ P' ∈ S', P'.restrict k F ∈ S) 
   ((algebraMap F F').comp (holomorphyRing S).val.toRingHom).codRestrict _ fun z ↦
     algebraMap_mem_holomorphyRing hS z.2
 
+omit [Algebra.IsIntegral k k'] in
 @[simp]
 theorem coe_holomorphyRingMap_apply (hS : ∀ P' ∈ S', P'.restrict k F ∈ S)
     (z : holomorphyRing S) : (holomorphyRingMap hS z : F') = algebraMap F F' z :=
   (rfl)
 
+omit [Algebra.IsIntegral k k'] in
 /-- The map of holomorphy rings induced by `F → F'` is injective. -/
 theorem holomorphyRingMap_injective (hS : ∀ P' ∈ S', P'.restrict k F ∈ S) :
     Function.Injective (holomorphyRingMap hS) := fun _ _ h ↦
