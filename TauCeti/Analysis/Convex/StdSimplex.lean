@@ -143,19 +143,20 @@ omit [Fintype ι] in
 /-- **The standard simplex as a cone on a facet.** The standard simplex is the convex join of the
 facet opposite a vertex `i`, the points with vanishing `i`-th coordinate, with that vertex. Along
 the segment from a point of the facet to the vertex, the `i`-th coordinate is the parameter. -/
-theorem convexJoin_facet_stdSimplex_single [Finite ι] [Nontrivial ι] [DecidableEq ι] (i : ι) :
-    convexJoin ℝ {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | y i = 0} {Pi.single i 1} =
-      range fun s : StdSimplex ℝ ι => ⇑s.weights := by
+theorem convexJoin_facet_stdSimplex_single {R : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Finite ι] [Nontrivial ι] [DecidableEq ι] (i : ι) :
+    convexJoin R {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0} {Pi.single i 1} =
+      range fun s : StdSimplex R ι => ⇑s.weights := by
   have := Fintype.ofFinite ι
-  have hS : (range fun s : StdSimplex ℝ ι => ⇑s.weights) =
+  have hS : (range fun s : StdSimplex R ι => ⇑s.weights) =
       {z | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} := by
     rw [StdSimplex.range_toFun_comp_weights]
     ext z
     simp
-  have hconv := StdSimplex.convex_range_toFun_comp_weights ℝ ι
+  have hconv := StdSimplex.convex_range_toFun_comp_weights R ι
   rw [hS] at hconv
   rw [hS]
-  have hb : (Pi.single i 1 : ι → ℝ) ∈ {z : ι → ℝ | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} :=
+  have hb : (Pi.single i 1 : ι → R) ∈ {z : ι → R | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} :=
     ⟨fun j => by rcases eq_or_ne j i with rfl | hj <;> simp [*], by simp⟩
   refine Subset.antisymm (convexJoin_subset (fun y hy => hy.1)
     (singleton_subset_iff.mpr hb) hconv) fun z hz => ?_
@@ -187,8 +188,8 @@ theorem convexJoin_facet_stdSimplex_single [Finite ι] [Nontrivial ι] [Decidabl
       · simp [ht]
       · simp [hj, hzero j (mem_erase.mpr ⟨hj, Finset.mem_univ j⟩)]
     obtain ⟨j, hj⟩ := exists_ne i
-    have hj' : (Pi.single j 1 : ι → ℝ) ∈
-        {y ∈ {z : ι → ℝ | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} | y i = 0} :=
+    have hj' : (Pi.single j 1 : ι → R) ∈
+        {y ∈ {z : ι → R | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} | y i = 0} :=
       ⟨⟨fun k => by rcases eq_or_ne k j with rfl | hk <;> simp [*], by simp⟩, by simp [hj.symm]⟩
     rw [hzi]
     exact subset_convexJoin_right ⟨_, hj'⟩ (mem_singleton _)
