@@ -35,6 +35,8 @@ It reuses `PiTensorProduct.reindex`; the convention is
 
 * `TauCeti.finrank_tensorPower` is the dimension count `dim (Rⁿ)^{⊗d} = nᵈ` that the monomial
   basis supplies.
+* `Matrix.piTensorProductMap_tensorPowerBasis`: in the monomial basis, a matrix `A` acting in
+  every tensor factor has the Kronecker power `∏ i, A (v i) (u i)` as its matrix.
 -/
 
 public section
@@ -186,6 +188,22 @@ theorem tensorPowerBasis_apply (f : Fin d → Fin n) :
 theorem finrank_tensorPower [StrongRankCondition R] :
     Module.finrank R (⨂[R] _ : Fin d, Fin n → R) = n ^ d := by
   rw [Module.finrank_eq_card_basis (tensorPowerBasis R n d), Fintype.card_fun]
+  simp
+
+/-- **A matrix acting diagonally on the monomial basis of `(Rⁿ)^{⊗d}`.** Applying `A` in every
+tensor factor sends the basis tensor `e_u` to `∑ v, (∏ i, A (v i) (u i)) • e_v`, so its matrix in
+the monomial basis is the Kronecker power of `A`. -/
+theorem _root_.Matrix.piTensorProductMap_tensorPowerBasis {R : Type u} [CommSemiring R] {n d : ℕ}
+    (A : Matrix (Fin n) (Fin n) R) (u : Fin d → Fin n) :
+    PiTensorProduct.map (fun _ : Fin d => A.mulVecLin) (tensorPowerBasis R n d u) =
+      ∑ v, (∏ i, A (v i) (u i)) • tensorPowerBasis R n d v := by
+  have hcol : ∀ i, A.mulVecLin (Pi.single (u i) (1 : R)) =
+      ∑ c, A c (u i) • Pi.single c (1 : R) := fun i => by
+    rw [Matrix.mulVecLin_apply, Matrix.mulVec_single_one, ← (Pi.basisFun R (Fin n)).sum_repr
+      (A.col (u i))]
+    simp [Matrix.col_apply]
+  simp only [tensorPowerBasis_apply, PiTensorProduct.map_tprod, hcol,
+    MultilinearMap.map_sum_finset, MultilinearMap.map_smul_univ]
   simp
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already

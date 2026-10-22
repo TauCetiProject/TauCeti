@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.KroneckerPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Action
 
 /-!
@@ -156,33 +157,14 @@ theorem sum_isConstantOnArcs_prod_apply (D : BrauerDiagram k) {A : Matrix ι ι 
         exact (Fintype.prod_sum fun (x : {x // D.IsLowerEnd x}) c =>
           A (ℓ x) c * A (ℓ (D.val x)) c).symm.trans (Fintype.prod_congr _ _ fun x => harc x)
     _ = if D.IsConstantOnArcs ℓ then 1 else 0 := by
-        split_ifs with hℓ
-        · exact Finset.prod_eq_one fun x _ => ite_eq_left ((D.isConstantOnArcs_def ℓ).mp hℓ x)
-        obtain ⟨x, hx⟩ : ∃ x, ℓ (D.val x) ≠ ℓ x := by
-          by_contra! h
-          exact hℓ ((D.isConstantOnArcs_def ℓ).mpr h)
+        -- Equality across every arc, read at the lower ends, is constancy on the arcs.
+        refine Fintype.prod_boole.trans (if_congr ⟨fun h => (D.isConstantOnArcs_def ℓ).mpr
+          fun x => ?_, fun hℓ x => (D.isConstantOnArcs_def ℓ).mp hℓ x⟩ rfl rfl)
         by_cases hlx : D.IsLowerEnd x
-        · exact Finset.prod_eq_zero (i := ⟨x, hlx⟩) (Finset.mem_univ _) (ite_eq_right hx)
-        · refine Finset.prod_eq_zero (i := ⟨D.val x, D.isLowerEnd_val_of_not hlx⟩)
-            (Finset.mem_univ _) (ite_eq_right ?_)
-          rw [D.apply_apply]
-          exact Ne.symm hx
-
-/-- The Kronecker power of a matrix `A` with `Aᵀ * A = 1` satisfies the same identity. -/
-private theorem kroneckerPower_transpose_mul_self {A : Matrix ι ι R} (hA : Aᵀ * A = 1) :
-    (Matrix.of fun v u : Fin k → ι => ∏ i, A (v i) (u i))ᵀ *
-      Matrix.of (fun v u : Fin k → ι => ∏ i, A (v i) (u i)) = 1 := by
-  ext v u
-  have hcol : ∀ i, ∑ c, A c (v i) * A c (u i) = if v i = u i then 1 else 0 := fun i => by
-    rw [← Matrix.one_apply, ← hA, Matrix.mul_apply]
-    simp [Matrix.transpose_apply]
-  simp only [Matrix.mul_apply, Matrix.transpose_apply, Matrix.of_apply, ← Finset.prod_mul_distrib]
-  rw [← (Fintype.prod_sum fun i c => A c (v i) * A c (u i)), Fintype.prod_congr _ _ hcol,
-    Matrix.one_apply]
-  split_ifs with h
-  · exact Finset.prod_eq_one fun i _ => ite_eq_left (congrFun h i)
-  · obtain ⟨i, hi⟩ := Function.ne_iff.mp h
-    exact Finset.prod_eq_zero (Finset.mem_univ i) (ite_eq_right hi)
+        · exact h ⟨x, hlx⟩
+        · have hx := h ⟨D.val x, D.isLowerEnd_val_of_not hlx⟩
+          rw [D.apply_apply] at hx
+          exact hx.symm
 
 /-- **The matrix of a Brauer diagram commutes with orthogonal matrices.** For a matrix `A` with
 `Aᵀ * A = 1`, the matrix `TauCeti.BrauerDiagram.orthogonalActionMatrix` of `D` commutes with the
@@ -215,22 +197,6 @@ theorem commute_orthogonalActionMatrix (D : BrauerDiagram k) {A : Matrix ι ι R
     _ = K * M := by rw [Matrix.mul_assoc, kroneckerPower_transpose_mul_self hA, Matrix.mul_one]
 
 end BrauerDiagram
-
-/-- **A matrix acting diagonally on the monomial basis of `(Rⁿ)^{⊗k}`.** Applying `A` in every
-tensor factor sends the basis tensor `e_u` to `∑ v, (∏ i, A (v i) (u i)) • e_v`, so its matrix in
-the monomial basis is the Kronecker power of `A`. -/
-theorem _root_.Matrix.piTensorProductMap_tensorPowerBasis {R : Type u} [CommSemiring R] {n k : ℕ}
-    (A : Matrix (Fin n) (Fin n) R) (u : Fin k → Fin n) :
-    PiTensorProduct.map (fun _ : Fin k => A.mulVecLin) (tensorPowerBasis R n k u) =
-      ∑ v, (∏ i, A (v i) (u i)) • tensorPowerBasis R n k v := by
-  have hcol : ∀ i, A.mulVecLin (Pi.single (u i) (1 : R)) =
-      ∑ c, A c (u i) • Pi.single c (1 : R) := fun i => by
-    rw [Matrix.mulVecLin_apply, Matrix.mulVec_single_one, ← (Pi.basisFun R (Fin n)).sum_repr
-      (A.col (u i))]
-    simp [Matrix.col_apply]
-  simp only [tensorPowerBasis_apply, PiTensorProduct.map_tprod, hcol,
-    MultilinearMap.map_sum_finset, MultilinearMap.map_smul_univ]
-  simp
 
 variable (R : Type u) (n k : ℕ)
 
