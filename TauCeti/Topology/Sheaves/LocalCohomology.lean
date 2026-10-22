@@ -289,8 +289,8 @@ abbrev supportedSectionsFunctor :
     rw [← cancel_mono (F.supportedSectionsι S)]
     simp
   map_comp {_ _ H} f g := by
-    rw [← cancel_mono (H.supportedSectionsι S), supportedSectionsLift_ι, Category.assoc,
-      supportedSectionsLift_ι, supportedSectionsLift_ι_assoc, Category.assoc]
+    rw [← cancel_mono (H.supportedSectionsι S)]
+    simp
 
 @[reassoc]
 lemma supportedSectionsFunctor_map_ι (f : F ⟶ G) :
@@ -321,6 +321,18 @@ section truncation
 open Abelian
 
 variable {T : ShortComplex (Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
+
+/-- `Γ_S` applied to the first term of a short complex is flasque when `Γ_S(F₁)` is. -/
+instance isFlasque_map_supportedSectionsFunctor_X₁
+    [TopCat.Presheaf.IsFlasque (T.X₁.supportedSectionsSheaf S).obj] :
+    TopCat.Sheaf.IsFlasque (T.map (supportedSectionsFunctor S)).X₁ :=
+  ‹_›
+
+/-- `Γ_S` applied to the second term of a short complex is flasque when `Γ_S(F₂)` is. -/
+instance isFlasque_map_supportedSectionsFunctor_X₂
+    [TopCat.Presheaf.IsFlasque (T.X₂.supportedSectionsSheaf S).obj] :
+    TopCat.Sheaf.IsFlasque (T.map (supportedSectionsFunctor S)).X₂ :=
+  ‹_›
 
 /-- The supported-section functor is left exact: it maps an exact sequence `F₁ ⟶ F₂ ⟶ F₃` whose
 first map is a monomorphism to an exact sequence `Γ_S(F₁) ⟶ Γ_S(F₂) ⟶ Γ_S(F₃)`. -/
@@ -368,6 +380,8 @@ theorem epi_supportedSectionsFunctor_map_g (hT : T.ShortExact)
     exact hV
   -- so near `x` the class `y` comes from a section of `F₂` supported in `S`
   obtain ⟨z, hz⟩ := Ext.covariant_sequence_exact₃ _ hT _ (zero_add 1) hV
+  -- sections of `Γ_S(F₂)` are by definition the subtype of supported sections of `F₂`, so
+  -- `Subtype.ext` reduces the equation to one between sections of `F₃`
   refine ⟨V, hVW, ⟨T.X₂.supportedHZeroEquiv S V z, Subtype.ext ?_⟩, hxV⟩
   have h₁ := congrArg Subtype.val (supportedHZeroEquiv_naturality_right T.g S V z)
   rw [hz, coe_supportedHZeroEquiv_supportedHRestrict] at h₁
@@ -409,11 +423,11 @@ theorem subsingleton_supportedH_one_of_shortExact (hT : T.ShortExact)
   -- because `Γ_S(F₂) ⟶ Γ_S(F₃)` is surjective on sections, `Γ_S(F₁)` being flasque
   obtain ⟨y, rfl⟩ := Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) (zero_add 1)
   have hΓ := shortExact_map_supportedSectionsFunctor S hT h
-  have : TopCat.Sheaf.IsFlasque (T.map (supportedSectionsFunctor S)).X₁ := by
-    rwa [ShortComplex.map_X₁, supportedSectionsFunctor_obj]
   obtain ⟨t, ht⟩ := (AddCommGrpCat.epi_iff_surjective _).1
     (TopCat.Sheaf.IsFlasque.epi_of_shortExact hΓ (U := W)) (T.X₃.supportedHZeroEquiv S W y)
   obtain ⟨z, rfl⟩ := (T.X₂.supportedHZeroEquiv S W).surjective t
+  -- `ht` is an equation in `Γ_S(F₃)(W)`, which is by definition the subtype of supported
+  -- sections of `F₃`; `Subtype.ext` only restates it at that subtype
   have hy : z.comp (Ext.mk₀ T.g) (add_zero 0) = y := (T.X₃.supportedHZeroEquiv S W).injective <|
     (supportedHZeroEquiv_naturality_right T.g S W z).trans (Subtype.ext (congrArg Subtype.val ht))
   rw [← hy, Ext.comp_assoc_of_second_deg_zero, hT.comp_extClass, Ext.comp_zero]
@@ -433,11 +447,6 @@ theorem subsingleton_supportedH_succ_of_isZero_supportedHSheaf_succ
     have hT : T.ShortExact := TauCeti.injectiveCokernelSequence_shortExact F
     have h₁ : IsZero (T.X₁.supportedHSheaf S 1) := h 0 (by omega)
     -- `Γ_S(F₃)` is flasque, as the quotient of the flasque sheaf `Γ_S(F₂)` by `Γ_S(F)`
-    have : TopCat.Sheaf.IsFlasque (T.map (supportedSectionsFunctor S)).X₁ := by
-      rwa [ShortComplex.map_X₁, supportedSectionsFunctor_obj]
-    have : TopCat.Sheaf.IsFlasque (T.map (supportedSectionsFunctor S)).X₂ := by
-      rw [ShortComplex.map_X₂, supportedSectionsFunctor_obj]
-      infer_instance
     have : TopCat.Presheaf.IsFlasque (T.X₃.supportedSectionsSheaf S).obj :=
       TopCat.Sheaf.IsFlasque.of_shortExact_of_isFlasque₁₂
         (shortExact_map_supportedSectionsFunctor S hT h₁)
