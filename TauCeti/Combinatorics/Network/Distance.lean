@@ -58,6 +58,11 @@ noncomputable def positiveEDist (c : Assignment Q K) (s t : V) : ℕ∞ :=
 
 variable {c : Assignment Q K} {s t x : V}
 
+theorem positiveEDist_def :
+    positiveEDist c s t =
+      ⨅ p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2}, (p.1.length : ℕ∞) := by
+  rw [positiveEDist]
+
 theorem positiveEDist_le_length (p : ArrowWalk Q s t) (hp : ∀ a ∈ p.arrows, 0 < c a.2.2) :
     positiveEDist c s t ≤ p.length :=
   iInf_le (fun p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2} ↦ (p.1.length : ℕ∞))
@@ -85,6 +90,13 @@ theorem PositiveReachable.exists_length_eq_positiveEDist (h : PositiveReachable 
     ENat.exists_eq_iInf fun p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2} ↦
       (p.1.length : ℕ∞)
   exact ⟨p.1, p.2, hp⟩
+
+@[simp]
+theorem positiveEDist_eq_zero_iff : positiveEDist c s t = 0 ↔ s = t := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ positiveEDist_self c s⟩
+  obtain ⟨p, -, hlen⟩ :=
+    (positiveEDist_ne_top_iff.1 (h ▸ ENat.zero_ne_top)).exists_length_eq_positiveEDist
+  exact @Quiver.Path.eq_of_length_zero V ⟨Q⟩ s t p (by exact_mod_cast hlen.trans h)
 
 /-- Following an arrow of positive capacity raises the positive distance by at most one. -/
 theorem positiveEDist_le_add_one (e : Q t x) (he : 0 < c e) :
