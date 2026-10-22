@@ -35,6 +35,8 @@ other one.
 * `TauCeti.TypeBSpinCarrier.isFaithful_standardComodule`: faithfulness of the standard comodule.
 * `TauCeti.TypeBSpinCarrier.mulVec_mem` and `TauCeti.TypeBSpinCarrier.points_mulVec_mem`:
   subcomodules are stable under carrier-valued points and under concrete carrier points.
+* `TauCeti.TypeBSpinCarrier.single_mem_of_rep_rootGenerator_eq`: a submodule stable under a
+  numbered simple-root matrix follows each signed basis step of its root generator.
 * `TauCeti.TypeBSpinCarrier.torusCorestrict_eq_ofWeights`: restricted to the weight torus, the
   standard comodule is the direct sum of the spin weight lines.
 * `TauCeti.TypeBSpinCarrier.isSimpleOrder_of_spinWeights_of_rootSubgroupPoints`: a comodule with
@@ -133,6 +135,24 @@ private theorem rootSubgroupPoints_mulVec_single_sub (j : Fin (n + 1) ⊕ Fin (n
   funext r
   simp [rootIntMatrix_apply_of_eq n j h, Pi.single_apply]
 
+/-- If a numbered simple root generator sends one lattice basis vector to a signed second one,
+then a submodule stable under the corresponding root matrix at parameter one and containing the
+first coordinate vector contains the second. -/
+theorem single_mem_of_rep_rootGenerator_eq
+    (N : Submodule R (Fin (dimension n) → R))
+    (j : Fin (n + 1) ⊕ Fin (n + 1)) {a a' : Fin (dimension n)} {c : ℤˣ}
+    (hroot : ∀ w ∈ N, ((rootSubgroupPoints n j R (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin (dimension n)) R) :
+          Matrix (Fin (dimension n)) (Fin (dimension n)) R) *ᵥ w ∈ N)
+    (h : rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.typeBSimpleRootGeneratorFamily j))
+        (latticeBasis n a : ExteriorAlgebra ℚ (polarization n).W) =
+      c • (latticeBasis n a' : ExteriorAlgebra ℚ (polarization n).W))
+    (ha : Pi.single a 1 ∈ N) : Pi.single a' 1 ∈ N := by
+  have hsub := N.sub_mem (hroot _ ha) ha
+  rw [rootSubgroupPoints_mulVec_single_sub n R j h] at hsub
+  exact (Submodule.smul_mem_iff_of_isUnit _ (by simpa using c.isUnit.map (Int.castRingHom R))).1
+    hsub
+
 /-- The character of the spin weight torus attached to a spin-basis index. -/
 noncomputable abbrev basisCharacter (a : Fin (dimension n)) :
     Multiplicative (Fin (n + 1) →₀ ℤ) :=
@@ -168,25 +188,6 @@ theorem torusCorestrict_eq_ofWeights :
 section Simple
 
 variable (k : Type u) [Field k]
-
-/-- If a numbered simple root generator sends one lattice basis vector to a signed second one,
-then a subspace stable under the corresponding root matrix at parameter one and containing the
-first coordinate vector contains the second. -/
-private theorem single_mem_of_rep_rootGenerator_eq
-    (N : Submodule k (Fin (dimension n) → k))
-    (j : Fin (n + 1) ⊕ Fin (n + 1)) {a a' : Fin (dimension n)} {c : ℤˣ}
-    (hroot : ∀ w ∈ N, ((rootSubgroupPoints n j k (Multiplicative.ofAdd 1) :
-        Matrix.GeneralLinearGroup (Fin (dimension n)) k) :
-          Matrix (Fin (dimension n)) (Fin (dimension n)) k) *ᵥ w ∈ N)
-    (h : rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.typeBSimpleRootGeneratorFamily j))
-        (latticeBasis n a : ExteriorAlgebra ℚ (polarization n).W) =
-      c • (latticeBasis n a' : ExteriorAlgebra ℚ (polarization n).W))
-    (ha : Pi.single a 1 ∈ N) : Pi.single a' 1 ∈ N := by
-  have hsub := N.sub_mem (hroot _ ha) ha
-  rw [rootSubgroupPoints_mulVec_single_sub n k j h] at hsub
-  have hc : ((c : ℤ) : k) ≠ 0 := by
-    rcases Int.units_eq_one_or c with rfl | rfl <;> simp
-  exact (Submodule.smul_mem_iff _ hc).1 hsub
 
 /-- Invariance under the two simple-root points makes membership of coordinate basis vectors
 stable under every simple reflection. -/

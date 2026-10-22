@@ -58,6 +58,9 @@ Measurability:
   `x ↦ (Q, x ∘ k)` is `δ_Q ⊗ Q^{⊗ Fin m}`. This generalizes the prefix marginal above from `Fin.val`
   to any injective `k`, and pairs it with the Dirac factor, which is the form a disintegration
   against a directing measure consumes.
+* `map_infinitePi_comp_injective` — reading the coordinates of `Q^{⊗ι}` along an injective map and
+  applying a measurable `h` to each gives `(Q.map h)^{⊗κ}`, the form an equivariance argument for
+  i.i.d. mixtures consumes.
 
 Bind-evaluation of the mixture `μ.bind fun ω ↦ (ProbabilityMeasure.pi fun i ↦ ν i ω).toMeasure`:
 * `bind_probabilityMeasure_pi_apply` — evaluation on a measurable set as the integral of the product
@@ -298,6 +301,22 @@ theorem map_infinitePi_pair_block {T α : Type*} [MeasurableSpace T] [Measurable
         rw [Measure.map_infinitePi_infinitePi_of_inj hk, Measure.infinitePi_eq_pi]
     _ = (Measure.dirac t).prod (ProbabilityMeasure.pi fun _ : Fin m ↦ Q).toMeasure := by
         rw [ProbabilityMeasure.toMeasure_pi, Measure.dirac_prod]
+
+/-- **Reindexing and transforming the coordinates of an i.i.d. power.** Reading the coordinates of
+`Q^{⊗ι}` along an injective `k : κ → ι` and applying a measurable `h` to each of them gives the
+power `(Q.map h)^{⊗κ}`. -/
+theorem map_infinitePi_comp_injective {ι κ α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (Q : ProbabilityMeasure α) {k : κ → ι} (hk : Function.Injective k) {h : α → β}
+    (hh : Measurable h) :
+    (Measure.infinitePi fun _ : ι ↦ (Q : Measure α)).map (fun x i ↦ h (x (k i)))
+      = Measure.infinitePi fun _ : κ ↦ (Q.map h : Measure β) := by
+  have hr : Measurable fun (x : ι → α) (i : κ) ↦ x (k i) :=
+    Measurable.of_eval fun i ↦ measurable_pi_apply (k i)
+  have hc : Measurable fun (x : κ → α) (i : κ) ↦ h (x i) :=
+    Measurable.of_eval fun i ↦ hh.comp (measurable_pi_apply i)
+  refine (Measure.map_map hc hr).symm.trans ?_
+  rw [Measure.map_infinitePi_infinitePi_of_inj hk, Measure.infinitePi_map_pi _ fun _ ↦ hh,
+    ProbabilityMeasure.toMeasure_map]
 
 /-- **Bind-evaluation.** Evaluating the mixture
 `μ.bind fun ω ↦ (ProbabilityMeasure.pi fun i ↦ ν i ω).toMeasure` on a measurable set `s` gives

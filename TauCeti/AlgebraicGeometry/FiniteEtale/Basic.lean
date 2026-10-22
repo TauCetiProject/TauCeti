@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Group.Affine
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.RingTheory.Etale.Finite
+public import Mathlib.CategoryTheory.Limits.FintypeCat
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # Finite étale schemes and their coordinate algebras
@@ -21,7 +23,9 @@ coordinate algebras without replacing a scheme by a chosen affine presentation.
 The construction restricts Mathlib's fully faithful `AlgebraicGeometry.algSpec`; essential
 surjectivity uses affineness of finite morphisms. The inverse is naturally identified with
 `AlgebraicGeometry.algΓ` using `AlgebraicGeometry.algΓAlgSpecAdjunction`. The classification
-over a separably closed field uses `CommAlgCat.FiniteEtale.equivOfIsSepClosed`.
+over a separably closed field uses `CommAlgCat.FiniteEtale.equivOfIsSepClosed`, and
+`equivOfIsSepClosedFunctorCompInclIso` identifies the finite set it attaches to a finite étale
+scheme with the set of sections of that scheme.
 
 ## References
 
@@ -46,6 +50,18 @@ theorem finiteEtaleSchemeProperty_iff {S : Scheme.{u}} (X : Over S) :
     finiteEtaleSchemeProperty S X ↔ IsFinite X.hom ∧ Etale X.hom :=
   (Iff.rfl)
 
+/-- The finite étale property of schemes over `S` is the object property of `Over S` induced by
+the morphism property `IsFinite ⊓ Etale`. Use it to apply Mathlib's closure results for
+`MorphismProperty.overObj`. -/
+theorem finiteEtaleSchemeProperty_eq_overObj (S : Scheme.{u}) :
+    finiteEtaleSchemeProperty S = (@IsFinite ⊓ @Etale : MorphismProperty Scheme).overObj :=
+  (rfl)
+
+/-- If `f ≫ g` and `g` are finite étale, then so is `f`. -/
+instance : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).HasOfPostcompProperty
+    (@IsFinite ⊓ @Etale) :=
+  ⟨fun f g ⟨_, _⟩ ⟨_, _⟩ ↦ ⟨IsFinite.of_comp f g, Etale.of_comp f g⟩⟩
+
 /-- Finite étale schemes over `S`, with all morphisms over `S`. -/
 abbrev FiniteEtaleScheme (S : Scheme.{u}) :=
   (finiteEtaleSchemeProperty S).FullSubcategory
@@ -55,6 +71,22 @@ namespace FiniteEtaleScheme
 instance {S : Scheme.{u}} (X : FiniteEtaleScheme S) : IsFinite X.obj.hom := X.property.1
 
 instance {S : Scheme.{u}} (X : FiniteEtaleScheme S) : Etale X.obj.hom := X.property.2
+
+/-- A morphism of finite étale schemes over `S` is finite. -/
+instance isFinite_hom_left {S : Scheme.{u}} {X Y : FiniteEtaleScheme S} (f : X ⟶ Y) :
+    IsFinite f.hom.left := by
+  have : IsFinite (f.hom.left ≫ Y.obj.hom) := by
+    rw [Over.w]
+    infer_instance
+  exact IsFinite.of_comp f.hom.left Y.obj.hom
+
+/-- A morphism of finite étale schemes over `S` is étale. -/
+instance etale_hom_left {S : Scheme.{u}} {X Y : FiniteEtaleScheme S} (f : X ⟶ Y) :
+    Etale f.hom.left := by
+  have : Etale (f.hom.left ≫ Y.obj.hom) := by
+    rw [Over.w]
+    infer_instance
+  exact Etale.of_comp f.hom.left Y.obj.hom
 
 /-- Bundle a scheme with a finite étale structure morphism. -/
 def ofHom {S X : Scheme.{u}} (f : X ⟶ S) [IsFinite f] [Etale f] : FiniteEtaleScheme S :=
@@ -68,6 +100,11 @@ def ofHom {S X : Scheme.{u}} (f : X ⟶ S) [IsFinite f] [Etale f] : FiniteEtaleS
 theorem ofHom_obj {S X : Scheme.{u}} (f : X ⟶ S) [IsFinite f] [Etale f] :
     (ofHom f).obj = Over.mk f :=
   (rfl)
+
+/-- The base itself, through its identity, is a terminal finite étale scheme. -/
+noncomputable def isTerminalOfHomId (S : Scheme.{u}) : Limits.IsTerminal (ofHom (𝟙 S)) :=
+  Limits.IsTerminal.isTerminalOfObj (finiteEtaleSchemeProperty S).ι _
+    (Over.mkIdTerminal.ofIso (eqToIso (ofHom_obj (𝟙 S)).symm))
 
 variable (R : CommRingCat.{u})
 
@@ -192,6 +229,69 @@ noncomputable def equivOfIsSepClosedFunctorIsoFiber (K : Type u) [Field K] [IsSe
         CommAlgCat.FiniteEtale.fiber K K :=
   eqToIso (equivOfIsSepClosed_functor K) ≪≫
     Functor.isoWhiskerLeft _ (CommAlgCat.FiniteEtale.fiberIsoFiniteSpec K).symm
+
+/-- Over a separably closed field `K`, the finite set that `equivOfIsSepClosed` attaches to the
+terminal finite étale scheme `Spec K` is a single point, since the equivalence preserves
+terminal objects. -/
+noncomputable instance uniqueEquivOfIsSepClosedFunctorObjOfHomId (K : Type u) [Field K]
+    [IsSepClosed K] :
+    Unique ((equivOfIsSepClosed K).functor.obj (ofHom (𝟙 (Spec (.of K))))) :=
+  Limits.Concrete.uniqueOfTerminalOfPreserves _
+    ((isTerminalOfHomId _).isTerminalObj (equivOfIsSepClosed K).functor _)
+
+/-- Over a separably closed field `K`, the finite set attached to a finite étale scheme by
+`equivOfIsSepClosed` is naturally its set of sections, that is, of its `K`-rational points. -/
+noncomputable def equivOfIsSepClosedFunctorCompInclIso (K : Type u) [Field K] [IsSepClosed K] :
+    (equivOfIsSepClosed K).functor ⋙ FintypeCat.incl ≅
+      (finiteEtaleSchemeProperty (Spec (.of K))).ι ⋙ coyoneda.obj (op (Over.mk (𝟙 _))) :=
+  letI E := equivOfIsSepClosed K
+  -- The equivalence sends the terminal finite étale scheme to a one-point set; a section
+  -- `g` goes to the image of that point under `E.functor.map g`.
+  Iso.symm <| NatIso.ofComponents (fun Y ↦ Equiv.toIso
+    { toFun g := E.functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g)) default
+      invFun y :=
+        eqToHom (ofHom_obj _).symm ≫ (E.functor.preimage (FintypeCat.homMk fun _ ↦ y)).hom
+      left_inv g := by
+        have : FintypeCat.homMk (fun _ ↦ E.functor.map
+            (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g)) default) =
+            E.functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g)) := by
+          ext a
+          rw [Unique.eq_default a, FintypeCat.homMk_apply]
+        simp only [this, Functor.preimage_map, ObjectProperty.homMk_hom, eqToHom_trans_assoc,
+          eqToHom_refl, Category.id_comp]
+      right_inv y := by
+        simp only [eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+          ObjectProperty.homMk_eta, Functor.map_preimage, FintypeCat.homMk_apply] }) (by
+    intro Y Y' f
+    ext g
+    suffices E.functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g ≫ f.hom)) default =
+        E.functor.map f (E.functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g))
+          default) by simpa
+    rw [← FintypeCat.comp_apply, ← Functor.map_comp, ← Category.assoc, ObjectProperty.homMk_comp,
+      ObjectProperty.homMk_eta])
+
+/-- A section `g` of a finite étale scheme `Y` over a separably closed field `K` corresponds to
+the image under `(equivOfIsSepClosed K).functor` of `g` of the unique point attached to `Spec K`.
+The point `a` is arbitrary, since that finite set has exactly one element. -/
+theorem equivOfIsSepClosedFunctorCompInclIso_inv_app_apply (K : Type u) [Field K]
+    [IsSepClosed K] (Y : FiniteEtaleScheme (Spec (.of K))) (g : Over.mk (𝟙 _) ⟶ Y.obj)
+    (a : (equivOfIsSepClosed K).functor.obj (ofHom (𝟙 (Spec (.of K))))) :
+    (equivOfIsSepClosedFunctorCompInclIso K).inv.app Y g =
+      (equivOfIsSepClosed K).functor.map (ObjectProperty.homMk (eqToHom (ofHom_obj _) ≫ g)) a := by
+  -- At `default` (from `uniqueEquivOfIsSepClosedFunctorObjOfHomId`, the instance used by the
+  -- definition) the two sides agree by definition of the inverse component.
+  rw [Subsingleton.elim a default]
+  rfl
+
+/-- A point `y` of the finite set attached to a finite étale scheme `Y` over a separably closed
+field `K` corresponds to the section preimage of the map from the one-point set picking `y`. -/
+theorem equivOfIsSepClosedFunctorCompInclIso_hom_app_apply (K : Type u) [Field K]
+    [IsSepClosed K] (Y : FiniteEtaleScheme (Spec (.of K)))
+    (y : (equivOfIsSepClosed K).functor.obj Y) :
+    (equivOfIsSepClosedFunctorCompInclIso K).hom.app Y y =
+      eqToHom (ofHom_obj _).symm ≫ ((equivOfIsSepClosed K).functor.preimage
+        (FintypeCat.homMk fun _ ↦ y)).hom :=
+  (rfl)
 
 end FiniteEtaleScheme
 

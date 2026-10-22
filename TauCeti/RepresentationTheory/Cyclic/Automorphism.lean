@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.Algebra.Module.Equiv.Basic
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 import Mathlib.Tactic.Abel
@@ -28,6 +29,9 @@ Its group cohomology is read off in
 * `AddEquiv.cyclicRepresentation A hA`: the representation of `C_m` on `T` in which the
   generator acts by `A`.
 * `AddEquiv.cyclicRep A hA`: the same representation, as an object of `Rep ℤ C_m`.
+* `AddMonoidHom.cyclicRepHom f hA hB hf`: an additive map `f` with `f ∘ A = B ∘ f`, as a morphism
+  of cyclic representations; it is compatible with composition
+  (`AddMonoidHom.cyclicRepHom_comp`).
 
 ## Main results
 
@@ -38,6 +42,13 @@ Its group cohomology is read off in
 * `AddEquiv.mem_ker_cyclicRep_applyAsHom_sub_iff`,
   `AddEquiv.mem_range_cyclicRep_applyAsHom_sub_iff`: the kernel of `ρ(g) - 𝟙` for the generator
   `g` is the fixed points of `A`, and its image is that of `1 - A`.
+* `AddEquiv.mem_ker_cyclicRep_refl_norm_iff`, `AddEquiv.mem_range_cyclicRep_refl_norm_iff`: for
+  the trivial action, given by the identity automorphism, the kernel of the norm is the
+  `m`-torsion and its image is `m T`.
+* `AddMonoidHom.exists_apply_eq_sum_range_iterate`,
+  `AddMonoidHom.sum_range_iterate_add_apply`: for an exact sequence `0 → Λ → E → T` with maps
+  intertwining automorphisms of order dividing `m`, the norm of a lift of a norm-zero element of
+  `T` is the image of a fixed point, and changing the lift by `l` adds the norm of `l`.
 -/
 
 public section
@@ -130,4 +141,115 @@ theorem mem_range_cyclicRep_applyAsHom_sub_iff (x : T) :
   · rw [cyclicRep_applyAsHom_sub_apply, ← hb, map_neg]
     abel
 
+/-! ### The trivial action -/
+
+/-- The identity automorphism has order dividing every `n`. Its cyclic representation is the
+trivial action of `C_n` on `T`. -/
+theorem iterate_refl (n : ℕ) : (⇑(AddEquiv.refl T))^[n] = id :=
+  Function.iterate_id n
+
+/-- For the trivial action, the kernel of the norm is the `m`-torsion. -/
+theorem mem_ker_cyclicRep_refl_norm_iff (x : T) :
+    x ∈ LinearMap.ker ((refl T).cyclicRep (iterate_refl m)).norm.asHom.hom.toLinearMap ↔
+      x ∈ Submodule.torsionBy ℤ T m := by
+  rw [mem_ker_cyclicRep_norm_iff, Submodule.mem_torsionBy_iff, natCast_zsmul]
+  simp
+
+/-- For the trivial action, the image of the norm is `m T`. -/
+theorem mem_range_cyclicRep_refl_norm_iff (x : T) :
+    x ∈ LinearMap.range ((refl T).cyclicRep (iterate_refl m)).norm.asHom.hom.toLinearMap ↔
+      ∃ y, m • y = x := by
+  rw [mem_range_cyclicRep_norm_iff]
+  simp
+
+/-- For the trivial action, every element is fixed by the generator. -/
+theorem mem_ker_cyclicRep_refl_applyAsHom_sub (x : T) :
+    x ∈ LinearMap.ker
+      (applyAsHom ((refl T).cyclicRep (iterate_refl m)) (.ofAdd 1) - 𝟙 _).hom.toLinearMap :=
+  (mem_ker_cyclicRep_applyAsHom_sub_iff _ _ x).2 (refl_apply x)
+
+/-- For the trivial action, the image of `ρ(g) - 𝟙`, for the generator `g`, is zero. -/
+theorem mem_range_cyclicRep_refl_applyAsHom_sub_iff (x : T) :
+    x ∈ LinearMap.range
+      (applyAsHom ((refl T).cyclicRep (iterate_refl m)) (.ofAdd 1) - 𝟙 _).hom.toLinearMap ↔
+      x = 0 := by
+  rw [mem_range_cyclicRep_applyAsHom_sub_iff]
+  simp [eq_comm]
+
 end AddEquiv
+
+namespace AddMonoidHom
+
+universe u
+
+variable {T M : Type u} [AddCommGroup T] [AddCommGroup M] {m : ℕ} [NeZero m] {A : T ≃+ T}
+  {B : M ≃+ M} (f : T →+ M) (hA : (⇑A)^[m] = _root_.id) (hB : (⇑B)^[m] = _root_.id)
+  (hf : ∀ x, f (A x) = B (f x))
+
+/-- An additive map `f : T →+ M` with `f ∘ A = B ∘ f` is a morphism from the cyclic
+representation of `A` to that of `B`. -/
+noncomputable def cyclicRepHom : A.cyclicRep hA ⟶ B.cyclicRep hB :=
+  Rep.ofHom
+    { toLinearMap := f.toIntLinearMap
+      isIntertwining' := fun g ↦ LinearMap.ext fun x ↦ by
+        rw [← ofAdd_toAdd g, LinearMap.comp_apply, LinearMap.comp_apply,
+          AddEquiv.cyclicRepresentation_ofAdd_apply, AddEquiv.cyclicRepresentation_ofAdd_apply]
+        exact Function.Semiconj.iterate_right hf _ x }
+
+/-- The morphism of cyclic representations defined by `f` is `f` on underlying groups. The
+coercion is stated on the intertwining maps of the underlying representations, rather than of the
+`Rep` objects, which is the form `simp` meets in applications. -/
+@[simp]
+theorem coe_cyclicRepHom_hom :
+    DFunLike.coe (F := (A.cyclicRepresentation hA).IntertwiningMap (B.cyclicRepresentation hB))
+      (f.cyclicRepHom hA hB hf).hom = f := by
+  ext x
+  simp [cyclicRepHom]
+
+open CategoryTheory in
+/-- The morphism of cyclic representations defined by a composite `g ∘ f` is the composite of the
+morphisms defined by `f` and `g`. -/
+theorem cyclicRepHom_comp {N : Type u} [AddCommGroup N] {C : N ≃+ N} (g : M →+ N)
+    (hC : (⇑C)^[m] = _root_.id) (hg : ∀ x, g (B x) = C (g x)) :
+    (g.comp f).cyclicRepHom hA hC (fun x ↦ (congrArg g (hf x)).trans (hg (f x))) =
+      f.cyclicRepHom hA hB hf ≫ g.cyclicRepHom hB hC hg := by
+  ext x
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap, LinearMap.coe_comp,
+    Function.comp_apply, Representation.IntertwiningMap.coe_toLinearMap, coe_cyclicRepHom_hom,
+    coe_comp]
+
+end AddMonoidHom
+
+namespace AddMonoidHom
+
+/-! ### Norms along an equivariant exact sequence -/
+
+variable {Λ E T : Type*} [AddCommGroup Λ] [AddCommGroup E] [AddCommGroup T] {m : ℕ}
+  {AΛ : Λ ≃+ Λ} {AE : E ≃+ E} {AT : T ≃+ T} (i : Λ →+ E) (p : E →+ T)
+
+/-- Changing the lift `s` by the image of `l : Λ` changes the norm `∑ j < m, AE^j s` by the image
+of the norm `∑ j < m, AΛ^j l`. -/
+theorem sum_range_iterate_add_apply (hi : ∀ x, i (AΛ x) = AE (i x)) (s : E) (l : Λ) :
+    ∑ j ∈ Finset.range m, (⇑AE)^[j] (s + i l) =
+      ∑ j ∈ Finset.range m, (⇑AE)^[j] s + i (∑ j ∈ Finset.range m, (⇑AΛ)^[j] l) := by
+  rw [map_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [iterate_map_add, Function.Semiconj.iterate_right hi j l]
+
+/-- The norm `∑ j < m, AE^j s` of a lift `s` of a norm-zero element of `T` is the image of a
+fixed point of `AΛ`. -/
+theorem exists_apply_eq_sum_range_iterate [NeZero m] (hE : (⇑AE)^[m] = _root_.id)
+    (hi : ∀ x, i (AΛ x) = AE (i x)) (hp : ∀ x, p (AE x) = AT (p x)) (hinj : Function.Injective i)
+    (hexact : Function.Exact i p) {s : E}
+    (hs : ∑ j ∈ Finset.range m, (⇑AT)^[j] (p s) = 0) :
+    ∃ v : Λ, AΛ v = v ∧ i v = ∑ j ∈ Finset.range m, (⇑AE)^[j] s := by
+  obtain ⟨v, hv⟩ := (hexact _).1 <| by
+    rw [map_sum, ← hs]
+    exact Finset.sum_congr rfl fun j _ ↦ Function.Semiconj.iterate_right hp j s
+  refine ⟨v, hinj ?_, hv⟩
+  -- The norm is fixed by `AE`.
+  have hN := (AE.cyclicRepresentation hE).self_norm_apply (.ofAdd 1) s
+  rwa [AddEquiv.cyclicRepresentation_ofAdd_one_apply, AddEquiv.cyclicRepresentation_norm_apply,
+    ← hv, ← hi] at hN
+
+end AddMonoidHom

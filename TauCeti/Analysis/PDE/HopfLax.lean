@@ -46,7 +46,7 @@ are not studied here.
 
 * `TauCeti.hopfLax_le` and `TauCeti.le_hopfLax_iff`: the Hopf–Lax value is the greatest lower bound
   of the penalized values.
-* `TauCeti.hopfLax_mono`: the Hopf–Lax value is monotone in the initial datum.
+* `TauCeti.hopfLax_mono`: the Hopf–Lax value is monotone in the Lagrangian and initial datum.
 * `TauCeti.hopfLax_le_add_mul` and `TauCeti.add_mul_le_hopfLax`: the bounds
   `m + t l ≤ u (t, x) ≤ φ x + t L 0` for lower bounds `m` of `φ` and `l` of `L`.
 * `TauCeti.hopfLax_add_add_smul_le`: the subsolution inequality
@@ -56,7 +56,7 @@ are not studied here.
   on the open half-space `t > 0`.
 * `TauCeti.hopfLax_norm_rpow` and `TauCeti.hopfLax_norm_rpow_add_add_smul_le`: for the cost
   `L w = ‖w‖ ^ p`, the formula reads `u (t, x) = inf_y (φ y + ‖x - y‖ ^ p / t ^ (p - 1))`, and the
-  subsolution inequality holds for `1 ≤ p`.
+  subsolution inequality holds in real seminormed spaces for `1 ≤ p`.
 
 ## References
 
@@ -121,10 +121,12 @@ theorem hopfLax_le_add_mul (hφ : BddBelow (range φ)) (hL : BddBelow (range L))
     (x : E) : hopfLax L φ t x ≤ φ x + t * L 0 := by
   simpa using hopfLax_le hφ hL ht x x
 
-/-- The Hopf–Lax value is monotone in the initial datum. -/
-theorem hopfLax_mono {ψ : E → ℝ} (hφ : BddBelow (range φ)) (hL : BddBelow (range L)) (ht : 0 ≤ t)
-    (hφψ : φ ≤ ψ) (x : E) : hopfLax L φ t x ≤ hopfLax L ψ t x :=
-  ciInf_mono (bddBelow_range_penalty hφ hL ht x) fun y ↦ add_le_add_left (hφψ y) _
+/-- The Hopf–Lax value is monotone in the Lagrangian and initial datum at nonnegative times. -/
+theorem hopfLax_mono {K ψ : E → ℝ} (hφ : BddBelow (range φ)) (hL : BddBelow (range L))
+    (ht : 0 ≤ t) (hLK : L ≤ K) (hφψ : φ ≤ ψ) (x : E) :
+    hopfLax L φ t x ≤ hopfLax K ψ t x :=
+  ciInf_mono (bddBelow_range_penalty hφ hL ht x) fun y ↦
+    add_le_add (hφψ y) (mul_le_mul_of_nonneg_left (hLK _) ht)
 
 /-- For lower bounds `m` of `φ` and `l` of `L`, the Hopf–Lax value at time `t ≥ 0` is at least
 `m + t l`. -/
@@ -184,9 +186,9 @@ theorem upperSemicontinuousOn_hopfLax [TopologicalSpace E] [IsTopologicalAddGrou
 
 end Module
 
-section Normed
+section Seminormed
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {φ : E → ℝ} {t h p : ℝ}
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {φ : E → ℝ} {t h p : ℝ}
 
 /-- For the cost `L w = ‖w‖ ^ p`, the Hopf–Lax value at time `t > 0` is
 `inf_y (φ y + ‖x - y‖ ^ p / t ^ (p - 1))`. -/
@@ -199,14 +201,15 @@ theorem hopfLax_norm_rpow (φ : E → ℝ) (ht : 0 < t) (x : E) :
     Real.rpow_sub_one ht.ne']
   field_simp
 
-/-- **The Hopf–Lax subsolution inequality for the `p`-th power cost.** For `1 ≤ p` and `φ` bounded
-below, `u (t + h, x + h w) ≤ u (t, x) + h ‖w‖ ^ p` for `t > 0` and `h ≥ 0`. -/
+/-- **The Hopf–Lax subsolution inequality for the `p`-th power cost.** In a real seminormed space,
+for `1 ≤ p` and `φ` bounded below, `u (t + h, x + h w) ≤ u (t, x) + h ‖w‖ ^ p` for `t > 0` and
+`h ≥ 0`. -/
 theorem hopfLax_norm_rpow_add_add_smul_le (hp : 1 ≤ p) (hφ : BddBelow (range φ)) (ht : 0 < t)
     (hh : 0 ≤ h) (x w : E) :
     hopfLax (‖·‖ ^ p) φ (t + h) (x + h • w) ≤ hopfLax (‖·‖ ^ p) φ t x + h * ‖w‖ ^ p :=
   hopfLax_add_add_smul_le hφ ⟨0, forall_mem_range.2 fun _ ↦ by positivity⟩
     (convexOn_norm_rpow (E := E) hp) ht hh x w
 
-end Normed
+end Seminormed
 
 end TauCeti

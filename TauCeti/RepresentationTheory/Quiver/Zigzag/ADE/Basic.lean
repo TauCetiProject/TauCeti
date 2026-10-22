@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
+public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.FiniteType
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
@@ -40,6 +40,8 @@ node `0` is trivalent, and the three arms are `1`, `2, 3`, and `4, 5, 6, 7, 8`, 
 
 * `TauCeti.isTree_zigzagA2Graph`, `TauCeti.isTree_zigzagD4Graph`,
   `TauCeti.isTree_zigzagE8Graph`, and `TauCeti.isTree_zigzagAffineE8Graph`: the graphs are trees.
+* `TauCeti.not_exists_dynkinType_iso_zigzagAffineE8Graph`: affine `E₈` is not a finite Dynkin
+  diagram.
 * `TauCeti.finrank_zigzagAlgebra_D4`, `TauCeti.finrank_zigzagAlgebra_E8`, and
   `TauCeti.finrank_zigzagAlgebra_affineE8`: the three zigzag dimensions.
 * `TauCeti.finrank_center_zigzagAlgebra_D4`, `TauCeti.finrank_center_zigzagAlgebra_E8`, and
@@ -218,6 +220,13 @@ theorem isTree_zigzagAffineE8Graph : zigzagAffineE8Graph.IsTree := by
   exact ⟨connected_zigzagAffineE8Graph, by
     rw [Nat.card_eq_fintype_card, ← SimpleGraph.edgeFinset_card,
       card_edgeFinset_zigzagAffineE8Graph, Nat.card_fin]⟩
+
+/-- **Affine `E₈` is not a finite Dynkin diagram**: the arm-labelled `T_{2,3,6}` graph is not
+isomorphic to the diagram of any valid Dynkin type. -/
+theorem not_exists_dynkinType_iso_zigzagAffineE8Graph :
+    ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (zigzagAffineE8Graph ≃g diagramGraph t.cartanMatrix) :=
+  AffineDynkinType.not_exists_dynkinType_iso AffineDynkinType.valid_E8
+    AffineDynkinType.isGraphical_E8
 
 /-- The `A₂` graph has one edge. -/
 @[simp]
