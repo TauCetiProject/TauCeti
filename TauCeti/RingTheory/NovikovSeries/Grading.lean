@@ -27,6 +27,7 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
 
 ## Main definitions
 
+* `TauCeti.NovikovSeries.supported R N s`: the Novikov series supported in the set `s`.
 * `TauCeti.NovikovSeries.gradeBy R N f i`: the Novikov series of degree `i` for the degree
   function `f`.
 
@@ -73,13 +74,23 @@ section AddZeroClass
 variable [AddZeroClass H] {N : H →+ ℝ}
 
 variable (R N) in
-/-- The Novikov series of degree `i` for the degree function `f`: those whose support lies in
-the fibre `f ⁻¹' {i}`. -/
-def gradeBy (f : H → ι) (i : ι) : Submodule R (NovikovSeries R H N) where
-  carrier := {a | a.support ⊆ f ⁻¹' {i}}
+/-- The Novikov series supported in the set `s`, the Novikov analogue of `Finsupp.supported`. -/
+def supported (s : Set H) : Submodule R (NovikovSeries R H N) where
+  carrier := {a | a.support ⊆ s}
   zero_mem' := by simp
   add_mem' ha hb := (support_add_subset _ _).trans (union_subset ha hb)
   smul_mem' r _ ha := (support_smul_subset r _).trans ha
+
+/-- A series lies in `supported R N s` exactly when its support lies in `s`. -/
+theorem mem_supported {s : Set H} {a : NovikovSeries R H N} :
+    a ∈ supported R N s ↔ a.support ⊆ s :=
+  Iff.rfl
+
+variable (R N) in
+/-- The Novikov series of degree `i` for the degree function `f`: those whose support lies in
+the fibre `f ⁻¹' {i}`. -/
+def gradeBy (f : H → ι) (i : ι) : Submodule R (NovikovSeries R H N) :=
+  supported R N (f ⁻¹' {i})
 
 /-- A series has degree `i` exactly when its support lies in the fibre over `i`. -/
 theorem mem_gradeBy_iff {f : H → ι} {i : ι} {a : NovikovSeries R H N} :
@@ -103,14 +114,8 @@ theorem gradeBy_eq_top {f : H → ι} {i : ι} (hf : ∀ h, f h = i) : gradeBy R
 /-- Homogeneous series of different degrees span independent submodules. -/
 theorem iSupIndep_gradeBy (f : H → ι) : iSupIndep (gradeBy R N f) := by
   intro i
-  -- The series whose support avoids the fibre over `i` form a submodule containing every
-  -- homogeneous piece of degree `j ≠ i`.
-  let avoid : Submodule R (NovikovSeries R H N) :=
-    { carrier := {a | a.support ⊆ (f ⁻¹' {i})ᶜ}
-      zero_mem' := by simp
-      add_mem' := fun ha hb => (support_add_subset _ _).trans (union_subset ha hb)
-      smul_mem' := fun r _ ha => (support_smul_subset r _).trans ha }
-  have hle : ⨆ (j) (_ : j ≠ i), gradeBy R N f j ≤ avoid :=
+  -- Every homogeneous piece of degree `j ≠ i` consists of series avoiding the fibre over `i`.
+  have hle : ⨆ (j) (_ : j ≠ i), gradeBy R N f j ≤ supported R N (f ⁻¹' {i})ᶜ :=
     iSup₂_le fun j hj a ha h hh => by
       rw [mem_compl_iff, mem_preimage, mem_singleton_iff, (ha hh : f h = j)]
       exact hj
@@ -137,12 +142,9 @@ span exactly the finitely supported series. -/
 theorem mem_iSup_gradeBy_iff {f : H → ι} (hf : ∀ i, BddAbove (N '' (f ⁻¹' {i})))
     {a : NovikovSeries R H N} : a ∈ ⨆ i, gradeBy R N f i ↔ a.support.Finite := by
   refine ⟨fun ha => ?_, fun ha => ?_⟩
-  · let fin : Submodule R (NovikovSeries R H N) :=
-      { carrier := {a | a.support.Finite}
-        zero_mem' := by simp
-        add_mem' := fun ha hb => (ha.union hb).subset (support_add_subset _ _)
-        smul_mem' := fun r _ ha => ha.subset (support_smul_subset r _) }
-    exact (iSup_le fun i _ hb => finite_support_of_mem_gradeBy (hf i) hb : _ ≤ fin) ha
+  · exact Submodule.iSup_induction (motive := fun b => b.support.Finite) _ ha
+      (fun i _ hb => finite_support_of_mem_gradeBy (hf i) hb) (by simp)
+      fun _ _ hb hc => (hb.union hc).subset (support_add_subset _ _)
   · obtain ⟨x, rfl⟩ := mem_range_ofFinsupp_iff.2 ha
     exact ofFinsupp_mem_iSup_gradeBy f x
 

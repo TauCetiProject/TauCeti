@@ -24,36 +24,39 @@ area `ω` and first Chern number `c`. Capped Hamiltonian Floer complexes are mod
 
 We write `Λ` as `NovikovSeries R Γ (-area)`, so the ring structure, the period-filtration
 topology and the completeness of Novikov series apply to it directly, and we grade it by the
-homomorphism `PeriodGroup.degree = 2 • chern`. Since `Γ` need not be discrete in area, `Λ` is not
-in general the direct sum of its homogeneous pieces; the graded structure is the graded monoid
-of homogeneous series of `TauCeti.RingTheory.NovikovSeries.Grading`.
+homomorphism `PeriodGroup.degree = 2 • chern`. A series whose support meets infinitely many
+degrees is not a finite sum of homogeneous series, so `Λ` is not in general the direct sum of its
+homogeneous pieces; the graded structure is the graded monoid of homogeneous series of
+`TauCeti.RingTheory.NovikovSeries.Grading`.
 
 The two classical coefficient regimes are distinguished by this grading.
 
 * If `c` vanishes on spherical classes, every series has degree `0`: the grading of the Floer
   complex is entirely carried by the generators.
-* If `ω = τ c` on spherical classes (spherical monotonicity), each degree is carried by at most
+* If every spherical class with vanishing first Chern number has vanishing area, for instance
+  if `ω = τ c` on spherical classes (spherical monotonicity), each degree is carried by at most
   one class, so every homogeneous series is a monomial, and the homogeneous series span exactly
-  the group ring `R[Γ]` of the cyclic group `Γ` (`PeriodGroup.isAddCyclic_of_area_eq_mul_chern`):
-  this is the finite Laurent model of the monotone coefficient ring. When moreover `τ > 0`, the
-  Novikov condition says exactly that the degrees of the support are bounded above.
+  the group ring `R[Γ]` of the cyclic group `Γ` (`PeriodGroup.isAddCyclic_of_ker_le`): in the
+  monotone case this is the finite Laurent model of the coefficient ring. When moreover
+  `ω = τ c` with `τ > 0`, the Novikov condition says exactly that the degrees of the support are
+  bounded above.
 
 ## Main definitions
 
-* `TauCeti.Floer.PeriodGroup.degree`: the degree `γ ↦ 2 c(γ)` of the monomial `e^γ`.
-* `TauCeti.Floer.NovikovRing R ω c`: the Floer Novikov ring over `R`.
+* `TauCeti.Floer.NovikovRing R ω c`: the Floer Novikov ring over `R`, graded by the degree
+  `TauCeti.Floer.PeriodGroup.degree` of `TauCeti.Geometry.Symplectic.Floer.PeriodGroup`.
 
 ## Main results
 
 * `TauCeti.Floer.NovikovRing.gradeBy_degree_eq_bot_of_odd`: there are no nonzero series of odd
   degree.
-* `TauCeti.Floer.NovikovRing.gradeBy_degree_zero_eq_top`,
+* `TauCeti.Floer.NovikovRing.gradeBy_degree_zero_eq_top_of_chern_eq_zero`,
   `TauCeti.Floer.NovikovRing.gradeBy_degree_eq_bot_of_chern_eq_zero`: if the first Chern number
   vanishes, the ring is concentrated in degree `0`.
-* `TauCeti.Floer.NovikovRing.eq_single_of_mem_gradeBy_degree`: for a spherically monotone pair,
-  every homogeneous series is a monomial.
-* `TauCeti.Floer.NovikovRing.mem_iSup_gradeBy_degree_iff`: for a spherically monotone pair, the
-  homogeneous series span exactly the finitely supported series, the image of `R[Γ]`.
+* `TauCeti.Floer.NovikovRing.eq_single_of_mem_gradeBy_degree`: if `ker c ≤ ker ω`, for instance
+  for a spherically monotone pair, every homogeneous series is a monomial.
+* `TauCeti.Floer.NovikovRing.mem_iSup_gradeBy_degree_iff`: if `ker c ≤ ker ω`, the homogeneous
+  series span exactly the finitely supported series, the image of `R[Γ]`.
 * `TauCeti.Floer.NovikovRing.forall_finite_lt_iff_bddAbove_degree`: for a positively monotone
   pair, a coefficient function is a Floer Novikov series exactly when the degrees of its support
   are bounded above.
@@ -77,33 +80,6 @@ open Function Set
 namespace TauCeti.Floer
 
 variable {S : Type*} [AddGroup S]
-
-namespace PeriodGroup
-
-variable (ω : S →+ ℝ) (c : S →+ ℤ)
-
-/-- The degree `2 c(γ)` of the monomial `e^γ` of the Floer Novikov ring: recapping an orbit by
-`γ` shifts its Conley–Zehnder grading by `2 c(γ)`. -/
-def degree : PeriodGroup ω c →+ ℤ :=
-  2 • chern ω c
-
-/-- The degree of a class is twice its first Chern number. -/
-@[simp]
-theorem degree_apply (γ : PeriodGroup ω c) : degree ω c γ = 2 * chern ω c γ := by
-  rw [degree, AddMonoidHom.smul_apply, nsmul_eq_mul, Nat.cast_ofNat]
-
-/-- Degrees in the period group are even. -/
-theorem even_degree (γ : PeriodGroup ω c) : Even (degree ω c γ) :=
-  ⟨chern ω c γ, by rw [degree_apply, two_mul]⟩
-
-variable {ω c} in
-/-- The degree is injective exactly when the first Chern number is. -/
-theorem degree_injective_iff : Injective (degree ω c) ↔ Injective (chern ω c) := by
-  refine ⟨fun h γ γ' hγ => h ?_, fun h γ γ' hγ => h ?_⟩
-  · rw [degree_apply, degree_apply, hγ]
-  · simpa using hγ
-
-end PeriodGroup
 
 open PeriodGroup
 
@@ -132,7 +108,7 @@ include h
 
 /-- If the first Chern number vanishes on spherical classes, every Floer Novikov series has
 degree `0`. -/
-theorem gradeBy_degree_zero_eq_top :
+theorem gradeBy_degree_zero_eq_top_of_chern_eq_zero :
     NovikovSeries.gradeBy R (-area ω c) (degree ω c) 0 = ⊤ :=
   NovikovSeries.gradeBy_eq_top fun γ => by rw [degree_apply, chern_eq_zero h, mul_zero]
 
@@ -145,30 +121,35 @@ theorem gradeBy_degree_eq_bot_of_chern_eq_zero {k : ℤ} (hk : k ≠ 0) :
 
 end ChernZero
 
-section Monotone
+section KerLE
 
-variable {τ : ℝ} (h : ∀ s, ω s = τ * c s)
-include h
+variable (hker : c.ker ≤ ω.ker)
+include hker
 
-/-- For a spherically monotone pair, the degree embeds the period group into `ℤ`. -/
-theorem degree_injective_of_area_eq_mul_chern : Injective (degree ω c) :=
-  degree_injective_iff.2 (chern_injective_of_area_eq_mul_chern h)
-
-/-- For a spherically monotone pair, a Floer Novikov series of the degree of `γ` is the monomial
+/-- If every spherical class with vanishing first Chern number has vanishing area, for instance
+for a spherically monotone pair, a Floer Novikov series of the degree of `γ` is the monomial
 `a_γ e^γ`. -/
 theorem eq_single_of_mem_gradeBy_degree {γ : PeriodGroup ω c} {a : NovikovRing R ω c}
     (ha : a ∈ NovikovSeries.gradeBy R (-area ω c) (degree ω c) (degree ω c γ)) :
     a = NovikovSeries.single γ (a.coeff γ) :=
-  NovikovSeries.eq_single_of_mem_gradeBy (degree_injective_of_area_eq_mul_chern h) ha
+  NovikovSeries.eq_single_of_mem_gradeBy (degree_injective_iff.2 (chern_injective_iff.2 hker)) ha
 
-/-- For a spherically monotone pair, the homogeneous Floer Novikov series span exactly the
-finitely supported series, that is, the image of the group ring `R[Γ]`
+/-- If every spherical class with vanishing first Chern number has vanishing area, for instance
+for a spherically monotone pair, the homogeneous Floer Novikov series span exactly the finitely
+supported series, that is, the image of the group ring `R[Γ]`
 (`TauCeti.NovikovSeries.mem_range_ofFinsupp_iff`). -/
 theorem mem_iSup_gradeBy_degree_iff {a : NovikovRing R ω c} :
     a ∈ ⨆ k, NovikovSeries.gradeBy R (-area ω c) (degree ω c) k ↔ a.support.Finite :=
   NovikovSeries.mem_iSup_gradeBy_iff fun _ =>
-    ((subsingleton_singleton.preimage (degree_injective_of_area_eq_mul_chern h)).finite.image
-      _).bddAbove
+    ((subsingleton_singleton.preimage
+      (degree_injective_iff.2 (chern_injective_iff.2 hker))).finite.image _).bddAbove
+
+end KerLE
+
+section Monotone
+
+variable {τ : ℝ} (h : ∀ s, ω s = τ * c s)
+include h
 
 /-- For a positively monotone pair, a coefficient function on the period group satisfies the
 Novikov condition of the Floer Novikov ring exactly when the degrees of its support are bounded
