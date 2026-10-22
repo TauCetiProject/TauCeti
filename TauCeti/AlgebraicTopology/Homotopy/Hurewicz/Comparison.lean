@@ -124,9 +124,11 @@ theorem subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComp
     | 0 => exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).mp inferInstance
     | 1 => exact inferInstance
     | n + 2 =>
-      let := ModuleCat.subsingleton_of_isZero (hH n)
+      let hHomology : Subsingleton
+          (((normalizedCubicalChainComplex ℤ).obj (TopCat.of X)).homology (n + 2)) :=
+        ModuleCat.subsingleton_of_isZero (hH n)
       exact (Additive.ofMul.trans (cubicalHurewiczAddEquiv ih).toEquiv).subsingleton_congr.mpr
-        inferInstance
+        hHomology
 
 /-- **Inductive Hurewicz vanishing criterion (singular homology).** If `X` is path connected with
 trivial `π_ 1 X x` and its integral singular homology vanishes in every degree `n + 2`, then all

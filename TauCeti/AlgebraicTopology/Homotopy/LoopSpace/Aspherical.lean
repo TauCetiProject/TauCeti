@@ -169,13 +169,13 @@ theorem pathConnectedSpace_loopSpace_and_forall_isZero_homology_singularChains_i
       ∀ n : ℕ, Subsingleton (π_ (n + 1) X x) := by
   constructor
   · rintro ⟨hpc, hH⟩
-    have : Subsingleton (((singularChains ℤ).obj (TopCat.of (Ω X x))).homology 1) :=
+    let hHomology : Subsingleton (((singularChains ℤ).obj (TopCat.of (Ω X x))).homology 1) :=
       ModuleCat.subsingleton_of_isZero (hH 1 one_ne_zero)
-    have : Subsingleton (π_ 2 X x) :=
+    let hPiTwo : Subsingleton (π_ 2 X x) :=
       (Additive.ofMul.trans
-        (pathLoopSpaceFirstHomologyAddEquiv x).toEquiv).subsingleton_congr.mpr inferInstance
-    have : Subsingleton (π_ 1 (Ω X x) (Path.refl x)) :=
-      (pathLoopSpaceMulEquiv (X := X) (x := x) 0).toEquiv.subsingleton_congr.mpr inferInstance
+        (pathLoopSpaceFirstHomologyAddEquiv x).toEquiv).subsingleton_congr.mpr hHomology
+    let hLoopPiOne : Subsingleton (π_ 1 (Ω X x) (Path.refl x)) :=
+      (pathLoopSpaceMulEquiv (X := X) (x := x) 0).toEquiv.subsingleton_congr.mpr hPiTwo
     exact (forall_subsingleton_homotopyGroup_loopSpace_iff x).mp
       (subsingleton_homotopyGroup_of_isZero_homology_singularChains (Path.refl x)
         fun n ↦ hH (n + 2) (Nat.succ_ne_zero _))
