@@ -215,11 +215,7 @@ theorem map_baseChangeHopfIdeal_positiveDefiningIdeal (k : Type u) [CommRing k]
     (CommHopfAlgCat.baseChangeHopfIdeal (K := k) positiveDefiningIdeal).map
         (coordinateHopfAlgebraGeneratedIso k).hom.hom =
       generatedPositiveDefiningIdeal k := by
-  have hpos : positiveDefiningIdeal = HopfIdeal.kerOfSurjective positiveRestriction.hom
-      (CommHopfAlgCat.quotientMapOfLe_surjective _ _) := by
-    ext x
-    rw [mem_positiveDefiningIdeal, HopfIdeal.mem_kerOfSurjective]
-  rw [hpos, generatedPositiveDefiningIdeal_def]
+  rw [positiveDefiningIdeal_def, generatedPositiveDefiningIdeal_def]
   exact CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective
     (coordinateHopfAlgebraGeneratedIso k) (Iso.refl _) _
     (generatedPositiveRestriction_surjective k)
