@@ -290,6 +290,12 @@ theorem homEquiv_apply_coe (φ : GHom (coeff ι S) ι) (x : X) :
 @[simp]
 theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v.2 := (rfl)
 
+/-- A `G`-homomorphism out of `G_{R(S)}` is determined by its values on the variables. -/
+@[ext]
+theorem gHom_ext {φ ψ : GHom (coeff ι S) ι}
+    (h : ∀ x, φ (inr (FreeGroup.of x) : GX G X) = ψ (inr (FreeGroup.of x) : GX G X)) : φ = ψ :=
+  (homEquiv ι S).injective (Subtype.ext (funext h))
+
 /-- If `ι` is injective and the system `S` has a solution in `H`, the coefficients embed in the
 coordinate group `G_{R(S)}`. -/
 theorem coeff_injective (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
@@ -368,6 +374,12 @@ theorem homEquiv_apply_coe (φ : GHom (coeff S) ι) (x : X) :
 @[simp]
 theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v.2 := (rfl)
 
+/-- A `G`-homomorphism out of `G_S` is determined by its values on the variables. -/
+@[ext]
+theorem gHom_ext {φ ψ : GHom (coeff S) ι}
+    (h : ∀ x, φ (inr (FreeGroup.of x) : GX G X) = ψ (inr (FreeGroup.of x) : GX G X)) : φ = ψ :=
+  (homEquiv ι S).injective (Subtype.ext (funext h))
+
 @[simp]
 theorem toCoordGroup_mk (S : Set (GX G X)) (w : GX G X) :
     toCoordGroup ι S (w : systemGroup G S) = (w : coordGroup ι S) := (rfl)
@@ -387,7 +399,21 @@ theorem coeff_injective (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
   ext g
   simp
 
+/-- Restricting a `G`-homomorphism `G_{R(S)} → H` along `G_S → G_{R(S)}` gives the same solution
+of `S`. -/
+@[simp]
+theorem homEquiv_comp_toCoordGroup (φ : GHom (coordGroup.coeff ι S) ι) :
+    homEquiv ι S (φ.comp (toCoordGroup ι S)) = coordGroup.homEquiv ι S φ :=
+  Subtype.ext (funext fun _ => by simp)
+
 end systemGroup
+
+/-- Evaluation at a solution `v` on `G_S` factors through `G_S → G_{R(S)}`. -/
+@[simp]
+theorem coordGroup.evalGHom_comp_toCoordGroup (hv : v ∈ V ι S) :
+    (evalGHom v hv).comp (systemGroup.toCoordGroup ι S) = systemGroup.evalGHom v hv := by
+  ext
+  simp
 
 /-! ### The radical is not the normal closure -/
 
