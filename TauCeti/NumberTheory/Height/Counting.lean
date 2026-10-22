@@ -68,8 +68,8 @@ theorem finite_setOf_naiveHeight_le (d : ℕ) (B : ℝ) :
       simpa only [Int.norm_eq_abs] using (norm_coeff_primitiveMinpoly_le_naiveHeight z i).trans hzB
     rw [Int.natCast_floor_eq_floor ((abs_nonneg _).trans h)]
     exact Int.le_floor.2 (by rwa [Int.cast_abs])
-  have hfin := (Polynomial.finite_setOf_natDegree_le_abs_intCoeff_le d ⌊B⌋₊).biUnion
-    fun f _ ↦ ((f.map (Int.castRingHom F)).roots.toFinset).finite_toSet
+  have hfin :=
+    Polynomial.finite_biUnion_roots_natDegree_le_abs_intCoeff_le (Int.castRingHom F) d ⌊B⌋₊
   refine ⟨hfin.subset hsub, (Set.ncard_le_ncard hsub hfin).trans ?_⟩
   rw [mul_comm]
   exact Polynomial.ncard_biUnion_roots_natDegree_le_abs_intCoeff_le _ d _

@@ -29,9 +29,9 @@ finiteness theorem. There, `NumberField.finite_of_discr_bdd` shows the number fi
 discriminant inside a fixed extension are finite by realising each as `ℚ(x)` for `x` a root of an
 integer polynomial of explicitly bounded degree and coefficient height, then invoking the
 *finiteness* of this very union of root sets, `Polynomial.bUnion_roots_finite`. Mathlib exposes
-only that finiteness; the effective Hermite–Minkowski target of the effective-bounds roadmap needs
-the matching explicit cardinality, so that an injection of the fields into this generating set
-turns into an explicit count of the fields. This file supplies that cardinality, upgrading
+only that finiteness; the matching explicit cardinality bounds the number of fields generated
+by elements of this set, giving an effective Hermite–Minkowski count. This file supplies that
+cardinality, upgrading
 `Polynomial.bUnion_roots_finite` exactly as
 `TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_le` upgrades the polynomial finiteness it is
 built on.
@@ -101,8 +101,7 @@ theorem finite_biUnion_roots_natDegree_le_abs_intCoeff_le (m : ℤ →+* S) (d B
 /-- The integer specialisation: the roots in a domain `S` of all integer polynomials of degree at
 most `d` with every coefficient bounded by `B` in absolute value number at most
 `(2 · B + 1) ^ (d + 1) · d`. Each of the `2 · B + 1` integers in `[-B, B]` is an allowed
-coefficient, and a degree-`≤ d` polynomial has at most `d` roots. This is the counting input named
-by the Layer-2 effective Hermite–Minkowski target. -/
+coefficient, and a degree-`≤ d` polynomial has at most `d` roots. -/
 theorem ncard_biUnion_roots_natDegree_le_abs_intCoeff_le (m : ℤ →+* S) (d B : ℕ) :
     (⋃ (f : ℤ[X]) (_ : f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)),
         ((f.map m).roots.toFinset : Set S)).ncard ≤ (2 * B + 1) ^ (d + 1) * d := by
