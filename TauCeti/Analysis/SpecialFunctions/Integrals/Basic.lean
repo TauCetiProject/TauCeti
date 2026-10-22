@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 /-!
 # Elementary interval integrals
 
-Interval integrals of elementary functions in closed form, continuing Mathlib's
+Interval integrals of elementary functions in closed form or as series, continuing Mathlib's
 `Mathlib/Analysis/SpecialFunctions/Integrals/Basic.lean`.
 
 ## Main declarations
@@ -22,9 +22,13 @@ Interval integrals of elementary functions in closed form, continuing Mathlib's
   `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
+* `TauCeti.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
+  sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
 -/
 
 public section
+
+open scoped Nat
 
 namespace TauCeti
 
@@ -84,8 +88,9 @@ theorem cos_pow_mul_cexp (k : ℕ) (n : ℤ) (θ : ℝ) :
         push_cast [hmk]
         ring
 
-/-- The integral `∫ θ in -π..π, cosᵏ θ exp (n θ i)`, the `n`-th Fourier coefficient of `cosᵏ`, read
-off the binomial expansion `cos_pow_mul_cexp` by orthogonality of the characters. -/
+/-- The integral `∫ θ in -π..π, cosᵏ θ exp (n θ i)`, which is `2π` times the `n`-th Fourier
+coefficient of the even function `cosᵏ`, read off the binomial expansion `cos_pow_mul_cexp` by
+orthogonality of the characters. -/
 theorem integral_cos_pow_mul_cexp (k : ℕ) (n : ℤ) :
     ∫ θ in -Real.pi..Real.pi, (Real.cos θ : ℂ) ^ k * Complex.exp (n * θ * Complex.I) =
       ∑ m ∈ Finset.range (k + 1),
@@ -96,5 +101,37 @@ theorem integral_cos_pow_mul_cexp (k : ℕ) (n : ℤ) :
       Complex.exp (((2 * m - k + n : ℤ) : ℂ) * θ * Complex.I)).intervalIntegrable _ _]
   refine Finset.sum_congr rfl fun m _ => ?_
   rw [intervalIntegral.integral_const_mul, integral_exp_int_mul_mul_I]
+
+
+/-- Termwise integration of the exponential series `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` against the
+Fourier character `exp (n θ i)` over `[-π, π]`. -/
+theorem hasSum_integral_exp_mul_cos_mul_cexp (κ : ℝ) (n : ℤ) :
+    HasSum (fun k : ℕ => ((κ ^ k / k ! : ℝ) : ℂ) *
+        ∫ θ in -Real.pi..Real.pi, (Real.cos θ : ℂ) ^ k * Complex.exp (n * θ * Complex.I))
+      (∫ θ in -Real.pi..Real.pi,
+        (Real.exp (κ * Real.cos θ) : ℂ) * Complex.exp (n * θ * Complex.I)) := by
+  simp_rw [← intervalIntegral.integral_const_mul]
+  refine intervalIntegral.hasSum_integral_of_dominated_convergence (fun k _ => |κ| ^ k / k !)
+    (fun k => by fun_prop) (fun k => MeasureTheory.ae_of_all _ fun θ _ => ?_)
+    (MeasureTheory.ae_of_all _ fun _ _ => Real.summable_pow_div_factorial |κ|)
+    intervalIntegrable_const (MeasureTheory.ae_of_all _ fun θ _ => ?_)
+  · have harg : (n : ℂ) * θ * Complex.I = ((n * θ : ℝ) : ℂ) * Complex.I := by
+      push_cast
+      ring
+    have hexp : ‖Complex.exp (n * θ * Complex.I)‖ = 1 := by
+      rw [harg, Complex.norm_exp_ofReal_mul_I]
+    have hcos : ‖(Real.cos θ : ℂ)‖ ≤ 1 := by
+      rw [Complex.norm_real, Real.norm_eq_abs]
+      exact Real.abs_cos_le_one θ
+    rw [norm_mul, norm_mul, norm_pow, hexp, mul_one, Complex.norm_real, Real.norm_eq_abs, abs_div,
+      abs_pow, Nat.abs_cast]
+    exact mul_le_of_le_one_right (by positivity) (pow_le_one₀ (norm_nonneg _) hcos)
+  · have h := (Complex.hasSum_ofReal.mpr
+      (NormedSpace.expSeries_div_hasSum_exp (κ * Real.cos θ))).mul_right
+        (Complex.exp (n * θ * Complex.I))
+    rw [← Real.exp_eq_exp_ℝ] at h
+    convert h using 2 with k
+    push_cast
+    ring
 
 end TauCeti

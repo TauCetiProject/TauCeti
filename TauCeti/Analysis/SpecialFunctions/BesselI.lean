@@ -51,8 +51,8 @@ von Mises–Fisher laws.
 * `Real.integral_exp_mul_cos_mul_cos` — the circle integral
   `∫_{-π}^{π} e^{κ cos θ} cos (n θ) dθ = 2π I_n(κ)` for natural `n` and real `κ`.
 * `Real.integral_exp_mul_cos_mul_cexp` — its complex form
-  `∫_{-π}^{π} e^{κ cos θ} e^{i n θ} dθ = 2π I_{|n|}(κ)` for integer `n`: the Fourier coefficients of
-  `θ ↦ e^{κ cos θ}`.
+  `∫_{-π}^{π} e^{κ cos θ} e^{i n θ} dθ = 2π I_{|n|}(κ)` for integer `n`, so the Fourier coefficients
+  of `θ ↦ e^{κ cos θ}` are the values `I_{|n|}(κ)`.
 
 ## Implementation notes
 
@@ -120,11 +120,13 @@ theorem hasSum_besselI (ν : ℝ) {x : ℝ} (hx : 0 < x) :
 `∑ⱼ (x / 2) ^ (2 j + n) / (j! (j + n)!)` at every real `x`, including `x ≤ 0`. -/
 theorem hasSum_besselI_natCast (n : ℕ) (x : ℝ) :
     HasSum (fun j : ℕ => (x / 2) ^ (2 * j + n) / (j ! * (j + n)!)) (besselI n x) := by
+  have hadd (j : ℕ) : (n : ℝ) + 1 + j = ((j + n : ℕ) : ℝ) + 1 := by
+    push_cast
+    ring
   rw [besselI_eq_rpow_mul, rpow_natCast]
   convert (Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re (n + 1) ((x / 2) ^ 2)).mul_left
     ((x / 2) ^ n) using 2 with j
-  rw [show (n : ℝ) + 1 + j = ((j + n : ℕ) : ℝ) + 1 by push_cast; ring, Gamma_nat_eq_factorial,
-    pow_add, pow_mul]
+  rw [hadd, Gamma_nat_eq_factorial, pow_add, pow_mul]
   ring
 
 /-- `I_ν(x)` is positive for `ν > -1` and `x > 0`. -/
@@ -239,35 +241,9 @@ section CircleIntegral
 
 open Complex (I)
 
-/-- Termwise integration of the exponential series of `e^{κ cos θ}` against `e^{i n θ}`. -/
-private theorem hasSum_integral_exp_mul_cos_mul_cexp (κ : ℝ) (n : ℤ) :
-    HasSum (fun k : ℕ => ((κ ^ k / k ! : ℝ) : ℂ) *
-        ∫ θ in -π..π, (cos θ : ℂ) ^ k * Complex.exp (n * θ * I))
-      (∫ θ in -π..π, (exp (κ * cos θ) : ℂ) * Complex.exp (n * θ * I)) := by
-  simp_rw [← intervalIntegral.integral_const_mul]
-  refine intervalIntegral.hasSum_integral_of_dominated_convergence (fun k _ => |κ| ^ k / k !)
-    (fun k => by fun_prop) (fun k => MeasureTheory.ae_of_all _ fun θ _ => ?_)
-    (MeasureTheory.ae_of_all _ fun _ _ => summable_pow_div_factorial |κ|) intervalIntegrable_const
-    (MeasureTheory.ae_of_all _ fun θ _ => ?_)
-  · have hexp : ‖Complex.exp (n * θ * I)‖ = 1 := by
-      rw [show (n : ℂ) * θ * I = ((n * θ : ℝ) : ℂ) * I by push_cast; ring,
-        Complex.norm_exp_ofReal_mul_I]
-    have hcos : ‖(cos θ : ℂ)‖ ≤ 1 := by
-      rw [Complex.norm_real, norm_eq_abs]
-      exact abs_cos_le_one θ
-    rw [norm_mul, norm_mul, norm_pow, hexp, mul_one, Complex.norm_real, norm_eq_abs, abs_div,
-      abs_pow, Nat.abs_cast]
-    exact mul_le_of_le_one_right (by positivity) (pow_le_one₀ (norm_nonneg _) hcos)
-  · have h := (Complex.hasSum_ofReal.mpr
-      (NormedSpace.expSeries_div_hasSum_exp (κ * cos θ))).mul_right (Complex.exp (n * θ * I))
-    rw [← exp_eq_exp_ℝ] at h
-    convert h using 2 with k
-    push_cast
-    ring
-
 private theorem integral_exp_mul_cos_mul_cexp_natCast (κ : ℝ) (n : ℕ) :
     ∫ θ in -π..π, (exp (κ * cos θ) : ℂ) * Complex.exp (n * θ * I) = 2 * π * besselI n κ := by
-  have h := hasSum_integral_exp_mul_cos_mul_cexp κ n
+  have h := TauCeti.hasSum_integral_exp_mul_cos_mul_cexp κ n
   simp only [TauCeti.integral_cos_pow_mul_cexp] at h
   rw [Int.cast_natCast] at h
   -- Only the exponents `k = 2 l + n` contribute.
@@ -287,7 +263,8 @@ private theorem integral_exp_mul_cos_mul_cexp_natCast (κ : ℝ) (n : ℕ) :
   rw [Finset.sum_eq_single l (fun m _ hm => by rw [ite_eq_right (by omega), mul_zero])
     (fun hl => absurd (Finset.mem_range.mpr (by omega)) hl), ite_eq_left (by push_cast; ring)]
   have hfac := Nat.choose_mul_factorial_mul_factorial (by omega : l ≤ 2 * l + n)
-  rw [show 2 * l + n - l = l + n by omega] at hfac
+  have hsub : 2 * l + n - l = l + n := by omega
+  rw [hsub] at hfac
   have hc : ((2 * l + n).choose l : ℂ) ≠ 0 := by exact_mod_cast (Nat.choose_pos (by omega)).ne'
   rw [← hfac]
   push_cast
