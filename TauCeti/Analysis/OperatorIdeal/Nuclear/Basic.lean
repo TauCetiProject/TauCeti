@@ -10,6 +10,7 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Adjoint
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # The nuclear gauge of a bounded operator
@@ -138,11 +139,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 theorem nuclearENorm_eq_zero (T : E →L[𝕜] F) :
     T.nuclearENorm = 0 ↔ T = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  have hz : ‖T‖ₑ = 0 := le_antisymm (h ▸ T.enorm_le_nuclearENorm) bot_le
-  have hn : ‖T‖ = 0 := by simpa using congrArg ENNReal.toReal hz
-  -- Mathlib's opNorm_zero_iff requires a normed source; here the source is only seminormed.
-  ext x
-  exact norm_le_zero_iff.mp (by simpa [hn] using T.le_opNorm x)
+  exact T.opENorm_eq_zero_iff.mp (le_antisymm (h ▸ T.enorm_le_nuclearENorm) bot_le)
 
 end Separated
 

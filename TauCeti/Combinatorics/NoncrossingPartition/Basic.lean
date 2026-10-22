@@ -35,6 +35,8 @@ only a meet, not a join, so the join in `NC(s)` is characterised by its universa
 
 * `Finpartition.isNoncrossing_bot`, `Finpartition.isNoncrossing_top` — the partitions into
   singletons and into one part are noncrossing.
+* `Finpartition.IsNoncrossing.part_eq_part` — in a noncrossing partition, positions
+  `a < b < c < d` with `a, c` in one part and `b, d` in one part all lie in one part.
 * `Finpartition.IsNoncrossing.inf` — common refinements of noncrossing partitions are
   noncrossing.
 * `Finpartition.IsNoncrossing.restrict` — restricting a noncrossing partition of `s` to a subset
@@ -42,6 +44,10 @@ only a meet, not a join, so the join in `NC(s)` is characterised by its universa
 * `TauCeti.NoncrossingPartition.instLattice` — the noncrossing partitions of `s` form a lattice,
   with meets computed in `Finpartition s`; it is bounded, and locally finite so that its
   incidence algebra is available.
+* `TauCeti.NoncrossingPartition.univ_eq_bot_top_of_pair` — a set with at most two elements has
+  only the partitions into singletons and into one part, which differ by
+  `TauCeti.NoncrossingPartition.bot_ne_top_of_one_lt_card` once it has two elements; a
+  one-element set has a unique noncrossing partition.
 
 ## References
 
@@ -84,6 +90,15 @@ theorem isNoncrossing_iff_part :
   rw [← P.part_eq_of_mem hC hb] at hd
   rw [← P.part_eq_of_mem hB ha, ← P.part_eq_of_mem hC hb]
   exact h a (P.le hB ha) b (P.le hC hb) c hc d hd hab hbc hcd
+
+/-- In a noncrossing partition, positions `a < b < c < d` with `a, c` in a common part and `b, d`
+in a common part all lie in one part. -/
+theorem IsNoncrossing.part_eq_part (hP : P.IsNoncrossing) {a b c d : α} (ha : a ∈ s)
+    (hb : b ∈ s) (hac : P.part a = P.part c) (hbd : P.part b = P.part d) (hab : a < b)
+    (hbc : b < c) (hcd : c < d) : P.part a = P.part b :=
+  isNoncrossing_iff_part.1 hP a ha b hb c
+    (hac ▸ P.mem_part_self.2 (P.part_nonempty.1 (hac ▸ P.part_nonempty.2 ha))) d
+    (hbd ▸ P.mem_part_self.2 (P.part_nonempty.1 (hbd ▸ P.part_nonempty.2 hb))) hab hbc hcd
 
 /-- The partition into singletons is noncrossing. -/
 @[simp]
@@ -198,6 +213,34 @@ noncrossing partition; in particular `NC(0)` has a single element. -/
 instance [IsEmpty α] : Unique (NoncrossingPartition s) where
   default := ⊥
   uniq := eq_bot_of_eq_empty s.eq_empty_of_isEmpty
+
+/-- The partition of a one-element set into its single part is its only noncrossing
+partition. -/
+instance (i : α) : Unique (NoncrossingPartition ({i} : Finset α)) where
+  default := ⊥
+  uniq P := le_bot_iff.1 <| le_top.trans_eq <| Subtype.ext <| Finpartition.ext <| by
+    simp [Finpartition.parts_top (singleton_ne_empty i)]
+
+/-- If `s` has at least two elements, the partition into singletons and the partition into one
+part are different noncrossing partitions of `s`. -/
+theorem bot_ne_top_of_one_lt_card (hs : 1 < #s) : (⊥ : NoncrossingPartition s) ≠ ⊤ := fun h => by
+  have := congrArg (fun P : NoncrossingPartition s => #P.1.parts) h
+  simp only [coe_bot, coe_top, Finpartition.card_bot,
+    Finpartition.parts_top (card_pos.1 (zero_lt_one.trans hs)).ne_empty, card_singleton] at this
+  omega
+
+/-- A noncrossing partition of a set with at most two elements is either the partition into
+singletons or the partition into one part. -/
+theorem eq_bot_or_eq_top_of_pair {i j : α} (P : NoncrossingPartition ({i, j} : Finset α)) :
+    P = ⊥ ∨ P = ⊤ :=
+  (Finpartition.eq_bot_or_eq_top_of_pair P.1).imp Subtype.ext Subtype.ext
+
+/-- The noncrossing partitions of a set with at most two elements are the partition into
+singletons and the partition into one part. -/
+theorem univ_eq_bot_top_of_pair {i j : α} :
+    (univ : Finset (NoncrossingPartition ({i, j} : Finset α))) = {⊥, ⊤} := by
+  ext P
+  simpa using eq_bot_or_eq_top_of_pair P
 
 end NoncrossingPartition
 
