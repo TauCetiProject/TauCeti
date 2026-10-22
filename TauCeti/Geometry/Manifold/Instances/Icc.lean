@@ -20,7 +20,8 @@ maps. These support reversal and stationary-time concatenation of smooth isotopi
 
 The constructions reuse Mathlib’s interval immersion and `Real.smoothTransition`.
 The preferred interval charts also expose their actual affine coordinate formulas and the
-within-range derivatives of the inclusion composed with their inverses.
+within-range derivatives of the inclusion composed with their inverses. The derivative of the
+inclusion is invertible at every point, including both endpoints.
 -/
 
 public section
@@ -226,6 +227,15 @@ theorem subtypeValIccTangentEquiv_toContinuousLinearMap (x : Icc a b) :
   by_cases hx : (x : ℝ) < b <;>
     simp only [subtypeValIccTangentEquiv, hx, ↓reduceIte, one_smul, neg_smul]
   all_goals rfl
+
+/-- The derivative of the interval inclusion is invertible at every point, including both
+endpoints. -/
+theorem isInvertible_mfderiv_subtypeVal_Icc (x : Icc a b) :
+    (mfderiv (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : Icc a b → ℝ) x).IsInvertible := by
+  have h := subtypeValIccTangentEquiv_toContinuousLinearMap x
+  rw [← ContinuousLinearMap.isInvertible_equiv_comp (e := NormedSpace.fromTangentSpace (x : ℝ))]
+  rw [← h]
+  exact ContinuousLinearMap.isInvertible_equiv
 
 /-- The derivative of an affine map from the interval to any real normed space is its linear
 part applied to the actual interval inclusion derivative, including at both endpoints. -/
