@@ -19,13 +19,15 @@ Let `K` be a number field and `n` a natural number. A *system of linear forms* a
 place `v` of `K` a family `L v : Fin n → Fin n → K` of `n` linear forms on `K ^ n`, written as
 coefficient vectors, so that the `i`-th form at `v` sends `x` to `L v i ⬝ᵥ x`. Given real weights
 `c v i` and a real parameter `Q`, the *twisted height* of a nonzero `x : Fin n → K` is
-`H_{L,c,Q}(x) = ∏_v max_i |L v i ⬝ᵥ x|_v * Q ^ (-c v i)`, where `|·|_v` is the degree-normalized
-absolute value `TauCeti.GlobalNumberFields.normAbs`. The twisted height of `0` is `0`.
+`H_{L,c,Q}(x) = ∏_v max_i (|L v i ⬝ᵥ x|_v * Q ^ (-c v i))`, where `|·|_v` is the
+degree-normalized absolute value `TauCeti.GlobalNumberFields.normAbs`. The twisted height of `0`
+is `0`.
 
 Twisted heights are the heights in which Evertse and Ferretti state and prove the quantitative
 Subspace Theorem: for suitable data and all large `Q`, the points `x` with
 `H_{L,c,Q}(x) ≤ Δ_L ^ (1 / n) * Q ^ (-δ)` lie in a proper linear subspace, one of finitely many
-as `Q` varies. Here `Δ_L` is the product over the places of the determinants of the forms.
+as `Q` varies. Here `Δ_L = ∏_v |det (L v)|_v` is the product over the places of the
+degree-normalized absolute values of the determinants of the forms.
 
 The local factors are `TauCeti.twistedLocalHeight`. The usual hypotheses on the data are that the
 forms at each place are linearly independent, that only finitely many distinct systems of forms
@@ -38,7 +40,7 @@ product. The definition does not assume these hypotheses: the product over the p
 ## Main definitions
 
 * `TauCeti.coordForms`: the coordinate forms `X_1, …, X_n` at every place.
-* `TauCeti.twistedLocalHeight`: the local factor `max_i |L v i ⬝ᵥ x|_v * Q ^ (-c v i)`.
+* `TauCeti.twistedLocalHeight`: the local factor `max_i (|L v i ⬝ᵥ x|_v * Q ^ (-c v i))`.
 * `TauCeti.twistedHeight`: the twisted height `H_{L,c,Q}`.
 
 ## Main results
@@ -47,8 +49,8 @@ product. The definition does not assume these hypotheses: the product over the p
 * `TauCeti.twistedHeight_smul`: the twisted height is projective, by the product formula.
 * `TauCeti.twistedHeight_coordForms_zero`: for coordinate forms and zero weights the twisted
   height is the absolute multiplicative height `Height.mulHeight x ^ (1 / [K : ℚ])`.
-* `TauCeti.twistedHeight_shift`: shifting the weights at each place by `θ v` multiplies the
-  twisted height by `Q ^ (∑ᶠ v, θ v)`.
+* `TauCeti.twistedHeight_shift_of_hasFiniteMulSupport`, `TauCeti.twistedHeight_shift`: shifting
+  the weights at each place by `θ v` multiplies the twisted height by `Q ^ (∑ᶠ v, θ v)`.
 * `TauCeti.twistedHeight_vecMul`: a common invertible change of variables of the forms is a change
   of variables of the point.
 * `TauCeti.twistedHeight_one`: for `Q = 1` the twisted height does not depend on the weights.
@@ -89,7 +91,8 @@ variable [NumberField K]
 
 /-! ### Local factors -/
 
-/-- The local factor `max_i |L v i ⬝ᵥ x|_v * Q ^ (-c v i)` of the twisted height at a place `v`. -/
+/-- The local factor `max_i (|L v i ⬝ᵥ x|_v * Q ^ (-c v i))` of the twisted height at a place
+`v`. -/
 def twistedLocalHeight (L : Place K → Fin n → Fin n → K) (c : Place K → Fin n → ℝ) (Q : ℝ)
     (v : Place K) (x : Fin n → K) : ℝ :=
   ⨆ i, normAbs v (L v i ⬝ᵥ x) * Q ^ (-c v i)
@@ -126,10 +129,12 @@ theorem twistedLocalHeight_shift (hQ : 0 < Q) (θ : Place K → ℝ) (v : Place 
   rw [neg_sub, sub_eq_add_neg, Real.rpow_add hQ]
   ring
 
+@[simp]
 theorem twistedLocalHeight_one (v : Place K) (x : Fin n → K) :
     twistedLocalHeight L c 1 v x = ⨆ i, normAbs v (L v i ⬝ᵥ x) := by
   simp [twistedLocalHeight_def]
 
+@[simp]
 theorem twistedLocalHeight_coordForms_zero (v : Place K) (x : Fin n → K) :
     twistedLocalHeight (coordForms K n) 0 Q v x = ⨆ i, normAbs v (x i) := by
   simp [twistedLocalHeight_def]
@@ -159,7 +164,7 @@ theorem hasFiniteMulSupport_twistedLocalHeight (hL : ∀ v, LinearIndependent K 
 /-! ### The twisted height -/
 
 open Classical in
-/-- The twisted height `H_{L,c,Q}(x) = ∏_v max_i |L v i ⬝ᵥ x|_v * Q ^ (-c v i)` of a point
+/-- The twisted height `H_{L,c,Q}(x) = ∏_v max_i (|L v i ⬝ᵥ x|_v * Q ^ (-c v i))` of a point
 `x ≠ 0` of `K ^ n`, for linear forms `L v i` and weights `c v i` indexed by the places `v` of `K`.
 The twisted height of `0` is `0`.
 
@@ -226,17 +231,28 @@ theorem twistedHeight_coordForms_zero {x : Fin n → K} (hx : x ≠ 0) :
       Real.iSup_nonneg fun i ↦ normAbs_nonneg v (x i)) hD]
 
 /-- Shifting the weights at each place `v` by a finitely supported `θ v` multiplies the twisted
-height by `Q ^ (∑ᶠ v, θ v)`. -/
+height of `x` by `Q ^ (∑ᶠ v, θ v)`, provided the local factors at `x` are `1` at all but finitely
+many places. -/
+theorem twistedHeight_shift_of_hasFiniteMulSupport (hQ : 0 < Q) {θ : Place K → ℝ}
+    (hθ : HasFiniteSupport θ) {x : Fin n → K}
+    (hx : HasFiniteMulSupport fun v ↦ twistedLocalHeight L c Q v x) :
+    twistedHeight L (fun v i ↦ c v i - θ v) Q x = Q ^ (∑ᶠ v, θ v) * twistedHeight L c Q x := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · simp
+  rw [twistedHeight_of_ne_zero hx0, twistedHeight_of_ne_zero hx0, Real.rpow_finsum_of_pos hQ hθ,
+    ← finprod_mul_distrib (hθ.hasFiniteMulSupport_fun_rpow fun _ ↦ Q) hx]
+  exact finprod_congr fun v ↦ twistedLocalHeight_shift hQ θ v x
+
+/-- Shifting the weights at each place `v` by a finitely supported `θ v` multiplies the twisted
+height by `Q ^ (∑ᶠ v, θ v)`, under the usual hypotheses on the data. -/
 theorem twistedHeight_shift (hQ : 0 < Q) (hL : ∀ v, LinearIndependent K (L v))
     (hLfin : (Set.range L).Finite) (hc : HasFiniteSupport c) {θ : Place K → ℝ}
     (hθ : HasFiniteSupport θ) (x : Fin n → K) :
     twistedHeight L (fun v i ↦ c v i - θ v) Q x = Q ^ (∑ᶠ v, θ v) * twistedHeight L c Q x := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp
-  rw [twistedHeight_of_ne_zero hx, twistedHeight_of_ne_zero hx, Real.rpow_finsum_of_pos hQ hθ,
-    ← finprod_mul_distrib (hθ.hasFiniteMulSupport_fun_rpow fun _ ↦ Q)
-      (hasFiniteMulSupport_twistedLocalHeight hL hLfin hc hx)]
-  exact finprod_congr fun v ↦ twistedLocalHeight_shift hQ θ v x
+  exact twistedHeight_shift_of_hasFiniteMulSupport hQ hθ
+    (hasFiniteMulSupport_twistedLocalHeight hL hLfin hc hx)
 
 /-- Composing every form with an invertible linear change of variables `y ↦ A *ᵥ y` is
 evaluating the twisted height at `A *ᵥ x`. -/
