@@ -36,53 +36,53 @@ namespace Compactification
 noncomputable section
 
 /-- The open interior map induced on the pullbacks of a compactification. -/
-def baseChangeJ (C : Compactification f) (g : T ⟶ S) :
+private def baseChangeJ (C : Compactification f) (g : T ⟶ S) :
     pullback f g ⟶ pullback C.p g :=
   pullback.lift (pullback.fst f g ≫ C.j) (pullback.snd f g)
     (by simp [← pullback.condition])
 
 @[reassoc (attr := simp)]
-theorem baseChangeJ_fst (C : Compactification f) (g : T ⟶ S) :
+private theorem baseChangeJ_fst (C : Compactification f) (g : T ⟶ S) :
     baseChangeJ C g ≫ pullback.fst C.p g = pullback.fst f g ≫ C.j :=
   pullback.lift_fst _ _ _
 
 @[reassoc (attr := simp)]
-theorem baseChangeJ_snd (C : Compactification f) (g : T ⟶ S) :
+private theorem baseChangeJ_snd (C : Compactification f) (g : T ⟶ S) :
     baseChangeJ C g ≫ pullback.snd C.p g = pullback.snd f g :=
   pullback.lift_snd _ _ _
 
-/-- The square relating the original and pulled-back interiors is cartesian. -/
-theorem isPullback_baseChange (C : Compactification f) (g : T ⟶ S) :
+private theorem isPullback_baseChangeJ (C : Compactification f) (g : T ⟶ S) :
     IsPullback (pullback.fst f g) (baseChangeJ C g) C.j (pullback.fst C.p g) := by
   apply IsPullback.of_bot (t := IsPullback.of_hasPullback C.p g)
   · simpa using (IsPullback.of_hasPullback f g)
   · simp
 
-instance (C : Compactification f) (g : T ⟶ S) :
+private instance (C : Compactification f) (g : T ⟶ S) :
     IsOpenImmersion (baseChangeJ C g) :=
-  MorphismProperty.of_isPullback (isPullback_baseChange C g)
+  MorphismProperty.of_isPullback (isPullback_baseChangeJ C g)
     (inferInstance : IsOpenImmersion C.j)
 
-instance (C : Compactification f) (g : T ⟶ S) :
+private instance (C : Compactification f) (g : T ⟶ S) :
     QuasiCompact (baseChangeJ C g) :=
-  MorphismProperty.of_isPullback (isPullback_baseChange C g)
+  MorphismProperty.of_isPullback (isPullback_baseChangeJ C g)
     (inferInstance : QuasiCompact C.j)
 
 /-- Pull back a compactification along an arbitrary map of bases.
 The compactification of `pullback.snd f g` has ambient scheme `pullback C.p g`,
 open immersion induced by `pullback.lift`, and proper map `pullback.snd C.p g`. -/
 -- Exposure and implicit reducibility keep dependent projection formulas usable across modules.
+-- Keep the exposed data explicit; only proof blocks can refer to the private helpers.
 @[expose, implicit_reducible] def baseChange (C : Compactification f) (g : T ⟶ S) :
     Compactification (pullback.snd f g) :=
-  ofHom (baseChangeJ C g) (pullback.snd C.p g) (baseChangeJ_snd C g)
+  @ofHom _ _ _ _ (pullback.lift (pullback.fst f g ≫ C.j) (pullback.snd f g)
+    (by simp [← pullback.condition])) (pullback.snd C.p g)
+    (by exact inferInstanceAs (IsOpenImmersion (baseChangeJ C g)))
+    (by exact inferInstanceAs (QuasiCompact (baseChangeJ C g))) inferInstance
+    (by exact baseChangeJ_snd C g)
 
 @[simp]
 theorem baseChange_Xbar (C : Compactification f) (g : T ⟶ S) :
     (C.baseChange g).Xbar = pullback C.p g :=
-  (rfl)
-
-theorem baseChange_j (C : Compactification f) (g : T ⟶ S) :
-    (C.baseChange g).j = baseChangeJ C g :=
   (rfl)
 
 @[simp]
@@ -101,6 +101,11 @@ theorem baseChange_j_fst (C : Compactification f) (g : T ⟶ S) :
 theorem baseChange_j_snd (C : Compactification f) (g : T ⟶ S) :
     (C.baseChange g).j ≫ pullback.snd C.p g = pullback.snd f g :=
   baseChangeJ_snd C g
+
+/-- The square relating the original and pulled-back interiors is cartesian. -/
+theorem isPullback_baseChange (C : Compactification f) (g : T ⟶ S) :
+    IsPullback (pullback.fst f g) (C.baseChange g).j C.j (pullback.fst C.p g) :=
+  isPullback_baseChangeJ C g
 
 /-- Flat base change preserves scheme-theoretic density of the interior. -/
 instance baseChange_isSchemeTheoreticallyDominant (C : Compactification f)
