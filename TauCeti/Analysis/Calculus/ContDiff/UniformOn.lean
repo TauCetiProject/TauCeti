@@ -20,8 +20,9 @@ chain of derivative families `G', G'', …` up to order `n`, each the derivative
 and the derivatives of orders `1` to `n` are bounded on `s` (`G` itself need not be bounded). On any
 set `s`, `G` is `C^n` on `s` (`UniformContDiffOn.contDiffOn`). The derivatives are carried
 along as functions `X → (X →L[𝕜] ⋯ →L[𝕜] Y)` rather than as iterated Fréchet derivatives,
-so a proof by induction on `n` applies the case `n` to the derivative of `G`. The domain and target may lie in different universes. After the first derivative, the target
-universe is the maximum of their universes and is closed under further derivatives.
+so a proof by induction on `n` applies the case `n` to the derivative of `G`. The domain and
+target may lie in different universes. After the first derivative, the target universe is the
+maximum of their universes and is closed under further derivatives.
 
 This is the regularity needed for superposition operators on bounded continuous functions: the
 uniform control is what makes the derivative of `f ↦ G ∘ f` converge at all the points `f t` at
@@ -148,7 +149,8 @@ theorem UniformContDiffOn.of_succ {n : ℕ} (h : UniformContDiffOn 𝕜 (n + 1) 
   | zero => exact (uniformContDiffOn_succ_iff.1 h).1
   | succ n =>
     obtain ⟨hu, G', hG', hC, hG'n⟩ := uniformContDiffOn_succ_iff.1 h
-    exact uniformContDiffOn_succ_iff.2 ⟨hu, G', hG', hC, uniformContDiffOn_of_succ_aux.{u, v, w} hG'n⟩
+    exact uniformContDiffOn_succ_iff.2
+      ⟨hu, G', hG', hC, uniformContDiffOn_of_succ_aux.{u, v, w} hG'n⟩
 
 /-- Uniform `C^n` regularity implies uniform `C^m` regularity for `m ≤ n`. -/
 theorem UniformContDiffOn.of_le {m n : ℕ} (hmn : m ≤ n) (h : UniformContDiffOn 𝕜 n G s) :
