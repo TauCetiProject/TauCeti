@@ -28,8 +28,10 @@ Clifford conjugation. On the even subalgebra the factors of `u` pair up to `u * 
 bivector `ι Q a * ι Q b` goes to `-(ι (-Q) a * ι (-Q) b)`; this is the sign of
 `CliffordAlgebra.evenToNeg`, and `CliffordAlgebra.equivNeg` restricts to that map on even
 elements. In particular, the complex isomorphism of `ℂ ⊗ V` restricts on the image of the real
-even subalgebra to the scalar extension of `CliffordAlgebra.evenEquivEvenNeg`. It does not come
-from any real isomorphism of the full algebras: odd elements pick up the factor `u`.
+even subalgebra to the scalar extension of `CliffordAlgebra.evenEquivEvenNeg`. For a nonzero real
+vector space it is not the scalar extension of any real isomorphism of the full algebras: it sends
+a nonzero real generator `ι Q m` to `i • ι (-Q) m`, which is not real. (When the vector space is
+zero, both algebras are the scalars and the isomorphism is the identity.)
 
 The target form is a parameter `Q'` with a proof of `Q' = -Q`, as for Mathlib's
 `CliffordAlgebra.evenToNeg`. This covers the inverse direction, and the base-changed form
