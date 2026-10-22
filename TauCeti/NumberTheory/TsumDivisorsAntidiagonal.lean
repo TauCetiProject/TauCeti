@@ -189,22 +189,22 @@ theorem hasSum_sum_divisors_mul_pow_sub (a b : ℕ → K) {C D : ℝ} {k l : ℕ
     (f g : K → K)
     (hf : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, a (d + 1) * r ^ (d + 1)) = f r)
     (hg : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, b (d + 1) * r ^ (d + 1)) = g r)
-    (hinv : ∀ r, f r⁻¹ = g r) (q u : Kˣ)
-    (hqu : ‖(q : K) * (u : K)‖ < 1) (hqui : ‖(q : K) * (u : K)⁻¹‖ < 1) :
+    (hinv : ∀ r, f r⁻¹ = g r) {q : K} (u : Kˣ)
+    (hqu : ‖q * (u : K)‖ < 1) (hqui : ‖q * (u : K)⁻¹‖ < 1) :
     HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors,
-        (a d * (u : K) ^ d + b d * (u : K)⁻¹ ^ d)) * (q : K) ^ n)
-      ((∑' n : ℤ, f ((q : K) ^ n * (u : K))) - f (u : K)) := by
+        (a d * (u : K) ^ d + b d * (u : K)⁻¹ ^ d)) * q ^ n)
+      ((∑' n : ℤ, f (q ^ n * (u : K))) - f (u : K)) := by
   have hq := norm_lt_one_of_norm_mul_lt_one_of_norm_mul_inv_lt_one u hqu hqui
-  have hneg (n : ℕ+) : f (((q : K) ^ (n : ℕ))⁻¹ * (u : K)) =
-      g ((q : K) ^ (n : ℕ) * (u : K)⁻¹) := by
-    simpa only [mul_inv, inv_inv] using hinv ((q : K) ^ (n : ℕ) * (u : K)⁻¹)
-  have hs : Summable (fun n : ℤ ↦ f ((q : K) ^ n * (u : K))) := by
+  have hneg (n : ℕ+) : f ((q ^ (n : ℕ))⁻¹ * (u : K)) =
+      g (q ^ (n : ℕ) * (u : K)⁻¹) := by
+    simpa only [mul_inv, inv_inv] using hinv (q ^ (n : ℕ) * (u : K)⁻¹)
+  have hs : Summable (fun n : ℤ ↦ f (q ^ n * (u : K))) := by
     apply Summable.of_nat_of_neg
     · simpa only [zpow_natCast] using
-        (summable_pnat_iff_summable_nat (f := fun n : ℕ ↦ f ((q : K) ^ n * (u : K)))).mp
+        (summable_pnat_iff_summable_nat (f := fun n : ℕ ↦ f (q ^ n * (u : K)))).mp
           (summable_apply_pow_pnat_mul_of_tsum_eq a ha hq hqu f hf)
     · apply (summable_pnat_iff_summable_nat
-        (f := fun n : ℕ ↦ f ((q : K) ^ (-(n : ℤ)) * (u : K)))).mp
+        (f := fun n : ℕ ↦ f (q ^ (-(n : ℤ)) * (u : K)))).mp
       simpa only [zpow_neg, zpow_natCast, hneg] using
         summable_apply_pow_pnat_mul_of_tsum_eq b hb hq hqui g hg
   have hp := hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow a ha hq hqu

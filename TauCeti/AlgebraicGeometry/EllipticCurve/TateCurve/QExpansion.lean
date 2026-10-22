@@ -23,9 +23,10 @@ of the nodal cubic. All remaining coefficients are finite divisor sums.
 
 These expansions cover the boundary of the fundamental annulus, which is not covered by
 geometric expansion in `u` and `q / u`: when `‖u‖ = 1`, the term at index zero must instead be
-kept as a rational function. They supply the analytic comparison needed to specialize formal
-identities in `q` at such parameters. No curve equation or uniformisation homomorphism is
-asserted here. At `u = 1` the rational terms retain the totalized field values.
+kept as a rational function. The unit-circle equation proof in
+`TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Equation` uses these expansions to compare
+the evaluated formal coordinates with the analytic coordinates. At `u = 1` the rational terms
+retain the totalized field values.
 
 ## Main results
 
@@ -68,7 +69,7 @@ theorem hasSum_tateUniformizationX_sub (q u : Kˣ)
     norm_natCast_le_mul_pow_one norm_natCast_le_mul_pow_one
     (fun r ↦ r / (1 - r) ^ 2) (fun r ↦ r / (1 - r) ^ 2)
     tsum_natCast_succ_mul_pow_succ tsum_natCast_succ_mul_pow_succ
-    (fun r ↦ inv_div_one_sub_inv_sq r) q u hqu hqui
+    (fun r ↦ inv_div_one_sub_inv_sq r) u hqu hqui
   have hs := (hasSum_sum_divisors_mul_pow norm_natCast_le_mul_pow_one hq).summable.hasSum
   convert ht.sub (hs.mul_left 2) using 1
   · funext n
@@ -124,7 +125,7 @@ theorem hasSum_tateUniformizationY_sub (q u : Kˣ)
     (fun d ↦ -((d + 1).choose 2 : K)) hp hm
     (fun r ↦ r ^ 2 / (1 - r) ^ 3) (fun r ↦ -r / (1 - r) ^ 3)
     tsum_choose_two_mul_pow_succ tsum_neg_choose_two_mul_pow_succ
-    (fun r ↦ inv_sq_div_one_sub_inv_cube r) q u hqu hqui
+    (fun r ↦ inv_sq_div_one_sub_inv_cube r) u hqu hqui
   have hs := (hasSum_sum_divisors_mul_pow norm_natCast_le_mul_pow_one hq).summable.hasSum
   convert ht.add hs using 1
   · funext n
