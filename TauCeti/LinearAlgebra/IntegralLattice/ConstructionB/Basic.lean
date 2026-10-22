@@ -43,7 +43,8 @@ Golay Construction A lattice from which the Leech lattice is obtained by gluing 
 * `TauCeti.ConstructionB.relIndex_lattice`: Construction B has index two in Construction A, and
   `mem_constructionA_lattice_iff` writes Construction A as Construction B and one coset.
 * `TauCeti.ConstructionB.integralLattice`: Construction B as an integral lattice, with
-  `discriminant_integralLattice` and `isEven_integralLattice`.
+  `discriminant_integralLattice` and `isEven_integralLattice`; Construction A lies in its dual
+  carrier by `constructionA_lattice_le_dualCarrier`.
 
 ## References
 
@@ -101,6 +102,11 @@ theorem intCast_mem_lattice (z : ι → ℤ) :
   refine and_congr Iff.rfl ⟨fun ⟨k, hk⟩ ↦ ⟨k, ?_⟩, fun ⟨k, hk⟩ ↦ ⟨k, ?_⟩⟩
   · exact_mod_cast hk
   · exact_mod_cast hk
+
+/-- A vector with a non-integer coordinate is not in Construction B. -/
+theorem notMem_lattice_of_ne_intCast {x : ι → ℚ} (i : ι) (hx : ∀ z : ℤ, x i ≠ z) :
+    x ∉ lattice C :=
+  fun h ↦ ConstructionA.notMem_lattice_of_ne_intCast 2 i hx (lattice_le C h)
 
 /-- The vector `2eᵢ` is not in Construction B: its coordinate sum is `2`. -/
 theorem single_two_notMem_lattice [DecidableEq ι] (i : ι) : Pi.single i 2 ∉ lattice C := by
@@ -262,17 +268,17 @@ theorem integralLattice_form (hC : C.IsSelfOrthogonal) :
     (integralLattice C hC).form = ConstructionA.form 2 := by
   rw [integralLattice, IntegralLattice.restrictFull_form, ConstructionA.integralLattice_form]
 
-/-- The vector `2eᵢ` pairs integrally with Construction B: the pairing reads off the `i`th
-coordinate. -/
-theorem single_two_mem_dualCarrier [DecidableEq ι] (hC : C.IsSelfOrthogonal) (i : ι) :
-    Pi.single i 2 ∈ (integralLattice C hC).dualCarrier := by
-  rw [IntegralLattice.dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
+/-- **Construction A pairs integrally with Construction B**, for a self-orthogonal code:
+Construction A is integral and contains Construction B. -/
+theorem constructionA_lattice_le_dualCarrier (hC : C.IsSelfOrthogonal) :
+    ConstructionA.lattice 2 C.toAddSubgroup ≤ (integralLattice C hC).dualCarrier := by
   intro x hx
-  rw [integralLattice_carrier] at hx
-  obtain ⟨z, hz⟩ := ConstructionA.exists_intCast_eq_of_mem_lattice 2 (lattice_le C hx) i
-  refine Submodule.mem_one.mpr ⟨z, ?_⟩
-  rw [(integralLattice C hC).isSymm.eq, integralLattice_form]
-  simpa using hz.symm
+  rw [IntegralLattice.dualCarrier, integralLattice_form, LinearMap.BilinForm.mem_dualSubmodule]
+  intro y hy
+  rw [integralLattice_carrier] at hy
+  exact (ConstructionA.lattice_le_dualSubmodule_iff 2 _).mpr
+    ((ConstructionA.toZModSubmodule_toAddSubgroup_le_euclideanDual_iff 2 C).mpr hC) hx y
+    (lattice_le C hy)
 
 /-- Construction B is nondegenerate, since its form is that of Construction A. -/
 instance isNondegenerate_integralLattice (hC : C.IsSelfOrthogonal) :

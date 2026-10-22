@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionB.Golay
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 
+import TauCeti.Algebra.Group.Subgroup.ZPowers
+
 /-!
 # The Leech lattice from Construction B and an odd shift
 
@@ -98,25 +100,23 @@ theorem constructionBLattice_form_leechShift_self :
   rw [constructionBLattice_form_leechShift, sum_leechShift, leechShift_zero]
   norm_num
 
-/-- A vector with a coordinate `1/2` does not lie in the Golay Construction B lattice, whose
-vectors are integral. -/
-private theorem notMem_constructionBLattice_carrier_of_eq_half {x : Fin 24 → ℚ} (i : Fin 24)
-    (hx : x i = 1 / 2) : x ∉ constructionBLattice.carrier := by
-  rw [constructionBLattice_carrier]
+/-- The rational `1/2` is not an integer. -/
+private theorem half_ne_intCast (z : ℤ) : (1 / 2 : ℚ) ≠ z := by
   intro h
-  obtain ⟨z, hz⟩ :=
-    ConstructionA.exists_intCast_eq_of_mem_lattice 2 (ConstructionB.lattice_le _ h) i
   have h2 : ((2 * z : ℤ) : ℚ) = 1 := by
     push_cast
-    rw [← hz, hx]
+    rw [← h]
     norm_num
   have h2' : 2 * z = 1 := by exact_mod_cast h2
   omega
 
 /-- The odd shift is not a vector of the Golay Construction B lattice. -/
 theorem leechShift_notMem_constructionBLattice_carrier :
-    leechShift ∉ constructionBLattice.carrier :=
-  notMem_constructionBLattice_carrier_of_eq_half 1 (leechShift_of_ne_zero (by decide))
+    leechShift ∉ constructionBLattice.carrier := by
+  rw [constructionBLattice_carrier]
+  refine ConstructionB.notMem_lattice_of_ne_intCast _ 1 ?_
+  rw [leechShift_of_ne_zero (by decide)]
+  exact half_ne_intCast
 
 /-- Twice the odd shift, `(-3, 1, …, 1)`, is a vector of the Golay Construction B lattice: it
 reduces to the all-ones Golay word and has coordinate sum `20`. -/
@@ -152,7 +152,8 @@ theorem leechShift_mem_dualCarrier : leechShift ∈ constructionBLattice.dualCar
 off the distinguished coordinate. -/
 theorem single_zero_two_mem_constructionBLattice_dualCarrier :
     Pi.single 0 2 ∈ constructionBLattice.dualCarrier := by
-  have h := ConstructionB.single_two_mem_dualCarrier code isDoublyEven_code.isSelfOrthogonal 0
+  have h := ConstructionB.constructionA_lattice_le_dualCarrier code
+    isDoublyEven_code.isSelfOrthogonal (by simpa using ConstructionA.single_mem_lattice 2 _ 0)
   rwa [IntegralLattice.dualCarrier, ConstructionB.integralLattice_carrier,
     ConstructionB.integralLattice_form, ← constructionBLattice_carrier,
     ← constructionBLattice_form] at h
@@ -207,9 +208,10 @@ theorem golayConstructionAClass_ne_zero : golayConstructionAClass ≠ 0 := by
 /-- The class of the odd shift differs from the class of `2e_∞`. -/
 theorem leechShiftClass_ne_golayConstructionAClass :
     leechShiftClass ≠ golayConstructionAClass := by
-  rw [leechShiftClass_def, golayConstructionAClass_def, Ne, discriminantGroup_mk_eq_iff]
-  refine notMem_constructionBLattice_carrier_of_eq_half 1 ?_
-  simp
+  rw [leechShiftClass_def, golayConstructionAClass_def, Ne, discriminantGroup_mk_eq_iff,
+    constructionBLattice_carrier]
+  refine ConstructionB.notMem_lattice_of_ne_intCast _ 1 ?_
+  simpa using half_ne_intCast
 
 /-- The sum of the classes of `s` and `2e_∞` is represented by the all-halves vector. -/
 theorem leechShiftClass_add_golayConstructionAClass :
@@ -222,8 +224,9 @@ theorem leechShiftClass_add_golayConstructionAClass :
 /-- The sum of the classes of `s` and `2e_∞` is nonzero. -/
 theorem leechShiftClass_add_golayConstructionAClass_ne_zero :
     leechShiftClass + golayConstructionAClass ≠ 0 := by
-  rw [leechShiftClass_add_golayConstructionAClass, Ne, discriminantGroup_mk_eq_zero_iff]
-  exact notMem_constructionBLattice_carrier_of_eq_half 0 rfl
+  rw [leechShiftClass_add_golayConstructionAClass, Ne, discriminantGroup_mk_eq_zero_iff,
+    constructionBLattice_carrier]
+  exact ConstructionB.notMem_lattice_of_ne_intCast _ 0 half_ne_intCast
 
 /-- **The discriminant group of the Golay Construction B lattice** consists of exactly four
 classes: `0`, the class of `2e_∞`, the class of the odd shift, and their sum. -/
@@ -300,18 +303,8 @@ theorem addOrderOf_leechShiftClass : addOrderOf leechShiftClass = 2 :=
 
 /-- The glue subgroup consists of zero and the class of the odd shift. -/
 theorem mem_leechShiftSubgroup_iff (g : constructionBLattice.DiscriminantGroup) :
-    g ∈ leechShiftSubgroup ↔ g = 0 ∨ g = leechShiftClass := by
-  classical
-  rw [leechShiftSubgroup,
-    (isOfFinAddOrder_of_finite _).mem_zmultiples_iff_mem_range_addOrderOf,
-    addOrderOf_leechShiftClass, Finset.mem_image]
-  constructor
-  · rintro ⟨a, ha, rfl⟩
-    rw [Finset.mem_range] at ha
-    interval_cases a <;> simp
-  · rintro (rfl | rfl)
-    · exact ⟨0, by simp, zero_nsmul _⟩
-    · exact ⟨1, by simp, one_nsmul _⟩
+    g ∈ leechShiftSubgroup ↔ g = 0 ∨ g = leechShiftClass :=
+  AddSubgroup.mem_zmultiples_iff_of_two_nsmul_eq_zero two_nsmul_leechShiftClass
 
 /-- The glue subgroup has order two. -/
 @[simp]

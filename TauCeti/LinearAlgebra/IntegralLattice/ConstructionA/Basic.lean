@@ -71,6 +71,12 @@ theorem exists_intCast_eq_of_mem_lattice {C : AddSubgroup (ι → ZMod m)} {x : 
   obtain ⟨w, -, rfl⟩ := (mem_lattice m).mp hx
   exact ⟨w i, rfl⟩
 
+/-- A vector with a non-integer coordinate is not in Construction A. -/
+theorem notMem_lattice_of_ne_intCast {C : AddSubgroup (ι → ZMod m)} {x : ι → ℚ} (i : ι)
+    (hx : ∀ z : ℤ, x i ≠ z) : x ∉ lattice m C := fun h ↦
+  let ⟨z, hz⟩ := exists_intCast_eq_of_mem_lattice m h i
+  hx z hz
+
 /-- An integer vector belongs to Construction A exactly when its reduction is a codeword. -/
 @[simp]
 theorem intCast_mem_lattice {C : AddSubgroup (ι → ZMod m)} (z : ι → ℤ) :
