@@ -7,11 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-public import TauCeti.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # Integration in polar coordinates
@@ -55,10 +51,6 @@ the Laplacian.
   polar coordinates, and the corresponding formula for the measure of the ball.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
-* `TauCeti.toSphere_volume_apply_univ`: on a real inner product space of dimension `d`, the
-  total surface measure of the unit sphere is `2 π ^ (d / 2) / Γ (d / 2)`.
-* `TauCeti.measurable_normalize`, `TauCeti.measurable_sphereDirection`: normalization and the
-  direction map `TauCeti.sphereDirection e` to the unit sphere are measurable.
 -/
 
 public section
@@ -343,63 +335,3 @@ theorem map_toSphere (f : E ≃ₗᵢ[ℝ] F) (μ : Measure E) :
 end Isometry
 
 end LinearIsometryEquiv
-
-namespace TauCeti
-
-open MeasureTheory Metric Set
-
-section InnerProductSpace
-
-open Module
-open scoped Real
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-
-/-- **The surface area of the unit sphere.** In a real inner product space of dimension `d`, the
-total surface measure of the unit sphere is `2 π ^ (d / 2) / Γ (d / 2)`. In dimension zero the
-sphere is empty, and both sides vanish since `Γ 0 = 0`. -/
-theorem toSphere_volume_apply_univ :
-    (volume : Measure E).toSphere univ =
-      ENNReal.ofReal (2 * π ^ ((finrank ℝ E : ℝ) / 2) / Real.Gamma ((finrank ℝ E : ℝ) / 2)) := by
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · simp [(Measure.toSphere_eq_zero_iff _).2 hE, finrank_zero_of_subsingleton]
-  have hd₀ : (0 : ℝ) < finrank ℝ E := Nat.cast_pos.2 finrank_pos
-  have hd : (0 : ℝ) < finrank ℝ E / 2 := by positivity
-  have hπ : √π ^ finrank ℝ E = π ^ ((finrank ℝ E : ℝ) / 2) := by
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul Real.pi_pos.le]
-    ring_nf
-  rw [Measure.toSphere_apply_univ, InnerProductSpace.volume_ball, Real.Gamma_add_one hd.ne', hπ]
-  simp only [ENNReal.ofReal_one, one_pow, one_mul]
-  rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg _)]
-  congr 1
-  field_simp
-
-end InnerProductSpace
-
-section Direction
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-
-/-- Normalization `x ↦ ‖x‖⁻¹ • x` is measurable. -/
-@[fun_prop]
-theorem measurable_normalize : Measurable (NormedSpace.normalize : E → E) := by
-  unfold NormedSpace.normalize
-  fun_prop
-
-/-- The direction map is measurable. -/
-@[fun_prop]
-theorem measurable_sphereDirection (e : sphere (0 : E) 1) : Measurable (sphereDirection e) := by
-  classical
-  have h : ((↑) ∘ sphereDirection e : E → E) =
-      fun x ↦ if x = 0 then ↑e else NormedSpace.normalize x := by
-    ext1 x
-    split_ifs with hx
-    · simp [hx]
-    · exact coe_sphereDirection_of_ne_zero e hx
-  rw [← (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).measurable_comp_iff, h]
-  exact Measurable.ite (measurableSet_singleton 0) measurable_const measurable_normalize
-
-end Direction
-
-end TauCeti

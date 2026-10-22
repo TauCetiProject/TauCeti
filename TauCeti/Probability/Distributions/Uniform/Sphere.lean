@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize.Measurable
+public import TauCeti.Geometry.Euclidean.Volume.Sphere
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 public import TauCeti.Probability.Distributions.Chi.Gaussian
 public import TauCeti.Probability.Distributions.Gaussian.Density
@@ -191,7 +192,7 @@ theorem map_sphereDirection_prod_norm_withDensity (e : sphere (0 : E) 1) {φ : �
       s.indicator (fun _ ↦ ENNReal.ofReal (r ^ (Module.finrank ℝ E - 1)) * t.indicator φ r) u)]
     · by_cases hu : u ∈ s <;> simp [hu, K]
     · intro r hr
-      have hr : 0 < r := hr
+      have hr : 0 < r := mem_Ioi.1 hr
       have hnr : ‖r • (u : E)‖ = r := by simp [norm_smul, Real.norm_of_nonneg hr.le]
       have hΦr : Φ (r • (u : E)) = (u, r) := by simp [Φ, sphereDirection_smul_of_pos e hr, hnr]
       by_cases hu : u ∈ s <;> by_cases ht : r ∈ t <;> simp [hΦr, hnr, hu, ht]
@@ -221,19 +222,8 @@ theorem stdGaussian_map_sphereDirection_prod_norm (e : sphere (0 : E) 1) :
   set φ : ℝ → ℝ≥0∞ := fun r ↦
     ENNReal.ofReal ((2 * Real.pi) ^ (-(d : ℝ) / 2) * Real.exp (-r ^ 2 / 2))
   have hφ : Measurable φ := by fun_prop
-  -- Transport the isotropic density of the Euclidean standard Gaussian along an orthonormal basis.
-  have hG : stdGaussian E = (volume : Measure E).withDensity fun x ↦ φ ‖x‖ := by
-    let b := (stdOrthonormalBasis ℝ E).repr
-    have hvol : (volume : Measure (EuclideanSpace ℝ (Fin d))).map b.symm = volume :=
-      b.symm.measurePreserving.map_eq
-    have htransport : ∀ g : EuclideanSpace ℝ (Fin d) → ℝ≥0∞,
-        ((volume : Measure (EuclideanSpace ℝ (Fin d))).withDensity g).map b.symm =
-          (volume : Measure E).withDensity fun x ↦ g (b x) := fun g ↦ by
-      simpa [hvol] using b.symm.toMeasurableEquiv.map_withDensity volume g
-    rw [← stdGaussian_map b.symm, stdGaussian_eq_withDensity, htransport]
-    congr 1
-    funext x
-    simp [φ, d]
+  have hG : stdGaussian E = (volume : Measure E).withDensity fun x ↦ φ ‖x‖ :=
+    stdGaussian_eq_withDensity_norm E
   have : IsFiniteMeasure ((volume : Measure E).withDensity fun x ↦ φ ‖x‖) := hG ▸ inferInstance
   rw [← stdGaussian_map_norm E, hG]
   exact map_sphereDirection_prod_norm_withDensity e hφ
