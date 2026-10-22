@@ -34,8 +34,9 @@ the analytic realization of the same fan with `ι → ℂ` through the character
 * `TauCeti.Toric.Fan.affineSpaceAlgebraicIso`: the toric scheme of the fan of affine space is
   isomorphic to `𝔸(ι; Spec ℂ)`, by an isomorphism over `Spec ℂ`
   (`TauCeti.Toric.Fan.isOver_affineSpaceAlgebraicIso_hom`).
-* `TauCeti.Toric.Fan.affineSpaceAlgebraicIso_hom_appTop_coord`: the coordinate `j` of
-  `𝔸(ι; Spec ℂ)` pulls back to the monomial of `b.coord j` on the chart of the orthant.
+* `TauCeti.Toric.Fan.affineToricChartι_comp_affineSpaceAlgebraicIso_hom_appTop_coord`: the
+  coordinate `j` of `𝔸(ι; Spec ℂ)` pulls back to the monomial of `b.coord j` on the chart of the
+  orthant.
 
 ## References
 
@@ -139,10 +140,7 @@ theorem affineToricChartι_comp_affineSpaceAlgebraicIso_hom :
         (affineSpaceAlgebraicIso b hi).hom =
       Spec.map (CommRingCat.ofHom (affineSpaceCoordinateRingEquiv b hi).symm.toRingHom) ≫
         (AffineSpace.SpecIso ι (.of ℂ)).inv := by
-  simp only [affineSpaceAlgebraicIso, Iso.trans_hom, Iso.symm_hom, asIso_inv,
-    IsIso.hom_inv_id_assoc, Functor.mapIso_hom, Iso.op_hom, Scheme.Spec_map,
-    Quiver.Hom.unop_op, RingEquiv.toCommRingCatIso_inv, AlgEquiv.toRingEquiv_symm,
-    RingEquiv.toRingHom_eq_coe]
+  simp [affineSpaceAlgebraicIso]
 
 /-- The identification of the toric scheme of the fan of affine space with `𝔸(ι; Spec ℂ)` is a
 morphism over `Spec ℂ`. -/
@@ -158,16 +156,19 @@ instance isOver_affineSpaceAlgebraicIso_hom :
 
 /-- On the chart of the orthant, the coordinate `j` of `𝔸(ι; Spec ℂ)` is the monomial of the
 coordinate character `b.coord j`. -/
-theorem affineSpaceAlgebraicIso_hom_appTop_coord (j : ι) :
+theorem affineToricChartι_comp_affineSpaceAlgebraicIso_hom_appTop_coord (j : ι) :
     ((affineSpace b hi).affineToricChartι (affineSpaceMaximalCone b hi) ≫
         (affineSpaceAlgebraicIso b hi).hom).appTop (AffineSpace.coord _ j) =
       (Scheme.ΓSpecIso _).inv (MonoidAlgebra.single
         (ofAdd ⟨(b.coord j).toAddMonoidHom,
           coord_mem_dualSemigroup_affineSpace b hi j (affineSpaceMaximalCone b hi)⟩) 1) := by
   rw [affineToricChartι_comp_affineSpaceAlgebraicIso_hom, Scheme.Hom.comp_appTop,
-    CommRingCat.comp_apply, AffineSpace.SpecIso_inv_appTop_coord, ← CommRingCat.comp_apply,
-    ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.comp_apply]
-  exact congrArg _ (affineSpaceCoordinateRingEquiv_symm_X b hi j)
+    CommRingCat.comp_apply, AffineSpace.SpecIso_inv_appTop_coord,
+    ← affineSpaceCoordinateRingEquiv_symm_X]
+  -- Naturality of `Scheme.ΓSpecIso` for the polynomial coordinate ring map, evaluated at `X j`.
+  exact (ConcreteCategory.congr_hom (Scheme.ΓSpecIso_inv_naturality
+    (CommRingCat.ofHom (affineSpaceCoordinateRingEquiv b hi).symm.toRingHom))
+    (MvPolynomial.X j)).symm
 
 end Scheme
 

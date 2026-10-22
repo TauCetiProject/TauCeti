@@ -180,9 +180,10 @@ theorem contMDiff_affineSpaceHomeomorph_symm (n : ℕ∞ω) :
   rw [Function.comp_apply, Function.comp_apply, analyticOfConeDiffeomorph_apply,
     affineSpaceHomeomorph_symm_apply, ← Diffeomorph.coe_toHomeomorph_symm,
     projectiveSpacePointDiffeomorph_toHomeomorph]
-  -- Closes definitionally: `affineSpace` and `orthant` are abbrevs for `ofCone` and its maximal
-  -- cone, and `orthantCoordinates` is `projectiveSpacePointHomeomorph b hi none g`, whose inverse
-  -- has the same underlying function under `affinePointTopology g` as under the chart topology.
+  -- Closes definitionally: `affineSpace` and `affineSpaceMaximalCone` are abbrevs for `ofCone`
+  -- and its maximal cone, and `orthantCoordinates` is `projectiveSpacePointHomeomorph b hi none g`,
+  -- whose inverse has the same underlying function under `affinePointTopology g` as under the
+  -- chart topology.
   rfl
 
 /-- The analytic realization of the fan of affine space is biholomorphic to `ι → ℂ`, for the
