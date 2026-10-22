@@ -401,28 +401,6 @@ private theorem contDiffAt_coord {m : ℕ∞ω} [IsManifold I m M]
     (IsManifold.chart_mem_maximalAtlas (I := I) (n := m) _) hw').1
     (hfm _ (zeroHomeomorph I f c w).2)) contDiffAt_const
 
-/-- A regular level `f⁻¹(c)` of a function which is `C^m` near the level, with `m ≥ 1`, is a
-`C^m` manifold of dimension `dim E - 1` for its preferred atlas. -/
-theorem isManifold_scalarRegularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
-    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) m f x) (hreg : IsRegularValue I 𝓘(ℝ) f c) :
-    letI := scalarRegularLevelChartedSpace (fun x hx ↦ (hfm x hx).of_le hm) hreg
-    IsManifold 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) m {x : M // f x = c} := by
-  have hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x := fun x hx ↦ (hfm x hx).of_le hm
-  let := scalarRegularLevelChartedSpace hf hreg
-  refine isManifold_of_contDiffOn _ _ _ fun χ χ' hχ hχ' ↦ ?_
-  rw [scalarRegularLevelChartedSpace_atlas] at hχ hχ'
-  obtain ⟨x, rfl⟩ := hχ
-  obtain ⟨x', rfl⟩ := hχ'
-  have htrans := contDiffOn_sectionZeroChartAt_trans (hasStrictFDerivAt_coord hf)
-    isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg)
-    (contDiffAt_coord hf hreg hfm) ((zeroHomeomorph I f c).symm x)
-    ((zeroHomeomorph I f c).symm x')
-  simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Set.range_id,
-    Set.inter_univ, Set.preimage_id, Function.comp_id, Function.id_comp]
-  -- The transport along the level homeomorphism cancels in each chart transition.
-  rwa [scalarRegularLevelChartAt, scalarRegularLevelChartAt,
-    Homeomorph.transOpenPartialHomeomorph_symm_trans]
-
 /-! ### The level as a submanifold -/
 
 /-- The section-zero atlas of `f - c` on the zero set in the self-modelled copy. -/
@@ -450,6 +428,21 @@ private theorem scalarRegularLevelChartedSpace_eq_pullbackChartedSpace :
     refine (scalarRegularLevelChartedSpace_chartAt hf hreg x).trans
       (Eq.trans ?_ (Homeomorph.pullbackChartedSpace_chartAt _ x).symm)
     rw [sectionZeroChartedSpace_chartAt, scalarRegularLevelChartAt]
+
+/-- A regular level `f⁻¹(c)` of a function which is `C^m` near the level, with `m ≥ 1`, is a
+`C^m` manifold of dimension `dim E - 1` for its preferred atlas. -/
+theorem isManifold_scalarRegularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
+    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) m f x) (hreg : IsRegularValue I 𝓘(ℝ) f c) :
+    letI := scalarRegularLevelChartedSpace (fun x hx ↦ (hfm x hx).of_le hm) hreg
+    IsManifold 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) m {x : M // f x = c} := by
+  have hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x := fun x hx ↦ (hfm x hx).of_le hm
+  let := zeroChartedSpace hf hreg
+  have := isManifold_sectionZero (hasStrictFDerivAt_coord hf)
+    isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg)
+    (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt ℝ (Bundle.Trivial ℝ ℝ) _)
+    (contDiffAt_coord hf hreg hfm)
+  rw [scalarRegularLevelChartedSpace_eq_pullbackChartedSpace]
+  exact (zeroHomeomorph I f c).symm.pullback_isManifold _ m
 
 /-- **The inclusion of a regular level is an immersion with complement `ℝ`.** For the preferred
 atlas `TauCeti.scalarRegularLevelChartedSpace`, the inclusion of a regular level `f⁻¹(c)` of a
