@@ -87,13 +87,13 @@ noncomputable def signedUnblockedDifferential :
 
 /-- The `y`-coefficient of the signed differential of the generator `x` is the signed matrix
 coefficient. -/
-@[simp]
 theorem signedUnblockedDifferential_single_apply (x y : GridState n) :
     G.signedUnblockedDifferential S R (Finsupp.single x 1) y =
       G.signedUnblockedCoefficient S R x y := by
   simp [signedUnblockedDifferential]
 
 /-- The coefficient formula for the signed differential on an arbitrary chain. -/
+@[simp]
 theorem signedUnblockedDifferential_apply_apply (c : GridChainMinus R n) (y : GridState n) :
     G.signedUnblockedDifferential S R c y =
       c.sum fun x a => a * G.signedUnblockedCoefficient S R x y := by
