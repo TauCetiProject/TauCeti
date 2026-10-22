@@ -30,7 +30,7 @@ public section
 
 namespace TauCeti.Huber
 
-open Filter MvPowerSeries
+open Filter _root_.MvPowerSeries
 open scoped Topology
 
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R]

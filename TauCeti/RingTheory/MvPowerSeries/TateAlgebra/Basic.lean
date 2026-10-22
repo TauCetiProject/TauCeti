@@ -35,7 +35,7 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 
 * `MvPowerSeries.norm_eq_gaussNorm`: the norm is the Gauss norm at the chosen polyradii.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
-* `TauCeti.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound gives
+* `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound gives
   the same Gauss-norm bound, even across different coefficient rings.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
@@ -519,7 +519,7 @@ end NormedField
 
 end MvPowerSeries
 
-namespace TauCeti
+namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries
 
@@ -541,4 +541,4 @@ theorem norm_le_mul_of_norm_coeff_le {σ R S : Type*}
       rw [mul_assoc]
       exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le g t) hK
 
-end TauCeti
+end TauCeti.MvPowerSeries

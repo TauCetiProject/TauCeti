@@ -47,29 +47,35 @@ theorem exists_restrictedMap_eq_and_norm_le {L : ℝ} (hL : 0 ≤ L)
   exact ⟨f, hf, norm_le_mul_of_norm_coeff_le hL hcoeff⟩
 
 /-- Uniformly bounded coefficient lifts make the induced map of restricted series open. -/
-theorem isOpenMap_restrictedMap {L : ℝ} (hL : 0 < L)
+theorem isOpenMap_restrictedMap {L : ℝ}
     (hlift : ∀ b, ∃ a, φ a = b ∧ ‖a‖ ≤ L * ‖b‖) :
     IsOpenMap (restrictedMap (c := c) φ hφ) := by
+  let K := max L 1
+  have hK : 0 < K := lt_max_of_lt_right one_pos
+  have hlift' : ∀ b, ∃ a, φ a = b ∧ ‖a‖ ≤ K * ‖b‖ := by
+    intro b
+    obtain ⟨a, ha, hnorm⟩ := hlift b
+    exact ⟨a, ha, hnorm.trans (mul_le_mul_of_nonneg_right (le_max_left L 1) (norm_nonneg b))⟩
   apply IsTopologicalAddGroup.isOpenMap_iff_nhds_zero.mpr
   refine (Metric.nhds_basis_ball.le_basis_iff
     (Metric.nhds_basis_ball.map (restrictedMap φ hφ))).mpr ?_
   intro ε hε
-  refine ⟨ε / L, div_pos hε hL, ?_⟩
+  refine ⟨ε / K, div_pos hε hK, ?_⟩
   intro g hg
-  obtain ⟨f, hf, hfn⟩ := exists_restrictedMap_eq_and_norm_le φ hφ hL.le hlift g
+  obtain ⟨f, hf, hfn⟩ := exists_restrictedMap_eq_and_norm_le φ hφ hK.le hlift' g
   refine ⟨f, ?_, hf⟩
-  have hg' : ‖g‖ < ε / L := by
+  have hg' : ‖g‖ < ε / K := by
     simpa only [Metric.mem_ball, dist_zero_right] using hg
   have hf' : ‖f‖ < ε := hfn.trans_lt <| by
-    simpa only [mul_comm] using (lt_div_iff₀ hL).mp hg'
+    simpa only [mul_comm] using (lt_div_iff₀ hK).mp hg'
   simpa only [Metric.mem_ball, dist_zero_right] using hf'
 
 /-- A bounded coefficient homomorphism with uniformly bounded lifts induces a quotient map
 for the Gauss norm topologies at arbitrary positive polyradii. -/
-theorem isQuotientMap_restrictedMap {L : ℝ} (hL : 0 < L)
+theorem isQuotientMap_restrictedMap {L : ℝ}
     (hlift : ∀ b, ∃ a, φ a = b ∧ ‖a‖ ≤ L * ‖b‖) :
     Topology.IsQuotientMap (restrictedMap (c := c) φ hφ) :=
-  (isOpenMap_restrictedMap φ hφ hL hlift).isQuotientMap
+  (isOpenMap_restrictedMap φ hφ hlift).isQuotientMap
     (continuous_restrictedMap φ hφ) (restrictedMap_surjective φ hφ hlift)
 
 end TauCeti.MvPowerSeries
