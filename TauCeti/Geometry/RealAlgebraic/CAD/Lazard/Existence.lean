@@ -100,19 +100,12 @@ theorem exists_isCAD_lazardValuationReindex_eq (F : Finset (MvPolynomial (Fin n)
         (fun f : A ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm f.1))
         ((fun x ↦ x ∘ Fin.revPerm.symm.symm) ⁻¹' C)) := by
       obtain ⟨d, hd⟩ := ha C hC
-      have himage : (fun x ↦ x ∘ Fin.revPerm.symm.symm) ⁻¹' C =
-          (fun x ↦ x ∘ Fin.revPerm.symm) '' C := by
-        ext x
-        simp only [mem_preimage, mem_image]
-        refine ⟨fun hx ↦ ⟨_, hx, ?_⟩, ?_⟩
-        · rw [Function.comp_assoc, Equiv.symm_comp_self, Function.comp_id]
-        · rintro ⟨y, hy, rfl⟩
-          rwa [Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id]
-      refine nonempty_lazardDelineation_of_lazardProjection hB (hd.preimage_comp_equiv _) ?_
+      -- Permuting coordinates is a homeomorphism, so the reordered cell stays preconnected.
+      have hpre := (Homeomorph.piCongrLeft (Y := fun _ : Fin n ↦ ℝ)
+        Fin.revPerm.symm.symm).symm.isPreconnected_preimage.2 (h𝓓.isConnected hC).isPreconnected
+      rw [Homeomorph.piCongrLeft_symm_apply] at hpre
+      exact nonempty_lazardDelineation_of_lazardProjection hB (hd.preimage_comp_equiv _) hpre
         fun q hq ↦ hproj q hq C hC
-      rw [himage]
-      exact (h𝓓.isConnected hC).isPreconnected.image _
-        (continuous_pi fun i ↦ continuous_apply _).continuousOn
     obtain ⟨𝓒, h𝓒, -, h𝓒a, h𝓒v⟩ :=
       h𝓓.exists_isCAD_lazardValuation_eq_of_lazardDelineation_reindex Fin.revPerm.symm ha hD
     -- Undoing the presentation, the delineated members are the members with reversed coordinates.

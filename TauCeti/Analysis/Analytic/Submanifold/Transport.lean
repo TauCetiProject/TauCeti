@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Analytic.Submanifold.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
-import Mathlib.Topology.Algebra.Module.Equiv.Pi
+import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Analytic changes of ambient coordinates
@@ -68,13 +68,16 @@ theorem IsAnalyticSubmanifold.preimage (hS : IsAnalyticSubmanifold d S)
 /-- Permuting the ambient coordinates preserves analytic submanifolds and their dimension. -/
 theorem IsAnalyticSubmanifold.preimage_comp_equiv (hS : IsAnalyticSubmanifold d S)
     (e : Fin n ≃ Fin n) : IsAnalyticSubmanifold d ((fun x ↦ x ∘ e) ⁻¹' S) := by
-  let L := ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜) e.symm
-  have hL (x : Fin n → 𝕜) : L x = x ∘ e := by
-    ext i
-    simp [L, ContinuousLinearEquiv.piCongrLeft, Equiv.piCongrLeft_apply]
-  convert hS.preimage L.toHomeomorph (fun x _ ↦ L.analyticAt x)
-    (fun x _ ↦ L.symm.analyticAt x) using 1
-  ext x
-  simp only [mem_preimage, ContinuousLinearEquiv.coe_toHomeomorph, hL]
+  -- Precomposition with a permutation of coordinates is continuous linear, hence analytic.
+  have ha (σ : Fin n ≃ Fin n) : AnalyticOnNhd 𝕜 (fun x : Fin n → 𝕜 ↦ x ∘ σ) univ := fun x _ ↦
+    (ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.proj (σ i) :
+      (Fin n → 𝕜) →L[𝕜] Fin n → 𝕜).analyticAt x
+  let h := (Homeomorph.piCongrLeft (Y := fun _ : Fin n ↦ 𝕜) e).symm
+  have hh : ⇑h = fun x ↦ x ∘ e := Homeomorph.piCongrLeft_symm_apply e
+  have hh' : ⇑h.symm = fun x ↦ x ∘ e.symm := funext fun x ↦
+    h.symm_apply_eq.2 <| by
+      simp only [hh, Function.comp_assoc, Equiv.symm_comp_self, Function.comp_id]
+  rw [← hh]
+  exact hS.preimage h (hh ▸ ha e) (hh' ▸ ha e.symm)
 
 end TauCeti
