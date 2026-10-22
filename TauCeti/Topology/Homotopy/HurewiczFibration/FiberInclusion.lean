@@ -205,8 +205,9 @@ theorem loopSection_comp_loop_homotopicWith (hp : IsHurewiczFibration.{v} p)
         ((loop p e₀).continuous.comp continuous_fst))).snd.eval
         (continuous_symm.comp continuous_snd)⟩
   let α' : C(FiberInclusionPathFiber p e₀ × I, E) := ⟨fun y ↦ y.1.val.2 (σ y.2), by fun_prop⟩
-  have hα : ∀ y t, p (α (y, t)) = γ (y, t) := fun y t ↦
-    congrArg (· (σ t)) (loop_loopSection e₀ hp (loop p e₀ y))
+  have hα : ∀ y t, p (α (y, t)) = γ (y, t) := fun y t ↦ by
+    simpa only [α, γ, ContinuousMap.coe_mk, loop_apply] using
+      congrArg (· (σ t)) (loop_loopSection e₀ hp (loop p e₀ y))
   have h₀ : ∀ y, α (y, 0) = α' (y, 0) := fun y ↦ by
     simp [α, α', (loopSection e₀ hp _).property.2, y.property.2]
   obtain ⟨G, hG₀, hG₁, hG, hpG⟩ :=
