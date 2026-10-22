@@ -343,6 +343,17 @@ theorem mem_vertexSet_connectedComponentOf_self {x : α} (hx : x ∈ V(G)) :
     x ∈ V((G.connectedComponentOf x hx).1) :=
   (mem_vertexSet_connectedComponentOf_iff hx).mpr (Reachable.refl hx)
 
+/-- Two vertices have the same connected component exactly when they are reachable from each
+other. -/
+@[simp]
+theorem connectedComponentOf_eq_connectedComponentOf_iff {x y : α} (hx : x ∈ V(G))
+    (hy : y ∈ V(G)) :
+    G.connectedComponentOf x hx = G.connectedComponentOf y hy ↔ G.Reachable x y := by
+  rw [← G.connectedComponentEquiv.injective.eq_iff, connectedComponentEquiv_apply,
+    connectedComponentEquiv_apply, ConnectedComponent.toSimple_connectedComponentOf,
+    ConnectedComponent.toSimple_connectedComponentOf, SimpleGraph.ConnectedComponent.eq,
+    toSimpleGraph_reachable_iff]
+
 /-- A connected-component subgraph is the component of each of its vertices. -/
 theorem ConnectedComponent.eq_connectedComponentOf {C : G.ConnectedComponent} {x : α}
     (hx : x ∈ V(C.1)) : C = G.connectedComponentOf x (C.property.le.vertexSet_mono hx) :=
