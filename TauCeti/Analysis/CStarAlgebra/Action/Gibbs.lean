@@ -9,8 +9,9 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Analysis.CStarAlgebra.Action.Inner
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS
-public import TauCeti.Analysis.Matrix.Exponential
 public import TauCeti.LinearAlgebra.Matrix.Trace.Duality
+import TauCeti.Analysis.Normed.Algebra.Exponential
+import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 
 /-!
@@ -100,7 +101,7 @@ theorem Matrix.IsHermitian.isKMSState_gibbsState (hK : K.IsHermitian) (β : ℝ)
             (a * (NormedSpace.exp (-((β : ℂ) • K)) * b)) *
             NormedSpace.exp ((β : ℂ) • K)).trace := by simp only [Matrix.mul_assoc]
       _ = (a * (NormedSpace.exp (-((β : ℂ) • K)) * b)).trace :=
-          trace_exp_neg_smul_mul_exp_smul K (β : ℂ) _
+          Matrix.trace_exp_neg_mul_exp (A := (β : ℂ) • K) _
       _ = (NormedSpace.exp (-((β : ℂ) • K)) * (b * a)).trace := by
           rw [Matrix.trace_mul_comm a (NormedSpace.exp (-((β : ℂ) • K)) * b), Matrix.mul_assoc]
 
@@ -124,7 +125,7 @@ theorem Matrix.IsHermitian.isKMSState_iff_eq_gibbsState (hK : K.IsHermitian) (β
     -- read the real scalars as complex ones, then cancel the weights in the middle
     simp only [neg_smul] at h
     rw [← Complex.coe_smul] at h
-    simp only [Matrix.mul_assoc, exp_smul_mul_exp_neg_smul_mul] at h
+    simp only [Matrix.mul_assoc, Matrix.exp_mul_exp_neg_mul] at h
     -- cycle the exponential weight to the end of each product and read off `h`
     simp only [Matrix.mul_assoc]
     calc (NormedSpace.exp ((β : ℂ) • K) * (ρ * (a * b))).trace
@@ -142,7 +143,7 @@ theorem Matrix.IsHermitian.isKMSState_iff_eq_gibbsState (hK : K.IsHermitian) (β
     rw [← hc, Matrix.scalar_apply, ← Matrix.smul_one_eq_diagonal]
   have hEρ : ρ = c • NormedSpace.exp (-((β : ℂ) • K)) := by
     calc ρ = NormedSpace.exp (-((β : ℂ) • K)) * NormedSpace.exp ((β : ℂ) • K) * ρ := by
-          rw [exp_neg_smul_mul_exp_smul, Matrix.one_mul]
+          rw [Matrix.exp_neg_mul_exp, Matrix.one_mul]
       _ = c • NormedSpace.exp (-((β : ℂ) • K)) := by
           rw [Matrix.mul_assoc, hQρ, Matrix.mul_smul, Matrix.mul_one]
   have hω1 : ω 1 = 1 := by

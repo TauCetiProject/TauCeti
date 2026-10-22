@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
+public import Mathlib.Analysis.Matrix.Order
+public import Mathlib.Analysis.Matrix.PosDef
+public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Analysis.Calculus.FDeriv.Det
 
 /-!
@@ -16,6 +19,12 @@ public import TauCeti.Analysis.Calculus.FDeriv.Det
 For a square matrix `A` over `ℝ` or `ℂ` (any `RCLike` field),
 
 `det (exp A) = exp (trace A)`.
+
+The file also records the exponential identities that are specific to matrices: the reciprocal
+laws `exp A * exp (-A) = 1` and `exp (-A) * exp A = 1` for an arbitrary matrix over commutative
+entries, invariance of the trace under conjugation by the two exponential weights, the real
+half-multiple identity `exp (β • K) = exp (β / 2 • K) * exp (β / 2 • K)`, and, for a Hermitian
+matrix `K`, the Hermiticity and the positivity of `exp (β • K)` and of `x ↦ Tr (exp (β • K) x)`.
 
 This is listed as a TODO in Mathlib's `Mathlib/Analysis/Normed/Algebra/MatrixExponential.lean`.
 No diagonalization is involved, so the identity holds for every matrix, including the real
@@ -34,6 +43,12 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 ## Main results
 
 * `Matrix.det_exp`: `det (exp A) = exp (trace A)`.
+* `Matrix.exp_mul_exp_neg`, `Matrix.exp_neg_mul_exp`, `Matrix.exp_mul_exp_neg_mul`: the
+  reciprocal laws for the exponential of an arbitrary matrix.
+* `Matrix.trace_exp_neg_mul_exp`: conjugating by the two exponential weights preserves the trace.
+* `Matrix.exp_smul_eq_mul_exp_half`: the exponential of a real multiple is a square.
+* `Matrix.IsHermitian.exp_smul`, `Matrix.IsHermitian.trace_exp_smul_mul_nonneg` and
+  `Matrix.IsHermitian.trace_exp_smul_pos`: Hermiticity and positivity for a Hermitian matrix.
 
 ## References
 
@@ -45,7 +60,7 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 public section
 
 open NormedSpace
-open scoped Matrix Matrix.Norms.Operator
+open scoped ComplexOrder Matrix Matrix.Norms.Operator MatrixOrder
 
 namespace Matrix
 
@@ -82,5 +97,92 @@ theorem det_exp (A : Matrix n n 𝕂) : det (exp A) = exp (trace A) := by
         rw [← NormedSpace.exp_add_of_commute ((Commute.refl _).neg_left), neg_add_cancel,
           exp_zero, mul_one]
     _ = exp (trace A) := by rw [← mul_assoc, hconst, one_mul]
+
+end Matrix
+
+/-! ### Exponential identities for matrices
+
+These are the matrix restatements used by the Gibbs-state development. The reciprocal laws and
+the trace identity hold for an arbitrary matrix over commutative entries, not only for scalar
+multiples; the real half-multiple identity and the Hermitian results need an `RCLike` field, and
+the positivity statements use the order on the entries.
+-/
+
+namespace Matrix
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- The exponential of a real multiple is the square of the exponential of the half multiple:
+`exp (β • K) = exp (β / 2 • K) * exp (β / 2 • K)`. -/
+theorem exp_smul_eq_mul_exp_half {𝕜 : Type*} [RCLike 𝕜] (K : Matrix m m 𝕜) (β : ℝ) :
+    NormedSpace.exp (β • K) =
+      NormedSpace.exp ((β / 2 : ℝ) • K) * NormedSpace.exp ((β / 2 : ℝ) • K) := by
+  conv_lhs => rw [← add_halves β, add_smul]
+  exact Matrix.exp_add_of_commute _ _ (((Commute.refl K).smul_left _).smul_right _)
+
+section CommutativeEntries
+
+variable {𝔸 : Type*} [NormedCommRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+
+/-- The exponential weights of an arbitrary matrix are mutually inverse. -/
+@[simp]
+theorem exp_mul_exp_neg (A : Matrix m m 𝔸) :
+    NormedSpace.exp A * NormedSpace.exp (-A) = 1 := by
+  rw [Matrix.exp_neg, Matrix.nonsing_inv_eq_ringInverse]
+  exact Ring.mul_inverse_cancel _ (Matrix.isUnit_exp A)
+
+/-- The exponential weights of an arbitrary matrix are mutually inverse. -/
+@[simp]
+theorem exp_neg_mul_exp (A : Matrix m m 𝔸) :
+    NormedSpace.exp (-A) * NormedSpace.exp A = 1 := by
+  rw [Matrix.exp_neg, Matrix.nonsing_inv_eq_ringInverse]
+  exact Ring.inverse_mul_cancel _ (Matrix.isUnit_exp A)
+
+/-- The exponential of a negative matrix cancels against an arbitrary factor. -/
+@[simp]
+theorem exp_mul_exp_neg_mul (A x : Matrix m m 𝔸) :
+    NormedSpace.exp A * (NormedSpace.exp (-A) * x) = x := by
+  rw [← Matrix.mul_assoc, exp_mul_exp_neg, Matrix.one_mul]
+
+/-- Conjugating by the two exponential weights preserves the trace. -/
+@[simp]
+theorem trace_exp_neg_mul_exp (A x : Matrix m m 𝔸) :
+    (NormedSpace.exp (-A) * x * NormedSpace.exp A).trace = x.trace := by
+  rw [Matrix.trace_mul_comm (NormedSpace.exp (-A) * x) (NormedSpace.exp A),
+    Matrix.exp_mul_exp_neg_mul]
+
+end CommutativeEntries
+
+namespace IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜] {K : Matrix m m 𝕜}
+
+/-- For a Hermitian matrix `K` the exponential of a real multiple is Hermitian. -/
+theorem exp_smul (hK : K.IsHermitian) (β : ℝ) :
+    (NormedSpace.exp ((β : ℝ) • K)).IsHermitian :=
+  Matrix.IsHermitian.exp ((IsSelfAdjoint.all β).smul hK)
+
+/-- For a Hermitian matrix `K`, the functional `x ↦ Tr (exp (β • K) * x)` is positive. -/
+theorem trace_exp_smul_mul_nonneg (hK : K.IsHermitian) (β : ℝ) {x : Matrix m m 𝕜}
+    (hx : 0 ≤ x) : 0 ≤ (NormedSpace.exp ((β : ℝ) • K) * x).trace := by
+  have hF : star (NormedSpace.exp ((β / 2 : ℝ) • K)) = NormedSpace.exp ((β / 2 : ℝ) • K) :=
+    (exp_smul hK _).eq
+  rw [exp_smul_eq_mul_exp_half K β, Matrix.mul_assoc, Matrix.trace_mul_comm, Matrix.mul_assoc]
+  refine Matrix.PosSemidef.trace_nonneg (Matrix.nonneg_iff_posSemidef.mp ?_)
+  simpa [hF, Matrix.mul_assoc] using
+    star_left_conjugate_nonneg hx (NormedSpace.exp ((β / 2 : ℝ) • K))
+
+variable [Nonempty m]
+
+/-- For a Hermitian matrix `K` the exponential `exp (β • K)`, the Gibbs weight at inverse
+temperature `-β`, has positive trace. -/
+theorem trace_exp_smul_pos (hK : K.IsHermitian) (β : ℝ) :
+    0 < (NormedSpace.exp ((β : ℝ) • K)).trace := by
+  have h := Matrix.PosDef.conjTranspose_mul_self (NormedSpace.exp ((β / 2 : ℝ) • K))
+    (Matrix.mulVec_injective_iff_isUnit.mpr (Matrix.isUnit_exp _))
+  rw [(exp_smul hK _).eq, ← exp_smul_eq_mul_exp_half K β] at h
+  exact h.trace_pos
+
+end IsHermitian
 
 end Matrix
