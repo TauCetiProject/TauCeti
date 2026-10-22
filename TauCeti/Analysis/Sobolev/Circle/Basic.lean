@@ -720,6 +720,7 @@ theorem toContinuousMap_injective (hs : 1 / 2 < s) :
 
 /-- For `s > 1/2`, the continuous representatives of `a ∈ H^s` on circles of different lengths
 correspond under the rescaling `AddCircle.equivAddCircle`. -/
+@[simp]
 theorem toContinuousMap_equivAddCircle (T' : ℝ) [hT' : Fact (0 < T')] (hs : 1 / 2 < s)
     (a : CircleSobolev s E) (x : AddCircle T) :
     toContinuousMap T' hs a

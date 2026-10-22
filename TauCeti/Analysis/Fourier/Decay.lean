@@ -168,13 +168,12 @@ theorem norm_fourierCoeff_le_of_differentiableOn_strip {f : AddCircle T → ℂ}
     congr 2
     push_cast
     ring
-  rw [hint, hshift, norm_smul, zero_add, sub_zero, norm_div, norm_one, Real.norm_of_nonneg hT0.le]
-  calc 1 / T * ‖∫ x in (0 : ℝ)..T, h (x + y * I)‖
-      ≤ 1 / T * (M * Real.exp (-(2 * π * |(n : ℝ)| * δ / T)) * |T - 0|) := by
+  rw [hint, hshift, norm_smul]
+  calc _ ≤ ‖1 / (0 + T - 0)‖ * (M * Real.exp (-(2 * π * |(n : ℝ)| * δ / T)) * |T - 0|) := by
         gcongr
         exact intervalIntegral.norm_integral_le_of_norm_le_const fun x _ ↦ hbound x
     _ = M * Real.exp (-(2 * π * |(n : ℝ)| * δ / T)) := by
-        rw [sub_zero, abs_of_pos hT0]
+        simp [abs_of_pos hT0]
         field_simp
 
 end Circle

@@ -372,6 +372,12 @@ theorem coe_toContinuousMapAlgHom (T : ℝ) [Fact (0 < T)] :
     ⇑(toContinuousMapAlgHom (s := s) (A := A) T) = toContinuousMap T hs.out :=
   (rfl)
 
+/-- On continuous representatives the powers of `H^s(A)` are the pointwise powers. -/
+@[simp]
+theorem toContinuousMap_pow (T : ℝ) [Fact (0 < T)] (a : CircleSobolev s A) (k : ℕ) :
+    toContinuousMap T hs.out (a ^ k) = toContinuousMap T hs.out a ^ k := by
+  rw [← coe_toContinuousMapAlgHom T, map_pow]
+
 end Ring
 
 section CommRing

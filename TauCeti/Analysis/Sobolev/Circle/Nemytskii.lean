@@ -342,6 +342,50 @@ private theorem exists_local_expansion {F : ℂ → ℂ} {U : Set ℂ} (hU : IsO
       (by linarith))
 
 omit hT in
+/-- The power series on `H^s` whose `k`-th term is `(y₁, …, yₖ) ↦ (k!)⁻¹ (w k) y₁ ⋯ yₖ`. -/
+private def factorialInvSeries (w : ℕ → CircleSobolev s ℂ) :
+    FormalMultilinearSeries ℂ (CircleSobolev s ℂ) (CircleSobolev s ℂ) := fun k ↦
+  (k.factorial : ℂ)⁻¹ • (convolution hs.out (.mul ℂ ℂ) (w k)).compContinuousMultilinearMap
+    (ContinuousMultilinearMap.mkPiAlgebraFin ℂ k (CircleSobolev s ℂ))
+
+omit hT in
+private theorem factorialInvSeries_apply_const (w : ℕ → CircleSobolev s ℂ) (k : ℕ)
+    (y : CircleSobolev s ℂ) :
+    factorialInvSeries w k (fun _ ↦ y) = (k.factorial : ℂ)⁻¹ • (w k * y ^ k) := by
+  simp [factorialInvSeries, List.ofFn_const, List.prod_replicate, mul_def]
+
+omit hT in
+/-- The series `factorialInvSeries w` has radius at least `ρ` when `‖w k‖ ≤ k! B / (C ρ) ^ k`,
+`C` the constant of `norm_pow_le`. -/
+private theorem le_radius_factorialInvSeries {w : ℕ → CircleSobolev s ℂ} {ρ B : ℝ}
+    (hρ : 0 < ρ) (hw : ∀ k, ‖w k‖ ≤
+      k.factorial * B / (max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 * ρ) ^ k) :
+    (ρ.toNNReal : ENNReal) ≤ (factorialInvSeries w).radius := by
+  set C := max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 with hC
+  have hC0 : 0 < C := lt_of_lt_of_le one_pos (le_max_right _ _)
+  have hB : 0 ≤ B := by simpa using (norm_nonneg _).trans (hw 0)
+  refine FormalMultilinearSeries.le_radius_of_bound _ (C * B) fun k ↦ ?_
+  have hL : ‖convolution hs.out (.mul ℂ ℂ) (w k)‖ ≤ C * ‖w k‖ :=
+    ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun b ↦ (norm_mul_le (w k) b).trans
+      (by gcongr; exact le_max_left _ _)
+  have hm : ‖ContinuousMultilinearMap.mkPiAlgebraFin ℂ k (CircleSobolev s ℂ)‖ ≤ C ^ k :=
+    ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ by
+      simpa [List.map_ofFn, List.prod_ofFn] using norm_list_prod_le (List.ofFn m)
+  have hqn : ‖factorialInvSeries w k‖ ≤ (k.factorial : ℝ)⁻¹ * (C * ‖w k‖) * C ^ k := by
+    rw [factorialInvSeries, norm_smul, norm_inv, Complex.norm_natCast, mul_assoc]
+    gcongr
+    exact (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _ _).trans
+      (mul_le_mul hL hm (norm_nonneg _) (by positivity))
+  rw [Real.coe_toNNReal _ hρ.le]
+  calc ‖factorialInvSeries w k‖ * ρ ^ k
+      ≤ (k.factorial : ℝ)⁻¹ * (C * (k.factorial * B / (C * ρ) ^ k)) * C ^ k * ρ ^ k := by
+        gcongr
+        exact hqn.trans (by gcongr; exact hw k)
+    _ = C * B := by
+        rw [mul_pow]
+        field_simp
+
+omit hT in
 /-- The series `∑ₖ (k!)⁻¹ (w k) y ^ k` converges absolutely in `H^s` when
 `‖w k‖ ≤ k! B / (C ρ) ^ k`, `C` the constant of `norm_pow_le`, and `‖y‖ < ρ`. -/
 private theorem summable_factorial_inv_smul_mul_pow {w : ℕ → CircleSobolev s ℂ} {ρ B : ℝ}
@@ -349,25 +393,11 @@ private theorem summable_factorial_inv_smul_mul_pow {w : ℕ → CircleSobolev s
       k.factorial * B / (max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 * ρ) ^ k)
     {y : CircleSobolev s ℂ} (hy : ‖y‖ < ρ) :
     Summable fun k ↦ (k.factorial : ℂ)⁻¹ • (w k * y ^ k) := by
-  set C := max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 with hC
-  have hC0 : 0 < C := lt_of_lt_of_le one_pos (le_max_right _ _)
-  have hB : 0 ≤ B := by simpa using (norm_nonneg _).trans (hw 0)
-  refine Summable.of_norm_bounded (((summable_geometric_of_lt_one (by positivity)
-    ((div_lt_one hρ).2 hy)).mul_left (C * B))) fun k ↦ ?_
-  calc ‖(k.factorial : ℂ)⁻¹ • (w k * y ^ k)‖
-      ≤ (k.factorial : ℝ)⁻¹ * (C * ‖w k‖ * (C ^ k * ‖y‖ ^ k)) := by
-        rw [norm_smul, norm_inv, Complex.norm_natCast]
-        gcongr
-        refine (norm_mul_le _ _).trans ?_
-        gcongr
-        · exact le_max_left _ _
-        · exact norm_pow_le y k
-    _ ≤ (k.factorial : ℝ)⁻¹ * (C * (k.factorial * B / (C * ρ) ^ k) * (C ^ k * ‖y‖ ^ k)) := by
-        gcongr
-        exact hw k
-    _ = C * B * (‖y‖ / ρ) ^ k := by
-        rw [div_pow, mul_pow]
-        field_simp
+  have hy' : y ∈ Metric.eball (0 : CircleSobolev s ℂ) (ρ.toNNReal : ENNReal) := by
+    rw [Metric.eball_coe, mem_ball_zero_iff, Real.coe_toNNReal _ hρ.le]
+    exact hy
+  simpa only [factorialInvSeries_apply_const] using ((factorialInvSeries w).summable_norm_apply
+    (Metric.eball_subset_eball (le_radius_factorialInvSeries hρ hw) hy')).of_norm
 
 /-- The local expansion of `exists_local_expansion`, summed in `H^s`: near every `u₀` with values
 in `U`, `nemytskii F (p + y) = ∑ₖ (k!)⁻¹ (w k) y ^ k` for `‖y‖ < ρ`, and its continuous
@@ -390,10 +420,7 @@ private theorem exists_hasSum_nemytskii {F : ℂ → ℂ} {U : Set ℂ} (hU : Is
     refine ((hsum.mapL (toContinuousMap T hs.out)).mapL (ContinuousMap.evalCLM ℂ x)).unique ?_
     convert (h y hy x).2 using 1
     funext k
-    have hpow : toContinuousMap T hs.out (y ^ k) = toContinuousMap T hs.out y ^ k := by
-      rw [← coe_toContinuousMapAlgHom T, map_pow]
-    rw [ContinuousMap.evalCLM_apply, map_smul, toContinuousMap_mul, hpow, ContinuousMap.smul_apply,
-      ContinuousMap.mul_apply, ContinuousMap.pow_apply, smul_eq_mul, mul_assoc]
+    simp [toContinuousMap_mul, toContinuousMap_pow, mul_assoc]
   rw [nemytskii_eq_of_forall_toContinuousMap_apply T hx]
   exact ⟨hsum, hx⟩
 
@@ -416,41 +443,13 @@ theorem analyticOnNhd_nemytskii {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
       {u : CircleSobolev s ℂ | ∀ x, toContinuousMap T hs.out u x ∈ U} := by
   intro u₀ hu₀
   obtain ⟨p, w, ρ, B, hρ, hp, hw, h⟩ := exists_hasSum_nemytskii T hU hF hu₀
-  set C := max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 with hC
-  have hC0 : 0 < C := lt_of_lt_of_le one_pos (le_max_right _ _)
-  have hB : 0 ≤ B := by simpa using (norm_nonneg _).trans (hw 0)
-  -- The `k`-th term of the power series is `(y₁, …, yₖ) ↦ (k!)⁻¹ (w k) y₁ ⋯ yₖ`.
-  let q : FormalMultilinearSeries ℂ (CircleSobolev s ℂ) (CircleSobolev s ℂ) := fun k ↦
-    (k.factorial : ℂ)⁻¹ • (convolution hs.out (.mul ℂ ℂ) (w k)).compContinuousMultilinearMap
-      (ContinuousMultilinearMap.mkPiAlgebraFin ℂ k (CircleSobolev s ℂ))
-  have hq (k : ℕ) (y : CircleSobolev s ℂ) :
-      q k (fun _ ↦ y) = (k.factorial : ℂ)⁻¹ • (w k * y ^ k) := by
-    simp [q, List.ofFn_const, List.prod_replicate, mul_def]
-  have hqn (k : ℕ) : ‖q k‖ ≤ (k.factorial : ℝ)⁻¹ * (C * ‖w k‖) * C ^ k := by
-    have hL : ‖convolution hs.out (.mul ℂ ℂ) (w k)‖ ≤ C * ‖w k‖ :=
-      ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun b ↦ (norm_mul_le (w k) b).trans
-        (by gcongr; exact le_max_left _ _)
-    have hm : ‖ContinuousMultilinearMap.mkPiAlgebraFin ℂ k (CircleSobolev s ℂ)‖ ≤ C ^ k :=
-      ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ by
-        simpa [List.map_ofFn, List.prod_ofFn] using norm_list_prod_le (List.ofFn m)
-    rw [norm_smul, norm_inv, Complex.norm_natCast, mul_assoc]
-    gcongr
-    exact (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _ _).trans
-      (mul_le_mul hL hm (norm_nonneg _) (by positivity))
-  have hps : HasFPowerSeriesOnBall (nemytskii F) q p (ρ.toNNReal : ENNReal) := {
-    r_le := q.le_radius_of_bound (C * B) fun k ↦ by
-      rw [Real.coe_toNNReal _ hρ.le]
-      calc ‖q k‖ * ρ ^ k ≤ (k.factorial : ℝ)⁻¹ * (C * (k.factorial * B / (C * ρ) ^ k)) * C ^ k *
-            ρ ^ k := by
-            gcongr
-            exact (hqn k).trans (by gcongr; exact hw k)
-        _ = C * B := by
-          rw [mul_pow]
-          field_simp
+  have hps : HasFPowerSeriesOnBall (nemytskii F) (factorialInvSeries w) p
+      (ρ.toNNReal : ENNReal) := {
+    r_le := le_radius_factorialInvSeries hρ hw
     r_pos := ENNReal.coe_pos.2 (Real.toNNReal_pos.2 hρ)
     hasSum := fun {y} hy ↦ by
       rw [Metric.eball_coe, mem_ball_zero_iff, Real.coe_toNNReal _ hρ.le] at hy
-      simpa only [hq] using (h y hy).1 }
+      simpa only [factorialInvSeries_apply_const] using (h y hy).1 }
   exact hps.analyticAt_of_mem (by
     rw [Metric.eball_coe, mem_ball_iff_norm, Real.coe_toNNReal _ hρ.le]
     exact hp)
