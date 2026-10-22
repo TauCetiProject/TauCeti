@@ -89,12 +89,9 @@ theorem isPushout_fundamentalGroup_union (hAopen : IsOpen A) (hBopen : IsOpen B)
       (hrange hs)).symm
   have subsetHomeomorph_coe (s : Set X) (hs : s ⊆ A ∪ B) (y : s) :
       ((((subsetHomeomorph s hs y : ((↑) : P → X) ⁻¹' s) : P) : X)) = y := by
-    have h := Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe
-      (f := (Subtype.val : P → X)) Topology.IsEmbedding.subtypeVal
-      (hrange hs) (subsetHomeomorph s hs y)
-    change (((subsetHomeomorph s hs).symm (subsetHomeomorph s hs y) : s) : X) =
-      (((subsetHomeomorph s hs y : ((↑) : P → X) ⁻¹' s) : P) : X) at h
-    simpa only [Homeomorph.symm_apply_apply] using h.symm
+    have h := congrArg Subtype.val
+      ((Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange (hrange hs)).apply_symm_apply y)
+    rwa [Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe] at h
   let eA : A ≃ₜ A' := subsetHomeomorph A subset_union_left
   let eB : B ≃ₜ B' := subsetHomeomorph B subset_union_right
   let eAB : ↥(A ∩ B) ≃ₜ ↥(A' ∩ B') :=

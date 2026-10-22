@@ -36,12 +36,10 @@ theorem mapOfEq_square
         GrpCat.ofHom (_root_.FundamentalGroup.mapOfEq g hg) =
       GrpCat.ofHom (_root_.FundamentalGroup.mapOfEq j hj) ≫
         GrpCat.ofHom (_root_.FundamentalGroup.mapOfEq k hk) := by
-  apply GrpCat.hom_ext
-  apply MonoidHom.ext
-  intro p
-  change _root_.FundamentalGroup.mapOfEq g hg (_root_.FundamentalGroup.mapOfEq f hf p) =
-    _root_.FundamentalGroup.mapOfEq k hk (_root_.FundamentalGroup.mapOfEq j hj p)
-  rw [mapOfEq_comp, mapOfEq_comp]
+  rw [← GrpCat.ofHom_comp, ← GrpCat.ofHom_comp]
+  congr 1
+  ext p
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, mapOfEq_comp, mapOfEq_comp]
   exact mapOfEq_congr h _ _ p
 
 /-- The morphism of groups underlying the isomorphism induced by a homeomorphism is the usual
