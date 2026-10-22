@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Enumerative.IncidenceAlgebra
-public import TauCeti.Combinatorics.NoncrossingPartition.Basic
+public import TauCeti.Combinatorics.NoncrossingPartition.Interval
 public import TauCeti.Data.Finset.Sort
 
 /-!
@@ -26,6 +26,10 @@ one part. Equivalently, the cumulants are the unique family satisfying the momen
 `φ_π(a) = ∑_{σ ≤ π} κ_σ(a)`; in particular, for nonempty `s`,
 `φ (a_{i₁} * ⋯ * a_{iₙ}) = ∑_{π ∈ NC(s)} κ_π(a)` where `i₁ < ⋯ < iₙ` lists `s`. Taking
 `s = Finset.univ : Finset (Fin n)` gives the cumulants `κ_n(a₁, …, aₙ)` of free probability.
+
+Free cumulants are multiplicative: `κ_π(a)` is the product over the parts `B` of `π` of the
+cumulants `κ_B(a)` of the words read along the parts. This follows from the factorization of the
+lower intervals of `NC(s)` into products of the lattices `NC(B)`, by induction on `s`.
 
 No normalisation `φ 1 = 1`, positivity or traciality is assumed. For `s = ∅` the cumulant
 `κ_∅(a)` is the empty product `1`; it carries no meaning, since free cumulants are indexed by
@@ -48,6 +52,10 @@ No normalisation `φ 1 = 1`, positivity or traciality is assumed. For `s = ∅` 
   all noncrossing partitions.
 * `TauCeti.freeCumulant_eq_sum_mu_mul_partitionMoment` — the cumulant is the sum of the block
   moments weighted by `μ(π, 1_s)`.
+* `TauCeti.partitionCumulant_eq_prod_freeCumulant` — free cumulants are multiplicative,
+  `κ_π(a) = ∏_{B ∈ π} κ_B(a)`, and `TauCeti.apply_prod_eq_sum_prod_freeCumulant` — the
+  resulting form `φ (a_{i₁} * ⋯ * a_{iₙ}) = ∑_{π ∈ NC(s)} ∏_{B ∈ π} κ_B(a)` of the
+  moment–cumulant formula.
 * `TauCeti.freeCumulant_singleton` and `TauCeti.freeCumulant_pair` — the first two cumulants are
   the mean `φ a_i` and the covariance `φ (a_i * a_j) - φ a_i * φ a_j`.
 
@@ -194,5 +202,62 @@ theorem freeCumulant_pair {i j : α} (hij : i < j) :
   rw [freeCumulant_def, this, add_sub_cancel_left]
 
 end Cumulant
+
+section Multiplicative
+
+variable [CommRing R] [Monoid A] (φ : A → R) (a : α → A)
+
+/-- If the free cumulants of the noncrossing partitions of each part of `π` are the products of
+their part cumulants, then these products satisfy the moment–cumulant formula below `π`. -/
+private theorem sum_Iic_prod_freeCumulant {π : NoncrossingPartition s}
+    (h : ∀ B ∈ π.1.parts, ∀ τ : NoncrossingPartition B,
+      partitionCumulant φ a τ = ∏ C ∈ τ.1.parts, freeCumulant φ a C) :
+    ∑ σ ∈ Iic π, ∏ C ∈ σ.1.parts, freeCumulant φ a C = partitionMoment φ a π.1 := by
+  rw [NoncrossingPartition.sum_Iic_prod_parts, partitionMoment_def]
+  refine prod_congr rfl fun B hB => ?_
+  rw [apply_prod_eq_sum_partitionCumulant φ a (π.1.nonempty_of_mem_parts hB)]
+  exact (sum_congr rfl fun τ _ => h B hB τ).symm
+
+/-- Free cumulants are *multiplicative*: the free cumulant of a noncrossing partition `π` is the
+product of the free cumulants of the words read along its parts, `κ_π(a) = ∏_{B ∈ π} κ_B(a)`. -/
+theorem partitionCumulant_eq_prod_freeCumulant (π : NoncrossingPartition s) :
+    partitionCumulant φ a π = ∏ B ∈ π.1.parts, freeCumulant φ a B := by
+  -- Induction on the size of `s`, and for fixed `s`, well-founded induction on `π`.
+  induction hn : #s using Nat.strong_induction_on generalizing s with
+  | _ n ih =>
+  induction π using WellFoundedLT.induction with
+  | _ π ihπ =>
+  by_cases hπ : π = ⊤
+  · subst hπ
+    rcases s.eq_empty_or_nonempty with rfl | hs
+    · rw [Finpartition.parts_eq_empty_iff.2 bot_eq_empty.symm, prod_empty, ← freeCumulant_def,
+        freeCumulant_empty]
+    · rw [NoncrossingPartition.coe_top, Finpartition.parts_top hs.ne_empty, prod_singleton,
+        freeCumulant_def]
+  -- The parts of `π ≠ ⊤` are smaller than `s`, so the products of part cumulants satisfy the
+  -- moment–cumulant formula below `π`; comparing with the cumulants below `π` gives the claim.
+  have key := sum_Iic_prod_freeCumulant φ a fun B hB τ => ih #B (hn ▸ card_lt_card
+    (ssubset_of_subset_of_ne (π.1.le hB) fun h =>
+      hπ (Subtype.ext (Finpartition.eq_top_of_mem_parts (h ▸ hB))))) τ rfl
+  rw [← sum_Iic_partitionCumulant φ a π, ← Iio_insert, sum_insert notMem_Iio_self,
+    sum_insert notMem_Iio_self, sum_congr rfl fun σ hσ => ihπ σ (mem_Iio.1 hσ)] at key
+  exact (add_right_cancel key).symm
+
+/-- The moment–cumulant formula with multiplicative cumulants: a moment of a nonempty word is the
+sum over the noncrossing partitions `π` of the products of the free cumulants along the parts of
+`π`, `φ (a_{i₁} * ⋯ * a_{iₙ}) = ∑_{π ∈ NC(s)} ∏_{B ∈ π} κ_B(a)` for `s = {i₁ < ⋯ < iₙ}`. -/
+theorem apply_prod_eq_sum_prod_freeCumulant (hs : s.Nonempty) :
+    φ ((s.sort.map a).prod) =
+      ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, freeCumulant φ a B := by
+  simp_rw [apply_prod_eq_sum_partitionCumulant φ a hs, partitionCumulant_eq_prod_freeCumulant]
+
+/-- The moment–cumulant formula with multiplicative cumulants for a word `a₁, …, aₙ` with
+`n ≥ 1`: `φ (a₁ * ⋯ * aₙ) = ∑_{π ∈ NC(n)} ∏_{B ∈ π} κ_B(a₁, …, aₙ)`. -/
+theorem apply_prod_ofFn_eq_sum_prod_freeCumulant {n : ℕ} (hn : n ≠ 0) (a : Fin n → A) :
+    φ (List.ofFn a).prod =
+      ∑ π : NoncrossingPartition (univ : Finset (Fin n)), ∏ B ∈ π.1.parts, freeCumulant φ a B := by
+  simp_rw [apply_prod_ofFn_eq_sum_partitionCumulant φ hn, partitionCumulant_eq_prod_freeCumulant]
+
+end Multiplicative
 
 end TauCeti
