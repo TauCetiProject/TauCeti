@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gaussian.Affine
 public import TauCeti.Probability.Distributions.LogNormal.Basic
-public import TauCeti.Analysis.SpecialFunctions.Exp.PiLp
+public import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Multivariate log-normal laws

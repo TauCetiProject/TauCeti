@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Exp.PiLp
 public import TauCeti.Probability.Distributions.Gaussian.Density
 public import TauCeti.Probability.Distributions.MultivariateLogNormal.Basic
 

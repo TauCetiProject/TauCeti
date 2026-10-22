@@ -7,10 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import Mathlib.Analysis.Calculus.FDeriv.WithLp
-public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
 /-!
 # Coordinatewise exponential and logarithmic Jacobians
@@ -19,7 +16,7 @@ On finite real Euclidean spaces, coordinatewise exponentiation has diagonal deri
 entries `exp (x i)`. Coordinatewise logarithms have diagonal derivative with entries `(x i)⁻¹`
 where the coordinates are nonzero. Their determinant formulas provide the Jacobian factors
 for transporting densities between Euclidean space and the positive orthant.
-Coordinatewise exponentiation is injective with range the positive orthant, which is measurable.
+Coordinatewise exponentiation is injective with range the positive orthant.
 -/
 
 public section
@@ -93,11 +90,3 @@ theorem det_fderiv_log (x : EuclideanSpace ℝ ι) (hx : ∀ i, x i ≠ 0) :
   rw [(hasFDerivAt_log x hx).fderiv, Matrix.det_toEuclideanCLM_diagonal, Finset.prod_inv_distrib]
 
 end PiLp
-
-/-- The positive orthant in finite real Euclidean space is measurable. -/
-theorem EuclideanSpace.measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :
-    MeasurableSet {x : EuclideanSpace ℝ ι | ∀ i, 0 < x i} := by
-  let : Fintype ι := Fintype.ofFinite ι
-  rw [Set.ofPred_forall]
-  exact MeasurableSet.iInter fun i ↦
-    measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)
