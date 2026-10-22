@@ -63,12 +63,13 @@ theorem IsClosed.add {form' : SmoothForm I M F k} (h : form.IsClosed)
     ((hform'.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp)), h, h']
   simp
 
-/-- A scalar multiple of a closed smooth form is closed, for any division semiring acting
-continuously on the coefficients and commuting with the real action (for instance `ℝ`, or `ℂ` on
-complex-valued forms). -/
-theorem IsClosed.smul {S : Type*} [DivisionSemiring S] [Module S F] [ContinuousConstSMul S F]
+/-- A scalar multiple of a closed smooth form is closed, for any scalars acting continuously on
+the coefficients and commuting with the real action (for instance `ℝ`, or `ℂ` on complex-valued
+forms). -/
+theorem IsClosed.smul {S : Type*} [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
     [SMulCommClass ℝ S F] (c : S) (h : form.IsClosed) : (c • form).IsClosed := by
-  rw [isClosed_def, SmoothForm.smul_toRoughForm, mextDeriv_smul, h, smul_zero]
+  rw [isClosed_def, SmoothForm.smul_toRoughForm, RoughForm.smul_eq_mapCoeff,
+    mextDeriv_mapCoeff _ (form.isSmoothForm.of_le (by simp)), h, RoughForm.mapCoeff_zero]
 
 /-- The negative of a closed smooth form is closed. -/
 theorem IsClosed.neg (h : form.IsClosed) : (-form).IsClosed := by

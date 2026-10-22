@@ -279,13 +279,13 @@ theorem mapCoeff_smul_of_map_smul {S' : Type*} [Monoid S] [DistribMulAction S F]
     mapCoeff L (c • φ) = d • mapCoeff L φ :=
   Subtype.ext (RoughForm.mapCoeff_smul_of_map_smul L hL φ.1)
 
-/-- The exterior derivative of smooth forms is linear for scalars of a division semiring acting
-on the coefficients, such as complex scalars on complex-valued forms. -/
+/-- The exterior derivative of smooth forms is linear for scalars acting on the coefficients,
+such as complex scalars on complex-valued forms. -/
 @[simp]
-theorem mextDerivₗ_smul [IsManifold I 2 M] [DivisionSemiring S] [Module S F]
+theorem mextDerivₗ_smul [IsManifold I 2 M] [Monoid S] [DistribMulAction S F]
     [ContinuousConstSMul S F] [SMulCommClass ℝ S F] (c : S) (φ : SmoothForm I M F k) :
-    mextDerivₗ I k (c • φ) = c • mextDerivₗ I k φ :=
-  Subtype.ext <| by simp only [mextDerivₗ_apply, smul_toRoughForm, mextDeriv_smul]
+    mextDerivₗ I k (c • φ) = c • mextDerivₗ I k φ := by
+  rw [smul_eq_mapCoeff, smul_eq_mapCoeff, mextDerivₗ_mapCoeff]
 
 /-- Pullback of smooth forms is linear for scalars acting on the coefficients. -/
 @[simp]
