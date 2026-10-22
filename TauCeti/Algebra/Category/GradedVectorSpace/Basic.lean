@@ -250,27 +250,10 @@ noncomputable def shiftCompTotalIso :
     ((shift k).toAdjunction.comp (gradedObjectTotalAdjunction ℤ (ModuleCat.{u} k)))
     ((gradedObjectTotalAdjunction ℤ (ModuleCat.{u} k)).ofNatIsoRight (Iso.refl _))
 
-private noncomputable def coproductUnitIso :
-    (∐ fun i : ℤ ↦ unit k i) ≅ ModuleCat.of k k where
-  hom := Sigma.desc fun i ↦
-    if hi : i = 0 then eqToHom (congrArg (unit k) hi) ≫ (unitObjZeroIso k).hom else 0
-  inv := (unitObjZeroIso k).inv ≫ Sigma.ι (unit k) 0
-  hom_inv_id := by
-    apply Sigma.hom_ext
-    intro i
-    by_cases hi : i = 0
-    · subst i
-      simp only [colimit.ι_desc_assoc, Discrete.functor_obj_eq_as, Cofan.mk_pt, Cofan.mk_ι_app,
-        ↓reduceDIte, eqToHom_refl, Category.id_comp, Iso.hom_inv_id_assoc, Category.comp_id]
-    · exact (isZero_unit_obj k hi).eq_of_src _ _
-  inv_hom_id := by
-    rw [Category.assoc, Sigma.ι_comp_desc]
-    simp
-
 /-- **The total space underlying `M = unit k` is `k`**. -/
 noncomputable def totalObjUnitIso :
     (GradedObject.total ℤ (ModuleCat.{u} k)).obj (unit k) ≅ ModuleCat.of k k :=
-  coproductUnitIso k
+  gradedObjectTotalSingleIso _ 0 _
 
 end GradedVectorSpace
 
