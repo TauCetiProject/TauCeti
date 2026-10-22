@@ -325,12 +325,8 @@ continuous linear map is a Lagrangian map exactly when its range is a Lagrangian
 theorem isLagrangianMap_continuousLinearMap_iff (σ₀ : SymplecticForm W) (L : V →L[ℝ] W) :
     (isNondegenerate_constSmooth σ₀).IsLagrangianMap 𝓘(ℝ, V) L ↔
       σ₀.IsLagrangian (LinearMap.range L.toLinearMap) := by
-  have hσ₀ (y : W) : (isNondegenerate_constSmooth σ₀).symplecticFormAt y = σ₀ := by
-    apply SymplecticForm.toBilinForm_injective
-    ext v w
-    exact (SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply _ y v w).trans
-      (constSmooth_apply σ₀ y v w)
-  simp only [SmoothTwoForm.IsNondegenerate.IsLagrangianMap, hσ₀, ContinuousLinearMap.mfderiv_eq]
+  simp only [SmoothTwoForm.IsNondegenerate.IsLagrangianMap,
+    isNondegenerate_constSmooth_symplecticFormAt, ContinuousLinearMap.mfderiv_eq]
   exact ⟨fun h ↦ h 0, fun h _ ↦ h⟩
 
 end SymplecticForm
