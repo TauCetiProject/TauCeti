@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Algebra.Group.Subgroup.Ker
+public import Mathlib.Algebra.Group.Submonoid.BigOperators
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Tactic.Abel
@@ -124,6 +125,12 @@ theorem arrowSum_eq_sum_ite [Fintype V] [DecidableEq V] (f : Assignment Q K)
     arrowSum f S T = ∑ v, ∑ w, ∑ e : Q v w, if v ∈ S ∧ w ∈ T then f e else 0 := by
   simp [arrowSum_def, ite_and]
 
+/-- The arrow sums of an assignment with values in an additive submonoid lie in the submonoid. -/
+theorem arrowSum_mem {M : Type*} [SetLike M K] [AddSubmonoidClass M K] {H : M}
+    {f : Assignment Q K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) (S T : Finset V) :
+    arrowSum f S T ∈ H :=
+  sum_mem fun _ _ ↦ sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e
+
 @[simp]
 theorem arrowSum_zero (S T : Finset V) : arrowSum (0 : Assignment Q K) S T = 0 := by
   simp [arrowSum_def]
@@ -232,6 +239,11 @@ theorem excessAt_def (f : Assignment Q K) (v : V) :
     excessAt f v = ∑ w, ∑ e : Q w v, f e - ∑ w, ∑ e : Q v w, f e :=
   (rfl)
 
+/-- The excess of an assignment with values in an additive subgroup lies in the subgroup. -/
+theorem excessAt_mem {M : Type*} [SetLike M K] [AddSubgroupClass M K] {H : M}
+    {f : Assignment Q K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) (v : V) : excessAt f v ∈ H :=
+  sub_mem (sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e) (sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e)
+
 /-- The excess at `v` is the value entering `{v}` minus the value leaving `{v}`. -/
 theorem excessAt_eq_arrowSum_sub (f : Assignment Q K) (v : V) :
     excessAt f v = arrowSum f univ {v} - arrowSum f {v} univ := by
@@ -266,6 +278,22 @@ theorem excessAt_neg (f : Assignment Q K) (v : V) : excessAt (-f) v = -excessAt 
 theorem excessAt_sub (f g : Assignment Q K) (v : V) :
     excessAt (f - g) v = excessAt f v - excessAt g v :=
   congrFun (map_sub (excessHom Q K) f g) v
+
+/-- A nonnegative assignment that vanishes on every arrow entering `v` has nonpositive excess at
+`v`. -/
+theorem excessAt_nonpos_of_nonneg_of_forall_in_eq_zero [PartialOrder K] [IsOrderedAddMonoid K]
+    {f : Assignment Q K} (hf : 0 ≤ f) {v : V} (h : ∀ w (e : Q w v), f e = 0) :
+    excessAt f v ≤ 0 := by
+  simp only [excessAt_def, h, sum_const_zero, zero_sub, neg_nonpos]
+  exact sum_nonneg fun w _ ↦ sum_nonneg fun e _ ↦ hf _ _ e
+
+/-- A nonnegative assignment that vanishes on every arrow leaving `v` has nonnegative excess at
+`v`. -/
+theorem excessAt_nonneg_of_nonneg_of_forall_out_eq_zero [PartialOrder K] [IsOrderedAddMonoid K]
+    {f : Assignment Q K} (hf : 0 ≤ f) {v : V} (h : ∀ w (e : Q v w), f e = 0) :
+    0 ≤ excessAt f v := by
+  simp only [excessAt_def, h, sum_const_zero, sub_zero]
+  exact sum_nonneg fun w _ ↦ sum_nonneg fun e _ ↦ hf _ _ e
 
 /-- **Excess on a vertex set.** The total excess of `f` on `S` is the value on arrows entering `S`
 from its complement minus the value on arrows leaving `S` for its complement; arrows with both ends
