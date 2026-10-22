@@ -82,8 +82,10 @@ theorem symplecticForm_interior_vectorBundleEulerField :
   -- The chart of the total space at `z` is the trivialization at `z.proj` followed by a chart of
   -- the base (`FiberBundle.extChartAt`), so it leaves the fibre coordinate unchanged.
   have hp : (trivializationAt (E →L[ℝ] ℝ) (fun x ↦ TangentSpace I x →L[ℝ] ℝ) z.proj z).2 =
-      (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z z).2 :=
-    rfl
+      (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z z).2 := by
+    simp only [FiberBundle.extChartAt, PartialEquiv.trans_apply, PartialEquiv.prod_coe,
+      PartialEquiv.refl_coe, id_eq, OpenPartialHomeomorph.coe_toPartialEquiv,
+      Trivialization.coe_coe]
   rw [RoughForm.interior_apply, symplecticForm_apply, Pi.neg_apply,
     ContinuousAlternatingMap.neg_apply, hl, vectorBundleEulerField_eq_trivializationAt, hp]
   -- This is the linear identity `ι_{p ∂_p} ω = -λ` at the chart point.

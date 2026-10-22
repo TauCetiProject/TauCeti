@@ -75,22 +75,35 @@ it is `ξ ∂_ξ` (`TauCeti.vectorBundleEulerField_eq_trivializationAt`). -/
 def vectorBundleEulerField (z : TotalSpace F V) : TangentSpace (I.prod 𝓘(𝕜, F)) z :=
   mfderiv 𝓘(𝕜) (I.prod 𝓘(𝕜, F)) (fun t : 𝕜 ↦ (⟨z.proj, t • z.2⟩ : TotalSpace F V)) 1 (1 : 𝕜)
 
+/-- The fibre coordinate of `c • z` is `c` times that of `z`, by linearity of the trivialization
+at the base point of `z`. -/
+private theorem trivializationAt_smul_snd (z : TotalSpace F V) (c : 𝕜) :
+    (trivializationAt F V z.proj (⟨z.proj, c • z.2⟩ : TotalSpace F V)).2 =
+      c • (trivializationAt F V z.proj z).2 :=
+  ((trivializationAt F V z.proj).linear 𝕜
+    (FiberBundle.mem_baseSet_trivializationAt F V z.proj)).map_smul c z.2
+
+/-- If `f` has derivative `f'` at `t`, then the curve `r ↦ f r • z` in the fibre of `z` has
+velocity `(0, f' • ξ)` at `t`, read in the chart at `z`, where `ξ` is the fibre coordinate of
+`z`. -/
+private theorem hasMFDerivAt_smul_curve (z : TotalSpace F V) {f : 𝕜 → 𝕜} {f' t : 𝕜}
+    (hf : HasDerivAt f f' t) :
+    HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, F)) (fun r : 𝕜 ↦ (⟨z.proj, f r • z.2⟩ : TotalSpace F V)) t
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : E), f' • (trivializationAt F V z.proj z).2)) := by
+  rw [Manifold.hasMFDerivAt_totalSpace_curve_iff]
+  -- Both the continuity and the derivative of the fibre coordinate reduce to those of
+  -- `r ↦ f r • ξ`.
+  refine ⟨(FiberBundle.continuousAt_totalSpace F _).2 ⟨continuousAt_const, ?_⟩,
+    hasDerivAt_const t (extChartAt I z.proj z.proj), ?_⟩ <;>
+    rw [funext fun r ↦ trivializationAt_smul_snd z (f r)]
+  exacts [hf.continuousAt.smul continuousAt_const, hf.smul_const _]
+
 /-- The line `t ↦ t • z` has velocity `(0, ξ)` at `t = 1`, read in the chart at `z`, where `ξ` is
 the fibre coordinate of `z`. -/
 private theorem hasMFDerivAt_smul_aux (z : TotalSpace F V) :
     HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, F)) (fun t : 𝕜 ↦ (⟨z.proj, t • z.2⟩ : TotalSpace F V)) 1
       ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : E), (trivializationAt F V z.proj z).2)) := by
-  have hb := FiberBundle.mem_baseSet_trivializationAt F V z.proj
-  rw [Manifold.hasMFDerivAt_totalSpace_curve_iff]
-  refine ⟨((contMDiff_id (n := 0)).smul_totalSpace
-    (contMDiff_const (c := z) (I := 𝓘(𝕜)) (I' := I.prod 𝓘(𝕜, F)))).continuous.continuousAt,
-    hasDerivAt_const (1 : 𝕜) (extChartAt I z.proj z.proj), ?_⟩
-  -- The fibre coordinate of `t • z` is `t` times that of `z`, by linearity of the trivialization.
-  have hlin : (fun r : 𝕜 ↦ (trivializationAt F V z.proj (⟨z.proj, r • z.2⟩ : TotalSpace F V)).2) =
-      fun r ↦ r • (trivializationAt F V z.proj z).2 :=
-    funext fun r ↦ ((trivializationAt F V z.proj).linear 𝕜 hb).map_smul r z.2
-  rw [hlin]
-  simpa using (hasDerivAt_id (1 : 𝕜)).smul_const (trivializationAt F V z.proj z).2
+  simpa only [one_smul] using hasMFDerivAt_smul_curve (I := I) z (hasDerivAt_id' (1 : 𝕜))
 
 /-- **Chart formula for the Euler vector field.** Read in the chart at `z`, where tangent vectors
 at `z` are their own coordinates, the Euler vector field at `z` is `(0, ξ)`, with `ξ` the fibre
@@ -147,20 +160,25 @@ theorem contMDiff_vectorBundleEulerField {m : ℕ∞ω}
     contMDiff_equivTangentBundleProd_symm.comp
       (contMDiff_const.prodMk (contMDiff_zeroSection 𝕜 (TangentSpace (I.prod 𝓘(𝕜, F)))))
   refine ((hΦ.contMDiff_tangentMap le_top).comp hσ).congr fun z ↦ ?_
+  simp only [Function.comp_apply, σ, tangentMap, equivTangentBundleProd_symm_apply_snd]
+  rw [equivTangentBundleProd_symm_apply_proj]
+  dsimp only
   -- The tangent map of the dilation sends the unit vector at `(1, z)` to the Euler field at `z`,
   -- by the chain rule along the line `t ↦ (t, z)`.
   have hline : HasMFDerivAt 𝓘(𝕜) (𝓘(𝕜).prod (I.prod 𝓘(𝕜, F))) (fun t : 𝕜 ↦ (t, z)) 1
-      ((ContinuousLinearMap.id 𝕜 𝕜).prod 0) :=
+      (ContinuousLinearMap.inl 𝕜 𝕜 (E × F)) :=
     (hasMFDerivAt_id 1).prodMk (hasMFDerivAt_const z 1)
   have hv := mfderiv_comp_apply_of_eq (1 : 𝕜) ((hΦ (1, z)).mdifferentiableAt (by simp))
     hline.mdifferentiableAt rfl (1 : 𝕜)
   rw [hline.mfderiv] at hv
-  have hz : Φ (1, z) = z := by simp [Φ]
-  have key : ∀ (w : TotalSpace F V), w = z → ∀ v : E × F,
-      (⟨z, v⟩ : TangentBundle (I.prod 𝓘(𝕜, F)) (TotalSpace F V)) = ⟨w, v⟩ := by
-    rintro _ rfl v
-    rfl
-  exact (key _ hz _).trans (congrArg (TotalSpace.mk' (E × F) (Φ (1, z))) hv)
+  -- By definition of `Φ`, its composite with the line `t ↦ (t, z)` is the line `t ↦ t • z`,
+  -- whose velocity at `t = 1` is the Euler field by definition; and `inl 1 = (1, 0)` by
+  -- definition of `ContinuousLinearMap.inl`. (`rw` cannot perform these steps, because the
+  -- tangent spaces involved are only definitionally equal to their model vector spaces.)
+  have hE : vectorBundleEulerField I z =
+      mfderiv (𝓘(𝕜).prod (I.prod 𝓘(𝕜, F))) (I.prod 𝓘(𝕜, F)) Φ (1, z) (1, 0) :=
+    hv
+  exact TotalSpace.ext (by simp [Φ]) (heq_of_eq hE)
 
 end General
 
@@ -182,19 +200,9 @@ theorem isMIntegralCurve_vectorBundleEulerField (z : TotalSpace F V) :
     IsMIntegralCurve (fun t : ℝ ↦ (⟨z.proj, Real.exp t • z.2⟩ : TotalSpace F V))
       (vectorBundleEulerField I) := by
   intro t
-  have hb := FiberBundle.mem_baseSet_trivializationAt F V z.proj
-  -- The fibre coordinate of `e^r • z` is `e^r` times that of `z`, by linearity of the
-  -- trivialization.
-  have hlin (r : ℝ) :
-      (trivializationAt F V z.proj (⟨z.proj, Real.exp r • z.2⟩ : TotalSpace F V)).2 =
-        Real.exp r • (trivializationAt F V z.proj z).2 :=
-    ((trivializationAt F V z.proj).linear ℝ hb).map_smul (Real.exp r) z.2
-  rw [vectorBundleEulerField_eq_trivializationAt, Manifold.hasMFDerivAt_totalSpace_curve_iff]
-  refine ⟨((Real.contDiff_exp.contMDiff (n := 0)).smul_totalSpace
-    (contMDiff_const (c := z) (I := 𝓘(ℝ)) (I' := I.prod 𝓘(ℝ, F)))).continuous.continuousAt,
-    hasDerivAt_const t (extChartAt I z.proj z.proj), ?_⟩
-  rw [funext hlin, hlin]
-  exact (Real.hasDerivAt_exp t).smul_const _
+  rw [vectorBundleEulerField_eq_trivializationAt]
+  have h := hasMFDerivAt_smul_curve (I := I) z (Real.hasDerivAt_exp t)
+  rwa [← trivializationAt_smul_snd] at h
 
 end Real
 
