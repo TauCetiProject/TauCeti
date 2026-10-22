@@ -61,6 +61,29 @@ variable {V : Type u} [AddCommGroup V] [Module ℝ V] (J : AlmostComplexStructur
   {Q : QuadraticForm ℝ V} [FiniteDimensional ℝ V] (hQJ : ∀ v, Q (J v) = Q v)
   (hQ : Q.Nondegenerate)
 
+/-- The rescaled action of a real vector splits into its holomorphic creation part and
+antiholomorphic contraction part. -/
+theorem scaledSpinAction_ι_one_tmul (r : ℂˣ) (v : V) :
+    (J.spinPolarizationData hQJ hQ).scaledSpinAction r
+        (ι (Q.baseChange ℂ) ((1 : ℂ) ⊗ₜ v)) =
+      (r : ℂ) • (J.spinPolarizationData hQJ hQ).wedge
+          ⟨J.holomorphicPart v, J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ v⟩ +
+        ((r⁻¹ : ℂˣ) : ℂ) • (J.spinPolarizationData hQJ hQ).contract
+          ⟨J.antiholomorphicPart v,
+            J.antiholomorphicPart_mem_spinPolarizationData_W' hQJ hQ v⟩ := by
+  have hW := (J.spinPolarizationData hQJ hQ).scaledSpinAction_ι_coe_W r
+    ⟨J.holomorphicPart v, J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ v⟩
+  have hW' := (J.spinPolarizationData hQJ hQ).scaledSpinAction_ι_coe_W' r
+    ⟨J.antiholomorphicPart v, J.antiholomorphicPart_mem_spinPolarizationData_W' hQJ hQ v⟩
+  -- Reduce the subtype coercions before using the common holomorphic decomposition.
+  dsimp only at hW hW'
+  rw [← J.holomorphicPart_add_antiholomorphicPart v, map_add, map_add, hW, hW']
+
+private noncomputable def sqrtTwoUnit : ℂˣ :=
+  Units.mk0 (Real.sqrt 2 : ℂ) (by norm_num)
+
+private theorem coe_sqrtTwoUnit : (sqrtTwoUnit : ℂ) = Real.sqrt 2 := rfl
+
 /-- **The native action of a real vector** on the spinor module `⋀ W` of the polarization by a
 complex structure: exterior multiplication by `v^(1,0)` plus contraction against
 `QuadraticMap.polar (Q.baseChange ℂ) · v^(0,1)`. -/
@@ -71,14 +94,8 @@ theorem spinAction_ι_one_tmul (v : V) :
         (J.spinPolarizationData hQJ hQ).contract
           ⟨J.antiholomorphicPart v,
             J.antiholomorphicPart_mem_spinPolarizationData_W' hQJ hQ v⟩ := by
-  have hW := (J.spinPolarizationData hQJ hQ).cliffordOperator_coe_W
-    ⟨J.holomorphicPart v, J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ v⟩
-  have hW' := (J.spinPolarizationData hQJ hQ).cliffordOperator_coe_W'
-    ⟨J.antiholomorphicPart v, J.antiholomorphicPart_mem_spinPolarizationData_W' hQJ hQ v⟩
-  -- Reduce the coercions of the anonymous-constructor subtype elements to the ambient vectors.
-  dsimp only at hW hW'
-  rw [← J.holomorphicPart_add_antiholomorphicPart v, map_add, map_add, spinAction_ι,
-    spinAction_ι, hW, hW']
+  simpa only [SpinPolarizationData.scaledSpinAction_one, inv_one, Units.val_one, one_smul]
+    using J.scaledSpinAction_ι_one_tmul hQJ hQ 1 v
 
 /-- **The `√2`-normalized Fock action** of the complexified Clifford algebra on `⋀ W`: the
 conjugate of the native action `TauCeti.spinAction` by the degree scaling of `⋀ W` by `√2`. A real
@@ -87,14 +104,14 @@ form `g_ℂ = -polar Q_ℂ / 2` (`TauCeti.AlmostComplexStructure.fockAction_ι_o
 noncomputable def fockAction :
     CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ]
       Module.End ℂ (ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) :=
-  (J.spinPolarizationData hQJ hQ).scaledSpinAction (Units.mk0 (Real.sqrt 2 : ℂ) (by norm_num))
+  (J.spinPolarizationData hQJ hQ).scaledSpinAction sqrtTwoUnit
 
 /-- The normalized Fock action is the rescaled spinor representation for any unit of value
 `√2`. -/
 theorem fockAction_eq_scaledSpinAction {r : ℂˣ} (hr : (r : ℂ) = Real.sqrt 2) :
     J.fockAction hQJ hQ = (J.spinPolarizationData hQJ hQ).scaledSpinAction r := by
   rw [fockAction]
-  exact congrArg _ (Units.ext hr.symm)
+  exact congrArg _ (Units.ext (coe_sqrtTwoUnit.trans hr.symm))
 
 /-- **The degree scaling by `√2` intertwines the native and the normalized Fock actions**:
 `T ∘ spinAction a = fockAction a ∘ T`, where `T` multiplies `⋀^p W` by `√2 ^ p`
@@ -122,16 +139,9 @@ theorem fockAction_ι_one_tmul (v : V) :
     rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
   have hinv : (Real.sqrt 2 : ℂ)⁻¹ = Real.sqrt 2 * 2⁻¹ :=
     inv_eq_of_mul_eq_one_right (by rw [← mul_assoc, hsqrt, mul_inv_cancel₀ two_ne_zero])
-  have hW := (J.spinPolarizationData hQJ hQ).scaledSpinAction_ι_coe_W
-    (Units.mk0 (Real.sqrt 2 : ℂ) (by norm_num))
-    ⟨J.holomorphicPart v, J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ v⟩
-  have hW' := (J.spinPolarizationData hQJ hQ).scaledSpinAction_ι_coe_W'
-    (Units.mk0 (Real.sqrt 2 : ℂ) (by norm_num))
-    ⟨J.antiholomorphicPart v, J.antiholomorphicPart_mem_spinPolarizationData_W' hQJ hQ v⟩
-  -- Reduce the coercions of the anonymous-constructor subtype elements to the ambient vectors.
-  dsimp only at hW hW'
-  rw [← J.holomorphicPart_add_antiholomorphicPart v, map_add, map_add, fockAction, hW, hW',
-    Units.val_inv_eq_inv_val, Units.val_mk0, hinv, smul_add, smul_smul]
+  rw [J.fockAction_eq_scaledSpinAction hQJ hQ coe_sqrtTwoUnit,
+    J.scaledSpinAction_ι_one_tmul hQJ hQ, Units.val_inv_eq_inv_val, coe_sqrtTwoUnit,
+    hinv, smul_add, smul_smul]
 
 /-- **The Clifford relation for the normalized Fock action**: `c(v) ^ 2 = Q v`. In the geometric
 convention `Q (v) = -g (v, v)` this is `c(v) ^ 2 = -|v|² Id`. -/

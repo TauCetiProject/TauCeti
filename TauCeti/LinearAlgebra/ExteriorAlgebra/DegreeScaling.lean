@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
 /-!
 # Degree scaling of an exterior algebra
@@ -58,6 +57,20 @@ end TauCeti.ExteriorAlgebra
 namespace ExteriorAlgebra
 
 open TauCeti.ExteriorAlgebra
+
+/-- Contraction against a functional commutes with an exterior-algebra map after pulling
+back the functional. -/
+theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+    (d : Module.Dual R N) (x : ExteriorAlgebra R M) :
+    contractLeft (Q := (0 : QuadraticForm R N)) d (_root_.ExteriorAlgebra.map f x) =
+      _root_.ExteriorAlgebra.map f
+        (contractLeft (Q := (0 : QuadraticForm R M)) (d ∘ₗ f) x) := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r => simp only [AlgHom.commutes, contractLeft_algebraMap, map_zero]
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | ι_mul x m hx =>
+    simp only [map_mul, _root_.ExteriorAlgebra.map_apply_ι, contractLeft_ι_mul, hx,
+      map_sub, map_smul, LinearMap.comp_apply]
 
 /-- The degree scaling is the exterior-algebra map induced by `r • id`. -/
 theorem degreeScaling_apply (r : Rˣ) (x : ExteriorAlgebra R M) :
@@ -123,12 +136,7 @@ theorem degreeScaling_contractLeft (r : Rˣ) (d : Module.Dual R M) (x : Exterior
   have hd : (((r⁻¹ : Rˣ) : R) • d) ∘ₗ ((r : R) • LinearMap.id) = d := by
     ext m
     simp
-  rw [degreeScaling_apply, degreeScaling_apply, ← LinearMap.smul_apply, ← map_smul]
-  -- Unfold the exterior-algebra map to match the Clifford map of its zero-form isometry.
-  simpa only [hd, ExteriorAlgebra.map] using
-    (CliffordAlgebra.contractLeft_map
-      (Q₁ := (0 : QuadraticForm R M)) (Q₂ := (0 : QuadraticForm R M))
-      { (r : R) • LinearMap.id with map_app' := fun _ => rfl }
-      (((r⁻¹ : Rˣ) : R) • d) x).symm
+  rw [degreeScaling_apply, degreeScaling_apply, ← LinearMap.smul_apply, ← map_smul,
+    _root_.ExteriorAlgebra.contractLeft_map, hd]
 
 end ExteriorAlgebra
