@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.GoingDown
 public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.HasGoingUp
-public import Mathlib.RingTheory.Ideal.Height
 public import Mathlib.RingTheory.KrullDimension.Basic
 
 /-!
@@ -27,9 +25,6 @@ For an injective integral extension both hold, and the two dimensions agree. Thi
 that reduces the dimension of a finitely generated algebra over a field to that of a polynomial
 ring through Noether normalization.
 
-If moreover `R → S` has going down, every prime of `S` has the height of its contraction:
-incomparability bounds the height from above and going down from below.
-
 ## Main results
 
 * `TauCeti.ringKrullDim_le_of_isIntegral`: `dim S ≤ dim R` for an integral `R`-algebra `S`.
@@ -37,8 +32,6 @@ incomparability bounds the height from above and going down from below.
   up and `Spec S → Spec R` is surjective.
 * `TauCeti.ringKrullDim_eq_of_isIntegral_of_faithfulSMul`: `dim S = dim R` for an injective
   integral extension.
-* `Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown`: a prime of an integral
-  `R`-algebra with going down has the height of its contraction to `R`.
 
 ## References
 
@@ -84,23 +77,5 @@ theorem ringKrullDim_eq_of_isIntegral_of_faithfulSMul [Algebra.IsIntegral R S] [
     ringKrullDim S = ringKrullDim R :=
   ringKrullDim_le_of_isIntegral.antisymm <|
     ringKrullDim_le_of_hasGoingUp_of_surjective (Algebra.IsIntegral.comap_surjective R S)
-
-/-- Let `S` be an integral `R`-algebra with going down. Then every prime `P` of `S` has the height
-of its contraction to `R`: incomparability bounds the height of `P` above, and going down lifts
-chains of primes of `R` ending at `P ∩ R` to chains ending at `P`. -/
-theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown [Algebra.IsIntegral R S]
-    [Algebra.HasGoingDown R S] (P : Ideal S) [P.IsPrime] : P.height = (P.under R).height := by
-  let Q : PrimeSpectrum S := ⟨P, inferInstance⟩
-  have h : (P.under R).height = Order.height (PrimeSpectrum.comap (algebraMap R S) Q) := by
-    rw [← PrimeSpectrum.height_eq_orderHeight, PrimeSpectrum.comap_asIdeal, Ideal.under_def]
-  rw [PrimeSpectrum.height_eq_orderHeight Q, h]
-  refine le_antisymm
-    (Order.height_le_height_apply_of_strictMono _ primeSpectrumComap_strictMono_of_isIntegral Q)
-    (Order.height_le fun l hl ↦ ?_)
-  -- Going down lifts a chain of primes of `R` ending at `P ∩ R` to one of `S` ending at `P`.
-  have : P.LiesOver l.last.asIdeal := ⟨by rw [hl]; rfl⟩
-  obtain ⟨L, hlen, hlast, -⟩ := Ideal.exists_ltSeries_of_hasGoingDown l P
-  rw [← hlen, show Q = L.last from hlast.symm]
-  exact Order.length_le_height_last
 
 end TauCeti

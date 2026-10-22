@@ -13,7 +13,7 @@ import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Polynomial.RationalRoot
 import TauCeti.RingTheory.Affinoid.FiniteQuotient
 import TauCeti.RingTheory.KrullDimension.Basic
-import TauCeti.RingTheory.KrullDimension.Integral
+import TauCeti.RingTheory.KrullDimension.Fiber
 import TauCeti.RingTheory.KrullDimension.Quotient
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
 
@@ -83,6 +83,8 @@ theorem exists_ringKrullDim_eq_finite_injective [Nontrivial A] (hA : IsAffinoidA
   let := g.toRingHom.toAlgebra
   have : Module.Finite T A := hfin
   have : Algebra.IsIntegral T A := Algebra.IsIntegral.of_finite T A
+  have : IsNoetherianRing T := MvPowerSeries.isNoetherianRing_isRestricted_subring
+  have : IsNoetherianRing A := hA.isNoetherianRing
   have : FaithfulSMul T A := (faithfulSMul_iff_algebraMap_injective T A).mpr hg
   refine ⟨n, ?_, g, hg, hfin⟩
   simpa using MvPowerSeries.ringKrullDim_eq_natCard_of_isIntegral (K := K) (σ := Fin n) (A := A)
@@ -104,9 +106,11 @@ theorem height_eq_ringKrullDim_of_isDomain [IsDomain A] (hA : IsAffinoidAlgebra 
   let := g.toRingHom.toAlgebra
   have : Module.Finite T A := hfin
   have : Algebra.IsIntegral T A := Algebra.IsIntegral.of_finite T A
+  have : IsNoetherianRing T := MvPowerSeries.isNoetherianRing_isRestricted_subring
+  have : IsNoetherianRing A := hA.isNoetherianRing
   have : FaithfulSMul T A := (faithfulSMul_iff_algebraMap_injective T A).mpr hg
   have : (m.under T).IsMaximal := Ideal.isMaximal_under_of_isIntegral_of_isMaximal m
-  rw [hn, Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown (R := T) m,
+  rw [hn, Ideal.height_eq_height_under_of_quasiFinite (R := T) m,
     Ideal.height_eq_natCard_of_isMaximal_isRestricted_subring, Nat.card_fin]
   norm_cast
 
