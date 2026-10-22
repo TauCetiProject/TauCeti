@@ -74,6 +74,7 @@ theorem pinningSimpleRootEquiv_apply (i : Fin 2) :
 
 /-- The root vector of the pinning at node `i` is the tangent vector of the numbered raising root
 subgroup. -/
+@[simp↓ 1100]
 theorem pinning_rootVector (i : Fin 2) :
     pinning.rootVector (pinningSimpleRootEquiv i) = rootVector (.inl i) := by
   rw [Pinning.rootVector_def]
