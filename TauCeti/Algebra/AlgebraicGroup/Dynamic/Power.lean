@@ -21,13 +21,12 @@ of the two conjugation families and preserves the constant coefficient. Hence
 * `Z(λⁿ) = Z(λ)` for `n ≠ 0`, because the substitution is injective.
 
 These hold on points over every commutative value semiring, and for the defining Hopf ideals
-over a commutative ring, with no field, smoothness or finite-type hypothesis.
+over a commutative ring, with no field, smoothness or finite-type hypothesis. The power
+`BialgHom.powCocharacter` and its point formula are in
+`TauCeti.Algebra.AlgebraicGroup.Dynamic.Points`.
 
 ## Main declarations
 
-* `BialgHom.powCocharacter`: the power `λⁿ` of a cocharacter, with
-  `BialgHom.powCocharacter_one`, `BialgHom.powCocharacter_powCocharacter` and
-  `BialgHom.powCocharacter_neg_one` relating it to `λ`, `λ^{mn}` and the opposite cocharacter.
 * `BialgHom.conjugate_powCocharacter`: generic conjugation by `λⁿ` is generic conjugation by
   `λ` followed by `T ↦ Tⁿ`; `BialgHom.coeff_conjugate_powCocharacter` is its coefficientwise
   form.
@@ -48,53 +47,6 @@ public section
 open WithConv TauCeti TauCeti.Cocharacter
 
 namespace BialgHom
-
-section Bialgebra
-
-variable {R H A : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
-variable [CommSemiring A] [Algebra R A]
-
-/-- The `n`-th power `t ↦ λ(tⁿ)` of a cocharacter `λ`: its composite with the `n`-th power
-map of the multiplicative group. -/
-noncomputable def powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ) :
-    H →ₐc[R] LaurentPolynomial R :=
-  (AddMonoidAlgebra.mapDomainBialgHom R (AddMonoidHom.mulRight n)).comp l
-
-/-- On coordinates the `n`-th power of a cocharacter substitutes `Tⁿ` for the Laurent
-variable. -/
-@[simp]
-theorem powCocharacter_apply (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ) (h : H) :
-    l.powCocharacter n h = AddMonoidAlgebra.mapDomain (· * n) (l h) := (rfl)
-
-/-- The first power of a cocharacter is the cocharacter itself. -/
-@[simp]
-theorem powCocharacter_one (l : H →ₐc[R] LaurentPolynomial R) : l.powCocharacter 1 = l := by
-  ext h k : 2
-  simp
-
-/-- Powers of a cocharacter compose by multiplying the exponents: `(λᵐ)ⁿ = λ^{mn}`. -/
-@[simp]
-theorem powCocharacter_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (m n : ℤ) :
-    (l.powCocharacter m).powCocharacter n = l.powCocharacter (m * n) := by
-  ext h k : 2
-  simp only [powCocharacter_apply, AddMonoidAlgebra.coeff_mapDomain, ← Finsupp.mapDomain_comp,
-    Function.comp_def, mul_assoc]
-
-/-- The power `λ⁻¹` of a cocharacter is its opposite cocharacter. -/
-theorem powCocharacter_neg_one (l : H →ₐc[R] LaurentPolynomial R) :
-    l.powCocharacter (-1) = l.oppositeCocharacter := by
-  ext h k : 2
-  simpa using Finsupp.mapDomain_apply_of_injective neg_injective (l h).coeff (-k)
-
-/-- The `n`-th power of a cocharacter evaluates at the `n`-th power of a unit. -/
-@[simp]
-theorem pointsHom_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ) (u : Aˣ) :
-    pointsHom A (l.powCocharacter n) u = pointsHom A l (u ^ n) := by
-  ext h
-  rw [pointsHom_apply, pointsHom_apply, ← laurentEval_comp_mapDomainAlgHom_mulRight]
-  simp [BialgHom.mapDomain_apply]
-
-end Bialgebra
 
 section HopfAlgebra
 
