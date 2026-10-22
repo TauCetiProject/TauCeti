@@ -55,6 +55,8 @@ biproduct, and degreewise-conflation formulas.
 * `TauCeti.ExactK0.map` and `TauCeti.ExactK0.mapEquiv`: functoriality for conflation-exact
   functors and invariance under exact equivalences, with `TauCeti.ExactK0.transportEquiv` the
   instance of the latter for a transported exact structure.
+* `TauCeti.ExactK0.map₂`: the biadditive map induced by a bifunctor which is conflation-exact in
+  each variable, with `TauCeti.ExactK0.map₂_of_of` its value `[F(X, Y)]` on a pair of classes.
 * `TauCeti.ExactK0.ofLE` and `TauCeti.ExactK0.fromSplit`: the comparison induced by the identity
   functor towards an exact structure with more conflations, and its instance out of the split
   Grothendieck group; `TauCeti.ExactK0.ofLEEquiv` is the comparison isomorphism between exact
@@ -620,6 +622,38 @@ lemma transportEquiv_of (E : ExactStructure C) (e : C ≌ D) [e.functor.Additive
   mapEquiv_of e _ _ X
 
 end Functoriality
+
+section Bifunctor
+
+variable {K : Type u''} [Category.{v''} K] [Preadditive K] [HasZeroObject K]
+  [HasBinaryBiproducts K] [EssentiallySmall.{w''} K] {E'' : ExactStructure K}
+  (F : C ⥤ D ⥤ K) [∀ X, (F.obj X).Additive] [∀ Y, (F.flip.obj Y).Additive]
+
+/-- The class `[F(X, Y)]` of a bifunctor which is conflation-exact in each variable, as a
+biadditive invariant. -/
+private noncomputable def map₂Invariant (h₁ : ∀ Y, E.IsConflationExact E'' (F.flip.obj Y))
+    (h₂ : ∀ X, E'.IsConflationExact E'' (F.obj X)) : BiadditiveInvariant E E' (ExactK0 E'') where
+  obj X Y := of ((F.obj X).obj Y)
+  map_iso₁ e Y := of_congr ((F.mapIso e).app Y)
+  map_conflation₂ X _ hS := of_conflation ((h₂ X).map_conflation hS)
+  map_conflation₁ hS Y := of_conflation ((h₁ Y).map_conflation hS)
+
+/-- **Biadditivity of exact `K₀`**: a bifunctor which is conflation-exact in each variable
+separately induces a biadditive map of exact Grothendieck groups, sending the pair of classes
+`([X], [Y])` to `[F(X, Y)]`. -/
+noncomputable def map₂ (h₁ : ∀ Y, E.IsConflationExact E'' (F.flip.obj Y))
+    (h₂ : ∀ X, E'.IsConflationExact E'' (F.obj X)) : ExactK0 E →+ ExactK0 E' →+ ExactK0 E'' :=
+  (map₂Invariant F h₁ h₂).bilift
+
+/-- The biadditive map induced by a bifunctor sends a pair of object classes to the class of the
+image of the pair. -/
+@[simp]
+lemma map₂_of_of (h₁ : ∀ Y, E.IsConflationExact E'' (F.flip.obj Y))
+    (h₂ : ∀ X, E'.IsConflationExact E'' (F.obj X)) (X : C) (Y : D) :
+    map₂ F h₁ h₂ (of X) (of Y) = (of ((F.obj X).obj Y) : ExactK0 E'') :=
+  (map₂Invariant F h₁ h₂).bilift_of_of X Y
+
+end Bifunctor
 
 section Comparison
 
