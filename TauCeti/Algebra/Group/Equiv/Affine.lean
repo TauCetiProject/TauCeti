@@ -22,6 +22,10 @@ from exact order, and characterizes fixed points by the image of `1 - A^k`.
 The partial norm and difference maps use sums and powers in `AddMonoid.End`.
 All results allow torsion. In particular, no division is used for involutions.
 
+The public API is in `TauCeti.CyclicAffine`. With `open TauCeti.CyclicAffine`, use
+`affinePerm A t` for the permutation and `toEnd A` for its linear endomorphism.
+Theorems likewise take explicit arguments, as in `affinePerm_pow_apply A t k x`.
+
 The norm and difference convention is the one in Brown, *Cohomology of Groups*,
 Chapter VI, Section 2. Periodicity is expressed using powers in `AddMonoid.End`;
 the iterate formula also uses function iteration.
