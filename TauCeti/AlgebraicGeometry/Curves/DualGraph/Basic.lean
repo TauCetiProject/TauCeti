@@ -167,6 +167,26 @@ theorem toSimpleGraph_connected : G.toSimpleGraph.Connected := by
     · exact hb ▸ ih
     · exact ih.tail (G.toSimpleGraph_adj.mpr ⟨hb, hbc⟩)
 
+variable {G} in
+/-- A connectivity criterion for a graph built on the image of a surjection `φ` from the vertices
+of `G`: it suffices that each edge of `G` is either collapsed by `φ` or carried by `φ` to an edge
+of the new graph, in either orientation. -/
+theorem connected_of_surjective {V E : Type*} {f : E → Fin 2 → V} (φ : G.Vertex → V)
+    (hφ : Function.Surjective φ)
+    (h : ∀ e, φ (G.endpoint e 0) = φ (G.endpoint e 1) ∨
+      ∃ e', (f e' 0 = φ (G.endpoint e 0) ∧ f e' 1 = φ (G.endpoint e 1)) ∨
+        (f e' 0 = φ (G.endpoint e 1) ∧ f e' 1 = φ (G.endpoint e 0))) (x y : V) :
+    Relation.ReflTransGen (fun v w ↦ ∃ e, (f e 0 = v ∧ f e 1 = w) ∨ (f e 0 = w ∧ f e 1 = v))
+      x y := by
+  obtain ⟨x, rfl⟩ := hφ x
+  obtain ⟨y, rfl⟩ := hφ y
+  refine Relation.ReflTransGen.lift' φ (fun a b ⟨e, hab⟩ ↦ ?_) x y (G.connected x y)
+  rcases h e with heq | ⟨e', h'⟩ <;> obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hab
+  · rw [Function.onFun, heq]
+  · rw [Function.onFun, heq]
+  · exact .single ⟨e', h'⟩
+  · exact .single ⟨e', h'.symm⟩
+
 /-- If every edge at `v` is a loop, then `v` is the only vertex: no edge leaves it, and the graph
 is connected. -/
 theorem eq_of_forall_endpoint_zero_eq_iff {v : G.Vertex}

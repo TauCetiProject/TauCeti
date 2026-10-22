@@ -204,25 +204,6 @@ private lemma card_edge_eq (v : G.Vertex) :
     filter_congr fun e _ ↦ by simp only [ne_eq, not_forall, not_not]
   rw [this, Fintype.card_subtype, card_filter_add_card_filter_not, card_univ]
 
-/-- A connectivity criterion for a graph built on the image of a surjection `φ` from the vertices
-of `G`: it suffices that each edge of `G` is either collapsed by `φ` or carried by `φ` to an edge
-of the new graph, in either orientation. -/
-private lemma connected_of_surjective {V E : Type*} {f : E → Fin 2 → V} (φ : G.Vertex → V)
-    (hφ : Function.Surjective φ)
-    (h : ∀ e, φ (G.endpoint e 0) = φ (G.endpoint e 1) ∨
-      ∃ e', (f e' 0 = φ (G.endpoint e 0) ∧ f e' 1 = φ (G.endpoint e 1)) ∨
-        (f e' 0 = φ (G.endpoint e 1) ∧ f e' 1 = φ (G.endpoint e 0))) (x y : V) :
-    Relation.ReflTransGen (fun v w ↦ ∃ e, (f e 0 = v ∧ f e 1 = w) ∨ (f e 0 = w ∧ f e 1 = v))
-      x y := by
-  obtain ⟨x, rfl⟩ := hφ x
-  obtain ⟨y, rfl⟩ := hφ y
-  refine Relation.ReflTransGen.lift' φ (fun a b ⟨e, hab⟩ ↦ ?_) x y (G.connected x y)
-  rcases h e with heq | ⟨e', h'⟩ <;> obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hab
-  · rw [Function.onFun, heq]
-  · rw [Function.onFun, heq]
-  · exact .single ⟨e', h'⟩
-  · exact .single ⟨e', h'.symm⟩
-
 /-! ### Contracting a tail -/
 
 /-- The graph left after deleting a vertex of valence one is connected: chains in `G` collapse
