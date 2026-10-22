@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Scaling
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
 
@@ -209,29 +210,25 @@ theorem scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian
     (hf.rpow_const_of_ne (fun y ↦ (hf_pos y).ne') _).congr fun y ↦
       (Real.rpow_rpow_inv (hu_pos y).le (div_ne_zero four_ne_zero hn')).symm
   -- Write `u ^ p = e^(2φ)` with `φ = (2 / (n - 2)) log u` and apply the conformal scalar formula.
-  set h : ℝ → ℝ := fun t ↦ 2 / ((finrank ℝ E : ℝ) - 2) * Real.log t with hh_def
-  have hfφ : ∀ y, u y ^ (4 / ((finrank ℝ E : ℝ) - 2)) = Real.exp (2 * (h ∘ u) y) := by
+  have hlog : ContMDiff I 𝓘(ℝ) 2 fun y ↦ Real.log (u y) :=
+    (hu.of_le (by simp)).log fun y ↦ (hu_pos y).ne'
+  have hfφ : ∀ y, u y ^ (4 / ((finrank ℝ E : ℝ) - 2)) =
+      Real.exp (2 * ((2 / ((finrank ℝ E : ℝ) - 2)) • fun y ↦ Real.log (u y)) y) := by
     intro y
-    rw [Real.rpow_def_of_pos (hu_pos y), Function.comp_apply, hh_def]
+    rw [Real.rpow_def_of_pos (hu_pos y), Pi.smul_apply, smul_eq_mul]
     ring_nf
-  rw [g.scalarCurvature_rescale hf hf_pos hfφ x]
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  -- The derivatives of `h` at the positive value `u x`.
-  have hh : ContDiffOn ℝ 2 h (Set.Ioi 0) :=
-    contDiffOn_const.mul (Real.contDiffOn_log.mono fun t ht ↦ (Set.mem_Ioi.1 ht).ne')
-  have hd : deriv h = fun t ↦ 2 / ((finrank ℝ E : ℝ) - 2) * t⁻¹ := by
-    rw [hh_def, deriv_const_mul_field', Real.deriv_log']
-  have hdd : deriv (deriv h) (u x) = 2 / ((finrank ℝ E : ℝ) - 2) * -(u x ^ 2)⁻¹ := by
-    rw [hd, deriv_const_mul_field, deriv_inv]
-  have hΔ := laplaceBeltrami_comp I isOpen_Ioi hh (hu.of_le (by simp)) hu_pos x
-  have hgrad := mgradient_comp_deriv (I := I) (f := u) (x := x)
-    ((hh.differentiableOn (by norm_num) _ hux).differentiableAt (isOpen_Ioi.mem_nhds hux))
-    (hu.mdifferentiableAt (by simp))
-  rw [hΔ, hdd, hgrad, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, hd,
-    conformalLaplacian_def, conformalCoefficient_def, ← g.scalarCurvature_def x,
-    show -((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2) =
+  have hpow : u x ^ (-((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2)) =
+      (u x ^ (4 / ((finrank ℝ E : ℝ) - 2)))⁻¹ * (u x)⁻¹ := by
+    rw [show -((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2) =
       -(4 / ((finrank ℝ E : ℝ) - 2)) + -1 by field_simp; ring,
-    Real.rpow_add hux, Real.rpow_neg hux.le, Real.rpow_neg_one]
+      Real.rpow_add hux, Real.rpow_neg hux.le, Real.rpow_neg_one]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  rw [g.scalarCurvature_rescale hf hf_pos hfφ x, laplaceBeltrami_smul I _ hlog,
+    mgradient_smul _ (hlog.mdifferentiable (by simp)), Pi.smul_apply,
+    laplaceBeltrami_log I (hu.of_le (by simp)) (fun y ↦ (hu_pos y).ne'),
+    mgradient_log (hu.mdifferentiableAt (by simp)) hux.ne', hpow, conformalLaplacian_def,
+    conformalCoefficient_def, ← g.scalarCurvature_def x]
+  simp only [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
   field_simp
   ring
 

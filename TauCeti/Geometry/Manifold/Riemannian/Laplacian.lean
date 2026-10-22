@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.InnerProductSpace.Trace
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Analysis.Normed.Module.Trace
@@ -15,6 +16,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
@@ -28,7 +30,8 @@ covariant derivative, the scalar Hessian obtained by pairing that derivative of 
 and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  The orthonormal-basis
 trace formula makes the relationship between the Laplacian and the Hessian explicit. The operator
 laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
-real function `h`. On a finite-dimensional inner-product space, the operator agrees with Mathlib's
+real function `h`, with its special case `Δ (log f) = Δ f / f - |grad f|² / f²`. On a
+finite-dimensional inner-product space, the operator agrees with Mathlib's
 flat Laplacian.
 
 -/
@@ -456,6 +459,19 @@ theorem laplaceBeltrami_comp {h : ℝ → ℝ} {s : Set ℝ} (hs : IsOpen s) (hh
       (hd.comp_mdifferentiableAt (hfd x)) (mdifferentiable_mgradient (I := I) hf x),
     ← laplaceBeltrami_def, ← inner_mgradient, mgradient_comp_deriv hd (hfd x),
     real_inner_smul_left, real_inner_self_eq_norm_sq, Function.comp_apply]
+
+/-- The Laplace--Beltrami operator of the logarithm of a nowhere-vanishing `C²` function:
+`Δ (log f) = Δ f / f - |grad f|² / f²`. -/
+theorem laplaceBeltrami_log {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (hf0 : ∀ y, f y ≠ 0)
+    (x : M) :
+    laplaceBeltrami I (fun y ↦ Real.log (f y)) x =
+      laplaceBeltrami I f x / f x - ‖mgradient I f x‖ ^ 2 / f x ^ 2 := by
+  have hdd : deriv (deriv Real.log) (f x) = -(f x ^ 2)⁻¹ := by
+    rw [Real.deriv_log', deriv_inv]
+  rw [show (fun y ↦ Real.log (f y)) = Real.log ∘ f from rfl,
+    laplaceBeltrami_comp I isOpen_compl_singleton Real.contDiffOn_log hf hf0 x,
+    Real.deriv_log, hdd]
+  ring
 
 end OperatorLaws
 
