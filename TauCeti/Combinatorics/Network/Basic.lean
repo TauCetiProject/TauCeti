@@ -28,16 +28,15 @@ endpoints are strict-implicit so that applying an assignment to an arrow infers 
 arrow. -/
 abbrev Assignment (Hom : V → V → Type v) (K : Type w) := ∀ ⦃x y : V⦄, Hom x y → K
 
-/-- Assignment evaluation is invariant under transport of the arrow endpoints. -/
-theorem assignment_homOfEq {Hom : V → V → Type v} {K : Type w}
-    (f : Assignment Hom K) {x y x' y' : V} (a : Hom x y) (hx : x = x') (hy : y = y') :
-    f (@Quiver.homOfEq V ⟨Hom⟩ x y x' y' a hx hy) = f a := by
-  subst x' y'
-  rfl
-
 namespace Assignment
 
 variable {Hom : V → V → Type v} {K L M : Type*}
+
+/-- Assignment evaluation is invariant under transport of the arrow endpoints. -/
+theorem apply_homOfEq (f : Assignment Hom K) {x y x' y' : V} (a : Hom x y) (hx : x = x')
+    (hy : y = y') : f (@Quiver.homOfEq V ⟨Hom⟩ x y x' y' a hx hy) = f a := by
+  subst x' y'
+  rfl
 
 /-- Change the coefficients of an assignment by applying `φ` to its value on every arrow.
 

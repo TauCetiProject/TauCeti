@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import TauCeti.Combinatorics.Network.Flow
+public import TauCeti.Combinatorics.Network.Walk
 
 /-!
 # Isomorphisms of bounded networks
@@ -36,9 +37,6 @@ section LE
 
 variable [LE K]
 variable {N : Network K V} {N' : Network K W} {N'' : Network K X}
-
-/-- The directed paths in the explicit arrow family carried by a network. -/
-abbrev Path (N : Network K V) (x y : V) := @Quiver.Path V ⟨N.Hom⟩ x y
 
 /-- An isomorphism of bounded networks: an equivalence of vertices and equivalences of every
 corresponding arrow type that preserve the lower and upper bounds. -/
@@ -144,7 +142,7 @@ private theorem apply_inverseHomEquiv {R : Type w'} (e : N ≃ₙ N') (g : N.Ass
     {x y : W} (a : N'.Hom x y) : g (e.inverseHomEquiv x y a) = g' a := by
   rw [inverseHomEquiv_apply, ← hg]
   simp only [Equiv.apply_symm_apply]
-  exact assignment_homOfEq g' a _ _
+  exact g'.apply_homOfEq a _ _
 
 /-- Reverse a bounded-network isomorphism. -/
 @[symm] def symm (e : N ≃ₙ N') : N' ≃ₙ N where
@@ -241,7 +239,7 @@ theorem assignmentEquiv_symm (e : N ≃ₙ N') (R : Type w') :
       rw [symm_homEquiv_apply_homEquiv]
     _ = e.symm.assignmentEquiv R f
           (e.symm.homEquiv (e.vertexEquiv x) (e.vertexEquiv y) (e.homEquiv x y a)) :=
-      assignment_homOfEq _ _ _ _
+      Assignment.apply_homOfEq _ _ _ _
     _ = f (e.homEquiv x y a) := e.symm.assignmentEquiv_apply R f (e.homEquiv x y a)
 
 /-- Assignment transport carries the zero assignment to zero. -/
@@ -388,27 +386,26 @@ theorem toPrefunctor_trans {N'' : Network K X} (e : N ≃ₙ N') (f : N' ≃ₙ 
   rfl
 
 /-- Transport a directed path along a network isomorphism. -/
-def mapPath (e : N ≃ₙ N') {x y : V} (p : N.Path x y) :
-    N'.Path (e.vertexEquiv x) (e.vertexEquiv y) :=
+def mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :
+    ArrowWalk N'.Hom (e.vertexEquiv x) (e.vertexEquiv y) :=
   @Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x y p
 
 /-- Path transport preserves the empty path. -/
 @[simp]
 theorem mapPath_nil (e : N ≃ₙ N') (x : V) :
-    e.mapPath (@Quiver.Path.nil V ⟨N.Hom⟩ x) = @Quiver.Path.nil W ⟨N'.Hom⟩ _ :=
+    e.mapPath (ArrowWalk.nil x) = ArrowWalk.nil (e.vertexEquiv x) :=
   @Prefunctor.mapPath_nil V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x
 
 /-- Path transport commutes with appending one arrow. -/
 @[simp]
-theorem mapPath_cons (e : N ≃ₙ N') {x y z : V} (p : N.Path x y) (a : N.Hom y z) :
-    e.mapPath (@Quiver.Path.cons V ⟨N.Hom⟩ x y z p a) =
-      @Quiver.Path.cons W ⟨N'.Hom⟩ _ _ _ (e.mapPath p) (e.homEquiv y z a) :=
+theorem mapPath_cons (e : N ≃ₙ N') {x y z : V} (p : ArrowWalk N.Hom x y) (a : N.Hom y z) :
+    e.mapPath (p.cons a) = (e.mapPath p).cons (e.homEquiv y z a) :=
   @Prefunctor.mapPath_cons V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor
     x y z p a
 
 /-- The identity network isomorphism fixes every path. -/
 @[simp]
-theorem mapPath_refl (N : Network K V) {x y : V} (p : N.Path x y) :
+theorem mapPath_refl (N : Network K V) {x y : V} (p : ArrowWalk N.Hom x y) :
     @Quiver.Path.cast V ⟨N.Hom⟩ _ _ x y (refl_vertexEquiv_apply N x)
       (refl_vertexEquiv_apply N y) ((refl N).mapPath p) = p :=
   -- The endpoint casts are along `rfl`, and `(refl N).toPrefunctor` is the identity prefunctor
@@ -418,7 +415,7 @@ theorem mapPath_refl (N : Network K V) {x y : V} (p : N.Path x y) :
 /-- Transport along a composite isomorphism applies the two path transports in order. -/
 @[simp]
 theorem mapPath_trans {N'' : Network K X} (e : N ≃ₙ N') (f : N' ≃ₙ N'')
-    {x y : V} (p : N.Path x y) :
+    {x y : V} (p : ArrowWalk N.Hom x y) :
     @Quiver.Path.cast X ⟨N''.Hom⟩ _ _ _ _ (trans_vertexEquiv_apply e f x)
       (trans_vertexEquiv_apply e f y) ((e.trans f).mapPath p) =
         f.mapPath (e.mapPath p) :=
@@ -429,7 +426,7 @@ theorem mapPath_trans {N'' : Network K X} (e : N ≃ₙ N') (f : N' ≃ₙ N'')
 
 /-- Mapping a path forward and then along the inverse isomorphism fixes it. -/
 @[simp]
-theorem mapPath_symm_mapPath (e : N ≃ₙ N') {x y : V} (p : N.Path x y) :
+theorem mapPath_symm_mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :
     @Quiver.Path.cast V ⟨N.Hom⟩ _ _ x y (symm_vertexEquiv_apply_vertexEquiv e x)
       (symm_vertexEquiv_apply_vertexEquiv e y) (e.symm.mapPath (e.mapPath p)) = p :=
   -- `Quiver.Hom.cast` and `Quiver.homOfEq` are the same endpoint transport by definition, so the
@@ -439,7 +436,7 @@ theorem mapPath_symm_mapPath (e : N ≃ₙ N') {x y : V} (p : N.Path x y) :
 
 /-- Mapping a path along the inverse and then forward fixes it. -/
 @[simp]
-theorem mapPath_mapPath_symm (e : N ≃ₙ N') {x y : W} (p : N'.Path x y) :
+theorem mapPath_mapPath_symm (e : N ≃ₙ N') {x y : W} (p : ArrowWalk N'.Hom x y) :
     @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ x y (vertexEquiv_apply_symm_vertexEquiv e x)
       (vertexEquiv_apply_symm_vertexEquiv e y) (e.mapPath (e.symm.mapPath p)) = p :=
   -- As in `mapPath_symm_mapPath`, `Quiver.Hom.cast` agrees with `Quiver.homOfEq` by definition.
@@ -448,16 +445,15 @@ theorem mapPath_mapPath_symm (e : N ≃ₙ N') {x y : W} (p : N'.Path x y) :
 
 /-- Path transport preserves length. -/
 @[simp]
-theorem length_mapPath (e : N ≃ₙ N') {x y : V} (p : N.Path x y) :
-    @Quiver.Path.length W ⟨N'.Hom⟩ _ _ (e.mapPath p) =
-      @Quiver.Path.length V ⟨N.Hom⟩ _ _ p :=
+theorem length_mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :
+    (e.mapPath p).length = p.length :=
   @Prefunctor.length_mapPath V W (Quiver.mk N.Hom) (Quiver.mk N'.Hom) e.toPrefunctor x y p
 
 /-- Path transport preserves concatenation. -/
 @[simp]
-theorem mapPath_comp (e : N ≃ₙ N') {x y z : V} (p : N.Path x y) (q : N.Path y z) :
-    e.mapPath (@Quiver.Path.comp V ⟨N.Hom⟩ x y z p q) =
-      @Quiver.Path.comp W ⟨N'.Hom⟩ _ _ _ (e.mapPath p) (e.mapPath q) :=
+theorem mapPath_comp (e : N ≃ₙ N') {x y z : V} (p : ArrowWalk N.Hom x y)
+    (q : ArrowWalk N.Hom y z) :
+    e.mapPath (p.comp q) = (e.mapPath p).comp (e.mapPath q) :=
   @Prefunctor.mapPath_comp V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor
     x y p z q
 
