@@ -7,9 +7,13 @@ module
 
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import Mathlib.LinearAlgebra.Matrix.Vec
 
 /-!
-# Measurability in the space of square matrices
+# Measurability of matrix operations
+
+The column-stacking vectorization `Matrix.vec` is measurable, since each of its coordinates is a
+matrix entry.
 
 Matrix inversion is not continuous: it jumps at the singular matrices, where Mathlib's totalized
 inverse takes the value `0`. It is still measurable, because Cramer's rule writes it as the
@@ -18,6 +22,7 @@ of scalars is measurable even at zero.
 
 ## Main results
 
+* `TauCeti.measurable_matrix_vec` — vectorization is measurable.
 * `TauCeti.measurable_matrix_inv` — matrix inversion is measurable, and the `MeasurableInv`
   instance it supplies.
 -/
@@ -25,6 +30,12 @@ of scalars is measurable even at zero.
 public section
 
 namespace TauCeti
+
+/-- The column-stacking vectorization of matrices is measurable. -/
+@[fun_prop]
+theorem measurable_matrix_vec {m n α : Type*} [MeasurableSpace α] :
+    Measurable fun A : Matrix m n α => A.vec :=
+  .of_eval fun _ => Matrix.measurable_apply
 
 variable {m : Type*} [Fintype m] [DecidableEq m] {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
   [IsTopologicalRing 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SecondCountableTopology 𝕜]
