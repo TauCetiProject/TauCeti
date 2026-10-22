@@ -52,9 +52,7 @@ one convenient witness that every graph admits an orientation.
 
 ## References
 
-This is the orientation comparison required in Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`. It uses Mathlib's universal property
-`Quiver.Symmetrify.lift`.
+The comparison uses Mathlib's universal property `Quiver.Symmetrify.lift`.
 -/
 
 public section
@@ -289,8 +287,8 @@ theorem card_symmetrify_hom [DecidableRel G.Adj] (i j : V) :
 /-- **A weight on a graph read on an orientation**: for every vertex `i`, the multigraph sum
 `∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` over the vertices of the oriented quiver is the neighbour sum
 `∑_{j ∼ i} δ_j`, since an orientation has exactly one arrow over each edge. -/
-theorem sum_card_hom_add_card_hom_mul [Fintype V] [DecidableRel G.Adj] {S : Type*} [Semiring S]
-    (δ : V → S) (i : V) :
+theorem sum_card_hom_add_card_hom_mul [Fintype V] [DecidableRel G.Adj] {S : Type*}
+    [NonAssocSemiring S] (δ : V → S) (i : V) :
     ∑ j : OrientedQuiver G o, ((Fintype.card (vertex G o i ⟶ j) +
         Fintype.card (j ⟶ vertex G o i) : ℕ) : S) * δ ((vertexEquiv G o).symm j) =
       ∑ j ∈ G.neighborFinset i, δ j := by
@@ -301,9 +299,7 @@ theorem sum_card_hom_add_card_hom_mul [Fintype V] [DecidableRel G.Adj] {S : Type
     split_ifs <;> simp
   have hsum :
       ∑ j ∈ G.neighborFinset i, δ j = ∑ j : V, (if G.Adj i j then (1 : S) else 0) * δ j := by
-    simp only [ite_mul, one_mul, zero_mul]
-    rw [← Finset.sum_filter]
-    exact Finset.sum_congr (by ext j; simp) fun _ _ => rfl
+    simp [SimpleGraph.neighborFinset_eq_filter, Finset.sum_filter, ite_mul]
   refine (hsum.trans (Fintype.sum_equiv (vertexEquiv G o) _ _ fun j => ?_)).symm
   simp only [vertexEquiv_apply, vertexEquiv_symm_vertex, hc j]
 
