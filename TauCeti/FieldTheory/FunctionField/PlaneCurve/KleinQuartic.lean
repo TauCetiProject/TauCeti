@@ -75,6 +75,10 @@ three variables. -/
 noncomputable def kleinQuartic : MvPolynomial (Fin 3) R :=
   X 0 ^ 3 * X 1 + X 1 ^ 3 * X 2 + X 2 ^ 3 * X 0
 
+/-- The Klein quartic as an explicit polynomial. -/
+theorem kleinQuartic_def : kleinQuartic R = X 0 ^ 3 * X 1 + X 1 ^ 3 * X 2 + X 2 ^ 3 * X 0 :=
+  (rfl)
+
 /-- The Klein quartic is homogeneous of degree `4`. -/
 theorem isHomogeneous_kleinQuartic : (kleinQuartic R).IsHomogeneous 4 :=
   ((((isHomogeneous_X R 0).pow 3).mul (isHomogeneous_X R 1)).add
