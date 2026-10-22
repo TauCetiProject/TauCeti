@@ -61,8 +61,9 @@ def bimoduleModuleCochainTensorAssociator :
   mapBifunctorAssociator (bimoduleModuleTensorAssociatorNatIso Γ Δ Θ) M N P
     (.up ℤ) (.up ℤ) (.up ℤ)
 
-set_option backward.isDefEq.respectTransparency false in
-set_option backward.isDefEq.respectTransparency.types false in
+-- Expose the totalization object in implicit type matching without unfolding the associator.
+attribute [local implicit_reducible] Functor.map₂HomologicalComplex
+
 /-- The totalized associator acts on a triple summand by the graded action associator. -/
 @[reassoc (attr := simp)]
 theorem ι_bimoduleModuleCochainTensorAssociator_hom (p q r j : ℤ) (h : p + q + r = j) :
@@ -79,8 +80,6 @@ theorem ι_bimoduleModuleCochainTensorAssociator_hom (p q r j : ℤ) (h : p + q 
     ι_mapBifunctorAssociatorX_hom (bimoduleModuleTensorAssociatorNatIso Γ Δ Θ)
       M N P (.up ℤ) (.up ℤ) (.up ℤ) p q r j (by exact Eq.trans (by rfl) h)
 
-set_option backward.isDefEq.respectTransparency false in
-set_option backward.isDefEq.respectTransparency.types false in
 /-- The inverse totalized associator acts by the inverse graded action associator. -/
 @[reassoc (attr := simp)]
 theorem ι_bimoduleModuleCochainTensorAssociator_inv (p q r j : ℤ) (h : p + q + r = j) :
