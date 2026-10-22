@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Logic.Equiv.PartialEquiv
 public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import TauCeti.Algebra.Field.Fin.Tuple
 public import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -112,11 +113,7 @@ noncomputable def affineChart (i : Fin (n + 1)) : PartialEquiv (ℙ K (Fin (n + 
   left_inv' x hx := by
     induction x using ind with | h v hv =>
     rw [mk_mem_affineOpen_iff] at hx
-    refine (mk_eq_mk_iff' K _ _ _ hv).2 ⟨(v i)⁻¹, ?_⟩
-    ext j
-    induction j using i.succAboveCases with
-    | x => simp [hx]
-    | p j => simp [div_eq_inv_mul]
+    exact (mk_eq_mk_iff' K _ _ _ hv).2 ⟨(v i)⁻¹, (Fin.insertNth_one_div_eq_inv_smul i v hx).symm⟩
   right_inv' z _ := by
     ext j
     simp
