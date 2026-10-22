@@ -181,13 +181,9 @@ abelianization is bijective. In degree two this applies when `A` is simply conne
 `π_2(X, A, a₀)` is commutative (`TauCeti.RelHomotopyGroup.mul_comm_of_subsingleton`). -/
 theorem toAbelianization_bijective_of_subsingleton
     (hA : Subsingleton (HomotopyGroup N X.pair.snd X.basepoint)) :
-    Function.Bijective (toAbelianization : RelHomotopyGroup N X → _) := by
-  refine ⟨fun a b h => ?_, toAbelianization_surjective⟩
-  have hbot : commutator (RelHomotopyGroup N X) = ⊥ :=
-    Subgroup.commutator_eq_bot_iff_le_centralizer.2 fun x _ =>
-      Subgroup.mem_centralizer_iff.2 fun y _ => mul_comm_of_subsingleton hA y x
-  rw [toAbelianization_eq_toAbelianization_iff, hbot, Subgroup.mem_bot] at h
-  exact mul_inv_eq_one.1 h
+    Function.Bijective (toAbelianization : RelHomotopyGroup N X → _) :=
+  letI : CommGroup (RelHomotopyGroup N X) := { mul_comm := mul_comm_of_subsingleton hA }
+  Additive.ofMul.bijective.comp Abelianization.equivOfComm.bijective
 
 /-- The quotient map onto the abelianization is natural in the based pair. -/
 @[simp]

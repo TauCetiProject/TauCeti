@@ -249,10 +249,9 @@ theorem injective_hurewicz_of_subsingleton_homotopyGroup
   -- The relative Hurewicz map is additive, so it is enough to show that its kernel is trivial.
   suffices h : ∀ a : RelHomotopyGroup (Fin (n + 1)) X,
       (hurewicz R (n + 1) a).hom 1 = 0 → a = 1 by
-    refine fun a b hab ↦ mul_inv_eq_one.1 (h _ ?_)
-    rw [hurewicz_mul, hurewicz_inv, ModuleCat.hom_add, ModuleCat.hom_neg, LinearMap.add_apply,
-      LinearMap.neg_apply, ← sub_eq_add_neg, sub_eq_zero]
-    exact hab
+    have := ((injective_iff_map_eq_zero (hurewiczIntHom X n)).2 fun a ha ↦
+      congrArg Additive.ofMul (h a.toMul (by simpa using ha))).comp Additive.ofMul.injective
+    simpa [Function.comp_def] using this
   intro a ha
   -- As `πₙ₊₁(A, a₀)` is trivial, `a` comes from a class `α` of `πₙ₊₂(X, a₀)`.
   obtain ⟨α, rfl⟩ := surjective_ofHomotopyGroup_of_subsingleton (hA (n + 1) (by lia)) a
