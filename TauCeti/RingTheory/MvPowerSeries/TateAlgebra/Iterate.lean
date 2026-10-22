@@ -33,6 +33,8 @@ For two arbitrary families of variables, the analogous comparison into multivari
 
 ## Main results
 
+* `TauCeti.Huber.norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow`: the weighted norms of the
+  coefficients of the slices, weighted again by `c none`, are the weighted norms at `c`.
 * `TauCeti.Huber.isRestricted_coeff_optionEquivLeft`: the coefficient slices of a restricted
   series in `Option σ` are restricted in `σ`.
 * `TauCeti.Huber.restrictedOptionEquiv`: the ring isomorphism
@@ -67,10 +69,12 @@ local notation "Flat" => IsRestricted.subring (R := R) c
 local notation "Iter" => PowerSeries.IsRestricted.subring (R := Inner) (c none)
 
 omit [IsUltrametricDist R] [∀ i, Fact (0 < c i)] in
-/-- The weighted norm of a coefficient of a slice, weighted again by the radius of the separated
-variable, is the weighted norm of the corresponding coefficient of the flat series. -/
-private theorem norm_coeff_slice_mul_prod_mul_pow (f : MvPowerSeries (Option σ) R) (n : ℕ)
-    (t : σ →₀ ℕ) :
+/-- Separating the variable `none` with `MvPowerSeries.optionEquivLeft`, the weighted norm at the
+polyradii `c ∘ some` of the coefficient at `t` of the `n`-th coefficient slice, weighted again by
+`c none ^ n`, is the weighted norm at the polyradii `c` of the coefficient of `f` at
+`t.optionElim n`. -/
+theorem norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow (f : MvPowerSeries (Option σ) R)
+    (n : ℕ) (t : σ →₀ ℕ) :
     ‖coeff t (PowerSeries.coeff n (optionEquivLeft σ R f))‖ *
         t.prod (fun i k ↦ c (some i) ^ k) * c none ^ n =
       ‖coeff (t.optionElim n) f‖ * (t.optionElim n).prod (c · ^ ·) := by
@@ -88,7 +92,7 @@ theorem isRestricted_coeff_optionEquivLeft (hc : 0 < c none) {f : MvPowerSeries 
   have h := (hf.comp hi.tendsto_cofinite).const_mul (c none ^ n)⁻¹
   rw [mul_zero] at h
   refine h.congr fun t ↦ ?_
-  rw [Function.comp_apply, ← norm_coeff_slice_mul_prod_mul_pow]
+  rw [Function.comp_apply, ← norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow]
   field_simp [(pow_pos hc n).ne']
 
 /-- The coefficient slices, regarded as a formal univariate series over the restricted subring. -/
@@ -120,7 +124,8 @@ private theorem isRestricted_restrictedOptionSeries (f : Flat) :
   rw [← le_div_iff₀ (hpos n), MvPowerSeries.norm_le_iff
     (div_nonneg (half_pos hε).le (hpos n).le)]
   intro t
-  rw [le_div_iff₀ (hpos n), coeff_restrictedOptionSeries, norm_coeff_slice_mul_prod_mul_pow]
+  rw [le_div_iff₀ (hpos n), coeff_restrictedOptionSeries,
+    norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow]
   by_contra hlt
   exact hnn ⟨t.optionElim n, (not_le.mp hlt).le, Finsupp.optionElim_apply_none n t⟩
 
@@ -157,7 +162,7 @@ private theorem isRestricted_optionEquivLeft_symm (g : Iter) :
       (t.some.optionElim (t none)).prod (c · ^ ·) := by
     rw [Finsupp.optionElim_some]
     exact not_lt.mp ht
-  rw [← norm_coeff_slice_mul_prod_mul_pow, hslice] at ht'
+  rw [← norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow, hslice] at ht'
   have hle := MvPowerSeries.norm_coeff_mul_prod_le
     (PowerSeries.coeff (t none) (g : PowerSeries Inner)) t.some
   refine Set.mem_biUnion (x := t none) ?_ ⟨t.some, ?_, Finsupp.optionElim_some t⟩
@@ -257,11 +262,12 @@ theorem norm_restrictedOptionEquiv (f : Flat) : ‖restrictedOptionEquiv f‖ = 
     rw [← le_div_iff₀ (hpos n), MvPowerSeries.norm_le_iff
       (div_nonneg (norm_nonneg _) (hpos n).le)]
     intro t
-    rw [le_div_iff₀ (hpos n), coeff_restrictedOptionEquiv, norm_coeff_slice_mul_prod_mul_pow]
+    rw [le_div_iff₀ (hpos n), coeff_restrictedOptionEquiv,
+      norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow]
     exact MvPowerSeries.norm_coeff_mul_prod_le f _
   · rw [MvPowerSeries.norm_le_iff (norm_nonneg _)]
     intro t
-    rw [← Finsupp.optionElim_some t, ← norm_coeff_slice_mul_prod_mul_pow,
+    rw [← Finsupp.optionElim_some t, ← norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow,
       ← coeff_restrictedOptionEquiv]
     exact (mul_le_mul_of_nonneg_right (MvPowerSeries.norm_coeff_mul_prod_le _ _) (hpos _).le).trans
       (TauCeti.PowerSeries.norm_coeff_mul_pow_le (restrictedOptionEquiv f) _)
