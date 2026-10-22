@@ -26,8 +26,8 @@ the cut and relates bonds to closed subgraphs.
   `Graph.isBridge_banana_singleton`, a singleton bond by `Graph.isBond_singleton_iff_isBridge`.
 
 Minimality is by inclusion, independently of cardinality or capacity, and no finiteness is
-assumed.  The characterization is the standard one; see
-[Diestel, *Graph Theory*, Section 1.9][diestel2017].
+assumed.  The characterization is the standard one; see R. Diestel, *Graph Theory*, 5th ed.,
+Graduate Texts in Mathematics 173, Springer, 2017, Section 1.9.
 -/
 
 public section
