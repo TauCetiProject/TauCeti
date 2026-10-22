@@ -29,10 +29,10 @@ sequence of coefficients, without requiring a normalized norm.
 In a complete normed commutative ring, `RingHom.evalBoundedSeries` evaluates a power series after
 applying a coefficient ring homomorphism whose image is uniformly bounded in norm. The resulting
 evaluation is a ring homomorphism, and in a non-archimedean target it satisfies the same uniform
-bound. For a target with `‖1‖ = 1`, `evalIntSeries` specializes this to integer coefficients
-and has norm at most one, or at most the norm of the parameter for an integral series without
-constant term. Multiplication by an evaluated integral formal unit preserves norms, even when the
-ring norm is only submultiplicative.
+bound. For a non-archimedean target with `‖1‖ = 1`, `evalIntSeries` specializes this to integer
+coefficients and has norm at most one, or at most the norm of the parameter for an integral series
+without constant term. Multiplication by an evaluated integral formal unit preserves norms, even
+when the ring norm is only submultiplicative.
 
 Iterating these evaluations, `evalIntBivariateSeries` evaluates an integral power series in two
 variables at a pair of parameters in the open unit ball. Likewise an integral polynomial has value
@@ -67,24 +67,26 @@ namespace RingHom
 image is uniformly bounded in norm. The defining sum converges at every parameter of norm below one,
 without requiring a linear topology on the target. -/
 noncomputable def evalBoundedSeries {R K : Type*} [Semiring R]
-    [NormedCommRing K] [CompleteSpace K] {M : ℝ}
-    (φ : R →+* K) (hφ : ∀ r, ‖φ r‖ ≤ M) (q : K) (hq : ‖q‖ < 1) : R⟦X⟧ →+* K where
+    [NormedCommRing K] [CompleteSpace K]
+    (φ : R →+* K) (hφ : ∃ M : ℝ, ∀ r, ‖φ r‖ ≤ M) (q : K) (hq : ‖q‖ < 1) : R⟦X⟧ →+* K where
   toFun f := ∑' n : ℕ, φ (coeff n f) * q ^ n
   map_zero' := by
     simp
   map_one' := by
     simp [PowerSeries.coeff_one]
   map_add' f g := by
+    obtain ⟨M, hM⟩ := hφ
     simp_rw [map_add, add_mul]
-    exact (TauCeti.summable_mul_pow_of_norm_le (fun n ↦ hφ (coeff n f)) hq).tsum_add
-      (TauCeti.summable_mul_pow_of_norm_le (fun n ↦ hφ (coeff n g)) hq)
+    exact (TauCeti.summable_mul_pow_of_norm_le (fun n ↦ hM (coeff n f)) hq).tsum_add
+      (TauCeti.summable_mul_pow_of_norm_le (fun n ↦ hM (coeff n g)) hq)
   map_mul' f g := by
+    obtain ⟨M, hM⟩ := hφ
     let a : ℕ → K := fun n ↦ φ (coeff n f) * q ^ n
     let b : ℕ → K := fun n ↦ φ (coeff n g) * q ^ n
     have han : Summable (fun n ↦ ‖a n‖) :=
-      TauCeti.summable_norm_mul_pow_of_norm_le (fun n ↦ hφ (coeff n f)) hq
+      TauCeti.summable_norm_mul_pow_of_norm_le (fun n ↦ hM (coeff n f)) hq
     have hbn : Summable (fun n ↦ ‖b n‖) :=
-      TauCeti.summable_norm_mul_pow_of_norm_le (fun n ↦ hφ (coeff n g)) hq
+      TauCeti.summable_norm_mul_pow_of_norm_le (fun n ↦ hM (coeff n g)) hq
     rw [tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm han hbn]
     apply tsum_congr fun n ↦ ?_
     rw [PowerSeries.coeff_mul, map_sum, Finset.sum_mul]
@@ -98,8 +100,8 @@ noncomputable def evalBoundedSeries {R K : Type*} [Semiring R]
 /-- Bounded-coefficient evaluation is the convergent sum of the mapped coefficients times powers
 of the parameter. -/
 theorem evalBoundedSeries_apply {R K : Type*} [Semiring R]
-    [NormedCommRing K] [CompleteSpace K] {M : ℝ}
-    (φ : R →+* K) (hφ : ∀ r, ‖φ r‖ ≤ M) (q : K) (hq : ‖q‖ < 1) (f : R⟦X⟧) :
+    [NormedCommRing K] [CompleteSpace K]
+    (φ : R →+* K) (hφ : ∃ M : ℝ, ∀ r, ‖φ r‖ ≤ M) (q : K) (hq : ‖q‖ < 1) (f : R⟦X⟧) :
     evalBoundedSeries φ hφ q hq f = ∑' n : ℕ, φ (coeff n f) * q ^ n := by
   rw [evalBoundedSeries]
   rfl
@@ -107,8 +109,8 @@ theorem evalBoundedSeries_apply {R K : Type*} [Semiring R]
 /-- Bounded-coefficient evaluation sends a constant series through the coefficient map. -/
 @[simp]
 theorem evalBoundedSeries_C {R K : Type*} [Semiring R]
-    [NormedCommRing K] [CompleteSpace K] {M : ℝ}
-    (φ : R →+* K) (hφ : ∀ r, ‖φ r‖ ≤ M) (q : K) (hq : ‖q‖ < 1) (r : R) :
+    [NormedCommRing K] [CompleteSpace K]
+    (φ : R →+* K) (hφ : ∃ M : ℝ, ∀ r, ‖φ r‖ ≤ M) (q : K) (hq : ‖q‖ < 1) (r : R) :
     evalBoundedSeries φ hφ q hq (C r) = φ r := by
   rw [evalBoundedSeries_apply]
   rw [tsum_eq_single 0]
@@ -119,8 +121,8 @@ theorem evalBoundedSeries_C {R K : Type*} [Semiring R]
 /-- Bounded-coefficient evaluation sends the formal parameter to the chosen element. -/
 @[simp]
 theorem evalBoundedSeries_X {R K : Type*} [Semiring R]
-    [NormedCommRing K] [CompleteSpace K] {M : ℝ}
-    (φ : R →+* K) (hφ : ∀ r, ‖φ r‖ ≤ M) (q : K) (hq : ‖q‖ < 1) :
+    [NormedCommRing K] [CompleteSpace K]
+    (φ : R →+* K) (hφ : ∃ M : ℝ, ∀ r, ‖φ r‖ ≤ M) (q : K) (hq : ‖q‖ < 1) :
     evalBoundedSeries φ hφ q hq (X : R⟦X⟧) = q := by
   rw [evalBoundedSeries_apply]
   simp [PowerSeries.coeff_X]
@@ -129,13 +131,14 @@ theorem evalBoundedSeries_X {R K : Type*} [Semiring R]
 coefficient map. -/
 theorem norm_evalBoundedSeries_le {R K : Type*} [Semiring R]
     [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] {M : ℝ}
-    (φ : R →+* K) (hφ : ∀ r, ‖φ r‖ ≤ M) (q : K) (hq : ‖q‖ < 1) (f : R⟦X⟧) :
+    (φ : R →+* K) (hφ : ∃ B : ℝ, ∀ r, ‖φ r‖ ≤ B) (hM : ∀ r, ‖φ r‖ ≤ M)
+    (q : K) (hq : ‖q‖ < 1) (f : R⟦X⟧) :
     ‖evalBoundedSeries φ hφ q hq f‖ ≤ M := by
   have hs := PowerSeries.norm_evalScalar_le (F := f.map φ) (a := q)
-    ((norm_nonneg (φ 0)).trans (hφ 0)) fun n ↦ by
+    ((norm_nonneg (φ 0)).trans (hM 0)) fun n ↦ by
       rw [coeff_map]
       exact (mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (norm_nonneg q) hq.le)).trans
-        (hφ _)
+        (hM _)
   simpa only [evalBoundedSeries_apply, PowerSeries.evalScalar_def, coeff_map, smul_eq_mul,
     mul_comm] using hs
 
@@ -182,7 +185,7 @@ sum converges without requiring a linear topology on the target. -/
 noncomputable def evalIntSeries {K : Type*} [NormedCommRing K] [NormOneClass K]
     [CompleteSpace K]
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) : ℤ⟦X⟧ →+* K :=
-  RingHom.evalBoundedSeries (Int.castRingHom K) (IsUltrametricDist.norm_intCast_le_one K) q hq
+  RingHom.evalBoundedSeries (Int.castRingHom K) ⟨1, IsUltrametricDist.norm_intCast_le_one K⟩ q hq
 
 /-- The evaluation map is the convergent sum of the coefficients times powers of the
 parameter. -/
@@ -205,7 +208,7 @@ theorem norm_evalIntSeries_le_one {K : Type*} [NormedCommRing K] [NormOneClass K
     [CompleteSpace K]
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) (f : ℤ⟦X⟧) :
     ‖evalIntSeries q hq f‖ ≤ 1 := by
-  exact RingHom.norm_evalBoundedSeries_le _ _ q hq f
+  exact RingHom.norm_evalBoundedSeries_le _ _ (IsUltrametricDist.norm_intCast_le_one K) q hq f
 
 /-- An integral series without constant term evaluates inside the open unit ball to an element of
 norm at most that of the parameter. -/
@@ -245,7 +248,7 @@ ball. The inner variable is evaluated at `u`, and the outer variable at `v`. -/
 noncomputable def evalIntBivariateSeries {K : Type*} [NormedCommRing K] [NormOneClass K]
     [CompleteSpace K] [IsUltrametricDist K]
     (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) : ℤ⟦X⟧⟦X⟧ →+* K :=
-  RingHom.evalBoundedSeries (evalIntSeries u hu) (norm_evalIntSeries_le_one u hu) v hv
+  RingHom.evalBoundedSeries (evalIntSeries u hu) ⟨1, norm_evalIntSeries_le_one u hu⟩ v hv
 
 /-- Bivariate integral evaluation is the iterated convergent sum of the coefficients. -/
 theorem evalIntBivariateSeries_apply {K : Type*} [NormedCommRing K] [NormOneClass K]
