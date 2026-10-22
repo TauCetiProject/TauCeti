@@ -20,7 +20,9 @@ scaling two forms by the same non-zero-divisor preserves whether they are isomet
 (`LinearMap.BilinForm.equivalent_smul_iff`), and gives the evaluation lemmas
 `LinearMap.BilinForm.IsometryEquiv.trans_apply`,
 `LinearMap.BilinForm.IsometryEquiv.symm_apply_apply` and
-`LinearMap.BilinForm.IsometryEquiv.apply_symm_apply` for Mathlib's isometric equivalences.
+`LinearMap.BilinForm.IsometryEquiv.apply_symm_apply` for Mathlib's isometric equivalences, which
+map the kernel of one form onto the kernel of the other
+(`LinearMap.BilinForm.IsometryEquiv.map_ker`).
 Isometric bilinear forms have isometric associated quadratic maps
 (`LinearMap.BilinForm.Equivalent.toQuadraticMap`). The isometry group and the determinant,
 base-change, and orthogonal-complement API are developed in
@@ -130,6 +132,17 @@ theorem symm_apply_apply (f : B₁.IsometryEquiv B₂) (x : M₁) : f.symm (f x)
 @[simp]
 theorem apply_symm_apply (f : B₁.IsometryEquiv B₂) (x : M₂) : f (f.symm x) = x :=
   f.toLinearEquiv.apply_symm_apply x
+
+/-- An isometric equivalence maps the kernel of one bilinear form onto the kernel of the other. -/
+theorem map_ker (f : B₁.IsometryEquiv B₂) :
+    (LinearMap.ker B₁).map (f : M₁ ≃ₗ[R] M₂).toLinearMap = LinearMap.ker B₂ := by
+  ext y
+  rw [Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap, LinearMap.mem_ker,
+    LinearMap.mem_ker, LinearMap.ext_iff, LinearMap.ext_iff]
+  simp only [LinearMap.zero_apply]
+  refine (f : M₁ ≃ₗ[R] M₂).forall_congr fun z ↦ ?_
+  rw [← f.map_app]
+  exact iff_of_eq (congrArg (fun v ↦ B₂ v (f z) = 0) ((f : M₁ ≃ₗ[R] M₂).apply_symm_apply y))
 
 end IsometryEquiv
 

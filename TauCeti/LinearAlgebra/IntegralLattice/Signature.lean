@@ -343,16 +343,8 @@ variable {L} {M : IntegralLattice W}
 /-- An isometry of the rational forms of two lattices maps the radical of one onto the radical of
 the other. -/
 theorem map_radical_of_isometryEquiv (f : L.form.IsometryEquiv M.form) :
-    L.radical.map (f : V ≃ₗ[ℚ] W).toLinearMap = M.radical := by
-  ext y
-  simp only [Submodule.mem_map, mem_radical_iff, LinearEquiv.coe_coe,
-    LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv]
-  refine ⟨?_, fun hy ↦ ⟨f.symm y, fun z ↦ ?_, f.apply_symm_apply y⟩⟩
-  · rintro ⟨x, hx, rfl⟩ z
-    rw [← f.apply_symm_apply z, f.map_app]
-    exact hx _
-  · rw [← f.map_app, f.apply_symm_apply]
-    exact hy _
+    L.radical.map (f : V ≃ₗ[ℚ] W).toLinearMap = M.radical :=
+  f.map_ker
 
 /-- Lattices with isometric rational forms have the same positive index. -/
 theorem sigPos_eq_of_equivalent (h : L.form.Equivalent M.form) : L.sigPos = M.sigPos :=
@@ -360,9 +352,8 @@ theorem sigPos_eq_of_equivalent (h : L.form.Equivalent M.form) : L.sigPos = M.si
 
 /-- Lattices with isometric rational forms have the same null index. -/
 theorem sigNull_eq_of_equivalent (h : L.form.Equivalent M.form) : L.sigNull = M.sigNull := by
-  obtain ⟨f⟩ := h
-  rw [sigNull, sigNull, ← map_radical_of_isometryEquiv f]
-  exact (LinearEquiv.finrank_map_eq (f : V ≃ₗ[ℚ] W) L.radical).symm
+  rw [sigNull, sigNull, ← L.radical_toQuadraticMap, ← M.radical_toQuadraticMap]
+  exact h.toQuadraticMap.rank_radical_eq
 
 /-- Lattices with isometric rational forms have the same negative index. -/
 theorem sigNeg_eq_of_equivalent (h : L.form.Equivalent M.form) : L.sigNeg = M.sigNeg :=
