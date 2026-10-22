@@ -31,8 +31,8 @@ a quotient of the Tate algebra in `m + n` variables.
 The universal property needs no continuity hypothesis: algebra homomorphisms from the noetherian
 Banach algebras `A` and `A⟨X⟩` into a completely normed affinoid algebra are automatically
 continuous, so the continuous universal property
-`MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring` applies. The images of the
-variables need only be power-bounded, not of norm at most one.
+`TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring` applies. The images
+of the variables need only be power-bounded, not of norm at most one.
 
 ## Main definitions
 
@@ -116,15 +116,15 @@ theorem algHom_ext_isRestricted_subring
 /-- **The extension of a `K`-algebra map `φ : A → B` to `A⟨X₁, …, Xₖ⟩` sending each `Xᵢ` to
 `bᵢ`**, for affinoid algebras `A` and `B` with complete ultrametric algebra norms and
 power-bounded `b₁, …, bₖ ∈ B`. It is the continuous extension
-`MvPowerSeries.restrictedLift`, which applies because `φ` is automatically continuous. -/
+`TauCeti.MvPowerSeries.restrictedLift`, which applies because `φ` is automatically continuous. -/
 noncomputable def restrictedLift (φ : A →ₐ[K] B) {b : Fin k → B}
     (hb : ∀ i, Huber.IsPowerBounded (b i)) :
     IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) →ₐ[K] B :=
   have := hA.isNoetherianRing
-  { _root_.MvPowerSeries.restrictedLift (φ := (φ : A →+* B)) (hB.continuous_algHom φ) hb with
+  { MvPowerSeries.restrictedLift (φ := (φ : A →+* B)) (hB.continuous_algHom φ) hb with
     commutes' r := by
       rw [IsScalarTower.algebraMap_apply K A (IsRestricted.subring (R := A) _)]
-      exact (_root_.MvPowerSeries.restrictedLift_algebraMap _ hb _).trans (φ.commutes r) }
+      exact (MvPowerSeries.restrictedLift_algebraMap _ hb _).trans (φ.commutes r) }
 
 variable (φ : A →ₐ[K] B) {b : Fin k → B} (hb : ∀ i, Huber.IsPowerBounded (b i))
 
@@ -132,12 +132,12 @@ variable (φ : A →ₐ[K] B) {b : Fin k → B} (hb : ∀ i, Huber.IsPowerBounde
 @[simp]
 theorem restrictedLift_algebraMap (a : A) :
     restrictedLift hA hB φ hb (algebraMap A _ a) = φ a :=
-  _root_.MvPowerSeries.restrictedLift_algebraMap _ hb a
+  MvPowerSeries.restrictedLift_algebraMap _ hb a
 
 /-- `restrictedLift` sends each variable `Xᵢ` to `bᵢ`. -/
 @[simp]
 theorem restrictedLift_X (i : Fin k) : restrictedLift hA hB φ hb ⟨X i, isRestricted_X _ i⟩ = b i :=
-  _root_.MvPowerSeries.restrictedLift_X _ hb i
+  MvPowerSeries.restrictedLift_X _ hb i
 
 include hA hB hb in
 /-- **The universal property of restricted series over an affinoid algebra.** Let `A` and `B` be

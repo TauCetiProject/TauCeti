@@ -475,22 +475,6 @@ instance {S : Type*} [CommSemiring S] [Algebra S R] :
 theorem coe_algebraMap_isRestrictedSubring (r : R) :
     (algebraMap R (IsRestricted.subring (R := R) c) r : MvPowerSeries σ R) = C r := (rfl)
 
-/-- Over an algebra `S` of coefficients, the algebra map into restricted series sends a scalar to
-the constant series of its image in `R`. -/
-theorem coe_algebraMap_isRestrictedSubring_apply {S : Type*} [CommSemiring S] [Algebra S R]
-    (s : S) : (algebraMap S (IsRestricted.subring (R := R) c) s : MvPowerSeries σ R) =
-      C (algebraMap S R s) := (rfl)
-
-/-- Over an algebra `S` of coefficients, scalars act on restricted series coefficientwise. -/
-@[simp]
-theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
-    (f : IsRestricted.subring (R := R) c) :
-    ((s • f : IsRestricted.subring (R := R) c) : MvPowerSeries σ R) =
-      s • (f : MvPowerSeries σ R) := by
-  ext t
-  rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring_apply, coeff_C_mul]
-  exact (Algebra.smul_def s _).symm
-
 /-- Without variables every restricted series is a constant. -/
 theorem algebraMap_isRestrictedSubring_surjective [IsEmpty σ] :
     Function.Surjective (algebraMap R (IsRestricted.subring (R := R) c)) := fun g ↦
@@ -567,6 +551,34 @@ theorem IsRestricted.coe_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ)
 
 end Rename
 
+end MvPowerSeries
+
+namespace TauCeti.MvPowerSeries
+
+open _root_.MvPowerSeries
+
+section Algebra
+
+variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ}
+
+/-- Over an algebra `S` of coefficients, the algebra map into restricted series sends a scalar to
+the constant series of its image in `R`. -/
+theorem coe_algebraMap_isRestrictedSubring_apply {S : Type*} [CommSemiring S] [Algebra S R]
+    (s : S) : (algebraMap S (IsRestricted.subring (R := R) c) s : MvPowerSeries σ R) =
+      C (algebraMap S R s) := (rfl)
+
+/-- Over an algebra `S` of coefficients, scalars act on restricted series coefficientwise. -/
+@[simp]
+theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
+    (f : IsRestricted.subring (R := R) c) :
+    ((s • f : IsRestricted.subring (R := R) c) : MvPowerSeries σ R) =
+      s • (f : MvPowerSeries σ R) := by
+  ext t
+  rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring_apply, coeff_C_mul]
+  exact (Algebra.smul_def s _).symm
+
+end Algebra
+
 section NormedField
 
 variable {σ K R : Type*} [NormedField K] [NormedCommRing R] [NormedAlgebra K R]
@@ -589,4 +601,4 @@ noncomputable instance instNormedAlgebraIsRestrictedSubring :
 
 end NormedField
 
-end MvPowerSeries
+end TauCeti.MvPowerSeries

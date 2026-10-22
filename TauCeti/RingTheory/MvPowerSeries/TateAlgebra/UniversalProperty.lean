@@ -26,15 +26,17 @@ is `TauCeti.Huber.IsPowerBounded` for the norm topology: the powers of `bᵢ` st
 
 ## Main definitions
 
-* `MvPowerSeries.restrictedLift`: the continuous ring homomorphism `R⟨X₁, …, Xₖ⟩ →+* S` extending
-  `φ` and sending `Xᵢ` to `bᵢ`.
+* `TauCeti.MvPowerSeries.restrictedLift`: the continuous ring homomorphism
+  `R⟨X₁, …, Xₖ⟩ →+* S` extending `φ` and sending `Xᵢ` to `bᵢ`.
 
 ## Main results
 
-* `MvPowerSeries.isRestricted_subring_ringHom_ext_of_continuous`: continuous ring homomorphisms
-  out of `R⟨X₁, …, Xₖ⟩` agreeing on constants and variables are equal.
-* `MvPowerSeries.restrictedLift_unique`: `restrictedLift` is the only such continuous extension.
-* `MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring`: the universal property.
+* `TauCeti.MvPowerSeries.isRestricted_subring_ringHom_ext_of_continuous`: continuous ring
+  homomorphisms out of `R⟨X₁, …, Xₖ⟩` agreeing on constants and variables are equal.
+* `TauCeti.MvPowerSeries.restrictedLift_unique`: `restrictedLift` is the only such continuous
+  extension.
+* `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring`: the universal
+  property.
 
 ## References
 
@@ -44,9 +46,9 @@ is `TauCeti.Huber.IsPowerBounded` for the norm topology: the powers of `bᵢ` st
 
 public section
 
-namespace MvPowerSeries
+namespace TauCeti.MvPowerSeries
 
-open TauCeti.Huber
+open _root_.MvPowerSeries TauCeti.Huber
 
 variable {k : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
@@ -107,7 +109,7 @@ include hφ hb in
 ring homomorphism `φ : R →+* S` into a complete ultrametric normed ring and power-bounded
 `b₁, …, bₖ ∈ S`, there is exactly one continuous ring homomorphism out of the Gauss-normed
 unit-radius restricted series that extends `φ` on constants and sends each `Xᵢ` to `bᵢ`, namely
-`MvPowerSeries.restrictedLift`. -/
+`TauCeti.MvPowerSeries.restrictedLift`. -/
 theorem existsUnique_continuous_ringHom_isRestricted_subring :
     ∃! ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* S,
       Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧
@@ -115,4 +117,4 @@ theorem existsUnique_continuous_ringHom_isRestricted_subring :
   ⟨restrictedLift hφ hb, ⟨continuous_restrictedLift hφ hb, restrictedLift_algebraMap hφ hb,
     restrictedLift_X hφ hb⟩, fun _ ⟨hψ, hC, hX⟩ ↦ restrictedLift_unique hφ hb hψ hC hX⟩
 
-end MvPowerSeries
+end TauCeti.MvPowerSeries

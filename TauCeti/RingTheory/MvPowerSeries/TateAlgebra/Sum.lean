@@ -204,13 +204,10 @@ constant series in `σ` whose value is the constant `r` in `τ`. -/
 @[simp]
 theorem restrictedSumEquiv_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
     restrictedSumEquiv (algebraMap S Flat s) = algebraMap S Iter s := by
-  classical
-  refine Subtype.ext (ext fun a ↦ Subtype.ext (ext fun b ↦ ?_))
-  have h : a.sumElim b = 0 ↔ a = 0 ∧ b = 0 := by simp [Finsupp.ext_iff, Sum.forall]
-  rw [coeff_coeff_restrictedSumEquiv, coe_algebraMap_isRestrictedSubring_apply,
-    coe_algebraMap_isRestrictedSubring_apply, coeff_C, coeff_C]
-  simp only [h]
-  by_cases ha : a = 0 <;> simp [ha, coeff_C, coe_algebraMap_isRestrictedSubring_apply]
+  rw [restrictedSumEquiv, RingEquiv.symm_apply_eq, RingEquiv.ofBijective_apply]
+  refine Subtype.ext ((sumAlgEquiv R σ τ).injective ?_)
+  simpa [sumFlatten, coe_algebraMap_isRestrictedSubring_apply, algebraMap_apply,
+    -AlgEquiv.commutes] using (sumAlgEquiv R σ τ).commutes (algebraMap S R s)
 
 /-- **Iteration of restricted series as an algebra isomorphism**: over every algebra `S` of
 coefficients, `restrictedSumEquiv` is an `S`-algebra isomorphism `R{X/c, Y/d} ≃ₐ[S] R{Y/d}{X/c}`.
