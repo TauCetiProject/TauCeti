@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
-import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.AlgebraicGeometry.Restrict
