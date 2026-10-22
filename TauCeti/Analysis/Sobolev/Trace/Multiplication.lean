@@ -73,7 +73,7 @@ theorem W1p.hyperplaneTrace_contDiffSMul_ae (a : ℝ) (hψ : ContDiff ℝ ∞ ψ
       (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := 2) (by norm_num)).induction_on u
       (isClosed_eq ?_ ?_) ?_
     · simpa only [Function.comp_def, W1p.contDiffSMulL_apply] using
-        (W1p.hyperplaneTrace a).continuous.comp
+        (W1p.hyperplaneTrace (p := 2) a).continuous.comp
           (W1p.contDiffSMulL ψ hψ hM (fun x _ => hψM x)
             (fun x _ => hgradM x)).continuous
     · exact T.continuous.comp (W1p.hyperplaneTrace a).continuous
@@ -84,8 +84,8 @@ theorem W1p.hyperplaneTrace_contDiffSMul_ae (a : ℝ) (hψ : ContDiff ℝ ∞ ψ
       rw [W1p.contDiffSMul_ofTestFunctionₗ hψ hM
         (fun x _ => hψM x) (fun x _ => hgradM x) φ Φ rfl]
       apply Lp.ext
-      filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae a Φ,
-        W1p.hyperplaneTrace_ofTestFunction_apply_ae a φ,
+      filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae (p := 2) (by norm_num) a Φ,
+        W1p.hyperplaneTrace_ofTestFunction_apply_ae (p := 2) (by norm_num) a φ,
         hT (W1p.hyperplaneTrace a (W1p.ofTestFunctionₗ volume ⊤ 2 φ))]
         with y hΦ hφ ht
       simp only [hΦ, ht, hφ, b]
@@ -122,7 +122,7 @@ theorem W1p.halfSpaceTrace_contDiffSMul_ae (a : ℝ) (hψ : ContDiff ℝ ∞ ψ)
       W1p.value_contDiffSMul_ae hψ hM
         (fun x _ => hψM x) (fun x _ => hgradM x) u] with x hx hm hwx hu
     simp only [hx, hm, hwx, hu]
-  rw [← heq, W1p.halfSpaceTrace_restrictL, W1p.halfSpaceTrace_apply]
+  rw [← heq, W1p.halfSpaceTrace_restrictL (p := 2) (by norm_num), W1p.halfSpaceTrace_apply]
   exact W1p.hyperplaneTrace_contDiffSMul_ae a hψ hψM hgradM w
 
 /-- Half-space Sobolev functions agreeing almost everywhere wherever a smooth bounded multiplier

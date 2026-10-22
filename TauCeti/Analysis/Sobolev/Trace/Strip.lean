@@ -254,7 +254,7 @@ private theorem norm_sq_hyperplaneTrace_ofTestFunction
       ∫ y : E, ‖φ (WithLp.toLp 2 (c, y))‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq]
   apply integral_congr_ae
-  filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae c φ] with y hy
+  filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae (p := 2) (by norm_num) c φ] with y hy
   rw [hy]
 
 private theorem integral_strip_energy_le_weighted_energy

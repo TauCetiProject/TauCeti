@@ -126,7 +126,7 @@ private theorem hyperplaneTrace_apply_ae_of_hasCompactSupport (a : ℝ)
     rw [ae_all_iff]
     intro k
     rw [← hΦ k, ← hΦconv k]
-    exact W1p.hyperplaneTrace_ofTestFunction_apply_ae a (Φ k)
+    exact W1p.hyperplaneTrace_ofTestFunction_apply_ae (p := 2) (by norm_num) a (Φ k)
   filter_upwards [hae, htest] with y hy hk
   refine tendsto_nhds_unique hy ?_
   simp only [hk]

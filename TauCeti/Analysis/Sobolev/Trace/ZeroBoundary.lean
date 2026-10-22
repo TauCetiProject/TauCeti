@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Trace.Hyperplane
+public import TauCeti.Analysis.Sobolev.Trace.HalfSpace
 public import TauCeti.Analysis.Sobolev.W1p.Extension
 
 /-!
@@ -75,7 +75,7 @@ theorem norm_hyperplaneTrace_le (a : ℝ)
     ‖hyperplaneTrace (Omega := Omega) a u‖ ≤
         ‖(W1p0.extendByZeroL (Omega := Omega) le_top u :
           W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2)‖ :=
-      W1p.norm_hyperplaneTrace_le a _
+      (W1p.norm_hyperplaneTrace_le_norm_restrictL a _).trans (W1p.norm_restrictL_le le_top _)
     _ = ‖W1p0.extendByZeroL (Omega := Omega) le_top u‖ := rfl
     _ = ‖u‖ := W1p0.norm_extendByZeroL le_top u
 
@@ -105,7 +105,7 @@ private theorem hyperplaneTrace_ofTestFunction_eq_zero (a : ℝ)
       (Sobolev1JetLp.extendByZeroₗᵢ_ofTestFunctionₗ le_top phi)
   rw [hyperplaneTrace_apply, hext]
   apply Lp.ext
-  filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae a psi,
+  filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae (p := 2) (by norm_num) a psi,
     Lp.coeFn_zero ℝ 2 (volume : Measure E)] with y hy hzero
   rw [hy, hzero]
   have hphi : phi (WithLp.toLp 2 (a, y)) = 0 := phi.zero_on_compl (hOmega y)
