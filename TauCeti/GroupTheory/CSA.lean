@@ -107,12 +107,13 @@ theorem IsCommTransitive.not_isConj_inv [IsMulTorsionFree G] (hG : IsCommTransit
         _ = x := by rw [hg, inv_inv]
     calc g ^ 2 * x = g * (g * x * g⁻¹) * g⁻¹ * g ^ 2 := by simp [pow_two, mul_assoc]
       _ = x * g ^ 2 := by rw [h2]
-  by_cases hg1 : g ^ 2 = 1
-  · rw [(pow_eq_one_iff_left two_ne_zero).1 hg1, one_mul, inv_one, mul_one] at hg
-    exact hxx (by nth_rw 2 [hg]; exact mul_inv_cancel x)
-  · have hgx : Commute g x := hG g (g ^ 2) x hg1 (Commute.self_pow g 2) hg2
-    rw [hgx.eq, mul_inv_cancel_right] at hg
-    exact hxx (by nth_rw 2 [hg]; exact mul_inv_cancel x)
+  have hgx : Commute g x := by
+    by_cases hg1 : g ^ 2 = 1
+    · rw [(pow_eq_one_iff_left two_ne_zero).1 hg1]
+      exact Commute.one_left x
+    · exact hG g (g ^ 2) x hg1 (Commute.self_pow g 2) hg2
+  rw [hgx.eq, mul_inv_cancel_right] at hg
+  exact hxx (mul_eq_one_iff_eq_inv.2 hg)
 
 /-- A nonabelian commutative-transitive group has trivial center. -/
 theorem IsCommTransitive.center_eq_bot (hG : IsCommTransitive G)
