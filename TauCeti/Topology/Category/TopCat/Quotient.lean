@@ -36,40 +36,42 @@ theorem quotientMk_apply (x : X) :
     DFunLike.coe (F := no_index _) (ConcreteCategory.hom (quotientMk s)) x =
       Quotient.mk s x := rfl
 
-variable {s} in
+end TauCeti.TopCat
+
+namespace TopologicalSpace.Opens
+
+variable {X : Type*} [TopologicalSpace X] {s : Setoid X}
+
 /-- The image of an open set closed under `s`, as an open set of the quotient by `s`. -/
-def saturatedOpen (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V) :
+def imageQuotientMk (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V) :
     Opens (Quotient s) :=
   ⟨Quotient.mk s '' V, Setoid.isOpen_image_quotient_mk s V.isOpen hV⟩
 
-variable {s} in
-/-- The carrier of `saturatedOpen V hV` is the image of `V` in the quotient. -/
+/-- The carrier of `V.imageQuotientMk hV` is the image of `V` in the quotient. -/
 @[simp]
-theorem coe_saturatedOpen (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V) :
-    (saturatedOpen V hV : Set (Quotient s)) = Quotient.mk s '' V :=
+theorem coe_imageQuotientMk (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V) :
+    (V.imageQuotientMk hV : Set (Quotient s)) = Quotient.mk s '' V :=
   (rfl)
 
-variable {s} in
-/-- A point of the quotient lies in `saturatedOpen V hV` exactly when it is the class of a point
-of `V`. -/
-theorem mem_saturatedOpen (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V)
-    {z : Quotient s} : z ∈ saturatedOpen V hV ↔ ∃ w ∈ V, Quotient.mk s w = z :=
+/-- A point of the quotient lies in `V.imageQuotientMk hV` exactly when it is the class of a
+point of `V`. -/
+theorem mem_imageQuotientMk (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V)
+    {z : Quotient s} : z ∈ V.imageQuotientMk hV ↔ ∃ w ∈ V, Quotient.mk s w = z :=
   Iff.rfl
 
-variable {s} in
 /-- The class of a point lies in the image of an open set closed under `s` exactly when the
 point lies in that set. -/
 @[simp]
-theorem mk_mem_saturatedOpen (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V)
-    {w : X} : Quotient.mk s w ∈ saturatedOpen V hV ↔ w ∈ V := by
-  rw [mem_saturatedOpen]
+theorem mk_mem_imageQuotientMk (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V)
+    {w : X} : Quotient.mk s w ∈ V.imageQuotientMk hV ↔ w ∈ V := by
+  rw [mem_imageQuotientMk]
   exact ⟨fun ⟨v, hv, hvw⟩ ↦ hV hv (Quotient.exact hvw), fun hw ↦ ⟨w, hw, rfl⟩⟩
 
-variable {s} in
 /-- The points over the image of an open set closed under `s` are the points of that set. -/
 @[simp]
-theorem mem_map_saturatedOpen (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V)
-    {w : X} : w ∈ (Opens.map (quotientMk s)).obj (saturatedOpen V hV) ↔ w ∈ V := by
-  rw [Opens.mem_map, quotientMk_apply, mk_mem_saturatedOpen]
+theorem mem_map_imageQuotientMk (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V)
+    {w : X} :
+    w ∈ (Opens.map (TauCeti.TopCat.quotientMk s)).obj (V.imageQuotientMk hV) ↔ w ∈ V := by
+  rw [Opens.mem_map, TauCeti.TopCat.quotientMk_apply, mk_mem_imageQuotientMk]
 
-end TauCeti.TopCat
+end TopologicalSpace.Opens

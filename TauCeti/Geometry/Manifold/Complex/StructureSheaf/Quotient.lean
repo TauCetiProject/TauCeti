@@ -301,13 +301,13 @@ private def descendSection {x y : X} {N : Set X} (hN : IsPairNhd s x y N) (V : O
     (hVN : (V : Set X) ⊆ N) (hxV : x ∈ V) (hyV : y ∈ V)
     (τ : (holomorphicStructureSheaf I X).obj.obj (op V)) (hτ : τ ⟨x, hxV⟩ = τ ⟨y, hyV⟩) :
     (quotientSheaf I s).obj.obj
-      (op (TopCat.saturatedOpen V (saturated_of_isPairNhd hN hVN hxV hyV))) :=
+      (op (V.imageQuotientMk (saturated_of_isPairNhd hN hVN hxV hyV))) :=
   (quotientSheafSectionsEquiv I s _).symm
     ⟨(holomorphicStructureSheaf I X).obj.map
-      (homOfLE fun _ hw ↦ (TopCat.mem_map_saturatedOpen V _).mp hw).op τ, by
+      (homOfLE fun _ hw ↦ (Opens.mem_map_imageQuotientMk V _).mp hw).op τ, by
       intro w v hw hv hwv
       simp only [map_apply]
-      rcases hN w (hVN ((TopCat.mem_map_saturatedOpen V
+      rcases hN w (hVN ((Opens.mem_map_imageQuotientMk V
         (saturated_of_isPairNhd hN hVN hxV hyV)).mp hw)) v hwv with rfl | ⟨hw' | hw', hv' | hv'⟩ <;>
         (try subst w) <;> (try subst v) <;> first | rfl | exact hτ | exact hτ.symm⟩
 
@@ -318,7 +318,7 @@ private theorem quotientStalkBranch_germ_descendSection {x y : X} {N : Set X}
     (z : Quotient s) (w : X) (hw : Quotient.mk s w = z) (hwV : w ∈ V) :
     quotientStalkBranch I s z w hw
       (ConcreteCategory.hom ((quotientSheaf I s).presheaf.germ _ z
-        (hw ▸ (TopCat.mem_map_saturatedOpen V
+        (hw ▸ (Opens.mem_map_imageQuotientMk V
           (saturated_of_isPairNhd hN hVN hxV hyV)).mpr hwV))
         (descendSection hN V hVN hxV hyV τ hτ)) =
       (holomorphicStructureSheaf I X).presheaf.germ V w hwV τ := by
@@ -347,16 +347,16 @@ private theorem eq_zero_of_quotientStalkBranch {x y : X} (hxy : s x y) {N : Open
   have hxV : x ∈ V := Or.inl ⟨hxA, hxN⟩
   have hyV : y ∈ V := Or.inr ⟨hyB, hyN⟩
   have hV := saturated_of_isPairNhd hN hVN hxV hyV
-  have hWU : TopCat.saturatedOpen V hV ≤ U := by
+  have hWU : V.imageQuotientMk hV ≤ U := by
     intro z hz
-    obtain ⟨w, hw | hw, rfl⟩ := (TopCat.mem_saturatedOpen V hV).mp hz
+    obtain ⟨w, hw | hw, rfl⟩ := (Opens.mem_imageQuotientMk V hV).mp hz
     exacts [iA.le hw.1, iB.le hw.1]
-  have hxW : Quotient.mk s x ∈ TopCat.saturatedOpen V hV :=
-    (TopCat.mem_map_saturatedOpen V hV).mpr hxV
+  have hxW : Quotient.mk s x ∈ V.imageQuotientMk hV :=
+    (Opens.mem_map_imageQuotientMk V hV).mpr hxV
   have h0 : (quotientSheaf I s).presheaf.map (homOfLE hWU).op σ = 0 := by
     ext w
     rw [quotientSheaf_map_val, map_zero]
-    obtain hw | hw := (TopCat.mem_map_saturatedOpen V hV).mp w.2
+    obtain hw | hw := (Opens.mem_map_imageQuotientMk V hV).mp w.2
     · simpa using congrArg (fun t ↦ t ⟨w, hw.1⟩) hA
     · simpa using congrArg (fun t ↦ t ⟨w, hw.1⟩) hB
   rw [← TopCat.Presheaf.germ_res_apply _ (homOfLE hWU) _ hxW, h0, map_zero]
