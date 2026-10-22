@@ -292,6 +292,18 @@ theorem assignmentEquiv_trans (e : N ≃ₙ N') (f : N' ≃ₙ N'') (R : Type w'
       (f.assignmentEquiv_apply R (e.assignmentEquiv R g) (e.homEquiv x y a)).symm
     _ = f.assignmentEquiv R (e.assignmentEquiv R g) ((e.trans f).homEquiv x y a) := rfl
 
+/-- Assignment transport preserves and reflects the pointwise order. -/
+theorem assignmentEquiv_le_assignmentEquiv_iff {R : Type w'} [LE R] (e : N ≃ₙ N')
+    (f g : N.Assignment R) : e.assignmentEquiv R f ≤ e.assignmentEquiv R g ↔ f ≤ g := by
+  constructor
+  · intro h x y a
+    simpa using h (e.vertexEquiv x) (e.vertexEquiv y) (e.homEquiv x y a)
+  · intro h x y a
+    obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
+    obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
+    obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
+    simpa using h x y a
+
 end Iso
 
 end LE
@@ -307,24 +319,9 @@ namespace Iso
 /-- Assignment transport preserves arbitrary pointwise order intervals. -/
 theorem assignmentEquiv_mem_Icc_map_iff (e : N ≃ₙ N') (lo hi f : N.Assignment K) :
     e.assignmentEquiv K f ∈
-        Set.Icc (e.assignmentEquiv K lo) (e.assignmentEquiv K hi) ↔ f ∈ Set.Icc lo hi := by
-  constructor
-  · intro hf
-    constructor
-    · intro x y a
-      simpa using hf.1 (e.vertexEquiv x) (e.vertexEquiv y) (e.homEquiv x y a)
-    · intro x y a
-      simpa using hf.2 (e.vertexEquiv x) (e.vertexEquiv y) (e.homEquiv x y a)
-  · intro hf
-    constructor <;> intro x y a
-    · obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
-      obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
-      obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
-      simpa using hf.1 x y a
-    · obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
-      obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
-      obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
-      simpa using hf.2 x y a
+        Set.Icc (e.assignmentEquiv K lo) (e.assignmentEquiv K hi) ↔ f ∈ Set.Icc lo hi :=
+  and_congr (e.assignmentEquiv_le_assignmentEquiv_iff lo f)
+    (e.assignmentEquiv_le_assignmentEquiv_iff f hi)
 
 /-- Assignment transport preserves pointwise order intervals when the endpoints are transported. -/
 theorem assignmentEquiv_mem_Icc_iff (e : N ≃ₙ N') (f : N.Assignment K) :
@@ -352,7 +349,8 @@ theorem excessAt_assignmentEquiv [Fintype V] [Fintype W]
     TauCeti.excessAt (e.assignmentEquiv R f) (e.vertexEquiv x) = TauCeti.excessAt f x := by
   rw [← excessAt_comp_equiv e.vertexEquiv e.homEquiv (e.assignmentEquiv R f) x]
   congr 1
-  exact (e.assignmentEquiv R).symm_apply_apply f
+  funext x y a
+  exact e.assignmentEquiv_apply R f a
 
 /-- Assignment transport preserves the circulation predicate. -/
 @[simp]
@@ -535,8 +533,7 @@ theorem mapBoundedFlow_toFun (e : N ≃ₙ N') {lo hi : N.Assignment K} {s t : V
 @[simp]
 theorem val_mapBoundedFlow (e : N ≃ₙ N') {lo hi : N.Assignment K} {s t : V}
     (f : TauCeti.BoundedFlow lo hi s t) : (e.mapBoundedFlow f).val = f.val := by
-  rw [TauCeti.BoundedFlow.val_def, mapBoundedFlow_toFun, e.excessAt_assignmentEquiv,
-    TauCeti.BoundedFlow.val_def]
+  simp [TauCeti.BoundedFlow.val_def]
 
 /-- Transport an ordinary flow, transporting its capacity assignment with it. -/
 def mapFlow (e : N ≃ₙ N') {cap : N.Assignment K} {s t : V}
@@ -546,11 +543,7 @@ def mapFlow (e : N ≃ₙ N') {cap : N.Assignment K} {s t : V}
   mem_Icc := by
     simpa only [assignmentEquiv_zero] using
       (e.assignmentEquiv_mem_Icc_map_iff 0 cap f.toFun).2 f.mem_Icc
-  conserve y hys hyt := by
-    obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective y
-    rw [e.excessAt_assignmentEquiv]
-    exact f.conserve x (fun h ↦ hys (congrArg e.vertexEquiv h))
-      (fun h ↦ hyt (congrArg e.vertexEquiv h))
+  conserve := (e.mapBoundedFlow f.toBoundedFlow).conserve
   excessAt_sink_nonneg := by
     rw [e.excessAt_assignmentEquiv]
     exact f.excessAt_sink_nonneg
@@ -565,8 +558,7 @@ theorem mapFlow_toFun (e : N ≃ₙ N') {cap : N.Assignment K} {s t : V}
 @[simp]
 theorem val_mapFlow (e : N ≃ₙ N') {cap : N.Assignment K} {s t : V}
     (f : TauCeti.Flow cap s t) : (e.mapFlow f).val = f.val := by
-  rw [TauCeti.BoundedFlow.val_def, mapFlow_toFun, e.excessAt_assignmentEquiv,
-    TauCeti.BoundedFlow.val_def]
+  simp [TauCeti.BoundedFlow.val_def]
 
 end Iso
 
