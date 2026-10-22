@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
 
 /-!
@@ -58,10 +59,10 @@ private theorem Connected.connected_induce_of_isBond (hG : G.Connected) (hS : S 
     rwa [vertexSet_induce, hT] at h
   have hwV := huw.right_mem
   have h₁ := hB.eq_of_subset ⟨isEdgeCut_edgeCut _ _,
-    hG.edgeCut_nonempty (hS hx) hwV (Reachable.refl hx) fun h ↦ hw (hTS h)⟩
+    (hG.reachable (hS hx) hwV).edgeCut_nonempty (Reachable.refl hx) fun h ↦ hw (hTS h)⟩
     (edgeCut_subset_edgeCut_of_edgeCut_induce_eq_empty hTS hT)
   have h₂ := hB.eq_of_subset ⟨isEdgeCut_edgeCut _ _,
-    hG.edgeCut_nonempty (S := S \ T) (hS hy) hwV ⟨hy, hxy⟩ fun h ↦ hw h.1⟩
+    (hG.reachable (hS hy) hwV).edgeCut_nonempty (S := S \ T) ⟨hy, hxy⟩ fun h ↦ hw h.1⟩
     (edgeCut_subset_edgeCut_of_edgeCut_induce_eq_empty sdiff_subset hST)
   have hsymm : T ∆ (S \ T) = S := by
     rw [disjoint_sdiff_right.symmDiff_eq_sup]
@@ -79,7 +80,7 @@ theorem Connected.isBond_edgeCut_iff (hG : G.Connected) (hS : S ⊆ V(G)) :
     fun ⟨hSc, hCc⟩ ↦ ?_⟩
   obtain ⟨u, hu⟩ := hSc.nonempty
   obtain ⟨w, hwV, hwS⟩ := hCc.nonempty
-  refine ⟨⟨isEdgeCut_edgeCut G S, hG.edgeCut_nonempty (hS hu) hwV hu hwS⟩,
+  refine ⟨⟨isEdgeCut_edgeCut G S, (hG.reachable (hS hu) hwV).edgeCut_nonempty hu hwS⟩,
     fun F ⟨hF, f, hf⟩ hFS ↦ ?_⟩
   obtain ⟨T, -, rfl⟩ := hF.exists_edgeCut
   -- Membership in `T` is constant on each side of the cut, since each side is connected and
