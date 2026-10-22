@@ -35,6 +35,11 @@ theorem isProperPower_of_sq (a : α) : Group.IsProperPower (of a ^ 2) :=
   intro h
   exact Group.not_isProperPower_ofAdd_one (by simpa [f] using Group.IsProperPower.map f h)
 
+/-- If a generator of a free group is the `m`-th power of some element, then `m = ±1`. -/
+theorem natAbs_eq_one_of_of_eq_zpow {a : α} {r : FreeGroup α} {m : ℤ} (h : of a = r ^ m) :
+    m.natAbs = 1 :=
+  Group.natAbs_eq_one_of_not_isProperPower_zpow (h ▸ FreeGroup.not_isProperPower_of a)
+
 /-- The commutator of two distinct free generators is not a proper power. -/
 theorem not_isProperPower_commutator {a b : α} (hab : a ≠ b) :
     ¬ Group.IsProperPower ⁅of a, of b⁆ := by
