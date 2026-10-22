@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.Instances.Icc
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
@@ -138,15 +138,6 @@ private def cylinderChart (I : ModelWithCorners ℝ E H) (x₀ : M) : E × ℝ �
 private theorem cylinderChart_apply (x₀ : M) (p : E × ℝ) :
     cylinderChart I x₀ p = ((extChartAt I x₀).symm p.1, projIcc 0 1 zero_le_one p.2) :=
   (rfl)
-
-/-- On a subset of the chart target with unique derivatives, the derivative of the inverse chart
-within the subset is its derivative within the model range. -/
-private theorem mfderivWithin_extChartAt_symm_of_subset [IsManifold I 1 M] (x₀ : M) {s : Set E}
-    (hs : s ⊆ (extChartAt I x₀).target) (hsu : UniqueDiffOn ℝ s) {y : E} (hy : y ∈ s) :
-    mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm s y =
-      mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) y :=
-  mfderivWithin_subset (fun _ hz ↦ extChartAt_target_subset_range x₀ (hs hz))
-    (hsu y hy).uniqueMDiffWithinAt (mdifferentiableWithinAt_extChartAt_symm (hs hy))
 
 /-- The derivative of the cylinder chart `(y, t) ↦ ((extChartAt I x₀).symm y, projIcc 0 1 t)`. -/
 private theorem mfderivWithin_cylinderChart_apply [IsManifold I 1 M] (x₀ : M) {s : Set E}
