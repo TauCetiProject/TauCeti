@@ -190,6 +190,62 @@ private theorem finite_support_divisor_finitePartCoe {f : MeromorphicFunction (O
       nhdsWithin_le_nhds⟩
   simp [MeromorphicOn.divisor_apply (meromorphicOn_finitePartCoe f) (mem_univ u), hord] at hu
 
+/-- The finite part of a nonzero meromorphic function on the Riemann sphere, read on `ℂ`, does not
+vanish identically near any point. -/
+private theorem meromorphicOrderAt_finitePartCoe_ne_top {f : MeromorphicFunction (OnePoint ℂ)}
+    (hf : f ≠ 0) (u : ℂ) : _root_.meromorphicOrderAt (finitePartCoe f) u ≠ ⊤ := fun h ↦ by
+  obtain ⟨y, hy⟩ := (((continuous_coe.continuousWithinAt.tendsto_nhdsWithin
+    (x := u) fun _ hy ↦ by simpa using hy).eventually
+    (eventually_finitePart_ne_zero hf (u : OnePoint ℂ))).and
+    (meromorphicOrderAt_eq_top_iff.1 h)).exists
+  exact hy.1 hy.2
+
+/-- The value at `y` of the finitely supported product `∏ᶠ u, (· - u) ^ d u`, as a finite
+product. -/
+private theorem finprod_sub_zpow_apply {d : ℂ → ℤ} (hd : d.support.Finite) (y : ℂ) :
+    (∏ᶠ u, (· - u) ^ d u) y = ∏ u ∈ hd.toFinset, (y - u) ^ d u :=
+  (congrFun (Function.FactorizedRational.finprod_eq_fun hd) y).trans <|
+    finprod_eq_prod_of_mulSupport_subset _ fun u hu ↦
+      hd.mem_toFinset.2 fun h ↦ hu (by simp [h])
+
+/-- At a point `y` outside a finite set `s`, the product of the `(y - u) ^ n u` over `u ∈ s` does
+not vanish. -/
+private theorem prod_sub_zpow_ne_zero {s : Finset ℂ} (n : ℂ → ℤ) {y : ℂ} (hy : y ∉ s) :
+    ∏ u ∈ s, (y - u) ^ n u ≠ 0 :=
+  Finset.prod_ne_zero_iff.2 fun _ hu ↦ zpow_ne_zero _ (sub_ne_zero.2 fun h ↦ hy (h ▸ hu))
+
+/-- If on `ℂ` the finite part of `f` is `∏ (z - u) ^ d(u)` times an analytic function `g`, away
+from a codiscrete set, then the quotient of `f` by the rational function `∏ (z - u) ^ d(u)` agrees
+with `g` at every point of `ℂ`. -/
+private theorem mul_inv_prod_coordinate_sub_zpow_apply {f : MeromorphicFunction (OnePoint ℂ)}
+    {d : ℂ → ℤ} (hd : d.support.Finite) {g : ℂ → ℂ} (hg : AnalyticOnNhd ℂ g univ)
+    (hfg : finitePartCoe f =ᶠ[codiscreteWithin univ] (∏ᶠ u, (· - u) ^ d u) • g) (z : ℂ) :
+    (f * (∏ u ∈ hd.toFinset, (coordinate - algebraMap ℂ _ u) ^ d u)⁻¹) z = ↑(g z) := by
+  set s := hd.toFinset with hs
+  set G := f * (∏ u ∈ s, (coordinate - algebraMap ℂ _ u) ^ d u)⁻¹
+  have hev : ∀ᶠ y : ℂ in 𝓝[≠] z, G y = ↑(g y) := by
+    have hs' : ∀ᶠ y : ℂ in 𝓝[≠] z, y ∉ s := by
+      filter_upwards [(s.finite_toSet.sdiff (t := {z})).isClosed.compl_mem_nhds
+        (fun h ↦ h.2 rfl) |> nhdsWithin_le_nhds, self_mem_nhdsWithin] with y hy hyz
+      exact fun h ↦ hy ⟨h, hyz⟩
+    filter_upwards [hs', (continuous_coe.continuousWithinAt.tendsto_nhdsWithin
+      (x := z) fun _ hy ↦ by simpa using hy).eventually (f.eventually_ne_infty z),
+      eventually_codiscrete_iff_forall_eventually_nhdsNE.1 hfg z] with y hy hfy hFy
+    have hφy := prod_coordinate_sub_zpow_apply s d hy
+    have hinv : (∏ u ∈ s, (coordinate - algebraMap ℂ _ u) ^ d u)⁻¹ (y : OnePoint ℂ) =
+        ↑(∏ u ∈ s, (y - u) ^ d u)⁻¹ := by
+      rw [inv_apply (by simp [hφy]) (by simp [hφy, prod_sub_zpow_ne_zero d hy]),
+        finitePart_of_eq_coe hφy]
+    rw [mul_apply hfy (by simp [hinv]), finitePart_of_eq_coe hinv]
+    congr 1
+    rw [show f.finitePart y = _ from hFy, Pi.smul_apply', smul_eq_mul,
+      finprod_sub_zpow_apply hd, ← hs]
+    field_simp [prod_sub_zpow_ne_zero d hy]
+  exact tendsto_nhds_unique_of_eventuallyEq
+    ((G.continuous.tendsto _).comp (continuous_coe.tendsto z) |>.mono_left nhdsWithin_le_nhds)
+    ((continuous_coe.tendsto _).comp (hg z (mem_univ z)).continuousAt |>.mono_left
+      nhdsWithin_le_nhds) hev
+
 /-- **Every meromorphic function on the Riemann sphere is a rational function of the
 coordinate.** -/
 private theorem ofRatFunc_surjective : Surjective ofRatFunc := by
@@ -201,14 +257,8 @@ private theorem ofRatFunc_surjective : Surjective ofRatFunc := by
   · exact zero_mem S
   have hfin := finite_support_divisor_finitePartCoe hf
   -- Factor the zeros and poles of `f` on `ℂ` out of its finite part.
-  have htop (u : (univ : Set ℂ)) : _root_.meromorphicOrderAt (finitePartCoe f) (u : ℂ) ≠ ⊤ :=
-    fun h ↦ by
-      obtain ⟨y, hy⟩ := (((continuous_coe.continuousWithinAt.tendsto_nhdsWithin
-        (x := (u : ℂ)) fun _ hy ↦ by simpa using hy).eventually
-        (eventually_finitePart_ne_zero hf ((u : ℂ) : OnePoint ℂ))).and
-        (meromorphicOrderAt_eq_top_iff.1 h)).exists
-      exact hy.1 hy.2
-  obtain ⟨g, hg, hg0, hfg⟩ := (meromorphicOn_finitePartCoe f).extract_zeros_poles htop hfin
+  obtain ⟨g, hg, hg0, hfg⟩ := (meromorphicOn_finitePartCoe f).extract_zeros_poles
+    (fun u ↦ meromorphicOrderAt_finitePartCoe_ne_top hf u) hfin
   set d := MeromorphicOn.divisor (finitePartCoe f) univ
   set s := hfin.toFinset
   -- The rational function `φ = ∏ (z - u) ^ d(u)` with the same zeros and poles on `ℂ`.
@@ -217,46 +267,16 @@ private theorem ofRatFunc_surjective : Surjective ofRatFunc := by
   have hcoord : coordinate ∈ S :=
     AlgHom.mem_fieldRange.2 ⟨RatFunc.X, by simpa using ofRatFunc_algebraMap Polynomial.X⟩
   have hφS : φ ∈ S := prod_mem fun u _ ↦ zpow_mem (sub_mem hcoord (algebraMap_mem S u)) _
-  have hφ (y : ℂ) (hy : y ∉ s) : φ y = ↑(∏ u ∈ s, (y - u) ^ d u) :=
-    prod_coordinate_sub_zpow_apply s d hy
-  have hφ0 (y : ℂ) (hy : y ∉ s) : ∏ u ∈ s, (y - u) ^ d u ≠ 0 :=
-    Finset.prod_ne_zero_iff.2 fun u hu ↦ zpow_ne_zero _ (sub_ne_zero.2 fun h ↦ hy (h ▸ hu))
   have hφne : φ ≠ 0 := by
     obtain ⟨y, hy⟩ := s.finite_toSet.infinite_compl.nonempty
     intro h
-    have := hφ y hy
+    have : φ y = _ := prod_coordinate_sub_zpow_apply s d hy
     rw [h, coe_zero] at this
-    exact hφ0 y hy (coe_injective this).symm
-  -- The quotient `G = f / φ` agrees on `ℂ` with the analytic function `g` without zeros.
+    exact prod_sub_zpow_ne_zero d hy (coe_injective this).symm
+  -- The quotient `G = f / φ` agrees on `ℂ` with the analytic function `g` without zeros, so it is
+  -- constant, and `f = G * φ` is rational.
   set G := f * φ⁻¹
-  have hG (z : ℂ) : G z = ↑(g z) := by
-    have hev : ∀ᶠ y : ℂ in 𝓝[≠] z, G y = ↑(g y) := by
-      have hs' : ∀ᶠ y : ℂ in 𝓝[≠] z, y ∉ s := by
-        filter_upwards [(s.finite_toSet.sdiff (t := {z})).isClosed.compl_mem_nhds
-          (fun h ↦ h.2 rfl) |> nhdsWithin_le_nhds, self_mem_nhdsWithin] with y hy hyz
-        exact fun h ↦ hy ⟨h, hyz⟩
-      filter_upwards [hs', (continuous_coe.continuousWithinAt.tendsto_nhdsWithin
-        (x := z) fun _ hy ↦ by simpa using hy).eventually (f.eventually_ne_infty z),
-        eventually_codiscrete_iff_forall_eventually_nhdsNE.1 hfg z] with y hy hfy hFy
-      have hφy := hφ y hy
-      have hinv : φ⁻¹ y = ↑(∏ u ∈ s, (y - u) ^ d u)⁻¹ := by
-        rw [inv_apply (by simp [hφy]) (by simp [hφy, hφ0 y hy]), finitePart_of_eq_coe hφy]
-      rw [mul_apply hfy (by simp [hinv]), finitePart_of_eq_coe hinv]
-      congr 1
-      simp only [finitePartCoe] at hFy
-      rw [hFy, Pi.smul_apply',
-        Function.FactorizedRational.finprod_eq_fun hfin, smul_eq_mul]
-      beta_reduce
-      rw [finprod_eq_prod_of_mulSupport_subset (s := s), mul_comm, ← mul_assoc,
-        inv_mul_cancel₀ (hφ0 y hy), one_mul]
-      intro u hu
-      simp only [mem_mulSupport] at hu
-      simpa [s] using fun h ↦ hu (by simp [h])
-    exact tendsto_nhds_unique_of_eventuallyEq
-      ((G.continuous.tendsto _).comp (continuous_coe.tendsto z) |>.mono_left nhdsWithin_le_nhds)
-      ((continuous_coe.tendsto _).comp (hg z (mem_univ z)).continuousAt |>.mono_left
-        nhdsWithin_le_nhds) hev
-  -- So `G` is constant, and `f = G * φ` is rational.
+  have hG : ∀ z : ℂ, G z = ↑(g z) := mul_inv_prod_coordinate_sub_zpow_apply hfin hg hfg
   obtain ⟨c, hc⟩ := exists_algebraMap_eq_of_forall_coe_ne (f := G) (fun z ↦ by simp [hG])
     fun z ↦ by simpa [hG] using hg0 ⟨z, mem_univ z⟩
   have hGS : G ∈ S := hc ▸ algebraMap_mem S c
