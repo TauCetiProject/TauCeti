@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.PolynomialAlgebra
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 public import TauCeti.RingTheory.ReesAlgebra.Grading
+public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Base change of the Rees algebra
@@ -43,6 +44,9 @@ the blowup of `Spec R`, and the flat case identifies the two. The comparison is 
 * `reesAlgebra.baseChangeHom_injective`: for flat `S`, the comparison is injective.
 * `reesAlgebra.baseChangeHom_mem_grade_iff`: for flat `S`, the comparison preserves and reflects
   degrees.
+* `reesAlgebra.baseChangeHom_baseChangeEquiv_symm_apply`,
+  `reesAlgebra.baseChangeEquiv_symm_baseChangeHom_apply`: for flat `S`, the comparison and the
+  inverse of `reesAlgebra.baseChangeEquiv` cancel.
 
 ## References
 
@@ -124,11 +128,8 @@ theorem baseChangeHom_surjective : Function.Surjective (baseChangeHom I S) := by
 inclusion `R[It] ⊆ R[X]` stays injective after tensoring with `S`. -/
 theorem baseChangeHom_injective [Module.Flat R S] : Function.Injective (baseChangeHom I S) := by
   have hmap : ⇑(Algebra.TensorProduct.map (AlgHom.id S S) (reesAlgebra I).val) =
-      ⇑((reesAlgebra I).val.toLinearMap.lTensor S) := by
-    ext x
-    induction x using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul s f => simp
+      ⇑((reesAlgebra I).val.toLinearMap.lTensor S) :=
+    funext fun x ↦ (AlgHom.lTensor_toLinearMap_apply S (reesAlgebra I).val x).symm
   have hinj : Function.Injective
       (Algebra.TensorProduct.map (AlgHom.id S S) (reesAlgebra I).val) := by
     rw [hmap]
@@ -175,6 +176,7 @@ theorem baseChangeGradedAlgHom_surjective : Function.Surjective (baseChangeGrade
 
 variable {I S} in
 /-- For flat `S`, the comparison of Rees algebras preserves and reflects degrees. -/
+@[simp]
 theorem baseChangeHom_mem_grade_iff [Module.Flat R S] {n : ℕ} {x : S ⊗[R] reesAlgebra I} :
     baseChangeHom I S x ∈ grade (I.map (algebraMap R S)) n ↔ x ∈ (grade I n).baseChange S :=
   Graded.map_mem_iff_of_injective (baseChangeGradedAlgHom I S) (baseChangeHom_injective I S)
@@ -207,6 +209,19 @@ theorem baseChangeGradedAlgHomSymm_apply [Module.Flat R S]
     (x : reesAlgebra (I.map (algebraMap R S))) :
     baseChangeGradedAlgHomSymm I S x = (baseChangeEquiv I S).symm x :=
   (rfl)
+
+/-- For flat `S`, the comparison undoes the inverse of `reesAlgebra.baseChangeEquiv`. -/
+@[simp]
+theorem baseChangeHom_baseChangeEquiv_symm_apply [Module.Flat R S]
+    (x : reesAlgebra (I.map (algebraMap R S))) :
+    baseChangeHom I S ((baseChangeEquiv I S).symm x) = x :=
+  (baseChangeEquiv I S).apply_symm_apply x
+
+/-- For flat `S`, the inverse of `reesAlgebra.baseChangeEquiv` undoes the comparison. -/
+@[simp]
+theorem baseChangeEquiv_symm_baseChangeHom_apply [Module.Flat R S] (x : S ⊗[R] reesAlgebra I) :
+    (baseChangeEquiv I S).symm (baseChangeHom I S x) = x :=
+  (baseChangeEquiv I S).symm_apply_apply x
 
 /-- For flat `S`, the inverse graded comparison is a right inverse of the graded comparison. -/
 theorem baseChangeGradedAlgHom_rightInverse [Module.Flat R S] :
