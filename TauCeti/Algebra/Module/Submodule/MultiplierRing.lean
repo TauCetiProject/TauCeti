@@ -14,9 +14,10 @@ public import TauCeti.Algebra.Ring.Subgroup
 Let `B` be a commutative `R`-algebra and `M` an `R`-submodule of `B`. The *multiplier ring*
 `B₀ = {b ∈ B | b M ⊆ M}` of the underlying additive subgroup of `M`
 (`AddSubgroup.multiplierRing`) is a subring of `B` containing the image of `R`. This file
-compares the ideal `I • M` of `B₀` coming from an ideal `I` of `R` with the extension of `I`
-to `B₀`. These comparisons are how a lattice in a finite algebra over a Huber ring yields a pair
-of definition.
+compares the `R`-submodule `I • M` of `B` coming from an ideal `I` of `R` with the extension of
+`I` to `B₀`. The submodule `I • M` lies in `B₀` only under a hypothesis such as
+`I • (M * M) ≤ M` (see `Submodule.smul_subset_multiplierRing`). These comparisons are how a
+lattice in a finite algebra over a Huber ring yields a pair of definition.
 
 ## Main results
 
