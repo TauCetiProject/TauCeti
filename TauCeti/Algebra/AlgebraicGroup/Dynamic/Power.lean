@@ -25,7 +25,9 @@ over a commutative ring, with no field, smoothness or finite-type hypothesis.
 
 ## Main declarations
 
-* `BialgHom.powCocharacter`: the power `λⁿ` of a cocharacter.
+* `BialgHom.powCocharacter`: the power `λⁿ` of a cocharacter, with
+  `BialgHom.powCocharacter_one`, `BialgHom.powCocharacter_powCocharacter` and
+  `BialgHom.powCocharacter_neg_one` relating it to `λ`, `λ^{mn}` and the opposite cocharacter.
 * `BialgHom.conjugate_powCocharacter`: generic conjugation by `λⁿ` is generic conjugation by
   `λ` followed by `T ↦ Tⁿ`.
 * `BialgHom.parabolic_powCocharacter`, `BialgHom.levi_powCocharacter`,
@@ -63,6 +65,40 @@ variable. -/
 theorem powCocharacter_apply (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ) (h : H) :
     l.powCocharacter n h = AddMonoidAlgebra.mapDomain (· * n) (l h) := (rfl)
 
+/-- The first power of a cocharacter is the cocharacter itself. -/
+@[simp]
+theorem powCocharacter_one (l : H →ₐc[R] LaurentPolynomial R) : l.powCocharacter 1 = l := by
+  ext h k : 2
+  simp
+
+/-- Powers of a cocharacter compose by multiplying the exponents: `(λᵐ)ⁿ = λ^{mn}`. -/
+@[simp]
+theorem powCocharacter_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (m n : ℤ) :
+    (l.powCocharacter m).powCocharacter n = l.powCocharacter (m * n) := by
+  ext h k : 2
+  simp only [powCocharacter_apply, AddMonoidAlgebra.coeff_mapDomain, ← Finsupp.mapDomain_comp,
+    Function.comp_def, mul_assoc]
+
+/-- The power `λ⁻¹` of a cocharacter is its opposite cocharacter. -/
+theorem powCocharacter_neg_one (l : H →ₐc[R] LaurentPolynomial R) :
+    l.powCocharacter (-1) = l.oppositeCocharacter := by
+  ext h k : 2
+  simpa using Finsupp.mapDomain_apply_of_injective neg_injective (l h).coeff (-k)
+
+/-- The substitution `T ↦ Tⁿ` sends the Laurent variable `T` to `Tⁿ`. -/
+private theorem mapDomainAlgHom_mulRight_T (n : ℤ) :
+    AddMonoidAlgebra.mapDomainAlgHom R A (AddMonoidHom.mulRight n) (LaurentPolynomial.T 1) =
+      LaurentPolynomial.T n := by
+  simp only [AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidHom.coe_mulRight,
+    LaurentPolynomial.T, AddMonoidAlgebra.mapDomain_single, one_mul]
+
+/-- The substitution `T ↦ Tⁿ` fixes the constant Laurent polynomials. -/
+private theorem mapDomainAlgHom_mulRight_comp_toAlgHom (n : ℤ) :
+    (AddMonoidAlgebra.mapDomainAlgHom R A (AddMonoidHom.mulRight n)).comp
+        (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) =
+      IsScalarTower.toAlgHom R A (LaurentPolynomial A) :=
+  AlgHom.ext fun a ↦ (AddMonoidAlgebra.mapDomainAlgHom A A (AddMonoidHom.mulRight n)).commutes a
+
 /-- The `n`-th power of a cocharacter evaluates at the `n`-th power of a unit. -/
 @[simp]
 theorem pointsHom_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ) (u : Aˣ) :
@@ -70,12 +106,13 @@ theorem pointsHom_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ
   have he : (laurentEval (R := R) u).comp
       (AddMonoidAlgebra.mapDomainAlgHom R R (AddMonoidHom.mulRight n)) = laurentEval (u ^ n) :=
     laurentEval_unique _ _ (by
-      simp only [AlgHom.comp_apply, AddMonoidAlgebra.mapDomainAlgHom_apply,
-        AddMonoidHom.coe_mulRight, LaurentPolynomial.T, AddMonoidAlgebra.mapDomain_single,
-        one_mul]
+      rw [AlgHom.comp_apply, mapDomainAlgHom_mulRight_T]
       exact laurentEval_T u n)
   rw [pointsHom_apply, pointsHom_apply, BialgHom.mapDomain_apply, BialgHom.mapDomain_apply,
-    ofConv_toConv, ofConv_toConv, ← he]
+    ofConv_toConv, ofConv_toConv, ← he, AlgHom.comp_assoc, powCocharacter,
+    BialgHom.comp_toAlgHom]
+  -- `mapDomainBialgHom` is built by `BialgHom.ofAlgHom` from `mapDomainAlgHom`, so its
+  -- underlying algebra map is `mapDomainAlgHom` by definition.
   rfl
 
 end Bialgebra
@@ -97,33 +134,19 @@ theorem conjugate_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ
   have hu : Units.map ψ.toMonoidHom (LaurentPolynomial.genericUnit A) =
       LaurentPolynomial.genericUnit A ^ n := by
     apply Units.ext
-    rw [Units.coe_map, LaurentPolynomial.genericUnit_val, LaurentPolynomial.genericUnit_zpow_val]
-    change ψ (LaurentPolynomial.T 1) = LaurentPolynomial.T n
-    simp only [ψ, AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidHom.coe_mulRight,
-      LaurentPolynomial.T, AddMonoidAlgebra.mapDomain_single, one_mul]
-  have hc : ψ.comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) =
-      IsScalarTower.toAlgHom R A (LaurentPolynomial A) :=
-    AlgHom.ext fun a ↦
-      (AddMonoidAlgebra.mapDomainAlgHom A A (AddMonoidHom.mulRight n)).commutes a
-  rw [mapValue_conjugate, hu, hc, conjugate_apply, genericPoint_eq_pointsHom,
-    pointsHom_powCocharacter, constPoint_apply, AlgHom.mapValue_apply]
+    simp only [Units.coe_map, LaurentPolynomial.genericUnit_val,
+      LaurentPolynomial.genericUnit_zpow_val, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, ψ, mapDomainAlgHom_mulRight_T]
+  rw [mapValue_conjugate, hu, mapDomainAlgHom_mulRight_comp_toAlgHom, conjugate_apply,
+    genericPoint_eq_pointsHom, pointsHom_powCocharacter, constPoint_apply, AlgHom.mapValue_apply]
 
 /-- **The dynamic parabolic of a positive power**: `P(λⁿ) = P(λ)` for `n > 0`. -/
 theorem parabolic_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) {n : ℤ} (hn : 0 < n) :
     parabolic A (l.powCocharacter n) = parabolic A l := by
-  have hmem (l' : H →ₐc[R] LaurentPolynomial R) (g : WithConv (H →ₐ[R] A)) :
-      g ∈ parabolic A l' ↔
-        ∀ h : H, ∀ k : ℤ, k < 0 → ((conjugate A l' g).ofConv h).coeff k = 0 := by
-    rw [mem_parabolic_iff, ← exists_algHom_toLaurent_comp_eq_iff]
-    constructor
-    · rintro ⟨F, hF⟩
-      rw [ofPolyPoint_apply] at hF
-      exact ⟨F.ofConv, congrArg ofConv hF⟩
-    · rintro ⟨F, hF⟩
-      exact ⟨toConv F, by rw [ofPolyPoint_apply]; exact congrArg toConv hF⟩
   have hinj : Function.Injective (· * n) := mul_left_injective₀ hn.ne'
   ext g
-  rw [hmem, hmem, conjugate_powCocharacter]
+  rw [mem_parabolic_iff_forall_coeff_conjugate_eq_zero,
+    mem_parabolic_iff_forall_coeff_conjugate_eq_zero, conjugate_powCocharacter]
   refine forall_congr' fun h ↦ ?_
   simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
     AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidHom.coe_mulRight,
@@ -175,10 +198,8 @@ theorem levi_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) {n : ℤ} (hn
     AddMonoidAlgebra.mapDomain_injective (mul_left_injective₀ hn)
   have hconst (g : WithConv (H →ₐ[R] A)) :
       AlgHom.mapValue ψ (constPoint A g) = constPoint A g := by
-    rw [constPoint_apply, AlgHom.mapValue_apply, ofConv_toConv, ← AlgHom.comp_assoc]
-    congr 2
-    exact AlgHom.ext fun a ↦
-      (AddMonoidAlgebra.mapDomainAlgHom A A (AddMonoidHom.mulRight n)).commutes a
+    rw [constPoint_apply, AlgHom.mapValue_apply, ofConv_toConv, ← AlgHom.comp_assoc,
+      mapDomainAlgHom_mulRight_comp_toAlgHom]
   ext g
   rw [mem_levi_iff, mem_levi_iff, conjugate_powCocharacter]
   refine Iff.trans ?_ (AlgHom.mapValue_injective hψ).eq_iff
