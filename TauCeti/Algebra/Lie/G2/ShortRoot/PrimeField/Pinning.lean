@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Pinning.Basic
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Basic
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Reductive
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.Trivialization
 

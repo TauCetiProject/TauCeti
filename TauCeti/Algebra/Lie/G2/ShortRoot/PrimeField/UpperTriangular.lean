@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.CrossProduct.Unitriangular
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.DiagonalFactor
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.BorelCandidate
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Candidate
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Basic
 
 /-!
@@ -47,7 +47,7 @@ torus, so the upper-triangular carrier points are exactly its points. Over an al
 field, a Borel candidate containing it is upper triangular by the overgroup theorem of
 `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.CarrierOvergroup`, so the identification
 here is the pointwise input for the Borel maximality of the positive subgroup in
-`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel`. No identification of the carrier
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Basic`. No identification of the carrier
 with an independently pinned group scheme is asserted here.
 
 ## Main results

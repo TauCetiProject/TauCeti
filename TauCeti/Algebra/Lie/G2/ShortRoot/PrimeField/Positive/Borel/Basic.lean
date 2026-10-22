@@ -35,8 +35,9 @@ scheme-theoretic, over every such `𝔽₃`-algebra.
 ## Main declarations
 
 * `TauCeti.G2ShortRoot.PrimeField.Positive.generatedPositiveDefiningIdeal_le_of_upperTriangular_le`:
-  a closed subgroup of the scalar-extended carrier lying in the upper-triangular subgroup of `GL₇`
-  lies in the positive subgroup.
+  over a commutative `𝔽₃`-algebra containing `λ` with `λ³ - λ` a unit, a closed subgroup of the
+  scalar-extended carrier lying in the upper-triangular subgroup of `GL₇` lies in the positive
+  subgroup.
 * `TauCeti.G2ShortRoot.PrimeField.Positive.isBorelCandidate_generatedPositiveDefiningIdeal`: the
   scalar-extended positive subgroup is a Borel candidate of the scalar-extended carrier.
 * `TauCeti.G2ShortRoot.PrimeField.Positive.isBorelOverAlgClosed_generatedPositiveDefiningIdeal`:
@@ -96,10 +97,10 @@ section Intersection
 
 variable (k : Type u) [CommRing k] [Algebra (ZMod 3) k]
 
-/-- **The carrier's upper-triangular intersection is the positive subgroup**, scheme-theoretically:
-over a commutative `𝔽₃`-algebra containing an element `λ` with `λ³ - λ` a unit, every closed
-subgroup of the scalar-extended carrier lying in the upper-triangular subgroup of `GL₇` lies in
-the positive subgroup. In Hopf ideals both containments are reversed. -/
+/-- **Closed subgroups of the upper-triangular carrier lie in the positive subgroup**,
+scheme-theoretically: over a commutative `𝔽₃`-algebra containing an element `λ` with `λ³ - λ` a
+unit, every closed subgroup of the scalar-extended carrier lying in the upper-triangular subgroup
+of `GL₇` lies in the positive subgroup. In Hopf ideals the containment is reversed. -/
 theorem generatedPositiveDefiningIdeal_le_of_upperTriangular_le {l : k}
     (hl : IsUnit (l ^ 3 - l)) (J : HopfIdeal k (generatedCoordinateHopfAlgebra k))
     (hJ : GeneralLinear.UpperTriangular.definingHopfIdeal k 7 ≤
