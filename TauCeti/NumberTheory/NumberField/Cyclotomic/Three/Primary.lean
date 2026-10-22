@@ -21,7 +21,8 @@ already satisfies the closure property `IsPrimaryEisenstein.neg_mul`. Its conten
 * `IsPrimitiveRoot.isPrimaryEisenstein_add_mul_iff`: `a + b ω` is primary if and only if
   `a ≡ 2` and `b ≡ 0` modulo `3`;
 * `TauCeti.isPrimaryEisenstein_intCast_iff`: a rational integer is primary exactly when it is
-  `2` modulo `3`;
+  `2` modulo `3`, with versions `TauCeti.isPrimaryEisenstein_natCast_iff` and
+  `TauCeti.isPrimaryEisenstein_ofNat_iff` for natural numbers and numerals;
 * `IsPrimitiveRoot.existsUnique_isPrimaryEisenstein_unit_mul`: an element not divisible by
   `ω - 1` has exactly one primary multiple by a unit of `ℤ[ω]`;
 * `TauCeti.existsUnique_associated_isPrimaryEisenstein`: a prime of `ℤ[ω]` of norm different
@@ -85,6 +86,21 @@ theorem isPrimaryEisenstein_intCast_iff {K : Type*} [Field K] [NumberField K] {a
   have h' : algebraMap ℤ (𝓞 K) 3 ∣ algebraMap ℤ (𝓞 K) (a - 2) := by simpa using h
   have hd : Module.finrank ℤ (𝓞 K) ≠ 0 := Module.finrank_pos.ne'
   simpa only [Algebra.norm_algebraMap, Int.pow_dvd_pow_iff hd] using map_dvd (Algebra.norm ℤ) h'
+
+/-- In the ring of integers of a number field, a natural number is primary exactly when it is
+congruent to `2` modulo `3`. -/
+@[simp]
+theorem isPrimaryEisenstein_natCast_iff {K : Type*} [Field K] [NumberField K] {n : ℕ} :
+    IsPrimaryEisenstein (n : 𝓞 K) ↔ n ≡ 2 [MOD 3] := by
+  rw [← Int.cast_natCast, isPrimaryEisenstein_intCast_iff]
+  exact Int.natCast_modEq_iff
+
+/-- In the ring of integers of a number field, a numeral is primary exactly when it is congruent
+to `2` modulo `3`. -/
+@[simp]
+theorem isPrimaryEisenstein_ofNat_iff {K : Type*} [Field K] [NumberField K] {n : ℕ}
+    [n.AtLeastTwo] : IsPrimaryEisenstein (ofNat(n) : 𝓞 K) ↔ ofNat(n) ≡ 2 [MOD 3] :=
+  isPrimaryEisenstein_natCast_iff
 
 end TauCeti
 
@@ -271,11 +287,15 @@ example : ¬ IsPrimaryEisenstein (((1 : ℤ) : 𝓞 K) + (-1 : ℤ) * hζ.toInte
 
 end Examples
 
-/- The rational integer `2` is primary, while `1` is not. -/
-example : IsPrimaryEisenstein ((2 : ℤ) : 𝓞 K) :=
-  (isPrimaryEisenstein_intCast_iff (a := 2)).mpr (by decide)
+/- The rational integer `2` is primary, while `1` and `3` are not. -/
+example : IsPrimaryEisenstein (2 : 𝓞 K) := by simp [Nat.ModEq]
 
 example : ¬ IsPrimaryEisenstein ((1 : ℤ) : 𝓞 K) :=
   fun h ↦ absurd ((isPrimaryEisenstein_intCast_iff (a := 1)).mp h) (by decide)
+
+example : ¬ IsPrimaryEisenstein (3 : 𝓞 K) := by simp [Nat.ModEq]
+
+/- A natural number `q ≡ 2 (mod 3)`, such as a rational prime of this form, is primary. -/
+example {q : ℕ} (hq : q % 3 = 2) : IsPrimaryEisenstein (q : 𝓞 K) := by simpa [Nat.ModEq] using hq
 
 end TauCeti
