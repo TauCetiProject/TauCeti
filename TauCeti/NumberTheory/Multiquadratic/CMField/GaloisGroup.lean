@@ -111,13 +111,8 @@ theorem card_aut_adjoin_I_sqrt_prime (p : ℕ) (hp : p.Prime) :
       = 4 := by
   have h := card_aut_adjoin_I_sqrt_primes (ι := Unit) (fun _ => p) (fun _ => hp)
     (fun _ _ _ => Subsingleton.elim _ _)
-  have hset : insert Complex.I
-      (Set.range fun _ : Unit => ((Real.sqrt p : ℝ) : ℂ))
-      = ({Complex.I, ((Real.sqrt p : ℝ) : ℂ)} : Set ℂ) := by
-    simp [Set.range_const]
-  rw [hset] at h
-  rw [h, Nat.card_eq_fintype_card, Fintype.card_unit]
-  norm_num
+  rw [insert_I_range_sqrt_unit p] at h
+  exact h.trans (by simp)
 
 /-- **Worked example: `|Gal(ℚ(i, √2)/ℚ)| = 4`.** The one-real-prime worked example,
 obtained from `card_aut_adjoin_I_sqrt_prime` with the single prime `2`. -/
