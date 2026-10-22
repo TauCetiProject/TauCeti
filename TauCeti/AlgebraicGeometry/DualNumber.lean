@@ -42,7 +42,9 @@ def dualNumberSplitEpi (R : Type u) [CommRing R] :
   section_ := Spec.map (CommRingCat.ofHom (TrivSqZeroExt.fstHom R R R).toRingHom)
   id := by
     rw [← Spec.map_comp, ← Spec.map_id]
-    congr 1
+    refine congrArg Spec.map ?_
+    ext r
+    simp
 
 /-- The section of `dualNumberSplitEpi R` is induced by the projection `R[ε] → R`, `ε ↦ 0`. -/
 theorem dualNumberSplitEpi_section (R : Type u) [CommRing R] :

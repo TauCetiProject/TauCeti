@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Conj
 public import Mathlib.GroupTheory.GroupExtension.Basic
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
 public import TauCeti.AlgebraicGeometry.DualNumber
-public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.SplitEpi
 
 /-!
 # Infinitesimal automorphisms of prestable maps
@@ -180,9 +178,8 @@ theorem restrictHom_id : restrictHom h (𝟙 (F.pullback p)) = 𝟙 F := by
 @[simp]
 theorem restrictHom_comp (f : F.pullback p ⟶ G.pullback p) (g : G.pullback p ⟶ H.pullback p) :
     restrictHom h (f ≫ g) = restrictHom h f ≫ restrictHom h g := by
-  rw [restrictHom_eq_iff, comp_curve, PointedPrestableFamily.comp_hom, Category.assoc,
-    restrictHom_hom_comp_pullbackSectionι, restrictHom_hom_comp_pullbackSectionι_assoc, comp_curve,
-    PointedPrestableFamily.comp_hom]
+  simp [restrictHom_eq_iff, restrictHom_hom_comp_pullbackSectionι,
+    restrictHom_hom_comp_pullbackSectionι_assoc]
 
 /-- Restriction along the section is a left inverse of base change along `p`. -/
 @[simp]
