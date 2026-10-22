@@ -9,10 +9,8 @@ public import Mathlib.RingTheory.Henselian
 public import TauCeti.RingTheory.Henselization.Algebra
 import Mathlib.RingTheory.Finiteness.Small
 import Mathlib.RingTheory.Smooth.Flat
-import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Henselization.Jacobson
 import TauCeti.RingTheory.Henselization.Section
-import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
 # The universal property of the henselization of a pair

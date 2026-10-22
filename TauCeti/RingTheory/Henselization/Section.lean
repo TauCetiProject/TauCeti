@@ -38,10 +38,8 @@ Nakayama's lemma gives `e C = S e`. Flatness then makes `S → C ⧸ (1 - e)` an
   quasi-finite `S`-algebra `C` with `S ⧸ J ≅ C ⧸ JC` has an `S`-algebra map to `S`.
 * `TauCeti.Henselization.nonempty_unique_algHom_of_isNeighbourhood`: an étale neighbourhood of a
   Henselian pair has exactly one `S`-algebra map to `S`.
-* `TauCeti.Henselization.IsNeighbourhood.nonempty_algHom` and
-  `TauCeti.Henselization.IsNeighbourhood.algHom_ext`: an étale neighbourhood of `(R, I)` has an
-  `R`-algebra map to every Henselian pair `(S, J)` with `IS ⊆ J`, and such maps are unique once
-  `IS` lies in the Jacobson radical of `S`.
+* `TauCeti.Henselization.IsNeighbourhood.nonempty_algHom`: an étale neighbourhood of `(R, I)` has
+  an `R`-algebra map to every Henselian pair `(S, J)` with `IS ⊆ J`.
 
 ## References
 
@@ -307,17 +305,6 @@ end TauCeti.Henselization
 namespace TauCeti.Henselization
 
 variable {R : Type*} [CommRing R] {I : Ideal R}
-
-/-- Two `R`-algebra maps out of an étale neighbourhood of `(R, I)` agree as soon as `I`
-generates an ideal of the target inside its Jacobson radical. -/
-theorem IsNeighbourhood.algHom_ext {B : CommAlgCat.{v} R} (hB : IsNeighbourhood I B)
-    {S : Type*} [CommRing S] [Algebra R S] (hI : I.map (algebraMap R S) ≤ Ideal.jacobson ⊥)
-    {f g : B →ₐ[R] S} : f = g := by
-  obtain ⟨hEtale, hBij⟩ := (isNeighbourhood_iff I B).mp hB
-  -- Both maps agree modulo `IS` because `B ⧸ IB ≅ R ⧸ I`, hence agree outright.
-  refine Algebra.FormallyUnramified.ext_of_quotient_eq R B _ hI (AlgHom.ext fun b ↦ ?_)
-  simpa only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk] using
-    quotient_mk_eq_of_reducedMap_surjective I hBij.2 f g b
 
 open TensorProduct in
 /-- An étale neighbourhood of `(R, I)` has an `R`-algebra map to every henselian pair `(S, J)`
