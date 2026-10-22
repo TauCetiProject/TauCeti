@@ -12,7 +12,6 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
-import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # The standard simplex as a join with its barycentre or a vertex
@@ -39,8 +38,6 @@ of a closed vertex star whose link is a combinatorial ball.
   the parameter along a segment from a boundary point to the barycentre.
 * `TauCeti.convexJoin_boundary_stdSimplex_barycenter`: the standard simplex is the convex join of
   its relative boundary with its barycentre.
-* `TauCeti.range_snoc_weights_zero`: the facet of the standard simplex opposite its last vertex is
-  the standard simplex one dimension down.
 * `TauCeti.convexJoin_facet_stdSimplex_single`: the standard simplex is the convex join of a facet
   with the opposite vertex.
 
@@ -141,28 +138,6 @@ theorem convexJoin_boundary_stdSimplex_barycenter [Nontrivial ι] :
       ⟨hS ▸ mem_range_self _, k, by simp [hjk]⟩
     rw [hzb]
     exact subset_convexJoin_right ⟨_, hj⟩ (mem_singleton _)
-
-/-- The facet of the standard simplex on `Fin (n + 2)` opposite its last vertex, the points with
-vanishing last coordinate, is the standard simplex on `Fin (n + 1)` with a zero last coordinate
-appended. -/
-theorem range_snoc_weights_zero (n : ℕ) :
-    (range fun s : StdSimplex ℝ (Fin (n + 1)) => (Fin.snoc ⇑s.weights 0 : Fin (n + 2) → ℝ)) =
-      {y ∈ range fun s : StdSimplex ℝ (Fin (n + 2)) => ⇑s.weights | y (Fin.last (n + 1)) = 0} := by
-  -- Appending a zero weight is the face map onto the facet opposite the last vertex.
-  have hsnoc (s : StdSimplex ℝ (Fin (n + 1))) :
-      ⇑(s.map (Fin.last (n + 1)).succAbove).weights = Fin.snoc ⇑s.weights 0 := by
-    funext k
-    induction k using Fin.lastCases with
-    | last => rw [StdSimplex.weights_map_succAbove_self, Fin.snoc_last]
-    | cast j =>
-      rw [StdSimplex.weights_map_succAbove_of_eq (Fin.succAbove_last_apply j), Fin.snoc_castSucc]
-  ext y
-  constructor
-  · rintro ⟨s, rfl⟩
-    exact ⟨⟨_, hsnoc s⟩, by simp⟩
-  · rintro ⟨⟨t, rfl⟩, ht⟩
-    obtain ⟨s, rfl⟩ := (StdSimplex.mem_range_map_succAbove_iff _ t).2 ht
-    exact ⟨s, (hsnoc s).symm⟩
 
 omit [Fintype ι] in
 /-- **The standard simplex as a cone on a facet.** The standard simplex is the convex join of the

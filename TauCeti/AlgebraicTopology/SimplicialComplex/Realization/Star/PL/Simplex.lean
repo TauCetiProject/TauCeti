@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.PL.ConvexJoin
 public import TauCeti.Topology.PL.FiniteInf
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # Piecewise-linear simplex models of vertex stars with spherical or ball links
@@ -226,7 +227,7 @@ theorem IsCombinatorialBall.exists_homeomorph_closedStarRealization_top
       {z ∈ range fun t : Convexity.StdSimplex ℝ (Fin (n + 2)) => ⇑t.weights |
         z (Fin.last (n + 1)) = 0} := by
     rw [range_comp' (fun w : Fin (n + 1) → ℝ => (Fin.snoc w 0 : Fin (n + 2) → ℝ)), hT,
-      ← range_comp', range_snoc_weights_zero]
+      ← range_comp', Convexity.StdSimplex.range_snoc_weights_zero]
   -- Coning from the last vertex, with height the last coordinate.
   let b : Fin (n + 2) → ℝ := Pi.single (Fin.last (n + 1)) 1
   have hh : IsPLOn (fun z : Fin (n + 2) → ℝ => z (Fin.last (n + 1))) univ :=
