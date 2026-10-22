@@ -23,9 +23,9 @@ This file constructs the paired wedge of continuous alternating maps on real mod
 topology. Its determinant normalization is the signed-permutation sum divided by the two input
 factorials. It provides bilinearity and pullback compatibility for general topological coefficient
 spaces, including the flip law. Joint continuity of each pairing is supplied explicitly; no norm
-is required on the domain or coefficients. The wedge construction requires continuity only for
-multiplication by fixed scalars on the output coefficients; the flip law uses the stronger
-continuity assumptions of `ContinuousLinearMap.pairingFlip`.
+is required on the domain or coefficients. The output coefficients require only continuity of
+multiplication by each fixed scalar. The flip law assumes this property for the second input
+coefficient space as well.
 
 It also proves the norm-free interior-product antiderivation law
 `ι_v (φ ∧ ψ) = ι_v φ ∧ ψ + (-1) ^ (deg φ) • φ ∧ ι_v ψ`, using
@@ -53,11 +53,7 @@ variable {E F₁ F₂ F₃ : Type*}
   [AddCommGroup F₁] [Module ℝ F₁] [TopologicalSpace F₁]
   [AddCommGroup F₂] [Module ℝ F₂] [TopologicalSpace F₂]
   [AddCommGroup F₃] [Module ℝ F₃] [TopologicalSpace F₃]
-  [IsTopologicalAddGroup F₃]
-
-section Wedge
-
-variable [ContinuousConstSMul ℝ F₃]
+  [IsTopologicalAddGroup F₃] [ContinuousConstSMul ℝ F₃]
 
 /-- The linear map induced by a continuous bilinear pairing on the tensor product. -/
 noncomputable def pairingLinear (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
@@ -320,15 +316,9 @@ theorem pairedWedge_zero_right {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F
   simp only [pairedWedge_apply, ContinuousAlternatingMap.coe_zero, Pi.zero_apply, _root_.map_zero,
     smul_zero, Finset.sum_const_zero]
 
-end Wedge
-
-section Flip
-
-variable [ContinuousSMul ℝ F₃]
-
 /-- The flip identity: swapping the two forms of a paired wedge flips the pairing and costs the
 graded sign `(-1) ^ (k * l)`. This holds for every pairing. -/
-theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
+theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂]
     {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (k + l) → E) :
@@ -373,7 +363,7 @@ theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
   simp
 
 /-- Anticommutation of a paired wedge along a skew-symmetric pairing. -/
-theorem pairedWedge_anticomm [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
+theorem pairedWedge_anticomm [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁]
     {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (hskew : ∀ a b, mu a b = -mu b a)
@@ -390,7 +380,7 @@ theorem pairedWedge_anticomm [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F�
     smul_neg]
 
 /-- Graded commutativity of the paired wedge along a symmetric pairing. -/
-theorem pairedWedge_comm [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
+theorem pairedWedge_comm [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁]
     {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (hsymm : ∀ a b, mu a b = mu b a)
@@ -404,11 +394,7 @@ theorem pairedWedge_comm [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
   rw [pairedWedge_flip]
   simp only [hflip]
 
-end Flip
-
 section InteriorProduct
-
-variable [ContinuousConstSMul ℝ F₃]
 
 open Equiv
 

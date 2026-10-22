@@ -81,7 +81,7 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
 section Independence
 
 variable [Finite G] {ι : Type*} {V : ι → Type w} [∀ i, AddCommGroup (V i)]
-  [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)]
+  [∀ i, Module k (V i)]
 
 /-- **The characters of pairwise inequivalent irreducible representations are linearly
 independent** as class functions: they are orthogonal for the character pairing, and each pairs
@@ -143,8 +143,8 @@ end ClassFunction
 namespace Representation
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
-  [Invertible (Nat.card G : k)] {V W : Type w} [AddCommGroup V] [Module k V]
-  [FiniteDimensional k V] [AddCommGroup W] [Module k W] [FiniteDimensional k W]
+  [Invertible (Nat.card G : k)] {V W : Type*} [AddCommGroup V] [Module k V]
+  [AddCommGroup W] [Module k W]
 
 /-- **An irreducible representation is determined by its character**: two irreducible
 representations with the same character are equivalent. -/
@@ -212,7 +212,7 @@ namespace ClassFunction
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type w}
-  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)]
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
 
 /-! ### Counting irreducibles against conjugacy classes -/
 

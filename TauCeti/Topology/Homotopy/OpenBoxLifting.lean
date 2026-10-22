@@ -26,6 +26,8 @@ prescribed lifts, for instance the constant lifts at a base point for loops
 
 * `TauCeti.IsHurewiczFibration.exists_lift_openBox`: relative homotopy lifting for the pair
   `(A × I × I, A × J)`.
+* `TauCeti.IsHurewiczFibration.exists_homotopy_lifts`: two lifts of the same family of paths from
+  the same starting points are homotopic through lifts, relative to the starting points.
 * `TauCeti.IsHurewiczFibration.exists_homotopy_endpoints`: two lifts of the same family of paths
   from the same starting points have homotopic end points, fiberwise over the end points of the
   paths.
@@ -290,17 +292,19 @@ private theorem openBoxDatum_bottom (y : Y) (u : I) :
 
 end Endpoints
 
-/-- **Uniqueness of lifts up to homotopy.**  Let `α` and `α'` be two families of paths in `E`,
-parametrized by a space `Y`, with the same starting points and lying over the same family `γ` of
-paths in `B`.  Then their end points are homotopic: there is a homotopy `K` from `α (·, 1)` to
-`α' (·, 1)` such that, for each `y`, it stays in the fiber over `γ (y, 1)`, the end point of the
-path `γ (y, ·)`. -/
-theorem IsHurewiczFibration.exists_homotopy_endpoints {Y : Type w} [TopologicalSpace Y]
+/-- **Lifts of the same family of paths are vertically homotopic.**  Let `α` and `α'` be two
+families of paths in `E`, parametrized by a space `Y`, with the same starting points and lying over
+the same family `γ` of paths in `B`.  Then they are homotopic through lifts of `γ`, relative to
+their starting points: there is a family of squares `G`, in coordinates `(u, t)`, equal to `α` on
+the side `u = 0`, to `α'` on the side `u = 1` and to the common starting point on the bottom
+`t = 0`, with `p (G (y, (u, t))) = γ (y, t)` throughout. -/
+theorem IsHurewiczFibration.exists_homotopy_lifts {Y : Type w} [TopologicalSpace Y]
     (hp : IsHurewiczFibration.{w} p) (γ : C(Y × I, B)) (α α' : C(Y × I, E))
     (hα : ∀ y t, p (α (y, t)) = γ (y, t))
     (hα' : ∀ y t, p (α' (y, t)) = γ (y, t)) (h₀ : ∀ y, α (y, 0) = α' (y, 0)) :
-    ∃ K : C(Y × I, E), (∀ y, K (y, 0) = α (y, 1)) ∧ (∀ y, K (y, 1) = α' (y, 1)) ∧
-      ∀ y s, p (K (y, s)) = γ (y, 1) := by
+    ∃ G : C(Y × (I × I), E), (∀ y t, G (y, (0, t)) = α (y, t)) ∧
+      (∀ y t, G (y, (1, t)) = α' (y, t)) ∧ (∀ y u, G (y, (u, 0)) = α (y, 0)) ∧
+      ∀ y u t, p (G (y, (u, t))) = γ (y, t) := by
   let H : C(Y × (I × I), B) := ⟨fun x ↦ γ (x.1, x.2.2), by fun_prop⟩
   have H_apply : ∀ x, H x = γ (x.1, x.2.2) := fun _ ↦ (rfl) -- the definition of `H`
   -- Lift the square over `γ (y, t)` from the data on the open box.
@@ -312,13 +316,27 @@ theorem IsHurewiczFibration.exists_homotopy_endpoints {Y : Type w} [TopologicalS
       rw [openBoxDatum_left, hα, H_apply]
     · obtain rfl : u = 1 := h
       rw [openBoxDatum_right, hα', H_apply])
+  refine ⟨G, fun y t ↦ ?_, fun y t ↦ ?_, fun y u ↦ ?_, fun y u t ↦ ?_⟩
+  · rw [hGJ y (0, t) (Or.inr (Or.inl rfl)), openBoxDatum_left]
+  · rw [hGJ y (1, t) (Or.inr (Or.inr rfl)), openBoxDatum_right]
+  · rw [hGJ y (u, 0) (Or.inl rfl), openBoxDatum_bottom]
+  · rw [← H_apply (y, (u, t))]
+    exact congr_fun hG (y, (u, t))
+
+/-- **Uniqueness of lifts up to homotopy.**  Let `α` and `α'` be two families of paths in `E`,
+parametrized by a space `Y`, with the same starting points and lying over the same family `γ` of
+paths in `B`.  Then their end points are homotopic: there is a homotopy `K` from `α (·, 1)` to
+`α' (·, 1)` such that, for each `y`, it stays in the fiber over `γ (y, 1)`, the end point of the
+path `γ (y, ·)`. -/
+theorem IsHurewiczFibration.exists_homotopy_endpoints {Y : Type w} [TopologicalSpace Y]
+    (hp : IsHurewiczFibration.{w} p) (γ : C(Y × I, B)) (α α' : C(Y × I, E))
+    (hα : ∀ y t, p (α (y, t)) = γ (y, t))
+    (hα' : ∀ y t, p (α' (y, t)) = γ (y, t)) (h₀ : ∀ y, α (y, 0) = α' (y, 0)) :
+    ∃ K : C(Y × I, E), (∀ y, K (y, 0) = α (y, 1)) ∧ (∀ y, K (y, 1) = α' (y, 1)) ∧
+      ∀ y s, p (K (y, s)) = γ (y, 1) := by
+  obtain ⟨G, hG₀, hG₁, -, hG⟩ := hp.exists_homotopy_lifts γ α α' hα hα' h₀
   -- The homotopy is the lift on the top edge `t = 1`.
-  let K : C(Y × I, E) := ⟨fun z ↦ G (z.1, (z.2, 1)), by fun_prop⟩
-  have K_apply : ∀ y s, K (y, s) = G (y, (s, 1)) := fun _ _ ↦ (rfl) -- the definition of `K`
-  refine ⟨K, fun y ↦ ?_, fun y ↦ ?_, fun y s ↦ ?_⟩
-  · rw [K_apply, hGJ y (0, 1) (Or.inr (Or.inl rfl)), openBoxDatum_left]
-  · rw [K_apply, hGJ y (1, 1) (Or.inr (Or.inr rfl)), openBoxDatum_right]
-  · rw [K_apply, ← H_apply (y, (s, 1))]
-    exact congr_fun hG (y, (s, 1))
+  exact ⟨⟨fun z ↦ G (z.1, (z.2, 1)), by fun_prop⟩, fun y ↦ hG₀ y 1, fun y ↦ hG₁ y 1,
+    fun y s ↦ hG y s 1⟩
 
 end TauCeti
