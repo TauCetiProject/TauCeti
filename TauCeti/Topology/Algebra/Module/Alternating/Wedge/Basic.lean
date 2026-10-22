@@ -202,26 +202,6 @@ theorem pairedWedge_add_right [ContinuousAdd F₂] {k l : ℕ} (μ : F₁ →L[�
   simp only [pairedWedge_apply, ContinuousAlternatingMap.add_apply, map_add,
     smul_add, Finset.sum_add_distrib]
 
-/-- The paired wedge respects scalar multiplication in its first alternating map. -/
-@[simp]
-theorem pairedWedge_smul_left [ContinuousConstSMul ℝ F₁] {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (c : ℝ)
-    (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
-    pairedWedge μ hμ (c • φ) ψ = c • pairedWedge μ hμ φ ψ := by
-  ext v
-  simp only [pairedWedge_apply, ContinuousAlternatingMap.smul_apply, map_smul,
-    _root_.smul_apply, Finset.smul_sum, smul_comm _ c]
-
-/-- The paired wedge respects scalar multiplication in its second alternating map. -/
-@[simp]
-theorem pairedWedge_smul_right [ContinuousConstSMul ℝ F₂] {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (c : ℝ)
-    (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
-    pairedWedge μ hμ φ (c • ψ) = c • pairedWedge μ hμ φ ψ := by
-  ext v
-  simp only [pairedWedge_apply, ContinuousAlternatingMap.smul_apply, map_smul,
-    Finset.smul_sum, smul_comm _ c]
-
 /-- If the pairing turns multiplication by `c` in its first argument into multiplication by `d`,
 then so does the paired wedge in its first alternating map. For a complex-bilinear pairing this is
 complex-linearity in the first factor; it also covers pairings that are conjugate-linear in the
@@ -250,6 +230,22 @@ theorem pairedWedge_smul_right_of_map_smul {S S' : Type*} [Monoid S] [DistribMul
   ext v
   simp only [pairedWedge_apply, ContinuousAlternatingMap.smul_apply, hcd, Finset.smul_sum,
     smul_comm _ d]
+
+/-- The paired wedge respects scalar multiplication in its first alternating map. -/
+@[simp]
+theorem pairedWedge_smul_left [ContinuousConstSMul ℝ F₁] {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (c : ℝ)
+    (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
+    pairedWedge μ hμ (c • φ) ψ = c • pairedWedge μ hμ φ ψ :=
+  pairedWedge_smul_left_of_map_smul μ hμ (fun a b ↦ by simp) φ ψ
+
+/-- The paired wedge respects scalar multiplication in its second alternating map. -/
+@[simp]
+theorem pairedWedge_smul_right [ContinuousConstSMul ℝ F₂] {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (c : ℝ)
+    (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
+    pairedWedge μ hμ φ (c • ψ) = c • pairedWedge μ hμ φ ψ :=
+  pairedWedge_smul_right_of_map_smul μ hμ (fun a b ↦ by simp) φ ψ
 
 /-- The paired wedge is natural in the coefficients: if continuous linear maps `L₁`, `L₂`, `L`
 of the coefficient spaces intertwine the pairings `μ` and `μ'`, then applying `L` to the paired
@@ -282,14 +278,10 @@ theorem pairedWedge_postcomp {F₄ : Type*} [AddCommGroup F₄] [Module ℝ F₄
         (by
           simpa only [Function.uncurry_def, Function.comp_def, ContinuousLinearMap.comp_apply,
             ContinuousLinearMap.postcomp_apply] using nu.continuous.comp hmu) phi psi =
-      nu.compContinuousAlternatingMap (pairedWedge mu hmu phi psi) := by
-  ext v
-  simp only [pairedWedge_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.postcomp_apply,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply, _root_.map_smul,
-    _root_.map_sum]
-  congr 2
-  funext sigma
-  exact (nu.map_smul_of_tower (Equiv.Perm.sign sigma) _).symm
+      nu.compContinuousAlternatingMap (pairedWedge mu hmu phi psi) :=
+  -- Postcomposition with an identity map is the identity on alternating maps by definition.
+  (compContinuousAlternatingMap_pairedWedge mu hmu _ _ (.id ℝ F₁) (.id ℝ F₂) nu
+    (fun _ _ ↦ rfl) phi psi).symm
 
 /-- The paired wedge is additive in the pairing. -/
 @[simp]
