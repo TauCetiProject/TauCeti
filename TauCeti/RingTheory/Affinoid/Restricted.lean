@@ -34,9 +34,16 @@ continuous, so the continuous universal property
 `MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring` applies. The images of the
 variables need only be power-bounded, not of norm at most one.
 
+## Main definitions
+
+* `TauCeti.IsAffinoidAlgebra.restrictedLift`: the `K`-algebra map `A⟨X₁, …, Xₘ⟩ →ₐ[K] B` extending
+  `φ : A →ₐ[K] B` and sending `Xᵢ` to a power-bounded `bᵢ`.
+
 ## Main results
 
 * `TauCeti.IsAffinoidAlgebra.isRestricted_subring`: `A⟨X₁, …, Xₘ⟩` is affinoid.
+* `TauCeti.IsAffinoidAlgebra.algHom_ext_isRestricted_subring`: `K`-algebra maps
+  `A⟨X₁, …, Xₘ⟩ → B` agreeing on `A` and on the variables are equal.
 * `TauCeti.IsAffinoidAlgebra.existsUnique_algHom_isRestricted_subring`: a `K`-algebra map
   `φ : A → B` into an affinoid algebra and power-bounded `b₁, …, bₘ ∈ B` extend uniquely to a
   `K`-algebra map `A⟨X₁, …, Xₘ⟩ → B` sending `Xᵢ` to `bᵢ`.
@@ -73,15 +80,12 @@ theorem isRestricted_subring {τ : Type*} [Finite τ] (hA : IsAffinoidAlgebra K 
     πL.le_opNorm r
   -- apply `π` to the coefficients of series in `X` over `K⟨Y⟩`
   let Φ := restrictedMap (c := fun _ : τ ↦ 1) π' hπ'
-  let e := restrictedSumAlgEquiv (R := K) (c := fun _ : τ ↦ (1 : ℝ)) (d := fun _ : Fin n ↦ 1)
+  let e := restrictedSumAlgEquiv (S := K) (R := K) (c := fun _ : τ ↦ (1 : ℝ))
+    (d := fun _ : Fin n ↦ 1)
   have hΦ (r : K) : Φ (e (algebraMap K _ r)) = algebraMap K _ r := by
-    refine Subtype.ext (ext fun t ↦ ?_)
-    simp only [Φ]
-    rw [e.commutes, coeff_restrictedMap, coe_algebraMap_isRestrictedSubring_apply,
-      coe_algebraMap_isRestrictedSubring_apply, coeff_C, coeff_C]
-    by_cases ht : t = 0
-    · simp [ht, π']
-    · simp [ht]
+    rw [e.commutes, IsScalarTower.algebraMap_apply K
+      (IsRestricted.subring (R := K) fun _ : Fin n ↦ (1 : ℝ)), restrictedMap_algebraMap]
+    exact (congrArg _ (π.commutes r)).trans (IsScalarTower.algebraMap_apply K A _ r).symm
   let ψ : IsRestricted.subring (R := K) (Sum.elim (fun _ : τ ↦ (1 : ℝ)) fun _ : Fin n ↦ 1) →ₐ[K]
       IsRestricted.subring (R := A) (fun _ : τ ↦ 1) :=
     { Φ.comp (e : _ →+* _) with commutes' := hΦ }
@@ -93,25 +97,59 @@ theorem isRestricted_subring {τ : Type*} [Finite τ] (hA : IsAffinoidAlgebra K 
     hrad ▸ isAffinoidAlgebra_tate
   exact hT.of_surjective ψ ((restrictedMap_surjective _ _ hC).comp e.surjective)
 
+variable {k : ℕ} (hA : IsAffinoidAlgebra K A) {B : Type*} [NormedCommRing B] [NormedAlgebra K B]
+  [IsUltrametricDist B] [CompleteSpace B] (hB : IsAffinoidAlgebra K B)
+
+include hA hB in
+/-- **`K`-algebra maps out of `A⟨X₁, …, Xₖ⟩` are determined on `A` and the variables.** Let `A`
+and `B` be affinoid algebras with complete ultrametric algebra norms. Two `K`-algebra maps
+`A⟨X₁, …, Xₖ⟩ → B` that agree on `A` and on every `Xᵢ` are equal. No continuity is assumed: it is
+automatic (`TauCeti.IsAffinoidAlgebra.continuous_algHom`). -/
+theorem algHom_ext_isRestricted_subring
+    {ψ₁ ψ₂ : IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) →ₐ[K] B}
+    (hC : ∀ a, ψ₁ (algebraMap A _ a) = ψ₂ (algebraMap A _ a))
+    (hX : ∀ i, ψ₁ ⟨X i, isRestricted_X _ i⟩ = ψ₂ ⟨X i, isRestricted_X _ i⟩) : ψ₁ = ψ₂ :=
+  have := (hA.isRestricted_subring (τ := Fin k)).isNoetherianRing
+  AlgHom.toRingHom_injective <| isRestricted_subring_ringHom_ext_of_continuous
+    (hB.continuous_algHom ψ₁) (hB.continuous_algHom ψ₂) hC hX
+
+/-- **The extension of a `K`-algebra map `φ : A → B` to `A⟨X₁, …, Xₖ⟩` sending each `Xᵢ` to
+`bᵢ`**, for affinoid algebras `A` and `B` with complete ultrametric algebra norms and
+power-bounded `b₁, …, bₖ ∈ B`. It is the continuous extension
+`MvPowerSeries.restrictedLift`, which applies because `φ` is automatically continuous. -/
+noncomputable def restrictedLift (φ : A →ₐ[K] B) {b : Fin k → B}
+    (hb : ∀ i, Huber.IsPowerBounded (b i)) :
+    IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) →ₐ[K] B :=
+  have := hA.isNoetherianRing
+  { _root_.MvPowerSeries.restrictedLift (φ := (φ : A →+* B)) (hB.continuous_algHom φ) hb with
+    commutes' r := by
+      rw [IsScalarTower.algebraMap_apply K A (IsRestricted.subring (R := A) _)]
+      exact (_root_.MvPowerSeries.restrictedLift_algebraMap _ hb _).trans (φ.commutes r) }
+
+variable (φ : A →ₐ[K] B) {b : Fin k → B} (hb : ∀ i, Huber.IsPowerBounded (b i))
+
+/-- `restrictedLift` extends `φ` on `A`. -/
+@[simp]
+theorem restrictedLift_algebraMap (a : A) :
+    restrictedLift hA hB φ hb (algebraMap A _ a) = φ a :=
+  _root_.MvPowerSeries.restrictedLift_algebraMap _ hb a
+
+/-- `restrictedLift` sends each variable `Xᵢ` to `bᵢ`. -/
+@[simp]
+theorem restrictedLift_X (i : Fin k) : restrictedLift hA hB φ hb ⟨X i, isRestricted_X _ i⟩ = b i :=
+  _root_.MvPowerSeries.restrictedLift_X _ hb i
+
+include hA hB hb in
 /-- **The universal property of restricted series over an affinoid algebra.** Let `A` and `B` be
 affinoid algebras with complete ultrametric algebra norms. A `K`-algebra map `φ : A → B` and
 power-bounded `b₁, …, bₖ ∈ B` extend to exactly one `K`-algebra map `A⟨X₁, …, Xₖ⟩ → B` sending
-each `Xᵢ` to `bᵢ`. It is continuous, as is every algebra map between such algebras
-(`TauCeti.IsAffinoidAlgebra.continuous_algHom`). -/
-theorem existsUnique_algHom_isRestricted_subring {k : ℕ} (hA : IsAffinoidAlgebra K A)
-    {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B] [CompleteSpace B]
-    (hB : IsAffinoidAlgebra K B) (φ : A →ₐ[K] B) {b : Fin k → B}
-    (hb : ∀ i, Huber.IsPowerBounded (b i)) :
+each `Xᵢ` to `bᵢ`, namely `TauCeti.IsAffinoidAlgebra.restrictedLift`. It is continuous, as is every
+algebra map between such algebras (`TauCeti.IsAffinoidAlgebra.continuous_algHom`). -/
+theorem existsUnique_algHom_isRestricted_subring :
     ∃! ψ : IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) →ₐ[K] B,
-      (∀ a, ψ (algebraMap A _ a) = φ a) ∧ ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i := by
-  have := hA.isNoetherianRing
-  have := (hA.isRestricted_subring (τ := Fin k)).isNoetherianRing
-  obtain ⟨ψ, ⟨-, hψC, hψX⟩, huniq⟩ :=
-    existsUnique_continuous_ringHom_isRestricted_subring (φ := (φ : A →+* B))
-      (hB.continuous_algHom φ) hb
-  refine ⟨{ ψ with commutes' r := ?_ }, ⟨hψC, hψX⟩, fun ψ' ⟨hψ'C, hψ'X⟩ ↦
-    AlgHom.toRingHom_injective (huniq ψ' ⟨hB.continuous_algHom ψ', hψ'C, hψ'X⟩)⟩
-  simpa [IsScalarTower.algebraMap_apply K A (IsRestricted.subring (R := A) _)] using
-    hψC (algebraMap K A r)
+      (∀ a, ψ (algebraMap A _ a) = φ a) ∧ ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i :=
+  ⟨restrictedLift hA hB φ hb, ⟨restrictedLift_algebraMap hA hB φ hb, restrictedLift_X hA hB φ hb⟩,
+    fun _ ⟨hC, hX⟩ ↦ algHom_ext_isRestricted_subring hA hB
+      (fun a ↦ by rw [hC, restrictedLift_algebraMap]) (fun i ↦ by rw [hX, restrictedLift_X])⟩
 
 end TauCeti.IsAffinoidAlgebra

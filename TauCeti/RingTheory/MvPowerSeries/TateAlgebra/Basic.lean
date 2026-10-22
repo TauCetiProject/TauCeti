@@ -481,6 +481,16 @@ theorem coe_algebraMap_isRestrictedSubring_apply {S : Type*} [CommSemiring S] [A
     (s : S) : (algebraMap S (IsRestricted.subring (R := R) c) s : MvPowerSeries σ R) =
       C (algebraMap S R s) := (rfl)
 
+/-- Over an algebra `S` of coefficients, scalars act on restricted series coefficientwise. -/
+@[simp]
+theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
+    (f : IsRestricted.subring (R := R) c) :
+    ((s • f : IsRestricted.subring (R := R) c) : MvPowerSeries σ R) =
+      s • (f : MvPowerSeries σ R) := by
+  ext t
+  rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring_apply, coeff_C_mul]
+  exact (Algebra.smul_def s _).symm
+
 /-- Without variables every restricted series is a constant. -/
 theorem algebraMap_isRestrictedSubring_surjective [IsEmpty σ] :
     Function.Surjective (algebraMap R (IsRestricted.subring (R := R) c)) := fun g ↦
@@ -570,11 +580,7 @@ noncomputable instance instNormedAlgebraIsRestrictedSubring :
   toAlgebra := instAlgebraIsRestrictedSubring
   norm_smul_le r f := by
     refine (norm_le_iff (by positivity)).mpr fun t ↦ ?_
-    have h : coeff t ((r • f : IsRestricted.subring (R := R) c) : MvPowerSeries σ R) =
-        r • coeff t (f : MvPowerSeries σ R) := by
-      rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring_apply,
-        coeff_C_mul, Algebra.smul_def]
-    rw [h]
+    rw [coe_smul_isRestrictedSubring]
     calc ‖r • coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
         ≤ ‖r‖ * (‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)) := by
           rw [← mul_assoc]

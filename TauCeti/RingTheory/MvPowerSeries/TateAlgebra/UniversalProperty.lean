@@ -24,8 +24,16 @@ the Gauss-normed model, which is continuous in both directions. Unlike
 is `TauCeti.Huber.IsPowerBounded` for the norm topology: the powers of `bᵢ` stay bounded, while
 `bᵢ` itself may have norm larger than one.
 
+## Main definitions
+
+* `MvPowerSeries.restrictedLift`: the continuous ring homomorphism `R⟨X₁, …, Xₖ⟩ →+* S` extending
+  `φ` and sending `Xᵢ` to `bᵢ`.
+
 ## Main results
 
+* `MvPowerSeries.isRestricted_subring_ringHom_ext_of_continuous`: continuous ring homomorphisms
+  out of `R⟨X₁, …, Xₖ⟩` agreeing on constants and variables are equal.
+* `MvPowerSeries.restrictedLift_unique`: `restrictedLift` is the only such continuous extension.
 * `MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring`: the universal property.
 
 ## References
@@ -40,41 +48,83 @@ namespace MvPowerSeries
 
 open TauCeti.Huber
 
-variable {k : ℕ} {R S : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormedCommRing S]
-  [IsUltrametricDist S] [CompleteSpace S]
+variable {k : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
+/-- The Gauss comparison sends the Huber constant `r` to the constant `r`. -/
+private theorem restrictedMvPowerSeriesGaussEquiv_weightedC (r : R) :
+    restrictedMvPowerSeriesGaussEquiv (n := k)
+      (weightedC _ isWeightFamily_one_weight r) = algebraMap R _ r :=
+  Subtype.ext (by simp)
+
+/-- The Gauss comparison sends the Huber variable `Xᵢ` to the variable `Xᵢ`. -/
+private theorem restrictedMvPowerSeriesGaussEquiv_weightedX (i : Fin k) :
+    restrictedMvPowerSeriesGaussEquiv (R := R)
+      (weightedX _ isWeightFamily_one_weight i) = ⟨X i, isRestricted_X _ i⟩ :=
+  Subtype.ext (by simp)
+
+/-- **Continuous ring homomorphisms out of `R⟨X₁, …, Xₖ⟩` are determined by the constants and the
+variables.** Two continuous ring homomorphisms into a Hausdorff ring that agree on every constant
+and on every `Xᵢ` are equal. -/
+theorem isRestricted_subring_ringHom_ext_of_continuous {T : Type*} [Semiring T]
+    [TopologicalSpace T] [T2Space T]
+    {ψ₁ ψ₂ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* T} (h₁ : Continuous ψ₁)
+    (h₂ : Continuous ψ₂) (hC : ∀ r, ψ₁ (algebraMap R _ r) = ψ₂ (algebraMap R _ r))
+    (hX : ∀ i, ψ₁ ⟨X i, isRestricted_X _ i⟩ = ψ₂ ⟨X i, isRestricted_X _ i⟩) : ψ₁ = ψ₂ := by
+  let e := restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)
+  have h := weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
+    (f := ψ₁.comp e.toRingHom) (g := ψ₂.comp e.toRingHom)
+    (h₁.comp continuous_restrictedMvPowerSeriesGaussEquiv)
+    (h₂.comp continuous_restrictedMvPowerSeriesGaussEquiv)
+    (fun r ↦ by simp [e, restrictedMvPowerSeriesGaussEquiv_weightedC, hC])
+    (fun i ↦ by simp [e, restrictedMvPowerSeriesGaussEquiv_weightedX, hX])
+  ext f
+  simpa using congr($h (e.symm f))
+
+variable {S : Type*} [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S] {φ : R →+* S}
+  (hφ : Continuous φ) {b : Fin k → S} (hb : ∀ i, IsPowerBounded (b i))
+
+/-- **The extension of `φ` to `R⟨X₁, …, Xₖ⟩` sending each `Xᵢ` to `bᵢ`**, for a continuous ring
+homomorphism `φ : R →+* S` into a complete ultrametric normed ring and power-bounded
+`b₁, …, bₖ ∈ S`. It is Wedhorn's evaluation homomorphism `TauCeti.Huber.weightedEvalHom`, carried
+along the Gauss comparison `TauCeti.Huber.restrictedMvPowerSeriesGaussEquiv`. -/
+noncomputable def restrictedLift : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* S :=
+  (weightedEvalHom isWeightFamily_one_weight hφ.continuousAt
+    ((isWeightBounded_one_weight_iff_forall_isPowerBounded φ b).mpr hb)).comp
+    (restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)).symm.toRingHom
+
+/-- `restrictedLift` is continuous. -/
+theorem continuous_restrictedLift : Continuous (restrictedLift hφ hb) :=
+  (continuous_weightedEvalHom _ _ _).comp continuous_restrictedMvPowerSeriesGaussEquiv_symm
+
+/-- `restrictedLift` extends `φ` on constants. -/
+@[simp]
+theorem restrictedLift_algebraMap (r : R) : restrictedLift hφ hb (algebraMap R _ r) = φ r := by
+  simp [restrictedLift, ← restrictedMvPowerSeriesGaussEquiv_weightedC]
+
+/-- `restrictedLift` sends each variable `Xᵢ` to `bᵢ`. -/
+@[simp]
+theorem restrictedLift_X (i : Fin k) : restrictedLift hφ hb ⟨X i, isRestricted_X _ i⟩ = b i := by
+  simp [restrictedLift, ← restrictedMvPowerSeriesGaussEquiv_weightedX]
+
+/-- `restrictedLift` is the only continuous ring homomorphism extending `φ` on constants and
+sending each `Xᵢ` to `bᵢ`. -/
+theorem restrictedLift_unique {ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* S}
+    (hψ : Continuous ψ) (hC : ∀ r, ψ (algebraMap R _ r) = φ r)
+    (hX : ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) : ψ = restrictedLift hφ hb :=
+  isRestricted_subring_ringHom_ext_of_continuous hψ (continuous_restrictedLift hφ hb)
+    (fun r ↦ by rw [hC, restrictedLift_algebraMap]) (fun i ↦ by rw [hX, restrictedLift_X])
+
+include hφ hb in
 /-- **The universal property of `R⟨X₁, …, Xₖ⟩` at power-bounded arguments.** For a continuous
 ring homomorphism `φ : R →+* S` into a complete ultrametric normed ring and power-bounded
 `b₁, …, bₖ ∈ S`, there is exactly one continuous ring homomorphism out of the Gauss-normed
-unit-radius restricted series that extends `φ` on constants and sends each `Xᵢ` to `bᵢ`. -/
-theorem existsUnique_continuous_ringHom_isRestricted_subring {φ : R →+* S} (hφ : Continuous φ)
-    {b : Fin k → S} (hb : ∀ i, IsPowerBounded (b i)) :
+unit-radius restricted series that extends `φ` on constants and sends each `Xᵢ` to `bᵢ`, namely
+`MvPowerSeries.restrictedLift`. -/
+theorem existsUnique_continuous_ringHom_isRestricted_subring :
     ∃! ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* S,
       Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧
-        ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i := by
-  -- the ultrametric norms make both rings nonarchimedean, as the Huber model requires
-  have : NonarchimedeanRing R :=
-    { toIsTopologicalRing := inferInstance
-      is_nonarchimedean := NonarchimedeanAddGroup.is_nonarchimedean }
-  have : NonarchimedeanRing S :=
-    { toIsTopologicalRing := inferInstance
-      is_nonarchimedean := NonarchimedeanAddGroup.is_nonarchimedean }
-  let e := restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)
-  have hC (r : R) : e (weightedC _ isWeightFamily_one_weight r) = algebraMap R _ r :=
-    Subtype.ext (by simp [e])
-  have hX (i : Fin k) : e (weightedX _ isWeightFamily_one_weight i) = ⟨X i, isRestricted_X _ i⟩ :=
-    Subtype.ext (by simp [e])
-  obtain ⟨ψ, ⟨hψ, hψC, hψX⟩, huniq⟩ := existsUnique_continuous_ringHom_weightedRestrictedSubring
-    isWeightFamily_one_weight hφ.continuousAt
-    ((isWeightBounded_one_weight_iff_forall_isPowerBounded φ b).mpr hb)
-  refine ⟨ψ.comp e.symm.toRingHom, ⟨hψ.comp continuous_restrictedMvPowerSeriesGaussEquiv_symm,
-    fun r ↦ ?_, fun i ↦ ?_⟩, fun ψ' ⟨hψ', hψ'C, hψ'X⟩ ↦ ?_⟩
-  · simp [← hC, hψC]
-  · simp [← hX, hψX]
-  · have h := huniq (ψ'.comp e.toRingHom)
-      ⟨hψ'.comp continuous_restrictedMvPowerSeriesGaussEquiv, fun r ↦ by simp [hC, hψ'C],
-        fun i ↦ by simp [hX, hψ'X]⟩
-    ext f
-    simpa using congr($h (e.symm f))
+        ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i :=
+  ⟨restrictedLift hφ hb, ⟨continuous_restrictedLift hφ hb, restrictedLift_algebraMap hφ hb,
+    restrictedLift_X hφ hb⟩, fun _ ⟨hψ, hC, hX⟩ ↦ restrictedLift_unique hφ hb hψ hC hX⟩
 
 end MvPowerSeries
