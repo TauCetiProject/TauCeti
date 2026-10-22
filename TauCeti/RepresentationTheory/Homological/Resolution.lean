@@ -37,6 +37,8 @@ defined through `Ext`, with an explicit map on inhomogeneous cochains.
 
 * `TauCeti.Rep.diagonalSuccIsoFree_inv_hom_single`: the comparison between the bar and standard
   resolutions on basis elements.
+* `TauCeti.Rep.standardComplex.εToSingle₀_f_zero`: the augmentation of the standard complex in
+  degree `0` is `Rep.standardComplex.ε`.
 * `TauCeti.Rep.standardResolution_π_f_zero_single` and
   `TauCeti.Rep.barResolution_π_f_zero_single`: the augmentations on basis elements.
 * `TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π`: the chain map lies over the identity of `k`.
@@ -58,6 +60,15 @@ namespace TauCeti.Rep
 open _root_.Rep
 
 universe u
+
+/-- In degree `0` the augmentation `Rep.standardComplex.εToSingle₀` of the standard complex is
+`Rep.standardComplex.ε`. -/
+@[simp]
+theorem standardComplex.εToSingle₀_f_zero {k G : Type u} [CommRing k] [Monoid G] :
+    (standardComplex.εToSingle₀ k G).f 0 =
+      (standardComplex.xIso k G 0).hom ≫ standardComplex.ε k G :=
+  -- `εToSingle₀` is defined as `(toSingle₀Equiv _ _).symm ⟨ε, d_comp_ε⟩`.
+  ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
 
 variable {k G H : Type u} [CommRing k] [Group G] [Group H]
 
