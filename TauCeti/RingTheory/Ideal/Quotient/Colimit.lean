@@ -16,7 +16,7 @@ isomorphisms for every algebra in a diagram, the same holds for its colimit. No 
 or nonemptiness assumption on the diagram is needed. This gives the residue-ring
 identification in constructions by colimits of étale neighbourhoods.
 
-Use `TauCeti.reducedMap_colimit_bijective I D hD` for bijectivity and
+Use `TauCeti.bijective_algebraMap_quotient_colimit I D hD` for bijectivity and
 `TauCeti.quotientColimitEquiv I D hD` for the corresponding algebra equivalence, where
 `hD` gives bijectivity of the canonical residue map at each object of `D`.
 
@@ -42,7 +42,7 @@ variable {R : Type u} [CommRing R] (I : Ideal R)
 
 /-- If `R / I → B / IB` is surjective, algebra maps from `B` to an algebra annihilated
 by `I` are unique. -/
-theorem algHom_ext_of_reducedMap_surjective (B : Type v) [CommRing B] [Algebra R B]
+theorem algHom_ext_of_surjective_algebraMap_quotient (B : Type v) [CommRing B] [Algebra R B]
     (hB : Function.Surjective (algebraMap (R ⧸ I) (B ⧸ I.map (algebraMap R B))))
     {S : Type w} [Semiring S] [Algebra R S]
     (hI : I ≤ RingHom.ker (algebraMap R S)) (f g : B →ₐ[R] S) : f = g := by
@@ -79,7 +79,7 @@ private noncomputable def residueCocone : Cocone D where
           (Ideal.Quotient.mkₐ R _)
       naturality j k f := by
         apply CommAlgCat.hom_ext
-        exact algHom_ext_of_reducedMap_surjective I (D.obj j) (hD j).2
+        exact algHom_ext_of_surjective_algebraMap_quotient I (D.obj j) (hD j).2
           (by simp) _ _ }
 
 /-- The residue map induced by the colimit universal property. -/
@@ -110,7 +110,7 @@ private theorem quotientToResidue_leftInverse :
   exact (quotientToResidue I D hD).commutes r
 
 /-- Colimits preserve the property that the canonical residue-algebra map is bijective. -/
-theorem reducedMap_colimit_bijective : Function.Bijective
+theorem bijective_algebraMap_quotient_colimit : Function.Bijective
     (algebraMap (R ⧸ I) (↑(colimit D) ⧸ I.map (algebraMap R ↑(colimit D)))) := by
   have he : (IsScalarTower.toAlgHom R (R ⧸ I)
       (↑(colimit D) ⧸ I.map (algebraMap R ↑(colimit D)))).comp (colimitToResidue I D hD) =
@@ -121,7 +121,7 @@ theorem reducedMap_colimit_bijective : Function.Bijective
       apply colimit.hom_ext
       intro j
       apply CommAlgCat.hom_ext
-      exact algHom_ext_of_reducedMap_surjective I (D.obj j) (hD j).2 (by
+      exact algHom_ext_of_surjective_algebraMap_quotient I (D.obj j) (hD j).2 (by
         intro r hr
         exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_map_of_mem _ hr)) _ _
     exact congrArg CommAlgCat.Hom.hom he'
@@ -137,7 +137,7 @@ noncomputable def quotientColimitEquiv :
   AlgEquiv.ofBijective (IsScalarTower.toAlgHom R (R ⧸ I)
     (↑(colimit D) ⧸ I.map (algebraMap R ↑(colimit D)))) (by
       simpa only [IsScalarTower.coe_toAlgHom'] using
-        reducedMap_colimit_bijective I D hD)
+        bijective_algebraMap_quotient_colimit I D hD)
 
 /-- The forward colimit residue equivalence is the canonical residue-algebra map. -/
 @[simp]
