@@ -45,9 +45,8 @@ and products add the two divisor bounds.
 * `TauCeti.RiemannSurface.meromorphicOrderAt`: its order at `x`.
 * `TauCeti.RiemannSurface.meromorphicAt_iff_of_mem_maximalAtlas` and
   `TauCeti.RiemannSurface.meromorphicOrderAt_eq_of_mem_maximalAtlas`: chart independence.
-* `TauCeti.RiemannSurface.tendsto_nhds_iff_meromorphicOrderAt_nonneg` and
-  `TauCeti.RiemannSurface.tendsto_zero_iff_meromorphicOrderAt_pos`: the order is nonnegative where
-  the function has a limit, and positive where that limit is zero.
+* `TauCeti.RiemannSurface.tendsto_zero_iff_meromorphicOrderAt_pos`: the order is positive exactly
+  where the function tends to zero.
 * `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt`: a holomorphic function
   is meromorphic.
 * `TauCeti.RiemannSurface.MeromorphicAt.comp` and `TauCeti.RiemannSurface.meromorphicOrderAt_comp`:
@@ -127,13 +126,6 @@ theorem meromorphicOrderAt_congr (h : f =ᶠ[𝓝[≠] x] g) :
   _root_.meromorphicOrderAt_congr (h.comp_tendsto (tendsto_chartAt_symm_nhdsNE x))
 
 /-! ### Limits and the sign of the order -/
-
-/-- A function meromorphic at `x` has a limit along the punctured neighbourhoods of `x` exactly
-when its order at `x` is nonnegative. -/
-theorem tendsto_nhds_iff_meromorphicOrderAt_nonneg (hf : MeromorphicAt f x) :
-    (∃ c, Tendsto f (𝓝[≠] x) (𝓝 c)) ↔ 0 ≤ meromorphicOrderAt f x :=
-  (exists_congr fun _ ↦ tendsto_comp_chartAt_symm_nhdsNE_iff (H := ℂ)).symm.trans
-    (_root_.tendsto_nhds_iff_meromorphicOrderAt_nonneg hf)
 
 /-- A function meromorphic at `x` tends to zero along the punctured neighbourhoods of `x` exactly
 when its order at `x` is positive. -/

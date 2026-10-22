@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
 import Mathlib.Topology.DiscreteSubset
-import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Orders and divisors of meromorphic functions on a Riemann surface
@@ -99,41 +98,24 @@ def order (x : X) : AddValuation (MeromorphicFunction X) (WithTop ℤ) :=
 /-- The order of `f` at `x` is the order at `x` of its finite part. -/
 theorem order_apply (x : X) (f : MeromorphicFunction X) :
     order x f = meromorphicOrderAt f.finitePart x :=
-  (rfl)
-
-/-- The order of a meromorphic function at `x` is nonnegative exactly when `x` is not a pole. -/
-@[simp]
-theorem order_nonneg_iff : 0 ≤ order x f ↔ f x ≠ ∞ := by
-  rw [order_apply, ← tendsto_nhds_iff_meromorphicOrderAt_nonneg (f.meromorphicAt_finitePart x)]
-  refine ⟨fun ⟨c, hc⟩ hx ↦ ?_, fun hx ↦
-    ⟨_, (continuousAt_finitePart hx).tendsto.mono_left nhdsWithin_le_nhds⟩⟩
-  -- Near `x` the function `f` is its finite part, which tends to `c`, while `f` tends to `f x`.
-  have := (chartAt ℂ x).nhdsNE_neBot (mem_chart_source ℂ x)
-  have hc' : Tendsto f (𝓝[≠] x) (𝓝 (c : OnePoint ℂ)) :=
-    ((continuous_coe.tendsto c).comp hc).congr'
-      ((f.eventually_ne_infty x).mono fun _ ↦ coe_finitePart)
-  exact OnePoint.coe_ne_infty c (tendsto_nhds_unique hc'
-    (hx ▸ f.continuous.continuousAt.mono_left nhdsWithin_le_nhds))
+  AddValuation.of_apply _
 
 /-- The order of a meromorphic function at `x` is negative exactly when `x` is a pole. -/
 @[simp]
 theorem order_neg_iff : order x f < 0 ↔ f x = ∞ := by
-  rw [← not_le, order_nonneg_iff, not_not]
+  rw [order_apply, ← sphereMap_eq_infty_iff (f.meromorphicAt_finitePart x), sphereMap_finitePart]
+
+/-- The order of a meromorphic function at `x` is nonnegative exactly when `x` is not a pole. -/
+@[simp]
+theorem order_nonneg_iff : 0 ≤ order x f ↔ f x ≠ ∞ := by
+  rw [← not_lt, order_neg_iff]
 
 /-- The order of a meromorphic function at `x` is positive exactly when `x` is a zero. -/
 @[simp]
 theorem order_pos_iff : 0 < order x f ↔ f x = ((0 : ℂ) : OnePoint ℂ) := by
   have hf := f.meromorphicAt_finitePart x
-  refine ⟨fun h ↦ ?_, fun hx ↦ ?_⟩
-  · have hx := order_nonneg_iff.1 h.le
-    have := (chartAt ℂ x).nhdsNE_neBot (mem_chart_source ℂ x)
-    rw [← coe_finitePart hx, tendsto_nhds_unique
-      ((continuousAt_finitePart hx).tendsto.mono_left nhdsWithin_le_nhds)
-      ((tendsto_zero_iff_meromorphicOrderAt_pos hf).2 h)]
-  · have hx' : f x ≠ ∞ := hx ▸ OnePoint.coe_ne_infty 0
-    have h := (continuousAt_finitePart hx').tendsto.mono_left (nhdsWithin_le_nhds (s := {x}ᶜ))
-    rw [finitePart_of_eq_coe hx] at h
-    exact (tendsto_zero_iff_meromorphicOrderAt_pos hf).1 h
+  rw [order_apply, ← tendsto_zero_iff_meromorphicOrderAt_pos hf, ← sphereMap_eq_coe_iff hf,
+    sphereMap_finitePart]
 
 /-- The order of a meromorphic function at `x` is zero exactly when `x` is neither a zero nor a
 pole. -/
