@@ -25,8 +25,10 @@ For a commutative ring `R` and a unit `q : Rˣ`, the infinite type-A Hecke algeb
 
 It is built as the quotient of `FreeAlgebra R ℕ` by these relations, which makes the universal
 property `TauCeti.InfiniteTypeAHeckeAlgebra.lift` available. The generator `T i` crosses the
-strands `i` and `i + 1` (counted from `0`), so the algebra is the union of the Hecke algebras on
-finitely many strands, all embedded compatibly. It is the natural carrier of the Ocneanu trace,
+strands `i` and `i + 1` (counted from `0`), so the algebra is the union of its stages
+`TauCeti.InfiniteTypeAHeckeAlgebra.stage R q n`, each a quotient image of the Hecke algebra on `n`
+strands. That these images are injective, so that the union is one of embedded copies, needs the
+basis theorem and is not proved here. The algebra is the natural carrier of the Ocneanu trace,
 which is a single linear functional on this union rather than a compatible family of functionals.
 
 ## Stages
@@ -118,8 +120,9 @@ inductive Rel : FreeAlgebra R ℕ → FreeAlgebra R ℕ → Prop
 end InfiniteTypeAHeckeAlgebra
 
 /-- The infinite type-A Hecke algebra over `R` with parameter `q`: the free `R`-algebra on `ℕ`
-modulo `TauCeti.InfiniteTypeAHeckeAlgebra.Rel`. It is the union of the type-A Hecke algebras on
-finitely many strands. -/
+modulo `TauCeti.InfiniteTypeAHeckeAlgebra.Rel`. It is the union of its finite stages
+`TauCeti.InfiniteTypeAHeckeAlgebra.stage R q n`; see the module docstring for what is proved about
+them. -/
 @[expose] def InfiniteTypeAHeckeAlgebra : Type _ := RingQuot (InfiniteTypeAHeckeAlgebra.Rel R q)
 
 instance : Ring (InfiniteTypeAHeckeAlgebra R q) :=
