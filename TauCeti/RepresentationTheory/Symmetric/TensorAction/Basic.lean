@@ -35,6 +35,8 @@ It reuses `PiTensorProduct.reindex`; the convention is
 
 * `TauCeti.finrank_tensorPower` is the dimension count `dim (Rⁿ)^{⊗d} = nᵈ` that the monomial
   basis supplies.
+* `TauCeti.map_reindex_range_asAlgebraHom` transports the image of a group-algebra element along
+  the canonical relabeling of tensor factors induced by an equality of their counts.
 -/
 
 public section
@@ -160,6 +162,21 @@ theorem permTensorActionAlgHom_apply_tprod (a : MonoidAlgebra R (Equiv.Perm (Fin
       a.coeff.sum fun σ r => r • PiTensorProduct.tprod R fun i => m (σ.symm i) := by
   rw [permTensorActionAlgHom_def, permTensorAction_def]
   exact PiTensorProduct.reindexRepresentation_asAlgebraHom_apply_tprod R (Fin n → R) (Fin d) a m
+
+/-- Relabeling the tensor factors along `finCongr h`, for `h : m = d`, transports the image of
+`a ∈ R[S_m]` onto the image of its transport to `R[S_d]`. -/
+theorem map_reindex_range_asAlgebraHom {m : ℕ} (h : m = d)
+    (a : MonoidAlgebra R (Equiv.Perm (Fin m))) :
+    (LinearMap.range ((permTensorAction R n m).asAlgebraHom a)).map
+        (PiTensorProduct.reindex R (fun _ => Fin n → R) (finCongr h) :
+          (⨂[R] _ : Fin m, Fin n → R) →ₗ[R] (⨂[R] _ : Fin d, Fin n → R)) =
+      LinearMap.range ((permTensorAction R n d).asAlgebraHom
+        (MonoidAlgebra.domCongr R R (finCongr h).permCongrHom a)) := by
+  subst h
+  have he : (Equiv.refl (Fin m)).permCongrHom = MulEquiv.refl _ := by
+    ext
+    simp
+  simp [he]
 
 /-- The monomial basis of `(Rⁿ)^{⊗d}`: the basis vector at `f : Fin d → Fin n` is the pure tensor
 whose `i`-th factor is the `f i`-th standard basis vector of `Rⁿ`. -/
