@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.RingTheory.PowerSeries.EvalAt
 import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
@@ -130,18 +131,13 @@ theorem norm_evalBoundedSeries_le {R K : Type*} [Semiring R]
     [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] {M : ℝ}
     (φ : R →+* K) (hφ : ∀ r, ‖φ r‖ ≤ M) (q : K) (hq : ‖q‖ < 1) (f : R⟦X⟧) :
     ‖evalBoundedSeries φ hφ q hq f‖ ≤ M := by
-  have hM : 0 ≤ M := (norm_nonneg (φ 0)).trans (hφ 0)
-  rw [evalBoundedSeries_apply]
-  apply IsUltrametricDist.norm_tsum_le_of_forall_le
-  intro n
-  rcases eq_or_ne n 0 with rfl | hn
-  · simpa using hφ (coeff 0 f)
-  calc
-    ‖φ (coeff n f) * q ^ n‖ ≤ ‖φ (coeff n f)‖ * ‖q ^ n‖ := norm_mul_le _ _
-    _ ≤ M * ‖q ^ n‖ := mul_le_mul_of_nonneg_right (hφ _) (norm_nonneg _)
-    _ ≤ M * ‖q‖ ^ n :=
-      mul_le_mul_of_nonneg_left (norm_pow_le' q (Nat.pos_of_ne_zero hn)) hM
-    _ ≤ M := mul_le_of_le_one_right hM (pow_le_one₀ (norm_nonneg q) hq.le)
+  have hs := PowerSeries.norm_evalScalar_le (F := f.map φ) (a := q)
+    ((norm_nonneg (φ 0)).trans (hφ 0)) fun n ↦ by
+      rw [coeff_map]
+      exact (mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (norm_nonneg q) hq.le)).trans
+        (hφ _)
+  simpa only [evalBoundedSeries_apply, PowerSeries.evalScalar_def, coeff_map, smul_eq_mul,
+    mul_comm] using hs
 
 end RingHom
 
