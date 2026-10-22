@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 public import Mathlib.Topology.Compactification.OnePoint.Sphere
+import TauCeti.Topology.Connected.PathConnected
 
 /-!
 # Invariance of domain
@@ -59,19 +60,6 @@ namespace TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-
-/-- If a set `A` is covered by two path-connected subsets `B` and `C` but is not itself path
-connected, then `B` is a path component of `A`. -/
-private theorem _root_.IsPathConnected.pathComponentIn_eq_of_not_isPathConnected {X : Type*}
-    [TopologicalSpace X] {A B C : Set X} {x : X} (hB : IsPathConnected B)
-    (hC : IsPathConnected C) (hBA : B ⊆ A) (hCA : C ⊆ A) (hABC : A ⊆ B ∪ C) (hx : x ∈ B)
-    (hA : ¬IsPathConnected A) : pathComponentIn A x = B := by
-  refine Subset.antisymm (fun q hq ↦ ?_) (hB.subset_pathComponentIn hx hBA)
-  by_contra hqB
-  have hqC : q ∈ C := (hABC (pathComponentIn_subset hq)).resolve_left hqB
-  exact hA ⟨x, hBA hx, fun {z} hz ↦
-    (hABC hz).elim (fun hzB ↦ hB.joinedIn _ hx _ hzB |>.mono hBA)
-      (fun hzC ↦ (hq : JoinedIn A _ q).trans ((hC.joinedIn _ hqC _ hzC).mono hCA))⟩
 
 /-- **Invariance of domain, local form.** If `f` is continuous and injective on a closed ball of
 positive radius in a finite-dimensional real normed space, with values in a normed space of the
