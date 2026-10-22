@@ -238,6 +238,15 @@ theorem splitProj_comp {x y z : V × Bool} (p : ArrowWalk (SplitHom Q) x y)
   | nil => simp [comp]
   | cons q e ih => simp only [comp] at ih ⊢; simp [ih, comp]
 
+/-- The lift of a composite walk is the lift of the first walk, ending at an entrance, followed by
+the lift of the second. -/
+@[simp]
+theorem splitLift_comp {s t x : V} (b : Bool) (p : ArrowWalk Q s t) (q : ArrowWalk Q t x) :
+    (p.comp q).splitLift b = (p.splitLift false).comp (q.splitLift b) := by
+  induction q generalizing b with
+  | nil => cases b <;> simp [splitLift_true, comp]
+  | cons q e ih => cases b <;> simp only [comp] at ih ⊢ <;> simp [ih]
+
 /-- A walk in the split network starting at the exit of `s` is the lift of its projection with the
 split arrow of `s` removed from the front. -/
 theorem splitLift_splitProj_of_exit {s : V} {y : V × Bool}
@@ -575,6 +584,26 @@ theorem assignment_ext {g g' : Assignment (SplitHom Q) K}
 @[simp]
 theorem assignment_zero [Zero K] : assignment (0 : Assignment Q K) 0 = 0 :=
   assignment_ext rfl fun _ ↦ rfl
+
+@[simp]
+theorem assignment_add [Add K] (f f' : Assignment Q K) (φ φ' : V → K) :
+    assignment (f + f') (φ + φ') = assignment f φ + assignment f' φ' :=
+  assignment_ext rfl fun _ ↦ rfl
+
+@[simp]
+theorem assignment_neg [Neg K] (f : Assignment Q K) (φ : V → K) :
+    assignment (-f) (-φ) = -assignment f φ :=
+  assignment_ext rfl fun _ ↦ rfl
+
+@[simp]
+theorem originalAssignment_add [Add K] (g g' : Assignment (SplitHom Q) K) :
+    originalAssignment (g + g') = originalAssignment g + originalAssignment g' :=
+  (rfl)
+
+@[simp]
+theorem originalAssignment_neg [Neg K] (g : Assignment (SplitHom Q) K) :
+    originalAssignment (-g) = -originalAssignment g :=
+  (rfl)
 
 /-- Split assignments are compared arrowwise on original arrows and vertexwise on split
 arrows. -/
