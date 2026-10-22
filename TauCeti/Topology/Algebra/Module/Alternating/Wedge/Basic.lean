@@ -278,10 +278,13 @@ theorem pairedWedge_postcomp {F₄ : Type*} [AddCommGroup F₄] [Module ℝ F₄
         (by
           simpa only [Function.uncurry_def, Function.comp_def, ContinuousLinearMap.comp_apply,
             ContinuousLinearMap.postcomp_apply] using nu.continuous.comp hmu) phi psi =
-      nu.compContinuousAlternatingMap (pairedWedge mu hmu phi psi) :=
-  -- Postcomposition with an identity map is the identity on alternating maps by definition.
-  (compContinuousAlternatingMap_pairedWedge mu hmu _ _ (.id ℝ F₁) (.id ℝ F₂) nu
-    (fun _ _ ↦ rfl) phi psi).symm
+      nu.compContinuousAlternatingMap (pairedWedge mu hmu phi psi) := by
+  have h₁ : (ContinuousLinearMap.id ℝ F₁).compContinuousAlternatingMap phi = phi := by
+    ext; simp
+  have h₂ : (ContinuousLinearMap.id ℝ F₂).compContinuousAlternatingMap psi = psi := by
+    ext; simp
+  rw [compContinuousAlternatingMap_pairedWedge mu hmu ((ContinuousLinearMap.postcomp F₂ nu).comp mu)
+    _ (.id ℝ F₁) (.id ℝ F₂) nu (fun _ _ ↦ by simp) phi psi, h₁, h₂]
 
 /-- The paired wedge is additive in the pairing. -/
 @[simp]
