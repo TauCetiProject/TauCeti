@@ -31,6 +31,8 @@ the polar pairing is therefore `B(x, y)` modulo `ℤ`.
 * `TauCeti.FiniteQuadraticModule.toFiniteBilinearModule`: the canonical polar bilinear module.
 * `TauCeti.FiniteQuadraticModule.Hom`: a quadratic-map-preserving additive homomorphism.
 * `TauCeti.FiniteQuadraticModule.Isometry`: a quadratic-map isometric equivalence.
+* `TauCeti.FiniteQuadraticModule.Isometry.ofEq`: the identity isometry between equal finite
+  quadratic modules.
 * `TauCeti.FiniteQuadraticModule.Hom.toIsometryOfNondegenerate`: a morphism from a
   nondegenerate source of the same finite cardinality, packaged as an isometry.
 * `TauCeti.FiniteQuadraticModule.IsIsotropic`: quadratic isotropy of an additive subgroup.
@@ -263,6 +265,21 @@ variable {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
 theorem trans_apply {C : FiniteQuadraticModule} (f : Isometry A B) (g : Isometry B C) (x : A) :
     (f.trans g) x = g (f x) :=
   rfl
+
+/-- The identity isometry between two equal finite quadratic modules. -/
+def ofEq {A' : FiniteQuadraticModule.{u}} (h : A = A') : Isometry A A' :=
+  h ▸ QuadraticMap.IsometryEquiv.refl A.quadratic
+
+/-- The identity isometry between equal finite quadratic modules is the cast of carriers. -/
+theorem ofEq_apply {A' : FiniteQuadraticModule.{u}} (h : A = A') (x : A) :
+    ofEq h x = cast (congrArg (fun C : FiniteQuadraticModule.{u} ↦ (C : Type u)) h) x := by
+  subst h
+  rfl
+
+/-- The identity isometry of a reflexive equality is the identity. -/
+@[simp]
+theorem ofEq_rfl : ofEq (rfl : A = A) = QuadraticMap.IsometryEquiv.refl A.quadratic :=
+  (rfl)
 
 /-- A quadratic isometry is, after forgetting bijectivity, a morphism. -/
 def toHom (f : Isometry A B) : Hom A B :=
