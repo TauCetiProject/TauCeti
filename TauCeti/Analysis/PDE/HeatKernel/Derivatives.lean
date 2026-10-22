@@ -197,8 +197,8 @@ private theorem exists_gaussianDecay_iteratedDeriv_rpow_smul (j : ℕ) :
         fun s : ℝ => s ^ (-(a + 1)) • (-a • Ψ (s ^ (-1 / 2 : ℝ) • x) -
           (1 / 2 : ℝ) • fderiv ℝ Ψ (s ^ (-1 / 2 : ℝ) • x) (s ^ (-1 / 2 : ℝ) • x)) :=
       (eventually_gt_nhds hs).mono fun s' hs' =>
-        ((hasDerivAt_rpow_smul_comp_rpow_smul (hΨ.1.differentiable (by simp)) a (-1 / 2) x
-          hs').congr_deriv (by module)).deriv
+        ((hasDerivAt_rpow_smul_comp_rpow_smul a (-1 / 2) x hs'
+          ((hΨ.1.differentiable (by simp)).differentiableAt)).congr_deriv (by module)).deriv
     rw [iteratedDeriv_succ', hderiv.iteratedDeriv_eq, h x s hs,
       show -(a + 1 + (j : ℝ)) = -(a + ((j + 1 : ℕ) : ℝ)) by push_cast; ring]
 

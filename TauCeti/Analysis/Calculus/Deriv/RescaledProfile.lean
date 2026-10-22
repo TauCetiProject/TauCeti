@@ -10,10 +10,10 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 /-!
 # Time derivatives of rescaled profiles
 
-For a differentiable profile `Ψ : E → F`, a fixed point `x : E`, and real exponents `a` and `b`,
-the expression `s^(-a) Ψ(s^b x)` is differentiable in `s > 0`, and its derivative is
-`s^(-(a + 1)) (-a Ψ(y) + b DΨ(y) y)` with `y = s^b x`. The derivative is again of the same form
-with a new profile, so iterated time derivatives of self-similar expressions, such as the
+For a profile `Ψ : E → F`, a fixed point `x : E`, and real exponents `a` and `b`, the expression
+`s^(-a) Ψ(s^b x)` is differentiable at each `s > 0` where `Ψ` is differentiable at `y = s^b x`,
+and its derivative is `s^(-(a + 1)) (-a Ψ(y) + b DΨ(y) y)`. The derivative is again of the same
+form with a new profile, so iterated time derivatives of self-similar expressions, such as the
 derivatives of the heat kernel under parabolic scaling, can be computed by induction.
 -/
 
@@ -27,9 +27,10 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The time derivative of a rescaled profile:
-`∂ₛ (s^(-a) Ψ(s^b x)) = s^(-(a + 1)) (-a Ψ(y) + b DΨ(y) y)` with `y = s^b x`. -/
-theorem hasDerivAt_rpow_smul_comp_rpow_smul {Ψ : E → F} (hΨ : Differentiable ℝ Ψ)
-    (a b : ℝ) (x : E) {s : ℝ} (hs : 0 < s) :
+`∂ₛ (s^(-a) Ψ(s^b x)) = s^(-(a + 1)) (-a Ψ(y) + b DΨ(y) y)` with `y = s^b x`, provided `Ψ` is
+differentiable at `y`. -/
+theorem hasDerivAt_rpow_smul_comp_rpow_smul {Ψ : E → F} (a b : ℝ) (x : E) {s : ℝ} (hs : 0 < s)
+    (hΨ : DifferentiableAt ℝ Ψ (s ^ b • x)) :
     HasDerivAt (fun s : ℝ => s ^ (-a) • Ψ (s ^ b • x))
       (s ^ (-(a + 1)) • (-a • Ψ (s ^ b • x) + b • fderiv ℝ Ψ (s ^ b • x) (s ^ b • x))) s := by
   have h1 : HasDerivAt (fun s : ℝ => s ^ (-a)) (-a * s ^ (-a - 1)) s :=
@@ -38,7 +39,7 @@ theorem hasDerivAt_rpow_smul_comp_rpow_smul {Ψ : E → F} (hΨ : Differentiable
     (hasDerivAt_rpow_const (Or.inl hs.ne')).smul_const x
   have h3 : HasDerivAt (fun s : ℝ => Ψ (s ^ b • x))
       (fderiv ℝ Ψ (s ^ b • x) ((b * s ^ (b - 1)) • x)) s :=
-    (hΨ (s ^ b • x)).hasFDerivAt.comp_hasDerivAt s h2
+    hΨ.hasFDerivAt.comp_hasDerivAt s h2
   convert h1.smul h3 using 1
   -- Collect the powers of `s`: `s^(-a) s^(b-1) = s^(-(a+1)) s^b`.
   have hpow : s ^ (-a) * s ^ (b - 1) = s ^ (-(a + 1)) * s ^ b := by
