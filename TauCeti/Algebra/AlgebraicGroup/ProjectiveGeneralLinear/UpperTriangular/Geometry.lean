@@ -101,6 +101,9 @@ theorem mem_definingPointsSubgroup_iff (L : Type w) [Field L] [Algebra k L] [IsA
       ∃ g : upperTriangularGroup (Fin n) L,
         Matrix.GeneralLinearGroup.innerAut (g : Matrix.GeneralLinearGroup (Fin n) L) =
           ProjectiveGeneralLinear.pointsMulEquiv n k (CommAlgCat.of k L) q := by
+  have hmap := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+    (definingHopfIdeal k n) (conjugationMap k n) (restriction k n)
+    (coordinateMap_comp_conjugationMap k n) (CommAlgCat.of k L)
   constructor
   · intro hq
     obtain ⟨p, hp⟩ := hq
@@ -108,11 +111,11 @@ theorem mem_definingPointsSubgroup_iff (L : Type w) [Field L] [Algebra k L] [IsA
       (conjugationMap k n) (CommHopfAlgCat.imageι_finiteType (restriction k n))
       (faithfullyFlat_conjugationMap k n) p
     refine ⟨GeneralLinear.UpperTriangular.pointsMulEquiv (R := k) (n := n) (A := L) f, ?_⟩
-    erw [← pointsMulEquiv_restriction]
-    congr 1
-    erw [← coordinateMap_comp_conjugationMap,
-      CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply, hf]
-    exact hp
+    have hq' := (hmap f).trans (congrArg
+      (CommHopfAlgCat.quotientPointsHom _ (definingHopfIdeal k n) (CommAlgCat.of k L)) hf)
+    rw [hp] at hq'
+    exact (pointsMulEquiv_restriction k n f).symm.trans
+      (congrArg (ProjectiveGeneralLinear.pointsMulEquiv n k (CommAlgCat.of k L)) hq')
   · rintro ⟨g, hg⟩
     let f := (GeneralLinear.UpperTriangular.pointsMulEquiv (R := k) (n := n) (A := L)).symm g
     have hf : (CommHopfAlgCat.Hom.mapPointsFunctor (restriction k n)).app
@@ -121,11 +124,7 @@ theorem mem_definingPointsSubgroup_iff (L : Type w) [Field L] [Algebra k L] [IsA
       rw [pointsMulEquiv_restriction, MulEquiv.apply_symm_apply]
       exact hg
     rw [← hf]
-    -- Resolve the point-functor presentation before testing the kernel.
-    erw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-    intro x hx
-    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply,
-      (HopfIdeal.mem_ker _).mp hx, map_zero]
+    exact ⟨_, (hmap f).symm⟩
 
 end
 

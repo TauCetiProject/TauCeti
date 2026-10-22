@@ -53,7 +53,32 @@ def restriction : ProjectiveGeneralLinear.coordinateHopfAlgebra n k ⟶
 theorem restriction_def : restriction k n =
     conjugationMap n k ≫ GeneralLinear.UpperTriangular.coordinateMap k n := (rfl)
 
+/-- Restriction sends a projective coordinate to the upper-triangular quotient class
+of its conjugation coordinate. -/
+theorem restriction_apply (x : ProjectiveGeneralLinear.coordinateHopfAlgebra n k) :
+    (restriction k n).hom x = Ideal.Quotient.mkₐ k
+      (GeneralLinear.UpperTriangular.definingHopfIdeal k n).toIdeal
+      ((ProjectiveGeneralLinear.conjugationMap n k).hom x) := by
+  exact GeneralLinear.UpperTriangular.coordinateMap_apply k n _
+
 variable {A : Type w} [CommRing A] [Algebra k A]
+
+/-- Restriction on points is conjugation after the upper-triangular quotient-point inclusion. -/
+theorem mapPointsFunctor_restriction
+    (f : HopfAlgebra.points (R := k)
+      (H := GeneralLinear.UpperTriangular.coordinateHopfAlgebra k n) (CommAlgCat.of k A)) :
+    (CommHopfAlgCat.Hom.mapPointsFunctor (restriction k n)).app (CommAlgCat.of k A) f =
+      WithConv.toConv ((CommHopfAlgCat.quotientPointsHom
+        (GeneralLinear.coordinateHopfAlgebra k n)
+        (GeneralLinear.UpperTriangular.definingHopfIdeal k n) (CommAlgCat.of k A) f).ofConv.comp
+          ((ProjectiveGeneralLinear.conjugationMap n k).hom :
+            ProjectiveGeneralLinear.coordinateHopfAlgebra n k →ₐ[k]
+              GeneralLinear.coordinateHopfAlgebra k n)) := by
+  apply WithConv.ofConv_injective
+  ext x
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply, restriction_apply,
+    WithConv.ofConv_toConv, AlgHom.comp_apply, CommHopfAlgCat.quotientPointsHom_apply_apply]
+  rfl
 
 /-- Restriction on points sends an upper-triangular matrix to its inner automorphism. -/
 @[simp]
@@ -65,14 +90,8 @@ theorem pointsMulEquiv_restriction
       Matrix.GeneralLinearGroup.innerAut
         (GeneralLinear.UpperTriangular.pointsMulEquiv (R := k) (n := n) (A := A) f :
           Matrix.GeneralLinearGroup (Fin n) A) := by
-  rw [restriction_def, CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply]
-  -- The outer point map needs the explicit coordinate-algebra presentation.
-  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-    ProjectiveGeneralLinear.pointsMulEquiv_conjugationMap]
-  congr 1
-  erw [GeneralLinear.pointsMulEquiv_apply,
-    GeneralLinear.UpperTriangular.coordinateMap_def]
-  exact GeneralLinear.UpperTriangular.pointsMulEquiv_coe k n f
+  rw [mapPointsFunctor_restriction, ProjectiveGeneralLinear.pointsMulEquiv_conjugationMap,
+    GeneralLinear.pointsMulEquiv_apply, GeneralLinear.UpperTriangular.pointsMulEquiv_coe]
 
 end Restriction
 
@@ -88,10 +107,7 @@ coordinate vanishes on the general-linear upper-triangular group. -/
 theorem mem_definingHopfIdeal (x : ProjectiveGeneralLinear.coordinateHopfAlgebra n k) :
     x ∈ definingHopfIdeal k n ↔
       (conjugationMap n k).hom x ∈ GeneralLinear.UpperTriangular.definingHopfIdeal k n := by
-  rw [HopfIdeal.mem_ker, restriction_def, _root_.CommHopfAlgCat.hom_comp,
-    BialgHom.comp_apply]
-  -- The quotient-point presentation stores its coordinate algebra implicitly.
-  erw [GeneralLinear.UpperTriangular.coordinateMap_apply]
+  rw [HopfIdeal.mem_ker, restriction_apply]
   exact Ideal.Quotient.eq_zero_iff_mem
 
 /-- The coordinate Hopf algebra of the projective upper-triangular closed subgroup. -/
@@ -104,7 +120,8 @@ abbrev coordinateMap : ProjectiveGeneralLinear.coordinateHopfAlgebra n k ⟶
     coordinateHopfAlgebra k n :=
   CommHopfAlgCat.mkQuotient _ (definingHopfIdeal k n)
 
-/-- The coordinate map from the projective upper-triangular group to its general-linear cover. -/
+/-- The coordinate morphism `O(PBₙ) → O(Bₙ)` of the quotient map from the general-linear
+upper-triangular group onto its projective image. -/
 abbrev conjugationMap : coordinateHopfAlgebra k n ⟶
     GeneralLinear.UpperTriangular.coordinateHopfAlgebra k n :=
   CommHopfAlgCat.imageι (restriction k n)
@@ -140,26 +157,31 @@ theorem coordinateMap_comp_rootSubgroupCoordinateMap (hij : i < j) :
       ProjectiveGeneralLinear.rootSubgroupCoordinateMap hij.ne :=
   CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _
 
+/-- Conjugation carries each positive general-linear root map to its projective root map. -/
+@[reassoc]
+theorem conjugationMap_comp_rootSubgroupCoordinateMap (hij : i < j) :
+    conjugationMap k n ≫ GeneralLinear.UpperTriangular.rootSubgroupCoordinateMap k hij =
+      rootSubgroupCoordinateMap k hij := by
+  apply CommHopfAlgCat.mkQuotient_hom_ext (H :=
+    ProjectiveGeneralLinear.coordinateHopfAlgebra n k) (I := definingHopfIdeal k n)
+  -- Quotient extensionality produces mkQuotient; name it coordinateMap so the factorization
+  -- lemmas match without unfolding the maps being compared.
+  change coordinateMap k n ≫ _ = coordinateMap k n ≫ _
+  rw [coordinateMap_comp_conjugationMap_assoc, restriction_def, Category.assoc,
+    GeneralLinear.UpperTriangular.coordinateMap_comp_rootSubgroupCoordinateMap,
+    coordinateMap_comp_rootSubgroupCoordinateMap,
+    ProjectiveGeneralLinear.rootSubgroupCoordinateMap_def]
+
 /-- The defining ideal is killed by the normalized diagonal torus of `PGL_{r+1}`. -/
 theorem definingHopfIdeal_le_ker_diagonalTorusCoordinateMap (r : ℕ) :
     (definingHopfIdeal k (r + 1)).toIdeal ≤
       RingHom.ker (ProjectiveGeneralLinear.diagonalTorusCoordinateMap r k).hom.toAlgHom := by
   intro x hx
-  have hx' := (mem_definingHopfIdeal k (r + 1) x).mp hx
-  simp only [RingHom.mem_ker, BialgHom.coe_toAlgHom,
-    ProjectiveGeneralLinear.diagonalTorusCoordinateMap_def,
-    _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
-  exact RingHom.mem_ker.mp
-    (GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker k (r + 1)
-      (GeneralLinear.weightTorusCoordinateMap (R := k)
-        (fun (j : Fin (r + 1)) (i : ULift.{u} (Fin r)) ↦
-          if j = i.down.castSucc then 1 else 0)).hom.toAlgHom
-      (fun i j hji ↦ by
-        rw [BialgHom.coe_toAlgHom, GeneralLinear.weightTorusCoordinateMap_X]
-        simp [ne_of_gt hji]) hx')
+  exact ProjectiveGeneralLinear.comap_upperTriangularIdeal_le_ker_diagonalTorusCoordinateMap
+    r k ((mem_definingHopfIdeal k (r + 1) x).mp hx)
 
-/-- The normalized diagonal torus as a coordinate morphism from the projective
-upper-triangular group. -/
+/-- The coordinate morphism `O(PB_{r+1}) → O(T)` of the inclusion of the normalized
+diagonal torus into the projective upper-triangular group. -/
 def diagonalTorusCoordinateMap (r : ℕ) :
     coordinateHopfAlgebra k (r + 1) ⟶
       (DiagonalizableGroup.coordinateRing k
