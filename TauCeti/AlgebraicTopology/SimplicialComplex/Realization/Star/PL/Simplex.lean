@@ -223,15 +223,17 @@ theorem IsCombinatorialBall.exists_homeomorph_closedStarRealization_top
     ContinuousLinearMap.pi fun j => ContinuousLinearMap.proj (Fin.castSucc j)
   have hE (z : Fin (n + 1) → ℝ) : E z = Fin.snoc z 0 :=
     funext fun i => Fin.lastCases (by simp [E]) (fun j => by simp [E]) i
+  have hP (z : Fin (n + 2) → ℝ) : P z = Fin.init z :=
+    funext fun j => by simp [P, Fin.init]
   have hF : IsPLOn (fun x => (Fin.snoc (f x) 0 : Fin (n + 2) → ℝ))
       (range fun y : geometricLink K v => (y.1.1 : ι → ℝ)) :=
     ((isPLOn_continuousAffineMap E.toContinuousAffineMap univ).comp hf
       fun _ _ => mem_univ _).congr fun x _ => (hE (f x)).symm
   have hG : IsPLOn (fun z => g (Fin.init z))
       (range fun y : geometricLink K v => (Fin.snoc (f (y.1.1 : ι → ℝ)) 0 : Fin (n + 2) → ℝ)) :=
-    hg.comp (isPLOn_continuousAffineMap P.toContinuousAffineMap _) <| by
+    (hg.comp (isPLOn_continuousAffineMap P.toContinuousAffineMap _) <| by
       rintro _ ⟨y, rfl⟩
-      exact ⟨y, by simp⟩
+      exact ⟨y, by simp [hP]⟩).congr fun z _ => congrArg g (hP z)
   have hT' : (range fun y : geometricLink K v =>
       (Fin.snoc (f (y.1.1 : ι → ℝ)) 0 : Fin (n + 2) → ℝ)) =
       {z ∈ range fun t : Convexity.StdSimplex ℝ (Fin (n + 2)) => ⇑t.weights |
@@ -241,8 +243,9 @@ theorem IsCombinatorialBall.exists_homeomorph_closedStarRealization_top
   -- Coning from the last vertex, with height the last coordinate.
   let b : Fin (n + 2) → ℝ := Pi.single (Fin.last (n + 1)) 1
   have hh : IsPLOn (fun z : Fin (n + 2) → ℝ => z (Fin.last (n + 1))) univ :=
-    isPLOn_continuousAffineMap (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 2) => ℝ)
-      (Fin.last (n + 1))).toContinuousAffineMap univ
+    (isPLOn_continuousAffineMap (ContinuousLinearMap.proj (R := ℝ)
+      (φ := fun _ : Fin (n + 2) => ℝ) (Fin.last (n + 1))).toContinuousAffineMap univ).congr
+      fun z _ => by simp
   have hS : convexJoin ℝ (range fun y : geometricLink K v =>
       (Fin.snoc (f (y.1.1 : ι → ℝ)) 0 : Fin (n + 2) → ℝ)) {b} =
       range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
