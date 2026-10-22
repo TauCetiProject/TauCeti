@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Divisibility.Prod
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 public import TauCeti.RingTheory.Huber.Prod
@@ -181,14 +180,6 @@ variable {p : ℕ} {R S : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGrou
   [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T2Space R] [CommRing S] [UniformSpace S]
   [IsUniformAddGroup S] [IsTopologicalRing S] [IsTateRing S] [CompleteSpace S] [T2Space S]
 
-omit [IsUniformAddGroup R] [CompleteSpace R] [T2Space R] [IsUniformAddGroup S] [CompleteSpace S]
-  [T2Space S] in
-/-- Divisibility in `(R × S)°` is componentwise, read through `(R × S)° ≃+* R° × S°`. -/
-private theorem dvd_iff_powerBoundedSubringProdEquiv {a b : powerBoundedSubring (R × S)} :
-    a ∣ b ↔ (powerBoundedSubringProdEquiv R S a).1 ∣ (powerBoundedSubringProdEquiv R S b).1 ∧
-      (powerBoundedSubringProdEquiv R S a).2 ∣ (powerBoundedSubringProdEquiv R S b).2 := by
-  rw [← map_dvd_iff (powerBoundedSubringProdEquiv R S), prod_dvd_iff]
-
 /-- The first factor of a perfectoid product is perfectoid: the first component of a
 pseudouniformiser of `R × S` witnessing the perfectoid condition witnesses it for `R`. -/
 private theorem IsPerfectoidTateRing.of_prod_left [IsPerfectoidTateRing p (R × S)] :
@@ -231,10 +222,11 @@ instance IsPerfectoidTateRing.prod [IsPerfectoidTateRing p R] [IsPerfectoidTateR
     exact dvd_iff_powerBoundedSubringProdEquiv.mpr
       ⟨by simpa using hi _ (by simpa using hy), by simpa using hi' _ (by simpa using hy')⟩
 
-/-- **A product is perfectoid exactly when both factors are.** The second factor is handled by
-swapping the factors, which is an isomorphism of topological rings. -/
+/-- **A product is perfectoid exactly when both factors are**: for complete Hausdorff Tate rings
+`R` and `S`, `R × S` is a perfectoid Tate ring exactly when `R` and `S` are. -/
 theorem isPerfectoidTateRing_prod_iff :
     IsPerfectoidTateRing p (R × S) ↔ IsPerfectoidTateRing p R ∧ IsPerfectoidTateRing p S := by
+  -- the second factor is handled by swapping the factors, an isomorphism of topological rings
   refine ⟨fun _ ↦ ⟨.of_prod_left (S := S), ?_⟩, fun ⟨_, _⟩ ↦ inferInstance⟩
   have : IsPerfectoidTateRing p (S × R) :=
     .of_ringEquiv (RingEquiv.prodComm (R := R) (S := S)) continuous_swap continuous_swap

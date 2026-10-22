@@ -108,6 +108,7 @@ variable {M N : Type*} [MonoidWithZero M] [MonoidWithZero N] [TopologicalSpace M
 /-- An element of a product of topological monoids with zero is topologically nilpotent exactly
 when both of its components are: the powers of `x` are taken componentwise, and a sequence in a
 product converges exactly when both of its component sequences do. -/
+@[simp]
 theorem Prod.isTopologicallyNilpotent_iff {x : M × N} :
     IsTopologicallyNilpotent x ↔ IsTopologicallyNilpotent x.1 ∧ IsTopologicallyNilpotent x.2 := by
   simp only [IsTopologicallyNilpotent, Prod.tendsto_iff, Prod.pow_fst, Prod.pow_snd, Prod.fst_zero,

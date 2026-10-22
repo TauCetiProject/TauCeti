@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Divisibility.Prod
 public import TauCeti.RingTheory.Huber.Uniform
 
 /-!
@@ -25,7 +26,8 @@ product `K × K♭` is such a Tate ring: it contains no field, and `p = (p, 0)` 
 * `TauCeti.Huber.isPowerBounded_prod_iff`, `TauCeti.Huber.isPseudoUniformizer_prod_iff`: the
   componentwise characterisations of power-bounded elements and of pseudouniformisers.
 * `TauCeti.Huber.powerBoundedSubring_prod`: `(A × B)° = A° × B°`, and
-  `TauCeti.Huber.powerBoundedSubringProdEquiv`, the resulting ring isomorphism.
+  `TauCeti.Huber.powerBoundedSubringProdEquiv`, the resulting ring isomorphism, along which
+  divisibility is componentwise (`TauCeti.Huber.dvd_iff_powerBoundedSubringProdEquiv`).
 * `TauCeti.Huber.isUniform_prod_iff`: `A × B` is uniform exactly when `A` and `B` are, with the
   instance `TauCeti.Huber.IsUniform.instProd`.
 * `TauCeti.Huber.IsTateRing.instProd`: a product of Tate rings is a Tate ring.
@@ -110,6 +112,12 @@ theorem coe_powerBoundedSubringProdEquiv_snd (x : powerBoundedSubring (A × B)) 
 theorem coe_powerBoundedSubringProdEquiv_symm
     (y : powerBoundedSubring A × powerBoundedSubring B) :
     ((powerBoundedSubringProdEquiv A B).symm y : A × B) = ((y.1 : A), (y.2 : B)) := (rfl)
+
+/-- Divisibility in `(A × B)°` is componentwise, read through `(A × B)° ≃+* A° × B°`. -/
+theorem dvd_iff_powerBoundedSubringProdEquiv {a b : powerBoundedSubring (A × B)} :
+    a ∣ b ↔ (powerBoundedSubringProdEquiv A B a).1 ∣ (powerBoundedSubringProdEquiv A B b).1 ∧
+      (powerBoundedSubringProdEquiv A B a).2 ∣ (powerBoundedSubringProdEquiv A B b).2 := by
+  rw [← map_dvd_iff (powerBoundedSubringProdEquiv A B), prod_dvd_iff]
 
 end Nonarchimedean
 
