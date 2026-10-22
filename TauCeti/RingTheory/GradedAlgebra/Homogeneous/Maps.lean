@@ -91,6 +91,12 @@ def baseChangeMap : 𝒜 →+*ᵍ (fun n ↦ (𝒜 n).baseChange S) where
   __ := (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom
   map_mem hx := Submodule.tmul_mem_baseChange_of_mem 1 hx
 
+/-- The graded coefficient inclusion has the usual tensor-product inclusion as its ring map. -/
+@[simp]
+theorem baseChangeMap_toRingHom :
+    (baseChangeMap S 𝒜).toRingHom =
+      (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom := (rfl)
+
 /-- Coefficient extension sends a homogeneous element to its pure tensor with one. -/
 @[simp]
 theorem baseChangeMap_apply (a : A) : baseChangeMap S 𝒜 a = 1 ⊗ₜ[R] a := (rfl)

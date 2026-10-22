@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.DriftMaximumPrinciple
+public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # The weak maximum principle for elliptic operators in non-divergence form
@@ -67,6 +69,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   a strict subsolution of `L`, with an explicit lower bound for `L w`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_add_smul`,
   `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
+  applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -220,9 +224,8 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_add_smul {A : Matrix ι ι ℝ}
     ext v w
     simpa [iteratedFDeriv_two_apply] using
       congrArg (· ![v, w]) (iteratedFDeriv_add_apply hf hg')
-  rw [h2, fderiv_add (hf.differentiableAt two_ne_zero)
-    (hg'.differentiableAt two_ne_zero), fderiv_const_smul_field,
-    fderiv_const_smul_field (f := fderiv ℝ g)]
+  rw [h2, fderiv_fderiv_const_smul, fderiv_add (hf.differentiableAt two_ne_zero)
+    (hg'.differentiableAt two_ne_zero), fderiv_const_smul_field]
   simp only [_root_.add_apply, Pi.smul_apply, _root_.smul_apply, smul_eq_mul, mul_add,
     Finset.sum_add_distrib, Finset.mul_sum]
   have h : ∑ i, ∑ j, A i j * (r * fderiv ℝ (fderiv ℝ g) x (EuclideanSpace.single i 1)
@@ -241,6 +244,15 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_neg (A : Matrix ι ι ℝ)
       (EuclideanSpace.single j 1) + fderiv ℝ f x v) := by
   have h : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
   simp only [h, fderiv_neg, _root_.neg_apply, mul_neg, Finset.sum_neg_distrib, neg_add]
+
+/-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the squared norm `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`. -/
+theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
+    {x v : EuclideanSpace ℝ ι} :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+      fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x v = 2 * A.trace + 2 * ⟪x, v⟫ := by
+  simp only [fderiv_fderiv_norm_sq_apply]
+  simp [EuclideanSpace.inner_single_left, Matrix.trace, Finset.mul_sum, mul_comm]
 
 variable [Nonempty ι]
 

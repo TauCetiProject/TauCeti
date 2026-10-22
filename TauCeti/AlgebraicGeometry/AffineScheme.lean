@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Properties
+import TauCeti.RingTheory.Localization.Tower
 
 /-!
 # Affine schemes: the spectrum, fixed points, and actions on global sections
@@ -23,6 +24,10 @@ form in which a free action of a finite group on an affine scheme enters the the
 quotients (`TauCeti.AffineInvariantQuotient.etale_projection`), once the group acts on `Γ(X, ⊤)` by
 pullback along inverses (`AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`).
 
+It also shows that for a compatible tower `R → B ↪ R_a`, localizing `B` at `a` gives `R_a`,
+so `Spec B ⟶ Spec R` is an isomorphism over the basic open `D(a)`. The map from `R` need not
+be injective. This is the local reason why an affine blowup changes nothing away from its center.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`: a group acting on a scheme `X` acts on
@@ -35,6 +40,9 @@ pullback along inverses (`AlgebraicGeometry.Scheme.globalSectionsMulSemiringActi
 * `AlgebraicGeometry.Scheme.Hom.span_range_appTop_sub_eq_top_iff`: for an endomorphism `f` of an
   affine scheme, the elements `f^*(a) - a` generate the unit ideal if and only if every point of
   `X` fixed by `f` has values in an empty scheme.
+* `AlgebraicGeometry.isIso_SpecMap_morphismRestrict_basicOpen_of_injective`: for an `R`-algebra `B`
+  embedded in a localization of `R` away from `a`, the morphism `Spec B ⟶ Spec R` restricts to an
+  isomorphism over `D(a)`.
 -/
 
 public section
@@ -112,5 +120,22 @@ theorem Scheme.globalSectionsMulSemiringAction_smul_def {X : Scheme.{u}} {G : Ty
     letI := Scheme.globalSectionsMulSemiringAction σ
     g • a = (σ g⁻¹).asIso.hom.appTop a :=
   rfl
+
+/-- **`Spec` of an intermediate ring of a localization.** Let `S` be a localization of `R` away
+from `a`, and let `B` be an `R`-algebra whose map to `S` is injective, for instance an
+`R`-subalgebra of `S`. Then `Spec B ⟶ Spec R` restricts to an isomorphism over the basic open
+`D(a)`. -/
+theorem isIso_SpecMap_morphismRestrict_basicOpen_of_injective {R B : Type u} {S : Type*}
+    [CommRing R] [CommRing B] [CommSemiring S] [Algebra R B] [Algebra B S] [Algebra R S]
+    [IsScalarTower R B S] (a : R) [IsLocalization.Away a S]
+    (h : Function.Injective (algebraMap B S)) :
+    IsIso (Spec.map (CommRingCat.ofHom (algebraMap R B)) ∣_ PrimeSpectrum.basicOpen a) := by
+  -- Over `D(a)`, the morphism is `Spec` of the isomorphism `R_a ≅ B_a`.
+  have : IsIso (CommRingCat.ofHom (Localization.awayMap (algebraMap R B) a)) :=
+    (RingEquiv.ofBijective _
+      (IsLocalization.Away.bijective_awayMap_of_injective a h)).toCommRingCatIso.isIso_hom
+  exact ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
+    (SpecMapRestrictBasicOpenIso (CommRingCat.ofHom (algebraMap R B)) a)).mpr
+    (inferInstanceAs (IsIso (Spec.map _)))
 
 end AlgebraicGeometry

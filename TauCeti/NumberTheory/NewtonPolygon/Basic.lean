@@ -11,6 +11,7 @@ public import Mathlib.Order.Interval.Set.Nat
 public import Mathlib.RingTheory.PowerSeries.Order
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.Analysis.Convex.Sequence.Envelope
+public import TauCeti.Analysis.Convex.Sequence.Supporting
 
 /-!
 # Newton polygons of polynomials and power series
@@ -42,9 +43,16 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
 
 * `Polynomial.isLowerConvexEnvelope_newtonPolygon`: the Newton polygon of a polynomial is the
   greatest convex minorant of its coefficient heights.
+* `PowerSeries.supportingValue_newtonPolygon` and `Polynomial.supportingValue_newtonPolygon`:
+  the Newton polygon has the same supporting values as the coefficient heights.
+* `Polynomial.newtonPolygon_eq_top_iff`: the Newton polygon of a polynomial is empty exactly
+  when every coefficient has infinite valuation.
 * `Polynomial.newtonPolygon_ne_top_iff`: if only zero has infinite valuation (for example
   over a division ring), a nonzero polynomial has a polygon whose finite domain is the
-  interval from its order of vanishing at zero to its degree.
+  interval from its order of vanishing at zero to its degree; in particular the polygon is
+  nonempty by `Polynomial.newtonPolygon_ne_top_of_ne_zero`.
+* `Polynomial.Monic.newtonPolygon_ne_top`: a monic polynomial has a nonempty Newton polygon,
+  whatever the valuation.
 * `Polynomial.newtonPolygon_natTrailingDegree` and `Polynomial.newtonPolygon_natDegree`:
   the polygon begins at the trailing coefficient and ends at the leading coefficient.
 * `Polynomial.ncard_finiteEdges_newtonPolygon`: if only zero has infinite valuation, a
@@ -107,6 +115,12 @@ theorem newtonPolygon_le (hf : IsAdmissible fun n => v (coeff n f)) (n : ℕ) :
 theorem le_newtonPolygon {H : ℕ → WithTop ℝ} (hH : IsConvexSeq H)
     (hHf : ∀ n, H n ≤ v (coeff n f)) : H ≤ f.newtonPolygon v :=
   le_lowerConvexEnvelope hH hHf
+
+/-- For admissible coefficient heights, the Newton polygon has the same supporting values as
+the coefficient heights. -/
+theorem supportingValue_newtonPolygon (hf : IsAdmissible fun n => v (coeff n f)) :
+    supportingValue (f.newtonPolygon v) = supportingValue fun n => v (coeff n f) :=
+  supportingValue_lowerConvexEnvelope hf
 
 variable (v)
 
@@ -195,6 +209,11 @@ theorem isAdmissible_addValuation_coeff : IsAdmissible fun n => v (f.coeff n) :=
   isAdmissible_of_forall_gt (p := f.natDegree) fun n hn => by
     rw [coeff_eq_zero_of_natDegree_lt hn, AddValuation.map_zero]
 
+/-- A polynomial has only finitely many coefficients of finite height. -/
+theorem finite_setOf_addValuation_coeff_ne_top : {n | v (f.coeff n) ≠ ⊤}.Finite :=
+  f.support.finite_toSet.subset fun n hn =>
+    mem_support_iff.mpr fun h => hn (by rw [h, AddValuation.map_zero])
+
 /-- The Newton polygon of a polynomial is the greatest convex minorant of its coefficient
 heights. -/
 theorem isLowerConvexEnvelope_newtonPolygon :
@@ -215,10 +234,23 @@ theorem le_newtonPolygon {H : ℕ → WithTop ℝ} (hH : IsConvexSeq H)
     (hHf : ∀ n, H n ≤ v (f.coeff n)) : H ≤ f.newtonPolygon v :=
   le_lowerConvexEnvelope hH hHf
 
+/-- The Newton polygon has the same supporting values as the coefficient heights. -/
+theorem supportingValue_newtonPolygon :
+    supportingValue (f.newtonPolygon v) = supportingValue fun n => v (f.coeff n) :=
+  supportingValue_lowerConvexEnvelope (isAdmissible_addValuation_coeff f v)
+
 /-- The zero polynomial has the empty Newton polygon. -/
 @[simp]
 theorem newtonPolygon_zero : (0 : R[X]).newtonPolygon v = ⊤ := by
   simp only [newtonPolygon_def, coeff_zero, AddValuation.map_zero]
+  exact lowerConvexEnvelope_top
+
+/-- The Newton polygon of a polynomial is empty exactly when every coefficient has infinite
+valuation. -/
+theorem newtonPolygon_eq_top_iff : f.newtonPolygon v = ⊤ ↔ ∀ n, v (f.coeff n) = ⊤ := by
+  refine ⟨fun h n => top_le_iff.mp ((congrFun h n).symm.trans_le (newtonPolygon_le f v n)),
+    fun h => ?_⟩
+  rw [newtonPolygon_def, funext h]
   exact lowerConvexEnvelope_top
 
 /-! ### Elementary operations -/
@@ -295,6 +327,19 @@ theorem newtonPolygon_ne_top_iff (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]} (h
     fun ⟨hn, hn'⟩ => ⟨_, hn, _, hn', ?_, ?_⟩⟩
   · exact mt (hv _) (trailingCoeff_nonzero_iff_nonzero.mpr hf)
   · exact mt (hv _) (leadingCoeff_ne_zero.mpr hf)
+
+variable {f v} in
+/-- If only zero has infinite valuation, a nonzero polynomial has a nonempty Newton polygon.
+Over a division ring the hypothesis on `v` is `AddValuation.top_iff`. -/
+theorem newtonPolygon_ne_top_of_ne_zero (hv : ∀ x, v x = ⊤ → x = 0) (hf : f ≠ 0) :
+    f.newtonPolygon v ≠ ⊤ := fun h =>
+  leadingCoeff_ne_zero.mpr hf (hv _ ((newtonPolygon_eq_top_iff f v).mp h f.natDegree))
+
+variable {f} in
+/-- A monic polynomial has a nonempty Newton polygon: its leading coefficient has valuation
+zero. -/
+theorem Monic.newtonPolygon_ne_top (hf : f.Monic) : f.newtonPolygon v ≠ ⊤ := fun h => by
+  simpa [hf.leadingCoeff] using (newtonPolygon_eq_top_iff f v).mp h f.natDegree
 
 /-- If only zero has infinite valuation, the finite unit edges of the Newton polygon of a
 polynomial are those between its order of vanishing at zero and its degree. -/

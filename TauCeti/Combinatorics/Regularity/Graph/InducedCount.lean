@@ -9,6 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Density
 public import Mathlib.Combinatorics.SimpleGraph.Maps
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Fintype.Pi
+public import TauCeti.Combinatorics.SimpleGraph.Density
 public import TauCeti.Order.Partition.Pi
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import TauCeti.Order.Partition.Finpartition
@@ -132,36 +133,28 @@ theorem inducedGraphCount3_le_sum_card_induced_add (P : Finpartition (univ : Fin
           Injective g ∧ ∀ i j, J.Adj i j ↔ G.Adj (g i) (g j)}
       ≤ ∑ φ : Fin 3 → P.parts with ¬Injective φ, ∏ i, #(φ i : Finset V) :=
         sum_le_sum fun φ _ ↦ (card_filter_le _ _).trans_eq (Fintype.card_piFinset _)
-    _ ≤ 3 * Fintype.card V * ∑ A ∈ P.parts, #A ^ 2 := by
-        simpa using P.sum_prod_card_of_not_injective_le (ι := Fin 3)
-    _ ≤ 3 * Fintype.card V * (m * Fintype.card V) := by
-        grw [P.sum_sq_card_parts_le hm, card_univ]
-    _ = 3 * m * Fintype.card V ^ 2 := by ring
+    _ ≤ 3 * m * Fintype.card V ^ 2 := by
+        simpa using P.sum_prod_card_of_not_injective_le_of_card_le (ι := Fin 3) hm
 
 /-- The coarse prediction of `J.inducedGraphCount3 G` from a partition `P` of the vertices. Each
 assignment `φ` of the vertices of `J` to three distinct parts of `P` contributes the volume
 `∏ i, #(φ i)` times, for each pair `i < j`, the edge density `d(φ i, φ j)` if `J.Adj i j` and the
-nonedge density `1 - d(φ i, φ j)` otherwise. -/
+nonedge density `1 - d(φ i, φ j)` otherwise (`SimpleGraph.patternDensity`). -/
 noncomputable def coarseInducedGraphEstimate3 (P : Finpartition (univ : Finset V)) : ℝ :=
   ∑ φ : Fin 3 → P.parts with Injective φ, (∏ i, (#(φ i : Finset V) : ℝ)) *
-    ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-      if J.Adj p.1.1 p.1.2 then (G.edgeDensity (φ p.1.1) (φ p.1.2) : ℝ)
-      else 1 - (G.edgeDensity (φ p.1.1) (φ p.1.2) : ℝ)
+    ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2}, G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2)
 
 theorem coarseInducedGraphEstimate3_def (P : Finpartition (univ : Finset V)) :
     J.coarseInducedGraphEstimate3 G P =
       ∑ φ : Fin 3 → P.parts with Injective φ, (∏ i, (#(φ i : Finset V) : ℝ)) *
         ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-          if J.Adj p.1.1 p.1.2 then (G.edgeDensity (φ p.1.1) (φ p.1.2) : ℝ)
-          else 1 - (G.edgeDensity (φ p.1.1) (φ p.1.2) : ℝ) := (rfl)
+          G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2) := (rfl)
 
 /-- The coarse prediction is nonnegative: edge and nonedge densities lie in `[0, 1]`. -/
 theorem coarseInducedGraphEstimate3_nonneg (P : Finpartition (univ : Finset V)) :
     0 ≤ J.coarseInducedGraphEstimate3 G P := by
   rw [coarseInducedGraphEstimate3_def]
-  refine sum_nonneg fun φ _ ↦ mul_nonneg (by positivity) (prod_nonneg fun p _ ↦ ?_)
-  split_ifs
-  · exact_mod_cast G.edgeDensity_nonneg _ _
-  · exact sub_nonneg.2 (mod_cast G.edgeDensity_le_one _ _)
+  exact sum_nonneg fun φ _ ↦ mul_nonneg (by positivity)
+    (prod_nonneg fun p _ ↦ G.patternDensity_nonneg _ _ _)
 
 end SimpleGraph

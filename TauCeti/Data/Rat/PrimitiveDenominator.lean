@@ -13,7 +13,7 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # A primitive common denominator of two rationals
 
-For rationals `x` and `y` there is an integer `a` clearing both denominators, `a x = b` and
+For rationals `x` and `y` there is a positive integer `a` clearing both denominators, `a x = b` and
 `a y = c` with `b, c ∈ ℤ`, such that the triple `(a, b, c)` is primitive: some integer
 combination of `a`, `b` and `c` equals `1`. Applied to the coefficients of a monic rational
 quadratic `t² = x t + y`, it rescales the relation to a primitive integral one
@@ -29,11 +29,13 @@ public section
 namespace Rat
 
 /-- **A primitive common denominator.** For rationals `x` and `y` there are integers `a`, `b`, `c`
-with `a x = b` and `a y = c` such that `a`, `b` and `c` generate the unit ideal of `ℤ`. -/
+with `0 < a`, `a x = b` and `a y = c` such that `a`, `b` and `c` generate the unit ideal of `ℤ`. -/
 theorem exists_primitive_common_denominator (x y : ℚ) :
-    ∃ a b c : ℤ, (a : ℚ) * x = b ∧ (a : ℚ) * y = c ∧ ∃ u v w : ℤ, u * a + v * b + w * c = 1 := by
+    ∃ a b c : ℤ, 0 < a ∧ (a : ℚ) * x = b ∧ (a : ℚ) * y = c ∧
+      ∃ u v w : ℤ, u * a + v * b + w * c = 1 := by
   -- Clear the denominators naively, then divide out the common factor `g`.
   set D : ℤ := x.den * y.den
+  have hDpos : 0 < D := mul_pos (by exact_mod_cast x.den_pos) (by exact_mod_cast y.den_pos)
   set B : ℤ := x.num * y.den
   set C : ℤ := y.num * x.den
   have hDx : (D : ℚ) * x = B := by
@@ -51,7 +53,8 @@ theorem exists_primitive_common_denominator (x y : ℚ) :
   obtain ⟨b, hb⟩ : g ∣ B := (Int.gcd_dvd_right ..).trans (Int.gcd_dvd_left ..)
   obtain ⟨c, hc⟩ : g ∣ C := (Int.gcd_dvd_right ..).trans (Int.gcd_dvd_right ..)
   have hgq : (g : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hg
-  refine ⟨a, b, c, ?_, ?_, Int.gcdA D (Int.gcd B C), Int.gcdB D (Int.gcd B C) * Int.gcdA B C,
+  refine ⟨a, b, c, pos_of_mul_pos_right (ha ▸ hDpos) (Int.natCast_nonneg _),
+    ?_, ?_, Int.gcdA D (Int.gcd B C), Int.gcdB D (Int.gcd B C) * Int.gcdA B C,
     Int.gcdB D (Int.gcd B C) * Int.gcdB B C, ?_⟩
   · refine mul_left_cancel₀ hgq ?_
     rw [← mul_assoc, ← Int.cast_mul, ← ha, hDx, hb, Int.cast_mul]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.ODE.PicardLindelof
+import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.Order.Floor
 
@@ -26,7 +27,9 @@ in Carathéodory's sense, as the integral equation
 that is `x = ODE.picard (fun s y ↦ M s y + F s) a x₀ x` on `[a, b]`, for `x` continuous on
 `[a, b]`. This file proves that this equation has a solution
 (`TauCeti.exists_continuousOn_eq_forall_mem_Icc_eq_picard`) and that the solution is unique
-(`TauCeti.eqOn_of_forall_mem_Icc_eq_picard`).
+(`TauCeti.eqOn_of_forall_mem_Icc_eq_picard`). For continuous coefficients and classical
+solutions on the whole line, `Continuous.eq_of_hasDerivAt_clm_apply` deduces uniqueness for
+`v' = B(t) v` from Mathlib's `ODE_solution_unique_of_mem_Ioo`.
 
 Linear equations with merely measurable, bounded coefficients arise as the Galerkin
 approximations of linear parabolic equations, whose coefficients are only measurable in time.
@@ -228,3 +231,21 @@ theorem eqOn_of_forall_mem_Icc_eq_picard
   exact fun t ht ↦ congr($this ⟨t, ht⟩)
 
 end TauCeti
+
+/-- **Uniqueness for time-dependent linear equations.** Two solutions of `v' = B(t) v` on the line,
+for a continuous family `B` of bounded operators, that agree at one time agree everywhere. On a
+bounded interval `B` is bounded, so the equation is uniformly Lipschitz there. -/
+theorem Continuous.eq_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {B : ℝ → X →L[ℝ] X} (hB : Continuous B) {v w : ℝ → X}
+    (hv : ∀ t, HasDerivAt v (B t (v t)) t) (hw : ∀ t, HasDerivAt w (B t (w t)) t) {t₀ : ℝ}
+    (h : v t₀ = w t₀) : v = w := by
+  funext t
+  set a := min t t₀ - 1
+  set b := max t t₀ + 1
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn (hB.continuousOn (s := Icc a b))
+  have hLip (s : ℝ) (hs : s ∈ Ioo a b) : LipschitzOnWith (Real.toNNReal C) (B s) univ :=
+    ((B s).lipschitzWith.weaken (NNReal.le_toNNReal_of_coe_le (by
+      simpa using hC s (Ioo_subset_Icc_self hs)))).lipschitzOnWith
+  exact ODE_solution_unique_of_mem_Ioo (v := fun s ↦ B s) (s := fun _ ↦ univ) hLip
+    (t₀ := t₀) ⟨by grind, by grind⟩ (fun s _ ↦ ⟨hv s, mem_univ _⟩)
+    (fun s _ ↦ ⟨hw s, mem_univ _⟩) h ⟨by grind, by grind⟩

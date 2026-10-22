@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Probability.Distributions.StudentT.Basic
 public import TauCeti.Probability.Distributions.Affine
+public import TauCeti.Probability.Distributions.BetaPrime.Basic
 import TauCeti.Probability.Distributions.Cauchy.Affine
+import TauCeti.Probability.Distributions.StudentT.ChiSquared
 
 /-!
 # Half-Student t and half-Cauchy distributions
@@ -21,6 +23,7 @@ This file constructs the laws, identifies their Lebesgue densities, proves joint
 measurability, and establishes their almost-sure positivity, topological support, and scaling law.
 The density is twice the scaled Student t density on the positive half-line. Folding and affine
 change of variables supply the density identity.
+The square-root beta-prime representation transfers sharp real-power moments to this law.
 
 ## References
 
@@ -48,6 +51,24 @@ def halfStudentTMeasure (ν s : ℝ) : Measure ℝ :=
 theorem halfStudentTMeasure_of_pos (hν : 0 < ν) (hs : 0 < s) :
     halfStudentTMeasure ν s = (studentTMeasure ν).map (fun x ↦ s * |x|) := by
   simp [halfStudentTMeasure, hν, hs]
+
+/-- A half-Student t law is the scaled square-root image of a beta-prime law with shapes
+`1 / 2` and `ν / 2`. -/
+theorem halfStudentTMeasure_eq_map_betaPrimeMeasure (hν : 0 < ν) (hs : 0 < s) :
+    halfStudentTMeasure ν s =
+      (betaPrimeMeasure (1 / 2) (ν / 2)).map (fun x ↦ s * √(ν * x)) := by
+  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure one_half_pos (half_pos hν)]
+  norm_num only [mul_one_div, mul_div_cancel_left₀ _ (two_ne_zero : (2 : ℝ) ≠ 0)]
+  have hdegrees : 2 * (ν / 2) = ν := by ring
+  rw [hdegrees, ← studentTMeasure_map_sq hν,
+    Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop), halfStudentTMeasure_of_pos hν hs]
+  congr 1
+  ext x
+  simp only [Function.comp_apply]
+  have hcancel : ν * (1 / 2 / (ν / 2) * x ^ 2) = x ^ 2 := by
+    field_simp
+  rw [hcancel, sqrt_sq_eq_abs]
 
 /-- Invalid degrees or scale give zero measure. -/
 @[simp]
