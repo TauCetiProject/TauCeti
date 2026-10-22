@@ -75,9 +75,7 @@ theorem IsFiberwiseInjective.isDrinfeldBasis
   have hle : i.ker ≤ E.pointsDivisor φ := by
     apply hφ.ker_torsionι_left_le_pointsDivisor
     intro a
-    have ha : a ^ N = 1 := Multiplicative.toAdd.injective <| by
-      ext <;> simp [nsmul_eq_mul]
-    rw [← map_pow, ha, map_one]
+    simpa [IsMonHom.monoidHom_apply, comp_mulBy] using range_le_ker_mulBy φ ⟨a, rfl⟩
   rw [isDrinfeldBasis_iff, ← ker_torsionι_left]
   exact (Scheme.IdealSheafData.eq_of_le_of_finrank_eq hle E.structureMap (by
     rw [← Scheme.Hom.finrank_comp_left_of_isIso i.toImage,

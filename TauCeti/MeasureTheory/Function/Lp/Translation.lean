@@ -18,30 +18,29 @@ import Mathlib.MeasureTheory.Measure.Prod
 /-!
 # The `Lᵖ` translation estimate
 
-This file develops continuous translation of `Lᵖ` functions on an additive monoid carrying a
-right-invariant measure, translation equivalences on additive commutative groups, and the
+This file develops continuous translation of `Lᵖ` functions on a space with continuous addition
+carrying a right-invariant measure, translation equivalences on additive groups, and the
 quantitative translation estimate for `C¹` functions on a real normed space:
 
 `‖u(· + h) - u‖_p ≤ ‖h‖ ‖Du‖_p`.
 
 Translation of `Lᵖ` classes is a linear isometric equivalence, it is an action of the additive
-group of vectors, and for `p < ∞` it is strongly continuous; consequently the translation
-increments of any `Lᵖ` function tend to zero. The translation estimate is the quantitative form of
-this continuity for a `C¹` function, and needs no integrability of the function itself.
+group, and for `p < ∞` it is strongly continuous. Consequently, the translation increments of any
+`Lᵖ` function tend to zero. The translation estimate is the quantitative form of this continuity
+for a `C¹` function, and needs no integrability of the function itself.
 
 ## Main declarations
 
 * `MeasureTheory.Lp.continuous_compMeasurePreserving_add_right`: strong continuity of translation
   of `Lᵖ` classes for `p < ∞`.
-* `MeasureTheory.Measure.translateLp`: translation by a vector as a linear isometric equivalence
-  of `Lᵖ`.
+* `MeasureTheory.Measure.translateLp`: translation by a group element as a linear
+  isometric equivalence of `Lᵖ`.
 * `MeasureTheory.Measure.coeFn_translateLp`, `MeasureTheory.MemLp.coeFn_translateLp_toLp`:
   translation is almost everywhere precomposition by addition.
 * `ContinuousLinearMap.compLpL_translateLp`: translation commutes with postcomposition by a
   continuous linear map.
 * `MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm`,
-  `MeasureTheory.Measure.translateLp_add`: translation is an action of the additive group of
-  vectors.
+  `MeasureTheory.Measure.translateLp_add`: translation is an action of the additive group.
 * `MeasureTheory.Measure.continuous_translateLp`: strong continuity of `translateLp` for `p < ∞`.
 * `MeasureTheory.Measure.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation
   increment with its pointwise `eLpNorm`.
@@ -79,11 +78,11 @@ namespace MeasureTheory
 
 namespace Lp
 
-variable {E F : Type*} [AddMonoid E] [MeasurableSpace E] [TopologicalSpace E] [ContinuousAdd E]
+variable {E F : Type*} [Add E] [MeasurableSpace E] [TopologicalSpace E] [ContinuousAdd E]
   [BorelSpace E] [R1Space E] [NormedAddCommGroup F] {mu : Measure E} [mu.IsAddRightInvariant]
   [mu.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure mu] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Translation of a fixed `Lᵖ` class depends continuously on the translation vector when
+/-- Translation of a fixed `Lᵖ` class depends continuously on the translation parameter when
 `p < ∞`. -/
 theorem continuous_compMeasurePreserving_add_right (hp : p ≠ ∞) (f : Lp F p mu) :
     Continuous fun h : E ↦ compMeasurePreserving (· + h) (measurePreserving_add_right mu h) f := by
@@ -100,7 +99,7 @@ namespace Measure
 
 section LpTranslation
 
-variable {E F : Type*} [AddCommGroup E] [MeasurableSpace E] [MeasurableAdd E]
+variable {E F : Type*} [AddGroup E] [MeasurableSpace E] [MeasurableAdd E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {mu : Measure E} [mu.IsAddRightInvariant]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -130,17 +129,18 @@ theorem _root_.ContinuousLinearMap.compLpL_translateLp {G : Type*} [NormedAddCom
   rw [hL, htr, htrL]
   exact hLtr.symm
 
-/-- Translating by `h₁ + h₂` is translating by `h₁` and then by `h₂`. -/
+/-- Translating by `h₁ + h₂` is translating by `h₂` and then by `h₁`, so these
+equivalences give a left action even when addition is not commutative. -/
 theorem translateLp_add (h₁ h₂ : E) :
-    translateLp (F := F) mu p (h₁ + h₂) = (translateLp mu p h₁).trans (translateLp mu p h₂) := by
+    translateLp (F := F) mu p (h₁ + h₂) = (translateLp mu p h₂).trans (translateLp mu p h₁) := by
   refine LinearIsometryEquiv.ext fun f => Lp.ext ?_
   filter_upwards [coeFn_translateLp (mu := mu) (h₁ + h₂) f,
-    coeFn_translateLp (mu := mu) h₂ (translateLp mu p h₁ f),
-    (measurePreserving_add_right mu h₂).quasiMeasurePreserving.ae_eq_comp
-      (coeFn_translateLp (mu := mu) h₁ f)] with x hx hy hz
+    coeFn_translateLp (mu := mu) h₁ (translateLp mu p h₂ f),
+    (measurePreserving_add_right mu h₁).quasiMeasurePreserving.ae_eq_comp
+      (coeFn_translateLp (mu := mu) h₂ f)] with x hx hy hz
   simp only [Function.comp_apply] at hx hy hz
   rw [hx, LinearIsometryEquiv.trans_apply, hy, hz]
-  exact congrArg _ (by abel)
+  exact congrArg _ (add_assoc _ _ _).symm
 
 /-- Translation by zero is the identity on `Lᵖ`. -/
 @[simp]
@@ -154,9 +154,9 @@ theorem translateLp_zero (f : Lp F p mu) : translateLp mu p 0 f = f := by
 theorem translateLp_symm (h : E) :
     (translateLp (F := F) mu p h).symm = translateLp mu p (-h) :=
   LinearIsometryEquiv.ext fun f => (LinearIsometryEquiv.symm_apply_eq _).2 <| by
-    rw [← LinearIsometryEquiv.trans_apply, ← translateLp_add, neg_add_cancel, translateLp_zero]
+    rw [← LinearIsometryEquiv.trans_apply, ← translateLp_add, add_neg_cancel, translateLp_zero]
 
-/-- Translation of a fixed `Lᵖ` class depends continuously on the translation vector when
+/-- Translation of a fixed `Lᵖ` class depends continuously on the translation parameter when
 `p < ∞`. -/
 theorem continuous_translateLp [TopologicalSpace E] [ContinuousAdd E] [BorelSpace E] [R1Space E]
     [mu.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure mu] (hp : p ≠ ∞) (f : Lp F p mu) :
@@ -181,7 +181,7 @@ end Measure
 namespace MemLp
 
 /-- The translate of the `Lᵖ` class of `f` by `h` is almost everywhere `f (· + h)`. -/
-theorem coeFn_translateLp_toLp {E F : Type*} [AddCommGroup E] [MeasurableSpace E]
+theorem coeFn_translateLp_toLp {E F : Type*} [AddGroup E] [MeasurableSpace E]
     [MeasurableAdd E] [NormedAddCommGroup F] [NormedSpace ℝ F] {mu : Measure E}
     [mu.IsAddRightInvariant] {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : E → F} (hf : MemLp f p mu) (h : E) :
     ⇑(mu.translateLp p h (hf.toLp f)) =ᵐ[mu] fun x ↦ f (x + h) :=
@@ -206,30 +206,29 @@ theorem comp_add_right_restrict_of_mapsTo [TopologicalSpace F] [ContinuousENorm 
 
 end
 
-variable {E F : Type*} [AddMonoid E] [MeasurableSpace E] {mu : Measure E}
+variable {E F : Type*} [AddZeroClass E] [MeasurableSpace E] {mu : Measure E}
   [mu.IsAddRightInvariant] {p : ℝ≥0∞}
 
-/-- Translation increments of an `Lᵖ` function on an additive monoid tend to zero as the
-translation tends to zero. -/
+/-- Translation increments of an `Lᵖ` function tend to zero as the translation tends to zero. -/
 theorem tendsto_eLpNorm_comp_add_sub [TopologicalSpace E] [ContinuousAdd E] [BorelSpace E]
     [R1Space E] [mu.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure mu] [NormedAddCommGroup F]
     {u : E → F} (hu : MemLp u p mu) (hp : 1 ≤ p) (hp' : p ≠ ∞) :
     Filter.Tendsto (fun h : E ↦ eLpNorm (fun x ↦ u (x + h) - u x) p mu) (nhds 0) (nhds 0) := by
   have : Fact (1 ≤ p) := ⟨hp⟩
   have htend := (Lp.continuous_compMeasurePreserving_add_right hp' (hu.toLp u)).tendsto 0
-  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at htend
+  have hzero : (fun x : E ↦ x + 0) = id := funext fun x ↦ add_zero x
+  simp only [hzero, Lp.compMeasurePreserving_id_apply] at htend
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm _ _ hu] at htend
   refine htend.congr' (Filter.Eventually.of_forall fun h ↦ eLpNorm_congr_ae ?_)
-  exact (((Lp.coeFn_compMeasurePreserving _ _).trans
-      ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hu.coeFn_toLp)).sub
-    ((Lp.coeFn_compMeasurePreserving _ _).trans
-      ((measurePreserving_add_right mu 0).quasiMeasurePreserving.ae_eq_comp
-        hu.coeFn_toLp))).trans (Filter.EventuallyEq.of_eq (funext fun x ↦ by simp))
+  exact ((Lp.coeFn_compMeasurePreserving _ _).trans
+    ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hu.coeFn_toLp)).sub
+      Filter.EventuallyEq.rfl
 
 end MemLp
 
 /-- A translation increment is at most twice the function: `‖u(· + h) - u‖_p ≤ 2 ‖u‖_p` for
 `1 ≤ p` and a right-invariant measure. -/
-theorem eLpNorm_comp_add_sub_le_two_mul {E F : Type*} [AddMonoid E] [MeasurableSpace E]
+theorem eLpNorm_comp_add_sub_le_two_mul {E F : Type*} [Add E] [MeasurableSpace E]
     [MeasurableAdd E] {mu : Measure E} [mu.IsAddRightInvariant] [NormedAddCommGroup F]
     {p : ℝ≥0∞} {u : E → F} (hu : AEStronglyMeasurable u mu) (hp : 1 ≤ p) (h : E) :
     eLpNorm (fun x => u (x + h) - u x) p mu ≤ 2 * eLpNorm u p mu := by
@@ -364,7 +363,7 @@ theorem ContDiff.lintegral_enorm_comp_add_sub_rpow_le (hu : ContDiff ℝ 1 u) {r
         simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hr0]
         rw [lintegral_mul_const' _ _ (by finiteness), mul_comm]
 
-/-- **The local `Lᵖ` translation estimate**: for a `C¹` function and `1 ≤ p < ∞`, if every
+/-- **The local `Lᵖ` translation estimate**: for a `C¹` function and `1 ≤ p ≤ ∞`, if every
 segment `[x, x + h]` starting in `K` lies in the measurable set `T`, then
 
 `‖u(· + h) - u‖_{Lᵖ(K)} ≤ ‖Du · h‖_{Lᵖ(T)}`.
@@ -373,35 +372,70 @@ Unlike `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`, the right-hand sid
 derivative in the direction `h`, and only on `T`: this is the form in which translation increments
 of a function defined on a domain are controlled away from the boundary. -/
 theorem ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply [SecondCountableTopology E]
-    (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) (h : E) {K T : Set E}
+    (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞} (hp : 1 ≤ p) (h : E) {K T : Set E}
     (hT : MeasurableSet T) (hKT : ∀ x ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, x + t • h ∈ T) :
     eLpNorm (fun x => u (x + h) - u x) p (mu.restrict K)
       ≤ eLpNorm (fun x => fderiv ℝ u x h) p (mu.restrict T) := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
   have hsub : Continuous fun x => u (x + h) - u x := by fun_prop
   have hfd : Continuous fun x => fderiv ℝ u x h :=
     (hu.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsub.aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hfd.aestronglyMeasurable]
-  exact ENNReal.rpow_le_rpow (hu.setLIntegral_enorm_comp_add_sub_rpow_le hr h hT hKT)
-    (by positivity)
+  by_cases hp' : p = ∞
+  · subst p
+    rw [eLpNorm_exponent_top hsub.aestronglyMeasurable,
+      eLpNorm_exponent_top hfd.aestronglyMeasurable]
+    let C := eLpNormEssSup (fun x => fderiv ℝ u x h) (mu.restrict T)
+    let g : E → ℝ≥0∞ := T.indicator fun x => ‖fderiv ℝ u x h‖ₑ
+    have hg : Measurable g := hfd.enorm.measurable.indicator hT
+    have hgC : ∀ᵐ x ∂mu, g x ≤ C := by
+      filter_upwards [(ae_restrict_iff' hT).1
+        (ae_le_eLpNormEssSup (f := fun x => fderiv ℝ u x h))] with x hx
+      by_cases hxT : x ∈ T
+      · simpa only [g, indicator_of_mem hxT] using hx hxT
+      · simp only [g, indicator_of_notMem hxT, zero_le]
+    have hjoint : Measurable fun z : E × ℝ => g (z.1 + z.2 • h) :=
+      hg.comp (by fun_prop : Continuous fun z : E × ℝ => z.1 + z.2 • h).measurable
+    -- Fubini transports the essential bound to almost every segment starting point.
+    have hsegments : ∀ᵐ x ∂mu, ∀ᵐ t ∂volume.restrict (Icc (0 : ℝ) 1),
+        g (x + t • h) ≤ C :=
+      (Measure.ae_ae_comm (μ := mu) (ν := volume.restrict (Icc (0 : ℝ) 1))
+        (p := fun x t => g (x + t • h) ≤ C)
+        (measurableSet_le hjoint measurable_const)).2
+        (Filter.Eventually.of_forall fun t =>
+          (measurePreserving_add_right mu (t • h)).quasiMeasurePreserving.tendsto_ae.eventually hgC)
+    apply eLpNormEssSup_le_of_ae_enorm_bound
+    refine (ae_restrict_iff (measurableSet_le hsub.enorm.measurable measurable_const)).2 ?_
+    filter_upwards [hsegments] with x hx hxK
+    calc ‖u (x + h) - u x‖ₑ
+        ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ := by
+          simpa only [ENNReal.rpow_one] using
+            hu.enorm_sub_rpow_le_lintegral_fderiv_apply (r := 1) le_rfl x h
+      _ = ∫⁻ t in Icc (0 : ℝ) 1, g (x + t • h) :=
+        setLIntegral_congr_fun measurableSet_Icc fun t ht =>
+          (indicator_of_mem (hKT x hxK t ht) (fun y => ‖fderiv ℝ u y h‖ₑ)).symm
+      _ ≤ ∫⁻ _ in Icc (0 : ℝ) 1, C := lintegral_mono_ae hx
+      _ = C := by simp [Real.volume_Icc]
+  · have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+    have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsub.aestronglyMeasurable,
+      eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hfd.aestronglyMeasurable]
+    exact ENNReal.rpow_le_rpow (hu.setLIntegral_enorm_comp_add_sub_rpow_le hr h hT hKT)
+      (by positivity)
 
 /-- **The `Lᵖ` translation estimate**: a `C¹` function moves in `Lᵖ` at most linearly in the
 translation, at the rate given by the `Lᵖ` seminorm of its derivative,
 
-`‖u(· + h) - u‖_p ≤ ‖h‖ ‖Du‖_p`, `1 ≤ p < ∞`.
+`‖u(· + h) - u‖_p ≤ ‖h‖ ‖Du‖_p`, `1 ≤ p ≤ ∞`.
 
 No support, integrability or boundedness hypothesis is needed. For `h ≠ 0`, if `Du` is not in
 `Lᵖ` the right-hand side is `∞` and the bound carries no information; at `h = 0` both sides are
 `0`. -/
 theorem ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv [SecondCountableTopology E]
-    (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) (h : E) :
+    (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞} (hp : 1 ≤ p) (h : E) :
     eLpNorm (fun x => u (x + h) - u x) p mu ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ u) p mu := by
   calc eLpNorm (fun x => u (x + h) - u x) p mu
       ≤ eLpNorm (fun x => fderiv ℝ u x h) p mu := by
         simpa only [Measure.restrict_univ] using
-          hu.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (mu := mu) (K := univ) hp hp' h
+          hu.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (mu := mu) (K := univ) hp h
             MeasurableSet.univ fun _ _ _ _ => mem_univ _
     _ ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ u) p mu :=
         eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' p
@@ -414,24 +448,26 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv [SecondCountableTopo
 distance between `u` and its translate tends to `0`. This is the qualitative corollary of
 `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`, which gives the linear modulus.
 
-For a `u` that is itself in `Lᵖ` this is `MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub`,
-which needs no derivative; the content here is that a `C¹` function with `Lᵖ` derivative
-translates continuously in `Lᵖ` even when it is not in `Lᵖ`. -/
+When `p < ∞` and `u` is itself in `Lᵖ`, this follows from
+`MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub` without a derivative assumption. Here `u` need
+not belong to `Lᵖ`, and `p = ∞` is allowed: an essentially bounded derivative gives a linear
+modulus of translation continuity even though arbitrary `L∞` functions need not translate
+continuously. -/
 theorem ContDiff.tendsto_eLpNorm_comp_add_sub [SecondCountableTopology E] (hu : ContDiff ℝ 1 u)
-    {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) (hfin : eLpNorm (fderiv ℝ u) p mu ≠ ∞) :
+    {p : ℝ≥0∞} (hp : 1 ≤ p) (hfin : eLpNorm (fderiv ℝ u) p mu ≠ ∞) :
     Filter.Tendsto (fun h : E => eLpNorm (fun x => u (x + h) - u x) p mu) (nhds 0) (nhds 0) :=
   TauCeti.tendsto_nhds_zero_of_le_enorm_mul hfin fun h =>
-    hu.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp hp' h
+    hu.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp h
 
 /-- **The second-order translation estimate**: the mixed second difference of a `C²` function is
 controlled by its second derivative,
 
-`‖u(· + h + k) - u(· + h) - (u(· + k) - u)‖_p ≤ ‖h‖ ‖k‖ ‖D²u‖_p`, `1 ≤ p < ∞`.
+`‖u(· + h + k) - u(· + h) - (u(· + k) - u)‖_p ≤ ‖h‖ ‖k‖ ‖D²u‖_p`, `1 ≤ p ≤ ∞`.
 
 As for `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`, no support, integrability or
 boundedness hypothesis is needed. -/
 theorem ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv
-    [SecondCountableTopology E] (hu : ContDiff ℝ 2 u) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    [SecondCountableTopology E] (hu : ContDiff ℝ 2 u) {p : ℝ≥0∞} (hp : 1 ≤ p)
     (h k : E) :
     eLpNorm (fun x => u (x + h + k) - u (x + h) - (u (x + k) - u x)) p mu ≤
       ‖h‖ₑ * ‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := by
@@ -444,12 +480,12 @@ theorem ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv
     rw [fderiv_fun_sub (by fun_prop) (hdiff x), fderiv_comp_add_right]
   calc eLpNorm (fun x => u (x + h + k) - u (x + h) - (u (x + k) - u x)) p mu
       ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ fun x => u (x + k) - u x) p mu :=
-        hinc.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp hp' h
+        hinc.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp h
     _ ≤ ‖h‖ₑ * (‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu) := by
         rw [hd]
         gcongr
         exact (hu.fderiv_right (m := 1) (by norm_num)).eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv
-          hp hp' k
+          hp k
     _ = ‖h‖ₑ * ‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := (mul_assoc _ _ _).symm
 
 end Translation

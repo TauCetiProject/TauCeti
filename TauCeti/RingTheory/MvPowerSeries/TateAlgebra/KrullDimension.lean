@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Height
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
+import Mathlib.RingTheory.Ideal.GoingDown
+import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.RingTheory.KrullDimension.Basic
 import TauCeti.RingTheory.KrullDimension.Integral
 import TauCeti.RingTheory.KrullDimension.Quotient
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 import TauCeti.RingTheory.PowerSeries.TateAlgebra
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
 
@@ -34,12 +38,25 @@ algebra `K⟨X⟩⟨Y⟩`.
   of primes of length `k + 1` gives a chain of length `k` above a nonzero element, so
   `dim K⟨X, Y⟩ ≤ dim K⟨X⟩ + 1`.
 
+The same induction shows that every maximal ideal `M` of `K⟨X₁, …, Xₙ⟩` has height `n`. Choose a
+nonzero `f ∈ M` and make it distinguished in `Y`. Then `K⟨X, Y⟩ ⧸ (f)` is finite free over `K⟨X⟩`,
+so going down holds for it, as for every flat extension. The image of `M` lies over a maximal
+ideal of `K⟨X⟩`, of height `n - 1`, so going down gives it height at least `n - 1`. Quotienting
+by the non-zero-divisor `f` lowers heights by one, so `M` has height at least `n`.
+
+The maximal-ideal height proof follows the finite-variable induction and transport under renaming
+of `MvPolynomial.height_eq_natCard_of_isMaximal` in
+`TauCeti.RingTheory.KrullDimension.FiniteType`. Its Jacobson-ring step is replaced here by
+Weierstrass quotients and going down for finite free extensions.
+
 ## Main results
 
 * `TauCeti.MvPowerSeries.ringKrullDim_isRestricted_subring`: the Tate algebra in the variables
   `σ`, for finite `σ`, has Krull dimension `Nat.card σ`.
 * `TauCeti.MvPowerSeries.ringKrullDim_eq_natCard_of_isIntegral`: a ring that is integral over an
   injectively embedded Tate algebra in the variables `σ` has Krull dimension `Nat.card σ`.
+* `Ideal.height_eq_natCard_of_isMaximal_isRestricted_subring`: every maximal ideal of the Tate
+  algebra in the variables `σ` has height `Nat.card σ`.
 
 ## References
 
@@ -113,5 +130,71 @@ theorem ringKrullDim_eq_natCard_of_isIntegral {σ : Type*} [Finite σ] {A : Type
     ringKrullDim A = Nat.card σ := by
   rw [ringKrullDim_eq_of_isIntegral_of_faithfulSMul (R := Tate σ),
     ringKrullDim_isRestricted_subring]
+
+open scoped nonZeroDivisors in
+/-- The inductive step for heights of maximal ideals: if every maximal ideal of `K⟨X⟩` has height
+at least the number `n` of variables, then every maximal ideal of `K⟨X, Y⟩` has height at least
+`n + 1`. -/
+private theorem natCard_add_one_le_height_option {σ : Type*} [Finite σ]
+    (IH : ∀ (p : Ideal (Tate σ)) [p.IsMaximal], Nat.card σ ≤ p.height)
+    (M : Ideal (Tate (Option σ))) [M.IsMaximal] : Nat.card (Option σ) ≤ M.height := by
+  -- `M ≠ 0`, since `K⟨X, Y⟩` has positive dimension and so is not a field.
+  have hM : M ≠ ⊥ := by
+    rintro rfl
+    have := ringKrullDim_eq_zero_of_isField (Ring.isField_iff_maximal_bot.mpr ‹_›)
+    rw [ringKrullDim_isRestricted_subring, Finite.card_option] at this
+    exact Nat.succ_ne_zero (Nat.card σ) (by exact_mod_cast this)
+  -- Transport `M` to `K⟨X⟩⟨Y⟩` along a change of variables making some `f ∈ M` distinguished.
+  obtain ⟨f, hfM, hf⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hM
+  obtain ⟨e, s, hd, hu⟩ := exists_algEquiv_isDistinguished_isUnit f hf
+  let R := Tate σ
+  let S := PowerSeries.IsRestricted.subring (R := R) 1
+  let E : Tate (Option σ) ≃+* S :=
+    (e : Tate (Option σ) ≃+* Tate (Option σ)).trans Huber.restrictedOptionEquiv
+  let g : S := E f
+  let N : Ideal S := M.comap E.symm
+  have hgN : g ∈ N := by simpa [N, g] using hfM
+  -- `S ⧸ (g)` is finite free over `R`, so going down bounds the height of the image of `N`
+  -- below by the height of its contraction to `R`, a maximal ideal.
+  let B := S ⧸ Ideal.span {g}
+  have : Module.Free R B := hd.free_quotient zero_lt_one hu
+  have : Module.Finite R B := hd.finite_quotient zero_lt_one hu
+  have : IsNoetherianRing R := isNoetherianRing_isRestricted_subring
+  have : IsNoetherianRing B := IsNoetherianRing.of_finite R B
+  have : Algebra.IsIntegral R B := Algebra.IsIntegral.of_finite R B
+  let Nb : Ideal B := N.map (Ideal.Quotient.mk _)
+  have : Nb.IsMaximal := Ideal.IsMaximal.map_of_surjective_of_ker_le Ideal.Quotient.mk_surjective
+    (by simpa [Ideal.mk_ker, Ideal.span_singleton_le_iff_mem] using hgN)
+  let p := Nb.under R
+  have : p.IsMaximal := Ideal.isMaximal_under_of_isIntegral_of_isMaximal Nb
+  have hNb : p.height ≤ Nb.height := by
+    rw [Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown p Nb]
+    exact le_self_add
+  -- Quotienting by the non-zero-divisor `g` lowers the height of `N` by one.
+  have hg : g ∈ S⁰ := mem_nonZeroDivisors_of_ne_zero (by simpa [g] using hf)
+  rw [← RingEquiv.height_comap E.symm M]
+  refine le_trans ?_ (Ideal.height_map_quotientMk_span_singleton_add_one_le hg N hgN)
+  rw [Finite.card_option, Nat.cast_add, Nat.cast_one]
+  gcongr
+  exact (IH p).trans hNb
+
+/-- **Heights of maximal ideals of Tate algebras.** Over a complete nonarchimedean field, every
+maximal ideal of the Tate algebra `K⟨X₁, …, Xₙ⟩` has height `n`, its Krull dimension. -/
+@[simp]
+theorem _root_.Ideal.height_eq_natCard_of_isMaximal_isRestricted_subring {σ : Type*} [Finite σ]
+    (M : Ideal (Tate σ)) [M.IsMaximal] : M.height = Nat.card σ := by
+  refine le_antisymm ?_ ?_
+  · have := Ideal.height_le_ringKrullDim_of_ne_top (Ideal.IsPrime.ne_top' (I := M))
+    rw [ringKrullDim_isRestricted_subring] at this
+    exact_mod_cast this
+  revert M
+  induction σ using Finite.induction_empty_option with
+  | of_equiv e H =>
+    intro M _
+    let e' : Tate _ ≃+* Tate _ := (IsRestricted.renameAlgEquiv (R := K) e fun _ ↦ 1).toRingEquiv
+    have := H (M.comap e')
+    rwa [RingEquiv.height_comap, Nat.card_congr e] at this
+  | h_empty => simp
+  | h_option IH => exact natCard_add_one_le_height_option IH
 
 end TauCeti.MvPowerSeries

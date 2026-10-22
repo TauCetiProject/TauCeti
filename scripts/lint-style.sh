@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 # Implementation is pinned in tauceti.toml; CI materializes it from TauCetiTools.
-exec uvx --from git+https://github.com/TauCetiProject/TauCetiTools@02db6ea51c27553cb6271e605612a56169ae72f6 tauceti-tools script lint-style.sh "$@"
+exec uvx --from git+https://github.com/TauCetiProject/TauCetiTools@ad4e955b398d1419b0931e3c825a925f1c6a6e9b tauceti-tools script lint-style.sh "$@"
