@@ -25,13 +25,13 @@ the letters `a = w j` and `b = w k`:
 * if `b < a`, it is sent to `-(s • w')`.
 
 On a two-letter block `{a ⊗ b, b ⊗ a}` with `a < b` its matrix is `[[Q - 1, -s], [-s, 0]]`. Write
-`X = TauCeti.signedCheckedR pos s j k`. Its eigenvalues are `Q` and `-1`: it satisfies the quadratic
-relation `(X - Q) (X + 1) = 0`; operators on disjoint pairs of strands commute; and operators on
-two pairs sharing a strand satisfy the braid relation. These identities hold for every `s`, so
-the adjacent operators satisfy the defining relations of the type-A Hecke algebra in the
-normalization `gᵢ = s Tᵢ`, `(gᵢ - Q) (gᵢ + 1) = 0`. When `s` is a unit they are invertible and
-define a braid group representation `TauCeti.signedCheckedRep`, and the rescaled operators
-`s⁻¹ • X` satisfy the quadratic relation `T * T = (s - s⁻¹) • T + 1` in the convention
+`X = TauCeti.signedCheckedR pos s j k`. It satisfies the quadratic relation `(X - Q) (X + 1) = 0`,
+so over a field its eigenvalues lie among `Q` and `-1`; operators on disjoint pairs of strands
+commute; and operators on two pairs sharing a strand satisfy the braid relation. These identities
+hold for every `s`, so the adjacent operators satisfy the defining relations of the type-A Hecke
+algebra in the normalization `gᵢ = s Tᵢ`, `(gᵢ - Q) (gᵢ + 1) = 0`. When `s` is a unit they are
+invertible and define a braid group representation `TauCeti.signedCheckedRep`, and the rescaled
+operators `s⁻¹ • X` satisfy the quadratic relation `T * T = (s - s⁻¹) • T + 1` in the convention
 `(Tᵢ - s) (Tᵢ + s⁻¹) = 0`.
 
 The matrix of the operator in the word basis is symmetric, the algebraic form of its
@@ -115,13 +115,13 @@ theorem signedCheckedR_single_update_update (s : R) {j k : Fin n} (hjk : j ≠ k
   simp only [update_of_ne hjk, Function.update_self]
 
 /-- The quadratic relation `X * X = (Q - 1) • X + Q • 1`, `Q = s ^ 2`, of the signed checked
-R-matrix: its eigenvalues are `Q` and `-1`. -/
+R-matrix, that is `(X - Q) (X + 1) = 0`; over a field its eigenvalues lie among `Q` and `-1`. -/
 theorem signedCheckedR_mul_self (s : R) (j k : Fin n) :
     signedCheckedR pos s j k * signedCheckedR pos s j k =
       (s ^ 2 - 1) • signedCheckedR pos s j k + s ^ 2 • 1 := by
   ext w : 2
   rcases eq_or_ne j k with rfl | hjk
-  · -- On a single strand the operator is diagonal, with eigenvalues `Q` and `-1`.
+  · -- On a single strand the operator is diagonal, with diagonal entries `Q` or `-1`.
     by_cases hw : pos (w j) <;>
       simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, Module.End.mul_apply,
         LinearMap.add_apply, LinearMap.smul_apply, Module.End.one_apply,
