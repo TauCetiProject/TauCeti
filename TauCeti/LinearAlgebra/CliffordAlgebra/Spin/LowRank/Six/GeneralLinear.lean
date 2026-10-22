@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.Spin.Structure
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Center
 import Mathlib.Algebra.Central.Matrix
-import Mathlib.Algebra.GroupWithZero.Idempotent
 
 /-!
 # The even unitary group of a split six-dimensional quadratic space
