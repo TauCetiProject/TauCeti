@@ -224,6 +224,7 @@ instance IsPerfectoidTateRing.prod [IsPerfectoidTateRing p R] [IsPerfectoidTateR
 
 /-- **A product is perfectoid exactly when both factors are**: for complete Hausdorff Tate rings
 `R` and `S`, `R × S` is a perfectoid Tate ring exactly when `R` and `S` are. -/
+@[simp]
 theorem isPerfectoidTateRing_prod_iff :
     IsPerfectoidTateRing p (R × S) ↔ IsPerfectoidTateRing p R ∧ IsPerfectoidTateRing p S := by
   -- the second factor is handled by swapping the factors, an isomorphism of topological rings

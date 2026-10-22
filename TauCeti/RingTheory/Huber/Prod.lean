@@ -63,6 +63,7 @@ theorem isPseudoUniformizer_prod_iff {x : M × N} :
 
 /-- **A product is uniform exactly when both factors are**: the power-bounded elements of `M × N`
 are the pairs of power-bounded elements. -/
+@[simp]
 theorem isUniform_prod_iff : IsUniform (M × N) ↔ IsUniform M ∧ IsUniform N := by
   have h : {x : M × N | IsPowerBounded x} =
       {a : M | IsPowerBounded a} ×ˢ {b : N | IsPowerBounded b} := by
