@@ -253,12 +253,20 @@ def sideAvoiding (r : V) (S : Finset V) : Finset V := if r ∈ S then Sᶜ else 
 @[simp] theorem notMem_sideAvoiding (r : V) (S : Finset V) : r ∉ sideAvoiding r S := by
   by_cases h : r ∈ S <;> simp [sideAvoiding, h]
 
+/-- A vertex lies in the side avoiding the root exactly when it lies on the opposite side of
+the cut from the root. -/
+@[simp] theorem mem_sideAvoiding {r v : V} {S : Finset V} :
+    v ∈ sideAvoiding r S ↔ (v ∈ S ↔ r ∉ S) := by
+  by_cases h : r ∈ S <;> simp [sideAvoiding, h]
+
 /-- A side not containing the root is its own side avoiding the root. -/
-theorem sideAvoiding_of_notMem {r : V} {S : Finset V} (h : r ∉ S) : sideAvoiding r S = S := by
+@[simp] theorem sideAvoiding_of_notMem {r : V} {S : Finset V} (h : r ∉ S) :
+    sideAvoiding r S = S := by
   simp [sideAvoiding, h]
 
 /-- The side avoiding the root of a side containing it is the complement. -/
-theorem sideAvoiding_of_mem {r : V} {S : Finset V} (h : r ∈ S) : sideAvoiding r S = Sᶜ := by
+@[simp] theorem sideAvoiding_of_mem {r : V} {S : Finset V} (h : r ∈ S) :
+    sideAvoiding r S = Sᶜ := by
   simp [sideAvoiding, h]
 
 /-- Both sides of a cut have the same side avoiding the root. -/
