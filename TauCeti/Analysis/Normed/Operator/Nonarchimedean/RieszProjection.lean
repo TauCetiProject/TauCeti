@@ -215,28 +215,22 @@ theorem IsRowCompact.isRieszProjection_rieszProjection {u : C₀(I, R) →L[R] C
     (Commute.one_right u) ((Commute.refl u).smul_right a)
   have hub : Commute u b := (u.commute_resolventHasseDerivAt h a).smul_right _
   -- Both `C` and `b`, hence `(C b) ^ h`, `1 - (C b) ^ h` and `b (C b) ^ h`, lie in the closure
-  -- of `R[u]`, which carries the closure submonoid and closure submodule of `R[u]`.
-  set S := (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R)))
-  have hCS : C ∈ closure S :=
-    subset_closure <| Subalgebra.sub_mem (A := C₀(I, R) →L[R] C₀(I, R)) _ (Subalgebra.one_mem _)
+  -- of `R[u]`, the carrier of the closure subalgebra `T`. The topological semiring structure is
+  -- synthesized up front, as in `ContinuousLinearMap.commute_resolventHasseDerivAt`.
+  have : IsTopologicalSemiring (C₀(I, R) →L[R] C₀(I, R)) := inferInstance
+  set T := (Algebra.adjoin R {u}).topologicalClosure
+  have hCS : C ∈ T := Subalgebra.le_topologicalClosure _ <|
+    Subalgebra.sub_mem (A := C₀(I, R) →L[R] C₀(I, R)) _ (Subalgebra.one_mem _)
       (Subalgebra.smul_mem _ (Algebra.self_mem_adjoin_singleton R u) a)
-  have hbS : b ∈ closure S := (Algebra.adjoin R {u}).toSubmodule.topologicalClosure.smul_mem _
-    (u.resolventHasseDerivAt_mem_closure_adjoin h a)
-  have hpS : (C * b) ^ h ∈ closure S :=
-    (Algebra.adjoin R {u}).toSubmonoid.topologicalClosure.pow_mem
-      ((Algebra.adjoin R {u}).toSubmonoid.topologicalClosure.mul_mem hCS hbS) h
-  have hES : 1 - (C * b) ^ h ∈ closure S := by
-    -- Written as `1 + (-1) • (C b) ^ h`: instance search does not find `ContinuousSub` for the
-    -- operator subtraction, so `Submodule.sub_mem` does not apply to the closure submodule.
-    rw [sub_eq_add_neg (G := C₀(I, R) →L[R] C₀(I, R)), ← neg_one_smul R ((C * b) ^ h)]
-    exact (Algebra.adjoin R {u}).toSubmodule.topologicalClosure.add_mem
-      (subset_closure (Subalgebra.one_mem _))
-      ((Algebra.adjoin R {u}).toSubmodule.topologicalClosure.smul_mem _ hpS)
+  have hbS : b ∈ T := T.smul_mem (u.resolventHasseDerivAt_mem_closure_adjoin h a) _
+  have hpS : (C * b) ^ h ∈ T := T.pow_mem (T.mul_mem hCS hbS) h
+  have hES : 1 - (C * b) ^ h ∈ T :=
+    Subalgebra.sub_mem (A := C₀(I, R) →L[R] C₀(I, R)) T T.one_mem hpS
   rw [rieszProjection_def]
   refine ⟨IsIdempotentElem.one_sub (R := C₀(I, R) →L[R] C₀(I, R)) hp,
     Commute.sub_right (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_right u)
       ((huC.mul_right hub).pow_right h), hES, ?_, b * (C * b) ^ h, ?_, ?_, ?_, ?_,
-    (Algebra.adjoin R {u}).toSubmonoid.topologicalClosure.mul_mem hbS hpS⟩
+    T.mul_mem hbS hpS⟩
   · rw [mul_sub (α := C₀(I, R) →L[R] C₀(I, R)), mul_one,
       TauCeti.pow_mul_mul_pow_of_pow_succ_mul_eq (M := C₀(I, R) →L[R] C₀(I, R)) hb]
     exact sub_self _
