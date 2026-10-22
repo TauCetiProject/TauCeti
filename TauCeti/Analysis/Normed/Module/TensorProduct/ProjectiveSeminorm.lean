@@ -30,17 +30,17 @@ this file adapts to two factors indexed by `Fin n` decompositions.
 
 ## Main definitions
 
-* `TauCeti.TensorProduct.projectiveSeminorm 𝕜 E F`: the projective seminorm on `E ⊗[𝕜] F`.
+* `TensorProduct.projectiveSeminorm 𝕜 E F`: the projective seminorm on `E ⊗[𝕜] F`.
 * `TauCeti.ProjectiveTensor 𝕜 E F`: the algebraic tensor product with the projective seminorm.
 
 ## Main results
 
-* `TauCeti.TensorProduct.projectiveSeminorm_sum_tmul_le` and
-  `TauCeti.TensorProduct.exists_sum_tmul_eq_of_projectiveSeminorm_lt`: the projective seminorm is
+* `TensorProduct.projectiveSeminorm_sum_tmul_le` and
+  `TensorProduct.exists_sum_tmul_eq_of_projectiveSeminorm_lt`: the projective seminorm is
   the infimum of the costs of finite decompositions.
-* `TauCeti.TensorProduct.apply_le_mul_projectiveSeminorm`: a seminorm bounded by `C ‖x‖ ‖y‖` on
+* `TensorProduct.apply_le_mul_projectiveSeminorm`: a seminorm bounded by `C ‖x‖ ‖y‖` on
   pure tensors is bounded by `C` times the projective seminorm.
-* `TauCeti.TensorProduct.norm_lift_le`: the linear map induced by a bounded bilinear map `B` is
+* `TensorProduct.norm_lift_le`: the linear map induced by a bounded bilinear map `B` is
   bounded by `‖B‖` times the projective seminorm.
 
 ## References
@@ -51,8 +51,6 @@ this file adapts to two factors indexed by `Fin n` decompositions.
 public section
 
 open scoped TensorProduct
-
-namespace TauCeti
 
 namespace TensorProduct
 
@@ -182,6 +180,8 @@ theorem norm_lift_le (B : E →L[𝕜] F →L[𝕜] G) (u : E ⊗[𝕜] F) :
 end NontriviallyNormedField
 
 end TensorProduct
+
+namespace TauCeti
 
 variable (𝕜 E F : Type*) [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]

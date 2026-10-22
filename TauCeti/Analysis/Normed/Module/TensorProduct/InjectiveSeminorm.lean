@@ -36,24 +36,24 @@ scalar field; it is not the classical injective norm used here.
 
 ## Main definitions
 
-* `TauCeti.TensorProduct.toDualMap 𝕜 E F`: the bounded operator on the dual of `E` induced by a
+* `TensorProduct.toDualMap 𝕜 E F`: the bounded operator on the dual of `E` induced by a
   tensor.
-* `TauCeti.TensorProduct.injectiveSeminorm 𝕜 E F`: the injective seminorm on `E ⊗[𝕜] F`.
+* `TensorProduct.injectiveSeminorm 𝕜 E F`: the injective seminorm on `E ⊗[𝕜] F`.
 * `TauCeti.InjectiveTensor 𝕜 E F`: the algebraic tensor product with the injective seminorm.
 * `TauCeti.ProjectiveTensor.toInjectiveTensor`: the contraction from the projective to the
   injective tensor product.
 
 ## Main results
 
-* `TauCeti.TensorProduct.injectiveSeminorm_le_projectiveSeminorm`: `ε ≤ π`.
-* `TauCeti.TensorProduct.injectiveSeminorm_le_iff_forall_norm_le_one`: the classical
+* `TensorProduct.injectiveSeminorm_le_projectiveSeminorm`: `ε ≤ π`.
+* `TensorProduct.injectiveSeminorm_le_iff_forall_norm_le_one`: the classical
   description of the injective seminorm over `ℝ` and `ℂ`.
-* `TauCeti.TensorProduct.injectiveSeminorm_tmul` and
-  `TauCeti.TensorProduct.projectiveSeminorm_tmul`: both seminorms are cross norms.
-* `TauCeti.TensorProduct.toDualMap_injective`: over `ℝ` and `ℂ`, a tensor is determined by the
+* `TensorProduct.injectiveSeminorm_tmul` and
+  `TensorProduct.projectiveSeminorm_tmul`: both seminorms are cross norms.
+* `TensorProduct.toDualMap_injective`: over `ℝ` and `ℂ`, a tensor is determined by the
   operator it induces on the dual of a normed left factor.
-* `TauCeti.TensorProduct.injectiveSeminorm_eq_zero_iff` and
-  `TauCeti.TensorProduct.projectiveSeminorm_eq_zero_iff`: both seminorms are definite.
+* `TensorProduct.injectiveSeminorm_eq_zero_iff` and
+  `TensorProduct.projectiveSeminorm_eq_zero_iff`: both seminorms are definite.
 
 ## References
 
@@ -63,8 +63,6 @@ scalar field; it is not the classical injective norm used here.
 public section
 
 open scoped TensorProduct
-
-namespace TauCeti
 
 namespace TensorProduct
 
@@ -229,6 +227,8 @@ end Normed
 end RCLike
 
 end TensorProduct
+
+namespace TauCeti
 
 section InjectiveTensor
 
