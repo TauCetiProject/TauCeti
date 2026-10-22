@@ -201,12 +201,19 @@ theorem evalIntSeries_X {K : Type*} [NormedCommRing K]
     evalIntSeries q hq (PowerSeries.X : ℤ⟦X⟧) = q := by
   exact RingHom.evalBoundedSeries_X _ _ q hq
 
+/-- Evaluation of an integral series inside the open unit ball has norm at most that of one. -/
+theorem norm_evalIntSeries_le {K : Type*} [NormedCommRing K] [CompleteSpace K]
+    [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) (f : ℤ⟦X⟧) :
+    ‖evalIntSeries q hq f‖ ≤ ‖(1 : K)‖ := by
+  exact RingHom.norm_evalBoundedSeries_le _ _
+    IsUltrametricDist.norm_intCast_le_norm_one q hq f
+
 /-- Evaluation of an integral series inside the open unit ball has norm at most one. -/
 theorem norm_evalIntSeries_le_one {K : Type*} [NormedCommRing K] [NormOneClass K]
     [CompleteSpace K]
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) (f : ℤ⟦X⟧) :
     ‖evalIntSeries q hq f‖ ≤ 1 := by
-  exact RingHom.norm_evalBoundedSeries_le _ _ (IsUltrametricDist.norm_intCast_le_one K) q hq f
+  simpa only [norm_one] using norm_evalIntSeries_le q hq f
 
 /-- An integral series without constant term evaluates inside the open unit ball to an element of
 norm at most that of the parameter. -/
@@ -247,8 +254,7 @@ noncomputable def evalIntBivariateSeries {K : Type*} [NormedCommRing K]
     [CompleteSpace K] [IsUltrametricDist K]
     (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) : ℤ⟦X⟧⟦X⟧ →+* K :=
   RingHom.evalBoundedSeries (evalIntSeries u hu)
-    ⟨‖(1 : K)‖, fun f ↦ RingHom.norm_evalBoundedSeries_le _ _
-      IsUltrametricDist.norm_intCast_le_norm_one u hu f⟩ v hv
+    ⟨‖(1 : K)‖, norm_evalIntSeries_le u hu⟩ v hv
 
 /-- Bivariate integral evaluation is the iterated convergent sum of the coefficients. -/
 theorem evalIntBivariateSeries_apply {K : Type*} [NormedCommRing K]
