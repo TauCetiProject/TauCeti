@@ -48,8 +48,6 @@ cases; the two-dimensional worked case, `GL₂(𝔽₂) ≅ S₃`, is in
 * `TauCeti.natCard_nonzeroVectors`: there are `|R| ^ |n| - 1` nonzero vectors.
 * `TauCeti.natCard_nonzeroVectors_fin_two_of_card_eq_two`: in dimension two over a semiring with
   two elements, there are three nonzero vectors.
-* `Matrix.GeneralLinearGroup.smul_single_one`: an invertible matrix sends the basis vector `eᵢ`
-  to its column `i`.
 * `TauCeti.exists_smul_eq_of_ne_zero` and `TauCeti.isPretransitive_nonzeroVectors`: over a field
   the action on the nonzero vectors is transitive.
 -/
@@ -112,24 +110,6 @@ noncomputable def nonzeroVectorsEquivFinThree (hR : Nat.card R = 2) :
     nonzeroVectors (Fin 2) R ≃ Fin 3 := by
   have : Finite R := Nat.finite_of_card_ne_zero (by omega)
   exact Finite.equivFinOfCardEq (natCard_nonzeroVectors_fin_two_of_card_eq_two hR)
-
-end TauCeti
-
-namespace Matrix.GeneralLinearGroup
-
-variable {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R]
-
-/-- The image of the basis vector `eᵢ` under an invertible matrix is its column `i`. -/
-theorem smul_single_one (g : GL n R) (i : n) :
-    g • (Pi.single i (1 : R) : n → R) = fun j ↦ g j i := by
-  ext j
-  simp [Units.smul_def, Matrix.smul_eq_mulVec]
-
-end Matrix.GeneralLinearGroup
-
-namespace TauCeti
-
-variable {n : Type*} [Fintype n] [DecidableEq n]
 
 section Field
 

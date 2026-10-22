@@ -48,6 +48,8 @@ For `n = 2` both subgroups are line stabilizers and they are conjugate.
 
 ## Main results
 
+* `TauCeti.lineStabilizer_eq_stabilizer` and `TauCeti.hyperplaneStabilizer_eq_stabilizer`: the
+  two subgroups as stabilizers of submodules.
 * `TauCeti.mem_lineStabilizer_iff` and `TauCeti.mem_hyperplaneStabilizer_iff`: membership in
   terms of matrix entries.
 * `TauCeti.map_inverseTranspose_lineStabilizer`: inverse transpose carries the line stabilizer
@@ -83,6 +85,19 @@ invertible matrices on `n → K` by `Matrix.mulVec`. -/
 def hyperplaneStabilizer (i : n) : Subgroup (GL n K) :=
   stabilizer (GL n K) (LinearMap.ker (LinearMap.proj i : (n → K) →ₗ[K] K))
 
+/-- The line stabilizer is the stabilizer of the line `K ∙ eᵢ` under the pointwise action of
+`GL n K` on submodules. -/
+theorem lineStabilizer_eq_stabilizer (i : n) :
+    lineStabilizer K i = stabilizer (GL n K) (K ∙ (Pi.single i 1 : n → K)) :=
+  (rfl)
+
+/-- The hyperplane stabilizer is the stabilizer of the hyperplane `{v | v i = 0}`, the kernel of
+the `i`-th coordinate, under the pointwise action of `GL n K` on submodules. -/
+theorem hyperplaneStabilizer_eq_stabilizer (i : n) :
+    hyperplaneStabilizer K i =
+      stabilizer (GL n K) (LinearMap.ker (LinearMap.proj i : (n → K) →ₗ[K] K)) :=
+  (rfl)
+
 variable {K}
 
 /-- **Membership in the line stabilizer**: an invertible matrix stabilizes the line `K ∙ eᵢ`
@@ -94,7 +109,7 @@ theorem mem_lineStabilizer_iff {g : GL n K} {i : n} :
   -- pointwise action of the group only after unfolding instances, so the general span lemmas are
   -- applied as terms rather than rewritten. The same holds below.
   refine (Submodule.smul_span_singleton_eq_iff (Pi.single_ne_zero_iff.mpr one_ne_zero)).trans ?_
-  rw [GeneralLinearGroup.smul_single_one]
+  rw [Units.smul_def, Matrix.smul_eq_mulVec, Matrix.mulVec_single_one]
   constructor
   · rintro ⟨c, hc⟩ j hj
     simpa [hj] using congrFun hc j
@@ -125,7 +140,8 @@ theorem mem_hyperplaneStabilizer_iff {g : GL n K} {i : n} :
     have hmem : g • (Pi.single j (1 : K) : n → K) ∈
         g • LinearMap.ker (LinearMap.proj i : (n → K) →ₗ[K] K) :=
       Submodule.smul_mem_pointwise_smul _ _ _ (by simp [Ne.symm hj])
-    rw [h, LinearMap.mem_ker, GeneralLinearGroup.smul_single_one] at hmem
+    rw [h, LinearMap.mem_ker, Units.smul_def, Matrix.smul_eq_mulVec,
+      Matrix.mulVec_single_one] at hmem
     exact hmem
   · intro h
     -- Row `i` vanishing off the diagonal is block triangularity for the two-block partition
@@ -199,22 +215,6 @@ theorem conj_smul_lineStabilizer_ne_hyperplaneStabilizer (hn : 3 ≤ Fintype.car
 
 /-! ### Almost conjugacy over a finite field -/
 
-/-- Membership in `eigenvectors` for an invertible matrix, in terms of its action. -/
-private theorem mem_eigenvectors_iff {g : GL n K} {v : n → K} :
-    v ∈ eigenvectors (g : Matrix n n K) ↔ v ≠ 0 ∧ ∃ c : K, g • v = c • v := by
-  simp [Units.smul_def, Matrix.smul_eq_mulVec]
-
-/-- An invertible matrix and its inverse have the same nonzero eigenvectors: both are the nonzero
-vectors whose line it stabilizes. -/
-private theorem eigenvectors_inv (g : GL n K) :
-    eigenvectors ((g⁻¹ : GL n K) : Matrix n n K) = eigenvectors (g : Matrix n n K) := by
-  ext v
-  simp only [mem_eigenvectors_iff]
-  refine and_congr_right fun hv ↦ ?_
-  have key (h : GL n K) : h • (K ∙ v) = K ∙ v ↔ ∃ c : K, h • v = c • v :=
-    Submodule.smul_span_singleton_eq_iff hv
-  rw [← key, ← key, inv_smul_eq_iff, eq_comm]
-
 /-- The elements `x` with `x⁻¹ h x` in the stabilizer of the line `K ∙ eᵢ` are those sending `eᵢ`
 to an eigenvector of `h`; they number the eigenvectors of `h` times the order of the stabilizer of
 `eᵢ`. -/
@@ -224,14 +224,14 @@ private theorem natCard_conj_mem_lineStabilizer (i : n) (h : GL n K) :
         Nat.card (stabilizer (GL n K) (Pi.single i 1 : n → K)) := by
   rw [← natCard_smul_mem_eq_natCard_mul_natCard_stabilizer _ fun v hv ↦
     mem_orbit_iff.mpr (exists_smul_eq_of_ne_zero (Pi.single_ne_zero_iff.mpr one_ne_zero)
-      (mem_eigenvectors_iff.mp hv).1)]
+      (GeneralLinearGroup.mem_eigenvectors_iff.mp hv).1)]
   refine Nat.card_congr (Equiv.subtypeEquivRight fun x ↦ ?_)
   have hx : x • (Pi.single i 1 : n → K) ≠ 0 :=
     (smul_ne_zero_iff_ne x).mpr (Pi.single_ne_zero_iff.mpr one_ne_zero)
   have hspan : x • (K ∙ (Pi.single i 1 : n → K)) = K ∙ (x • Pi.single i 1) :=
     Submodule.smul_span_singleton x _
   rw [lineStabilizer, mem_stabilizer_iff, mul_smul, mul_smul, inv_smul_eq_iff, hspan,
-    mem_eigenvectors_iff]
+    GeneralLinearGroup.mem_eigenvectors_iff]
   exact (Submodule.smul_span_singleton_eq_iff hx).trans (and_iff_right hx).symm
 
 /-- **Line and hyperplane stabilizers are almost conjugate over a finite field**: they meet every
@@ -254,7 +254,8 @@ theorem almostConjugate_lineStabilizer_hyperplaneStabilizer [Finite K] (i : n) :
   -- Transport along `θ` replaces `g` by `(g⁻¹)ᵀ`, which has as many eigenvectors as `g`.
   have heig : Nat.card (eigenvectors ((θ g : GL n K) : Matrix n n K)) =
       Nat.card (eigenvectors (g : Matrix n n K)) := by
-    rw [GeneralLinearGroup.coe_inverseTranspose, natCard_eigenvectors_transpose, eigenvectors_inv]
+    rw [GeneralLinearGroup.coe_inverseTranspose, natCard_eigenvectors_transpose, coe_units_inv,
+      GeneralLinearGroup.eigenvectors_inv]
   calc Nat.card {x : GL n K // x⁻¹ * g * x ∈ lineStabilizer K i}
       = Nat.card {x : GL n K // x⁻¹ * θ g * x ∈ lineStabilizer K i} := by
         rw [natCard_conj_mem_lineStabilizer, natCard_conj_mem_lineStabilizer, heig]
