@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
 /-!
 # Degree scaling of an exterior algebra
@@ -93,11 +94,7 @@ theorem degreeScaling_of_mem_exteriorPower (r : Rˣ) {n : ℕ} {x : ExteriorAlge
 theorem degreeScaling_involute (r : Rˣ) (x : ExteriorAlgebra R M) :
     degreeScaling r (involute (Q := (0 : QuadraticForm R M)) x) =
       involute (Q := (0 : QuadraticForm R M)) (degreeScaling r x) := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap s => simp only [AlgHom.commutes, AlgEquiv.commutes]
-  | ι m => simp only [involute_ι, map_neg, degreeScaling_ι, map_smul, smul_neg]
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | mul x y hx hy => simp only [map_mul, hx, hy]
+  simp only [degreeScaling_apply, _root_.ExteriorAlgebra.map, map_involute]
 
 /-- **Conjugating a contraction by the degree scaling by `r` multiplies it by `r⁻¹`.** -/
 @[simp]
