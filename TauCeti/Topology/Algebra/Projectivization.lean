@@ -71,15 +71,18 @@ variable [TopologicalSpace V]
 instance instTopologicalSpace : TopologicalSpace (ℙ K V) :=
   inferInstanceAs (TopologicalSpace (Quotient (projectivizationSetoid K V)))
 
+/-- The map `mk' K` from nonzero vectors to `ℙ K V` is a quotient map. -/
 theorem isQuotientMap_mk' : IsQuotientMap (mk' K : {v : V // v ≠ 0} → ℙ K V) :=
   isQuotientMap_quotient_mk'
 
+/-- The map `mk' K` from nonzero vectors to `ℙ K V` is continuous. -/
 @[fun_prop]
 theorem continuous_mk' : Continuous (mk' K : {v : V // v ≠ 0} → ℙ K V) :=
   continuous_quotient_mk'
 
 variable {α : Type*} [TopologicalSpace α]
 
+/-- A map out of `ℙ K V` is continuous iff its composite with `mk' K` is continuous. -/
 theorem continuous_iff {f : ℙ K V → α} : Continuous f ↔ Continuous (f ∘ mk' K) :=
   isQuotientMap_mk'.continuous_iff
 
@@ -102,10 +105,14 @@ end Map
 
 variable [ContinuousConstSMul Kˣ V]
 
+/-- When scalar multiplication by units of `K` is continuous on `V`, the map `mk' K` from
+nonzero vectors to `ℙ K V` is open. -/
 theorem isOpenMap_mk' : IsOpenMap (mk' K : {v : V // v ≠ 0} → ℙ K V) := fun U hU ↦ by
   rw [← isQuotientMap_mk'.isOpen_preimage, preimage_image_mk']
   exact isOpen_iUnion fun a ↦ isOpenMap_smul a U hU
 
+/-- When scalar multiplication by units of `K` is continuous on `V`, the map `mk' K` from
+nonzero vectors to `ℙ K V` is an open quotient map. -/
 theorem isOpenQuotientMap_mk' : IsOpenQuotientMap (mk' K : {v : V // v ≠ 0} → ℙ K V) :=
   ⟨Quotient.mk''_surjective, continuous_mk', isOpenMap_mk'⟩
 
