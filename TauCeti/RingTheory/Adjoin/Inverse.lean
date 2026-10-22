@@ -252,7 +252,7 @@ theorem fg_inf_of_mul_eq_one [IsNoetherianRing R] (hFG : F * G = 1) {S : Set N}
   have hrefl (i : S) : aeval F (reflect m (v i)) = F ^ m * aeval G (v i) := by
     rw [aeval_def, aeval_def, ← eval₂_reflect_mul_pow (algebraMap R B) G m (v i) (hvm i),
       mul_left_comm, ← mul_pow, hFG, one_pow, mul_one]
-    rfl
+    rw [invOf_eq_left_inv hFG]
   let κ : S → R[X] := fun i ↦ X ^ m * u i - reflect m (v i)
   have hκ : κ ∈ relations F S := by
     rw [mem_relations]
