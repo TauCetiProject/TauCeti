@@ -131,6 +131,18 @@ noncomputable def lift (hIJ : I.map (algebraMap R S) ≤ J) : algebra I →ₐ[R
 theorem eq_lift (hIJ : I.map (algebraMap R S) ≤ J) (f : algebra I →ₐ[R] S) : f = lift hIJ :=
   algHom_ext_of_map_le_jacobson (hIJ.trans HenselianRing.jac)
 
+/-- On the stage of an étale neighbourhood `B`, `lift` restricts to any `R`-algebra map
+`B → S`: there is exactly one such map. -/
+theorem lift_comp_stage (hIJ : I.map (algebraMap R S) ≤ J) (B : Neighbourhood.{u, u} I)
+    (φ : B.obj →ₐ[R] S) : (lift hIJ).comp (stage I B) = φ :=
+  B.property.algHom_ext (hIJ.trans HenselianRing.jac)
+
+/-- On the stage of an étale neighbourhood `B`, `lift` agrees with any `R`-algebra map
+`B → S`. -/
+theorem lift_stage (hIJ : I.map (algebraMap R S) ≤ J) (B : Neighbourhood.{u, u} I)
+    (φ : B.obj →ₐ[R] S) (b : B.obj) : lift hIJ (stage I B b) = φ b :=
+  DFunLike.congr_fun (lift_comp_stage hIJ B φ) b
+
 variable (J) in
 /-- **The universal property of the henselization.** For a henselian pair `(S, J)` receiving a
 map of pairs from `(R, I)`, there is a unique `R`-algebra map from the henselization of
