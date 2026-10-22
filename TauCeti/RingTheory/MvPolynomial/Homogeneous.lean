@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 
@@ -22,10 +23,14 @@ vector, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishe
 positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitution of
 polynomials of degree at most one, and `hp.homogeneousComponent_mul_right` records that
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
-by `d`.
+by `d`. In finitely many variables, `hp.support_subset_finsuppAntidiag` places the exponents
+of `p` among those of total degree `n`, and `hp.as_sum_finsuppAntidiag` expands `p` as a sum
+of monomials over that finite set.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
-product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous.
+product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
+`MvPolynomial.sum_smul_X_pow_mem_homogeneousSubmodule`: the `n`-th power of a linear form is
+homogeneous of degree `n`.
 -/
 
 public section
@@ -131,9 +136,38 @@ theorem homogeneousComponent_mul_right {σ R : Type*} [CommSemiring R]
   simpa only [key] using DirectSum.coe_decompose_mul_of_right_mem (homogeneousSubmodule σ R) n
     (a := a) ((mem_homogeneousSubmodule d t).mpr ht)
 
+/-- In finitely many variables, the exponents of a homogeneous polynomial of degree `n` lie in the
+finite set of exponents of total degree `n`. -/
+theorem support_subset_finsuppAntidiag {σ R : Type*} [Fintype σ] [DecidableEq σ]
+    [CommSemiring R] {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) :
+    p.support ⊆ (Finset.univ : Finset σ).finsuppAntidiag n := fun d hd ↦ by
+  have hdeg : d.degree = n := by
+    rw [Finsupp.degree_eq_weight_one]
+    exact hp (mem_support_iff.mp hd)
+  rw [Finsupp.degree_eq_sum] at hdeg
+  exact Finset.mem_finsuppAntidiag.mpr ⟨hdeg, Finset.subset_univ _⟩
+
+/-- In finitely many variables, a homogeneous polynomial of degree `n` is the sum of its
+monomials over the finite set of exponents of total degree `n`. -/
+theorem as_sum_finsuppAntidiag {σ R : Type*} [Fintype σ] [DecidableEq σ] [CommSemiring R]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) :
+    p = ∑ d ∈ (Finset.univ : Finset σ).finsuppAntidiag n, monomial d (p.coeff d) := by
+  conv_lhs => rw [p.as_sum]
+  exact Finset.sum_subset hp.support_subset_finsuppAntidiag fun d _ hd ↦ by
+    rw [notMem_support_iff.mp hd, monomial_zero]
+
 end MvPolynomial.IsHomogeneous
 
 namespace MvPolynomial
+
+/-- The `n`-th power of a linear form is homogeneous of degree `n`. -/
+theorem sum_smul_X_pow_mem_homogeneousSubmodule {σ R : Type*} [Fintype σ] [CommSemiring R]
+    (x : σ → R) (n : ℕ) :
+    (∑ i, x i • X i : MvPolynomial σ R) ^ n ∈ homogeneousSubmodule σ R n := by
+  have h1 : (∑ i, x i • X i : MvPolynomial σ R) ∈ homogeneousSubmodule σ R 1 :=
+    Submodule.sum_mem _ fun i _ ↦
+      Submodule.smul_mem _ _ ((mem_homogeneousSubmodule 1 _).mpr (isHomogeneous_X R i))
+  simpa using ((mem_homogeneousSubmodule 1 _).mp h1).pow n
 
 variable {σ R : Type*} [CommRing R]
 
