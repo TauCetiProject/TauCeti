@@ -380,12 +380,6 @@ noncomputable def zigzagBacktrackTaylor : ReducedTensorWords k (nonisolatedZigza
   suspensionTaylor (zigzagLoopAInfinityAlgebra hns (0 : (Fin 4 → G.Dart) →₀ k) (by simp)).grading
     (backtrackOps hns P a)
 
-/-- The two loop deformations have the same grading. -/
-private theorem grading_zigzagLoopAInfinityAlgebra (c c' : (Fin 4 → G.Dart) →₀ k) (hc hc') :
-    (zigzagLoopAInfinityAlgebra hns c hc).grading =
-      (zigzagLoopAInfinityAlgebra hns c' hc').grading :=
-  InternalGrading.ext fun p ↦ by simp
-
 /-- The backtrack Taylor map vanishes on a word with a letter of degree two. -/
 private theorem zigzagBacktrackTaylor_of_tprod_eq_zero_of_mem {m : ℕ} (hm : 0 < m)
     (w : Fin m → nonisolatedZigzagQuotient k G) (j : Fin m)
@@ -547,23 +541,13 @@ private theorem taylor_zigzagLoopAInfinityAlgebra_subword_two {n : ℕ}
     sub_zero]
   norm_num
 
-/-- The quartic operation of a loop deformation takes values of degree two. -/
-private theorem zigzagLoopAInfinityAlgebra_m_four_mem (y : Fin 4 → nonisolatedZigzagQuotient k G) :
-    (zigzagLoopAInfinityAlgebra hns c hc).m 4 y ∈ zigzagIntegerGrade k G 2 := by
-  rw [zigzagLoopAInfinityAlgebra_m_four, Finsupp.linearCombination_apply, Finsupp.sum,
-    _root_.sum_apply]
-  refine Submodule.sum_mem _ fun w _ ↦ ?_
-  rw [_root_.smul_apply, zigzagLoopOperation_apply]
-  exact Submodule.smul_mem _ _
-    (Submodule.smul_mem _ _ (zigzagVolume_mem_zigzagIntegerGrade_two k G _))
-
 /-- The Taylor map of a loop deformation takes values of degree two on blocks of length four. -/
 private theorem taylor_zigzagLoopAInfinityAlgebra_subword_four_mem {n : ℕ}
     (x : Fin n → nonisolatedZigzagQuotient k G) (s : ℕ) :
     (zigzagLoopAInfinityAlgebra hns c hc).taylor (subword k x s 4) ∈ zigzagIntegerGrade k G 2 := by
   by_cases h : s + 4 ≤ n
   · rw [subword_eq_of_tprod k x (by norm_num) h, AInfinityAlgebra.taylor_of_tprod]
-    exact zigzagLoopAInfinityAlgebra_m_four_mem hns hc _
+    exact zigzagLoopAInfinityAlgebra_m_four_mem _ hc _
   · rw [subword_eq_zero_of_lt_add k x (by omega), map_zero]
     exact zero_mem _
 
@@ -670,7 +654,7 @@ private theorem backtrack_component_four (x : Fin 4 → nonisolatedZigzagQuotien
   set 𝒢 := (zigzagLoopAInfinityAlgebra hns (0 : (Fin 4 → G.Dart) →₀ k) (by simp)).grading with h𝒢
   have hG : (zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a)
       (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients a hP)).grading = 𝒢 :=
-    grading_zigzagLoopAInfinityAlgebra hns _ _ _ _
+    zigzagLoopAInfinityAlgebra_grading_eq _ _ _ _
   have h₃ (y : nonisolatedZigzagQuotient k G) : 𝒢.koszulTwist 3 y = 𝒢.koszulTwist 1 y := by
     simpa using (LinearMap.congr_fun (𝒢.koszulTwist_comp 1 2) y).symm
   have hmul (y z : nonisolatedZigzagQuotient k G) :
@@ -719,7 +703,7 @@ private theorem backtrack_component_two (x : Fin 2 → nonisolatedZigzagQuotient
       backtrack_collapse_eq_zero hns a _ x p d (by omega), add_zero,
     Finset.sum_range_succ, Finset.sum_range_one, backtrack_cut_eq_zero hns a hP' x 0 (by omega),
     AInfinityAlgebra.taylor_of_tprod,
-    grading_zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a) 0 _ (by simp)]
+    zigzagLoopAInfinityAlgebra_grading_eq (zigzagBacktrackCoefficients P a) _ 0 (by simp)]
   simp (disch := norm_num) only [Nat.reduceSub, letter_add_zigzagBacktrackTaylor_subword_one,
     zigzagLoopAInfinityAlgebra_m_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
   norm_num
@@ -803,8 +787,8 @@ noncomputable def zigzagBacktrackAInfinityHom :
       (zigzagLoopAInfinityAlgebra hns (0 : (Fin 4 → G.Dart) →₀ k) (by simp)) :=
   AInfinityHom.ofTaylor (letter k _ + zigzagBacktrackTaylor hns P a)
     (by
-      rw [← grading_zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a) 0
-        (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients a hP) (by simp)]
+      rw [← zigzagLoopAInfinityAlgebra_grading_eq (zigzagBacktrackCoefficients P a)
+        (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients a hP) 0 (by simp)]
       exact (isHomogeneous_letter _).add (isHomogeneous_zigzagBacktrackTaylor hns a _ _))
     (taylor_comp_coalgHom_zigzagBacktrackTaylor hns a hP hP')
 
@@ -837,7 +821,7 @@ theorem component_three_zigzagBacktrackAInfinityHom :
     fin_cases i <;> simp
   rw [AInfinityHom.component_apply _ 3 (by norm_num), taylor_zigzagBacktrackAInfinityHom,
     LinearMap.add_apply, letter_of_of_ne_one k _ (by decide), zero_add,
-    grading_zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a) 0 _ (by simp), hx]
+    zigzagLoopAInfinityAlgebra_grading_eq (zigzagBacktrackCoefficients P a) _ 0 (by simp), hx]
   -- The suspension sign twists the middle letter, which negates the backtrack cochain.
   simp only [PNat.mk_ofNat, zigzagBacktrackTaylor_of_tprod_three, neg_neg,
     zigzagBacktrackCochain_koszulTwist_one_one hns a (zigzagLoopAInfinityAlgebra_grading_piece _ _)]

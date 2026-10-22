@@ -55,6 +55,10 @@ Nontriviality of such a deformation modulo `A∞` isomorphism is not addressed h
   word, where it is the volume class at the base of the walk.
 * `TauCeti.zigzagLoopAInfinityAlgebra_m_two_apply`, `TauCeti.zigzagLoopAInfinityAlgebra_m_four`
   and `TauCeti.zigzagLoopAInfinityAlgebra_m_eq_zero`: the operations.
+* `TauCeti.zigzagLoopAInfinityAlgebra_m_four_mem`: the quartic operation takes values in the
+  volume classes.
+* `TauCeti.zigzagLoopAInfinityAlgebra_grading_eq`: the grading does not depend on the
+  coefficients.
 * `TauCeti.zigzagLoopAInfinityAlgebra_zero_m_eq_zero`: with zero coefficients, the strict zigzag
   algebra, every operation besides `m₂` vanishes.
 * `TauCeti.isMinimal_zigzagLoopAInfinityAlgebra` and
@@ -303,6 +307,13 @@ theorem zigzagLoopAInfinityAlgebra_grading_piece :
   unfold zigzagLoopAInfinityAlgebra
   exact congrArg InternalGrading.piece (AInfinityAlgebra.ofStasheff_grading _ _ _ _ _ _ _)
 
+/-- The grading of a loop deformation does not depend on its coefficients. -/
+theorem zigzagLoopAInfinityAlgebra_grading_eq (c' : (Fin 4 → G.Dart) →₀ k)
+    (hc' : ∀ w ∈ c'.support, ∀ i, (w i).fst = (w (i + 1)).snd) :
+    (zigzagLoopAInfinityAlgebra hns c hc).grading =
+      (zigzagLoopAInfinityAlgebra hns c' hc').grading :=
+  InternalGrading.ext fun p ↦ by simp
+
 /-- The binary operation of the loop deformation is the product of the zigzag algebra. -/
 @[simp]
 theorem zigzagLoopAInfinityAlgebra_m_two_apply (x : Fin 2 → nonisolatedZigzagQuotient k G) :
@@ -315,6 +326,17 @@ theorem zigzagLoopAInfinityAlgebra_m_four :
     (zigzagLoopAInfinityAlgebra hns c hc).m 4 =
       Finsupp.linearCombination k (zigzagLoopOperation k G hns) c := by
   rw [zigzagLoopAInfinityAlgebra_m, loopOps]
+
+/-- The quartic operation of the loop deformation takes values of degree two, in the volume
+classes. -/
+theorem zigzagLoopAInfinityAlgebra_m_four_mem (y : Fin 4 → nonisolatedZigzagQuotient k G) :
+    (zigzagLoopAInfinityAlgebra hns c hc).m 4 y ∈ zigzagIntegerGrade k G 2 := by
+  rw [zigzagLoopAInfinityAlgebra_m_four, Finsupp.linearCombination_apply, Finsupp.sum,
+    _root_.sum_apply]
+  refine Submodule.sum_mem _ fun w _ ↦ ?_
+  rw [_root_.smul_apply, zigzagLoopOperation_apply]
+  exact Submodule.smul_mem _ _
+    (Submodule.smul_mem _ _ (zigzagVolume_mem_zigzagIntegerGrade_two k G _))
 
 /-- Every operation of the loop deformation other than `m₂` and `m₄` vanishes. -/
 theorem zigzagLoopAInfinityAlgebra_m_eq_zero {n : ℕ} (h₂ : n ≠ 2) (h₄ : n ≠ 4) :
