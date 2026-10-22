@@ -263,8 +263,8 @@ theorem inner_ιMulti_ιInv_contractLeft_add_hodgeStar (hkk : 2 + 2 = finrank �
   have hwedge : exteriorPower.wedge ℝ V 2 2 F F =
       2 • exteriorPower.wedge ℝ V 2 2 F (ιMulti ℝ 2 ![s, a]) := by
     apply Subtype.ext
-    simp only [SetLike.coe_gMul, exteriorPower.wedge, DirectSum.gMulLHom_apply_apply,
-      exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_apply, Submodule.coe_smul_of_tower]
+    simp only [exteriorPower.coe_wedge, exteriorPower.ιMulti_apply_coe,
+      ExteriorAlgebra.ιMulti_apply, Submodule.coe_smul_of_tower]
     simp only [List.ofFn_succ, List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one,
       Matrix.cons_val_zero, Matrix.cons_val_succ, hιa]
     exact TauCeti.ExteriorAlgebra.mul_self_eq_two_smul_mul_ι_mul_contractLeft hss (by omega) F.2

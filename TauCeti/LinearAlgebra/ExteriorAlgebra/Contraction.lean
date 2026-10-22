@@ -463,8 +463,8 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
 variable [Module.Free R M] [Module.Finite R M]
 
-/-- **A form of degree at least the rank is divisible by any vector**: if `d m = 1` and
-`finrank R M ≤ n`, then every `x ∈ ⋀ⁿ M` is `m ∧ (d ⌋ x)`. -/
+/-- **A form of degree at least the rank is divisible by any vector `m` with `d m = 1`**: if
+`d m = 1` and `finrank R M ≤ n`, then every `x ∈ ⋀ⁿ M` is `m ∧ (d ⌋ x)`. -/
 theorem eq_ι_mul_contractLeft_of_finrank_le {d : Module.Dual R M} {m : M} (hdm : d m = 1)
     {n : ℕ} (hn : Module.finrank R M ≤ n) {x : _root_.ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) :
     x = ι R m * contractLeft (Q := (0 : QuadraticForm R M)) d x := by
