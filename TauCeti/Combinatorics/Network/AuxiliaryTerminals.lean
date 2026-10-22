@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Data.Finset.Sum
 public import TauCeti.Combinatorics.Network.Excess
+public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 
 /-!
 # Auxiliary terminals
@@ -40,8 +41,8 @@ at most the capacity of `S`.
 ## Main results
 
 * `TauCeti.arrowSum_auxTerminalCapacity`: the capacity of a `σ`–`τ` cut.
-* `TauCeti.arrowSum_auxTerminalCapacity_of_subset_of_disjoint`: a vertex set containing `A` and
-  avoiding `B`, together with `σ`, has the same cut capacity as in the original network.
+* `TauCeti.TerminalCut.IsAdmissible.arrowSum_auxTerminalCapacity`: a vertex set containing `A`
+  and avoiding `B`, together with `σ`, has the same cut capacity as in the original network.
 * `TauCeti.arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity`: the normalization lemma.
 
 ## References
@@ -110,6 +111,7 @@ theorem originalEquiv_symm_original {v w : V} (e : Q v w) :
     originalEquiv.symm (original (A := A) (B := B) e) = e :=
   (rfl)
 
+@[simp]
 theorem original_originalEquiv_symm {v w : V} (e : AuxTerminalHom Q A B (inl v) (inl w)) :
     original (originalEquiv.symm e) = e :=
   (rfl)
@@ -123,12 +125,22 @@ theorem original_inj {v w : V} {e e' : Q v w} :
     original (A := A) (B := B) e = original e' ↔ e = e' :=
   original_injective.eq_iff
 
+/-- The fresh source has an arrow to `Sum.inl a` only when `a ∈ A`. -/
+theorem mem_of_source {a : V} (e : AuxTerminalHom Q A B (inr false) (inl a)) : a ∈ A :=
+  e.2
+
+/-- The fresh sink has an arrow from `Sum.inl b` only when `b ∈ B`. -/
+theorem mem_of_sink {b : V} (e : AuxTerminalHom Q A B (inl b) (inr true)) : b ∈ B :=
+  e.2
+
 /-- Every arrow from the fresh source to `Sum.inl a` is `source`. -/
-theorem eq_source {a : V} (e : AuxTerminalHom Q A B (inr false) (inl a)) : e = source e.2 :=
+theorem eq_source {a : V} (e : AuxTerminalHom Q A B (inr false) (inl a)) :
+    e = source (mem_of_source e) :=
   (rfl)
 
 /-- Every arrow from `Sum.inl b` to the fresh sink is `sink`. -/
-theorem eq_sink {b : V} (e : AuxTerminalHom Q A B (inl b) (inr true)) : e = sink e.2 :=
+theorem eq_sink {b : V} (e : AuxTerminalHom Q A B (inl b) (inr true)) :
+    e = sink (mem_of_sink e) :=
   (rfl)
 
 instance instSubsingletonSource (a : V) :
@@ -228,13 +240,13 @@ theorem arrowSum_auxTerminalCapacity (cap : Assignment Q K) (cσ cτ : V → K)
     split_ifs with ha
     · rw [Fintype.sum_eq_single (AuxTerminalHom.source ha) fun e he ↦
         (he (AuxTerminalHom.eq_source e)).elim, auxTerminalCapacity_source]
-    · exact sum_eq_zero fun e _ ↦ (ha e.2).elim
+    · exact sum_eq_zero fun e _ ↦ (ha (AuxTerminalHom.mem_of_source e)).elim
   have hsnk (b : V) : ∑ e : AuxTerminalHom Q A B (inl b) (inr true),
       auxTerminalCapacity cap cσ cτ e = if b ∈ B then cτ b else 0 := by
     split_ifs with hb
     · rw [Fintype.sum_eq_single (AuxTerminalHom.sink hb) fun e he ↦
         (he (AuxTerminalHom.eq_sink e)).elim, auxTerminalCapacity_sink]
-    · exact sum_eq_zero fun e _ ↦ (hb e.2).elim
+    · exact sum_eq_zero fun e _ ↦ (hb (AuxTerminalHom.mem_of_sink e)).elim
   have hA : S.toLeftᶜ ∩ A = A \ S.toLeft := by
     rw [inter_comm, sdiff_eq_inter_compl]
   have hnone : ∑ e : AuxTerminalHom Q A B (inr false) (inr true),
@@ -248,19 +260,20 @@ theorem arrowSum_auxTerminalCapacity (cap : Assignment Q K) (cσ cτ : V → K)
 
 /-- A vertex set `R` containing `A` and avoiding `B`, together with the fresh source, is a cut
 with the same capacity as `R` in the original network. -/
-theorem arrowSum_auxTerminalCapacity_of_subset_of_disjoint (cap : Assignment Q K)
-    (cσ cτ : V → K) {R : Finset V} (hAR : A ⊆ R) (hRB : Disjoint R B) :
+theorem TerminalCut.IsAdmissible.arrowSum_auxTerminalCapacity {R : Finset V}
+    (hR : TerminalCut.IsAdmissible A B R) (cap : Assignment Q K) (cσ cτ : V → K) :
     arrowSum (auxTerminalCapacity (A := A) (B := B) cap cσ cτ) (R.disjSum {false})
         (R.disjSum {false})ᶜ = arrowSum cap R Rᶜ := by
-  simp [arrowSum_auxTerminalCapacity cap cσ cτ (S := R.disjSum {false}) (by simp) (by simp),
-    sdiff_eq_empty_iff_subset.mpr hAR, disjoint_iff_inter_eq_empty.mp hRB.symm]
+  simp [_root_.TauCeti.arrowSum_auxTerminalCapacity cap cσ cτ (S := R.disjSum {false}) (by simp)
+    (by simp), sdiff_eq_empty_iff_subset.mpr hR.subset,
+    disjoint_iff_inter_eq_empty.mp hR.disjoint.symm]
 
 /-- **Normalization of auxiliary cuts.** Let `A` and `B` be disjoint, and suppose that the arrow
 from the fresh source to each `a ∈ A` has capacity at least the total capacity leaving `a`, and the
 arrow from each `b ∈ B` to the fresh sink has capacity at least the total capacity entering `b`.
 Then for every cut `S` separating the fresh source from the fresh sink, the vertex set
-`(S.toLeft ∪ A) \ B`, which contains `A` and avoids `B`, has original cut capacity at most the
-capacity of `S`. -/
+`(S.toLeft ∪ A) \ B`, which is admissible by `TerminalCut.isAdmissible_union_sdiff`, has original
+cut capacity at most the capacity of `S`. -/
 theorem arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity [PartialOrder K]
     [IsOrderedAddMonoid K] (hAB : Disjoint A B) {cap : Assignment Q K} (hcap : 0 ≤ cap)
     {cσ cτ : V → K} (hcσ : ∀ a ∈ A, ∑ w, ∑ e : Q a w, cap e ≤ cσ a)
