@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.Probability.Distributions.Beta
 public import TauCeti.Probability.Cdf
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Beta
 import TauCeti.Analysis.SpecialFunctions.Gamma
 import TauCeti.MeasureTheory.Measure.Measurability
@@ -160,38 +159,11 @@ private theorem sum_range_yuleSimonWeightReal (hρ : 0 < ρ) {n : ℕ} (hn : n �
       ← sub_mul_beta_add_one_eq_yuleSimonWeightReal hρ m.succ_ne_zero]
     ring
 
-/-- The upper tail values `n B(n, ρ + 1)` tend to zero: by Euler's limit formula they are
-asymptotic to `Γ(ρ + 1) n ^ (-ρ)`. -/
-private theorem tendsto_natCast_mul_beta_atTop (hρ : 0 < ρ) :
-    Tendsto (fun n : ℕ => n * beta n (ρ + 1)) atTop (𝓝 0) := by
-  have hequiv := ((Asymptotics.IsEquivalent.refl (u := fun _ : ℕ => Real.Gamma (ρ + 1))).mul
-    (Real.isEquivalent_Gamma_natCast_add_one_add ρ).inv).mul
-      (Asymptotics.IsEquivalent.refl (u := fun n : ℕ => (n ! : ℝ)))
-  have hlim : Tendsto (fun n : ℕ => Real.Gamma (ρ + 1) * ((n : ℝ) ^ ρ * n !)⁻¹ * n !)
-      atTop (𝓝 0) := by
-    have hpow := ((tendsto_rpow_neg_atTop hρ).comp tendsto_natCast_atTop_atTop).const_mul
-      (Real.Gamma (ρ + 1))
-    rw [mul_zero] at hpow
-    refine hpow.congr' ?_
-    filter_upwards [eventually_ne_atTop 0] with n hn
-    have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
-    have hfac : (n ! : ℝ) ≠ 0 := by positivity
-    simp only [Function.comp_apply, Real.rpow_neg hn'.le]
-    field_simp
-  refine (hequiv.symm.tendsto_nhds hlim).congr' ?_
-  filter_upwards [eventually_ne_atTop 0] with n hn
-  have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
-  have hfac : Real.Gamma n * n = n ! := by
-    rw [← Real.Gamma_nat_eq_factorial, Real.Gamma_add_one hn'.ne', mul_comm]
-  simp only [Pi.mul_apply, Pi.inv_apply, beta]
-  rw [← hfac, show (n : ℝ) + (ρ + 1) = n + 1 + ρ by ring]
-  ring
-
 /-- For positive shape, the real masses sum to one. -/
 theorem hasSum_yuleSimonWeightReal (hρ : 0 < ρ) : HasSum (yuleSimonWeightReal ρ) 1 := by
   rw [hasSum_iff_tendsto_nat_of_nonneg (yuleSimonWeightReal_nonneg hρ.le),
     ← tendsto_add_atTop_iff_nat 1]
-  have hlim := (tendsto_natCast_mul_beta_atTop hρ).const_sub 1
+  have hlim := (tendsto_natCast_mul_beta_atTop (by linarith : 1 < ρ + 1)).const_sub 1
   rw [sub_zero] at hlim
   refine hlim.congr' ?_
   filter_upwards [eventually_ne_atTop 0] with n hn

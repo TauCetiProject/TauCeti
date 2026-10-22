@@ -12,6 +12,8 @@ import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Gamma
 
 /-!
 # Euler's beta integrals, in real-valued form
@@ -63,6 +65,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
 * `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
 * `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
+* `ProbabilityTheory.tendsto_natCast_mul_beta_atTop` — `n Β(n, s) → 0` along the natural numbers
+  for `s > 1`.
 
 ## Implementation notes
 
@@ -517,5 +521,35 @@ theorem beta_three_halves_three_halves : beta (3 / 2) (3 / 2) = Real.pi / 8 := b
   rw [beta, hg]
   norm_num
   nlinarith [Real.sq_sqrt Real.pi_pos.le]
+
+open Filter Topology in
+open scoped Nat in
+/-- The values `n B(n, s)` tend to zero for `s > 1`: by Euler's limit formula they are
+asymptotic to `Γ(s) n ^ (1 - s)`. -/
+theorem tendsto_natCast_mul_beta_atTop {s : ℝ} (hs : 1 < s) :
+    Tendsto (fun n : ℕ => n * beta n s) atTop (𝓝 0) := by
+  obtain ⟨ρ, hρ, rfl⟩ : ∃ ρ : ℝ, 0 < ρ ∧ s = ρ + 1 := ⟨s - 1, by linarith, by ring⟩
+  have hequiv := ((Asymptotics.IsEquivalent.refl (u := fun _ : ℕ => Real.Gamma (ρ + 1))).mul
+    (Real.isEquivalent_Gamma_natCast_add_one_add ρ).inv).mul
+      (Asymptotics.IsEquivalent.refl (u := fun n : ℕ => (n ! : ℝ)))
+  have hlim : Tendsto (fun n : ℕ => Real.Gamma (ρ + 1) * ((n : ℝ) ^ ρ * n !)⁻¹ * n !)
+      atTop (𝓝 0) := by
+    have hpow := ((tendsto_rpow_neg_atTop hρ).comp tendsto_natCast_atTop_atTop).const_mul
+      (Real.Gamma (ρ + 1))
+    rw [mul_zero] at hpow
+    refine hpow.congr' ?_
+    filter_upwards [eventually_ne_atTop 0] with n hn
+    have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
+    have hfac : (n ! : ℝ) ≠ 0 := by positivity
+    simp only [Function.comp_apply, Real.rpow_neg hn'.le]
+    field_simp
+  refine (hequiv.symm.tendsto_nhds hlim).congr' ?_
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
+  have hfac : Real.Gamma n * n = n ! := by
+    rw [← Real.Gamma_nat_eq_factorial, Real.Gamma_add_one hn'.ne', mul_comm]
+  simp only [Pi.mul_apply, Pi.inv_apply, beta]
+  rw [← hfac, show (n : ℝ) + (ρ + 1) = n + 1 + ρ by ring]
+  ring
 
 end ProbabilityTheory

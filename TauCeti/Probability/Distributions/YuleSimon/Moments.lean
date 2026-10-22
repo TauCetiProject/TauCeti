@@ -13,6 +13,7 @@ import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
 # Moments of the Yule–Simon distribution
@@ -113,38 +114,27 @@ arguments. -/
 theorem integrableExpSet_id_map_cast_yuleSimonMeasure (hρ : 0 < ρ) :
     integrableExpSet id ((yuleSimonMeasure ρ).map (Nat.cast : ℕ → ℝ)) = Iic 0 := by
   have := isProbabilityMeasure_yuleSimonMeasure hρ
+  have hnonneg : ∀ᵐ x ∂((yuleSimonMeasure ρ).map (Nat.cast : ℕ → ℝ)), (0 : ℝ) ≤ id x :=
+    MeasurableEmbedding.natCast.ae_map_iff.2 (Eventually.of_forall fun k => Nat.cast_nonneg k)
   ext t
-  simp only [integrableExpSet, id_eq, mem_ofPred_eq, mem_Iic]
-  rw [MeasurableEmbedding.natCast.integrable_map_iff]
-  constructor
-  · intro h
-    by_contra ht
-    push Not at ht
-    -- A positive exponential moment would dominate the moment of order `⌈ρ⌉₊`.
-    obtain ⟨m, hm⟩ : ∃ m : ℕ, ρ ≤ m := ⟨⌈ρ⌉₊, Nat.le_ceil ρ⟩
-    refine hm.not_gt ((integrable_pow_yuleSimonMeasure_iff hρ m).mp ?_)
-    refine (h.const_mul ((m ! : ℝ) / t ^ m)).mono' (by fun_prop) (Eventually.of_forall fun k => ?_)
-    have hle := Real.pow_div_factorial_le_exp _ (mul_nonneg ht.le (Nat.cast_nonneg k)) m
-    have htm : 0 < t ^ m := by positivity
-    have hfac : (0 : ℝ) < m ! := by positivity
-    rw [Function.comp_apply, norm_pow, Real.norm_natCast]
-    rw [div_le_iff₀ hfac, mul_pow] at hle
-    rw [div_mul_eq_mul_div, le_div_iff₀ htm]
-    linarith
-  · intro ht
-    refine (integrable_const (1 : ℝ)).mono' (by fun_prop) (Eventually.of_forall fun k => ?_)
-    rw [Function.comp_apply, Real.norm_eq_abs, abs_of_pos (exp_pos _), exp_le_one_iff]
-    exact mul_nonpos_of_nonpos_of_nonneg ht (Nat.cast_nonneg k)
+  simp only [integrableExpSet, mem_ofPred_eq, mem_Iic]
+  refine ⟨fun h => ?_, fun ht => integrable_exp_mul_of_ge t 0 ht aemeasurable_id hnonneg⟩
+  by_contra ht
+  push Not at ht
+  -- A positive exponential moment would give the infinite moment of order `⌈ρ⌉₊`.
+  refine not_integrable_exp_mul_of_not_integrable_pow ⌈ρ⌉₊ aemeasurable_id hnonneg ?_ ht h
+  exact fun hi => (Nat.le_ceil ρ).not_gt ((integrable_pow_map_cast_yuleSimonMeasure_iff hρ _).1 hi)
 
 /-! ### Rising-factorial moments -/
 
 /-- The rising-factorial-weighted Yule–Simon masses telescope against the Gamma quotients
 `Γ(k + m) / Γ(k + ρ)`. -/
-private theorem yuleSimonWeightReal_mul_ascPochhammer_eq (hρ : 0 < ρ) {m : ℕ} (hm : (m : ℝ) < ρ)
+private theorem yuleSimonWeightReal_mul_ascPochhammer_eq {m : ℕ} (hm : (m : ℝ) < ρ)
     {k : ℕ} (hk : k ≠ 0) :
     yuleSimonWeightReal ρ k * (ascPochhammer ℝ m).eval (k : ℝ) =
       ρ * Gamma (ρ + 1) / (ρ - m) *
         (Gamma (k + m) / Gamma (k + ρ) - Gamma ((k + 1 : ℕ) + m) / Gamma ((k + 1 : ℕ) + ρ)) := by
+  have hρ : 0 < ρ := (Nat.cast_nonneg m).trans_lt hm
   have hk' : (0 : ℝ) < k := by exact_mod_cast Nat.pos_of_ne_zero hk
   have hΓk := Gamma_pos_of_pos hk'
   have hasc : (ascPochhammer ℝ m).eval (k : ℝ) * Gamma k = Gamma (k + m) := by
@@ -162,26 +152,12 @@ private theorem yuleSimonWeightReal_mul_ascPochhammer_eq (hρ : 0 < ρ) {m : ℕ
   field_simp
   ring
 
-/-- The Gamma quotients `Γ(n + 1 + m) / Γ(n + 1 + ρ)` tend to zero when `m < ρ`. -/
-private theorem tendsto_Gamma_div_Gamma_atTop {m : ℝ} (hm : m < ρ) :
-    Tendsto (fun n : ℕ => Gamma ((n + 1 : ℕ) + m) / Gamma ((n + 1 : ℕ) + ρ)) atTop (𝓝 0) := by
-  have hequiv := (isEquivalent_Gamma_natCast_add_one_add m).div
-    (isEquivalent_Gamma_natCast_add_one_add ρ)
-  have hlim := (tendsto_rpow_neg_atTop (sub_pos.mpr hm)).comp tendsto_natCast_atTop_atTop
-  refine ((hequiv.symm.tendsto_nhds (hlim.congr' ?_)).congr' ?_)
-  · filter_upwards [eventually_ne_atTop 0] with n hn
-    have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
-    have hfac : (n ! : ℝ) ≠ 0 := by positivity
-    simp only [Function.comp_apply, Pi.div_apply, neg_sub, rpow_sub hn']
-    field_simp
-  · exact Eventually.of_forall fun n => by simp only [Pi.div_apply, Nat.cast_succ]
-
 /-- The rising-factorial moment `E[X (X + 1) ⋯ (X + m - 1)]` of the real cast of a Yule–Simon law
 is `ρ m! / (ρ - m)` whenever `m < ρ`. -/
-theorem integral_ascPochhammer_map_cast_yuleSimonMeasure (hρ : 0 < ρ) {m : ℕ}
-    (hm : (m : ℝ) < ρ) :
+theorem integral_ascPochhammer_map_cast_yuleSimonMeasure {m : ℕ} (hm : (m : ℝ) < ρ) :
     ∫ x, (ascPochhammer ℝ m).eval x ∂((yuleSimonMeasure ρ).map (Nat.cast : ℕ → ℝ)) =
       ρ * m ! / (ρ - m) := by
+  have hρ : 0 < ρ := (Nat.cast_nonneg m).trans_lt hm
   rw [MeasurableEmbedding.natCast.integral_map, yuleSimonMeasure_eq_sum_dirac hρ,
     integral_sum_dirac (yuleSimonWeight_ne_top ρ)]
   simp only [smul_eq_mul, yuleSimonWeight_toReal hρ.le]
@@ -190,17 +166,19 @@ theorem integral_ascPochhammer_map_cast_yuleSimonMeasure (hρ : 0 < ρ) {m : ℕ
   have hshift : (fun n : ℕ => yuleSimonWeightReal ρ (n + 1) *
       (ascPochhammer ℝ m).eval ((n + 1 : ℕ) : ℝ)) = fun n => C * (r n - r (n + 1)) := by
     funext n
-    rw [yuleSimonWeightReal_mul_ascPochhammer_eq hρ hm n.succ_ne_zero]
+    rw [yuleSimonWeightReal_mul_ascPochhammer_eq hm n.succ_ne_zero]
   -- The shifted partial sums telescope to `C (r 0 - r N)`, and `r N → 0`.
   have hsum : HasSum (fun k : ℕ => yuleSimonWeightReal ρ k * (ascPochhammer ℝ m).eval (k : ℝ))
       (C * r 0) := by
     rw [← hasSum_nat_add_iff' 1, Finset.sum_range_one, Nat.cast_zero, yuleSimonWeightReal_zero,
       zero_mul, sub_zero, hasSum_iff_tendsto_nat_of_nonneg fun n => mul_nonneg
         (yuleSimonWeightReal_nonneg hρ.le _) (ascPochhammer_pos m _ (by positivity)).le, hshift]
-    have hlim := ((tendsto_Gamma_div_Gamma_atTop hm).const_sub (r 0)).const_mul C
+    have hlim := (((tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop hm).comp
+      (tendsto_add_atTop_nat 1)).const_sub (r 0)).const_mul C
     rw [sub_zero] at hlim
     refine hlim.congr fun N => ?_
     rw [← Finset.mul_sum, Finset.sum_range_sub']
+    rfl
   rw [hsum.tsum_eq]
   have hρΓ : Gamma (1 + ρ) ≠ 0 := (Gamma_pos_of_pos (by positivity)).ne'
   simp only [C, r, zero_add, Nat.cast_one]
@@ -212,8 +190,7 @@ theorem integral_ascPochhammer_map_cast_yuleSimonMeasure (hρ : 0 < ρ) {m : ℕ
 /-- The mean of the real cast of a Yule–Simon law is `ρ / (ρ - 1)` for `ρ > 1`. -/
 theorem integral_id_map_cast_yuleSimonMeasure (hρ : 1 < ρ) :
     ∫ x, x ∂((yuleSimonMeasure ρ).map (Nat.cast : ℕ → ℝ)) = ρ / (ρ - 1) := by
-  simpa using integral_ascPochhammer_map_cast_yuleSimonMeasure (by linarith) (m := 1)
-    (by simpa using hρ)
+  simpa using integral_ascPochhammer_map_cast_yuleSimonMeasure (m := 1) (by simpa using hρ)
 
 /-- The variance of the real cast of a Yule–Simon law is `ρ² / ((ρ - 1)² (ρ - 2))` for
 `ρ > 2`. -/
@@ -225,8 +202,7 @@ theorem variance_id_map_cast_yuleSimonMeasure (hρ : 2 < ρ) :
   have hint1 := (integrable_pow_map_cast_yuleSimonMeasure_iff hρ0 1).2 (by norm_num; linarith)
   have hint2 := (integrable_pow_map_cast_yuleSimonMeasure_iff hρ0 2).2 (by norm_num; linarith)
   -- The second rising-factorial moment is `E[X²] + E[X] = 2ρ / (ρ - 2)`.
-  have hasc := integral_ascPochhammer_map_cast_yuleSimonMeasure hρ0 (m := 2)
-    (by norm_num; linarith)
+  have hasc := integral_ascPochhammer_map_cast_yuleSimonMeasure (m := 2) (by norm_num; linarith)
   have heval (x : ℝ) : (ascPochhammer ℝ 2).eval x = x ^ 2 + x ^ 1 := by
     simp [ascPochhammer_succ_right]
     ring

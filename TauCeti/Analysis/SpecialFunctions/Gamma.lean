@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Measurability, reciprocal continuity, and ratio asymptotics of the real Gamma function
@@ -41,7 +42,10 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.continuous_inv_Gamma` — `s ↦ (Real.Gamma s)⁻¹` is continuous.
 * `Real.exists_abs_inv_Gamma_le` — `(Real.Gamma s)⁻¹` is bounded on `[a, ∞)`.
 * `Real.Gamma_add_nat_div_Gamma_eq` — `Γ(x + n) / Γ x` is the rising factorial `x (x + 1) ⋯`.
+* `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
+* `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
+  `a < b`.
 -/
 
 public section
@@ -101,7 +105,7 @@ theorem Gamma_add_nat_div_Gamma_eq {n : ℕ} (x : ℝ) (hx : ∀ k : ℕ, x ≠ 
     ring
 
 /-- The product `s (s + 1) ⋯ (s + n - 1)` times `Γ s` is `Γ (s + n)`, for positive `s`. -/
-private theorem prod_range_add_mul_Gamma {s : ℝ} (hs : 0 < s) (n : ℕ) :
+theorem prod_range_add_mul_Gamma {s : ℝ} (hs : 0 < s) (n : ℕ) :
     (∏ j ∈ Finset.range n, (s + j)) * Gamma s = Gamma (s + n) := by
   induction n with
   | zero => simp
@@ -158,5 +162,23 @@ theorem isEquivalent_Gamma_natCast_add_one_add (s : ℝ) :
       simp only [Pi.div_apply]
       rw [rpow_add_one hn'.ne']
       field_simp
+
+/-- The Gamma quotients `Γ(n + a) / Γ(n + b)` tend to zero along the natural numbers when `a < b`,
+since they decay like `n ^ (a - b)`. -/
+theorem tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop {a b : ℝ} (hab : a < b) :
+    Tendsto (fun n : ℕ => Gamma (n + a) / Gamma (n + b)) atTop (𝓝 0) := by
+  have hequiv := (isEquivalent_Gamma_natCast_add_one_add (a - 1)).div
+    (isEquivalent_Gamma_natCast_add_one_add (b - 1))
+  have hlim := (tendsto_rpow_neg_atTop (sub_pos.mpr hab)).comp tendsto_natCast_atTop_atTop
+  refine ((hequiv.symm.tendsto_nhds (hlim.congr' ?_)).congr' ?_)
+  · filter_upwards [eventually_ne_atTop 0] with n hn
+    have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
+    have hfac : (n ! : ℝ) ≠ 0 := by positivity
+    simp only [Function.comp_apply, Pi.div_apply]
+    rw [show -(b - a) = (a - 1) - (b - 1) by ring, rpow_sub hn']
+    field_simp
+  · refine Eventually.of_forall fun n => ?_
+    simp only [Pi.div_apply]
+    rw [show (n : ℝ) + 1 + (a - 1) = n + a by ring, show (n : ℝ) + 1 + (b - 1) = n + b by ring]
 
 end Real
