@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Formal
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Component
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Iso
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Obstruction
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop
 
@@ -63,14 +62,14 @@ see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD4`.
 
 * `TauCeti.zigzagBacktrackOperation_coboundary` and `TauCeti.zigzagBacktrackCochain_coboundary`:
   the quartic operation is the Hochschild coboundary of the backtrack cochain.
-* `TauCeti.taylor_zigzagBacktrackAInfinityHom` and
-  `TauCeti.component_three_zigzagBacktrackAInfinityHom`: the Taylor map of the backtrack
-  isomorphism, and its arity-three component, the backtrack cochain.
+* `TauCeti.taylor_zigzagBacktrackAInfinityHom`,
+  `TauCeti.component_three_zigzagBacktrackAInfinityHom` and
+  `TauCeti.component_zigzagBacktrackAInfinityHom_of_ne`: the Taylor map of the backtrack
+  isomorphism, its arity-three component, the backtrack cochain, and the vanishing of its
+  components outside arities one and three.
 * `TauCeti.isIso_zigzagBacktrackAInfinityHom` and
   `TauCeti.isFormal_zigzagLoopAInfinityAlgebra_zigzagBacktrackCoefficients`: the loop deformation
   with backtrack coefficients is `A∞` isomorphic to the strict zigzag algebra, hence formal.
-* `TauCeti.zigzagBasis_coord_dart_koszulTwist_one`: the degree-one Koszul twist of the path-length
-  grading negates arrow coordinates.
 
 ## References
 
@@ -151,50 +150,6 @@ theorem zigzagBacktrackOperation_coboundary {d e : G.Dart} (h : d.fst = e.snd)
     zigzagBasisFun_inr_inr, SimpleGraph.Dart.symm_toProd, Prod.fst_swap, Prod.snd_swap]
   simp only [h]
   module
-
-/-! ### The degree-one Koszul twist of the path-length grading -/
-
-section Twist
-
-variable {k hns} {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G)}
-
-/-- The degree-one Koszul twist of the path-length grading on the vertex-arrow-volume basis: it
-fixes vertex idempotents and volume classes and negates arrows. -/
-private theorem koszulTwist_one_zigzagBasis (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G)
-    (b : ZigzagBasisIndex G) :
-    𝒢.koszulTwist 1 (zigzagBasis k G hns b) =
-      (match b with
-        | .inl _ => 1
-        | .inr (.inl _) => -1
-        | .inr (.inr _) => 1 : k) • zigzagBasis k G hns b := by
-  rcases b with v | d | v <;> simp only [zigzagBasis_apply, zigzagBasisFun_inl,
-    zigzagBasisFun_inr_inl, zigzagBasisFun_inr_inr]
-  · rw [𝒢.koszulTwist_apply_of_mem_zero, one_smul]
-    rw [h𝒢, ← Nat.cast_zero, zigzagIntegerGrade_ofNat,
-      zigzagGrade_zero_eq_span_range_vertexIdempotent]
-    exact Submodule.subset_span ⟨v, rfl⟩
-  · rw [𝒢.koszulTwist_one_apply_of_mem (e := 1)
-      (by rw [h𝒢]; exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G d)]
-    simp
-  · rw [𝒢.koszulTwist_one_apply_of_mem (e := 2)
-      (by rw [h𝒢]; exact zigzagVolume_mem_zigzagIntegerGrade_two k G v)]
-    simp [show (2 : ℤ).negOnePow = 1 from by simpa using Int.negOnePow_two_mul 1]
-
-/-- The degree-one Koszul twist of the path-length grading negates arrow coordinates. -/
-theorem zigzagBasis_coord_dart_koszulTwist_one (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G)
-    (d : G.Dart) (x : nonisolatedZigzagQuotient k G) :
-    (zigzagBasis k G hns).coord (.inr (.inl d)) (𝒢.koszulTwist 1 x) =
-      -(zigzagBasis k G hns).coord (.inr (.inl d)) x := by
-  have key : (zigzagBasis k G hns).coord (.inr (.inl d)) ∘ₗ 𝒢.koszulTwist 1 =
-      -(zigzagBasis k G hns).coord (.inr (.inl d)) := by
-    refine (zigzagBasis k G hns).ext fun b ↦ ?_
-    rw [LinearMap.comp_apply, koszulTwist_one_zigzagBasis h𝒢, map_smul, zigzagBasis_coord_apply,
-      LinearMap.neg_apply, zigzagBasis_coord_apply]
-    rcases b with j | e | j <;> simp
-    split_ifs <;> simp
-  exact LinearMap.congr_fun key x
-
-end Twist
 
 /-! ### Weighted families of backtrack operations -/
 
@@ -317,16 +272,6 @@ theorem zigzagBacktrackCochain_mul_zigzagBacktrackCochain_eq_zero
   refine Finset.sum_eq_zero fun p hp ↦ Finset.sum_eq_zero fun q hq ↦ ?_
   rw [smul_mul_smul_comm, zigzagMk_ofArrow_mul_ofArrow_of_ne k G (hP' p hp q hq), smul_zero]
 
-/-- Negating the first input of the backtrack cochain negates it. -/
-private theorem zigzagBacktrackCochain_neg_zero (x y z : nonisolatedZigzagQuotient k G) :
-    zigzagBacktrackCochain hns P a ![-x, y, z] = -zigzagBacktrackCochain hns P a ![x, y, z] := by
-  simp [zigzagBacktrackCochain_apply]
-
-/-- Negating the second input of the backtrack cochain negates it. -/
-private theorem zigzagBacktrackCochain_neg_one (x y z : nonisolatedZigzagQuotient k G) :
-    zigzagBacktrackCochain hns P a ![x, -y, z] = -zigzagBacktrackCochain hns P a ![x, y, z] := by
-  simp [zigzagBacktrackCochain_apply]
-
 section Twist
 
 variable {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G)}
@@ -338,7 +283,9 @@ private theorem koszulTwist_one_zigzagBacktrackCochain (x : Fin 3 → nonisolate
     𝒢.koszulTwist 1 (zigzagBacktrackCochain hns P a x) = -zigzagBacktrackCochain hns P a x := by
   have harrow (d : G.Dart) : 𝒢.koszulTwist 1 (zigzagMk k G (ofArrow (arrow G d.adj))) =
       -zigzagMk k G (ofArrow (arrow G d.adj)) := by
-    simpa [zigzagBasis_apply] using koszulTwist_one_zigzagBasis (hns := hns) h𝒢 (.inr (.inl d))
+    rw [𝒢.koszulTwist_one_apply_of_mem (e := 1)
+      (by rw [h𝒢]; exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G d)]
+    simp
   simp only [zigzagBacktrackCochain_apply, map_sum, map_smul, harrow, smul_neg,
     Finset.sum_neg_distrib]
 
@@ -380,6 +327,16 @@ private theorem zigzagBacktrackCochain_coboundary_koszulTwist (hP : ∀ p ∈ P,
           zigzagBacktrackCochain hns P a
             ![-𝒢.koszulTwist 1 x₀, 𝒢.koszulTwist 1 (-𝒢.koszulTwist 1 x₁),
               𝒢.koszulTwist 1 x₂ * x₃]) := by
+  -- Negating the first or the second input negates the cochain, by multilinearity.
+  have hneg₀ (u v w : nonisolatedZigzagQuotient k G) :
+      zigzagBacktrackCochain hns P a ![-u, v, w] = -zigzagBacktrackCochain hns P a ![u, v, w] := by
+    have h := (zigzagBacktrackCochain hns P a).map_update_neg (Fin.cons u ![v, w]) 0 u
+    rwa [Fin.update_cons_zero, Fin.update_cons_zero] at h
+  have hneg₁ (u v w : nonisolatedZigzagQuotient k G) :
+      zigzagBacktrackCochain hns P a ![u, -v, w] = -zigzagBacktrackCochain hns P a ![u, v, w] := by
+    have h := (zigzagBacktrackCochain hns P a).map_update_neg (Fin.cons u (Fin.cons v ![w]))
+      (Fin.succ 0) v
+    rwa [← Fin.cons_update, ← Fin.cons_update, Fin.update_cons_zero, Fin.update_cons_zero] at h
   have hid := zigzagBacktrackCochain_coboundary hns a hP (𝒢.koszulTwist 1 x₀) x₁
     (𝒢.koszulTwist 1 x₂) x₃
   rw [zigzagBacktrackCochain_koszulTwist_one_zero hns a h𝒢 x₀ x₁ (𝒢.koszulTwist 1 x₂),
@@ -387,8 +344,7 @@ private theorem zigzagBacktrackCochain_coboundary_koszulTwist (hP : ∀ p ∈ P,
   rw [koszulTwist_one_zigzagBacktrackCochain hns a h𝒢,
     zigzagBacktrackCochain_koszulTwist_one_one hns a h𝒢 x₀ x₁ x₂, neg_neg, hmul,
     InternalGrading.koszulTwist_koszulTwist, map_neg, InternalGrading.koszulTwist_koszulTwist,
-    zigzagBacktrackCochain_neg_zero, zigzagBacktrackCochain_neg_zero,
-    zigzagBacktrackCochain_neg_one, neg_neg, ← hid]
+    hneg₀, hneg₀, hneg₁, neg_neg, ← hid]
   abel
 
 end Twist
@@ -720,8 +676,7 @@ private theorem backtrack_component_four (x : Fin 4 → nonisolatedZigzagQuotien
       (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients a hP)).grading = 𝒢 :=
     grading_zigzagLoopAInfinityAlgebra hns _ _ _ _
   have h₃ (y : nonisolatedZigzagQuotient k G) : 𝒢.koszulTwist 3 y = 𝒢.koszulTwist 1 y := by
-    rw [show (3 : ℤ) = 1 + 2 by norm_num, ← InternalGrading.koszulTwist_comp, LinearMap.comp_apply,
-      InternalGrading.koszulTwist_two, LinearMap.id_apply]
+    simpa using (LinearMap.congr_fun (𝒢.koszulTwist_comp 1 2) y).symm
   have hmul (y z : nonisolatedZigzagQuotient k G) :
       𝒢.koszulTwist 1 (y * z) = 𝒢.koszulTwist 1 y * 𝒢.koszulTwist 1 z := by
     have h := (zigzagLoopAInfinityAlgebra hns (0 : (Fin 4 → G.Dart) →₀ k)
@@ -876,6 +831,7 @@ theorem linearPart_zigzagBacktrackAInfinityHom :
     zigzagBacktrackTaylor_of_tprod_of_ne hns a _ (by norm_num), add_zero, LinearMap.id_apply]
 
 /-- The arity-three component of the backtrack isomorphism is the backtrack cochain. -/
+@[simp]
 theorem component_three_zigzagBacktrackAInfinityHom :
     (zigzagBacktrackAInfinityHom hns a hP hP').component 3 = zigzagBacktrackCochain hns P a := by
   ext x
@@ -894,6 +850,17 @@ theorem component_three_zigzagBacktrackAInfinityHom :
   congr 1
   funext i
   fin_cases i <;> rfl
+
+/-- The components of the backtrack isomorphism vanish outside arities one and three. -/
+@[simp]
+theorem component_zigzagBacktrackAInfinityHom_of_ne {n : ℕ} (h₁ : n ≠ 1) (h₃ : n ≠ 3) :
+    (zigzagBacktrackAInfinityHom hns a hP hP').component n = 0 := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · exact AInfinityHom.component_zero _
+  ext x
+  rw [AInfinityHom.component_apply _ n hn, taylor_zigzagBacktrackAInfinityHom,
+    LinearMap.add_apply, letter_of_of_ne_one k _ (Subtype.coe_ne_coe.mp h₁), zero_add,
+    zigzagBacktrackTaylor_of_tprod_of_ne hns a hn h₃, _root_.zero_apply]
 
 /-- **The backtrack isomorphism is an `A∞` isomorphism.** -/
 theorem isIso_zigzagBacktrackAInfinityHom : (zigzagBacktrackAInfinityHom hns a hP hP').IsIso :=
