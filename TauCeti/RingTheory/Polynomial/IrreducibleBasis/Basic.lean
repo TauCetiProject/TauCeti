@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.Polynomial.SquarefreeBasis
 
 import Mathlib.Algebra.BigOperators.Associated
 import Mathlib.Algebra.Squarefree.Basic
-import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
@@ -30,13 +29,11 @@ unique factorization domain by Mathlib's `MvPolynomial.uniqueFactorizationMonoid
 operators for cylindrical algebraic decomposition (McCallum's and Lazard's) are applied to an
 irreducible basis of the input family together with the contents, and the signs and roots of
 the original family are recovered from those of the basis and the contents. By Gauss's lemma
-the basis stays irreducible over the fraction field of `D`, and its members stay pairwise
-coprime there. An irreducible basis is in particular a squarefree basis
-(`Finset.IsSquarefreeBasis`), so its product is squarefree over the fraction field. Pairwise
-coprimality is the form in which resultants of distinct basis members are nonzero. Nonzero
-discriminants additionally need separability, which follows from squarefreeness in
-characteristic zero (as for `R = ℝ`) but can fail in positive characteristic, where an
-irreducible member can be inseparable.
+the basis stays irreducible over the fraction field of `D`. An irreducible basis is in
+particular a squarefree basis (`Finset.IsSquarefreeBasis`), so its members are pairwise coprime
+and its product is squarefree over the fraction field; hence resultants of distinct members are
+nonzero, and in characteristic zero (as for `R = ℝ`) so are discriminants of members. In
+positive characteristic an irreducible member can be inseparable, with zero discriminant.
 
 ## Main definitions and results
 
@@ -46,23 +43,18 @@ irreducible member can be inseparable.
   product of irreducible polynomials of positive degree.
 * `Finset.IsIrreducibleBasis.isPrimitive`: the members of the basis are primitive.
 * `Finset.IsIrreducibleBasis.isSquarefreeBasis`: an irreducible basis is a squarefree basis.
-  Content reconstruction and the squarefreeness of products are proved for squarefree bases.
+  Content reconstruction, root recovery, the squarefreeness of products, and the nonvanishing of
+  resultants and discriminants are proved for squarefree bases.
 * `Finset.IsIrreducibleBasis.exists_associated_iff`: an irreducible polynomial of positive
   degree is associated to a member of the basis exactly when it divides a nonzero member of
   the family. Consequently any two irreducible bases agree up to associates
   (`Finset.IsIrreducibleBasis.exists_associated`, `Finset.IsIrreducibleBasis.exists_eq_C_mul`)
   and have the same cardinality (`Finset.IsIrreducibleBasis.card_eq`).
-* `Finset.IsIrreducibleBasis.irreducible_map`, `Finset.IsIrreducibleBasis.isCoprime_map`: over
-  the fraction field of `D`, the members of the basis are irreducible and pairwise coprime.
-* `Finset.IsIrreducibleBasis.resultant_ne_zero`, `Finset.IsIrreducibleBasis.discr_ne_zero`: the
-  resultants of distinct members of the basis are nonzero, and in characteristic zero so are the
-  discriminants of its members.
+* `Finset.IsIrreducibleBasis.irreducible_map`: over the fraction field of `D`, the members of
+  the basis are irreducible.
 * `Finset.IsIrreducibleBasis.exists_associated_discr`,
   `Finset.IsIrreducibleBasis.exists_associated_resultant`: the discriminants and pairwise
   resultants of one irreducible basis are associated to those of any other.
-* `Finset.IsIrreducibleBasis.isRoot_map_iff`: after a specialization `φ : D →+* A` into a
-  domain under which a member `f` of the family does not vanish, the roots of the specialized
-  `f` are exactly the roots of the specialized basis members dividing `f`.
 
 ## References
 
@@ -103,21 +95,6 @@ end Defs
 variable {D : Type*} [CommRing D] {F B B' : Finset D[X]} {b b' : D[X]}
 
 namespace IsIrreducibleBasis
-
-/-- Roots of a specialized member of the family are the roots of the specialized members of
-the basis dividing it, provided the specialization of the member does not vanish. -/
-theorem isRoot_map_iff (hB : F.IsIrreducibleBasis B) {f : D[X]} (hf : f ∈ F) {A : Type*}
-    [CommRing A] [IsDomain A] (φ : D →+* A) (hφ : f.map φ ≠ 0) (t : A) :
-    (f.map φ).IsRoot t ↔ ∃ b ∈ B, b ∣ f ∧ (b.map φ).IsRoot t := by
-  refine ⟨fun ht ↦ ?_, fun ⟨b, _, hbf, hbt⟩ ↦ hbt.dvd (Polynomial.map_dvd φ hbf)⟩
-  obtain ⟨c, e, rfl⟩ := hB.exists_eq_C_mul_prod f hf
-  have hc : φ c ≠ 0 := by rintro hc; simp [Polynomial.map_mul, hc] at hφ
-  simp only [Polynomial.map_mul, map_C, Polynomial.map_prod, Polynomial.map_pow, IsRoot,
-    eval_mul, eval_C, eval_prod, eval_pow, mul_eq_zero, hc, false_or,
-    Finset.prod_eq_zero_iff, pow_eq_zero_iff', ne_eq] at ht
-  obtain ⟨b, hb, hbt, he⟩ := ht
-  exact ⟨b, hb, ((dvd_pow_self b he).trans
-    (dvd_prod_of_mem (fun b ↦ b ^ e b) hb)).mul_left _, hbt⟩
 
 variable [IsDomain D]
 
@@ -225,32 +202,7 @@ theorem irreducible_map (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) :
     Irreducible (b.map (algebraMap D K)) :=
   (hB.isPrimitive hb).irreducible_iff_irreducible_map_fraction_map.1 (hB.irreducible b hb)
 
-/-- Distinct members of an irreducible basis are coprime over the fraction field. -/
-theorem isCoprime_map (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
-    IsCoprime (b.map (algebraMap D K)) (b'.map (algebraMap D K)) :=
-  (hB.irreducible_map K hb).coprime_iff_not_dvd.2 fun h ↦ hne <|
-    hB.eq_of_associated b hb b' hb' <| (hB.irreducible b hb).associated_of_dvd
-      (hB.irreducible b' hb') ((hB.isPrimitive hb).dvd_of_fraction_map_dvd_fraction_map h)
-
 end FractionField
-
-/-- The resultant of two distinct members of an irreducible basis is nonzero. -/
-theorem resultant_ne_zero (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) (hb' : b' ∈ B)
-    (hne : b ≠ b') : resultant b b' ≠ 0 := by
-  have hinj := IsFractionRing.injective D (FractionRing D)
-  have h := Polynomial.resultant_ne_zero _ _ (hB.isCoprime_map (FractionRing D) hb hb' hne)
-  rwa [natDegree_map_eq_of_injective hinj, natDegree_map_eq_of_injective hinj, resultant_map_map,
-    map_ne_zero_iff _ hinj] at h
-
-/-- In characteristic zero, the discriminant of a member of an irreducible basis is nonzero. In
-positive characteristic an irreducible member can be inseparable, with zero discriminant. -/
-theorem discr_ne_zero [CharZero D] (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) : b.discr ≠ 0 := by
-  have hinj := IsFractionRing.injective D (FractionRing D)
-  have : CharZero (FractionRing D) := charZero_of_injective_algebraMap hinj
-  have hb0 := (Polynomial.map_ne_zero_iff hinj).2 (hB.irreducible b hb).ne_zero
-  have h := (discr_ne_zero_iff hb0).2 (hB.irreducible_map (FractionRing D) hb).separable
-  rwa [discr_map_of_natDegree_eq _ (natDegree_map_eq_of_injective hinj _),
-    map_ne_zero_iff _ hinj] at h
 
 end IsIrreducibleBasis
 

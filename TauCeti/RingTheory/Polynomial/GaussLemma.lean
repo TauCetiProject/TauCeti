@@ -20,7 +20,9 @@ Consequently squarefreeness and relative primality pass from `R[X]` to `K[X]`
 (`Squarefree.map_fraction_map`, `IsRelPrime.map_fraction_map`). No primitivity is assumed:
 a constant factor of a polynomial over `R` becomes a unit over `K`, so these implications
 only lose information. Over `K[X]`, a principal ideal domain, relative primality is the same
-as `IsCoprime`, which makes resultants of the images nonzero.
+as `IsCoprime`, which makes resultants of the images nonzero; this is how the members of a
+squarefree basis are shown to have nonzero pairwise resultants
+(`Finset.IsSquarefreeBasis.resultant_ne_zero`).
 
 These facts complement Mathlib's
 `Polynomial.IsPrimitive.irreducible_iff_irreducible_map_fraction_map` and

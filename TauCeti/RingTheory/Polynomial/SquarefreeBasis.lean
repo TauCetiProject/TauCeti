@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 
 import Mathlib.Algebra.Squarefree.Basic
 import Mathlib.FieldTheory.Perfect
+import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.RingTheory.Polynomial.GaussLemma
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
@@ -29,8 +30,9 @@ single polynomial `f` into primitive, squarefree, pairwise relatively prime `s�
 squarefree basis of `{f}`. McCallum's family lifting theorem only uses
 the properties recorded here.
 
-Over the fraction field the product of a squarefree basis stays squarefree, by Gauss's lemma;
-in characteristic zero the discriminant of the product of any subfamily is therefore nonzero.
+Over the fraction field the product of a squarefree basis stays squarefree and its members stay
+pairwise coprime, by Gauss's lemma. Hence the resultants of distinct members are nonzero, and in
+characteristic zero the discriminant of the product of any subfamily is nonzero.
 
 ## Main definitions and results
 
@@ -39,8 +41,15 @@ in characteristic zero the discriminant of the product of any subfamily is there
   is its content times a unit times a product of powers of the basis.
 * `Finset.IsSquarefreeBasis.squarefree_prod`, `Finset.IsSquarefreeBasis.squarefree_prod_map`:
   the product of the basis is squarefree, also over the fraction field.
-* `Finset.IsSquarefreeBasis.discr_prod_ne_zero`: in characteristic zero, the product of any
-  subfamily of the basis has nonzero discriminant.
+* `Finset.IsSquarefreeBasis.isCoprime_map`, `Finset.IsSquarefreeBasis.resultant_ne_zero`:
+  distinct members of the basis are coprime over the fraction field, so their resultant is
+  nonzero.
+* `Finset.IsSquarefreeBasis.discr_prod_ne_zero`, `Finset.IsSquarefreeBasis.discr_ne_zero`: in
+  characteristic zero, the product of any subfamily of the basis, in particular each member, has
+  nonzero discriminant.
+* `Finset.IsSquarefreeBasis.isRoot_map_iff`: after a specialization `φ : D →+* A` into a
+  domain under which a member `f` of the family does not vanish, the roots of the specialized
+  `f` are exactly the roots of the specialized basis members dividing `f`.
 
 ## References
 
@@ -77,7 +86,22 @@ end Defs
 
 namespace IsSquarefreeBasis
 
-variable {D : Type*} [CommRing D] {F B : Finset D[X]}
+variable {D : Type*} [CommRing D] {F B : Finset D[X]} {b b' : D[X]}
+
+/-- Roots of a specialized member of the family are the roots of the specialized members of
+the basis dividing it, provided the specialization of the member does not vanish. -/
+theorem isRoot_map_iff (hB : F.IsSquarefreeBasis B) {f : D[X]} (hf : f ∈ F) {A : Type*}
+    [CommRing A] [IsDomain A] (φ : D →+* A) (hφ : f.map φ ≠ 0) (t : A) :
+    (f.map φ).IsRoot t ↔ ∃ b ∈ B, b ∣ f ∧ (b.map φ).IsRoot t := by
+  refine ⟨fun ht ↦ ?_, fun ⟨b, _, hbf, hbt⟩ ↦ hbt.dvd (Polynomial.map_dvd φ hbf)⟩
+  obtain ⟨c, e, rfl⟩ := hB.exists_eq_C_mul_prod f hf
+  have hc : φ c ≠ 0 := by rintro hc; simp [Polynomial.map_mul, hc] at hφ
+  simp only [Polynomial.map_mul, map_C, Polynomial.map_prod, Polynomial.map_pow, IsRoot,
+    eval_mul, eval_C, eval_prod, eval_pow, mul_eq_zero, hc, false_or,
+    Finset.prod_eq_zero_iff, pow_eq_zero_iff', ne_eq] at ht
+  obtain ⟨b, hb, hbt, he⟩ := ht
+  exact ⟨b, hb, ((dvd_pow_self b he).trans
+    (dvd_prod_of_mem (fun b ↦ b ^ e b) hb)).mul_left _, hbt⟩
 
 /-- Every product of powers of the members of a squarefree basis is primitive, so the
 constant in `exists_eq_C_mul_prod` is the content of the member up to a unit. -/
@@ -129,6 +153,24 @@ theorem discr_prod_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B)
   rw [← Polynomial.map_prod, Polynomial.discr_map_of_natDegree_eq _
     (Polynomial.natDegree_map_eq_of_injective hinj _), map_ne_zero_iff _ hinj] at h
   exact h
+
+/-- In characteristic zero, the discriminant of a member of a squarefree basis is nonzero. -/
+theorem discr_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) : b.discr ≠ 0 := by
+  simpa using hB.discr_prod_ne_zero (singleton_subset_iff.2 hb)
+
+/-- Distinct members of a squarefree basis are coprime over the fraction field. -/
+theorem isCoprime_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
+    (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
+    IsCoprime (b.map (algebraMap D K)) (b'.map (algebraMap D K)) :=
+  (hB.isRelPrime b hb b' hb' hne).map_fraction_map.isCoprime
+
+/-- The resultant of two distinct members of a squarefree basis is nonzero. -/
+theorem resultant_ne_zero (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B)
+    (hne : b ≠ b') : resultant b b' ≠ 0 := by
+  have hinj := IsFractionRing.injective D (FractionRing D)
+  have h := Polynomial.resultant_ne_zero _ _ (hB.isCoprime_map (FractionRing D) hb hb' hne)
+  rwa [natDegree_map_eq_of_injective hinj, natDegree_map_eq_of_injective hinj, resultant_map_map,
+    map_ne_zero_iff _ hinj] at h
 
 end IsSquarefreeBasis
 
