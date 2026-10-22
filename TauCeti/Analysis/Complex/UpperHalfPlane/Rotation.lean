@@ -25,8 +25,10 @@ rotation moves any point onto the imaginary axis (`exists_rotation_smul_re_eq_ze
 ingredient that turns transitivity of `PSL(2, ℝ)` on `ℍ` into two-point transitivity on geodesic
 lines (`Geodesic.lean`).
 
-The stabiliser of `I` is not identified with the rotation group here, and no rotation angle is
-computed explicitly.
+The file also describes the stabiliser of `I` in `SL(2, ℝ)` in coordinates: its elements are
+exactly the matrices `!![a, b; -b, a]` with `a² + b² = 1` (`smul_I_eq_I_iff` and
+`sq_add_sq_eq_one_of_smul_I_eq_I`). Their parametrization by an angle `θ` as `rotation θ` is not
+set up here, and no rotation angle is computed explicitly.
 
 ## Main declarations
 

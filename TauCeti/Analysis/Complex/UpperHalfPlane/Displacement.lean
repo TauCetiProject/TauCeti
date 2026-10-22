@@ -81,11 +81,6 @@ theorem cosh_dist_smul_I (g : SL(2, ℝ)) :
   field_simp
   linear_combination -(g 0 0 * g 1 1 - g 0 1 * g 1 0 + 1) * hdet
 
-/-- An element of `SL(2, ℝ)` fixing `I` is `!![a, b; -b, a]` with `a² + b² = 1`. -/
-private theorem eq_of_smul_I_eq_I {k : SL(2, ℝ)} (hk : k • I = I) :
-    k 1 1 = k 0 0 ∧ k 1 0 = -k 0 1 ∧ k 0 0 ^ 2 + k 0 1 ^ 2 = 1 :=
-  ⟨((smul_I_eq_I_iff k).1 hk).1, ((smul_I_eq_I_iff k).1 hk).2, sq_add_sq_eq_one_of_smul_I_eq_I hk⟩
-
 /-- The base-point displacement of a conjugate of `k = !![a, b; -b, a]`:
 `N(B k B⁻¹) - 2 = b² (N(B)² - 4)`, where `N` is the sum of the squares of the entries. -/
 private theorem sumSq_conj {B k : SL(2, ℝ)} (h₁₁ : k 1 1 = k 0 0) (h₁₀ : k 1 0 = -k 0 1)
@@ -114,7 +109,8 @@ theorem cosh_dist_smul_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z 
   set k := P⁻¹ * g * P with hk
   have hkI : k • I = I := by
     rw [hk, mul_smul, mul_smul, hz, inv_smul_smul]
-  obtain ⟨h₁₁, h₁₀, hab⟩ := eq_of_smul_I_eq_I hkI
+  obtain ⟨h₁₁, h₁₀⟩ := (smul_I_eq_I_iff k).1 hkI
+  have hab := sq_add_sq_eq_one_of_smul_I_eq_I hkI
   have hg : g = P * k * P⁻¹ := by
     rw [hk]
     group
@@ -146,7 +142,8 @@ theorem trace_commutatorElement_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz :
   set X := P⁻¹ * h * P with hX
   have hkI : k • I = I := by
     rw [hk, mul_smul, mul_smul, hz, inv_smul_smul]
-  obtain ⟨h₁₁, h₁₀, hab⟩ := eq_of_smul_I_eq_I hkI
+  obtain ⟨h₁₁, h₁₀⟩ := (smul_I_eq_I_iff k).1 hkI
+  have hab := sq_add_sq_eq_one_of_smul_I_eq_I hkI
   have hcomm : ⁅g, h⁆ = P * ⁅k, X⁆ * P⁻¹ := by
     simp only [hk, hX, commutatorElement_def]
     group
