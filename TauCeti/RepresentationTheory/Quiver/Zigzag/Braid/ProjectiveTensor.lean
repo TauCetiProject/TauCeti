@@ -85,14 +85,6 @@ private local instance projectiveTensorRightModule (i : V) : Module Zᵐᵒᵖ (
 
 /-! ### The carrier identification -/
 
--- `zigzagBraidBimoduleRightFactorsEquiv_op_smul` restated with the restricted `Zᵐᵒᵖ` action, the
--- form `BalancedTensorProduct.congr` expects. The two actions agree only after unfolding
--- `Algebra.TensorProduct.includeRight`, so rewriting under `congr` needs this exact statement.
-private theorem rightFactors_smul (i : V) (a : Z) (m : U i) :
-    zigzagBraidBimoduleRightFactorsEquiv k G i (op a • m) =
-      op a • zigzagBraidBimoduleRightFactorsEquiv k G i m :=
-  zigzagBraidBimoduleRightFactorsEquiv_op_smul k G i a m
-
 private theorem ridSymm_smul (j : V) (a : Z) (n : L j) :
     (TensorProduct.rid k (L j)).symm (a • n) = a • (TensorProduct.rid k (L j)).symm n := by
   simp [TensorProduct.smul_tmul']
@@ -104,7 +96,7 @@ def zigzagBraidProjectiveTensorCornerEquiv (i j : V) :
   (GradedModuleCat.bimoduleModuleTensorUnderlyingEquiv Γ Γ (U i) (P j)).trans
     ((BalancedTensorProduct.congr (zigzagBraidBimoduleRightFactorsEquiv k G i)
       (TensorProduct.rid k (L j)).symm
-      (rightFactors_smul k G i) (ridSymm_smul k G j)).trans
+      (zigzagBraidBimoduleRightFactorsEquiv_op_smul k G i) (ridSymm_smul k G j)).trans
     ((BalancedTensorProduct.outerFactors k Z (R i) (L j) (L i) k).trans
       (TensorProduct.congr (spanSingletonBalancedTensorProductEquivCorner k
         (isIdempotentElem_zigzagAlgebraBasis_inl k G i)

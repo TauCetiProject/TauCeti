@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coxeter.DeformedReflection
+public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.ProjectiveTensor
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.K0
 
@@ -148,27 +149,7 @@ end CommRing
 
 /-! ### The Artin group action -/
 
-variable [Field k]
-
-/-- Conjugation by the coordinates in the vertex-projective basis. -/
-private def coordinateConj :
-    ((V → LaurentPolynomial ℤ) ≃ₗ[LaurentPolynomial ℤ] (V → LaurentPolynomial ℤ)) →*
-      (LaurentK0.{max u w} (gradedFiniteProjectiveModulesExactStructure A) ≃ₗ[LaurentPolynomial ℤ]
-        LaurentK0.{max u w} (gradedFiniteProjectiveModulesExactStructure A)) where
-  toFun σ := (zigzagAlgebraGradedProjectiveClassBasis k G).equivFun.trans
-    (σ.trans (zigzagAlgebraGradedProjectiveClassBasis k G).equivFun.symm)
-  map_one' := LinearEquiv.ext fun x ↦ by
-    simp only [LinearEquiv.trans_apply, LinearEquiv.coe_one, id, LinearEquiv.symm_apply_apply]
-  map_mul' σ τ := LinearEquiv.ext fun x ↦ by
-    simp only [LinearEquiv.trans_apply, LinearEquiv.mul_apply, LinearEquiv.apply_symm_apply]
-
-private theorem coordinateConj_apply
-    (σ : (V → LaurentPolynomial ℤ) ≃ₗ[LaurentPolynomial ℤ] (V → LaurentPolynomial ℤ))
-    (x : LaurentK0.{max u w} (gradedFiniteProjectiveModulesExactStructure A)) :
-    coordinateConj k G σ x = (zigzagAlgebraGradedProjectiveClassBasis k G).equivFun.symm
-      (σ ((zigzagAlgebraGradedProjectiveClassBasis k G).equivFun x)) := (rfl)
-
-variable [Fintype V] [DecidableEq V]
+variable [Field k] [Fintype V] [DecidableEq V]
 
 /-- **The action of the graph's Artin group on `K₀^gr(proj Z)`.** The standard generator at `i`
 acts by the deformed simple reflection at `q`, in the basis of vertex-projective classes; by
@@ -178,8 +159,9 @@ def zigzagBraidK0Action :
     TauCeti.ArtinGroup G.coxeterMatrix →*
       (LaurentK0.{max u w} (gradedFiniteProjectiveModulesExactStructure A) ≃ₗ[LaurentPolynomial ℤ]
         LaurentK0.{max u w} (gradedFiniteProjectiveModulesExactStructure A)) :=
-  (coordinateConj k G).comp
-    (G.deformedReflectionRepresentation (LaurentPolynomial.isUnit_T 1).unit)
+  (LinearEquiv.autCongr
+    (zigzagAlgebraGradedProjectiveClassBasis k G).equivFun.symm).toMonoidHom.comp
+      (G.deformedReflectionRepresentation (LaurentPolynomial.isUnit_T 1).unit)
 
 /-- The standard generator at `i` acts by the deformed reflection at `q` in vertex-projective
 coordinates. -/
@@ -190,7 +172,8 @@ theorem zigzagBraidK0Action_gen_apply (i : V)
         (G.deformedReflection (LaurentPolynomial.isUnit_T 1).unit i
           ((zigzagAlgebraGradedProjectiveClassBasis k G).equivFun x)) := by
   rw [zigzagBraidK0Action, MonoidHom.comp_apply,
-    SimpleGraph.deformedReflectionRepresentation_gen, coordinateConj_apply]
+    SimpleGraph.deformedReflectionRepresentation_gen, MulEquiv.coe_toMonoidHom,
+    LinearEquiv.autCongr_apply_apply, LinearEquiv.symm_symm]
 
 /-- **The braid complex acts on `K₀^gr(proj Z)` by its Euler class**: the standard generator at
 `i` sends `[P_j]` to `[Z ⊗_Z P_j] - [U_i ⊗_Z P_j]`, the Euler class of `B_i ⊗_Z P_j`, whose

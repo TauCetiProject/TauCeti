@@ -166,9 +166,11 @@ theorem zigzagBraidBimoduleRightFactorsEquiv_apply (i : V) (u : U i) :
       TensorProduct.comm k (L i) (R i) (zigzagBraidBimoduleFactorsEquiv k G i u) := (rfl)
 
 /-- The reversed factor identification carries the right action of `Z` on the vertex bimodule to
-the action of `Zᵐᵒᵖ` on the right-ideal factor. -/
+the action of `Zᵐᵒᵖ` on the right-ideal factor. It is stated with the restricted `Zᵐᵒᵖ` action,
+the form `BalancedTensorProduct.congr` expects. -/
 theorem zigzagBraidBimoduleRightFactorsEquiv_op_smul (i : V) (a : Z) (m : U i) :
-    zigzagBraidBimoduleRightFactorsEquiv k G i (((1 : Z) ⊗ₜ[k] op a) • m) =
+    letI := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) (U i)
+    zigzagBraidBimoduleRightFactorsEquiv k G i (op a • m) =
       op a • zigzagBraidBimoduleRightFactorsEquiv k G i m := by
   have key (t : L i ⊗[k] R i) :
       TensorProduct.comm k (L i) (R i)
@@ -181,14 +183,6 @@ theorem zigzagBraidBimoduleRightFactorsEquiv_op_smul (i : V) (a : Z) (m : U i) :
   exact (congrArg (TensorProduct.comm k (L i) (R i))
     (zigzagBraidBimoduleFactorsEquiv_tmul_smul k G i 1 a m)).trans
       (key (zigzagBraidBimoduleFactorsEquiv k G i m))
-
--- `zigzagBraidBimoduleRightFactorsEquiv_op_smul` restated with the restricted `Zᵐᵒᵖ` action, the
--- form `BalancedTensorProduct.congr` expects. The two actions agree only after unfolding
--- `Algebra.TensorProduct.includeRight`, so rewriting under `congr` needs this exact statement.
-private theorem rightFactors_equivariant (i : V) (a : Z) (m : U i) :
-    zigzagBraidBimoduleRightFactorsEquiv k G i (op a • m) =
-      op a • zigzagBraidBimoduleRightFactorsEquiv k G i m :=
-  zigzagBraidBimoduleRightFactorsEquiv_op_smul k G i a m
 
 private theorem leftFactors_equivariant (j : V) (a : Z) (n : U j) :
     zigzagBraidBimoduleFactorsEquiv k G j (a • n) =
@@ -209,7 +203,7 @@ def zigzagBraidTensorCornerEquiv (i j : V) :
   (GradedModuleCat.bimoduleTensorUnderlyingEquiv Γ Γ Γ (U i) (U j)).trans
     ((BalancedTensorProduct.congr (zigzagBraidBimoduleRightFactorsEquiv k G i)
       (zigzagBraidBimoduleFactorsEquiv k G j)
-      (rightFactors_equivariant k G i) (leftFactors_equivariant k G j)).trans
+      (zigzagBraidBimoduleRightFactorsEquiv_op_smul k G i) (leftFactors_equivariant k G j)).trans
     ((BalancedTensorProduct.outerFactors k Z (R i) (L j) (L i) (R j)).trans
       (TensorProduct.congr (spanSingletonBalancedTensorProductEquivCorner k
         (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
