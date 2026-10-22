@@ -133,7 +133,8 @@ def enhancedQuantumDegree (D : OrientedPDCode n) (e : D.toPDCode.EnhancedState) 
 
 /-- The defining formula of the quantum degree of an enhanced state. -/
 theorem enhancedQuantumDegree_def (D : OrientedPDCode n) (e : D.toPDCode.EnhancedState) :
-    D.enhancedQuantumDegree e = D.stateQuantumShift e.1 + Khovanov.labelingQuantumDegree _ e.2 := (rfl)
+    D.enhancedQuantumDegree e =
+      D.stateQuantumShift e.1 + Khovanov.labelingQuantumDegree _ e.2 := (rfl)
 
 /-- **The enhanced state sum** of an oriented code: the sum of `(-1) ^ i q ^ j` over all enhanced
 states, where `i` is the cochain degree and `j` the quantum degree, with `q = T`; that is, the
