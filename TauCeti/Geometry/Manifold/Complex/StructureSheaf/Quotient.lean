@@ -348,7 +348,8 @@ private theorem eq_zero_of_quotientStalkBranch {x y : X} (hxy : s x y) {N : Open
   have hyV : y ∈ V := Or.inr ⟨hyB, hyN⟩
   have hV := saturated_of_isPairNhd hN hVN hxV hyV
   have hWU : TopCat.saturatedOpen V hV ≤ U := by
-    rintro _ ⟨w, hw | hw, rfl⟩
+    intro z hz
+    obtain ⟨w, hw | hw, rfl⟩ := (TopCat.mem_saturatedOpen V hV).mp hz
     exacts [iA.le hw.1, iB.le hw.1]
   have hxW : Quotient.mk s x ∈ TopCat.saturatedOpen V hV :=
     (TopCat.mem_map_saturatedOpen V hV).mpr hxV

@@ -21,9 +21,9 @@ each flag pair. This file identifies its stalks.
 
 * `NodalGluing.quotientStalkBranchEquiv`: at a point of the normalization which is not a flag
   point, the stalk of the glued curve is the holomorphic stalk of the normalization.
-* `NodalGluing.quotientStalkToNodeEquiv`: at the node of a flag pair `f`, the stalk of the glued
-  curve is the branch-pair node ring at `fstPoint d f` and `sndPoint d f`, the ring of pairs of
-  holomorphic germs on the two branches with equal values at the node.
+* `NodalGluing.quotientStalkToNodeEquiv`: at the node `nodeOfFlag d f` of a flag pair `f`, the
+  stalk of the glued curve is the branch-pair node ring at `fstPoint d f` and `sndPoint d f`,
+  the ring of pairs of holomorphic germs on the two branches with equal values at the node.
 
 Both follow from the corresponding local statements for quotients of a complex manifold,
 `holomorphicStructureSheaf.quotientStalkBranch_bijective` and
@@ -98,17 +98,22 @@ theorem quotientStalkBranchEquiv_apply [∀ i, T1Space (X i)] {x : Σ i, X i}
 
 /-- The stalk of the glued curve at the node of a flag pair is the branch-pair node ring. -/
 def quotientStalkToNodeEquiv [∀ i, T2Space (X i)] (f : Flag) :
-    (quotientSheaf I (gluedRelSetoid d)).presheaf.stalk (Quotient.mk _ (fstPoint d f)) ≃+*
+    (quotientSheaf I (gluedRelSetoid d)).presheaf.stalk (nodeOfFlag d f) ≃+*
       nodeLocalRing I I (fstPoint d f) (sndPoint d f) :=
-  RingEquiv.ofBijective _ (NodalGluing.quotientStalkToNode_bijective I d f)
+  ((quotientSheaf I (gluedRelSetoid d)).presheaf.stalkCongr
+      (.of_eq (mk_fstPoint d f).symm)).commRingCatIsoToRingEquiv.trans
+    (RingEquiv.ofBijective _ (NodalGluing.quotientStalkToNode_bijective I d f))
 
-/-- The stalk isomorphism at a node is the pair of branch restrictions. -/
+/-- The stalk isomorphism at a node is the pair of branch restrictions, after identifying the
+node with the class of the first point of the flag pair. -/
 @[simp]
 theorem quotientStalkToNodeEquiv_apply [∀ i, T2Space (X i)] (f : Flag)
-    (g : (quotientSheaf I (gluedRelSetoid d)).presheaf.stalk (Quotient.mk _ (fstPoint d f))) :
+    (g : (quotientSheaf I (gluedRelSetoid d)).presheaf.stalk (nodeOfFlag d f)) :
     quotientStalkToNodeEquiv I d f g =
       quotientStalkToNode I (gluedRelSetoid d) (fstPoint d f) (sndPoint d f)
-        (gluedRelSetoid_fstPoint_sndPoint d f) g :=
+        (gluedRelSetoid_fstPoint_sndPoint d f)
+        ((quotientSheaf I (gluedRelSetoid d)).presheaf.stalkSpecializes
+          (specializes_of_eq (mk_fstPoint d f)) g) :=
   (rfl)
 
 end TauCeti.NodalGluing
