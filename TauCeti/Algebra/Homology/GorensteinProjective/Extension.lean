@@ -109,22 +109,13 @@ private structure HorseshoeStep
   right_g : middleIso.inv ≫ presentation.g ≫ targetIso.hom ≫ V.S.g ≫
       V.rightIso.hom = biprod.snd ≫ Q.toCycles n (n + 1)
 
-omit [Small.{v} A] in
-private theorem cyclesShortComplex_shortExact_of_iso {P : CochainComplex (ModuleCat.{v} A) ℤ}
-    {n : ℤ} (hP : P.ExactAt (n + 1)) {X Y : ModuleCat.{v} A} (e : X ≅ P.cycles n)
-    (e' : P.cycles (n + 1) ≅ Y) :
-    (ShortComplex.mk (e.hom ≫ P.iCycles n) (P.toCycles n (n + 1) ≫ e'.hom)
-      (by simp [HomologicalComplex.iCycles_toCycles_assoc])).ShortExact := by
-  -- the cycle sequence `0 → Zⁿ → Pⁿ → Zⁿ⁺¹ → 0` is short exact as `P` is exact in degree `n + 1`
-  have h := P.cyclesShortComplex_shortExact n (n + 1) (by simp) hP
-  rw [P.cyclesShortComplex_def] at h
-  exact ShortComplex.shortExact_of_iso (ShortComplex.isoMk e.symm (Iso.refl (P.X n)) e') h
-
 private theorem positiveHorseshoeStep_nonempty {P Q : CochainComplex (ModuleCat.{v} A) ℤ}
     (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) {n : ℤ} (U : CycleExtension P Q n) :
     ∃ V : CycleExtension P Q (n + 1), Nonempty (HorseshoeStep P Q n U V) := by
-  have hPS := cyclesShortComplex_shortExact_of_iso (hP.acyclic (n + 1)) U.leftIso (Iso.refl _)
-  have hQS := cyclesShortComplex_shortExact_of_iso (hQ.acyclic (n + 1)) U.rightIso (Iso.refl _)
+  have hPS := P.cyclesShortComplex_shortExact_of_iso rfl (hP.acyclic (n + 1)) U.leftIso
+    (Iso.refl _)
+  have hQS := Q.cyclesShortComplex_shortExact_of_iso rfl (hQ.acyclic (n + 1)) U.rightIso
+    (Iso.refl _)
   have hright : IsGorensteinProjective A U.S.X₃ :=
     (IsGorensteinProjective A).prop_of_iso U.rightIso.symm (hQ.isGorensteinProjective_cycles n)
   have := hP.finite n
@@ -154,8 +145,10 @@ omit [Small.{v} A] in
 private theorem negativeHorseshoeStep_nonempty {P Q : CochainComplex (ModuleCat.{v} A) ℤ}
     (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) {n : ℤ} (V : CycleExtension P Q (n + 1)) :
     ∃ U : CycleExtension P Q n, Nonempty (HorseshoeStep P Q n U V) := by
-  have hPS := cyclesShortComplex_shortExact_of_iso (hP.acyclic (n + 1)) (Iso.refl _) V.leftIso.symm
-  have hQS := cyclesShortComplex_shortExact_of_iso (hQ.acyclic (n + 1)) (Iso.refl _) V.rightIso.symm
+  have hPS := P.cyclesShortComplex_shortExact_of_iso rfl (hP.acyclic (n + 1)) (Iso.refl _)
+    V.leftIso.symm
+  have hQS := Q.cyclesShortComplex_shortExact_of_iso rfl (hQ.acyclic (n + 1)) (Iso.refl _)
+    V.rightIso.symm
   obtain ⟨K, i, p, hip, a, b, hab, hT, hU, hleftg, hrightg, hleftf, hrightf⟩ :=
     (ExactStructure.abelian (ModuleCat.{v} A)).exists_conflation_biprod_of_conflation_of_projective
       ((ExactStructure.abelian_conflation V.S).mpr V.shortExact)
