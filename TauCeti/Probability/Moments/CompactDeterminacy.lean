@@ -148,8 +148,9 @@ theorem Measure.ext_of_forall_integral_monomial_eq_of_support [Fintype ι] (hK :
 /-- **Univariate moment determinacy on a compact set.** Two finite Borel measures on `ℝ` that are
 both supported on a common compact set `K` and have the same moments `∫ xⁿ` are equal.
 
-This is the case `ι = Unit` of `Measure.ext_of_forall_integral_monomial_eq_of_support`, transported
-along `ℝ ≃ᵐ (Unit → ℝ)`; both support hypotheses are needed for the same reason as there. -/
+Neither support hypothesis can be dropped: the moments are Bochner integrals, which are `0` for
+non-integrable integrands, so the Dirac mass at `0` and the standard Cauchy measure have the same
+moments. -/
 theorem Measure.ext_of_forall_integral_pow_eq_of_support {K : Set ℝ} (hK : IsCompact K)
     {μ ν : Measure ℝ} [IsFiniteMeasure μ] [IsFiniteMeasure ν] (hμ : μ Kᶜ = 0) (hν : ν Kᶜ = 0)
     (hmom : ∀ n : ℕ, ∫ x, x ^ n ∂μ = ∫ x, x ^ n ∂ν) :

@@ -262,8 +262,9 @@ variable {φ} in
 the law `μ_a` of a selfadjoint element `a` exactly when its moments are the moments of `a`:
 `∫ x ^ n dμ = φ (a ^ n)` for every `n`.
 
-The support hypothesis cannot be dropped: the moments are Bochner integrals, which vanish for
-non-integrable integrands, so without it they carry no information about `μ`. -/
+The support hypothesis cannot be dropped: the moments are Bochner integrals, which are `0` for
+non-integrable integrands, so a heavy-tailed `μ` can match the moments of `a` without being
+`μ_a`. -/
 theorem eq_law_iff_forall_integral_pow (ha : IsSelfAdjoint a) {μ : Measure ℝ} [IsFiniteMeasure μ]
     {K : Set ℝ} (hK : IsCompact K) (hμ : μ Kᶜ = 0) :
     μ = law φ a ↔ ∀ n : ℕ, ((∫ x, x ^ n ∂μ : ℝ) : ℂ) = φ (a ^ n) := by
