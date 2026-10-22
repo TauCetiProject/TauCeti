@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Basic
 public import TauCeti.MeasureTheory.Function.BoundedBorel
+public import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Analysis.Normed.Operator.Extend
@@ -42,6 +43,8 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.integral`: the integral against `P`, a unital star algebra homomorphism.
 * `ProjValMeasure.integral_ofSimpleFunc`: the integral of a simple symbol is the finite sum of
   its values times the projections of its fibres.
+* `ProjValMeasure.eq_integral_of_continuous`: a continuous map agreeing with the integral on
+  simple symbols is the integral.
 * `ProjValMeasure.integral_indicator`: the integral of a measurable indicator is the projection.
 * `ProjValMeasure.integral_diag_eq_inner_integral`: diagonal matrix elements of the integral are
   integrals against the diagonal measures.
@@ -113,22 +116,6 @@ private theorem setToSimpleFunc_smulProj_piecewise (P : ProjValMeasure X H) (c :
   rw [SimpleFunc.setToSimpleFunc_indicator _ P.smulProj_empty hB, smulProj_apply,
     projOrZero_of_measurableSet P hB]
 
-private theorem piecewise_mul_piecewise (c d : ℂ) {A B : Set X} (hA : MeasurableSet A)
-    (hB : MeasurableSet B) :
-    SimpleFunc.piecewise A hA (SimpleFunc.const X c) (SimpleFunc.const X 0) *
-        SimpleFunc.piecewise B hB (SimpleFunc.const X d) (SimpleFunc.const X 0) =
-      SimpleFunc.piecewise (A ∩ B) (hA.inter hB) (SimpleFunc.const X (c * d))
-        (SimpleFunc.const X 0) := by
-  ext x
-  by_cases hxA : x ∈ A <;> by_cases hxB : x ∈ B <;>
-    simp [SimpleFunc.piecewise_apply, hxA, hxB]
-
-private theorem star_piecewise (c : ℂ) {A : Set X} (hA : MeasurableSet A) :
-    star (SimpleFunc.piecewise A hA (SimpleFunc.const X c) (SimpleFunc.const X 0)) =
-      SimpleFunc.piecewise A hA (SimpleFunc.const X (star c)) (SimpleFunc.const X 0) := by
-  ext x
-  by_cases hxA : x ∈ A <;> simp [SimpleFunc.piecewise_apply, hxA]
-
 /-- The integral of simple symbols against `P`, as a unital star algebra homomorphism. -/
 private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆ₐ[ℂ] (H →L[ℂ] H) where
   toFun s := s.setToSimpleFunc P.smulProj
@@ -143,7 +130,7 @@ private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆�
     | const c hA =>
       induction t using SimpleFunc.induction with
       | const d hB =>
-        rw [piecewise_mul_piecewise, setToSimpleFunc_smulProj_piecewise,
+        rw [SimpleFunc.piecewise_const_mul_piecewise_const, setToSimpleFunc_smulProj_piecewise,
           setToSimpleFunc_smulProj_piecewise, setToSimpleFunc_smulProj_piecewise,
           smul_mul_smul_comm, P.proj_inter]
       | add _ ht₁ ht₂ =>
@@ -161,15 +148,20 @@ private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆�
   map_star' s := by
     induction s using SimpleFunc.induction with
     | const c hA =>
-      rw [star_piecewise, setToSimpleFunc_smulProj_piecewise,
+      rw [SimpleFunc.star_piecewise_const, setToSimpleFunc_smulProj_piecewise,
         setToSimpleFunc_smulProj_piecewise, star_smul, (P.isSelfAdjoint_proj _ hA).star_eq]
     | add _ hs₁ hs₂ =>
       rw [star_add, setToSimpleFunc_smulProj_add,
         setToSimpleFunc_smulProj_add, star_add, hs₁, hs₂]
 
+private theorem simpleIntegral_eq_setToSimpleFunc (P : ProjValMeasure X H)
+    (s : SimpleFunc X ℂ) : P.simpleIntegral s = s.setToSimpleFunc P.smulProj :=
+  rfl
+
 private theorem simpleIntegral_apply (P : ProjValMeasure X H) (s : SimpleFunc X ℂ) :
     P.simpleIntegral s =
       ∑ c ∈ s.range, c • P.proj (s ⁻¹' {c}) (s.measurableSet_fiber c) := by
+  rw [simpleIntegral_eq_setToSimpleFunc, SimpleFunc.setToSimpleFunc]
   refine Finset.sum_congr rfl fun c _ => ?_
   rw [smulProj_apply, projOrZero_of_measurableSet]
 
@@ -178,10 +170,9 @@ diagonal measures. -/
 private theorem integral_diag_eq_inner_simpleIntegral (P : ProjValMeasure X H)
     (s : SimpleFunc X ℂ) (ξ : H) : ∫ x, s x ∂(P.diag ξ) = ⟪ξ, P.simpleIntegral s ξ⟫_ℂ := by
   rw [← s.integral_eq_integral (SimpleFunc.integrable_of_isFiniteMeasure s),
-    SimpleFunc.integral_def, SimpleFunc.setToSimpleFunc, simpleIntegral_apply,
-    FunLike.coe_sum, Finset.sum_apply, inner_sum]
+    SimpleFunc.integral_eq, simpleIntegral_apply, FunLike.coe_sum, Finset.sum_apply, inner_sum]
   refine Finset.sum_congr rfl fun c _ => ?_
-  rw [weightedSMul_apply, FunLike.coe_smul, Pi.smul_apply, inner_smul_right,
+  rw [FunLike.coe_smul, Pi.smul_apply, inner_smul_right,
     P.inner_proj, measureReal_def, Complex.real_smul, mul_comm]
 
 /-- The integral of a simple symbol is bounded in operator norm by its supremum norm. -/
@@ -223,7 +214,8 @@ private theorem integralCLM_ofSimpleFunc (P : ProjValMeasure X H) (s : SimpleFun
 
 /-- The **integral** of a bounded Borel symbol against a projection-valued measure `P`,
 `P.integral f = ∫ f dP`, as a unital star algebra homomorphism. It is characterised by
-`integral_ofSimpleFunc` on simple symbols and its continuity (`continuous_integral`). -/
+`integral_ofSimpleFunc` on simple symbols and its continuity (`continuous_integral`); see
+`eq_integral_of_continuous`. -/
 def integral (P : ProjValMeasure X H) : BoundedBorelFunction X →⋆ₐ[ℂ] (H →L[ℂ] H) where
   toFun := P.integralCLM
   map_zero' := map_zero P.integralCLM
@@ -256,6 +248,16 @@ private theorem integral_ofSimpleFunc_eq_simpleIntegral (P : ProjValMeasure X H)
 symbols have the limiting integral. -/
 theorem continuous_integral (P : ProjValMeasure X H) : Continuous P.integral :=
   P.integralCLM.continuous
+
+/-- A continuous map on bounded Borel symbols that agrees with `P.integral` on simple symbols is
+`P.integral`, since simple symbols are dense. -/
+theorem eq_integral_of_continuous (P : ProjValMeasure X H)
+    {Φ : BoundedBorelFunction X → H →L[ℂ] H} (hΦ : Continuous Φ)
+    (h : ∀ s, Φ (BoundedBorelFunction.ofSimpleFunc s) =
+      P.integral (BoundedBorelFunction.ofSimpleFunc s)) :
+    Φ = ⇑P.integral :=
+  funext fun f => BoundedBorelFunction.denseRange_ofSimpleFunc.induction_on f
+    (isClosed_eq hΦ P.continuous_integral) h
 
 /-- The integral of a simple symbol `s` is `∑ c • P(s ⁻¹' {c})`, the sum running over the values
 of `s`. -/
