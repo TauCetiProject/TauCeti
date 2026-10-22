@@ -103,6 +103,21 @@ theorem coe_restrictedMvPowerSeriesGaussEquiv_symm
     (restrictedMvPowerSeriesGaussEquiv.symm f : MvPowerSeries (Fin n) R) = f :=
   RingEquiv.coe_subringCongr_apply weightedRestrictedSubring_eq_isRestricted_subring.symm f
 
+/-- The Gauss comparison sends the Huber constant `r` to the constant `r`. -/
+@[simp]
+theorem restrictedMvPowerSeriesGaussEquiv_weightedC (r : R) :
+    restrictedMvPowerSeriesGaussEquiv (n := n)
+      (weightedC _ isWeightFamily_one_weight r) = algebraMap R _ r :=
+  Subtype.ext (by simp)
+
+/-- The Gauss comparison sends the Huber variable `Xᵢ` to the variable `Xᵢ`. -/
+@[simp]
+theorem restrictedMvPowerSeriesGaussEquiv_weightedX (i : Fin n) :
+    restrictedMvPowerSeriesGaussEquiv (R := R)
+      (weightedX _ isWeightFamily_one_weight i) =
+        ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_X _ i⟩ :=
+  Subtype.ext (by simp)
+
 /-- The identity Gauss comparison also respects the coefficient-algebra structure. -/
 noncomputable def restrictedMvPowerSeriesGaussAlgEquiv :
     weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set R)) isWeightFamily_one_weight ≃ₐ[R]

@@ -14,15 +14,18 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.Coderivation
 Let `φ : Tᶜ(M) ⟶ M` vanish on the words of length at most `e`.  The coalgebra morphism
 `F = coalgHom (letter + φ)`, whose Taylor components are those of the identity perturbed by `φ`,
 sends a word to the sum, over all ways of cutting it into consecutive blocks, of the word in which
-some blocks are collapsed by `φ`.  A collapsed block has more than `e` letters, so on a word of
-length at most `2 e + 1` at most one block is collapsed, and `F` agrees there with
-`id + coderiv φ`, the identity plus the coderivation collapsing one block by `φ`.
+some blocks are collapsed by `φ`.  A collapsed block has more than `e` letters, so `F` is the
+identity on the words of length at most `e`, and on a word of length at most `2 e + 1` at most one
+block is collapsed, so `F` agrees there with `id + coderiv φ`, the identity plus the coderivation
+collapsing one block by `φ`.
 
 This is the length bound behind gauge transformations of `A∞` structures: such a transformation
 changes the Taylor map on short words only through one insertion of `φ`.
 
 ## Main results
 
+* `TauCeti.ReducedTensorWords.coalgHom_letter_add_apply_eq_self_of_mem_filtration`: the coalgebra
+  morphism with Taylor components `letter + φ` is the identity on the words of length at most `e`.
 * `TauCeti.ReducedTensorWords.coalgHom_letter_add_apply_of_mem_filtration`: the coalgebra
   morphism with Taylor components `letter + φ` is `id + coderiv φ` on the words of length at most
   `2 e + 1`.
@@ -69,46 +72,23 @@ private theorem letter_coalgHom_letter_add_apply (φ : ReducedTensorWords R M �
     letter R M (coalgHom R (letter R M + φ) z) = letter R M z + φ z := by
   rw [← LinearMap.comp_apply (letter R M), letter_comp_coalgHom, LinearMap.add_apply]
 
-/- The proofs below do not expand `coalgHom`.  They show by induction along the conilpotence
-filtration first that `F - id` vanishes on the words of length at most `e`, and then that
-`F - id - coderiv φ` vanishes on the words of length at most `2 e + 1`, where
-`F = coalgHom (letter + φ)`.  The letter component of `F - id` is `φ`, which vanishes on the words
-of length at most `e`, while that of `F - id - coderiv φ` is zero.  The co-Leibniz rules of `F`
-and `coderiv φ` express the deconcatenation of a value through values on shorter words; in the
-second induction this leaves the term `(F - id) ⊗ (F - id)`, which vanishes since every cut of a
-word of length at most `2 e + 1` has a half of length at most `e`. -/
-
 /-- The coalgebra morphism with Taylor components `letter + φ` is the identity on the words of
-length at most `e`, when `φ` vanishes on them. -/
-private theorem coalgHom_letter_add_sub_id_apply_eq_zero {φ : ReducedTensorWords R M →ₗ[R] M}
-    {e : ℕ} (hφ : ∀ z ∈ filtration R M e, φ z = 0) :
-    ∀ z ∈ filtration R M e,
-      (coalgHom R (letter R M + φ) - LinearMap.id : Module.End R (ReducedTensorWords R M)) z =
-        0 := by
-  have hF : IsCoalgHom R (coalgHom R (letter R M + φ)) := isCoalgHom_coalgHom _
-  refine apply_eq_zero_of_mem_filtration_of_succ e fun k hk ih z hz ↦ ⟨?_, ?_⟩
-  · rw [LinearMap.sub_apply, map_sub, letter_coalgHom_letter_add_apply, LinearMap.id_apply,
-      add_sub_cancel_left, hφ z (filtration_monotone R M (by omega) hz)]
-  · -- Expanding `F ⊗ F` with `F = id + (F - id)`, each remaining term vanishes on the cuts of
-    -- `z`, since each cut has a half of length at most `k`, on which `F - id` vanishes.
-    generalize coalgHom R (letter R M + φ) = F at hF ih ⊢
-    have h : TensorProduct.map F F (deconcatenation R M z) - deconcatenation R M z =
-        TensorProduct.map (F - LinearMap.id) LinearMap.id (deconcatenation R M z) +
-          TensorProduct.map LinearMap.id (F - LinearMap.id) (deconcatenation R M z) +
-          TensorProduct.map (F - LinearMap.id) (F - LinearMap.id) (deconcatenation R M z) := by
-      conv_lhs => rw [← add_sub_cancel LinearMap.id F]
-      rw [TensorProduct.map_add_left, TensorProduct.map_add_right, TensorProduct.map_add_right,
-        TensorProduct.map_id]
-      simp only [LinearMap.add_apply, LinearMap.id_apply]
-      abel
-    rw [map_deconcatenation_eq_zero_of_mem_filtration R M ih
-        (apply_eq_zero_of_mem_filtration_zero R M _) (by simpa using hz),
-      map_deconcatenation_eq_zero_of_mem_filtration R M
-        (apply_eq_zero_of_mem_filtration_zero R M _) ih (by simpa using hz),
-      map_deconcatenation_eq_zero_of_mem_filtration R M ih ih
-        (filtration_monotone R M (by omega) hz), add_zero, add_zero,
-      ← hF.deconcatenation_apply] at h
-    rw [LinearMap.sub_apply, map_sub, LinearMap.id_apply, h]
+length at most `e`, when `φ` vanishes on them: there its Taylor components are those of the
+identity. -/
+theorem coalgHom_letter_add_apply_eq_self_of_mem_filtration
+    {φ : ReducedTensorWords R M →ₗ[R] M} {e : ℕ} (hφ : ∀ z ∈ filtration R M e, φ z = 0)
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M e) :
+    coalgHom R (letter R M + φ) z = z :=
+  (isCoalgHom_coalgHom _).apply_eq_of_mem_filtration (isCoalgHom_id M)
+    (fun w hw ↦ by rw [letter_coalgHom_letter_add_apply, hφ w hw, add_zero, LinearMap.id_apply])
+    hz
+
+/- The proof below does not expand `coalgHom`.  It shows by induction along the conilpotence
+filtration that `F - id - coderiv φ` vanishes on the words of length at most `2 e + 1`, where
+`F = coalgHom (letter + φ)`.  The letter component of `F - id - coderiv φ` is zero, and the
+co-Leibniz rules of `F` and `coderiv φ` express the deconcatenation of a value through values on
+shorter words.  This leaves the term `(F - id) ⊗ (F - id)`, which vanishes since every cut of a
+word of length at most `2 e + 1` has a half of length at most `e`, on which `F - id` vanishes. -/
 
 /-- **A coalgebra morphism close to the identity.**  If `φ` vanishes on the words of length at most
 `e`, then the coalgebra morphism with Taylor components `letter + φ` is `id + coderiv φ` on the
@@ -120,7 +100,11 @@ theorem coalgHom_letter_add_apply_of_mem_filtration {φ : ReducedTensorWords R M
     coalgHom R (letter R M + φ) z = z + coderiv R φ z := by
   have hF : IsCoalgHom R (coalgHom R (letter R M + φ)) := isCoalgHom_coalgHom _
   have hD : IsCoderivation R (coderiv R φ) := isCoderivation_coderiv R φ
-  have hX := coalgHom_letter_add_sub_id_apply_eq_zero hφ
+  have hX : ∀ z ∈ filtration R M e,
+      (coalgHom R (letter R M + φ) - LinearMap.id : Module.End R (ReducedTensorWords R M)) z =
+        0 := fun z hz ↦ by
+    rw [LinearMap.sub_apply, LinearMap.id_apply,
+      coalgHom_letter_add_apply_eq_self_of_mem_filtration hφ hz, sub_self]
   suffices h : ∀ z ∈ filtration R M (2 * e + 1),
       (coalgHom R (letter R M + φ) - LinearMap.id - coderiv R φ :
         Module.End R (ReducedTensorWords R M)) z = 0 by
