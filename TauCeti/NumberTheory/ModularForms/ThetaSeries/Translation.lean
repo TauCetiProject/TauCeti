@@ -187,11 +187,23 @@ theorem thetaCoset_two_mul_intCast_vadd (hL : IsIntegral L) (hγ : γ ∈ dual L
   · obtain ⟨m, hm⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
     exact ⟨m * n, by rw [hm]; push_cast; ring⟩
 
+/-- The translation law of the theta series of a coset of an integral lattice: for `γ ∈ L^∨`,
+`θ_{γ+L}(τ + 2) = exp (2 π i ‖γ‖²) θ_{γ+L}(τ)`. -/
+theorem thetaCoset_two_vadd (hL : IsIntegral L) (hγ : γ ∈ dual L) (τ : ℍ) :
+    thetaCoset L γ ((2 : ℝ) +ᵥ τ) = cexp (2 * π * I * (‖γ‖ ^ 2 : ℝ)) * thetaCoset L γ τ := by
+  simpa using hL.thetaCoset_two_mul_intCast_vadd hγ 1 τ
+
 /-- The theta series of an integral lattice has period `2`. -/
 @[simp]
 theorem thetaSeries_two_mul_intCast_vadd (hL : IsIntegral L) (n : ℤ) (τ : ℍ) :
     thetaSeries L ((2 * n : ℝ) +ᵥ τ) = thetaSeries L τ := by
   simpa using hL.thetaCoset_two_mul_intCast_vadd (zero_mem (dual L)) n τ
+
+/-- The theta series of an integral lattice has period `2`: `Θ_L(τ + 2) = Θ_L(τ)`. -/
+@[simp]
+theorem thetaSeries_two_vadd (hL : IsIntegral L) (τ : ℍ) :
+    thetaSeries L ((2 : ℝ) +ᵥ τ) = thetaSeries L τ := by
+  simpa using hL.thetaSeries_two_mul_intCast_vadd 1 τ
 
 /-- The translation law of the theta series of a coset of an integral lattice, in slash form: for
 `γ ∈ L^∨`, every weight `k` and every integer `n`,
