@@ -141,8 +141,8 @@ section Semiring
 
 variable [Semiring R] {α x : ι → R}
 
-/-- Every solution of `∑ αᵢ xᵢ = 1` is a nondegenerate solution on the complement of a
-vanishing subsum: take `I` maximal among the index sets with vanishing subsum. -/
+/-- Every solution of `∑ αᵢ xᵢ = 1` has a vanishing subsum over some `I` such that its
+restriction to `Iᶜ` is a nondegenerate solution. -/
 theorem exists_sum_eq_zero_and_isNondegenerateSolution_compl [DecidableEq ι]
     (h : ∑ i, α i * x i = 1) :
     ∃ I : Finset ι, ∑ i ∈ I, α i * x i = 0 ∧
