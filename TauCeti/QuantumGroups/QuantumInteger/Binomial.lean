@@ -58,7 +58,11 @@ open Finset
 
 namespace TauCeti
 
-variable {K : Type*} [Field K]
+variable {K : Type*}
+
+section
+
+variable [CommSemiring K] [Inv K]
 
 /-- The symmetric quantum binomial coefficient `[n choose k]_q`, defined by `[n choose 0]_q = 1`,
 `[0 choose k+1]_q = 0` and the Pascal rule
@@ -104,14 +108,20 @@ theorem quantumBinomial_succ_succ (q : K) (n k : ℕ) :
     rw [quantumBinomial_succ_succ, ih, quantumBinomial_eq_zero_of_lt q (Nat.lt_succ_self n)]
     simp
 
-/-- At `q = 1` the quantum binomial coefficients are the ordinary binomial coefficients. -/
-@[simp] theorem quantumBinomial_one (n k : ℕ) : quantumBinomial (1 : K) n k = n.choose k := by
+/-- If inversion fixes `1`, the quantum binomial coefficients at `q = 1` are the ordinary
+binomial coefficients. -/
+@[simp] theorem quantumBinomial_one (h_inv_one : (1 : K)⁻¹ = 1) (n k : ℕ) :
+    quantumBinomial (1 : K) n k = n.choose k := by
   induction n generalizing k with
   | zero => cases k <;> simp
   | succ n ih =>
     cases k with
     | zero => simp
-    | succ k => simp [quantumBinomial_succ_succ, ih, Nat.choose_succ_succ]
+    | succ k => simp [quantumBinomial_succ_succ, ih, h_inv_one, Nat.choose_succ_succ]
+
+end
+
+variable [Field K]
 
 /-- `[n choose 1]_q = [n]_q` whenever the quantum integers are defined by a nonzero
 denominator. -/
