@@ -399,6 +399,16 @@ theorem connected_iff_toSimpleGraph_connected : G.Connected ↔ G.toSimpleGraph.
     exact mem_connectedComponentVertexSet_iff.mpr
       ⟨hy, SimpleGraph.ConnectedComponent.sound (hG ⟨y, hy⟩ vx)⟩
 
+/-- A multigraph is connected exactly when it has an actual vertex and any two actual vertices are
+reachable from each other. -/
+theorem connected_iff_forall_reachable :
+    G.Connected ↔ V(G).Nonempty ∧ ∀ ⦃x⦄, x ∈ V(G) → ∀ ⦃y⦄, y ∈ V(G) → G.Reachable x y := by
+  rw [connected_iff_toSimpleGraph_connected, SimpleGraph.connected_iff, nonempty_subtype,
+    and_comm]
+  refine and_congr_right fun _ ↦ ⟨fun h x hx y hy ↦ ?_, fun h u v ↦ ?_⟩
+  · exact toSimpleGraph_reachable_iff.mp (h ⟨x, hx⟩ ⟨y, hy⟩)
+  · exact toSimpleGraph_reachable_iff.mpr (h u.property v.property)
+
 /-- Finitely many actual vertices give finitely many connected-component subgraphs. -/
 instance [Finite V(G)] : Finite G.ConnectedComponent :=
   G.connectedComponentEquiv.finite_iff.mpr inferInstance
