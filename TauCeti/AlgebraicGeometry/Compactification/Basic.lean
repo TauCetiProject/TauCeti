@@ -91,6 +91,15 @@ instance proper {C D : Compactification f} (h : Hom C D) : IsProper h.hom.h := b
     infer_instance
   exact IsProper.of_comp h.hom.h D.p
 
+/-- A morphism of compactifications is a monomorphism when its map of ambient schemes is. -/
+theorem mono_of_mono_h {C D : Compactification f} (h : Hom C D) [Mono h.hom.h] : Mono h :=
+  ⟨fun a b hab ↦ ObjectProperty.hom_ext _ <| Factorisation.Hom.ext <| by
+    rw [← cancel_mono h.hom.h]
+    simpa using congrArg (fun k ↦ k.hom.h) hab⟩
+
+instance {C D : Compactification f} (h : Hom C D) [IsClosedImmersion h.hom.h] : Mono h :=
+  mono_of_mono_h h
+
 end Hom
 
 /-- A compactifiable morphism is separated. -/
