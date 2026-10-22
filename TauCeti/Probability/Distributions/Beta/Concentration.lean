@@ -24,6 +24,21 @@ open scoped NNReal
 
 namespace TauCeti.Probability
 
+/-- Weak convergence of two-category Dirichlet laws carries over to their first-coordinate Beta
+marginals. -/
+theorem tendsto_betaMeasure_of_tendsto_dirichletMeasure {α : Type*} {l : Filter α}
+    {a : α → Fin 2 → ℝ} (ha : ∀ x i, 0 < a x i)
+    {ν : ProbabilityMeasure (EuclideanSpace ℝ (Fin 2))}
+    (h : Tendsto (β := ProbabilityMeasure (EuclideanSpace ℝ (Fin 2))) (fun x ↦
+      (⟨dirichletMeasure (a x), isProbabilityMeasure_dirichletMeasure (ha x)⟩ :
+        ProbabilityMeasure (EuclideanSpace ℝ (Fin 2)))) l (𝓝 ν)) :
+    Tendsto (β := ProbabilityMeasure ℝ) (fun x ↦
+      (⟨betaMeasure (a x 0) (a x 1), isProbabilityMeasureBeta (ha x 0) (ha x 1)⟩ :
+        ProbabilityMeasure ℝ)) l (𝓝 (ν.map fun y ↦ y 0)) := by
+  refine ((ProbabilityMeasure.continuous_map (by fun_prop)).tendsto ν |>.comp h).congr
+    fun x ↦ ProbabilityMeasure.toMeasure_injective ?_
+  exact (ProbabilityMeasure.toMeasure_map _).trans (map_eval_zero_dirichletMeasure_fin_two (ha x))
+
 /-- Beta laws with increasing total concentration and fixed interior mean converge weakly
 to the point mass at that mean. -/
 theorem tendsto_betaMeasure_concentration_atTop {p : ℝ} (hp : p ∈ Ioo 0 1) :
@@ -40,23 +55,8 @@ theorem tendsto_betaMeasure_concentration_atTop {p : ℝ} (hp : p ∈ Ioo 0 1) :
     fin_cases i
     · simpa [w] using hp.1
     · simpa [w] using sub_pos.mpr hp.2
-  have h := (ProbabilityMeasure.continuous_map
-    (f := fun x : EuclideanSpace ℝ (Fin 2) ↦ x 0) (by fun_prop)).tendsto
-      (⟨Measure.dirac ((EuclideanSpace.equiv (Fin 2) ℝ).symm w.weights), inferInstance⟩ :
-        ProbabilityMeasure (EuclideanSpace ℝ (Fin 2))) |>.comp
-          (tendsto_dirichletMeasure_concentration_atTop w hw)
-  have hmap (c : Ioi (0 : ℝ)) :
-      ProbabilityMeasure.map (⟨dirichletMeasure (fun i ↦ (c : ℝ) * w.weights i),
-        isProbabilityMeasure_dirichletMeasure (fun i ↦ mul_pos c.2 (hw i))⟩ :
-          ProbabilityMeasure (EuclideanSpace ℝ (Fin 2)))
-        (fun x : EuclideanSpace ℝ (Fin 2) ↦ x 0) =
-      (⟨betaMeasure ((c : ℝ) * p) ((c : ℝ) * (1 - p)),
-        isProbabilityMeasureBeta (mul_pos c.2 hp.1) (mul_pos c.2 (sub_pos.mpr hp.2))⟩ :
-          ProbabilityMeasure ℝ) := by
-    apply ProbabilityMeasure.toMeasure_injective
-    refine (ProbabilityMeasure.toMeasure_map _).trans ?_
-    simpa only [ProbabilityMeasure.coe_mk, hw0, hw1] using
-      map_eval_zero_dirichletMeasure_fin_two (fun i ↦ mul_pos c.2 (hw i))
+  have h := tendsto_betaMeasure_of_tendsto_dirichletMeasure (fun c i ↦ mul_pos c.2 (hw i))
+    (tendsto_dirichletMeasure_concentration_atTop w hw)
   have hdirac :
       ProbabilityMeasure.map
         (⟨Measure.dirac ((EuclideanSpace.equiv (Fin 2) ℝ).symm w.weights), inferInstance⟩ :
@@ -67,7 +67,7 @@ theorem tendsto_betaMeasure_concentration_atTop {p : ℝ} (hp : p ∈ Ioo 0 1) :
     refine (ProbabilityMeasure.toMeasure_map _).trans ?_
     simp [hw0]
   rw [hdirac] at h
-  exact h.congr (fun c ↦ hmap c)
+  exact h.congr fun c ↦ ProbabilityMeasure.toMeasure_injective (by simp [hw0, hw1])
 
 /-- Beta laws with decreasing total concentration and fixed interior mean converge weakly to the
 Bernoulli law that gives mass `1 - p` to zero and mass `p` to one. -/
@@ -88,25 +88,9 @@ theorem tendsto_betaMeasure_concentration_atBot {p : ℝ} (hp : p ∈ Ioo 0 1) :
     fin_cases i
     · simpa [hw0] using hp.1
     · simpa [hw1] using hp.2
-  have h := (ProbabilityMeasure.continuous_map
-    (f := fun x : EuclideanSpace ℝ (Fin 2) ↦ x 0) (by fun_prop)).tendsto
-      ((categoricalMeasure w).map (EuclideanSpace.basisFun (Fin 2) ℝ)).toProbabilityMeasure
-        |>.comp (tendsto_dirichletMeasure_concentration_atBot w hw)
-  have hmap (c : Ioi (0 : ℝ)) :
-      ProbabilityMeasure.map (⟨dirichletMeasure
-          (fun i ↦ (c : ℝ) * (w.weights i : ℝ)),
-        isProbabilityMeasure_dirichletMeasure
-          (fun i ↦ mul_pos c.2 (by exact_mod_cast hw i))⟩ :
-          ProbabilityMeasure (EuclideanSpace ℝ (Fin 2)))
-        (fun x : EuclideanSpace ℝ (Fin 2) ↦ x 0) =
-      (⟨betaMeasure ((c : ℝ) * p) ((c : ℝ) * (1 - p)),
-        isProbabilityMeasureBeta (mul_pos c.2 hp.1) (mul_pos c.2 (sub_pos.mpr hp.2))⟩ :
-          ProbabilityMeasure ℝ) := by
-    apply ProbabilityMeasure.toMeasure_injective
-    refine (ProbabilityMeasure.toMeasure_map _).trans ?_
-    exact (map_eval_zero_dirichletMeasure_fin_two
-      fun i ↦ mul_pos c.2 (by exact_mod_cast hw i)).trans
-        (by rw [hw0, hw1, ProbabilityMeasure.coe_mk])
+  have h := tendsto_betaMeasure_of_tendsto_dirichletMeasure
+    (fun c i ↦ mul_pos c.2 (NNReal.coe_pos.2 (hw i)))
+    (tendsto_dirichletMeasure_concentration_atBot w hw)
   have hcat : categoricalMeasure w = bernoulliMeasure 0 1 q := by
     simp [categoricalMeasure_def, bernoulliMeasure_def, Fin.sum_univ_two, w]
   have hlimit :
@@ -118,6 +102,6 @@ theorem tendsto_betaMeasure_concentration_atBot {p : ℝ} (hp : p ∈ Ioo 0 1) :
     refine (ProbabilityMeasure.toMeasure_map _).trans ?_
     simp [hcat, map_bernoulliMeasure]
   rw [hlimit] at h
-  exact h.congr (fun c ↦ hmap c)
+  exact h.congr fun c ↦ ProbabilityMeasure.toMeasure_injective (by simp [hw0, hw1])
 
 end TauCeti.Probability
