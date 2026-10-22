@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import Mathlib.Topology.MetricSpace.PiNat
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Explicit metrics on weak-star compact sets
@@ -51,12 +52,8 @@ theorem ext_of_denseRange_unitBall {u : ℕ → closedBall (0 : E) 1} (hu : Dens
     refine ContinuousLinearMap.opNorm_le_of_ball (ε := 1) zero_lt_one le_rfl ?_
     intro x hx
     simp [heq ⟨x, ball_subset_closedBall hx⟩]
-  apply DFunLike.ext
-  intro x
-  apply sub_eq_zero.mp
-  apply norm_le_zero_iff.mp
-  exact ((toStrongDual f - toStrongDual g).le_opNorm x).trans
-    (mul_nonpos_of_nonpos_of_nonneg hn (norm_nonneg x))
+  exact sub_eq_zero.mp ((toStrongDual f - toStrongDual g).opNorm_zero_iff'.mp
+    (le_antisymm hn (norm_nonneg _)))
 
 /-- Evaluation on a sequence dense in the predual unit ball embeds a weak-star compact set
 into the countable product of scalar fields. -/

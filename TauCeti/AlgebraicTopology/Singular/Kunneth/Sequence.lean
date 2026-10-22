@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 
@@ -15,10 +16,11 @@ Let `X` and `Y` be topological spaces and `M` and `N` modules over a commutative
 Suppose that the cycles `Z_q(Y; N)` of the singular chain complex `C(Y; N)` and the quotients
 `C_q(Y; N) / Z_q(Y; N)` are projective.  Over a principal ideal domain this holds for every
 projective `N`, for instance `N = k`, since the singular chain modules `C_q(Y; N) = ⨁ N` are then
-projective (`SSet.projective_chainComplex_X`) and instance search finds both hypotheses
-(`HomologicalComplex.free_cycles_of_isPrincipalIdealRing` and
-`HomologicalComplex.free_cokernel_iCycles_of_isPrincipalIdealRing`).  Then the **Künneth
-sequence**
+projective (`SSet.projective_chainComplex_X`). More generally, both hypotheses are found by
+instance search when every `k`-module has projective dimension at most one
+(`HomologicalComplex.projective_cycles_of_hasProjectiveDimensionLE_one` and
+`HomologicalComplex.projective_cokernel_iCycles_of_hasProjectiveDimensionLE_one`). Then the
+**Künneth sequence**
 
 `0 ⟶ ⨁_{p + q = m + 1} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₘ₊₁(X × Y; M ⊗ N)`
 `    ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; M), H_q(Y; N)) ⟶ 0`
@@ -32,8 +34,8 @@ map `TopCat.singularHomologyKunneth`, assembled from the homology cross products
 through the Eilenberg–Zilber homotopy equivalence `TopCat.eilenbergZilberHomotopyEquiv`, whose
 inverse is the shuffle map through which the Künneth map is defined.
 
-Over a principal ideal domain `k`, with `M = N = k` and the unitor `k ⊗ k ≅ k`, this gives the
-classical sequence
+Over a hereditary commutative ring `k`, expressed by requiring every `k`-module to have
+projective dimension at most one, taking `M = N = k` and the unitor `k ⊗ k ≅ k` gives the sequence
 
 `0 ⟶ ⨁_{p + q = m + 1} Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₘ₊₁(X × Y; k)`
 `    ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k)) ⟶ 0`
@@ -48,11 +50,11 @@ short complexes (`TopCat.singularHomologyKunnethShortComplexMap` and
 `TopCat.singularHomologyKunnethShortComplexCoefficientMap`).
 
 If the cycles of `C(X; M)` split off its terms as well, for instance for projective `M` and `N`
-over a principal ideal domain, the Künneth map is a split monomorphism
+over a hereditary commutative ring, the Künneth map is a split monomorphism
 (`TopCat.isSplitMono_singularHomologyKunneth`) and the sequence splits
 (`TopCat.singularHomologyKunnethSplitting`, and `TopCat.singularHomologyKunnethUnitSplitting` for
-coefficients in a principal ideal domain).  The splitting is built from chosen splittings of the
-cycles of the singular chain complexes and need not be natural in `X` and `Y`; that no natural
+coefficients in a hereditary commutative ring). The splitting is built from chosen splittings of
+the cycles of the singular chain complexes and need not be natural in `X` and `Y`; that no natural
 splitting exists is not proved here.
 
 ## Main definitions and results
@@ -66,7 +68,7 @@ splitting exists is not proved here.
 * `TopCat.mono_singularHomologyKunneth`: the Künneth map is a monomorphism in every degree.
 * `TopCat.singularHomologyKunnethUnitShortComplex` and
   `TopCat.singularHomologyKunnethUnitShortComplex_shortExact`: its form with coefficients in a
-  principal ideal domain.
+  hereditary commutative ring.
 * `TopCat.singularHomologyKunnethShortComplexMap` and
   `TopCat.singularHomologyKunnethShortComplexCoefficientMap`: the morphisms of Künneth short
   complexes induced by a pair of continuous maps and by a pair of maps of coefficient modules.
@@ -371,7 +373,7 @@ end CoefficientNaturality
 
 section Unit
 
-variable (k) [NoZeroDivisors k] [IsPrincipalIdealRing k] (X Y : TopCat.{w})
+variable (k) [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] (X Y : TopCat.{w})
 
 /-- The Künneth short complex with coefficients in the ring:
 `⨁_{p + q = m + 1} Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₘ₊₁(X × Y; k) ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k))`,
@@ -387,8 +389,8 @@ abbrev singularHomologyKunnethUnitShortComplex (m : ℕ) : ShortComplex (ModuleC
       singularHomologyToTor X Y (𝟙_ _) (𝟙_ _) m)
     (by simp)
 
-/-- **The Künneth short exact sequence over a principal ideal domain.**  For a principal ideal
-domain `k`, for instance `ℤ`,
+/-- **The Künneth short exact sequence over a hereditary commutative ring.** For a commutative
+ring `k` whose modules have projective dimension at most one, for instance `ℤ`,
 
 `0 ⟶ ⨁_{p + q = m + 1} Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₘ₊₁(X × Y; k)`
 `  ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k)) ⟶ 0`
@@ -405,7 +407,7 @@ theorem singularHomologyKunnethUnitShortComplex_shortExact (m : ℕ) :
     (((singularHomologyFunctor _ (m + 1)).mapIso (λ_ (𝟙_ (ModuleCat.{w} k)))).app (X ⊗ Y))
     (Iso.refl _) (Category.id_comp _).symm (by simp)
 
-/-- **The Künneth short exact sequence over a principal ideal domain splits**, so that
+/-- **The Künneth short exact sequence over a hereditary commutative ring splits**, so that
 `Hₘ₊₁(X × Y; k)` is the direct sum of `⨁_{p + q = m + 1} Hₚ(X; k) ⊗ H_q(Y; k)` and
 `⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k))`
 (`CategoryTheory.ShortComplex.Splitting.isoBinaryBiproduct`).
