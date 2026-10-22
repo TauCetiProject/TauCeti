@@ -25,8 +25,7 @@ without replacement from a population of size `N` containing `K` marked objects.
 
 This file defines the law as a finite weighted sum of Dirac measures, proves its normalization
 from Vandermonde's identity, and provides its mass, support, cumulative-mass, finite-integral,
-mean, variance, and transform APIs. Outside the classical parameter range the measure is zero,
-as required by the standard-distributions roadmap.
+mean, variance, and transform APIs. Outside the classical parameter range the measure is zero.
 
 ## Main definitions and results
 
@@ -37,11 +36,15 @@ as required by the standard-distributions roadmap.
   parameter range.
 * `TauCeti.Probability.hypergeometricMeasure_singleton`: the exact singleton mass.
 * `TauCeti.Probability.hypergeometricWeight_ne_zero_iff`: the exact support.
+* `TauCeti.Probability.hypergeometricMeasure_eq_dirac_of_support`: a law supported at one count
+  is the corresponding Dirac measure.
+* `TauCeti.Probability.hypergeometricMeasure_zero_sample` and
+  `TauCeti.Probability.hypergeometricMeasure_full_sample`: the deterministic sample-size boundaries.
 * `TauCeti.Probability.hypergeometricMeasure_real_Iic`: the native cumulative mass.
 * `TauCeti.Probability.integral_hypergeometricMeasure`: integration as a finite weighted sum.
 * `TauCeti.Probability.integral_id_map_cast_hypergeometricMeasure`: the mean of the real cast law.
-* `TauCeti.Probability.variance_id_map_cast_hypergeometricMeasure`: its variance when `1 < N`,
-  with separate zero-variance results for populations of size zero and one.
+* `TauCeti.Probability.variance_id_map_cast_hypergeometricMeasure`: its variance, including
+  populations of size zero and one.
 * `TauCeti.Probability.mgf_id_map_cast_hypergeometricMeasure` and
   `TauCeti.Probability.charFun_map_cast_hypergeometricMeasure`: the finite transform formulas for
   the real-valued cast law.
@@ -50,7 +53,6 @@ as required by the standard-distributions roadmap.
 
 * N. L. Johnson, A. W. Kemp, S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley,
   2005, Chapter 6.
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 3, "Hypergeometric".
 -/
 
 public section
@@ -207,9 +209,36 @@ theorem hypergeometricWeight_ne_top (N K n k : ℕ) (hn : n ≤ N) :
     · exact_mod_cast Nat.choose_ne_zero hn
   · simp
 
+/-! ## Deterministic boundary laws -/
+
+/-- A valid hypergeometric law whose support is contained in one count is the Dirac law there. -/
+theorem hypergeometricMeasure_eq_dirac_of_support {N K n j : ℕ} (hK : K ≤ N) (hn : n ≤ N)
+    (h : ∀ k, k ≤ K ∧ k ≤ n ∧ n - k ≤ N - K → k = j) :
+    hypergeometricMeasure N K n = Measure.dirac j := by
+  let _ := isProbabilityMeasure_hypergeometricMeasure hK hn
+  have hae : (fun k : ℕ ↦ k) =ᵐ[hypergeometricMeasure N K n] fun _ ↦ j := by
+    apply ae_iff_of_countable.mpr
+    intro k hk
+    exact h k ((hypergeometricMeasure_singleton_ne_zero_iff hK hn k).mp hk)
+  simpa using Measure.map_congr hae
+
+/-- Drawing no objects gives the Dirac law at zero when the marked count is valid. -/
+@[simp]
+theorem hypergeometricMeasure_zero_sample {N K : ℕ} (hK : K ≤ N) :
+    hypergeometricMeasure N K 0 = Measure.dirac 0 := by
+  exact hypergeometricMeasure_eq_dirac_of_support hK (Nat.zero_le N) (by omega)
+
+/-- Drawing the entire population gives the Dirac law at its valid marked count. -/
+@[simp]
+theorem hypergeometricMeasure_full_sample {N K : ℕ} (hK : K ≤ N) :
+    hypergeometricMeasure N K N = Measure.dirac K := by
+  exact hypergeometricMeasure_eq_dirac_of_support hK le_rfl (by omega)
+
+/-! ## Integration -/
+
 /-- Every function is integrable against a hypergeometric measure, since the measure has finite
 support. -/
-theorem integrable_hypergeometricMeasure {E : Type*} [NormedAddGroup E]
+theorem integrable_hypergeometricMeasure {E : Type*} [SeminormedAddGroup E]
     (f : ℕ → E) (N K n : ℕ) : Integrable f (hypergeometricMeasure N K n) := by
   rw [hypergeometricMeasure]
   split_ifs with h
@@ -217,6 +246,15 @@ theorem integrable_hypergeometricMeasure {E : Type*} [NormedAddGroup E]
       (integrable_dirac (by simp)).smul_measure
         (hypergeometricWeight_ne_top N K n _ h.2)
   · simp
+
+/-- Every function on `ℝ` is integrable against the real-valued cast of a hypergeometric law,
+since the native law has finite support. -/
+@[simp]
+theorem integrable_map_cast_hypergeometricMeasure {E : Type*} [SeminormedAddGroup E]
+    (f : ℝ → E) (N K n : ℕ) :
+    Integrable f ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)) := by
+  rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff]
+  exact integrable_hypergeometricMeasure (fun k ↦ f (k : ℝ)) N K n
 
 /-- Integration against a valid hypergeometric measure is the corresponding finite weighted
 sum. -/
@@ -378,16 +416,20 @@ private theorem sum_hypergeometricWeight_toReal_mul_pred {N K n : ℕ} (hK : K �
     have hnle : n ≤ 1 := by omega
     interval_cases n <;> norm_num [Finset.sum_range_succ, hypergeometricWeight]
 
-/-- The mean of the real cast of a valid hypergeometric law is `nK / N` when the population
-is nonempty. The only valid empty-population parameters are handled separately below. -/
+/-- The mean of the real cast of a valid hypergeometric law is `nK / N`.
+For an empty population, both the mean and the totalized quotient are zero. -/
 @[simp]
 theorem integral_id_map_cast_hypergeometricMeasure {N K n : ℕ}
-    (hK : K ≤ N) (hn : n ≤ N) (hN : 0 < N) :
+    (hK : K ≤ N) (hn : n ≤ N) :
     ∫ x, x ∂((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)) =
       (n : ℝ) * (K : ℝ) / (N : ℝ) := by
+  by_cases hN : N = 0
+  · subst N
+    simp_all [hypergeometricMeasure, hypergeometricWeight]
   rw [integral_map (by fun_prop) (by fun_prop),
     integral_hypergeometricMeasure (fun k ↦ (k : ℝ)) hK hn]
-  simpa only [smul_eq_mul] using sum_hypergeometricWeight_toReal_mul hK hn hN
+  simpa only [smul_eq_mul] using
+    sum_hypergeometricWeight_toReal_mul hK hn (Nat.pos_of_ne_zero hN)
 
 private theorem integral_sq_id_map_cast_hypergeometricMeasure {N K n : ℕ}
     (hK : K ≤ N) (hn : n ≤ N) (hN : 1 < N) :
@@ -414,69 +456,35 @@ private theorem integral_sq_id_map_cast_hypergeometricMeasure {N K n : ℕ}
       rw [sum_hypergeometricWeight_toReal_mul_pred hK hn hN,
         sum_hypergeometricWeight_toReal_mul hK hn (by omega)]
 
-private theorem integrable_sq_id_map_cast_hypergeometricMeasure (N K n : ℕ) :
-    Integrable (fun x : ℝ ↦ x ^ 2)
-      ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)) := by
-  rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff]
-  convert integrable_hypergeometricMeasure (fun k : ℕ ↦ ((k : ℝ) ^ 2)) N K n using 1
-  funext k
-  rfl
-
-/-- The variance of the real cast of a valid hypergeometric law for a population with at least
-two elements. The finite-population correction is `(N - n) / (N - 1)`; populations of size zero
-and one are handled separately below. -/
+/-- The variance of the real cast of a valid hypergeometric law.
+The finite-population correction is `(N - n) / (N - 1)`. For populations of size zero or one,
+the variance and the totalized expression are both zero. -/
 @[simp]
 theorem variance_id_map_cast_hypergeometricMeasure {N K n : ℕ}
-    (hK : K ≤ N) (hn : n ≤ N) (hN : 1 < N) :
+    (hK : K ≤ N) (hn : n ≤ N) :
     variance id ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)) =
       (n : ℝ) * ((K : ℝ) / (N : ℝ)) * (1 - (K : ℝ) / (N : ℝ)) *
         (((N : ℝ) - (n : ℝ)) / ((N : ℝ) - 1)) := by
-  let _ : IsProbabilityMeasure (hypergeometricMeasure N K n) :=
-    isProbabilityMeasure_hypergeometricMeasure hK hn
-  have hmem : MemLp id 2
-      ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)) :=
-    (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2
-      (integrable_sq_id_map_cast_hypergeometricMeasure N K n)
-  rw [variance_eq_sub hmem]
-  simp only [Pi.pow_apply, id_eq]
-  rw [integral_sq_id_map_cast_hypergeometricMeasure hK hn hN,
-    integral_id_map_cast_hypergeometricMeasure hK hn (by omega)]
-  have hNreal : (1 : ℝ) < (N : ℝ) := by exact_mod_cast hN
-  have hNm1 : (N : ℝ) - 1 ≠ 0 := by linarith
-  field_simp [hNm1]
-  ring
-
-/-- The real cast of the unique valid empty-population hypergeometric law has mean zero. -/
-@[simp]
-theorem integral_id_map_cast_hypergeometricMeasure_zero :
-    ∫ x, x ∂((hypergeometricMeasure 0 0 0).map (Nat.cast : ℕ → ℝ)) = 0 := by
-  norm_num [hypergeometricMeasure, hypergeometricWeight]
-
-/-- The real cast of the unique valid empty-population hypergeometric law has variance zero. -/
-@[simp]
-theorem variance_id_map_cast_hypergeometricMeasure_zero :
-    variance id ((hypergeometricMeasure 0 0 0).map (Nat.cast : ℕ → ℝ)) = 0 := by
-  norm_num [hypergeometricMeasure, hypergeometricWeight]
-
-/-- Every valid hypergeometric law on a population of size one has variance zero. This is stated
-separately because the usual formula contains the totalized quotient by `N - 1`. -/
-@[simp]
-theorem variance_id_map_cast_hypergeometricMeasure_of_population_one {K n : ℕ}
-    (hK : K ≤ 1) (hn : n ≤ 1) :
-    variance id ((hypergeometricMeasure 1 K n).map (Nat.cast : ℕ → ℝ)) = 0 := by
-  interval_cases K <;> interval_cases n <;>
-    simp [hypergeometricMeasure, hypergeometricWeight, Finset.sum_range_succ]
+  by_cases hN : 1 < N
+  · let _ : IsProbabilityMeasure (hypergeometricMeasure N K n) :=
+      isProbabilityMeasure_hypergeometricMeasure hK hn
+    have hmem : MemLp id 2
+        ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)) :=
+      (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2
+        (integrable_map_cast_hypergeometricMeasure (fun x : ℝ ↦ x ^ 2) N K n)
+    rw [variance_eq_sub hmem]
+    simp only [Pi.pow_apply, id_eq]
+    rw [integral_sq_id_map_cast_hypergeometricMeasure hK hn hN,
+      integral_id_map_cast_hypergeometricMeasure hK hn]
+    have hNreal : (1 : ℝ) < (N : ℝ) := by exact_mod_cast hN
+    have hNm1 : (N : ℝ) - 1 ≠ 0 := by linarith
+    field_simp [hNm1]
+    ring
+  · have hNle : N ≤ 1 := by omega
+    interval_cases N <;> interval_cases K <;> interval_cases n <;>
+      simp [hypergeometricMeasure, hypergeometricWeight, Finset.sum_range_succ]
 
 /-! ## Transforms of the real-valued cast law -/
-
-/-- Every function on `ℝ` is integrable against the real-valued cast of a hypergeometric law,
-since the native law has finite support. -/
-@[simp]
-theorem integrable_map_cast_hypergeometricMeasure {E : Type*} [NormedAddGroup E]
-    (f : ℝ → E) (N K n : ℕ) :
-    Integrable f ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)) := by
-  rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff]
-  exact integrable_hypergeometricMeasure (fun k ↦ f (k : ℝ)) N K n
 
 /-- Integration against the real-valued cast of a valid hypergeometric law is a finite weighted
 sum. -/

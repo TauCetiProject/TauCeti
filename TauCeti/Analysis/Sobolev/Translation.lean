@@ -13,8 +13,8 @@ import Mathlib.MeasureTheory.Group.Integral
 /-!
 # The `Lᵖ` translation estimate on `W^{1,p}_0`
 
-This file transports the **translation estimate** to Sobolev functions: for `1 ≤ p < ∞` and a
-vector `h`,
+This file transports the **translation estimate** to Sobolev test-function closures: for
+`1 ≤ p ≤ ∞` and a vector `h`,
 
 `‖u(· + h) - u‖_p ≤ ‖h‖ ‖∇u‖_p`.
 
@@ -24,8 +24,7 @@ finite-dimensional real inner product space `E` carrying an arbitrary additive H
 not just `ℝⁿ` with Lebesgue measure; `ℝⁿ` is used informally below for the whole-space case
 `Ω = ⊤`.  Together with the extension of a `W^{1,p}_0(Ω)` function by zero, it supplies the
 *uniform smallness of translations* hypothesis of the Fréchet--Kolmogorov compactness criterion,
-and so is the analytic input for Rellich--Kondrachov, Lane A.6 of
-`TauCetiRoadmap/PDE/README.md`.
+and so is an analytic input for Rellich--Kondrachov when `p < ∞`.
 
 ## The estimate on `W^{1,p}_0(ℝⁿ)`
 
@@ -40,12 +39,12 @@ function defined on a proper open `Ω` moves it off `Ω`, so the general case is
 composed with an extension of `W^{1,p}_0(Ω)` by zero.
 
 The theorem assumes membership in `W^{1,p}_0(ℝⁿ)`, the closure of the test functions, because
-test-function density is the available route to the whole-space estimate. Since `Ω = ⊤` has no
-boundary, this is not an additional boundary condition. For a proper `Ω`, however, transferring
-the estimate by zero extension does require `W^{1,p}_0(Ω)`: the zero-extension of a general
-Sobolev function need not be weakly differentiable across `∂Ω`. A local form on `W^{1,p}(Ω)`
-survives on compactly contained subsets for translations smaller than their distance to the
-boundary.
+test-function density is the available route to the whole-space estimate. For `p < ∞`, this
+closure is all of `W^{1,p}(ℝⁿ)`. At `p = ∞` the closure condition remains part of the statement.
+For a proper `Ω`, transferring the estimate by zero extension requires `W^{1,p}_0(Ω)`:
+the extension of a general Sobolev function by zero need not be weakly differentiable across
+`∂Ω`. A local form on `W^{1,p}(Ω)` survives on compactly contained subsets for translations
+smaller than their distance to the boundary.
 
 ## Translation after extension by zero
 
@@ -77,8 +76,8 @@ estimate give the fixed-bounded-support and translation inputs for Fréchet--Kol
 
 ## References
 
-Lane A.6 of `TauCetiRoadmap/PDE/README.md`; H. Brezis, *Functional Analysis, Sobolev Spaces and
-Partial Differential Equations*, Proposition 9.3, for the estimate, and Theorem 4.26 for the
+H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
+Proposition 9.3, for the estimate, and Theorem 4.26 for the
 Fréchet--Kolmogorov criterion it feeds; L. C. Evans, *Partial Differential Equations*,
 Chapter 5, for the difference-quotient form of the same bound.
 -/
@@ -100,7 +99,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 /-- The translation estimate for a single test function, in the shape the jets of `W^{1,p}(ℝⁿ)`
 present it. -/
-private theorem eLpNorm_testFunctionLp_comp_add_sub_testFunctionLp_le (hp : p ≠ ∞) (h : E)
+private theorem eLpNorm_testFunctionLp_comp_add_sub_testFunctionLp_le (h : E)
     (phi : 𝓓((⊤ : Opens E), ℝ)) :
     eLpNorm (fun x => testFunctionLp (mu := mu) p phi (x + h)
         - testFunctionLp (mu := mu) p phi x) p mu
@@ -118,9 +117,9 @@ private theorem eLpNorm_testFunctionLp_comp_add_sub_testFunctionLp_le (hp : p �
     rw [h1]
     exact congrArg (· - phi x) h2
   rw [hL, enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv]
-  exact (phi.contDiff.of_le (by simp)).eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv Fact.out hp h
+  exact (phi.contDiff.of_le (by simp)).eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv Fact.out h
 
-/-- **The translation estimate on `W^{1,p}_0(ℝⁿ)`**: for `1 ≤ p < ∞`, every `u` in the closure of
+/-- **The translation estimate on `W^{1,p}_0(ℝⁿ)`**: for `1 ≤ p ≤ ∞`, every `u` in the closure of
 the test functions satisfies
 
 `‖u(· + h) - u‖_p ≤ ‖h‖ ‖∇u‖_p`.
@@ -131,7 +130,7 @@ The estimate for a single test function comes from
 zero-extension operator turns this into the corresponding estimate on `W^{1,p}_0(Ω)` for an
 arbitrary open `Ω`, which is the form the Fréchet--Kolmogorov compactness criterion consumes in
 the proof of Rellich--Kondrachov. -/
-theorem W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient (hp : p ≠ ∞) (h : E)
+theorem W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient (h : E)
     {u : W1p mu ⊤ p}
     (hu : u ∈ w1p0Submodule mu ⊤ p) :
     eLpNorm (fun x => W1p.value u (x + h) - W1p.value u x) p mu
@@ -160,11 +159,11 @@ theorem W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient (hp : p ≠ �
         W1p.gradientL.continuous.enorm)
   refine w1p0Submodule_subset_of_isClosed hclosed (fun phi => ?_) hu
   simpa only [Set.mem_ofPred_eq, W1p.value_ofTestFunctionₗ, W1p.gradient_ofTestFunctionₗ] using
-    eLpNorm_testFunctionLp_comp_add_sub_testFunctionLp_le hp h phi
+    eLpNorm_testFunctionLp_comp_add_sub_testFunctionLp_le h phi
 
 /-! ### Translation after extension by zero -/
 
-/-- **The translation estimate on `W^{1,p}_0(Ω)` for an arbitrary open `Ω`**: for `1 ≤ p < ∞`,
+/-- **The translation estimate on `W^{1,p}_0(Ω)` for an arbitrary open `Ω`**: for `1 ≤ p ≤ ∞`,
 the extension by zero of `u ∈ W^{1,p}_0(Ω)` satisfies
 
 `‖u(· + h) - u‖_p ≤ ‖h‖ ‖∇u‖_p`
@@ -176,11 +175,11 @@ gradient component, so the right-hand side is the gradient seminorm of `u` on `�
 nothing is lost in the transfer.  This is the form the Fréchet--Kolmogorov criterion consumes in
 the proof of Rellich--Kondrachov. -/
 theorem W1p0.eLpNorm_value_extendByZeroL_comp_add_sub_le_mul_enorm_gradient {Omega : Opens E}
-    (hp : p ≠ ∞) (h : E) (u : W1p0 mu Omega p) :
+    (h : E) (u : W1p0 mu Omega p) :
     eLpNorm (fun x => W1p.value (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) (x + h) -
         W1p.value (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) x) p mu
       ≤ ‖h‖ₑ * ‖W1p.gradient (u : W1p mu Omega p)‖ₑ := by
-  refine (W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient hp h
+  refine (W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient h
     (W1p0.extendByZeroL le_top u).2).trans_eq ?_
   congr 1
   rw [W1p0.gradient_extendByZeroL]
@@ -196,7 +195,7 @@ common `δ > 0` such that every zero extension `\tilde{u}` satisfies
 When `Ω` is bounded, `TauCeti.W1p0.value_extendByZeroL_ae_eq_zero_compl` also supplies fixed
 bounded support for the family. -/
 theorem W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_gradient_le
-    {Omega : Opens E} (hp : p ≠ ∞) {S : Set (W1p0 mu Omega p)} {C : ℝ}
+    {Omega : Opens E} {S : Set (W1p0 mu Omega p)} {C : ℝ}
     (hS : ∀ u ∈ S, ‖W1p.gradient (u : W1p mu Omega p)‖ ≤ C)
     {epsilon : ℝ≥0∞} (hepsilon : 0 < epsilon) :
     ∃ delta > 0, ∀ u ∈ S, ∀ h : E, ‖h‖ < delta →
@@ -212,7 +211,7 @@ theorem W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_gr
   let delta := epsilon.toReal / (C + 1)
   have hdelta : 0 < delta := div_pos (ENNReal.toReal_pos hepsilon.ne' hepsilon_top) (by linarith)
   refine ⟨delta, hdelta, fun u hu h hh =>
-    (W1p0.eLpNorm_value_extendByZeroL_comp_add_sub_le_mul_enorm_gradient hp h u).trans ?_⟩
+    (W1p0.eLpNorm_value_extendByZeroL_comp_add_sub_le_mul_enorm_gradient h u).trans ?_⟩
   have hu_enorm : ‖W1p.gradient (u : W1p mu Omega p)‖ₑ ≤ ENNReal.ofReal C := by
     rw [← ofReal_norm]
     exact ENNReal.ofReal_mono (hS u hu)
@@ -229,14 +228,14 @@ theorem W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_gr
 the graph-norm-bounded corollary of
 `TauCeti.W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_gradient_le`. -/
 theorem W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_norm_le
-    {Omega : Opens E} (hp : p ≠ ∞) {S : Set (W1p0 mu Omega p)} {C : ℝ}
+    {Omega : Opens E} {S : Set (W1p0 mu Omega p)} {C : ℝ}
     (hS : ∀ u ∈ S, ‖u‖ ≤ C) {epsilon : ℝ≥0∞} (hepsilon : 0 < epsilon) :
     ∃ delta > 0, ∀ u ∈ S, ∀ h : E, ‖h‖ < delta →
       eLpNorm (fun x =>
         W1p.value (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) (x + h) -
           W1p.value (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) x) p mu
         ≤ epsilon := by
-  refine W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_gradient_le hp
+  refine W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_gradient_le
     (C := C) (epsilon := epsilon) ?_ hepsilon
   intro u hu
   exact (W1p.norm_gradient_le (u : W1p mu Omega p)).trans (hS u hu)
