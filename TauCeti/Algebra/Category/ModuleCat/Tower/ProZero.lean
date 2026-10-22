@@ -106,6 +106,7 @@ theorem multiplicationTower_transition (a : R) (n : ℕ) :
 
 /-- The composite transition `Aₖ → Aₙ` of `multiplicationTower a` is right multiplication by
 `a ^ (k - n)`. -/
+@[simp]
 theorem multiplicationTower_transitionOfLE (a : R) {n k : ℕ} (h : n ≤ k) :
     (multiplicationTower a).transitionOfLE h = LinearMap.toSpanSingleton R R (a ^ (k - n)) := by
   -- The `have`s are stated for `R →ₗ[R] R`; the goals are about the defeq carrier of
