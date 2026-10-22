@@ -170,7 +170,8 @@ private theorem summable_xTerm_nat (q : K) (hq : ‖q‖ < 1) (u : K) :
     simpa [Nat.cofinite_eq_atTop] using
       (tendsto_pow_atTop_nhds_zero_of_norm_lt_one hq).mul_const u
   have hs : Summable (fun n : ℕ ↦ ‖q ^ n * u‖) := by
-    simpa only [norm_mul] using (summable_norm_geometric_of_norm_lt_one hq).mul_right ‖u‖
+    simpa only [norm_mul] using
+      (_root_.summable_norm_geometric_of_norm_lt_one hq).mul_right ‖u‖
   have hi : Tendsto (fun n : ℕ ↦ ((1 - q ^ n * u) ^ 2)⁻¹) cofinite (𝓝 1) := by
     simpa using ((tendsto_const_nhds (x := (1 : K))).sub hp).pow 2 |>.inv₀ (by simp)
   simpa only [xTerm, div_eq_mul_inv] using hs.mul_tendsto_const hi
@@ -181,7 +182,8 @@ private theorem summable_yTerm_nat (q : K) (hq : ‖q‖ < 1) (u : K) :
     simpa [Nat.cofinite_eq_atTop] using
       (tendsto_pow_atTop_nhds_zero_of_norm_lt_one hq).mul_const u
   have hs : Summable (fun n : ℕ ↦ ‖q ^ n * u‖) := by
-    simpa only [norm_mul] using (summable_norm_geometric_of_norm_lt_one hq).mul_right ‖u‖
+    simpa only [norm_mul] using
+      (_root_.summable_norm_geometric_of_norm_lt_one hq).mul_right ‖u‖
   have hi : Tendsto (fun n : ℕ ↦ q ^ n * u / (1 - q ^ n * u) ^ 3) cofinite (𝓝 0) := by
     simpa only [Pi.div_def, zero_div] using
       hp.div (((tendsto_const_nhds (x := (1 : K))).sub hp).pow 3) (by simp)
