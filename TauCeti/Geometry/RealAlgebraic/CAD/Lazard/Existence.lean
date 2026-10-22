@@ -101,11 +101,9 @@ theorem exists_isCAD_lazardValuationReindex_eq (F : Finset (MvPolynomial (Fin n)
         ((fun x ↦ x ∘ Fin.revPerm.symm.symm) ⁻¹' C)) := by
       obtain ⟨d, hd⟩ := ha C hC
       -- Permuting coordinates is a homeomorphism, so the reordered cell stays preconnected.
-      have hpre := (Homeomorph.piCongrLeft (Y := fun _ : Fin n ↦ ℝ)
-        Fin.revPerm.symm.symm).symm.isPreconnected_preimage.2 (h𝓓.isConnected hC).isPreconnected
-      rw [Homeomorph.piCongrLeft_symm_apply] at hpre
-      exact nonempty_lazardDelineation_of_lazardProjection hB (hd.preimage_comp_equiv _) hpre
-        fun q hq ↦ hproj q hq C hC
+      exact nonempty_lazardDelineation_of_lazardProjection hB (hd.preimage_comp_equiv _)
+        ((Homeomorph.piCongrLeft _).symm.isPreconnected_preimage.2
+          (h𝓓.isConnected hC).isPreconnected) fun q hq ↦ hproj q hq C hC
     obtain ⟨𝓒, h𝓒, -, h𝓒a, h𝓒v⟩ :=
       h𝓓.exists_isCAD_lazardValuation_eq_of_lazardDelineation_reindex Fin.revPerm.symm ha hD
     -- Undoing the presentation, the delineated members are the members with reversed coordinates.
