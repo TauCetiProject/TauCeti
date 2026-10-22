@@ -141,9 +141,7 @@ theorem infinitesimalSubstAlgEquiv_add (he : e ^ 2 = 0) (a b : S⟦X⟧) :
 @[simp]
 theorem infinitesimalSubstAlgEquiv_symm (he : e ^ 2 = 0) (a : S⟦X⟧) :
     (infinitesimalSubstAlgEquiv e he a).symm = infinitesimalSubstAlgEquiv e he (-a) := by
-  refine AlgEquiv.ext fun f ↦ ?_
-  rw [AlgEquiv.symm_apply_eq, ← AlgEquiv.mul_apply, ← infinitesimalSubstAlgEquiv_add,
-    add_neg_cancel, infinitesimalSubstAlgEquiv_zero, AlgEquiv.one_apply]
+  simp only [infinitesimalSubstAlgEquiv, AlgEquiv.ofAlgHom_symm, neg_neg]
 
 /-- The commutator of infinitesimal substitutions: for square-zero `e₁, e₂`, the group commutator
 `⁅σ₁, σ₂⁆ = σ₁ σ₂ σ₁⁻¹ σ₂⁻¹` of `σ₁ = 1 + e₁ a D` and `σ₂ = 1 + e₂ b D`, with multiplication given
@@ -283,20 +281,16 @@ noncomputable def infinitesimalSubstitutionsEquiv :
     (mem_infinitesimalSubstitutions_iff R).2
       ⟨_, X_dvd_iff.1 (Ideal.mem_span_singleton.1 a.toAdd.2), rfl⟩⟩
   invFun σ := .ofAdd ⟨mk fun n ↦ (coeff n (σ.1 X)).snd, by
-    obtain ⟨a, ha, h⟩ := (mem_infinitesimalSubstitutions_iff R).1 σ.2
-    rw [Ideal.mem_span_singleton, X_dvd_iff, ← coeff_zero_eq_constantCoeff_apply, coeff_mk, h,
-      infinitesimalSubstAlgEquiv_X, snd_coeff_X_add_eps_smul, coeff_zero_eq_constantCoeff_apply,
-      ha]⟩
+    simpa only [Ideal.mem_span_singleton, X_dvd_iff, ← coeff_zero_eq_constantCoeff_apply,
+      coeff_mk, TrivSqZeroExt.snd_zero] using
+      congr(TrivSqZeroExt.snd $(constantCoeff_apply_X_eq_zero R σ.2.2))⟩
   left_inv a := by
     ext n
     simp only [toAdd_ofAdd, coeff_mk, infinitesimalSubstAlgEquiv_X, snd_coeff_X_add_eps_smul]
   right_inv σ := by
-    obtain ⟨a, ha, h⟩ := (mem_infinitesimalSubstitutions_iff R).1 σ.2
     ext1
-    simp only [toAdd_ofAdd, h, infinitesimalSubstAlgEquiv_X, snd_coeff_X_add_eps_smul]
-    congr 2
-    ext n
-    exact coeff_mk _ _
+    exact (eq_infinitesimalSubstAlgEquiv R σ.2.1
+      (constantCoeff_apply_X_eq_zero R σ.2.2)).symm
   map_mul' a b := by
     ext1
     simp [infinitesimalSubstAlgEquiv_add]
