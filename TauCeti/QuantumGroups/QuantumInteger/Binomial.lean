@@ -169,9 +169,7 @@ theorem quantumBinomial_succ_right_eq (q : K) (n k : ℕ) :
       rw [show (n : ℤ) - (k + 1) + (k + 1 + 1) = n + 1 by ring] at h₂
       have p₁ : q ^ (n - k) = q ^ ((n : ℤ) - k) := by rw [← Nat.cast_sub hk.le, zpow_natCast]
       have p₂ : q ^ (n - (k + 1)) = q ^ ((n : ℤ) - (k + 1)) := by
-        rw [← zpow_natCast, Nat.cast_sub hk]
-        push_cast
-        rfl
+        rw [← zpow_natCast, Nat.cast_sub hk, Nat.cast_add_one]
       have p₃ : ∀ m : ℕ, q⁻¹ ^ m = q ^ (-(m : ℤ)) := fun m => by
         rw [zpow_neg, zpow_natCast, inv_pow]
       rw [quantumBinomial_succ_succ, quantumBinomial_succ_succ, p₁, p₂, p₃, p₃]
