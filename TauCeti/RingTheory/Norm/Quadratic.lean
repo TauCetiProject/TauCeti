@@ -138,10 +138,12 @@ variable {K L : Type*} [Field K] [CommRing L] [Algebra K L] [Algebra.IsQuadratic
 namespace Algebra.IsQuadraticExtension
 
 /-- In a commutative quadratic algebra over a field, a root `θ ∉ K` of `X² + t X + c` has trace
-`-t`. Indeed `θ² = Tr θ · θ - N θ` by Cayley–Hamilton, and `1, θ` are linearly independent. -/
+`-t`. -/
 theorem trace_eq_neg_of_sq_add_mul_add_eq_zero {θ : L} (hθ : θ ∉ Set.range (algebraMap K L))
     {t c : K} (h : θ ^ 2 + algebraMap K L t * θ + algebraMap K L c = 0) :
     Algebra.trace K L θ = -t := by
+  -- By Cayley–Hamilton `θ² = Tr θ · θ - N θ`; comparing with `h` and using that `1, θ` are
+  -- linearly independent forces `Tr θ = -t`.
   by_contra hne
   have hsq := sq_eq_trace_smul_sub_norm K θ
   rw [Algebra.smul_def] at hsq
