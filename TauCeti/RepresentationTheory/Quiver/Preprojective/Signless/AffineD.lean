@@ -151,7 +151,7 @@ private theorem sum_affineDMatrix_mul_affineDMatrix {n : ℕ} (hn : 4 ≤ n)
     (v : Fin (AffineDynkinType.D n).nodes) :
     ∑ w ∈ (AffineDynkinType.D n).graph.neighborFinset v,
       affineDMatrix k n w v * affineDMatrix k n v w = 0 := by
-  have hv : (v : ℕ) < n + 1 := v.isLt
+  have hv : (v : ℕ) < n + 1 := v.isLt.trans_eq (AffineDynkinType.nodes_D n)
   -- Each node supplies its list of neighbours. The list is `Nodup` and lists exactly the
   -- neighbours, both checked by the default arguments, leaving the sum of backtracks along it.
   have of_list (l : List (Fin (AffineDynkinType.D n).nodes))
@@ -178,7 +178,7 @@ private theorem sum_affineDMatrix_mul_affineDMatrix {n : ℕ} (hn : 4 ≤ n)
   -- The node roles: the leaf `0`, the branch node `1` of the star `D₄`, the branch node `1` for
   -- `n ≥ 5`, an interior path node, the branch node `n - 3` for `n ≥ 5`, and the leaves `n - 2`,
   -- `n - 1` and `n`.
-  have hnodes : (AffineDynkinType.D n).nodes = n + 1 := rfl
+  have hnodes := AffineDynkinType.nodes_D n
   rcases (by omega : (v : ℕ) = 0 ∨ ((v : ℕ) = 1 ∧ n = 4) ∨ ((v : ℕ) = 1 ∧ 5 ≤ n) ∨
       (2 ≤ (v : ℕ) ∧ (v : ℕ) ≤ n - 4) ∨ ((v : ℕ) = n - 3 ∧ 5 ≤ n) ∨ (v : ℕ) = n - 2 ∨
       (v : ℕ) = n - 1 ∨ (v : ℕ) = n) with
@@ -218,7 +218,7 @@ theorem exists_mem_signlessPreprojectiveGrade_four_notMem_commutatorSubmodule [N
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   classical
   obtain ⟨f⟩ := hG
-  have hnodes : (AffineDynkinType.D n).nodes = n + 1 := rfl
+  have hnodes := AffineDynkinType.nodes_D n
   let c : Fin (AffineDynkinType.D n).nodes := ⟨1, by omega⟩
   let l₁ : Fin (AffineDynkinType.D n).nodes := ⟨0, by omega⟩
   let l₂ : Fin (AffineDynkinType.D n).nodes := ⟨n - 1, by omega⟩
