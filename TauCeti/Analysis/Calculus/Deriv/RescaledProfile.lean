@@ -47,8 +47,9 @@ theorem hasDerivAt_rpow_smul_comp_rpow_smul {Ψ : E → F} (a b : ℝ) (x : E) {
     ring_nf
   have hpow' : s ^ (-a - 1) = s ^ (-(a + 1)) := by ring_nf
   simp only [map_smul, smul_smul, smul_add, hpow']
-  rw [show s ^ (-a) * (b * s ^ (b - 1)) = s ^ (-(a + 1)) * b * s ^ b by
-    linear_combination b * hpow]
+  have hcoeff : s ^ (-a) * (b * s ^ (b - 1)) = s ^ (-(a + 1)) * b * s ^ b := by
+    linear_combination b * hpow
+  rw [hcoeff]
   module
 
 end TauCeti

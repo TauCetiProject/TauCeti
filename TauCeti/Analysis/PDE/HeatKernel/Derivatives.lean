@@ -199,8 +199,8 @@ private theorem exists_gaussianDecay_iteratedDeriv_rpow_smul (j : ℕ) :
       (eventually_gt_nhds hs).mono fun s' hs' =>
         ((hasDerivAt_rpow_smul_comp_rpow_smul a (-1 / 2) x hs'
           ((hΨ.1.differentiable (by simp)).differentiableAt)).congr_deriv (by module)).deriv
-    rw [iteratedDeriv_succ', hderiv.iteratedDeriv_eq, h x s hs,
-      show -(a + 1 + (j : ℝ)) = -(a + ((j + 1 : ℕ) : ℝ)) by push_cast; ring]
+    have hexp : -(a + 1 + (j : ℝ)) = -(a + ((j + 1 : ℕ) : ℝ)) := by push_cast; ring
+    rw [iteratedDeriv_succ', hderiv.iteratedDeriv_eq, h x s hs, hexp]
 
 /-- **Gaussian bounds on the space-time derivatives of the heat kernel.** For all orders `j` in
 time and `m` in space there is a constant `C`, independent of the time, such that
@@ -219,9 +219,10 @@ theorem exists_norm_iteratedDeriv_iteratedFDeriv_heatKernel_le (j m : ℕ) :
         iteratedFDeriv ℝ m (heatKernel 1) (s ^ (-1 / 2 : ℝ) • x) :=
     (eventually_gt_nhds ht).mono fun s hs => by
       simp only [iteratedFDeriv_heatKernel_eq_rpow_smul hs, neg_div]
+  have htwo : (-1 / 2 : ℝ) * (2 : ℕ) = -1 := by norm_num
   have hexp : -‖t ^ (-1 / 2 : ℝ) • x‖ ^ 2 / 8 = -‖x‖ ^ 2 / (8 * t) := by
     rw [norm_smul, norm_of_nonneg (by positivity), mul_pow, ← rpow_natCast, ← rpow_mul ht.le,
-      show (-1 / 2 : ℝ) * (2 : ℕ) = -1 by norm_num, rpow_neg_one]
+      htwo, rpow_neg_one]
     field_simp
   have hΦx := hC (t ^ (-1 / 2 : ℝ) • x)
   rw [pow_zero, one_mul, norm_iteratedFDeriv_zero, hexp] at hΦx
@@ -258,8 +259,9 @@ theorem exists_integral_norm_iteratedFDeriv_heatKernel_le (m : ℕ) :
   -- The Gaussian `exp(-‖x‖² / (8t))` is `(8πt)^(n/2) K_{2t}(x)`, of integral `(8πt)^(n/2)`.
   have hG : ∀ x : E, exp (-‖x‖ ^ 2 / (8 * t)) =
       (8 * π * t) ^ ((finrank ℝ E : ℝ) / 2) * heatKernel (2 * t) x := fun x => by
-    rw [heatKernel_apply, ← mul_assoc, show 4 * π * (2 * t) = 8 * π * t by ring,
-      show -‖x‖ ^ 2 / (4 * (2 * t)) = -‖x‖ ^ 2 / (8 * t) by ring, neg_div (2 : ℝ),
+    have hc : 4 * π * (2 * t) = 8 * π * t := by ring
+    have he : -‖x‖ ^ 2 / (4 * (2 * t)) = -‖x‖ ^ 2 / (8 * t) := by ring
+    rw [heatKernel_apply, ← mul_assoc, hc, he, neg_div (2 : ℝ),
       rpow_neg (by positivity), mul_inv_cancel₀ (by positivity), one_mul]
   have h2t : 0 < 2 * t := by positivity
   calc ∫ x : E, ‖iteratedFDeriv ℝ m (heatKernel t) x‖
