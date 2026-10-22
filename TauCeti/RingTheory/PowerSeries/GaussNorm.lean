@@ -42,6 +42,7 @@ restricted series. For complete coefficients this is the convergence statement b
 successive-approximation arguments, taking the place of completeness of the restricted-series
 space for the Gauss norm. Over a complete ultrametric ring, it suffices for the Gauss norms
 to tend to zero along the cofinite filter, without absolute summability of those real norms.
+The coefficient families are then summable by `summable_coeff_of_tendsto_gaussNorm_zero`.
 
 Multiplicativity and the ultrametric inequality together make the Gauss norm a valuation with
 values in `ℝ≥0` on the ring of restricted series, `gaussValuation`, whose support is trivial.
@@ -110,9 +111,10 @@ closed unit disc next to its Gauss points.
 * `TauCeti.PowerSeries.gaussValuationAbove_monomial_coeff_le` and
   `TauCeti.PowerSeries.gaussValuationBelow_monomial_coeff_le`: every monomial of a series is at
   most the series for both refined Gauss valuations.
-* `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff_of_tendsto_gaussNorm_zero`: over a complete
-  ultrametric ring, coefficientwise sums are restricted when their Gauss norms tend to zero
-  along the cofinite filter.
+* `TauCeti.PowerSeries.summable_coeff_of_tendsto_gaussNorm_zero` and
+  `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff_of_tendsto_gaussNorm_zero`: over a complete
+  ultrametric ring, cofinite decay of the Gauss norms gives summable coefficients, and the
+  coefficientwise sum of restricted series is restricted.
 * `TauCeti.PowerSeries.summable_norm_coeff_of_summable_gaussNorm`: summable Gauss norms give
   summable coefficient norms in every degree over a seminormed ring, without completeness.
 * `TauCeti.PowerSeries.summable_coeff_of_summable_gaussNorm` and
@@ -724,16 +726,32 @@ theorem isRestricted_mk_tsum_coeff (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted 
 
 variable [CompleteSpace R] [IsUltrametricDist R]
 
+/-- Over a complete ultrametric ring, a family of power series with finite Gauss norms tending
+to zero along the cofinite filter has summable coefficients in every degree. -/
+theorem summable_coeff_of_tendsto_gaussNorm_zero (hc : 0 < c)
+    (ha : ∀ k, (a k).HasGaussNorm norm c)
+    (hs : Tendsto (fun k ↦ (a k).gaussNorm norm c) cofinite (𝓝 0)) (i : ℕ) :
+    Summable fun k ↦ (a k).coeff i := by
+  apply NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+  rw [tendsto_zero_iff_norm_tendsto_zero]
+  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun k ↦ ?_)
+    (by simpa using hs.mul_const (c ^ i)⁻¹)
+  rw [← div_eq_mul_inv, le_div_iff₀ (pow_pos hc i)]
+  exact PowerSeries.le_gaussNorm norm c _ (ha k) i
+
 /-- Over a complete ultrametric ring, the coefficientwise sum of restricted power series is
 restricted whenever their Gauss norms tend to zero along the cofinite filter. Unlike absolute
 summability of the real Gauss norms, this is the convergence criterion intrinsic to an
-ultrametric norm. -/
+ultrametric norm. The coefficient families are summable by
+`summable_coeff_of_tendsto_gaussNorm_zero`. -/
 theorem isRestricted_mk_tsum_coeff_of_tendsto_gaussNorm_zero (hc : 0 < c)
     (ha : ∀ k, (a k).IsRestricted c)
     (hs : Tendsto (fun k ↦ (a k).gaussNorm norm c) cofinite (𝓝 0)) :
     (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).IsRestricted c := by
   let : Fact (0 < c) := ⟨hc⟩
-  -- Univariate series are Unit-indexed multivariate series; use their complete Gauss norm.
+  -- PowerSeries R is definitionally MvPowerSeries Unit R. Its univariate restricted-subring
+  -- normed and complete instances are defined downstream in PowerSeries/TateAlgebra, which
+  -- imports this file, so we use the existing multivariate instances on the same carrier here.
   let S := MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)
   let A : ι → S := fun k ↦ ⟨a k, ha k⟩
   have hnorm (k) : ‖A k‖ = (a k).gaussNorm norm c :=
@@ -742,8 +760,8 @@ theorem isRestricted_mk_tsum_coeff_of_tendsto_gaussNorm_zero (hc : 0 < c)
     apply NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
     rw [tendsto_zero_iff_norm_tendsto_zero]
     simpa only [hnorm] using hs
-  have hcoeff (n : ℕ) : HasSum (fun k ↦ (a k).coeff n)
-      (PowerSeries.coeff n ((∑' k, A k : S) : PowerSeries R)) := by
+  have hcoeff (n : ℕ) : (∑' k, (a k).coeff n) =
+      PowerSeries.coeff n ((∑' k, A k : S) : PowerSeries R) := by
     let coeffHom : S →+ R :=
       (PowerSeries.coeff n).toAddMonoidHom.comp S.subtype.toAddMonoidHom
     have hcont : Continuous coeffHom :=
@@ -751,12 +769,14 @@ theorem isRestricted_mk_tsum_coeff_of_tendsto_gaussNorm_zero (hc : 0 < c)
         rw [← div_eq_inv_mul, le_div_iff₀ (pow_pos hc n),
           MvPowerSeries.norm_eq_gaussNorm (c := fun _ : Unit ↦ c)]
         exact PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.2) n).continuous
-    exact hA.hasSum.map coeffHom hcont
+    exact (summable_coeff_of_tendsto_gaussNorm_zero hc
+      (fun k ↦ hasGaussNorm_of_isRestricted (ha k)) hs n).hasSum.unique
+      (hA.hasSum.map coeffHom hcont)
   have heq : (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i) =
       ((∑' k, A k : S) : PowerSeries R) := by
     ext n
     rw [PowerSeries.coeff_mk]
-    exact (hcoeff n).tsum_eq
+    exact hcoeff n
   rw [heq]
   exact (∑' k, A k).2
 
