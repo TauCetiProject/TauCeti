@@ -152,6 +152,16 @@ theorem norm_coeff_mul_prod_le (f : IsRestricted.subring (R := R) c) (t : σ →
     ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ ‖f‖ :=
   le_gaussNorm norm c _ f.2.hasGaussNorm t
 
+/-- **Coefficients are continuous for the Gauss norm**: the coefficient of `Xᵗ` is bounded by
+`(cᵗ)⁻¹` times the Gauss norm. -/
+theorem continuous_coeff_isRestrictedSubring (t : σ →₀ ℕ) :
+    Continuous fun f : IsRestricted.subring (R := R) c ↦ coeff t (f : MvPowerSeries σ R) :=
+  AddMonoidHomClass.continuous_of_bound
+    ((coeff t).toAddMonoidHom.comp (IsRestricted.subring (R := R) c).subtype.toAddMonoidHom)
+    (t.prod (c · ^ ·))⁻¹ fun f ↦ by
+      rw [inv_mul_eq_div, le_div_iff₀ (prod_pow_pos t)]
+      exact norm_coeff_mul_prod_le f t
+
 /-- A nonnegative bound on the norm is exactly a bound on every weighted coefficient norm. -/
 theorem norm_le_iff {f : IsRestricted.subring (R := R) c} {r : ℝ}
     (hr : 0 ≤ r) : ‖f‖ ≤ r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ r := by
