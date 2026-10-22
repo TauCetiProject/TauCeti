@@ -43,12 +43,12 @@ is the local model for extension and trace on domains with Lipschitz boundary.
   `TauCeti.W1p.opNorm_extendByReflectionL_le`, and its value and gradient
   `TauCeti.W1p.value_extendByReflectionL_ae` and `TauCeti.W1p.gradient_extendByReflectionL_ae`.
 * `TauCeti.W1p.halfSpaceTrace`: the `Lᵖ` trace on `{a} × E` of a `W^{1,p}` function on the
-  half-space, with `TauCeti.W1p.norm_halfSpaceTrace_rpow_le`, the general bounds
-  `TauCeti.W1p.norm_halfSpaceTrace_le_rpow_inv_mul` and
-  `TauCeti.W1p.opNorm_halfSpaceTrace_le_rpow_inv`, the sharper `H¹` bounds
-  `TauCeti.W1p.norm_halfSpaceTrace_le` and `TauCeti.W1p.opNorm_halfSpaceTrace_le`, and
-  `TauCeti.W1p.halfSpaceTrace_restrictL`. On `H¹₀` of the half-space it agrees with the
-  zero-boundary trace (`TauCeti.W1p.halfSpaceTrace_coe_w1p0`) and so vanishes
+  half-space, with `TauCeti.W1p.norm_halfSpaceTrace_rpow_le`, the bounds
+  `TauCeti.W1p.norm_halfSpaceTrace_le` and `TauCeti.W1p.opNorm_halfSpaceTrace_le` with constant
+  `p ^ (1 / p)`, the sharper `H¹` bounds `TauCeti.W1p.norm_halfSpaceTrace_le_norm` and
+  `TauCeti.W1p.opNorm_halfSpaceTrace_le_one`, and `TauCeti.W1p.halfSpaceTrace_restrictL`. On
+  `W^{1,p}_0` of the half-space it agrees with the zero-boundary trace
+  (`TauCeti.W1p.halfSpaceTrace_coe_w1p0`) and so vanishes
   (`TauCeti.W1p.halfSpaceTrace_eq_zero_of_w1p0`).
 
 ## References
@@ -358,43 +358,32 @@ theorem W1p.norm_halfSpaceTrace_rpow_le (hp : p ≠ ∞) (a : ℝ)
 
 /-- For `1 ≤ p < ∞`, the half-space trace has norm at most `p ^ (1 / p)` times the Sobolev norm on
 the half-space. The constant is `1` at `p = 1`. -/
-theorem W1p.norm_halfSpaceTrace_le_rpow_inv_mul (hp : p ≠ ∞) (a : ℝ)
+theorem W1p.norm_halfSpaceTrace_le (hp : p ≠ ∞) (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) :
     ‖W1p.halfSpaceTrace hp a u‖ ≤ p.toReal ^ p.toReal⁻¹ * ‖u‖ := by
-  have hp1 : 1 ≤ p := Fact.out
-  have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp hp1
-  have hr0 : 0 < p.toReal := zero_lt_one.trans_le hr
-  have h1 : ‖W1p.value u‖ ^ p.toReal ≤ ‖u‖ ^ p.toReal :=
-    Real.rpow_le_rpow (norm_nonneg _) (W1p.norm_value_le u) hr0.le
-  have h2 : ‖W1p.gradient u‖ ^ p.toReal ≤ ‖u‖ ^ p.toReal :=
-    Real.rpow_le_rpow (norm_nonneg _) (W1p.norm_gradient_le u) hr0.le
-  have hb : ‖W1p.halfSpaceTrace hp a u‖ ^ p.toReal ≤ p.toReal * ‖u‖ ^ p.toReal := by
-    nlinarith [W1p.norm_halfSpaceTrace_rpow_le hp a u, sub_nonneg.2 hr]
-  rw [← Real.rpow_le_rpow_iff (norm_nonneg _) (by positivity) hr0,
-    Real.mul_rpow (by positivity) (norm_nonneg _), ← Real.rpow_mul hr0.le,
-    inv_mul_cancel₀ hr0.ne', Real.rpow_one]
-  exact hb
+  have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp (Fact.out : 1 ≤ p)
+  exact le_rpow_inv_mul_of_rpow_le hr (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
+    (W1p.norm_value_le u) (W1p.norm_gradient_le u) (W1p.norm_halfSpaceTrace_rpow_le hp a u)
 
 /-- For `1 ≤ p < ∞`, the half-space trace has operator norm at most `p ^ (1 / p)`, which is `1`
 at `p = 1`. -/
-theorem W1p.opNorm_halfSpaceTrace_le_rpow_inv (hp : p ≠ ∞) (a : ℝ) :
+theorem W1p.opNorm_halfSpaceTrace_le (hp : p ≠ ∞) (a : ℝ) :
     ‖W1p.halfSpaceTrace (E := E) hp a‖ ≤ p.toReal ^ p.toReal⁻¹ :=
-  ContinuousLinearMap.opNorm_le_bound _ (by positivity)
-    (W1p.norm_halfSpaceTrace_le_rpow_inv_mul hp a)
+  ContinuousLinearMap.opNorm_le_bound _ (by positivity) (W1p.norm_halfSpaceTrace_le hp a)
 
 /-- The `H¹` half-space trace has norm at most the Sobolev norm on the half-space. -/
-theorem W1p.norm_halfSpaceTrace_le (a : ℝ)
+theorem W1p.norm_halfSpaceTrace_le_norm (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) :
     ‖W1p.halfSpaceTrace ENNReal.ofNat_ne_top a u‖ ≤ ‖u‖ :=
   (W1p.norm_hyperplaneTrace_le_norm_restrictL a (W1p.extendByReflectionL a u)).trans_eq
     (by rw [W1p.restrictL_extendByReflectionL])
 
 /-- The `H¹` half-space trace has operator norm at most one. -/
-theorem W1p.opNorm_halfSpaceTrace_le (a : ℝ) :
+theorem W1p.opNorm_halfSpaceTrace_le_one (a : ℝ) :
     ‖W1p.halfSpaceTrace (E := E) (p := 2) ENNReal.ofNat_ne_top a‖ ≤ 1 := by
   apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
   intro u
-  simpa only [one_mul] using W1p.norm_halfSpaceTrace_le a u
+  simpa only [one_mul] using W1p.norm_halfSpaceTrace_le_norm a u
 
 /-- The half-space trace of the restriction of a whole-space `W^{1,p}` function is its hyperplane
 trace. With `TauCeti.W1p.hyperplaneTrace_ofTestFunction_apply_ae`, this identifies the trace of
@@ -411,32 +400,33 @@ theorem W1p.halfSpaceTrace_restrictL (hp : p ≠ ∞) (a : ℝ)
   rw [W1p.restrictL_extendByReflectionL] at h
   exact h.trans (W1p.value_restrictL_ae hle u)
 
-/-- On `H¹₀` of the half-space, the half-space trace agrees with the zero-boundary trace
+/-- On `W^{1,p}_0` of the half-space, the half-space trace agrees with the zero-boundary trace
 `TauCeti.W1p0.hyperplaneTrace`, defined through extension by zero. -/
-theorem W1p.halfSpaceTrace_coe_w1p0 (a : ℝ)
-    (u : W1p0 (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) :
-    W1p.halfSpaceTrace ENNReal.ofNat_ne_top a
-        (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) =
-      W1p0.hyperplaneTrace (E := E) (Omega := normalHalfSpace a) a u := by
-  refine (W1p.halfSpaceTrace_apply _ a _).trans ((W1p.hyperplaneTrace_eq_of_value_ae_eq
-    (by norm_num) a ?_).trans (W1p0.hyperplaneTrace_apply a u).symm)
+theorem W1p.halfSpaceTrace_coe_w1p0 (hp : p ≠ ∞) (a : ℝ)
+    (u : W1p0 (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) :
+    W1p.halfSpaceTrace hp a
+        (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) =
+      W1p0.hyperplaneTrace (E := E) (Omega := normalHalfSpace a) hp a u := by
+  refine (W1p.halfSpaceTrace_apply hp a _).trans ((W1p.hyperplaneTrace_eq_of_value_ae_eq
+    hp a ?_).trans (W1p0.hyperplaneTrace_apply hp a u).symm)
   have h := (W1p.value_restrictL_ae (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)
     (W1p.extendByReflectionL a
-      (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2))).symm
+      (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p))).symm
   rw [W1p.restrictL_extendByReflectionL] at h
   refine h.trans ?_
   rw [W1p0.value_extendByZeroL]
   exact (coeFn_extendByZeroLpₗᵢ_restrict ℝ _ _ _).symm
 
-/-- Functions in `H¹₀` of the half-space have zero half-space trace: the flat-model inclusion
-`H¹₀(H) ⊆ ker(halfSpaceTrace)`. -/
-theorem W1p.halfSpaceTrace_eq_zero_of_w1p0 (a : ℝ)
-    (u : W1p0 (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) :
-    W1p.halfSpaceTrace ENNReal.ofNat_ne_top a
-        (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) =
+/-- Functions in `W^{1,p}_0` of the half-space have zero half-space trace: the flat-model inclusion
+`W^{1,p}_0(H) ⊆ ker(halfSpaceTrace)`. -/
+theorem W1p.halfSpaceTrace_eq_zero_of_w1p0 (hp : p ≠ ∞) (a : ℝ)
+    (u : W1p0 (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) :
+    W1p.halfSpaceTrace hp a
+        (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) =
       0 :=
-  (W1p.halfSpaceTrace_coe_w1p0 a u).trans (W1p0.hyperplaneTrace_apply_eq_zero_of_forall_not_mem a
-    (fun _ => (mem_normalHalfSpace a _).not.2 (lt_irrefl a)) u)
+  (W1p.halfSpaceTrace_coe_w1p0 hp a u).trans
+    (W1p0.hyperplaneTrace_apply_eq_zero_of_forall_not_mem hp a
+      (fun _ => (mem_normalHalfSpace a _).not.2 (lt_irrefl a)) u)
 
 end Trace
 

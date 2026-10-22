@@ -11,7 +11,6 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Analysis.Normed.Operator.Extend
-import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Flat traces in `W^{1,p}`
@@ -28,7 +27,8 @@ The estimate behind it is the `Lʳ` trace inequality for compactly supported `C�
 (`TauCeti.integral_hyperplane_abs_rpow_le_integral_halfSpace`), obtained by integrating the
 one-dimensional estimate `TauCeti.abs_rpow_le_integral_Ioi` over the normal lines. For `r = 2`
 its right side is the `H¹` energy on the half-space, and for `r = 1` it is the `L¹` norm of the
-gradient there.
+gradient there. For a test function, `TauCeti.integral_rpow_energy_eq_of_ae_eq` writes that right
+side as `(p - 1) ‖u‖ᵖ + ‖∇u‖ᵖ` in terms of `Lᵖ` norms.
 
 This flat trace is the local model for boundary conditions on strips and on smooth domains.
 No pointwise representative of an arbitrary Sobolev function is evaluated: agreement with
@@ -69,24 +69,6 @@ private def hyperplaneTestFunctionₗ (p : ℝ≥0∞) (a : ℝ) :
     rw [← MemLp.toLp_const_smul]
     apply MemLp.toLp_congr
     exact Filter.Eventually.of_forall fun y ↦ by simp
-
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- The `Lʳ` energy density `(r - 1) |u|ʳ + ‖Du‖ʳ` of a compactly supported `C¹` function is
-continuous with compact support. -/
-private theorem continuous_rpow_energy {u : WithLp 2 (ℝ × E) → ℝ} (hu : ContDiff ℝ 1 u)
-    {r : ℝ} (hr : 1 ≤ r) :
-    Continuous fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r :=
-  (continuous_const.mul (hu.continuous.abs.rpow_const fun _ ↦ Or.inr (zero_le_one.trans hr))).add
-    ((hu.continuous_fderiv one_ne_zero).norm.rpow_const fun _ ↦ Or.inr (zero_le_one.trans hr))
-
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-private theorem hasCompactSupport_rpow_energy {u : WithLp 2 (ℝ × E) → ℝ}
-    (hsupp : HasCompactSupport u) {r : ℝ} (hr : 1 ≤ r) :
-    HasCompactSupport fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r := by
-  have hr0 : r ≠ 0 := (zero_lt_one.trans_le hr).ne'
-  exact (hsupp.mono fun x hx hz ↦ hx (by simp [hz, hr0])).add
-    ((hsupp.fderiv ℝ).mono fun x hx hz ↦ hx (by
-      simp only [hz, norm_zero (E := WithLp 2 (ℝ × E) →L[ℝ] ℝ), Real.zero_rpow hr0]))
 
 omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
 private theorem rpow_energy_nonneg (u : WithLp 2 (ℝ × E) → ℝ) {r : ℝ} (hr : 1 ≤ r)
@@ -172,6 +154,27 @@ theorem integral_hyperplane_abs_rpow_le_integral
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+/-- If `V` and `G` represent `u` and its gradient `μ`-almost everywhere, the integral of the `Lᵖ`
+energy density `(p - 1) |u|ᵖ + ‖Du‖ᵖ` is `(p - 1) ‖V‖ᵖ + ‖G‖ᵖ`. With `μ` the volume restricted to
+a domain, this evaluates the right side of the flat trace inequality on test functions. -/
+theorem integral_rpow_energy_eq_of_ae_eq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [CompleteSpace F] [MeasurableSpace F] {μ : Measure F}
+    (hp : p ≠ ∞) {u : F → ℝ} {V : Lp ℝ p μ} {G : Lp F p μ} (hV : V =ᵐ[μ] u)
+    (hG : G =ᵐ[μ] ∇ u) :
+    ∫ x, (p.toReal - 1) * |u x| ^ p.toReal + ‖fderiv ℝ u x‖ ^ p.toReal ∂μ =
+      (p.toReal - 1) * ‖V‖ ^ p.toReal + ‖G‖ ^ p.toReal := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+  have hv : (fun x ↦ ‖V x‖ ^ p.toReal) =ᵐ[μ] fun x ↦ |u x| ^ p.toReal := by
+    filter_upwards [hV] with x hx
+    rw [hx, Real.norm_eq_abs]
+  have hg : (fun x ↦ ‖G x‖ ^ p.toReal) =ᵐ[μ] fun x ↦ ‖fderiv ℝ u x‖ ^ p.toReal := by
+    filter_upwards [hG] with x hx
+    rw [hx, norm_gradient_eq_norm_fderiv]
+  rw [integral_add ((((Lp.memLp V).integrable_norm_rpow hp0 hp).congr hv).const_mul _)
+      (((Lp.memLp G).integrable_norm_rpow hp0 hp).congr hg), integral_const_mul,
+    ← integral_congr_ae hv, ← integral_congr_ae hg, Lp.integral_norm_rpow_eq_norm_rpow hp0 hp,
+    Lp.integral_norm_rpow_eq_norm_rpow hp0 hp]
+
 /-- On test functions, the `Lᵖ` norm of the restriction to `{a} × E` is at most `p ^ (1 / p)`
 times the `W^{1,p}` norm. -/
 private theorem norm_hyperplaneTestFunction_le (hp : p ≠ ∞) (a : ℝ)
@@ -180,54 +183,26 @@ private theorem norm_hyperplaneTestFunction_le (hp : p ≠ ∞) (a : ℝ)
       p.toReal ^ p.toReal⁻¹ * ‖W1p.ofTestFunctionₗ volume ⊤ p φ‖ := by
   have hp1 : 1 ≤ p := Fact.out
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
-  set r := p.toReal with hr_def
-  have hr : 1 ≤ r := by simpa using ENNReal.toReal_mono hp hp1
-  have hr0 : 0 < r := zero_lt_one.trans_le hr
+  have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp hp1
   set w := W1p.ofTestFunctionₗ volume ⊤ p φ
   have hu : ContDiff ℝ 1 (φ : WithLp 2 (ℝ × E) → ℝ) := φ.contDiff.of_le (by simp)
-  have hvalue := testFunctionLp_apply_ae (mu := volume) p φ
-  have hgrad := gradientTestFunctionLp_apply_ae (mu := volume) p φ
-  simp only [Opens.coe_top, Measure.restrict_univ] at hvalue hgrad
   -- The three integrals in the trace inequality, as powers of `Lᵖ` norms.
-  have htr : ‖hyperplaneTestFunctionₗ p a φ‖ ^ r = ∫ y : E, |φ (WithLp.toLp 2 (a, y))| ^ r := by
+  have htr : ‖hyperplaneTestFunctionₗ p a φ‖ ^ p.toReal =
+      ∫ y : E, |φ (WithLp.toLp 2 (a, y))| ^ p.toReal := by
     rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp]
     apply integral_congr_ae
     filter_upwards [(hyperplane_memLp p a φ).coeFn_toLp] with y hy
-    simp only [hyperplaneTestFunctionₗ, LinearMap.coe_mk, AddHom.coe_mk, hy, Real.norm_eq_abs,
-      hr_def]
-  have hv : ∫ x : WithLp 2 (ℝ × E), |φ x| ^ r = ‖W1p.value w‖ ^ r := by
-    rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp, W1p.value_ofTestFunctionₗ]
-    simp only [Opens.coe_top, Measure.restrict_univ]
-    apply integral_congr_ae
-    filter_upwards [hvalue] with x hx
-    rw [hx, Real.norm_eq_abs]
-  have hg : ∫ x : WithLp 2 (ℝ × E), ‖fderiv ℝ φ x‖ ^ r = ‖W1p.gradient w‖ ^ r := by
-    rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp, W1p.gradient_ofTestFunctionₗ]
-    simp only [Opens.coe_top, Measure.restrict_univ]
-    apply integral_congr_ae
-    filter_upwards [hgrad] with x hx
-    rw [hx, norm_gradient_eq_norm_fderiv]
-  have hiv : Integrable (fun x : WithLp 2 (ℝ × E) ↦ |φ x| ^ r) volume :=
-    (φ.continuous.abs.rpow_const fun _ ↦ Or.inr hr0.le).integrable_of_hasCompactSupport
-      (φ.hasCompactSupport.mono fun x hx hz ↦ hx (by simp [hz, hr0.ne']))
-  have hig : Integrable (fun x : WithLp 2 (ℝ × E) ↦ ‖fderiv ℝ φ x‖ ^ r) volume :=
-    ((hu.continuous_fderiv one_ne_zero).norm.rpow_const fun _ ↦ Or.inr hr0.le)
-      |>.integrable_of_hasCompactSupport ((φ.hasCompactSupport.fderiv ℝ).mono fun x hx hz ↦
-        hx (by simp only [hz, norm_zero (E := WithLp 2 (ℝ × E) →L[ℝ] ℝ),
-          Real.zero_rpow hr0.ne']))
+    simp only [hyperplaneTestFunctionₗ, LinearMap.coe_mk, AddHom.coe_mk, hy, Real.norm_eq_abs]
+  have henergy := integral_rpow_energy_eq_of_ae_eq hp (u := φ) (V := W1p.value w)
+    (G := W1p.gradient w)
+    (by rw [W1p.value_ofTestFunctionₗ]; exact testFunctionLp_apply_ae (mu := volume) p φ)
+    (by rw [W1p.gradient_ofTestFunctionₗ]; exact gradientTestFunctionLp_apply_ae (mu := volume) p φ)
+  simp only [Opens.coe_top, Measure.restrict_univ] at henergy
   have key := integral_hyperplane_abs_rpow_le_integral hu φ.hasCompactSupport a hr
-  rw [integral_add (hiv.const_mul _) hig, integral_const_mul, hv, hg, ← htr] at key
+  rw [henergy, ← htr] at key
   -- Both norms on the right are at most the Sobolev norm.
-  have hbound : ‖hyperplaneTestFunctionₗ p a φ‖ ^ r ≤ r * ‖w‖ ^ r := by
-    have h1 : ‖W1p.value w‖ ^ r ≤ ‖w‖ ^ r :=
-      Real.rpow_le_rpow (norm_nonneg _) (W1p.norm_value_le w) hr0.le
-    have h2 : ‖W1p.gradient w‖ ^ r ≤ ‖w‖ ^ r :=
-      Real.rpow_le_rpow (norm_nonneg _) (W1p.norm_gradient_le w) hr0.le
-    nlinarith [sub_nonneg.2 hr]
-  rw [← Real.rpow_le_rpow_iff (norm_nonneg _) (by positivity) hr0,
-    Real.mul_rpow (by positivity) (norm_nonneg _), ← Real.rpow_mul hr0.le,
-    inv_mul_cancel₀ hr0.ne', Real.rpow_one]
-  exact hbound
+  exact le_rpow_inv_mul_of_rpow_le hr (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
+    (W1p.norm_value_le w) (W1p.norm_gradient_le w) key
 
 /-- The `Lᵖ` trace on the hyperplane `{a} × E` of a whole-space `W^{1,p}` function, defined as the
 unique continuous extension of restriction of test functions. It is characterized by

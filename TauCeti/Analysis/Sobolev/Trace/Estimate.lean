@@ -22,6 +22,10 @@ For `1 ≤ r`, a compactly supported `C¹` real function has the `r`-th power of
 endpoint of a half-line bounded by the integral of `(r - 1) |g|ʳ + |g'|ʳ` on that half-line
 (`TauCeti.abs_rpow_le_integral_Ioi`); for `r = 2` this is the `H¹` energy. Integrating this
 estimate over the transverse variables supplies the flat-boundary `W^{1,p}` trace inequality.
+The energy density `(r - 1) |u|ʳ + ‖Du‖ʳ` of a compactly supported `C¹` function on any normed
+space is continuous with compact support (`TauCeti.continuous_rpow_energy`,
+`TauCeti.hasCompactSupport_rpow_energy`), and `TauCeti.le_rpow_inv_mul_of_rpow_le` turns an
+inequality `xʳ ≤ (r - 1) yʳ + zʳ` into the linear bound `x ≤ r ^ (1 / r) n` for `y, z ≤ n`.
 
 The estimate follows the fundamental-theorem-of-calculus proof of the trace theorem in
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.5.
@@ -95,19 +99,48 @@ theorem norm_sq_add_norm_sq_le_integral_norm_sq_add_norm_deriv_sq
   rw [hleft] at hmono
   nlinarith
 
-/-- The `Lʳ` energy density `(r - 1) |g|ʳ + |g'|ʳ` of a compactly supported `C¹` function is
-integrable. -/
+section Energy
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- For `1 ≤ r`, the `Lʳ` energy density `(r - 1) |u|ʳ + ‖Du‖ʳ` of a `C¹` function is
+continuous. -/
+theorem continuous_rpow_energy {u : F → ℝ} (hu : ContDiff ℝ 1 u) {r : ℝ} (hr : 1 ≤ r) :
+    Continuous fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r :=
+  (continuous_const.mul (hu.continuous.abs.rpow_const fun _ ↦ Or.inr (zero_le_one.trans hr))).add
+    ((hu.continuous_fderiv one_ne_zero).norm.rpow_const fun _ ↦ Or.inr (zero_le_one.trans hr))
+
+/-- For `1 ≤ r`, the `Lʳ` energy density `(r - 1) |u|ʳ + ‖Du‖ʳ` of a compactly supported
+function has compact support. -/
+theorem hasCompactSupport_rpow_energy {u : F → ℝ} (hsupp : HasCompactSupport u) {r : ℝ}
+    (hr : 1 ≤ r) : HasCompactSupport fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r := by
+  have hr0 : r ≠ 0 := (zero_lt_one.trans_le hr).ne'
+  exact (hsupp.mono fun x hx hz ↦ hx (by simp [hz, hr0])).add
+    ((hsupp.fderiv ℝ).mono fun x hx hz ↦ hx (by
+      simp only [hz, norm_zero (E := F →L[ℝ] ℝ), Real.zero_rpow hr0]))
+
+end Energy
+
 private theorem integrable_rpow_energy {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g)
     (hs : HasCompactSupport g) {r : ℝ} (hr : 1 ≤ r) :
     Integrable (fun t ↦ (r - 1) * |g t| ^ r + |deriv g t| ^ r) volume := by
-  have hr0 : r ≠ 0 := (zero_lt_one.trans_le hr).ne'
-  have h1 : Continuous fun t ↦ (r - 1) * |g t| ^ r :=
-    continuous_const.mul (hg.continuous.abs.rpow_const fun _ => Or.inr (zero_le_one.trans hr))
-  have h2 : Continuous fun t ↦ |deriv g t| ^ r :=
-    (hg.continuous_deriv le_rfl).abs.rpow_const fun _ => Or.inr (zero_le_one.trans hr)
-  exact (h1.add h2).integrable_of_hasCompactSupport
-    ((hs.mono fun t ht hzero ↦ ht (by simp [hzero, hr0])).add
-      (hs.deriv.mono fun t ht hzero ↦ ht (by simp [hzero, hr0])))
+  simpa only [← norm_deriv_eq_norm_fderiv, Real.norm_eq_abs] using
+    (continuous_rpow_energy hg hr).integrable_of_hasCompactSupport
+      (hasCompactSupport_rpow_energy hs hr)
+
+/-- If `x ^ r ≤ (r - 1) y ^ r + z ^ r` for `1 ≤ r` and nonnegative `x`, `y`, `z`, with `y` and `z`
+at most `n`, then `x ≤ r ^ (1 / r) n`. This turns the `Lʳ` trace inequality into a bound with
+constant `r ^ (1 / r)` by the Sobolev norm. -/
+theorem le_rpow_inv_mul_of_rpow_le {r x y z n : ℝ} (hr : 1 ≤ r) (hx : 0 ≤ x) (hy : 0 ≤ y)
+    (hz : 0 ≤ z) (hyn : y ≤ n) (hzn : z ≤ n) (h : x ^ r ≤ (r - 1) * y ^ r + z ^ r) :
+    x ≤ r ^ r⁻¹ * n := by
+  have hr0 : 0 < r := zero_lt_one.trans_le hr
+  have hn : 0 ≤ n := hy.trans hyn
+  have h1 : y ^ r ≤ n ^ r := Real.rpow_le_rpow hy hyn hr0.le
+  have h2 : z ^ r ≤ n ^ r := Real.rpow_le_rpow hz hzn hr0.le
+  rw [← Real.rpow_le_rpow_iff hx (by positivity) hr0, Real.mul_rpow (by positivity) hn,
+    ← Real.rpow_mul hr0.le, inv_mul_cancel₀ hr0.ne', Real.rpow_one]
+  nlinarith [sub_nonneg.2 hr]
 
 /-- **The one-dimensional `Lᵖ` trace estimate.** For `1 ≤ r`, the `r`-th power of the value at
 the endpoint of a half-line of a compactly supported `C¹` function is controlled by

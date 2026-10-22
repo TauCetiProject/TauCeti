@@ -253,7 +253,7 @@ theorem W1p.normalEpigraphTrace_apply (hφ : LipschitzWith K φ)
 theorem W1p.norm_normalEpigraphTrace_le (hφ : LipschitzWith K φ)
     (u : W1p volume (normalEpigraph φ) 2) :
     ‖W1p.normalEpigraphTrace hφ u‖ ≤ (1 + K) * ‖u‖ :=
-  (W1p.norm_halfSpaceTrace_le 0 _).trans (W1p.norm_normalEpigraphEquivL_le hφ u)
+  (W1p.norm_halfSpaceTrace_le_norm 0 _).trans (W1p.norm_normalEpigraphEquivL_le hφ u)
 
 /-- The trace on a graph domain has operator norm at most `1 + K`. -/
 theorem W1p.opNorm_normalEpigraphTrace_le (hφ : LipschitzWith K φ) :

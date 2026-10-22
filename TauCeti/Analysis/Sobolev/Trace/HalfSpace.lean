@@ -58,7 +58,6 @@ private theorem norm_hyperplaneTrace_ofTestFunction_rpow_le (hp : p ≠ ∞) (a 
   have hp1 : 1 ≤ p := Fact.out
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp hp1
-  have hr0 : 0 < p.toReal := zero_lt_one.trans_le hr
   let v := W1p.restrictL (le_top (a := normalHalfSpace (E := E) a))
     (W1p.ofTestFunctionₗ volume ⊤ p φ)
   have hu : ContDiff ℝ 1 (φ : WithLp 2 (ℝ × E) → ℝ) := φ.contDiff.of_le (by simp)
@@ -74,36 +73,15 @@ private theorem norm_hyperplaneTrace_ofTestFunction_rpow_le (hp : p ≠ ∞) (a 
     have hφ := gradientTestFunctionLp_apply_ae (mu := volume) p φ
     simp only [Opens.coe_top, Measure.restrict_univ] at hφ
     exact hφ.filter_mono (ae_mono Measure.restrict_le_self)
-  -- The three integrals in the one-sided trace inequality, as powers of `Lᵖ` norms.
+  -- The left side of the one-sided trace inequality, as a power of an `Lᵖ` norm.
   have htr : ‖W1p.hyperplaneTrace hp a (W1p.ofTestFunctionₗ volume ⊤ p φ)‖ ^ p.toReal =
       ∫ y : E, |φ (WithLp.toLp 2 (a, y))| ^ p.toReal := by
     rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp]
     apply integral_congr_ae
     filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae hp a φ] with y hy
     rw [hy, Real.norm_eq_abs]
-  have hvi : ∫ x in normalHalfSpace (E := E) a, |φ x| ^ p.toReal = ‖W1p.value v‖ ^ p.toReal := by
-    rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp]
-    apply integral_congr_ae
-    filter_upwards [hv] with x hx
-    rw [hx, Real.norm_eq_abs]
-  have hgi : ∫ x in normalHalfSpace (E := E) a, ‖fderiv ℝ φ x‖ ^ p.toReal =
-      ‖W1p.gradient v‖ ^ p.toReal := by
-    rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp]
-    apply integral_congr_ae
-    filter_upwards [hg] with x hx
-    rw [hx, norm_gradient_eq_norm_fderiv]
-  have hiv : Integrable (fun x : WithLp 2 (ℝ × E) ↦ |φ x| ^ p.toReal) volume :=
-    (φ.continuous.abs.rpow_const fun _ ↦ Or.inr hr0.le).integrable_of_hasCompactSupport
-      (φ.hasCompactSupport.mono fun x hx hz ↦ hx (by simp [hz, hr0.ne']))
-  have hig : Integrable (fun x : WithLp 2 (ℝ × E) ↦ ‖fderiv ℝ φ x‖ ^ p.toReal) volume :=
-    ((hu.continuous_fderiv one_ne_zero).norm.rpow_const fun _ ↦ Or.inr hr0.le)
-      |>.integrable_of_hasCompactSupport ((φ.hasCompactSupport.fderiv ℝ).mono fun x hx hz ↦
-        hx (by simp only [hz, norm_zero (E := WithLp 2 (ℝ × E) →L[ℝ] ℝ),
-          Real.zero_rpow hr0.ne']))
   have key := integral_hyperplane_abs_rpow_le_integral_halfSpace hu φ.hasCompactSupport a hr
-  simp only [coe_normalHalfSpace] at hvi hgi
-  rw [integral_add (hiv.const_mul _).integrableOn hig.integrableOn, integral_const_mul,
-    ← htr, hvi, hgi] at key
+  rw [← coe_normalHalfSpace a, integral_rpow_energy_eq_of_ae_eq hp hv hg, ← htr] at key
   exact key
 
 /-- **One-sided control of the flat trace.** For `1 ≤ p < ∞`, the `p`-th power of the `Lᵖ` norm
