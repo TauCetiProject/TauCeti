@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.SquarefreeBasis
+public import TauCeti.RingTheory.MvPolynomial.SquarefreeBasis.Basic
 public import TauCeti.Geometry.RealAlgebraic.SignInvariant
 import TauCeti.Algebra.MvPolynomial.Equiv
 import Mathlib.Algebra.MvPolynomial.Nilpotent
@@ -23,7 +23,7 @@ The distinguished variable is coordinate zero, through `MvPolynomial.finSuccEqui
 The content is evaluated at the remaining coordinates. Constant signs for the basis and
 contents transfer to the original family. The statements include zero inputs, vanishing
 contents, and empty bases. The corresponding ambient-order reconstruction and transfer
-are in `TauCeti.RingTheory.MvPolynomial.SquarefreeBasis`.
+are in `TauCeti.RingTheory.MvPolynomial.SquarefreeBasis.Basic`.
 
 ## References
 
