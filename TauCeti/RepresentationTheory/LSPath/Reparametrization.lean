@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.LSPath.PLPath
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Order.Field.MinMax
 import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
@@ -56,6 +57,7 @@ reparametrization stays rational.
   parametrized path present the same `TauCeti.PLPath`.
 * `TauCeti.PLPath.IsReparam.trans`, `TauCeti.PLPath.IsReparam.ofSegments_map_snd_eq`:
   reparametrization is transitive and does not change the presented `TauCeti.PLPath`.
+* `TauCeti.PLPath.IsReparam.append`: reparametrization is compatible with concatenation.
 * `TauCeti.PLPath.ofSegments_map_snd_eq_iff_exists_isReparam`: two timed presentations of positive
   duration present the same `TauCeti.PLPath` exactly when they are reparametrizations of a common
   timed presentation.
@@ -196,6 +198,18 @@ theorem IsTimed.eq_nil_of_duration_nonpos (hp : IsTimed p) (h : duration p ≤ 0
 
 variable [AddCommGroup V] [Module 𝕜 V] {v w : V}
 
+omit [IsStrictOrderedRing 𝕜] in
+/-- Up to time `0`, the first segment has not been started. -/
+theorem evalTimed_cons_of_nonpos (ht : t ≤ 0) :
+    evalTimed ((d, v) :: p) t = evalTimed p (t - d) := by
+  rw [evalTimed_cons, max_eq_left ((min_le_left t d).trans ht), zero_div, zero_smul, zero_add]
+
+omit [IsStrictOrderedRing 𝕜] in
+/-- From time `d` on, the first segment, of duration `d`, has been run entirely. -/
+theorem evalTimed_cons_of_le (hd : 0 < d) (ht : d ≤ t) :
+    evalTimed ((d, v) :: p) t = v + evalTimed p (t - d) := by
+  rw [evalTimed_cons, min_eq_right ht, max_eq_right hd.le, div_self hd.ne', one_smul]
+
 /-- The parametrized path is `0` up to time `0`. -/
 theorem evalTimed_of_nonpos (hp : ∀ x ∈ p, 0 ≤ x.1) (ht : t ≤ 0) : evalTimed p t = 0 := by
   induction p generalizing t with
@@ -203,8 +217,7 @@ theorem evalTimed_of_nonpos (hp : ∀ x ∈ p, 0 ≤ x.1) (ht : t ≤ 0) : evalT
   | cons x p ih =>
     obtain ⟨d, v⟩ := x
     simp only [List.forall_mem_cons] at hp
-    rw [evalTimed_cons, max_eq_left ((min_le_left t d).trans ht), zero_div, zero_smul, zero_add,
-      ih hp.2 (by linarith [hp.1])]
+    rw [evalTimed_cons_of_nonpos ht, ih hp.2 (by linarith [hp.1])]
 
 theorem evalTimed_zero (hp : ∀ x ∈ p, 0 ≤ x.1) : evalTimed p 0 = 0 :=
   evalTimed_of_nonpos hp le_rfl
@@ -219,8 +232,8 @@ theorem evalTimed_of_duration_le (hp : IsTimed p) (ht : duration p ≤ t) :
     rw [isTimed_cons] at hp
     have hdur := duration_nonneg hp.2.nonneg
     simp only [duration_cons] at ht
-    rw [evalTimed_cons, min_eq_right (by linarith), max_eq_right hp.1.le, div_self hp.1.ne',
-      one_smul, ih hp.2 (by linarith), List.map_cons, List.sum_cons]
+    rw [evalTimed_cons_of_le hp.1 (by linarith), ih hp.2 (by linarith), List.map_cons,
+      List.sum_cons]
 
 /-- The parametrized path of a timed presentation ends, at its total duration, at the endpoint of
 the path it presents. -/
@@ -232,17 +245,9 @@ theorem evalTimed_duration (hp : IsTimed p) :
 presentation, shifted back by the first duration and translated back by the first segment. -/
 theorem evalTimed_eq_evalTimed_cons_add_sub (hd : 0 < d) {s : 𝕜} (hs : 0 ≤ s) :
     evalTimed p s = evalTimed ((d, v) :: p) (s + d) - v := by
-  rw [evalTimed_cons, min_eq_right (by linarith), max_eq_right hd.le, div_self hd.ne', one_smul,
-    add_sub_cancel_right, add_sub_cancel_left]
+  rw [evalTimed_cons_of_le hd (by linarith), add_sub_cancel_right, add_sub_cancel_left]
 
 /-! ### Subdividing a segment -/
-
-omit [IsStrictOrderedRing 𝕜] in
-private theorem max_zero_min_div_mul_div (t d D : 𝕜) :
-    max 0 (min t d) / d * (d / D) = max 0 (min t d) / D := by
-  rcases eq_or_ne d 0 with rfl | hd
-  · simp
-  · rw [div_mul_div_comm, mul_comm (max 0 (min t d)) d, mul_div_mul_left _ _ hd]
 
 /-- Subdividing a segment of duration `D = d₁ + d₂` into its pieces of durations `d₁` and `d₂`
 does not change the parametrized path. The durations `d₁` and `d₂` may vanish. -/
@@ -253,6 +258,22 @@ theorem evalTimed_cons_eq_evalTimed_cons_cons {d₁ d₂ D : 𝕜} {v₁ v₂ : 
   subst hD hv₁ hv₂
   simp only [evalTimed_cons, smul_smul, max_zero_min_div_mul_div, max_zero_min_add h₁ h₂, sub_sub]
   module
+
+/-- Subdividing a segment `w` of duration `e` at the time `d`, for `0 ≤ d ≤ e`, into its pieces
+`(d / e) • w` of duration `d` and `((e - d) / e) • w` of duration `e - d` does not change the
+parametrized path. -/
+theorem evalTimed_cons_eq_evalTimed_cons_cons_sub (hd : 0 ≤ d) (hde : d ≤ e) (w : V)
+    (p : List (𝕜 × V)) (t : 𝕜) :
+    evalTimed ((e, w) :: p) t = evalTimed ((d, (d / e) • w) :: (e - d, ((e - d) / e) • w) :: p) t :=
+  evalTimed_cons_eq_evalTimed_cons_cons hd (sub_nonneg.2 hde) (add_sub_cancel d e) rfl rfl p t
+
+/-- Subdividing a segment `w` at the fraction `d / e`, for `0 ≤ d ≤ e` and `0 < e`, into the
+segments `(d / e) • w` and `((e - d) / e) • w` does not change the presented path. -/
+theorem ofSegments_div_smul_cons_sub_div_smul_cons (hd : 0 ≤ d) (hde : d ≤ e) (he : 0 < e)
+    (w : V) (l : List V) :
+    ofSegments 𝕜 ((d / e) • w :: ((e - d) / e) • w :: l) = ofSegments 𝕜 (w :: l) := by
+  rw [ofSegments_smul_cons_smul_cons (div_nonneg hd he.le) (div_nonneg (sub_nonneg.2 hde) he.le),
+    ← add_div, add_sub_cancel, div_self he.ne', one_smul]
 
 /-! ### Timed presentations in `𝕜` -/
 
@@ -312,9 +333,7 @@ theorem exists_evalTimed_eq {φ : List (𝕜 × 𝕜)} (hφ : IsTimed φ) (hφ' 
         linarith
     · obtain ⟨t, ht₀, ht, htu⟩ := ih hφ hφ' (u := u - a) (by linarith) (by linarith)
       refine ⟨t + d, by linarith, by simp only [duration_cons]; linarith, ?_⟩
-      rw [evalTimed_cons, min_eq_right (by linarith), max_eq_right hd.le, div_self hd.ne',
-        add_sub_cancel_right, htu, one_smul]
-      ring
+      rw [evalTimed_cons_of_le hd (by linarith), add_sub_cancel_right, htu, add_sub_cancel]
 
 /-! ### Composing with a reparametrization -/
 
@@ -326,9 +345,9 @@ theorem evalTimed_cons_comp {d' : 𝕜} {φ : List (𝕜 × 𝕜)} (hd : 0 < d) 
     (h : ∀ t, evalTimed p t = evalTimed q (evalTimed φ t)) (t : 𝕜) :
     evalTimed ((d, v) :: p) t = evalTimed ((d', v) :: q) (evalTimed ((d, d') :: φ) t) := by
   have hφ₁ : ∀ x ∈ φ, 0 ≤ x.1 := fun x hx ↦ (hφ x hx).1
-  rw [evalTimed_cons, evalTimed_cons, evalTimed_cons, h, smul_eq_mul]
   rcases le_total t d with htd | hdt
   · -- Before time `d`, both sides run along `v`, and the rest of the path has not started.
+    rw [evalTimed_cons, evalTimed_cons, evalTimed_cons, h, smul_eq_mul]
     set c := max 0 (min t d) / d
     have h₀ : 0 ≤ c := div_nonneg (le_max_left _ _) hd.le
     have h₁ : c ≤ 1 := div_le_one_of_le₀ (max_le hd.le (min_le_right _ _)) hd.le
@@ -340,11 +359,10 @@ theorem evalTimed_cons_comp {d' : 𝕜} {φ : List (𝕜 × 𝕜)} (hd : 0 < d) 
     · rw [mul_div_cancel_right₀ _ hd'0]
   · -- After time `d`, both sides have run along all of `v`.
     have hs := evalTimed_nonneg hφ (t - d)
-    rw [min_eq_right hdt, max_eq_right hd.le, div_self hd.ne', one_mul, one_smul,
-      min_eq_right (by linarith), max_eq_right hd', add_sub_cancel_left]
-    rcases eq_or_ne d' 0 with rfl | hd'0
+    rw [evalTimed_cons_of_le hd hdt, evalTimed_cons_of_le hd hdt, h]
+    rcases hd'.lt_or_eq with hd'0 | rfl
+    · rw [evalTimed_cons_of_le hd'0 (by linarith), add_sub_cancel_left]
     · simp [hv rfl]
-    · rw [div_self hd'0, one_smul]
 
 /-! ### Reparametrization -/
 
@@ -397,6 +415,28 @@ theorem IsReparam.cons (h : IsReparam p q) (hd : 0 < d) (hq : ∀ x ∈ q, 0 ≤
     by simp [hφp], by simp [hφq], ?_⟩
   exact evalTimed_cons_comp hd hd.le (fun h ↦ absurd h hd.ne')
     (hφ.and_nonneg hφ') hq hφe
+
+/-- Concatenating reparametrizations is a reparametrization: the timings concatenate. -/
+theorem IsReparam.append {p₁ p₂ q₁ q₂ : List (𝕜 × V)} (h₁ : IsReparam p₁ q₁)
+    (h₂ : IsReparam p₂ q₂) (hq₁ : IsTimed q₁) (hq₂ : ∀ x ∈ q₂, 0 ≤ x.1) :
+    IsReparam (p₁ ++ p₂) (q₁ ++ q₂) := by
+  obtain ⟨φ₁, hφ₁, hφ₁', hφ₁p, hφ₁q, hφ₁e⟩ := h₁
+  obtain ⟨φ₂, hφ₂, hφ₂', hφ₂p, hφ₂q, hφ₂e⟩ := h₂
+  refine ⟨φ₁ ++ φ₂, fun x hx ↦ (List.mem_append.1 hx).elim (hφ₁ x) (hφ₂ x),
+    fun x hx ↦ (List.mem_append.1 hx).elim (hφ₁' x) (hφ₂' x), by simp [hφ₁p, hφ₂p],
+    by simp [hφ₁q, hφ₂q], fun t ↦ ?_⟩
+  rw [evalTimed_append, evalTimed_append, evalTimed_append, hφ₁e, hφ₂e, hφ₁p]
+  rcases le_total t (duration p₁) with ht | ht
+  · -- Up to the end of `p₁`, the timing stays within `q₁`, and `p₂` has not started.
+    have hs : evalTimed φ₁ t ≤ duration q₁ := by
+      rw [← hφ₁q, ← evalTimed_of_duration_le hφ₁ le_rfl]
+      exact monotone_evalTimed (hφ₁.and_nonneg hφ₁') (ht.trans hφ₁p.ge)
+    rw [evalTimed_of_nonpos hφ₂.nonneg (sub_nonpos.2 ht), evalTimed_zero hq₂, add_zero,
+      add_zero, evalTimed_of_nonpos hq₂ (sub_nonpos.2 hs), add_zero]
+  · -- After the end of `p₁`, the timing has run through all of `q₁`.
+    have hs := evalTimed_nonneg (hφ₂.and_nonneg hφ₂') (t - duration p₁)
+    rw [evalTimed_of_duration_le hφ₁ (hφ₁p.trans_le ht), hφ₁q, add_sub_cancel_left,
+      evalTimed_of_duration_le hq₁ le_rfl, evalTimed_of_duration_le hq₁ (le_add_of_nonneg_right hs)]
 
 /-- Merging two adjacent segments pointing in the same direction, run during the sum of their
 durations, is a reparametrization. -/
@@ -469,8 +509,7 @@ theorem evalTimed_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q) (hφ : I
     dsimp only at he hd ha
     have hq₂ : IsTimed ((e - a, ((e - a) / e) • w) :: q) := isTimed_cons.2 ⟨sub_pos.2 hae, hq⟩
     simp only [timedComp.eq_3, hae, ↓reduceIte]
-    rw [evalTimed_cons_eq_evalTimed_cons_cons (D := e) (v := w) ha
-      (sub_pos.2 hae).le (add_sub_cancel a e) rfl rfl q]
+    rw [evalTimed_cons_eq_evalTimed_cons_cons_sub ha hae.le w q]
     exact evalTimed_cons_comp hd ha (fun h ↦ by rw [h, zero_div, zero_smul])
       (hφ.and_nonneg hφ') hq₂.nonneg (ih hq₂ hφ hφ') t
   | case4 w q d a φ _ ih =>
@@ -554,11 +593,10 @@ theorem timedComp_snd_nonneg {q : List (𝕜 × 𝕜)} {φ : List (𝕜 × 𝕜)
     exact List.forall_mem_cons.2 ⟨(List.forall_mem_cons.1 hq').1,
       ih (isTimed_cons.1 hq).2 (List.forall_mem_cons.1 hq').2 (List.forall_mem_cons.1 hφ').2⟩
   | case5 e w q d a φ hae hae' ih =>
-    have hea : e < a := (not_lt.1 hae).lt_of_ne' hae'
     simp only [timedComp.eq_3, hae, hae', ↓reduceIte]
     exact List.forall_mem_cons.2 ⟨(List.forall_mem_cons.1 hq').1,
       ih (isTimed_cons.1 hq).2 (List.forall_mem_cons.1 hq').2
-        (List.forall_mem_cons.2 ⟨(sub_pos.2 hea).le, (List.forall_mem_cons.1 hφ').2⟩)⟩
+        (List.forall_mem_cons.2 ⟨sub_nonneg.2 (not_lt.1 hae), (List.forall_mem_cons.1 hφ').2⟩)⟩
 
 /-- When the timing `φ` runs through all of `q`, the composite `TauCeti.PLPath.timedComp q φ`
 presents the same `TauCeti.PLPath` as `q`. -/
@@ -579,8 +617,7 @@ theorem ofSegments_map_snd_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q)
     rw [List.map_cons, ofSegments_cons,
       ih (isTimed_cons.2 ⟨sub_pos.2 hae, hq⟩) hφ' (by simp only [duration_cons]; linarith),
       ← ofSegments_cons, List.map_cons, List.map_cons,
-      ofSegments_smul_cons_smul_cons (div_nonneg ha he.le) (div_nonneg (sub_pos.2 hae).le he.le),
-      ← add_div, add_sub_cancel, div_self he.ne', one_smul]
+      ofSegments_div_smul_cons_sub_div_smul_cons ha hae.le he]
   | case4 w q d a φ _ ih =>
     simp only [duration_cons, List.map_cons, List.sum_cons] at h
     simp only [timedComp.eq_3, lt_self_iff_false, ↓reduceIte]
@@ -588,12 +625,11 @@ theorem ofSegments_map_snd_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q)
       ofSegments_cons, ofSegments_cons,
       ih (isTimed_cons.1 hq).2 (List.forall_mem_cons.1 hφ').2 (by linarith)]
   | case5 e w q d a φ hae hae' ih =>
-    have hea : e < a := (not_lt.1 hae).lt_of_ne' hae'
     simp only [duration_cons, List.map_cons, List.sum_cons] at h
     simp only [timedComp.eq_3, hae, hae', ↓reduceIte]
     rw [List.map_cons, List.map_cons, ofSegments_cons,
       ofSegments_cons, ih (isTimed_cons.1 hq).2
-        (List.forall_mem_cons.2 ⟨(sub_pos.2 hea).le, (List.forall_mem_cons.1 hφ').2⟩)
+        (List.forall_mem_cons.2 ⟨sub_nonneg.2 (not_lt.1 hae), (List.forall_mem_cons.1 hφ').2⟩)
         (by simp only [List.map_cons, List.sum_cons]; linarith)]
 
 /-! ### The parametrized path determines the presented path -/
@@ -615,7 +651,7 @@ private theorem eq_and_evalTimed_eq_of_evalTimed_cons_eq (hd : 0 < d) (hp : IsTi
       evalTimed_eq_evalTimed_cons_add_sub (p := q) (v := v) hd ht, h]
 
 /-- Two timed presentations with the same parametrized path present the same
-`TauCeti.PLPath`: the segment-list model does not identify too much. -/
+`TauCeti.PLPath`: the presented `TauCeti.PLPath` depends only on the parametrized path. -/
 theorem ofSegments_map_snd_eq_of_evalTimed_eq (hp : IsTimed p) (hq : IsTimed q)
     (h : ∀ t, evalTimed p t = evalTimed q t) :
     ofSegments 𝕜 (p.map Prod.snd) = ofSegments 𝕜 (q.map Prod.snd) := by
@@ -636,12 +672,9 @@ theorem ofSegments_map_snd_eq_of_evalTimed_eq (hp : IsTimed p) (hq : IsTimed q)
       ofSegments 𝕜 (v :: p.map Prod.snd) = ofSegments 𝕜 (w :: q.map Prod.snd) := by
     intro d e v w p q hd hde hp hq hn h
     have he : 0 < e := hd.trans hde
-    have hsplit (t : 𝕜) := evalTimed_cons_eq_evalTimed_cons_cons (D := e) (v := w) hd.le
-      (sub_pos.2 hde).le (add_sub_cancel d e) rfl rfl q t
     rw [same hd hp (isTimed_cons.2 ⟨sub_pos.2 hde, hq⟩) (by simp only [List.length_cons]; omega)
-      fun t ↦ (h t).trans (hsplit t), List.map_cons,
-      ofSegments_smul_cons_smul_cons (div_nonneg hd.le he.le) (div_nonneg (sub_pos.2 hde).le he.le),
-      ← add_div, add_sub_cancel, div_self he.ne', one_smul]
+      fun t ↦ (h t).trans (evalTimed_cons_eq_evalTimed_cons_cons_sub hd.le hde.le w q t),
+      List.map_cons, ofSegments_div_smul_cons_sub_div_smul_cons hd.le hde.le he]
   -- An empty presentation has the parametrized path of a single stationary segment.
   have nil_left : ∀ {e : 𝕜} {w : V} {q : List (𝕜 × V)}, 0 < e → IsTimed q →
       q.length + 1 = n → (∀ t, evalTimed ((e, w) :: q) t = 0) →
