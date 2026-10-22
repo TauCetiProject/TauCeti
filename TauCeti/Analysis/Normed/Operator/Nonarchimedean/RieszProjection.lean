@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
+import TauCeti.Algebra.Ring.Commute
 import TauCeti.Algebra.Ring.SpectralIdempotent
 
 /-!
@@ -76,14 +77,7 @@ namespace ContinuousLinearMap
 
 section Projection
 
-variable [NormedCommRing R]
-
-/-- An operator commuting with `u` commutes with `1 - a • u`. -/
-private theorem commute_one_sub_smul_left {u X : C₀(I, R) →L[R] C₀(I, R)} (hX : Commute u X)
-    (a : R) : Commute (1 - a • u) X :=
-  Commute.sub_left (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_left X) (hX.smul_left a)
-
-variable [TauCeti.NormedRing.IsTate R]
+variable [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
 
 /-- A **Riesz projection** of an endomorphism `u` of `C₀(I, R)` at the scalar `a`, of order `h`:
 an idempotent `E` commuting with `u` and lying in the operator-norm closure of the polynomials in
@@ -117,7 +111,7 @@ theorem eq_zero_of_order_zero (hE : IsRieszProjection u a 0 E) : E = 0 := by
 
 /-- A Riesz projection commutes with `1 - a • u`. -/
 theorem commute_one_sub_smul (hE : IsRieszProjection u a h E) : Commute (1 - a • u) E :=
-  commute_one_sub_smul_left hE.commute a
+  hE.commute.one_sub_smul_left (A := C₀(I, R) →L[R] C₀(I, R)) a
 
 /-- **The range of a Riesz projection is the generalised eigenspace** `ker (1 - a • u) ^ h`. -/
 theorem range_eq_ker (hE : IsRieszProjection u a h E) :
@@ -181,7 +175,8 @@ theorem rieszProjection_order_zero (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
 private theorem commute_one_sub_smul_inverse_smul_resolventHasseDerivAt
     (u : C₀(I, R) →L[R] C₀(I, R)) (a c : R) (h : ℕ) :
     Commute (1 - a • u) (Ring.inverse c • u.resolventHasseDerivAt h a) :=
-  (commute_one_sub_smul_left (u.commute_resolventHasseDerivAt h a) a).smul_right _
+  ((u.commute_resolventHasseDerivAt h a).one_sub_smul_left (A := C₀(I, R) →L[R] C₀(I, R))
+    a).smul_right _
 
 /-- The normalised Hasse derivative of the resolvent inverts `1 - a • u` up to a multiple of `u`:
 `(1 - a • u) (c⁻¹ • Δᵏ⁺¹V(a)) = 1 + c⁻¹ • u ΔᵏV(a)` when `c = Δᵏ⁺¹H_u(a)` is a unit. -/
@@ -216,7 +211,8 @@ theorem IsRowCompact.isRieszProjection_rieszProjection {u : C₀(I, R) →L[R] C
     hu.one_sub_smul_pow_succ_mul_inverse_smul_resolventHasseDerivAt hH hc
   have hp := hCb.isIdempotentElem_mul_pow_of_pow_succ_mul_eq (M := C₀(I, R) →L[R] C₀(I, R)) hb
   have hbp : Commute b ((C * b) ^ h) := (hCb.symm.mul_right (Commute.refl b)).pow_right h
-  have huC : Commute u C := (commute_one_sub_smul_left (Commute.refl u) a).symm
+  have huC : Commute u C :=
+    (Commute.refl u).one_sub_smul_right (A := C₀(I, R) →L[R] C₀(I, R)) a
   have hub : Commute u b := (u.commute_resolventHasseDerivAt h a).smul_right _
   -- Both `C` and `b`, hence `(C b) ^ h`, `1 - (C b) ^ h` and `b (C b) ^ h`, lie in the closure
   -- of `R[u]`, the carrier of the closure subalgebra `T` (`Subalgebra.topologicalClosure_coe`).
