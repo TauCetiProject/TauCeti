@@ -59,7 +59,9 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   algebra isomorphism of restricted-series subrings.
 * `MvPowerSeries.mk_monomial_eq_algebraMap_mul_prod`: a restricted monomial `r Xᵗ` is the constant
   `r` times the product of the variables.
-* Over a normed field, the restricted-series subring is a `NormedAlgebra` over its coefficients.
+* The restricted-series subring is an algebra over every algebra `S` of coefficients, through the
+  constant series, and over a normed field `K` restricted series over a normed `K`-algebra form a
+  `NormedAlgebra` over `K`.
 
 ## References
 
@@ -509,10 +511,16 @@ section NormedCommRing
 
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ}
 
-/-- Restricted series form a coefficient algebra via the constant-series embedding. -/
-noncomputable instance instAlgebraIsRestrictedSubring :
-    Algebra R (IsRestricted.subring (R := R) c) :=
-  (C.codRestrict _ (isRestricted_C c)).toAlgebra
+/-- Restricted series form an algebra over every algebra `S` of coefficients, via the
+constant-series embedding. For `S = R` this is the coefficient algebra. -/
+noncomputable instance instAlgebraIsRestrictedSubring {S : Type*} [CommSemiring S]
+    [Algebra S R] : Algebra S (IsRestricted.subring (R := R) c) :=
+  ((C.codRestrict _ (isRestricted_C c)).comp (algebraMap S R)).toAlgebra
+
+/-- The algebra structures over `S` and over the coefficients `R` form a scalar tower. -/
+instance {S : Type*} [CommSemiring S] [Algebra S R] :
+    IsScalarTower S R (IsRestricted.subring (R := R) c) :=
+  IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
 
 /-- The coefficient algebra map into restricted series is the constant-series embedding. -/
 @[simp]
@@ -595,24 +603,54 @@ theorem IsRestricted.coe_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ)
 
 end Rename
 
+end MvPowerSeries
+
+namespace TauCeti.MvPowerSeries
+
+open _root_.MvPowerSeries
+
+section Algebra
+
+variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ}
+
+/-- Over an algebra `S` of coefficients, the algebra map into restricted series sends a scalar to
+the constant series of its image in `R`. -/
+theorem coe_algebraMap_isRestrictedSubring_apply {S : Type*} [CommSemiring S] [Algebra S R]
+    (s : S) : (algebraMap S (IsRestricted.subring (R := R) c) s : MvPowerSeries σ R) =
+      C (algebraMap S R s) := (rfl)
+
+/-- Over an algebra `S` of coefficients, scalars act on restricted series coefficientwise. -/
+@[simp]
+theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
+    (f : IsRestricted.subring (R := R) c) :
+    ((s • f : IsRestricted.subring (R := R) c) : MvPowerSeries σ R) =
+      s • (f : MvPowerSeries σ R) := by
+  ext t
+  rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring_apply, coeff_C_mul]
+  exact (Algebra.smul_def s _).symm
+
+end Algebra
+
 section NormedField
 
-variable {σ R : Type*} [NormedField R] [IsUltrametricDist R] {c : σ → ℝ}
-  [∀ i, Fact (0 < c i)]
+variable {σ K R : Type*} [NormedField K] [NormedCommRing R] [NormedAlgebra K R]
+  [IsUltrametricDist R] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
 
-/-- At positive polyradii, restricted series form a normed algebra over their ultrametric
-coefficient field. -/
+/-- At positive polyradii, restricted series over a normed algebra `R` over a normed field `K`
+form a normed `K`-algebra: scalars act coefficientwise. In particular, restricted series form a
+normed algebra over an ultrametric coefficient field. -/
 noncomputable instance instNormedAlgebraIsRestrictedSubring :
-    NormedAlgebra R (IsRestricted.subring (R := R) c) where
+    NormedAlgebra K (IsRestricted.subring (R := R) c) where
   toAlgebra := instAlgebraIsRestrictedSubring
   norm_smul_le r f := by
-    rw [Algebra.smul_def]
-    have h : algebraMap R (IsRestricted.subring (R := R) c) r =
-        ⟨C r, isRestricted_C c r⟩ := Subtype.ext (coe_algebraMap_isRestrictedSubring r)
-    rw [h]
-    simpa only [norm_C] using
-      norm_mul_le (⟨C r, isRestricted_C c r⟩ : IsRestricted.subring (R := R) c) f
+    refine (norm_le_iff (by positivity)).mpr fun t ↦ ?_
+    rw [coe_smul_isRestrictedSubring]
+    calc ‖r • coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
+        ≤ ‖r‖ * (‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)) := by
+          rw [← mul_assoc]
+          exact mul_le_mul_of_nonneg_right (norm_smul_le r _) (prod_pow_pos t).le
+      _ ≤ ‖r‖ * ‖f‖ := mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) (norm_nonneg r)
 
 end NormedField
 
-end MvPowerSeries
+end TauCeti.MvPowerSeries
