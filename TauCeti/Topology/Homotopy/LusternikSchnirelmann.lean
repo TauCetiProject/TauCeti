@@ -18,8 +18,8 @@ nullhomotopic. Only the inclusion has to contract inside `X`: `U` itself need no
 contractible. A categorical cover of `A ⊆ X` of size `n` is a family of `n` categorical open
 subsets of `X` whose union contains `A` (`TauCeti.LSCategoricalCover`), and the unnormalized
 Lusternik–Schnirelmann category `TauCeti.lsCategoryCount X A : ℕ∞` is the least size of such a
-cover, or `⊤` if there is none. With this unnormalized convention a point has count `1` and the
-empty set has count `0`.
+cover, or `⊤` if there is none. With this unnormalized convention the empty subset has count `0`
+and a contractible space, such as a one-point space, has count `1` on `univ`.
 
 The count is monotone in `A`, subadditive on finite unions, and does not increase under
 deformations: if `g : X → X` is homotopic to the identity and maps `A` into `B`, then
@@ -209,8 +209,8 @@ end LSCategoricalCover
 
 variable (X) in
 /-- The unnormalized *Lusternik–Schnirelmann category* of a subset `A` of `X`: the least size of a
-categorical cover of `A`, or `⊤` if `A` has no finite categorical cover. A point has count `1` and
-the empty set has count `0`. -/
+categorical cover of `A`, or `⊤` if `A` has no finite categorical cover. The empty set has count
+`0`, and a contractible space, such as a one-point space, has count `1` on `univ`. -/
 noncomputable def lsCategoryCount (A : Set X) : ℕ∞ :=
   ⨅ (n : ℕ) (_ : Nonempty (LSCategoricalCover X A n)), (n : ℕ∞)
 
