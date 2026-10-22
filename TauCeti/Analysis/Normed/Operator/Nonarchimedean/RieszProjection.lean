@@ -170,29 +170,6 @@ theorem rieszProjection_order_zero (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
   rw [rieszProjection_def, pow_zero]
   exact sub_self (1 : C₀(I, R) →L[R] C₀(I, R))
 
-/-- The normalised Hasse derivative `b = c⁻¹ • ΔʰV(a)` of the resolvent commutes with
-`1 - a • u`. -/
-private theorem commute_one_sub_smul_inverse_smul_resolventHasseDerivAt
-    (u : C₀(I, R) →L[R] C₀(I, R)) (a c : R) (h : ℕ) :
-    Commute (1 - a • u) (Ring.inverse c • u.resolventHasseDerivAt h a) :=
-  ((u.commute_resolventHasseDerivAt h a).one_sub_smul_left (A := C₀(I, R) →L[R] C₀(I, R))
-    a).smul_right _
-
-/-- The normalised Hasse derivative of the resolvent inverts `1 - a • u` up to a multiple of `u`:
-`(1 - a • u) (c⁻¹ • Δᵏ⁺¹V(a)) = 1 + c⁻¹ • u ΔᵏV(a)` when `c = Δᵏ⁺¹H_u(a)` is a unit. -/
-private theorem IsRowCompact.one_sub_smul_mul_inverse_smul_resolventHasseDerivAt_succ
-    [IsUltrametricDist R] [CompleteSpace R] {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
-    {a : R} {k : ℕ}
-    (hc : IsUnit ((PowerSeries.hasseDeriv (k + 1) u.matrixCoeff.charPowerSeries).evalAt a)) :
-    (1 - a • u) * (Ring.inverse
-        ((PowerSeries.hasseDeriv (k + 1) u.matrixCoeff.charPowerSeries).evalAt a) •
-          u.resolventHasseDerivAt (k + 1) a) =
-      1 + Ring.inverse ((PowerSeries.hasseDeriv (k + 1) u.matrixCoeff.charPowerSeries).evalAt a) •
-        (u * u.resolventHasseDerivAt k a) := by
-  rw [mul_def, comp_smul, ← mul_def, hu.one_sub_smul_mul_resolventHasseDerivAt_succ,
-    smul_add (A := C₀(I, R) →L[R] C₀(I, R)),
-    smul_smul, Ring.inverse_mul_cancel _ hc, one_smul]
-
 variable [IsUltrametricDist R] [CompleteSpace R]
 
 /-- **The Riesz projector at a good zero.** Let `u` be row compact, and let `a` be a good zero of
