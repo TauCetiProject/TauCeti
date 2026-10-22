@@ -134,7 +134,7 @@ theorem HasGaussNorm.onOpenDisc (hf : f.HasGaussNorm norm R₀) : f.OnOpenDisc R
 bounded at every radius `0 < r < R₀`. -/
 theorem onOpenDisc_iff_forall_hasGaussNorm :
     f.OnOpenDisc R₀ ↔ ∀ r : ℝ, 0 < r → r < R₀ → f.HasGaussNorm norm r := by
-  refine ⟨fun hf r hr hrR ↦ ((isRestricted_iff' r f).mp (hf r hr hrR)).bddAbove_range,
+  refine ⟨fun hf r hr hrR ↦ TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (hf r hr hrR),
     fun hf r hr hrR ↦ ?_⟩
   obtain ⟨s, hrs, hsR⟩ := exists_between hrR
   exact (hf s (hr.trans hrs) hsR).isRestricted_of_abs_lt ((abs_of_pos hr).trans_lt hrs)

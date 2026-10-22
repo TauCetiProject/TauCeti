@@ -28,9 +28,6 @@ it induces the polynomial-to-series comparisons used in Weierstrass division and
 * `TauCeti.PowerSeries.isRestricted_of_abs_le`: restrictedness passes to smaller radii, and
   `TauCeti.PowerSeries.isRestrictedSubring_le_of_abs_le` is the resulting containment of subrings.
 * `TauCeti.PowerSeries.isRestricted_polynomial`: every polynomial is restricted.
-* `TauCeti.PowerSeries.mul_abs_pow_le_of_forall_mul_pow_le`: a sequence whose weighted terms are
-  bounded by `A` at a radius `q > 0` has weighted terms bounded by `A * (|c| / q)ⁿ` at the radius
-  `c`; applied to coefficient norms, this is the radius-loss estimate.
 * `PowerSeries.IsRestricted.mul_of_abs_lt`: over any normed ring, a product of series restricted
   at `c'` is restricted at every `c` with `|c| < |c'|`.
 * `TauCeti.PowerSeries.not_isRestricted_mk_pow`: for `a ≠ 0` and a multiplicative norm, `∑ aⁿ Xⁿ`
@@ -121,15 +118,6 @@ theorem _root_.PowerSeries.IsRestricted.exists_nonneg_norm_coeff_mul_pow_le
   obtain ⟨A, hA⟩ := hf.bddAbove_range
   exact ⟨A, (by positivity : 0 ≤ ‖f.coeff 0‖ * |c| ^ 0).trans (hA ⟨0, rfl⟩), fun n ↦ hA ⟨n, rfl⟩⟩
 
-/-- If the weighted terms `aₙ qⁿ` of a real sequence at a radius `q > 0` are bounded by `A`, then
-at the radius `c` its weighted terms are bounded by `A * (|c| / q)ⁿ`. Applied to the coefficient
-norms of a power series, this is the estimate behind every loss of radius. -/
-theorem mul_abs_pow_le_of_forall_mul_pow_le {a : ℕ → ℝ} {q A : ℝ} (hq : 0 < q)
-    (hA : ∀ n, a n * q ^ n ≤ A) (n : ℕ) : a n * |c| ^ n ≤ A * (|c| / q) ^ n :=
-  calc a n * |c| ^ n = a n * q ^ n * (|c| / q) ^ n := by
-        rw [div_pow]; field_simp
-    _ ≤ A * (|c| / q) ^ n := by gcongr; exact hA n
-
 section Algebra
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ}
@@ -213,8 +201,8 @@ theorem IsRestricted.mul_of_abs_lt (hf : f.IsRestricted c') (hg : g.IsRestricted
           rw [← hp', pow_add]
           ring
         _ ≤ (A * ρ ^ p.1) * (B * ρ ^ p.2) :=
-          mul_le_mul (TauCeti.PowerSeries.mul_abs_pow_le_of_forall_mul_pow_le hq hA p.1)
-            (TauCeti.PowerSeries.mul_abs_pow_le_of_forall_mul_pow_le hq hB p.2)
+          mul_le_mul (TauCeti.mul_abs_pow_le_of_forall_mul_pow_le hq hA p.1)
+            (TauCeti.mul_abs_pow_le_of_forall_mul_pow_le hq hB p.2)
             (by positivity) (by positivity)
         _ = A * B * ρ ^ n := by rw [← hp', pow_add]; ring
     _ = (n + 1 : ℝ) * ρ ^ n * (A * B) := by

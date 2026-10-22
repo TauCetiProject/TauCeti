@@ -252,7 +252,7 @@ theorem _root_.PowerSeries.HasGaussNorm.isRestricted_of_abs_lt {c' : ℝ}
   obtain ⟨B, hB⟩ := hf
   rw [← PowerSeries.isRestricted_abs_iff, PowerSeries.isRestricted_iff']
   refine squeeze_zero (fun n ↦ by positivity)
-    (mul_abs_pow_le_of_forall_mul_pow_le hc' fun n ↦ hB ⟨n, rfl⟩) ?_
+    (TauCeti.mul_abs_pow_le_of_forall_mul_pow_le hc' fun n ↦ hB ⟨n, rfl⟩) ?_
   simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity)
     ((div_lt_one hc').mpr h)).const_mul B
 

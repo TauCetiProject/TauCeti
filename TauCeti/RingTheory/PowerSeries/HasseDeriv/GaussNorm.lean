@@ -125,7 +125,7 @@ theorem IsRestricted.hasseDeriv_of_abs_lt (hf : f.IsRestricted c') (h : |c| < |c
   refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hupper
   rw [coeff_hasseDeriv, ← nsmul_eq_mul]
   have hscaled : ‖coeff (n + k) f‖ * |c| ^ n ≤ q⁻¹ ^ k * A * ρ ^ n :=
-    TauCeti.PowerSeries.mul_abs_pow_le_of_forall_mul_pow_le hq hAk n
+    TauCeti.mul_abs_pow_le_of_forall_mul_pow_le hq hAk n
   calc
     ‖(n + k).choose k • coeff (n + k) f‖ * |c| ^ n
         ≤ ((n + k).choose k : ℝ) * (‖coeff (n + k) f‖ * |c| ^ n) := by
