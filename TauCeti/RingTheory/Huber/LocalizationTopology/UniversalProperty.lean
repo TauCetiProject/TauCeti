@@ -356,6 +356,27 @@ theorem existsUnique_continuous_ringHom_locTopology {B : Type*} [CommRing B] [To
   existsUnique_continuous_ringHom_locTopology_of_isBounded_submonoidClosure P T s S hden hφ hs
     (isBounded_submonoidClosure (T.finite_toSet.image _) fun _ ⟨t, ht, h⟩ ↦ h ▸ hpow t ht)
 
+/-- Passing to a multiple of the denominator gives a continuous map of uncompleted rational
+localisations when the target numerators contain the rescaled source numerators. -/
+theorem continuous_awayLift_locTopology [IsTopologicalRing A] (P : PairOfDefinition A)
+    (U : Set A) (u : A) (V : Type*) [CommRing V] [Algebra A V] [IsLocalization.Away u V]
+    (hU : P.HasDenominatorPower U u V) (T : Set A) (w : A) (W : Type*) [CommRing W]
+    [Algebra A W] [IsLocalization.Away w W] (hT : P.HasDenominatorPower T w W)
+    (r : A) (hw : w = u * r) (hgen : ∀ t ∈ U, t * r ∈ T) :
+    letI := P.locTopology U u V hU
+    letI := P.locTopology T w W hT
+    Continuous (IsLocalization.Away.lift u (IsLocalization.Away.isUnit_of_dvd w ⟨r, hw⟩) :
+      V →+* W) := by
+  let _ := P.locTopology U u V hU
+  let _ := P.locTopology T w W hT
+  have := P.isTopologicalRing_locTopology U u V hU
+  have := P.isTopologicalRing_locTopology T w W hT
+  apply continuous_of_continuousAt_zero
+  rw [ContinuousAt, map_zero]
+  exact (P.hasBasis_nhds_zero_locTopology U u V hU).tendsto_iff
+    (P.hasBasis_nhds_zero_locTopology T w W hT) |>.mpr fun n _ ↦
+      ⟨n, trivial, fun x hx ↦ P.awayLift_mem_locIdealImage U u V T w W r hw hgen n hx⟩
+
 end PairOfDefinition
 
 end
