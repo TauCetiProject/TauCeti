@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Data.Fin.Basic
-import TauCeti.Data.Fin.StrictMono
 import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
@@ -53,8 +52,9 @@ construct the Schubert cells or their closures as schemes.
 * `Module.Basis.existsUnique_flagEchelon`, `Module.Basis.span_flagEchelon`: existence and
   uniqueness of the reduced echelon basis.
 * `StrictMono.card_echelonFreeEntries_image`: the number of free entries of a cell is
-  `∑ k, (p_k - k)`, which is `r (n - r) - |λ|` by `StrictMono.sum_sub_add_sum_sub_eq_mul`.
-* `StrictMono.antitone_sub_sub`: `λ_k = n - r + k - p_k` is a partition.
+  `∑ k, (p_k - k)`. This is `r (n - r) - |λ|` by `StrictMono.sum_sub_add_sum_sub_eq_mul`, and
+  `λ_k = n - r + k - p_k` is a partition by `StrictMono.antitone_sub_sub`; both are in
+  `TauCeti.Data.Fin.StrictMono`.
 
 ## References
 
@@ -119,30 +119,6 @@ theorem card_echelonFreeEntries_image (hp : StrictMono p) :
   rw [hpiv, card_image_of_injective _ hp.injective, Fin.card_Iio, Fin.card_Iio] at h
   rw [hfib, card_map]
   omega
-
-/-- For pivots `p 0 < ⋯ < p (r - 1)` in `Fin n`, the sequence `λ i = n - r + i - p i` is
-antitone: it is a partition, read in increasing order of `i`. -/
-theorem antitone_sub_sub (hp : StrictMono p) : Antitone fun i : Fin r ↦ n - r + i - p i := by
-  intro i k hik
-  have := (Fin.val_strictMono.comp hp).add_sub_le_nat hik
-  have := Fin.le_def.mp hik
-  simp only [Function.comp_apply] at *
-  omega
-
-/-- For pivots `p 0 < ⋯ < p (r - 1)` in `Fin n`, the number of free entries `∑ i, (p i - i)` of
-the corresponding reduced echelon matrices is `r (n - r) - |λ|`, for the partition
-`λ i = n - r + i - p i`. -/
-theorem sum_sub_add_sum_sub_eq_mul (hp : StrictMono p) :
-    ∑ i, ((p i : ℕ) - i) + ∑ i, (n - r + i - p i) = r * (n - r) := by
-  have hp' := Fin.val_strictMono.comp hp
-  have h (i : Fin r) : (p i : ℕ) - i + (n - r + i - p i) = n - r := by
-    have h₀ := hp'.add_sub_le_nat (Fin.le_def.mpr (Nat.zero_le i) : (⟨0, i.pos⟩ : Fin r) ≤ i)
-    have h₁ := hp'.add_sub_le_nat (Fin.le_def.mpr (Nat.le_sub_one_of_lt i.isLt) :
-      i ≤ ⟨r - 1, by omega⟩)
-    have := (p ⟨r - 1, by omega⟩).isLt
-    simp only [Function.comp_apply] at h₀ h₁
-    omega
-  simp [← Finset.sum_add_distrib, h]
 
 end StrictMono
 
