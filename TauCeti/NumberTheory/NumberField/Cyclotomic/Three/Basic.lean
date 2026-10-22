@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Three
+public import Mathlib.RingTheory.RootsOfUnity.Lemmas
 
 /-!
 # Basic facts about the Eisenstein integers
@@ -36,10 +37,9 @@ namespace IsPrimitiveRoot
 
 variable {K : Type*} [Field K] {ζ : K} (hζ : IsPrimitiveRoot ζ 3)
 
-/-- The square of `ζ - 1` divides `3` in `𝓞 K`: `3 = (ζ - 1) ^ 2 * (-ζ ^ 2)`. -/
-theorem toInteger_sub_one_sq_dvd_three : (hζ.toInteger - 1) ^ 2 ∣ (3 : 𝓞 K) :=
-  ⟨-hζ.toInteger ^ 2, by
-    have h2 : hζ.toInteger ^ 2 = -hζ.toInteger - 1 := IsCyclotomicExtension.Rat.Three.eta_sq hζ
-    linear_combination (hζ.toInteger - 2) * hζ.toInteger_cube_eq_one + h2⟩
+/-- The square of `ζ - 1` divides `3` in `𝓞 K`. -/
+theorem toInteger_sub_one_sq_dvd_three : (hζ.toInteger - 1) ^ 2 ∣ (3 : 𝓞 K) := by
+  obtain ⟨z, _, hz⟩ := hζ.toInteger_isPrimitiveRoot.self_sub_one_pow_dvd_order (k := 2) (by decide)
+  exact ⟨z, by simpa only [Nat.cast_ofNat, mul_comm] using hz⟩
 
 end IsPrimitiveRoot
