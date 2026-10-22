@@ -158,19 +158,12 @@ theorem isLeast_form_self_checkerboardVectorClass [NeZero n] :
 
 /-! ## The spinor and cospinor cosets -/
 
-/-- A rational number in `ℤ + 1/2` has square at least `1 / 4`: the coordinatewise form of
-`Int.quarter_le_cast_add_half_sq`. -/
-private theorem one_div_four_le_mul_self {y : ℚ} (hy : ∃ z : ℤ, y = z + 1 / 2) :
-    1 / 4 ≤ y * y := by
-  obtain ⟨z, rfl⟩ := hy
-  rw [← sq]
-  exact Int.quarter_le_cast_add_half_sq z
-
 /-- **Vectors with all coordinates in `ℤ + 1/2` have norm at least `n / 4`**, since each
 coordinate has square at least `1 / 4`. -/
 theorem div_four_le_checkerboardLattice_form_self {x : Fin n → ℚ}
     (hx : ∀ i, ∃ z : ℤ, x i = z + 1 / 2) : (n : ℚ) / 4 ≤ (checkerboardLattice n).form x x := by
-  have hsum := Finset.sum_le_sum fun i (_ : i ∈ univ) ↦ one_div_four_le_mul_self (hx i)
+  have hsum := Finset.sum_le_sum fun i (_ : i ∈ univ) ↦
+    Int.quarter_le_mul_self_of_eq_cast_add_half (hx i)
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
   rw [checkerboardLattice_form_apply]
   linarith
@@ -201,7 +194,7 @@ private theorem form_self_eq_div_four_iff {x : Fin n → ℚ}
     rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     ring
   rw [checkerboardLattice_form_apply, hconst, eq_comm,
-    Finset.sum_eq_sum_iff_of_le fun i _ ↦ one_div_four_le_mul_self (hx i)]
+    Finset.sum_eq_sum_iff_of_le fun i _ ↦ Int.quarter_le_mul_self_of_eq_cast_add_half (hx i)]
   refine forall_congr' fun i ↦ ?_
   rw [imp_iff_right (Finset.mem_univ i), eq_comm, show (1 / 4 : ℚ) = 1 / 2 * (1 / 2) by norm_num,
     mul_self_eq_mul_self_iff]

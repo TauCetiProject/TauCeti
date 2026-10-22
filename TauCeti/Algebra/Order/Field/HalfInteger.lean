@@ -14,7 +14,8 @@ import Mathlib.Tactic.Linarith
 # Squares of half-integers in ordered fields
 
 An integer cast into a linearly ordered field and translated by one half has square at least
-one quarter. This bound applies coordinatewise to vectors whose coordinates are half-integers.
+one quarter, and so does any element of the field known to lie in `ℤ + 1/2`. This bound
+applies coordinatewise to vectors whose coordinates are half-integers.
 -/
 
 public section
@@ -30,5 +31,13 @@ theorem quarter_le_cast_add_half_sq {K : Type*} [Field K] [LinearOrder K]
     nlinarith
   · have hq : (0 : K) ≤ z := by exact_mod_cast hz
     nlinarith
+
+/-- An element of `ℤ + 1/2` in a linearly ordered field has square at least one quarter: the
+form of `Int.quarter_le_cast_add_half_sq` for an element known to be a half-integer. -/
+theorem quarter_le_mul_self_of_eq_cast_add_half {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {y : K} (hy : ∃ z : ℤ, y = z + 1 / 2) : (1 / 4 : K) ≤ y * y := by
+  obtain ⟨z, rfl⟩ := hy
+  rw [← sq]
+  exact quarter_le_cast_add_half_sq z
 
 end Int
