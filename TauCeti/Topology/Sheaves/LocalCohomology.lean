@@ -34,6 +34,8 @@ supports in `S`; for a closed submanifold `M` of codimension `n` in a manifold `
 * `CategoryTheory.Sheaf.supportedSectionsSheaf F S`: the sheaf `Γ_S(F)` of sections supported in
   `S`, which is flasque when `F` is;
 * `CategoryTheory.Sheaf.supportedSectionsι F S`: the inclusion `Γ_S(F) ⟶ F`, a monomorphism;
+* `CategoryTheory.Sheaf.supportedSectionsLift`: the factorization through `Γ_S(F)` of a
+  morphism into `F` whose sections are supported in `S`;
 * `CategoryTheory.Sheaf.supportedHSheaf F S n`: the local cohomology sheaf `𝓗_Sⁿ(F)`;
 * `CategoryTheory.Sheaf.supportedHSheafZeroIso`: `𝓗_S⁰(F) ≅ Γ_S(F)`;
 * `CategoryTheory.Sheaf.isZero_stalk_supportedHSheaf_of_notMem`: the stalks of `𝓗_Sⁿ(F)` at
@@ -131,6 +133,33 @@ def supportedSectionsι : F.supportedSectionsSheaf S ⟶ F :=
 lemma supportedSectionsι_hom_app_apply (W : (Opens X)ᵒᵖ) (s : F.supportedSections S W.unop) :
     (F.supportedSectionsι S).hom.app W s = s :=
   (rfl)
+
+/-- The sections of `F` in the image of the inclusion `Γ_S(F) ⟶ F` are exactly the sections
+supported in `S`. -/
+@[simp]
+lemma range_supportedSectionsι_hom_app (W : (Opens X)ᵒᵖ) :
+    ((F.supportedSectionsι S).hom.app W).hom.range = F.supportedSections S W.unop :=
+  (F.supportedSections S W.unop).range_subtype
+
+variable {F S} in
+/-- A morphism `G ⟶ F` all of whose sections are supported in `S` factors through the inclusion
+`Γ_S(F) ⟶ F`. -/
+def supportedSectionsLift {G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+    (φ : G ⟶ F) (h : ∀ W s, φ.hom.app W s ∈ F.supportedSections S W.unop) :
+    G ⟶ F.supportedSectionsSheaf S :=
+  ObjectProperty.homMk
+    { app W := AddCommGrpCat.ofHom ((φ.hom.app W).hom.codRestrict _ (h W))
+      naturality _ _ f := by
+        ext s
+        exact Subtype.ext congr($(φ.hom.naturality f) s) }
+
+variable {F S} in
+@[reassoc (attr := simp)]
+lemma supportedSectionsLift_ι {G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+    (φ : G ⟶ F) (h : ∀ W s, φ.hom.app W s ∈ F.supportedSections S W.unop) :
+    supportedSectionsLift φ h ≫ F.supportedSectionsι S = φ := by
+  ext
+  rfl
 
 /-- The inclusion `Γ_S(F) ⟶ F` is a monomorphism, since it is injective on sections. -/
 instance mono_supportedSectionsι : Mono (F.supportedSectionsι S) := by
