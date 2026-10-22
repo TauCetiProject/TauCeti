@@ -25,14 +25,17 @@ constant on the arcs of `D`, a product over the arcs of `D` of copies of the cop
 `∑ c, e_c ⊗ e_c`. A matrix `A` with `A * Aᵀ = 1` fixes the copairing, so applying `A` at every
 boundary point fixes this indicator (`TauCeti.BrauerDiagram.sum_prod_mul_ite_isConstantOnArcs`).
 Splitting the boundary into its bottom and top halves, this says `T * M * Tᵀ = M` for the matrix
-`M` of `D` and the matrix `T` of the diagonal action of `A`, and `Tᵀ * T = 1` turns it into
-`T * M = M * T`.
+`M` of `D` and the matrix `T` of the diagonal action of `A`
+(`TauCeti.BrauerDiagram.mul_orthogonalActionMatrix_mul_transpose`), and `Tᵀ * T = 1`
+(`TauCeti.transpose_toMatrix_piTensorProductMap_mul_self`) turns it into `T * M = M * T`.
 
 ## Main results
 
 * `TauCeti.BrauerDiagram.sum_prod_mul_ite_isConstantOnArcs`: the indicator of the labellings
   constant on the arcs of a Brauer diagram is invariant under a matrix `A` with `A * Aᵀ = 1`
   applied at every boundary point.
+* `TauCeti.BrauerDiagram.mul_orthogonalActionMatrix_mul_transpose`: the matrix form of this
+  invariance, `T * M * Tᵀ = M` for the matrix `M` of a diagram and the matrix `T` of `A ⊗ ⋯ ⊗ A`.
 * `TauCeti.commute_brauerActionOrth_piTensorProductMap`: every element of the Brauer algebra acts
   on `(Rⁿ)^{⊗k}` commuting with the diagonal action of a matrix `A` with `Aᵀ * A = 1`.
 * `TauCeti.commute_brauerActionOrth_tensorPower`: the Brauer action commutes with the diagonal
@@ -107,6 +110,30 @@ theorem sum_prod_mul_ite_isConstantOnArcs (D : BrauerDiagram k) {A : Matrix ι �
         refine if_congr ?_ rfl rfl
         rw [D.isConstantOnArcs_iff_forall_mem_arcTransversal, Subtype.forall]
 
+/-- **The matrix of a Brauer diagram is orthogonally invariant.** If `A * Aᵀ = 1` and `T` is the
+matrix with entries `∏ i, A (v i) (u i)`, the matrix of `A ⊗ ⋯ ⊗ A` in the monomial basis, then
+`T * M * Tᵀ = M` for the matrix `M` of `D`. This is
+`TauCeti.BrauerDiagram.sum_prod_mul_ite_isConstantOnArcs` with the boundary split into its bottom
+and top halves. -/
+theorem mul_orthogonalActionMatrix_mul_transpose (D : BrauerDiagram k) {A : Matrix ι ι R}
+    (hA : A * Aᵀ = 1) :
+    (Matrix.of fun v u : Fin k → ι => ∏ i, A (v i) (u i)) * D.orthogonalActionMatrix R ι *
+        (Matrix.of fun v u : Fin k → ι => ∏ i, A (v i) (u i))ᵀ =
+      D.orthogonalActionMatrix R ι := by
+  ext v u
+  have key := D.sum_prod_mul_ite_isConstantOnArcs hA (Sum.elim u v)
+  -- Split a labelling of the boundary into its bottom and top labellings.
+  have helim : ∀ w w' : Fin k → ι,
+      (Equiv.sumArrowEquivProdArrow _ _ _).symm (w, w') = Sum.elim w w' := fun w w' => by
+    funext p
+    rcases p with i | i <;> simp
+  rw [← (Equiv.sumArrowEquivProdArrow _ _ _).symm.sum_comp, Fintype.sum_prod_type] at key
+  simp only [helim, Fintype.prod_sum_type, Sum.elim_inl, Sum.elim_inr] at key
+  simp only [Matrix.mul_apply, Matrix.of_apply, Matrix.transpose_apply,
+    orthogonalActionMatrix_apply, Finset.sum_mul]
+  rw [← key]
+  exact Finset.sum_congr rfl fun w _ => Finset.sum_congr rfl fun w' _ => by ring
+
 end BrauerDiagram
 
 section CommSemiring
@@ -123,38 +150,19 @@ theorem commute_brauerActionOrth_piTensorProductMap {A : Matrix (Fin n) (Fin n) 
   rw [← (BrauerAlgebra.basis R (n : R) k).sum_repr b]
   simp only [map_sum, map_smul, BrauerAlgebra.basis_apply]
   refine Commute.sum_left _ _ _ fun D _ => Commute.smul_left ?_ _
-  set T : Matrix (Fin k → Fin n) (Fin k → Fin n) R := Matrix.of fun v u => ∏ i, A (v i) (u i)
-  set M := D.orthogonalActionMatrix R (Fin n)
-  have hconj : T * M * Tᵀ = M := by
-    ext v u
-    have key := D.sum_prod_mul_ite_isConstantOnArcs (mul_eq_one_comm.mp hA) (Sum.elim u v)
-    -- Split a labelling of the boundary into its bottom and top labellings.
-    have helim : ∀ w w' : Fin k → Fin n,
-        (Equiv.sumArrowEquivProdArrow _ _ _).symm (w, w') = Sum.elim w w' := fun w w' => by
-      funext p
-      rcases p with i | i <;> simp
-    rw [← (Equiv.sumArrowEquivProdArrow _ _ _).symm.sum_comp, Fintype.sum_prod_type] at key
-    simp only [helim, Fintype.prod_sum_type, Sum.elim_inl, Sum.elim_inr] at key
-    simp only [T, M, Matrix.mul_apply, Matrix.of_apply, Matrix.transpose_apply,
-      BrauerDiagram.orthogonalActionMatrix_apply, Finset.sum_mul]
-    rw [← key]
-    exact Finset.sum_congr rfl fun w _ => Finset.sum_congr rfl fun w' _ => by ring
-  have horth : Tᵀ * T = 1 := by
-    -- `Tᵀ` is the matrix of `Aᵀ ⊗ ⋯ ⊗ Aᵀ`, so this is the functoriality of `PiTensorProduct.map`.
-    have hTt : Tᵀ = Matrix.of fun v u => ∏ i, Aᵀ (v i) (u i) := by
-      ext v u
-      simp [T]
-    rw [hTt, ← toMatrix_piTensorProductMap,
-      show T = _ from (toMatrix_piTensorProductMap R n k A).symm, ← LinearMap.toMatrix_comp,
-      ← PiTensorProduct.map_comp, ← Matrix.mulVecLin_mul, hA, Matrix.mulVecLin_one,
-      PiTensorProduct.map_id, LinearMap.toMatrix_id]
-  have hcomm : M * T = T * M := by
-    calc M * T = T * M * Tᵀ * T := by rw [hconj]
-      _ = T * M := by rw [Matrix.mul_assoc (T * M), horth, Matrix.mul_one]
   apply (LinearMap.toMatrix (tensorPowerBasis R n k) (tensorPowerBasis R n k)).injective
   rw [LinearMap.toMatrix_mul, LinearMap.toMatrix_mul, brauerActionOrth_of,
-    LinearMap.toMatrix_toLin, toMatrix_piTensorProductMap]
-  exact hcomm
+    LinearMap.toMatrix_toLin]
+  set T := LinearMap.toMatrix (tensorPowerBasis R n k) (tensorPowerBasis R n k)
+    (PiTensorProduct.map fun _ : Fin k => Matrix.mulVecLin A) with hT
+  set M := D.orthogonalActionMatrix R (Fin n)
+  have hconj : T * M * Tᵀ = M := by
+    rw [hT, toMatrix_piTensorProductMap]
+    exact D.mul_orthogonalActionMatrix_mul_transpose (mul_eq_one_comm.mp hA)
+  calc M * T = T * M * Tᵀ * T := by rw [hconj]
+    _ = T * M := by
+      rw [Matrix.mul_assoc (T * M), hT, transpose_toMatrix_piTensorProductMap_mul_self R n k hA,
+        Matrix.mul_one]
 
 end CommSemiring
 

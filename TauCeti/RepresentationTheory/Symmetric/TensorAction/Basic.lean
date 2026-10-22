@@ -38,11 +38,13 @@ It reuses `PiTensorProduct.reindex`; the convention is
   basis supplies.
 * `TauCeti.toMatrix_piTensorProductMap` is the matrix of the diagonal action `A ⊗ ⋯ ⊗ A` of a
   matrix `A` in the monomial basis.
+* `TauCeti.transpose_toMatrix_piTensorProductMap_mul_self`: if `Aᵀ * A = 1`, the matrix `T` of
+  `A ⊗ ⋯ ⊗ A` satisfies `Tᵀ * T = 1`.
 -/
 
 public section
 
-open scoped TensorProduct
+open scoped Matrix TensorProduct
 
 universe u v w
 
@@ -201,6 +203,30 @@ theorem toMatrix_piTensorProductMap (A : Matrix (Fin n) (Fin n) R) :
   rw [LinearMap.toMatrix_apply, tensorPowerBasis_def, Basis.piTensorProduct_apply,
     PiTensorProduct.map_tprod, Basis.piTensorProduct_repr_tprod_apply]
   simp
+
+/-- The transpose of the matrix of `A ⊗ ⋯ ⊗ A` in the monomial basis is the matrix of
+`Aᵀ ⊗ ⋯ ⊗ Aᵀ`. -/
+theorem transpose_toMatrix_piTensorProductMap (A : Matrix (Fin n) (Fin n) R) :
+    (LinearMap.toMatrix (tensorPowerBasis R n d) (tensorPowerBasis R n d)
+        (PiTensorProduct.map fun _ : Fin d => Matrix.mulVecLin A))ᵀ =
+      LinearMap.toMatrix (tensorPowerBasis R n d) (tensorPowerBasis R n d)
+        (PiTensorProduct.map fun _ : Fin d => Matrix.mulVecLin Aᵀ) := by
+  rw [toMatrix_piTensorProductMap, toMatrix_piTensorProductMap]
+  ext v u
+  simp
+
+/-- If `Aᵀ * A = 1`, then the matrix `T` of `A ⊗ ⋯ ⊗ A` in the monomial basis satisfies
+`Tᵀ * T = 1`: by `TauCeti.transpose_toMatrix_piTensorProductMap`, this is the functoriality of
+`PiTensorProduct.map`. -/
+theorem transpose_toMatrix_piTensorProductMap_mul_self {A : Matrix (Fin n) (Fin n) R}
+    (hA : Aᵀ * A = 1) :
+    (LinearMap.toMatrix (tensorPowerBasis R n d) (tensorPowerBasis R n d)
+        (PiTensorProduct.map fun _ : Fin d => Matrix.mulVecLin A))ᵀ *
+      LinearMap.toMatrix (tensorPowerBasis R n d) (tensorPowerBasis R n d)
+        (PiTensorProduct.map fun _ : Fin d => Matrix.mulVecLin A) = 1 := by
+  rw [transpose_toMatrix_piTensorProductMap, ← LinearMap.toMatrix_comp, ← PiTensorProduct.map_comp,
+    ← Matrix.mulVecLin_mul, hA, Matrix.mulVecLin_one, PiTensorProduct.map_id,
+    LinearMap.toMatrix_id]
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already
 -- provable from the underlying tensor-action rules, so adding them to the simp set is redundant.
