@@ -322,17 +322,10 @@ theorem eq_subst_addInvX_iff_subst_left_eq_zero {f g : MvPowerSeries σ R}
     g = PowerSeries.subst f F.addInvX ↔ F.toPowerSeries.subst ![g, f] = 0 := by
   let x : F.Point σ := ⟨f, hf⟩
   let y : F.Point σ := ⟨g, hg⟩
-  constructor
-  · rintro rfl
-    exact subst_addInvX_self_eq_zero F hf
-  · intro h
-    have h' : y + x = 0 := Subtype.ext (by
-      rw [FormalGroup.add_apply, FormalGroup.zero_apply]
-      exact h)
-    have heq : y = -x := eq_neg_of_add_eq_zero_left h'
-    have hval := congrArg (fun z : F.Point σ ↦ z.val) heq
-    rw [FormalGroup.neg_apply] at hval
-    simpa only [x, y] using hval
+  have h := (Subtype.ext_iff (a1 := y) (a2 := -x)).symm.trans
+    ((eq_neg_iff_add_eq_zero (a := y) (b := x)).trans
+      (Subtype.ext_iff (a1 := y + x) (a2 := (0 : F.Point σ))))
+  simpa only [FormalGroup.neg_apply, FormalGroup.add_apply, FormalGroup.zero_apply] using h
 
 /-- The inverse coordinate gives right inverses too, without assuming commutativity of `F`. -/
 @[simp]
@@ -349,16 +342,9 @@ theorem eq_subst_addInvX_iff_subst_right_eq_zero {f g : MvPowerSeries σ R}
     g = PowerSeries.subst f F.addInvX ↔ F.toPowerSeries.subst ![f, g] = 0 := by
   let x : F.Point σ := ⟨f, hf⟩
   let y : F.Point σ := ⟨g, hg⟩
-  constructor
-  · rintro rfl
-    exact subst_self_addInvX_eq_zero F hf
-  · intro h
-    have h' : x + y = 0 := Subtype.ext (by
-      rw [FormalGroup.add_apply, FormalGroup.zero_apply]
-      exact h)
-    have heq : y = -x := eq_neg_of_add_eq_zero_right h'
-    have hval := congrArg (fun z : F.Point σ ↦ z.val) heq
-    rw [FormalGroup.neg_apply] at hval
-    simpa only [x, y] using hval
+  have h := (Subtype.ext_iff (a1 := y) (a2 := -x)).symm.trans
+    ((add_eq_zero_iff_eq_neg' (a := x) (b := y)).symm.trans
+      (Subtype.ext_iff (a1 := x + y) (a2 := (0 : F.Point σ))))
+  simpa only [FormalGroup.neg_apply, FormalGroup.add_apply, FormalGroup.zero_apply] using h
 
 end TauCeti
