@@ -43,7 +43,9 @@ is the local model for extension and trace on domains with Lipschitz boundary.
   `TauCeti.W1p.opNorm_extendByReflectionL_le`, and its value and gradient
   `TauCeti.W1p.value_extendByReflectionL_ae` and `TauCeti.W1p.gradient_extendByReflectionL_ae`.
 * `TauCeti.W1p.halfSpaceTrace`: the `Lᵖ` trace on `{a} × E` of a `W^{1,p}` function on the
-  half-space, with `TauCeti.W1p.norm_halfSpaceTrace_rpow_le`, the `H¹` bounds
+  half-space, with `TauCeti.W1p.norm_halfSpaceTrace_rpow_le`, the general bounds
+  `TauCeti.W1p.norm_halfSpaceTrace_le_rpow_inv_mul` and
+  `TauCeti.W1p.opNorm_halfSpaceTrace_le_rpow_inv`, the sharper `H¹` bounds
   `TauCeti.W1p.norm_halfSpaceTrace_le` and `TauCeti.W1p.opNorm_halfSpaceTrace_le`, and
   `TauCeti.W1p.halfSpaceTrace_restrictL`. On `H¹₀` of the half-space it agrees with the
   zero-boundary trace (`TauCeti.W1p.halfSpaceTrace_coe_w1p0`) and so vanishes
@@ -353,6 +355,32 @@ theorem W1p.norm_halfSpaceTrace_rpow_le (hp : p ≠ ∞) (a : ℝ)
       (p.toReal - 1) * ‖W1p.value u‖ ^ p.toReal + ‖W1p.gradient u‖ ^ p.toReal := by
   simpa only [W1p.restrictL_extendByReflectionL, ← W1p.halfSpaceTrace_apply] using
     W1p.norm_hyperplaneTrace_rpow_le_restrictL hp a (W1p.extendByReflectionL a u)
+
+/-- For `1 ≤ p < ∞`, the half-space trace has norm at most `p ^ (1 / p)` times the Sobolev norm on
+the half-space. The constant is `1` at `p = 1`. -/
+theorem W1p.norm_halfSpaceTrace_le_rpow_inv_mul (hp : p ≠ ∞) (a : ℝ)
+    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) :
+    ‖W1p.halfSpaceTrace hp a u‖ ≤ p.toReal ^ p.toReal⁻¹ * ‖u‖ := by
+  have hp1 : 1 ≤ p := Fact.out
+  have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp hp1
+  have hr0 : 0 < p.toReal := zero_lt_one.trans_le hr
+  have h1 : ‖W1p.value u‖ ^ p.toReal ≤ ‖u‖ ^ p.toReal :=
+    Real.rpow_le_rpow (norm_nonneg _) (W1p.norm_value_le u) hr0.le
+  have h2 : ‖W1p.gradient u‖ ^ p.toReal ≤ ‖u‖ ^ p.toReal :=
+    Real.rpow_le_rpow (norm_nonneg _) (W1p.norm_gradient_le u) hr0.le
+  have hb : ‖W1p.halfSpaceTrace hp a u‖ ^ p.toReal ≤ p.toReal * ‖u‖ ^ p.toReal := by
+    nlinarith [W1p.norm_halfSpaceTrace_rpow_le hp a u, sub_nonneg.2 hr]
+  rw [← Real.rpow_le_rpow_iff (norm_nonneg _) (by positivity) hr0,
+    Real.mul_rpow (by positivity) (norm_nonneg _), ← Real.rpow_mul hr0.le,
+    inv_mul_cancel₀ hr0.ne', Real.rpow_one]
+  exact hb
+
+/-- For `1 ≤ p < ∞`, the half-space trace has operator norm at most `p ^ (1 / p)`, which is `1`
+at `p = 1`. -/
+theorem W1p.opNorm_halfSpaceTrace_le_rpow_inv (hp : p ≠ ∞) (a : ℝ) :
+    ‖W1p.halfSpaceTrace (E := E) hp a‖ ≤ p.toReal ^ p.toReal⁻¹ :=
+  ContinuousLinearMap.opNorm_le_bound _ (by positivity)
+    (W1p.norm_halfSpaceTrace_le_rpow_inv_mul hp a)
 
 /-- The `H¹` half-space trace has norm at most the Sobolev norm on the half-space. -/
 theorem W1p.norm_halfSpaceTrace_le (a : ℝ)
