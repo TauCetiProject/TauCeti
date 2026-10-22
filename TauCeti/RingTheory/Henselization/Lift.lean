@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Henselian
 public import TauCeti.RingTheory.Henselization.Algebra
 import Mathlib.RingTheory.Finiteness.Small
-import Mathlib.RingTheory.Smooth.Flat
 import TauCeti.RingTheory.Henselization.Jacobson
 import TauCeti.RingTheory.Henselization.Section
 
