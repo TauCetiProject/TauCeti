@@ -36,7 +36,11 @@ Independently of a basis, the grade involution is the sign `(-1) ^ n` on the `n`
 a contraction carries the `(n + 1)`-th exterior power into the `n`-th, and a vector graded-commutes
 with every multivector: `ι m * x = involute x * ι m`.  Together with the graded Leibniz rule
 `CliffordAlgebra.contractLeft_mul`, these say that a contraction is an odd derivation of degree
-`-1` of the graded-commutative exterior algebra.
+`-1` of the graded-commutative exterior algebra. On a wedge product of vectors it is the alternating
+sum of deletions (`TauCeti.ExteriorAlgebra.contractLeft_ιMulti`), and it is natural along
+`ExteriorAlgebra.map` (`TauCeti.ExteriorAlgebra.contractLeft_map`). Dually, exterior
+multiplication by a vector raises the degree by one (`TauCeti.ExteriorAlgebra.wedgeLeft`). These
+are the differential and the homotopy of the Koszul complex.
 -/
 
 public section
@@ -424,6 +428,59 @@ theorem contractLeft_mem_exteriorPower (d : Module.Dual R M) {n : ℕ}
     · rw [Nat.add_sub_cancel] at ih
       rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
       exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ v) ih
+
+/-- Left multiplication by a vector raises the exterior degree by one: it carries the `n`-th
+exterior power into the `(n + 1)`-th. -/
+theorem ι_mul_mem_exteriorPower (m : M) {n : ℕ} {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) :
+    ExteriorAlgebra.ι R m * x ∈ ⋀[R]^(n + 1) M := by
+  rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
+  exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ m) hx
+
+/-- Exterior multiplication `v ↦ m ∧ v` by a vector `m`, from the `n`-th exterior power to the
+`(n + 1)`-th. Mathlib's `exteriorPower.wedge R M 1 n` is the same product with values in degree
+`1 + n`, which is not definitionally `n + 1`; this form composes with maps out of `⋀ⁿ⁺¹ M`. -/
+def wedgeLeft (m : M) (n : ℕ) : ⋀[R]^n M →ₗ[R] ⋀[R]^(n + 1) M :=
+  (LinearMap.mulLeft R (ExteriorAlgebra.ι R m)).restrict fun _ hx ↦ ι_mul_mem_exteriorPower m hx
+
+/-- `wedgeLeft m n` is left multiplication by `ι R m` in the exterior algebra. -/
+@[simp]
+theorem coe_wedgeLeft_apply (m : M) (n : ℕ) (x : ⋀[R]^n M) :
+    (wedgeLeft m n x : ExteriorAlgebra R M) = ExteriorAlgebra.ι R m * x :=
+  (rfl)
+
+/-- **Contraction of a wedge product of vectors** is the alternating sum of the contractions of
+its factors: `d ⌋ (v₀ ∧ ⋯ ∧ vₙ) = ∑ᵢ (-1) ^ i d(vᵢ) v₀ ∧ ⋯ ∧ v̂ᵢ ∧ ⋯ ∧ vₙ`. -/
+theorem contractLeft_ιMulti (d : Module.Dual R M) {n : ℕ} (v : Fin (n + 1) → M) :
+    contractLeft (Q := (0 : QuadraticForm R M)) d (ExteriorAlgebra.ιMulti R (n + 1) v) =
+      ∑ i : Fin (n + 1), ((-1 : R) ^ (i : ℕ) * d (v i)) •
+        ExteriorAlgebra.ιMulti R n (i.removeNth v) := by
+  induction n with
+  | zero => simp [Algebra.algebraMap_eq_smul_one]
+  | succ n ih =>
+    have hrem (i : Fin (n + 1)) : ExteriorAlgebra.ιMulti R (n + 1) (i.succ.removeNth v) =
+        ExteriorAlgebra.ι R (v 0) *
+          ExteriorAlgebra.ιMulti R n (i.removeNth (Matrix.vecTail v)) := by
+      rw [ExteriorAlgebra.ιMulti_succ_apply]
+      congr 2
+      ext j
+      simp [Matrix.vecTail, Fin.removeNth_apply, Fin.succ_succAbove_succ]
+    rw [ExteriorAlgebra.ιMulti_succ_apply, contractLeft_ι_mul, ih, Fin.sum_univ_succ (n := n + 1),
+      Finset.mul_sum]
+    simp [hrem, pow_succ, sub_eq_add_neg, Matrix.vecTail, Fin.tail,
+      Function.comp_def]
+
+/-- **Contraction is natural in the module**: if `d' ∘ f = d`, then contracting by `d'` after
+`ExteriorAlgebra.map f` is `ExteriorAlgebra.map f` after contracting by `d`. -/
+theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] {f : M →ₗ[R] N}
+    {d : Module.Dual R M} {d' : Module.Dual R N} (h : d' ∘ₗ f = d) (x : ExteriorAlgebra R M) :
+    contractLeft (Q := (0 : QuadraticForm R N)) d' (ExteriorAlgebra.map f x) =
+      ExteriorAlgebra.map f (contractLeft (Q := (0 : QuadraticForm R M)) d x) := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r => rw [AlgHom.commutes, contractLeft_algebraMap, contractLeft_algebraMap, map_zero]
+  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
+  | ι_mul x m hx =>
+    rw [map_mul, ExteriorAlgebra.map_apply_ι, contractLeft_ι_mul, contractLeft_ι_mul, hx, map_sub,
+      map_smul, map_mul, ExteriorAlgebra.map_apply_ι, ← h, LinearMap.comp_apply]
 
 end TauCeti.ExteriorAlgebra
 
