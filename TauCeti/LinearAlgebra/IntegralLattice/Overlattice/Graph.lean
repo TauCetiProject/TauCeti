@@ -22,6 +22,13 @@ coordinate space is the original lattice, the condition needed for primitive emb
 The construction uses the existing discriminant-product isometry and isotropic-subgroup
 gluing correspondence. The ambient rational form is the orthogonal sum form throughout.
 
+Conversely, every even unimodular lattice for the orthogonal sum form which contains `L ⊥ M`
+and meets the two coordinate spaces in exactly `L` and `M` arises by this construction. Its
+subgroup of the discriminant group of `L ⊥ M` is a Lagrangian meeting both factors trivially,
+hence the graph of an isometry of opposite discriminant forms. This is the orthogonal-sum model of
+the statement that a nondegenerate primitive sublattice of an even unimodular lattice and its
+orthogonal complement have opposite discriminant forms.
+
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*,
@@ -305,5 +312,76 @@ theorem signature_glueAlongDiscriminant :
   have hn : (L.glueAlongDiscriminant M hL hM e).sigNull = (L.orthogonalSum M).sigNull :=
     congrArg (fun S : Submodule ℚ (V × W) ↦ Module.finrank ℚ S) hr
   simp only [signature, hn, sigPos, sigNeg, glueAlongDiscriminant_form]
+
+/-! ## Even unimodular overlattices are graph gluings -/
+
+omit [L.IsNondegenerate] [M.IsNondegenerate] in
+/-- A pair of dual vectors has its pair of classes in the image of `N / (L ⊥ M)` exactly when it
+lies in `N`. -/
+private theorem mk_mem_map_discriminantSubgroup_iff (N : (L.orthogonalSum M).IntermediateCarrier)
+    (x : L.dualCarrier) (y : M.dualCarrier) :
+    ((Submodule.Quotient.mk x, Submodule.Quotient.mk y) :
+        L.DiscriminantGroup × M.DiscriminantGroup) ∈
+        ((L.orthogonalSum M).discriminantSubgroup N).map
+          (L.discriminantGroupOrthogonalSumEquiv M).toAddEquiv.toAddMonoidHom ↔
+      ((x : V), (y : W)) ∈ N.1 := by
+  set z := (L.orthogonalSumDualCarrierEquiv M).symm (x, y)
+  have hz : (L.discriminantGroupOrthogonalSumEquiv M).toAddEquiv.toAddMonoidHom
+      (Submodule.Quotient.mk z) = (Submodule.Quotient.mk x, Submodule.Quotient.mk y) := by
+    simp [z]
+  rw [← hz, AddSubgroup.mem_map_iff_mem (AddEquiv.injective _),
+    mk_mem_discriminantSubgroup_iff, coe_orthogonalSumDualCarrierEquiv_symm_apply]
+
+/-- **Even unimodular overlattices of `L ⊥ M` are graph gluings.** Let `N` be an even unimodular
+lattice for the orthogonal sum form which contains `L ⊥ M` and meets the two coordinate spaces in
+exactly `L` and `M`. Then `N` is obtained by gluing along an isometry from the discriminant form of
+`L` to the negative of that of `M`. This is the converse of the construction
+`TauCeti.IntegralLattice.glueAlongDiscriminant`, and the orthogonal-sum model of the statement
+that a nondegenerate primitive sublattice of an even unimodular lattice and its orthogonal
+complement have opposite discriminant forms. -/
+theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
+    (hform : N.form = (L.orthogonalSum M).form)
+    (hle : (L.orthogonalSum M).carrier ≤ N.carrier) (hNe : N.IsEven) (hNu : N.IsUnimodular)
+    (hleft : ∀ x : V, (x, 0) ∈ N.carrier → x ∈ L.carrier)
+    (hright : ∀ y : W, (0, y) ∈ N.carrier → y ∈ M.carrier) :
+    ∃ f : FiniteQuadraticModule.Isometry (L.discriminantQuadraticModule hL)
+      (M.discriminantQuadraticModule hM).neg, N = L.glueAlongDiscriminant M hL hM f := by
+  set S := L.orthogonalSum M
+  have hS : S.IsEven := (L.isEven_orthogonalSum_iff M).mpr ⟨hL, hM⟩
+  -- `N` is an intermediate carrier of `L ⊥ M`, even and with unimodular underlying lattice.
+  set P := N.toIntermediateCarrier hform hle
+  have hPc : P.1 = N.carrier := N.coe_toIntermediateCarrier hform hle
+  have hdual : N.carrier ≤ S.dualCarrier := hPc ▸ P.2.2
+  have hPe := N.isEven_toIntermediateCarrier hform hle hNe
+  have hPN := N.toIntegralLattice_toIntermediateCarrier hform hle hPe.isIntegral
+  -- Its subgroup of the discriminant group is a quadratic Lagrangian.
+  have hlag : (S.discriminantQuadraticModule hS).IsLagrangian (S.discriminantSubgroup P) := by
+    refine (FiniteQuadraticModule.isLagrangian_def _ _).mpr
+      ⟨(IntermediateCarrier.isEven_iff_isIsotropic_discriminantSubgroup hS P).mp hPe, ?_⟩
+    exact hPe.isIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian.mp (hPN.symm ▸ hNu)
+  have hlag' := ((L.discriminantQuadraticIsometryOrthogonalSum M hL hM).isLagrangian_map_iff
+    _ (S.discriminantSubgroup P)).mpr hlag
+  rw [discriminantQuadraticIsometryOrthogonalSum_toAddEquiv] at hlag'
+  have hmem := L.mk_mem_map_discriminantSubgroup_iff M P
+  rw [hPc] at hmem
+  -- The transported subgroup meets both factors trivially, so it is the graph of an isometry.
+  obtain ⟨f, hf⟩ := FiniteQuadraticModule.exists_isometry_neg_mem_iff_of_isLagrangian _ _ hlag'
+    (fun a ha ↦ by
+      induction a using Submodule.Quotient.induction_on with
+      | _ x =>
+        exact (L.discriminantGroup_mk_eq_zero_iff x).mpr (hleft _ ((hmem x 0).mp ha)))
+    (fun b hb ↦ by
+      induction b using Submodule.Quotient.induction_on with
+      | _ y =>
+        exact (M.discriminantGroup_mk_eq_zero_iff y).mpr (hright _ ((hmem 0 y).mp hb)))
+  refine ⟨f, IntegralLattice.ext ?_ (by rw [glueAlongDiscriminant_form, hform])⟩
+  ext z
+  rw [mem_glueAlongDiscriminant_iff_exists]
+  constructor
+  · intro hz
+    obtain ⟨hx, hy⟩ := (L.mem_dualCarrier_orthogonalSum M z).mp (hdual hz)
+    exact ⟨hx, hy, (hf _ _).mp ((hmem ⟨z.1, hx⟩ ⟨z.2, hy⟩).mpr hz)⟩
+  · rintro ⟨hx, hy, h⟩
+    exact (hmem ⟨z.1, hx⟩ ⟨z.2, hy⟩).mp ((hf _ _).mpr h)
 
 end TauCeti.IntegralLattice

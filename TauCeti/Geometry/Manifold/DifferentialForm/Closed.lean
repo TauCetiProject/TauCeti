@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
-public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 
 /-!
 # Closed smooth differential forms
@@ -83,10 +82,13 @@ theorem IsClosed.add {form' : SmoothForm I M F k} (h : form.IsClosed)
     ((hform'.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp)), h, h']
   simp
 
-/-- A real scalar multiple of a closed smooth form is closed. -/
-theorem IsClosed.smul (c : ℝ) (h : form.IsClosed) : (c • form).IsClosed := by
-  rw [isClosed_def, SmoothForm.smul_toRoughForm]
-  rw [mextDeriv_smul, h, smul_zero]
+/-- A scalar multiple of a closed smooth form is closed, for any scalars acting continuously on
+the coefficients and commuting with the real action (for instance `ℝ`, or `ℂ` on complex-valued
+forms). -/
+theorem IsClosed.smul {S : Type*} [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
+    [SMulCommClass ℝ S F] (c : S) (h : form.IsClosed) : (c • form).IsClosed := by
+  rw [isClosed_def, SmoothForm.smul_toRoughForm, RoughForm.smul_eq_mapCoeff,
+    mextDeriv_mapCoeff _ (form.isSmoothForm.of_le (by simp)), h, RoughForm.mapCoeff_zero]
 
 /-- The negative of a closed smooth form is closed. -/
 theorem IsClosed.neg (h : form.IsClosed) : (-form).IsClosed := by
