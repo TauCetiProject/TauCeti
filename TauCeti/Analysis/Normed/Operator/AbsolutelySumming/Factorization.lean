@@ -34,8 +34,8 @@ some regular Borel probability measure `ν` on `B`. Such a bound is the same as 
   domination stated with `jₚ`.
 * `ContinuousLinearMap.summingENorm_le_ofReal_iff_exists_eq_comp_rangeRestrict`: Pietsch
   factorization through the canonical image.
-* `ContinuousLinearMap.summingENorm_le_ofReal_iff_exists_eq_comp_codRestrict`: Pietsch
-  factorization through the closure of the canonical image, for a Banach target.
+* `ContinuousLinearMap.summingENorm_le_ofReal_iff_exists_eq_comp_codRestrict_topologicalClosure`:
+  Pietsch factorization through the closure of the canonical image, for a Banach target.
 
 ## References
 
@@ -68,7 +68,7 @@ def evalLp : E →L[𝕜] Lp 𝕜 p ν :=
   (ContinuousMap.toLp p ν 𝕜).comp (evalClosedBall 1)
 
 /-- The canonical operator `jₚ` sends `x` to the class of the evaluation `f ↦ f x`. -/
-theorem evalLp_ae_eq (x : E) : evalLp p ν x =ᵐ[ν] fun f ↦ (f : WeakDual 𝕜 E) x := by
+theorem coeFn_evalLp (x : E) : evalLp p ν x =ᵐ[ν] fun f ↦ (f : WeakDual 𝕜 E) x := by
   rw [evalLp, ContinuousLinearMap.comp_apply]
   exact (ContinuousMap.coeFn_toLp ν _).trans
     (.of_eq (funext fun f ↦ evalClosedBall_apply_apply 1 x f))
@@ -79,8 +79,8 @@ theorem norm_evalLp_apply (hp : p ≠ ∞) (x : E) :
   have hp0 : p ≠ 0 := (one_pos.trans_le Fact.out).ne'
   have hmem : MemLp (fun f : toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1 ↦
       (f : WeakDual 𝕜 E) x) p ν :=
-    (Lp.memLp (evalLp p ν x)).ae_eq (evalLp_ae_eq ν x)
-  rw [Lp.norm_def, eLpNorm_congr_ae (evalLp_ae_eq ν x),
+    (Lp.memLp (evalLp p ν x)).ae_eq (coeFn_evalLp ν x)
+  rw [Lp.norm_def, eLpNorm_congr_ae (coeFn_evalLp ν x),
     hmem.eLpNorm_eq_integral_rpow_norm hp0 hp, ENNReal.toReal_ofReal (by positivity), one_div]
 
 /-- For a probability measure `ν`, the canonical operator `jₚ` is a contraction. -/
@@ -140,8 +140,8 @@ theorem summingENorm_le_ofReal_iff_exists_eq_comp_rangeRestrict (hp : p ≠ ∞)
 `1 ≤ p < ∞` and `C ≥ 0`, `πₚ(T) ≤ C` iff there are a regular Borel probability measure `ν` on the
 weak-star compact dual unit ball and an operator `S` of norm at most `C` on the closure of
 `range jₚ` in `Lᵖ(ν)` such that `T = S ∘ jₚ`. -/
-theorem summingENorm_le_ofReal_iff_exists_eq_comp_codRestrict [CompleteSpace F] (hp : p ≠ ∞)
-    {T : E →L[𝕜] F} {C : ℝ} (hC : 0 ≤ C) :
+theorem summingENorm_le_ofReal_iff_exists_eq_comp_codRestrict_topologicalClosure
+    [CompleteSpace F] (hp : p ≠ ∞) {T : E →L[𝕜] F} {C : ℝ} (hC : 0 ≤ C) :
     T.summingENorm p ≤ ENNReal.ofReal C ↔
       ∃ (ν : Measure (WeakDual.toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1))
         (_ : IsProbabilityMeasure ν), ν.Regular ∧
