@@ -30,13 +30,17 @@ Serre's theorem compares orthonormal families of `M` with bases of `M~`. For a f
 * if the residues span `M~`, then `e` has dense span (`TauCeti.ResidueModule.dense_span`). The
   proof is successive approximation: a vector of `M⁰` agrees with a combination of the `e i`
   modulo `ϖM⁰`, the error is `ϖ` times a vector of `M⁰`, and iterating approximates the vector
-  modulo `ϖ ^ k M⁰` for every `k`. For an orthonormal family the converse holds
-  (`TauCeti.ResidueModule.span_mk_eq_top_iff`).
+  modulo `ϖ ^ k M⁰` for every `k`. For an orthonormal family the converse holds, without the
+  condition on the norms (`TauCeti.ResidueModule.span_mk_eq_top_of_isOrthonormalFamily`), so
+  that the two are equivalent (`TauCeti.ResidueModule.span_mk_eq_top_iff`).
 
 Thus `e` is an orthonormal basis exactly when `ē` is a basis of `M~`
-(`TauCeti.ResidueModule.isOrthonormalBasis_iff`), and in particular any lift of a basis of `M~` to
-`M⁰` is an orthonormal basis of `M` (`TauCeti.ResidueModule.isOrthonormalBasis_of_basis`). No
-completeness is needed for these statements. Over a complete ring and for a complete module, where
+(`TauCeti.ResidueModule.isOrthonormalBasis_iff`); the residues of an orthonormal basis form a
+basis without the condition on the norms
+(`TauCeti.ResidueModule.linearIndependent_mk_and_span_mk_eq_top`), and in particular any lift
+of a basis of `M~` to `M⁰` is an orthonormal basis of `M`
+(`TauCeti.ResidueModule.isOrthonormalBasis_of_basis`). No completeness is needed for these
+statements. Over a complete ring and for a complete module, where
 orthonormal bases are the same as linear isometries with model spaces `C₀(I, R)`, this shows that
 `M` is orthonormalisable exactly when its residue module is free
 (`TauCeti.isONable_iff_free_residueModule`).
@@ -232,18 +236,19 @@ theorem dense_span (hM : ∀ m : M, zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ = ‖m�
   have := V.topologicalClosure.smul_mem ((ϖ.unit ^ (-(k : ℤ)) : Rˣ) : R) (hball _ hy)
   rwa [zpow_smul_zpow_smul_of_add_eq_zero ϖ.unit (neg_add_cancel (k : ℤ))] at this
 
-/-- **Serre: dense span is spanning residues.** An orthonormal family of the closed unit ball has
-dense span exactly when its residues span the residue module, for a norm with values in
-`‖ϖ‖ ^ ℤ ∪ {0}`. -/
-theorem span_mk_eq_top_iff (hM : ∀ m : M, zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ = ‖m‖)
-    {e : I → unitClosedBallSubmodule R M} (he : IsOrthonormalFamily R fun i ↦ (e i : M)) :
-    Submodule.span (Subring.unitClosedBall R ⧸ unitBallIdeal R) (Set.range (mk ∘ e)) = ⊤ ↔
-      Dense (Submodule.span R (Set.range fun i ↦ (e i : M)) : Set M) := by
-  refine ⟨dense_span ϖ hM, fun hdense ↦ eq_top_iff.2 fun z _ ↦ ?_⟩
+include ϖ in
+/-- **Orthonormal families with dense span have spanning residues.** If an orthonormal family of
+the closed unit ball has dense span, then its residues span the residue module. This needs only a
+multiplicative pseudo-uniformiser `ϖ`, with no condition on the values of the norms. -/
+theorem span_mk_eq_top_of_isOrthonormalFamily {e : I → unitClosedBallSubmodule R M}
+    (he : IsOrthonormalFamily R fun i ↦ (e i : M))
+    (hdense : Dense (Submodule.span R (Set.range fun i ↦ (e i : M)) : Set M)) :
+    Submodule.span (Subring.unitClosedBall R ⧸ unitBallIdeal R) (Set.range (mk ∘ e)) = ⊤ := by
+  refine eq_top_iff.2 fun z _ ↦ ?_
   obtain ⟨x, rfl⟩ := mk_surjective z
-  -- Approximate `x` to within distance less than one by a finite combination `∑ g i • e i`.
-  obtain ⟨_, hsV, hxs⟩ := Metric.mem_closure_iff.mp (hdense.closure_eq ▸ Set.mem_univ (x : M)) 1
-    one_pos
+  -- Approximate `x` to within distance less than `‖ϖ‖` by a finite combination `∑ g i • e i`.
+  obtain ⟨_, hsV, hxs⟩ := Metric.mem_closure_iff.mp (hdense.closure_eq ▸ Set.mem_univ (x : M)) _
+    ϖ.norm_pos
   obtain ⟨g, rfl⟩ := Finsupp.mem_span_range_iff_exists_finsupp.mp hsV
   rw [dist_eq_norm, Finsupp.sum] at hxs
   set s := ∑ i ∈ g.support, g i • (e i : M)
@@ -251,18 +256,42 @@ theorem span_mk_eq_top_iff (hM : ∀ m : M, zpowCeil ‖(ϖ.unit : R)‖ ‖m‖
   have hs : ‖s‖ ≤ 1 := by
     have := IsUltrametricDist.norm_add_le_max (x : M) (-((x : M) - s))
     rw [← sub_eq_add_neg, sub_sub_cancel, norm_neg] at this
-    exact this.trans (max_le (mem_unitClosedBallSubmodule.mp x.2) hxs.le)
+    exact this.trans (max_le (mem_unitClosedBallSubmodule.mp x.2) (hxs.le.trans ϖ.norm_lt_one.le))
   have hg (i : I) : ‖g i‖ ≤ 1 := by
     by_cases hi : i ∈ g.support
     · exact (he.norm_le_norm_sum_smul g hi).trans hs
     · simp [Finsupp.notMem_support_iff.mp hi]
   let a (i : I) : Subring.unitClosedBall R := ⟨g i, Subring.mem_unitClosedBall.mpr (hg i)⟩
-  -- So `x` has the residue of the combination `∑ a i • e i` of the unit ball.
+  -- So `x` has the residue of the combination `∑ a i • e i` of the unit ball, as the difference
+  -- is `ϖ` times a vector of the unit ball.
   have hxy : mk x = mk (∑ i ∈ g.support, a i • e i) := by
-    rw [mk_eq_mk_iff ϖ hM, Submodule.coe_sum]
-    simpa only [Submodule.coe_smul, Subring.smul_def, a] using hxs
+    rw [mk_apply, mk_apply, Submodule.Quotient.eq]
+    refine mem_unitBallIdeal_smul_top_of_norm_le ϖ ?_
+    rw [Submodule.coe_sub, Submodule.coe_sum]
+    simpa only [Submodule.coe_smul, Subring.smul_def, a] using hxs.le
   rw [hxy, mk_sum_smul]
   exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
+/-- **Serre: dense span is spanning residues.** An orthonormal family of the closed unit ball has
+dense span exactly when its residues span the residue module, for a norm with values in
+`‖ϖ‖ ^ ℤ ∪ {0}`. -/
+theorem span_mk_eq_top_iff (hM : ∀ m : M, zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ = ‖m‖)
+    {e : I → unitClosedBallSubmodule R M} (he : IsOrthonormalFamily R fun i ↦ (e i : M)) :
+    Submodule.span (Subring.unitClosedBall R ⧸ unitBallIdeal R) (Set.range (mk ∘ e)) = ⊤ ↔
+      Dense (Submodule.span R (Set.range fun i ↦ (e i : M)) : Set M) :=
+  ⟨dense_span ϖ hM, span_mk_eq_top_of_isOrthonormalFamily ϖ he⟩
+
+include ϖ in
+/-- **Orthonormal bases have residues forming a basis.** The residues of an orthonormal basis of
+the closed unit ball are linearly independent over the residue ring and span the residue module.
+This needs only a multiplicative pseudo-uniformiser `ϖ`, with no condition on the values of the
+norms. -/
+theorem linearIndependent_mk_and_span_mk_eq_top {e : I → unitClosedBallSubmodule R M}
+    (he : IsOrthonormalBasis R fun i ↦ (e i : M)) :
+    LinearIndependent (Subring.unitClosedBall R ⧸ unitBallIdeal R) (mk ∘ e) ∧
+      Submodule.span (Subring.unitClosedBall R ⧸ unitBallIdeal R) (Set.range (mk ∘ e)) = ⊤ :=
+  ⟨linearIndependent_mk_of_isOrthonormalFamily he.isOrthonormalFamily,
+    span_mk_eq_top_of_isOrthonormalFamily ϖ he.isOrthonormalFamily he.dense_span⟩
 
 /-- **Serre's theorem.** For norms with values in `‖ϖ‖ ^ ℤ ∪ {0}`, a family of the closed unit
 ball is an orthonormal basis exactly when its residues are a basis of the residue module: they are
@@ -271,10 +300,9 @@ theorem isOrthonormalBasis_iff (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ ‖
     (hM : ∀ m : M, zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ = ‖m‖) {e : I → unitClosedBallSubmodule R M} :
     IsOrthonormalBasis R (fun i ↦ (e i : M)) ↔
       LinearIndependent (Subring.unitClosedBall R ⧸ unitBallIdeal R) (mk ∘ e) ∧
-        Submodule.span (Subring.unitClosedBall R ⧸ unitBallIdeal R) (Set.range (mk ∘ e)) = ⊤ := by
-  refine ⟨fun he ↦ ⟨linearIndependent_mk_of_isOrthonormalFamily he.isOrthonormalFamily,
-    (span_mk_eq_top_iff ϖ hM he.isOrthonormalFamily).2 he.dense_span⟩, fun ⟨hli, hspan⟩ ↦ ?_⟩
-  exact ⟨(linearIndependent_mk_iff ϖ hR hM).1 hli, dense_span ϖ hM hspan⟩
+        Submodule.span (Subring.unitClosedBall R ⧸ unitBallIdeal R) (Set.range (mk ∘ e)) = ⊤ :=
+  ⟨linearIndependent_mk_and_span_mk_eq_top ϖ, fun ⟨hli, hspan⟩ ↦
+    ⟨(linearIndependent_mk_iff ϖ hR hM).1 hli, dense_span ϖ hM hspan⟩⟩
 
 /-- **Lifts of a residue basis are an orthonormal basis.** For norms with values in
 `‖ϖ‖ ^ ℤ ∪ {0}`, any family of the closed unit ball whose residues form a basis `b` of the residue

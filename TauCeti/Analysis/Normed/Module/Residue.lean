@@ -43,6 +43,8 @@ orthonormal bases of `M` with bases of `M~`.
 
 * `TauCeti.norm_lt_one_of_mem_unitBallIdeal_smul_top`: the vectors of `R⁰⁰ • M⁰` have norm
   less than one.
+* `TauCeti.mem_unitBallIdeal_smul_top_of_norm_le`: the vectors of `M⁰` of norm at most `‖ϖ‖`
+  lie in `R⁰⁰ • M⁰`, for any multiplicative pseudo-uniformiser `ϖ`.
 * `TauCeti.mem_unitBallIdeal_smul_top_iff`: for a norm with values in `‖ϖ‖ ^ ℤ ∪ {0}`, these are
   exactly the vectors of `M⁰` of norm less than one.
 * `TauCeti.ResidueModule.mk_eq_zero_iff` and `TauCeti.ResidueModule.mk_eq_mk_iff`: the same
@@ -131,27 +133,33 @@ theorem norm_lt_one_of_mem_unitBallIdeal_smul_top {m : unitClosedBallSubmodule R
         (mem_unitBallIdeal.mp ha)
   · exact (IsUltrametricDist.norm_add_le_max (m : M) n).trans_lt (max_lt hm hn)
 
+/-- A vector of the closed unit ball of norm at most `‖ϖ‖`, for a multiplicative
+pseudo-uniformiser `ϖ`, is `ϖ` times a vector of the closed unit ball, so it lies in `R⁰⁰ • M⁰`. -/
+theorem mem_unitBallIdeal_smul_top_of_norm_le (ϖ : NormedRing.PseudoUniformizer R)
+    {m : unitClosedBallSubmodule R M} (hm : ‖(m : M)‖ ≤ ‖(ϖ.unit : R)‖) :
+    m ∈ (unitBallIdeal R • ⊤ :
+      Submodule (Subring.unitClosedBall R) (unitClosedBallSubmodule R M)) := by
+  -- So `m = ϖ • (ϖ⁻¹ • m)` with `‖ϖ⁻¹ • m‖ ≤ 1`.
+  let ϖ₀ : Subring.unitClosedBall R := ⟨ϖ.unit, Subring.mem_unitClosedBall.mpr ϖ.norm_lt_one.le⟩
+  let n : unitClosedBallSubmodule R M :=
+    ⟨((ϖ.unit⁻¹ : Rˣ) : R) • (m : M), by
+      rw [mem_unitClosedBallSubmodule, ϖ.norm_inv_smul]
+      exact inv_mul_le_one_of_le₀ hm ϖ.norm_pos.le⟩
+  have hmn : m = ϖ₀ • n := by
+    ext
+    simp [ϖ₀, n, Subring.smul_def, smul_smul]
+  rw [hmn]
+  exact Submodule.smul_mem_smul (mem_unitBallIdeal.mpr ϖ.norm_lt_one) Submodule.mem_top
+
 /-- **The residue module of a discretely normed module.** If the norm of `M` takes its values in
 `‖ϖ‖ ^ ℤ ∪ {0}` for a multiplicative pseudo-uniformiser `ϖ`, then `R⁰⁰ • M⁰` consists exactly of
 the vectors of `M⁰` of norm less than one. -/
 theorem mem_unitBallIdeal_smul_top_iff (ϖ : NormedRing.PseudoUniformizer R)
     (hM : ∀ m : M, zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ = ‖m‖) {m : unitClosedBallSubmodule R M} :
     m ∈ (unitBallIdeal R • ⊤ :
-      Submodule (Subring.unitClosedBall R) (unitClosedBallSubmodule R M)) ↔ ‖(m : M)‖ < 1 := by
-  refine ⟨norm_lt_one_of_mem_unitBallIdeal_smul_top, fun hm ↦ ?_⟩
-  set c := ‖(ϖ.unit : R)‖
-  have hmc : ‖(m : M)‖ ≤ c := le_of_lt_one_of_zpowCeil_eq_self ϖ.norm_pos ϖ.norm_lt_one (hM _) hm
-  -- So `m = ϖ • (ϖ⁻¹ • m)` with `‖ϖ⁻¹ • m‖ ≤ 1`.
-  let ϖ₀ : Subring.unitClosedBall R := ⟨ϖ.unit, Subring.mem_unitClosedBall.mpr ϖ.norm_lt_one.le⟩
-  let n : unitClosedBallSubmodule R M :=
-    ⟨((ϖ.unit⁻¹ : Rˣ) : R) • (m : M), by
-      rw [mem_unitClosedBallSubmodule, ϖ.norm_inv_smul]
-      exact inv_mul_le_one_of_le₀ hmc ϖ.norm_pos.le⟩
-  have hmn : m = ϖ₀ • n := by
-    ext
-    simp [ϖ₀, n, Subring.smul_def, smul_smul]
-  rw [hmn]
-  exact Submodule.smul_mem_smul (mem_unitBallIdeal.mpr ϖ.norm_lt_one) Submodule.mem_top
+      Submodule (Subring.unitClosedBall R) (unitClosedBallSubmodule R M)) ↔ ‖(m : M)‖ < 1 :=
+  ⟨norm_lt_one_of_mem_unitBallIdeal_smul_top, fun hm ↦ mem_unitBallIdeal_smul_top_of_norm_le ϖ
+    (le_of_lt_one_of_zpowCeil_eq_self ϖ.norm_pos ϖ.norm_lt_one (hM _) hm)⟩
 
 namespace ResidueModule
 
