@@ -61,8 +61,9 @@ Killing form.
   cohomology.
 * `TauCeti.CurrentAlgebra.residueClassEquiv`: the linear equivalence `t ↦ t • [c_Ψ]` from the
   scalars onto continuous second cohomology.
-* `TauCeti.CurrentAlgebra.finrank_continuousSecondCohomology_eq_one`: for a simple Lie algebra,
-  continuous second cohomology of formal currents is one-dimensional.
+* `TauCeti.CurrentAlgebra.finrank_continuousSecondCohomology_eq_one`: for a simple Lie algebra
+  over an algebraically closed field of characteristic zero, continuous second cohomology of
+  formal currents is one-dimensional.
 
 ## References
 
@@ -241,10 +242,10 @@ theorem exists_eq_smul_twoCochainOfBilinear_add_d₁₂ {Ψ : LinearMap.BilinFor
     rintro _ ⟨y, z, rfl⟩
     have h := hcP_apply (AddMonoidAlgebra.single N₀ 1 ⊗ₜ y)
       (AddMonoidAlgebra.single (n - N₀) 1 ⊗ₜ z)
-    rw [hN _ (hmode _ _ le_rfl) _ (hmode _ _ (by omega)), map_zero,
-      LoopAlgebra.twoCochainOfBilinear_apply_apply, LinearEquiv.apply_symm_apply,
-      TauCeti.LieAlgebra.LoopAlgebra.residuePairing_single_tmul, ite_eq_right (by omega),
-      mul_zero, zero_sub, zero_eq_neg] at h
+    rw [hN _ (hmode _ _ le_rfl) _ (hmode _ _ (by omega))] at h
+    simp only [map_zero, LoopAlgebra.twoCochainOfBilinear_apply_apply,
+      TauCeti.LieAlgebra.LoopAlgebra.residuePairing_single_tmul,
+      show N₀ + (n - N₀) ≠ 0 by omega, ↓reduceIte, mul_zero, zero_sub, zero_eq_neg] at h
     exact eP.injective (by rw [h, map_zero])
   -- Truncating at `2 N₀` extends `g` to a continuous one-cochain `f` on formal currents.
   set f : oneCochain K (currentAlgebra K L) (TrivialLieModule K (currentAlgebra K L) K) :=
@@ -263,8 +264,10 @@ theorem exists_eq_smul_twoCochainOfBilinear_add_d₁₂ {Ψ : LinearMap.BilinFor
     (denseRange_ofLoop K L) ?_⟩
   rintro _ ⟨u, rfl⟩ _ ⟨v, rfl⟩
   apply eC.injective
-  rw [hcP_apply, add_apply_apply, smul_apply_apply, map_add, map_smul, d₁₂_apply_apply_ofTrivial,
-    map_neg, ← LieHom.map_lie, hf_ofLoop, twoCochainOfBilinear_ofLoop, smul_eq_mul, sub_eq_add_neg]
+  simp only [hcP_apply, add_apply_apply, smul_apply_apply, map_add, map_smul,
+    d₁₂_apply_apply_ofTrivial, map_neg, ← LieHom.map_lie, hf_ofLoop, smul_eq_mul]
+  rw [twoCochainOfBilinear_ofLoop]
+  ring
 
 /-- **The continuous second cohomology of formal currents is spanned by the residue class.**
 Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, every class in the
@@ -281,7 +284,9 @@ theorem exists_eq_smul_residueClass {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lie
   obtain ⟨t, f, hf, hc⟩ := exists_eq_smul_twoCochainOfBilinear_add_d₁₂ hΨ hΨs hspan hne c.2
   refine ⟨t, ?_⟩
   rw [residueClass_eq_mk, ← map_smul, continuousSecondCohomologyMk_eq_iff]
-  exact ⟨f, hf, by simp [hc]; abel⟩
+  exact ⟨f, hf, by
+    simp only [SetLike.mk_smul_mk, AddSubgroupClass.coe_sub, hc]
+    abel⟩
 
 /-- **The continuous second cohomology of formal currents is one-dimensional.** Under the
 hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, the map `t ↦ t • [c_Ψ]` is a linear

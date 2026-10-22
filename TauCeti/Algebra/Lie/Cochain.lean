@@ -75,7 +75,6 @@ lemma twoCochainMap_mem_twoCocycle [LieRingModule L' M'] [LieModule R L' M']
     twoCochainMap e φ c ∈ twoCocycle R L' M' := by
   rw [mem_twoCocycle_iff_of_trivial] at hc ⊢
   intro x y z
-  rw [twoCochainMap_apply_apply, twoCochainMap_apply_apply, twoCochainMap_apply_apply,
-    LieHom.map_lie, LieHom.map_lie, LieHom.map_lie, hc, map_add]
+  simp only [twoCochainMap_apply_apply, LieHom.map_lie, hc (φ x) (φ y) (φ z), map_add]
 
 end LieModule.Cohomology
