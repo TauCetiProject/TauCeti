@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Analytic.Complexification.Basic
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.Complex.PiBall
 
 /-!
 # Complexification of real analytic functions on open sets
@@ -50,23 +51,6 @@ open scoped Topology
 
 variable {ι κ : Type*} [Fintype ι]
 
-/-- In a polydisc centred at a real point, the real part of a point, viewed as a real point and
-as a complex point, lies in the polydisc, and so does the complex conjugate of the point. -/
-private theorem re_mem_ball_and_star_mem_ball {a : ι → ℝ} {r : ℝ} {z : ι → ℂ}
-    (hz : z ∈ ball (fun i ↦ (a i : ℂ)) r) :
-    (fun i ↦ (z i).re) ∈ ball a r ∧ (fun i ↦ ((z i).re : ℂ)) ∈ ball (fun i ↦ (a i : ℂ)) r ∧
-      star z ∈ ball (fun i ↦ (a i : ℂ)) r := by
-  have hr := pos_of_mem_ball hz
-  rw [mem_ball, dist_pi_lt_iff hr] at hz
-  have hre (i : ι) : dist (z i).re (a i) < r := by
-    calc dist (z i).re (a i) = |(z i - a i).re| := by simp [Real.dist_eq]
-      _ ≤ ‖z i - a i‖ := Complex.abs_re_le_norm _
-      _ < r := by simpa [dist_eq_norm] using hz i
-  refine ⟨?_, ?_, ?_⟩ <;> rw [mem_ball, dist_pi_lt_iff hr] <;> intro i
-  · exact hre i
-  · simpa [Complex.dist_of_im_eq] using hre i
-  · simpa [dist_eq_norm, ← Complex.norm_conj (z i - a i)] using hz i
-
 /-- Two complex analytic functions on polydiscs centred at real points that agree at the common
 real points of the polydiscs agree on their intersection. -/
 private theorem eqOn_inter_ball_of_forall_real {E : Type*} [NormedAddCommGroup E]
@@ -80,8 +64,10 @@ private theorem eqOn_inter_ball_of_forall_real {E : Type*} [NormedAddCommGroup E
   · simp [h]
   -- the real part of a common point is a common real point, where the identity theorem applies
   set w : ι → ℝ := fun i ↦ (z i).re
-  obtain ⟨hwa, hwa', -⟩ := re_mem_ball_and_star_mem_ball hza
-  obtain ⟨hwb, hwb', -⟩ := re_mem_ball_and_star_mem_ball hzb
+  have hwa := Complex.pi_re_mem_ball hza
+  have hwa' := Complex.pi_ofReal_re_mem_ball hza
+  have hwb := Complex.pi_re_mem_ball hzb
+  have hwb' := Complex.pi_ofReal_re_mem_ball hzb
   refine (hF.mono inter_subset_left).eqOn_of_preconnected_of_eventuallyEq
     (hG.mono inter_subset_right) ((convex_ball _ _).inter (convex_ball _ _)).isPreconnected
     ⟨hwa', hwb'⟩ ((hF _ hwa').eventuallyEq_of_eventually_real (hG _ hwb') ?_)
@@ -98,11 +84,10 @@ private theorem iUnion_ball_ofReal {U : Set (ι → ℝ)} {s : U → ℝ} (hs : 
         z ∈ ⋃ x : U, ball (fun i ↦ ((x : ι → ℝ) i : ℂ)) (s x) := by
   refine ⟨isOpen_iUnion fun _ ↦ isOpen_ball, fun y ↦ ⟨fun hy ↦ ?_, fun hy ↦ ?_⟩, fun z ↦ ?_⟩
   · obtain ⟨x, hx⟩ := mem_iUnion.1 hy
-    simpa using hsU x (re_mem_ball_and_star_mem_ball hx).1
+    simpa using hsU x (Complex.pi_re_mem_ball hx)
   · exact mem_iUnion.2 ⟨⟨y, hy⟩, mem_ball_self (hs _)⟩
   · simp only [mem_iUnion]
-    exact exists_congr fun x ↦ ⟨fun h ↦ by simpa using (re_mem_ball_and_star_mem_ball h).2.2,
-      fun h ↦ (re_mem_ball_and_star_mem_ball h).2.2⟩
+    exact exists_congr fun x ↦ Complex.pi_star_mem_ball_iff
 
 /-- Holomorphic extensions of a function `g` from real-centred polydiscs around the points of an
 open set `U`, each commuting with conjugation, glue to a holomorphic extension on a
@@ -147,7 +132,7 @@ private theorem exists_complexification_of_local {E : Type*} [NormedAddCommGroup
   · rw [hG ⟨x, hx⟩ (mem_ball_self (hr _)), hFg ⟨x, hx⟩ x (mem_ball_self (hr _))]
   · by_cases hz : z ∈ W
     · obtain ⟨x, hx⟩ := mem_iUnion.1 hz
-      rw [hG x (re_mem_ball_and_star_mem_ball hx).2.2, hG x hx, hFs]
+      rw [hG x (Complex.pi_star_mem_ball_iff.2 hx), hG x hx, hFs]
     · have hz' : star z ∉ W := fun h ↦ hz ((hWstar z).1 h)
       simp only [G, hz, hz', ↓reduceDIte, star_zero]
 
