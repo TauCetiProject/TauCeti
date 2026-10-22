@@ -88,7 +88,6 @@ noncomputable def unitsEquivOfSubsingleton [Subsingleton M] :
   Units.mapEquiv (equivOfSubsingleton Q).toMulEquiv
 
 /-- The scalar-unit equivalence agrees with the units map induced by the Clifford equivalence. -/
-@[simp]
 theorem unitsEquivOfSubsingleton_apply [Subsingleton M] (x : (CliffordAlgebra Q)ˣ) :
     (unitsEquivOfSubsingleton Q).toMonoidHom x =
       Units.map (equivOfSubsingleton Q).toMonoidHom x := by
