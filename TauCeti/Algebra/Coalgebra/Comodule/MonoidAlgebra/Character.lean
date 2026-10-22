@@ -59,6 +59,9 @@ weight vectors, `TauCeti.Comodule.mem_weightSpace_dual_iff` and
 * `TauCeti.Comodule.formalCharacter_prod`: **additivity on direct sums.**
 * `TauCeti.Comodule.formalCharacter_tensor`: **multiplicativity on tensor products.**
 * `TauCeti.Comodule.formalCharacter_dual`: **the dual has the inverted character.**
+* `TauCeti.Comodule.formalCharacter_groupLike` and `TauCeti.Comodule.formalCharacter_trivial`:
+  the comodule with coaction `v ↦ v ⊗ g` has formal character `dim V · g`; for `g = 1`, the
+  trivial comodule, this is `dim V`.
 
 ## References
 
@@ -278,5 +281,35 @@ theorem formalCharacter_dual :
 end Dual
 
 end Character
+
+/-! ### Group-like and trivial comodules -/
+
+section GroupLike
+
+variable {k : Type u} {G : Type v} [Field k]
+variable {V : Type w} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+
+/-- **The formal character of a group-like comodule.** If the coaction is `v ↦ v ⊗ g`, every
+vector has weight `g`, so the formal character is `dim V · g`. -/
+@[simp]
+theorem formalCharacter_groupLike (g : G) :
+    letI : Comodule k (MonoidAlgebra k G) V := groupLike (R := k) (M := V)
+      ⟨MonoidAlgebra.single g 1, MonoidAlgebra.isGroupLikeElem_single_one g⟩
+    formalCharacter k G V = MonoidAlgebra.single g (finrank k V : ℤ) := by
+  let _ : Comodule k (MonoidAlgebra k G) V := groupLike (R := k) (M := V)
+    ⟨MonoidAlgebra.single g 1, MonoidAlgebra.isGroupLikeElem_single_one g⟩
+  let b := Module.finBasis k V
+  rw [b.comoduleFormalCharacter_eq_sum (fun _ ↦ g) fun i ↦ mem_weightSpace.mpr rfl]
+  simp
+
+/-- **The formal character of the trivial comodule** is its dimension: every vector has
+weight `1`. Not a simp lemma: `formalCharacter_groupLike` already rewrites the left-hand side,
+to `single 1 (dim V)`. -/
+theorem formalCharacter_trivial [Monoid G] :
+    letI : Comodule k (MonoidAlgebra k G) V := trivial (R := k) (M := V)
+    formalCharacter k G V = finrank k V :=
+  formalCharacter_groupLike (k := k) (V := V) (1 : G)
+
+end GroupLike
 
 end TauCeti.Comodule
