@@ -24,7 +24,7 @@ public section
 namespace WeierstrassCurve.VariableChange
 
 /-- Conjugating a change of variables by `σ` and then by `τ` is conjugating by `τ * σ`. -/
-lemma map_map_algEquiv {R L : Type*} [CommRing R] [CommRing L] [Algebra R L]
+lemma map_map_algEquiv {R L : Type*} [CommSemiring R] [CommRing L] [Algebra R L]
     (C : VariableChange L) (σ τ : L ≃ₐ[R] L) :
     (C.map (σ : L →+* L)).map (τ : L →+* L) = C.map ((τ * σ : L ≃ₐ[R] L) : L →+* L) := by
   rw [map_map]
