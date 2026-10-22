@@ -140,6 +140,26 @@ lemma resolutionComplexMap_f_one (φ : S ⟶ S') : (resolutionComplexMap φ).f 1
   erw [HomologicalComplex.mkHomFromDouble_f₀]
   exact Iso.inv_hom_id_assoc _ _
 
+/-- The induced map of the identity short-complex morphism is the identity chain map. -/
+@[simp]
+lemma resolutionComplexMap_id (S : ShortComplex C) :
+    resolutionComplexMap (𝟙 S) = 𝟙 S.resolutionComplex := by
+  ext n
+  obtain _ | _ | n := n
+  · simp; rfl
+  · simp; rfl
+  · exact (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
+
+/-- The induced chain maps preserve composition of short-complex morphisms. -/
+@[simp]
+lemma resolutionComplexMap_comp {S'' : ShortComplex C} (φ : S ⟶ S') (ψ : S' ⟶ S'') :
+    resolutionComplexMap (φ ≫ ψ) = resolutionComplexMap φ ≫ resolutionComplexMap ψ := by
+  ext n
+  obtain _ | _ | n := n
+  · simp; rfl
+  · simp; rfl
+  · exact (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
+
 /-- The chain map induced by `φ` lies over `φ.τ₃`. -/
 @[reassoc (attr := simp)]
 lemma resolutionComplexMap_comp_resolutionπ (φ : S ⟶ S') :
