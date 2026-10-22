@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.Basic
+import TauCeti.Probability.Process.Array.AldousHoover.NoiseSplit
 import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 import TauCeti.Probability.Exchangeability.Arrays.Strip.Cell.CommonCoding
 import TauCeti.Probability.Exchangeability.Arrays.Strip.VertexCoding
-import TauCeti.Probability.Independence.InfinitePi
-import TauCeti.Probability.ProductMeasure
 
 /-!
 # The Aldous--Hoover representation of a separately exchangeable array
@@ -69,74 +68,6 @@ noncomputable section
 open MeasureTheory ProbabilityTheory unitInterval
 
 namespace TauCeti.Probability
-
-namespace AldousHoover
-
-/-- The noise of a separate Aldous--Hoover coding, sorted into the global variable, the row and
-the column variables, and the cell variables. -/
-private def splitSeparateNoise (u : NoiseIndex Axis (ℕ × ℕ) → I) :
-    (I × (ℕ → I) × (ℕ → I)) × (ℕ × ℕ → I) :=
-  ((u .global, fun i => u (.vertex .row i), fun j => u (.vertex .column j)),
-    fun p => u (.cell p))
-
-private theorem measurable_splitSeparateNoise : Measurable splitSeparateNoise :=
-  ((measurable_pi_apply _).prodMk ((Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
-    (Measurable.of_eval fun _ => measurable_pi_apply _))).prodMk
-      (Measurable.of_eval fun _ => measurable_pi_apply _)
-
-/-- The non-cell noise indices, read as `none` for the global index and `some` of a row or a column
-index for a vertex index. -/
-private def vertexNoiseIndex : Option (ℕ ⊕ ℕ) → NoiseIndex Axis (ℕ × ℕ)
-  | none => .global
-  | some (.inl i) => .vertex .row i
-  | some (.inr j) => .vertex .column j
-
-private theorem vertexNoiseIndex_injective : Function.Injective vertexNoiseIndex := by
-  rintro (_ | _ | _) (_ | _ | _) h <;> simp_all [vertexNoiseIndex]
-
-/-- **The separate-coding noise splits into independent pieces**: the global variable, the i.i.d.
-row variables, the i.i.d. column variables and the i.i.d. cell variables are independent uniform
-families. -/
-private theorem map_splitSeparateNoise_noiseMeasure :
-    (noiseMeasure Axis (ℕ × ℕ)).map splitSeparateNoise =
-      ((volume : Measure I).prod ((Measure.infinitePi fun _ : ℕ => (volume : Measure I)).prod
-        (Measure.infinitePi fun _ : ℕ => (volume : Measure I)))).prod
-        (Measure.infinitePi fun _ : ℕ × ℕ => (volume : Measure I)) := by
-  have hcell : Function.Injective (NoiseIndex.cell : ℕ × ℕ → NoiseIndex Axis (ℕ × ℕ)) :=
-    fun _ _ h => NoiseIndex.cell.inj h
-  have hdisj : Disjoint (Set.range vertexNoiseIndex) (Set.range NoiseIndex.cell) := by
-    rw [Set.disjoint_left]
-    rintro _ ⟨(_ | _ | _), rfl⟩ ⟨_, h⟩ <;> cases h
-  -- The noise law is the product of its independent uniform coordinates.
-  have hnoise : noiseMeasure Axis (ℕ × ℕ) = Measure.infinitePi fun _ => (volume : Measure I) := by
-    simpa [map_eval_noiseMeasure] using
-      (iIndepFun_eval_noiseMeasure Axis (ℕ × ℕ)).map_fun_eq_infinitePi_map
-        fun q => measurable_pi_apply q
-  -- Separate the cell noise, then the global variable, then the rows from the columns.
-  set f₁ : (NoiseIndex Axis (ℕ × ℕ) → I) → (Option (ℕ ⊕ ℕ) → I) × (ℕ × ℕ → I) :=
-    fun u => (fun o => u (vertexNoiseIndex o), fun p => u (.cell p))
-  set f₂ : (Option (ℕ ⊕ ℕ) → I) → I × (ℕ ⊕ ℕ → I) := fun y => (y none, fun s => y (some s))
-  set f₃ : (ℕ ⊕ ℕ → I) → (ℕ → I) × (ℕ → I) :=
-    fun z => (fun i => z (.inl i), fun j => z (.inr j))
-  have h₁ : Measurable f₁ := (Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
-    (Measurable.of_eval fun _ => measurable_pi_apply _)
-  have h₂ : Measurable f₂ :=
-    (measurable_pi_apply _).prodMk (Measurable.of_eval fun _ => measurable_pi_apply _)
-  have h₃ : Measurable f₃ := (Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
-    (Measurable.of_eval fun _ => measurable_pi_apply _)
-  have h₂₃ : Measurable (Prod.map id f₃ ∘ f₂) := (measurable_id.prodMap h₃).comp h₂
-  have hsplit : splitSeparateNoise = Prod.map (Prod.map id f₃ ∘ f₂) id ∘ f₁ := rfl
-  rw [hsplit, ← Measure.map_map (h₂₃.prodMap measurable_id) h₁, hnoise,
-    infinitePi_map_pair_comp _ hcell hdisj,
-    Measure.map_infinitePi_infinitePi_of_inj vertexNoiseIndex_injective,
-    ← Measure.map_prod_map _ _ h₂₃ measurable_id, Measure.map_id,
-    ← Measure.map_map (measurable_id.prodMap h₃) h₂,
-    TauCeti.MeasureTheory.Measure.infinitePi_map_none_some,
-    ← Measure.map_prod_map _ _ measurable_id h₃, Measure.map_id,
-    infinitePi_map_pair_comp _ Sum.inr_injective Set.isCompl_range_inl_range_inr.disjoint,
-    Measure.map_infinitePi_infinitePi_of_inj Sum.inl_injective]
-
-end AldousHoover
 
 open AldousHoover
 
@@ -285,7 +216,7 @@ theorem SeparatelyExchangeable.exists_map_separateArray_eq [StandardBorelSpace �
         G ((q.1.1, q.1.2.1 p.1), q.1.2.2 p.2) (q.2 p)) ∘
         Prod.map W id ∘ splitSeparateNoise := by
     funext u p
-    simp [separateArray_apply, W, splitSeparateNoise]
+    simp [separateArray_apply, W]
   rw [hcode, ← Measure.map_map hΨ ((hW.prodMap measurable_id).comp measurable_splitSeparateNoise),
     ← Measure.map_map (hW.prodMap measurable_id) measurable_splitSeparateNoise,
     map_splitSeparateNoise_noiseMeasure, ← Measure.map_prod_map _ _ hW measurable_id,
