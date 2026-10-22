@@ -115,11 +115,13 @@ theorem asymmetricLaplacePDFReal_of_nonpos_right (hr : r ≤ 0) (m l x : ℝ) :
   rw [asymmetricLaplacePDFReal, ite_eq_right fun h => (not_lt.mpr hr) h.2]
 
 /-- At or below the location the density is the rising exponential branch. -/
+@[simp]
 theorem asymmetricLaplacePDFReal_of_le (hl : 0 < l) (hr : 0 < r) (hx : x ≤ m) :
     asymmetricLaplacePDFReal m l r x = l * r / (l + r) * Real.exp (l * (x - m)) := by
   rw [asymmetricLaplacePDFReal, ite_eq_left ⟨hl, hr⟩, ite_eq_left hx]
 
 /-- Above the location the density is the decaying exponential branch. -/
+@[simp]
 theorem asymmetricLaplacePDFReal_of_lt (hl : 0 < l) (hr : 0 < r) (hx : m < x) :
     asymmetricLaplacePDFReal m l r x = l * r / (l + r) * Real.exp (-(r * (x - m))) := by
   rw [asymmetricLaplacePDFReal, ite_eq_left ⟨hl, hr⟩, ite_eq_right (not_le.mpr hx)]
@@ -312,14 +314,6 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 /-! ### The characteristic function -/
 
-/-- The left-tail denominator of the characteristic function does not vanish. -/
-private lemma ofReal_add_I_mul_ne_zero (hl : 0 < l) (t : ℝ) : (l : ℂ) + Complex.I * t ≠ 0 :=
-  fun h => by simpa [hl.ne'] using congrArg Complex.re h
-
-/-- The right-tail denominator of the characteristic function does not vanish. -/
-private lemma ofReal_sub_I_mul_ne_zero (hr : 0 < r) (t : ℝ) : (r : ℂ) - Complex.I * t ≠ 0 :=
-  fun h => by simpa [hr.ne'] using congrArg Complex.re h
-
 /-- **The characteristic function of the asymmetric Laplace law**, read off the exponential
 construction. -/
 theorem charFun_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (m t : ℝ) :
@@ -340,8 +334,8 @@ theorem charFun_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (m t : ℝ) :
     integral_prod_mul (fun x : ℝ => Complex.exp (t * x * Complex.I))
       (fun y : ℝ => Complex.exp (↑(-t) * y * Complex.I)),
     ← charFun_apply_real, ← charFun_apply_real, charFun_expMeasure hr, charFun_expMeasure hl]
-  have hden := ofReal_add_I_mul_ne_zero hl t
-  have hden' := ofReal_sub_I_mul_ne_zero hr t
+  have hden : (l : ℂ) + Complex.I * t ≠ 0 := Complex.ne_zero_of_re_pos (by simpa using hl)
+  have hden' : (r : ℂ) - Complex.I * t ≠ 0 := Complex.ne_zero_of_re_pos (by simpa using hr)
   push_cast
   rw [mul_neg, sub_neg_eq_add]
   field_simp
@@ -395,9 +389,7 @@ private lemma integral_Ioi_asymmetricLaplacePDFReal_smul_exp (hl : 0 < l) (hr : 
     congr 1
     ring
   have hden : (-r : ℂ) + t * Complex.I ≠ 0 := fun h => by simp [h] at hre
-  have hden' : (r : ℂ) - t * Complex.I ≠ 0 := by
-    rw [mul_comm]
-    exact ofReal_sub_I_mul_ne_zero hr t
+  have hden' : (r : ℂ) - t * Complex.I ≠ 0 := Complex.ne_zero_of_re_pos (by simpa using hr)
   rw [setIntegral_congr_fun measurableSet_Ioi hR, integral_const_mul,
     integral_exp_mul_complex_Ioi hre, ← hexp]
   field_simp
@@ -419,8 +411,8 @@ private lemma charFun_withDensity_asymmetricLaplacePDF (hl : 0 < l) (hr : 0 < r)
     ← integral_add_compl (s := Iic m) measurableSet_Iic hint, compl_Iic,
     integral_Iic_asymmetricLaplacePDFReal_smul_exp hl hr,
     integral_Ioi_asymmetricLaplacePDFReal_smul_exp hl hr]
-  have hden := ofReal_add_I_mul_ne_zero hl t
-  have hden' := ofReal_sub_I_mul_ne_zero hr t
+  have hden : (l : ℂ) + Complex.I * t ≠ 0 := Complex.ne_zero_of_re_pos (by simpa using hl)
+  have hden' : (r : ℂ) - Complex.I * t ≠ 0 := Complex.ne_zero_of_re_pos (by simpa using hr)
   have hsum : (l : ℂ) + r ≠ 0 := by exact_mod_cast (add_pos hl hr).ne'
   push_cast
   field_simp
