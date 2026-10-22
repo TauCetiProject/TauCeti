@@ -72,12 +72,9 @@ variable (𝕜 E F : Type*) [NontriviallyNormedField 𝕜] [SeminormedAddCommGro
 /-- The bounded operator `StrongDual 𝕜 E →L[𝕜] F` induced by a tensor in `E ⊗[𝕜] F`: the pure
 tensor `x ⊗ₜ y` gives `f ↦ f x • y`. -/
 noncomputable def contractStrongDual : E ⊗[𝕜] F →ₗ[𝕜] StrongDual 𝕜 E →L[𝕜] F :=
-  _root_.TensorProduct.lift <| LinearMap.mk₂ 𝕜
-    (fun x y ↦ (NormedSpace.inclusionInDoubleDual 𝕜 E x).smulRight y)
-    (fun x x' y ↦ by ext f; simp [add_smul])
-    (fun c x y ↦ by ext f; simp [mul_smul])
-    (fun x y y' ↦ by ext f; simp)
-    (fun c x y ↦ by ext f; simp [smul_comm c])
+  _root_.TensorProduct.lift
+    (((ContinuousLinearMap.smulRightL 𝕜 (StrongDual 𝕜 E) F).comp
+      (NormedSpace.inclusionInDoubleDual 𝕜 E)).toLinearMap₁₂)
 
 variable {𝕜 E F}
 
@@ -113,13 +110,6 @@ theorem injectiveSeminorm_apply (u : E ⊗[𝕜] F) :
 theorem norm_contractStrongDual_apply_le (u : E ⊗[𝕜] F) (f : StrongDual 𝕜 E) :
     ‖contractStrongDual 𝕜 E F u f‖ ≤ injectiveSeminorm 𝕜 E F u * ‖f‖ :=
   (contractStrongDual 𝕜 E F u).le_opNorm f
-
-/-- A nonnegative constant bounds the injective seminorm of a tensor if and only if it bounds
-the operator the tensor induces on the dual. -/
-theorem injectiveSeminorm_le_iff {u : E ⊗[𝕜] F} {C : ℝ} (hC : 0 ≤ C) :
-    injectiveSeminorm 𝕜 E F u ≤ C ↔ ∀ f, ‖contractStrongDual 𝕜 E F u f‖ ≤ C * ‖f‖ :=
-  ⟨fun h f ↦ (norm_contractStrongDual_apply_le u f).trans (by gcongr),
-    fun h ↦ (contractStrongDual 𝕜 E F u).opNorm_le_bound hC h⟩
 
 /-- On a pure tensor `x ⊗ₜ y`, the injective seminorm is the norm of `x` in the double dual
 times the norm of `y`. -/
