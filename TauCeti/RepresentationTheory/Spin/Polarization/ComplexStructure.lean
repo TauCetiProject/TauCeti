@@ -110,11 +110,9 @@ theorem antiholomorphicPart_mem_spinPolarizationData_W' (v : V) :
 @[simp]
 theorem spinPolarizationData_decompositionEquiv_symm_tmul (v : V) :
     (J.spinPolarizationData hQJ hQ).decompositionEquiv.symm ((1 : ℂ) ⊗ₜ v) =
-      ((⟨J.holomorphicPart v, by
-          rw [spinPolarizationData_W]; exact J.holomorphicPart_mem_eigenspace_baseChange_I v⟩,
-        ⟨J.antiholomorphicPart v, by
-          rw [spinPolarizationData_W']
-          exact J.antiholomorphicPart_mem_eigenspace_baseChange_neg_I v⟩), 0) := by
+      ((⟨J.holomorphicPart v, J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ v⟩,
+        ⟨J.antiholomorphicPart v, J.antiholomorphicPart_mem_spinPolarizationData_W' hQJ hQ v⟩),
+        0) := by
   rw [← J.holomorphicPart_add_antiholomorphicPart v]
   simpa using (J.spinPolarizationData hQJ hQ).decompositionEquiv_symm_apply
     ⟨J.holomorphicPart v, _⟩ ⟨J.antiholomorphicPart v, _⟩ 0
