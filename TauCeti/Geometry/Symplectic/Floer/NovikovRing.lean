@@ -93,7 +93,11 @@ abbrev NovikovRing [Zero R] : Type _ :=
 
 namespace NovikovRing
 
-variable {R ω c} [Semiring R]
+variable {R ω c}
+
+section Semiring
+
+variable [Semiring R]
 
 /-- There are no nonzero Floer Novikov series of odd degree. -/
 theorem gradeBy_degree_eq_bot_of_odd {k : ℤ} (hk : Odd k) :
@@ -146,9 +150,11 @@ theorem mem_iSup_gradeBy_degree_iff {a : NovikovRing R ω c} :
 
 end KerLE
 
+end Semiring
+
 section Monotone
 
-variable {τ : ℝ} (h : ∀ s, ω s = τ * c s)
+variable [Zero R] {τ : ℝ} (h : ∀ s, ω s = τ * c s)
 include h
 
 /-- For a positively monotone pair, a coefficient function on the period group satisfies the
