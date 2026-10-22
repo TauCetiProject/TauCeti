@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Cyclotomic.Three
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Three.Basic
 
 /-!
 # Primary elements of the Eisenstein integers
@@ -86,11 +86,6 @@ theorem isPrimaryEisenstein_intCast_iff {K : Type*} [Field K] [NumberField K] {a
   have hd : Module.finrank ℤ (𝓞 K) ≠ 0 := Module.finrank_pos.ne'
   simpa only [Algebra.norm_algebraMap, Int.pow_dvd_pow_iff hd] using map_dvd (Algebra.norm ℤ) h'
 
-private theorem finrank_ringOfIntegers_three {K : Type*} [Field K] [NumberField K]
-    [IsCyclotomicExtension {3} ℚ K] : Module.finrank ℤ (𝓞 K) = 2 := by
-  rw [RingOfIntegers.rank, IsCyclotomicExtension.finrank (n := 3) K
-    (Polynomial.cyclotomic.irreducible_rat (by norm_num)), Nat.totient_prime Nat.prime_three]
-
 end TauCeti
 
 namespace IsPrimitiveRoot
@@ -142,17 +137,6 @@ theorem isPrimaryEisenstein_add_mul_iff {a b : ℤ} :
   rw [isPrimaryEisenstein_iff, h, ← Int.cast_ofNat,
     intCast_dvd_intCast_add_intCast_mul_toInteger_iff, Int.modEq_comm, Int.modEq_iff_dvd,
     Int.modEq_zero_iff_dvd]
-
-omit [NumberField K] [IsCyclotomicExtension {3} ℚ K] in
-private theorem toInteger_sq : hζ.toInteger ^ 2 = -hζ.toInteger - 1 := by
-  simpa only [IsCyclotomicExtension.Rat.Three.coe_eta] using
-    IsCyclotomicExtension.Rat.Three.eta_sq hζ
-
-omit [NumberField K] [IsCyclotomicExtension {3} ℚ K] in
-/-- `3 = (ζ - 1) ^ 2 * (-ζ ^ 2)`. -/
-private theorem toInteger_sub_one_sq_dvd_three : (hζ.toInteger - 1) ^ 2 ∣ (3 : 𝓞 K) :=
-  ⟨-hζ.toInteger ^ 2, by linear_combination (hζ.toInteger - 2) * hζ.toInteger_cube_eq_one +
-    hζ.toInteger_sq⟩
 
 /-- Every element of `𝓞 K` not divisible by `ζ - 1` has a primary multiple by a unit. See Xu,
 *Reciprocity Laws*, Proposition 4.5. -/
