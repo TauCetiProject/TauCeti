@@ -614,6 +614,14 @@ theorem quotient_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (J : 
     (P.quotient J).idealImage n = (P.idealImage n).map (Ideal.Quotient.mk J).toAddMonoidHom :=
   P.map_idealImage _ _ n
 
+/-- The identification of `f⁻¹(A₀)` with `A₀` induced by an injective `f` whose image contains
+the ring of definition `A₀`. -/
+private noncomputable def comapRingOfDefinitionEquiv (P : PairOfDefinition A) {B : Type*}
+    [CommRing B] (f : B →+* A) (hf : Function.Injective f) (hP : P.ringOfDefinition ≤ f.range) :
+    P.ringOfDefinition.comap f ≃+* P.ringOfDefinition :=
+  (Subring.equivMapOfInjective _ f hf).trans
+    (RingEquiv.subringCongr (Subring.map_comap_eq_self hP))
+
 /-- The pullback of a pair of definition along an embedding `f : B →+* A` whose image
 contains the ring of definition: its ring of definition is `f⁻¹(A₀)`, which `f` identifies with
 `A₀` as a topological ring, and its ideal of definition is the preimage of `I` under that
@@ -621,9 +629,7 @@ identification (`TauCeti.Huber.PairOfDefinition.mem_comap_idealOfDefinition`). -
 noncomputable def comap [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
     [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A) (hf : IsEmbedding f)
     (hP : P.ringOfDefinition ≤ f.range) : PairOfDefinition B :=
-  let e : P.ringOfDefinition.comap f ≃+* P.ringOfDefinition :=
-    (Subring.equivMapOfInjective _ f hf.injective).trans
-      (RingEquiv.subringCongr (Subring.map_comap_eq_self hP))
+  let e := P.comapRingOfDefinitionEquiv f hf.injective hP
   have he : IsInducing e :=
     (hf.isInducing.comp IsInducing.subtypeVal).codRestrict fun b ↦ b.2
   { ringOfDefinition := P.ringOfDefinition.comap f
@@ -664,13 +670,12 @@ theorem comap_idealImage [IsTopologicalRing A] {B : Type*} [CommRing B] [Topolog
     (hP : P.ringOfDefinition ≤ f.range) (n : ℕ) :
     (P.comap f hf hP).idealImage n = (P.idealImage n).comap (f : B →+ A) := by
   let e : (P.comap f hf hP).ringOfDefinition ≃+* P.ringOfDefinition :=
-    (Subring.equivMapOfInjective _ f hf.injective).trans
-      (RingEquiv.subringCongr (Subring.map_comap_eq_self hP))
+    P.comapRingOfDefinitionEquiv f hf.injective hP
   -- The ideal of definition of the pullback is, by construction, the preimage under `e`.
   have hI : (P.comap f hf hP).idealOfDefinition = P.idealOfDefinition.comap e := rfl
   ext x
   simp only [mem_idealImage, AddSubgroup.mem_comap, AddMonoidHom.coe_ofClass]
-  rw [hI, ← Ideal.map_symm, ← Ideal.map_pow, Ideal.map_symm]
+  rw [hI, ← comap_pow_of_equiv]
   constructor
   · rintro ⟨y, hy, rfl⟩
     exact ⟨e y, hy, rfl⟩
