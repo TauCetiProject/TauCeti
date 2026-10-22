@@ -36,13 +36,14 @@ variable {T : Type*} [CommRing T]
 
 namespace CompleteOrthogonalIdempotents
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {f : ι → T}
+variable {ι : Type*} [Fintype ι] {f : ι → T}
 
 /-- A complete orthogonal family of idempotents `f i` of `T` splits every `T`-algebra `X` into
 the product of its base changes to the components `T ⧸ (1 - f i)`. -/
 noncomputable def tensorProductEquiv (hf : CompleteOrthogonalIdempotents f) (X : Type*)
     [Semiring X] [Algebra T X] :
     X ≃ₐ[T] Π i, (T ⧸ Ideal.span {1 - f i}) ⊗[T] X :=
+  open scoped Classical in
   (Algebra.TensorProduct.lid T X).symm.trans <|
     (Algebra.TensorProduct.congr
       (AlgEquiv.ofBijective (AlgHom.pi fun _ ↦ Ideal.Quotient.mkₐ T _) hf.bijective_pi)
