@@ -25,9 +25,8 @@ the regular values are dense.
 Mathlib proves the corresponding result for an endomorphism of one normed space in
 `addHaar_image_eq_zero_of_det_fderivWithin_eq_zero`.  We transport the codomain across a continuous
 linear equivalence and use uniqueness of additive Haar measure to return to the original codomain.
-This is the first, equal-dimensional slice of finite-dimensional Sard required by Lane F0 of the
-analytic Heegaard Floer roadmap.  The general Morse--Sard theorem additionally needs the
-higher-regularity argument when the dimensions differ.
+Together with the lower-dimensional-source case, this reduces the remaining Morse--Sard argument
+to maps whose source has strictly larger dimension, where higher regularity is needed.
 
 ## Main results
 

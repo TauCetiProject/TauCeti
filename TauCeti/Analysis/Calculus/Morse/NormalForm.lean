@@ -132,7 +132,6 @@ theorem hessianAverage_zero (f : E → F) (x : E) :
     norm_num [integral_id]
   rw [hI, one_smul]
 
-omit [CompleteSpace F] in
 /-- The averaged Hessian of a `C^{n+2}` function is `C^n` in the direction. -/
 theorem contDiff_hessianAverage {n : ℕ∞} (hf : ContDiff ℝ (n + 2) f) (x : E) :
     ContDiff ℝ n (hessianAverage f x) := by

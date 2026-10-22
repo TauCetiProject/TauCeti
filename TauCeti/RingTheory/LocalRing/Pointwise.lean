@@ -32,9 +32,8 @@ namespace TauCeti.IsLocalRing
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
 
 /-- A group acting by ring automorphisms on a local ring fixes every power of the maximal ideal:
-each automorphism is a surjective ring homomorphism, hence maps `𝔪` onto `𝔪`.
-Simplify this action before distributing it over the power. -/
-@[simp↓]
+each automorphism is a surjective ring homomorphism, hence maps `𝔪` onto `𝔪`. -/
+@[simp]
 theorem smul_maximalIdeal_pow (σ : G) (n : ℕ) :
     σ • (maximalIdeal S ^ n) = maximalIdeal S ^ n := by
   have hsurj : Function.Surjective (MulSemiringAction.toRingHom G S σ) :=

@@ -27,7 +27,7 @@ arrows count dimensions over `k`, not the valuations over the residue division r
 The instances here make the general API apply without further hypotheses:
 
 * the morphism spaces between representatives are finite-dimensional
-  (`ModuleCat.finiteDimensional_hom_of_finite`), so every arrow set is finite;
+  (`ModuleCat.finite_hom_of_finite`), so every arrow set is finite;
 * representatives have local endomorphism rings
   (`TauCeti.isLocalRing_end_of_indecomposable`, Fitting's lemma for the finite-dimensional
   endomorphism algebra), so
@@ -73,7 +73,7 @@ instance : Module.Finite A a.representative :=
   a.representative_property.1
 
 instance : IsLocalRing (End a.representative) :=
-  isLocalRing_end_of_indecomposable (k := k) a.representative_property.2
+  isLocalRing_end_of_indecomposable (R := k) a.representative_property.2
 
 /-- For a representation-finite algebra, the quiver of irreducible morphisms of finitely
 generated modules has finitely many arrows in total. -/

@@ -11,28 +11,32 @@ public import Mathlib.Algebra.Homology.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 
 /-!
-# The monoidal structure of cochain complexes of modules on homogeneous summands
+# The monoidal structure of homological complexes on homogeneous summands
 
 Mathlib's `HomologicalComplex.monoidalCategory` totalizes the degreewise tensor product, so every
-structural map of `CochainComplex (ModuleCat R) ℤ` is assembled from maps on the homogeneous
+structural map of a monoidal category of homological complexes, such as
+`CochainComplex (ModuleCat R) ℤ` or `ChainComplex C ℕ`, is assembled from maps on the homogeneous
 summands `X.X p ⊗ Y.X q` of `X ⊗ Y`.  Mathlib states the component formulas for the auxiliary
 constructions the monoidal structure is built from — `HomologicalComplex.mapBifunctorMap`,
 `HomologicalComplex.leftUnitor'`, `HomologicalComplex.rightUnitor'` and
 `HomologicalComplex.mapBifunctorAssociatorX` — but not for the whiskerings, `λ_`, `ρ_` and `α_`
 themselves.  This file supplies that last step, so that a calculation on homogeneous summands
-never has to unfold the monoidal structure.  The formula for `⊗ₘ` holds verbatim for homological
-complexes of any shape in any monoidal preadditive category, and is stated in that generality.
+never has to unfold the monoidal structure.  The formulas hold verbatim for homological complexes
+of any shape in any monoidal preadditive category, and are stated in that generality; only their
+evaluation on pure tensors, `HomologicalComplex.ι_tensorHom_apply`, is specific to modules.
 
 ## Main results
 
-* `HomologicalComplex.ι_tensorHom`: the tensor product of two morphisms on a homogeneous summand,
-  for homological complexes in any monoidal preadditive category and of any shape.
+* `HomologicalComplex.ι_tensorHom`: the tensor product of two morphisms on a homogeneous summand.
 * `HomologicalComplex.tensorHom_eq_mapBifunctorMap`: `⊗ₘ` of homological complexes is the
   totalization `HomologicalComplex.mapBifunctorMap` of the two morphisms.
 * `HomologicalComplex.ι_whiskerLeft` and `HomologicalComplex.ι_whiskerRight`: the two whiskerings
   on a homogeneous summand.
 * `HomologicalComplex.leftUnitor_inv_f` and `HomologicalComplex.rightUnitor_inv_f`: the degreewise
   components of the inverse unitors.
+* `HomologicalComplex.mapBifunctor₁₂.ι_eq_whiskerRight` and
+  `HomologicalComplex.mapBifunctor₂₃.ι_eq_whiskerLeft`: the inclusions of the summand
+  `X.X p ⊗ Y.X q ⊗ Z.X r` into `(X ⊗ Y) ⊗ Z` and `X ⊗ (Y ⊗ Z)` via whiskered `ιTensorObj`.
 * `HomologicalComplex.ι_ι_associator_hom` and `HomologicalComplex.ι_ι_associator_inv`: the
   associator and its inverse on the summand `X.X p ⊗ Y.X q ⊗ Z.X r`, with arbitrary intermediate
   degrees.
@@ -81,103 +85,110 @@ lemma tensorHom_eq_mapBifunctorMap {K₁ K₂ L₁ L₂ : HomologicalComplex C c
     f₁ ⊗ₘ f₂ = mapBifunctorMap f₁ f₂ (curriedTensor C) c :=
   rfl
 
-end General
+variable {c}
 
-variable {R : Type v} [CommRing R]
-
-/-- Left whiskering in `CochainComplex (ModuleCat R) ℤ` is the totalization of the identity and
+/-- Left whiskering of homological complexes is the totalization of the identity and
 the given morphism.  Mathlib defines the monoidal structure on homological complexes through
 `HomologicalComplex.mapBifunctorMap`, but states no component lemma for `◁`. -/
-lemma whiskerLeft_eq_mapBifunctorMap (X : CochainComplex (ModuleCat.{v} R) ℤ)
-    {Y Z : CochainComplex (ModuleCat.{v} R) ℤ} (g : Y ⟶ Z) :
-    X ◁ g = mapBifunctorMap (𝟙 X) g (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) :=
+lemma whiskerLeft_eq_mapBifunctorMap (X : HomologicalComplex C c) {Y Z : HomologicalComplex C c}
+    (g : Y ⟶ Z) :
+    X ◁ g = mapBifunctorMap (𝟙 X) g (curriedTensor C) c :=
   rfl
 
-/-- Right whiskering in `CochainComplex (ModuleCat R) ℤ` is the totalization of the given
+/-- Right whiskering of homological complexes is the totalization of the given
 morphism and the identity; the counterpart of
 `HomologicalComplex.whiskerLeft_eq_mapBifunctorMap`. -/
-lemma whiskerRight_eq_mapBifunctorMap {X Y : CochainComplex (ModuleCat.{v} R) ℤ} (f : X ⟶ Y)
-    (Z : CochainComplex (ModuleCat.{v} R) ℤ) :
-    f ▷ Z = mapBifunctorMap f (𝟙 Z) (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) :=
+lemma whiskerRight_eq_mapBifunctorMap {X Y : HomologicalComplex C c} (f : X ⟶ Y)
+    (Z : HomologicalComplex C c) :
+    f ▷ Z = mapBifunctorMap f (𝟙 Z) (curriedTensor C) c :=
   rfl
 
-/-- Left whiskering of cochain complexes of modules, restricted to a homogeneous summand, is left
+/-- Left whiskering of homological complexes, restricted to a homogeneous summand, is left
 whiskering of the summand. -/
 @[reassoc (attr := simp)]
-lemma ι_whiskerLeft (X : CochainComplex (ModuleCat.{v} R) ℤ)
-    {Y Z : CochainComplex (ModuleCat.{v} R) ℤ} (g : Y ⟶ Z) (p q j : ℤ) (h : p + q = j) :
+lemma ι_whiskerLeft (X : HomologicalComplex C c)
+    {Y Z : HomologicalComplex C c} (g : Y ⟶ Z) (p q j : I) (h : p + q = j) :
     ιTensorObj X Y p q j h ≫ (X ◁ g).f j = (X.X p ◁ g.f q) ≫ ιTensorObj X Z p q j h := by
   rw [whiskerLeft_eq_mapBifunctorMap, ι_tensorHom, id_f, id_tensorHom]
 
-/-- Right whiskering of cochain complexes of modules, restricted to a homogeneous summand, is
+/-- Right whiskering of homological complexes, restricted to a homogeneous summand, is
 right whiskering of the summand. -/
 @[reassoc (attr := simp)]
-lemma ι_whiskerRight {X Y : CochainComplex (ModuleCat.{v} R) ℤ} (f : X ⟶ Y)
-    (Z : CochainComplex (ModuleCat.{v} R) ℤ) (p q j : ℤ) (h : p + q = j) :
+lemma ι_whiskerRight {X Y : HomologicalComplex C c} (f : X ⟶ Y)
+    (Z : HomologicalComplex C c) (p q j : I) (h : p + q = j) :
     ιTensorObj X Z p q j h ≫ (f ▷ Z).f j = (f.f p ▷ Z.X q) ≫ ιTensorObj Y Z p q j h := by
   rw [whiskerRight_eq_mapBifunctorMap, ι_tensorHom, id_f, tensorHom_id]
 
-/-- The degreewise component of the inverse left unitor of cochain complexes of modules is the
+/-- The degreewise component of the inverse left unitor of homological complexes is the
 component of the auxiliary graded isomorphism `HomologicalComplex.leftUnitor'`, whose value is
 recorded by `HomologicalComplex.leftUnitor'_inv`. -/
-lemma leftUnitor_inv_f (X : CochainComplex (ModuleCat.{v} R) ℤ) (j : ℤ) :
+lemma leftUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
     (λ_ X).inv.f j = (leftUnitor' X).inv j := by
   dsimp only [MonoidalCategoryStruct.leftUnitor, monoidalCategoryStruct,
     monoidalCategory, leftUnitor, Iso.symm_inv]
   simp only [Hom.isoOfComponents_hom_f, Functor.mapIso_hom, Iso.symm_hom]
   rfl
 
-/-- The degreewise component of the inverse right unitor of cochain complexes of modules is the
+/-- The degreewise component of the inverse right unitor of homological complexes is the
 component of the auxiliary graded isomorphism `HomologicalComplex.rightUnitor'`, whose value is
 recorded by `HomologicalComplex.rightUnitor'_inv`. -/
-lemma rightUnitor_inv_f (X : CochainComplex (ModuleCat.{v} R) ℤ) (j : ℤ) :
+lemma rightUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
     (ρ_ X).inv.f j = (rightUnitor' X).inv j := by
   dsimp only [MonoidalCategoryStruct.rightUnitor, monoidalCategoryStruct,
     monoidalCategory, rightUnitor, Iso.symm_inv]
   simp only [Hom.isoOfComponents_hom_f, Functor.mapIso_hom, Iso.symm_hom]
   rfl
 
-/-- The associator of cochain complexes of modules, restricted to the summand indexed by the
+/-- The inclusion `HomologicalComplex.mapBifunctor₁₂.ι` of the summand `X.X p ⊗ Y.X q ⊗ Z.X r`
+into `(X ⊗ Y) ⊗ Z`, written with the monoidal whiskering and `HomologicalComplex.ιTensorObj`.
+Mathlib's `HomologicalComplex.mapBifunctor₁₂.ι_eq` states it for the raw totalization. -/
+@[reassoc]
+lemma mapBifunctor₁₂.ι_eq_whiskerRight (X Y Z : HomologicalComplex C c) (p q r pq j : I)
+    (hpq : p + q = pq) (h : pq + r = j) :
+    mapBifunctor₁₂.ι (curriedTensor C) (curriedTensor C) X Y Z c c p q r j
+        (by rw [← h, ← hpq]; rfl) =
+      (ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫ ιTensorObj (X ⊗ Y) Z pq r j h := by
+  rw [mapBifunctor₁₂.ι_eq (curriedTensor C) (curriedTensor C) X Y Z c c p q r pq j hpq h]
+  -- `(curriedTensor C).map f).app W` is `f ▷ W` and `ιMapBifunctor` is `ιTensorObj`, by definition.
+  rfl
+
+/-- The inclusion `HomologicalComplex.mapBifunctor₂₃.ι` of the summand `X.X p ⊗ Y.X q ⊗ Z.X r`
+into `X ⊗ (Y ⊗ Z)`, written with the monoidal whiskering and `HomologicalComplex.ιTensorObj`.
+Mathlib's `HomologicalComplex.mapBifunctor₂₃.ι_eq` states it for the raw totalization. -/
+@[reassoc]
+lemma mapBifunctor₂₃.ι_eq_whiskerLeft (X Y Z : HomologicalComplex C c) (p q r qr j : I)
+    (hqr : q + r = qr) (h : p + qr = j) :
+    mapBifunctor₂₃.ι (curriedTensor C) (curriedTensor C) X Y Z c c c p q r j
+        (by rw [← h, ← hqr]; exact add_assoc p q r) =
+      (X.X p ◁ ιTensorObj Y Z q r qr hqr) ≫ ιTensorObj X (Y ⊗ Z) p qr j h := by
+  rw [mapBifunctor₂₃.ι_eq (curriedTensor C) (curriedTensor C) X Y Z c c c p q r qr j hqr h]
+  -- `(curriedTensor C).obj W).map f` is `W ◁ f` and `ιMapBifunctor` is `ιTensorObj`, by definition.
+  rfl
+
+/-- The associator of homological complexes, restricted to the summand indexed by the
 degrees `p`, `q` and `r`, is the associator of the three summands. The intermediate
 degrees `pq` and `qr` may be any degrees equal to `p + q` and `q + r`. -/
 @[reassoc]
-lemma ι_ι_associator_hom (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ) (p q r pq qr j : ℤ)
+lemma ι_ι_associator_hom (X Y Z : HomologicalComplex C c) (p q r pq qr j : I)
     (hpq : p + q = pq) (hqr : q + r = qr) (h : pq + r = j) (h' : p + qr = j) :
     (ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫
         ιTensorObj (X ⊗ Y) Z pq r j h ≫ (α_ X Y Z).hom.f j =
       (α_ (X.X p) (Y.X q) (Z.X r)).hom ≫ (X.X p ◁ ιTensorObj Y Z q r qr hqr) ≫
         ιTensorObj X (Y ⊗ Z) p qr j h' := by
-  -- The totalization index of a triple tensor product is definitionally the sum of the three
-  -- degrees; naming the reindexed hypothesis keeps every later term type-correct.
-  have hr : ComplexShape.r (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ)
-      (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q, r) = j :=
-    show p + q + r = j by omega
-  have e₁ : mapBifunctor₁₂.ι (curriedTensor (ModuleCat.{v} R)) (curriedTensor (ModuleCat.{v} R))
-      X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ) p q r j hr =
-      (ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫ ιTensorObj (X ⊗ Y) Z pq r j h := by
-    rw [mapBifunctor₁₂.ι_eq (curriedTensor (ModuleCat.{v} R)) (curriedTensor (ModuleCat.{v} R))
-      X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ) p q r pq j hpq h]
-    rfl
-  have e₂ : mapBifunctor₂₃.ι (curriedTensor (ModuleCat.{v} R)) (curriedTensor (ModuleCat.{v} R))
-      X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) p q r j hr =
-      (X.X p ◁ ιTensorObj Y Z q r qr hqr) ≫ ιTensorObj X (Y ⊗ Z) p qr j h' := by
-    rw [mapBifunctor₂₃.ι_eq (curriedTensor (ModuleCat.{v} R)) (curriedTensor (ModuleCat.{v} R))
-      X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) p q r qr j hqr h']
-    rfl
-  rw [← Category.assoc, ← e₁, ← e₂]
+  rw [← Category.assoc, ← mapBifunctor₁₂.ι_eq_whiskerRight X Y Z p q r pq j hpq h,
+    ← mapBifunctor₂₃.ι_eq_whiskerLeft X Y Z p q r qr j hqr h']
   -- Mathlib assembles the associator of homological complexes from
   -- `HomologicalComplex.mapBifunctorAssociatorX`, but states no component lemma for `α_`.
   have ha : (α_ X Y Z).hom.f j =
-      (mapBifunctorAssociatorX (curriedAssociatorNatIso (ModuleCat.{v} R)) X Y Z
-        (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) j).hom := rfl
+      (mapBifunctorAssociatorX (curriedAssociatorNatIso C) X Y Z c c c j).hom := rfl
   rw [ha]
   simp only [ι_mapBifunctorAssociatorX_hom, curriedAssociatorNatIso_hom_app_app_app]
 
-/-- The inverse associator of cochain complexes of modules, restricted to a homogeneous
+/-- The inverse associator of homological complexes, restricted to a homogeneous
 summand with arbitrary intermediate degrees, is the inverse associator of the three summands. -/
 @[reassoc]
-lemma ι_ι_associator_inv (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ)
-    (p q r pq qr j : ℤ) (hpq : p + q = pq) (hqr : q + r = qr) (h : pq + r = j)
+lemma ι_ι_associator_inv (X Y Z : HomologicalComplex C c)
+    (p q r pq qr j : I) (hpq : p + q = pq) (hqr : q + r = qr) (h : pq + r = j)
     (h' : p + qr = j) :
     (X.X p ◁ ιTensorObj Y Z q r qr hqr) ≫ ιTensorObj X (Y ⊗ Z) p qr j h' ≫ (α_ X Y Z).inv.f j =
       (α_ (X.X p) (Y.X q) (Z.X r)).inv ≫ (ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫
@@ -188,8 +199,11 @@ lemma ι_ι_associator_inv (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ)
   -- spelled `(HomologicalComplex.tensorObj (X ⊗ Y) Z).X j` rather than `((X ⊗ Y) ⊗ Z).X j`.
   erw [Category.comp_id]
 
+end General
+
 section ComplexesOfModules
 
+variable {R : Type v} [CommRing R]
 variable {I : Type*} [AddMonoid I] {c : ComplexShape I} [c.TensorSigns] [DecidableEq I]
 
 /-- The tensor product of two morphisms of homological complexes of modules on a pure tensor in a

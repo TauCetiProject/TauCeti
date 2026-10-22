@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
 
 /-!
 # The metric-lowered Riemann curvature tensor
@@ -19,6 +20,8 @@ This file bundles that expression as a quadrilinear map and records its algebrai
 Every connection gives antisymmetry in the first pair. Metric compatibility gives antisymmetry
 in the last pair, torsion-freeness gives the first Bianchi identity, and together these imply
 pair-interchange symmetry. The latter symmetry also makes the Ricci contraction symmetric.
+By polarization, these symmetries determine `Rm` from its values `Rm(u, v, v, u)` on linearly
+independent pairs `u, v`, the numerators of the sectional curvatures.
 
 The sign and argument conventions follow J. M. Lee, *Introduction to Riemannian Manifolds*,
 2nd ed., Springer GTM 176 (2018), Chapter 7.
@@ -28,6 +31,9 @@ The sign and argument conventions follow J. M. Lee, *Introduction to Riemannian 
 * `CovariantDerivative.riemannCurvatureTensor`: the metric-lowered curvature tensor.
 * `CovariantDerivative.IsMetricCompatible.riemannCurvatureTensor_swap_pairs`:
   pair-interchange symmetry.
+* `CovariantDerivative.IsMetricCompatible.riemannCurvatureTensor_eq_of_forall_linearIndependent`:
+  `Rm` is the unique tensor with the curvature symmetries and the same values `T(u, v, v, u)` on
+  linearly independent pairs.
 * `CovariantDerivative.IsMetricCompatible.ricciTensor_comm` and
   `CovariantDerivative.IsMetricCompatible.ricciTensor_isSymm`: symmetry of Ricci curvature.
 * `CovariantDerivative.ricciTensor_eq_sum_riemannCurvatureTensor` and
@@ -132,5 +138,24 @@ theorem IsMetricCompatible.riemannCurvatureTensor_swap_pairs
       cov.riemannCurvatureTensor x w z u v := by
   simpa only [riemannCurvatureTensor_apply] using
     hcov.inner_curvatureTensor_swap_pairs ht x u v w z
+
+variable {cov} in
+/-- For a metric-compatible torsion-free connection, the Riemann curvature tensor at `x` is the
+only quadrilinear form with the algebraic symmetries of a curvature tensor whose values
+`T(u, v, v, u)` on linearly independent pairs are the sectional-curvature numerators
+`⟨R(u, v)v, u⟩`. -/
+theorem IsMetricCompatible.riemannCurvatureTensor_eq_of_forall_linearIndependent
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0) (x : M)
+    {T : TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[ℝ]
+      TangentSpace I x →ₗ[ℝ] ℝ}
+    (h₁ : ∀ u v w z, T u v w z = -T v u w z) (h₂ : ∀ u v w z, T u v w z = -T u v z w)
+    (h₃ : ∀ u v w z, T u v w z + T v w u z + T w u v z = 0)
+    (hT : ∀ u v, LinearIndependent ℝ ![u, v] → cov.riemannCurvatureTensor x u v v u = T u v v u) :
+    cov.riemannCurvatureTensor x = T :=
+  LinearMap.eq_of_cyclic_eq_zero_of_linearIndependent (by norm_num)
+    (cov.riemannCurvatureTensor_antisymm_first x)
+    (IsMetricCompatible.riemannCurvatureTensor_antisymm_last cov hcov x)
+    (cov.riemannCurvatureTensor_cyclic_eq_zero ht x) h₁ h₂ h₃ hT
 
 end CovariantDerivative

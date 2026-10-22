@@ -46,7 +46,7 @@ theorem segmentAverage_eq_integral_Icc (w : ℝ → ℝ) (g : E → F) (x : E) :
 
 /-- A weighted segment average depends smoothly on its displacement when its weight and integrand
 are smooth. -/
-theorem ContDiff.contDiff_segmentAverage {n : ℕ∞} {w : ℝ → ℝ} {g : E → F}
+theorem ContDiff.contDiff_segmentAverage [CompleteSpace F] {n : ℕ∞} {w : ℝ → ℝ} {g : E → F}
     (hw : ContDiff ℝ n w) (hg : ContDiff ℝ n g) (x : E) :
     ContDiff ℝ n (segmentAverage w g x) := by
   rw [segmentAverage_eq_integral_Icc]
@@ -93,7 +93,7 @@ theorem hadamardFactor_self [CompleteSpace F] (f : E → F) (x : E) :
 /-- If `f` is `n + 1` times continuously differentiable, its Hadamard factor is `n` times
 continuously differentiable in the endpoint. -/
 theorem ContDiff.contDiff_hadamardFactor_of_succ
-    {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (n : ℕ∞) (f : E → F) (hf : ContDiff ℝ (n + 1) f) (x : E) :
     ContDiff ℝ n (hadamardFactor f x) := by
   have hd : ContDiff ℝ n (fderiv ℝ f) := hf.fderiv_right (m := n) (by norm_num)
@@ -118,7 +118,7 @@ theorem ContDiff.sub_eq_hadamardFactor_apply [CompleteSpace F]
 
 /-- For a smooth function, the averaged derivative in Hadamard's factorization depends smoothly on
 the endpoint. -/
-theorem ContDiff.contDiff_hadamardFactor (f : E → F)
+theorem ContDiff.contDiff_hadamardFactor [CompleteSpace F] (f : E → F)
     (hf : ContDiff ℝ ∞ f)
     (x : E) : ContDiff ℝ ∞ (hadamardFactor f x) := by
   simpa using ContDiff.contDiff_hadamardFactor_of_succ (⊤ : ℕ∞) f (by simpa using hf) x
