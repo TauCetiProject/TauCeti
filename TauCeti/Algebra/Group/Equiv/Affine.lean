@@ -21,6 +21,10 @@ from exact order, and characterizes fixed points by the image of `1 - A^k`.
 
 The partial norm and difference maps use sums and powers in `AddMonoid.End`.
 All results allow torsion. In particular, no division is used for involutions.
+The period-two zero composites are instances of
+`TauCeti.one_sub_mul_one_add_of_sq_eq_one` and
+`TauCeti.one_add_mul_one_sub_of_sq_eq_one` in
+`TauCeti.LinearAlgebra.End.OrderTwoThree`, since endomorphism multiplication is composition.
 
 The public API is in `TauCeti.CyclicAffine`. With `open TauCeti.CyclicAffine`, use
 `affinePerm A t` for the permutation and `toEnd A` for its linear endomorphism.
@@ -48,22 +52,6 @@ def toEnd [AddZeroClass T] (A : T ≃+ T) : AddMonoid.End T :=
 theorem coe_toEnd [AddZeroClass T] (A : T ≃+ T) : ⇑(toEnd A) = A := by rfl
 
 variable [AddCommGroup T]
-
-/-- For an involution, the period-two norm followed by the difference map is zero. -/
-theorem one_sub_comp_one_add_of_sq_eq_one (A : AddMonoid.End T) (hA : A ^ 2 = 1) :
-    (1 - A).comp (1 + A) = 0 := by
-  -- Mathlib has no bundled composition/product rewrite at this pin; multiplication is
-  -- defined as composition, so expose it to apply the geometric-sum identity.
-  change (1 - A) * (1 + A) = 0
-  rw [add_comm (1 : AddMonoid.End T) A, ← geom_sum_two, mul_neg_geom_sum, hA, sub_self]
-
-/-- For an involution, the difference map followed by the period-two norm is zero. -/
-theorem one_add_comp_one_sub_of_sq_eq_one (A : AddMonoid.End T) (hA : A ^ 2 = 1) :
-    (1 + A).comp (1 - A) = 0 := by
-  -- Mathlib has no bundled composition/product rewrite at this pin; multiplication is
-  -- defined as composition, so expose it to apply the geometric-sum identity.
-  change (1 + A) * (1 - A) = 0
-  rw [add_comm (1 : AddMonoid.End T) A, ← geom_sum_two, geom_sum_mul_neg, hA, sub_self]
 
 /-- An affine permutation with linear part `A` and translation part `t`. -/
 def affinePerm (A : T ≃+ T) (t : T) : Equiv.Perm T :=
