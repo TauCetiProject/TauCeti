@@ -57,6 +57,28 @@ theorem coeff_conjugate (l : H →ₐc[R] LaurentPolynomial R)
     (p.ofConv h).coeff n) heq
   simpa only [AddMonoidAlgebra.coeff_mapAlgHom, AlgHom.comp_apply, conjugationAlgHom] using hc.symm
 
+/-- **The coefficients of universal conjugation are weight vectors.** Conjugating the `n`-th
+coefficient of `h` produces only the monomial of degree `n`, whose coefficient is that same
+coefficient. -/
+@[simp]
+theorem coeff_conjugationAlgHom_coeff (l : H →ₐc[R] LaurentPolynomial R) (h : H) (m n : ℤ) :
+    (conjugationAlgHom l ((conjugationAlgHom l h).coeff n)).coeff m =
+      if m = n then (conjugationAlgHom l h).coeff n else 0 := by
+  have h' := coeff_coeff_conjugate_conjugate (l := l) (toConv (AlgHom.id R H)) h m n
+  rwa [coeff_conjugate] at h'
+
+/-- Conjugation by the generic point sends the `n`-th coefficient of universal conjugation to a
+monomial of degree `n`. -/
+theorem conjugate_ofConv_coeff_conjugationAlgHom (l : H →ₐc[R] LaurentPolynomial R)
+    (g : WithConv (H →ₐ[R] A)) (h : H) (n : ℤ) :
+    (conjugate A l g).ofConv ((conjugationAlgHom l h).coeff n) =
+      LaurentPolynomial.C (g.ofConv ((conjugationAlgHom l h).coeff n)) *
+        LaurentPolynomial.T n := by
+  refine AddMonoidAlgebra.coeff_injective (Finsupp.ext fun m ↦ ?_)
+  rw [coeff_conjugate, coeff_conjugationAlgHom_coeff, ← LaurentPolynomial.single_eq_C_mul_T,
+    AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
+  split_ifs <;> simp_all [eq_comm]
+
 private def negativeCoefficientIdeal (l : H →ₐc[R] LaurentPolynomial R) : Ideal H :=
   Ideal.span {x | ∃ h : H, ∃ n : ℤ, n < 0 ∧ (conjugationAlgHom l h).coeff n = x}
 

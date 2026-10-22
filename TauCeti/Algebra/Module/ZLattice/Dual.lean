@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
 public import TauCeti.Algebra.Module.ZLattice.Basic
@@ -31,6 +32,9 @@ self-duality of `ℤⁿ ⊆ ℝⁿ`.
 
 The dual is antitone, and it commutes with pulling a lattice back along a linear isometry
 equivalence (`ZLattice.dual_comap`), so every notion defined from it is an isometry invariant.
+Along a general continuous linear equivalence `e` of complete spaces the dual is pulled back along
+the adjoint of `e⁻¹` instead (`ZLattice.dual_comap_continuousLinearEquiv`): the dual of `A L` is
+`(A⁻¹)ᵀ L^∨`, the transport of dual lattices under a linear change of variables.
 
 This is the dual lattice entering Poisson summation over a lattice, and the integrality,
 evenness and unimodularity of a lattice in `TauCeti/Algebra/Module/ZLattice/Integral.lean` are
@@ -52,6 +56,8 @@ defined from it.
 * `ZLattice.dual_span_orthonormalBasis`: the `ℤ`-span of an orthonormal basis is self-dual.
 * `ZLattice.dual_dual`: the dual of the dual of a full lattice is the lattice itself.
 * `ZLattice.dual_comap`: the dual commutes with pulling back along a linear isometry equivalence.
+* `ZLattice.dual_comap_continuousLinearEquiv`: the dual of the pullback along a continuous linear
+  equivalence `e` is the pullback of the dual along the adjoint of `e⁻¹`.
 -/
 
 public section
@@ -129,6 +135,23 @@ theorem dual_comap (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E) :
   refine ⟨fun h z hz ↦ ?_, fun h y hy ↦ e.inner_map_map x y ▸ h _ hy⟩
   obtain ⟨m, hm⟩ := h (e.symm z) (by rwa [e.apply_symm_apply])
   exact ⟨m, by rwa [← e.inner_map_map, e.apply_symm_apply] at hm⟩
+
+/-- The dual of the pullback of a lattice along a continuous linear equivalence `e` is the
+pullback of the dual along the adjoint of `e⁻¹`. Read through images, the dual of `A L` is
+`(A⁻¹)ᵀ L^∨` for a linear automorphism `A`. -/
+@[simp]
+theorem dual_comap_continuousLinearEquiv [CompleteSpace E] [CompleteSpace F] (L : Submodule ℤ E)
+    (e : F ≃L[ℝ] E) :
+    dual (ZLattice.comap ℝ L e.toLinearMap) =
+      ZLattice.comap ℝ (dual L) (ContinuousLinearMap.adjoint (e.symm : E →L[ℝ] F)).toLinearMap := by
+  ext x
+  simp only [mem_comap, mem_dual, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+    ContinuousLinearMap.coe_coe]
+  refine ⟨fun h y hy ↦ ?_, fun h z hz ↦ ?_⟩
+  · obtain ⟨m, hm⟩ := h (e.symm y) (by simpa using hy)
+    exact ⟨m, by rwa [ContinuousLinearMap.adjoint_inner_left]⟩
+  · obtain ⟨m, hm⟩ := h (e z) hz
+    exact ⟨m, by simpa [ContinuousLinearMap.adjoint_inner_left] using hm⟩
 
 section FiniteDimensional
 
