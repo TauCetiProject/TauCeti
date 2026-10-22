@@ -38,8 +38,9 @@ first `n - 1` generators `T 0, …, T (n - 2)`, the image of the Hecke algebra o
 stages increase with `n` (`TauCeti.InfiniteTypeAHeckeAlgebra.stage_mono`), contain only scalars
 on at most one strand (`TauCeti.InfiniteTypeAHeckeAlgebra.stage_eq_bot_of_le_one`), and exhaust
 the algebra (`TauCeti.InfiniteTypeAHeckeAlgebra.iSup_stage`). The braid group on `n` strands
-maps into the units of the stage `n` (`TauCeti.InfiniteTypeAHeckeAlgebra.braidHom`), compatibly
-with adding a last strand, and its image spans the stage as an `R`-module. That each stage is
+maps into the units of the algebra (`TauCeti.InfiniteTypeAHeckeAlgebra.braidHom`), with image in
+the stage `n` (`TauCeti.InfiniteTypeAHeckeAlgebra.braidHom_mem_stage`), compatibly with adding a
+last strand, and its image spans the stage as an `R`-module. That each stage is
 isomorphic to the Hecke algebra presented on `n - 1` generators, equivalently that it is free of
 rank `n!`, is the basis theorem and is not proved here.
 
@@ -51,8 +52,9 @@ lives on the first `a` strands and the shift by `a` of any element lives on the 
 on, so the two commute (`TauCeti.InfiniteTypeAHeckeAlgebra.commute_shift_of_mem_stage`). Hence
 placing an element of the stage `a` on the first `a` strands and an element of the stage `b` on
 the next `b` strands is an algebra map from the tensor product
-(`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl`). These are the disjoint block embeddings along
-which Markov traces are multiplicative.
+(`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl`). These are the disjoint block maps along which
+Markov traces are multiplicative; that they are injective, so embeddings, needs the basis
+theorem and is not proved here.
 
 ## Main definitions
 
@@ -65,7 +67,7 @@ which Markov traces are multiplicative.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.braidHom`: the homomorphism from the braid group on `n`
   strands to the units.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.shift`: the strand shift `T i ↦ T (i + k)`.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl`: the disjoint block embedding of two stages.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl`: the disjoint block map of two stages.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.indexCharacter` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.signCharacter`: the characters `T i ↦ q` and `T i ↦ -q⁻¹`.
 
@@ -429,9 +431,10 @@ theorem commute_shift_of_mem_stage {a : ℕ} {x : InfiniteTypeAHeckeAlgebra R q}
   exact commute_T (Or.inl (by omega))
 
 variable (R q) in
-/-- The disjoint block embedding: the algebra map from the tensor product of the stages `a` and
-`b` to the stage `a + b` that places the first factor on the first `a` strands and the second
-factor, shifted by `a`, on the next `b` strands. -/
+/-- The disjoint block map: the algebra map from the tensor product of the stages `a` and `b` to
+the stage `a + b` that places the first factor on the first `a` strands and the second factor,
+shifted by `a`, on the next `b` strands. Its injectivity, which would make it an embedding,
+needs the basis theorem and is not proved here. -/
 def blockIncl (a b : ℕ) : stage R q a ⊗[R] stage R q b →ₐ[R] stage R q (a + b) :=
   (Algebra.TensorProduct.lift (stage R q a).val ((shift R q a).comp (stage R q b).val)
     fun x y ↦ by
@@ -446,7 +449,7 @@ def blockIncl (a b : ℕ) : stage R q a ⊗[R] stage R q b →ₐ[R] stage R q (
       exact shift_mem_stage a y.2
     | add z z' hz hz' => simpa only [map_add] using add_mem hz hz'
 
-/-- The disjoint block embedding multiplies the first factor by the shift of the second. -/
+/-- The disjoint block map multiplies the first factor by the shift of the second. -/
 @[simp]
 theorem coe_blockIncl_tmul {a b : ℕ} (x : stage R q a) (y : stage R q b) :
     (blockIncl R q a b (x ⊗ₜ y) : InfiniteTypeAHeckeAlgebra R q) = x * shift R q a y := by
