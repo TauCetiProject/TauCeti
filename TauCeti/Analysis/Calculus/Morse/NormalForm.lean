@@ -132,12 +132,14 @@ theorem hessianAverage_zero (f : E → F) (x : E) :
     norm_num [integral_id]
   rw [hI, one_smul]
 
+omit [CompleteSpace F] in
 /-- The averaged Hessian of a `C^{n+2}` function is `C^n` in the direction. -/
 theorem contDiff_hessianAverage {n : ℕ∞} (hf : ContDiff ℝ (n + 2) f) (x : E) :
     ContDiff ℝ n (hessianAverage f x) := by
   have hd : ContDiff ℝ n (fderiv ℝ (fderiv ℝ f)) :=
     (hf.fderiv_right (m := n + 1) (by norm_num [add_assoc])).fderiv_right (m := n) (by simp)
-  exact (by fun_prop : ContDiff ℝ n fun t : ℝ ↦ 2 * (1 - t)).contDiff_segmentAverage hd x
+  exact hd.contDiff_segmentAverage
+    ((by fun_prop : Continuous fun t : ℝ ↦ 2 * (1 - t)).intervalIntegrable 0 1) x
 
 omit [CompleteSpace F] in
 private theorem continuous_hessianAverage_integrand (hf : ContDiff ℝ 2 f) (x v : E) :
