@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Commuting
+public import TauCeti.GroupTheory.FreeGroup.ProperPower
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 
@@ -53,12 +54,8 @@ variable {α : Type*}
 
 /-- If a generator of a free group is the `m`-th power of some element, then `m = ±1`. -/
 theorem natAbs_eq_one_of_of_eq_zpow {a : α} {r : FreeGroup α} {m : ℤ} (h : of a = r ^ m) :
-    m.natAbs = 1 := by
-  -- The exponent-sum homomorphism to `ℤ` sends `of a` to `1`.
-  let d : FreeGroup α →* Multiplicative ℤ := FreeGroup.lift fun _ ↦ Multiplicative.ofAdd 1
-  have hd : (1 : ℤ) = m * (d r).toAdd := by
-    simpa [d, mul_comm] using congrArg (fun g ↦ (d g).toAdd) h
-  obtain rfl | rfl := Int.eq_one_or_neg_one_of_mul_eq_one hd.symm <;> rfl
+    m.natAbs = 1 :=
+  Group.natAbs_eq_one_of_not_isProperPower_zpow (h ▸ FreeGroup.not_isProperPower_of a)
 
 /-- An element of a free group commuting with a generator `of a` is a power of `of a`. -/
 theorem mem_zpowers_of_of_commute {a : α} {z : FreeGroup α} (h : Commute z (of a)) :
@@ -88,9 +85,8 @@ variable {G : Type*} [Group G] [IsFreeGroup G]
 
 /-- A free group has unique roots for every fixed nonzero exponent: `x ^ n = y ^ n` with `n ≠ 0`
 forces `x = y`. In particular a free group is torsion-free. -/
-instance : HasUniqueRoots G where
-  pow_left_injective n hn x y h := (toFreeGroup G).injective <|
-    pow_left_injective hn (by simpa only [map_pow] using congrArg (toFreeGroup G) h)
+instance : HasUniqueRoots G :=
+  Function.Injective.hasUniqueRoots (toFreeGroup G).toMonoidHom (toFreeGroup G).injective
 
 /-- A free group with a nontrivial central element is commutative. -/
 theorem isMulCommutative_of_mem_center {x : G} (hx : x ∈ Subgroup.center G) (hx1 : x ≠ 1) :
