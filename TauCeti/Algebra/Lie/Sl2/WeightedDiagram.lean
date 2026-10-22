@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Sl2.EigenspaceMap
 public import TauCeti.Algebra.Lie.Weights.Basic
-public import TauCeti.LinearAlgebra.RootSystem.Positive
+public import TauCeti.Algebra.Lie.Weights.Borel
 
 /-!
 # The simple root values of a dominant neutral element lie in `{0, 1, 2}`
@@ -42,10 +42,6 @@ natural values on the negative ones (`TauCeti.exists_nat_root_apply_eq_neg_of_me
 
 ## Main results
 
-* `TauCeti.exists_nat_root_apply_of_mem_posRoots`: a dominant element takes a natural value on
-  every positive root.
-* `TauCeti.exists_nat_root_apply_eq_neg_of_mem_negRoots`: it takes the negative of a natural value
-  on every negative root.
 * `IsSl2Triple.root_apply_eq_zero_or_eq_one_or_eq_two`: the simple root values of a dominant
   neutral element lie in `{0, 1, 2}`.
 
@@ -66,44 +62,6 @@ variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   {b : (rootSystem H).Base}
 
 namespace TauCeti
-
-/-! ### Dominant elements on positive and negative roots -/
-
-/-- **A dominant element takes natural values on the positive roots**, not only on the simple ones,
-since a positive root is a natural combination of the simple roots. -/
-theorem exists_nat_root_apply_of_mem_posRoots {x : H}
-    (hx : ∀ j ∈ b.support, ∃ n : ℕ, (j : Weight K H L) x = n) {i : H.root}
-    (hi : i ∈ posRoots (rootSystem H) b) :
-    ∃ n : ℕ, (i : Weight K H L) x = n := by
-  classical
-  obtain ⟨f, -, hsum⟩ := exists_root_eq_sum_nat_of_mem_posRoots (rootSystem H) b hi
-  -- name the natural value at `x` of each simple root
-  obtain ⟨g, hg⟩ : ∃ g : H.root → ℕ, ∀ j ∈ b.support, (j : Weight K H L) x = g j :=
-    ⟨fun j ↦ if hj : j ∈ b.support then (hx j hj).choose else 0,
-      fun j hj ↦ by simpa only [dite_eq_left hj] using (hx j hj).choose_spec⟩
-  refine ⟨∑ j ∈ b.support, f j * g j, ?_⟩
-  have hval := congr($hsum x)
-  simp only [rootSystem_root_apply, LinearMap.sum_apply, LinearMap.smul_apply,
-    Weight.toLinear_apply] at hval
-  rw [hval, Nat.cast_sum]
-  refine Finset.sum_congr rfl fun j hj ↦ ?_
-  rw [hg j hj, nsmul_eq_mul, Nat.cast_mul]
-
-/-- **A dominant element takes nonpositive integer values on the negative roots**: the negative of
-a negative root is a positive root. -/
-theorem exists_nat_root_apply_eq_neg_of_mem_negRoots {x : H}
-    (hx : ∀ j ∈ b.support, ∃ n : ℕ, (j : Weight K H L) x = n) {i : H.root}
-    (hi : i ∈ negRoots (rootSystem H) b) :
-    ∃ n : ℕ, (i : Weight K H L) x = -n := by
-  obtain ⟨n, hn⟩ := exists_nat_root_apply_of_mem_posRoots hx
-    ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots (rootSystem H) b i).mpr hi)
-  refine ⟨n, ?_⟩
-  have hroot :
-      (rootSystem H).root ((rootSystem H).reflectionPerm i i) = -(rootSystem H).root i := by
-    rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self]
-  have hval := congr($hroot x)
-  simp only [rootSystem_root_apply, Weight.toLinear_apply, LinearMap.neg_apply] at hval
-  rw [← hn, hval, neg_neg]
 
 /-- With `α` simple and `α x ≥ 3` at a dominant `x`, no root `χ` with `χ x = 2` has `χ - α` as a
 weight: that would write `α` as the sum of the positive roots `χ` and `α - χ`. -/
