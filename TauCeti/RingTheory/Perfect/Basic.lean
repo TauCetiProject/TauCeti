@@ -24,7 +24,7 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
   of `x` is its `p ^ n`-th root.
 * `TauCeti.iterateFrobeniusEquiv_symm_dvd_of_le`: deeper roots of `x` divide shallower ones.
 * `TauCeti.isReduced_of_perfectRing`: a perfect ring of prime characteristic is reduced.
-* `TauCeti.mul_eq_zero_of_mul_pow_p_eq_zero`: `a * b ^ p = 0` implies `a * b = 0`.
+* `TauCeti.mul_eq_zero_of_mul_pow_expChar_eq_zero`: `a * b ^ p = 0` implies `a * b = 0`.
 * `TauCeti.mul_iterateFrobeniusEquiv_symm_succ_eq_zero`: an element killing the `p ^ n`-th root
   of `x` also kills its `p ^ (n + 1)`-th root.
 -/
@@ -66,7 +66,7 @@ theorem isReduced_of_perfectRing [hp : Fact p.Prime] : IsReduced R :=
 
 /-- In a perfect ring of exponential characteristic `p`, if `a` kills `b ^ p` then `a` kills
 `b`. -/
-theorem mul_eq_zero_of_mul_pow_p_eq_zero {a b : R} (h : a * b ^ p = 0) : a * b = 0 := by
+theorem mul_eq_zero_of_mul_pow_expChar_eq_zero {a b : R} (h : a * b ^ p = 0) : a * b = 0 := by
   -- In exponential characteristic `1` there is nothing to prove; otherwise `R` is reduced.
   obtain hp | rfl := expChar_is_prime_or_one R p
   · have := Fact.mk hp
@@ -80,7 +80,7 @@ theorem mul_iterateFrobeniusEquiv_symm_succ_eq_zero {x c : R} {n : ℕ}
     c * (iterateFrobeniusEquiv R p (n + 1)).symm x = 0 := by
   -- The `p ^ n`-th root is the `p`-th power of the `p ^ (n + 1)`-th root.
   rw [← iterateFrobeniusEquiv_symm_succ_pow x n] at h
-  exact mul_eq_zero_of_mul_pow_p_eq_zero h
+  exact mul_eq_zero_of_mul_pow_expChar_eq_zero h
 
 /-- If `c` kills the `p ^ n`-th root of `x`, then it kills every positive power of the
 `p ^ (n + 1)`-th root of `x`. -/

@@ -147,7 +147,8 @@ theorem frobeniusRootTransition_apply (f : R) {m n : ℕ} (h : m ≤ n) (a : R) 
 
 /-- The transition from stage `m` to stage `n`, followed by multiplication by the `p ^ n`-th root
 of `f`, is multiplication by the `p ^ m`-th root of `f`. -/
-theorem frobeniusRootTransition_mul_root (f : R) {m n : ℕ} (h : m ≤ n) (a : R) :
+theorem frobeniusRootTransition_apply_mul_iterateFrobeniusEquiv_symm (f : R) {m n : ℕ} (h : m ≤ n)
+    (a : R) :
     frobeniusRootTransition R p f m n h a * (iterateFrobeniusEquiv R p n).symm f =
       a * (iterateFrobeniusEquiv R p m).symm f := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
@@ -185,7 +186,7 @@ private noncomputable def directLimitLift (f : R) :
       ⟨_, iterateFrobeniusEquiv_symm_mem_frobeniusRootIdeal f n⟩)
     fun m n h a ↦ Subtype.ext <| by
       simpa only [LinearMap.toSpanSingleton_apply, Submodule.coe_smul, smul_eq_mul] using
-        frobeniusRootTransition_mul_root f h a
+        frobeniusRootTransition_apply_mul_iterateFrobeniusEquiv_symm f h a
 
 private theorem directLimitLift_of (f : R) (n : ℕ) (a : R) :
     (directLimitLift f
