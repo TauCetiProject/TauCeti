@@ -103,6 +103,23 @@ isometry group of `Q.polarBilin`,
 
 public section
 
+/-! ### Isometric embeddings -/
+
+namespace LinearMap.BilinForm.Isometry
+
+variable {R M M' : Type*} [CommSemiring R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+  [Module R M'] {B : LinearMap.BilinForm R M} {B' : LinearMap.BilinForm R M'}
+
+/-- An isometric embedding of a left-separating form is injective: a vector in its kernel pairs
+trivially with everything. -/
+theorem injective (ι : B →bᵢ B') (hB : B.SeparatingLeft) : Function.Injective ι := by
+  intro x y hxy
+  rw [← sub_eq_zero]
+  refine hB (x - y) fun z => ?_
+  rw [← ι.map_app, map_sub, hxy, sub_self, LinearMap.map_zero₂]
+
+end LinearMap.BilinForm.Isometry
+
 namespace TauCeti
 
 open Module
@@ -330,11 +347,8 @@ variable {R M : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
 /-- An isometry of a left-separating form is injective: it cannot collapse a vector that pairs
 nontrivially with something. -/
 theorem IsIsometry.injective (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
-    Function.Injective f := by
-  intro x y hxy
-  rw [← sub_eq_zero]
-  refine hB (x - y) fun z => ?_
-  rw [← hf.apply (x - y) z, map_sub, hxy, sub_self, LinearMap.map_zero₂]
+    Function.Injective f :=
+  LinearMap.BilinForm.Isometry.injective ⟨f, hf.apply⟩ hB
 
 end AddCommGroup
 
@@ -637,20 +651,3 @@ end BaseChange
 end CommRing
 
 end LinearMap.BilinForm
-
-/-! ### Isometric embeddings -/
-
-namespace LinearMap.BilinForm.Isometry
-
-variable {R M M' : Type*} [CommSemiring R] [AddCommGroup M] [Module R M] [AddCommGroup M']
-  [Module R M'] {B : LinearMap.BilinForm R M} {B' : LinearMap.BilinForm R M'}
-
-/-- An isometric embedding of a left-separating form is injective: a vector in its kernel pairs
-trivially with everything. -/
-theorem injective (ι : B →bᵢ B') (hB : B.SeparatingLeft) : Function.Injective ι := by
-  intro x y hxy
-  rw [← sub_eq_zero]
-  refine hB (x - y) fun z => ?_
-  rw [← ι.map_app, map_sub, hxy, sub_self, LinearMap.map_zero₂]
-
-end LinearMap.BilinForm.Isometry

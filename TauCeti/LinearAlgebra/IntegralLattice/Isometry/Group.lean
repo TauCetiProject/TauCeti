@@ -62,7 +62,10 @@ subgroup of level `d`, which has finite index for `d ≠ 0`.
   determined by its matrix in a finite carrier basis.
 * `TauCeti.IntegralLattice.Isometry.mem_congruenceSubgroup_iff`: an isometry lies in the
   congruence subgroup of level `d` when it moves every lattice vector by `d` times a lattice
-  vector; for `d ≠ 0` this subgroup has finite index.
+  vector, and `TauCeti.IntegralLattice.Isometry.finiteIndex_congruenceSubgroup`: for `d ≠ 0` this
+  subgroup has finite index.
+* `TauCeti.IntegralLattice.Isometry.mem_range_toIsometryGroup_iff`: a rational isometry comes from
+  a self-isometry exactly when it preserves membership in the carrier.
 
 ## References
 
@@ -339,6 +342,29 @@ theorem toIsometryGroup_ofIsometryGroup (G : isometryGroup L.form) (h h') :
     toIsometryGroup L (ofIsometryGroup G h h') = G :=
   Subtype.ext (LinearEquiv.ext fun x ↦ by simp)
 
+@[simp]
+theorem ofIsometryGroup_toIsometryGroup (g : Isometry L L) (h h') :
+    ofIsometryGroup (toIsometryGroup L g) h h' = g :=
+  Isometry.ext fun x ↦ by simp
+
+/-- A rational isometry of `L` comes from a self-isometry of `L` exactly when it preserves
+membership in the carrier. -/
+theorem mem_range_toIsometryGroup_iff {G : isometryGroup L.form} :
+    G ∈ (toIsometryGroup L).range ↔ ∀ x, (G : V ≃ₗ[ℚ] V) x ∈ L.carrier ↔ x ∈ L.carrier := by
+  refine ⟨?_, fun h ↦ ⟨ofIsometryGroup G (fun x hx ↦ (h x).mpr hx) fun x hx ↦ (h _).mp ?_,
+    toIsometryGroup_ofIsometryGroup G _ _⟩⟩
+  · rintro ⟨g, rfl⟩ x
+    simp
+  · rwa [LinearEquiv.apply_symm_apply]
+
+/-- A subgroup of rational isometries of `L` each mapping the carrier into itself consists of
+self-isometries of `L`. -/
+theorem le_range_toIsometryGroup {H : Subgroup (isometryGroup L.form)}
+    (hH : ∀ G ∈ H, ∀ x ∈ L.carrier, (G : V ≃ₗ[ℚ] V) x ∈ L.carrier) :
+    H ≤ (toIsometryGroup L).range := fun G hG ↦
+  mem_range_toIsometryGroup_iff.mpr fun x ↦ ⟨fun hx ↦ by
+    simpa using hH _ (inv_mem hG) _ hx, hH G hG x⟩
+
 /-! ### Congruence subgroups -/
 
 /-- The action of a self-isometry of `L` on the quotient `L / d L` of its carrier. -/
@@ -352,6 +378,11 @@ noncomputable def reductionHom (L : IntegralLattice V) (d : ℤ) :
     rw [mul_def, carrierEquiv_trans, LinearEquiv.coe_trans, QuotSMulTop.map_comp,
       Module.End.mul_eq_comp]
 
+@[simp]
+theorem reductionHom_apply_mk (d : ℤ) (g : Isometry L L) (x : L) :
+    reductionHom L d g (Submodule.Quotient.mk x) = Submodule.Quotient.mk (g.carrierEquiv x) :=
+  QuotSMulTop.map_apply_mk ..
+
 /-- The principal congruence subgroup of level `d`: the self-isometries of `L` acting trivially
 on `L / d L`. -/
 noncomputable def congruenceSubgroup (L : IntegralLattice V) (d : ℤ) : Subgroup (Isometry L L) :=
@@ -364,22 +395,39 @@ theorem mem_congruenceSubgroup_iff {d : ℤ} {g : Isometry L L} :
   rw [congruenceSubgroup, MonoidHom.mem_ker]
   refine ⟨fun hg x ↦ ?_, fun hg ↦ Submodule.linearMap_qext _ (LinearMap.ext fun x ↦ ?_)⟩
   · have h := LinearMap.congr_fun hg (Submodule.Quotient.mk x)
-    rw [Module.End.one_apply, reductionHom, MonoidHom.coe_mk, OneHom.coe_mk,
-      QuotSMulTop.map_apply_mk, Submodule.Quotient.eq, Submodule.mem_smul_pointwise_iff_exists] at h
+    rw [Module.End.one_apply, reductionHom_apply_mk, Submodule.Quotient.eq,
+      Submodule.mem_smul_pointwise_iff_exists] at h
     obtain ⟨y, -, hy⟩ := h
     exact ⟨y, hy.symm⟩
   · obtain ⟨y, hy⟩ := hg x
     rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply, Module.End.one_apply,
-      reductionHom, MonoidHom.coe_mk, OneHom.coe_mk, QuotSMulTop.map_apply_mk,
-      Submodule.Quotient.eq, Submodule.mem_smul_pointwise_iff_exists]
+      reductionHom_apply_mk, Submodule.Quotient.eq, Submodule.mem_smul_pointwise_iff_exists]
     exact ⟨y, Submodule.mem_top, hy.symm⟩
 
-/-- For `d ≠ 0`, the congruence subgroup of level `d` has finite index in `O(L)`. -/
+/-- The congruence subgroups of levels `-d` and `d` coincide. -/
+@[simp]
+theorem congruenceSubgroup_neg (L : IntegralLattice V) (d : ℤ) :
+    congruenceSubgroup L (-d) = congruenceSubgroup L d := by
+  ext g
+  simp only [mem_congruenceSubgroup_iff]
+  exact forall_congr' fun x ↦ ⟨fun ⟨y, hy⟩ ↦ ⟨-y, by rw [hy, neg_smul, smul_neg]⟩,
+    fun ⟨y, hy⟩ ↦ ⟨-y, by rw [hy, neg_smul_neg]⟩⟩
+
+/-- For a positive level `d`, the congruence subgroup of level `d` has finite index in `O(L)`. -/
 instance (L : IntegralLattice V) (d : ℕ) [NeZero d] : (congruenceSubgroup L d).FiniteIndex := by
   have : Finite (Module.End ℤ (QuotSMulTop (d : ℤ) L)) :=
     Finite.of_injective _ DFunLike.coe_injective
   rw [congruenceSubgroup, ← MonoidHom.ker_toHomUnits]
   infer_instance
+
+/-- For `d ≠ 0`, the congruence subgroup of level `d` has finite index in `O(L)`. -/
+theorem finiteIndex_congruenceSubgroup (L : IntegralLattice V) {d : ℤ} (hd : d ≠ 0) :
+    (congruenceSubgroup L d).FiniteIndex := by
+  have : NeZero d.natAbs := ⟨Int.natAbs_ne_zero.mpr hd⟩
+  rcases Int.natAbs_eq d with h | h <;> rw [h]
+  · infer_instance
+  · rw [congruenceSubgroup_neg]
+    infer_instance
 
 end Isometry
 

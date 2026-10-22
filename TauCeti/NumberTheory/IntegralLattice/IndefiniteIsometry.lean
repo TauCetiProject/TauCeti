@@ -132,35 +132,27 @@ theorem infinite_isometry_of_isIndefinite_of_anisotropic {L : IntegralLattice V}
     (M.binaryDiscriminant_pos_of_isIndefinite hV hMind)
     (M.not_isSquare_binaryDiscriminant_of_anisotropic hV hManiso)
   set ι := L.restrictIsometry S
-  -- A single positive integer `d` carries the orthogonal projection of `L` into `M`.
-  obtain ⟨r, hr, hrπ⟩ := Submodule.IsLattice.exists_ne_zero_forall_smul_mem ℚ M.carrier
+  -- A single nonzero integer `d` carries the orthogonal projection of `L` into `M`.
+  obtain ⟨d, hd, hdπ⟩ := Submodule.IsLattice.exists_ne_zero_forall_smul_mem ℚ M.carrier
     ((Module.Finite.fg_top (M := L)).map ((ι.orthogonalProjection hS).restrictScalars ℤ ∘ₗ
       L.carrier.subtype))
-  set d := r.natAbs
-  have : NeZero d := ⟨Int.natAbs_ne_zero.mpr hr⟩
-  have hd : (d : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr (NeZero.ne d)
-  have hdπ' (z : V) (hz : z ∈ L.carrier) :
-      (d : ℤ) • ι.orthogonalProjection hS z ∈ M.carrier := by
-    have h := hrπ _ ⟨⟨z, hz⟩, Submodule.mem_top, rfl⟩
-    rcases Int.natAbs_eq r with hr' | hr'
-    · rwa [← hr']
-    · rw [hr', neg_smul, neg_mem_iff] at h
-      exact h
   -- The isometries of `M` acting trivially on `M / d M` form an infinite group.
   let Γ := Isometry.congruenceSubgroup M d
+  have := Isometry.finiteIndex_congruenceSubgroup M hd
   have : Infinite Γ := Γ.infinite_of_finiteIndex
-  let F : Γ → Isometry L L := fun g ↦ Isometry.ofIsometryGroup
-    (ι.isometryGroupExtend L.isSymm hS (Isometry.toIsometryGroup M g))
-    (fun z hz ↦ isometryGroupExtend_mem_carrier hS hd hdπ' g.2 hz)
-    (fun z hz ↦ by
-      rw [← LinearEquiv.coe_inv, ← Subgroup.coe_inv, ← map_inv, ← map_inv]
-      exact isometryGroupExtend_mem_carrier hS hd hdπ' (inv_mem g.2) hz)
-  refine Infinite.of_injective F fun g h hgh ↦ Subtype.ext (Isometry.ext fun z ↦ ?_)
-  have h₁ := ι.isometryGroupExtend_injective L.isSymm hS (Subtype.ext (LinearEquiv.ext fun w ↦ by
-    simpa only [F, Isometry.ofIsometryGroup_apply] using
-      congrArg (fun e : Isometry L L ↦ e w) hgh))
-  simpa only [Isometry.toIsometryGroup_apply] using
-    LinearEquiv.congr_fun (congrArg Subtype.val h₁) z
+  -- Their extensions are distinct isometries of `L`.
+  let φ := (ι.isometryGroupExtend L.isSymm hS).comp ((Isometry.toIsometryGroup M).comp Γ.subtype)
+  have hφ : Function.Injective φ := (ι.isometryGroupExtend_injective L.isSymm hS).comp
+    ((Isometry.toIsometryGroup_injective M).comp Subtype.val_injective)
+  have hrange : φ.range ≤ (Isometry.toIsometryGroup L).range := by
+    refine Isometry.le_range_toIsometryGroup ?_
+    rintro _ ⟨g, rfl⟩ z hz
+    exact isometryGroupExtend_mem_carrier hS hd
+      (fun w hw ↦ hdπ _ ⟨⟨w, hw⟩, Submodule.mem_top, rfl⟩) g.2 hz
+  have : Infinite (Isometry.toIsometryGroup L).range :=
+    Infinite.of_injective (fun g ↦ ⟨φ g, hrange ⟨g, rfl⟩⟩) fun g h hgh ↦
+      hφ (congrArg Subtype.val hgh)
+  exact Infinite.of_surjective _ (Isometry.toIsometryGroup L).rangeRestrict_surjective
 
 /-- **The anisotropic case of the infiniteness of `SO(L)`.** An indefinite integral lattice whose
 rational norm form is anisotropic has infinitely many proper isometries. -/
