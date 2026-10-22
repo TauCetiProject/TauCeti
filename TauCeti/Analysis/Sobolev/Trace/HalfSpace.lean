@@ -50,7 +50,7 @@ variable [MeasurableSpace E] [InnerProductSpace ℝ E]
 
 private theorem norm_hyperplaneTrace_ofTestFunction_rpow_le (hp : p ≠ ∞) (a : ℝ)
     (φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :
-    ‖W1p.hyperplaneTrace a (W1p.ofTestFunctionₗ volume ⊤ p φ)‖ ^ p.toReal ≤
+    ‖W1p.hyperplaneTrace hp a (W1p.ofTestFunctionₗ volume ⊤ p φ)‖ ^ p.toReal ≤
       (p.toReal - 1) * ‖W1p.value (W1p.restrictL (le_top (a := normalHalfSpace (E := E) a))
         (W1p.ofTestFunctionₗ volume ⊤ p φ))‖ ^ p.toReal +
       ‖W1p.gradient (W1p.restrictL (le_top (a := normalHalfSpace (E := E) a))
@@ -75,7 +75,7 @@ private theorem norm_hyperplaneTrace_ofTestFunction_rpow_le (hp : p ≠ ∞) (a 
     simp only [Opens.coe_top, Measure.restrict_univ] at hφ
     exact hφ.filter_mono (ae_mono Measure.restrict_le_self)
   -- The three integrals in the one-sided trace inequality, as powers of `Lᵖ` norms.
-  have htr : ‖W1p.hyperplaneTrace a (W1p.ofTestFunctionₗ volume ⊤ p φ)‖ ^ p.toReal =
+  have htr : ‖W1p.hyperplaneTrace hp a (W1p.ofTestFunctionₗ volume ⊤ p φ)‖ ^ p.toReal =
       ∫ y : E, |φ (WithLp.toLp 2 (a, y))| ^ p.toReal := by
     rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp]
     apply integral_congr_ae
@@ -111,7 +111,7 @@ of the flat trace of `u ∈ W^{1,p}(ℝ × E)` is at most `(p - 1) ‖u‖ᵖ + 
 taken on the right-hand half-space alone. -/
 theorem W1p.norm_hyperplaneTrace_rpow_le_restrictL (hp : p ≠ ∞) (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p) :
-    ‖W1p.hyperplaneTrace a u‖ ^ p.toReal ≤
+    ‖W1p.hyperplaneTrace hp a u‖ ^ p.toReal ≤
       (p.toReal - 1) * ‖W1p.value (W1p.restrictL
         (le_top (a := normalHalfSpace (E := E) a)) u)‖ ^ p.toReal +
       ‖W1p.gradient (W1p.restrictL (le_top (a := normalHalfSpace (E := E) a)) u)‖ ^ p.toReal := by
@@ -125,14 +125,14 @@ theorem W1p.norm_hyperplaneTrace_rpow_le_restrictL (hp : p ≠ ∞) (a : ℝ)
       ((W1p.gradientL.comp R).continuous.norm).rpow_const fun _ ↦ Or.inr hr0
   refine (W1p.denseRange_ofTestFunctionₗ_top
     (mu := (volume : Measure (WithLp 2 (ℝ × E)))) hp).induction_on u
-      (isClosed_le ((W1p.hyperplaneTrace a).continuous.norm.rpow_const fun _ ↦ Or.inr hr0)
+      (isClosed_le ((W1p.hyperplaneTrace hp a).continuous.norm.rpow_const fun _ ↦ Or.inr hr0)
         ((continuous_const.mul hc1).add hc2))
       (norm_hyperplaneTrace_ofTestFunction_rpow_le hp a)
 
 /-- The flat `H¹` trace is controlled by the Sobolev norm on the right-hand half-space alone. -/
 theorem W1p.norm_hyperplaneTrace_le_norm_restrictL (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2) :
-    ‖W1p.hyperplaneTrace a u‖ ≤
+    ‖W1p.hyperplaneTrace ENNReal.ofNat_ne_top a u‖ ≤
       ‖W1p.restrictL (le_top (a := normalHalfSpace (E := E) a)) u‖ := by
   have h := W1p.norm_hyperplaneTrace_rpow_le_restrictL (p := 2) (by norm_num) a u
   simp only [ENNReal.toReal_ofNat, Real.rpow_two] at h
@@ -145,7 +145,7 @@ have the same flat trace. Equality of their gradients need not be assumed. -/
 theorem W1p.hyperplaneTrace_eq_of_value_ae_eq (hp : p ≠ ∞) (a : ℝ)
     {u v : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p}
     (hvalue : W1p.value u =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] W1p.value v) :
-    W1p.hyperplaneTrace a u = W1p.hyperplaneTrace a v := by
+    W1p.hyperplaneTrace hp a u = W1p.hyperplaneTrace hp a v := by
   have hp1 : 1 ≤ p := Fact.out
   have hr0 : 0 < p.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le hp1).ne' hp
   have h : W1p.restrictL (le_top (a := normalHalfSpace (E := E) a)) u =
@@ -160,7 +160,7 @@ theorem W1p.hyperplaneTrace_eq_of_value_ae_eq (hp : p ≠ ∞) (a : ℝ)
   have hb := W1p.norm_hyperplaneTrace_rpow_le_restrictL (E := E) hp a (u - v)
   simp only [hsub, ← W1p.valueL_apply, ← W1p.gradientL_apply, map_zero, norm_zero,
     Real.zero_rpow hr0.ne', mul_zero, add_zero] at hb
-  have hz : W1p.hyperplaneTrace (E := E) a (u - v) = 0 :=
+  have hz : W1p.hyperplaneTrace (E := E) hp a (u - v) = 0 :=
     norm_le_zero_iff.mp (le_of_eq ((Real.rpow_eq_zero (norm_nonneg _) hr0.ne').mp
       (le_antisymm hb (Real.rpow_nonneg (norm_nonneg _) _))))
   rw [map_sub] at hz

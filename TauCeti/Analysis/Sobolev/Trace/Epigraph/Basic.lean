@@ -240,11 +240,13 @@ half-space trace of the flattened function `u ∘ (graphFlattening φ).symm`. It
 boundary point `(0, y)` of the half-space. -/
 def W1p.normalEpigraphTrace (hφ : LipschitzWith K φ) :
     W1p volume (normalEpigraph φ) 2 →L[ℝ] Lp ℝ 2 (volume : Measure E) :=
-  (W1p.halfSpaceTrace 0).comp (W1p.normalEpigraphEquivL hφ).toContinuousLinearMap
+  (W1p.halfSpaceTrace (p := 2) ENNReal.ofNat_ne_top 0).comp
+    (W1p.normalEpigraphEquivL hφ).toContinuousLinearMap
 
 theorem W1p.normalEpigraphTrace_apply (hφ : LipschitzWith K φ)
     (u : W1p volume (normalEpigraph φ) 2) :
-    W1p.normalEpigraphTrace hφ u = W1p.halfSpaceTrace 0 (W1p.normalEpigraphEquivL hφ u) :=
+    W1p.normalEpigraphTrace hφ u =
+      W1p.halfSpaceTrace ENNReal.ofNat_ne_top 0 (W1p.normalEpigraphEquivL hφ u) :=
   (rfl)
 
 /-- **The trace inequality on a graph domain**: `‖Tu‖_{L²} ≤ (1 + K) ‖u‖_{H¹}`. -/

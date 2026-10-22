@@ -17,7 +17,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 # Flat traces in `W^{1,p}`
 
 For `1 ≤ p < ∞`, restriction to the hyperplane `{a} × E` extends uniquely to a bounded linear map
-`TauCeti.W1p.hyperplaneTrace a` from the weak Sobolev space `W^{1,p}(ℝ × E)` to `Lᵖ(E)`. The
+`TauCeti.W1p.hyperplaneTrace hp a` from the weak Sobolev space `W^{1,p}(ℝ × E)` to `Lᵖ(E)`. The
 ambient product has its Euclidean norm, represented by `WithLp 2`. The trace agrees with
 restriction on test functions, has operator norm at most `p ^ (1 / p)`, and sends Sobolev
 convergence to convergence of boundary values. The construction uses the whole-space
@@ -231,9 +231,9 @@ private theorem norm_hyperplaneTestFunction_le (hp : p ≠ ∞) (a : ℝ)
 
 /-- The `Lᵖ` trace on the hyperplane `{a} × E` of a whole-space `W^{1,p}` function, defined as the
 unique continuous extension of restriction of test functions. It is characterized by
-`TauCeti.W1p.hyperplaneTrace_ofTestFunction_apply_ae` and `TauCeti.W1p.hyperplaneTrace_unique`
-for `p < ∞`. -/
-def W1p.hyperplaneTrace (a : ℝ) :
+`TauCeti.W1p.hyperplaneTrace_ofTestFunction_apply_ae` and `TauCeti.W1p.hyperplaneTrace_unique`.
+The exponent is finite because test functions are dense in `W^{1,p}` only for `p < ∞`. -/
+def W1p.hyperplaneTrace (_hp : p ≠ ∞) (a : ℝ) :
     W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p →L[ℝ] Lp ℝ p (volume : Measure E) :=
   (hyperplaneTestFunctionₗ p a).extendOfNorm (W1p.ofTestFunctionₗ volume ⊤ p)
 
@@ -241,7 +241,7 @@ def W1p.hyperplaneTrace (a : ℝ) :
 theorem W1p.hyperplaneTrace_ofTestFunction_apply_ae (hp : p ≠ ∞) (a : ℝ)
     (φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :
     ∀ᵐ y ∂(volume : Measure E),
-      W1p.hyperplaneTrace a (W1p.ofTestFunctionₗ volume ⊤ p φ) y =
+      W1p.hyperplaneTrace hp a (W1p.ofTestFunctionₗ volume ⊤ p φ) y =
         φ (WithLp.toLp 2 (a, y)) := by
   rw [W1p.hyperplaneTrace, LinearMap.extendOfNorm_eq
     (W1p.denseRange_ofTestFunctionₗ_top (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := p) hp)
@@ -251,14 +251,14 @@ theorem W1p.hyperplaneTrace_ofTestFunction_apply_ae (hp : p ≠ ∞) (a : ℝ)
 /-- The flat trace has norm at most `p ^ (1 / p)` times the whole-space `W^{1,p}` norm. -/
 theorem W1p.norm_hyperplaneTrace_le (hp : p ≠ ∞) (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p) :
-    ‖W1p.hyperplaneTrace a u‖ ≤ p.toReal ^ p.toReal⁻¹ * ‖u‖ :=
+    ‖W1p.hyperplaneTrace hp a u‖ ≤ p.toReal ^ p.toReal⁻¹ * ‖u‖ :=
   (hyperplaneTestFunctionₗ p a).norm_extendOfNorm_apply_le
     (W1p.denseRange_ofTestFunctionₗ_top (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := p) hp) _
     (norm_hyperplaneTestFunction_le hp a) u
 
 /-- The operator norm of the hyperplane trace is at most `p ^ (1 / p)`. -/
 theorem W1p.opNorm_hyperplaneTrace_le (hp : p ≠ ∞) (a : ℝ) :
-    ‖W1p.hyperplaneTrace (E := E) (p := p) a‖ ≤ p.toReal ^ p.toReal⁻¹ :=
+    ‖W1p.hyperplaneTrace (E := E) (p := p) hp a‖ ≤ p.toReal ^ p.toReal⁻¹ :=
   LinearMap.opNorm_extendOfNorm_le (f := hyperplaneTestFunctionₗ p a)
     (W1p.denseRange_ofTestFunctionₗ_top (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := p) hp)
     (by positivity) (norm_hyperplaneTestFunction_le hp a)
@@ -269,7 +269,7 @@ theorem W1p.hyperplaneTrace_unique (hp : p ≠ ∞) (a : ℝ)
     (T : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p →L[ℝ] Lp ℝ p (volume : Measure E))
     (hT : ∀ φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ),
       ∀ᵐ y ∂(volume : Measure E), T (W1p.ofTestFunctionₗ volume ⊤ p φ) y =
-        φ (WithLp.toLp 2 (a, y))) : T = W1p.hyperplaneTrace a := by
+        φ (WithLp.toLp 2 (a, y))) : T = W1p.hyperplaneTrace hp a := by
   apply Eq.symm
   unfold W1p.hyperplaneTrace
   refine LinearMap.extendOfNorm_unique

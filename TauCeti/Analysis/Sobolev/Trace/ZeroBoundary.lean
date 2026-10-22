@@ -52,7 +52,7 @@ function by zero to the whole space before taking the whole-space hyperplane tra
 def hyperplaneTrace (a : ℝ) :
     W1p0 (volume : Measure (WithLp 2 (ℝ × E))) Omega 2 →L[ℝ]
       Lp ℝ 2 (volume : Measure E) :=
-  (W1p.hyperplaneTrace a).comp
+  (W1p.hyperplaneTrace (p := 2) ENNReal.ofNat_ne_top a).comp
     ((w1p0Submodule (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2).toSubmodule.subtypeL.comp
       (W1p0.extendByZeroL (Omega := Omega) le_top))
 
@@ -62,7 +62,7 @@ its extension by zero. -/
 theorem hyperplaneTrace_apply (a : ℝ)
     (u : W1p0 (volume : Measure (WithLp 2 (ℝ × E))) Omega 2) :
     hyperplaneTrace (Omega := Omega) a u =
-      W1p.hyperplaneTrace a
+      W1p.hyperplaneTrace ENNReal.ofNat_ne_top a
         (W1p0.extendByZeroL (Omega := Omega) le_top u :
           W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2) :=
   (rfl)
