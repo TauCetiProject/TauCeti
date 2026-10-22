@@ -30,6 +30,9 @@ inclusions `TauCeti.DGAdditiveClosure.single` and projections `TauCeti.DGAdditiv
 are closed of degree zero, `proj j ∘ single i` is the identity for `i = j` and zero otherwise, and
 `∑ᵢ single i ∘ proj i` is the identity of `M`.
 
+A DG functor `F : C ⥤ D` induces a DG functor `TauCeti.DGAdditiveClosure.map F` between the
+additive closures, sending `⊕ᵢ Xᵢ` to `⊕ᵢ F Xᵢ` and applying `F` to every matrix entry.
+
 The additive closure of the shift closure is the home of the underlying objects `⊕ᵢ Xᵢ[rᵢ]` of
 the one-sided twisted complexes of Bondal and Kapranov, whose twisting differential is a
 degree-one matrix of this kind.
@@ -45,6 +48,8 @@ degree-one matrix of this kind.
   projection to a summand.
 * `TauCeti.DGAdditiveClosure.sum`: the direct sum `M ⊕ N` of two objects, the concatenation of
   their families of summands.
+* `TauCeti.DGAdditiveClosure.map`: the DG functor between additive closures induced by a DG
+  functor, applied summandwise and entrywise.
 
 ## Main results
 
@@ -72,7 +77,7 @@ open CategoryTheory HomologicalComplex
 
 namespace TauCeti
 
-universe v u
+universe v u u₂
 
 /-- The objects of the **additive closure** of a differential graded category on the objects
 `C`: a finite family `X : ι → C`, standing for the formal direct sum `⊕ᵢ Xᵢ`.  The Hom complexes
@@ -471,6 +476,66 @@ theorem dgHomEquiv_dgId_sum_inr_inr (M N : DGAdditiveClosure C) (i j : N.ι) :
   rcases eq_or_ne i j with rfl | h
   · rw [dgHomEquiv_dgId_self, dgHomEquiv_dgId_self]
   · rw [dgHomEquiv_dgId_of_ne R _ (Sum.inr_injective.ne h), dgHomEquiv_dgId_of_ne R _ h]
+
+/-! ### Functoriality -/
+
+section Map
+
+variable {D : Type u₂} [DGCategory R D]
+  (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
+
+/-- The action of a DG functor on matrices of morphisms of degree `n`: it is applied entrywise. -/
+noncomputable def mapHom (M N : DGAdditiveClosure C) (n : ℤ) :
+    DGHom R n M N →ₗ[R]
+      DGHom R n (⟨M.ι, fun i ↦ F.obj (M.X i)⟩ : DGAdditiveClosure D) ⟨N.ι, fun j ↦ F.obj (N.X j)⟩ :=
+  (dgHomEquiv R _ _ n).symm.toLinearMap ∘ₗ
+    (LinearMap.piMap fun _ ↦ LinearMap.piMap fun _ ↦ F.dgMap n) ∘ₗ
+      (dgHomEquiv R M N n).toLinearMap
+
+/-- The entries of the image of a matrix are the images of its entries. -/
+@[simp]
+theorem dgHomEquiv_mapHom {M N : DGAdditiveClosure C} {n : ℤ} (f : DGHom R n M N) (i : M.ι)
+    (j : N.ι) :
+    dgHomEquiv R _ _ n (mapHom R F M N n f) i j = F.dgMap n (dgHomEquiv R M N n f i j) := by
+  simp [mapHom]
+
+/-- The DG functor between additive closures induced by a DG functor `F`, sending `⊕ᵢ Xᵢ` to
+`⊕ᵢ F Xᵢ` and applying `F` to every matrix entry. -/
+-- This is reducible, with the object map given explicitly, so that the index type of the image of
+-- `M` is reducibly `M.ι`: the matrix entries of morphisms between images are then indexed by the
+-- summands of the original objects.
+noncomputable abbrev map :
+    EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) (DGAdditiveClosure C)
+      (DGAdditiveClosure D) :=
+  letI G := EnrichedFunctor.ofDGMap
+    (fun M ↦ (⟨M.ι, fun i ↦ F.obj (M.X i)⟩ : DGAdditiveClosure D))
+    (fun {M N} n ↦ mapHom R F M N n)
+    (fun n f ↦ dgHom_ext R fun i j ↦ by
+      rw [dgHomEquiv_mapHom, dgHomEquiv_dgDifferential, dgHomEquiv_dgDifferential,
+        dgHomEquiv_mapHom, EnrichedFunctor.dgMap_dgDifferential])
+    (fun M ↦ dgHom_ext R fun i j ↦ by
+      rw [dgHomEquiv_mapHom]
+      rcases eq_or_ne i j with rfl | h
+      · rw [dgHomEquiv_dgId_self R M, dgHomEquiv_dgId_self, EnrichedFunctor.dgMap_dgId]
+      · rw [dgHomEquiv_dgId_of_ne R M h, dgHomEquiv_dgId_of_ne R _ h, map_zero])
+    (fun f g h ↦ dgHom_ext R fun i k ↦ by
+      rw [dgHomEquiv_mapHom, dgHomEquiv_dgComp, dgHomEquiv_dgComp, map_sum]
+      exact Finset.sum_congr rfl fun j _ ↦ by
+        rw [dgHomEquiv_mapHom, dgHomEquiv_mapHom, EnrichedFunctor.dgMap_dgComp])
+  { obj := fun M ↦ (⟨M.ι, fun i ↦ F.obj (M.X i)⟩ : DGAdditiveClosure D)
+    -- The tactic block postpones elaborating `G.map` until the expected type, which mentions the
+    -- object map above, is known; the two object maps then agree by unfolding `G`.
+    map := by exact G.map
+    map_id := G.map_id
+    map_comp := G.map_comp }
+
+/-- The induced DG functor acts on matrices by `TauCeti.DGAdditiveClosure.mapHom`. -/
+@[simp]
+theorem dgMap_map {M N : DGAdditiveClosure C} {n : ℤ} (f : DGHom R n M N) :
+    (map R F).dgMap n f = mapHom R F M N n f :=
+  (EnrichedFunctor.dgMap_apply _ f).trans rfl
+
+end Map
 
 end DGAdditiveClosure
 
