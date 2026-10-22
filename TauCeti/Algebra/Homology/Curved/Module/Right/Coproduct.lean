@@ -40,7 +40,7 @@ coacyclic objects of the second kind are closed.
 * `TauCeti.CurvedDGRightModuleCat.homotopyDirectSumCofanIsColimit`: the direct sum is a coproduct
   in the curved homotopy category.
 * The `HasCoproducts` instances on the closed and homotopy categories, and the preservation of
-  these coproducts by the quotient functor.
+  all coproducts indexed by `Type u` by the quotient functor.
 
 ## References
 
@@ -338,6 +338,14 @@ instance : PreservesColimit
     (dgClosedToHomotopy R) :=
   preservesColimit_of_preserves_colimit_cocone (closedDirectSumCofanIsColimit M)
     ((isColimitMapCoconeCofanMkEquiv _ _ _).symm (homotopyDirectSumCofanIsColimit M))
+
+/-- The quotient functor to the curved homotopy category preserves all coproducts indexed by
+`J`. -/
+instance : PreservesColimitsOfShape (Discrete J)
+    (dgClosedToHomotopy R (C := CurvedDGRightModuleCat.{u, u, u} h)) :=
+  ⟨fun {F} ↦ preservesColimit_of_iso_diagram (K₁ := Discrete.functor fun j ↦
+    ForgetEnrichment.of _ (ForgetEnrichment.to (CochainComplex (ModuleCat R) ℤ) (F.obj ⟨j⟩)))
+    _ (Discrete.natIsoFunctor (F := F)).symm⟩
 
 noncomputable instance (X : J → DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) :
     HasCoproduct X :=
