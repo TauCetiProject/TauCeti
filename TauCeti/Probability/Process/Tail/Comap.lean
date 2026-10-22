@@ -27,7 +27,8 @@ namespace TauCeti.Probability
 variable {Ω Ω' : Type*} {β : ℕ → Type*} [∀ k, MeasurableSpace (β k)]
 
 /-- Future σ-algebras commute with composition of a process with an arbitrary map. -/
-@[simp]
+-- Commute composition directly before expanding the supremum defining the future algebra.
+@[simp↓ 1100]
 theorem tailFamily_comp (X : (k : ℕ) → Ω → β k) (f : Ω' → Ω) (n : ℕ) :
     tailFamily (fun k => X k ∘ f) n = MeasurableSpace.comap f (tailFamily X n) := by
   simp only [tailFamily_eq_iSup_comap, MeasurableSpace.comap_iSup,

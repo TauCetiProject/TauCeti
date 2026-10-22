@@ -65,7 +65,8 @@ theorem quantile_map_cast_poissonMeasure_eq_zero_iff (r : ℝ≥0) (hu : u ∈ I
   simpa [IsLeast, lowerBounds] using quantile_map_cast_poissonMeasure_eq_iff r hu 0
 
 /-- The rate-zero Poisson law has zero quantile at every interior probability level. -/
-@[simp]
+-- Compute the zero-rate quantile before rewriting the measure as a Dirac mass.
+@[simp↓ 1100]
 theorem quantile_map_cast_poissonMeasure_zero (hu : u ∈ Ioo 0 1) :
     Po(ℝ, 0).quantile u = 0 :=
   (quantile_map_cast_poissonMeasure_eq_zero_iff 0 hu).2 (by simpa using hu.2.le)
