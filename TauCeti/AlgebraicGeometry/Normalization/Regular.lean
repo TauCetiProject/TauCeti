@@ -104,7 +104,8 @@ theorem isRegular_normalization_of_field [IsLocallyNoetherian Y]
     [QuasiCompact f] [QuasiSeparated f] [IsFinite f.fromNormalization] :
     IsRegular f.normalization :=
   have := LocallyOfFiniteType.isLocallyNoetherian f.fromNormalization
-  .of_isNormalScheme (f.fromNormalization.topologicalKrullDim_le.trans hY)
+  .of_isNormalScheme_of_topologicalKrullDim_le_one
+    (f.fromNormalization.topologicalKrullDim_le.trans hY)
 
 /-- **Resolution of curves: regularity of the normalization.** Let `Y` be an integral locally
 Noetherian scheme of dimension at most one, and suppose that the normalization of `Y` in its

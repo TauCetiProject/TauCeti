@@ -38,8 +38,8 @@ rings.
 * `TauCeti.AlgebraicGeometry.IsRegular.component_regular`: regular affine-open section rings.
 * `TauCeti.AlgebraicGeometry.isRegular_Spec_iff`: regularity of an affine scheme.
 * `TauCeti.AlgebraicGeometry.IsRegular.isNormal`: regular schemes are normal.
-* `TauCeti.AlgebraicGeometry.IsRegular.of_isNormalScheme`: a locally Noetherian normal scheme of
-  dimension at most one is regular.
+* `TauCeti.AlgebraicGeometry.IsRegular.of_isNormalScheme_of_topologicalKrullDim_le_one`: a locally
+  Noetherian normal scheme of dimension at most one is regular.
 
 ## References
 
@@ -179,8 +179,8 @@ instance IsRegular.isNormal [IsRegular X] : IsNormalScheme X := by
 Noetherian integrally closed local domain of dimension at most one, hence a field or a discrete
 valuation ring. Stacks, Lemma 10.119.7 (00PD). -/
 @[stacks 00PD "dimension at most one"]
-theorem IsRegular.of_isNormalScheme [IsLocallyNoetherian X] [IsNormalScheme X]
-    (hX : topologicalKrullDim X ≤ 1) : IsRegular X := by
+theorem IsRegular.of_isNormalScheme_of_topologicalKrullDim_le_one [IsLocallyNoetherian X]
+    [IsNormalScheme X] (hX : topologicalKrullDim X ≤ 1) : IsRegular X := by
   refine ⟨fun x ↦ ?_⟩
   have : Ring.KrullDimLE 1 (X.presheaf.stalk x) := by
     rw [Ring.krullDimLE_iff, ringKrullDim_stalk_eq_coheight]
