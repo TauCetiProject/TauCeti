@@ -32,6 +32,9 @@ GitHub fallback. `HOSTED_RUNNER_BUDGET` defaults to 18 running GitHub-hosted job
 including the picker. Set it below the provider's total job limit to preserve
 headroom for short control jobs.
 
+Shared capacity observations must be complete, match the organization, remain unexpired,
+and be at most 150 seconds old. This retains the two-minute shared-cache allowance.
+
 Capacity scans preserve the existing App API reserve (default 1,500 requests),
 then try one complete scan using the repository token (reserve 250). Incomplete
 scans cannot authorize spare cloud capacity. Fleet selection also requires a
