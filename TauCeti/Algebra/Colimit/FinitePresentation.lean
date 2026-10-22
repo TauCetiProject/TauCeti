@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Colimit.DirectLimit
 public import Mathlib.RingTheory.FinitePresentation
-public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.RingTheory.TensorProduct.DirectLimit
 import Mathlib.Data.Finset.Order
 
 /-!
@@ -21,8 +20,8 @@ This file shows that `Hom_A(S, -)` commutes with this colimit when `S` is finite
 * two `A`-algebra maps from an `A`-algebra `S` of finite type into a stage that agree in the
   colimit already agree at a later stage.
 
-It also shows that base change commutes with directed colimits of algebras:
-`(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)`. Combining the two, maps from a finitely presented
+Combining these with the equivalence `(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)` of
+`TauCeti.Algebra.TensorProduct.directLimitLeft`, maps from a finitely presented
 `A`-algebra `S` into `(colim B i) ⊗[A] M` descend to some `B i ⊗[A] M`, uniquely up to passing to
 a later stage. In base change form, every `R`-algebra map `R ⊗[A] S → R ⊗[A] M`, for
 `R = colim B i`, is the base change of a `B i`-algebra map `B i ⊗[A] S → B i ⊗[A] M`, and two such
@@ -38,14 +37,18 @@ the concrete colimit `DirectLimit` of a directed system of algebras.
 
 ## Main results
 
-* `DirectLimit.Algebra.exists_eq_comp_of_finitePresentation`: an `A`-algebra map from a finitely
-  presented `A`-algebra into a directed colimit of `A`-algebras factors through some stage.
-* `DirectLimit.Algebra.exists_comp_eq_comp_of_finiteType`: two `A`-algebra maps from an
+* `TauCeti.DirectLimit.Algebra.exists_eq_comp_of_finitePresentation`: an `A`-algebra map from a
+  finitely presented `A`-algebra into a directed colimit of `A`-algebras factors through some
+  stage.
+* `TauCeti.DirectLimit.Algebra.exists_comp_eq_comp_of_finiteType`: two `A`-algebra maps from an
   `A`-algebra of finite type into a stage which agree in the colimit agree at a later stage.
-* `Algebra.TensorProduct.directLimitLeft`: `(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)`.
-* `DirectLimit.Algebra.exists_comp_rTensor_eq_rTensor_comp`,
-  `DirectLimit.Algebra.exists_rTensor_comp_eq_rTensor_comp`: descent and eventual equality of
-  maps between base changes `R ⊗[A] S → R ⊗[A] M`, for `S` finitely presented.
+* `TauCeti.DirectLimit.Algebra.exists_eq_rTensor_comp_of_finitePresentation`,
+  `TauCeti.DirectLimit.Algebra.exists_rTensor_comp_eq_rTensor_comp_of_finiteType`: the same two
+  statements for maps `S → (colim B i) ⊗[A] M`.
+* `TauCeti.DirectLimit.Algebra.exists_restrictScalars_comp_rTensor_eq_of_finitePresentation`,
+  `TauCeti.DirectLimit.Algebra.exists_rTensor_comp_restrictScalars_eq_of_finiteType`: descent
+  and eventual equality of maps between base changes `R ⊗[A] S → R ⊗[A] M`, for `S` finitely
+  presented.
 
 ## References
 
@@ -55,37 +58,19 @@ the concrete colimit `DirectLimit` of a directed system of algebras.
 
 public section
 
-open TensorProduct
+open scoped TensorProduct
 
-section CommSemiring
-
-variable {A ι : Type*} [CommSemiring A] [Preorder ι] {B : ι → Type*} [∀ i, CommSemiring (B i)]
-  [∀ i, Algebra A (B i)] {f : ∀ i j, i ≤ j → B i →ₐ[A] B j} [DirectedSystem B (f · · ·)]
-  {S : Type*} [Semiring S] [Algebra A S] (M : Type*) [CommSemiring M] [Algebra A M]
-
-/-- Base change along a fixed `A`-algebra `M` turns a directed system of `A`-algebras `B i` into
-the directed system of `A`-algebras `B i ⊗[A] M`. -/
-instance DirectedSystem.algebraRTensor :
-    DirectedSystem (B · ⊗[A] M) fun i j h ↦ Algebra.TensorProduct.rTensor M (f i j h) where
-  map_self i x := by
-    induction x using TensorProduct.inductionOn with
-    | tmul b m => simp [DirectedSystem.map_self' f]
-    | add x y hx hy => simp_all
-  map_map := by
-    intro k j i hij hjk x
-    induction x using TensorProduct.inductionOn with
-    | tmul b m => simp [DirectedSystem.map_map' f]
-    | add x y hx hy => simp_all
+namespace TauCeti
 
 namespace DirectLimit.Algebra
 
-variable [IsDirectedOrder ι] [Nonempty ι]
+open _root_.DirectLimit.Algebra
 
-/-- The canonical maps into a direct limit of algebras are compatible with the transition
-maps. -/
-@[simp]
-theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of B f j).comp (f i j hij) = of B f i :=
-  AlgHom.ext fun _ ↦ of_f _ _
+section Semiring
+
+variable {A ι : Type*} [CommSemiring A] [Preorder ι] {B : ι → Type*} [∀ i, Semiring (B i)]
+  [∀ i, Algebra A (B i)] {f : ∀ i j, i ≤ j → B i →ₐ[A] B j} [DirectedSystem B (f · · ·)]
+  [IsDirectedOrder ι] [Nonempty ι] {S : Type*} [Semiring S] [Algebra A S]
 
 /-- Two `A`-algebra maps from an `A`-algebra of finite type into a stage of a directed colimit of
 `A`-algebras which agree in the colimit already agree at a later stage. -/
@@ -108,86 +93,16 @@ theorem exists_comp_eq_comp_of_finiteType [Algebra.FiniteType A S] {j : ι}
   rw [← DirectedSystem.map_map' f (hjk ⟨x, hx⟩) (hkl ⟨x, hx⟩), hk]
   exact DirectedSystem.map_map' f _ _ _
 
-end DirectLimit.Algebra
+end Semiring
 
-namespace Algebra.TensorProduct
+section CommSemiring
 
-variable [IsDirectedOrder ι] [Nonempty ι]
+variable {A ι : Type*} [CommSemiring A] [Preorder ι] {B : ι → Type*} [∀ i, CommSemiring (B i)]
+  [∀ i, Algebra A (B i)] {f : ∀ i j, i ≤ j → B i →ₐ[A] B j} [DirectedSystem B (f · · ·)]
+  [IsDirectedOrder ι] [Nonempty ι] {S : Type*} [Semiring S] [Algebra A S]
+  (M : Type*) [CommSemiring M] [Algebra A M]
 
-open DirectLimit.Algebra
-
-/-- The map `colim (B i ⊗[A] M) → (colim B i) ⊗[A] M` induced by the base changes of the
-canonical maps `B i → colim B i`. -/
-private noncomputable def fromDirectLimit :
-    DirectLimit (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) →ₐ[A] DirectLimit B f ⊗[A] M :=
-  DirectLimit.Algebra.lift _ _ _ (fun i ↦ rTensor M (of B f i)) fun i j hij x ↦ by
-    rw [← AlgHom.comp_apply, ← map_comp, of_comp_f, AlgHom.comp_id]
-
-/-- The map `(colim B i) ⊗[A] M → colim (B i ⊗[A] M)`, sending `[b] ⊗ m` to `[b ⊗ m]`. -/
-private noncomputable def toDirectLimit :
-    DirectLimit B f ⊗[A] M →ₐ[A] DirectLimit (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) :=
-  lift (DirectLimit.Algebra.lift _ _ _
-      (fun i ↦ (of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i).comp includeLeft)
-      fun i j hij b ↦ by
-        simp only [AlgHom.comp_apply, includeLeft_apply]
-        rw [← of_f (G := (B · ⊗[A] M)) (f := fun i j h ↦ rTensor M (f i j h)) hij]
-        simp only [map_tmul, AlgHom.id_apply])
-    ((of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) (Classical.arbitrary ι)).comp includeRight)
-    fun _ _ ↦ .all _ _
-
-private theorem fromDirectLimit_of (i : ι) (x : B i ⊗[A] M) :
-    fromDirectLimit M (of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i x) =
-      rTensor M (of B f i) x :=
-  DirectLimit.Algebra.lift_of ..
-
-private theorem toDirectLimit_of_tmul (i : ι) (b : B i) (m : M) :
-    toDirectLimit M (of B f i b ⊗ₜ m) =
-      of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i (b ⊗ₜ m) := by
-  -- The image of `1 ⊗ m` does not depend on the stage it is taken at.
-  have h1 (j : ι) : of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) j (1 ⊗ₜ m) =
-      of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i (1 ⊗ₜ m) := by
-    obtain ⟨k, hjk, hik⟩ := exists_ge_ge j i
-    rw [← of_f (G := (B · ⊗[A] M)) (f := fun i j h ↦ rTensor M (f i j h)) hjk,
-      ← of_f (G := (B · ⊗[A] M)) (f := fun i j h ↦ rTensor M (f i j h)) hik]
-    simp only [map_tmul, map_one, AlgHom.id_apply]
-  rw [show of B f i b ⊗ₜ[A] m = (of B f i b ⊗ₜ[A] 1) * (1 ⊗ₜ m) by
-    rw [tmul_mul_tmul, mul_one, one_mul], map_mul]
-  simp only [toDirectLimit, lift_tmul, map_one, mul_one, one_mul, DirectLimit.Algebra.lift_of,
-    AlgHom.comp_apply, includeLeft_apply, includeRight_apply, h1]
-  rw [← map_mul, tmul_mul_tmul, mul_one, one_mul]
-
-variable (f) in
-/-- Base change commutes with directed colimits of algebras:
-`(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)`. -/
-noncomputable def directLimitLeft :
-    DirectLimit B f ⊗[A] M ≃ₐ[A] DirectLimit (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) :=
-  AlgEquiv.ofAlgHom (toDirectLimit (f := f) M) (fromDirectLimit M)
-    (DirectLimit.Algebra.hom_ext _ fun i ↦ ext' fun b m ↦ by
-      rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply, fromDirectLimit_of, map_tmul,
-        AlgHom.id_apply, toDirectLimit_of_tmul, AlgHom.id_apply])
-    (ext' fun b m ↦ by
-      obtain ⟨i, b, rfl⟩ := DirectLimit.exists_eq_mk _ b
-      rw [← DirectLimit.Algebra.of_apply (R := A), AlgHom.comp_apply, toDirectLimit_of_tmul,
-        fromDirectLimit_of, map_tmul, AlgHom.id_apply, AlgHom.id_apply])
-
-theorem directLimitLeft_of_tmul (i : ι) (b : B i) (m : M) :
-    directLimitLeft f M (of B f i b ⊗ₜ m) =
-      of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i (b ⊗ₜ m) :=
-  toDirectLimit_of_tmul M i b m
-
-theorem directLimitLeft_symm_of (i : ι) (x : B i ⊗[A] M) :
-    (directLimitLeft f M).symm (of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i x) =
-      rTensor M (of B f i) x := by
-  rw [directLimitLeft, AlgEquiv.ofAlgHom_symm]
-  exact fromDirectLimit_of (f := f) M i x
-
-end Algebra.TensorProduct
-
-namespace DirectLimit.Algebra
-
-variable [IsDirectedOrder ι] [Nonempty ι]
-
-open Algebra.TensorProduct
+open _root_.Algebra.TensorProduct TauCeti.Algebra.TensorProduct
 
 /-- Two `A`-algebra maps from an `A`-algebra `S` of finite type into a base change `B j ⊗[A] M`
 which agree in `(colim B i) ⊗[A] M` already agree in `B k ⊗[A] M` for some `k ≥ j`. -/
@@ -221,21 +136,16 @@ theorem exists_rTensor_comp_restrictScalars_eq_of_finiteType [Algebra.FiniteType
     RingHom.id_apply] at h₁ h₂
   simp only [AlgHom.comp_apply, includeLeft_apply, AlgHom.coe_restrictScalars', h₁, h₂]
 
-end DirectLimit.Algebra
-
 end CommSemiring
 
 section CommRing
 
 variable {A ι : Type*} [CommRing A] [Preorder ι] {B : ι → Type*} [∀ i, CommSemiring (B i)]
   [∀ i, Algebra A (B i)] {f : ∀ i j, i ≤ j → B i →ₐ[A] B j} [DirectedSystem B (f · · ·)]
-  {S : Type*} [Semiring S] [Algebra A S] (M : Type*) [CommSemiring M] [Algebra A M]
+  [IsDirectedOrder ι] [Nonempty ι] {S : Type*} [Semiring S] [Algebra A S]
+  (M : Type*) [CommSemiring M] [Algebra A M]
 
-namespace DirectLimit.Algebra
-
-variable [IsDirectedOrder ι] [Nonempty ι]
-
-open Algebra.TensorProduct
+open _root_.Algebra.TensorProduct TauCeti.Algebra.TensorProduct
 
 /-- An `A`-algebra map from a finitely presented `A`-algebra into a directed colimit of
 `A`-algebras factors through some stage. -/
@@ -311,6 +221,8 @@ theorem exists_restrictScalars_comp_rTensor_eq_of_finitePresentation
       AlgHom.id_apply, AlgHom.coe_restrictScalars', h₁, h₂]
   · simpa [-DirectLimit.Algebra.of_apply] using congr($hψ s)
 
+end CommRing
+
 end DirectLimit.Algebra
 
-end CommRing
+end TauCeti
