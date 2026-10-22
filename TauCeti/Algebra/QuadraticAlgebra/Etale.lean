@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wentao Li
 -/
 module
-public import TauCeti.Algebra.QuadraticAlgebra.Discriminant
+public import Mathlib.RingTheory.QuadraticAlgebra
 public import TauCeti.RingTheory.Etale.Discriminant
 
 /-!
@@ -26,6 +26,6 @@ namespace QuadraticAlgebra
 theorem etale_of_discr_ne_zero {K : Type*} [Field K] {a b : K} (hd : discr a b ≠ 0) :
     Algebra.Etale K (QuadraticAlgebra K a b) := by
   apply TauCeti.Algebra.etale_of_isUnit_discr (basis a b)
-  simpa only [algebraDiscr_basis] using (isUnit_iff_ne_zero.mpr hd)
+  simpa only [Algebra.discr_quadraticAlgebra] using (isUnit_iff_ne_zero.mpr hd)
 
 end QuadraticAlgebra
