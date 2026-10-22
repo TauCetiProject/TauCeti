@@ -134,6 +134,12 @@ theorem map_target_arrows {s t : V} (p : ArrowWalk Q s t) :
       List.concat_eq_append, List.map_singleton]
     rw [List.tail_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p)]
 
+/-- The vertices of a walk are its source followed by the targets of its arrows. -/
+theorem vertices_eq_cons_map_target_arrows {s t : V} (p : ArrowWalk Q s t) :
+    p.vertices = s :: p.arrows.map (fun a ↦ a.2.1) := by
+  rw [map_target_arrows]
+  exact List.eq_cons_of_mem_head? (@Quiver.Path.vertices_head? V ⟨Q⟩ s t p)
+
 /-- A walk whose vertices after the first are distinct traverses no arrow twice. -/
 theorem nodup_arrows_of_nodup_tail {s t : V} {p : ArrowWalk Q s t}
     (hp : p.vertices.tail.Nodup) : p.arrows.Nodup :=
