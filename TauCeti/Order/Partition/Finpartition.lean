@@ -24,6 +24,8 @@ the single part of the coarsest partition of a non-bottom element, the partition
 fibres of a map to a finite type, the associated indexed partition, the sizes of the traces of a
 subset on the parts, cardinality bounds for common refinements, a bound on the sum of the squared
 part sizes, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
+the monotonicity of `Finpartition.bind`, products over its parts, its parts through each point,
+and the fact that it is inverse to restricting a refinement to the parts of the coarser partition,
 the behavior of intersections of parts under refinement, the symmetry of lying in a common part,
 the determination of a partition by its parts through each point, the parts of a restriction, the
 monotonicity of `Finpartition.part` under refinement, the coarse parent
@@ -105,6 +107,29 @@ theorem bind_le {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] [D
   intro b hb
   obtain ⟨A, hA, hb⟩ := mem_bind.1 hb
   exact ⟨A, hA, (Q A hA).le hb⟩
+
+/-- Juxtaposition is monotone in the finite partitions of the parts. -/
+theorem bind_mono {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] [DecidableEq α]
+    {a : α} {P : Finpartition a} {Q Q' : ∀ i ∈ P.parts, Finpartition i}
+    (h : ∀ i hi, Q i hi ≤ Q' i hi) : P.bind Q ≤ P.bind Q' := by
+  intro b hb
+  obtain ⟨A, hA, hb⟩ := mem_bind.1 hb
+  obtain ⟨c, hc, hbc⟩ := h A hA hb
+  exact ⟨c, mem_bind.2 ⟨A, hA, hc⟩, hbc⟩
+
+/-- A product over the parts of the juxtaposition `P.bind Q` is the product, over the parts `A`
+of `P`, of the products over the parts of `Q A`. -/
+@[to_additive /-- A sum over the parts of the juxtaposition `P.bind Q` is the sum, over the parts
+`A` of `P`, of the sums over the parts of `Q A`. -/]
+theorem prod_parts_bind {α M : Type*} [Lattice α] [OrderBot α] [IsModularLattice α]
+    [DecidableEq α] [CommMonoid M] {a : α} (P : Finpartition a)
+    (Q : ∀ i ∈ P.parts, Finpartition i) (g : α → M) :
+    ∏ b ∈ (P.bind Q).parts, g b = ∏ A ∈ P.parts.attach, ∏ b ∈ (Q A.1 A.2).parts, g b := by
+  rw [bind_parts, Finset.prod_biUnion]
+  rintro ⟨b, hb⟩ - ⟨c, hc⟩ - hbc
+  refine Finset.disjoint_left.2 fun d hdb hdc => (Q b hb).ne_bot hdb <| eq_bot_iff.2 <|
+    (le_inf ((Q b hb).le hdb) ((Q c hc).le hdc)).trans
+      (P.disjoint hb hc (Subtype.coe_injective.ne hbc)).le_bot
 
 /-- If `Q` refines `P`, then each part of `P` is the union of the parts of `Q` it contains. -/
 theorem biUnion_filter_subset_eq_of_le {ι : Type*} [DecidableEq ι] {s B : Finset ι}
@@ -376,6 +401,26 @@ theorem eq_bot_or_eq_top_of_pair {i j : α} (P : Finpartition ({i, j} : Finset �
       · rw [P.mem_part_iff_part_eq_part hi hj] at hy
         exact absurd (hy ▸ P.mem_part hj) hji
       · exact mem_singleton.1 hy'
+
+/-- In the juxtaposition `P.bind Q`, the part through a point of a part `B` of `P` is its part in
+`Q B`. -/
+theorem part_bind {Q : ∀ i ∈ P.parts, Finpartition i} {B : Finset α} (hB : B ∈ P.parts) {a : α}
+    (ha : a ∈ B) : (P.bind Q).part a = (Q B hB).part a :=
+  part_eq_of_mem _ (mem_bind.2 ⟨B, hB, (Q B hB).part_mem.2 ha⟩) ((Q B hB).mem_part_self.2 ha)
+
+/-- Restricting the juxtaposition `P.bind Q` to a part `B` of `P` recovers `Q B`. -/
+@[simp]
+theorem restrict_bind {Q : ∀ i ∈ P.parts, Finpartition i} {B : Finset α} (hB : B ∈ P.parts) :
+    (P.bind Q).restrict (P.le hB) = Q B hB :=
+  ext_of_part fun a ha => by
+    rw [part_restrict _ _ ha, part_bind hB ha, inter_eq_left.2 ((Q B hB).part_subset a)]
+
+/-- Juxtaposing the restrictions of a refinement `Q ≤ P` to the parts of `P` recovers `Q`. -/
+@[simp]
+theorem bind_restrict (h : Q ≤ P) : (P.bind fun _ hB => Q.restrict (P.le hB)) = Q :=
+  ext_of_part fun a ha => by
+    rw [part_bind (P.part_mem.2 ha) (P.mem_part_self.2 ha),
+      part_restrict _ _ (P.mem_part_self.2 ha), inter_eq_left.2 (part_mono h a)]
 
 end FinsetRefinement
 
