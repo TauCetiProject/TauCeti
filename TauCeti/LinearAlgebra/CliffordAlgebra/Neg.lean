@@ -68,34 +68,28 @@ section General
 
 variable (Q Q' : QuadraticForm R M) (h : Q' = -Q) {u : R} (hu : u * u = -1)
 
-/-- The algebra map `CliffordAlgebra Q → CliffordAlgebra Q'` sending `ι Q m` to `u • ι Q' m`. -/
-private def toNeg : CliffordAlgebra Q →ₐ[R] CliffordAlgebra Q' :=
-  lift Q ⟨u • ι Q', fun m ↦ by
-    simp only [LinearMap.smul_apply, smul_mul_smul_comm, hu, ι_sq_scalar, h,
-      neg_apply, map_neg, neg_one_smul, neg_neg]⟩
+/-- Multiplication by `u` is an isometry from `Q` to `Q' = -Q`, with inverse multiplication by
+`-u`. -/
+private def isometryEquivNeg : Q.IsometryEquiv Q' where
+  toLinearEquiv := LinearEquiv.smulOfUnit ⟨u, -u, by rw [mul_neg, hu, neg_neg],
+    by rw [neg_mul, hu, neg_neg]⟩
+  map_app' m := by
+    simp [LinearEquiv.smulOfUnit, h, QuadraticMap.map_smul, hu]
 
-private theorem toNeg_ι (m : M) : toNeg Q Q' h hu (ι Q m) = u • ι Q' m :=
-  lift_ι_apply _ _ m
-
-private theorem toNeg_comp_toNeg (h' : Q = -Q') {v : R} (hv : v * v = -1) (huv : u * v = 1) :
-    (toNeg Q' Q h' hv).comp (toNeg Q Q' h hu) = AlgHom.id R _ := by
-  ext m
-  simp [toNeg_ι, smul_smul, huv]
+private theorem isometryEquivNeg_apply (m : M) : isometryEquivNeg Q Q' h hu m = u • m :=
+  rfl
 
 /-- If `u * u = -1`, the Clifford algebras of `Q` and of `Q' = -Q` are isomorphic, by the algebra
-map sending a vector `ι Q m` to `u • ι Q' m`. Over `ℂ`, with `u = Complex.I`, this is the map
-`v ↦ i v` between the complexified Clifford algebras of a real form and of its negative. -/
+map sending a vector `ι Q m` to `u • ι Q' m`; this is `CliffordAlgebra.equivOfIsometry` for the
+isometry `m ↦ u • m`. Over `ℂ`, with `u = Complex.I`, this is the map `v ↦ i v` between the
+complexified Clifford algebras of a real form and of its negative. -/
 def equivNeg : CliffordAlgebra Q ≃ₐ[R] CliffordAlgebra Q' :=
-  have h' : Q = -Q' := by rw [h, neg_neg]
-  have hu' : -u * -u = -1 := by rw [neg_mul_neg, hu]
-  AlgEquiv.ofAlgHom (toNeg Q Q' h hu) (toNeg Q' Q h' hu')
-    (toNeg_comp_toNeg Q' Q h' hu' h hu (by rw [neg_mul, hu, neg_neg]))
-    (toNeg_comp_toNeg Q Q' h hu h' hu' (by rw [mul_neg, hu, neg_neg]))
+  equivOfIsometry (isometryEquivNeg Q Q' h hu)
 
 /-- `CliffordAlgebra.equivNeg` multiplies each vector by `u`. -/
 @[simp]
 theorem equivNeg_ι (m : M) : equivNeg Q Q' h hu (ι Q m) = u • ι Q' m :=
-  toNeg_ι Q Q' h hu m
+  (map_apply_ι _ m).trans (map_smul (ι Q') u m)
 
 /-- The inverse of `CliffordAlgebra.equivNeg` multiplies each vector by `-u`. -/
 @[simp]
@@ -106,9 +100,12 @@ theorem equivNeg_symm_ι (m : M) : (equivNeg Q Q' h hu).symm (ι Q' m) = -(u •
 the opposite direction. -/
 theorem equivNeg_symm :
     (equivNeg Q Q' h hu).symm =
-      equivNeg Q' Q (by rw [h, neg_neg]) (u := -u) (by rw [neg_mul_neg, hu]) :=
-  AlgEquiv.coe_toAlgHom_injective <| hom_ext <| LinearMap.ext fun m ↦ by
-    simp
+      equivNeg Q' Q (by rw [h, neg_neg]) (u := -u) (by rw [neg_mul_neg, hu]) := by
+  rw [equivNeg, equivOfIsometry_symm]
+  congr 1
+  dsimp only [QuadraticMap.IsometryEquiv.symm, isometryEquivNeg]
+  congr 1
+  exact LinearEquiv.ext fun m ↦ rfl
 
 /-- A bivector `ι Q a * ι Q b` goes to the negative `-(ι Q' a * ι Q' b)` of the corresponding
 bivector, since the two factors of `u` multiply to `-1`. -/
@@ -131,39 +128,28 @@ theorem equivNeg_coe (x : even Q) :
 /-- `CliffordAlgebra.equivNeg` commutes with the grade involution. -/
 @[simp]
 theorem equivNeg_involute (x : CliffordAlgebra Q) :
-    equivNeg Q Q' h hu (involute x) = involute (equivNeg Q Q' h hu x) := by
-  have key : (equivNeg Q Q' h hu).toAlgHom.comp involute =
-      involute.comp (equivNeg Q Q' h hu).toAlgHom := by
-    ext m
-    simp
-  exact congr($key x)
+    equivNeg Q Q' h hu (involute x) = involute (equivNeg Q Q' h hu x) :=
+  map_involute _ x
 
 /-- `CliffordAlgebra.equivNeg` commutes with reversal. -/
 @[simp]
 theorem equivNeg_reverse (x : CliffordAlgebra Q) :
-    equivNeg Q Q' h hu (reverse x) = reverse (equivNeg Q Q' h hu x) := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r => simp
-  | ι m => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | mul x y hx hy => simp only [reverse.map_mul, map_mul, hx, hy]
+    equivNeg Q Q' h hu (reverse x) = reverse (equivNeg Q Q' h hu x) :=
+  map_reverse _ x
 
 /-- `CliffordAlgebra.equivNeg` commutes with Clifford conjugation. -/
 @[simp]
 theorem equivNeg_star (x : CliffordAlgebra Q) :
-    equivNeg Q Q' h hu (star x) = star (equivNeg Q Q' h hu x) := by
-  simp only [star_def, equivNeg_reverse, equivNeg_involute]
+    equivNeg Q Q' h hu (star x) = star (equivNeg Q Q' h hu x) :=
+  map_star _ x
 
 /-- `CliffordAlgebra.equivNeg` carries the vectors of `Q` onto the vectors of `Q'`. -/
 private theorem map_range_ι_equivNeg :
     (LinearMap.range (ι Q)).map (equivNeg Q Q' h hu).toLinearMap =
-      LinearMap.range (ι Q') := by
-  apply le_antisymm
-  · rintro _ ⟨_, ⟨m, rfl⟩, rfl⟩
-    exact ⟨u • m, by simp⟩
-  · rintro _ ⟨m, rfl⟩
-    refine ⟨ι Q ((-u) • m), ⟨_, rfl⟩, ?_⟩
-    simp [smul_smul, hu]
+      LinearMap.range (ι Q') :=
+  (ι_range_map_map (isometryEquivNeg Q Q' h hu).toIsometry).trans <|
+    (congrArg _ (LinearEquiv.range (isometryEquivNeg Q Q' h hu).toLinearEquiv)).trans
+      (Submodule.map_top _)
 
 /-- `CliffordAlgebra.equivNeg` preserves the `ℤ/2`-grading: it carries `evenOdd Q i` onto
 `evenOdd Q' i`. -/
@@ -191,12 +177,12 @@ theorem map_equivNeg {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] {Q₂ Q�
     (h₂ : Q₂' = -Q₂) (f : Q →qᵢ Q₂) (f' : Q' →qᵢ Q₂') (hf : f'.toLinearMap = f.toLinearMap)
     (x : CliffordAlgebra Q) :
     map f' (equivNeg Q Q' h hu x) = equivNeg Q₂ Q₂' h₂ hu (map f x) := by
-  have key : (map f').comp (equivNeg Q Q' h hu).toAlgHom =
-      (equivNeg Q₂ Q₂' h₂ hu).toAlgHom.comp (map f) := by
-    ext m
-    have hm : f' m = f m := congr($hf m)
-    simp [hm]
-  exact congr($key x)
+  have key : f'.comp (isometryEquivNeg Q Q' h hu).toIsometry =
+      (isometryEquivNeg Q₂ Q₂' h₂ hu).toIsometry.comp f :=
+    QuadraticMap.Isometry.ext fun m ↦ by
+      simpa [isometryEquivNeg_apply] using congr($hf (u • m))
+  exact (AlgHom.congr_fun (map_comp_map _ _) x).trans <| congr(map $key x).trans
+    (AlgHom.congr_fun (map_comp_map _ _) x).symm
 
 end General
 
