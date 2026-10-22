@@ -205,8 +205,7 @@ noncomputable def closedDirectSumDesc {N : CurvedDGRightModuleCat.{u, u, u} h}
       rw [toModule_comp_directSum_differential]
       refine DirectSum.linearMap_ext R fun j ↦ LinearMap.ext fun y ↦ ?_
       simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, DirectSum.toModule_lof]
-      rw [show F (DirectSum.lof R J _ j y) = closedHom (f j) y from
-        DirectSum.toModule_lof Aᵐᵒᵖ (M := fun j ↦ M j) j y]
+      rw [DirectSum.lof_eq_of R, ← DirectSum.lof_eq_of Aᵐᵒᵖ, DirectSum.toModule_lof]
       exact differential_closedHom (f j) y)
 
 /-- The closed morphism out of the direct sum is the direct-sum universal map. -/
@@ -299,8 +298,7 @@ theorem dgClosedToHomotopy_map_directSum_ext {N : CurvedDGRightModuleCat.{u, u, 
     refine DirectSum.linearMap_ext R fun j ↦ LinearMap.ext fun y ↦ ?_
     simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
       LinearMap.restrictScalars_apply, DirectSum.toModule_lof]
-    rw [show K (DirectSum.lof R J _ j y) = (k j).1 y from
-      DirectSum.toModule_lof Aᵐᵒᵖ (M := fun j ↦ M j) j y]
+    rw [DirectSum.lof_eq_of R, ← DirectSum.lof_eq_of Aᵐᵒᵖ, DirectSum.toModule_lof]
     exact hk j y
 
 /-- The cofan of homotopy classes of the summand inclusions into the direct sum. -/

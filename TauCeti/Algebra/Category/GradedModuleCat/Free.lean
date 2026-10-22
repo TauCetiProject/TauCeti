@@ -103,9 +103,9 @@ def freeLift {M : GradedModuleCat.{max uA uI} 𝒜} (x : ∀ i, M.grading.piece 
     (LinearMap.isHomogeneous_def.mpr fun p y hy => ?_)
   refine InternalGrading.toModule_mem_of_mem_directSumPiece _ M.grading.piece _
     (fun i z hz => ?_) (by simpa only [InternalGrading.directSum_piece] using hy)
+  have hz' : z ∈ 𝒜 (p - d i) := by simpa [sub_eq_add_neg] using hz
   rw [LinearMap.toSpanSingleton_apply]
-  simpa using SetLike.GradedSMul.smul_mem (show z ∈ 𝒜 (p - d i) by
-    simpa [sub_eq_add_neg] using hz) (x i).property
+  simpa using SetLike.GradedSMul.smul_mem hz' (x i).property
 
 /-- The underlying linear map of extension is the direct-sum universal map. -/
 @[simp]
