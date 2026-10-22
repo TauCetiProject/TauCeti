@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.AlgebraicGeometry.Limits
+public import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Base change of a section of a scheme morphism
@@ -65,11 +66,8 @@ lemma isPullback_graphSection {T' T : Over S} (φ : T' ⟶ T) (x : T ⟶ Over.mk
       (graphSection x) := by
   -- The square formed by `T' ×_S X ⟶ T ×_S X` and the two projections is a pullback square;
   -- pasting with it gives a square whose horizontal composites are identities.
-  have h : IsPullback ((Over.pullback f).map φ).left (pullback.fst T'.hom f)
-      (pullback.fst T.hom f) φ.left := by
-    refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback T.hom f).flip
-    simpa using (IsPullback.of_hasPullback T'.hom f).flip
-  refine IsPullback.of_right ?_ (graphSection_comp_pullback_map φ x) h.flip
+  refine IsPullback.of_right ?_ (graphSection_comp_pullback_map φ x)
+    (Over.isPullback_pullback_map_left f φ).flip
   rw [graphSection_fst, graphSection_fst]
   exact IsPullback.id_horiz φ.left
 
@@ -122,14 +120,6 @@ lemma baseChangeSection_comp_pullback_map {T' T : Over S} (φ : T' ⟶ T) :
   rw [baseChangeSection, baseChangeSection, ← comp_basePoint hx₀ φ]
   exact graphSection_comp_pullback_map φ (basePoint hx₀ T)
 
-/-- The morphism between two base changes induced by a morphism of `S`-schemes forms a pullback
-square with their first projections. -/
-lemma isPullback_over_pullback_map_left {T T' : Over S} (φ : T' ⟶ T) :
-    IsPullback ((Over.pullback f).map φ).left (pullback.fst T'.hom f)
-      (pullback.fst T.hom f) φ.left := by
-  refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback T.hom f).flip
-  simpa using (IsPullback.of_hasPullback T'.hom f).flip
-
 /-- The base-changed section over `T'` is the pullback of the base-changed section over `T`
 along a morphism `T' ⟶ T` of schemes over `S`. -/
 lemma isPullback_baseChangeSection {T' T : Over S} (φ : T' ⟶ T) :
@@ -137,7 +127,7 @@ lemma isPullback_baseChangeSection {T' T : Over S} (φ : T' ⟶ T) :
       ((Over.pullback f).map φ).left (baseChangeSection f x₀ hx₀ T) :=
   IsPullback.of_right
     (by simpa only [baseChangeSection_fst] using IsPullback.id_horiz φ.left)
-    (baseChangeSection_comp_pullback_map f x₀ hx₀ φ) (isPullback_over_pullback_map_left f φ).flip
+    (baseChangeSection_comp_pullback_map f x₀ hx₀ φ) (Over.isPullback_pullback_map_left f φ).flip
 
 end
 

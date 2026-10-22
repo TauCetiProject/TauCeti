@@ -77,7 +77,7 @@ theorem relativePicardFiberDegree_abelMap_app {T : (Over S)ᵒᵖ} {Ω : Type u}
     pullback.map _ _ _ _ ξ (𝟙 X) (𝟙 S) (by simp) (by simp)
   -- `(Over.pullback f).map (Over.homMk ξ)` is this `pullback.map` by definition.
   have hpb : IsPullback g (pullback.fst (ξ ≫ T.unop.hom) f) (pullback.fst T.unop.hom f) ξ :=
-    isPullback_over_pullback_map_left f (Over.homMk ξ : Over.mk (ξ ≫ T.unop.hom) ⟶ T.unop)
+    Over.isPullback_pullback_map_left f (Over.homMk ξ : Over.mk (ξ ≫ T.unop.hom) ⟶ T.unop)
   have hD' := hD.comap_of_isPullback hpb
   have := hD.flat
   have := hD.isFinite
