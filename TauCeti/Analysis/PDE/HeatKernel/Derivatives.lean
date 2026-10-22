@@ -280,6 +280,7 @@ theorem exists_integral_norm_iteratedFDeriv_heatKernel_le (m : ℕ) :
 
 /-- **The derivatives of the heat kernel have integral zero.** For every order `m ≥ 1` and every
 `t > 0`, `∫ D^m K_t = 0`. -/
+@[simp]
 theorem integral_iteratedFDeriv_heatKernel_eq_zero {t : ℝ} (ht : 0 < t) {m : ℕ} (hm : m ≠ 0) :
     ∫ x : E, iteratedFDeriv ℝ m (heatKernel t) x = 0 := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm
