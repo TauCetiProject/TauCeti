@@ -72,6 +72,8 @@ The identification of this simple-root model with the classical coordinate model
   discriminant group.
 * `TauCeti.IntegralLattice.typeADiscriminantGroupEquiv`: the resulting isomorphism
   `ZMod (n + 1) ≃+ A_{Aₙ}`.
+* `TauCeti.IntegralLattice.typeADiscriminantGroupEquiv_apply`: it carries the label `a` to the
+  class `a.val • ω₁`.
 * `TauCeti.IntegralLattice.discriminantQuadraticMap_typeAFundamentalWeightClass`:
   `q(ω₁) = n / (2 (n + 1))`.
 * `TauCeti.IntegralLattice.discriminantPairing_typeAFundamentalWeightClass`:
@@ -431,6 +433,11 @@ noncomputable def typeADiscriminantGroupEquiv :
 theorem typeADiscriminantGroupEquiv_apply_one :
     typeADiscriminantGroupEquiv n 1 = typeAFundamentalWeightClass n :=
   zmodAddEquivOfGenerator_apply_one _ _
+
+/-- The label `a : ZMod (n + 1)` names the class `a.val • ω₁`. -/
+theorem typeADiscriminantGroupEquiv_apply (a : ZMod (n + 1)) :
+    typeADiscriminantGroupEquiv n a = a.val • typeAFundamentalWeightClass n := by
+  rw [← typeADiscriminantGroupEquiv_apply_one, ← map_nsmul, nsmul_one, ZMod.natCast_zmod_val]
 
 /-! ## The discriminant form on every class
 

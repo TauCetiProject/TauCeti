@@ -304,9 +304,7 @@ theorem typeAIsometryZeroSumLattice_typeAFundamentalWeight_apply (j : Fin (n + 1
     simp only [map_smul, Submodule.coe_sum, Submodule.coe_smul,
       typeAIsometryZeroSumLattice_typeASimpleRoot]
     refine sum_congr rfl fun k _ ↦ congrArg (· • zeroSumSimpleRoot n k) ?_
-    simp only [w, typeAFundamentalWeight_apply, sum_sub_distrib, sum_const, Fin.card_Iic,
-      Fin.val_castSucc, nsmul_eq_mul, sum_ite_eq', mem_Iic, Fin.zero_le, ↓reduceIte]
-    push_cast
+    simp [w, typeAFundamentalWeight_apply, sum_sub_distrib]
     field_simp
     ring
   exact congrFun key j
@@ -332,11 +330,10 @@ theorem exists_typeAIsometryZeroSumLattice_apply_eq_intCast_sub_of_mk_eq {k : �
     ← (typeAIsometryZeroSumLattice n).apply_mem_carrier_iff, mem_zeroSumLattice_carrier_iff] at hx
   obtain ⟨m, hm⟩ := hx j
   refine ⟨m + k * if j = 0 then 1 else 0, ?_⟩
-  rw [map_sub, map_zsmul, Submodule.coe_sub, Submodule.coe_smul_of_tower, Pi.sub_apply,
-    Pi.smul_apply, typeAIsometryZeroSumLattice_typeAFundamentalWeight_apply, zsmul_eq_mul,
-    mul_sub, mul_one_div] at hm
+  rw [map_sub, map_zsmul] at hm
+  simp at hm
   push_cast
-  split_ifs at hm ⊢ <;> linarith
+  linear_combination hm
 
 /-! ## Invariants of the coordinate model -/
 

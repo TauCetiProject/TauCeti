@@ -179,9 +179,7 @@ theorem isLeast_form_self_typeADiscriminantGroupEquiv (a : ZMod (n + 1)) :
     IsLeast {q : ℚ | ∃ x : (typeARootLattice n).dualCarrier,
       Submodule.Quotient.mk x = typeADiscriminantGroupEquiv n a ∧
         (typeARootLattice n).form x x = q} ((a.val : ℚ) * (n + 1 - a.val) / (n + 1)) := by
-  have ha : typeADiscriminantGroupEquiv n a = a.val • typeAFundamentalWeightClass n := by
-    rw [← typeADiscriminantGroupEquiv_apply_one, ← map_nsmul, nsmul_one, ZMod.natCast_zmod_val]
-  rw [ha]
+  rw [typeADiscriminantGroupEquiv_apply]
   exact isLeast_form_self_nsmul_typeAFundamentalWeightClass (ZMod.val_lt a).le
 
 end TauCeti.IntegralLattice
