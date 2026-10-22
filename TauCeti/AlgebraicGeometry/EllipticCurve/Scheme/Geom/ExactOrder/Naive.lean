@@ -71,21 +71,8 @@ has exact order `N` and `N` is invertible in every residue field of `S`, then th
 theorem IsOfExactOrder.etale_multiplesDivisor (h : E.IsOfExactOrder P N)
     (hN : ∀ s : S, (N : S.residueField s) ≠ 0) :
     Etale ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) := by
-  let I := E.multiplesDivisor P N
-  -- the inclusion of `V(I)` into `E` factors through the closed immersion `E[N] ⟶ E`
-  have hle : (E.torsionι N).left.ker ≤ I.subschemeι.ker := by
-    rw [Scheme.IdealSheafData.ker_subschemeι]
-    exact h.ker_torsionι_le
-  let j := IsClosedImmersion.lift (E.torsionι N).left I.subschemeι hle
-  have hj : j ≫ (E.torsionι N).left = I.subschemeι := IsClosedImmersion.lift_fac _ _ _
-  have : Etale (E.torsion N).X.hom :=
-    E.etale_torsion_hom_of_forall_intCast_ne_zero fun s ↦ by exact_mod_cast hN s
-  have : FormallyUnramified (j ≫ (E.torsionι N).left) := by rw [hj]; infer_instance
-  have : FormallyUnramified j := .of_comp j (E.torsionι N).left
-  have : FormallyUnramified (I.subschemeι ≫ E.structureMap) := by
-    rw [← hj, Category.assoc, torsionι_left_structureMap]
-    exact MorphismProperty.comp_mem _ _ _ inferInstance inferInstance
-  exact .of_formallyUnramified_of_flat _
+  exact E.etale_subscheme_of_ker_torsionι_le (E.multiplesDivisor P N)
+    (fun s ↦ by exact_mod_cast hN s) h.ker_torsionι_le
 
 end Base
 

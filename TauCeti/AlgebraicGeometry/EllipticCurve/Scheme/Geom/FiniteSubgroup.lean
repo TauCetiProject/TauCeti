@@ -44,24 +44,8 @@ level is étale over the base. -/
 theorem IsFiberwiseInjective.etale_pointsDivisor (hφ : E.IsFiberwiseInjective φ)
     {N : ℕ} (hN : ∀ s : S, (N : S.residueField s) ≠ 0) (hkill : ∀ a, φ a ^ N = 1) :
     Etale ((E.pointsDivisor φ).subschemeι ≫ E.structureMap) := by
-  classical
-  let I := E.pointsDivisor φ
-  let D := Over.mk (I.subschemeι ≫ E.structureMap)
-  have hle : (E.torsionι N).left.ker ≤ I := hφ.ker_torsionι_left_le_pointsDivisor hkill
-  let j := IsClosedImmersion.lift (E.torsionι N).left I.subschemeι (by simpa using hle)
-  have hj : j ≫ (E.torsionι N).left = I.subschemeι := IsClosedImmersion.lift_fac _ _ _
-  have : Etale (E.torsion N).X.hom :=
-    E.etale_torsion_hom_of_forall_intCast_ne_zero fun s ↦ by exact_mod_cast hN s
-  have : FormallyUnramified (j ≫ (E.torsionι N).left) := by rw [hj]; infer_instance
-  have : FormallyUnramified j := .of_comp j (E.torsionι N).left
-  have : FormallyUnramified D.hom := by
-    dsimp only [D, Over.mk_hom]
-    rw [← hj, Category.assoc, torsionι_left_structureMap]
-    exact MorphismProperty.comp_mem _ _ _ inferInstance inferInstance
-  have : Flat D.hom := inferInstanceAs (Flat ((E.pointsDivisor φ).subschemeι ≫ E.structureMap))
-  have : LocallyOfFinitePresentation D.hom := inferInstanceAs
-    (LocallyOfFinitePresentation ((E.pointsDivisor φ).subschemeι ≫ E.structureMap))
-  exact Etale.of_formallyUnramified_of_flat D.hom
+  exact E.etale_subscheme_of_ker_torsionι_le (E.pointsDivisor φ)
+    (fun s ↦ by exact_mod_cast hN s) (hφ.ker_torsionι_left_le_pointsDivisor hkill)
 
 -- The section cover is only used to restrict the group operations to this divisor.
 omit [Group A] in
