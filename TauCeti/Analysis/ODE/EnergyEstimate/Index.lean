@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Fredholm.ContinuousFamily
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
+public import TauCeti.Analysis.InnerProductSpace.Symmetric
 public import TauCeti.Analysis.ODE.EnergyEstimate.Fredholm
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 import Mathlib.Analysis.SpecialFunctions.Exponential
@@ -154,15 +155,6 @@ theorem index_trajectoryOperator_eq_of_tendsto {A B : ℝ → E →L[ℝ] E}
     (isFredholm_trajectoryOperator_one_sub_smul_add_smul hA hAsym hB hBsym hα hminus hplus hAbot
       hAtop hBbot hBtop hdAbot hdAtop hdBbot hdBtop AL BL hAL hBL) 0 1
 
-/-- A limit of symmetric operators is symmetric, since self-adjointness is a closed condition. -/
-private theorem isSymmetric_of_tendsto {A : ℝ → E →L[ℝ] E}
-    (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) {l : Filter ℝ} [l.NeBot] {A₀ : E →L[ℝ] E}
-    (h : Tendsto A l (𝓝 A₀)) : (A₀ : E →ₗ[ℝ] E).IsSymmetric :=
-  ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.mp <|
-    (isClosed_eq continuous_star continuous_id).mem_of_tendsto h
-      (Eventually.of_forall fun s ↦ ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.mpr
-        (hsym s))
-
 /-- A constant coefficient gives index zero. For a symmetric operator `A₀` on a
 finite-dimensional real inner product space with `α ‖v‖ ≤ ‖A₀ v‖` for some `α > 0`, the trajectory
 operator `u ↦ u' + A₀ u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` has index zero. Both it and its formal
@@ -196,7 +188,8 @@ theorem index_trajectoryOperator_eq_zero_of_tendsto {A : ℝ → E →L[ℝ] E}
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     (trajectoryOperator (p := 2) AL).index = 0 := by
-  have hsym₀ : (A₀ : E →ₗ[ℝ] E).IsSymmetric := isSymmetric_of_tendsto hsym htop
+  have hsym₀ : (A₀ : E →ₗ[ℝ] E).IsSymmetric :=
+    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)
   let A₀L := (memLp_top_const (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) A₀).toLp
   have hA₀L : A₀L =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A₀ := MemLp.coeFn_toLp _
   rw [index_trajectoryOperator_eq_of_tendsto hA hsym contDiff_const (fun _ ↦ hsym₀) hα hgap hgap
@@ -369,12 +362,6 @@ private theorem memLp_top_modelCoefficient {μ : Measure ℝ} :
       refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul] <;>
         exact mul_le_of_le_one_left (norm_nonneg _) (hψ _))
 
-/-- The negative of a symmetric operator is symmetric. -/
-private theorem isSymmetric_neg {T : E →L[ℝ] E} (hT : (T : E →ₗ[ℝ] E).IsSymmetric) :
-    ((-T : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := by
-  rw [ContinuousLinearMap.toLinearMap_neg, ← zero_sub]
-  exact LinearMap.IsSymmetric.zero.sub hT
-
 variable [FiniteDimensional ℝ E] {T : E →L[ℝ] E} {v : ℝ → E}
 
 /-- Along a solution of `v' = -ψ(t) T v` on `[0, ∞)`, for a symmetric `T`, the eigencoordinate of
@@ -496,7 +483,7 @@ private theorem integrableOn_Iio_norm_sq_iff (hT : (T : E →ₗ[ℝ] E).IsSymme
   have hw (t : ℝ) (ht : 0 ≤ t) : HasDerivAt (fun s ↦ v (-s))
       (-(Real.smoothTransition t • (-T) (v (-t)))) t := by
     simpa [Function.comp_def] using (hv (-t) (neg_nonpos.mpr ht)).scomp t (hasDerivAt_neg t)
-  have h := integrableOn_Ioi_norm_sq_iff (isSymmetric_neg hT) hw
+  have h := integrableOn_Ioi_norm_sq_iff hT.neg hw
   rw [ContinuousLinearMap.toLinearMap_neg, Module.End.pointSpectralSubspace_neg, neg_Ioi,
     neg_zero] at h
   rw [← h, ← (Measure.measurePreserving_neg volume).integrableOn_comp_preimage
@@ -582,8 +569,10 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     (trajectoryOperator (p := 2) AL).index =
       (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
         Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0)) := by
-  have hsymminus := isSymmetric_of_tendsto hsym hbot
-  have hsymplus := isSymmetric_of_tendsto hsym htop
+  have hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric :=
+    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym)
+  have hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric :=
+    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)
   have hker {B : E →L[ℝ] E} (hB : ∀ v, α * ‖v‖ ≤ ‖B v‖) : LinearMap.ker (B : E →ₗ[ℝ] E) = ⊥ :=
     LinearMap.ker_eq_bot'.2 fun v hv ↦ by
       have h := hB v
@@ -605,8 +594,7 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
       hplus hMbot hMtop tendsto_deriv_modelCoefficient_atBot tendsto_deriv_modelCoefficient_atTop
       ML hML,
     neg_modelCoefficient, squareIntegrableSolutions_modelCoefficient hsymminus hsymplus]
-  rw [squareIntegrableSolutions_modelCoefficient (isSymmetric_neg hsymminus)
-      (isSymmetric_neg hsymplus),
+  rw [squareIntegrableSolutions_modelCoefficient hsymminus.neg hsymplus.neg,
     ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_neg,
     Module.End.pointSpectralSubspace_neg, Module.End.pointSpectralSubspace_neg, neg_Ioi, neg_Iio,
     neg_zero]
