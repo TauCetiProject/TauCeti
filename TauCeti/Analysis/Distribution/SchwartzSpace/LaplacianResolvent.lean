@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.FourierMultiplier
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 public import TauCeti.Analysis.Normed.Module.Complexification
 
@@ -32,8 +32,6 @@ satisfying a Weitzenböck identity `L* L = L L* = -Δ + c`: then `L⁻¹ = L* (-
 
 * `TauCeti.hasTemperateGrowth_inv_mul_norm_sq_add`: the symbol `(a ‖ξ‖² + c)⁻¹`, for `a ≥ 0` and
   `c > 0`, has temperate growth.
-* `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
-* `SchwartzMap.fourierMultiplierCLM_laplacian`: Fourier multipliers commute with the Laplacian.
 * `SchwartzMap.neg_laplacian_fourierMultiplierCLM_add_smul` and
   `SchwartzMap.fourierMultiplierCLM_neg_laplacian_add_smul`: the Fourier multiplier with symbol
   `((2π)² ‖ξ‖² + c)⁻¹` is a two-sided inverse of `-Δ + c` on complex Schwartz space.
@@ -85,30 +83,7 @@ section Complex
 variable {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedSpace 𝕜 F]
   [SMulCommClass ℂ 𝕜 F]
 
-/-- Fourier multipliers are additive in the symbol. -/
-theorem fourierMultiplierCLM_add {g₁ g₂ : E → 𝕜} (hg₁ : g₁.HasTemperateGrowth)
-    (hg₂ : g₂.HasTemperateGrowth) :
-    fourierMultiplierCLM F (g₁ + g₂) = fourierMultiplierCLM F g₁ + fourierMultiplierCLM F g₂ := by
-  ext1 f
-  simp [fourierMultiplierCLM_apply, smulLeftCLM_add hg₁ hg₂]
-
 variable [CompleteSpace F]
-
-/-- Fourier multipliers commute with the Laplacian. -/
-theorem fourierMultiplierCLM_laplacian {g : E → 𝕜} (hg : g.HasTemperateGrowth) (f : 𝓢(E, F)) :
-    fourierMultiplierCLM F g (Δ f) = Δ (fourierMultiplierCLM F g f) := by
-  have hn : (fun ξ : E ↦ ‖ξ‖ ^ 2).HasTemperateGrowth := by fun_prop
-  -- Commute the two symbols before transporting the identity through the Laplacian formula.
-  have hcomm : fourierMultiplierCLM F g
-      (fourierMultiplierCLM F (fun ξ : E ↦ ‖ξ‖ ^ 2) f) =
-      fourierMultiplierCLM F (fun ξ : E ↦ ‖ξ‖ ^ 2) (fourierMultiplierCLM F g f) := by
-    have hn𝕜 : (fun ξ : E ↦ RCLike.ofReal (K := 𝕜) (‖ξ‖ ^ 2)).HasTemperateGrowth := by
-      fun_prop
-    simp only [← fourierMultiplierCLM_ofReal 𝕜 hn]
-    simp only [fourierMultiplierCLM_fourierMultiplierCLM_apply hg hn𝕜,
-      fourierMultiplierCLM_fourierMultiplierCLM_apply hn𝕜 hg, mul_comm g]
-  simpa only [laplacian_eq_fourierMultiplierCLM, ContinuousLinearMap.map_smul_of_tower]
-    using congrArg (fun q ↦ -((2 * π) ^ 2) • q) hcomm
 
 /-- The Fourier multiplier with symbol `((2π)² ‖ξ‖² + c)⁻¹` is a right inverse of `-Δ + c`. -/
 @[simp]
