@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Scaling
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
 
 /-!
 # The conformal Laplacian
@@ -23,19 +25,23 @@ nonnegative Laplacian (`TauCeti.Manifold.laplaceBeltrami` is `Δ_g = div ∘ gra
 the scalar curvature of the Levi-Civita connection. It is the operator of the Yamabe problem: for
 `n > 2` and `u > 0`, the metric `u ^ (4 / (n - 2)) g` has scalar curvature
 `u ^ (-(n + 2) / (n - 2)) L_g u`, so `u` gives a metric of constant scalar curvature `λ` exactly
-when `L_g u = λ u ^ (pₙ - 1)`. That transformation law is not proved here.
+when `L_g u = λ u ^ (pₙ - 1)`.
 
 The definition is total in the dimension; at `n = 2` the coefficient `aₙ` is `0` by the
 convention for division by zero, and the operator has its classical meaning only for `n > 2`.
 The metric is the `RiemannianBundle` instance of the tangent bundle, as for
-`TauCeti.Manifold.laplaceBeltrami`. This file develops the operator itself and its two basic
-examples:
+`TauCeti.Manifold.laplaceBeltrami`. This file develops the operator itself, its two basic
+examples, and the transformation law of scalar curvature:
 
 * on Euclidean space, which is flat, `L u = aₙ (-Δ u)` for Mathlib's Laplacian `Δ`, so the
   bubble equation `aₙ (-Δ U) = n (n - 1) U ^ (pₙ - 1)` says that every bubble `U` solves the
   Yamabe equation `L U = n (n - 1) U ^ (pₙ - 1)` of the unit round sphere;
 * under multiplication of the metric by a positive constant `c`, both `Δ` and `Scal` are
-  multiplied by `c⁻¹`, so `L_{c g} = c⁻¹ L_g`.
+  multiplied by `c⁻¹`, so `L_{c g} = c⁻¹ L_g`;
+* for `n ≠ 2` and `u > 0`, writing `u ^ (4 / (n - 2)) = e^(2φ)` with `φ = (2 / (n - 2)) log u`,
+  the conformal change formula `Scal_ĝ = e^(-2φ) (Scal_g - 2 (n - 1) Δφ - (n - 1) (n - 2) |dφ|²)`
+  and the chain rule for `Δ log u` combine into `Scal_ĝ = u ^ (-(n + 2) / (n - 2)) L_g u`: the
+  first-order terms `|du|² / u²` cancel exactly for the coefficient `aₙ`.
 
 ## Main declarations
 
@@ -48,6 +54,10 @@ examples:
   space, `L u = aₙ (-Δ u)`.
 * `TauCeti.Yamabe.conformalLaplacian_bubble`: the bubbles solve `L U = n (n - 1) U ^ (pₙ - 1)`.
 * `TauCeti.Yamabe.conformalLaplacian_rescale_const`: `L_{c g} = c⁻¹ L_g` for a constant `c > 0`.
+* `TauCeti.Yamabe.scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian`: the scalar curvature
+  of `ĝ = u ^ (4 / (n - 2)) g` is `u ^ (-(n + 2) / (n - 2)) L_g u`.
+* `TauCeti.Yamabe.scalarCurvature_rescale_eq_iff_conformalLaplacian_eq`: `ĝ` has scalar
+  curvature `c` exactly where `L_g u = c u ^ (pₙ - 1)`.
 
 ## References
 
@@ -178,6 +188,73 @@ theorem conformalLaplacian_rescale_const
     ← (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).scalarCurvature_def x,
     ← g.scalarCurvature_def x, g.scalarCurvature_rescale_const hc x]
   ring
+
+/-- **Scalar curvature of a conformal metric.** In dimension `n ≠ 2`, let `u` be a positive
+function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. Then the scalar curvature of `ĝ`
+is `Scal_ĝ = u ^ (-(n + 2) / (n - 2)) L_g u`, where `L_g` is the conformal Laplacian of `g`.
+Such a `u` is automatically smooth. -/
+theorem scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
+    {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
+    {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} (x : M) :
+    (g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos).scalarCurvature x =
+      u x ^ (-((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2)) *
+        (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+          conformalLaplacian I u x) := by
+  have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
+  have hux := hu_pos x
+  -- `u = (u ^ p) ^ p⁻¹` is smooth because the conformal factor `u ^ p` is.
+  have hu : ContMDiff I 𝓘(ℝ) ∞ u :=
+    (hf.rpow_const_of_ne (fun y ↦ (hf_pos y).ne') _).congr fun y ↦
+      (Real.rpow_rpow_inv (hu_pos y).le (div_ne_zero four_ne_zero hn')).symm
+  -- Write `u ^ p = e^(2φ)` with `φ = (2 / (n - 2)) log u` and apply the conformal scalar formula.
+  set h : ℝ → ℝ := fun t ↦ 2 / ((finrank ℝ E : ℝ) - 2) * Real.log t with hh_def
+  have hfφ : ∀ y, u y ^ (4 / ((finrank ℝ E : ℝ) - 2)) = Real.exp (2 * (h ∘ u) y) := by
+    intro y
+    rw [Real.rpow_def_of_pos (hu_pos y), Function.comp_apply, hh_def]
+    ring_nf
+  rw [g.scalarCurvature_rescale hf hf_pos hfφ x]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  -- The derivatives of `h` at the positive value `u x`.
+  have hh : ContDiffOn ℝ 2 h (Set.Ioi 0) :=
+    contDiffOn_const.mul (Real.contDiffOn_log.mono fun t ht ↦ (Set.mem_Ioi.1 ht).ne')
+  have hd : deriv h = fun t ↦ 2 / ((finrank ℝ E : ℝ) - 2) * t⁻¹ := by
+    rw [hh_def, deriv_const_mul_field', Real.deriv_log']
+  have hdd : deriv (deriv h) (u x) = 2 / ((finrank ℝ E : ℝ) - 2) * -(u x ^ 2)⁻¹ := by
+    rw [hd, deriv_const_mul_field, deriv_inv]
+  have hΔ := laplaceBeltrami_comp I isOpen_Ioi hh (hu.of_le (by simp)) hu_pos x
+  have hgrad := mgradient_comp_deriv (I := I) (f := u) (x := x)
+    ((hh.differentiableOn (by norm_num) _ hux).differentiableAt (isOpen_Ioi.mem_nhds hux))
+    (hu.mdifferentiableAt (by simp))
+  rw [hΔ, hdd, hgrad, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, hd,
+    conformalLaplacian_def, conformalCoefficient_def, ← g.scalarCurvature_def x,
+    show -((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2) =
+      -(4 / ((finrank ℝ E : ℝ) - 2)) + -1 by field_simp; ring,
+    Real.rpow_add hux, Real.rpow_neg hux.le, Real.rpow_neg_one]
+  field_simp
+  ring
+
+/-- **The Yamabe equation.** In dimension `n ≠ 2`, let `u` be a positive function such that
+`ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. Then `ĝ` has scalar curvature `c` at a point exactly
+when `u` solves the Yamabe equation `L_g u = c u ^ (pₙ - 1)` there, where `pₙ = 2 n / (n - 2)`. -/
+theorem scalarCurvature_rescale_eq_iff_conformalLaplacian_eq
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
+    {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
+    {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} (c : ℝ) (x : M) :
+    (g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos).scalarCurvature x = c ↔
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+        conformalLaplacian I u x) = c * u x ^ (criticalExponent (finrank ℝ E) - 1) := by
+  have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
+  have hp : criticalExponent (finrank ℝ E) - 1 =
+      -(-((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2)) := by
+    rw [criticalExponent_def]
+    field_simp
+    ring
+  rw [scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian g hn hu_pos x, hp,
+    Real.rpow_neg (hu_pos x).le, eq_mul_inv_iff_mul_eq₀ (Real.rpow_pos_of_pos (hu_pos x) _).ne',
+    mul_comm]
 
 end Rescale
 

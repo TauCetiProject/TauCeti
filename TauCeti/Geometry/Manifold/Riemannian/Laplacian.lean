@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -25,8 +26,10 @@ import TauCeti.Geometry.Manifold.VectorField.LieBracket
 This file introduces the pointwise Riemannian divergence as the trace of the Levi–Civita
 covariant derivative, the scalar Hessian obtained by pairing that derivative of the gradient,
 and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  The orthonormal-basis
-trace formula makes the relationship between the Laplacian and the Hessian explicit. On a
-finite-dimensional inner-product space, the operator agrees with Mathlib's flat Laplacian.
+trace formula makes the relationship between the Laplacian and the Hessian explicit. The operator
+laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
+real function `h`. On a finite-dimensional inner-product space, the operator agrees with Mathlib's
+flat Laplacian.
 
 -/
 
@@ -431,6 +434,28 @@ theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(�
   simp only [laplaceBeltrami, mgradient_smul c (hf.mdifferentiable (by simp))]
   exact divergence_smul I c _ x
     (mdifferentiable_mgradient (I := I) hf x)
+
+/-- **Chain rule for the Laplace--Beltrami operator.** If `h` is `C²` on an open set of real
+numbers containing all values of a `C²` function `f`, then
+`Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²`. -/
+theorem laplaceBeltrami_comp {h : ℝ → ℝ} {s : Set ℝ} (hs : IsOpen s) (hh : ContDiffOn ℝ 2 h s)
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (hfs : ∀ y, f y ∈ s) (x : M) :
+    laplaceBeltrami I (h ∘ f) x =
+      deriv h (f x) * laplaceBeltrami I f x +
+        deriv (deriv h) (f x) * ‖mgradient I f x‖ ^ 2 := by
+  have hfd : ∀ y, MDifferentiableAt I 𝓘(ℝ) f y := fun y ↦ hf.mdifferentiableAt (by simp)
+  have hh' : ContDiffOn ℝ 1 (deriv h) s := hh.deriv_of_isOpen hs (by norm_num)
+  -- The gradient of `h ∘ f` is the section `h'(f) • grad f`, to which the product rule applies.
+  have hgrad : mgradient I (h ∘ f) = (deriv h ∘ f) • mgradient I f := by
+    funext y
+    exact mgradient_comp_deriv ((hh.differentiableOn (by norm_num) _ (hfs y)).differentiableAt
+      (hs.mem_nhds (hfs y))) (hfd y)
+  have hd : DifferentiableAt ℝ (deriv h) (f x) :=
+    (hh'.differentiableOn one_ne_zero _ (hfs x)).differentiableAt (hs.mem_nhds (hfs x))
+  rw [laplaceBeltrami, hgrad, divergence_smul_function I _ _ x
+      (hd.comp_mdifferentiableAt (hfd x)) (mdifferentiable_mgradient (I := I) hf x),
+    ← laplaceBeltrami_def, ← inner_mgradient, mgradient_comp_deriv hd (hfd x),
+    real_inner_smul_left, real_inner_self_eq_norm_sq, Function.comp_apply]
 
 end OperatorLaws
 
