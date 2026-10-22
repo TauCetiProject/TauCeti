@@ -376,6 +376,14 @@ section Twist
 variable {k G} {hns : ∀ i : V, ∃ j, G.Adj i j}
   {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G)}
 
+/-- The degree-one Koszul twist of the path-length grading negates arrows. -/
+theorem koszulTwist_one_zigzagMk_ofArrow (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G) (d : G.Dart) :
+    𝒢.koszulTwist 1 (zigzagMk k G (ofArrow (arrow G d.adj))) =
+      -zigzagMk k G (ofArrow (arrow G d.adj)) := by
+  rw [𝒢.koszulTwist_one_apply_of_mem (e := 1)
+    (by rw [h𝒢]; exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G d)]
+  simp
+
 /-- The degree-one Koszul twist of the path-length grading on the vertex-arrow-volume basis: it
 fixes vertex idempotents and volume classes and negates arrows. -/
 private theorem koszulTwist_one_zigzagBasis (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G)
@@ -391,9 +399,7 @@ private theorem koszulTwist_one_zigzagBasis (h𝒢 : 𝒢.piece = zigzagIntegerG
     rw [h𝒢, ← Nat.cast_zero, zigzagIntegerGrade_ofNat,
       zigzagGrade_zero_eq_span_range_vertexIdempotent]
     exact Submodule.subset_span ⟨v, rfl⟩
-  · rw [𝒢.koszulTwist_one_apply_of_mem (e := 1)
-      (by rw [h𝒢]; exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G d)]
-    simp
+  · rw [koszulTwist_one_zigzagMk_ofArrow h𝒢, neg_one_smul]
   · rw [𝒢.koszulTwist_one_apply_of_mem (e := 2)
       (by rw [h𝒢]; exact zigzagVolume_mem_zigzagIntegerGrade_two k G v)]
     simp [Int.negOnePow_even 2 even_two]
@@ -408,8 +414,11 @@ theorem zigzagBasis_coord_dart_koszulTwist_one (h𝒢 : 𝒢.piece = zigzagInteg
     refine (zigzagBasis k G hns).ext fun b ↦ ?_
     rw [LinearMap.comp_apply, koszulTwist_one_zigzagBasis h𝒢, map_smul, zigzagBasis_coord_apply,
       LinearMap.neg_apply, zigzagBasis_coord_apply]
-    rcases b with j | e | j <;> simp
-    split_ifs <;> simp
+    rcases b with j | e | j
+    · simp only [reduceCtorEq, ite_false, smul_zero, neg_zero]
+    · simp only [Sum.inr.injEq, Sum.inl.injEq]
+      split_ifs <;> simp only [neg_one_smul, smul_zero, neg_zero]
+    · simp only [Sum.inr.injEq, reduceCtorEq, ite_false, smul_zero, neg_zero]
   exact LinearMap.congr_fun key x
 
 end Twist

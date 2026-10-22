@@ -281,13 +281,8 @@ include h𝒢
 /-- The degree-one Koszul twist negates the values of the backtrack cochain, which are arrows. -/
 private theorem koszulTwist_one_zigzagBacktrackCochain (x : Fin 3 → nonisolatedZigzagQuotient k G) :
     𝒢.koszulTwist 1 (zigzagBacktrackCochain hns P a x) = -zigzagBacktrackCochain hns P a x := by
-  have harrow (d : G.Dart) : 𝒢.koszulTwist 1 (zigzagMk k G (ofArrow (arrow G d.adj))) =
-      -zigzagMk k G (ofArrow (arrow G d.adj)) := by
-    rw [𝒢.koszulTwist_one_apply_of_mem (e := 1)
-      (by rw [h𝒢]; exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G d)]
-    simp
-  simp only [zigzagBacktrackCochain_apply, map_sum, map_smul, harrow, smul_neg,
-    Finset.sum_neg_distrib]
+  simp only [zigzagBacktrackCochain_apply, map_sum, map_smul, koszulTwist_one_zigzagMk_ofArrow h𝒢,
+    smul_neg, Finset.sum_neg_distrib]
 
 /-- Twisting the first input of the backtrack cochain negates it. -/
 private theorem zigzagBacktrackCochain_koszulTwist_one_zero
@@ -426,9 +421,11 @@ private theorem zigzagBacktrackTaylor_of_tprod_three_koszulTwist
   rw [zigzagBacktrackTaylor, suspensionTaylor_of_tprod, backtrackOps_three]
   congr 1
   funext i
-  fin_cases i <;> simp
-  -- the two sides list the same letters, indexed by `Fin` literals
-  rfl
+  -- the outer letters carry the twists of even degree `2` and `0`, which are the identity
+  fin_cases i
+  · exact LinearMap.congr_fun (InternalGrading.koszulTwist_two _) _
+  · rfl
+  · exact LinearMap.congr_fun (InternalGrading.koszulTwist_zero _) _
 
 /-- On a word of length three the backtrack Taylor map is the negative of the backtrack cochain:
 the suspension sign of an arity-three operation of even degree is that of its middle letter, which
