@@ -12,15 +12,19 @@ public import Mathlib.Topology.Algebra.Polynomial
 # Integrability and `L²` membership of polynomials against a finite-moment measure
 
 This file proves that a real polynomial, evaluated pointwise, is integrable and square-integrable
-against any measure on `ℝ` all of whose polynomial moments are finite:
+against any measure on `ℝ` whose polynomial moments are finite (up to the relevant degree):
 
-* `integrable_eval_of_forall_integrable_pow` — a polynomial is integrable, being a finite linear
-  combination of monomials, and `integral_eval_eq_sum_range` — its integral is the corresponding
-  combination of moments; both also hold assuming only the monomials up to its degree integrable;
+* `integrable_eval_of_forall_le_natDegree` — a polynomial is integrable, being a finite linear
+  combination of monomials, as soon as its monomials up to its degree are integrable, and
+  `integral_eval_eq_sum_range` — under the same hypothesis, its integral is the corresponding
+  combination of moments;
+* `integrable_eval_of_forall_integrable_pow` — the all-moments corollary: every polynomial is
+  integrable when every monomial is;
 * `memLp_two_eval_of_forall_integrable_pow` — a polynomial is in `L²`, since the square of a
   polynomial is again a polynomial (hence integrable), and `memLp_two_iff_integrable_sq`.
 
-Both consume only the moment hypothesis `∀ k, Integrable (x ↦ xᵏ) μ`, with no dependence on the
+The all-moments results consume only the moment hypothesis `∀ k, Integrable (x ↦ xᵏ) μ`, and the
+degree-bounded ones only its restriction to `k ≤ q.natDegree`, with no dependence on the
 particular measure, so they apply verbatim to the Gaussian measure (all moments finite by Fernique)
 and to the compactly supported Chebyshev measure alike.
 
