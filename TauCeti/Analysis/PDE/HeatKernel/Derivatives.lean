@@ -199,9 +199,8 @@ private theorem exists_gaussianDecay_iteratedDeriv_rpow_smul (j : ℕ) :
       (eventually_gt_nhds hs).mono fun s' hs' =>
         ((hasDerivAt_rpow_smul_comp_rpow_smul (hΨ.1.differentiable (by simp)) a (-1 / 2) x
           hs').congr_deriv (by module)).deriv
-    rw [iteratedDeriv_succ', hderiv.iteratedDeriv_eq, h x s hs]
-    push_cast
-    ring_nf
+    rw [iteratedDeriv_succ', hderiv.iteratedDeriv_eq, h x s hs,
+      show -(a + 1 + (j : ℝ)) = -(a + ((j + 1 : ℕ) : ℝ)) by push_cast; ring]
 
 /-- **Gaussian bounds on the space-time derivatives of the heat kernel.** For all orders `j` in
 time and `m` in space there is a constant `C`, independent of the time, such that
@@ -270,10 +269,14 @@ theorem exists_integral_norm_iteratedFDeriv_heatKernel_le (m : ℕ) :
           (((integrable_heatKernel h2t).const_mul _).const_mul _) fun x => ?_
         simpa only [hG] using hC t ht x
     _ = C * (8 * π) ^ ((finrank ℝ E : ℝ) / 2) * t ^ (-(m : ℝ) / 2) := by
+        have hexp : t ^ (-(finrank ℝ E + m : ℝ) / 2) * t ^ ((finrank ℝ E : ℝ) / 2) =
+            t ^ (-(m : ℝ) / 2) := by
+          rw [← rpow_add ht]
+          congr 1
+          ring
         rw [integral_const_mul, integral_const_mul, integral_heatKernel h2t, mul_one,
-          mul_rpow (by positivity) ht.le, mul_assoc, mul_left_comm (t ^ _), ← mul_assoc,
-          ← rpow_add ht]
-        ring_nf
+          mul_rpow (by positivity) ht.le, ← hexp]
+        ring
 
 /-- **The derivatives of the heat kernel have integral zero.** For every order `m ≥ 1` and every
 `t > 0`, `∫ D^m K_t = 0`. -/
