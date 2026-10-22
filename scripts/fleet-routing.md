@@ -25,7 +25,7 @@ jobs that fail to acquire it.
 Namespace has an approximate cap of **20 queued or running build jobs**, shared
 across PR and staging. Picker, recovery, publisher, and finalizer jobs are excluded.
 The variable `NAMESPACE_BUILD_CAP` overrides the default in the configuration.
-Concurrent pickers can briefly exceed this snapshot-based cap. When Namespace is
+Concurrent picker decisions can admit jobs above this snapshot-based cap. When Namespace is
 full, staging falls through to GitHub; if all eligible destinations are full or
 unknown, the build waits for a GitHub-hosted slot. A failed picker uses that same
 GitHub fallback. The existing GitHub budget defaults to 18 busy jobs (production currently uses
