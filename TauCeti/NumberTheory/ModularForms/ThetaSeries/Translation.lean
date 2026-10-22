@@ -80,9 +80,45 @@ theorem thetaCoset_vadd_eq_mul (L : Submodule ℤ E) (γ : E) {t : ℝ}
     linear_combination (π * I) * hm'
   rw [coe_vadd, he, exp_add, exp_int_mul_two_pi_mul_I, mul_one, exp_add]
 
-variable [InnerProductSpace ℝ E] {L : Submodule ℤ E} {γ : E}
+variable {L : Submodule ℤ E}
 
 /-! ### Even lattices -/
+
+namespace IsEven
+
+/-- The theta series of an even lattice has period `1`. -/
+@[simp]
+theorem thetaSeries_intCast_vadd (hL : IsEven L) (n : ℤ) (τ : ℍ) :
+    thetaSeries L ((n : ℝ) +ᵥ τ) = thetaSeries L τ := by
+  rw [← thetaCoset_zero, thetaCoset_vadd_eq_mul L 0 (fun v hv ↦ ?_) τ]
+  · simp
+  · obtain ⟨m, hm⟩ := isEven_iff.mp hL v hv
+    exact ⟨m * n, by rw [zero_add, hm, norm_zero]; push_cast; ring⟩
+
+/-- The theta series of an even lattice has period `1`: `Θ_L(τ + 1) = Θ_L(τ)`. -/
+@[simp]
+theorem thetaSeries_one_vadd (hL : IsEven L) (τ : ℍ) :
+    thetaSeries L ((1 : ℝ) +ᵥ τ) = thetaSeries L τ := by
+  simpa using hL.thetaSeries_intCast_vadd 1 τ
+
+/-- The theta series of an even lattice is invariant under every power of `T`, in every
+weight. -/
+@[simp]
+theorem thetaSeries_slash_T_zpow (hL : IsEven L) (k n : ℤ) :
+    thetaSeries L ∣[k] (ModularGroup.T ^ n) = thetaSeries L := by
+  ext τ
+  rw [TauCeti.ModularForm.slash_T_zpow_apply, hL.thetaSeries_intCast_vadd]
+
+/-- The theta series of an even lattice is invariant under `T`, in every weight:
+`Θ_L ∣[k] T = Θ_L`. -/
+@[simp]
+theorem thetaSeries_slash_T (hL : IsEven L) (k : ℤ) :
+    thetaSeries L ∣[k] ModularGroup.T = thetaSeries L := by
+  simpa using hL.thetaSeries_slash_T_zpow k 1
+
+end IsEven
+
+variable [InnerProductSpace ℝ E] {γ : E}
 
 namespace IsEven
 
@@ -112,18 +148,6 @@ theorem thetaCoset_one_vadd (hL : IsEven L) (hγ : γ ∈ dual L) (τ : ℍ) :
     thetaCoset L γ ((1 : ℝ) +ᵥ τ) = cexp (π * I * (‖γ‖ ^ 2 : ℝ)) * thetaCoset L γ τ := by
   simpa using hL.thetaCoset_intCast_vadd hγ 1 τ
 
-/-- The theta series of an even lattice has period `1`. -/
-@[simp]
-theorem thetaSeries_intCast_vadd (hL : IsEven L) (n : ℤ) (τ : ℍ) :
-    thetaSeries L ((n : ℝ) +ᵥ τ) = thetaSeries L τ := by
-  simpa using hL.thetaCoset_intCast_vadd (zero_mem (dual L)) n τ
-
-/-- The theta series of an even lattice has period `1`: `Θ_L(τ + 1) = Θ_L(τ)`. -/
-@[simp]
-theorem thetaSeries_one_vadd (hL : IsEven L) (τ : ℍ) :
-    thetaSeries L ((1 : ℝ) +ᵥ τ) = thetaSeries L τ := by
-  simpa using hL.thetaSeries_intCast_vadd 1 τ
-
 /-- The translation law of the theta series of a coset of an even lattice, in slash form: for
 `γ ∈ L^∨`, every weight `k` and every integer `n`,
 `θ_{γ+L} ∣[k] T ^ n = exp (π i n ‖γ‖²) θ_{γ+L}`. -/
@@ -151,20 +175,6 @@ theorem thetaCoset_slash_T_zpow_eq_self (hL : IsEven L) (hγ : γ ∈ dual L) (k
     have : (N : ℂ) * ((‖γ‖ ^ 2 : ℝ) : ℂ) = 2 * m := by exact_mod_cast hm
     linear_combination (π * I) * this
   rw [hL.thetaCoset_slash_T_zpow hγ, hm', exp_int_mul_two_pi_mul_I, one_smul]
-
-/-- The theta series of an even lattice is invariant under every power of `T`, in every
-weight. -/
-@[simp]
-theorem thetaSeries_slash_T_zpow (hL : IsEven L) (k n : ℤ) :
-    thetaSeries L ∣[k] (ModularGroup.T ^ n) = thetaSeries L := by
-  simpa using hL.thetaCoset_slash_T_zpow (zero_mem (dual L)) k n
-
-/-- The theta series of an even lattice is invariant under `T`, in every weight:
-`Θ_L ∣[k] T = Θ_L`. -/
-@[simp]
-theorem thetaSeries_slash_T (hL : IsEven L) (k : ℤ) :
-    thetaSeries L ∣[k] ModularGroup.T = thetaSeries L := by
-  simpa using hL.thetaSeries_slash_T_zpow k 1
 
 end IsEven
 
