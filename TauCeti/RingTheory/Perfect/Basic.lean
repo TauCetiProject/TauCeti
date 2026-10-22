@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Perfect
+public import TauCeti.Algebra.GroupWithZero.Basic
 
 /-!
 # Roots of elements of perfect rings
 
 Let `R` be a perfect ring of exponential characteristic `p`. Every `x ∈ R` has a unique
 `p ^ n`-th root `(iterateFrobeniusEquiv R p n).symm x` for each `n`. This file records how these
-roots relate to each other, and the fact that `p`-th powers can be cancelled from annihilation
-relations because Frobenius is injective.
+roots relate to each other, the fact that `R` is reduced when `p` is prime, and the fact that
+`p`-th powers can be cancelled from annihilation relations.
 
 ## Main results
 
@@ -22,6 +23,7 @@ relations because Frobenius is injective.
 * `TauCeti.iterateFrobeniusEquiv_symm_succ_pow`: the `p`-th power of the `p ^ (n + 1)`-th root
   of `x` is its `p ^ n`-th root.
 * `TauCeti.iterateFrobeniusEquiv_symm_dvd_of_le`: deeper roots of `x` divide shallower ones.
+* `TauCeti.isReduced_of_perfectRing`: a perfect ring of prime characteristic is reduced.
 * `TauCeti.mul_eq_zero_of_mul_pow_p_eq_zero`: `a * b ^ p = 0` implies `a * b = 0`.
 * `TauCeti.mul_iterateFrobeniusEquiv_symm_succ_eq_zero`: an element killing the `p ^ n`-th root
   of `x` also kills its `p ^ (n + 1)`-th root.
@@ -34,15 +36,17 @@ namespace TauCeti
 variable {R : Type*} [CommSemiring R] {p : ℕ} [ExpChar R p] [PerfectRing R p]
 
 /-- The `p ^ n`-th power of the `p ^ (m + n)`-th root of `x` is its `p ^ m`-th root. -/
+@[simp]
 theorem iterateFrobeniusEquiv_symm_add_pow (x : R) (m n : ℕ) :
     (iterateFrobeniusEquiv R p (m + n)).symm x ^ p ^ n = (iterateFrobeniusEquiv R p m).symm x := by
   rw [add_comm, iterateFrobeniusEquiv_symm_add_apply, ← iterateFrobeniusEquiv_def,
     RingEquiv.apply_symm_apply]
 
 /-- The `p`-th power of the `p ^ (n + 1)`-th root of `x` is its `p ^ n`-th root. -/
+@[simp]
 theorem iterateFrobeniusEquiv_symm_succ_pow (x : R) (n : ℕ) :
     (iterateFrobeniusEquiv R p (n + 1)).symm x ^ p = (iterateFrobeniusEquiv R p n).symm x := by
-  simpa using iterateFrobeniusEquiv_symm_add_pow x n 1
+  rw [← iterateFrobeniusEquiv_symm_add_pow x n 1, pow_one]
 
 /-- Deeper roots of `x` divide shallower ones: the `p ^ n`-th root of `x` divides its
 `p ^ m`-th root when `m ≤ n`. -/
@@ -52,13 +56,23 @@ theorem iterateFrobeniusEquiv_symm_dvd_of_le (x : R) {m n : ℕ} (h : m ≤ n) :
   rw [← iterateFrobeniusEquiv_symm_add_pow x m k]
   exact dvd_pow_self _ (pow_ne_zero _ (expChar_ne_zero R p))
 
+variable (R p) in
+/-- A perfect ring of prime characteristic `p` is reduced. -/
+theorem isReduced_of_perfectRing [hp : Fact p.Prime] : IsReduced R :=
+  -- If `x ^ n = 0`, then the `p ^ n`-th power of `x` vanishes, and Frobenius is injective.
+  ⟨fun x ⟨n, hn⟩ ↦ (iterateFrobeniusEquiv R p n).injective <| by
+    rw [map_zero, iterateFrobeniusEquiv_def,
+      pow_eq_zero_of_le (Nat.lt_pow_self hp.out.one_lt).le hn]⟩
+
 /-- In a perfect ring of exponential characteristic `p`, if `a` kills `b ^ p` then `a` kills
 `b`. -/
 theorem mul_eq_zero_of_mul_pow_p_eq_zero {a b : R} (h : a * b ^ p = 0) : a * b = 0 := by
-  -- The `p`-th power of `a * b` is a multiple of `a * b ^ p`, and Frobenius is injective.
-  apply injective_frobenius R p
-  rw [frobenius_def, map_zero, mul_pow, ← pow_sub_one_mul (expChar_ne_zero R p) a, mul_assoc, h,
-    mul_zero]
+  -- In exponential characteristic `1` there is nothing to prove; otherwise `R` is reduced.
+  obtain hp | rfl := expChar_is_prime_or_one R p
+  · have := Fact.mk hp
+    have := isReduced_of_perfectRing R p
+    exact mul_eq_zero_of_mul_pow_eq_zero h
+  · simpa using h
 
 /-- If `c` kills the `p ^ n`-th root of `x`, then it kills the `p ^ (n + 1)`-th root of `x`. -/
 theorem mul_iterateFrobeniusEquiv_symm_succ_eq_zero {x c : R} {n : ℕ}

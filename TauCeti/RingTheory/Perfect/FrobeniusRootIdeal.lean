@@ -36,6 +36,7 @@ building blocks of the Tor independence of perfect rings.
 ## Main results
 
 * `TauCeti.mem_frobeniusRootIdeal`: `x ∈ J_f` iff some `f ^ (1 / p ^ n)` divides `x`.
+* `TauCeti.map_iterateFrobeniusEquiv_frobeniusRootIdeal`: `J_f` is stable under Frobenius.
 * `TauCeti.frobeniusRootIdeal_eq_radical`: `J_f = √(f)`.
 * `TauCeti.frobeniusRootDirectLimitEquiv_of`: the colimit presentation on each stage.
 * `TauCeti.isIdempotentElem_frobeniusRootIdeal`: `J_f * J_f = J_f`.
@@ -88,6 +89,23 @@ theorem iterateFrobeniusEquiv_symm_mem_frobeniusRootIdeal (f : R) (n : ℕ) :
 @[simp]
 theorem self_mem_frobeniusRootIdeal (f : R) : f ∈ frobeniusRootIdeal R p f := by
   simpa using iterateFrobeniusEquiv_symm_mem_frobeniusRootIdeal (p := p) f 0
+
+/-- The Frobenius-root ideal of `f` is stable under the iterated Frobenius `x ↦ x ^ p ^ n`. With
+this lemma, `simp` proves that every `p ^ n`-th root of `f` lies in the Frobenius-root ideal
+of `f`. -/
+@[simp]
+theorem map_iterateFrobeniusEquiv_frobeniusRootIdeal (f : R) (n : ℕ) :
+    (frobeniusRootIdeal R p f).map (iterateFrobeniusEquiv R p n) = frobeniusRootIdeal R p f := by
+  refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun x hx ↦ ?_) fun x hx ↦ ?_
+  · rw [Ideal.mem_comap, iterateFrobeniusEquiv_def]
+    exact Ideal.pow_mem_of_mem _ hx _ (pow_pos (expChar_pos R p) n)
+  · -- The `p ^ n`-th root of a multiple of `f ^ (1 / p ^ m)` is a multiple of
+    -- `f ^ (1 / p ^ (n + m))`.
+    rw [← RingEquiv.apply_symm_apply (iterateFrobeniusEquiv R p n) x]
+    refine Ideal.mem_map_of_mem _ ?_
+    obtain ⟨m, a, rfl⟩ := mem_frobeniusRootIdeal.mp hx
+    rw [map_mul, ← iterateFrobeniusEquiv_symm_add_apply]
+    exact Ideal.mul_mem_right _ _ (iterateFrobeniusEquiv_symm_mem_frobeniusRootIdeal f _)
 
 /-- Finitely many elements of the Frobenius-root ideal of `f` are all divisible by a single
 `p ^ n`-th root of `f`. -/
