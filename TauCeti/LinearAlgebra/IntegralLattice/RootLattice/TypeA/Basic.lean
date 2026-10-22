@@ -54,6 +54,8 @@ The identification of this simple-root model with the classical coordinate model
 * `TauCeti.IntegralLattice.typeARootLattice`: the lattice, with Gram matrix `CartanMatrix.A n`.
 * `TauCeti.IntegralLattice.form_typeASimpleRoot_typeASimpleRoot`: its simple-root Gram matrix is
   `CartanMatrix.A n`.
+* `TauCeti.IntegralLattice.sum_smul_typeASimpleRoot`: every vector is the combination of the
+  simple roots with its own coordinates.
 * `TauCeti.IntegralLattice.typeASimpleRootBasis`: the simple roots as a `ℤ`-basis of the lattice.
 * `TauCeti.IntegralLattice.isEven_typeARootLattice`: it is even.
 * `TauCeti.IntegralLattice.isPosDef_typeARootLattice`: it is positive definite.
@@ -127,6 +129,13 @@ theorem typeASimpleRoot_apply (i j : Fin n) :
 
 private theorem typeASimpleRoot_eq_basisFun (i : Fin n) :
     typeASimpleRoot n i = Pi.basisFun ℚ (Fin n) i := rfl
+
+variable {n} in
+/-- Every vector of the ambient space is the combination of the simple roots with its own
+coordinates as coefficients. -/
+theorem sum_smul_typeASimpleRoot (x : Fin n → ℚ) : ∑ j, x j • typeASimpleRoot n j = x := by
+  ext k
+  simp [Finset.sum_apply]
 
 /-- The form of the type `Aₙ` root lattice, expanded in the standard coordinates. -/
 theorem typeARootLattice_form_apply (x y : Fin n → ℚ) :
@@ -295,11 +304,7 @@ theorem form_typeAFundamentalWeight_self :
     (typeARootLattice n).form (typeAFundamentalWeight n) (typeAFundamentalWeight n) =
       (n : ℚ) / ((n : ℚ) + 1) := by
   classical
-  have hexpand : typeAFundamentalWeight n =
-      ∑ j : Fin n, (typeAFundamentalWeight n j) • typeASimpleRoot n j := by
-    ext k
-    simp [typeASimpleRoot, Pi.basisFun_apply, Pi.single_apply]
-  nth_rewrite 2 [hexpand]
+  nth_rewrite 2 [← sum_smul_typeASimpleRoot (typeAFundamentalWeight n)]
   rw [map_sum]
   simp only [map_smul, smul_eq_mul, form_typeAFundamentalWeight_simpleRoot]
   rcases Nat.eq_zero_or_pos n with rfl | hn

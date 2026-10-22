@@ -46,6 +46,8 @@ norm of a glue vector in an orthogonal sum of root lattices.
   sum zero with coordinates in `ℤ - k / (n + 1)` has norm at least `k (n + 1 - k) / (n + 1)`.
 * `TauCeti.IntegralLattice.dotProduct_self_eq_mul_sub_div_iff`: equality holds exactly when all
   coordinates are `-k / (n + 1)` or `1 - k / (n + 1)`.
+* `TauCeti.IntegralLattice.exists_mk_eq_nsmul_typeAFundamentalWeightClass_and_apply_eq`: the
+  class `k ω₁` contains a dual vector with these minimal classical coordinates.
 * `TauCeti.IntegralLattice.isLeast_form_self_nsmul_typeAFundamentalWeightClass`: the minimum norm
   of the class `k ω₁` is `k (n + 1 - k) / (n + 1)` for `k ≤ n + 1`.
 * `TauCeti.IntegralLattice.isLeast_form_self_typeADiscriminantGroupEquiv`: the same minimum,
@@ -115,6 +117,36 @@ theorem dotProduct_self_eq_mul_sub_div_iff {k : ℤ} {x : Fin (n + 1) → ℚ} (
 
 /-! ## The discriminant classes of the root lattice -/
 
+/-- **A minimal vector of the discriminant class `k ω₁` of `Aₙ`.** For `0 ≤ k ≤ n + 1`, the class
+`k ω₁` contains a dual vector whose classical coordinates are `1 - k / (n + 1)` in the first `k`
+places and `-k / (n + 1)` in the others. -/
+theorem exists_mk_eq_nsmul_typeAFundamentalWeightClass_and_apply_eq {k : ℕ} (hk : k ≤ n + 1) :
+    ∃ x : (typeARootLattice n).dualCarrier,
+      Submodule.Quotient.mk x = k • typeAFundamentalWeightClass n ∧
+        ∀ j, (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) j =
+          (if (j : ℕ) < k then 1 else 0) - k / (n + 1) := by
+  set e := typeAIsometryZeroSumLattice n
+  -- The difference `z` of the wanted vector from the classical coordinates
+  -- `k (e₀ - (1 / (n + 1)) (1, …, 1))` of `k ω₁` is an integral vector of coordinate sum zero.
+  set z : Fin (n + 1) → ℚ := fun j ↦ (if (j : ℕ) < k then 1 else 0) - k * if j = 0 then 1 else 0
+  have hz : z ∈ singleParityCheckCode ℚ (Fin (n + 1)) := by
+    rw [mem_singleParityCheckCode]
+    simp [z, sum_sub_distrib, sum_boole, Fin.card_filter_val_lt, min_eq_right hk]
+  have hzL : e.symm ⟨z, hz⟩ ∈ (typeARootLattice n).carrier := by
+    rw [e.symm.apply_mem_carrier_iff, mem_zeroSumLattice_carrier_iff]
+    intro j
+    refine ⟨(if (j : ℕ) < k then 1 else 0) - k * if j = 0 then 1 else 0, ?_⟩
+    simp [z]
+  refine ⟨(k : ℤ) • typeAFundamentalWeightDual n +
+    ⟨e.symm ⟨z, hz⟩, (typeARootLattice n).le_dualCarrier hzL⟩, ?_, fun j ↦ ?_⟩
+  · rw [← natCast_zsmul, mk_eq_zsmul_typeAFundamentalWeightClass_iff, Submodule.coe_add,
+      Submodule.coe_smul, coe_typeAFundamentalWeightDual, add_sub_cancel_left]
+    exact hzL
+  · simp only [Submodule.coe_add, Submodule.coe_smul, coe_typeAFundamentalWeightDual, map_add,
+      map_zsmul, Isometry.apply_symm_apply]
+    simp [e, z]
+    split_ifs <;> ring
+
 /-- **The minimum norm of the discriminant class `k ω₁` of `Aₙ` is `k (n + 1 - k) / (n + 1)`**,
 for `0 ≤ k ≤ n + 1`.  It is attained by the dual vector whose classical coordinates are
 `(n + 1 - k) / (n + 1)` in the first `k` places and `-k / (n + 1)` in the others, and it bounds the
@@ -125,47 +157,13 @@ theorem isLeast_form_self_nsmul_typeAFundamentalWeightClass {k : ℕ} (hk : k �
         (typeARootLattice n).form x x = q} ((k : ℚ) * (n + 1 - k) / (n + 1)) := by
   set e := typeAIsometryZeroSumLattice n
   refine ⟨?_, ?_⟩
-  · -- The minimal vector `y` and its difference `z = y - k (e₀ - (1 / (n + 1)) (1, …, 1))` from
-    -- the classical coordinates of `k ω₁`, an integral vector of coordinate sum zero.
-    set y : Fin (n + 1) → ℚ := fun j ↦ (if (j : ℕ) < k then 1 else 0) - k / (n + 1)
-    set z : Fin (n + 1) → ℚ := fun j ↦ (if (j : ℕ) < k then 1 else 0) - k * if j = 0 then 1 else 0
-    have hn : (n : ℚ) + 1 ≠ 0 := by positivity
-    have hcard : ∑ j : Fin (n + 1), (if (j : ℕ) < k then (1 : ℚ) else 0) = k := by
-      rw [sum_boole, Fin.card_filter_val_lt, min_eq_right hk]
-    have hy : ∑ j, y j = 0 := by
-      simp only [y, sum_sub_distrib, hcard, sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul,
-        Nat.cast_add, Nat.cast_one]
-      field_simp
-      ring
-    have hz : z ∈ singleParityCheckCode ℚ (Fin (n + 1)) := by
-      rw [mem_singleParityCheckCode]
-      simp [z, sum_sub_distrib, hcard]
-    have hzL : e.symm ⟨z, hz⟩ ∈ (typeARootLattice n).carrier := by
-      rw [e.symm.apply_mem_carrier_iff, mem_zeroSumLattice_carrier_iff]
-      intro j
-      refine ⟨(if (j : ℕ) < k then 1 else 0) - k * if j = 0 then 1 else 0, ?_⟩
-      simp [z]
-    let u : (typeARootLattice n).dualCarrier :=
-      ⟨e.symm ⟨z, hz⟩, (typeARootLattice n).le_dualCarrier hzL⟩
-    have hey : (e ((k : ℤ) • typeAFundamentalWeightDual n + u : (typeARootLattice n).dualCarrier)
-        : Fin (n + 1) → ℚ) = y := by
-      ext j
-      rw [Submodule.coe_add, Submodule.coe_smul, map_add, map_zsmul, Isometry.apply_symm_apply,
-        Submodule.coe_add, Submodule.coe_smul_of_tower, Pi.add_apply, Pi.smul_apply,
-        coe_typeAFundamentalWeightDual, typeAIsometryZeroSumLattice_typeAFundamentalWeight_apply,
-        zsmul_eq_mul]
-      simp only [y, z]
-      push_cast
-      ring
-    refine ⟨(k : ℤ) • typeAFundamentalWeightDual n + u, ?_, ?_⟩
-    · rw [← natCast_zsmul, mk_eq_zsmul_typeAFundamentalWeightClass_iff, Submodule.coe_add,
-        Submodule.coe_smul, coe_typeAFundamentalWeightDual, add_sub_cancel_left]
-      exact hzL
-    · rw [typeARootLattice_form_self_eq_dotProduct, hey]
-      refine (dotProduct_self_eq_mul_sub_div_iff (k := k) hy fun j ↦
-        ⟨if (j : ℕ) < k then 1 else 0, by simp [y]⟩).mpr fun j ↦ ?_
-      push_cast
-      by_cases hj : (j : ℕ) < k <;> simp [y, hj]
+  · obtain ⟨x, hx, hex⟩ := exists_mk_eq_nsmul_typeAFundamentalWeightClass_and_apply_eq hk
+    refine ⟨x, hx, ?_⟩
+    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).2
+    rw [typeARootLattice_form_self_eq_dotProduct]
+    refine (dotProduct_self_eq_mul_sub_div_iff (k := k) hsum fun j ↦
+      ⟨if (j : ℕ) < k then 1 else 0, by simp [e, hex]⟩).mpr fun j ↦ ?_
+    by_cases hj : (j : ℕ) < k <;> simp [e, hex, hj]
   · rintro q ⟨x, hx, rfl⟩
     rw [← natCast_zsmul] at hx
     rw [typeARootLattice_form_self_eq_dotProduct]

@@ -298,12 +298,9 @@ theorem typeAIsometryZeroSumLattice_typeAFundamentalWeight_apply (j : Fin (n + 1
     simp [w, sum_sub_distrib]
     field_simp
     norm_num
-  have hω : typeAFundamentalWeight n = ∑ k, typeAFundamentalWeight n k • typeASimpleRoot n k := by
-    ext i
-    simp [Finset.sum_apply]
   have key : (typeAIsometryZeroSumLattice n (typeAFundamentalWeight n) : Fin (n + 1) → ℚ) = w := by
     rw [← sum_smul_zeroSumSimpleRoot n hw]
-    conv_lhs => rw [hω, map_sum]
+    conv_lhs => rw [← sum_smul_typeASimpleRoot (typeAFundamentalWeight n), map_sum]
     simp only [map_smul, Submodule.coe_sum, Submodule.coe_smul,
       typeAIsometryZeroSumLattice_typeASimpleRoot]
     refine sum_congr rfl fun k _ ↦ congrArg (· • zeroSumSimpleRoot n k) ?_
