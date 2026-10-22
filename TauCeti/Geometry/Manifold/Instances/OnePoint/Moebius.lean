@@ -38,7 +38,8 @@ inverse the transformation of the inverse matrix: this is `Diffeomorph.constSmul
 * `OnePoint.affineChart_equivProjectivization_symm_mk` and
   `OnePoint.invChart_equivProjectivization_symm_mk`: the two charts in homogeneous coordinates.
 * `OnePoint.invChart_symm_eq_smul`: the inverse of the inverted chart is a Möbius transformation.
-* `OnePoint.contMDiff_smul_coe`: a Möbius transformation restricted to `𝕜` is analytic.
+* `Matrix.GeneralLinearGroup.contMDiff_smul_coe`: a Möbius transformation restricted to `𝕜` is
+  analytic.
 * `OnePoint.instContMDiffConstSMul`: `GL (Fin 2) 𝕜` acts on `OnePoint 𝕜` by analytic maps.
 * `OnePoint.instContinuousConstSMul`: in particular it acts by homeomorphisms.
 
@@ -101,6 +102,16 @@ theorem invChart_symm_eq_smul (w : 𝕜) :
   rw [smul_some_eq_ite]
   by_cases hw : w = 0 <;> simp [GeneralLinearGroup.mkOfDetNeZero, hw]
 
+end Proper
+
+end OnePoint
+
+namespace Matrix.GeneralLinearGroup
+
+open OnePoint
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
+
 /-- **A Möbius transformation restricted to `𝕜` is analytic.** For `g = !![a, b; c, d]`, it is
 `z ↦ (a * z + b) / (c * z + d)` away from the pole and sends the pole to `∞`. -/
 theorem contMDiff_smul_coe (g : GL (Fin 2) 𝕜) :
@@ -135,6 +146,12 @@ theorem contMDiff_smul_coe (g : GL (Fin 2) 𝕜) :
     exact ((contMDiff_coe _).comp z₀
       ((hpc.contDiffAt.div hqc.contDiffAt hq₀).contMDiffAt)).congr_of_eventuallyEq hev
 
+end Matrix.GeneralLinearGroup
+
+namespace OnePoint
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
+
 /-- **Möbius transformations of the projective line are analytic.** For `𝕜 = ℂ`, every
 transformation `z ↦ (a * z + b) / (c * z + d)` of the Riemann sphere is holomorphic, and hence a
 biholomorphism `Diffeomorph.constSmul 𝓘(ℂ) ω g` with inverse the transformation of `g⁻¹`. -/
@@ -150,7 +167,7 @@ instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(𝕜) ω (GL (Fin 2) �
           (fun w : 𝕜 ↦ (g * σ) • (w : OnePoint 𝕜)) ∘ invChart := by
         filter_upwards [invChart.open_source.mem_nhds (by simp)] with x hx
         rw [Function.comp_apply, mul_smul, ← hσ, invChart.left_inv hx]
-      exact ((contMDiff_smul_coe _ _).comp _
+      exact (((g * σ).contMDiff_smul_coe _).comp _
         (contMDiffAt_of_mem_maximalAtlas (IsManifold.subset_maximalAtlas (Or.inr rfl))
           (by simp))).congr_of_eventuallyEq hev
     | coe z =>
@@ -159,14 +176,12 @@ instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(𝕜) ω (GL (Fin 2) �
           (fun w : 𝕜 ↦ g • (w : OnePoint 𝕜)) ∘ affineChart := by
         filter_upwards [affineChart.open_source.mem_nhds (by simp)] with x hx
         rw [Function.comp_apply, ← affineChart_symm_apply, affineChart.left_inv hx]
-      exact ((contMDiff_smul_coe _ _).comp _
+      exact ((g.contMDiff_smul_coe _).comp _
         (contMDiffAt_of_mem_maximalAtlas (IsManifold.subset_maximalAtlas (Or.inl rfl))
           (by simp))).congr_of_eventuallyEq hev
 
 /-- Möbius transformations are homeomorphisms of the projective line. -/
 instance instContinuousConstSMul : ContinuousConstSMul (GL (Fin 2) 𝕜) (OnePoint 𝕜) :=
   ContMDiffConstSMul.continuousConstSMul (I := 𝓘(𝕜)) ω
-
-end Proper
 
 end OnePoint
