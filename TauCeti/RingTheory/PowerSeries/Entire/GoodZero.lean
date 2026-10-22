@@ -105,11 +105,7 @@ theorem IsGoodZero.unique [Nontrivial R] (hh : f.IsGoodZero a h) (hk : f.IsGoodZ
 
 /-- The series `(X - a)ʰ` has a good zero of order `h` at `a`. -/
 theorem isGoodZero_X_sub_C_pow : ((X - C a) ^ h : R⟦X⟧).IsGoodZero a h := by
-  have hP : ((X - C a) ^ h : R⟦X⟧) = ((Polynomial.X - Polynomial.C a) ^ h : Polynomial R) := by
-    simp
-  simp_rw [hP, isGoodZero_iff, hasseDeriv_coe, evalAt_coe, Polynomial.coe_aeval_eq_eval,
-    Polynomial.eval_hasseDeriv_X_sub_C_pow]
-  simp +contextual [Nat.ne_of_lt]
+  simp +contextual [isGoodZero_iff, evalAt_hasseDeriv_X_sub_C_pow, Nat.ne_of_lt]
 
 /-- **Good zeros of polynomials.** Over a nontrivial ring, a polynomial `p` has a good zero of
 order `h` at `a` exactly when `h` is the multiplicity of `a` as a root of `p` and the quotient of

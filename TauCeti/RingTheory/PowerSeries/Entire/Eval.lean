@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Ring.InfiniteSum
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
 public import TauCeti.RingTheory.PowerSeries.EvalAt
-import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
 # Evaluation of entire power series
@@ -181,13 +180,10 @@ theorem IsEntire.evalAt_hasseDeriv_X_sub_C_pow_mul [CompleteSpace R] (hg : g.IsE
     (m j : ℕ) :
     (PowerSeries.hasseDeriv j ((X - C a) ^ m * g)).evalAt a =
       if m ≤ j then (PowerSeries.hasseDeriv (j - m) g).evalAt a else 0 := by
-  have hP : ((X - C a) ^ m : R⟦X⟧) = ((Polynomial.X - Polynomial.C a) ^ m : Polynomial R) := by
-    simp
-  rw [hP, hasseDeriv_mul, IsEntire.evalAt_sum _ fun ij _ ↦
-    ((isEntire_coe _).hasseDeriv _).mul (hg.hasseDeriv _),
+  have hP : ((X - C a) ^ m : R⟦X⟧).IsEntire := (isEntire_X.sub (isEntire_C a)).pow m
+  rw [hasseDeriv_mul, IsEntire.evalAt_sum _ fun ij _ ↦ (hP.hasseDeriv _).mul (hg.hasseDeriv _),
     Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  simp_rw [((isEntire_coe _).hasseDeriv _).evalAt_mul (hg.hasseDeriv _), hasseDeriv_coe,
-    evalAt_coe, Polynomial.coe_aeval_eq_eval, Polynomial.eval_hasseDeriv_X_sub_C_pow, ite_mul,
+  simp_rw [(hP.hasseDeriv _).evalAt_mul (hg.hasseDeriv _), evalAt_hasseDeriv_X_sub_C_pow, ite_mul,
     one_mul, zero_mul]
   simp [Finset.sum_ite_eq']
 

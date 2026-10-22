@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
+import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
 # Evaluation of power series as infinite sums
@@ -39,6 +40,7 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalAt_coe`: on polynomials, `evalAt` is `Polynomial.aeval`.
 * `PowerSeries.evalAt_hasseDeriv_coe`: the value at `a` of a Hasse derivative of a polynomial is a
   coefficient of its Taylor expansion at `a`.
+* `PowerSeries.evalAt_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - a) ^ m` at `a`.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
 * `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
@@ -148,6 +150,14 @@ variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] [TopologicalSpace A]
 @[simp]
 theorem evalAt_neg (f : R⟦X⟧) (b : A) : (-f).evalAt b = -f.evalAt b := by
   simp [evalAt_def, neg_smul, tsum_neg]
+
+/-- The Hasse derivative of order `i` of `(X - a) ^ m` is `1` at `a` if `i = m`, and `0`
+otherwise. -/
+theorem evalAt_hasseDeriv_X_sub_C_pow [TopologicalSpace R] (a : R) (i m : ℕ) :
+    (hasseDeriv i ((X - C a) ^ m : R⟦X⟧)).evalAt a = if i = m then 1 else 0 := by
+  have hP : ((X - C a) ^ m : R⟦X⟧) = ((Polynomial.X - Polynomial.C a) ^ m : Polynomial R) := by
+    simp
+  rw [hP, evalAt_hasseDeriv_coe, Polynomial.taylor_coeff, Polynomial.eval_hasseDeriv_X_sub_C_pow]
 
 end Ring
 
