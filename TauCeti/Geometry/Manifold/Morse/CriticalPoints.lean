@@ -9,6 +9,7 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Geometry.Manifold.Morse.Index
+public import TauCeti.Geometry.Manifold.RegularValue
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
@@ -98,6 +99,13 @@ theorem mem_criticalPoints_iff_mfderiv_eq_zero :
 theorem criticalPoints_eq_setOf_mfderiv_eq_zero :
     criticalPoints I f = {x | mfderiv I 𝓘(ℝ) f x = 0} :=
   Set.ext fun _ ↦ mem_criticalPoints_iff_mfderiv_eq_zero
+
+/-- A scalar value is regular exactly when it is not the value of a critical point. -/
+theorem isRegularValue_iff_notMem_image_criticalPoints {c : ℝ} :
+    IsRegularValue I 𝓘(ℝ) f c ↔ c ∉ f '' criticalPoints I f := by
+  simp only [isRegularValue_iff, isRegularPoint_iff_mvfderiv_ne_zero, mem_image,
+    mem_criticalPoints, not_exists, not_and]
+  tauto
 
 /-- A function and its negation have the same critical points. -/
 @[simp]
