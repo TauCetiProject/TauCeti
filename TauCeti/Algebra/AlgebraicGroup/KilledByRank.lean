@@ -40,8 +40,8 @@ Write `ι₁` and `ι₂` for the two inclusions `H → H ⊗[R] H`. The shear a
 `a ⊗ b ↦ (a ⊗ 1) Δ b` of `H ⊗[R] H` over its left factor preserves norms and sends `ι₂` to
 `Δ = ι₁ * ι₂`, where `ι₁` comes from the identity of `H`. Taking norms gives
 `N(ι₂) = id ^ n * N(ι₂)`, and `ι₂` is a unit, so `id ^ n = 1`. The universal point `id` then
-controls every point. The locally free case follows by checking the resulting identity of
-elements of `H` after localizing at every maximal ideal of `R`.
+controls every point. The finite flat case follows by checking the resulting identity of
+elements of `H` after localizing at every maximal ideal of `R`, where finite flat modules are free.
 
 ## References
 
