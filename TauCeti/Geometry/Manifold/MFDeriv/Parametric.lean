@@ -109,6 +109,11 @@ theorem hasDerivAt_mvfderiv_apply
   have hr' : MDifferentiableAt I 𝓘(𝕜, F') (F r) x :=
     (hr.comp x (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt one_ne_zero
   rw [hr'.mvfderiv]
+  -- The chart reading of `F r` is `F r ∘ (extChartAt I x).symm`, since the chart of the target
+  -- model space is the identity.
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+    Function.id_comp]
+  -- `tangentSpaceCastModel I x` is the identity of `E`, the tangent space at `x`.
   rfl
 
 end TauCeti.Manifold
