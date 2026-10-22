@@ -77,7 +77,7 @@ theorem contractLeft_map (f : Q₁ →qᵢ Q₂) (d : Module.Dual R M₂)
   | add x y hx hy => simp only [map_add, hx, hy]
   | ι_mul x m hx =>
     simp only [map_mul, map_apply_ι, contractLeft_ι_mul, hx, map_sub,
-      map_smul, LinearMap.comp_apply]
+      map_smul, LinearMap.comp_apply, QuadraticMap.Isometry.coe_toLinearMap]
 
 /-- Clifford conjugation commutes with the algebra map induced by a quadratic isometry. -/
 @[simp]
