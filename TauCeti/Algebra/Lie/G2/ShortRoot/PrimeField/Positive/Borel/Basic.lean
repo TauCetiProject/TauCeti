@@ -178,17 +178,6 @@ section AlgebraicallyClosed
 
 variable (k : Type u) [Field k] [Algebra (ZMod 3) k] [IsAlgClosed k]
 
-/-- An algebraically closed field of characteristic three contains an element `λ` with `λ³ - λ`
-nonzero: a square root of `-1` has `λ³ - λ = -2λ = λ`. -/
-private theorem exists_pow_three_sub_ne_zero : ∃ l : k, l ^ 3 - l ≠ 0 := by
-  obtain ⟨l, hl⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : k) two_pos
-  have h3 : (3 : k) = 0 := by
-    rw [← map_ofNat (algebraMap (ZMod 3) k) 3, show (OfNat.ofNat 3 : ZMod 3) = 0 from rfl,
-      map_zero]
-  refine ⟨l, fun h ↦ ?_⟩
-  have hl0 : l = 0 := by linear_combination h - l * hl + l * h3
-  simp [hl0] at hl
-
 /-- **The scalar-extended positive subgroup is a Borel subgroup** over every algebraically closed
 field of characteristic three: it is maximal among smooth, connected, solvable closed subgroups of
 the scalar-extended carrier. -/
@@ -198,8 +187,15 @@ theorem isBorelOverAlgClosed_generatedPositiveDefiningIdeal :
   refine (HopfIdeal.isBorelOverAlgClosed_iff _ _ _).mpr ⟨inferInstance,
     isBorelCandidate_generatedPositiveDefiningIdeal k,
     fun J hJ hle ↦ ?_⟩
-  obtain ⟨l, hl⟩ := exists_pow_three_sub_ne_zero k
-  exact generatedPositiveDefiningIdeal_le_of_upperTriangular_le k (Ne.isUnit hl) J
+  -- `k` is infinite, so it has an element `λ ∉ {0, 1, -1}`, and then `λ³ - λ` is nonzero.
+  classical
+  obtain ⟨l, hl⟩ := Infinite.exists_notMem_finset ({0, 1, -1} : Finset k)
+  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hl
+  have hl3 : l ^ 3 - l ≠ 0 := by
+    rw [show l ^ 3 - l = l * (l - 1) * (l + 1) by ring]
+    exact mul_ne_zero (mul_ne_zero hl.1 (sub_ne_zero.mpr hl.2.1))
+      (by rw [ne_eq, add_eq_zero_iff_eq_neg]; exact hl.2.2)
+  exact generatedPositiveDefiningIdeal_le_of_upperTriangular_le k (Ne.isUnit hl3) J
     (upperTriangular_le_comapOfSurjective_of_isBorelCandidate_of_le k J hJ hle)
 
 end AlgebraicallyClosed
