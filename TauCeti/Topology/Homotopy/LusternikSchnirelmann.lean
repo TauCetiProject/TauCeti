@@ -38,8 +38,9 @@ critical point on that level.
   pullback `comap`.
 * `TauCeti.lsCategoryCount X A`: the least size of a categorical cover of `A`, attained when
   finite (`TauCeti.nonempty_lsCategoricalCover_of_lsCategoryCount_eq`).
-* `TauCeti.lsCategoryCount_le_iff`: on a nonempty space, `lsCategoryCount X A ≤ n` exactly when
-  `A` has a categorical cover of size `n`.
+* `TauCeti.lsCategoryCount_le_iff`: `lsCategoryCount X A ≤ n` exactly when `A` has a categorical
+  cover of size at most `n`, and `TauCeti.lsCategoryCount_lt_top_iff`: the count is finite exactly
+  when `A` has a categorical cover.
 * `TauCeti.lsCategoryCount_union_le` and `TauCeti.lsCategoryCount_biUnion_le`: subadditivity.
 * `TauCeti.lsCategoryCount_le_of_homotopic_id`: the deformation inequality.
 * `ContinuousMap.HomotopyEquiv.lsCategoryCount_univ_eq` and `Homeomorph.lsCategoryCount_image`:
@@ -75,6 +76,24 @@ structure LSCategoricalCover (X : Type*) [TopologicalSpace X] (A : Set X) (n : �
   nullhomotopic : ∀ i, (subtypeVal (opens i : Set X)).Nullhomotopic
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- The inclusion of a subset of a singleton is nullhomotopic, since it is constant. -/
+theorem nullhomotopic_subtypeVal_of_subset_singleton {U : Set X} {x : X} (h : U ⊆ {x}) :
+    (subtypeVal U).Nullhomotopic := by
+  rw [show subtypeVal U = const U x from ContinuousMap.ext fun u ↦ h u.2]
+  exact nullhomotopic_of_constant x
+
+/-- In a discrete space a set with nullhomotopic inclusion has at most one point: under a
+nullhomotopy of the inclusion, the track of a point is a path in a discrete space, hence constant.
+-/
+theorem exists_subset_singleton_of_nullhomotopic [DiscreteTopology X] {U : Set X}
+    (h : (subtypeVal U).Nullhomotopic) : ∃ x, U ⊆ {x} := by
+  obtain ⟨x, ⟨H⟩⟩ := h
+  refine ⟨x, fun u hu ↦ ?_⟩
+  have := PreconnectedSpace.constant (inferInstance : PreconnectedSpace unitInterval)
+    (f := fun t ↦ H (t, ⟨u, hu⟩)) (by fun_prop) (x := 0) (y := 1)
+  simp only [Homotopy.apply_zero, Homotopy.apply_one, const_apply] at this
+  rwa [subtypeVal_apply] at this
 
 namespace LSCategoricalCover
 
@@ -142,11 +161,7 @@ def pad [Nonempty X] (c : LSCategoricalCover X A m) (h : m ≤ n) : LSCategorica
     have key (U : Opens X) (hU : U = ⊥ ∨ ∃ j, U = c.opens j) :
         (subtypeVal (U : Set X)).Nullhomotopic := by
       obtain rfl | ⟨j, rfl⟩ := hU
-      · -- A map out of the empty set is constant.
-        have : IsEmpty ((⊥ : Opens X) : Set X) := by simp
-        exact ⟨Classical.arbitrary X,
-          (ContinuousMap.ext isEmptyElim :
-            subtypeVal ((⊥ : Opens X) : Set X) = const _ (Classical.arbitrary X)) ▸ .refl _⟩
+      · exact nullhomotopic_subtypeVal_of_subset_singleton (x := Classical.arbitrary X) (by simp)
       · exact c.nullhomotopic j
     apply key
     split_ifs
@@ -217,14 +232,33 @@ theorem nonempty_lsCategoricalCover_of_lsCategoryCount_eq (h : lsCategoryCount X
       ↦ (k.1 : ℕ∞)
     rwa [← Nat.cast_inj.mp (hk'.trans h)]
 
+/-- The Lusternik–Schnirelmann count of `A` is at most `n` exactly when `A` has a categorical
+cover of size at most `n`. -/
+theorem lsCategoryCount_le_iff :
+    lsCategoryCount X A ≤ n ↔ ∃ m ≤ n, Nonempty (LSCategoricalCover X A m) := by
+  refine ⟨fun h ↦ ?_, fun ⟨m, hm, ⟨c⟩⟩ ↦ c.lsCategoryCount_le.trans (by exact_mod_cast hm)⟩
+  obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.mp (h.trans_lt (ENat.natCast_lt_top n)).ne
+  exact ⟨m, by exact_mod_cast hm ▸ h, nonempty_lsCategoricalCover_of_lsCategoryCount_eq hm.symm⟩
+
 /-- On a nonempty space, `A` has a categorical cover of size `n` exactly when its
 Lusternik–Schnirelmann count is at most `n`. On an empty space only the size `0` occurs. -/
-theorem lsCategoryCount_le_iff [Nonempty X] :
-    lsCategoryCount X A ≤ n ↔ Nonempty (LSCategoricalCover X A n) := by
-  refine ⟨fun h ↦ ?_, fun ⟨c⟩ ↦ c.lsCategoryCount_le⟩
-  obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.mp (h.trans_lt (ENat.natCast_lt_top n)).ne
-  obtain ⟨c⟩ := nonempty_lsCategoricalCover_of_lsCategoryCount_eq hm.symm
-  exact ⟨c.pad (by exact_mod_cast hm ▸ h)⟩
+theorem nonempty_lsCategoricalCover_iff [Nonempty X] :
+    Nonempty (LSCategoricalCover X A n) ↔ lsCategoryCount X A ≤ n := by
+  refine ⟨fun ⟨c⟩ ↦ c.lsCategoryCount_le, fun h ↦ ?_⟩
+  obtain ⟨m, hm, ⟨c⟩⟩ := lsCategoryCount_le_iff.mp h
+  exact ⟨c.pad hm⟩
+
+/-- The Lusternik–Schnirelmann count of `A` is finite exactly when `A` has a categorical cover. -/
+theorem lsCategoryCount_lt_top_iff :
+    lsCategoryCount X A < ⊤ ↔ ∃ n, Nonempty (LSCategoricalCover X A n) := by
+  refine ⟨fun h ↦ ?_, fun ⟨n, ⟨c⟩⟩ ↦ c.lsCategoryCount_le.trans_lt (ENat.natCast_lt_top n)⟩
+  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp h.ne
+  exact ⟨n, nonempty_lsCategoricalCover_of_lsCategoryCount_eq hn.symm⟩
+
+/-- The Lusternik–Schnirelmann count of `A` is `⊤` exactly when `A` has no categorical cover. -/
+theorem lsCategoryCount_eq_top_iff :
+    lsCategoryCount X A = ⊤ ↔ ∀ n, IsEmpty (LSCategoricalCover X A n) := by
+  simp only [← not_lt_top_iff, lsCategoryCount_lt_top_iff, not_exists, not_nonempty_iff]
 
 /-- The Lusternik–Schnirelmann count is monotone in the subset. -/
 theorem lsCategoryCount_mono (h : A ⊆ B) : lsCategoryCount X A ≤ lsCategoryCount X B :=
@@ -307,22 +341,12 @@ theorem lsCategoryCount_eq_encard [DiscreteTopology X] (A : Set X) :
     | inl hA =>
       have hsingle (x : X) : lsCategoryCount X {x} ≤ 1 :=
         (LSCategoricalCover.single ⟨{x}, isOpen_discrete _⟩ subset_rfl
-          ⟨x, (ContinuousMap.ext fun u ↦ by rw [subtypeVal_apply]; exact u.2 :
-            subtypeVal ({x} : Set X) = const _ x) ▸ .refl _⟩).lsCategoryCount_le
+          (nullhomotopic_subtypeVal_of_subset_singleton (x := x) subset_rfl)).lsCategoryCount_le
       calc lsCategoryCount X A = lsCategoryCount X (⋃ x ∈ hA.toFinset, {x}) := by simp
         _ ≤ ∑ x ∈ hA.toFinset, lsCategoryCount X {x} := lsCategoryCount_biUnion_le _ _
         _ ≤ ∑ x ∈ hA.toFinset, 1 := Finset.sum_le_sum fun x _ ↦ hsingle x
         _ = A.encard := by simp [hA.encard_eq_coe_toFinset_card]
-  · -- Each open set of the cover has at most one point: under a nullhomotopy `H` of its
-    -- inclusion, the track `t ↦ H (t, u)` of a point `u` is a path in a discrete space, hence
-    -- constant.
-    choose x H using c.nullhomotopic
-    have hx (i : Fin n) : (c.opens i : Set X) ⊆ {x i} := fun u hu ↦ by
-      obtain ⟨H⟩ := H i
-      have := PreconnectedSpace.constant (inferInstance : PreconnectedSpace unitInterval)
-        (f := fun t ↦ H (t, ⟨u, hu⟩)) (by fun_prop) (x := 0) (y := 1)
-      simp only [Homotopy.apply_zero, Homotopy.apply_one, const_apply] at this
-      rwa [subtypeVal_apply] at this
+  · choose x hx using fun i ↦ exists_subset_singleton_of_nullhomotopic (c.nullhomotopic i)
     calc A.encard ≤ (range x).encard := encard_le_encard <| c.subset_iUnion.trans <|
           iUnion_subset fun i ↦ (hx i).trans <| singleton_subset_iff.mpr (mem_range_self i)
       _ ≤ (univ : Set (Fin n)).encard := by rw [← image_univ]; exact encard_image_le _ _
