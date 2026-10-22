@@ -36,7 +36,8 @@ Independently of a basis, the grade involution is the sign `(-1) ^ n` on the `n`
 a contraction carries the `(n + 1)`-th exterior power into the `n`-th, and a vector graded-commutes
 with every multivector: `ι m * x = involute x * ι m`.  Together with the graded Leibniz rule
 `CliffordAlgebra.contractLeft_mul`, these say that a contraction is an odd derivation of degree
-`-1` of the graded-commutative exterior algebra.
+`-1` of the graded-commutative exterior algebra. Contraction is also natural for the functoriality
+`ExteriorAlgebra.map` of the exterior algebra (`TauCeti.ExteriorAlgebra.contractLeft_map`).
 -/
 
 public section
@@ -424,6 +425,22 @@ theorem contractLeft_mem_exteriorPower (d : Module.Dual R M) {n : ℕ}
     · rw [Nat.add_sub_cancel] at ih
       rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
       exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ v) ih
+
+/-! ### Naturality of contraction -/
+
+/-- **Contraction is natural for linear maps**: contracting the image of `x` under
+`ExteriorAlgebra.map f` against `d` is the image of the contraction of `x` against the pulled-back
+functional `d ∘ₗ f`. -/
+theorem contractLeft_map {N : Type w} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+    (d : Module.Dual R N) (x : ExteriorAlgebra R M) :
+    contractLeft (Q := (0 : QuadraticForm R N)) d (_root_.ExteriorAlgebra.map f x) =
+      _root_.ExteriorAlgebra.map f (contractLeft (Q := (0 : QuadraticForm R M)) (d ∘ₗ f) x) := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r => simp only [AlgHom.commutes, contractLeft_algebraMap, map_zero]
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | ι_mul x m hx =>
+    simp only [map_mul, _root_.ExteriorAlgebra.map_apply_ι, contractLeft_ι_mul, hx, map_sub,
+      map_smul, LinearMap.comp_apply]
 
 end TauCeti.ExteriorAlgebra
 
