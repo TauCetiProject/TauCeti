@@ -36,16 +36,19 @@ A smooth map is isotropic exactly when it pulls `σ` back to zero
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero`), which is the
 form in which isotropy of graphs and sections is usually checked.
 
-When the differential is injective, the linear dimension bounds give `2 dim N ≤ dim M` for
-isotropic maps and `2 dim N = dim M` for Lagrangian ones, and an isotropic immersion from a
-manifold of half the dimension is Lagrangian. Coisotropic maps satisfy `dim M ≤ 2 dim N` without
-any injectivity.
+When `M` is finite-dimensional and the differential is injective at some point of `N` (so `N`
+is nonempty), the linear dimension bounds give `2 dim N ≤ dim M` for isotropic maps and
+`2 dim N = dim M` for Lagrangian ones, and an isotropic immersion from a manifold of half the
+dimension is Lagrangian. When `M` and `N` are finite-dimensional, a coisotropic map from a
+nonempty `N` satisfies `dim M ≤ 2 dim N` without any injectivity. From an empty source every
+map satisfies all three predicates vacuously, and no dimension constraint follows.
 
 A **Lagrangian immersion** (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianImmersion`)
 into a finite-dimensional manifold is a smooth immersion with isotropic tangent images from a
-manifold of half the dimension; it is equivalently an immersion which is a Lagrangian map
-(`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianImmersion_iff`). It is a separate notion from
-an embedded Lagrangian submanifold: its image may have self-intersections.
+manifold of half the dimension; when the source is nonempty, it is equivalently an immersion
+which is a Lagrangian map (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianImmersion_iff`).
+It is a separate notion from an embedded Lagrangian submanifold: its image may have
+self-intersections.
 
 The basic example: in a finite-dimensional symplectic vector space with its constant symplectic
 form, a continuous linear map is a Lagrangian map exactly when its range is a Lagrangian subspace
@@ -59,6 +62,8 @@ form, a continuous linear map is a Lagrangian map exactly when its range is a La
   vanishing of the pulled-back form.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianMap_comp_diffeomorph_iff`: independence of
   the parametrization.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_transport`: the differential of a
+  symplectomorphism transports the tangent-space symplectic forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianMap_diffeomorph_comp_iff`: transport by
   symplectomorphisms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.two_mul_finrank`: the dimension count.
@@ -193,9 +198,10 @@ variable {E₂ H₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [T
   {I₂ : ModelWithCorners ℝ E₂ H₂} {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H₂ M₂]
   [IsManifold I₂ ∞ M₂] {σ₂ : SmoothTwoForm I₂ M₂} {hσ₂ : σ₂.IsNondegenerate}
 
+variable (hσ) in
 /-- At every point, the differential of a diffeomorphism pulling `σ₂` back to `σ` transports the
 tangent-space symplectic form of `σ` to that of `σ₂`. -/
-private theorem symplecticFormAt_transport (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
+theorem symplecticFormAt_transport (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) (y : M) :
     (hσ.symplecticFormAt y).transport
         (ψ.mfderivToContinuousLinearEquiv (by simp) y).toLinearEquiv =
@@ -206,26 +212,14 @@ private theorem symplecticFormAt_transport (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
     ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe,
     Diffeomorph.mfderivToContinuousLinearEquiv_coe]
 
-omit [IsManifold I ∞ M] [IsManifold I₂ ∞ M₂] in
-/-- The tangent image of `ψ ∘ f` is the transport of that of `f` along `dψ`. -/
-private theorem range_mfderiv_diffeomorph_comp_eq_map (ψ : M ≃ₘ⟮I, I₂⟯ M₂) (x : N) :
-    LinearMap.range (mfderiv J I₂ (ψ ∘ f) x).toLinearMap =
-      (LinearMap.range (mfderiv J I f x).toLinearMap).map
-        (ψ.mfderivToContinuousLinearEquiv (by simp) (f x)).toLinearEquiv.toLinearMap := by
-  rw [ψ.range_mfderiv_diffeomorph_comp (by simp)]
-  congr 1
-  ext v
-  rw [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe,
-    Diffeomorph.mfderivToContinuousLinearEquiv_coe, ContinuousLinearMap.coe_coe]
-
 /-- A symplectomorphism preserves isotropic maps: if `ψ` pulls `σ₂` back to `σ`, then `ψ ∘ f` is
 isotropic for `σ₂` exactly when `f` is isotropic for `σ`. -/
 theorem isIsotropicMap_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) :
     hσ₂.IsIsotropicMap J (ψ ∘ f) ↔ hσ.IsIsotropicMap J f := by
   refine forall_congr' fun x ↦ ?_
-  rw [range_mfderiv_diffeomorph_comp_eq_map, Function.comp_apply,
-    ← symplecticFormAt_transport ψ hψ, SymplecticForm.isIsotropic_map_transport_iff]
+  rw [ψ.range_mfderiv_diffeomorph_comp (by simp), Function.comp_apply,
+    ← hσ.symplecticFormAt_transport ψ hψ, SymplecticForm.isIsotropic_map_transport_iff]
 
 /-- A symplectomorphism preserves coisotropic maps: if `ψ` pulls `σ₂` back to `σ`, then `ψ ∘ f`
 is coisotropic for `σ₂` exactly when `f` is coisotropic for `σ`. -/
@@ -233,8 +227,8 @@ theorem isCoisotropicMap_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) :
     hσ₂.IsCoisotropicMap J (ψ ∘ f) ↔ hσ.IsCoisotropicMap J f := by
   refine forall_congr' fun x ↦ ?_
-  rw [range_mfderiv_diffeomorph_comp_eq_map, Function.comp_apply,
-    ← symplecticFormAt_transport ψ hψ, SymplecticForm.isCoisotropic_map_transport_iff]
+  rw [ψ.range_mfderiv_diffeomorph_comp (by simp), Function.comp_apply,
+    ← hσ.symplecticFormAt_transport ψ hψ, SymplecticForm.isCoisotropic_map_transport_iff]
 
 /-- **Transport by symplectomorphisms.** If `ψ` pulls `σ₂` back to `σ`, then `ψ ∘ f` is Lagrangian
 for `σ₂` exactly when `f` is Lagrangian for `σ`. -/
@@ -242,8 +236,8 @@ theorem isLagrangianMap_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) :
     hσ₂.IsLagrangianMap J (ψ ∘ f) ↔ hσ.IsLagrangianMap J f := by
   refine forall_congr' fun x ↦ ?_
-  rw [range_mfderiv_diffeomorph_comp_eq_map, Function.comp_apply,
-    ← symplecticFormAt_transport ψ hψ, SymplecticForm.isLagrangian_map_transport_iff]
+  rw [ψ.range_mfderiv_diffeomorph_comp (by simp), Function.comp_apply,
+    ← hσ.symplecticFormAt_transport ψ hψ, SymplecticForm.isLagrangian_map_transport_iff]
 
 end Transport
 

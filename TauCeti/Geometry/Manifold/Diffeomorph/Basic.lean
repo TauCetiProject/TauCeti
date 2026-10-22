@@ -124,15 +124,18 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
 
 /-- Postcomposition with a diffeomorphism maps tangent images by its differential: the range of
-the differential of `h ∘ f` at `x` is the image under `dh` of the range of the differential of `f`.
+the differential of `h ∘ f` at `x` is the image of the range of the differential of `f` under the
+linear equivalence `dh`, `Diffeomorph.mfderivToContinuousLinearEquiv`.
 No differentiability of `f` is assumed: when `f` is not differentiable at `x`, neither is `h ∘ f`,
 and both ranges are zero. -/
 theorem range_mfderiv_diffeomorph_comp (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f : P → M) (x : P) :
     LinearMap.range (mfderiv K J (h ∘ f) x).toLinearMap =
-      (LinearMap.range (mfderiv K I f x).toLinearMap).map (mfderiv I J h (f x)).toLinearMap := by
+      (LinearMap.range (mfderiv K I f x).toLinearMap).map
+        (h.mfderivToContinuousLinearEquiv hn (f x)).toLinearEquiv.toLinearMap := by
   by_cases hf : MDifferentiableAt K I f x
   · rw [mfderiv_comp x (h.mdifferentiable hn (f x)) hf, ContinuousLinearMap.toLinearMap_comp,
       LinearMap.range_comp]
+    rfl
   · have hhf : ¬MDifferentiableAt K J (h ∘ f) x := (h.mdifferentiableAt_comp_iff hn).not.mpr hf
     simp only [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hhf,
       ContinuousLinearMap.toLinearMap_zero, LinearMap.range_zero, Submodule.map_bot]
