@@ -181,20 +181,23 @@ theorem tendsto_dPlus_maturity_strike (hσ : σ ≠ 0) (hK : K ≠ 0) :
 /-- As the maturity tends to `0⁺`, `d₋ → +∞` in the money. -/
 theorem tendsto_dMinus_maturity_atTop (hσ : 0 < σ) (hK : 0 < K) (hsK : K < s) :
     Tendsto (dMinus s r σ K) (𝓝[>] 0) atTop :=
-  ((tendsto_dPlus_maturity_atTop hσ hK hsK).atTop_add (tendsto_mul_sqrt_nhds_zero σ).neg).congr
-    fun u => by rw [dMinus_def, sub_eq_add_neg]
+  ((tendsto_dPlus_maturity_atTop hσ hK hsK).atTop_add
+    ((tendsto_mul_sqrt_nhds_zero σ).mono_left nhdsWithin_le_nhds).neg).congr
+      fun u => by rw [dMinus_def, sub_eq_add_neg]
 
 /-- As the maturity tends to `0⁺`, `d₋ → -∞` out of the money. -/
 theorem tendsto_dMinus_maturity_atBot (hσ : 0 < σ) (hs : 0 < s) (hsK : s < K) :
     Tendsto (dMinus s r σ K) (𝓝[>] 0) atBot :=
-  ((tendsto_dPlus_maturity_atBot hσ hs hsK).atBot_add (tendsto_mul_sqrt_nhds_zero σ).neg).congr
-    fun u => by rw [dMinus_def, sub_eq_add_neg]
+  ((tendsto_dPlus_maturity_atBot hσ hs hsK).atBot_add
+    ((tendsto_mul_sqrt_nhds_zero σ).mono_left nhdsWithin_le_nhds).neg).congr
+      fun u => by rw [dMinus_def, sub_eq_add_neg]
 
 /-- As the maturity tends to `0⁺`, `d₋ → 0` at the money. -/
 theorem tendsto_dMinus_maturity_strike (hσ : σ ≠ 0) (hK : K ≠ 0) :
     Tendsto (dMinus K r σ K) (𝓝[>] 0) (𝓝 0) := by
   simpa only [sub_zero] using ((tendsto_dPlus_maturity_strike (r := r) hσ hK).sub
-    (tendsto_mul_sqrt_nhds_zero σ)).congr fun u => (dMinus_def K r σ K u).symm
+    ((tendsto_mul_sqrt_nhds_zero σ).mono_left nhdsWithin_le_nhds)).congr fun u =>
+      (dMinus_def K r σ K u).symm
 
 /-- If `Φ(d₊)` and `Φ(d₋)` both tend to `a` at maturity, the call price tends to `s a - K a`. -/
 private theorem tendsto_callPrice_maturity_of_tendsto_cdf {a : ℝ}
