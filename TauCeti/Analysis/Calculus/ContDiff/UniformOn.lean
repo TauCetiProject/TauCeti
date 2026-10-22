@@ -17,8 +17,8 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 `TauCeti.UniformContDiffOn 𝕜 n G s` says that a function `G : X → Y` between normed spaces has a
 chain of derivative families `G', G'', …` up to order `n`, each the derivative at every point of
 `s` of the previous one, such that `G` and all these derivatives are uniformly continuous on `s`
-and the derivatives of orders `1` to `n` are bounded on `s` (`G` itself need not be bounded). When
-`s` is open, `G` is `C^n` on `s` (`UniformContDiffOn.contDiffOn`). The derivatives are carried
+and the derivatives of orders `1` to `n` are bounded on `s` (`G` itself need not be bounded). On any
+set `s`, `G` is `C^n` on `s` (`UniformContDiffOn.contDiffOn`). The derivatives are carried
 along as functions `X → (X →L[𝕜] ⋯ →L[𝕜] Y)` rather than as iterated Fréchet derivatives,
 so a proof by induction on `n` applies the case `n` to the derivative of `G`. The domain and the
 target lie in the same universe, because the recursion passes to the target `X →L[𝕜] Y`.
@@ -154,16 +154,20 @@ theorem uniformContDiffOn_succ_iff_fderiv_of_isOpen (hs : IsOpen s) {n : ℕ} :
   · exact uniformContDiffOn_succ_iff.2 ⟨hu, fderiv 𝕜 G, fun x hx ↦
       ((hd x hx).differentiableAt (hs.mem_nhds hx)).hasFDerivAt, ⟨C, hC⟩, hG'⟩
 
-/-- On an open set, a uniformly `C^n` function is `C^n`. -/
-theorem UniformContDiffOn.contDiffOn {n : ℕ} (hs : IsOpen s) (h : UniformContDiffOn 𝕜 n G s) :
+/-- A uniformly `C^n` function is `C^n` on an arbitrary set. -/
+theorem UniformContDiffOn.contDiffOn {n : ℕ} (h : UniformContDiffOn 𝕜 n G s) :
     ContDiffOn 𝕜 n G s := by
   induction n generalizing Y with
   | zero => exact contDiffOn_zero.2 h.continuousOn
   | succ n ih =>
     obtain ⟨-, G', hG', -, hG'n⟩ := uniformContDiffOn_succ_iff.1 h
-    have hder : ∀ x ∈ s, fderiv 𝕜 G x = G' x := fun x hx ↦ (hG' x hx).fderiv
-    rw [Nat.cast_succ, contDiffOn_succ_iff_fderiv_of_isOpen hs]
-    exact ⟨h.differentiableOn le_add_self, by simp, (ih hG'n).congr hder⟩
+    rw [Nat.cast_succ]
+    refine (contDiffOn_succ_iff_hasFDerivWithinAt (by simp)).2 ?_
+    intro x hx
+    refine ⟨s, ?_, by simp, G', ?_, ih hG'n⟩
+    · simpa only [insert_eq_of_mem hx] using
+        (self_mem_nhdsWithin : s ∈ nhdsWithin x s)
+    · exact fun y hy ↦ (hG' y hy).hasFDerivWithinAt
 
 /-- **A smooth function is uniformly smooth on a compact set.** If `G` is `C^n` on an open set `t`
 and `s ⊆ t` is compact, then `G` is uniformly `C^n` on `s`: every derivative is continuous, hence
