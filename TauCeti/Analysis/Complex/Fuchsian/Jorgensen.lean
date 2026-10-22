@@ -18,6 +18,7 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Endpoint
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.GroupTheory.JorgensenSequence
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
@@ -291,12 +292,6 @@ private theorem coe_conj (S Y : SL(2, ℝ)) :
     ((S⁻¹ * Y * S : SL(2, ℝ)) : PSL(2, ℝ)) = (S : PSL(2, ℝ))⁻¹ * Y * S := by
   rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
 
-/-- Change of frame sends subgroup elements into the conjugated subgroup. -/
-private theorem conj_mem_conjAct_smul (S : SL(2, ℝ)) {x : PSL(2, ℝ)} (hx : x ∈ Γ) :
-    (S : PSL(2, ℝ))⁻¹ * x * S ∈ ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹ • Γ := by
-  have := Subgroup.smul_mem_pointwise_smul x (ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹) Γ hx
-  rwa [ConjAct.toConjAct_smul, inv_inv] at this
-
 /-- **Jørgensen's inequality for hyperbolic elements.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup
 and let `A, B ∈ SL(2, ℝ)` lift elements of `Γ`, with `A` hyperbolic: `|tr A| > 2`. Unless `B`
 conjugates the class of `A` to itself or to its inverse, that is, unless `B` fixes or exchanges
@@ -317,10 +312,10 @@ theorem one_le_abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_of_
   set Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (P : PSL(2, ℝ))⁻¹ • Γ
   have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
   have hD : (dilation s : PSL(2, ℝ)) ∈ Γ' := by
-    have := conj_mem_conjAct_smul P hA
+    have := (inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hA
     rwa [hAg, show (P : PSL(2, ℝ))⁻¹ * (P * (dilation s : PSL(2, ℝ)) * (P : PSL(2, ℝ))⁻¹) * P =
       dilation s by group] at this
-  have hXmem : (X : PSL(2, ℝ)) ∈ Γ' := hXcoe ▸ conj_mem_conjAct_smul P hB
+  have hXmem : (X : PSL(2, ℝ)) ∈ Γ' := hXcoe ▸ (inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hB
   -- the exceptional cases correspond under the change of frame
   have hconj (y : PSL(2, ℝ))
       (hy : (X : PSL(2, ℝ)) * (dilation s : PSL(2, ℝ)) * (X : PSL(2, ℝ))⁻¹ = y) :
@@ -482,8 +477,8 @@ theorem one_le_abs_trace_commutatorElement_sub_two_of_isParabolic [DiscreteTopol
   set X : SL(2, ℝ) := S⁻¹ * B * S with hX
   set Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹ • Γ
   have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
-  have hTmem : (T : PSL(2, ℝ)) ∈ Γ' := (coe_conj S A) ▸ conj_mem_conjAct_smul S hA
-  have hXmem : (X : PSL(2, ℝ)) ∈ Γ' := (coe_conj S B) ▸ conj_mem_conjAct_smul S hB
+  have hTmem : (T : PSL(2, ℝ)) ∈ Γ' := (coe_conj S A) ▸ (inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hA
+  have hXmem : (X : PSL(2, ℝ)) ∈ Γ' := (coe_conj S B) ▸ (inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hB
   have hTx : (T : PSL(2, ℝ)) = upperRightHom x := (coe_conj S A).trans hAx
   -- the conjugate `X` of `B` does not fix `∞`, so Shimizu's lemma bounds its lower-left entry
   have hX0 : X 1 0 ≠ 0 := by
