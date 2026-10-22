@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Formal
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Component
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Obstruction
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop
 
 /-!
@@ -101,6 +100,7 @@ noncomputable def zigzagBacktrackOperation (d e : G.Dart) :
       (zigzagBasis k G hns (.inr (.inl d)))
 
 /-- A backtrack operation is the product of three arrow coordinates times an arrow. -/
+@[simp]
 theorem zigzagBacktrackOperation_apply (d e : G.Dart) (x : Fin 3 → nonisolatedZigzagQuotient k G) :
     zigzagBacktrackOperation k G hns d e x =
       ((zigzagBasis k G hns).coord (.inr (.inl d)) (x 0) *
@@ -337,14 +337,15 @@ private theorem zigzagBacktrackCochain_coboundary_koszulTwist (hP : ∀ p ∈ P,
     have h := (zigzagBacktrackCochain hns P a).map_update_neg (Fin.cons u (Fin.cons v ![w]))
       (Fin.succ 0) v
     rwa [← Fin.cons_update, ← Fin.cons_update, Fin.update_cons_zero, Fin.update_cons_zero] at h
+  -- Normalize the twists and negations on both sides, then compare with the coboundary identity.
   have hid := zigzagBacktrackCochain_coboundary hns a hP (𝒢.koszulTwist 1 x₀) x₁
     (𝒢.koszulTwist 1 x₂) x₃
-  rw [zigzagBacktrackCochain_koszulTwist_one_zero hns a h𝒢 x₀ x₁ (𝒢.koszulTwist 1 x₂),
-    zigzagBacktrackCochain_koszulTwist_one_two hns a h𝒢 x₀ x₁ x₂, neg_neg] at hid
-  rw [koszulTwist_one_zigzagBacktrackCochain hns a h𝒢,
-    zigzagBacktrackCochain_koszulTwist_one_one hns a h𝒢 x₀ x₁ x₂, neg_neg, hmul,
-    InternalGrading.koszulTwist_koszulTwist, map_neg, InternalGrading.koszulTwist_koszulTwist,
-    hneg₀, hneg₀, hneg₁, neg_neg, ← hid]
+  simp only [zigzagBacktrackCochain_koszulTwist_one_zero hns a h𝒢,
+    zigzagBacktrackCochain_koszulTwist_one_one hns a h𝒢,
+    zigzagBacktrackCochain_koszulTwist_one_two hns a h𝒢,
+    koszulTwist_one_zigzagBacktrackCochain hns a h𝒢, hmul, map_neg,
+    InternalGrading.koszulTwist_koszulTwist, hneg₀, hneg₁, neg_neg] at hid ⊢
+  rw [← hid]
   abel
 
 end Twist
@@ -407,6 +408,7 @@ private theorem zigzagBacktrackTaylor_of_tprod_eq_zero_of_mem {m : ℕ} (hm : 0 
   · rw [backtrackOps_eq_zero hns a h3, _root_.zero_apply]
 
 /-- The backtrack Taylor map vanishes on words whose length is not three. -/
+@[simp]
 theorem zigzagBacktrackTaylor_of_tprod_of_ne {m : ℕ} (hm : 0 < m) (hm3 : m ≠ 3)
     (w : Fin m → nonisolatedZigzagQuotient k G) :
     zigzagBacktrackTaylor hns P a (of k _ ⟨m, hm⟩ (PiTensorProduct.tprod k w)) = 0 := by
@@ -431,9 +433,11 @@ private theorem zigzagBacktrackTaylor_of_tprod_three_koszulTwist
 /-- On a word of length three the backtrack Taylor map is the negative of the backtrack cochain:
 the suspension sign of an arity-three operation of even degree is that of its middle letter, which
 the backtrack cochain only reads through an arrow coordinate. -/
+@[simp]
 theorem zigzagBacktrackTaylor_of_tprod_three (w : Fin 3 → nonisolatedZigzagQuotient k G) :
-    zigzagBacktrackTaylor hns P a (of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k w)) =
+    zigzagBacktrackTaylor hns P a (of k _ (3 : ℕ+) (PiTensorProduct.tprod k w)) =
       -zigzagBacktrackCochain hns P a w := by
+  change zigzagBacktrackTaylor hns P a (of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k w)) = _
   rw [zigzagBacktrackTaylor_of_tprod_three_koszulTwist,
     zigzagBacktrackCochain_koszulTwist_one_one hns a (zigzagLoopAInfinityAlgebra_grading_piece _ _)]
   congr 2
@@ -718,16 +722,14 @@ private theorem backtrack_component_two (x : Fin 2 → nonisolatedZigzagQuotient
             ((zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a)
               (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients a hP)).taylor
                 (subword k x p d))) := by
+  -- Only the cut after the first letter remains; both sides are then the twisted product.
   rw [Finset.sum_eq_zero fun p _ ↦ Finset.sum_eq_zero fun d _ ↦
       backtrack_collapse_eq_zero hns a _ x p d (by omega), add_zero,
     Finset.sum_range_succ, Finset.sum_range_one, backtrack_cut_eq_zero hns a hP' x 0 (by omega),
-    zero_add, letter_add_zigzagBacktrackTaylor_subword_one hns a x 0 (by norm_num),
-    letter_add_zigzagBacktrackTaylor_subword_one hns a x 1 (by norm_num),
-    AInfinityAlgebra.taylor_of_tprod, zigzagLoopAInfinityAlgebra_m_two_apply,
-    zigzagLoopAInfinityAlgebra_m_two_apply,
+    AInfinityAlgebra.taylor_of_tprod,
     grading_zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a) 0 _ (by simp)]
-  simp only [Fin.isValue, Fin.val_zero, Fin.val_one, Nat.cast_zero, Nat.cast_one, Nat.cast_ofNat,
-    sub_zero, Matrix.cons_val_zero, Matrix.cons_val_one]
+  simp (disch := norm_num) only [Nat.reduceSub, letter_add_zigzagBacktrackTaylor_subword_one,
+    zigzagLoopAInfinityAlgebra_m_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
   norm_num
 
 include hP hP' in
@@ -843,10 +845,10 @@ theorem component_three_zigzagBacktrackAInfinityHom :
     fin_cases i <;> simp
   rw [AInfinityHom.component_apply _ 3 (by norm_num), taylor_zigzagBacktrackAInfinityHom,
     LinearMap.add_apply, letter_of_of_ne_one k _ (by decide), zero_add,
-    grading_zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a) 0 _ (by simp), hx,
-    zigzagBacktrackTaylor_of_tprod_three,
-    zigzagBacktrackCochain_koszulTwist_one_one hns a (zigzagLoopAInfinityAlgebra_grading_piece _ _),
-    neg_neg]
+    grading_zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a) 0 _ (by simp), hx]
+  -- The suspension sign twists the middle letter, which negates the backtrack cochain.
+  simp only [PNat.mk_ofNat, zigzagBacktrackTaylor_of_tprod_three, neg_neg,
+    zigzagBacktrackCochain_koszulTwist_one_one hns a (zigzagLoopAInfinityAlgebra_grading_piece _ _)]
   congr 1
   funext i
   fin_cases i <;> rfl
