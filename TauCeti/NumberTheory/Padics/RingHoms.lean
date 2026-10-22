@@ -37,7 +37,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
   topology.
 * `PadicInt.toZMod_eq_zero_iff_dvd`, `PadicInt.toZModPow_eq_zero_iff_dvd`: the kernels of
-  reduction and truncation, as divisibility statements.
+  reduction and truncation, as divisibility statements; `PadicInt.toZModPow_eq_iff_dvd_sub`:
+  two `p`-adic integers truncate to the same residue exactly when `p ^ n` divides their
+  difference.
 * `PadicInt.two_dvd_sq_sub_self`: every `2`-adic integer satisfies `x ^ 2 ≡ x` modulo `2`.
 * `PadicInt.toZModPow_eq_one_of_norm_sub_one_le`: a norm bound forcing a `p`-adic integer to
   reduce to `1` modulo `p ^ n`.
@@ -151,6 +153,12 @@ theorem two_dvd_sq_sub_self (x : ℤ_[2]) : (2 : ℤ_[2]) ∣ x ^ 2 - x := by
 theorem toZModPow_eq_zero_iff_dvd (n : ℕ) (x : ℤ_[p]) :
     toZModPow n x = 0 ↔ (p : ℤ_[p]) ^ n ∣ x := by
   rw [← RingHom.mem_ker, ker_toZModPow, Ideal.mem_span_singleton]
+
+/-- Two `p`-adic integers have the same truncation modulo `p ^ n` exactly when `p ^ n` divides
+their difference. -/
+theorem toZModPow_eq_iff_dvd_sub (n : ℕ) {x y : ℤ_[p]} :
+    toZModPow n x = toZModPow n y ↔ (p : ℤ_[p]) ^ n ∣ y - x := by
+  rw [eq_comm, ← sub_eq_zero, ← map_sub, toZModPow_eq_zero_iff_dvd]
 
 /-- A `p`-adic integer within `p ^ (-n)` of `1` reduces to `1` modulo `p ^ n`. -/
 theorem toZModPow_eq_one_of_norm_sub_one_le {n : ℕ} {x : ℤ_[p]}

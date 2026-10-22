@@ -69,6 +69,9 @@ public section
 
 open Module
 open LinearMap (BilinForm)
+open PadicInt (eight_dvd_sub_iff_toZModPow_three_eq exists_eq_sq_mul_of_toZModPow_three_eq
+  isSquare_mul_iff_toZModPow_three_eq isUnit_of_toZModPow_three_mul_self
+  toZModPow_three_mul_self_of_isUnit)
 
 namespace LinearMap.BilinForm
 
@@ -77,55 +80,6 @@ universe u
 /-! ### Residues modulo `8` -/
 
 section Residues
-
-/-- The residue modulo `8` of a unit of `ℤ_[2]` squares to `1`. -/
-private theorem toZModPow_three_mul_self_of_isUnit {z : ℤ_[2]} (hz : IsUnit z) :
-    PadicInt.toZModPow 3 z * PadicInt.toZModPow 3 z = 1 := by
-  obtain ⟨u, rfl⟩ := hz
-  have key : ∀ a b : ZMod (2 ^ 3), a * b = 1 → a * a = 1 := by decide
-  exact key _ (PadicInt.toZModPow 3 (↑u⁻¹ : ℤ_[2])) (by rw [← map_mul, Units.mul_inv, map_one])
-
-/-- An element of `ℤ_[2]` whose residue modulo `8` squares to `1` is a unit. -/
-private theorem isUnit_of_toZModPow_three_mul_self {z : ℤ_[2]}
-    (hz : PadicInt.toZModPow 3 z * PadicInt.toZModPow 3 z = 1) : IsUnit z := by
-  by_contra h
-  obtain ⟨w, rfl⟩ := PadicInt.not_isUnit_iff_dvd.mp h
-  have key : ∀ a : ZMod (2 ^ 3), 2 * a * (2 * a) ≠ 1 := by decide
-  exact key (PadicInt.toZModPow 3 w) (by simpa [map_ofNat] using hz)
-
-/-- Two units of `ℤ_[2]` with the same residue modulo `8` differ by the square of a unit. -/
-private theorem exists_eq_sq_mul_of_toZModPow_three_eq {a c : ℤ_[2]} (ha : IsUnit a)
-    (hc : IsUnit c) (h : PadicInt.toZModPow 3 a = PadicInt.toZModPow 3 c) :
-    ∃ s : ℤ_[2], IsUnit s ∧ c = s ^ 2 * a := by
-  have hmem : hc.unit * ha.unit⁻¹ ∈ TauCeti.unitsPrincipal 2 3 := by
-    rw [TauCeti.mem_unitsPrincipal_iff_toZModPow, Units.val_mul, map_mul, IsUnit.unit_spec, ← h,
-      ← map_mul, IsUnit.mul_val_inv, map_one]
-  rw [TauCeti.unitsPrincipal_three_eq_range_powMonoidHom_two] at hmem
-  obtain ⟨w, hw⟩ := hmem
-  rw [powMonoidHom_apply, eq_mul_inv_iff_mul_eq] at hw
-  refine ⟨w, w.isUnit, ?_⟩
-  simpa using (congrArg Units.val hw).symm
-
-/-- For units `a` and `c` of `ℤ_[2]`, the product `a * c` is a square exactly when `a` and `c`
-agree modulo `8`. -/
-private theorem isSquare_mul_iff_toZModPow_three_eq {a c : ℤ_[2]} (ha : IsUnit a)
-    (hc : IsUnit c) :
-    IsSquare (a * c) ↔ PadicInt.toZModPow 3 a = PadicInt.toZModPow 3 c := by
-  refine ⟨fun ⟨r, hr⟩ ↦ ?_, fun h ↦ ?_⟩
-  · have hru : IsUnit r := isUnit_of_mul_isUnit_left (hr ▸ ha.mul hc)
-    have key : ∀ x y z : ZMod (2 ^ 3), x * x = 1 → z * z = 1 → x * y = z * z → x = y := by
-      decide
-    exact key _ _ _ (toZModPow_three_mul_self_of_isUnit ha) (toZModPow_three_mul_self_of_isUnit hru)
-      (by rw [← map_mul, ← map_mul, hr])
-  · obtain ⟨s, -, hs⟩ := exists_eq_sq_mul_of_toZModPow_three_eq ha hc h
-    exact ⟨s * a, by rw [hs]; ring⟩
-
-/-- Divisibility by `8` in `ℤ_[2]` is equality of residues modulo `8`. -/
-private theorem eight_dvd_sub_iff_toZModPow_three_eq {a c : ℤ_[2]} :
-    (8 : ℤ_[2]) ∣ c - a ↔ PadicInt.toZModPow 3 a = PadicInt.toZModPow 3 c := by
-  have h8 : (8 : ℤ_[2]) = ((2 : ℕ) : ℤ_[2]) ^ 3 := by norm_num
-  rw [h8, ← Ideal.mem_span_singleton, ← PadicInt.ker_toZModPow, RingHom.mem_ker, map_sub,
-    sub_eq_zero, eq_comm]
 
 /-- **The determinant class and oddity of a diagonal determine at least four entries.** Let the
 residues `dᵢ` all lie in `{y, 5y}` and the residues `vᵢ` all lie in `{-y, -5y}` modulo `8`. If the
