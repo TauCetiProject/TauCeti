@@ -117,11 +117,8 @@ theorem map_comp_multivariateGaussian (m : EuclideanSpace ℝ ι) {S : Matrix ι
     ext k
     simp [L, Matrix.mulVec, dotProduct, Matrix.one_apply]
   have hcov : L * S * L.transpose = S.submatrix f f := by
-    have hleft := Matrix.one_submatrix_mul f (Equiv.refl ι) S
-    have hright := Matrix.mul_submatrix_one (Equiv.refl ι) f (S.submatrix f id)
-    simp only [Equiv.coe_refl, Equiv.refl_symm, Function.id_comp] at hleft hright
-    rw [Matrix.transpose_submatrix, Matrix.transpose_one, hleft, hright,
-      Matrix.submatrix_submatrix, Function.comp_id, Function.id_comp]
+    ext
+    simp [L, Matrix.mul_apply, Matrix.one_apply]
   simpa [hL, hcov] using map_affine_multivariateGaussian m hS L 0
 
 /-- An identity-covariance Gaussian is the product of its unit-variance Gaussian coordinate

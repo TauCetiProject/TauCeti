@@ -16,7 +16,8 @@ import Mathlib.Analysis.Matrix.Order
 
 The matrix normal law `matrixNormalMeasure M U V` on real `ι × κ` matrices has mean `M`, row
 covariance `U` and column covariance `V`. It is defined through the column-stacking
-vectorization `Matrix.vec`: the vectorization of a matrix normal matrix is the multivariate
+vectorization `Matrix.vec`, packaged as the measurable equivalence
+`TauCeti.matrixVecMeasurableEquiv`: the vectorization of a matrix normal matrix is the multivariate
 Gaussian with mean `vec M` and Kronecker covariance `V ⊗ₖ U`. Thus entries `(i, j)` and
 `(k, l)` have covariance `U i k * V j l`, and rows and columns are multivariate Gaussian with
 covariances proportional to `V` and `U`.
@@ -63,8 +64,7 @@ and covariance `V ⊗ₖ U`. If `U` or `V` is not positive semidefinite, it is t
 def matrixNormalMeasure (M : Matrix ι κ ℝ) (U : Matrix ι ι ℝ) (V : Matrix κ κ ℝ) :
     Measure (Matrix ι κ ℝ) :=
   if U.PosSemidef ∧ V.PosSemidef then
-    (multivariateGaussian (WithLp.toLp 2 M.vec) (V ⊗ₖ U)).map
-      fun x => Matrix.of fun i j => x (j, i)
+    (multivariateGaussian (WithLp.toLp 2 M.vec) (V ⊗ₖ U)).map (matrixVecMeasurableEquiv 2).symm
   else Measure.dirac M
 
 /-- For positive semidefinite covariances, the matrix normal law is the Gaussian law of its
@@ -72,8 +72,7 @@ vectorization, read back as a matrix. -/
 theorem matrixNormalMeasure_of_posSemidef (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ}
     {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) :
     matrixNormalMeasure M U V =
-      (multivariateGaussian (WithLp.toLp 2 M.vec) (V ⊗ₖ U)).map
-        fun x => Matrix.of fun i j => x (j, i) :=
+      (multivariateGaussian (WithLp.toLp 2 M.vec) (V ⊗ₖ U)).map (matrixVecMeasurableEquiv 2).symm :=
   ite_eq_left ⟨hU, hV⟩
 
 /-- If one of the covariance parameters is not positive semidefinite, the matrix normal law is
@@ -98,30 +97,17 @@ theorem map_vec_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ
     (hU : U.PosSemidef) (hV : V.PosSemidef) :
     (matrixNormalMeasure M U V).map (fun X => WithLp.toLp 2 X.vec) =
       multivariateGaussian (WithLp.toLp 2 M.vec) (V ⊗ₖ U) := by
-  have h : (fun X : Matrix ι κ ℝ => WithLp.toLp 2 X.vec) ∘
-      (fun x : EuclideanSpace ℝ (κ × ι) => Matrix.of fun i j => x (j, i)) = id := by
-    funext x
-    ext ⟨j, i⟩
-    simp [Function.flip_def]
-  rw [matrixNormalMeasure_of_posSemidef M hU hV, Measure.map_map (by fun_prop)
-    (by fun_prop), h, Measure.map_id]
-
-private theorem map_multivariateGaussian_vec_zero (M : Matrix ι κ ℝ) :
-    (multivariateGaussian (WithLp.toLp 2 M.vec) 0).map
-      (fun x => Matrix.of fun i j => x (j, i)) = Measure.dirac M := by
-  have h : multivariateGaussian (WithLp.toLp 2 M.vec) (0 : Matrix (κ × ι) (κ × ι) ℝ) =
-      Measure.dirac (WithLp.toLp 2 M.vec) := by
-    simp [multivariateGaussian]
-  rw [h, Measure.map_dirac' (by fun_prop)]
-  exact congrArg Measure.dirac (Matrix.ext fun _ _ => Matrix.of_apply _ _ _)
+  rw [matrixNormalMeasure_of_posSemidef M hU hV]
+  exact MeasurableEquiv.map_map_symm (matrixVecMeasurableEquiv (m := ι) (n := κ) (α := ℝ) 2)
 
 /-- A zero row covariance gives the point mass at the mean. -/
 @[simp]
 theorem matrixNormalMeasure_zero_left (M : Matrix ι κ ℝ) (V : Matrix κ κ ℝ) :
     matrixNormalMeasure M 0 V = Measure.dirac M := by
   by_cases hV : V.PosSemidef
-  · rw [matrixNormalMeasure_of_posSemidef M Matrix.PosSemidef.zero hV, Matrix.kronecker_zero]
-    exact map_multivariateGaussian_vec_zero M
+  · rw [matrixNormalMeasure_of_posSemidef M Matrix.PosSemidef.zero hV, Matrix.kronecker_zero,
+      multivariateGaussian_zero_right, Measure.map_dirac' (MeasurableEquiv.measurable _)]
+    exact congrArg Measure.dirac ((matrixVecMeasurableEquiv 2).symm_apply_apply M)
   · exact matrixNormalMeasure_of_not_posSemidef M fun h => hV h.2
 
 /-- A zero column covariance gives the point mass at the mean. -/
@@ -129,8 +115,9 @@ theorem matrixNormalMeasure_zero_left (M : Matrix ι κ ℝ) (V : Matrix κ κ �
 theorem matrixNormalMeasure_zero_right (M : Matrix ι κ ℝ) (U : Matrix ι ι ℝ) :
     matrixNormalMeasure M U 0 = Measure.dirac M := by
   by_cases hU : U.PosSemidef
-  · rw [matrixNormalMeasure_of_posSemidef M hU Matrix.PosSemidef.zero, Matrix.zero_kronecker]
-    exact map_multivariateGaussian_vec_zero M
+  · rw [matrixNormalMeasure_of_posSemidef M hU Matrix.PosSemidef.zero, Matrix.zero_kronecker,
+      multivariateGaussian_zero_right, Measure.map_dirac' (MeasurableEquiv.measurable _)]
+    exact congrArg Measure.dirac ((matrixVecMeasurableEquiv 2).symm_apply_apply M)
   · exact matrixNormalMeasure_of_not_posSemidef M fun h => hU h.1
 
 /-- When there is only one matrix, as for an empty row or column type, the matrix normal law is
@@ -261,31 +248,33 @@ theorem map_mul_mul_add_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix �
   have hBVB : (Bᵀ * V * B).PosSemidef := by
     simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using
       hV.conjTranspose_mul_mul_same B
+  -- Mathlib's `kronecker_mulVec_vec` produces `A * X * Bᵀ`, so it is applied at `Bᵀ`.
+  have hK (X : Matrix ι κ ℝ) : (Bᵀ ⊗ₖ A) *ᵥ X.vec = (A * X * B).vec := by
+    simpa using Matrix.kronecker_mulVec_vec A X Bᵀ
   have hL (X : Matrix ι κ ℝ) :
-      (Bᵀ ⊗ₖ A).toEuclideanLin (WithLp.toLp 2 X.vec) + WithLp.toLp 2 C.vec =
-        WithLp.toLp 2 (A * X * B + C).vec := by
-    rw [Matrix.vec_add, WithLp.toLp_add, ← Matrix.transpose_transpose B,
-      ← Matrix.kronecker_mulVec_vec, Matrix.transpose_transpose, Matrix.toLpLin_toLp,
-      Matrix.toLin'_apply]
+      matrixVecMeasurableEquiv 2 (A * X * B + C) =
+        (Bᵀ ⊗ₖ A).toEuclideanLin (matrixVecMeasurableEquiv 2 X) + matrixVecMeasurableEquiv 2 C := by
+    simp [hK]
   have hcov : (Bᵀ ⊗ₖ A) * (V ⊗ₖ U) * (Bᵀ ⊗ₖ A)ᵀ = (Bᵀ * V * B) ⊗ₖ (A * U * Aᵀ) := by
     rw [← Matrix.kroneckerMap_transpose, Matrix.transpose_transpose, ← Matrix.mul_kronecker_mul,
       ← Matrix.mul_kronecker_mul]
-  have hmap := map_affine_multivariateGaussian (WithLp.toLp 2 M.vec) (hV.kronecker hU) (Bᵀ ⊗ₖ A)
-    (WithLp.toLp 2 C.vec)
-  rw [hL M, hcov] at hmap
+  have hmap := map_affine_multivariateGaussian (matrixVecMeasurableEquiv 2 M) (hV.kronecker hU)
+    (Bᵀ ⊗ₖ A) (matrixVecMeasurableEquiv 2 C)
+  rw [← hL M, hcov] at hmap
+  -- Under vectorization, `X ↦ A * X * B + C` becomes the affine map of `hmap`.
+  have hcomm : (fun X => A * X * B + C) ∘ (matrixVecMeasurableEquiv 2).symm =
+      (matrixVecMeasurableEquiv 2).symm ∘
+        fun x => (Bᵀ ⊗ₖ A).toEuclideanLin x + matrixVecMeasurableEquiv 2 C := by
+    funext x
+    apply (matrixVecMeasurableEquiv 2).injective
+    rw [Function.comp_apply, Function.comp_apply, hL, MeasurableEquiv.apply_symm_apply,
+      MeasurableEquiv.apply_symm_apply]
   have hmeas : Measurable fun X : Matrix ι κ ℝ => A * X * B + C :=
     (((continuous_const.matrix_mul continuous_id).matrix_mul continuous_const).add
       continuous_const).measurable
-  rw [matrixNormalMeasure_of_posSemidef _ hAUA hBVB, ← hmap,
-    matrixNormalMeasure_of_posSemidef M hU hV, Measure.map_map hmeas (by fun_prop),
-    Measure.map_map (by fun_prop) (by fun_prop)]
-  refine congrArg (fun g => (multivariateGaussian (WithLp.toLp 2 M.vec) (V ⊗ₖ U)).map g)
-    (funext fun x => ?_)
-  have hx : WithLp.toLp 2 (Matrix.of fun i j => x (j, i)).vec = x := by
-    ext
-    simp
-  conv_rhs => rw [Function.comp_apply, ← hx, hL]
-  ext
-  simp
+  rw [matrixNormalMeasure_of_posSemidef _ hAUA hBVB, matrixNormalMeasure_of_posSemidef M hU hV,
+    Measure.map_map hmeas (MeasurableEquiv.measurable _), hcomm,
+    ← Measure.map_map (MeasurableEquiv.measurable _) (by fun_prop)]
+  exact congrArg (Measure.map _) hmap
 
 end TauCeti.Probability

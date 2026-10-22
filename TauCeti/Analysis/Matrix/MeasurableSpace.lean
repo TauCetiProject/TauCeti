@@ -6,14 +6,16 @@ Authors: Claude
 module
 
 public import Mathlib.Analysis.Matrix.MeasurableSpace
+public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Vec
 
 /-!
 # Measurability of matrix operations
 
-The column-stacking vectorization `Matrix.vec` is measurable, since each of its coordinates is a
-matrix entry.
+The column-stacking vectorization `Matrix.vec` is a measurable equivalence between `m × n`
+matrices and functions on `n × m`. It is packaged with target `WithLp p (n × m → α)`, so that for
+real entries and `p = 2` it identifies matrices with `EuclideanSpace ℝ (n × m)`.
 
 Matrix inversion is not continuous: it jumps at the singular matrices, where Mathlib's totalized
 inverse takes the value `0`. It is still measurable, because Cramer's rule writes it as the
@@ -23,6 +25,7 @@ of scalars is measurable even at zero.
 ## Main results
 
 * `TauCeti.measurable_matrix_vec` — vectorization is measurable.
+* `TauCeti.matrixVecMeasurableEquiv` — vectorization as a measurable equivalence.
 * `TauCeti.measurable_matrix_inv` — matrix inversion is measurable, and the `MeasurableInv`
   instance it supplies.
 -/
@@ -36,6 +39,31 @@ namespace TauCeti
 theorem measurable_matrix_vec {m n α : Type*} [MeasurableSpace α] :
     Measurable fun A : Matrix m n α => A.vec :=
   .of_eval fun _ => Matrix.measurable_apply
+
+/-- The column-stacking vectorization `Matrix.vec` as a measurable equivalence onto the `L^p` copy
+of functions on the transposed index type. Its inverse reads entry `(i, j)` from coordinate
+`(j, i)`. -/
+@[expose] def matrixVecMeasurableEquiv {m n α : Type*} [MeasurableSpace α] (p : ENNReal) :
+    Matrix m n α ≃ᵐ WithLp p (n × m → α) where
+  toFun A := WithLp.toLp p A.vec
+  invFun x := Matrix.of fun i j => x.ofLp (j, i)
+  left_inv _ := rfl
+  right_inv _ := rfl
+  measurable_toFun := (WithLp.measurable_toLp p _).comp measurable_matrix_vec
+  measurable_invFun := by
+    change Measurable fun x : WithLp p (n × m → α) => Matrix.of fun i j => x.ofLp (j, i)
+    fun_prop
+
+@[simp]
+theorem matrixVecMeasurableEquiv_apply {m n α : Type*} [MeasurableSpace α] (p : ENNReal)
+    (A : Matrix m n α) : matrixVecMeasurableEquiv p A = WithLp.toLp p A.vec :=
+  rfl
+
+@[simp]
+theorem matrixVecMeasurableEquiv_symm_apply {m n α : Type*} [MeasurableSpace α] (p : ENNReal)
+    (x : WithLp p (n × m → α)) :
+    (matrixVecMeasurableEquiv p).symm x = Matrix.of fun i j => x.ofLp (j, i) :=
+  rfl
 
 variable {m : Type*} [Fintype m] [DecidableEq m] {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
   [IsTopologicalRing 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SecondCountableTopology 𝕜]
