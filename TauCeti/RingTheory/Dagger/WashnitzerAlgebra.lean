@@ -48,7 +48,9 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   proper subring as soon as there is a variable, while `W` is everything when there is none
   (`TauCeti.Dagger.washnitzerAlgebra_eq_top`).
 * `TauCeti.Dagger.exists_isRestricted_forall_norm_coeff_mul_pow_lt`: strict coefficient bounds
-  on an overconvergent series persist to some radius `ρ > 1`.
+  on an overconvergent series persist to some radius `ρ > 1`; by
+  `TauCeti.Dagger.exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt` this holds for the
+  coefficients at any set of exponents.
 * `TauCeti.Dagger.isUnit_washnitzerAlgebra_iff` and
   `TauCeti.Dagger.washnitzerAlgebra.isUnit_toTate_iff`: over a complete ultrametric field an
   overconvergent series is a unit of `W` iff it is a unit of the Tate algebra, iff its constant
@@ -224,34 +226,49 @@ theorem denseRange_toTate : DenseRange (toTate σ R) := by
 
 end washnitzerAlgebra
 
+/-- **Radius selection on a set of exponents.** If the coefficients of an overconvergent series at
+the exponents in `S` all have norm strictly less than `r`, then for some radius `ρ > 1` at which
+the series is restricted, the weighted coefficient norms `‖aᵥ‖ ρ^|ν|` with `ν ∈ S` are still
+strictly less than `r`. -/
+theorem exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt {f : MvPowerSeries σ R}
+    (hf : f ∈ washnitzerAlgebra σ R) {S : Set (σ →₀ ℕ)} {r : ℝ}
+    (h : ∀ t ∈ S, ‖coeff t f‖ < r) :
+    ∃ ρ > (1 : ℝ), IsRestricted (fun _ : σ ↦ ρ) f ∧ ∀ t ∈ S, ‖coeff t f‖ * ρ ^ t.degree < r := by
+  obtain ⟨ρ₀, hρ₀, hf⟩ := hf
+  -- Only finitely many exponents in `S` have weighted norm at least `r` at radius `ρ₀`.
+  have hS : {t ∈ S | r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree}.Finite := by
+    rcases le_or_gt r 0 with hr | hr
+    · exact Set.Finite.subset Set.finite_empty fun t ht ↦ absurd ((norm_nonneg _).trans_lt
+        (h t ht.1)) hr.not_gt
+    · refine Set.Finite.subset (s := {t | r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree}) ?_ fun t ht ↦ ht.2
+      simpa [not_lt] using
+        eventually_cofinite.1 ((isRestricted_const_iff.1 hf).eventually (gt_mem_nhds hr))
+  -- For each of them, the strict bound at radius `1` persists to radii near `1`.
+  have hnear : ∀ᶠ ρ in 𝓝 (1 : ℝ),
+      ρ < ρ₀ ∧ ∀ t ∈ {t ∈ S | r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree},
+        ‖coeff t f‖ * ρ ^ t.degree < r := by
+    refine (gt_mem_nhds hρ₀).and (hS.eventually_all.2 fun t ht ↦ ?_)
+    have hc : Continuous fun ρ : ℝ ↦ ‖coeff t f‖ * ρ ^ t.degree := by fun_prop
+    exact hc.continuousAt.eventually_lt continuousAt_const (by simpa using h t ht.1)
+  obtain ⟨ρ, ⟨hρ₀', hρS⟩, hρ⟩ :=
+    ((hnear.filter_mono nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Set.Ioi 1))).exists
+  refine ⟨ρ, hρ, isRestricted_of_le hf (fun _ ↦ zero_le_one.trans hρ.le) fun _ ↦ hρ₀'.le,
+    fun t htS ↦ ?_⟩
+  by_cases ht : r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree
+  · exact hρS t ⟨htS, ht⟩
+  · exact (mul_le_mul_of_nonneg_left
+      (pow_le_pow_left₀ (zero_le_one.trans (le_of_lt hρ)) hρ₀'.le _)
+      (norm_nonneg _)).trans_lt (not_le.1 ht)
+
 /-- **Radius selection.** If every coefficient of an overconvergent series has norm strictly less
 than `r`, then for some radius `ρ > 1` at which the series is restricted, every weighted
 coefficient norm `‖aᵥ‖ ρ^|ν|` is still strictly less than `r`. -/
 theorem exists_isRestricted_forall_norm_coeff_mul_pow_lt {f : MvPowerSeries σ R}
     (hf : f ∈ washnitzerAlgebra σ R) {r : ℝ} (h : ∀ t, ‖coeff t f‖ < r) :
     ∃ ρ > (1 : ℝ), IsRestricted (fun _ : σ ↦ ρ) f ∧ ∀ t, ‖coeff t f‖ * ρ ^ t.degree < r := by
-  obtain ⟨ρ₀, hρ₀, hf⟩ := hf
-  have hr : 0 < r := (norm_nonneg _).trans_lt (h 0)
-  -- Only finitely many exponents have weighted norm at least `r` at radius `ρ₀`.
-  have hS : {t : σ →₀ ℕ | r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree}.Finite := by
-    simpa [not_lt] using
-      eventually_cofinite.1 ((isRestricted_const_iff.1 hf).eventually (gt_mem_nhds hr))
-  -- For each of them, the strict bound at radius `1` persists to radii near `1`.
-  have hnear : ∀ᶠ ρ in 𝓝 (1 : ℝ),
-      ρ < ρ₀ ∧ ∀ t ∈ {t : σ →₀ ℕ | r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree},
-        ‖coeff t f‖ * ρ ^ t.degree < r := by
-    refine (gt_mem_nhds hρ₀).and (hS.eventually_all.2 fun t _ ↦ ?_)
-    have hc : Continuous fun ρ : ℝ ↦ ‖coeff t f‖ * ρ ^ t.degree := by fun_prop
-    exact hc.continuousAt.eventually_lt continuousAt_const (by simpa using h t)
-  obtain ⟨ρ, ⟨hρ₀', hρS⟩, hρ⟩ :=
-    ((hnear.filter_mono nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Set.Ioi 1))).exists
-  refine ⟨ρ, hρ, isRestricted_of_le hf (fun _ ↦ zero_le_one.trans hρ.le) fun _ ↦ hρ₀'.le,
-    fun t ↦ ?_⟩
-  by_cases ht : r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree
-  · exact hρS t ht
-  · exact (mul_le_mul_of_nonneg_left
-      (pow_le_pow_left₀ (zero_le_one.trans (le_of_lt hρ)) hρ₀'.le _)
-      (norm_nonneg _)).trans_lt (not_le.1 ht)
+  obtain ⟨ρ, hρ, hf, hρt⟩ :=
+    exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt hf (S := Set.univ) fun t _ ↦ h t
+  exact ⟨ρ, hρ, hf, fun t ↦ hρt t trivial⟩
 
 end Defs
 
