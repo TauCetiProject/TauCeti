@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Path
+public import Mathlib.Combinatorics.Quiver.Cast
 
 /-!
 # Prefunctors on paths and on vertices
 
 Elementary facts about a prefunctor `φ : Q ⥤q R` which `Prefunctor.mapPath` and `Prefunctor.comp`
 leave unrecorded: pushing a path along `φ` preserves its length, a prefunctor with a two-sided
-inverse is bijective on vertices, and a pair of composable one-sided inverse pairs composes to a
-one-sided inverse pair.
+inverse is bijective on vertices, a pair of composable one-sided inverse pairs composes to a
+one-sided inverse pair, and a prefunctor that undoes another on vertices and arrows also undoes
+it on paths.
 
 ## Main results
 
@@ -21,14 +22,18 @@ one-sided inverse pair.
 * `Prefunctor.obj_bijective_of_comp_eq_id`: mutually inverse prefunctors are bijective on vertices.
 * `Prefunctor.comp_comp_comp_eq_id`: composing two one-sided inverse pairs of prefunctors gives a
   one-sided inverse pair.
+* `Prefunctor.cast_mapPath_mapPath`: a prefunctor that undoes another on vertices and arrows
+  undoes it on paths.
 
 ## References
 
-They all feed `TauCeti.PathAlgebra.mapAlgHom` in
+The first three feed `TauCeti.PathAlgebra.mapAlgHom` in
 `TauCeti/RepresentationTheory/Quiver/PathAlgebra/Map.lean`, whose uniform hypothesis is
 bijectivity on vertices, and the transport of the zigzag relations in
 `TauCeti/RepresentationTheory/Quiver/Zigzag/Isomorphism.lean`, which is stated in terms of path
 lengths.
+`Prefunctor.cast_mapPath_mapPath` gives the inverse laws for path transport along isomorphisms of
+bounded networks in `TauCeti/Combinatorics/Network/Isomorphism.lean`.
 -/
 
 public section
@@ -64,5 +69,23 @@ theorem _root_.Prefunctor.comp_comp_comp_eq_id (φ : Q ⥤q R) (ψ : R ⥤q Q) (
     (ψ' : S ⥤q R) (hφψ : φ.comp ψ = Prefunctor.id Q) (hφψ' : φ'.comp ψ' = Prefunctor.id R) :
     (φ.comp φ').comp (ψ'.comp ψ) = Prefunctor.id Q := by
   rw [Prefunctor.comp_assoc, ← Prefunctor.comp_assoc φ' ψ' ψ, hφψ', Prefunctor.id_comp, hφψ]
+
+/-- **A prefunctor that undoes another on vertices and arrows undoes it on paths**: pushing a path
+along `φ` and then `ψ` returns the original path once its endpoints are transported back. -/
+theorem _root_.Prefunctor.cast_mapPath_mapPath (φ : Q ⥤q R) (ψ : R ⥤q Q)
+    (hobj : ∀ a, ψ.obj (φ.obj a) = a)
+    (hmap : ∀ {a b} (e : a ⟶ b), (ψ.map (φ.map e)).cast (hobj a) (hobj b) = e)
+    {a b : Q} (p : Quiver.Path a b) :
+    (ψ.mapPath (φ.mapPath p)).cast (hobj a) (hobj b) = p := by
+  induction p with
+  | nil => exact Quiver.Path.cast_nil (hobj a)
+  | @cons b c p e ih =>
+      -- `Quiver.Path.cast_cons` keeps the middle vertex fixed; here it moves along `hobj b`.
+      have cast_cons {a' b' c' : Q} (q : Quiver.Path a' b') (f : b' ⟶ c') (ha : a' = a)
+          (hb : b' = b) (hc : c' = c) :
+          (q.cons f).cast ha hc = (q.cast ha hb).cons (f.cast hb hc) := by
+        subst ha hb hc
+        rfl
+      rw [Prefunctor.mapPath_cons, Prefunctor.mapPath_cons, cast_cons _ _ _ (hobj b), ih, hmap]
 
 end TauCeti

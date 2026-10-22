@@ -406,34 +406,11 @@ theorem mapPath_cons (e : N ≃ₙ N') {x y z : V} (p : N.Path x y) (a : N.Hom y
   @Prefunctor.mapPath_cons V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor
     x y z p a
 
-end Iso
-
-/-- Transporting the endpoints of an empty path gives the empty path. -/
-private theorem homOfEq_path_nil {N : Network K V} {x x' : V} (hx : x = x') :
-    @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ x x x' x'
-      (@Quiver.Path.nil V ⟨N.Hom⟩ x) hx hx = @Quiver.Path.nil V ⟨N.Hom⟩ x' := by
-  subst x'
-  rfl
-
-/-- Transporting the endpoints of a path ending in an arrow transports the shorter path and the
-arrow separately. -/
-private theorem homOfEq_path_cons {N : Network K V} {x y z x' y' z' : V} (q : N.Path x y)
-    (a : N.Hom y z) (hx : x = x') (hy : y = y') (hz : z = z') :
-    @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ x z x' z'
-        (@Quiver.Path.cons V ⟨N.Hom⟩ x y z q a) hx hz =
-      @Quiver.Path.cons V ⟨N.Hom⟩ x' y' z'
-        (@Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ x y x' y' q hx hy)
-        (@Quiver.homOfEq V ⟨N.Hom⟩ y z y' z' a hy hz) := by
-  subst x' y' z'
-  rfl
-
-namespace Iso
-
 /-- The identity network isomorphism fixes every path. -/
 @[simp]
 theorem mapPath_refl (N : Network K V) {x y : V} (p : N.Path x y) :
-    @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ _ _ x y ((refl N).mapPath p)
-      (refl_vertexEquiv_apply N x) (refl_vertexEquiv_apply N y) = p :=
+    @Quiver.Path.cast V ⟨N.Hom⟩ _ _ x y (refl_vertexEquiv_apply N x)
+      (refl_vertexEquiv_apply N y) ((refl N).mapPath p) = p :=
   -- The endpoint casts are along `rfl`, and `(refl N).toPrefunctor` is the identity prefunctor
   -- by `toPrefunctor_refl`, so both sides agree definitionally with `Prefunctor.mapPath_id`.
   @Prefunctor.mapPath_id V (Quiver.mk N.Hom) x y p
@@ -442,43 +419,32 @@ theorem mapPath_refl (N : Network K V) {x y : V} (p : N.Path x y) :
 @[simp]
 theorem mapPath_trans {N'' : Network K X} (e : N ≃ₙ N') (f : N' ≃ₙ N'')
     {x y : V} (p : N.Path x y) :
-    @Quiver.homOfEq X ⟨fun x y ↦ N''.Path x y⟩ _ _ _ _ ((e.trans f).mapPath p)
-      (trans_vertexEquiv_apply e f x) (trans_vertexEquiv_apply e f y) =
+    @Quiver.Path.cast X ⟨N''.Hom⟩ _ _ _ _ (trans_vertexEquiv_apply e f x)
+      (trans_vertexEquiv_apply e f y) ((e.trans f).mapPath p) =
         f.mapPath (e.mapPath p) :=
   -- The endpoint casts are along `rfl`, and `(e.trans f).toPrefunctor` is the composite
   -- prefunctor by `toPrefunctor_trans`, so this is `Prefunctor.mapPath_comp_apply`.
   @Prefunctor.mapPath_comp_apply V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom)
     e.toPrefunctor X (Quiver.mk N''.Hom) f.toPrefunctor x y p
 
-/-- Path transport along a pair of isomorphisms that is inverse on vertices and on arrows fixes
-every path. -/
-private theorem homOfEq_mapPath_mapPath (e : N ≃ₙ N') (f : N' ≃ₙ N)
-    (hv : ∀ x, f.vertexEquiv (e.vertexEquiv x) = x)
-    (ha : ∀ x y (a : N.Hom x y),
-      @Quiver.homOfEq V ⟨N.Hom⟩ _ _ x y (f.homEquiv _ _ (e.homEquiv x y a)) (hv x) (hv y) = a)
-    {x y : V} (p : N.Path x y) :
-    @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ _ _ x y (f.mapPath (e.mapPath p)) (hv x) (hv y) =
-      p := by
-  induction p with
-  | nil =>
-      rw [mapPath_nil, mapPath_nil]
-      exact homOfEq_path_nil (hv x)
-  | @cons y z p a ih =>
-      rw [mapPath_cons, mapPath_cons, homOfEq_path_cons _ _ (hv x) (hv y) (hv z), ih, ha]
-
 /-- Mapping a path forward and then along the inverse isomorphism fixes it. -/
 @[simp]
 theorem mapPath_symm_mapPath (e : N ≃ₙ N') {x y : V} (p : N.Path x y) :
-    @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ _ _ x y (e.symm.mapPath (e.mapPath p))
-      (symm_vertexEquiv_apply_vertexEquiv e x) (symm_vertexEquiv_apply_vertexEquiv e y) = p :=
-  homOfEq_mapPath_mapPath e e.symm _ e.symm_homEquiv_apply_homEquiv p
+    @Quiver.Path.cast V ⟨N.Hom⟩ _ _ x y (symm_vertexEquiv_apply_vertexEquiv e x)
+      (symm_vertexEquiv_apply_vertexEquiv e y) (e.symm.mapPath (e.mapPath p)) = p :=
+  -- `Quiver.Hom.cast` and `Quiver.homOfEq` are the same endpoint transport by definition, so the
+  -- arrow inverse law is the hypothesis of `Prefunctor.cast_mapPath_mapPath`.
+  @Prefunctor.cast_mapPath_mapPath V W (Quiver.mk N.Hom) (Quiver.mk N'.Hom) e.toPrefunctor
+    e.symm.toPrefunctor _ (e.symm_homEquiv_apply_homEquiv _ _) x y p
 
 /-- Mapping a path along the inverse and then forward fixes it. -/
 @[simp]
 theorem mapPath_mapPath_symm (e : N ≃ₙ N') {x y : W} (p : N'.Path x y) :
-    @Quiver.homOfEq W ⟨fun x y ↦ N'.Path x y⟩ _ _ x y (e.mapPath (e.symm.mapPath p))
-      (vertexEquiv_apply_symm_vertexEquiv e x) (vertexEquiv_apply_symm_vertexEquiv e y) = p :=
-  homOfEq_mapPath_mapPath e.symm e _ e.homEquiv_apply_symm_homEquiv p
+    @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ x y (vertexEquiv_apply_symm_vertexEquiv e x)
+      (vertexEquiv_apply_symm_vertexEquiv e y) (e.mapPath (e.symm.mapPath p)) = p :=
+  -- As in `mapPath_symm_mapPath`, `Quiver.Hom.cast` agrees with `Quiver.homOfEq` by definition.
+  @Prefunctor.cast_mapPath_mapPath W V (Quiver.mk N'.Hom) (Quiver.mk N.Hom) e.symm.toPrefunctor
+    e.toPrefunctor _ (e.homEquiv_apply_symm_homEquiv _ _) x y p
 
 /-- Path transport preserves length. -/
 @[simp]
