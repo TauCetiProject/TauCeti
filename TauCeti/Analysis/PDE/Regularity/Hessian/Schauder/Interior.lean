@@ -16,14 +16,14 @@ import TauCeti.Topology.MetricSpace.Holder
 # The interior Schauder estimate on small balls
 
 Let `0 < α < 1`, and let `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu` be a non-divergence-form operator on `ℝ^{n+1}`
-whose coefficients are `α`-Hölder with constant `L` on a closed ball `B̄_R = B̄(x₀, R)`, and such
+whose coefficients are `α`-Hölder with constant `L` on the closed ball `closedBall x₀ R`, and such
 that `a(x₀)` has ellipticity constants `0 < λ ≤ Λ`. If `R` is small compared with the Hölder
 modulus of the coefficients, in the sense of the scale condition of
 `TauCeti.PDE.exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall`, then for every
 `ρ < R` there is a constant `C`, independent of the solution, such that every `u` which is `C²` on
 the open ball `B_R` with `α`-Hölder Hessian there satisfies
 
-`[D²u]_{α; B̄_ρ} ≤ C ([L u]_{α; B_R} + N)`,
+`[D²u]_{α; closedBall x₀ ρ} ≤ C ([L u]_{α; B_R} + N)`,
 
 where `N` bounds `|u|`, `‖Du‖` and `‖D²u‖` on `B_R`. The Hölder constant of the Hessian on `B_R`
 enters only qualitatively: the estimate does not depend on it. This is the localized form of the
@@ -32,8 +32,8 @@ continuous coefficients on a domain, by covering a compact set with small balls.
 
 ## The argument
 
-Choose a smooth cutoff `ζ` equal to one near `B̄_ρ` with support in `B_R`, and put `w = ζ u`,
-which is `C²` on the whole space (`ContDiffOn.contDiff_mul_of_tsupport_subset`). By the
+Choose a smooth cutoff `ζ` equal to one near `closedBall x₀ ρ` with support in `B_R`, and put
+`w = ζ u`, which is `C²` on the whole space (`ContDiffOn.contDiff_mul_of_tsupport_subset`). By the
 second-order product rule (`TauCeti.fderiv_fderiv_mul_apply_of_tsupport_subset`),
 
 `∂ᵢ∂ⱼw = ζ ∂ᵢ∂ⱼu + Tᵢⱼ`, where `Tᵢⱼ = u ∂ᵢ∂ⱼζ + ∂ᵢζ ∂ⱼu + ∂ⱼζ ∂ᵢu`,
@@ -44,7 +44,7 @@ globally Hölder (`HolderWith.smul_of_eq_zero`). On the ball the lower-order fac
 are Lipschitz, with constant `N`, hence `α`-Hölder. This bounds the Hölder constant of `L w` by
 `C (K + N)`, where `K` is the Hölder constant of `L u`, and `‖D²w‖_{L²} ≤ C N`; the Hessian of
 `w` is supported in `B_R` and globally Hölder a priori. The compact-support estimate then bounds the
-Hölder constant of `D²w`, which equals `D²u` near `B̄_ρ`.
+Hölder constant of `D²w`, which equals `D²u` near `closedBall x₀ ρ`.
 
 ## Main declaration
 
@@ -367,7 +367,7 @@ private theorem holderWith_sum_smul_fderiv_fderiv_cutoff_mul {s : Set E} (hs : I
 
 /-- **The interior Schauder estimate on small balls.** Let `0 < α < 1`. There is `C₀ > 0`,
 depending only on dimension and `α`, with the following property. Let `a` be `α`-Hölder entrywise
-with constant `L` on the closed ball `B̄_R = B̄(x₀, R)`, where `R > 0`, and suppose `a x₀` has
+with constant `L` on the closed ball `closedBall x₀ R`, where `R > 0`, and suppose `a x₀` has
 ellipticity bounds `λ, Λ`, with `λ > 0`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu` and
 `κ = C₀ (Λ / λ)^(1 + (n+1)/4 + α/2)`, and assume the scale condition
 
@@ -376,7 +376,7 @@ ellipticity bounds `λ, Λ`, with `λ > 0`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ�
 Then for every `ρ < R` there is `C`, independent of `u`, with the following property. Let `u` be
 `C²` on the open ball `B_R`, with `|u|`, `‖Du‖` and `‖D²u‖` bounded by `N` there and with `D²u`
 `α`-Hölder on `B_R` (with any constant). If `L u` is `α`-Hölder on `B_R` with constant `K`, then
-`D²u` is `α`-Hölder on `B̄_ρ` with constant `C (K + N)`. -/
+`D²u` is `α`-Hölder on `closedBall x₀ ρ` with constant `C (K + N)`. -/
 theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) :
     ∃ C₀ : ℝ, 0 < C₀ ∧
@@ -398,12 +398,13 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   obtain ⟨C₀, hC₀, hCS⟩ :=
     exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall hα hα1 (n := n)
   refine ⟨C₀, hC₀, fun {a x₀ lam Lam} hlam hEll hEll' {L R} hR hsmall hL {ρ} hρR => ?_⟩
-  -- The cutoff `ζ`, equal to one near `B̄_ρ` and supported in `B_R`, and its constant `Z`.
+  -- The cutoff `ζ`, equal to one near `closedBall x₀ ρ` and supported in `B_R`, and its
+  -- constant `Z`.
   obtain ⟨ζ, hζ, -, hζ1, hζc, hζs⟩ :=
     (isCompact_closedBall x₀ ρ).exists_contDiff_cutoff isOpen_ball (closedBall_subset_ball hρR)
   obtain ⟨Z, hZ0, hZ1, hZ2⟩ := exists_holderWith_and_abs_le_of_hasCompactSupport hα1.le hζ hζc
   have hζ2 : ContDiffOn ℝ 2 ζ (ball x₀ R) := (hζ.of_le (by norm_cast)).contDiffOn
-  -- A bound `M` for the coefficients on `B̄_R`.
+  -- A bound `M` for the coefficients on `closedBall x₀ R`.
   choose Ma hMa using fun i j => (isCompact_closedBall x₀ R).exists_bound_of_continuousOn
     ((hL i j).continuousOn hα)
   set M : ℝ≥0 := ∑ i, ∑ j, (Ma i j).toNNReal
@@ -504,7 +505,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
           have : 0 ≤ Q * A₃ := mul_nonneg hQ hA₃
           nlinarith
       _ = _ := by push_cast; ring
-  -- On a neighbourhood of `B̄_ρ` the cutoff is one, so `D²w = D²u` there.
+  -- On a neighbourhood of `closedBall x₀ ρ` the cutoff is one, so `D²w = D²u` there.
   have hwu (x : E) (hx : x ∈ closedBall x₀ ρ) :
       iteratedFDeriv ℝ 2 w x = iteratedFDeriv ℝ 2 u x := by
     have hev : w =ᶠ[𝓝 x] u := by
