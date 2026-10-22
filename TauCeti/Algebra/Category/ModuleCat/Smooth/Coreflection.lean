@@ -28,8 +28,8 @@ of a topological ring with continuous right multiplications forming a basis of n
 
 ## Main definitions
 
-* `TauCeti.smoothPart J M`: the largest submodule of `M` all of whose vectors are killed by some
-  `J i`.
+* `TauCeti.smoothPart J M`: the supremum of the submodules of `M` all of whose vectors are killed
+  by some `J i`; for nonempty directed `J`, the largest such submodule.
 * `TauCeti.smoothPartFunctor hJ`: the smooth part as a functor `ModuleCat A ⥤ smooth modules`.
 * `TauCeti.smoothPartAdjunction hJ`: the inclusion of smooth modules is left adjoint to the smooth
   part.
@@ -65,8 +65,9 @@ section SmoothPart
 
 variable (M : Type v) [AddCommGroup M] [Module A M] {N : Type*} [AddCommGroup N] [Module A N]
 
-/-- The *smooth part* of an `A`-module `M` for a family `J` of left ideals: the largest submodule of
-`M` all of whose vectors are killed by some `J i`. -/
+/-- The *smooth part* of an `A`-module `M` for a family `J` of left ideals: the supremum of the
+submodules of `M` all of whose vectors are killed by some `J i`. When `J` is nonempty and directed
+downwards, it is the largest such submodule (`le_smoothPart_iff`). -/
 def smoothPart : Submodule A M :=
   sSup {p | ∀ m ∈ p, ∃ i, ∀ a ∈ J i, a • m = 0}
 
