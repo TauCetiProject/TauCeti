@@ -112,22 +112,31 @@ private theorem coe_normalizeSegmentToSphere_one_left (y : Y) :
   rw [coe_normalizeSegmentToSphere_apply]
   simp
 
-/-- Where `f` and `g` agree at a unit vector the segment homotopy stays at that vector. -/
-private theorem coe_normalizeSegmentToSphere_apply_of_eq {y : Y} {v : E} (hfy : f y = v)
-    (hgy : g y = v) (hv : ‖v‖ = 1) (u : I) :
+/-- Where `f` is a unit vector and `g` has the same direction, the segment homotopy stays
+at that vector. -/
+private theorem coe_normalizeSegmentToSphere_apply_of_normalize_eq {y : Y} {v : E}
+    (hfy : f y = v) (hgy : normalize (g y) = v) (hv : ‖v‖ = 1) (u : I) :
     ((normalizeSegmentToSphere f g hf hg h0 (u, y) : sphere (0 : E) 1) : E) = v := by
-  rw [coe_normalizeSegmentToSphere_apply, hfy, hgy, ← add_smul]
-  simpa using normalize_eq_self_of_norm_eq_one hv
+  have hg : g y = ‖g y‖ • v := by rw [← hgy, norm_smul_normalize]
+  have hsegment : (1 - (u : ℝ)) • f y + (u : ℝ) • g y =
+      (1 - (u : ℝ) + (u : ℝ) * ‖g y‖) • v := by
+    conv_lhs => rw [hfy, hg, smul_smul, ← add_smul]
+  have hcoeff : 0 ≤ 1 - (u : ℝ) + (u : ℝ) * ‖g y‖ :=
+    add_nonneg (sub_nonneg.mpr u.2.2) (mul_nonneg u.2.1 (norm_nonneg _))
+  have hcoeff_ne : 1 - (u : ℝ) + (u : ℝ) * ‖g y‖ ≠ 0 := by
+    intro hzero
+    exact h0 (u, y) (by rw [hsegment, hzero, zero_smul])
+  rw [coe_normalizeSegmentToSphere_apply, hsegment,
+    normalize_smul_of_pos (lt_of_le_of_ne hcoeff hcoeff_ne.symm)]
+  exact normalize_eq_self_of_norm_eq_one hv
 
 end Segment
 
 /-- A path in the unit sphere is homotopic to the radial projection of a continuous comparison
-map when every point of their pointwise straight-line homotopy avoids the origin and the comparison
-map itself takes the source and target values at the two endpoints. -/
+map when every point of their pointwise straight-line homotopy avoids the origin. -/
 theorem _root_.Path.homotopic_of_segment_ne_zero {a b : sphere (0 : E) 1} (γ γ' : Path a b)
     (f : I → E) (hf : Continuous f)
     (hγ' : ∀ t, ((γ' t : sphere (0 : E) 1) : E) = normalize (f t))
-    (hf_zero : f 0 = (a : E)) (hf_one : f 1 = (b : E))
     (h : ∀ z : I × I,
       (1 - (z.1 : ℝ)) • ((γ z.2 : sphere (0 : E) 1) : E) +
         (z.1 : ℝ) • f z.2 ≠ 0) : γ.Homotopic γ' := by
@@ -146,11 +155,15 @@ theorem _root_.Path.homotopic_of_segment_ne_zero {a b : sphere (0 : E) 1} (γ γ
     rw [coe_normalizeSegmentToSphere_one_left]
     exact (hγ' s).symm
   · intro u
-    refine Subtype.ext (coe_normalizeSegmentToSphere_apply_of_eq (y := (0 : I)) ?_ hf_zero hanorm u)
-    exact congrArg Subtype.val γ.source
+    refine Subtype.ext (coe_normalizeSegmentToSphere_apply_of_normalize_eq
+      (y := (0 : I)) ?_ ?_ hanorm u)
+    · exact congrArg Subtype.val γ.source
+    · exact (hγ' 0).symm.trans (congrArg Subtype.val γ'.source)
   · intro u
-    refine Subtype.ext (coe_normalizeSegmentToSphere_apply_of_eq (y := (1 : I)) ?_ hf_one hbnorm u)
-    exact congrArg Subtype.val γ.target
+    refine Subtype.ext (coe_normalizeSegmentToSphere_apply_of_normalize_eq
+      (y := (1 : I)) ?_ ?_ hbnorm u)
+    · exact congrArg Subtype.val γ.target
+    · exact (hγ' 1).symm.trans (congrArg Subtype.val γ'.target)
 
 private theorem normalize_smul_sub_smul_ne_of_ne {x p : E} (hx : ‖x‖ = 1) (hp : ‖p‖ = 1)
     (hxp : x ≠ p) (u : I) : normalize ((1 - (u : ℝ)) • x - (u : ℝ) • p) ≠ p := by

@@ -353,7 +353,7 @@ theorem _root_.Path.exists_homotopic_notMem_range {x y : sphere (0 : E) 1}
     simp [hz, mem_ball, hγnorm] at hmem
   have hsquare : γ.Homotopic γ' :=
     γ.homotopic_of_segment_ne_zero γ' (nodeInterp N node) hcontL
-      (fun t => coe_normalizeToSphere_apply (nodeInterp N node) hcontL hLne t) hL0 hL1 hGne
+      (fun t => coe_normalizeToSphere_apply (nodeInterp N node) hcontL hLne t) hGne
   -- The comparison path lives in finitely many planes, which cannot cover `E`.
   have hVne : ∀ m : Fin (N + 1),
       Submodule.span ℝ ({node (m : ℕ), node ((m : ℕ) + 1)} : Set E) ≠ ⊤ := by
