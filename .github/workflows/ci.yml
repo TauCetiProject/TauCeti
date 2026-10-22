@@ -337,16 +337,19 @@ jobs:
       # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
       # The build globs every TauCeti/ module directly, so nothing depends on a root that
       # re-exports the library.
+      # Temporary workaround; remove after adopting lean4#15868.
+      - name: Restore cached module archives
+        env:
+          LAKE_NO_CACHE: "true"
+        run: python3 scripts/bulk-unpack-cache.py
+
       - name: Build
         env:
           # Restore only from the locally-populated $LAKE_CACHE_DIR the step above filled;
           # never let the build itself reach a remote cache service. Same rule as the
           # sandboxed build in pr-build.yml and as the publish step below.
           LAKE_NO_CACHE: "true"
-        run: |
-          # Temporary workaround; remove after adopting lean4#15868.
-          python3 scripts/bulk-unpack-cache.py
-          lake build
+        run: lake build
 
       # The same shared checks as trusted PR builds, compiled from merged main's sources.
       - name: Shared ownership and axiom audits

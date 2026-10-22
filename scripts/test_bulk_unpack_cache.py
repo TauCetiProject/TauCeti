@@ -167,9 +167,9 @@ class WorkflowTests(unittest.TestCase):
         commands = [step.get("run", "") for step in steps]
         snapshot = next(i for i, text in enumerate(commands) if "lake_cache_reuse.py snapshot" in text)
         prepare = next(i for i, text in enumerate(commands) if "python3 scripts/bulk-unpack-cache.py" in text)
+        build = next(i for i, text in enumerate(commands) if text.strip() == "lake build")
         self.assertLess(snapshot, prepare)
-        self.assertLess(commands[prepare].index("bulk-unpack-cache.py"),
-                        commands[prepare].index("lake build"))
+        self.assertLess(prepare, build)
         self.assertNotIn("continue-on-error", steps[prepare])
         self.assertEqual(steps[prepare]["env"]["LAKE_NO_CACHE"], "true")
         self.assertTrue(any("test_bulk_unpack_cache.py --integration" in text for text in commands))
