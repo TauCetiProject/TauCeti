@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Dirichlet.Moments
 public import TauCeti.Probability.Distributions.Categorical
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Concentration
 import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import Mathlib.Topology.Order.AtTopBotIxx
 
 /-!
@@ -43,16 +44,6 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [Nonempty ι]
 
-omit [Nonempty ι] in
-private theorem sum_coe_weights (p : Convexity.StdSimplex ℝ≥0 ι) :
-    ∑ i, (p.weights i : ℝ) = 1 := by
-  exact_mod_cast p.total_of_fintype
-
-omit [Nonempty ι] in
-private theorem sum_mul_coe_weights (p : Convexity.StdSimplex ℝ≥0 ι) (c : ℝ) :
-    ∑ i, c * (p.weights i : ℝ) = c := by
-  rw [← Finset.mul_sum, sum_coe_weights, mul_one]
-
 /-- The expected squared norm of a Dirichlet vector with concentration vector `c p`, where `p` is
 a probability vector. As `c` tends to zero this tends to one, forcing the law towards the
 vertices of the simplex. -/
@@ -64,19 +55,32 @@ theorem integral_norm_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ≥0
   let _ := isProbabilityMeasure_dirichletMeasure ha
   have hcoord (i : ι) :
       ∫ x, (x i) ^ 2 ∂dirichletMeasure (fun j ↦ c * (p.weights j : ℝ)) =
-        (p.weights i : ℝ) * (1 - p.weights i) / (c + 1) + (p.weights i : ℝ) ^ 2 := by
+        ((p.weights i : ℝ) + c * (p.weights i : ℝ) ^ 2) / (c + 1) := by
     have hv := variance_eval_dirichletMeasure ha i
     rw [variance_eq_sub (memLp_eval_dirichletMeasure i 2),
-      integral_eval_dirichletMeasure ha, sum_mul_coe_weights] at hv
+      integral_eval_dirichletMeasure ha, p.sum_mul_coe_weights] at hv
     calc
       _ = c * (p.weights i : ℝ) * (c - c * (p.weights i : ℝ)) /
             (c ^ 2 * (c + 1)) + (c * (p.weights i : ℝ) / c) ^ 2 :=
         eq_add_of_sub_eq hv
-      _ = _ := by field_simp
+      _ = _ := by
+        field_simp
+        ring
   simp only [EuclideanSpace.real_norm_sq_eq]
   rw [integral_finsetSum _ fun i _ ↦ (memLp_eval_dirichletMeasure i 2).integrable_sq]
-  simp_rw [hcoord, Finset.sum_add_distrib, ← Finset.sum_div, mul_sub, mul_one,
-    Finset.sum_sub_distrib, sum_coe_weights, ← pow_two]
+  simp only [hcoord]
+  rw [← Finset.sum_div, Finset.sum_add_distrib, p.sum_coe_weights, ← Finset.mul_sum, add_comm]
+
+/-- The expectation of `1 - ‖x‖ ^ 2` under a Dirichlet law with concentration vector `c p`, where
+`p` is a probability vector. It tends to zero with `c`. -/
+theorem integral_one_sub_norm_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ≥0 ι)
+    (hp : ∀ i, 0 < p.weights i) {c : ℝ} (hc : 0 < c) :
+    ∫ x, 1 - ‖x‖ ^ 2 ∂dirichletMeasure (fun i ↦ c * (p.weights i : ℝ)) =
+      c * (1 - ∑ i, (p.weights i : ℝ) ^ 2) / (c + 1) := by
+  let _ := isProbabilityMeasure_dirichletMeasure fun i ↦
+    mul_pos hc (by exact_mod_cast hp i : (0 : ℝ) < p.weights i)
+  rw [integral_sub (integrable_const _) (memLp_id_dirichletMeasure 2).norm.integrable_sq,
+    integral_const, probReal_univ, one_smul, integral_norm_sq_dirichletMeasure_smul p hp hc]
   field_simp
   ring
 
@@ -100,26 +104,21 @@ theorem tendsto_dirichletMeasure_concentration_atBot [MeasurableSpace ι]
     filter_upwards [ae_norm_le_one_dirichletMeasure] with x hx
     rw [Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
     exact Real.sqrt_le_one.2 (by nlinarith [sq_nonneg ‖x‖])
-  have hmoment (c : Ioi (0 : ℝ)) :
-      ∫ x, √(1 - ‖x‖ ^ 2) ^ 2 ∂dirichletMeasure (fun i ↦ (c : ℝ) * (p.weights i : ℝ)) =
-        (c : ℝ) * (1 - ∑ i, (p.weights i : ℝ) ^ 2) / ((c : ℝ) + 1) := by
-    let _ := isProbabilityMeasure_dirichletMeasure (ha c)
-    have hsq : ∀ᵐ x ∂dirichletMeasure (fun i ↦ (c : ℝ) * (p.weights i : ℝ)),
-        √(1 - ‖x‖ ^ 2) ^ 2 = 1 - ‖x‖ ^ 2 := by
-      filter_upwards [ae_norm_le_one_dirichletMeasure] with x hx
-      exact Real.sq_sqrt (by nlinarith [norm_nonneg x])
-    rw [integral_congr_ae hsq,
-      integral_sub (integrable_const _) (memLp_id_dirichletMeasure 2).norm.integrable_sq,
-      integral_const, probReal_univ, one_smul, integral_norm_sq_dirichletMeasure_smul p hp c.2]
-    have hc1 : (c : ℝ) + 1 ≠ 0 := (add_pos c.2 zero_lt_one).ne'
-    field_simp
-    ring
+  -- Compare a bounded Lipschitz `f` at `x` with the `x`-weighted average of its values at the
+  -- vertices. Under the Dirichlet law this average integrates to the categorical integral of
+  -- `f`, and the pointwise error is at most `K * √(1 - ‖x‖ ^ 2)`.
   refine ProbabilityMeasure.tendsto_of_lipschitz_approx_of_integral_sq_tendsto_zero
     (d := fun _ x ↦ √(1 - ‖x‖ ^ 2)) hsqrt_mem ?_ fun f K _ hK c ↦
       ⟨fun x ↦ ∑ i, x i * f (EuclideanSpace.basisFun ι ℝ i), ?_, ?_, ?_⟩
-  · have hcoe : Tendsto (fun c : Ioi (0 : ℝ) ↦ (c : ℝ)) atBot (𝓝 0) := by
-      have h : Tendsto (id : ℝ → ℝ) (𝓝[>] 0) (𝓝 0) := tendsto_id.mono_left inf_le_left
-      rwa [← map_coe_Ioi_atBot (0 : ℝ), tendsto_map'_iff, Function.comp_def] at h
+  · have hmoment (c : Ioi (0 : ℝ)) :
+        ∫ x, √(1 - ‖x‖ ^ 2) ^ 2 ∂dirichletMeasure (fun i ↦ (c : ℝ) * (p.weights i : ℝ)) =
+          (c : ℝ) * (1 - ∑ i, (p.weights i : ℝ) ^ 2) / ((c : ℝ) + 1) := by
+      rw [← integral_one_sub_norm_sq_dirichletMeasure_smul p hp c.2]
+      refine integral_congr_ae ?_
+      filter_upwards [ae_norm_le_one_dirichletMeasure] with x hx
+      exact Real.sq_sqrt (by nlinarith [norm_nonneg x])
+    have hcoe : Tendsto (fun c : Ioi (0 : ℝ) ↦ (c : ℝ)) atBot (𝓝 0) :=
+      (tendsto_comp_coe_Ioi_atBot (f := id)).2 (tendsto_id.mono_left nhdsWithin_le_nhds)
     have hquot : Tendsto (fun c : Ioi (0 : ℝ) ↦
         (c : ℝ) * (1 - ∑ i, (p.weights i : ℝ) ^ 2) / ((c : ℝ) + 1)) atBot
         (𝓝 (0 * (1 - ∑ i, (p.weights i : ℝ) ^ 2) / (0 + 1))) :=
@@ -134,28 +133,12 @@ theorem tendsto_dirichletMeasure_concentration_atBot [MeasurableSpace ι]
       integral_categoricalMeasure, integral_finsetSum _ fun i _ ↦
         ((memLp_eval_dirichletMeasure i 1).integrable (by norm_num)).mul_const _]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [integral_mul_const, integral_eval_dirichletMeasure (ha c), sum_mul_coe_weights,
+    rw [integral_mul_const, integral_eval_dirichletMeasure (ha c), p.sum_mul_coe_weights,
       mul_div_cancel_left₀ _ c.2.ne', smul_eq_mul]
   · simp only [ProbabilityMeasure.coe_mk]
     filter_upwards [ae_pos_dirichletMeasure (ha c), ae_sum_eq_one_dirichletMeasure (ha c)]
       with x hx0 hx1
-    calc
-      |f x - ∑ i, x i * f (EuclideanSpace.basisFun ι ℝ i)| =
-          |∑ i, x i * (f x - f (EuclideanSpace.basisFun ι ℝ i))| := by
-        simp_rw [mul_sub]
-        rw [Finset.sum_sub_distrib, ← Finset.sum_mul, hx1, one_mul]
-      _ ≤ ∑ i, x i * |f x - f (EuclideanSpace.basisFun ι ℝ i)| := by
-        refine (Finset.abs_sum_le_sum_abs _ _).trans_eq (Finset.sum_congr rfl fun i _ ↦ ?_)
-        rw [abs_mul, abs_of_pos (hx0 i)]
-      _ ≤ ∑ i, x i * (K * dist x (EuclideanSpace.basisFun ι ℝ i)) := by
-        refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_left ?_ (hx0 i).le
-        simpa [Real.dist_eq] using hK.dist_le_mul x (EuclideanSpace.basisFun ι ℝ i)
-      _ = K * ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) := by
-        rw [Finset.mul_sum]
-        exact Finset.sum_congr rfl fun i _ ↦ by ring
-      _ ≤ K * √(1 - ‖x‖ ^ 2) :=
-        mul_le_mul_of_nonneg_left
-          (EuclideanSpace.sum_mul_dist_basisFun_le_sqrt (fun i ↦ (hx0 i).le) hx1) K.coe_nonneg
+    exact EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt (fun i ↦ (hx0 i).le) hx1 hK
 
 /-- The mean squared distance from the fixed mean of a Dirichlet law is the sum of its
 coordinate variances. It decays inversely with one plus the total concentration. -/
