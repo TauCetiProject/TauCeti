@@ -106,16 +106,10 @@ theorem isProbabilityMeasure_betaNegativeBinomialMeasure {r a b : ℝ} (hr : 0 �
     IsProbabilityMeasure (betaNegativeBinomialMeasure r a b) := by
   rw [betaNegativeBinomialMeasure_eq_bind hr ha hb]
   let _ : IsProbabilityMeasure (betaMeasure a b) := isProbabilityMeasureBeta ha hb
-  constructor
-  rw [Measure.bind_apply MeasurableSet.univ (by fun_prop :
-    Measurable fun p : ℝ => negativeBinomialMeasure r p).aemeasurable]
-  have hmass : (fun p : ℝ => negativeBinomialMeasure r p Set.univ) =ᵐ[betaMeasure a b]
-      fun _ => 1 := by
-    filter_upwards [ae_mem_Ioo_betaMeasure a b] with p hp
-    let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp.1 hp.2.le
-    simp
-  rw [lintegral_congr_ae hmass]
-  simp
+  refine isProbabilityMeasure_bind
+    (by fun_prop : Measurable fun p : ℝ => negativeBinomialMeasure r p).aemeasurable ?_
+  filter_upwards [ae_mem_Ioo_betaMeasure a b] with p hp
+  exact isProbabilityMeasure_negativeBinomialMeasure hr hp.1 hp.2.le
 
 /-- At negative-binomial shape zero, every valid beta-negative-binomial law is concentrated at
 zero. -/
