@@ -69,8 +69,6 @@ instance isNormalScheme_normalization_of_field {K : Type u} [Field K]
   refine ⟨⟨_, hU.preimage f.fromNormalization⟩, hxU, ?_⟩
   let := (f.app U).hom.toAlgebra
   let e := (f.normalizationObjIso hU).commRingCatIsoToRingEquiv
-  -- `Spec K` is a single point, so the preimage of `U` in it is either empty or everything.
-  have : Subsingleton (Spec (.of K)) := inferInstanceAs (Subsingleton (PrimeSpectrum K))
   by_cases htop : f ⁻¹ᵁ U = ⊤
   · -- The sections of `Spec K` over everything are `K`, so the sections of the normalization
     -- over the preimage of `U` are an integral closure in a field.
