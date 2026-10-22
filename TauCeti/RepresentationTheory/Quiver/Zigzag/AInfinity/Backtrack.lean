@@ -437,6 +437,8 @@ the backtrack cochain only reads through an arrow coordinate. -/
 theorem zigzagBacktrackTaylor_of_tprod_three (w : Fin 3 → nonisolatedZigzagQuotient k G) :
     zigzagBacktrackTaylor hns P a (of k _ (3 : ℕ+) (PiTensorProduct.tprod k w)) =
       -zigzagBacktrackCochain hns P a w := by
+  -- `(3 : ℕ+)` is definitionally `⟨3, _⟩`; rewriting with `PNat.mk_ofNat` is not possible here
+  -- because the type `Fin ↑3` of the word `w` depends on this literal
   change zigzagBacktrackTaylor hns P a (of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k w)) = _
   rw [zigzagBacktrackTaylor_of_tprod_three_koszulTwist,
     zigzagBacktrackCochain_koszulTwist_one_one hns a (zigzagLoopAInfinityAlgebra_grading_piece _ _)]
