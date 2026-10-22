@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.Defs
-public import Mathlib.Basic.NNReal.Basic
 
 /-!
 # Faces of the standard simplex
@@ -19,13 +18,9 @@ takes that value wherever some weight vanishes.  Two facets, opposite `j < k`, m
 codimension-two face opposite both: a common point of the two facets comes from that face through
 both composites of face maps, the two sides of the simplicial identity
 `SimplexCategory.δ_comp_δ`.
-
-The weights of a point of `StdSimplex ℝ≥0 X` still sum to one after casting them to `ℝ`.
 -/
 
 public section
-
-open scoped NNReal
 
 namespace Convexity.StdSimplex
 
@@ -128,14 +123,5 @@ theorem exists_map_succAbove_of_map_succAbove_eq {n : ℕ} {j k : Fin (n + 2)} (
     rwa [Fin.succAbove_pred_of_lt _ _ hjk, Fin.predAbove_of_le_castSucc _ _ hle] at this
   rw [← h, ← map_comp, ← hcomp, map_comp]
 
-/-- The weights of a point of a standard simplex over `ℝ≥0`, cast to `ℝ`, sum to `1`. -/
-theorem sum_coe_weights [Fintype X] (p : StdSimplex ℝ≥0 X) : ∑ i, (p.weights i : ℝ) = 1 := by
-  exact_mod_cast p.total_of_fintype
-
-/-- Scaling the real weights of a point of a standard simplex over `ℝ≥0` by `c` gives weights
-summing to `c`. -/
-theorem sum_mul_coe_weights [Fintype X] (p : StdSimplex ℝ≥0 X) (c : ℝ) :
-    ∑ i, c * (p.weights i : ℝ) = c := by
-  rw [← Finset.mul_sum, sum_coe_weights, mul_one]
 
 end Convexity.StdSimplex

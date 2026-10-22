@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Dirichlet.Marginal
 public import TauCeti.Probability.Moments.Covariance
-public import TauCeti.Geometry.Convex.ConvexSpace.Defs
+public import TauCeti.Geometry.Convex.ConvexSpace.NNReal
 
 /-!
 # Mean and covariance of the Dirichlet distribution

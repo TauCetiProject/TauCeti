@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Multinomial.Basic
 public import TauCeti.Probability.Distributions.Poisson.Sum
 public import TauCeti.Probability.HasLaw
-import TauCeti.Geometry.Convex.ConvexSpace.Defs
+import TauCeti.Geometry.Convex.ConvexSpace.NNReal
 
 /-!
 # Poisson allocation and conditioning
