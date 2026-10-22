@@ -46,17 +46,19 @@ combination of orbit sums of monomials.
 
 ## Main results
 
-* `FixedPoints.moduleFinite_subalgebra`: a finite-type `R`-algebra is a finite module over its
-  invariants under a finite group.
-* `FixedPoints.finiteType_subalgebra`: **Noether's finiteness theorem**: over a Noetherian base,
-  the invariants of a finite group acting on a finite-type algebra form a finite-type algebra.
+* `TauCeti.FixedPoints.moduleFinite_subalgebra`: a finite-type `R`-algebra is a finite module
+  over its invariants under a finite group.
+* `TauCeti.FixedPoints.finiteType_subalgebra`: **Noether's finiteness theorem**: over a Noetherian
+  base, the invariants of a finite group acting on a finite-type algebra form a finite-type
+  algebra.
 * `TauCeti.sum_smul_prod_pow_mem_adjoin`: over a `ℚ`-algebra, the orbit sum of every monomial in
   `x` is a polynomial in the orbit sums of the monomials of degree at most `|G|`.
-* `FixedPoints.subalgebra_eq_adjoin_sum_smul_prod_pow`: **Noether's degree bound**: if `x`
-  generates `A` over a `ℚ`-algebra `R`, the orbit sums of the monomials in `x` of degree at most
-  `|G|` generate `A^G`.
-* `FixedPoints.finiteType_subalgebra_of_algebraRat`: over any `ℚ`-algebra, Noetherian or not,
-  the invariants of a finite group acting on a finite-type algebra form a finite-type algebra.
+* `TauCeti.FixedPoints.subalgebra_eq_adjoin_sum_smul_prod_pow`: **Noether's degree bound**: if
+  `x` generates `A` over a `ℚ`-algebra `R`, the orbit sums of the monomials in `x` of degree at
+  most `|G|` generate `A^G`.
+* `TauCeti.FixedPoints.finiteType_subalgebra_of_algebraRat`: over any `ℚ`-algebra, Noetherian or
+  not, the invariants of a finite group acting on a finite-type algebra form a finite-type
+  algebra.
 
 ## References
 
@@ -73,7 +75,7 @@ public section
 
 open Finset MvPolynomial
 
-namespace FixedPoints
+namespace TauCeti.FixedPoints
 
 section Finiteness
 
@@ -98,7 +100,7 @@ instance finiteType_subalgebra [IsNoetherianRing R] [Algebra.FiniteType R A] [Fi
 
 end Finiteness
 
-end FixedPoints
+end TauCeti.FixedPoints
 
 section DegreeBound
 
@@ -161,7 +163,7 @@ theorem sum_smul_prod_pow_mem_adjoin (x : ι → A) (d : ι →₀ ℕ) :
 
 end TauCeti
 
-namespace FixedPoints
+namespace TauCeti.FixedPoints
 
 variable [SMulCommClass G R A]
 
@@ -194,11 +196,11 @@ theorem subalgebra_eq_adjoin_sum_smul_prod_pow (x : ι → A)
   · rintro _ ⟨d, -, rfl⟩
     exact FixedPoints.mem_subalgebra.2 fun h ↦ TauCeti.smul_sum_smul h _
 
-end FixedPoints
+end TauCeti.FixedPoints
 
 end DegreeBound
 
-namespace FixedPoints
+namespace TauCeti.FixedPoints
 
 variable (R A G : Type*) [CommRing R] [Algebra ℚ R] [CommRing A] [Algebra R A] [Group G]
   [MulSemiringAction G A] [SMulCommClass G R A]
@@ -213,4 +215,4 @@ instance finiteType_subalgebra_of_algebraRat [Algebra.FiniteType R A] [Finite G]
     (fun i : t ↦ (i : A)) (by simpa using ht)]
   exact Subalgebra.fg_def.2 ⟨_, (Finsupp.finite_of_degree_le _).image _, rfl⟩
 
-end FixedPoints
+end TauCeti.FixedPoints
