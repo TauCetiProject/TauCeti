@@ -18,12 +18,6 @@ are derived from `SmoothForm`.
 
 The degree-two specialization supplies the bilinear view used by the symplectic modules while
 retaining the generic form's alternating-map and smooth-section structure.
-
-The linear equivalence `legacySmoothTwoFormEquiv` identifies the two-form view `SmoothTwoForm`
-with the generic degree-two carrier `SmoothForm I M ℝ 2`. These types are definitionally equal,
-so the equivalence is the identity. Bundling this identification lets the two-form interface use
-generic differential-form maps, with forward and inverse simp laws and an ordered-pair evaluation
-law via `SmoothForm.eval₂`.
 -/
 
 public section
@@ -43,35 +37,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 abbrev SmoothTwoForm (I : ModelWithCorners ℝ E H) (M : Type*)
     [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] : Type _ :=
   SmoothForm I M ℝ 2
-
-/-- The linear identification of the two-form view `SmoothTwoForm I M` with the generic
-degree-two carrier `SmoothForm I M ℝ 2`. Both types are definitionally equal, so this is the
-identity map. It connects the two-form interface to the generic differential-form API; its
-chartwise closedness characterization is `legacySmoothTwoFormEquiv_isClosed_iff`. -/
-noncomputable def legacySmoothTwoFormEquiv :
-    TauCeti.SmoothTwoForm I M ≃ₗ[ℝ] SmoothForm I M ℝ 2 :=
-  LinearEquiv.refl ℝ _
-
-/-- Applying the identity equivalence leaves a degree-two smooth form unchanged. -/
-@[simp]
-theorem legacySmoothTwoFormEquiv_apply_eq
-    (φ : TauCeti.SmoothTwoForm I M) :
-    legacySmoothTwoFormEquiv φ = φ :=
-  by simp only [legacySmoothTwoFormEquiv, LinearEquiv.refl_apply]
-
-/-- Applying the inverse identity equivalence leaves a degree-two smooth form unchanged. -/
-@[simp]
-theorem legacySmoothTwoFormEquiv_symm_apply
-    (φ : SmoothForm I M ℝ 2) :
-    legacySmoothTwoFormEquiv.symm φ = φ :=
-  by simp only [legacySmoothTwoFormEquiv, LinearEquiv.refl_symm, LinearEquiv.refl_apply]
-
-/-- Evaluating the identity equivalence on an ordered pair gives the two-form evaluation. -/
-theorem legacySmoothTwoFormEquiv_apply
-    (φ : TauCeti.SmoothTwoForm I M) (x : M) (v w : TangentSpace I x) :
-    (legacySmoothTwoFormEquiv φ : RoughForm I M ℝ 2) x ![v, w] = φ.eval₂ x v w := by
-  rw [legacySmoothTwoFormEquiv_apply_eq]
-  exact (SmoothForm.eval₂_apply φ x v w).symm
 
 namespace SmoothTwoForm
 
