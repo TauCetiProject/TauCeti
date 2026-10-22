@@ -26,6 +26,7 @@ linear combinations. On products they satisfy the general Leibniz rule
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
 * `Derivation.iterate_sum_smul`: iterated differentiation commutes with scalar linear combinations.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
+* `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 -/
 
 public section
@@ -63,5 +64,13 @@ theorem iterate_apply_mul (D : Derivation R A A) (n : ℕ) (a b : A) :
     congr 1
     refine Finset.sum_congr rfl fun ij hij => ?_
     rw [n.choose_symm_of_eq_add (Finset.mem_antidiagonal.1 hij).symm, mul_comm]
+
+/-- Scalar multiples of a locally nilpotent derivation are locally nilpotent. -/
+theorem exists_iterate_smul_eq_zero (D : Derivation R A A)
+    (hD : ∀ a, ∃ n, D^[n] a = 0) (r : R) (a : A) : ∃ n, (r • D)^[n] a = 0 := by
+  obtain ⟨n, hn⟩ := hD a
+  refine ⟨n, ?_⟩
+  have hpow : (r • D).toLinearMap ^ n = r ^ n • D.toLinearMap ^ n := smul_pow r D.toLinearMap n
+  simpa [Module.End.pow_apply, coeFn_coe, hn] using LinearMap.congr_fun hpow a
 
 end Derivation
