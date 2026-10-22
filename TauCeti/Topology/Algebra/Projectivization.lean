@@ -51,7 +51,7 @@ quotient map.
 The topology and its quotient-map API (`instTopologicalSpace` through `isOpenQuotientMap_mk'`)
 follow Zayn Blore's Mathlib pull request
 [mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117), with the same names
-and statements, so that they can be replaced by imports once that pull request lands.
+and statements.
 -/
 
 public section
@@ -139,8 +139,9 @@ theorem mk'_eq_mk'_iff_forall_strongDual [SeparatingDual K V] (v w : {v : V // v
     have hvw : (v : V) = (f v / f w) • (w : V) := by
       rw [← sub_eq_zero]
       refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := K) fun g ↦ ?_
-      rw [map_sub, map_smul, smul_eq_mul, div_mul_eq_mul_div, h f g, mul_comm (f w),
-        mul_div_assoc, div_self hf, mul_one, sub_self]
+      rw [map_sub, map_smul, smul_eq_mul]
+      field_simp
+      linear_combination -h f g
     have hc : f v / f w ≠ 0 := fun hc ↦ v.2 (by rw [hvw, hc, zero_smul])
     exact ⟨Units.mk0 _ hc, Subtype.ext (by rw [Units.smul_coe, Units.smul_def,
       Units.val_mk0, ← hvw])⟩
