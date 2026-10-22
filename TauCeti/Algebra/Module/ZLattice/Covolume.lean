@@ -32,9 +32,10 @@ Independently of any inner product, pulling a full lattice back along a continuo
 automorphism `A` of a finite-dimensional real normed space divides its covolume by `|det A|`, for
 every Haar measure (`ZLattice.covolume_comap_continuousLinearEquiv`). Since Mathlib writes the
 image `A L` as the pullback `ZLattice.comap ℝ L A⁻¹`, this says `covolume (A L) = |det A| *
-covolume L`. Likewise, the coordinates of any `ℤ`-basis of `L` carry a Haar measure `μ` to Lebesgue
-measure divided by `covolume L μ` (`ZLattice.volume_image_eq_measure_div_covolume`), which reduces
-volume estimates for `L` to estimates for `ℤⁿ ⊆ ℝⁿ`.
+covolume L`. Likewise, the image of a set `s` under the coordinates of any `ℤ`-basis of `L` has
+Lebesgue measure `μ s / covolume L μ` for every Haar measure `μ`
+(`ZLattice.volume_image_eq_measure_div_covolume`): the coordinates carry `μ` to `covolume L μ` times
+Lebesgue measure. This reduces volume estimates for `L` to estimates for `ℤⁿ ⊆ ℝⁿ`.
 
 ## Main results
 
@@ -43,8 +44,8 @@ volume estimates for `L` to estimates for `ℤⁿ ⊆ ℝⁿ`.
 * `ZLattice.covolume_dual`: `covolume L^∨ = (covolume L)⁻¹`.
 * `ZLattice.covolume_comap_continuousLinearEquiv`: the covolume of the pullback of `L` along a
   continuous linear automorphism `A` is `|det A|⁻¹ * covolume L`.
-* `ZLattice.volume_image_eq_measure_div_covolume`: the coordinates of a `ℤ`-basis of `L` carry a
-  Haar measure `μ` to `(covolume L μ)⁻¹` times Lebesgue measure.
+* `ZLattice.volume_image_eq_measure_div_covolume`: the image of `s` under the coordinates of a
+  `ℤ`-basis of `L` has Lebesgue measure `μ s / covolume L μ`.
 -/
 
 public section
@@ -79,7 +80,7 @@ theorem _root_.ZLattice.covolume_comap_continuousLinearEquiv (L : Submodule ℤ 
   rw [ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm, abs_inv]
 
 /-- The coordinates of a `ℤ`-basis `b` of a full lattice `L` carry any Haar measure `μ` to
-Lebesgue measure on `ι → ℝ`, scaled by the covolume: the image of any set `s` has volume
+`covolume L μ` times Lebesgue measure on `ι → ℝ`: the image of any set `s` has volume
 `μ s / covolume L μ`. This is Mathlib's `ZLattice.volume_image_eq_volume_div_covolume'` for an
 arbitrary Haar measure on a normed space and an arbitrary set. -/
 theorem _root_.ZLattice.volume_image_eq_measure_div_covolume (L : Submodule ℤ E)
@@ -104,10 +105,10 @@ theorem _root_.ZLattice.volume_image_eq_measure_div_covolume (L : Submodule ℤ 
       congrFun (φ.apply_symm_apply x) i
     simp [LinearEquiv.image_eq_preimage_symm, ZSpan.mem_fundamentalDomain, hx]
   have hcov : ENNReal.ofReal (ZLattice.covolume L μ) = c := by
+    have hfin := (ZSpan.fundamentalDomain_isBounded (b.ofZLatticeBasis ℝ)).measure_lt_top (μ := μ)
     rw [ZLattice.covolume_eq_measure_fundamentalDomain L μ (ZLattice.isAddFundamentalDomain b μ),
-      measureReal_def, ENNReal.ofReal_toReal
-        (ZSpan.fundamentalDomain_isBounded _).measure_lt_top.ne, hμ, hF, Real.volume_pi_Ico]
-    simp
+      measureReal_def, ENNReal.ofReal_toReal hfin.ne]
+    simp [hμ, hF, Real.volume_pi_Ico]
   rw [hμ s, ← hcov, mul_comm, ENNReal.mul_div_cancel_right
     (ENNReal.ofReal_pos.2 (ZLattice.covolume_pos L μ)).ne' ENNReal.ofReal_ne_top]
 

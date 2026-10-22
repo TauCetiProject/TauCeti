@@ -316,10 +316,9 @@ private theorem volume_fold_smul {X : Set (Fin n → ℝ)} (hX : MeasurableSet X
   let D : (Fin n → ℝ) →ₗ[ℝ] (Fin n → ℝ) := Matrix.toLin' (Matrix.diagonal d)
   have hD : ∀ x i, D x i = d i * x i := fun x i ↦ by simp [D, Matrix.mulVec_diagonal]
   have hdet : LinearMap.det D = ρ⁻¹ ^ (n - m) := by
-    rw [LinearMap.det_toLin', Matrix.det_diagonal, Finset.prod_ite, Finset.prod_const_one,
-      one_mul, Finset.prod_const, Finset.filter_not,
-      Finset.card_sdiff_of_subset (Finset.filter_subset _ _), Finset.card_univ, Fintype.card_fin,
-      Fin.card_filter_val_lt]
+    have h := Finset.card_filter_add_card_filter_not (s := Finset.univ) fun i : Fin n ↦ (i : ℕ) < m
+    simp only [Finset.card_univ, Fintype.card_fin, Fin.card_filter_val_lt, not_lt] at h
+    simp [D, d, Finset.prod_ite]
     congr 1
     omega
   set X' := D ⁻¹' X
@@ -366,8 +365,6 @@ private theorem prod_mul_volume_le_one {n : ℕ} {C : Set (Fin n → ℝ)} (hC :
     (hsep : ∀ j (hj : j < n), ∀ x ∈ g j • C, ∀ y ∈ g j • C, (∀ i, ∃ k : ℤ, x i - y i = k) →
       x ⟨j, hj⟩ = y ⟨j, hj⟩) :
     ENNReal.ofReal (∏ i ∈ Finset.range n, g i) * volume C ≤ 1 := by
-  have hprod : ∀ m ≤ n, 0 ≤ ∏ i ∈ Finset.range m, g i := fun m hm ↦
-    Finset.prod_nonneg fun i hi ↦ (hg0 i (by simp at hi; omega)).le
   -- The volume of the `m`-fold of `t • C` is at least `(∏ i < m, g i) * t ^ (n - m) * vol C`.
   have claim : ∀ m ≤ n, ∀ t : ℝ, 0 < t → (∀ i < m, g i ≤ t) →
       ENNReal.ofReal ((∏ i ∈ Finset.range m, g i) * t ^ (n - m)) * volume C ≤
@@ -407,29 +404,6 @@ private theorem prod_mul_volume_le_one {n : ℕ} {C : Set (Fin n → ℝ)} (hC :
 /-! ### The general theorem -/
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- If a basis `b` is triangular with respect to a basis `e` (each `b l` is a combination of
-`e 0, …, e l`), then a vector in the span of `e 0, …, e (j - 1)` has vanishing coordinates in `b`
-from the `j`-th on. -/
-private theorem repr_eq_zero_of_mem_span_image_Iio {n : ℕ} {e b : Basis (Fin n) ℝ E}
-    (htri : ∀ l i, l < i → e.repr (b l) i = 0) {j : Fin n} {v : E}
-    (hv : v ∈ span ℝ (e '' Iio j)) {i : Fin n} (hji : j ≤ i) : b.repr v i = 0 := by
-  have := e.finiteDimensional_of_finite
-  have hle : span ℝ (b '' Iio j) ≤ span ℝ (e '' Iio j) := by
-    refine span_le.2 (image_subset_iff.2 fun l hl ↦ ?_)
-    rw [mem_preimage, SetLike.mem_coe, Basis.mem_span_image]
-    intro i hi
-    by_contra hil
-    exact (Finsupp.mem_support_iff.1 hi) (htri l i (lt_of_lt_of_le hl (not_lt.1 hil)))
-  -- The two spans have the same dimension, so they coincide.
-  have heq : span ℝ (b '' Iio j) = span ℝ (e '' Iio j) := by
-    refine eq_of_le_of_finrank_eq hle ?_
-    rw [image_eq_range, image_eq_range]
-    exact (finrank_span_eq_card (b.linearIndependent.comp _ Subtype.val_injective)).trans
-      (finrank_span_eq_card (e.linearIndependent.comp _ Subtype.val_injective)).symm
-  rw [← heq, Basis.mem_span_image] at hv
-  by_contra hvi
-  exact absurd (hv (Finsupp.mem_support_iff.2 hvi)) (not_lt.2 hji)
 
 /-- In coordinates `φ` in which `L` is `ℤⁿ` and the span of `a 0, …, a (j - 1)` lies in the kernel
 of the `j`-th coordinate, two points of `g j • φ '' (½ • interior K)` whose difference is an
@@ -507,12 +481,12 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
   -- `core` reads `(∏ g) * (2⁻ⁿ * (μ (interior K) / covolume L μ)) ≤ 1`.
   have hcov : ENNReal.ofReal (ZLattice.covolume L μ) ≠ 0 :=
     (ENNReal.ofReal_pos.2 (ZLattice.covolume_pos L μ)).ne'
-  have hhalf : ENNReal.ofReal ((1 / 2 : ℝ) ^ n) = ((2 : ENNReal) ^ n)⁻¹ := by
-    rw [ENNReal.ofReal_pow (by norm_num), one_div, ENNReal.ofReal_inv_of_pos (by norm_num),
-      ENNReal.ofReal_ofNat, ENNReal.inv_pow]
-  rw [hhalf, mul_left_comm] at core
-  have := (ENNReal.mul_le_iff_le_inv (by simp) (by simp)).1 core
-  rwa [inv_inv, mul_one, ← mul_div_assoc, ENNReal.div_le_iff hcov ENNReal.ofReal_ne_top] at this
+  -- Divide the goal by `covolume L μ` and by `2 ^ n`.
+  rw [← ENNReal.div_le_iff hcov ENNReal.ofReal_ne_top, ← one_mul ((2 : ENNReal) ^ n),
+    ← ENNReal.div_le_iff (by simp) (by simp)]
+  convert core using 1
+  simp [div_eq_mul_inv, ENNReal.ofReal_pow, ENNReal.ofReal_inv_of_pos]
+  ring
 
 /-- **Minkowski's second theorem**, upper bound. Let `L` be a full lattice in an `n`-dimensional
 real normed space `E`, `μ` a Haar measure on `E`, and `K ⊆ E` convex and symmetric about `0`. Let
