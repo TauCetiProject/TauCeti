@@ -515,6 +515,14 @@ theorem positiveEdist_lt_top_iff : positiveEdist c s t < ⊤ ↔ PositiveReachab
 theorem positiveEdist_eq_top_iff : positiveEdist c s t = ⊤ ↔ ¬PositiveReachable c s t := by
   rw [← positiveEdist_lt_top_iff, lt_top_iff_ne_top, not_not]
 
+/-- The positive distance vanishes exactly between identical endpoints. -/
+@[simp]
+theorem positiveEdist_eq_zero_iff : positiveEdist c s t = 0 ↔ s = t := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ positiveEdist_self c s⟩
+  obtain ⟨p, -, -, hlen⟩ :=
+    (positiveEdist_lt_top_iff.1 (h ▸ ENat.top_pos)).exists_isPath_length_eq_positiveEdist
+  exact @Quiver.Path.eq_of_length_zero V ⟨Q⟩ s t p (by exact_mod_cast hlen.trans h)
+
 /-- The positive distance grows by at most one along an arrow of positive capacity. -/
 theorem positiveEdist_le_add_one (e : Q x y) (he : 0 < c e) :
     positiveEdist c s y ≤ positiveEdist c s x + 1 := by
