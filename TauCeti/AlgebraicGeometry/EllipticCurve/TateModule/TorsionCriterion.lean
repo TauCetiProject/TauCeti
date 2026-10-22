@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.GoodReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.PotentialGoodReduction
+-- Proof-only: a natural number invertible in `𝒪[K]` is nonzero in `K`.
+import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # Good reduction from unramified torsion at potential good reduction
@@ -125,9 +127,8 @@ theorem hasGoodReduction_iff_isUnramified_divisionField (h : W.HasPotentialGoodR
     [TopologicalSpace (W.divisionField N)] [IsNonarchimedeanLocalField (W.divisionField N)]
     [ValuativeExtension K (W.divisionField N)] :
     W.HasGoodReduction 𝒪[K] ↔ IsUnramified K (W.divisionField N) := by
-  have hNK : (N : K) ≠ 0 := fun h₀ ↦ hNk <| by
-    have : (N : 𝒪[K]) = 0 := Subtype.ext (by simpa using h₀)
-    rw [← map_natCast (IsLocalRing.residue 𝒪[K]), this, map_zero]
+  have hNK : (N : K) ≠ 0 := IsUnit.natCast_ne_zero_of_algebra (K := 𝒪[K])
+    ((IsLocalRing.residue_ne_zero_iff_isUnit _).1 (by rwa [map_natCast]))
   rw [h.hasGoodReduction_iff_forall_mem_inertiaSubgroup hN hNk,
     W.isUnramified_divisionField_iff_forall_mem_inertiaSubgroup hNK]
 
