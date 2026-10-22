@@ -42,9 +42,9 @@ normal closure of `x ^ n` when `n ≠ 1`.
 * `TauCeti.GroupAlgGeom.V ι S`: the algebraic set `V_H(S)` of a system `S ⊆ G[X]`.
 * `TauCeti.GroupAlgGeom.I ι Y`: the ideal `I_H(Y)`, a normal subgroup of `G[X]`.
 * `TauCeti.GroupAlgGeom.Rad ι S`: the radical `Rad_H(S) = I_H(V_H(S))`.
-* `TauCeti.GroupAlgGeom.coordGroup ι S`: the coordinate group `G_{R(S)} = G[X] ⧸ Rad_H(S)`.
-* `TauCeti.GroupAlgGeom.systemGroup G S`: the group `G_S = G[X] ⧸ ncl(S)` of the system `S`.
-* `TauCeti.GroupAlgGeom.systemGroup.toCoordGroup ι S`: the surjection `G_S →* G_{R(S)}`.
+* `TauCeti.GroupAlgGeom.CoordGroup ι S`: the coordinate group `G_{R(S)} = G[X] ⧸ Rad_H(S)`.
+* `TauCeti.GroupAlgGeom.SystemGroup G S`: the group `G_S = G[X] ⧸ ncl(S)` of the system `S`.
+* `TauCeti.GroupAlgGeom.SystemGroup.toCoordGroup ι S`: the surjection `G_S →* G_{R(S)}`.
 
 ## Main results
 
@@ -56,9 +56,9 @@ normal closure of `x ^ n` when `n ≠ 1`.
   normal closure of the equations `x (g x)⁻¹`, for injective `ι`.
 * `TauCeti.GroupAlgGeom.GX.quotientHomEquiv`: `G`-homomorphisms from `G[X] ⧸ N` to `H`
   correspond to the points of `V_H(N)`.
-* `TauCeti.GroupAlgGeom.coordGroup.homEquiv`, `TauCeti.GroupAlgGeom.systemGroup.homEquiv`:
+* `TauCeti.GroupAlgGeom.CoordGroup.homEquiv`, `TauCeti.GroupAlgGeom.SystemGroup.homEquiv`:
   `G`-homomorphisms from `G_{R(S)}` or from `G_S` to `H` correspond to the solutions of `S` in `H`.
-* `TauCeti.GroupAlgGeom.coordGroup.coeff_injective`: `G_{R(S)}` is a `G`-group when `S` has a
+* `TauCeti.GroupAlgGeom.CoordGroup.coeff_injective`: `G_{R(S)}` is a `G`-group when `S` has a
   solution in a `G`-group.
 * `TauCeti.GroupAlgGeom.Rad_pow_eq_normalClosure`,
   `TauCeti.GroupAlgGeom.normalClosure_pow_ne_normalClosure`: over a torsion-free `H` with
@@ -154,15 +154,19 @@ theorem V_empty : V ι (∅ : Set (GX G X)) = Set.univ :=
 theorem I_empty : I ι (∅ : Set (X → H)) = ⊤ :=
   SetLike.coe_injective ((lowerPolar_empty _).trans coe_top.symm)
 
+@[simp]
 theorem V_union (S T : Set (GX G X)) : V ι (S ∪ T) = V ι S ∩ V ι T :=
   upperPolar_union _ S T
 
+@[simp]
 theorem V_iUnion {κ : Sort*} (S : κ → Set (GX G X)) : V ι (⋃ k, S k) = ⋂ k, V ι (S k) :=
   upperPolar_iUnion _ S
 
+@[simp]
 theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
   SetLike.coe_injective ((lowerPolar_union _ Y Z).trans (coe_inf (I ι Y) (I ι Z)).symm)
 
+@[simp]
 theorem I_iUnion {κ : Sort*} (Y : κ → Set (X → H)) : I ι (⋃ k, Y k) = ⨅ k, I ι (Y k) :=
   SetLike.coe_injective ((lowerPolar_iUnion _ Y).trans (coe_iInf (S := fun k => I ι (Y k))).symm)
 
@@ -326,19 +330,19 @@ end GX
 
 variable (ι) in
 /-- The coordinate group `G_{R(S)} = G[X] ⧸ Rad_H(S)` of a system `S` over `H`. -/
-abbrev coordGroup (S : Set (GX G X)) : Type _ :=
+abbrev CoordGroup (S : Set (GX G X)) : Type _ :=
   GX G X ⧸ Rad ι S
 
-namespace coordGroup
+namespace CoordGroup
 
 variable (ι) in
 /-- The coefficient homomorphism `G →* G_{R(S)}`. -/
-def coeff (S : Set (GX G X)) : G →* coordGroup ι S :=
+def coeff (S : Set (GX G X)) : G →* CoordGroup ι S :=
   GX.quotientCoeff _
 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
-    coeff ι S g = ((inl g : GX G X) : coordGroup ι S) := (rfl)
+    coeff ι S g = ((inl g : GX G X) : CoordGroup ι S) := (rfl)
 
 variable (v) in
 /-- Evaluation at a solution `v` of `S` in `H`, as a `G`-homomorphism `G_{R(S)} → H`. -/
@@ -347,7 +351,7 @@ def evalGHom (hv : v ∈ V ι S) : GHom (coeff ι S) ι :=
 
 @[simp]
 theorem evalGHom_mk (hv : v ∈ V ι S) (w : GX G X) :
-    evalGHom v hv (w : coordGroup ι S) = eval ι v w := (rfl)
+    evalGHom v hv (w : CoordGroup ι S) = eval ι v w := (rfl)
 
 variable (ι S) in
 /-- The universal property of the coordinate group: `G`-homomorphisms `G_{R(S)} → H` correspond
@@ -378,32 +382,32 @@ variable (ι) in
 /-- The coordinate group `G_{R(S)}` of a system with a solution in a `G`-group `H`, as a
 `G`-group. -/
 @[expose] def toGGroup (hι : Function.Injective ι) (hS : (V ι S).Nonempty) : GGroup G :=
-  ⟨coordGroup ι S, coeff ι S, coeff_injective hι hS⟩
+  ⟨CoordGroup ι S, coeff ι S, coeff_injective hι hS⟩
 
 @[simp]
 theorem toGGroup_coeff (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
     (toGGroup ι hι hS).coeff = coeff ι S := (rfl)
 
-end coordGroup
+end CoordGroup
 
 variable (G) in
 /-- The group `G_S = G[X] ⧸ ncl(S)` presented over `G` by the system `S` of equations. -/
-abbrev systemGroup (S : Set (GX G X)) : Type _ :=
+abbrev SystemGroup (S : Set (GX G X)) : Type _ :=
   GX G X ⧸ normalClosure S
 
-namespace systemGroup
+namespace SystemGroup
 
 /-- The coefficient homomorphism `G →* G_S`. -/
-def coeff (S : Set (GX G X)) : G →* systemGroup G S :=
+def coeff (S : Set (GX G X)) : G →* SystemGroup G S :=
   GX.quotientCoeff _
 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
-    coeff S g = ((inl g : GX G X) : systemGroup G S) := (rfl)
+    coeff S g = ((inl g : GX G X) : SystemGroup G S) := (rfl)
 
 variable (ι) in
 /-- The canonical surjection `G_S →* G_{R(S)}`, a `G`-homomorphism. -/
-def toCoordGroup (S : Set (GX G X)) : GHom (coeff S) (coordGroup.coeff ι S) where
+def toCoordGroup (S : Set (GX G X)) : GHom (coeff S) (CoordGroup.coeff ι S) where
   toMonoidHom := QuotientGroup.map _ _ (.id _) (by simpa using normalClosure_le_Rad S)
   map_coeff' _ := (rfl)
 
@@ -414,7 +418,7 @@ def evalGHom (hv : v ∈ V ι S) : GHom (coeff S) ι :=
 
 @[simp]
 theorem evalGHom_mk (hv : v ∈ V ι S) (w : GX G X) :
-    evalGHom v hv (w : systemGroup G S) = eval ι v w := (rfl)
+    evalGHom v hv (w : SystemGroup G S) = eval ι v w := (rfl)
 
 variable (ι S) in
 /-- The universal property of `G_S`: `G`-homomorphisms `G_S → H` correspond to the solutions of
@@ -437,7 +441,7 @@ theorem gHom_ext {φ ψ : GHom (coeff S) ι}
 
 @[simp]
 theorem toCoordGroup_mk (S : Set (GX G X)) (w : GX G X) :
-    toCoordGroup ι S (w : systemGroup G S) = (w : coordGroup ι S) := (rfl)
+    toCoordGroup ι S (w : SystemGroup G S) = (w : CoordGroup ι S) := (rfl)
 
 theorem toCoordGroup_surjective (S : Set (GX G X)) :
     Function.Surjective (toCoordGroup ι S) := by
@@ -454,16 +458,16 @@ theorem coeff_injective (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
 /-- Restricting a `G`-homomorphism `G_{R(S)} → H` along `G_S → G_{R(S)}` gives the same solution
 of `S`. -/
 @[simp]
-theorem homEquiv_comp_toCoordGroup (φ : GHom (coordGroup.coeff ι S) ι) :
-    homEquiv ι S (φ.comp (toCoordGroup ι S)) = coordGroup.homEquiv ι S φ :=
+theorem homEquiv_comp_toCoordGroup (φ : GHom (CoordGroup.coeff ι S) ι) :
+    homEquiv ι S (φ.comp (toCoordGroup ι S)) = CoordGroup.homEquiv ι S φ :=
   Subtype.ext (funext fun _ => by simp)
 
-end systemGroup
+end SystemGroup
 
 /-- Evaluation at a solution `v` on `G_S` factors through `G_S → G_{R(S)}`. -/
 @[simp]
-theorem coordGroup.evalGHom_comp_toCoordGroup (hv : v ∈ V ι S) :
-    (evalGHom v hv).comp (systemGroup.toCoordGroup ι S) = systemGroup.evalGHom v hv := by
+theorem CoordGroup.evalGHom_comp_toCoordGroup (hv : v ∈ V ι S) :
+    (evalGHom v hv).comp (SystemGroup.toCoordGroup ι S) = SystemGroup.evalGHom v hv := by
   ext
   simp
 
