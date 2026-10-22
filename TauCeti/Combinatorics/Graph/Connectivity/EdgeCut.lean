@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Graph.Connected.EdgeCut
+public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
 
 import all Mathlib.Combinatorics.Graph.Connected.EdgeCut
@@ -16,8 +17,10 @@ import all Mathlib.Combinatorics.Graph.Connected.EdgeCut
 This file relates Mathlib's edge cuts `Graph.edgeCut` to edge-labelled multigraph walks.
 A walk that starts inside a vertex set and ends outside it traverses an edge of the cut, so a
 vertex set is closed under reachability exactly when its edge cut is empty.  In particular, the
-set of vertices reachable from a point has empty edge cut.  Deleting edges removes them from every
-edge cut, and loops never cross a cut.
+set of vertices reachable from a point has empty edge cut, and in a connected graph every vertex
+set separating two actual vertices has a nonempty edge cut.  Deleting edges removes them from every
+edge cut, and loops never cross a cut.  In a graph on two distinct vertices, the edge cut of
+either vertex consists of all edges.
 
 If the edge cut of `T` is contained in that of `S`, then the subgraph induced on `S` has empty
 edge cut along `T`; conversely when `T ⊆ S`.
@@ -99,6 +102,26 @@ theorem Reachable.mem_of_edgeCut_eq_empty (h : G.Reachable x y) (hS : G.edgeCut 
 theorem edgeCut_setOf_reachable (G : Graph α β) (x : α) :
     G.edgeCut {y | G.Reachable x y} = ∅ :=
   edgeCut_eq_empty_iff_forall_reachable.mpr fun _ _ h hx ↦ Reachable.trans hx h
+
+/-- In a connected graph, a vertex set containing one actual vertex and missing another has a
+nonempty edge cut. -/
+theorem Connected.edgeCut_nonempty (hG : G.Connected) (hx : x ∈ V(G)) (hy : y ∈ V(G))
+    (hxS : x ∈ S) (hyS : y ∉ S) : (G.edgeCut S).Nonempty := by
+  obtain ⟨-, ⟨p⟩⟩ := reachable_def.mp (hG.reachable hx hy)
+  obtain ⟨e, -, he⟩ := p.exists_mem_edges_mem_edgeCut hxS hyS
+  exact ⟨e, he⟩
+
+/-- The edge cut separating the two ends of a graph on two distinct vertices consists of all its
+edges. -/
+@[simp]
+theorem edgeCut_banana_singleton {u w : α} (huw : u ≠ w) (F : Set β) :
+    (banana u w F).edgeCut {u} = F := by
+  ext f
+  simp only [mem_edgeCut_iff, banana_isLink, mem_singleton_iff]
+  constructor
+  · rintro ⟨-, -, ⟨hf, -⟩, -, -⟩
+    exact hf
+  · exact fun hf ↦ ⟨u, w, ⟨hf, .inl ⟨rfl, rfl⟩⟩, rfl, huw.symm⟩
 
 /-! ### Edge cuts of induced subgraphs -/
 

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
 
 /-!
@@ -15,8 +14,6 @@ Mathlib defines a bond of a multigraph `G : Graph α β` as an inclusion-minimal
 cut, `Graph.IsBond`.  This file characterizes bonds through the connectivity of the two sides of
 the cut and relates bonds to closed subgraphs.
 
-* `Graph.Connected.edgeCut_nonempty`: in a connected graph, a vertex set separating two actual
-  vertices has a nonempty edge cut.
 * `Graph.Connected.isBond_edgeCut_iff`: for a connected graph `G` and a set `S` of actual
   vertices, the edge cut of `S` is a bond exactly when both `S` and its complement `V(G) \ S`
   induce connected subgraphs.  Neither side need be assumed nonempty: the empty graph is not
@@ -42,14 +39,6 @@ universe u v
 namespace Graph
 
 variable {α : Type u} {β : Type v} {G H : Graph α β} {S : Set α} {B : Set β} {e : β} {x y : α}
-
-/-- In a connected graph, a vertex set containing one actual vertex and missing another has a
-nonempty edge cut. -/
-theorem Connected.edgeCut_nonempty (hG : G.Connected) (hx : x ∈ V(G)) (hy : y ∈ V(G))
-    (hxS : x ∈ S) (hyS : y ∉ S) : (G.edgeCut S).Nonempty := by
-  obtain ⟨-, ⟨p⟩⟩ := reachable_def.mp (hG.reachable hx hy)
-  obtain ⟨e, -, he⟩ := p.exists_mem_edges_mem_edgeCut hxS hyS
-  exact ⟨e, he⟩
 
 /-- In a connected graph, if the edge cut of a set `S` of actual vertices is a bond, then `S`
 induces a connected subgraph. -/
@@ -145,18 +134,6 @@ theorem IsClosedSubgraph.isBond_iff (hBH : B ⊆ E(H)) (hHG : H ≤c G) :
   ⟨IsBond.anti_of_isClosedSubgraph hHG hBH, IsBond.of_isClosedSubgraph hHG⟩
 
 /-! ### Graphs on two vertices -/
-
-/-- The edge cut separating the two ends of a graph on two distinct vertices consists of all its
-edges. -/
-@[simp]
-theorem edgeCut_banana_singleton {u w : α} (huw : u ≠ w) (F : Set β) :
-    (banana u w F).edgeCut {u} = F := by
-  ext f
-  simp only [mem_edgeCut_iff, banana_isLink, mem_singleton_iff]
-  constructor
-  · rintro ⟨-, -, ⟨hf, -⟩, -, -⟩
-    exact hf
-  · exact fun hf ↦ ⟨u, w, ⟨hf, .inl ⟨rfl, rfl⟩⟩, rfl, huw.symm⟩
 
 /-- The nonempty set of edges joining two distinct vertices is a bond of the graph they form:
 both sides of the cut are single vertices. -/
