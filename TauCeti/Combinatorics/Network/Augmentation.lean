@@ -265,7 +265,8 @@ that vanishes on the arrows entering `s` and on the arrows leaving `t`, such tha
 `g` is still nonnegative. Then `f` has negative excess at `s` and positive excess at `t`, and every
 vertex of negative, respectively positive, excess for `g` has negative, respectively positive,
 excess for `f`. -/
-lemma excessAt_sign_of_sub_walkAssignment {f : Assignment Q K} {s t : V} (hst : s ≠ t) {p : ArrowWalk Q s t}
+lemma excessAt_sign_of_sub_walkAssignment {f : Assignment Q K} {s t : V}
+    (hst : s ≠ t) {p : ArrowWalk Q s t}
     {q : K} (hq : 0 < q) (hg : 0 ≤ f - walkAssignment p q) (hin : ∀ w (e : Q w s), f e = 0)
     (hout : ∀ w (e : Q t w), f e = 0) :
     excessAt f s < 0 ∧ 0 < excessAt f t ∧
