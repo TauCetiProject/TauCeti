@@ -87,11 +87,11 @@ noncomputable def unitsEquivOfSubsingleton [Subsingleton M] :
     (CliffordAlgebra Q)ˣ ≃* Rˣ :=
   Units.mapEquiv (equivOfSubsingleton Q).toMulEquiv
 
-/-- The scalar-unit equivalence agrees with the units map induced by the Clifford equivalence. -/
-theorem unitsEquivOfSubsingleton_apply [Subsingleton M] (x : (CliffordAlgebra Q)ˣ) :
-    (unitsEquivOfSubsingleton Q).toMonoidHom x =
-      Units.map (equivOfSubsingleton Q).toMonoidHom x := by
-  rfl
+/-- The scalar-unit equivalence has the expected underlying scalar value. -/
+@[simp]
+theorem coe_unitsEquivOfSubsingleton_apply [Subsingleton M] (x : (CliffordAlgebra Q)ˣ) :
+    ((unitsEquivOfSubsingleton Q x : Rˣ) : R) = equivOfSubsingleton Q (x : CliffordAlgebra Q) := by
+  simp [unitsEquivOfSubsingleton]
 
 /-- Units whose twisted conjugation preserves the Clifford vector range in dimension zero.
 
@@ -139,7 +139,8 @@ theorem zeroVectorNormalizerEquivUnits_apply [Subsingleton M]
       Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) := by
   simp only [zeroVectorNormalizerEquivUnits, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
     Subgroup.topEquiv_apply]
-  exact unitsEquivOfSubsingleton_apply Q _
+  apply Units.ext
+  simp
 
 end CliffordAlgebra
 

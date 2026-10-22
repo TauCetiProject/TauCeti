@@ -51,8 +51,8 @@ private theorem map_evenUnitaryGroup_unitsEquivOfSubsingleton [Subsingleton V] :
   · rintro ⟨x, hx, rfl⟩
     rw [mem_rootsOfUnity]
     apply Units.ext
-    rw [unitsEquivOfSubsingleton_apply]
-    rw [pow_two, Units.val_mul, Units.val_one, Units.coe_map]
+    rw [pow_two, Units.val_mul, Units.val_one]
+    simp only [MulEquiv.coe_toMonoidHom, coe_unitsEquivOfSubsingleton_apply]
     rw [← map_mul]
     calc
       equivOfSubsingleton Q ((x : CliffordAlgebra Q) * x) =
@@ -71,11 +71,9 @@ private theorem map_evenUnitaryGroup_unitsEquivOfSubsingleton [Subsingleton V] :
     · simp [even_eq_top_of_subsingleton Q]
     · rw [reverse_eq_self_of_subsingleton Q]
       apply (equivOfSubsingleton Q).injective
-      have hx : Units.map (equivOfSubsingleton Q).toMonoidHom x = u := by
-        rw [← unitsEquivOfSubsingleton_apply]
-        exact (unitsEquivOfSubsingleton Q).apply_symm_apply u
-      have hxval : equivOfSubsingleton Q (x : CliffordAlgebra Q) = (u : K) :=
-        congrArg Units.val hx
+      have hxval : equivOfSubsingleton Q (x : CliffordAlgebra Q) = (u : K) := by
+        rw [← coe_unitsEquivOfSubsingleton_apply]
+        exact congrArg Units.val ((unitsEquivOfSubsingleton Q).apply_symm_apply u)
       rw [map_mul, map_one, hxval]
       have hu' : u ^ 2 = 1 := (mem_rootsOfUnity 2 u).mp hu
       simpa only [pow_two, Units.val_mul, Units.val_one] using congrArg Units.val hu'
@@ -95,8 +93,11 @@ theorem coe_evenUnitaryGroupEquivRootsOfUnityOfSubsingleton_apply [Subsingleton 
     (x : evenUnitaryGroup Q) :
     ((evenUnitaryGroupEquivRootsOfUnityOfSubsingleton Q x : rootsOfUnity 2 K) : Kˣ) =
       Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) := by
-  simp only [evenUnitaryGroupEquivRootsOfUnityOfSubsingleton, MulEquiv.trans_apply]
-  exact unitsEquivOfSubsingleton_apply Q _
+  apply Units.ext
+  change ((unitsEquivOfSubsingleton Q (x : (CliffordAlgebra Q)ˣ) : Kˣ) : K) =
+    (Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) : K)
+  rw [coe_unitsEquivOfSubsingleton_apply, Units.coe_map]
+  rfl
 
 /-- In dimension zero and characteristic not two, the even unitary group has two elements. -/
 theorem card_evenUnitaryGroup_of_subsingleton [Subsingleton V] [IsDomain K]
