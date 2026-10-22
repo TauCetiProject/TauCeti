@@ -28,14 +28,14 @@ variable [NonUnitalSeminormedRing R] [NormedSpace 𝕜 R]
 
 /-- The underlying linear map of bounded left multiplication is algebraic left multiplication. -/
 @[simp]
-theorem toLinearMap_mul_apply (x : R) :
+theorem toLinearMap_mul_eq_mulLeft (x : R) :
     (mul 𝕜 R x).toLinearMap = LinearMap.mulLeft 𝕜 x := by
   ext y
   simp
 
 /-- The underlying linear map of bounded right multiplication is algebraic right multiplication. -/
 @[simp]
-theorem toLinearMap_flip_mul_apply (x : R) :
+theorem toLinearMap_flip_mul_eq_mulRight (x : R) :
     ((mul 𝕜 R).flip x).toLinearMap = LinearMap.mulRight 𝕜 x := by
   ext y
   simp
@@ -53,7 +53,7 @@ variable [SeminormedRing R] [NormedSpace 𝕜 R]
 theorem mul_pow_apply (x y : R) (n : ℕ) :
     ((mul 𝕜 R x) ^ n) y = x ^ n * y := by
   -- Transport the linear-map power identity through the explicit bundling boundary.
-  rw [← coe_coe, toLinearMap_pow, toLinearMap_mul_apply,
+  rw [← coe_coe, toLinearMap_pow, toLinearMap_mul_eq_mulLeft,
     LinearMap.pow_mulLeft, LinearMap.mulLeft_apply]
 
 /-- A power of bounded right multiplication acts by the corresponding algebra power. -/
@@ -61,7 +61,7 @@ theorem mul_pow_apply (x y : R) (n : ℕ) :
 theorem flip_mul_pow_apply (x y : R) (n : ℕ) :
     (((mul 𝕜 R).flip x) ^ n) y = y * x ^ n := by
   -- Transport the linear-map power identity through the explicit bundling boundary.
-  rw [← coe_coe, toLinearMap_pow, toLinearMap_flip_mul_apply,
+  rw [← coe_coe, toLinearMap_pow, toLinearMap_flip_mul_eq_mulRight,
     LinearMap.pow_mulRight, LinearMap.mulRight_apply]
 
 end Unital
