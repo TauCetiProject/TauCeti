@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.NodeLocalRing
 public import TauCeti.Topology.Category.TopCat.Quotient
 import Mathlib.Algebra.Category.Ring.FilteredColimits
 import Mathlib.Topology.Sheaves.CommRingCat
-import TauCeti.Topology.Constructions.Basic
 
 /-!
 # Holomorphic functions on normalization quotients
@@ -272,17 +271,6 @@ open Topology
 
 variable {I s}
 
-/-- The image of a saturated open set of the normalization is open in the quotient. -/
-private def saturatedOpen (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V) :
-    Opens (Quotient s) :=
-  ⟨Quotient.mk s '' V, Setoid.isOpen_image_quotient_mk s V.isOpen hV⟩
-
-/-- The normalization points over the image of a saturated open set are the points of that set. -/
-private theorem mem_map_saturatedOpen (V : Opens X) (hV : ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V)
-    {w : X} : w ∈ (Opens.map (TopCat.quotientMk s)).obj (saturatedOpen V hV) ↔ w ∈ V := by
-  rw [Opens.mem_map, TopCat.quotientMk_apply]
-  exact ⟨fun ⟨v, hv, hvw⟩ ↦ hV hv (Quotient.exact hvw), fun hw ↦ ⟨w, hw, rfl⟩⟩
-
 /-- On `N`, a point is identified only with itself, or else both points lie in `{x, y}`. -/
 private def IsPairNhd (s : Setoid X) (x y : X) (N : Set X) : Prop :=
   ∀ w ∈ N, ∀ v, s w v → v = w ∨ ((w = x ∨ w = y) ∧ (v = x ∨ v = y))
@@ -312,13 +300,14 @@ soon as it takes equal values at the two points of the pair. -/
 private def descendSection {x y : X} {N : Set X} (hN : IsPairNhd s x y N) (V : Opens X)
     (hVN : (V : Set X) ⊆ N) (hxV : x ∈ V) (hyV : y ∈ V)
     (τ : (holomorphicStructureSheaf I X).obj.obj (op V)) (hτ : τ ⟨x, hxV⟩ = τ ⟨y, hyV⟩) :
-    (quotientSheaf I s).obj.obj (op (saturatedOpen V (saturated_of_isPairNhd hN hVN hxV hyV))) :=
+    (quotientSheaf I s).obj.obj
+      (op (TopCat.saturatedOpen V (saturated_of_isPairNhd hN hVN hxV hyV))) :=
   (quotientSheafSectionsEquiv I s _).symm
     ⟨(holomorphicStructureSheaf I X).obj.map
-      (homOfLE fun _ hw ↦ (mem_map_saturatedOpen V _).mp hw).op τ, by
+      (homOfLE fun _ hw ↦ (TopCat.mem_map_saturatedOpen V _).mp hw).op τ, by
       intro w v hw hv hwv
       simp only [map_apply]
-      rcases hN w (hVN ((mem_map_saturatedOpen V
+      rcases hN w (hVN ((TopCat.mem_map_saturatedOpen V
         (saturated_of_isPairNhd hN hVN hxV hyV)).mp hw)) v hwv with rfl | ⟨hw' | hw', hv' | hv'⟩ <;>
         (try subst w) <;> (try subst v) <;> first | rfl | exact hτ | exact hτ.symm⟩
 
@@ -329,7 +318,7 @@ private theorem quotientStalkBranch_germ_descendSection {x y : X} {N : Set X}
     (z : Quotient s) (w : X) (hw : Quotient.mk s w = z) (hwV : w ∈ V) :
     quotientStalkBranch I s z w hw
       (ConcreteCategory.hom ((quotientSheaf I s).presheaf.germ _ z
-        (hw ▸ (mem_map_saturatedOpen V
+        (hw ▸ (TopCat.mem_map_saturatedOpen V
           (saturated_of_isPairNhd hN hVN hxV hyV)).mpr hwV))
         (descendSection hN V hVN hxV hyV τ hτ)) =
       (holomorphicStructureSheaf I X).presheaf.germ V w hwV τ := by
@@ -358,14 +347,15 @@ private theorem eq_zero_of_quotientStalkBranch {x y : X} (hxy : s x y) {N : Open
   have hxV : x ∈ V := Or.inl ⟨hxA, hxN⟩
   have hyV : y ∈ V := Or.inr ⟨hyB, hyN⟩
   have hV := saturated_of_isPairNhd hN hVN hxV hyV
-  have hWU : saturatedOpen V hV ≤ U := by
+  have hWU : TopCat.saturatedOpen V hV ≤ U := by
     rintro _ ⟨w, hw | hw, rfl⟩
     exacts [iA.le hw.1, iB.le hw.1]
-  have hxW : Quotient.mk s x ∈ saturatedOpen V hV := (mem_map_saturatedOpen V hV).mpr hxV
+  have hxW : Quotient.mk s x ∈ TopCat.saturatedOpen V hV :=
+    (TopCat.mem_map_saturatedOpen V hV).mpr hxV
   have h0 : (quotientSheaf I s).presheaf.map (homOfLE hWU).op σ = 0 := by
     ext w
     rw [quotientSheaf_map_val, map_zero]
-    obtain hw | hw := (mem_map_saturatedOpen V hV).mp w.2
+    obtain hw | hw := (TopCat.mem_map_saturatedOpen V hV).mp w.2
     · simpa using congrArg (fun t ↦ t ⟨w, hw.1⟩) hA
     · simpa using congrArg (fun t ↦ t ⟨w, hw.1⟩) hB
   rw [← TopCat.Presheaf.germ_res_apply _ (homOfLE hWU) _ hxW, h0, map_zero]
