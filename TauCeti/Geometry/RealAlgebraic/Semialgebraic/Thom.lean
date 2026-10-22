@@ -29,9 +29,12 @@ the root family specializes to zero form a separate stratum, on which every quer
 
 Applying the Ben-Or–Kozen–Reif sign-moment inverse to the products of consecutive derivatives gives
 a uniform coefficient-sign description of each realized Thom encoding, of its position in the order
-of distinct roots, and of the comparison (`=`, `<`, `>`) between a polynomial threshold `T(x)` and
-the root with a prescribed Thom encoding or a prescribed root index. In cylinder coordinates over
-`R ^ n`, this describes the regions strictly below and strictly above the `i`-th distinct root.
+of distinct roots, and of the strict comparisons (`<`, `>`) between a polynomial threshold `T(x)`
+and the root with a prescribed Thom encoding or a prescribed root index. Equality with a
+Thom-encoded root follows directly from polynomial sign conditions. Equality with a prescribed
+root index is given by `TauCeti.isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_eq` in
+`TauCeti.Geometry.RealAlgebraic.Semialgebraic.RootCount`. In cylinder coordinates over `R ^ n`,
+this file describes the regions strictly below and strictly above the `i`-th distinct root.
 
 ## Main declarations
 
@@ -93,15 +96,6 @@ private theorem tarskiQuery_map_eval_eq_integralNormalization {P : (MvPolynomial
   rw [← integralNormalization_map _ _ ha, hmap,
     tarskiQuery_integralNormalization hx fun z _ => ?_]
   rw [hlc, eval_map, sign_eval₂_C_pow_mul_scaleRoots _ _ ha, eval_map]
-
-omit [IsStrictOrderedRing R] in
-/-- Specializing an iterated derivative and taking its sign gives the derivative sign of the
-specialized polynomial. -/
-private theorem sign_eval_map_iterate_derivative (P : (MvPolynomial σ R)[X]) (x : σ → R)
-    (r : R) (k : ℕ) :
-    SignType.sign (((derivative^[k] P).map (MvPolynomial.eval x)).eval r) =
-      derivativeSign (P.map (MvPolynomial.eval x)) r k := by
-  rw [derivativeSign_def, iterate_derivative_map]
 
 variable [IsRealClosed R]
 
@@ -248,15 +242,13 @@ private theorem fullInverse_mulVec_tarskiQuery_derivative_eq_one_iff
           SignType.sign (((derivative^[j.val + 1] P).map
             (MvPolynomial.eval x)).eval r) = τ j := by
   classical
-  simp only [sign_eval_map_iterate_derivative]
   by_cases hp : P.map (MvPolynomial.eval x) = 0
-  · simp [hp, ← Pi.zero_def, Matrix.mulVec_zero]
-  · simp only [Polynomial.map_prod, Polynomial.map_pow, ← iterate_derivative_map,
-      fullInverse_mulVec_iterate_derivative_of_natDegree_le _
-        RealClosure.polynomialRolle_of_isRealClosed hp natDegree_map_le,
-      Multiset.mem_toFinset, Polynomial.mem_roots hp, IsRoot.def]
-    simp only [iterate_derivative_map, sign_eval_map_iterate_derivative]
-    simp
+  · simp [sign_eval_map_iterate_derivative, hp, ← Pi.zero_def, Matrix.mulVec_zero]
+  · simp only [Polynomial.map_prod, Polynomial.map_pow, ← iterate_derivative_map]
+    rw [fullInverse_mulVec_iterate_derivative_of_natDegree_le _
+      RealClosure.polynomialRolle_of_isRealClosed hp natDegree_map_le]
+    simp only [Multiset.mem_toFinset, Polynomial.mem_roots hp, IsRoot.def,
+      ite_eq_left_iff, zero_ne_one, imp_false, not_not]
 
 /-- **Uniform Thom-encoding realization.** For a prescribed sign word on the derivatives of orders
 `1, …, P.natDegree`, the parameters at which the specialized polynomial has a root with those

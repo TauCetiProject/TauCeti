@@ -238,9 +238,8 @@ theorem lt_iff_thomLT_derivativeSign_of_natDegree_le {p : R[X]} {d : ℕ} (hd : 
     by_contra h
     exact hi (derivativeSign_const p a b (by omega))
   have htail (k : ℕ) (hk : i.val < k) : derivativeSign p a k = derivativeSign p b k := by
-    by_cases hkp : k ≤ d
-    · exact ht ⟨k, by omega⟩ hk
-    · simp [derivativeSign_eq_zero p _ (by omega : p.natDegree < k)]
+    exact TauCeti.derivativeSign_eq_of_forall_le (n := i.val + 1) hd
+      (fun j hj hjd => ht ⟨j, by omega⟩ hj) hk
   rw [lt_iff_derivativeSign p hrolle hi htail]
   exact ⟨fun h => ⟨hdeg, h⟩, fun ⟨_, h⟩ => h⟩
 
