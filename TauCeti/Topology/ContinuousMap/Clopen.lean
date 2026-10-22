@@ -13,8 +13,9 @@ public import TauCeti.Topology.Sets.Clopens
 # Extension by zero from a clopen subset
 
 A continuous function on a clopen subset extends continuously to the ambient space by taking the
-value zero on the complementary clopen. This file packages that operation as a continuous linear
-map and records its pointwise values, its exact norm, and its interaction with restriction.
+value zero on the complementary clopen. For a compact space and a seminormed module over a
+semiring whose fixed scalars act continuously, this file packages that operation as a continuous
+linear map and records its pointwise values, its exact norm, and its interaction with restriction.
 
 The construction is the test-function operator used to restrict an abstract measure to a clopen
 subset.
@@ -30,7 +31,11 @@ open Set TopologicalSpace ContinuousMap
 
 namespace ContinuousMap
 
-variable {X E : Type*} [TopologicalSpace X] [CompactSpace X] [SeminormedAddCommGroup E]
+variable {X E : Type*} [TopologicalSpace X]
+
+section Zero
+
+variable [TopologicalSpace E] [Zero E]
 
 private noncomputable def zeroExtendClopenFn (s : Clopens X) (f : C(s, E)) : C(X, E) := by
   let S : Bool → Set X
@@ -43,35 +48,30 @@ private noncomputable def zeroExtendClopenFn (s : Clopens X) (f : C(s, E)) : C(X
   · intro i j x hxi hxj
     cases i <;> cases j
     · rfl
-    · exfalso
-      have hxs : x ∈ s := by simpa [S] using hxi
-      have hxns : x ∉ s := by simpa [S] using hxj
-      exact hxns hxs
-    · exfalso
-      have hxns : x ∉ s := by simpa [S] using hxi
-      have hxs : x ∈ s := by simpa [S] using hxj
-      exact hxns hxs
+    · exact (hxj hxi).elim
+    · exact (hxi hxj).elim
     · rfl
   · intro x
     by_cases hx : x ∈ s
     · exact ⟨false, by simpa [S] using s.isOpen.mem_nhds hx⟩
     · exact ⟨true, by simpa [S] using s.isClosed.isOpen_compl.mem_nhds hx⟩
 
-omit [CompactSpace X] in
 private theorem zeroExtendClopenFn_apply_mem (s : Clopens X) (f : C(s, E))
     {x : X} (hx : x ∈ s) : zeroExtendClopenFn s f x = f ⟨x, hx⟩ := by
   rw [zeroExtendClopenFn]
   exact liftCover_coe (i := false) ⟨x, hx⟩
 
-omit [CompactSpace X] in
 private theorem zeroExtendClopenFn_apply_not_mem (s : Clopens X) (f : C(s, E))
     {x : X} (hx : x ∉ s) : zeroExtendClopenFn s f x = 0 := by
   rw [zeroExtendClopenFn]
   exact liftCover_coe (i := true) ⟨x, hx⟩
 
-section Module
+end Zero
 
-variable (R : Type*) [Ring R] [Module R E] [ContinuousConstSMul R E]
+section LinearMap
+
+variable (R : Type*) [Semiring R] [TopologicalSpace E] [AddCommMonoid E] [ContinuousAdd E]
+  [Module R E] [ContinuousConstSMul R E]
 
 private noncomputable def zeroExtendClopenLinearMap (s : Clopens X) :
     C(s, E) →ₗ[R] C(X, E) where
@@ -87,20 +87,38 @@ private noncomputable def zeroExtendClopenLinearMap (s : Clopens X) :
     · simp only [zeroExtendClopenFn_apply_mem s _ hx, ContinuousMap.smul_apply, RingHom.id_apply]
     · simp only [zeroExtendClopenFn_apply_not_mem s _ hx, ContinuousMap.smul_apply, smul_zero]
 
+end LinearMap
+
+section Norm
+
+variable [CompactSpace X] [SeminormedAddCommGroup E]
+
+private theorem norm_zeroExtendClopenFn (s : Clopens X) (f : C(s, E)) :
+    ‖zeroExtendClopenFn s f‖ = ‖f‖ := by
+  apply le_antisymm
+  · refine (norm_le _ (norm_nonneg f)).2 fun x ↦ ?_
+    by_cases hx : x ∈ s
+    · rw [zeroExtendClopenFn_apply_mem s f hx]
+      exact norm_coe_le_norm f ⟨x, hx⟩
+    · rw [zeroExtendClopenFn_apply_not_mem s f hx, norm_zero]
+      exact norm_nonneg f
+  · refine (norm_le _ (norm_nonneg (zeroExtendClopenFn s f))).2 fun x ↦ ?_
+    rw [← zeroExtendClopenFn_apply_mem s f x.2]
+    exact norm_coe_le_norm (zeroExtendClopenFn s f) x
+
+end Norm
+
+section Module
+
+variable [CompactSpace X] [SeminormedAddCommGroup E]
+  (R : Type*) [Semiring R] [Module R E] [ContinuousConstSMul R E]
+
 /-- Extend a continuous function on a clopen subset by zero on its complement. -/
 noncomputable def zeroExtendClopen (s : Clopens X) : C(s, E) →L[R] C(X, E) :=
-  (zeroExtendClopenLinearMap R s).mkContinuous 1 fun f ↦ by
-    rw [one_mul]
-    refine (norm_le _ (norm_nonneg f)).2 fun x ↦ ?_
-    by_cases hx : x ∈ s
-    · have hval : ((zeroExtendClopenLinearMap R s) f) x = f ⟨x, hx⟩ :=
-        zeroExtendClopenFn_apply_mem s f hx
-      rw [hval]
-      exact norm_coe_le_norm f ⟨x, hx⟩
-    · have hval : ((zeroExtendClopenLinearMap R s) f) x = 0 :=
-        zeroExtendClopenFn_apply_not_mem s f hx
-      rw [hval, norm_zero]
-      exact norm_nonneg f
+  { zeroExtendClopenLinearMap R s with
+    cont := AddMonoidHomClass.continuous_of_bound (zeroExtendClopenLinearMap R s) 1 fun f ↦ by
+      simp only [zeroExtendClopenLinearMap, LinearMap.coe_mk, AddHom.coe_mk,
+        norm_zeroExtendClopenFn, one_mul, le_refl] }
 
 variable {R}
 
@@ -119,17 +137,8 @@ theorem zeroExtendClopen_apply_not_mem (s : Clopens X) (f : C(s, E))
 /-- Extension by zero preserves the supremum norm, including for the empty clopen. -/
 @[simp]
 theorem norm_zeroExtendClopen (s : Clopens X) (f : C(s, E)) :
-    ‖zeroExtendClopen R s f‖ = ‖f‖ := by
-  apply le_antisymm
-  · exact (norm_le _ (norm_nonneg f)).2 fun x ↦ by
-      by_cases hx : x ∈ s
-      · rw [zeroExtendClopen_apply_mem s f hx]
-        exact norm_coe_le_norm f ⟨x, hx⟩
-      · rw [zeroExtendClopen_apply_not_mem s f hx, norm_zero]
-        exact norm_nonneg f
-  · exact (norm_le _ (norm_nonneg (zeroExtendClopen R s f))).2 fun x ↦ by
-      rw [← zeroExtendClopen_apply_mem (R := R) s f x.2]
-      exact norm_coe_le_norm (zeroExtendClopen R s f) x
+    ‖zeroExtendClopen R s f‖ = ‖f‖ :=
+  norm_zeroExtendClopenFn s f
 
 /-- Restricting an extension by zero recovers the original function. -/
 @[simp]
@@ -158,7 +167,7 @@ end Module
 
 section Ring
 
-variable {R : Type*} [SeminormedRing R]
+variable [CompactSpace X] {R : Type*} [SeminormedRing R]
 
 /-- Extending a restricted function by zero is multiplication by the clopen characteristic
 function. -/
@@ -168,13 +177,8 @@ theorem zeroExtendClopen_restrict (s : Clopens X) (f : C(X, R)) :
       (LocallyConstant.charFn R s.isClopen : C(X, R)) * f := by
   ext x
   by_cases hx : x ∈ s
-  · have hchar : ((LocallyConstant.charFn R s.isClopen : C(X, R)) x) = 1 := by
-      simpa [hx] using congrFun (LocallyConstant.coe_charFn R s.isClopen) x
-    rw [zeroExtendClopen_apply_mem s _ hx, mul_apply, hchar]
-    simpa only [one_mul] using restrict_apply_mk f (s : Set X) x hx
-  · have hchar : ((LocallyConstant.charFn R s.isClopen : C(X, R)) x) = 0 := by
-      simpa [hx] using congrFun (LocallyConstant.coe_charFn R s.isClopen) x
-    rw [zeroExtendClopen_apply_not_mem s _ hx, mul_apply, hchar, zero_mul]
+  · simpa [hx, LocallyConstant.coe_charFn] using restrict_apply_mk f (s : Set X) x hx
+  · simp [hx, LocallyConstant.coe_charFn]
 
 end Ring
 

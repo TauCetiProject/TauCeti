@@ -29,7 +29,8 @@ nondegenerate over a field extension. It also identifies the base change of a di
 the diagonal form obtained by mapping its coefficients into the target algebra, extends
 orthogonal and special orthogonal automorphisms so a quadratic space's rational symmetries act on
 each scalar extension, and shows that extending scalars carries the reflection in a vector `v` to
-the reflection in `1 ⊗ₜ v`.
+the reflection in `1 ⊗ₜ v`, so that a reflection factorization `τ_{v₀} ⋯ τ_{vₙ₋₁}` extends to the
+factorization `τ_{1 ⊗ v₀} ⋯ τ_{1 ⊗ vₙ₋₁}`.
 
 These results complement Mathlib's construction `QuadraticForm.baseChange` and its pure-tensor
 evaluation theorem.  They allow localizations of a quadratic space to inherit maps, injective
@@ -222,6 +223,12 @@ theorem QuadraticForm.exists_isUnit_baseChange_apply (A : Type uA) [CommRing A] 
 
 namespace QuadraticForm
 
+/-- Extending scalars evaluates a quadratic form at `1 ⊗ₜ v` by applying the algebra map to
+its value at `v`. -/
+theorem baseChange_one_tmul (Q : QuadraticForm R M) (v : M) :
+    Q.baseChange A (1 ⊗ₜ v) = algebraMap R A (Q v) := by
+  rw [baseChange_tmul, mul_one, Algebra.smul_def, mul_one]
+
 /-- Polarization after base change, evaluated on pure tensors. -/
 @[simp]
 theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M) :
@@ -356,6 +363,12 @@ theorem not_anisotropic_baseChange [FaithfulSMul R A] [Module.Flat R M]
   apply hx
   apply Module.Flat.tensorProduct_mk_injective R M A
   simpa using hzero
+
+/-- A quadratic form taking a unit value still takes a unit value after base change. -/
+theorem exists_isUnit_baseChange {Q : _root_.QuadraticForm R M} (hQ : ∃ v, IsUnit (Q v)) :
+    ∃ v, IsUnit (Q.baseChange A v) :=
+  hQ.imp' (1 ⊗ₜ ·) fun _ hv ↦ by
+    simpa [baseChange_tmul, Algebra.smul_def] using hv.map (algebraMap R A)
 
 end QuadraticForm
 
@@ -588,6 +601,13 @@ theorem specialOrthogonalGroupBaseChange_injective [FaithfulSMul R A] [Module.Fl
   apply Subtype.ext
   exact congrArg (fun x : orthogonalGroup Q => (x : M ≃ₗ[R] M)) hO
 
+/-- If `Q v` is invertible, then so is the value `algebraMap R A (Q v)` of `Q.baseChange A` at
+`1 ⊗ₜ v`. -/
+instance invertibleBaseChangeOneTmul (Q : _root_.QuadraticForm R M) (v : M) [Invertible (Q v)] :
+    Invertible (Q.baseChange A (1 ⊗ₜ v)) :=
+  (Invertible.map (algebraMap R A) (Q v)).copy _ (by
+    rw [Q.baseChange_one_tmul])
+
 /-- Extending scalars carries the reflection in `v` to the reflection in `1 ⊗ₜ v`: the base change
 of `τ_v` is `τ_{1 ⊗ v}` for `Q.baseChange A`. -/
 theorem reflection_baseChange (Q : _root_.QuadraticForm R M) (v : M) [Invertible (Q v)]
@@ -595,7 +615,7 @@ theorem reflection_baseChange (Q : _root_.QuadraticForm R M) (v : M) [Invertible
     reflection (Q.baseChange A) (1 ⊗ₜ v) = LinearEquiv.baseChange R A M M (reflection Q v) := by
   have hinv : ⅟(Q.baseChange A (1 ⊗ₜ v)) = algebraMap R A ⅟(Q v) :=
     invOf_eq_left_inv (by
-      rw [_root_.QuadraticForm.baseChange_tmul, mul_one, Algebra.smul_def, mul_one, ← map_mul,
+      rw [Q.baseChange_one_tmul, ← map_mul,
         invOf_mul_self, map_one])
   ext x
   induction x using TensorProduct.inductionOn with
@@ -604,6 +624,28 @@ theorem reflection_baseChange (Q : _root_.QuadraticForm R M) (v : M) [Invertible
       _root_.QuadraticForm.polar_baseChange_tmul]
     simp [TensorProduct.tmul_sub, TensorProduct.smul_tmul', Algebra.smul_def, mul_assoc]
   | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- Extending scalars carries the orthogonal reflection in `v` to the orthogonal reflection in
+`1 ⊗ₜ v`, as elements of the orthogonal group of `Q.baseChange A`. -/
+@[simp]
+theorem orthogonalGroupBaseChange_reflectionOrthogonal (Q : _root_.QuadraticForm R M) (v : M)
+    [Invertible (Q v)] :
+    orthogonalGroupBaseChange (A := A) Q (reflectionOrthogonal Q v) =
+      reflectionOrthogonal (Q.baseChange A) (1 ⊗ₜ v) :=
+  Subtype.ext <| by
+    rw [coe_orthogonalGroupBaseChange, coe_reflectionOrthogonal, coe_reflectionOrthogonal,
+      reflection_baseChange]
+
+/-- **Reflection factorizations extend scalars.** If `g = τ_{v₀} ⋯ τ_{vₙ₋₁}` is a product of
+reflections of `Q`, then its scalar extension is the product of the reflections of
+`Q.baseChange A` in the vectors `1 ⊗ₜ vᵢ`, in the same order. Applied to the completions of a
+number field, a global reflection factorization localizes to one at every place. -/
+theorem orthogonalGroupBaseChange_prod_ofFn_reflectionOrthogonal (Q : _root_.QuadraticForm R M)
+    {n : ℕ} (v : Fin n → M) [∀ i, Invertible (Q (v i))] :
+    orthogonalGroupBaseChange (A := A) Q (List.ofFn fun i ↦ reflectionOrthogonal Q (v i)).prod =
+      (List.ofFn fun i ↦ reflectionOrthogonal (Q.baseChange A) (1 ⊗ₜ v i)).prod := by
+  simp only [map_list_prod, List.map_ofFn, Function.comp_def,
+    orthogonalGroupBaseChange_reflectionOrthogonal]
 
 end QuadraticMap
 
@@ -741,7 +783,7 @@ theorem Nondegenerate.of_baseChange [Invertible (2 : K)]
   apply QuadraticMap.nondegenerate_associated_iff.mp
   have h := QuadraticMap.nondegenerate_associated_iff.mpr hQ
   rw [_root_.QuadraticForm.associated_baseChange] at h
-  exact TauCeti.nondegenerate_of_nondegenerate_baseChange L
+  exact LinearMap.BilinForm.nondegenerate_of_nondegenerate_baseChange L
     (QuadraticMap.associated Q) (Module.Free.chooseBasis K V) h
 
 /-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after extending its
@@ -754,7 +796,7 @@ theorem Nondegenerate.baseChange [Invertible (2 : K)]
   let b := Module.Free.chooseBasis K V
   rw [← QuadraticMap.nondegenerate_associated_iff]
   rw [_root_.QuadraticForm.associated_baseChange]
-  exact (TauCeti.nondegenerate_baseChange_iff (QuadraticMap.associated Q) b).2
+  exact (LinearMap.BilinForm.nondegenerate_baseChange_iff (QuadraticMap.associated Q) b).2
     (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
 
 /-- On a space of dimension at most one, a quadratic form is anisotropic exactly when its

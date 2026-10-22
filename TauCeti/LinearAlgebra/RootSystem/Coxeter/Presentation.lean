@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Coxeter.Bruhat
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
 public import TauCeti.LinearAlgebra.RootSystem.BraidRelation
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit
 import all TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 
 /-!
@@ -52,6 +54,10 @@ its simple root is an inversion of the word, and the reflection in it deletes a 
   inversions.
 * `TauCeti.isReduced_weylCoxeterSystem_iff`: a word is reduced exactly when the element it spells
   has as many inversions as the word has letters.
+* `RootPairing.weylCoxeterSystem_isReflection_ofIdx`: the reflection in every root, simple or not,
+  is a reflection of the Coxeter system.
+* `RootPairing.bruhatStep_ofIdx_mul_iff_mem_inversions`: for a positive root `β`, `s_β w → w` is an
+  edge of the Bruhat graph exactly when `β` is an inversion of `w⁻¹`.
 
 ## References
 
@@ -187,5 +193,28 @@ inversions as the word has letters. -/
 theorem isReduced_weylCoxeterSystem_iff (l : List b.support) :
     (weylCoxeterSystem P b).IsReduced l ↔ (inversions P b (wordProd P b l)).ncard = l.length := by
   rw [CoxeterSystem.IsReduced, weylCoxeterSystem_wordProd, length_weylCoxeterSystem_eq]
+
+/-- **Root reflections are Coxeter reflections.** The reflection in any root, simple or not, is a
+conjugate of a simple reflection of the Coxeter system of the Weyl group, because every root is
+Weyl-conjugate to a simple root. -/
+theorem _root_.RootPairing.weylCoxeterSystem_isReflection_ofIdx (i : ι) :
+    (weylCoxeterSystem P b).IsReflection (RootPairing.weylGroup.ofIdx P i) := by
+  obtain ⟨j, hj, w, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b i
+  refine ⟨w, ⟨j, hj⟩, ?_⟩
+  rw [weylCoxeterSystem_simple, RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj]
+
+/-- **Bruhat steps by root reflections.** For a positive root `β`, reflecting in `β` moves `w` one
+step down the Bruhat graph, `s_β w → w`, exactly when `β` is an inversion of `w⁻¹`. -/
+theorem _root_.RootPairing.bruhatStep_ofIdx_mul_iff_mem_inversions (w : P.weylGroup) {β : ι}
+    (hβ : b.IsPos β) :
+    (weylCoxeterSystem P b).BruhatStep (RootPairing.weylGroup.ofIdx P β * w) w ↔
+      β ∈ inversions P b w⁻¹ := by
+  rw [← ncard_inversions_ofIdx_mul_lt_iff P b w hβ, ← length_weylCoxeterSystem_eq,
+    ← length_weylCoxeterSystem_eq]
+  refine ⟨CoxeterSystem.BruhatStep.length_lt, fun hlt ↦ ?_⟩
+  have hstep := (weylCoxeterSystem P b).bruhatStep_mul_left
+    (P.weylCoxeterSystem_isReflection_ofIdx b β) (u := RootPairing.weylGroup.ofIdx P β * w)
+    (by rwa [← mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, one_mul])
+  rwa [← mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, one_mul] at hstep
 
 end TauCeti

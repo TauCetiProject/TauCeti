@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # The cohomology of a graded piece of the index filtration
@@ -87,6 +86,55 @@ theorem shiftedModuleComplexXEquiv_d (p n : ℤ)
     (eqToIso (gradedCochainComplexLift_X.{uR, uM, uP} (hdeg := hM.isHomogeneous.reindex p)
       (hsq := fun _ x ↦ hM.sq_zero x) n)).hom_inv_id_apply x] at key
   exact key
+
+omit [SMulCommClass R Aᵐᵒᵖ M] in
+/-- The value of an element of degree `n` of `shiftedModuleComplex hM p` lies in `ℳ j` for every
+`j = n + p`. -/
+theorem shiftedModuleComplexXEquiv_mem {p n j : ℤ} (hj : j = n + p)
+    (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n) :
+    (shiftedModuleComplexXEquiv hM p n α : M) ∈ ℳ j :=
+  hj ▸ (shiftedModuleComplexXEquiv hM p n α).2
+
+omit [SMulCommClass R Aᵐᵒᵖ M] in
+/-- Transport along an equality of degrees does not change the underlying element of `ℳ`. -/
+theorem shiftedModuleComplexXEquiv_XIsoOfEq_hom (p i j : ℤ) (hij : i = j)
+    (z : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X i) :
+    (shiftedModuleComplexXEquiv hM p j
+        (((shiftedModuleComplex.{uR, uA, uM, uP} hM p).XIsoOfEq hij).hom.hom z) : M) =
+      shiftedModuleComplexXEquiv hM p i z := by
+  subst hij
+  rfl
+
+omit [SMulCommClass R Aᵐᵒᵖ M] in
+/-- A cycle of `shiftedModuleComplex hM p` is a cycle of `ℳ`. -/
+theorem shiftedModuleComplexXEquiv_d_eq_zero_iff (p n : ℤ)
+    (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n) :
+    ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).d n (n + 1)).hom α = 0 ↔
+      dM (shiftedModuleComplexXEquiv hM p n α) = 0 := by
+  rw [← shiftedModuleComplexXEquiv_d, ← ZeroMemClass.coe_zero (ℳ (n + 1 + p)),
+    ← map_zero (shiftedModuleComplexXEquiv hM p (n + 1)), Subtype.coe_inj,
+    (shiftedModuleComplexXEquiv hM p (n + 1)).injective.eq_iff]
+
+omit [SMulCommClass R Aᵐᵒᵖ M] in
+/-- The class of an element of `shiftedModuleComplex hM p` whose value is `dM` of a value of the
+previous degree vanishes. -/
+theorem shiftedModuleComplex_homologyπ_eq_zero (p n : ℤ)
+    (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n)
+    (hα : ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).d n (n + 1)).hom α = 0)
+    (b : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X (n - 1))
+    (hb : (shiftedModuleComplexXEquiv hM p n α : M) = dM (shiftedModuleComplexXEquiv hM p _ b)) :
+    ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).homologyπ n).hom
+      ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCatCyclesMk α (n + 1) (by simp) hα) =
+      0 := by
+  refine ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_homologyπ_eq_zero_iff (n := n)
+    (m := n - 1) (by simp) _).2 ⟨b, ?_⟩
+  refine (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_iCycles_injective n ?_
+  rw [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i,
+    HomologicalComplex.iCycles_moduleCatCyclesMk]
+  refine (shiftedModuleComplexXEquiv hM p n).injective (Subtype.ext ?_)
+  have hd := shiftedModuleComplexXEquiv_d hM p (n - 1) b
+  rw [sub_add_cancel] at hd
+  rw [hd, hb]
 
 variable (ind : P → ℤ) (p : ℤ)
 

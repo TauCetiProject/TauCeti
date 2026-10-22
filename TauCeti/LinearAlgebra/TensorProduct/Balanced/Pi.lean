@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
-public import Mathlib.Algebra.Algebra.Opposite
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.LinearAlgebra.Pi
 
@@ -17,6 +16,10 @@ Tensoring a right module `M` with the free left module `P → A` on a finite set
 module `P → M` of `M`-valued functions on `P`: the identification sends `m ⊗ g` to
 `fun y ↦ m · g y`, and its inverse sends `f` to `∑ x, f x ⊗ e_x` with `e_x` the coordinate
 functions.  For `P` a point this is the unit identification `TauCeti.BalancedTensorProduct.rid`.
+
+The ground-ring action on `A` only needs to be compatible with its right action on `M`:
+the two actions on `M` commute and form a scalar tower. An algebra structure on `A` is not
+required.
 
 ## Main definitions
 
@@ -35,12 +38,15 @@ namespace TauCeti.BalancedTensorProduct
 
 open MulOpposite
 
-variable (k A : Type*) [CommRing k] [Ring A] [Algebra k A]
-  (M : Type*) [AddCommGroup M] [Module k M] [Module Aᵐᵒᵖ M] [IsScalarTower k Aᵐᵒᵖ M]
+section Bilinear
+
+variable (k A : Type*) [CommSemiring k] [Semiring A] [Module k A]
+  (M : Type*) [AddCommMonoid M] [Module k M] [Module Aᵐᵒᵖ M]
+  [SMulCommClass k Aᵐᵒᵖ M] [IsScalarTower k Aᵐᵒᵖ M]
   (P : Type*)
 
 /-- The bilinear map `(m, g) ↦ fun y ↦ m · g y` underlying `piRight`. -/
-private noncomputable def piRightBilinear : M →ₗ[k] (P → A) →ₗ[k] (P → M) :=
+private def piRightBilinear : M →ₗ[k] (P → A) →ₗ[k] (P → M) :=
   LinearMap.mk₂ k (fun m g y ↦ op (g y) • m)
     (fun m m' g ↦ by ext y; exact smul_add _ _ _)
     (fun c m g ↦ by ext y; exact (smul_comm _ _ _).symm)
@@ -56,18 +62,23 @@ private theorem piRightBilinear_balanced (a : A) (m : M) (g : P → A) :
   ext y
   simp only [piRightBilinear_apply, Pi.smul_apply, smul_eq_mul, op_mul, mul_smul]
 
-variable [Fintype P]
+end Bilinear
+
+variable (k A : Type*) [CommRing k] [Ring A] [Module k A]
+  (M : Type*) [AddCommGroup M] [Module k M] [Module Aᵐᵒᵖ M]
+  (P : Type*) [Fintype P]
 
 /-- The inverse of `piRight`: `f ↦ ∑ x, f x ⊗ e_x`, with `e_x` the coordinate functions. -/
-private noncomputable def piRightInv [DecidableEq P] :
+private def piRightInv [DecidableEq P] :
     (P → M) →ₗ[k] BalancedTensorProduct k A M (P → A) :=
   ∑ x : P, ((mk k A).flip (Pi.single x 1)).comp (LinearMap.proj x)
 
-omit [IsScalarTower k Aᵐᵒᵖ M] in
 private theorem piRightInv_apply [DecidableEq P] (f : P → M) :
     piRightInv k A M P f = ∑ x : P, tmul k A (f x) (Pi.single x 1) := by
   simp only [piRightInv, LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.proj_apply,
     LinearMap.flip_apply, mk_apply]
+
+variable [SMulCommClass k Aᵐᵒᵖ M] [IsScalarTower k Aᵐᵒᵖ M]
 
 open scoped Classical in
 /-- **Tensoring a right module with a finite free left module gives the functions into it**:

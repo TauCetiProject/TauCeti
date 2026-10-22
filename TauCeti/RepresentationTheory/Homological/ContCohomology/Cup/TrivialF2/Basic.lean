@@ -36,7 +36,8 @@ continuous cohomology are formed from. It is the `ℤ`-coefficient counterpart o
   `TauCeti.trivialF2TopPairing_bil_assoc`: the lift of `1` is a two-sided unit, and the
   multiplication is associative.
 * `TauCeti.trivialF2TopPairing_cup_comm`: the mod-two cup product is commutative in every
-  bidegree, without the Koszul sign.
+  bidegree, without the Koszul sign; `TauCeti.trivialF2TopPairing_cup_one_one_comm` is the
+  degree-one case.
 * `TauCeti.trivialF2Map_cup`: pullback preserves cup products with trivial `𝔽₂` coefficients.
 * `TauCeti.trivialF2TopPairing_cup_one_one_explicitH1`: on explicit cocycles, the cup product of
   two classes of `H¹(G, 𝔽₂)` is the class of the product cocycle `(g, h) ↦ a g * b h`;
@@ -148,6 +149,12 @@ theorem trivialF2TopPairing_cup_comm (m n : ℕ) (x : cohomF2 G m) (y : cohomF2 
   · exact one_zsmul _
   · rw [neg_one_zsmul]
     exact ZModModule.neg_eq_self _
+
+/-- **The mod-two cup product of two degree-one classes is symmetric**: `x ∪ y = y ∪ x`. -/
+theorem trivialF2TopPairing_cup_one_one_comm (x y : cohomF2 G 1) :
+    (trivialF2TopPairing G).cup 1 1 x y = (trivialF2TopPairing G).cup 1 1 y x := by
+  rw [trivialF2TopPairing_cup_comm, ContinuousCohomology.degreeCast_rfl, Iso.refl_hom,
+    ConcreteCategory.id_apply]
 
 /-- The unit class of continuous cohomology with trivial `𝔽₂` coefficients: the degree-zero class
 of the lift of `1`, a two-sided unit for the cup product along `TauCeti.trivialF2TopPairing`. -/

@@ -76,6 +76,25 @@ theorem cartier_monomial (q r m : ℕ) (hq : q ≠ 0) (hr : r < q) (a : R) :
   simp only [coeff_cartier, coeff_monomial, hn]
   split_ifs <;> simp_all [coeff_monomial]
 
+/-- At nonzero modulus, a Cartier operator sends a polynomial to a polynomial whose degree is at
+most the original degree divided by the modulus. This holds for every index `r`. -/
+theorem exists_cartier_coe_polynomial_eq (q r : ℕ) (hq : q ≠ 0) (P : Polynomial R) :
+    ∃ P' : Polynomial R, P'.natDegree ≤ P.natDegree / q ∧ cartier R q r (P : R⟦X⟧) = P' := by
+  classical
+  refine ⟨∑ n ∈ Finset.range (P.natDegree / q + 1), Polynomial.monomial n (P.coeff (q * n + r)),
+    Polynomial.natDegree_sum_le_of_forall_le _ _ fun n hn ↦
+      (Polynomial.natDegree_monomial_le _).trans (Nat.lt_succ_iff.mp (Finset.mem_range.mp hn)),
+    ?_⟩
+  ext n
+  simp only [coeff_cartier, Polynomial.coeff_coe, Polynomial.finsetSum_coeff,
+    Polynomial.coeff_monomial, Finset.sum_ite_eq', Finset.mem_range]
+  split_ifs with hn
+  · rfl
+  · refine Polynomial.coeff_eq_zero_of_natDegree_lt ?_
+    have hlt : P.natDegree / q < n := by omega
+    have := (Nat.div_lt_iff_lt_mul (Nat.pos_of_ne_zero hq)).mp hlt
+    nlinarith
+
 end Semiring
 
 section CommRing

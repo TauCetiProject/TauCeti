@@ -38,6 +38,8 @@ vertices at infinity of a polygonal domain.
 * `TauCeti.recenterInvertedCoordinate_eq_div` identifies it with inversion about the new centre.
 * `TauCeti.exists_ball_lt_norm_of_inverted_coordinate`: near a boundary zero, the nonzero values
   of the inverted coordinate correspond to points far from any given centre.
+* `TauCeti.add_inv_notMem_image_of_inverted_coordinate`: a nonzero real boundary value of the
+  inverted coordinate is not a value of the original map.
 * `TauCeti.exists_ball_recenterInvertedCoordinate` supplies all analytic properties near a
   boundary zero.
 -/
@@ -134,6 +136,20 @@ theorem exists_ball_lt_norm_of_inverted_coordinate {g : ℂ → ℂ} {q : ℂ}
   obtain ⟨r, hr, h⟩ := Metric.mem_nhdsWithin_iff.mp
     ((tendsto_norm_cobounded_atTop.comp hfar).eventually_gt_atTop R)
   exact ⟨r, hr, fun z hz hzH hgz => h ⟨hz, hzH, hgz⟩⟩
+
+/-- A nonzero real boundary value `q + g⁻¹` of an inverted coordinate `g = (f - q)⁻¹`, injective
+away from its zeros, is not a value of `f` on the upper half-plane. -/
+theorem add_inv_notMem_image_of_inverted_coordinate {f g : ℂ → ℂ} {q : ℂ}
+    (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet)
+    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0}) {z : ℂ} (hz0 : z.im = 0) (hgz : g z ≠ 0) :
+    q + (g z)⁻¹ ∉ f '' upperHalfPlaneSet := by
+  rintro ⟨y, hy, hyz⟩
+  have hgy : g y = g z := by
+    rw [hgf hy]
+    dsimp only
+    rw [hyz, add_sub_cancel_left, inv_inv]
+  have hyz' := hgi ⟨le_of_lt hy, hgy ▸ hgz⟩ ⟨hz0.ge, hgz⟩ hgy
+  exact (hyz' ▸ hy : 0 < z.im).ne' hz0
 
 /-- **A recentered coordinate near a boundary prevertex.** Suppose `g = (f - q)⁻¹` in the upper
 half-plane, is continuous on the closed upper half-plane and holomorphic and nonzero in its
