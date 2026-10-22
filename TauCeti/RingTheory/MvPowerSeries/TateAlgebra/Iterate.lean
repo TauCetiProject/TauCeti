@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
-public import TauCeti.Data.Finsupp.Option
+public import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Iteration of Gauss-normed restricted series in one variable
