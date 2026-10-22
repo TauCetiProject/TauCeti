@@ -40,45 +40,23 @@ theorem wedge_ιMulti (u : Fin k → M) (v : Fin l → M) :
   simp only [SetLike.coe_gMul, wedge, DirectSum.gMulLHom_apply_apply,
     ιMulti_apply_coe, ExteriorAlgebra.ιMulti_mul_ιMulti]
 
-/-- The wedge product commutes with applying an endomorphism to both factors. -/
-theorem wedge_map (f : M →ₗ[R] M) (x : ⋀[R]^k M) (y : ⋀[R]^l M) :
-    wedge R M k l (exteriorPower.map k f x) (exteriorPower.map l f y) =
-      exteriorPower.map (k + l) f (wedge R M k l x y) := by
-  have h : ∀ x y, wedge R M k l (exteriorPower.map k f x) (exteriorPower.map l f y) =
-      exteriorPower.map (k + l) f (wedge R M k l x y) := by
-    intro x y
-    have hx : x ∈ Submodule.span R (Set.range (ιMulti R k)) := by
-      rw [ιMulti_span]
-      trivial
-    induction hx using Submodule.span_induction with
-    | mem x hx =>
-        have hy : y ∈ Submodule.span R (Set.range (ιMulti R l)) := by
-          rw [ιMulti_span]
-          trivial
-        induction hy using Submodule.span_induction with
-        | mem y hy =>
-            rcases hy with ⟨v, rfl⟩
-            rcases hx with ⟨u, rfl⟩
-            simp only [exteriorPower.map_apply_ιMulti, wedge_ιMulti]
-            congr 1
-            funext i
-            refine Fin.addCases ?_ ?_ i <;> intro j <;>
-              simp only [Fin.append_left, Fin.append_right, Function.comp_apply]
-        | zero => rw [map_zero, map_zero, map_zero]; simp
-        | add y₁ y₂ _ _ hy₁ hy₂ =>
-            rw [map_add, map_add, map_add, hy₁, hy₂, map_add]
-        | smul a y _ hy =>
-            rw [map_smul, map_smul, map_smul, hy, map_smul]
-    | zero => simp [wedge, LinearMap.zero_apply]
-    | add x₁ x₂ _ _ hx₁ hx₂ =>
-        rw [map_add, map_add, map_add]
-        simp only [LinearMap.add_apply]
-        rw [hx₁, hx₂, map_add]
-    | smul a x _ hx =>
-        rw [map_smul, map_smul, map_smul]
-        simp only [LinearMap.smul_apply]
-        rw [hx, map_smul]
-  exact h x y
+/-- The wedge product commutes with applying a linear map to both factors. -/
+theorem wedge_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N) :
+    (wedge R N k l).compl₁₂ (exteriorPower.map k f) (exteriorPower.map l f) =
+      (wedge R M k l).compr₂ (exteriorPower.map (k + l) f) := by
+  refine exteriorPower.linearMap_ext (R := R) (M := M)
+    (N := (⋀[R]^l M) →ₗ[R] ⋀[R]^(k + l) N) (n := k) ?_
+  apply AlternatingMap.ext
+  intro u
+  apply exteriorPower.linearMap_ext
+  apply AlternatingMap.ext
+  intro v
+  simp only [LinearMap.compAlternatingMap_apply, LinearMap.compl₁₂_apply,
+    LinearMap.compr₂_apply, exteriorPower.map_apply_ιMulti, exteriorPower.wedge_ιMulti]
+  congr 1
+  funext i
+  refine Fin.addCases ?_ ?_ i <;> intro j <;>
+    simp only [Fin.append_left, Fin.append_right, Function.comp_apply]
 
 /-- A wedge pairing transported from a specified top degree is the wedge product followed by
 the trivialisation in that degree. -/
@@ -98,21 +76,14 @@ theorem wedge_compr₂_compl₁₂_exteriorPower (b : Module.Basis (Fin n) R M) 
     LinearMap.compl₁₂ ((wedge R M k l).compr₂ (hkl ▸ vol))
       (exteriorPower.map k f) (exteriorPower.map l f) =
       LinearMap.det f • ((wedge R M k l).compr₂ (hkl ▸ vol)) := by
-  apply exteriorPower.linearMap_ext
-  apply AlternatingMap.ext
-  intro u
-  apply exteriorPower.linearMap_ext
-  apply AlternatingMap.ext
-  intro v
-  simp only [LinearMap.compAlternatingMap_apply, LinearMap.compl₁₂_apply,
-    LinearMap.smul_apply, LinearMap.compr₂_apply, exteriorPower.map_apply_ιMulti]
-  rw [exteriorPower.wedge_ιMulti, exteriorPower.wedge_ιMulti]
-  simp only [smul_eq_mul]
-  have happ : Fin.append (f ∘ u) (f ∘ v) = f ∘ Fin.append u v := by
-    funext i
-    refine Fin.addCases ?_ ?_ i <;> intro j <;>
-      simp only [Fin.append_left, Fin.append_right, Function.comp_apply]
-  rw [happ, ← exteriorPower.map_apply_ιMulti]
+  apply LinearMap.ext
+  intro x
+  apply LinearMap.ext
+  intro y
+  simp only [LinearMap.compl₁₂_apply, LinearMap.smul_apply, LinearMap.compr₂_apply]
+  have hmap := LinearMap.congr_fun₂ (wedge_map f) x y
+  simp only [LinearMap.compl₁₂_apply, LinearMap.compr₂_apply] at hmap
+  rw [hmap]
   subst n
   rw [b.map_exteriorPower_top_eq_det_smul f]
   simp only [LinearMap.smul_apply, map_smul, LinearMap.id_apply, smul_eq_mul]
