@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.Data.Finsupp.Weight
 
 /-!
@@ -221,14 +222,6 @@ theorem blockHomogenize_degree_zero (f : MvPolynomial S R) :
   · rw [ite_eq_left (h₁.2 H), ite_eq_left (h₀.2 H), H.2]
   · rw [ite_eq_right (mt h₁.1 H), ite_eq_right (mt h₀.1 H)]
 
-omit [Fintype B] in
-/-- Evaluating the monomial `c X^a Y^e` with every homogenizing variable set to `1` gives the
-value of `c Y^e`. -/
-private theorem eval₂_monomial_sumElim_of_eq_one {T : Type*} [CommSemiring T] (φ : R →+* T)
-    (x : B ⊕ S → T) (hx : ∀ h, x (.inl h) = 1) (a : B →₀ ℕ) (e : S →₀ ℕ) (c : R) :
-    eval₂ φ x (monomial (a.sumElim e) c) = eval₂ φ (x ∘ Sum.inr) (monomial e c) := by
-  simp [eval₂_monomial, prod_sumElim, Function.comp_def, hx]
-
 /-- If `f` satisfies the block bounds, then evaluating its block homogenization with every
 homogenizing variable set to `1` gives the value of `f`. -/
 theorem eval₂_blockHomogenize_of_eq_one {T : Type*} [CommSemiring T] (φ : R →+* T)
@@ -280,16 +273,6 @@ section Weight
 
 variable [DecidableEq B]
 
-omit [Fintype B] in
-/-- The degree of `X^a Y^e` in block `h`, whose variables are the homogenizing variable `.inl h`
-and the affine variables `.inr j` with `b j = h`. -/
-private theorem weight_sumElim (a : B →₀ ℕ) (e : S →₀ ℕ) (h : B) :
-    weight (fun v ↦ if Sum.elim id b v = h then 1 else 0) (a.sumElim e) =
-      a h + e.mapDomain b h := by
-  rw [weight_ite_eq_mapDomain_apply, sumElim_eq_add, mapDomain_add, ← mapDomain_comp,
-    ← mapDomain_comp]
-  simp
-
 /-- The block homogenization is homogeneous of degree `d h` in block `h`, whose variables are
 the homogenizing variable `.inl h` and the affine variables `.inr j` with `b j = h`. -/
 theorem isWeightedHomogeneous_blockHomogenize (f : MvPolynomial S R) (h : B) :
@@ -300,7 +283,7 @@ theorem isWeightedHomogeneous_blockHomogenize (f : MvPolynomial S R) (h : B) :
     ⟨_, _, (comapDomain_sumElim_comapDomain u).symm⟩
   rw [coeff_sumElim_blockHomogenize] at hu
   split_ifs at hu with H
-  · rw [weight_sumElim, H h]
+  · rw [weight_ite_sumElim_eq_add_mapDomain_apply, H h]
   · exact (hu rfl).elim
 
 /-- A polynomial in the variables `B ⊕ S` that is homogeneous of degree `d h` in every block `h`
@@ -316,7 +299,7 @@ theorem blockHomogenize_aeval_one_X {F : MvPolynomial (B ⊕ S) R}
   obtain ⟨a, e, rfl⟩ : ∃ a e, u = Finsupp.sumElim a e :=
     ⟨_, _, (comapDomain_sumElim_comapDomain u).symm⟩
   have H (h : B) : a h + e.mapDomain b h = d h := by
-    rw [← weight_sumElim]
+    rw [← weight_ite_sumElim_eq_add_mapDomain_apply]
     exact hF h (mem_support_iff.mp hu)
   rw [aeval_def, eval₂_monomial_sumElim_of_eq_one _ _ (fun _ ↦ rfl), Sum.elim_comp_inr,
     ← aeval_def, aeval_X_left_apply, blockHomogenize_monomial,
