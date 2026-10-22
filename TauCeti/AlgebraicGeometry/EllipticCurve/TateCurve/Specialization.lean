@@ -13,13 +13,12 @@ public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
 # Specialization of the Tate equation
 
 The coefficients of the Tate equation are formal power series with integer coefficients. In a
-complete non-archimedean normed ring with `‖1‖ = 1`, their sums converge at every parameter of norm
-less than one.
+complete non-archimedean normed ring, their sums converge at every parameter of norm less than one.
 This remains true in residue characteristics `2` and `3`: the sixth coefficient is summed from
 its integral coefficients, with no division in the target ring.
 
-For a unit parameter in the open unit ball of a complete non-archimedean normed commutative ring
-with `‖1‖ = 1`, these sums give a nonsingular Tate equation. Its discriminant has the same norm as
+For a unit parameter in the open unit ball of a complete non-archimedean normed commutative ring,
+these sums give a nonsingular Tate equation. When `‖1‖ = 1`, its discriminant has the same norm as
 the parameter, even when the ring norm is only submultiplicative. The coefficients `a₄` and `a₆`
 have norm at most that of the parameter and `c₄` has norm one, so over a field
 `|j| = 1 / |q| > 1`. Point uniformisation requires further arguments.
@@ -36,7 +35,7 @@ namespace TauCeti
 
 section
 
-variable {K : Type*} [NormedCommRing K] [NormOneClass K] [CompleteSpace K]
+variable {K : Type*} [NormedCommRing K] [CompleteSpace K]
   [IsUltrametricDist K]
 
 /-- The analytic fourth Tate coefficient, obtained from the integral formal series. -/
@@ -61,7 +60,7 @@ theorem tateCurveA₆_def (q : K) (hq : ‖q‖ < 1) :
     evalIntSeries_divisorSumSeries]
 
 /-- The integral identity `12 a₆(q) = -(5 s₃(q) + 7 s₅(q))` holds in every complete
-non-archimedean normed commutative ring with `‖1‖ = 1`, even when `12 = 0` there. -/
+non-archimedean normed commutative ring, even when `12 = 0` there. -/
 @[simp] theorem twelve_mul_tateCurveA₆ {q : K} (hq : ‖q‖ < 1) :
     12 * tateCurveA₆ q hq = -(5 * divisorSumAt 3 q + 7 * divisorSumAt 5 q) := by
   simpa only [map_mul, map_ofNat, map_neg, map_add, evalIntSeries_divisorSumSeries, tateCurveA₆]
@@ -117,6 +116,8 @@ with no discreteness or characteristic assumption. -/
 instance isElliptic_tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     (tateCurveAt q hq).IsElliptic :=
   ⟨isUnit_tateCurveAt_Δ q hq⟩
+
+variable [NormOneClass K]
 
 /-- The specialized Tate discriminant has the same norm as the parameter, even for a
 submultiplicative ring norm. -/

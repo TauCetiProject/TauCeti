@@ -29,10 +29,10 @@ sequence of coefficients, without requiring a normalized norm.
 In a complete normed commutative ring, `RingHom.evalBoundedSeries` evaluates a power series after
 applying a coefficient ring homomorphism whose image is uniformly bounded in norm. The resulting
 evaluation is a ring homomorphism, and in a non-archimedean target it satisfies the same uniform
-bound. For a non-archimedean target with `‖1‖ = 1`, `evalIntSeries` specializes this to integer
-coefficients and has norm at most one, or at most the norm of the parameter for an integral series
-without constant term. Multiplication by an evaluated integral formal unit preserves norms, even
-when the ring norm is only submultiplicative.
+bound. For a non-archimedean target, `evalIntSeries` specializes this to integer coefficients
+without requiring a normalized norm. When `‖1‖ = 1`, it has norm at most one, or at most the norm
+of the parameter for an integral series without constant term. Multiplication by an evaluated
+integral formal unit preserves norms, even when the ring norm is only submultiplicative.
 
 Iterating these evaluations, `evalIntBivariateSeries` evaluates an integral power series in two
 variables at a pair of parameters in the open unit ball. Likewise an integral polynomial has value
@@ -182,24 +182,22 @@ theorem summable_norm_intCast_mul_pow_mul_pow {K : Type*} [SeminormedRing K]
 /-- Evaluation of an integral formal power series at a parameter of norm below one in a complete
 non-archimedean normed commutative ring. Integer coefficients are bounded in norm, so the defining
 sum converges without requiring a linear topology on the target. -/
-noncomputable def evalIntSeries {K : Type*} [NormedCommRing K] [NormOneClass K]
-    [CompleteSpace K]
-    [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) : ℤ⟦X⟧ →+* K :=
-  RingHom.evalBoundedSeries (Int.castRingHom K) ⟨1, IsUltrametricDist.norm_intCast_le_one K⟩ q hq
+noncomputable def evalIntSeries {K : Type*} [NormedCommRing K]
+    [CompleteSpace K] [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) : ℤ⟦X⟧ →+* K :=
+  RingHom.evalBoundedSeries (Int.castRingHom K)
+    ⟨‖(1 : K)‖, IsUltrametricDist.norm_intCast_le_norm_one⟩ q hq
 
 /-- The evaluation map is the convergent sum of the coefficients times powers of the
 parameter. -/
-theorem evalIntSeries_apply {K : Type*} [NormedCommRing K] [NormOneClass K]
-    [CompleteSpace K]
-    [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) (f : ℤ⟦X⟧) :
+theorem evalIntSeries_apply {K : Type*} [NormedCommRing K]
+    [CompleteSpace K] [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) (f : ℤ⟦X⟧) :
     evalIntSeries q hq f = ∑' n : ℕ, ((PowerSeries.coeff n f : ℤ) : K) * q ^ n :=
   (rfl)
 
 /-- Evaluating the formal parameter gives the chosen element. -/
 @[simp]
-theorem evalIntSeries_X {K : Type*} [NormedCommRing K] [NormOneClass K]
-    [CompleteSpace K]
-    [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) :
+theorem evalIntSeries_X {K : Type*} [NormedCommRing K]
+    [CompleteSpace K] [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) :
     evalIntSeries q hq (PowerSeries.X : ℤ⟦X⟧) = q := by
   exact RingHom.evalBoundedSeries_X _ _ q hq
 
@@ -245,13 +243,15 @@ in a complete non-archimedean normed commutative ring with `‖1‖ = 1`. -/
 
 /-- Iterated evaluation of an integral bivariate power series at two parameters in the open unit
 ball. The inner variable is evaluated at `u`, and the outer variable at `v`. -/
-noncomputable def evalIntBivariateSeries {K : Type*} [NormedCommRing K] [NormOneClass K]
+noncomputable def evalIntBivariateSeries {K : Type*} [NormedCommRing K]
     [CompleteSpace K] [IsUltrametricDist K]
     (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) : ℤ⟦X⟧⟦X⟧ →+* K :=
-  RingHom.evalBoundedSeries (evalIntSeries u hu) ⟨1, norm_evalIntSeries_le_one u hu⟩ v hv
+  RingHom.evalBoundedSeries (evalIntSeries u hu)
+    ⟨‖(1 : K)‖, fun f ↦ RingHom.norm_evalBoundedSeries_le _ _
+      IsUltrametricDist.norm_intCast_le_norm_one u hu f⟩ v hv
 
 /-- Bivariate integral evaluation is the iterated convergent sum of the coefficients. -/
-theorem evalIntBivariateSeries_apply {K : Type*} [NormedCommRing K] [NormOneClass K]
+theorem evalIntBivariateSeries_apply {K : Type*} [NormedCommRing K]
     [CompleteSpace K] [IsUltrametricDist K]
     (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) (f : ℤ⟦X⟧⟦X⟧) :
     evalIntBivariateSeries u hu v hv f =
@@ -263,7 +263,7 @@ theorem evalIntBivariateSeries_apply {K : Type*} [NormedCommRing K] [NormOneClas
 
 /-- Bivariate evaluation is also the joint sum over the two coefficient indices. Absolute
 summability permits reindexing this family without retaining the order of evaluation. -/
-theorem evalIntBivariateSeries_eq_tsum {K : Type*} [NormedCommRing K] [NormOneClass K]
+theorem evalIntBivariateSeries_eq_tsum {K : Type*} [NormedCommRing K]
     [CompleteSpace K] [IsUltrametricDist K]
     (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) (f : ℤ⟦X⟧⟦X⟧) :
     evalIntBivariateSeries u hu v hv f =
@@ -282,7 +282,7 @@ theorem evalIntBivariateSeries_eq_tsum {K : Type*} [NormedCommRing K] [NormOneCl
 /-- Bivariate evaluation of a series constant in the outer variable is its evaluation at the
 inner parameter. -/
 @[simp]
-theorem evalIntBivariateSeries_C {K : Type*} [NormedCommRing K] [NormOneClass K]
+theorem evalIntBivariateSeries_C {K : Type*} [NormedCommRing K]
     [CompleteSpace K] [IsUltrametricDist K]
     (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) (f : ℤ⟦X⟧) :
     evalIntBivariateSeries u hu v hv (C f) = evalIntSeries u hu f := by
@@ -290,7 +290,7 @@ theorem evalIntBivariateSeries_C {K : Type*} [NormedCommRing K] [NormOneClass K]
 
 /-- Bivariate evaluation sends the outer formal parameter to the outer chosen element. -/
 @[simp]
-theorem evalIntBivariateSeries_X {K : Type*} [NormedCommRing K] [NormOneClass K]
+theorem evalIntBivariateSeries_X {K : Type*} [NormedCommRing K]
     [CompleteSpace K] [IsUltrametricDist K]
     (u : K) (hu : ‖u‖ < 1) (v : K) (hv : ‖v‖ < 1) :
     evalIntBivariateSeries u hu v hv (X : ℤ⟦X⟧⟦X⟧) = v := by
