@@ -15,6 +15,9 @@ A proper power is a power with a natural exponent at least two. In particular th
 a proper power; the predicate makes no exception for it, so an element that is not a proper
 power is nontrivial. Homomorphisms preserve proper powers; in particular conjugation preserves
 and reflects them.
+
+Conjugation, inversion, and positive powers transport maximal-root decompositions,
+specified by a nonzero exponent and a root that is not a proper power.
 -/
 
 public section
@@ -118,6 +121,27 @@ namespace Group
 @[simp] theorem isProperPower_conj_iff {G : Type*} [Group G] (g x : G) :
     IsProperPower (g * x * g⁻¹) ↔ IsProperPower x :=
   MulEquiv.isProperPower_map_iff (MulAut.conj g)
+
+/-- Conjugation transports a maximal-root decomposition without changing its exponent. -/
+theorem maximalRoot_conj {G : Type*} [Group G] {x r : G} {k : ℕ} (g : G)
+    (hk : k ≠ 0) (hx : r ^ k = x) (hr : ¬IsProperPower r) :
+    k ≠ 0 ∧ (g * r * g⁻¹) ^ k = g * x * g⁻¹ ∧ ¬IsProperPower (g * r * g⁻¹) := by
+  refine ⟨hk, ?_, (isProperPower_conj_iff g r).not.2 hr⟩
+  rw [conj_pow, hx]
+
+/-- Inversion transports a maximal-root decomposition without changing its exponent. -/
+theorem maximalRoot_inv {G : Type*} [Group G] {x r : G} {k : ℕ}
+    (hk : k ≠ 0) (hx : r ^ k = x) (hr : ¬IsProperPower r) :
+    k ≠ 0 ∧ (r⁻¹) ^ k = x⁻¹ ∧ ¬IsProperPower r⁻¹ := by
+  refine ⟨hk, ?_, isProperPower_inv.not.2 hr⟩
+  rw [inv_pow, hx]
+
+/-- A positive power transports a maximal-root decomposition by multiplying the exponent. -/
+theorem maximalRoot_pow {G : Type*} [Group G] {x r : G} {k m : ℕ}
+    (hk : k ≠ 0) (hx : r ^ k = x) (hr : ¬IsProperPower r) (hm : m ≠ 0) :
+    m * k ≠ 0 ∧ r ^ (m * k) = x ^ m ∧ ¬IsProperPower r := by
+  refine ⟨Nat.mul_ne_zero hm hk, ?_, hr⟩
+  rw [Nat.mul_comm m k, pow_mul, hx]
 
 /-- A generator of the centralizer of a nontrivial element in a torsion-free group is not a
 proper power. -/
