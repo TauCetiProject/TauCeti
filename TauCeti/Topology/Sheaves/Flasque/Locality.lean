@@ -34,18 +34,18 @@ of unique gluings (`TopCat.Sheaf.existsUnique_gluing'`). Sheaves of modules are 
 * `TopCat.Presheaf.IsLocallyFlasque`: a presheaf is locally flasque if every point has an open
   neighbourhood on which all restriction maps are surjective;
 * `TopCat.Sheaf.IsLocallyFlasque`: a sheaf is locally flasque if its underlying presheaf is;
-* `TauCeti.Topology.surjective_map_of_isLocallyFlasque`: the restriction maps of a locally flasque
+* `TopCat.Sheaf.surjective_map_of_isLocallyFlasque`: the restriction maps of a locally flasque
   sheaf are surjective, for every pair of open sets;
-* `TauCeti.Topology.isLocallyFlasque_of_forall_surjective`: surjectivity of all restriction maps
+* `TopCat.Presheaf.isLocallyFlasque_of_forall_surjective`: surjectivity of all restriction maps
   implies local flasqueness;
-* `TauCeti.Topology.isFlasque_of_isLocallyFlasque`: a locally flasque sheaf is flasque;
-* `TauCeti.Topology.isLocallyFlasque_of_isFlasque_of_surjective_epi`: a flasque sheaf is locally
+* `TopCat.Sheaf.isFlasque_of_isLocallyFlasque`: a locally flasque sheaf is flasque;
+* `TopCat.Sheaf.isLocallyFlasque_of_isFlasque_of_surjective_epi`: a flasque sheaf is locally
   flasque, whenever the epimorphisms of the coefficient category are surjective;
-* `TauCeti.Topology.isLocallyFlasque_of_isFlasque` and
-  `TauCeti.Topology.isFlasque_iff_isLocallyFlasque`: for sheaves of modules, local
+* `TopCat.Sheaf.isLocallyFlasque_of_isFlasque` and
+  `TopCat.Sheaf.isFlasque_iff_isLocallyFlasque`: for sheaves of modules, local
   flasqueness and flasqueness are equivalent;
-* `TauCeti.Topology.isLocallyFlasque_of_isFlasque_types` and
-  `TauCeti.Topology.isFlasque_iff_isLocallyFlasque_types`: the same equivalence for sheaves of
+* `TopCat.Sheaf.isLocallyFlasque_of_isFlasque_types` and
+  `TopCat.Sheaf.isFlasque_iff_isLocallyFlasque_types`: the same equivalence for sheaves of
   sets.
 
 ## References
@@ -77,6 +77,17 @@ class IsLocallyFlasque (F : Presheaf C X) : Prop where
   surj : ∀ x : X, ∃ W : Opens X, x ∈ W ∧
     ∀ ⦃U V : Opens X⦄ (h : U ≤ V), V ≤ W → Function.Surjective (F.map (homOfLE h).op)
 
+/-- If all the restriction maps of a presheaf are surjective, then it is locally flasque: the whole
+space is a witness at every point. -/
+theorem isLocallyFlasque_of_forall_surjective (F : Presheaf C X)
+    (hF : ∀ ⦃U V : Opens X⦄ (hUV : U ≤ V), Function.Surjective (F.map (homOfLE hUV).op)) :
+    F.IsLocallyFlasque := by
+  refine ⟨?_⟩
+  intro x
+  refine ⟨⊤, Set.mem_univ x, ?_⟩
+  intro U V hUV _
+  exact hF hUV
+
 end TopCat.Presheaf
 
 namespace TopCat.Sheaf
@@ -86,12 +97,6 @@ variable {C : Type v} [Category.{w} C] {FC : C → C → Type*} {CC : C → Type
 
 /-- A sheaf is locally flasque if its underlying presheaf is locally flasque. -/
 abbrev IsLocallyFlasque (F : Sheaf C X) := Presheaf.IsLocallyFlasque F.obj
-
-end TopCat.Sheaf
-
-namespace TauCeti
-
-namespace Topology
 
 variable {X : TopCat.{u}}
 
@@ -134,7 +139,7 @@ private lemma trans {s t u : Extension F a} (h₁ : s.Le t) (h₂ : t.Le u) : s.
   sec_le h :=
     calc F.map (homOfLE h).op u.sec
         = F.map (homOfLE (h₁.le_dom.trans h₂.le_dom)).op u.sec :=
-          TopCat.Presheaf.map_homOfLE_congr _ _ _
+          ConcreteCategory.congr_hom (TopCat.Presheaf.map_homOfLE_congr _ _) u.sec
       _ = F.map (homOfLE h₁.le_dom).op (F.map (homOfLE h₂.le_dom).op u.sec) :=
             (TopCat.Presheaf.restrict_restrict h₁.le_dom h₂.le_dom u.sec).symm
       _ = F.map (homOfLE h₁.le_dom).op t.sec := by rw [h₂.sec_le h₂.le_dom]
@@ -145,7 +150,8 @@ end
 /-- A chain of extensions of a section is bounded by an extension over the supremum of the domains
 of the chain: the sheaf condition glues the sections of the chain. -/
 private lemma exists_ub_of_isChain [HasLimitsOfSize.{u, u} C]
-    [(forget C).ReflectsIsomorphisms] [PreservesLimitsOfSize.{u, u} (forget C)]
+    [(CategoryTheory.forget C).ReflectsIsomorphisms]
+    [PreservesLimitsOfSize.{u, u} (CategoryTheory.forget C)]
     (F : TopCat.Sheaf C X) {U : Opens X} {a : ToType (F.1.obj (op U))}
     (c : Set (Extension F.1 a)) (hc : IsChain (fun s t => s.Le t) c) :
     ∃ ub : Extension F.1 a, ∀ s ∈ c, s.Le ub := by
@@ -157,7 +163,8 @@ private lemma exists_ub_of_isChain [HasLimitsOfSize.{u, u} C]
       intro s t
       by_cases hst : s = t
       · subst hst
-        exact TopCat.Presheaf.map_homOfLE_congr (F := F.1) _ _ _
+        exact ConcreteCategory.congr_hom
+          (TopCat.Presheaf.map_homOfLE_congr (F := F.1) _ _) (sf s)
       · have hne' : s.1 ≠ t.1 := fun h => hst (Subtype.ext h)
         rcases hc s.2 t.2 hne' with h | h
         · have hsf : F.1.map (homOfLE h.le_dom).op (sf t) = sf s := h.sec_le h.le_dom
@@ -181,15 +188,15 @@ private lemma exists_ub_of_isChain [HasLimitsOfSize.{u, u} C]
         _ = F.1.map (homOfLE s₀.le_dom).op s₀.sec := by rw [h0]
         _ = a := s₀.sec_le
     · intro s hs
-      exact ⟨le_iSup f ⟨s, hs⟩,
-        fun hh => (TopCat.Presheaf.map_homOfLE_congr hh _ w).trans (hw ⟨s, hs⟩)⟩
+      exact ⟨le_iSup f ⟨s, hs⟩, fun _ => hw ⟨s, hs⟩⟩
   · exact ⟨⟨U, le_rfl, a, by simp⟩, fun s hs => absurd ⟨s, hs⟩ hne⟩
 
 /-- The domain of a maximal extension of a section contains the ambient open set: a point missing
 from it has a neighbourhood on which all restriction maps are surjective, and the maximal extension
 extends across that neighbourhood. -/
 private lemma le_dom_of_maximal [HasLimitsOfSize.{u, u} C]
-    [(forget C).ReflectsIsomorphisms] [PreservesLimitsOfSize.{u, u} (forget C)]
+    [(CategoryTheory.forget C).ReflectsIsomorphisms]
+    [PreservesLimitsOfSize.{u, u} (CategoryTheory.forget C)]
     (F : TopCat.Sheaf C X) [hF : F.IsLocallyFlasque] {U V : Opens X} {a : ToType (F.1.obj (op U))}
     (m : Extension F.1 a)
     (hm : ∀ e : Extension F.1 a, m.Le e → e.Le m) : V ≤ m.dom := by
@@ -235,8 +242,7 @@ private lemma le_dom_of_maximal [HasLimitsOfSize.{u, u} C]
             (TopCat.Presheaf.restrict_restrict m.le_dom le_sup_left w).symm
         _ = F.1.map (homOfLE m.le_dom).op m.sec := by rw [h0]
         _ = a := m.sec_le⟩
-  have hmle : m.Le e' := ⟨le_sup_left,
-    fun hh => (TopCat.Presheaf.map_homOfLE_congr hh _ w).trans (hw 0)⟩
+  have hmle : m.Le e' := ⟨le_sup_left, fun _ => hw 0⟩
   exact hx ((sup_le_iff.mp (hm e' hmle).le_dom).2 hxW')
 
 end Extension
@@ -245,7 +251,8 @@ end Extension
 restriction maps of a sheaf are surjective, then all the restriction maps of the sheaf are
 surjective. -/
 theorem surjective_map_of_isLocallyFlasque [HasLimitsOfSize.{u, u} C]
-    [(forget C).ReflectsIsomorphisms] [PreservesLimitsOfSize.{u, u} (forget C)]
+    [(CategoryTheory.forget C).ReflectsIsomorphisms]
+    [PreservesLimitsOfSize.{u, u} (CategoryTheory.forget C)]
     (F : TopCat.Sheaf C X) [F.IsLocallyFlasque] ⦃U V : Opens X⦄ (hUV : U ≤ V) :
     Function.Surjective (F.1.map (homOfLE hUV).op) := by
   intro a
@@ -259,23 +266,14 @@ theorem surjective_map_of_isLocallyFlasque [HasLimitsOfSize.{u, u} C]
   calc F.1.map (homOfLE hUV).op (F.1.map (homOfLE hVle).op m.sec)
       = F.1.map (homOfLE (hUV.trans hVle)).op m.sec :=
         TopCat.Presheaf.restrict_restrict hUV hVle m.sec
-    _ = F.1.map (homOfLE m.le_dom).op m.sec := TopCat.Presheaf.map_homOfLE_congr _ _ _
+    _ = F.1.map (homOfLE m.le_dom).op m.sec :=
+      ConcreteCategory.congr_hom (TopCat.Presheaf.map_homOfLE_congr _ _) m.sec
     _ = a := m.sec_le
-
-/-- If all the restriction maps of a presheaf are surjective, then it is locally flasque: the whole
-space is a witness at every point. -/
-theorem isLocallyFlasque_of_forall_surjective (F : TopCat.Presheaf C X)
-    (hF : ∀ ⦃U V : Opens X⦄ (hUV : U ≤ V), Function.Surjective (F.map (homOfLE hUV).op)) :
-    F.IsLocallyFlasque := by
-  refine ⟨?_⟩
-  intro x
-  refine ⟨⊤, trivial, ?_⟩
-  intro U V hUV _
-  exact hF hUV
 
 /-- **Flasque locality**: a locally flasque sheaf is flasque. -/
 instance isFlasque_of_isLocallyFlasque [HasLimitsOfSize.{u, u} C]
-    [(forget C).ReflectsIsomorphisms] [PreservesLimitsOfSize.{u, u} (forget C)]
+    [(CategoryTheory.forget C).ReflectsIsomorphisms]
+    [PreservesLimitsOfSize.{u, u} (CategoryTheory.forget C)]
     (F : TopCat.Sheaf C X) [F.IsLocallyFlasque] :
     F.IsFlasque where
   epi {U V} i := by
@@ -291,7 +289,7 @@ theorem isLocallyFlasque_of_isFlasque_of_surjective_epi
     (F : TopCat.Sheaf C X) (hF : F.IsFlasque)
     (h : ∀ {A B : C} (f : A ⟶ B), Epi f → Function.Surjective f) :
     F.IsLocallyFlasque := by
-  refine isLocallyFlasque_of_forall_surjective F.1 ?_
+  refine TopCat.Presheaf.isLocallyFlasque_of_forall_surjective F.1 ?_
   intro U V hUV
   exact h _ (hF.epi (homOfLE hUV).op)
 
@@ -301,8 +299,8 @@ section Modules
 
 variable {R : Type u} [Ring R]
 
-/-- For a sheaf of modules, being flasque is a local property: it suffices to check that the
-restriction maps inside a neighbourhood of each point are surjective. -/
+/-- A flasque sheaf of modules is locally flasque: for every point, the restriction maps inside
+some neighbourhood of that point are surjective. -/
 theorem isLocallyFlasque_of_isFlasque (F : TopCat.Sheaf (ModuleCat.{u} R) X)
     (hF : F.IsFlasque) : F.IsLocallyFlasque :=
   isLocallyFlasque_of_isFlasque_of_surjective_epi F hF fun f hEpi =>
@@ -322,8 +320,8 @@ end Modules
 
 section Sets
 
-/-- For a sheaf of sets, being flasque is a local property: it suffices to check that the
-restriction maps inside a neighbourhood of each point are surjective. -/
+/-- A flasque sheaf of sets is locally flasque: for every point, the restriction maps inside some
+neighbourhood of that point are surjective. -/
 theorem isLocallyFlasque_of_isFlasque_types (F : TopCat.Sheaf (Type u) X) (hF : F.IsFlasque) :
     F.IsLocallyFlasque :=
   isLocallyFlasque_of_isFlasque_of_surjective_epi F hF fun f hEpi =>
@@ -341,6 +339,4 @@ theorem isFlasque_iff_isLocallyFlasque_types (F : TopCat.Sheaf (Type u) X) :
 
 end Sets
 
-end Topology
-
-end TauCeti
+end TopCat.Sheaf

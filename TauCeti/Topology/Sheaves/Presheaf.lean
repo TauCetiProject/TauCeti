@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.ConcreteCategory.Basic
 public import Mathlib.Topology.Sheaves.Presheaf
 
 /-!
@@ -29,7 +28,7 @@ open CategoryTheory Opposite TopologicalSpace
 
 namespace TopCat.Presheaf
 
-universe w v u w'
+universe w v u
 
 variable {C : Type u} [Category.{v} C] {T : TopCat.{w}}
 
@@ -42,16 +41,9 @@ theorem comp_map_comp_map_eq_self {F : T.Presheaf C} {A : C} {V V' : Opens T}
     (a ≫ F.map i) ≫ F.map j = a := by
   rw [Category.assoc, ← F.map_comp, Subsingleton.elim (i ≫ j) (𝟙 _), F.map_id, Category.comp_id]
 
-section Restriction
-
-variable {FC : C → C → Type*} {CC : C → Type w'}
-  [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
-
 /-- Two proofs of the same inclusion of open sets give the same restriction map. -/
-theorem map_homOfLE_congr {F : T.Presheaf C} {U V : Opens T} (h h' : U ≤ V)
-    (s : ToType (F.obj (op V))) : F.map (homOfLE h).op s = F.map (homOfLE h').op s := by
+theorem map_homOfLE_congr {F : T.Presheaf C} {U V : Opens T} (h h' : U ≤ V) :
+    F.map (homOfLE h).op = F.map (homOfLE h').op := by
   rw [Subsingleton.elim h h']
-
-end Restriction
 
 end TopCat.Presheaf
