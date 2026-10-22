@@ -39,6 +39,10 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
   leading and trailing coefficients.
 * `Polynomial.count_newtonSlopes_of_isFiniteFace`: the multiplicity of a slope `σ` is the
   width of the face of slope `σ`.
+* `Polynomial.left_eq_natTrailingDegree_add_card_filter_newtonSlopes_lt` and
+  `Polynomial.right_eq_natTrailingDegree_add_card_filter_newtonSlopes_le`: the absolute
+  endpoints of the face of slope `σ` are the order of vanishing at zero plus the number of
+  finite slopes below `σ`, respectively at most `σ`.
 * `Polynomial.newtonSlopes_C_mul`, `Polynomial.newtonSlopes_X_pow_mul`,
   `Polynomial.newtonSlopes_comp_C_mul_X` and `Polynomial.newtonSlopes_map`: multiplication by
   a scalar of finite valuation and by `X ^ k` preserves the slopes, the substitution
@@ -154,6 +158,46 @@ theorem count_newtonSlopes_of_isFiniteFace {σ : ℝ} {l u : ℕ}
     hface.left_ne_top (by rw [h]; rfl)
   rw [newtonSlopes_eq_slopeMultiset hd]
   exact d.count_slopeMultiset_of_isFiniteFace (hd ▸ hface)
+
+variable (f v) in
+/-- The number of finite slopes satisfying a predicate is the number of finite unit edges whose
+slope satisfies it. -/
+private theorem card_filter_newtonSlopes (p : ℝ → Prop) [DecidablePred p] :
+    ((f.newtonSlopes v).filter p).card =
+      {i | i ∈ finiteEdges (f.newtonPolygon v) ∧ p (unitSlope (f.newtonPolygon v) i)}.ncard := by
+  rw [newtonSlopes_def, Multiset.filter_map, Multiset.card_map, ← Finset.filter_val,
+    Finset.card_val, ← Set.ncard_coe_finset]
+  congr 1
+  ext i
+  simp
+
+/-- If only zero has infinite valuation, the left endpoint of the finite face of slope `σ` is
+the order of vanishing at zero plus the number of finite slopes strictly less than `σ`. The
+endpoint is an absolute index. -/
+theorem left_eq_natTrailingDegree_add_card_filter_newtonSlopes_lt (hv : ∀ x, v x = ⊤ → x = 0)
+    {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    l = f.natTrailingDegree + ((f.newtonSlopes v).filter (· < σ)).card := by
+  have hf : f ≠ 0 := by
+    rintro rfl
+    exact hface.left_ne_top (by simp)
+  rw [card_filter_newtonSlopes]
+  exact hface.left_eq_start_add_ncard_unitSlope_lt (f.isConvexSeq_newtonPolygon v)
+    ((newtonPolygon_ne_top_iff v hv hf).mpr ⟨le_rfl, natTrailingDegree_le_natDegree f⟩)
+    fun n hn => ((newtonPolygon_ne_top_iff v hv hf).mp hn).1
+
+/-- If only zero has infinite valuation, the right endpoint of the finite face of slope `σ` is
+the order of vanishing at zero plus the number of finite slopes at most `σ`. The endpoint is an
+absolute index. -/
+theorem right_eq_natTrailingDegree_add_card_filter_newtonSlopes_le (hv : ∀ x, v x = ⊤ → x = 0)
+    {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    u = f.natTrailingDegree + ((f.newtonSlopes v).filter (· ≤ σ)).card := by
+  have hf : f ≠ 0 := by
+    rintro rfl
+    exact hface.left_ne_top (by simp)
+  rw [card_filter_newtonSlopes]
+  exact hface.right_eq_start_add_ncard_unitSlope_le (f.isConvexSeq_newtonPolygon v)
+    ((newtonPolygon_ne_top_iff v hv hf).mpr ⟨le_rfl, natTrailingDegree_le_natDegree f⟩)
+    fun n hn => ((newtonPolygon_ne_top_iff v hv hf).mp hn).1
 
 /-! ### Length and total height change -/
 
