@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Algebra.Order.Floor.Semifield
 public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Tactic.Linarith
@@ -60,17 +59,17 @@ theorem mem_Ico_ceil_div_iff (hτ : 0 < τ) {n : ℕ} :
     n ∈ Finset.Ico ⌈s / τ⌉₊ ⌈t / τ⌉₊ ↔ n * τ ∈ Set.Ico s t := by
   rw [Finset.mem_Ico, Nat.ceil_le, Nat.lt_ceil, div_le_iff₀ hτ, lt_div_iff₀ hτ, Set.mem_Ico]
 
-/-- For any degree bound `s : ℕ` and positive parameter `B : ℝ`, the number of integer grid points
+/-- For any degree bound `s : ℕ` and positive parameter `B : K`, the number of integer grid points
 in `[-⌊B⌋₊, ⌊B⌋₊]` times the number of derivative orders in `[0, ⌊s / B⌋₊]` strictly exceeds
 `s`. -/
-theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (s : ℕ) {B : ℝ} (hB : 0 < B) :
-    s < (2 * ⌊B⌋₊ + 1) * (⌊(s : ℝ) / B⌋₊ + 1) := by
-  have h1 : B < 2 * (⌊B⌋₊ : ℝ) + 1 := by
-    linarith [Nat.lt_floor_add_one B, Nat.cast_nonneg (α := ℝ) ⌊B⌋₊]
-  have h2 : (s : ℝ) / B < (⌊(s : ℝ) / B⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
-  have h3 : (s : ℝ) < (2 * (⌊B⌋₊ : ℝ) + 1) * ((⌊(s : ℝ) / B⌋₊ : ℝ) + 1) := by
-    calc (s : ℝ) = B * ((s : ℝ) / B) := (mul_div_cancel₀ _ hB.ne').symm
-      _ < (2 * (⌊B⌋₊ : ℝ) + 1) * ((⌊(s : ℝ) / B⌋₊ : ℝ) + 1) :=
+theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (s : ℕ) {B : K} (hB : 0 < B) :
+    s < (2 * ⌊B⌋₊ + 1) * (⌊(s : K) / B⌋₊ + 1) := by
+  have h1 : B < 2 * (⌊B⌋₊ : K) + 1 := by
+    linarith [Nat.lt_floor_add_one B, Nat.cast_nonneg (α := K) ⌊B⌋₊]
+  have h2 : (s : K) / B < (⌊(s : K) / B⌋₊ : K) + 1 := Nat.lt_floor_add_one _
+  have h3 : (s : K) < (2 * (⌊B⌋₊ : K) + 1) * ((⌊(s : K) / B⌋₊ : K) + 1) := by
+    calc (s : K) = B * ((s : K) / B) := (mul_div_cancel₀ _ hB.ne').symm
+      _ < (2 * (⌊B⌋₊ : K) + 1) * ((⌊(s : K) / B⌋₊ : K) + 1) :=
           mul_lt_mul'' h1 h2 hB.le (div_nonneg (Nat.cast_nonneg s) hB.le)
   exact_mod_cast h3
 

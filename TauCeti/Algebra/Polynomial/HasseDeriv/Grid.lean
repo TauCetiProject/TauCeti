@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import TauCeti.Algebra.Order.Floor.Semifield
 public import TauCeti.Data.Int.Interval
 public import TauCeti.Algebra.Polynomial.Roots
