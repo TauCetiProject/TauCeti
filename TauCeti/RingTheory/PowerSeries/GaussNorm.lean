@@ -71,6 +71,8 @@ closed unit disc next to its Gauss points.
 * `TauCeti.PowerSeries.hasGaussNorm_add` and `TauCeti.PowerSeries.hasGaussNorm_mul`: bounded
   weighted coefficient norms are preserved by addition and multiplication over an ultrametric
   seminormed ring, at any nonnegative radius.
+* `PowerSeries.HasGaussNorm.isRestricted_of_abs_lt`: bounded weighted coefficients at `c'` give
+  restrictedness at every `c` with `|c| < c'`.
 * `TauCeti.PowerSeries.gaussNorm_eq_of_forall_le`: the Gauss norm is attained at a degree whose
   weighted coefficient dominates.
 * `TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le` and
@@ -244,6 +246,19 @@ variable {R : Type*} [NormedRing R] {c : ℝ} {f : PowerSeries R}
 theorem hasGaussNorm_of_isRestricted (hf : f.IsRestricted c) :
     f.HasGaussNorm norm c :=
   ((PowerSeries.isRestricted_iff c f).mp hf).bddAbove_range_of_cofinite
+
+/-- **Bounded weighted coefficients give restrictedness at smaller radii.** If the weighted
+coefficient norms `‖aₙ‖ c'ⁿ` are bounded, then `‖aₙ‖ cⁿ → 0` for every `c` with `|c| < c'`, being
+dominated by a multiple of `(|c| / c')ⁿ`. -/
+theorem _root_.PowerSeries.HasGaussNorm.isRestricted_of_abs_lt {c' : ℝ}
+    (hf : f.HasGaussNorm norm c') (h : |c| < c') : f.IsRestricted c := by
+  have hc' : 0 < c' := (abs_nonneg c).trans_lt h
+  obtain ⟨B, hB⟩ := hf
+  rw [← PowerSeries.isRestricted_abs_iff, PowerSeries.isRestricted_iff']
+  refine squeeze_zero (fun n ↦ by positivity)
+    (TauCeti.mul_abs_pow_le_of_forall_mul_pow_le hc' fun n ↦ hB ⟨n, rfl⟩) ?_
+  simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity)
+    ((div_lt_one hc').mpr h)).const_mul B
 
 /-- **The Gauss norm is right continuous in the radius**: for a series restricted at radius `s`,
 if radii `rₙ ∈ [ρ, s]` tend to `ρ > 0`, the Gauss norms at `rₙ` tend to the Gauss norm at `ρ`.
