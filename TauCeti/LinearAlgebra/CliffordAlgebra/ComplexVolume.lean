@@ -227,6 +227,7 @@ theorem volumeElement_mul_ι_of_odd (hn : Odd n) (v : V) :
   rw [h, smul_mul_assoc, prod_map_ι_mul_ι_of_odd_length hl (hln ▸ hn) (hspan v), mul_smul_comm]
 
 /-- For `Q v = -‖v‖²`, the volume element squares to `(-1) ^ ((n + 1).choose 2)`. -/
+@[simp]
 theorem volumeElement_mul_self (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
     volumeElement Q o * volumeElement Q o = (-1) ^ (n + 1).choose 2 := by
   have h := basis_mul_self_of_orthonormal hQ (frame V n) Finset.univ
@@ -383,6 +384,7 @@ variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
 
 /-- **`Γ` is an involution**: `Γ² = 1`. -/
+@[simp]
 theorem complexVolume_mul_self : complexVolume Q o * complexVolume Q o = 1 := by
   rw [complexVolume_def, smul_mul_smul_comm, ← map_mul, volumeElement_mul_self o hQ, map_pow,
     map_neg, map_one, neg_one_pow_eq_pow_mod_two ((n + 1).choose 2), Nat.choose_two_mod_two,
