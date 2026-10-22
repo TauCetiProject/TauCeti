@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.Finsupp.Multiset
+public import Mathlib.Data.Finsupp.Option
 public import TauCeti.Data.Finsupp.Order
 
 /-!
@@ -31,6 +32,9 @@ sums the coefficients in that block. For natural-valued exponents, this is the d
 
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
+* `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
+* `Finsupp.pow_degree_le_pow_degree_optionElim`: `a ^ degree f ≤ b ^ degree (f.optionElim m)`
+  for `0 ≤ a ≤ b` and `1 ≤ b`.
 * `Finsupp.weight_le_degree_nsmul`: if `w s ≤ c` for all `s`, then `weight w f ≤ degree f • c`.
 * `Finsupp.weight_le_degree_nsmul_of_mem_support`: the same bound, assuming `w s ≤ c` only for
   the variables `s` occurring in `f`.
@@ -63,6 +67,23 @@ the degree of `t`. -/
 theorem prod_pow_eq_pow_degree {σ M : Type*} [CommMonoid M] (t : σ →₀ ℕ) (a : M) :
     (t.prod fun _ n ↦ a ^ n) = a ^ t.degree := by
   rw [Finsupp.prod, Finset.prod_pow_eq_pow_sum, degree_apply]
+
+/-- Extending `f` to `Option σ` by the value `y` at `none` adds `y` to the degree. -/
+@[simp]
+theorem degree_optionElim {σ R : Type*} [AddCommMonoid R] (f : σ →₀ R) (y : R) :
+    (f.optionElim y).degree = y + f.degree := by
+  have h (g : Option σ →₀ R) : g.degree = g.sum fun _ e ↦ e := degree_apply g
+  rw [h, sum_option_index _ _ (fun _ ↦ rfl) fun _ _ _ ↦ rfl, optionElim_apply_none,
+    some_optionElim, degree_apply, Finsupp.sum]
+
+/-- A power `a ^ degree f` is bounded by the power `b ^ degree (f.optionElim m)` of a larger
+base `b ≥ 1`, for any value `m` at `none`. -/
+theorem pow_degree_le_pow_degree_optionElim {σ R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {a b : R} (ha : 0 ≤ a) (hab : a ≤ b) (hb : 1 ≤ b) (f : σ →₀ ℕ) (m : ℕ) :
+    a ^ f.degree ≤ b ^ (f.optionElim m).degree := by
+  rw [degree_optionElim, pow_add]
+  exact (pow_le_pow_left₀ ha hab _).trans (le_mul_of_one_le_left (pow_nonneg (ha.trans hab) _)
+    (one_le_pow₀ hb))
 
 end Finsupp
 
