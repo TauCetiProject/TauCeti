@@ -102,6 +102,7 @@ def comap (f : MeromorphicFunction Y) : MeromorphicFunction X where
   mdifferentiable' := f.mdifferentiable.comp hφ
   ne_infty' := comp_ne_infty φ hφ hne f
 
+@[simp]
 theorem coe_comap (f : MeromorphicFunction Y) : ⇑(comap φ hφ hne f) = f ∘ φ :=
   (rfl)
 
@@ -148,10 +149,7 @@ variable [ConnectedSpace X] [ConnectedSpace Y] (φ : X → Y)
 
 include hφ hne in
 /-- The pullback of meromorphic functions along a nonconstant holomorphic map `φ : X → Y` of
-connected Riemann surfaces, as a homomorphism of `ℂ`-algebras `M(Y) →ₐ[ℂ] M(X)`. Sums and products
-are preserved because they are characterized by their values away from the poles
-(`TauCeti.RiemannSurface.MeromorphicFunction.eq_add_iff` and
-`TauCeti.RiemannSurface.MeromorphicFunction.eq_mul_iff`). -/
+connected Riemann surfaces, as a homomorphism of `ℂ`-algebras `M(Y) →ₐ[ℂ] M(X)`, `f ↦ f ∘ φ`. -/
 def comapₐ : MeromorphicFunction Y →ₐ[ℂ] MeromorphicFunction X where
   toFun := comap φ hφ hne
   map_one' := ext fun _ ↦ by simp
@@ -165,6 +163,53 @@ def comapₐ : MeromorphicFunction Y →ₐ[ℂ] MeromorphicFunction X where
 @[simp]
 theorem comapₐ_apply (f : MeromorphicFunction Y) : comapₐ φ hφ hne f = comap φ hφ hne f :=
   (rfl)
+
+@[simp]
+theorem comap_zero : comap φ hφ hne 0 = 0 :=
+  map_zero (comapₐ φ hφ hne)
+
+@[simp]
+theorem comap_one : comap φ hφ hne 1 = 1 :=
+  map_one (comapₐ φ hφ hne)
+
+@[simp]
+theorem comap_add (f g : MeromorphicFunction Y) :
+    comap φ hφ hne (f + g) = comap φ hφ hne f + comap φ hφ hne g :=
+  map_add (comapₐ φ hφ hne) f g
+
+@[simp]
+theorem comap_mul (f g : MeromorphicFunction Y) :
+    comap φ hφ hne (f * g) = comap φ hφ hne f * comap φ hφ hne g :=
+  map_mul (comapₐ φ hφ hne) f g
+
+@[simp]
+theorem comap_neg (f : MeromorphicFunction Y) : comap φ hφ hne (-f) = -comap φ hφ hne f :=
+  map_neg (comapₐ φ hφ hne) f
+
+@[simp]
+theorem comap_sub (f g : MeromorphicFunction Y) :
+    comap φ hφ hne (f - g) = comap φ hφ hne f - comap φ hφ hne g :=
+  map_sub (comapₐ φ hφ hne) f g
+
+@[simp]
+theorem comap_inv (f : MeromorphicFunction Y) : comap φ hφ hne f⁻¹ = (comap φ hφ hne f)⁻¹ :=
+  map_inv₀ (comapₐ φ hφ hne) f
+
+@[simp]
+theorem comap_div (f g : MeromorphicFunction Y) :
+    comap φ hφ hne (f / g) = comap φ hφ hne f / comap φ hφ hne g :=
+  map_div₀ (comapₐ φ hφ hne) f g
+
+@[simp]
+theorem comap_pow (f : MeromorphicFunction Y) (n : ℕ) :
+    comap φ hφ hne (f ^ n) = comap φ hφ hne f ^ n :=
+  map_pow (comapₐ φ hφ hne) f n
+
+@[simp]
+theorem comap_algebraMap (c : ℂ) :
+    comap φ hφ hne (algebraMap ℂ (MeromorphicFunction Y) c) =
+      algebraMap ℂ (MeromorphicFunction X) c :=
+  (comapₐ φ hφ hne).commutes c
 
 /-- **The pullback is a field embedding.** Pulling meromorphic functions back along a
 nonconstant holomorphic map of connected Riemann surfaces is injective. -/
