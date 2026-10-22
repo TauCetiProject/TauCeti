@@ -41,8 +41,7 @@ this file describes the regions strictly below and strictly above the `i`-th dis
 * `TauCeti.isSemialgebraic_setOf_tarskiQuery_map_eval_eq`: one Tarski-query fiber is semialgebraic.
 * `TauCeti.isSemialgebraic_setOf_tarskiQuery_map_eval`: any condition on finitely many Tarski
   queries is semialgebraic.
-* `TauCeti.isSemialgebraic_setOf_mem_roots_derivative_signs_eq`,
-  `TauCeti.isSemialgebraic_setOf_exists_root_derivative_signs_eq`: realization of a prescribed
+* `TauCeti.isSemialgebraic_setOf_exists_root_derivative_signs_eq`: realization of a prescribed
   derivative-sign word by a root of the specialization.
 * `TauCeti.isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_eval_eq`,
   `TauCeti.isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and_eval_lt`,
@@ -310,26 +309,6 @@ private theorem eq_of_mem_roots_derivative_signs_eq {P : (MvPolynomial σ R)[X]}
   funext j
   simpa only [sign_eval_map_iterate_derivative] using (hτ j).trans (hτ' j).symm
 
-/-- **Uniform Thom-encoding realization.** For a prescribed sign word `τ`, the parameters at which
-the specialized polynomial is nonzero and has a root with consecutive derivative signs `τ` form a
-semialgebraic set. -/
-theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq
-    (P : (MvPolynomial σ R)[X]) (τ : Fin P.natDegree → SignType) :
-    IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
-      ∀ j : Fin P.natDegree,
-        SignType.sign (((derivative^[j.val + 1] P).map
-          (MvPolynomial.eval x)).eval r) = τ j} := by
-  convert (isSemialgebraic_setOf_map_eval_eq_zero P).compl.inter
-    (isSemialgebraic_setOf_exists_root_derivative_signs_eq P τ) using 1
-  ext x
-  simp only [mem_ofPred_eq, mem_inter_iff, mem_compl_iff, Multiset.mem_toFinset,
-    Polynomial.mem_roots']
-  constructor
-  · rintro ⟨r, ⟨hp, hr⟩, hτ⟩
-    exact ⟨hp, r, hr, hτ⟩
-  · rintro ⟨hp, r, hr, hτ⟩
-    exact ⟨r, ⟨hp, hr⟩, hτ⟩
-
 omit [IsStrictOrderedRing R] [IsRealClosed R] in
 /-- **Equality with a Thom-encoded root.** For a polynomial `T` and sign word `τ`, the parameters
 `x` at which `P.map (MvPolynomial.eval x)` has a root `r ∈ roots.toFinset` with derivative signs
@@ -367,12 +346,13 @@ private theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and
       (∀ j : Fin P.natDegree,
         SignType.sign (((derivative^[j.val + 1] P).map
           (MvPolynomial.eval x)).eval r) = τ j) ∧ Φ (MvPolynomial.eval x T) r} := by
-  convert (isSemialgebraic_setOf_mem_roots_derivative_signs_eq P τ).inter
+  convert ((isSemialgebraic_setOf_map_eval_eq_zero P).compl.inter
+    (isSemialgebraic_setOf_exists_root_derivative_signs_eq P τ)).inter
     (isSemialgebraic_setOf_sign_eval
       (fun i : Fin (P.natDegree + 1) => (derivative^[i.val] P).eval T)
       (fun υ => Ψ υ τ)) using 1
   ext x
-  simp only [mem_ofPred_eq, mem_inter_iff, ← eval_map_apply,
+  simp only [mem_ofPred_eq, mem_inter_iff, mem_compl_iff, ← eval_map_apply,
     sign_eval_map_iterate_derivative]
   have hcmp {r : R} (hr : r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset)
       (hτ : ∀ j : Fin P.natDegree,
@@ -383,8 +363,13 @@ private theorem isSemialgebraic_setOf_mem_roots_derivative_signs_eq_and
     simpa only [funext hτ] using hiff natDegree_map_le
       (Polynomial.ne_zero_of_mem_roots (Multiset.mem_toFinset.mp hr))
       (Polynomial.isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr))
-  exact ⟨fun ⟨r, hr, hτ, h⟩ => ⟨⟨r, hr, hτ⟩, (hcmp hr hτ).mp h⟩,
-    fun ⟨⟨r, hr, hτ⟩, h⟩ => ⟨r, hr, hτ, (hcmp hr hτ).mpr h⟩⟩
+  constructor
+  · rintro ⟨r, hr, hτ, h⟩
+    exact ⟨⟨Polynomial.ne_zero_of_mem_roots (Multiset.mem_toFinset.mp hr), r,
+      Polynomial.isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr), hτ⟩, (hcmp hr hτ).mp h⟩
+  · rintro ⟨⟨hp, r, hr, hτ⟩, h⟩
+    have hr' := Multiset.mem_toFinset.mpr ((Polynomial.mem_roots hp).mpr hr)
+    exact ⟨r, hr', hτ, (hcmp hr' hτ).mpr h⟩
 
 /-- **Strict inequality below a Thom-encoded root.** For a polynomial `T` and sign word `τ`, the
 parameters `x` at which `P.map (MvPolynomial.eval x)` has a root `r ∈ roots.toFinset` with
