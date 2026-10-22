@@ -61,6 +61,15 @@ open _root_.Rep
 
 universe u
 
+/-- In degree `0` the augmentation `Rep.standardComplex.εToSingle₀` of the standard complex is
+`Rep.standardComplex.ε`. -/
+@[simp]
+theorem standardComplex.εToSingle₀_f_zero {k G : Type u} [CommRing k] [Monoid G] :
+    (standardComplex.εToSingle₀ k G).f 0 =
+      (standardComplex.xIso k G 0).hom ≫ standardComplex.ε k G :=
+  -- `εToSingle₀` is defined as `(toSingle₀Equiv _ _).symm ⟨ε, d_comp_ε⟩`.
+  ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
+
 variable {k G H : Type u} [CommRing k] [Group G] [Group H]
 
 /-- The comparison `Rep.diagonalSuccIsoFree` between the bar and standard resolutions sends the
@@ -81,15 +90,6 @@ theorem diagonalSuccIsoFree_inv_hom_single (m : ℕ) (x : Fin m → G) (g : G) (
     (Representation.linearizeMap_single (k := k)
       (Action.diagonalSuccIsoTensorTrivial G m).inv (g, x) ((1 : k) * r))).trans ?_
   rw [one_mul, Action.diagonalSuccIsoTensorTrivial_inv_hom_apply]
-
-/-- In degree `0` the augmentation `Rep.standardComplex.εToSingle₀` of the standard complex is
-`Rep.standardComplex.ε`. -/
-@[simp]
-theorem standardComplex.εToSingle₀_f_zero :
-    (standardComplex.εToSingle₀ k G).f 0 =
-      (standardComplex.xIso k G 0).hom ≫ standardComplex.ε k G :=
-  -- `εToSingle₀` is defined as `(toSingle₀Equiv _ _).symm ⟨ε, d_comp_ε⟩`.
-  ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
 
 /-- The augmentation of the standard resolution sends a basis element with coefficient `r` to
 `r`. -/

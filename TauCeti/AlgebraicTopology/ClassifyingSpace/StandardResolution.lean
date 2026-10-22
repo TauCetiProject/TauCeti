@@ -97,11 +97,26 @@ def universalGSpaceChainComplexToStandardComplex :
   comm' i j (h : j + 1 = i) := by
     subst i
     rw [universalGSpaceChainComplex_d]
-    -- `Rep.standardComplex.xIso` is `Iso.refl`, so its inverse acts as the identity.
-    have hx (n : ℕ) (y) : (Rep.standardComplex.xIso k G n).inv.hom y = y := rfl
-    refine Rep.hom_ext <| Representation.IntertwiningMap.ext <|
-      MonoidAlgebra.lhom_ext' fun c ↦ LinearMap.ext_ring ?_
-    simp [Rep.standardComplex.d_apply, hx]
+    change (universalGSpaceToStandardHom k G (j + 1) ≫
+        (Rep.standardComplex.xIso k G (j + 1)).inv) ≫
+          (Rep.standardComplex k G).d (j + 1) j =
+      universalGSpaceBoundary k G j ≫
+        universalGSpaceToStandardHom k G j ≫ (Rep.standardComplex.xIso k G j).inv
+    refine Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun x ↦ ?_
+    -- The standard-complex coordinate isomorphisms are definitionally identities.
+    dsimp only [Rep.standardComplex.xIso]
+    simp only [Rep.hom_comp_toLinearMap]
+    rw [Rep.standardComplex.d_eq]
+    change (Rep.standardComplex.d k G (j + 1))
+        ((universalGSpaceToStandard k (j + 1)) (MonoidAlgebra.coeffLinearEquiv k x)) =
+      (universalGSpaceToStandard k j)
+        (MonoidAlgebra.coeffLinearEquiv k ((universalGSpaceBoundary k G j).hom x))
+    have hb := congr(ModuleCat.Hom.hom $(universalGSpaceBoundary_comp_coeff k G j) x)
+    change MonoidAlgebra.coeffLinearEquiv k ((universalGSpaceBoundary k G j).hom x) =
+      OrderedSimplicialChain.boundary k j (MonoidAlgebra.coeffLinearEquiv k x) at hb
+    rw [hb]
+    exact congr($(universalGSpaceToStandard_boundary (G := G) k j)
+      (MonoidAlgebra.coeffLinearEquiv k x)).symm
 
 /-- In degree `n` the chain map is the comparison of permutation representations. -/
 theorem universalGSpaceChainComplexToStandardComplex_f (n : ℕ) :
@@ -122,15 +137,12 @@ theorem universalGSpaceChainComplexToStandardComplex_f_hom_single {n : ℕ}
 @[reassoc (attr := simp)]
 theorem universalGSpaceToStandardHom_comp_ε :
     universalGSpaceToStandardHom k G 0 ≫ Rep.standardComplex.ε k G =
-      permutationAugmentation k G _ :=
-  Rep.hom_ext <| Representation.IntertwiningMap.ext <|
-    MonoidAlgebra.lhom_ext' fun c ↦ LinearMap.ext_ring <| by
-      simp only [LinearMap.comp_apply, MonoidAlgebra.lsingle_apply, Rep.hom_comp,
-        Representation.IntertwiningMap.coe_toLinearMap]
-      -- The permutation augmentation sends a basis vector to `1`.
-      rw [permutationAugmentation_apply, ← MonoidAlgebra.basis_apply,
-        Module.Basis.sumCoords_self_apply]
-      simp [Rep.standardComplex.ε]
+      permutationAugmentation k G _ := by
+  apply (forget₂ (Rep k G) (ModuleCat k)).map_injective
+  rw [Functor.map_comp, forget₂_map_permutationAugmentation]
+  ext x
+  simpa [universalGSpaceToStandardHom] using
+    universalGSpaceToStandard_augmentation k (MonoidAlgebra.coeffLinearEquiv k x)
 
 /-- **The join-to-standard chain map preserves the augmentations**: both sum the coefficients of
 a `0`-chain. -/
