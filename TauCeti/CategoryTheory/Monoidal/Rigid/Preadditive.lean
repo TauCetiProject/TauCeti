@@ -12,7 +12,8 @@ public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 # Duals in a monoidal preadditive category
 
 In a monoidal preadditive category the right adjoint mate `f ↦ fᘁ` is additive, because it is
-built from whiskering and composition.
+built from whiskering and composition, and the coevaluation of an exact pairing out of a nonzero
+object is nonzero, by the zigzag identity.
 
 In a monoidal `k`-linear category the Frobenius reciprocity bijections `tensorLeftHomEquiv` and
 `tensorRightHomEquiv` are `k`-linear, so they compare dimensions of morphism spaces, for instance
@@ -22,6 +23,7 @@ of the multiplicity spaces of a fusion category.
 
 * `TauCeti.rightAdjointMate_zero` and `TauCeti.rightAdjointMate_add`: the right adjoint mate is
   additive;
+* `TauCeti.coevaluation_ne_zero`: the coevaluation `η_ X Y` is nonzero when `X` is;
 * `TauCeti.tensorLeftHomLinearEquiv` and `TauCeti.tensorRightHomLinearEquiv`: Frobenius
   reciprocity as `k`-linear equivalences.
 -/
@@ -52,6 +54,14 @@ theorem rightAdjointMate_add (f g : X ⟶ Y) : (f + g)ᘁ = fᘁ + gᘁ := by
   simp [rightAdjointMate]
 
 end Mate
+
+/-- The coevaluation of an exact pairing of `X` with `Y` is nonzero when `X` is nonzero: otherwise
+the zigzag identity would make the identity of `X` zero. -/
+theorem coevaluation_ne_zero {X Y : C} [ExactPairing X Y] (hX : ¬IsZero X) : η_ X Y ≠ 0 := by
+  intro h
+  have hz := ExactPairing.evaluation_coevaluation X Y
+  rw [h, MonoidalPreadditive.zero_whiskerRight, zero_comp] at hz
+  exact hX ((IsZero.iff_id_eq_zero X).2 (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom))
 
 section Linear
 

@@ -77,7 +77,7 @@ noncomputable def gradedIdempotentProjectiveForgetK0Equiv :
       ExactK0.{uA} (finiteProjectiveModulesExactStructure A) :=
   let _ : IsArtinianRing A := IsArtinianRing.of_finite k A
   have hI (i : I) : (Ideal.span {e i} : Ideal A).IsHomogeneous 𝒜 :=
-    Ideal.homogeneous_span 𝒜 _ (by simpa using ⟨0, he₀ i⟩)
+    Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
   (LaurentSpecialization.basis 1
       (gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne)).repr.trans
     (idempotentProjectiveBasis he
@@ -94,7 +94,7 @@ theorem gradedIdempotentProjectiveForgetK0Equiv_toLinearMap :
       gradedFiniteProjectiveModulesForgetK0 𝒜 := by
   let _ : IsArtinianRing A := IsArtinianRing.of_finite k A
   have hI (i : I) : (Ideal.span {e i} : Ideal A).IsHomogeneous 𝒜 :=
-    Ideal.homogeneous_span 𝒜 _ (by simpa using ⟨0, he₀ i⟩)
+    Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
   let b :=
     LaurentSpecialization.basis 1 (gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne)
   refine b.ext fun i => ?_

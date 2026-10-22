@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
@@ -43,6 +44,8 @@ specialization to the adjoint representation.
   direct sum of its weight submodules.**
 * `TauCeti.DiagonalizableGroup.finite_setOf_weightSpace_ne_bot`: a comodule that is finitely
   generated as a module has finitely many nonzero weight submodules after corestriction.
+* `TauCeti.DiagonalizableGroup.weightSpace_mapDomainBialgHom_comp`: pushing the characters forward
+  along `q : X →* Y` sums the weight submodules over the fibres of `q`.
 * `TauCeti.DiagonalizableGroup.mem_weightSpace_iff_endOfPoint`: the universal point detects
   membership in a weight space.
 * `TauCeti.DiagonalizableGroup.endOfPoint_tmul_of_mem_weightSpace`: a monoid-algebra point acts on
@@ -118,6 +121,51 @@ theorem finite_setOf_weightSpace_ne_bot [Module.Finite R V] (π : C →ₗc[R] M
     {x : X | weightSpace V π x ≠ ⊥}.Finite :=
   letI : Comodule R (MonoidAlgebra R X) V := Comodule.Corestrict (M := V) π
   Comodule.finite_setOf_weightSpace_ne_bot R X V
+
+/-- **Pushing the characters forward along a monoid homomorphism collects weight submodules.** For
+`q : X →* Y`, the `y`-weight submodule after corestricting along `R[q] ∘ π` is the sum of the
+`x`-weight submodules for `π` over the characters `x` with `q x = y`.
+
+For commutative groups this is the restriction of a representation along `D(Y) → D(X) → G`. -/
+theorem weightSpace_mapDomainBialgHom_comp [Monoid X] {Y : Type*} [Monoid Y]
+    (π : C →ₗc[R] MonoidAlgebra R X) (q : X →* Y) (y : Y) :
+    weightSpace V ((MonoidAlgebra.mapDomainBialgHom R q :
+        MonoidAlgebra R X →ₗc[R] MonoidAlgebra R Y).comp π) y =
+      ⨆ x ∈ q ⁻¹' {y}, weightSpace V π x := by
+  set π' := (MonoidAlgebra.mapDomainBialgHom R q :
+    MonoidAlgebra R X →ₗc[R] MonoidAlgebra R Y).comp π
+  -- An `x`-weight vector for `π` is a `q x`-weight vector for `π'`.
+  have hle (x : X) : weightSpace V π x ≤ weightSpace V π' (q x) := fun v hv ↦ by
+    rw [mem_weightSpace, ← LinearMap.lTensor_def] at hv ⊢
+    -- `CoalgHom.comp_toLinearMap` is stated for the coercion to linear maps; restate it for
+    -- `toLinearMap`, which is what `mem_weightSpace` produces.
+    rw [show π'.toLinearMap = (MonoidAlgebra.mapDomainBialgHom R q).toLinearMap ∘ₗ π.toLinearMap
+      from CoalgHom.comp_toLinearMap _ _, LinearMap.lTensor_comp_apply, hv, LinearMap.lTensor_tmul]
+    exact congrArg (v ⊗ₜ[R] ·) (MonoidAlgebra.mapDomainBialgHom_single q x 1)
+  refine le_antisymm (fun v hv ↦ ?_) (iSup₂_le fun x hx ↦ by
+    rw [Set.mem_preimage, Set.mem_singleton_iff] at hx
+    exact hx ▸ hle x)
+  -- Decompose `v` into its weight components for `π`, then project onto the `y`-weight
+  -- component for `π'`: a component of weight `x` survives exactly when `q x = y`. Under the
+  -- two corestricted comodule structures, `weightSpace V π` and `weightSpace V π'` are by
+  -- definition the weight submodules of `Comodule.weightSpace`.
+  let : Comodule R (MonoidAlgebra R X) V := Comodule.Corestrict π
+  let : Comodule R (MonoidAlgebra R Y) V := Comodule.Corestrict π'
+  have hcomp (x : X) : Comodule.weightProj R Y V y (Comodule.weightProj R X V x v) ∈
+      ⨆ x ∈ q ⁻¹' {y}, weightSpace V π x := by
+    have hx : Comodule.weightProj R X V x v ∈ weightSpace V π' (q x) :=
+      hle x (Comodule.weightProj_mem_weightSpace x v)
+    by_cases hqx : q x = y
+    · rw [Comodule.weightProj_of_mem (hqx ▸ hx)]
+      exact Submodule.mem_iSup_of_mem x (Submodule.mem_iSup_of_mem hqx
+        (Comodule.weightProj_mem_weightSpace x v))
+    · rw [Comodule.weightProj_of_mem_of_ne (Ne.symm hqx) hx]
+      exact zero_mem _
+  rw [← Comodule.weightProj_of_mem (R := R) (G := Y) hv,
+    ← Comodule.weightDecomposition_sum (R := R) (G := X) v, Finsupp.sum, map_sum]
+  exact Submodule.sum_mem _ fun x _ ↦ by
+    rw [Comodule.weightDecomposition_apply]
+    exact hcomp x
 
 end Decomposition
 

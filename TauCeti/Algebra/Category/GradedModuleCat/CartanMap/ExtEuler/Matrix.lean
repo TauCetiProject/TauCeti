@@ -34,9 +34,10 @@ is a unit of `ℤ[q,q⁻¹]`. These are the graded analogues of
 `TauCeti.extEulerMatrix_eq_inverseCartanMatrix_transpose`.
 
 Euler-admissibility of all pairs of finite graded modules is a genuine hypothesis. For the dual
-numbers `k[ε]/(ε²)` with `ε` in degree one, the graded Cartan matrix is `[1 + q]`, whose
-determinant is not a unit, so by `TauCeti.isUnit_det_gradedCartanMatrix` some pair of finite graded
-modules is not graded Euler-admissible.
+numbers `k[ε]/(ε²)` with `ε` in degree two, the graded Cartan matrix is `[1 + q²]`
+(`TauCeti.gradedCartanMatrix_dualNumber`), whose determinant is not a unit, so the residue field is
+not graded Euler-admissible against itself
+(`TauCeti.not_isGradedEulerAdmissible_dualNumberGradedResidue`).
 
 ## Main results
 

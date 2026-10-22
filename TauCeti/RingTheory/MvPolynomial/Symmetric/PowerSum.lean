@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.FiberSubgroup
 import TauCeti.Algebra.MvPolynomial.Monomial
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 import TauCeti.GroupTheory.Perm.Partition
 
 /-!

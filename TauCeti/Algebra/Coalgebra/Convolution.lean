@@ -25,7 +25,7 @@ law. This file proves that for an **algebra map**
 derivations is in `TauCeti/Algebra/AlgebraicGroup/Tangent/Basic.lean`.
 
 Finally, the file records how convolution algebras change with their coefficients. An algebra
-map `g : B →ₐ[R] B'` induces an algebra map of convolution algebras by post-composition, and when
+map `g : B →ₐ[R] B'` induces Mathlib's `AlgHom.convPostcomp` on convolution algebras, and when
 `B'` is a `B`-algebra with a basis over `B`, taking coordinates identifies the convolution
 algebra with coefficients in `B'` with a free module over the one with coefficients in `B`.
 
@@ -41,10 +41,8 @@ algebra with coefficients in `B'` with a free module over the one with coefficie
   normalization rules and `WithConv.mulTensor_convMul`.
 * `AlgHom.toConv_toLinearMap_comp_mul'`: an algebra map composed with
   multiplication is its own exterior square.
-* `AlgHom.convCompLeft`: post-composition with an algebra map, as an algebra map of convolution
-  algebras.
 * `Module.Basis.convCoordEquiv`: the coordinates of a convolution-algebra element in a basis of
-  the coefficients, with `Module.Basis.convCoordEquiv_convCompLeft_mul` recording that they are
+  the coefficients, with `Module.Basis.convCoordEquiv_convPostcomp_mul` recording that they are
   linear over the convolution algebra of the smaller coefficient ring.
 -/
 
@@ -266,27 +264,6 @@ section CoefficientChange
 
 open WithConv
 
-/-- Post-composition with an algebra homomorphism `g : B →ₐ[R] B'` of coefficient algebras, as an
-algebra homomorphism between the convolution algebras of linear maps out of a coalgebra `C`. -/
-noncomputable def _root_.AlgHom.convCompLeft {R B B' : Type*} [CommSemiring R] [Semiring B]
-    [Algebra R B] [Semiring B'] [Algebra R B'] (g : B →ₐ[R] B') (C : Type*) [AddCommMonoid C]
-    [Module R C] [_root_.Coalgebra R C] :
-    WithConv (C →ₗ[R] B) →ₐ[R] WithConv (C →ₗ[R] B') where
-  toFun f := toConv (g.toLinearMap ∘ₗ f.ofConv)
-  map_one' := by ext; simp
-  map_mul' f f' := ofConv_injective (_root_.LinearMap.algHom_comp_convMul_distrib g f f')
-  map_zero' := by ext; simp
-  map_add' f f' := by ext; simp
-  commutes' r := by ext; simp
-
-/-- `g.convCompLeft C` post-composes with `g`. -/
-@[simp]
-theorem _root_.AlgHom.convCompLeft_apply {R B B' C : Type*} [CommSemiring R] [Semiring B]
-    [Algebra R B] [Semiring B'] [Algebra R B'] [AddCommMonoid C] [Module R C]
-    [_root_.Coalgebra R C] (g : B →ₐ[R] B') (f : WithConv (C →ₗ[R] B)) :
-    g.convCompLeft C f = toConv (g.toLinearMap ∘ₗ f.ofConv) :=
-  (rfl)
-
 /-- A basis of `B'` over `B` identifies linear maps `C → B'` with families of linear maps
 `C → B`, by taking coordinates. -/
 noncomputable def _root_.Module.Basis.convCoordEquiv {ι B B' : Type*} [Finite ι]
@@ -339,12 +316,12 @@ variable [CommSemiring B] [Semiring B'] [Algebra B B'] [Algebra R B] [Algebra R 
 /-- Taking coordinates in a basis of `B'` over `B` is linear over the convolution algebra with
 coefficients in `B`, which acts on maps into `B'` through post-composition with
 `algebraMap B B'`. -/
-theorem _root_.Module.Basis.convCoordEquiv_convCompLeft_mul [_root_.Coalgebra R C]
+theorem _root_.Module.Basis.convCoordEquiv_convPostcomp_mul [_root_.Coalgebra R C]
     (b : Module.Basis ι B B') (f : WithConv (C →ₗ[R] B)) (φ : WithConv (C →ₗ[R] B')) (i : ι) :
-    b.convCoordEquiv R C ((IsScalarTower.toAlgHom R B B').convCompLeft C f * φ) i =
+    b.convCoordEquiv R C ((IsScalarTower.toAlgHom R B B').convPostcomp (C := C) f * φ) i =
       f * b.convCoordEquiv R C φ i := by
   ext c
-  simp only [Module.Basis.convCoordEquiv_apply, AlgHom.convCompLeft_apply,
+  simp only [Module.Basis.convCoordEquiv_apply, AlgHom.convPostcomp_apply_ofConv,
     _root_.LinearMap.convMul_apply, _root_.LinearMap.comp_apply, ofConv_toConv]
   induction (CoalgebraStruct.comul c : C ⊗[R] C) with
   | tmul x y => simp [← Algebra.smul_def]
