@@ -31,10 +31,8 @@ expansion after removing its constant term.
 
 * `HasSum.sum_divisorsAntidiagonal`: regrouping a convergent double series by the product of
   the indices.
-* `TauCeti.hasSum_sum_divisors_mul_pow`: for bounded `g` and `‖r‖ < 1`, the Lambert-type series
+* `TauCeti.hasSum_sum_divisors_mul_pow`: for polynomially bounded `g` and `‖r‖ < 1`, the series
   `∑_{c, m ≥ 1} g(m) r^{c m}` is the power series `∑_n (∑_{m ∣ n} g(m)) rⁿ`.
-* `TauCeti.hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow`: convergence and regrouping
-  for weights of polynomial growth.
 * `TauCeti.hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow`: a second parameter
   with `‖q * u‖ < 1` produces weighted divisor-sum coefficients.
 * `TauCeti.hasSum_sum_divisors_mul_pow_sub`: a reciprocal pair of
@@ -58,22 +56,24 @@ theorem HasSum.sum_divisorsAntidiagonal {f : ℕ → ℕ → α} {a : α}
 
 namespace TauCeti
 
-/-- **Lambert-type series as power series.** For a bounded sequence `g` and `‖r‖ < 1` in a
+/-- **Lambert-type series as power series.** For polynomially bounded `g` and `‖r‖ < 1` in a
 complete normed ring, the power series `∑_n (∑_{m ∣ n} g(m)) rⁿ` sums to the double series
 `∑_{c ≥ 1} ∑_{m ≥ 1} g(m) r^{c m}`. For instance `g(m) = m sᵐ` gives
 `∑_{c ≥ 1} r^c s / (1 - r^c s)²` when `‖s‖ ≤ 1` in a non-archimedean field. -/
 theorem hasSum_sum_divisors_mul_pow {K : Type*} [NormedRing K] [CompleteSpace K] {g : ℕ → K}
-    {C : ℝ} (hg : ∀ m, ‖g m‖ ≤ C) {r : K} (hr : ‖r‖ < 1) :
+    {C : ℝ} {k : ℕ} (hg : ∀ m, ‖g m‖ ≤ C * (m : ℝ) ^ k) {r : K} (hr : ‖r‖ < 1) :
     HasSum (fun n : ℕ ↦ (∑ m ∈ n.divisors, g m) * r ^ n)
       (∑' c : ℕ, ∑' m : ℕ, g (m + 1) * r ^ ((c + 1) * (m + 1))) := by
-  have hC : 0 ≤ C := (norm_nonneg _).trans (hg 0)
   have hs : Summable (fun p : ℕ+ × ℕ+ ↦ g p.2 * r ^ ((p.1 : ℕ) * p.2)) := by
-    refine Summable.of_norm_bounded (g := fun p : ℕ+ × ℕ+ ↦ C * ‖r‖ ^ ((p.1 : ℕ) * p.2)) ?_ ?_
-    · simpa using (summable_prod_mul_pow 0 (r := ‖r‖) (by simpa using hr)).mul_left C
+    refine Summable.of_norm_bounded
+      (g := fun p : ℕ+ × ℕ+ ↦ C * ((p.2 : ℝ) ^ k * ‖r‖ ^ ((p.1 : ℕ) * p.2))) ?_ ?_
+    · simpa using (summable_prod_mul_pow k (r := ‖r‖) (by simpa using hr)).mul_left C
     · intro p
       calc ‖g p.2 * r ^ ((p.1 : ℕ) * p.2)‖ ≤ ‖g p.2‖ * ‖r ^ ((p.1 : ℕ) * p.2)‖ := norm_mul_le _ _
-        _ ≤ C * ‖r‖ ^ ((p.1 : ℕ) * p.2) :=
-          mul_le_mul (hg _) (norm_pow_le' _ (mul_pos p.1.2 p.2.2)) (norm_nonneg _) hC
+        _ ≤ C * ((p.2 : ℝ) ^ k * ‖r‖ ^ ((p.1 : ℕ) * p.2)) := by
+          rw [← mul_assoc]
+          exact mul_le_mul (hg _) (norm_pow_le' _ (mul_pos p.1.2 p.2.2))
+            (norm_nonneg _) ((norm_nonneg _).trans (hg _))
   have hv : ∑' p : ℕ+ × ℕ+, g p.2 * r ^ ((p.1 : ℕ) * p.2) =
       ∑' c : ℕ, ∑' m : ℕ, g (m + 1) * r ^ ((c + 1) * (m + 1)) := by
     rw [hs.tsum_prod, tsum_pnat_eq_tsum_succ (f := fun c ↦ ∑' m : ℕ+, g m * r ^ (c * m))]
@@ -159,22 +159,6 @@ theorem hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow (a : ℕ → K) {C : 
   intro d
   rw [mul_pow, ← pow_mul]
   ring
-
-/-- Regrouping a Lambert series with weights of polynomial growth gives a convergent
-divisor-sum expansion. The term at index zero vanishes because `Nat.divisors 0` is empty. -/
-theorem hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow (a : ℕ → K) {C : ℝ} {k : ℕ}
-    (ha : ∀ d, ‖a d‖ ≤ C * (d : ℝ) ^ k)
-    {q : K} (hq : ‖q‖ < 1) :
-    HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors, a d) * q ^ n)
-      (∑' n : ℕ+, ∑' d : ℕ+, a d * q ^ (n * d : ℕ)) := by
-  have h := hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow a ha hq
-    (u := 1) (by simpa using hq)
-  simp only [one_pow, mul_one] at h
-  convert h using 1
-  apply tsum_congr
-  intro n
-  rw [tsum_pnat_eq_tsum_succ (f := fun d : ℕ ↦ a d * q ^ ((n : ℕ) * d))]
-  simp only [pow_mul]
 
 /-- A geometric expansion with polynomially bounded weights gives a summable sequence
 when evaluated at `qⁿ * u` for positive `n` on the annulus of convergence. -/

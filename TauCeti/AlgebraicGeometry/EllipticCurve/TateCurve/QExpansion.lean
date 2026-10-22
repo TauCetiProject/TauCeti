@@ -69,8 +69,7 @@ theorem hasSum_tateUniformizationX_sub (q u : Kˣ)
     (fun r ↦ r / (1 - r) ^ 2) (fun r ↦ r / (1 - r) ^ 2)
     tsum_natCast_succ_mul_pow_succ tsum_natCast_succ_mul_pow_succ
     (fun r ↦ inv_div_one_sub_inv_sq r) q u hqu hqui
-  have hs := (hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow
-    (fun d ↦ (d : K)) norm_natCast_le_mul_pow_one hq).summable.hasSum
+  have hs := (hasSum_sum_divisors_mul_pow norm_natCast_le_mul_pow_one hq).summable.hasSum
   convert ht.sub (hs.mul_left 2) using 1
   · funext n
     simp only [Finset.sum_mul, Finset.mul_sum, ← Finset.sum_sub_distrib]
@@ -126,8 +125,7 @@ theorem hasSum_tateUniformizationY_sub (q u : Kˣ)
     (fun r ↦ r ^ 2 / (1 - r) ^ 3) (fun r ↦ -r / (1 - r) ^ 3)
     tsum_choose_two_mul_pow_succ tsum_neg_choose_two_mul_pow_succ
     (fun r ↦ inv_sq_div_one_sub_inv_cube r) q u hqu hqui
-  have hs := (hasSum_sum_divisors_mul_pow_of_norm_le_mul_pow
-    (fun d ↦ (d : K)) norm_natCast_le_mul_pow_one hq).summable.hasSum
+  have hs := (hasSum_sum_divisors_mul_pow norm_natCast_le_mul_pow_one hq).summable.hasSum
   convert ht.add hs using 1
   · funext n
     simp only [Finset.sum_mul, ← Finset.sum_add_distrib]

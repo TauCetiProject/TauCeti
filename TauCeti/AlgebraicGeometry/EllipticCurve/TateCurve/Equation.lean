@@ -210,7 +210,8 @@ private theorem hasSum_sum_divisors_intCast_mul_pow (a : ℕ → ℤ) (F : K →
     rw [norm_mul, norm_pow, ← one_mul 1]
     exact mul_le_mul (IsUltrametricDist.norm_intCast_le_one K _) (pow_le_one₀ (norm_nonneg _) hs)
       (by positivity) zero_le_one
-  convert hasSum_sum_divisors_mul_pow hg hq using 1
+  convert hasSum_sum_divisors_mul_pow (g := fun d ↦ (a d : K) * s ^ d)
+    (C := 1) (k := 0) (by simpa only [pow_zero, mul_one] using hg) hq using 1
   refine tsum_congr fun c ↦ ?_
   have hr : ‖q ^ (c + 1) * s‖ < 1 := by
     rw [norm_mul, norm_pow]

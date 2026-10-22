@@ -45,7 +45,7 @@ theorem norm_pow_succ_mul_pow_lt_one {K : Type*} [SeminormedRing K]
     _ < 1 := by simpa using pow_lt_one₀ (norm_nonneg _) hu (Nat.succ_ne_zero n)
 
 /-- Multiplying a parameter in the open unit ball by further powers of `q` keeps it there. -/
-theorem norm_pow_pnat_mul_lt_one {K : Type*} [NormedCommRing K] [NormOneClass K]
+theorem norm_pow_pnat_mul_lt_one {K : Type*} [SeminormedRing K] [NormOneClass K]
     {q v : K} (hq : ‖q‖ < 1) (hqv : ‖q * v‖ < 1)
     (n : ℕ+) : ‖q ^ (n : ℕ) * v‖ < 1 := by
   have hn : (n : ℕ) = ((n : ℕ) - 1) + 1 := (Nat.sub_add_cancel n.pos).symm
