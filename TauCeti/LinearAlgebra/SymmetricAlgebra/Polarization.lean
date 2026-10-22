@@ -24,10 +24,10 @@ zero.
 
 The `n`-th powers `v ^ n` of the vectors of a polynomially dense set span the whole degree-`n`
 component of `S(V)`. This is the coordinate-free form of
-`MvPolynomial.span_sum_smul_X_pow_eq_homogeneousSubmodule`, to which it is reduced by a basis of `V`
-and its dual basis: the first identifies `S(V)` with a polynomial ring in which `v ^ n` becomes the
-`n`-th power of the linear form with the coordinates of `v`, and the second identifies the
-polynomial functions on `V` with polynomials in those coordinates.
+`TauCeti.MvPolynomial.span_sum_smul_X_pow_eq_homogeneousSubmodule`, to which it is reduced by a
+basis of `V` and its dual basis: the first identifies `S(V)` with a polynomial ring in which
+`v ^ n` becomes the `n`-th power of the linear form with the coordinates of `v`, and the second
+identifies the polynomial functions on `V` with polynomials in those coordinates.
 
 ## Main results
 
@@ -61,7 +61,7 @@ theorem span_pow_eq_homogeneous_of_polynomial_vanishing (S : Set V)
   have hS' : ∀ q, (∀ x ∈ b.equivFun '' S, MvPolynomial.eval x q = 0) → q = 0 := by
     intro q hq
     have hzero := hS ((SymmetricAlgebra.equivMvPolynomial b.dualBasis).symm q) fun v hv ↦ by
-      rw [SymmetricAlgebra.lift_apply_eq_eval_equivMvPolynomial b.dualBasis,
+      rw [lift_apply_eq_eval_equivMvPolynomial b.dualBasis,
         AlgEquiv.apply_symm_apply]
       simpa [Module.Basis.dualBasis_apply] using hq _ ⟨v, hv, rfl⟩
     simpa using hzero
@@ -73,6 +73,6 @@ theorem span_pow_eq_homogeneous_of_polynomial_vanishing (S : Set V)
       SymmetricAlgebra.equivMvPolynomial_ι, Module.Basis.constr_apply_fintype, e]
   apply Submodule.map_injective_of_injective (f := e.toLinearMap) e.injective
   rw [Submodule.map_span, himage, map_homogeneousSubmodule_equivMvPolynomial,
-    MvPolynomial.span_sum_smul_X_pow_eq_homogeneousSubmodule _ hS' n]
+    TauCeti.MvPolynomial.span_sum_smul_X_pow_eq_homogeneousSubmodule _ hS' n]
 
 end TauCeti.SymmetricAlgebra

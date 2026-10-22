@@ -33,9 +33,9 @@ polynomials on a Cartan subalgebra, where `S` is the set of dominant integral we
 
 ## Main results
 
-* `MvPolynomial.span_sum_smul_X_pow_eq_homogeneousSubmodule`: the `n`-th powers of the linear
-  forms with coefficient vectors in a polynomially dense set span the homogeneous polynomials of
-  degree `n`.
+* `TauCeti.MvPolynomial.span_sum_smul_X_pow_eq_homogeneousSubmodule`: the `n`-th powers of the
+  linear forms with coefficient vectors in a polynomially dense set span the homogeneous
+  polynomials of degree `n`.
 
 ## References
 
@@ -44,7 +44,9 @@ polynomials on a Cartan subalgebra, where `S` is the set of dominant integral we
 
 public section
 
-namespace MvPolynomial
+namespace TauCeti.MvPolynomial
+
+open _root_.MvPolynomial
 
 variable {σ : Type*} [Fintype σ]
 
@@ -93,4 +95,4 @@ theorem span_sum_smul_X_pow_eq_homogeneousSubmodule (S : Set (σ → K))
   exact hφu <| (hφ hu).trans <|
     Finset.sum_eq_zero fun d hd ↦ by rw [hmono d hd, mul_zero]
 
-end MvPolynomial
+end TauCeti.MvPolynomial
