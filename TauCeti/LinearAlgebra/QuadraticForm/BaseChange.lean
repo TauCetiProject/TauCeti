@@ -223,6 +223,12 @@ theorem QuadraticForm.exists_isUnit_baseChange_apply (A : Type uA) [CommRing A] 
 
 namespace QuadraticForm
 
+/-- Extending scalars evaluates a quadratic form at `1 ⊗ₜ v` by applying the algebra map to
+its value at `v`. -/
+theorem baseChange_one_tmul (Q : QuadraticForm R M) (v : M) :
+    Q.baseChange A (1 ⊗ₜ v) = algebraMap R A (Q v) := by
+  rw [baseChange_tmul, mul_one, Algebra.smul_def, mul_one]
+
 /-- Polarization after base change, evaluated on pure tensors. -/
 @[simp]
 theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M) :
@@ -600,7 +606,7 @@ theorem specialOrthogonalGroupBaseChange_injective [FaithfulSMul R A] [Module.Fl
 instance invertibleBaseChangeOneTmul (Q : _root_.QuadraticForm R M) (v : M) [Invertible (Q v)] :
     Invertible (Q.baseChange A (1 ⊗ₜ v)) :=
   (Invertible.map (algebraMap R A) (Q v)).copy _ (by
-    rw [_root_.QuadraticForm.baseChange_tmul, mul_one, Algebra.smul_def, mul_one])
+    rw [Q.baseChange_one_tmul])
 
 /-- Extending scalars carries the reflection in `v` to the reflection in `1 ⊗ₜ v`: the base change
 of `τ_v` is `τ_{1 ⊗ v}` for `Q.baseChange A`. -/
@@ -609,7 +615,7 @@ theorem reflection_baseChange (Q : _root_.QuadraticForm R M) (v : M) [Invertible
     reflection (Q.baseChange A) (1 ⊗ₜ v) = LinearEquiv.baseChange R A M M (reflection Q v) := by
   have hinv : ⅟(Q.baseChange A (1 ⊗ₜ v)) = algebraMap R A ⅟(Q v) :=
     invOf_eq_left_inv (by
-      rw [_root_.QuadraticForm.baseChange_tmul, mul_one, Algebra.smul_def, mul_one, ← map_mul,
+      rw [Q.baseChange_one_tmul, ← map_mul,
         invOf_mul_self, map_one])
   ext x
   induction x using TensorProduct.inductionOn with
