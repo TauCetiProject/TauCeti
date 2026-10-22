@@ -28,7 +28,9 @@ power series do: substituting `φ` and then `ψ` is substituting `φ (ψ)`. The 
 the chain rule `D(f (φ)) = (Df)(φ) Dφ`, and the residue obeys the finite-map formula
 `Res(f (φ) Dφ dX) = ord φ • Res(f dX)` in all characteristics (in particular, coordinate changes of
 order `1` preserve the residue). A formal coordinate `φ = u X + ⋯`, `u ≠ 0`, gives a substitution
-automorphism of `K⸨X⸩`, inverse to that of `φ⁻¹`.
+automorphism of `K⸨X⸩`, inverse to that of `φ⁻¹`. Substitution is natural in the coefficient
+field: a field embedding `K → L`, applied to every coefficient, carries `f (φ)` to the
+substitution of the image of `φ` into the image of `f`.
 
 ## Main definitions
 
@@ -54,6 +56,8 @@ automorphism of `K⸨X⸩`, inverse to that of `φ⁻¹`.
   `φ.order = 1`.
 * `TauCeti.LaurentSeries.substAlgHom_comp_substAlgHom`: `(f (φ)) (ψ) = f (φ (ψ))`.
 * `TauCeti.LaurentSeries.substAlgEquiv_mul`: for formal coordinates, `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`.
+* `TauCeti.LaurentSeries.mapRingHom_substAlgHom`, `TauCeti.LaurentSeries.mapRingHom_substAlgEquiv`:
+  naturality of substitution under coefficient-field embeddings.
 * `TauCeti.LaurentSeries.substAlgHom_X_pow`: the substitution `X ↦ X ^ e` is
   `HahnSeries.embDomainRingHom` along `n ↦ e * n`, with coefficient formulas
   `TauCeti.LaurentSeries.coeff_substAlgHom_X_pow_mul` and
@@ -388,6 +392,33 @@ theorem rescale_coe (a : Kˣ) (f : K⟦X⟧) :
   ext n
   rw [coeff_rescale, coeff_coe_rescale]
 
+/-! ### Naturality in the coefficient field -/
+
+section map
+
+variable {L : Type*} [Field L] (σ : K →+* L)
+
+/-- Substitution into Laurent series is natural in the coefficient field: applying a field
+embedding `σ : K →+* L` to the coefficients of `f (φ)` gives the substitution of the image `ψ` of
+`φ` into the image of `f`. The image `ψ` is passed explicitly, with its (automatic) side conditions,
+so that it can be given in normal form, such as `X ^ e` for the ramified substitution. -/
+theorem mapRingHom_substAlgHom {ψ : L⟦X⟧} (hψ : constantCoeff ψ = 0) (hψ₀ : ψ ≠ 0)
+    (h : PowerSeries.map σ φ = ψ) (f : K⸨X⸩) :
+    mapRingHom σ (substAlgHom hφ hφ₀ f) = substAlgHom hψ hψ₀ (mapRingHom σ f) := by
+  subst h
+  -- both sides are ring homomorphisms out of the fraction field `K⸨X⸩` of `K⟦X⟧`
+  refine congr($(IsLocalization.ringHom_ext (nonZeroDivisors K⟦X⟧)
+    (j := (mapRingHom σ).comp (substAlgHom hφ hφ₀ : K⸨X⸩ →+* K⸨X⸩))
+    (k := (substAlgHom hψ hψ₀ : L⸨X⸩ →+* L⸨X⸩).comp (mapRingHom σ))
+    (RingHom.ext fun p ↦ ?_)) f)
+  simp only [RingHom.comp_apply, RingHom.coe_coe, _root_.LaurentSeries.coe_algebraMap,
+    substAlgHom_coe, mapRingHom_apply, map_ofPowerSeries]
+  -- `PowerSeries.map` is by definition `MvPowerSeries.map` over `Unit`, the form in which
+  -- Mathlib states `PowerSeries.map_subst`
+  exact congrArg _ (map_subst (HasSubst.of_constantCoeff_zero' hφ) p)
+
+end map
+
 /-! ### Substitution of formal coordinates -/
 
 /-- The substitution automorphism `f ↦ f (φ)` of `K⸨X⸩` attached to a formal coordinate `φ`, with
@@ -432,6 +463,16 @@ theorem substAlgEquiv_one : substAlgEquiv (1 : FormalCoordinate K) = 1 :=
   AlgEquiv.ext fun f ↦ by
     rw [coe_substAlgEquiv, substAlgHom_eq_id_of_eq_X _ _ FormalCoordinate.toPowerSeries_one,
       AlgHom.id_apply, AlgEquiv.one_apply]
+
+/-- Substitution automorphisms are natural in the coefficient field: applying a field embedding
+`σ : K →+* L` to the coefficients intertwines `σ_φ` with the substitution automorphism of the
+base-changed coordinate. -/
+theorem mapRingHom_substAlgEquiv {L : Type*} [Field L] (σ : K →+* L) (φ : FormalCoordinate K)
+    (f : K⸨X⸩) :
+    mapRingHom σ (substAlgEquiv φ f) =
+      substAlgEquiv (FormalCoordinate.map σ φ) (mapRingHom σ f) := by
+  rw [coe_substAlgEquiv, coe_substAlgEquiv]
+  exact mapRingHom_substAlgHom _ _ σ _ _ (FormalCoordinate.toPowerSeries_map σ φ).symm f
 
 /-- The ring homomorphisms underlying `σ_φ` and its inverse are inverse to each other, so that
 `σ_φ`-semilinear equivalences can be formed. -/

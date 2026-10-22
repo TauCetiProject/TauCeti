@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.RingTheory.HahnSeries.EventualCoeff
+public import TauCeti.RingTheory.HahnSeries.Map
 
 /-!
 # Convergence of formal Laurent series
@@ -33,6 +34,8 @@ limit is replaced here by the assumed pointwise agreement with the prescribed li
 * `TauCeti.tendsto_laurentSeries_iff_coeff` characterizes convergence by a common lower support
   bound and eventual equality of every coefficient.
 * `TauCeti.tendsto_laurentSeries_iff_orderTop_sub` gives the equivalent order formulation.
+* `TauCeti.LaurentSeries.continuous_mapRingHom`: applying a field embedding to the coefficients
+  is continuous.
 * `TauCeti.laurentSeries_eventually_coeff_single_neg_succ_eq_zero` and
   `TauCeti.laurentSeries_not_tendsto_single_neg_succ` exhibit the coefficientwise counterexample.
 -/
@@ -110,6 +113,16 @@ theorem tendsto_laurentSeries_iff_orderTop_sub {ι : Type*} {l : Filter ι}
       have hdiff : (f i - g).coeff z = 0 :=
         (HahnSeries.le_orderTop_iff_forall.mp hi) z (by exact_mod_cast (lt_add_one z))
       simpa only [HahnSeries.coeff_sub, sub_eq_zero] using hdiff
+
+/-- Applying a field embedding `σ : K →+* L` to the coefficients is continuous for the valuation
+topologies, since it preserves orders. -/
+theorem LaurentSeries.continuous_mapRingHom {L : Type*} [Field L] (σ : K →+* L) :
+    Continuous (HahnSeries.mapRingHom σ : K⸨X⸩ →+* L⸨X⸩) :=
+  continuous_iff_continuousAt.mpr fun g ↦ by
+    refine (tendsto_laurentSeries_iff_orderTop_sub _ _).mpr fun D ↦ ?_
+    filter_upwards [(tendsto_laurentSeries_iff_orderTop_sub id g).mp tendsto_id D] with f hf
+    rwa [← map_sub, HahnSeries.mapRingHom_apply,
+      HahnSeries.orderTop_map_of_injective _ σ.injective]
 
 /-- Every fixed coefficient of the sequence of monomials with exponents `-1, -2, ...` and fixed
 coefficient `r` is eventually zero. -/
