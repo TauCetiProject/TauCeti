@@ -28,11 +28,11 @@ for a volatility `σ > 0` and strike `K > 0`. Here `Φ` is the standard Gaussian
   `√τ ∂²C/∂s²(K, τ) → 1 / (K σ √(2π))`, so the gamma tends to `+∞` and has no finite terminal
   value at `s = K`.
 
-The zero-spot and far-field limits are squeezes between the no-arbitrage bounds `0 ≤ C ≤ s` and
-`0 ≤ P ≤ K e^{-rτ} Φ(-d₋)` of `TauCeti.Probability.Finance.BlackScholes.Basic`. The terminal
-limits follow the sign of `log (s / K)`, which decides whether `d₊` and `d₋` tend to `+∞`, to
-`-∞`, or to `0`; joint continuity in `(s, τ)` then follows because the call is
-`1`-Lipschitz in the spot, its delta `Φ(d₊)` lying in `(0, 1)`.
+The spot limits are the boundary conditions at `s = 0` and `s = ∞`, and the maturity limits the
+terminal condition at `τ = 0`, that accompany the Black–Scholes equation for the call and put.
+The terminal behaviour of `d₊` and `d₋` (to `+∞`, to `-∞` or to `0`, according to whether the
+option is in, out of or at the money) is recorded separately, since it governs every maturity
+limit here.
 
 ## Main declarations
 
@@ -92,6 +92,9 @@ theorem abs_callPrice_sub_callPrice_le {x : ℝ} (hx : 0 < x) (hs : 0 < s) (hK :
 
 /-! ### Limits in the spot -/
 
+-- The zero-spot and far-field limits are squeezes between the no-arbitrage bounds `0 ≤ C ≤ s`
+-- and `0 ≤ P ≤ K e^{-rτ} Φ(-d₋)`.
+
 /-- **Call boundary at zero spot.** As the spot tends to `0`, the call price tends to `0`. -/
 theorem tendsto_callPrice_spot_zero (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
     Tendsto (fun x => callPrice x r σ K τ) (𝓝[>] 0) (𝓝 0) := by
@@ -142,6 +145,10 @@ theorem tendsto_callPrice_sub_spot_atTop (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < 
 
 /-! ### Limits at maturity -/
 
+-- The limits at maturity follow the sign of `log (s / K)`, which decides whether `d₊` and `d₋`
+-- tend to `+∞`, to `-∞`, or to `0`. Joint convergence in `(s, τ)` then follows because the call
+-- is `1`-Lipschitz in the spot, its delta `Φ(d₊)` lying in `(0, 1)`.
+
 /-- As the remaining maturity tends to `0⁺`, the discounted strike `K e^{-rτ}` tends to `K`. -/
 private theorem tendsto_discount_nhdsGT_zero :
     Tendsto (fun u => K * exp (-r * u)) (𝓝[>] 0) (𝓝 K) := by
@@ -159,19 +166,19 @@ theorem dPlus_eq_add (hσ : σ ≠ 0) (hτ : 0 < τ) :
 
 /-- As the maturity tends to `0⁺`, `d₊` behaves like `log (s / K) / (σ √τ)`: the remainder
 tends to `0`. -/
-theorem tendsto_dPlus_sub (hσ : 0 < σ) :
+theorem tendsto_dPlus_sub (hσ : σ ≠ 0) :
     Tendsto (fun u => dPlus s r σ K u - log (s / K) * (σ * √u)⁻¹) (𝓝[>] 0) (𝓝 0) := by
   have h : Continuous fun u => (r + σ ^ 2 / 2) * √u / σ := by fun_prop
   refine ((h.continuousWithinAt.tendsto (s := Ioi 0) (x := 0)).congr' ?_).trans (by simp)
   filter_upwards [self_mem_nhdsWithin] with u hu
-  rw [dPlus_eq_add hσ.ne' hu, add_sub_cancel_left]
+  rw [dPlus_eq_add hσ hu, add_sub_cancel_left]
 
 /-- As the maturity tends to `0⁺`, `d₊ → +∞` in the money. -/
 theorem tendsto_dPlus_maturity_atTop (hσ : 0 < σ) (hK : 0 < K) (hsK : K < s) :
     Tendsto (dPlus s r σ K) (𝓝[>] 0) atTop := by
   have hlog : 0 < log (s / K) := log_pos ((one_lt_div hK).2 hsK)
   have h := (tendsto_inv_nhdsGT_zero.comp (tendsto_mul_sqrt_nhdsGT_zero hσ)).const_mul_atTop hlog
-  exact (h.atTop_add (tendsto_dPlus_sub (s := s) (r := r) (K := K) hσ)).congr fun u => by
+  exact (h.atTop_add (tendsto_dPlus_sub (s := s) (r := r) (K := K) hσ.ne')).congr fun u => by
     simp only [Function.comp_apply]
     ring
 
@@ -182,14 +189,14 @@ theorem tendsto_dPlus_maturity_atBot (hσ : 0 < σ) (hs : 0 < s) (hsK : s < K) :
     (hs.trans hsK)).2 hsK)
   have h := (tendsto_inv_nhdsGT_zero.comp
     (tendsto_mul_sqrt_nhdsGT_zero hσ)).const_mul_atTop_of_neg hlog
-  exact (h.atBot_add (tendsto_dPlus_sub (s := s) (r := r) (K := K) hσ)).congr fun u => by
+  exact (h.atBot_add (tendsto_dPlus_sub (s := s) (r := r) (K := K) hσ.ne')).congr fun u => by
     simp only [Function.comp_apply]
     ring
 
 /-- As the maturity tends to `0⁺`, `d₊ → 0` at the money. -/
-theorem tendsto_dPlus_maturity_strike (hσ : 0 < σ) (hK : 0 < K) :
+theorem tendsto_dPlus_maturity_strike (hσ : σ ≠ 0) (hK : K ≠ 0) :
     Tendsto (dPlus K r σ K) (𝓝[>] 0) (𝓝 0) := by
-  simpa [div_self hK.ne'] using tendsto_dPlus_sub (s := K) (r := r) (K := K) hσ
+  simpa [div_self hK] using tendsto_dPlus_sub (s := K) (r := r) (K := K) hσ
 
 /-- As the maturity tends to `0⁺`, `d₋ → +∞` in the money. -/
 theorem tendsto_dMinus_maturity_atTop (hσ : 0 < σ) (hK : 0 < K) (hsK : K < s) :
@@ -204,7 +211,7 @@ theorem tendsto_dMinus_maturity_atBot (hσ : 0 < σ) (hs : 0 < s) (hsK : s < K) 
     fun u => by rw [dMinus_def, sub_eq_add_neg]
 
 /-- As the maturity tends to `0⁺`, `d₋ → 0` at the money. -/
-theorem tendsto_dMinus_maturity_strike (hσ : 0 < σ) (hK : 0 < K) :
+theorem tendsto_dMinus_maturity_strike (hσ : σ ≠ 0) (hK : K ≠ 0) :
     Tendsto (dMinus K r σ K) (𝓝[>] 0) (𝓝 0) := by
   simpa only [sub_zero] using ((tendsto_dPlus_maturity_strike (r := r) hσ hK).sub
     (tendsto_mul_sqrt_nhds_zero σ)).congr fun u => (dMinus_def K r σ K u).symm
@@ -230,8 +237,8 @@ theorem tendsto_callPrice_maturity_zero (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K)
     rw [posPart_eq_zero.2 (sub_nonpos.2 hsK.le)]
     simpa using h
   · -- At the money, `d₊, d₋ → 0` and both cdf values tend to `Φ(0)`.
-    have hp := tendsto_dPlus_maturity_strike (r := r) hσ hK
-    have hm := tendsto_dMinus_maturity_strike (r := r) hσ hK
+    have hp := tendsto_dPlus_maturity_strike (r := r) hσ.ne' hK.ne'
+    have hm := tendsto_dMinus_maturity_strike (r := r) hσ.ne' hK.ne'
     have hΦ := (hasDerivAt_cdf_gaussianReal 0 one_ne_zero 0).continuousAt.tendsto
     have h := tendsto_callPrice_maturity_of_tendsto_cdf (hΦ.comp hp) (hΦ.comp hm)
     simpa using h
@@ -328,7 +335,7 @@ theorem tendsto_sqrt_mul_deriv_deriv_callPrice_spot_strike (hσ : 0 < σ) (hK : 
   have hφ : Continuous (gaussianPDFReal 0 1) := by
     simp_rw [funext gaussianPDFReal_zero_one]
     fun_prop
-  have h := ((hφ.tendsto 0).comp (tendsto_dPlus_maturity_strike (r := r) hσ hK)).div_const
+  have h := ((hφ.tendsto 0).comp (tendsto_dPlus_maturity_strike (r := r) hσ.ne' hK.ne')).div_const
     (K * σ)
   rw [Function.comp_def, gaussianPDFReal_zero_one] at h
   have hval : (√(2 * π))⁻¹ * exp (-(0 ^ 2 / 2)) / (K * σ) = 1 / (K * σ * √(2 * π)) := by
