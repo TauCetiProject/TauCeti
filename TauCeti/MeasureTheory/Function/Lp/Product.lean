@@ -15,6 +15,8 @@ The product `(x, y) ↦ f x * g y` of two square-integrable functions with value
 normed ring is square-integrable for the product measure. Neither measure needs to be s-finite.
 `MeasureTheory.MemLp.mul_prod` gives membership, while `MeasureTheory.Lp.prodMul` packages the
 product as an `Lp` vector with its almost-everywhere representative and additive and scalar laws.
+The norm is at most the product of the factor norms. Over a nontrivially normed field,
+`MeasureTheory.Lp.prodMulL` bundles this construction as a bounded bilinear map of norm at most one.
 
 The norm need only be submultiplicative. A normed ring supplies its own left scalar action, and
 homogeneity in the second argument with respect to that action requires commutativity.
@@ -69,6 +71,33 @@ noncomputable def prodMul (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
 theorem coeFn_prodMul (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
     ⇑(prodMul F G) =ᵐ[μ.prod ν] fun p : α × β => F p.1 * G p.2 :=
   MemLp.coeFn_toLp _
+
+/-- The tensor norm is at most the product of the factor norms, without finiteness assumptions
+on either measure. -/
+theorem norm_prodMul_le (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) : ‖prodMul F G‖ ≤ ‖F‖ * ‖G‖ := by
+  have hpow : ‖prodMul F G‖ₑ ^ 2 ≤ (‖F‖ₑ * ‖G‖ₑ) ^ 2 := by
+    rw [mul_pow]
+    simp only [Lp.enorm_def,
+      eLpNorm_eq_eLpNorm' two_ne_zero ENNReal.ofNat_ne_top (Lp.aestronglyMeasurable _),
+      eLpNorm', ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
+    norm_num
+    calc
+      ∫⁻ p, ‖prodMul F G p‖ₑ ^ 2 ∂(μ.prod ν)
+          = ∫⁻ p : α × β, ‖F p.1 * G p.2‖ₑ ^ 2 ∂(μ.prod ν) :=
+        lintegral_congr_ae ((coeFn_prodMul F G).fun_comp fun x => ‖x‖ₑ ^ 2)
+      _ ≤ ∫⁻ p : α × β, ‖F p.1‖ₑ ^ 2 * ‖G p.2‖ₑ ^ 2 ∂(μ.prod ν) := by
+        refine lintegral_mono fun p => ?_
+        have hmul : ‖F p.1 * G p.2‖ₑ ≤ ‖F p.1‖ₑ * ‖G p.2‖ₑ := by
+          simpa only [enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe]
+            using nnnorm_mul_le (F p.1) (G p.2)
+        simpa only [mul_pow] using pow_le_pow_left' hmul 2
+      _ ≤ ∫⁻ x, ∫⁻ y, ‖F x‖ₑ ^ 2 * ‖G y‖ₑ ^ 2 ∂ν ∂μ := lintegral_prod_le _
+      _ = (∫⁻ x, ‖F x‖ₑ ^ 2 ∂μ) * ∫⁻ y, ‖G y‖ₑ ^ 2 ∂ν :=
+        lintegral_lintegral_mul ((Lp.aestronglyMeasurable F).enorm.pow_const 2)
+          ((Lp.aestronglyMeasurable G).enorm.pow_const 2)
+  have h := ENNReal.toReal_mono (by finiteness) hpow
+  simp only [ENNReal.toReal_pow, ENNReal.toReal_mul, toReal_enorm] at h
+  exact (sq_le_sq₀ (norm_nonneg _) (by positivity)).1 h
 
 /-- The tensor is additive in its first argument. -/
 @[simp]
@@ -131,6 +160,8 @@ theorem prodMul_smul_left (c : 𝕜) (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
 
 end NormedRing
 
+section NormedCommRing
+
 variable [NormedCommRing 𝕜]
 
 /-- The tensor is homogeneous in its second argument. -/
@@ -143,5 +174,32 @@ theorem prodMul_smul_right (c : 𝕜) (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
     (Measure.quasiMeasurePreserving_snd (α := α) (μ := μ)).tendsto_ae.eventually
       (Lp.coeFn_smul c G)] with q h h1 hsmul hg
   simp [h, hsmul, h1, hg, mul_left_comm]
+
+end NormedCommRing
+
+variable [NontriviallyNormedField 𝕜]
+
+/-- **The tensor as a bounded bilinear map.** `prodMulL F G = prodMul F G`, packaged so that
+either operand can be fixed: `prodMulL F` fixes the left factor, `prodMulL.flip G` the right.
+Its operator norm is at most `1`; neither measure needs to be s-finite. -/
+noncomputable def prodMulL :
+    Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 ν →L[𝕜] Lp 𝕜 2 (μ.prod ν) :=
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ 𝕜 prodMul
+      (fun F₁ F₂ G => prodMul_add_left F₁ F₂ G)
+      (fun c F G => prodMul_smul_left c F G)
+      (fun F G₁ G₂ => prodMul_add_right F G₁ G₂)
+      (fun c F G => prodMul_smul_right c F G))
+    1 fun F G => by simpa using norm_prodMul_le F G
+
+/-- Applying the bilinear tensor map gives the pointwise-product vector. -/
+@[simp]
+theorem prodMulL_apply (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
+    prodMulL F G = prodMul F G :=
+  LinearMap.mkContinuous₂_apply _ _ _ _
+
+/-- The bilinear tensor map has operator norm at most one. -/
+theorem norm_prodMulL_le : ‖prodMulL (𝕜 := 𝕜) (μ := μ) (ν := ν)‖ ≤ 1 :=
+  LinearMap.mkContinuous₂_norm_le _ zero_le_one _
 
 end MeasureTheory.Lp
