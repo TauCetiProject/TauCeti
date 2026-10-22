@@ -46,6 +46,27 @@ def idealGenerator (f : BinaryQuadraticForm ℤ) (D : ℤ) : QuadraticAlgebra �
 @[simp] theorem idealGenerator_im (f : BinaryQuadraticForm ℤ) (D : ℤ) :
     (f.idealGenerator D).im = 1 / 2 := (rfl)
 
+/-- A form of discriminant `D` with nonzero leading coefficient is determined by the quotient of
+its two ideal generators: if `β_g a_h = β_h a_g`, then `g = h`. -/
+theorem eq_of_idealGenerator_mul_a_eq {g h : BinaryQuadraticForm ℤ} {D : ℤ}
+    (hg : g.discrim = D) (hh : h.discrim = D) (hga : g.a ≠ 0)
+    (heq : g.idealGenerator D * (h.a : QuadraticAlgebra ℚ (D : ℚ) 0) =
+      h.idealGenerator D * (g.a : QuadraticAlgebra ℚ (D : ℚ) 0)) : g = h := by
+  have him := congrArg QuadraticAlgebra.im heq
+  have hre := congrArg QuadraticAlgebra.re heq
+  simp only [im_mul, re_mul, idealGenerator_re, idealGenerator_im, re_intCast, im_intCast,
+    mul_zero, add_zero, zero_add] at him hre
+  have ha : h.a = g.a := by exact_mod_cast (by linarith : (h.a : ℚ) = g.a)
+  have hgaQ : (g.a : ℚ) ≠ 0 := by exact_mod_cast hga
+  rw [ha] at hre
+  have hb : h.b = g.b := by
+    exact_mod_cast mul_right_cancel₀ hgaQ (by linarith : (h.b : ℚ) * g.a = g.b * g.a)
+  have hc : h.c = g.c := by
+    have hdisc : h.discrim = g.discrim := hh.trans hg.symm
+    rw [discrim_def, discrim_def, discrim, discrim, ha, hb] at hdisc
+    exact mul_left_cancel₀ (mul_ne_zero four_ne_zero hga) (by linarith)
+  exact (BinaryQuadraticForm.ext ha hb hc).symm
+
 /-- A form's second ideal generator differs integrally from the order generator. -/
 theorem generator_eq_idealGenerator_add (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) :

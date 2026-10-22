@@ -89,27 +89,6 @@ private theorem norm_mul_a_eq (f g : BinaryQuadraticForm ℤ) (D : ℤ)
   push_cast at h ⊢
   linarith
 
-/-- A form of discriminant `D` with nonzero leading coefficient is determined by the quotient of
-its two ideal generators: if `β_g a_h = β_h a_g`, then `g = h`. -/
-private theorem eq_of_idealGenerator_mul_eq {g h : BinaryQuadraticForm ℤ} {D : ℤ}
-    (hg : g.discrim = D) (hh : h.discrim = D) (hga : g.a ≠ 0)
-    (heq : g.idealGenerator D * (h.a : QuadraticAlgebra ℚ (D : ℚ) 0) =
-      h.idealGenerator D * (g.a : QuadraticAlgebra ℚ (D : ℚ) 0)) : g = h := by
-  have him := congrArg QuadraticAlgebra.im heq
-  have hre := congrArg QuadraticAlgebra.re heq
-  simp only [im_mul, re_mul, idealGenerator_re, idealGenerator_im, re_intCast, im_intCast,
-    mul_zero, add_zero, zero_add] at him hre
-  have ha : h.a = g.a := by exact_mod_cast (by linarith : (h.a : ℚ) = g.a)
-  have hgaQ : (g.a : ℚ) ≠ 0 := by exact_mod_cast hga
-  rw [ha] at hre
-  have hb : h.b = g.b := by
-    exact_mod_cast mul_right_cancel₀ hgaQ (by linarith : (h.b : ℚ) * g.a = g.b * g.a)
-  have hc : h.c = g.c := by
-    have hdisc : h.discrim = g.discrim := hh.trans hg.symm
-    rw [discrim_def, discrim_def, discrim, discrim, ha, hb] at hdisc
-    exact mul_left_cancel₀ (mul_ne_zero four_ne_zero hga) (by linarith)
-  exact (BinaryQuadraticForm.ext ha hb hc).symm
-
 /-- If `μ` carries the ideal basis `a, β` of `f` to the ideal basis of `g` by a matrix of
 determinant `1`, then `g` is the corresponding proper transform of `f`. -/
 private theorem exists_smul_eq_of_mul_eq {D : ℤ} {f g : BinaryQuadraticForm ℤ}
@@ -121,7 +100,7 @@ private theorem exists_smul_eq_of_mul_eq {D : ℤ} {f g : BinaryQuadraticForm �
       μ * (z • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + w • f.idealGenerator D)) :
     ∃ γ : SL(2, ℤ), γ • f = g := by
   let γ : SL(2, ℤ) := ⟨!![w, z; y, x], by rw [Matrix.det_fin_two_of]; linarith⟩
-  refine ⟨γ, (eq_of_idealGenerator_mul_eq hgD ((discrim_smul γ f).trans hfD) hga ?_).symm⟩
+  refine ⟨γ, (eq_of_idealGenerator_mul_a_eq hgD ((discrim_smul γ f).trans hfD) hga ?_).symm⟩
   have hfirst := idealChangeFactor_mul_first f D hfD hfa γ
   have hsecond := idealChangeFactor_mul_second f D hfD hfa γ
   simp only [γ, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
@@ -171,10 +150,10 @@ private theorem exists_smul_eq_of_fractionalIdeal_eq {D : ℤ} [Fact (¬ IsSquar
     exact_mod_cast hprodQ
   -- Since `D < 0`, norms are nonnegative, so the determinant is nonnegative, hence `1`.
   refine Int.eq_one_of_mul_eq_one_right ?_ hprod
-  have hD : (D : ℚ) < 0 := by exact_mod_cast hneg
-  have hN : 0 ≤ QuadraticAlgebra.norm μ⁻¹ := by
-    rw [norm_def]
-    nlinarith [mul_self_nonneg μ⁻¹.re, mul_self_nonneg μ⁻¹.im]
+  have hN : 0 ≤ QuadraticAlgebra.norm μ⁻¹ := norm_nonneg_of_discr_nonpos (by
+    rw [discr_def]
+    have hD : (D : ℚ) < 0 := by exact_mod_cast hneg
+    linarith) μ⁻¹
   have hdet : (0 : ℚ) ≤ ((x' * w' - y' * z' : ℤ) : ℚ) :=
     nonneg_of_mul_nonneg_left (h₂ ▸ mul_nonneg hN hgaQ.le) hfaQ
   exact_mod_cast hdet
@@ -236,22 +215,11 @@ section PosDef
 
 variable (n : ℕ) [NeZero n]
 
-/-- A form is primitive positive definite of discriminant `-n` exactly when it has discriminant
-`-n`, positive leading coefficient and coprime coefficients. -/
-@[simp] theorem mem_posDef_inf_primitiveForms {f : BinaryQuadraticForm ℤ} :
-    f ∈ posDef n ⊓ primitiveForms (-n) ↔ f.discrim = -n ∧ 0 < f.a ∧ f.IsPrimitive :=
-  calc f ∈ posDef n ⊓ primitiveForms (-n) ↔ f ∈ posDef n ∧ f ∈ primitiveForms (-n) := Iff.rfl
-    _ ↔ _ := by rw [mem_posDef, mem_primitiveForms]; tauto
-
-/-- The proper equivalence classes of primitive positive definite forms of discriminant `-n`. -/
-abbrev PosDefProperClass := orbitRel.Quotient SL(2, ℤ) ↥(posDef n ⊓ primitiveForms (-n))
-
 variable (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1)
 
 /-- A primitive positive definite form, as a primitive form of discriminant `-n`. -/
 private def toPrimitiveForms (f : ↥(posDef n ⊓ primitiveForms (-n))) : primitiveForms (-n) :=
-  ⟨f, (mem_primitiveForms _ _).mpr ⟨((mem_posDef_inf_primitiveForms n).mp f.2).1,
-    ((mem_posDef_inf_primitiveForms n).mp f.2).2.2⟩⟩
+  ⟨f, inf_le_right (a := posDef n) f.2⟩
 
 private theorem coe_toPrimitiveForms (f : ↥(posDef n ⊓ primitiveForms (-n))) :
     (toPrimitiveForms n f : BinaryQuadraticForm ℤ) = f := (rfl)
@@ -267,9 +235,7 @@ noncomputable def posDefProperClassToPic :
 /-- The Picard class of the proper class of a form is the Picard class of the form. -/
 @[simp] theorem posDefProperClassToPic_mk (f : ↥(posDef n ⊓ primitiveForms (-n))) :
     posDefProperClassToPic n hn (Quotient.mk _ f) =
-      picClass (-n) hn ⟨f, (mem_primitiveForms _ _).mpr
-        ⟨((mem_posDef_inf_primitiveForms n).mp f.2).1,
-          ((mem_posDef_inf_primitiveForms n).mp f.2).2.2⟩⟩ := (rfl)
+      picClass (-n) hn ⟨f, inf_le_right (a := posDef n) f.2⟩ := (rfl)
 
 /-- **Distinct proper classes of primitive positive definite forms have distinct Picard classes.**
 This is the injective half of the correspondence between proper classes of primitive positive
