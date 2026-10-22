@@ -267,6 +267,22 @@ theorem excessAt_sub (f g : Assignment Q K) (v : V) :
     excessAt (f - g) v = excessAt f v - excessAt g v :=
   congrFun (map_sub (excessHom Q K) f g) v
 
+/-- A nonnegative assignment that vanishes on every arrow entering `v` has nonpositive excess at
+`v`. -/
+theorem excessAt_nonpos_of_nonneg_of_forall_in_eq_zero [PartialOrder K] [IsOrderedAddMonoid K]
+    {f : Assignment Q K} (hf : 0 ≤ f) {v : V} (h : ∀ w (e : Q w v), f e = 0) :
+    excessAt f v ≤ 0 := by
+  simp only [excessAt_def, h, sum_const_zero, zero_sub, neg_nonpos]
+  exact sum_nonneg fun w _ ↦ sum_nonneg fun e _ ↦ hf _ _ e
+
+/-- A nonnegative assignment that vanishes on every arrow leaving `v` has nonnegative excess at
+`v`. -/
+theorem excessAt_nonneg_of_nonneg_of_forall_out_eq_zero [PartialOrder K] [IsOrderedAddMonoid K]
+    {f : Assignment Q K} (hf : 0 ≤ f) {v : V} (h : ∀ w (e : Q v w), f e = 0) :
+    0 ≤ excessAt f v := by
+  simp only [excessAt_def, h, sum_const_zero, sub_zero]
+  exact sum_nonneg fun w _ ↦ sum_nonneg fun e _ ↦ hf _ _ e
+
 /-- **Excess on a vertex set.** The total excess of `f` on `S` is the value on arrows entering `S`
 from its complement minus the value on arrows leaving `S` for its complement; arrows with both ends
 in `S` cancel. -/

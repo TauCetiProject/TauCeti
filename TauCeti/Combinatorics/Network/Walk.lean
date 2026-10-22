@@ -24,10 +24,11 @@ in order with repetitions. A directed *path* repeats no vertex, and a directed *
 walk of positive length that repeats no vertex other than its common endpoints. Since the target
 of each traversed arrow is a later vertex of the walk, neither repeats an arrow; this is what
 bounds the value a path or cycle places on a single arrow in flow augmentation. Every walk
-contains a path between the same endpoints that uses only arrows of the walk. The *bottleneck* of
-a walk for capacities `c` is the least capacity of an arrow it traverses, and a vertex is
-*positively reachable* from another when some walk joins them along arrows of positive capacity;
-for residual capacities these are augmenting walks.
+contains a path between the same endpoints that uses only arrows of the walk, and every closed
+walk of positive length contains a cycle at the same vertex that uses only arrows of the walk.
+The *bottleneck* of a walk for capacities `c` is the least capacity of an arrow it traverses, and
+a vertex is *positively reachable* from another when some walk joins them along arrows of positive
+capacity; for residual capacities these are augmenting walks.
 
 ## Main definitions
 
@@ -46,11 +47,14 @@ for residual capacities these are augmenting walks.
   cycles traverse every arrow at most once.
 * `TauCeti.ArrowWalk.exists_isPath_arrows_subset`: every walk contains a path with the same
   endpoints.
+* `TauCeti.ArrowWalk.exists_isCycle_arrows_subset`: every closed walk of positive length contains
+  a cycle.
 * `TauCeti.ArrowWalk.le_bottleneck_iff` and `TauCeti.ArrowWalk.exists_mem_bottleneck_eq`: the
   bottleneck is the minimum of the capacities along the walk.
 * `TauCeti.positiveReachable_iff_exists_isPath` and `TauCeti.positiveReachable_iff_reflTransGen`:
   positive reachability is witnessed by a path, and is the reflexive transitive closure of being
-  joined by an arrow of positive capacity.
+  joined by an arrow of positive capacity; `TauCeti.exists_isCycle_iff_transGen` is the
+  counterpart for cycles.
 * `TauCeti.positiveReachable_iff_nonempty_arrowWalk`: positive reachability is reachability along
   the arrow family `TauCeti.PositiveHom c` of arrows of positive capacity.
 * `TauCeti.PositiveReachable.mem_of_mem`: a vertex set that no arrow of positive capacity leaves
@@ -219,6 +223,28 @@ theorem exists_isPath_arrows_subset {s t : V} (p : ArrowWalk Q s t) :
       exact List.append_subset.2
         ⟨List.subset_append_of_subset_left _ hsub, List.subset_append_right _ _⟩
 
+/-- **Cycle extraction.** Every closed walk of positive length contains a cycle at the same vertex
+that traverses only arrows of the walk. -/
+theorem exists_isCycle_arrows_subset {s : V} (c : ArrowWalk Q s s) (hc : 0 < c.length) :
+    ∃ c' : ArrowWalk Q s s, c'.IsCycle ∧ c'.arrows ⊆ c.arrows := by
+  cases c with
+  | nil => simp at hc
+  | @cons u _ p e =>
+    obtain ⟨p', hp', hsub⟩ := exists_isPath_arrows_subset (Q := Q) p
+    refine ⟨p'.cons e, ⟨by simp, ?_⟩, ?_⟩
+    · have hv : (p'.cons e).vertices = p'.vertices.concat s :=
+        @Quiver.Path.vertices_cons V ⟨Q⟩ _ _ _ p' e
+      have hne : p'.vertices ≠ [] := @Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p'
+      have hh : p'.vertices.head hne = s := @Quiver.Path.vertices_head_eq V ⟨Q⟩ _ _ p' hne
+      have hhead : p'.vertices = s :: p'.vertices.tail := by
+        conv_lhs => rw [← List.cons_head_tail hne, hh]
+      rw [isPath_def, hhead, List.nodup_cons] at hp'
+      rw [hv, List.concat_eq_append, List.tail_append_of_ne_nil hne]
+      exact hp'.2.append (List.nodup_singleton s) (List.disjoint_singleton.2 hp'.1)
+    · rw [arrows_cons, arrows_cons]
+      exact List.append_subset.2
+        ⟨List.subset_append_of_subset_left _ hsub, List.subset_append_right _ _⟩
+
 /-! ### Bottlenecks -/
 
 section Bottleneck
@@ -328,6 +354,29 @@ theorem positiveReachable_iff_reflTransGen :
     induction h with
     | refl => exact .refl c s
     | tail _ he ih => exact ih.tail he.choose he.choose_spec
+
+/-- **Cycles of positive arrows.** Some cycle at `v` traverses only arrows of positive capacity
+exactly when `v` reaches itself in one or more steps along arrows of positive capacity. -/
+theorem exists_isCycle_iff_transGen {v : V} :
+    (∃ p : ArrowWalk Q v v, p.IsCycle ∧ ∀ a ∈ p.arrows, 0 < c a.2.2) ↔
+      Relation.TransGen (fun v w ↦ ∃ e : Q v w, 0 < c e) v v := by
+  constructor
+  · rintro ⟨p, hp, hpos⟩
+    cases p with
+    | nil => simp [ArrowWalk.isCycle_def] at hp
+    | cons p e =>
+      simp only [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at hpos
+      exact Relation.TransGen.tail'_iff.2 ⟨_, positiveReachable_iff_reflTransGen.1
+        ⟨p, fun a ha ↦ hpos a (.inl ha)⟩, e, hpos _ (.inr rfl)⟩
+  · intro h
+    obtain ⟨u, hvu, e, he⟩ := Relation.TransGen.tail'_iff.1 h
+    obtain ⟨p, hp⟩ := positiveReachable_iff_reflTransGen.2 hvu
+    obtain ⟨p', hp', hsub⟩ := (p.cons e).exists_isCycle_arrows_subset (by simp)
+    refine ⟨p', hp', fun a ha ↦ ?_⟩
+    have ha := hsub ha
+    rw [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at ha
+    rcases ha with ha | rfl
+    exacts [hp a ha, he]
 
 variable (c) in
 /-- The arrows of positive capacity for `c`, retaining their identities: the arrow family of the
