@@ -735,16 +735,16 @@ theorem gaussDegree_teichmuller_mul_pow (hv : v.Integers O) (hρ₀ : 0 < ρ) (h
     (mul_ne_zero (teichmuller_ne_zero p ha) (pow_ne_zero m hp))
     (Filter.Eventually.of_forall fun ρ' hρ' ↦ gaussValuation_teichmuller_mul_pow hv hρ' a m)
 
-/-- Multiplying by a Teichmüller representative `[c]` with `c ≠ 0` does not change the degree. -/
+/-- Multiplying by a Teichmüller representative `[c]` with `c ≠ 0` does not change the degree,
+including at radius zero. -/
 @[simp]
-theorem gaussDegree_teichmuller_mul (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {c : O}
+theorem gaussDegree_teichmuller_mul (hv : v.Integers O) (hρ : ρ < 1) {c : O}
     (hc : c ≠ 0) (x : 𝕎 O) :
     gaussDegree p hv ρ hρ (teichmuller p c * x) = gaussDegree p hv ρ hρ x := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · rw [mul_zero]
-  have h₀ := gaussDegree_teichmuller_mul_pow (p := p) hv hρ₀ hρ hc 0
-  rw [pow_zero, mul_one] at h₀
-  rw [gaussDegree_mul hv hρ₀ hρ (teichmuller_ne_zero p hc) hx, h₀, zero_add]
+  have hvc : v (algebraMap O K c) ≠ 0 := by
+    rwa [ne_eq, map_eq_zero, map_eq_zero_iff _ hv.hom_inj]
+  simp only [gaussDegree, teichmullerCoeff_teichmuller_mul, map_mul,
+    gaussValuation_teichmuller, mul_assoc, mul_right_inj' hvc]
 
 /-- A nonzero finite Teichmüller sum `∑_{j < n} [aⱼ] pʲ` has degree less than `n`. -/
 theorem gaussDegree_sum_range_teichmuller_mul_pow_lt (hv : v.Integers O) (hρ₀ : 0 < ρ)
