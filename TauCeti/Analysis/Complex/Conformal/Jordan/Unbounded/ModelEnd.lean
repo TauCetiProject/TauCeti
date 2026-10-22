@@ -28,6 +28,9 @@ preconnected at infinity inside `U` by `TauCeti.IsPreconnectedAtInfinityIn.mono`
 hypothesis under which distinct boundary zeros of an inverted coordinate lie in distinct ends
 (`TauCeti.eq_of_eventually_mem_of_inverted_coordinate_eq_zero`).
 
+The far parts of sector and half-strip ends are also open and unbounded. A finite disjoint
+family covering a domain far out can be replaced by such open far parts.
+
 ## Main results
 
 * `TauCeti.isPreconnectedAtInfinityIn_halfStrip`: a half-strip is preconnected at infinity.
@@ -36,6 +39,9 @@ hypothesis under which distinct boundary zeros of an inverted coordinate lie in 
 * `TauCeti.isPreconnectedAtInfinityIn_halfStripExterior`: the far part of the exterior of a closed
   half-strip is preconnected at infinity.
 
+* `TauCeti.exists_far_ends`: replace a finite family of sector and half-strip ends by open,
+  unbounded far parts that remain disjoint, preconnected at infinity and cover the domain far out.
+
 ## References
 
 * T. Driscoll and L. Trefethen, *Schwarz--Christoffel Mapping*, Ch. 2.
@@ -43,7 +49,7 @@ hypothesis under which distinct boundary zeros of an inverted coordinate lie in 
 
 public section
 
-open Bornology Complex Filter Metric Set
+open Bornology Complex Filter Function Metric Set Topology
 
 namespace TauCeti
 
@@ -196,5 +202,110 @@ theorem isPreconnectedAtInfinityIn_halfStripExterior (ρ : ℝ) {c b : ℂ} (hb 
       div_lt_div_iff_of_pos_right (norm_pos_iff.2 hb)]
   rw [hset]
   exact (isPreconnectedAtInfinityIn_halfStripExterior_zero_one _).preimage_div_sub hb
+
+/-- The far part `E ∩ {ρ' < ‖w - c‖}`, `0 ≤ ρ'`, of a sector end of opening less than
+`2 * π` or a half-strip end is open. -/
+theorem isOpen_inter_far_of_end {e' ρ ρ' : ℝ} {E : Set ℂ} {c b : ℂ} (hb : b ≠ 0)
+    (hρ' : 0 ≤ ρ')
+    (hE : (e' ∈ Ioo (-3 : ℝ) (-1) ∧
+        E = {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < (-e' - 1) * Real.pi / 2}) ∨
+      (e' = -1 ∧ E = {w : ℂ | ρ < ((w - c) / b).re ∧ ((w - c) / b).im ∈ Ioo 0 Real.pi})) :
+    IsOpen (E ∩ {w : ℂ | ρ' < ‖w - c‖}) := by
+  -- strict inequalities between functions continuous at the point
+  have hnorm : Continuous fun w : ℂ => ‖w - c‖ := by fun_prop
+  have hdiv : Continuous fun w : ℂ => (w - c) / b := by fun_prop
+  refine isOpen_iff_mem_nhds.mpr fun w hw => ?_
+  have hfar : ∀ᶠ y in 𝓝 w, ρ' < ‖y - c‖ := continuousAt_const.eventually_lt hnorm.continuousAt hw.2
+  rcases hE with ⟨he, rfl⟩ | ⟨he, rfl⟩
+  · -- off the centre, the argument is continuous inside a sector of opening less than `2 * π`
+    have hne : (w - c) / b ≠ 0 := div_ne_zero (norm_pos_iff.mp (hρ'.trans_lt hw.2)) hb
+    have hslit : (w - c) / b ∈ slitPlane := by
+      refine mem_slitPlane_iff_arg.mpr ⟨fun h => ?_, hne⟩
+      have := hw.1.2
+      rw [h, abs_of_pos Real.pi_pos] at this
+      nlinarith [Real.pi_pos, he.1]
+    have harg : ContinuousAt (fun y : ℂ => |((y - c) / b).arg|) w :=
+      continuous_abs.continuousAt.comp
+        ((continuousAt_arg hslit).comp (f := fun y : ℂ => (y - c) / b) hdiv.continuousAt)
+    filter_upwards [hfar, continuousAt_const.eventually_lt hnorm.continuousAt hw.1.1,
+      harg.eventually_lt continuousAt_const hw.1.2] with y h₁ h₂ h₃ using ⟨⟨h₂, h₃⟩, h₁⟩
+  · have hre : Continuous fun y : ℂ => ((y - c) / b).re := by fun_prop
+    have him : Continuous fun y : ℂ => ((y - c) / b).im := by fun_prop
+    filter_upwards [hfar, continuousAt_const.eventually_lt hre.continuousAt hw.1.1,
+      continuousAt_const.eventually_lt him.continuousAt hw.1.2.1,
+      him.continuousAt.eventually_lt continuousAt_const hw.1.2.2] with y h₁ h₂ h₃ h₄
+      using ⟨⟨h₂, h₃, h₄⟩, h₁⟩
+
+/-- The far part `E ∩ {ρ' < ‖w - c‖}`, `ρ' ≤ |ρ|`, of a sector end of opening less than
+`2 * π` or a half-strip end is unbounded. -/
+theorem not_isBounded_inter_far_of_end {e' ρ ρ' : ℝ} {E : Set ℂ} {c b : ℂ} (hb : b ≠ 0)
+    (hρ' : ρ' ≤ |ρ|)
+    (hE : (e' ∈ Ioo (-3 : ℝ) (-1) ∧
+        E = {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < (-e' - 1) * Real.pi / 2}) ∨
+      (e' = -1 ∧ E = {w : ℂ | ρ < ((w - c) / b).re ∧ ((w - c) / b).im ∈ Ioo 0 Real.pi})) :
+    ¬IsBounded (E ∩ {w : ℂ | ρ' < ‖w - c‖}) := fun hE' => by
+  obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.mp hE'
+  -- the points `c + b * ζ` with `t ≤ re ζ`, for `t` large, are far from `c` and from `0`
+  have hbpos : 0 < ‖b‖ := norm_pos_iff.mpr hb
+  set t := (|M| + ‖c‖ + |ρ| + 1) / ‖b‖ + |ρ| + 1
+  have hbt : |M| + ‖c‖ + |ρ| + 1 ≤ ‖b‖ * t := by
+    have := mul_div_cancel₀ (|M| + ‖c‖ + |ρ| + 1) hbpos.ne'
+    nlinarith [abs_nonneg ρ]
+  have ht : |ρ| < t := by
+    have : 0 ≤ (|M| + ‖c‖ + |ρ| + 1) / ‖b‖ := by positivity
+    linarith
+  have hfar (ζ : ℂ) (hζ : t ≤ ζ.re) : |ρ| < ‖c + b * ζ - c‖ ∧ M < ‖c + b * ζ‖ := by
+    have h₁ : ‖b‖ * t ≤ ‖c + b * ζ - c‖ := by
+      rw [add_sub_cancel_left, norm_mul]
+      exact mul_le_mul_of_nonneg_left (hζ.trans ((le_abs_self _).trans (abs_re_le_norm ζ)))
+        (norm_nonneg b)
+    constructor <;> linarith [norm_sub_le (c + b * ζ) c, le_abs_self M, abs_nonneg M,
+      abs_nonneg ρ, norm_nonneg c]
+  have hdiv (ζ : ℂ) : (c + b * ζ - c) / b = ζ := by
+    rw [add_sub_cancel_left, mul_div_cancel_left₀ _ hb]
+  rcases hE with ⟨he, rfl⟩ | ⟨he, rfl⟩
+  · obtain ⟨h₁, h₂⟩ := hfar t (by simp)
+    refine (hM (c + b * t) ⟨⟨(le_abs_self ρ).trans_lt h₁, ?_⟩, hρ'.trans_lt h₁⟩).not_gt h₂
+    rw [hdiv, arg_ofReal_of_nonneg (by linarith [abs_nonneg ρ]), abs_zero]
+    nlinarith [Real.pi_pos, he.2]
+  · obtain ⟨h₁, h₂⟩ := hfar (t + Real.pi / 2 * Complex.I) (by simp)
+    refine (hM _ ⟨⟨?_, ?_, ?_⟩, hρ'.trans_lt h₁⟩).not_gt h₂ <;> rw [hdiv] <;> simp <;>
+      linarith [Real.pi_pos, le_abs_self ρ]
+
+/-- **Open far parts of the ends.**  For finitely many pairwise disjoint sector ends of opening
+less than `2 * π` or half-strip ends contained in `U` and covering it far out, their far parts are
+open, unbounded, pairwise disjoint and preconnected at infinity inside `U`, and still cover `U`
+far out. -/
+theorem exists_far_ends {κ : Type*} [Finite κ] {e' : κ → ℝ} {U : Set ℂ}
+    {E : κ → Set ℂ} {c b : κ → ℂ} {ρ R : ℝ} (hb : ∀ k, b k ≠ 0)
+    (hE : ∀ k, (e' k ∈ Ioo (-3 : ℝ) (-1) ∧
+        E k = {w : ℂ | ρ < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2}) ∨
+      (e' k = -1 ∧
+        E k = {w : ℂ | ρ < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi}))
+    (hEU : ∀ k, E k ⊆ U) (hUE : ∀ w ∈ U, R < ‖w‖ → ∃ k, w ∈ E k)
+    (hEd : Pairwise (Disjoint on E)) :
+    ∃ E' : κ → Set ℂ, ∃ R' : ℝ, (∀ k, IsOpen (E' k)) ∧ (∀ k, E' k ⊆ E k) ∧
+      Pairwise (Disjoint on E') ∧ (∀ w ∈ U, R' < ‖w‖ → ∃ k, w ∈ E' k) ∧
+      (∀ k, IsPreconnectedAtInfinityIn U (E' k)) ∧ ∀ k, ¬IsBounded (E' k) := by
+  have := Fintype.ofFinite κ
+  refine ⟨fun k => E k ∩ {w : ℂ | max ρ 0 < ‖w - c k‖}, max R (max ρ 0 + ∑ k, ‖c k‖),
+    fun k => isOpen_inter_far_of_end (hb k) (le_max_right ρ 0) (hE k),
+    fun k => inter_subset_left,
+    fun k l hkl => (hEd hkl).mono inter_subset_left inter_subset_left, fun w hw hRw => ?_,
+    fun k => ?_, fun k => not_isBounded_inter_far_of_end (hb k)
+      (max_le (le_abs_self ρ) (abs_nonneg ρ)) (hE k)⟩
+  · -- far from `0`, a point is far from every centre
+    obtain ⟨k, hk⟩ := hUE w hw ((le_max_left _ _).trans_lt hRw)
+    have hck : ‖c k‖ ≤ ∑ l, ‖c l‖ :=
+      Finset.single_le_sum (f := fun l => ‖c l‖) (fun _ _ => norm_nonneg _) (Finset.mem_univ k)
+    refine ⟨k, hk, ?_⟩
+    have := norm_sub_norm_le w (c k)
+    have := le_max_right R (max ρ 0 + ∑ l, ‖c l‖)
+    exact (by linarith : max ρ 0 < ‖w - c k‖)
+  · rcases hE k with ⟨-, hEk⟩ | ⟨-, hEk⟩
+    · exact ((isPreconnectedAtInfinityIn_sector ρ _ (hb k)).mono (hEk ▸ hEU k)).subset
+        (hEk ▸ inter_subset_left)
+    · exact ((isPreconnectedAtInfinityIn_halfStrip ρ (hb k)).mono (hEk ▸ hEU k)).subset
+        (hEk ▸ inter_subset_left)
 
 end TauCeti
