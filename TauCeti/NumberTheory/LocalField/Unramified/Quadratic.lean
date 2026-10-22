@@ -21,7 +21,7 @@ discriminant `Tr(ω)² - 4 N(ω)` of `ω` is a unit of `𝒪[K]`, then `L/K` is 
 reduction modulo `𝓂[K]` is separable. A root of that reduction in `𝓀[K]` would be simple, so by
 Hensel's lemma it would lift to a root in `𝒪[K]`, and `ω` would lie in `K`, where its
 discriminant vanishes. So the residue of `ω` lies outside `𝓀[K]`, the residue degree of `L/K`
-is two, and `(1, ω)` lifts the residue basis `(1, ω̄)`.
+is two, and `(1, ω)` lifts the residue basis `(1, residue 𝒪[L] ω)`.
 
 The typical generator is `ω = (x - b)/s` for a square root `x ∉ K` of `a ∈ K`, when `2b = s t`
 and `b² - a = s² c` with `t, c ∈ 𝒪[K]`. Its discriminant is `t² - 4c = 4a/s²`. With `b = 0` and
@@ -145,7 +145,7 @@ private theorem finrank_residueField_eq_two_of_isUnit_discrim
 
 /-- **The integral basis of an unramified quadratic extension.** If `ω ∈ 𝒪[L]` has discriminant
 `Tr(ω)² - 4 N(ω)` a unit of `𝒪[K]`, then `(1, ω)` is a basis of `𝒪[L]` over `𝒪[K]`. It lifts the
-basis `(1, ω̄)` of the residue extension. -/
+basis `(1, residue 𝒪[L] ω)` of the residue extension. -/
 noncomputable def unramifiedQuadraticBasis
     (hω : IsUnit (Algebra.trace 𝒪[K] 𝒪[L] ω ^ 2 - 4 * Algebra.norm 𝒪[K] ω)) :
     Module.Basis (Fin 2) 𝒪[K] 𝒪[L] :=
