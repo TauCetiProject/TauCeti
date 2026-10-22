@@ -81,16 +81,19 @@ class PickerTests(unittest.TestCase):
             (directory / "fixture.json").write_text(json.dumps(fixture))
             (directory / "sitecustomize.py").write_text("""
 import io,json,os,time,urllib.request,urllib.error
-original=urllib.request.urlopen
-def urlopen(request,*args,**kwargs):
+original=urllib.request.OpenerDirector.open
+def urlopen(self,request,*args,**kwargs):
     if getattr(request,'full_url','').startswith('https://github-state.taucetiproject.org/v1/runner-capacity?'):
         fixture=json.load(open(os.environ['FIXTURE']))
+        handler=next(h for h in self.handlers if type(h).__name__=='NoRedirect')
+        if handler.redirect_request(request,None,302,'redirect',{},'https://other.invalid/') is not None:raise RuntimeError('redirect allowed')
+        if fixture.get('_shared_http'):raise urllib.error.HTTPError(request.full_url,fixture['_shared_http'],'fixture',{},None)
         value=fixture.get('_shared')
         if value is None:raise urllib.error.URLError('fixture unavailable')
         value={'observed_at':time.time()*1000,'retry_at':time.time()*1000+30000,**value}
         return io.BytesIO(json.dumps(value).encode())
-    return original(request,*args,**kwargs)
-urllib.request.urlopen=urlopen
+    return original(self,request,*args,**kwargs)
+urllib.request.OpenerDirector.open=urlopen
 """)
             output, summary, calls = (directory / name for name in ["output", "summary", "calls"])
             step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "pick")
@@ -108,7 +111,7 @@ urllib.request.urlopen=urlopen
                    "REPOSITORY_API_RESERVE": selected_repository_reserve,
                    "GH_TOKEN": app_token or "repository-token",
                    "GITHUB_STATE_TOKEN": state_token, "CAPACITY_REPOSITORY": "Test/code",
-                   "PYTHONPATH": str(directory)}
+                   "PYTHONPATH": str(directory), "PYTHONOPTIMIZE": "1"}
             step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "pick")
             result = subprocess.run(["bash", "-e", "-c", step["run"]], env=env,
                                     text=True, capture_output=True, timeout=20)
@@ -117,13 +120,15 @@ urllib.request.urlopen=urlopen
                     summary.read_text(), calls.read_text().splitlines() if calls.exists() else [])
 
     def test_prepared_shared_capacity_avoids_all_github_calls(self):
-        for busy, expected in ((9, "true"), (19, "false")):
+        for busy, expected in ((9, "true"), (18, "true"), (19, "false")):
             fixture={'_shared':dict(complete=True, organization='Test', busy=busy, cached=True, requests=25)}
             output, summary, calls=self.pick(fixture, state_token='state-client')
             self.assertEqual(output['github'],expected)
             self.assertEqual(output['busy'],str(busy))
             self.assertEqual(calls,[])
             self.assertIn('Shared capacity observation:',summary)
+            self.assertIn('credential_pool=shared_state',summary)
+            self.assertNotIn('state-client',summary)
 
     def test_unavailable_incomplete_wrong_org_and_expired_cache_use_direct_discovery(self):
         good=dict(complete=True,organization='Test',busy=0,cached=True,requests=25)
@@ -135,6 +140,14 @@ urllib.request.urlopen=urlopen
             self.assertEqual(output['busy'],'2')
             self.assertIn('Shared capacity unavailable',summary)
             self.assertTrue(calls)
+
+    def test_shared_http_errors_and_redirects_use_direct_discovery(self):
+        for status in (302,401,429,503):
+            fixture=self.fixture();fixture['_shared_http']=status
+            output,summary,calls=self.pick(fixture,state_token='state-client')
+            self.assertEqual(output['github'],'true')
+            self.assertTrue(calls)
+            self.assertNotIn('state-client',summary)
 
     def test_namespace_backlog_does_not_spill_idle_github_capacity(self):
         fixture = self.fixture()

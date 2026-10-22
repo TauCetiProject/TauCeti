@@ -222,19 +222,21 @@ jobs:
           if [ -n "${GITHUB_STATE_TOKEN:-}" ]; then
             if snapshot=$(python3 - <<'PY_SHARED'
           import json,os,time,urllib.request,urllib.parse
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs):return None
           repo=os.environ['CAPACITY_REPOSITORY']
           try:
               request=urllib.request.Request('https://github-state.taucetiproject.org/v1/runner-capacity?'+urllib.parse.urlencode({'repository':repo}),headers={
                   'Authorization':'Bearer '+os.environ['GITHUB_STATE_TOKEN'],
                   'User-Agent':'TauCetiWorker/1.0 (+https://github.com/TauCetiProject/TauCetiWorker)'})
-              with urllib.request.urlopen(request,timeout=10) as response:
+              with urllib.request.build_opener(NoRedirect()).open(request,timeout=10) as response:
                   raw=response.read(16385)
               if len(raw)>16384:raise ValueError('oversized capacity response')
               value=json.loads(raw);now=time.time()*1000
-              assert value.get('complete') is True and value.get('organization')==repo.split('/')[0]
-              assert type(value.get('busy')) is int and 0<=value['busy']<=10000
-              assert isinstance(value.get('observed_at'),(int,float)) and -5000<=now-value['observed_at']<=60000
-              assert isinstance(value.get('retry_at'),(int,float)) and value['retry_at']>now
+              if value.get('complete') is not True or value.get('organization')!=repo.split('/')[0]:raise ValueError('invalid coverage')
+              if type(value.get('busy')) is not int or not 0<=value['busy']<=10000:raise ValueError('invalid count')
+              if not isinstance(value.get('observed_at'),(int,float)) or not -5000<=now-value['observed_at']<=60000:raise ValueError('stale observation')
+              if not isinstance(value.get('retry_at'),(int,float)) or value['retry_at']<=now:raise ValueError('expired observation')
               print(json.dumps({k:value[k] for k in ('busy','observed_at','cached','requests')}))
           except Exception:
               raise SystemExit(1)
@@ -242,6 +244,7 @@ jobs:
             ); then
               busy=$(printf '%s' "$snapshot" | python3 -c 'import json,sys;print(json.load(sys.stdin)["busy"])')
               echo "Shared capacity observation: $snapshot" >> "$GITHUB_STEP_SUMMARY"
+              api_pool=shared_state
               reason=shared_capacity_available
               if [ "$busy" -le "$BUDGET" ]; then decide true "$busy hosted jobs observed by shared discovery (budget $BUDGET): using GitHub."; fi
               reason=shared_capacity_busy
