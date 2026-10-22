@@ -160,18 +160,36 @@ theorem neg_laplacian_laplacianResolvent_add_smul {c : ℝ} (hc : 0 < c) (f : �
     map_smul, postcompCLM_postcompCLM, reCLM_comp_ofRealLI, postcompCLM_apply,
     ContinuousLinearMap.id_apply] using congrArg (fun u : 𝓢(E, G) ↦ u x) hreal
 
+/-- The resolvent of the Laplacian commutes with the Laplacian. -/
+theorem laplacianResolvent_laplacian {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
+    laplacianResolvent c (Δ f) = Δ (laplacianResolvent c f) := by
+  have hcomplex := fourierMultiplierCLM_laplacian
+    (TauCeti.hasTemperateGrowth_inv_mul_norm_sq_add (E := E) (a := (2 * π) ^ 2)
+      (c := c) (by positivity) hc)
+    (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
+  have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
+  simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM] using hreal
+
 /-- The resolvent of the Laplacian is a left inverse of `-Δ + c`, for `c > 0`. -/
 @[simp]
 theorem laplacianResolvent_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
     laplacianResolvent c (-Δ f + c • f) = f := by
-  have hcomplex := fourierMultiplierCLM_neg_laplacian_add_smul hc
-    (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
-  have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
-  ext x
-  simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM, map_add, map_neg,
-    map_smul, postcompCLM_postcompCLM, reCLM_comp_ofRealLI, postcompCLM_apply,
-    ContinuousLinearMap.id_apply] using congrArg (fun u : 𝓢(E, G) ↦ u x) hreal
+  rw [map_add, map_neg, map_smul, laplacianResolvent_laplacian hc]
+  exact neg_laplacian_laplacianResolvent_add_smul hc f
 
 end Real
+
+/-- On complex-valued Schwartz space, the real resolvent is the Fourier multiplier with
+symbol `((2π)² ‖ξ‖² + c)⁻¹`. -/
+theorem laplacianResolvent_eq_fourierMultiplierCLM
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
+    {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
+    laplacianResolvent c f =
+      fourierMultiplierCLM G (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹) f := by
+  have h := congrArg (laplacianResolvent (G := G) c)
+    (neg_laplacian_fourierMultiplierCLM_add_smul hc f)
+  rw [laplacianResolvent_neg_laplacian_add_smul hc] at h
+  exact h.symm
+
 
 end SchwartzMap
