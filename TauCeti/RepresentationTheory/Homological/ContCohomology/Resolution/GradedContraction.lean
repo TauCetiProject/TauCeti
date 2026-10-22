@@ -49,6 +49,10 @@ a homogeneous cocycle is its class in continuous cohomology
 
 ## Main results
 
+* `TopRep.ResolutionContraction.ofGraded_ι`, `TopRep.ResolutionContraction.ofGraded_proj_apply`,
+  `TopRep.ResolutionContraction.ofGraded_hom_apply`: the data of `ofGraded` are `ι`, `π` and `h`.
+* `TopRep.ResolutionContraction.gradedCohomologyClass_add`, `gradedCohomologyClass_zero` and
+  `gradedCohomologyClass_smul`: the class is linear in the cocycle.
 * `TopRep.ResolutionContraction.gradedCohomologyClass_eq_of_sub_eq_d`: homogeneous cocycles
   differing by the differential of a homogeneous invariant element have the same class.
 * `TopRep.gradedCohomologyClass_gradedResolutionContraction`: on the total coinduced resolution,
@@ -100,34 +104,55 @@ noncomputable def ofGraded (X : TopRep.{max v w} k G) (ι : X ⟶ M) (hι : ∀ 
   ι := M.gradedCochainComplexLift ℳ hρ d hd hdd 0 ι hι
   proj := π ∘ₗ (M.gradedCochainComplexι ℳ hρ d hd hdd 0).hom.toLinearMap
   hom n := M.gradedCochainComplexRestrict ℳ hρ d hd hdd h hh (by push_cast; ring)
-  proj_ι x := by
-    rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
-      ContIntertwiningMap.toContinuousLinearMap_apply, gradedCochainComplexι_apply,
-      gradedCochainComplexLift_apply, hπι]
+  proj_ι x := by simp [ContIntertwiningMap.toContinuousLinearMap_apply, hπι]
   ι_proj_add_hom_d v := by
     apply gradedCochainComplexι_injective M ℳ hρ d hd hdd 0
     have hv := hdh v.1
     rw [hh₀ v.1 v.2, map_zero, zero_add] at hv
-    rw [map_add, gradedCochainComplexι_apply, gradedCochainComplexι_apply,
-      gradedCochainComplexι_apply, gradedCochainComplexLift_apply, LinearMap.comp_apply,
-      ContinuousLinearMap.coe_coe, ContIntertwiningMap.toContinuousLinearMap_apply,
-      gradedCochainComplexι_apply, gradedCochainComplexRestrict_apply,
-      gradedCochainComplex_d_apply, hv, add_sub_cancel]
+    rw [map_add]
+    simp [ContIntertwiningMap.toContinuousLinearMap_apply, hv]
   d_hom_add_hom_d n v := by
     apply gradedCochainComplexι_injective M ℳ hρ d hd hdd (n + 1)
-    rw [map_add, gradedCochainComplexι_apply, gradedCochainComplexι_apply,
-      gradedCochainComplexι_apply, gradedCochainComplex_d_apply,
-      gradedCochainComplexRestrict_apply, gradedCochainComplexRestrict_apply,
-      gradedCochainComplex_d_apply, hdh, hπ n v.1 v.2, map_zero, sub_zero]
+    rw [map_add]
+    simp [hdh, hπ n v.1 v.2]
   continuous_proj :=
     (continuous_conj_restrict (hρ := hρ) (hd := hd) (hdd := hdd) hπc 0).congr fun p ↦ by
-      rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
-        ContIntertwiningMap.toContinuousLinearMap_apply, gradedCochainComplexι_apply,
-        gradedCochainComplex_ρ_apply]
+      simp [ContIntertwiningMap.toContinuousLinearMap_apply]
   continuous_hom n := (continuous_gradedCochainComplex_X_iff M ℳ hρ d hd hdd n _).2 <|
     (continuous_conj_restrict (hρ := hρ) (hd := hd) (hdd := hdd) hhc (n + 1)).congr fun p ↦ by
-      rw [gradedCochainComplex_ρ_apply, gradedCochainComplexRestrict_apply,
-        gradedCochainComplex_ρ_apply]
+      simp
+
+section ofGraded
+
+variable (X : TopRep.{max v w} k G) (ι : X ⟶ M) (hι : ∀ x, ι.hom x ∈ ℳ 0)
+  (π : M.V →ₗ[k] X.V) (h : M.V →ₗ[k] M.V) (hh : TauCeti.LinearMap.IsHomogeneous h ℳ ℳ (-1))
+  (hπι : ∀ x, π (ι.hom x) = x) (hπ : ∀ (n : ℕ), ∀ v ∈ ℳ (n + 1 : ℕ), π v = 0)
+  (hh₀ : ∀ v ∈ ℳ 0, h v = 0) (hdh : ∀ v, d.hom (h v) + h (d.hom v) = v - ι.hom (π v))
+  (hπc : Continuous fun p : M.V × G ↦ X.ρ p.2 (π (M.ρ p.2⁻¹ p.1)))
+  (hhc : Continuous fun p : M.V × G ↦ M.ρ p.2 (h (M.ρ p.2⁻¹ p.1)))
+
+/-- The augmentation of `ofGraded` is the factorization of `ι` through the degree-zero term. -/
+@[simp]
+theorem ofGraded_ι :
+    (ofGraded (hρ := hρ) (hd := hd) (hdd := hdd) X ι hι π h hh hπι hπ hh₀ hdh hπc hhc).ι =
+      M.gradedCochainComplexLift ℳ hρ d hd hdd 0 ι hι :=
+  (rfl)
+
+/-- The retraction of `ofGraded` is `π` on the degree-zero term. -/
+@[simp]
+theorem ofGraded_proj_apply (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X 0).V) :
+    (ofGraded (hρ := hρ) (hd := hd) (hdd := hdd) X ι hι π h hh hπι hπ hh₀ hdh hπc hhc).proj v =
+      π v.1 :=
+  congrArg π (gradedCochainComplexι_apply M ℳ hρ d hd hdd 0 v)
+
+/-- The contracting homotopy of `ofGraded` is `h` on each term. -/
+@[simp]
+theorem ofGraded_hom_apply (n : ℕ) (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X (n + 1)).V) :
+    ((ofGraded (hρ := hρ) (hd := hd) (hdd := hdd) X ι hι π h hh hπι hπ hh₀ hdh hπc hhc).hom n
+      v).1 = h v.1 :=
+  gradedCochainComplexRestrict_apply M ℳ hρ d hd hdd h hh _ v
+
+end ofGraded
 
 variable [IsTopologicalGroup G] {X : TopRep.{max v w} k G}
   (c : ResolutionContraction X (M.gradedCochainComplex ℳ hρ d hd hdd))
@@ -159,10 +184,47 @@ theorem gradedCohomologyClass_eq_of_sub_eq_d {n : ℕ} {z z' : M.V} (hz : z ∈ 
   c.cohomologyClass_eq_of_sub_eq_d _ _ _ _
     (M.gradedCochainComplexInvariant ℳ hρ d hd hdd n y hy hyinv)
     (gradedCochainComplexι_injective M ℳ hρ d hd hdd (n + 1) (by
-      rw [map_sub, gradedCochainComplexι_apply, gradedCochainComplexι_apply,
-        gradedCochainComplexι_apply, gradedCochainComplex_d_apply,
-        gradedCochainComplexInvariant_val, gradedCochainComplexInvariant_val,
-        gradedCochainComplexInvariant_val, hzy]))
+      rw [map_sub]
+      simpa using hzy))
+
+/-- The class of a sum of homogeneous cocycles is the sum of their classes. -/
+@[simp]
+theorem gradedCohomologyClass_add {n : ℕ} {z z' : M.V} (hz : z ∈ ℳ n) (hz' : z' ∈ ℳ n)
+    (hinv : ∀ g, M.ρ g z = z) (hinv' : ∀ g, M.ρ g z' = z') (hdz : d.hom z = 0)
+    (hdz' : d.hom z' = 0) :
+    c.gradedCohomologyClass (z + z') (add_mem hz hz') (fun g ↦ by rw [map_add, hinv, hinv'])
+        (by rw [map_add, hdz, hdz', add_zero]) =
+      c.gradedCohomologyClass z hz hinv hdz + c.gradedCohomologyClass z' hz' hinv' hdz' := by
+  simp only [gradedCohomologyClass_def, ← cohomologyClass_add]
+  congr 1
+  refine Subtype.ext (gradedCochainComplexι_injective M ℳ hρ d hd hdd n ?_)
+  rw [Submodule.coe_add, map_add]
+  simp
+
+/-- The class of the zero cocycle is zero. -/
+@[simp]
+theorem gradedCohomologyClass_zero {n : ℕ} :
+    c.gradedCohomologyClass (0 : M.V) (zero_mem (ℳ n)) (fun g ↦ map_zero (M.ρ g)) (map_zero _) =
+      0 := by
+  rw [gradedCohomologyClass_def, ← c.cohomologyClass_zero]
+  congr 1
+  refine Subtype.ext (gradedCochainComplexι_injective M ℳ hρ d hd hdd n ?_)
+  rw [ZeroMemClass.coe_zero, map_zero]
+  simp
+
+/-- The class of a scalar multiple of a homogeneous cocycle is the scalar multiple of its
+class. -/
+@[simp]
+theorem gradedCohomologyClass_smul {n : ℕ} (r : k) {z : M.V} (hz : z ∈ ℳ n)
+    (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
+    c.gradedCohomologyClass (r • z) (Submodule.smul_mem _ r hz)
+        (fun g ↦ by rw [map_smul, hinv]) (by rw [map_smul, hdz, smul_zero]) =
+      r • c.gradedCohomologyClass z hz hinv hdz := by
+  rw [gradedCohomologyClass_def, gradedCohomologyClass_def, ← cohomologyClass_smul]
+  congr 1
+  refine Subtype.ext (gradedCochainComplexι_injective M ℳ hρ d hd hdd n ?_)
+  rw [Submodule.coe_smul, map_smul]
+  simp
 
 end ResolutionContraction
 
@@ -289,6 +351,28 @@ noncomputable def gradedResolutionContraction :
         (X.gradedResolutionDifferential_gradedResolutionHomotopy_add v))
     (hM.continuous_conj hX _) (hM.continuous_conj hM _)
 
+/-- The augmentation of `gradedResolutionContraction` is the augmentation of the total
+resolution. -/
+@[simp]
+theorem gradedResolutionContraction_ι_apply (x : X.V) :
+    ((gradedResolutionContraction hX).ι.hom x).1 = X.gradedResolutionAugmentation x :=
+  have := hX.discreteTopology
+  (gradedCochainComplexLift_apply _ _ _ _ _ _ 0 _ _ x).trans
+    (gradedResolutionTopRepAugmentation_apply X x)
+
+/-- The retraction of `gradedResolutionContraction` is `gradedResolutionProjection`. -/
+@[simp]
+theorem gradedResolutionContraction_proj_apply (v : ((gradedResolutionCochainComplex X).X 0).V) :
+    (gradedResolutionContraction hX).proj v = X.gradedResolutionProjection v.1 :=
+  congrArg X.gradedResolutionProjection (gradedCochainComplexι_apply _ _ _ _ _ _ 0 v)
+
+/-- The contracting homotopy of `gradedResolutionContraction` is `gradedResolutionHomotopy`. -/
+@[simp]
+theorem gradedResolutionContraction_hom_apply (n : ℕ)
+    (v : ((gradedResolutionCochainComplex X).X (n + 1)).V) :
+    ((gradedResolutionContraction hX).hom n v).1 = X.gradedResolutionHomotopy v.1 :=
+  gradedCochainComplexRestrict_apply _ _ _ _ _ _ _ X.isHomogeneous_gradedResolutionHomotopy _ v
+
 /-- The chain map `gradedResolutionToResolution X` lies over the identity of `X`. -/
 private theorem ι_comp_gradedResolutionToResolution_f_zero :
     (gradedResolutionContraction hX).ι ≫ (gradedResolutionToResolution X).f 0 =
@@ -299,9 +383,7 @@ private theorem ι_comp_gradedResolutionToResolution_f_zero :
   rw [comp_apply, resolutionContraction_ι]
   refine gradedResolutionComponent_apply X _ _ ?_
   exact (gradedCochainComplexι_apply _ _ _ _ _ _ 0 _).trans
-    ((gradedCochainComplexLift_apply _ _ _ _ _ _ 0 _ _ x).trans
-      ((gradedResolutionTopRepAugmentation_apply X x).trans
-        (gradedResolutionAugmentation_apply X x)))
+    ((gradedResolutionContraction_ι_apply hX x).trans (gradedResolutionAugmentation_apply X x))
 
 /-- **On the total coinduced resolution, the class of a homogeneous cocycle is its class in
 continuous cohomology**: a homogeneous cocycle `z` of degree `n`, included into the total

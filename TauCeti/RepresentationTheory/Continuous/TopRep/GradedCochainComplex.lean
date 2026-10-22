@@ -46,6 +46,8 @@ assembles a `ℤ`-indexed complex of modules from the same kind of data.
 * `TopRep.gradedCochainComplex_d_comp_ι`: the inclusions intertwine the differential of the
   complex with `d`.
 * `TopRep.gradedCochainComplex_d_apply`: the same statement on an element.
+* `TopRep.gradedCochainComplexLift_comp_ι`, `TopRep.gradedCochainComplexLift_unique`: the
+  factorization through a term is characterized by its composite with the inclusion.
 * `TopRep.gradedCochainComplex_d_invariant`: a fixed homogeneous vector killed by `d` is an
   invariant cocycle of the complex.
 -/
@@ -163,6 +165,23 @@ theorem gradedCochainComplexι_injective (n : ℕ) :
     Function.Injective (M.gradedCochainComplexι ℳ hρ d hd hdd n).hom :=
   subrepresentationι_injective M (ℳ n) _
 
+/-- The factorization through a term of `gradedCochainComplex`, followed by the inclusion, is the
+original morphism. -/
+@[reassoc (attr := simp)]
+theorem gradedCochainComplexLift_comp_ι {Y : TopRep.{w} k G} (n : ℕ) (f : Y ⟶ M)
+    (hf : ∀ y, f.hom y ∈ ℳ n) :
+    M.gradedCochainComplexLift ℳ hρ d hd hdd n f hf ≫ M.gradedCochainComplexι ℳ hρ d hd hdd n =
+      f :=
+  subrepresentationLift_comp_ι M (ℳ n) (hρ n) f hf
+
+/-- A morphism into a term of `gradedCochainComplex` is the factorization of its composite with
+the inclusion. -/
+theorem gradedCochainComplexLift_unique {Y : TopRep.{w} k G} (n : ℕ) (f : Y ⟶ M)
+    (hf : ∀ y, f.hom y ∈ ℳ n) (g : Y ⟶ (M.gradedCochainComplex ℳ hρ d hd hdd).X n)
+    (hg : g ≫ M.gradedCochainComplexι ℳ hρ d hd hdd n = f) :
+    g = M.gradedCochainComplexLift ℳ hρ d hd hdd n f hf :=
+  subrepresentationLift_unique M (ℳ n) (hρ n) f hf g hg
+
 /-- **The inclusions intertwine the differentials**: the differential of `gradedCochainComplex`
 followed by the inclusion is the inclusion followed by `d`. -/
 @[reassoc]
@@ -175,6 +194,7 @@ theorem gradedCochainComplex_d_comp_ι (n : ℕ) :
   exact subrepresentationLift_comp_ι _ _ _ _ _
 
 /-- The differential of `gradedCochainComplex` on an element is `d` applied to it in `M`. -/
+@[simp]
 theorem gradedCochainComplex_d_apply (n : ℕ)
     (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V) :
     (((M.gradedCochainComplex ℳ hρ d hd hdd).d n (n + 1)).hom v).1 = d.hom v.1 := by
