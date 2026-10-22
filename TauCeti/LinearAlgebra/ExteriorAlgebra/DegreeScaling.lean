@@ -124,8 +124,8 @@ theorem degreeScaling_contractLeft (r : Rˣ) (d : Module.Dual R M) (x : Exterior
     ext m
     simp
   rw [degreeScaling_apply, degreeScaling_apply, ← LinearMap.smul_apply, ← map_smul]
-  -- Exterior-algebra maps are Clifford maps of the zero-form isometries induced by linear maps.
-  simpa only [hd] using
+  -- Unfold the exterior-algebra map to match the Clifford map of its zero-form isometry.
+  simpa only [hd, ExteriorAlgebra.map] using
     (CliffordAlgebra.contractLeft_map
       (Q₁ := (0 : QuadraticForm R M)) (Q₂ := (0 : QuadraticForm R M))
       { (r : R) • LinearMap.id with map_app' := fun _ => rfl }
