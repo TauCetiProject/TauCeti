@@ -13,6 +13,7 @@ import TauCeti.GroupTheory.GroupAction.Stabilizer
 import TauCeti.LinearAlgebra.Matrix.Eigenvectors
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonzeroVectors
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
@@ -49,8 +50,6 @@ For `n = 2` both subgroups are line stabilizers and they are conjugate.
 
 ## Main results
 
-* `TauCeti.lineStabilizer_eq_stabilizer` and `TauCeti.hyperplaneStabilizer_eq_stabilizer`: the
-  two subgroups as stabilizers of submodules.
 * `TauCeti.mem_lineStabilizer_iff` and `TauCeti.mem_hyperplaneStabilizer_iff`: membership in
   terms of matrix entries.
 * `TauCeti.map_inverseTranspose_lineStabilizer`: inverse transpose carries the line stabilizer
@@ -86,19 +85,6 @@ invertible matrices on `n → K` by `Matrix.mulVec`. -/
 def hyperplaneStabilizer (i : n) : Subgroup (GL n K) :=
   stabilizer (GL n K) (LinearMap.ker (LinearMap.proj i : (n → K) →ₗ[K] K))
 
-/-- The line stabilizer is the stabilizer of the line `K ∙ eᵢ` under the pointwise action of
-`GL n K` on submodules. -/
-theorem lineStabilizer_eq_stabilizer (i : n) :
-    lineStabilizer K i = stabilizer (GL n K) (K ∙ (Pi.single i 1 : n → K)) :=
-  (rfl)
-
-/-- The hyperplane stabilizer is the stabilizer of the hyperplane `{v | v i = 0}`, the kernel of
-the `i`-th coordinate, under the pointwise action of `GL n K` on submodules. -/
-theorem hyperplaneStabilizer_eq_stabilizer (i : n) :
-    hyperplaneStabilizer K i =
-      stabilizer (GL n K) (LinearMap.ker (LinearMap.proj i : (n → K) →ₗ[K] K)) :=
-  (rfl)
-
 variable {K}
 
 /-- **Membership in the line stabilizer**: an invertible matrix stabilizes the line `K ∙ eᵢ`
@@ -121,16 +107,6 @@ theorem mem_lineStabilizer_iff {g : GL n K} {i : n} :
     · subst hj
       simp
     · simp [h j hj, hj]
-
-/-- An invertible matrix whose row `i` vanishes off the diagonal maps the coordinate hyperplane
-`{v | v i = 0}` into itself. -/
-private theorem smul_apply_eq_zero {g : GL n K} {i : n} (h : ∀ j ≠ i, g i j = 0) {w : n → K}
-    (hw : w i = 0) : (g • w) i = 0 := by
-  simp only [Units.smul_def, Matrix.smul_eq_mulVec, Matrix.mulVec, dotProduct]
-  refine Finset.sum_eq_zero fun j _ ↦ ?_
-  by_cases hj : j = i
-  · simp [hj, hw]
-  · simp [h j hj]
 
 /-- **Membership in the hyperplane stabilizer**: an invertible matrix stabilizes the coordinate
 hyperplane `{v | v i = 0}` exactly when its row `i` vanishes off the diagonal. -/
@@ -155,11 +131,16 @@ theorem mem_hyperplaneStabilizer_iff {g : GL n K} {i : n} :
     have hinv : ∀ j ≠ i, (g⁻¹ : GL n K) i j = 0 := fun j hj ↦ by
       have := Matrix.blockTriangular_inv_of_blockTriangular hb (i := i) (j := j) (by simp [hj])
       rwa [← Matrix.coe_units_inv] at this
+    -- A matrix whose row `i` vanishes off the diagonal maps the hyperplane into itself.
+    have hmaps {h : GL n K} (hh : ∀ j ≠ i, h i j = 0) {w : n → K} (hw : w i = 0) :
+        (h • w) i = 0 := by
+      rw [Units.smul_def, Matrix.smul_eq_mulVec, mulVec_apply_eq_mul_of_forall_ne_eq_zero hh, hw,
+        mul_zero]
     refine le_antisymm (fun x hx ↦ ?_) (fun w hw ↦ ?_)
     · obtain ⟨w, hw, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
-      exact smul_apply_eq_zero h hw
+      exact hmaps h hw
     · exact (Submodule.mem_smul_pointwise_iff_exists _ _ _).mpr
-        ⟨g⁻¹ • w, smul_apply_eq_zero hinv hw, smul_inv_smul g w⟩
+        ⟨g⁻¹ • w, hmaps hinv hw, smul_inv_smul g w⟩
 
 /-- **Inverse transpose exchanges the two stabilizers**: the automorphism `g ↦ (g⁻¹)ᵀ` of
 `GL n K` carries the stabilizer of the line `K ∙ eᵢ` onto the stabilizer of the hyperplane

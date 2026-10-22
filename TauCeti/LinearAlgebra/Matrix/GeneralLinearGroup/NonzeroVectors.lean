@@ -119,7 +119,9 @@ variable {K : Type*} [Field K]
 vector of `n → K` is carried to any other by some element of `GL n K`. -/
 theorem exists_smul_eq_of_ne_zero {v w : n → K} (hv : v ≠ 0) (hw : w ≠ 0) :
     ∃ g : GL n K, g • v = w := by
-  -- Extend the isomorphism of lines `K ∙ v ≃ K ∙ w` sending `v` to `w` to all of `n → K`.
+  -- Extend the isomorphism of lines `K ∙ v ≃ K ∙ w` sending `v` to `w` to all of `n → K`. This
+  -- adapts the proof of `Projectivization.linearEquiv_is_two_pretransitive` in
+  -- `Mathlib.LinearAlgebra.Projectivization.Action`, which extends an isomorphism of planes.
   obtain ⟨f, hf⟩ := Submodule.exists_linearEquiv_restrict_eq
     ((LinearEquiv.toSpanNonzeroSingleton K _ v hv).symm.trans
       (LinearEquiv.toSpanNonzeroSingleton K _ w hw))

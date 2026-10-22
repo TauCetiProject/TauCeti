@@ -23,7 +23,9 @@ The nonzero eigenvectors of a square matrix `A`, for all eigenvalues together, f
 eigenspaces of the same size for every scalar `c`, because both are kernels of matrices `A - c`
 and `(A - c)ᵀ` of the same rank. Over a finite field, each nonzero eigenvector has exactly one
 eigenvalue, so summing over eigenvalues shows that a matrix and its transpose have equally many
-nonzero eigenvectors. An invertible matrix and its inverse have the same nonzero eigenvectors.
+nonzero eigenvectors. Over an infinite field the nonzero eigenvectors of any matrix are infinite
+in number or absent, so `Nat.card` counts zero of them for both, and the equality holds over every
+field. An invertible matrix and its inverse have the same nonzero eigenvectors.
 
 ## Main definitions
 
@@ -32,8 +34,9 @@ nonzero eigenvectors. An invertible matrix and its inverse have the same nonzero
 ## Main results
 
 * `Matrix.natCard_eigenspace_transpose`: `A` and `Aᵀ` have eigenspaces of equal size.
-* `Matrix.natCard_eigenvectors_transpose`: over a finite field, `A` and `Aᵀ` have equally many
-  nonzero eigenvectors.
+* `Matrix.natCard_eigenvectors_of_infinite`: over an infinite field, `Nat.card` of the nonzero
+  eigenvectors is zero.
+* `Matrix.natCard_eigenvectors_transpose`: `A` and `Aᵀ` have equally many nonzero eigenvectors.
 * `Matrix.GeneralLinearGroup.mem_eigenvectors_iff`: membership in the eigenvectors of an
   invertible matrix, in terms of its action on vectors.
 * `Matrix.GeneralLinearGroup.eigenvectors_inv`: an invertible matrix and its inverse have the
@@ -77,9 +80,27 @@ theorem natCard_eigenspace_transpose (A : Matrix n n K) (c : K) :
     rw [transpose_sub, transpose_smul, transpose_one]
   rw [key, key, htr, rank_transpose]
 
-/-- A matrix and its transpose have equally many nonzero eigenvectors over a finite field. -/
-theorem natCard_eigenvectors_transpose [Finite K] (A : Matrix n n K) :
+/-- Over an infinite field the nonzero eigenvectors of a matrix are infinite in number or absent,
+because they are closed under multiplication by nonzero scalars; either way `Nat.card` is zero. -/
+theorem natCard_eigenvectors_of_infinite [Infinite K] (A : Matrix n n K) :
+    Nat.card A.eigenvectors = 0 := by
+  rcases A.eigenvectors.eq_empty_or_nonempty with h | ⟨v, hv⟩
+  · simp [h]
+  rw [mem_eigenvectors] at hv
+  obtain ⟨hv0, c, hc⟩ := hv
+  have := (Set.finite_singleton (0 : K)).infinite_compl.to_subtype
+  refine Set.Infinite.card_eq_zero (Set.infinite_of_injective_forall_mem
+    (f := fun a : ↥({0}ᶜ : Set K) ↦ (a : K) • v)
+    (fun a b hab ↦ Subtype.ext (smul_left_injective K hv0 hab))
+    fun a ↦ mem_eigenvectors.mpr ⟨smul_ne_zero (Set.mem_compl_singleton_iff.mp a.2) hv0, c, ?_⟩)
+  rw [mulVec_smul, hc, smul_comm]
+
+/-- A matrix and its transpose have equally many nonzero eigenvectors. Over an infinite field both
+counts are zero, as `Nat.card` of an infinite or empty set. -/
+theorem natCard_eigenvectors_transpose (A : Matrix n n K) :
     Nat.card Aᵀ.eigenvectors = Nat.card A.eigenvectors := by
+  cases finite_or_infinite K
+  case inr => rw [natCard_eigenvectors_of_infinite, natCard_eigenvectors_of_infinite]
   have := Fintype.ofFinite K
   -- Sort the nonzero eigenvectors by their eigenvalue, which a nonzero vector determines.
   have hsigma (B : Matrix n n K) : Nat.card B.eigenvectors =
