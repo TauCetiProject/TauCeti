@@ -153,18 +153,22 @@ private theorem mem_fixedSubcomodule_coinvariantsComodule_iff (hI : I.IsNormal)
   Comodule.mem_fixedSubcomodule_ofCorestrict_iff _ _ _ _
     (map_one (CommHopfAlgCat.coinvariantsι hI).hom)
 
+/-- The quotient map `H → H ⧸ I` has the same underlying linear map whether it is bundled as a
+coalgebra morphism or as an algebra morphism. -/
+private theorem toLinearMap_toCoalgHom_mkBialgHom :
+    (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).toCoalgHom.toLinearMap =
+      (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
+  ext x
+  simp [BialgHom.toCoalgHom_apply]
+
 private theorem map_mem_weightSpace_one {V' : Type w}
     [AddCommMonoid V'] [Module k V'] [Comodule k H V'] (f : Comodule.Hom k H V V')
     {v : V} (hv : v ∈ I.weightSpace V 1) : f v ∈ I.weightSpace V' 1 := by
   let q := (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).toCoalgHom
   let _ : Comodule k (H ⧸ I.toIdeal) V := Comodule.Corestrict q
   let _ : Comodule k (H ⧸ I.toIdeal) V' := Comodule.Corestrict q
-  have hq : q.toLinearMap = (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
-    ext x
-    change (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).toCoalgHom x =
-      (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap x
-    rw [BialgHom.toCoalgHom_apply, Bialgebra.Quotient.mkBialgHom_apply,
-      AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+  have hq : q.toLinearMap = (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap :=
+    toLinearMap_toCoalgHom_mkBialgHom
   have hv' : v ∈ _root_.GroupLike.weightSpace (M := V) (1 : GroupLike k (H ⧸ I.toIdeal)) := by
     rw [_root_.GroupLike.mem_weightSpace, Comodule.corestrict_coact_apply, hq]
     simpa using I.mem_weightSpace.mp hv
@@ -216,13 +220,8 @@ theorem linearlyReductiveCommHopfAlgProperty.of_quotient_of_coinvariants
         v ∈ (letI : Comodule k (H ⧸ I.toIdeal) V := Comodule.Corestrict q;
           Comodule.fixedSubcomodule k (H ⧸ I.toIdeal) V) := by
     let _ : Comodule k (H ⧸ I.toIdeal) V := Comodule.Corestrict q
-    have hq : q.toLinearMap = (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
-      ext x
-      -- Expose the two bundled quotient maps before applying their evaluation lemmas.
-      change (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).toCoalgHom x =
-        (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap x
-      rw [BialgHom.toCoalgHom_apply, Bialgebra.Quotient.mkBialgHom_apply,
-        AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+    have hq : q.toLinearMap = (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap :=
+      toLinearMap_toCoalgHom_mkBialgHom
     rw [HopfIdeal.IsNormal.mem_weightSpaceOneSubcomodule, Comodule.mem_fixedSubcomodule,
       Comodule.corestrict_coact_apply, hq]
   have hsurj : Function.Surjective (coinvariantsComoduleHom M hI f.hom) := by
