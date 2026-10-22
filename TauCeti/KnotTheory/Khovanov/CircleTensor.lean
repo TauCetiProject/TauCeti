@@ -182,41 +182,6 @@ end Merge
 
 end Basis
 
-section Degree
-
-variable {ι : Type*} [Fintype ι]
-
-/-- The quantum degree of a labelling is the number of circles minus twice the number of
-`X`-labels. -/
-theorem labelingQuantumDegree_eq (l : ι → Bool) :
-    labelingQuantumDegree ι l = Fintype.card ι - 2 * #{i | l i = true} := by
-  rw [labelingQuantumDegree_def, Finset.natCast_card_filter, Finset.mul_sum, Fintype.card,
-    Finset.cast_card, ← Finset.sum_sub_distrib]
-  exact Finset.sum_congr rfl fun i _ ↦ by cases l i <;> simp
-
-variable {σ τ : Type*} [Fintype σ] [Fintype τ] [DecidableEq τ]
-
-/-- When no fibre of `f` carries two `X`-labels of `l`, merging along `f` changes the quantum degree
-of `l` by `|τ| - |σ|`. -/
-theorem labelingQuantumDegree_merge {f : σ → τ} {l : σ → Bool}
-    (h : ∀ j, #{i | f i = j ∧ l i = true} ≤ 1) :
-    labelingQuantumDegree τ (fun j ↦ decide (∃ i, f i = j ∧ l i = true)) =
-      labelingQuantumDegree σ l + (Fintype.card τ - Fintype.card σ) := by
-  -- The circles of `τ` labelled `X` are the images of those of `σ`, on which `f` is injective.
-  have himage : ({j | decide (∃ i, f i = j ∧ l i = true) = true} : Finset τ) =
-      Finset.image f {i | l i = true} := by
-    ext j
-    simp [and_comm]
-  have hinj : Set.InjOn f ({i | l i = true} : Finset σ) := by
-    intro i hi i' hi' hii'
-    exact Finset.card_le_one.mp (h (f i)) i (by simpa using hi) i'
-      (by simpa [hii'] using hi')
-  rw [labelingQuantumDegree_eq, labelingQuantumDegree_eq, himage,
-    Finset.card_image_of_injOn hinj]
-  ring
-
-end Degree
-
 section Grading
 
 variable (R : Type u) [CommRing R] (ι : Type*) [Fintype ι]
