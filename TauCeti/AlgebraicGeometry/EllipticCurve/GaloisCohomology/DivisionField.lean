@@ -195,9 +195,19 @@ theorem exists_map_separableClosure_eq_of_nsmul_eq_zero [W.IsElliptic] (hm : (m 
       Affine.Point.map (separableClosure K (AlgebraicClosure K)).val Q = P := by
   have hmK : ((m : ℤ) : SeparableClosure K) ≠ 0 := by
     simpa using (map_ne_zero (algebraMap K (SeparableClosure K))).2 hm
+  -- Applied to the curve `W⁄Kˢ` over the separably closed field `Kˢ`, the rationality lemma speaks
+  -- of the curves `(W⁄Kˢ)⁄K^{alg}` and `(W⁄Kˢ)⁄Kˢ`. These are `W⁄K^{alg}` and `W⁄Kˢ` by unfolding
+  -- `WeierstrassCurve.baseChange`: the coefficients `algebraMap Kˢ K^{alg} (algebraMap K Kˢ a)`
+  -- reduce to `algebraMap K K^{alg} a`, as `Kˢ` is the subfield `separableClosure K K^{alg}` with
+  -- the induced algebra maps. So `P` and `Q` are used at these types directly.
   obtain ⟨Q, rfl⟩ := (W⁄(SeparableClosure K)).mem_range_baseChange_of_zsmul_eq_zero_of_isSepClosed
     (Ω := AlgebraicClosure K) hmK (P := P) (by exact_mod_cast hP)
-  -- The base change from `Kˢ` and the inclusion `Kˢ → K^{alg}` agree on each point.
+  -- `Affine.Point.baseChange Kˢ K^{alg}` is `Affine.Point.map (Algebra.ofId Kˢ K^{alg})`. On each
+  -- point it and `Affine.Point.map` along `val` both apply the subtype coercion `Kˢ → K^{alg}` to
+  -- the coordinates, so each case closes by `rfl`. No rewrite is available: Mathlib's
+  -- `Affine.Point.map_baseChange` compares base changes of one fixed curve, while here the two
+  -- maps start from the curves `(W⁄Kˢ)⁄Kˢ` and `W⁄Kˢ`, which agree only up to unfolding, and
+  -- rewriting along `WeierstrassCurve.map_baseChange` would put a `cast` on the points.
   refine ⟨Q, ?_⟩
   rcases Q with _ | _ <;> rfl
 
