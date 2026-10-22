@@ -36,7 +36,6 @@ limit here.
 
 ## Main declarations
 
-* `TauCeti.BlackScholes.abs_callPrice_sub_callPrice_le` — the call is `1`-Lipschitz in the spot.
 * `TauCeti.BlackScholes.tendsto_dMinus_spot_atTop` — `d₋ → ∞` as the spot tends to `∞`.
 * `TauCeti.BlackScholes.dPlus_eq_add`, `TauCeti.BlackScholes.tendsto_dPlus_sub` — `d₊` behaves
   like `log (s / K) / (σ √τ)` near maturity.
@@ -75,20 +74,6 @@ open scoped Topology
 namespace TauCeti.BlackScholes
 
 variable {s r σ K τ : ℝ}
-
-/-! ### Lipschitz continuity in the spot -/
-
-/-- The Black–Scholes call price is `1`-Lipschitz in the spot. -/
-theorem abs_callPrice_sub_callPrice_le {x : ℝ} (hx : 0 < x) (hs : 0 < s) (hK : 0 < K)
-    (hσ : σ ≠ 0) (hτ : 0 < τ) :
-    |callPrice x r σ K τ - callPrice s r σ K τ| ≤ |x - s| := by
-  have h := (convex_Ioi (0 : ℝ)).norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f := fun y => callPrice y r σ K τ) (C := 1)
-    (fun y hy => (hasDerivAt_callPrice_spot (r := r) hy hK hσ hτ).hasDerivWithinAt)
-    (fun y _ => by
-      rw [norm_of_nonneg (cdf_nonneg _ _)]
-      exact cdf_le_one _ _) hs hx
-  simpa only [norm_eq_abs, one_mul] using h
 
 /-! ### Limits in the spot -/
 
