@@ -17,15 +17,15 @@ import TauCeti.NumberTheory.Transcendental.Lindemann.Galois
 # The Lindemann–Weierstrass theorem
 
 This file proves the Lindemann–Weierstrass theorem for algebraic numbers, in the two classical
-forms. Here the field `ℚ̄` of algebraic numbers is `integralClosure ℚ ℂ`.
+forms. Here the field of algebraic numbers is `integralClosure ℚ ℂ`.
 
 * `linearIndependent_exp`: the exponentials of pairwise distinct algebraic numbers are linearly
-  independent over `ℚ̄` (Baker's form of the theorem).
+  independent over the algebraic numbers (Baker's form of the theorem).
 * `algebraicIndependent_exp`: the exponentials of `ℚ`-linearly independent algebraic numbers are
-  algebraically independent over `ℚ̄`. The hypothesis is stated as linear independence over `ℕ`,
-  which for the `ℚ`-vector space `ℚ̄` is equivalent to linear independence over `ℚ`. It says
-  exactly that distinct monomials `∏ (exp uᵢ) ^ mᵢ = exp (∑ mᵢ uᵢ)` have distinct exponents, so
-  that the first form applies.
+  algebraically independent over the algebraic numbers. The hypothesis is stated as linear
+  independence over `ℕ`, which for the `ℚ`-vector space of algebraic numbers is equivalent to
+  linear independence over `ℚ`. It says exactly that distinct monomials
+  `∏ (exp uᵢ) ^ mᵢ = exp (∑ mᵢ uᵢ)` have distinct exponents, so that the first form applies.
 
 Both are deduced from the injectivity of exponential evaluation over a number field that is
 Galois over `ℚ` (`LindemannWeierstrass.expEval_injective`): the finitely many exponents and
