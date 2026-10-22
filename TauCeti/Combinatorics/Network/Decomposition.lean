@@ -323,6 +323,18 @@ theorem target_eq_of_mem_paths [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow
     exact neg_nonpos.2 f.val_nonneg
   · exact (f.conserve _ hs h).le
 
+/-- The path weights of a decomposition of an ordinary `s`–`t` flow add up to its value. -/
+theorem sum_weight_paths_eq_val [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
+    (D : PathCycleDecomposition f.toFun) : (D.paths.map WeightedWalk.weight).sum = f.val := by
+  classical
+  have hs : (D.paths.filter fun p ↦ p.source = t) = [] :=
+    List.filter_eq_nil_iff.2 fun p hp ↦ by
+      simpa using D.source_ne_of_mem_paths hp f.excessAt_sink_nonneg
+  have ht : (D.paths.filter fun p ↦ p.target = t) = D.paths :=
+    List.filter_eq_self.2 fun p hp ↦ decide_eq_true (D.target_eq_of_mem_paths hp)
+  rw [f.val_def]
+  simpa [hs, ht] using (D.excessAt_eq_sum_sub_sum t).symm
+
 end Flow
 
 section LinearOrder
@@ -356,14 +368,6 @@ theorem sum_weight_filter_target_eq_posPart [DecidableEq V] (v : V) :
       List.filter_eq_nil_iff.2 fun p hp ↦ by simpa using D.source_ne_of_mem_paths hp hv
     rw [posPart_eq_self.2 hv, D.excessAt_eq_sum_sub_sum v, h]
     simp
-
-variable {cap : Assignment Q K} {s t : V} {f : Flow cap s t} (D : PathCycleDecomposition f.toFun)
-
-/-- The path weights of a decomposition of an ordinary `s`–`t` flow add up to its value. -/
-theorem sum_weight_paths_eq_val : (D.paths.map WeightedWalk.weight).sum = f.val := by
-  classical
-  rw [← List.filter_eq_self.2 fun p hp ↦ decide_eq_true (D.target_eq_of_mem_paths hp),
-    D.sum_weight_filter_target_eq_posPart, ← f.val_def, posPart_eq_self.2 f.val_nonneg]
 
 end LinearOrder
 
