@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.QuotientGroup.Index
-import TauCeti.GroupTheory.Index.Basic
+import TauCeti.GroupTheory.Index.Map
 
 /-!
 # The image index before and after quotienting
@@ -20,9 +20,8 @@ In particular, when `f` reflects torsion and the source torsion is finite, this 
 correction between the cokernel on the whole group and the cokernel modulo torsion. The latter
 is the index of the image on the free quotients of finitely generated abelian groups.
 
-The proof uses Mathlib's order-index formula and second isomorphism theorem, through
-`Subgroup.relIndex_mul_index`, `Subgroup.card_ker_mul_card_range`, and Tau Ceti's
-`Subgroup.index_map_mk'_eq_index_sup`.
+The proof uses Mathlib's order-index formula `Subgroup.card_ker_mul_card_range` and
+Tau Ceti's image-index factorization `TauCeti.subgroup_index_map_mul_relIndex_ker`.
 -/
 
 public section
@@ -58,13 +57,15 @@ theorem index_range_mul_card_comap_mul {f : A →* B} {S : Subgroup B} [S.Normal
       Nat.card_congr (Subgroup.subgroupOfEquivOfLe (hIS ▸ inf_le_right)).toEquiv
     rw [← hcard]
     exact Subgroup.index_mul_card _
-  have hidx : f.range.index = f.range.relIndex S * (f.range ⊔ S).index := by
-    rw [← Subgroup.relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal]
-    exact (Subgroup.relIndex_mul_index le_sup_left).symm
-  rw [Subgroup.index_map_mk'_eq_index_sup, hidx, hT]
+  have hidx := subgroup_index_map_mul_relIndex_ker f.range
+    (QuotientGroup.mk' S) (QuotientGroup.mk'_surjective S)
+  rw [QuotientGroup.ker_mk'] at hidx
+  rw [← hidx, hT]
   calc
-    f.range.relIndex S * (f.range ⊔ S).index * (Nat.card f.ker * Nat.card I) =
-        (f.range ⊔ S).index * (f.range.relIndex S * Nat.card I) * Nat.card f.ker := by ac_rfl
-    _ = (f.range ⊔ S).index * Nat.card S * Nat.card f.ker := by rw [hSI]
+    (f.range.map (QuotientGroup.mk' S)).index * f.range.relIndex S *
+        (Nat.card f.ker * Nat.card I) =
+        (f.range.map (QuotientGroup.mk' S)).index *
+          (f.range.relIndex S * Nat.card I) * Nat.card f.ker := by ac_rfl
+    _ = (f.range.map (QuotientGroup.mk' S)).index * Nat.card S * Nat.card f.ker := by rw [hSI]
 
 end TauCeti
