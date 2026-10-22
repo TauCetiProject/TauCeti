@@ -138,6 +138,8 @@ theorem prod_parts_bind {α M : Type*} [Lattice α] [OrderBot α] [IsModularLatt
     [DecidableEq α] [CommMonoid M] {a : α} (P : Finpartition a)
     (Q : ∀ i ∈ P.parts, Finpartition i) (g : α → M) :
     ∏ b ∈ (P.bind Q).parts, g b = ∏ A ∈ P.parts.attach, ∏ b ∈ (Q A.1 A.2).parts, g b :=
+  -- Mathlib only provides the additive `Finpartition.sum_combine`, so we transfer `sum_parts_bind`
+  -- through `Additive M`, whose finite sums are by definition the finite products in `M`.
   sum_parts_bind (M := Additive M) P Q (Additive.ofMul ∘ g)
 
 /-- If `Q` refines `P`, then each part of `P` is the union of the parts of `Q` it contains. -/
