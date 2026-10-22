@@ -275,33 +275,21 @@ open IntermediateCarrier
 
 section ToIntermediateCarrier
 
-/-- An integral lattice `N` for the form of `L` containing `L` is an intermediate carrier of `L`:
-integrality of `N` places it inside the dual carrier of `L`. -/
-@[expose] def toIntermediateCarrier (N : IntegralLattice V) {L : IntegralLattice V}
-    (hform : N.form = L.form) (hle : L.carrier ≤ N.carrier) : L.IntermediateCarrier :=
-  ⟨N.carrier, hle, fun x hx ↦ by
-    rw [dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
-    intro y hy
-    rw [← hform]
-    exact N.form_mem_one ⟨x, hx⟩ ⟨y, hle hy⟩⟩
-
 variable (N : IntegralLattice V) {L : IntegralLattice V} (hform : N.form = L.form)
   (hle : L.carrier ≤ N.carrier)
-
-/-- The intermediate carrier attached to an integral overlattice is its carrier. -/
-@[simp]
-theorem coe_toIntermediateCarrier : (N.toIntermediateCarrier hform hle).1 = N.carrier :=
-  rfl
 
 /-- The intermediate carrier attached to an integral overlattice is integral. -/
 theorem isIntegral_toIntermediateCarrier :
     IntermediateCarrier.IsIntegral (N.toIntermediateCarrier hform hle) :=
-  isIntegral_def.mpr fun x hx y hy ↦ hform ▸ N.form_mem_one ⟨x, hx⟩ ⟨y, hy⟩
+  isIntegral_def.mpr fun x hx y hy ↦ by
+    rw [coe_toIntermediateCarrier] at hx hy
+    exact hform ▸ N.form_mem_one ⟨x, hx⟩ ⟨y, hy⟩
 
 /-- The intermediate carrier attached to an even overlattice is even. -/
 theorem isEven_toIntermediateCarrier (hN : N.IsEven) :
     IntermediateCarrier.IsEven (N.toIntermediateCarrier hform hle) :=
   isEven_def.mpr fun x hx ↦ by
+    rw [coe_toIntermediateCarrier] at hx
     simpa [norm_apply, hform] using (N.isEven_iff_forall_norm.mp hN) ⟨x, hx⟩
 
 /-- The integral lattice of the intermediate carrier attached to an integral overlattice is that
@@ -311,7 +299,8 @@ theorem toIntegralLattice_toIntermediateCarrier
     [(N.toIntermediateCarrier hform hle).1.IsLattice ℚ]
     (h : IntermediateCarrier.IsIntegral (N.toIntermediateCarrier hform hle)) :
     h.toIntegralLattice = N :=
-  IntegralLattice.ext h.toIntegralLattice_carrier (h.toIntegralLattice_form.trans hform.symm)
+  IntegralLattice.ext (h.toIntegralLattice_carrier.trans (N.coe_toIntermediateCarrier hform hle))
+    (h.toIntegralLattice_form.trans hform.symm)
 
 end ToIntermediateCarrier
 

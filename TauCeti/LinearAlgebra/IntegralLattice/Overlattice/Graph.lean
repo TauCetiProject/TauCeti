@@ -350,7 +350,8 @@ theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
   have hS : S.IsEven := (L.isEven_orthogonalSum_iff M).mpr ⟨hL, hM⟩
   -- `N` is an intermediate carrier of `L ⊥ M`, even and with unimodular underlying lattice.
   set P := N.toIntermediateCarrier hform hle
-  have hdual : N.carrier ≤ S.dualCarrier := P.2.2
+  have hPc : P.1 = N.carrier := N.coe_toIntermediateCarrier hform hle
+  have hdual : N.carrier ≤ S.dualCarrier := hPc ▸ P.2.2
   have hPe := N.isEven_toIntermediateCarrier hform hle hNe
   have hPN := N.toIntegralLattice_toIntermediateCarrier hform hle hPe.isIntegral
   -- Its subgroup of the discriminant group is a quadratic Lagrangian.
@@ -362,6 +363,7 @@ theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
     _ (S.discriminantSubgroup P)).mpr hlag
   rw [discriminantQuadraticIsometryOrthogonalSum_toAddEquiv] at hlag'
   have hmem := L.mk_mem_map_discriminantSubgroup_iff M P
+  rw [hPc] at hmem
   -- The transported subgroup meets both factors trivially, so it is the graph of an isometry.
   obtain ⟨f, hf⟩ := FiniteQuadraticModule.exists_isometry_neg_mem_iff_of_isLagrangian _ _ hlag'
     (fun a ha ↦ by

@@ -97,9 +97,10 @@ private theorem quadratic_halfCharacteristicDual_add {w : L}
   obtain ⟨x, hx⟩ := h
   induction x using Submodule.Quotient.induction_on with
   | _ y =>
-    have hy : (y : V) ∈ L.carrier :=
-      (L.evenSublattice.mk_mem_discriminantSubgroup_iff
+    have hy : (y : V) ∈ L.carrier := by
+      have := (L.evenSublattice.mk_mem_discriminantSubgroup_iff
         (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le) y).mp hx
+      rwa [coe_toIntermediateCarrier] at this
     obtain ⟨k, hk⟩ := halfNorm_add_lattice_vector L hw ⟨y, hy⟩
     rw [← Submodule.Quotient.mk_add, discriminantQuadraticMap_mk,
       discriminantQuadraticMap_mk, L.evenSublattice_form]
