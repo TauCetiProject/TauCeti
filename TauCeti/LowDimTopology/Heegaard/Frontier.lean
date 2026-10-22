@@ -69,9 +69,9 @@ the second handlebody onto the standard one, it corresponds to a point of the fr
 standard handlebody in `ℂ × ℝ`. -/
 theorem coe_mem_left_iff (hE : finrank ℝ E = 3) (e : s.right ≃ₜ handlebody s.genus)
     (x : s.right) : (x : M) ∈ s.left ↔ (e x : ℂ × ℝ) ∈ frontier (handlebody s.genus) := by
-  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
-  rw [e.coe_apply_mem_frontier_iff (finrank_eq_finrank_complex_prod_real hE),
-    ← s.inter_eq_frontier_right, Set.mem_inter_iff, and_iff_left x.2]
+  have := s.symm.coe_mem_right_iff hE
+  rw [symm_left, symm_right, symm_genus] at this
+  exact this e x
 
 end HeegaardSplitting
 

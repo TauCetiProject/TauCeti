@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import Mathlib.Topology.LocallyConstant.Basic
-public import Mathlib.Algebra.Field.ULift
 
 /-!
 # The complement of an embedded cube is acyclic
@@ -308,15 +307,12 @@ theorem isPathConnected_sphere_compl_range_closedBall {F : Type w} [NormedAddCom
     {h : closedBall (0 : E) 1 → sphere (0 : F) 1} (hc : Continuous h) (hi : Function.Injective h)
     (hne : (range h)ᶜ.Nonempty) : IsPathConnected (range h)ᶜ := by
   obtain ⟨y, hy⟩ := hne
-  let K := ULift.{w} ℚ
-  have := ModuleCat.subsingleton_of_isZero <|
-    isZero_reducedSingularHomologyFunctor_compl_range_closedBall (ModuleCat.of K K)
-      (isZero_reducedSingularHomologyFunctor_sphere_compl_singleton (ModuleCat.of K K)) hc hi 0
-  have hrank := rank_reducedSingularHomologyFunctor_zero (K := K) (X := of ↥(range h)ᶜ) ⟨y, hy⟩
-  rw [rank_subsingleton', eq_comm, Cardinal.mk_eq_zero_iff, isEmpty_subtype] at hrank
-  rw [isPathConnected_iff_pathConnectedSpace, pathConnectedSpace_iff_zerothHomotopy]
-  exact ⟨⟨ZerothHomotopy.mk ⟨y, hy⟩⟩,
-    ⟨fun c d ↦ (not_not.1 (hrank c)).trans (not_not.1 (hrank d)).symm⟩⟩
+  have : Nonempty ↥(range h)ᶜ := ⟨⟨y, hy⟩⟩
+  let K := ULift.{w} ℤ
+  exact isPathConnected_iff_pathConnectedSpace.2
+    (pathConnectedSpace_of_isZero_reducedSingularHomologyFunctor_zero
+      (isZero_reducedSingularHomologyFunctor_compl_range_closedBall (ModuleCat.of K K)
+        (isZero_reducedSingularHomologyFunctor_sphere_compl_singleton _) hc hi 0))
 
 end Main
 

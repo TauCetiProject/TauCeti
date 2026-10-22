@@ -26,9 +26,9 @@ a handlebody embedded in a `3`-manifold with the frontier of its image.
 
 The proof is the one in Hatcher. Embed the target `F` in the sphere `Sⁿ`, its one-point
 compactification (`onePointEquivSphereOfFinrankEq`). For a closed ball `D` in the domain on which
-`f` is continuous and injective, with boundary sphere `S`, the complement of `f(S)` in `Sⁿ` has
-exactly two path components by the Jordan–Brouwer separation theorem
-(`TauCeti.natCard_zerothHomotopy_sphere_compl_range_eq_two`). It is the disjoint union of the
+`f` is continuous and injective, with boundary sphere `S`, the complement of `f(S)` in `Sⁿ` is
+not connected by the Jordan–Brouwer separation theorem
+(`TauCeti.not_isPreconnected_compl_range_sphere`). It is the disjoint union of the
 complement of `f(D)`, which is path connected because it is acyclic
 (`TauCeti.isPathConnected_sphere_compl_range_closedBall`), and of the image of the
 open ball, which is path connected as the image of a convex set. So these are its two path
@@ -59,6 +59,19 @@ namespace TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- If a set `A` is covered by two path-connected subsets `B` and `C` but is not itself path
+connected, then `B` is a path component of `A`. -/
+private theorem _root_.IsPathConnected.pathComponentIn_eq_of_not_isPathConnected {X : Type*}
+    [TopologicalSpace X] {A B C : Set X} {x : X} (hB : IsPathConnected B)
+    (hC : IsPathConnected C) (hBA : B ⊆ A) (hCA : C ⊆ A) (hABC : A ⊆ B ∪ C) (hx : x ∈ B)
+    (hA : ¬IsPathConnected A) : pathComponentIn A x = B := by
+  refine Subset.antisymm (fun q hq ↦ ?_) (hB.subset_pathComponentIn hx hBA)
+  by_contra hqB
+  have hqC : q ∈ C := (hABC (pathComponentIn_subset hq)).resolve_left hqB
+  exact hA ⟨x, hBA hx, fun {z} hz ↦
+    (hABC hz).elim (fun hzB ↦ hB.joinedIn _ hx _ hzB |>.mono hBA)
+      (fun hzC ↦ (hq : JoinedIn A _ q).trans ((hC.joinedIn _ hqC _ hzC).mono hCA))⟩
 
 /-- **Invariance of domain, local form.** If `f` is continuous and injective on a closed ball of
 positive radius in a finite-dimensional real normed space, with values in a normed space of the
@@ -128,20 +141,10 @@ private theorem isOpen_image_ball (hEF : finrank ℝ E = finrank ℝ F) {f : E �
     exact OnePoint.coe_ne_infty _ (Φ.injective hy)
   -- By the Jordan–Brouwer separation theorem `A` is not path connected, so `B` is a path
   -- component of `A`.
-  have hcard : Nat.card (ZerothHomotopy A) = 2 :=
-    natCard_zerothHomotopy_sphere_compl_range_eq_two (by simp [hEF])
-      (hcont sphere_subset_closedBall) (hinj' sphere_subset_closedBall)
-  have hcomp : pathComponentIn A (j (f x)) = B := by
-    refine Subset.antisymm (fun q hq ↦ ?_) (hB.subset_pathComponentIn hfx hBA)
-    by_contra hqB
-    have hqC : q ∈ C := ((hABC (pathComponentIn_subset hq)).resolve_left hqB)
-    have hA : IsPathConnected A := ⟨j (f x), hBA hfx, fun {z} hz ↦
-      (hABC hz).elim (fun hzB ↦ hB.joinedIn _ hfx _ hzB |>.mono hBA)
-        (fun hzC ↦ (hq : JoinedIn A _ q).trans ((hC.joinedIn _ hqC _ hzC).mono hCA))⟩
-    have := isPathConnected_iff_pathConnectedSpace.1 hA
-    have : Unique (ZerothHomotopy A) := uniqueOfSubsingleton (ZerothHomotopy.mk ⟨_, hBA hfx⟩)
-    rw [Nat.card_unique] at hcard
-    omega
+  have hcomp : pathComponentIn A (j (f x)) = B :=
+    hB.pathComponentIn_eq_of_not_isPathConnected hC hBA hCA hABC hfx fun hA ↦
+      not_isPreconnected_compl_range_sphere (by simp [hEF]) (hcont sphere_subset_closedBall)
+        (hinj' sphere_subset_closedBall) hA.isConnected.isPreconnected
   -- A path component of an open subset of a manifold is open.
   have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) = n + 1) := ⟨by simp⟩
   have := ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin n))
