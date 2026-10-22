@@ -83,8 +83,6 @@ theorem exists_ringKrullDim_eq_finite_injective [Nontrivial A] (hA : IsAffinoidA
   let := g.toRingHom.toAlgebra
   have : Module.Finite T A := hfin
   have : Algebra.IsIntegral T A := Algebra.IsIntegral.of_finite T A
-  have : IsNoetherianRing T := MvPowerSeries.isNoetherianRing_isRestricted_subring
-  have : IsNoetherianRing A := hA.isNoetherianRing
   have : FaithfulSMul T A := (faithfulSMul_iff_algebraMap_injective T A).mpr hg
   refine ⟨n, ?_, g, hg, hfin⟩
   simpa using MvPowerSeries.ringKrullDim_eq_natCard_of_isIntegral (K := K) (σ := Fin n) (A := A)
