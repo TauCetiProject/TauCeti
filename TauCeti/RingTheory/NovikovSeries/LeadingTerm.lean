@@ -8,14 +8,14 @@ module
 public import Mathlib.Algebra.AffineMonoid.UniqueSums
 public import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 public import TauCeti.RingTheory.NovikovSeries.Multiplication
-public import TauCeti.RingTheory.NovikovSeries.Topology
 
 /-!
 # Leading terms of Novikov series, and Novikov rings without zero divisors
 
 Let `H` be an additive monoid with a period homomorphism `N : H →+ ℝ`. A nonzero Novikov series
-`a` attains a least period on its support; this is its *order* `a.order`. Since `N` need not be
-injective, finitely many nonzero coefficients may share this least period. The *leading term*
+`a` attains a least period on its support; this is its *order* `a.order`
+(`TauCeti.NovikovSeries.order`). Since `N` need not be injective, finitely many nonzero
+coefficients may share this least period. The *leading term*
 `a.leadingTerm` keeps all of them: it is the element of the group ring `R[H]` with the
 coefficients of `a` at the exponents of period `a.order`, and `0` elsewhere. Its exponents all have
 the same period, so when `H` is a group they lie in a single coset `h + ker N`, and the leading
@@ -32,17 +32,11 @@ is injective.
 
 ## Main definitions
 
-* `TauCeti.NovikovSeries.order`: the least period of the support of a Novikov series, and `0` for
-  the zero series.
 * `TauCeti.NovikovSeries.leadingTerm`: the coefficients of least period, as an element of the
   group ring.
 
 ## Main results
 
-* `TauCeti.NovikovSeries.isLeast_order`: the order of a nonzero series is the least period of its
-  support.
-* `TauCeti.NovikovSeries.mem_periodFiltration_iff_le_order`: a nonzero series lies in the period
-  neighbourhood `U_C` exactly when `C` is at most its order.
 * `TauCeti.NovikovSeries.coeff_mul_eq_zero_of_lt_order_add` and
   `TauCeti.NovikovSeries.coeff_mul_of_period_eq_order_add`: below the period
   `a.order + b.order` the product `a * b` vanishes, and at that period its coefficients are those
@@ -50,8 +44,9 @@ is injective.
 * `TauCeti.NovikovSeries.leadingTerm_mul_of_ne_zero` and
   `TauCeti.NovikovSeries.order_mul_of_leadingTerm_mul_ne_zero`: a nonzero product of leading
   terms is the leading term of the product, and then orders add.
-* `TauCeti.NovikovSeries.leadingTerm_mul` and `TauCeti.NovikovSeries.order_mul`: the same
-  without side condition when `R[H]` has no zero divisors.
+* `TauCeti.NovikovSeries.leadingTerm_mul` and `TauCeti.NovikovSeries.order_mul`: when `R[H]` has
+  no zero divisors, the leading term is multiplicative without side condition, and the orders of
+  two nonzero series add.
 * The instances `NoZeroDivisors` and `IsDomain`: the Novikov ring inherits the absence of zero
   divisors from the group ring.
 * `TauCeti.NovikovSeries.isDomain_of_fg`: over a domain, the Novikov ring of a finitely generated
@@ -76,64 +71,6 @@ namespace TauCeti
 namespace NovikovSeries
 
 variable {R H : Type*}
-
-section Order
-
-variable [AddZeroClass H] {N : H →+ ℝ} [Zero R] {a : NovikovSeries R H N} {h : H} {C : ℝ}
-
-/-- The order of a Novikov series: the least period of its support, and `0` for the zero series.
--/
-def order (a : NovikovSeries R H N) : ℝ :=
-  sInf (N '' a.support)
-
-@[simp]
-theorem order_zero : (0 : NovikovSeries R H N).order = 0 := by
-  simp [order]
-
-/-- The order of a nonzero Novikov series is the least period of its support. -/
-theorem isLeast_order (ha : a ≠ 0) : IsLeast (N '' a.support) a.order := by
-  obtain ⟨g, -, hg⟩ := exists_isLeast_image_support (support_nonempty_iff.2 ha)
-  rwa [order, hg.csInf_eq]
-
-/-- A Novikov series whose support has least period `C` has order `C`. -/
-theorem order_eq_of_isLeast (hC : IsLeast (N '' a.support) C) : a.order = C :=
-  hC.csInf_eq
-
-theorem order_le_of_coeff_ne_zero (hh : a.coeff h ≠ 0) : a.order ≤ N h :=
-  csInf_le a.bddBelow_image_support ⟨h, mem_support.2 hh, rfl⟩
-
-theorem coeff_eq_zero_of_lt_order (hh : N h < a.order) : a.coeff h = 0 := by
-  by_contra ha
-  exact (order_le_of_coeff_ne_zero ha).not_gt hh
-
-/-- A nonzero Novikov series has a nonzero coefficient at an exponent of period equal to its
-order. -/
-theorem exists_coeff_ne_zero_and_period_eq_order (ha : a ≠ 0) :
-    ∃ h, a.coeff h ≠ 0 ∧ N h = a.order := by
-  obtain ⟨h, hh, hN⟩ := (isLeast_order ha).1
-  exact ⟨h, mem_support.1 hh, hN⟩
-
-/-- A nonzero Novikov series vanishes below the period cutoff `C` exactly when `C` is at most its
-order. -/
-theorem le_order_iff (ha : a ≠ 0) : C ≤ a.order ↔ ∀ h, N h < C → a.coeff h = 0 := by
-  refine ⟨fun hC h hh => coeff_eq_zero_of_lt_order (hh.trans_le hC), fun hC => ?_⟩
-  obtain ⟨h, hh, hN⟩ := exists_coeff_ne_zero_and_period_eq_order ha
-  rw [← hN]
-  by_contra hlt
-  exact hh (hC h (not_le.1 hlt))
-
-@[simp]
-theorem order_single {r : R} (hr : r ≠ 0) : (single h r : NovikovSeries R H N).order = N h :=
-  order_eq_of_isLeast <| by simp [support_single_of_ne hr]
-
-end Order
-
-/-- A nonzero Novikov series lies in the period neighbourhood `U_C` exactly when `C` is at most
-its order. -/
-theorem mem_periodFiltration_iff_le_order [AddZeroClass H] {N : H →+ ℝ} [AddGroup R]
-    {a : NovikovSeries R H N} (ha : a ≠ 0) {C : ℝ} :
-    a ∈ periodFiltration R N C ↔ C ≤ a.order :=
-  mem_periodFiltration.trans (le_order_iff ha).symm
 
 section LeadingTerm
 
