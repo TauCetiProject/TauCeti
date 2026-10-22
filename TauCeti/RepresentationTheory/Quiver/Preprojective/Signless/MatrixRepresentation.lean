@@ -41,10 +41,13 @@ A representation of a subgraph extends by zero along a copy, by
 
 ## Main results
 
-* `TauCeti.signlessMatrixRepresentation_vertexIdempotent` and
+* `TauCeti.signlessMatrixRepresentation_vertexIdempotent`,
+  `TauCeti.signlessMatrixRepresentation_ofPath_toPath` and
   `TauCeti.signlessMatrixRepresentation_ofArrow`: the values on vertex idempotents and arrows.
 * `TauCeti.signlessMatrixRepresentation_backtrackElem`: a backtrack `v → w → v` acts by the block
   `E_vv ⊗ (β w v * β v w)`.
+* `TauCeti.trace_signlessMatrixRepresentation_backtrackElem_mul_backtrackElem`: the trace of a
+  product of two backtracks at a common vertex.
 
 ## References
 
@@ -170,13 +173,23 @@ theorem signlessMatrixRepresentation_vertexIdempotent (v : V) :
   rw [signlessMatrixRepresentation, signlessPreprojectiveLift_signlessPreprojectiveMk,
     matrixPathAlgHom, liftAlgHomOfArrows_vertexIdempotent, matrixVertex, vertexEquiv_symm_vertex]
 
+/-- The matrix representation sends the length-one path of the arrow `i → j` to the block
+`E_ji ⊗ β i j`. This is the simp-normal form of `signlessMatrixRepresentation_ofArrow`. -/
+@[simp]
+theorem signlessMatrixRepresentation_ofPath_toPath {i j : V} (h : G.Adj i j) :
+    signlessMatrixRepresentation k β hβ
+        (signlessPreprojectiveMk k _ (ofPath ⟨vertex G i, vertex G j, (arrow G h).toPath⟩)) =
+      single j i 1 ⊗ₖ β i j := by
+  rw [signlessMatrixRepresentation, signlessPreprojectiveLift_signlessPreprojectiveMk,
+    ← ofArrow_eq_ofPath, matrixPathAlgHom_ofArrow]
+
 /-- The matrix representation sends the arrow `i → j` to the block `E_ji ⊗ β i j`. This is not a
-simp lemma: `ofArrow` is not in simp-normal form. -/
+simp lemma: `ofArrow` is not in simp-normal form, and
+`signlessMatrixRepresentation_ofPath_toPath` covers its normal form. -/
 theorem signlessMatrixRepresentation_ofArrow {i j : V} (h : G.Adj i j) :
     signlessMatrixRepresentation k β hβ (signlessPreprojectiveMk k _ (ofArrow (arrow G h))) =
       single j i 1 ⊗ₖ β i j := by
-  rw [signlessMatrixRepresentation, signlessPreprojectiveLift_signlessPreprojectiveMk,
-    matrixPathAlgHom_ofArrow]
+  rw [ofArrow_eq_ofPath, signlessMatrixRepresentation_ofPath_toPath]
 
 /-- The matrix representation sends the backtrack `v → w → v` to the block
 `E_vv ⊗ (β w v * β v w)`. -/
@@ -186,6 +199,17 @@ theorem signlessMatrixRepresentation_backtrackElem {v w : V} (h : G.Adj v w) :
       single v v 1 ⊗ₖ (β w v * β v w) := by
   rw [signlessMatrixRepresentation, signlessPreprojectiveLift_signlessPreprojectiveMk,
     matrixPathAlgHom_backtrackElem]
+
+/-- The trace of the image of a product of two backtracks `v → w₁ → v` and `v → w₂ → v` at a
+common vertex `v` is the trace of the product of their blocks at `v`. -/
+theorem trace_signlessMatrixRepresentation_backtrackElem_mul_backtrackElem {v w₁ w₂ : V}
+    (h₁ : G.Adj v w₁) (h₂ : G.Adj v w₂) :
+    trace (signlessMatrixRepresentation k β hβ
+        (signlessPreprojectiveMk k _ (backtrackElem G k h₁ * backtrackElem G k h₂))) =
+      trace (β w₁ v * β v w₁ * (β w₂ v * β v w₂)) := by
+  rw [map_mul, map_mul, signlessMatrixRepresentation_backtrackElem,
+    signlessMatrixRepresentation_backtrackElem, ← mul_kronecker_mul, single_mul_single_same,
+    trace_kronecker, trace_single_eq_same, mul_one, one_mul]
 
 end Representation
 
