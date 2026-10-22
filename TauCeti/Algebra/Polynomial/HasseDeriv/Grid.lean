@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Archimedean.Real.Basic
-public import Mathlib.Data.Int.Interval
+public import TauCeti.Algebra.Order.Floor.Semifield
+public import TauCeti.Data.Int.Interval
 public import TauCeti.Algebra.Polynomial.Roots
 public import TauCeti.Algebra.Polynomial.Taylor
 import Mathlib.Data.ZMod.Basic
@@ -31,8 +31,6 @@ nonvanishing on rectangular integer grids.
 * `TauCeti.exists_eval_polynomial_hasseDeriv_intCast_ne_zero`: for nonzero `p : R[X]` of
   degree `≤ s` and `B > 0`, there exist `z : ℤ` and `i : ℕ` with `|z| ≤ B`, `i ≤ s / B`, and
   `(hasseDeriv i p).eval (z : R) ≠ 0`.
-* `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`: the number of
-  integer points times the number of allowed derivative orders exceeds the degree bound.
 
 ## References
 
@@ -43,34 +41,6 @@ nonvanishing on rectangular integer grids.
 public section
 
 namespace TauCeti
-
-/-- The integer grid `[-⌊B⌋₊, ⌊B⌋₊]` has `2 * ⌊B⌋₊ + 1` distinct images in any
-characteristic-zero additive group with one. -/
-theorem card_intCast_Icc_floor {R : Type*} [AddGroupWithOne R] [CharZero R] (B : ℝ) :
-    ((Finset.Icc (-(⌊B⌋₊ : ℤ)) (⌊B⌋₊ : ℤ)).map
-      ⟨(Int.cast : ℤ → R), Int.cast_injective⟩).card = 2 * ⌊B⌋₊ + 1 := by
-  rw [Finset.card_map, Int.card_Icc]
-  omega
-
-/-- Every integer in `[-⌊B⌋₊, ⌊B⌋₊]` has absolute value at most the nonnegative bound `B`. -/
-theorem natAbs_le_of_mem_Icc_floor {B : ℝ} (hB : 0 ≤ B) {z : ℤ}
-    (hz : z ∈ Finset.Icc (-(⌊B⌋₊ : ℤ)) (⌊B⌋₊ : ℤ)) : (z.natAbs : ℝ) ≤ B := by
-  obtain ⟨hz1, hz2⟩ := Finset.mem_Icc.1 hz
-  exact (Nat.cast_le.2 (by omega : z.natAbs ≤ ⌊B⌋₊)).trans (Nat.floor_le hB)
-
-/-- For any degree bound `s : ℕ` and positive parameter `B : ℝ`, the number of integer grid points
-in `[-⌊B⌋₊, ⌊B⌋₊]` times the number of derivative orders in `[0, ⌊s / B⌋₊]` strictly exceeds
-`s`. -/
-theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (s : ℕ) {B : ℝ} (hB : 0 < B) :
-    s < (2 * ⌊B⌋₊ + 1) * (⌊(s : ℝ) / B⌋₊ + 1) := by
-  have h1 : B < 2 * (⌊B⌋₊ : ℝ) + 1 := by
-    linarith [Nat.lt_floor_add_one B, Nat.cast_nonneg (α := ℝ) ⌊B⌋₊]
-  have h2 : (s : ℝ) / B < (⌊(s : ℝ) / B⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
-  have h3 : (s : ℝ) < (2 * (⌊B⌋₊ : ℝ) + 1) * ((⌊(s : ℝ) / B⌋₊ : ℝ) + 1) := by
-    calc (s : ℝ) = B * ((s : ℝ) / B) := (mul_div_cancel₀ _ hB.ne').symm
-      _ < (2 * (⌊B⌋₊ : ℝ) + 1) * ((⌊(s : ℝ) / B⌋₊ : ℝ) + 1) :=
-          mul_lt_mul'' h1 h2 hB.le (div_nonneg (Nat.cast_nonneg s) hB.le)
-  exact_mod_cast h3
 
 open _root_.Polynomial
 
