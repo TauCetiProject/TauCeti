@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.DenseSubmodule
-public import TauCeti.Topology.Algebra.Module.ZeroSequenceOfUnits
+public import TauCeti.Topology.Algebra.Module.Noetherian
 public import TauCeti.Topology.Algebra.IsUniformGroup.Submodule
 public import Mathlib.Algebra.Exact.Basic
 import Mathlib.Algebra.Module.FinitePresentation
@@ -18,7 +18,7 @@ import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 A submodule of a complete, metrisable module over a complete Tate ring whose topological closure
 is module-finite is itself closed. This is Bosch–Güntzer–Remmert §3.7.2/1 in its closure form. It
 gives the *only if* direction of Wedhorn's Proposition 6.17, that every submodule of a noetherian
-module is closed; with the converse `TauCeti.HasZeroSequenceOfUnits.isNoetherian_of_forall_isClosed`
+module is closed; with the converse `TauCeti.isNoetherian_of_forall_isClosed`
 this file proves Proposition 6.17 in both directions. Its consequence for a
 noetherian ring — every submodule of a finitely generated module is closed — is what makes a finite
 presentation of a finite module *strict*, which is the form in which Wedhorn's Remark 8.29 consumes
@@ -41,7 +41,7 @@ the closure, that is `N.topologicalClosure = N`, and `N` is closed because its c
   `TauCeti.Huber.isNoetherianRing_iff_forall_isClosed`: Wedhorn's Proposition 6.17, that a complete
   Hausdorff first-countable module over a complete Hausdorff Tate ring, and in particular the ring
   itself, is noetherian exactly when all of its submodules are closed. The converse direction is
-  `TauCeti.HasZeroSequenceOfUnits.isNoetherian_of_forall_isClosed`.
+  `TauCeti.isNoetherian_of_forall_isClosed`.
 * `TauCeti.Huber.IsTateRing.exists_presentation_isStrictMap_isOpenMap`: over a complete
   noetherian Tate ring, a finite module with its module topology has a presentation
   `Aⁿ →[u] Aᵐ →[p] M → 0` with `u` strict and `p` open — Wedhorn's Remark 8.29's use of
@@ -137,10 +137,10 @@ theorem isClosed_of_isNoetherian [IsNoetherian A V] (N : Submodule A V) :
 /-- **A complete Hausdorff first-countable module over a complete Hausdorff Tate ring is noetherian
 if and only if all of its submodules are closed** ([Wedhorn, *Adic Spaces*][wedhorn_adic],
 Proposition 6.17). The forward direction is `TauCeti.Huber.isClosed_of_isNoetherian`; the converse,
-a Baire category argument, is `TauCeti.HasZeroSequenceOfUnits.isNoetherian_of_forall_isClosed`. -/
+a Baire category argument, is `TauCeti.isNoetherian_of_forall_isClosed`. -/
 theorem isNoetherian_iff_forall_isClosed :
     IsNoetherian A V ↔ ∀ N : Submodule A V, IsClosed (N : Set V) :=
-  ⟨fun _ ↦ isClosed_of_isNoetherian, HasZeroSequenceOfUnits.isNoetherian_of_forall_isClosed⟩
+  ⟨fun _ ↦ isClosed_of_isNoetherian, TauCeti.isNoetherian_of_forall_isClosed⟩
 
 /-- **A complete Hausdorff Tate ring is noetherian if and only if all of its ideals are closed**
 ([Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 6.17, the case of the ring itself). -/

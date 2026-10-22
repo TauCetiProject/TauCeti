@@ -6,16 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Ext.DimensionShifting
-public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import Mathlib.RingTheory.FiniteLength
+public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
+import TauCeti.LinearAlgebra.FreeModule.PID
 
 /-!
-# Projective dimension bounds along composition series
+# Projective dimension bounds for modules
 
 A common bound on the projective dimensions of simple modules also bounds every
 module of finite length. This lets short resolutions of simple modules control higher
 Ext groups of arbitrary finite-length modules, without choosing resolutions of their
 successive extensions.
+
+Over a principal ideal ring without zero divisors, every module has projective dimension at most
+one: a submodule of a projective module is free, and hence projective. This supplies the
+hereditary condition in terms of Mathlib's projective-dimension predicate.
 
 For a module of projective dimension at most one, the standard free presentation has
 projective kernel and hence is a projective resolution of length one.
@@ -66,3 +71,23 @@ theorem projective_projectiveShortComplex_X₁ [Small.{v} R] {M : ModuleCat.{v} 
   exact projective_iff_hasProjectiveDimensionLT_one.mpr h₁
 
 end TauCeti
+
+namespace ModuleCat
+
+open CategoryTheory
+
+universe u v
+
+/-- Every module over a principal ideal ring without zero divisors has projective dimension at
+most one. -/
+instance hasProjectiveDimensionLE_one_of_isPrincipalIdealRing {R : Type u} [CommRing R]
+    [NoZeroDivisors R] [IsPrincipalIdealRing R] [Small.{v} R] (M : ModuleCat.{v} R) :
+    HasProjectiveDimensionLE M 1 := by
+  apply (forall_hasProjectiveDimensionLE_one_iff_projective_of_mono (ModuleCat.{v} R)).mpr ?_ M
+  intro X Y f _ _
+  have : Module.Free R X := Module.Free.of_injective_of_projective_of_isPrincipalIdealRing f.hom
+    ((ModuleCat.mono_iff_injective f).mp inferInstance)
+  have : Module.Projective R X := Module.Projective.of_free
+  exact ModuleCat.projective_of_categoryTheory_projective X
+
+end ModuleCat

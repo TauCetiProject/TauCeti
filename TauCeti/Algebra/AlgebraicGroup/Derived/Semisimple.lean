@@ -19,24 +19,24 @@ import TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed
 /-!
 # The derived subgroup of a reductive group is semisimple
 
-Over a field of characteristic zero, the scheme-theoretic derived subgroup `[G, G]` of a
+Over any field and in every characteristic, the scheme-theoretic derived subgroup `[G, G]` of a
 reductive affine group `G` is semisimple.
 
 Over an algebraically closed field the argument is the classical one. The solvable radical
 `R(G)` is a central torus, hence a central closed diagonalizable subgroup, so the determinant
 argument of `BialgHom.moduleFinite_quotient_sup_derivedDefiningIdeal` shows that
 `R(G) ∩ [G, G]` is finite. The solvable radical of the normal subgroup `[G, G]` lies in
-`R(G) ∩ [G, G]`, and a finite connected smooth group is trivial. Over a general field of
-characteristic zero, formation of the derived subgroup commutes with extension to an algebraic
-closure, where the geometric definition of semisimplicity is tested.
+`R(G) ∩ [G, G]`, and a finite connected smooth group is trivial. Over a general field,
+formation of the derived subgroup commutes with extension to an algebraic closure, where the
+geometric definition of semisimplicity is tested.
 
 ## Main declarations
 
 * `TauCeti.reductiveCommHopfAlgProperty.moduleFinite_quotient_solvableRadical_sup_derived`:
-  over an algebraically closed field of characteristic zero, the solvable radical of a reductive
-  group meets its derived subgroup in a finite subgroup scheme.
-* `TauCeti.reductiveCommHopfAlgProperty.semisimple_derived`: in characteristic zero, the derived
-  subgroup of a reductive group is semisimple.
+  over an algebraically closed field, the solvable radical of a reductive group meets its derived
+  subgroup in a finite subgroup scheme.
+* `TauCeti.reductiveCommHopfAlgProperty.semisimple_derived`: the derived subgroup of a reductive
+  group is semisimple.
 
 ## References
 
@@ -54,10 +54,10 @@ universe u
 
 noncomputable section
 
-variable {k : Type u} [Field k] [CharZero k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
+variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
 /-- **The solvable radical of a reductive group meets the derived subgroup finitely.** Over an
-algebraically closed field of characteristic zero, the coordinate algebra
+algebraically closed field, in every characteristic, the coordinate algebra
 `H ⧸ (R(H) ⊔ [H, H])` of the intersection of the solvable radical with the derived subgroup is
 finite-dimensional. -/
 theorem moduleFinite_quotient_solvableRadical_sup_derived [IsAlgClosed k]
@@ -85,7 +85,7 @@ theorem moduleFinite_quotient_solvableRadical_sup_derived [IsAlgClosed k]
     (hker ▸ hH.isCentral_solvableRadicalDefiningIdeal)
   rwa [hker] at hfinite
 
-/-- **The derived subgroup of a reductive group is semisimple** in characteristic zero. The
+/-- **The derived subgroup of a reductive group is semisimple**, in every characteristic. The
 ground field need not be algebraically closed, and the group need not split. -/
 theorem semisimple_derived (hH : reductiveCommHopfAlgProperty k H) :
     semisimpleCommHopfAlgProperty k

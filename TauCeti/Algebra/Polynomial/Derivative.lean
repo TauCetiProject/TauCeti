@@ -16,7 +16,8 @@ This file records auxiliary results relating Mathlib's polynomial derivative API
 iterated derivatives after a linear change of variables, and controlling degrees of derivatives
 under coefficient maps.
 
-The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function.
+The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
+and every scalar multiple of it is locally nilpotent.
 
 A coefficient map can lower the degree of a polynomial, and in positive characteristic it can
 lower the degree of a derivative even when it preserves the degree of the polynomial itself.
@@ -42,6 +43,15 @@ function. -/
 theorem _root_.Polynomial.coe_derivative' [CommSemiring R] :
     ⇑(derivative' : Derivation R R[X] R[X]) = derivative :=
   _root_.funext derivative'_apply
+
+/-- The scaled derivative `r • d / dX` is locally nilpotent: some iterate of it kills each
+polynomial. -/
+theorem _root_.Polynomial.exists_iterate_smul_derivative'_apply_eq_zero [CommSemiring R] (r : R)
+    (p : R[X]) : ∃ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = 0 := by
+  refine ⟨p.natDegree + 1, ?_⟩
+  rw [← Derivation.coeFn_coe, ← Module.End.coe_pow, Derivation.coe_smul_linearMap, smul_pow,
+    LinearMap.smul_apply, Module.End.pow_apply, Derivation.coeFn_coe, coe_derivative',
+    iterate_derivative_eq_zero (Nat.lt_succ_self _), smul_zero]
 
 /-- The `k`-th derivative of `p (a X)` is `a ^ k p⁽ᵏ⁾ (a X)`. -/
 theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : R[X]) (a : R)

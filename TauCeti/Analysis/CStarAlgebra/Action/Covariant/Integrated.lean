@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Basic
 public import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
 public import Mathlib.MeasureTheory.Integral.CompactlySupported

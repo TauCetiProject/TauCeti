@@ -131,6 +131,14 @@ theorem range_endCube_subset {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube
   rintro _ ⟨y, rfl⟩
   exact D.homotopy_one_mem hm c y
 
+/-- The deformation of a cube whose faces have dimension less than `n` ends in a cube sending the
+boundary of the cube into `A`. -/
+theorem mapsTo_endCube_boundary {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube X (m + 1)) :
+    MapsTo (D.endCube c) (Cube.boundary (Fin (m + 1))) A := by
+  rintro y ⟨i, hi⟩
+  rw [endCube_apply, ← Fin.insertNth_self_removeNth i y, D.homotopy_insertNth c i hi]
+  exact D.homotopy_one_mem hm _ _
+
 /-- The end of the deformation commutes with the faces at the endpoints of the interval. -/
 theorem face_endCube {m : ℕ} (c : SingularCube X (m + 1)) (i : Fin (m + 1)) {t : I}
     (ht : t = 0 ∨ t = 1) :

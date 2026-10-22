@@ -68,20 +68,12 @@ theorem orthogonalSpinorNorm_comp_orthogonalGroupBaseChange (Q : QuadraticForm K
   let : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   refine QuadraticMap.orthogonalGroup_hom_ext Q hQ fun v _ ↦ ?_
-  have hv : Q.baseChange L (1 ⊗ₜ v) = algebraMap K L (Q v) := by
-    rw [QuadraticForm.baseChange_tmul, mul_one, Algebra.smul_def, mul_one]
-  let _ : Invertible (Q.baseChange L (1 ⊗ₜ v)) :=
-    (Invertible.map (algebraMap K L) (Q v)).copy _ hv
-  have hrefl : QuadraticMap.orthogonalGroupBaseChange Q (QuadraticMap.reflectionOrthogonal Q v) =
-      QuadraticMap.reflectionOrthogonal (Q.baseChange L) (1 ⊗ₜ v) := by
-    apply Subtype.ext
-    rw [QuadraticMap.coe_orthogonalGroupBaseChange, QuadraticMap.coe_reflectionOrthogonal,
-      QuadraticMap.coe_reflectionOrthogonal, QuadraticMap.reflection_baseChange]
-  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, hrefl,
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply,
+    QuadraticMap.orthogonalGroupBaseChange_reflectionOrthogonal,
     orthogonalSpinorNorm_reflectionOrthogonal, orthogonalSpinorNorm_reflectionOrthogonal]
   simp only [squareClassHom_apply, AddMonoidHom.toMultiplicative_apply_apply, toAdd_ofAdd,
     LinearMap.toAddMonoidHom_coe, RingHom.squareClassMap_apply]
-  exact congrArg (Multiplicative.ofAdd ∘ squareClass) (Units.ext hv)
+  exact congrArg (Multiplicative.ofAdd ∘ squareClass) (Units.ext (Q.baseChange_one_tmul v))
 
 /-- The spinor norm of an orthogonal automorphism after extending scalars from `K` to `L` is the
 image of its spinor norm under the pushforward of square classes. -/
