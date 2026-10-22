@@ -11,6 +11,8 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+
 /-!
 # Fibrewise sums of Euclidean coordinates
 
@@ -28,6 +30,7 @@ Borel measurable structure on the scalar field.
 
 ## Additional results
 
+* `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
 * `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
   `𝕜 × 𝕜ⁿ`.
@@ -40,6 +43,14 @@ noncomputable section
 open scoped BigOperators
 
 namespace EuclideanSpace
+
+/-- The positive orthant in finite real Euclidean space is measurable. -/
+theorem measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :
+    MeasurableSet {x : EuclideanSpace ℝ ι | ∀ i, 0 < x i} := by
+  let : Fintype ι := Fintype.ofFinite ι
+  rw [Set.ofPred_forall]
+  exact MeasurableSet.iInter fun i ↦
+    measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)
 
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
