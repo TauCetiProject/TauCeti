@@ -60,6 +60,9 @@ supported in `S` glues with zero on `W ∖ S` to a unique section over `W` suppo
 * `CategoryTheory.Sheaf.relativeH'.subsingleton_succ_of_isFlasque`: a flasque sheaf has no relative
   cohomology in positive degrees for an inclusion of opens; in particular it has no cohomology with
   supports in positive degrees.
+* `CategoryTheory.Sheaf.relativeH'.bijective_extClass_postcomp`: dimension shifting, the connecting
+  maps `Hⁿ⁺¹(V, U; F₃) ⟶ Hⁿ⁺²(V, U; F₁)` of a short exact sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with
+  `F₂` flasque are bijective;
 * `CategoryTheory.Sheaf.supportedHRestrict`: the restriction map `H_Sⁿ(W, F) ⟶ H_Sⁿ(W', F)` for
   `W' ≤ W`, and `CategoryTheory.Sheaf.supportedHPresheaf F S n`, the presheaf `W ↦ H_Sⁿ(W, F)`;
 * `CategoryTheory.Sheaf.existsUnique_mem_supportedSections_map_eq`: excision for sections
@@ -173,6 +176,16 @@ lemma supportedHRestrict_supportedHRestrict (S : Closeds X) {W'' W' W : Opens X}
     F.supportedHRestrict S h' n (F.supportedHRestrict S h n x) =
       F.supportedHRestrict S (h'.trans h) n x :=
   relativeH'.map_map F _ _ _ _ _ _ _ _ _ x
+
+/-- Restriction of cohomology with supports commutes with the Yoneda product by an `Ext` class
+between coefficient sheaves, such as the map induced by a morphism of sheaves or the connecting
+class of a short exact sequence of sheaves. -/
+lemma supportedHRestrict_comp {G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+    (S : Closeds X) {W' W : Opens X} (h : W' ≤ W) {m n k : ℕ} (x : F.supportedH S W m)
+    (α : Ext F G n) (hk : m + n = k) :
+    G.supportedHRestrict S h k (x.comp α hk) = (F.supportedHRestrict S h m x).comp α hk := by
+  simp only [supportedHRestrict, relativeH'.map_apply]
+  exact (Ext.comp_assoc _ _ _ (zero_add m) hk (by omega)).symm
 
 /-- Under `supportedHZeroEquiv`, restriction of degree-zero cohomology with supports is the
 restriction of sections. -/
@@ -431,6 +444,21 @@ instance subsingleton_succ_of_isFlasque [TopCat.Presheaf.IsFlasque F.obj]
     rw [← AddCommGrpCat.epi_iff_surjective]
     infer_instance
   | succ n => exact subsingleton_add_two F i inferInstance inferInstance
+
+/-- **Dimension shifting** for relative cohomology: if `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is a short exact
+sequence of sheaves with `F₂` flasque, the connecting map `Hⁿ⁺¹(V, U; F₃) ⟶ Hⁿ⁺²(V, U; F₁)` is
+bijective. In particular this applies to cohomology with supports
+`H_Sⁿ⁺¹(W, F₃) ⟶ H_Sⁿ⁺²(W, F₁)`. -/
+theorem bijective_extClass_postcomp
+    {T : ShortComplex (Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
+    (hT : T.ShortExact) [TopCat.Presheaf.IsFlasque T.X₂.obj] {U V : Opens X} (i : U ⟶ V)
+    (n : ℕ) :
+    Function.Bijective (hT.extClass.postcomp _ (rfl : n + 1 + 1 = n + 2) :
+      T.X₃.relativeH' i (n + 1) →+ T.X₁.relativeH' i (n + 2)) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
+  · obtain ⟨z, rfl⟩ := Abelian.Ext.covariant_sequence_exact₃ _ hT x rfl hx
+    rw [Subsingleton.elim z 0, Abelian.Ext.zero_comp]
+  · exact Abelian.Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) rfl
 
 end relativeH'
 
