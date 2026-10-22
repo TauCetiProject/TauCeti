@@ -153,6 +153,20 @@ of `A`. -/
 def idealOfDefinition : Ideal D.ringOfDefinition :=
   D.base.idealOfDefinition.map D.toRingOfDefinition
 
+/-- `A₀ → B₀ → F` is `A₀ → F`. -/
+private theorem restrict_includeLeft_comp_restrict_algebraMap :
+    (includeLeftRingHom.restrict _ D.ringOfDefinition
+      fun _ hb ↦ D.tmul_one_mem_ringOfDefinition hb).comp
+        ((algebraMap A B).restrict _ _ D.algebraMap_mem_left) = D.toRingOfDefinition :=
+  RingHom.ext fun a ↦ Subtype.ext (algebraMap_apply (a : A)).symm
+
+/-- `A₀ → C₀ → F` is `A₀ → F`. -/
+private theorem restrict_includeRight_comp_restrict_algebraMap :
+    (((includeRight : C →ₐ[A] B ⊗[A] C) : C →+* B ⊗[A] C).restrict _ D.ringOfDefinition
+      fun _ hc ↦ D.one_tmul_mem_ringOfDefinition hc).comp
+        ((algebraMap A C).restrict _ _ D.algebraMap_mem_right) = D.toRingOfDefinition :=
+  RingHom.ext fun a ↦ Subtype.ext (algebraMap_apply' (a : A)).symm
+
 /-- Unfolding lemma for `TauCeti.Huber.TensorDatum.idealOfDefinition`. -/
 theorem idealOfDefinition_def :
     D.idealOfDefinition = D.base.idealOfDefinition.map D.toRingOfDefinition :=
@@ -251,14 +265,14 @@ private theorem mul_mem_of_forall_algebraMap {x : B ⊗[A] C} {k : ℕ}
     (fun y z hy hz ↦ by simpa [mul_add] using add_mem hy hz)
     (fun r y hy ↦ by simpa [mul_left_comm] using mul_mem r.2 hy) hx hy
 
-/-- **Every element of `B ⊗[A] C` multiplies a power of `J` into `F`.** For an elementary tensor
-`b ⊗ c`, a power of `I B₀` multiplies `b` into `B₀`, and a power of `I C₀` multiplies `c` into
-`C₀`. -/
+/-- **Every element of `B ⊗[A] C` multiplies a power of `J` into `F`.** This is the
+left-multiplication condition making the images of the powers of `J` a `RingSubgroupsBasis`. -/
 theorem exists_forall_mul_mem [SeparatelyContinuousMul B] [SeparatelyContinuousMul C]
     (x : B ⊗[A] C) :
     ∃ k, ∀ y ∈ D.idealOfDefinition ^ k, x * (y : B ⊗[A] C) ∈ D.ringOfDefinition := by
   induction x using TensorProduct.inductionOn with
   | tmul b c =>
+    -- A power of `I B₀` multiplies `b` into `B₀`, and a power of `I C₀` multiplies `c` into `C₀`.
     obtain ⟨k₁, hk₁⟩ :=
       D.left.exists_pow_idealOfDefinition_mul_mem D.left.isOpen_ringOfDefinition b
     obtain ⟨k₂, hk₂⟩ :=
@@ -313,8 +327,8 @@ section Topology
 variable [SeparatelyContinuousMul B] [SeparatelyContinuousMul C]
 
 /-- The topology on `B ⊗[A] C` whose neighbourhoods of zero are the images of the powers of the
-ideal of definition `J`. By `TauCeti.Huber.TensorDatum.topology_eq` it does not depend on the
-datum. -/
+ideal of definition `J`. When `A`, `B` and `C` are topological rings it does not depend on the
+datum (`TauCeti.Huber.TensorDatum.topology_eq`). -/
 @[instance_reducible] def topology : TopologicalSpace (B ⊗[A] C) :=
   D.basis.topology
 
@@ -374,6 +388,15 @@ theorem pairOfDefinition_ringOfDefinition :
     D.pairOfDefinition.ringOfDefinition = D.ringOfDefinition :=
   (rfl)
 
+/-- The neighbourhoods of zero of `pairOfDefinition` are the images of the powers of `J`. -/
+@[simp]
+theorem pairOfDefinition_idealImage (n : ℕ) :
+    letI := D.topology
+    D.pairOfDefinition.idealImage n = D.idealImage n := by
+  let _ := D.topology
+  ext
+  exact (PairOfDefinition.mem_idealImage _ n).trans D.mem_idealImage.symm
+
 /-- Membership in the ideal of definition of `pairOfDefinition` is membership in `J`. -/
 @[simp]
 theorem mem_pairOfDefinition_idealOfDefinition
@@ -400,9 +423,12 @@ theorem isAdicHom_includeLeft :
     IsAdicHom (includeLeftRingHom : B →+* B ⊗[A] C) := by
   let _ := D.topology
   refine ⟨D.left, D.pairOfDefinition, fun _ hb ↦ D.tmul_one_mem_ringOfDefinition hb, ?_⟩
-  rw [← D.map_idealOfDefinition_left, Ideal.map_map]
-  exact congrArg (Ideal.map · D.base.idealOfDefinition)
-    (RingHom.ext fun a ↦ Subtype.ext (algebraMap_apply (a : A)).symm)
+  -- The pair `D.pairOfDefinition` has ring of definition `F` and ideal of definition `J` by
+  -- definition (`pairOfDefinition_ringOfDefinition`).
+  change Ideal.map (includeLeftRingHom.restrict _ D.ringOfDefinition
+    fun _ hb ↦ D.tmul_one_mem_ringOfDefinition hb) D.left.idealOfDefinition = D.idealOfDefinition
+  rw [← D.map_idealOfDefinition_left, Ideal.map_map, restrict_includeLeft_comp_restrict_algebraMap,
+    idealOfDefinition_def]
 
 /-- The inclusion `C → B ⊗[A] C` is adic for the topology of a tensor datum: it carries `C₀`
 into `F`, and `I C₀` to the ideal `J = I F`. -/
@@ -411,9 +437,12 @@ theorem isAdicHom_includeRight :
     IsAdicHom ((includeRight : C →ₐ[A] B ⊗[A] C) : C →+* B ⊗[A] C) := by
   let _ := D.topology
   refine ⟨D.right, D.pairOfDefinition, fun _ hc ↦ D.one_tmul_mem_ringOfDefinition hc, ?_⟩
-  rw [← D.map_idealOfDefinition_right, Ideal.map_map]
-  exact congrArg (Ideal.map · D.base.idealOfDefinition)
-    (RingHom.ext fun a ↦ Subtype.ext (algebraMap_apply' (a : A)).symm)
+  -- As for `isAdicHom_includeLeft`, the pair `D.pairOfDefinition` is `(F, J)` by definition.
+  change Ideal.map (((includeRight : C →ₐ[A] B ⊗[A] C) : C →+* B ⊗[A] C).restrict _
+    D.ringOfDefinition fun _ hc ↦ D.one_tmul_mem_ringOfDefinition hc) D.right.idealOfDefinition =
+      D.idealOfDefinition
+  rw [← D.map_idealOfDefinition_right, Ideal.map_map,
+    restrict_includeRight_comp_restrict_algebraMap, idealOfDefinition_def]
 
 end Topology
 
