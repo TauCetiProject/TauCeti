@@ -65,7 +65,7 @@ vertex type `V ⊕ Bool`. The arrows between original vertices `Sum.inl v` and `
 of `Q v w`; the fresh source `σ = Sum.inr false` has one arrow to each `Sum.inl a` with `a ∈ A`; the
 fresh sink `τ = Sum.inr true` has one arrow from each `Sum.inl b` with `b ∈ B`; and there are no
 other arrows. -/
-abbrev AuxTerminalHom : V ⊕ Bool → V ⊕ Bool → Type v
+@[expose] def AuxTerminalHom : V ⊕ Bool → V ⊕ Bool → Type v
   | inl v, inl w => Q v w
   | inr false, inl a => {_u : PUnit.{v + 1} // a ∈ A}
   | inl b, inr true => {_u : PUnit.{v + 1} // b ∈ B}
@@ -74,8 +74,8 @@ abbrev AuxTerminalHom : V ⊕ Bool → V ⊕ Bool → Type v
 instance AuxTerminalHom.instFintype [DecidableEq V] [∀ v w, Fintype (Q v w)] :
     ∀ x y, Fintype (AuxTerminalHom Q A B x y)
   | inl v, inl w => inferInstanceAs (Fintype (Q v w))
-  | inr false, inl a => inferInstanceAs (Fintype {_u : PUnit // a ∈ A})
-  | inl b, inr true => inferInstanceAs (Fintype {_u : PUnit // b ∈ B})
+  | inr false, inl a => inferInstanceAs (Fintype {_u : PUnit.{v + 1} // a ∈ A})
+  | inl b, inr true => inferInstanceAs (Fintype {_u : PUnit.{v + 1} // b ∈ B})
   | inl _, inr false => inferInstanceAs (Fintype PEmpty)
   | inr false, inr _ => inferInstanceAs (Fintype PEmpty)
   | inr true, _ => inferInstanceAs (Fintype PEmpty)
@@ -100,10 +100,12 @@ def sink {b : V} (hb : b ∈ B) : AuxTerminalHom Q A B (inl b) (inr true) :=
 def originalEquiv {v w : V} : Q v w ≃ AuxTerminalHom Q A B (inl v) (inl w) :=
   Equiv.refl _
 
+@[simp]
 theorem originalEquiv_apply {v w : V} (e : Q v w) :
     originalEquiv (A := A) (B := B) e = original e :=
   (rfl)
 
+@[simp]
 theorem originalEquiv_symm_original {v w : V} (e : Q v w) :
     originalEquiv.symm (original (A := A) (B := B) e) = e :=
   (rfl)
@@ -116,6 +118,7 @@ theorem original_injective {v w : V} :
     Function.Injective (original (A := A) (B := B) : Q v w → _) :=
   originalEquiv.injective
 
+@[simp]
 theorem original_inj {v w : V} {e e' : Q v w} :
     original (A := A) (B := B) e = original e' ↔ e = e' :=
   original_injective.eq_iff
@@ -197,7 +200,7 @@ section Cut
 
 variable [AddCommMonoid K] [Fintype V] [DecidableEq V] [∀ v w, Fintype (Q v w)]
 
-omit [Fintype V] [DecidableEq V] in
+omit [Fintype V] in
 /-- The total capacity with auxiliary terminals of the arrows between two original vertices is
 their original total capacity. -/
 theorem sum_auxTerminalCapacity_inl_inl (cap : Assignment Q K) (cσ cτ : V → K) (x y : V) :
