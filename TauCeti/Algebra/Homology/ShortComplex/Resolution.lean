@@ -90,7 +90,9 @@ def resolutionComplexIsoDouble (S : ShortComplex C) :
     rintro i j hij
     obtain rfl : j + 1 = i := hij
     obtain _ | j := j
-    · change (HomologicalComplex.doubleXIso₀ S.f _).inv ≫ _ = _
+    · -- `rw` cannot match through the component-family match. Reduce its degree-one branch
+      -- and `Iso.symm_hom` to expose the inverse of `doubleXIso₀` before rewriting `double_d`.
+      change (HomologicalComplex.doubleXIso₀ S.f _).inv ≫ _ = _
       rw [HomologicalComplex.double_d S.f (c := ComplexShape.down ℕ) (i₀ := 1) (i₁ := 0)
         rfl (by decide)]
       exact Iso.inv_hom_id_assoc _ _
