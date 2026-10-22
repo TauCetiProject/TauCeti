@@ -33,18 +33,19 @@ identically (`mem_continuousTwoCochain_iff_of_hasBasis`).
 If the bracket of `L` is continuous and every element of `M` is annihilated by a neighbourhood of
 zero (for instance if `M` is a trivial module), then the differential `d₁₂` sends continuous
 one-cochains to continuous two-cocycles (`d₁₂_mem_continuousTwoCocycle`). The continuous second
-cohomology `continuousSecondCohomology` is the quotient of continuous two-cocycles by coboundaries
-of continuous one-cochains. In this degree it is the receptacle for the classes of continuously
-split central extensions of a topological Lie algebra, such as the formal loop algebra, by a
-discrete module.
+cohomology `continuousSecondCohomology` is the quotient of continuous two-cocycles by those
+coboundaries of continuous one-cochains which are themselves continuous; under the hypotheses of
+`d₁₂_mem_continuousTwoCocycle` these are all coboundaries of continuous one-cochains. With trivial
+coefficients it is the receptacle for the classes of continuously split central extensions of a
+topological Lie algebra, such as the formal loop algebra, by a discrete trivial module.
 
 ## Main definitions
 
 * `TauCeti.LieModule.Cohomology.continuousOneCochain`: one-cochains vanishing near zero.
 * `TauCeti.LieModule.Cohomology.continuousTwoCochain`: continuous alternating two-cochains.
 * `TauCeti.LieModule.Cohomology.continuousTwoCocycle`: continuous two-cocycles.
-* `TauCeti.LieModule.Cohomology.continuousTwoCoboundary`: coboundaries of continuous
-  one-cochains, as a submodule of the continuous two-cocycles.
+* `TauCeti.LieModule.Cohomology.continuousTwoCoboundary`: the coboundaries of continuous
+  one-cochains which are continuous two-cocycles.
 * `TauCeti.LieModule.Cohomology.continuousSecondCohomology`: their quotient.
 
 ## Main results
@@ -169,12 +170,15 @@ variable [LieRingModule L M] [LieModule R L M]
 def continuousTwoCocycle : Submodule R (twoCochain R L M) :=
   continuousTwoCochain R L M ⊓ twoCocycle R L M
 
-/-- Coboundaries of continuous one-cochains, as a submodule of the continuous two-cocycles. -/
+/-- The coboundaries of continuous one-cochains which are themselves continuous, as a submodule of
+the continuous two-cocycles. By `d₁₂_mem_continuousTwoCocycle`, this is every coboundary of a
+continuous one-cochain when the bracket of `L` is continuous and every element of `M` is
+annihilated by a neighbourhood of zero. -/
 def continuousTwoCoboundary : Submodule R (continuousTwoCocycle R L M) :=
   ((continuousOneCochain R L M).map (d₁₂ R L M)).comap (continuousTwoCocycle R L M).subtype
 
 /-- Continuous second Lie algebra cohomology with discrete coefficients: continuous two-cocycles
-modulo coboundaries of continuous one-cochains. -/
+modulo the continuous coboundaries of continuous one-cochains. -/
 abbrev continuousSecondCohomology := continuousTwoCocycle R L M ⧸ continuousTwoCoboundary R L M
 
 /-- The quotient map from continuous two-cocycles to continuous second cohomology. -/
@@ -225,6 +229,15 @@ def continuousSecondCohomologyLift (g : continuousTwoCocycle R L M →ₗ[R] N)
 theorem continuousSecondCohomologyLift_mk (g : continuousTwoCocycle R L M →ₗ[R] N)
     (h : ∀ c ∈ continuousTwoCoboundary R L M, g c = 0) (c : continuousTwoCocycle R L M) :
     continuousSecondCohomologyLift g h (continuousSecondCohomologyMk R L M c) = g c := (rfl)
+
+/-- A linear map from continuous second cohomology is determined by its values on cocycle
+representatives. -/
+theorem continuousSecondCohomologyLift_unique (g : continuousTwoCocycle R L M →ₗ[R] N)
+    (h : ∀ c ∈ continuousTwoCoboundary R L M, g c = 0)
+    (φ : continuousSecondCohomology R L M →ₗ[R] N)
+    (hφ : φ ∘ₗ continuousSecondCohomologyMk R L M = g) :
+    φ = continuousSecondCohomologyLift g h :=
+  Submodule.linearMap_qext _ hφ
 
 /-- Two linear maps out of continuous second cohomology agree once they agree on cocycle
 representatives. -/

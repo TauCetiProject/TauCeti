@@ -29,10 +29,10 @@ continuous or not, since its restriction to polynomial currents is not.
 
 ## Main results
 
-* `TauCeti.CurrentAlgebra.mem_continuousTwoCochain_iff`: the joint-continuity criterion for
-  two-cochains on formal currents.
-* `TauCeti.CurrentAlgebra.d₁₂_mem_continuousTwoCocycle`: coboundaries of continuous one-cochains
-  with trivial coefficients are continuous two-cocycles.
+* `TauCeti.CurrentAlgebra.mem_continuousTwoCochain_iff_orderSubmodule`: the joint-continuity
+  criterion for two-cochains on formal currents.
+* `TauCeti.CurrentAlgebra.d₁₂_mem_continuousTwoCocycle_of_isTrivial`: coboundaries of continuous
+  one-cochains with trivial coefficients are continuous two-cocycles.
 * `TauCeti.CurrentAlgebra.twoCochainOfBilinear_mem_continuousTwoCocycle`: the residue cocycle is
   continuous.
 * `TauCeti.CurrentAlgebra.residueClass`: its class in continuous second cohomology.
@@ -60,16 +60,16 @@ variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup
 
 /-- A one-cochain on formal currents is continuous exactly when it vanishes on all currents of
 some order `N`. -/
-theorem mem_continuousOneCochain_iff {f : oneCochain R (currentAlgebra R L) M} :
+theorem mem_continuousOneCochain_iff_orderSubmodule {f : oneCochain R (currentAlgebra R L) M} :
     f ∈ continuousOneCochain R (currentAlgebra R L) M ↔
       ∃ N : ℤ, ∀ u ∈ orderSubmodule R L N, f u = 0 := by
-  simp [TauCeti.LieModule.Cohomology.mem_continuousOneCochain_iff,
+  simp [mem_continuousOneCochain_iff,
     (hasBasis_nhds_zero R L).eventually_iff]
 
 /-- **The joint-continuity criterion on formal currents.** An alternating two-cochain `c` on
 formal currents is continuous exactly when each partial map `c u` vanishes on the currents of some
 order, and `c` vanishes on all pairs of currents of order at least a single `N`. -/
-theorem mem_continuousTwoCochain_iff {c : twoCochain R (currentAlgebra R L) M} :
+theorem mem_continuousTwoCochain_iff_orderSubmodule {c : twoCochain R (currentAlgebra R L) M} :
     c ∈ continuousTwoCochain R (currentAlgebra R L) M ↔
       (∀ u, ∃ N : ℤ, ∀ v ∈ orderSubmodule R L N, c u v = 0) ∧
         ∃ N : ℤ, ∀ u ∈ orderSubmodule R L N, ∀ v ∈ orderSubmodule R L N, c u v = 0 := by
@@ -77,12 +77,12 @@ theorem mem_continuousTwoCochain_iff {c : twoCochain R (currentAlgebra R L) M} :
 
 /-- Coboundaries of continuous one-cochains on formal currents with trivial coefficients are
 continuous two-cocycles. -/
-theorem d₁₂_mem_continuousTwoCocycle [LieRingModule (currentAlgebra R L) M]
+theorem d₁₂_mem_continuousTwoCocycle_of_isTrivial [LieRingModule (currentAlgebra R L) M]
     [LieModule R (currentAlgebra R L) M] [LieModule.IsTrivial (currentAlgebra R L) M]
     {f : oneCochain R (currentAlgebra R L) M}
     (hf : f ∈ continuousOneCochain R (currentAlgebra R L) M) :
     d₁₂ R (currentAlgebra R L) M f ∈ continuousTwoCocycle R (currentAlgebra R L) M :=
-  TauCeti.LieModule.Cohomology.d₁₂_mem_continuousTwoCocycle (continuous_lie R L)
+  d₁₂_mem_continuousTwoCocycle (continuous_lie R L)
     (fun m ↦ Eventually.of_forall fun u ↦ trivial_lie_zero _ M u m) hf
 
 variable (R L)
@@ -92,7 +92,7 @@ theorem twoCochainOfBilinear_mem_continuousTwoCochain (Φ : LinearMap.BilinForm 
     (hΦ : Φ.IsSymm) :
     twoCochainOfBilinear R L Φ hΦ ∈
       continuousTwoCochain R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) R) := by
-  refine mem_continuousTwoCochain_iff.mpr ⟨fun u ↦ ?_, ⟨0, fun u hu v hv ↦ ?_⟩⟩
+  refine mem_continuousTwoCochain_iff_orderSubmodule.mpr ⟨fun u ↦ ?_, ⟨0, fun u hu v hv ↦ ?_⟩⟩
   · obtain ⟨N, hN⟩ := exists_orderSubmodule_le_ker_residuePairing R L Φ u
     exact ⟨N, fun v hv ↦ by simp [LinearMap.mem_ker.mp (hN hv)]⟩
   · simp [residuePairing_eq_zero_of_mem_orderSubmodule_zero R L Φ hu hv]
@@ -137,13 +137,12 @@ theorem smul_residueClass_eq_zero_iff [IsDomain R] [CharZero R] {Φ : LinearMap.
   -- Restricting the coboundary along the polynomial currents exhibits `t • c_Φ` as a coboundary
   -- on the loop algebra, which is impossible for `t ≠ 0`.
   refine (TauCeti.LieAlgebra.LoopAlgebra.smul_twoCochainOfBilinear_mem_range_d₁₂_iff hΦs hΦ0 t).mp
-    ⟨eP.symm.toLinearMap ∘ₗ eC.toLinearMap ∘ₗ f ∘ₗ (ofLoop R L).toLinearMap, ?_⟩
+    ⟨(eP.symm.toLinearMap ∘ₗ eC.toLinearMap) ∘ₗ f ∘ₗ (ofLoop R L).toLinearMap, ?_⟩
   refine Subtype.ext (LinearMap.ext₂ fun u v ↦ eP.injective ?_)
-  have huv := congrArg (fun c : twoCochain R _ _ ↦ eC (c (ofLoop R L u) (ofLoop R L v))) hf
-  simp only [Submodule.coe_smul, smul_apply_apply, d₁₂_apply_apply_ofTrivial, map_neg, map_smul,
-    ← LieHom.map_lie] at huv
-  simp only [twoCochain_val_apply, d₁₂_apply_apply_ofTrivial, smul_apply_apply, map_neg, map_smul]
-  simpa [eC, eP] using huv
+  rw [twoCochain_val_apply, twoCochain_val_apply, d₁₂_comp_lieHom_apply_apply_ofTrivial, hf,
+    Submodule.coe_smul, smul_apply_apply, smul_apply_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, map_smul, map_smul,
+    Submodule.coe_mk, twoCochainOfBilinear_ofLoop]
 
 /-- The residue class of a nonzero invariant symmetric form over a characteristic-zero domain is
 nonzero. -/
