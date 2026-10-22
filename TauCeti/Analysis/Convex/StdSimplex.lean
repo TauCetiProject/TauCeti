@@ -12,6 +12,7 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # The standard simplex as a join with its barycentre or a vertex
@@ -147,18 +148,21 @@ appended. -/
 theorem range_snoc_weights_zero (n : ℕ) :
     (range fun s : StdSimplex ℝ (Fin (n + 1)) => (Fin.snoc ⇑s.weights 0 : Fin (n + 2) → ℝ)) =
       {y ∈ range fun s : StdSimplex ℝ (Fin (n + 2)) => ⇑s.weights | y (Fin.last (n + 1)) = 0} := by
-  rw [range_comp' (fun w : Fin (n + 1) → ℝ => (Fin.snoc w 0 : Fin (n + 2) → ℝ)),
-    StdSimplex.range_toFun_comp_weights, StdSimplex.range_toFun_comp_weights]
-  ext z
-  simp only [mem_image, mem_inter_iff, mem_iInter, mem_ofPred_eq]
+  -- Appending a zero weight is the face map onto the facet opposite the last vertex.
+  have hsnoc (s : StdSimplex ℝ (Fin (n + 1))) :
+      ⇑(s.map (Fin.last (n + 1)).succAbove).weights = Fin.snoc ⇑s.weights 0 := by
+    funext k
+    induction k using Fin.lastCases with
+    | last => rw [StdSimplex.weights_map_succAbove_self, Fin.snoc_last]
+    | cast j =>
+      rw [StdSimplex.weights_map_succAbove_of_eq (Fin.succAbove_last_apply j), Fin.snoc_castSucc]
+  ext y
   constructor
-  · rintro ⟨w, ⟨hw, hsum⟩, rfl⟩
-    refine ⟨⟨fun i => Fin.lastCases (by simp) (fun j => by simpa using hw j) i, ?_⟩, by simp⟩
-    simpa [Fin.sum_univ_castSucc] using hsum
-  · rintro ⟨⟨hz, hsum⟩, hlast⟩
-    refine ⟨Fin.init z, ⟨fun j => hz j.castSucc, ?_⟩, ?_⟩
-    · simpa [Fin.sum_univ_castSucc, Fin.init, hlast] using hsum
-    · rw [← hlast, Fin.snoc_init_self]
+  · rintro ⟨s, rfl⟩
+    exact ⟨⟨_, hsnoc s⟩, by simp⟩
+  · rintro ⟨⟨t, rfl⟩, ht⟩
+    obtain ⟨s, rfl⟩ := (StdSimplex.mem_range_map_succAbove_iff _ t).2 ht
+    exact ⟨s, (hsnoc s).symm⟩
 
 omit [Fintype ι] in
 /-- **The standard simplex as a cone on a facet.** The standard simplex is the convex join of the
