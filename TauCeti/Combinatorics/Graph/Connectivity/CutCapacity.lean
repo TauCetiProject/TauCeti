@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Graph.Connected.EdgeCut
-public import TauCeti.Combinatorics.Graph.EdgeEnds
+public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 
 /-!
@@ -36,20 +35,6 @@ open Finset
 namespace Graph
 
 variable {V E K : Type*} (G : Graph V E)
-
-/-- An actual edge crosses a vertex cut exactly when its unordered pair of ends crosses the
-corresponding cut of actual vertices. -/
-theorem edgeEnds_crosses_iff_mem_edgeCut (e : G.edgeSet) (S : Set G.vertexSet) :
-    (G.edgeEnds e).Crosses S ↔ e.1 ∈ G.edgeCut (Subtype.val '' S) := by
-  classical
-  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
-  let x' : G.vertexSet := ⟨x, hxy.left_mem⟩
-  let y' : G.vertexSet := ⟨y, hxy.right_mem⟩
-  have hend : G.edgeEnds e = s(x', y') := (G.edgeEnds_eq_iff_isLink e x' y').2 hxy
-  have hx' : x'.1 = x := rfl
-  have hy' : y'.1 = y := rfl
-  rw [hend, Sym2.crosses_mk_iff, hxy.mem_edgeCut_iff, ← hx', ← hy',
-    Subtype.val_injective.mem_set_image, Subtype.val_injective.mem_set_image]
 
 open Classical in
 /-- The capacity of a cut in a weighted multigraph. Each actual crossing edge is counted once. -/
