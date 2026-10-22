@@ -30,6 +30,7 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 
 /-- Braiding `A` past `Z` and then applying `f : A ⊗ A' ⟶ 𝟙_ C` after `Z` is braiding `A'` back
 under `Z` and then applying `f` before `Z`. -/
+@[reassoc]
 theorem braiding_whiskerRight_comp_whiskerLeft {A A' : C} (Z : C) (f : A ⊗ A' ⟶ 𝟙_ C) :
     (β_ A Z).hom ▷ A' ≫ (α_ Z A A').hom ≫ Z ◁ f =
       (α_ A Z A').hom ≫ A ◁ (β_ A' Z).inv ≫ (α_ A A' Z).inv ≫ f ▷ Z ≫ (λ_ Z).hom ≫
@@ -42,6 +43,7 @@ theorem braiding_whiskerRight_comp_whiskerLeft {A A' : C} (Z : C) (f : A ⊗ A' 
 
 /-- Braiding `Z` past `A` and then applying `f : A' ⊗ A ⟶ 𝟙_ C` before `Z` is braiding `Z` back
 under `A'` and then applying `f` after `Z`. -/
+@[reassoc]
 theorem whiskerLeft_braiding_comp_whiskerRight {A A' : C} (Z : C) (f : A' ⊗ A ⟶ 𝟙_ C) :
     A' ◁ (β_ Z A).hom ≫ (α_ A' A Z).inv ≫ f ▷ Z =
       (α_ A' Z A).inv ≫ (β_ Z A').inv ▷ A ≫ (α_ Z A' A).hom ≫ Z ◁ f ≫ (ρ_ Z).hom ≫

@@ -23,7 +23,9 @@ category whose twist is compatible with duals.
 ## Main declarations
 
 * `TauCeti.BalancedCategory`: a twist on a braided monoidal category;
-* `TauCeti.BalancedCategory.twist_hom_app_unit`: the twist is trivial on the unit object.
+* `TauCeti.BalancedCategory.twist_hom_app_unit`, `TauCeti.BalancedCategory.twist_inv_app_unit`:
+  the twist and its inverse are trivial on the unit object;
+* `TauCeti.BalancedCategory.twist_inv_tensor`: the balancing axiom for the inverse twist.
 
 The class is named `BalancedCategory` rather than `Balanced` because Mathlib's
 `CategoryTheory.Balanced` is the unrelated notion of a category in which every morphism that is
@@ -58,6 +60,8 @@ class BalancedCategory (C : Type u) [Category.{v} C] [MonoidalCategory C] [Braid
 
 namespace BalancedCategory
 
+attribute [reassoc] twist_tensor
+
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
   [BalancedCategory C]
 
@@ -69,6 +73,20 @@ theorem twist_hom_app_unit : (twist (C := C)).hom.app (𝟙_ C) = 𝟙 (𝟙_ C)
   rw [← cancel_epi ((twist (C := C)).hom.app (𝟙_ C))]
   simpa [twist_tensor, tensorHom_def, ← unitors_equal, ← unitors_inv_equal] using
     ((twist (C := C)).hom.naturality (λ_ (𝟙_ C)).hom).symm
+
+/-- The inverse twist of the unit object is the identity. -/
+@[simp]
+theorem twist_inv_app_unit : (twist (C := C)).inv.app (𝟙_ C) = 𝟙 (𝟙_ C) := by
+  rw [← cancel_epi ((twist (C := C)).hom.app (𝟙_ C)), Iso.hom_inv_id_app, twist_hom_app_unit]
+  simp
+
+/-- The balancing axiom for the inverse twist: the inverse twist of a tensor product is the
+inverse double braiding followed by the tensor product of the inverse twists. -/
+@[reassoc]
+theorem twist_inv_tensor (X Y : C) : (twist (C := C)).inv.app (X ⊗ Y) =
+    (β_ Y X).inv ≫ (β_ X Y).inv ≫ (twist.inv.app X ⊗ₘ twist.inv.app Y) := by
+  rw [← cancel_epi ((twist (C := C)).hom.app (X ⊗ Y)), Iso.hom_inv_id_app, twist_tensor]
+  simp
 
 end BalancedCategory
 
