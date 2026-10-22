@@ -212,6 +212,7 @@ theorem Rad_normalClosure (S : Set (GX G X)) :
     Rad ι (normalClosure S : Set (GX G X)) = Rad ι S := by
   rw [Rad_def, V_normalClosure, Rad_def]
 
+@[simp]
 theorem Rad_empty : Rad ι (∅ : Set (GX G X)) = I ι Set.univ := by
   rw [Rad_def, V_empty]
 
@@ -238,15 +239,6 @@ theorem I_singleton_comp (hι : Function.Injective ι) (g : X → G) :
     simp
 
 /-! ### Coordinate groups and the group of a system -/
-
-/-- A homomorphism out of a quotient of `G[X]` that restricts to `ι` on the coefficients is
-evaluation at the images of the variables. -/
-private theorem eval_mk {N : Subgroup (GX G X)} [N.Normal] (φ : GX G X ⧸ N →* H)
-    (hφ : φ.comp ((QuotientGroup.mk' N).comp inl) = ι) (w : GX G X) :
-    eval ι (fun x => φ (inr (FreeGroup.of x) : GX G X)) w = φ w := by
-  have := eq_eval (φ.comp (QuotientGroup.mk' N))
-  rw [MonoidHom.comp_assoc, hφ] at this
-  exact (DFunLike.congr_fun this w).symm
 
 variable (ι) in
 /-- The coordinate group `G_{R(S)} = G[X] ⧸ Rad_H(S)` of a system `S` over `H`. -/
@@ -279,13 +271,16 @@ variable (ι S) in
 to the solutions of `S` in `H`, by restriction to the variables and by evaluation. -/
 def homEquiv : GHom (coeff ι S) ι ≃ V ι S where
   toFun φ := ⟨fun x => φ (inr (FreeGroup.of x) : GX G X), fun s hs =>
-    (eval_mk _ φ.comp_coeff s).trans <| by
-      rw [(QuotientGroup.eq_one_iff s).2 (subset_Rad S hs), map_one]⟩
+    (DFunLike.congr_fun (eval_eq_of_comp_inl
+      ((MonoidHom.comp_assoc _ _ _).trans φ.comp_coeff)) s).trans <| by
+      rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply,
+        (QuotientGroup.eq_one_iff s).2 (subset_Rad S hs), map_one]⟩
   invFun v := evalGHom v v.2
   left_inv φ := by
     refine GHom.ext fun q => ?_
     obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
-    exact eval_mk _ φ.comp_coeff w
+    exact DFunLike.congr_fun (eval_eq_of_comp_inl
+      ((MonoidHom.comp_assoc _ _ _).trans φ.comp_coeff)) w
   right_inv v := Subtype.ext (funext fun x => eval_inr_of ι v.1 x)
 
 @[simp]
@@ -354,13 +349,16 @@ variable (ι S) in
 `S` in `H`, by restriction to the variables and by evaluation. -/
 def homEquiv : GHom (coeff S) ι ≃ V ι S where
   toFun φ := ⟨fun x => φ (inr (FreeGroup.of x) : GX G X), fun s hs =>
-    (eval_mk _ φ.comp_coeff s).trans <| by
-      rw [(QuotientGroup.eq_one_iff s).2 (subset_normalClosure hs), map_one]⟩
+    (DFunLike.congr_fun (eval_eq_of_comp_inl
+      ((MonoidHom.comp_assoc _ _ _).trans φ.comp_coeff)) s).trans <| by
+      rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply,
+        (QuotientGroup.eq_one_iff s).2 (subset_normalClosure hs), map_one]⟩
   invFun v := evalGHom v v.2
   left_inv φ := by
     refine GHom.ext fun q => ?_
     obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
-    exact eval_mk _ φ.comp_coeff w
+    exact DFunLike.congr_fun (eval_eq_of_comp_inl
+      ((MonoidHom.comp_assoc _ _ _).trans φ.comp_coeff)) w
   right_inv v := Subtype.ext (funext fun x => eval_inr_of ι v.1 x)
 
 @[simp]
