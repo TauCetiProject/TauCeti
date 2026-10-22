@@ -265,20 +265,26 @@ def zigzagBraidProjectiveTensorSelfIso (i : V) : T i i ≅ P i ⊞ (P i).shiftOb
 
 /-- The summand `P_i` of `U_i ⊗_Z P_i` is inserted along the vertex idempotent of the diagonal
 corner. -/
+@[simp]
 theorem zigzagBraidProjectiveTensorSelfIso_inv_inl (i : V) (z : L i) :
-    (biprod.inl ≫ (zigzagBraidProjectiveTensorSelfIso k G i).inv).hom z =
+    (zigzagBraidProjectiveTensorSelfIso k G i).inv.hom
+        ((biprod.inl : _ ⟶ P i ⊞ (P i).shiftObj 2).hom z) =
       (zigzagBraidProjectiveTensorCornerEquiv k G i i).symm
         ((zigzagAlgebraSelfCornerEquiv k G i).symm (1, 0) ⊗ₜ[k] z) := by
+  rw [← LinearMap.comp_apply, ← GradedModuleCat.hom_comp]
   simp only [zigzagBraidProjectiveTensorSelfIso, Iso.symm_inv, asIso_hom, biprod.inl_desc,
     selfInl, GradedModuleCat.hom_comp, LinearMap.comp_apply,
     GradedModuleCat.hom_shiftFunctorZeroIso_inv_app, LinearMap.id_apply]
   exact insertCornerHom_apply k G _ _ _
 
 /-- The summand `P_i{2}` of `U_i ⊗_Z P_i` is inserted along the volume of the diagonal corner. -/
+@[simp]
 theorem zigzagBraidProjectiveTensorSelfIso_inv_inr (i : V) (z : L i) :
-    (biprod.inr ≫ (zigzagBraidProjectiveTensorSelfIso k G i).inv).hom z =
+    (zigzagBraidProjectiveTensorSelfIso k G i).inv.hom
+        ((biprod.inr : _ ⟶ P i ⊞ (P i).shiftObj 2).hom z) =
       (zigzagBraidProjectiveTensorCornerEquiv k G i i).symm
         ((zigzagAlgebraSelfCornerEquiv k G i).symm (0, 1) ⊗ₜ[k] z) := by
+  rw [← LinearMap.comp_apply, ← GradedModuleCat.hom_comp]
   simp only [zigzagBraidProjectiveTensorSelfIso, Iso.symm_inv, asIso_hom, biprod.inr_desc, selfInr]
   exact insertCornerHom_apply k G _ _ _
 
@@ -319,6 +325,7 @@ def zigzagBraidProjectiveTensorAdjIso {i j : V} (h : G.Adj j i) : T i j ≅ (P i
   (asIso (adjInsert k G h)).symm
 
 /-- The inverse of the adjacent isomorphism inserts `P_i{1}` along the arrow from `j` to `i`. -/
+@[simp]
 theorem zigzagBraidProjectiveTensorAdjIso_inv_apply {i j : V} (h : G.Adj j i) (z : L i) :
     (zigzagBraidProjectiveTensorAdjIso k G h).inv.hom z =
       (zigzagBraidProjectiveTensorCornerEquiv k G i j).symm
@@ -353,6 +360,7 @@ def zigzagBraidProjectiveUnitTensorIso (j : V) :
       GradedModuleCat.bimoduleModuleTensorMap_id, Category.id_comp, Iso.inv_hom_id]
 
 /-- The identification `Z ⊗_Z P_j ≅ P_j` is the action of `Z` on `P_j`. -/
+@[simp]
 theorem zigzagBraidProjectiveUnitTensorIso_hom_tmul (j : V) (x : zigzagGradedBimodule k G)
     (n : L j) :
     (zigzagBraidProjectiveUnitTensorIso k G j).hom.hom
