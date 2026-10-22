@@ -85,6 +85,7 @@ theorem coeff_conjugate_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (n
     AddMonoidAlgebra.coeff_mapDomain]
 
 /-- **The dynamic parabolic of a positive power**: `P(λⁿ) = P(λ)` for `n > 0`. -/
+@[simp]
 theorem parabolic_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) {n : ℤ} (hn : 0 < n) :
     parabolic A (l.powCocharacter n) = parabolic A l := by
   have hinj : Function.Injective (· * n) := mul_left_injective₀ hn.ne'
@@ -117,6 +118,7 @@ theorem limit_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) {n : ℤ} (h
     Finsupp.mapDomain_apply_of_injective (mul_left_injective₀ hn) _ (0 : ℤ)
 
 /-- **The dynamic unipotent subgroup of a positive power**: `U(λⁿ) = U(λ)` for `n > 0`. -/
+@[simp]
 theorem unipotent_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) {n : ℤ} (hn : 0 < n) :
     unipotent A (l.powCocharacter n) = unipotent A l := by
   ext g
@@ -130,6 +132,7 @@ theorem unipotent_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) {n : ℤ
     exact ⟨hgn, by rwa [limit_powCocharacter l hn.ne' hgn hg]⟩
 
 /-- **The dynamic Levi subgroup of a nonzero power**: `Z(λⁿ) = Z(λ)` for `n ≠ 0`. -/
+@[simp]
 theorem levi_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) {n : ℤ} (hn : n ≠ 0) :
     levi A (l.powCocharacter n) = levi A l := by
   set ψ : LaurentPolynomial A →ₐ[R] LaurentPolynomial A :=
@@ -154,6 +157,7 @@ section HopfIdeal
 variable {R H : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
 
 /-- The defining Hopf ideal of the dynamic parabolic of `λⁿ` is that of `λ`, for `n > 0`. -/
+@[simp]
 theorem parabolicDefiningHopfIdeal_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) {n : ℤ}
     (hn : 0 < n) : parabolicDefiningHopfIdeal (l.powCocharacter n) =
       parabolicDefiningHopfIdeal l := by
@@ -163,6 +167,7 @@ theorem parabolicDefiningHopfIdeal_powCocharacter (l : H →ₐc[R] LaurentPolyn
     quotientPointsSubgroup_parabolicDefiningHopfIdeal, parabolic_powCocharacter l hn]
 
 /-- The defining Hopf ideal of the dynamic Levi of `λⁿ` is that of `λ`, for `n ≠ 0`. -/
+@[simp]
 theorem leviDefiningHopfIdeal_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) {n : ℤ}
     (hn : n ≠ 0) : leviDefiningHopfIdeal (l.powCocharacter n) = leviDefiningHopfIdeal l := by
   apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq (H := _root_.CommHopfAlgCat.of R H)
@@ -172,6 +177,7 @@ theorem leviDefiningHopfIdeal_powCocharacter (l : H →ₐc[R] LaurentPolynomial
 
 /-- The defining Hopf ideal of the dynamic unipotent subgroup of `λⁿ` is that of `λ`, for
 `n > 0`. -/
+@[simp]
 theorem unipotentDefiningHopfIdeal_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) {n : ℤ}
     (hn : 0 < n) :
     (l.powCocharacter n).unipotentDefiningHopfIdeal = l.unipotentDefiningHopfIdeal := by
