@@ -110,15 +110,16 @@ theorem spinSixWedgeForm_isSymm : (spinSixWedgeForm K).IsSymm := by
     norm_num
   rw [hsign, one_smul]
 
-/-- The exterior-square action scales the wedge form by the determinant.  The special-linear
-case above is the determinant-one specialization; this form is the version needed when a
-coordinate change is not itself special linear. -/
+/-- The exterior-square action scales the wedge form by the determinant. The theorem
+`spinSixWedgeForm_invariant` below is its determinant-one specialization; this form is the version
+needed when a coordinate change is not itself special linear. -/
 theorem spinSixWedgeForm_comp_exteriorPower (f : (Fin 4 → K) →ₗ[K] (Fin 4 → K)) :
     (spinSixWedgeForm K).comp (exteriorPower.map 2 f) (exteriorPower.map 2 f) =
       LinearMap.det f • spinSixWedgeForm K := by
   rw [spinSixWedgeForm_eq_compr₂]
   simpa only [LinearMap.BilinForm.comp] using
-    exteriorPower.wedgePairing_compl₁₂_exteriorPower (Pi.basisFun K (Fin 4)) rfl f
+    exteriorPower.wedge_compr₂_compl₁₂_exteriorPower (Pi.basisFun K (Fin 4)) rfl
+      (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv.toLinearMap f
 
 /-- Pointwise form of `spinSixWedgeForm_comp_exteriorPower` for rewriting evaluations. -/
 @[simp]

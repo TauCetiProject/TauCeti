@@ -21,7 +21,9 @@ On the exterior-power bases induced by a basis `b`, the wedge pairing of `e_s` a
 shuffle sign of `s` times the volume of `b` when `s` and `t` are disjoint, and zero otherwise.
 The top exterior product `Module.Basis.topVector` of a basis indexed by `Fin n` is the wedge of
 the basis vectors, and the shuffle signs of a set of `k` indices and of its complement of `l`
-indices multiply to `(-1) ^ (k * l)`.
+indices multiply to `(-1) ^ (k * l)`. Composing a complementary-degree wedge pairing,
+trivialised by a linear map on the top exterior power, with the exterior powers of an endomorphism
+scales it by the determinant of that endomorphism.
 -/
 
 public section
@@ -38,6 +40,46 @@ theorem wedge_ιMulti (u : Fin k → M) (v : Fin l → M) :
   simp only [SetLike.coe_gMul, wedge, DirectSum.gMulLHom_apply_apply,
     ιMulti_apply_coe, ExteriorAlgebra.ιMulti_mul_ιMulti]
 
+/-- The wedge product commutes with applying an endomorphism to both factors. -/
+theorem wedge_map (f : M →ₗ[R] M) (x : ⋀[R]^k M) (y : ⋀[R]^l M) :
+    wedge R M k l (exteriorPower.map k f x) (exteriorPower.map l f y) =
+      exteriorPower.map (k + l) f (wedge R M k l x y) := by
+  have h : ∀ x y, wedge R M k l (exteriorPower.map k f x) (exteriorPower.map l f y) =
+      exteriorPower.map (k + l) f (wedge R M k l x y) := by
+    intro x y
+    have hx : x ∈ Submodule.span R (Set.range (ιMulti R k)) := by
+      rw [ιMulti_span]
+      trivial
+    induction hx using Submodule.span_induction with
+    | mem x hx =>
+        have hy : y ∈ Submodule.span R (Set.range (ιMulti R l)) := by
+          rw [ιMulti_span]
+          trivial
+        induction hy using Submodule.span_induction with
+        | mem y hy =>
+            rcases hy with ⟨v, rfl⟩
+            rcases hx with ⟨u, rfl⟩
+            simp only [exteriorPower.map_apply_ιMulti, wedge_ιMulti]
+            congr 1
+            funext i
+            refine Fin.addCases ?_ ?_ i <;> intro j <;>
+              simp only [Fin.append_left, Fin.append_right, Function.comp_apply]
+        | zero => rw [map_zero, map_zero, map_zero]; simp
+        | add y₁ y₂ _ _ hy₁ hy₂ =>
+            rw [map_add, map_add, map_add, hy₁, hy₂, map_add]
+        | smul a y _ hy =>
+            rw [map_smul, map_smul, map_smul, hy, map_smul]
+    | zero => simp [wedge, LinearMap.zero_apply]
+    | add x₁ x₂ _ _ hx₁ hx₂ =>
+        rw [map_add, map_add, map_add]
+        simp only [LinearMap.add_apply]
+        rw [hx₁, hx₂, map_add]
+    | smul a x _ hx =>
+        rw [map_smul, map_smul, map_smul]
+        simp only [LinearMap.smul_apply]
+        rw [hx, map_smul]
+  exact h x y
+
 /-- A wedge pairing transported from a specified top degree is the wedge product followed by
 the trivialisation in that degree. -/
 theorem wedgePairing_eq_compr₂_of_finrank_eq (n : ℕ) (hfin : Module.finrank R M = n)
@@ -51,11 +93,11 @@ theorem wedgePairing_eq_compr₂_of_finrank_eq (n : ℕ) (hfin : Module.finrank 
 
 /-- Applying an endomorphism to both arguments of a complementary-degree wedge pairing scales it
 by the determinant of the endomorphism. -/
-theorem wedgePairing_compl₁₂_exteriorPower (b : Module.Basis (Fin n) R M) (hkl : k + l = n)
-    (f : M →ₗ[R] M) :
-    LinearMap.compl₁₂ ((wedge R M k l).compr₂ (hkl ▸ b.exteriorPowerTopEquiv).toLinearMap)
+theorem wedge_compr₂_compl₁₂_exteriorPower (b : Module.Basis (Fin n) R M) (hkl : k + l = n)
+    (vol : ⋀[R]^n M →ₗ[R] R) (f : M →ₗ[R] M) :
+    LinearMap.compl₁₂ ((wedge R M k l).compr₂ (hkl ▸ vol))
       (exteriorPower.map k f) (exteriorPower.map l f) =
-      LinearMap.det f • ((wedge R M k l).compr₂ (hkl ▸ b.exteriorPowerTopEquiv).toLinearMap) := by
+      LinearMap.det f • ((wedge R M k l).compr₂ (hkl ▸ vol)) := by
   apply exteriorPower.linearMap_ext
   apply AlternatingMap.ext
   intro u
@@ -70,18 +112,10 @@ theorem wedgePairing_compl₁₂_exteriorPower (b : Module.Basis (Fin n) R M) (h
     funext i
     refine Fin.addCases ?_ ?_ i <;> intro j <;>
       simp only [Fin.append_left, Fin.append_right, Function.comp_apply]
-  change (hkl ▸ b.exteriorPowerTopEquiv).toLinearMap
-      (exteriorPower.ιMulti R (k + l) (Fin.append (f ∘ u) (f ∘ v))) =
-    LinearMap.det f * (hkl ▸ b.exteriorPowerTopEquiv).toLinearMap
-      (exteriorPower.ιMulti R (k + l) (Fin.append u v))
-  rw [happ]
+  rw [happ, ← exteriorPower.map_apply_ιMulti]
   subst n
-  -- The transport in `hkl ▸` is definitionally the top-degree equivalence after the degree proof
-  -- is substituted; expose it so the basis determinant theorem applies.
-  change b.exteriorPowerTopEquiv (exteriorPower.ιMulti R (k + l) (f ∘ Fin.append u v)) =
-    LinearMap.det f * b.exteriorPowerTopEquiv (exteriorPower.ιMulti R (k + l) (Fin.append u v))
-  rw [Module.Basis.exteriorPowerTopEquiv_apply_ιMulti,
-    Module.Basis.exteriorPowerTopEquiv_apply_ιMulti, Module.Basis.det_comp]
+  rw [b.map_exteriorPower_top_eq_det_smul f]
+  simp only [LinearMap.smul_apply, map_smul, LinearMap.id_apply, smul_eq_mul]
 
 /-- **The wedge pairing on exterior-power basis vectors**: `e_s` and `e_t` pair to the shuffle sign
 of `s` times the volume `vol b.topVector` when `s` and `t` are disjoint, and to zero otherwise.

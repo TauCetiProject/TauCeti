@@ -48,7 +48,8 @@ private theorem det_exteriorPower_two_sq [IsDomain R] (A : Matrix (Fin 4) (Fin 4
       A.det • B := by
     rw [hpair]
     simpa only [LinearMap.BilinForm.comp, LinearMap.det_toLin'] using
-      exteriorPower.wedgePairing_compl₁₂_exteriorPower b rfl A.toLin'
+      exteriorPower.wedge_compr₂_compl₁₂_exteriorPower b rfl
+        b.exteriorPowerTopEquiv.toLinearMap A.toLin'
   let e := b.exteriorPower 2
   have hG : (LinearMap.BilinForm.toMatrix e B).det ≠ 0 :=
     (LinearMap.separatingLeft_iff_det_ne_zero e).mp hB.separatingLeft
