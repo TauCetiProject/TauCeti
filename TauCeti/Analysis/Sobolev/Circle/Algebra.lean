@@ -44,6 +44,9 @@ continuous functions `CircleSobolev.toContinuousMap`.
 * `TauCeti.CircleSobolev.toContinuousMap_mul` and `TauCeti.CircleSobolev.norm_mul_le`: the product
   of `H^s(A)` is the pointwise product, and
   `‖a * b‖ ≤ 2 ^ (s + 1) √(∑ₙ (1 + |n|) ^ (-2 s)) ‖a‖ ‖b‖`.
+* `TauCeti.CircleSobolev.norm_list_prod_le` and `TauCeti.CircleSobolev.norm_pow_le`: the same
+  estimate for finite products and powers, `‖a ^ k‖ ≤ (max C 1) ^ k ‖a‖ ^ k` with `C` the constant
+  above.
 
 ## References
 
@@ -334,6 +337,30 @@ theorem algebraMap_eq_single (c : ℂ) :
 /-- The product of `H^s(A)` is continuous, since it is a bounded bilinear map. -/
 instance : IsTopologicalRing (CircleSobolev s A) where
   continuous_mul := (convolution hs.out (.mul ℂ A)).continuous₂
+
+/-- The product estimate for a finite product in `H^s(A)`: with `C` the constant of
+`norm_mul_le`, `‖a₁ ⋯ aₖ‖ ≤ (max C 1) ^ k ‖a₁‖ ⋯ ‖aₖ‖`. -/
+theorem norm_list_prod_le [NormOneClass A] (l : List (CircleSobolev s A)) :
+    ‖l.prod‖ ≤
+      max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 ^ l.length * (l.map norm).prod := by
+  induction l with
+  | nil => simp [one_def, weight_def]
+  | cons a l ih =>
+    rw [List.prod_cons, List.length_cons, List.map_cons, List.prod_cons, pow_succ]
+    calc ‖a * l.prod‖ ≤ 2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n) * ‖a‖ * ‖l.prod‖ :=
+          norm_mul_le a l.prod
+      _ ≤ max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 * ‖a‖ *
+          (max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 ^ l.length *
+            (l.map norm).prod) := by
+        gcongr
+        exact le_max_left _ _
+      _ = _ := by ring
+
+/-- The product estimate for powers in `H^s(A)`: with `C` the constant of `norm_mul_le`,
+`‖a ^ k‖ ≤ (max C 1) ^ k ‖a‖ ^ k`. -/
+theorem norm_pow_le [NormOneClass A] (a : CircleSobolev s A) (k : ℕ) :
+    ‖a ^ k‖ ≤ max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 ^ k * ‖a‖ ^ k := by
+  simpa [List.prod_replicate] using norm_list_prod_le (List.replicate k a)
 
 /-- For `s > 1/2`, `toContinuousMap` is an algebra homomorphism `H^s(A) → C(AddCircle T, A)`. -/
 def toContinuousMapAlgHom (T : ℝ) [Fact (0 < T)] : CircleSobolev s A →ₐ[ℂ] C(AddCircle T, A) :=

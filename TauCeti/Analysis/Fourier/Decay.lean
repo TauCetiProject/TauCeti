@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.Fourier.AddCircle
+public import Mathlib.Analysis.Complex.CauchyIntegral
 
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 
@@ -22,7 +23,8 @@ The periodic analogue concerns Fourier coefficients on `AddCircle T`. Integratin
 period, with no boundary term by periodicity, multiplies the `n`-th Fourier coefficient by
 `2πin / T` for each derivative. A `C^k` function on the circle therefore has Fourier coefficients
 of size `O(|n| ^ (-k))`. This is what makes smooth functions act boundedly, by multiplication, on
-the Fourier-coefficient Sobolev spaces of the circle.
+the Fourier-coefficient Sobolev spaces of the circle. A function extending holomorphically to a
+strip around the real axis has exponentially decaying Fourier coefficients, by Cauchy's theorem.
 
 ## Main declarations
 
@@ -31,6 +33,9 @@ the Fourier-coefficient Sobolev spaces of the circle.
   `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C` for some `C > 0`.
 * `TauCeti.exists_abs_pow_mul_norm_fourierCoeff_le`: if `f : AddCircle T → ℂ` is `C^k` as a
   periodic function on `ℝ`, then `|n| ^ k * ‖fourierCoeff f n‖ ≤ C` for some `C`.
+* `TauCeti.norm_fourierCoeff_le_of_differentiableOn_strip`: if `f : AddCircle T → ℂ` extends to a
+  periodic function holomorphic and bounded by `M` on the strip `|Im z| ≤ δ`, then
+  `‖fourierCoeff f n‖ ≤ M e^{-2π |n| δ / T}`.
 -/
 
 public section
@@ -57,7 +62,7 @@ theorem exists_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f) (hsupp : H
 section Circle
 
 open Complex
-open scoped Real
+open scoped Real Interval
 
 variable {T : ℝ} [hT : Fact (0 < T)]
 
@@ -92,6 +97,85 @@ theorem exists_abs_pow_mul_norm_fourierCoeff_le {f : AddCircle T → ℂ} {k : �
         ((2 * π) ^ k * |(n : ℝ)| ^ k / T ^ k * ‖fourierCoeffOn _ (fun x : ℝ ↦ f x) n‖) := by
           field_simp
       _ ≤ T ^ k / (2 * π) ^ k * M := by gcongr
+
+/-- **Exponential decay of the Fourier coefficients of a function holomorphic in a strip.** If
+`f : AddCircle T → ℂ` is the restriction to `ℝ` of a function `g` which is `T`-periodic and
+holomorphic on the closed strip `|Im z| ≤ δ`, and bounded there by `M`, then
+`‖fourierCoeff f n‖ ≤ M e^{-2π |n| δ / T}`. -/
+theorem norm_fourierCoeff_le_of_differentiableOn_strip {f : AddCircle T → ℂ} {g : ℂ → ℂ}
+    {δ M : ℝ} (hδ : 0 ≤ δ) (hfg : ∀ x : ℝ, f x = g x)
+    (hper : ∀ z : ℂ, |z.im| ≤ δ → g (z + T) = g z)
+    (hg : DifferentiableOn ℂ g {z | |z.im| ≤ δ}) (hM : ∀ z : ℂ, |z.im| ≤ δ → ‖g z‖ ≤ M)
+    (n : ℤ) : ‖fourierCoeff f n‖ ≤ M * Real.exp (-(2 * π * |(n : ℝ)| * δ / T)) := by
+  have hT0 : 0 < T := hT.out
+  have hTc : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT0.ne'
+  -- The contour of the coefficient integral is shifted to the horizontal line `Im z = y`, on the
+  -- side of the real axis where the Fourier monomial `e^{-2πinz/T}` is small.
+  obtain ⟨y, hyδ, hny⟩ : ∃ y : ℝ, |y| = δ ∧ (n : ℝ) * y = -(|(n : ℝ)| * δ) := by
+    rcases le_or_gt 0 (n : ℝ) with hn | hn
+    · exact ⟨-δ, by simp [abs_of_nonneg hδ], by rw [abs_of_nonneg hn]; ring⟩
+    · exact ⟨δ, abs_of_nonneg hδ, by rw [abs_of_neg hn]; ring⟩
+  set h : ℂ → ℂ := fun z ↦ cexp (-(2 * π * I * n * z / T)) * g z with hh
+  have hmem {t : ℝ} (ht : t ∈ [[0, y]]) : |t| ≤ δ := by
+    rw [← hyδ]
+    rcases Set.mem_uIcc.1 ht with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+    · exact abs_le_abs h₂ (by linarith)
+    · rw [abs_of_nonpos h₂, abs_of_nonpos (h₁.trans h₂)]; linarith
+  have hrect : DifferentiableOn ℂ h ([[(0 : ℂ).re, (T + y * I).re]] ×ℂ
+      [[(0 : ℂ).im, (T + y * I).im]]) := by
+    refine ((differentiable_exp.comp (by fun_prop)).differentiableOn.mul hg).mono fun z hz ↦ ?_
+    simp only [mem_reProdIm, zero_im, add_im, ofReal_im, mul_im, ofReal_re, I_im, mul_one, I_re,
+      mul_zero, add_zero, zero_add] at hz
+    exact hmem hz.2
+  -- The integrals of `h` over the two vertical sides of the rectangle agree, by periodicity.
+  have hside : ∫ t in (0 : ℝ)..y, h (T + t * I) = ∫ t in (0 : ℝ)..y, h (0 + t * I) := by
+    refine intervalIntegral.integral_congr fun t ht ↦ ?_
+    have hexp : cexp (-(2 * π * I * n * (T + t * I) / T)) =
+        cexp (-(2 * π * I * n * (t * I) / T)) := by
+      rw [show -(2 * π * I * n * (T + t * I) / T) =
+          -(2 * π * I * n * (t * I) / T) + ((-n : ℤ) : ℂ) * (2 * π * I) by
+        push_cast; field_simp; ring, exp_add, exp_int_mul_two_pi_mul_I, mul_one]
+    have hg' : g (T + t * I) = g (t * I) := by
+      rw [add_comm]
+      exact hper _ (by simpa using hmem ht)
+    simp only [hh, zero_add, hexp, hg']
+  -- Cauchy's theorem for the rectangle with corners `0` and `T + y i`.
+  have hshift : ∫ x in (0 : ℝ)..T, h x = ∫ x in (0 : ℝ)..T, h (x + y * I) := by
+    have key := integral_boundary_rect_eq_zero_of_differentiableOn h 0 (T + y * I) hrect
+    simp only [zero_re, zero_im, add_re, ofReal_re, mul_re, I_re, I_im, ofReal_im, mul_zero,
+      sub_zero, mul_one, add_im, mul_im, zero_add, add_zero, ofReal_zero, zero_mul] at key
+    rw [hside] at key
+    simp only [zero_add] at key
+    linear_combination key
+  -- On the shifted line, `|e^{-2πinz/T}| = e^{2πny/T} = e^{-2π|n|δ/T}`.
+  have hbound (x : ℝ) : ‖h (x + y * I)‖ ≤ M * Real.exp (-(2 * π * |(n : ℝ)| * δ / T)) := by
+    have hre : (-(2 * π * I * n * (x + y * I) / T)).re = -(2 * π * |(n : ℝ)| * δ / T) := by
+      rw [show -(2 * π * I * n * (x + y * I) / T) =
+          ((2 * π * (n * y) / T : ℝ) : ℂ) + ((-(2 * π * n * x / T) : ℝ) : ℂ) * I by
+        push_cast; field_simp; ring_nf; rw [I_sq]; ring, hny]
+      simp only [add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
+        add_zero]
+      ring
+    rw [hh, norm_mul, norm_exp, hre, mul_comm]
+    exact mul_le_mul_of_nonneg_right (hM _ (by simp [hyδ])) (Real.exp_pos _).le
+  -- The coefficient is `T⁻¹ ∫₀ᵀ h`, which is now bounded by the shifted integral.
+  rw [fourierCoeff_eq_fourierCoeffOn 0, fourierCoeffOn_eq_integral]
+  have hint : ∫ x in (0 : ℝ)..0 + T, fourier (-n) (x : AddCircle (0 + T - 0)) • f x =
+      ∫ x in (0 : ℝ)..T, h x := by
+    rw [zero_add]
+    refine intervalIntegral.integral_congr fun x _ ↦ ?_
+    rw [fourier_coe_apply, hfg, smul_eq_mul, hh]
+    congr 2
+    push_cast
+    ring
+  rw [hint, hshift, norm_smul, zero_add, sub_zero, norm_div, norm_one, Real.norm_of_nonneg hT0.le]
+  calc 1 / T * ‖∫ x in (0 : ℝ)..T, h (x + y * I)‖
+      ≤ 1 / T * (M * Real.exp (-(2 * π * |(n : ℝ)| * δ / T)) * |T - 0|) := by
+        gcongr
+        exact intervalIntegral.norm_integral_le_of_norm_le_const fun x _ ↦ hbound x
+    _ = M * Real.exp (-(2 * π * |(n : ℝ)| * δ / T)) := by
+        rw [sub_zero, abs_of_pos hT0]
+        field_simp
 
 end Circle
 
