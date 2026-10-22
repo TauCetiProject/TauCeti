@@ -24,14 +24,14 @@ the letters `a = w j` and `b = w k`:
 * if `a < b`, it is sent to `(Q - 1) • w - s • w'`, where `w'` exchanges the two letters;
 * if `b < a`, it is sent to `-(s • w')`.
 
-On a two-letter block `{a ⊗ b, b ⊗ a}` with `a < b` its matrix is `[[Q - 1, -s], [-s, 0]]`. It is
-`Ř = TauCeti.signedCheckedR pos s j k`. Its eigenvalues are `Q` and `-1`: it satisfies the quadratic
-relation `(Ř - Q) (Ř + 1) = 0`; operators on disjoint pairs of strands commute; and operators on
+On a two-letter block `{a ⊗ b, b ⊗ a}` with `a < b` its matrix is `[[Q - 1, -s], [-s, 0]]`. Write
+`X = TauCeti.signedCheckedR pos s j k`. Its eigenvalues are `Q` and `-1`: it satisfies the quadratic
+relation `(X - Q) (X + 1) = 0`; operators on disjoint pairs of strands commute; and operators on
 two pairs sharing a strand satisfy the braid relation. These identities hold for every `s`, so
 the adjacent operators satisfy the defining relations of the type-A Hecke algebra in the
 normalization `gᵢ = s Tᵢ`, `(gᵢ - Q) (gᵢ + 1) = 0`. When `s` is a unit they are invertible and
 define a braid group representation `TauCeti.signedCheckedRep`, and the rescaled operators
-`s⁻¹ • Ř` satisfy the quadratic relation `T * T = (s - s⁻¹) • T + 1` in the convention
+`s⁻¹ • X` satisfy the quadratic relation `T * T = (s - s⁻¹) • T + 1` in the convention
 `(Tᵢ - s) (Tᵢ + s⁻¹) = 0`.
 
 The matrix of the operator in the word basis is symmetric, the algebraic form of its
@@ -40,7 +40,7 @@ models of Markov traces on the Hecke algebras with a positive real parameter are
 operators, on ordered alphabets of positive and negative letters that also carry weights.
 
 If every letter is positive, reversing the order of the alphabet turns the operator into a
-rescaled Jimbo R-matrix at the parameter `-s`: `Ř = (-s) • T_{-s}` on `ιᵒᵈ`
+rescaled Jimbo R-matrix at the parameter `-s`: `X = (-s) • T_{-s}` on `ιᵒᵈ`
 (`TauCeti.signedCheckedR_eq_jimboGenerator`). Negative letters have no such description; signed
 alphabets of this kind arise from the vector representation of the quantum supergroup
 `U_q(gl(m|n))`.
@@ -53,11 +53,11 @@ alphabets of this kind arise from the vector representation of the quantum super
 
 ## Main results
 
-* `TauCeti.signedCheckedR_mul_self`: the quadratic relation `Ř * Ř = (Q - 1) • Ř + Q • 1`.
+* `TauCeti.signedCheckedR_mul_self`: the quadratic relation `X * X = (Q - 1) • X + Q • 1`.
 * `TauCeti.signedCheckedR_mul_comm`: operators on disjoint pairs of strands commute.
 * `TauCeti.signedCheckedR_braid`: the braid relation.
 * `TauCeti.signedCheckedR_single_apply_comm`: the matrix in the word basis is symmetric.
-* `TauCeti.inv_smul_signedCheckedR_mul_self`: the Hecke quadratic relation for `s⁻¹ • Ř`.
+* `TauCeti.inv_smul_signedCheckedR_mul_self`: the Hecke quadratic relation for `s⁻¹ • X`.
 * `TauCeti.signedCheckedR_eq_jimboGenerator`: the comparison with the Jimbo R-matrix for an
   alphabet of positive letters.
 
@@ -114,7 +114,7 @@ theorem signedCheckedR_single_update_update (s : R) {j k : Fin n} (hjk : j ≠ k
   rw [signedCheckedR_single_one, hswap]
   simp only [update_of_ne hjk, Function.update_self]
 
-/-- The quadratic relation `Ř * Ř = (Q - 1) • Ř + Q • 1`, `Q = s ^ 2`, of the signed checked
+/-- The quadratic relation `X * X = (Q - 1) • X + Q • 1`, `Q = s ^ 2`, of the signed checked
 R-matrix: its eigenvalues are `Q` and `-1`. -/
 theorem signedCheckedR_mul_self (s : R) (j k : Fin n) :
     signedCheckedR pos s j k * signedCheckedR pos s j k =
@@ -236,7 +236,7 @@ section Unit
 variable (s : Rˣ)
 
 /-- The signed checked R-matrix is invertible when `s` is a unit, with right inverse
-`s⁻¹ ^ 2 • (Ř + (1 - Q) • 1)`. -/
+`s⁻¹ ^ 2 • (X + (1 - Q) • 1)`. -/
 theorem signedCheckedR_mul_smul_add (j k : Fin n) :
     signedCheckedR pos (s : R) j k * ((((s⁻¹ : Rˣ) : R) ^ 2) •
       (signedCheckedR pos (s : R) j k + (1 - (s : R) ^ 2) • 1)) = 1 := by
@@ -248,7 +248,7 @@ theorem signedCheckedR_mul_smul_add (j k : Fin n) :
   · linear_combination hs
 
 /-- The signed checked R-matrix is invertible when `s` is a unit, with left inverse
-`s⁻¹ ^ 2 • (Ř + (1 - Q) • 1)`. -/
+`s⁻¹ ^ 2 • (X + (1 - Q) • 1)`. -/
 theorem smul_add_mul_signedCheckedR (j k : Fin n) :
     ((((s⁻¹ : Rˣ) : R) ^ 2) • (signedCheckedR pos (s : R) j k + (1 - (s : R) ^ 2) • 1)) *
       signedCheckedR pos (s : R) j k = 1 := by
@@ -259,7 +259,7 @@ theorem smul_add_mul_signedCheckedR (j k : Fin n) :
   · ring
   · linear_combination hs
 
-/-- **The Hecke normalization.** For a unit `s`, the rescaled operator `T = s⁻¹ • Ř` satisfies the
+/-- **The Hecke normalization.** For a unit `s`, the rescaled operator `T = s⁻¹ • X` satisfies the
 type-A Hecke quadratic relation `T * T = (s - s⁻¹) • T + 1`, equivalently
 `(T - s) * (T + s⁻¹) = 0`. -/
 theorem inv_smul_signedCheckedR_mul_self (j k : Fin n) :
@@ -273,7 +273,7 @@ theorem inv_smul_signedCheckedR_mul_self (j k : Fin n) :
   · linear_combination (((s⁻¹ : Rˣ) : R) * (s : R) + 1) * hs
 
 /-- The signed checked R-matrix on the two strands crossed by the elementary braid `σ i`, as a
-unit, with inverse `s⁻¹ ^ 2 • (Ř + (1 - Q) • 1)`. -/
+unit, with inverse `s⁻¹ ^ 2 • (X + (1 - Q) • 1)`. -/
 noncomputable def signedCheckedRUnit (i : Fin (n - 1)) : (Module.End R ((Fin n → ι) →₀ R))ˣ where
   val := signedCheckedR pos (s : R) (BraidGroup.strand i) (BraidGroup.strandSucc i)
   inv := (((s⁻¹ : Rˣ) : R) ^ 2) •
