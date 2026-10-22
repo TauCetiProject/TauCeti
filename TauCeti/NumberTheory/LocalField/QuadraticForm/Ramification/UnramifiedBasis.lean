@@ -20,7 +20,7 @@ a square, and `K(√u)/K` is the unramified quadratic extension. An attained squ
 `TauCeti.exists_basis_integerRing_of_sq_eq_of_isUnit_discrim`.
 
 In odd residue characteristic `e = 0`, every nonsquare unit has defect exponent `0`, and the
-statement gives the basis `(1, √u - b)` for any `b` with `u - b²` a unit. The trace and norm of
+statement gives the basis `(1, √u - b)` for some `b` with `u - b²` a unit. The trace and norm of
 `ω` are `Tr ω = -2b/π^e` and `N ω = (b² - u)/π^{2e}`, and the unit norms from `K(√u)` are read
 off this basis by `Module.Basis.exists_norm_eq_iff_of_integerRing`.
 

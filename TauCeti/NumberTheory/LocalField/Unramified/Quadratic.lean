@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
-public import TauCeti.NumberTheory.LocalField.Norm.Basic
+public import TauCeti.NumberTheory.LocalField.Norm.Quadratic
 public import TauCeti.NumberTheory.LocalField.Unramified.Basic
-public import TauCeti.RingTheory.Norm.Quadratic
 import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
@@ -17,7 +15,8 @@ import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 Let `L/K` be a quadratic extension of nonarchimedean local fields and let `ω ∈ 𝒪[L]`. If the
 discriminant `Tr(ω)² - 4 N(ω)` of `ω` is a unit of `𝒪[K]`, then `L/K` is unramified and
-`(1, ω)` is a basis of `𝒪[L]` over `𝒪[K]`. Indeed `ω` is a root of `X² - Tr(ω) X + N(ω)`, whose
+`(1, ω)` is a basis of `𝒪[L]` over `𝒪[K]`. Indeed `ω` is a root of `X² - Tr(ω) X + N(ω)`
+(`TauCeti.sq_sub_trace_mul_add_norm`), whose
 reduction modulo `𝓂[K]` is separable. A root of that reduction in `𝓀[K]` would be simple, so by
 Hensel's lemma it would lift to a root in `𝒪[K]`, and `ω` would lie in `K`, where its
 discriminant vanishes. So the residue of `ω` lies outside `𝓀[K]`, the residue degree of `L/K`
@@ -51,7 +50,7 @@ with their traces and norms, are the input of the description of unit norms
 
 public section
 
-open ValuativeRel IsLocalRing Polynomial
+open ValuativeRel IsLocalRing
 
 namespace TauCeti
 
@@ -63,18 +62,6 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 section Discrim
 
 variable {ω : 𝒪[L]}
-
-/-- Every `ω ∈ 𝒪[L]` is a root of `X² - Tr(ω) X + N(ω)`, with trace and norm taken in `𝒪[K]`. -/
-private theorem sq_sub_trace_mul_add_norm (ω : 𝒪[L]) :
-    ω ^ 2 - algebraMap 𝒪[K] 𝒪[L] (Algebra.trace 𝒪[K] 𝒪[L] ω) * ω +
-      algebraMap 𝒪[K] 𝒪[L] (Algebra.norm 𝒪[K] ω) = 0 := by
-  apply Subtype.ext
-  have h := Algebra.IsQuadraticExtension.sq_eq_trace_smul_sub_norm K (ω : L)
-  rw [Algebra.smul_def] at h
-  simp only [ZeroMemClass.coe_zero, AddMemClass.coe_add, AddSubgroupClass.coe_sub,
-    MulMemClass.coe_mul, SubmonoidClass.coe_pow, coe_algebraMap_integerRing,
-    coe_trace_integerRing, coe_norm_integerRing]
-  linear_combination h
 
 /-- An element of `𝒪[L]` of unit discriminant does not lie in `K`. -/
 private theorem coe_notMem_range_of_isUnit_discrim
@@ -175,45 +162,11 @@ section SquareRoot
 
 variable {x : L} {a b s : K} {t c : 𝒪[K]}
 
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
-/-- If `x ∉ K` is a square root of `a`, `2b = s t` and `b² - a = s² c` with `s ≠ 0` and
-`t, c ∈ 𝒪[K]`, then `(x - b)/s` lies in `𝒪[L]`, with trace `-t` and norm `c`. -/
-private theorem exists_integerRing_eq_div_of_sq_eq (hx : x ∉ Set.range (algebraMap K L))
-    (hx2 : x ^ 2 = algebraMap K L a) (hs : s ≠ 0) (ht : 2 * b = s * t)
-    (hbc : b ^ 2 - a = s ^ 2 * c) :
-    ∃ ω : 𝒪[L], (ω : L) = (x - algebraMap K L b) / algebraMap K L s ∧
-      Algebra.trace K L (ω : L) = -(t : K) ∧ Algebra.norm K (ω : L) = c := by
-  set y := (x - algebraMap K L b) / algebraMap K L s
-  have hy : y = algebraMap K L (-b / s) + algebraMap K L s⁻¹ * x := by
-    simp only [y, map_div₀, map_neg, map_inv₀]
-    ring
-  have htr : Algebra.trace K L y = -(t : K) := by
-    rw [hy, Algebra.IsQuadraticExtension.trace_algebraMap_add_algebraMap_mul_of_sq_eq hx hx2]
-    field_simp
-    linear_combination -ht
-  have hn : Algebra.norm K y = c := by
-    rw [hy, Algebra.IsQuadraticExtension.norm_algebraMap_add_algebraMap_mul_of_sq_eq hx hx2]
-    field_simp
-    linear_combination hbc
-  -- `y` is a root of the monic polynomial `X² + t X + c` over `𝒪[K]`.
-  have hint : IsIntegral 𝒪[K] y := by
-    refine ⟨X ^ 2 + C t * X + C c, ?_, ?_⟩
-    · rw [add_assoc]
-      exact monic_X_pow_add (degree_linear_le.trans_lt (by norm_num))
-    · have hsq := Algebra.IsQuadraticExtension.sq_eq_trace_smul_sub_norm K y
-      rw [htr, hn, Algebra.smul_def] at hsq
-      simp only [eval₂_add, eval₂_mul, eval₂_X_pow, eval₂_C, eval₂_X,
-        IsScalarTower.algebraMap_apply 𝒪[K] K L, Algebra.algebraMap_ofSubsemiring_apply]
-      rw [map_neg] at hsq
-      linear_combination hsq
-  exact ⟨⟨y, (Valuation.Integers.isIntegral_iff_valuation_le_one
-    (Valuation.integer.integers (valuation K)) _).1 hint⟩, rfl, htr, hn⟩
-
 /-- **The integral basis `(1, (x - b)/s)` of an unramified quadratic extension.** Let `x ∈ L`,
 `x ∉ K`, be a square root of `a ∈ K`, and let `b, s ∈ K` with `s ≠ 0`, `2b = s t` and
-`b² - a = s² c` for some `t, c ∈ 𝒪[K]` with `t² - 4c` a unit. Then `ω = (x - b)/s` is a root of
-`X² + t X + c`, the extension `L/K` is unramified, and `(1, ω)` is a basis of `𝒪[L]` over `𝒪[K]`
-with `Tr ω = -t` and `N ω = c`. -/
+`b² - a = s² c` for some `t, c ∈ 𝒪[K]` with `t² - 4c` a unit. Then, for `ω = (x - b)/s`, `(1, ω)`
+is a basis of `𝒪[L]` over `𝒪[K]` with `Tr ω = -t` and `N ω = c`. The extension `L/K` is then
+unramified, by `TauCeti.isUnramified_of_isUnit_discrim`. -/
 theorem exists_basis_integerRing_of_sq_eq_of_isUnit_discrim
     (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L a) (hs : s ≠ 0)
     (ht : 2 * b = s * t) (hbc : b ^ 2 - a = s ^ 2 * c) (hdisc : IsUnit (t ^ 2 - 4 * c)) :
@@ -230,8 +183,8 @@ theorem exists_basis_integerRing_of_sq_eq_of_isUnit_discrim
     by rw [unramifiedQuadraticBasis_one, hn]⟩
 
 /-- **The basis `(1, √a)` in odd residue characteristic.** If `2` is a unit of `𝒪[K]` and
-`x ∈ L`, `x ∉ K`, is a square root of a unit `a` of `𝒪[K]`, then `L/K` is unramified and `(1, x)`
-is a basis of `𝒪[L]` over `𝒪[K]`, with `Tr x = 0` and `N x = -a`. -/
+`x ∈ L`, `x ∉ K`, is a square root of a unit `a` of `𝒪[K]`, then `(1, x)` is a basis of `𝒪[L]`
+over `𝒪[K]`, with `Tr x = 0` and `N x = -a`. -/
 theorem exists_basis_integerRing_of_sq_eq_of_isUnit (h2 : IsUnit (2 : 𝒪[K])) {a : 𝒪[K]}
     (ha : IsUnit a) (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L a) :
     ∃ B : Module.Basis (Fin 2) 𝒪[K] 𝒪[L], B 0 = 1 ∧ (B 1 : L) = x ∧
