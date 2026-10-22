@@ -100,6 +100,12 @@ theorem HasCompactoidImage.neg {u : E →L[K] F} (hu : u.HasCompactoidImage) :
     (-u).HasCompactoidImage := by
   simpa using hu.smul (-1)
 
+/-- A map has compactoid image exactly when its negation does. -/
+@[simp]
+theorem hasCompactoidImage_neg_iff {u : E →L[K] F} :
+    (-u).HasCompactoidImage ↔ u.HasCompactoidImage :=
+  ⟨fun h ↦ by simpa using h.neg, HasCompactoidImage.neg⟩
+
 /-- The difference of two maps with compactoid image has compactoid image. -/
 theorem HasCompactoidImage.sub {u v : E →L[K] F} (hu : u.HasCompactoidImage)
     (hv : v.HasCompactoidImage) : (u - v).HasCompactoidImage := by
