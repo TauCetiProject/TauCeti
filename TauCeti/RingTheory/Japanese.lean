@@ -48,6 +48,10 @@ in characteristic zero, there are none, and the two notions agree for Noetherian
 * `TauCeti.Ring.isN1_of_isLocalization`, `TauCeti.Ring.isJapanese_of_isLocalization`: a
   localization of an N-1, respectively Japanese, domain is N-1, respectively Japanese (Stacks,
   Lemma 10.161.3 (032G)).
+* `TauCeti.Ring.IsN1.of_span_eq_top`, `TauCeti.Ring.IsJapanese.of_span_eq_top`: being N-1,
+  respectively Japanese, is local on `Spec R`: a domain is N-1, respectively Japanese, as soon as
+  its localizations `R_{f_i}` are, for elements `f_i` generating the unit ideal (Stacks,
+  Lemma 10.161.6 (032J)).
 * `TauCeti.Ring.IsN1.finite_integralClosure_of_isSeparable`: for a Noetherian N-1 domain, the
   integral closure in every finite separable extension of the fraction field is finite (Stacks,
   Lemma 10.161.8 (032L), applied to the normalization).
@@ -272,6 +276,53 @@ theorem isJapanese_of_isLocalization [IsDomain R] [IsJapanese R] (M : Submonoid 
       M S _ (IsLocalization.le_nonZeroDivisors_of_nontrivial M S)
     have := IsJapanese.finite_integralClosure (R := R) (FractionRing S) L
     exact finite_integralClosure_of_isLocalization M S L
+
+/-- **Being N-1 is local on `Spec R`.** If the elements of `t` generate the unit ideal of a
+domain `R` and the localization `R_f` is N-1 for every nonzero `f ∈ t`, then `R` is N-1. Stacks,
+Lemma 10.161.6 (032J). -/
+theorem IsN1.of_span_eq_top [IsDomain R] {t : Set R} (ht : Ideal.span t = ⊤)
+    (H : ∀ f ∈ t, f ≠ 0 → IsN1 (Localization.Away f)) : IsN1 R := by
+  -- Only the nonzero `f ∈ t` matter, and for those `R_f` is a subring of `FractionRing R`.
+  let K := FractionRing R
+  let (f : ↥(t \ {0})) : Algebra (Localization.Away f.1) K :=
+    IsLocalization.localizationAlgebraOfSubmonoidLe _ _ _ _
+      (powers_le_nonZeroDivisors_of_noZeroDivisors f.2.2)
+  have (f : ↥(t \ {0})) : IsScalarTower R (Localization.Away f.1) K :=
+    IsLocalization.localization_isScalarTower_of_submonoid_le _ _ _ _ _
+  have (f : ↥(t \ {0})) : IsFractionRing (Localization.Away f.1) K :=
+    IsFractionRing.isFractionRing_of_isLocalization (.powers f.1) _ _
+      (powers_le_nonZeroDivisors_of_noZeroDivisors f.2.2)
+  have (f : ↥(t \ {0})) := H f.1 f.2.1 f.2.2
+  exact ⟨finite_integralClosure_of_span_eq_top K (Ideal.span_sdiff_singleton_zero.trans ht)
+    fun f ↦ IsN1.finite_integralClosure (R := Localization.Away f.1) K⟩
+
+/-- **Being Japanese is local on `Spec R`.** If the elements of `t` generate the unit ideal of a
+domain `R` and the localization `R_f` is Japanese for every `f ∈ t`, then `R` is Japanese. Stacks,
+Lemma 10.161.6 (032J). The localization at `f = 0` is the zero ring, which is not a domain, and
+the hypothesis asks nothing of it. -/
+theorem IsJapanese.of_span_eq_top [IsDomain R] {t : Set R} (ht : Ideal.span t = ⊤)
+    (H : ∀ f ∈ t, ∀ [IsDomain (Localization.Away f)], IsJapanese (Localization.Away f)) :
+    IsJapanese R := by
+  refine of_finite_integralClosure (FractionRing R) fun L _ _ _ _ _ ↦ ?_
+  -- Only the nonzero `f ∈ t` matter, and for those `R_f` is a subring of `FractionRing R`, whose
+  -- finite extension `L` is a finite extension of the fraction field of `R_f`.
+  let K := FractionRing R
+  let (f : ↥(t \ {0})) : Algebra (Localization.Away f.1) K :=
+    IsLocalization.localizationAlgebraOfSubmonoidLe _ _ _ _
+      (powers_le_nonZeroDivisors_of_noZeroDivisors f.2.2)
+  have (f : ↥(t \ {0})) : IsScalarTower R (Localization.Away f.1) K :=
+    IsLocalization.localization_isScalarTower_of_submonoid_le _ _ _ _ _
+  have (f : ↥(t \ {0})) : IsFractionRing (Localization.Away f.1) K :=
+    IsFractionRing.isFractionRing_of_isLocalization (.powers f.1) _ _
+      (powers_le_nonZeroDivisors_of_noZeroDivisors f.2.2)
+  let (f : ↥(t \ {0})) : Algebra (Localization.Away f.1) L :=
+    ((algebraMap K L).comp (algebraMap (Localization.Away f.1) K)).toAlgebra
+  have (f : ↥(t \ {0})) : IsScalarTower (Localization.Away f.1) K L := .of_algebraMap_eq' rfl
+  have (f : ↥(t \ {0})) : IsScalarTower R (Localization.Away f.1) L := .to₁₂₄ _ _ K _
+  have (f : ↥(t \ {0})) : IsDomain (Localization.Away f.1) := Localization.Away.isDomain f.2.2
+  have (f : ↥(t \ {0})) := H f.1 f.2.1
+  exact finite_integralClosure_of_span_eq_top L (Ideal.span_sdiff_singleton_zero.trans ht)
+    fun f ↦ IsJapanese.finite_integralClosure (R := Localization.Away f.1) K L
 
 /-- The localization of an N-1 domain at a prime is N-1. -/
 instance IsN1.localization_atPrime [IsDomain R] [IsN1 R] (p : Ideal R) [p.IsPrime] :
