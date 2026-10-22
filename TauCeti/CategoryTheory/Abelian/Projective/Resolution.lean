@@ -35,11 +35,8 @@ def homotopyOfComm : Homotopy f (homotopyEquiv P Q).hom :=
 
 /-- A chain map between projective resolutions of `X` compatible with the augmentations is a
 homotopy equivalence; its homotopy inverse is the lift of the identity of `X`. -/
-def homotopyEquivOfComm : HomotopyEquiv P.complex Q.complex where
-  hom := f
-  inv := lift (𝟙 X) Q P
-  homotopyHomInvId := liftHomotopy (𝟙 X) _ _ (by simp [hf]) (by simp)
-  homotopyInvHomId := liftHomotopy (𝟙 X) _ _ (by simp [hf]) (by simp)
+def homotopyEquivOfComm : HomotopyEquiv P.complex Q.complex :=
+  (homotopyEquiv P Q).copy (homotopyOfComm P Q f hf).symm
 
 /-- The forward map of the homotopy equivalence is the given chain map. -/
 @[simp]
