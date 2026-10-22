@@ -191,17 +191,101 @@ theorem hasStrictFDerivAt_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasF
       hasFDerivAt_fderiv_comp hG hGs hG' (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf))
     (continuousAt_fderiv_comp hG hGs hG' hδ hf₀)
 
+end BoundedContinuousFunction
+
+universe u v
+
+namespace BoundedContinuousFunction
+
+section Local
+
+variable {α 𝕜 : Type*} {X : Type u} {Y : Type v} [TopologicalSpace α] [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+  [IsRCLikeNormedField 𝕜] {G : X → Y} {C : ℝ≥0} {s : Set X} {f₀ : α →ᵇ X} {δ : ℝ}
+  {Θ : (α →ᵇ X) → α →ᵇ Y}
+
+-- The induction step only needs the theorem for the derivative target.
+private theorem contDiffAt_of_uniformContDiffOn_step {n : ℕ}
+    (hG : TauCeti.UniformContDiffOn 𝕜 (n + 1) G s)
+    (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
+    (hΘ : ∀ f ∈ ball f₀ δ, ∀ t, Θ f t = G (f t))
+    (hstep : ∀ (G' : X → X →L[𝕜] Y), TauCeti.UniformContDiffOn 𝕜 n G' s →
+      ∀ {Θ' : (α →ᵇ X) → α →ᵇ (X →L[𝕜] Y)} {δ' : ℝ}, 0 < δ' →
+        (∀ t, ball (f₀ t) δ' ⊆ s) →
+        (∀ f ∈ ball f₀ δ', ∀ t, Θ' f t = G' (f t)) → ContDiffAt 𝕜 n Θ' f₀) :
+    ContDiffAt 𝕜 (n + 1) Θ f₀ := by
+  obtain ⟨-, G', hGs, ⟨C, hC⟩, hG'n⟩ := TauCeti.uniformContDiffOn_succ_iff.1 hG
+  have hG'c : ContinuousOn G' s := hG'n.continuousOn
+  -- The family of derivatives along a function with values in `s`.
+  have hΘ' : ∀ f ∈ ball f₀ (δ / 2), ∀ t, derivFamily hG'c hC f t = G' (f t) := fun f hf t ↦
+    derivFamily_apply hG'c hC (fun t ↦ ball_half_subset_of_mem_ball hf₀ hf t
+      (mem_ball_self (half_pos hδ))) t
+  have hΘ'C : ContDiffAt 𝕜 n (derivFamily hG'c hC) f₀ :=
+    hstep G' hG'n (half_pos hδ)
+      (fun t ↦ (ball_subset_ball (by linarith)).trans (hf₀ t)) hΘ'
+  rw [contDiffAt_succ_iff_hasFDerivAt]
+  have hA : ContDiff 𝕜 n (applyCLM : (α →ᵇ (X →L[𝕜] Y)) →L[𝕜] (α →ᵇ X) →L[𝕜] α →ᵇ Y) :=
+    ContinuousLinearMap.contDiff _
+  refine ⟨fun f ↦ applyCLM (derivFamily hG'c hC f),
+    ⟨ball f₀ (δ / 2), ball_mem_nhds f₀ (half_pos hδ), fun f hf ↦ ?_⟩,
+    hA.comp_contDiffAt f₀ hΘ'C⟩
+  exact hasFDerivAt_of_forall_apply_eq hGs hG'n.uniformContinuousOn (half_pos hδ)
+    (ball_half_subset_of_mem_ball hf₀ hf)
+    (fun g hg t ↦ hΘ g (Metric.ball_half_subset _ hf hg) t)
+    (hΘ' f hf)
+
+private theorem contDiffAt_of_uniformContDiffOn_aux {Z : Type (max u v)}
+    [NormedAddCommGroup Z] [NormedSpace 𝕜 Z] {G : X → Z}
+    {Θ : (α →ᵇ X) → α →ᵇ Z} {n : ℕ} (hG : TauCeti.UniformContDiffOn 𝕜 n G s)
+    (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
+    (hΘ : ∀ f ∈ ball f₀ δ, ∀ t, Θ f t = G (f t)) : ContDiffAt 𝕜 n Θ f₀ := by
+  induction n generalizing Z G Θ f₀ δ with
+  | zero =>
+    refine contDiffAt_zero.2 ⟨ball f₀ (δ / 2), ball_mem_nhds f₀ (half_pos hδ), fun f hf ↦ ?_⟩
+    exact (continuousAt_of_forall_apply_eq (TauCeti.uniformContDiffOn_zero_iff.1 hG)
+      (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf)
+      fun g hg t ↦ hΘ g (Metric.ball_half_subset _ hf hg) t).continuousWithinAt
+  | succ n ih =>
+    exact contDiffAt_of_uniformContDiffOn_step hG hδ hf₀ hΘ
+      (fun G' hG'n {_} {_} hδ' hf₀' hΘ' ↦ ih hG'n hδ' hf₀' hΘ')
+
+/-- **Superposition operators are `C^n`.** Let `G` be uniformly `C^n` on `s`. If the values of `f₀`
+stay a distance `δ > 0` inside `s` and `Θ` agrees with the superposition `f ↦ G ∘ f` on the ball
+of radius `δ` about `f₀`, then `Θ` is `C^n` at `f₀` for the sup norm. -/
+theorem contDiffAt_of_forall_apply_eq {n : ℕ} (hG : TauCeti.UniformContDiffOn 𝕜 n G s)
+    (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) (hΘ : ∀ f ∈ ball f₀ δ, ∀ t, Θ f t = G (f t)) :
+    ContDiffAt 𝕜 n Θ f₀ := by
+  cases n with
+  | zero =>
+    refine contDiffAt_zero.2 ⟨ball f₀ (δ / 2), ball_mem_nhds f₀ (half_pos hδ), fun f hf ↦ ?_⟩
+    exact (continuousAt_of_forall_apply_eq (TauCeti.uniformContDiffOn_zero_iff.1 hG)
+      (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf)
+      fun g hg t ↦ hΘ g (Metric.ball_half_subset _ hf hg) t).continuousWithinAt
+  | succ n =>
+    exact contDiffAt_of_uniformContDiffOn_step hG hδ hf₀ hΘ
+      (fun G' hG'n {_} {_} hδ' hf₀' hΘ' ↦
+        contDiffAt_of_uniformContDiffOn_aux hG'n hδ' hf₀' hΘ')
+
+/-- **A superposition operator is `C^n`.** Let `G` be Lipschitz and uniformly `C^n` on `s`. If the
+values of `f₀` stay a distance `δ > 0` inside `s`, then `f ↦ G ∘ f` is `C^n` at `f₀`. -/
+theorem contDiffAt_comp_of_uniformContDiffOn (hG : LipschitzWith C G) {n : ℕ}
+    (hGn : TauCeti.UniformContDiffOn 𝕜 n G s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) :
+    ContDiffAt 𝕜 n (comp G hG) f₀ :=
+  contDiffAt_of_forall_apply_eq hGn hδ hf₀ fun _ _ _ ↦ rfl
+
+variable {G' : X → X →L[𝕜] Y}
+
 /-- **A superposition operator is `C¹`.** Let `G` be Lipschitz, with derivative `G' x` at every
 point `x` of `s`, where `G'` is uniformly continuous on `s`. If the values of `f₀` stay a distance
 `δ > 0` inside `s`, then the map `f ↦ G ∘ f` is continuously differentiable at `f₀`. -/
 theorem contDiffAt_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
     (hG' : UniformContinuousOn G' s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) :
     ContDiffAt 𝕜 1 (comp G hG) f₀ := by
-  refine contDiffAt_one_iff.2 ⟨fderiv 𝕜 (comp G hG), ball f₀ (δ / 2),
-    ball_mem_nhds f₀ (half_pos hδ), fun f hf ↦ ?_, fun f hf ↦ ?_⟩
-  · exact (continuousAt_fderiv_comp hG hGs hG' (half_pos hδ)
-      (ball_half_subset_of_mem_ball hf₀ hf)).continuousWithinAt
-  · exact hasFDerivAt_fderiv_comp hG hGs hG' (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf)
+  exact contDiffAt_comp_of_uniformContDiffOn hG
+    (TauCeti.uniformContDiffOn_succ_iff.2
+      ⟨hG.uniformContinuous.uniformContinuousOn, G', hGs,
+        ⟨C, fun x hx ↦ (hGs x hx).le_of_lipschitz hG⟩,
+        TauCeti.uniformContDiffOn_zero_iff.2 hG'⟩) hδ hf₀
 
 /-- **A superposition operator is `C¹`, global form.** If `G` is Lipschitz and differentiable
 everywhere, with a derivative `G'` that is uniformly continuous on every ball about `0`, then
@@ -214,59 +298,6 @@ theorem contDiff_comp (hG : LipschitzWith C G) (hGs : ∀ x, HasFDerivAt G (G' x
   contDiff_iff_contDiffAt.2 fun f₀ ↦
     contDiffAt_comp hG (fun x _ ↦ hGs x) (hG' (‖f₀‖ + 1)) one_pos fun t ↦
       ball_subset_ball' <| by rw [dist_zero_right]; linarith [norm_coe_le_norm f₀ t]
-
-end BoundedContinuousFunction
-
-universe u
-
-namespace BoundedContinuousFunction
-
-section Local
-
-variable {α 𝕜 : Type*} {X Y : Type u} [TopologicalSpace α] [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-  [IsRCLikeNormedField 𝕜] {G : X → Y} {C : ℝ≥0} {s : Set X} {f₀ : α →ᵇ X} {δ : ℝ}
-  {Θ : (α →ᵇ X) → α →ᵇ Y}
-
-/-- **Superposition operators are `C^n`.** Let `G` be uniformly `C^n` on `s`. If the values of `f₀`
-stay a distance `δ > 0` inside `s` and `Θ` agrees with the superposition `f ↦ G ∘ f` on the ball
-of radius `δ` about `f₀`, then `Θ` is `C^n` at `f₀` for the sup norm. -/
-theorem contDiffAt_of_forall_apply_eq {n : ℕ} (hG : TauCeti.UniformContDiffOn 𝕜 n G s)
-    (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) (hΘ : ∀ f ∈ ball f₀ δ, ∀ t, Θ f t = G (f t)) :
-    ContDiffAt 𝕜 n Θ f₀ := by
-  induction n generalizing Y G Θ f₀ δ with
-  | zero =>
-    refine contDiffAt_zero.2 ⟨ball f₀ (δ / 2), ball_mem_nhds f₀ (half_pos hδ), fun f hf ↦ ?_⟩
-    exact (continuousAt_of_forall_apply_eq (TauCeti.uniformContDiffOn_zero_iff.1 hG)
-      (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf)
-      fun g hg t ↦ hΘ g (Metric.ball_half_subset _ hf hg) t
-      ).continuousWithinAt
-  | succ n ih =>
-    obtain ⟨-, G', hGs, ⟨C, hC⟩, hG'n⟩ := TauCeti.uniformContDiffOn_succ_iff.1 hG
-    have hG'c : ContinuousOn G' s := hG'n.continuousOn
-    -- The family of derivatives along a function with values in `s`.
-    have hΘ' : ∀ f ∈ ball f₀ (δ / 2), ∀ t, derivFamily hG'c hC f t = G' (f t) := fun f hf t ↦
-      derivFamily_apply hG'c hC (fun t ↦ ball_half_subset_of_mem_ball hf₀ hf t
-        (mem_ball_self (half_pos hδ))) t
-    have hΘ'C : ContDiffAt 𝕜 n (derivFamily hG'c hC) f₀ :=
-      ih hG'n (half_pos hδ) (fun t ↦ (ball_subset_ball (by linarith)).trans (hf₀ t)) hΘ'
-    rw [Nat.cast_succ, contDiffAt_succ_iff_hasFDerivAt]
-    have hA : ContDiff 𝕜 n (applyCLM : (α →ᵇ (X →L[𝕜] Y)) →L[𝕜] (α →ᵇ X) →L[𝕜] α →ᵇ Y) :=
-      ContinuousLinearMap.contDiff _
-    refine ⟨fun f ↦ applyCLM (derivFamily hG'c hC f),
-      ⟨ball f₀ (δ / 2), ball_mem_nhds f₀ (half_pos hδ), fun f hf ↦ ?_⟩,
-      hA.comp_contDiffAt f₀ hΘ'C⟩
-    exact hasFDerivAt_of_forall_apply_eq hGs hG'n.uniformContinuousOn (half_pos hδ)
-      (ball_half_subset_of_mem_ball hf₀ hf)
-      (fun g hg t ↦ hΘ g (Metric.ball_half_subset _ hf hg) t)
-      (hΘ' f hf)
-
-/-- **A superposition operator is `C^n`.** Let `G` be Lipschitz and uniformly `C^n` on `s`. If the
-values of `f₀` stay a distance `δ > 0` inside `s`, then `f ↦ G ∘ f` is `C^n` at `f₀`. -/
-theorem contDiffAt_comp_of_uniformContDiffOn (hG : LipschitzWith C G) {n : ℕ}
-    (hGn : TauCeti.UniformContDiffOn 𝕜 n G s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) :
-    ContDiffAt 𝕜 n (comp G hG) f₀ :=
-  contDiffAt_of_forall_apply_eq hGn hδ hf₀ fun _ _ _ ↦ rfl
 
 end Local
 
