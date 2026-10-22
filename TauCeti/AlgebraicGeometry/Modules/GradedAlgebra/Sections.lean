@@ -272,15 +272,21 @@ variable {U} {V : X.Opens}
 
 /-- Restriction of sections along an inclusion of opens `V ≤ U`, as a graded ring homomorphism
 between the graded rings of sections. Its underlying ring homomorphism is
-`CategoryTheory.CommMon.restrictGradedSections` by definition, which is exposed so that algebra
-structures built from either one agree. -/
-@[expose]
+`CategoryTheory.CommMon.restrictGradedSections`
+(`CategoryTheory.CommMon.restrictGradedSectionsGradedHom_toRingHom`). -/
 def _root_.CategoryTheory.CommMon.restrictGradedSectionsGradedHom (i : V ⟶ U) :
     A.gradedSectionsGrading U →+*ᵍ A.gradedSectionsGrading V where
   __ := A.restrictGradedSections i
   map_mem {n x} hx := by
     obtain ⟨x, rfl⟩ := DirectSum.mem_summand.mp hx
     simpa using of_mem_gradedSectionsGrading n _
+
+/-- The underlying ring homomorphism of the graded restriction of sections is the restriction of
+sections. -/
+@[simp]
+theorem _root_.CategoryTheory.CommMon.restrictGradedSectionsGradedHom_toRingHom (i : V ⟶ U) :
+    (A.restrictGradedSectionsGradedHom i).toRingHom = A.restrictGradedSections i :=
+  (rfl)
 
 /-- The graded restriction of sections is the restriction of sections. -/
 @[simp]

@@ -133,29 +133,21 @@ theorem baseChangeMap_apply (a : A) : baseChangeMap S 𝒜 a = 1 ⊗ₜ[R] a := 
 section IsBaseChange
 
 variable {S} {B : Type*} [CommSemiring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
-  {ℬ : ι → Submodule S B} (f : 𝒜 →+*ᵍ ℬ)
-  (hfR : ∀ r : R, f (algebraMap R A r) = algebraMap R B r)
+  [DecidableEq ι] [AddMonoid ι] [GradedAlgebra 𝒜] {ℬ : ι → Submodule S B} [GradedAlgebra ℬ]
+  (f : 𝒜 →+*ᵍ ℬ) (hfR : ∀ r : R, f (algebraMap R A r) = algebraMap R B r)
 
 /-- The graded comparison map `S ⊗[R] A → B`, `s ⊗ a ↦ s • f a`, of a graded ring homomorphism
-`f` over the coefficient extension `R → S`. -/
-noncomputable def baseChangeLift : (fun n ↦ (𝒜 n).baseChange S) →+*ᵍ ℬ where
-  __ := (Algebra.TensorProduct.lift (Algebra.ofId S B) ⟨f.toRingHom, hfR⟩
-    fun _ _ ↦ .all _ _).toRingHom
-  map_mem {n x} hx := by
-    rw [Submodule.baseChange_eq_span] at hx
-    induction hx using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨a, ha, rfl⟩ := hx
-      simpa using f.map_mem ha
-    | zero => simp
-    | add x y _ _ hx hy => simpa using add_mem hx hy
-    | smul s x _ hx => simpa using Submodule.smul_mem _ s hx
+`f` over the coefficient extension `R → S`. It is the graded ring homomorphism underlying
+`GradedAlgHom.liftEquiv`, applied to `f` as a graded `R`-algebra homomorphism. -/
+noncomputable def baseChangeLift : (fun n ↦ (𝒜 n).baseChange S) →+*ᵍ ℬ :=
+  (GradedAlgHom.liftEquiv 𝒜 ℬ ⟨⟨f.toRingHom, hfR⟩, f.map_mem⟩).toGradedRingHom
 
-/-- The graded comparison map sends a pure tensor `s ⊗ a` to `s • f a`. -/
+/-- The graded comparison map sends a pure tensor `s ⊗ a` to `s • f a`
+(`GradedAlgHom.liftEquiv_tmul`). -/
 @[simp]
 theorem baseChangeLift_tmul (s : S) (a : A) :
-    baseChangeLift 𝒜 f hfR (s ⊗ₜ[R] a) = s • f a := by
-  simp [baseChangeLift, Algebra.smul_def]
+    baseChangeLift 𝒜 f hfR (s ⊗ₜ[R] a) = s • f a :=
+  GradedAlgHom.liftEquiv_tmul _ s a
 
 /-- The graded comparison map restricts to `f` along the coefficient inclusion. -/
 @[simp]
@@ -177,8 +169,7 @@ theorem bijective_baseChangeLift
   rw [h]
   exact hf.equiv.bijective
 
-variable [DecidableEq ι] [AddMonoid ι] [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
-  (hf : IsBaseChange S (AlgHom.mk f.toRingHom hfR).toLinearMap)
+variable (hf : IsBaseChange S (AlgHom.mk f.toRingHom hfR).toLinearMap)
 
 /-- The inverse of the graded comparison map `S ⊗[R] A → B` of a graded ring homomorphism
 exhibiting `B` as the base change of `A`, which is graded as well. -/

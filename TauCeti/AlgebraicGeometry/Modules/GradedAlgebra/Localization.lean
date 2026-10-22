@@ -144,14 +144,19 @@ theorem _root_.CategoryTheory.CommMon.isBaseChange_restrictGradedSections
   let := (A.restrictGradedSections (homOfLE (X.basicOpen_le f))).toAlgebra
   have := IsScalarTower.of_algebraMap_eq (R := Γ(X, U)) (S := ⨁ n, Γ(A.X n, U))
     (A := ⨁ n, Γ(A.X n, X.basicOpen f)) fun r ↦
-      (A.restrictGradedSections_algebraMap_basicOpen f r).symm
+      ((A.restrictGradedSectionsGradedHom_apply _ _).symm.trans
+        (A.restrictGradedSections_algebraMap_basicOpen f r)).symm
   have : IsLocalization.Away f Γ(X, X.basicOpen f) := hU.isLocalization_basicOpen f
   have hloc := A.isLocalization_gradedSections_basicOpen hU f
   have : IsLocalization (Algebra.algebraMapSubmonoid (⨁ n, Γ(A.X n, U)) (Submonoid.powers f))
       (⨁ n, Γ(A.X n, X.basicOpen f)) := by
     rwa [Algebra.algebraMapSubmonoid, Submonoid.map_powers]
-  exact (isLocalizedModule_iff_isBaseChange (Submonoid.powers f) Γ(X, X.basicOpen f) _).mp
-    ((isLocalizedModule_iff_isLocalization (S := Submonoid.powers f)).mpr inferInstance)
+  have key : IsBaseChange Γ(X, X.basicOpen f) (IsScalarTower.toAlgHom Γ(X, U)
+      (⨁ n, Γ(A.X n, U)) (⨁ n, Γ(A.X n, X.basicOpen f))).toLinearMap :=
+    (isLocalizedModule_iff_isBaseChange (Submonoid.powers f) Γ(X, X.basicOpen f) _).mp
+      ((isLocalizedModule_iff_isLocalization (S := Submonoid.powers f)).mpr inferInstance)
+  convert key using 1
+  exact LinearMap.ext fun x ↦ A.restrictGradedSectionsGradedHom_apply _ x
 
 end BaseChange
 
