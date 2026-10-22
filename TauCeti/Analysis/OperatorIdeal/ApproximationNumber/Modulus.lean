@@ -61,7 +61,9 @@ space and `T` into a Banach space, then `aₙ(T) ≤ C aₙ(A)` for every `n`. -
 theorem singularValue_le_mul_of_forall_norm_apply_le {T : E →L[𝕜] F} {A : E →L[𝕜] G} {C : ℝ≥0}
     (h : ∀ x, ‖T x‖ ≤ C * ‖A x‖) (n : ℕ) :
     T.singularValue n ≤ C * A.singularValue n := by
-  have hV : ‖T.factorThru A‖₊ ≤ C := norm_factorThru_le C.coe_nonneg h
+  have hV : ‖T.factorThru A‖₊ ≤ C := by
+    rw [← NNReal.coe_le_coe, coe_nnnorm]
+    exact norm_factorThru_le C.coe_nonneg h
   calc T.singularValue n = (T.factorThru A ∘L A).singularValue n := by
         rw [factorThru_comp ⟨C, h⟩]
     _ ≤ ‖T.factorThru A‖₊ * A.singularValue n := singularValue_comp_le_left _ _ n
