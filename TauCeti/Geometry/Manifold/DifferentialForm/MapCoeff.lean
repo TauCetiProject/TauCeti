@@ -26,6 +26,12 @@ and pullback are complex-linear. The scalar action is defined on underlying form
 so for real scalars it agrees with the submodule action on `SmoothForm I M F k` up to reducible
 unfolding of instances. Coefficient conjugation of complex-valued forms is conjugate-linear.
 
+The paired wedge is natural for coefficient maps intertwining two pairings. A pairing that turns
+multiplication by one scalar into multiplication by another makes the wedge of smooth forms
+semilinear in the same way; in particular, the wedge for a complex-bilinear pairing of complex
+coefficient spaces is complex-linear in each form. Coefficient conjugation is multiplicative for
+the wedge of complex-valued forms given by complex multiplication.
+
 ## Main declarations
 
 * `TauCeti.RoughForm.mapCoeff`, `TauCeti.SmoothForm.mapCoeff`: coefficient maps of forms.
@@ -40,6 +46,13 @@ unfolding of instances. Coefficient conjugation of complex-valued forms is conju
 * `TauCeti.SmoothForm.mextDerivₗ_smul`, `TauCeti.SmoothForm.mpullback_smul`: the exterior
   derivative and pullback are linear for these scalars.
 * `TauCeti.SmoothForm.mapCoeff_conj_smul`: coefficient conjugation is conjugate-linear.
+* `TauCeti.RoughForm.mapCoeff_wedgeWith`, `TauCeti.SmoothForm.mapCoeff_wedgeWith`: naturality of
+  the paired wedge in the coefficients.
+* `TauCeti.SmoothForm.wedgeWith_smul_left_of_map_smul`,
+  `TauCeti.SmoothForm.wedgeWith_smul_right_of_map_smul`: the paired wedge is linear, or
+  semilinear, for scalars acting on the coefficients compatibly with the pairing.
+* `TauCeti.SmoothForm.mapCoeff_conj_wedgeWith_mul`: coefficient conjugation of the wedge of
+  complex-valued forms.
 
 ## References
 
@@ -305,5 +318,88 @@ theorem mapCoeff_conj_smul (c : ℂ) (φ : SmoothForm I M ℂ k) :
   mapCoeff_smul_of_map_smul _ (fun v ↦ by simp) φ
 
 end SmoothForm
+
+/-! ### Coefficient maps and scalars of wedge products -/
+
+section Wedge
+
+variable {F₁ F₂ F₃ G₁ G₂ G₃ : Type*}
+  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [NormedAddCommGroup F₃] [NormedSpace ℝ F₃] [NormedAddCommGroup G₁] [NormedSpace ℝ G₁]
+  [NormedAddCommGroup G₂] [NormedSpace ℝ G₂] [NormedAddCommGroup G₃] [NormedSpace ℝ G₃]
+  {l : ℕ}
+
+/-- The paired rough-form wedge is natural in the coefficients: if coefficient maps `L₁`, `L₂`,
+`L` intertwine the pairings `μ` and `μ'`, then the coefficient map `L` of the wedge of `φ` and `ψ`
+is the wedge of their coefficient maps. -/
+theorem RoughForm.mapCoeff_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (μ' : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
+    (L₁ : F₁ →L[ℝ] G₁) (L₂ : F₂ →L[ℝ] G₂) (L : F₃ →L[ℝ] G₃)
+    (hL : ∀ a b, L (μ a b) = μ' (L₁ a) (L₂ b)) (φ : RoughForm I M F₁ k)
+    (ψ : RoughForm I M F₂ l) :
+    mapCoeff L (φ.wedgeWith μ ψ) = (mapCoeff L₁ φ).wedgeWith μ' (mapCoeff L₂ ψ) := by
+  funext x
+  simp only [mapCoeff, wedgeWith_apply']
+  exact ContinuousAlternatingMap.compContinuousAlternatingMap_pairedWedge μ μ.continuous₂ μ'
+    μ'.continuous₂ L₁ L₂ L hL (φ x) (ψ x)
+
+namespace SmoothForm
+
+variable [IsManifold I 1 M]
+
+/-- The paired wedge of smooth forms is natural in the coefficients: if coefficient maps `L₁`,
+`L₂`, `L` intertwine the pairings `μ` and `μ'`, then the coefficient map `L` of the wedge of `φ`
+and `ψ` is the wedge of their coefficient maps. -/
+theorem mapCoeff_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (μ' : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
+    (L₁ : F₁ →L[ℝ] G₁) (L₂ : F₂ →L[ℝ] G₂) (L : F₃ →L[ℝ] G₃)
+    (hL : ∀ a b, L (μ a b) = μ' (L₁ a) (L₂ b)) (φ : SmoothForm I M F₁ k)
+    (ψ : SmoothForm I M F₂ l) :
+    mapCoeff L (wedgeWith μ φ ψ) = wedgeWith μ' (mapCoeff L₁ φ) (mapCoeff L₂ ψ) :=
+  Subtype.ext <| by
+    simpa only [coe_mapCoeff, coe_wedgeWith] using
+      RoughForm.mapCoeff_wedgeWith μ μ' L₁ L₂ L hL φ.1 ψ.1
+
+section Scalars
+
+variable {S S' : Type*} [Monoid S'] [DistribMulAction S' F₃] [ContinuousConstSMul S' F₃]
+  [SMulCommClass ℝ S' F₃]
+
+/-- If the pairing turns multiplication by `c` in its first argument into multiplication by `d`,
+then so does the paired wedge of smooth forms in its first form. For a complex-bilinear pairing
+of complex coefficient spaces this is complex-linearity in the first form; it also covers
+pairings that are conjugate-linear in the first argument. -/
+theorem wedgeWith_smul_left_of_map_smul [Monoid S] [DistribMulAction S F₁]
+    [ContinuousConstSMul S F₁] [SMulCommClass ℝ S F₁] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {c : S} {d : S'}
+    (hcd : ∀ a b, μ (c • a) b = d • μ a b) (φ : SmoothForm I M F₁ k)
+    (ψ : SmoothForm I M F₂ l) :
+    wedgeWith μ (c • φ) ψ = d • wedgeWith μ φ ψ :=
+  Subtype.ext <| by
+    simpa only [coe_wedgeWith, smul_toRoughForm] using
+      RoughForm.wedgeWith_smul_left_of_map_smul μ hcd φ.1 ψ.1
+
+/-- If the pairing turns multiplication by `c` in its second argument into multiplication by
+`d`, then so does the paired wedge of smooth forms in its second form. For a complex-bilinear
+pairing of complex coefficient spaces this is complex-linearity in the second form. -/
+theorem wedgeWith_smul_right_of_map_smul [Monoid S] [DistribMulAction S F₂]
+    [ContinuousConstSMul S F₂] [SMulCommClass ℝ S F₂] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {c : S} {d : S'}
+    (hcd : ∀ a b, μ a (c • b) = d • μ a b) (φ : SmoothForm I M F₁ k)
+    (ψ : SmoothForm I M F₂ l) :
+    wedgeWith μ φ (c • ψ) = d • wedgeWith μ φ ψ :=
+  Subtype.ext <| by
+    simpa only [coe_wedgeWith, smul_toRoughForm] using
+      RoughForm.wedgeWith_smul_right_of_map_smul μ hcd φ.1 ψ.1
+
+end Scalars
+
+/-- Complex conjugation of the coefficients of complex-valued smooth forms is multiplicative for
+the wedge product given by complex multiplication. -/
+theorem mapCoeff_conj_wedgeWith_mul (φ : SmoothForm I M ℂ k) (ψ : SmoothForm I M ℂ l) :
+    mapCoeff (Complex.conjCLE : ℂ →L[ℝ] ℂ) (wedgeWith (ContinuousLinearMap.mul ℝ ℂ) φ ψ) =
+      wedgeWith (ContinuousLinearMap.mul ℝ ℂ) (mapCoeff (Complex.conjCLE : ℂ →L[ℝ] ℂ) φ)
+        (mapCoeff (Complex.conjCLE : ℂ →L[ℝ] ℂ) ψ) :=
+  mapCoeff_wedgeWith _ _ _ _ _ (fun a b ↦ by simp) φ ψ
+
+end SmoothForm
+
+end Wedge
 
 end TauCeti
