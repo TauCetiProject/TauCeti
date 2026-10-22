@@ -176,9 +176,7 @@ theorem integral_apply_matrixNormalMeasure (M : Matrix ι κ ℝ) (U : Matrix ι
       integral_map Matrix.measurable_apply.aemeasurable (by fun_prop)]
   · rw [matrixNormalMeasure_of_not_posSemidef M h, integral_dirac]
 
-/-- Entries `(i, j)` and `(k, l)` of a matrix normal matrix have covariance `U i k * V j l`. The
-row and column covariances are separately identifiable only up to a reciprocal scalar factor,
-but this product is determined by the law. -/
+/-- Entries `(i, j)` and `(k, l)` of a matrix normal matrix have covariance `U i k * V j l`. -/
 theorem covariance_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ}
     {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) (i k : ι) (j l : κ) :
     cov[fun X => X i j, fun X => X k l; matrixNormalMeasure M U V] = U i k * V j l := by
