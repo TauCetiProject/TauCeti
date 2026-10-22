@@ -349,30 +349,21 @@ theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
   set S := L.orthogonalSum M
   have hS : S.IsEven := (L.isEven_orthogonalSum_iff M).mpr ⟨hL, hM⟩
   -- `N` is an intermediate carrier of `L ⊥ M`, even and with unimodular underlying lattice.
-  have hdual : N.carrier ≤ S.dualCarrier := fun x hx ↦ by
-    rw [dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
-    intro y hy
-    simpa [hform] using N.form_mem_one ⟨x, hx⟩ ⟨y, hle hy⟩
-  let P : S.IntermediateCarrier := ⟨N.carrier, hle, hdual⟩
-  have hPe : IntermediateCarrier.IsEven P := IntermediateCarrier.isEven_def.mpr fun x hx ↦ by
-    simpa [norm_apply, hform] using (N.isEven_iff_forall_norm.mp hNe) ⟨x, hx⟩
-  have hPN : hPe.isIntegral.toIntegralLattice = N :=
-    IntegralLattice.ext hPe.isIntegral.toIntegralLattice_carrier (by
-      rw [hPe.isIntegral.toIntegralLattice_form, hform])
+  set P := N.toIntermediateCarrier hform hle
+  have hdual : N.carrier ≤ S.dualCarrier := P.2.2
+  have hPe := N.isEven_toIntermediateCarrier hform hle hNe
+  have hPN := N.toIntegralLattice_toIntermediateCarrier hform hle hPe.isIntegral
   -- Its subgroup of the discriminant group is a quadratic Lagrangian.
   have hlag : (S.discriminantQuadraticModule hS).IsLagrangian (S.discriminantSubgroup P) := by
     refine (FiniteQuadraticModule.isLagrangian_def _ _).mpr
       ⟨(IntermediateCarrier.isEven_iff_isIsotropic_discriminantSubgroup hS P).mp hPe, ?_⟩
-    exact hPe.isIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian.mp (hPN ▸ hNu)
+    exact hPe.isIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian.mp (hPN.symm ▸ hNu)
   have hlag' := ((L.discriminantQuadraticIsometryOrthogonalSum M hL hM).isLagrangian_map_iff
     _ (S.discriminantSubgroup P)).mpr hlag
   rw [discriminantQuadraticIsometryOrthogonalSum_toAddEquiv] at hlag'
   have hmem := L.mk_mem_map_discriminantSubgroup_iff M P
   -- The transported subgroup meets both factors trivially, so it is the graph of an isometry.
-  obtain ⟨f, hf⟩ := FiniteQuadraticModule.exists_isometry_neg_mem_iff_of_isLagrangian _ _
-    (L.isNondegenerate_discriminantQuadraticModule hL)
-    (M.isNondegenerate_discriminantQuadraticModule hM)
-    hlag'
+  obtain ⟨f, hf⟩ := FiniteQuadraticModule.exists_isometry_neg_mem_iff_of_isLagrangian _ _ hlag'
     (fun a ha ↦ by
       induction a using Submodule.Quotient.induction_on with
       | _ x =>

@@ -20,9 +20,9 @@ The subgroup is Mathlib's `AddMonoidHom.graph`; no separate graph carrier is int
 Quadratic isotropy is characterized for arbitrary additive homomorphisms, including
 degenerate modules, before the nondegenerate Lagrangian theorem.
 
-Conversely, when `A` and `B` are both nondegenerate, a quadratic Lagrangian of `A ⊥ B` meeting
-both factors only in zero is such a graph: its two coordinate projections are injective, the
-order of a Lagrangian forces them to be bijective, and Mathlib's Goursat lemma
+Conversely, a quadratic Lagrangian of `A ⊥ B` meeting both factors only in zero is such a graph:
+both factors are then nondegenerate, its two coordinate projections are injective, the order of a
+Lagrangian forces them to be bijective, and Mathlib's Goursat lemma
 `AddSubgroup.exists_addEquiv_eq_graph` then produces the isometry. This identifies the glue
 subgroup of an even unimodular overlattice in which both summands are primitive.
 
@@ -95,14 +95,26 @@ theorem isLagrangian_graph_iff (e : A ≃+ B) (hA : A.IsNondegenerate) :
       ((A.prod B).toFiniteBilinearModule.isLagrangian_def _).mpr
         (A.orthogonalComplement_graph B e he hA).symm⟩
 
-/-- **A Lagrangian meeting both factors trivially is a graph.** If `A` and `B` are
-nondegenerate and a quadratic Lagrangian `H` of `A ⊥ B` meets `A ⊥ 0` and `0 ⊥ B` only in zero,
-then `H` is the graph of an isometry from `A` to the negative of `B`. This is the converse of
-`TauCeti.FiniteQuadraticModule.isLagrangian_graph_iff`. -/
-theorem exists_isometry_neg_mem_iff_of_isLagrangian (hA : A.IsNondegenerate)
-    (hB : B.IsNondegenerate) {H : AddSubgroup (A × B)} (hH : (A.prod B).IsLagrangian H)
+/-- **A Lagrangian meeting both factors trivially is a graph.** If a quadratic Lagrangian `H` of
+`A ⊥ B` meets `A ⊥ 0` and `0 ⊥ B` only in zero, then `H` is the graph of an isometry from `A` to
+the negative of `B`. Both factors are then nondegenerate, since `H` is its own orthogonal
+complement. This is the converse of `TauCeti.FiniteQuadraticModule.isLagrangian_graph_iff`. -/
+theorem exists_isometry_neg_mem_iff_of_isLagrangian {H : AddSubgroup (A × B)}
+    (hH : (A.prod B).IsLagrangian H)
     (hleft : ∀ x : A, (x, 0) ∈ H → x = 0) (hright : ∀ y : B, (0, y) ∈ H → y = 0) :
     ∃ e : Isometry A B.neg, ∀ x y, (x, y) ∈ H ↔ e x = y := by
+  -- A radical vector of either factor is orthogonal to `H`, hence lies in `H`, hence vanishes.
+  have hHo := ((A.prod B).toFiniteBilinearModule.isLagrangian_def H).mp hH.toFiniteBilinearModule
+  have hA : A.IsNondegenerate := A.toFiniteBilinearModule.isNondegenerate_of_radical_eq_bot <|
+    (AddSubgroup.eq_bot_iff_forall _).mpr fun x hx ↦ hleft x <| hHo ▸
+      ((A.prod B).toFiniteBilinearModule.mem_orthogonalComplement_iff H _).mpr fun z _ ↦ by
+        rw [prod_pairing, (A.toFiniteBilinearModule.mem_radical_iff x).mp hx,
+          FiniteBilinearModule.pairing_zero_left, add_zero]
+  have hB : B.IsNondegenerate := B.toFiniteBilinearModule.isNondegenerate_of_radical_eq_bot <|
+    (AddSubgroup.eq_bot_iff_forall _).mpr fun y hy ↦ hright y <| hHo ▸
+      ((A.prod B).toFiniteBilinearModule.mem_orthogonalComplement_iff H _).mpr fun z _ ↦ by
+        rw [prod_pairing, (B.toFiniteBilinearModule.mem_radical_iff y).mp hy,
+          FiniteBilinearModule.pairing_zero_left, zero_add]
   let π₁ : H →+ A := (AddMonoidHom.fst A B).comp H.subtype
   let π₂ : H →+ B := (AddMonoidHom.snd A B).comp H.subtype
   -- Each projection is injective on `H`, because `H` meets the other factor trivially.
