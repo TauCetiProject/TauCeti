@@ -122,8 +122,8 @@ of the sums over the parts of `Q A`. -/
 theorem sum_parts_bind {α M : Type*} [Lattice α] [OrderBot α] [IsModularLattice α]
     [DecidableEq α] [AddCommMonoid M] {a : α} (P : Finpartition a)
     (Q : ∀ i ∈ P.parts, Finpartition i) (g : α → M) :
-    ∑ b ∈ (P.bind Q).parts, g b = ∑ A ∈ P.parts.attach, ∑ b ∈ (Q A.1 A.2).parts, g b :=
-  sum_combine (fun A : P.parts => Q A.1 A.2) P.supIndep.attach g
+    ∑ b ∈ (P.bind Q).parts, g b = ∑ A ∈ P.parts.attach, ∑ b ∈ (Q A.1 A.2).parts, g b := by
+  rw [bind_parts, ← combine_parts (fun A : P.parts => Q A.1 A.2) P.supIndep.attach, sum_combine]
 
 /-- A product over the parts of the juxtaposition `P.bind Q` is the product, over the parts `A`
 of `P`, of the products over the parts of `Q A`. -/
