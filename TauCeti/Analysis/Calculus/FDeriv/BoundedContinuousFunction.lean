@@ -148,7 +148,7 @@ private theorem continuousAt_fderiv_comp (hG : LipschitzWith C G)
     (hasFDerivAt_comp hG hGs hG' hδ hf₀ hΦ₀).fderiv, dist_eq_norm, ← map_sub]
   refine ((norm_applyCLM_apply_le _).trans ?_).trans_lt (half_lt_self hε)
   refine (norm_le (half_pos hε).le).2 fun t ↦ ?_
-  rw [coe_sub, Pi.sub_apply, hΦ, hΦ₀, ← dist_eq_norm]
+  rw [FunLike.coe_sub, Pi.sub_apply, hΦ, hΦ₀, ← dist_eq_norm]
   exact hG'η _ (hfs t (mem_ball_self (half_pos hδ))) _ (hf₀ t (mem_ball_self hδ))
     ((dist_coe_le_dist t).trans (hf.le.trans (min_le_right _ _)))
 
