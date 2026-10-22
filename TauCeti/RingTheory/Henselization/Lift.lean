@@ -65,10 +65,9 @@ ideal of the target inside its Jacobson radical. In particular, maps of pairs fr
 henselization of `(R, I)` to a henselian pair are unique. -/
 theorem algHom_ext_of_map_le_jacobson {S : Type*} [CommRing S] [Algebra R S]
     (hI : I.map (algebraMap R S) ≤ Ideal.jacobson ⊥) {f g : algebra I →ₐ[R] S} : f = g := by
-  ext x
-  obtain ⟨B, b, rfl⟩ := exists_stage_eq I x
-  exact DFunLike.congr_fun (B.property.algHom_ext hI (f := f.comp (stage I B))
-    (g := g.comp (stage I B))) b
+  apply hom_ext
+  intro B
+  exact B.property.algHom_ext hI
 
 section Lift
 

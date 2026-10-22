@@ -56,33 +56,11 @@ noncomputable def stage (I : Ideal R) (B : Neighbourhood.{u, u} I) : B.obj →�
 @[simp]
 theorem stage_naturality (I : Ideal R) {B C : Neighbourhood.{u, u} I} (f : B ⟶ C) :
     (stage I C).comp f.hom.hom = stage I B := by
-  let E := equivSmallModel (Neighbourhood.{u, u} I)
-  have hunit : (IsNeighbourhood I).ι.map f ≫
-      (IsNeighbourhood I).ι.map (E.unitIso.hom.app C) =
-      (IsNeighbourhood I).ι.map (E.unitIso.hom.app B) ≫
-        (IsNeighbourhood I).ι.map (E.inverse.map (E.functor.map f)) := by
-    simpa only [Functor.id_obj, Functor.id_map, Functor.comp_obj, Functor.comp_map,
-      Functor.map_comp] using
-      congrArg (IsNeighbourhood I).ι.map (E.unitIso.hom.naturality f)
-  have hw : (IsNeighbourhood I).ι.map (E.inverse.map (E.functor.map f)) ≫
-      colimit.ι (diagram I) (E.functor.obj C) =
-      colimit.ι (diagram I) (E.functor.obj B) := by
-    simpa only [diagram, Functor.comp_obj, Functor.comp_map] using
-      colimit.w (diagram I) (E.functor.map f)
-  have h' : (IsNeighbourhood I).ι.map f ≫
-        (IsNeighbourhood I).ι.map (E.unitIso.hom.app C) ≫
-        colimit.ι (diagram I) (E.functor.obj C) =
-      (IsNeighbourhood I).ι.map (E.unitIso.hom.app B) ≫
-        colimit.ι (diagram I) (E.functor.obj B) := by
-    rw [← Category.assoc, hunit, Category.assoc, hw]
-  -- The goal uses algebra-hom composition, while `h'` is an equality in `CommAlgCat`.
-  -- Unfold their concrete morphisms so the underlying algebra homomorphisms can be compared.
-  change CommAlgCat.Hom.hom ((IsNeighbourhood I).ι.map f ≫
-      (IsNeighbourhood I).ι.map (E.unitIso.hom.app C) ≫
-        colimit.ι (diagram I) (E.functor.obj C)) =
-    CommAlgCat.Hom.hom ((IsNeighbourhood I).ι.map (E.unitIso.hom.app B) ≫
-      colimit.ι (diagram I) (E.functor.obj B))
-  exact congrArg CommAlgCat.Hom.hom h'
+  -- Transporting the small colimit cocone back along the equivalence gives the stage maps.
+  exact congrArg CommAlgCat.Hom.hom
+    (((Cocone.whiskeringEquivalence
+      (equivSmallModel (Neighbourhood.{u, u} I)).symm).inverse.obj
+        (colimit.cocone (diagram I))).w f)
 
 /-- Naturality of the stage maps, evaluated at an element. -/
 @[simp]
@@ -142,7 +120,7 @@ theorem exists_stage_eq (I : Ideal R) (x : algebra I) :
 
 /-- Two maps from the henselization algebra are equal if they agree on every stage. -/
 @[ext]
-theorem hom_ext {I : Ideal R} {S : Type u} [CommRing S] [Algebra R S]
+theorem hom_ext {I : Ideal R} {S : Type*} [Semiring S] [Algebra R S]
     {f g : algebra I →ₐ[R] S}
     (h : ∀ (B : Neighbourhood.{u, u} I), f.comp (stage I B) = g.comp (stage I B)) :
     f = g := by
