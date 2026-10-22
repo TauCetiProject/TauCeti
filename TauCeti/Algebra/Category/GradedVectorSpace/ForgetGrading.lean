@@ -151,6 +151,17 @@ theorem finrank_forgetGrading (x : LaurentK0.{u} (finiteExactStructure k)) :
   | of V =>
     simp [finrank_finiteTotal_obj]
 
+/-- At `q = 1`, the coordinate of a specialized class in the basis `[M]` is the dimension of its
+forgotten class. -/
+theorem laurentSpecializationBasis_one_repr
+    (x : LaurentSpecialization (1 : ℤˣ) (LaurentK0.{u} (finiteExactStructure k))) (i : Unit) :
+    (laurentSpecializationBasis k 1).repr x i =
+      AbelianK0.finrank k ((AbelianK0.toExactK0 (FGModuleCat.{u} k)).symm
+        (LaurentK0.forgetGrading.{u, u} (isConflationExact_finiteTotal k)
+          (finiteTotalCommShift k) x)) := by
+  obtain ⟨x, rfl⟩ := LaurentSpecialization.mk_surjective 1 x
+  rw [laurentSpecializationBasis_repr_mk, finrank_forgetGrading]
+
 /-! ### The comparison hypotheses -/
 
 /-- Every finite-dimensional vector space is, up to isomorphism, the underlying vector space of a
@@ -190,9 +201,8 @@ theorem mk_one_of_eq_of_finiteTotal_iso (V W : (finite k).FullSubcategory)
     LaurentSpecialization.mk (1 : ℤˣ) (LaurentK0.of.{u} (finiteExactStructure k) V) =
       LaurentSpecialization.mk 1 (LaurentK0.of.{u} (finiteExactStructure k) W) := by
   refine (laurentSpecializationBasis k 1).ext_elem fun i ↦ ?_
-  rw [laurentSpecializationBasis_repr_mk, laurentSpecializationBasis_repr_mk,
-    ← finrank_forgetGrading, ← finrank_forgetGrading, LaurentK0.forgetGrading_mk_of,
-    LaurentK0.forgetGrading_mk_of, ExactK0.of_congr e.some]
+  simp only [laurentSpecializationBasis_one_repr, LaurentK0.forgetGrading_mk_of,
+    ExactK0.of_congr e.some]
 
 /-- **Forgetting the grading is an isomorphism at `q = 1`**: the graded Grothendieck group of
 finite graded vector spaces, specialized at `q = 1`, is identified with the Grothendieck group of
@@ -237,11 +247,10 @@ theorem forgetGradingK0Equiv_symm_apply
     (forgetGradingK0Equiv k).symm x =
       AbelianK0.finrank k ((AbelianK0.toExactK0 (FGModuleCat.{u} k)).symm x) •
         LaurentSpecialization.mk 1 (LaurentK0.of.{u} (finiteExactStructure k) (unitFinite k)) := by
-  obtain ⟨y, rfl⟩ := (forgetGradingK0Equiv k).surjective x
-  obtain ⟨y, rfl⟩ := LaurentSpecialization.mk_surjective 1 y
-  rw [LinearEquiv.symm_apply_apply, forgetGradingK0Equiv_apply, finrank_forgetGrading,
-    ← laurentSpecializationBasis_repr_mk k 1 _ (), ← laurentSpecializationBasis_apply k 1 ()]
-  simpa using ((laurentSpecializationBasis k 1).sum_repr (LaurentSpecialization.mk 1 y)).symm
+  refine (laurentSpecializationBasis k 1).ext_elem fun i ↦ ?_
+  rw [laurentSpecializationBasis_one_repr, ← forgetGradingK0Equiv_apply,
+    LinearEquiv.apply_symm_apply]
+  simp
 
 end GradedVectorSpace
 
