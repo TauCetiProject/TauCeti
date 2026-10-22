@@ -62,6 +62,13 @@ public section
 
 namespace WeierstrassCurve
 
+/-- Conjugating a change of variables by `σ` and then by `τ` is conjugating by `τ * σ`. -/
+lemma VariableChange.map_map_algEquiv {R L : Type*} [CommSemiring R] [CommRing L] [Algebra R L]
+    (C : VariableChange L) (σ τ : L ≃ₐ[R] L) :
+    (C.map (σ : L →+* L)).map (τ : L →+* L) = C.map ((τ * σ : L ≃ₐ[R] L) : L →+* L) := by
+  rw [VariableChange.map_map]
+  exact congrArg C.map (RingHom.ext fun x ↦ (AlgEquiv.mul_apply τ σ x).symm)
+
 variable {R : Type*} [CommRing R] (E : WeierstrassCurve R)
 
 /-- The automorphism `[-1] : (x, y) ↦ (x, -y - a₁x - a₃)` of a Weierstrass curve, as an admissible
