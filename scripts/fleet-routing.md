@@ -29,12 +29,12 @@ Concurrent pickers can briefly exceed this snapshot-based cap. When Namespace is
 full, staging falls through to GitHub; if all eligible destinations are full or
 unknown, the build waits for a GitHub-hosted slot. A failed picker uses that same
 GitHub fallback. The existing GitHub budget defaults to 18 busy jobs (production currently uses
-12), including the picker, preserving
-headroom for short control jobs under the provider's 20-job limit.
+12), including the picker, preserving headroom for short control jobs under the provider's 20-job limit.
 
 Capacity scans preserve the existing App API reserve (default 1,500 requests),
 then try one complete scan using the repository token (reserve 250). Incomplete
-scans cannot authorize spare cloud capacity. Fleet selection also requires a complete observation of queued guest targets.
+scans cannot authorize spare cloud capacity. Fleet selection also requires a
+complete observation of queued guest targets.
 The existing shared state service coalesces cloud and queued-target discovery;
 older snapshots can still answer the first GitHub preference. Picker control jobs
 remain on GitHub so Namespace queueing cannot block selection of a fleet guest.
