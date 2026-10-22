@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 public import TauCeti.Probability.Distributions.Chi.Gaussian
 public import TauCeti.Probability.Distributions.Gaussian.Density
@@ -21,11 +21,13 @@ is empty and there is no probability law on it.
 
 The uniform law is invariant under linear isometries, so its embedded mean vanishes. It is also
 the law of the direction of a standard Gaussian vector, and that direction is independent of the
-Gaussian radius, which has the chi law with `d` degrees of freedom. More generally, the direction
-of any finite measure with a radial density against Lebesgue measure is uniform and independent
-of the radius. The direction is read through `sphereDirection e`, which sends a nonzero vector `x`
-to `‖x‖⁻¹ • x` and the origin to an assigned point `e` of the sphere; the origin is a null set
-for these laws, so the results hold for every choice of `e`.
+Gaussian radius, which has the chi law with `d` degrees of freedom. More generally, the joint
+law of direction and radius of any finite measure with a radial density against Lebesgue measure
+is the product of the uniform law and the radius law; for a probability measure this says the
+direction is uniform and independent of the radius. The direction is read through
+`TauCeti.sphereDirection e`, which sends a nonzero vector `x` to `‖x‖⁻¹ • x` and the origin to an
+assigned point `e` of the sphere; the origin is a null set for these laws, so the results hold
+for every choice of `e`.
 
 The radial factorization comes from the polar-coordinate formula
 `TauCeti.lintegral_eq_lintegral_toSphere_lintegral_Ioi`, which is Mathlib's
@@ -34,21 +36,19 @@ The radial factorization comes from the polar-coordinate formula
 ## Main definitions
 
 * `TauCeti.Probability.uniformSphereMeasure`: the uniform law on the unit sphere.
-* `TauCeti.Probability.sphereDirection`: the direction of a vector, with an assigned value at
-  the origin.
 
 ## Main results
 
-* `TauCeti.Probability.map_uniformSphereMeasure`: invariance under linear isometric
+* `LinearIsometryEquiv.map_uniformSphereMeasure`: invariance under linear isometric
   equivalences.
 * `TauCeti.Probability.integral_coe_uniformSphereMeasure`: the embedded mean is zero.
-* `TauCeti.Probability.map_sphereDirection_prod_norm_withDensity`: the direction of a radial
-  density is uniform and independent of the radius.
+* `TauCeti.Probability.map_sphereDirection_prod_norm_withDensity`: the joint law of direction
+  and radius of a finite radial density is the product of the uniform law and the radius law.
 * `TauCeti.Probability.stdGaussian_map_sphereDirection_prod_norm`: the direction and radius of a
   standard Gaussian vector are independent, uniform on the sphere and chi distributed.
-* `TauCeti.Probability.hasLaw_sphereDirection_of_hasLaw_stdGaussian`,
-  `TauCeti.Probability.indepFun_sphereDirection_norm_of_hasLaw_stdGaussian`: the same statements
-  for a random vector with standard Gaussian law.
+* `ProbabilityTheory.HasLaw.sphereDirection_stdGaussian`,
+  `ProbabilityTheory.HasLaw.indepFun_sphereDirection_norm_stdGaussian`: the same statements for a
+  random vector with standard Gaussian law.
 
 ## References
 
@@ -66,9 +66,8 @@ namespace TauCeti.Probability
 
 section UniformSphere
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-  [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
 
 variable (E) in
 /-- The uniform law on the unit sphere of a finite-dimensional real inner product space: the
@@ -101,16 +100,37 @@ instance isProbabilityMeasure_uniformSphereMeasure [Nontrivial E] :
     exact ENNReal.inv_mul_cancel (Measure.measure_univ_ne_zero.2 (Measure.toSphere_ne_zero _))
       (measure_ne_top _ _)
 
+end UniformSphere
+
+end TauCeti.Probability
+
+namespace LinearIsometryEquiv
+
+open TauCeti TauCeti.Probability
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+
 /-- **Isometry invariance of the uniform sphere law.** A linear isometric equivalence, restricted
 to the unit spheres, carries the uniform law on the sphere of `E` to the uniform law on the
 sphere of `F`. With `F = E` this is invariance under orthogonal transformations. -/
 theorem map_uniformSphereMeasure (f : E ≃ₗᵢ[ℝ] F) :
     (uniformSphereMeasure E).map (Subtype.map f fun x hx ↦ by simpa using hx) =
       uniformSphereMeasure F := by
-  rw [uniformSphereMeasure_def, uniformSphereMeasure_def, Measure.map_smul, map_toSphere,
+  rw [uniformSphereMeasure_def, uniformSphereMeasure_def, Measure.map_smul, f.map_toSphere,
     f.measurePreserving.map_eq, toSphere_volume_apply_univ, toSphere_volume_apply_univ,
     f.toLinearEquiv.finrank_eq]
   exact (f.continuous.measurable.subtype_map _).aemeasurable
+
+end LinearIsometryEquiv
+
+namespace TauCeti.Probability
+
+section Mean
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
 
 /-- The uniform law on the sphere has embedded mean zero. -/
 theorem integral_coe_uniformSphereMeasure :
@@ -120,7 +140,7 @@ theorem integral_coe_uniformSphereMeasure :
   have hg : Measurable g := f.continuous.measurable.subtype_map _
   have h := integral_map (μ := uniformSphereMeasure E) hg.aemeasurable
     (continuous_subtype_val.aestronglyMeasurable (f := ((↑) : sphere (0 : E) 1 → E)))
-  rw [map_uniformSphereMeasure f] at h
+  rw [f.map_uniformSphereMeasure] at h
   have hg' : ∀ x : sphere (0 : E) 1, (g x : E) = -(x : E) := fun x ↦ by
     simp only [g]
     rw [Subtype.map_coe]
@@ -132,73 +152,19 @@ theorem integral_coe_uniformSphereMeasure :
     exact neg_add_cancel _
   exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
 
-end UniformSphere
-
-section Direction
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-open Classical in
-/-- The direction of a vector on the unit sphere: `‖x‖⁻¹ • x` for a nonzero vector `x`, and the
-assigned point `e` of the sphere at the origin. -/
-def sphereDirection (e : sphere (0 : E) 1) (x : E) : sphere (0 : E) 1 :=
-  ⟨if x = 0 then e else NormedSpace.normalize x, by
-    split_ifs with hx
-    exacts [e.2, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)]⟩
-
-variable (e : sphere (0 : E) 1) {x : E}
-
-/-- The direction of the origin is the assigned point. -/
-@[simp]
-theorem sphereDirection_zero : sphereDirection e 0 = e := by
-  simp [sphereDirection]
-
-/-- The direction of a nonzero vector is its normalization. -/
-theorem coe_sphereDirection_of_ne_zero (hx : x ≠ 0) :
-    (sphereDirection e x : E) = NormedSpace.normalize x := by
-  simp [sphereDirection, hx]
-
-/-- A vector is its norm times its direction. -/
-@[simp]
-theorem norm_smul_sphereDirection (x : E) : ‖x‖ • (sphereDirection e x : E) = x := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · rw [coe_sphereDirection_of_ne_zero e hx, NormedSpace.norm_smul_normalize]
-
-/-- A positive multiple of a point of the sphere has that point as its direction. -/
-@[simp]
-theorem sphereDirection_smul_of_pos {r : ℝ} (hr : 0 < r) (u : sphere (0 : E) 1) :
-    sphereDirection e (r • (u : E)) = u := by
-  have hu : (u : E) ≠ 0 := ne_zero_of_mem_sphere one_ne_zero u
-  ext1
-  rw [coe_sphereDirection_of_ne_zero e (smul_ne_zero hr.ne' hu),
-    NormedSpace.normalize_smul_of_pos hr,
-    NormedSpace.normalize_eq_self_of_norm_eq_one (norm_eq_of_mem_sphere u)]
-
-/-- A point of the sphere is its own direction. -/
-@[simp]
-theorem sphereDirection_coe (u : sphere (0 : E) 1) : sphereDirection e (u : E) = u := by
-  simpa using sphereDirection_smul_of_pos e one_pos u
-
-/-- The direction map is measurable. -/
-@[fun_prop]
-theorem measurable_sphereDirection [MeasurableSpace E] [BorelSpace E] :
-    Measurable (sphereDirection e) := by
-  unfold sphereDirection NormedSpace.normalize
-  refine Measurable.subtype_mk (Measurable.ite (measurableSet_singleton 0) measurable_const ?_)
-  fun_prop
-
-end Direction
+end Mean
 
 section Radial
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- **The direction of a radial law is uniform and independent of the radius.** If a finite
-measure has a density against Lebesgue measure depending only on the norm, then its direction
-and its radius are independent, and the direction is uniform on the sphere. The assigned
-direction `e` of the origin is irrelevant since the origin is a null set. -/
+/-- **Polar factorization of a radial law.** If a finite measure has a density against Lebesgue
+measure depending only on the norm, then the joint law of its direction and its radius is the
+product of the uniform law on the sphere and the law of the radius. For a probability measure this
+says that the direction is uniform on the sphere and independent of the radius; in general the
+direction marginal is the uniform law scaled by the total mass. The assigned direction `e` of the
+origin is irrelevant since the origin is a null set. -/
 theorem map_sphereDirection_prod_norm_withDensity (e : sphere (0 : E) 1) {φ : ℝ → ℝ≥0∞}
     (hφ : Measurable φ) [IsFiniteMeasure ((volume : Measure E).withDensity fun x ↦ φ ‖x‖)] :
     ((volume : Measure E).withDensity fun x ↦ φ ‖x‖).map (fun x ↦ (sphereDirection e x, ‖x‖)) =
@@ -232,11 +198,18 @@ theorem map_sphereDirection_prod_norm_withDensity (e : sphere (0 : E) 1) {φ : �
   have hnorm : ∀ t, (‖·‖) ⁻¹' t = Φ ⁻¹' (univ ×ˢ t) := fun t ↦ by ext; simp [Φ]
   have hσ₀ : (volume : Measure E).toSphere univ ≠ 0 :=
     Measure.measure_univ_ne_zero.2 (Measure.toSphere_ne_zero _)
+  -- The uniform law times the total surface mass recovers the surface measure.
+  have hσ : ∀ s, uniformSphereMeasure E s * (volume : Measure E).toSphere univ =
+      (volume : Measure E).toSphere s := fun s ↦ by
+    rw [uniformSphereMeasure_def, Measure.smul_apply, smul_eq_mul, ← ENNReal.div_eq_inv_mul,
+      ENNReal.div_mul_cancel hσ₀ (measure_ne_top _ _)]
   refine (Measure.prod_eq fun s t hs ht ↦ ?_).symm
-  rw [Measure.map_apply hΦ (hs.prod ht), key s t hs ht, Measure.map_apply measurable_norm ht,
-    hnorm, key univ t .univ ht, uniformSphereMeasure_def, Measure.smul_apply, smul_eq_mul,
-    mul_comm _ ((volume : Measure E).toSphere s), mul_assoc, ← mul_assoc _ _ (K t),
-    ENNReal.inv_mul_cancel hσ₀ (measure_ne_top _ _), one_mul]
+  have hprod : (ν.map Φ) (s ×ˢ t) = (volume : Measure E).toSphere s * K t := by
+    rw [Measure.map_apply hΦ (hs.prod ht), key s t hs ht]
+  have hrad : (ν.map (‖·‖)) t = (volume : Measure E).toSphere univ * K t := by
+    rw [Measure.map_apply measurable_norm ht, hnorm, key univ t .univ ht]
+  rw [hprod, hrad, ← hσ s]
+  ring
 
 /-- **The direction of a standard Gaussian vector is uniform and independent of its radius.**
 The pair of the direction and the norm of a standard Gaussian vector has the product of the
@@ -251,9 +224,13 @@ theorem stdGaussian_map_sphereDirection_prod_norm (e : sphere (0 : E) 1) :
   -- Transport the isotropic density of the Euclidean standard Gaussian along an orthonormal basis.
   have hG : stdGaussian E = (volume : Measure E).withDensity fun x ↦ φ ‖x‖ := by
     let b := (stdOrthonormalBasis ℝ E).repr
-    rw [← stdGaussian_map b.symm, stdGaussian_eq_withDensity, ← b.symm.coe_toHomeomorph,
-      ← Homeomorph.toMeasurableEquiv_coe, MeasurableEquiv.map_withDensity,
-      Homeomorph.toMeasurableEquiv_coe, b.symm.coe_toHomeomorph, b.symm.measurePreserving.map_eq]
+    have hvol : (volume : Measure (EuclideanSpace ℝ (Fin d))).map b.symm = volume :=
+      b.symm.measurePreserving.map_eq
+    have htransport : ∀ g : EuclideanSpace ℝ (Fin d) → ℝ≥0∞,
+        ((volume : Measure (EuclideanSpace ℝ (Fin d))).withDensity g).map b.symm =
+          (volume : Measure E).withDensity fun x ↦ g (b x) := fun g ↦ by
+      simpa [hvol] using b.symm.toMeasurableEquiv.map_withDensity volume g
+    rw [← stdGaussian_map b.symm, stdGaussian_eq_withDensity, htransport]
     congr 1
     funext x
     simp [φ, d]
@@ -272,29 +249,29 @@ theorem stdGaussian_map_sphereDirection (e : sphere (0 : E) 1) :
 
 end Radial
 
-section RandomVariable
+end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open TauCeti TauCeti.Probability
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → E}
 
 /-- The direction of a random vector with standard Gaussian law is uniform on the sphere. -/
-theorem hasLaw_sphereDirection_of_hasLaw_stdGaussian (hX : HasLaw X (stdGaussian E) P)
+theorem HasLaw.sphereDirection_stdGaussian (hX : HasLaw X (stdGaussian E) P)
     (e : sphere (0 : E) 1) :
     HasLaw (fun ω ↦ sphereDirection e (X ω)) (uniformSphereMeasure E) P :=
   HasLaw.comp ⟨(measurable_sphereDirection e).aemeasurable, stdGaussian_map_sphereDirection e⟩ hX
 
 /-- The direction of a random vector with standard Gaussian law is independent of its norm. -/
-theorem indepFun_sphereDirection_norm_of_hasLaw_stdGaussian (hX : HasLaw X (stdGaussian E) P)
+theorem HasLaw.indepFun_sphereDirection_norm_stdGaussian (hX : HasLaw X (stdGaussian E) P)
     (e : sphere (0 : E) 1) :
     IndepFun (fun ω ↦ sphereDirection e (X ω)) (fun ω ↦ ‖X ω‖) P := by
   have := hX.isProbabilityMeasure
-  have hnorm : HasLaw (fun ω ↦ ‖X ω‖) (chiMeasure (Module.finrank ℝ E) 1) P :=
-    HasLaw.comp ⟨measurable_norm.aemeasurable, stdGaussian_map_norm E⟩ hX
-  refine (indepFun_iff_hasLaw_prodMk_prod
-    (hasLaw_sphereDirection_of_hasLaw_stdGaussian hX e) hnorm).2 ?_
+  refine (indepFun_iff_hasLaw_prodMk_prod (hX.sphereDirection_stdGaussian e)
+    hX.norm_stdGaussian).2 ?_
   exact HasLaw.comp ⟨((measurable_sphereDirection e).prodMk measurable_norm).aemeasurable,
     stdGaussian_map_sphereDirection_prod_norm e⟩ hX
 
-end RandomVariable
-
-end TauCeti.Probability
+end ProbabilityTheory

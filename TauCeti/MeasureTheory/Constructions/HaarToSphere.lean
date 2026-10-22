@@ -52,8 +52,8 @@ the Laplacian.
 * `TauCeti.setIntegral_ball_zero_eq_integral_Ioo`,
   `TauCeti.integral_Ioo_pow_mul_toSphere_real_univ`: integration over a ball about the origin in
   polar coordinates, and the corresponding formula for the measure of the ball.
-* `TauCeti.map_toSphere`: a linear isometric equivalence carries the surface measure of `μ` to
-  the surface measure of the image of `μ`.
+* `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
+  measure of `μ` to the surface measure of the image of `μ`.
 * `TauCeti.toSphere_volume_apply_univ`: on a real inner product space of dimension `d`, the
   total surface measure of the unit sphere is `2 π ^ (d / 2) / Γ (d / 2)`.
 -/
@@ -302,7 +302,7 @@ theorem integral_norm_rpow_neg_finrank_mul_fderiv_apply_self {f : E → ℝ} (hf
 
 end TauCeti
 
-namespace TauCeti
+namespace LinearIsometryEquiv
 
 open MeasureTheory Metric Set
 open scoped Pointwise
@@ -331,11 +331,19 @@ theorem map_toSphere (f : E ≃ₗᵢ[ℝ] F) (μ : Measure E) :
       refine ⟨r, hr, ⟨f.symm v, by simp⟩, ?_, ?_⟩
       · simpa [g, Subtype.map] using hv
       · simpa using congrArg f.symm hx
+  -- Pushing forward along `f` evaluates any set through its preimage, measurable or not.
+  have hmap : ∀ t : Set F, μ.map f t = μ (f ⁻¹' t) := fun t ↦ by
+    simpa using f.toHomeomorph.toMeasurableEquiv.map_apply (μ := μ) t
   rw [Measure.map_apply hg hs, Measure.toSphere_apply' _ (hg hs), Measure.toSphere_apply' _ hs,
-    hcone, ← f.coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe, MeasurableEquiv.map_apply,
-    f.toLinearEquiv.finrank_eq]
+    hmap, hcone, f.toLinearEquiv.finrank_eq]
 
 end Isometry
+
+end LinearIsometryEquiv
+
+namespace TauCeti
+
+open MeasureTheory Metric Set
 
 section InnerProductSpace
 
