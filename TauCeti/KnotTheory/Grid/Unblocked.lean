@@ -719,6 +719,14 @@ theorem constantCoeffReduction_unblockedDifferential_eq_fullyBlockedDifferential
   rw [G.unblockedDifferential_single_apply,
     ← G.fullyBlockedRectangleCount_eq_constantCoeff, G.fullyBlockedDifferential_single_apply]
 
+/-- Taking constant coefficients intertwines the unblocked and fully blocked differentials. -/
+@[simp]
+theorem fullyBlockedDifferential_mapRange_constantCoeff (c : GridChainMinus (ZMod 2) n) :
+    G.fullyBlockedDifferential (c.mapRange constantCoeff (map_zero _)) =
+      (G.unblockedDifferential (ZMod 2) c).mapRange constantCoeff (map_zero _) := by
+  rw [← G.constantCoeffReduction_unblockedDifferential_eq_fullyBlockedDifferential,
+    LinearMap.constantCoeffReduction_mapRange_constantCoeff]
+
 /-- A grid state that no counted rectangle leaves is a cycle of `GC⁻`. -/
 theorem unblockedDifferential_single_eq_zero {z : GridState n}
     (hz : ∀ y : GridState n, G.unblockedRectangles z y = ∅) :

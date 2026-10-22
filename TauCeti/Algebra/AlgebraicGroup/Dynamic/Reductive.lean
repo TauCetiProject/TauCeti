@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Coordinate
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Tangent.CharZero
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent.Connected
@@ -75,11 +76,8 @@ theorem isUnipotentRadicalCandidate_unipotentDefiningHopfIdeal [Algebra.Smooth k
     ?_
   rw [smoothUnipotentCommHopfAlgProperty_iff]
   refine ⟨?_, fun g ↦ isUnipotentPoint_quotient_of_le_unipotent _ _ l (AlgebraicClosure k) ?_ g⟩
-  · have : Algebra.FormallySmooth k (H ⧸ (parabolicDefiningHopfIdeal l).toIdeal) := by
-      rw [hl, HopfIdeal.bot_toIdeal]
-      exact Algebra.FormallySmooth.of_equiv (AlgEquiv.quotientBot k H).symm
-    have := formallySmooth_quotient_unipotentDefiningHopfIdeal l
-    exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
+  · exact (smoothCommHopfAlgProperty_iff _).mp
+      (smoothCommHopfAlgProperty_quotient_unipotentDefiningHopfIdeal l)
   · rw [quotientPointsSubgroup_unipotentDefiningHopfIdeal]
 
 end BialgHom

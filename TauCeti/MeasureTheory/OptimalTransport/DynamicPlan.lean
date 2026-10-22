@@ -127,6 +127,10 @@ instance isProbabilityMeasure_endpointLaw (η : Measure C(I, X)) [IsProbabilityM
 
 variable [BorelSpace X]
 
+/-- The pair of endpoints `γ ↦ (γ 0, γ 1)` of a path is a measurable function on `C(I, X)`. -/
+theorem _root_.ContinuousMap.measurable_endpoints : Measurable fun γ : C(I, X) ↦ (γ 0, γ 1) :=
+  (ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)
+
 /-- The value of the law at time `t` on a measurable set `s` is the `η`-measure of the paths
 lying in `s` at time `t`. -/
 theorem timeMarginal_apply (η : Measure C(I, X)) (t : I) {s : Set X} (hs : MeasurableSet s) :
@@ -137,8 +141,7 @@ theorem timeMarginal_apply (η : Measure C(I, X)) (t : I) {s : Set X} (hs : Meas
 pair of endpoints lies in `s`. -/
 theorem endpointLaw_apply (η : Measure C(I, X)) {s : Set (X × X)} (hs : MeasurableSet s) :
     endpointLaw η s = η {γ | (γ 0, γ 1) ∈ s} :=
-  Measure.map_apply
-    ((ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)) hs
+  Measure.map_apply ContinuousMap.measurable_endpoints hs
 
 /-- The first marginal of the endpoint law is the law at time `0`. -/
 @[simp]
@@ -231,12 +234,10 @@ theorem exists_ae_mem_geodesicPaths_endpointLaw_eq (π : Measure (X × X)) [SFin
     ∃ η : Measure C(I, X), SFinite η ∧ (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧
       endpointLaw η = π := by
   obtain ⟨G, hG, hGπ⟩ := exists_measurable_ae_mem_geodesicPaths π hπ
-  have he : Measurable fun γ : C(I, X) ↦ (γ 0, γ 1) :=
-    (ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)
   refine ⟨π.map G, inferInstance,
     (ae_map_iff hG.aemeasurable isClosed_geodesicPaths.measurableSet).2 ?_, ?_⟩
   · filter_upwards [hGπ] with z hz using hz.1
-  · rw [endpointLaw_def, Measure.map_map he hG]
+  · rw [endpointLaw_def, Measure.map_map ContinuousMap.measurable_endpoints hG]
     conv_rhs => rw [← Measure.map_id (μ := π)]
     refine Measure.map_congr ?_
     filter_upwards [hGπ] with z hz
@@ -365,7 +366,7 @@ theorem exists_ae_mem_geodesicPaths_wassersteinEDist_timeMarginal_le [IsGeodesic
     rw [← Measure.endpointLaw_def, hηπ]
     infer_instance
   refine ⟨η, Measure.isFiniteMeasure_of_map (μ := η) (f := fun γ ↦ (γ 0, γ 1))
-    ((ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)).aemeasurable,
+    ContinuousMap.measurable_endpoints.aemeasurable,
     hη, ?_, ?_, fun s t ↦ ?_⟩
   · rw [← Measure.fst_endpointLaw, hηπ, hπ.fst_eq]
   · rw [← Measure.snd_endpointLaw, hηπ, hπ.snd_eq]

@@ -267,33 +267,6 @@ private lemma up_r_of {p q r j : ℤ} (h : p + q + r = j) :
     ComplexShape.r (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ)
       (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q, r) = j := h
 
-/- Mathlib's `mapBifunctor₁₂.ι_eq` and `mapBifunctor₂₃.ι_eq` are stated for the raw totalization
-`HomologicalComplex.mapBifunctor`; these two restatements spell the same equations with the
-monoidal `⊗`, which is the form in which the hexagon and its ingredients occur. -/
-@[reassoc]
-private lemma ι₁₂_eq (p q r pq j : ℤ) (hpq : p + q = pq) (hj : p + q + r = j) :
-    HomologicalComplex.mapBifunctor₁₂.ι (curriedTensor (ModuleCat.{v} R))
-        (curriedTensor (ModuleCat.{v} R)) X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ)
-        p q r j (up_r_of hj) =
-      (HomologicalComplex.ιTensorObj X Y p q pq hpq ▷ Z.X r) ≫
-        HomologicalComplex.ιTensorObj (X ⊗ Y) Z pq r j (by omega) := by
-  rw [HomologicalComplex.mapBifunctor₁₂.ι_eq (curriedTensor (ModuleCat.{v} R))
-    (curriedTensor (ModuleCat.{v} R)) X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ)
-    p q r pq j hpq (by dsimp; omega)]
-  rfl
-
-@[reassoc]
-private lemma ι₂₃_eq (p q r qr j : ℤ) (hqr : q + r = qr) (hj : p + q + r = j) :
-    HomologicalComplex.mapBifunctor₂₃.ι (curriedTensor (ModuleCat.{v} R))
-        (curriedTensor (ModuleCat.{v} R)) X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ)
-        (ComplexShape.up ℤ) p q r j (up_r_of hj) =
-      (X.X p ◁ HomologicalComplex.ιTensorObj Y Z q r qr hqr) ≫
-        HomologicalComplex.ιTensorObj X (Y ⊗ Z) p qr j (by omega) := by
-  rw [HomologicalComplex.mapBifunctor₂₃.ι_eq (curriedTensor (ModuleCat.{v} R))
-    (curriedTensor (ModuleCat.{v} R)) X Y Z (ComplexShape.up ℤ) (ComplexShape.up ℤ)
-    (ComplexShape.up ℤ) p q r qr j hqr (by dsimp; omega)]
-  rfl
-
 private lemma ι₁₂_hexagon_forward_lhs (p q r j : ℤ)
     (h : ComplexShape.r (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ)
       (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q, r) = j) :
@@ -308,7 +281,7 @@ private lemma ι₁₂_hexagon_forward_lhs (p q r j : ℤ)
             (ComplexShape.up ℤ) q r p j (up_r_of (by have := up_r_eq h; omega))) := by
   have h' := up_r_eq h
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    ι₁₂_eq R X Y Z p q r (p + q) j rfl h',
+    HomologicalComplex.mapBifunctor₁₂.ι_eq_whiskerRight X Y Z p q r (p + q) j rfl h',
     Category.assoc,
     HomologicalComplex.ι_ι_associator_hom_assoc _ _ _ p q r (p + q) (q + r) j rfl rfl h'
       (by omega),
@@ -318,7 +291,7 @@ private lemma ι₁₂_hexagon_forward_lhs (p q r j : ℤ)
   simp only [Linear.units_smul_comp, Category.assoc]
   rw [HomologicalComplex.ι_ι_associator_hom Y Z X q r p (q + r) (r + p) j rfl rfl (by omega)
     (by omega), Linear.comp_units_smul,
-    ← ι₂₃_eq R Y Z X q r p (r + p) j rfl (by omega)]
+    ← HomologicalComplex.mapBifunctor₂₃.ι_eq_whiskerLeft Y Z X q r p (r + p) j rfl (by omega)]
 
 private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
     (h : ComplexShape.r (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ)
@@ -335,7 +308,8 @@ private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
             (ComplexShape.up ℤ) q r p j (up_r_of (by have := up_r_eq h; omega))) := by
   have h' := up_r_eq h
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    ι₁₂_eq R X Y Z p q r (q + p) j (by omega) h',
+    HomologicalComplex.mapBifunctor₁₂.ι_eq_whiskerRight X Y Z p q r (q + p) j (by omega)
+      (by omega),
     Category.assoc, HomologicalComplex.whiskerRight_eq_mapBifunctorMap,
     HomologicalComplex.ι_mapBifunctorMap_assoc]
   simp only [HomologicalComplex.id_f, CategoryTheory.Functor.map_id, Category.id_comp]
@@ -355,7 +329,8 @@ private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
     ← Units.smul_def,
     MonoidalCategory.whiskerLeft_comp,
     Linear.units_smul_comp, Category.assoc,
-    ← ι₂₃_eq R Y Z X q r p (p + r) j (by omega) (by omega),
+    ← HomologicalComplex.mapBifunctor₂₃.ι_eq_whiskerLeft Y Z X q r p (p + r) j (by omega)
+      (by omega),
     Linear.comp_units_smul, Linear.comp_units_smul, smul_smul, ← Int.negOnePow_add,
     show p * q + p * r = p * (q + r) by ring]
 

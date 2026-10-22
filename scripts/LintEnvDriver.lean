@@ -21,7 +21,7 @@ candidate code runs, and the executable is mounted read-only; see `lint-env.sh`.
 
 Usage: `lint-env-driver [--only-listed] <tag> <marker-file> <modules-file> <linter>...`
 
-* Imports every module listed (one per line) in `<modules-file>`. `importModules` loads the closure
+* Imports Mathlib's standard lint support and every project module listed in `<modules-file>`. `importModules` loads the closure
   at the `private` olean level, as the legacy (non-module) `#lint` driver did; see PRIVATE
   DECLARATIONS in `lint-env.sh`.
 * Runs exactly the named linters on the declarations of the `TauCeti` package, or, with
@@ -102,7 +102,8 @@ unsafe def main (args : List String) : IO UInt32 := do
   initSearchPath (← findSysroot)
   -- The legacy `#lint` driver ran imported initializers too (`lean` always does).
   enableInitializersExecution
-  let env ← importModules (modules.map ({ module := · })) {} (trustLevel := 1024)
+  let lintImports := #[`Mathlib.Init, `Mathlib.Tactic.SetNotationForOrder] ++ modules
+  let env ← importModules (lintImports.map ({ module := · })) {} (trustLevel := 1024)
     (loadExts := true)
   let opts : Options := ({} : Options).setBool `trace.Batteries.Lint true
   let ctx : Core.Context := { fileName := tag, fileMap := default, options := opts }

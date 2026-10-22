@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Lp.Weak
 public import TauCeti.Analysis.OperatorIdeal.Carrier
 public import Mathlib.Topology.Semicontinuity.Basic
+import TauCeti.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Basic.Denumerable
 import Mathlib.Topology.Algebra.InfiniteSum.Real
@@ -305,13 +306,7 @@ theorem enorm_le_summingENorm (T : E →L[𝕜] F) : ‖T‖ₑ ≤ T.summingENo
 theorem summingENorm_eq_zero_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {T : E →L[𝕜] F} : T.summingENorm p = 0 ↔ T = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ summingENorm_zero⟩
-  have hn : ‖T‖ = 0 := by
-    have h0 := congrArg ENNReal.toReal (le_antisymm (h ▸ enorm_le_summingENorm T) bot_le)
-    rw [toReal_enorm] at h0
-    simpa using h0
-  -- Mathlib's `opNorm_zero_iff` requires a normed source; here the source is only seminormed.
-  ext v
-  exact norm_le_zero_iff.mp (by simpa [hn] using T.le_opNorm v)
+  exact T.opENorm_eq_zero_iff.mp (le_antisymm (h ▸ enorm_le_summingENorm T) bot_le)
 
 /-- The rank-one operator `x ↦ f x • y` has gauge `‖f‖ ‖y‖`. -/
 @[simp]

@@ -20,6 +20,9 @@ generic measure and integration API is in `TauCeti.MeasureTheory.Measure.AtomMix
 probability measure, the results compute the cdf, mean, variance, moment-generating function, and
 characteristic function. These formulas allow atomic and continuous parts to be handled without
 pretending that the whole mixture has a density.
+
+The formulas live in `MeasureTheory.Measure` and support dot notation on the base measure,
+for example `μ.cdf_atomMixture` and `μ.mgf_id_atomMixture`.
 -/
 
 public section
@@ -30,7 +33,7 @@ open MeasureTheory ProbabilityTheory Set
 
 open scoped ENNReal unitInterval
 
-namespace TauCeti.Probability
+namespace MeasureTheory.Measure
 
 /-! ### Distribution and moment formulas -/
 
@@ -49,16 +52,12 @@ theorem cdf_atomMixture (μ : Measure ℝ) [IsProbabilityMeasure μ] (c : ℝ)
   · split_ifs <;> simp
   all_goals finiteness
 
-end TauCeti.Probability
-
-namespace TauCeti.Probability
-
 /-- The mean of an atom mixture is the convex combination of the component means. -/
 theorem integral_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval)
     (hμ : Integrable id μ) :
     ∫ x, x ∂μ.atomMixture c w =
       (w : ℝ) * c + (1 - (w : ℝ)) * ∫ x, x ∂μ := by
-  simpa only [id_eq, smul_eq_mul] using integral_atomMixture μ c w id hμ
+  simpa only [id_eq, smul_eq_mul] using μ.integral_atomMixture c w id hμ
 
 /-- The second raw moment of an atom mixture is the convex combination of the component second
 moments. -/
@@ -66,7 +65,7 @@ theorem integral_sq_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval)
     (hμ : Integrable (fun x => x ^ 2) μ) :
     ∫ x, x ^ 2 ∂μ.atomMixture c w =
       (w : ℝ) * c ^ 2 + (1 - (w : ℝ)) * ∫ x, x ^ 2 ∂μ := by
-  simpa only [smul_eq_mul] using integral_atomMixture μ c w (fun x => x ^ 2) hμ
+  simpa only [smul_eq_mul] using μ.integral_atomMixture c w (fun x => x ^ 2) hμ
 
 /-- The variance of an atom mixture is the within-component variance plus the variance caused by
 separating the atom from the component mean. -/
@@ -81,8 +80,8 @@ theorem variance_id_atomMixture (μ : Measure ℝ) [IsProbabilityMeasure μ] (c 
     exact (hdirac.smul_measure (by simp)).add_measure (hμ.smul_measure (by simp))
   rw [variance_eq_sub hmix, variance_eq_sub hμ]
   simp only [Pi.pow_apply, id_eq]
-  rw [integral_id_atomMixture _ _ _
-    (hμ.integrable one_le_two), integral_sq_atomMixture _ _ _ hμ.integrable_sq]
+  rw [μ.integral_id_atomMixture _ _ (hμ.integrable one_le_two),
+    μ.integral_sq_atomMixture _ _ hμ.integrable_sq]
   ring
 
 private theorem mgf_atomMixture_of_integrable (μ : Measure ℝ) (c : ℝ)
@@ -90,7 +89,7 @@ private theorem mgf_atomMixture_of_integrable (μ : Measure ℝ) (c : ℝ)
     (hμ : Integrable (fun x => Real.exp (t * x)) μ) :
     mgf id (μ.atomMixture c w) t =
       (w : ℝ) * Real.exp (t * c) + (1 - (w : ℝ)) * mgf id μ t := by
-  simpa [mgf] using integral_atomMixture μ c w (fun x => Real.exp (t * x)) hμ
+  simpa [mgf] using μ.integral_atomMixture c w (fun x => Real.exp (t * x)) hμ
 
 /-- Away from the pure-atom endpoint, an atom mixture has an exponential moment exactly when its
 base component does. -/
@@ -117,7 +116,7 @@ theorem integrableExpSet_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitIn
     exact iff_true_intro (integrable_dirac (by finiteness))
   · simp only [hw, ↓reduceIte]
     ext t
-    exact integrable_exp_mul_id_atomMixture_iff μ c hw t
+    exact μ.integrable_exp_mul_id_atomMixture_iff c hw t
 
 /-- The moment-generating function of an atom mixture is the convex combination of the component
 moment-generating functions throughout the mixture's exact exponential-integrability domain. -/
@@ -128,8 +127,8 @@ theorem mgf_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval) (t : 
   by_cases hw : w = 1
   · subst w
     simp [mgf, Measure.atomMixture_def]
-  · exact mgf_atomMixture_of_integrable μ c w t
-      ((integrable_exp_mul_id_atomMixture_iff μ c hw t).mp ht)
+  · exact μ.mgf_atomMixture_of_integrable c w t
+      ((μ.integrable_exp_mul_id_atomMixture_iff c hw t).mp ht)
 
 /-- The cumulant-generating function of an atom mixture is the logarithm of the weighted sum of
 component mgfs, rather than a mixture of their cumulant-generating functions. -/
@@ -137,7 +136,7 @@ theorem cgf_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval) (t : 
     (ht : t ∈ integrableExpSet id (μ.atomMixture c w)) :
     cgf id (μ.atomMixture c w) t =
       Real.log ((w : ℝ) * Real.exp (t * c) + (1 - (w : ℝ)) * mgf id μ t) := by
-  rw [cgf, mgf_id_atomMixture μ c w t ht]
+  rw [cgf, μ.mgf_id_atomMixture c w t ht]
 
 /-- The characteristic function of an atom mixture is the convex combination of the component
 characteristic functions. -/
@@ -152,6 +151,6 @@ theorem charFun_atomMixture (μ : Measure ℝ) [IsFiniteMeasure μ] (c : ℝ)
     convert le_rfl
     simp [← Complex.ofReal_mul]
   simpa [charFun_apply_real] using
-    integral_atomMixture μ c w (fun x : ℝ => Complex.exp (t * x * Complex.I)) hμ
+    μ.integral_atomMixture c w (fun x : ℝ => Complex.exp (t * x * Complex.I)) hμ
 
-end TauCeti.Probability
+end MeasureTheory.Measure

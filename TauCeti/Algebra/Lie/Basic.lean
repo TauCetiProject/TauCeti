@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.EngelSubalgebra
 public import Mathlib.Algebra.Lie.IdealOperations
 public import Mathlib.Algebra.Lie.Semisimple.Defs
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Basis.Basic
 
 /-!
@@ -35,8 +34,8 @@ This file supplies general constructions for Lie modules that are missing from M
   a representation implies irreducibility of the induced Lie module.
 * `Module.Basis.repr_lie_eq_sum`: a Lie bracket coordinate is a weighted sum of bracket columns.
 
-* `TauCeti.LieModuleHom.instFiniteDimensional`: the morphism space of two finite-dimensional Lie
-  modules is finite-dimensional.
+* `TauCeti.LieModuleHom.instModuleFinite`: the morphism space is finitely generated when its
+  source is finitely generated and its target is Noetherian over the base ring.
 * `TauCeti.lieSpan_le_lieAnnihilator`: a vector annihilated by a generating set is annihilated by
   the Lie subalgebra it generates.
 * `TauCeti.mem_lieAnnihilator`: membership in `lieAnnihilator R L v` is equivalent to vanishing
@@ -260,16 +259,16 @@ namespace LieModuleHom
 
 /-! ### Morphism spaces of Lie modules -/
 
-/-- The morphism space of two finite-dimensional Lie modules is finite-dimensional: by
-`LieModule.maxTrivLinearMapEquivLieModuleHom` it is the maximal trivial submodule of the
-finite-dimensional space of all linear maps between them. -/
-instance instFiniteDimensional {K : Type u} {L : Type v} {M : Type w} {N : Type w₁}
-    [Field K] [LieRing L] [LieAlgebra K L]
-    [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
-    [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N]
-    [FiniteDimensional K N] :
-    FiniteDimensional K (M →ₗ⁅K,L⁆ N) :=
-  Module.Finite.equiv (LieModule.maxTrivLinearMapEquivLieModuleHom (R := K) (L := L)
+/-- When the source is finitely generated and the target is Noetherian as modules over the base
+ring, their space of Lie module morphisms is finitely generated over that ring. In particular,
+the morphism space of two finite-dimensional Lie modules over a field is finite-dimensional. -/
+instance instModuleFinite {R : Type u} {L : Type v} {M : Type w} {N : Type w₁}
+    [CommRing R] [LieRing L] [LieAlgebra R L]
+    [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M] [Module.Finite R M]
+    [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
+    [IsNoetherian R N] :
+    Module.Finite R (M →ₗ⁅R,L⁆ N) :=
+  Module.Finite.equiv (LieModule.maxTrivLinearMapEquivLieModuleHom (R := R) (L := L)
     (M := M) (N := N))
 
 end LieModuleHom
