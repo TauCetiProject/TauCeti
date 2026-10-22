@@ -45,7 +45,8 @@ product. The definition does not assume these hypotheses: the product over the p
 
 ## Main results
 
-* `TauCeti.twistedHeight_pos`: the twisted height of a nonzero point is positive.
+* `TauCeti.twistedHeight_pos`: for `Q > 0` and forms linearly independent at every place,
+  the twisted height of a nonzero point is positive.
 * `TauCeti.twistedHeight_smul`: the twisted height is projective, by the product formula.
 * `TauCeti.twistedHeight_coordForms_zero`: for coordinate forms and zero weights the twisted
   height is the absolute multiplicative height `Height.mulHeight x ^ (1 / [K : ℚ])`.
@@ -189,7 +190,8 @@ theorem twistedHeight_nonneg (hQ : 0 ≤ Q) (x : Fin n → K) : 0 ≤ twistedHei
   · rw [twistedHeight_of_ne_zero hx]
     exact finprod_nonneg fun v ↦ twistedLocalHeight_nonneg hQ v x
 
-/-- The twisted height of a nonzero point is positive. -/
+/-- For `Q > 0` and forms linearly independent at every place, the twisted height of a nonzero
+point is positive. -/
 theorem twistedHeight_pos (hQ : 0 < Q) (hL : ∀ v, LinearIndependent K (L v)) {x : Fin n → K}
     (hx : x ≠ 0) : 0 < twistedHeight L c Q x := by
   rw [twistedHeight_of_ne_zero hx]
