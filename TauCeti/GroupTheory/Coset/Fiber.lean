@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.SetTheory.Cardinal.Finite
 -- Proof-only: `smulAddHom`, the `n • ·` homomorphism the zsmul case is read through.
 import Mathlib.Algebra.Module.End
+-- Proof-only: `Set.Finite.preimage'`, for the kernel of a composite.
+import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # A nonempty fiber of a group homomorphism is a copy of the kernel
@@ -41,6 +43,8 @@ therefore take a point in the fiber as an argument, while the finiteness result 
   fiber has as many elements as the kernel.
 * `AddMonoidHom.finite_fiber` (and `MonoidHom.finite_fiber`): every fiber is finite when the
   kernel is.
+* `AddMonoidHom.finite_ker_comp` (and `MonoidHom.finite_ker_comp`): the kernel of a composite is
+  finite when both kernels are.
 * `AddMonoidHom.sum_fiber_eq_sum_ker_add_left` (and
   `MonoidHom.prod_fiber_eq_prod_ker_mul_left`): summing an arbitrary function over a nonempty fiber
   is summing its values on `a + t` over the kernel.
@@ -115,6 +119,17 @@ theorem MonoidHom.finite_fiber {G H : Type*} [Group G] [MulOneClass H] (f : G �
   rcases isEmpty_or_nonempty {x : G // f x = b} with _ | ⟨⟨a, ha⟩⟩
   · infer_instance
   · exact Finite.of_equiv _ (f.subtypeFiberEquivKer ha).symm
+
+/-- **The kernel of a composite is finite when both kernels are.** It is the preimage under `f`
+of the kernel of `g`, and every fiber of `f` is finite. -/
+@[to_additive
+/-- **The kernel of a composite is finite when both kernels are.** It is the preimage under `f`
+of the kernel of `g`, and every fiber of `f` is finite. -/]
+theorem MonoidHom.finite_ker_comp {G H K : Type*} [Group G] [Group H] [MulOneClass K]
+    (g : H →* K) (f : G →* H) (hg : (g.ker : Set H).Finite) (hf : (f.ker : Set G).Finite) :
+    ((g.comp f).ker : Set G).Finite := by
+  have := hf.to_subtype
+  exact hg.preimage' fun b _ ↦ Set.finite_coe_iff.1 (f.finite_fiber b)
 
 /-- **A product over a nonempty fiber is a product over the kernel translated on the left.** For
 a chosen point `a` in the fiber over `b`, the product of `g` over the fiber equals the product of

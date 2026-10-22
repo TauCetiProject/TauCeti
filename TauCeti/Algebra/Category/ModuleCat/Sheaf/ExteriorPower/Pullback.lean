@@ -45,6 +45,9 @@ comparisons, which uses the pushforward of underlying presheaves
 `TauCeti.SheafOfModules.presheafPushforward` as in the lax monoidal structure of
 `TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward`.
 
+When the coefficient map is an isomorphism and the site functor is also cocontinuous, the
+pushforward comparison is invertible.
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Exercise II.5.16.
@@ -157,6 +160,19 @@ theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
     (by rw [_root_.SheafOfModules.exteriorPowerOneIso_hom_app, Iso.inv_hom_id_assoc])
     (PresheafOfModules.pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
       (commRingCatHom φ) M.val)
+
+-- Adapted from `TauCeti.SheafOfModules.isIso_pushforwardSymmetricPowerComparison`.
+/-- Restriction along a continuous and cocontinuous functor with an isomorphism of coefficient
+sheaves preserves every exterior power. -/
+instance isIso_pushforwardExteriorPowerComparison [F.IsCocontinuous J K] [IsIso φ] (n : ℕ) :
+    IsIso (pushforwardExteriorPowerComparison φ n) := by
+  have hα : IsIso (commRingCatHom φ) := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro U
+    exact (ConcreteCategory.isIso_iff_bijective _).mpr
+      ((ConcreteCategory.isIso_iff_bijective (φ.hom.app U)).mp inferInstance)
+  unfold pushforwardExteriorPowerComparison
+  infer_instance
 
 variable {φ} {G : _root_.SheafOfModules.{u} (ringCatSheaf S) ⥤
     _root_.SheafOfModules.{u} (ringCatSheaf R)} (adj : G ⊣ _root_.SheafOfModules.pushforward φ)

@@ -72,6 +72,8 @@ applied to an explicit diagonalization over a fixed base field. Its degree-one c
   `w₂(Tr_*⟨a⟩) = 0`.
 * `TauCeti.cup_sw1Class_formClass_traceTransfer_sq_galoisCor_eq_zero`:
   `w₁(Tr_*⟨1⟩) ∪ cor (a) = 0`.
+* `TauCeti.sw2Class_formClass_traceTransfer_smul_sq_eq_add_galoisEvens`:
+  `w₂(Tr_*⟨a⟩) = w₂(Tr_*⟨1⟩) + N^{Ev}((a))`.
 * `TauCeti.sw2Class_formClass_traceTransfer_smul_sq`: **the relative Stiefel–Whitney formula in
   degree two**, `w₂(Tr_*⟨a⟩) = w₂(Tr_*⟨1⟩) + N^{Ev}((a)) + w₁(Tr_*⟨1⟩) ∪ cor (a)`.
 * `TauCeti.sw2_eq_add_galoisEvens_add_cup_of_equivalent_traceTransfer`: the same formula on
@@ -195,6 +197,42 @@ theorem cup_sw1Class_formClass_traceTransfer_sq_galoisCor_eq_zero [Invertible (2
     cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one]
   exact hilbertSymbol_normUnits_eq_one ⟨x, by rw [← hx2, _root_.sq]⟩ a
 
+/-- **The Evens norm is the change of `w₂` under twisting the trace form**: for a quadratic
+extension `L/K` and `a ∈ Lˣ`,
+
+```text
+w₂(Tr_*⟨a⟩) = w₂(Tr_*⟨1⟩) + N^{Ev}((a)),
+```
+
+where the Evens norm is taken along any `K`-embedding `σ` of `L` into a separable closure of `K`.
+This is the relative formula `TauCeti.sw2Class_formClass_traceTransfer_smul_sq` without its
+cross term `w₁(Tr_*⟨1⟩) ∪ cor (a)`, which vanishes for a quadratic extension
+(`TauCeti.cup_sw1Class_formClass_traceTransfer_sq_galoisCor_eq_zero`). -/
+theorem sw2Class_formClass_traceTransfer_smul_sq_eq_add_galoisEvens [Invertible (2 : L)]
+    (σ : L →ₐ[K] SeparableClosure K) (hfin : Module.finrank K L = 2) (a : Lˣ)
+    (ha : (((a : L) • QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Nondegenerate)
+    (h1 : ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Nondegenerate) :
+    sw2Class (formClass _ ha) =
+      sw2Class (formClass _ h1) + galoisEvens K L σ hfin (kummerClass a) := by
+  have : Algebra.IsSeparable K L := Algebra.isSeparable_of_finrank_eq_two two_ne_zero hfin
+  obtain ⟨x, d, hx, hx2⟩ :=
+    exists_sq_eq_algebraMap_units_of_finrank_eq_two hfin
+  -- Both `w₂(Tr_*⟨a⟩)` and `N^{Ev}((a))` are known separately for `Tr a = 0` and `Tr a ≠ 0`,
+  -- and in each case they differ by `w₂(Tr_*⟨1⟩) = (2) ∪ (d)`.
+  rw [sw2Class_formClass_traceTransfer_sq_of_sq hfin hx hx2]
+  have h2d : (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+      (kummerClass (unitOfInvertible (2 : K))) (kummerClass d) +
+        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+          (kummerClass (unitOfInvertible (2 : K))) (kummerClass d) = 0 :=
+    (two_nsmul _).symm.trans (cohomF2.two_nsmul_eq_zero _ _ _)
+  by_cases htr : Algebra.trace K L (a : L) = 0
+  · rw [sw2Class_formClass_traceTransfer_smul_sq_of_trace_eq_zero hfin a htr,
+      galoisEvens2_kummerClass_of_trace_eq_zero σ hfin d hx hx2 a htr, h2d]
+  · have hN : Units.map (Algebra.norm K : L →* K) a = Algebra.normUnits K a := Units.ext (by simp)
+    rw [sw2Class_formClass_traceTransfer_smul_sq_of_sq hfin hx hx2 a (t := Units.mk0 _ htr) rfl,
+      galoisEvens2_kummerClass σ hfin d hx hx2 a (Units.mk0 _ htr) rfl, hN, ← add_assoc,
+      add_right_comm, h2d, zero_add]
+
 /-- **The relative Stiefel–Whitney formula in degree two, on the trace forms themselves** (Kahn,
 Théorème 2 in degree two): for a quadratic extension `L/K`, which is separable as `2` is
 invertible, and `a ∈ Lˣ` with Kummer class `(a) ∈ H¹(G_L, 𝔽₂)`,
@@ -214,33 +252,10 @@ theorem sw2Class_formClass_traceTransfer_smul_sq [Invertible (2 : L)]
       sw2Class (formClass _ h1) + galoisEvens K L σ hfin (kummerClass a) +
         (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1Class (formClass _ h1))
           (galoisCor K L σ 1 (kummerClass a)) := by
-  have : Algebra.IsSeparable K L := Algebra.isSeparable_of_finrank_eq_two two_ne_zero hfin
-  -- Write `L = K(x)` with `x² = d ∈ Kˣ`.
-  obtain ⟨x, -, hxK, ⟨d, hx2⟩, -⟩ :=
-    IntermediateField.exists_sq_mem_range_adjoin_simple_eq_of_finrank_eq_two
-      (E := (⊤ : IntermediateField K L)) (by rw [IntermediateField.finrank_top', hfin])
-  have hx : x ∉ Set.range (algebraMap K L) := by rwa [← IntermediateField.mem_bot]
-  have hd : d ≠ 0 := by
-    rintro rfl
-    exact hx ⟨0, by rw [map_zero, eq_comm, ← pow_eq_zero_iff two_ne_zero, hx2, map_zero]⟩
-  lift d to Kˣ using hd.isUnit
-  -- The right-hand side is `(2) ∪ (d) + N^{Ev}((a))`, since the cross term vanishes. Both
-  -- `w₂(Tr_*⟨a⟩)` and `N^{Ev}((a))` are known separately for `Tr a = 0` and `Tr a ≠ 0`, and
-  -- in each case they differ by `(2) ∪ (d)`.
+  obtain ⟨x, d, hx, hx2⟩ :=
+    exists_sq_eq_algebraMap_units_of_finrank_eq_two hfin
   rw [cup_sw1Class_formClass_traceTransfer_sq_galoisCor_eq_zero σ hfin hx hx2 h1, add_zero,
-    sw2Class_formClass_traceTransfer_sq_of_sq hfin hx hx2]
-  have h2d : (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
-      (kummerClass (unitOfInvertible (2 : K))) (kummerClass d) +
-        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
-          (kummerClass (unitOfInvertible (2 : K))) (kummerClass d) = 0 :=
-    (two_nsmul _).symm.trans (cohomF2.two_nsmul_eq_zero _ _ _)
-  by_cases htr : Algebra.trace K L (a : L) = 0
-  · rw [sw2Class_formClass_traceTransfer_smul_sq_of_trace_eq_zero hfin a htr,
-      galoisEvens2_kummerClass_of_trace_eq_zero σ hfin d hx hx2 a htr, h2d]
-  · have hN : Units.map (Algebra.norm K : L →* K) a = Algebra.normUnits K a := Units.ext (by simp)
-    rw [sw2Class_formClass_traceTransfer_smul_sq_of_sq hfin hx hx2 a (t := Units.mk0 _ htr) rfl,
-      galoisEvens2_kummerClass σ hfin d hx hx2 a (Units.mk0 _ htr) rfl, hN, ← add_assoc,
-      add_right_comm, h2d, zero_add]
+    sw2Class_formClass_traceTransfer_smul_sq_eq_add_galoisEvens σ hfin a ha h1]
 
 /-- **The relative Stiefel–Whitney formula in degree two, on diagonal presentations of the trace
 forms**: for a quadratic extension `L/K` and `a ∈ Lˣ`, if `Tr_*⟨1⟩ ≅ ⟨t₁, …, tₘ⟩` and

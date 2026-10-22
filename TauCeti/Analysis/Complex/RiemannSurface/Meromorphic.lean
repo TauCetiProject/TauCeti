@@ -49,8 +49,9 @@ and products add the two divisor bounds.
   is meromorphic.
 * `TauCeti.RiemannSurface.MeromorphicAt.comp` and `TauCeti.RiemannSurface.meromorphicOrderAt_comp`:
   pullback along a holomorphic map, with the order formula.
-* `TauCeti.RiemannSurface.MeromorphicAt.add`, `.neg`, `.sub`, `.smul`, and `.mul`:
-  arithmetic of local meromorphic sections.
+* `TauCeti.RiemannSurface.meromorphicAt_const`, `TauCeti.RiemannSurface.MeromorphicAt.add`,
+  `.neg`, `.sub`, `.smul`, `.const_smul`, `.mul`, `.inv`, and `.pow`: arithmetic of local
+  meromorphic sections.
 * `TauCeti.RiemannSurface.meromorphicOrderAt_add`, `_neg`, `_smul`, and `_mul`:
   arithmetic of their orders.
 
@@ -222,6 +223,12 @@ section Additive
 variable {f g : X → E}
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- A constant function is meromorphic at every point of a Riemann surface. -/
+@[simp]
+theorem meromorphicAt_const (c : E) (x : X) : MeromorphicAt (fun _ ↦ c) x :=
+  _root_.MeromorphicAt.const c _
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The sum of functions meromorphic at a point of a Riemann surface is meromorphic there. -/
 @[to_fun]
 theorem MeromorphicAt.add (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
@@ -279,6 +286,14 @@ theorem MeromorphicAt.smul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
   exact hf.smul hg
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- A constant multiple of a function meromorphic at a point is meromorphic there. -/
+@[to_fun]
+theorem MeromorphicAt.const_smul (hg : MeromorphicAt g x) (c : ℂ) : MeromorphicAt (c • g) x := by
+  rw [meromorphicAt_def] at hg ⊢
+  rw [Pi.smul_comp]
+  exact hg.const_smul c
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The order of a scalar times a vector-valued meromorphic function is the sum of their
 orders. -/
 @[to_fun]
@@ -301,6 +316,22 @@ omit [IsManifold 𝓘(ℂ) 1 X] in
 theorem MeromorphicAt.mul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
     MeromorphicAt (f * g) x := by
   simpa only [smul_eq_mul] using hf.smul hg
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The inverse of a function meromorphic at a point of a Riemann surface is meromorphic there. -/
+@[to_fun]
+theorem MeromorphicAt.inv (hf : MeromorphicAt f x) : MeromorphicAt f⁻¹ x := by
+  rw [meromorphicAt_def] at hf ⊢
+  rw [Pi.inv_comp]
+  exact hf.inv
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- A power of a function meromorphic at a point of a Riemann surface is meromorphic there. -/
+@[to_fun]
+theorem MeromorphicAt.pow (hf : MeromorphicAt f x) (n : ℕ) : MeromorphicAt (f ^ n) x := by
+  rw [meromorphicAt_def] at hf ⊢
+  rw [Pi.pow_comp]
+  exact hf.pow n
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The order of a product of meromorphic functions on a Riemann surface is the sum of their

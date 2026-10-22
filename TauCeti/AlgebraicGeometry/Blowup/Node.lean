@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
 public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 public import TauCeti.RingTheory.Node.Blowup
-public import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.RegularLocalRing.Node
 
 /-!

@@ -24,7 +24,8 @@ their matrices.
 
 * Every column tends to zero along the cofinite filter (`tendsto_matrixCoeff_cofinite`), and over
   a ring with a multiplicative pseudo-uniformiser every entry is bounded by the operator norm
-  (`norm_matrixCoeff_le`).
+  (`norm_matrixCoeff_le`), so convergence in operator norm gives uniform convergence of the
+  entries (`tendstoUniformly_matrixCoeff_of_tendsto`).
 * The value of `u` is given by the convergent matrix action: `(u x) i = ∑ j, A i j * x j` over a
   commutative ring (`hasSum_matrixCoeff_mul`), and the matrix of a composite is the convergent
   matrix product (`hasSum_matrixCoeff_comp`).
@@ -103,6 +104,14 @@ theorem matrixCoeff_sub (u v : C₀(J, R) →L[R] C₀(I, R)) :
   (rfl)
 
 @[simp]
+theorem matrixCoeff_sum {ι : Type*} (s : Finset ι) (u : ι → C₀(J, R) →L[R] C₀(I, R)) :
+    (∑ k ∈ s, u k).matrixCoeff = ∑ k ∈ s, (u k).matrixCoeff := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih => rw [Finset.sum_insert ha, Finset.sum_insert ha, matrixCoeff_add, ih]
+
+@[simp]
 theorem matrixCoeff_id : (ContinuousLinearMap.id R C₀(J, R)).matrixCoeff = 1 := by
   ext i j
   simp [matrixCoeff_apply, Matrix.one_apply, Pi.single_apply]
@@ -128,6 +137,20 @@ theorem norm_matrixCoeff_le [TauCeti.NormedRing.IsTate R] (u : C₀(J, R) →L[R
     (j : J) : ‖u.matrixCoeff i j‖ ≤ ‖u‖ := by
   simpa [matrixCoeff_apply] using
     (norm_coe_le_norm _ i).trans (le_ringOpNorm u (ZeroAtInftyContinuousMap.single j (1 : R)))
+
+/-- Over Tate scalars, convergence in operator norm gives uniform convergence of the matrix
+entries. -/
+theorem tendstoUniformly_matrixCoeff_of_tendsto [TauCeti.NormedRing.IsTate R] {α : Type*}
+    {l : Filter α} {w : α → C₀(J, R) →L[R] C₀(I, R)} {w₀ : C₀(J, R) →L[R] C₀(I, R)}
+    (h : Tendsto (fun a ↦ ‖w a - w₀‖) l (𝓝 0)) :
+    TendstoUniformly (fun a (p : I × J) ↦ (w a).matrixCoeff p.1 p.2)
+      (fun p ↦ w₀.matrixCoeff p.1 p.2) l := by
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  filter_upwards [h.eventually_lt_const hε] with a ha p
+  rw [dist_comm]
+  simpa only [dist_eq_norm, matrixCoeff_sub, Matrix.sub_apply] using
+    ((w a - w₀).norm_matrixCoeff_le p.1 p.2).trans_lt ha
 
 end SeminormedRing
 

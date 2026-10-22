@@ -210,6 +210,16 @@ theorem binaryDiscriminant_ne_zero (hV : Module.finrank ℚ V = 2) [L.IsNondegen
   exact (mul_ne_zero (by decide : (-4 : ℤ) ≠ 0)
     (L.determinant_ne_zero_iff.mpr L.form_nondegenerate)) he.symm
 
+/-- A rank-two lattice with nonzero primitive discriminant has nonzero form. -/
+theorem form_ne_zero_of_binaryDiscriminant_ne_zero (hV : Module.finrank ℚ V = 2)
+    (h : L.binaryDiscriminant hV ≠ 0) : L.form ≠ 0 := by
+  intro hL
+  apply h
+  rw [L.binaryDiscriminant_eq_discrim_primPart
+    (Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)) hV,
+    (binaryNormForm_eq_zero_iff _ _).mpr hL]
+  simp [BinaryQuadraticForm.discrim_def, discrim]
+
 /-- An integral primitive discriminant is zero or one modulo four. -/
 theorem binaryDiscriminant_emod_four_eq_zero_or_one (hV : Module.finrank ℚ V = 2) :
     L.binaryDiscriminant hV % 4 = 0 ∨ L.binaryDiscriminant hV % 4 = 1 := by

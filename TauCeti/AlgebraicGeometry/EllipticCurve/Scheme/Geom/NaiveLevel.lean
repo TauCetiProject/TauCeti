@@ -442,12 +442,7 @@ theorem isFiberwiseInjective_iff_range_eq_ker (hN : (N : K) ≠ 0)
     E.IsFiberwiseInjective φ ↔ φ.range = (IsMonHom.monoidHom (E.mulBy N) _).ker := by
   have : NeZero N := ⟨by rintro rfl; exact hN Nat.cast_zero⟩
   -- `φ` takes values in `E[N](K)`, which has `N²` elements, as many as `(ℤ/Nℤ)²`
-  have hle : φ.range ≤ (IsMonHom.monoidHom (E.mulBy N) _).ker := by
-    rintro _ ⟨a, rfl⟩
-    have ha : a ^ N = 1 := Multiplicative.toAdd.injective <| by
-      ext <;> simp [nsmul_eq_mul]
-    rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply, comp_mulBy, zpow_natCast, ← map_pow, ha,
-      map_one]
+  have hle := range_le_ker_mulBy φ
   have hker : Nat.card (IsMonHom.monoidHom (E.mulBy N) (𝟙_ (Over (Spec (.of K))))).ker = N ^ 2 := by
     rw [← Nat.card_congr (E.torsionPointsMulEquiv N _).toEquiv,
       E.natCard_torsion (n := N) (by exact_mod_cast hN), Int.natAbs_natCast]
