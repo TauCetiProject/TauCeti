@@ -26,10 +26,16 @@ and other workflow pins remain independent. `test_stack_policy.py` runs in
 `test_stack_checkpoint_restore.py` runs in both the policy workflow and main CI
 and does not depend on the Tools pin.
 
-The batch finalizer, CI status retry workflow, and main CI build/test job pin
-Tools separately for confirmed-withdrawal reporting. A successful build whose
-requested Bors batch is explicitly canceled finishes with `batch withdrawn; no
-verdict posted`, removes its pending intent, and posts neither a red nor green
-`build` status. Genuine build/cache failures (including an unfinished canceled
-build) and invalid or unavailable Bors observations retain their existing behavior.
-For local finalizer tests, materialize the helpers using that job's Tools revision.
+The `finalize-merge-group-build` job in `.github/workflows/pr-build.yml` pins its
+Tools version separately from the project default. `.github/workflows/retry-ci-status.yml`
+uses the same version to resume pending finalization and status intents.
+A successful audited and published build whose requested Bors batch is explicitly
+canceled finishes with `batch withdrawn; no verdict posted`, removes its pending
+intent, and posts neither a red nor green `build` status. Genuine build and cache
+publication failures, including an unfinished canceled build, produce `build=failure`.
+Missing, malformed or unavailable Bors observations do not prove withdrawal or
+authorize a green build status.
+
+For local finalizer commands and tests, materialize the helpers using the
+`tools-ref` pinned by `finalize-merge-group-build` in `.github/workflows/pr-build.yml`.
+The main CI build/test job uses its own Tools pin and matching regression tests.
