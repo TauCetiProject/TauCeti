@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Polynomial.Content
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 
 import Mathlib.Algebra.Squarefree.Basic
-import Mathlib.FieldTheory.Perfect
 import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.RingTheory.Polynomial.GaussLemma
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
@@ -141,22 +140,12 @@ theorem squarefree_prod_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing 
 /-- In characteristic zero, the product of any subfamily of a squarefree basis has
 nonzero discriminant. This includes the empty subfamily, whose product is `1`. -/
 theorem discr_prod_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B)
-    {A : Finset D[X]} (hA : A ⊆ B) : (∏ b ∈ A, b).discr ≠ 0 := by
-  let K := FractionRing D
-  have hinj := IsFractionRing.injective D K
-  have : CharZero K := charZero_of_injective_algebraMap hinj
-  have hsep : (∏ b ∈ A, b.map (algebraMap D K)).Separable :=
-    PerfectField.separable_iff_squarefree.2 <|
-      (hB.squarefree_prod_map K).squarefree_of_dvd
-        (Finset.prod_dvd_prod_of_subset A B _ hA)
-  have h := (Polynomial.discr_ne_zero_iff hsep.ne_zero).2 hsep
-  rw [← Polynomial.map_prod, Polynomial.discr_map_of_natDegree_eq _
-    (Polynomial.natDegree_map_eq_of_injective hinj _), map_ne_zero_iff _ hinj] at h
-  exact h
+    {A : Finset D[X]} (hA : A ⊆ B) : (∏ b ∈ A, b).discr ≠ 0 :=
+  (hB.squarefree_prod.squarefree_of_dvd (Finset.prod_dvd_prod_of_subset A B _ hA)).discr_ne_zero
 
 /-- In characteristic zero, the discriminant of a member of a squarefree basis is nonzero. -/
-theorem discr_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) : b.discr ≠ 0 := by
-  simpa using hB.discr_prod_ne_zero (singleton_subset_iff.2 hb)
+theorem discr_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) : b.discr ≠ 0 :=
+  (hB.squarefree b hb).discr_ne_zero
 
 /-- Distinct members of a squarefree basis are coprime over the fraction field. -/
 theorem isCoprime_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
