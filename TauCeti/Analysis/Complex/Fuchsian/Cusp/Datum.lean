@@ -34,6 +34,8 @@ on the scaling, and the datum is unique once the cusp and the scaling are fixed.
   scaling.
 * `Subgroup.IsCuspPoint.exists_cuspDatum`: for a discrete `Γ`, every cusp point and every scaling
   sending it to `∞` carry a cusp datum.
+* `Subgroup.commute_of_smul_parabolicFixedPoint`: for a discrete `Γ`, an element fixing the fixed
+  point of a parabolic element commutes with it.
 
 ## References
 
@@ -344,6 +346,20 @@ theorem IsCuspPoint.exists_cuspDatum_cusp_eq [DiscreteTopology Γ] {c : OnePoint
   obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq PSL(2, ℝ) c ∞
   obtain ⟨D, hD, -⟩ := hc.exists_cuspDatum hσ
   exact ⟨D, hD⟩
+
+/-- In a discrete subgroup of `PSL(2, ℝ)`, an element fixing the fixed point of a parabolic element
+commutes with it: both lie in the stabilizer of that cusp, which is infinite cyclic. -/
+theorem commute_of_smul_parabolicFixedPoint [DiscreteTopology Γ] {g h : PSL(2, ℝ)} (hg : g ∈ Γ)
+    (hh : h ∈ Γ) (hpar : IsParabolic g)
+    (hhg : h • parabolicFixedPoint g = parabolicFixedPoint g) : Commute g h := by
+  obtain ⟨D, hD⟩ := (isCuspPoint_iff_exists_parabolicFixedPoint_eq.2
+    ⟨⟨g, hg⟩, hpar, rfl⟩).exists_cuspDatum_cusp_eq
+  obtain ⟨m, hm⟩ := (D.mem_stabilizer_iff (g := ⟨g, hg⟩)).1
+    (mem_stabilizer_iff.2 (by rw [hD]; exact hpar.smul_parabolicFixedPoint))
+  obtain ⟨n, hn⟩ := (D.mem_stabilizer_iff (g := ⟨h, hh⟩)).1
+    (mem_stabilizer_iff.2 (by rw [hD]; exact hhg))
+  exact congrArg Subtype.val (hm ▸ hn ▸ Commute.zpow_zpow_self D.generator m n :
+    Commute (⟨g, hg⟩ : Γ) ⟨h, hh⟩).eq
 
 /-- Every cusp orbit of a discrete subgroup of `PSL(2, ℝ)` is represented by a cusp datum. -/
 theorem CuspDatum.cuspOrbit_surjective [DiscreteTopology Γ] :
