@@ -80,7 +80,8 @@ path-connected `X` that space is a `K(π₁(X, x), 1)`.
   on vanish.
 * `TauCeti.isEilenbergMacLaneSpaceOne_killHomotopyGroups`: for `n = 2` and path-connected `X`,
   the colimit is a `K(π₁(X, x), 1)`.
-* `TauCeti.cwType_killHomotopyGroups`: for such a CW complex `X`, the colimit has CW type.
+* `TauCeti.cwType_killHomotopyGroups`: for a Hausdorff CW complex `X` without cells of dimension
+  greater than `n`, the colimit has CW type.
 * `TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq`: maps into a space whose homotopy groups
   vanish from dimension `n` on extend over the colimit.
 * `TauCeti.exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv`: for `n ≥ 2`, the
@@ -338,8 +339,9 @@ private abbrev towerRelCWComplex :
 
 include hX in
 /-- Every cell of the tower has dimension greater than `n`, and `X` has no cells of dimension
-greater than `n`, so the boundary of an `m`-cell of the tower lies in the `m`-skeleton of `X`,
-which is all of `X`. -/
+greater than `n`, so the part in `X` of the boundary of an `m`-cell of the tower lies in the
+skeleton of `X` below dimension `m`, which is all of `X`, viewed in the colimit via the
+inclusion. -/
 private lemma cellFrontier_inter_range_subset_skeletonLT :
     letI := rangeInclRelCWComplex n X x
     letI := towerRelCWComplex n X x
