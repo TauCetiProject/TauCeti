@@ -181,10 +181,10 @@ theorem contMDiffAt_of_hasDerivAt_family {m n : WithTop ℕ∞}
         (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) y (h y)) x := by
   rw [contMDiffAt_hom_bundle] at hb ⊢
   refine ⟨contMDiffAt_id, ?_⟩
-  -- `Ĝ s y` is `b s y` read in the tangent trivialization at `x`.
-  set Ĝ : ℝ → M → E →L[ℝ] E →L[ℝ] ℝ := fun s y ↦ ContinuousLinearMap.inCoordinates E
+  -- `B s y` is `b s y` read in the tangent trivialization at `x`.
+  set B : ℝ → M → E →L[ℝ] E →L[ℝ] ℝ := fun s y ↦ ContinuousLinearMap.inCoordinates E
     (TangentSpace I) (E →L[ℝ] ℝ) (fun z : M ↦ TangentSpace I z →L[ℝ] ℝ) x y x y (b s y)
-  have hreg := contMDiffAt_deriv_of_contMDiffAt_uncurry (F := Ĝ) (t := t) (x := x) hb.2 hmn
+  have hreg := contMDiffAt_deriv_of_contMDiffAt_uncurry (F := B) (t := t) (x := x) hb.2 hmn
   refine hreg.congr_of_eventuallyEq ?_
   filter_upwards [hh, (chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy hyx
   have key (φ : TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) (a c : E) :
@@ -195,11 +195,11 @@ theorem contMDiffAt_of_hasDerivAt_family {m n : WithTop ℕ∞}
     rw [inCoordinates_apply_eq₂ (F₃ := ℝ) (E₃ := fun _ : M ↦ ℝ)
       (by simpa using hyx) (by simpa using hyx) (by simp)]
     simp
-  -- Each evaluation of `Ĝ · y` is a parameter curve of `b` at `y`, with derivative given by `h`.
-  have hcurve (a c : E) : HasDerivAt (fun s ↦ Ĝ s y a c)
+  -- Each evaluation of `B · y` is a parameter curve of `b` at `y`, with derivative given by `h`.
+  have hcurve (a c : E) : HasDerivAt (fun s ↦ B s y a c)
       (h y ((trivializationAt E (TangentSpace I) x).symm y a)
         ((trivializationAt E (TangentSpace I) x).symm y c)) t := by
-    simpa only [Ĝ, key] using hy _ _
+    simpa only [B, key] using hy _ _
   have hD := (differentiableAt_clm_iff_forall_apply.mpr fun a ↦
     differentiableAt_clm_iff_forall_apply.mpr fun c ↦ (hcurve a c).differentiableAt).hasDerivAt
   ext a c
