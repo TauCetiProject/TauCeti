@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basic
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
 /-!
@@ -25,14 +24,14 @@ creation–annihilation anticommutator.
 
 ## Main definitions
 
-* `ExteriorAlgebra.degreeScaling`: the algebra automorphism of `⋀ M` induced by `r • id`.
+* `TauCeti.ExteriorAlgebra.degreeScaling`: the algebra automorphism of `⋀ M` induced by `r • id`.
 
 ## Main results
 
-* `ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`: the degree scaling acts on the
+* `TauCeti.ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`: the degree scaling acts on the
   `n`-th exterior power by `r ^ n`.
-* `ExteriorAlgebra.degreeScaling_ι`, `ExteriorAlgebra.degreeScaling_involute` and
-  `ExteriorAlgebra.degreeScaling_contractLeft`: its interaction with the generators, the
+* `TauCeti.ExteriorAlgebra.degreeScaling_ι`, `TauCeti.ExteriorAlgebra.degreeScaling_involute` and
+  `TauCeti.ExteriorAlgebra.degreeScaling_contractLeft`: its interaction with the generators, the
   grade involution and contraction.
 -/
 
@@ -40,7 +39,7 @@ public section
 
 open CliffordAlgebra
 
-namespace ExteriorAlgebra
+namespace TauCeti.ExteriorAlgebra
 
 universe u v
 
@@ -48,7 +47,7 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- **The degree scaling of an exterior algebra** by a unit `r`: the algebra automorphism of
 `⋀ M` induced by the scalar multiplication `r • id` of `M`. It multiplies the `n`-th exterior power
-by `r ^ n` (`ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`). -/
+by `r ^ n` (`TauCeti.ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`). -/
 noncomputable def degreeScaling (r : Rˣ) : ExteriorAlgebra R M ≃ₐ[R] ExteriorAlgebra R M :=
   AlgEquiv.ofAlgHom (_root_.ExteriorAlgebra.map ((r : R) • LinearMap.id))
     (_root_.ExteriorAlgebra.map (((r⁻¹ : Rˣ) : R) • LinearMap.id))
@@ -94,7 +93,11 @@ theorem degreeScaling_of_mem_exteriorPower (r : Rˣ) {n : ℕ} {x : ExteriorAlge
 theorem degreeScaling_involute (r : Rˣ) (x : ExteriorAlgebra R M) :
     degreeScaling r (involute (Q := (0 : QuadraticForm R M)) x) =
       involute (Q := (0 : QuadraticForm R M)) (degreeScaling r x) := by
-  simp only [degreeScaling_apply, _root_.ExteriorAlgebra.map, map_involute]
+  induction x using CliffordAlgebra.induction with
+  | algebraMap s => simp
+  | ι m => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | mul x y hx hy => simp only [map_mul, hx, hy]
 
 /-- **Conjugating a contraction by the degree scaling by `r` multiplies it by `r⁻¹`.** -/
 @[simp]
@@ -104,7 +107,12 @@ theorem degreeScaling_contractLeft (r : Rˣ) (d : Module.Dual R M) (x : Exterior
   have hd : (((r⁻¹ : Rˣ) : R) • d) ∘ₗ ((r : R) • LinearMap.id) = d := by
     ext m
     simp
-  rw [degreeScaling_apply, degreeScaling_apply, ← LinearMap.smul_apply, ← map_smul,
-    contractLeft_map, hd]
+  rw [degreeScaling_apply, degreeScaling_apply, ← LinearMap.smul_apply, ← map_smul]
+  -- Exterior-algebra maps are Clifford maps of the zero-form isometries induced by linear maps.
+  simpa only [hd] using
+    (CliffordAlgebra.contractLeft_map
+      (Q₁ := (0 : QuadraticForm R M)) (Q₂ := (0 : QuadraticForm R M))
+      { (r : R) • LinearMap.id with map_app' := fun _ => rfl }
+      (((r⁻¹ : Rˣ) : R) • d) x).symm
 
-end ExteriorAlgebra
+end TauCeti.ExteriorAlgebra

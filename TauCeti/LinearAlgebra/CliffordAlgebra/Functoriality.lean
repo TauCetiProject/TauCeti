@@ -23,6 +23,7 @@ and scalar action on the right Clifford algebra is faithful.
 
 * `CliffordAlgebra.map_involute` proves naturality of the grade involution.
 * `CliffordAlgebra.map_reverse` proves naturality of Clifford reversal.
+* `CliffordAlgebra.contractLeft_map` proves naturality of contraction.
 * `CliffordAlgebra.map_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra.
 * `CliffordAlgebra.evenEquivOfIsometry` restricts an isometry-induced equivalence to the even
@@ -65,6 +66,18 @@ theorem map_reverse (f : Q₁ →qᵢ Q₂) (x : CliffordAlgebra Q₁) :
   | ι m => simp
   | add x y hx hy => simp only [map_add, hx, hy]
   | mul x y hx hy => simp only [reverse.map_mul, map_mul, hx, hy]
+
+/-- Contraction against a linear functional commutes with the algebra map induced by a
+quadratic isometry, after pulling back the functional. -/
+theorem contractLeft_map (f : Q₁ →qᵢ Q₂) (d : Module.Dual R M₂)
+    (x : CliffordAlgebra Q₁) :
+    contractLeft d (map f x) = map f (contractLeft (d ∘ₗ f.toLinearMap) x) := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r => simp only [AlgHom.commutes, contractLeft_algebraMap, map_zero]
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | ι_mul x m hx =>
+    simp only [map_mul, map_apply_ι, contractLeft_ι_mul, hx, map_sub,
+      map_smul, LinearMap.comp_apply]
 
 /-- Clifford conjugation commutes with the algebra map induced by a quadratic isometry. -/
 @[simp]

@@ -50,6 +50,7 @@ together with the formula for `c(v)`.
 public section
 
 open CliffordAlgebra ExteriorAlgebra
+open TauCeti.ExteriorAlgebra
 open scoped TensorProduct
 
 namespace TauCeti.AlmostComplexStructure
@@ -97,7 +98,7 @@ theorem fockAction_eq_scaledSpinAction {r : ℂˣ} (hr : (r : ℂ) = Real.sqrt 2
 
 /-- **The degree scaling by `√2` intertwines the native and the normalized Fock actions**:
 `T ∘ spinAction a = fockAction a ∘ T`, where `T` multiplies `⋀^p W` by `√2 ^ p`
-(`ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`). -/
+(`TauCeti.ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`). -/
 theorem degreeScaling_comp_spinAction_eq_fockAction_comp {r : ℂˣ}
     (hr : (r : ℂ) = Real.sqrt 2) (a : CliffordAlgebra (Q.baseChange ℂ)) :
     (degreeScaling r).toLinearMap ∘ₗ spinAction _ (J.spinPolarizationData hQJ hQ) a =

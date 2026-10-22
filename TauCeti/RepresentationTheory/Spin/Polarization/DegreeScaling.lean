@@ -44,6 +44,7 @@ the polar form `QuadraticMap.polar Q`; when `Q` is the negative `-g` of a metric
 public section
 
 open CliffordAlgebra ExteriorAlgebra
+open TauCeti.ExteriorAlgebra
 
 namespace TauCeti.SpinPolarizationData
 
