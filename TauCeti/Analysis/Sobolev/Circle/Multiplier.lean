@@ -17,8 +17,8 @@ import TauCeti.Analysis.Fourier.Decay
 On Fourier coefficients, multiplying a function on the circle by the monomial `e^{imθ}` shifts the
 coefficients by `m`, and multiplying by `g = ∑ₘ gₘ e^{imθ}` convolves them with `(gₘ)`. This file
 constructs these operators on the Fourier-coefficient Sobolev spaces `H^s` of
-`TauCeti/Analysis/Sobolev/Circle/Basic.lean`, for every real order `s`, including negative and
-fractional orders where elements of `H^s` are not functions.
+`TauCeti/Analysis/Sobolev/Circle/Basic.lean`, for every real order `s`, including fractional
+orders, and negative orders where elements of `H^s` may be distributions rather than functions.
 
 By Peetre's inequality (`CircleSobolev.weight_add_le`), the shift by `m` has norm at most
 `(1 + |m|) ^ |s|` on `H^s`. The multiplication operator by the coefficient sequence `g` is then

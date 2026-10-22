@@ -80,7 +80,7 @@ theorem exists_abs_pow_mul_norm_fourierCoeff_le {f : AddCircle T → ℂ} {k : �
     · simp only [Int.cast_zero, abs_zero, zero_pow hk.ne', zero_mul]
       have := hT.out
       positivity
-  · rw [fourierCoeffOn_iteratedDeriv hf (fun x ↦ by simp) 0 hn le_rfl, norm_mul,
+  · rw [fourierCoeffOn_iteratedDeriv hf (fun x ↦ by simp) 0 n le_rfl, norm_mul,
       norm_pow] at hbound
     have hnorm : ‖(2 * π * I * n / T : ℂ)‖ = 2 * π * |(n : ℝ)| / T := by
       simp [abs_of_pos hT.out]

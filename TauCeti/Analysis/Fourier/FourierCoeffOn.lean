@@ -29,7 +29,7 @@ endpoint `a`, which the coefficients do not see, is recovered by continuity.
 
 For a function on `AddCircle T`, the Fourier coefficients are those of its lift on any period
 interval (`TauCeti.fourierCoeff_eq_fourierCoeffOn`). On such an interval, each derivative of a
-`C^k` periodic function multiplies its nonzero-frequency coefficients by `2πin / T`
+`C^k` periodic function multiplies its coefficients by `2πin / T`
 (`TauCeti.fourierCoeffOn_iteratedDeriv`), since periodicity kills the boundary term of the
 integration by parts.
 -/
@@ -143,12 +143,22 @@ theorem fourierCoeff_eq_fourierCoeffOn (a : ℝ) (f : AddCircle T → ℂ) (n : 
   funext x
   simp [AddCircle.liftIoc, AddCircle.coe_equivIoc]
 
-/-- Each derivative of a `C^k` function of period `T` multiplies its nonzero-frequency Fourier
-coefficients on a period interval by `2πin / T`. -/
+/-- Each derivative of a `C^k` function of period `T` multiplies its Fourier coefficients on a
+period interval by `2πin / T`. At frequency `0` this says that the derivatives have mean zero. -/
 theorem fourierCoeffOn_iteratedDeriv {f : ℝ → ℂ} {k : ℕ} (hf : ContDiff ℝ k f)
-    (hper : Function.Periodic f T) (a : ℝ) {n : ℤ} (hn : n ≠ 0) {j : ℕ} (hj : j ≤ k) :
+    (hper : Function.Periodic f T) (a : ℝ) (n : ℤ) {j : ℕ} (hj : j ≤ k) :
     fourierCoeffOn (lt_add_of_pos_right a hT.out) (iteratedDeriv j f) n =
       (2 * π * I * n / T) ^ j * fourierCoeffOn (lt_add_of_pos_right a hT.out) f n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · cases j with
+    | zero => simp
+    | succ j =>
+      have hd := hf.differentiable_iteratedDeriv j (by exact_mod_cast hj)
+      simp only [fourierCoeffOn_eq_integral, neg_zero, fourier_zero, one_smul, iteratedDeriv_succ]
+      rw [intervalIntegral.integral_deriv_eq_sub (fun x _ ↦ (hd x))]
+      · simp [hper.iteratedDeriv j a]
+      · simpa [iteratedDeriv_succ] using
+          (hf.continuous_iteratedDeriv (j + 1) (by exact_mod_cast hj)).intervalIntegrable a (a + T)
   induction j with
   | zero => simp
   | succ j ih =>
