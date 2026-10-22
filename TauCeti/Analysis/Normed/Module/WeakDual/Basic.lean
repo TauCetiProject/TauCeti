@@ -31,7 +31,6 @@ instance [ProperSpace 𝕜] (f : StrongDual 𝕜 E) (r : ℝ) :
   isCompact_iff_compactSpace.mp (isCompact_closedBall f r)
 
 /-- The continuous function `φ ↦ ‖φ x‖ ^ p` on the weak-star closed ball of radius `r`. -/
-@[expose]
 noncomputable def evalRpow (r : ℝ) (p : ℝ≥0∞) (x : E) :
     C(toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual 𝕜 E) r, ℝ) where
   toFun φ := ‖(φ : WeakDual 𝕜 E) x‖ ^ p.toReal
@@ -42,6 +41,7 @@ noncomputable def evalRpow (r : ℝ) (p : ℝ≥0∞) (x : E) :
 @[simp]
 theorem evalRpow_apply (r : ℝ) (p : ℝ≥0∞) (x : E)
     (φ : toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual 𝕜 E) r) :
-    evalRpow r p x φ = ‖(φ : WeakDual 𝕜 E) x‖ ^ p.toReal := rfl
+    evalRpow r p x φ = ‖(φ : WeakDual 𝕜 E) x‖ ^ p.toReal := by
+  simp [evalRpow]
 
 end WeakDual

@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.Normed.Module.RCLike.Rpow
-import Mathlib.Topology.ContinuousMap.Compact
+import TauCeti.Topology.ContinuousMap.Compact
 
 /-!
 # Pietsch domination
@@ -83,8 +83,11 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
     T.summingENorm p ≤ ENNReal.ofReal C := by
   have hq : 0 < p.toReal := ENNReal.toReal_pos (one_pos.trans_le Fact.out).ne' hp
   have hint (x : E) : Integrable (fun f : dualBall 𝕜 E ↦ ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal) ν :=
-    (WeakDual.evalRpow 1 p x).continuous.integrable_of_hasCompactSupport
-      (HasCompactSupport.of_compactSpace _)
+    by
+      have h : Integrable (fun f ↦ WeakDual.evalRpow 1 p x f) ν :=
+        (WeakDual.evalRpow 1 p x).continuous.integrable_of_hasCompactSupport
+          (HasCompactSupport.of_compactSpace _)
+      simpa only [WeakDual.evalRpow_apply] using h
   rw [summingENorm_le_ofReal_iff hC]
   intro n x
   set W := weakLpNorm (𝕜 := 𝕜) p x
@@ -189,30 +192,6 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
   rw [Real.rpow_le_rpow_iff (hAδ.trans (by linarith)) hAδ (by positivity)] at hsum
   linarith
 
-/-- The continuous real functions uniformly bounded below by a positive constant form a
-convex set. -/
-private theorem convex_uniformlyPositive {X : Type*} [TopologicalSpace X] :
-    Convex ℝ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
-  rintro h₁ ⟨δ₁, hδ₁, h₁δ⟩ h₂ ⟨δ₂, hδ₂, h₂δ⟩ a b ha hb hab
-  refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, fun f ↦ ?_⟩
-  have e₁ := (min_le_left δ₁ δ₂).trans (h₁δ f)
-  have e₂ := (min_le_right δ₁ δ₂).trans (h₂δ f)
-  simp only [ContinuousMap.add_apply, ContinuousMap.smul_apply, smul_eq_mul]
-  calc
-    min δ₁ δ₂ = a * min δ₁ δ₂ + b * min δ₁ δ₂ := by rw [← add_mul, hab, one_mul]
-    _ ≤ a * h₁ f + b * h₂ f := by gcongr
-
-/-- Uniform positivity is open in the uniform topology on continuous functions
-on a compact space. -/
-private theorem isOpen_uniformlyPositive {X : Type*} [TopologicalSpace X] [CompactSpace X] :
-    IsOpen {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
-  refine Metric.isOpen_iff.2 ?_
-  rintro h ⟨δ, hδ, hhδ⟩
-  refine ⟨δ / 2, half_pos hδ, fun h' hh' ↦ ⟨δ / 2, half_pos hδ, fun f ↦ ?_⟩⟩
-  have := (ContinuousMap.dist_apply_le_dist (f := h') (g := h) f).trans (mem_ball.1 hh').le
-  rw [Real.dist_eq] at this
-  linarith [hhδ f, (abs_le.1 this).1]
-
 /-- A Hahn–Banach separation in `C(B, ℝ)` gives a continuous linear functional `L` on the
 continuous functions on the dual ball that is negative on the constant `1`, nonpositive on
 nonnegative functions, and satisfies `‖T x‖ ^ p * L 1 ≥ C ^ p * L (f ↦ ‖f x‖ ^ p)`. -/
@@ -231,8 +210,8 @@ private theorem exists_separating_functional (hp : p ≠ ∞) {T : E →L[𝕜] 
   let Q : Set C(dualBall 𝕜 E, ℝ) := Φ '' {w | ∀ x, 0 ≤ w x}
   -- The open convex cone of functions bounded below by a positive constant.
   let P : Set C(dualBall 𝕜 E, ℝ) := {h | ∃ δ > 0, ∀ f, δ ≤ h f}
-  have hPconv : Convex ℝ P := convex_uniformlyPositive
-  have hPopen : IsOpen P := isOpen_uniformlyPositive
+  have hPconv : Convex ℝ P := ContinuousMap.convex_uniformlyPositive
+  have hPopen : IsOpen P := ContinuousMap.isOpen_uniformlyPositive
   have hQconv : Convex ℝ Q := by
     refine Convex.linear_image ?_ Φ
     intro w₁ hw₁ w₂ hw₂ a b ha hb _ x
