@@ -33,6 +33,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 
 ## Main results
 
+* `MvPowerSeries.uniformContinuous_coeff_isRestrictedSubring`: coefficient maps are uniformly
+  continuous for the Gauss norm at arbitrary positive polyradii.
 * `MvPowerSeries.norm_eq_gaussNorm`: the norm is the Gauss norm at the chosen polyradii.
 * `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
@@ -152,15 +154,20 @@ theorem norm_coeff_mul_prod_le (f : IsRestricted.subring (R := R) c) (t : σ →
     ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ ‖f‖ :=
   le_gaussNorm norm c _ f.2.hasGaussNorm t
 
-/-- **Coefficients are continuous for the Gauss norm**: the coefficient of `Xᵗ` is bounded by
-`(cᵗ)⁻¹` times the Gauss norm. -/
-theorem continuous_coeff_isRestrictedSubring (t : σ →₀ ℕ) :
-    Continuous fun f : IsRestricted.subring (R := R) c ↦ coeff t (f : MvPowerSeries σ R) :=
-  AddMonoidHomClass.continuous_of_bound
+/-- Coefficient maps are uniformly continuous for the Gauss norm, with bound `(cᵗ)⁻¹`. -/
+theorem uniformContinuous_coeff_isRestrictedSubring (t : σ →₀ ℕ) :
+    UniformContinuous fun f : IsRestricted.subring (R := R) c ↦ coeff t (f : MvPowerSeries σ R) :=
+  AddMonoidHomClass.uniformContinuous_of_bound
     ((coeff t).toAddMonoidHom.comp (IsRestricted.subring (R := R) c).subtype.toAddMonoidHom)
     (t.prod (c · ^ ·))⁻¹ fun f ↦ by
       rw [inv_mul_eq_div, le_div_iff₀ (prod_pow_pos t)]
       exact norm_coeff_mul_prod_le f t
+
+/-- **Coefficients are continuous for the Gauss norm**: the coefficient of `Xᵗ` is bounded by
+`(cᵗ)⁻¹` times the Gauss norm. -/
+theorem continuous_coeff_isRestrictedSubring (t : σ →₀ ℕ) :
+    Continuous fun f : IsRestricted.subring (R := R) c ↦ coeff t (f : MvPowerSeries σ R) :=
+  (uniformContinuous_coeff_isRestrictedSubring t).continuous
 
 /-- A nonnegative bound on the norm is exactly a bound on every weighted coefficient norm. -/
 theorem norm_le_iff {f : IsRestricted.subring (R := R) c} {r : ℝ}
@@ -309,14 +316,8 @@ instance [NormOneClass R] : NormOneClass
 instance [CompleteSpace R] : CompleteSpace
     (IsRestricted.subring (R := R) c) := by
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
-  have hcoeff (t : σ →₀ ℕ) : CauchySeq fun k ↦ coeff t (F k : MvPowerSeries σ R) := by
-    let coeffHom : IsRestricted.subring (R := R) c →+ R :=
-      (coeff t).toAddMonoidHom.comp
-        (IsRestricted.subring (R := R) c).subtype.toAddMonoidHom
-    refine (AddMonoidHomClass.uniformContinuous_of_bound coeffHom (t.prod (c · ^ ·))⁻¹
-      fun f ↦ ?_).comp_cauchySeq hF
-    rw [← div_eq_inv_mul, le_div_iff₀ (prod_pow_pos t)]
-    exact norm_coeff_mul_prod_le f t
+  have hcoeff (t : σ →₀ ℕ) : CauchySeq fun k ↦ coeff t (F k : MvPowerSeries σ R) :=
+    (uniformContinuous_coeff_isRestrictedSubring t).comp_cauchySeq hF
   -- Multivariate power series are coefficient functions; `a` is their coefficientwise limit.
   choose a ha using fun t ↦ cauchySeq_tendsto_of_complete (hcoeff t)
   have hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t,

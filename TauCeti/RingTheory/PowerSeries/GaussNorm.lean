@@ -767,10 +767,7 @@ theorem isRestricted_mk_tsum_coeff_of_tendsto_gaussNorm_zero (hc : 0 < c)
     let coeffHom : S →+ R :=
       (PowerSeries.coeff n).toAddMonoidHom.comp S.subtype.toAddMonoidHom
     have hcont : Continuous coeffHom :=
-      (AddMonoidHomClass.uniformContinuous_of_bound coeffHom (c ^ n)⁻¹ fun f ↦ by
-        rw [← div_eq_inv_mul, le_div_iff₀ (pow_pos hc n),
-          MvPowerSeries.norm_eq_gaussNorm (c := fun _ : Unit ↦ c)]
-        exact PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.2) n).continuous
+      MvPowerSeries.continuous_coeff_isRestrictedSubring (Finsupp.single () n)
     exact (summable_coeff_of_tendsto_gaussNorm_zero (R := R) hc
       (fun k ↦ hasGaussNorm_of_isRestricted (ha k)) hs n).hasSum.unique
       (hA.hasSum.map coeffHom hcont)
