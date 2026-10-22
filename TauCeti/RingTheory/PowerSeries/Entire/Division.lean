@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
+public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.PowerSeries.Inverse
@@ -57,6 +58,8 @@ operators, whose Fredholm determinants are entire series.
   coefficient homomorphisms commute with quotient and remainder.
 * `PowerSeries.divByMonic_coe` and `PowerSeries.modByMonic_coe`: on polynomials, these are
   `Polynomial.divByMonic` and `Polynomial.modByMonic`.
+* `PowerSeries.IsEntire.evalAt_eq_eval_modByMonic`: at a root of `p`, an entire series takes the
+  value of its remainder.
 * `PowerSeries.divByMonic_modByMonic_unique`: over an ultrametric ring with `‖1‖ = 1`, a division
   with entire quotient and remainder of degree less than `d` is this one.
 * `PowerSeries.IsEntire.coe_mul_divByMonic_cancel_left`: over an ultrametric ring with
@@ -373,6 +376,15 @@ theorem modByMonic_coe_of_degree_lt {g : Polynomial R} (hp : p.Monic)
     (hg : g.degree < p.degree) : (g : R⟦X⟧).modByMonic p = g := by
   rw [modByMonic_coe g hp, (Polynomial.div_modByMonic_unique 0 g hp ⟨by simp, hg⟩).2]
 
+/-- At a root `a` of the monic polynomial `p`, an entire series takes the value of its remainder
+on division by `p`. -/
+theorem IsEntire.evalAt_eq_eval_modByMonic (hf : f.IsEntire) (hp : p.Monic) {a : R}
+    (ha : p.eval a = 0) : f.evalAt a = (f.modByMonic p).eval a := by
+  conv_lhs => rw [← hf.modByMonic_add_divByMonic hp]
+  rw [(isEntire_coe _).evalAt_add ((isEntire_coe _).mul (hf.divByMonic _)),
+    (isEntire_coe _).evalAt_mul (hf.divByMonic _), evalAt_coe, evalAt_coe]
+  simp [ha]
+
 section Ultrametric
 
 variable [IsUltrametricDist R] [NormOneClass R]
@@ -427,11 +439,8 @@ theorem IsEntire.coe_mul_modByMonic {q : R⟦X⟧} (hq : q.IsEntire) (hp : p.Mon
 does not change its remainder on division by the monic polynomial `p`. -/
 theorem IsEntire.modByMonic_coe_add_coe_mul {q : R⟦X⟧} (hq : q.IsEntire) (hp : p.Monic)
     (g : Polynomial R) : ((g : R⟦X⟧) + p * q).modByMonic p = g %ₘ p := by
-  have : Nontrivial R := NormOneClass.nontrivial
-  refine (divByMonic_modByMonic_unique (((g /ₘ p : Polynomial R) : R⟦X⟧) + q) (g %ₘ p) hp
-    ((isEntire_coe _).add hq) ⟨?_, Polynomial.degree_modByMonic_lt _ hp⟩).2
-  rw [mul_add, ← add_assoc, ← Polynomial.coe_mul, ← Polynomial.coe_add,
-    Polynomial.modByMonic_add_div]
+  rw [(isEntire_coe g).add_modByMonic ((isEntire_coe p).mul hq), modByMonic_coe g hp,
+    hq.coe_mul_modByMonic hp, add_zero]
 
 /-- Over an ultrametric ring with `‖1‖ = 1`, an entire series leaves no remainder on division by
 a monic polynomial `p` exactly when it is `p` times an entire series. -/
