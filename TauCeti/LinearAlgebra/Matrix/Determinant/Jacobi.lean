@@ -33,8 +33,6 @@ the cofactor formula for an entry of the adjugate.
 ## Main results
 
 * `Matrix.det_mul_det_submatrix_adjugate`: Jacobi's complementary minor theorem in adjugate form.
-* `Matrix.det_submatrix_equiv`: reindexing the rows and columns of a determinant by two different
-  equivalences multiplies it by the sign of their relative permutation.
 * `Equiv.Perm.sign_eq_prod_ite`: the sign of a permutation as a product over its inversions.
 * `Equiv.Perm.sign_shuffle`: the sign of a shuffle permutation is a power of `-1`.
 -/
@@ -96,17 +94,6 @@ namespace Matrix
 
 variable {R : Type*} [CommRing R]
 
-/-- Reindexing the rows and columns of a determinant by two different equivalences multiplies the
-determinant by the sign of the permutation relating them. -/
-theorem det_submatrix_equiv {n α : Type*} [Fintype n] [DecidableEq n] [Fintype α]
-    [DecidableEq α] (A : Matrix n n R) (e f : α ≃ n) :
-    (A.submatrix e f).det = Perm.sign (f.symm.trans e) * A.det := by
-  -- `A.submatrix e f = (A.submatrix f f).submatrix (f.symm.trans e) id`, so `det_permute` applies.
-  rw [← det_permute, ← det_submatrix_equiv_self f]
-  congr 1
-  ext
-  simp
-
 /-- The sign of the shuffle that lists `I` followed by its complement. -/
 private theorem sign_finSumComplEquiv {n k : ℕ} (I : Finset (Fin n)) (hI : #I = k)
     (hI' : #Iᶜ = n - k) (h : k + (n - k) = n) :
@@ -161,8 +148,9 @@ theorem det_mul_det_submatrix_adjugate {n k : ℕ} (A : Matrix (Fin n) (Fin n) R
       pow_add, pow_mul]
     simp [ε]
   have hdet := congrArg det hBM
-  rw [det_mul, det_fromBlocks_zero₂₁, det_fromBlocks_zero₁₂, det_smul, det_submatrix_equiv,
-    hsign] at hdet
+  have hB : B.det = (A.reindex P.symm Q.symm).det := by simp [B, reindex_apply]
+  rw [det_mul, det_fromBlocks_zero₂₁, det_fromBlocks_zero₁₂, det_smul, hB, det_reindex,
+    Equiv.symm_symm, hsign] at hdet
   simp only [det_one, one_mul, mul_one, Fintype.card_fin] at hdet
   have hε : ε ^ 2 = 1 := by rw [← pow_mul, pow_mul', neg_one_sq, one_pow]
   -- `C.toBlocks₂₂` is `adj A[Jᶜ, Iᶜ]` and `B.toBlocks₁₁` is `A[I, J]` by definition.
