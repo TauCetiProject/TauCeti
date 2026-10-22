@@ -79,6 +79,7 @@ variable {f : A →ₚₗ[R] B}
 
 /-- A multiplicative law sends `1` to `1` after scalar extension to a commutative `R`-algebra in an
 arbitrary universe. -/
+@[simp]
 theorem toFun_one (hf : f.IsMultiplicative) (S : Type*) [CommSemiring S] [Algebra R S] :
     f.toFun S 1 = 1 := by
   calc f.toFun S 1 = f.toFun S ((Algebra.ofId R S).toLinearMap.rTensor A 1) := by
@@ -89,6 +90,7 @@ theorem toFun_one (hf : f.IsMultiplicative) (S : Type*) [CommSemiring S] [Algebr
 
 /-- A multiplicative law preserves products after scalar extension to a commutative `R`-algebra
 in an arbitrary universe. -/
+@[simp]
 theorem toFun_mul (hf : f.IsMultiplicative) {S : Type*} [CommSemiring S] [Algebra R S]
     (x y : S ⊗[R] A) : f.toFun S (x * y) = f.toFun S x * f.toFun S y := by
   -- lift `x` and `y` simultaneously to a polynomial algebra in the universe of `R`
@@ -118,11 +120,13 @@ theorem toFun_mul (hf : f.IsMultiplicative) {S : Type*} [CommSemiring S] [Algebr
         rw [hp, hq, toFun'_eq_toFun, isCompat_apply, isCompat_apply]
 
 /-- The ground map of a multiplicative law sends `1` to `1`. -/
+@[simp]
 theorem ground_one (hf : f.IsMultiplicative) : f.ground 1 = 1 := by
   simp only [ground_apply, ← Algebra.TensorProduct.one_def, hf.toFun'_one,
     ← Algebra.TensorProduct.lid_toLinearEquiv, AlgEquiv.toLinearEquiv_apply, map_one]
 
 /-- The ground map of a multiplicative law preserves products. -/
+@[simp]
 theorem ground_mul (hf : f.IsMultiplicative) (a b : A) :
     f.ground (a * b) = f.ground a * f.ground b := by
   have hab : (1 : R) ⊗ₜ[R] (a * b) = (1 ⊗ₜ[R] a) * (1 ⊗ₜ[R] b) := by
