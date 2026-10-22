@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Colimit.DirectLimit
+public import TauCeti.Algebra.Colimit.DirectLimit
 public import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
@@ -24,8 +24,6 @@ directions are built separately from the universal properties of `DirectLimit.Al
 
 ## Main declarations
 
-* `TauCeti.DirectLimit.Algebra.of_comp_f`: the canonical maps into a direct limit of algebras are
-  compatible with the transition maps.
 * `TauCeti.DirectedSystem.algebraRTensor`: the directed system `B i ⊗[A] M`.
 * `TauCeti.directLimitLeft`:
   `(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)`, with `directLimitLeft_of_tmul` and
@@ -38,25 +36,9 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-namespace DirectLimit.Algebra
-
 variable {A ι : Type*} [CommSemiring A] [Preorder ι] {B : ι → Type*} [∀ i, Semiring (B i)]
   [∀ i, Algebra A (B i)] {f : ∀ i j, i ≤ j → B i →ₐ[A] B j} [DirectedSystem B (f · · ·)]
-  [IsDirectedOrder ι] [Nonempty ι]
-
-open _root_.DirectLimit.Algebra
-
-/-- The canonical maps into a direct limit of algebras are compatible with the transition
-maps. -/
-@[simp]
-theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of B f j).comp (f i j hij) = of B f i :=
-  AlgHom.ext fun _ ↦ of_f _ _
-
-end DirectLimit.Algebra
-
-variable {A ι : Type*} [CommSemiring A] [Preorder ι] {B : ι → Type*} [∀ i, CommSemiring (B i)]
-  [∀ i, Algebra A (B i)] {f : ∀ i j, i ≤ j → B i →ₐ[A] B j} [DirectedSystem B (f · · ·)]
-  (M : Type*) [CommSemiring M] [Algebra A M]
+  (M : Type*) [Semiring M] [Algebra A M]
 
 /-- Base change along a fixed `A`-algebra `M` turns a directed system of `A`-algebras `B i` into
 the directed system of `A`-algebras `B i ⊗[A] M`. -/
@@ -83,6 +65,15 @@ private noncomputable def fromDirectLimit :
   DirectLimit.Algebra.lift _ _ _ (fun i ↦ rTensor M (of B f i)) fun i j hij x ↦ by
     rw [← AlgHom.comp_apply, ← map_comp, of_comp_f, AlgHom.comp_id]
 
+/-- The image of `1 ⊗ m` in `colim (B i ⊗[A] M)` does not depend on the stage it is taken at. -/
+private theorem of_one_tmul (i j : ι) (m : M) :
+    of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) j (1 ⊗ₜ m) =
+      of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i (1 ⊗ₜ m) := by
+  obtain ⟨k, hjk, hik⟩ := exists_ge_ge j i
+  rw [← of_f (G := (B · ⊗[A] M)) (f := fun i j h ↦ rTensor M (f i j h)) hjk,
+    ← of_f (G := (B · ⊗[A] M)) (f := fun i j h ↦ rTensor M (f i j h)) hik]
+  simp only [map_tmul, map_one, AlgHom.id_apply]
+
 /-- The map `(colim B i) ⊗[A] M → colim (B i ⊗[A] M)`, sending `[b] ⊗ m` to `[b ⊗ m]`. -/
 private noncomputable def toDirectLimit :
     DirectLimit B f ⊗[A] M →ₐ[A] DirectLimit (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) :=
@@ -93,7 +84,14 @@ private noncomputable def toDirectLimit :
         rw [← of_f (G := (B · ⊗[A] M)) (f := fun i j h ↦ rTensor M (f i j h)) hij]
         simp only [map_tmul, AlgHom.id_apply])
     ((of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) (Classical.arbitrary ι)).comp includeRight)
-    fun _ _ ↦ .all _ _
+    fun x m ↦ by
+      -- Both factors come from the same stage, where `b ⊗ 1` and `1 ⊗ m` commute.
+      induction x using _root_.DirectLimit.induction with | _ i b
+      rw [← DirectLimit.Algebra.of_apply (R := A)]
+      simp only [DirectLimit.Algebra.lift_of, AlgHom.comp_apply, includeLeft_apply,
+        includeRight_apply]
+      rw [of_one_tmul M i]
+      exact ((Commute.one_right b).tmul (R := A) (Commute.one_left m)).map _
 
 private theorem fromDirectLimit_of (i : ι) (x : B i ⊗[A] M) :
     fromDirectLimit M (of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i x) =
@@ -103,16 +101,9 @@ private theorem fromDirectLimit_of (i : ι) (x : B i ⊗[A] M) :
 private theorem toDirectLimit_of_tmul (i : ι) (b : B i) (m : M) :
     toDirectLimit M (of B f i b ⊗ₜ m) =
       of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i (b ⊗ₜ m) := by
-  -- The image of `1 ⊗ m` does not depend on the stage it is taken at.
-  have h1 (j : ι) : of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) j (1 ⊗ₜ m) =
-      of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i (1 ⊗ₜ m) := by
-    obtain ⟨k, hjk, hik⟩ := exists_ge_ge j i
-    rw [← of_f (G := (B · ⊗[A] M)) (f := fun i j h ↦ rTensor M (f i j h)) hjk,
-      ← of_f (G := (B · ⊗[A] M)) (f := fun i j h ↦ rTensor M (f i j h)) hik]
-    simp only [map_tmul, map_one, AlgHom.id_apply]
   simp only [toDirectLimit, lift_tmul, DirectLimit.Algebra.lift_of, AlgHom.comp_apply,
-    includeLeft_apply, includeRight_apply, h1]
-  rw [← map_mul, tmul_mul_tmul, mul_one, one_mul]
+    includeLeft_apply, includeRight_apply]
+  rw [of_one_tmul M i, ← map_mul, tmul_mul_tmul, mul_one, one_mul]
 
 variable (f) in
 /-- Base change commutes with directed colimits of algebras:
@@ -121,12 +112,13 @@ noncomputable def directLimitLeft :
     DirectLimit B f ⊗[A] M ≃ₐ[A] DirectLimit (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) :=
   AlgEquiv.ofAlgHom (toDirectLimit (f := f) M) (fromDirectLimit M)
     (DirectLimit.Algebra.hom_ext _ fun i ↦ ext' fun b m ↦ by
-      rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply, fromDirectLimit_of, map_tmul,
-        AlgHom.id_apply, toDirectLimit_of_tmul, AlgHom.id_apply])
+      simp only [AlgHom.comp_apply, AlgHom.id_apply, fromDirectLimit_of, map_tmul,
+        toDirectLimit_of_tmul])
     (ext' fun b m ↦ by
-      obtain ⟨i, b, rfl⟩ := DirectLimit.exists_eq_mk _ b
-      rw [← DirectLimit.Algebra.of_apply (R := A), AlgHom.comp_apply, toDirectLimit_of_tmul,
-        fromDirectLimit_of, map_tmul, AlgHom.id_apply, AlgHom.id_apply])
+      induction b using _root_.DirectLimit.induction with | _ i b
+      rw [← DirectLimit.Algebra.of_apply (R := A)]
+      simp only [AlgHom.comp_apply, AlgHom.id_apply, toDirectLimit_of_tmul, fromDirectLimit_of,
+        map_tmul])
 
 theorem directLimitLeft_of_tmul (i : ι) (b : B i) (m : M) :
     directLimitLeft f M (of B f i b ⊗ₜ m) =

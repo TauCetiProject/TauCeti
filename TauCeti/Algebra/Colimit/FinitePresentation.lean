@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.FinitePresentation
 public import TauCeti.RingTheory.TensorProduct.DirectLimit
-import Mathlib.Data.Finset.Order
+import Mathlib.Data.Fintype.Order
 
 /-!
 # Algebra maps from finitely presented algebras into directed colimits
@@ -81,26 +81,20 @@ theorem exists_comp_eq_comp_of_finiteType [Algebra.FiniteType A S] {j : ι}
   obtain ⟨s, hs⟩ := (Algebra.FiniteType.out : (⊤ : Subalgebra A S).FG)
   -- Each of the finitely many generators is equalized at some later stage.
   have hgen (x : s) : ∃ k, ∃ hjk : j ≤ k, f j k hjk (ψ₁ x) = f j k hjk (ψ₂ x) := by
-    obtain ⟨k, hk₁, hk₂, hk⟩ := Quotient.eq.mp congr($h x)
+    have hx := congr($h x)
+    simp only [AlgHom.comp_apply, DirectLimit.Algebra.of_apply] at hx
+    obtain ⟨k, hk₁, hk₂, hk⟩ := Quotient.eq.mp hx
     exact ⟨k, hk₁, hk⟩
   choose k hjk hk using hgen
-  obtain ⟨l, hl⟩ := Finset.exists_le (insert j (Finset.univ.image k))
-  have hjl : j ≤ l := hl j (Finset.mem_insert_self _ _)
-  have hkl (x : s) : k x ≤ l :=
-    hl _ (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ (Finset.mem_univ _)))
+  obtain ⟨l₀, hl₀⟩ := Finite.exists_le k
+  obtain ⟨l, hjl, hl₀l⟩ := exists_ge_ge j l₀
+  have hkl (x : s) : k x ≤ l := (hl₀ x).trans hl₀l
   refine ⟨l, hjl, AlgHom.ext_of_adjoin_eq_top hs fun x hx ↦ ?_⟩
   simp only [AlgHom.comp_apply]
   rw [← DirectedSystem.map_map' f (hjk ⟨x, hx⟩) (hkl ⟨x, hx⟩), hk]
   exact DirectedSystem.map_map' f _ _ _
 
-end Semiring
-
-section CommSemiring
-
-variable {A ι : Type*} [CommSemiring A] [Preorder ι] {B : ι → Type*} [∀ i, CommSemiring (B i)]
-  [∀ i, Algebra A (B i)] {f : ∀ i j, i ≤ j → B i →ₐ[A] B j} [DirectedSystem B (f · · ·)]
-  [IsDirectedOrder ι] [Nonempty ι] {S : Type*} [Semiring S] [Algebra A S]
-  (M : Type*) [CommSemiring M] [Algebra A M]
+variable (M : Type*) [Semiring M] [Algebra A M]
 
 open _root_.Algebra.TensorProduct
 
@@ -113,6 +107,17 @@ theorem exists_rTensor_comp_eq_rTensor_comp_of_finiteType [Algebra.FiniteType A 
   exists_comp_eq_comp_of_finiteType <| AlgHom.ext fun s ↦
     (directLimitLeft f M).symm.injective <| by
     simpa only [AlgHom.comp_apply, directLimitLeft_symm_of] using congr($h s)
+
+end Semiring
+
+section CommSemiring
+
+variable {A ι : Type*} [CommSemiring A] [Preorder ι] {B : ι → Type*} [∀ i, CommSemiring (B i)]
+  [∀ i, Algebra A (B i)] {f : ∀ i j, i ≤ j → B i →ₐ[A] B j} [DirectedSystem B (f · · ·)]
+  [IsDirectedOrder ι] [Nonempty ι] {S : Type*} [Semiring S] [Algebra A S]
+  (M : Type*) [Semiring M] [Algebra A M]
+
+open _root_.Algebra.TensorProduct
 
 /-- **Eventual equality of maps between base changes.** If two `B j`-algebra maps
 `Ψ₁ Ψ₂ : B j ⊗[A] S → B j ⊗[A] M`, for `S` of finite type over `A`, have the same base change to
@@ -153,11 +158,10 @@ theorem exists_eq_comp_of_finitePresentation [Algebra.FinitePresentation A S]
     (φ : S →ₐ[A] DirectLimit B f) : ∃ i, ∃ ψ : S →ₐ[A] B i, φ = (of B f i).comp ψ := by
   classical
   obtain ⟨n, π, hπ, s, hs⟩ := Algebra.FinitePresentation.out (R := A) (A := S)
-  replace hs : Ideal.span (s : Set _) = RingHom.ker π := hs
+  rw [AlgHom.toRingHom_eq_coe, RingHom.ker_coe_toRingHom] at hs
   -- Lift the images of the generators to a common stage `i`.
   choose j x hx using fun k : Fin n ↦ DirectLimit.exists_eq_mk _ (φ (π (MvPolynomial.X k)))
-  obtain ⟨i, hi⟩ := Finset.exists_le (Finset.univ.image j)
-  have hji (k : Fin n) : j k ≤ i := hi _ (Finset.mem_image_of_mem _ (Finset.mem_univ _))
+  obtain ⟨i, hji⟩ := Finite.exists_le j
   let ψ₀ : MvPolynomial (Fin n) A →ₐ[A] B i := MvPolynomial.aeval fun k ↦ f (j k) i (hji k) (x k)
   have hψ₀ : (of B f i).comp ψ₀ = φ.comp π := MvPolynomial.algHom_ext fun k ↦ by
     simp [ψ₀, hx]
@@ -168,10 +172,9 @@ theorem exists_eq_comp_of_finitePresentation [Algebra.FinitePresentation A S]
       simpa [hr] using congr($hψ₀ r)
     exact ⟨m, him, hm⟩
   choose m him hm using hrel
-  obtain ⟨l, hl⟩ := Finset.exists_le (insert i (Finset.univ.image m))
-  have hil : i ≤ l := hl i (Finset.mem_insert_self _ _)
-  have hml (r : s) : m r ≤ l :=
-    hl _ (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ (Finset.mem_univ _)))
+  obtain ⟨l₀, hl₀⟩ := Finite.exists_le m
+  obtain ⟨l, hil, hl₀l⟩ := exists_ge_ge i l₀
+  have hml (r : s) : m r ≤ l := (hl₀ r).trans hl₀l
   have hker : RingHom.ker π ≤ RingHom.ker ((f i l hil).comp ψ₀) := by
     rw [← hs, Ideal.span_le]
     intro r hr
@@ -179,14 +182,11 @@ theorem exists_eq_comp_of_finitePresentation [Algebra.FinitePresentation A S]
   -- The map `MvPolynomial (Fin n) A → B l` descends to `S ≃ MvPolynomial (Fin n) A ⧸ ker π`.
   let e := Ideal.quotientKerAlgEquivOfSurjective hπ
   have he : e.symm.toAlgHom.comp π = Ideal.Quotient.mkₐ A (RingHom.ker π) :=
-    AlgHom.ext fun _ ↦ e.symm_apply_eq.mpr rfl
-  refine ⟨l, (Ideal.Quotient.liftₐ _ _ fun a ha ↦ hker ha).comp e.symm.toAlgHom,
-    (AlgHom.cancel_right hπ).mp ?_⟩
-  rw [← hψ₀, AlgHom.comp_assoc, AlgHom.comp_assoc, he]
-  refine AlgHom.ext fun p ↦ ?_
-  simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
-  -- `Ideal.Quotient.liftₐ` evaluates on `mk p` by definition (`Ideal.Quotient.lift_mk`).
-  exact (of_f _ _).symm
+    AlgHom.ext fun _ ↦ Ideal.quotientKerAlgEquivOfSurjective_symm_apply hπ _
+  refine ⟨l, (Ideal.Quotient.liftₐ _ _ fun a ha ↦ RingHom.mem_ker.mp (hker ha)).comp
+    e.symm.toAlgHom, (AlgHom.cancel_right hπ).mp ?_⟩
+  rw [← hψ₀, AlgHom.comp_assoc, AlgHom.comp_assoc, he, Ideal.Quotient.liftₐ_comp,
+    ← AlgHom.comp_assoc, of_comp_f]
 
 /-- An `A`-algebra map from a finitely presented `A`-algebra `S` into the base change
 `(colim B i) ⊗[A] M` factors through some `B i ⊗[A] M`. -/
