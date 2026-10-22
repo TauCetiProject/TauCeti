@@ -87,19 +87,6 @@ private theorem range_eq_top (hx : IsRegularPoint I 𝓘(ℝ) f x) :
     (fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)).range = ⊤ :=
   LinearMap.range_eq_top.2 hx.surjective_fderiv_comp_extChartAt_symm
 
-/-- The preferred chart of the self-modelled copy at `x` is the preferred extended chart of `M`. -/
-private theorem chartAt_apply (y : BoundarylessModel I M) :
-    chartAt E (BoundarylessModel.homeomorph I M x) y =
-      extChartAt I x ((BoundarylessModel.homeomorph I M).symm y) := by
-  rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_apply, Homeomorph.symm_apply_apply,
-    extChartAt_coe, comp_apply]
-
-private theorem chartAt_symm_apply (v : E) :
-    (BoundarylessModel.homeomorph I M).symm
-      ((chartAt E (BoundarylessModel.homeomorph I M x)).symm v) = (extChartAt I x).symm v := by
-  rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_symm_apply, Homeomorph.symm_apply_apply,
-    Homeomorph.symm_apply_apply, extChartAt_coe_symm, comp_apply]
-
 variable [FiniteDimensional ℝ E] (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hx : IsRegularPoint I 𝓘(ℝ) f x)
 
 /-- The implicit-function chart `y ↦ (f ((extChartAt I x).symm y) - f x, P (y - extChartAt I x x))`
@@ -138,26 +125,25 @@ private noncomputable abbrev modelChart : OpenPartialHomeomorph (BoundarylessMod
 private theorem modelChart_apply (y : BoundarylessModel I M) :
     modelChart hf hx y = (coordEquiv hx).symm
       (implicitChart hf hx (extChartAt I x ((BoundarylessModel.homeomorph I M).symm y))) := by
-  rw [← chartAt_apply]
-  -- The composite chart applies the preferred chart, the restricted implicit-function chart and
-  -- `L⁻¹` in turn.
-  rfl
+  rw [OpenPartialHomeomorph.coe_trans, comp_apply, BoundarylessModel.chartAt_apply,
+    Homeomorph.symm_apply_apply, OpenPartialHomeomorph.transHomeomorph_apply, comp_apply,
+    OpenPartialHomeomorph.coe_restrOpen, ContinuousLinearEquiv.coe_toHomeomorph]
 
 private theorem modelChart_symm_apply (v : E) :
     (BoundarylessModel.homeomorph I M).symm ((modelChart hf hx).symm v) =
       (extChartAt I x).symm ((implicitChart hf hx).symm (coordEquiv hx v)) := by
-  rw [← chartAt_symm_apply]
-  -- The inverse composite chart applies `L`, the inverse implicit-function chart and the inverse
-  -- preferred chart in turn.
-  rfl
+  rw [OpenPartialHomeomorph.coe_trans_symm, comp_apply, BoundarylessModel.chartAt_symm_apply,
+    Homeomorph.symm_apply_apply, OpenPartialHomeomorph.transHomeomorph_symm_apply, comp_apply,
+    OpenPartialHomeomorph.coe_restrOpen_symm, ← ContinuousLinearEquiv.toHomeomorph_symm,
+    ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.coe_toHomeomorph]
 
 private theorem mem_modelChart_source_iff (y : BoundarylessModel I M) :
     y ∈ (modelChart hf hx).source ↔
       (BoundarylessModel.homeomorph I M).symm y ∈ (chartAt H x).source ∧
         extChartAt I x ((BoundarylessModel.homeomorph I M).symm y) ∈ domain hf hx := by
-  rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage, chartAt_apply,
-    BoundarylessModel.chartAt_eq, BoundarylessModel.chart_source, mem_preimage,
-    Homeomorph.symm_apply_apply]
+  rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage,
+    BoundarylessModel.chartAt_apply, Homeomorph.symm_apply_apply, BoundarylessModel.chartAt_eq,
+    BoundarylessModel.chart_source, mem_preimage, Homeomorph.symm_apply_apply]
   simp only [OpenPartialHomeomorph.transHomeomorph_source, OpenPartialHomeomorph.restrOpen_source,
     mem_inter_iff, domain]
   tauto
@@ -196,7 +182,7 @@ private theorem contMDiffAt_modelChart {n : ℕ∞ω} [IsManifold I n M] {y : Bo
       hfy).sub contDiffAt_const
   have hcoord : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) n (coordChart hf hx)
       (chartAt E (BoundarylessModel.homeomorph I M x) y) := by
-    rw [contMDiffAt_iff_contDiffAt, chartAt_apply]
+    rw [contMDiffAt_iff_contDiffAt, BoundarylessModel.chartAt_apply, Homeomorph.symm_apply_apply]
     exact (coordEquiv hx).symm.contDiff.contDiffAt.comp _
       ((hasStrictFDerivAt_coord hf).contDiffAt_implicitToOpenPartialHomeomorphOfComplemented hg _ _)
   have hchart : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) n (chartAt E (BoundarylessModel.homeomorph I M x)) y :=
