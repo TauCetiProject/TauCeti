@@ -48,6 +48,8 @@ are *defined* to vanish (`asymmetricLaplaceMeasure_of_nonpos_left`,
   `rnDeriv_asymmetricLaplaceMeasure` — the density API;
 * `cdf_asymmetricLaplaceMeasure_eq` — the cdf is `r / (l + r) * exp (l * (x - m))` up to the
   location and `1 - l / (l + r) * exp (-(r * (x - m)))` above it;
+* `memLp_id_asymmetricLaplaceMeasure` and `integrable_id_asymmetricLaplaceMeasure` — the identity
+  is square-integrable, hence integrable;
 * `integral_id_asymmetricLaplaceMeasure` and `variance_id_asymmetricLaplaceMeasure` — the mean
   `m + r⁻¹ - l⁻¹` and the variance `(r ^ 2)⁻¹ + (l ^ 2)⁻¹`;
 * `asymmetricLaplaceMeasure_self` — equal rates give the Laplace law of scale `r⁻¹`;
@@ -510,6 +512,30 @@ theorem cdf_asymmetricLaplaceMeasure_eq (hl : 0 < l) (hr : 0 < r) (m x : ℝ) :
       integral_asymmetricLaplacePDFReal_Ioi hl hr (not_le.mp hx).le]
 
 /-! ### Mean and variance -/
+
+/-- The identity is square-integrable against an asymmetric Laplace law, for all parameters. -/
+theorem memLp_id_asymmetricLaplaceMeasure (m l r : ℝ) :
+    MemLp id 2 (asymmetricLaplaceMeasure m l r) := by
+  rcases le_or_gt l 0 with hl | hl
+  · simp [asymmetricLaplaceMeasure_of_nonpos_left hl]
+  rcases le_or_gt r 0 with hr | hr
+  · simp [asymmetricLaplaceMeasure_of_nonpos_right hr]
+  have := isProbabilityMeasure_expMeasure hl
+  have := isProbabilityMeasure_expMeasure hr
+  rw [asymmetricLaplaceMeasure_of_pos hl hr, memLp_map_measure_iff (by fun_prop) (by fun_prop)]
+  exact ((memLp_const m).add ((memLp_id_expMeasure hr).comp_measurePreserving
+    measurePreserving_fst)).sub
+    ((memLp_id_expMeasure hl).comp_measurePreserving measurePreserving_snd)
+
+/-- The identity is integrable against an asymmetric Laplace law, for all parameters. -/
+theorem integrable_id_asymmetricLaplaceMeasure (m l r : ℝ) :
+    Integrable id (asymmetricLaplaceMeasure m l r) := by
+  rcases le_or_gt l 0 with hl | hl
+  · simp [asymmetricLaplaceMeasure_of_nonpos_left hl]
+  rcases le_or_gt r 0 with hr | hr
+  · simp [asymmetricLaplaceMeasure_of_nonpos_right hr]
+  have := isProbabilityMeasure_asymmetricLaplaceMeasure hl hr m
+  exact (memLp_id_asymmetricLaplaceMeasure m l r).integrable one_le_two
 
 /-- **The mean of the asymmetric Laplace law** is `m + r⁻¹ - l⁻¹`. -/
 theorem integral_id_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (m : ℝ) :
