@@ -32,6 +32,8 @@ The reconstruction API is in `TauCeti`. In particular,
 `TauCeti.finiteProjection_unitsToZModPow_ext μ ν h` proves uniqueness,
 `TauCeti.mapDomain_finiteProjection_unitsToZModPow μ` supplies compatibility, and
 `TauCeti.ofUnitCoordinates_finiteProjection μ` reconstructs a measure.
+Use these qualified calls: measure field notation searches Mathlib's root `AbstractMeasure`
+namespace and does not find these lemmas in `TauCeti`.
 
 ## References
 
