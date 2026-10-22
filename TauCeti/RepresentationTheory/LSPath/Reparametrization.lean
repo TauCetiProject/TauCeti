@@ -144,10 +144,11 @@ section Eval
 
 variable [Field 𝕜] [LinearOrder 𝕜] [AddCommGroup V] [Module 𝕜 V]
 
-/-- The parametrized path of a list of `(duration, segment)` pairs: starting at `0` at time `0`,
-it runs along each segment `v` in turn at constant velocity, during a time interval of length the
-duration `d` of `v`. At time `t` the first pair contributes `(max 0 (min t d) / d) • v`, and the
-remaining pairs are run from time `d` on. -/
+/-- The parametrized path of a list of `(duration, segment)` pairs. At time `t` the first pair
+`(d, v)` contributes `(max 0 (min t d) / d) • v`, and the remaining pairs are run from time `d` on.
+For a timed presentation (`TauCeti.PLPath.IsTimed p`, every duration positive) this starts at `0`
+at time `0` and runs along each segment `v` in turn at constant velocity, during a time interval of
+length the duration `d` of `v`. -/
 def evalTimed : List (𝕜 × V) → 𝕜 → V
   | [], _ => 0
   | (d, v) :: p, t => (max 0 (min t d) / d) • v + evalTimed p (t - d)
@@ -219,6 +220,7 @@ theorem evalTimed_of_nonpos (hp : ∀ x ∈ p, 0 ≤ x.1) (ht : t ≤ 0) : evalT
     simp only [List.forall_mem_cons] at hp
     rw [evalTimed_cons_of_nonpos ht, ih hp.2 (by linarith [hp.1])]
 
+@[simp]
 theorem evalTimed_zero (hp : ∀ x ∈ p, 0 ≤ x.1) : evalTimed p 0 = 0 :=
   evalTimed_of_nonpos hp le_rfl
 
@@ -480,10 +482,11 @@ private theorem timedComp_split_aux {a : 𝕜} (hd : 0 < d) (he : 0 < e) (hae : 
   exact ⟨hea, div_pos (mul_pos hd he) ha, (div_lt_iff₀ ha).2 (mul_lt_mul_of_pos_left hea hd)⟩
 
 /-- A list of `(duration, segment)` pairs presenting the composite `evalTimed q ∘ evalTimed φ` of
-the parametrized path of `q` with a timing `φ` in `𝕜` (see
-`TauCeti.PLPath.evalTimed_timedComp`). It runs through the pieces of `φ` in turn: a piece of `φ`
-that ends before the current segment `(e, w)` of `q` does is run along the corresponding part of
-`w`, and a piece of `φ` that ends after it is subdivided at the end of that segment. -/
+the parametrized path of `q` with a timing `φ` in `𝕜`, when `q` and `φ` are timed presentations
+and every segment of `φ` is nonnegative (see `TauCeti.PLPath.evalTimed_timedComp`). It runs
+through the pieces of `φ` in turn: a piece of `φ` that ends before the current segment `(e, w)` of
+`q` does is run along the corresponding part of `w`, and a piece of `φ` that ends after it is
+subdivided at the end of that segment. -/
 def timedComp : List (𝕜 × V) → List (𝕜 × 𝕜) → List (𝕜 × V)
   | _, [] => []
   | [], φ => φ.map fun x ↦ (x.1, 0)
