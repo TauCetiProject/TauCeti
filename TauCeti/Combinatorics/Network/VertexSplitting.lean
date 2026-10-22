@@ -354,21 +354,37 @@ theorem arrows_splitLift_true {s t : V} (p : ArrowWalk Q s t) :
     rw [splitLift_true, splitLift_false_cons, arrows_cons, arrows_cons, ih, arrows_cons]
     simp
 
-/-- The lift of a walk ending at an exit traverses an original arrow exactly when the walk
-traverses it. -/
+/-- The arrows traversed by the lift ending at an entrance: for each arrow of the walk, the split
+arrow of its source followed by that arrow. -/
+theorem arrows_splitLift_false {s t : V} (p : ArrowWalk Q s t) :
+    (p.splitLift false).arrows = p.arrows.flatMap fun a ↦
+      [⟨_, _, SplitHom.split a.1⟩, ⟨(a.1, true), (a.2.1, false), SplitHom.original a.2.2⟩] := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    rw [splitLift_false_cons, splitLift_true, arrows_cons, arrows_cons, ih, arrows_cons]
+    simp
+
+/-- The lift of a walk traverses an original arrow exactly when the walk traverses it. -/
 @[simp]
-theorem original_mem_arrows_splitLift_true {s t v w : V} {p : ArrowWalk Q s t} {e : Q v w} :
-    ⟨(v, true), (w, false), SplitHom.original e⟩ ∈ (p.splitLift true).arrows ↔
+theorem original_mem_arrows_splitLift {s t v w : V} {b : Bool} {p : ArrowWalk Q s t}
+    {e : Q v w} :
+    ⟨(v, true), (w, false), SplitHom.original e⟩ ∈ (p.splitLift b).arrows ↔
       ⟨v, w, e⟩ ∈ p.arrows := by
-  simp only [arrows_splitLift_true, List.mem_cons, List.mem_flatMap]
-  constructor
-  · rintro (h | ⟨⟨x, y, e'⟩, ha, h | h | h⟩)
-    · cases h
-    · cases h
-      exact ha
-    · cases h
-    · cases h
-  · exact fun h ↦ .inr ⟨_, h, .inl rfl⟩
+  have hfalse : ⟨(v, true), (w, false), SplitHom.original e⟩ ∈ (p.splitLift false).arrows ↔
+      ⟨v, w, e⟩ ∈ p.arrows := by
+    simp only [arrows_splitLift_false, List.mem_flatMap, List.mem_cons]
+    constructor
+    · rintro ⟨⟨x, y, e'⟩, ha, h | h | h⟩
+      · cases h
+      · cases h
+        exact ha
+      · cases h
+    · exact fun h ↦ ⟨_, h, .inr (.inl rfl)⟩
+  cases b
+  · exact hfalse
+  · rw [splitLift_true, arrows_cons, List.mem_append, hfalse]
+    simp
 
 /-- The lift of a walk ending at an exit traverses the split arrow of `v` exactly when the walk
 visits `v`. -/
@@ -388,6 +404,18 @@ theorem split_mem_arrows_splitLift_true {s t v : V} {p : ArrowWalk Q s t} :
   · rintro (rfl | ⟨a, ha, rfl⟩)
     · exact .inl rfl
     · exact .inr ⟨a, ha, .inr (.inl rfl)⟩
+
+/-- The lift of a walk ending at an entrance traverses the split arrow of `v` exactly when the walk
+visits `v` before its last vertex. -/
+@[simp]
+theorem split_mem_arrows_splitLift_false {s t v : V} {p : ArrowWalk Q s t} :
+    ⟨(v, false), (v, true), SplitHom.split v⟩ ∈ (p.splitLift false).arrows ↔
+      v ∈ p.vertices.dropLast := by
+  cases p with
+  | nil => simp
+  | cons p e =>
+    rw [splitLift_false_cons, arrows_cons, List.mem_append, split_mem_arrows_splitLift_true]
+    simp [Quiver.Path.vertices_cons]
 
 /-! ### Walks starting at an exit -/
 
@@ -495,20 +523,31 @@ theorem arrows_eq_flatMap_arrows_splitProj {s t : V}
   rw [arrows_splitLift_true, arrows_comp] at h
   simpa using h.symm
 
-/-- A walk in the split network from the exit of `s` to an exit traverses an original arrow
-exactly when its projection traverses it. -/
+/-- The arrows traversed by a walk in the split network from the exit of `s` to an entrance,
+preceded by the split arrow of `s`: for each arrow of its projection, the split arrow of its source
+followed by that arrow. -/
+theorem split_cons_arrows_eq_flatMap_arrows_splitProj {s t : V}
+    (q : ArrowWalk (SplitHom Q) (s, true) (t, false)) :
+    ⟨_, _, SplitHom.split s⟩ :: q.arrows = q.splitProj.arrows.flatMap fun a ↦
+      [⟨_, _, SplitHom.split a.1⟩, ⟨(a.1, true), (a.2.1, false), SplitHom.original a.2.2⟩] := by
+  have h := congrArg arrows (splitLift_splitProj_of_exit q)
+  rw [arrows_splitLift_false, arrows_comp] at h
+  simpa using h.symm
+
+/-- A walk in the split network from the exit of `s` traverses an original arrow exactly when its
+projection traverses it. -/
 @[simp]
-theorem original_mem_arrows_of_exit {s t v w : V} {q : ArrowWalk (SplitHom Q) (s, true) (t, true)}
-    {e : Q v w} :
+theorem original_mem_arrows_of_exit {s v w : V} {y : V × Bool}
+    {q : ArrowWalk (SplitHom Q) (s, true) y} {e : Q v w} :
     ⟨(v, true), (w, false), SplitHom.original e⟩ ∈ q.arrows ↔ ⟨v, w, e⟩ ∈ q.splitProj.arrows := by
-  have h : q.splitProj.splitLift true = _ := splitLift_splitProj_of_exit q
-  rw [← original_mem_arrows_splitLift_true (p := q.splitProj), h, arrows_comp]
+  rw [← original_mem_arrows_splitLift (b := y.2) (p := q.splitProj), splitLift_splitProj_of_exit,
+    arrows_comp]
   simp
 
 /-- A walk in the split network from the exit of `s` to an exit traverses the split arrow of `v`
 exactly when its projection visits `v` after its first vertex. -/
 @[simp]
-theorem split_mem_arrows_of_exit {s t v : V} {q : ArrowWalk (SplitHom Q) (s, true) (t, true)} :
+theorem split_mem_arrows_of_exit_true {s t v : V} {q : ArrowWalk (SplitHom Q) (s, true) (t, true)} :
     ⟨(v, false), (v, true), SplitHom.split v⟩ ∈ q.arrows ↔ v ∈ q.splitProj.vertices.tail := by
   rw [arrows_eq_flatMap_arrows_splitProj, ← map_target_arrows]
   simp only [List.mem_flatMap, List.mem_cons, List.mem_map, List.not_mem_nil, or_false]
@@ -519,6 +558,23 @@ theorem split_mem_arrows_of_exit {s t v : V} {q : ArrowWalk (SplitHom Q) (s, tru
       exact ⟨_, ha, rfl⟩
   · rintro ⟨a, ha, rfl⟩
     exact ⟨a, ha, .inr rfl⟩
+
+/-- A walk in the split network from the exit of `s` to an entrance traverses the split arrow of
+`v` exactly when its projection visits `v` strictly between its first and last vertices. -/
+@[simp]
+theorem split_mem_arrows_of_exit_false {s t v : V}
+    {q : ArrowWalk (SplitHom Q) (s, true) (t, false)} :
+    ⟨(v, false), (v, true), SplitHom.split v⟩ ∈ q.arrows ↔
+      v ∈ q.splitProj.vertices.tail.dropLast := by
+  cases q with
+  | @cons y _ q e =>
+    rcases y with ⟨u, _ | _⟩
+    · exact e.elim
+    obtain ⟨e, rfl⟩ := SplitHom.exists_original e
+    rw [arrows_cons, List.mem_append, split_mem_arrows_of_exit_true, splitProj_cons,
+      SplitHom.toWalk_original]
+    simp [comp, Quiver.Path.vertices_cons,
+      List.tail_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ (splitProj q))]
 
 end ArrowWalk
 
@@ -596,6 +652,16 @@ theorem assignment_neg [Neg K] (f : Assignment Q K) (φ : V → K) :
   assignment_ext rfl fun _ ↦ rfl
 
 @[simp]
+theorem assignment_sub [Sub K] (f f' : Assignment Q K) (φ φ' : V → K) :
+    assignment (f - f') (φ - φ') = assignment f φ - assignment f' φ' :=
+  assignment_ext rfl fun _ ↦ rfl
+
+@[simp]
+theorem originalAssignment_zero [Zero K] :
+    originalAssignment (0 : Assignment (SplitHom Q) K) = 0 :=
+  (rfl)
+
+@[simp]
 theorem originalAssignment_add [Add K] (g g' : Assignment (SplitHom Q) K) :
     originalAssignment (g + g') = originalAssignment g + originalAssignment g' :=
   (rfl)
@@ -603,6 +669,11 @@ theorem originalAssignment_add [Add K] (g g' : Assignment (SplitHom Q) K) :
 @[simp]
 theorem originalAssignment_neg [Neg K] (g : Assignment (SplitHom Q) K) :
     originalAssignment (-g) = -originalAssignment g :=
+  (rfl)
+
+@[simp]
+theorem originalAssignment_sub [Sub K] (g g' : Assignment (SplitHom Q) K) :
+    originalAssignment (g - g') = originalAssignment g - originalAssignment g' :=
   (rfl)
 
 /-- Split assignments are compared arrowwise on original arrows and vertexwise on split
