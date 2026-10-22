@@ -44,8 +44,9 @@ built on.
   roots in `S` among all degree-`≤ d` polynomials with every coefficient in a finite set `U`.
 * `TauCeti.Polynomial.ncard_biUnion_roots_natDegree_le_abs_intCoeff_le`: the integer
   specialisation, `(2 · B + 1) ^ (d + 1) · d` roots among all degree-`≤ d` integer polynomials
-  with every coefficient bounded by `B` in absolute value. This is the form named by the
-  Layer-2 ("effective Hermite–Minkowski") target.
+  with every coefficient bounded by `B` in absolute value.
+* `TauCeti.Polynomial.finite_biUnion_roots_natDegree_le_abs_intCoeff_le`: the same root set
+  is finite.
 * `TauCeti.Polynomial.finite_biUnion_roots_natDegree_le_coeff_mem_pi`,
   `TauCeti.Polynomial.ncard_biUnion_roots_natDegree_le_coeff_mem_pi_le`: the coefficient-dependent
   version, at most `∏ᵢ #(s i) · n` roots among all degree-`≤ n` polynomials whose `i`-th
@@ -89,6 +90,13 @@ theorem ncard_biUnion_roots_natDegree_le_coeff_mem_le (m : R →+* S) (d : ℕ) 
         ((f.map m).roots.toFinset : Set S)).ncard ≤ U.card ^ (d + 1) * d :=
   (ncard_biUnion_roots_map_le m (finite_setOf_natDegree_le_coeff_mem d U.finite_toSet)
     fun _ hf ↦ hf.1).trans (by gcongr; exact ncard_natDegree_le_coeff_mem_le d U)
+
+/-- The integer specialisation: the roots in a domain `S` of all integer polynomials of degree at
+most `d` whose coefficients are bounded by `B` in absolute value form a finite set. -/
+theorem finite_biUnion_roots_natDegree_le_abs_intCoeff_le (m : ℤ →+* S) (d B : ℕ) :
+    (⋃ (f : ℤ[X]) (_ : f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)),
+        ((f.map m).roots.toFinset : Set S)).Finite :=
+  (finite_setOf_natDegree_le_abs_intCoeff_le d B).biUnion fun _ _ ↦ Finset.finite_toSet _
 
 /-- The integer specialisation: the roots in a domain `S` of all integer polynomials of degree at
 most `d` with every coefficient bounded by `B` in absolute value number at most
