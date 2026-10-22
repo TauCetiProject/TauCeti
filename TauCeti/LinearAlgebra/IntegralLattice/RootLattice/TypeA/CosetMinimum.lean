@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.ZeroSum
+import TauCeti.Data.Int.MulPred
 
 /-!
 # Shortest vectors in the discriminant cosets of `Aₙ`
@@ -39,6 +40,8 @@ norm of a glue vector in an orthogonal sum of root lattices.
 
 ## Main results
 
+* `TauCeti.IntegralLattice.dotProduct_self_eq_mul_sub_div_add_sum`: the exact norm identity
+  `∑ xⱼ² = k (n + 1 - k) / (n + 1) + ∑ mⱼ (mⱼ - 1)` in classical coordinates.
 * `TauCeti.IntegralLattice.mul_sub_div_le_dotProduct_self`: a vector of `ℚ^{n+1}` of coordinate
   sum zero with coordinates in `ℤ - k / (n + 1)` has norm at least `k (n + 1 - k) / (n + 1)`.
 * `TauCeti.IntegralLattice.dotProduct_self_eq_mul_sub_div_iff`: equality holds exactly when all
@@ -67,8 +70,8 @@ variable {n : ℕ}
 /-- **The norm identity of the cosets of `Aₙ`.** If `x` has coordinate sum zero and
 `xⱼ = mⱼ - k / (n + 1)` with integers `mⱼ`, then
 `∑ xⱼ² = k (n + 1 - k) / (n + 1) + ∑ mⱼ (mⱼ - 1)`. -/
-private theorem dotProduct_self_eq_add_sum {k : ℤ} {x : Fin (n + 1) → ℚ} (hx : ∑ j, x j = 0)
-    {m : Fin (n + 1) → ℤ} (hm : ∀ j, x j = m j - k / (n + 1)) :
+theorem dotProduct_self_eq_mul_sub_div_add_sum {k : ℤ} {x : Fin (n + 1) → ℚ}
+    (hx : ∑ j, x j = 0) {m : Fin (n + 1) → ℤ} (hm : ∀ j, x j = m j - k / (n + 1)) :
     x ⬝ᵥ x = k * (n + 1 - k) / (n + 1) + ∑ j, (m j : ℚ) * (m j - 1) := by
   have hn : (n : ℚ) + 1 ≠ 0 := by positivity
   -- The coordinate sum `∑ (mⱼ - k / (n + 1)) = 0` forces `∑ mⱼ = k`.
@@ -86,11 +89,6 @@ private theorem dotProduct_self_eq_add_sum {k : ℤ} {x : Fin (n + 1) → ℚ} (
   field_simp
   ring
 
-/-- The error term `m (m - 1)` of the norm identity is nonnegative for an integer `m`. -/
-private theorem intCast_mul_sub_one_nonneg (m : ℤ) : (0 : ℚ) ≤ m * (m - 1) := by
-  have h : (m : ℚ) ≤ m ^ 2 := by exact_mod_cast Int.le_self_sq m
-  nlinarith
-
 /-- **The coset bound for `Aₙ` in classical coordinates.** A vector of `ℚ^{n+1}` with coordinate
 sum zero whose coordinates all lie in `ℤ - k / (n + 1)` has norm at least
 `k (n + 1 - k) / (n + 1)`. -/
@@ -98,8 +96,8 @@ theorem mul_sub_div_le_dotProduct_self {k : ℤ} {x : Fin (n + 1) → ℚ} (hx :
     (hint : ∀ j, ∃ m : ℤ, x j = m - k / (n + 1)) :
     k * (n + 1 - k) / (n + 1) ≤ x ⬝ᵥ x := by
   choose m hm using hint
-  rw [dotProduct_self_eq_add_sum hx hm, le_add_iff_nonneg_right]
-  exact sum_nonneg fun j _ ↦ intCast_mul_sub_one_nonneg (m j)
+  rw [dotProduct_self_eq_mul_sub_div_add_sum hx hm, le_add_iff_nonneg_right]
+  exact sum_nonneg fun j _ ↦ by exact_mod_cast Int.zero_le_mul_sub_one (m j)
 
 /-- **The vectors attaining the coset bound for `Aₙ`.** A vector of `ℚ^{n+1}` with coordinate sum
 zero whose coordinates all lie in `ℤ - k / (n + 1)` has norm `k (n + 1 - k) / (n + 1)` exactly
@@ -109,8 +107,8 @@ theorem dotProduct_self_eq_mul_sub_div_iff {k : ℤ} {x : Fin (n + 1) → ℚ} (
     x ⬝ᵥ x = k * (n + 1 - k) / (n + 1) ↔
       ∀ j, x j = -(k / (n + 1)) ∨ x j = 1 - k / (n + 1) := by
   choose m hm using hint
-  rw [dotProduct_self_eq_add_sum hx hm, add_eq_left,
-    sum_eq_zero_iff_of_nonneg fun j _ ↦ intCast_mul_sub_one_nonneg (m j)]
+  rw [dotProduct_self_eq_mul_sub_div_add_sum hx hm, add_eq_left,
+    sum_eq_zero_iff_of_nonneg fun j _ ↦ by exact_mod_cast Int.zero_le_mul_sub_one (m j)]
   refine forall_congr' fun j ↦ ?_
   rw [imp_iff_right (mem_univ j), hm j, mul_eq_zero, sub_eq_zero]
   constructor <;> rintro (h | h) <;> [left; right; left; right] <;> linarith
