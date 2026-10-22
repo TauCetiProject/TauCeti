@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.Convergence
 public import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
 public import TauCeti.RingTheory.NovikovSeries.Multiplication
 public import TauCeti.RingTheory.NovikovSeries.Topology
-public import Mathlib.Topology.UniformSpace.Equiv
 
 /-!
 # Novikov series on the integers are Laurent series
@@ -39,8 +37,6 @@ Mathlib.
 
 ## Main results
 
-* `TauCeti.NovikovSeries.forall_finite_lt_iff_bddBelow_support`: on `ℤ`, the Novikov support
-  condition is boundedness below of the support.
 * `TauCeti.NovikovSeries.toLaurentSeries_single` and
   `TauCeti.NovikovSeries.toLaurentSeries_ofAddMonoidAlgebra`: the comparison sends monomials to
   monomials and restricts to the inclusion of Laurent polynomials.
@@ -69,27 +65,6 @@ namespace TauCeti
 namespace NovikovSeries
 
 variable {R : Type*}
-
-/-- On the exponent group `ℤ` with the period map `k ↦ k`, a coefficient function has only
-finitely many nonzero coefficients below every real cutoff if and only if its support is bounded
-below. -/
-theorem forall_finite_lt_iff_bddBelow_support [Zero R] (f : ℤ → R) :
-    (∀ C : ℝ, {k : ℤ | f k ≠ 0 ∧ Int.castAddHom ℝ k < C}.Finite) ↔
-      BddBelow (Function.support f) := by
-  refine ⟨fun hf => ?_, fun ⟨m, hm⟩ C => ?_⟩
-  · obtain ⟨m, hm⟩ := (hf 0).bddBelow
-    refine ⟨min m 0, fun k hk => ?_⟩
-    rcases lt_or_ge k 0 with hk₀ | hk₀
-    · exact (min_le_left _ _).trans (hm ⟨hk, by simpa using hk₀⟩)
-    · exact (min_le_right _ _).trans hk₀
-  · refine (finite_Icc m ⌈C⌉).subset fun k hk => ⟨hm hk.1, ?_⟩
-    have hkC : (k : ℝ) < C := by simpa using hk.2
-    exact Int.cast_le.1 (hkC.le.trans (Int.le_ceil C))
-
-/-- The support of a Novikov series on `ℤ` for the period map `k ↦ k` is bounded below. -/
-theorem bddBelow_support_int [Zero R] (a : NovikovSeries R ℤ (Int.castAddHom ℝ)) :
-    BddBelow a.support :=
-  (forall_finite_lt_iff_bddBelow_support a.coeff).1 a.finite_lt |>.mono fun _ => mem_support.1
 
 section Semiring
 
