@@ -108,11 +108,15 @@ instance isFiniteMeasure_noncentralFMeasure (m n : ℝ) (l : ℝ≥0) :
 /-! ### The Poisson mixture of scaled central F laws -/
 
 /-- The noncentral F law is the Poisson-weighted sum, with weights of rate `l / 2`, of the
-central F laws `F(m + 2 * j, n)` scaled by `(m + 2 * j) / m`. -/
-theorem noncentralFMeasure_eq_sum (hm : 0 < m) (hn : 0 < n) (l : ℝ≥0) :
+central F laws `F(m + 2 * j, n)` scaled by `(m + 2 * j) / m`. For `n ≤ 0` both sides are
+zero. -/
+theorem noncentralFMeasure_eq_sum (hm : 0 < m) (l : ℝ≥0) :
     noncentralFMeasure m n l = Measure.sum fun j : ℕ ↦
       poissonMeasure (l / 2) {j} •
         (fisherSnedecorMeasure (m + 2 * j) n).map (fun x ↦ (m + 2 * j) / m * x) := by
+  by_cases hn : 0 < n
+  swap
+  · simp [hn]
   let _ := isProbabilityMeasure_chiSquaredMeasure hn.le
   rw [noncentralFMeasure_eq_map hm hn, noncentralChiSquaredMeasure_eq_sum hm.le,
     Measure.prod_sum_left, Measure.map_sum (by fun_prop)]
@@ -129,27 +133,27 @@ theorem noncentralFMeasure_eq_sum (hm : 0 < m) (hn : 0 < n) (l : ℝ≥0) :
 
 /-- The noncentral F law as a `Measure.bind` mixture of scaled central F laws over the Poisson
 law of rate `l / 2`. -/
-theorem noncentralFMeasure_eq_bind (hm : 0 < m) (hn : 0 < n) (l : ℝ≥0) :
+theorem noncentralFMeasure_eq_bind (hm : 0 < m) (l : ℝ≥0) :
     noncentralFMeasure m n l = (poissonMeasure (l / 2)).bind fun j ↦
       (fisherSnedecorMeasure (m + 2 * j) n).map (fun x ↦ (m + 2 * j) / m * x) := by
   ext s hs
-  rw [noncentralFMeasure_eq_sum hm hn, Measure.sum_apply _ hs,
+  rw [noncentralFMeasure_eq_sum hm, Measure.sum_apply _ hs,
     Measure.bind_apply hs (.of_discrete), lintegral_countable']
   simp only [Measure.smul_apply, smul_eq_mul, mul_comm]
 
 /-- Set evaluation as an extended-real Poisson series; the formula holds for every set. -/
-theorem noncentralFMeasure_apply (hm : 0 < m) (hn : 0 < n) (l : ℝ≥0) (s : Set ℝ) :
+theorem noncentralFMeasure_apply (hm : 0 < m) (l : ℝ≥0) (s : Set ℝ) :
     noncentralFMeasure m n l s = ∑' j : ℕ, poissonMeasure (l / 2) {j} *
       (fisherSnedecorMeasure (m + 2 * j) n).map (fun x ↦ (m + 2 * j) / m * x) s := by
-  rw [noncentralFMeasure_eq_sum hm hn, Measure.sum_apply_of_countable]
+  rw [noncentralFMeasure_eq_sum hm, Measure.sum_apply_of_countable]
   simp only [Measure.smul_apply, smul_eq_mul]
 
 /-- Nonnegative integration against the noncentral F law can be performed component by
 component, without measurability, finiteness or integrability assumptions on the observable. -/
-theorem lintegral_noncentralFMeasure (hm : 0 < m) (hn : 0 < n) (l : ℝ≥0) (f : ℝ → ℝ≥0∞) :
+theorem lintegral_noncentralFMeasure (hm : 0 < m) (l : ℝ≥0) (f : ℝ → ℝ≥0∞) :
     ∫⁻ x, f x ∂noncentralFMeasure m n l = ∑' j : ℕ, poissonMeasure (l / 2) {j} *
       ∫⁻ x, f ((m + 2 * j) / m * x) ∂fisherSnedecorMeasure (m + 2 * j) n := by
-  rw [noncentralFMeasure_eq_sum hm hn, lintegral_sum_measure]
+  rw [noncentralFMeasure_eq_sum hm, lintegral_sum_measure]
   congr 1
   funext j
   have hj : (m + 2 * j) / m ≠ 0 := by positivity
@@ -167,14 +171,16 @@ theorem noncentralFMeasure_zero_noncentrality (m n : ℝ) :
   · rw [noncentralFMeasure_of_not_pos h, fisherSnedecorMeasure_of_not_pos h]
 
 /-- The noncentral F law dominates its Poisson-zero component, the central F law with the same
-degrees weighted by `exp (-l / 2)`. -/
-theorem smul_fisherSnedecorMeasure_le_noncentralFMeasure (hm : 0 < m) (hn : 0 < n)
-    (l : ℝ≥0) :
+degrees weighted by `exp (-l / 2)`, for every choice of parameters. -/
+theorem smul_fisherSnedecorMeasure_le_noncentralFMeasure (m n : ℝ) (l : ℝ≥0) :
     ENNReal.ofReal (exp (-(l : ℝ) / 2)) • fisherSnedecorMeasure m n ≤
       noncentralFMeasure m n l := by
+  by_cases hm : 0 < m
+  swap
+  · simp [hm]
   have hle := Measure.le_sum (fun j : ℕ ↦ poissonMeasure (l / 2) {j} •
     (fisherSnedecorMeasure (m + 2 * j) n).map (fun x ↦ (m + 2 * j) / m * x)) 0
-  rw [← noncentralFMeasure_eq_sum hm hn] at hle
+  rw [← noncentralFMeasure_eq_sum hm] at hle
   simpa [poissonMeasure_singleton, div_self hm.ne', NNReal.coe_div, neg_div] using hle
 
 /-! ### Support and absolute continuity -/
@@ -197,7 +203,7 @@ choice of parameters. -/
 theorem absolutelyContinuous_noncentralFMeasure (m n : ℝ) (l : ℝ≥0) :
     noncentralFMeasure m n l ≪ volume := by
   by_cases h : 0 < m ∧ 0 < n
-  · rw [noncentralFMeasure_eq_sum h.1 h.2]
+  · rw [noncentralFMeasure_eq_sum h.1]
     refine Measure.absolutelyContinuous_sum_left fun j ↦
       (Measure.AbsolutelyContinuous.smul_left ?_ _)
     have hj : (m + 2 * j) / m ≠ 0 := by have := h.1; positivity
@@ -223,7 +229,7 @@ theorem support_noncentralFMeasure (hm : 0 < m) (hn : 0 < n) (l : ℝ≥0) :
   · have hw : ENNReal.ofReal (exp (-(l : ℝ) / 2)) ≠ 0 :=
       ENNReal.ofReal_ne_zero_iff.2 (exp_pos _)
     have hac := (Measure.absolutelyContinuous_smul hw).trans
-      (smul_fisherSnedecorMeasure_le_noncentralFMeasure hm hn l).absolutelyContinuous
+      (smul_fisherSnedecorMeasure_le_noncentralFMeasure m n l).absolutelyContinuous
     rw [← support_fisherSnedecorMeasure hm hn]
     exact hac.support_mono
 
