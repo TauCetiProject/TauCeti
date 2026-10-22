@@ -53,6 +53,8 @@ hypothesis by tripling four coefficients, which changes neither invariant.
   same statement for bilinear forms over `ℤ₂` with orthogonal bases of unit self-pairings.
 * `TauCeti.equivalent_weightedSumSquares_of_toZModPow_eq`: diagonal forms over `ℤ₂` whose
   coefficients have equal odd residues modulo `8` are isometric.
+* `TauCeti.equivalent_binary_of_four_dvd_sub`: the binary step `⟨x, y⟩ ≅ ⟨z, x y z⟩` over `ℤ₂`
+  for units `x, y` and `z ≡ y (mod 4)`.
 
 ## References
 
@@ -78,14 +80,6 @@ theorem equivalent_weightedSumSquares_of_toZModPow_eq {ι : Type*} [Fintype ι]
   choose t ht using fun i ↦ exists_eq_mul_sq_of_toZModPow_eq (hv i) (h i)
   exact ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares t fun i ↦ (ht i).symm⟩
 
-/-- A congruence modulo `4`, read on residues modulo `8`, is divisibility by `4`. -/
-private theorem four_dvd_sub_of_two_mul_sub_eq_zero {x y : ℤ_[2]}
-    (h : 2 * (toZModPow 3 x - toZModPow 3 y) = 0) : (4 : ℤ_[2]) ∣ x - y := by
-  have h8 : ((2 : ℕ) : ℤ_[2]) ^ 3 ∣ 2 * (x - y) := by
-    rw [← toZModPow_eq_zero_iff_dvd, map_mul, map_sub, map_ofNat, h]
-  rw [show ((2 : ℕ) : ℤ_[2]) ^ 3 = 2 * 4 by norm_num] at h8
-  exact (mul_dvd_mul_iff_left two_ne_zero).mp h8
-
 /-- Two odd residues modulo `8` are congruent modulo `4` up to sign. -/
 private theorem two_mul_add_eq_zero_of_ne {x y : ZMod (2 ^ 3)} (hx : x * x = 1) (hy : y * y = 1)
     (h : 2 * (x - y) ≠ 0) : 2 * (x + y) = 0 := by
@@ -104,14 +98,14 @@ private theorem add_mul_mul_eq_of_two_mul_sub_eq_zero {x y z : ZMod (2 ^ 3)} (hx
 
 /-! ### Elementary isometries -/
 
-/-- **The binary step.** If `z ≡ y (mod 4)` for odd `x, y, z` in `ℤ₂`, then `⟨x, y⟩ ≅ ⟨z, x y z⟩`.
-Writing `z - y = 4m`, the element `z - 4 x m²` agrees with `y` modulo `8`, so it is `y t²` for a
-unit `t`, and `x (2m)² + y t² = z`. -/
-private theorem equivalent_binary_of_two_mul_sub_eq_zero {x y z : ℤ_[2]}
-    (hx : toZModPow 3 x * toZModPow 3 x = 1) (hy : toZModPow 3 y * toZModPow 3 y = 1)
-    (hz : toZModPow 3 z * toZModPow 3 z = 1) (h : 2 * (toZModPow 3 z - toZModPow 3 y) = 0) :
+/-- **The binary step.** If `x` and `y` are units of `ℤ₂` and `z ≡ y (mod 4)`, then
+`⟨x, y⟩ ≅ ⟨z, x y z⟩`. Writing `z - y = 4m`, the element `z - 4 x m²` agrees with `y` modulo `8`,
+so it is `y t²` for a unit `t`, and `x (2m)² + y t² = z`. -/
+theorem equivalent_binary_of_four_dvd_sub {x y z : ℤ_[2]} (hx : IsUnit x) (hy : IsUnit y)
+    (h : (4 : ℤ_[2]) ∣ z - y) :
     (weightedSumSquares ℤ_[2] ![x, y]).Equivalent (weightedSumSquares ℤ_[2] ![z, x * y * z]) := by
-  obtain ⟨m, hm⟩ := four_dvd_sub_of_two_mul_sub_eq_zero h
+  rw [isUnit_iff_toZModPow_three_mul_self] at hx hy
+  obtain ⟨m, hm⟩ := h
   have key : ∀ a b : ZMod (2 ^ 3), b * b = 1 → 4 * a - 4 * b * a ^ 2 = 0 := by decide
   have hr : toZModPow 3 (z - 4 * x * m ^ 2) = toZModPow 3 y := by
     rw [show z - 4 * x * m ^ 2 = y + 4 * m - 4 * x * m ^ 2 by linear_combination hm]
@@ -119,7 +113,11 @@ private theorem equivalent_binary_of_two_mul_sub_eq_zero {x y z : ℤ_[2]}
     linear_combination key (toZModPow 3 m) (toZModPow 3 x) hx
   -- `z - 4 x m²` is `y` times the square of a unit.
   obtain ⟨t, ht⟩ := exists_eq_mul_sq_of_toZModPow_eq hy hr
-  have hzu := isUnit_iff_toZModPow_three_mul_self.mpr hz
+  -- `z ≡ y (mod 4)` is a unit.
+  have hzu : IsUnit z := by
+    have key' : ∀ a b : ZMod (2 ^ 3), b * b = 1 → (b + 4 * a) * (b + 4 * a) = 1 := by decide
+    rw [isUnit_iff_toZModPow_three_mul_self, show z = y + 4 * m by linear_combination hm]
+    simpa only [map_add, map_mul, map_ofNat] using key' (toZModPow 3 m) _ hy
   have e : (weightedSumSquares ℤ_[2] ![x, y]).Equivalent
       (weightedSumSquares ℤ_[2] ![(hzu.unit : ℤ_[2]), x * y * hzu.unit]) :=
     ⟨(isometryEquivBinaryNormalForm x y (2 * m) t hzu.unit
@@ -177,7 +175,9 @@ private theorem equivalent_cons_cons_of_two_mul_sub_eq_zero {m : ℕ} (ih : Clas
     (hcy : 2 * (toZModPow 3 c - toZModPow 3 y) = 0) :
     (weightedSumSquares ℤ_[2] (Fin.cons x (Fin.cons y r) : Fin (m + 2) → ℤ_[2])).Equivalent
       (weightedSumSquares ℤ_[2] (Fin.cons c t : Fin (m + 2) → ℤ_[2])) := by
-  have hpair := equivalent_binary_of_two_mul_sub_eq_zero hx hy hc hcy
+  have hpair := equivalent_binary_of_four_dvd_sub (isUnit_iff_toZModPow_three_mul_self.mpr hx)
+    (isUnit_iff_toZModPow_three_mul_self.mpr hy)
+    (four_dvd_sub_iff_two_mul_toZModPow_sub_eq_zero.mpr hcy)
   refine (equivalent_weightedSumSquares_of_pair (w := Fin.cons x (Fin.cons y r))
     (w' := Fin.cons c (Fin.cons (x * y * c) r)) (i := 0) (j := 1) zero_ne_one
     (by simpa using hpair) ?_).trans (equivalent_weightedSumSquares_cons c (ih _ _ ?_ ht ?_ ?_))
@@ -281,13 +281,17 @@ private theorem equivalent_of_rank_four (ih : Classified 3) {w v : Fin 4 → ℤ
       (weightedSumSquares ℤ_[2] ![a, a, b * c * a, d]) := by
     refine equivalent_weightedSumSquares_cons a (equivalent_weightedSumSquares_of_pair
       (w := ![b, c, d]) (w' := ![a, b * c * a, d]) (i := 0) (j := 1) zero_ne_one ?_ ?_)
-    · simpa using equivalent_binary_of_two_mul_sub_eq_zero hb hc ha (by linear_combination -hca)
+    · simpa using equivalent_binary_of_four_dvd_sub (isUnit_iff_toZModPow_three_mul_self.mpr hb)
+        (isUnit_iff_toZModPow_three_mul_self.mpr hc)
+        (four_dvd_sub_iff_two_mul_toZModPow_sub_eq_zero.mpr (by linear_combination -hca))
     · intro k hk0 hk1
       fin_cases k <;> simp_all
   have e₂ : (weightedSumSquares ℤ_[2] ![a, a, b * c * a, d]).Equivalent
       (weightedSumSquares ℤ_[2] ![a, a, a, b * c * a * d * a]) :=
     equivalent_weightedSumSquares_cons a (equivalent_weightedSumSquares_cons a
-      (equivalent_binary_of_two_mul_sub_eq_zero hbca hd ha (by linear_combination -hda)))
+      (equivalent_binary_of_four_dvd_sub (isUnit_iff_toZModPow_three_mul_self.mpr hbca)
+        (isUnit_iff_toZModPow_three_mul_self.mpr hd)
+        (four_dvd_sub_iff_two_mul_toZModPow_sub_eq_zero.mpr (by linear_combination -hda))))
   -- Rescale `e` to `a k` with `k = a e`, which has the same residue, and take the quaternary step.
   have e₃ : (weightedSumSquares ℤ_[2] ![a, a, a, b * c * a * d * a]).Equivalent
       (weightedSumSquares ℤ_[2] ![a, a, a, a * (a * (b * c * a * d * a))]) := by

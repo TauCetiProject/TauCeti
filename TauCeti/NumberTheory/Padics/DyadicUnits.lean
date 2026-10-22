@@ -62,7 +62,9 @@ or `4`, with `1` exactly for `A = 1` and `4` exactly for `A = V^(f)`.
 * `TauCeti.exists_eq_mul_sq_of_toZModPow_eq`: elements of `ℤ_2` with the same odd residue
   modulo `8` differ by the square of a unit; `TauCeti.isUnit_iff_toZModPow_three_mul_self`:
   units of `ℤ_2` are exactly the elements whose residue modulo `8` squares to one, with the
-  unit-valued form `TauCeti.toZModPow_three_mul_self`.
+  unit-valued form `TauCeti.toZModPow_three_mul_self`;
+  `TauCeti.four_dvd_sub_iff_two_mul_toZModPow_sub_eq_zero`: congruence modulo `4` read on
+  residues modulo `8`.
 * `TauCeti.relIndex_map_powMonoidHom_two_eq_one_or_two_or_four`: `(A : A²) ∈ {1, 2, 4}` for
   closed `A`;
   `TauCeti.relIndex_map_powMonoidHom_two_eq_four_iff` and
@@ -501,6 +503,13 @@ theorem isUnit_iff_toZModPow_three_mul_self {x : ℤ_[2]} :
 theorem toZModPow_three_mul_self (u : ℤ_[2]ˣ) :
     toZModPow 3 (u : ℤ_[2]) * toZModPow 3 (u : ℤ_[2]) = 1 :=
   isUnit_iff_toZModPow_three_mul_self.mp u.isUnit
+
+/-- **Congruence modulo `4` is read on residues modulo `8`.** Two `2`-adic integers are congruent
+modulo `4` exactly when twice the difference of their residues modulo `8` vanishes. -/
+theorem four_dvd_sub_iff_two_mul_toZModPow_sub_eq_zero {x y : ℤ_[2]} :
+    (4 : ℤ_[2]) ∣ x - y ↔ 2 * (toZModPow 3 x - toZModPow 3 y) = 0 := by
+  rw [← map_sub, ← map_ofNat (toZModPow 3) 2, ← map_mul, toZModPow_eq_zero_iff_dvd,
+    show ((2 : ℕ) : ℤ_[2]) ^ 3 = 2 * 4 by norm_num, mul_dvd_mul_iff_left two_ne_zero]
 
 /-- **Square classes of `ℤ₂ˣ` are residues modulo `8`.** An element of `ℤ₂` with the same odd
 residue modulo `8` as `y` is `y` times the square of a unit. -/
