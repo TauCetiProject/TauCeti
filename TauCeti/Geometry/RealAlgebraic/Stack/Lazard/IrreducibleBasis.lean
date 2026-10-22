@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
 public import TauCeti.RingTheory.MvPolynomial.IrreducibleBasis.Lazard
+public import TauCeti.RingTheory.MvPolynomial.SquarefreeBasis.Lazard
 
 /-!
 # Lazard delineations of a family from its irreducible basis
