@@ -61,6 +61,8 @@ The identification of this simple-root model with the classical coordinate model
 * `TauCeti.IntegralLattice.minimum_typeARootLattice`: for `n ≥ 1` its minimum is `2`.
 * `TauCeti.IntegralLattice.typeAFundamentalWeight`: the first fundamental weight `ω₁`.
 * `TauCeti.IntegralLattice.typeAFundamentalWeightClass`: its class in the discriminant group.
+* `TauCeti.IntegralLattice.mk_eq_zsmul_typeAFundamentalWeightClass_iff`: a dual vector lies in
+  the class `k ω₁` exactly when it differs from `k ω₁` by a lattice vector.
 * `TauCeti.IntegralLattice.form_typeAFundamentalWeight_self`: `⟨ω₁, ω₁⟩ = n / (n + 1)`.
 * `TauCeti.IntegralLattice.addOrderOf_typeAFundamentalWeightClass`: the class of `ω₁` has order
   `n + 1`.
@@ -345,6 +347,17 @@ theorem coe_typeAFundamentalWeightDual :
 noncomputable def typeAFundamentalWeightClass :
     (typeARootLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk (typeAFundamentalWeightDual n)
+
+variable {n} in
+/-- A dual vector lies in the class `k ω₁` exactly when it differs from `k ω₁` by a vector of the
+root lattice. -/
+theorem mk_eq_zsmul_typeAFundamentalWeightClass_iff (x : (typeARootLattice n).dualCarrier)
+    (k : ℤ) :
+    (Submodule.Quotient.mk x : (typeARootLattice n).DiscriminantGroup) =
+        k • typeAFundamentalWeightClass n ↔
+      (x : Fin n → ℚ) - k • typeAFundamentalWeight n ∈ (typeARootLattice n).carrier := by
+  rw [typeAFundamentalWeightClass, ← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_iff,
+    Submodule.coe_sub, Submodule.coe_smul, coe_typeAFundamentalWeightDual]
 
 /-- **An integer multiple of the first fundamental weight lies in the root lattice exactly when
 `n + 1` divides it**.  For `n > 0`, this is forced by the last simple-root coordinate
