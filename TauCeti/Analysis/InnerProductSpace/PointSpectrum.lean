@@ -168,6 +168,12 @@ theorem restrictedPointSpectrum_top :
 def PointSpectrumIn (A : Module.End 𝕜 E) (U : Submodule 𝕜 E) (Ω : Set ℝ) : Prop :=
   A.restrictedPointSpectrum U ⊆ Ω
 
+/-- Point-spectral containment is equivalent to inclusion of the restricted point spectrum.
+This provides the subset characterization without unfolding `PointSpectrumIn` in client modules. -/
+theorem pointSpectrumIn_iff_restrictedPointSpectrum_subset {Ω : Set ℝ} :
+    A.PointSpectrumIn U Ω ↔ A.restrictedPointSpectrum U ⊆ Ω :=
+  Iff.rfl
+
 /-- Point-spectral containment in `Ω` says that `A x = μ x` with `x ∈ U` nonzero forces
 `μ ∈ Ω`. -/
 theorem pointSpectrumIn_iff {Ω : Set ℝ} :

@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
+
 /-!
 # Iteration of Gauss-normed Tate algebras
 
@@ -30,7 +32,7 @@ public section
 
 namespace TauCeti.Huber
 
-open Filter MvPowerSeries
+open Filter _root_.MvPowerSeries
 open scoped Topology
 
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
@@ -40,21 +42,25 @@ local notation "ExtraTate" => IsRestricted.subring (R := R) (fun _ : Option σ �
 local notation "IteratedTate" => PowerSeries.IsRestricted.subring (R := Tate) 1
 
 omit [IsUltrametricDist R] in
-/-- Each coefficient slice obtained by separating one variable is restricted. -/
-theorem isRestricted_coeff_optionEquivLeft {f : MvPowerSeries (Option σ) R}
-    (hf : IsRestricted (fun _ ↦ 1) f) (n : ℕ) :
-    IsRestricted (fun _ ↦ 1) (PowerSeries.coeff n (optionEquivLeft σ R f)) := by
+/-- At a constant radius `ρ > 0`, each coefficient slice obtained by separating one variable is
+restricted. -/
+theorem isRestricted_coeff_optionEquivLeft {ρ : ℝ} (hρ : 0 < ρ) {f : MvPowerSeries (Option σ) R}
+    (hf : IsRestricted (fun _ ↦ ρ) f) (n : ℕ) :
+    IsRestricted (fun _ ↦ ρ) (PowerSeries.coeff n (optionEquivLeft σ R f)) := by
   have hi : Function.Injective (fun t : σ →₀ ℕ ↦ t.optionElim n) := by
     intro t u h
     simpa using congrArg Finsupp.some h
-  simpa [IsRestricted, Function.comp_def, coeff_coeff_optionEquivLeft] using
-    hf.comp hi.tendsto_cofinite
+  have h := ((isRestricted_const_iff.1 hf).comp hi.tendsto_cofinite).const_mul (ρ ^ n)⁻¹
+  rw [mul_zero] at h
+  refine isRestricted_const_iff.2 (h.congr fun t ↦ ?_)
+  rw [Function.comp_apply, coeff_coeff_optionEquivLeft, Finsupp.degree_optionElim, pow_add]
+  field_simp
 
 /-- The coefficient slices, regarded as a formal univariate series over the restricted subring. -/
 private noncomputable def restrictedOptionSeries (f : ExtraTate) : PowerSeries Tate := by
   refine PowerSeries.mk fun n ↦ ?_
   refine ⟨PowerSeries.coeff n (optionEquivLeft σ R (f : MvPowerSeries (Option σ) R)), ?_⟩
-  exact isRestricted_coeff_optionEquivLeft (σ := σ) (R := R) f.2 n
+  exact isRestricted_coeff_optionEquivLeft (σ := σ) (R := R) one_pos f.2 n
 
 private theorem coeff_restrictedOptionSeries (f : ExtraTate) (n : ℕ) :
     (PowerSeries.coeff (R := Tate) n (restrictedOptionSeries f) : MvPowerSeries σ R) =
