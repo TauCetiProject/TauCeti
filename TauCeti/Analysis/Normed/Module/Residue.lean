@@ -64,20 +64,20 @@ variable (R M : Type*) [SeminormedCommRing R] [IsUltrametricDist R] [NormOneClas
   [SeminormedAddCommGroup M] [IsUltrametricDist M] [Module R M] [IsBoundedSMul R M]
 
 /-- **The closed unit ball of a module.** In an ultrametric seminormed module with contractive
-scalar action, the vectors of norm at most one form a submodule over the closed unit ball
-`Subring.unitClosedBall R` of the scalars. -/
-def unitClosedBallSubmodule : Submodule (Subring.unitClosedBall R) M where
-  carrier := {m | ‖m‖ ≤ 1}
-  add_mem' hm hn := (IsUltrametricDist.norm_add_le_max _ _).trans (max_le hm hn)
-  zero_mem' := by simp
-  smul_mem' a m hm := (norm_smul_le (a : R) m).trans
-    ((mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.mp a.2)).trans hm)
+scalar action, the open additive subgroup `IsUltrametricDist.closedBall_openAddSubgroup` of
+vectors of norm at most one is a submodule over the closed unit ball `Subring.unitClosedBall R`
+of the scalars. -/
+def unitClosedBallSubmodule : Submodule (Subring.unitClosedBall R) M :=
+  { (IsUltrametricDist.closedBall_openAddSubgroup M one_pos : AddSubgroup M) with
+    smul_mem' a m hm := mem_closedBall_zero_iff.mpr <| (norm_smul_le (a : R) m).trans <|
+      (mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.mp a.2)).trans
+        (mem_closedBall_zero_iff.mp hm) }
 
 variable {R M} in
 /-- A vector lies in the closed unit ball exactly when its norm is at most one. -/
 @[simp]
 theorem mem_unitClosedBallSubmodule {m : M} : m ∈ unitClosedBallSubmodule R M ↔ ‖m‖ ≤ 1 :=
-  Iff.rfl
+  mem_closedBall_zero_iff
 
 /-- The carrier of `unitClosedBallSubmodule R M` is `Metric.closedBall 0 1`. -/
 @[simp]
@@ -127,7 +127,8 @@ theorem norm_lt_one_of_mem_unitBallIdeal_smul_top {m : unitClosedBallSubmodule R
     ‖(m : M)‖ < 1 := by
   refine Submodule.smul_induction_on hm (fun a ha n _ ↦ ?_) fun m n hm hn ↦ ?_
   · exact (norm_smul_le (a : R) (n : M)).trans_lt <|
-      (mul_le_of_le_one_right (norm_nonneg _) n.2).trans_lt (mem_unitBallIdeal.mp ha)
+      (mul_le_of_le_one_right (norm_nonneg _) (mem_unitClosedBallSubmodule.mp n.2)).trans_lt
+        (mem_unitBallIdeal.mp ha)
   · exact (IsUltrametricDist.norm_add_le_max (m : M) n).trans_lt (max_lt hm hn)
 
 /-- **The residue module of a discretely normed module.** If the norm of `M` takes its values in
@@ -139,11 +140,7 @@ theorem mem_unitBallIdeal_smul_top_iff (ϖ : NormedRing.PseudoUniformizer R)
       Submodule (Subring.unitClosedBall R) (unitClosedBallSubmodule R M)) ↔ ‖(m : M)‖ < 1 := by
   refine ⟨norm_lt_one_of_mem_unitBallIdeal_smul_top, fun hm ↦ ?_⟩
   set c := ‖(ϖ.unit : R)‖
-  -- A norm in `c ^ ℤ ∪ {0}` that is less than `1 = c ^ 0` is at most `c`.
-  have hmc : ‖(m : M)‖ ≤ c := by
-    have := (zpowCeil_lt_zpow_iff ϖ.norm_pos ϖ.norm_lt_one (x := ‖(m : M)‖) 0).mp
-      (by rw [hM, zpow_zero]; exact hm)
-    simpa using this
+  have hmc : ‖(m : M)‖ ≤ c := le_of_lt_one_of_zpowCeil_eq_self ϖ.norm_pos ϖ.norm_lt_one (hM _) hm
   -- So `m = ϖ • (ϖ⁻¹ • m)` with `‖ϖ⁻¹ • m‖ ≤ 1`.
   let ϖ₀ : Subring.unitClosedBall R := ⟨ϖ.unit, Subring.mem_unitClosedBall.mpr ϖ.norm_lt_one.le⟩
   let n : unitClosedBallSubmodule R M :=

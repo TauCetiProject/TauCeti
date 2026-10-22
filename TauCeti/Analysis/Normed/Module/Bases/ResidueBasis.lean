@@ -55,6 +55,12 @@ public section
 
 namespace TauCeti
 
+/-- Scaling by `u ^ n` and then by `u ^ m` cancels when `m + n = 0`. -/
+private theorem zpow_smul_zpow_smul_of_add_eq_zero {R M : Type*} [Monoid R] [MulAction R M]
+    (u : Rˣ) {m n : ℤ} (hmn : m + n = 0) (x : M) :
+    ((u ^ m : Rˣ) : R) • ((u ^ n : Rˣ) : R) • x = x := by
+  rw [smul_smul, ← Units.val_mul, ← zpow_add, hmn, zpow_zero, Units.val_one, one_smul]
+
 variable {R M I : Type*} [SeminormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
   [SeminormedAddCommGroup M] [IsUltrametricDist M] [Module R M] [IsBoundedSMul R M]
 
@@ -80,10 +86,7 @@ theorem linearIndependent_mk_of_isOrthonormalFamily {e : I → unitClosedBallSub
   rw [Submodule.coe_sum] at hlt
   simp only [Submodule.coe_smul, Subring.smul_def] at hlt
   rw [← ha i, Ideal.Quotient.eq_zero_iff_mem, mem_unitBallIdeal]
-  calc ‖(a i : R)‖ ≤ (s.sup fun i ↦ ‖(a i : R)‖₊ : NNReal) :=
-        NNReal.coe_le_coe.mpr (Finset.le_sup (f := fun i ↦ ‖(a i : R)‖₊) hi)
-    _ = ‖∑ i ∈ s, (a i : R) • (e i : M)‖ := (he.norm_sum_smul s fun i ↦ (a i : R)).symm
-    _ < 1 := hlt
+  exact (he.norm_le_norm_sum_smul (fun i ↦ (a i : R)) hi).trans_lt hlt
 
 variable (ϖ : NormedRing.PseudoUniformizer R)
 
@@ -153,8 +156,7 @@ theorem linearIndependent_mk_iff (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ �
       ((ϖ.unit ^ n : Rˣ) : R) • ∑ i ∈ s, (b i : R) • (e i : M) := by
     rw [Finset.smul_sum]
     refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [hb_coe hi, smul_smul, ← mul_assoc, ← Units.val_mul, ← zpow_add, add_neg_cancel, zpow_zero,
-      Units.val_one, one_mul]
+    rw [hb_coe hi, mul_smul, zpow_smul_zpow_smul_of_add_eq_zero ϖ.unit (add_neg_cancel n)]
   rw [hsum, ϖ.norm_zpow_smul, hn]
   exact le_mul_of_one_le_right (norm_nonneg _) hx
 
@@ -183,9 +185,7 @@ private theorem exists_mem_span_norm_sub_le (hM : ∀ m : M, zpowCeil ‖(ϖ.uni
       simp only [ha, Function.comp_apply]
     rw [mk_eq_mk_iff ϖ hM, Submodule.coe_sum] at heq
     simp only [Submodule.coe_smul, Subring.smul_def] at heq
-    have := (zpowCeil_lt_zpow_iff ϖ.norm_pos ϖ.norm_lt_one (x := ‖y - _‖) 0).mp
-      (by rw [hM, zpow_zero]; exact heq)
-    simpa using this
+    exact le_of_lt_one_of_zpowCeil_eq_self ϖ.norm_pos ϖ.norm_lt_one (hM _) heq
   induction k with
   | zero => exact ⟨0, V.zero_mem, by simpa using hx⟩
   | succ k ih =>
@@ -199,8 +199,7 @@ private theorem exists_mem_span_norm_sub_le (hM : ∀ m : M, zpowCeil ‖(ϖ.uni
     refine ⟨s + ((ϖ.unit ^ (k : ℤ) : Rˣ) : R) • t, V.add_mem hs (V.smul_mem _ ht), ?_⟩
     have hxst : x - (s + ((ϖ.unit ^ (k : ℤ) : Rˣ) : R) • t) =
         ((ϖ.unit ^ (k : ℤ) : Rˣ) : R) • (y - t) := by
-      rw [smul_sub, smul_smul, ← Units.val_mul, ← zpow_add, add_neg_cancel, zpow_zero,
-        Units.val_one, one_smul]
+      rw [smul_sub, zpow_smul_zpow_smul_of_add_eq_zero ϖ.unit (add_neg_cancel (k : ℤ))]
       abel
     rw [hxst, ϖ.norm_zpow_smul, zpow_natCast, pow_succ]
     exact mul_le_mul_of_nonneg_left hyt (pow_nonneg ϖ.norm_pos.le k)
@@ -231,8 +230,7 @@ theorem dense_span (hM : ∀ m : M, zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ = ‖m�
       _ ≤ (‖x‖ + 1)⁻¹ * (‖x‖ + 1) := by gcongr
       _ = 1 := inv_mul_cancel₀ (by positivity)
   have := V.topologicalClosure.smul_mem ((ϖ.unit ^ (-(k : ℤ)) : Rˣ) : R) (hball _ hy)
-  rwa [smul_smul, ← Units.val_mul, ← zpow_add, neg_add_cancel, zpow_zero, Units.val_one,
-    one_smul] at this
+  rwa [zpow_smul_zpow_smul_of_add_eq_zero ϖ.unit (neg_add_cancel (k : ℤ))] at this
 
 /-- **Serre: dense span is spanning residues.** An orthonormal family of the closed unit ball has
 dense span exactly when its residues span the residue module, for a norm with values in
@@ -256,10 +254,7 @@ theorem span_mk_eq_top_iff (hM : ∀ m : M, zpowCeil ‖(ϖ.unit : R)‖ ‖m‖
     exact this.trans (max_le (mem_unitClosedBallSubmodule.mp x.2) hxs.le)
   have hg (i : I) : ‖g i‖ ≤ 1 := by
     by_cases hi : i ∈ g.support
-    · calc ‖g i‖ ≤ (g.support.sup fun i ↦ ‖g i‖₊ : NNReal) :=
-            NNReal.coe_le_coe.mpr (Finset.le_sup (f := fun i ↦ ‖g i‖₊) hi)
-        _ = ‖s‖ := (he.norm_sum_smul _ _).symm
-        _ ≤ 1 := hs
+    · exact (he.norm_le_norm_sum_smul g hi).trans hs
     · simp [Finsupp.notMem_support_iff.mp hi]
   let a (i : I) : Subring.unitClosedBall R := ⟨g i, Subring.mem_unitClosedBall.mpr (hg i)⟩
   -- So `x` has the residue of the combination `∑ a i • e i` of the unit ball.

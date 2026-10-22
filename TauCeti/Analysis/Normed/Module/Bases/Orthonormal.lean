@@ -132,6 +132,13 @@ theorem norm_sum_smul (he : IsOrthonormalFamily R e) (s : Finset I) (a : I → R
     ‖∑ i ∈ s, a i • e i‖ = (s.sup fun i ↦ ‖a i‖₊ : ℝ≥0) := by
   rw [← coe_nnnorm, he s a]
 
+/-- A coefficient of a finite linear combination of an orthonormal family has norm at most the
+norm of the combination. -/
+theorem norm_le_norm_sum_smul (he : IsOrthonormalFamily R e) {s : Finset I} (a : I → R) {i : I}
+    (hi : i ∈ s) : ‖a i‖ ≤ ‖∑ i ∈ s, a i • e i‖ := by
+  rw [he.norm_sum_smul]
+  exact NNReal.coe_le_coe.mpr (Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi)
+
 /-- A multiple of a vector of an orthonormal family has the norm of its coefficient. -/
 theorem norm_smul (he : IsOrthonormalFamily R e) (i : I) (r : R) : ‖r • e i‖ = ‖r‖ := by
   simpa using he.norm_sum_smul {i} fun _ ↦ r
