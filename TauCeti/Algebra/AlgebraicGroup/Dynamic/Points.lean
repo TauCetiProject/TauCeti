@@ -218,9 +218,11 @@ theorem pointsHom_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) (u 
 theorem _root_.BialgHom.pointsHom_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ)
     (u : Aˣ) :
     pointsHom A (l.powCocharacter n) u = pointsHom A l (u ^ n) := by
-  rw [pointsHom_apply, pointsHom_apply, BialgHom.mapDomain_apply, BialgHom.mapDomain_apply,
-    ofConv_toConv, ofConv_toConv, ← laurentEval_comp_mapDomainAlgHom_mulRight]
-  rfl
+  ext h
+  rw [pointsHom_apply, pointsHom_apply, ← laurentEval_comp_mapDomainAlgHom_mulRight]
+  simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+    BialgHom.powCocharacter_apply, AddMonoidAlgebra.mapDomainAlgHom_apply,
+    AddMonoidHom.coe_mulRight]
 
 /-- Images of multiplicative-group points commute: they lie in the image of the commutative
 group `𝔾ₘ(A)`. -/
