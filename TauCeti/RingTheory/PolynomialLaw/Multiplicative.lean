@@ -81,10 +81,11 @@ variable {f : A →ₚₗ[R] B}
 arbitrary universe. -/
 theorem toFun_one (hf : f.IsMultiplicative) (S : Type*) [CommSemiring S] [Algebra R S] :
     f.toFun S 1 = 1 := by
-  have h1 : (Algebra.ofId R S).toLinearMap.rTensor A (1 : R ⊗[R] A) = 1 := by
-    rw [AlgHom.rTensor_toLinearMap_apply, map_one]
-  rw [← h1, ← isCompat_apply, ← toFun'_eq_toFun, hf.toFun'_one, AlgHom.rTensor_toLinearMap_apply,
-    map_one]
+  calc f.toFun S 1 = f.toFun S ((Algebra.ofId R S).toLinearMap.rTensor A 1) := by
+        rw [AlgHom.rTensor_toLinearMap_apply, map_one]
+    _ = (Algebra.ofId R S).toLinearMap.rTensor B (f.toFun' R 1) := by
+        rw [toFun'_eq_toFun, isCompat_apply]
+    _ = 1 := by rw [hf.toFun'_one, AlgHom.rTensor_toLinearMap_apply, map_one]
 
 /-- A multiplicative law preserves products after scalar extension to a commutative `R`-algebra
 in an arbitrary universe. -/
@@ -100,24 +101,34 @@ theorem toFun_mul (hf : f.IsMultiplicative) {S : Type*} [CommSemiring S] [Algebr
   have hθ (u v : MvPolynomial (Fin m ⊕ Fin n) R ⊗[R] A) :
       θ.toLinearMap.rTensor A (u * v) = θ.toLinearMap.rTensor A u * θ.toLinearMap.rTensor A v := by
     simp only [AlgHom.rTensor_toLinearMap_apply, map_mul]
-  rw [← hψ, ← hχ, AlgHom.comp_toLinearMap, AlgHom.comp_toLinearMap, LinearMap.rTensor_comp_apply,
-    LinearMap.rTensor_comp_apply, ← hθ, ← f.isCompat_apply θ, ← f.isCompat_apply θ,
-    ← f.isCompat_apply θ, ← toFun'_eq_toFun, hf.toFun'_mul]
-  simp only [AlgHom.rTensor_toLinearMap_apply, map_mul]
+  -- transport `p` and `q` along the inclusions into the polynomial algebra in `m + n` variables
+  set p' := (MvPolynomial.rename Sum.inl).toLinearMap.rTensor A p
+  set q' := (MvPolynomial.rename Sum.inr).toLinearMap.rTensor A q
+  have hp : ψ.toLinearMap.rTensor A p = θ.toLinearMap.rTensor A p' := by
+    rw [← hψ, AlgHom.comp_toLinearMap, LinearMap.rTensor_comp_apply]
+  have hq : χ.toLinearMap.rTensor A q = θ.toLinearMap.rTensor A q' := by
+    rw [← hχ, AlgHom.comp_toLinearMap, LinearMap.rTensor_comp_apply]
+  calc f.toFun S (ψ.toLinearMap.rTensor A p * χ.toLinearMap.rTensor A q)
+      = θ.toLinearMap.rTensor B (f.toFun' _ (p' * q')) := by
+        rw [hp, hq, ← hθ, toFun'_eq_toFun, isCompat_apply]
+    _ = θ.toLinearMap.rTensor B (f.toFun' _ p') * θ.toLinearMap.rTensor B (f.toFun' _ q') := by
+        rw [hf.toFun'_mul]
+        simp only [AlgHom.rTensor_toLinearMap_apply, map_mul]
+    _ = f.toFun S (ψ.toLinearMap.rTensor A p) * f.toFun S (χ.toLinearMap.rTensor A q) := by
+        rw [hp, hq, toFun'_eq_toFun, isCompat_apply, isCompat_apply]
 
 /-- The ground map of a multiplicative law sends `1` to `1`. -/
 theorem ground_one (hf : f.IsMultiplicative) : f.ground 1 = 1 := by
-  rw [ground_apply, ← Algebra.TensorProduct.one_def, hf.toFun'_one, Algebra.TensorProduct.one_def,
-    TensorProduct.lid_tmul, _root_.one_smul]
+  simp only [ground_apply, ← Algebra.TensorProduct.one_def, hf.toFun'_one,
+    ← Algebra.TensorProduct.lid_toLinearEquiv, AlgEquiv.toLinearEquiv_apply, map_one]
 
 /-- The ground map of a multiplicative law preserves products. -/
 theorem ground_mul (hf : f.IsMultiplicative) (a b : A) :
     f.ground (a * b) = f.ground a * f.ground b := by
-  have hlid (x : R ⊗[R] B) : TensorProduct.lid R B x = Algebra.TensorProduct.lid R B x := by
-    rw [← Algebra.TensorProduct.lid_toLinearEquiv, AlgEquiv.toLinearEquiv_apply]
   have hab : (1 : R) ⊗ₜ[R] (a * b) = (1 ⊗ₜ[R] a) * (1 ⊗ₜ[R] b) := by
     rw [Algebra.TensorProduct.tmul_mul_tmul, one_mul]
-  rw [ground_apply, ground_apply, ground_apply, hab, hf.toFun'_mul, hlid, hlid, hlid, map_mul]
+  simp only [ground_apply, hab, hf.toFun'_mul, ← Algebra.TensorProduct.lid_toLinearEquiv,
+    AlgEquiv.toLinearEquiv_apply, map_mul]
 
 /-- Multiplicative laws compose. -/
 theorem comp {g : B →ₚₗ[R] C} (hg : g.IsMultiplicative) (hf : f.IsMultiplicative) :
