@@ -37,6 +37,13 @@ limits follow the sign of `log (s / K)`, which decides whether `d₊` and `d₋`
 ## Main declarations
 
 * `TauCeti.BlackScholes.abs_callPrice_sub_callPrice_le` — the call is `1`-Lipschitz in the spot.
+* `TauCeti.BlackScholes.tendsto_dMinus_spot_atTop` — `d₋ → ∞` as the spot tends to `∞`.
+* `TauCeti.BlackScholes.dPlus_eq_add`, `TauCeti.BlackScholes.tendsto_dPlus_sub` — `d₊` behaves
+  like `log (s / K) / (σ √τ)` near maturity.
+* `TauCeti.BlackScholes.tendsto_dPlus_maturity_atTop`,
+  `TauCeti.BlackScholes.tendsto_dPlus_maturity_atBot`,
+  `TauCeti.BlackScholes.tendsto_dPlus_maturity_strike` and their `dMinus` analogues — the limits
+  of `d₊` and `d₋` at maturity in, out of and at the money.
 * `TauCeti.BlackScholes.tendsto_callPrice_spot_zero`,
   `TauCeti.BlackScholes.tendsto_putPrice_spot_zero` — the limits at zero spot.
 * `TauCeti.BlackScholes.tendsto_callPrice_sub_spot_atTop`,
@@ -106,7 +113,7 @@ theorem tendsto_putPrice_spot_zero (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
   simpa only [putPrice_eq_callPrice] using h
 
 /-- As the spot tends to `∞`, so does `d₋`. -/
-private theorem tendsto_dMinus_spot_atTop (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
+theorem tendsto_dMinus_spot_atTop (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
     Tendsto (fun x => dMinus x r σ K τ) atTop atTop := by
   have h : Tendsto (fun x => log (x / K)) atTop atTop :=
     tendsto_log_atTop.comp (tendsto_id.atTop_div_const hK)
@@ -146,7 +153,7 @@ private theorem tendsto_discount_nhdsGT_zero :
   simpa using tendsto_nhdsGT_zero_of_continuous (f := fun u => K * exp (-r * u)) (by fun_prop)
 
 /-- For a positive maturity, `d₊ = log (s / K) / (σ √τ) + (r + σ² / 2) √τ / σ`. -/
-private theorem dPlus_eq_add (hσ : σ ≠ 0) (hτ : 0 < τ) :
+theorem dPlus_eq_add (hσ : σ ≠ 0) (hτ : 0 < τ) :
     dPlus s r σ K τ = log (s / K) * (σ * √τ)⁻¹ + (r + σ ^ 2 / 2) * √τ / σ := by
   have h := (sqrt_pos.2 hτ).ne'
   rw [dPlus_def, add_div, div_eq_mul_inv]
@@ -156,7 +163,7 @@ private theorem dPlus_eq_add (hσ : σ ≠ 0) (hτ : 0 < τ) :
 
 /-- As the maturity tends to `0⁺`, `d₊` behaves like `log (s / K) / (σ √τ)`: the remainder
 tends to `0`. -/
-private theorem tendsto_dPlus_sub (hσ : 0 < σ) :
+theorem tendsto_dPlus_sub (hσ : 0 < σ) :
     Tendsto (fun u => dPlus s r σ K u - log (s / K) * (σ * √u)⁻¹) (𝓝[>] 0) (𝓝 0) := by
   refine ((tendsto_nhdsGT_zero_of_continuous (f := fun u => (r + σ ^ 2 / 2) * √u / σ)
     (by fun_prop)).congr' ?_).trans (by simp)
@@ -164,7 +171,7 @@ private theorem tendsto_dPlus_sub (hσ : 0 < σ) :
   rw [dPlus_eq_add hσ.ne' hu, add_sub_cancel_left]
 
 /-- As the maturity tends to `0⁺`, `d₊ → +∞` in the money. -/
-private theorem tendsto_dPlus_maturity_atTop (hσ : 0 < σ) (hK : 0 < K) (hsK : K < s) :
+theorem tendsto_dPlus_maturity_atTop (hσ : 0 < σ) (hK : 0 < K) (hsK : K < s) :
     Tendsto (dPlus s r σ K) (𝓝[>] 0) atTop := by
   have hlog : 0 < log (s / K) := log_pos ((one_lt_div hK).2 hsK)
   have h := (tendsto_inv_nhdsGT_zero.comp (tendsto_mul_sqrt_nhdsGT_zero hσ)).const_mul_atTop hlog
@@ -173,7 +180,7 @@ private theorem tendsto_dPlus_maturity_atTop (hσ : 0 < σ) (hK : 0 < K) (hsK : 
     ring
 
 /-- As the maturity tends to `0⁺`, `d₊ → -∞` out of the money. -/
-private theorem tendsto_dPlus_maturity_atBot (hσ : 0 < σ) (hs : 0 < s) (hsK : s < K) :
+theorem tendsto_dPlus_maturity_atBot (hσ : 0 < σ) (hs : 0 < s) (hsK : s < K) :
     Tendsto (dPlus s r σ K) (𝓝[>] 0) atBot := by
   have hlog : log (s / K) < 0 := log_neg (div_pos hs (hs.trans hsK)) ((div_lt_one
     (hs.trans hsK)).2 hsK)
@@ -184,18 +191,32 @@ private theorem tendsto_dPlus_maturity_atBot (hσ : 0 < σ) (hs : 0 < s) (hsK : 
     ring
 
 /-- As the maturity tends to `0⁺`, `d₊ → 0` at the money. -/
-private theorem tendsto_dPlus_maturity_strike (hσ : 0 < σ) (hK : 0 < K) :
+theorem tendsto_dPlus_maturity_strike (hσ : 0 < σ) (hK : 0 < K) :
     Tendsto (dPlus K r σ K) (𝓝[>] 0) (𝓝 0) := by
   simpa [div_self hK.ne'] using tendsto_dPlus_sub (s := K) (r := r) (K := K) hσ
 
-/-- `d₋ = d₊ - σ √τ` has the same limit as `d₊` at maturity. -/
-private theorem tendsto_dMinus_maturity_of_tendsto_dPlus (hσ : 0 < σ) {l : Filter ℝ}
-    (hl : ∀ {f g : ℝ → ℝ}, Tendsto f (𝓝[>] 0) l → Tendsto g (𝓝[>] 0) (𝓝 0) →
-      Tendsto (fun u => f u - g u) (𝓝[>] 0) l)
-    (h : Tendsto (dPlus s r σ K) (𝓝[>] 0) l) :
-    Tendsto (dMinus s r σ K) (𝓝[>] 0) l := by
-  have hsq := (tendsto_mul_sqrt_nhdsGT_zero hσ).mono_right nhdsWithin_le_nhds
-  exact (hl h hsq).congr fun u => (dMinus_def s r σ K u).symm
+/-- As the maturity tends to `0⁺`, `σ √τ → 0`, so `d₋ = d₊ - σ √τ` has the same limit as `d₊`. -/
+private theorem tendsto_mul_sqrt_nhds_zero (hσ : 0 < σ) :
+    Tendsto (fun u => σ * √u) (𝓝[>] 0) (𝓝 0) :=
+  (tendsto_mul_sqrt_nhdsGT_zero hσ).mono_right nhdsWithin_le_nhds
+
+/-- As the maturity tends to `0⁺`, `d₋ → +∞` in the money. -/
+theorem tendsto_dMinus_maturity_atTop (hσ : 0 < σ) (hK : 0 < K) (hsK : K < s) :
+    Tendsto (dMinus s r σ K) (𝓝[>] 0) atTop :=
+  ((tendsto_dPlus_maturity_atTop hσ hK hsK).atTop_add (tendsto_mul_sqrt_nhds_zero hσ).neg).congr
+    fun u => by rw [dMinus_def, sub_eq_add_neg]
+
+/-- As the maturity tends to `0⁺`, `d₋ → -∞` out of the money. -/
+theorem tendsto_dMinus_maturity_atBot (hσ : 0 < σ) (hs : 0 < s) (hsK : s < K) :
+    Tendsto (dMinus s r σ K) (𝓝[>] 0) atBot :=
+  ((tendsto_dPlus_maturity_atBot hσ hs hsK).atBot_add (tendsto_mul_sqrt_nhds_zero hσ).neg).congr
+    fun u => by rw [dMinus_def, sub_eq_add_neg]
+
+/-- As the maturity tends to `0⁺`, `d₋ → 0` at the money. -/
+theorem tendsto_dMinus_maturity_strike (hσ : 0 < σ) (hK : 0 < K) :
+    Tendsto (dMinus K r σ K) (𝓝[>] 0) (𝓝 0) := by
+  simpa only [sub_zero] using ((tendsto_dPlus_maturity_strike (r := r) hσ hK).sub
+    (tendsto_mul_sqrt_nhds_zero hσ)).congr fun u => (dMinus_def K r σ K u).symm
 
 /-- If `Φ(d₊)` and `Φ(d₋)` both tend to `a` at maturity, the call price tends to `s a - K a`. -/
 private theorem tendsto_callPrice_maturity_of_tendsto_cdf {a : ℝ}
@@ -212,23 +233,20 @@ theorem tendsto_callPrice_maturity_zero (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K)
   rcases lt_trichotomy s K with hsK | rfl | hsK
   · -- Out of the money, `d₊, d₋ → -∞` and both cdf values tend to `0`.
     have hp := tendsto_dPlus_maturity_atBot (r := r) hσ hs hsK
-    have hm := tendsto_dMinus_maturity_of_tendsto_dPlus hσ
-      (fun hf hg => by simpa only [sub_eq_add_neg] using hf.atBot_add hg.neg) hp
+    have hm := tendsto_dMinus_maturity_atBot (r := r) hσ hs hsK
     have h := tendsto_callPrice_maturity_of_tendsto_cdf ((tendsto_cdf_atBot _).comp hp)
       ((tendsto_cdf_atBot _).comp hm)
     rw [posPart_eq_zero.2 (sub_nonpos.2 hsK.le)]
     simpa using h
   · -- At the money, `d₊, d₋ → 0` and both cdf values tend to `Φ(0)`.
     have hp := tendsto_dPlus_maturity_strike (r := r) hσ hK
-    have hm := tendsto_dMinus_maturity_of_tendsto_dPlus hσ
-      (fun hf hg => by simpa only [sub_zero] using hf.sub hg) hp
+    have hm := tendsto_dMinus_maturity_strike (r := r) hσ hK
     have hΦ := (hasDerivAt_cdf_gaussianReal 0 one_ne_zero 0).continuousAt.tendsto
     have h := tendsto_callPrice_maturity_of_tendsto_cdf (hΦ.comp hp) (hΦ.comp hm)
     simpa using h
   · -- In the money, `d₊, d₋ → +∞` and both cdf values tend to `1`.
     have hp := tendsto_dPlus_maturity_atTop (r := r) hσ hK hsK
-    have hm := tendsto_dMinus_maturity_of_tendsto_dPlus hσ
-      (fun hf hg => by simpa only [sub_eq_add_neg] using hf.atTop_add hg.neg) hp
+    have hm := tendsto_dMinus_maturity_atTop (r := r) hσ hK hsK
     have h := tendsto_callPrice_maturity_of_tendsto_cdf ((tendsto_cdf_atTop _).comp hp)
       ((tendsto_cdf_atTop _).comp hm)
     rw [posPart_eq_self.2 (sub_nonneg.2 hsK.le)]
