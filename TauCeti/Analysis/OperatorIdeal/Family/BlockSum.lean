@@ -160,16 +160,10 @@ theorem extend_decreasingMerge_le {a b : ℕ → ℝ≥0} (ha : Antitone a) (hb 
     Φ.extend (fun n ↦ (decreasingMerge a b n : ℝ≥0∞)) ≤
       Φ.extend (fun n ↦ (a n : ℝ≥0∞)) + Φ.extend (fun n ↦ (b n : ℝ≥0∞)) := by
   -- Realise `a` and `b` as the approximation numbers of diagonal operators on real `ℓ²`.
-  have diag {c : ℕ → ℝ≥0} (hc : Antitone c) :
-      ∃ D : ℓ²(ℕ, ℝ) →L[ℝ] ℓ²(ℕ, ℝ), D.singularValue = c := by
-    let d : ℓ^∞(ℕ, ℝ) := ⟨fun n ↦ (c n : ℝ), memℓp_infty ⟨c 0, by
-      rintro _ ⟨n, rfl⟩
-      simpa using hc (Nat.zero_le n)⟩⟩
-    refine ⟨lp.diagonalCLM d, funext fun n ↦ ?_⟩
-    rw [lp.singularValue_diagonalCLM d fun m k hmk ↦ by simpa [d] using hc hmk]
-    simp [d]
-  obtain ⟨D₁, rfl⟩ := diag ha
-  obtain ⟨D₂, rfl⟩ := diag hb
+  obtain ⟨d₁, rfl⟩ := lp.exists_singularValue_diagonalCLM_eq (𝕜 := ℝ) (p := 2) ha
+  obtain ⟨d₂, rfl⟩ := lp.exists_singularValue_diagonalCLM_eq (𝕜 := ℝ) (p := 2) hb
+  set D₁ : ℓ²(ℕ, ℝ) →L[ℝ] ℓ²(ℕ, ℝ) := lp.diagonalCLM d₁
+  set D₂ : ℓ²(ℕ, ℝ) →L[ℝ] ℓ²(ℕ, ℝ) := lp.diagonalCLM d₂
   -- The orthogonal block sum of the diagonal operators is the sum `(D₁ ⊕ 0) + (0 ⊕ D₂)` of maps
   -- between Hilbert spaces, so subadditivity of the induced gauge applies.
   rw [← Φ.opGauge_withLpProdMap (p := 2), ← opGauge_def, ← opGauge_def]
