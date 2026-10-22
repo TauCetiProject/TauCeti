@@ -50,18 +50,6 @@ open TauCeti.Huber
 
 variable {k : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
-/-- The Gauss comparison sends the Huber constant `r` to the constant `r`. -/
-private theorem restrictedMvPowerSeriesGaussEquiv_weightedC (r : R) :
-    restrictedMvPowerSeriesGaussEquiv (n := k)
-      (weightedC _ isWeightFamily_one_weight r) = algebraMap R _ r :=
-  Subtype.ext (by simp)
-
-/-- The Gauss comparison sends the Huber variable `Xᵢ` to the variable `Xᵢ`. -/
-private theorem restrictedMvPowerSeriesGaussEquiv_weightedX (i : Fin k) :
-    restrictedMvPowerSeriesGaussEquiv (R := R)
-      (weightedX _ isWeightFamily_one_weight i) = ⟨X i, isRestricted_X _ i⟩ :=
-  Subtype.ext (by simp)
-
 /-- **Continuous ring homomorphisms out of `R⟨X₁, …, Xₖ⟩` are determined by the constants and the
 variables.** Two continuous ring homomorphisms into a Hausdorff ring that agree on every constant
 and on every `Xᵢ` are equal. -/
@@ -75,8 +63,8 @@ theorem isRestricted_subring_ringHom_ext_of_continuous {T : Type*} [Semiring T]
     (f := ψ₁.comp e.toRingHom) (g := ψ₂.comp e.toRingHom)
     (h₁.comp continuous_restrictedMvPowerSeriesGaussEquiv)
     (h₂.comp continuous_restrictedMvPowerSeriesGaussEquiv)
-    (fun r ↦ by simp [e, restrictedMvPowerSeriesGaussEquiv_weightedC, hC])
-    (fun i ↦ by simp [e, restrictedMvPowerSeriesGaussEquiv_weightedX, hX])
+    (fun r ↦ by simp [e, hC])
+    (fun i ↦ by simp [e, hX])
   ext f
   simpa using congr($h (e.symm f))
 
