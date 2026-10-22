@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Points
 
 import Mathlib.Algebra.Group.End
+import TauCeti.Algebra.Polynomial.Laurent.Polynomial
 
 /-!
 # The dynamic parabolic, unipotent and Levi subgroups of a cocharacter
@@ -53,6 +54,8 @@ degenerates: `P(l)` and `Z(l)` are everything and `U(l)` is trivial.
 * `TauCeti.Cocharacter.limit`: the limit homomorphism `P(l)(A) → G(A)`.
 * `TauCeti.Cocharacter.limit_of_mem_levi` and `TauCeti.Cocharacter.limit_mem_levi`: the limit is
   a retraction of the dynamic parabolic onto its Levi subgroup.
+* `TauCeti.Cocharacter.coeff_coeff_conjugate_conjugate`: the cocycle identity for conjugation by
+  the generic point, on coefficients.
 * `TauCeti.Cocharacter.unipotent_sup_levi`, `TauCeti.Cocharacter.unipotent_inf_levi`,
   `TauCeti.Cocharacter.conj_mem_unipotent` and
   `TauCeti.Cocharacter.eq_of_unipotent_mul_levi_eq`: the Levi decomposition.
@@ -159,6 +162,21 @@ theorem mem_parabolic_iff {g : WithConv (H →ₐ[R] A)} :
 theorem mem_parabolic_of_eq {g : WithConv (H →ₐ[R] A)} {F : WithConv (H →ₐ[R] Polynomial A)}
     (hF : ofPolyPoint A F = conjugate A l g) : g ∈ parabolic A l :=
   ⟨F, hF⟩
+
+/-- Membership in the dynamic parabolic is the vanishing of every negative coefficient of the
+conjugation family. -/
+theorem mem_parabolic_iff_forall_coeff_conjugate_eq_zero {g : WithConv (H →ₐ[R] A)} :
+    g ∈ parabolic A l ↔
+      ∀ h : H, ∀ n : ℤ, n < 0 → ((conjugate A l g).ofConv h).coeff n = 0 := by
+  rw [mem_parabolic_iff, ← exists_algHom_toLaurent_comp_eq_iff]
+  constructor
+  · rintro ⟨F, hF⟩
+    rw [ofPolyPoint_apply] at hF
+    exact ⟨F.ofConv, congrArg ofConv hF⟩
+  · rintro ⟨F, hF⟩
+    refine ⟨toConv F, ?_⟩
+    rw [ofPolyPoint_apply]
+    exact congrArg toConv hF
 
 variable (A l) in
 /-- The unique `A[X]`-point extending the conjugate of a point of the dynamic parabolic. -/
@@ -426,6 +444,65 @@ private theorem mapAlgHom_evalZero_comp_scaleSubst :
         ((Polynomial.aeval (0 : A)).restrictScalars R) := by
   ext a <;> simp [scaleSubst_C, scaleSubst_X]
 
+/-- **The cocycle identity for generic conjugation**: conjugating by `l(T)` and then by `l(T')`
+is conjugating by `l(T · T')`. -/
+private theorem conjugate_conjugate (g : WithConv (H →ₐ[R] A)) :
+    conjugate (LaurentPolynomial A) l (conjugate A l g) =
+      AlgHom.mapValue (prodSubst R A) (conjugate A l g) := by
+  rw [conjugate_apply, constPoint_apply, ← AlgHom.mapValue_apply,
+    mapValue_conjugate, genericPoint_eq_pointsHom]
+  have hconj (a b x : WithConv (H →ₐ[R]
+      LaurentPolynomial (LaurentPolynomial A))) :
+      a * b * x * (a * b)⁻¹ = a * (b * x * b⁻¹) * a⁻¹ := by
+    simpa only [MulAut.conj_apply, MulAut.mul_apply] using
+      congrArg (fun f : MulAut _ => f x)
+        ((MulAut.conj : _ →* MulAut _).map_mul a b)
+  rw [← hconj, ← map_mul, mapValue_conjugate, map_prodSubst_genericUnit,
+    prodSubst_comp_const, prodUnit,
+    mul_comm (Units.map (IsScalarTower.toAlgHom R (LaurentPolynomial A)
+      (LaurentPolynomial (LaurentPolynomial A))).toMonoidHom
+        (LaurentPolynomial.genericUnit A))
+      (LaurentPolynomial.genericUnit (LaurentPolynomial A))]
+
+/-- The substitution `T ↦ T · T'` sends the monomial `a Tⁿ` to `(a Tⁿ) T'ⁿ`. -/
+private theorem prodSubst_C_mul_T (a : A) (n : ℤ) :
+    prodSubst R A (LaurentPolynomial.C a * LaurentPolynomial.T n) =
+      LaurentPolynomial.C (LaurentPolynomial.C a * LaurentPolynomial.T n) *
+        LaurentPolynomial.T n := by
+  have hT : prodSubst R A (LaurentPolynomial.T n) =
+      LaurentPolynomial.C (LaurentPolynomial.T n) * LaurentPolynomial.T n := by
+    have hc : Commute (Units.map (IsScalarTower.toAlgHom R (LaurentPolynomial A)
+        (LaurentPolynomial (LaurentPolynomial A))).toMonoidHom (LaurentPolynomial.genericUnit A))
+        (LaurentPolynomial.genericUnit (LaurentPolynomial A)) :=
+      Units.ext (mul_comm _ _)
+    rw [prodSubst, AlgHom.restrictScalars_apply, laurentEval_T, prodUnit, hc.mul_zpow,
+      Units.val_mul, ← map_zpow, Units.coe_map, LaurentPolynomial.genericUnit_zpow_val,
+      LaurentPolynomial.genericUnit_zpow_val]
+    simp
+  rw [map_mul, prodSubst_C, hT, map_mul, mul_assoc]
+
+/-- The coefficients of the substitution `T ↦ T · T'` are concentrated on the diagonal. -/
+private theorem coeff_coeff_prodSubst (p : LaurentPolynomial A) (m n : ℤ) :
+    ((prodSubst R A p).coeff n).coeff m = if m = n then p.coeff n else 0 := by
+  induction p using LaurentPolynomial.induction_on' with
+  | add p q hp hq =>
+      simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hp, hq]
+      split_ifs <;> simp
+  | C_mul_T k a =>
+      rw [prodSubst_C_mul_T, ← LaurentPolynomial.single_eq_C_mul_T,
+        ← LaurentPolynomial.single_eq_C_mul_T]
+      simp only [AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
+      split_ifs <;> simp_all [-LaurentPolynomial.single_eq_C_mul_T]
+
+/-- **The cocycle identity for generic conjugation, on coefficients.** Conjugating
+`l(T) · g · l(T)⁻¹` once more by `l(T')` only produces monomials in `T · T'`: the coefficient of
+`T'ⁿ Tᵐ` is the coefficient of `Tⁿ` in `l(T) · g · l(T)⁻¹` when `m = n`, and zero otherwise. -/
+theorem coeff_coeff_conjugate_conjugate (g : WithConv (H →ₐ[R] A)) (h : H) (m n : ℤ) :
+    (((conjugate (LaurentPolynomial A) l (conjugate A l g)).ofConv h).coeff n).coeff m =
+      if m = n then ((conjugate A l g).ofConv h).coeff n else 0 := by
+  rw [conjugate_conjugate, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+    coeff_coeff_prodSubst]
+
 /-- **The limit of a point of the dynamic parabolic lies in the Levi subgroup.** Together with
 `limit_of_mem_levi` this exhibits the limit homomorphism as a retraction of the dynamic parabolic
 onto its Levi subgroup. -/
@@ -451,20 +528,8 @@ theorem limit_mem_levi (g : parabolic A l) : limit A l g ∈ levi A l := by
         AlgHom.mapValue (prodSubst R A) (conjugate A l (g : WithConv (H →ₐ[R] A))) := by
       rw [← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, ← prodSubst_comp_toLaurent,
         AlgHom.mapValue_comp, MonoidHom.comp_apply, hF]
-    rw [hl, hr, conjugate_apply, constPoint_apply, ← AlgHom.mapValue_apply,
-      mapValue_conjugate, genericPoint_eq_pointsHom]
-    have hconj (a b x : WithConv (H →ₐ[R]
-        LaurentPolynomial (LaurentPolynomial A))) :
-        a * b * x * (a * b)⁻¹ = a * (b * x * b⁻¹) * a⁻¹ := by
-      simpa only [MulAut.conj_apply, MulAut.mul_apply] using
-        congrArg (fun f : MulAut _ => f x)
-          ((MulAut.conj : _ →* MulAut _).map_mul a b)
-    rw [← hconj, ← map_mul, mapValue_conjugate, map_prodSubst_genericUnit,
-      prodSubst_comp_const, prodUnit,
-      mul_comm (Units.map (IsScalarTower.toAlgHom R (LaurentPolynomial A)
-        (LaurentPolynomial (LaurentPolynomial A))).toMonoidHom
-          (LaurentPolynomial.genericUnit A))
-        (LaurentPolynomial.genericUnit (LaurentPolynomial A))]
+    rw [hl, hr]
+    exact conjugate_conjugate _
   -- Specialize the generic identity at `X = 0`.
   rw [mem_levi_iff, limit_apply]
   simp only [evalZeroPoint_apply, constPoint_apply, ← AlgHom.mapValue_apply]

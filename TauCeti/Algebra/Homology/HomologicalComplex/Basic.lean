@@ -32,7 +32,9 @@ For chain complexes indexed by the natural numbers, the identification of zero c
 cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`), and so is the passage from zero
 chains to zeroth homology (`ChainComplex.pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap`).
 The isomorphisms `homologyIsoSc'`
-are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`).
+are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`), and exactness in a degree
+is the vanishing of the homology of the short complex `sc'` there
+(`HomologicalComplex.exactAt_iff_isZero_homology_sc'`).
 -/
 
 public section
@@ -239,6 +241,14 @@ lemma homologyMap_comp_homologyIsoSc'_hom :
   exact (natIsoSc' C c i j k hi hk).hom.naturality f
 
 end HomologyIsoSc'
+
+/-- A homological complex is exact at `j` exactly when the homology of its short complex at `j`,
+with explicit neighbouring indices, is zero. -/
+lemma exactAt_iff_isZero_homology_sc' {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*}
+    {c : ComplexShape ι} (L : HomologicalComplex C c) (i j k : ι) (hi : c.prev j = i)
+    (hk : c.next j = k) [(L.sc' i j k).HasHomology] :
+    L.ExactAt j ↔ IsZero (L.sc' i j k).homology :=
+  (exactAt_iff' L i j k hi hk).trans (ShortComplex.exact_iff_isZero_homology _)
 
 end HomologicalComplex
 

@@ -24,7 +24,8 @@ whose factor of degree zero it would differentiate.
 ## Main results
 
 * `HomologicalComplex.ι_tensorObj_d`: the differential of `X ⊗ Y` restricted to the summand
-  `X.X p ⊗ Y.X q`, for cochain complexes of modules.
+  `X.X p ⊗ Y.X q`, for cochain complexes of modules, and `HomologicalComplex.ι_tensorObj_d'`,
+  the same formula with arbitrary names for the successor degrees.
 * `ChainComplex.ιTensorObj_D₁_succ`, `ChainComplex.ιTensorObj_D₁_zero`,
   `ChainComplex.ιTensorObj_D₂_succ` and `ChainComplex.ιTensorObj_D₂_zero`: the two parts of the
   differential of `K₁ ⊗ K₂` on a homogeneous summand, for chain complexes indexed by `ℕ`.
@@ -71,6 +72,17 @@ lemma ι_tensorObj_d (X Y : CochainComplex (ModuleCat.{v} R) ℤ) (p q j : ℤ)
     mapBifunctor.d₂_eq _ _ _ _ p
       (ComplexShape.up_mk q (q + 1) rfl) (j + 1) (by dsimp; omega)]
   simp only [ComplexShape.ε₁_def, one_smul, ComplexShape.ε₂_def, ComplexShape.ε_up_ℤ]
+
+/-- `HomologicalComplex.ι_tensorObj_d` with arbitrary indices `p'`, `q'` and `j'` for the
+successors of `p`, `q` and `j`, in whiskered form. -/
+@[reassoc]
+lemma ι_tensorObj_d' (X Y : CochainComplex (ModuleCat.{v} R) ℤ) {p q j p' q' j' : ℤ}
+    (hpq : p + q = j) (hp : p + 1 = p') (hq : q + 1 = q') (hj : j + 1 = j') :
+    ιTensorObj X Y p q j hpq ≫ (X ⊗ Y).d j j' =
+      (X.d p p' ▷ Y.X q) ≫ ιTensorObj X Y p' q j' (by omega) +
+        p.negOnePow • ((X.X p ◁ Y.d q q') ≫ ιTensorObj X Y p q' j' (by omega)) := by
+  subst hp hq hj
+  simp
 
 end HomologicalComplex
 

@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Fredholm.ContinuousFamily
 public import TauCeti.Analysis.ODE.EnergyEstimate.Fredholm
+public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 
 /-!
-# The index of the trajectory operator depends only on its limits
+# The index of the trajectory operator
 
 Let `A : ℝ → End(E)` be a `C¹` family of symmetric operators on a finite-dimensional real inner
 product space `E`, with invertible limits `A±` at `±∞` and with `A'` tending to zero at both ends.
@@ -19,7 +20,9 @@ The trajectory operator `D_A u = u' + A u : W^{1,2}(ℝ, E) → L²(ℝ, E)` is 
 
 * the index of `D_A` depends only on the limits `A±`: two such families with the same limits give
   operators of the same index;
-* the index vanishes when the two limits agree.
+* the index vanishes when the two limits agree;
+* the index is the dimension of the space of square-integrable solutions of `v' = -A v` minus that
+  of `v' = A v`, and this holds for every continuous symmetric `A` for which `D_A` has closed range.
 
 For the first statement, the affine family `(1 - t) A + t B` has the same limits as `A` and `B` for
 every real `t`, so each of its trajectory operators is Fredholm. The trajectory operator depends
@@ -33,7 +36,10 @@ The first statement is the invariance of the index under deformations of the coe
 that fix its limits; the second is its value when the limits agree. Together they reduce the
 computation of the index for arbitrary limits to that of one family for each pair of limits. That
 computation, which identifies the index with the difference of the numbers of negative eigenvalues
-of `A⁻` and `A⁺`, is not proved here.
+of `A⁻` and `A⁺`, is not proved here. The third statement is the form it takes: the kernel of
+`D_A` is the space of square-integrable solutions of `v' + A v = 0`
+(`TauCeti.WeakDerivStep.kerTrajectoryOperatorEquiv`), and the cokernel is the kernel of the formal
+adjoint `D_{-A}`.
 
 ## Main declarations
 
@@ -41,6 +47,11 @@ of `A⁻` and `A⁺`, is not proved here.
   have trajectory operators of the same index.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_zero_of_tendsto`: a family with equal limits
   at both ends gives index zero.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range`: when
+  the range of `D_A` is closed, the index of `D_A` is the dimension of the square-integrable
+  solutions of `v' = -A v` minus that of `v' = A v`.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank`: the same formula under
+  the hypotheses of `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`.
 
 ## References
 
@@ -170,5 +181,52 @@ theorem index_trajectoryOperator_eq_zero_of_tendsto {A : ℝ → E →L[ℝ] E}
     hbot htop tendsto_const_nhds tendsto_const_nhds hdbot hdtop (by simp) (by simp) AL A₀L hAL
     hA₀L]
   exact index_trajectoryOperator_const hsym₀ hα hgap A₀L hA₀L
+
+variable {A : ℝ → E →L[ℝ] E}
+
+/-- **The index of a trajectory operator with closed range counts square-integrable solutions.**
+For a continuous family `A` of symmetric operators on a finite-dimensional real inner product
+space `E` such that the range of `D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is closed,
+the index of `D_A` is the dimension of the space of square-integrable solutions of `v' = -A v`
+minus the dimension of the space of square-integrable solutions of `v' = A v`. -/
+theorem index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range
+    (hA : Continuous A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (hclosed : IsClosed ((trajectoryOperator (p := 2) AL).range :
+      Set (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ (squareIntegrableSolutions A) : ℤ) -
+        Module.finrank ℝ (squareIntegrableSolutions (-A)) := by
+  have hALsym : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
+      (AL s).toLinearMap.IsSymmetric := by
+    filter_upwards [hAL] with s hs
+    rw [hs]
+    exact hsym s
+  have hnegAL : -AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] -A := by
+    filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
+    simp only [hs, Pi.neg_apply, hAs]
+  rw [index_trajectoryOperator_of_isClosed_range hALsym hclosed,
+    finrank_ker_trajectoryOperator hA AL hAL, finrank_ker_trajectoryOperator hA.neg (-AL) hnegAL]
+
+/-- **The index of the trajectory operator counts square-integrable solutions.** Under the
+hypotheses of `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`, the index of
+`D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the dimension of the space of
+square-integrable solutions of `v' = -A v` minus the dimension of the space of square-integrable
+solutions of `v' = A v`. This specializes
+`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range`. -/
+theorem index_trajectoryOperator_eq_finrank_sub_finrank
+    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
+    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
+    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ (squareIntegrableSolutions A) : ℤ) -
+        Module.finrank ℝ (squareIntegrableSolutions (-A)) :=
+  index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range hA.continuous hsym AL hAL
+    (isClosed_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL hAL)
 
 end TauCeti.WeakDerivStep
