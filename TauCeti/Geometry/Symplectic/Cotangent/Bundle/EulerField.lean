@@ -63,9 +63,7 @@ theorem liouvilleForm_interior_vectorBundleEulerField [IsManifold I 2 M] :
     (liouvilleForm I M).1.interior (vectorBundleEulerField I) = 0 := by
   funext z
   ext v
-  rw [RoughForm.interior_apply, liouvilleForm_apply, Matrix.cons_val_zero,
-    mfderiv_proj_vectorBundleEulerField, map_zero, Pi.zero_apply,
-    ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+  simp [RoughForm.interior_apply, liouvilleForm_apply]
 
 variable [IsManifold I ∞ M]
 
