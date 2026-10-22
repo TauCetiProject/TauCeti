@@ -137,7 +137,9 @@ theorem zeroVectorNormalizerEquivUnits_apply [Subsingleton M]
     (x : zeroVectorNormalizer Q) :
     (zeroVectorNormalizerEquivUnits Q x : Rˣ) =
       Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) := by
-  rfl
+  simp only [zeroVectorNormalizerEquivUnits, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
+    Subgroup.topEquiv_apply]
+  exact unitsEquivOfSubsingleton_apply Q _
 
 end CliffordAlgebra
 
