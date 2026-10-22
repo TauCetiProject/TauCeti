@@ -174,10 +174,13 @@ theorem isNilpotent_tangentMatrix_iff
     refine ⟨N, ?_⟩
     rw [← map_counit_map_iterate_genericMatrix]
     ext i j
-    rw [Matrix.map_apply, Matrix.map_apply,
-      D.iterate_eq_zero_of_le (hm _) (Finset.single_le_sum (f := fun ij : Fin n × Fin n ↦
-        m (genericMatrix R n ij.1 ij.2)) (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ (i, j))),
-      map_zero, Matrix.zero_apply]
+    have hle := Finset.single_le_sum (f := fun ij : Fin n × Fin n ↦
+      m (genericMatrix R n ij.1 ij.2)) (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ (i, j))
+    have hij : D^[N] (genericMatrix R n i j) = 0 := by
+      simpa only [Module.End.pow_apply, Derivation.coeFn_coe] using
+        Module.End.pow_map_zero_of_le (f := D.toLinearMap) hle
+          (by simpa only [Module.End.pow_apply, Derivation.coeFn_coe] using hm _)
+    rw [Matrix.map_apply, Matrix.map_apply, hij, map_zero, Matrix.zero_apply]
 
 variable [Algebra ℚ R] [Algebra ℚ (H R n)]
 
