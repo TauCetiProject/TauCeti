@@ -349,6 +349,17 @@ theorem residualUpdate_walkAssignment_mem_Icc {lo hi f : Assignment Q K} (hf : f
     residualUpdate f (walkAssignment p q) ∈ Set.Icc lo hi :=
   residualUpdate_mem_Icc (walkAssignment_mem_Icc hp hq (residualCapacity_nonneg hf) hle)
 
+/-- Updating along a residual walk by a nonnegative amount creates positive residual capacity on a
+residual arrow only if the reverse residual arrow lies on the walk. -/
+theorem pos_residualCapacity_or_mem_arrows_of_pos_residualCapacity_residualUpdate
+    {lo hi f : Assignment Q K} {s t : V} {p : ArrowWalk (ResidualHom Q) s t} {q : K} (hq : 0 ≤ q)
+    {x y : V} (a : ResidualHom Q x y)
+    (ha : 0 < residualCapacity lo hi (residualUpdate f (walkAssignment p q)) a) :
+    0 < residualCapacity lo hi f a ∨ (⟨y, x, a.swap⟩ : Σ x y, ResidualHom Q x y) ∈ p.arrows := by
+  refine or_iff_not_imp_right.2 fun h ↦ ha.trans_le ?_
+  rw [residualCapacity_residualUpdate, walkAssignment_eq_zero_of_notMem p q h, add_zero]
+  exact sub_le_self _ (walkAssignment_nonneg p hq _ _ a)
+
 variable [Fintype V] [∀ x y, Fintype (Q x y)]
 
 namespace Flow

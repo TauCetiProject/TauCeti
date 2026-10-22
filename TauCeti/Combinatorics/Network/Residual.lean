@@ -157,6 +157,15 @@ theorem residualUpdate_residualUpdate (f : Assignment Q K) (r r' : Assignment (R
     residualUpdate (residualUpdate f r) r' = residualUpdate f (r + r') := by
   simp [residualUpdate_def, add_assoc]
 
+/-- Updating by `r` uses up `r a` of the residual capacity of each residual arrow `a` and frees
+the value `r` takes on the reverse residual arrow `a.swap`. -/
+theorem residualCapacity_residualUpdate (lo hi f : Assignment Q K)
+    (r : Assignment (ResidualHom Q) K) {v w : V} (a : ResidualHom Q v w) :
+    residualCapacity lo hi (residualUpdate f r) a =
+      residualCapacity lo hi f a - r a + r (a.swap : ResidualHom Q w v) := by
+  cases a <;> simp only [Sum.swap_inl, Sum.swap_inr, residualCapacity_inl, residualCapacity_inr,
+    residualUpdate_apply] <;> abel
+
 section Map
 
 variable {L F : Type*} [AddCommGroup L] [FunLike F K L] [AddMonoidHomClass F K L]

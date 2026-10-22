@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Path.Vertices
+public import Mathlib.Data.ENat.Lattice
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Order.WellFounded
 public import Mathlib.Data.List.Nodup
@@ -30,7 +31,10 @@ contains a path between the same endpoints that uses only arrows of the walk, an
 walk of positive length contains a cycle at the same vertex that uses only arrows of the walk.
 The *bottleneck* of a walk for capacities `c` is the least capacity of an arrow it traverses, and
 a vertex is *positively reachable* from another when some walk joins them along arrows of positive
-capacity; for residual capacities these are augmenting walks.
+capacity; for residual capacities these are augmenting walks. The *positive distance* from `s` to
+`t` is the least length of such a walk, `⊤` if there is none; it is the largest function of `t`
+vanishing at `s` that grows by at most one along every arrow of positive capacity, and it grows by
+exactly one along every arrow of a shortest such walk.
 
 ## Main definitions
 
@@ -40,6 +44,7 @@ capacity; for residual capacities these are augmenting walks.
 * `TauCeti.ArrowWalk.bottleneck`: the least capacity along a walk that traverses an arrow.
 * `TauCeti.PositiveReachable c s t`: some walk from `s` to `t` traverses only arrows of positive
   capacity for `c`.
+* `TauCeti.positiveEdist c s t`: the least length of such a walk, in `ℕ∞`.
 
 ## Main results
 
@@ -64,6 +69,13 @@ capacity; for residual capacities these are augmenting walks.
 * `TauCeti.positiveReachable_map_iff` and `TauCeti.positiveReachable_map_iff_of_strictMono`: a
   coefficient map preserving and reflecting positivity, such as a strictly monotone map fixing
   zero, does not change positive reachability.
+* `TauCeti.PositiveReachable.exists_isPath_length_eq_positiveEdist`: the positive distance is
+  attained by a path.
+* `TauCeti.positiveEdist_le_add_one` and `TauCeti.le_positiveEdist_of_forall_le_add_one`: the
+  positive distance grows by at most one along an arrow of positive capacity, and it is the largest
+  function vanishing at the source with this property.
+* `TauCeti.positiveEdist_lt_of_mem_arrows`: the positive distance strictly grows along every arrow
+  of a shortest walk of positive arrows.
 -/
 
 public section
@@ -447,5 +459,116 @@ lemma exists_isPath_of_acyclic {K : Type w} [Zero K] [LinearOrder K] [Finite V]
     exact hmin w (ReflTransGen.head ⟨e', h⟩ hs) (.single ⟨e', h⟩)
   · refine le_antisymm (not_lt.1 fun h ↦ ?_) (hf _ _ e')
     exact hmax w (ht.tail ⟨e', h⟩) (.single ⟨e', h⟩)
+
+/-! ### Distance along arrows of positive capacity -/
+
+section PositiveEdist
+
+variable {K : Type w} [Zero K] [LT K]
+
+/-- The *positive distance* from `s` to `t` for the capacities `c`: the least length of a walk from
+`s` to `t` that traverses only arrows of positive capacity, and `⊤` if there is no such walk. For
+the residual capacities of a flow, it is the length of a shortest augmenting walk. -/
+noncomputable def positiveEdist (c : Assignment Q K) (s t : V) : ℕ∞ :=
+  ⨅ p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2}, (p.1.length : ℕ∞)
+
+variable {c : Assignment Q K} {s t x y : V}
+
+/-- A value is at most the positive distance exactly when it is at most the length of every walk of
+arrows of positive capacity. -/
+theorem le_positiveEdist_iff {n : ℕ∞} :
+    n ≤ positiveEdist c s t ↔
+      ∀ p : ArrowWalk Q s t, (∀ a ∈ p.arrows, 0 < c a.2.2) → n ≤ p.length := by
+  simp [positiveEdist, le_iInf_iff]
+
+/-- The positive distance is at most the length of every walk of arrows of positive capacity. -/
+theorem positiveEdist_le {p : ArrowWalk Q s t} (hp : ∀ a ∈ p.arrows, 0 < c a.2.2) :
+    positiveEdist c s t ≤ p.length :=
+  iInf_le_of_le ⟨p, hp⟩ le_rfl
+
+@[simp]
+theorem positiveEdist_self (c : Assignment Q K) (s : V) : positiveEdist c s s = 0 :=
+  nonpos_iff_eq_zero.1 (positiveEdist_le (p := ArrowWalk.nil s) (by simp))
+
+/-- **Shortest walks.** If `t` is positively reachable from `s`, then some path from `s` to `t` of
+arrows of positive capacity has length the positive distance. -/
+theorem PositiveReachable.exists_isPath_length_eq_positiveEdist (h : PositiveReachable c s t) :
+    ∃ p : ArrowWalk Q s t, p.IsPath ∧ (∀ a ∈ p.arrows, 0 < c a.2.2) ∧
+      p.length = positiveEdist c s t := by
+  have : Nonempty {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2} :=
+    let ⟨p, hp⟩ := h; ⟨⟨p, hp⟩⟩
+  obtain ⟨⟨p, hp⟩, hlen⟩ :=
+    ciInf_mem fun p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2} ↦ (p.1.length : ℕ∞)
+  obtain ⟨p', hp', hsub⟩ := p.exists_isPath_arrows_subset
+  have hpos' : ∀ a ∈ p'.arrows, 0 < c a.2.2 := fun a ha ↦ hp a (hsub ha)
+  refine ⟨p', hp', hpos', le_antisymm ?_ (positiveEdist_le hpos')⟩
+  -- the path `p'` traverses distinct arrows of `p`, so it is no longer than `p`
+  have hle := (hp'.nodup_arrows.subperm hsub).length_le
+  rw [ArrowWalk.length_arrows, ArrowWalk.length_arrows] at hle
+  exact (ENat.natCast_le_natCast.2 hle).trans_eq hlen
+
+theorem positiveEdist_lt_top_iff : positiveEdist c s t < ⊤ ↔ PositiveReachable c s t := by
+  refine ⟨fun h ↦ ?_, fun ⟨p, hp⟩ ↦ (positiveEdist_le hp).trans_lt (ENat.natCast_lt_top _)⟩
+  by_contra hr
+  exact h.ne (top_le_iff.1 (le_positiveEdist_iff.2 fun p hp ↦ (hr ⟨p, hp⟩).elim))
+
+theorem positiveEdist_eq_top_iff : positiveEdist c s t = ⊤ ↔ ¬PositiveReachable c s t := by
+  rw [← positiveEdist_lt_top_iff, lt_top_iff_ne_top, not_not]
+
+/-- The positive distance grows by at most one along an arrow of positive capacity. -/
+theorem positiveEdist_le_add_one (e : Q x y) (he : 0 < c e) :
+    positiveEdist c s y ≤ positiveEdist c s x + 1 := by
+  rcases eq_top_or_lt_top (positiveEdist c s x) with h | h
+  · simp [h]
+  obtain ⟨p, -, hp, hlen⟩ := (positiveEdist_lt_top_iff.1 h).exists_isPath_length_eq_positiveEdist
+  rw [← hlen]
+  refine (positiveEdist_le (p := p.cons e) fun a ha ↦ ?_).trans_eq (by simp)
+  rw [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at ha
+  rcases ha with ha | rfl
+  exacts [hp a ha, he]
+
+/-- The positive distance from `s` is the largest function vanishing at `s` that grows by at most
+one along every arrow of positive capacity. -/
+theorem le_positiveEdist_of_forall_le_add_one {φ : V → ℕ∞} (hs : φ s = 0)
+    (hφ : ∀ ⦃x y : V⦄ (e : Q x y), 0 < c e → φ y ≤ φ x + 1) (t : V) :
+    φ t ≤ positiveEdist c s t := by
+  refine le_positiveEdist_iff.2 fun p hp ↦ ?_
+  induction p with
+  | nil => simp [hs]
+  | cons p e ih =>
+    simp only [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at hp
+    refine (hφ e (hp _ (.inr rfl))).trans ?_
+    simpa using add_le_add_right (ih fun a ha ↦ hp a (.inl ha)) 1
+
+/-- Along a shortest walk of arrows of positive capacity, the positive distance from the source
+strictly grows across every arrow, so by `positiveEdist_le_add_one` it grows by exactly one. -/
+theorem positiveEdist_lt_of_mem_arrows {p : ArrowWalk Q s t} (hp : ∀ a ∈ p.arrows, 0 < c a.2.2)
+    (hlen : p.length = positiveEdist c s t) {a : Σ x y, Q x y} (ha : a ∈ p.arrows) :
+    positiveEdist c s a.1 < positiveEdist c s a.2.1 := by
+  induction p with
+  | nil => simp at ha
+  | @cons x y p e ih =>
+    simp only [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at hp ha
+    have hlen' : (ArrowWalk.length p : ℕ∞) + 1 = positiveEdist c s y := by simpa using hlen
+    -- the initial segment `p` is a shortest walk to `x`
+    have hx : positiveEdist c s x = ArrowWalk.length p := by
+      refine le_antisymm (positiveEdist_le fun a ha ↦ hp a (.inl ha)) ?_
+      rw [← ENat.add_le_add_iff_right ENat.one_ne_top, hlen']
+      exact positiveEdist_le_add_one e (hp _ (.inr rfl))
+    rcases ha with ha | rfl
+    · exact ih (fun a ha ↦ hp a (.inl ha)) hx.symm ha
+    · rw [← hlen', hx]
+      exact ENat.lt_add_one_iff (ENat.natCast_ne_top _) |>.2 le_rfl
+
+/-- On a finite vertex type, a finite positive distance is less than the number of vertices. -/
+theorem positiveEdist_lt_card [Fintype V] (h : PositiveReachable c s t) :
+    positiveEdist c s t < Fintype.card V := by
+  obtain ⟨p, hp, hpos⟩ := positiveReachable_iff_exists_isPath.1 h
+  refine (positiveEdist_le hpos).trans_lt (ENat.natCast_lt_natCast.2 ?_)
+  have := hp.length_le_card
+  rw [ArrowWalk.vertices, @Quiver.Path.vertices_length V ⟨Q⟩] at this
+  exact this
+
+end PositiveEdist
 
 end TauCeti
