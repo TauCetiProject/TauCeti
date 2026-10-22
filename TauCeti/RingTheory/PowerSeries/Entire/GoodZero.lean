@@ -104,6 +104,7 @@ theorem IsGoodZero.unique [Nontrivial R] (hh : f.IsGoodZero a h) (hk : f.IsGoodZ
   · exact absurd (hh.evalAt_hasseDeriv_eq_zero hlt ▸ hk.isUnit_evalAt_hasseDeriv) not_isUnit_zero
 
 /-- The series `(X - a)ʰ` has a good zero of order `h` at `a`. -/
+@[simp]
 theorem isGoodZero_X_sub_C_pow : ((X - C a) ^ h : R⟦X⟧).IsGoodZero a h := by
   simp +contextual [isGoodZero_iff, evalAt_hasseDeriv_X_sub_C_pow, Nat.ne_of_lt]
 
@@ -149,6 +150,7 @@ variable {R : Type*} [NormedCommRing R] [CompleteSpace R] {f g : R⟦X⟧} {a : 
 
 /-- For entire `g`, the series `(X - a)ʰ g` has a good zero of order `h` at `a` exactly when
 `g(a)` is a unit. -/
+@[simp]
 theorem IsEntire.isGoodZero_X_sub_C_pow_mul_iff (hg : g.IsEntire) :
     ((X - C a) ^ h * g).IsGoodZero a h ↔ IsUnit (g.evalAt a) := by
   simp only [isGoodZero_iff, hg.evalAt_hasseDeriv_X_sub_C_pow_mul, le_refl, ite_true,

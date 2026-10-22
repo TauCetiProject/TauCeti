@@ -176,6 +176,7 @@ theorem IsEntire.evalAt_map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Spa
 /-- **Evaluated Leibniz rule at `a` for `(X - a)ᵐ g`.** For entire `g`, the Hasse derivative of
 order `j` of `(X - a)ᵐ g` at `a` is the Hasse derivative of order `j - m` of `g` at `a` when
 `m ≤ j`, and `0` otherwise. -/
+@[simp]
 theorem IsEntire.evalAt_hasseDeriv_X_sub_C_pow_mul [CompleteSpace R] (hg : g.IsEntire) (a : R)
     (m j : ℕ) :
     (PowerSeries.hasseDeriv j ((X - C a) ^ m * g)).evalAt a =
