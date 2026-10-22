@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.Fourier.AddCircle
 
-import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.Fourier.FourierCoeffOn
 
 /-!
 # Decay of Fourier transforms and Fourier coefficients of smooth functions
@@ -31,10 +31,6 @@ the Fourier-coefficient Sobolev spaces of the circle.
   `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C` for some `C > 0`.
 * `TauCeti.exists_abs_pow_mul_norm_fourierCoeff_le`: if `f : AddCircle T → ℂ` is `C^k` as a
   periodic function on `ℝ`, then `|n| ^ k * ‖fourierCoeff f n‖ ≤ C` for some `C`.
-* `TauCeti.fourierCoeffOn_iteratedDeriv`: on a period interval, the Fourier coefficients of the
-  `j`-th derivative of a `C^k` periodic function are `(2πin / T) ^ j` times those of the function.
-* `TauCeti.norm_fourierCoeffOn_le`: a sup bound on `(a, b]` bounds the Fourier coefficients on
-  `[a, b]`.
 -/
 
 public section
@@ -61,56 +57,9 @@ theorem exists_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f) (hsupp : H
 section Circle
 
 open Complex
-open scoped Real Interval
+open scoped Real
 
 variable {T : ℝ} [hT : Fact (0 < T)]
-
-/-- The Fourier coefficients of a function on `AddCircle T` are those of its lift to `ℝ` on any
-period interval `(a, a + T]`. -/
-theorem fourierCoeff_eq_fourierCoeffOn (a : ℝ) (f : AddCircle T → ℂ) (n : ℤ) :
-    fourierCoeff f n = fourierCoeffOn (lt_add_of_pos_right a hT.out) (fun x : ℝ ↦ f x) n := by
-  rw [← fourierCoeff_liftIoc_eq]
-  congr 1
-  funext x
-  simp [AddCircle.liftIoc, AddCircle.coe_equivIoc]
-
-/-- Each derivative of a `C^k` function of period `T` multiplies its nonzero-frequency Fourier
-coefficients on a period interval by `2πin / T`. -/
-theorem fourierCoeffOn_iteratedDeriv {f : ℝ → ℂ} {k : ℕ} (hf : ContDiff ℝ k f)
-    (hper : Function.Periodic f T) (a : ℝ) {n : ℤ} (hn : n ≠ 0) {j : ℕ} (hj : j ≤ k) :
-    fourierCoeffOn (lt_add_of_pos_right a hT.out) (iteratedDeriv j f) n =
-      (2 * π * I * n / T) ^ j * fourierCoeffOn (lt_add_of_pos_right a hT.out) f n := by
-  induction j with
-  | zero => simp
-  | succ j ih =>
-    have hd := hf.differentiable_iteratedDeriv j (by exact_mod_cast hj)
-    have h := fourierCoeffOn_of_hasDerivAt (lt_add_of_pos_right a hT.out) hn
-      (f := iteratedDeriv j f) (f' := iteratedDeriv (j + 1) f)
-      (fun x _ ↦ by simpa [iteratedDeriv_succ] using (hd x).hasDerivAt)
-      ((hf.continuous_iteratedDeriv (j + 1) (by exact_mod_cast hj)).intervalIntegrable _ _)
-    rw [hper.iteratedDeriv j a, sub_self, mul_zero, zero_sub, ih (by omega)] at h
-    have hT0 : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT.out.ne'
-    have hc : (2 * π * I * n : ℂ) ≠ 0 := by simp [hn, Real.pi_ne_zero, I_ne_zero]
-    rw [pow_succ, mul_comm _ (2 * π * I * n / T), mul_assoc, h]
-    push_cast
-    field_simp
-    ring
-
-/-- A pointwise bound on a function over the interval `(a, b]` bounds its Fourier coefficients
-on `[a, b]`. -/
-theorem norm_fourierCoeffOn_le {a b : ℝ} (hab : a < b) {g : ℝ → E} {M : ℝ}
-    (hM : ∀ x ∈ Set.Ioc a b, ‖g x‖ ≤ M) (n : ℤ) : ‖fourierCoeffOn hab g n‖ ≤ M := by
-  rw [fourierCoeffOn_eq_integral, norm_smul]
-  have h := intervalIntegral.norm_integral_le_of_norm_le_const (a := a) (b := b)
-    (f := fun x : ℝ ↦ fourier (-n) (x : AddCircle (b - a)) • g x) (C := M) fun x hx ↦ by
-      simp only [norm_smul, fourier_apply, Circle.norm_coe, one_mul]
-      rw [Set.uIoc_of_le hab.le] at hx
-      exact hM x hx
-  have hba := sub_pos.2 hab
-  rw [abs_of_pos hba] at h
-  rw [norm_div, norm_one, Real.norm_of_nonneg hba.le]
-  calc 1 / (b - a) * _ ≤ 1 / (b - a) * (M * (b - a)) := by gcongr
-    _ = M := by field_simp
 
 /-- **Decay of the Fourier coefficients of a `C^k` function on the circle.** If a function on
 `AddCircle T` is `C^k` as a periodic function on `ℝ`, then `|n| ^ k * ‖fourierCoeff f n‖` is
