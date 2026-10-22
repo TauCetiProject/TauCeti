@@ -90,7 +90,7 @@ Leibniz rule `δ_comp` and the totalized monoidal structure are Mathlib's.
 
 public section
 
-open CategoryTheory Limits MonoidalCategory CochainComplex.HomComplex
+open CategoryTheory Limits MonoidalCategory CochainComplex CochainComplex.HomComplex
 
 namespace TauCeti
 
@@ -118,7 +118,8 @@ noncomputable def cochainCompTensor (p q j : ℤ)
 lemma cochainCompTensor_tmul (p q j : ℤ)
     (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q) = j)
     (z₂ : ModuleCat.of R (Cochain G K p)) (z₁ : ModuleCat.of R (Cochain F G q)) :
-    ModuleCat.Hom.hom (cochainCompTensor R F G K p q j h) (z₂ ⊗ₜ z₁) =
+    (dsimp% only [linearHomComplex_X]
+      ModuleCat.Hom.hom (cochainCompTensor R F G K p q j h) (z₂ ⊗ₜ z₁)) =
       (z₁.comp z₂ (by dsimp at h; omega) : ModuleCat.of R (Cochain F K j)) :=
   (rfl)
 
@@ -165,8 +166,8 @@ private lemma cochainCompTensor_d (p q j : ℤ)
         (z₂' ⊗ₜ ModuleCat.Hom.hom ((linearHomComplex R F G).d q (q + 1)) z₁') =
     ModuleCat.Hom.hom ((linearHomComplex R F K).d j (j + 1))
       (ModuleCat.Hom.hom (cochainCompTensor R F G K p q j _) (z₂' ⊗ₜ z₁'))
-  rw [linearHomComplex_d_apply, linearHomComplex_d_apply, cochainCompTensor_tmul,
-    cochainCompTensor_tmul, cochainCompTensor_tmul, linearHomComplex_d_apply]
+  rw [linearHomComplex_d_hom_apply, linearHomComplex_d_hom_apply, cochainCompTensor_tmul,
+    cochainCompTensor_tmul, cochainCompTensor_tmul, linearHomComplex_d_hom_apply]
   exact (δ_comp z₁' z₂' (by omega) (q + 1) (p + 1) (j + 1) rfl rfl rfl).symm
 
 /-- **Composition of cochains is a closed degree-zero map.**  It assembles into a morphism of
@@ -224,9 +225,10 @@ lemma linearHomComplexOfHom_f_zero {F G : CochainComplex C ℤ} (φ : F ⟶ G) :
 of the associated cochain. -/
 @[simp]
 lemma linearHomComplexOfHom_f_zero_apply {F G : CochainComplex C ℤ} (φ : F ⟶ G) (r : R) :
-    ModuleCat.Hom.hom ((linearHomComplexOfHom R φ).f 0)
+    (dsimp% only [linearHomComplex_X]
+      ModuleCat.Hom.hom ((linearHomComplexOfHom R φ).f 0)
         ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
-          (𝟙_ (ModuleCat.{v} R))).inv r) =
+          (𝟙_ (ModuleCat.{v} R))).inv r)) =
       (r • Cochain.ofHom φ : ModuleCat.of R (Cochain F G 0)) := by
   rw [linearHomComplexOfHom_f_zero]
   -- `ModuleCat.hom_comp` does not expose application through `ModuleCat.ofHom` in the form
@@ -254,9 +256,10 @@ lemma linearHomComplexUnit_def :
 the identity cochain. -/
 @[simp]
 lemma linearHomComplexUnit_f_zero_apply (r : R) :
-    ModuleCat.Hom.hom ((linearHomComplexUnit R F).f 0)
+    (dsimp% only [linearHomComplex_X]
+      ModuleCat.Hom.hom ((linearHomComplexUnit R F).f 0)
         ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
-          (𝟙_ (ModuleCat.{v} R))).inv r) =
+          (𝟙_ (ModuleCat.{v} R))).inv r)) =
       (r • Cochain.ofHom (𝟙 F) : ModuleCat.of R (Cochain F F 0)) := by
   rw [linearHomComplexUnit_def, linearHomComplexOfHom_f_zero_apply]
 

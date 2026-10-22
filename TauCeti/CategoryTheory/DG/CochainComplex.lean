@@ -12,9 +12,9 @@ public import TauCeti.CategoryTheory.DG.Basic
 # Cochain complexes as a differential graded category
 
 Cochain complexes in an `R`-linear preadditive category are enriched in cochain complexes of
-`R`-modules through `TauCeti.linearHomComplex`, so they form a differential graded category.  This
-file evaluates the differential graded operations of `TauCeti/CategoryTheory/DG/Basic.lean` on that
-example: the degree-`n` morphisms are the degree-`n` cochains, the differential is Mathlib's
+`R`-modules through `CochainComplex.linearHomComplex`, so they form a differential graded category.
+This file evaluates the differential graded operations of `TauCeti/CategoryTheory/DG/Basic.lean`
+on that example: the degree-`n` morphisms are the degree-`n` cochains, the differential is Mathlib's
 signed `CochainComplex.HomComplex.δ`, the identity is the identity cochain, and composition is
 composition of cochains with the Koszul sign.
 
@@ -44,7 +44,7 @@ conventions of every later differential graded construction.
 
 public section
 
-open CategoryTheory MonoidalCategory CochainComplex.HomComplex HomologicalComplex
+open CategoryTheory MonoidalCategory CochainComplex CochainComplex.HomComplex HomologicalComplex
 
 namespace TauCeti
 
@@ -57,7 +57,7 @@ differential `δ` of cochains. -/
 @[simp]
 theorem dgDifferential_linearHomComplex {F G : CochainComplex C ℤ} (n : ℤ)
     (z : DGHom R n F G) : dgDifferential R n z = δ n (n + 1) z :=
-  linearHomComplex_d_apply R F G n (n + 1) z
+  linearHomComplex_d_hom_apply R F G n (n + 1) z
 
 /-- The identity of the differential graded category of cochain complexes is the identity
 cochain. -/
