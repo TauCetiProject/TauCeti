@@ -229,7 +229,8 @@ theorem primaryComponent_middle_eq_bot (S : DiscreteShortExact G A B C) (hp : p.
   obtain ⟨a', ha', hia'⟩ := exists_mem_primaryComponent_apply_eq
     (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) (n + 1)).hom hp
     (isAddTorsion_continuousCohomology n a) hx
-  rw [hA, AddSubgroup.mem_bot] at ha'
+  rw [AddCommMonoid.mem_primaryComponent, ← AddCommGroup.mem_primaryComponent, hA,
+    AddSubgroup.mem_bot] at ha'
   rw [← hia', ha', _root_.map_zero]
 
 /-- **Exactness at `Hⁿ⁺¹(G, C)` on `p`-primary components.** For a short exact sequence
@@ -254,7 +255,8 @@ theorem primaryComponent_right_eq_bot (S : DiscreteShortExact G A B C) (hp : p.P
   obtain ⟨b', hb', hb'x⟩ := exists_mem_primaryComponent_apply_eq
     (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) (n + 1)).hom hp
     (isAddTorsion_continuousCohomology n b) hx
-  rw [hB, AddSubgroup.mem_bot] at hb'
+  rw [AddCommMonoid.mem_primaryComponent, ← AddCommGroup.mem_primaryComponent, hB,
+    AddSubgroup.mem_bot] at hb'
   rw [← hb'x, hb', _root_.map_zero]
 
 end TauCeti.ContCohomology.DiscreteShortExact
