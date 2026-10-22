@@ -65,6 +65,12 @@ theorem mem_lattice {C : AddSubgroup (ι → ZMod m)} {x : ι → ℚ} :
   simp only [← Submodule.mem_toAddSubgroup, AddSubgroup.toIntSubmodule_toAddSubgroup]
   simp [LinearMap.compLeft, Function.comp_def]
 
+/-- Construction A vectors are integral: each coordinate is an integer. -/
+theorem exists_intCast_eq_of_mem_lattice {C : AddSubgroup (ι → ZMod m)} {x : ι → ℚ}
+    (hx : x ∈ lattice m C) (i : ι) : ∃ z : ℤ, x i = z := by
+  obtain ⟨w, -, rfl⟩ := (mem_lattice m).mp hx
+  exact ⟨w i, rfl⟩
+
 /-- An integer vector belongs to Construction A exactly when its reduction is a codeword. -/
 @[simp]
 theorem intCast_mem_lattice {C : AddSubgroup (ι → ZMod m)} (z : ι → ℤ) :

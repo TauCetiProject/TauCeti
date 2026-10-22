@@ -102,6 +102,14 @@ theorem intCast_mem_lattice (z : ι → ℤ) :
   · exact_mod_cast hk
   · exact_mod_cast hk
 
+/-- The vector `2eᵢ` is not in Construction B: its coordinate sum is `2`. -/
+theorem single_two_notMem_lattice [DecidableEq ι] (i : ι) : Pi.single i 2 ∉ lattice C := by
+  intro h
+  obtain ⟨-, k, hk⟩ := mem_lattice.mp h
+  simp only [Finset.sum_pi_single', Finset.mem_univ, ite_true] at hk
+  have hk' : (2 : ℤ) = 4 * k := by exact_mod_cast hk
+  omega
+
 /-- **The parity form of Construction B.** For a doubly even code, the Construction A vector
 `c + 2z`, with `c` the `0`/`1` lift of a codeword, lies in Construction B exactly when `∑ zᵢ` is
 even. Together with `ConstructionA.exists_eq_val_add_mul` this describes every Construction B
@@ -253,6 +261,18 @@ Construction A. -/
 theorem integralLattice_form (hC : C.IsSelfOrthogonal) :
     (integralLattice C hC).form = ConstructionA.form 2 := by
   rw [integralLattice, IntegralLattice.restrictFull_form, ConstructionA.integralLattice_form]
+
+/-- The vector `2eᵢ` pairs integrally with Construction B: the pairing reads off the `i`th
+coordinate. -/
+theorem single_two_mem_dualCarrier [DecidableEq ι] (hC : C.IsSelfOrthogonal) (i : ι) :
+    Pi.single i 2 ∈ (integralLattice C hC).dualCarrier := by
+  rw [IntegralLattice.dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
+  intro x hx
+  rw [integralLattice_carrier] at hx
+  obtain ⟨z, hz⟩ := ConstructionA.exists_intCast_eq_of_mem_lattice 2 (lattice_le C hx) i
+  refine Submodule.mem_one.mpr ⟨z, ?_⟩
+  rw [(integralLattice C hC).isSymm.eq, integralLattice_form]
+  simpa using hz.symm
 
 /-- Construction B is nondegenerate, since its form is that of Construction A. -/
 instance isNondegenerate_integralLattice (hC : C.IsSelfOrthogonal) :
