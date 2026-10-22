@@ -148,10 +148,8 @@ Normal build gates and the worker rule to wait for prerequisites still apply.
 
 ## Enforcement, races and retries
 
-The batching guarantees below require a caller using checkpoint mode and global
-wake coalescing. Legacy per-event callers still use focused checks and can
-exhaust GitHub's 100 waiting slots; upgrading the checker alone does not change
-workflow scheduling.
+The main-defined `stack-policy.yml` uses checkpointed automatic batches and
+retains focused manual audits without checkpoint state.
 
 Main-target opened/reopened/synchronize/draft events invoke trusted main policy.
 Edited events invoke it only when the base changes; title/body-only edits are
@@ -223,8 +221,8 @@ closure, preserved branch and observed admitted-child withdrawal verification.
 
 `--state-in state.json --state-out next.json` enables incremental batches.
 `--prs N ...` selects multiple explicit targets without requiring separate
-source preparation. Without checkpoint arguments, the focused/backlog interface
-continues to support the deployed caller during rollout.
+source preparation. Focused `--pr` invocations are uncheckpointed and inspect
+only the selected PR.
 
 Checkpoint version 1 contains a reporting `watermark`, ordered `pending` PR
 numbers, `checked` and `failed` identities (head SHA, updated time and base ref),
@@ -275,14 +273,14 @@ Dry-run and focused manual invocations must not restore or publish the automatic
 apply checkpoint artifact;
 `--pr` rejects combination with `--state-out` to protect one-PR canaries.
 
-Automatic wakes can then coalesce globally: one running batch and the newest
-waiting wake cover all metadata updates, including notifications replaced before
-taking a runner. Keep manual and scheduled requests outside automatic replacement
-and all policy mutations under the same global lock. Full recovery sweeps share
-this checkpoint so continuation does not restart at the first PR. No extra merge
-gate or fixed debounce is needed.
+The workflow coalesces automatic wakes globally: one running batch and the newest
+waiting wake cover changed identities, including notifications replaced before
+taking a runner. Manual and scheduled requests stay outside automatic replacement,
+and all policy mutations use the same global lock. Full recovery sweeps share
+this checkpoint so continuation does not restart at the first PR. The workflow
+adds no merge gate or fixed debounce.
 
-For local regression tests in TauCetiTools run
-`python3 -m unittest discover -s tests -p test_stack_batch.py`. Coverage includes collapsed notifications,
-latest identities, interruption and publication failure, shared source setup,
-fair continuation, stale fork wakes and read-only execution.
+The [shared batching regression tests](https://github.com/TauCetiProject/TauCetiTools/blob/980a7a0e321a7fe86981f6c9f872a2acad93af69/tests/test_stack_batch.py)
+live in the pinned Tools repository. They cover collapsed notifications, current
+identities, interruption and publication failure, shared source setup, fair
+continuation, stale fork wakes and read-only execution.
