@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.ExteriorPower.Basic
 Let `M` be a comodule over a commutative bialgebra `H`, and let `g` be an `A`-point of `H`.
 There are two ways to let `g` act on exterior powers after extending scalars to `A`: through the
 exterior algebra over `A` of its action on `A ⊗[R] M`, or through the exterior-algebra comodule of
-`M` and its homogeneous pieces. The comparison `TauCeti.exteriorAlgebraEquivBaseChange`
+`M` and its homogeneous pieces. The inverse of `ExteriorAlgebra.baseChangeEquiv`
 intertwines the two actions.
 
 As a consequence, for a submodule `W` of `M`, the point stabilizes the scalar extension of the
@@ -46,12 +46,13 @@ the point action on the exterior-algebra comodule. -/
 @[simp]
 theorem _root_.TauCeti.exteriorAlgebraEquivBaseChange_map_endOfPoint (g : H →ₐ[R] A)
     (x : ExteriorAlgebra A (A ⊗[R] M)) :
-    exteriorAlgebraEquivBaseChange A (ExteriorAlgebra.map (endOfPoint M g) x) =
-      endOfPoint (ExteriorAlgebra R M) g (exteriorAlgebraEquivBaseChange A x) := by
+    (ExteriorAlgebra.baseChangeEquiv R M A).symm (ExteriorAlgebra.map (endOfPoint M g) x) =
+      endOfPoint (ExteriorAlgebra R M) g ((ExteriorAlgebra.baseChangeEquiv R M A).symm x) := by
   rw [← exteriorAlgebraEndOfPoint_apply]
-  suffices h : (exteriorAlgebraEquivBaseChange A).toAlgHom.comp
+  suffices h : (ExteriorAlgebra.baseChangeEquiv R M A).symm.toAlgHom.comp
       (ExteriorAlgebra.map (endOfPoint M g)) =
-        (exteriorAlgebraEndOfPoint g).comp (exteriorAlgebraEquivBaseChange A).toAlgHom from
+        (exteriorAlgebraEndOfPoint g).comp
+          (ExteriorAlgebra.baseChangeEquiv R M A).symm.toAlgHom from
     AlgHom.congr_fun h x
   apply ExteriorAlgebra.hom_ext
   refine LinearMap.ext fun y ↦ ?_
@@ -71,8 +72,9 @@ theorem map_endOfPoint_baseChange_range_exteriorPowerMap_eq_iff (W : Submodule R
         (ExteriorAlgebra.map (endOfPoint M g)).toLinearMap =
       ((W.baseChange A).map (ExteriorAlgebra.ι A)) ^ n := by
   let s := (⋀[R]^n M).subtype.baseChange A
-  let e := (exteriorAlgebraEquivBaseChange (R := R) (M := M) A).toAlgHom
-  have he : Function.Injective e.toLinearMap := (exteriorAlgebraEquivBaseChange A).injective
+  let e := (ExteriorAlgebra.baseChangeEquiv R M A).symm.toAlgHom
+  have he : Function.Injective e.toLinearMap :=
+    (ExteriorAlgebra.baseChangeEquiv R M A).symm.injective
   -- Inside `ExteriorAlgebra R M`, the exterior image of `W` is the `n`th power of `W`.
   have himage : (LinearMap.range (_root_.exteriorPower.map n W.subtype)).map (⋀[R]^n M).subtype =
       (W.map (ExteriorAlgebra.ι R)) ^ n := by

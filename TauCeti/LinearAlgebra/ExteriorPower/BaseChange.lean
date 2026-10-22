@@ -36,7 +36,7 @@ variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 /-- The exterior-algebra comparison preserves each homogeneous degree. -/
 @[simp]
 theorem TauCeti.exteriorAlgebraEquivBaseChange_map_exteriorPower (n : ℕ) :
-    (⋀[A]^n (A ⊗[R] M)).map (TauCeti.exteriorAlgebraEquivBaseChange A).toLinearMap =
+    (⋀[A]^n (A ⊗[R] M)).map (_root_.ExteriorAlgebra.baseChangeEquiv R M A).symm.toLinearMap =
       (⋀[R]^n M).baseChange A := by
   simp only [_root_.ExteriorAlgebra.exteriorPower]
   rw [← AlgEquiv.toLinearEquiv_toLinearMap, ← AlgEquiv.toAlgHom_toLinearMap,
@@ -44,7 +44,7 @@ theorem TauCeti.exteriorAlgebraEquivBaseChange_map_exteriorPower (n : ℕ) :
   simp only [AlgEquiv.toAlgHom_toLinearMap, AlgEquiv.toLinearEquiv_toLinearMap]
   congr 1
   rw [← LinearMap.range_comp]
-  have h : (TauCeti.exteriorAlgebraEquivBaseChange (M := M) A).toLinearMap.comp
+  have h : (_root_.ExteriorAlgebra.baseChangeEquiv R M A).symm.toLinearMap.comp
       (_root_.ExteriorAlgebra.ι A) = (_root_.ExteriorAlgebra.ι R).baseChange A := by
     apply LinearMap.ext
     intro x
@@ -67,7 +67,7 @@ theorem baseChange_subtype_injective (n : ℕ) :
 /-- Exterior powers commute with extension of scalars over arbitrary commutative rings. -/
 noncomputable def equivBaseChange (n : ℕ) :
     (⋀[A]^n (A ⊗[R] M)) ≃ₗ[A] A ⊗[R] (⋀[R]^n M) :=
-  ((TauCeti.exteriorAlgebraEquivBaseChange A).toLinearEquiv.ofSubmodules _ _
+  ((_root_.ExteriorAlgebra.baseChangeEquiv R M A).symm.toLinearEquiv.ofSubmodules _ _
     (TauCeti.exteriorAlgebraEquivBaseChange_map_exteriorPower A n)).trans
       (LinearEquiv.ofInjective ((⋀[R]^n M).subtype.baseChange A)
         (baseChange_subtype_injective A n)).symm
@@ -76,7 +76,7 @@ noncomputable def equivBaseChange (n : ℕ) :
 @[simp]
 theorem subtype_baseChange_equivBaseChange (n : ℕ) (x : ⋀[A]^n (A ⊗[R] M)) :
     (⋀[R]^n M).subtype.baseChange A (equivBaseChange A n x) =
-      TauCeti.exteriorAlgebraEquivBaseChange A (x : ExteriorAlgebra A (A ⊗[R] M)) := by
+      (_root_.ExteriorAlgebra.baseChangeEquiv R M A).symm (x : ExteriorAlgebra A (A ⊗[R] M)) := by
   exact (LinearEquiv.ofInjective_symm_apply _ (h := baseChange_subtype_injective A n) _).trans
     (LinearEquiv.ofSubmodules_apply _ _ x)
 
