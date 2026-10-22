@@ -83,20 +83,24 @@ theorem hasCompactoidImage_iff {u : E →L[K] F} :
 theorem hasCompactoidImage_zero : (0 : E →L[K] F).HasCompactoidImage :=
   (Set.finite_singleton 0).isCompactoidSet.mono (Set.image_subset_iff.2 fun _ _ ↦ rfl)
 
+/-- The sum of two maps with compactoid image has compactoid image. -/
 theorem HasCompactoidImage.add {u v : E →L[K] F} (hu : u.HasCompactoidImage)
     (hv : v.HasCompactoidImage) : (u + v).HasCompactoidImage :=
   (IsCompactoidSet.add hu hv).mono <| Set.image_subset_iff.2 fun _ hx ↦
     Set.add_mem_add (Set.mem_image_of_mem u hx) (Set.mem_image_of_mem v hx)
 
+/-- A scalar multiple of a map with compactoid image has compactoid image. -/
 theorem HasCompactoidImage.smul {u : E →L[K] F} (hu : u.HasCompactoidImage) (c : K) :
     (c • u).HasCompactoidImage :=
   (IsCompactoidSet.smul hu c).mono <| Set.image_subset_iff.2 fun _ hx ↦
     Set.smul_mem_smul_set (Set.mem_image_of_mem u hx)
 
+/-- The negation of a map with compactoid image has compactoid image. -/
 theorem HasCompactoidImage.neg {u : E →L[K] F} (hu : u.HasCompactoidImage) :
     (-u).HasCompactoidImage := by
   simpa using hu.smul (-1)
 
+/-- The difference of two maps with compactoid image has compactoid image. -/
 theorem HasCompactoidImage.sub {u v : E →L[K] F} (hu : u.HasCompactoidImage)
     (hv : v.HasCompactoidImage) : (u - v).HasCompactoidImage := by
   simpa [sub_eq_add_neg] using hu.add hv.neg
@@ -134,16 +138,8 @@ maps every bounded set to a compactoid set. -/
 theorem hasCompactoidImage_iff_forall_isBounded {u : E →L[K] F} :
     u.HasCompactoidImage ↔ ∀ S : Set E, IsBounded S → IsCompactoidSet K (u '' S) := by
   refine ⟨fun hu S hS ↦ ?_, fun h ↦ h _ isBounded_closedBall⟩
-  -- A bounded set lies in `c • closedBall 0 1` for a scalar `c` of large norm.
-  obtain ⟨r, hr⟩ := isBounded_iff_forall_norm_le.1 hS
-  obtain ⟨c, hc⟩ := NormedField.exists_lt_norm K (max r 0)
-  have hc₀ : 0 < ‖c‖ := (le_max_right r 0).trans_lt hc
-  refine (IsCompactoidSet.smul hu c).mono <| Set.image_subset_iff.2 fun x hx ↦ ?_
-  have hx' : c⁻¹ • x ∈ closedBall (0 : E) 1 := by
-    rw [mem_closedBall_zero_iff, norm_smul, norm_inv, inv_mul_le_iff₀ hc₀, mul_one]
-    exact (hr x hx).trans <| (le_max_left r 0).trans hc.le
-  simpa [smul_smul, mul_inv_cancel₀ (norm_pos_iff.1 hc₀)] using
-    Set.smul_mem_smul_set (a := c) (Set.mem_image_of_mem u hx')
+  obtain ⟨a, ha⟩ := (NormedSpace.isBounded_iff_subset_smul_closedBall K).1 hS
+  exact (IsCompactoidSet.smul hu a).mono ((Set.image_mono ha).trans (image_smul_set u a _).subset)
 
 /-- Precomposing a map with compactoid image with a continuous linear map gives a map with
 compactoid image. -/
