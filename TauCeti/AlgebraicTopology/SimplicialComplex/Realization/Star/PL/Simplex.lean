@@ -99,23 +99,6 @@ private theorem isPLOn_geometricLink_of_homeomorph {κ : Type*} {L : AbstractSim
   refine ⟨hL ▸ hf, hT ▸ hg, fun y => ?_, hT⟩
   rw [hfe (toLink y), hge, e.symm_apply_apply]
 
-/-- A homeomorphism onto the coordinate image of the realization of the full complex on `Fin m`,
-read as a homeomorphism onto that realization. -/
-private theorem exists_homeomorph_top_of_homeomorph {X : Type*} [TopologicalSpace X] {m : ℕ}
-    {S : Set (Fin m → ℝ)} (φ : X ≃ₜ S)
-    (hS : S = range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin m)) =>
-      (y.1 : Fin m → ℝ)) :
-    ∃ ψ : X ≃ₜ Realization (⊤ : AbstractSimplicialComplex (Fin m)),
-      ∀ x, ((ψ x).1 : Fin m → ℝ) = φ x := by
-  subst hS
-  let r := ((⊤ : AbstractSimplicialComplex (Fin m)).isClosedEmbedding_realization_coe
-    (Set.toFinite _)).isEmbedding.toHomeomorph
-  have hr (w : Realization (⊤ : AbstractSimplicialComplex (Fin m))) :
-      ((r w : Fin m → ℝ)) = (w.1 : Fin m → ℝ) :=
-    Topology.IsEmbedding.toHomeomorph_apply_coe _ w
-  exact ⟨φ.trans r.symm, fun x =>
-    (hr _).symm.trans (congrArg Subtype.val (r.apply_symm_apply (φ x)))⟩
-
 /-- **Simplex model of a closed vertex star with a spherical link.** If the link of `v` is a
 combinatorial `n`-sphere, the closed star of `v` is homeomorphic to the standard `(n + 1)`-simplex,
 the realization of the full complex on `Fin (n + 2)`, with piecewise-linear ambient coordinate
@@ -169,7 +152,11 @@ theorem IsCombinatorialSphere.exists_homeomorph_closedStarRealization_top
   obtain ⟨φ, hapex, hheight, -, F, G, hF, hG, hFφ, hGφ⟩ :=
     exists_homeomorph_closedStarRealization_convexJoin hK hne hf hg hgf
       (hh.mono (subset_univ _)) hhF
-  obtain ⟨ψ, hψ⟩ := exists_homeomorph_top_of_homeomorph φ hS
+  -- Identify the join with the realization of the full complex through its coordinates.
+  let ψ := φ.trans ((Homeomorph.setCongr hS).trans
+    ((⊤ : AbstractSimplicialComplex (Fin (n + 2))).realizationHomeomorphRange (toFinite _)).symm)
+  have hψ (x : closedStarRealization K {v}) : ((ψ x).1 : Fin (n + 2) → ℝ) = φ x :=
+    coe_realizationHomeomorphRange_symm_apply _ _ _
   have hc : c = (n : ℝ) + 2 := by simp [c]
   refine ⟨ψ, ?_, fun x => ?_, F, G, hF, by rw [← hS]; exact hG,
     fun x => by rw [hψ]; exact hFφ x, fun x => by rw [hψ]; exact hGφ x⟩
@@ -242,7 +229,11 @@ theorem IsCombinatorialBall.exists_homeomorph_closedStarRealization_top
     exists_homeomorph_closedStarRealization_convexJoin (b := b) hK hne hF hG
       (fun y => by simp only [Fin.init_snoc, hgf]) (hh.mono (subset_univ _))
       (fun y t _ => by simp [b])
-  obtain ⟨ψ, hψ⟩ := exists_homeomorph_top_of_homeomorph φ hS
+  -- Identify the join with the realization of the full complex through its coordinates.
+  let ψ := φ.trans ((Homeomorph.setCongr hS).trans
+    ((⊤ : AbstractSimplicialComplex (Fin (n + 2))).realizationHomeomorphRange (toFinite _)).symm)
+  have hψ (x : closedStarRealization K {v}) : ((ψ x).1 : Fin (n + 2) → ℝ) = φ x :=
+    coe_realizationHomeomorphRange_symm_apply _ _ _
   refine ⟨ψ, by rw [hψ, hapex], fun x => by rw [hψ]; exact hheight x, F, G, hF,
     by rw [← hS]; exact hG, fun x => by rw [hψ]; exact hFφ x, fun x => by rw [hψ]; exact hGφ x⟩
 
