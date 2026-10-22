@@ -82,7 +82,7 @@ jobs:
       - name: Mint picker read token
         if: ${{ env.HAS_APP == 'true' }}
         id: app-token
-        uses: actions/create-github-app-token@29824b336c9c3f639e8f920a6b650a6edfb6e0e7 # v2.2.1
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         continue-on-error: true
         with:
           app-id: ${{ secrets.APP_ID }}
