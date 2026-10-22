@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.RingTheory.CyclicCohomology.EvenPairing.Basic
 import Mathlib.Algebra.Polynomial.Derivative
 import TauCeti.Algebra.Group.Idempotent
+import TauCeti.Algebra.Polynomial.Eval.AlgebraMap
 import TauCeti.LinearAlgebra.Multilinear.Polynomial
 
 /-!
@@ -75,17 +76,15 @@ theorem apply_const_eval_algebraMap_eq {n : ℕ} (hn : Even n)
     (hbφ : hochschildCoboundary R A M n φ = 0) {e : A[X]} (he : IsIdempotentElem e) (s t : R) :
     φ (fun _ ↦ e.eval (algebraMap R A s)) = φ (fun _ ↦ e.eval (algebraMap R A t)) := by
   refine φ.apply_eval_algebraMap_eq_of_sum_update_derivative_eq_zero (fun _ ↦ e) (fun r ↦ ?_) s t
-  -- Evaluation at the central element `algebraMap R A r` is a ring homomorphism.
-  let ev : A[X] →+* A :=
-    eval₂RingHom' (RingHom.id A) (algebraMap R A r) fun a ↦ Algebra.commute_algebraMap_right r a
-  have hev (q : A[X]) : ev q = q.eval (algebraMap R A r) := eval₂_id
   -- Differentiating `e = e * e` shows that `e′` is tangent to the idempotents at `e`.
   have hd : derivative e = derivative e * e + e * derivative e := by
     conv_lhs => rw [← he.eq]
     exact derivative_mul
   refine Finset.sum_eq_zero fun k _ ↦ ?_
-  refine apply_update_const_eq_zero_of_isIdempotentElem hn hφ hbφ (e := ev e) (he.map ev) ?_ k
-  rw [← hev, ← map_mul, ← map_mul, ← map_add, add_comm, ← hd]
+  -- Evaluation at the central element `algebraMap R A r` is a ring homomorphism.
+  simp only [← evalAlgebraMapRingHom_apply A r]
+  refine apply_update_const_eq_zero_of_isIdempotentElem hn hφ hbφ (he.map _) ?_ k
+  rw [← map_mul, ← map_mul, ← map_add, add_comm, ← hd]
 
 /-- Conjugating an idempotent by a square-zero unipotent `1 + N` preserves the value of an
 even-degree cyclic cocycle on constant tuples. -/
@@ -102,12 +101,10 @@ private theorem apply_const_one_add_mul_mul_one_sub_eq {n : ℕ} (hn : Even n)
   have hP : IsIdempotentElem ((1 + C N * X) * C e * (1 - C N * X)) :=
     (he.map C).mul_mul_of_mul_eq_one (by simp [sub_mul, mul_add, hX])
   have h := apply_const_eval_algebraMap_eq hn hφ hbφ hP 1 0
-  let ev (r : R) : A[X] →+* A :=
-    eval₂RingHom' (RingHom.id A) (algebraMap R A r) fun a ↦ Algebra.commute_algebraMap_right r a
-  have hev (r : R) (q : A[X]) : q.eval (algebraMap R A r) = ev r q := eval₂_id.symm
-  rw [hev, hev] at h
-  simpa only [map_mul, map_add, map_sub, map_one, ev, eval₂RingHom'_apply, eval₂_C, eval₂_X,
-    RingHom.id_apply, map_zero, mul_zero, mul_one, one_mul, add_zero, sub_zero] using h
+  rw [← evalAlgebraMapRingHom_apply A, ← evalAlgebraMapRingHom_apply A] at h
+  simp only [map_mul, map_add, map_sub, map_one] at h
+  simpa only [evalAlgebraMapRingHom_apply, eval_C, eval_X, map_one, map_zero, mul_one, one_mul,
+    mul_zero, add_zero, sub_zero] using h
 
 /-- Conjugating an idempotent `e` to `u⁻¹ e u` by a unit `u` preserves the value of an
 even-degree cyclic cocycle on constant tuples. -/
