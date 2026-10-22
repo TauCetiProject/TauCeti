@@ -50,7 +50,11 @@ weight vectors, `TauCeti.Comodule.mem_weightSpace_dual_iff` and
   exactly when it kills every weight space other than that of `g⁻¹`.
 * `TauCeti.Comodule.formalCharacter_coeff`: the coefficients of the formal character are the
   weight multiplicities.
+* `TauCeti.Comodule.formalCharacter_coeff_eq_zero_iff`: the formal character is supported on the
+  weights.
 * `TauCeti.Comodule.sum_formalCharacter_coeff_eq_finrank`: the multiplicities add up to `dim V`.
+* `TauCeti.Comodule.formalCharacter_eq_zero_iff`: the formal character vanishes only for the zero
+  comodule.
 * `TauCeti.Comodule.formalCharacter_congr`: isomorphic comodules have the same formal character.
 * `TauCeti.Comodule.formalCharacter_prod`: **additivity on direct sums.**
 * `TauCeti.Comodule.formalCharacter_tensor`: **multiplicativity on tensor products.**
@@ -156,6 +160,11 @@ theorem formalCharacter_coeff (g : G) :
     (formalCharacter k G V).coeff g = (finrank k (weightSpace k G V g) : ℤ) := by
   rw [formalCharacter, Finsupp.ofSupportFinite_coe]
 
+/-- A coefficient of the formal character vanishes exactly at an element that is not a weight. -/
+theorem formalCharacter_coeff_eq_zero_iff {g : G} :
+    (formalCharacter k G V).coeff g = 0 ↔ weightSpace k G V g = ⊥ := by
+  rw [formalCharacter_coeff, Int.natCast_eq_zero, Submodule.finrank_eq_zero]
+
 /-- **The formal character as a sum over a weight basis.** Each vector of a basis of weight
 vectors contributes its weight. -/
 theorem _root_.Module.Basis.comoduleFormalCharacter_eq_sum {ι : Type*} [Fintype ι]
@@ -176,6 +185,16 @@ theorem sum_formalCharacter_coeff_eq_finrank :
     ← Finsupp.sum_finsetSum_index (fun _ ↦ rfl) fun _ _ _ ↦ rfl, finrank_eq_card_basis b]
   simp
 
+variable (k G V) in
+/-- **The formal character vanishes only for the zero comodule.** -/
+@[simp]
+theorem formalCharacter_eq_zero_iff : formalCharacter k G V = 0 ↔ finrank k V = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ MonoidAlgebra.coeff_injective (Finsupp.ext fun g ↦ ?_)⟩
+  · simpa [h] using (sum_formalCharacter_coeff_eq_finrank k G V).symm
+  · rw [MonoidAlgebra.coeff_zero, Finsupp.zero_apply, formalCharacter_coeff_eq_zero_iff,
+      ← Submodule.finrank_eq_zero]
+    exact Nat.le_zero.mp (h ▸ Submodule.finrank_le _)
+
 variable {W : Type x} [AddCommGroup W] [Module k W] [Comodule k (MonoidAlgebra k G) W]
   [FiniteDimensional k W]
 
@@ -192,6 +211,7 @@ section Prod
 attribute [local instance] Comodule.Prod
 
 /-- **The formal character is additive on direct sums.** -/
+@[simp]
 theorem formalCharacter_prod :
     formalCharacter k G (V × W) = formalCharacter k G V + formalCharacter k G W := by
   obtain ⟨ι, _, b, wt, hb⟩ := exists_basis_mem_weightSpace k G V
@@ -214,6 +234,7 @@ variable [Monoid G]
 attribute [local instance] Comodule.tensor
 
 /-- **The formal character is multiplicative on tensor products.** -/
+@[simp]
 theorem formalCharacter_tensor :
     formalCharacter k G (V ⊗[k] W) = formalCharacter k G V * formalCharacter k G W := by
   obtain ⟨ι, _, b, wt, hb⟩ := exists_basis_mem_weightSpace k G V
@@ -246,6 +267,7 @@ theorem finrank_weightSpace_dual (g : G) :
   exact Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ inv_eq_iff_eq_inv)
 
 /-- **The formal character of the dual is the inverted character.** -/
+@[simp]
 theorem formalCharacter_dual :
     formalCharacter k G (Module.Dual k V) =
       MonoidAlgebra.mapDomain (fun g : G ↦ g⁻¹) (formalCharacter k G V) := by

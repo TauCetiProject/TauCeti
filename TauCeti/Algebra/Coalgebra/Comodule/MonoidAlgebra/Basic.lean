@@ -38,6 +38,10 @@ says that the `h`-coefficient of `v g` is `v g` when `h = g` and `0` otherwise. 
 maps are therefore orthogonal idempotents with images the weight submodules, which gives both the
 spanning and the independence half of the decomposition.
 
+The file also shows that every finite-dimensional comodule over a field has a basis of weight
+vectors, whose vectors of a given weight span that weight space, and that a tensor product of
+weight vectors is a weight vector whose weight is the product of their weights.
+
 ## Main definitions
 
 * `TauCeti.Comodule.tensorCoeffEquiv`: the coefficients of an element of `V ⊗[R] R[G]`, as a
@@ -81,12 +85,14 @@ spanning and the independence half of the decomposition.
 
 ## Implementation notes
 
-Only the coalgebra structure of `R[G]` is used, so `G` is an arbitrary type: no multiplication on
-`G` and no algebra structure on `R[G]` enter the argument. That `R[G]` is free on `G` is used
-through `TensorProduct.finsuppScalarRight`, which presents `V ⊗[R] R[G]` as the finitely supported
-functions `G →₀ V` and so supplies the finite support of the weight decomposition for free; this is
-also the only place where decidable equality on `G` is used internally, and it is discharged
-classically.
+The weight decomposition uses only the coalgebra structure of `R[G]`, so there `G` is an
+arbitrary type: no multiplication on `G` and no algebra structure on `R[G]` enter the argument.
+Only the sections on algebra maps out of `R[G]` and on tensor products of weight vectors assume a
+monoid structure on `G`; the latter uses the bialgebra structure of `R[G]`. That `R[G]` is free on
+`G` is used through `TensorProduct.finsuppScalarRight`, which presents `V ⊗[R] R[G]` as the
+finitely supported functions `G →₀ V` and so supplies the finite support of the weight
+decomposition for free; this is also the only place where decidable equality on `G` is used
+internally, and it is discharged classically.
 
 ## References
 
