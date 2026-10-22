@@ -64,8 +64,8 @@ theorem liouvilleForm_interior_vectorBundleEulerField [IsManifold I 2 M] :
   funext z
   ext v
   rw [RoughForm.interior_apply, liouvilleForm_apply, Matrix.cons_val_zero,
-    mfderiv_proj_vectorBundleEulerField, map_zero]
-  rfl
+    mfderiv_proj_vectorBundleEulerField, map_zero, Pi.zero_apply,
+    ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
 
 variable [IsManifold I ∞ M]
 
@@ -79,15 +79,9 @@ theorem symplecticForm_interior_vectorBundleEulerField :
   -- Read both sides in the chart at `z`, where the Euler field is `(0, p)`.
   have hl := inChartAt_liouvilleForm z (mem_extChartAt_target z)
   rw [RoughForm.inChartAt_extChartAt_self] at hl
-  -- The chart of the total space at `z` is the trivialization at `z.proj` followed by a chart of
-  -- the base (`FiberBundle.extChartAt`), so it leaves the fibre coordinate unchanged.
-  have hp : (trivializationAt (E →L[ℝ] ℝ) (fun x ↦ TangentSpace I x →L[ℝ] ℝ) z.proj z).2 =
-      (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z z).2 := by
-    simp only [FiberBundle.extChartAt, PartialEquiv.trans_apply, PartialEquiv.prod_coe,
-      PartialEquiv.refl_coe, id_eq, OpenPartialHomeomorph.coe_toPartialEquiv,
-      Trivialization.coe_coe]
   rw [RoughForm.interior_apply, symplecticForm_apply, Pi.neg_apply,
-    ContinuousAlternatingMap.neg_apply, hl, vectorBundleEulerField_eq_trivializationAt, hp]
+    ContinuousAlternatingMap.neg_apply, hl, vectorBundleEulerField_eq_trivializationAt,
+    ← Manifold.extChartAt_totalSpace_apply_snd (IB := I)]
   -- This is the linear identity `ι_{p ∂_p} ω = -λ` at the chart point.
   have h := strongDualCotangentSymplecticForm_cotangentLiouvilleField
     (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z z) (v 0)
