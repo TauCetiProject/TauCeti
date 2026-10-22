@@ -214,22 +214,19 @@ theorem isSquare_mul_of_adjoin_simple_eq [NeZero (2 : K)] {a c : K} {x y : L}
       (hxy.trans (IntermediateField.adjoin_simple_eq_bot_iff.mpr hyb))
 
 /-- **A square root in a shared square class lies in the other simple field.** Let `x` and `y` be
-square roots of `a` and `c` in a field extension `L / K`. If `a` and `c` are nonzero and `a · c` is
-a square `t²` in `K`, then `y ∈ K(x)`, since `y = ± (c / t) x`. -/
+square roots of `a` and `c` in a field extension `L / K`. If `a` is nonzero and `a · c` is a square
+`t²` in `K`, then `y ∈ K(x)`, since `y = ± (t / a) x`. -/
 theorem mem_adjoin_simple_of_isSquare_mul {a c : K} {x y : L}
-    (hx : x ^ 2 = algebraMap K L a) (hy : y ^ 2 = algebraMap K L c) (ha : a ≠ 0) (hc : c ≠ 0)
+    (hx : x ^ 2 = algebraMap K L a) (hy : y ^ 2 = algebraMap K L c) (ha : a ≠ 0)
     (hac : IsSquare (a * c)) : y ∈ IntermediateField.adjoin K {x} := by
   obtain ⟨t, ht⟩ := hac
-  have ht0 : t ≠ 0 := by
-    rintro rfl
-    exact mul_ne_zero ha hc (by rw [ht, mul_zero])
-  -- `((c / t) x)² = c² a / t² = c`, so `y = ± (c / t) x`.
-  have hsq : y ^ 2 = (algebraMap K L (c / t) * x) ^ 2 := by
+  -- `((t / a) x)² = t² a / a² = c`, so `y = ± (t / a) x`.
+  have hsq : y ^ 2 = (algebraMap K L (t / a) * x) ^ 2 := by
     rw [mul_pow, hx, hy, ← map_pow, ← map_mul]
     congr 1
-    rw [div_pow, div_mul_eq_mul_div, eq_div_iff (pow_ne_zero 2 ht0)]
-    linear_combination (-c) * ht
-  have hmem : algebraMap K L (c / t) * x ∈ IntermediateField.adjoin K {x} :=
+    field_simp
+    linear_combination ht
+  have hmem : algebraMap K L (t / a) * x ∈ IntermediateField.adjoin K {x} :=
     mul_mem (IntermediateField.algebraMap_mem _ _) (IntermediateField.mem_adjoin_simple_self K x)
   rcases sq_eq_sq_iff_eq_or_eq_neg.mp hsq with h | h
   · exact h ▸ hmem
@@ -245,8 +242,8 @@ theorem adjoin_simple_eq_of_isSquare_mul {a c : K} {x y : L}
     IntermediateField.adjoin K {x} = IntermediateField.adjoin K {y} :=
   le_antisymm
     (IntermediateField.adjoin_simple_le_iff.mpr
-      (mem_adjoin_simple_of_isSquare_mul hy hx hc ha (mul_comm a c ▸ hac)))
-    (IntermediateField.adjoin_simple_le_iff.mpr (mem_adjoin_simple_of_isSquare_mul hx hy ha hc hac))
+      (mem_adjoin_simple_of_isSquare_mul hy hx hc (mul_comm a c ▸ hac)))
+    (IntermediateField.adjoin_simple_le_iff.mpr (mem_adjoin_simple_of_isSquare_mul hx hy ha hac))
 
 /-- An element outside the base field generates a quadratic intermediate field and has degree
 two. -/

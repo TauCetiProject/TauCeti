@@ -16,7 +16,6 @@ import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.SquareClass
 import TauCeti.NumberTheory.LocalField.SquareClasses
-import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 
 /-!
 # The totally ramified quadratic extensions in odd residue characteristic
@@ -41,13 +40,10 @@ roots of the Eisenstein polynomials `X ^ 2 - ϖ` and `X ^ 2 - u ϖ`.
 
 ## Main results
 
-* `TauCeti.adjoin_mem_totallyRamifiedOfDegree_of_pow_eq`: a root of `X ^ n - ϖ` for a uniformizer
-  `ϖ` generates a member of `σ_K(n)`.
-* `TauCeti.eq_one_of_mem_totallyRamifiedOfDegree_of_le_maximalUnramifiedExtension`: a member of
-  `σ_K(n)` inside the maximal unramified extension has `n = 1`.
 * `TauCeti.totallyRamifiedOfDegree_two_eq`: `σ_K(2) = {K(√ϖ), K(√(u ϖ))}` in odd residue
   characteristic.
-* `TauCeti.adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul`: the two fields are distinct.
+* `TauCeti.adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul`: the two fields are distinct whenever
+  `2 ≠ 0` in `K`.
 * `TauCeti.encard_totallyRamifiedOfDegree_two`: `σ_K(2)` has exactly two elements.
 * `TauCeti.tsum_one_div_natCard_residueField_pow_wildExponent_two`: Serre's mass formula for
   `n = 2` in odd residue characteristic.
@@ -73,43 +69,13 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- **Roots of `X ^ n - ϖ` generate counted extensions.** For a uniformizer `ϖ` of `K` and
-`0 < n`, a root in the separable closure of `X ^ n - ϖ`, which is Eisenstein, generates a member
-of `σ_K(n)`. -/
-theorem adjoin_mem_totallyRamifiedOfDegree_of_pow_eq {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) {n : ℕ}
-    (hn : 0 < n) {x : SeparableClosure K}
-    (hx : x ^ n = algebraMap K (SeparableClosure K) ϖ) :
-    K⟮x⟯ ∈ totallyRamifiedOfDegree K n :=
-  adjoin_mem_totallyRamifiedOfDegree_of_eisenstein
-    (isEisensteinAt_X_pow_sub_C_of_irreducible hϖ hn) (natDegree_X_pow_sub_C _)
-    (by simp [hx, Algebra.algebraMap_ofSubsemiring_apply])
-
-/-- **An unramified member of `σ_K(n)` has degree one.** A member of `σ_K(n)` contained in the
-maximal unramified extension of `K` is both unramified and totally ramified over `K`, so its
-degree `n` is its ramification index `1`. -/
-theorem eq_one_of_mem_totallyRamifiedOfDegree_of_le_maximalUnramifiedExtension {n : ℕ}
-    {L : IntermediateField K (SeparableClosure K)} (hL : L ∈ totallyRamifiedOfDegree K n)
-    (hle : L ≤ maximalUnramifiedExtension K (SeparableClosure K)) : n = 1 := by
-  obtain ⟨rfl, htr⟩ := mem_totallyRamifiedOfDegree_iff.1 hL
-  have := htr.finite
-  let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
-  let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
-  have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
-  have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
-  rw [← (isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1
-    (L.isTotallyRamified_iff.1 htr)]
-  exact (isUnramified_iff_ramificationIndex_eq_one K L).1
-    (L.le_maximalUnramifiedExtension_iff.1 hle)
-
-/-- **The two fields `K(√ϖ)` and `K(√(u ϖ))` are distinct** when `u` is a unit of `𝒪[K]` that is
-not a square: equality would make `ϖ · u ϖ`, hence `u`, a square. -/
-theorem adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul (h2 : ¬ ringChar 𝓀[K] ∣ 2) {ϖ : 𝒪[K]}
+/-- **The two fields `K(√ϖ)` and `K(√(u ϖ))` are distinct** when `2 ≠ 0` in `K` and `u` is a unit
+of `𝒪[K]` that is not a square: equality would make `ϖ · u ϖ`, hence `u`, a square. -/
+theorem adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul [NeZero (2 : K)] {ϖ : 𝒪[K]}
     (hϖ : Irreducible ϖ) (u : 𝒪[K]ˣ) (hu : ¬ IsSquare ((u : 𝒪[K]) : K))
     {x y : SeparableClosure K} (hx : x ^ 2 = algebraMap K (SeparableClosure K) ϖ)
     (hy : y ^ 2 = algebraMap K (SeparableClosure K) ((u : 𝒪[K]) * ϖ : 𝒪[K])) :
     K⟮x⟯ ≠ K⟮y⟯ := by
-  have h2' : IsUnit (2 : 𝒪[K]) := by simpa using IsLocalRing.isUnit_natCast_iff_not_dvd.2 h2
-  have : NeZero (2 : K) := ⟨two_ne_zero_of_isUnit_two h2'⟩
   intro hxy
   -- `x ∉ K`, since `K(x)` has degree two.
   have hxb : x ∉ (⊥ : IntermediateField K (SeparableClosure K)) := by
@@ -198,7 +164,7 @@ theorem encard_totallyRamifiedOfDegree_two (h2 : ¬ ringChar 𝓀[K] ∣ 2) :
   obtain ⟨y, hy⟩ := IsSepClosed.exists_pow_nat_eq
     (algebraMap K (SeparableClosure K) ((u : 𝒪[K]) * ϖ : 𝒪[K])) 2
   rw [totallyRamifiedOfDegree_two_eq h2 hϖ u hu' hx hy,
-    Set.encard_pair (adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul h2 hϖ u hu' hx hy)]
+    Set.encard_pair (adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul hϖ u hu' hx hy)]
 
 /-- **Serre's mass formula for quadratic extensions in odd residue characteristic**:
 `∑_{L ∈ σ_K(2)} q ^ (-c(L)) = 2`, where `q` is the cardinality of the residue field of `K`. Both
