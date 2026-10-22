@@ -56,6 +56,7 @@ noncomputable def toMultiplierRing (M : Submodule R B) : R →+* M.toAddSubgroup
   (algebraMap R B).codRestrict _ M.algebraMap_mem_multiplierRing
 
 /-- The structure map `R → B₀` sends `a` to `a • 1`. -/
+@[simp]
 theorem coe_toMultiplierRing (M : Submodule R B) (a : R) :
     (M.toMultiplierRing a : B) = a • (1 : B) := by
   rw [toMultiplierRing, RingHom.codRestrict_apply, Algebra.smul_def, mul_one]
