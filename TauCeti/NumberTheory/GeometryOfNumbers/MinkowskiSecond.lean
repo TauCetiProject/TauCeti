@@ -11,6 +11,7 @@ import Mathlib.Analysis.Convex.Measure
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
 import TauCeti.Algebra.Module.ZLattice.Covolume
+import TauCeti.LinearAlgebra.Basis.Triangular
 
 /-!
 # Minkowski's second theorem: the upper bound
@@ -465,7 +466,7 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
     (hK.interior.smul _).linear_image φ.toLinearMap
   let g' : ℕ → ℝ := fun i ↦ if h : i < n then g ⟨i, h⟩ else 0
   have hflag : ∀ j, ∀ v ∈ span ℝ (a '' Iio j), φ v j = 0 := fun j v hv ↦
-    repr_eq_zero_of_mem_span_image_Iio (b := bR)
+    bR.repr_eq_zero_of_mem_span_image_Iio
       (fun l ↦ by rw [b.ofZLatticeBasis_apply ℝ L l]; exact (hb l).1) (he ▸ hv) (le_refl j)
   have core := prod_mul_volume_le_one hCopen.measurableSet hCc g'
     (fun i hi ↦ by simp [g', hi, hg0]) (fun i j hij hj ↦ by
