@@ -25,9 +25,9 @@ reduced and connected.
 If every closed orbit is trivial, then every nonzero finite-dimensional representation has a
 weight vector: the whole projective space is a nonempty closed invariant set, so it contains a
 closed orbit, whose line is then a subrepresentation. By the triangular embedding criterion, `G`
-is then a closed subgroup of an upper-triangular group, hence solvable. This direction only needs
-the group to be irreducible. Conversely, for a reduced connected solvable group the Borel
-fixed-point theorem makes every closed orbit a single point, so its line is stable under all
+is then a closed subgroup of an upper-triangular group, hence solvable. This direction needs no
+connectedness or reducedness assumption. Conversely, for a reduced connected solvable group the
+Borel fixed-point theorem makes every closed orbit a single point, so its line is stable under all
 rational points, and reducedness promotes this to a subrepresentation.
 
 The first direction is the input for an induction on dimension in the conjugacy of Borel
@@ -38,14 +38,14 @@ conjugate of that proper subgroup.
 ## Main declarations
 
 * `TauCeti.Comodule.isSolvable_points_of_forall_stabilizerHopfIdeal_eq_bot_of_isClosed`: if every
-  closed projective orbit of an irreducible group is trivial, its points with values in every
+  closed projective orbit of an affine group is trivial, its points with values in every
   commutative algebra form a solvable group.
 * `TauCeti.Comodule.isSolvable_iff_forall_stabilizerHopfIdeal_eq_bot_of_isClosed`: **a reduced
   connected group is solvable exactly when all of its closed projective orbits are trivial.**
 * `TauCeti.Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff`: the rational points
   of the stabilizer of `k ∙ m` are the rational points fixing the orbit base point `[m]`.
 * `TauCeti.HopfIdeal.exists_ne_bot_forall_exists_conjugate_le_of_not_isSolvable`: **an
-  irreducible group that is not solvable has a proper closed subgroup containing a conjugate of
+  affine group that is not solvable has a proper closed subgroup containing a conjugate of
   every reduced connected solvable closed subgroup.**
 
 ## References
@@ -79,11 +79,10 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff
 variable [IsAlgClosed k] [Algebra.FiniteType k H]
 
 /-- **Solvability from trivial closed orbits.** If the line of every closed projective orbit of
-an irreducible affine group of finite type over an algebraically closed field is a
+an affine group of finite type over an algebraically closed field is a
 subrepresentation, then the points of the group with values in every commutative algebra form a
 solvable group. -/
 theorem isSolvable_points_of_forall_stabilizerHopfIdeal_eq_bot_of_isClosed
-    [IrreducibleSpace (PrimeSpectrum H)]
     (horbit : ∀ (M : Type u) [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
       (m : M) (hm : Module.IsUnimodular k m),
       IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) →
@@ -124,9 +123,6 @@ theorem isSolvable_iff_forall_stabilizerHopfIdeal_eq_bot_of_isClosed
         IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) →
           (k ∙ m).stabilizerHopfIdeal H = ⊥ := by
   refine ⟨fun _ M _ _ _ _ m hm hclosed ↦ ?_, fun horbit ↦
-    let _ : IrreducibleSpace (PrimeSpectrum H) :=
-      _root_.CommHopfAlgCat.irreducibleSpace_primeSpectrum_of_connectedSpace k
-        (_root_.CommHopfAlgCat.of k H)
     isSolvable_points_of_forall_stabilizerHopfIdeal_eq_bot_of_isClosed horbit k⟩
   -- Every rational point preserves the line, and rational points detect subcomodules.
   rw [Submodule.stabilizerHopfIdeal_eq_bot_iff]
@@ -147,11 +143,11 @@ universe u
 variable {k : Type u} [Field k] [IsAlgClosed k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
 /-- **A proper subgroup containing all connected solvable subgroups up to conjugacy.** An
-irreducible affine group of finite type over an algebraically closed field whose rational points
+affine group of finite type over an algebraically closed field whose rational points
 do not form a solvable group has a proper closed subgroup containing a conjugate of every reduced
 connected closed subgroup with solvable rational points. -/
 theorem exists_ne_bot_forall_exists_conjugate_le_of_not_isSolvable
-    [IrreducibleSpace (PrimeSpectrum H)] (hH : ¬ Group.IsSolvable (WithConv (H →ₐ[k] k))) :
+    (hH : ¬ Group.IsSolvable (WithConv (H →ₐ[k] k))) :
     ∃ D : HopfIdeal k H, D ≠ ⊥ ∧ ∀ (I : HopfIdeal k H)
       [IsReduced (FiniteTypeCommHopfAlgCat.quotient H I)]
       [ConnectedSpace (PrimeSpectrum (FiniteTypeCommHopfAlgCat.quotient H I))]

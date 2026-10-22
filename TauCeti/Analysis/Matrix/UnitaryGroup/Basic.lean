@@ -33,7 +33,8 @@ namespace Matrix
 variable {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α] [StarRing α]
 
 /-- A diagonal matrix is unitary exactly when each of its diagonal entries is unitary. -/
-@[simp]
+-- Test entries before rewriting diagonal unitarity to function-valued unitarity.
+@[simp↓]
 theorem diagonal_mem_unitaryGroup_iff {d : n → α} :
     diagonal d ∈ unitaryGroup n α ↔ ∀ i, d i ∈ unitary α := by
   simp only [mem_unitaryGroup_iff, star_eq_conjTranspose, diagonal_conjTranspose,
