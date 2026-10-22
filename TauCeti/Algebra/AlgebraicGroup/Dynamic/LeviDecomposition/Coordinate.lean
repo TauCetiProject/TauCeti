@@ -275,7 +275,7 @@ theorem parabolicCoordinateAlgEquiv_mk
 
 /-- The dynamic unipotent subgroup is an algebra retract of the dynamic parabolic, so it is
 formally smooth whenever the dynamic parabolic is. -/
-theorem formallySmooth_quotient_unipotentDefiningHopfIdeal (l : H →ₐc[R] LaurentPolynomial R)
+instance formallySmooth_quotient_unipotentDefiningHopfIdeal (l : H →ₐc[R] LaurentPolynomial R)
     [Algebra.FormallySmooth R (H ⧸ (parabolicDefiningHopfIdeal l).toIdeal)] :
     Algebra.FormallySmooth R (H ⧸ l.unipotentDefiningHopfIdeal.toIdeal) := by
   let ε : (H ⧸ (leviDefiningHopfIdeal l).toIdeal) →ₐ[R] R :=
@@ -290,7 +290,7 @@ theorem formallySmooth_quotient_unipotentDefiningHopfIdeal (l : H →ₐc[R] Lau
 
 /-- The dynamic Levi subgroup is an algebra retract of the dynamic parabolic, so it is formally
 smooth whenever the dynamic parabolic is. -/
-theorem formallySmooth_quotient_leviDefiningHopfIdeal (l : H →ₐc[R] LaurentPolynomial R)
+instance formallySmooth_quotient_leviDefiningHopfIdeal (l : H →ₐc[R] LaurentPolynomial R)
     [Algebra.FormallySmooth R (H ⧸ (parabolicDefiningHopfIdeal l).toIdeal)] :
     Algebra.FormallySmooth R (H ⧸ (leviDefiningHopfIdeal l).toIdeal) := by
   let ε : (H ⧸ l.unipotentDefiningHopfIdeal.toIdeal) →ₐ[R] R :=

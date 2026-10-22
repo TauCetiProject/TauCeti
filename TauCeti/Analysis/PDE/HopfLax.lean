@@ -56,7 +56,7 @@ are not studied here.
   on the open half-space `t > 0`.
 * `TauCeti.hopfLax_norm_rpow` and `TauCeti.hopfLax_norm_rpow_add_add_smul_le`: for the cost
   `L w = ‖w‖ ^ p`, the formula reads `u (t, x) = inf_y (φ y + ‖x - y‖ ^ p / t ^ (p - 1))`, and the
-  subsolution inequality holds for `1 ≤ p`.
+  subsolution inequality holds in real seminormed spaces for `1 ≤ p`.
 
 ## References
 
@@ -201,20 +201,15 @@ theorem hopfLax_norm_rpow (φ : E → ℝ) (ht : 0 < t) (x : E) :
     Real.rpow_sub_one ht.ne']
   field_simp
 
-end Seminormed
-
-section Normed
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {φ : E → ℝ} {t h p : ℝ}
-
-/-- **The Hopf–Lax subsolution inequality for the `p`-th power cost.** For `1 ≤ p` and `φ` bounded
-below, `u (t + h, x + h w) ≤ u (t, x) + h ‖w‖ ^ p` for `t > 0` and `h ≥ 0`. -/
+/-- **The Hopf–Lax subsolution inequality for the `p`-th power cost.** In a real seminormed space,
+for `1 ≤ p` and `φ` bounded below, `u (t + h, x + h w) ≤ u (t, x) + h ‖w‖ ^ p` for `t > 0` and
+`h ≥ 0`. -/
 theorem hopfLax_norm_rpow_add_add_smul_le (hp : 1 ≤ p) (hφ : BddBelow (range φ)) (ht : 0 < t)
     (hh : 0 ≤ h) (x w : E) :
     hopfLax (‖·‖ ^ p) φ (t + h) (x + h • w) ≤ hopfLax (‖·‖ ^ p) φ t x + h * ‖w‖ ^ p :=
   hopfLax_add_add_smul_le hφ ⟨0, forall_mem_range.2 fun _ ↦ by positivity⟩
     (convexOn_norm_rpow (E := E) hp) ht hh x w
 
-end Normed
+end Seminormed
 
 end TauCeti

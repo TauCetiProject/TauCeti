@@ -11,7 +11,7 @@ public import Mathlib.Algebra.CharP.Lemmas
 # Natural casts and `p`-power maps in exponential characteristic `p`
 
 In an additive monoid with one of exponential characteristic `p`, the natural-number cast of
-`p ^ n` vanishes whenever `1 < p ^ n`.
+`p ^ n` vanishes whenever `1 < p ^ n`. If an integer is not divisible by `p`, then `1 < p`.
 
 In a ring of exponential characteristic `p`, raising to the power `q = p ^ n` commutes with
 negation. Mathlib records the special case `(-1) ^ q = -1` (`neg_one_pow_expChar_pow`) and the
@@ -20,6 +20,8 @@ law.
 
 ## Main results
 
+* `TauCeti.one_lt_expChar_of_not_dvd`: nondivisibility by the exponential characteristic
+  forces it to exceed one.
 * `TauCeti.natCast_pow_expChar_eq_zero`: the natural-number cast of `p ^ n` vanishes when
   `1 < p ^ n`.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
@@ -28,6 +30,13 @@ law.
 public section
 
 namespace TauCeti
+
+/-- An exponential characteristic that does not divide an integer is greater than one. -/
+theorem one_lt_expChar_of_not_dvd (R : Type*) [AddMonoidWithOne R] {p : ℕ} [ExpChar R p]
+    {n : ℤ} (h : ¬(p : ℤ) ∣ n) : 1 < p := by
+  rcases expChar_is_prime_or_one R p with hp | rfl
+  · exact hp.one_lt
+  · exact (h (one_dvd _)).elim
 
 /-- In an additive monoid with one of exponential characteristic `p`, the natural-number cast
 of `p ^ n` vanishes whenever `1 < p ^ n`. -/

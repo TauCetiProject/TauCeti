@@ -27,6 +27,8 @@ space by them.
 
 * `ConnectedComponents.instMulActionOfContinuousConstSMul`: an action by continuous maps descends
   to connected components.
+* `ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq`: points of a set lie in the same
+  connected component of the subspace exactly when they have the same component in the set.
 * `Homeomorph.image_connectedComponent`: a homeomorphism maps a connected component onto
   the connected component of the image point.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
@@ -83,6 +85,18 @@ theorem smul_mk (g : G) (x : X) :
 instance : ContinuousConstSMul G (ConnectedComponents X) where
   continuous_const_smul g :=
     (continuous_const_smul g : Continuous (fun x : X ↦ g • x)).connectedComponentsMap_continuous
+
+end ConnectedComponents
+
+namespace ConnectedComponents
+
+/-- Two points of a set `F` define the same connected component of the subspace `F` exactly when
+they have the same connected component in `F`. -/
+theorem coe_eq_coe_iff_connectedComponentIn_eq {F : Set X} {a b : X} (ha : a ∈ F) (hb : b ∈ F) :
+    ((⟨a, ha⟩ : F) : ConnectedComponents F) = (⟨b, hb⟩ : F) ↔
+      connectedComponentIn F a = connectedComponentIn F b := by
+  rw [connectedComponentIn_eq_image ha, connectedComponentIn_eq_image hb,
+    Subtype.val_injective.image_injective.eq_iff, coe_eq_coe]
 
 end ConnectedComponents
 

@@ -28,6 +28,9 @@ extension by zero is discontinuous at the other origin.
 
 * `TauCeti.compactlySupportedForms.extendByZero`: extension by zero of compactly supported smooth
   forms along an inclusion of open subsets.
+* `TauCeti.compactlySupportedForms.extendByZero_injective` and
+  `TauCeti.compactlySupportedForms.mem_range_extendByZero_iff`: it is injective, and its image
+  consists of the compactly supported forms supported in the smaller open subset.
 * `TauCeti.compactlySupportedForms.mextDerivₗ_extendByZero`: it commutes with the exterior
   derivative.
 * `TauCeti.compactlySupportedDeRhamComplex.extendByZero`: the induced cochain map of compactly
@@ -94,6 +97,51 @@ theorem extendByZero_extendByZero {U V W : Opens M} (h₁ : U ≤ V) (h₂ : V �
     (φ : compactlySupportedForms I U k) :
     extendByZero h₂ k (extendByZero h₁ k φ) = extendByZero (h₁.trans h₂) k φ :=
   Subtype.ext <| Subtype.ext <| RoughForm.extendByZero_extendByZero h₁ W φ.1.1
+
+/-- Extension by zero of compactly supported forms is injective: restricting the extension back to
+the smaller open subset recovers the form. -/
+theorem extendByZero_injective {U W : Opens M} (h : U ≤ W) (k : ℕ) :
+    Function.Injective (extendByZero (I := I) h k) := fun φ ψ hφψ ↦ by
+  have := congrArg (fun χ : compactlySupportedForms I W k ↦
+    TauCeti.mpullback I I (Opens.inclusion h) (χ : SmoothForm I W ℝ k).1) hφψ
+  simp only [coe_extendByZero, RoughForm.mpullback_inclusion_extendByZero] at this
+  exact Subtype.ext (Subtype.ext this)
+
+/-- A compactly supported form on `W` is the extension by zero of a compactly supported form on an
+open subset `U ≤ W` exactly when its support lies in `U`. -/
+theorem mem_range_extendByZero_iff {U W : Opens M} (h : U ≤ W) {k : ℕ}
+    {φ : compactlySupportedForms I W k} :
+    φ ∈ LinearMap.range (extendByZero h k) ↔
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (φ : SmoothForm I W ℝ k).1 ⊆
+        {x | (x : M) ∈ U} := by
+  refine ⟨?_, fun hφ ↦ ?_⟩
+  · rintro ⟨ψ, rfl⟩
+    refine (RoughForm.tsupport_extendByZero_subset h
+      ((mem_compactlySupportedForms I).mp ψ.2)).trans ?_
+    rintro _ ⟨x, -, rfl⟩
+    exact x.2
+  -- The restriction of `φ` to `U` is compactly supported, since the support of `φ` is a compact
+  -- subset of the image of the embedding of `U` in `W`.
+  let ψ : SmoothForm I U ℝ k :=
+    SmoothForm.mpullback (I := I) (I' := I) (Opens.inclusion h) (contMDiff_inclusion _) φ
+  have hψ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ.1) := by
+    rw [SmoothForm.coe_mpullback]
+    exact (Topology.IsInducing.isCompact_preimage' (f := Opens.inclusion h)
+        (Topology.IsEmbedding.inclusion h).isInducing ((mem_compactlySupportedForms I).mp φ.2)
+        fun x hx ↦ ⟨⟨x, hφ hx⟩, rfl⟩).of_isClosed_subset (_root_.isClosed_tsupport _)
+        (RoughForm.tsupport_mpullback_subset_preimage (f := Opens.inclusion h)
+          (continuous_inclusion h) _)
+  refine ⟨⟨ψ, (mem_compactlySupportedForms I).mpr hψ⟩, Subtype.ext <| Subtype.ext ?_⟩
+  funext x
+  by_cases hx : (x : M) ∈ U
+  · rw [coe_extendByZero, RoughForm.extendByZero_apply_of_mem _ hx, SmoothForm.coe_mpullback,
+      mpullback_inclusion_apply]
+    -- The inclusion of `U` in `W` sends `⟨x, hx⟩` to `⟨x, h hx⟩`, which is `x` by eta for
+    -- subtypes; both hold by definition.
+    rfl
+  · rw [coe_extendByZero, RoughForm.extendByZero_apply_of_notMem _ hx]
+    exact (_root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ)
+      fun hx' ↦ hx (hφ hx')).symm
 
 end Forms
 

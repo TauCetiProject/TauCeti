@@ -11,9 +11,10 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 /-!
 # Closed smooth differential forms
 
-Closedness is the vanishing of the generic manifold exterior derivative of a smooth form.  The
-degree-two specialization in `TwoForm.Closed` only supplies its constant-form convenience
-theorem; the predicate and its generic API live here so they can be reused at every degree.
+Closedness is the vanishing of the generic manifold exterior derivative of a smooth form. This
+module also characterizes it by vanishing of the exterior derivatives of the chart expressions.
+The degree-two specialization in `TwoForm.Closed` supplies a constant-form convenience theorem.
+The predicate and its generic API live here so they can be reused at every degree.
 -/
 
 public section
@@ -40,6 +41,24 @@ def IsClosed (form : SmoothForm I M F k) : Prop := mextDeriv form.1 = 0
 theorem isClosed_def (form : SmoothForm I M F k) :
     form.IsClosed ↔ mextDeriv form.1 = 0 :=
   Iff.rfl
+
+/-- Closedness is equivalent to vanishing of the exterior derivative of every chart expression
+within the model range, at every point of the chart target. -/
+theorem isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero [IsManifold I 2 M]
+    (form : SmoothForm I M F k) :
+    form.IsClosed ↔ ∀ x₀ z, z ∈ (extChartAt I x₀).target →
+      extDerivWithin (form.1.inChartAt x₀) (Set.range I) z = 0 := by
+  have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
+  constructor
+  · intro h x₀ z hz
+    rw [isClosed_def] at h
+    rw [← hform.inChartAt_mextDeriv_eq x₀ hz, h, RoughForm.inChartAt_zero]
+    simp
+  · intro h
+    rw [isClosed_def]
+    funext x
+    rw [mextDeriv_def]
+    exact h x (extChartAt I x x) (mem_extChartAt_target x)
 
 /-- Closedness can equivalently be checked pointwise on the exterior derivative. -/
 theorem isClosed_iff_forall_mextDeriv_apply_eq_zero (form : SmoothForm I M F k) :

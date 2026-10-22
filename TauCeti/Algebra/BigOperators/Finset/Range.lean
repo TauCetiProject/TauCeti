@@ -45,6 +45,8 @@ which reindex a sum over antidiagonals to a rectangle.
   `V m = ∑ k ∈ range (m + 1), c k • a ^ (m - k)` of scalars with the powers of `a`.
 * `Finset.sum_range_succ_eq_sum_range_add`: regroup a sum whose successive terms split into
   adjacent contributions, retaining the final boundary term.
+* `Finset.prod_range_mul_eq_prod_prod`, `Finset.sum_range_mul_eq_sum_sum`: split a product or
+  sum over `range (n * q)` into `q` consecutive blocks of `n` terms.
 -/
 
 public section
@@ -61,6 +63,15 @@ theorem sum_range_succ_eq_sum_range_add {M : Type*} [AddCommMonoid M]
     sum_congr rfl (fun k hk ↦ hsucc k (mem_range.mp hk)), sum_add_distrib, sum_add_distrib]
   have hshift := (sum_range_succ' g n).symm.trans (sum_range_succ g n)
   simpa only [add_assoc, add_left_comm, add_comm] using congrArg (· + ∑ k ∈ range n, h k) hshift
+
+/-- A product over `range (n * q)` is the product of `q` consecutive blocks of `n` factors. -/
+@[to_additive sum_range_mul_eq_sum_sum
+  /-- A sum over `range (n * q)` is the sum of `q` consecutive blocks of `n` terms. -/]
+theorem prod_range_mul_eq_prod_prod {M : Type*} [CommMonoid M] (f : ℕ → M) (n q : ℕ) :
+    ∏ l ∈ range (n * q), f l = ∏ j ∈ range q, ∏ l ∈ range n, f (n * j + l) := by
+  induction q with
+  | zero => simp
+  | succ q ih => rw [Nat.mul_succ, prod_range_add, ih, prod_range_succ]
 
 end Finset
 
