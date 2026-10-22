@@ -28,11 +28,11 @@ integrable weight `f` then acts on `E` by the **integrated form**
 
 a bounded operator with `‖π(f)‖ ≤ C * ‖f‖₁` when `‖π g‖ ≤ C`. This file builds the map
 `f ↦ π(f)` as a continuous linear map `L¹(G, μ) →L E →L E` over any nontrivially normed field,
-with a commuting real normed-space structure on `E` for integration. For groups over an `RCLike`
-field, it proves the identities that make this a representation of the convolution algebra
-`L¹(G)`: translating the weight composes with `π`, convolution of weights becomes composition of
-operators, and, for a unitary `π` and an inversion-invariant `μ`, adjoints correspond to the
-involution `f^*(g) = conj (f (-g))`.
+with a commuting real normed-space structure on `E` for integration. For groups with a
+left-invariant measure, translating the weight composes with `π`. Over an `RCLike` field, on an
+abelian group with a right-invariant measure, convolution of weights becomes composition of
+operators. For a unitary `π` over an `RCLike` field and an inversion-invariant `μ`, adjoints
+correspond to the involution `f^*(g) = conj (f (-g))`.
 For commutative monoids `G`, the integrated operators commute for any measure; for abelian groups,
 they are also normal when `π` is unitary and `μ` is inversion-invariant.
 
@@ -199,8 +199,8 @@ end Normed
 
 section Translate
 
-variable {𝕜 G E : Type*} [RCLike 𝕜] [AddGroup G] [TopologicalSpace G] [MeasurableSpace G]
-  [R1Space G] [BorelSpace G]
+variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [AddGroup G] [TopologicalSpace G]
+  [MeasurableSpace G] [R1Space G] [BorelSpace G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
   {μ : Measure G} [μ.InnerRegularCompactLTTop] {π : ContRepresentation 𝕜 (Multiplicative G) E}
   {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
@@ -214,9 +214,15 @@ theorem _root_.ContRepresentation.comp_integratedOperatorL1 [CompleteSpace E] [M
         (Lp.compMeasurePreserving (fun g ↦ -h + g) (measurePreserving_add_left μ (-h)) f) := by
   ext v
   rw [ContinuousLinearMap.comp_apply, ContRepresentation.integratedOperatorL1_apply,
-    ContRepresentation.integratedOperatorL1_apply,
-    ← (π _).integral_comp_comm
-      (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)]
+    ContRepresentation.integratedOperatorL1_apply]
+  -- A continuous additive operator is real-linear without a real algebra structure on `𝕜`.
+  have hint : ∫ g, π (.ofAdd h) (f g • π (.ofAdd g) v) ∂μ =
+      π (.ofAdd h) (∫ g, f g • π (.ofAdd g) v ∂μ) := by
+    simpa [AddMonoidHom.toRealLinearMap] using
+      ((π (.ofAdd h)).toAddMonoidHom.toRealLinearMap
+        (π (.ofAdd h)).continuous).integral_comp_comm
+          (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
+  rw [← hint]
   have hcomp : ∫ g, (Lp.compMeasurePreserving (fun g ↦ -h + g)
         (measurePreserving_add_left μ (-h)) f) g • π (.ofAdd g) v ∂μ =
       ∫ g, f (-h + g) • π (.ofAdd g) v ∂μ := by
@@ -244,7 +250,7 @@ end Translate
 
 section Commute
 
-variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommMonoid G] [TopologicalSpace G]
+variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [AddCommMonoid G] [TopologicalSpace G]
   [MeasurableSpace G] [R1Space G] [BorelSpace G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
   [CompleteSpace E]
@@ -259,8 +265,12 @@ theorem _root_.ContRepresentation.commute_integratedOperatorL1
   apply ContinuousLinearMap.ext
   intro v
   simp only [mul_apply_eq_comp, ContRepresentation.integratedOperatorL1_apply]
-  rw [← (π g).integral_comp_comm
-    (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)]
+  have hint : ∫ t, π g (f t • π (.ofAdd t) v) ∂μ =
+      π g (∫ t, f t • π (.ofAdd t) v ∂μ) := by
+    simpa [AddMonoidHom.toRealLinearMap] using
+      ((π g).toAddMonoidHom.toRealLinearMap (π g).continuous).integral_comp_comm
+        (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
+  rw [← hint]
   apply integral_congr_ae
   filter_upwards [] with t
   rw [map_smul]
@@ -276,8 +286,13 @@ theorem _root_.ContRepresentation.integratedOperatorL1_commute (f₁ f₂ : G �
   intro v
   simp only [mul_apply_eq_comp]
   rw [π.integratedOperatorL1_apply f₂ v]
-  rw [← (π.integratedOperatorL1 hcont hbdd μ f₁).integral_comp_comm
-    (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f₂) v)]
+  have hint : ∫ t, π.integratedOperatorL1 hcont hbdd μ f₁ (f₂ t • π (.ofAdd t) v) ∂μ =
+      π.integratedOperatorL1 hcont hbdd μ f₁ (∫ t, f₂ t • π (.ofAdd t) v ∂μ) := by
+    simpa [AddMonoidHom.toRealLinearMap] using
+      ((π.integratedOperatorL1 hcont hbdd μ f₁).toAddMonoidHom.toRealLinearMap
+          (π.integratedOperatorL1 hcont hbdd μ f₁).continuous).integral_comp_comm
+        (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f₂) v)
+  rw [← hint]
   rw [π.integratedOperatorL1_apply f₂]
   refine integral_congr_ae (.of_forall fun t ↦ ?_)
   dsimp only
