@@ -26,7 +26,7 @@ Zero inputs are included in the multiplicity transfer, with multiplicity zero.
 
 S. McCallum, A. Parusiński, L. Paunescu, *Validity proof of Lazard's method for CAD
 construction*, Journal of Symbolic Computation 92 (2019), Sections 2 and 5.
-The factorization is `Finset.IsIrreducibleBasis.exists_eq_C_content_mul_unit_mul_prod`;
+The factorization is `Finset.IsSquarefreeBasis.exists_eq_C_content_mul_unit_mul_prod`;
 the multiplicative evaluation is `MvPolynomial.lazardEvalHom`.
 -/
 
@@ -56,7 +56,7 @@ theorem exists_lazardEval_eq_C_mul_prod (hB : F.IsIrreducibleBasis B)
       ∀ a : Fin n → R, (swap f).lazardEval (Polynomial.C ∘ a) =
         Polynomial.C (f.content.lazardEval a * (u : MvPolynomial (Fin n) R).lazardEval a) *
           ∏ b ∈ B, (swap b).lazardEval (Polynomial.C ∘ a) ^ e b := by
-  obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_unit_mul_prod hf
+  obtain ⟨u, e, hfe⟩ := hB.isSquarefreeBasis.exists_eq_C_content_mul_unit_mul_prod hf
   refine ⟨u, e, fun a ↦ ?_⟩
   conv_lhs => rw [hfe]
   rw [map_mul, optionEquivRight_optionEquivLeft_symm_C, lazardEval_mul,
@@ -73,7 +73,7 @@ theorem exists_lazardExponent_eq_content_add_sum (hB : F.IsIrreducibleBasis B)
     ∃ e : Polynomial (MvPolynomial (Fin n) R) → ℕ, ∀ a : Fin n → R,
       (swap f).lazardExponent (Polynomial.C ∘ a) = f.content.lazardExponent a +
         ∑ b ∈ B, e b • (swap b).lazardExponent (Polynomial.C ∘ a) := by
-  obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_unit_mul_prod hf
+  obtain ⟨u, e, hfe⟩ := hB.isSquarefreeBasis.exists_eq_C_content_mul_unit_mul_prod hf
   refine ⟨e, fun a ↦ ?_⟩
   have hc : f.content ≠ 0 := fun h ↦ hf0 (content_eq_zero_iff.mp h)
   have hu : (u : MvPolynomial (Fin n) R).lazardExponent a = 0 :=
