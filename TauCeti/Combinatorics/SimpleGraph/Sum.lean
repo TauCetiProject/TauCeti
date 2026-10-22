@@ -27,9 +27,9 @@ multiplicative over disjoint sums is evaluated on an edgeless graph.
 
 Finally, Mathlib's `SimpleGraph.edgeSetSumEquiv`, implemented by `Sym2.fromRelNdrec`, comes with
 no evaluation lemmas. `SimpleGraph.coe_edgeSetSumEquiv_symm_inl` and
-`SimpleGraph.coe_edgeSetSumEquiv_symm_inr` say that it sends an edge of either summand to its image
-under the corresponding inclusion, which is how a product over the edges of `G ⊕g H` splits into
-products over the edges of `G` and of `H`.
+`SimpleGraph.coe_edgeSetSumEquiv_symm_inr` say that its inverse sends an edge of either summand to
+its image under the corresponding inclusion, which is how a product over the edges of `G ⊕g H`
+splits into products over the edges of `G` and of `H`.
 
 ## Main results
 
