@@ -9,18 +9,18 @@ measurements do not measure the saving on GitHub's original 190.4s restore.
 Temporary workaround for https://github.com/leanprover/lean4/pull/15868.
 Remove this script and its workflow invocation when the pinned toolchain provides
 native bulk restoration. This only supports TauCeti's attested default layout
-and its fresh private cache: mappings are removed after preparation. Run inside the
-offline build sandbox, before any candidate code or Lake build.
+and its fresh private cache: mappings are removed after preparation. Run inside
+the offline PR sandbox, or before main CI builds, before any library code runs.
 """
 
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
 import sys
 import tempfile
 import time
-import tomllib
 
 
 HASH = re.compile(r"[0-9a-f]{16}")
@@ -44,17 +44,19 @@ def unpack(project: Path) -> int:
     # This workaround knows only TauCeti's standard paths. Do not load the
     # candidate's Lake configuration or guess if its layout changes.
     try:
+        import tomllib
         config = tomllib.loads((project / "lakefile.toml").read_text())
         libs = config.get("lean_lib", [])
         if ((project / "lakefile.lean").exists() or config.get("name") != "TauCeti"
                 or any(config.get(key, default) != default for key, default in (
                     ("buildDir", ".lake/build"), ("leanLibDir", "lib/lean"),
                     ("irDir", "ir"), ("srcDir", ".")))
-                or len(libs) != 1 or libs[0].get("name") != "TauCeti"
+                or not isinstance(libs, list) or len(libs) != 1
+                or not isinstance(libs[0], dict) or libs[0].get("name") != "TauCeti"
                 or libs[0].get("srcDir", ".") != "."):
             raise ValueError("unsupported Lake layout")
-    except (OSError, ValueError, TypeError, AttributeError) as error:
-        print(f"bulk-unpack-cache: {error}; using stock Lake restoration")
+    except (ImportError, OSError, ValueError, TypeError, AttributeError) as error:
+        print(f"::warning::bulk-unpack-cache: {error}; using stock Lake restoration")
         return 0
     records = []
     record_paths = []
@@ -81,7 +83,7 @@ def unpack(project: Path) -> int:
             records.append({"file": str(artifact), "hash": path.stem})
             record_paths.append(path)
     except (OSError, ValueError) as error:
-        print(f"bulk-unpack-cache: {error}; using stock Lake restoration")
+        print(f"::warning::bulk-unpack-cache: {error}; using stock Lake restoration")
         return 0
     if not records:
         return 0
@@ -99,7 +101,7 @@ def unpack(project: Path) -> int:
             subprocess.run([str(leantar), "-x", "-j", "-"], input=json.dumps(records),
                            text=True, check=True)
         except (OSError, subprocess.CalledProcessError) as error:
-            print(f"bulk-unpack-cache: {error}; using stock Lake restoration")
+            print(f"::warning::bulk-unpack-cache: {error}; using stock Lake restoration")
             return 0
         moves = []
         modules = set()
@@ -130,7 +132,7 @@ def unpack(project: Path) -> int:
                         target = build.joinpath(destination, *parts[:-1], source.name)
                         moves.append((source, target))
         except (OSError, ValueError, TypeError, AttributeError) as error:
-            print(f"bulk-unpack-cache: {error}; using stock Lake restoration")
+            print(f"::warning::bulk-unpack-cache: {error}; using stock Lake restoration")
             return 0
         for source, target in moves:
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -145,16 +147,24 @@ def unpack(project: Path) -> int:
     return len(records)
 
 
-if __name__ == "__main__":
-    project = Path(sys.argv[1]) if len(sys.argv) > 1 else Path.cwd()
+def main(project: Path) -> None:
     # Only the job's disposable cache may lose its input-to-archive mappings.
     # Never touch a shared user cache or prepopulate a cache-disabled build.
-    import os
-    expected = project.resolve() / ".lake/cache"
-    configured = os.environ.get("LAKE_CACHE_DIR", "")
-    if (not configured or Path(configured).resolve() != expected
-            or os.environ.get("LAKE_ARTIFACT_CACHE") != "true"
-            or os.environ.get("LAKE_RESTORE_ARTIFACTS") != "true"):
-        print("bulk-unpack-cache: private CI cache not enabled; using stock Lake restoration")
-    else:
-        unpack(project)
+    try:
+        expected = project.resolve() / ".lake/cache"
+        configured = os.environ.get("LAKE_CACHE_DIR", "")
+        if (not configured or Path(configured).resolve() != expected
+                or os.environ.get("LAKE_ARTIFACT_CACHE") != "true"
+                or os.environ.get("LAKE_RESTORE_ARTIFACTS") != "true"):
+            print("bulk-unpack-cache: private CI cache not enabled; using stock Lake restoration")
+        else:
+            unpack(project)
+    except Exception as error:
+        # All installed outputs came from the same archives stock Lake restores.
+        # Records are removed only after all files are installed. A partial
+        # install therefore remains recoverable by the normal hash-checked build.
+        print(f"::warning::bulk-unpack-cache: {error}; using stock Lake restoration")
+
+
+if __name__ == "__main__":
+    main(Path(sys.argv[1]) if len(sys.argv) > 1 else Path.cwd())
