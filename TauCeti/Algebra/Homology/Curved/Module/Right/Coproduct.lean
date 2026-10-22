@@ -120,6 +120,14 @@ theorem directSum_differential :
     (directSum M).differential = DirectSum.lmap fun j ↦ (M j).differential :=
   (rfl)
 
+/-- Each component of the direct-sum differential is the differential of that summand. The
+coercion to functions is written out because the carrier of `directSum M` is not syntactically a
+function type; it is the one `DirectSum.ext` produces. -/
+@[simp]
+theorem directSum_differential_apply (x : ⨁ j, M j) (j : J) :
+    DFunLike.coe (F := Π₀ j, M j) ((directSum M).differential x) j = (M j).differential (x j) :=
+  (rfl)
+
 /-- The differential of the direct sum preserves each summand. -/
 @[simp]
 theorem directSum_differential_of [DecidableEq J] (j : J) (x : M j) :
