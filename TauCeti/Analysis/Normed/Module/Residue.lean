@@ -18,9 +18,9 @@ be an ultrametric seminormed `R`-module with contractive scalar action. The vect
 most one form an `R⁰`-submodule `M⁰ = TauCeti.unitClosedBallSubmodule R M` of `M`, and the
 *residue module* of `M` is
 
-`M̃ = TauCeti.ResidueModule R M = M⁰ ⧸ R⁰⁰ • M⁰`,
+`M~ = TauCeti.ResidueModule R M = M⁰ ⧸ R⁰⁰ • M⁰`,
 
-a module over the residue ring `R̃ = R⁰ ⧸ R⁰⁰`. Reduction modulo `R⁰⁰ • M⁰` is the
+a module over the residue ring `R~ = R⁰ ⧸ R⁰⁰`. Reduction modulo `R⁰⁰ • M⁰` is the
 `R⁰`-linear map `TauCeti.ResidueModule.mk`.
 
 Every vector of `R⁰⁰ • M⁰` has norm less than one. The converse holds when the norm of `M` takes
@@ -30,14 +30,14 @@ vector of norm less than one then has norm at most `‖ϖ‖`, so it is `ϖ` tim
 Thus for such norms `R⁰⁰ • M⁰ = ϖ M⁰` is the open unit ball of `M`, and two vectors of `M⁰` have
 the same residue exactly when they are at distance less than one
 (`TauCeti.ResidueModule.mk_eq_mk_iff`). This is the reduction used by Serre to compare
-orthonormal bases of `M` with bases of `M̃`.
+orthonormal bases of `M` with bases of `M~`.
 
 ## Main definitions
 
 * `TauCeti.unitClosedBallSubmodule R M`: the closed unit ball `M⁰` as an `R⁰`-submodule of `M`.
 * `TauCeti.ResidueModule R M`: the residue module `M⁰ ⧸ R⁰⁰ • M⁰`, a module over
   `R⁰ ⧸ R⁰⁰`.
-* `TauCeti.ResidueModule.mk`: the reduction map `M⁰ → M̃`.
+* `TauCeti.ResidueModule.mk`: the reduction map `M⁰ → M~`.
 
 ## Main results
 
@@ -110,7 +110,7 @@ theorem mk_surjective : Function.Surjective (mk : unitClosedBallSubmodule R M �
   Submodule.mkQ_surjective _
 
 /-- The residue ring acts on residues through representatives:
-`ā • m̄ = (a • m)‾`. -/
+the residue of `a` times the residue of `m` is the residue of `a • m`. -/
 @[simp]
 theorem smul_mk (a : Subring.unitClosedBall R) (m : unitClosedBallSubmodule R M) :
     Ideal.Quotient.mk (unitBallIdeal R) a • mk m = mk (a • m) :=

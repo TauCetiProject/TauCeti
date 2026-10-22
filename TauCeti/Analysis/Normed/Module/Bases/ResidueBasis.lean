@@ -16,25 +16,25 @@ Let `R` be an ultrametric seminormed commutative ring with a multiplicative pseu
 that the norms of `R` and of `M` take their values in `‖ϖ‖ ^ ℤ ∪ {0}`; this is the condition
 `zpowCeil ‖ϖ‖ ‖x‖ = ‖x‖` of `TauCeti.zpowCeil`. When the norm of `R` satisfies it, rounding the
 norm of a module up (`TauCeti.zpowCeilAddGroupNorm`) gives a bounded-equivalent norm satisfying it
-as well. Write `R⁰` and `M⁰` for the closed unit balls, `R̃ = R⁰ ⧸ R⁰⁰` for the residue ring and
-`M̃ = TauCeti.ResidueModule R M` for the residue module. Under the condition on the norms,
+as well. Write `R⁰` and `M⁰` for the closed unit balls, `R~ = R⁰ ⧸ R⁰⁰` for the residue ring and
+`M~ = TauCeti.ResidueModule R M` for the residue module. Under the condition on the norms,
 `R⁰⁰ • M⁰ = ϖM⁰` is the open unit ball of `M` (`TauCeti.mem_unitBallIdeal_smul_top_iff`), and
-likewise `R⁰⁰ = ϖR⁰`, so that `R̃ = R⁰ ⧸ ϖR⁰` and `M̃ = M⁰ ⧸ ϖM⁰`.
+likewise `R⁰⁰ = ϖR⁰`, so that `R~ = R⁰ ⧸ ϖR⁰` and `M~ = M⁰ ⧸ ϖM⁰`.
 
-Serre's theorem compares orthonormal families of `M` with bases of `M̃`. For a family
+Serre's theorem compares orthonormal families of `M` with bases of `M~`. For a family
 `e : I → M⁰` with residues `ē i = ResidueModule.mk (e i)`:
 
-* `e` is orthonormal exactly when the residues `ē` are linearly independent over `R̃`
+* `e` is orthonormal exactly when the residues `ē` are linearly independent over `R~`
   (`TauCeti.ResidueModule.linearIndependent_mk_iff`). Orthonormal families always have
   independent residues, without the condition on the norms.
-* if the residues span `M̃`, then `e` has dense span (`TauCeti.ResidueModule.dense_span`). The
+* if the residues span `M~`, then `e` has dense span (`TauCeti.ResidueModule.dense_span`). The
   proof is successive approximation: a vector of `M⁰` agrees with a combination of the `e i`
   modulo `ϖM⁰`, the error is `ϖ` times a vector of `M⁰`, and iterating approximates the vector
   modulo `ϖ ^ k M⁰` for every `k`. For an orthonormal family the converse holds
   (`TauCeti.ResidueModule.span_mk_eq_top_iff`).
 
-Thus `e` is an orthonormal basis exactly when `ē` is a basis of `M̃`
-(`TauCeti.ResidueModule.isOrthonormalBasis_iff`), and in particular any lift of a basis of `M̃` to
+Thus `e` is an orthonormal basis exactly when `ē` is a basis of `M~`
+(`TauCeti.ResidueModule.isOrthonormalBasis_iff`), and in particular any lift of a basis of `M~` to
 `M⁰` is an orthonormal basis of `M` (`TauCeti.ResidueModule.isOrthonormalBasis_of_basis`). No
 completeness is needed for these statements. Over a complete ring and for a complete module, where
 orthonormal bases are the same as linear isometries with model spaces `C₀(I, R)`, this shows that
