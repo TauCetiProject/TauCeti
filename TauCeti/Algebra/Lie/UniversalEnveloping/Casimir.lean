@@ -88,6 +88,9 @@ public section
 
 open Finset LieAlgebra LieModule UniversalEnvelopingAlgebra
 
+-- Canonical generators map into the commutator Lie algebra of the enveloping algebra.
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 namespace TauCeti
 
 universe u v
@@ -104,13 +107,13 @@ variable (K L) in
 bilinear map that turns the invariance of `∑ᵢ xᵢ ⊗ yᵢ` into the centrality of the Casimir
 element. -/
 private noncomputable def genMul :
-    L →ₗ[K] L →ₗ[K] UniversalEnvelopingAlgebra K L := by
-  letI : LieRing (UniversalEnvelopingAlgebra K L) := LieRing.ofAssociativeRing
-  exact (LinearMap.mul K (UniversalEnvelopingAlgebra K L)).compl₁₂
+    L →ₗ[K] L →ₗ[K] UniversalEnvelopingAlgebra K L :=
+  (LinearMap.mul K (UniversalEnvelopingAlgebra K L)).compl₁₂
     (ι K).toLinearMap (ι K).toLinearMap
 
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem genMul_apply (x y : L) : genMul K L x y = ι K x * ι K y := (rfl)
+private theorem genMul_apply (x y : L) : genMul K L x y = ι K x * ι K y := by
+  simp only [genMul, LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, LinearMap.mul_apply']
 
 variable (K L) in
 /-- **The Casimir element** `Ω = ∑ᵢ xᵢ yᵢ ∈ U(L)` of a Lie algebra with nondegenerate Killing
