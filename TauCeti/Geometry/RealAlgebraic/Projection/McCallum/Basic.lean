@@ -26,7 +26,8 @@ is the finite subset of `R` consisting of
   (which differ only by a sign).
 
 The intended coefficient ring is `R = MvPolynomial (Fin n) ℝ` with `B` an irreducible basis of
-`F` (`Finset.IsIrreducibleBasis`). Mathlib fixes no normalization on `MvPolynomial`; any
+`F` (`Finset.IsIrreducibleBasis`), or more generally a squarefree basis
+(`Finset.IsSquarefreeBasis`). Mathlib fixes no normalization on `MvPolynomial`; any
 `NormalizedGCDMonoid` structure may be chosen, and changing it changes each content only by a
 unit factor.
 
@@ -50,10 +51,10 @@ vanish under `φ` and `ψ`, then every member of the basis, and every member of 
 same degree after either specialization, and is nullified by `φ` exactly when it is nullified by
 `ψ`.
 
-The discriminant of the product of any subfamily of an irreducible basis has constant
+The discriminant of the product of any subfamily of a squarefree basis has constant
 ambient order wherever the projection does
-(`Finset.IsIrreducibleBasis.orderAt_discr_prod_eq_of_mcCallumProjection`). Together with
-`Finset.IsIrreducibleBasis.discr_prod_ne_zero`, this supplies the discriminant hypotheses
+(`Finset.IsSquarefreeBasis.orderAt_discr_prod_eq_of_mcCallumProjection`). Together with
+`Finset.IsSquarefreeBasis.discr_prod_ne_zero`, this supplies the discriminant hypotheses
 for applying a single-polynomial delineability theorem to the active basis product.
 
 ## Main definitions and results
@@ -66,9 +67,9 @@ for applying a single-polynomial delineability theorem to the active basis produ
 * `Finset.natDegree_map_eq_of_mcCallumProjection`, `Finset.map_eq_zero_iff_of_mcCallumProjection`:
   two specializations under which the same elements of the projection vanish give every member
   of the basis the same degree, and nullify the same members of the basis.
-* `Finset.IsIrreducibleBasis.natDegree_map_eq_of_mcCallumProjection`,
-  `Finset.IsIrreducibleBasis.map_eq_zero_iff_of_mcCallumProjection`: the same for the members of
-  the family, when the basis is an irreducible basis.
+* `Finset.IsSquarefreeBasis.natDegree_map_eq_of_mcCallumProjection`,
+  `Finset.IsSquarefreeBasis.map_eq_zero_iff_of_mcCallumProjection`: the same for the members of
+  the family, when the basis is a squarefree basis.
 
 ## References
 
@@ -195,13 +196,13 @@ theorem natDegree_map_eq_of_mcCallumProjection
     (b.map φ).natDegree = (b.map ψ).natDegree :=
   natDegree_map_eq_of_map_coeff_eq_zero_iff fun _ hi ↦ h _ (coeff_mem_mcCallumProjection hb hi)
 
-namespace IsIrreducibleBasis
+namespace IsSquarefreeBasis
 
-variable [IsDomain R] [IsDomain A] [IsDomain A']
+variable [IsDomain A] [IsDomain A']
 
 /-- If the same elements of the McCallum projection vanish under specializations `φ` and `ψ` into
 domains, then a member of the family is nullified by `φ` exactly when it is nullified by `ψ`. -/
-theorem map_eq_zero_iff_of_mcCallumProjection (hB : F.IsIrreducibleBasis B)
+theorem map_eq_zero_iff_of_mcCallumProjection (hB : F.IsSquarefreeBasis B)
     (h : ∀ a ∈ F.mcCallumProjection B, φ a = 0 ↔ ψ a = 0) (hf : f ∈ F) :
     f.map φ = 0 ↔ f.map ψ = 0 := by
   obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_unit_mul_prod hf
@@ -217,7 +218,7 @@ theorem map_eq_zero_iff_of_mcCallumProjection (hB : F.IsIrreducibleBasis B)
 
 /-- If the same elements of the McCallum projection vanish under specializations `φ` and `ψ` into
 domains, then every member of the family has the same degree after either specialization. -/
-theorem natDegree_map_eq_of_mcCallumProjection (hB : F.IsIrreducibleBasis B)
+theorem natDegree_map_eq_of_mcCallumProjection (hB : F.IsSquarefreeBasis B)
     (h : ∀ a ∈ F.mcCallumProjection B, φ a = 0 ↔ ψ a = 0) (hf : f ∈ F) :
     (f.map φ).natDegree = (f.map ψ).natDegree := by
   rcases eq_or_ne (f.map ψ) 0 with h0 | h0
@@ -238,7 +239,7 @@ theorem natDegree_map_eq_of_mcCallumProjection (hB : F.IsIrreducibleBasis B)
   simp only [natDegree_pow, zero_add]
   exact sum_congr rfl fun b hb ↦ by rw [Finset.natDegree_map_eq_of_mcCallumProjection h hb]
 
-end IsIrreducibleBasis
+end IsSquarefreeBasis
 
 end Specialization
 
@@ -255,8 +256,8 @@ product of any subfamily of the basis. In particular, order-invariance of the pr
 supplies the constant-order hypothesis of the discriminant theorem for this product.
 The formal discriminant may vanish at both base points; no nonvanishing of its values or
 of specialized leading coefficients is assumed. -/
-theorem IsIrreducibleBasis.orderAt_discr_prod_eq_of_mcCallumProjection
-    (hB : F.IsIrreducibleBasis B) (hA : A ⊆ B) (a b : σ → R)
+theorem IsSquarefreeBasis.orderAt_discr_prod_eq_of_mcCallumProjection
+    (hB : F.IsSquarefreeBasis B) (hA : A ⊆ B) (a b : σ → R)
     (h : ∀ p ∈ F.mcCallumProjection B, p.orderAt a = p.orderAt b) :
     (∏ p ∈ A, p).discr.orderAt a = (∏ p ∈ A, p).discr.orderAt b := by
   exact Finset.orderAt_discr_prod_eq A id

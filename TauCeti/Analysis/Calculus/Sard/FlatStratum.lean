@@ -19,7 +19,7 @@ if `f` is `C^{k+1}` and every iterated derivative of order `1 ≤ i ≤ k` vanis
 Morse--Sard theorem this is the estimate for the innermost stratum `Σ_k` of the critical set, the
 one place where regularity beyond `C¹` is genuinely needed; the two slices already available,
 `TauCeti.addHaar_image_eq_zero_of_not_surjective_fderivWithin` (equal dimensions, `C¹`) and
-`Differentiable.addHaar_image_eq_zero_of_finrank_lt_finrank` (smaller source,
+`DifferentiableOn.addHaar_image_eq_zero_of_finrank_lt_finrank` (smaller source,
 differentiable), neither says anything when the source dimension exceeds the target dimension.
 
 The argument is the classical one, but the covering estimate is replaced by Hausdorff dimension.
@@ -33,8 +33,9 @@ When `[Nontrivial F]`, a point of the stratum with `1 ≤ k` has vanishing first
 stratum consists of critical points and this is a statement about critical values; see
 `TauCeti.not_surjective_fderiv_of_iteratedFDeriv_one_eq_zero`.
 
-This is Lane F0 of the analytic Heegaard Floer roadmap, where finite-dimensional Sard is the
-prerequisite for Sard--Smale and hence for every transversality argument downstream.
+The flat-stratum estimate combines with local parametrizations of the other strata to prove
+nullity for the full locus where the first derivative vanishes, by induction on the source
+dimension.
 
 ## Main results
 

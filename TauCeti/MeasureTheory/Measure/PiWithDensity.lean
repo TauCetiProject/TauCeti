@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.Pi
+import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
 # A finite product of weighted measures is the product measure with the product weight
@@ -14,6 +15,9 @@ public import TauCeti.MeasureTheory.Integral.Pi
 `(MeasureTheory.Measure.pi μ).withDensity (fun x => ∏ i, f i (x i))`: putting a density on each
 factor of a finite product measure is the same as putting the product of the densities on the
 product measure.
+
+As a consequence, a finite product of σ-finite measures absolutely continuous with respect to
+σ-finite reference measures is absolutely continuous with respect to their product.
 
 Mathlib has the two-factor versions `MeasureTheory.Measure.prod_withDensity₀` and
 `MeasureTheory.Measure.prod_withDensity` but not the `MeasureTheory.Measure.pi` version, which is
@@ -29,6 +33,7 @@ indicator-truncated densities.
 
 * `TauCeti.pi_withDensity₀`: the identification, for almost everywhere measurable densities.
 * `TauCeti.pi_withDensity`: the same for measurable densities.
+* `MeasureTheory.Measure.AbsolutelyContinuous.pi`: finite products preserve absolute continuity.
 -/
 
 public section
@@ -80,3 +85,20 @@ theorem pi_withDensity (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] 
   pi_withDensity₀ μ fun i => (hf i).aemeasurable
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+/-- Finite products preserve absolute continuity between σ-finite measures. -/
+theorem AbsolutelyContinuous.pi {ι : Type*} [Fintype ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] {μ ν : ∀ i, Measure (α i)}
+    [∀ i, SigmaFinite (μ i)] [∀ i, SigmaFinite (ν i)] (h : ∀ i, μ i ≪ ν i) :
+    Measure.pi μ ≪ Measure.pi ν := by
+  have hμ (i : ι) : (ν i).withDensity ((μ i).rnDeriv (ν i)) = μ i :=
+    withDensity_rnDeriv_eq _ _ (h i)
+  let (i : ι) : SigmaFinite ((ν i).withDensity ((μ i).rnDeriv (ν i))) := by
+    rw [hμ]
+    infer_instance
+  rw [← funext hμ, TauCeti.pi_withDensity _ fun i => measurable_rnDeriv _ _]
+  exact withDensity_absolutelyContinuous _ _
+
+end MeasureTheory.Measure

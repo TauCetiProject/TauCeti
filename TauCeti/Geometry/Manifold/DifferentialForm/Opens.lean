@@ -24,9 +24,18 @@ on `W` is `C^n` as soon as its restrictions to the members of an open cover of `
 (`TauCeti.IsSmoothForm.of_mpullback_inclusion`). Conversely, a form on `U` extends by zero to `W`
 (`TauCeti.RoughForm.extendByZero`), and the extension is `C^n` when it vanishes near every point
 of `W` outside `U` (`TauCeti.IsSmoothForm.extendByZero`); this applies in particular to the
-product of a form with a cut-off function (`TauCeti.IsSmoothForm.extendByZero_smul`).
+product of a form with a cut-off function (`TauCeti.IsSmoothForm.extendByZero_smul`), and, on a
+Hausdorff manifold, to every compactly supported form on `U`, whose extension vanishes near the
+points outside `U` (`TauCeti.RoughForm.eventually_extendByZero_eq_zero`) and is again compactly
+supported (`TauCeti.RoughForm.isCompact_tsupport_extendByZero`).
 
-These are the gluing and cut-off steps of the Mayer–Vietoris sequence of de Rham cohomology.
+The exterior derivative is local, so, without any regularity assumption, it commutes with
+restriction to an open subset (`TauCeti.mpullback_inclusion_mextDeriv`) and with extension by zero
+whenever the extension vanishes near every point of `W` outside `U`
+(`TauCeti.RoughForm.mextDeriv_extendByZero`).
+
+These are the gluing and cut-off steps of the Mayer–Vietoris sequence of de Rham cohomology, and
+the extension step of its compactly supported variant.
 
 ## References
 
@@ -70,6 +79,12 @@ theorem extendByZero_inclusion {U W : Opens M} (h : U ≤ W) (ω : RoughForm I U
   simp only [extendByZero, Opens.inclusion]
   exact dite_eq_left x.2
 
+/-- The extension by zero agrees with the form at the points of the smaller open subset. -/
+theorem extendByZero_apply_of_mem {U W : Opens M} (ω : RoughForm I U F k) {x : W}
+    (hx : (x : M) ∈ U) : extendByZero W ω x = ω ⟨x, hx⟩ := by
+  simp only [extendByZero]
+  exact dite_eq_left hx
+
 /-- The extension by zero vanishes outside the smaller open subset. -/
 theorem extendByZero_apply_of_notMem {U W : Opens M} (ω : RoughForm I U F k)
     {x : W} (hx : (x : M) ∉ U) : extendByZero W ω x = 0 := by
@@ -82,6 +97,139 @@ theorem mpullback_inclusion_extendByZero {U W : Opens M} (h : U ≤ W) (ω : Rou
     mpullback I I (Opens.inclusion h) (extendByZero W ω) = ω := by
   funext x
   rw [mpullback_inclusion_apply, extendByZero_inclusion]
+
+/-- Extension by zero from an open subset to itself is the identity. -/
+@[simp]
+theorem extendByZero_self {U : Opens M} (ω : RoughForm I U F k) : extendByZero U ω = ω :=
+  funext (extendByZero_inclusion le_rfl ω)
+
+/-- Extending by zero in two steps along `U ≤ V ≤ W` is extending by zero from `U` to `W`. -/
+theorem extendByZero_extendByZero {U V : Opens M} (h : U ≤ V) (W : Opens M)
+    (ω : RoughForm I U F k) : extendByZero W (extendByZero V ω) = extendByZero W ω := by
+  funext x
+  by_cases hU : (x : M) ∈ U
+  · rw [extendByZero_apply_of_mem _ (h hU)]
+    exact (extendByZero_apply_of_mem (x := ⟨x, h hU⟩) ω hU).trans
+      (extendByZero_apply_of_mem _ hU).symm
+  · rw [extendByZero_apply_of_notMem _ hU]
+    by_cases hV : (x : M) ∈ V
+    · rw [extendByZero_apply_of_mem _ hV]
+      exact extendByZero_apply_of_notMem (x := ⟨x, hV⟩) ω hU
+    · exact extendByZero_apply_of_notMem _ hV
+
+/-- Extension by zero of the zero form is zero. -/
+@[simp]
+theorem extendByZero_zero {U : Opens M} (W : Opens M) :
+    extendByZero W (0 : RoughForm I U F k) = 0 := by
+  funext x
+  by_cases hx : (x : M) ∈ U
+  · rw [extendByZero_apply_of_mem _ hx]
+    -- The fibres of `U` at `⟨x, hx⟩` and of `W` at `x` are both the model fibre, so the remaining
+    -- pointwise identity holds by unfolding the operations on dependent functions.
+    rfl
+  · exact extendByZero_apply_of_notMem _ hx
+
+/-- Extension by zero is additive. -/
+@[simp]
+theorem extendByZero_add {U : Opens M} (W : Opens M) (ω η : RoughForm I U F k) :
+    extendByZero W (ω + η) = extendByZero W ω + extendByZero W η := by
+  funext x
+  by_cases hx : (x : M) ∈ U
+  · rw [Pi.add_apply, extendByZero_apply_of_mem _ hx, extendByZero_apply_of_mem _ hx,
+      extendByZero_apply_of_mem _ hx]
+    -- The fibres of `U` at `⟨x, hx⟩` and of `W` at `x` are both the model fibre, so the remaining
+    -- pointwise identity holds by unfolding the operations on dependent functions.
+    rfl
+  · rw [Pi.add_apply, extendByZero_apply_of_notMem _ hx, extendByZero_apply_of_notMem _ hx,
+      extendByZero_apply_of_notMem _ hx, add_zero]
+
+/-- Extension by zero commutes with multiplication by a constant. -/
+@[simp]
+theorem extendByZero_smul {U : Opens M} (W : Opens M) (c : ℝ) (ω : RoughForm I U F k) :
+    extendByZero W (c • ω) = c • extendByZero W ω := by
+  funext x
+  by_cases hx : (x : M) ∈ U
+  · rw [Pi.smul_apply, extendByZero_apply_of_mem _ hx, extendByZero_apply_of_mem _ hx]
+    -- The fibres of `U` at `⟨x, hx⟩` and of `W` at `x` are both the model fibre, so the remaining
+    -- pointwise identity holds by unfolding the operations on dependent functions.
+    rfl
+  · rw [Pi.smul_apply, extendByZero_apply_of_notMem _ hx, extendByZero_apply_of_notMem _ hx,
+      smul_zero]
+
+/-- Viewed as a function to the model fibre, the extension by zero is `Function.extend` along the
+inclusion, so Mathlib's support theory for `Function.extend` applies to it. -/
+private theorem extendByZero_eq_extend {U W : Opens M} (h : U ≤ W) (ω : RoughForm I U F k) :
+    (extendByZero W ω : W → E [⋀^Fin k]→L[ℝ] F) =
+      Function.extend (Opens.inclusion h) (ω : U → E [⋀^Fin k]→L[ℝ] F)
+        (0 : W → E [⋀^Fin k]→L[ℝ] F) := by
+  funext x
+  by_cases hx : (x : M) ∈ U
+  · exact (extendByZero_inclusion h ω ⟨x, hx⟩).trans
+      ((Set.inclusion_injective h).extend_apply _ (0 : W → E [⋀^Fin k]→L[ℝ] F) ⟨x, hx⟩).symm
+  · have hxr : ¬∃ y, Opens.inclusion h y = x := by
+      rintro ⟨y, rfl⟩
+      exact hx y.2
+    exact (extendByZero_apply_of_notMem ω hx).trans
+      (Function.extend_apply' (γ := E [⋀^Fin k]→L[ℝ] F) (f := Opens.inclusion h) ω 0 x hxr).symm
+
+section T2
+
+variable [T2Space M]
+
+/-- On a Hausdorff manifold, the extension by zero of a compactly supported form on an open subset
+`U ≤ W` is supported in the image of the support of the form. -/
+theorem tsupport_extendByZero_subset {U W : Opens M} (h : U ≤ W) {ω : RoughForm I U F k}
+    (hω : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ω)) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (extendByZero W ω) ⊆
+      Opens.inclusion h '' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ω := by
+  rw [extendByZero_eq_extend h]
+  exact HasCompactSupport.tsupport_extend_zero_subset hω (continuous_inclusion h)
+
+/-- On a Hausdorff manifold, the extension by zero of a compactly supported form on an open subset
+`U ≤ W` is compactly supported. -/
+theorem isCompact_tsupport_extendByZero {U W : Opens M} (h : U ≤ W) {ω : RoughForm I U F k}
+    (hω : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ω)) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (extendByZero W ω)) := by
+  rw [extendByZero_eq_extend h]
+  exact HasCompactSupport.extend_zero hω (continuous_inclusion h)
+
+/-- On a Hausdorff manifold, the extension by zero of a compactly supported form on an open subset
+`U ≤ W` vanishes near every point of `W` outside `U`. -/
+theorem eventually_extendByZero_eq_zero {U W : Opens M} (h : U ≤ W) {ω : RoughForm I U F k}
+    (hω : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ω)) {x : W} (hx : (x : M) ∉ U) :
+    ∀ᶠ y in 𝓝 x, extendByZero W ω y = 0 := by
+  have hxs : x ∉ _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (extendByZero W ω) :=
+    fun hxs ↦ hx <| by
+      obtain ⟨y, -, rfl⟩ := tsupport_extendByZero_subset h hω hxs
+      exact y.2
+  filter_upwards [(_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _).isOpen_compl.mem_nhds
+    hxs] with y hy
+  exact _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin k]→L[ℝ] F) hy
+
+end T2
+
+/-- Restricting the extension by zero to an open subset `V ≤ W` is the extension by zero to `V`. -/
+@[simp]
+theorem mpullback_inclusion_extendByZero_eq_extendByZero {U V W : Opens M} (h : V ≤ W)
+    (ω : RoughForm I U F k) :
+    mpullback I I (Opens.inclusion h) (extendByZero W ω) = extendByZero V ω := by
+  funext x
+  rw [mpullback_inclusion_apply]
+  -- Both sides test membership of the same underlying point of `M` in `U`.
+  rfl
+
+/-- The extension by zero of the product of a form on `U ≤ W` with a function on `W` vanishes near
+every point of `W` outside `U` near which the function vanishes. -/
+theorem eventually_extendByZero_smul_eq_zero {U W : Opens M} (h : U ≤ W) (ω : RoughForm I U F k)
+    {g : W → ℝ} {x : W} (hx : ∀ᶠ y in 𝓝 x, g y = 0) :
+    ∀ᶠ y in 𝓝 x, extendByZero W (fun y : U ↦ g (Opens.inclusion h y) • ω y) y = 0 := by
+  filter_upwards [hx] with y hy
+  by_cases hyU : (y : M) ∈ U
+  · obtain ⟨y, rfl⟩ : ∃ y' : U, Opens.inclusion h y' = y := ⟨⟨y, hyU⟩, Subtype.ext rfl⟩
+    rw [extendByZero_inclusion]
+    exact (congrArg (· • ω y) hy).trans (zero_smul ℝ _)
+  · exact extendByZero_apply_of_notMem _ hyU
+
 
 end RoughForm
 
@@ -105,6 +253,35 @@ theorem RoughForm.inChartAt_mpullback_inclusion_eventuallyEq {U W : Opens M} (h 
     ← Function.comp_apply (f := Opens.inclusion h), ← hev'.self_of_nhds]
   ext v
   exact (inChartAt_apply γ (Opens.inclusion h x) z v).symm
+
+/-- Restriction to a smaller open subset commutes with the exterior derivative, with no regularity
+assumption: near every point of the smaller subset both are computed from the same coordinate
+expression. -/
+theorem mpullback_inclusion_mextDeriv {U W : Opens M} (h : U ≤ W) (γ : RoughForm I W F k) :
+    mpullback I I (Opens.inclusion h) (mextDeriv γ) =
+      mextDeriv (mpullback I I (Opens.inclusion h) γ) := by
+  funext x
+  have heq := RoughForm.inChartAt_mpullback_inclusion_eventuallyEq h γ x
+  rw [mpullback_inclusion_apply, mextDeriv_def, mextDeriv_def, extChartAt_inclusion_self]
+  exact (heq.extDerivWithin_eq (heq.self_of_nhdsWithin (mem_range_self _))).symm
+
+/-- The exterior derivative commutes with extension by zero from an open subset `U ≤ W`, provided
+the extension vanishes near every point of `W` outside `U`. No regularity is needed. -/
+theorem RoughForm.mextDeriv_extendByZero {U W : Opens M} (h : U ≤ W) {ω : RoughForm I U F k}
+    (hzero : ∀ x : W, (x : M) ∉ U → ∀ᶠ y in 𝓝 x, RoughForm.extendByZero W ω y = 0) :
+    mextDeriv (RoughForm.extendByZero W ω) = RoughForm.extendByZero W (mextDeriv ω) := by
+  funext x
+  by_cases hx : (x : M) ∈ U
+  · obtain ⟨x, rfl⟩ : ∃ x' : U, Opens.inclusion h x' = x := ⟨⟨x, hx⟩, rfl⟩
+    rw [RoughForm.extendByZero_inclusion,
+      ← mpullback_inclusion_apply h (mextDeriv (RoughForm.extendByZero W ω)),
+      mpullback_inclusion_mextDeriv, RoughForm.mpullback_inclusion_extendByZero]
+  · rw [RoughForm.extendByZero_apply_of_notMem _ hx]
+    have hz : ∀ᶠ y in 𝓝 x, RoughForm.extendByZero W ω y = (0 : RoughForm I W F k) y :=
+      hzero x hx
+    rw [mextDeriv_congr_of_eventuallyEq hz, mextDeriv_zero]
+    -- The value of the zero form at `x` is zero; the fibres differ only by the dependent typing.
+    rfl
 
 /-- Regularity of a form at a point of an open subset is regularity of its restriction there. -/
 theorem contMDiffAt_mpullback_inclusion_iff {U W : Opens M} (h : U ≤ W) {n : WithTop ℕ∞}
@@ -138,6 +315,19 @@ theorem IsSmoothForm.of_mpullback_inclusion {W : Opens M} {ι : Type*} {U : ι �
   obtain ⟨i, hi⟩ := hcover x
   exact (contMDiffAt_mpullback_inclusion_iff (hU i) γ ⟨x, hi⟩).mp ((hγ i).contMDiff _)
 
+/-- A form on the union of two open subsets is `C^n` when both restrictions are `C^n`. -/
+theorem IsSmoothForm.of_mpullback_inclusion_sup {U V : Opens M} {n : WithTop ℕ∞}
+    {γ : RoughForm I (U ⊔ V : Opens M) F k}
+    (hU : IsSmoothForm I n (mpullback I I (Opens.inclusion le_sup_left) γ))
+    (hV : IsSmoothForm I n (mpullback I I (Opens.inclusion le_sup_right) γ)) :
+    IsSmoothForm I n γ := by
+  refine IsSmoothForm.of_mpullback_inclusion (U := fun b : Bool ↦ cond b U V)
+    (fun b ↦ by cases b <;> simp) (fun x ↦ ?_) fun b ↦ ?_
+  · rcases Opens.mem_sup.mp x.2 with hx | hx
+    exacts [⟨true, hx⟩, ⟨false, hx⟩]
+  · cases b
+    · exact hV
+    · exact hU
 
 /-- The extension by zero of a `C^n` form on an open subset `U ≤ W` is `C^n`, provided it vanishes
 near every point of `W` outside `U`. -/
@@ -164,12 +354,7 @@ theorem IsSmoothForm.extendByZero_smul {U W : Opens M} (h : U ≤ W) {n : WithTo
     (hg : ContMDiff I 𝓘(ℝ) n g) (hzero : ∀ x : W, (x : M) ∉ U → ∀ᶠ y in 𝓝 x, g y = 0) :
     IsSmoothForm I n
       (RoughForm.extendByZero W fun y : U ↦ g (Opens.inclusion h y) • ω y) := by
-  refine (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h fun x hx ↦ ?_
-  filter_upwards [hzero x hx] with y hy
-  by_cases hyU : (y : M) ∈ U
-  · obtain ⟨y, rfl⟩ : ∃ y' : U, Opens.inclusion h y' = y := ⟨⟨y, hyU⟩, Subtype.ext rfl⟩
-    rw [RoughForm.extendByZero_inclusion]
-    exact (congrArg (· • ω y) hy).trans (zero_smul ℝ _)
-  · exact RoughForm.extendByZero_apply_of_notMem _ hyU
+  exact (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h
+    (fun x hx ↦ RoughForm.eventually_extendByZero_smul_eq_zero h ω (hzero x hx))
 
 end TauCeti

@@ -19,9 +19,9 @@ formed from the universal commutator morphism, rather than just commutators of r
 The normal-subgroup theorems apply because the derived subgroup is smooth and geometrically
 connected by `Derived.Geometric`. No perfectness or characteristic hypothesis is needed.
 Reductivity of the derived subgroup is a step toward its semisimplicity; the reductive result
-here does not assert triviality of its radical or equality with the ambient group. In
-characteristic zero, semisimplicity is `TauCeti.reductiveCommHopfAlgProperty.semisimple_derived`
-in `TauCeti.Algebra.AlgebraicGroup.Derived.Semisimple`.
+here does not assert triviality of its radical or equality with the ambient group.
+Semisimplicity is `TauCeti.reductiveCommHopfAlgProperty.semisimple_derived` in
+`TauCeti.Algebra.AlgebraicGroup.Derived.Semisimple`.
 
 ## References
 

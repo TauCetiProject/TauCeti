@@ -192,6 +192,11 @@ theorem invChart_symm_of_ne_zero {w : 𝕜} (hw : w ≠ 0) :
     invChart.symm w = ((w⁻¹ : 𝕜) : OnePoint 𝕜) := by
   simp [invChart, hw]
 
+/-- At every point of the projective line, the inverted chart reads the reciprocal of the affine
+chart, with the convention `0⁻¹ = 0` at `0` and at `∞`. -/
+theorem inv_invChart (x : OnePoint 𝕜) : (invChart x)⁻¹ = affineChart x := by
+  induction x using OnePoint.rec <;> simp
+
 /-! ### The charted space -/
 
 /-- The projective line `OnePoint 𝕜` as a charted space modelled on `𝕜`: its atlas consists of the

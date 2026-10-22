@@ -56,7 +56,7 @@ public section
 
 namespace TauCeti.Huber
 
-open Filter MvPowerSeries
+open Filter _root_.MvPowerSeries
 open scoped Topology
 
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : Option σ → ℝ}
@@ -69,7 +69,7 @@ local notation "Iter" => PowerSeries.IsRestricted.subring (R := Inner) (c none)
 omit [IsUltrametricDist R] [∀ i, Fact (0 < c i)] in
 /-- Each coefficient slice obtained by separating one variable is restricted. Only the radius of
 the separated variable needs to be positive. -/
-theorem isRestricted_coeff_optionEquivLeft [Fact (0 < c none)] {f : MvPowerSeries (Option σ) R}
+theorem isRestricted_coeff_optionEquivLeft (hc : 0 < c none) {f : MvPowerSeries (Option σ) R}
     (hf : IsRestricted c f) (n : ℕ) :
     IsRestricted (fun i ↦ c (some i)) (PowerSeries.coeff n (optionEquivLeft σ R f)) := by
   have hi : Function.Injective (fun t : σ →₀ ℕ ↦ t.optionElim n) := fun t u h ↦ by
@@ -78,13 +78,13 @@ theorem isRestricted_coeff_optionEquivLeft [Fact (0 < c none)] {f : MvPowerSerie
   rw [mul_zero] at h
   refine h.congr fun t ↦ ?_
   rw [Function.comp_apply, coeff_coeff_optionEquivLeft, Finsupp.prod_pow_optionElim]
-  field_simp [(pow_pos (Fact.out : 0 < c none) n).ne']
+  field_simp [(pow_pos hc n).ne']
 
 /-- The coefficient slices, regarded as a formal univariate series over the restricted subring. -/
 private noncomputable def restrictedOptionSeries (f : Flat) : PowerSeries Inner :=
   PowerSeries.mk fun n ↦
     ⟨PowerSeries.coeff n (optionEquivLeft σ R (f : MvPowerSeries (Option σ) R)),
-      isRestricted_coeff_optionEquivLeft f.2 n⟩
+      isRestricted_coeff_optionEquivLeft Fact.out f.2 n⟩
 
 private theorem coeff_restrictedOptionSeries (f : Flat) (n : ℕ) :
     (PowerSeries.coeff (R := Inner) n (restrictedOptionSeries f) : MvPowerSeries σ R) =

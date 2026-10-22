@@ -48,6 +48,8 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
 * `TauCeti.singularToCubical_app_f_zero_simplexChain` and
   `TauCeti.cubicalToSingular_app_f_zero_ofCube`: in degree zero the comparison maps send a point
   to the same point.
+* `TauCeti.cubicalToSingularGen_zero` and `TauCeti.singularToCubicalGen_zero`: in degree zero the
+  model generators are the point simplex and the point cube.
 * `TauCeti.TopCat.isIso_singularHomologyMap_of_quasiIso`: a map inducing a quasi-isomorphism of
   normalized cubical chains induces isomorphisms on singular homology.
 
@@ -241,6 +243,14 @@ theorem cubicalToSingular_app_f_ofCube {X : TopCat.{u}} {n : ℕ} (c : SingularC
   rw [cubeToHom_hom_comp_upCube] at h
   exact h.symm
 
+/-- In degree zero, the model generator of the comparison to simplicial chains is the `0`-simplex
+at the unique point of the `0`-cube. -/
+@[simp]
+theorem cubicalToSingularGen_zero :
+    cubicalToSingularGen k 0 =
+      simplexChain (TopCat.toSSetObj₀Equiv.symm ((upCube.{u} 0) fun i ↦ i.elim0)) 1 :=
+  cubicalToSingular_app_f_zero_ofZeroCube (upCube 0)
+
 /-- The image of the identity cube is the image of its subcube along the identity. -/
 theorem cubicalToSingularSubcube_id (n : ℕ) :
     cubicalToSingularSubcube k n (ContinuousMap.id (Fin n → unitInterval)) =
@@ -342,6 +352,14 @@ theorem cubicalToSingularCompHomotopy_hom_ofCube {X : TopCat.{u}} {n : ℕ} (c :
     (normalizedCubicalChainComplex_map_f_apply (cubeToHom c) n _).trans
       (by rw [NormalizedCubicalChain.map_ofCube, cubeToHom_hom_comp_upCube])
   exact (congrArg ((cubicalToSingularCompHomotopy k X).hom n (n + 1)).hom e.symm).trans h
+
+/-- In degree zero, the model generator of the comparison to cubical chains is the point cube at the
+vertex of the `0`-simplex. -/
+@[simp]
+theorem singularToCubicalGen_zero :
+    singularToCubicalGen k 0 = NormalizedCubicalChain.ofCube (simplexModel.{u} 0) k
+      (SingularCube.point (TopCat.toSSetObj₀Equiv (idSimplex.{u} 0))) :=
+  singularToCubical_app_f_zero_simplexChain (idSimplex 0)
 
 end ModelChains
 

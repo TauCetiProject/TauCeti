@@ -38,6 +38,8 @@ compatibility of the comparison in the other direction is
 
 ## Main results
 
+* `TauCeti.LocalCoefficientSystem.twistedSingularToCubical_ιTwistedChainComplex_const`: on a point
+  simplex the comparison is the class of the point cube.
 * `TauCeti.LocalCoefficientSystem.twistedSingularToCubical_twistedPushforward`: compatibility
   with pushforwards from simply connected spaces.
 * `TauCeti.LocalCoefficientSystem.twistedSingularToCubicalMap_naturality`,
@@ -106,6 +108,29 @@ theorem twistedSingularToCubical_ιTwistedChainComplex {n : ℕ}
     (twistedSingularToCubical L n).hom (ιTwistedChainComplex L n σ a) =
       twistedSingularToCubicalSummand L σ a :=
   ConcreteCategory.congr_hom (ιTwistedChainComplex_comp_twistedSingularToCubical L σ) a
+
+/-- On a point simplex, the comparison to cubical chains is the class of the point cube. -/
+theorem twistedSingularToCubical_ιTwistedChainComplex_const (x : X)
+    (a : L.obj (FundamentalGroupoid.mk x)) :
+    (twistedSingularToCubical L 0).hom
+        (ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) a) =
+      NormalizedTwistedCubicalChain.ofCube L (ContinuousMap.const _ x) a := by
+  -- The point simplex is named so that the fibres of its summand and of the pushforward agree.
+  set σ : (TopCat.toSSet.obj X) _⦋0⦌ := ULift.up (TopCat.ofHom (ContinuousMap.const _ x))
+  -- Unfold the summand to the pushforward of the point cube of the model.
+  refine (twistedSingularToCubical_ιTwistedChainComplex L σ a).trans
+    ((twistedSingularToCubicalSummand_apply L σ a).trans
+      ((congrArg (fun y ↦ NormalizedTwistedCubicalChain.pushforward
+        (Z := simplexModel.{v} 0) L (simplexToHom σ).hom
+        (SimplexCategory.toTopInitialVertex ⦋0⦌) 0 y a)
+        (singularToCubicalGen_zero (k := ULift.{v} ℤ))).trans
+        ((NormalizedTwistedCubicalChain.pushforward_ofCube (L := L)
+          (f := (simplexToHom σ).hom) (z₀ := SimplexCategory.toTopInitialVertex ⦋0⦌) _ a).trans
+          ?_)))
+  -- The pushed cube is the point cube at `x`, and the transport of `a` is trivial.
+  exact NormalizedTwistedCubicalChain.ofCube_congr (L := L) (ContinuousMap.ext fun _ ↦ rfl)
+    (map_pathClass_heq (L := L) (simplexToHom σ).hom
+      (z := SimplexCategory.toTopInitialVertex ⦋0⦌) (Subsingleton.elim _ _) a)
 
 /-- **Compatibility with pushforwards.** The comparison carries the simplicial pushforward of a
 chain of a simply connected space `Z` to the cubical pushforward of the image of the chain. -/

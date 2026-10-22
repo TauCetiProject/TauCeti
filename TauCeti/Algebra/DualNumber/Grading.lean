@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 
 /-!
 # The degree-two grading on the dual numbers
@@ -20,6 +21,9 @@ the usual ungraded dual-number algebra.
 
 * `TauCeti.dualNumberGrade`: the degree pieces of the dual numbers.
 * `TauCeti.dualNumberGradedAlgebra`: the corresponding graded-algebra structure.
+* `TauCeti.dualNumberIntegerGrade` and `TauCeti.dualNumberIntegerGradedAlgebra`: the same grading
+  extended by zero to integer degrees, the indexing in which internal shifts of graded modules
+  are stated.
 
 ## Main results
 
@@ -30,6 +34,8 @@ the usual ungraded dual-number algebra.
 * `TauCeti.dualNumberGrade_eq_bot`: every degree other than zero and two vanishes.
 * `TauCeti.dualNumberGradeZeroEquiv` and `TauCeti.dualNumberGradeTwoEquiv`:
   the two nonzero pieces are linearly equivalent to the base ring.
+* `TauCeti.dualNumberIntegerGrade_zero_eq_span_one`: in the integer grading, degree zero is the
+  line through `1`.
 
 ## Implementation notes
 
@@ -276,5 +282,47 @@ rather than a global instance so callers choose when to install it locally. -/
 noncomputable def dualNumberGradedAlgebra : GradedAlgebra (dualNumberGrade R) := by
   letI := dualNumberGradedMonoid R
   exact DirectSum.IsInternal.gradedAlgebra (isInternal_dualNumberGrade R)
+
+/-! ### Integer degrees -/
+
+/-- The standard grading of the dual numbers, extended by zero from natural to integer degrees.
+This is the indexing used by internal shifts of graded modules. -/
+noncomputable def dualNumberIntegerGrade (d : ℤ) : Submodule R (DualNumber R) :=
+  Graded.extendByZero (dualNumberGrade R) d
+
+/-- In a natural degree `n`, the integer grading is the degree-`n` piece of the standard grading. -/
+@[simp]
+theorem dualNumberIntegerGrade_ofNat (n : ℕ) :
+    dualNumberIntegerGrade R n = dualNumberGrade R n :=
+  Graded.extendByZero_natCast _ n
+
+/-- The integer grading of the dual numbers vanishes in negative degrees. -/
+@[simp]
+theorem dualNumberIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
+    dualNumberIntegerGrade R d = ⊥ :=
+  Graded.extendByZero_of_neg _ hd
+
+/-- The unit of the dual numbers has integer degree zero. -/
+theorem one_mem_dualNumberIntegerGrade_zero :
+    (1 : DualNumber R) ∈ dualNumberIntegerGrade R 0 := by
+  rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero,
+    TrivSqZeroExt.snd_one]
+
+/-- **Integer degree zero is the line through `1`.** -/
+theorem dualNumberIntegerGrade_zero_eq_span_one :
+    dualNumberIntegerGrade R 0 = R ∙ (1 : DualNumber R) := by
+  ext x
+  rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero,
+    Submodule.mem_span_singleton]
+  refine ⟨fun hx => ⟨x.fst, TrivSqZeroExt.ext (by simp) (by simp [hx])⟩, ?_⟩
+  rintro ⟨r, rfl⟩
+  simp
+
+/-- The dual numbers are integer graded, with `ε` in degree two and zero pieces in negative
+degrees. This is a definition rather than a global instance, like `dualNumberGradedAlgebra`. -/
+@[instance_reducible]
+noncomputable def dualNumberIntegerGradedAlgebra : GradedAlgebra (dualNumberIntegerGrade R) :=
+  let _ := dualNumberGradedAlgebra R
+  Graded.gradedAlgebraExtendByZero (dualNumberGrade R)
 
 end TauCeti

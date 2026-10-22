@@ -20,6 +20,12 @@ The subgroup is Mathlib's `AddMonoidHom.graph`; no separate graph carrier is int
 Quadratic isotropy is characterized for arbitrary additive homomorphisms, including
 degenerate modules, before the nondegenerate Lagrangian theorem.
 
+Conversely, a quadratic Lagrangian of `A ⊥ B` meeting both factors only in zero is such a graph:
+both factors are then nondegenerate, its two coordinate projections are injective, the order of a
+Lagrangian forces them to be bijective, and Mathlib's Goursat lemma
+`AddSubgroup.exists_addEquiv_eq_graph` then produces the isometry. This identifies the glue
+subgroup of an even unimodular overlattice in which both summands are primitive.
+
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.6.
@@ -88,5 +94,56 @@ theorem isLagrangian_graph_iff (e : A ≃+ B) (hA : A.IsNondegenerate) :
     exact ⟨(A.isIsotropic_graph_iff B e.toAddMonoidHom).mpr he,
       ((A.prod B).toFiniteBilinearModule.isLagrangian_def _).mpr
         (A.orthogonalComplement_graph B e he hA).symm⟩
+
+/-- **A Lagrangian meeting both factors trivially is a graph.** If a quadratic Lagrangian `H` of
+`A ⊥ B` meets `A ⊥ 0` and `0 ⊥ B` only in zero, then `H` is the graph of an isometry from `A` to
+the negative of `B`. Both factors are then nondegenerate, since `H` is its own orthogonal
+complement. This is the converse of `TauCeti.FiniteQuadraticModule.isLagrangian_graph_iff`. -/
+theorem exists_isometry_neg_mem_iff_of_isLagrangian {H : AddSubgroup (A × B)}
+    (hH : (A.prod B).IsLagrangian H)
+    (hleft : ∀ x : A, (x, 0) ∈ H → x = 0) (hright : ∀ y : B, (0, y) ∈ H → y = 0) :
+    ∃ e : Isometry A B.neg, ∀ x y, (x, y) ∈ H ↔ e x = y := by
+  -- A radical vector of either factor is orthogonal to `H`, hence lies in `H`, hence vanishes.
+  have hHo := ((A.prod B).toFiniteBilinearModule.isLagrangian_def H).mp hH.toFiniteBilinearModule
+  have hA : A.IsNondegenerate := A.toFiniteBilinearModule.isNondegenerate_of_radical_eq_bot <|
+    (AddSubgroup.eq_bot_iff_forall _).mpr fun x hx ↦ hleft x <| hHo ▸
+      ((A.prod B).toFiniteBilinearModule.mem_orthogonalComplement_iff H _).mpr fun z _ ↦ by
+        rw [prod_pairing, (A.toFiniteBilinearModule.mem_radical_iff x).mp hx,
+          FiniteBilinearModule.pairing_zero_left, add_zero]
+  have hB : B.IsNondegenerate := B.toFiniteBilinearModule.isNondegenerate_of_radical_eq_bot <|
+    (AddSubgroup.eq_bot_iff_forall _).mpr fun y hy ↦ hright y <| hHo ▸
+      ((A.prod B).toFiniteBilinearModule.mem_orthogonalComplement_iff H _).mpr fun z _ ↦ by
+        rw [prod_pairing, (B.toFiniteBilinearModule.mem_radical_iff y).mp hy,
+          FiniteBilinearModule.pairing_zero_left, zero_add]
+  let π₁ : H →+ A := (AddMonoidHom.fst A B).comp H.subtype
+  let π₂ : H →+ B := (AddMonoidHom.snd A B).comp H.subtype
+  -- Each projection is injective on `H`, because `H` meets the other factor trivially.
+  have h₁ : Function.Injective π₁ := by
+    refine (injective_iff_map_eq_zero π₁).mpr fun ⟨⟨x, y⟩, hxy⟩ hx ↦ ?_
+    obtain rfl : x = 0 := hx
+    obtain rfl := hright y hxy
+    rfl
+  have h₂ : Function.Injective π₂ := by
+    refine (injective_iff_map_eq_zero π₂).mpr fun ⟨⟨x, y⟩, hxy⟩ hy ↦ ?_
+    obtain rfl : y = 0 := hy
+    obtain rfl := hleft x hxy
+    rfl
+  -- A Lagrangian has `#H² = #A·#B`, so both injective projections are bijective.
+  have hsq : Nat.card H * Nat.card H = Nat.card A * Nat.card B := by
+    rw [← pow_two, FiniteBilinearModule.IsLagrangian.card_sq _ hH.toFiniteBilinearModule
+      ((A.isNondegenerate_prod B).mpr ⟨hA, hB⟩)]
+    exact Nat.card_prod A B
+  have hHA := Nat.card_le_card_of_injective π₁ h₁
+  have hHB := Nat.card_le_card_of_injective π₂ h₂
+  have hpos : 0 < Nat.card H := Nat.card_pos
+  obtain ⟨e, hHe⟩ := AddSubgroup.exists_addEquiv_eq_graph
+    ((Nat.bijective_iff_injective_and_card π₁).mpr ⟨h₁, by nlinarith⟩)
+    ((Nat.bijective_iff_injective_and_card π₂).mpr ⟨h₂, by nlinarith⟩)
+  rw [hHe] at hH
+  refine ⟨{ toLinearEquiv := e.toIntLinearEquiv, map_app' := fun x ↦ ?_ }, fun x y ↦ ?_⟩
+  · exact (B.neg_quadratic _).trans
+      (neg_eq_iff_eq_neg.mpr ((A.isLagrangian_graph_iff B e hA).mp hH x))
+  · rw [hHe]
+    exact AddMonoidHom.mem_graph
 
 end TauCeti.FiniteQuadraticModule
