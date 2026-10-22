@@ -166,6 +166,20 @@ theorem asymmetricLaplacePDF_of_nonpos_right (hr : r ≤ 0) (m l x : ℝ) :
   rw [asymmetricLaplacePDF_eq_ofReal, asymmetricLaplacePDFReal_of_nonpos_right hr,
     ENNReal.ofReal_zero]
 
+/-- At or below the location the `ℝ≥0∞`-valued density is the rising exponential branch. -/
+@[simp]
+theorem asymmetricLaplacePDF_of_le (hl : 0 < l) (hr : 0 < r) (hx : x ≤ m) :
+    asymmetricLaplacePDF m l r x =
+      ENNReal.ofReal (l * r / (l + r) * Real.exp (l * (x - m))) := by
+  rw [asymmetricLaplacePDF_eq_ofReal, asymmetricLaplacePDFReal_of_le hl hr hx]
+
+/-- Above the location the `ℝ≥0∞`-valued density is the decaying exponential branch. -/
+@[simp]
+theorem asymmetricLaplacePDF_of_lt (hl : 0 < l) (hr : 0 < r) (hx : m < x) :
+    asymmetricLaplacePDF m l r x =
+      ENNReal.ofReal (l * r / (l + r) * Real.exp (-(r * (x - m)))) := by
+  rw [asymmetricLaplacePDF_eq_ofReal, asymmetricLaplacePDFReal_of_lt hl hr hx]
+
 /-- The real-valued asymmetric Laplace density is measurable. -/
 @[fun_prop]
 theorem measurable_asymmetricLaplacePDFReal (m l r : ℝ) :
@@ -199,24 +213,6 @@ private lemma asymmetricLaplacePDFReal_eq_mul_exp_of_lt (hl : 0 < l) (hr : 0 < r
   rw [asymmetricLaplacePDFReal_of_lt hl hr hy, mul_assoc, ← Real.exp_add]
   ring_nf
 
-/-- The density is integrable on every lower half-line ending at or below the location. -/
-private lemma integrableOn_asymmetricLaplacePDFReal_Iic (hl : 0 < l) (hr : 0 < r) (hx : x ≤ m) :
-    IntegrableOn (asymmetricLaplacePDFReal m l r) (Iic x) := by
-  have h : IntegrableOn
-      (fun y : ℝ => l * r / (l + r) * Real.exp (-(l * m)) * Real.exp (l * y)) (Iic x) :=
-    (integrableOn_exp_mul_Iic hl x).const_mul _
-  exact h.congr_fun (fun y hy => (asymmetricLaplacePDFReal_eq_mul_exp_of_le hl hr
-    (le_trans hy hx)).symm) measurableSet_Iic
-
-/-- The density is integrable on every upper half-line starting at or above the location. -/
-private lemma integrableOn_asymmetricLaplacePDFReal_Ioi (hl : 0 < l) (hr : 0 < r) (hx : m ≤ x) :
-    IntegrableOn (asymmetricLaplacePDFReal m l r) (Ioi x) := by
-  have h : IntegrableOn
-      (fun y : ℝ => l * r / (l + r) * Real.exp (r * m) * Real.exp (-r * y)) (Ioi x) :=
-    (integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hr) x).const_mul _
-  exact h.congr_fun (fun y (hy : x < y) => (asymmetricLaplacePDFReal_eq_mul_exp_of_lt hl hr
-    (lt_of_le_of_lt hx hy)).symm) measurableSet_Ioi
-
 /-- The mass of the density below a point at or under the location. -/
 theorem integral_asymmetricLaplacePDFReal_Iic (hl : 0 < l) (hr : 0 < r) (hx : x ≤ m) :
     ∫ y in Iic x, asymmetricLaplacePDFReal m l r y = r / (l + r) * Real.exp (l * (x - m)) := by
@@ -249,10 +245,24 @@ theorem integrable_asymmetricLaplacePDFReal (m l r : ℝ) :
   by_cases hl : 0 < l
   · by_cases hr : 0 < r
     · rw [← integrableOn_univ, ← Iic_union_Ioi (a := m)]
-      exact (integrableOn_asymmetricLaplacePDFReal_Iic hl hr le_rfl).union
-        (integrableOn_asymmetricLaplacePDFReal_Ioi hl hr le_rfl)
+      exact (IntegrableOn.congr_fun ((integrableOn_exp_mul_Iic hl m).const_mul _)
+          (fun y hy => (asymmetricLaplacePDFReal_eq_mul_exp_of_le hl hr hy).symm)
+          measurableSet_Iic).union
+        (IntegrableOn.congr_fun ((integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hr) m).const_mul _)
+          (fun y hy => (asymmetricLaplacePDFReal_eq_mul_exp_of_lt hl hr hy).symm)
+          measurableSet_Ioi)
     · simp [funext (asymmetricLaplacePDFReal_of_nonpos_right (not_lt.mp hr) m l)]
   · simp [funext (asymmetricLaplacePDFReal_of_nonpos_left (not_lt.mp hl) m r)]
+
+/-- The asymmetric Laplace density is integrable on every lower half-line. -/
+theorem integrableOn_asymmetricLaplacePDFReal_Iic :
+    IntegrableOn (asymmetricLaplacePDFReal m l r) (Iic x) :=
+  (integrable_asymmetricLaplacePDFReal m l r).integrableOn
+
+/-- The asymmetric Laplace density is integrable on every upper half-line. -/
+theorem integrableOn_asymmetricLaplacePDFReal_Ioi :
+    IntegrableOn (asymmetricLaplacePDFReal m l r) (Ioi x) :=
+  (integrable_asymmetricLaplacePDFReal m l r).integrableOn
 
 /-- The asymmetric Laplace density integrates to `1`. -/
 theorem integral_asymmetricLaplacePDFReal (hl : 0 < l) (hr : 0 < r) (m : ℝ) :
@@ -318,6 +328,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 /-- **The characteristic function of the asymmetric Laplace law**, read off the exponential
 construction. -/
+@[simp]
 theorem charFun_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (m t : ℝ) :
     charFun (asymmetricLaplaceMeasure m l r) t =
       Complex.exp (Complex.I * m * t) * (r * l) /
@@ -590,6 +601,7 @@ theorem variance_id_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (m : ℝ)
 
 /-- **Equal rates give the Laplace law.** With both rates equal to `r`, the asymmetric Laplace law
 is the Laplace law of scale `r⁻¹`. -/
+@[simp]
 theorem asymmetricLaplaceMeasure_self (m r : ℝ) :
     asymmetricLaplaceMeasure m r r = laplaceMeasure m r⁻¹ := by
   rw [asymmetricLaplaceMeasure_eq_withDensity, laplaceMeasure_eq_withDensity]
