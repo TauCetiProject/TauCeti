@@ -98,6 +98,36 @@ def resolutionComplexIsoDouble (S : ShortComplex C) :
       exact Iso.inv_hom_id_assoc _ _
     · exact (S.isZero_resolutionComplex_X_add_two j).eq_of_src _ _)
 
+/-- The comparison isomorphism in degree zero is the inverse of Mathlib's degree-zero
+identification for the two-term complex. -/
+@[simp]
+lemma resolutionComplexIsoDouble_hom_f_zero (S : ShortComplex C) :
+    S.resolutionComplexIsoDouble.hom.f 0 =
+      (HomologicalComplex.doubleXIso₁ S.f rfl (by decide)).inv := by
+  rfl
+
+/-- The comparison isomorphism in degree one is the inverse of Mathlib's degree-one
+identification for the two-term complex. -/
+@[simp]
+lemma resolutionComplexIsoDouble_hom_f_one (S : ShortComplex C) :
+    S.resolutionComplexIsoDouble.hom.f 1 =
+      (HomologicalComplex.doubleXIso₀ S.f rfl).inv := by
+  rfl
+
+/-- The inverse comparison in degree zero is Mathlib's degree-zero identification. -/
+@[simp]
+lemma resolutionComplexIsoDouble_inv_f_zero (S : ShortComplex C) :
+    S.resolutionComplexIsoDouble.inv.f 0 =
+      (HomologicalComplex.doubleXIso₁ S.f rfl (by decide)).hom := by
+  rfl
+
+/-- The inverse comparison in degree one is Mathlib's degree-one identification. -/
+@[simp]
+lemma resolutionComplexIsoDouble_inv_f_one (S : ShortComplex C) :
+    S.resolutionComplexIsoDouble.inv.f 1 =
+      (HomologicalComplex.doubleXIso₀ S.f rfl).hom := by
+  rfl
+
 /-- The augmentation `S.g : S.X₂ ⟶ S.X₃` of `S.resolutionComplex`, as a chain map to the single
 complex on `S.X₃`. -/
 def resolutionπ (S : ShortComplex C) :
