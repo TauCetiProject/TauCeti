@@ -24,14 +24,14 @@ creation–annihilation anticommutator.
 
 ## Main definitions
 
-* `TauCeti.ExteriorAlgebra.degreeScaling`: the algebra automorphism of `⋀ M` induced by `r • id`.
+* `ExteriorAlgebra.degreeScaling`: the algebra automorphism of `⋀ M` induced by `r • id`.
 
 ## Main results
 
-* `TauCeti.ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`: the degree scaling acts on the
+* `ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`: the degree scaling acts on the
   `n`-th exterior power by `r ^ n`.
-* `TauCeti.ExteriorAlgebra.degreeScaling_ι`, `TauCeti.ExteriorAlgebra.degreeScaling_involute` and
-  `TauCeti.ExteriorAlgebra.degreeScaling_contractLeft`: its interaction with the generators, the
+* `ExteriorAlgebra.degreeScaling_ι`, `ExteriorAlgebra.degreeScaling_involute` and
+  `ExteriorAlgebra.degreeScaling_contractLeft`: its interaction with the generators, the
   grade involution and contraction.
 -/
 
@@ -39,7 +39,7 @@ public section
 
 open CliffordAlgebra
 
-namespace TauCeti.ExteriorAlgebra
+namespace ExteriorAlgebra
 
 universe u v
 
@@ -47,7 +47,7 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- **The degree scaling of an exterior algebra** by a unit `r`: the algebra automorphism of
 `⋀ M` induced by the scalar multiplication `r • id` of `M`. It multiplies the `n`-th exterior power
-by `r ^ n` (`TauCeti.ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`). -/
+by `r ^ n` (`ExteriorAlgebra.degreeScaling_of_mem_exteriorPower`). -/
 noncomputable def degreeScaling (r : Rˣ) : ExteriorAlgebra R M ≃ₐ[R] ExteriorAlgebra R M :=
   AlgEquiv.ofAlgHom (_root_.ExteriorAlgebra.map ((r : R) • LinearMap.id))
     (_root_.ExteriorAlgebra.map (((r⁻¹ : Rˣ) : R) • LinearMap.id))
@@ -110,4 +110,4 @@ theorem degreeScaling_contractLeft (r : Rˣ) (d : Module.Dual R M) (x : Exterior
   rw [degreeScaling_apply, degreeScaling_apply, ← LinearMap.smul_apply, ← map_smul,
     contractLeft_map, hd]
 
-end TauCeti.ExteriorAlgebra
+end ExteriorAlgebra
