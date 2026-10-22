@@ -26,8 +26,9 @@ directions are built separately from the universal properties of `DirectLimit.Al
 
 * `TauCeti.DirectedSystem.algebraRTensor`: the directed system `B i ⊗[A] M`.
 * `TauCeti.directLimitLeft`:
-  `(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)`, with `directLimitLeft_tmul_of` and
-  `directLimitLeft_symm_of`.
+  `(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)`, with `directLimitLeft_tmul_of`,
+  `directLimitLeft_rTensor_of`, `directLimitLeft_symm_of` and the composite forms
+  `directLimitLeft_comp_rTensor_of` and `directLimitLeft_symm_comp_of`.
 -/
 
 public section
@@ -130,5 +131,25 @@ theorem directLimitLeft_symm_of (i : ι) (x : B i ⊗[A] M) :
       rTensor M (of B f i) x := by
   rw [directLimitLeft, AlgEquiv.ofAlgHom_symm]
   exact fromDirectLimit_of (f := f) M i x
+
+theorem directLimitLeft_rTensor_of (i : ι) (x : B i ⊗[A] M) :
+    directLimitLeft f M (rTensor M (of B f i) x) =
+      of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i x := by
+  rw [← directLimitLeft_symm_of, AlgEquiv.apply_symm_apply]
+
+/-- `directLimitLeft_rTensor_of` as an equality of algebra maps. -/
+@[simp]
+theorem directLimitLeft_comp_rTensor_of (i : ι) :
+    (directLimitLeft f M : DirectLimit B f ⊗[A] M →ₐ[A] _).comp (rTensor M (of B f i)) =
+      of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i :=
+  AlgHom.ext (directLimitLeft_rTensor_of M i)
+
+/-- `directLimitLeft_symm_of` as an equality of algebra maps. -/
+@[simp]
+theorem directLimitLeft_symm_comp_of (i : ι) :
+    ((directLimitLeft f M).symm : _ →ₐ[A] DirectLimit B f ⊗[A] M).comp
+        (of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i) =
+      rTensor M (of B f i) :=
+  AlgHom.ext (directLimitLeft_symm_of M i)
 
 end TauCeti

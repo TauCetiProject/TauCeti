@@ -104,9 +104,9 @@ theorem exists_rTensor_comp_eq_rTensor_comp_of_finiteType [Algebra.FiniteType A 
     {ψ₁ ψ₂ : S →ₐ[A] B j ⊗[A] M}
     (h : (rTensor M (of B f j)).comp ψ₁ = (rTensor M (of B f j)).comp ψ₂) :
     ∃ k, ∃ hjk : j ≤ k, (rTensor M (f j k hjk)).comp ψ₁ = (rTensor M (f j k hjk)).comp ψ₂ :=
-  exists_comp_eq_comp_of_finiteType <| AlgHom.ext fun s ↦
-    (directLimitLeft f M).symm.injective <| by
-    simpa only [AlgHom.comp_apply, directLimitLeft_symm_of] using congr($h s)
+  exists_comp_eq_comp_of_finiteType <| by
+    simpa only [← AlgHom.comp_assoc, directLimitLeft_comp_rTensor_of] using
+      congr((directLimitLeft f M).toAlgHom.comp $h)
 
 end Semiring
 
@@ -197,9 +197,9 @@ theorem exists_eq_rTensor_comp_of_finitePresentation [Algebra.FinitePresentation
     ∃ i, ∃ ψ : S →ₐ[A] B i ⊗[A] M, φ = (rTensor M (of B f i)).comp ψ := by
   obtain ⟨i, ψ, hψ⟩ :=
     exists_eq_comp_of_finitePresentation ((directLimitLeft f M).toAlgHom.comp φ)
-  refine ⟨i, ψ, AlgHom.ext fun s ↦ ?_⟩
-  rw [AlgHom.comp_apply, ← directLimitLeft_symm_of, ← AlgHom.comp_apply, ← hψ]
-  exact ((directLimitLeft f M).symm_apply_apply (φ s)).symm
+  refine ⟨i, ψ, ?_⟩
+  rw [← directLimitLeft_symm_comp_of, AlgHom.comp_assoc, ← hψ, ← AlgHom.comp_assoc,
+    AlgEquiv.symm_comp, AlgHom.id_comp]
 
 /-- **Descent of maps between base changes.** Let `R = colim B i`. Every `R`-algebra map
 `Φ : R ⊗[A] S → R ⊗[A] M`, for `S` finitely presented over `A`, is the base change of a
