@@ -351,7 +351,8 @@ theorem eq_zero_of_forall_vermaModule_smul_eq_zero (hq : IsGenericQuantumParamet
     have hγ : eProd q (q⁻¹ ^ (n + 1)) c ≠ 0 := by
       refine eProd_ne_zero hq hμ fun i _ hi => hq.pow_ne_one (n := 2 * i + 2 * (n + 1))
         (by omega) ?_
-      rw [pow_add, ← hi, ← pow_mul, mul_comm (n + 1) 2, ← mul_pow, inv_mul_cancel₀ hq0, one_pow]
+      rw [pow_add, ← hi]
+      simp [← pow_mul, mul_comm, hq0]
     have h := repr_smul_vec hμ (fun a' b' c' hc' => ih c' hc' a' b') a
     rw [hx _ hμ, map_zero, Finsupp.zero_apply, eq_comm, mul_eq_zero, or_iff_right hγ] at h
     simp only [Set.mem_ofPred_eq, ← laurentEval_eq_eval₂]

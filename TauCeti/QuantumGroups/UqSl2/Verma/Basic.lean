@@ -223,17 +223,20 @@ theorem e_pow_smul_vec_add (c j : ℕ) :
   induction c with
   | zero => simp
   | succ c ih =>
-    rw [pow_succ, mul_smul, ← add_assoc, e_smul_vec_succ, smul_comm, ih, smul_smul,
-      Finset.prod_range_succ, mul_comm, Nat.cast_add]
+    rw [pow_succ, mul_smul, ← add_assoc, e_smul_vec_succ, smul_comm (e q ^ c), ih, smul_smul,
+      Finset.prod_range_succ]
+    congr 1
+    push_cast
+    ring
 
 /-- A power of `E` of exponent larger than `j` kills `v_j`. -/
 theorem e_pow_smul_vec_of_lt {c j : ℕ} (h : j < c) : e q ^ c • vec q μ j = 0 := by
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_lt h
-  have hj := e_pow_smul_vec_add (q := q) (μ := μ) j 0
-  rw [zero_add] at hj
-  have hexp : j + d + 1 = d + 1 + j := by omega
-  rw [hexp, pow_add, mul_smul, hj, smul_comm, pow_succ, mul_smul, e_smul_vec_zero, smul_zero,
-    smul_zero]
+  induction c, h using Nat.le_induction with
+  | base =>
+    -- `E^j` sends `v_j` to a multiple of `v₀`, which `E` kills.
+    simpa [pow_succ', mul_smul, smul_comm (e q) (_ : ℂ)] using
+      congrArg (e q • ·) (e_pow_smul_vec_add (q := q) (μ := μ) j 0)
+  | succ c _ ih => rw [pow_succ', mul_smul, ih, smul_zero]
 
 /-! ### Spanning -/
 
