@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
 /-!
 # The Clifford algebras of `Q` and `-Q` over a ring containing a square root of `-1`
@@ -68,28 +69,18 @@ section General
 
 variable (Q Q' : QuadraticForm R M) (h : Q' = -Q) {u : R} (hu : u * u = -1)
 
-/-- Multiplication by `u` is an isometry from `Q` to `Q' = -Q`, with inverse multiplication by
-`-u`. -/
-private def isometryEquivNeg : Q.IsometryEquiv Q' where
-  toLinearEquiv := LinearEquiv.smulOfUnit ⟨u, -u, by rw [mul_neg, hu, neg_neg],
-    by rw [neg_mul, hu, neg_neg]⟩
-  map_app' m := by
-    simp [LinearEquiv.smulOfUnit, h, QuadraticMap.map_smul, hu]
-
-private theorem isometryEquivNeg_apply (m : M) : isometryEquivNeg Q Q' h hu m = u • m :=
-  rfl
-
 /-- If `u * u = -1`, the Clifford algebras of `Q` and of `Q' = -Q` are isomorphic, by the algebra
 map sending a vector `ι Q m` to `u • ι Q' m`; this is `CliffordAlgebra.equivOfIsometry` for the
 isometry `m ↦ u • m`. Over `ℂ`, with `u = Complex.I`, this is the map `v ↦ i v` between the
 complexified Clifford algebras of a real form and of its negative. -/
 def equivNeg : CliffordAlgebra Q ≃ₐ[R] CliffordAlgebra Q' :=
-  equivOfIsometry (isometryEquivNeg Q Q' h hu)
+  equivOfIsometry (QuadraticMap.isometryEquivNeg h hu)
 
 /-- `CliffordAlgebra.equivNeg` multiplies each vector by `u`. -/
 @[simp]
 theorem equivNeg_ι (m : M) : equivNeg Q Q' h hu (ι Q m) = u • ι Q' m :=
-  (map_apply_ι _ m).trans (map_smul (ι Q') u m)
+  (map_apply_ι _ m).trans <| (congrArg (ι Q') (QuadraticMap.isometryEquivNeg_apply h hu m)).trans
+    (map_smul (ι Q') u m)
 
 /-- The inverse of `CliffordAlgebra.equivNeg` multiplies each vector by `-u`. -/
 @[simp]
@@ -101,11 +92,8 @@ the opposite direction. -/
 theorem equivNeg_symm :
     (equivNeg Q Q' h hu).symm =
       equivNeg Q' Q (by rw [h, neg_neg]) (u := -u) (by rw [neg_mul_neg, hu]) := by
-  rw [equivNeg, equivOfIsometry_symm]
-  congr 1
-  dsimp only [QuadraticMap.IsometryEquiv.symm, isometryEquivNeg]
-  congr 1
-  exact LinearEquiv.ext fun m ↦ rfl
+  rw [equivNeg, equivOfIsometry_symm, QuadraticMap.isometryEquivNeg_symm]
+  rfl
 
 /-- A bivector `ι Q a * ι Q b` goes to the negative `-(ι Q' a * ι Q' b)` of the corresponding
 bivector, since the two factors of `u` multiply to `-1`. -/
@@ -147,8 +135,8 @@ theorem equivNeg_star (x : CliffordAlgebra Q) :
 private theorem map_range_ι_equivNeg :
     (LinearMap.range (ι Q)).map (equivNeg Q Q' h hu).toLinearMap =
       LinearMap.range (ι Q') :=
-  (ι_range_map_map (isometryEquivNeg Q Q' h hu).toIsometry).trans <|
-    (congrArg _ (LinearEquiv.range (isometryEquivNeg Q Q' h hu).toLinearEquiv)).trans
+  (ι_range_map_map (QuadraticMap.isometryEquivNeg h hu).toIsometry).trans <|
+    (congrArg _ (LinearEquiv.range (QuadraticMap.isometryEquivNeg h hu).toLinearEquiv)).trans
       (Submodule.map_top _)
 
 /-- `CliffordAlgebra.equivNeg` preserves the `ℤ/2`-grading: it carries `evenOdd Q i` onto
@@ -177,10 +165,10 @@ theorem map_equivNeg {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] {Q₂ Q�
     (h₂ : Q₂' = -Q₂) (f : Q →qᵢ Q₂) (f' : Q' →qᵢ Q₂') (hf : f'.toLinearMap = f.toLinearMap)
     (x : CliffordAlgebra Q) :
     map f' (equivNeg Q Q' h hu x) = equivNeg Q₂ Q₂' h₂ hu (map f x) := by
-  have key : f'.comp (isometryEquivNeg Q Q' h hu).toIsometry =
-      (isometryEquivNeg Q₂ Q₂' h₂ hu).toIsometry.comp f :=
+  have key : f'.comp (QuadraticMap.isometryEquivNeg h hu).toIsometry =
+      (QuadraticMap.isometryEquivNeg h₂ hu).toIsometry.comp f :=
     QuadraticMap.Isometry.ext fun m ↦ by
-      simpa [isometryEquivNeg_apply] using congr($hf (u • m))
+      simpa using congr($hf (u • m))
   exact (AlgHom.congr_fun (map_comp_map _ _) x).trans <| congr(map $key x).trans
     (AlgHom.congr_fun (map_comp_map _ _) x).symm
 
