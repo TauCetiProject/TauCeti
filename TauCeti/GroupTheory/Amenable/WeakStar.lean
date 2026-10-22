@@ -82,19 +82,19 @@ theorem toStrongDual_toWeakDual (m : Mean G) :
   StrongDual.toStrongDual_toWeakDual _
 
 theorem toWeakDual_injective : Function.Injective (toWeakDual : Mean G → WeakDual ℝ (UCB G)) :=
-  fun m n h => ext fun f => by simpa using DFunLike.congr_fun h f
+  StrongDual.toWeakDual.injective.comp toContinuousLinearMap_injective
 
 /-- An element of the weak-* dual of `UCB G` comes from a mean exactly when it is nonnegative on
 nonnegative functions and takes the value `1` at `1`. -/
 theorem mem_range_toWeakDual_iff {φ : WeakDual ℝ (UCB G)} :
     φ ∈ Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)) ↔
       (∀ f, 0 ≤ f → 0 ≤ φ f) ∧ φ 1 = 1 := by
-  refine ⟨?_, fun ⟨hφ, h₁⟩ => ⟨mk₀ (WeakDual.toStrongDual φ).toLinearMap
-    (fun f hf => by simpa [WeakDual.toStrongDual_apply] using hφ f hf)
-    (by simpa [WeakDual.toStrongDual_apply] using h₁),
-    DFunLike.ext _ _ fun f => by simp [WeakDual.toStrongDual_apply]⟩⟩
-  rintro ⟨m, rfl⟩
-  exact ⟨fun f hf => by simpa using map_nonneg m hf, by simp⟩
+  have : φ ∈ Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)) ↔
+      WeakDual.toStrongDual φ ∈ Set.range (toContinuousLinearMap : Mean G → UCB G →L[ℝ] ℝ) := by
+    refine exists_congr fun m => ?_
+    rw [← toStrongDual_toWeakDual, WeakDual.toStrongDual_inj]
+  rw [this, mem_range_toContinuousLinearMap_iff]
+  simp [WeakDual.toStrongDual_apply]
 
 /-- The means lie in the closed unit ball of the dual of `UCB G`. -/
 theorem range_toWeakDual_subset_closedBall :
