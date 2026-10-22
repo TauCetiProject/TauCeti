@@ -85,7 +85,7 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
 private abbrev coverObj : GradedModuleCat.{max w uA} 𝒜 :=
   directSumObj fun j =>
     (ofIdeal 𝒜 (Ideal.span {e j})
-      (Ideal.isHomogeneous_span_singleton_of_mem_zero 𝒜 (he₀ j))).shiftObj (d j)
+      (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ j⟩)).shiftObj (d j)
 
 private theorem mem_coverObj_piece_iff (p : ℤ) (x : coverObj he₀ d) :
     x ∈ (coverObj he₀ d).grading.piece p ↔

@@ -122,7 +122,7 @@ private theorem isHomogeneous_positiveMulIdeal (he₀ : e ∈ 𝒜 0) :
 private def positiveMulIdealInclusion (he₀ : e ∈ 𝒜 0) :
     GradedModuleCat.ofIdeal 𝒜 (gradedPositiveMulIdeal 𝒜 e) (isHomogeneous_positiveMulIdeal 𝒜 he₀) ⟶
       GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e})
-        (Ideal.isHomogeneous_span_singleton_of_mem_zero 𝒜 he₀) :=
+        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀⟩) :=
   GradedModuleCat.ofHom (Submodule.inclusion (positiveMulIdeal_le 𝒜 e)) <|
     LinearMap.isHomogeneous_def.2 fun p x hx => by
       rw [GradedModuleCat.mem_ofIdeal_piece_iff] at hx ⊢
@@ -185,7 +185,7 @@ theorem mem_gradedPositiveMulQuotient_piece_iff (he₀ : e ∈ 𝒜 0) {p : ℤ}
   refine (GradedModuleCat.mem_cokernelGrading_piece_iff (positiveMulIdealInclusion 𝒜 he₀)).trans
     (exists_congr fun x => and_congr ?_ Iff.rfl)
   exact GradedModuleCat.mem_ofIdeal_piece_iff
-    (Ideal.isHomogeneous_span_singleton_of_mem_zero 𝒜 he₀)
+    (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀⟩)
 
 /-- **The map `Ae / A₊e ⟶ M` sending the class of `x` to `x m`**, for an element `m` of an
 `A`-module `M` killed by `A₊e`. -/
@@ -316,7 +316,7 @@ private theorem exists_eq_smul_headGenerator (i : I) (y : gradedPositiveMulQuoti
     ∃ c : k, y = c • headGenerator e he₀ i := by
   obtain ⟨x, rfl⟩ := gradedPositiveMulQuotientMk_surjective (he₀ i) y
   have hx₀ : (decompose 𝒜 (x : A) 0 : A) ∈ (Ideal.span {e i} : Ideal A) :=
-    Ideal.isHomogeneous_span_singleton_of_mem_zero 𝒜 (he₀ i) 0 x.2
+    Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩ 0 x.2
   obtain ⟨c, hc⟩ := exists_eq_smul_of_mem_zero he hspan (decompose 𝒜 (x : A) 0).2 hx₀
   refine ⟨c, ?_⟩
   rw [headGenerator, ← LinearMap.map_smul_of_tower, ← sub_eq_zero, ← map_sub,

@@ -107,8 +107,8 @@ def dualNumberGradedProjectiveBasis :
       (LaurentK0.{u} (gradedFiniteProjectiveModulesExactStructure (dualNumberIntegerGrade k))) :=
   gradedIdempotentProjectiveBasis (completeOrthogonalIdempotents_one k)
     (fun _ => one_mem_dualNumberIntegerGrade_zero k)
-    (fun _ => Ideal.isHomogeneous_span_singleton_of_mem_zero _
-      (one_mem_dualNumberIntegerGrade_zero k))
+    (fun _ => Ideal.isHomogeneous_span_singleton _
+      ⟨0, one_mem_dualNumberIntegerGrade_zero k⟩)
     (fun _ => dualNumberIntegerGrade_eq_bot_of_neg k) (dualNumberIntegerGrade_zero_le_span k)
     (fun _ => one_ne_zero)
 
@@ -128,11 +128,11 @@ theorem dualNumberGradedProjectiveBasis_apply (i : Unit) :
     dualNumberGradedProjectiveBasis k i =
       LaurentK0.of.{u} (gradedFiniteProjectiveModulesExactStructure (dualNumberIntegerGrade k))
         ⟨GradedModuleCat.ofIdeal (dualNumberIntegerGrade k) (Ideal.span {1})
-            (Ideal.isHomogeneous_span_singleton_of_mem_zero _
-              (one_mem_dualNumberIntegerGrade_zero k)),
+            (Ideal.isHomogeneous_span_singleton _
+              ⟨0, one_mem_dualNumberIntegerGrade_zero k⟩),
           gradedFiniteProjectiveModules_ofIdeal_span_singleton IsIdempotentElem.one
-            (Ideal.isHomogeneous_span_singleton_of_mem_zero _
-              (one_mem_dualNumberIntegerGrade_zero k))⟩ := by
+            (Ideal.isHomogeneous_span_singleton _
+              ⟨0, one_mem_dualNumberIntegerGrade_zero k⟩)⟩ := by
   rw [dualNumberGradedProjectiveBasis, gradedIdempotentProjectiveBasis_apply]
 
 /-- The vector of `TauCeti.dualNumberGradedResidueBasis` is the class `[S]` of the graded residue
@@ -168,6 +168,7 @@ private theorem finrank_dualNumberIntegerGrade (p : ℤ) :
 /-- **The graded Cartan matrix of the dual numbers is `1 + q²`**, with `ε` in degree two, in the
 bases `[A]` and `[S]`: the regular module has the graded composition factors `S` and `S{2}`. At
 `q = 1` this is the ungraded Cartan matrix `2` of `TauCeti.cartanMatrix_dualNumber`. -/
+@[simp]
 theorem gradedCartanMatrix_dualNumber :
     gradedCartanMatrix (dualNumberIntegerGrade k) (dualNumberGradedProjectiveBasis k)
         (dualNumberGradedResidueBasis k) =
