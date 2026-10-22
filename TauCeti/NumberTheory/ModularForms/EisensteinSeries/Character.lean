@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
 public import TauCeti.NumberTheory.ModularForms.Parity
 import TauCeti.Data.ZMod.Divisibility
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # Eisenstein series with character
@@ -231,10 +232,6 @@ theorem charEisensteinSeriesMF_eq_zero (hk : 3 ≤ k) (huv : u * v ∣ N)
     (h : ψ (-1) * φ (-1) ≠ (-1) ^ k) : charEisensteinSeriesMF ψ φ hk huv = 0 := by
   have hmem := charEisensteinSeriesMF_mem_modFormCharSpace ψ φ hk huv
   rwa [modFormCharSpace_eq_bot_of_char_neg_one_ne, Submodule.mem_bot] at hmem
-  have hneg {m : ℕ} (hm : m ∣ N) (χ : DirichletCharacter ℂ m) :
-      χ.changeLevel hm (-1) = χ (-1) := by
-    simpa using
-      DirichletCharacter.changeLevel_eq_cast_of_dvd' χ hm (a := -1) isCoprime_one_left.neg_left
-  simpa [MulChar.coe_toUnitHom, hneg] using h
+  simpa [MulChar.coe_toUnitHom] using h
 
 end TauCeti.EisensteinSeries

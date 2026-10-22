@@ -205,8 +205,8 @@ theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n :
 
 /-- Raising the level of a Dirichlet character does not change its value at `-1`. -/
 @[simp]
-theorem changeLevel_apply_neg_one {S : Type*} [CommRing S] {d n : ℕ} (h : d ∣ n)
-    (χ : DirichletCharacter S d) : changeLevel h χ (-1) = χ (-1) := by
+theorem changeLevel_apply_neg_one {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
+    (χ : DirichletCharacter R d) : changeLevel h χ (-1) = χ (-1) := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := -1) (IsCoprime.neg_left isCoprime_one_left)
 
 /-- **Changing the level preserves parity**: the value at `-1` of a Dirichlet character is the
