@@ -320,6 +320,26 @@ theorem add (hD : H.IsDomainBetween x y D) (hE : H.IsDomainBetween y w E) :
 theorem neg (hD : H.IsDomainBetween x y D) : H.IsDomainBetween y x (-D) := by
   refine ⟨?_, ?_⟩ <;> simp only [map_neg, hD.1, hD.2, neg_sub]
 
+/-- On an `α`-curve where `x` and `y` differ, the point of `x` is a corner of every domain from
+`x` to `y`, at which the boundary of its `α`-part has coefficient `-1`. -/
+theorem alphaArcBoundary_alphaBoundary_point_left
+    (hD : H.IsDomainBetween x y D) {i : Fin n} (hi : H.point x i ≠ H.point y i) :
+    H.alphaArcBoundary (H.alphaBoundary D) (H.point x i) = -1 := by
+  classical
+  simp only [HeegaardIntersectionSystem.point_apply] at hi
+  rw [(isDomainBetween_iff.mp hD).1]
+  simp [Ne.symm hi]
+
+/-- On an `α`-curve where `x` and `y` differ, the point of `y` is a corner of every domain from
+`x` to `y`, at which the boundary of its `α`-part has coefficient `1`. -/
+theorem alphaArcBoundary_alphaBoundary_point_right
+    (hD : H.IsDomainBetween x y D) {i : Fin n} (hi : H.point x i ≠ H.point y i) :
+    H.alphaArcBoundary (H.alphaBoundary D) (H.point y i) = 1 := by
+  classical
+  simp only [HeegaardIntersectionSystem.point_apply] at hi
+  rw [(isDomainBetween_iff.mp hD).1]
+  simp [hi]
+
 end IsDomainBetween
 
 variable (H) in

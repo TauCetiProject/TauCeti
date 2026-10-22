@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Topology.PureDimension
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
+import TauCeti.RingTheory.Catenary
 
 /-!
 # Krull dimension and heights under quotients
@@ -31,6 +32,11 @@ the lower-bound step of height counts by induction on the number of variables. I
 ring Krull's principal ideal theorem gives the reverse inequality, so the height drops by exactly
 one.
 
+Quotienting by an ideal `q ≤ p` does not increase the height of the prime `p`. If `p` has finite
+height, a chain of primes of length `ht p` ending at `p` starts above some minimal prime `q`, and
+it lies in the interval `[q, p]` of `Spec R`, whose dimension is `ht (p ⧸ q)`; so the height of
+`p` is attained on an irreducible component of `Spec R` through `p`.
+
 The spectrum of a ring is pure-dimensional of dimension `d` exactly when every quotient by a
 minimal prime has Krull dimension `d`: the irreducible components are the closed subsets `V(P)`
 for minimal primes `P`. This gives a componentwise criterion using only quotient dimensions.
@@ -50,6 +56,10 @@ for minimal primes `P`. This gives a componentwise criterion using only quotient
 * `Ideal.height_map_quotientMk_nilradical`: reduction preserves the height of a prime ideal.
 * `Ideal.height_map_quotientMk_span_singleton_add_one`: in a noetherian ring, quotienting by a
   non-zero-divisor in a prime `p` lowers the height of `p` by one.
+* `Ideal.height_map_quotientMk_le`: quotienting by an ideal contained in a prime `p` does not
+  increase the height of `p`.
+* `Ideal.exists_mem_minimalPrimes_height_map_quotientMk_eq`: a prime `p` of finite height has the
+  height of its image modulo some minimal prime `q ≤ p`.
 -/
 
 public section
@@ -220,5 +230,39 @@ theorem height_map_quotientMk_span_singleton_add_one [IsNoetherianRing R] {r : R
     (p.map (Quotient.mk (span {r}))).height + 1 = p.height :=
   (height_map_quotientMk_span_singleton_add_one_le hr p hrp).antisymm
     (height_le_height_add_one_of_mem hrp)
+
+/-- Passing to the quotient by an ideal `q ≤ p` does not increase the height of the prime `p`: a
+chain of primes of `R ⧸ q` ending at the image of `p` pulls back to a chain ending at `p`. -/
+theorem height_map_quotientMk_le {p q : Ideal R} [p.IsPrime] (hqp : q ≤ p) :
+    (p.map (Quotient.mk q)).height ≤ p.height := by
+  have : (p.map (Quotient.mk q)).IsPrime := isPrime_map_quotientMk_of_isPrime hqp
+  let P : PrimeSpectrum (R ⧸ q) := ⟨_, this⟩
+  have hP : PrimeSpectrum.comap (Quotient.mk q) P = (⟨p, ‹_›⟩ : PrimeSpectrum R) :=
+    PrimeSpectrum.ext (comap_map_mk hqp)
+  calc (p.map (Quotient.mk q)).height = Order.height P := P.height_eq_orderHeight
+    _ ≤ Order.height (PrimeSpectrum.comap (Quotient.mk q) P) :=
+        Order.height_le_height_apply_of_strictMono _
+          (RingHom.strictMono_comap_of_surjective Quotient.mk_surjective) P
+    _ = p.height := by rw [hP]; exact (PrimeSpectrum.height_eq_orderHeight _).symm
+
+/-- If the prime `p` has finite height, then some minimal prime `q ≤ p` satisfies
+`ht (p ⧸ q) = ht p`: the height of `p` is attained on an irreducible component of `Spec R`
+through `p`. -/
+theorem exists_mem_minimalPrimes_height_map_quotientMk_eq (p : Ideal R) [p.IsPrime]
+    [p.FiniteHeight] :
+    ∃ q ∈ minimalPrimes R, q ≤ p ∧ (p.map (Quotient.mk q)).height = p.height := by
+  -- Take a chain of length `ht p` ending at `p` and a minimal prime below its first prime.
+  obtain ⟨l, hl, hlen⟩ := p.exists_ltSeries_length_eq_height
+  obtain ⟨q, hq, hqh⟩ := exists_minimalPrimes_le (J := l.head.asIdeal) bot_le
+  let Q : PrimeSpectrum R := ⟨q, hq.1.1⟩
+  have hQ : Q ≤ l.head := hqh
+  have hQP : Q ≤ ⟨p, ‹_›⟩ := hl ▸ hQ.trans l.head_le_last
+  refine ⟨q, hq, hQP, (height_map_quotientMk_le hQP).antisymm ?_⟩
+  -- The chain `l` lies in the interval `[q, p]` of `Spec R`, whose dimension is `ht (p ⧸ q)`.
+  let l' : LTSeries (Set.Icc Q ⟨p, ‹_›⟩) :=
+    .mk l.length (fun i ↦ ⟨l i, hQ.trans (l.head_le i), hl ▸ l.monotone (Fin.le_last i)⟩)
+      fun _ _ hij ↦ Subtype.mk_lt_mk.mpr (l.strictMono hij)
+  rw [← hlen, ← WithBot.coe_le_coe, ← PrimeSpectrum.krullDim_Icc hQP]
+  exact Order.LTSeries.length_le_krullDim l'
 
 end Ideal

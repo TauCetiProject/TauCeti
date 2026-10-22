@@ -21,6 +21,11 @@ Lie algebra inside the Lie algebra of `G`: it is the subspace fixed by the adjoi
 `D(X)`, that is, the weight space of the trivial character in the weight decomposition of `Lie G`
 under `D(X)`.
 
+More generally, for a homomorphism `q : X →* Y` the composite `D(Y) → D(X) → G` has coordinate map
+`R[q] ∘ π`, and the Lie algebra of its centralizer is the sum of the weight spaces of `D(X)` over
+the characters killed by `q`. For the quotient map `X → X ⧸ S` this describes the Lie algebra of
+the centralizer of the common kernel of the characters in `S`.
+
 Both sides are conditions on a tangent vector `d` at the identity of `G`, viewed as a counit-valued
 derivation of `H`. The tangent vector lies in the Lie algebra of the centralizer when it kills the
 coefficients of the conjugation defects; evaluating a derivation on the conjugation defect is
@@ -44,6 +49,10 @@ criterion `Derivation.mem_adjointWeightSpace_iff_universalPointAction` is stated
   `D(X)`.**
 * `BialgHom.lieSubalgebra_centralizerHopfIdeal_toSubmodule`: the Lie algebra of the centralizer
   is the trivial weight space, transported along cotangent duality.
+* `BialgHom.cotangentLinearEquiv_mem_lieSubalgebra_centralizerHopfIdeal_mapDomainBialgHom_comp_iff`
+  and `BialgHom.lieSubalgebra_centralizerHopfIdeal_mapDomainBialgHom_comp_toSubmodule`: for
+  `q : X →* Y`, the Lie algebra of the centralizer of `D(Y) → D(X) → G` is the sum of the weight
+  spaces of `D(X)` over the kernel of `q`.
 
 ## References
 
@@ -316,5 +325,40 @@ theorem lieSubalgebra_centralizerHopfIdeal_toSubmodule :
   rw [LieSubalgebra.mem_toSubmodule, Submodule.mem_map_equiv,
     ← cotangentLinearEquiv_mem_lieSubalgebra_centralizerHopfIdeal_iff,
     LinearEquiv.apply_symm_apply]
+
+section Smaller
+
+variable {Y : Type u} [CommGroup Y] (q : X →* Y)
+
+/-- **The Lie algebra of the centralizer of a smaller diagonalizable subgroup.** For
+`q : X →* Y`, a tangent vector of `G` lies in the Lie algebra of the centralizer of
+`D(Y) → D(X) → G` exactly when it lies in the sum of the weight spaces of `D(X)` over the
+characters in the kernel of `q`. For the quotient map `X → X ⧸ S`, this is the Lie algebra of the
+centralizer of the common kernel of the characters in `S`. -/
+theorem cotangentLinearEquiv_mem_lieSubalgebra_centralizerHopfIdeal_mapDomainBialgHom_comp_iff
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    Derivation.cotangentLinearEquiv (B := R) x ∈
+        (centralizerHopfIdeal ((MonoidAlgebra.mapDomainBialgHom R q).comp π)).lieSubalgebra
+          (B := R) ↔
+      x ∈ ⨆ χ ∈ q.ker, Derivation.adjointWeightSpace π χ := by
+  rw [cotangentLinearEquiv_mem_lieSubalgebra_centralizerHopfIdeal_iff,
+    Derivation.adjointWeightSpace_mapDomainBialgHom_comp]
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, MonoidHom.mem_ker]
+
+/-- The Lie algebra of the centralizer of `D(Y) → D(X) → G`, for `q : X →* Y`, is the sum of the
+weight spaces of `D(X)` over the kernel of `q`, transported along cotangent duality. -/
+theorem lieSubalgebra_centralizerHopfIdeal_mapDomainBialgHom_comp_toSubmodule :
+    ((centralizerHopfIdeal ((MonoidAlgebra.mapDomainBialgHom R q).comp π)).lieSubalgebra
+        (B := R)).toSubmodule =
+      (⨆ χ ∈ q.ker, Derivation.adjointWeightSpace π χ).map
+        (Derivation.cotangentLinearEquiv (R := R) (A := H) (B := R) :
+          Module.Dual R (Bialgebra.CotangentSpace R H) →ₗ[R]
+            Derivation R H (Bialgebra.CounitAlgebra R H R)) := by
+  ext d
+  rw [LieSubalgebra.mem_toSubmodule, Submodule.mem_map_equiv,
+    ← cotangentLinearEquiv_mem_lieSubalgebra_centralizerHopfIdeal_mapDomainBialgHom_comp_iff,
+    LinearEquiv.apply_symm_apply]
+
+end Smaller
 
 end BialgHom

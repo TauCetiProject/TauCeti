@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Iterate
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Subst
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Units
 public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import Mathlib.Analysis.Normed.Ring.Units
 
@@ -53,6 +54,9 @@ largest degree gives the distinguished coefficient.
 * `TauCeti.MvPowerSeries.exists_restrictedTriangularEquiv_isDistinguished_isUnit` and
   `TauCeti.MvPowerSeries.exists_algEquiv_isDistinguished_isUnit`: over a complete nonarchimedean
   field, the dominant coefficient is moreover a unit.
+* `TauCeti.MvPowerSeries.isDistinguished_isUnit_of_norm_coeff_lt`: at any radii, a series over
+  restricted series is distinguished with a unit coefficient when the constant term of that
+  coefficient strictly dominates all other weighted coefficients.
 
 ## References
 
@@ -397,5 +401,40 @@ theorem exists_algEquiv_isDistinguished_isUnit {K : Type*} [NormedField K] [IsUl
         PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)))) := by
   obtain ⟨α, hα, s, hd, hu⟩ := exists_restrictedTriangularEquiv_isDistinguished_isUnit f hf
   exact ⟨restrictedTriangularEquiv α hα, s, hd, hu⟩
+
+section Field
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+
+/-- A series over a ring of restricted series is distinguished of degree `s` at radius `r > 0`,
+with a unit coefficient in degree `s`, when the constant term `a` of that coefficient strictly
+dominates: the other weighted coefficient norms of the coefficient in degree `s` are below `‖a‖`,
+and those of the coefficient in every other degree `m`, multiplied by `r ^ m`, are below
+`‖a‖ r ^ s`. -/
+theorem isDistinguished_isUnit_of_norm_coeff_lt {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    {r : ℝ} (hr : 0 < r) {s : ℕ} {G : PowerSeries (IsRestricted.subring (R := K) c)}
+    (h0 : constantCoeff (↑(PowerSeries.coeff s G) : MvPowerSeries σ K) ≠ 0)
+    (hs : ∀ t ≠ 0, ‖coeff t (↑(PowerSeries.coeff s G) : MvPowerSeries σ K)‖ * t.prod (c · ^ ·) <
+      ‖constantCoeff (↑(PowerSeries.coeff s G) : MvPowerSeries σ K)‖)
+    (hm : ∀ m ≠ s, ∀ t, ‖coeff t (↑(PowerSeries.coeff m G) : MvPowerSeries σ K)‖ *
+      t.prod (c · ^ ·) * r ^ m < ‖constantCoeff (↑(PowerSeries.coeff s G) : MvPowerSeries σ K)‖ *
+        r ^ s) :
+    PowerSeries.IsDistinguished r s G ∧ IsUnit (PowerSeries.coeff s G) := by
+  set N := ‖constantCoeff (↑(PowerSeries.coeff s G) : MvPowerSeries σ K)‖
+  have hGs : ‖PowerSeries.coeff s G‖ = N :=
+    norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le fun t ht ↦ (hs t ht).le
+  have hGm (m : ℕ) (hm' : m ≠ s) : ‖PowerSeries.coeff m G‖ * r ^ m < N * r ^ s := by
+    have hrm : 0 < r ^ m := pow_pos hr _
+    rw [← lt_div_iff₀ hrm, MvPowerSeries.norm_lt_iff]
+    exact fun t ↦ (lt_div_iff₀ hrm).2 (hm m hm' t)
+  have hgauss : G.gaussNorm norm r = N * r ^ s := by
+    rw [TauCeti.PowerSeries.gaussNorm_eq_of_forall_le fun m ↦ ?_, hGs]
+    rcases eq_or_ne m s with rfl | hm'
+    · exact le_rfl
+    · exact (hGm m hm').le.trans_eq (by rw [hGs])
+  exact ⟨⟨by rw [hGs, hgauss], fun m hm' ↦ hgauss ▸ hGm m hm'.ne'⟩,
+    (isUnit_iff_constantCoeff_ne_zero_and_norm_coeff_mul_prod_lt _).2 ⟨h0, hs⟩⟩
+
+end Field
 
 end TauCeti.MvPowerSeries
