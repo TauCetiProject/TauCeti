@@ -56,6 +56,9 @@ a right inverse, is unique on either side, and is an involution, `i(i(X)) = X`.
 
 ## Implementation notes
 
+The coefficient recurrence and multivariate inverse lemmas in `TauCeti` take `F` as their first
+explicit argument; for example, use `TauCeti.coeff_succ_addInvX F n`.
+
 The name `addInvX` and the group structure on `F.Point σ` follow the design proposed by Wenrong
 Zou in Mathlib PR [#36167](https://github.com/leanprover-community/mathlib4/pull/36167), which
 defines the inverse there through a recursion on its coefficients. Here `i` is instead the limit
