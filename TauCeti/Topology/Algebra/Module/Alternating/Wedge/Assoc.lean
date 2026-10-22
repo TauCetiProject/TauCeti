@@ -14,7 +14,8 @@ import TauCeti.GroupTheory.Perm.Basic
 Paired wedges are associative whenever the two composites of their coefficient pairings agree.
 The domain and coefficient spaces need no norms. This permits iterated wedges on tangent fibres
 and on general topological vector bundles. Joint continuity of each pairing is stated explicitly;
-separate continuity alone does not suffice.
+separate continuity alone does not suffice. On the intermediate and final coefficient spaces,
+scalar multiplication need only be continuous for each fixed scalar.
 
 The iterated evaluation formulas flatten the nested alternatizations into a single signed
 permutation sum with coefficient `1 / (k! l! m!)`. They use signed-sum reindexing for the nested
@@ -35,11 +36,11 @@ variable {E F₁ F₂ F₃ F₁₂ F₂₃ G : Type*}
   [AddCommGroup F₂] [Module ℝ F₂] [TopologicalSpace F₂]
   [AddCommGroup F₃] [Module ℝ F₃] [TopologicalSpace F₃]
   [AddCommGroup F₁₂] [Module ℝ F₁₂] [TopologicalSpace F₁₂]
-  [IsTopologicalAddGroup F₁₂] [ContinuousSMul ℝ F₁₂]
+  [IsTopologicalAddGroup F₁₂] [ContinuousConstSMul ℝ F₁₂]
   [AddCommGroup F₂₃] [Module ℝ F₂₃] [TopologicalSpace F₂₃]
-  [IsTopologicalAddGroup F₂₃] [ContinuousSMul ℝ F₂₃]
+  [IsTopologicalAddGroup F₂₃] [ContinuousConstSMul ℝ F₂₃]
   [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
-  [IsTopologicalAddGroup G] [ContinuousSMul ℝ G]
+  [IsTopologicalAddGroup G] [ContinuousConstSMul ℝ G]
   {k l m : ℕ}
 
 /-- A paired wedge whose left factor is itself a paired wedge is the signed sum over all

@@ -158,8 +158,7 @@ theorem trace_eq_neg_of_sq_add_mul_add_eq_zero {θ : L} (hθ : θ ∉ Set.range 
 theorem norm_eq_of_sq_add_mul_add_eq_zero {θ : L} (hθ : θ ∉ Set.range (algebraMap K L))
     {t c : K} (h : θ ^ 2 + algebraMap K L t * θ + algebraMap K L c = 0) :
     Algebra.norm K θ = c := by
-  have : Nontrivial L :=
-    Module.nontrivial_of_finrank_pos (R := K) (by rw [finrank_eq_two K L]; norm_num)
+  have := Module.nontrivial_of_finrank_eq_succ (finrank_eq_two K L)
   have hsq := sq_eq_trace_smul_sub_norm K θ
   rw [Algebra.smul_def, trace_eq_neg_of_sq_add_mul_add_eq_zero hθ h, map_neg] at hsq
   have key : algebraMap K L (Algebra.norm K θ - c) = 0 := by
