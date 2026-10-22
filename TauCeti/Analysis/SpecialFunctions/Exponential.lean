@@ -17,7 +17,8 @@ import TauCeti.Data.Finset.Basic
 
 This file expresses a finite increment of the exponential in a possibly noncommutative real
 Banach algebra as an integral. Unlike a first-order derivative formula, the identity is exact for
-every increment. It also derives the corresponding integral formula for the Fréchet derivative.
+every increment. It also derives the corresponding integral formula for the Fréchet derivative,
+and the complex-time differentiability of the conjugation formula in a complex Banach algebra.
 
 ## Main results
 
@@ -27,6 +28,8 @@ every increment. It also derives the corresponding integral formula for the Fré
   `exp ((1 - t) (x + h)) * h * exp (t x)` over the unit interval.
 * `TauCeti.expFDeriv_apply_eq_integral`: the Fréchet derivative is the corresponding Duhamel
   integral linear in the increment.
+* `TauCeti.differentiable_exp_smul_mul_mul_exp_neg_smul`: `z ↦ exp (izh) a exp (-izh)` is entire
+  in the complex time `z`.
 
 ## References
 
@@ -90,6 +93,26 @@ theorem exp_add_sub_exp_eq_integral (x h : A) :
   simpa only [neg_neg, neg_sub] using hneg.symm
 
 end Duhamel
+
+/-!
+### Complex-time differentiability of the conjugation formula
+-/
+
+section ComplexTime
+
+open Complex
+
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
+
+/-- Conjugation by `exp (izh)` is an entire function of the complex time `z`:
+`z ↦ exp (izh) a exp (-izh)`. -/
+theorem differentiable_exp_smul_mul_mul_exp_neg_smul (h a : A) :
+    Differentiable ℂ fun z : ℂ => exp ((I * z) • h) * a * exp (-(I * z) • h) := by
+  have hd : Differentiable ℂ fun z : ℂ => exp (z • h) := differentiable_exp_smul_const (𝕂 := ℂ) h
+  exact ((hd.comp (differentiable_id.const_mul I)).mul (differentiable_const a)).mul
+    (hd.comp (differentiable_id.const_mul I).neg)
+
+end ComplexTime
 
 /-!
 ## The Fréchet derivative series
