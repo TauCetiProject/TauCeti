@@ -243,11 +243,11 @@ theorem mul_max_nnnorm_le_nnnorm_smul_add [NormedField K] [NormedAddCommGroup M]
     exact mul_le_of_le_one_left zero_le hr
 
 /-- If each `e N` is `T (N + 1) / T N`-orthogonal to the span of the previous vectors, for a
-strictly decreasing sequence `T` of positive constants at most one, then in an ultrametric space
+non-increasing sequence `T` of positive constants at most one, then in an ultrametric space
 the vectors `e i` with `i < N` form a `T N`-orthogonal family. -/
 theorem isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub [NormedField K]
     [NormedAddCommGroup M] [NormedSpace K M] [IsUltrametricDist M] {e : ℕ → M} {T : ℕ → ℝ≥0}
-    (hT : StrictAnti T) (hT' : ∀ n, 0 < T n ∧ T n ≤ 1)
+    (hT : Antitone T) (hT' : ∀ n, 0 < T n ∧ T n ≤ 1)
     (he : ∀ N, ∀ z ∈ Submodule.span K (e '' Set.Iio N), T (N + 1) / T N * ‖e N‖₊ ≤ ‖e N - z‖₊)
     (N : ℕ) : IsTOrthogonalFamily K (T N) (fun i : Set.Iio N ↦ e i) := by
   -- Reduce to finite combinations of the `e i`, `i < N`, indexed by finite sets of naturals.
@@ -287,8 +287,8 @@ theorem isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub [NormedField K]
             · exact ih _ hlt a
         _ ≤ ‖a N • e N + ∑ i ∈ s.erase N, a i • e i‖₊ :=
             mul_max_nnnorm_le_nnnorm_smul_add
-              (div_le_one_of_le₀ (hT N.lt_succ_self).le zero_le) (he N) (a N) hz
-    · exact (mul_le_mul_of_nonneg_right (hT N.lt_succ_self).le zero_le).trans
+              (div_le_one_of_le₀ (hT N.le_succ) zero_le) (he N) (a N) hz
+    · exact (mul_le_mul_of_nonneg_right (hT N.le_succ) zero_le).trans
         (ih s (fun i hi ↦ hs' i hi fun h ↦ hN (h ▸ hi)) a)
 
 namespace IsTOrthogonalBasis

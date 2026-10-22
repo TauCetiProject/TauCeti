@@ -87,7 +87,7 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq (w : ℕ → E) {t : ℝ≥
         exact add_mem (mem_sup_left (mem_span_singleton_self _)) (mem_sup_right (hyF n))
   -- Each `e n` is `T (n + 1) / T n`-orthogonal to the previous vectors, so for every `N` the
   -- vectors `e i` with `i < N` are `T N`-orthogonal, and `t ≤ T N`.
-  have key := isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub (K := K) hT
+  have key := isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub (K := K) hT.antitone
     (fun n ↦ ⟨(hT' n).1, (hT' n).2.2⟩) fun N z hz ↦ by
       rw [hspan] at hz
       exact_mod_cast hy N z hz
