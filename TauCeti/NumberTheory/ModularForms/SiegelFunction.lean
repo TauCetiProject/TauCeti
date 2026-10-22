@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ModularForms.DedekindEta
 public import Mathlib.NumberTheory.ZetaValues
+public import TauCeti.Analysis.SpecialFunctions.QPochhammer
 
 /-!
 # Siegel functions
@@ -29,6 +29,8 @@ The phases are exact: no root of unity is lost to a choice of branch.
 ## Main definitions and results
 
 * `TauCeti.ModularForm.siegelFunction r τ`: the Siegel function `g_r(τ)`.
+* `TauCeti.ModularForm.hasProdLocallyUniformlyOn_siegelFunction`: the defining product
+  `∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` converges locally uniformly on the upper half-plane.
 * `TauCeti.ModularForm.differentiableOn_siegelFunction`: `g_r` is holomorphic on the upper
   half-plane.
 * `TauCeti.ModularForm.siegelFunction_ne_zero`: for `r ∉ ℤ²`, `g_r` has no zero on the upper
@@ -76,32 +78,7 @@ theorem siegelFunction_def (r : Fin 2 → ℝ) (τ : ℂ) :
 
 section Product
 
-/-! ### The half products `∏_{n ≥ 1} (1 - qⁿ w)` -/
-
-/-- For `‖q‖ < 1` the product `∏_{n ≥ 1} (1 - qⁿ w)` converges. -/
-private theorem multipliable_one_sub_pow_mul {q : ℂ} (hq : ‖q‖ < 1) (w : ℂ) :
-    Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) * w := by
-  apply multipliable_one_sub_of_summable
-  simpa [norm_pow, pow_succ, mul_assoc] using
-    (summable_geometric_of_lt_one (norm_nonneg q) hq).mul_right (‖q‖ * ‖w‖)
-
-/-- Shifting the half product: `∏_{n ≥ 1} (1 - qⁿ w) = (1 - q w) ∏_{n ≥ 1} (1 - qⁿ (q w))`. -/
-private theorem tprod_one_sub_pow_mul_eq {q : ℂ} (hq : ‖q‖ < 1) (w : ℂ) :
-    ∏' n : ℕ, (1 - q ^ (n + 1) * w) = (1 - q * w) * ∏' n : ℕ, (1 - q ^ (n + 1) * (q * w)) := by
-  rw [tprod_eq_zero_mul' (by simpa [pow_succ, mul_assoc] using
-    multipliable_one_sub_pow_mul hq (q * w))]
-  simp [pow_succ, mul_assoc]
-
-/-- The other half product, shifted:
-`∏_{n ≥ 1} (1 - qⁿ (q w)⁻¹) = (1 - w⁻¹) ∏_{n ≥ 1} (1 - qⁿ w⁻¹)` for `q ≠ 0`. -/
-private theorem tprod_one_sub_pow_mul_inv_eq {q : ℂ} (hq : ‖q‖ < 1) (hq₀ : q ≠ 0) (w : ℂ) :
-    ∏' n : ℕ, (1 - q ^ (n + 1) * (q * w)⁻¹) = (1 - w⁻¹) * ∏' n : ℕ, (1 - q ^ (n + 1) * w⁻¹) := by
-  have h : ∀ n : ℕ, q ^ (n + 1) * (q * w)⁻¹ = q ^ n * w⁻¹ := fun n ↦ by
-    rw [mul_inv, pow_succ]
-    field_simp
-  simp_rw [h]
-  rw [tprod_eq_zero_mul' (multipliable_one_sub_pow_mul hq w⁻¹)]
-  simp
+/-! ### The product `P_q(w)` -/
 
 /-- The product `P_q(w) = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` in the Siegel function. -/
 private noncomputable def siegelProd (q w : ℂ) : ℂ :=
@@ -131,44 +108,6 @@ section Analytic
 
 /-! ### Convergence and holomorphy on the upper half-plane -/
 
-/-- On a compact subset of the upper half-plane, `‖e^{2π i τ}‖` is bounded by a constant `< 1`. -/
-private theorem exists_norm_cexp_le_of_isCompact {S : Set ℂ} (hS : IsCompact S)
-    (hSH : S ⊆ upperHalfPlaneSet) :
-    ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ τ ∈ S, ‖cexp (2 * π * I * τ)‖ ≤ ρ := by
-  rcases S.eq_empty_or_nonempty with rfl | hne
-  · exact ⟨0, le_rfl, one_pos, by simp⟩
-  obtain ⟨τ₀, hτ₀, hmax⟩ := hS.exists_isMaxOn hne
-    (show ContinuousOn (fun τ : ℂ ↦ ‖cexp (2 * π * I * τ)‖) S by fun_prop)
-  exact ⟨_, norm_nonneg _, norm_exp_two_pi_I_lt_one ⟨τ₀, hSH hτ₀⟩, hmax⟩
-
-/-- For an entire `w`, the half product `∏_{n ≥ 1} (1 - qⁿ w(τ))` converges locally uniformly on
-the upper half-plane. -/
-private theorem hasProdLocallyUniformlyOn_one_sub_pow_mul {w : ℂ → ℂ} (hw : Continuous w) :
-    HasProdLocallyUniformlyOn (fun (n : ℕ) τ ↦ 1 - cexp (2 * π * I * τ) ^ (n + 1) * w τ)
-      (fun τ ↦ ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (n + 1) * w τ)) upperHalfPlaneSet := by
-  simp_rw [sub_eq_add_neg]
-  refine hasProdLocallyUniformlyOn_of_forall_compact isOpen_upperHalfPlaneSet
-    fun S hSH hS ↦ ?_
-  obtain ⟨ρ, hρ₀, hρ₁, hρ⟩ := exists_norm_cexp_le_of_isCompact hS hSH
-  obtain ⟨M, hM⟩ := hS.exists_bound_of_continuousOn hw.continuousOn
-  refine ((summable_geometric_of_lt_one hρ₀ hρ₁).mul_left (ρ * M)).hasProdUniformlyOn_nat_one_add
-    hS (.of_forall fun n τ hτ ↦ ?_) fun n ↦ by fun_prop
-  calc ‖-(cexp (2 * π * I * τ) ^ (n + 1) * w τ)‖
-      = ‖cexp (2 * π * I * τ)‖ ^ (n + 1) * ‖w τ‖ := by simp [norm_pow]
-    _ ≤ ρ ^ (n + 1) * M :=
-      mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) (hρ τ hτ) _) (hM τ hτ) (norm_nonneg _)
-        (pow_nonneg hρ₀ _)
-    _ = ρ * M * ρ ^ n := by ring
-
-/-- The half product `∏_{n ≥ 1} (1 - qⁿ w(τ))` is holomorphic on the upper half-plane. -/
-private theorem differentiableOn_tprod_one_sub_pow_mul {w : ℂ → ℂ} (hw : Differentiable ℂ w) :
-    DifferentiableOn ℂ (fun τ ↦ ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (n + 1) * w τ))
-      upperHalfPlaneSet :=
-  (hasProdLocallyUniformlyOn_one_sub_pow_mul hw.continuous).differentiableOn
-    (.of_forall fun s ↦ by
-      simpa [Finset.prod_fn] using DifferentiableOn.finsetProd fun _ _ ↦ by fun_prop)
-    isOpen_upperHalfPlaneSet
-
 /-- On the upper half-plane the Siegel function is the product of its two half products. -/
 private theorem siegelFunction_eq_mul_tprod_mul_tprod (r : Fin 2 → ℝ) {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction r τ =
@@ -181,6 +120,27 @@ private theorem siegelFunction_eq_mul_tprod_mul_tprod (r : Fin 2 → ℝ) {τ : 
   rw [siegelFunction_def, (multipliable_one_sub_pow_mul hq _).tprod_mul
     (multipliable_one_sub_pow_mul hq _)]
 
+/-- The infinite product `∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` defining the Siegel function, with
+`q = e^{2π i τ}` and `w = e^{2π i (r₁ τ + r₂)}`, converges locally uniformly on the upper
+half-plane. -/
+theorem hasProdLocallyUniformlyOn_siegelFunction (r : Fin 2 → ℝ) :
+    HasProdLocallyUniformlyOn
+      (fun (n : ℕ) τ ↦ (1 - cexp (2 * π * I * τ) ^ (n + 1) * cexp (2 * π * I * (r 0 * τ + r 1))) *
+        (1 - cexp (2 * π * I * τ) ^ (n + 1) * cexp (-(2 * π * I * (r 0 * τ + r 1)))))
+      (fun τ ↦ ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (n + 1) * cexp (2 * π * I * (r 0 * τ + r 1))) *
+        (1 - cexp (2 * π * I * τ) ^ (n + 1) * cexp (-(2 * π * I * (r 0 * τ + r 1)))))
+      upperHalfPlaneSet := by
+  have hw : Differentiable ℂ fun τ ↦ cexp (2 * π * I * (r 0 * τ + r 1)) := by fun_prop
+  have hw' : Differentiable ℂ fun τ ↦ cexp (-(2 * π * I * (r 0 * τ + r 1))) := by fun_prop
+  have h := (hasProdLocallyUniformlyOn_one_sub_pow_mul hw.continuous).mul₀
+    (hasProdLocallyUniformlyOn_one_sub_pow_mul hw'.continuous)
+    (differentiableOn_tprod_one_sub_pow_mul hw).continuousOn
+    (differentiableOn_tprod_one_sub_pow_mul hw').continuousOn
+  refine (h.congr fun s τ _ ↦ ?_).congr_right fun τ hτ ↦ ?_
+  · simp [Finset.prod_mul_distrib]
+  · have hq : ‖cexp (2 * π * I * τ)‖ < 1 := norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩
+    exact ((multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _)).symm
+
 /-- **The Siegel function is holomorphic** on the upper half-plane. -/
 theorem differentiableOn_siegelFunction (r : Fin 2 → ℝ) :
     DifferentiableOn ℂ (siegelFunction r) upperHalfPlaneSet := by
@@ -188,40 +148,6 @@ theorem differentiableOn_siegelFunction (r : Fin 2 → ℝ) :
   refine (DifferentiableOn.mul (by fun_prop) ?_)
   exact (differentiableOn_tprod_one_sub_pow_mul (by fun_prop)).mul
     (differentiableOn_tprod_one_sub_pow_mul (by fun_prop))
-
-/-- `1 - e^{2π i (x τ + y)}` vanishes at a point `τ` of the upper half-plane only when `x = 0` and
-`y` is an integer. -/
-private theorem one_sub_cexp_ne_zero {x y : ℝ} {τ : ℂ} (hτ : 0 < τ.im)
-    (h : ∀ k : ℤ, x = 0 → y ≠ k) : 1 - cexp (2 * π * I * (x * τ + y)) ≠ 0 := by
-  rw [sub_ne_zero, ne_comm, Ne, Complex.exp_eq_one_iff]
-  rintro ⟨k, hk⟩
-  have hk' : (x : ℂ) * τ + y = k := by
-    have h2 : (2 * π * I : ℂ) ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
-    exact mul_left_cancel₀ h2 (by rw [hk]; ring)
-  have him := congrArg Complex.im hk'
-  have hre := congrArg Complex.re hk'
-  simp only [add_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero, intCast_im] at him
-  have hx : x = 0 := by
-    rcases mul_eq_zero.mp him with h | h
-    · exact h
-    · exact absurd h (ne_of_gt hτ)
-  exact h k hx (by simpa [hx] using hre)
-
-/-- `qⁿ⁺¹ e^{2π i (x τ + y)} = e^{2π i ((n + 1 + x) τ + y)}` for `q = e^{2π i τ}`. -/
-private theorem cexp_pow_mul_cexp (n : ℕ) (x y : ℝ) (τ : ℂ) :
-    cexp (2 * π * I * τ) ^ (n + 1) * cexp (2 * π * I * (x * τ + y)) =
-      cexp (2 * π * I * (((n + 1 + x : ℝ) : ℂ) * τ + y)) := by
-  rw [← Complex.exp_nat_mul, ← Complex.exp_add]
-  push_cast
-  ring_nf
-
-/-- If the factors `1 - qⁿ⁺¹ w` are nonzero, so is `∏_{n ≥ 1} (1 - qⁿ w)`. -/
-private theorem tprod_one_sub_pow_mul_ne_zero {q : ℂ} (hq : ‖q‖ < 1) {w : ℂ}
-    (h : ∀ n : ℕ, 1 - q ^ (n + 1) * w ≠ 0) : ∏' n : ℕ, (1 - q ^ (n + 1) * w) ≠ 0 := by
-  simp_rw [sub_eq_add_neg] at h ⊢
-  refine tprod_one_add_ne_zero_of_summable h ?_
-  simpa [norm_pow, pow_succ, mul_assoc] using
-    (summable_geometric_of_lt_one (norm_nonneg q) hq).mul_right (‖q‖ * ‖w‖)
 
 /-- **The Siegel function has no zeros** on the upper half-plane when `r ∉ ℤ²`. -/
 theorem siegelFunction_ne_zero {r : Fin 2 → ℝ} (hr : ∀ s : Fin 2 → ℤ, r ≠ fun i ↦ (s i : ℝ))
@@ -236,15 +162,18 @@ theorem siegelFunction_ne_zero {r : Fin 2 → ℝ} (hr : ∀ s : Fin 2 → ℤ, 
     ring_nf
   rw [siegelFunction_eq_mul_tprod_mul_tprod r hτ]
   refine mul_ne_zero (mul_ne_zero (by simp [exp_ne_zero]) ?_) (mul_ne_zero ?_ ?_)
-  · exact one_sub_cexp_ne_zero hτ fun k h0 h1 ↦ (hint 0 k).elim (· (by simpa using h0)) (· h1)
+  · exact UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero hτ fun k h0 h1 ↦
+      (hint 0 k).elim (· (by simpa using h0)) (· h1)
   · refine tprod_one_sub_pow_mul_ne_zero hq fun n ↦ ?_
-    rw [cexp_pow_mul_cexp]
-    refine one_sub_cexp_ne_zero hτ fun k h0 h1 ↦ (hint (-(n + 1)) k).elim (· ?_) (· h1)
+    rw [UpperHalfPlane.exp_two_pi_I_pow_mul_exp]
+    refine UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero hτ fun k h0 h1 ↦
+      (hint (-(n + 1)) k).elim (· ?_) (· h1)
     push_cast
     linarith
   · refine tprod_one_sub_pow_mul_ne_zero hq fun n ↦ ?_
-    rw [hneg, cexp_pow_mul_cexp]
-    refine one_sub_cexp_ne_zero hτ fun k h0 h1 ↦ (hint (n + 1) (-k)).elim (· ?_) (· ?_)
+    rw [hneg, UpperHalfPlane.exp_two_pi_I_pow_mul_exp]
+    refine UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero hτ fun k h0 h1 ↦
+      (hint (n + 1) (-k)).elim (· ?_) (· ?_)
     · push_cast
       linarith
     · push_cast
@@ -256,6 +185,10 @@ section Translation
 
 /-! ### Translations of `r` and of `τ` -/
 
+/-- `(-1)ⁿ = e^{-π i n}` for an integer `n`. -/
+private theorem neg_one_zpow_eq_cexp (n : ℤ) : (-1 : ℂ) ^ n = cexp (n * -(π * I)) := by
+  rw [exp_int_mul, Complex.exp_neg, exp_pi_mul_I, inv_neg, inv_one]
+
 /-- **Translating `r₂` by an integer**: `g_{(r₁, r₂ + n)} = (-1)ⁿ e^{π i n r₁} g_{(r₁, r₂)}`. -/
 private theorem siegelFunction_add_zero_intCast (r : Fin 2 → ℝ) (n : ℤ) (τ : ℂ) :
     siegelFunction (r + ![0, (n : ℝ)]) τ =
@@ -265,10 +198,8 @@ private theorem siegelFunction_add_zero_intCast (r : Fin 2 → ℝ) (n : ℤ) (�
     rw [show 2 * π * I * (r 0 * τ + ((r 1 + n : ℝ) : ℂ)) =
       2 * π * I * (r 0 * τ + r 1) + n * (2 * π * I) by push_cast; ring,
       Complex.exp_add, exp_int_mul_two_pi_mul_I, mul_one]
-  have hneg : (-1 : ℂ) ^ n = cexp (n * -(π * I)) := by
-    rw [exp_int_mul, Complex.exp_neg, exp_pi_mul_I, inv_neg, inv_one]
   simp only [siegelFunction_eq_siegelProd, Pi.add_apply, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one, add_zero, hw, hneg]
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, add_zero, hw, neg_one_zpow_eq_cexp]
   have h : cexp (π * I * ((r 1 + n : ℝ) : ℂ) * (r 0 - 1)) =
       cexp (n * -(π * I)) * cexp (π * I * n * r 0) * cexp (π * I * r 1 * (r 0 - 1)) := by
     simp only [← Complex.exp_add]
@@ -363,7 +294,7 @@ theorem siegelFunction_add_intCast (r : Fin 2 → ℝ) (s : Fin 2 → ℤ) {τ :
       cexp (-(π * I * s 0 * s 1)) * (-1) ^ s 0 * (-1) ^ s 1 := by
     rw [zpow_add₀ (by norm_num), zpow_add₀ (by norm_num),
       show -(π * I * s 0 * s 1) = ((s 0 * s 1 : ℤ) : ℂ) * -(π * I) by push_cast; ring,
-      exp_int_mul, Complex.exp_neg, exp_pi_mul_I, inv_neg, inv_one]
+      ← neg_one_zpow_eq_cexp]
   have hexp : cexp (-(π * I * s 0 * ((r 1 + s 1 : ℝ) : ℂ))) * cexp (π * I * s 1 * r 0) =
       cexp (-(π * I * s 0 * s 1)) * cexp (-(π * I * (s 0 * r 1 - s 1 * r 0))) := by
     simp only [← Complex.exp_add]
