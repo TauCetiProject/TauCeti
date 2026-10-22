@@ -57,7 +57,7 @@ open scoped DirectSum
 
 namespace TauCeti.CurvedDGRightModuleCat
 
-universe uR uA uM uJ
+universe uR uA uM uJ uN
 
 section Objects
 
@@ -100,12 +100,20 @@ noncomputable def directSum (M : J → CurvedDGRightModuleCat.{uR, uA, uM} h) :
 
 variable (M : J → CurvedDGRightModuleCat.{uR, uA, uM} h)
 
+/-- The homogeneous pieces of the direct sum are those of the direct-sum grading. -/
+theorem directSum_grading :
+    (directSum M).grading =
+      InternalGrading.directSumPiece fun j ↦ InternalGrading.ofDecomposition (M j).grading :=
+  funext fun p ↦ InternalGrading.directSum_piece _ p
+
 /-- Membership in a homogeneous piece of the direct sum is componentwise. -/
 @[simp]
 theorem mem_directSum_grading_iff (p : ℤ) (x : ⨁ j, M j) :
     x ∈ (directSum M).grading p ↔ ∀ j, x j ∈ (M j).grading p := by
-  simp only [directSum, InternalGrading.directSum_piece, InternalGrading.mem_directSumPiece_iff,
-    InternalGrading.ofDecomposition_piece]
+  rw [directSum_grading]
+  simpa only [InternalGrading.ofDecomposition_piece] using
+    InternalGrading.mem_directSumPiece_iff
+      (fun j ↦ InternalGrading.ofDecomposition (M j).grading) p x
 
 /-- The differential of the direct sum is componentwise. -/
 theorem directSum_differential :
@@ -119,6 +127,17 @@ theorem directSum_differential_of [DecidableEq J] (j : J) (x : M j) :
       DirectSum.of (fun j ↦ M j) j ((M j).differential x) := by
   rw [directSum_differential, ← DirectSum.lof_eq_of R, ← DirectSum.lof_eq_of R,
     DirectSum.lmap_lof]
+
+/-- Precomposing a direct-sum universal map with the differential of the direct sum gives the
+universal map of the summand maps precomposed with the summand differentials. -/
+theorem toModule_comp_directSum_differential [DecidableEq J] {N : Type uN} [AddCommGroup N]
+    [Module R N] [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N] (φ : ∀ j, M j →ₗ[Aᵐᵒᵖ] N) :
+    (DirectSum.toModule Aᵐᵒᵖ J N φ).restrictScalars R ∘ₗ (directSum M).differential =
+      DirectSum.toModule R J N fun j ↦ (φ j).restrictScalars R ∘ₗ (M j).differential := by
+  refine DirectSum.linearMap_ext R fun j ↦ LinearMap.ext fun y ↦ ?_
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, DirectSum.toModule_lof,
+    directSum_differential, DirectSum.lmap_lof]
+  exact DirectSum.toModule_lof Aᵐᵒᵖ j _
 
 end Objects
 
@@ -144,7 +163,7 @@ private theorem toModule_mem_grading [DecidableEq J] {N : CurvedDGRightModuleCat
   InternalGrading.toModule_mem_of_mem_directSumPiece
     (fun j ↦ InternalGrading.ofDecomposition (M j).grading) N.grading φ
     (fun j x hx ↦ hφ j p x (by rwa [InternalGrading.ofDecomposition_piece] at hx))
-    (by simpa only [directSum, InternalGrading.directSum_piece] using hx)
+    (by rwa [directSum_grading] at hx)
 
 /-- The inclusion of a summand into the direct sum, as a closed morphism. -/
 noncomputable def closedDirectSumι (j : J) :
@@ -153,8 +172,8 @@ noncomputable def closedDirectSumι (j : J) :
   classical
   exact closedHomOf (DirectSum.lof Aᵐᵒᵖ J (fun j ↦ M j) j)
     (fun p x hx ↦ by
-      simpa only [directSum, InternalGrading.directSum_piece, DirectSum.lof_eq_of] using
-        InternalGrading.lof_mem_directSumPiece
+      rw [directSum_grading]
+      exact InternalGrading.lof_mem_directSumPiece
           (fun j ↦ InternalGrading.ofDecomposition (M j).grading) p j
           ⟨x, by rwa [InternalGrading.ofDecomposition_piece]⟩)
     (fun x ↦ directSum_differential_of M j x)
@@ -180,12 +199,15 @@ noncomputable def closedDirectSumDesc {N : CurvedDGRightModuleCat.{u, u, u} h}
       simpa only [add_zero] using toModule_mem_grading M (fun j ↦ closedHom (f j)) (q := 0)
         (fun j p x hx ↦ by simpa only [add_zero] using closedHom_mem (f j) hx) hx)
     (fun x ↦ by
-      induction x using DirectSum.induction_on with
-      | zero => simp only [map_zero]
-      | of j y =>
-        rw [directSum_differential_of, ← DirectSum.lof_eq_of Aᵐᵒᵖ, ← DirectSum.lof_eq_of Aᵐᵒᵖ,
-          DirectSum.toModule_lof, DirectSum.toModule_lof, differential_closedHom]
-      | add x y hx hy => rw [map_add, map_add, map_add, hx, hy, map_add])
+      let F := DirectSum.toModule Aᵐᵒᵖ J N fun j ↦ closedHom (f j)
+      refine LinearMap.congr_fun (?_ : N.differential ∘ₗ F.restrictScalars R =
+        F.restrictScalars R ∘ₗ (directSum M).differential) x
+      rw [toModule_comp_directSum_differential]
+      refine DirectSum.linearMap_ext R fun j ↦ LinearMap.ext fun y ↦ ?_
+      simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, DirectSum.toModule_lof]
+      rw [show F (DirectSum.lof R J _ j y) = closedHom (f j) y from
+        DirectSum.toModule_lof Aᵐᵒᵖ (M := fun j ↦ M j) j y]
+      exact differential_closedHom (f j) y)
 
 /-- The closed morphism out of the direct sum is the direct-sum universal map. -/
 @[simp]
@@ -263,21 +285,23 @@ theorem dgClosedToHomotopy_map_directSum_ext {N : CurvedDGRightModuleCat.{u, u, 
   simp only [quotient_map_eq_iff_exists_homotopy, closedHom_comp, LinearMap.comp_apply,
     closedHom_closedDirectSumι] at hfg ⊢
   choose k hk using hfg
-  refine ⟨⟨DirectSum.toModule Aᵐᵒᵖ J N fun j ↦ (k j).1, ?_⟩, fun x ↦ ?_⟩
+  let K := DirectSum.toModule Aᵐᵒᵖ J N fun j ↦ (k j).1
+  refine ⟨⟨K, ?_⟩, fun x ↦ ?_⟩
   · rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def]
     intro p x hx
     exact toModule_mem_grading M (fun j ↦ (k j).1)
       (fun j p y hy ↦ (dgRightModuleCochains.mem_iff.mp (k j).2).map_mem hy) hx
-  · induction x using DirectSum.induction_on with
-    | zero => simp only [map_zero, sub_zero, add_zero]
-    | of j y =>
-      rw [directSum_differential_of, ← DirectSum.lof_eq_of Aᵐᵒᵖ, ← DirectSum.lof_eq_of Aᵐᵒᵖ,
-        DirectSum.toModule_lof, DirectSum.toModule_lof]
-      exact hk j y
-    | add x y hx hy =>
-      simp only [map_add]
-      rw [add_sub_add_comm, hx, hy]
-      abel
+  · refine LinearMap.congr_fun (?_ : (closedHom f).restrictScalars R -
+      (closedHom g).restrictScalars R =
+        (N.differential ∘ₗ K.restrictScalars R : directSum M →ₗ[R] N) +
+          K.restrictScalars R ∘ₗ (directSum M).differential) x
+    rw [toModule_comp_directSum_differential]
+    refine DirectSum.linearMap_ext R fun j ↦ LinearMap.ext fun y ↦ ?_
+    simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
+      LinearMap.restrictScalars_apply, DirectSum.toModule_lof]
+    rw [show K (DirectSum.lof R J _ j y) = (k j).1 y from
+      DirectSum.toModule_lof Aᵐᵒᵖ (M := fun j ↦ M j) j y]
+    exact hk j y
 
 /-- The cofan of homotopy classes of the summand inclusions into the direct sum. -/
 noncomputable abbrev homotopyDirectSumCofan : Cofan fun j ↦ DGHomotopyCategory.of R (M j) :=
