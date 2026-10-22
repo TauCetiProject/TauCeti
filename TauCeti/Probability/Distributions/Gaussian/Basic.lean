@@ -49,8 +49,8 @@ theorem tendsto_mul_gaussianPDFReal_zero_one_cocompact :
     (√(2 * π))⁻¹
   rw [mul_zero] at h
   refine tendsto_zero_iff_norm_tendsto_zero.2 (h.congr fun x => ?_)
-  rw [gaussianPDFReal_zero_one, rpow_one, norm_mul, norm_mul, norm_eq_abs,
-    norm_of_nonneg (by positivity), norm_of_nonneg (by positivity)]
+  simp only [gaussianPDFReal_zero_one, rpow_one, norm_mul, norm_eq_abs, abs_exp,
+    abs_of_pos (inv_pos.2 (sqrt_pos.2 (by positivity : (0 : ℝ) < 2 * π)))]
   ring_nf
 
 end TauCeti.Probability

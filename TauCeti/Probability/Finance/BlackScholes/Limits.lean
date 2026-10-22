@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Finance.BlackScholes.Greeks
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 
@@ -28,15 +29,13 @@ for a volatility `σ > 0` and strike `K > 0`. Here `Φ` is the standard Gaussian
   value at `s = K`.
 
 The zero-spot and far-field limits are squeezes between the no-arbitrage bounds `0 ≤ C ≤ s` and
-`0 ≤ P ≤ K e^{-rτ} Φ(-d₋)`, where nonnegativity comes from the risk-neutral representation of the
-prices. The terminal limits follow the sign of `log (s / K)`, which decides whether `d₊` and `d₋`
-tend to `+∞`, to `-∞`, or to `0`; joint continuity in `(s, τ)` then follows because the call is
+`0 ≤ P ≤ K e^{-rτ} Φ(-d₋)` of `TauCeti.Probability.Finance.BlackScholes.Basic`. The terminal
+limits follow the sign of `log (s / K)`, which decides whether `d₊` and `d₋` tend to `+∞`, to
+`-∞`, or to `0`; joint continuity in `(s, τ)` then follows because the call is
 `1`-Lipschitz in the spot, its delta `Φ(d₊)` lying in `(0, 1)`.
 
 ## Main declarations
 
-* `TauCeti.BlackScholes.callPrice_nonneg`, `TauCeti.BlackScholes.putPrice_nonneg`,
-  `TauCeti.BlackScholes.callPrice_le` — the bounds `0 ≤ C ≤ s` and `0 ≤ P`.
 * `TauCeti.BlackScholes.abs_callPrice_sub_callPrice_le` — the call is `1`-Lipschitz in the spot.
 * `TauCeti.BlackScholes.tendsto_callPrice_spot_zero`,
   `TauCeti.BlackScholes.tendsto_putPrice_spot_zero` — the limits at zero spot.
@@ -70,33 +69,7 @@ namespace TauCeti.BlackScholes
 
 variable {s r σ K τ : ℝ}
 
-/-! ### No-arbitrage bounds -/
-
-/-- The Black–Scholes call price is nonnegative. -/
-theorem callPrice_nonneg (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
-    0 ≤ callPrice s r σ K τ := by
-  rw [← riskNeutralPrice_call hs hσ hK hτ]
-  exact riskNeutralPrice_nonneg (fun x => posPart_nonneg _) s r σ τ
-
-/-- The Black–Scholes put price is nonnegative. -/
-theorem putPrice_nonneg (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
-    0 ≤ putPrice s r σ K τ := by
-  rw [← riskNeutralPrice_put hs hσ hK hτ]
-  exact riskNeutralPrice_nonneg (fun x => posPart_nonneg _) s r σ τ
-
-/-- The Black–Scholes call price is at most the spot. -/
-theorem callPrice_le (hs : 0 ≤ s) (hK : 0 ≤ K) : callPrice s r σ K τ ≤ s := by
-  rw [callPrice_def]
-  have h₁ := mul_le_mul_of_nonneg_left (cdf_le_one (gaussianReal 0 1) (dPlus s r σ K τ)) hs
-  have h₂ := mul_nonneg (mul_nonneg hK (exp_pos (-r * τ)).le)
-    (cdf_nonneg (gaussianReal 0 1) (dMinus s r σ K τ))
-  linarith
-
-/-- The put price is at most its strike leg `K e^{-rτ} Φ(-d₋)`. -/
-private theorem putPrice_le_mul_cdf (hs : 0 ≤ s) :
-    putPrice s r σ K τ ≤ K * exp (-r * τ) * cdf (gaussianReal 0 1) (-dMinus s r σ K τ) := by
-  rw [putPrice_def]
-  linarith [mul_nonneg hs (cdf_nonneg (gaussianReal 0 1) (-dPlus s r σ K τ))]
+/-! ### Lipschitz continuity in the spot -/
 
 /-- The Black–Scholes call price is `1`-Lipschitz in the spot. -/
 theorem abs_callPrice_sub_callPrice_le {x : ℝ} (hx : 0 < x) (hs : 0 < s) (hK : 0 < K)
@@ -162,14 +135,15 @@ theorem tendsto_callPrice_sub_spot_atTop (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < 
 
 /-! ### Limits at maturity -/
 
-/-- As the remaining maturity tends to `0`, `σ √τ` tends to `0` through positive values. -/
-private theorem tendsto_mul_sqrt_nhdsGT_zero (hσ : 0 < σ) :
-    Tendsto (fun u => σ * √u) (𝓝[>] 0) (𝓝[>] 0) := by
-  refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-  · have h : Continuous fun u => σ * √u := by fun_prop
-    simpa using (h.continuousWithinAt (s := Ioi 0) (x := 0)).tendsto
-  · filter_upwards [self_mem_nhdsWithin] with u hu
-    exact mul_pos hσ (sqrt_pos.2 hu)
+/-- A continuous function tends to its value at `0` as its argument tends to `0⁺`. -/
+private theorem tendsto_nhdsGT_zero_of_continuous {f : ℝ → ℝ} (hf : Continuous f) :
+    Tendsto f (𝓝[>] 0) (𝓝 (f 0)) :=
+  (hf.tendsto 0).mono_left nhdsWithin_le_nhds
+
+/-- As the remaining maturity tends to `0⁺`, the discounted strike `K e^{-rτ}` tends to `K`. -/
+private theorem tendsto_discount_nhdsGT_zero :
+    Tendsto (fun u => K * exp (-r * u)) (𝓝[>] 0) (𝓝 K) := by
+  simpa using tendsto_nhdsGT_zero_of_continuous (f := fun u => K * exp (-r * u)) (by fun_prop)
 
 /-- For a positive maturity, `d₊ = log (s / K) / (σ √τ) + (r + σ² / 2) √τ / σ`. -/
 private theorem dPlus_eq_add (hσ : σ ≠ 0) (hτ : 0 < τ) :
@@ -184,8 +158,8 @@ private theorem dPlus_eq_add (hσ : σ ≠ 0) (hτ : 0 < τ) :
 tends to `0`. -/
 private theorem tendsto_dPlus_sub (hσ : 0 < σ) :
     Tendsto (fun u => dPlus s r σ K u - log (s / K) * (σ * √u)⁻¹) (𝓝[>] 0) (𝓝 0) := by
-  have h : Continuous fun u => (r + σ ^ 2 / 2) * √u / σ := by fun_prop
-  refine ((h.continuousWithinAt (s := Ioi 0) (x := 0)).tendsto.congr' ?_).trans (by simp)
+  refine ((tendsto_nhdsGT_zero_of_continuous (f := fun u => (r + σ ^ 2 / 2) * √u / σ)
+    (by fun_prop)).congr' ?_).trans (by simp)
   filter_upwards [self_mem_nhdsWithin] with u hu
   rw [dPlus_eq_add hσ.ne' hu, add_sub_cancel_left]
 
@@ -227,11 +201,9 @@ private theorem tendsto_dMinus_maturity_of_tendsto_dPlus (hσ : 0 < σ) {l : Fil
 private theorem tendsto_callPrice_maturity_of_tendsto_cdf {a : ℝ}
     (hp : Tendsto (fun u => cdf (gaussianReal 0 1) (dPlus s r σ K u)) (𝓝[>] 0) (𝓝 a))
     (hm : Tendsto (fun u => cdf (gaussianReal 0 1) (dMinus s r σ K u)) (𝓝[>] 0) (𝓝 a)) :
-    Tendsto (callPrice s r σ K) (𝓝[>] 0) (𝓝 (s * a - K * a)) := by
-  have hdisc : Tendsto (fun u => K * exp (-r * u)) (𝓝[>] 0) (𝓝 K) := by
-    have h : Continuous fun u => K * exp (-r * u) := by fun_prop
-    simpa using (h.continuousWithinAt (s := Ioi 0) (x := 0)).tendsto
-  exact ((hp.const_mul s).sub (hdisc.mul hm)).congr fun u => (callPrice_def s r σ K u).symm
+    Tendsto (callPrice s r σ K) (𝓝[>] 0) (𝓝 (s * a - K * a)) :=
+  ((hp.const_mul s).sub (tendsto_discount_nhdsGT_zero.mul hm)).congr fun u =>
+    (callPrice_def s r σ K u).symm
 
 /-- **Call payoff at maturity.** For a fixed spot `s > 0`, as the remaining maturity tends to
 `0⁺` the call price tends to the payoff `(s - K)⁺`. -/
@@ -288,17 +260,13 @@ theorem tendsto_callPrice_terminal (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) :
 put price tends to the payoff `(K - s₀)⁺`. -/
 theorem tendsto_putPrice_terminal (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) :
     Tendsto (fun p : ℝ × ℝ => putPrice p.1 r σ K p.2) (𝓝 s ×ˢ 𝓝[>] 0) (𝓝 (K - s)⁺) := by
-  have hdisc : Tendsto (fun p : ℝ × ℝ => K * exp (-r * p.2)) (𝓝 s ×ˢ 𝓝[>] 0)
-      (𝓝 (K * exp (-r * 0))) := by
-    have h : Continuous fun u => K * exp (-r * u) := by fun_prop
-    exact (h.continuousWithinAt (s := Ioi 0) (x := 0)).tendsto.comp tendsto_snd
-  rw [mul_zero, exp_zero, mul_one] at hdisc
-  have h := ((tendsto_callPrice_terminal (r := r) hs hσ hK).sub tendsto_fst).add hdisc
+  have h := ((tendsto_callPrice_terminal (r := r) hs hσ hK).sub tendsto_fst).add
+    ((tendsto_discount_nhdsGT_zero (K := K) (r := r)).comp tendsto_snd)
   have hpay : (s - K)⁺ - s + K = (K - s)⁺ := by
     rw [show K - s = -(s - K) by ring, posPart_neg]
     linear_combination posPart_sub_negPart (s - K)
   rw [hpay] at h
-  simpa only [putPrice_eq_callPrice] using h
+  simpa only [putPrice_eq_callPrice, Function.comp_apply] using h
 
 /-- **Put payoff at maturity.** For a fixed spot `s > 0`, as the remaining maturity tends to
 `0⁺` the put price tends to the payoff `(K - s)⁺`. -/
@@ -320,9 +288,8 @@ theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hσ : 0 <
     refine ⟨(div_pos hs hK).ne', fun h => hsK ((div_eq_one_iff_eq hK.ne').1 h), ?_⟩
     linarith [div_pos hs hK]
   have hA : Tendsto (fun u => s * (log (s / K) + (r + σ ^ 2 / 2) * u)) (𝓝[>] 0)
-      (𝓝 (s * (log (s / K) + (r + σ ^ 2 / 2) * 0))) := by
-    have h : Continuous fun u => s * (log (s / K) + (r + σ ^ 2 / 2) * u) := by fun_prop
-    exact (h.continuousWithinAt (s := Ioi 0) (x := 0)).tendsto
+      (𝓝 (s * (log (s / K) + (r + σ ^ 2 / 2) * 0))) :=
+    tendsto_nhdsGT_zero_of_continuous (by fun_prop)
   rw [mul_zero, add_zero] at hA
   have hd : Tendsto (dPlus s r σ K) (𝓝[>] 0) (cocompact ℝ) := by
     rcases hsK.lt_or_gt with hsK | hsK
@@ -355,7 +322,11 @@ theorem tendsto_sqrt_mul_deriv_deriv_callPrice_spot_strike (hσ : 0 < σ) (hK : 
   have h := ((hφ.tendsto 0).comp (tendsto_dPlus_maturity_strike (r := r) hσ hK)).div_const
     (K * σ)
   rw [Function.comp_def, gaussianPDFReal_zero_one] at h
-  refine (h.congr' ?_).trans (by simp [div_eq_inv_mul, mul_comm])
+  have hval : (√(2 * π))⁻¹ * exp (-(0 ^ 2 / 2)) / (K * σ) = 1 / (K * σ * √(2 * π)) := by
+    rw [zero_pow two_ne_zero, zero_div, neg_zero, exp_zero, mul_one]
+    field_simp
+  rw [hval] at h
+  refine h.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with u hu
   have hsq := (sqrt_pos.2 hu).ne'
   rw [(hasDerivAt_deriv_callPrice_spot hK hK hσ.ne' hu).deriv]
@@ -365,10 +336,8 @@ theorem tendsto_sqrt_mul_deriv_deriv_callPrice_spot_strike (hσ : 0 < σ) (hK : 
 remaining maturity tends to `0⁺`. -/
 theorem tendsto_deriv_deriv_callPrice_spot_strike_atTop (hσ : 0 < σ) (hK : 0 < K) :
     Tendsto (fun u => deriv (deriv fun x => callPrice x r σ K u) K) (𝓝[>] 0) atTop := by
-  have hsqrt : Tendsto (fun u : ℝ => √u) (𝓝[>] 0) (𝓝[>] 0) := by
-    simpa using tendsto_mul_sqrt_nhdsGT_zero (σ := 1) one_pos
   have h := (tendsto_sqrt_mul_deriv_deriv_callPrice_spot_strike (r := r) hσ hK).pos_mul_atTop
-    (by positivity) (tendsto_inv_nhdsGT_zero.comp hsqrt)
+    (by positivity) (tendsto_inv_nhdsGT_zero.comp tendsto_sqrt_nhdsGT_zero)
   refine h.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with u hu
   rw [Function.comp_apply, mul_comm, ← mul_assoc, inv_mul_cancel₀ (sqrt_pos.2 hu).ne', one_mul]
