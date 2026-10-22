@@ -50,16 +50,13 @@ open PowerSeries
 namespace Polynomial
 
 /-- An integral polynomial evaluated at a point of the closed unit ball of a non-archimedean
-normed ring with `‖1‖ = 1` has norm at most one. -/
-theorem norm_aeval_le_one {K : Type*} [NormedRing K] [NormOneClass K] [IsUltrametricDist K]
+seminormed ring with `‖1‖ = 1` has norm at most one. -/
+theorem norm_aeval_le_one {K : Type*} [SeminormedRing K] [NormOneClass K] [IsUltrametricDist K]
     (p : ℤ[X]) {x : K} (hx : ‖x‖ ≤ 1) : ‖aeval x p‖ ≤ 1 := by
   rw [aeval_eq_sum_range]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ ↦ ?_
-  rw [zsmul_eq_mul]
-  calc ‖(p.coeff i : K) * x ^ i‖ ≤ ‖(p.coeff i : K)‖ * ‖x ^ i‖ := norm_mul_le _ _
-    _ ≤ 1 * 1 := mul_le_mul (IsUltrametricDist.norm_intCast_le_one K _)
-        ((norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg _) hx)) (norm_nonneg _) zero_le_one
-    _ = 1 := one_mul 1
+  exact (IsUltrametricDist.norm_zsmul_le (x ^ i) (p.coeff i)).trans
+    ((norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg _) hx))
 
 end Polynomial
 
