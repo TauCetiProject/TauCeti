@@ -29,8 +29,9 @@ the determination of a partition by its parts through each point, the parts of a
 monotonicity of `Finpartition.part` under refinement, the coarse parent
 `Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
 summation formulas for the fine parts below a coarse part and for sums over points of functions of
-the fine and coarse parts through them, and the position of the parts of `Finpartition.atomise`
-relative to the sets it cuts along.
+the fine and coarse parts through them, the fact that a set with at most two elements has no finite
+partitions other than the finest and the coarsest, and the position of the parts of
+`Finpartition.atomise` relative to the sets it cuts along.
 -/
 
 public section
@@ -349,6 +350,32 @@ theorem sum_apply_part_part (h : Q ≤ P) {M : Type*} [AddCommMonoid M]
   rw [← Finset.sum_const]
   exact Finset.sum_congr rfl fun a ha => by
     rw [Q.part_eq_of_mem B.2 ha, part_eq_refinementParent h B ha]
+
+/-- A finite partition of a set with at most two elements is either the partition into singletons
+or the partition into one part. -/
+theorem eq_bot_or_eq_top_of_pair {i j : α} (P : Finpartition ({i, j} : Finset α)) :
+    P = ⊥ ∨ P = ⊤ := by
+  have hi : i ∈ ({i, j} : Finset α) := mem_insert_self i {j}
+  have hj : j ∈ ({i, j} : Finset α) := mem_insert_of_mem (mem_singleton_self j)
+  by_cases hji : j ∈ P.part i
+  · refine Or.inr (top_le_iff.1 fun t ht => ⟨P.part i, P.part_mem.2 hi, ?_⟩)
+    rw [mem_singleton.1 (parts_top_subset _ ht)]
+    exact insert_subset_iff.2 ⟨P.mem_part hi, singleton_subset_iff.2 hji⟩
+  · refine Or.inl (le_bot_iff.1 fun t ht => ?_)
+    obtain ⟨x, hx⟩ := P.nonempty_of_mem_parts ht
+    refine ⟨{x}, mem_bot_iff.2 ⟨x, P.le ht hx, rfl⟩, fun y hy => ?_⟩
+    rw [← P.part_eq_of_mem ht hx] at hy
+    have hxs := P.le ht hx
+    rw [mem_singleton]
+    rcases mem_insert.1 hxs with rfl | hx'
+    · rcases mem_insert.1 (P.part_subset x hy) with rfl | hy'
+      · rfl
+      · exact absurd (mem_singleton.1 hy' ▸ hy) hji
+    · rw [mem_singleton.1 hx'] at hy ⊢
+      rcases mem_insert.1 (P.part_subset j hy) with rfl | hy'
+      · rw [P.mem_part_iff_part_eq_part hi hj] at hy
+        exact absurd (hy ▸ P.mem_part hj) hji
+      · exact mem_singleton.1 hy'
 
 end FinsetRefinement
 

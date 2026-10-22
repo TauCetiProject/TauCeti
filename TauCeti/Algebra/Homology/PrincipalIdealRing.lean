@@ -84,8 +84,6 @@ instance free_cokernel_iCycles_of_isPrincipalIdealRing [Module.Projective k (K.X
     Module.Free k (cokernel (K.iCycles i) : ModuleCat.{v} k) :=
   .of_injective_of_projective_of_isPrincipalIdealRing
     (cokernel.desc (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _)).hom
-    ((ModuleCat.mono_iff_injective _).mp (ShortComplex.exact_of_f_is_kernel
-      (ShortComplex.mk (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _))
-      (K.cyclesIsKernel i (c.next i) rfl)).mono_cokernelDesc)
+    ((ModuleCat.mono_iff_injective _).mp inferInstance)
 
 end HomologicalComplex
