@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
-import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
 import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
 
@@ -48,23 +47,7 @@ theorem IsFiberwiseInjective.etale_pointsDivisor (hφ : E.IsFiberwiseInjective �
   classical
   let I := E.pointsDivisor φ
   let D := Over.mk (I.subschemeι ≫ E.structureMap)
-  have hprod : I = ⨅ a, (φ a).left.ker := by
-    dsimp only [I]
-    rw [pointsDivisor_def]
-    apply Scheme.IdealSheafData.prod_eq_iInf_of_pairwise_disjoint_support
-    intro a b hab
-    apply disjoint_iff.mpr
-    apply SetLike.coe_injective
-    simpa only [Set.inf_eq_inter, Set.bot_eq_empty, TopologicalSpace.Closeds.coe_inf,
-      TopologicalSpace.Closeds.coe_bot,
-      coe_support_ker_left] using
-      (hφ.disjoint_range hab).eq_bot
-  have hle : (E.torsionι N).left.ker ≤ I := by
-    rw [hprod]
-    refine le_iInf fun a ↦ ?_
-    have hx : φ a ≫ E.mulBy N = 1 := by rw [comp_mulBy, zpow_natCast, hkill]
-    simpa [← Over.comp_left, E.torsionLift_torsionι (φ a) hx] using
-      Scheme.Hom.le_ker_comp (E.torsionLift (φ a) hx).left (E.torsionι N).left
+  have hle : (E.torsionι N).left.ker ≤ I := hφ.ker_torsionι_left_le_pointsDivisor hkill
   let j := IsClosedImmersion.lift (E.torsionι N).left I.subschemeι (by simpa using hle)
   have hj : j ≫ (E.torsionι N).left = I.subschemeι := IsClosedImmersion.lift_fac _ _ _
   have : Etale (E.torsion N).X.hom :=
