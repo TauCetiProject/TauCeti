@@ -7,7 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
+import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # Integration in polar coordinates
@@ -49,6 +52,10 @@ the Laplacian.
 * `TauCeti.setIntegral_ball_zero_eq_integral_Ioo`,
   `TauCeti.integral_Ioo_pow_mul_toSphere_real_univ`: integration over a ball about the origin in
   polar coordinates, and the corresponding formula for the measure of the ball.
+* `TauCeti.map_toSphere`: a linear isometric equivalence carries the surface measure of `μ` to
+  the surface measure of the image of `μ`.
+* `TauCeti.toSphere_volume_apply_univ`: on a real inner product space of dimension `d`, the
+  total surface measure of the unit sphere is `2 π ^ (d / 2) / Γ (d / 2)`.
 -/
 
 public section
@@ -292,5 +299,69 @@ theorem integral_norm_rpow_neg_finrank_mul_fderiv_apply_self {f : E → ℝ} (hf
   rw [integral_congr_ae (ae_of_all _ hray), integral_const, smul_eq_mul,
     Measure.toSphere_real_apply_univ]
   ring
+
+end TauCeti
+
+namespace TauCeti
+
+open MeasureTheory Metric Set
+open scoped Pointwise
+
+section Isometry
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
+
+/-- A linear isometric equivalence `f` carries the surface measure `μ.toSphere` to the surface
+measure of the image measure `μ.map f`, through the restriction of `f` to the unit spheres. -/
+theorem map_toSphere (f : E ≃ₗᵢ[ℝ] F) (μ : Measure E) :
+    μ.toSphere.map (Subtype.map f fun x hx ↦ by simpa using hx) = (μ.map f).toSphere := by
+  set g : sphere (0 : E) 1 → sphere (0 : F) 1 := Subtype.map f fun x hx ↦ by simpa using hx
+  have hg : Measurable g := f.continuous.measurable.subtype_map _
+  ext s hs
+  -- The cone over `g ⁻¹' s` is the preimage under `f` of the cone over `s`.
+  have hcone : Ioo (0 : ℝ) 1 • ((↑) '' (g ⁻¹' s) : Set E) =
+      f ⁻¹' (Ioo (0 : ℝ) 1 • ((↑) '' s : Set F)) := by
+    ext x
+    simp only [mem_preimage, Set.mem_smul, mem_image, exists_exists_and_eq_and]
+    constructor
+    · rintro ⟨r, hr, u, hu, rfl⟩
+      exact ⟨r, hr, g u, hu, by simp [g]⟩
+    · rintro ⟨r, hr, v, hv, hx⟩
+      refine ⟨r, hr, ⟨f.symm v, by simp⟩, ?_, ?_⟩
+      · simpa [g, Subtype.map] using hv
+      · simpa using congrArg f.symm hx
+  rw [Measure.map_apply hg hs, Measure.toSphere_apply' _ (hg hs), Measure.toSphere_apply' _ hs,
+    hcone, ← f.coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe, MeasurableEquiv.map_apply,
+    f.toLinearEquiv.finrank_eq]
+
+end Isometry
+
+section InnerProductSpace
+
+open Module
+open scoped Real
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- **The surface area of the unit sphere.** In a real inner product space of dimension `d`, the
+total surface measure of the unit sphere is `2 π ^ (d / 2) / Γ (d / 2)`. In dimension zero the
+sphere is empty, and both sides vanish since `Γ 0 = 0`. -/
+theorem toSphere_volume_apply_univ :
+    (volume : Measure E).toSphere univ =
+      ENNReal.ofReal (2 * π ^ ((finrank ℝ E : ℝ) / 2) / Real.Gamma ((finrank ℝ E : ℝ) / 2)) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · simp [(Measure.toSphere_eq_zero_iff _).2 hE, finrank_zero_of_subsingleton]
+  have hd₀ : (0 : ℝ) < finrank ℝ E := Nat.cast_pos.2 finrank_pos
+  have hd : (0 : ℝ) < finrank ℝ E / 2 := by positivity
+  rw [Measure.toSphere_apply_univ, InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow,
+    one_mul, ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg _)]
+  congr 1
+  rw [Real.Gamma_add_one hd.ne', Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul
+    Real.pi_pos.le]
+  field_simp [(Real.Gamma_pos_of_pos hd).ne', hd₀.ne']
+
+end InnerProductSpace
 
 end TauCeti
