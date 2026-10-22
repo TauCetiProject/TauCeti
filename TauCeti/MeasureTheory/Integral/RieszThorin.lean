@@ -190,7 +190,7 @@ private theorem map_eq_sum (u : SimpleFunc γ ℂ) (ψ : ℂ → ℂ) :
 private theorem map_apply_eq_sum (u : SimpleFunc γ ℂ) (ψ : ℂ → ℂ) (x : γ) :
     u.map ψ x = ∑ c ∈ u.range, ψ c * fiberInd u c x := by
   rw [u.map_apply_eq_sum_restrict_const]
-  simp_rw [← smul_fiberInd, SimpleFunc.smul_apply, smul_eq_mul]
+  simp_rw [← smul_fiberInd, _root_.smul_apply, smul_eq_mul]
 
 private theorem integral_map_powSign_eq_sum (T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ))
     (f : SimpleFunc α ℂ) (g : SimpleFunc β ℂ) (w w' : ℂ)
@@ -418,11 +418,11 @@ private theorem enorm_integral_mul_le_mul (T : SimpleFunc α ℂ →ₗ[ℂ] (β
   have ha : 0 < a := ENNReal.toReal_pos hf0 hf
   have hb : 0 < b := ENNReal.toReal_pos hg0 hg
   have hfa : eLpNorm (((a⁻¹ : ℝ) : ℂ) • f) p μ ≤ 1 := by
-    rw [SimpleFunc.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
+    rw [FunLike.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
       Real.norm_of_nonneg (inv_nonneg.2 ha.le), ENNReal.ofReal_inv_of_pos ha,
       ENNReal.ofReal_toReal hf, ENNReal.inv_mul_cancel hf0 hf]
   have hgb : eLpNorm (((b⁻¹ : ℝ) : ℂ) • g) q' ν ≤ 1 := by
-    rw [SimpleFunc.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
+    rw [FunLike.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
       Real.norm_of_nonneg (inv_nonneg.2 hb.le), ENNReal.ofReal_inv_of_pos hb,
       ENNReal.ofReal_toReal hg, ENNReal.inv_mul_cancel hg0 hg]
   have key := norm_integral_mul_le_of_le_one T hp₀ hp₁ hθ hpθ hq' h₀ h₁ hfa hgb
@@ -432,7 +432,7 @@ private theorem enorm_integral_mul_le_mul (T : SimpleFunc α ℂ →ₗ[ℂ] (β
     refine integral_congr_ae ?_
     filter_upwards [show ⇑(T (((a⁻¹ : ℝ) : ℂ) • f)) =ᵐ[ν] ((a⁻¹ : ℝ) : ℂ) • ⇑(T f) by
       rw [map_smul]; exact AEEqFun.coeFn_smul _ _] with y hy
-    rw [hy, SimpleFunc.smul_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul]
+    rw [hy, _root_.smul_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul]
     push_cast
     ring
   rw [hscale, norm_mul, norm_real, Real.norm_of_nonneg (by positivity)] at key
