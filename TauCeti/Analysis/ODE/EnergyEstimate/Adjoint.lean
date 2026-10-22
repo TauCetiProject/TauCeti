@@ -16,8 +16,8 @@ formal adjoint of the trajectory operator
 `D_A u = u' + A u`
 
 with `D_A^* v = -v' + A v`.  This file proves the identity on compactly supported continuously
-differentiable paths.  It also proves the same global and tail coercive estimates for the formal
-adjoint that are available for `D_A` itself.
+differentiable paths.  It also proves global and tail coercive estimates for the formal
+adjoint by applying the estimates for `D_A` to the negated family `-A`.
 
 The adjoint estimates are the cokernel input for the Fredholm property of the Sobolev realization
 of `D_A`: after identifying vectors orthogonal to its range with weak solutions of the adjoint
@@ -119,15 +119,21 @@ theorem exists_pos_forall_integral_norm_neg_deriv_add_sq_add_mul_integral_norm_s
     (hdbot : Tendsto (deriv A) atBot (nhds 0)) (hdtop : Tendsto (deriv A) atTop (nhds 0)) :
     ∃ R > 0, ∀ (w : ℝ → E), ContDiff ℝ 1 w → HasCompactSupport w →
       Function.support w ⊆ {s | R ≤ |s|} →
-      (∫ s, ‖deriv w s‖ ^ 2) + (α ^ 2 / 8) * (∫ s, ‖w s‖ ^ 2) ≤
+      (∫ s, ‖deriv w s‖ ^ 2) + (α ^ 2 / 2) * (∫ s, ‖w s‖ ^ 2) ≤
         ∫ s, ‖-deriv w s + A s (w s)‖ ^ 2 := by
-  obtain ⟨hB, hBsym, hBminus, hBplus, hdBbot, hdBtop⟩ :=
-    neg_trajectory_hypotheses hA hsym hminus hplus hdbot hdtop
-  obtain ⟨R, hR, hest⟩ :=
-    exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
-      hB hBsym hα hBminus hBplus hbot.neg htop.neg hdBbot hdBtop
-  exact ⟨R, hR, fun w hw hcw hsupport ↦ by
-    simpa only [norm_deriv_add_neg_apply] using hest w hw hcw hsupport⟩
+  obtain ⟨R, hR, C, _, hest⟩ :=
+    exists_pos_nonneg_forall_integral_norm_neg_deriv_add_sq_add_mul_integral_norm_sq_le
+      hA hsym hα hminus hplus hbot htop hdbot hdtop
+  refine ⟨R + 1, by linarith, fun w hw hcw hsupport ↦ ?_⟩
+  -- Enlarge the excluded interval so the compact error in the global estimate vanishes.
+  have hzero : (∫ s in Icc (-R) R, ‖w s‖ ^ 2) = 0 :=
+    setIntegral_eq_zero_of_forall_eq_zero fun s hs ↦ by
+      have hsabs : |s| ≤ R := abs_le.mpr hs
+      have hwzero : w s = 0 := Function.notMem_support.mp fun hws ↦ by
+        have hsfar : R + 1 ≤ |s| := hsupport hws
+        linarith
+      simp [hwzero]
+  simpa [hzero] using hest w hw hcw
 
 end TauCeti
 
