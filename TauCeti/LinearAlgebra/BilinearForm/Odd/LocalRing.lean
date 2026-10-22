@@ -27,6 +27,8 @@ Induction can therefore continue without assuming that two is invertible.
   least two represents units on two orthogonal vectors.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self`: an odd
   unimodular form has a unit-diagonal orthogonal basis.
+* `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_orthogonal_span_singleton`: so does
+  the orthogonal complement of a unit vector, once that complement represents a unit.
 
 ## References
 
@@ -174,6 +176,45 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self (hB : 
       · simpa only [hc0] using hx
       · rw [hcs]
         exact hdu' j
+
+/-- **The orthogonal complement of a unit vector in an odd unimodular form.** Let `B` be a
+symmetric form whose Gram determinant in a basis of size `n + 1` is a unit over a local ring. If
+`x` has unit self-pairing and is orthogonal to a vector `y` with unit self-pairing, then the
+orthogonal complement of `x` has an orthogonal basis of size `n` all of whose self-pairings are
+units.
+
+Together with `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`,
+this extends `x` to a unit-diagonal orthogonal basis of the whole module. -/
+theorem IsSymm.exists_orthogonal_basis_isUnit_orthogonal_span_singleton (hB : B.IsSymm)
+    {n : ℕ} (b : Basis (Fin (n + 1)) R M) (hdet : IsUnit (B.toMatrix b).det) {x y : M}
+    (hx : IsUnit (B x x)) (hy : IsUnit (B y y)) (hxy : B x y = 0) :
+    ∃ t : Basis (Fin n) R (B.orthogonal (R ∙ x)),
+      (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho t ∧ ∀ i, IsUnit (B (t i) (t i)) := by
+  let v : Fin 1 → M := fun _ ↦ x
+  let G : Matrix (Fin 1) (Fin 1) R := fun _ _ ↦ B x x
+  have hGdet : IsUnit G.det := by
+    rw [Matrix.det_fin_one]
+    exact hx
+  obtain ⟨_, t, _w, _hw, hdetT⟩ :=
+    hB.exists_basis_orthogonal (m := n) b (v := v) (fun _ _ ↦ rfl) hGdet
+  have hTdet : IsUnit ((B.restrict (B.orthogonal (Submodule.span R (Set.range v)))).toMatrix
+      t).det := by
+    rw [hdetT] at hdet
+    exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet)
+  have hvspan : Submodule.span R (Set.range v) = R ∙ x := by simp [v]
+  have hyMem : y ∈ B.orthogonal (Submodule.span R (Set.range v)) := by
+    rw [hvspan, mem_orthogonal_iff]
+    intro z hz
+    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hz
+    simp [hxy]
+  obtain ⟨d, hd, hdu⟩ := (hB.restrict _).exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self
+    t hTdet ⟨⟨y, hyMem⟩, hy⟩
+  let e : B.orthogonal (Submodule.span R (Set.range v)) ≃ₗ[R] B.orthogonal (R ∙ x) :=
+    LinearEquiv.ofEq _ _ (congrArg B.orthogonal hvspan)
+  refine ⟨d.map e, ?_, fun i ↦ by simpa [e] using hdu i⟩
+  rw [iIsOrtho_def] at hd ⊢
+  intro i j hij
+  simpa [e] using hd i j hij
 
 end LinearMap.BilinForm
 
