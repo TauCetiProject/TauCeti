@@ -110,6 +110,16 @@ theorem isPrCompact_def (u : M →L[R] N) :
         rM.comp iM = .id R M ∧ rN.comp iN = .id R N ∧ (iN.comp (u.comp rM)).IsRowCompact :=
   Iff.rfl
 
+/-- **Retract factorisation**: if `rM ∘ iM = id` and `rN ∘ iN = id` present the source and target
+of `u`, then `u` factors through its extension as `rN ∘ (iN ∘ u ∘ rM) ∘ iM`. -/
+theorem comp_comp_comp_of_retract {J : Type*} [TopologicalSpace J] {I : Type*}
+    [TopologicalSpace I] {iM : M →L[R] C₀(J, R)} {rM : C₀(J, R) →L[R] M} {iN : N →L[R] C₀(I, R)}
+    {rN : C₀(I, R) →L[R] N} (hM : rM.comp iM = .id R M) (hN : rN.comp iN = .id R N)
+    (u : M →L[R] N) : rN.comp ((iN.comp (u.comp rM)).comp iM) = u := by
+  ext x
+  have hx : rM (iM x) = x := by simpa using DFunLike.congr_fun hM x
+  simpa [hx] using DFunLike.congr_fun hN (u x)
+
 /-- A map whose extension through retract presentations of its source and target is row compact
 is row compact in the sense of (Pr) modules. -/
 theorem isPrCompact_of_isRowCompact_comp {J : Type u} [TopologicalSpace J] [DiscreteTopology J]
@@ -193,10 +203,9 @@ theorem isRowCompact_comp_of_retract {J : Type*} [TopologicalSpace J] [DiscreteT
     [TopologicalSpace J'] [DiscreteTopology J'] [DecidableEq J'] [TopologicalSpace I']
     [DiscreteTopology I'] (j : N →L[R] C₀(I', R)) (s : C₀(J', R) →L[R] M) :
     (j.comp (u.comp s)).IsRowCompact := by
-  have hM' (x : M) : rM (iM x) = x := by simpa using DFunLike.congr_fun hM x
-  have hN' (y : N) : rN (iN y) = y := by simpa using DFunLike.congr_fun hN y
-  have : j.comp (u.comp s) = (j.comp rN).comp ((iN.comp (u.comp rM)).comp (iM.comp s)) :=
-    ContinuousLinearMap.ext fun x ↦ by simp [hM', hN']
+  have : j.comp (u.comp s) = (j.comp rN).comp ((iN.comp (u.comp rM)).comp (iM.comp s)) := by
+    conv_lhs => rw [← comp_comp_comp_of_retract hM hN u]
+    simp only [comp_assoc]
   rw [this]
   exact (hu.comp_clm _).clm_comp _
 
@@ -311,14 +320,13 @@ theorem IsPrCompact.tendsto_ringOpNorm_comp_indicatorCLM_comp_sub {I : Type*}
       atTop (𝓝 0) := by
   classical
   obtain ⟨J, _, _, iM, rM, hM⟩ := (hasPr_def R M).1 hu.hasPr_source
-  have hM' (x : M) : rM (iM x) = x := by simpa using DFunLike.congr_fun hM x
-  have hN' (y : N) : rN (iN y) = y := by simpa using DFunLike.congr_fun hN y
   set A := iN.comp (u.comp rM)
   have hA := (hu.isRowCompact_comp iN rM).tendsto_ringOpNorm_indicatorCLM_comp_sub
   -- Since `u = rN ∘ A ∘ iM`, the error of the truncation is `rN ∘ (π_S ∘ A - A) ∘ iM`.
   have hS (S : Finset I) : rN.comp ((indicatorCLM R (S : Set I)).comp (iN.comp u)) - u =
-      rN.comp (((indicatorCLM R (S : Set I)).comp A - A).comp iM) :=
-    ContinuousLinearMap.ext fun x ↦ by simp [A, hM', hN']
+      rN.comp (((indicatorCLM R (S : Set I)).comp A - A).comp iM) := by
+    rw [sub_comp, comp_sub, comp_comp_comp_of_retract hM hN]
+    simp only [A, comp_assoc, hM, comp_id]
   refine squeeze_zero (fun _ ↦ ringOpNorm_nonneg _) (fun S ↦ ?_)
     (by simpa using (hA.const_mul ‖rN‖).mul_const ‖iM‖)
   rw [hS, mul_assoc]
@@ -338,11 +346,7 @@ continuous. -/
 theorem IsPrCompact.isCompletelyContinuous {u : M →L[R] N} (hu : u.IsPrCompact) :
     u.IsCompletelyContinuous := by
   obtain ⟨J, _, _, _, I, _, _, iM, rM, iN, rN, hM, hN, h⟩ := hu
-  have hM' (x : M) : rM (iM x) = x := by simpa using DFunLike.congr_fun hM x
-  have hN' (y : N) : rN (iN y) = y := by simpa using DFunLike.congr_fun hN y
-  have hu : u = rN.comp ((iN.comp (u.comp rM)).comp iM) :=
-    ContinuousLinearMap.ext fun x ↦ by simp [hM', hN']
-  rw [hu]
+  rw [← comp_comp_comp_of_retract hM hN u]
   exact (h.isCompletelyContinuous.comp_clm iM).clm_comp rN
 
 end Ultrametric
@@ -352,15 +356,12 @@ section FiniteUltrametric
 variable {R : Type w} [NormedRing R] [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
   [CompleteSpace R] {M : Type u} [NormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
 
-/-- **The identity criterion on (Pr) modules**: over complete ultrametric Tate scalars, the
-identity of a module is row compact exactly when the module has property (Pr) and is finitely
-generated. A finitely generated module with (Pr) is a retract of `C₀(S, R)` for a finite set `S`
-of generators. -/
-theorem isPrCompact_id_iff :
-    (ContinuousLinearMap.id R M).IsPrCompact ↔ HasPr R M ∧ Module.Finite R M := by
-  refine ⟨fun hu ↦ ⟨hu.hasPr_source, ?_⟩, fun ⟨hM, hfin⟩ ↦ ?_⟩
-  · have := hu.hasPr_source.completeSpace
-    exact isCompletelyContinuous_id_iff.1 hu.isCompletelyContinuous
+/-- Over complete ultrametric Tate scalars, every continuous linear map from a module with
+property (Pr) into a finitely generated module with property (Pr) is row compact. A finitely
+generated module with (Pr) is a retract of `C₀(S, R)` for a finite set `S` of generators. -/
+theorem isPrCompact_of_finite [Module.Finite R M] (hM : HasPr R M) {L : Type*}
+    [SeminormedAddCommGroup L] [Module R L] (hL : HasPr R L) (u : L →L[R] M) :
+    u.IsPrCompact := by
   have := hM.completeSpace
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := M)
   let : TopologicalSpace s := ⊥
@@ -375,8 +376,17 @@ theorem isPrCompact_id_iff :
   obtain ⟨t, ht⟩ := hM.lifting_property q (.id R M) hq
   let e := (equivFunOnFintype R R (I := s)).toContinuousLinearEquiv
   refine isPrCompact_of_finite_retract (iN := (e.symm : (s → R) →L[R] C₀(s, R)).comp t)
-    (rN := q.comp (e : C₀(s, R) →L[R] (s → R))) ?_ hM _
+    (rN := q.comp (e : C₀(s, R) →L[R] (s → R))) ?_ hL _
   exact ContinuousLinearMap.ext fun x ↦ by simpa using DFunLike.congr_fun ht x
+
+/-- **The identity criterion on (Pr) modules**: over complete ultrametric Tate scalars, the
+identity of a module is row compact exactly when the module has property (Pr) and is finitely
+generated. -/
+theorem isPrCompact_id_iff :
+    (ContinuousLinearMap.id R M).IsPrCompact ↔ HasPr R M ∧ Module.Finite R M := by
+  refine ⟨fun hu ↦ ⟨hu.hasPr_source, ?_⟩, fun ⟨hM, _⟩ ↦ isPrCompact_of_finite hM hM _⟩
+  have := hu.hasPr_source.completeSpace
+  exact isCompletelyContinuous_id_iff.1 hu.isCompletelyContinuous
 
 /-- **The finiteness germ**: over complete ultrametric Tate scalars, a row-compact endomorphism
 `u` of a (Pr) module with `(1 - u) ^ n = 0` forces the module to be finitely generated. -/
@@ -393,19 +403,5 @@ theorem IsPrCompact.projective_of_one_sub_pow_eq_zero {u : M →L[R] M} (hu : u.
   hu.hasPr_source.projective
 
 end FiniteUltrametric
-
-section Finite
-
-variable {R : Type w} [NormedCommRing R] [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
-  [CompleteSpace R] {M : Type u} [NormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
-
-/-- Over complete ultrametric Tate scalars, every continuous linear map from a module with
-property (Pr) into a finitely generated module with property (Pr) is row compact. -/
-theorem isPrCompact_of_finite [Module.Finite R M] (hM : HasPr R M) {L : Type*}
-    [SeminormedAddCommGroup L] [Module R L] (hL : HasPr R L) (u : L →L[R] M) :
-    u.IsPrCompact := by
-  simpa using (isPrCompact_id_iff.2 ⟨hM, ‹_›⟩).comp_clm u hL
-
-end Finite
 
 end ContinuousLinearMap
