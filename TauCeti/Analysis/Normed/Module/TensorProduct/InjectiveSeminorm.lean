@@ -36,8 +36,8 @@ scalar field; it is not the classical injective norm used here.
 
 ## Main definitions
 
-* `TensorProduct.toDualMap 𝕜 E F`: the bounded operator on the dual of `E` induced by a
-  tensor.
+* `TensorProduct.contractStrongDual 𝕜 E F`: the bounded operator on the dual of `E` induced by
+  a tensor.
 * `TensorProduct.injectiveSeminorm 𝕜 E F`: the injective seminorm on `E ⊗[𝕜] F`.
 * `TauCeti.InjectiveTensor 𝕜 E F`: the algebraic tensor product with the injective seminorm.
 * `TauCeti.ProjectiveTensor.toInjectiveTensor`: the contraction from the projective to the
@@ -50,7 +50,7 @@ scalar field; it is not the classical injective norm used here.
   description of the injective seminorm over `ℝ` and `ℂ`.
 * `TensorProduct.injectiveSeminorm_tmul` and
   `TensorProduct.projectiveSeminorm_tmul`: both seminorms are cross norms.
-* `TensorProduct.toDualMap_injective`: over `ℝ` and `ℂ`, a tensor is determined by the
+* `TensorProduct.contractStrongDual_injective`: over `ℝ` and `ℂ`, a tensor is determined by the
   operator it induces on the dual of a normed left factor.
 * `TensorProduct.injectiveSeminorm_eq_zero_iff` and
   `TensorProduct.projectiveSeminorm_eq_zero_iff`: both seminorms are definite.
@@ -73,7 +73,7 @@ variable (𝕜 E F : Type*) [NontriviallyNormedField 𝕜] [SeminormedAddCommGro
 
 /-- The bounded operator `StrongDual 𝕜 E →L[𝕜] F` induced by a tensor in `E ⊗[𝕜] F`: the pure
 tensor `x ⊗ₜ y` gives `f ↦ f x • y`. -/
-noncomputable def toDualMap : E ⊗[𝕜] F →ₗ[𝕜] StrongDual 𝕜 E →L[𝕜] F :=
+noncomputable def contractStrongDual : E ⊗[𝕜] F →ₗ[𝕜] StrongDual 𝕜 E →L[𝕜] F :=
   _root_.TensorProduct.lift <| LinearMap.mk₂ 𝕜
     (fun x y ↦ (NormedSpace.inclusionInDoubleDual 𝕜 E x).smulRight y)
     (fun x x' y ↦ by ext f; simp [add_smul])
@@ -85,14 +85,15 @@ variable {𝕜 E F}
 
 /-- The operator induced by `x ⊗ₜ y` sends `f` to `f x • y`. -/
 @[simp]
-theorem toDualMap_tmul (x : E) (y : F) (f : StrongDual 𝕜 E) :
-    toDualMap 𝕜 E F (x ⊗ₜ y) f = f x • y := by
-  simp [toDualMap]
+theorem contractStrongDual_tmul (x : E) (y : F) (f : StrongDual 𝕜 E) :
+    contractStrongDual 𝕜 E F (x ⊗ₜ y) f = f x • y := by
+  simp [contractStrongDual]
 
 /-- The operator induced by a tensor sends `f` to the image of the tensor under `f ⊗ id`,
 followed by `𝕜 ⊗[𝕜] F ≃ F`. -/
-theorem toDualMap_apply (u : E ⊗[𝕜] F) (f : StrongDual 𝕜 E) :
-    toDualMap 𝕜 E F u f = _root_.TensorProduct.lid 𝕜 F ((f : E →ₗ[𝕜] 𝕜).rTensor F u) := by
+theorem contractStrongDual_apply (u : E ⊗[𝕜] F) (f : StrongDual 𝕜 E) :
+    contractStrongDual 𝕜 E F u f =
+      _root_.TensorProduct.lid 𝕜 F ((f : E →ₗ[𝕜] 𝕜).rTensor F u) := by
   induction u with
   | tmul x y => simp
   | add u v hu hv => simp [hu, hv]
@@ -103,30 +104,30 @@ variable (𝕜 E F) in
 continuous linear functionals `f` and `g` of norm at most one, for any decomposition
 `u = ∑ i, x i ⊗ₜ y i`; see `injectiveSeminorm_le_iff_forall_norm_le_one`. -/
 noncomputable def injectiveSeminorm : Seminorm 𝕜 (E ⊗[𝕜] F) :=
-  (normSeminorm 𝕜 (StrongDual 𝕜 E →L[𝕜] F)).comp (toDualMap 𝕜 E F)
+  (normSeminorm 𝕜 (StrongDual 𝕜 E →L[𝕜] F)).comp (contractStrongDual 𝕜 E F)
 
 /-- The injective seminorm is the operator norm of the induced operator on the dual. -/
 theorem injectiveSeminorm_apply (u : E ⊗[𝕜] F) :
-    injectiveSeminorm 𝕜 E F u = ‖toDualMap 𝕜 E F u‖ :=
+    injectiveSeminorm 𝕜 E F u = ‖contractStrongDual 𝕜 E F u‖ :=
   (rfl)
 
 /-- The operator induced by a tensor is bounded by its injective seminorm. -/
-theorem norm_toDualMap_apply_le (u : E ⊗[𝕜] F) (f : StrongDual 𝕜 E) :
-    ‖toDualMap 𝕜 E F u f‖ ≤ injectiveSeminorm 𝕜 E F u * ‖f‖ :=
-  (toDualMap 𝕜 E F u).le_opNorm f
+theorem norm_contractStrongDual_apply_le (u : E ⊗[𝕜] F) (f : StrongDual 𝕜 E) :
+    ‖contractStrongDual 𝕜 E F u f‖ ≤ injectiveSeminorm 𝕜 E F u * ‖f‖ :=
+  (contractStrongDual 𝕜 E F u).le_opNorm f
 
 /-- A nonnegative constant bounds the injective seminorm of a tensor if and only if it bounds
 the operator the tensor induces on the dual. -/
 theorem injectiveSeminorm_le_iff {u : E ⊗[𝕜] F} {C : ℝ} (hC : 0 ≤ C) :
-    injectiveSeminorm 𝕜 E F u ≤ C ↔ ∀ f, ‖toDualMap 𝕜 E F u f‖ ≤ C * ‖f‖ :=
-  ⟨fun h f ↦ (norm_toDualMap_apply_le u f).trans (by gcongr),
-    fun h ↦ (toDualMap 𝕜 E F u).opNorm_le_bound hC h⟩
+    injectiveSeminorm 𝕜 E F u ≤ C ↔ ∀ f, ‖contractStrongDual 𝕜 E F u f‖ ≤ C * ‖f‖ :=
+  ⟨fun h f ↦ (norm_contractStrongDual_apply_le u f).trans (by gcongr),
+    fun h ↦ (contractStrongDual 𝕜 E F u).opNorm_le_bound hC h⟩
 
 /-- The injective seminorm of a pure tensor is at most the product of the norms. -/
 theorem injectiveSeminorm_tmul_le (x : E) (y : F) :
     injectiveSeminorm 𝕜 E F (x ⊗ₜ y) ≤ ‖x‖ * ‖y‖ := by
   refine (injectiveSeminorm_le_iff (by positivity)).2 fun f ↦ ?_
-  rw [toDualMap_tmul, norm_smul]
+  rw [contractStrongDual_tmul, norm_smul]
   calc ‖f x‖ * ‖y‖ ≤ (‖f‖ * ‖x‖) * ‖y‖ := by gcongr; exact f.le_opNorm x
     _ = ‖x‖ * ‖y‖ * ‖f‖ := by ring
 
@@ -147,21 +148,25 @@ variable [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup
   [NormedSpace 𝕜 F]
 
 /-- Over `ℝ` and `ℂ`, the injective seminorm is the supremum of
-`‖g (toDualMap 𝕜 E F u f)‖ = ‖∑ i, f (x i) * g (y i)‖` over the closed unit balls of the duals
-of `E` and `F`. -/
+`‖g (contractStrongDual 𝕜 E F u f)‖ = ‖∑ i, f (x i) * g (y i)‖` over the closed unit balls of
+the duals of `E` and `F`. -/
 theorem injectiveSeminorm_le_iff_forall_norm_le_one {u : E ⊗[𝕜] F} {C : ℝ} (hC : 0 ≤ C) :
     injectiveSeminorm 𝕜 E F u ≤ C ↔
       ∀ (f : StrongDual 𝕜 E) (g : StrongDual 𝕜 F), ‖f‖ ≤ 1 → ‖g‖ ≤ 1 →
-        ‖g (toDualMap 𝕜 E F u f)‖ ≤ C := by
+        ‖g (contractStrongDual 𝕜 E F u f)‖ ≤ C := by
   refine ⟨fun h f g hf hg ↦ ?_, fun h ↦ ?_⟩
-  · calc ‖g (toDualMap 𝕜 E F u f)‖ ≤ ‖g‖ * (injectiveSeminorm 𝕜 E F u * ‖f‖) :=
-          g.le_of_opNorm_le_of_le le_rfl (norm_toDualMap_apply_le u f)
+  · calc ‖g (contractStrongDual 𝕜 E F u f)‖ ≤ ‖g‖ * (injectiveSeminorm 𝕜 E F u * ‖f‖) :=
+          g.le_of_opNorm_le_of_le le_rfl (norm_contractStrongDual_apply_le u f)
       _ ≤ 1 * (C * 1) := by gcongr
       _ = C := by ring
   · rw [injectiveSeminorm_apply]
     refine ContinuousLinearMap.opNorm_le_of_unit_norm hC fun f hf ↦ ?_
-    rw [← (NormedSpace.inclusionInDoubleDualLi 𝕜).norm_map]
-    exact ContinuousLinearMap.opNorm_le_of_unit_norm hC fun g hg ↦ h f g hf.le hg.le
+    have hev : ‖NormedSpace.inclusionInDoubleDual 𝕜 F (contractStrongDual 𝕜 E F u f)‖ ≤ C :=
+      ContinuousLinearMap.opNorm_le_of_unit_norm hC fun g hg ↦ by
+        rw [NormedSpace.dual_def]
+        exact h f g hf.le hg.le
+    refine NormedSpace.norm_le_dual_bound 𝕜 _ hC fun g ↦ ?_
+    simpa only [NormedSpace.dual_def] using ContinuousLinearMap.le_of_opNorm_le _ hev g
 
 /-- The injective seminorm is a cross norm: its value on `x ⊗ₜ y` is `‖x‖ * ‖y‖`. -/
 @[simp]
@@ -169,8 +174,8 @@ theorem injectiveSeminorm_tmul (x : E) (y : F) :
     injectiveSeminorm 𝕜 E F (x ⊗ₜ y) = ‖x‖ * ‖y‖ := by
   refine le_antisymm (injectiveSeminorm_tmul_le x y) ?_
   obtain ⟨f, hf, hfx⟩ := exists_dual_vector'' 𝕜 x
-  calc ‖x‖ * ‖y‖ = ‖toDualMap 𝕜 E F (x ⊗ₜ y) f‖ := by simp [hfx, norm_smul]
-    _ ≤ injectiveSeminorm 𝕜 E F (x ⊗ₜ y) * ‖f‖ := norm_toDualMap_apply_le _ f
+  calc ‖x‖ * ‖y‖ = ‖contractStrongDual 𝕜 E F (x ⊗ₜ y) f‖ := by simp [hfx, norm_smul]
+    _ ≤ injectiveSeminorm 𝕜 E F (x ⊗ₜ y) * ‖f‖ := norm_contractStrongDual_apply_le _ f
     _ ≤ injectiveSeminorm 𝕜 E F (x ⊗ₜ y) * 1 := by gcongr
     _ = injectiveSeminorm 𝕜 E F (x ⊗ₜ y) := mul_one _
 
@@ -185,8 +190,9 @@ end Seminormed
 
 /-- Over `ℝ` and `ℂ`, a tensor whose left factor is a normed space is determined by the operator
 it induces on the dual of that factor. -/
-theorem toDualMap_injective [NormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F]
-    [NormedSpace 𝕜 F] : Function.Injective (toDualMap 𝕜 E F) := by
+theorem contractStrongDual_injective [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] :
+    Function.Injective (contractStrongDual 𝕜 E F) := by
   refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
   obtain ⟨E₀, _, hE₀⟩ := _root_.TensorProduct.exists_finite_submodule_left_of_setFinite
     {u} (Set.finite_singleton u)
@@ -201,8 +207,7 @@ theorem toDualMap_injective [NormedAddCommGroup E] [NormedSpace 𝕜 E] [Seminor
   have hcoord : b.coord i = (f : E →ₗ[𝕜] 𝕜) ∘ₗ E₀.subtype := by
     ext x
     simp [hf]
-  rw [hcoord, LinearMap.rTensor_comp_apply, ← toDualMap_apply, hu,
-    zero_apply]
+  rw [hcoord, LinearMap.rTensor_comp_apply, ← contractStrongDual_apply, hu, zero_apply]
 
 section Normed
 
@@ -212,7 +217,7 @@ variable [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [Nor
 @[simp]
 theorem injectiveSeminorm_eq_zero_iff {u : E ⊗[𝕜] F} : injectiveSeminorm 𝕜 E F u = 0 ↔ u = 0 := by
   rw [injectiveSeminorm_apply, ContinuousLinearMap.opNorm_zero_iff,
-    toDualMap_injective.eq_iff' (map_zero _)]
+    contractStrongDual_injective.eq_iff' (map_zero _)]
 
 /-- Over `ℝ` and `ℂ`, the projective seminorm on a tensor product of normed spaces is
 definite. -/
@@ -268,6 +273,26 @@ def linearEquiv : InjectiveTensor 𝕜 E F ≃ₗ[𝕜] E ⊗[𝕜] F where
 
 variable {𝕜 E F}
 
+/-- The equivalence with `E ⊗[𝕜] F` forgets the wrapper. -/
+@[simp]
+theorem equiv_apply (u : InjectiveTensor 𝕜 E F) : equiv 𝕜 E F u = u.toTensorProduct :=
+  (rfl)
+
+/-- The inverse equivalence wraps an algebraic tensor. -/
+@[simp]
+theorem equiv_symm_apply (u : E ⊗[𝕜] F) : (equiv 𝕜 E F).symm u = mk u :=
+  (rfl)
+
+/-- The additive equivalence with `E ⊗[𝕜] F` forgets the wrapper. -/
+@[simp]
+theorem addEquiv_apply (u : InjectiveTensor 𝕜 E F) : addEquiv 𝕜 E F u = u.toTensorProduct :=
+  (rfl)
+
+/-- The inverse additive equivalence wraps an algebraic tensor. -/
+@[simp]
+theorem addEquiv_symm_apply (u : E ⊗[𝕜] F) : (addEquiv 𝕜 E F).symm u = mk u :=
+  (rfl)
+
 /-- The linear equivalence with `E ⊗[𝕜] F` forgets the wrapper. -/
 @[simp]
 theorem linearEquiv_apply (u : InjectiveTensor 𝕜 E F) : linearEquiv 𝕜 E F u = u.toTensorProduct :=
@@ -276,6 +301,61 @@ theorem linearEquiv_apply (u : InjectiveTensor 𝕜 E F) : linearEquiv 𝕜 E F 
 /-- The inverse linear equivalence wraps an algebraic tensor. -/
 @[simp]
 theorem linearEquiv_symm_apply (u : E ⊗[𝕜] F) : (linearEquiv 𝕜 E F).symm u = ⟨u⟩ :=
+  (rfl)
+
+/-- The underlying tensor of `0` is `0`. -/
+@[simp]
+theorem toTensorProduct_zero : (0 : InjectiveTensor 𝕜 E F).toTensorProduct = 0 :=
+  (rfl)
+
+/-- The underlying tensor of a sum is the sum of the underlying tensors. -/
+@[simp]
+theorem toTensorProduct_add (u v : InjectiveTensor 𝕜 E F) :
+    (u + v).toTensorProduct = u.toTensorProduct + v.toTensorProduct :=
+  (rfl)
+
+/-- The underlying tensor of a negation is the negated underlying tensor. -/
+@[simp]
+theorem toTensorProduct_neg (u : InjectiveTensor 𝕜 E F) :
+    (-u).toTensorProduct = -u.toTensorProduct :=
+  (rfl)
+
+/-- The underlying tensor of a difference is the difference of the underlying tensors. -/
+@[simp]
+theorem toTensorProduct_sub (u v : InjectiveTensor 𝕜 E F) :
+    (u - v).toTensorProduct = u.toTensorProduct - v.toTensorProduct :=
+  (rfl)
+
+/-- The underlying tensor of a scalar multiple is the scalar multiple of the underlying tensor.
+-/
+@[simp]
+theorem toTensorProduct_smul (a : 𝕜) (u : InjectiveTensor 𝕜 E F) :
+    (a • u).toTensorProduct = a • u.toTensorProduct :=
+  (rfl)
+
+/-- Wrapping `0` gives `0`. -/
+@[simp]
+theorem mk_zero : (mk 0 : InjectiveTensor 𝕜 E F) = 0 :=
+  (rfl)
+
+/-- Wrapping a sum gives the sum of the wrapped tensors. -/
+@[simp]
+theorem mk_add (u v : E ⊗[𝕜] F) : (mk (u + v) : InjectiveTensor 𝕜 E F) = mk u + mk v :=
+  (rfl)
+
+/-- Wrapping a negation gives the negation of the wrapped tensor. -/
+@[simp]
+theorem mk_neg (u : E ⊗[𝕜] F) : (mk (-u) : InjectiveTensor 𝕜 E F) = -mk u :=
+  (rfl)
+
+/-- Wrapping a difference gives the difference of the wrapped tensors. -/
+@[simp]
+theorem mk_sub (u v : E ⊗[𝕜] F) : (mk (u - v) : InjectiveTensor 𝕜 E F) = mk u - mk v :=
+  (rfl)
+
+/-- Wrapping a scalar multiple gives the scalar multiple of the wrapped tensor. -/
+@[simp]
+theorem mk_smul (a : 𝕜) (u : E ⊗[𝕜] F) : (mk (a • u) : InjectiveTensor 𝕜 E F) = a • mk u :=
   (rfl)
 
 /-- Two injective tensors are equal when their underlying algebraic tensors are equal. -/

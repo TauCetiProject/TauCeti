@@ -15,8 +15,9 @@ public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 For seminormed spaces `E` and `F` over a normed field `𝕜`, the projective seminorm of
 `u : E ⊗[𝕜] F` is the infimum of `∑ i, ‖x i‖ * ‖y i‖` over all finite decompositions
 `u = ∑ i, x i ⊗ₜ y i`. It is the largest seminorm on `E ⊗[𝕜] F` that is bounded on pure tensors
-by the product of the norms of the factors, and every bounded bilinear map out of `E × F`
-induces a linear map on `E ⊗[𝕜] F` bounded by its operator norm for this seminorm.
+by the product of the norms of the factors. Over a nontrivially normed field, every bounded
+bilinear map out of `E × F` induces a linear map on `E ⊗[𝕜] F` bounded by its operator norm for
+this seminorm.
 
 Mathlib's binary tensor product carries no norm of its own for general normed spaces, while for
 inner product spaces it carries the Hilbert-space norm. The type `TauCeti.ProjectiveTensor 𝕜 E F`
@@ -40,8 +41,8 @@ this file adapts to two factors indexed by `Fin n` decompositions.
   the infimum of the costs of finite decompositions.
 * `TensorProduct.apply_le_mul_projectiveSeminorm`: a seminorm bounded by `C ‖x‖ ‖y‖` on
   pure tensors is bounded by `C` times the projective seminorm.
-* `TensorProduct.norm_lift_le`: the linear map induced by a bounded bilinear map `B` is
-  bounded by `‖B‖` times the projective seminorm.
+* `TensorProduct.norm_lift_le`: over a nontrivially normed field, the linear map induced by a
+  bounded bilinear map `B` is bounded by `‖B‖` times the projective seminorm.
 
 ## References
 
@@ -219,6 +220,26 @@ def linearEquiv : ProjectiveTensor 𝕜 E F ≃ₗ[𝕜] E ⊗[𝕜] F where
 
 variable {𝕜 E F}
 
+/-- The equivalence with `E ⊗[𝕜] F` forgets the wrapper. -/
+@[simp]
+theorem equiv_apply (u : ProjectiveTensor 𝕜 E F) : equiv 𝕜 E F u = u.toTensorProduct :=
+  (rfl)
+
+/-- The inverse equivalence wraps an algebraic tensor. -/
+@[simp]
+theorem equiv_symm_apply (u : E ⊗[𝕜] F) : (equiv 𝕜 E F).symm u = mk u :=
+  (rfl)
+
+/-- The additive equivalence with `E ⊗[𝕜] F` forgets the wrapper. -/
+@[simp]
+theorem addEquiv_apply (u : ProjectiveTensor 𝕜 E F) : addEquiv 𝕜 E F u = u.toTensorProduct :=
+  (rfl)
+
+/-- The inverse additive equivalence wraps an algebraic tensor. -/
+@[simp]
+theorem addEquiv_symm_apply (u : E ⊗[𝕜] F) : (addEquiv 𝕜 E F).symm u = mk u :=
+  (rfl)
+
 /-- The linear equivalence with `E ⊗[𝕜] F` forgets the wrapper. -/
 @[simp]
 theorem linearEquiv_apply (u : ProjectiveTensor 𝕜 E F) : linearEquiv 𝕜 E F u = u.toTensorProduct :=
@@ -227,6 +248,61 @@ theorem linearEquiv_apply (u : ProjectiveTensor 𝕜 E F) : linearEquiv 𝕜 E F
 /-- The inverse linear equivalence wraps an algebraic tensor. -/
 @[simp]
 theorem linearEquiv_symm_apply (u : E ⊗[𝕜] F) : (linearEquiv 𝕜 E F).symm u = ⟨u⟩ :=
+  (rfl)
+
+/-- The underlying tensor of `0` is `0`. -/
+@[simp]
+theorem toTensorProduct_zero : (0 : ProjectiveTensor 𝕜 E F).toTensorProduct = 0 :=
+  (rfl)
+
+/-- The underlying tensor of a sum is the sum of the underlying tensors. -/
+@[simp]
+theorem toTensorProduct_add (u v : ProjectiveTensor 𝕜 E F) :
+    (u + v).toTensorProduct = u.toTensorProduct + v.toTensorProduct :=
+  (rfl)
+
+/-- The underlying tensor of a negation is the negated underlying tensor. -/
+@[simp]
+theorem toTensorProduct_neg (u : ProjectiveTensor 𝕜 E F) :
+    (-u).toTensorProduct = -u.toTensorProduct :=
+  (rfl)
+
+/-- The underlying tensor of a difference is the difference of the underlying tensors. -/
+@[simp]
+theorem toTensorProduct_sub (u v : ProjectiveTensor 𝕜 E F) :
+    (u - v).toTensorProduct = u.toTensorProduct - v.toTensorProduct :=
+  (rfl)
+
+/-- The underlying tensor of a scalar multiple is the scalar multiple of the underlying tensor.
+-/
+@[simp]
+theorem toTensorProduct_smul (a : 𝕜) (u : ProjectiveTensor 𝕜 E F) :
+    (a • u).toTensorProduct = a • u.toTensorProduct :=
+  (rfl)
+
+/-- Wrapping `0` gives `0`. -/
+@[simp]
+theorem mk_zero : (mk 0 : ProjectiveTensor 𝕜 E F) = 0 :=
+  (rfl)
+
+/-- Wrapping a sum gives the sum of the wrapped tensors. -/
+@[simp]
+theorem mk_add (u v : E ⊗[𝕜] F) : (mk (u + v) : ProjectiveTensor 𝕜 E F) = mk u + mk v :=
+  (rfl)
+
+/-- Wrapping a negation gives the negation of the wrapped tensor. -/
+@[simp]
+theorem mk_neg (u : E ⊗[𝕜] F) : (mk (-u) : ProjectiveTensor 𝕜 E F) = -mk u :=
+  (rfl)
+
+/-- Wrapping a difference gives the difference of the wrapped tensors. -/
+@[simp]
+theorem mk_sub (u v : E ⊗[𝕜] F) : (mk (u - v) : ProjectiveTensor 𝕜 E F) = mk u - mk v :=
+  (rfl)
+
+/-- Wrapping a scalar multiple gives the scalar multiple of the wrapped tensor. -/
+@[simp]
+theorem mk_smul (a : 𝕜) (u : E ⊗[𝕜] F) : (mk (a • u) : ProjectiveTensor 𝕜 E F) = a • mk u :=
   (rfl)
 
 /-- Two projective tensors are equal when their underlying algebraic tensors are equal. -/
