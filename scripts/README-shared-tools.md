@@ -21,8 +21,7 @@ The complete installation inventory is in the [setup manual](https://github.com/
 The no-stacking workflow pins its batching implementation separately in
 `.github/workflows/stack-policy.yml`. Before local no-stacking commands or tests,
 materialize the helpers using that workflow's Tools revision. The project default
-and other workflow pins remain independent. The full no-stacking source-policy
-suite runs in `stack-policy.yml` under its own pin, rather than being duplicated
-in main CI under the older default whose workflow contract assumes the former
-layout. Checkpoint-restoration fault tests run in both workflows independently of
-the Tools pin.
+and other workflow pins remain independent. `test_stack_policy.py` runs in
+`stack-policy.yml` against that workflow's Tools pin.
+`test_stack_checkpoint_restore.py` runs in both the policy workflow and main CI
+and does not depend on the Tools pin.

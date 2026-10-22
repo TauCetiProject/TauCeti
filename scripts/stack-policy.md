@@ -207,8 +207,7 @@ Tools revision pinned in `stack-policy.yml`, as described in
 [shared tools](README-shared-tools.md). Run `python3 scripts/test_stack_policy.py`
 for real Git/source and API/mutation fixtures, and
 `python3 scripts/test_stack_checkpoint_restore.py` for unavailable checkpoint reads.
-The full source-policy suite runs in the policy workflow under its own Tools pin;
-main CI runs the independent checkpoint-restoration tests. Historical source observations are recorded at their named revisions
+Historical source observations are recorded at their named revisions
 in `stack_policy_fixtures.json`; they are not assertions about later heads.
 Use `python3 scripts/stack_policy.py --pr NUMBER --report audit.jsonl` for a local
 read-only audit; omit the number for backlog. `--apply` requires `STACK_ACTOR` to
@@ -262,8 +261,7 @@ assumed empty queue. Unavailable artifact-index, producer-metadata or download
 reads emit a notice and leave no input state, so enforcement can recover without
 waiting for the checkpoint service. Unverified producers are never downloaded;
 partial downloads are discarded. Publish only
-the output checkpoint file, including on failure; restore the latest artifact
-from this exact trusted main-defined workflow. Artifact publication commits
+the output checkpoint file, including on failure. Artifact publication commits
 progress; a failed publication leaves the old artifact authoritative. Discover
 artifacts directly because cancelled pending runs do not have useful state.
 Budget exhaustion is successful deferral only after the current invocation saved
@@ -272,13 +270,6 @@ failures remain red, as do unexpected execution and persistence failures.
 Dry-run and focused manual invocations must not restore or publish the automatic
 apply checkpoint artifact;
 `--pr` rejects combination with `--state-out` to protect one-PR canaries.
-
-The workflow coalesces automatic wakes globally: one running batch and the newest
-waiting wake cover changed identities, including notifications replaced before
-taking a runner. Manual and scheduled requests stay outside automatic replacement,
-and all policy mutations use the same global lock. Full recovery sweeps share
-this checkpoint so continuation does not restart at the first PR. The workflow
-adds no merge gate or fixed debounce.
 
 The [shared batching regression tests](https://github.com/TauCetiProject/TauCetiTools/blob/980a7a0e321a7fe86981f6c9f872a2acad93af69/tests/test_stack_batch.py)
 live in the pinned Tools repository. They cover collapsed notifications, current
