@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Topology.Sequences
 import Mathlib.Topology.Order.Compact
+import TauCeti.Topology.MetricSpace.SeparatedBalls
 import TauCeti.Topology.Sequences
 
 /-!
@@ -36,7 +37,7 @@ raises `#Z` by one, and `#Z * δ ≤ E` stops the process.
 
 This is the counting step of the bubbling analysis in Gromov compactness: for `J`-holomorphic
 curves, the mean-value inequality supplies the energy concentration hypothesis, and the points of
-`Z` are where bubbles form.
+`Z` are the concentration points at which further bubbling analysis is required.
 
 ## Main results
 
@@ -71,18 +72,12 @@ theorem card_mul_le_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : F
     (hZ : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ i in l, δ ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ) :
     Z.card * δ ≤ E := by
   -- Choose a radius `ε` for which the balls about the points of `Z` are pairwise disjoint.
-  obtain ⟨ε, hsep, hε⟩ : ∃ ε, (∀ z ∈ Z, ∀ z' ∈ Z, z ≠ z' → ε + ε ≤ dist z z') ∧ 0 < ε := by
-    refine (Eventually.and (f := 𝓝[>] (0 : ℝ)) ?_ self_mem_nhdsWithin).exists
-    simp only [eventually_all_finset]
-    intro z _ z' _
-    by_cases h : z = z'
-    · simp [h]
-    · filter_upwards [nhdsWithin_le_nhds (gt_mem_nhds (half_pos (dist_pos.2 h)))] with r hr _
-      linarith
+  obtain ⟨ε, hε, -, hsep⟩ :=
+    exists_pos_closedBall_subset_and_lt_dist (T := Z) (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
   obtain ⟨i, hi⟩ := ((eventually_all_finset Z).2 fun z hz ↦ hZ z hz ε hε).exists
   have hdisj : (Z : Set X).Pairwise (Disjoint on fun z ↦ ball z ε ∩ Ω) :=
-    fun z hz z' hz' hne ↦ (ball_disjoint_ball (hsep z hz z' hz' hne)).mono inter_subset_left
-      inter_subset_left
+    fun z hz z' hz' hne ↦ (ball_disjoint_ball (by linarith [hsep z hz z' hz' hne])).mono
+      inter_subset_left inter_subset_left
   calc Z.card * δ = ∑ z ∈ Z, δ := by simp
     _ ≤ ∑ z ∈ Z, ∫ y in ball z ε ∩ Ω, e i y ∂μ := Finset.sum_le_sum hi
     _ = ∫ y in ⋃ z ∈ Z, ball z ε ∩ Ω, e i y ∂μ :=
