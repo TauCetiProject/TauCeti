@@ -21,7 +21,7 @@ This file shows that `Hom_A(S, -)` commutes with this colimit when `S` is finite
   colimit already agree at a later stage.
 
 Combining these with the equivalence `(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)` of
-`TauCeti.Algebra.TensorProduct.directLimitLeft`, maps from a finitely presented
+`Algebra.TensorProduct.directLimitLeft`, maps from a finitely presented
 `A`-algebra `S` into `(colim B i) ⊗[A] M` descend to some `B i ⊗[A] M`, uniquely up to passing to
 a later stage. In base change form, every `R`-algebra map `R ⊗[A] S → R ⊗[A] M`, for
 `R = colim B i`, is the base change of a `B i`-algebra map `B i ⊗[A] S → B i ⊗[A] M`, and two such
@@ -102,7 +102,7 @@ variable {A ι : Type*} [CommSemiring A] [Preorder ι] {B : ι → Type*} [∀ i
   [IsDirectedOrder ι] [Nonempty ι] {S : Type*} [Semiring S] [Algebra A S]
   (M : Type*) [CommSemiring M] [Algebra A M]
 
-open _root_.Algebra.TensorProduct TauCeti.Algebra.TensorProduct
+open _root_.Algebra.TensorProduct
 
 /-- Two `A`-algebra maps from an `A`-algebra `S` of finite type into a base change `B j ⊗[A] M`
 which agree in `(colim B i) ⊗[A] M` already agree in `B k ⊗[A] M` for some `k ≥ j`. -/
@@ -145,7 +145,7 @@ variable {A ι : Type*} [CommRing A] [Preorder ι] {B : ι → Type*} [∀ i, Co
   [IsDirectedOrder ι] [Nonempty ι] {S : Type*} [Semiring S] [Algebra A S]
   (M : Type*) [CommSemiring M] [Algebra A M]
 
-open _root_.Algebra.TensorProduct TauCeti.Algebra.TensorProduct
+open _root_.Algebra.TensorProduct
 
 /-- An `A`-algebra map from a finitely presented `A`-algebra into a directed colimit of
 `A`-algebras factors through some stage. -/
