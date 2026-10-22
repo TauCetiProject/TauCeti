@@ -207,8 +207,9 @@ section Quotient
 
 variable (R V : Type*) [Ring R] [AddCommGroup V] [Module R V]
 
-/-- The finite-jet module `U_a(V) / (U_a(V) ∩ U_b(V))`. The group-level structures are fixed
-here so that the quotient can be used directly with concrete coefficient modules. -/
+/-- The finite-jet module `U_a(V) / (U_a(V) ∩ U_b(V))` of classes of series in `U_a(V)`.
+Two series define the same class when their difference lies in `U_b(V)`; the quotient is zero
+when `b ≤ a`. -/
 abbrev latticeQuotient (a b : ℤ) :=
   lattice R V a ⧸ (lattice R V b).comap (lattice R V a).subtype
 
@@ -296,7 +297,8 @@ theorem latticeEquiv_apply (a : ℤ) (f : lattice R V a) :
     (latticeEquiv R V a f : HahnSeries ℤ V) =
       (of R).symm (f : HahnModule ℤ R V) := by
   calc
-    _ = (ofLinearEquiv R).symm (f : HahnModule ℤ R V) := (rfl)
+    _ = (ofLinearEquiv R).symm (f : HahnModule ℤ R V) :=
+      LinearEquiv.ofSubmodule'_apply _ _ _
     _ = _ := ofLinearEquiv_symm_apply _
 
 @[simp]
@@ -304,8 +306,9 @@ theorem latticeEquiv_symm_apply (a : ℤ) (f : TauCeti.LaurentSeries.lattice R V
     ((latticeEquiv R V a).symm f : HahnModule ℤ R V) =
       of R (f : HahnSeries ℤ V) := by
   calc
-    _ = ofLinearEquiv R (f : HahnSeries ℤ V) := (rfl)
-    _ = _ := ofLinearEquiv_apply _
+    _ = ((ofLinearEquiv R).symm).symm (f : HahnSeries ℤ V) :=
+      LinearEquiv.ofSubmodule'_symm_apply _ _ _
+    _ = _ := by rw [LinearEquiv.symm_symm, ofLinearEquiv_apply]
 
 end Lattice
 
@@ -313,13 +316,14 @@ section Quotient
 
 variable (R V : Type*) [Ring R] [AddCommGroup V] [Module R V]
 
-/-- The finite-jet module `U_a(V) / (U_a(V) ∩ U_b(V))`. The group-level structures are fixed
-here so that the quotient can be used directly with concrete coefficient modules. -/
+/-- The finite-jet module `U_a(V) / (U_a(V) ∩ U_b(V))` of classes of series in `U_a(V)`.
+Two series define the same class when their difference lies in `U_b(V)`; the quotient is zero
+when `b ≤ a`. -/
 abbrev latticeQuotient (a b : ℤ) :=
   lattice R V a ⧸ (lattice R V b).comap (lattice R V a).subtype
 
-/-- The finite-jet quotient of a Hahn-module lattice is given by its coefficients on `[a, b)`.
-It is transported from the coefficient comparison for module-valued Hahn series. -/
+/-- The class of `f` in the Hahn-module lattice quotient maps to the coefficients of
+`(of R).symm f` at the exponents `a ≤ n < b`. -/
 noncomputable def latticeQuotientEquiv (a b : ℤ) :
     latticeQuotient R V a b ≃ₗ[R] (Finset.Ico a b → V) :=
   (Submodule.Quotient.equiv _ _ (latticeEquiv R V a) (by
