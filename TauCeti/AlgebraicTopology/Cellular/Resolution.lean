@@ -9,8 +9,6 @@ public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.AlgebraicTopology.Cellular.Augmentation
 public import TauCeti.AlgebraicTopology.Cellular.Covering
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
-public import TauCeti.AlgebraicTopology.Homotopy.Whitehead
 
 /-!
 # The cellular chains of a contractible free cover as a projective resolution
@@ -33,7 +31,8 @@ complex is exact (`TauCeti.quasiIso_cellularChainComplexAugmentation`), so the c
 This applies to the universal cover of a `K(G, 1)` CW complex: if `B` carries a CW structure on
 the whole space and is aspherical, and `E` is simply connected, then `E` is weakly contractible, and
 since it has CW type, it is contractible by Whitehead's theorem
-(`IsQuotientCoveringMap.contractibleSpace_preimage_univ`). The group acting is `G`, acting on `E`
+(`IsQuotientCoveringMap.contractibleSpace_preimage_univ`, in
+`TauCeti.AlgebraicTopology.EilenbergMacLane.Contractible`). The group acting is `G`, acting on `E`
 by the given action; Mathlib's `IsQuotientCoveringMap.fundamentalGroupEquiv` identifies `G` with
 the opposite of the fundamental group of `B`. This resolution is the input for identifying the
 cellular homology and cohomology of `B` with the group homology and cohomology of `G`.
@@ -51,15 +50,11 @@ cellular homology and cohomology of `B` with the group homology and cohomology o
 
 * `TauCeti.quasiIso_cellularChainComplexRepAugmentation`: for contractible `p ⁻¹' C`, the
   augmentation is a quasi-isomorphism.
-* `IsQuotientCoveringMap.contractibleSpace_preimage_univ`: the simply connected free cover of an
-  aspherical CW complex is contractible.
 
 ## References
 
 * K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section I.4, Proposition 4.1, and
   Section II.4.
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 4.1, Theorem 4.5
-  and the corollary after it.
 -/
 
 public section
@@ -101,8 +96,18 @@ lemma cellularAugmentationRep_hom_toLinearMap :
       (cellularAugmentation (p ⁻¹' C) (ModuleCat.of R R)).hom :=
   (rfl)
 
+/-- Forgetting the action, `TauCeti.cellularAugmentationRep` is the augmentation of the
+cellular chains of `p ⁻¹' C`. Not a simp lemma: `Rep.forget₂_moduleCat_map` and
+`TauCeti.cellularAugmentationRep_hom_toLinearMap` already prove it. -/
+lemma forget₂_map_cellularAugmentationRep :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    haveI := hG.isCoveringMap.t2Space
+    (forget₂ (Rep R G) (ModuleCat R)).map (cellularAugmentationRep C hG R) =
+      cellularAugmentation (p ⁻¹' C) (ModuleCat.of R R) :=
+  (rfl)
+
 /-- The equivariant augmentation vanishes on the boundaries of lifted `1`-cells. -/
-@[simp]
+@[reassoc (attr := simp)]
 lemma cellularDifferentialRep_comp_cellularAugmentationRep :
     cellularDifferentialRep C hG R 0 ≫ cellularAugmentationRep C hG R = 0 := by
   let := cwComplexPreimage C hG.isCoveringMap
@@ -145,25 +150,11 @@ theorem quasiIso_cellularChainComplexRepAugmentation [ContractibleSpace (p ⁻¹
   · refine Arrow.isoMk' _ _ (cellularChainComplexRepForget₂Iso C hG R)
       ((HomologicalComplex.singleMapHomologicalComplex _ _ 0).app _) ?_
     -- In degree `0` both sides are `TauCeti.cellularAugmentation` after transports along
-    -- equalities of objects; the transport between representations is compared with its image
-    -- under `forget₂` on elements.
+    -- equalities of objects. `Rep.forget₂_moduleCat_map` is excluded so that `forget₂` stays
+    -- visible on the transport, where `eqToHom_map` applies, and on the augmentation, where
+    -- `TauCeti.forget₂_map_cellularAugmentationRep` applies.
     ext : 1
-    simp only [HomologicalComplex.comp_f, cellularChainComplexRepForget₂Iso_hom_f,
-      cellularChainComplexAugmentation_f_zero, Functor.mapHomologicalComplex_map_f,
-      cellularChainComplexRepAugmentation_f_zero]
-    ext x
-    have h := congrArg (fun f ↦ ModuleCat.Hom.hom f x)
-      (eqToHom_map (forget₂ (Rep R G) (ModuleCat R)) (cellularChainComplexRep_X C hG R 0))
-    simp only [Rep.forget₂_moduleCat_map, ModuleCat.hom_ofHom] at h
-    simp only [ChainComplex.single₀_obj_zero, Functor.mapHomologicalComplex_obj_X,
-      Rep.forget₂_moduleCat_obj, eqToHom_trans_assoc, ModuleCat.hom_comp,
-      Rep.forget₂_moduleCat_map, Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
-      cellularAugmentationRep_hom_toLinearMap, ModuleCat.ofHom_comp, ModuleCat.of_coe,
-      ConcreteCategory.ofHom_hom, Iso.app_hom,
-      HomologicalComplex.singleMapHomologicalComplex_hom_app_self, ChainComplex.single₀ObjXSelf,
-      Iso.refl_hom, Rep.hom_id, Representation.IntertwiningMap.toLinearMap_id, ModuleCat.ofHom_id,
-      Iso.refl_inv, Category.comp_id, ConcreteCategory.hom_ofHom]
-    exact congrArg (cellularAugmentation (p ⁻¹' C) (ModuleCat.of R R)).hom h.symm
+    simp [-Rep.forget₂_moduleCat_map, eqToHom_map, forget₂_map_cellularAugmentationRep]
 
 /-- The terms of the lifted cellular chain complex are projective representations: each is free
 over the group ring, with basis one chosen lift of each cell of `C`. -/
@@ -203,29 +194,3 @@ lemma cellularResolution_π [ContractibleSpace (p ⁻¹' C)] :
   (rfl)
 
 end TauCeti
-
-namespace IsQuotientCoveringMap
-
-open TauCeti
-
-variable {E B : Type w} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
-  {G : Type w} [Group G] [MulAction G E]
-
-/-- **The simply connected free cover of an aspherical CW complex is contractible.** If `B`
-carries a CW structure on the whole space and is aspherical, and `E` is simply connected, then
-`E`, and so `p ⁻¹' univ`, is weakly contractible; it has CW type, through the lifted CW structure,
-so it is contractible by Whitehead's theorem. -/
-theorem contractibleSpace_preimage_univ (hG : IsQuotientCoveringMap p G) [T2Space B]
-    [CWComplex (univ : Set B)] [SimplyConnectedSpace E] {b : B} (hb : IsAspherical B b) :
-    ContractibleSpace (p ⁻¹' (univ : Set B)) := by
-  let := cwComplexPreimage (univ : Set B) hG.isCoveringMap
-  have := hG.isCoveringMap.t2Space
-  let e : (p ⁻¹' (univ : Set B)) ≃ₜ E :=
-    (Homeomorph.setCongr preimage_univ).trans (Homeomorph.Set.univ E)
-  have : CWType E := e.symm.cwType
-  obtain ⟨x, hx⟩ := hG.surjective b
-  have : ContractibleSpace E := contractibleSpace_of_subsingleton_homotopyGroup x
-    (hG.isCoveringMap.subsingleton_homotopyGroup_of_isAspherical hx hb)
-  exact e.contractibleSpace
-
-end IsQuotientCoveringMap

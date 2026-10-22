@@ -35,7 +35,9 @@ Taking the total space simply connected in the upwards direction says that the u
 of an aspherical space is weakly contractible: all of its homotopy groups vanish, including
 `π₁`, which is where simple connectedness enters. Nothing here asserts that such a cover is
 contractible; that is a genuinely stronger statement, which holds when the cover has CW type by
-Whitehead's theorem (`TauCeti.contractibleSpace_of_subsingleton_homotopyGroup`).
+Whitehead's theorem (`TauCeti.contractibleSpace_of_subsingleton_homotopyGroup`), for instance for
+the cover of a CW complex (`IsQuotientCoveringMap.contractibleSpace`, in
+`TauCeti.AlgebraicTopology.EilenbergMacLane.Contractible`).
 
 The `ᵐᵒᵖ` in Mathlib's `IsQuotientCoveringMap.fundamentalGroupEquiv` is invisible in the
 `K(G, 1)` statement below: being a `K(G, 1)` is invariant under `MulEquiv.inv'`, the

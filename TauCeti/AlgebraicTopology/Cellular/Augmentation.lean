@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.SingleHomology
+public import TauCeti.AlgebraicTopology.Cellular.Coproduct
 public import TauCeti.AlgebraicTopology.Cellular.Naturality
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 
@@ -41,6 +42,11 @@ colimits are exact, as for modules over a ring; no finiteness of the set of cell
 
 ## Main results
 
+* `TauCeti.ι_cellularChainGroupIso_inv_comp_cellularAugmentation`: the augmentation takes the
+  value `1` on the generator of each `0`-cell.
+* `TauCeti.descOpcycles_cellularAugmentation`: on cellular homology in degree `0`, the
+  augmentation induces the cellular–singular comparison followed by the augmentation of singular
+  homology.
 * `TauCeti.cellularChainGroupMap_comp_cellularAugmentation`: the augmentation is natural under
   cellular maps.
 * `TauCeti.exactAt_cellularChainComplex_of_contractibleSpace`: the cellular chain complex of a
@@ -89,6 +95,55 @@ lemma cellularAugmentation_def :
             (TopCat.of C).singularHomology₀ε R :=
   (rfl)
 
+/-- On the zeroth singular homology of the `0`-skeleton, mapped to the cellular chains by the
+quotient for the empty subspace, the augmentation is the augmentation of singular homology. -/
+@[reassoc]
+lemma singularHomologyπ_comp_cellularAugmentation :
+    (skeletonPair C 0).singularHomologyπ R 0 ≫ cellularAugmentation C R =
+      (TopCat.of (skeletonObj C 1)).singularHomology₀ε R := by
+  have h1 := cellularCyclesIso_inv_comp_iCycles C R 0
+  rw [skeletonBasePairToSkeletonPair_zero, TopPair.singularHomologyMap_id, Category.id_comp] at h1
+  -- The absolute and relative homology objects agree only up to unfolding, so the composites
+  -- through the quotient map of `C` are reassociated by terms rather than by `rw` or `simp`.
+  have key : (skeletonPair C 0).singularHomologyπ R 0 ≫ (cellularCyclesIso C R 0).inv ≫
+      homologyπ _ 0 ≫ (cellularSingularHomologyIsoOfCWComplex C R 0).hom =
+        SSet.homologyMap
+          (TopCat.toSSet.map (TopPair.Hom.fst (skeletonBasePairToComplex C 0))) R 0 := by
+    refine (cancel_mono ((complexBasePair C).singularHomologyπ R 0)).1 ?_
+    refine ((Category.assoc _ _ _).trans (_ ≫= (Category.assoc _ _ _).trans (_ ≫=
+      (Category.assoc _ _ _).trans (_ ≫=
+        cellularSingularHomologyIsoOfCWComplex_hom_comp_singularHomologyπ C R 0)))).trans ?_
+    exact (_ ≫= (_ ≫= homologyπ_comp_cellularSingularHomologyIso_hom C R 0)).trans
+      ((_ ≫= Iso.inv_hom_id_assoc _ _).trans
+        (TopPair.singularHomologyπ_naturality (skeletonBasePairToComplex C 0) (R := R) 0).symm)
+  have h2 := key =≫ (TopCat.of C).singularHomology₀ε R
+  simp only [Category.assoc] at h2
+  rw [cellularAugmentation, ← h1]
+  simp only [Category.assoc]
+  rw [← HomologicalComplex.homology_π_ι_assoc, isoHomologyι_hom_inv_id_assoc, h2]
+  exact singularHomologyMap_singularHomology₀ε R _
+
+/-- **The augmentation takes the value `1` on each `0`-cell**: it sends the generator of a
+`0`-cell, under the identification `TauCeti.cellularChainGroupIso` of the cellular chains with
+copies of `R` indexed by the cells, to the identity of `R`. -/
+@[reassoc (attr := simp)]
+lemma ι_cellularChainGroupIso_inv_comp_cellularAugmentation (j : cell C 0) :
+    Sigma.ι (fun _ ↦ R) j ≫ (cellularChainGroupIso C R 0).inv ≫ cellularAugmentation C R =
+      𝟙 R := by
+  let φ := TopPair.sigmaι (fun _ ↦ diskBoundaryPair.{w} 0) j ≫
+    (sigmaDiskBoundaryPairIso (cell C 0) 0).hom ≫ characteristicPairMap C 0
+  -- The generator is the image of the class of the point `D⁰` under the characteristic map.
+  have hφ : (diskBoundaryPair.{w} 0).singularHomologyπ R 0 ≫
+      TopPair.singularHomologyMap φ R 0 ≫ cellularAugmentation C R =
+        (TopCat.disk.{w} 0).singularHomology₀ε R :=
+    ((Category.assoc _ _ _).symm.trans
+      ((TopPair.singularHomologyπ_naturality φ (R := R) 0).symm =≫ _)).trans
+        ((Category.assoc _ _ _).trans ((_ ≫= singularHomologyπ_comp_cellularAugmentation C R).trans
+          (singularHomologyMap_singularHomology₀ε R _)))
+  exact (ι_cellularChainGroupIso_inv_assoc C R 0 j _).trans
+    ((_ ≫= ((IsIso.eq_inv_comp _).2 hφ).trans
+      (singularHomologyDiskBoundaryPairIso_zero_hom R).symm).trans (Iso.inv_hom_id _))
+
 /-- The augmentation vanishes on the boundaries of `1`-cells. -/
 @[reassoc (attr := simp)]
 lemma cellularDifferential_comp_cellularAugmentation :
@@ -113,6 +168,18 @@ lemma cellularChainComplexAugmentation_f_zero :
     (cellularChainComplexAugmentation C R).f 0 =
       eqToHom (cellularChainComplex_X C R 0) ≫ cellularAugmentation C R :=
   ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
+
+/-- The map that the augmentation induces on cellular homology in degree `0`, identified with the
+opcycles, is the cellular–singular comparison followed by the augmentation of singular homology. -/
+lemma descOpcycles_cellularAugmentation :
+    (cellularChainComplex C R).descOpcycles
+        (eqToHom (cellularChainComplex_X C R 0) ≫ cellularAugmentation C R) 1 (by simp)
+        (by simp) =
+      (cellularChainComplex C R).isoHomologyι₀.inv ≫
+        (cellularSingularHomologyIsoOfCWComplex C R 0).hom ≫
+          (TopCat.of C).singularHomology₀ε R := by
+  rw [← cancel_epi ((cellularChainComplex C R).pOpcycles 0), p_descOpcycles]
+  simp [cellularAugmentation]
 
 omit [HasColimitsOfShape ℕ A] [HasExactColimitsOfShape ℕ A] in
 /-- **The cellular chain complex of a contractible CW complex is exact in positive degrees**:
@@ -141,12 +208,7 @@ theorem quasiIso_cellularChainComplexAugmentation [ContractibleSpace C] :
           eqToHom (cellularChainComplex_X C R 0) ≫ cellularAugmentation C R = 0 := by simp
       -- The map induced on cellular homology in degree `0` is an isomorphism.
       have : IsIso ((cellularChainComplex C R).descOpcycles _ 1 (by simp) hε) := by
-        rw [show (cellularChainComplex C R).descOpcycles _ 1 _ hε =
-          (cellularChainComplex C R).isoHomologyι₀.inv ≫
-            (cellularSingularHomologyIsoOfCWComplex C R 0).hom ≫
-              (TopCat.of C).singularHomology₀ε R by
-          rw [← cancel_epi ((cellularChainComplex C R).pOpcycles 0), p_descOpcycles]
-          simp [cellularAugmentation]]
+        rw [descOpcycles_cellularAugmentation]
         infer_instance
       obtain ⟨hex, hepi⟩ := (ChainComplex.isIso_descOpcycles_iff _ _ _).1 this
       refine ⟨(ShortComplex.exact_iff_of_iso ?_).1 hex, ?_⟩
