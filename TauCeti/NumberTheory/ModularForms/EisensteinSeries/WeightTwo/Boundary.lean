@@ -57,8 +57,12 @@ theorem linearIndependent_constantTerms_correctedE2AtLevel :
     LinearIndependent ℂ (fun d : {d : ℕ // 1 < d ∧ d ∣ N} ↦
       ModularForm.constantTerms (correctedE2AtLevel N d)) := by
   suffices h : LinearIndependent ℂ (constantTermsAtDivisors ∘ correctedE2AtLevel N) by
-    erw [constantTermsAtDivisors_eq_comp, LinearMap.coe_comp, Function.comp_assoc] at h
-    exact LinearIndependent.of_comp _ h
+    rw [constantTermsAtDivisors_eq_comp] at h
+    -- The restatement unfolds `SL(2, ℤ)` to the matrix subtype in `funLeft`'s domain.
+    -- `erw` identifies this with the `SL(2, ℤ)` codomain of `constantTerms`.
+    erw [LinearMap.coe_comp] at h
+    rw [Function.comp_assoc] at h
+    exact LinearIndependent.of_comp (LinearMap.funLeft ℂ ℂ _) h
   classical
   let v : N.divisors → N.divisors → ℂ :=
     fun d c ↦ (Nat.gcd c.val d.val : ℂ) ^ 2 / d.val
@@ -78,7 +82,10 @@ theorem linearIndependent_constantTerms_correctedE2AtLevel :
   convert (hd.comp nontrivialDivisorEquiv nontrivialDivisorEquiv.injective).neg using 1
   funext d c
   dsimp only [Function.comp_def, Pi.neg_apply]
-  erw [constantTermsAtDivisors_apply, constantTermAt_correctedE2AtLevel]
+  rw [constantTermsAtDivisors_apply]
+  -- The evaluation lemma unfolds the representative's type to the matrix subtype;
+  -- `erw` identifies it with the `SL(2, ℤ)` argument of the constant-term formula.
+  erw [constantTermAt_correctedE2AtLevel]
   simp [v, one, Int.gcd_natCast_natCast, sub_eq_add_neg, add_comm]
 
 /-- The span of corrected weight-two Eisenstein series has no nonzero cusp form. -/
