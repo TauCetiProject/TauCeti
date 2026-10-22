@@ -11,11 +11,12 @@ public import Mathlib.LinearAlgebra.Projectivization.Basic
 /-!
 # Standard affine charts of projective space
 
-For a field `K` and an index type `ι`, the projective space `ℙ K (ι → K)` is covered by the
-standard affine opens `U_i = {[v] | v i ≠ 0}`, one for each `i : ι`. For `ι = Fin (n + 1)`, the
-homogeneous ratios `[v] ↦ (v (i.succAbove j) / v i)_(j : Fin n)` identify `U_i` with the affine
-space `Fin n → K`; the inverse inserts the coordinate `1` in position `i`, sending `z` to
-`[Fin.insertNth i 1 z]`. The remaining coordinates are enumerated by `Fin.succAbove i`.
+For a division ring `K` and an index type `ι`, the projective space `ℙ K (ι → K)` is covered by
+the standard affine opens `U_i = {[v] | v i ≠ 0}`, one for each `i : ι`. For a field `K` and
+`ι = Fin (n + 1)`, the homogeneous ratios `[v] ↦ (v (i.succAbove j) / v i)_(j : Fin n)`
+identify `U_i` with the affine space `Fin n → K`; the inverse inserts the coordinate `1` in
+position `i`, sending `z` to `[Fin.insertNth i 1 z]`. The remaining coordinates are enumerated by
+`Fin.succAbove i`.
 
 This file records these charts as partial equivalences `Projectivization.affineChart i`, together
 with their transition maps: on the overlap of `U_i` and `U_j`, the transition from the chart of `i`
@@ -46,13 +47,18 @@ open Set
 
 open scoped LinearAlgebra.Projectivization
 
-namespace Projectivization
+/-- Inserting the coordinate `1` into a tuple gives a tuple that does not vanish; these are the
+homogeneous coordinates `Fin.insertNth i 1 z` of the point with affine coordinates `z` in the
+standard affine chart of `i`. -/
+theorem Fin.insertNth_one_ne_zero {α : Type*} [Zero α] [One α] [NeZero (1 : α)] {n : ℕ}
+    (i : Fin (n + 1)) (z : Fin n → α) : Fin.insertNth (α := fun _ ↦ α) i 1 z ≠ 0 :=
+  fun h ↦ one_ne_zero (α := α) (by simpa using congr_fun h i)
 
-variable {K : Type*} [Field K]
+namespace Projectivization
 
 section AffineOpen
 
-variable {ι : Type*}
+variable {K : Type*} [DivisionRing K] {ι : Type*}
 
 /-- The standard affine open of projective space where the `i`-th homogeneous coordinate is
 nonzero. -/
@@ -90,13 +96,7 @@ theorem affineOpen_eq_univ [Subsingleton ι] (i : ι) : affineOpen (K := K) i = 
 
 end AffineOpen
 
-variable {n : ℕ}
-
-/-- The homogeneous coordinates `Fin.insertNth i 1 z` of the point with affine coordinates `z` in
-the chart of `i` do not all vanish. -/
-theorem insertNth_one_ne_zero (i : Fin (n + 1)) (z : Fin n → K) :
-    Fin.insertNth (α := fun _ ↦ K) i 1 z ≠ 0 :=
-  fun h ↦ one_ne_zero (α := K) (by simpa using congr_fun h i)
+variable {K : Type*} [Field K] {n : ℕ}
 
 /-- The standard affine chart of projective space at the coordinate `i`: on the affine open where
 the `i`-th homogeneous coordinate is nonzero, it is given by the ratios of the other coordinates to
@@ -110,7 +110,7 @@ noncomputable def affineChart (i : Fin (n + 1)) : PartialEquiv (ℙ K (Fin (n + 
     ext j
     simp [h, mul_div_mul_left _ _ ht]
   invFun z := mk K (Fin.insertNth (α := fun _ ↦ K) i 1 z)
-    (insertNth_one_ne_zero i z)
+    (Fin.insertNth_one_ne_zero i z)
   source := affineOpen i
   target := univ
   map_source' _ _ := mem_univ _
@@ -146,7 +146,7 @@ theorem affineChart_mk (i : Fin (n + 1)) (v : Fin (n + 1) → K) (hv : v ≠ 0) 
 @[simp]
 theorem affineChart_symm_apply (i : Fin (n + 1)) (z : Fin n → K) :
     (affineChart i).symm z = mk K (Fin.insertNth (α := fun _ ↦ K) i 1 z)
-      (insertNth_one_ne_zero i z) :=
+      (Fin.insertNth_one_ne_zero i z) :=
   (rfl)
 
 /-- The domain of the transition map from the standard affine chart of `i` to that of `j`
