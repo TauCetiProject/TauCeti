@@ -36,7 +36,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
   at naturals prime to the new level.
-* `DirichletCharacter.even_changeLevel_iff`: changing the level preserves parity.
+* `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
+  changing the level preserves the value at `-1`, hence parity.
 * `DirichletCharacter.conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply`: a primitivity
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
@@ -175,13 +176,17 @@ theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n :
     (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
 
+/-- Raising the level of a Dirichlet character does not change its value at `-1`. -/
+@[simp]
+theorem changeLevel_apply_neg_one {S : Type*} [CommRing S] {d n : ℕ} (h : d ∣ n)
+    (χ : DirichletCharacter S d) : changeLevel h χ (-1) = χ (-1) := by
+  simpa using changeLevel_eq_cast_of_dvd' χ h (a := -1) (IsCoprime.neg_left isCoprime_one_left)
+
 /-- **Changing the level preserves parity**: the value at `-1` of a Dirichlet character is the
 value at `-1` of its lift to any multiple level. -/
 @[simp]
 theorem even_changeLevel_iff {S : Type*} [CommRing S] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter S d) : (changeLevel h χ).Even ↔ χ.Even := by
-  have hneg := changeLevel_eq_cast_of_dvd' χ h (a := -1) (IsCoprime.neg_left isCoprime_one_left)
-  simp only [Int.cast_neg, Int.cast_one] at hneg
-  rw [Even, Even, hneg]
+  rw [Even, Even, changeLevel_apply_neg_one]
 
 end DirichletCharacter

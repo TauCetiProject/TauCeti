@@ -51,28 +51,6 @@ namespace TauCeti.EisensteinSeries.CharIndex
 
 variable {N k : ℕ} [NeZero N]
 
-/-- Two indices with the same raising parameter whose characters agree after raising to level
-`N` are equal: a primitive character is determined by its raise, its modulus being the
-conductor of the raise. -/
-private theorem eq_of_changeLevel_eq {a b : CharIndex N k} (ht : a.t = b.t)
-    (hpsi : a.psi.changeLevel a.u_dvd = b.psi.changeLevel b.u_dvd)
-    (hphi : a.phi.changeLevel a.v_dvd = b.phi.changeLevel b.v_dvd) : a = b := by
-  have hu : a.u = b.u := by
-    have h := congrArg DirichletCharacter.conductor hpsi
-    rwa [DirichletCharacter.conductor_changeLevel, DirichletCharacter.conductor_changeLevel,
-      a.psi_primitive, b.psi_primitive] at h
-  have hv : a.v = b.v := by
-    have h := congrArg DirichletCharacter.conductor hphi
-    rwa [DirichletCharacter.conductor_changeLevel, DirichletCharacter.conductor_changeLevel,
-      a.phi_primitive, b.phi_primitive] at h
-  obtain ⟨u, v, t, psi, phi, _, _, _, _⟩ := a
-  obtain ⟨u', v', t', psi', phi', _, _, _, _⟩ := b
-  dsimp only at hu hv ht hpsi hphi
-  subst hu hv ht
-  obtain rfl := DirichletCharacter.changeLevel_injective _ hpsi
-  obtain rfl := DirichletCharacter.changeLevel_injective _ hphi
-  rfl
-
 /-- **Linear independence of the Eisenstein series with character** (Diamond–Shurman,
 Theorem 4.5.2): in weight `k ≥ 3`, the normalized raised series `E_k^(psi, phi, t)` attached to
 distinct indices are linearly independent. -/
