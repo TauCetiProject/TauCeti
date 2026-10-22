@@ -136,33 +136,26 @@ theorem signOf_mul_signOf_eq_neg {x z : GridState n} {D E : GridRectangleDecompo
 
 /-! ### Gauge transforms -/
 
+/-- In a two-step product of gauged signs the gauge sign `b` of the intermediate state appears
+twice and cancels. -/
+private theorem gauge_mul_gauge (a b c s t : ℤˣ) : a * b * s * (b * c * t) = a * c * (s * t) := by
+  calc a * b * s * (b * c * t) = (b * b) * (a * c * (s * t)) := by ac_rfl
+    _ = a * c * (s * t) := by rw [Int.units_mul_self, one_mul]
+
 /-- The gauge transform of a sign assignment by a sign `f` on grid states: the sign of a rectangle
 from `x` to `y` is multiplied by `f x * f y`. The rules survive because in every two-step product
 the sign of the intermediate state appears twice. -/
 def gauge (f : GridState n → ℤˣ) : GridSignAssignment n where
   sign {x y} r hr := f x * f y * S.sign r hr
   sign_mul_sign_eq_neg {x z} D E hD₁ hD₂ hE₁ hE₂ hne hdomain := by
-    have h := S.sign_mul_sign_eq_neg D E hD₁ hD₂ hE₁ hE₂ hne hdomain
-    calc f x * f E.middle * S.sign E.first hE₁ * (f E.middle * f z * S.sign E.second hE₂)
-        = (f E.middle * f E.middle) * (f x * f z) *
-            (S.sign E.first hE₁ * S.sign E.second hE₂) := by ac_rfl
-      _ = -((f D.middle * f D.middle) * (f x * f z) *
-            (S.sign D.first hD₁ * S.sign D.second hD₂)) := by
-          rw [h, Int.units_mul_self, Int.units_mul_self, mul_neg]
-      _ = -(f x * f D.middle * S.sign D.first hD₁ *
-            (f D.middle * f z * S.sign D.second hD₂)) := by congr 1; ac_rfl
+    rw [gauge_mul_gauge, gauge_mul_gauge, S.sign_mul_sign_eq_neg D E hD₁ hD₂ hE₁ hE₂ hne hdomain,
+      mul_neg]
   sign_mul_sign_eq_neg_one_of_left_eq_left {x y} r s hr hs hleft := by
-    calc f x * f y * S.sign r hr * (f y * f x * S.sign s hs)
-        = (f x * f x) * (f y * f y) * (S.sign r hr * S.sign s hs) := by ac_rfl
-      _ = -1 := by
-          rw [S.sign_mul_sign_eq_neg_one_of_left_eq_left r s hr hs hleft, Int.units_mul_self,
-            Int.units_mul_self, one_mul, one_mul]
+    rw [gauge_mul_gauge, S.sign_mul_sign_eq_neg_one_of_left_eq_left r s hr hs hleft,
+      Int.units_mul_self, one_mul]
   sign_mul_sign_eq_one_of_left_eq_right {x y} r s hr hs hright := by
-    calc f x * f y * S.sign r hr * (f y * f x * S.sign s hs)
-        = (f x * f x) * (f y * f y) * (S.sign r hr * S.sign s hs) := by ac_rfl
-      _ = 1 := by
-          rw [S.sign_mul_sign_eq_one_of_left_eq_right r s hr hs hright, Int.units_mul_self,
-            Int.units_mul_self, one_mul, one_mul]
+    rw [gauge_mul_gauge, S.sign_mul_sign_eq_one_of_left_eq_right r s hr hs hright,
+      Int.units_mul_self, one_mul]
 
 /-- The sign of an empty rectangle in a gauge transform. -/
 @[simp]
@@ -190,11 +183,8 @@ theorem gauge_one : S.gauge 1 = S := by
 
 /-- A gauge transform is undone by the same gauge, since every sign squares to `1`. -/
 theorem gauge_gauge_self (f : GridState n → ℤˣ) : (S.gauge f).gauge f = S := by
-  ext x y r hr : 1
-  simp only [gauge_sign]
-  calc f x * f y * (f x * f y * S.sign r hr)
-      = (f x * f x) * (f y * f y) * S.sign r hr := by ac_rfl
-    _ = S.sign r hr := by rw [Int.units_mul_self, Int.units_mul_self, one_mul, one_mul]
+  have hf : f * f = 1 := funext fun x => Int.units_mul_self (f x)
+  rw [gauge_gauge, hf, gauge_one]
 
 end GridSignAssignment
 
