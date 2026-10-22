@@ -51,7 +51,7 @@ Since `1 - e^{-α}` is not a zero divisor in `ℤ[M]`, the localization identity
 * `RootPairing.demazureOperator_eq_self_iff`: `Dᵢ f = f` exactly when `sᵢ f = f`.
 * `RootPairing.demazureOperator_demazureOperator`: `Dᵢ² = Dᵢ`.
 * `RootPairing.demazureOperator_mul_of_reflection_eq`: `Dᵢ` is linear over `sᵢ`-invariants.
-* `RootPairing.demazureOperator_of_isWeylInvariant`: `Dᵢ` fixes Weyl-invariant elements.
+* `RootPairing.demazureOperator_eq_self_of_isWeylInvariant`: `Dᵢ` fixes Weyl-invariant elements.
 
 ## References
 
@@ -228,7 +228,7 @@ theorem demazureOperator_mul_of_reflection_eq {g : AddMonoidAlgebra ℤ M}
   ring
 
 /-- The Demazure operator fixes every Weyl-invariant element. -/
-theorem demazureOperator_of_isWeylInvariant {f : AddMonoidAlgebra ℤ M}
+theorem demazureOperator_eq_self_of_isWeylInvariant {f : AddMonoidAlgebra ℤ M}
     (hf : TauCeti.IsWeylInvariant P f) : P.demazureOperator i f = f := by
   refine (P.demazureOperator_eq_self_iff i).mpr (AddMonoidAlgebra.ext (Finsupp.ext fun x ↦ ?_))
   simpa [← LinearEquiv.coe_inv] using hf.coeff_smul (weylGroup.ofIdx P i) x
