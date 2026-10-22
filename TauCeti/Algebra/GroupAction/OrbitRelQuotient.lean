@@ -826,7 +826,7 @@ instance instSMulQuotientGroup : SMul (G ⧸ H) (orbitRel.Quotient H P) where
     orbitRel_smul_smul H (QuotientGroup.leftRel_apply.1 hg) hpq
 
 /-- The action of `G ⧸ H` on `H`-orbits is computed on representatives. -/
-@[simp, to_additive (attr := simp) /-- The action of `G ⧸ H` on `H`-orbits is computed on
+@[to_additive (attr := simp) /-- The action of `G ⧸ H` on `H`-orbits is computed on
 representatives. -/]
 theorem mk_smul_mk (g : G) (p : P) :
     (g : G ⧸ H) • (Quotient.mk'' p : orbitRel.Quotient H P) = Quotient.mk'' (g • p) :=

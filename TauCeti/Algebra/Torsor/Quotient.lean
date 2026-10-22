@@ -86,7 +86,7 @@ instance instSDivQuotientGroup : SDiv (G ⧸ H) (orbitRel.Quotient H P) where
     mk_sdiv_eq_mk_sdiv H hp hq
 
 /-- The difference of two `H`-orbits is computed on representatives. -/
-@[simp, to_additive (attr := simp) /-- The difference of two `H`-orbits is computed on
+@[to_additive (attr := simp) /-- The difference of two `H`-orbits is computed on
 representatives. -/]
 theorem mk_sdiv_mk (p q : P) :
     (Quotient.mk'' p : orbitRel.Quotient H P) /ₛ Quotient.mk'' q = ((p /ₛ q : G) : G ⧸ H) :=
