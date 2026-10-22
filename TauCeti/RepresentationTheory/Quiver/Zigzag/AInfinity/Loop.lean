@@ -55,6 +55,8 @@ Nontriviality of such a deformation modulo `A∞` isomorphism is not addressed h
   word, where it is the volume class at the base of the walk.
 * `TauCeti.zigzagLoopAInfinityAlgebra_m_two_apply`, `TauCeti.zigzagLoopAInfinityAlgebra_m_four`
   and `TauCeti.zigzagLoopAInfinityAlgebra_m_eq_zero`: the operations.
+* `TauCeti.zigzagLoopAInfinityAlgebra_zero_m_eq_zero`: with zero coefficients, the strict zigzag
+  algebra, every operation besides `m₂` vanishes.
 * `TauCeti.isMinimal_zigzagLoopAInfinityAlgebra` and
   `TauCeti.strictUnit_one_zigzagLoopAInfinityAlgebra`: the algebra is minimal and strictly unital.
 * `TauCeti.isHomogeneous_zigzagLoopAInfinityAlgebra_m_adams`: the Adams degree of `m n` is
@@ -318,6 +320,14 @@ theorem zigzagLoopAInfinityAlgebra_m_four :
 theorem zigzagLoopAInfinityAlgebra_m_eq_zero {n : ℕ} (h₂ : n ≠ 2) (h₄ : n ≠ 4) :
     (zigzagLoopAInfinityAlgebra hns c hc).m n = 0 := by
   rw [zigzagLoopAInfinityAlgebra_m, loopOps_eq_zero c h₂ h₄]
+
+/-- The strict zigzag algebra, the loop deformation with zero coefficients, has no operation
+besides the product. -/
+theorem zigzagLoopAInfinityAlgebra_zero_m_eq_zero {n : ℕ} (hn : n ≠ 2) :
+    (zigzagLoopAInfinityAlgebra hns (0 : (Fin 4 → G.Dart) →₀ k) (by simp)).m n = 0 := by
+  rcases eq_or_ne n 4 with rfl | h₄
+  · rw [zigzagLoopAInfinityAlgebra_m_four, _root_.map_zero]
+  · exact zigzagLoopAInfinityAlgebra_m_eq_zero _ _ hn h₄
 
 /-- **The quartic operation on arrows**: on the arrows of four darts `d`, the quartic operation of
 the loop deformation is the coefficient `c d` times the volume class at the head of `d 0`. -/

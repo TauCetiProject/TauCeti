@@ -591,13 +591,6 @@ private theorem letter_add_zigzagBacktrackTaylor_subword_three {n : ℕ}
   rw [LinearMap.add_apply, letter_subword_of_ne_one k _ x s (by norm_num), zero_add,
     zigzagBacktrackTaylor_subword_three hns a x s h]
 
-/-- The strict zigzag algebra has no operation besides the product. -/
-private theorem zigzagLoopAInfinityAlgebra_zero_m_eq_zero {n : ℕ} (hn : n ≠ 2) :
-    (zigzagLoopAInfinityAlgebra hns (0 : (Fin 4 → G.Dart) →₀ k) (by simp)).m n = 0 := by
-  rcases eq_or_ne n 4 with rfl | h₄
-  · rw [zigzagLoopAInfinityAlgebra_m_four, map_zero]
-  · exact zigzagLoopAInfinityAlgebra_m_eq_zero _ _ hn h₄
-
 variable (hP : ∀ p ∈ P, p.1.fst = p.2.snd) (hP' : ∀ p ∈ P, ∀ q ∈ P, q.1 ≠ p.1.symm)
 
 include hP' in
@@ -745,7 +738,7 @@ private theorem taylor_comp_coalgHom_zigzagBacktrackTaylor :
   refine linearMap_ext k _ fun ⟨n, hn⟩ x ↦ ?_
   rw [LinearMap.comp_apply,
     (isMinimal_zigzagLoopAInfinityAlgebra (hns := hns) _ _).taylor_coalgHom_of_tprod
-      (fun m hm ↦ zigzagLoopAInfinityAlgebra_zero_m_eq_zero hns (by omega)),
+      (fun m hm ↦ zigzagLoopAInfinityAlgebra_zero_m_eq_zero (by omega)),
     LinearMap.add_apply, LinearMap.comp_apply, AInfinityAlgebra.barDifferential_def,
     gradedCoderiv_of_tprod, map_sum]
   simp only [map_sum]
@@ -876,7 +869,7 @@ theorem isFormal_zigzagLoopAInfinityAlgebra_zigzagBacktrackCoefficients :
     (zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a)
       (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients a hP)).IsFormal :=
   (AInfinityAlgebra.IsMinimal.isFormal (isMinimal_zigzagLoopAInfinityAlgebra _ _)
-    fun _ hn ↦ zigzagLoopAInfinityAlgebra_zero_m_eq_zero hns (by omega)).of_isQuasiIso
+    fun _ hn ↦ zigzagLoopAInfinityAlgebra_zero_m_eq_zero (by omega)).of_isQuasiIso
       (isIso_zigzagBacktrackAInfinityHom hns a hP hP').isQuasiIso
 
 end AInfinity

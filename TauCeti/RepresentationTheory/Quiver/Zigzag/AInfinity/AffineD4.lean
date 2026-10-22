@@ -323,11 +323,9 @@ theorem exists_isIso_liuWangAffineD4AInfinityAlgebra (c : k) :
 `A∞` deformation. -/
 theorem isFormal_liuWangAffineD4AInfinityAlgebra (c : k) :
     (liuWangAffineD4AInfinityAlgebra k c).IsFormal := by
-  obtain ⟨f, hf, -⟩ := exists_isIso_liuWangAffineD4AInfinityAlgebra c
-  exact (AInfinityAlgebra.IsMinimal.isFormal (isMinimal_zigzagLoopAInfinityAlgebra _ _)
-    fun n hn ↦ by
-      rcases eq_or_ne n 4 with rfl | h₄
-      · rw [zigzagLoopAInfinityAlgebra_m_four, map_zero]
-      · exact zigzagLoopAInfinityAlgebra_m_eq_zero _ _ (by omega) h₄).of_isQuasiIso hf.isQuasiIso
+  simp only [liuWangAffineD4AInfinityAlgebra,
+    liuWangAffineD4Coefficients_eq_zigzagBacktrackCoefficients]
+  exact isFormal_zigzagLoopAInfinityAlgebra_zigzagBacktrackCoefficients _ _
+    fst_eq_snd_of_mem_liuWangAffineD4BacktrackPairs ne_symm_of_mem_liuWangAffineD4BacktrackPairs
 
 end TauCeti
