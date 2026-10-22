@@ -93,6 +93,12 @@ theorem transitionOfLE_def {n k : ℕ} (h : n ≤ k) :
     F.transitionOfLE h = (F.map (homOfLE h).op).hom :=
   (rfl)
 
+/-- Every map `F.map f : Aₖ → Aₙ` of a tower is the composite transition `transitionOfLE`. -/
+@[simp]
+theorem map_hom_eq_transitionOfLE {n k : ℕ} (f : op k ⟶ op n) :
+    (F.map f).hom = F.transitionOfLE (leOfHom f.unop) := by
+  rw [transitionOfLE_def, Subsingleton.elim (homOfLE _).op f]
+
 @[simp]
 theorem transitionOfLE_succ (n : ℕ) : F.transitionOfLE (Nat.le_succ n) = F.transition n :=
   (rfl)
