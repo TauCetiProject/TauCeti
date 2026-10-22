@@ -26,7 +26,7 @@ directions are built separately from the universal properties of `DirectLimit.Al
 
 * `TauCeti.DirectedSystem.algebraRTensor`: the directed system `B i ⊗[A] M`.
 * `TauCeti.directLimitLeft`:
-  `(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)`, with `directLimitLeft_of_tmul` and
+  `(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)`, with `directLimitLeft_tmul_of` and
   `directLimitLeft_symm_of`.
 -/
 
@@ -98,7 +98,7 @@ private theorem fromDirectLimit_of (i : ι) (x : B i ⊗[A] M) :
       rTensor M (of B f i) x :=
   DirectLimit.Algebra.lift_of ..
 
-private theorem toDirectLimit_of_tmul (i : ι) (b : B i) (m : M) :
+private theorem toDirectLimit_tmul_of (i : ι) (b : B i) (m : M) :
     toDirectLimit M (of B f i b ⊗ₜ m) =
       of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i (b ⊗ₜ m) := by
   simp only [toDirectLimit, lift_tmul, DirectLimit.Algebra.lift_of, AlgHom.comp_apply,
@@ -113,17 +113,17 @@ noncomputable def directLimitLeft :
   AlgEquiv.ofAlgHom (toDirectLimit (f := f) M) (fromDirectLimit M)
     (DirectLimit.Algebra.hom_ext _ fun i ↦ ext' fun b m ↦ by
       simp only [AlgHom.comp_apply, AlgHom.id_apply, fromDirectLimit_of, map_tmul,
-        toDirectLimit_of_tmul])
+        toDirectLimit_tmul_of])
     (ext' fun b m ↦ by
       induction b using _root_.DirectLimit.induction with | _ i b
       rw [← DirectLimit.Algebra.of_apply (R := A)]
-      simp only [AlgHom.comp_apply, AlgHom.id_apply, toDirectLimit_of_tmul, fromDirectLimit_of,
+      simp only [AlgHom.comp_apply, AlgHom.id_apply, toDirectLimit_tmul_of, fromDirectLimit_of,
         map_tmul])
 
-theorem directLimitLeft_of_tmul (i : ι) (b : B i) (m : M) :
+theorem directLimitLeft_tmul_of (i : ι) (b : B i) (m : M) :
     directLimitLeft f M (of B f i b ⊗ₜ m) =
       of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i (b ⊗ₜ m) :=
-  toDirectLimit_of_tmul M i b m
+  toDirectLimit_tmul_of M i b m
 
 theorem directLimitLeft_symm_of (i : ι) (x : B i ⊗[A] M) :
     (directLimitLeft f M).symm (of (B · ⊗[A] M) (fun i j h ↦ rTensor M (f i j h)) i x) =

@@ -119,6 +119,12 @@ variable {A ι : Type*} [CommSemiring A] [Preorder ι] {B : ι → Type*} [∀ i
 
 open _root_.Algebra.TensorProduct
 
+/-- A map of `R`-algebras `R ⊗[A] S → R ⊗[A] M` fixes `r ⊗ₜ 1`, the image of `r` under the
+algebra map. -/
+private theorem map_tmul_one {R : Type*} [CommSemiring R] [Algebra A R]
+    (Ψ : R ⊗[A] S →ₐ[R] R ⊗[A] M) (r : R) : Ψ (r ⊗ₜ 1) = r ⊗ₜ 1 := by
+  simpa using Ψ.commutes r
+
 /-- **Eventual equality of maps between base changes.** If two `B j`-algebra maps
 `Ψ₁ Ψ₂ : B j ⊗[A] S → B j ⊗[A] M`, for `S` of finite type over `A`, have the same base change to
 `R = colim B i`, then they have the same base change to `B k` for some `k ≥ j`. -/
@@ -135,11 +141,7 @@ theorem exists_rTensor_comp_restrictScalars_eq_of_finiteType [Algebra.FiniteType
     (ψ₁ := (Ψ₁.restrictScalars A).comp includeRight)
     (ψ₂ := (Ψ₂.restrictScalars A).comp includeRight) congr(AlgHom.comp $h includeRight)
   refine ⟨k, hjk, Algebra.TensorProduct.ext (AlgHom.ext fun b ↦ ?_) hk⟩
-  have h₁ := Ψ₁.commutes b
-  have h₂ := Ψ₂.commutes b
-  simp only [Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self,
-    RingHom.id_apply] at h₁ h₂
-  simp only [AlgHom.comp_apply, includeLeft_apply, AlgHom.coe_restrictScalars', h₁, h₂]
+  simp only [AlgHom.comp_apply, includeLeft_apply, AlgHom.coe_restrictScalars', map_tmul_one]
 
 end CommSemiring
 
@@ -185,8 +187,8 @@ theorem exists_eq_comp_of_finitePresentation [Algebra.FinitePresentation A S]
     AlgHom.ext fun _ ↦ Ideal.quotientKerAlgEquivOfSurjective_symm_apply hπ _
   refine ⟨l, (Ideal.Quotient.liftₐ _ _ fun a ha ↦ RingHom.mem_ker.mp (hker ha)).comp
     e.symm.toAlgHom, (AlgHom.cancel_right hπ).mp ?_⟩
-  rw [← hψ₀, AlgHom.comp_assoc, AlgHom.comp_assoc, he, Ideal.Quotient.liftₐ_comp,
-    ← AlgHom.comp_assoc, of_comp_f]
+  -- Both sides become `(of B f l).comp ((f i l hil).comp ψ₀)`.
+  simp only [← hψ₀, ← of_comp_f hil, AlgHom.comp_assoc, he, Ideal.Quotient.liftₐ_comp]
 
 /-- An `A`-algebra map from a finitely presented `A`-algebra `S` into the base change
 `(colim B i) ⊗[A] M` factors through some `B i ⊗[A] M`. -/
@@ -213,12 +215,8 @@ theorem exists_restrictScalars_comp_rTensor_eq_of_finitePresentation
     exists_eq_rTensor_comp_of_finitePresentation M ((Φ.restrictScalars A).comp includeRight)
   refine ⟨i, AlgHom.liftEquiv A (B i) S _ ψ,
     Algebra.TensorProduct.ext (AlgHom.ext fun b ↦ ?_) (AlgHom.ext fun s ↦ ?_)⟩
-  · have h₁ := Φ.commutes (of B f i b)
-    have h₂ := (AlgHom.liftEquiv A (B i) S _ ψ).commutes b
-    simp only [Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self,
-      RingHom.id_apply] at h₁ h₂
-    simp only [AlgHom.comp_apply, includeLeft_apply, Algebra.TensorProduct.map_tmul,
-      AlgHom.id_apply, AlgHom.coe_restrictScalars', h₁, h₂]
+  · simp only [AlgHom.comp_apply, includeLeft_apply, Algebra.TensorProduct.map_tmul,
+      AlgHom.id_apply, AlgHom.coe_restrictScalars', map_tmul_one]
   · simpa [-DirectLimit.Algebra.of_apply] using congr($hψ s)
 
 end CommRing
