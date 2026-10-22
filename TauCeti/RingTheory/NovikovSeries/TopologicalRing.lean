@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.NovikovSeries.Topology
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 public import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
+public import Mathlib.Topology.Algebra.LinearTopology
 
 /-!
 # Novikov series form a topological ring, and geometric series
@@ -40,6 +41,12 @@ is the expansion `(1 - e^g)⁻¹ = ∑ₖ e^(k • g)`. Such geometric series ar
 product formula for dynamical zeta functions, and they appear in the torsion of circle-valued
 Morse complexes.
 
+The nonnegative subring is closed, hence complete, and the traces of the subgroups `U_C` are
+ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients it is an
+`S`-algebra. These are the hypotheses of Mathlib's continuous evaluation of power series
+(`PowerSeries.aeval`) at its topologically nilpotent elements, such as those of the positive ideal.
+The units `u` with `u - 1` in the positive ideal form its principal unit group.
+
 ## Main definitions
 
 * `TauCeti.NovikovSeries.nonnegSubring`: the subring of series supported in periods `≥ 0`.
@@ -47,6 +54,8 @@ Morse complexes.
   supported in periods `> 0`.
 * `TauCeti.NovikovSeries.unitsOneSub`: for `a` in the positive ideal, `1 - a` as a unit of the
   nonnegative subring, with inverse the geometric series `∑ aⁿ`.
+* `TauCeti.NovikovSeries.principalUnitGroup`: the units `u` of the nonnegative subring with
+  `u - 1` in the positive ideal.
 
 ## Main results
 
@@ -70,6 +79,9 @@ Morse complexes.
 * `TauCeti.NovikovSeries.one_sub_single_mul_tsum` and
   `TauCeti.NovikovSeries.tsum_mul_one_sub_single`: the two inverse identities of the monomial
   geometric series `∑ₖ rᵏ e^(k • g)` for `N g > 0`.
+* The instances `CompleteSpace`, `IsLinearTopology` and `Algebra` on the nonnegative subring.
+* `TauCeti.NovikovSeries.isOpen_posIdeal` and `TauCeti.NovikovSeries.isClosed_posIdeal`: the
+  positive ideal is open and closed in the nonnegative subring.
 
 ## References
 
@@ -296,6 +308,116 @@ theorem coe_inv_unitsOneSub {a : nonnegSubring R N} (ha : a ∈ posIdeal R N) :
 theorem isUnit_one_sub_of_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posIdeal R N) :
     IsUnit (1 - a) :=
   (unitsOneSub ha).isUnit
+
+/-! ### The nonnegative subring as a complete linearly topologized algebra -/
+
+/-- The nonnegative subring is complete, being closed in the complete ring of Novikov series. -/
+instance : CompleteSpace (nonnegSubring R N) :=
+  isClosed_nonnegSubring.completeSpace_coe
+
+/-- In the nonnegative subring, the traces of the subgroups `U_C` form a basis of neighbourhoods
+of `0`. -/
+theorem hasBasis_nhds_zero_nonnegSubring :
+    (𝓝 (0 : nonnegSubring R N)).HasBasis (fun _ : ℝ => True)
+      fun C => {a | (a : NovikovSeries R H N) ∈ periodFiltration R N C} := by
+  rw [nhds_subtype]
+  exact hasBasis_nhds_zero.comap _
+
+/-- The nonnegative subring is linearly topologized: the traces of the subgroups `U_C` are
+ideals of it, since multiplying by a series of nonnegative periods does not lower periods. This
+is what makes power series evaluable at its topologically nilpotent elements
+(`PowerSeries.aeval`). -/
+instance : IsLinearTopology (nonnegSubring R N) (nonnegSubring R N) :=
+  .mk_of_hasBasis' (nonnegSubring R N) (S := Ideal (nonnegSubring R N))
+    (s := fun C => {
+      carrier := {a | (a : NovikovSeries R H N) ∈ periodFiltration R N C}
+      add_mem' := fun ha hb => add_mem ha hb
+      zero_mem' := zero_mem (periodFiltration R N C)
+      smul_mem' := fun c a ha => by
+        simpa using
+          mul_mem_periodFiltration (mem_periodFiltration.2 (mem_nonnegSubring.1 c.2)) ha })
+    hasBasis_nhds_zero_nonnegSubring fun I r _ => I.smul_mem r
+
+/-- The positive ideal is open in the nonnegative subring: it contains the trace of `U_1`. -/
+theorem isOpen_posIdeal : IsOpen (posIdeal R N : Set (nonnegSubring R N)) :=
+  AddSubgroup.isOpen_mono (H₁ := (periodFiltration R N 1).comap
+      (nonnegSubring R N).subtype.toAddMonoidHom) (H₂ := (posIdeal R N).toAddSubgroup)
+    (fun _ ha => mem_posIdeal.2 (exists_pos_mem_periodFiltration_iff.1 ⟨1, one_pos, ha⟩))
+    ((isOpen_periodFiltration 1).preimage continuous_subtype_val)
+
+/-- The positive ideal is closed in the nonnegative subring, being an open subgroup. -/
+theorem isClosed_posIdeal : IsClosed (posIdeal R N : Set (nonnegSubring R N)) :=
+  AddSubgroup.isClosed_of_isOpen (posIdeal R N).toAddSubgroup isOpen_posIdeal
+
+/-- A series of the positive ideal is topologically nilpotent in the nonnegative subring. -/
+theorem isTopologicallyNilpotent_of_mem_posIdeal' {a : nonnegSubring R N}
+    (ha : a ∈ posIdeal R N) : IsTopologicallyNilpotent a := by
+  unfold IsTopologicallyNilpotent
+  rw [Topology.IsInducing.subtypeVal.tendsto_nhds_iff]
+  simp only [Function.comp_def, SubmonoidClass.coe_pow, ZeroMemClass.coe_zero]
+  exact isTopologicallyNilpotent_of_mem_posIdeal ha
+
+section Algebra
+
+variable {S : Type*} [CommSemiring S] [Algebra S R]
+
+/-- For an `S`-algebra `R`, the nonnegative subring is an `S`-algebra, with coefficientwise
+scalar multiplication. -/
+instance : Algebra S (nonnegSubring R N) where
+  smul s a := ⟨s • (a : NovikovSeries R H N), mem_nonnegSubring.2 fun h hh => by
+    rw [coeff_smul, mem_nonnegSubring.1 a.2 h hh, smul_zero]⟩
+  algebraMap := (algebraMap S (NovikovSeries R H N)).codRestrict (nonnegSubring R N) fun s => by
+    rw [algebraMap_apply]
+    exact single_mem_nonnegSubring (map_zero N).ge _
+  commutes' s a := Subtype.ext (Algebra.commutes s (a : NovikovSeries R H N))
+  smul_def' s a := Subtype.ext (Algebra.smul_def s (a : NovikovSeries R H N))
+
+@[simp, norm_cast]
+theorem coe_smul_nonnegSubring (s : S) (a : nonnegSubring R N) :
+    ((s • a : nonnegSubring R N) : NovikovSeries R H N) = s • (a : NovikovSeries R H N) :=
+  (rfl)
+
+@[simp, norm_cast]
+theorem coe_algebraMap_nonnegSubring (s : S) :
+    ((algebraMap S (nonnegSubring R N) s : nonnegSubring R N) : NovikovSeries R H N) =
+      algebraMap S (NovikovSeries R H N) s :=
+  (rfl)
+
+instance : ContinuousConstSMul S (nonnegSubring R N) where
+  continuous_const_smul s := continuous_induced_rng.2 <| by
+    simpa [Function.comp_def] using (continuous_const_smul s).comp continuous_subtype_val
+
+/-- For discrete scalars, scalar multiplication on the nonnegative subring is jointly
+continuous. -/
+instance [TopologicalSpace S] [DiscreteTopology S] : ContinuousSMul S (nonnegSubring R N) :=
+  ⟨continuous_prod_of_discrete_left.2 fun s => continuous_const_smul s⟩
+
+end Algebra
+
+variable (R N) in
+/-- The principal unit group of the nonnegative subring: the units `u` with `u - 1` in the
+positive ideal. Every `1 - a` with `a` in the positive ideal is such a unit
+(`TauCeti.NovikovSeries.unitsOneSub`). -/
+def principalUnitGroup : Subgroup (nonnegSubring R N)ˣ where
+  carrier := {u | (u : nonnegSubring R N) - 1 ∈ posIdeal R N}
+  one_mem' := by simp
+  mul_mem' {u v} hu hv := by
+    have huv : ((u * v : (nonnegSubring R N)ˣ) : nonnegSubring R N) - 1 =
+        u * ((v : nonnegSubring R N) - 1) + ((u : nonnegSubring R N) - 1) := by
+      rw [Units.val_mul, mul_sub, mul_one, sub_add_sub_cancel]
+    rw [Set.mem_ofPred_eq, huv]
+    exact add_mem (Ideal.mul_mem_left _ _ hv) hu
+  inv_mem' {u} hu := by
+    have hu' : ((u⁻¹ : (nonnegSubring R N)ˣ) : nonnegSubring R N) - 1 =
+        -(↑u⁻¹ * ((u : nonnegSubring R N) - 1)) := by
+      rw [mul_sub, Units.inv_mul, mul_one, neg_sub]
+    rw [Set.mem_ofPred_eq, hu']
+    exact neg_mem (Ideal.mul_mem_left _ _ hu)
+
+@[simp]
+theorem mem_principalUnitGroup {u : (nonnegSubring R N)ˣ} :
+    u ∈ principalUnitGroup R N ↔ (u : nonnegSubring R N) - 1 ∈ posIdeal R N :=
+  Iff.rfl
 
 end Ring
 
