@@ -76,6 +76,7 @@ variable {K : Type} [Field K]
 namespace BrauerGroup
 
 /-- Refining a cocycle to a larger finite Galois subextension does not change its Brauer class. -/
+@[simp]
 theorem crossedProductClass_refine {L M : IntermediateField K (SeparableClosure K)}
     [FiniteDimensional K L] [IsGalois K L] [FiniteDimensional K M] [IsGalois K M] (hLM : L ≤ M)
     (c : TwoCocycle K L) : crossedProductClass (c.refine hLM) = crossedProductClass c := by

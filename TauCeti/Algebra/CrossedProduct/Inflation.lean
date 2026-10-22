@@ -211,6 +211,7 @@ theorem val_refine_toFun_restrictNormalHom [Normal K M] (hLM : L ≤ M) (c : Two
 
 /-- Refining a cocycle to a larger finite normal subextension does not change its inflated
 continuous cocycle. -/
+@[simp]
 theorem inflateZ2_refine [Normal K M] [FiniteDimensional K L] [FiniteDimensional K M] (hLM : L ≤ M)
     (c : TwoCocycle K L) : (c.refine hLM).inflateZ2 M = c.inflateZ2 L :=
   inflateZ2_comap _ _ _ (coe_inclusion hLM) c
@@ -627,6 +628,7 @@ end Refinement
 
 /-- Refining a cocycle to a larger finite normal subextension does not change its inflated
 continuous class. -/
+@[simp]
 theorem inflateClass_refine {L M : IntermediateField K (SeparableClosure K)} [Normal K L]
     [Normal K M] [FiniteDimensional K L] [FiniteDimensional K M] (hLM : L ≤ M)
     (c : TwoCocycle K L) : (c.refine hLM).inflateClass M = c.inflateClass L :=
