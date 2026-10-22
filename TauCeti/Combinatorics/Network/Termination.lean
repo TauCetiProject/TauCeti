@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Group.Basic
 public import Mathlib.Algebra.Order.Ring.Rat
 public import TauCeti.Combinatorics.Network.AugmentingPath
 public import TauCeti.Data.Rat.ZMultiples
@@ -31,7 +30,6 @@ subgroup, augmentation sequences need not terminate.
 
 ## Main results
 
-* `TauCeti.Flow.exists_nsmul_eq_val`: a flow with values in `zmultiples d` has value `n • d`.
 * `TauCeti.Flow.AugmentsTo.val_add_le`: an augmentation step raises the value by at least `d`.
 * `TauCeti.Flow.wellFounded_val_lt`: the relation of having larger value is well-founded on flows
   with values in `zmultiples d`.
@@ -70,15 +68,6 @@ section LinearOrder
 
 variable [AddCommGroup K] [LinearOrder K] [IsOrderedAddMonoid K] {cap : Assignment Q K} {s t : V}
   {d : K}
-
-/-- For `0 < d`, an ordinary flow with arrow values in `zmultiples d` has value `n • d` for a
-natural number `n`. -/
-theorem exists_nsmul_eq_val (hd : 0 < d) {f : Flow cap s t}
-    (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d) : ∃ n : ℕ, n • d = f.val := by
-  obtain ⟨k, hk⟩ := mem_zmultiples_iff.1 (excessAt_mem hf t)
-  rw [← BoundedFlow.val_def] at hk
-  have hk₀ : 0 ≤ k := (zsmul_le_zsmul_iff_left hd).1 (by simpa [hk] using f.val_nonneg)
-  exact ⟨k.toNat, by rw [← natCast_zsmul, Int.toNat_of_nonneg hk₀, hk]⟩
 
 /-- For capacities in `zmultiples d`, an augmentation step between distinct terminals from a flow
 with arrow values in `zmultiples d` raises the value by at least `d`. -/
