@@ -132,23 +132,6 @@ theorem qExpansion_slash_J {F : Type*} [FunLike F ℍ ℂ] [ModularFormClass F �
 
 /-! ### The congruence subgroups -/
 
-end TauCeti
-
-namespace Matrix.SpecialLinearGroup
-
-/-- Conjugation by `J` realizes `conjJ`. -/
-lemma J_mul_mapGL_mul_J (γ : SL(2, ℤ)) :
-    UpperHalfPlane.J * mapGL ℝ γ * UpperHalfPlane.J = mapGL ℝ (conjJ γ) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [UpperHalfPlane.J, Matrix.mul_apply, Fin.sum_univ_two, Matrix.vecMul, dotProduct]
-
-end Matrix.SpecialLinearGroup
-
-namespace TauCeti
-
-open UpperHalfPlane
-
 section Congruence
 
 lemma conjJ_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) : conjJ γ ∈ Gamma0 N := by
@@ -194,9 +177,7 @@ private lemma slash_conj_eq {f : ℍ → ℂ}
       (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f) (g : ↥(Gamma0 N)) :
     (f ∣[k] J) ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
       (↑(χ⁻¹ ((Gamma0Map N).toHomUnits g)) : ℂ) • (f ∣[k] J) := by
-  have hJg : J * mapGL ℝ (g : SL(2, ℤ)) = mapGL ℝ (conjJ (g : SL(2, ℤ))) * J := by
-    rw [← J_mul_mapGL_mul_J, mul_assoc, ← sq, J_sq, mul_one]
-  rw [← SlashAction.slash_mul, hJg, SlashAction.slash_mul,
+  rw [← SlashAction.slash_mul, J_mul_mapGL, SlashAction.slash_mul,
     hf ⟨conjJ (g : SL(2, ℤ)), conjJ_mem_Gamma0 g.2⟩, ModularForm.smul_slash,
     Gamma0Map_conjJ, sigma_J]
   congr 1

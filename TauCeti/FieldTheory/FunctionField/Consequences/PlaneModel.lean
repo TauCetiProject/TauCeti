@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MvPolynomial.FinTwo
+public import TauCeti.Algebra.MvPolynomial.Fin.Two
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 

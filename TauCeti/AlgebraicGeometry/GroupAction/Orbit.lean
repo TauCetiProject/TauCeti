@@ -75,9 +75,18 @@ theorem mem_orbitBoundary (x : 𝟙_ (Over S) ⟶ X) (p : X.left) :
 theorem orbit_subset_orbitClosure (x : 𝟙_ (Over S) ⟶ X) :
     orbit G x ⊆ orbitClosure G x := subset_closure
 
+/-- The orbit boundary is contained in the orbit closure. -/
+theorem orbitBoundary_subset_orbitClosure (x : 𝟙_ (Over S) ⟶ X) :
+    orbitBoundary G x ⊆ orbitClosure G x := Set.sdiff_subset
+
 /-- The orbit closure is closed. -/
 theorem isClosed_orbitClosure (x : 𝟙_ (Over S) ⟶ X) :
     IsClosed (orbitClosure G x) := isClosed_closure
+
+/-- The geometric orbit is closed exactly when its boundary is empty. -/
+theorem isClosed_orbit_iff_orbitBoundary_eq_empty (x : 𝟙_ (Over S) ⟶ X) :
+    IsClosed (orbit G x) ↔ orbitBoundary G x = ∅ := by
+  rw [orbitBoundary_def, orbitClosure_def, Set.sdiff_eq_empty, closure_subset_iff_isClosed]
 
 /-- Equivariant morphisms carry geometric orbit images onto the corresponding orbit images. -/
 theorem image_orbit (x : 𝟙_ (Over S) ⟶ X) (f : X ⟶ Y) [IsModHom G f] :

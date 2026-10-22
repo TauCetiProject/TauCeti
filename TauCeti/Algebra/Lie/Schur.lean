@@ -146,10 +146,7 @@ generated source over a Noetherian commutative ring. -/
 theorem finite_lieModuleHom_of_isIrreducible [IsNoetherian R M] :
     Module.Finite R (M →ₗ⁅R,L⁆ N) := by
   by_cases h : Nonempty (M ≃ₗ⁅R,L⁆ N)
-  · have : Module.Finite R (M →ₗ⁅R,L⁆ M) :=
-      Module.Finite.equiv (_root_.LieModule.maxTrivLinearMapEquivLieModuleHom
-        (R := R) (L := L) (M := M) (N := M))
-    exact Module.Finite.equiv (LieModuleEquiv.congrRight (M := M) h.some)
+  · exact Module.Finite.equiv (LieModuleEquiv.congrRight (M := M) h.some)
   · have : Subsingleton (M →ₗ⁅R,L⁆ N) :=
       subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv (not_nonempty_iff.mp h)
     exact Module.Finite.of_surjective (0 : R →ₗ[R] (M →ₗ⁅R,L⁆ N))

@@ -44,8 +44,11 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 * `LaurentSeries.mem_range_expand_iff`: a Laurent series is in the image of `X ↦ X ^ d` exactly
   when all its exponents are divisible by `d`.
 * `LaurentSeries.expand_coe`: `expand` extends `PowerSeries.expand`.
+* `FiniteField.LaurentSeries.expand_card`: over a finite field with `q` elements, the expansion
+  `X ↦ X ^ q` of a Laurent series is its `q`-th power.
 * `LaurentSeries.sum_single_mul_expand_contract`: reconstruction from congruence components.
 * `LaurentSeries.contract_eq_of_sum_eq`: uniqueness of the congruence components.
+* `LaurentSeries.contract_expand_mul`: `contract d (expand d g * h) r = g * contract d h r`.
 * `LaurentSeries.coeff_ramifiedEmbedding_intCast_div`,
   `LaurentSeries.coeff_ramifiedEmbedding_of_not_den_dvd`: the coefficients of the level-`n`
   embedding.
@@ -184,6 +187,14 @@ theorem expand_coe {R : Type*} [CommRing R] (d : ℕ+) (f : R⟦X⟧) :
     rintro ⟨c, hc⟩
     exact hk ⟨c, by omega⟩
 
+/-- Over a finite field with `q` elements, the expansion `X ↦ X ^ q` of a Laurent series is its
+`q`-th power. The modulus is given as a positive natural number `d` with `d = q`. -/
+theorem _root_.FiniteField.LaurentSeries.expand_card {K : Type*} [Field K] [Fintype K] (d : ℕ+)
+    (hd : (d : ℕ) = Fintype.card K) (f : K⸨X⸩) : expand K d f = f ^ Fintype.card K := by
+  rw [← single_order_mul_powerSeriesPart f]
+  simp [-single_order_mul_powerSeriesPart, expand_coe, FiniteField.PowerSeries.expand_card,
+    mul_pow, single_pow, hd]
+
 /-! ### Contraction by exponent congruence classes -/
 
 /-- The `r`-th exponent-congruence component of a Laurent series. Its coefficient at `k` is the
@@ -211,7 +222,7 @@ theorem coeff_contract {S : Type*} [Zero S] (d : ℕ+) (f : S⸨X⸩) (r : Fin d
 
 /-- Contraction is additive. -/
 @[simp]
-theorem contract_add {S : Type*} [AddCommMonoid S] (d : ℕ+) (f g : S⸨X⸩) (r : Fin d) :
+theorem contract_add {S : Type*} [AddMonoid S] (d : ℕ+) (f g : S⸨X⸩) (r : Fin d) :
     contract d (f + g) r = contract d f r + contract d g r := by
   ext k
   simp
@@ -222,6 +233,57 @@ theorem contract_zero {S : Type*} [Zero S] (d : ℕ+) (r : Fin d) :
     contract d (0 : S⸨X⸩) r = 0 := by
   ext k
   simp
+
+/-- Contraction commutes with scalar multiplication. -/
+@[simp]
+theorem contract_smul {M S : Type*} [Zero S] [SMulZeroClass M S] (d : ℕ+) (c : M) (f : S⸨X⸩)
+    (r : Fin d) : contract d (c • f) r = c • contract d f r := by
+  ext k
+  simp
+
+/-- Contraction commutes with finite sums. -/
+@[simp]
+theorem contract_sum {ι S : Type*} [AddCommMonoid S] (d : ℕ+) (s : Finset ι) (f : ι → S⸨X⸩)
+    (r : Fin d) : contract d (∑ i ∈ s, f i) r = ∑ i ∈ s, contract d (f i) r := by
+  ext k
+  simp
+
+/-- The congruence components of a monomial: `X ^ m` contributes to component `r` exactly when
+`m ≡ r` modulo `d`, and then as the monomial of exponent `(m - r) / d`. -/
+@[simp]
+theorem contract_single {S : Type*} [Zero S] (d : ℕ+) (m : ℤ) (a : S) (r : Fin d) :
+    contract d (single m a) r = if (d : ℤ) ∣ m - r then single ((m - r) / d) a else 0 := by
+  ext k
+  have hd : (d : ℤ) ≠ 0 := by exact_mod_cast d.ne_zero
+  rw [coeff_contract, coeff_single]
+  by_cases hdvd : (d : ℤ) ∣ m - r
+  · rw [ite_eq_left hdvd, coeff_single]
+    obtain ⟨j, hj⟩ := hdvd
+    rw [hj, Int.mul_ediv_cancel_left _ hd]
+    by_cases hk : k = j
+    · rw [ite_eq_left (by rw [hk]; linear_combination -hj), ite_eq_left hk]
+    · rw [ite_eq_right hk, ite_eq_right]
+      exact fun h ↦ hk (mul_left_cancel₀ hd (by linear_combination h + hj))
+  · rw [ite_eq_right hdvd, coeff_zero, ite_eq_right]
+    intro h
+    exact hdvd ⟨k, by linear_combination -h⟩
+
+/-- The congruence components of `1` vanish except at residue zero. -/
+@[simp]
+theorem contract_one {S : Type*} [Zero S] [One S] (d : ℕ+) (r : Fin d) :
+    contract d (1 : S⸨X⸩) r = if r = 0 then 1 else 0 := by
+  rw [← single_zero_one, contract_single]
+  by_cases hr : r = 0
+  · subst hr
+    simp
+  · have hr0 : (0 : ℤ) < r := by
+      have : (r : ℕ) ≠ 0 := Fin.val_ne_zero_iff.mpr hr
+      omega
+    have hrd : (r : ℤ) < d := by exact_mod_cast r.isLt
+    have hdvd : ¬ (d : ℤ) ∣ 0 - r := by
+      rw [zero_sub, dvd_neg]
+      exact fun h ↦ hr0.ne' (Int.eq_zero_of_dvd_of_nonneg_of_lt hr0.le hrd h)
+    rw [ite_eq_right hdvd, ite_eq_right hr]
 
 /-- At exponent `d * k + r`, a sum of expanded congruence components recovers coefficient `k`
 of component `r`. -/
@@ -236,33 +298,23 @@ theorem coeff_sum_single_mul_expand {A : Type*} [CommSemiring A] (d : ℕ+)
   · intro s _ hsr
     apply coeff_expand_of_not_dvd
     intro hdiv
-    obtain ⟨q, hq⟩ := hdiv
-    have hmod : (r : ℤ) - s = (d : ℤ) * (q - k) := by
-      linear_combination hq
-    have hrlt : (r : ℤ) < d := by exact_mod_cast r.isLt
-    have hslt : (s : ℤ) < d := by exact_mod_cast s.isLt
-    have hrnonneg : (0 : ℤ) ≤ r := by exact_mod_cast r.val.zero_le
-    have hsnonneg : (0 : ℤ) ≤ s := by exact_mod_cast s.val.zero_le
-    have hdpos : (0 : ℤ) < d := by exact_mod_cast d.pos
-    have hrslt : (r : ℤ) - s < d := by omega
-    have hneg : -(d : ℤ) < (r : ℤ) - s := by omega
-    have hqk : q - k = 0 := by nlinarith [hmod]
-    have hrs : (r : ℤ) = s := by rw [hqk, mul_zero] at hmod; omega
-    exact hsr (Fin.ext (by exact_mod_cast hrs.symm))
+    have hmod := Int.emod_eq_emod_iff_emod_sub_eq_zero.mpr
+      (Int.emod_eq_zero_of_dvd hdiv)
+    simp only [Int.mul_add_emod_self_left] at hmod
+    rw [Int.emod_eq_of_lt (by omega) (by exact_mod_cast r.isLt),
+      Int.emod_eq_of_lt (by omega) (by exact_mod_cast s.isLt)] at hmod
+    exact hsr (Fin.ext (by exact_mod_cast hmod.symm))
   · simp
 
 /-- A Laurent series is the sum of its expanded exponent-congruence components. -/
 theorem sum_single_mul_expand_contract {A : Type*} [CommSemiring A] (d : ℕ+) (f : A⸨X⸩) :
     ∑ r : Fin d, single (r : ℤ) 1 * expand A d (contract d f r) = f := by
   ext z
-  let r : Fin d := ⟨(z % d).toNat, by
-    rw [← Int.ofNat_lt, Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))]
-    exact Int.emod_lt_of_pos _ (by exact_mod_cast d.pos)⟩
-  let k := z / (d : ℤ)
+  let r : Fin d := ⟨z.natMod d, Int.natMod_lt d.ne_zero⟩
   have hr : (r : ℤ) = z % d := by
-    simp only [r]
-    rw [Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))]
-  have hz : (d : ℤ) * k + r = z := by
+    simp only [r, Int.natMod]
+    exact Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))
+  have hz : (d : ℤ) * (z / d) + r = z := by
     rw [hr, add_comm, Int.emod_add_mul_ediv]
   rw [← hz, coeff_sum_single_mul_expand, coeff_contract, hz]
 
@@ -272,6 +324,23 @@ theorem contract_eq_of_sum_eq {A : Type*} [CommSemiring A] (d : ℕ+) (g : Fin d
     contract d f r = g r := by
   ext k
   rw [coeff_contract, ← h, coeff_sum_single_mul_expand]
+
+/-- Multiplication by an expanded series passes through the exponent-congruence components. -/
+@[simp]
+theorem contract_expand_mul {A : Type*} [CommSemiring A] (d : ℕ+) (g h : A⸨X⸩) (r : Fin d) :
+    contract d (expand A d g * h) r = g * contract d h r := by
+  refine contract_eq_of_sum_eq d (fun s ↦ g * contract d h s) _ ?_ r
+  conv_rhs => rw [← sum_single_mul_expand_contract d h]
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  rw [map_mul, mul_left_comm]
+
+/-- The congruence components of an expanded series: `expand A d g` lies in the residue-zero
+component, where it contracts back to `g`. -/
+@[simp]
+theorem contract_expand {A : Type*} [CommSemiring A] (d : ℕ+) (g : A⸨X⸩) (r : Fin d) :
+    contract d (expand A d g) r = if r = 0 then g else 0 := by
+  simpa using contract_expand_mul d g 1 r
 
 /-! ### Ramified levels in rational exponents -/
 

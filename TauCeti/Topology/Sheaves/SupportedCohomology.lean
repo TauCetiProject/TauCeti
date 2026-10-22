@@ -30,14 +30,22 @@ the pair is the support sequence
 no cohomology with supports in positive degrees; this is the acyclicity input for computing
 cohomology with supports by flasque resolutions.
 
+For closed subsets `Z ≤ S`, the triple `W ∖ S ⟶ W ∖ Z ⟶ W` gives the long exact sequence of
+supports
+
+`⋯ ⟶ H_Zⁿ(W, F) ⟶ H_Sⁿ(W, F) ⟶ H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F) ⟶ ⋯`,
+
+whose first map enlarges the support and whose second map is restriction to `W ∖ Z`.
+
 For opens `W' ≤ W`, the inclusion of pairs `(W', W' ∖ S) ⟶ (W, W ∖ S)` induces restriction maps
 `H_Sⁿ(W, F) ⟶ H_Sⁿ(W', F)`, which make `W ↦ H_Sⁿ(W, F)` a presheaf; sheafifying it gives the local
-cohomology sheaves of `F` with supports in `S`. *Excision* says that cohomology with supports in
-`S` only depends on a neighbourhood of `S`: if `S ∩ W ⊆ W'`, restriction is an isomorphism
-`H_Sⁿ(W, F) ≃+ H_Sⁿ(W', F)`. The proof shows that the map of relative free sheaves
-`ℤ_{W', W' ∖ S} ⟶ ℤ_{W, W ∖ S}` is already an isomorphism, by the Yoneda criterion
-`TauCeti.CategoryTheory.isIso_relativeFreeYonedaSheafMap_iff`: a section over `W'` supported in `S`
-glues with zero on `W ∖ S` to a unique section over `W` supported in `S`.
+cohomology sheaves of `F` with supports in `S` (`TauCeti.Topology.Sheaves.LocalCohomology`). On an
+open `W` disjoint from `S` the inclusion `W ∖ S ⟶ W` is an isomorphism, so `H_Sⁿ(W, F) = 0`.
+*Excision* says that cohomology with supports in `S` only depends on a neighbourhood of `S`: if
+`S ∩ W ⊆ W'`, restriction is an isomorphism `H_Sⁿ(W, F) ≃+ H_Sⁿ(W', F)`. The proof shows that the
+map of relative free sheaves `ℤ_{W', W' ∖ S} ⟶ ℤ_{W, W ∖ S}` is already an isomorphism, by the
+Yoneda criterion `TauCeti.CategoryTheory.isIso_relativeFreeYonedaSheafMap_iff`: a section over `W'`
+supported in `S` glues with zero on `W ∖ S` to a unique section over `W` supported in `S`.
 
 ## Main declarations
 
@@ -47,6 +55,8 @@ glues with zero on `W ∖ S` to a unique section over `W` supported in `S`.
   supports in `S`;
 * `CategoryTheory.Sheaf.supportedHZeroEquiv`: `H_S⁰(W, F) ≃+ Γ_S(W, F)`, natural in `F`
   (`CategoryTheory.Sheaf.supportedHZeroEquiv_naturality_right`);
+* `CategoryTheory.Sheaf.subsingleton_supportedH_of_le_compl`: `H_Sⁿ(W, F) = 0` when `W` is disjoint
+  from `S`;
 * `CategoryTheory.Sheaf.relativeH'.subsingleton_succ_of_isFlasque`: a flasque sheaf has no relative
   cohomology in positive degrees for an inclusion of opens; in particular it has no cohomology with
   supports in positive degrees.
@@ -57,7 +67,13 @@ glues with zero on `W ∖ S` to a unique section over `W` supported in `S`.
 * `TopologicalSpace.Closeds.isIso_relativeFreeYonedaSheafMap_complInclusion`: excision for the
   relative free sheaves `ℤ_{W, W ∖ S}`;
 * `CategoryTheory.Sheaf.supportedHExcisionEquiv`: excision `H_Sⁿ(W, F) ≃+ H_Sⁿ(W', F)` when
-  `S ∩ W ⊆ W'`.
+  `S ∩ W ⊆ W'`;
+* `CategoryTheory.Sheaf.supportedHMap` and `CategoryTheory.Sheaf.supportedHδ`: for `Z ≤ S`, the map
+  `H_Zⁿ(W, F) ⟶ H_Sⁿ(W, F)` and the connecting map `H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F)` of the long
+  exact sequence of supports, whose exactness is
+  `CategoryTheory.Sheaf.exact_supportedHMap_supportedHRestrict`,
+  `CategoryTheory.Sheaf.exact_supportedHRestrict_supportedHδ` and
+  `CategoryTheory.Sheaf.exact_supportedHδ_supportedHMap`.
 
 ## References
 
@@ -184,6 +200,14 @@ lemma supportedHPresheaf_obj (S : Closeds X) (n : ℕ) (W : (Opens X)ᵒᵖ) :
     (F.supportedHPresheaf S n).obj W = AddCommGrpCat.of (F.supportedH S W.unop n) :=
   (rfl)
 
+/-- Cohomology with supports in `S` vanishes on an open `W` disjoint from `S`, where the inclusion
+`W ∖ S ⟶ W` is an isomorphism. -/
+theorem subsingleton_supportedH_of_le_compl (S : Closeds X) {W : Opens X} (hW : W ≤ S.compl)
+    (n : ℕ) : Subsingleton (F.supportedH S W n) :=
+  haveI : IsIso (S.complInclusion W) :=
+    ⟨homOfLE (le_inf le_rfl hW), Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+  relativeH'.subsingleton_of_isIso F _ n
+
 /-- Excision for sections with supports: if `W' ≤ W` and `S ∩ W ⊆ W'` (that is,
 `W ≤ W' ⊔ (X ∖ S)`), then every section over `W'` supported in `S` is the restriction of a unique
 section over `W` supported in `S`, namely the one gluing it with zero on `W ∖ S`. -/
@@ -255,6 +279,135 @@ lemma supportedHExcisionEquiv_apply (S : Closeds X) {W' W : Opens X} (h : W' ≤
     F.supportedHExcisionEquiv S h hW n x = F.supportedHRestrict S h n x :=
   haveI := S.isIso_relativeFreeYonedaSheafMap_complInclusion h hW
   relativeH'.mapAddEquiv_apply F _ _ _ _ _ x
+
+section supportSequence
+
+variable {Z S : Closeds X}
+
+/-- For closed subsets `Z ≤ S`, the map `H_Zⁿ(W, F) ⟶ H_Sⁿ(W, F)` enlarging the support, induced
+by the inclusion of pairs `(W, W ∖ S) ⟶ (W, W ∖ Z)`. -/
+noncomputable def supportedHMap (hZS : Z ≤ S) (W : Opens X) (n : ℕ) :
+    F.supportedH Z W n →+ F.supportedH S W n :=
+  relativeH'.map F (Z.complInclusion W) (S.complInclusion W)
+    (homOfLE (inf_le_inf_left W ((Closeds.complOrderIso X).monotone hZS))) (𝟙 W) rfl n
+
+@[simp]
+lemma supportedHMap_self (Z : Closeds X) (W : Opens X) {n : ℕ} (x : F.supportedH Z W n) :
+    F.supportedHMap (le_refl Z) W n x = x :=
+  -- `homOfLE` of a reflexivity proof is the identity of the thin category `Opens X`
+  relativeH'.map_id F (Z.complInclusion W) x
+
+@[simp]
+lemma supportedHMap_supportedHMap {T : Closeds X} (hZS : Z ≤ S) (hST : S ≤ T) (W : Opens X)
+    {n : ℕ} (x : F.supportedH Z W n) :
+    F.supportedHMap hST W n (F.supportedHMap hZS W n x) = F.supportedHMap (hZS.trans hST) W n x :=
+  relativeH'.map_map F _ _ _ _ _ _ _ _ _ x
+
+/-- Enlarging the support commutes with restriction to a smaller open `W' ≤ W`. -/
+@[simp]
+lemma supportedHRestrict_supportedHMap (hZS : Z ≤ S) {W' W : Opens X} (h : W' ≤ W) {n : ℕ}
+    (x : F.supportedH Z W n) :
+    F.supportedHRestrict S h n (F.supportedHMap hZS W n x) =
+      F.supportedHMap hZS W' n (F.supportedHRestrict Z h n x) := by
+  simp only [supportedHRestrict, supportedHMap, relativeH'.map_map]
+  -- both sides are induced by morphisms of pairs into `(W', W' ∖ S)`, which agree because
+  -- `Opens X` is a thin category
+  rfl
+
+/-- Under `supportedHZeroEquiv`, enlarging the support in degree zero is the inclusion of
+`Γ_Z(W, F)` in `Γ_S(W, F)`. -/
+lemma coe_supportedHZeroEquiv_supportedHMap (hZS : Z ≤ S) (W : Opens X)
+    (x : F.supportedH Z W 0) :
+    (F.supportedHZeroEquiv S W (F.supportedHMap hZS W 0 x) : F.obj.obj (op W)) =
+      F.supportedHZeroEquiv Z W x := by
+  rw [coe_supportedHZeroEquiv_apply, supportedHMap, relativeH'.coe_zeroEquiv_map]
+  simp
+
+/-- The connecting map `H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F)` of the long exact sequence of supports: the
+connecting map of the triple `(W ∖ Z) ∖ S ⟶ W ∖ Z ⟶ W`. -/
+noncomputable def supportedHδ (Z S : Closeds X) (W : Opens X) {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁) :
+    F.supportedH S (W ⊓ Z.compl) n₀ →+ F.supportedH Z W n₁ :=
+  relativeH'.tripleδ F (S.complInclusion (W ⊓ Z.compl)) (Z.complInclusion W) h
+
+/-- The connecting map of the long exact sequence of supports is the connecting map
+`Hⁿ(W ∖ Z, (W ∖ Z) ∖ S; F) ⟶ Hⁿ⁺¹(W, W ∖ Z; F)` of the triple `(W ∖ Z) ∖ S ⟶ W ∖ Z ⟶ W`. -/
+lemma supportedHδ_apply (Z S : Closeds X) (W : Opens X) {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁)
+    (x : F.supportedH S (W ⊓ Z.compl) n₀) :
+    F.supportedHδ Z S W h x =
+      relativeH'.tripleδ F (S.complInclusion (W ⊓ Z.compl)) (Z.complInclusion W) h x :=
+  -- `supportedHδ` is defined as this connecting map
+  (rfl)
+
+/-- If `Z ≤ S`, the cohomology with supports `H_Sⁿ(W, F)` is the relative cohomology of the
+triple's composite inclusion `(W ∖ Z) ∖ S ⟶ W`. -/
+private noncomputable def supportedHTripleEquiv (hZS : Z ≤ S) (W : Opens X) (n : ℕ) :
+    F.supportedH S W n ≃+ F.relativeH' (S.complInclusion (W ⊓ Z.compl) ≫ Z.complInclusion W) n :=
+  -- since `S.compl ≤ Z.compl`, the opens `(W ∖ Z) ∖ S` and `W ∖ S` are equal
+  haveI : IsIso (homOfLE (inf_le_inf_right S.compl inf_le_left) :
+      W ⊓ Z.compl ⊓ S.compl ⟶ W ⊓ S.compl) :=
+    homOfLE_isIso_of_eq _ (by rw [inf_assoc,
+      inf_eq_right.2 (show S.compl ≤ Z.compl from (Closeds.complOrderIso X).monotone hZS)])
+  relativeH'.mapAddEquiv F (S.complInclusion W) _
+    (homOfLE (inf_le_inf_right S.compl inf_le_left)) (𝟙 W) rfl n
+
+/-- Enlarging the support is the first map of the long exact sequence of the triple. -/
+private lemma map_triple_eq_supportedHMap (hZS : Z ≤ S) (W : Opens X) (n : ℕ) :
+    (relativeH'.map F (Z.complInclusion W) (S.complInclusion (W ⊓ Z.compl) ≫ Z.complInclusion W)
+        (S.complInclusion (W ⊓ Z.compl)) (𝟙 W) (by simp) n).comp (AddEquiv.refl _).toAddMonoidHom =
+      (supportedHTripleEquiv F hZS W n).toAddMonoidHom.comp (F.supportedHMap hZS W n) := by
+  ext x
+  simp only [AddMonoidHom.coe_comp, AddEquiv.coe_toAddMonoidHom, Function.comp_apply,
+    AddEquiv.refl_apply, supportedHTripleEquiv, relativeH'.mapAddEquiv_apply, supportedHMap,
+    relativeH'.map_map]
+  -- the two morphisms of pairs agree, because `Opens X` is a thin category
+  rfl
+
+/-- Restricting to `W ∖ Z` is the second map of the long exact sequence of the triple. -/
+private lemma map_triple_comp_eq_supportedHRestrict (hZS : Z ≤ S) (W : Opens X) (n : ℕ) :
+    (relativeH'.map F (S.complInclusion (W ⊓ Z.compl) ≫ Z.complInclusion W)
+        (S.complInclusion (W ⊓ Z.compl)) (𝟙 _) (Z.complInclusion W) (by simp) n).comp
+        (supportedHTripleEquiv F hZS W n).toAddMonoidHom =
+      (AddEquiv.refl _).toAddMonoidHom.comp (F.supportedHRestrict S inf_le_left n) := by
+  ext x
+  simp only [AddMonoidHom.coe_comp, AddEquiv.coe_toAddMonoidHom, Function.comp_apply,
+    AddEquiv.refl_apply, supportedHTripleEquiv, relativeH'.mapAddEquiv_apply, supportedHRestrict,
+    relativeH'.map_map]
+  -- the two morphisms of pairs agree, because `Opens X` is a thin category
+  rfl
+
+/-- The long exact sequence of supports `⋯ ⟶ H_Zⁿ(W, F) ⟶ H_Sⁿ(W, F) ⟶ H_Sⁿ(W ∖ Z, F) ⟶ ⋯` for
+closed subsets `Z ≤ S` is exact at `H_Sⁿ(W, F)`: a class with supports in `S` comes from a class
+with supports in `Z` exactly when it restricts to zero on `W ∖ Z`. -/
+theorem exact_supportedHMap_supportedHRestrict (hZS : Z ≤ S) (W : Opens X) (n : ℕ) :
+    Function.Exact (F.supportedHMap hZS W n)
+      (F.supportedHRestrict S (inf_le_left : W ⊓ Z.compl ≤ W) n) :=
+  Function.Exact.of_ladder_addEquiv_of_exact' (AddEquiv.refl _) (supportedHTripleEquiv F hZS W n)
+    (AddEquiv.refl _) (map_triple_eq_supportedHMap F hZS W n)
+    (map_triple_comp_eq_supportedHRestrict F hZS W n)
+    (relativeH'.exact_map_map F (S.complInclusion (W ⊓ Z.compl)) (Z.complInclusion W) n)
+
+/-- The long exact sequence of supports for closed subsets `Z ≤ S` is exact at
+`H_Sⁿ(W ∖ Z, F)`: the kernel of the connecting map consists of the restrictions of classes on `W`
+with supports in `S`. -/
+theorem exact_supportedHRestrict_supportedHδ (hZS : Z ≤ S) (W : Opens X) {n₀ n₁ : ℕ}
+    (h : 1 + n₀ = n₁) :
+    Function.Exact (F.supportedHRestrict S (inf_le_left : W ⊓ Z.compl ≤ W) n₀)
+      (F.supportedHδ Z S W h) :=
+  Function.Exact.of_ladder_addEquiv_of_exact' (supportedHTripleEquiv F hZS W n₀) (AddEquiv.refl _)
+    (AddEquiv.refl _) (map_triple_comp_eq_supportedHRestrict F hZS W n₀) rfl
+    (relativeH'.exact_map_tripleδ F (S.complInclusion (W ⊓ Z.compl)) (Z.complInclusion W) h)
+
+/-- The long exact sequence of supports for closed subsets `Z ≤ S` is exact at
+`H_Zⁿ⁺¹(W, F)`: a class with supports in `Z` becomes zero with supports in `S` exactly when it
+comes from `H_Sⁿ(W ∖ Z, F)` under the connecting map. -/
+theorem exact_supportedHδ_supportedHMap (hZS : Z ≤ S) (W : Opens X) {n₀ n₁ : ℕ}
+    (h : 1 + n₀ = n₁) :
+    Function.Exact (F.supportedHδ Z S W h) (F.supportedHMap hZS W n₁) :=
+  Function.Exact.of_ladder_addEquiv_of_exact' (AddEquiv.refl _) (AddEquiv.refl _)
+    (supportedHTripleEquiv F hZS W n₁) rfl (map_triple_eq_supportedHMap F hZS W n₁)
+    (relativeH'.exact_tripleδ_map F (S.complInclusion (W ⊓ Z.compl)) (Z.complInclusion W) h)
+
+end supportSequence
 
 end Sheaf
 

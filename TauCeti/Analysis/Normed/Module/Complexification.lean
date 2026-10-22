@@ -299,6 +299,13 @@ variable {X}
 
 variable (X)
 
+/-- Taking real parts undoes the real embedding. -/
+@[simp]
+theorem reCLM_comp_ofRealLI :
+    reCLM X ∘L (ofRealLI X).toContinuousLinearMap = ContinuousLinearMap.id ℝ X := by
+  ext x
+  simp
+
 /-- The complexification is real-linearly homeomorphic to `X × X` via `z ↦ (re z, im z)`. -/
 def equivProd : Complexification X ≃L[ℝ] X × X :=
   LinearEquiv.toContinuousLinearEquivOfBounds

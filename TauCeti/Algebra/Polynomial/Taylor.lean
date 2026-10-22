@@ -38,6 +38,7 @@ removes its term of degree `n - 1`.
   order `p.rootMultiplicity r` does not vanish at `r`.
 * `Polynomial.pow_sub_dvd_hasseDeriv_of_pow_dvd`: if `(X - r) ^ n` divides `p`, then
   `(X - r) ^ (n - k)` divides the Hasse derivative of `p` of order `k`.
+* `Polynomial.eval_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - r) ^ m` at `r`.
 * `Polynomial.nextCoeff_taylor`: the second-highest coefficient of `p(X + r)`.
 -/
 
@@ -89,6 +90,14 @@ theorem pow_sub_dvd_hasseDeriv_of_pow_dvd {p : R[X]} {r : R} {n : ℕ} (k : ℕ)
   rw [taylor_coeff] at this ⊢
   rw [← LinearMap.comp_apply, hasseDeriv_comp, LinearMap.smul_apply, nsmul_eq_mul, eval_mul, this,
     mul_zero]
+
+/-- The Hasse derivative of order `i` of `(X - r) ^ m` is `1` at `r` if `i = m`, and `0`
+otherwise: the Taylor expansion of `(X - r) ^ m` at `r` is `X ^ m`. -/
+@[simp]
+theorem eval_hasseDeriv_X_sub_C_pow (r : R) (i m : ℕ) :
+    (hasseDeriv i ((X - C r) ^ m)).eval r = if i = m then 1 else 0 := by
+  rw [← taylor_coeff]
+  simp [taylor_pow, coeff_X_pow]
 
 end CommRing
 

@@ -13,9 +13,10 @@ import Mathlib.Topology.Algebra.InfiniteSum.Basic
 # Evaluating divisor-sum series
 
 The integral divisor-sum series converges at a parameter of norm less than one in a complete
-non-archimedean normed ring with `‖1‖ = 1`. Its value is the sum of its evaluated coefficients.
-In a commutative target ring, `evalIntSeries_divisorSumSeries` identifies evaluation of the formal
-series `divisorSumSeries k` under `evalIntSeries` with its analytic value `divisorSumAt k q`.
+non-archimedean seminormed ring. Its value is the sum of its evaluated coefficients.
+When the target is normed and commutative with `‖1‖ = 1`, `evalIntSeries_divisorSumSeries`
+identifies evaluation of the formal series `divisorSumSeries k` under `evalIntSeries` with its
+analytic value `divisorSumAt k q`.
 -/
 
 public section
@@ -25,19 +26,19 @@ open scoped ArithmeticFunction.sigma
 
 namespace TauCeti
 
-variable {K : Type*} [NormedRing K] [NormOneClass K] [CompleteSpace K] [IsUltrametricDist K]
+variable {K : Type*} [SeminormedRing K] [CompleteSpace K] [IsUltrametricDist K]
 
 /-- The divisor-sum series `s_k(q) = ∑ σ_k(n) q^n` converges for `‖q‖ < 1`. -/
 theorem summable_divisorSumSeries (k : ℕ) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ (((σ k n : ℕ) : ℤ) : K) * q ^ n) :=
   summable_intCast_mul_pow (fun n : ℕ ↦ ((σ k n : ℕ) : ℤ)) hq
 
-/-- Evaluation of the integral divisor-sum series in a complete non-archimedean normed ring. Its
+/-- Evaluation of the integral divisor-sum series in a complete non-archimedean seminormed ring. Its
 convergence for `‖q‖ < 1` is `summable_divisorSumSeries`. -/
 noncomputable def divisorSumAt (k : ℕ) (q : K) : K :=
   ∑' n : ℕ, (((σ k n : ℕ) : ℤ) : K) * q ^ n
 
-omit [NormOneClass K] [CompleteSpace K] [IsUltrametricDist K] in
+omit [CompleteSpace K] [IsUltrametricDist K] in
 /-- The value of a divisor-sum series is its defining sum. -/
 theorem divisorSumAt_def (k : ℕ) (q : K) :
     divisorSumAt k q = ∑' n : ℕ, (((σ k n : ℕ) : ℤ) : K) * q ^ n := by

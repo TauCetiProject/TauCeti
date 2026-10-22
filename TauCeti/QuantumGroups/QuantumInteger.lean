@@ -61,6 +61,34 @@ theorem pow_injective {q : K} (hq : IsGenericQuantumParameter q) :
   by_contra hd
   exact hq.pow_ne_one (n := d) (by omega) h
 
+/-- The integer powers of a generic quantum parameter are pairwise distinct. -/
+theorem zpow_injective {q : K} (hq : IsGenericQuantumParameter q) :
+    Function.Injective (q ^ · : ℤ → K) := by
+  intro m n h
+  wlog hmn : m ≤ n generalizing m n
+  · exact (this h.symm (by omega)).symm
+  obtain ⟨d, rfl⟩ := Int.le.dest hmn
+  have h : q ^ d = 1 := by simpa [zpow_add₀ hq.ne_zero, zpow_ne_zero, hq.ne_zero] using h.symm
+  simpa using hq.pow_injective (h.trans (pow_zero q).symm)
+
+/-- At a generic parameter in a field of characteristic not two, a signed power `ε q ^ m` is an
+integral power of `q` only for the positive sign. -/
+theorem eq_one_of_units_mul_zpow_eq_zpow [NeZero (2 : K)] {q : K}
+    (hq : IsGenericQuantumParameter q) {ε : ℤˣ} {m n : ℤ} (h : ((ε : ℤ) : K) * q ^ m = q ^ n) :
+    ε = 1 := by
+  rcases Int.units_eq_one_or ε with rfl | rfl
+  · rfl
+  exfalso
+  have hsq : q ^ (m * 2) = q ^ (n * 2) := by
+    rw [zpow_mul, zpow_mul, ← h, zpow_two, zpow_two]
+    push_cast
+    ring
+  obtain rfl : m = n := by have := hq.zpow_injective hsq; omega
+  have : (2 : K) * q ^ m = 0 := by
+    push_cast at h
+    linear_combination -h
+  exact mul_ne_zero two_ne_zero (zpow_ne_zero m hq.ne_zero) this
+
 /-- A generic quantum parameter is not equal to its inverse. -/
 theorem ne_inv {q : K} (hq : IsGenericQuantumParameter q) : q ≠ q⁻¹ := by
   intro h
@@ -81,6 +109,19 @@ theorem inv {q : K} (hq : IsGenericQuantumParameter q) : IsGenericQuantumParamet
   refine ⟨inv_ne_zero hq.ne_zero, fun n hn hpow => ?_⟩
   apply hq.pow_ne_one hn
   simpa [inv_pow] using congrArg Inv.inv hpow
+
+/-- A positive natural power of a generic quantum parameter is generic. -/
+theorem pow {q : K} (hq : IsGenericQuantumParameter q) {k : ℕ} (hk : 0 < k) :
+    IsGenericQuantumParameter (q ^ k) := by
+  refine ⟨pow_ne_zero k hq.ne_zero, fun n hn hpow => ?_⟩
+  rw [← pow_mul] at hpow
+  exact hq.pow_ne_one (Nat.mul_pos hk hn) hpow
+
+/-- For nonzero `c`, the multiples `q ^ n * c` of a generic quantum parameter `q` are pairwise
+distinct. -/
+theorem pow_mul_injective {q c : K} (hq : IsGenericQuantumParameter q) (hc : c ≠ 0) :
+    Function.Injective fun n : ℕ => q ^ n * c :=
+  fun _ _ h => hq.pow_injective (mul_right_cancel₀ hc h)
 
 end IsGenericQuantumParameter
 
