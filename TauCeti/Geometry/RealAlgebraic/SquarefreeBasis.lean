@@ -5,25 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.IrreducibleBasis.Basic
+public import TauCeti.RingTheory.MvPolynomial.SquarefreeBasis
 public import TauCeti.Geometry.RealAlgebraic.SignInvariant
 import TauCeti.Algebra.MvPolynomial.Equiv
 import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.Basic.Sign.Basic
 
 /-!
-# Reconstructing signs from an irreducible basis
+# Reconstructing signs from a squarefree basis
 
-An irreducible basis reconstructs each input polynomial as its content, a unit, and a
-product of powers of basis members. Over a polynomial coefficient ring over an ordered
-domain, that unit is a nonzero scalar. Thus the signs of the content and the basis,
-together with the scalar sign, determine the sign of the input.
+A squarefree basis, in particular an irreducible basis, reconstructs each input polynomial
+as its content, a unit, and a product of powers of basis members. Over a polynomial
+coefficient ring over an ordered domain, that unit is a nonzero scalar. Thus the signs of the
+content and the basis, together with the scalar sign, determine the sign of the input.
 
 The distinguished variable is coordinate zero, through `MvPolynomial.finSuccEquiv`.
 The content is evaluated at the remaining coordinates. Constant signs for the basis and
 contents transfer to the original family. The statements include zero inputs, vanishing
 contents, and empty bases. The corresponding ambient-order reconstruction and transfer
-are in `TauCeti.RingTheory.MvPolynomial.IrreducibleBasis.Basic`.
+are in `TauCeti.RingTheory.MvPolynomial.SquarefreeBasis`.
 
 ## References
 
@@ -35,7 +35,7 @@ public section
 
 open MvPolynomial Polynomial
 
-namespace Finset.IsIrreducibleBasis
+namespace Finset.IsSquarefreeBasis
 
 variable {R : Type*} [CommRing R] {n : ℕ}
   [NormalizedGCDMonoid (MvPolynomial (Fin n) R)]
@@ -48,7 +48,7 @@ variable [LinearOrder R] [IsStrictOrderedRing R]
 /-- The signs of the content and the basis factors reconstruct the sign of each
 input, with one fixed nonzero scalar sign and fixed exponents. The identity holds
 also on zero fibers, so nullified inputs need no separate sign convention. -/
-theorem exists_sign_eval_eq_content_mul_unit_mul_prod (hB : F.IsIrreducibleBasis B)
+theorem exists_sign_eval_eq_content_mul_unit_mul_prod (hB : F.IsSquarefreeBasis B)
     {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F) :
     ∃ ε : SignType, ε ≠ 0 ∧ ∃ e : Polynomial (MvPolynomial (Fin n) R) → ℕ,
       ∀ a : Fin (n + 1) → R,
@@ -70,7 +70,7 @@ theorem exists_sign_eval_eq_content_mul_unit_mul_prod (hB : F.IsIrreducibleBasis
 /-- Sign-invariance of the content and the basis on a set implies sign-invariance
 of every input on that set. The set may be disconnected, and may contain points
 at which some basis members or the content vanish. -/
-theorem signInvariant_eval (hB : F.IsIrreducibleBasis B)
+theorem signInvariant_eval (hB : F.IsSquarefreeBasis B)
     {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F)
     {S : Set (Fin (n + 1) → R)}
     (hc : TauCeti.SignInvariant (fun a ↦ MvPolynomial.eval (Fin.tail a) f.content) S)
@@ -86,4 +86,4 @@ theorem signInvariant_eval (hB : F.IsIrreducibleBasis B)
 
 end Signs
 
-end Finset.IsIrreducibleBasis
+end Finset.IsSquarefreeBasis
