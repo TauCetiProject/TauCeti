@@ -153,11 +153,17 @@ noncomputable def algEquivOfHenselianRing : algebra I ≃ₐ[R] R :=
     (Subsingleton.elim _ _)
     (algHom_ext_of_map_le_jacobson (extended_le_jacobson I))
 
+/-- The inverse of `algEquivOfHenselianRing` is the structure map of the henselization. -/
+@[simp]
+theorem algEquivOfHenselianRing_symm_apply (r : R) :
+    (algEquivOfHenselianRing I).symm r = algebraMap R (algebra I) r := by
+  simpa using (algEquivOfHenselianRing I).symm.commutes r
+
 /-- If `(R, I)` is henselian, the structure map from `R` to its henselization along `I` is
 bijective. -/
 theorem bijective_algebraMap_of_henselianRing : Function.Bijective (algebraMap R (algebra I)) := by
   have h : ⇑(algEquivOfHenselianRing I).symm = algebraMap R (algebra I) :=
-    funext fun r ↦ by simpa using (algEquivOfHenselianRing I).symm.commutes r
+    funext (algEquivOfHenselianRing_symm_apply I)
   exact h ▸ (algEquivOfHenselianRing I).symm.bijective
 
 end Henselian

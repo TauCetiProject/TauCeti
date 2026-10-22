@@ -13,7 +13,6 @@ import Mathlib.RingTheory.Ideal.Pure
 import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Henselian.Idempotent
 import TauCeti.RingTheory.QuasiFinite.ZariskisMainTheorem
-import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
 # Sections of étale neighbourhoods of a Henselian pair
@@ -293,12 +292,10 @@ theorem nonempty_unique_algHom_of_isNeighbourhood [HenselianRing S J] {C : CommA
     (hC : IsNeighbourhood J C) : Nonempty (Unique (C →ₐ[S] S)) := by
   obtain ⟨hEt, hbij⟩ := (isNeighbourhood_iff J C).mp hC
   obtain ⟨σ⟩ := nonempty_algHom_of_bijective_reducedMap J hbij
-  refine ⟨{ default := σ, uniq := fun τ ↦ ?_ }⟩
-  refine TauCeti.Algebra.FormallyUnramified.ext_of_quotient_eq S C J HenselianRing.jac ?_
-  ext c
-  have h := quotient_mk_eq_of_reducedMap_surjective J hbij.2 τ σ c
-  rw [Ideal.Quotient.eq, Algebra.algebraMap_self, Ideal.map_id] at h
-  simpa using Ideal.Quotient.eq.mpr h
+  have hJ : J.map (algebraMap S S) ≤ Ideal.jacobson ⊥ := by
+    rw [Algebra.algebraMap_self, Ideal.map_id]
+    exact HenselianRing.jac
+  exact ⟨{ default := σ, uniq := fun _ ↦ hC.algHom_ext hJ }⟩
 
 end TauCeti.Henselization
 
