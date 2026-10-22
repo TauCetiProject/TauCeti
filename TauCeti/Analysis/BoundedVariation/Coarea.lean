@@ -308,7 +308,7 @@ theorem measurable_perimeter_setOf_lt [IsLocallyFiniteMeasure μ]
     (hu : AEMeasurable u (μ.restrict Ω)) : Measurable fun t => perimeter μ Ω {x | t < u x} := by
   simp_rw [perimeter_setOf_lt_congr_ae hu.ae_eq_mk]
   -- Lower semicontinuity can only fail at the countably many levels of positive measure.
-  refine measurable_of_countable_setOf_not_lowerSemicontinuousAt
+  refine measurable_of_countable_not_lowerSemicontinuousAt
     ((Measure.countable_meas_level_set_pos (μ := μ.restrict Ω) hu.measurable_mk).mono
       fun t ht => ?_)
   by_contra h

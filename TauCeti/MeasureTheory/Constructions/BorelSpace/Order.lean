@@ -21,7 +21,7 @@ level set is null, hence off a countable set.
 
 ## Main results
 
-* `TauCeti.measurable_of_countable_setOf_not_lowerSemicontinuousAt`: a function that is lower
+* `TauCeti.measurable_of_countable_not_lowerSemicontinuousAt`: a function that is lower
   semicontinuous at all but countably many points is measurable.
 -/
 
@@ -36,7 +36,7 @@ variable {α δ : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSpace 
   [TopologicalSpace δ] [MeasurableSpace δ] [OpensMeasurableSpace δ] [MeasurableSingletonClass δ]
 
 /-- A function that is lower semicontinuous at all but countably many points is measurable. -/
-theorem measurable_of_countable_setOf_not_lowerSemicontinuousAt {f : δ → α}
+theorem measurable_of_countable_not_lowerSemicontinuousAt {f : δ → α}
     (hf : {x | ¬LowerSemicontinuousAt f x}.Countable) : Measurable f := by
   refine measurable_of_Ioi fun y => ?_
   -- A superlevel point where `f` is lower semicontinuous is an interior point.
