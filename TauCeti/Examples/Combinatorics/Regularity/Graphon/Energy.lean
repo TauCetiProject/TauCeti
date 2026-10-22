@@ -87,9 +87,6 @@ example {m : ℕ} [NeZero m] (P : Finpartition (univ : Finset (Fin m))) (x : uni
     (P.cellPartition.indexedPartition.index x : Set unitInterval) =
       TauCeti.unitInterval.cellFin m ⁻¹'
         (P.part (TauCeti.unitInterval.cellFin m x) : Set (Fin m)) := by
-  -- `x` lies in the part through it, so the canonical index selects that part.
-  have hx : x ∈ ((⟨_, P.preimage_part_cellFin_mem x⟩ : P.cellPartition.parts) :
-      Set unitInterval) := P.mem_part (mem_univ _)
-  exact congrArg Subtype.val (P.cellPartition.indexedPartition.mem_iff_index_eq.1 hx)
+  simp
 
 end TauCeti.DenseGraphLimits
