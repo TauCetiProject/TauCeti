@@ -62,6 +62,8 @@ analysis on these pairings for three root vectors, in which no division by `2` o
 * `Matrix.ShellLieAlgebra.cartan_lie_root`, `Matrix.ShellLieAlgebra.root_lie_root`: the
   bracket on Cartan and root vectors.
 * `Matrix.ShellLieAlgebra.cartan_lie_rootBracket`: `⁅x_a, x_b⁆` has weight `a + b`.
+* `Matrix.ShellLieAlgebra.rootBracket_eq_zero_of_nonneg`: root vectors whose roots have nonnegative
+  pairing commute, for symmetric `B`.
 * `Matrix.ShellLieAlgebra.lie_skew`: antisymmetry, for symmetric `B` with even diagonal.
 * `Matrix.ShellLieAlgebra.lie_jacobi`: the Jacobi identity, for positive definite `B` with even
   diagonal.
@@ -160,6 +162,17 @@ theorem rootBracket_of_notMem_of_add_ne_zero {a b : B.normTwoShell}
     (h : (a : I → ℤ) + b ∉ B.normTwoShell) (h' : (a : I → ℤ) + b ≠ 0) :
     rootBracket B a b = 0 := by
   rw [rootBracket, dite_eq_right h, ite_eq_right h', smul_zero]
+
+variable {B} in
+/-- For a symmetric `B`, two root vectors whose roots have nonnegative pairing have bracket zero:
+the sum of the roots then has norm at least `4`. -/
+theorem rootBracket_eq_zero_of_nonneg (hB : B.IsSymm) {a b : B.normTwoShell}
+    (h : 0 ≤ (a : I → ℤ) ⬝ᵥ B *ᵥ b) : rootBracket B a b = 0 := by
+  refine rootBracket_of_notMem_of_add_ne_zero (fun hm ↦ ?_) fun hz ↦ ?_
+  · have := (hB.add_mem_normTwoShell_iff a.2 b.2).1 hm
+    omega
+  · rw [eq_neg_of_add_eq_zero_right hz, mulVec_neg, dotProduct_neg, mem_normTwoShell.mp a.2] at h
+    omega
 
 /-- The bracket on basis vectors. -/
 private noncomputable def basisBracket :
@@ -617,7 +630,7 @@ protected theorem leibniz_lie (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
 /-- **The signed Lie ring of the norm-two shell** of a positive definite integer matrix `B` with
 even diagonal. It is not an instance, since it depends on these two hypotheses; install it
 locally when needed. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 noncomputable def lieRing (hB : B.PosDef) (hdiag : ∀ i, Even (B i i)) :
     LieRing (ShellLieAlgebra B) where
   add_lie := ShellLieAlgebra.add_lie
