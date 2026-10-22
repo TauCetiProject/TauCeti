@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Analysis.Calculus.FDeriv.Add
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Calculus.LogDeriv
 
 import Mathlib.Analysis.Calculus.Deriv.Shift
@@ -16,9 +17,9 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 
 Differentiation commutes with translation of the domain, so the Fréchet and the
 one-variable derivative of a periodic function are periodic with the same period, and
-hence so is the logarithmic derivative. All three statements are unconditional:
-`fderiv`, `deriv`, and with them `logDeriv` take their junk values at non-differentiable
-points, and the translation identities hold there too.
+hence so are the iterated and the logarithmic derivatives. All these statements are
+unconditional: `fderiv`, `deriv`, and with them `iteratedDeriv` and `logDeriv` take their junk
+values at non-differentiable points, and the translation identities hold there too.
 
 These extensions of Mathlib's periodicity API live in the root `Function` namespace as
 `Periodic.*`, so that `hf.deriv` and its analogues resolve by receiver notation. They remain
@@ -29,6 +30,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
 * `Function.Periodic.fderiv`: the Fréchet derivative of a periodic function is
   periodic.
 * `Function.Periodic.deriv`: the derivative of a periodic function is periodic.
+* `Function.Periodic.iteratedDeriv`: the iterated derivatives of a periodic function are
+  periodic.
 * `Function.Periodic.logDeriv`: the logarithmic derivative of a periodic
   function is periodic.
 -/
@@ -49,6 +52,13 @@ protected theorem Periodic.fderiv {E F : Type*} [NormedAddCommGroup E] [NormedSp
 protected theorem Periodic.deriv {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {f : 𝕜 → F} {c : 𝕜} (hf : Periodic f c) : Periodic (deriv f) c := fun x ↦ by
   rw [← deriv_comp_add_const, hf.funext]
+
+/-- The iterated derivatives of a periodic function are periodic. -/
+protected theorem Periodic.iteratedDeriv {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f : 𝕜 → F} {c : 𝕜} (hf : Periodic f c) (n : ℕ) : Periodic (iteratedDeriv n f) c := by
+  induction n with
+  | zero => simpa using hf
+  | succ n ih => simpa only [iteratedDeriv_succ] using ih.deriv
 
 /-- The logarithmic derivative of a periodic function is periodic. -/
 protected theorem Periodic.logDeriv {𝕜' : Type*} [NontriviallyNormedField 𝕜']
