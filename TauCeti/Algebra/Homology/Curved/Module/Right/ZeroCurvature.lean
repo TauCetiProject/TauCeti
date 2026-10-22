@@ -55,6 +55,9 @@ cohomology and no underlying DG module, and nothing here compares the two kinds 
   Hom complex.
 * `TauCeti.DGRightModuleCat.isQuasiEquivalence_dgToCurvedFunctor`: the functor is a
   quasi-equivalence.
+* `TauCeti.DGRightModuleCat.dgToCurvedFunctor_comp_curvedToDGFunctor` and
+  `TauCeti.DGRightModuleCat.curvedToDGFunctor_comp_dgToCurvedFunctor`: the two differential
+  graded functors are mutually inverse.
 * `TauCeti.DGRightModuleCat.dgClosedHom_closedToCurvedFunctor_map`: the functor on closed
   degree-zero morphisms is the degree-zero part of the differential graded functor.
 
@@ -275,31 +278,44 @@ theorem curvedToDGFunctor_map_comp_dgToCurvedFunctor_map
   ext n f
   exact (toCurvedDGHomLinearEquiv M.toDG N.toDG n).apply_symm_apply f
 
+/-- The zero-curvature differential graded functor followed by its inverse is the identity
+differential graded functor. -/
+@[simp]
+theorem dgToCurvedFunctor_comp_curvedToDGFunctor :
+    (dgToCurvedFunctor (h := h)).comp _ (curvedToDGFunctor (h := h)) =
+      EnrichedFunctor.id (CochainComplex (ModuleCat.{u} R) ℤ) (DGRightModuleCat.{u, u, u} h) :=
+  -- The composite is the identity on objects, so its `eqToHom` is along a reflexive equation.
+  EnrichedFunctor.ext _ (fun _ ↦ rfl) fun M N ↦
+    (Category.comp_id _).trans (dgToCurvedFunctor_map_comp_curvedToDGFunctor_map M N)
+
+/-- The inverse differential graded functor followed by the zero-curvature differential graded
+functor is the identity differential graded functor. -/
+@[simp]
+theorem curvedToDGFunctor_comp_dgToCurvedFunctor :
+    (curvedToDGFunctor (h := h)).comp _ (dgToCurvedFunctor (h := h)) =
+      EnrichedFunctor.id (CochainComplex (ModuleCat.{u} R) ℤ)
+        (CurvedDGRightModuleCat.{u, u, u} h.isCurvedDGAlgebra_zero) :=
+  -- As in `dgToCurvedFunctor_comp_curvedToDGFunctor`, with the two functors interchanged.
+  EnrichedFunctor.ext _ (fun _ ↦ rfl) fun M N ↦
+    (Category.comp_id _).trans (curvedToDGFunctor_map_comp_dgToCurvedFunctor_map M N)
+
 /-- **The homotopy category of DG right modules is the curved homotopy category at curvature
 zero.** The equivalence is induced by the zero-curvature differential graded functor, with inverse
-induced by `curvedToDGFunctor`; its unit and counit are identities. -/
+induced by `curvedToDGFunctor`, and it is built from `H⁰` of the identities
+`dgToCurvedFunctor_comp_curvedToDGFunctor` and `curvedToDGFunctor_comp_dgToCurvedFunctor`. -/
 noncomputable def homotopyToCurvedEquivalence :
     DGHomotopyCategory R (DGRightModuleCat.{u, u, u} h) ≌
-      DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h.isCurvedDGAlgebra_zero) where
-  functor := (dgToCurvedFunctor (h := h)).mapDGHomotopyCategory
-  inverse := (curvedToDGFunctor (h := h)).mapDGHomotopyCategory
-  unitIso := NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {X Y} f ↦ by
-    refine (Category.comp_id _).trans (Eq.trans ?_ (Category.id_comp _).symm)
-    exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-      (((congrArg (HomologicalComplex.homologyMap · 0)
-        (dgToCurvedFunctor_map_comp_curvedToDGFunctor_map (DGHomotopyCategory.underlying R X)
-          (DGHomotopyCategory.underlying R Y))).trans
-        (HomologicalComplex.homologyMap_id _ 0)).symm.trans
-          (HomologicalComplex.homologyMap_comp _ _ 0))) f
-  counitIso := NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {X Y} f ↦ by
-    refine (Category.comp_id _).trans (Eq.trans ?_ (Category.id_comp _).symm)
-    exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-      ((HomologicalComplex.homologyMap_comp _ _ 0).symm.trans
-        ((congrArg (HomologicalComplex.homologyMap · 0)
-          (curvedToDGFunctor_map_comp_dgToCurvedFunctor_map (DGHomotopyCategory.underlying R X)
-            (DGHomotopyCategory.underlying R Y))).trans
-          (HomologicalComplex.homologyMap_id _ 0)))) f
-  functor_unitIso_comp _ := (Category.comp_id _).trans (CategoryTheory.Functor.map_id _ _)
+      DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h.isCurvedDGAlgebra_zero) :=
+  .mk (dgToCurvedFunctor (h := h)).mapDGHomotopyCategory
+    (curvedToDGFunctor (h := h)).mapDGHomotopyCategory
+    (EnrichedFunctor.mapDGHomotopyCategoryIdIso.symm ≪≫
+      eqToIso (congrArg EnrichedFunctor.mapDGHomotopyCategory
+        dgToCurvedFunctor_comp_curvedToDGFunctor.symm) ≪≫
+      EnrichedFunctor.mapDGHomotopyCategoryCompIso _ _)
+    ((EnrichedFunctor.mapDGHomotopyCategoryCompIso _ _).symm ≪≫
+      eqToIso (congrArg EnrichedFunctor.mapDGHomotopyCategory
+        curvedToDGFunctor_comp_dgToCurvedFunctor) ≪≫
+      EnrichedFunctor.mapDGHomotopyCategoryIdIso)
 
 /-- The homotopy equivalence is the functor induced by `dgToCurvedFunctor`. -/
 @[simp]
