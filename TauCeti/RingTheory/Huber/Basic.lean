@@ -78,6 +78,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 * `TauCeti.Huber.PairOfDefinition.map_idealImage` and
   `TauCeti.Huber.PairOfDefinition.quotient_idealImage`: the neighbourhood basis of zero of the
   image (resp. quotient) pair of definition is the image of that of the original pair.
+* `TauCeti.Huber.PairOfDefinition.comap_idealImage`: the neighbourhood basis of zero of the
+  pullback pair of definition is the preimage of that of the original pair.
 * `TauCeti.Huber.PairOfDefinition.isBounded_ringOfDefinition`: a ring of definition is bounded,
   hence `A₀ ≤ A°` (`TauCeti.Huber.PairOfDefinition.le_powerBoundedSubring`). This is the
   boundedness half of Wedhorn Corollary 6.4.
@@ -620,10 +622,8 @@ noncomputable def comap [IsTopologicalRing A] {B : Type*} [CommRing B] [Topologi
     [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A) (hf : IsEmbedding f)
     (hP : P.ringOfDefinition ≤ f.range) : PairOfDefinition B :=
   let e : P.ringOfDefinition.comap f ≃+* P.ringOfDefinition :=
-    RingEquiv.ofBijective (f.restrict _ _ fun _ hb ↦ hb)
-      ⟨fun _ _ h ↦ Subtype.ext (hf.injective (congrArg Subtype.val h)), fun ⟨a, ha⟩ ↦ by
-        obtain ⟨b, rfl⟩ := hP ha
-        exact ⟨⟨b, ha⟩, rfl⟩⟩
+    (Subring.equivMapOfInjective _ f hf.injective).trans
+      (RingEquiv.subringCongr (Subring.map_comap_eq_self hP))
   have he : IsInducing e :=
     (hf.isInducing.comp IsInducing.subtypeVal).codRestrict fun b ↦ b.2
   { ringOfDefinition := P.ringOfDefinition.comap f
@@ -654,6 +654,30 @@ theorem mem_comap_idealOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing 
       (⟨f b, Subring.mem_comap.mp (P.comap_ringOfDefinition f hf hP ▸ b.2)⟩ :
         P.ringOfDefinition) ∈ P.idealOfDefinition :=
   (Iff.rfl)
+
+/-- **The neighbourhood basis of the pullback pair is the preimage of the original one**: the
+image in `B` of the `n`-th power of the ideal of definition of `P.comap f hf hP` is the preimage
+of `P.idealImage n` under `f`. -/
+@[simp]
+theorem comap_idealImage [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A) (hf : IsEmbedding f)
+    (hP : P.ringOfDefinition ≤ f.range) (n : ℕ) :
+    (P.comap f hf hP).idealImage n = (P.idealImage n).comap (f : B →+ A) := by
+  let e : (P.comap f hf hP).ringOfDefinition ≃+* P.ringOfDefinition :=
+    (Subring.equivMapOfInjective _ f hf.injective).trans
+      (RingEquiv.subringCongr (Subring.map_comap_eq_self hP))
+  -- The ideal of definition of the pullback is, by construction, the preimage under `e`.
+  have hI : (P.comap f hf hP).idealOfDefinition = P.idealOfDefinition.comap e := rfl
+  ext x
+  simp only [mem_idealImage, AddSubgroup.mem_comap, AddMonoidHom.coe_ofClass]
+  rw [hI, ← Ideal.map_symm, ← Ideal.map_pow, Ideal.map_symm]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨e y, hy, rfl⟩
+  · rintro ⟨z, hz, hzx⟩
+    have hx : f x ∈ P.ringOfDefinition := hzx ▸ z.2
+    have hez : e ⟨x, hx⟩ = z := Subtype.ext hzx.symm
+    exact ⟨⟨x, hx⟩, by rwa [Ideal.mem_comap, hez], rfl⟩
 
 
 end PairOfDefinition
