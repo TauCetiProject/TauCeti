@@ -5,26 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.CStarAlgebra.Exponential
-import Mathlib.Analysis.Calculus.FDeriv.Mul
-import Mathlib.Analysis.SpecialFunctions.Exponential
 
 /-!
-# Exponentials of self-adjoint elements
+# The adjoint of an exponential unitary
 
 Let `A` be a complete normed complex algebra with a continuous star structure and `h` a
 self-adjoint element of `A`. The adjoint of the unitary `selfAdjoint.expUnitary h` is
 `expUnitary (-h)`, `selfAdjoint.star_expUnitary`, whose underlying element is `exp (-(I • h))`.
 
-Hence conjugation by `exp (izh)`, the inner dynamics of the Hamiltonian `h`, extends to an entire
-function of the complex time `z`, `TauCeti.differentiable_exp_smul_mul_mul_exp_neg_smul`. This is
-the exponential input to the inner dynamics of a bounded self-adjoint Hamiltonian.
-
 ## Main declarations
 
 * `selfAdjoint.star_expUnitary`: the adjoint of `expUnitary`.
-* `TauCeti.differentiable_exp_smul_mul_mul_exp_neg_smul`: `z ↦ exp (izh) a exp (-izh)` is entire.
 
 ## References
 
@@ -35,22 +27,6 @@ Section 2.5.3, for the one-parameter group `t ↦ exp (ith)` of a self-adjoint e
 public section
 
 noncomputable section
-
-open Complex NormedSpace
-
-namespace TauCeti
-
-variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
-
-/-- Conjugation by `exp (izh)` is an entire function of the complex time `z`:
-`z ↦ exp (izh) a exp (-izh)`. -/
-theorem differentiable_exp_smul_mul_mul_exp_neg_smul (h a : A) :
-    Differentiable ℂ fun z : ℂ => exp ((I * z) • h) * a * exp (-(I * z) • h) := by
-  have hd : Differentiable ℂ fun z : ℂ => exp (z • h) := differentiable_exp_smul_const (𝕂 := ℂ) h
-  exact ((hd.comp (differentiable_id.const_mul I)).mul (differentiable_const a)).mul
-    (hd.comp (differentiable_id.const_mul I).neg)
-
-end TauCeti
 
 namespace selfAdjoint
 

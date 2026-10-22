@@ -23,7 +23,7 @@ For a Hermitian matrix `K` the exponential `exp (β • K)` of a real multiple i
 `Matrix.IsHermitian.exp_smul`, and has positive trace,
 `Matrix.IsHermitian.trace_exp_smul_pos`. Hence `x ↦ Tr (exp (β • K) * x)` is a positive
 functional, `Matrix.IsHermitian.trace_exp_smul_mul_nonneg`, the unnormalised Gibbs functional of
-a matrix Hamiltonian at inverse temperature `β`.
+a matrix Hamiltonian at inverse temperature `-β`.
 
 ## Main declarations
 
@@ -35,7 +35,8 @@ a matrix Hamiltonian at inverse temperature `β`.
   trace.
 * `Matrix.IsHermitian.exp_smul`: `exp (β • K)` is Hermitian for Hermitian `K`.
 * `Matrix.IsHermitian.trace_exp_smul_mul_nonneg` and `Matrix.IsHermitian.trace_exp_smul_pos`:
-  positivity of the unnormalised Gibbs functional and of the Gibbs weight.
+  positivity of the unnormalised Gibbs functional at inverse temperature `-β` and of its
+  normalising constant.
 
 ## References
 
@@ -105,7 +106,8 @@ theorem trace_exp_smul_mul_nonneg (hK : K.IsHermitian) (β : ℝ) {x : Matrix m 
 
 variable [Nonempty m]
 
-/-- For a Hermitian matrix `K` the Gibbs weight `exp (β • K)` has positive trace. -/
+/-- For a Hermitian matrix `K` the exponential `exp (β • K)`, the Gibbs weight at inverse
+temperature `-β`, has positive trace. -/
 theorem trace_exp_smul_pos (hK : K.IsHermitian) (β : ℝ) :
     0 < (NormedSpace.exp (β • K)).trace := by
   have h := Matrix.PosDef.conjTranspose_mul_self (NormedSpace.exp ((β / 2) • K))

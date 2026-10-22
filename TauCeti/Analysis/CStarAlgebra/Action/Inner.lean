@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
 public import TauCeti.Analysis.CStarAlgebra.Exponential
+import TauCeti.Analysis.SpecialFunctions.Exponential
 
 /-!
 # Inner dynamics of a self-adjoint element
