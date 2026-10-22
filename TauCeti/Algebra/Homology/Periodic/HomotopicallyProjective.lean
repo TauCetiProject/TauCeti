@@ -45,6 +45,10 @@ underlying module, and is not contractible, so it is not homotopically projectiv
   localization is bijective on morphisms out of a homotopically projective complex.
 * `TauCeti.PeriodicComplex.IsHomotopicallyProjective.quasiIso_iff`: between homotopically
   projective complexes, quasi-isomorphisms are exactly the homotopy equivalences.
+* `TauCeti.PeriodicComplex.isHomotopicallyProjective_of_d_eq_zero`: a complex with projective
+  terms and zero differential is homotopically projective.
+* `TauCeti.PeriodicComplex.IsHomotopicallyProjective.of_splitting`: homotopically projective
+  complexes are closed under extensions that split in every degree.
 
 The proofs follow Joël Riou's treatment of K-projective complexes in
 `Mathlib.Algebra.Homology.HomotopyCategory.KProjective` and
@@ -135,6 +139,43 @@ theorem isHomotopicallyProjective_and_acyclic_iff (K : CochainComplex C (ZMod n)
     ⟨isHomotopicallyProjective_of_homotopy h, ?_⟩⟩
   rw [← quotient_obj_mem_subcategoryAcyclic_iff]
   exact ObjectProperty.prop_of_isZero _ ((HomotopyCategory.isZero_quotient_obj_iff K).mpr ⟨h⟩)
+
+/-- A periodic complex with projective terms and zero differential is homotopically projective. -/
+theorem isHomotopicallyProjective_of_d_eq_zero {K : CochainComplex C (ZMod n)}
+    [∀ i, Projective (K.X i)] (hd : ∀ i j, K.d i j = 0) : IsHomotopicallyProjective K where
+  nonempty_homotopy_zero {L} f hL := by
+    have hex (j i : ZMod n) (hji : j + 1 = i) : (L.sc' j i (i + 1)).Exact :=
+      (L.exactAt_iff' j i (i + 1) ((ComplexShape.up (ZMod n)).prev_eq' hji)
+        ((ComplexShape.up (ZMod n)).next_eq' rfl)).mp (hL i)
+    have hf (i : ZMod n) : f.f i ≫ L.d i (i + 1) = 0 := by
+      rw [f.comm, hd, zero_comp]
+    let h : ∀ i j, (ComplexShape.up (ZMod n)).Rel j i → (K.X i ⟶ L.X j) :=
+      fun i j hji ↦ (hex j i hji).liftFromProjective (f.f i) (hf i)
+    refine ⟨(Homotopy.ofEq ?_).trans (Homotopy.nullHomotopy' h)⟩
+    ext i
+    rw [Homotopy.nullHomotopicMap'_f (k₂ := i - 1) (k₀ := i + 1) (sub_add_cancel i 1) rfl, hd,
+      zero_comp, zero_add]
+    exact ((hex (i - 1) i (sub_add_cancel i 1)).liftFromProjective_comp (f.f i) (hf i)).symm
+
+/-- Homotopically projective periodic complexes are closed under extensions that split in every
+degree. The splittings need not be compatible with the differentials. -/
+theorem IsHomotopicallyProjective.of_splitting (S : ShortComplex (CochainComplex C (ZMod n)))
+    (hS : ∀ i, Nonempty (S.map (eval C (ComplexShape.up (ZMod n)) i)).Splitting)
+    [IsHomotopicallyProjective S.X₁] [IsHomotopicallyProjective S.X₃] :
+    IsHomotopicallyProjective S.X₂ := by
+  let := ExactStructure.homologicalComplex_split_isFrobenius (C := C)
+    (c := ComplexShape.up (ZMod n)) (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩)
+    (fun i ↦ ⟨i + 1, rfl⟩) |>.stableHasShift
+  let := stableToHomotopyCommShift C n
+  have hT := homotopyCategory_map_stableConflationTriangle_mem_distTriang C n S
+    ((ExactStructure.homologicalComplex_conflation_iff _ _ S).mpr
+      fun i ↦ (ExactStructure.split_conflation _).mpr (hS i))
+  rw [isHomotopicallyProjective_iff_leftOrthogonal]
+  -- The degreewise split sequence gives a distinguished triangle in the homotopy category whose
+  -- vertices are the classes of `S.X₁`, `S.X₂` and `S.X₃`.
+  simpa using (subcategoryAcyclic C n).leftOrthogonal.ext_of_isTriangulatedClosed₂ _ hT
+    (by simpa using IsHomotopicallyProjective.leftOrthogonal S.X₁)
+    (by simpa using IsHomotopicallyProjective.leftOrthogonal S.X₃)
 
 namespace IsHomotopicallyProjective
 

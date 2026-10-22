@@ -179,11 +179,9 @@ theorem eulerDegree_ker_of_smooth :
   have hdim : topologicalKrullDim X = 1 :=
     topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k))
   have := finiteDimensional_cohomology_one_trivial_of_isProper k hdim
-  have hclosed := isClosed_singleton_of_section hs
-  have hstalk := ((smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq
-    (X ↘ Spec (.of k)) 1).mp inferInstance).2 _ hclosed
-  have hcodim : coheight (s (IsLocalRing.closedPoint k)) = 1 := by
-    exact_mod_cast (ringKrullDim_stalk_eq_coheight _).symm.trans hstalk
+  have hcodim : coheight (s (IsLocalRing.closedPoint k)) = 1 :=
+    coheight_eq_of_isClosed_of_smoothOfRelativeDimension (X ↘ Spec (.of k))
+      (isClosed_singleton_of_section hs)
   exact eulerDegree_ker s (x := ⟨_, hcodim⟩) rfl
     (fun y ↦ by exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim y).trans hdim.le)
     hs (isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension s hs).isEffectiveCartier

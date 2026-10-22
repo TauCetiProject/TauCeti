@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LowDimTopology.Heegaard.Nice
 public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.FinCases
@@ -57,6 +58,8 @@ has Maslov index `2`, and the two bigons give different values of `μ(D) - 2 n_z
   admissible exactly when its basepoint lies in the annulus.
 * `TauCeti.HeegaardRegionSystem.not_weaklyAdmissible_circleTimesSphere_one`: with the basepoint
   in a bigon, the diagram is not weakly admissible.
+* `TauCeti.HeegaardRegionSystem.isNice_circleTimesSphere_iff`: the diagram is nice exactly when
+  its basepoint lies in the annulus.
 * `TauCeti.HeegaardRegionSystem.maslovIndex_circleTimesSphere_single_one`,
   `TauCeti.HeegaardRegionSystem.maslovIndex_circleTimesSphere_single_two` and
   `TauCeti.HeegaardRegionSystem.maslovIndex_circleTimesSphere_periodic`: both bigons have Maslov
@@ -291,6 +294,13 @@ theorem cornerCount_circleTimesSphere (r s : Fin 3) :
   revert r s
   simp only [cornerCount_eq_card, cornerRegion_eq]
   decide
+
+/-- The diagram is nice exactly when its basepoint lies in the annulus: the regions without a
+basepoint are then the two bigons, while with the basepoint in a bigon the annulus, of Euler
+characteristic zero, is neither a bigon nor a square. -/
+theorem isNice_circleTimesSphere_iff (r : Fin 3) :
+    (circleTimesSphere r).IsNice ![0, 1, 1] ↔ r = 0 := by
+  fin_cases r <;> simp [isNice_iff, Fin.forall_fin_succ]
 
 /-- The bigon `B₁`, a disk with two corners, has Maslov index one. -/
 theorem maslovIndex_circleTimesSphere_single_one (r : Fin 3) :

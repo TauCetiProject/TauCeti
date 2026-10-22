@@ -17,10 +17,11 @@ public import TauCeti.Geometry.RealAlgebraic.Stack.Sectors
 /-!
 # McCallum lifting over an order-invariant base
 
-An irreducible polynomial basis is analytically delineable over a connected analytic
-submanifold when none of its fibers is nullified and the McCallum projection is
-order-invariant there. Every input polynomial reconstructed from the basis then has constant
-ambient order, and hence constant sign, on every section and sector of the resulting stack.
+A squarefree polynomial basis, in particular an irreducible basis, is analytically delineable
+over a connected analytic submanifold when none of its fibers is nullified and the McCallum
+projection is order-invariant there. Every input polynomial reconstructed from the basis then
+has constant ambient order, and hence constant sign, on every section and sector of the
+resulting stack.
 
 This is the non-nullified lifting step of McCallum's projection-correctness argument, used at
 each positive-dimensional cell whose base is already order-invariant for the projection. A
@@ -165,12 +166,12 @@ namespace TauCeti
 variable {n d : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
   {F B : Finset (Polynomial (MvPolynomial (Fin n) ℝ))} {S : Set (Fin n → ℝ)}
 
-/-- Any nonnullified subfamily of an irreducible basis has a common delineation over a
+/-- Any nonnullified subfamily of a squarefree basis has a common delineation over a
 preconnected analytic submanifold on which the original McCallum projection is
 order-invariant. The product of the subfamily has constant ambient order along each section.
 Nullified members outside the subfamily cause no obstruction. -/
 theorem exists_delineation_orderAt_prod_eq_of_mcCallumProjection
-    (hB : F.IsIrreducibleBasis B) {A : Finset (Polynomial (MvPolynomial (Fin n) ℝ))}
+    (hB : F.IsSquarefreeBasis B) {A : Finset (Polynomial (MvPolynomial (Fin n) ℝ))}
     (hAB : A ⊆ B) (hS : IsAnalyticSubmanifold d S) (hconn : IsPreconnected S)
     (hfiber : ∀ b ∈ A, ∀ x ∈ S, b.map (MvPolynomial.eval x) ≠ 0)
     (hproj : ∀ q ∈ F.mcCallumProjection B, ∀ x ∈ S, ∀ y ∈ S,
@@ -205,19 +206,19 @@ theorem exists_delineation_orderAt_prod_eq_of_mcCallumProjection
 
 end TauCeti
 
-namespace Finset.IsIrreducibleBasis
+namespace Finset.IsSquarefreeBasis
 
 variable {n d : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
   {F B : Finset (Polynomial (MvPolynomial (Fin n) ℝ))}
   {S : Set (Fin n → ℝ)}
 
-/-- **McCallum lifting over an order-invariant base.** If an irreducible basis has no
+/-- **McCallum lifting over an order-invariant base.** If a squarefree basis has no
 nullified fiber over a connected analytic submanifold and every member of its McCallum
 projection has constant ambient order there, then the basis has a common delineation.
 Every stack cell is an analytic submanifold, and every original input has constant ambient
 order and sign on that cell. -/
 theorem exists_delineation_orderAt_eq_of_mcCallumProjection
-    (hB : F.IsIrreducibleBasis B) (hS : TauCeti.IsAnalyticSubmanifold d S)
+    (hB : F.IsSquarefreeBasis B) (hS : TauCeti.IsAnalyticSubmanifold d S)
     (hconn : IsPreconnected S)
     (hfiber : ∀ b ∈ B, ∀ x ∈ S, b.map (MvPolynomial.eval x) ≠ 0)
     (hproj : ∀ q ∈ F.mcCallumProjection B, ∀ x ∈ S, ∀ y ∈ S,
@@ -255,4 +256,4 @@ theorem exists_delineation_orderAt_eq_of_mcCallumProjection
       rw [hai, hai', Fin.cons_self_tail, Fin.cons_self_tail] at h
       exact h) E hE
 
-end Finset.IsIrreducibleBasis
+end Finset.IsSquarefreeBasis

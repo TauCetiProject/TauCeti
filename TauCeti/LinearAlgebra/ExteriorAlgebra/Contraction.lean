@@ -31,6 +31,12 @@ monomial, and so the basis vector indexed by `s`, by the parity of its degree.
 Every basis vector is the product of the exterior-algebra generators of its index set, in
 increasing order; for index sets with one or two elements this is also recorded in the explicit
 forms `TauCeti.ExteriorAlgebra.basis_singleton` and `TauCeti.ExteriorAlgebra.basis_pair`.
+
+Independently of a basis, the grade involution is the sign `(-1) ^ n` on the `n`-th exterior power,
+a contraction carries the `(n + 1)`-th exterior power into the `n`-th, and a vector graded-commutes
+with every multivector: `ι m * x = involute x * ι m`.  Together with the graded Leibniz rule
+`CliffordAlgebra.contractLeft_mul`, these say that a contraction is an odd derivation of degree
+`-1` of the graded-commutative exterior algebra.
 -/
 
 public section
@@ -376,4 +382,66 @@ theorem ι_mul_contractLeft_coord_basis {I : Type w} [LinearOrder I]
     rw [basisEraseSign_eq_neg_one_pow_card_filter_lt, smul_smul, hsignSq, one_smul]
   · rw [mul_zero]
 
+/-! ### Exterior powers under the grade involution and contraction -/
+
+/-- **The grade involution acts on the `n`-th exterior power by `(-1) ^ n`.** -/
+theorem involute_of_mem_exteriorPower {n : ℕ} {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) :
+    involute (Q := (0 : QuadraticForm R M)) x = (-1 : R) ^ n • x := by
+  induction hx using Submodule.pow_induction_on_left' with
+  | algebraMap r => simp
+  | add x y i hx hy ihx ihy => rw [map_add, ihx, ihy, smul_add]
+  | mem_mul m hm i x hx ih =>
+    obtain ⟨v, rfl⟩ := hm
+    rw [map_mul, ih, involute_ι, mul_smul_comm, neg_mul, smul_neg, pow_succ', mul_smul,
+      neg_one_smul]
+
+/-- Contraction annihilates the zeroth exterior power, the scalars. -/
+theorem contractLeft_eq_zero_of_mem_exteriorPower_zero (d : Module.Dual R M)
+    {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^0 M) :
+    contractLeft (Q := (0 : QuadraticForm R M)) d x = 0 := by
+  rw [_root_.ExteriorAlgebra.exteriorPower, pow_zero] at hx
+  obtain ⟨r, rfl⟩ := Submodule.mem_one.mp hx
+  exact contractLeft_algebraMap (Q := (0 : QuadraticForm R M)) d r
+
+/-- **Contraction lowers the exterior degree by one**: it carries the `(n + 1)`-th exterior power
+into the `n`-th. -/
+theorem contractLeft_mem_exteriorPower (d : Module.Dual R M) {n : ℕ}
+    {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^(n + 1) M) :
+    contractLeft (Q := (0 : QuadraticForm R M)) d x ∈ ⋀[R]^n M := by
+  suffices h : ∀ i (x : ExteriorAlgebra R M) (_ : x ∈ ⋀[R]^i M),
+      contractLeft (Q := (0 : QuadraticForm R M)) d x ∈ ⋀[R]^(i - 1) M from h _ x hx
+  intro i x hx
+  induction hx using Submodule.pow_induction_on_left' with
+  | algebraMap r => simp
+  | add x y i hx hy ihx ihy => rw [map_add]; exact add_mem ihx ihy
+  | mem_mul m hm i x hx ih =>
+    obtain ⟨v, rfl⟩ := hm
+    rw [contractLeft_ι_mul, Nat.succ_sub_one]
+    refine sub_mem (Submodule.smul_mem _ _ hx) ?_
+    rcases i with _ | i
+    · rw [contractLeft_eq_zero_of_mem_exteriorPower_zero d hx, mul_zero]
+      exact zero_mem _
+    · rw [Nat.add_sub_cancel] at ih
+      rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
+      exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ v) ih
+
 end TauCeti.ExteriorAlgebra
+
+namespace ExteriorAlgebra
+
+variable {R : Type*} {M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- **A vector graded-commutes with every multivector**: moving `ι R m` past `x` applies the grade
+involution to `x`. -/
+theorem ι_mul_eq_involute_mul (m : M) (x : ExteriorAlgebra R M) :
+    ExteriorAlgebra.ι R m * x =
+      involute (Q := (0 : QuadraticForm R M)) x * ExteriorAlgebra.ι R m := by
+  induction x using CliffordAlgebra.induction with
+  | algebraMap r => rw [AlgHom.commutes, Algebra.commutes]
+  | ι v =>
+    rw [involute_ι, neg_mul, eq_neg_iff_add_eq_zero]
+    exact ExteriorAlgebra.ι_add_mul_swap m v
+  | mul x y hx hy => rw [← mul_assoc, hx, mul_assoc, hy, map_mul, mul_assoc]
+  | add x y hx hy => rw [mul_add, hx, hy, map_add, add_mul]
+
+end ExteriorAlgebra

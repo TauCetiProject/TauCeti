@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.FormalGroup.AddInv
 public import TauCeti.RingTheory.FormalGroup.Logarithm
 -- Proof-only: splitting a power series into its truncation and its tail.
 import Mathlib.RingTheory.PowerSeries.Trunc
@@ -65,12 +66,6 @@ open MvPowerSeries
 namespace FormalGroup
 
 variable {R : Type*} [CommRing R] (F : FormalGroup R)
-
-/-- The tautological point `T` of `F`, with values in the power series ring `R⟦T⟧`. -/
-private noncomputable def tautologicalPoint : F.Point Unit :=
-  ⟨PowerSeries.X, PowerSeries.HasSubst.X'⟩
-
-private theorem val_tautologicalPoint : F.tautologicalPoint.val = PowerSeries.X := (rfl)
 
 /-- **Multiplication by `n`** on a formal group law `F`: the power series `[n]_F(T)`, which is `n`
 times the tautological point `T` in the monoid `F.Point Unit` of power-series points of `F`. -/

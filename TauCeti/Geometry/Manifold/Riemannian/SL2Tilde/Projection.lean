@@ -235,7 +235,8 @@ theorem inner_mfderiv_projection_mfderiv (Φ : Isom J SL2Tilde) (p : SL2Tilde)
     inner ℝ (mfderiv J K projection (Φ p) (mfderiv J J Φ p u))
       (mfderiv J K projection (Φ p) (mfderiv J J Φ p v)) =
     inner ℝ (mfderiv J K projection p u) (mfderiv J K projection p v) := by
-  simp only [inner_mfderiv_projection, Φ.inner_mfderiv, Φ.ricciTensor_mfderiv]
+  simp only [inner_mfderiv_projection, Φ.inner_mfderiv,
+    Φ.isLocalRiemannianIsometry.ricciTensor_mfderiv]
 
 /-- A diffeomorphism of the hyperbolic base induced by a Sasaki isometry is a Riemannian
 isometry. Together with fibre preservation, this gives descent to hyperbolic isometries. -/
