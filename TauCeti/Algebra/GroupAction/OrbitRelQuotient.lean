@@ -67,6 +67,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk` and
   `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE`: the representative convention of
   Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions.
+* `MulAction.orbitRel.Quotient.instMulActionQuotientGroup`: for a normal subgroup `H`, the
+  quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives
+  (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version.
 -/
 
 public section
@@ -794,6 +797,54 @@ theorem MulAction.orbitRelQuotientLift_prodMk {f' : X → Z}
 end Lift
 
 end TauCeti
+
+/-! ### The quotient group action on orbits of a normal subgroup -/
+
+namespace MulAction.orbitRel.Quotient
+
+variable {G P : Type*} [Group G] (H : Subgroup G) [MulAction G P] [H.Normal]
+
+/-- Translating by elements of `G` that agree modulo the normal subgroup `H` sends points in the
+same `H`-orbit to points in the same `H`-orbit. -/
+@[to_additive /-- Translating by elements of `G` that agree modulo the normal subgroup `H` sends
+points in the same `H`-orbit to points in the same `H`-orbit. -/]
+theorem orbitRel_smul_smul {g g' : G} {p q : P} (hg : g⁻¹ * g' ∈ H)
+    (hpq : orbitRel H P p q) : orbitRel H P (g • p) (g' • q) := by
+  rw [orbitRel_apply, mem_orbit_iff] at hpq ⊢
+  obtain ⟨⟨h, hh⟩, rfl⟩ := hpq
+  refine ⟨⟨g * h * g'⁻¹, ?_⟩, ?_⟩
+  · have hk : g * (h * (g⁻¹ * g')⁻¹) * g⁻¹ ∈ H :=
+      ‹H.Normal›.conj_mem _ (H.mul_mem hh (H.inv_mem hg)) g
+    simpa [mul_assoc] using hk
+  · simp [subgroup_smul_def, smul_smul, mul_assoc]
+
+/-- The quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives. -/
+@[to_additive /-- The quotient group `G ⧸ H` acts on the space of `H`-orbits by translating
+representatives. -/]
+instance instSMulQuotientGroup : SMul (G ⧸ H) (orbitRel.Quotient H P) where
+  smul := Quotient.map₂ (· • ·) fun _ _ hg _ _ hpq =>
+    orbitRel_smul_smul H (QuotientGroup.leftRel_apply.1 hg) hpq
+
+/-- The action of `G ⧸ H` on `H`-orbits is computed on representatives. -/
+@[to_additive (attr := simp) /-- The action of `G ⧸ H` on `H`-orbits is computed on
+representatives. -/]
+theorem mk_smul_mk (g : G) (p : P) :
+    (g : G ⧸ H) • (Quotient.mk'' p : orbitRel.Quotient H P) = Quotient.mk'' (g • p) :=
+  rfl
+
+/-- The quotient group `G ⧸ H` acts on the space of `H`-orbits. -/
+@[to_additive /-- The quotient group `G ⧸ H` acts on the space of `H`-orbits. -/]
+instance instMulActionQuotientGroup : MulAction (G ⧸ H) (orbitRel.Quotient H P) where
+  one_smul x := by
+    induction x using Quotient.inductionOn' with
+    | h p => rw [← QuotientGroup.mk_one, mk_smul_mk, one_smul]
+  mul_smul g g' x := by
+    induction g using QuotientGroup.induction_on with | H g =>
+    induction g' using QuotientGroup.induction_on with | H g' =>
+    induction x using Quotient.inductionOn' with
+    | h p => rw [← QuotientGroup.mk_mul, mk_smul_mk, mk_smul_mk, mk_smul_mk, mul_smul]
+
+end MulAction.orbitRel.Quotient
 
 namespace MulActionHom
 
