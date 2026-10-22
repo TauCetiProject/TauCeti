@@ -144,28 +144,23 @@ theorem forall_exists_aeval_pderiv_kleinQuartic_ne_zero_iff :
     (∀ b : Fin 3 → A, b ≠ 0 → aeval b (kleinQuartic R) = 0 →
         ∃ l, aeval b (pderiv l (kleinQuartic R)) ≠ 0) ↔ (7 : A) ≠ 0 := by
   refine ⟨fun hsm h7 ↦ ?_, fun h7 _ ↦ exists_aeval_pderiv_kleinQuartic_ne_zero h7⟩
-  have hb : ![1, 2, 4] ≠ (0 : Fin 3 → A) := fun h ↦ one_ne_zero (congr_fun h 0)
-  obtain ⟨l, hl⟩ := hsm ![1, 2, 4] hb (by
-    rw [aeval_kleinQuartic]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.vecHead,
-      Matrix.vecTail, Function.comp_apply, Fin.succ_zero_eq_one]
+  -- The singular point `(1 : 2 : 4)`, given by its coordinates.
+  obtain ⟨b, hb0, hb1, hb2⟩ : ∃ b : Fin 3 → A, b 0 = 1 ∧ b 1 = 2 ∧ b 2 = 4 :=
+    ⟨![1, 2, 4], rfl, rfl, rfl⟩
+  have hb : b ≠ 0 := fun h ↦ one_ne_zero (hb0 ▸ congr_fun h 0)
+  obtain ⟨l, hl⟩ := hsm b hb (by
+    rw [aeval_kleinQuartic, hb0, hb1, hb2]
     linear_combination 14 * h7)
   refine hl ?_
   match l with
   | 0 =>
-    rw [aeval_pderiv_zero_kleinQuartic]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.vecHead,
-      Matrix.vecTail, Function.comp_apply, Fin.succ_zero_eq_one]
+    rw [aeval_pderiv_zero_kleinQuartic, hb0, hb1, hb2]
     linear_combination 10 * h7
   | 1 =>
-    rw [aeval_pderiv_one_kleinQuartic]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.vecHead,
-      Matrix.vecTail, Function.comp_apply, Fin.succ_zero_eq_one]
+    rw [aeval_pderiv_one_kleinQuartic, hb0, hb1, hb2]
     linear_combination 7 * h7
   | 2 =>
-    rw [aeval_pderiv_two_kleinQuartic]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.vecHead,
-      Matrix.vecTail, Function.comp_apply, Fin.succ_zero_eq_one]
+    rw [aeval_pderiv_two_kleinQuartic, hb0, hb1, hb2]
     linear_combination 8 * h7
 
 end Polynomial
