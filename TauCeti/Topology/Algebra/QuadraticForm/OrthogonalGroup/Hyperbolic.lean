@@ -131,12 +131,10 @@ theorem connectedComponentOfOne_specialOrthogonalGroup_hyperbolicPlane :
       (Units.posSubgroup ℝ).map (hyperbolicTorus ℝ) := by
   let e := hyperbolicTorusContinuousMulEquiv ℝ
   rw [← ContinuousMulEquiv.map_connectedComponentOfOne e, Units.connectedComponentOfOne_real]
-  ext g
-  constructor
-  · rintro ⟨u, hu, rfl⟩
-    exact ⟨u, hu, by simp [e]⟩
-  · rintro ⟨u, hu, rfl⟩
-    exact ⟨u, hu, by simp [e]⟩
+  have he : e.toMulEquiv.toMonoidHom = hyperbolicTorus ℝ := by
+    ext u
+    simp [e]
+  rw [he]
 
 /-! ### Worked examples over `ℝ` -/
 

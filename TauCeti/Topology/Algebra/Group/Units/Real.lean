@@ -28,38 +28,16 @@ namespace Units
 /-- The positive real units form a preconnected set. -/
 theorem isPreconnected_posSubgroup_real :
     IsPreconnected (Units.posSubgroup ℝ : Set ℝˣ) := by
-  let f : Set.Ioi (0 : ℝ) → Units.posSubgroup ℝ := fun x =>
-    ⟨Units.mk0 x.1 x.2.ne', (Units.mem_posSubgroup _).2 x.2⟩
-  have hf : Continuous f := by
-    apply continuous_induced_rng.mpr
-    apply Units.continuous_iff.mpr
+  rw [← Units.isEmbedding_val₀.isInducing.isPreconnected_image]
+  have himage : Units.val '' (Units.posSubgroup ℝ : Set ℝˣ) = Set.Ioi (0 : ℝ) := by
+    ext x
     constructor
-    · exact continuous_subtype_val
-    · apply continuous_iff_continuousAt.mpr
-      intro x
-      apply ContinuousAt.congr_of_eventuallyEq
-        ((continuousAt_inv₀ x.2.ne').comp continuous_subtype_val.continuousAt)
-      filter_upwards [] with y
-      simp [f, Units.val_inv_eq_inv_val]
-  let hpreIoi : PreconnectedSpace (Set.Ioi (0 : ℝ)) :=
-    Subtype.preconnectedSpace isPreconnected_Ioi
-  have himage : f '' (Set.univ : Set (Set.Ioi (0 : ℝ))) =
-      (Set.univ : Set (Units.posSubgroup ℝ)) := by
-    ext u
-    constructor
-    · rintro ⟨x, hx, rfl⟩
-      simp
-    · intro hu
-      let x : Set.Ioi (0 : ℝ) :=
-        ⟨(((u : Units.posSubgroup ℝ) : ℝˣ) : ℝ),
-          (Units.mem_posSubgroup _).1 u.2⟩
-      refine ⟨x, mem_univ _, ?_⟩
-      apply Subtype.ext
-      simp [f, x]
-  exact isPreconnected_iff_preconnectedSpace.mpr ⟨by
-    rw [← himage]
-    exact (@PreconnectedSpace.isPreconnected_univ (Set.Ioi (0 : ℝ)) _ hpreIoi).image
-      f hf.continuousOn⟩
+    · rintro ⟨u, hu, rfl⟩
+      exact (Units.mem_posSubgroup _).1 hu
+    · intro hx
+      exact ⟨Units.mk0 x hx.ne', (Units.mem_posSubgroup _).2 hx, rfl⟩
+  rw [himage]
+  exact isPreconnected_Ioi
 
 /-- The positive real units are the identity component of the real unit group. -/
 theorem connectedComponentOfOne_real :

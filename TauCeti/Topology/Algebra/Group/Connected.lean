@@ -165,11 +165,12 @@ theorem _root_.ContinuousMulEquiv.map_connectedComponentOfOne {G' : Type*} [Grou
   apply le_antisymm
   · exact Subgroup.map_connectedComponentOfOne_le e.continuous_toFun
   · intro g hg
-    have h := e.continuous_invFun.mapsTo_connectedComponent 1 hg
-    refine ⟨e.invFun g, ?_, ?_⟩
-    · change e.invFun g ∈ connectedComponent (1 : G)
-      simpa using h
-    · exact e.apply_symm_apply g
+    have h :
+        (Subgroup.connectedComponentOfOne G').map e.symm.toMulEquiv.toMonoidHom ≤
+          Subgroup.connectedComponentOfOne G :=
+      Subgroup.map_connectedComponentOfOne_le e.symm.continuous_toFun
+    refine ⟨e.symm g, h ⟨g, hg, rfl⟩, ?_⟩
+    exact e.apply_symm_apply g
 
 open scoped Pointwise in
 /-- The quotient of a topological group by its identity component is totally disconnected. -/
