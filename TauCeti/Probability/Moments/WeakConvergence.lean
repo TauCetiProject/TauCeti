@@ -127,9 +127,11 @@ private theorem dominator_le {f : ℝ → ℝ} {p : ℝ[X]} {C δ R M t c : ℝ}
   have h₁ : t * p.eval x ^ 2 ≤ t * (C + δ) ^ 2 := by
     rw [← sq_abs (p.eval x)]
     exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (abs_nonneg _) hpx 2) ht.le
-  have h₂ : c / M ^ (2 * n) * x ^ (2 * n) ≤ c * ((R / M) ^ 2) ^ n := by
-    rw [← (even_two_mul n).pow_abs x, ← pow_mul, div_pow, div_mul_eq_mul_div, mul_div_assoc]
-    gcongr
+  have h₂ : c / M ^ (2 * n) * x ^ (2 * n) ≤ c * ((R / M) ^ 2) ^ n :=
+    calc c / M ^ (2 * n) * x ^ (2 * n) = c * ((|x| / M) ^ 2) ^ n := by
+          rw [← (even_two_mul n).pow_abs x]
+          ring
+      _ ≤ c * ((R / M) ^ 2) ^ n := by gcongr
   linarith
 
 end TauCeti
