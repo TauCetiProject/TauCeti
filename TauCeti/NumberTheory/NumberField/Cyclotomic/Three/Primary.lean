@@ -175,7 +175,7 @@ theorem exists_isPrimaryEisenstein_unit_mul {x : 𝓞 K} (hx : ¬ hζ.toInteger 
     exact dvd_add (dvd_mul_of_dvd_left h3 _) (dvd_mul_left _ _)
   let η : (𝓞 K)ˣ := (hζ.toInteger_isPrimitiveRoot.isUnit (by decide)).unit
   have hη : (η : 𝓞 K) = ω := IsCyclotomicExtension.Rat.Three.coe_eta hζ
-  have h2 : ω ^ 2 = -ω - 1 := hζ.toInteger_sq
+  have h2 : ω ^ 2 = -ω - 1 := IsCyclotomicExtension.Rat.Three.eta_sq hζ
   have h3 : ω ^ 3 = 1 := hζ.toInteger_cube_eq_one
   -- A unit `u` with `u * (a + b ω) = a' + b' ω` and `a' ≡ 2`, `b' ≡ 0` modulo `3` works.
   have key (u : (𝓞 K)ˣ) (a' b' : ℤ) (h : (u : 𝓞 K) * (a + b * ω) = a' + b' * ω)
