@@ -24,6 +24,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
 
 * `AlgebraicGeometry.Scheme.isoSpec_inv_appTop`: the global sections of `X.isoSpec.inv` are
   `(Scheme.ΓSpecIso Γ(X, ⊤)).inv`.
+* `AlgebraicGeometry.IsAffineOpen.fromSpec_comp_eq_SpecMap`: on an affine open `U` of `X`, a
+  morphism `X ⟶ Spec R` restricted along `Spec Γ(X, U) ⟶ X` is the spectrum of the ring map
+  `R → Γ(X, U)` it induces.
 * `AlgebraicGeometry.isIso_SpecMap_morphismRestrict_basicOpen_of_injective`: for an `R`-algebra `B`
   embedded in a localization of `R` away from `a`, the morphism `Spec B ⟶ Spec R` restricts to an
   isomorphism over `D(a)`.
@@ -44,6 +47,14 @@ theorem Scheme.isoSpec_inv_appTop (X : Scheme.{u}) [IsAffine X] :
     rw [← Scheme.Hom.comp_appTop, Iso.hom_inv_id, Scheme.Hom.id_appTop]
   rw [← Iso.comp_hom_eq_id]
   simpa [Scheme.isoSpec] using h
+
+/-- On an affine open `U` of `X`, the morphism `f : X ⟶ Spec R` restricted along
+`Spec Γ(X, U) ⟶ X` is the spectrum of the ring map `R → Γ(X, U)` induced by `f`. -/
+theorem IsAffineOpen.fromSpec_comp_eq_SpecMap {X : Scheme.{u}} {R : CommRingCat.{u}}
+    (f : X ⟶ Spec R) {U : X.Opens} (hU : IsAffineOpen U) :
+    hU.fromSpec ≫ f = Spec.map ((Scheme.ΓSpecIso R).inv ≫ f.appLE ⊤ U le_top) := by
+  rw [← IsAffineOpen.SpecMap_appLE_fromSpec f (isAffineOpen_top _) hU le_top,
+    IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp]
 
 /-- **`Spec` of an intermediate ring of a localization.** Let `S` be a localization of `R` away
 from `a`, and let `B` be an `R`-algebra whose map to `S` is injective, for instance an
