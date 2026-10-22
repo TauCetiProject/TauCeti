@@ -22,9 +22,8 @@ at most one, which is the classical definition of the injective norm.
 
 This file proves that the injective seminorm is bounded by the projective seminorm, that over
 `ℝ` and `ℂ` both agree with `‖x‖ * ‖y‖` on a pure tensor `x ⊗ₜ y`, and that both are norms when
-`E` and `F` are normed spaces. Definiteness rests on the injectivity of the map from tensors to
-operators on the dual: a tensor lies in `E₀ ⊗[𝕜] F` for a finite-dimensional subspace `E₀ ≤ E`,
-and the coordinate functionals of a basis of `E₀` extend to `E` by the Hahn–Banach theorem.
+`E` and `F` are normed spaces. Definiteness follows from the injectivity of the map from
+tensors to operators on the dual.
 
 The type `TauCeti.InjectiveTensor 𝕜 E F` is a copy of `E ⊗[𝕜] F` carrying the injective
 seminorm, and the identity of the underlying tensors is a contraction from
@@ -193,6 +192,8 @@ it induces on the dual of that factor. -/
 theorem contractStrongDual_injective [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] :
     Function.Injective (contractStrongDual 𝕜 E F) := by
+  -- The tensor lies in `E₀ ⊗[𝕜] F` for a finite-dimensional subspace `E₀ ≤ E`; its coordinates
+  -- in a basis of `E₀` are recovered by Hahn–Banach extensions of the coordinate functionals.
   refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
   obtain ⟨E₀, _, hE₀⟩ := _root_.TensorProduct.exists_finite_submodule_left_of_setFinite
     {u} (Set.finite_singleton u)
