@@ -20,6 +20,9 @@ Dually, `Finsupp.snoc s x : Fin (n + 1) →₀ M` appends `x` after `s`, and `Fi
 the last entry of `t`; these are the `Finsupp` versions of `Fin.snoc` and `Fin.init`. Adding two
 such vectors adds initial parts and last entries separately. Two such vectors are compared
 lexicographically by their initial parts first, and then by their last entries.
+
+Finally, `Finsupp.ext_iff_of_fin_three` says that a finitely supported function on `Fin 3` is
+determined by its values at any three distinct points, in whatever order they are listed.
 -/
 
 public section
@@ -127,5 +130,12 @@ theorem snoc_add_snoc [AddZeroClass M] (s t : Fin n →₀ M) (x y : M) :
     snoc s x + snoc t y = snoc (s + t) (x + y) := by
   ext i
   cases i using Fin.lastCases <;> simp
+
+/-- A finitely supported function on `Fin 3` is determined by its values at three distinct
+points `a, b, c`. -/
+theorem ext_iff_of_fin_three [Zero M] {a b c : Fin 3} (hab : a ≠ b) (hac : a ≠ c) (hbc : b ≠ c)
+    {d d' : Fin 3 →₀ M} : d = d' ↔ d a = d' a ∧ d b = d' b ∧ d c = d' c := by
+  refine ⟨by rintro rfl; simp, fun ⟨h₁, h₂, h₃⟩ => Finsupp.ext fun x => ?_⟩
+  rcases (by omega : x = a ∨ x = b ∨ x = c) with rfl | rfl | rfl <;> assumption
 
 end Finsupp

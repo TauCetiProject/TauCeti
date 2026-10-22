@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
+import TauCeti.AlgebraicGeometry.ResidueField
 import TauCeti.Topology.JacobsonSpace
 
 /-!
@@ -105,9 +106,7 @@ theorem locallyQuasiFinite_mulBy_left {n : ℤ} (hn : n ≠ 0) :
     LocallyQuasiFinite (E.mulBy n).left := by
   refine locallyQuasiFinite_iff_finite_preimage_singleton.mpr fun y ↦ ?_
   -- the geometric point `t` of `E` at `y`, with values in an algebraic closure of `κ(y)`
-  let t : Spec (.of (AlgebraicClosure (E.carrier.residueField y))) ⟶ E.carrier :=
-    Spec.map (CommRingCat.ofHom (algebraMap (E.carrier.residueField y) _)) ≫
-      E.carrier.fromSpecResidueField y
+  let t := E.carrier.fromSpecAlgebraicClosure y
   -- the base change `E'` of `E` along `t`, with the section `σ` induced by `t`
   let E' := E.baseChange (t ≫ E.structureMap)
   let g : E'.carrier ⟶ E.carrier := (E.baseChangeIso _).hom ≫ pullback.fst _ _
@@ -116,7 +115,7 @@ theorem locallyQuasiFinite_mulBy_left {n : ℤ} (hn : n ≠ 0) :
   have hσ : σ ≫ E'.structureMap = 𝟙 _ := by simp [σ, E', ← baseChangeIso_hom_snd]
   have hσg (a) : g (σ a) = y := by
     have : σ ≫ g = t := by simp [g, σ]
-    rw [← Scheme.Hom.comp_apply, this, Scheme.Hom.comp_apply, Scheme.fromSpecResidueField_apply]
+    rw [← Scheme.Hom.comp_apply, this, Scheme.fromSpecAlgebraicClosure_apply]
   -- `[n]` on `E'` is the base change of `[n]` on `E` along `g`, so the fibre of `[n]` over `y` is
   -- the image under `g` of the fibre of `[n]` on `E'` over `σ`
   have hsq := isPullback_mulBy_left_of_isPullback (E.isPullback_baseChange (t ≫ E.structureMap))

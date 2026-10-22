@@ -7,7 +7,7 @@ name: Queue Housekeeping
 #            The branch is kept; the comment says it is fine to open a fresh PR after another look.
 #   dedup    Close a newer PR that authors the same roadmap target (the <!--tauceti-target:v1 ...-->
 #            body marker) as an older open one; keep the lowest PR number.
-#   stale    Close a PR whose latest review scoreboard is changes-requested/blocked and that has had
+#   stale    Close a PR labelled awaiting-author that has had
 #            no activity for STALE_DAYS (default 7).
 # The only opt-out is a `keep` (or hold/wip/human/do-not-close) label; human activity alone does not
 # spare a PR. abandon is a server-side label query (one request, independent of total open-PR count),
@@ -43,10 +43,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@02db6ea51c27553cb6271e605612a56169ae72f6
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e43c8eb6c51e9b6d5833fcd12d49df3f0f7283f1
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 02db6ea51c27553cb6271e605612a56169ae72f6
+          tools-ref: e43c8eb6c51e9b6d5833fcd12d49df3f0f7283f1
           project-directory: .
       - name: Abandon stuck PRs and close duplicates
         env:

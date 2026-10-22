@@ -39,14 +39,15 @@ namespace Matrix
 
 variable {n α : Type*} [Fintype n] [DecidableEq n]
 
+/-- The diagonal matrix unit `Eᵢᵢ` is idempotent. -/
+@[simp]
+theorem isIdempotentElem_single_one [NonAssocSemiring α] (i : n) :
+    IsIdempotentElem (single i i (1 : α)) := by
+  simp [IsIdempotentElem]
+
 section Semiring
 
 variable [Semiring α]
-
-/-- The diagonal matrix unit `Eᵢᵢ` is idempotent. -/
-@[simp]
-theorem isIdempotentElem_single_one (i : n) : IsIdempotentElem (single i i (1 : α)) := by
-  simp [IsIdempotentElem]
 
 /-- A matrix in the corner of `Eᵢᵢ` is supported on the entry `(i, i)`. -/
 theorem single_apply_eq_of_mem_corner {i : n} {x : Matrix n n α}

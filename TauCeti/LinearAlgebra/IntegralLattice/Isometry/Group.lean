@@ -9,6 +9,7 @@ public import Mathlib.Algebra.GroupWithZero.Units.Fintype
 public import Mathlib.Algebra.Ring.Int.Units
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Orientation
+public import Mathlib.LinearAlgebra.SpecialLinearGroup
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 
 /-!
@@ -30,6 +31,10 @@ its determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank.
 * `TauCeti.IntegralLattice.Isometry.det`: the determinant `O(L) →* ℤˣ`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup`: the subgroup `SO(L)` of determinant one.
 * `TauCeti.IntegralLattice.Isometry.neg`: negation, the element `-1` of `O(L)`.
+* `TauCeti.IntegralLattice.specialOrthogonalGroup.toSpecialLinearGroup`: restriction to the
+  carrier as a group homomorphism from `SO(L)` to the special linear group of the carrier.
+* `TauCeti.IntegralLattice.specialOrthogonalGroup.toMatrix`: the matrix of a proper isometry in a
+  finite carrier basis, as a group homomorphism into `Matrix.SpecialLinearGroup ι ℤ`.
 
 ## Main results
 
@@ -40,6 +45,8 @@ its determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank.
   a self-isometry preserves or reverses the orientation of any finite carrier basis.
 * `TauCeti.IntegralLattice.index_specialOrthogonalGroup_le_two`: `SO(L)` has index at most two.
 * `TauCeti.IntegralLattice.Isometry.det_neg`: the determinant of negation is `(-1) ^ rank L`.
+* `TauCeti.IntegralLattice.specialOrthogonalGroup.toMatrix_injective`: a proper isometry is
+  determined by its matrix in a finite carrier basis.
 
 ## References
 
@@ -227,6 +234,47 @@ theorem neg_mem_specialOrthogonalGroup_iff (L : IntegralLattice V) :
     Isometry.neg L ∈ specialOrthogonalGroup L ↔ Even (Module.finrank ℤ L) := by
   rw [mem_specialOrthogonalGroup_iff, Isometry.det_neg, neg_one_pow_eq_one_iff_even]
   exact fun h ↦ by simpa using congrArg Units.val h
+
+namespace specialOrthogonalGroup
+
+/-- Restriction of a proper isometry to the carrier, as a group homomorphism from `SO(L)` to the
+special linear group of the carrier. -/
+def toSpecialLinearGroup (L : IntegralLattice V) :
+    specialOrthogonalGroup L →* _root_.SpecialLinearGroup ℤ L where
+  toFun g := ⟨(g : Isometry L L).carrierEquiv,
+    (Isometry.det_apply _).symm.trans (mem_specialOrthogonalGroup_iff.mp g.prop)⟩
+  map_one' := Subtype.ext (by simpa using map_one (Isometry.carrierEquivHom L))
+  map_mul' g h :=
+    Subtype.ext (by simpa using map_mul (Isometry.carrierEquivHom L) (g : Isometry L L) h)
+
+@[simp]
+theorem coe_toSpecialLinearGroup_apply (g : specialOrthogonalGroup L) :
+    (toSpecialLinearGroup L g : L ≃ₗ[ℤ] L) = (g : Isometry L L).carrierEquiv := (rfl)
+
+/-- A proper isometry is determined by its restriction to the carrier. -/
+theorem toSpecialLinearGroup_injective (L : IntegralLattice V) :
+    Function.Injective (toSpecialLinearGroup L) := fun _ _ h ↦
+  Subtype.ext (Isometry.carrierEquiv_injective (congrArg Subtype.val h))
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- The matrix of a proper isometry in a finite carrier basis `b`, as a group homomorphism from
+`SO(L)` to `Matrix.SpecialLinearGroup ι ℤ`. -/
+noncomputable def toMatrix (b : Module.Basis ι ℤ L) :
+    specialOrthogonalGroup L →* Matrix.SpecialLinearGroup ι ℤ :=
+  (Matrix.SpecialLinearGroup.toLin_equiv b).symm.toMonoidHom.comp (toSpecialLinearGroup L)
+
+@[simp]
+theorem coe_toMatrix_apply (b : Module.Basis ι ℤ L) (g : specialOrthogonalGroup L) :
+    ((toMatrix b g : Matrix.SpecialLinearGroup ι ℤ) : Matrix ι ι ℤ) =
+      LinearMap.toMatrix b b ((g : Isometry L L).carrierEquiv : L →ₗ[ℤ] L) :=
+  Matrix.SpecialLinearGroup.toLin_equiv.symm_toLinearMap_eq b _
+
+/-- A proper isometry is determined by its matrix in a finite carrier basis. -/
+theorem toMatrix_injective (b : Module.Basis ι ℤ L) : Function.Injective (toMatrix b) :=
+  (Matrix.SpecialLinearGroup.toLin_equiv b).symm.injective.comp (toSpecialLinearGroup_injective L)
+
+end specialOrthogonalGroup
 
 end IntegralLattice
 

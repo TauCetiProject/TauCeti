@@ -38,6 +38,8 @@ over the field of four elements.
   `(x - y) ^ q = x ^ q - y ^ q`.
 * `TauCeti.FiniteField.mem_frobeniusFixedSubalgebra`: membership in the fixed subalgebra is the
   equation `a ^ q ^ n = a`.
+* `TauCeti.FiniteField.finite_frobeniusFixedSubalgebra`: in a domain, a positive iterate fixes
+  only finitely many elements.
 * `TauCeti.FiniteField.isPurelyInseparable_fieldRange_frobeniusAlgHom`: `L` is purely
   inseparable over the field range of `FiniteField.frobeniusAlgHom K L`.
 * `TauCeti.FiniteField.frobeniusEquiv_involutive`: on a field of order `p ^ 2`, the Frobenius
@@ -102,6 +104,18 @@ theorem mem_frobeniusFixedSubalgebra {n : ℕ} {a : A} :
     a ∈ frobeniusFixedSubalgebra K A n ↔ a ^ (Nat.card K) ^ n = a := by
   rw [frobeniusFixedSubalgebra, AlgHom.mem_equalizer, frobeniusAlgHom_pow_apply, AlgHom.coe_id,
     id_eq]
+
+/-- **In a domain, a positive iterate of the Frobenius fixes only finitely many elements**: they
+are roots of the nonzero polynomial `X ^ (Nat.card K) ^ n - X`, so for `K = 𝔽_q` there are at
+most `q ^ n` of them. -/
+theorem finite_frobeniusFixedSubalgebra [IsDomain A] {n : ℕ} (hn : n ≠ 0) :
+    Finite (frobeniusFixedSubalgebra K A n) := by
+  have hq : 1 < Nat.card K ^ n := Nat.one_lt_pow hn Finite.one_lt_card
+  refine Set.Finite.to_subtype ((Polynomial.finite_setOfPred_isRoot
+    (Polynomial.X_pow_sub_X_ne_zero (R := A) hq)).subset fun a ha => ?_)
+  rw [SetLike.mem_coe, mem_frobeniusFixedSubalgebra] at ha
+  simp only [Set.mem_ofPred_eq, Polynomial.IsRoot.def, Polynomial.eval_sub, Polynomial.eval_pow,
+    Polynomial.eval_X, ha, sub_self]
 
 variable {K L : Type*} [Field K] [Fintype K] [Field L] [Algebra K L]
 

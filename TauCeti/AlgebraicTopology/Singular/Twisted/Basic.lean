@@ -596,6 +596,13 @@ lemma twistedChainComplexCoefficientIso_inv (e : L ≅ K) :
     (twistedChainComplexCoefficientIso e).inv = twistedChainComplexCoefficientMap e.inv :=
   (rfl)
 
+/-- An isomorphism of local coefficient systems induces an isomorphism of twisted chain
+complexes. -/
+instance isIso_twistedChainComplexCoefficientMap (η : L ⟶ K) [IsIso η] :
+    IsIso (twistedChainComplexCoefficientMap η) :=
+  inferInstanceAs
+    (IsIso ((twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).map η))
+
 /-- The map on twisted homology induced by a morphism of local coefficient systems. -/
 abbrev twistedHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :
     twistedHomology L k ⟶ twistedHomology K k :=
