@@ -179,16 +179,30 @@ theorem measurable_asymmetricLaplacePDF (m l r : ℝ) :
 
 /-! ### Mass of the two half-lines -/
 
+/-- At or below the location the density is a constant multiple of `exp (l * y)`. -/
+private lemma asymmetricLaplacePDFReal_eq_mul_exp_of_le (hl : 0 < l) (hr : 0 < r) {y : ℝ}
+    (hy : y ≤ m) :
+    asymmetricLaplacePDFReal m l r y =
+      l * r / (l + r) * Real.exp (-(l * m)) * Real.exp (l * y) := by
+  rw [asymmetricLaplacePDFReal_of_le hl hr hy, mul_assoc, ← Real.exp_add]
+  ring_nf
+
+/-- Above the location the density is a constant multiple of `exp (-r * y)`. -/
+private lemma asymmetricLaplacePDFReal_eq_mul_exp_of_lt (hl : 0 < l) (hr : 0 < r) {y : ℝ}
+    (hy : m < y) :
+    asymmetricLaplacePDFReal m l r y =
+      l * r / (l + r) * Real.exp (r * m) * Real.exp (-r * y) := by
+  rw [asymmetricLaplacePDFReal_of_lt hl hr hy, mul_assoc, ← Real.exp_add]
+  ring_nf
+
 /-- The density is integrable on every lower half-line ending at or below the location. -/
 private lemma integrableOn_asymmetricLaplacePDFReal_Iic (hl : 0 < l) (hr : 0 < r) (hx : x ≤ m) :
     IntegrableOn (asymmetricLaplacePDFReal m l r) (Iic x) := by
   have h : IntegrableOn
       (fun y : ℝ => l * r / (l + r) * Real.exp (-(l * m)) * Real.exp (l * y)) (Iic x) :=
     (integrableOn_exp_mul_Iic hl x).const_mul _
-  refine h.congr_fun (fun y hy => ?_) measurableSet_Iic
-  dsimp only
-  rw [asymmetricLaplacePDFReal_of_le hl hr (le_trans hy hx), mul_assoc, ← Real.exp_add]
-  ring_nf
+  exact h.congr_fun (fun y hy => (asymmetricLaplacePDFReal_eq_mul_exp_of_le hl hr
+    (le_trans hy hx)).symm) measurableSet_Iic
 
 /-- The density is integrable on every upper half-line starting at or above the location. -/
 private lemma integrableOn_asymmetricLaplacePDFReal_Ioi (hl : 0 < l) (hr : 0 < r) (hx : m ≤ x) :
@@ -196,21 +210,15 @@ private lemma integrableOn_asymmetricLaplacePDFReal_Ioi (hl : 0 < l) (hr : 0 < r
   have h : IntegrableOn
       (fun y : ℝ => l * r / (l + r) * Real.exp (r * m) * Real.exp (-r * y)) (Ioi x) :=
     (integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hr) x).const_mul _
-  refine h.congr_fun (fun y (hy : x < y) => ?_) measurableSet_Ioi
-  dsimp only
-  rw [asymmetricLaplacePDFReal_of_lt hl hr (lt_of_le_of_lt hx hy), mul_assoc, ← Real.exp_add]
-  ring_nf
+  exact h.congr_fun (fun y (hy : x < y) => (asymmetricLaplacePDFReal_eq_mul_exp_of_lt hl hr
+    (lt_of_le_of_lt hx hy)).symm) measurableSet_Ioi
 
 /-- The mass of the density below a point at or under the location. -/
 theorem integral_asymmetricLaplacePDFReal_Iic (hl : 0 < l) (hr : 0 < r) (hx : x ≤ m) :
     ∫ y in Iic x, asymmetricLaplacePDFReal m l r y = r / (l + r) * Real.exp (l * (x - m)) := by
-  have hexp : ∀ y, l * r / (l + r) * Real.exp (l * (y - m)) =
-      l * r / (l + r) * Real.exp (-(l * m)) * Real.exp (l * y) := fun y => by
-    rw [mul_assoc, ← Real.exp_add]
-    ring_nf
   rw [setIntegral_congr_fun measurableSet_Iic
-      (fun y hy => asymmetricLaplacePDFReal_of_le hl hr (le_trans hy hx)),
-    funext hexp, integral_const_mul, integral_exp_mul_Iic hl]
+      (fun y hy => asymmetricLaplacePDFReal_eq_mul_exp_of_le hl hr (le_trans hy hx)),
+    integral_const_mul, integral_exp_mul_Iic hl]
   have hx' : Real.exp (l * (x - m)) = Real.exp (-(l * m)) * Real.exp (l * x) := by
     rw [← Real.exp_add]
     ring_nf
@@ -221,13 +229,10 @@ theorem integral_asymmetricLaplacePDFReal_Iic (hl : 0 < l) (hr : 0 < r) (hx : x 
 theorem integral_asymmetricLaplacePDFReal_Ioi (hl : 0 < l) (hr : 0 < r) (hx : m ≤ x) :
     ∫ y in Ioi x, asymmetricLaplacePDFReal m l r y =
       l / (l + r) * Real.exp (-(r * (x - m))) := by
-  have hexp : ∀ y, l * r / (l + r) * Real.exp (-(r * (y - m))) =
-      l * r / (l + r) * Real.exp (r * m) * Real.exp (-r * y) := fun y => by
-    rw [mul_assoc, ← Real.exp_add]
-    ring_nf
   rw [setIntegral_congr_fun measurableSet_Ioi
-      (fun y (hy : x < y) => asymmetricLaplacePDFReal_of_lt hl hr (lt_of_le_of_lt hx hy)),
-    funext hexp, integral_const_mul, integral_exp_mul_Ioi (neg_lt_zero.mpr hr)]
+      (fun y (hy : x < y) =>
+        asymmetricLaplacePDFReal_eq_mul_exp_of_lt hl hr (lt_of_le_of_lt hx hy)),
+    integral_const_mul, integral_exp_mul_Ioi (neg_lt_zero.mpr hr)]
   have hx' : Real.exp (-(r * (x - m))) = Real.exp (r * m) * Real.exp (-r * x) := by
     rw [← Real.exp_add]
     ring_nf
@@ -307,6 +312,14 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 /-! ### The characteristic function -/
 
+/-- The left-tail denominator of the characteristic function does not vanish. -/
+private lemma ofReal_add_I_mul_ne_zero (hl : 0 < l) (t : ℝ) : (l : ℂ) + Complex.I * t ≠ 0 :=
+  fun h => by simpa [hl.ne'] using congrArg Complex.re h
+
+/-- The right-tail denominator of the characteristic function does not vanish. -/
+private lemma ofReal_sub_I_mul_ne_zero (hr : 0 < r) (t : ℝ) : (r : ℂ) - Complex.I * t ≠ 0 :=
+  fun h => by simpa [hr.ne'] using congrArg Complex.re h
+
 /-- **The characteristic function of the asymmetric Laplace law**, read off the exponential
 construction. -/
 theorem charFun_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (m t : ℝ) :
@@ -327,10 +340,8 @@ theorem charFun_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (m t : ℝ) :
     integral_prod_mul (fun x : ℝ => Complex.exp (t * x * Complex.I))
       (fun y : ℝ => Complex.exp (↑(-t) * y * Complex.I)),
     ← charFun_apply_real, ← charFun_apply_real, charFun_expMeasure hr, charFun_expMeasure hl]
-  have hden : (l : ℂ) + Complex.I * t ≠ 0 := fun h => by
-    simpa [hl.ne'] using congrArg Complex.re h
-  have hden' : (r : ℂ) - Complex.I * t ≠ 0 := fun h => by
-    simpa [hr.ne'] using congrArg Complex.re h
+  have hden := ofReal_add_I_mul_ne_zero hl t
+  have hden' := ofReal_sub_I_mul_ne_zero hr t
   push_cast
   rw [mul_neg, sub_neg_eq_add]
   field_simp
@@ -384,8 +395,9 @@ private lemma integral_Ioi_asymmetricLaplacePDFReal_smul_exp (hl : 0 < l) (hr : 
     congr 1
     ring
   have hden : (-r : ℂ) + t * Complex.I ≠ 0 := fun h => by simp [h] at hre
-  have hden' : (r : ℂ) - t * Complex.I ≠ 0 := fun h => by
-    simpa [hr.ne'] using congrArg Complex.re h
+  have hden' : (r : ℂ) - t * Complex.I ≠ 0 := by
+    rw [mul_comm]
+    exact ofReal_sub_I_mul_ne_zero hr t
   rw [setIntegral_congr_fun measurableSet_Ioi hR, integral_const_mul,
     integral_exp_mul_complex_Ioi hre, ← hexp]
   field_simp
@@ -407,10 +419,8 @@ private lemma charFun_withDensity_asymmetricLaplacePDF (hl : 0 < l) (hr : 0 < r)
     ← integral_add_compl (s := Iic m) measurableSet_Iic hint, compl_Iic,
     integral_Iic_asymmetricLaplacePDFReal_smul_exp hl hr,
     integral_Ioi_asymmetricLaplacePDFReal_smul_exp hl hr]
-  have hden : (l : ℂ) + Complex.I * t ≠ 0 := fun h => by
-    simpa [hl.ne'] using congrArg Complex.re h
-  have hden' : (r : ℂ) - Complex.I * t ≠ 0 := fun h => by
-    simpa [hr.ne'] using congrArg Complex.re h
+  have hden := ofReal_add_I_mul_ne_zero hl t
+  have hden' := ofReal_sub_I_mul_ne_zero hr t
   have hsum : (l : ℂ) + r ≠ 0 := by exact_mod_cast (add_pos hl hr).ne'
   push_cast
   field_simp
