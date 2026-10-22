@@ -163,6 +163,19 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
   [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
 
+/-- The measurable-set form of linear coarea, used to pass to null sets and
+Lebesgue-measurable sets. -/
+private theorem lintegral_euclideanHausdorffMeasure_inter_preimage_singleton_of_measurableSet
+    (L : E →ₗ[ℝ] F) {t : Set E} (ht : MeasurableSet t) :
+    ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) =
+      ENNReal.ofReal L.adjoint.normDet * volume t := by
+  have hind (y : F) :
+      ∫⁻ x in L ⁻¹' {y}, t.indicator 1 x ∂μHE[finrank ℝ E - finrank ℝ F] =
+        μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) := by
+    rw [lintegral_indicator_one ht, Measure.restrict_apply ht]
+  simpa only [hind, lintegral_indicator_one ht] using
+    L.lintegral_setLIntegral_preimage_singleton (measurable_one.indicator ht).aemeasurable
+
 /-- Almost every fibre of a Lebesgue-null set is null for Hausdorff measure of dimension
 `dim E - dim F`. No measurability assumption on the set is needed. -/
 theorem ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero (L : E →ₗ[ℝ] F)
@@ -172,15 +185,15 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero (L : E →
   · let t := toMeasurable (volume : Measure E) s
     have ht : MeasurableSet t := measurableSet_toMeasurable _ _
     have htzero : volume t = 0 := by simpa only [t, measure_toMeasurable] using hs
-    have hco := L.lintegral_setLIntegral_preimage_singleton
-      (measurable_one.indicator ht).aemeasurable
-    have hmeas := L.measurable_setLIntegral_preimage_singleton hL (measurable_one.indicator ht)
-    have hzero : (∫⁻ y : F, ∫⁻ x in L ⁻¹' {y}, t.indicator 1 x
-        ∂μHE[finrank ℝ E - finrank ℝ F]) = 0 := by
-      simpa only [lintegral_indicator_one ht, htzero, mul_zero] using hco
+    have hco := lintegral_euclideanHausdorffMeasure_inter_preimage_singleton_of_measurableSet L ht
+    have hmeas : Measurable fun y : F ↦
+        μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) := by
+      simpa only [lintegral_indicator_one ht, Measure.restrict_apply ht] using
+        L.measurable_setLIntegral_preimage_singleton hL (measurable_one.indicator ht)
+    have hzero : (∫⁻ y : F, μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y})) = 0 := by
+      simpa only [htzero, mul_zero] using hco
     filter_upwards [(lintegral_eq_zero_iff hmeas).mp hzero] with y hy
-    apply measure_mono_null (inter_subset_inter_left _ (subset_toMeasurable volume s))
-    simpa only [lintegral_indicator_one ht, Measure.restrict_apply ht, Pi.zero_apply] using hy
+    exact measure_mono_null (inter_subset_inter_left _ (subset_toMeasurable volume s)) hy
   · filter_upwards [L.ae_preimage_singleton_eq_empty volume hL] with y hy
     simp [hy]
 
@@ -199,15 +212,6 @@ theorem lintegral_euclideanHausdorffMeasure_inter_preimage_singleton (L : E →�
     (hs : NullMeasurableSet s) :
     ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (s ∩ L ⁻¹' {y}) =
       ENNReal.ofReal L.adjoint.normDet * volume s := by
-  have hind {t : Set E} (ht : MeasurableSet t) (y : F) :
-      ∫⁻ x in L ⁻¹' {y}, t.indicator 1 x ∂μHE[finrank ℝ E - finrank ℝ F] =
-        μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) := by
-    rw [lintegral_indicator_one ht, Measure.restrict_apply ht]
-  have key {t : Set E} (ht : MeasurableSet t) :
-      ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) =
-        ENNReal.ofReal L.adjoint.normDet * volume t := by
-    simpa [hind ht, lintegral_indicator_one ht] using
-      L.lintegral_setLIntegral_preimage_singleton (measurable_one.indicator ht).aemeasurable
   -- Squeeze `s` between measurable sets `t ⊆ s ⊆ u` differing by a null set.
   obtain ⟨t, hts, ht, hst⟩ := hs.exists_measurable_subset_ae_eq
   set u := toMeasurable volume s
@@ -215,7 +219,8 @@ theorem lintegral_euclideanHausdorffMeasure_inter_preimage_singleton (L : E →�
     (ae_eq_set.1 (hs.toMeasurable_ae_eq.trans hst.symm)).1
   -- Almost every fibre of the null set `u \ t` is null.
   have hnull := TauCeti.ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero L hut
-  rw [← measure_congr hst, ← key ht]
+  rw [← measure_congr hst,
+    ← TauCeti.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton_of_measurableSet L ht]
   refine lintegral_congr_ae (hnull.mono fun y hy ↦ le_antisymm ?_ (measure_mono ?_))
   · calc μHE[finrank ℝ E - finrank ℝ F] (s ∩ L ⁻¹' {y})
         ≤ μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y} ∪ (u \ t) ∩ L ⁻¹' {y}) := by
