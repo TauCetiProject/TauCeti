@@ -67,6 +67,17 @@ local notation "Flat" => IsRestricted.subring (R := R) c
 local notation "Iter" => PowerSeries.IsRestricted.subring (R := Inner) (c none)
 
 omit [IsUltrametricDist R] [∀ i, Fact (0 < c i)] in
+/-- The weighted norm of a coefficient of a slice, weighted again by the radius of the separated
+variable, is the weighted norm of the corresponding coefficient of the flat series. -/
+private theorem norm_coeff_slice_mul_prod_mul_pow (f : MvPowerSeries (Option σ) R) (n : ℕ)
+    (t : σ →₀ ℕ) :
+    ‖coeff t (PowerSeries.coeff n (optionEquivLeft σ R f))‖ *
+        t.prod (fun i k ↦ c (some i) ^ k) * c none ^ n =
+      ‖coeff (t.optionElim n) f‖ * (t.optionElim n).prod (c · ^ ·) := by
+  rw [coeff_coeff_optionEquivLeft, Finsupp.prod_pow_optionElim]
+  ring
+
+omit [IsUltrametricDist R] [∀ i, Fact (0 < c i)] in
 /-- Each coefficient slice obtained by separating one variable is restricted. Only the radius of
 the separated variable needs to be positive. -/
 theorem isRestricted_coeff_optionEquivLeft (hc : 0 < c none) {f : MvPowerSeries (Option σ) R}
@@ -77,7 +88,7 @@ theorem isRestricted_coeff_optionEquivLeft (hc : 0 < c none) {f : MvPowerSeries 
   have h := (hf.comp hi.tendsto_cofinite).const_mul (c none ^ n)⁻¹
   rw [mul_zero] at h
   refine h.congr fun t ↦ ?_
-  rw [Function.comp_apply, coeff_coeff_optionEquivLeft, Finsupp.prod_pow_optionElim]
+  rw [Function.comp_apply, ← norm_coeff_slice_mul_prod_mul_pow]
   field_simp [(pow_pos hc n).ne']
 
 /-- The coefficient slices, regarded as a formal univariate series over the restricted subring. -/
@@ -109,8 +120,7 @@ private theorem isRestricted_restrictedOptionSeries (f : Flat) :
   rw [← le_div_iff₀ (hpos n), MvPowerSeries.norm_le_iff
     (div_nonneg (half_pos hε).le (hpos n).le)]
   intro t
-  rw [le_div_iff₀ (hpos n), coeff_restrictedOptionSeries, coeff_coeff_optionEquivLeft, mul_assoc,
-    mul_comm (t.prod _), ← Finsupp.prod_pow_optionElim]
+  rw [le_div_iff₀ (hpos n), coeff_restrictedOptionSeries, norm_coeff_slice_mul_prod_mul_pow]
   by_contra hlt
   exact hnn ⟨t.optionElim n, (not_le.mp hlt).le, Finsupp.optionElim_apply_none n t⟩
 
@@ -121,9 +131,8 @@ private theorem isRestricted_optionEquivLeft_symm (g : Iter) :
   classical
   set h := (optionEquivLeft σ R).symm (PowerSeries.map (Inner).subtype (g : PowerSeries Inner))
   have hpos (n : ℕ) : 0 < c none ^ n := pow_pos Fact.out n
-  have hcoeff (n : ℕ) (t : σ →₀ ℕ) : coeff (t.optionElim n) h =
-      coeff t (PowerSeries.coeff (R := Inner) n (g : PowerSeries Inner) : MvPowerSeries σ R) := by
-    rw [← coeff_coeff_optionEquivLeft]
+  have hslice (n : ℕ) : PowerSeries.coeff n (optionEquivLeft σ R h) =
+      (PowerSeries.coeff (R := Inner) n (g : PowerSeries Inner) : MvPowerSeries σ R) := by
     simp [h]
   refine tendsto_order.mpr ⟨fun _ hb ↦ .of_forall fun t ↦
     hb.trans_le (mul_nonneg (norm_nonneg _) (MvPowerSeries.prod_pow_pos t).le), fun ε hε ↦ ?_⟩
@@ -148,15 +157,13 @@ private theorem isRestricted_optionEquivLeft_symm (g : Iter) :
       (t.some.optionElim (t none)).prod (c · ^ ·) := by
     rw [Finsupp.optionElim_some]
     exact not_lt.mp ht
-  rw [Finsupp.prod_pow_optionElim, hcoeff] at ht'
+  rw [← norm_coeff_slice_mul_prod_mul_pow, hslice] at ht'
   have hle := MvPowerSeries.norm_coeff_mul_prod_le
     (PowerSeries.coeff (t none) (g : PowerSeries Inner)) t.some
   refine Set.mem_biUnion (x := t none) ?_ ⟨t.some, ?_, Finsupp.optionElim_some t⟩
-  · refine ht'.trans ?_
-    rw [mul_left_comm, mul_comm]
-    exact mul_le_mul_of_nonneg_right hle (hpos _).le
+  · exact ht'.trans (mul_le_mul_of_nonneg_right hle (hpos _).le)
   · rw [Set.mem_ofPred_eq, div_le_iff₀ (hpos _)]
-    exact ht'.trans_eq (by ring)
+    exact ht'
 
 /-- Flattening the iterated restricted-series ring into the multivariate restricted-series ring. -/
 private noncomputable def restrictedOptionFlatten : Iter →+* Flat :=
@@ -250,13 +257,12 @@ theorem norm_restrictedOptionEquiv (f : Flat) : ‖restrictedOptionEquiv f‖ = 
     rw [← le_div_iff₀ (hpos n), MvPowerSeries.norm_le_iff
       (div_nonneg (norm_nonneg _) (hpos n).le)]
     intro t
-    rw [le_div_iff₀ (hpos n), coeff_restrictedOptionEquiv, coeff_coeff_optionEquivLeft,
-      mul_assoc, mul_comm (t.prod _), ← Finsupp.prod_pow_optionElim]
+    rw [le_div_iff₀ (hpos n), coeff_restrictedOptionEquiv, norm_coeff_slice_mul_prod_mul_pow]
     exact MvPowerSeries.norm_coeff_mul_prod_le f _
   · rw [MvPowerSeries.norm_le_iff (norm_nonneg _)]
     intro t
-    rw [← Finsupp.optionElim_some t, ← coeff_coeff_optionEquivLeft, Finsupp.prod_pow_optionElim,
-      ← coeff_restrictedOptionEquiv, mul_left_comm, mul_comm]
+    rw [← Finsupp.optionElim_some t, ← norm_coeff_slice_mul_prod_mul_pow,
+      ← coeff_restrictedOptionEquiv]
     exact (mul_le_mul_of_nonneg_right (MvPowerSeries.norm_coeff_mul_prod_le _ _) (hpos _).le).trans
       (TauCeti.PowerSeries.norm_coeff_mul_pow_le (restrictedOptionEquiv f) _)
 
