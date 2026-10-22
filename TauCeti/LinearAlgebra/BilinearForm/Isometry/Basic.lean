@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Isometry
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 import Mathlib.Algebra.Ring.NonZeroDivisors
 
 /-!
@@ -16,8 +17,14 @@ import Mathlib.Algebra.Ring.NonZeroDivisors
 This file defines the predicate that an endomorphism preserves a bilinear form and provides its
 elementary API, including the bridge to Mathlib's bundled isometric maps. It also records that
 scaling two forms by the same non-zero-divisor preserves whether they are isometric
-(`LinearMap.BilinForm.equivalent_smul_iff`). The isometry group and the determinant, base-change,
-and orthogonal-complement API are developed in `TauCeti.LinearAlgebra.BilinearForm.Isometry`.
+(`LinearMap.BilinForm.equivalent_smul_iff`), and gives the evaluation lemmas
+`LinearMap.BilinForm.IsometryEquiv.trans_apply`,
+`LinearMap.BilinForm.IsometryEquiv.symm_apply_apply` and
+`LinearMap.BilinForm.IsometryEquiv.apply_symm_apply` for Mathlib's isometric equivalences.
+Isometric bilinear forms have isometric associated quadratic maps
+(`LinearMap.BilinForm.Equivalent.toQuadraticMap`). The isometry group and the determinant,
+base-change, and orthogonal-complement API are developed in
+`TauCeti.LinearAlgebra.BilinearForm.Isometry`.
 -/
 
 public section
@@ -101,5 +108,35 @@ are isometric exactly when their unimodular rescalings `C` and `C'` are. -/
   ⟨fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
       simpa using e.map_app y x)⟩⟩,
     fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ by simp⟩⟩⟩
+
+namespace IsometryEquiv
+
+variable {R M₁ M₂ M₃ : Type*} [CommSemiring R] [AddCommMonoid M₁] [AddCommMonoid M₂]
+  [AddCommMonoid M₃] [Module R M₁] [Module R M₂] [Module R M₃] {B₁ : BilinForm R M₁}
+  {B₂ : BilinForm R M₂} {B₃ : BilinForm R M₃}
+
+/-- A composite of isometric equivalences applies the first and then the second. -/
+@[simp]
+theorem trans_apply (f : B₁.IsometryEquiv B₂) (g : B₂.IsometryEquiv B₃) (x : M₁) :
+    f.trans g x = g (f x) :=
+  (rfl)
+
+/-- The inverse of an isometric equivalence undoes it. -/
+@[simp]
+theorem symm_apply_apply (f : B₁.IsometryEquiv B₂) (x : M₁) : f.symm (f x) = x :=
+  f.toLinearEquiv.symm_apply_apply x
+
+/-- An isometric equivalence undoes its inverse. -/
+@[simp]
+theorem apply_symm_apply (f : B₁.IsometryEquiv B₂) (x : M₂) : f (f.symm x) = x :=
+  f.toLinearEquiv.apply_symm_apply x
+
+end IsometryEquiv
+
+/-- Isometric bilinear forms have isometric associated quadratic maps `x ↦ B x x`. -/
+theorem Equivalent.toQuadraticMap {R M₁ M₂ : Type*} [CommSemiring R] [AddCommMonoid M₁]
+    [AddCommMonoid M₂] [Module R M₁] [Module R M₂] {B₁ : BilinForm R M₁} {B₂ : BilinForm R M₂}
+    (h : B₁.Equivalent B₂) : B₁.toQuadraticMap.Equivalent B₂.toQuadraticMap :=
+  h.map fun f ↦ { f.toLinearEquiv with map_app' := fun x ↦ by simp }
 
 end LinearMap.BilinForm
