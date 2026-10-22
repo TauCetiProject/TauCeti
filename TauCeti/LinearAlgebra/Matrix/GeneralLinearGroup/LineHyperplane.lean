@@ -102,6 +102,7 @@ variable {K}
 
 /-- **Membership in the line stabilizer**: an invertible matrix stabilizes the line `K ∙ eᵢ`
 exactly when its column `i` vanishes off the diagonal. -/
+@[simp]
 theorem mem_lineStabilizer_iff {g : GL n K} {i : n} :
     g ∈ lineStabilizer K i ↔ ∀ j ≠ i, g j i = 0 := by
   rw [lineStabilizer, mem_stabilizer_iff]
@@ -132,6 +133,7 @@ private theorem smul_apply_eq_zero {g : GL n K} {i : n} (h : ∀ j ≠ i, g i j 
 
 /-- **Membership in the hyperplane stabilizer**: an invertible matrix stabilizes the coordinate
 hyperplane `{v | v i = 0}` exactly when its row `i` vanishes off the diagonal. -/
+@[simp]
 theorem mem_hyperplaneStabilizer_iff {g : GL n K} {i : n} :
     g ∈ hyperplaneStabilizer K i ↔ ∀ j ≠ i, g i j = 0 := by
   rw [hyperplaneStabilizer, mem_stabilizer_iff]
