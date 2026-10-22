@@ -1125,9 +1125,9 @@ jobs:
         run: |
           export PATH="$HOME/.elan/bin:$PATH"
           # The sandboxed build/audit/lint body comes from the separately mounted, workflow-pinned
-          # gate checkout; candidate scripts are never invoked. Keeping the bwrap bash payload
-          # a fixed, comment-free one-liner
-          # is deliberate: a comment's apostrophe once closed this single-quoted string
+          # gate checkout; candidate scripts are never invoked. Bulk extraction is a temporary
+          # workaround until the pinned toolchain includes leanprover/lean4#15868.
+          # Keeping the bwrap bash payload a fixed, comment-free one-liner is deliberate: a comment's apostrophe once closed this single-quoted string
           # early and reddened every PR build (#694). All prose now lives in the script.
           export TAUCETI_PROJECT_ROOT="$PWD/pr"
           export TAUCETI_TRUSTED_SCRIPTS="$PWD/gate/scripts"
@@ -1178,7 +1178,7 @@ jobs:
             --chdir "$PWD/pr" \
             --unshare-user --unshare-ipc --unshare-pid --unshare-net --unshare-uts \
             --unshare-cgroup --disable-userns --die-with-parent --new-session \
-            -- bash -euxo pipefail -c 'exec bash ../gate/scripts/sandbox-build.sh'
+            -- bash -euxo pipefail -c 'python3 ../gate/scripts/bulk-unpack-cache.py; exec bash ../gate/scripts/sandbox-build.sh'
 
       - name: Prepare merge-group cache artifact metadata
         id: cache_stage
