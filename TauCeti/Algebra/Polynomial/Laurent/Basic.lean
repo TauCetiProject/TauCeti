@@ -97,6 +97,7 @@ theorem mapDomainAlgHom_mulRight_T (n m : ℤ) :
     AddMonoidAlgebra.mapDomain_single]
 
 /-- The substitution `T ↦ Tⁿ` fixes the constant Laurent polynomials. -/
+@[simp]
 theorem mapDomainAlgHom_mulRight_comp_toAlgHom {S : Type*} [CommSemiring S] [Algebra R S]
     (n : ℤ) :
     (AddMonoidAlgebra.mapDomainAlgHom R S (AddMonoidHom.mulRight n)).comp
@@ -208,6 +209,7 @@ theorem laurentEval_invert (u : Aˣ) (p : R[T;T⁻¹]) :
     laurentEval_unique u⁻¹ ((laurentEval u).comp invert.toAlgHom) (by simp)]
 
 /-- **Evaluating after the substitution `T ↦ Tⁿ` is evaluating at the `n`-th power.** -/
+@[simp]
 theorem laurentEval_comp_mapDomainAlgHom_mulRight (u : Aˣ) (n : ℤ) :
     (laurentEval (R := R) u).comp
         (AddMonoidAlgebra.mapDomainAlgHom R R (AddMonoidHom.mulRight n)) =

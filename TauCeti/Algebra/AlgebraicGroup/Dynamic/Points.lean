@@ -96,6 +96,7 @@ theorem powCocharacter_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (m 
     Function.comp_def, mul_assoc]
 
 /-- The power `λ⁻¹` of a cocharacter is its opposite cocharacter. -/
+@[simp]
 theorem powCocharacter_neg_one (l : H →ₐc[R] LaurentPolynomial R) :
     l.powCocharacter (-1) = l.oppositeCocharacter := by
   ext h k : 2
@@ -217,9 +218,9 @@ theorem pointsHom_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) (u 
 theorem _root_.BialgHom.pointsHom_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ)
     (u : Aˣ) :
     pointsHom A (l.powCocharacter n) u = pointsHom A l (u ^ n) := by
-  ext h
-  rw [pointsHom_apply, pointsHom_apply, ← laurentEval_comp_mapDomainAlgHom_mulRight]
-  simp [BialgHom.mapDomain_apply]
+  rw [pointsHom_apply, pointsHom_apply, BialgHom.mapDomain_apply, BialgHom.mapDomain_apply,
+    ofConv_toConv, ofConv_toConv, ← laurentEval_comp_mapDomainAlgHom_mulRight]
+  rfl
 
 /-- Images of multiplicative-group points commute: they lie in the image of the commutative
 group `𝔾ₘ(A)`. -/
