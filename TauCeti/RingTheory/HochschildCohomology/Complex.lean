@@ -28,6 +28,9 @@ The complex and its cohomology are defined for nonunital associative algebras. F
 algebra this is the naive cochain complex, rather than the relative complex of its forced
 unitization.
 
+The concrete cocycles and coboundaries are defined over semirings when the `R`-action on `M`
+commutes with itself. The categorical complex and cohomology use a commutative ring.
+
 As for cyclic cohomology, `hochschildCohomology.mk` sends a Hochschild cocycle to its class; it
 is surjective and its kernel consists exactly of the coboundaries, so linear maps out of
 Hochschild cohomology are described by `hochschildCohomology.desc`. In degree zero there are no
@@ -66,33 +69,11 @@ namespace TauCeti
 
 universe u
 
-variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
+section Cocycles
+
+variable (R : Type*) (A : Type u) (M : Type*) [Semiring R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
-
-section Complex
-
-/-- The Hochschild cochain complex `C⁰ → C¹ → ⋯`: in degree `n` the `M`-valued `n`-cochains on
-`A`, the multilinear maps in `n + 1` arguments, with the Hochschild coboundary as differential. -/
-def hochschildCochainComplex : CochainComplex (ModuleCat R) ℕ :=
-  CochainComplex.of (fun n ↦ ModuleCat.of R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M))
-    (fun n ↦ ModuleCat.ofHom (hochschildCoboundary R A M n))
-    fun _ ↦ ModuleCat.hom_ext (hochschildCoboundary_comp_hochschildCoboundary R A M)
-
-/-- The degree-`n` term of the Hochschild cochain complex is the module of `n`-cochains. -/
-def hochschildCochainComplexXIso (n : ℕ) :
-    (hochschildCochainComplex R A M).X n ≅
-      ModuleCat.of R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
-  Iso.refl _
-
-/-- Under the identifications `hochschildCochainComplexXIso`, the differential of the Hochschild
-cochain complex is the Hochschild coboundary. -/
-@[reassoc, elementwise]
-theorem hochschildCochainComplex_d (n : ℕ) :
-    (hochschildCochainComplex R A M).d n (n + 1) ≫
-        (hochschildCochainComplexXIso R A M (n + 1)).hom =
-      (hochschildCochainComplexXIso R A M n).hom ≫
-        ModuleCat.ofHom (hochschildCoboundary R A M n) := by
-  simp [hochschildCochainComplex, hochschildCochainComplexXIso]
+  [SMulCommClass R R M]
 
 /-- The Hochschild `n`-cocycles: the `n`-cochains annihilated by the Hochschild coboundary. -/
 def hochschildCocycles (n : ℕ) : Submodule R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
@@ -143,6 +124,36 @@ variable {R A M} in
 theorem mem_hochschildCocycles_zero_iff {φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M} :
     φ ∈ hochschildCocycles R A M 0 ↔ ∀ x y : A, φ (fun _ ↦ x * y) = φ (fun _ ↦ y * x) := by
   rw [mem_hochschildCocycles_iff, hochschildCoboundary_zero_eq_zero_iff]
+
+end Cocycles
+
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+
+section Complex
+
+/-- The Hochschild cochain complex `C⁰ → C¹ → ⋯`: in degree `n` the `M`-valued `n`-cochains on
+`A`, the multilinear maps in `n + 1` arguments, with the Hochschild coboundary as differential. -/
+def hochschildCochainComplex : CochainComplex (ModuleCat R) ℕ :=
+  CochainComplex.of (fun n ↦ ModuleCat.of R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M))
+    (fun n ↦ ModuleCat.ofHom (hochschildCoboundary R A M n))
+    fun _ ↦ ModuleCat.hom_ext (hochschildCoboundary_comp_hochschildCoboundary R A M)
+
+/-- The degree-`n` term of the Hochschild cochain complex is the module of `n`-cochains. -/
+def hochschildCochainComplexXIso (n : ℕ) :
+    (hochschildCochainComplex R A M).X n ≅
+      ModuleCat.of R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
+  Iso.refl _
+
+/-- Under the identifications `hochschildCochainComplexXIso`, the differential of the Hochschild
+cochain complex is the Hochschild coboundary. -/
+@[reassoc, elementwise]
+theorem hochschildCochainComplex_d (n : ℕ) :
+    (hochschildCochainComplex R A M).d n (n + 1) ≫
+        (hochschildCochainComplexXIso R A M (n + 1)).hom =
+      (hochschildCochainComplexXIso R A M n).hom ≫
+        ModuleCat.ofHom (hochschildCoboundary R A M n) := by
+  simp [hochschildCochainComplex, hochschildCochainComplexXIso]
 
 end Complex
 
