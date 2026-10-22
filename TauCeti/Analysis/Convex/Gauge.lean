@@ -16,7 +16,8 @@ For a convex neighbourhood `s` of `0` in a real topological vector space, Mathli
 of `s`. This file records the dilated form: for `0 < t`, the sublevel set `{x | gauge s x ≤ t}` is
 `t • closure s`. For a convex body, which is closed, this turns bounds on the gauge into
 membership in a dilate of the body (`ConvexBody.gauge_le_iff_mem_smul`), which is how successive
-minima are stated.
+minima are stated. For such a body, the gauge is also positive away from `0`
+(`ConvexBody.gauge_pos_iff`).
 -/
 
 public section
@@ -44,3 +45,11 @@ theorem ConvexBody.gauge_le_iff_mem_smul {E : Type*} [NormedAddCommGroup E] [Nor
     gauge (K : Set E) x ≤ t ↔ x ∈ t • (K : Set E) := by
   rw [gauge_le_iff_mem_smul_closure K.convex (mem_interior_iff_mem_nhds.1 hK) ht,
     K.isClosed.closure_eq]
+
+/-- For a convex body `K` with `0` in its interior, the gauge of `x` is positive exactly when
+`x ≠ 0`. -/
+theorem ConvexBody.gauge_pos_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {K : ConvexBody E} (hK : 0 ∈ interior (K : Set E)) {x : E} :
+    0 < gauge (K : Set E) x ↔ x ≠ 0 :=
+  gauge_pos (absorbent_nhds_zero (mem_interior_iff_mem_nhds.1 hK))
+    ((NormedSpace.isVonNBounded_iff ℝ).2 K.isBounded)
