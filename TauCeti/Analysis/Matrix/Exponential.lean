@@ -17,10 +17,11 @@ Over an `RCLike` field `𝕜`, scalar multiples of a fixed matrix commute, so th
 multiplicative, `Matrix.exp_add_smul`, and `exp (β • K)` is the inverse of `exp (-(β • K))`,
 `Matrix.exp_smul_mul_exp_neg_smul`, also against an arbitrary factor,
 `Matrix.exp_smul_mul_exp_neg_smul_mul`. Conjugating by the two weights does not change the trace,
-`Matrix.trace_exp_neg_smul_mul_exp_smul`.
+`Matrix.trace_exp_neg_smul_mul_exp_smul`, and the exponential of a real multiple is the square of
+the exponential of the half multiple, `Matrix.exp_smul_eq_mul_exp_half`.
 
-For a Hermitian complex matrix `K`, the exponential `exp (β • K)` of a real multiple is again
-Hermitian, `Matrix.IsHermitian.exp_smul`, and has positive trace,
+For a Hermitian matrix `K`, the exponential `exp (β • K)` of a real multiple is again Hermitian,
+`Matrix.IsHermitian.exp_smul`, and has positive trace,
 `Matrix.IsHermitian.trace_exp_smul_pos`. Hence `x ↦ Tr (exp (β • K) * x)` is a positive
 functional, `Matrix.IsHermitian.trace_exp_smul_mul_nonneg`, the unnormalised Gibbs functional of
 a matrix Hamiltonian at inverse temperature `-β`.
@@ -33,6 +34,7 @@ a matrix Hamiltonian at inverse temperature `-β`.
   both as plain products and against an arbitrary factor.
 * `Matrix.trace_exp_neg_smul_mul_exp_smul`: conjugating by the exponential weights preserves the
   trace.
+* `Matrix.exp_smul_eq_mul_exp_half`: the exponential of a real multiple is a square.
 * `Matrix.IsHermitian.exp_smul`: `exp (β • K)` is Hermitian for Hermitian `K`.
 * `Matrix.IsHermitian.trace_exp_smul_mul_nonneg` and `Matrix.IsHermitian.trace_exp_smul_pos`:
   positivity of the unnormalised Gibbs functional at inverse temperature `-β` and of its
@@ -89,45 +91,47 @@ theorem trace_exp_neg_smul_mul_exp_smul (K : Matrix m m 𝕜) (β : 𝕜) (x : M
     (exp (-(β • K)) * x * exp (β • K)).trace = x.trace := by
   rw [Matrix.trace_mul_comm (exp (-(β • K)) * x) (exp (β • K)), exp_smul_mul_exp_neg_smul_mul]
 
-end RCLike
-
-/-- The real-scalar form of `Matrix.exp_add_smul` for complex matrices, used by the Hermitian
-lemmas below: `exp (β • K)` is the square of `exp ((β / 2) • K)`. -/
-private theorem exp_smul_eq_mul_exp_half (K : Matrix m m ℂ) (β : ℝ) :
-    NormedSpace.exp (β • K) =
-      NormedSpace.exp ((β / 2) • K) * NormedSpace.exp ((β / 2) • K) := by
+/-- The exponential of a real multiple is the square of the exponential of the half multiple:
+`exp (β • K) = exp (β / 2 • K) * exp (β / 2 • K)`. This is the real-scalar form of
+`Matrix.exp_add_smul`, used for the Hermitian lemmas below. -/
+theorem exp_smul_eq_mul_exp_half (K : Matrix m m 𝕜) (β : ℝ) :
+    NormedSpace.exp ((β : ℝ) • K) =
+      NormedSpace.exp ((β / 2 : ℝ) • K) * NormedSpace.exp ((β / 2 : ℝ) • K) := by
   conv_lhs => rw [← add_halves β, add_smul]
   exact Matrix.exp_add_of_commute _ _ (((Commute.refl K).smul_left _).smul_right _)
 
 namespace IsHermitian
 
-variable {K : Matrix m m ℂ}
+variable {K : Matrix m m 𝕜}
 
 /-- For a Hermitian matrix `K` the exponential of a real multiple is Hermitian. -/
-theorem exp_smul (hK : K.IsHermitian) (β : ℝ) : (NormedSpace.exp (β • K)).IsHermitian :=
+theorem exp_smul (hK : K.IsHermitian) (β : ℝ) :
+    (NormedSpace.exp ((β : ℝ) • K)).IsHermitian :=
   Matrix.IsHermitian.exp ((IsSelfAdjoint.all β).smul hK)
 
 /-- For a Hermitian matrix `K`, the functional `x ↦ Tr (exp (β • K) * x)` is positive. -/
-theorem trace_exp_smul_mul_nonneg (hK : K.IsHermitian) (β : ℝ) {x : Matrix m m ℂ}
-    (hx : 0 ≤ x) : 0 ≤ (NormedSpace.exp (β • K) * x).trace := by
-  have hF : star (NormedSpace.exp ((β / 2) • K)) = NormedSpace.exp ((β / 2) • K) :=
+theorem trace_exp_smul_mul_nonneg (hK : K.IsHermitian) (β : ℝ) {x : Matrix m m 𝕜}
+    (hx : 0 ≤ x) : 0 ≤ (NormedSpace.exp ((β : ℝ) • K) * x).trace := by
+  have hF : star (NormedSpace.exp ((β / 2 : ℝ) • K)) = NormedSpace.exp ((β / 2 : ℝ) • K) :=
     (exp_smul hK _).eq
   rw [exp_smul_eq_mul_exp_half K β, Matrix.mul_assoc, Matrix.trace_mul_comm, Matrix.mul_assoc]
   refine Matrix.PosSemidef.trace_nonneg (Matrix.nonneg_iff_posSemidef.mp ?_)
   simpa [hF, Matrix.mul_assoc] using
-    star_left_conjugate_nonneg hx (NormedSpace.exp ((β / 2) • K))
+    star_left_conjugate_nonneg hx (NormedSpace.exp ((β / 2 : ℝ) • K))
 
 variable [Nonempty m]
 
 /-- For a Hermitian matrix `K` the exponential `exp (β • K)`, the Gibbs weight at inverse
 temperature `-β`, has positive trace. -/
 theorem trace_exp_smul_pos (hK : K.IsHermitian) (β : ℝ) :
-    0 < (NormedSpace.exp (β • K)).trace := by
-  have h := Matrix.PosDef.conjTranspose_mul_self (NormedSpace.exp ((β / 2) • K))
+    0 < (NormedSpace.exp ((β : ℝ) • K)).trace := by
+  have h := Matrix.PosDef.conjTranspose_mul_self (NormedSpace.exp ((β / 2 : ℝ) • K))
     (Matrix.mulVec_injective_iff_isUnit.mpr (Matrix.isUnit_exp _))
   rw [(exp_smul hK _).eq, ← exp_smul_eq_mul_exp_half K β] at h
   exact h.trace_pos
 
 end IsHermitian
+
+end RCLike
 
 end Matrix
