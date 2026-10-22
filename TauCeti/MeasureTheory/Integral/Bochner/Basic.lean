@@ -53,8 +53,9 @@ in the seminorm form `eLpNorm (f i - g) 1 μ → 0` (for instance by
 The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose home is
 `Mathlib.MeasureTheory.Integral.Bochner.Basic`, plus continuity of `ENNReal.ofReal` at `0`.
 
-* `tendsto_integral_smul_of_tendsto_lintegral_enorm_sub` passes `L¹(s)` convergence through
-  an almost everywhere bounded scalar multiplier vanishing almost everywhere outside `s`.
+* `tendsto_integral_smul_of_tendsto_lintegral_enorm_sub` turns `L¹(s)` convergence into
+  convergence of integrals against an almost everywhere bounded scalar multiplier vanishing
+  almost everywhere outside `s`.
 
 ## Tail lower bounds
 
@@ -258,8 +259,9 @@ theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [Meas
     ← ofReal_integral_norm_eq_lintegral_enorm hi]
   simp only [Function.comp_apply, Pi.sub_apply]
 
-/-- Pairing with an almost everywhere bounded scalar multiplier vanishing almost everywhere outside
-`s` preserves `L¹(s)` convergence.
+/-- If `a i → b` in `L¹(s)`, then the integrals `∫ x, c x • a i x ∂μ` converge to
+`∫ x, c x • b x ∂μ` for an almost everywhere bounded scalar multiplier `c` vanishing
+almost everywhere outside `s`.
 The approximating pairings need only be eventually integrable, and the limiting pairing
 needs only to be almost everywhere strongly measurable. -/
 theorem tendsto_integral_smul_of_tendsto_lintegral_enorm_sub {α 𝕜 F ι : Type*}
