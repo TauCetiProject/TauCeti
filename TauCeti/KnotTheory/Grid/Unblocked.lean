@@ -51,7 +51,7 @@ Maslov statement needs the rectangle to be empty; the Alexander statement holds 
 
 The differential is defined over an arbitrary commutative coefficient ring. It squares to zero
 only in characteristic two: over a general ring the rectangle counts must be corrected by a sign
-assignment, a later stage of the roadmap.
+assignment, which `SignAssignment/Differential.lean` does.
 
 ## Main definitions
 
