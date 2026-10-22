@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Splits
+public import TauCeti.Algebra.Polynomial.Roots
 public import TauCeti.NumberTheory.NewtonPolygon.Mul
 
 /-!
@@ -125,21 +126,6 @@ private theorem card_filter_newtonSlopes_eq [DecidableEq R] (hv : ∀ x, v x = �
     Multiset.filter_filter]
   exact congrArg _ (Multiset.filter_congr fun _ _ => and_comm)
 
-/-- The number of roots satisfying a predicate that holds at zero is the order of vanishing at
-zero plus the number of nonzero roots satisfying it. -/
-private theorem card_filter_roots_eq_natTrailingDegree_add [DecidableEq R] {f : R[X]} (q : R → Prop)
-    [DecidablePred q] (hq : q 0) :
-    (f.roots.filter q).card =
-      f.natTrailingDegree + (f.roots.filter fun α => α ≠ 0 ∧ q α).card := by
-  have hsplit : f.roots.filter q =
-      f.roots.filter (· = 0) + f.roots.filter fun α => α ≠ 0 ∧ q α := by
-    rw [← Multiset.filter_add_not (· = 0) (f.roots.filter q), Multiset.filter_filter,
-      Multiset.filter_filter]
-    congr 1
-    exact Multiset.filter_congr fun α _ => ⟨And.left, fun h => ⟨h, h ▸ hq⟩⟩
-  rw [hsplit, Multiset.card_add, Multiset.filter_eq', Multiset.card_replicate, count_roots,
-    rootMultiplicity_eq_natTrailingDegree']
-
 /-- If only zero has infinite valuation and `f` splits, the left endpoint of the finite face of
 slope `σ` of the Newton polygon is the number of roots `α` with `-σ < v α`, counted with
 multiplicity and including the root zero. For a valuation `‖x‖ = b ^ (-v x)` these are the
@@ -149,7 +135,7 @@ theorem card_filter_roots_lt_addValuation (hv : ∀ x, v x = ⊤ → x = 0) {f :
     (f.roots.filter fun α => ((-σ : ℝ) : WithTop ℝ) < v α).card = l := by
   classical
   rw [left_eq_natTrailingDegree_add_card_filter_newtonSlopes_lt hv hface,
-    card_filter_newtonSlopes_eq hv hf, card_filter_roots_eq_natTrailingDegree_add _
+    card_filter_newtonSlopes_eq hv hf, card_filter_roots_eq_natTrailingDegree_add f
       (by rw [v.map_zero]; exact WithTop.coe_lt_top _)]
   refine congrArg _ (congrArg _ (Multiset.filter_congr fun α _ => and_congr_right fun hα => ?_))
   rw [← WithTop.coe_untop₀_of_ne_top (mt (hv α) hα), WithTop.coe_lt_coe]
@@ -164,7 +150,7 @@ theorem card_filter_roots_le_addValuation (hv : ∀ x, v x = ⊤ → x = 0) {f :
     (f.roots.filter fun α => ((-σ : ℝ) : WithTop ℝ) ≤ v α).card = u := by
   classical
   rw [right_eq_natTrailingDegree_add_card_filter_newtonSlopes_le hv hface,
-    card_filter_newtonSlopes_eq hv hf, card_filter_roots_eq_natTrailingDegree_add _
+    card_filter_newtonSlopes_eq hv hf, card_filter_roots_eq_natTrailingDegree_add f
       (by rw [v.map_zero]; exact le_top)]
   refine congrArg _ (congrArg _ (Multiset.filter_congr fun α _ => and_congr_right fun hα => ?_))
   rw [← WithTop.coe_untop₀_of_ne_top (mt (hv α) hα), WithTop.coe_le_coe]
