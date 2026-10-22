@@ -286,6 +286,17 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
     abs_neg, abs_mul, abs_sq, ← Real.four_mul_sinh_half_sq]
   ring
 
+/-- Coercion to `PSL(2, ℝ)` preserves change of frame. -/
+private theorem coe_conj (S Y : SL(2, ℝ)) :
+    ((S⁻¹ * Y * S : SL(2, ℝ)) : PSL(2, ℝ)) = (S : PSL(2, ℝ))⁻¹ * Y * S := by
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+
+/-- Change of frame sends subgroup elements into the conjugated subgroup. -/
+private theorem conj_mem_conjAct_smul (S : SL(2, ℝ)) {x : PSL(2, ℝ)} (hx : x ∈ Γ) :
+    (S : PSL(2, ℝ))⁻¹ * x * S ∈ ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹ • Γ := by
+  have := Subgroup.smul_mem_pointwise_smul x (ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹) Γ hx
+  rwa [ConjAct.toConjAct_smul, inv_inv] at this
+
 /-- **Jørgensen's inequality for hyperbolic elements.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup
 and let `A, B ∈ SL(2, ℝ)` lift elements of `Γ`, with `A` hyperbolic: `|tr A| > 2`. Unless `B`
 conjugates the class of `A` to itself or to its inverse, that is, unless `B` fixes or exchanges
@@ -302,18 +313,14 @@ theorem one_le_abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_of_
   obtain ⟨P, rfl⟩ := QuotientGroup.mk_surjective g
   -- move to the frame where `A` is the dilation: `X = P⁻¹ B P` and `Γ' = P⁻¹ Γ P`
   set X : SL(2, ℝ) := P⁻¹ * B * P with hX
-  have hXcoe : (X : PSL(2, ℝ)) = (P : PSL(2, ℝ))⁻¹ * B * P := by
-    rw [hX, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+  have hXcoe : (X : PSL(2, ℝ)) = (P : PSL(2, ℝ))⁻¹ * B * P := coe_conj P B
   set Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (P : PSL(2, ℝ))⁻¹ • Γ
   have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
-  have hmem (x : PSL(2, ℝ)) (hx : x ∈ Γ) : (P : PSL(2, ℝ))⁻¹ * x * P ∈ Γ' := by
-    have := Subgroup.smul_mem_pointwise_smul x (ConjAct.toConjAct (P : PSL(2, ℝ))⁻¹) Γ hx
-    rwa [ConjAct.toConjAct_smul, inv_inv] at this
   have hD : (dilation s : PSL(2, ℝ)) ∈ Γ' := by
-    have := hmem _ hA
+    have := conj_mem_conjAct_smul P hA
     rwa [hAg, show (P : PSL(2, ℝ))⁻¹ * (P * (dilation s : PSL(2, ℝ)) * (P : PSL(2, ℝ))⁻¹) * P =
       dilation s by group] at this
-  have hXmem : (X : PSL(2, ℝ)) ∈ Γ' := hXcoe ▸ hmem _ hB
+  have hXmem : (X : PSL(2, ℝ)) ∈ Γ' := hXcoe ▸ conj_mem_conjAct_smul P hB
   -- the exceptional cases correspond under the change of frame
   have hconj (y : PSL(2, ℝ))
       (hy : (X : PSL(2, ℝ)) * (dilation s : PSL(2, ℝ)) * (X : PSL(2, ℝ))⁻¹ = y) :
@@ -473,23 +480,18 @@ theorem one_le_abs_trace_commutatorElement_sub_two_of_isParabolic [DiscreteTopol
   obtain ⟨S, rfl⟩ := QuotientGroup.mk_surjective σ
   set T : SL(2, ℝ) := S⁻¹ * A * S with hT
   set X : SL(2, ℝ) := S⁻¹ * B * S with hX
-  have hcoe (Y : SL(2, ℝ)) : ((S⁻¹ * Y * S : SL(2, ℝ)) : PSL(2, ℝ)) =
-      (S : PSL(2, ℝ))⁻¹ * Y * S := by
-    rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
   set Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹ • Γ
   have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
-  have hmem (Y : SL(2, ℝ)) (hY : (Y : PSL(2, ℝ)) ∈ Γ) :
-      ((S⁻¹ * Y * S : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' := by
-    have := Subgroup.smul_mem_pointwise_smul _ (ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹) Γ hY
-    rwa [ConjAct.toConjAct_smul, inv_inv, ← hcoe] at this
-  have hTx : (T : PSL(2, ℝ)) = upperRightHom x := (hcoe A).trans hAx
+  have hTmem : (T : PSL(2, ℝ)) ∈ Γ' := (coe_conj S A) ▸ conj_mem_conjAct_smul S hA
+  have hXmem : (X : PSL(2, ℝ)) ∈ Γ' := (coe_conj S B) ▸ conj_mem_conjAct_smul S hB
+  have hTx : (T : PSL(2, ℝ)) = upperRightHom x := (coe_conj S A).trans hAx
   -- the conjugate `X` of `B` does not fix `∞`, so Shimizu's lemma bounds its lower-left entry
   have hX0 : X 1 0 ≠ 0 := by
     intro h
     have h' := (mk_smul_infty_eq_infty_iff X).2 h
-    rw [hcoe, mul_smul, mul_smul, hσ, inv_smul_eq_iff] at h'
+    rw [coe_conj, mul_smul, mul_smul, hσ, inv_smul_eq_iff] at h'
     exact hBc (h'.trans hσ)
-  have hshim := inv_le_abs_apply_one_zero_of_upperRightHom_mem hx (hTx ▸ hmem A hA) (hmem B hB)
+  have hshim := inv_le_abs_apply_one_zero_of_upperRightHom_mem hx (hTx ▸ hTmem) hXmem
     hX0
   -- `T = ±!![1, x; 0, 1]`, so `tr ⁅T, X⁆ - 2 = x² (X 1 0)²`
   have hTe : T 1 0 = 0 ∧ T 1 1 = T 0 0 ∧ T 0 1 ^ 2 = x ^ 2 := by

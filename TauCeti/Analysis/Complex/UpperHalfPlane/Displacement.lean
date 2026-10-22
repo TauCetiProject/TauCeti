@@ -145,6 +145,11 @@ theorem cosh_dist_smul_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z 
     (((Q⁻¹ * P) 0 0 ^ 2 + (Q⁻¹ * P) 0 1 ^ 2 + (Q⁻¹ * P) 1 0 ^ 2 + (Q⁻¹ * P) 1 1 ^ 2) ^ 2 / 2 - 2) *
       hab
 
+/-- Moving the base point to `I` conjugates the acting matrix. -/
+private theorem dist_smul_smul_I_eq (P k : SL(2, ℝ)) :
+    dist (k • P • I) (P • I) = dist ((P⁻¹ * k * P) • I) I := by
+  rw [← dist_smul P⁻¹, inv_smul_smul, mul_smul, mul_smul]
+
 /-- **The trace of a commutator with an element fixing a point.** If `g ∈ SL(2, ℝ)` fixes
 `z ∈ ℍ`, then for every `h ∈ SL(2, ℝ)`,
 `tr ⁅g, h⁆ = 2 + (4 - tr² g) / 2 · (cosh (dist (h • z) z) - 1)`. -/
@@ -165,7 +170,7 @@ theorem trace_commutatorElement_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz :
     simp only [hk, hX, commutatorElement_def]
     group
   have hdist : dist (h • P • I) (P • I) = dist (X • I) I := by
-    rw [← dist_smul P⁻¹, inv_smul_smul, ← mul_smul, ← mul_smul, hX, mul_assoc]
+    exact dist_smul_smul_I_eq P h
   have hg : P * k * P⁻¹ = g := by
     rw [hk]
     group
@@ -240,12 +245,10 @@ distance has trace close to `±2` unless it is elliptic. -/
 theorem trace_sq_sub_four_le (g : SL(2, ℝ)) (z : ℍ) :
     (g : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 - 4 ≤ 2 * (Real.cosh (dist (g • z) z) - 1) := by
   obtain ⟨P, rfl⟩ := MulAction.exists_smul_eq SL(2, ℝ) I z
-  have hdist : dist (g • P • I) (P • I) = dist ((P⁻¹ * g * P) • I) I := by
-    rw [← dist_smul P⁻¹, inv_smul_smul, mul_smul, mul_smul]
   have htr : (g : Matrix (Fin 2) (Fin 2) ℝ).trace = ((P⁻¹ * g * P : SL(2, ℝ)) :
       Matrix (Fin 2) (Fin 2) ℝ).trace := by
     simpa using (trace_mul_mul_inv P⁻¹ g).symm
-  rw [hdist, htr]
+  rw [dist_smul_smul_I_eq P g, htr]
   exact trace_sq_sub_four_le_of_I _
 
 /-- **The commutator trace and the displacement of a point.** For `g, h ∈ SL(2, ℝ)` and `z ∈ ℍ`,
@@ -256,12 +259,10 @@ theorem abs_trace_commutatorElement_sub_two_le (g h : SL(2, ℝ)) (z : ℍ) :
     |((⁅g, h⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace - 2| ≤
       4 * (Real.cosh (dist (g • z) z) * Real.cosh (dist (h • z) z) - 1) := by
   obtain ⟨P, rfl⟩ := MulAction.exists_smul_eq SL(2, ℝ) I z
-  have hdist (k : SL(2, ℝ)) : dist (k • P • I) (P • I) = dist ((P⁻¹ * k * P) • I) I := by
-    rw [← dist_smul P⁻¹, inv_smul_smul, mul_smul, mul_smul]
   have hcomm : ⁅g, h⁆ = P * ⁅P⁻¹ * g * P, P⁻¹ * h * P⁆ * P⁻¹ := by
     simp only [commutatorElement_def]
     group
-  rw [hdist, hdist, hcomm, trace_mul_mul_inv]
+  rw [dist_smul_smul_I_eq P g, dist_smul_smul_I_eq P h, hcomm, trace_mul_mul_inv]
   exact abs_trace_commutatorElement_sub_two_le_of_I _ _
 
 end Matrix.SpecialLinearGroup
