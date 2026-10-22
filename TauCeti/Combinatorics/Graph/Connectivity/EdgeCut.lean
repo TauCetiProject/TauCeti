@@ -19,6 +19,9 @@ vertex set is closed under reachability exactly when its edge cut is empty.  In 
 set of vertices reachable from a point has empty edge cut.  Deleting edges removes them from every
 edge cut, and loops never cross a cut.
 
+If the edge cut of `T` is contained in that of `S`, then the subgraph induced on `S` has empty
+edge cut along `T`; conversely when `T ⊆ S`.
+
 These facts are the interface between cut-based and walk-based descriptions of connectivity,
 used for instance to characterize bridges by deletion.
 
@@ -96,5 +99,27 @@ theorem Reachable.mem_of_edgeCut_eq_empty (h : G.Reachable x y) (hS : G.edgeCut 
 theorem edgeCut_setOf_reachable (G : Graph α β) (x : α) :
     G.edgeCut {y | G.Reachable x y} = ∅ :=
   edgeCut_eq_empty_iff_forall_reachable.mpr fun _ _ h hx ↦ Reachable.trans hx h
+
+/-! ### Edge cuts of induced subgraphs -/
+
+/-- If every edge crossing `T` also crosses `S`, then no edge with both ends in `S` crosses `T`:
+the subgraph induced on `S` has empty edge cut along `T`. -/
+theorem edgeCut_induce_eq_empty_of_edgeCut_subset {T : Set α}
+    (h : G.edgeCut T ⊆ G.edgeCut S) : (G.induce S).edgeCut T = ∅ := by
+  refine eq_empty_of_forall_notMem fun e he ↦ ?_
+  obtain ⟨x, y, ⟨hxy, hxS, hyS⟩, hxT, hyT⟩ := mem_edgeCut_iff.mp he
+  have := hxy.mem_edgeCut_iff.mp (h (mem_edgeCut_iff.mpr ⟨x, y, hxy, hxT, hyT⟩))
+  tauto
+
+/-- If `T ⊆ S` has empty edge cut in the subgraph induced on `S`, then every edge crossing `T`
+also crosses `S`. -/
+theorem edgeCut_subset_edgeCut_of_edgeCut_induce_eq_empty {T : Set α} (hTS : T ⊆ S)
+    (h : (G.induce S).edgeCut T = ∅) : G.edgeCut T ⊆ G.edgeCut S := by
+  rintro e ⟨x, y, hxy, hxT, hyT⟩
+  refine mem_edgeCut_iff.mpr ⟨x, y, hxy, hTS hxT, fun hyS ↦ ?_⟩
+  have he : e ∈ (G.induce S).edgeCut T :=
+    mem_edgeCut_iff.mpr ⟨x, y, ⟨hxy, hTS hxT, hyS⟩, hxT, hyT⟩
+  rw [h] at he
+  exact he
 
 end Graph
