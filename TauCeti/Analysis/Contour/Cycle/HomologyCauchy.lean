@@ -26,9 +26,11 @@ generators may make `C` null-homologous even when no individual generator is. Th
 not follow by applying the single-curve theorem termwise. Instead, Dixon's two auxiliary integrals
 are summed over the finite support of `C`. Their jump across the boundary of `U` is the winding
 number of the whole cycle, so cycle-level null-homology makes the sum entire; decay at infinity and
-Liouville then make it zero. The vector-valued case follows from the scalar one: every continuous
-linear functional commutes with the cycle integral (`TauCeti.Contour.Cycle.integral_comp_comm`),
-and these functionals separate the points of a complex normed space by the Hahn–Banach theorem.
+Liouville then make it zero. For a complete space `E`, the vector-valued case follows from the
+scalar one: every continuous linear functional commutes with the cycle integral
+(`TauCeti.Contour.Cycle.integral_comp_comm`), and these functionals separate the points of `E` by
+the Hahn–Banach theorem. For an incomplete `E`, every Bochner integral valued in `E` is zero, and
+hence so is the cycle integral.
 
 ## Main result
 
