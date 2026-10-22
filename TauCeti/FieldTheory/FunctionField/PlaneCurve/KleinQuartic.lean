@@ -90,19 +90,22 @@ theorem aeval_kleinQuartic (b : Fin 3 → A) :
   simp [kleinQuartic]
 
 /-- The partial derivative `∂/∂X₀ = 3 X₀² X₁ + X₂³` of the Klein quartic at a point `b`. -/
-private theorem aeval_pderiv_zero_kleinQuartic (b : Fin 3 → A) :
+@[simp]
+theorem aeval_pderiv_zero_kleinQuartic (b : Fin 3 → A) :
     aeval b (pderiv 0 (kleinQuartic R)) = 3 * b 0 ^ 2 * b 1 + b 2 ^ 3 := by
   simp [kleinQuartic, pderiv_X]
   ring
 
 /-- The partial derivative `∂/∂X₁ = X₀³ + 3 X₁² X₂` of the Klein quartic at a point `b`. -/
-private theorem aeval_pderiv_one_kleinQuartic (b : Fin 3 → A) :
+@[simp]
+theorem aeval_pderiv_one_kleinQuartic (b : Fin 3 → A) :
     aeval b (pderiv 1 (kleinQuartic R)) = b 0 ^ 3 + 3 * b 1 ^ 2 * b 2 := by
   simp [kleinQuartic, pderiv_X]
   ring
 
 /-- The partial derivative `∂/∂X₂ = X₁³ + 3 X₂² X₀` of the Klein quartic at a point `b`. -/
-private theorem aeval_pderiv_two_kleinQuartic (b : Fin 3 → A) :
+@[simp]
+theorem aeval_pderiv_two_kleinQuartic (b : Fin 3 → A) :
     aeval b (pderiv 2 (kleinQuartic R)) = b 1 ^ 3 + 3 * b 2 ^ 2 * b 0 := by
   simp [kleinQuartic, pderiv_X]
   ring
