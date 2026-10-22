@@ -11,6 +11,7 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.Topology.UniformSpace.Real
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
 public import TauCeti.Data.Fin.Basic
+public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 import Mathlib.Tactic.Module
 import TauCeti.GroupTheory.Perm.Inversion
@@ -279,12 +280,10 @@ theorem pairedWedge_postcomp {F₄ : Type*} [AddCommGroup F₄] [Module ℝ F₄
           simpa only [Function.uncurry_def, Function.comp_def, ContinuousLinearMap.comp_apply,
             ContinuousLinearMap.postcomp_apply] using nu.continuous.comp hmu) phi psi =
       nu.compContinuousAlternatingMap (pairedWedge mu hmu phi psi) := by
-  have h₁ : (ContinuousLinearMap.id ℝ F₁).compContinuousAlternatingMap phi = phi := by
-    ext; simp
-  have h₂ : (ContinuousLinearMap.id ℝ F₂).compContinuousAlternatingMap psi = psi := by
-    ext; simp
   rw [compContinuousAlternatingMap_pairedWedge mu hmu ((ContinuousLinearMap.postcomp F₂ nu).comp mu)
-    _ (.id ℝ F₁) (.id ℝ F₂) nu (fun _ _ ↦ by simp) phi psi, h₁, h₂]
+    _ (.id ℝ F₁) (.id ℝ F₂) nu (fun _ _ ↦ by simp) phi psi,
+    ContinuousLinearMap.id_compContinuousAlternatingMap,
+    ContinuousLinearMap.id_compContinuousAlternatingMap]
 
 /-- The paired wedge is additive in the pairing. -/
 @[simp]
