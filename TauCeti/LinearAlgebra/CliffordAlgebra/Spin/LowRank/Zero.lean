@@ -52,8 +52,8 @@ private theorem map_evenUnitaryGroup_unitsEquivOfSubsingleton [Subsingleton V] :
     rw [mem_rootsOfUnity]
     apply Units.ext
     rw [unitsEquivOfSubsingleton_apply]
-    change (equivOfSubsingleton Q (x : CliffordAlgebra Q)) ^ 2 = 1
-    rw [pow_two, ← map_mul]
+    rw [pow_two, Units.val_mul, Units.val_one, Units.coe_map]
+    rw [← map_mul]
     calc
       equivOfSubsingleton Q ((x : CliffordAlgebra Q) * x) =
           equivOfSubsingleton Q (reverse (x : CliffordAlgebra Q) * x) := by
@@ -95,7 +95,7 @@ theorem coe_evenUnitaryGroupEquivRootsOfUnityOfSubsingleton_apply [Subsingleton 
     (x : evenUnitaryGroup Q) :
     ((evenUnitaryGroupEquivRootsOfUnityOfSubsingleton Q x : rootsOfUnity 2 K) : Kˣ) =
       Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) := by
-  change unitsEquivOfSubsingleton Q (x : (CliffordAlgebra Q)ˣ) = _
+  simp only [evenUnitaryGroupEquivRootsOfUnityOfSubsingleton, MulEquiv.trans_apply]
   exact unitsEquivOfSubsingleton_apply Q _
 
 /-- In dimension zero and characteristic not two, the even unitary group has two elements. -/
