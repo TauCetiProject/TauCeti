@@ -21,7 +21,8 @@ without choosing a Borel representative permanently.
 
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
-of the corresponding part of the set. Hyperplane sections of bounded sets have finite volume.
+of the corresponding part of the set. Hyperplane sections of bounded sets have finite volume,
+and a hyperplane meets a Lebesgue-measurable set in a null set (`TauCeti.volume_sep_inner_eq`).
 
 The coordinate construction uses Mathlib's `Submodule.orthogonalDecomposition` and
 `LinearIsometryEquiv.toSpanUnitSingleton`; its normalization follows Mathlib's volume
@@ -177,5 +178,11 @@ theorem volume_sep_inner_mem_eq_setLIntegral (e : E) (he : ‖e‖ = 1) {s : Set
     (hs.inter (hI.preimage hm).nullMeasurableSet), ← lintegral_indicator hI]
   congr 1 with t
   by_cases ht : t ∈ I <;> simp [ht, inner_add_smul e he]
+
+/-- A hyperplane `⟪e, x⟫ = c` meets a Lebesgue-measurable set in a null set. -/
+theorem volume_sep_inner_eq {s : Set E} (hs : NullMeasurableSet s volume) {e : E}
+    (he : ‖e‖ = 1) (c : ℝ) : volume {x ∈ s | ⟪e, x⟫ = c} = 0 := by
+  simpa using (volume_sep_inner_mem_eq_setLIntegral e he hs
+    (measurableSet_singleton c)).trans (setLIntegral_measure_zero _ _ Real.volume_singleton)
 
 end TauCeti

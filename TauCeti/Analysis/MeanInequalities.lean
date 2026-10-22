@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.MeanInequalities
 
 /-!
-# Superadditivity of the weighted geometric mean
+# Weighted geometric mean inequalities
 
 For nonnegative weights `w i` summing to `1`, the weighted geometric mean
 `G(a) = ∏ i, a i ^ w i` of a nonnegative family is superadditive:
@@ -27,6 +27,8 @@ up to at most `1`.
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
+* `TauCeti.one_le_div_add_div_mul_rpow_mul_rpow`: the weighted arithmetic mean of reciprocals
+  times the weighted geometric mean is at least `1`, with its equality case.
 
 ## References
 
@@ -72,3 +74,30 @@ theorem prod_rpow_add_prod_rpow_le_prod_add_rpow {ι : Type*} (s : Finset ι) {w
     _ = 1 := hw'
 
 end Real
+
+namespace TauCeti
+
+/-- For positive `a`, `b` and `0 < θ < 1`, the weighted arithmetic mean of their
+reciprocals times their weighted geometric mean is at least `1`, with equality only if `a = b`. -/
+theorem one_le_div_add_div_mul_rpow_mul_rpow {a b θ : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hθ₀ : 0 < θ) (hθ₁ : θ < 1) :
+    1 ≤ ((1 - θ) / a + θ / b) * (a ^ (1 - θ) * b ^ θ) ∧
+      (((1 - θ) / a + θ / b) * (a ^ (1 - θ) * b ^ θ) = 1 → a = b) := by
+  have hP : 0 < a ^ (1 - θ) * b ^ θ := by positivity
+  have hinv : a⁻¹ ^ (1 - θ) * b⁻¹ ^ θ = (a ^ (1 - θ) * b ^ θ)⁻¹ := by
+    rw [Real.inv_rpow ha.le, Real.inv_rpow hb.le, mul_inv]
+  have hsum : (1 - θ) * a⁻¹ + θ * b⁻¹ = (1 - θ) / a + θ / b := by ring
+  have hamgm := Real.geom_mean_le_arith_mean2_weighted (sub_pos.2 hθ₁).le hθ₀.le
+    (inv_pos.2 ha).le (inv_pos.2 hb).le (sub_add_cancel 1 θ)
+  rw [hinv, hsum] at hamgm
+  refine ⟨?_, fun h ↦ ?_⟩
+  · calc (1 : ℝ) = (a ^ (1 - θ) * b ^ θ)⁻¹ * (a ^ (1 - θ) * b ^ θ) := (inv_mul_cancel₀ hP.ne').symm
+      _ ≤ _ := mul_le_mul_of_nonneg_right hamgm hP.le
+  · have heq : (a ^ (1 - θ) * b ^ θ)⁻¹ = (1 - θ) / a + θ / b := by
+      rw [eq_comm, ← mul_eq_one_iff_eq_inv₀ hP.ne']
+      exact h
+    rw [← hinv, ← hsum, Real.geom_mean_eq_arith_mean2_weighted_iff_of_pos (sub_pos.2 hθ₁) hθ₀
+      (inv_pos.2 ha).le (inv_pos.2 hb).le (sub_add_cancel 1 θ)] at heq
+    exact inv_injective heq
+
+end TauCeti

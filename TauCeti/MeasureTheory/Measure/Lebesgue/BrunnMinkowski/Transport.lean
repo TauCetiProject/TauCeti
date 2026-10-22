@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inverse
 public import Mathlib.Analysis.Calculus.MeanValue
-public import Mathlib.Analysis.Convex.Body
-public import Mathlib.Analysis.MeanInequalities
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
+public import TauCeti.Analysis.Convex.Body.Measure
 public import TauCeti.Analysis.Convex.Measure
+public import TauCeti.Analysis.MeanInequalities
 public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Section
 
 /-!
@@ -70,53 +70,6 @@ namespace ConvexBody
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- The weighted arithmetic–geometric mean bound behind the transport argument, together with
-its equality case. -/
-private theorem one_le_div_add_div_mul_rpow_mul_rpow {a b θ : ℝ} (ha : 0 < a) (hb : 0 < b)
-    (hθ₀ : 0 < θ) (hθ₁ : θ < 1) :
-    1 ≤ ((1 - θ) / a + θ / b) * (a ^ (1 - θ) * b ^ θ) ∧
-      (((1 - θ) / a + θ / b) * (a ^ (1 - θ) * b ^ θ) = 1 → a = b) := by
-  have hP : 0 < a ^ (1 - θ) * b ^ θ := by positivity
-  have hinv : a⁻¹ ^ (1 - θ) * b⁻¹ ^ θ = (a ^ (1 - θ) * b ^ θ)⁻¹ := by
-    rw [Real.inv_rpow ha.le, Real.inv_rpow hb.le, mul_inv]
-  have hsum : (1 - θ) * a⁻¹ + θ * b⁻¹ = (1 - θ) / a + θ / b := by ring
-  have hamgm := Real.geom_mean_le_arith_mean2_weighted (sub_pos.2 hθ₁).le hθ₀.le
-    (inv_pos.2 ha).le (inv_pos.2 hb).le (sub_add_cancel 1 θ)
-  rw [hinv, hsum] at hamgm
-  refine ⟨?_, fun h ↦ ?_⟩
-  · calc (1 : ℝ) = (a ^ (1 - θ) * b ^ θ)⁻¹ * (a ^ (1 - θ) * b ^ θ) := (inv_mul_cancel₀ hP.ne').symm
-      _ ≤ _ := mul_le_mul_of_nonneg_right hamgm hP.le
-  · have heq : (a ^ (1 - θ) * b ^ θ)⁻¹ = (1 - θ) / a + θ / b := by
-      rw [eq_comm, ← mul_eq_one_iff_eq_inv₀ hP.ne']
-      exact h
-    rw [← hinv, ← hsum, Real.geom_mean_eq_arith_mean2_weighted_iff_of_pos (sub_pos.2 hθ₁) hθ₀
-      (inv_pos.2 ha).le (inv_pos.2 hb).le (sub_add_cancel 1 θ)] at heq
-    exact inv_injective heq
-
-/-- A hyperplane `⟪e, x⟫ = c` meets a Lebesgue-measurable set in a null set. -/
-private theorem volume_sep_inner_eq {s : Set E} (hs : NullMeasurableSet s volume) {e : E}
-    (he : ‖e‖ = 1) (c : ℝ) : volume {x ∈ s | ⟪e, x⟫ = c} = 0 := by
-  simpa using (TauCeti.volume_sep_inner_mem_eq_setLIntegral e he hs
-    (measurableSet_singleton c)).trans (setLIntegral_measure_zero _ _ Real.volume_singleton)
-
-/-- The heights of a positive-volume convex body along a unit vector form a nondegenerate
-compact interval. -/
-private theorem exists_image_inner_eq_Icc (K : ConvexBody E) (hK : 0 < volume (K : Set E))
-    {e : E} (he : ‖e‖ = 1) :
-    ∃ a b : ℝ, a < b ∧ (fun x ↦ ⟪e, x⟫) '' (K : Set E) = Icc a b := by
-  have hcont : Continuous fun x : E ↦ ⟪e, x⟫ := by fun_prop
-  have hI := eq_Icc_of_connected_compact
-    ⟨K.nonempty.image _, K.convex.isPreconnected.image _ hcont.continuousOn⟩
-    (K.isCompact.image hcont)
-  refine ⟨_, _, lt_of_not_ge fun hle ↦ hK.ne' ?_, hI⟩
-  -- Otherwise `K` lies in a hyperplane, which is null.
-  have hsub : (K : Set E) ⊆ {x ∈ (K : Set E) | ⟪e, x⟫ = sInf ((fun x ↦ ⟪e, x⟫) '' K)} :=
-    fun x hx ↦ by
-      have hx' : ⟪e, x⟫ ∈ Icc _ _ := hI ▸ mem_image_of_mem _ hx
-      exact ⟨hx, le_antisymm (hx'.2.trans hle) hx'.1⟩
-  exact measure_mono_null hsub
-    (volume_sep_inner_eq K.isCompact.measurableSet.nullMeasurableSet he _)
-
 /-- **Volume quantiles of a convex body.** For a positive-volume convex body `K` of volume
 `V` and a unit vector `e`, the heights of `K` form an interval `[a, b]` with `a < b`, and the
 volume below height `t` maps `(a, b)` increasingly onto `(0, V)`. Its inverse `z` is
@@ -165,7 +118,8 @@ private theorem exists_volume_quantile (K : ConvexBody E) (hK : 0 < volume (K : 
     have hsub : {x ∈ (K : Set E) | ⟪e, x⟫ ≤ a} ⊆ {x ∈ (K : Set E) | ⟪e, x⟫ = a} :=
       fun x hx ↦ ⟨hx.1, le_antisymm hx.2 (hheight x hx.1).1⟩
     simp only [F]
-    rw [measureReal_def, measure_mono_null hsub (volume_sep_inner_eq hKm.nullMeasurableSet he a),
+    rw [measureReal_def,
+      measure_mono_null hsub (TauCeti.volume_sep_inner_eq hKm.nullMeasurableSet he a),
       ENNReal.toReal_zero]
   have hFb : F b = V := by
     simp only [F, V]
@@ -274,7 +228,7 @@ theorem exists_forall_volume_sep_inner_le_add_eq (K L : ConvexBody E)
     have := (hzL τ hτ).2.1
     have : 0 < 1 - θ := sub_pos.2 hθ₁
     positivity
-  have hg (τ : ℝ) (hτ : τ ∈ Ioo 0 V) := one_le_div_add_div_mul_rpow_mul_rpow
+  have hg (τ : ℝ) (hτ : τ ∈ Ioo 0 V) := TauCeti.one_le_div_add_div_mul_rpow_mul_rpow
     (hzK τ hτ).2.1 (hzL τ hτ).2.1 hθ₀ hθ₁
   -- Change of variables: the integral of `g` over `(0, V)` is at most the volume of `M`.
   have hMm : MeasurableSet ((1 - θ) • (K : Set E) + θ • (L : Set E)) :=
@@ -338,7 +292,7 @@ theorem exists_forall_volume_sep_inner_le_add_eq (K L : ConvexBody E)
       have hsub : {x ∈ (C : Set E) | ⟪e, x⟫ ≤ s} ⊆ {x ∈ (C : Set E) | ⟪e, x⟫ = a} :=
         fun x hx ↦ ⟨hx.1, le_antisymm (hx.2.trans hs) (hC x hx.1)⟩
       exact measure_mono_null hsub
-        (volume_sep_inner_eq C.isCompact.measurableSet.nullMeasurableSet he a)
+        (TauCeti.volume_sep_inner_eq C.isCompact.measurableSet.nullMeasurableSet he a)
     rw [hnull K aK t (fun x hx ↦ (hhK x hx).1) htK,
       hnull L aL (t + c) (fun x hx ↦ (hhL x hx).1) (by linarith)]
   rcases le_or_gt bK t with htK' | htK'
