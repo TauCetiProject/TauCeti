@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RingHom.Unramified
 public import Mathlib.RingTheory.Kaehler.TensorProduct
+public import Mathlib.RingTheory.Unramified.Locus
 import Mathlib.RingTheory.LocalRing.Module
 
 /-!
@@ -15,6 +16,10 @@ import Mathlib.RingTheory.LocalRing.Module
 A finite-type algebra is formally unramified if all its base changes to fields are formally
 unramified. This criterion passes from fibre computations to relative unramifiedness without
 requiring flatness or finite presentation.
+
+`Algebra.IsUnramifiedIn.formallyUnramified_fiber` gives the converse comparison at one prime:
+unramifiedness at every prime over `p` implies formal unramifiedness of the fibre over `p`,
+without a finiteness assumption.
 
 The proof uses finite generation of Kähler differentials, their base-change equivalence
 `KaehlerDifferential.tensorKaehlerEquivBase`, and the residue-field description of module support
@@ -34,6 +39,19 @@ namespace Algebra
 universe u v
 
 variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- If an algebra is unramified at every prime over `p`, its fibre over `p` is formally
+unramified. No finiteness hypothesis is needed. -/
+theorem IsUnramifiedIn.formallyUnramified_fiber {p : Ideal R} [p.IsPrime]
+    (h : IsUnramifiedIn S p) : FormallyUnramified p.ResidueField (p.Fiber S) := by
+  let : Algebra S (p.Fiber S) := TensorProduct.rightAlgebra
+  apply formallyUnramified_iff_forall.mpr
+  intro q
+  let Q := q.asIdeal.under S
+  have : Q.IsPrime := inferInstance
+  have : Q.LiesOver p := inferInstance
+  have : IsUnramifiedAt R Q := h Q inferInstance inferInstance
+  exact IsUnramifiedAt.residueField p Q q.asIdeal rfl
 
 /-- A finite-type algebra is formally unramified if every base change to a field is formally
 unramified. No flatness assumption is required. -/
