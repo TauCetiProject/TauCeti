@@ -166,24 +166,18 @@ theorem tendsto_toLaurentSeries_iff {ι : Type*} {l : Filter ι}
     {f : ι → NovikovSeries K ℤ (Int.castAddHom ℝ)} {a : NovikovSeries K ℤ (Int.castAddHom ℝ)} :
     Tendsto (fun i => toLaurentSeries (f i)) l (𝓝 (toLaurentSeries a)) ↔ Tendsto f l (𝓝 a) := by
   rw [tendsto_laurentSeries_iff_coeff, tendsto_nhds_iff]
-  simp only [coeff_toLaurentSeries, Int.coe_castAddHom]
+  refine ⟨fun ⟨⟨b, hb⟩, hcoeff⟩ C => ?_, fun h => ?_⟩
+  · filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hb hcoeff ⌈C⌉] with i hi k hk
+    exact hi k (Int.lt_ceil.2 hk)
+  simp only [coeff_toLaurentSeries]
   obtain ⟨m, hm⟩ := a.bddBelow_support_int
   have ha (k : ℤ) (hk : k < m) : a.coeff k = 0 :=
     by_contra fun hk' => (hm (mem_support.2 hk')).not_gt hk
-  refine ⟨fun ⟨⟨b, hb⟩, hcoeff⟩ C => ?_, fun h => ⟨⟨m, ?_⟩, fun k => ?_⟩⟩
-  · -- Below `min b m` all coefficients vanish; the finitely many exponents in `[min b m, C)` are
-    -- handled by eventual agreement of each coefficient.
-    have hfin : {k : ℤ | min b m ≤ k ∧ (k : ℝ) < C}.Finite :=
-      (finite_Icc (min b m) ⌈C⌉).subset fun k hk =>
-        ⟨hk.1, Int.cast_le.1 (hk.2.le.trans (Int.le_ceil C))⟩
-    filter_upwards [hb, (hfin.eventually_all).2 fun k _ => hcoeff k] with i hbi hci k hk
-    rcases lt_or_ge k (min b m) with hkb | hkb
-    · rw [hbi k (hkb.trans_le (min_le_left _ _)), ha k (hkb.trans_le (min_le_right _ _))]
-    · exact hci k ⟨hkb, hk⟩
+  refine ⟨⟨m, ?_⟩, fun k => ?_⟩
   · filter_upwards [h m] with i hi k hk
     rw [hi k (Int.cast_lt.2 hk), ha k hk]
   · filter_upwards [h (k + 1)] with i hi
-    exact hi k (lt_add_one _)
+    exact hi k (by simp)
 
 /-- Over a field, the comparison is continuous for the period and valuation topologies. -/
 theorem continuous_toLaurentSeries :
