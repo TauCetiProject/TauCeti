@@ -166,6 +166,7 @@ noncomputable def zigzagBacktrackCochain :
   ∑ p ∈ P, a p • zigzagBacktrackOperation k G hns p.1 p.2
 
 /-- The backtrack cochain is a weighted sum of products of three arrow coordinates times arrows. -/
+@[simp]
 theorem zigzagBacktrackCochain_apply (x : Fin 3 → nonisolatedZigzagQuotient k G) :
     zigzagBacktrackCochain hns P a x =
       ∑ p ∈ P, (a p * ((zigzagBasis k G hns).coord (.inr (.inl p.1)) (x 0) *
@@ -290,21 +291,21 @@ private theorem zigzagBacktrackCochain_koszulTwist_one_zero
     (x y z : nonisolatedZigzagQuotient k G) :
     zigzagBacktrackCochain hns P a ![𝒢.koszulTwist 1 x, y, z] =
       -zigzagBacktrackCochain hns P a ![x, y, z] := by
-  simp [zigzagBacktrackCochain_apply, zigzagBasis_coord_dart_koszulTwist_one h𝒢]
+  simp [zigzagBasis_coord_dart_koszulTwist_one h𝒢]
 
 /-- Twisting the second input of the backtrack cochain negates it. -/
 private theorem zigzagBacktrackCochain_koszulTwist_one_one
     (x y z : nonisolatedZigzagQuotient k G) :
     zigzagBacktrackCochain hns P a ![x, 𝒢.koszulTwist 1 y, z] =
       -zigzagBacktrackCochain hns P a ![x, y, z] := by
-  simp [zigzagBacktrackCochain_apply, zigzagBasis_coord_dart_koszulTwist_one h𝒢]
+  simp [zigzagBasis_coord_dart_koszulTwist_one h𝒢]
 
 /-- Twisting the third input of the backtrack cochain negates it. -/
 private theorem zigzagBacktrackCochain_koszulTwist_one_two
     (x y z : nonisolatedZigzagQuotient k G) :
     zigzagBacktrackCochain hns P a ![x, y, 𝒢.koszulTwist 1 z] =
       -zigzagBacktrackCochain hns P a ![x, y, z] := by
-  simp [zigzagBacktrackCochain_apply, zigzagBasis_coord_dart_koszulTwist_one h𝒢]
+  simp [zigzagBasis_coord_dart_koszulTwist_one h𝒢]
 
 /-- **The coboundary identity with suspension signs**: the form of
 `TauCeti.zigzagBacktrackCochain_coboundary` met in the arity-four component equation, where the
