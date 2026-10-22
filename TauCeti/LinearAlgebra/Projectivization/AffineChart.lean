@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Logic.Equiv.PartialEquiv
 public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Standard affine charts of projective space
@@ -46,13 +47,6 @@ public section
 open Set
 
 open scoped LinearAlgebra.Projectivization
-
-/-- Inserting the coordinate `1` into a tuple gives a tuple that does not vanish; these are the
-homogeneous coordinates `Fin.insertNth i 1 z` of the point with affine coordinates `z` in the
-standard affine chart of `i`. -/
-theorem Fin.insertNth_one_ne_zero {α : Type*} [Zero α] [One α] [NeZero (1 : α)] {n : ℕ}
-    (i : Fin (n + 1)) (z : Fin n → α) : Fin.insertNth (α := fun _ ↦ α) i 1 z ≠ 0 :=
-  fun h ↦ one_ne_zero (α := α) (by simpa using congr_fun h i)
 
 namespace Projectivization
 
