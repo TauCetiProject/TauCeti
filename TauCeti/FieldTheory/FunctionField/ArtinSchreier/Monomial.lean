@@ -154,7 +154,6 @@ private theorem ne_pow_sub_self (hm : ¬ p ∣ m) :
     ∀ w : RatFunc k, w ^ p - w ≠ RatFunc.X ^ m := by
   obtain ⟨hneg, hdvd⟩ := reduced_pole k p hm
   exact ne_pow_sub_self_of_exists_reduced_artinSchreier_pole (v := (Place.infty k).valuation) p
-    (Fact.out : p.Prime).one_lt
     ⟨0, by simpa only [Valuation.ord_def, ← Place.ord_def] using hneg,
       by simpa only [Valuation.ord_def, ← Place.ord_def] using hdvd⟩
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Ring.NegOnePow
 public import TauCeti.KnotTheory.PDCode.Jones.Basic
-public import TauCeti.KnotTheory.PDCode.ResolvedCircle
+public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Basic
 
 /-!
 # Enhanced states and the Jones polynomial

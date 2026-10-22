@@ -41,7 +41,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
   metric is a `C^n` vector field.
 * `TauCeti.Manifold.mdifferentiable_mgradient`: a `C²` function has a differentiable Riemannian
   gradient section.
-* `TauCeti.Manifold.contMDiff_neg_mgradient`: so is the negative gradient.
+* `TauCeti.Manifold.contMDiff_neg_mgradient`: so is the negative gradient, and
+  `TauCeti.Manifold.contMDiff_neg_mgradient_one` states its `C¹` case for a `C²` function.
 * `TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`: for a
   continuous metric, the differential of `f` read in a chart is locally bounded by a multiple of
   the length of the gradient. This is how coordinate estimates for `df` become metric estimates.
@@ -238,6 +239,15 @@ theorem contMDiff_neg_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
     ContMDiff I I.tangent n (fun x ↦ (⟨x, -mgradient I f x⟩ : TangentBundle I M)) := by
   simpa only [mgradient_neg] using contMDiff_mgradient (f := -f) hf.neg
+
+/-- `TauCeti.Manifold.contMDiff_neg_mgradient` at `n = 1`, with the smoothness order `1 + 1`
+written as `2`, in the form taken by the integral-curve API. -/
+theorem contMDiff_neg_mgradient_one [IsManifold I 2 M]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    ContMDiff I I.tangent 1 (fun y ↦ (⟨y, (-mgradient I f) y⟩ : TangentBundle I M)) :=
+  have : IsManifold I (1 + 1) M := by rwa [one_add_one_eq_two]
+  contMDiff_neg_mgradient (n := 1) (by rwa [one_add_one_eq_two])
 
 /-! ### Comparison with the differential in a chart -/
 

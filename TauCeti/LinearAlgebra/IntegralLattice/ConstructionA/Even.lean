@@ -135,6 +135,19 @@ theorem not_isEven_integralLattice_of_odd (hm : Odd m) [Nonempty ι]
 
 /-! ## The binary case -/
 
+/-- Every Construction A vector of an even binary code has an even coordinate sum. -/
+theorem exists_sum_eq_two_mul (C : LinearCode (ZMod 2) ι) (hC : BinaryCode.IsEven C)
+    {x : ι → ℚ} (hx : x ∈ lattice 2 C.toAddSubgroup) : ∃ k : ℤ, ∑ i, x i = 2 * k := by
+  obtain ⟨z, hz, rfl⟩ := (mem_lattice 2).mp hx
+  have hpar : ((∑ i, z i : ℤ) : ZMod 2) = 0 := by
+    have h := dotProduct_one_eq_hammingNorm (fun i ↦ (z i : ZMod 2))
+    simp only [dotProduct, Pi.one_apply, mul_one] at h
+    push_cast
+    rw [h, ZMod.natCast_eq_zero_iff_even]
+    exact BinaryCode.isEven_iff.mp hC _ hz
+  obtain ⟨k, hk⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ 2).mp hpar
+  exact ⟨k, by beta_reduce; exact_mod_cast hk⟩
+
 /-- A Construction A lattice at modulus two is even exactly when every codeword weight is
 divisible by four. -/
 theorem isEven_integralLattice_two_iff (C : AddSubgroup (ι → ZMod 2))

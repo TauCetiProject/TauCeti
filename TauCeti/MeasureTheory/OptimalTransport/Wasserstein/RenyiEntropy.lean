@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.Basic
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import TauCeti.Algebra.Homology.HomologicalComplex.ProjectiveDimension
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Braiding
@@ -20,7 +21,11 @@ suppose that the cycles `Z_q(L)` and the quotients `L_q / Z_q(L)` are projective
 projective modules over a principal ideal domain
 (`HomologicalComplex.free_cycles_of_isPrincipalIdealRing` and
 `HomologicalComplex.free_cokernel_iCycles_of_isPrincipalIdealRing`), for instance for singular
-chains with integer coefficients.  Then the **Künneth sequence**
+chains with integer coefficients. More generally, both projectivity hypotheses are found by
+instance search for a complex of projective modules when every module has projective dimension
+at most one (`HomologicalComplex.projective_cycles_of_hasProjectiveDimensionLE_one` and
+`HomologicalComplex.projective_cokernel_iCycles_of_hasProjectiveDimensionLE_one`). Then the
+**Künneth sequence**
 
 `0 ⟶ ⨁_{p + q = m + 1} Hₚ(K) ⊗ H_q(L) ⟶ Hₘ₊₁(K ⊗ L) ⟶ ⨁_{p + q = m} Tor₁(Hₚ(K), H_q(L)) ⟶ 0`
 
