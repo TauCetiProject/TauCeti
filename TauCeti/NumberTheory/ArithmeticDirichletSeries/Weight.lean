@@ -403,24 +403,36 @@ theorem conj_conj (χ : MultiplicativeIdealWeight K) : χ.conj.conj = χ := by
   ext I
   simp
 
-@[simp]
-theorem conj_one : (1 : MultiplicativeIdealWeight K).conj = 1 := by
-  ext I
-  rcases eq_or_ne I ⊥ with rfl | hI <;> simp [*]
-
 /-- Conjugation is multiplicative for the pointwise product. -/
 @[simp]
 theorem conj_mul (χ ψ : MultiplicativeIdealWeight K) : (χ * ψ).conj = χ.conj * ψ.conj := by
   ext I
   simp
 
-/-- Conjugation commutes with powers; in particular the conjugate of the pointwise square is the
-square of the conjugate. -/
+/-- Conjugation is the `star` of the weights, as for `MulChar`, `TauCeti.IdealArithmeticFunction`
+and `TauCeti.EulerProductData`: an involution which is multiplicative, the product being
+commutative. -/
+instance : StarMul (MultiplicativeIdealWeight K) where
+  star := conj
+  star_involutive := conj_conj
+  star_mul χ ψ := (conj_mul χ ψ).trans (mul_comm _ _)
+
+/-- The `star` of a weight is its conjugate; `χ.conj` is the simp normal form. -/
 @[simp]
-theorem conj_pow (χ : MultiplicativeIdealWeight K) (n : ℕ) : (χ ^ n).conj = χ.conj ^ n := by
-  induction n with
-  | zero => rw [pow_zero, pow_zero, conj_one]
-  | succ n ih => rw [pow_succ, pow_succ, conj_mul, ih]
+theorem star_eq_conj (χ : MultiplicativeIdealWeight K) : star χ = χ.conj := rfl
+
+/-- The trivial weight is its own conjugate: `star_one` stated with `conj`, the simp normal form of
+`star` (`TauCeti.MultiplicativeIdealWeight.star_eq_conj`). -/
+@[simp]
+theorem conj_one : (1 : MultiplicativeIdealWeight K).conj = 1 :=
+  star_one _
+
+/-- Conjugation commutes with powers: `star_pow` stated with `conj`, the simp normal form of
+`star` (`TauCeti.MultiplicativeIdealWeight.star_eq_conj`). In particular the conjugate of the
+pointwise square is the square of the conjugate. -/
+@[simp]
+theorem conj_pow (χ : MultiplicativeIdealWeight K) (n : ℕ) : (χ ^ n).conj = χ.conj ^ n :=
+  star_pow χ n
 
 /-- The **norm twist** `I ↦ χ I * N(I) ^ (-z)`. For general `z` this leaves the unitary
 carrier; only the purely imaginary twists preserve it
@@ -999,9 +1011,9 @@ def conj (χ : UnitaryIdealWeight K) : UnitaryIdealWeight K :=
 @[simp]
 theorem val_conj (χ : UnitaryIdealWeight K) : (conj χ).1 = χ.1.conj := (rfl)
 
+/-- Conjugation of unitary weights is an involution. -/
 @[simp]
-theorem conj_one : conj (1 : UnitaryIdealWeight K) = 1 :=
-  Subtype.ext (by rw [val_conj, val_one, MultiplicativeIdealWeight.conj_one])
+theorem conj_conj (χ : UnitaryIdealWeight K) : conj (conj χ) = χ := Subtype.ext <| by simp
 
 /-- Conjugation of unitary weights is multiplicative for the pointwise product. -/
 @[simp]
@@ -1009,12 +1021,30 @@ theorem conj_mul (χ ψ : UnitaryIdealWeight K) : conj (χ * ψ) = conj χ * con
   Subtype.ext (by
     rw [val_conj, val_mul, val_mul, val_conj, val_conj, MultiplicativeIdealWeight.conj_mul])
 
-/-- Conjugation of unitary weights commutes with powers, in particular with the pointwise
-square. -/
+/-- Conjugation is the `star` of the unitary weights, restricting that of
+`TauCeti.MultiplicativeIdealWeight`: an involution which is multiplicative, the product being
+commutative. -/
+instance : StarMul (UnitaryIdealWeight K) where
+  star := conj
+  star_involutive := conj_conj
+  star_mul χ ψ := (conj_mul χ ψ).trans (mul_comm _ _)
+
+/-- The `star` of a unitary weight is its conjugate; `conj χ` is the simp normal form. -/
+@[simp]
+theorem star_eq_conj (χ : UnitaryIdealWeight K) : star χ = conj χ := rfl
+
+/-- The trivial unitary weight is its own conjugate: `star_one` stated with `conj`, the simp
+normal form of `star` (`TauCeti.UnitaryIdealWeight.star_eq_conj`). -/
+@[simp]
+theorem conj_one : conj (1 : UnitaryIdealWeight K) = 1 :=
+  star_one _
+
+/-- Conjugation of unitary weights commutes with powers: `star_pow` stated with `conj`, the simp
+normal form of `star` (`TauCeti.UnitaryIdealWeight.star_eq_conj`). In particular it commutes with
+the pointwise square. -/
 @[simp]
 theorem conj_pow (χ : UnitaryIdealWeight K) (n : ℕ) : conj (χ ^ n) = conj χ ^ n :=
-  Subtype.ext (by
-    rw [val_conj, val_pow, val_pow, val_conj, MultiplicativeIdealWeight.conj_pow])
+  star_pow χ n
 
 /-- Restricting a unitary weight away from a finite set of primes keeps it unitary: the
 restricted weight is unchanged at the primes that are good for it. -/
