@@ -56,10 +56,8 @@ theorem isCongrOne_ofFinitePart_iff {m : Ideal (RingOfIntegers K)} {hm : m ≠ �
 def finiteIdealsPrimeToEquiv (m : Ideal (RingOfIntegers K)) (hm : m ≠ ⊥) :
     NumberFieldArithmetic.idealsAway K (Ideal.finiteRaySupport m hm) ≃*
       idealsPrimeTo (Modulus.ofFinitePart m hm) :=
-  MulEquiv.subgroupCongr (by
-    change NumberFieldArithmetic.idealsAway K (Ideal.finiteRaySupport m hm) =
-      NumberFieldArithmetic.idealsAway K (Modulus.ofFinitePart m hm).support
-    rw [Modulus.support_ofFinitePart])
+  MulEquiv.subgroupCongr <|
+    congrArg (NumberFieldArithmetic.idealsAway K) (Modulus.support_ofFinitePart m hm).symm
 
 /-- The prime-to-ideal comparison does not change the underlying fractional ideal. -/
 @[simp]
@@ -160,10 +158,8 @@ def finiteIntegralIdealsPrimeToEquiv (m : Ideal (RingOfIntegers K)) (hm : m ≠ 
     NumberFieldArithmetic.integralIdealsAway
         (Ideal.finiteRaySupport m hm) ≃*
       integralIdealsPrimeTo (Modulus.ofFinitePart m hm) :=
-  MulEquiv.submonoidCongr (by
-    change NumberFieldArithmetic.integralIdealsAway (Ideal.finiteRaySupport m hm) =
-      NumberFieldArithmetic.integralIdealsAway (Modulus.ofFinitePart m hm).support
-    rw [Modulus.support_ofFinitePart])
+  MulEquiv.submonoidCongr <|
+    congrArg NumberFieldArithmetic.integralIdealsAway (Modulus.support_ofFinitePart m hm).symm
 
 /-- The integral prime-to-ideal comparison does not change the underlying ideal. -/
 @[simp]
