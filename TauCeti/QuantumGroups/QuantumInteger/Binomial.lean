@@ -8,6 +8,7 @@ module
 public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import Mathlib.Algebra.Algebra.Defs
 
+import TauCeti.Algebra.BigOperators.Finset.Range
 import Mathlib.Tactic
 
 /-!
@@ -236,16 +237,6 @@ private theorem pow_mul_quantumBinomial_add_pow_mul_quantumBinomial {q : K} (hq 
   simp only [e₁, e₂]
   linear_combination (-(q ^ ((k + 1) * j) * quantumBinomial q (k + (j + 1)) (k + 1))) * hinv
 
-/-- Pascal-type reassembly of a sum: if `c 0 = b 0`, `b (n + 1) = 0` and
-`c (k + 1) = a k + b (k + 1)` for `k ≤ n`, then `∑_(k ≤ n) (a k + b k) = ∑_(k ≤ n + 1) c k`. -/
-private theorem sum_range_add_eq_sum_range_succ {M : Type*} [AddCommMonoid M] {a b c : ℕ → M}
-    {n : ℕ} (h : ∀ k ≤ n, a k + b (k + 1) = c (k + 1)) (h₀ : b 0 = c 0) (hn : b (n + 1) = 0) :
-    ∑ k ∈ range (n + 1), (a k + b k) = ∑ k ∈ range (n + 1 + 1), c k := by
-  have hb : ∑ k ∈ range (n + 1), b k = ∑ k ∈ range (n + 1), b (k + 1) + b 0 := by
-    rw [← sum_range_succ' b, sum_range_succ b (n + 1), hn, add_zero]
-  rw [sum_add_distrib, hb, ← add_assoc, ← sum_add_distrib, sum_range_succ' c, h₀]
-  exact congrArg (· + c 0) (sum_congr rfl fun k hk => h k (Nat.lt_succ_iff.mp (mem_range.mp hk)))
-
 /-- The **`q`-binomial theorem**: if `y x = q² x y` for a nonzero scalar `q`, then
 `(x + y)^n = ∑_k q^(k(n-k)) [n choose k]_q x^k y^(n-k)`. -/
 theorem add_pow_of_mul_eq_smul_mul {A : Type*} [Semiring A] [Algebra K A] {q : K} (hq : q ≠ 0)
@@ -268,11 +259,17 @@ theorem add_pow_of_mul_eq_smul_mul {A : Type*} [Semiring A] [Algebra K A] {q : K
       intro k hk
       rw [show n + 1 - k = n - k + 1 by have := mem_range.mp hk; omega]
       simp only [smul_mul_assoc, mul_add, mul_assoc, hpow, mul_smul_comm, smul_smul, pow_succ]
-    -- Shift the second sum by one index and match coefficients by the Pascal rule.
-    rw [pow_succ, ih, sum_mul, sum_congr rfl hterm]
-    refine sum_range_add_eq_sum_range_succ (fun k hk => ?_) (by simp) ?_
-    · rw [Nat.add_sub_add_right, ← add_smul,
-        pow_mul_quantumBinomial_add_pow_mul_quantumBinomial hq hk]
-    · simp [quantumBinomial_eq_zero_of_lt q (Nat.lt_succ_self n)]
+    -- Regroup the target sum as the shifted first sum plus the second sum, matching
+    -- coefficients by the Pascal rule; the last term of the second sum vanishes.
+    rw [pow_succ, ih, sum_mul, sum_congr rfl hterm, sum_range_succ_eq_sum_range_add (n := n + 1)
+      (g := fun k => (q ^ (k * (n - k)) * quantumBinomial q n k) • (x ^ k * y ^ (n + 1 - k)))
+      (h := fun k => (q ^ (k * (n - k)) * quantumBinomial q n k * (q ^ 2) ^ (n - k)) •
+        (x ^ (k + 1) * y ^ (n - k)))]
+    · simp [quantumBinomial_eq_zero_of_lt q (Nat.lt_succ_self n), add_comm]
+    · simp
+    · -- The two contributions to index `k + 1` combine by the Pascal rule.
+      intro k hk
+      rw [Nat.add_sub_add_right, ← add_smul,
+        ← pow_mul_quantumBinomial_add_pow_mul_quantumBinomial hq (Nat.lt_succ_iff.mp hk), add_comm]
 
 end TauCeti
