@@ -131,32 +131,19 @@ theorem equivNeg_star (x : CliffordAlgebra Q) :
     equivNeg Q Q' h hu (star x) = star (equivNeg Q Q' h hu x) :=
   map_star _ x
 
-/-- `CliffordAlgebra.equivNeg` carries the vectors of `Q` onto the vectors of `Q'`. -/
-private theorem map_range_ι_equivNeg :
-    (LinearMap.range (ι Q)).map (equivNeg Q Q' h hu).toLinearMap =
-      LinearMap.range (ι Q') :=
-  (ι_range_map_map (QuadraticMap.isometryEquivNeg h hu).toIsometry).trans <|
-    (congrArg _ (LinearEquiv.range (QuadraticMap.isometryEquivNeg h hu).toLinearEquiv)).trans
-      (Submodule.map_top _)
-
 /-- `CliffordAlgebra.equivNeg` preserves the `ℤ/2`-grading: it carries `evenOdd Q i` onto
 `evenOdd Q' i`. -/
 theorem map_evenOdd_equivNeg (i : ZMod 2) :
-    (evenOdd Q i).map (equivNeg Q Q' h hu).toLinearMap = evenOdd Q' i := by
-  rw [evenOdd, evenOdd, Submodule.map_iSup]
-  refine iSup_congr fun j ↦ ?_
-  rw [← map_range_ι_equivNeg Q Q' h hu]
-  -- `AlgEquiv.toLinearMap` is an abbreviation for the linear map underlying the algebra map.
-  exact Submodule.map_pow _ (equivNeg Q Q' h hu).toAlgHom j
+    (evenOdd Q i).map (equivNeg Q Q' h hu).toLinearMap = evenOdd Q' i :=
+  map_evenOdd_equivOfIsometry _ i
 
 variable {Q Q'} in
 /-- An element lies in `evenOdd Q' i` after applying `CliffordAlgebra.equivNeg` exactly when it
 lies in `evenOdd Q i`. -/
 @[simp]
 theorem equivNeg_mem_evenOdd_iff {x : CliffordAlgebra Q} {i : ZMod 2} :
-    equivNeg Q Q' h hu x ∈ evenOdd Q' i ↔ x ∈ evenOdd Q i := by
-  rw [← map_evenOdd_equivNeg Q Q' h hu i]
-  exact ⟨fun ⟨y, hy, hxy⟩ ↦ (equivNeg Q Q' h hu).injective hxy ▸ hy, fun hx ↦ ⟨x, hx, rfl⟩⟩
+    equivNeg Q Q' h hu x ∈ evenOdd Q' i ↔ x ∈ evenOdd Q i :=
+  equivOfIsometry_mem_evenOdd_iff _
 
 /-- `CliffordAlgebra.equivNeg` is natural along quadratic isometries: for an isometry `f` from
 `Q` to `Q₂`, whose underlying linear map is also an isometry `f'` from `Q'` to `Q₂'`, the

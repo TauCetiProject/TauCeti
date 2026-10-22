@@ -201,6 +201,12 @@ theorem _root_.QuadraticMap.isometryEquivNeg_symm (h : Q' = -Q) (hu : u * u = -1
   congr 1
   exact LinearEquiv.ext fun _ ↦ rfl
 
+/-- The inverse of `QuadraticMap.isometryEquivNeg` multiplies each vector by `-u`. -/
+@[simp]
+theorem _root_.QuadraticMap.isometryEquivNeg_symm_apply (h : Q' = -Q) (hu : u * u = -1) (m : M) :
+    (QuadraticMap.isometryEquivNeg h hu).symm m = -(u • m) := by
+  rw [QuadraticMap.isometryEquivNeg_symm, QuadraticMap.isometryEquivNeg_apply, neg_smul]
+
 end Neg
 
 section Reindex
