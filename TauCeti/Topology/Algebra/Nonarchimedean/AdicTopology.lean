@@ -254,7 +254,10 @@ theorem Ideal.adicTopology_eq_of_radical_eq {R : Type*} [CommRing R] {I J : Idea
 namespace TauCeti.IsAdic
 
 /-- An open quotient of an adic ring has the adic topology of the extended ideal. Neither
-finite generation nor completeness of the defining ideal is required. -/
+finite generation nor completeness of the defining ideal is required.
+
+Use `TauCeti.IsAdic.map_of_isOpenQuotientMap hI f hf`, or
+`hI.map_of_isOpenQuotientMap f hf` with `open TauCeti`. -/
 theorem map_of_isOpenQuotientMap {R S : Type*} [CommRing R] [CommRing S]
     [TopologicalSpace R] [TopologicalSpace S] [IsTopologicalRing S]
     {I : Ideal R} (hI : IsAdic I) (f : R →+* S) (hf : IsOpenQuotientMap f) :
