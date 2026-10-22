@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.MetricSpace.ProperSpace
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Compactoid subsets of normed spaces
@@ -36,6 +37,8 @@ field, the two notions agree (`TauCeti.isCompactoidSet_iff_totallyBounded`).
 * `TauCeti.isCompactoidSet_iff_forall_mem_nhds`: the formulation through zero neighbourhoods.
 * `TauCeti.isCompactoidSet_of_forall_exists_finset`: approximation by finite subfamilies of a
   fixed family suffices.
+* `TauCeti.isCompactoidSet_of_forall_exists_norm_sub_lt`: a set approximated arbitrarily well by
+  compactoid sets is compactoid.
 * `TauCeti.IsCompactoidSet.mono`, `TauCeti.IsCompactoidSet.union`,
   `TauCeti.IsCompactoidSet.add`, `TauCeti.isCompactoidSet_sum`, `TauCeti.IsCompactoidSet.smul`,
   `TauCeti.IsCompactoidSet.image`, `TauCeti.isCompactoidSet_closure_iff`: stability under
@@ -43,6 +46,8 @@ field, the two notions agree (`TauCeti.isCompactoidSet_iff_totallyBounded`).
 * `TotallyBounded.isCompactoidSet`, `Set.Finite.isCompactoidSet`: totally bounded sets, in
   particular finite sets, are compactoid.
 * `TauCeti.IsCompactoidSet.isBounded`: compactoid sets are bounded.
+* `Bornology.IsBounded.isCompactoidSet`: in a finite-dimensional space over a complete nontrivially
+  normed field, conversely, bounded sets are compactoid.
 * `TauCeti.isCompactoidSet_iff_totallyBounded`: over a field whose closed balls are compact,
   compactoid sets are exactly the totally bounded sets.
 
@@ -156,19 +161,28 @@ theorem isCompactoidSet_sum {ι : Type*} {s : Finset ι} (t : ι → Set E)
   Finset.sum_induction t (IsCompactoidSet K) (fun _ _ ↦ IsCompactoidSet.add)
     (fun _ _ ↦ ⟨0, Fin.elim0, fun x hx ↦ ⟨Fin.elim0, (·.elim0), by simp_all⟩⟩) h
 
-/-- The closure of a compactoid set is compactoid. -/
-theorem IsCompactoidSet.closure {S : Set E} (hS : IsCompactoidSet K S) :
-    IsCompactoidSet K (closure S) := by
+/-- A set that lies, for every `ε > 0`, within distance `ε` of some compactoid set is compactoid.
+-/
+theorem isCompactoidSet_of_forall_exists_norm_sub_lt {S : Set E}
+    (h : ∀ ε : ℝ, 0 < ε → ∃ T : Set E, IsCompactoidSet K T ∧ ∀ x ∈ S, ∃ y ∈ T, ‖x - y‖ < ε) :
+    IsCompactoidSet K S := by
   intro ε hε
-  obtain ⟨n, v, hv⟩ := hS (ε / 2) (half_pos hε)
+  obtain ⟨T, hT, hST⟩ := h (ε / 2) (half_pos hε)
+  obtain ⟨n, v, hv⟩ := hT (ε / 2) (half_pos hε)
   refine ⟨n, v, fun x hx ↦ ?_⟩
-  obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.1 hx (ε / 2) (half_pos hε)
+  obtain ⟨y, hy, hxy⟩ := hST x hx
   obtain ⟨a, ha, hy⟩ := hv y hy
   refine ⟨a, ha, ?_⟩
-  calc ‖x - ∑ i, a i • v i‖ = ‖(x - y) + (y - ∑ i, a i • v i)‖ := by congr 1; abel
+  calc ‖x - ∑ i, a i • v i‖ = ‖(x - y) + (y - ∑ i, a i • v i)‖ := by rw [sub_add_sub_cancel]
     _ ≤ ‖x - y‖ + ‖y - ∑ i, a i • v i‖ := norm_add_le _ _
-    _ < ε / 2 + ε / 2 := add_lt_add (by rwa [← dist_eq_norm]) hy
+    _ < ε / 2 + ε / 2 := add_lt_add hxy hy
     _ = ε := add_halves ε
+
+/-- The closure of a compactoid set is compactoid. -/
+theorem IsCompactoidSet.closure {S : Set E} (hS : IsCompactoidSet K S) :
+    IsCompactoidSet K (closure S) :=
+  isCompactoidSet_of_forall_exists_norm_sub_lt fun ε hε ↦ ⟨S, hS, fun x hx ↦ by
+    simpa only [← dist_eq_norm] using Metric.mem_closure_iff.1 hx ε hε⟩
 
 /-- A set is compactoid if and only if its closure is. -/
 @[simp]
@@ -234,6 +248,29 @@ theorem IsCompactoidSet.totallyBounded [ProperSpace K] {S : Set E}
     _ = ε := add_halves ε
 
 end TotallyBounded
+
+section FiniteDimensional
+
+variable [NontriviallyNormedField K] [CompleteSpace K] [NormedAddCommGroup E] [NormedSpace K E]
+  [FiniteDimensional K E]
+
+/-- A bounded subset of a finite-dimensional normed space over a complete nontrivially normed
+field is compactoid: after scaling by a scalar of large norm, its coordinates in a basis have norm
+at most one. -/
+theorem _root_.Bornology.IsBounded.isCompactoidSet {S : Set E} (hS : Bornology.IsBounded S) :
+    IsCompactoidSet K S := by
+  let b := Module.finBasis K E
+  obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 (hS.image b.equivFunL.toContinuousLinearMap)
+  obtain ⟨c, hc⟩ := NormedField.exists_lt_norm K (max M 0)
+  have hc₀ : 0 < ‖c‖ := (le_max_right M 0).trans_lt hc
+  refine fun ε hε ↦ ⟨_, fun i ↦ c • b i, fun x hx ↦ ⟨fun i ↦ b.repr x i * c⁻¹, fun i ↦ ?_, ?_⟩⟩
+  · have hxM : ‖b.equivFunL x‖ ≤ M := by
+      simpa only [ContinuousLinearEquiv.coe_coe] using hM _ ⟨x, hx, rfl⟩
+    rw [norm_mul, norm_inv, mul_inv_le_iff₀ hc₀, one_mul, ← Module.Basis.equivFunL_apply]
+    exact (norm_le_pi_norm (b.equivFunL x) i).trans <| hxM.trans <| (le_max_left M 0).trans hc.le
+  · simpa [smul_smul, inv_mul_cancel_right₀ (norm_pos_iff.1 hc₀), b.sum_repr x] using hε
+
+end FiniteDimensional
 
 end TauCeti
 
