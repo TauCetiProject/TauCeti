@@ -15,7 +15,7 @@ public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
 /-!
 # The combinatorial hat differential of a Heegaard diagram
 
-The hat chain group `ĈF` of a pointed Heegaard diagram is the `𝔽₂`-vector space on its
+The hat chain group `\widehat{CF}` of a pointed Heegaard diagram is the `𝔽₂`-vector space on its
 generators. Its differential sends a generator `x` to the sum over generators `y` of the number,
 modulo two, of holomorphic disks from `x` to `y` of Maslov index one avoiding the basepoints. The
 domain of such a disk is a nonnegative domain from `x` to `y` with multiplicity zero at every
