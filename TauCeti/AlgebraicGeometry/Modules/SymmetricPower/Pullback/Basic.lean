@@ -17,7 +17,8 @@ pullback--pushforward adjunction equation. In degree one the comparison is an is
 
 The comparison is the input for proving that symmetric powers commute with pullback on
 quasicoherent modules. That stronger invertibility statement in arbitrary degree requires the
-affine calculation and descent and is not asserted here.
+affine calculation and descent; it is proved in
+`TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Pullback.Quasicoherent`.
 
 ## Main declaration
 

@@ -91,6 +91,8 @@ bounded below by `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
   set;
 * `TauCeti.mongeAmpereMeasure_ite_eq_restrict` — the measure is local: restricting a convex
   function to an open convex subset restricts its Monge–Ampère measure;
+* `TauCeti.injOn_gradient_inter_setOf_det_ne_zero` — the gradient is injective on the points
+  where the subdifferential is the single gradient with an expansion of nonzero determinant;
 * `TauCeti.withDensity_image_gradient_eq_setLIntegral` — the change of variables formula
   `∫_{∇F(t)} g dμ = ∫_t det (H x) g (∇F x) dμ` along the gradient of a convex function, on a set
   `t` where the subdifferential is the single gradient with positive derivative `H x`;
@@ -387,6 +389,29 @@ section Smooth
 
 variable [μ.IsAddHaarMeasure]
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The gradient of a convex `f : E → EReal` is injective on the points of a set `t` at which the
+subdifferential of `f` is the single gradient `∇F x`, with the expansion
+`y' = ∇F x + H x (x' - x) + o(‖x' - x‖)`, and `det (H x) ≠ 0`. If two such points `x₁ ≠ x₂` had
+the same gradient, it would be a subgradient along the segment between them, and the expansion
+at `x₁` would vanish in the direction `x₂ - x₁`
+(`apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le`). -/
+theorem injOn_gradient_inter_setOf_det_ne_zero (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
+    {H : E → E →L[ℝ] E} {t : Set E}
+    (hP : ∀ x ∈ t, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
+      ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖) :
+    InjOn (∇ fun x' => (f x').toReal) (t ∩ {x | (H x).det ≠ 0}) := by
+  intro x₁ hx₁ x₂ hx₂ hg
+  by_contra hne
+  have hy₁ : (∇ fun x' => (f x').toReal) x₁ ∈ subdifferential (innerₗ E) f x₁ := by
+    rw [(hP x₁ hx₁.1).1]; exact mem_singleton _
+  have hy₂ : (∇ fun x' => (f x').toReal) x₁ ∈ subdifferential (innerₗ E) f x₂ := by
+    rw [hg, (hP x₂ hx₂.1).1]; exact mem_singleton _
+  refine hx₁.2 (LinearMap.det_eq_zero_iff_ker_ne_bot.2 ((Submodule.ne_bot_iff _).2
+    ⟨x₂ - x₁, LinearMap.mem_ker.2 ?_, sub_ne_zero.2 (Ne.symm hne)⟩))
+  exact apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le hf hy₁ hy₂ (hP x₁ hx₁.1).2
+
 /-- **Change of variables along the gradient of a convex function.** Let `f : E → EReal` be convex,
 with real representative `F x = (f x).toReal`, and let `t` be a measurable set at each point of
 which the subdifferential of `f` is the single gradient `∇F x`, with the expansion
@@ -409,16 +434,8 @@ theorem withDensity_image_gradient_eq_setLIntegral
   have hder : ∀ s ⊆ t, ∀ x ∈ s, HasFDerivWithinAt G (H x) s x := fun s hs x hx =>
     hasFDerivWithinAt_gradient_toReal_of_forall_mem_subdifferential_norm_sub_le
       (fun x' hx' => by rw [(hP x' (hs hx')).1]; exact mem_singleton _) (hP x (hs hx)).2.2
-  have hinj : InjOn G Z := by
-    intro x₁ hx₁ x₂ hx₂ hg
-    by_contra hne
-    have hy₁ : G x₁ ∈ subdifferential (innerₗ E) f x₁ := by
-      rw [(hP x₁ hx₁.1).1]; exact mem_singleton _
-    have hy₂ : G x₁ ∈ subdifferential (innerₗ E) f x₂ := by
-      rw [hg, (hP x₂ hx₂.1).1]; exact mem_singleton _
-    refine hx₁.2 (LinearMap.det_eq_zero_iff_ker_ne_bot.2 ((Submodule.ne_bot_iff _).2
-      ⟨x₂ - x₁, LinearMap.mem_ker.2 ?_, sub_ne_zero.2 (Ne.symm hne)⟩))
-    exact apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le hf hy₁ hy₂ (hP x₁ hx₁.1).2.2
+  have hinj : InjOn G Z :=
+    injOn_gradient_inter_setOf_det_ne_zero hf fun x hx => ⟨(hP x hx).1, (hP x hx).2.2⟩
   have hdeg : ∀ x ∈ t \ Z, (H x).det = 0 := fun x hx => not_not.1 fun h => hx.2 ⟨hx.1, h⟩
   have hZ0 : μ.withDensity g (G '' (t \ Z)) = 0 :=
     withDensity_absolutelyContinuous μ g

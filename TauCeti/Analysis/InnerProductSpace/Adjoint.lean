@@ -9,7 +9,12 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 
 /-!
-# Adjoints of isometric isomorphisms, of `L²` coordinate projections, and norm bounds
+# Adjoints of linear maps
+
+For bounded operators between complete inner product spaces, the adjoint takes values in the
+orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
+For a continuous linear equivalence between complete inner product spaces, the adjoint is
+bijective (`ContinuousLinearEquiv.adjoint_bijective`).
 
 Two families of adjoints of linear maps between finite-dimensional inner product spaces:
 
@@ -33,8 +38,40 @@ linear map, the orthogonal complement of its kernel has the dimension of the cod
 public section
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+namespace ContinuousLinearMap
+
+open scoped InnerProduct
+
+/-- The adjoint of a bounded operator takes values in the orthogonal complement of its kernel. -/
+theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
+    (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
+  rw [orthogonal_ker]
+  exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+open scoped InnerProduct
+
+/-- The adjoint of a continuous linear equivalence between Hilbert spaces is bijective. -/
+@[simp]
+theorem adjoint_bijective [CompleteSpace E] [CompleteSpace F] (e : E ≃L[𝕜] F) :
+    Function.Bijective ((e : E →L[𝕜] F)†) := by
+  refine Function.bijective_iff_has_inverse.mpr ⟨((e.symm : F →L[𝕜] E)†), ?_, ?_⟩
+  · intro x
+    simp only [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+      e.coe_comp_coe_symm, ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
+  · intro x
+    simp only [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+      e.coe_symm_comp_coe, ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
+
+end ContinuousLinearEquiv
+
+variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
 namespace LinearIsometryEquiv
 
