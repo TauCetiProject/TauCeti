@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Algebra.MvPolynomial.Monomial
@@ -180,6 +179,7 @@ theorem blockHomogenize_map {T : Type*} [CommSemiring T] (φ : R →+* T) (f : M
   simp only [coeff_map, coeff_sumElim_blockHomogenize]
   split_ifs <;> simp
 
+@[simp]
 theorem blockHomogenize_monomial (e : S →₀ ℕ) (c : R) :
     blockHomogenize b d (monomial e c) =
       if ∀ h, e.mapDomain b h ≤ d h then monomial (blockHomogenizeExponent b d e) c else 0 :=
@@ -198,6 +198,7 @@ theorem blockHomogenize_one :
   simpa using blockHomogenize_C b d (1 : R)
 
 /-- With all block degrees zero, block homogenization keeps only the constant term. -/
+@[simp]
 theorem blockHomogenize_degree_zero (f : MvPolynomial S R) :
     blockHomogenize b 0 f = C (f.coeff 0) := by
   classical
