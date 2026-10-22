@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
-public import TauCeti.LinearAlgebra.ExteriorPower.Determinant
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.RepresentationTheory.ClassicalGroups.Volume
 
@@ -15,8 +14,8 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Volume
 
 The wedge product identifies two bivectors in a four-dimensional vector space with a top-degree
 exterior vector. The standard volume map therefore gives a symmetric perfect bilinear form on
-`⋀²(K⁴)`. The exterior-square standard action of `SL₄(K)` preserves this form: acting on both
-bivectors is the same as acting on their wedge, while `SL₄(K)` acts trivially in top degree.
+`⋀²(K⁴)`. Applying an endomorphism to both bivectors scales this form by its determinant, and the
+exterior-square standard action of `SL₄(K)` preserves it as the determinant-one specialization.
 
 This file bundles that action as a homomorphism from `SL₄(K)` to the isometry group of the wedge
 form. Over `ℂ`, it is the six-dimensional orthogonal representation underlying the exceptional
@@ -31,6 +30,8 @@ comparison between the four-dimensional special linear group and the six-dimensi
 ## Main results
 
 * `TauCeti.spinSixWedgeForm_ιMulti`: the wedge form evaluates to a determinant on pure wedges.
+* `TauCeti.spinSixWedgeForm_comp_exteriorPower`: applying the exterior-square of an endomorphism
+  to both arguments scales the form by its determinant.
 
 ## References
 
@@ -58,6 +59,15 @@ noncomputable def spinSixWedgeForm :
         (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv)
     (by simp)
 
+/-- The fixed-degree presentation of `spinSixWedgeForm` as wedge multiplication followed by the
+standard top-degree determinant trivialisation. -/
+theorem spinSixWedgeForm_eq_compr₂ : spinSixWedgeForm K =
+    (exteriorPower.wedge K (Fin 4 → K) 2 2).compr₂
+      (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv := by
+  unfold spinSixWedgeForm
+  simpa only using exteriorPower.wedgePairing_eq_compr₂_of_finrank_eq 4 (by simp) rfl
+    (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv
+
 /-- On pure wedges, the wedge form is the determinant of the concatenated vectors. -/
 @[simp]
 theorem spinSixWedgeForm_ιMulti (u v : Fin 2 → (Fin 4 → K)) :
@@ -65,12 +75,7 @@ theorem spinSixWedgeForm_ιMulti (u v : Fin 2 → (Fin 4 → K)) :
       (exteriorPower.ιMulti K 2 v) =
       (Matrix.of (Fin.append u v)).det := by
   -- `wedgePairing` stores its degree equalities as transports; expose the fixed-degree wedge map.
-  rw [show spinSixWedgeForm K =
-      (exteriorPower.wedge K (Fin 4 → K) 2 2).compr₂
-        (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv by
-    unfold spinSixWedgeForm
-    simpa only using exteriorPower.wedgePairing_eq_compr₂_of_finrank_eq 4 (by simp) rfl
-      (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv]
+  rw [spinSixWedgeForm_eq_compr₂]
   simp only [LinearMap.compr₂_apply]
   rw [exteriorPower.wedge_ιMulti]
   -- Remove the remaining linear-map coercion so the top-degree basis theorem matches the goal.
@@ -111,33 +116,17 @@ coordinate change is not itself special linear. -/
 theorem spinSixWedgeForm_comp_exteriorPower (f : (Fin 4 → K) →ₗ[K] (Fin 4 → K)) :
     (spinSixWedgeForm K).comp (exteriorPower.map 2 f) (exteriorPower.map 2 f) =
       LinearMap.det f • spinSixWedgeForm K := by
-  apply exteriorPower.linearMap_ext
-  apply AlternatingMap.ext
-  intro u
-  apply exteriorPower.linearMap_ext
-  apply AlternatingMap.ext
-  intro v
-  simp only [LinearMap.compAlternatingMap_apply, LinearMap.BilinForm.comp_apply,
-    exteriorPower.map_apply_ιMulti]
-  rw [show spinSixWedgeForm K =
-      (exteriorPower.wedge K (Fin 4 → K) 2 2).compr₂
-        (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv by
-    unfold spinSixWedgeForm
-    simpa only using exteriorPower.wedgePairing_eq_compr₂_of_finrank_eq 4 (by simp) rfl
-      (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv]
-  simp only [LinearMap.smul_apply, LinearMap.compr₂_apply]
-  rw [exteriorPower.wedge_ιMulti, exteriorPower.wedge_ιMulti]
-  simp only [smul_eq_mul]
-  have happ : Fin.append (f ∘ u) (f ∘ v) = f ∘ Fin.append u v := by
-    funext i
-    refine Fin.addCases ?_ ?_ i <;> intro j <;>
-      simp only [Fin.append_left, Fin.append_right, Function.comp_apply]
-  change (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv
-      (exteriorPower.ιMulti K 4 (Fin.append (f ∘ u) (f ∘ v))) =
-    LinearMap.det f * (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv
-      (exteriorPower.ιMulti K 4 (Fin.append u v))
-  rw [happ, Module.Basis.exteriorPowerTopEquiv_apply_ιMulti,
-    Module.Basis.exteriorPowerTopEquiv_apply_ιMulti, Module.Basis.det_comp]
+  rw [spinSixWedgeForm_eq_compr₂]
+  simpa only [LinearMap.BilinForm.comp] using
+    exteriorPower.wedgePairing_compl₁₂_exteriorPower (Pi.basisFun K (Fin 4)) rfl f
+
+/-- Pointwise form of `spinSixWedgeForm_comp_exteriorPower` for rewriting evaluations. -/
+@[simp]
+theorem spinSixWedgeForm_exteriorPower_map_apply
+    (f : (Fin 4 → K) →ₗ[K] (Fin 4 → K)) (x y : ⋀[K]^2 (Fin 4 → K)) :
+    spinSixWedgeForm K (exteriorPower.map 2 f x) (exteriorPower.map 2 f y) =
+      LinearMap.det f * spinSixWedgeForm K x y := by
+  exact LinearMap.congr_fun₂ (spinSixWedgeForm_comp_exteriorPower K f) x y
 
 /-- The exterior-square standard representation of `SL₄(K)` preserves the wedge form. -/
 theorem spinSixWedgeForm_invariant (g : Matrix.SpecialLinearGroup (Fin 4) K) :

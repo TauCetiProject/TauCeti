@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
+public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 -- Private: the exterior algebra basis is used only inside the proof of
 -- `Set.powersetCard.sign_mul_sign_compl`.
 import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
@@ -47,6 +48,40 @@ theorem wedgePairing_eq_compr₂_of_finrank_eq (n : ℕ) (hfin : Module.finrank 
       (wedge R M k l).compr₂ (hdeg ▸ vol) := by
   subst n
   rfl
+
+/-- Applying an endomorphism to both arguments of a complementary-degree wedge pairing scales it
+by the determinant of the endomorphism. -/
+theorem wedgePairing_compl₁₂_exteriorPower (b : Module.Basis (Fin n) R M) (hkl : k + l = n)
+    (f : M →ₗ[R] M) :
+    LinearMap.compl₁₂ ((wedge R M k l).compr₂ (hkl ▸ b.exteriorPowerTopEquiv).toLinearMap)
+      (exteriorPower.map k f) (exteriorPower.map l f) =
+      LinearMap.det f • ((wedge R M k l).compr₂ (hkl ▸ b.exteriorPowerTopEquiv).toLinearMap) := by
+  apply exteriorPower.linearMap_ext
+  apply AlternatingMap.ext
+  intro u
+  apply exteriorPower.linearMap_ext
+  apply AlternatingMap.ext
+  intro v
+  simp only [LinearMap.compAlternatingMap_apply, LinearMap.compl₁₂_apply,
+    LinearMap.smul_apply, LinearMap.compr₂_apply, exteriorPower.map_apply_ιMulti]
+  rw [exteriorPower.wedge_ιMulti, exteriorPower.wedge_ιMulti]
+  simp only [smul_eq_mul]
+  have happ : Fin.append (f ∘ u) (f ∘ v) = f ∘ Fin.append u v := by
+    funext i
+    refine Fin.addCases ?_ ?_ i <;> intro j <;>
+      simp only [Fin.append_left, Fin.append_right, Function.comp_apply]
+  change (hkl ▸ b.exteriorPowerTopEquiv).toLinearMap
+      (exteriorPower.ιMulti R (k + l) (Fin.append (f ∘ u) (f ∘ v))) =
+    LinearMap.det f * (hkl ▸ b.exteriorPowerTopEquiv).toLinearMap
+      (exteriorPower.ιMulti R (k + l) (Fin.append u v))
+  rw [happ]
+  subst n
+  -- The transport in `hkl ▸` is definitionally the top-degree equivalence after the degree proof
+  -- is substituted; expose it so the basis determinant theorem applies.
+  change b.exteriorPowerTopEquiv (exteriorPower.ιMulti R (k + l) (f ∘ Fin.append u v)) =
+    LinearMap.det f * b.exteriorPowerTopEquiv (exteriorPower.ιMulti R (k + l) (Fin.append u v))
+  rw [Module.Basis.exteriorPowerTopEquiv_apply_ιMulti,
+    Module.Basis.exteriorPowerTopEquiv_apply_ιMulti, Module.Basis.det_comp]
 
 /-- **The wedge pairing on exterior-power basis vectors**: `e_s` and `e_t` pair to the shuffle sign
 of `s` times the volume `vol b.topVector` when `s` and `t` are disjoint, and to zero otherwise.
