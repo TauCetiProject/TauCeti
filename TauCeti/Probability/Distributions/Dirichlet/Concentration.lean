@@ -9,7 +9,6 @@ public import TauCeti.Probability.Distributions.Dirichlet.Moments
 public import TauCeti.Probability.Distributions.Categorical
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Concentration
 import TauCeti.Analysis.InnerProductSpace.PiL2
-import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import Mathlib.Topology.Order.AtTopBotIxx
 
 /-!
@@ -43,46 +42,6 @@ open scoped NNReal
 namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [Nonempty ι]
-
-/-- The expected squared norm of a Dirichlet vector with concentration vector `c p`, where `p` is
-a probability vector. As `c` tends to zero this tends to one, forcing the law towards the
-vertices of the simplex. -/
-theorem integral_norm_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ≥0 ι)
-    (hp : ∀ i, 0 < p.weights i) {c : ℝ} (hc : 0 < c) :
-    ∫ x, ‖x‖ ^ 2 ∂dirichletMeasure (fun i ↦ c * (p.weights i : ℝ)) =
-      (c * ∑ i, (p.weights i : ℝ) ^ 2 + 1) / (c + 1) := by
-  have ha (i : ι) : 0 < c * (p.weights i : ℝ) := mul_pos hc (by exact_mod_cast hp i)
-  let _ := isProbabilityMeasure_dirichletMeasure ha
-  have hcoord (i : ι) :
-      ∫ x, (x i) ^ 2 ∂dirichletMeasure (fun j ↦ c * (p.weights j : ℝ)) =
-        ((p.weights i : ℝ) + c * (p.weights i : ℝ) ^ 2) / (c + 1) := by
-    have hv := variance_eval_dirichletMeasure ha i
-    rw [variance_eq_sub (memLp_eval_dirichletMeasure i 2),
-      integral_eval_dirichletMeasure ha, p.sum_mul_coe_weights] at hv
-    calc
-      _ = c * (p.weights i : ℝ) * (c - c * (p.weights i : ℝ)) /
-            (c ^ 2 * (c + 1)) + (c * (p.weights i : ℝ) / c) ^ 2 :=
-        eq_add_of_sub_eq hv
-      _ = _ := by
-        field_simp
-        ring
-  simp only [EuclideanSpace.real_norm_sq_eq]
-  rw [integral_finsetSum _ fun i _ ↦ (memLp_eval_dirichletMeasure i 2).integrable_sq]
-  simp only [hcoord]
-  rw [← Finset.sum_div, Finset.sum_add_distrib, p.sum_coe_weights, ← Finset.mul_sum, add_comm]
-
-/-- The expectation of `1 - ‖x‖ ^ 2` under a Dirichlet law with concentration vector `c p`, where
-`p` is a probability vector. It tends to zero with `c`. -/
-theorem integral_one_sub_norm_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ≥0 ι)
-    (hp : ∀ i, 0 < p.weights i) {c : ℝ} (hc : 0 < c) :
-    ∫ x, 1 - ‖x‖ ^ 2 ∂dirichletMeasure (fun i ↦ c * (p.weights i : ℝ)) =
-      c * (1 - ∑ i, (p.weights i : ℝ) ^ 2) / (c + 1) := by
-  let _ := isProbabilityMeasure_dirichletMeasure fun i ↦
-    mul_pos hc (by exact_mod_cast hp i : (0 : ℝ) < p.weights i)
-  rw [integral_sub (integrable_const _) (memLp_id_dirichletMeasure 2).norm.integrable_sq,
-    integral_const, probReal_univ, one_smul, integral_norm_sq_dirichletMeasure_smul p hp hc]
-  field_simp
-  ring
 
 /-- Decreasing the total concentration at fixed strictly positive weights makes the Dirichlet
 laws converge weakly to the categorical law on the simplex vertices with the same weights. -/

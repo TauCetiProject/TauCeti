@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Measure.Portmanteau
-import Mathlib.Probability.Moments.Variance
+import TauCeti.Probability.Moments.Variance
 
 /-!
 # Weak limits from vanishing second moments
@@ -30,19 +30,7 @@ public section
 open Filter MeasureTheory Topology
 open scoped NNReal
 
-namespace MeasureTheory
-
-/-- On a probability space, the mean of a square-integrable function is at most the square root of
-its second moment. -/
-theorem integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    [IsProbabilityMeasure μ] {g : Ω → ℝ} (hg : MemLp g 2 μ) :
-    ∫ x, g x ∂μ ≤ √(∫ x, g x ^ 2 ∂μ) := by
-  apply Real.le_sqrt_of_sq_le
-  have h := ProbabilityTheory.variance_nonneg g μ
-  rw [ProbabilityTheory.variance_eq_sub hg] at h
-  simpa only [Pi.pow_apply, sub_nonneg] using h
-
-namespace ProbabilityMeasure
+namespace MeasureTheory.ProbabilityMeasure
 
 /-- Probability measures `μ i` converge weakly to `ν` if each bounded `K`-Lipschitz function `f`
 is within `K * d i` of a `μ i`-integrable function whose `μ i`-integral is the `ν`-integral of
@@ -91,6 +79,4 @@ theorem tendsto_dirac_of_integral_dist_sq_tendsto_zero {E ι : Type*}
   · simp [integral_dirac' _ _ hK.continuous.stronglyMeasurable]
   · simpa [Real.dist_eq] using hK.dist_le_mul y x
 
-end ProbabilityMeasure
-
-end MeasureTheory
+end MeasureTheory.ProbabilityMeasure
