@@ -108,6 +108,25 @@ def plucker (x : Fin p → ι → R) (s : powersetCard ι p) : R :=
 theorem plucker_apply (x : Fin p → ι → R) (s : powersetCard ι p) :
     plucker x s = (Matrix.of fun i j ↦ x i (ofFinEmbEquiv.symm s j)).det := (rfl)
 
+/-- A maximal minor on any enumeration of its columns is the Plücker coordinate on its sorted
+range, multiplied by a permutation sign. -/
+theorem _root_.Matrix.exists_det_submatrix_eq_sign_mul_plucker (A : Matrix (Fin p) ι R)
+    (e : Fin p ↪ ι) :
+    ∃ σ : Equiv.Perm (Fin p), (A.submatrix id e).det =
+      (σ.sign : R) * plucker A.row (ofFinEmb p ι e) := by
+  set s := ofFinEmb p ι e
+  set t := ofFinEmbEquiv.symm s
+  have hrange : Set.range t = Set.range e := Set.ext fun i ↦ by
+    rw [mem_range_ofFinEmbEquiv_symm_iff_mem, mem_ofFinEmb_iff_mem_range]
+  let σ : Equiv.Perm (Fin p) := (Equiv.ofInjective e e.injective).trans
+    ((Set.equivOfEq hrange.symm).trans (Equiv.ofInjective t t.injective).symm)
+  have he : A.submatrix id e = (A.submatrix id t).submatrix id σ := by
+    ext i j
+    simp [σ, Equiv.apply_ofInjective_symm]
+  have hp : (A.submatrix id t).det = plucker A.row s :=
+    (plucker_apply A.row s).symm
+  exact ⟨σ, by rw [he, Matrix.det_permute', hp]⟩
+
 /-- The empty family has Plücker coordinate `1`. -/
 @[simp]
 theorem plucker_of_isEmpty (x : Fin 0 → ι → R) (s : powersetCard ι 0) : plucker x s = 1 :=
@@ -239,23 +258,10 @@ theorem plucker_ne_zero_iff [IsDomain R] [Finite ι] (x : Fin p → ι → R) :
   · intro hx
     obtain ⟨e, he⟩ := (Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero
       (A := Matrix.of x)).1 hx
-    -- Sort the chosen columns; the resulting minor differs only by a permutation sign.
-    have hcard : (Finset.image e Finset.univ).card = p := by
-      simp [Finset.card_image_of_injective, e.injective]
-    let s : powersetCard ι p := ofCard hcard
-    let σ : Equiv.Perm (Fin p) :=
-      (Finset.orderIsoOfFin (Finset.image e Finset.univ) hcard).toEquiv.trans
-        ((Set.equivOfEq Fintype.coe_image_univ).trans (Equiv.ofInjective e e.injective).symm)
-    have hσ (j : Fin p) : e (σ j) = ofFinEmbEquiv.symm s j := by
-      simp [σ, Equiv.apply_ofInjective_symm]
-      rfl
-    refine Function.ne_iff.2 ⟨s, ?_⟩
-    have hminor : (Matrix.of fun i j ↦ x i (ofFinEmbEquiv.symm s j)) =
-        ((Matrix.of x).submatrix id e).submatrix id σ := by
-      ext i j
-      simp [hσ]
-    rw [plucker_apply, hminor, Matrix.det_permute']
-    exact mul_ne_zero (σ.sign.isUnit.map (Int.castRingHom R)).ne_zero he
+    obtain ⟨σ, hσ⟩ := (Matrix.of x).exists_det_submatrix_eq_sign_mul_plucker e
+    refine Function.ne_iff.2 ⟨ofFinEmb p ι e, ?_⟩
+    intro h
+    exact he (by simp [hσ, h])
 
 section Field
 
