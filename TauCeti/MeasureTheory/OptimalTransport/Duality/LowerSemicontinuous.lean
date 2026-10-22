@@ -140,15 +140,6 @@ section Polish
 
 variable [PolishSpace X] [BorelSpace X] [PolishSpace Y] [BorelSpace Y]
 
-/-- For a nonnegative cost `c`, continuous in its first argument, and a potential `ψ` bounded
-above, the `c`-conjugate `x ↦ ⨅ y, c x y - ψ y` is upper semicontinuous. -/
-private theorem upperSemicontinuous_iInf_sub {α β : Type*} [TopologicalSpace α] {c : α → β → ℝ}
-    (hc : ∀ y, Continuous (c · y)) (hc0 : ∀ x y, 0 ≤ c x y) {ψ : β → ℝ}
-    (hψ : BddAbove (range ψ)) : UpperSemicontinuous fun x ↦ ⨅ y, c x y - ψ y := by
-  obtain ⟨C, hC⟩ := hψ
-  exact upperSemicontinuous_ciInf (fun x ↦ ⟨-C, forall_mem_range.2 fun y ↦ by
-    linarith [hc0 x y, hC ⟨y, rfl⟩]⟩) fun y ↦ ((hc y).sub continuous_const).upperSemicontinuous
-
 /-- **Kantorovich duality over bounded upper semicontinuous potentials.** For a nonnegative
 lower-semicontinuous cost on Polish spaces, the primal transport cost is the least upper bound, in
 `ℝ≥0∞`, of the positive parts of the values of the dual-feasible pairs of bounded upper

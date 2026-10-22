@@ -39,8 +39,8 @@ Benamou–Brenier formula for the cost `L w = ‖w‖ ^ p`.
 The infimum is taken in `ℝ`, so the results assume `φ` and `L` bounded below, which makes it finite
 for `t ≥ 0`. At `t = 0` the formula degenerates to the infimum of `φ`; the Hopf–Lax function
 recovers `φ` as a limit `t → 0⁺` only under additional hypotheses. For the cost `‖w‖ ^ p` with
-`1 < p`, this holds at every point where `φ` is lower semicontinuous, and for a bounded `φ` the
-Hopf–Lax function is jointly continuous at positive times, whatever the regularity of `φ`. Times
+`1 < p`, this holds at every point where `φ` is lower semicontinuous, and for `φ` bounded below
+the Hopf–Lax function is jointly continuous at positive times, whatever the regularity of `φ`. Times
 `t < 0` are not studied here.
 
 ## Main definitions
@@ -65,7 +65,7 @@ Hopf–Lax function is jointly continuous at positive times, whatever the regula
 * `TauCeti.hopfLax_norm_rpow_le` and `TauCeti.abs_hopfLax_norm_rpow_le`: for the cost `‖w‖ ^ p`
   with `p > 0`, `u (t, x) ≤ φ x`, and `u` is bounded by any bound of `φ`.
 * `TauCeti.lowerSemicontinuousOn_hopfLax_norm_rpow` and `TauCeti.continuousOn_hopfLax_norm_rpow`:
-  for `1 ≤ p` and bounded `φ`, `u` is jointly continuous on the open half-space `t > 0`; in
+  for `1 ≤ p` and `φ` bounded below, `u` is jointly continuous on the open half-space `t > 0`; in
   particular it is continuous in space at each time `t > 0`
   (`TauCeti.continuous_hopfLax_norm_rpow`).
 * `TauCeti.tendsto_hopfLax_norm_rpow_nhdsGT_zero`: for `1 < p` and `φ` bounded below,
@@ -259,23 +259,21 @@ theorem abs_hopfLax_norm_rpow_le (hp : 0 < p) {C : ℝ} (hφ : ∀ y, |φ y| ≤
   simpa using add_mul_le_hopfLax (L := fun w : E ↦ ‖w‖ ^ p) (l := 0) hm (fun w ↦ by positivity)
     ht x
 
-/-- For `1 ≤ p` and a bounded initial datum `φ`, the Hopf–Lax value for the cost `‖w‖ ^ p` is
-jointly lower semicontinuous in time and space on the open half-space `t > 0`. No regularity of `φ`
-is needed. -/
-theorem lowerSemicontinuousOn_hopfLax_norm_rpow (hp : 1 ≤ p)
-    (hφ : Bornology.IsBounded (range φ)) :
+/-- For `1 ≤ p` and an initial datum `φ` bounded below, the Hopf–Lax value for the cost
+`‖w‖ ^ p` is jointly lower semicontinuous in time and space on the open half-space `t > 0`. No
+regularity of `φ` is needed. -/
+theorem lowerSemicontinuousOn_hopfLax_norm_rpow (hp : 1 ≤ p) (hφ : BddBelow (range φ)) :
     LowerSemicontinuousOn (fun q : ℝ × E ↦ hopfLax (‖·‖ ^ p) φ q.1 q.2) {q | 0 < q.1} := by
   -- Points `y` far from `x` cannot compete with `y = x`, and for `y` in a bounded region the
   -- penalties `‖x - y‖ ^ p / t ^ (p - 1)` are uniformly equicontinuous in `(t, x)`.
   have hp0 : 0 < p := zero_lt_one.trans_le hp
-  obtain ⟨A, hA⟩ := hφ.bddBelow
-  obtain ⟨B, hB⟩ := hφ.bddAbove
+  obtain ⟨A, hA⟩ := hφ
   rintro ⟨t₀, x₀⟩ (ht₀ : 0 < t₀) m (hm : m < hopfLax (‖·‖ ^ p) φ t₀ x₀)
   set u₀ := hopfLax (‖·‖ ^ p) φ t₀ x₀
   have hε : 0 < (u₀ - m) / 2 := by linarith
-  -- Beyond distance `R` from `x`, the penalty exceeds the oscillation of `φ` for `t ≤ 2 t₀`.
+  -- Beyond distance `R` from `x`, the penalty exceeds `φ x₀ - A` for `t ≤ 2 t₀`.
   obtain ⟨R, hR0, hR⟩ := ((eventually_gt_atTop 0).and ((tendsto_rpow_atTop hp0).eventually_ge_atTop
-    ((B - A + 1) * (2 * t₀) ^ (p - 1)))).exists
+    ((φ x₀ - A + 1) * (2 * t₀) ^ (p - 1)))).exists
   -- The penalty `(t, d) ↦ d ^ p / t ^ (p - 1)` is uniformly continuous on a compact box.
   let g : ℝ × ℝ → ℝ := fun z ↦ z.2 ^ p / z.1 ^ (p - 1)
   let K : Set (ℝ × ℝ) := Icc (t₀ / 2) (2 * t₀) ×ˢ Icc 0 (R + 1)
@@ -312,31 +310,31 @@ theorem lowerSemicontinuousOn_hopfLax_norm_rpow (hp : 1 ≤ p)
       rwa [sub_sub_sub_cancel_right]
     have hclose := hgδ _ hmem _ hmem₀ hdist
     rw [Real.dist_eq] at hclose
-    have := hopfLax_norm_rpow_le_add_div (p := p) hφ.bddBelow ht₀ x₀ y
+    have := hopfLax_norm_rpow_le_add_div (p := p) ⟨A, hA⟩ ht₀ x₀ y
     simp only [g] at hclose
     linarith [(abs_lt.1 hclose).1]
-  · -- Distant points: the penalty alone exceeds the oscillation of `φ`.
-    have hRt : B - A + 1 ≤ R ^ p / t ^ (p - 1) := by
+  · -- Distant points: the penalty alone exceeds `φ x₀ - A`.
+    have hRt : φ x₀ - A + 1 ≤ R ^ p / t ^ (p - 1) := by
       rw [le_div_iff₀ (by positivity)]
       exact (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow htpos.le ht.2 (by linarith))
-        (by linarith [hA ⟨x₀, rfl⟩, hB ⟨x₀, rfl⟩])).trans hR
+        (by linarith [hA ⟨x₀, rfl⟩])).trans hR
     have := add_rpow_div_le_add_norm_rpow_div hp0.le (fun y ↦ hA ⟨y, rfl⟩) hR0.le htpos
       (not_lt.1 hy)
-    have := hopfLax_norm_rpow_le hp0 hφ.bddBelow ht₀.le x₀
-    linarith [hB ⟨x₀, rfl⟩]
+    have := hopfLax_norm_rpow_le hp0 ⟨A, hA⟩ ht₀.le x₀
+    linarith
 
-/-- For `1 ≤ p` and a bounded initial datum `φ`, the Hopf–Lax value for the cost `‖w‖ ^ p` is
-jointly continuous in time and space on the open half-space `t > 0`. -/
-theorem continuousOn_hopfLax_norm_rpow (hp : 1 ≤ p) (hφ : Bornology.IsBounded (range φ)) :
+/-- For `1 ≤ p` and an initial datum `φ` bounded below, the Hopf–Lax value for the cost
+`‖w‖ ^ p` is jointly continuous in time and space on the open half-space `t > 0`. -/
+theorem continuousOn_hopfLax_norm_rpow (hp : 1 ≤ p) (hφ : BddBelow (range φ)) :
     ContinuousOn (fun q : ℝ × E ↦ hopfLax (‖·‖ ^ p) φ q.1 q.2) {q | 0 < q.1} :=
   continuousOn_iff_lower_upperSemicontinuousOn.2 ⟨lowerSemicontinuousOn_hopfLax_norm_rpow hp hφ,
-    upperSemicontinuousOn_hopfLax hφ.bddBelow ⟨0, forall_mem_range.2 fun _ ↦ by positivity⟩
+    upperSemicontinuousOn_hopfLax hφ ⟨0, forall_mem_range.2 fun _ ↦ by positivity⟩
       (continuous_norm.rpow_const fun _ ↦ Or.inr (zero_le_one.trans hp))⟩
 
-/-- For `1 ≤ p`, a bounded initial datum `φ` and a time `t > 0`, the Hopf–Lax value for the cost
-`‖w‖ ^ p` is continuous in space. -/
-theorem continuous_hopfLax_norm_rpow (hp : 1 ≤ p) (hφ : Bornology.IsBounded (range φ))
-    (ht : 0 < t) : Continuous (hopfLax (‖·‖ ^ p) φ t) :=
+/-- For `1 ≤ p`, an initial datum `φ` bounded below and a time `t > 0`, the Hopf–Lax value for the
+cost `‖w‖ ^ p` is continuous in space. -/
+theorem continuous_hopfLax_norm_rpow (hp : 1 ≤ p) (hφ : BddBelow (range φ)) (ht : 0 < t) :
+    Continuous (hopfLax (‖·‖ ^ p) φ t) :=
   (continuousOn_hopfLax_norm_rpow hp hφ).comp_continuous (Continuous.prodMk_right t) fun _ ↦ ht
 
 /-- **The Hopf–Lax value recovers the initial datum.** For `1 < p` and `φ` bounded below, at every

@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.PDE.HopfLax
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Endpoint
 import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.PlanInterpolation
 import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Subsolution
@@ -118,7 +119,7 @@ private theorem ofReal_integral_hopfLax_sub_le
   -- The delayed Hopf–Lax function, defined on all of `ℝ × E` by freezing times below `a - δ / 2`.
   let u : ℝ × E → ℝ := fun q ↦ k * hopfLax (‖·‖ ^ p) f (max (q.1 - a + δ) (δ / 2)) q.2
   have hu : Continuous u := by
-    refine continuous_const.mul ((continuousOn_hopfLax_norm_rpow hp hf).comp_continuous
+    refine continuous_const.mul ((continuousOn_hopfLax_norm_rpow hp hf.bddBelow).comp_continuous
       (f := fun q : ℝ × E ↦ (max (q.1 - a + δ) (δ / 2), q.2)) (by fun_prop) fun q ↦ ?_)
     exact lt_max_of_lt_right (half_pos hδ)
   have hub (x : E) : u (b, x) = k * hopfLax (‖·‖ ^ p) f (b - a + δ) x := by
@@ -160,9 +161,9 @@ private theorem ofReal_integral_hopfLax_sub_integral_le
         ∫⁻ t in Ioo a b, ∫⁻ x, ENNReal.ofReal (‖v t x‖ ^ p) ∂(ν t : Measure E) := by
   obtain ⟨M, hM⟩ := exists_norm_mul_hopfLax_norm_rpow_le (p := p) (by linarith) hf hk
   have hT : 0 < b - a := sub_pos.2 hab
-  have hH := continuousOn_hopfLax_norm_rpow hp.le hf
+  have hH := continuousOn_hopfLax_norm_rpow hp.le hf.bddBelow
   have hmeas {t : ℝ} (ht : 0 < t) : Measurable fun x ↦ k * hopfLax (‖·‖ ^ p) f t x :=
-    (continuous_const.mul (continuous_hopfLax_norm_rpow hp.le hf ht)).measurable
+    (continuous_const.mul (continuous_hopfLax_norm_rpow hp.le hf.bddBelow ht)).measurable
   -- Let the delay `δₙ = 1 / (n + 1)` tend to `0`.
   let δ : ℕ → ℝ := fun n ↦ 1 / (n + 1)
   have hδ0 (n : ℕ) : 0 < δ n := Nat.one_div_pos_of_nat
@@ -242,7 +243,7 @@ theorem wassersteinEDist_rpow_le_mul_lintegral
   obtain ⟨M, hM⟩ := exists_norm_mul_hopfLax_norm_rpow_le (p := p.toReal) (by linarith) hf hk.le
   have hHint : Integrable (fun y ↦ k * hopfLax (‖·‖ ^ p.toReal) f (b - a) y) (ν b : Measure E) :=
     .of_bound (C := M) (continuous_const.mul
-      (continuous_hopfLax_norm_rpow hr.le hf hT)).aestronglyMeasurable
+      (continuous_hopfLax_norm_rpow hr.le hf.bddBelow hT)).aestronglyMeasurable
       (ae_of_all _ (hM _ hT.le))
   have hint := integral_mono
     (MeasureTheory.integrable_of_isBounded_range hψ.measurable.aestronglyMeasurable hψb) hHint hψle
@@ -284,10 +285,12 @@ theorem isLeast_wassersteinEDist_rpow_lintegral {μ μ' : Measure E} [IsProbabil
       exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_isOptimalCoupling_le hp.le hp_top
         hπ hfin
     have : IsProbabilityMeasure π := hπ.toIsCoupling.isProbabilityMeasure
-    let P : FiniteMeasure (E × E) := ⟨π, inferInstance⟩
-    let ν : ℝ → FiniteMeasure E := fun t ↦ P.map fun z ↦ (1 - t) • z.1 + t • z.2
+    let P : ProbabilityMeasure (E × E) := ⟨π, inferInstance⟩
+    let ν : ℝ → FiniteMeasure E := fun t ↦
+      (P.map fun z ↦ (1 - t) • z.1 + t • z.2).toFiniteMeasure
     have hν (t : ℝ) : (ν t : Measure E) = π.map fun z ↦ (1 - t) • z.1 + t • z.2 := rfl
-    have hνc : Continuous ν := P.continuous_map_smul_fst_add_smul_snd
+    have hνc : Continuous ν := ProbabilityMeasure.toFiniteMeasure_continuous.comp
+      (P.continuous_map_of_forall_continuous (fun t ↦ by fun_prop) fun z ↦ by fun_prop)
     have h0 : (ν 0 : Measure E) = μ := by
       simpa [hν, Measure.fst] using hπ.toIsCoupling.fst_eq
     have h1 : (ν 1 : Measure E) = μ' := by

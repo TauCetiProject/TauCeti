@@ -71,7 +71,10 @@ marginal integrals of a dual pair meaningful.
   sections is upper semicontinuous, and `TauCeti.measurable_cTransform_of_upperSemicontinuous` —
   it is then Borel measurable, while `TauCeti.uniformContinuous_iInf_sub` shows that a
   real-valued infimal transform is uniformly continuous when the target-variable sections of the
-  cost share a uniform modulus and its infima are finite;
+  cost share a uniform modulus and its infima are finite, and
+  `TauCeti.upperSemicontinuous_iInf_sub` shows that a real-valued infimal transform
+  `x ↦ ⨅ y, c x y - ψ y` is upper semicontinuous when the cost is nonnegative and continuous in
+  `x` and `ψ` is bounded above;
 * `TauCeti.cTransform_add_const` — the transform turns an additive real constant into its
   negative, which is the normalisation freedom of the dual problem, and
   `TauCeti.cTransform_add_add`, `TauCeti.cSuperdifferential_add_add`,
@@ -326,6 +329,15 @@ theorem uniformContinuous_iInf_sub [PseudoMetricSpace Y] [Nonempty X]
   have h2 := key y y' hy'
   rw [Real.dist_eq, abs_lt]
   constructor <;> linarith
+
+/-- For a nonnegative cost `c`, continuous in its first argument, and a potential `ψ` bounded
+above, the real infimal transform `x ↦ ⨅ y, c x y - ψ y` is upper semicontinuous. -/
+theorem upperSemicontinuous_iInf_sub {α β : Type*} [TopologicalSpace α] {c : α → β → ℝ}
+    (hc : ∀ y, Continuous (c · y)) (hc0 : ∀ x y, 0 ≤ c x y) {ψ : β → ℝ}
+    (hψ : BddAbove (Set.range ψ)) : UpperSemicontinuous fun x ↦ ⨅ y, c x y - ψ y := by
+  obtain ⟨C, hC⟩ := hψ
+  exact upperSemicontinuous_ciInf (fun x ↦ ⟨-C, Set.forall_mem_range.2 fun y ↦ by
+    linarith [hc0 x y, hC ⟨y, rfl⟩]⟩) fun y ↦ ((hc y).sub continuous_const).upperSemicontinuous
 
 /-- A `c`-transform is upper semicontinuous when each function in its defining infimum is upper
 semicontinuous. -/

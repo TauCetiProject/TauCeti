@@ -47,8 +47,8 @@ this is proved for the Lagrangian `‖·‖ ^ p` with `1 ≤ p` and a bounded-be
 (`TauCeti.hopfLax_norm_rpow_add_add_smul_le`). They are upper semicontinuous at positive times when
 the initial datum and the Lagrangian are bounded below and the Lagrangian is continuous
 (`TauCeti.upperSemicontinuousOn_hopfLax`). So they must be shifted in time, to make the strip lie
-in positive times, before this theorem applies to them. For a bounded initial datum and the
-Lagrangian `‖·‖ ^ p` with `1 ≤ p`, they are even jointly continuous at positive times
+in positive times, before this theorem applies to them. For an initial datum bounded below and
+the Lagrangian `‖·‖ ^ p` with `1 ≤ p`, they are even jointly continuous at positive times
 (`TauCeti.continuousOn_hopfLax_norm_rpow`), which supplies both semicontinuity hypotheses.
 
 The right side is the `ℝ≥0∞`-valued integral of the positive part of `L (vₜ x)`, so neither the
