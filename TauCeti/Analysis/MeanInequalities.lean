@@ -33,7 +33,9 @@ Mathlib states it for finite sums (`ENNReal.Lp_add_le`) and for summable `ℝ≥
 finite partial sums. It is the counting-measure case of `ENNReal.lintegral_Lp_add_le`, stated
 without measure theory. It gives the triangle inequality for gauges defined as `ℓᵖ` sums in `ℝ≥0∞`,
 such as the Hilbert–Schmidt energy of an operator. Hölder's inequality holds for such sums in the
-same way, extending `ENNReal.inner_le_Lp_mul_Lq` and `NNReal.inner_le_Lp_mul_Lq_tsum`.
+same way, extending `ENNReal.inner_le_Lp_mul_Lq` and `NNReal.inner_le_Lp_mul_Lq_tsum`. The `ℓᵖ`
+norm of such a family is antitone in the exponent, which gives the inclusions between Schatten
+classes of operators.
 
 Finally, the two-point weighted AM-GM inequality is restated after normalizing by positive scalars
 `a` and `b`: `A ^ (1 - θ) * B ^ θ ≤ ((1 - θ) * (A / a) + θ * (B / b)) * (a ^ (1 - θ) * b ^ θ)`,
@@ -48,6 +50,7 @@ hyperplane sections in the Kneser–Süss equality argument for Brunn–Minkowsk
   by positive scalars, with the strict form.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.inner_le_Lp_mul_Lq_tsum`: Hölder's inequality for unconditional sums in `ℝ≥0∞`.
+* `ENNReal.Lq_le_Lp_tsum`: the `ℓᵖ` norm of an `ℝ≥0∞`-valued family is antitone in `p`.
 
 ## References
 
@@ -154,5 +157,24 @@ theorem inner_le_Lp_mul_Lq_tsum {ι : Type*} (f g : ι → ℝ≥0∞) {p q : �
   · exact ENNReal.sum_le_tsum s
   · exact one_div_nonneg.2 hpq.symm.nonneg
   · exact ENNReal.sum_le_tsum s
+
+/-- The `ℓᵖ` norms of an `ℝ≥0∞`-valued family decrease as the exponent grows: for `0 < p ≤ q`,
+`(∑' i, f i ^ q) ^ (1 / q) ≤ (∑' i, f i ^ p) ^ (1 / p)`. No summability hypotheses are needed;
+both sides may be infinite. This is the unconditional-sum form of `ENNReal.rpow_add_rpow_le`. -/
+theorem Lq_le_Lp_tsum {ι : Type*} (f : ι → ℝ≥0∞) {p q : ℝ} (hp : 0 < p) (hpq : p ≤ q) :
+    (∑' i, f i ^ q) ^ (1 / q) ≤ (∑' i, f i ^ p) ^ (1 / p) := by
+  set S := (∑' i, f i ^ p) ^ (1 / p) with hS
+  have hpq' : 0 ≤ q - p := sub_nonneg.2 hpq
+  -- Each term is at most the `ℓᵖ` norm `S`, so `f i ^ q ≤ f i ^ p * S ^ (q - p)`.
+  have hfS (i : ι) : f i ≤ S := by
+    rw [hS, one_div, le_rpow_inv_iff hp]
+    exact ENNReal.le_tsum (f := fun i ↦ f i ^ p) i
+  have hSp : S ^ p = ∑' i, f i ^ p := by rw [hS, one_div, rpow_inv_rpow hp.ne']
+  rw [one_div, rpow_inv_le_iff (hp.trans_le hpq)]
+  calc ∑' i, f i ^ q = ∑' i, f i ^ p * f i ^ (q - p) := by
+        simp_rw [← rpow_add_of_nonneg _ _ hp.le hpq', add_sub_cancel]
+    _ ≤ ∑' i, f i ^ p * S ^ (q - p) := by gcongr with i; exact hfS i
+    _ = S ^ q := by
+        rw [ENNReal.tsum_mul_right, ← hSp, ← rpow_add_of_nonneg _ _ hp.le hpq', add_sub_cancel]
 
 end ENNReal

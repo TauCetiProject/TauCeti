@@ -22,10 +22,10 @@ of which every sequence **of the form** `normEDS b c d` is a specialization: it 
 `preNormEDS` and for the two complement sequences (`preNormEDS_eq_aeval`, `complEDS₂_eq_aeval`,
 `complEDS_eq_aeval`).
 
-Note the claim is about the *constructed function* `normEDS`, not about elliptic divisibility
-sequences in the abstract: the pinned Mathlib does not know that `normEDS b c d` satisfies
-`IsEllipticDvdSequence` — it records proving so as a TODO — so nothing here says every EDS arises
-this way, only that every `normEDS b c d` does.
+Mathlib also proves `IsEllipticDvdSequence.normEDS` and classifies elliptic divisibility
+sequences with a nonzerodivisor second term as scalar multiples of `normEDS`, via
+`IsEllipticDvdSequence.eq_smul_normEDS`. The specialization identities here concern the
+constructed function `normEDS` itself.
 
 The point is that an identity between the terms of a sequence of the form `normEDS b c d` need
 only be proved once, over `MvPolynomial NormEDSParam ℤ`, and then specialises to every ring and
@@ -41,6 +41,7 @@ parameters' ring need not be.
 
 * `normEDS_eq_aeval`: every sequence of the form `normEDS b c d` is `universalNormEDS` specialised
   along `NormEDSParam.rec b c d`.
+* `universalNormEDS_ne_zero`: the universal sequence vanishes only at `0`.
 * `preNormEDS_eq_aeval`, `complEDS₂_eq_aeval`, `complEDS_eq_aeval`: the same for the three companion
   sequences, each specialising **its own** construction over `ℤ[B, C, D]` — `preNormEDS`,
   `complEDS₂` and `complEDS` at the three indeterminates — not `universalNormEDS`, which is only
@@ -87,10 +88,9 @@ complements but not for `preNormEDS`, although Mathlib's `map_preNormEDS` makes 
 one-line proof and consumers reaching for the pre-normalised sequence would otherwise have to
 redo it.
 
-`universalNormEDS_ne_zero` lives in `NormEDS.lean`: it rests on
-`normEDS_two_three_two_eq_id`, proved there using Mathlib's `IsEllipticSequence.normEDS` and
-`IsEllipticSequence.ext` from `Ext.lean`. That proof specialises the universal parameters, so
-`NormEDS.lean` imports this file and the nonvanishing lemma follows the same import direction.
+`universalNormEDS_ne_zero` adapts the same AINTLIB file's declaration at the roadmap's NagellLutz
+pin `dev/modular-curves @ 9fec8eba7652`. It specialises the universal parameters using Mathlib's
+`normEDS_two_three_two`.
 -/
 
 public section
@@ -152,3 +152,12 @@ theorem complEDS_eq_aeval :
   simp_rw [map_complEDS, aeval_X]
 
 end NormEDSParam
+
+open NormEDSParam
+
+/-- **The universal normalised EDS is nonzero away from `0`.** Specialising the three
+indeterminates at `(2, 3, 2)` sends `universalNormEDS n` to `n` itself, by
+`normEDS_two_three_two`, so a vanishing value forces a vanishing index. -/
+theorem universalNormEDS_ne_zero {n : ℤ} (hn : n ≠ 0) : universalNormEDS n ≠ 0 := fun h ↦ hn <| by
+  apply_fun aeval (NormEDSParam.rec (2 : ℤ) 3 2) at h
+  simpa using h

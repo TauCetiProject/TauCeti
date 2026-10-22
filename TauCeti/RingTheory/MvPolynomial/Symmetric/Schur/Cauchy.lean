@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.HsymmPart
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
