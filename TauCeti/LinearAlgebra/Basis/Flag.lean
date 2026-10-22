@@ -7,8 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-public import TauCeti.Data.Fin.StrictMono
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.StrictMono
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Pivots of a subspace relative to a basis flag and Schubert cells
@@ -53,6 +54,7 @@ construct the Schubert cells or their closures as schemes.
   uniqueness of the reduced echelon basis.
 * `StrictMono.card_echelonFreeEntries_image`: the number of free entries of a cell is
   `∑ k, (p_k - k)`, which is `r (n - r) - |λ|` by `StrictMono.sum_sub_add_sum_sub_eq_mul`.
+* `StrictMono.antitone_sub_sub`: `λ_k = n - r + k - p_k` is a partition.
 
 ## References
 
@@ -118,6 +120,30 @@ theorem card_echelonFreeEntries_image (hp : StrictMono p) :
   rw [hfib, card_map]
   omega
 
+/-- For pivots `p 0 < ⋯ < p (r - 1)` in `Fin n`, the sequence `λ i = n - r + i - p i` is
+antitone: it is a partition, read in increasing order of `i`. -/
+theorem antitone_sub_sub (hp : StrictMono p) : Antitone fun i : Fin r ↦ n - r + i - p i := by
+  intro i k hik
+  have := (Fin.val_strictMono.comp hp).add_sub_le_nat hik
+  have := Fin.le_def.mp hik
+  simp only [Function.comp_apply] at *
+  omega
+
+/-- For pivots `p 0 < ⋯ < p (r - 1)` in `Fin n`, the number of free entries `∑ i, (p i - i)` of
+the corresponding reduced echelon matrices is `r (n - r) - |λ|`, for the partition
+`λ i = n - r + i - p i`. -/
+theorem sum_sub_add_sum_sub_eq_mul (hp : StrictMono p) :
+    ∑ i, ((p i : ℕ) - i) + ∑ i, (n - r + i - p i) = r * (n - r) := by
+  have hp' := Fin.val_strictMono.comp hp
+  have h (i : Fin r) : (p i : ℕ) - i + (n - r + i - p i) = n - r := by
+    have h₀ := hp'.add_sub_le_nat (Fin.le_def.mpr (Nat.zero_le i) : (⟨0, i.pos⟩ : Fin r) ≤ i)
+    have h₁ := hp'.add_sub_le_nat (Fin.le_def.mpr (Nat.le_sub_one_of_lt i.isLt) :
+      i ≤ ⟨r - 1, by omega⟩)
+    have := (p ⟨r - 1, by omega⟩).isLt
+    simp only [Function.comp_apply] at h₀ h₁
+    omega
+  simp [← Finset.sum_add_distrib, h]
+
 end StrictMono
 
 namespace Module.Basis
@@ -161,24 +187,6 @@ theorem mem_flagPivots {i : Fin n} :
     exact ⟨x, hxW, hxF, fun h ↦ hx ((mem_flag_castSucc_iff_of_mem_flag_succ hxF).mpr h)⟩
   · rintro ⟨x, hxW, hxF, hx⟩
     exact ⟨x, ⟨hxW, hxF⟩, fun h ↦ hx ((mem_flag_castSucc_iff_of_mem_flag_succ hxF).mp h)⟩
-
-/-- A family of vectors indexed by a finite set `S` of indices, whose `s`-th member has the
-coordinates of `b s` at the indices in `S`, is linearly independent. -/
-theorem linearIndependent_of_repr_eq_single {ι : Type*} {b : Basis ι R M}
-    {S : Finset ι} {v : S → M}
-    (hv : ∀ s : S, ∀ t ∈ S, b.repr (v s) t = Finsupp.single (s : ι) 1 t) :
-    LinearIndependent R v := by
-  classical
-  let π : M →ₗ[R] (S → R) := LinearMap.pi fun t ↦ b.coord t
-  have hπ : π ∘ v = fun s ↦ Pi.single s 1 := by
-    funext s t
-    simp only [Function.comp_apply, π, LinearMap.pi_apply, coord_apply]
-    rw [hv s t t.2]
-    by_cases hst : t = s
-    · simp [hst]
-    · rw [Finsupp.single_eq_of_ne (fun h : (t : ι) = s ↦ hst (Subtype.ext h)),
-        Pi.single_eq_of_ne hst]
-  exact LinearIndependent.of_comp π (hπ ▸ Pi.linearIndependent_single_one S R)
 
 end Semiring
 
@@ -351,10 +359,12 @@ theorem flagEchelon_mem_flag {i : Fin n} (hi : i ∈ b.flagPivots W) :
     b.flagEchelon W i ∈ b.flag i.succ :=
   (flagEchelon_spec hi).1.2
 
+@[simp]
 theorem repr_flagEchelon {i j : Fin n} (hi : i ∈ b.flagPivots W) (hj : j ∈ b.flagPivots W) :
     b.repr (b.flagEchelon W i) j = Finsupp.single i 1 j :=
   (flagEchelon_spec hi).2 j hj
 
+@[simp]
 theorem flagEchelon_of_notMem {i : Fin n} (hi : i ∉ b.flagPivots W) : b.flagEchelon W i = 0 := by
   simp [flagEchelon, hi]
 
@@ -397,6 +407,7 @@ theorem repr_echelonRow (S : Finset (Fin n)) (a : S.echelonFreeEntries → R) (s
       a ⟨(s, j), h⟩ else 0 := by
   rw [echelonRow, ← equivFun_apply, LinearEquiv.apply_symm_apply]
 
+@[simp]
 theorem repr_echelonRow_of_mem {S : Finset (Fin n)} (a : S.echelonFreeEntries → R) (s : Fin n)
     {j : Fin n} (hj : j ∈ S) : b.repr (b.echelonRow S a s) j = Finsupp.single s 1 j := by
   rw [repr_echelonRow, Finsupp.single_apply]
