@@ -12,7 +12,7 @@ name: pick-runner
 #
 # Ordinary placement first tries the existing state service's complete organization
 # capacity snapshot when its scoped token is configured. It must match this organization,
-# be at most 60 seconds old and remain within its validity period. A missing token or
+# be at most 150 seconds old and remain within its validity period. A missing token or
 # unusable snapshot falls back to direct counting. A valid snapshot needs no direct
 # GitHub inventory requests or quota preflight, and uses the same hosted budget below.
 #
