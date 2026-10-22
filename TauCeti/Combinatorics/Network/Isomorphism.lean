@@ -435,14 +435,10 @@ namespace Iso
 @[simp]
 theorem mapPath_refl (N : Network K V) {x y : V} (p : N.Path x y) :
     @Quiver.homOfEq V ⟨fun x y ↦ N.Path x y⟩ _ _ x y ((refl N).mapPath p)
-      (refl_vertexEquiv_apply N x) (refl_vertexEquiv_apply N y) = p := by
-  induction p with
-  | nil =>
-      rw [mapPath_nil]
-      exact homOfEq_path_nil (refl_vertexEquiv_apply N x)
-  | @cons y z p a ih =>
-      rw [mapPath_cons, homOfEq_path_cons _ _ (refl_vertexEquiv_apply N x)
-        (refl_vertexEquiv_apply N y) (refl_vertexEquiv_apply N z), ih, refl_homEquiv_apply]
+      (refl_vertexEquiv_apply N x) (refl_vertexEquiv_apply N y) = p :=
+  -- The endpoint casts are along `rfl`, and `(refl N).toPrefunctor` is the identity prefunctor
+  -- by `toPrefunctor_refl`, so both sides agree definitionally with `Prefunctor.mapPath_id`.
+  @Prefunctor.mapPath_id V (Quiver.mk N.Hom) x y p
 
 /-- Transport along a composite isomorphism applies the two path transports in order. -/
 @[simp]
@@ -450,15 +446,11 @@ theorem mapPath_trans {N'' : Network K X} (e : N ≃ₙ N') (f : N' ≃ₙ N'')
     {x y : V} (p : N.Path x y) :
     @Quiver.homOfEq X ⟨fun x y ↦ N''.Path x y⟩ _ _ _ _ ((e.trans f).mapPath p)
       (trans_vertexEquiv_apply e f x) (trans_vertexEquiv_apply e f y) =
-        f.mapPath (e.mapPath p) := by
-  induction p with
-  | nil =>
-      rw [mapPath_nil, mapPath_nil, mapPath_nil]
-      exact homOfEq_path_nil (trans_vertexEquiv_apply e f x)
-  | @cons y z p a ih =>
-      rw [mapPath_cons, mapPath_cons, mapPath_cons, homOfEq_path_cons _ _
-        (trans_vertexEquiv_apply e f x) (trans_vertexEquiv_apply e f y)
-        (trans_vertexEquiv_apply e f z), ih, trans_homEquiv_apply]
+        f.mapPath (e.mapPath p) :=
+  -- The endpoint casts are along `rfl`, and `(e.trans f).toPrefunctor` is the composite
+  -- prefunctor by `toPrefunctor_trans`, so this is `Prefunctor.mapPath_comp_apply`.
+  @Prefunctor.mapPath_comp_apply V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom)
+    e.toPrefunctor X (Quiver.mk N''.Hom) f.toPrefunctor x y p
 
 /-- Path transport along a pair of isomorphisms that is inverse on vertices and on arrows fixes
 every path. -/
