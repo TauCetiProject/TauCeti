@@ -15,7 +15,8 @@ This file proves that a real polynomial, evaluated pointwise, is integrable and 
 against any measure on `ℝ` all of whose polynomial moments are finite:
 
 * `integrable_eval_of_forall_integrable_pow` — a polynomial is integrable, being a finite linear
-  combination of monomials;
+  combination of monomials, and `integral_eval_eq_sum_range` — its integral is the corresponding
+  combination of moments; both also hold assuming only the monomials up to its degree integrable;
 * `memLp_two_eval_of_forall_integrable_pow` — a polynomial is in `L²`, since the square of a
   polynomial is again a polynomial (hence integrable), and `memLp_two_iff_integrable_sq`.
 
@@ -37,14 +38,31 @@ open MeasureTheory Polynomial
 
 variable {μ : Measure ℝ}
 
-/-- A real polynomial is integrable against any measure all of whose polynomial moments are finite.
-The polynomial is a finite linear combination of the monomials `x ↦ xᵏ`, each integrable by
-hypothesis. -/
-theorem integrable_eval_of_forall_integrable_pow
-    (hmom : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) μ) (q : ℝ[X]) :
+/-- A real polynomial is integrable against any measure against which its monomials up to its
+degree are integrable, being a finite linear combination of them. -/
+theorem integrable_eval_of_forall_le_natDegree {q : ℝ[X]}
+    (hmom : ∀ k ≤ q.natDegree, Integrable (fun x : ℝ => x ^ k) μ) :
     Integrable (fun x : ℝ => q.eval x) μ := by
   simp_rw [Polynomial.eval_eq_sum_range]
-  exact integrable_finsetSum _ fun i _ => (hmom i).const_mul _
+  exact integrable_finsetSum _ fun k hk =>
+    (hmom k (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk))).const_mul _
+
+/-- The integral of a real polynomial against a measure against which its monomials up to its degree
+are integrable is the corresponding linear combination of the moments `∫ xᵏ dμ`. -/
+theorem integral_eval_eq_sum_range {q : ℝ[X]}
+    (hmom : ∀ k ≤ q.natDegree, Integrable (fun x : ℝ => x ^ k) μ) :
+    ∫ x, q.eval x ∂μ = ∑ k ∈ Finset.range (q.natDegree + 1), q.coeff k * ∫ x, x ^ k ∂μ := by
+  simp_rw [Polynomial.eval_eq_sum_range]
+  rw [integral_finsetSum _ fun k hk =>
+    (hmom k (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk))).const_mul _]
+  simp_rw [integral_const_mul]
+
+/-- A real polynomial is integrable against any measure all of whose polynomial moments are
+finite. -/
+theorem integrable_eval_of_forall_integrable_pow
+    (hmom : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) μ) (q : ℝ[X]) :
+    Integrable (fun x : ℝ => q.eval x) μ :=
+  integrable_eval_of_forall_le_natDegree fun k _ => hmom k
 
 /-- A real polynomial is in `L²` against any measure all of whose polynomial moments are finite.
 The square of a polynomial is again a polynomial, hence integrable by
