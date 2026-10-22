@@ -76,7 +76,14 @@ namespace ContinuousLinearMap
 
 section Projection
 
-variable [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
+variable [NormedCommRing R]
+
+/-- An operator commuting with `u` commutes with `1 - a • u`. -/
+private theorem commute_one_sub_smul_left {u X : C₀(I, R) →L[R] C₀(I, R)} (hX : Commute u X)
+    (a : R) : Commute (1 - a • u) X :=
+  Commute.sub_left (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_left X) (hX.smul_left a)
+
+variable [TauCeti.NormedRing.IsTate R]
 
 /-- A **Riesz projection** of an endomorphism `u` of `C₀(I, R)` at the scalar `a`, of order `h`:
 an idempotent `E` commuting with `u` and lying in the operator-norm closure of the polynomials in
@@ -110,7 +117,7 @@ theorem eq_zero_of_order_zero (hE : IsRieszProjection u a 0 E) : E = 0 := by
 
 /-- A Riesz projection commutes with `1 - a • u`. -/
 theorem commute_one_sub_smul (hE : IsRieszProjection u a h E) : Commute (1 - a • u) E :=
-  Commute.sub_left (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_left E) (hE.commute.smul_left a)
+  commute_one_sub_smul_left hE.commute a
 
 /-- **The range of a Riesz projection is the generalised eigenspace** `ker (1 - a • u) ^ h`. -/
 theorem range_eq_ker (hE : IsRieszProjection u a h E) :
@@ -174,9 +181,7 @@ theorem rieszProjection_order_zero (u : C₀(I, R) →L[R] C₀(I, R)) (a : R) :
 private theorem commute_one_sub_smul_inverse_smul_resolventHasseDerivAt
     (u : C₀(I, R) →L[R] C₀(I, R)) (a c : R) (h : ℕ) :
     Commute (1 - a • u) (Ring.inverse c • u.resolventHasseDerivAt h a) :=
-  (Commute.sub_left (R := C₀(I, R) →L[R] C₀(I, R))
-    (Commute.one_left (u.resolventHasseDerivAt h a))
-    ((u.commute_resolventHasseDerivAt h a).smul_left a)).smul_right _
+  (commute_one_sub_smul_left (u.commute_resolventHasseDerivAt h a) a).smul_right _
 
 /-- The normalised Hasse derivative of the resolvent inverts `1 - a • u` up to a multiple of `u`:
 `(1 - a • u) (c⁻¹ • Δᵏ⁺¹V(a)) = 1 + c⁻¹ • u ΔᵏV(a)` when `c = Δᵏ⁺¹H_u(a)` is a unit. -/
@@ -211,26 +216,29 @@ theorem IsRowCompact.isRieszProjection_rieszProjection {u : C₀(I, R) →L[R] C
     hu.one_sub_smul_pow_succ_mul_inverse_smul_resolventHasseDerivAt hH hc
   have hp := hCb.isIdempotentElem_mul_pow_of_pow_succ_mul_eq (M := C₀(I, R) →L[R] C₀(I, R)) hb
   have hbp : Commute b ((C * b) ^ h) := (hCb.symm.mul_right (Commute.refl b)).pow_right h
-  have huC : Commute u C := Commute.sub_right (R := C₀(I, R) →L[R] C₀(I, R))
-    (Commute.one_right u) ((Commute.refl u).smul_right a)
+  have huC : Commute u C := (commute_one_sub_smul_left (Commute.refl u) a).symm
   have hub : Commute u b := (u.commute_resolventHasseDerivAt h a).smul_right _
   -- Both `C` and `b`, hence `(C b) ^ h`, `1 - (C b) ^ h` and `b (C b) ^ h`, lie in the closure
-  -- of `R[u]`, the carrier of the closure subalgebra `T`. The topological semiring structure is
-  -- synthesized up front, as in `ContinuousLinearMap.commute_resolventHasseDerivAt`.
+  -- of `R[u]`, the carrier of the closure subalgebra `T` (`Subalgebra.topologicalClosure_coe`).
+  -- The topological semiring structure is synthesized up front, as in
+  -- `ContinuousLinearMap.commute_resolventHasseDerivAt`.
   have : IsTopologicalSemiring (C₀(I, R) →L[R] C₀(I, R)) := inferInstance
   set T := (Algebra.adjoin R {u}).topologicalClosure
+  have hT (x : C₀(I, R) →L[R] C₀(I, R)) :
+      x ∈ T ↔ x ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
+    rw [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe]
   have hCS : C ∈ T := Subalgebra.le_topologicalClosure _ <|
     Subalgebra.sub_mem (A := C₀(I, R) →L[R] C₀(I, R)) _ (Subalgebra.one_mem _)
       (Subalgebra.smul_mem _ (Algebra.self_mem_adjoin_singleton R u) a)
-  have hbS : b ∈ T := T.smul_mem (u.resolventHasseDerivAt_mem_closure_adjoin h a) _
+  have hbS : b ∈ T := T.smul_mem ((hT _).2 (u.resolventHasseDerivAt_mem_closure_adjoin h a)) _
   have hpS : (C * b) ^ h ∈ T := T.pow_mem (T.mul_mem hCS hbS) h
   have hES : 1 - (C * b) ^ h ∈ T :=
     Subalgebra.sub_mem (A := C₀(I, R) →L[R] C₀(I, R)) T T.one_mem hpS
   rw [rieszProjection_def]
   refine ⟨IsIdempotentElem.one_sub (R := C₀(I, R) →L[R] C₀(I, R)) hp,
     Commute.sub_right (R := C₀(I, R) →L[R] C₀(I, R)) (Commute.one_right u)
-      ((huC.mul_right hub).pow_right h), hES, ?_, b * (C * b) ^ h, ?_, ?_, ?_, ?_,
-    T.mul_mem hbS hpS⟩
+      ((huC.mul_right hub).pow_right h), (hT _).1 hES, ?_, b * (C * b) ^ h, ?_, ?_, ?_, ?_,
+    (hT _).1 (T.mul_mem hbS hpS)⟩
   · rw [mul_sub (α := C₀(I, R) →L[R] C₀(I, R)), mul_one,
       TauCeti.pow_mul_mul_pow_of_pow_succ_mul_eq (M := C₀(I, R) →L[R] C₀(I, R)) hb]
     exact sub_self _
