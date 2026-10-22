@@ -206,7 +206,7 @@ theorem productClass_vadd_out (γ : PeriodGroup ω c) (D₁ : C₁) (D₂ : C₂
 
 /-- If gluing is equivariant in the first input, recapping the first input by `γ` subtracts `γ`
 from the product class. -/
-theorem productClass_vadd_fst [AddTorsor (PeriodGroup ω c) C₁]
+theorem productClass_vadd_fst [VAdd (PeriodGroup ω c) C₁]
     (hglue : ∀ (γ : PeriodGroup ω c) D₁ D₂, glue (γ +ᵥ D₁) D₂ = γ +ᵥ glue D₁ D₂)
     (γ : PeriodGroup ω c) (D₁ : C₁) (D₂ : C₂) (D₀ : C₀) :
     productClass glue (γ +ᵥ D₁) D₂ D₀ = productClass glue D₁ D₂ D₀ - γ := by
@@ -214,7 +214,7 @@ theorem productClass_vadd_fst [AddTorsor (PeriodGroup ω c) C₁]
 
 /-- If gluing is equivariant in the second input, recapping the second input by `γ` subtracts
 `γ` from the product class. -/
-theorem productClass_vadd_snd [AddTorsor (PeriodGroup ω c) C₂]
+theorem productClass_vadd_snd [VAdd (PeriodGroup ω c) C₂]
     (hglue : ∀ (γ : PeriodGroup ω c) D₁ D₂, glue D₁ (γ +ᵥ D₂) = γ +ᵥ glue D₁ D₂)
     (γ : PeriodGroup ω c) (D₁ : C₁) (D₂ : C₂) (D₀ : C₀) :
     productClass glue D₁ (γ +ᵥ D₂) D₀ = productClass glue D₁ D₂ D₀ - γ := by
