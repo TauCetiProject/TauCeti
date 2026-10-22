@@ -107,6 +107,11 @@ private theorem isOpen_domain : IsOpen (domain hf hx) :=
   ((implicitChart hf hx).open_source.inter (isOpen_extChartAt_target x)).inter
     ((hasStrictFDerivAt_coord hf).isOpen_implicitCoordSource _ _)
 
+/-- The domain lies in the preferred extended chart target, hence over the preferred chart
+target. -/
+private theorem domain_subset : domain hf hx ⊆ I.symm ⁻¹' (chartAt H x).target :=
+  fun _ hp ↦ ((extChartAt_target (I := I) x).subset hp.1.2).1
+
 /-- The derivative `L v = (D v, P v)` of the implicit-function chart at the base point. -/
 private noncomputable abbrev coordEquiv :
     E ≃L[ℝ] ℝ × (fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)).ker :=
@@ -153,13 +158,13 @@ private theorem mem_modelChart_target_iff (v : E) :
       coordEquiv hx v ∈ (implicitChart hf hx).target ∧
         (implicitChart hf hx).symm (coordEquiv hx v) ∈ domain hf hx := by
   rw [OpenPartialHomeomorph.trans_target, mem_inter_iff, mem_preimage, BoundarylessModel.chartAt_eq,
-    BoundarylessModel.chart_target, Homeomorph.symm_apply_apply]
-  -- The target of the restricted implicit-function chart is cut out by the domain, which lies in
+    BoundarylessModel.chart_target, Homeomorph.symm_apply_apply,
+    OpenPartialHomeomorph.transHomeomorph_target, OpenPartialHomeomorph.restrOpen_toPartialEquiv,
+    PartialEquiv.restr_target, ← ContinuousLinearEquiv.toHomeomorph_symm,
+    ContinuousLinearEquiv.symm_symm, preimage_inter, mem_inter_iff]
+  -- The target of the restricted implicit-function chart is cut out by the domain, which lies over
   -- the preferred chart target.
-  refine and_iff_left_of_imp fun h ↦ ?_
-  have h' := h.2.1.2
-  rw [extChartAt_target] at h'
-  exact h'.1
+  exact and_iff_left_of_imp fun h ↦ domain_subset hf hx h.2
 
 /-- In the submersion chart, `f - f x` is the first coordinate of `L`. -/
 private theorem apply_modelChart_symm {v : E} (hv : v ∈ (modelChart hf hx).target) :
@@ -216,9 +221,7 @@ private theorem contMDiffAt_modelChart_symm {n : ℕ∞ω} [IsManifold I n M] (h
       (chartAt E (BoundarylessModel.homeomorph I M x)).symm p := by
     refine contMDiffOn_chart_symm.contMDiffAt ((chartAt E _).open_target.mem_nhds ?_)
     rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_target, Homeomorph.symm_apply_apply]
-    have h := hvD.1.2
-    rw [extChartAt_target] at h
-    exact h.1
+    exact domain_subset hf hx hvD
   rw [OpenPartialHomeomorph.coe_trans_symm]
   exact hchart.comp v hcoord
 
@@ -362,8 +365,9 @@ theorem scalarSubmersionChartAt_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n 
         Homeomorph.apply_symm_apply]
       exact hy)
   rwa [show (modelChart hf hx).restrOpen _ (modelChart hf hx).open_source = modelChart hf hx from
-    OpenPartialHomeomorph.toPartialEquiv_injective
-      (PartialEquiv.restr_eq_of_source_subset subset_rfl)] at h
+    OpenPartialHomeomorph.toPartialEquiv_injective <|
+      ((modelChart hf hx).restrOpen_toPartialEquiv _ _).trans
+        (PartialEquiv.restr_eq_of_source_subset subset_rfl)] at h
 
 /-- **A regular point of a scalar function is a submersion point.** If `f` is `C^n` near a regular
 point `x`, with `1 ≤ n`, then `f` is a `C^n` submersion at `x` with complement the kernel of the
