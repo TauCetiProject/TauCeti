@@ -24,6 +24,10 @@ Hochschild cohomology `HHⁿ(A, Hom_R(A, M))` of `A` with coefficients in `Hom_R
 Hochschild cohomology with coefficients in `M`. For `M = R` it is `HHⁿ(A, A*)`, the Hochschild
 cohomology of `A` with coefficients in its dual bimodule.
 
+The complex and its cohomology are defined for nonunital associative algebras. For a nonunital
+algebra this is the naive cochain complex, rather than the relative complex of its forced
+unitization.
+
 As for cyclic cohomology, `hochschildCohomology.mk` sends a Hochschild cocycle to its class; it
 is surjective and its kernel consists exactly of the coboundaries, so linear maps out of
 Hochschild cohomology are described by `hochschildCohomology.desc`. In degree zero there are no
@@ -34,8 +38,8 @@ coboundaries and the cocycles are the traces.
 * `TauCeti.hochschildCochainComplex`: the Hochschild cochain complex.
 * `TauCeti.hochschildCocycles`, `TauCeti.hochschildCoboundaries`: Hochschild cocycles and
   coboundaries.
-* `TauCeti.hochschildCohomology`: the Hochschild cohomology `HHⁿ(A, Hom_R(A, M))` of a unital
-  algebra.
+* `TauCeti.hochschildCohomology`: the cohomology of the Hochschild cochain complex; for a unital
+  algebra it is the Hochschild cohomology `HHⁿ(A, Hom_R(A, M))`.
 * `TauCeti.hochschildCohomology.mk`: the class of a Hochschild cocycle.
 * `TauCeti.hochschildCohomology.desc`: the linear map out of Hochschild cohomology induced by a
   linear map on Hochschild cocycles vanishing on Hochschild coboundaries.
@@ -62,10 +66,10 @@ namespace TauCeti
 
 universe u
 
-section Complex
-
 variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+
+section Complex
 
 /-- The Hochschild cochain complex `C⁰ → C¹ → ⋯`: in degree `n` the `M`-valued `n`-cochains on
 `A`, the multilinear maps in `n + 1` arguments, with the Hochschild coboundary as differential. -/
@@ -144,12 +148,9 @@ end Complex
 
 section Cohomology
 
-variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M]
-  [Module R M]
-
-/-- The cohomology of the Hochschild cochain complex of a unital algebra `A` with `M`-valued
-cochains in `n + 1` arguments. In Connes' cochain description this is the Hochschild cohomology
-`HHⁿ(A, Hom_R(A, M))` of `A` with coefficients in the bimodule `Hom_R(A, M)`, not with
+/-- The cohomology of the Hochschild cochain complex of `A` with `M`-valued cochains in `n + 1`
+arguments. For a unital algebra `A`, in Connes' cochain description this is the Hochschild
+cohomology `HHⁿ(A, Hom_R(A, M))` of `A` with coefficients in the bimodule `Hom_R(A, M)`, not with
 coefficients in `M`; for `M = R` it is `HHⁿ(A, A*)`, with coefficients in the dual bimodule. -/
 abbrev hochschildCohomology (n : ℕ) : ModuleCat R :=
   (hochschildCochainComplex R A M).homology n
