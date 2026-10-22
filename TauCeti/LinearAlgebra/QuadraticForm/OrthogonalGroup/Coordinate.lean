@@ -31,6 +31,13 @@ universe u v
 variable {R : Type u} [CommRing R] [Invertible (2 : R)] {V : Type v} [AddCommGroup V] [Module R V]
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
+private theorem toMatrix_injective (b : Basis n R V) :
+    Function.Injective (QuadraticForm.toMatrix b : QuadraticForm R V → Matrix n n R) := by
+  intro Q₁ Q₂ h
+  apply (QuadraticMap.associated_rightInverse R).injective
+  apply (LinearMap.toMatrix₂ b b).injective
+  simpa only [QuadraticForm.toMatrix] using h
+
 /-- In a basis, an automorphism preserves a quadratic form exactly when its matrix
 satisfies the usual Gram-matrix congruence equation. -/
 theorem mem_orthogonalGroup_iff_toMatrix (Q : QuadraticForm R V) (b : Basis n R V)
@@ -59,30 +66,18 @@ theorem mem_orthogonalGroup_iff_toMatrix (Q : QuadraticForm R V) (b : Basis n R 
               LinearMap.toMatrix b b g.toLinearMap :=
           QuadraticForm.toMatrix_comp b b Q g.toLinearMap
         _ = QuadraticForm.toMatrix b Q := hmatrix
-    have hassoc : (QuadraticMap.associatedHom R) (Q.comp g.toLinearMap) =
-        (QuadraticMap.associatedHom R) Q := by
-      apply (LinearMap.toMatrix₂ b b).injective
-      simpa only [QuadraticForm.toMatrix] using hmatrix'
-    have hcomp : Q.comp g.toLinearMap = Q := by
-      apply QuadraticMap.ext
-      intro x
-      calc
-        (Q.comp g.toLinearMap) x =
-            ((QuadraticMap.associatedHom R) (Q.comp g.toLinearMap)) x x :=
-          (QuadraticMap.associated_eq_self_apply R (Q.comp g.toLinearMap) x).symm
-        _ = ((QuadraticMap.associatedHom R) Q) x x :=
-          congrArg (fun B => B x x) hassoc
-        _ = Q x := QuadraticMap.associated_eq_self_apply R Q x
+    have hcomp : Q.comp g.toLinearMap = Q := toMatrix_injective b hmatrix'
     exact congrArg (fun q : QuadraticForm R V => q x) hcomp
 
 /-- In a basis, a linear automorphism belongs to the special orthogonal group
-exactly when its Gram-matrix congruence equation holds and its determinant is one. -/
+exactly when its Gram-matrix congruence and determinant equations both hold. -/
 theorem mem_specialOrthogonalGroup_iff_toMatrix (Q : QuadraticForm R V) (b : Basis n R V)
     (g : V ≃ₗ[R] V) :
     g ∈ specialOrthogonalGroup Q ↔
       (LinearMap.toMatrix b b g.toLinearMap)ᵀ * (QuadraticForm.toMatrix b Q) *
           LinearMap.toMatrix b b g.toLinearMap = QuadraticForm.toMatrix b Q ∧
-        LinearEquiv.det g = 1 := by
+        Matrix.det (LinearMap.toMatrix b b g.toLinearMap) = 1 := by
   rw [mem_specialOrthogonalGroup_iff, mem_orthogonalGroup_iff_toMatrix Q b g]
+  simp [Units.ext_iff]
 
 end TauCeti.QuadraticMap
