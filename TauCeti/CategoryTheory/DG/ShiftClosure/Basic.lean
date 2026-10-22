@@ -381,7 +381,6 @@ theorem dgHomEquiv_fromShift (X : DGShiftClosure C) (n : ℤ) :
   simp [fromShift]
 
 /-- The comparison morphism `X[r] ⟶ X[r + n]` is closed. -/
-@[simp]
 theorem dgDifferential_toShift (X : DGShiftClosure C) (n : ℤ) :
     dgDifferential R (-n) (toShift R X n) = 0 :=
   (dgHomEquiv R _ _ (-n + 1)).injective <| by
@@ -389,7 +388,6 @@ theorem dgDifferential_toShift (X : DGShiftClosure C) (n : ℤ) :
       smul_zero, smul_zero, map_zero]
 
 /-- The comparison morphisms `X[r] ⟶ X[r + n] ⟶ X[r]` compose to the identity of `X[r]`. -/
-@[simp]
 theorem dgComp_toShift_fromShift (X : DGShiftClosure C) (n : ℤ) :
     dgComp R (toShift R X n) (fromShift R X n) (neg_add_cancel n) = dgId R X :=
   (dgHomEquiv R _ _ 0).injective <| by
@@ -402,7 +400,6 @@ theorem dgComp_toShift_fromShift (X : DGShiftClosure C) (n : ℤ) :
 
 /-- The comparison morphisms `X[r + n] ⟶ X[r] ⟶ X[r + n]` compose to the identity of
 `X[r + n]`. -/
-@[simp]
 theorem dgComp_fromShift_toShift (X : DGShiftClosure C) (n : ℤ) :
     dgComp R (fromShift R X n) (toShift R X n) (add_neg_cancel n) =
       dgId R ((shiftFunctor R n).obj X) :=
@@ -415,7 +412,6 @@ theorem dgComp_fromShift_toShift (X : DGShiftClosure C) (n : ℤ) :
     exact LinearMap.congr_fun (castDeg_def (C := C) R (X := X.obj) (Y := X.obj) _) _
 
 /-- The comparison morphism `X[r + n] ⟶ X[r]` is closed. -/
-@[simp]
 theorem dgDifferential_fromShift (X : DGShiftClosure C) (n : ℤ) :
     dgDifferential R n (fromShift R X n) = 0 :=
   dgDifferential_eq_zero_of_dgComp_eq_dgId R (dgDifferential_toShift R X n) (neg_add_cancel n)
