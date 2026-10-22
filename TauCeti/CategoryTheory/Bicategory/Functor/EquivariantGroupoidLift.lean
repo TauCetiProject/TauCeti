@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.Cat
-public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
-public import Mathlib.CategoryTheory.Products.Basic
-public import Mathlib.CategoryTheory.SingleObj
+public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
 /-!
 # Equivariant groupoid lifts of categorical group actions
@@ -63,24 +61,9 @@ product `b * a`, so the commuting isomorphisms compare the two factorizations
   Kac–Moody algebras](https://arxiv.org/abs/math/0508382).
 -/
 
-@[expose] public section
+public section
 
 universe w v u₂ v₁ u₁
-
-namespace CategoryTheory.Pseudofunctor
-
-open Bicategory
-
-variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
-
-/-- The restriction of a pseudofunctor `F` out of `LocallyDiscrete (Γ × SingleObj H)` to the
-fiber `{p} × SingleObj H`, that is, its composite with `Prod.sectR p (SingleObj H)`. Its value
-at the unique object is `F.obj ⟨(p, ⋆)⟩` and its value at `a : H` is `F.map (𝟙 p, a)`. -/
-abbrev restrictFiber {B : Type*} [Bicategory B] (F : LocallyDiscrete (Γ × SingleObj H) ⥤ᵖ B)
-    (p : Γ) : LocallyDiscrete (SingleObj H) ⥤ᵖ B :=
-  (Prod.sectR p (SingleObj H)).toPseudofunctor.comp F
-
-end CategoryTheory.Pseudofunctor
 
 namespace TauCeti
 
@@ -133,7 +116,7 @@ abbrev act (actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}) (p
   ((actions p).map a.toLoc).toFunctor
 
 /-- The equivalence `e_p : F (p, ⋆) ≌ C p` given by the fiber comparison at `p`. -/
-noncomputable def fiberEquivalence (p : Γ) : L.jointFiber p ≌ fiber actions p :=
+@[expose] noncomputable def fiberEquivalence (p : Γ) : L.jointFiber p ≌ fiber actions p :=
   letI := L.isEquivalence_comparison p
   ((L.comparison p).app ⟨SingleObj.star H⟩).toFunctor.asEquivalence
 
@@ -164,10 +147,9 @@ noncomputable def comparisonNaturality (p : Γ) (a : SingleObj.star H ⟶ Single
 two factorizations `(𝟙 p, a) ≫ (g, 1) = (g, a) = (g, 1) ≫ (𝟙 q, a)` of `(g, a)`. -/
 noncomputable def jointActCommIso {p q : Γ} (g : p ⟶ q) (a : SingleObj.star H ⟶ SingleObj.star H) :
     L.jointAct p a ⋙ L.jointMap g ≅ L.jointMap g ⋙ L.jointAct q a :=
-  (Cat.Hom.toNatIso (L.joint.mapComp' (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc
-      (g ×ₘ a).toLoc (by simp [← Quiver.Hom.comp_toLoc]))).symm ≪≫
-    Cat.Hom.toNatIso (L.joint.mapComp' (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 q ×ₘ a).toLoc
-      (g ×ₘ a).toLoc (by simp [← Quiver.Hom.comp_toLoc]))
+  Cat.Hom.toNatIso (L.joint.isoMapOfCommSq
+    (⟨by simp⟩ : CommSq (𝟙 p ×ₘ a) (g ×ₘ 𝟙 (SingleObj.star H)) (g ×ₘ 𝟙 (SingleObj.star H))
+      (𝟙 q ×ₘ a)).toLoc)
 
 @[simp]
 lemma jointActCommIso_hom_app {p q : Γ} (g : p ⟶ q) (a : SingleObj.star H ⟶ SingleObj.star H)
@@ -176,13 +158,34 @@ lemma jointActCommIso_hom_app {p q : Γ} (g : p ⟶ q) (a : SingleObj.star H ⟶
       (L.joint.mapComp' (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (g ×ₘ a).toLoc
           (by simp [← Quiver.Hom.comp_toLoc])).inv.toNatTrans.app Y ≫
         (L.joint.mapComp' (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 q ×ₘ a).toLoc (g ×ₘ a).toLoc
-          (by simp [← Quiver.Hom.comp_toLoc])).hom.toNatTrans.app Y :=
+          (by simp [← Quiver.Hom.comp_toLoc])).hom.toNatTrans.app Y := by
+  rw [jointActCommIso, Pseudofunctor.isoMapOfCommSq_eq _ _ (g ×ₘ a).toLoc
+    (by simp [← Quiver.Hom.comp_toLoc])]
   rfl
 
 /-- The transport functor `E_g = e_p⁻¹ ⋙ F (g, 1) ⋙ e_q : C p ⥤ C q` of an arrow `g : p ⟶ q`,
 expressed on the prescribed fibers. -/
-noncomputable def transport {p q : Γ} (g : p ⟶ q) : fiber actions p ⥤ fiber actions q :=
+@[expose] noncomputable def transport {p q : Γ} (g : p ⟶ q) : fiber actions p ⥤ fiber actions q :=
   (L.fiberEquivalence p).inverse ⋙ L.jointMap g ⋙ (L.fiberEquivalence q).functor
+
+lemma transport_def {p q : Γ} (g : p ⟶ q) :
+    L.transport g = (L.fiberEquivalence p).inverse ⋙ L.jointMap g ⋙
+      (L.fiberEquivalence q).functor :=
+  rfl
+
+@[simp]
+lemma transport_obj {p q : Γ} (g : p ⟶ q) (X : fiber actions p) :
+    (L.transport g).obj X =
+      (L.fiberEquivalence q).functor.obj
+        ((L.jointMap g).obj ((L.fiberEquivalence p).inverse.obj X)) :=
+  rfl
+
+@[simp]
+lemma transport_map {p q : Γ} (g : p ⟶ q) {X Y : fiber actions p} (f : X ⟶ Y) :
+    (L.transport g).map f =
+      (L.fiberEquivalence q).functor.map
+        ((L.jointMap g).map ((L.fiberEquivalence p).inverse.map f)) :=
+  rfl
 
 /-- The unit isomorphism `E_(𝟙 p) ≅ 𝟭`: the unit comparison of the joint pseudofunctor at
 `(p, ⋆)`, followed by the counit of the fiber comparison. -/
@@ -332,12 +335,12 @@ noncomputable def transportEquivalence {p q : Γ} (g : p ≅ q) : fiber actions 
 
 @[simp]
 lemma transportEquivalence_functor {p q : Γ} (g : p ≅ q) :
-    (L.transportEquivalence g).functor = L.transport g.hom :=
+    (L.transportEquivalence g).functor = L.transport g.hom := by
   rfl
 
 @[simp]
 lemma transportEquivalence_inverse {p q : Γ} (g : p ≅ q) :
-    (L.transportEquivalence g).inverse = L.transport g.inv :=
+    (L.transportEquivalence g).inverse = L.transport g.inv := by
   rfl
 
 /-- The transport functor along an isomorphism of `Γ` is an equivalence. In particular, when
