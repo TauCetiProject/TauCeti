@@ -108,16 +108,22 @@ theorem quantumBinomial_succ_succ (q : K) (n k : ℕ) :
     rw [quantumBinomial_succ_succ, ih, quantumBinomial_eq_zero_of_lt q (Nat.lt_succ_self n)]
     simp
 
-/-- If inversion fixes `1`, the quantum binomial coefficients at `q = 1` are the ordinary
+end
+
+section
+
+variable [Semifield K]
+
+/-- Over a semifield, the quantum binomial coefficients at `q = 1` are the ordinary
 binomial coefficients. -/
-@[simp] theorem quantumBinomial_one (h_inv_one : (1 : K)⁻¹ = 1) (n k : ℕ) :
+@[simp] theorem quantumBinomial_one (n k : ℕ) :
     quantumBinomial (1 : K) n k = n.choose k := by
   induction n generalizing k with
   | zero => cases k <;> simp
   | succ n ih =>
     cases k with
     | zero => simp
-    | succ k => simp [quantumBinomial_succ_succ, ih, h_inv_one, Nat.choose_succ_succ]
+    | succ k => simp [quantumBinomial_succ_succ, ih, Nat.choose_succ_succ]
 
 end
 
