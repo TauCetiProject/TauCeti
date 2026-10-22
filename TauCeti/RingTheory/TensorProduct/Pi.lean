@@ -13,16 +13,15 @@ public import Mathlib.RingTheory.TensorProduct.Pi
 Mathlib's `Algebra.TensorProduct.prodRight` distributes `A ⊗[R] (B × C)` over the product in the
 right factor. This file gives the algebra equivalence for a product in the left factor,
 `(A₁ × A₂) ⊗[R] B ≃ₐ[R] (A₁ ⊗[R] B) × (A₂ ⊗[R] B)`: the algebra form of Mathlib's linear
-`TensorProduct.prodLeft`. It also computes the matrix entries of the base change of an algebra
-map between function algebras `ι → T`, identified with `T' ⊗[T] (ι → T) ≃ₐ (ι → T')` by Mathlib's
-`Algebra.TensorProduct.piScalarRight`.
+`TensorProduct.prodLeft`. It also evaluates the inverse of Mathlib's
+`Algebra.TensorProduct.piScalarRight : A ⊗[R] (ι → R) ≃ₐ[S] (ι → A)` on `Pi.single i x`, so that
+`simp` computes the matrix entries of a base change of an algebra map between function algebras.
 
 ## Main declarations
 
 * `TauCeti.Algebra.TensorProduct.prodLeft`: the algebra equivalence above.
-* `TauCeti.Algebra.TensorProduct.piScalarRight_map_symm_single`: under Mathlib's
-  `Algebra.TensorProduct.piScalarRight`, the base change of an algebra map between function
-  algebras has the images of the original matrix entries as its matrix entries.
+* `TauCeti.Algebra.TensorProduct.piScalarRight_symm_single`: the inverse of Mathlib's
+  `Algebra.TensorProduct.piScalarRight` on `Pi.single i x`.
 -/
 
 public section
@@ -57,22 +56,16 @@ theorem prodLeft_symm_tmul (a₁ : A₁) (a₂ : A₂) (b : B) :
     (prodLeft R A₁ A₂ B).symm (a₁ ⊗ₜ b, a₂ ⊗ₜ b) = (a₁, a₂) ⊗ₜ b :=
   (AlgEquiv.symm_apply_eq _).2 (prodLeft_tmul a₁ a₂ b).symm
 
-
-/-- The matrix entries of the base change of an algebra map between split algebras are the images
-of the original entries: under `piScalarRight`, the base change of `φ : (ι → T) →ₐ[T] (κ → T)` to
-`T'` sends `Pi.single i 1` to the image of `φ (Pi.single i 1)`. -/
-theorem piScalarRight_map_symm_single {T : Type*} (T' : Type*) [CommSemiring T] [CommSemiring T']
-    [Algebra T T'] {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
-    (φ : (ι → T) →ₐ[T] (κ → T)) (i : ι) (j : κ) :
-    Algebra.TensorProduct.piScalarRight T T' T' κ
-        (Algebra.TensorProduct.map (AlgHom.id T' T') φ
-          ((Algebra.TensorProduct.piScalarRight T T' T' ι).symm (Pi.single i 1))) j =
-      algebraMap T T' (φ (Pi.single i 1) j) := by
-  have h : (Algebra.TensorProduct.piScalarRight T T' T' ι).symm (Pi.single i 1) =
-      1 ⊗ₜ Pi.single i 1 := by
-    rw [AlgEquiv.symm_apply_eq]
-    ext k
-    simp [Pi.single_apply]
-  simp [h, Algebra.algebraMap_eq_smul_one]
+/-- The inverse of `piScalarRight` sends `Pi.single i x` to `x ⊗ₜ Pi.single i 1`: the algebra form
+of Mathlib's `TensorProduct.piScalarRight_symm_single`. -/
+@[simp]
+theorem piScalarRight_symm_single (R S A : Type*) {ι : Type*} [CommSemiring R] [CommSemiring S]
+    [Algebra R S] [Semiring A] [Algebra R A] [Algebra S A] [IsScalarTower R S A] [Fintype ι]
+    [DecidableEq ι] (x : A) (i : ι) :
+    (Algebra.TensorProduct.piScalarRight R S A ι).symm (Pi.single i x) =
+      x ⊗ₜ Pi.single i 1 := by
+  rw [AlgEquiv.symm_apply_eq]
+  ext k
+  simp [Pi.single_apply]
 
 end TauCeti.Algebra.TensorProduct

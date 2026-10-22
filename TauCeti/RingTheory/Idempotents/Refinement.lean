@@ -124,32 +124,32 @@ theorem completeOrthogonalIdempotents_prod_ite {ι : Type*} [Fintype ι] [Decida
     simpa using h.symm
 
 /-- Each factor of an atom `∏ y, (if σ y then e y else 1 - e y)` absorbs it. -/
-theorem ite_mul_prod_ite {ι : Type*} [Fintype ι] {e : ι → R} (he : ∀ i, IsIdempotentElem (e i))
-    (σ : ι → Bool) (x : ι) :
+theorem ite_mul_prod_ite {ι : Type*} [Fintype ι] {e : ι → R} (σ : ι → Bool) {x : ι}
+    (hx : IsIdempotentElem (e x)) :
     (if σ x then e x else 1 - e x) * ∏ y, (if σ y then e y else 1 - e y) =
       ∏ y, (if σ y then e y else 1 - e y) := by
   have hidem : IsIdempotentElem (if σ x then e x else 1 - e x) := by
     split
-    · exact he x
-    · exact (he x).one_sub
+    · exact hx
+    · exact hx.one_sub
   classical
   rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ x), ← mul_assoc, hidem.eq]
 
 /-- A prime ideal over the component `R ⧸ (1 - ∏ y, ...)` of an atom contains `e x` exactly when
 the atom uses `1 - e x`. -/
 theorem notMem_iff_of_one_sub_prod_ite_mem {ι : Type*} [Fintype ι] {e : ι → R}
-    (he : ∀ i, IsIdempotentElem (e i)) (σ : ι → Bool) {p : Ideal R} [p.IsPrime]
-    (hp : 1 - ∏ y, (if σ y then e y else 1 - e y) ∈ p) (x : ι) : e x ∉ p ↔ σ x := by
+    (σ : ι → Bool) {p : Ideal R} [p.IsPrime] (hp : 1 - ∏ y, (if σ y then e y else 1 - e y) ∈ p)
+    {x : ι} (hx : IsIdempotentElem (e x)) : e x ∉ p ↔ σ x := by
   have hF : ∏ y, (if σ y then e y else 1 - e y) ∉ p := fun h ↦
     Ideal.IsPrime.ne_top' ((Ideal.eq_top_iff_one _).mpr (by simpa using p.add_mem h hp))
-  have hmul := ite_mul_prod_ite he σ x
+  have hmul := ite_mul_prod_ite σ hx
   by_cases hσx : σ x
   · simp only [hσx, ↓reduceIte] at hmul
     exact iff_of_true (fun hx ↦ hF (hmul ▸ p.mul_mem_right _ hx)) hσx
   · simp only [hσx, Bool.false_eq_true, ↓reduceIte] at hmul
     have h1 : 1 - e x ∉ p := fun h ↦ hF (hmul ▸ p.mul_mem_right _ h)
     have h0 : e x * (1 - e x) ∈ p := by
-      rw [(he x).mul_one_sub_self]
+      rw [hx.mul_one_sub_self]
       exact p.zero_mem
     exact iff_of_false (not_not.mpr ((Ideal.IsPrime.mem_or_mem ‹_› h0).resolve_right h1)) hσx
 

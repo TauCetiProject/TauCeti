@@ -159,7 +159,7 @@ private theorem etale_and_finite_equalizer_pi {ι κ : Type*} [_root_.Finite ι]
   have hT' (x : Bool × ι × κ) : algebraMap T T' (a x) = 0 ∨ algebraMap T T' (a x) = 1 := by
     have hfactor :=
       congrArg (Ideal.Quotient.mk (Ideal.span {1 - ∏ y, if σ y then a y else 1 - a y}))
-        (TauCeti.ite_mul_prod_ite ha σ x)
+        (TauCeti.ite_mul_prod_ite σ (ha x))
     rw [map_mul, TauCeti.Ideal.Quotient.mk_span_singleton_one_sub_self, mul_one] at hfactor
     rw [Ideal.Quotient.algebraMap_eq]
     split at hfactor
@@ -175,10 +175,10 @@ private theorem etale_and_finite_equalizer_pi {ι κ : Type*} [_root_.Finite ι]
     ((eκ : (T' ⊗[T] (κ → T)) →ₐ[T'] (κ → T')).comp
       ((Algebra.TensorProduct.map (AlgHom.id T' T') ψ).comp (eι.symm : (ι → T') →ₐ[T'] _)))
     (fun i j ↦ by
-      simpa [a, eι, eκ, TauCeti.Algebra.TensorProduct.piScalarRight_map_symm_single] using
+      simpa [a, eι, eκ, Algebra.algebraMap_eq_smul_one] using
         hT' (true, i, j))
     (fun i j ↦ by
-      simpa [a, eι, eκ, TauCeti.Algebra.TensorProduct.piScalarRight_map_symm_single] using
+      simpa [a, eι, eκ, Algebra.algebraMap_eq_smul_one] using
         hT' (false, i, j))
   exact ⟨.of_equiv e.symm, .equiv e.symm.toLinearEquiv⟩
 
@@ -260,10 +260,10 @@ private theorem etale_and_finite_equalizer {R A B : Type u} [CommRing R] [CommRi
   -- Every prime of `T'` lies over the component of the atom, where the ranks of `A` and `B` are
   -- read off from the atom.
   have hσ (q : PrimeSpectrum T') : ∀ x, a x ∉ (q.comap (algebraMap R T')).asIdeal ↔ σ x := by
-    refine TauCeti.notMem_iff_of_one_sub_prod_ite_mem ha σ ?_
     have h0 : algebraMap R T' (1 - ∏ x, if σ x then a x else 1 - a x) = 0 :=
       Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self _)
-    exact Ideal.mem_comap.mpr (h0 ▸ q.asIdeal.zero_mem)
+    exact fun x ↦ TauCeti.notMem_iff_of_one_sub_prod_ite_mem σ
+      (Ideal.mem_comap.mpr (h0 ▸ q.asIdeal.zero_mem)) (ha x)
   obtain ⟨m, hm⟩ := TauCeti.Module.exists_rankAtStalk_tensorProduct_eq (T' := T') εA hNA hεA'
     fun q q' k ↦ (hσ q (.inl k)).trans (hσ q' (.inl k)).symm
   obtain ⟨n, hn⟩ := TauCeti.Module.exists_rankAtStalk_tensorProduct_eq (T' := T') εB hNB hεB'
