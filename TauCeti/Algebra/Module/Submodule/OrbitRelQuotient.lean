@@ -39,31 +39,22 @@ variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] (p : Submodule R M
 /-- Two points lie in one orbit of translation by a submodule `p` exactly when their difference
 lies in `p`. -/
 theorem Submodule.orbitRel_apply_iff_sub_mem {x y : M} :
-    AddAction.orbitRel p M x y ↔ x - y ∈ p := by
-  rw [AddAction.orbitRel_apply, AddAction.mem_orbit_iff]
-  constructor
-  · rintro ⟨l, rfl⟩
-    simp [Submodule.vadd_def]
-  · intro h
-    exact ⟨⟨x - y, h⟩, by simp [Submodule.vadd_def]⟩
-
-/-- The orbit space of translation by `p` and the quotient module `M ⧸ p` are the same quotient
-of `M`. This equivalence transfers the group structure; it is the underlying equivalence of
-`Submodule.orbitRelQuotientAddEquiv`, which should be used instead. -/
-def Submodule.orbitRelQuotientEquiv : AddAction.orbitRel.Quotient p M ≃ M ⧸ p :=
-  Quotient.congr (Equiv.refl M) fun x y ↦ by
-    rw [Equiv.refl_apply, Equiv.refl_apply, quotientRel_def, orbitRel_apply_iff_sub_mem]
+    AddAction.orbitRel p M x y ↔ x - y ∈ p :=
+  (QuotientAddGroup.rightRel_apply (s := p.toAddSubgroup)).trans <| by
+    rw [← sub_eq_add_neg]; exact sub_mem_comm_iff
 
 /-- The additive group structure on the orbit space of translation by `p`, transferred from the
-quotient module `M ⧸ p`. -/
+quotient module `M ⧸ p`, which is the same quotient of `M`. -/
 instance Submodule.instAddCommGroupOrbitRelQuotient :
     AddCommGroup (AddAction.orbitRel.Quotient p M) :=
-  p.orbitRelQuotientEquiv.addCommGroup
+  Equiv.addCommGroup (β := M ⧸ p) <|
+    Quotient.congrRight fun _ _ ↦ p.orbitRel_apply_iff_sub_mem.trans p.quotientRel_def.symm
 
 /-- The orbit space of translation by `p` is additively equivalent to the quotient module
 `M ⧸ p`, by an equivalence sending the orbit of `x` to the class of `x`. -/
 def Submodule.orbitRelQuotientAddEquiv : AddAction.orbitRel.Quotient p M ≃+ M ⧸ p :=
-  p.orbitRelQuotientEquiv.addEquiv
+  Equiv.addEquiv (β := M ⧸ p) <|
+    Quotient.congrRight fun _ _ ↦ p.orbitRel_apply_iff_sub_mem.trans p.quotientRel_def.symm
 
 /-- `Submodule.orbitRelQuotientAddEquiv` sends the orbit of `x` to the class of `x`. -/
 @[simp]
