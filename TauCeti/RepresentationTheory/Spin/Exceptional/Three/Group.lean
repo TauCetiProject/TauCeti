@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Three.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.Spin.Representation
+public import TauCeti.RepresentationTheory.Spin.Polarization.Exists
 public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Spin.OddStructure
 import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
@@ -362,19 +363,21 @@ theorem nonempty_spinGroup_mulEquiv_specialLinearGroup_of_finrank_eq_three
       (SpinPolarizationData.ofNondegenerate Q hQ) hV
   exact ⟨f⟩
 
-/-- A nondegenerate three-dimensional form also supplies the polarization needed by the
-polarized representation comparison, so the group equivalence can be chosen to carry the
-actual spin representation to the standard representation. -/
+/-- Over a separably closed field of characteristic not two, a nondegenerate three-dimensional
+quadratic form admits a group equivalence to `SL₂` identifying the spin representation associated
+to `SpinPolarizationData.ofNondegenerate Q hQ` with the standard representation. -/
 theorem
     exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_of_isSepClosed
     [NeZero (2 : K)] [IsSepClosed K] (hQ : Q.Nondegenerate) (hV : finrank K V = 3) :
-    ∃ P : SpinPolarizationData Q, ∃ f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K,
-      Nonempty ((spinRep Q P).Equiv ((stdSLRep K 2).comp f.toMonoidHom)) := by
+    letI : FiniteDimensional K V := .of_finrank_eq_succ (n := 2) (by omega)
+    ∃ f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K,
+      Nonempty ((spinRep Q (SpinPolarizationData.ofNondegenerate Q hQ)).Equiv
+        ((stdSLRep K 2).comp f.toMonoidHom)) := by
   let _ : FiniteDimensional K V := .of_finrank_eq_succ (by omega)
   let P := SpinPolarizationData.ofNondegenerate Q hQ
   obtain ⟨f, hf⟩ :=
     exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_of_finrank_eq_three
       P hV
-  exact ⟨P, f, hf⟩
+  exact ⟨f, hf⟩
 
 end TauCeti
