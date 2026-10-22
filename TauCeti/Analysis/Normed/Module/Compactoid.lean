@@ -264,9 +264,10 @@ theorem _root_.Bornology.IsBounded.isCompactoidSet {S : Set E} (hS : Bornology.I
   obtain ⟨c, hc⟩ := NormedField.exists_lt_norm K (max M 0)
   have hc₀ : 0 < ‖c‖ := (le_max_right M 0).trans_lt hc
   refine fun ε hε ↦ ⟨_, fun i ↦ c • b i, fun x hx ↦ ⟨fun i ↦ b.repr x i * c⁻¹, fun i ↦ ?_, ?_⟩⟩
-  · rw [norm_mul, norm_inv, mul_inv_le_iff₀ hc₀, one_mul]
-    exact (norm_le_pi_norm (b.equivFun x) i).trans <|
-      (hM _ ⟨x, hx, rfl⟩).trans <| (le_max_left M 0).trans hc.le
+  · have hxM : ‖b.equivFunL x‖ ≤ M := by
+      simpa only [ContinuousLinearEquiv.coe_coe] using hM _ ⟨x, hx, rfl⟩
+    rw [norm_mul, norm_inv, mul_inv_le_iff₀ hc₀, one_mul, ← Module.Basis.equivFunL_apply]
+    exact (norm_le_pi_norm (b.equivFunL x) i).trans <| hxM.trans <| (le_max_left M 0).trans hc.le
   · simpa [smul_smul, inv_mul_cancel_right₀ (norm_pos_iff.1 hc₀), b.sum_repr x] using hε
 
 end FiniteDimensional
