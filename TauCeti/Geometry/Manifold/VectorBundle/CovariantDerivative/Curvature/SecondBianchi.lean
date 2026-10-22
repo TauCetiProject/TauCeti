@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # The second Bianchi identity
@@ -81,18 +83,10 @@ theorem curvatureOperator_commutator_cyclic_eq_zero
           curvatureOperator cov Z (mlieBracket I X Y) σ x) = 0 := by
   let _ : IsManifold I (minSmoothness ℝ 3) M :=
     IsManifold.of_le (m := minSmoothness ℝ 3) (n := ∞) (by simp)
-  let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M :=
-    IsManifold.of_le (m := (∞ : ℕ∞ω) + 1) (n := ∞) (by simp)
-  have hbr {U W : Π y : M, TangentSpace I y}
-      (hU : CMDiff ∞ (T% U)) (hW : CMDiff ∞ (T% W)) :
-      CMDiff ∞ (T% (mlieBracket I U W)) :=
-    ContDiff.mlieBracket_vectorField (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) hU hW (by
-      simp [minSmoothness_of_isRCLikeNormedField])
   have hsub {τ τ' : Π y : M, V y} (hτ : CMDiff ∞ (T% τ)) (hτ' : CMDiff ∞ (T% τ')) :
-      cov (τ - τ') x = cov τ x - cov τ' x := by
-    rw [eq_sub_iff_add_eq, ← cov.isCovariantDerivativeOnUniv.add
-      ((hτ.sub_section hτ').mdifferentiable (by simp) x) (hτ'.mdifferentiable (by simp) x),
-      sub_add_cancel]
+      cov (τ - τ') x = cov τ x - cov τ' x :=
+    cov.isCovariantDerivativeOnUniv.sub (hτ.mdifferentiable (by simp) x)
+      (hτ'.mdifferentiable (by simp) x)
   -- Expand the derivative of a curvature section into its three third-order terms.
   have hexp {A B C : Π y : M, TangentSpace I y}
       (hA : CMDiff ∞ (T% A)) (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C)) :
@@ -104,7 +98,7 @@ theorem curvatureOperator_commutator_cyclic_eq_zero
     have hBσ := cov.contMDiff_apply hB hσ
     have hBC := cov.contMDiff_apply hB hCσ
     have hCB := cov.contMDiff_apply hC hBσ
-    have hbrσ := cov.contMDiff_apply (hbr hB hC) hσ
+    have hbrσ := cov.contMDiff_apply (contMDiff_mlieBracket hB hC) hσ
     have hR : curvatureOperator cov B C σ =
         (fun y ↦ cov (fun y ↦ cov σ y (C y)) y (B y)) -
           (fun y ↦ cov (fun y ↦ cov σ y (B y)) y (C y)) -
@@ -117,17 +111,9 @@ theorem curvatureOperator_commutator_cyclic_eq_zero
   have hjac : cov σ x (mlieBracket I X (mlieBracket I Y Z) x) +
       cov σ x (mlieBracket I Y (mlieBracket I Z X) x) +
         cov σ x (mlieBracket I Z (mlieBracket I X Y) x) = 0 := by
-    have hj := leibniz_identity_mlieBracket_apply
-      (hX.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt
-      (hY.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt
-      (hZ.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt (x := x)
-    rw [mlieBracket_swap_apply (V := mlieBracket I X Y) (W := Z),
-      mlieBracket_swap (V := X) (W := Z), ← neg_one_smul ℝ (mlieBracket I Z X),
-      mlieBracket_const_smul_right ((hbr hZ hX).mdifferentiable (by simp) x),
-      neg_one_smul] at hj
-    rw [hj]
-    simp only [map_add, map_neg]
-    abel
+    rw [← map_add, ← map_add, jacobi_identity_mlieBracket_apply
+      (hX.of_le (by simp)).contMDiffAt (hY.of_le (by simp)).contMDiffAt
+      (hZ.of_le (by simp)).contMDiffAt, map_zero]
   rw [hexp hX hY hZ, hexp hY hZ hX, hexp hZ hX hY]
   simp only [curvatureOperator_apply]
   rw [← neg_eq_zero]
