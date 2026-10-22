@@ -239,42 +239,6 @@ section CircleIntegral
 
 open Complex (I)
 
-/-- The binomial expansion of `cosᵏ θ e^{i n θ}` into the characters `e^{i (2m - k + n) θ}`. -/
-private theorem cos_pow_mul_cexp (k : ℕ) (n : ℤ) (θ : ℝ) :
-    (cos θ : ℂ) ^ k * Complex.exp (n * θ * I) =
-      ∑ m ∈ Finset.range (k + 1),
-        (1 / 2 : ℂ) ^ k * k.choose m * Complex.exp (((2 * m - k + n : ℤ) : ℂ) * θ * I) := by
-  have hcos : (cos θ : ℂ) = (1 / 2) * (Complex.exp (θ * I) + Complex.exp (-θ * I)) := by
-    rw [Complex.ofReal_cos, ← Complex.two_cos]
-    ring
-  rw [hcos, mul_pow, add_pow, Finset.mul_sum, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun m hm => ?_
-  have hmk : m ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
-  rw [← Complex.exp_nat_mul, ← Complex.exp_nat_mul]
-  calc (1 / 2 : ℂ) ^ k *
-        (Complex.exp (m * (θ * I)) * Complex.exp ((k - m : ℕ) * (-θ * I)) * k.choose m) *
-        Complex.exp (n * θ * I)
-      = (1 / 2 : ℂ) ^ k * k.choose m *
-          Complex.exp (m * (θ * I) + (k - m : ℕ) * (-θ * I) + n * θ * I) := by
-        rw [Complex.exp_add, Complex.exp_add]
-        ring
-    _ = _ := by
-        congr 3
-        push_cast [hmk]
-        ring
-
-/-- `∫_{-π}^{π} cosᵏ θ e^{i n θ} dθ`, read off the binomial expansion by orthogonality. -/
-private theorem integral_cos_pow_mul_cexp (k : ℕ) (n : ℤ) :
-    ∫ θ in -π..π, (cos θ : ℂ) ^ k * Complex.exp (n * θ * I) =
-      ∑ m ∈ Finset.range (k + 1),
-        (1 / 2 : ℂ) ^ k * k.choose m * if 2 * m - k + n = 0 then 2 * (π : ℂ) else 0 := by
-  simp_rw [cos_pow_mul_cexp]
-  rw [intervalIntegral.integral_finsetSum fun m _ =>
-    (by fun_prop : Continuous fun θ : ℝ => (1 / 2 : ℂ) ^ k * k.choose m *
-      Complex.exp (((2 * m - k + n : ℤ) : ℂ) * θ * I)).intervalIntegrable _ _]
-  refine Finset.sum_congr rfl fun m _ => ?_
-  rw [intervalIntegral.integral_const_mul, TauCeti.integral_exp_int_mul_mul_I]
-
 /-- Termwise integration of the exponential series of `e^{κ cos θ}` against `e^{i n θ}`. -/
 private theorem hasSum_integral_exp_mul_cos_mul_cexp (κ : ℝ) (n : ℤ) :
     HasSum (fun k : ℕ => ((κ ^ k / k ! : ℝ) : ℂ) *
@@ -304,7 +268,7 @@ private theorem hasSum_integral_exp_mul_cos_mul_cexp (κ : ℝ) (n : ℤ) :
 private theorem integral_exp_mul_cos_mul_cexp_natCast (κ : ℝ) (n : ℕ) :
     ∫ θ in -π..π, (exp (κ * cos θ) : ℂ) * Complex.exp (n * θ * I) = 2 * π * besselI n κ := by
   have h := hasSum_integral_exp_mul_cos_mul_cexp κ n
-  simp only [integral_cos_pow_mul_cexp] at h
+  simp only [TauCeti.integral_cos_pow_mul_cexp] at h
   rw [Int.cast_natCast] at h
   -- Only the exponents `k = 2 l + n` contribute.
   have hz : ∀ k ∉ Set.range (fun l : ℕ => 2 * l + n),

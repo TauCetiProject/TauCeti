@@ -20,6 +20,8 @@ Interval integrals of elementary functions in closed form, continuing Mathlib's
   for `a, b ∈ (-1, 1)`.
 * `TauCeti.integral_exp_int_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for the integer
   `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
+* `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
+  binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
 -/
 
 public section
@@ -55,5 +57,44 @@ theorem integral_exp_int_mul_mul_I (k : ℤ) :
       Complex.exp_eq_exp_iff_exists_int.mpr ⟨k, by push_cast; ring⟩
     simp_rw [mul_right_comm _ _ Complex.I]
     rw [integral_exp_mul_complex hc, ite_eq_right hk, hper, sub_self, zero_div]
+
+/-- The binomial expansion of `cosᵏ θ exp (n θ i)` into the Fourier characters
+`exp ((2m - k + n) θ i)`. -/
+theorem cos_pow_mul_cexp (k : ℕ) (n : ℤ) (θ : ℝ) :
+    (Real.cos θ : ℂ) ^ k * Complex.exp (n * θ * Complex.I) =
+      ∑ m ∈ Finset.range (k + 1), (1 / 2 : ℂ) ^ k * k.choose m *
+        Complex.exp (((2 * m - k + n : ℤ) : ℂ) * θ * Complex.I) := by
+  have hcos : (Real.cos θ : ℂ) =
+      (1 / 2) * (Complex.exp (θ * Complex.I) + Complex.exp (-θ * Complex.I)) := by
+    rw [Complex.ofReal_cos, ← Complex.two_cos]
+    ring
+  rw [hcos, mul_pow, add_pow, Finset.mul_sum, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun m hm => ?_
+  have hmk : m ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
+  rw [← Complex.exp_nat_mul, ← Complex.exp_nat_mul]
+  calc (1 / 2 : ℂ) ^ k * (Complex.exp (m * (θ * Complex.I)) *
+        Complex.exp ((k - m : ℕ) * (-θ * Complex.I)) * k.choose m) *
+        Complex.exp (n * θ * Complex.I)
+      = (1 / 2 : ℂ) ^ k * k.choose m * Complex.exp (m * (θ * Complex.I) +
+          (k - m : ℕ) * (-θ * Complex.I) + n * θ * Complex.I) := by
+        rw [Complex.exp_add, Complex.exp_add]
+        ring
+    _ = _ := by
+        congr 3
+        push_cast [hmk]
+        ring
+
+/-- The integral `∫ θ in -π..π, cosᵏ θ exp (n θ i)`, the `n`-th Fourier coefficient of `cosᵏ`, read
+off the binomial expansion `cos_pow_mul_cexp` by orthogonality of the characters. -/
+theorem integral_cos_pow_mul_cexp (k : ℕ) (n : ℤ) :
+    ∫ θ in -Real.pi..Real.pi, (Real.cos θ : ℂ) ^ k * Complex.exp (n * θ * Complex.I) =
+      ∑ m ∈ Finset.range (k + 1),
+        (1 / 2 : ℂ) ^ k * k.choose m * if 2 * m - k + n = 0 then 2 * (Real.pi : ℂ) else 0 := by
+  simp_rw [cos_pow_mul_cexp]
+  rw [intervalIntegral.integral_finsetSum fun m _ =>
+    (by fun_prop : Continuous fun θ : ℝ => (1 / 2 : ℂ) ^ k * k.choose m *
+      Complex.exp (((2 * m - k + n : ℤ) : ℂ) * θ * Complex.I)).intervalIntegrable _ _]
+  refine Finset.sum_congr rfl fun m _ => ?_
+  rw [intervalIntegral.integral_const_mul, integral_exp_int_mul_mul_I]
 
 end TauCeti
