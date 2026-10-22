@@ -85,17 +85,6 @@ theorem conj_eq_or_conj_eq_inv_of_cosh_dist [DiscreteTopology Γ] {A B : SL(2, �
   have hC := Matrix.SpecialLinearGroup.abs_trace_commutatorElement_sub_two_le A B z
   linarith
 
-/-- On `[0, 1 / 4]` the hyperbolic cosine is at most `32 / 31`. -/
-private theorem cosh_le_of_le_one_div_four {δ : ℝ} (h₀ : 0 ≤ δ) (h : δ ≤ 1 / 4) :
-    Real.cosh δ ≤ 32 / 31 := by
-  calc Real.cosh δ ≤ Real.cosh (1 / 4) := by
-        rw [Real.cosh_le_cosh, abs_of_nonneg h₀, abs_of_pos (by norm_num : (0 : ℝ) < 1 / 4)]
-        exact h
-    _ ≤ Real.exp ((1 / 4) ^ 2 / 2) := Real.cosh_le_exp_half_sq _
-    _ ≤ 1 / (1 - (1 / 4) ^ 2 / 2) :=
-        Real.exp_bound_div_one_sub_of_interval (by norm_num) (by norm_num)
-    _ = 32 / 31 := by norm_num
-
 /-- **The Margulis lemma for Fuchsian groups.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup and let
 `g, h ∈ Γ` both move a point `z ∈ ℍ` a distance at most `1 / 4`. If `g` fixes no point of `ℍ`, that
 is, if `g` is parabolic or hyperbolic, then `h g h⁻¹ = g` or `h g h⁻¹ = g⁻¹`. -/
@@ -118,8 +107,17 @@ theorem conj_eq_or_conj_eq_inv_of_dist_le [DiscreteTopology Γ] {g h : PSL(2, �
     refine hfix (UpperHalfPlane.fixedPt _ hellA) ?_
     rw [UpperHalfPlane.pslMk_smul]
     exact (UpperHalfPlane.gl_smul_eq_self_iff_eq_fixedPt (by simp) hellA).2 rfl
-  have hcA := cosh_le_of_le_one_div_four dist_nonneg hgz
-  have hcB := cosh_le_of_le_one_div_four dist_nonneg hhz
+  -- on `[0, 1 / 4]` the hyperbolic cosine is at most `cosh (1 / 4) ≤ exp (1 / 32) ≤ 32 / 31`
+  have hcosh : ∀ δ : ℝ, 0 ≤ δ → δ ≤ 1 / 4 → Real.cosh δ ≤ 32 / 31 := fun δ h₀ h =>
+    calc Real.cosh δ ≤ Real.cosh (1 / 4) := by
+          rw [Real.cosh_le_cosh, abs_of_nonneg h₀, abs_of_pos (by norm_num : (0 : ℝ) < 1 / 4)]
+          exact h
+      _ ≤ Real.exp ((1 / 4) ^ 2 / 2) := Real.cosh_le_exp_half_sq _
+      _ ≤ 1 / (1 - (1 / 4) ^ 2 / 2) :=
+          Real.exp_bound_div_one_sub_of_interval (by norm_num) (by norm_num)
+      _ = 32 / 31 := by norm_num
+  have hcA := hcosh _ dist_nonneg hgz
+  have hcB := hcosh _ dist_nonneg hhz
   have h1A := Real.one_le_cosh (dist (A • z) z)
   have h1B := Real.one_le_cosh (dist (B • z) z)
   have htrA := Matrix.SpecialLinearGroup.trace_sq_sub_four_le A z
