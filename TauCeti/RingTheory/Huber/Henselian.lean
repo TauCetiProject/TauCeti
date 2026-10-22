@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.RingOfDefinition
 public import TauCeti.RingTheory.Henselian.Lifting
 
-import Mathlib.Topology.Algebra.IsUniformGroup.Basic
+import TauCeti.RingTheory.Subring.SpanSingleton
 
 /-!
 # Henselian subrings of complete Tate rings
@@ -44,12 +44,21 @@ contains, not just for the ideal originally specified by its pair of definition.
 theorem PairOfDefinition.isAdicComplete_span_singleton (P : PairOfDefinition A)
     (ϖ : P.ringOfDefinition) (hϖ : IsPseudoUniformizer (ϖ : A)) :
     IsAdicComplete (Ideal.span {ϖ}) P.ringOfDefinition := by
-  have : IsUniformAddGroup P.ringOfDefinition := P.ringOfDefinition.toAddSubgroup.isUniformAddGroup
-  obtain ⟨hcomplete, hsep⟩ := P.isAdic_idealOfDefinition.isAdicComplete_iff.mp
-    P.isAdicComplete_idealOfDefinition
-  exact (P.ringOfDefinition.isAdic_span_singleton_of_isPseudoUniformizer
-    P.isOpen_ringOfDefinition P.isBounded_ringOfDefinition hϖ ϖ.property).isAdicComplete_iff.mpr
-      ⟨hcomplete, hsep⟩
+  let Q := PairOfDefinition.ofIsPseudoUniformizer P.ringOfDefinition P.isOpen_ringOfDefinition
+    P.isBounded_ringOfDefinition hϖ ϖ.property
+  -- Use the public projection equality rather than unfolding the pair's hidden definition.
+  let e : Q.ringOfDefinition ≃+* P.ringOfDefinition :=
+    RingEquiv.subringCongr (PairOfDefinition.ofIsPseudoUniformizer_ringOfDefinition
+      P.ringOfDefinition P.isOpen_ringOfDefinition P.isBounded_ringOfDefinition hϖ ϖ.property)
+  have hI : Q.idealOfDefinition.map e = Ideal.span {ϖ} := by
+    ext x
+    rw [← Ideal.comap_symm, Ideal.mem_comap,
+      PairOfDefinition.mem_ofIsPseudoUniformizer_idealOfDefinition,
+      P.ringOfDefinition.mem_span_singleton_iff ϖ.property]
+    simp only [e, RingEquiv.subringCongr_symm, RingEquiv.coe_subringCongr_apply]
+  rw [← hI]
+  exact (IsAdicComplete.congr_ringEquiv Q.idealOfDefinition e).mpr
+    Q.isAdicComplete_idealOfDefinition
 
 omit [IsHuberRing A] in
 /-- A ring of definition of a complete Hausdorff Tate ring is henselian along every
