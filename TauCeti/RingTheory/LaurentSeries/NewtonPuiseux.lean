@@ -7,7 +7,6 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
-import TauCeti.Algebra.Polynomial.LinearFactor
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.LaurentSeries.SlopeNormalization
 import TauCeti.RingTheory.PowerSeries.Hensel
@@ -33,10 +32,9 @@ which may be assumed monic.
    (`Polynomial.Monic.exists_map_expand_eq_scaleRoots_of_nextCoeff_eq_zero`). Its reduction
    modulo `X` still has no term of degree `m - 1`, and its coefficient of `Y ^ j₀` is nonzero, so
    the reduction is not `Y ^ m`.
-3. In characteristic zero such a reduction is not a power `(Y - b) ^ m`, so at any of its roots
-   it splits into coprime monic factors of degrees `0 < r < m`
-   (`Polynomial.Monic.exists_eq_X_sub_C_pow_mul_of_nextCoeff_eq_zero`). Hensel's lemma lifts
-   this splitting to the rescaled polynomial (`Polynomial.Monic.exists_monic_mul_eq_of_isCoprime`).
+3. In characteristic zero such a reduction is not a power `(Y - b) ^ m`, so it splits into
+   coprime monic factors of positive degree, and Hensel's lemma lifts this splitting to the
+   rescaled polynomial (`Polynomial.Monic.exists_monic_mul_eq_of_nextCoeff_map_eq_zero`).
 4. By induction the factor of degree `r` has a root after some ramification `X ↦ X ^ n`. Undoing
    the rescaling and the translation gives a root of `P` after the ramification `X ↦ X ^ (n * q)`.
 
@@ -67,27 +65,6 @@ namespace TauCeti.LaurentSeries
 open _root_.LaurentSeries
 
 variable {K : Type*} [Field K]
-
-/-- A monic polynomial of positive degree `m` over `K⟦X⟧`, whose reduction modulo `X` has no term
-of degree `m - 1` and is not `Y ^ m`, has a monic factor of degree strictly between `0` and `m`:
-the reduction splits at a root into coprime factors, and Hensel's lemma lifts the splitting. -/
-private theorem exists_monic_mul_eq_of_nextCoeff_map_eq_zero [IsAlgClosed K] [CharZero K]
-    {Q : K⟦X⟧[X]} (hQ : Q.Monic) (hm : 0 < Q.natDegree)
-    (hnext : (Q.map PowerSeries.constantCoeff).nextCoeff = 0)
-    (hX : Q.map PowerSeries.constantCoeff ≠ X ^ Q.natDegree) :
-    ∃ G H : K⟦X⟧[X], G.Monic ∧ G * H = Q ∧ 0 < G.natDegree ∧ G.natDegree < Q.natDegree := by
-  have hgm := hQ.natDegree_map PowerSeries.constantCoeff
-  obtain ⟨a, ha⟩ := IsAlgClosed.exists_root (Q.map PowerSeries.constantCoeff)
-    (by rw [degree_eq_natDegree (hQ.map _).ne_zero, hgm]; exact_mod_cast hm.ne')
-  obtain ⟨r, h, hr, hrm, -, hcop, hgh⟩ :=
-    (hQ.map _).exists_eq_X_sub_C_pow_mul_of_nextCoeff_eq_zero
-      (by rw [hgm]; exact_mod_cast hm.ne') hnext (by rwa [hgm]) ha
-  obtain ⟨G, H, hG, -, hGg, -, hGH⟩ :=
-    hQ.exists_monic_mul_eq_of_isCoprime ((monic_X_sub_C a).pow r) hcop hgh
-  have hGr : G.natDegree = r := by
-    rw [← hG.natDegree_map PowerSeries.constantCoeff, hGg, (monic_X_sub_C a).natDegree_pow,
-      natDegree_X_sub_C, mul_one]
-  exact ⟨G, H, hG, hGH, hGr ▸ hr, hGr ▸ hgm ▸ hrm⟩
 
 /-- Undoing a rescaling: if the ramification `X ↦ X ^ q` of `P` is the root scaling by `s` of a
 monic polynomial `Q`, and `Q` has a root after a further ramification `X ↦ X ^ n`, then `P` has a
@@ -135,11 +112,14 @@ private theorem exists_isRoot_map_expand_of_monic (m : ℕ) :
   obtain ⟨q, v, Q, hQ, hQm, hPQ, hQnext, hQX⟩ :=
     hP₁.exists_map_expand_eq_scaleRoots_of_nextCoeff_eq_zero hnext (hP₁m ▸ hX)
   rw [hP₁m] at hQm
-  obtain ⟨G, H, hG, hGH, hG0, hGm⟩ := exists_monic_mul_eq_of_nextCoeff_map_eq_zero hQ
-    (hQm ▸ hm) hQnext hQX
+  obtain ⟨G, H, hG, hH, hGH, hG0, hH0⟩ := hQ.exists_monic_mul_eq_of_nextCoeff_map_eq_zero
+    (IsAlgClosed.splits _) (by rw [hQm]; exact_mod_cast hm.ne') hQnext hQX
+  have hGm : G.natDegree < m := by
+    rw [← hQm, ← hGH, hG.natDegree_mul hH]
+    omega
   -- By induction, `G` has a root after a ramification `X ↦ X ^ n`, hence so does the rescaled
   -- polynomial.
-  obtain ⟨n, y, hy⟩ := ih _ (hQm ▸ hGm) (G.map (ofPowerSeries ℤ K)) (hG.map _)
+  obtain ⟨n, y, hy⟩ := ih _ hGm (G.map (ofPowerSeries ℤ K)) (hG.map _)
     (hG.natDegree_map _) hG0
   obtain ⟨z, hz⟩ := exists_isRoot_map_expand_mul (hQ.map _) hPQ (n := n) (y := y) (by
     rw [← hGH, Polynomial.map_mul, Polynomial.map_mul, IsRoot, eval_mul, hy.eq_zero, zero_mul])

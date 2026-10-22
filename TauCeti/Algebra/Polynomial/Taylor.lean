@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.Algebra.Polynomial.Taylor
-import Mathlib.Tactic.Ring
 
 /-!
-# Taylor coefficients at a root, and the second-highest Taylor coefficient
+# Taylor coefficients at a root and in subleading degree
 
 The Taylor expansion `taylor r p = p(X + r)` of a polynomial `p` at `r` starts in degree
 `p.rootMultiplicity r`, and its trailing coefficient is the value at `r` of `p` divided by the
@@ -23,10 +22,9 @@ Since the Taylor coefficients of `p` at `r` are the values at `r` of the Hasse d
 divisibility of `p` by `(X - r) ^ n` is the vanishing of its Hasse derivatives of order less than
 `n` at `r`. A Hasse derivative of order `k` therefore lowers such a divisibility by at most `k`.
 
-At the other end of the expansion, translating the variable of a polynomial of degree `n` by `r`
-adds `n * r` times the leading coefficient to the coefficient of `X ^ (n - 1)`. When `n` is
-invertible, translating a monic polynomial by minus `1 / n` times that coefficient therefore
-removes its term of degree `n - 1`.
+At the other end of the expansion, the leading coefficient is unchanged and the subleading
+coefficient moves by `p.natDegree * r * p.leadingCoeff`. This is the input for the Tschirnhaus
+shift, which removes the subleading coefficient whenever `p.natDegree` is invertible.
 
 ## Main results
 
@@ -39,14 +37,27 @@ removes its term of degree `n - 1`.
 * `Polynomial.pow_sub_dvd_hasseDeriv_of_pow_dvd`: if `(X - r) ^ n` divides `p`, then
   `(X - r) ^ (n - k)` divides the Hasse derivative of `p` of order `k`.
 * `Polynomial.eval_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - r) ^ m` at `r`.
-* `Polynomial.nextCoeff_taylor`: the second-highest coefficient of `p(X + r)`.
+* `Polynomial.nextCoeff_taylor`: the subleading coefficient of the Taylor expansion of `p` at `r`
+  is `p.nextCoeff + p.natDegree * r * p.leadingCoeff`.
 -/
 
 public section
 
 namespace Polynomial
 
-section CommRing
+/-- The subleading coefficient of the Taylor expansion `p(X + r)` is that of `p` plus
+`p.natDegree * r * p.leadingCoeff`. -/
+theorem nextCoeff_taylor {R : Type*} [CommSemiring R] (p : R[X]) (r : R) :
+    (taylor r p).nextCoeff = p.nextCoeff + p.natDegree * r * p.leadingCoeff := by
+  rcases Nat.eq_zero_or_pos p.natDegree with h | h
+  · simp [nextCoeff, natDegree_taylor, h]
+  -- The Hasse derivative of order `p.natDegree - 1` is linear; evaluate it at `r`.
+  rw [nextCoeff_of_natDegree_pos (by rwa [natDegree_taylor]), nextCoeff_of_natDegree_pos h,
+    natDegree_taylor, taylor_coeff,
+    eq_X_add_C_of_natDegree_le_one ((natDegree_hasseDeriv_le _ _).trans (by omega))]
+  obtain ⟨d, hd⟩ : ∃ d, p.natDegree = d + 1 := ⟨_, (Nat.succ_pred_eq_of_pos h).symm⟩
+  simp [hasseDeriv_coeff, leadingCoeff, hd, add_comm 1 d]
+  ring
 
 variable {R : Type*} [CommRing R]
 
@@ -98,31 +109,5 @@ theorem eval_hasseDeriv_X_sub_C_pow (r : R) (i m : ℕ) :
     (hasseDeriv i ((X - C r) ^ m)).eval r = if i = m then 1 else 0 := by
   rw [← taylor_coeff]
   simp [taylor_pow, coeff_X_pow]
-
-end CommRing
-
-section CommSemiring
-
-variable {R : Type*} [CommSemiring R]
-
-/-- Translating the variable by `r` adds `n * r` times the leading coefficient to the coefficient
-of `X ^ (n - 1)`, where `n` is the degree. -/
-@[simp]
-theorem nextCoeff_taylor (p : R[X]) (r : R) :
-    (taylor r p).nextCoeff = p.nextCoeff + p.natDegree * r * p.leadingCoeff := by
-  rcases Nat.eq_zero_or_pos p.natDegree with h | h
-  · simp [nextCoeff, natDegree_taylor, h]
-  -- The relevant Taylor coefficient is the value at `r` of a Hasse derivative of degree `≤ 1`.
-  have h2 : (hasseDeriv (p.natDegree - 1) p).natDegree < 2 :=
-    (natDegree_hasseDeriv_le p _).trans_lt (by omega)
-  rw [nextCoeff_of_natDegree_pos (by rwa [natDegree_taylor]), nextCoeff_of_natDegree_pos h,
-    natDegree_taylor, taylor_coeff, eval_eq_sum_range' h2]
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero, hasseDeriv_coeff, zero_add, pow_zero,
-    pow_one, Nat.choose_self, Nat.cast_one, one_mul, mul_one, leadingCoeff]
-  rw [Nat.add_sub_of_le h, Nat.choose_symm_of_eq_add (Nat.sub_add_cancel h).symm,
-    Nat.choose_one_right]
-  ring
-
-end CommSemiring
 
 end Polynomial
