@@ -133,11 +133,24 @@ private local instance tensorFactorsRightModule (i : V) : Module Zᵐᵒᵖ (U i
 private local instance tensorFactorsLeftModule (i : V) : Module Z (U i) :=
   TauCeti.Algebra.TensorProduct.moduleLeft (k := k) (A := Z) (B := Zᵐᵒᵖ) (U i)
 
-private def rightFactors (i : V) : U i ≃ₗ[k] R i ⊗[k] L i :=
+/-- Identify the vertex bimodule with its two idempotent-ideal factors in the opposite order,
+the right ideal first. The right action of `Z` is then the action of `Zᵐᵒᵖ` on the first factor,
+the form in which balanced tensor products over `Z` act. -/
+def zigzagBraidBimoduleRightFactorsEquiv (i : V) : U i ≃ₗ[k] R i ⊗[k] L i :=
   (zigzagBraidBimoduleFactorsEquiv k G i).trans (TensorProduct.comm k _ _)
 
-private theorem rightFactors_equivariant (i : V) (a : Z) (m : U i) :
-    rightFactors k G i (op a • m) = op a • rightFactors k G i m := by
+/-- The reversed factor identification is the factor identification followed by swapping the
+two factors. -/
+@[simp]
+theorem zigzagBraidBimoduleRightFactorsEquiv_apply (i : V) (u : U i) :
+    zigzagBraidBimoduleRightFactorsEquiv k G i u =
+      TensorProduct.comm k (L i) (R i) (zigzagBraidBimoduleFactorsEquiv k G i u) := (rfl)
+
+/-- The reversed factor identification carries the right action of `Z` on the vertex bimodule to
+the action of `Zᵐᵒᵖ` on the right-ideal factor. -/
+theorem zigzagBraidBimoduleRightFactorsEquiv_op_smul (i : V) (a : Z) (m : U i) :
+    zigzagBraidBimoduleRightFactorsEquiv k G i (((1 : Z) ⊗ₜ[k] op a) • m) =
+      op a • zigzagBraidBimoduleRightFactorsEquiv k G i m := by
   have key (t : L i ⊗[k] R i) :
       TensorProduct.comm k (L i) (R i)
         (TensorProduct.map ((Algebra.lsmul k k (L i)) (1 : Z))
@@ -149,6 +162,14 @@ private theorem rightFactors_equivariant (i : V) (a : Z) (m : U i) :
   exact (congrArg (TensorProduct.comm k (L i) (R i))
     (zigzagBraidBimoduleFactorsEquiv_tmul_smul k G i 1 a m)).trans
       (key (zigzagBraidBimoduleFactorsEquiv k G i m))
+
+-- `zigzagBraidBimoduleRightFactorsEquiv_op_smul` restated with the restricted `Zᵐᵒᵖ` action, the
+-- form `BalancedTensorProduct.congr` expects. The two actions agree only after unfolding
+-- `Algebra.TensorProduct.includeRight`, so rewriting under `congr` needs this exact statement.
+private theorem rightFactors_equivariant (i : V) (a : Z) (m : U i) :
+    zigzagBraidBimoduleRightFactorsEquiv k G i (op a • m) =
+      op a • zigzagBraidBimoduleRightFactorsEquiv k G i m :=
+  zigzagBraidBimoduleRightFactorsEquiv_op_smul k G i a m
 
 private theorem leftFactors_equivariant (j : V) (a : Z) (n : U j) :
     zigzagBraidBimoduleFactorsEquiv k G j (a • n) =
@@ -167,7 +188,7 @@ def zigzagBraidTensorCornerEquiv (i j : V) :
     GradedModuleCat.bimoduleTensorObj Γ Γ Γ (U i) (U j) ≃ₗ[k]
       cornerSubmodule k (e i) (e j) ⊗[k] (L i ⊗[k] R j) :=
   (GradedModuleCat.bimoduleTensorUnderlyingEquiv Γ Γ Γ (U i) (U j)).trans
-    ((BalancedTensorProduct.congr (rightFactors k G i)
+    ((BalancedTensorProduct.congr (zigzagBraidBimoduleRightFactorsEquiv k G i)
       (zigzagBraidBimoduleFactorsEquiv k G j)
       (rightFactors_equivariant k G i) (leftFactors_equivariant k G j)).trans
     ((BalancedTensorProduct.outerFactors k Z (R i) (L j) (L i) (R j)).trans
@@ -189,7 +210,7 @@ theorem zigzagBraidTensorCornerEquiv_tmul (i j : V) (l : L i) (r : R i)
       (BalancedTensorProduct.tmul k Z r l') ⊗ₜ[k] (l ⊗ₜ[k] r') := by
   simp only [zigzagBraidTensorCornerEquiv, LinearEquiv.trans_apply]
   rw [GradedModuleCat.bimoduleTensorUnderlyingEquiv_tmul Γ Γ Γ (U i) (U j)]
-  simp only [BalancedTensorProduct.congr_tmul, rightFactors, LinearEquiv.trans_apply,
+  simp only [BalancedTensorProduct.congr_tmul, zigzagBraidBimoduleRightFactorsEquiv_apply,
     LinearEquiv.apply_symm_apply, TensorProduct.comm_tmul,
     BalancedTensorProduct.outerFactors_tmul, TensorProduct.congr_tmul,
     LinearEquiv.refl_apply]
