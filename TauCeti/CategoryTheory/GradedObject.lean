@@ -237,4 +237,24 @@ noncomputable def gradedObjectTotalSingleIso {β : Type} (C : Type u) [Category.
       · exact (GradedObject.isInitialSingleObjApply j Y i hi).hom_ext _ _
     inv_hom_id := by simp }
 
+/-- The inclusion of degree `j` into the total object of `(GradedObject.single j).obj Y`,
+followed by `TauCeti.gradedObjectTotalSingleIso`, is `GradedObject.singleObjApplyIso`. -/
+@[simp, reassoc]
+theorem ι_gradedObjectTotalSingleIso_hom {β : Type} (C : Type u) [Category.{v} C]
+    [HasCoproducts.{0} C] [DecidableEq β] (j : β) (Y : C) :
+    Sigma.ι ((GradedObject.single j).obj Y) j ≫
+        (gradedObjectTotalSingleIso C j Y).hom =
+      (GradedObject.singleObjApplyIso j Y).hom := by
+  simp [gradedObjectTotalSingleIso, GradedObject.singleObjApplyIso]
+
+/-- The inverse of `TauCeti.gradedObjectTotalSingleIso` is the inclusion of degree `j`. -/
+@[simp]
+theorem gradedObjectTotalSingleIso_inv {β : Type} (C : Type u) [Category.{v} C]
+    [HasCoproducts.{0} C] [DecidableEq β] (j : β) (Y : C) :
+    (gradedObjectTotalSingleIso C j Y).inv =
+      (GradedObject.singleObjApplyIso j Y).inv ≫
+        Sigma.ι ((GradedObject.single j).obj Y) j := by
+  unfold gradedObjectTotalSingleIso
+  rfl
+
 end TauCeti
