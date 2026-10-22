@@ -77,16 +77,17 @@ theorem symplecticForm_interior_vectorBundleEulerField :
   -- Read both sides in the chart at `z`, where the Euler field is `(0, p)`.
   have hl := inChartAt_liouvilleForm z (mem_extChartAt_target z)
   rw [RoughForm.inChartAt_extChartAt_self] at hl
-  rw [RoughForm.interior_apply, symplecticForm_apply, Pi.neg_apply,
-    ContinuousAlternatingMap.neg_apply, hl, vectorBundleEulerField_eq_trivializationAt,
-    ← Manifold.extChartAt_totalSpace_apply_snd (IB := I)]
   -- This is the linear identity `ι_{p ∂_p} ω = -λ` at the chart point.
   have h := strongDualCotangentSymplecticForm_cotangentLiouvilleField
     (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z z) (v 0)
-  rw [cotangentLiouvilleField_apply] at h
-  have hv : (fun _ : Fin 1 ↦ v 0) = v := funext fun i ↦ congrArg v (Subsingleton.elim 0 i)
-  exact h.trans (DFunLike.congr_arg
-    (-cotangentLiouvilleForm (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z z)) hv)
+  -- `symplecticForm_apply` is stated on `Fin 2`, so `simp` cannot use it at `Fin (1 + 1)`.
+  rw [RoughForm.interior_apply, symplecticForm_apply]
+  -- A family `v` indexed by `Fin 1` is the constant family at `v 0`.
+  simp only [Pi.neg_apply, hl, vectorBundleEulerField_eq_trivializationAt,
+    ← Manifold.extChartAt_totalSpace_apply_snd (IB := I), cotangentLiouvilleField_apply,
+    show (fun _ ↦ v 0) = v from (eq_const_of_subsingleton v 0).symm] at h ⊢
+  -- The two sides now agree up to definitional unfolding: `Bundle.Trivial _ ℝ z` is `ℝ`.
+  exact h
 
 /-- **The radial field `p ∂_p` is a Liouville vector field** of the canonical symplectic form of
 the cotangent bundle: `L_Z ω = ω`, for the Euler vector field `Z` of `T*M`. -/
