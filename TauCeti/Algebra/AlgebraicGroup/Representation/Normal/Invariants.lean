@@ -12,6 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.SubgroupWeigh
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 import Mathlib.RingTheory.Flat.Equalizer
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Intersection
 
 /-!
@@ -201,26 +202,6 @@ variable [Field k] [CommRing A] [HopfAlgebra k A]
 variable [AddCommMonoid V] [Module k V] [Comodule k A V]
 variable {I : HopfIdeal k A}
 
-omit [Comodule k A V] in
-private theorem lTensor_assoc_rTensor_natural {Q : Type x} [AddCommMonoid Q] [Module k Q]
-    (π : A →ₗ[k] Q) (ρ : V →ₗ[k] V ⊗[k] A) (t : V ⊗[k] A) :
-    (π.lTensor A).lTensor V (TensorProduct.assoc k V A A (ρ.rTensor A t)) =
-      TensorProduct.assoc k V A Q (ρ.rTensor Q (π.lTensor V t)) := by
-  rw [LinearMap.lTensor, LinearMap.lTensor, LinearMap.rTensor, LinearMap.rTensor,
-    TensorProduct.map_map_assoc]
-  congr 1
-  rw [LinearMap.lTensor, TensorProduct.map_map, TensorProduct.map_map]
-  simp
-
-omit [Comodule k A V] in
-private theorem assoc_rTensor_lTensor_natural {Q : Type x} [AddCommMonoid Q] [Module k Q]
-    (π : A →ₗ[k] Q) (ρ : V →ₗ[k] V ⊗[k] A) (t : V ⊗[k] A) :
-    TensorProduct.assoc k V Q A ((π.lTensor V ∘ₗ ρ).rTensor A t) =
-      (π.rTensor A).lTensor V (TensorProduct.assoc k V A A (ρ.rTensor A t)) := by
-  rw [LinearMap.rTensor_comp_apply]
-  exact (LinearMap.congr_fun (LinearMap.lTensor_rTensor_comp_assoc A (P := V) (Q := A) π)
-    (ρ.rTensor A t)).symm
-
 private theorem lTensor_coassoc_natural {Q : Type x} [AddCommMonoid Q] [Module k Q]
     (π : A →ₗ[k] Q) (v : V) :
     (π.lTensor A ∘ₗ Coalgebra.comul).lTensor V (Comodule.coact (R := k) (C := A) v) =
@@ -228,7 +209,7 @@ private theorem lTensor_coassoc_natural {Q : Type x} [AddCommMonoid Q] [Module k
         ((Comodule.coact (R := k) (C := A)).rTensor Q
           (π.lTensor V (Comodule.coact (R := k) (C := A) v))) := by
   rw [LinearMap.lTensor_comp_apply, ← Comodule.coassoc_apply]
-  exact lTensor_assoc_rTensor_natural π (Comodule.coact (R := k) (C := A))
+  exact LinearMap.lTensor_assoc_rTensor_natural π (Comodule.coact (R := k) (C := A))
     (Comodule.coact (R := k) (C := A) v)
 
 private theorem assoc_rTensor_coact_natural {Q : Type x} [AddCommMonoid Q] [Module k Q]
@@ -239,17 +220,8 @@ private theorem assoc_rTensor_coact_natural {Q : Type x} [AddCommMonoid Q] [Modu
       (π.rTensor A).lTensor V
         (Coalgebra.comul.lTensor V (Comodule.coact (R := k) (C := A) v)) := by
   rw [← Comodule.coassoc_apply]
-  exact assoc_rTensor_lTensor_natural π (Comodule.coact (R := k) (C := A))
+  exact LinearMap.assoc_rTensor_lTensor_natural π (Comodule.coact (R := k) (C := A))
     (Comodule.coact (R := k) (C := A) v)
-
-omit [Comodule k A V] in
-private theorem assoc_flip_one_rTensor (Q : Type x) [AddCommMonoid Q] [Module k Q] [One Q]
-    (y : V ⊗[k] A) :
-    TensorProduct.assoc k V Q A (((TensorProduct.mk k V Q).flip 1).rTensor A y) =
-      (TensorProduct.mk k Q A 1).lTensor V y := by
-  induction y with
-  | tmul a b => simp
-  | add y z hy hz => simp [hy, hz]
 
 private theorem assoc_rTensor_coact_eq_lTensor_one_of_mem_range
     {Q : Type x} [AddCommMonoid Q] [Module k Q] [One Q] (B : Submodule k A) (π : A →ₗ[k] Q)
@@ -370,7 +342,7 @@ theorem IsNormal.coact_mem_range_rTensor_weightSpace_one (hI : I.IsNormal) {v : 
     apply (TensorProduct.assoc k V Q A).injective
     rw [hsub, map_sub,
       assoc_rTensor_coact_eq_lTensor_one_of_mem_range B π hx hleft,
-      assoc_flip_one_rTensor Q, sub_self, map_zero]
+      LinearMap.assoc_flip_mk_rTensor, sub_self, map_zero]
   have hexact := LinearMap.exact_iff.mp
     (Module.Flat.rTensor_exact A (LinearMap.exact_subtype_ker_map F))
   rw [hW, ← hexact]

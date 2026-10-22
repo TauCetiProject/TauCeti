@@ -15,8 +15,11 @@ This file defines contraction of a tensor product against a linear functional on
 bundled as a linear map in the functional, and records its behavior on pure tensors and under
 tensor-product maps.
 Such contractions extract coordinates and test tensor identities, supporting componentwise
-arguments about coactions and weight spaces. It also proves the tensor identity that makes
-the Casimir element of a trace commute with multiplication.
+arguments about coactions and weight spaces.
+It records naturality identities for the associator that arise when manipulating
+coassociativity of coactions.
+It also proves the tensor identity that makes the Casimir element of a trace commute with
+multiplication.
 
 ## Main declarations
 
@@ -26,6 +29,11 @@ the Casimir element of a trace commute with multiplication.
 * `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
 * `LinearMap.lTensor_comp_map_id_comm`: maps on separate tensor factors commute.
 * `LinearMap.tensorComponent_comp_tensorComponent`: successive contractions combine after
+  reassociation.
+* `LinearMap.lTensor_map_assoc_rTensor_natural`, `LinearMap.lTensor_assoc_rTensor_natural`,
+  `LinearMap.assoc_rTensor_lTensor_natural`: reassociation after expanding the left factor is
+  natural in maps on the other factors.
+* `LinearMap.assoc_flip_mk_rTensor`: inserting a fixed middle factor commutes with
   reassociation.
 * `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
@@ -129,6 +137,59 @@ theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :
     mul_comm]
 
 end
+
+section AssocNatural
+
+variable {R M N P P' S S' : Type*} [CommSemiring R]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+  [AddCommMonoid P] [Module R P] [AddCommMonoid P'] [Module R P']
+  [AddCommMonoid S] [Module R S] [AddCommMonoid S'] [Module R S']
+
+/-- Reassociating after expanding the left factor by `ρ : M → N ⊗ P` is natural in maps on the
+last two factors. -/
+theorem lTensor_map_assoc_rTensor_natural (f : P →ₗ[R] P') (g : S →ₗ[R] S')
+    (ρ : M →ₗ[R] N ⊗[R] P) (t : M ⊗[R] S) :
+    (TensorProduct.map f g).lTensor N (TensorProduct.assoc R N P S (ρ.rTensor S t)) =
+      TensorProduct.assoc R N P' S' ((f.lTensor N ∘ₗ ρ).rTensor S' (g.lTensor M t)) := by
+  induction t with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul m s =>
+    simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul, LinearMap.comp_apply]
+    induction ρ m with
+    | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
+    | tmul n p => simp
+
+/-- Reassociating after expanding the left factor by `ρ : M → N ⊗ P` is natural in a map on the
+last factor. -/
+theorem lTensor_assoc_rTensor_natural (π : S →ₗ[R] S') (ρ : M →ₗ[R] N ⊗[R] P)
+    (t : M ⊗[R] S) :
+    (π.lTensor P).lTensor N (TensorProduct.assoc R N P S (ρ.rTensor S t)) =
+      TensorProduct.assoc R N P S' (ρ.rTensor S' (π.lTensor M t)) := by
+  have h := lTensor_map_assoc_rTensor_natural LinearMap.id π ρ t
+  rw [LinearMap.lTensor_id, LinearMap.id_comp] at h
+  -- `π.lTensor P` is `TensorProduct.map LinearMap.id π` by definition.
+  exact h
+
+/-- Reassociating after expanding the left factor by `ρ : M → N ⊗ P` is natural in a map on the
+middle factor. -/
+theorem assoc_rTensor_lTensor_natural (π : P →ₗ[R] P') (ρ : M →ₗ[R] N ⊗[R] P)
+    (t : M ⊗[R] S) :
+    TensorProduct.assoc R N P' S ((π.lTensor N ∘ₗ ρ).rTensor S t) =
+      (π.rTensor S).lTensor N (TensorProduct.assoc R N P S (ρ.rTensor S t)) := by
+  rw [LinearMap.rTensor_comp_apply]
+  exact (LinearMap.congr_fun
+    (LinearMap.lTensor_rTensor_comp_assoc (M := P) (N := P') (P := N) (Q := S) π)
+    (ρ.rTensor S t)).symm
+
+/-- Inserting a fixed vector `p` as a new middle tensor factor commutes with reassociation. -/
+theorem assoc_flip_mk_rTensor (p : P) (y : M ⊗[R] S) :
+    TensorProduct.assoc R M P S (((TensorProduct.mk R M P).flip p).rTensor S y) =
+      (TensorProduct.mk R P S p).lTensor M y := by
+  induction y with
+  | tmul a b => simp
+  | add y z hy hz => simp [hy, hz]
+
+end AssocNatural
 
 /-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
 @[simp]

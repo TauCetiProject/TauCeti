@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Comodules whose coaction takes values in a subcoalgebra
@@ -50,18 +51,6 @@ variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable [AddCommMonoid D] [Module R D] [Coalgebra R D]
 variable {M : Type x} [AddCommMonoid M] [Module R M] [Comodule R C M]
 
-omit [Coalgebra R C] [Coalgebra R D] [Comodule R C M] in
-private theorem lTensor_map_assoc_rTensor_natural (ι : D →ₗ[R] C)
-    (ρ : M →ₗ[R] M ⊗[R] D) (t : M ⊗[R] D) :
-    (TensorProduct.map ι ι).lTensor M
-        (TensorProduct.assoc R M D D (ρ.rTensor D t)) =
-      TensorProduct.assoc R M C C
-        ((ι.lTensor M ∘ₗ ρ).rTensor C (ι.lTensor M t)) := by
-  rw [LinearMap.lTensor, LinearMap.rTensor, TensorProduct.map_map_assoc]
-  congr 1
-  rw [LinearMap.lTensor, LinearMap.rTensor, TensorProduct.map_map, TensorProduct.map_map]
-  simp
-
 /-- A right `C`-comodule whose coaction takes values in `M ⊗ D`, for a coalgebra morphism
 `ι : D →ₗc[R] C` with `M ⊗ D → M ⊗ C` and `M ⊗ (D ⊗ D) → M ⊗ (C ⊗ C)` injective, is a right
 `D`-comodule. Its coaction is the unique lift of the original one. -/
@@ -86,7 +75,7 @@ noncomputable def ofCorestrict (ι : D →ₗc[R] C)
         (TensorProduct.assoc R M D D (ρ.rTensor D (ρ m))) =
           TensorProduct.assoc R M C C ((coact (R := R) (C := C)).rTensor C
             (coact (R := R) (C := C) m)) := by
-      rw [lTensor_map_assoc_rTensor_natural, hcomp, hρ]
+      rw [LinearMap.lTensor_map_assoc_rTensor_natural, hcomp, hρ]
     have hr : (TensorProduct.map ι.toLinearMap ι.toLinearMap).lTensor M
         (Coalgebra.comul.lTensor M (ρ m)) =
           Coalgebra.comul.lTensor M (coact (R := R) (C := C) m) := by
