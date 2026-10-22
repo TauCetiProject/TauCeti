@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.ModuleTopology.Basic
 import Mathlib.Topology.Algebra.Algebra
+import TauCeti.Algebra.Ring.Subgroup
 
 /-!
 # Finite algebras over a Huber ring
@@ -21,8 +22,8 @@ step in making it a Huber pair over `(A, A⁺)`.
 Fix a pair of definition `(A₀, I)` of `A` and a finitely generated `A₀`-submodule `M₀ ⊆ B`
 containing `1` and spanning `B` over `A`. The submodules `Iⁿ • M₀` are a neighbourhood basis of
 `0` (`TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero_idealOfDefinition_pow_smul`). The
-*multiplier ring* `B₀ = {b ∈ B | b M₀ ⊆ M₀}` is a subring of `B`. Since `M₀ * M₀` is finitely
-generated, a power `Iʲ` carries it into `M₀`
+*multiplier ring* `B₀ = {b ∈ B | b M₀ ⊆ M₀}` is a subring of `B` (`AddSubgroup.multiplierRing`).
+Since `M₀ * M₀` is finitely generated, a power `Iʲ` carries it into `M₀`
 (`TauCeti.Huber.PairOfDefinition.exists_pow_smul_le`), so `Iʲ • M₀ ⊆ B₀` and `B₀` is open.
 With the extension `J` of `I` to `B₀`, one gets `I^(n + j) • M₀ ⊆ Jⁿ ⊆ Iⁿ • M₀`, the second
 inclusion because `1 ∈ M₀` and `B₀ M₀ ⊆ M₀`. So the topology of `B₀` is the `J`-adic one and
@@ -56,33 +57,11 @@ namespace PairOfDefinition
 
 /-! ### The multiplier ring of a lattice -/
 
-/-- The *multiplier ring* of an `A₀`-submodule `M₀ ⊆ B`: the elements `b` with `b M₀ ⊆ M₀`. -/
-private def multiplierRing (P : PairOfDefinition A) (M₀ : Submodule P.ringOfDefinition B) :
-    Subring B where
-  carrier := {b | ∀ m ∈ M₀, b * m ∈ M₀}
-  mul_mem' {a b} ha hb m hm := by
-    rw [mul_assoc]
-    exact ha _ (hb m hm)
-  one_mem' m hm := by rwa [one_mul]
-  add_mem' {a b} ha hb m hm := by
-    rw [add_mul]
-    exact M₀.add_mem (ha m hm) (hb m hm)
-  zero_mem' m _ := by
-    rw [zero_mul]
-    exact M₀.zero_mem
-  neg_mem' {a} ha m hm := by
-    rw [neg_mul]
-    exact M₀.neg_mem (ha m hm)
-
-/-- Membership in the multiplier ring. -/
-private theorem mem_multiplierRing (P : PairOfDefinition A) {M₀ : Submodule P.ringOfDefinition B}
-    {b : B} : b ∈ multiplierRing P M₀ ↔ ∀ m ∈ M₀, b * m ∈ M₀ := Iff.rfl
-
 /-- The image of `A₀` lies in the multiplier ring. -/
 private theorem algebraMap_mem_multiplierRing (P : PairOfDefinition A)
     (M₀ : Submodule P.ringOfDefinition B) (a : P.ringOfDefinition) :
-    algebraMap P.ringOfDefinition B a ∈ multiplierRing P M₀ := by
-  refine (mem_multiplierRing P).mpr fun m hm ↦ ?_
+    algebraMap P.ringOfDefinition B a ∈ M₀.toAddSubgroup.multiplierRing := by
+  refine AddSubgroup.mem_multiplierRing.mpr fun m hm ↦ ?_
   rw [← Algebra.smul_def]
   exact M₀.smul_mem a hm
 
@@ -90,18 +69,19 @@ private theorem algebraMap_mem_multiplierRing (P : PairOfDefinition A)
 private theorem smul_subset_multiplierRing (P : PairOfDefinition A)
     {M₀ : Submodule P.ringOfDefinition B} {j : ℕ} (hj : P.idealOfDefinition ^ j • (M₀ * M₀) ≤ M₀) :
     ((P.idealOfDefinition ^ j • M₀ : Submodule P.ringOfDefinition B) : Set B) ⊆
-      multiplierRing P M₀ := fun x hx ↦ by
+      M₀.toAddSubgroup.multiplierRing := fun x hx ↦ by
   refine Submodule.smul_induction_on hx (fun t ht n hn ↦ ?_) fun x y hx hy ↦ ?_
-  · refine (mem_multiplierRing P).mpr fun m hm ↦ ?_
+  · refine AddSubgroup.mem_multiplierRing.mpr fun m hm ↦ ?_
     rw [smul_mul_assoc]
     exact hj (Submodule.smul_mem_smul ht (Submodule.mul_mem_mul hn hm))
-  · exact (multiplierRing P M₀).add_mem hx hy
+  · exact M₀.toAddSubgroup.multiplierRing.add_mem hx hy
 
 /-! ### The ideal of definition of the multiplier ring -/
 
 /-- The structure map `A₀ → B₀` into the multiplier ring. -/
 private noncomputable def toMultiplierRing (P : PairOfDefinition A)
-    (M₀ : Submodule P.ringOfDefinition B) : P.ringOfDefinition →+* multiplierRing P M₀ :=
+    (M₀ : Submodule P.ringOfDefinition B) :
+    P.ringOfDefinition →+* M₀.toAddSubgroup.multiplierRing :=
   (algebraMap P.ringOfDefinition B).codRestrict _ (algebraMap_mem_multiplierRing P M₀)
 
 /-- The structure map `A₀ → B₀` sends `a` to `a • 1`. -/
@@ -113,7 +93,7 @@ private theorem coe_toMultiplierRing (P : PairOfDefinition A) (M₀ : Submodule 
 private theorem coe_map_pow_subset (P : PairOfDefinition A) {M₀ : Submodule P.ringOfDefinition B}
     (h1 : (1 : B) ∈ M₀) (n : ℕ) :
     Subtype.val '' ((P.idealOfDefinition.map (toMultiplierRing P M₀) ^ n :
-      Ideal (multiplierRing P M₀)) : Set (multiplierRing P M₀)) ⊆
+      Ideal M₀.toAddSubgroup.multiplierRing) : Set M₀.toAddSubgroup.multiplierRing) ⊆
         ((P.idealOfDefinition ^ n • M₀ : Submodule P.ringOfDefinition B) : Set B) := by
   rintro _ ⟨x, hx, rfl⟩
   rw [SetLike.mem_coe, ← Ideal.map_pow] at hx
@@ -128,7 +108,7 @@ private theorem coe_map_pow_subset (P : PairOfDefinition A) {M₀ : Submodule P.
     rw [smul_eq_mul, Subring.coe_mul]
     refine Submodule.smul_induction_on' hy (fun t ht m hm ↦ ?_) fun _ _ _ _ h₁ h₂ ↦ ?_
     · rw [mul_smul_comm]
-      exact Submodule.smul_mem_smul ht ((mem_multiplierRing P).mp r.2 m hm)
+      exact Submodule.smul_mem_smul ht (AddSubgroup.mem_multiplierRing.mp r.2 m hm)
     · rw [mul_add]
       exact Submodule.add_mem _ h₁ h₂
 
@@ -137,10 +117,11 @@ extended ideal `J = I B₀`. -/
 private theorem smul_subset_coe_map_pow (P : PairOfDefinition A)
     {M₀ : Submodule P.ringOfDefinition B} {j : ℕ}
     (hj : ((P.idealOfDefinition ^ j • M₀ : Submodule P.ringOfDefinition B) : Set B) ⊆
-      multiplierRing P M₀) (n : ℕ) :
+      M₀.toAddSubgroup.multiplierRing) (n : ℕ) :
     ((P.idealOfDefinition ^ (n + j) • M₀ : Submodule P.ringOfDefinition B) : Set B) ⊆
       Subtype.val '' ((P.idealOfDefinition.map (toMultiplierRing P M₀) ^ n :
-        Ideal (multiplierRing P M₀)) : Set (multiplierRing P M₀)) := fun x hx ↦ by
+        Ideal M₀.toAddSubgroup.multiplierRing) : Set M₀.toAddSubgroup.multiplierRing) := by
+  intro x hx
   rw [pow_add, Submodule.mul_smul] at hx
   refine Submodule.smul_induction_on hx (fun a ha y hy ↦ ?_) ?_
   · refine ⟨toMultiplierRing P M₀ a * ⟨y, hj hy⟩, ?_, ?_⟩
@@ -176,7 +157,7 @@ private theorem nonempty_pairOfDefinition (P : PairOfDefinition A) :
     exact Submodule.fg_span (hT.mul hT)
   obtain ⟨j, hj⟩ := P.exists_pow_smul_le M₀ hfg (by simp [hspan])
   have hjB₀ := smul_subset_multiplierRing P hj
-  set B₀ := multiplierRing P M₀
+  set B₀ := M₀.toAddSubgroup.multiplierRing
   set J := P.idealOfDefinition.map (toMultiplierRing P M₀)
   refine ⟨{ ringOfDefinition := B₀
             isOpen_ringOfDefinition := B₀.toAddSubgroup.isOpen_of_mem_nhds
