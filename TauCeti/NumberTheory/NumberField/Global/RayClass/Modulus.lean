@@ -268,6 +268,22 @@ def one (K : Type*) [Field K] [NumberField K] : Modulus K where
 
 @[simp] theorem one_infinitePart : (one K).infinitePart = ∅ := (rfl)
 
+/-- The modulus with prescribed nonzero finite part and no infinite part. -/
+def ofFinitePart (m : Ideal (RingOfIntegers K)) (hm : m ≠ ⊥) : Modulus K where
+  finitePart := m
+  finitePart_ne_bot := hm
+  infinitePart := ∅
+
+@[simp]
+theorem ofFinitePart_finitePart (m : Ideal (RingOfIntegers K)) (hm : m ≠ ⊥) :
+    (ofFinitePart m hm).finitePart = m :=
+  (rfl)
+
+@[simp]
+theorem ofFinitePart_infinitePart (m : Ideal (RingOfIntegers K)) (hm : m ≠ ⊥) :
+    (ofFinitePart m hm).infinitePart = ∅ :=
+  (rfl)
+
 /-- The trivial modulus has empty support: no height-one prime divides the unit ideal. -/
 @[simp] theorem support_one : (one K).support = ∅ := by
   ext v
