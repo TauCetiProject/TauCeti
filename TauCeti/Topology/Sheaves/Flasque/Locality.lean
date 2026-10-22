@@ -136,7 +136,7 @@ private lemma trans {s t u : Extension F a} (h₁ : s.Le t) (h₂ : t.Le u) : s.
         = F.map (homOfLE (h₁.le_dom.trans h₂.le_dom)).op u.sec :=
           TopCat.Presheaf.map_homOfLE_congr _ _ _
       _ = F.map (homOfLE h₁.le_dom).op (F.map (homOfLE h₂.le_dom).op u.sec) :=
-            (TopCat.Presheaf.map_homOfLE_apply_map _ _ _).symm
+            (TopCat.Presheaf.restrict_restrict h₁.le_dom h₂.le_dom u.sec).symm
       _ = F.map (homOfLE h₁.le_dom).op t.sec := by rw [h₂.sec_le h₂.le_dom]
       _ = s.sec := h₁.sec_le h₁.le_dom
 
@@ -162,14 +162,14 @@ private lemma exists_ub_of_isChain [HasLimitsOfSize.{u, u} C]
         rcases hc s.2 t.2 hne' with h | h
         · have hsf : F.1.map (homOfLE h.le_dom).op (sf t) = sf s := h.sec_le h.le_dom
           simp only [Opens.infLELeft, Opens.infLERight]
-          rw [← hsf,
-            TopCat.Presheaf.map_homOfLE_apply_map (F := F.1)
-              (inf_le_left : f s ⊓ f t ≤ f s) h.le_dom (sf t)]
+          rw [← hsf]
+          exact TopCat.Presheaf.restrict_restrict (F := F.1)
+            (inf_le_left : f s ⊓ f t ≤ f s) h.le_dom (sf t)
         · have hsf : F.1.map (homOfLE h.le_dom).op (sf s) = sf t := h.sec_le h.le_dom
           simp only [Opens.infLELeft, Opens.infLERight]
-          rw [← hsf,
-            TopCat.Presheaf.map_homOfLE_apply_map (F := F.1)
-              (inf_le_right : f s ⊓ f t ≤ f t) h.le_dom (sf s)]
+          rw [← hsf]
+          exact (TopCat.Presheaf.restrict_restrict (F := F.1)
+            (inf_le_right : f s ⊓ f t ≤ f t) h.le_dom (sf s)).symm
     obtain ⟨w, hw, -⟩ := F.existsUnique_gluing' f (iSup f) (fun s => homOfLE (le_iSup f s))
       le_rfl sf hcompat
     refine ⟨⟨iSup f, s₀.le_dom.trans (le_iSup f ⟨s₀, hs₀⟩), w, ?_⟩, ?_⟩
@@ -177,7 +177,7 @@ private lemma exists_ub_of_isChain [HasLimitsOfSize.{u, u} C]
       calc F.1.map (homOfLE (s₀.le_dom.trans (le_iSup f ⟨s₀, hs₀⟩))).op w
           = F.1.map (homOfLE s₀.le_dom).op
               (F.1.map (homOfLE (le_iSup f ⟨s₀, hs₀⟩)).op w) :=
-            (TopCat.Presheaf.map_homOfLE_apply_map _ _ _).symm
+            (TopCat.Presheaf.restrict_restrict s₀.le_dom (le_iSup f ⟨s₀, hs₀⟩) w).symm
         _ = F.1.map (homOfLE s₀.le_dom).op s₀.sec := by rw [h0]
         _ = a := s₀.sec_le
     · intro s hs
@@ -211,12 +211,15 @@ private lemma le_dom_of_maximal [HasLimitsOfSize.{u, u} C]
     fin_cases i <;> fin_cases j <;>
       simp only [f, sf, Opens.infLELeft, Opens.infLERight]
     · exact hbW.symm
-    · exact (TopCat.Presheaf.map_eqToHom_map_homOfLE (F := F.1) (inf_comm W' m.dom)
-        (inf_le_right : m.dom ⊓ W' ≤ W') (inf_le_left : W' ⊓ m.dom ≤ W') bW).symm.trans
-        ((congrArg (fun z => F.1.map (eqToHom (inf_comm W' m.dom)).op z) hbW).trans
-          (TopCat.Presheaf.map_eqToHom_map_homOfLE (F := F.1) (inf_comm W' m.dom)
-            (inf_le_left : m.dom ⊓ W' ≤ m.dom) (inf_le_right : W' ⊓ m.dom ≤ m.dom)
-            m.sec))
+    · -- the overlap is symmetric in the two open sets, so transport the equation along `inf_comm`
+      have h₁ : TopCat.Presheaf.restrictOpen m.sec (m.dom ⊓ W')
+          (inf_le_left : m.dom ⊓ W' ≤ m.dom) =
+          TopCat.Presheaf.restrictOpen bW (m.dom ⊓ W')
+            (inf_le_right : m.dom ⊓ W' ≤ W') := hbW.symm
+      apply_fun (fun z => TopCat.Presheaf.restrictOpen z (W' ⊓ m.dom)
+        (le_of_eq (inf_comm W' m.dom))) at h₁
+      rw [TopCat.Presheaf.restrict_restrict, TopCat.Presheaf.restrict_restrict] at h₁
+      exact h₁.symm
   let iUV : ∀ i : Fin 2, f i ⟶ (m.dom ⊔ W')
     | 0 => homOfLE le_sup_left
     | 1 => homOfLE le_sup_right
@@ -227,7 +230,11 @@ private lemma le_dom_of_maximal [HasLimitsOfSize.{u, u} C]
   let e' : Extension F.1 a :=
     ⟨m.dom ⊔ W', m.le_dom.trans le_sup_left, w, by
       have h0 : F.1.map (homOfLE (le_sup_left : m.dom ≤ m.dom ⊔ W')).op w = m.sec := hw 0
-      rw [← TopCat.Presheaf.map_homOfLE_apply_map (F := F.1) m.le_dom le_sup_left w, h0, m.sec_le]⟩
+      calc F.1.map (homOfLE (m.le_dom.trans le_sup_left)).op w
+          = F.1.map (homOfLE m.le_dom).op (F.1.map (homOfLE le_sup_left).op w) :=
+            (TopCat.Presheaf.restrict_restrict m.le_dom le_sup_left w).symm
+        _ = F.1.map (homOfLE m.le_dom).op m.sec := by rw [h0]
+        _ = a := m.sec_le⟩
   have hmle : m.Le e' := ⟨le_sup_left,
     fun hh => (TopCat.Presheaf.map_homOfLE_congr hh _ w).trans (hw 0)⟩
   exact hx ((sup_le_iff.mp (hm e' hmle).le_dom).2 hxW')
@@ -251,7 +258,7 @@ theorem surjective_map_of_isLocallyFlasque [HasLimitsOfSize.{u, u} C]
   refine ⟨F.1.map (homOfLE hVle).op m.sec, ?_⟩
   calc F.1.map (homOfLE hUV).op (F.1.map (homOfLE hVle).op m.sec)
       = F.1.map (homOfLE (hUV.trans hVle)).op m.sec :=
-        TopCat.Presheaf.map_homOfLE_apply_map _ _ _
+        TopCat.Presheaf.restrict_restrict hUV hVle m.sec
     _ = F.1.map (homOfLE m.le_dom).op m.sec := TopCat.Presheaf.map_homOfLE_congr _ _ _
     _ = a := m.sec_le
 

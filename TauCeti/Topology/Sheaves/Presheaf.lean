@@ -12,10 +12,8 @@ public import Mathlib.Topology.Sheaves.Presheaf
 # Restriction maps of presheaves
 
 Composing restriction maps along inclusions of opens in both directions gives the identity after
-any morphism into the starting section object, since the inclusions force the opens to be equal.
-Restricting a section twice along inclusions of opens is restricting it once, two proofs of the same
-inclusion of opens give the same restriction map, and transporting a section along an equality of
-open sets and restricting it is a single restriction.
+any morphism into the starting section object, since the inclusions force the opens to be equal, and
+two proofs of the same inclusion of opens give the same restriction map.
 
 ## Main results
 
@@ -23,10 +21,6 @@ open sets and restricting it is a single restriction.
   directions gives the identity after any morphism into the starting section object.
 * `TopCat.Presheaf.map_homOfLE_congr`: two proofs of the same inclusion of opens give the same
   restriction map.
-* `TopCat.Presheaf.map_homOfLE_apply_map`: restricting a section twice along inclusions of opens is
-  restricting it once.
-* `TopCat.Presheaf.map_eqToHom_map_homOfLE`: transporting a section along an equality of open sets
-  and restricting it is a single restriction.
 -/
 
 public section
@@ -57,20 +51,6 @@ variable {FC : C → C → Type*} {CC : C → Type w'}
 theorem map_homOfLE_congr {F : T.Presheaf C} {U V : Opens T} (h h' : U ≤ V)
     (s : ToType (F.obj (op V))) : F.map (homOfLE h).op s = F.map (homOfLE h').op s := by
   rw [Subsingleton.elim h h']
-
-/-- Restricting a section twice along inclusions of open sets is restricting it once. -/
-theorem map_homOfLE_apply_map {F : T.Presheaf C} {A B D : Opens T} (h₁ : A ≤ B) (h₂ : B ≤ D)
-    (s : ToType (F.obj (op D))) :
-    F.map (homOfLE h₁).op (F.map (homOfLE h₂).op s) = F.map (homOfLE (h₁.trans h₂)).op s := by
-  rw [← ConcreteCategory.comp_apply, ← F.map_comp, ← op_comp, homOfLE_comp]
-
-/-- Transporting a section along an equality of open sets and then restricting it is a single
-restriction. -/
-theorem map_eqToHom_map_homOfLE {F : T.Presheaf C} {A B D : Opens T} (e : A = B) (h : B ≤ D)
-    (h' : A ≤ D) (s : ToType (F.obj (op D))) :
-    F.map (eqToHom e).op (F.map (homOfLE h).op s) = F.map (homOfLE h').op s := by
-  rw [← ConcreteCategory.comp_apply, ← F.map_comp, ← op_comp,
-    Subsingleton.elim (eqToHom e ≫ homOfLE h) (homOfLE h')]
 
 end Restriction
 
