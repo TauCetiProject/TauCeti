@@ -37,6 +37,8 @@ capacity; for residual capacities these are augmenting walks.
 * `TauCeti.ArrowWalk Q s t`: directed walks from `s` to `t` along the arrow family `Q`.
 * `TauCeti.ArrowWalk.arrows`: the arrows traversed by a walk, in order.
 * `TauCeti.ArrowWalk.IsPath` and `TauCeti.ArrowWalk.IsCycle`: directed paths and cycles.
+* `TauCeti.Assignment.IsAcyclic`: arrow assignments whose positive support contains no directed
+  cycle.
 * `TauCeti.ArrowWalk.bottleneck`: the least capacity along a walk that traverses an arrow.
 * `TauCeti.PositiveReachable c s t`: some walk from `s` to `t` traverses only arrows of positive
   capacity for `c`.
@@ -57,6 +59,8 @@ capacity; for residual capacities these are augmenting walks.
   positive reachability is witnessed by a path, and is the reflexive transitive closure of being
   joined by an arrow of positive capacity; `TauCeti.exists_isCycle_iff_transGen` is the
   counterpart for cycles.
+* `TauCeti.Assignment.isAcyclic_iff_forall_not_transGen`: an assignment is acyclic exactly when
+  no vertex reaches itself in one or more steps along arrows of positive value.
 * `TauCeti.positiveReachable_iff_nonempty_arrowWalk`: positive reachability is reachability along
   the arrow family `TauCeti.PositiveHom c` of arrows of positive capacity.
 * `TauCeti.PositiveReachable.mem_of_mem`: a vertex set that no arrow of positive capacity leaves
@@ -383,6 +387,26 @@ theorem exists_isCycle_iff_transGen {v : V} :
     rcases ha with ha | rfl
     exacts [hp a ha, he]
 
+namespace Assignment
+
+/-- An arrow assignment is *acyclic* when no directed cycle traverses only arrows of positive
+value. -/
+def IsAcyclic (f : Assignment Q K) : Prop :=
+  ∀ ⦃v : V⦄ (c : ArrowWalk Q v v), c.IsCycle → ¬∀ a ∈ c.arrows, 0 < f a.2.2
+
+theorem isAcyclic_def (f : Assignment Q K) :
+    f.IsAcyclic ↔ ∀ ⦃v : V⦄ (c : ArrowWalk Q v v), c.IsCycle → ¬∀ a ∈ c.arrows, 0 < f a.2.2 :=
+  Iff.rfl
+
+/-- An assignment is acyclic exactly when no vertex reaches itself in one or more steps along
+arrows of positive value. -/
+theorem isAcyclic_iff_forall_not_transGen (f : Assignment Q K) :
+    f.IsAcyclic ↔ ∀ v, ¬Relation.TransGen (fun v w ↦ ∃ e : Q v w, 0 < f e) v v := by
+  simp only [← exists_isCycle_iff_transGen, not_exists, not_and]
+  exact ⟨fun h v c ↦ h c, fun h v c ↦ h v c⟩
+
+end Assignment
+
 variable (c) in
 /-- The arrows of positive capacity for `c`, retaining their identities: the arrow family of the
 part of `Q` along which positive reachability travels. -/
@@ -425,11 +449,11 @@ open Relation in
 positive path between distinct vertices, with no positive arrow entering its initial vertex and no
 positive arrow leaving its final vertex. -/
 lemma exists_isPath_of_acyclic {K : Type w} [Zero K] [LinearOrder K] [Finite V]
-    {f : Assignment Q K} (hf : 0 ≤ f)
-    (hacyc : ∀ v, ¬ TransGen (fun v w ↦ ∃ e : Q v w, 0 < f e) v v) {x y : V} (e : Q x y)
+    {f : Assignment Q K} (hf : 0 ≤ f) (hacyc : f.IsAcyclic) {x y : V} (e : Q x y)
     (he : 0 < f e) :
     ∃ (s t : V) (p : ArrowWalk Q s t), p.IsPath ∧ s ≠ t ∧ (∀ a ∈ p.arrows, 0 < f a.2.2) ∧
       (∀ w (e : Q w s), f e = 0) ∧ ∀ w (e : Q t w), f e = 0 := by
+  rw [Assignment.isAcyclic_iff_forall_not_transGen] at hacyc
   set R : V → V → Prop := fun v w ↦ ∃ e : Q v w, 0 < f e
   have : IsTrans V (TransGen R) := ⟨fun _ _ _ ↦ TransGen.trans⟩
   have : IsTrans V (flip (TransGen R)) := ⟨fun _ _ _ h₁ h₂ ↦ TransGen.trans h₂ h₁⟩

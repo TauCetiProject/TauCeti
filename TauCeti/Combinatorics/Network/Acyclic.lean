@@ -23,15 +23,8 @@ Acyclicity is stronger than having a decomposition without cycles: unit flows al
 `s → a → b → t` and `s → b → a → t` add up to a flow that these two paths decompose, but whose
 arrows of positive value contain the cycle `a → b → a`.
 
-## Main definitions
-
-* `TauCeti.Assignment.IsAcyclic f`: no directed cycle traverses only arrows of positive value
-  for `f`.
-
 ## Main results
 
-* `TauCeti.Assignment.isAcyclic_iff_forall_not_transGen`: an assignment is acyclic exactly when
-  no vertex reaches itself in one or more steps along arrows of positive value.
 * `TauCeti.Assignment.IsAcyclic.apply_eq_zero_or_apply_eq_zero` and
   `TauCeti.Assignment.IsAcyclic.apply_eq_zero_of_loop`: a nonnegative acyclic assignment vanishes
   on one of any two opposite arrows, and on every loop.
@@ -68,22 +61,6 @@ section LT
 
 variable [Zero K] [LT K]
 
-/-- An arrow assignment is *acyclic* when no directed cycle traverses only arrows of positive
-value. -/
-def IsAcyclic (f : Assignment Q K) : Prop :=
-  ∀ ⦃v : V⦄ (c : ArrowWalk Q v v), c.IsCycle → ¬∀ a ∈ c.arrows, 0 < f a.2.2
-
-theorem isAcyclic_def (f : Assignment Q K) :
-    f.IsAcyclic ↔ ∀ ⦃v : V⦄ (c : ArrowWalk Q v v), c.IsCycle → ¬∀ a ∈ c.arrows, 0 < f a.2.2 :=
-  Iff.rfl
-
-/-- An assignment is acyclic exactly when no vertex reaches itself in one or more steps along
-arrows of positive value. -/
-theorem isAcyclic_iff_forall_not_transGen (f : Assignment Q K) :
-    f.IsAcyclic ↔ ∀ v, ¬TransGen (fun v w ↦ ∃ e : Q v w, 0 < f e) v v := by
-  simp only [← exists_isCycle_iff_transGen, not_exists, not_and]
-  exact ⟨fun h v c ↦ h c, fun h v c ↦ h v c⟩
-
 /-- An acyclic assignment is not positive on two opposite arrows. -/
 theorem IsAcyclic.not_pos_and_pos {f : Assignment Q K} (hf : f.IsAcyclic) {x y : V} (e : Q x y)
     (e' : Q y x) : ¬(0 < f e ∧ 0 < f e') := fun h ↦
@@ -104,7 +81,8 @@ theorem isAcyclic_zero : (0 : Assignment Q K).IsAcyclic := by
 
 /-- An assignment below an acyclic one is acyclic. -/
 theorem IsAcyclic.anti {f g : Assignment Q K} (hfg : f ≤ g) (hg : g.IsAcyclic) : f.IsAcyclic :=
-  fun _ c hc hpos ↦ hg c hc fun a ha ↦ (hpos a ha).trans_le (hfg _ _ a.2.2)
+  (isAcyclic_def f).2 fun _ c hc hpos ↦
+    (isAcyclic_def g).1 hg c hc fun a ha ↦ (hpos a ha).trans_le (hfg _ _ a.2.2)
 
 end Preorder
 
@@ -210,11 +188,12 @@ variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
 /-- A path–cycle decomposition of an acyclic assignment has no cycles. -/
 theorem PathCycleDecomposition.cycles_eq_nil_of_isAcyclic (D : PathCycleDecomposition f)
     (hf : f.IsAcyclic) : D.cycles = [] :=
-  List.eq_nil_iff_forall_not_mem.2 fun c hc ↦ hf c.walk (D.isCycle_walk c hc) fun a ha ↦ by
-    have hle := D.assignment_le_of_mem_cycles hc a.1 a.2.1 a.2.2
-    rw [WeightedClosedWalk.assignment_def,
-      walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ ha] at hle
-    exact (D.weight_pos_of_mem_cycles c hc).trans_le hle
+  List.eq_nil_iff_forall_not_mem.2 fun c hc ↦
+    (Assignment.isAcyclic_def f).1 hf c.walk (D.isCycle_walk c hc) fun a ha ↦ by
+      have hle := D.assignment_le_of_mem_cycles hc a.1 a.2.1 a.2.2
+      rw [WeightedClosedWalk.assignment_def,
+        walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ ha] at hle
+      exact (D.weight_pos_of_mem_cycles c hc).trans_le hle
 
 /-- The paths of a path–cycle decomposition of an acyclic assignment add up to the assignment. -/
 theorem PathCycleDecomposition.pathAssignment_eq_of_isAcyclic (D : PathCycleDecomposition f)
