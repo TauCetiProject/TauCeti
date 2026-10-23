@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Lie.Solvable
 public import Mathlib.Algebra.Lie.TensorProduct
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Isomorphisms
+import TauCeti.Algebra.Lie.BaseChange.Perfect
 
 /-!
 # Low-degree Lie algebra cochains
@@ -101,14 +102,11 @@ theorem exists_d₁₂_eq_of_forall_dual [LieModule.IsTrivial L M] [Module.Proje
     ∃ f : oneCochain R L M, d₁₂ R L M f = c := by
   let B := (LieModule.toModuleHom R L L).toLinearMap
   have hB_apply (x y : L) : B (x ⊗ₜ y) = ⁅x, y⁆ := LieModule.toModuleHom_apply R L L x y
-  have hB : Function.Surjective B := by
-    intro u
-    -- Since `L` is perfect, `u` is a linear combination of brackets.
-    have hu : u ∈ Submodule.span R {⁅x, y⁆ | (x : L) (y : L)} := by
-      rw [← LieAlgebra.coe_derivedSeries_one_eq, LieIdeal.toLieSubalgebra_toSubmodule, hL]
-      exact Submodule.mem_top
-    exact (Submodule.span_le (p := LinearMap.range B)).mpr
-      (by rintro _ ⟨x, y, rfl⟩; exact ⟨x ⊗ₜ y, hB_apply x y⟩) hu
+  -- Since `L` is perfect, every element is a linear combination of brackets.
+  have hB : Function.Surjective B := fun u ↦
+    (Submodule.span_le (p := LinearMap.range B)).mpr
+      (by rintro _ ⟨x, y, rfl⟩; exact ⟨x ⊗ₜ y, hB_apply x y⟩)
+      (TauCeti.LieAlgebra.mem_span_lie_of_derivedSeries_one_eq_top hL u)
   -- The kernel of the bracket is killed by every functional applied to `c`, hence by `c`.
   have hker : LinearMap.ker B ≤ LinearMap.ker (TensorProduct.lift c.1) := by
     intro w hw

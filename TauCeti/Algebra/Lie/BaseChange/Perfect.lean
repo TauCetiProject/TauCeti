@@ -20,6 +20,9 @@ modes or currents of lower order.
 
 ## Main results
 
+* `TauCeti.LieAlgebra.mem_span_lie_of_derivedSeries_one_eq_top`: a perfect Lie algebra is the
+  `R`-span of its brackets; `TauCeti.LieAlgebra.derivedSeries_one_eq_top_of_le_span_lie` is the
+  converse.
 * `TauCeti.LieAlgebra.ExtendScalars.mul_tmul_mem_span_lie`: for perfect `L`, `(a * b) ⊗ x` lies in
   the `R`-span of the brackets `⁅a ⊗ y, b ⊗ z⁆`.
 -/
@@ -28,11 +31,28 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.LieAlgebra.ExtendScalars
+namespace TauCeti.LieAlgebra
 
 open _root_.LieAlgebra
 
 variable {R A L : Type*} [CommRing R] [CommRing A] [Algebra R A] [LieRing L] [LieAlgebra R L]
+
+/-- **A perfect Lie algebra is spanned by its brackets**: if `⁅L, L⁆ = L`, then every element of `L`
+is an `R`-linear combination of brackets `⁅y, z⁆`. -/
+theorem mem_span_lie_of_derivedSeries_one_eq_top (hL : derivedSeries R L 1 = ⊤) (x : L) :
+    x ∈ Submodule.span R {⁅y, z⁆ | (y : L) (z : L)} := by
+  rw [← coe_derivedSeries_one_eq, LieIdeal.toLieSubalgebra_toSubmodule, hL]
+  exact Submodule.mem_top
+
+/-- **A Lie algebra spanned by its brackets is perfect**: the converse of
+`mem_span_lie_of_derivedSeries_one_eq_top`. -/
+theorem derivedSeries_one_eq_top_of_le_span_lie
+    (h : ⊤ ≤ Submodule.span R {⁅y, z⁆ | (y : L) (z : L)}) : derivedSeries R L 1 = ⊤ := by
+  rw [← LieSubmodule.toSubmodule_eq_top, ← LieIdeal.toLieSubalgebra_toSubmodule,
+    coe_derivedSeries_one_eq]
+  exact top_le_iff.mp h
+
+namespace ExtendScalars
 
 /-- **Tensors over a perfect Lie algebra are sums of brackets with prescribed coefficients.** If
 `L` is perfect, then for all coefficients `a` and `b` every tensor `(a * b) ⊗ x` is an `R`-linear
@@ -40,10 +60,7 @@ combination of brackets `⁅a ⊗ y, b ⊗ z⁆`. -/
 theorem mul_tmul_mem_span_lie (hL : derivedSeries R L 1 = ⊤) (a b : A) (x : L) :
     ((a * b) ⊗ₜ x : A ⊗[R] L) ∈
       Submodule.span R {u | ∃ y z : L, ⁅(a ⊗ₜ y : A ⊗[R] L), b ⊗ₜ z⁆ = u} := by
-  have hx : x ∈ Submodule.span R {u | ∃ y z : L, ⁅y, z⁆ = u} := by
-    rw [← coe_derivedSeries_one_eq, LieIdeal.toLieSubalgebra_toSubmodule, hL]
-    exact Submodule.mem_top
-  induction hx using Submodule.span_induction with
+  induction mem_span_lie_of_derivedSeries_one_eq_top hL x using Submodule.span_induction with
   | mem u hu =>
     obtain ⟨y, z, rfl⟩ := hu
     exact Submodule.subset_span ⟨y, z, ExtendScalars.bracket_tmul ..⟩
@@ -51,4 +68,6 @@ theorem mul_tmul_mem_span_lie (hL : derivedSeries R L 1 = ⊤) (a b : A) (x : L)
   | add u v _ _ hu hv => simpa only [TensorProduct.tmul_add] using Submodule.add_mem _ hu hv
   | smul r u _ hu => simpa only [TensorProduct.tmul_smul] using Submodule.smul_mem _ r hu
 
-end TauCeti.LieAlgebra.ExtendScalars
+end ExtendScalars
+
+end TauCeti.LieAlgebra

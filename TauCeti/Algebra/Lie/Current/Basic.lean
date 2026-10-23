@@ -302,13 +302,10 @@ every current is an `R`-linear combination of brackets of currents. Mathlib's
 statement over `R` is the one that applies to `R`-linear cochains. -/
 theorem derivedSeries_one_eq_top (hL : LieAlgebra.derivedSeries R L 1 = ⊤) :
     LieAlgebra.derivedSeries R (currentAlgebra R L) 1 = ⊤ := by
-  refine eq_top_iff.mpr fun u _ ↦ ?_
+  refine LieAlgebra.derivedSeries_one_eq_top_of_le_span_lie fun u _ ↦ ?_
   obtain ⟨N, hN⟩ := exists_mem_orderSubmodule R L u
-  have hu : u ∈ Submodule.span R {⁅a, b⁆ | (a : currentAlgebra R L) (b : currentAlgebra R L)} :=
-    Submodule.span_mono (by rintro _ ⟨a, -, b, -, rfl⟩; exact ⟨a, b, rfl⟩)
-      (orderSubmodule_add_le_span_lie R L hL N 0 (by simpa using hN))
-  rwa [← LieAlgebra.coe_derivedSeries_one_eq, LieIdeal.toLieSubalgebra_toSubmodule,
-    LieSubmodule.mem_toSubmodule] at hu
+  exact Submodule.span_mono (by rintro _ ⟨a, -, b, -, rfl⟩; exact ⟨a, b, rfl⟩)
+    (orderSubmodule_add_le_span_lie R L hL N 0 (by simpa using hN))
 
 /-- The inclusion of polynomial currents into formal currents. -/
 def ofLoop : LieAlgebra.loopAlgebra R ℤ L →ₗ⁅R⁆ currentAlgebra R L :=
