@@ -20,9 +20,8 @@ internal-Hom comparison of the strong monoidal tilde functor; in particular it r
 evaluation and is natural in both modules. No projectivity or Noetherian hypothesis is needed.
 
 This identifies the internal-Hom objects on affine charts with the modules to which
-`Module.FinitePresentation.isBaseChange_map` applies. Compatibility with the pullback
-comparison is a separate step toward flat base change of internal Hom. Finite presentation
-is essential: the internal Hom of arbitrary quasicoherent sheaves need not be quasicoherent.
+`Module.FinitePresentation.isBaseChange_map` applies. Finite presentation is essential: the
+internal Hom of arbitrary quasicoherent sheaves need not be quasicoherent.
 
 ## References
 
