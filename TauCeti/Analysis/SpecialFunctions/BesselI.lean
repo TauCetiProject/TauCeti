@@ -40,6 +40,7 @@ von Mises–Fisher laws.
 * `Real.hasSum_besselI_natCast` — the series `∑ⱼ (x / 2) ^ (2 j + n) / (j! (j + n)!)` of a natural
   order `n`, at every real `x`.
 * `Real.besselI_pos` — `I_ν(x) > 0` for `ν > -1` and `x > 0`.
+* `Real.one_le_besselI_zero_left` — `I_0(x) ≥ 1` for every real `x`.
 * `Real.besselI_zero` — `I_0(0) = 1` and `I_ν(0) = 0` for `ν ≠ 0`.
 * `Real.tendsto_rpow_neg_mul_besselI_nhdsGT_zero` — `(x / 2) ^ (-ν) I_ν(x) → 1 / Γ(ν + 1)` as
   `x → 0⁺`.
@@ -130,6 +131,13 @@ theorem besselI_pos {ν x : ℝ} (hν : -1 < ν) (hx : 0 < x) : 0 < besselI ν x
     positivity
   exact hasSum_lt (f := 0) (i := 0) (fun j => (hterm j).le) (hterm 0) hasSum_zero
     (hasSum_besselI ν hx)
+
+/-- `I_0(x) ≥ 1` at every real `x`: the power series of `I_0` has nonnegative terms and leading
+term `1`. In particular `I_0` never vanishes. -/
+theorem one_le_besselI_zero_left (x : ℝ) : 1 ≤ besselI 0 x := by
+  have h := hasSum_besselI_natCast 0 x
+  simp only [Nat.cast_zero, add_zero, pow_mul] at h
+  simpa using le_hasSum h 0 fun j _ => by positivity
 
 /-- `I_ν(0)` is `1` for `ν = 0` and `0` otherwise. -/
 @[simp]
