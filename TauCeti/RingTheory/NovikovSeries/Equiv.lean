@@ -45,24 +45,6 @@ section Reindex
 
 variable [AddMonoid H] [AddMonoid H'] {N : H →+ ℝ} {N' : H' →+ ℝ}
 
-private theorem period_rescale_symm (e : H ≃+ H') {c : ℝ} (hc : 0 < c)
-    (hcN : ∀ h, N' (e h) = c * N h) (h' : H') :
-    N (e.symm h') = c⁻¹ * N' h' := by
-  have h := hcN (e.symm h')
-  rw [e.apply_symm_apply] at h
-  rw [h, inv_mul_cancel_left₀ hc.ne']
-
-private theorem exists_period_rescale_trans [AddMonoid H''] {N'' : H'' →+ ℝ}
-    (e : H ≃+ H') (e' : H' ≃+ H'')
-    (he : ∃ c > 0, ∀ h, N' (e h) = c * N h)
-    (he' : ∃ c > 0, ∀ h, N'' (e' h) = c * N' h) :
-    ∃ c > 0, ∀ h, N'' ((e.trans e') h) = c * N h := by
-  simpa only [AddEquiv.trans_apply, AddMonoidHom.comp_apply,
-    AddEquiv.coe_toAddMonoidHom] using
-    exists_period_rescale_comp (φ := e.toAddMonoidHom) (φ' := e'.toAddMonoidHom)
-      (by simpa only [AddEquiv.coe_toAddMonoidHom] using he)
-      (by simpa only [AddEquiv.coe_toAddMonoidHom] using he')
-
 section Algebra
 
 variable [Semiring R] [Algebra A R] (e : H ≃+ H')
@@ -125,7 +107,7 @@ theorem domCongr_refl :
 theorem domCongr_trans [AddMonoid H''] {N'' : H'' →+ ℝ} (e' : H' ≃+ H'')
     (he' : ∃ c > 0, ∀ h, N'' (e' h) = c * N' h) :
     (domCongr A (R := R) e he).trans (domCongr A e' he') =
-      domCongr A (e.trans e') (by exact exists_period_rescale_trans e e' he he') := by
+      domCongr A (e.trans e') (by exact exists_period_rescale_trans he he') := by
   ext a h
   simp
 
@@ -145,7 +127,7 @@ theorem domCongr_mem_periodFiltration_iff {c C : ℝ} (hc : 0 < c)
   · intro ha
     have hb := map_mem_periodFiltration ((AlgHom.id A R : R →+* R) : R →+ R)
       (e.symm : H' →+ H) (exists_period_rescale_symm (e := e) ⟨c, hc, hcN⟩)
-      (inv_pos.mpr hc).le (period_rescale_symm e hc hcN) ha
+      (inv_pos.mpr hc).le (period_rescale_symm hc hcN) ha
     rw [← domCongr_symm_apply A e ⟨c, hc, hcN⟩] at hb
     simpa [hc.ne'] using hb
   · intro ha
@@ -176,6 +158,7 @@ theorem continuousDomCongr_symm :
     (continuousDomCongr A (R := R) e he).symm =
       continuousDomCongr A e.symm (exists_period_rescale_symm he) := by
   ext b h
+  -- Unfold the continuous wrapper and its inverse to expose the underlying algebra equivalence.
   change ((domCongr A e he).symm b).coeff h =
     (domCongr A e.symm (exists_period_rescale_symm he) b).coeff h
   simp
@@ -192,7 +175,7 @@ theorem continuousDomCongr_refl :
 theorem continuousDomCongr_trans [AddMonoid H''] {N'' : H'' →+ ℝ} (e' : H' ≃+ H'')
     (he' : ∃ c > 0, ∀ h, N'' (e' h) = c * N' h) :
     (continuousDomCongr A (R := R) e he).trans (continuousDomCongr A e' he') =
-      continuousDomCongr A (e.trans e') (by exact exists_period_rescale_trans e e' he he') := by
+      continuousDomCongr A (e.trans e') (by exact exists_period_rescale_trans he he') := by
   ext a h
   simp
 
