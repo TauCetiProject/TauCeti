@@ -87,8 +87,9 @@ theorem fundamentalDiscriminantChar_mul {D E : ℤ} (hD : Int.IsFundamentalDiscr
     fundamentalDiscriminantChar_apply_int hE ht htprod]
   simp only [genusCharFun_def, Finset.prod_union hdisj]
 
+-- Prefer these explicit evaluations to the generic prime-discriminant rule.
 /-- The character of `-4` is `χ₄` at every integer. -/
-@[simp↓]
+@[simp↓ high]
 theorem fundamentalDiscriminantChar_neg_four (n : ℤ) :
     fundamentalDiscriminantChar (-4) isPrimeDiscriminant_neg_four.isFundamentalDiscr n =
       ZMod.χ₄ (n : ZMod 4) := by
@@ -96,7 +97,7 @@ theorem fundamentalDiscriminantChar_neg_four (n : ℤ) :
     primeDiscriminantCharFun_neg_four]
 
 /-- The character of `8` is `χ₈` at every integer. -/
-@[simp↓]
+@[simp↓ high]
 theorem fundamentalDiscriminantChar_eight (n : ℤ) :
     fundamentalDiscriminantChar 8 isPrimeDiscriminant_eight.isFundamentalDiscr n =
       ZMod.χ₈ (n : ZMod 8) := by
@@ -104,7 +105,7 @@ theorem fundamentalDiscriminantChar_eight (n : ℤ) :
     primeDiscriminantCharFun_eight]
 
 /-- The character of `-8` is `χ₈'` at every integer. -/
-@[simp↓]
+@[simp↓ high]
 theorem fundamentalDiscriminantChar_neg_eight (n : ℤ) :
     fundamentalDiscriminantChar (-8) isPrimeDiscriminant_neg_eight.isFundamentalDiscr n =
       ZMod.χ₈' (n : ZMod 8) := by
