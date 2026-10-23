@@ -44,8 +44,9 @@ concrete p-adic norm and valuation APIs.
   the latter, `Padic.isUnit_two_integerRing` shows that `2` is a unit of the integer ring for odd
   `p`.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
-  the integer ring, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a uniformizer of
-  `ℚ_[p]`.
+  the integer ring, `TauCeti.Padic.irreducible_intCast_mul_natCast_self` that so is its product
+  with an integer prime to `p`, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a
+  uniformizer of `ℚ_[p]`.
 * `TauCeti.Padic.valuation_eq_one_of_coe_eq`: a unit of `ℤ_[p]` has valuation one in `ℚ_[p]`.
 * `TauCeti.Padic.spanSingleton_natCast_pow_eq_maximalIdeal_zpow`: `p ^ n 𝒪[ℚ_[p]] = 𝓂 ^ n`.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
@@ -283,6 +284,14 @@ namespace TauCeti.Padic
 theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
   simpa only [map_natCast] using
     (PadicInt.irreducible_p (p := p)).map (_root_.Padic.integerRingEquiv p).symm
+
+variable {p} in
+/-- The product of `p` with an integer prime to `p` is a uniformizer of the integer ring of
+`ℚ_[p]`. -/
+theorem irreducible_intCast_mul_natCast_self {m : ℤ} (hm : ¬ (p : ℤ) ∣ m) :
+    Irreducible ((m : 𝒪[ℚ_[p]]) * p) :=
+  (irreducible_isUnit_mul (_root_.Padic.isUnit_intCast_integerRing hm)).2
+    (irreducible_natCast_self p)
 
 /-- The residue prime `p` is a uniformizer of `ℚ_[p]`. -/
 theorem isUniformizer_natCast_self :
