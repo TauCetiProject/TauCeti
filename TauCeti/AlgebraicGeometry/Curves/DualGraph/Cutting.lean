@@ -86,54 +86,26 @@ lemma marking_cutComponent (x : (G.smoothing Sᶜ).Vertex)
     (i : {i : ι ⊕ (S × Fin 2) // G.smoothingVertex Sᶜ (G.cutMarking S i) = x}) :
     ((G.cutComponent S x).marking i).1 = G.cutMarking S i.1 := (rfl)
 
-/-- Every original vertex occurs in exactly one cut piece. -/
-theorem sum_card_vertex_cutComponent :
-    ∑ x : (G.smoothing Sᶜ).Vertex, Fintype.card (G.cutComponent S x).Vertex =
-      Fintype.card G.Vertex := by
-  simp only [Fintype.card_subtype]
-  exact (card_eq_sum_card_fiberwise (s := univ) (t := univ)
-    (f := G.smoothingVertex Sᶜ) (by simp)).symm.trans card_univ
-
-/-- The uncut nodes occur once among all cut pieces. -/
-theorem sum_card_edge_cutComponent :
-    ∑ x : (G.smoothing Sᶜ).Vertex, Fintype.card (G.cutComponent S x).Edge = #Sᶜ := by
-  simp only [Fintype.card_subtype]
-  have h := (card_eq_sum_card_fiberwise (s := Sᶜ) (t := univ)
-    (f := fun e ↦ G.smoothingVertex Sᶜ (G.endpoint e 0)) (by simp)).symm
-  simpa only [← filter_filter, filter_mem_eq_inter, univ_inter] using h
-
-/-- The vertex genera of all cut pieces sum to the original total vertex genus. -/
-theorem sum_genus_cutComponent :
-    ∑ x : (G.smoothing Sᶜ).Vertex, ∑ v, (G.cutComponent S x).genus v =
-      ∑ v, G.genus v := by
-  have hsum (x : (G.smoothing Sᶜ).Vertex) :
-      ∑ v : (G.cutComponent S x).Vertex, G.genus v.1 =
-        ∑ v with G.smoothingVertex Sᶜ v = x, G.genus v :=
-    (sum_subtype _ (by simp) G.genus).symm
-  simp only [hsum]
-  exact sum_fiberwise univ (G.smoothingVertex Sᶜ) G.genus
-
 /-- **Genus of a partial normalization.** The sum of the arithmetic genera of its connected
 pieces, plus the number of cut nodes plus one, equals the original genus plus the number of
 pieces. This includes separating, nonseparating and simultaneous cuts, without subtraction. -/
 theorem sum_arithmeticGenus_cutComponent_add_card :
     (∑ x : (G.smoothing Sᶜ).Vertex, (G.cutComponent S x).arithmeticGenus) + #S + 1 =
       G.arithmeticGenus + Fintype.card (G.smoothing Sᶜ).Vertex := by
-  have h := sum_congr rfl fun x (_ : x ∈ (univ : Finset (G.smoothing Sᶜ).Vertex)) ↦
-    (G.cutComponent S x).arithmeticGenus_add_card_vertex
-  simp only [sum_add_distrib, G.sum_card_vertex_cutComponent S,
-    G.sum_card_edge_cutComponent S, G.sum_genus_cutComponent S, sum_const, card_univ,
-    smul_eq_mul, mul_one] at h
-  have hcounts :
-      (∑ x : (G.smoothing Sᶜ).Vertex, (G.cutComponent S x).arithmeticGenus) +
-        Fintype.card G.Vertex = ∑ v, G.genus v + #Sᶜ +
-          Fintype.card (G.smoothing Sᶜ).Vertex := h
-  have hG := G.arithmeticGenus_add_card_vertex
+  have h := (G.smoothing Sᶜ).arithmeticGenus_add_card_vertex
+  rw [G.arithmeticGenus_smoothing Sᶜ] at h
+  -- Branch markings do not affect the arithmetic genus of a smoothing component.
+  have hgen (x : (G.smoothing Sᶜ).Vertex) :
+      (G.smoothing Sᶜ).genus x = (G.cutComponent S x).arithmeticGenus := by
+    simp only [arithmeticGenus_def, firstBetti_def]
+  simp_rw [← hgen]
+  have hE := G.card_edge_smoothing Sᶜ
   have hS := card_add_card_compl S
+  dsimp only [smoothing] at *
   omega
 
 /-- Cutting cannot create more than one new connected piece per cut node. -/
-theorem card_cutComponent_le :
+theorem card_vertex_smoothing_compl_le :
     Fintype.card (G.smoothing Sᶜ).Vertex ≤ #S + 1 := by
   have h := (G.smoothing Sᶜ).card_vertex_le_card_edge_add_one
   have hE := G.card_edge_smoothing Sᶜ
@@ -145,12 +117,46 @@ theorem sum_arithmeticGenus_cutComponent_le :
     (∑ x : (G.smoothing Sᶜ).Vertex, (G.cutComponent S x).arithmeticGenus) ≤
       G.arithmeticGenus := by
   have := G.sum_arithmeticGenus_cutComponent_add_card S
-  have := G.card_cutComponent_le S
+  have := G.card_vertex_smoothing_compl_le S
   omega
 
 /-! ### Special flags and stability -/
 
+/-- The valence at a vertex of a cut piece counts the branches of uncut nodes there. -/
+theorem valence_cutComponent (x : (G.smoothing Sᶜ).Vertex)
+    (v : (G.cutComponent S x).Vertex) :
+    (G.cutComponent S x).valence v =
+      ∑ e ∈ Sᶜ, #{i : Fin 2 | G.endpoint e i = v.1} := by
+  simp only [valence_eq_sum, ← Subtype.val_inj]
+  rw [← sum_subtype {e ∈ Sᶜ | G.smoothingVertex Sᶜ (G.endpoint e 0) = x}
+    (by simp) (fun e ↦ #{i : Fin 2 | G.endpoint e i = v.1})]
+  refine sum_subset (filter_subset _ _) fun e he hnot ↦ ?_
+  apply card_eq_zero.mpr
+  apply filter_eq_empty_iff.mpr
+  intro i _ hei
+  have hex := (G.smoothingVertex_endpoint Sᶜ he 0 i).trans
+    ((congrArg (G.smoothingVertex Sᶜ) hei).trans v.2)
+  exact hnot (by simp [he, hex])
+
 variable [Fintype ι]
+
+/-- The markings at a vertex of a cut piece are its original markings and the branches of
+cut nodes there. -/
+theorem numMarkings_cutComponent (x : (G.smoothing Sᶜ).Vertex)
+    (v : (G.cutComponent S x).Vertex) :
+    (G.cutComponent S x).numMarkings v = G.numMarkings v.1 +
+      ∑ e ∈ S, #{i : Fin 2 | G.endpoint e i = v.1} := by
+  simp only [numMarkings_def, card_filter, ← Subtype.val_inj]
+  rw [← sum_subtype {i | G.smoothingVertex Sᶜ (G.cutMarking S i) = x}
+    (by simp) (fun i ↦ if G.cutMarking S i = v.1 then 1 else 0)]
+  rw [sum_filter_of_ne (fun i _ hi ↦ ?_)]
+  · simp only [Fintype.sum_sum_type, cutMarking_inl, cutMarking_inr,
+      Fintype.sum_prod_type]
+    rw [← sum_subtype S (by simp)
+      (fun e ↦ ∑ i : Fin 2, if G.endpoint e i = v.1 then 1 else 0)]
+  · by_cases hei : G.cutMarking S i = v.1
+    · exact (congrArg (G.smoothingVertex Sᶜ) hei).trans v.2
+    · simp [hei] at hi
 
 /-- At a vertex of a cut piece, the number of remaining node branches plus the number of
 markings equals the original number of special flags. A cut branch becomes a marking. -/
@@ -158,33 +164,8 @@ theorem valence_add_numMarkings_cutComponent (x : (G.smoothing Sᶜ).Vertex)
     (v : (G.cutComponent S x).Vertex) :
     (G.cutComponent S x).valence v + (G.cutComponent S x).numMarkings v =
       G.valence v.1 + G.numMarkings v.1 := by
-  have hval : (G.cutComponent S x).valence v =
-      ∑ e ∈ Sᶜ, #{i : Fin 2 | G.endpoint e i = v.1} := by
-    simp only [valence_eq_sum, ← Subtype.val_inj]
-    rw [← sum_subtype {e ∈ Sᶜ | G.smoothingVertex Sᶜ (G.endpoint e 0) = x}
-      (by simp) (fun e ↦ #{i : Fin 2 | G.endpoint e i = v.1})]
-    refine sum_subset (filter_subset _ _) fun e he hnot ↦ ?_
-    apply card_eq_zero.mpr
-    apply filter_eq_empty_iff.mpr
-    intro i _ hei
-    have hex := (G.smoothingVertex_endpoint Sᶜ he 0 i).trans
-      ((congrArg (G.smoothingVertex Sᶜ) hei).trans v.2)
-    exact hnot (by simp [he, hex])
-  have hmark : (G.cutComponent S x).numMarkings v = G.numMarkings v.1 +
-      ∑ e ∈ S, #{i : Fin 2 | G.endpoint e i = v.1} := by
-    simp only [numMarkings_def, card_filter, ← Subtype.val_inj]
-    rw [← sum_subtype {i | G.smoothingVertex Sᶜ (G.cutMarking S i) = x}
-      (by simp) (fun i ↦ if G.cutMarking S i = v.1 then 1 else 0)]
-    rw [sum_filter_of_ne (fun i _ hi ↦ ?_)]
-    · simp only [Fintype.sum_sum_type, cutMarking_inl, cutMarking_inr,
-        Fintype.sum_prod_type]
-      rw [← sum_subtype S (by simp)
-        (fun e ↦ ∑ i : Fin 2, if G.endpoint e i = v.1 then 1 else 0)]
-    · by_cases hei : G.cutMarking S i = v.1
-      · exact (congrArg (G.smoothingVertex Sᶜ) hei).trans v.2
-      · simp [hei] at hi
+  rw [G.valence_cutComponent S x v, G.numMarkings_cutComponent S x v, G.valence_eq_sum]
   have h := sum_add_sum_compl S fun e ↦ #{i : Fin 2 | G.endpoint e i = v.1}
-  rw [G.valence_eq_sum] at *
   omega
 
 /-- Partial normalization with its branch markings preserves each log-canonical degree. -/
