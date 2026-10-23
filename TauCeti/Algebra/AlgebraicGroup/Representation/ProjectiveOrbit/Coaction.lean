@@ -29,6 +29,8 @@ The statement is made in the coordinates of a finite basis `b`, where the polyno
   basis.
 * `TauCeti.Comodule.leftRegularCoactAlgHom_comp_polynomialOrbitCoordinates`: the orbit
   coordinates intertwine the coaction on polynomial functions with the left regular coaction.
+* `TauCeti.Comodule.map_polynomialOrbitCoordinates_comp_polynomialCoact`: the same, as the
+  equation of linear maps required of a comodule morphism.
 
 ## References
 
@@ -67,5 +69,19 @@ theorem leftRegularCoactAlgHom_comp_polynomialOrbitCoordinates (b : Basis ι R V
         (polynomialCoact H b) := by
   refine MvPolynomial.algHom_ext fun i ↦ ?_
   simp [leftRegularCoact_apply, comul_matrixCoefficient_eq_sum (C := H) b, polynomialCoact_X]
+
+/-- **Orbit coordinates are equivariant**, as linear maps: the form of
+`leftRegularCoactAlgHom_comp_polynomialOrbitCoordinates` taken by the `map_coact` field of a
+comodule morphism from `polynomial H b` to the left regular comodule `leftRegular R H`. -/
+theorem map_polynomialOrbitCoordinates_comp_polynomialCoact (b : Basis ι R V) (m : V) :
+    TensorProduct.map (polynomialOrbitCoordinates H b m).toLinearMap LinearMap.id ∘ₗ
+        (polynomialCoact H b).toLinearMap =
+      leftRegularCoact R H ∘ₗ (polynomialOrbitCoordinates H b m).toLinearMap := by
+  have h := congrArg AlgHom.toLinearMap
+    (leftRegularCoactAlgHom_comp_polynomialOrbitCoordinates (H := H) b m)
+  simp only [AlgHom.comp_toLinearMap, toLinearMap_leftRegularCoactAlgHom,
+    Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq,
+    AlgHom.toLinearMap_id] at h
+  exact h.symm
 
 end TauCeti.Comodule

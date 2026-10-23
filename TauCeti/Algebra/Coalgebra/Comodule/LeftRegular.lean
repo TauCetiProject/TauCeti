@@ -126,17 +126,14 @@ theorem leftRegularCoact_coassoc :
 theorem lTensor_counit_comp_leftRegularCoact :
     (Coalgebra.counit (R := R) (A := H)).lTensor H ∘ₗ leftRegularCoact R H =
       (TensorProduct.mk R H R).flip 1 := by
+  -- Applying `id ⊗ ε` to `∑ f₍₂₎ ⊗ S(f₍₁₎)` swaps the counit law `∑ ε(f₍₁₎) ⊗ f₍₂₎ = 1 ⊗ f`.
   ext f
-  rw [leftRegularCoact, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    ← LinearMap.comp_apply (Coalgebra.counit.lTensor H), ← LinearMap.lTensor_comp,
-    HopfAlgebra.counit_comp_antipode]
-  have h := LinearMap.congr_fun (Coalgebra.rTensor_counit_comp_comul (R := R) (A := H)) f
-  simp only [LinearMap.comp_apply, TensorProduct.mk_apply] at h
-  simp only [LinearMap.flip_apply, TensorProduct.mk_apply]
-  rw [← TensorProduct.comm_tmul R R H, ← h]
-  induction Coalgebra.comul (R := R) f using TensorProduct.inductionOn with
-  | tmul x y => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
+  calc _ = TensorProduct.comm R R H (Coalgebra.counit.rTensor H (Coalgebra.comul f)) := by
+        rw [LinearMap.comp_apply, leftRegularCoact_apply]
+        induction Coalgebra.comul (R := R) f using TensorProduct.inductionOn with
+        | tmul x y => simp
+        | add x y hx hy => simp only [map_add, hx, hy]
+    _ = _ := by simp
 
 variable (R H) in
 /-- The left regular comodule structure on a Hopf algebra, with coaction

@@ -85,11 +85,8 @@ def columnOrbitHom (j : Fin n) :
   { toLinearMap := (Comodule.polynomialOrbitCoordinates (coordinateHopfAlgebra R n)
       (Pi.basisFun R (Fin n)) (Pi.single j 1)).toLinearMap
     map_coact := by
-      rw [polynomialComodule_coact, Comodule.leftRegular_coact,
-        ← Comodule.toLinearMap_leftRegularCoactAlgHom, ← AlgHom.comp_toLinearMap,
-        Comodule.leftRegularCoactAlgHom_comp_polynomialOrbitCoordinates, AlgHom.comp_toLinearMap,
-        Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq,
-        AlgHom.toLinearMap_id] }
+      rw [polynomialComodule_coact, Comodule.leftRegular_coact]
+      exact Comodule.map_polynomialOrbitCoordinates_comp_polynomialCoact _ _ }
 
 variable {R n}
 
