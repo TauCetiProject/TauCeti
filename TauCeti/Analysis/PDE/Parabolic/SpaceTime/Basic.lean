@@ -150,6 +150,15 @@ theorem edist_slabMk {a b : ℝ} (x y : E) (t s : Icc a b) :
     edist (slabMk x t) (slabMk y s) = edist x y + edist t s ^ (1 / 2 : ℝ) :=
   edist_ofCoords x y t s
 
+/-- At a common position, the `α`-th power of the parabolic distance between two points of a slab
+is the `α / 2`-th power of the time distance. -/
+theorem edist_slabMk_same_space_rpow {a b : ℝ} (x : E) (t s : Icc a b) (α : ℝ≥0) :
+    edist (slabMk x t) (slabMk x s) ^ (α : ℝ) = edist t s ^ ((α / 2 : ℝ≥0) : ℝ) := by
+  rw [edist_slabMk, edist_self, zero_add, ← ENNReal.rpow_mul]
+  congr 1
+  push_cast
+  ring
+
 theorem edist_space_le (p q : ParabolicSpaceTime E) : edist p.space q.space ≤ edist p q :=
   WithLp.edist_fst_le p q
 
@@ -217,6 +226,22 @@ theorem continuous_space : Continuous (space : ParabolicSpaceTime E → E) :=
 @[fun_prop]
 theorem continuous_time : Continuous (time : ParabolicSpaceTime E → ℝ) :=
   (continuous_snd.comp coordsHomeomorph.continuous).congr fun _ => by simp
+
+/-- Building a point from its coordinates is jointly continuous in `(x, t)`. -/
+@[fun_prop]
+theorem continuous_ofCoords : Continuous fun z : E × ℝ => ofCoords z.1 z.2 :=
+  coordsHomeomorph.symm.continuous
+
+/-- Building a point of a slab from its coordinates is jointly continuous in `(x, t)`. -/
+@[fun_prop]
+theorem continuous_slabMk {a b : ℝ} :
+    Continuous fun z : E × Icc a b => slabMk (a := a) (b := b) z.1 z.2 :=
+  (continuous_ofCoords.comp (continuous_fst.prodMk
+    (continuous_subtype_val.comp continuous_snd))).subtype_mk _
+
+@[fun_prop]
+theorem continuous_slabTime {a b : ℝ} : Continuous (slabTime : slab (E := E) a b → Icc a b) :=
+  (continuous_time.comp continuous_subtype_val).subtype_mk _
 
 /-! ### Time reversal -/
 

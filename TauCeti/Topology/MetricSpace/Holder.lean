@@ -43,6 +43,8 @@ points, the form in which Hölder seminorms are written in analysis texts.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
   function on the whole space.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
+* `le_mul_edist_rpow_iff`: between distinct points, a bound by a multiple of `edist x y ^ r` is a
+  bound on the difference quotient.
 * `eHolderNorm_le_iff`: `eHolderNorm r f ≤ C` if and only if the Hölder inequality holds with the
   extended constant `C`.
 * `eHolderNorm_eq_iSup`, `eHolderNorm_eq_iSup_dist`: the Hölder seminorm is the supremum of the
@@ -126,8 +128,9 @@ theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddComm
     exact (hf a (Finset.mem_insert_self a s)).add
       (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)) (g := fun x => ∑ i ∈ s, f i x)
 
-/-- Between distinct points, a bound by a multiple of `edist x y ^ r` is a bound on the quotient. -/
-private theorem le_mul_edist_rpow_iff {X : Type*} [MetricSpace X] {r : ℝ≥0} {a C : ℝ≥0∞}
+/-- Between distinct points `x ≠ y` of a metric space, a bound `a ≤ C * edist x y ^ r` is
+equivalent to the bound `a / edist x y ^ r ≤ C` on the difference quotient. -/
+theorem le_mul_edist_rpow_iff {X : Type*} [MetricSpace X] {r : ℝ≥0} {a C : ℝ≥0∞}
     {x y : X} (hxy : x ≠ y) :
     a ≤ C * edist x y ^ (r : ℝ) ↔ a / edist x y ^ (r : ℝ) ≤ C :=
   (ENNReal.div_le_iff (ENNReal.rpow_pos (edist_pos.2 hxy) (edist_ne_top x y)).ne'

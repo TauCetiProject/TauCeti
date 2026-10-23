@@ -107,9 +107,8 @@ the parabolic distance is the square root of the time distance. -/
 theorem timeEHolderNorm_div_two_le_eHolderNorm (α : ℝ≥0) (v : slab (E := E) a b → F) :
     timeEHolderNorm (α / 2) v ≤ eHolderNorm α v := by
   refine timeEHolderNorm_le_iff.2 fun x t s => ?_
-  have h := edist_le_eHolderNorm_mul α v (slabMk x t) (slabMk x s)
-  rw [edist_slabMk, edist_self x, zero_add, ← ENNReal.rpow_mul, one_div_mul_eq_div] at h
-  rwa [NNReal.coe_div, NNReal.coe_two]
+  rw [← edist_slabMk_same_space_rpow x t s]
+  exact edist_le_eHolderNorm_mul α v (slabMk x t) (slabMk x s)
 
 /-- The parabolic `α`-seminorm is bounded by the sum of the spatial `α`-seminorm and the temporal
 `α / 2`-seminorm. -/
@@ -124,7 +123,7 @@ theorem eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm (α : ℝ≥0)
     gcongr
     exact le_self_add
   have htime : edist t s ^ ((α / 2 : ℝ≥0) : ℝ) ≤ edist (slabMk x t) (slabMk y s) ^ (α : ℝ) := by
-    rw [NNReal.coe_div, NNReal.coe_two, ← one_div_mul_eq_div, ENNReal.rpow_mul, edist_slabMk]
+    rw [← edist_slabMk_same_space_rpow x t s, edist_slabMk, edist_slabMk, edist_self, zero_add]
     gcongr
     exact le_add_self
   -- Move first in space at the time `t`, then in time at the position `y`.
