@@ -168,7 +168,7 @@ instance : (spec R).IsEquivalence where
 
 /-- Finite étale algebras over a commutative ring are anti-equivalent to finite étale schemes
 over its spectrum. The forward functor is `spec`. -/
-noncomputable def finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme :
+@[expose] noncomputable def finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme :
     (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ ≌ FiniteEtaleScheme (Spec R) :=
   (spec R).asEquivalence
 

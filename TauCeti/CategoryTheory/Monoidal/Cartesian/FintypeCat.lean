@@ -105,6 +105,16 @@ theorem associator_inv_apply {X Y Z : FintypeCat.{u}} (p : X ⊗ (Y ⊗ Z)) :
   rfl
 
 @[simp]
+theorem braiding_hom_apply {X Y : FintypeCat.{u}} (p : X ⊗ Y) :
+    dsimp% (β_ X Y).hom p = (p.2, p.1) :=
+  rfl
+
+@[simp]
+theorem braiding_inv_apply {X Y : FintypeCat.{u}} (p : Y ⊗ X) :
+    dsimp% (β_ X Y).inv p = (p.2, p.1) :=
+  rfl
+
+@[simp]
 theorem fst_apply {X Y : FintypeCat.{u}} (p : X ⊗ Y) :
     dsimp% fst X Y p = p.1 :=
   rfl

@@ -79,7 +79,7 @@ variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω] [IsSepClosed Ω] [I
 finite étale `K`-schemes are equivalent to finite sets with a continuous action of `Gal(Ω/K)`.
 A finite étale scheme `Spec A` goes to the set of `Ω`-valued points of `A`
 (`specCompGaloisEquivalenceFunctorIso`). -/
-noncomputable def galoisEquivalence :
+@[expose] noncomputable def galoisEquivalence :
     FiniteEtaleScheme (Spec (.of K)) ≌ ContAction FintypeCat.{u} Gal(Ω/K) :=
   (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).symm.trans
     (galoisFiber K Ω).asEquivalence
@@ -95,10 +95,27 @@ sends `Spec A` to the finite set `A →ₐ[K] Ω` of `Ω`-valued points of `A`, 
 postcomposition. -/
 noncomputable def specCompGaloisEquivalenceFunctorIso :
     spec (.of K) ⋙ (galoisEquivalence K Ω).functor ≅ galoisFiber K Ω :=
-  Functor.isoWhiskerRight (eqToIso (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor _).symm)
-      _ ≪≫ (Functor.associator _ _ _).symm ≪≫
+  (Functor.associator _ _ _).symm ≪≫
     Functor.isoWhiskerRight (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).unitIso.symm
       (galoisFiber K Ω) ≪≫ Functor.leftUnitor _
+
+/-- The component of `specCompGaloisEquivalenceFunctorIso` at `A` is the Galois fibre functor
+applied to the inverse unit of the finite étale anti-equivalence at `A`. -/
+@[simp]
+theorem specCompGaloisEquivalenceFunctorIso_hom_app (A : (CommAlgCat.FiniteEtale.{u} K)ᵒᵖ) :
+    (specCompGaloisEquivalenceFunctorIso K Ω).hom.app A =
+      (galoisFiber K Ω).map
+        ((finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).unitIso.inv.app A) :=
+  (rfl)
+
+/-- The inverse component of `specCompGaloisEquivalenceFunctorIso` at `A` is the Galois fibre
+functor applied to the unit of the finite étale anti-equivalence at `A`. -/
+@[simp]
+theorem specCompGaloisEquivalenceFunctorIso_inv_app (A : (CommAlgCat.FiniteEtale.{u} K)ᵒᵖ) :
+    (specCompGaloisEquivalenceFunctorIso K Ω).inv.app A =
+      (galoisFiber K Ω).map
+        ((finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).unitIso.hom.app A) :=
+  (rfl)
 
 /-- **Finite étale group schemes over a field are finite Galois groups.** Group objects in finite
 étale `K`-schemes are equivalent to group objects in finite continuous `Gal(Ω/K)`-sets, that is,
