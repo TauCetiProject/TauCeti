@@ -64,6 +64,22 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Half the difference of two points at distance at most `d` has norm at most `d / 2`. -/
+private lemma norm_half_smul_sub_le {a b : E} {d : ℝ} (h : ‖a - b‖ ≤ d) :
+    ‖(1 / 2 : ℝ) • (a - b)‖ ≤ d / 2 := by
+  rw [norm_smul, Real.norm_of_nonneg (by norm_num)]
+  linarith
+
+/-- A null-measurable set inside a closed ball of radius `r`, with the volume of a closed ball of
+radius `r`, agrees a.e. with the ball containing it. -/
+private lemma ae_eq_closedBall_of_subset_of_volume_eq {s : Set E} (hsm : NullMeasurableSet s volume)
+    {c x : E} {r : ℝ} (hc : s ⊆ closedBall c r) (h : volume s = volume (closedBall x r)) :
+    s =ᵐ[volume] closedBall c r :=
+  ae_eq_of_subset_of_measure_ge hc (by
+    rw [Measure.addHaar_closedBall_center volume c, ← Measure.addHaar_closedBall_center volume x,
+      h]) hsm measure_closedBall_lt_top.ne
+
 /-- **Isodiametric inequality**: a bounded set has at most the volume of a closed ball whose
 radius is half its diameter. The set need not be measurable; its outer volume is bounded. -/
 theorem volume_le_volume_closedBall_diam_div_two {s : Set E} (hs : Bornology.IsBounded s)
@@ -93,9 +109,8 @@ theorem volume_le_volume_closedBall_diam_div_two {s : Set E} (hs : Bornology.IsB
     have hab := dist_le_diam_of_mem hs.closure ha hb
     rw [diam_closure, dist_eq_norm] at hab
     dsimp only
-    rw [mem_closedBall_zero_iff, neg_smul, ← sub_eq_add_neg, ← smul_sub, norm_smul,
-      Real.norm_of_nonneg (by norm_num)]
-    linarith
+    rw [mem_closedBall_zero_iff, neg_smul, ← sub_eq_add_neg, ← smul_sub]
+    exact norm_half_smul_sub_le hab
   have hroot : volume s ^ (Module.finrank ℝ E : ℝ)⁻¹ ≤
       volume (closedBall x (diam s / 2)) ^ (Module.finrank ℝ E : ℝ)⁻¹ :=
     calc
@@ -185,8 +200,8 @@ theorem exists_subset_closedBall_diam_div_two_of_volume_le {s : Set E}
     rw [hHd, dist_eq_norm] at hab
     have : (1 - 1 / 2 : ℝ) • a + (1 / 2 : ℝ) • b = (1 / 2 : ℝ) • (a - -b) := by module
     dsimp only
-    rw [mem_closedBall_zero_iff, this, norm_smul, Real.norm_of_nonneg (by norm_num)]
-    linarith
+    rw [mem_closedBall_zero_iff, this]
+    exact norm_half_smul_sub_le hab
   have hneg : volume (-H) = volume H := Measure.measure_neg volume H
   obtain ⟨v, hv⟩ := hHconv.exists_eq_vadd_of_volume_le hHc hH0 hHconv.neg
     hHc.neg (hneg ▸ hH0) (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num) (by
@@ -200,8 +215,8 @@ theorem exists_subset_closedBall_diam_div_two_of_volume_le {s : Set E}
   rw [hHd, dist_eq_norm] at hyz
   rw [mem_closedBall, dist_eq_norm, sub_neg_eq_add]
   have : y + (1 / 2 : ℝ) • v = (1 / 2 : ℝ) • (y - (-v + -y)) := by module
-  rw [this, norm_smul, Real.norm_of_nonneg (by norm_num)]
-  linarith
+  rw [this]
+  exact norm_half_smul_sub_le hyz
 
 /-- **Equality in the isodiametric inequality, a.e. form.** A bounded Lebesgue-measurable set `s`
 has the volume of a closed ball of radius `diam s / 2` exactly when it agrees a.e. with such a
@@ -212,9 +227,7 @@ theorem volume_eq_volume_closedBall_diam_div_two_iff_exists_ae_eq {s : Set E}
       ∃ c, s =ᵐ[volume] closedBall c (diam s / 2) := by
   refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ ?_⟩
   · obtain ⟨c, hc⟩ := exists_subset_closedBall_diam_div_two_of_volume_le hs h.ge
-    refine ⟨c, ae_eq_of_subset_of_measure_ge hc ?_ hsm measure_closedBall_lt_top.ne⟩
-    rw [Measure.addHaar_closedBall_center volume c, ← Measure.addHaar_closedBall_center volume x,
-      h]
+    exact ⟨c, ae_eq_closedBall_of_subset_of_volume_eq hsm hc h⟩
   · rw [measure_congr hc, Measure.addHaar_closedBall_center volume c,
       Measure.addHaar_closedBall_center volume x]
 
@@ -236,10 +249,7 @@ theorem volume_eq_volume_closedBall_diam_div_two_iff_exists_eq {s : Set E} (hsc 
       exact ha
     -- The open set `ball c (diam s / 2) \ s` is null, hence empty, and `s` is closed.
     have hae : s =ᵐ[volume] closedBall c (diam s / 2) :=
-      ae_eq_of_subset_of_measure_ge hc (by
-        rw [Measure.addHaar_closedBall_center volume c,
-          ← Measure.addHaar_closedBall_center volume x, h]) hsc.nullMeasurableSet
-        measure_closedBall_lt_top.ne
+      ae_eq_closedBall_of_subset_of_volume_eq hsc.nullMeasurableSet hc h
     have hball : ball c (diam s / 2) ⊆ s := sdiff_eq_empty.1 <|
       (isOpen_ball.sdiff hsc).eq_empty_of_measure_zero <|
         measure_mono_null (sdiff_subset_sdiff_left ball_subset_closedBall) (ae_eq_set.1 hae).2
