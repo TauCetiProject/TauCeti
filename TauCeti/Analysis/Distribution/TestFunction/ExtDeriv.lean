@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
-public import Mathlib.Analysis.Distribution.Distribution
+public import Mathlib.Analysis.Distribution.TestFunction
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
