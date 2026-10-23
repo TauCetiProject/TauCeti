@@ -466,9 +466,8 @@ theorem visitTime_cast_eq_of_strictMono (hb : poly'.boundary ℝ = poly.boundary
     (h : 2 * ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2) =
       2 * ((poly'.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2)) (j) :
     visitTime hs' hπ' (Fin.cast h j) = φ (visitTime hs hπ j) := by
-  have hDP : poly'.doublePoints ℝ (projAlong ℝ p₀ d) = poly.doublePoints ℝ (projAlong ℝ p₀ d) := by
-    ext x
-    simp only [mem_doublePoints, hb]
+  have hDP : poly'.doublePoints ℝ (projAlong ℝ p₀ d) = poly.doublePoints ℝ (projAlong ℝ p₀ d) :=
+    doublePoints_eq_of_boundary_eq hb
   -- The change of time carries the crossing times of `poly` onto those of `poly'`.
   have hct : poly'.crossingTimes p₀ d = φ '' poly.crossingTimes p₀ d := by
     refine Subset.antisymm (fun t' ht' ↦ ?_) ?_
@@ -507,7 +506,7 @@ theorem gaussCode_partner_cast_eq_of_strictMono (hb : poly'.boundary ℝ = poly.
   rw [boundaryParam_visitTime_partner, hbp, hbp, boundaryParam_visitTime_partner]
   have hx := (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs hπ j)).2
   have hx' : poly.boundaryParam (visitTime hs hπ j) ∈ poly'.doublePoints ℝ (projAlong ℝ p₀ d) := by
-    simp only [mem_doublePoints, hb] at hx ⊢
+    rw [doublePoints_eq_of_boundary_eq hb]
     exact hx
   exact hπ.eq_doublePointPartner (doublePoints_subset_boundary hx)
     (hb ▸ doublePointPartner_mem_boundary (doublePoints_subset_boundary hx'))

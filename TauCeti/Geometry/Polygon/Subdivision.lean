@@ -77,9 +77,8 @@ variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Mod
 
 /-- Subdividing an edge does not change the double points of a map. -/
 theorem doublePoints_insertVertex_edgePath (π : P → Q) (hs : s ∈ Icc (0 : R) 1) :
-    (poly.insertVertex i (poly.edgePath R i s)).doublePoints R π = poly.doublePoints R π := by
-  ext x
-  simp only [mem_doublePoints, boundary_insertVertex_edgePath poly i hs]
+    (poly.insertVertex i (poly.edgePath R i s)).doublePoints R π = poly.doublePoints R π :=
+  doublePoints_eq_of_boundary_eq (boundary_insertVertex_edgePath poly i hs)
 
 /-- After subdividing an edge, a projection is regular exactly when it was regular before and the
 new vertex is not a double point. -/
