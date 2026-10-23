@@ -174,6 +174,13 @@ theorem isClosedEmbedding [T2Space X] (h : IsSolidTorusNeighborhood f Φ) :
     IsClosedEmbedding Φ :=
   h.isEmbedding.continuous.isClosedEmbedding h.isEmbedding.injective
 
+/-- A loop with a solid torus neighbourhood in a Hausdorff space has closed image. -/
+theorem isClosed_range [T2Space X] (h : IsSolidTorusNeighborhood f Φ) : IsClosed (range f) := by
+  have hcore : f = fun z ↦ Φ (0, z) := funext fun z ↦ (h.apply_zero z).symm
+  rw [hcore]
+  exact (isCompact_range
+    (h.isEmbedding.continuous.comp (continuous_const.prodMk continuous_id))).isClosed
+
 /-- A solid torus neighbourhood is carried along an open embedding of the ambient space, such as
 the inclusion of an open subset or a homeomorphism. -/
 theorem comp {e : X → Y} (he : IsOpenEmbedding e) (h : IsSolidTorusNeighborhood f Φ) :

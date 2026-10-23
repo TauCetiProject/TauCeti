@@ -182,6 +182,19 @@ private theorem apply_radialPoint_notMem_range (h : IsSolidTorusNeighborhood f �
   rw [h.apply_mem_range_iff, ← norm_eq_zero, norm_radialPoint]
   exact hr0.ne'
 
+/-- A continuous radial motion gives a homotopy in any set containing its image. -/
+private def radialHomotopy (h : IsSolidTorusNeighborhood f Φ) {s : Set X}
+    (r : C(unitInterval, ℝ)) (hr : ∀ t, r t ∈ Icc (0 : ℝ) 1)
+    (hs : ∀ t q, Φ (radialPoint (r t) (hr t) q) ∈ s)
+    {g₀ g₁ : C(Circle × Circle, s)}
+    (h₀ : ∀ q, (g₀ q : X) = Φ (radialPoint (r 0) (hr 0) q))
+    (h₁ : ∀ q, (g₁ q : X) = Φ (radialPoint (r 1) (hr 1) q)) : g₀.Homotopy g₁ where
+  toFun x := ⟨Φ (radialPoint (r x.1) (hr x.1) x.2), hs x.1 x.2⟩
+  continuous_toFun := (h.isEmbedding.continuous.comp
+    (continuous_radialPoint (r.continuous.comp continuous_fst) _ continuous_snd)).subtype_mk _
+  map_zero_left q := Subtype.ext (h₀ q).symm
+  map_one_left q := Subtype.ext (h₁ q).symm
+
 /-- The torus at radius `1 / 2` is a deformation retract of the punctured open solid torus: the
 homotopy equivalence `S¹ × S¹ ≃ₕ U ∖ K`, `(u, z) ↦ Φ (u / 2, z)`. -/
 private def torusHomotopyEquiv (h : IsSolidTorusNeighborhood f Φ) :
@@ -220,20 +233,21 @@ private def coreMap (h : IsSolidTorusNeighborhood f Φ) :
 /-- The radial contraction of the torus at radius `1 / 2` onto the core, inside the open solid
 torus. -/
 private def contractHomotopy (h : IsSolidTorusNeighborhood f Φ) :
-    ((puncturedToOpen f Φ).comp h.torusHomotopyEquiv.toFun).Homotopy h.coreMap where
-  toFun x := ⟨Φ (radialPoint ((1 - x.1) / 2)
-      ⟨by linarith [unitInterval.le_one x.1], by linarith [unitInterval.nonneg x.1]⟩ x.2),
-    _, (norm_radialPoint _ _ _).trans_lt (by linarith [unitInterval.nonneg x.1]), rfl⟩
-  continuous_toFun := (h.isEmbedding.continuous.comp (continuous_radialPoint (by fun_prop) _
-    continuous_snd)).subtype_mk _
-  map_zero_left q := Subtype.ext <| by
-    simp only [ContinuousMap.comp_apply, ContinuousMap.inclusion_apply_coe,
-      coe_torusHomotopyEquiv_apply]
-    exact congrArg Φ (radialPoint_congr (by simp) _ _ q)
-  map_one_left q := Subtype.ext <| by
-    simp only [coreMap, ContinuousMap.coe_mk]
-    exact congrArg Φ ((radialPoint_congr (by simp) _ ⟨le_rfl, zero_le_one⟩ q).trans
-      (radialPoint_zero q _))
+    ((puncturedToOpen f Φ).comp h.torusHomotopyEquiv.toFun).Homotopy h.coreMap :=
+  h.radialHomotopy (s := Φ '' {p | ‖(p.1 : ℂ)‖ < 1})
+    ⟨fun t ↦ (1 - t) / 2, by fun_prop⟩
+    (fun t ↦ ⟨by dsimp; linarith [unitInterval.le_one t],
+      by dsimp; linarith [unitInterval.nonneg t]⟩)
+    (fun t q ↦ ⟨_, (norm_radialPoint _ _ _).trans_lt
+      (by dsimp; linarith [unitInterval.nonneg t]), rfl⟩)
+    (fun q ↦ by
+      simp only [ContinuousMap.comp_apply, ContinuousMap.inclusion_apply_coe,
+        coe_torusHomotopyEquiv_apply]
+      exact congrArg Φ (radialPoint_congr (by simp) _ _ q))
+    (fun q ↦ by
+      simp only [coreMap, ContinuousMap.coe_mk]
+      exact congrArg Φ ((radialPoint_congr (by simp) _ ⟨le_rfl, zero_le_one⟩ q).trans
+        (radialPoint_zero q _)).symm)
 
 /-- The projection of the open solid torus to its core, followed by `z ↦ (1, z)`. -/
 private def openToTorus (h : IsSolidTorusNeighborhood f Φ) :
@@ -298,28 +312,21 @@ private abbrev frontierToComplement (h : IsSolidTorusNeighborhood f Φ) :
 complement. -/
 private def expandHomotopy (h : IsSolidTorusNeighborhood f Φ) :
     ((puncturedToComplement f Φ).comp h.torusHomotopyEquiv.toFun).Homotopy
-      (h.frontierToComplement.comp ⟨h.exteriorFrontierHomeomorph, by fun_prop⟩) where
-  toFun x := ⟨Φ (radialPoint ((1 + x.1) / 2)
-      ⟨by linarith [unitInterval.nonneg x.1], by linarith [unitInterval.le_one x.1]⟩ x.2),
-    h.apply_radialPoint_notMem_range (by linarith [unitInterval.nonneg x.1]) _ _⟩
-  continuous_toFun := (h.isEmbedding.continuous.comp (continuous_radialPoint (by fun_prop) _
-    continuous_snd)).subtype_mk _
-  map_zero_left q := Subtype.ext <| by
-    simp only [ContinuousMap.comp_apply, ContinuousMap.inclusion_apply_coe,
-      coe_torusHomotopyEquiv_apply]
-    exact congrArg Φ (radialPoint_congr (by simp) _ _ q)
-  map_one_left q := Subtype.ext <| by
-    simp only [ContinuousMap.comp_apply, ContinuousMap.inclusion_apply_coe,
-      ContinuousMap.coe_mk, coe_exteriorFrontierHomeomorph_apply]
-    exact congrArg Φ ((radialPoint_congr (by norm_num) _ ⟨zero_le_one, le_rfl⟩ q).trans
-      (radialPoint_one q _))
-
-/-- The knot is closed. -/
-private theorem isClosed_range_loop (h : IsSolidTorusNeighborhood f Φ) : IsClosed (range f) := by
-  have hcore : f = fun z ↦ Φ (0, z) := funext fun z ↦ (h.apply_zero z).symm
-  rw [hcore]
-  exact (isCompact_range
-    (h.isEmbedding.continuous.comp (continuous_const.prodMk continuous_id))).isClosed
+      (h.frontierToComplement.comp ⟨h.exteriorFrontierHomeomorph, by fun_prop⟩) :=
+  h.radialHomotopy (s := (range f)ᶜ) ⟨fun t ↦ (1 + t) / 2, by fun_prop⟩
+    (fun t ↦ ⟨by dsimp; linarith [unitInterval.nonneg t],
+      by dsimp; linarith [unitInterval.le_one t]⟩)
+    (fun t q ↦ h.apply_radialPoint_notMem_range
+      (by dsimp; linarith [unitInterval.nonneg t]) _ q)
+    (fun q ↦ by
+      simp only [ContinuousMap.comp_apply, ContinuousMap.inclusion_apply_coe,
+        coe_torusHomotopyEquiv_apply]
+      exact congrArg Φ (radialPoint_congr (by simp) _ _ q))
+    (fun q ↦ by
+      simp only [ContinuousMap.comp_apply, ContinuousMap.inclusion_apply_coe,
+        ContinuousMap.coe_mk, coe_exteriorFrontierHomeomorph_apply]
+      exact congrArg Φ ((radialPoint_congr (by norm_num) _ ⟨zero_le_one, le_rfl⟩ q).trans
+        (radialPoint_one q _)).symm)
 
 include h₁ h₂ in
 private theorem mayerVietoris (h : IsSolidTorusNeighborhood f Φ) :
@@ -327,7 +334,7 @@ private theorem mayerVietoris (h : IsSolidTorusNeighborhood f Φ) :
       firstHomologyMap (puncturedToComplement f Φ) x = 0 → x = 0) ∧
     ∀ c, ∃ x, firstHomologyMap (puncturedToOpen f Φ) x = 0 ∧
       firstHomologyMap (puncturedToComplement f Φ) x = c :=
-  mayerVietoris_one (X := X) h.isOpen_image h.isClosed_range_loop.isOpen_compl
+  mayerVietoris_one (X := X) h.isOpen_image h.isClosed_range.isOpen_compl
     (eq_univ_of_forall fun x ↦ (em (x ∈ range f)).imp (fun hx ↦ h.range_subset_image hx) id)
     h₁ h₂
 
@@ -388,6 +395,33 @@ private theorem boundaryHomologyMap_torusCurveClass (h : IsSolidTorusNeighborhoo
     ← FramedBoundaryTorus.torusCurveClass_def] at hH
   exact hH.symm
 
+/-- The boundary meridian represents the meridian at radius `1 / 2` in the complement. -/
+private theorem boundaryHomologyMap_basis_zero (h : IsSolidTorusNeighborhood f Φ) :
+    h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0) =
+      firstHomologyMap (puncturedToComplement f Φ)
+        (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass 1 0)) := by
+  rw [FramedBoundaryTorus.ofHomeomorph_basis_zero, h.boundaryHomologyMap_torusCurveClass]
+
+include h₁ h₂ in
+/-- Integer multiples of the boundary meridian parametrize the first homology of the knot
+complement bijectively. -/
+theorem bijective_toSpanSingleton_meridian (h : IsSolidTorusNeighborhood f Φ) :
+    Bijective (LinearMap.toSpanSingleton ℤ _
+      (h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0))) := by
+  -- `LinearMap.toSpanSingleton` uses the `Module ℤ` action of the homology object, while the
+  -- computations above use `zsmul`; the two agree by `Int.cast_smul_eq_zsmul`.
+  refine ⟨fun k k' hkk' ↦ sub_eq_zero.1 <| h.eq_zero_of_zsmul_eq_zero h₁ h₂ ?_, ?_⟩
+  · have hk : k • h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0) =
+        k' • h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0) := by
+      rw [← Int.cast_smul_eq_zsmul ℤ k, ← Int.cast_smul_eq_zsmul ℤ k']
+      exact hkk'
+    rw [← h.boundaryHomologyMap_basis_zero, sub_zsmul, hk, add_neg_cancel]
+  · intro c
+    obtain ⟨k, hk⟩ := h.exists_zsmul_eq h₁ h₂ c
+    refine ⟨k, ?_⟩
+    rw [← hk, ← h.boundaryHomologyMap_basis_zero, ← Int.cast_smul_eq_zsmul ℤ k]
+    rfl
+
 /-- **The meridian generates the first homology of the knot complement.** For a knot with a solid
 torus neighbourhood `Φ` in a Hausdorff space `X` with `H₁(X; ℤ) = H₂(X; ℤ) = 0`, the first
 integral homology of the knot complement is infinite cyclic, freely generated by the meridian of
@@ -396,25 +430,7 @@ integral homology of the knot complement is infinite cyclic, freely generated by
 the linking number with the knot, oriented so that the meridian of `Φ` has linking number `1`. -/
 def complementHomologyEquiv (h : IsSolidTorusNeighborhood f Φ) :
     ((singularChains ℤ).obj (TopCat.of ↥(range f)ᶜ)).homology 1 ≃ₗ[ℤ] ℤ :=
-  have hμ : h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0) =
-      firstHomologyMap (puncturedToComplement f Φ)
-        (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass 1 0)) := by
-    rw [FramedBoundaryTorus.ofHomeomorph_basis_zero, h.boundaryHomologyMap_torusCurveClass]
-  -- `LinearMap.toSpanSingleton` uses the `Module ℤ` action of the homology object, while the
-  -- computations above use `zsmul`; the two agree by `Int.cast_smul_eq_zsmul`.
-  (LinearEquiv.ofBijective (LinearMap.toSpanSingleton ℤ _
-    (h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0)))
-    ⟨fun k k' hkk' ↦ sub_eq_zero.1 <| h.eq_zero_of_zsmul_eq_zero h₁ h₂ <| by
-        have hk : k • h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0) =
-            k' • h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0) := by
-          rw [← Int.cast_smul_eq_zsmul ℤ k, ← Int.cast_smul_eq_zsmul ℤ k']
-          exact hkk'
-        rw [← hμ, sub_zsmul, hk, add_neg_cancel],
-      fun c ↦ by
-        obtain ⟨k, hk⟩ := h.exists_zsmul_eq h₁ h₂ c
-        refine ⟨k, ?_⟩
-        rw [← hk, ← hμ, ← Int.cast_smul_eq_zsmul ℤ k]
-        rfl⟩).symm
+  (LinearEquiv.ofBijective _ (h.bijective_toSpanSingleton_meridian h₁ h₂)).symm
 
 /-- The inverse of `TauCeti.IsSolidTorusNeighborhood.complementHomologyEquiv` sends `k` to `k`
 times the meridian. -/
@@ -439,6 +455,31 @@ longitude of `Φ` is `λ₀ + n · μ` for the preferred longitude `λ₀`
 it is the linking number of the longitude of `Φ` with the knot. -/
 def framingNumber (h : IsSolidTorusNeighborhood f Φ) : ℤ :=
   h.complementHomologyEquiv h₁ h₂ (h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1))
+
+/-- The longitude is homologous in the complement to the framing number times the meridian. -/
+theorem boundaryHomologyMap_framedBoundaryTorus_basis_one (h : IsSolidTorusNeighborhood f Φ) :
+    h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1) =
+      h.framingNumber h₁ h₂ • h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0) := by
+  rw [framingNumber]
+  have hlongitude := (h.complementHomologyEquiv h₁ h₂).symm_apply_apply
+    (h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1))
+  rw [complementHomologyEquiv_symm_apply] at hlongitude
+  exact hlongitude.symm
+
+/-- The framing number is the unique integer relating the longitude and meridian in the
+homology of the knot complement. -/
+theorem framingNumber_eq_iff (h : IsSolidTorusNeighborhood f Φ) (n : ℤ) :
+    h.framingNumber h₁ h₂ = n ↔
+      h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1) =
+        n • h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0) := by
+  constructor
+  · intro hn
+    rw [← hn]
+    exact h.boundaryHomologyMap_framedBoundaryTorus_basis_one h₁ h₂
+  · intro hn
+    have hlongitude := congrArg (h.complementHomologyEquiv h₁ h₂) hn
+    rw [framingNumber]
+    simpa only [map_zsmul, complementHomologyEquiv_meridian, smul_eq_mul, mul_one] using hlongitude
 
 /-- A class of the boundary torus with `(μ, λ)`-coordinates `(p, q)` is homologous in the knot
 complement to `p + n q` times the meridian, `n` the framing number. -/
@@ -501,7 +542,6 @@ theorem complementHomologyEquiv_boundaryHomologyMap_preferred (h : IsSolidTorusN
   ring
 
 /-- **The preferred longitude is null-homologous in the knot complement.** -/
-@[simp]
 theorem boundaryHomologyMap_preferredFramedBoundaryTorus_basis_one
     (h : IsSolidTorusNeighborhood f Φ) :
     h.boundaryHomologyMap ((h.preferredFramedBoundaryTorus h₁ h₂).basis 1) = 0 := by
