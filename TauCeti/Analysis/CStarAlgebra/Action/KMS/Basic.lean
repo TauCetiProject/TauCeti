@@ -39,10 +39,9 @@ The KMS function of a pair is unique, `IsKMSFunction.eqOn`, by Schwarz reflectio
 real axis, and it is bounded on the strip by `‖φ‖ ‖a‖ ‖b‖`, `IsKMSFunction.norm_le`, by the
 Phragmén–Lindelöf principle. When `b` is entire analytic, the KMS function is
 `z ↦ φ (a α_z(b))`; this gives the analytic form of the KMS condition,
-`ω (a α_{iβ}(b)) = ω (b a)`, `IsKMSState.apply_mul_entireExtension_mul_I`. If every element is
-entire analytic, the analytic form characterizes β-KMS states,
-`isKMSState_iff_of_forall_isEntireAnalytic`. For the trivial action this shows that the β-KMS
-states are the tracial states for every `β`.
+`ω (a α_{iβ}(b)) = ω (b a)`, `IsKMSState.apply_mul_entireExtension_mul_I`. The converse
+analytic criterion and its specialization to the trivial action are proved in
+`TauCeti.Analysis.CStarAlgebra.Action.KMS.Dense`.
 
 For `β ≠ 0` every β-KMS state is invariant under the dynamics, `IsKMSState.apply_action`.
 Replacing `a` by an approximate unit in the analytic KMS identity gives `ω (α_{iβ}(b)) = ω b`
@@ -106,6 +105,20 @@ theorem eqOn_of_apply_ofReal (hF : α.IsKMSFunction β φ a b F)
 theorem eqOn (hF : α.IsKMSFunction β φ a b F) (hG : α.IsKMSFunction β φ a b G) :
     EqOn F G (im ⁻¹' uIcc 0 β) :=
   hF.eqOn_of_apply_ofReal hG.continuousOn hG.differentiableOn hG.apply_ofReal
+
+/-- Subtracting KMS functions with the same first coefficient subtracts the second
+coefficients. -/
+theorem sub_right {c : A} (hF : α.IsKMSFunction β φ a b F)
+    (hG : α.IsKMSFunction β φ a c G) :
+    α.IsKMSFunction β φ a (b - c) (fun z => F z - G z) where
+  continuousOn := hF.continuousOn.sub hG.continuousOn
+  differentiableOn := hF.differentiableOn.sub hG.differentiableOn
+  isBounded_image := (hF.isBounded_image.sub hG.isBounded_image).subset
+    (image_subset_iff.mpr fun z hz => ⟨F z, mem_image_of_mem F hz,
+      G z, mem_image_of_mem G hz, rfl⟩)
+  apply_ofReal t := by simp [hF.apply_ofReal, hG.apply_ofReal, mul_sub]
+  apply_ofReal_add_mul_I t := by
+    simp [hF.apply_ofReal_add_mul_I, hG.apply_ofReal_add_mul_I, sub_mul]
 
 /-- On the two boundary lines a KMS function is bounded by `‖φ‖ ‖a‖ ‖b‖`. -/
 private theorem norm_le_of_im_eq (hF : α.IsKMSFunction β φ a b F) {z : ℂ}
@@ -225,17 +238,6 @@ theorem IsKMSState.apply_mul_entireExtension_mul_I (hω : α.IsKMSState β ω) (
   obtain ⟨F, hF⟩ := hω.exists_isKMSFunction a b
   simpa using hF.apply_mul_entireExtension_ofReal_add_mul_I hb 0
 
-/-- When every element is entire analytic, a state is β-KMS exactly when it satisfies the
-analytic KMS identity `ω (a α_{iβ}(b)) = ω (b a)`. -/
-theorem isKMSState_iff_of_forall_isEntireAnalytic (h : ∀ b, α.IsEntireAnalytic b) :
-    α.IsKMSState β ω ↔ ‖(ω : A →L[ℂ] ℂ)‖ = 1 ∧
-      ∀ a b, ω (a * α.entireExtension b (β * I)) = ω (b * a) := by
-  refine ⟨fun hω => ⟨hω.norm_eq_one, fun a b => hω.apply_mul_entireExtension_mul_I a (h b)⟩,
-    fun ⟨hnorm, hid⟩ => ⟨hnorm, fun a b => ⟨fun z => ω (a * α.entireExtension b z), ?_⟩⟩⟩
-  refine (isKMSFunction_apply_mul_entireExtension_iff (h b)).mpr fun t => ?_
-  rw [← (h b).entireExtension_action, ← ContinuousLinearMap.coe_coe]
-  exact hid a _
-
 /-- The `0`-KMS states are exactly the tracial states. -/
 theorem isKMSState_zero_iff :
     α.IsKMSState 0 ω ↔ ‖(ω : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ a b, ω (a * b) = ω (b * a) := by
@@ -254,12 +256,6 @@ theorem isKMSState_zero_iff :
     refine ((ω : A →L[ℂ] ℂ).le_opNorm _).trans ?_
     gcongr
     exact (norm_mul_le _ _).trans_eq (by rw [StarAlgEquiv.norm_map])
-
-/-- For the trivial action the β-KMS states are the tracial states, for every `β`. -/
-theorem isKMSState_trivial_iff :
-    (trivial : CStarAction _ A).IsKMSState β ω ↔
-      ‖(ω : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ a b, ω (a * b) = ω (b * a) := by
-  simp [isKMSState_iff_of_forall_isEntireAnalytic isEntireAnalytic_trivial]
 
 /-! ### Invariance of KMS states -/
 

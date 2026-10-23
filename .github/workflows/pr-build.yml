@@ -138,14 +138,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@580b5cbabe91227a70a95201c5de75c361d415e6
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 580b5cbabe91227a70a95201c5de75c361d415e6
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@580b5cbabe91227a70a95201c5de75c361d415e6
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1537,14 +1537,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@580b5cbabe91227a70a95201c5de75c361d415e6
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 580b5cbabe91227a70a95201c5de75c361d415e6
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@580b5cbabe91227a70a95201c5de75c361d415e6
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}

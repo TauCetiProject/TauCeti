@@ -16,19 +16,11 @@ under the Krull topology. This gives continuity for the cocycles attached to poi
 of Weierstrass curves. Descent is developed in
 `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisDescent.lean`.
 
-Conjugation by algebra automorphisms is an action (`VariableChange.map_map_algEquiv`).
 -/
 
 public section
 
 namespace WeierstrassCurve.VariableChange
-
-/-- Conjugating a change of variables by `σ` and then by `τ` is conjugating by `τ * σ`. -/
-lemma map_map_algEquiv {R L : Type*} [CommRing R] [CommRing L] [Algebra R L]
-    (C : VariableChange L) (σ τ : L ≃ₐ[R] L) :
-    (C.map (σ : L →+* L)).map (τ : L →+* L) = C.map ((τ * σ : L ≃ₐ[R] L) : L →+* L) := by
-  rw [map_map]
-  exact congrArg C.map (RingHom.ext fun x ↦ (AlgEquiv.mul_apply τ σ x).symm)
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 

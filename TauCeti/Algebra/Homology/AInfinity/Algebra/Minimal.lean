@@ -28,6 +28,8 @@ algebras, a morphism is a quasi-isomorphism exactly when its linear part is bije
   algebra is minimal exactly when the differential vanishes.
 * `TauCeti.AInfinityAlgebra.isMinimal_cohomologyAInfinityAlgebra`: the cohomology `A∞` algebra is
   minimal.
+* `TauCeti.AInfinityAlgebra.IsMinimal.taylor_coalgHom_of_tprod`: after a coalgebra morphism, the
+  Taylor map of a graded algebra only sees the cuts of a word into two blocks.
 * `TauCeti.AInfinityHom.isQuasiIso_iff_linearPart_bijective`: between minimal algebras, a
   quasi-isomorphism has bijective linear part.
 * `TauCeti.AInfinityHom.isQuasiIso_iff_isIso`: between minimal algebras, the quasi-isomorphisms
@@ -83,6 +85,36 @@ variable {𝒜 : AInfinityAlgebra R A}
 theorem m_one (h : 𝒜.IsMinimal) (x : Fin 1 → A) : 𝒜.m 1 x = 0 := by
   obtain ⟨y, rfl⟩ : ∃ y, x = ![y] := ⟨x 0, funext fun i ↦ by fin_cases i; rfl⟩
   exact (isMinimal_iff_m_one_eq_zero 𝒜).1 h y
+
+open ReducedTensorWords in
+/-- The Taylor map of an `A∞` algebra without operations above arity two vanishes on words obtained
+by prepending two letters to a nonempty word. -/
+private theorem taylor_prepend_prepend (hm : ∀ k, 3 ≤ k → 𝒜.m k = 0) (u v : A)
+    (W : ReducedTensorWords R A) : 𝒜.taylor (prepend R A u (prepend R A v W)) = 0 := by
+  have h : 𝒜.taylor ∘ₗ prepend R A u ∘ₗ prepend R A v = 0 := by
+    refine linearMap_ext R A fun n y ↦ ?_
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, prepend_of_tprod, prepend_of_tprod,
+      𝒜.taylor_of_tprod, hm _ (by have := n.2; simp only; omega), LinearMap.zero_apply,
+      _root_.zero_apply]
+  exact LinearMap.congr_fun h W
+
+open ReducedTensorWords in
+/-- **The Taylor map of a graded algebra after a coalgebra morphism.**  For a minimal `A∞` algebra
+`𝒜` without operations above arity two, the Taylor map after the coalgebra morphism with Taylor
+components `f` only sees the cuts of a word into two blocks: on `x₁ ⋯ xₙ` it is the sum over the
+cuts of `m₂(τ f(x₁ ⋯ x_d), f(x_{d+1} ⋯ xₙ))`, with `τ` the degree-one Koszul twist carrying the
+suspension sign of `m₂`. -/
+theorem taylor_coalgHom_of_tprod (h : 𝒜.IsMinimal) (hm : ∀ k, 3 ≤ k → 𝒜.m k = 0)
+    (f : ReducedTensorWords R A →ₗ[R] A) {n : ℕ} (hn : 0 < n) (x : Fin n → A) :
+    𝒜.taylor (coalgHom R f (of R A ⟨n, hn⟩ (PiTensorProduct.tprod R x))) =
+      ∑ d ∈ Finset.range n,
+        𝒜.m 2 ![𝒜.grading.koszulTwist 1 (f (subword R x 0 d)), f (subword R x d (n - d))] := by
+  rw [of_tprod_eq_subword R hn, coalgHom_subword, map_add, map_sum, taylor_ofLetter, h.m_one,
+    zero_add]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [coalgHom_subword, map_add, map_sum, map_add, map_sum, prepend_ofLetter, taylor_of_two,
+    zero_add]
+  simp [taylor_prepend_prepend hm]
 
 /-- Every element of a minimal `A∞` algebra is a cycle. -/
 theorem mem_cycles (h : 𝒜.IsMinimal) (x : A) : x ∈ 𝒜.cycles := by
