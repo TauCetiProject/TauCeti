@@ -63,7 +63,8 @@ theorem stage_naturality (I : Ideal R) {B C : Neighbourhood.{u, u} I} (f : B ⟶
   have hstage (B : Neighbourhood.{u, u} I) : (c.ι.app B).hom = stage I B := by
     simp [c, Cocone.whiskeringEquivalence, Equivalence.invFunIdAssoc_inv_app,
       Equivalence.counitInv, diagram, stage, E]
-    rfl
+    -- The inclusion is an induced functor: its map is the underlying neighbourhood morphism.
+    dsimp only [ObjectProperty.ι, inducedFunctor]
   have hw := congrArg CommAlgCat.Hom.hom (c.w f)
   simp only [CommAlgCat.hom_comp, hstage] at hw
   exact hw
