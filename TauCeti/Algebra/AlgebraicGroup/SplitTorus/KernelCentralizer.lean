@@ -22,10 +22,12 @@ built.
   centralizer `Z_G(ker α)` is `SplitMaximalTorus.centralizerKerHopfIdeal`.
 * The characters of `ker α` modulo torsion form the lattice `(X ⧸ ℤα) ⧸ torsion`, which is free.
   The corresponding subgroup `T_α = D((X ⧸ ℤα) ⧸ torsion)` of `ker α` is therefore a split torus
-  (`SplitMaximalTorus.splitTorus_kerTorus`). Over a field, `T_α` is classically written
-  `(ker α)°`: the quotient `ker α ⧸ T_α` is the finite diagonalizable group whose character group
-  is the torsion of `X ⧸ ℤα`. That identification is not proved here. The centralizer `Z_G(T_α)`
-  is `SplitMaximalTorus.centralizerKerTorusHopfIdeal`.
+  (`SplitMaximalTorus.splitTorus_kerTorus`). Over a field, `T_α` is classically
+  `((ker α)°)_red`: the quotient `ker α ⧸ T_α` is the finite diagonalizable group whose character
+  group is the torsion of `X ⧸ ℤα`. In characteristic zero this is `(ker α)°`, but in
+  characteristic `p` the identity component can be larger: for `T = 𝔾ₘ` and `α = p`, `ker α = μₚ`
+  is connected while `T_α` is trivial. These identifications are not proved here. The centralizer
+  `Z_G(T_α)` is `SplitMaximalTorus.centralizerKerTorusHopfIdeal`.
 
 A character `χ` vanishes on `T_α` exactly when some positive multiple of `χ` lies in `ℤα`
 (`SplitMaximalTorus.ofAdd_mem_ker_kerTorusCharacterMap_iff`), so `T_α` is cut out by the
