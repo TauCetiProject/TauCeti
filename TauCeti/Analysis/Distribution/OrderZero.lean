@@ -76,6 +76,16 @@ private lemma zeroExt_apply (f : C_c(Ω, ℝ)) (x : E) :
   · exact Subtype.val_injective.extend_apply _ _ (⟨x, h⟩ : Ω)
   · exact Function.extend_apply' _ _ _ fun ⟨y, hy⟩ => h (hy ▸ y.2)
 
+private lemma zeroExt_add (f g : C_c(Ω, ℝ)) (x : E) :
+    zeroExt (f + g) x = zeroExt f x + zeroExt g x := by
+  simp only [zeroExt_apply]
+  split_ifs <;> simp
+
+private lemma zeroExt_smul (c : ℝ) (f : C_c(Ω, ℝ)) (x : E) :
+    zeroExt (c • f) x = c * zeroExt f x := by
+  simp only [zeroExt_apply]
+  split_ifs <;> simp
+
 private lemma continuous_zeroExt (f : C_c(Ω, ℝ)) : Continuous (zeroExt f) :=
   f.hasCompactSupport.continuous_extend_zero Ω.isOpen f.continuous
 
@@ -128,11 +138,11 @@ private lemma IsApprox.add {f g : C_c(Ω, ℝ)} {φ ψ : ℕ → 𝓓(Ω, ℝ)} 
   obtain ⟨⟨K', hK', hK'Ω, hψK⟩, hψε⟩ := hψ
   refine ⟨⟨K ∪ K', hK.union hK', union_subset hKΩ hK'Ω, fun n => ?_⟩, fun n x => ?_⟩
   · exact (tsupport_add (φ n) (ψ n)).trans (union_subset_union (hφK n) (hψK n))
-  · have h : zeroExt (f + g) x = zeroExt f x + zeroExt g x := by
-      simp only [zeroExt_apply]
-      split_ifs <;> simp
-    calc |(φ + ψ) n x - zeroExt (f + g) x|
-        = |(φ n x - zeroExt f x) + (ψ n x - zeroExt g x)| := by simp [h]; ring_nf
+  · calc |(φ + ψ) n x - zeroExt (f + g) x|
+        = |(φ n x - zeroExt f x) + (ψ n x - zeroExt g x)| := by
+          rw [zeroExt_add, Pi.add_apply, FunLike.coe_add, Pi.add_apply]
+          congr 1
+          ring
       _ ≤ ε n + ε' n := (abs_add_le _ _).trans (add_le_add (hφε n x) (hψε n x))
 
 private lemma IsApprox.smul {f : C_c(Ω, ℝ)} {φ : ℕ → 𝓓(Ω, ℝ)} {ε : ℕ → ℝ}
@@ -140,10 +150,8 @@ private lemma IsApprox.smul {f : C_c(Ω, ℝ)} {φ : ℕ → 𝓓(Ω, ℝ)} {ε 
   obtain ⟨⟨K, hK, hKΩ, hφK⟩, hφε⟩ := hφ
   refine ⟨⟨K, hK, hKΩ, fun n => ?_⟩, fun n x => ?_⟩
   · exact (closure_mono (Function.support_const_smul_subset c _)).trans (hφK n)
-  · have h : zeroExt (c • f) x = c * zeroExt f x := by
-      simp only [zeroExt_apply]
-      split_ifs <;> simp
-    simpa [h, ← mul_sub, abs_mul] using mul_le_mul_of_nonneg_left (hφε n x) (abs_nonneg c)
+  · simpa [zeroExt_smul, ← mul_sub, abs_mul] using
+      mul_le_mul_of_nonneg_left (hφε n x) (abs_nonneg c)
 
 variable {T : 𝓓'(Ω, ℝ)}
   (hT : ∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K →

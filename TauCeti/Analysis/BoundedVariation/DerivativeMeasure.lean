@@ -63,39 +63,14 @@ namespace TestFunction
 theorem ofReal_abs_integral_lineDeriv_mul_le_totalVariationOn (φ : 𝓓(Ω, ℝ)) (v : E) :
     ENNReal.ofReal |∫ x, ∂_{v} φ x * u x ∂μ| ≤
       ‖v‖ₑ * ‖(φ : E →ᵇ ℝ)‖ₑ * totalVariationOn μ Ω u := by
-  set c := ‖v‖ * ‖(φ : E →ᵇ ℝ)‖
-  rcases (mul_nonneg (norm_nonneg v) (norm_nonneg _) : 0 ≤ c).eq_or_lt with hc | hc
-  · -- If `v = 0` or `φ = 0`, the directional derivative vanishes.
-    have hzero (x : E) : ∂_{v} φ x = 0 := by
-      rcases mul_eq_zero.1 hc.symm with hv | hφ
-      · simp [norm_eq_zero.1 hv]
-      · have : (φ : E → ℝ) = 0 := by
-          ext y
-          simpa using congr($(norm_eq_zero.1 hφ) y)
-        simp [this]
-    simp [hzero]
-  -- Otherwise `c⁻¹ • (φ v)` is an admissible test vector field with divergence `c⁻¹ ∂_v φ`.
-  set ψ : 𝓓(Ω, E) := c⁻¹ • postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ
-  have hψ (x : E) : ‖ψ x‖ ≤ 1 := by
-    have h := (φ : E →ᵇ ℝ).norm_coe_le_norm x
-    simp only [ψ, smul_apply, postcompCLM_apply, Function.comp_apply,
-      ContinuousLinearMap.toSpanSingleton_apply, norm_smul, norm_inv]
-    rw [Real.norm_of_nonneg hc.le, inv_mul_le_one₀ hc, mul_comm]
-    exact mul_le_mul_of_nonneg_left (by simpa using h) (norm_nonneg v)
-  have hdiv : ∫ x, divergenceCLM ψ x * u x ∂μ = c⁻¹ * ∫ x, ∂_{v} φ x * u x ∂μ := by
-    rw [← integral_const_mul]
-    congr 1 with x
-    simp only [ψ, map_smul, smul_apply, divergenceCLM_postcompCLM_toSpanSingleton, smul_eq_mul]
-    ring
-  have h := ofReal_abs_integral_le_totalVariationOn (μ := μ) (u := u) ψ hψ
-  rw [hdiv, abs_mul, abs_inv, abs_of_pos hc, ENNReal.ofReal_mul (inv_nonneg.2 hc.le)] at h
-  calc ENNReal.ofReal |∫ x, ∂_{v} φ x * u x ∂μ|
-      = ENNReal.ofReal c * (ENNReal.ofReal c⁻¹ * ENNReal.ofReal |∫ x, ∂_{v} φ x * u x ∂μ|) := by
-        rw [← mul_assoc, ← ENNReal.ofReal_mul hc.le, mul_inv_cancel₀ hc.ne', ENNReal.ofReal_one,
-          one_mul]
-    _ ≤ ENNReal.ofReal c * totalVariationOn μ Ω u := by gcongr
-    _ = ‖v‖ₑ * ‖(φ : E →ᵇ ℝ)‖ₑ * totalVariationOn μ Ω u := by
-        rw [ENNReal.ofReal_mul (norm_nonneg v), ofReal_norm, ofReal_norm]
+  -- `∂_v φ` is the divergence of the vector field `φ v`, which is bounded by `‖v‖ ‖φ‖_∞`.
+  have h := ofReal_abs_integral_le_ofReal_mul_totalVariationOn (μ := μ) (u := u)
+    (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ) (c := ‖v‖ * ‖(φ : E →ᵇ ℝ)‖)
+    fun x => by
+      simpa [norm_smul, mul_comm] using
+        mul_le_mul_of_nonneg_left ((φ : E →ᵇ ℝ).norm_coe_le_norm x) (norm_nonneg v)
+  rwa [divergenceCLM_postcompCLM_toSpanSingleton, ENNReal.ofReal_mul (norm_nonneg v), ofReal_norm,
+    ofReal_norm] at h
 
 end TestFunction
 

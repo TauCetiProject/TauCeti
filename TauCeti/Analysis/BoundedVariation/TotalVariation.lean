@@ -40,6 +40,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.totalVariationOn μ Ω u`: the total variation of `u` on `Ω`.
 * `TauCeti.ofReal_abs_integral_le_totalVariationOn`: every admissible pairing is bounded by the
   total variation, and `TauCeti.totalVariationOn_le_iff` characterises upper bounds.
+* `TauCeti.ofReal_abs_integral_le_ofReal_mul_totalVariationOn`: a test vector field bounded by `c`
+  pairs to at most `c |Du|(Ω)`.
 * `TauCeti.totalVariationOn_congr_ae`: the total variation only sees `u` almost everywhere on
   `Ω`.
 * `TauCeti.totalVariationOn_mono`: monotonicity in the open set.
@@ -169,6 +171,24 @@ theorem totalVariationOn_smul (c : ℝ) :
   · rw [abs_of_nonneg hc, totalVariationOn_smul_of_nonneg hc]
   · rw [abs_of_nonpos hc, ← totalVariationOn_smul_of_nonneg (neg_nonneg.mpr hc), neg_smul,
       totalVariationOn_neg]
+
+/-- A test vector field bounded by `c` pairs to at most `c |Du|(Ω)`. -/
+theorem ofReal_abs_integral_le_ofReal_mul_totalVariationOn (φ : 𝓓(Ω, E)) {c : ℝ}
+    (hφ : ∀ x, ‖φ x‖ ≤ c) :
+    ENNReal.ofReal |∫ x, divergenceCLM φ x * u x ∂μ| ≤
+      ENNReal.ofReal c * totalVariationOn μ Ω u := by
+  rcases le_or_gt c 0 with hc | hc
+  · have hφ0 : φ = 0 := by
+      ext x
+      exact norm_le_zero_iff.1 ((hφ x).trans hc)
+    simp [hφ0]
+  -- Pair `c⁻¹ • φ`, which is admissible, with `c • u`.
+  rw [← totalVariationOn_smul_of_nonneg hc.le]
+  convert ofReal_abs_integral_le_totalVariationOn (u := c • u) (c⁻¹ • φ) fun x => ?_ using 3
+  · congr 1 with x
+    simp only [map_smul, smul_apply, Pi.smul_apply, smul_eq_mul]
+    field_simp
+  · simpa [norm_smul, abs_of_pos hc, inv_mul_le_iff₀ hc] using hφ x
 
 /-- **Subadditivity.** For functions locally integrable on `Ω`,
 `|D(u + v)|(Ω) ≤ |Du|(Ω) + |Dv|(Ω)`. -/
