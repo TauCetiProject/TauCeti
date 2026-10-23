@@ -21,7 +21,7 @@ for `p = 0` the value is zero and does not describe the infinite zero set.
 
 The definitions and their basic API are independent of matrix inversion.
 Sign counts and sign sums are unchanged when the points and polynomials are mapped through a
-strictly monotone ring homomorphism (`Finset.signCount_image`, `Finset.signSum_image`).
+strictly monotone ring homomorphism (`Finset.signCount_map_image`, `Finset.signSum_map_image`).
 Over a field, `Polynomial.tarskiQuery_integralNormalization` clears the leading coefficient of
 the root polynomial, so Tarski queries can always be computed at a monic root polynomial.
 
@@ -131,7 +131,7 @@ variable {S : Type*} [Semiring S] [LinearOrder S] [DecidableEq S] {f : R →+* S
 /-- Sign counts are preserved by mapping the points and the polynomials through a strictly
 monotone ring homomorphism. -/
 @[simp]
-theorem signCount_image {J : Type*} (hf : StrictMono f) (Z : Finset R) (Q : J → R[X])
+theorem signCount_map_image {J : Type*} (hf : StrictMono f) (Z : Finset R) (Q : J → R[X])
     (σ : J → SignType) :
     signCount (Z.image f) (fun j => (Q j).map f) σ = signCount Z Q σ := by
   classical
@@ -142,7 +142,7 @@ theorem signCount_image {J : Type*} (hf : StrictMono f) (Z : Finset R) (Q : J �
 /-- Sign sums are preserved by mapping the points and the polynomial through a strictly
 monotone ring homomorphism. -/
 @[simp]
-theorem signSum_image (hf : StrictMono f) (Z : Finset R) (p : R[X]) :
+theorem signSum_map_image (hf : StrictMono f) (Z : Finset R) (p : R[X]) :
     signSum (Z.image f) (p.map f) = signSum Z p := by
   rw [signSum_eq_sum, signSum_eq_sum, sum_image fun _ _ _ _ h => hf.injective h]
   simp only [sign_eval_map _ f hf]

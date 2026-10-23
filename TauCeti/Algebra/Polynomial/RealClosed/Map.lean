@@ -47,12 +47,13 @@ namespace Polynomial
 
 section Roots
 
-variable {R S : Type*} [Field R] [IsRealClosed R] [CommRing S] [IsDomain S] [IsFormallyReal S]
+variable {R S : Type*} [Field R] [IsRealClosed R] [CommRing S] [IsFormallyReal S]
 
 /-- An irreducible polynomial over a real closed field that is not linear has no root in any
-formally real domain containing it. -/
-theorem _root_.Irreducible.not_isRoot_map_of_natDegree_ne_one {q : R[X]} (hq : Irreducible q)
-    (h1 : q.natDegree ≠ 1) (f : R →+* S) (s : S) : ¬ (q.map f).IsRoot s := by
+nontrivial formally real ring containing it. -/
+theorem _root_.Irreducible.not_isRoot_map_of_natDegree_ne_one [Nontrivial S] {q : R[X]}
+    (hq : Irreducible q) (h1 : q.natDegree ≠ 1) (f : R →+* S) (s : S) :
+    ¬ (q.map f).IsRoot s := by
   have h2 : q.natDegree = 2 := by
     have := natDegree_le_two_of_irreducible q hq
     have := natDegree_pos_iff_degree_pos.mpr (degree_pos_of_irreducible hq)
@@ -88,8 +89,10 @@ theorem _root_.Irreducible.not_isRoot_map_of_natDegree_ne_one {q : R[X]} (hq : I
   have hzero : (2 * f (q.coeff 2) * s + f (q.coeff 1)) * (2 * f (q.coeff 2) * s + f (q.coeff 1)) +
       f e * f e = 0 := by
     linear_combination hdisc_map - hsq
-  exact he₀ (mul_self_eq_zero.mp (IsFormallyReal.eq_zero_of_add_left (.mul_self _) (.mul_self _)
-    hzero))
+  exact he₀ (IsReduced.eq_zero _ ⟨2, (sq _).trans
+    (IsFormallyReal.eq_zero_of_add_left (.mul_self _) (.mul_self _) hzero)⟩)
+
+variable [IsDomain S]
 
 /-- **Roots over a real closed field.** A homomorphism from a real closed field into a formally
 real domain creates no new roots: the roots of `p.map f`, with multiplicity, are the images of the
@@ -143,7 +146,7 @@ theorem tarskiQuery_map_of_isRealClosed (f : R →+* S) (p q : R[X]) :
     tarskiQuery (p.map f) (q.map f) = tarskiQuery p q := by
   classical
   rw [tarskiQuery_eq_signSum, tarskiQuery_eq_signSum, roots_toFinset_map_of_isRealClosed,
-    Finset.signSum_image f.strictMono_of_isRealClosed]
+    Finset.signSum_map_image f.strictMono_of_isRealClosed]
 
 /-- **Transport of sign counts at roots.** The number of roots of `p` realizing a sign condition
 on a family `Q` is unchanged by passing to any ordered ring containing the real closed field. -/
@@ -152,7 +155,7 @@ theorem signCount_roots_map_of_isRealClosed {J : Type*} (f : R →+* S) (p : R[X
     Finset.signCount (p.map f).roots.toFinset (fun j => (Q j).map f) σ =
       Finset.signCount p.roots.toFinset Q σ := by
   classical
-  rw [roots_toFinset_map_of_isRealClosed, Finset.signCount_image f.strictMono_of_isRealClosed]
+  rw [roots_toFinset_map_of_isRealClosed, Finset.signCount_map_image f.strictMono_of_isRealClosed]
 
 /-- **Transport of Cauchy indices.** The Cauchy index of the mapped quotient on a set `s` in an
 ordered ring containing a real closed field is the Cauchy index of the original quotient on
