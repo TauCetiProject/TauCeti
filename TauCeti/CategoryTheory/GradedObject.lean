@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Pi
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
+public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import Mathlib.CategoryTheory.Abelian.Transfer
 public import Mathlib.CategoryTheory.GradedObject.Single
 public import Mathlib.CategoryTheory.Limits.Shapes.FiniteLimits
@@ -23,7 +24,7 @@ It also records that the canonical reindexing and shift functors are additive an
 evaluation in a single degree preserves finite limits and colimits, so that a short exact sequence
 of graded objects is short exact in every degree, and that totalizing a graded object,
 `X ↦ ∐ᵢ Xᵢ`, is left adjoint to the constant graded object
-(`TauCeti.gradedObjectTotalAdjunction`).
+(`TauCeti.gradedObjectTotalAdjunction`), additive, and exact when coproducts are exact.
 
 Mathlib provides the category of graded objects and its grading shift, but not these
 structures. They are what homological algebra needs: `Ext` groups, and hence the graded
@@ -180,5 +181,32 @@ noncomputable def gradedObjectTotalAdjunction (β : Type) (C : Type u) [Category
   change (piEquivalenceFunctorDiscrete β C).functor ⋙ colim ⊣ _
   exact ((piEquivalenceFunctorDiscrete β C).toAdjunction.comp colimConstAdj).ofNatIsoRight
     (Iso.refl _)
+
+/-- Totalizing a graded object is additive: the coproduct of a sum of componentwise morphisms is
+the sum of their coproducts. -/
+instance gradedObjectTotalAdditive (β : Type) [Preadditive C] [HasCoproducts.{0} C] :
+    (GradedObject.total β C).Additive where
+  map_add {X Y f g} := by
+    -- `GradedObject.total` sends a morphism to the induced map of coproducts, by definition.
+    change Limits.Sigma.map (fun i ↦ f i + g i) =
+      Limits.Sigma.map (fun i ↦ f i) + Limits.Sigma.map (fun i ↦ g i)
+    ext i
+    simp [Preadditive.comp_add]
+
+/-- **Totalizing is exact when coproducts are exact**: if coproducts indexed by `β` preserve
+finite limits in `C`, as in Grothendieck's axiom AB4, then so does `X ↦ ∐ᵢ Xᵢ`. -/
+instance gradedObjectTotalPreservesFiniteLimits (β : Type) [HasCoproducts.{0} C]
+    [HasExactColimitsOfShape (Discrete β) C] :
+    PreservesFiniteLimits (GradedObject.total β C) :=
+  -- `GradedObject.total` is by definition `X ↦ ∐ᵢ Xᵢ`, the colimit of the diagram
+  -- `Discrete β ⥤ C` corresponding to `X`.
+  preservesFiniteLimits_of_natIso
+    (Iso.refl _ : (piEquivalenceFunctorDiscrete β C).functor ⋙ colim ≅ GradedObject.total β C)
+
+/-- Totalizing a graded object preserves finite colimits, being a left adjoint. -/
+instance gradedObjectTotalPreservesFiniteColimits (β : Type) [HasCoproducts.{0} C] :
+    PreservesFiniteColimits (GradedObject.total β C) :=
+  have := (gradedObjectTotalAdjunction β C).leftAdjoint_preservesColimits.{0, 0}
+  PreservesColimitsOfSize.preservesFiniteColimits _
 
 end TauCeti
