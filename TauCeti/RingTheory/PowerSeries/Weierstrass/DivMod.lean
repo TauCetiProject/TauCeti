@@ -228,11 +228,13 @@ theorem weierstrassMod_mul_eq_zero (q : PowerSeries.IsRestricted.subring (R := R
     (by rw [Polynomial.degree_zero]; exact WithBot.bot_lt_coe s) (by simp)
 
 /-- A polynomial of degree less than `s` has Weierstrass quotient zero. -/
+@[simp]
 theorem weierstrassDiv_polynomialToRestricted_of_degree_lt {p : Polynomial R}
     (hp : p.degree < s) : hg.weierstrassDiv hc (polynomialToRestricted c p) = 0 :=
   hg.weierstrassDiv_eq_of_mul_add_eq hc (q := 0) hp (by simp)
 
 /-- A polynomial of degree less than `s` is its own Weierstrass remainder. -/
+@[simp]
 theorem weierstrassMod_polynomialToRestricted_of_degree_lt {p : Polynomial R}
     (hp : p.degree < s) : hg.weierstrassMod hc (polynomialToRestricted c p) = p :=
   hg.weierstrassMod_eq_of_mul_add_eq hc (q := 0) hp (by simp)
@@ -248,6 +250,7 @@ theorem weierstrassMod_eq_zero_iff_dvd {f : PowerSeries.IsRestricted.subring (R 
   exact this.symm
 
 /-- In distinguished degree zero every Weierstrass remainder is zero. -/
+@[simp]
 theorem weierstrassMod_eq_zero (hg : IsMulDistinguished c 0 (g : PowerSeries R))
     (f : PowerSeries.IsRestricted.subring (R := R) c) : hg.weierstrassMod hc f = 0 := by
   have := hg.degree_weierstrassMod_lt hc f
