@@ -65,12 +65,23 @@ open Finset QuadraticMap
 
 namespace QuadraticForm
 
-variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-  [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+section CommRing
+
+variable {R M : Type*} [CommRing R] [LinearOrder R] [AddCommGroup M] [Module R M]
+
+/-- If a linear automorphism `e` negates a quadratic form, `Q (e v) = -Q v`, then `Q` and `-Q` are
+equivalent, so the two indices of inertia of `Q` agree. For example, the real part of a complex
+quadratic form is negated by multiplication by `I`. -/
+theorem sigNeg_eq_sigPos_of_comp_eq_neg (Q : _root_.QuadraticForm R M) (e : M ≃ₗ[R] M)
+    (he : ∀ v, Q (e v) = -Q v) : sigNeg Q = sigPos Q := by
+  rw [← sigPos_neg]
+  exact (QuadraticMap.Equivalent.sigPos_eq ⟨⟨e, fun v ↦ by simp [he]⟩⟩).symm
+
+variable [IsStrictOrderedRing R] [Module.Finite R M]
 
 /-- Multiplication by a positive scalar preserves the positive index of inertia. -/
 @[simp]
-theorem sigPos_smul_of_pos (Q : _root_.QuadraticForm K M) {a : K} (ha : 0 < a) :
+theorem sigPos_smul_of_pos (Q : _root_.QuadraticForm R M) {a : R} (ha : 0 < a) :
     sigPos (a • Q) = sigPos Q := by
   apply le_antisymm
   · obtain ⟨U, hUrank, hU⟩ := exists_finrank_eq_sigPos_and_posDef (a • Q)
@@ -84,7 +95,7 @@ theorem sigPos_smul_of_pos (Q : _root_.QuadraticForm K M) {a : K} (ha : 0 < a) :
 
 /-- Multiplication by a positive scalar preserves the negative index of inertia. -/
 @[simp]
-theorem sigNeg_smul_of_pos (Q : _root_.QuadraticForm K M) {a : K} (ha : 0 < a) :
+theorem sigNeg_smul_of_pos (Q : _root_.QuadraticForm R M) {a : R} (ha : 0 < a) :
     sigNeg (a • Q) = sigNeg Q := by
   calc
     sigNeg (a • Q) = sigPos (-(a • Q)) := (sigPos_neg (Q := a • Q)).symm
@@ -94,7 +105,7 @@ theorem sigNeg_smul_of_pos (Q : _root_.QuadraticForm K M) {a : K} (ha : 0 < a) :
 
 /-- Multiplication by a negative scalar exchanges the positive and negative indices of inertia. -/
 @[simp]
-theorem sigPos_smul_of_neg (Q : _root_.QuadraticForm K M) {a : K} (ha : a < 0) :
+theorem sigPos_smul_of_neg (Q : _root_.QuadraticForm R M) {a : R} (ha : a < 0) :
     sigPos (a • Q) = sigNeg Q := by
   have hpos : 0 < -a := neg_pos.mpr ha
   have hform : a • Q = (-a) • (-Q) := by simp
@@ -102,7 +113,7 @@ theorem sigPos_smul_of_neg (Q : _root_.QuadraticForm K M) {a : K} (ha : a < 0) :
 
 /-- Multiplication by a negative scalar exchanges the negative and positive indices of inertia. -/
 @[simp]
-theorem sigNeg_smul_of_neg (Q : _root_.QuadraticForm K M) {a : K} (ha : a < 0) :
+theorem sigNeg_smul_of_neg (Q : _root_.QuadraticForm R M) {a : R} (ha : a < 0) :
     sigNeg (a • Q) = sigPos Q := by
   have hpos : 0 < -a := neg_pos.mpr ha
   calc
@@ -110,14 +121,10 @@ theorem sigNeg_smul_of_neg (Q : _root_.QuadraticForm K M) {a : K} (ha : a < 0) :
     _ = sigPos ((-a) • Q) := congrArg sigPos (neg_smul a Q).symm
     _ = sigPos Q := sigPos_smul_of_pos Q hpos
 
-omit [IsStrictOrderedRing K] [FiniteDimensional K M] in
-/-- If a linear automorphism `e` negates a quadratic form, `Q (e v) = -Q v`, then `Q` and `-Q` are
-equivalent, so the two indices of inertia of `Q` agree. For example, the real part of a complex
-quadratic form is negated by multiplication by `I`. -/
-theorem sigNeg_eq_sigPos_of_comp_eq_neg (Q : _root_.QuadraticForm K M) (e : M ≃ₗ[K] M)
-    (he : ∀ v, Q (e v) = -Q v) : sigNeg Q = sigPos Q := by
-  rw [← sigPos_neg]
-  exact (QuadraticMap.Equivalent.sigPos_eq ⟨⟨e, fun v ↦ by simp [he]⟩⟩).symm
+end CommRing
+
+variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [AddCommGroup M] [Module K M] [FiniteDimensional K M]
 
 /-- A quadratic form is nonnegative exactly when its negative index of inertia vanishes. -/
 theorem forall_nonneg_iff_sigNeg_eq_zero (Q : _root_.QuadraticForm K M) :
@@ -311,14 +318,11 @@ namespace LinearMap.BilinForm
 
 open _root_.QuadraticForm
 
-variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-  [AddCommGroup M] [Module K M] [FiniteDimensional K M]
-
-omit [IsStrictOrderedRing K] [FiniteDimensional K M] in
 /-- The negative index of a bilinear form agrees with that of its Gram matrix in any basis. -/
 @[simp]
-theorem sigNeg_toMatrix {I : Type*} [Fintype I] [DecidableEq I]
-    (b : Module.Basis I K M) (B : LinearMap.BilinForm K M) :
+theorem sigNeg_toMatrix {R M I : Type*} [CommRing R] [LinearOrder R] [AddCommGroup M]
+    [Module R M] [Fintype I] [DecidableEq I] (b : Module.Basis I R M)
+    (B : LinearMap.BilinForm R M) :
     _root_.sigNeg ((B.toMatrix b).toQuadraticForm') = _root_.sigNeg B.toQuadraticMap := by
   apply QuadraticMap.Equivalent.sigNeg_eq
   refine ⟨{
@@ -326,6 +330,9 @@ theorem sigNeg_toMatrix {I : Type*} [Fintype I] [DecidableEq I]
     map_app' := fun v ↦ ?_ }⟩
   rw [Matrix.toQuadraticForm'_apply, LinearMap.BilinMap.toQuadraticMap_apply]
   exact (B.dotProduct_toMatrix_mulVec b v v).symm
+
+variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [AddCommGroup M] [Module K M] [FiniteDimensional K M]
 
 /-- A symmetric bilinear form is positive-semidefinite if and only if the negative index of its
 associated quadratic form vanishes. -/
