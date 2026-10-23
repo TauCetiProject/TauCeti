@@ -32,6 +32,8 @@ This file develops `Γ` for an arbitrary additive group `S` with two such homomo
 * `TauCeti.Floer.PeriodGroup ω c`: the period group `Γ`.
 * `TauCeti.Floer.PeriodGroup.periods`: the injective homomorphism `Γ →+ ℝ × ℤ` recording area
   and first Chern number, with components `PeriodGroup.area` and `PeriodGroup.chern`.
+* `TauCeti.Floer.PeriodGroup.degree`: the degree `γ ↦ 2 c(γ)`, the grading shift of a recapping
+  by `γ`.
 * `TauCeti.Floer.PeriodGroup.map`: the homomorphism of period groups induced by a homomorphism of
   class groups preserving area and Chern number.
 
@@ -89,6 +91,20 @@ def area : PeriodGroup ω c →+ ℝ :=
 /-- The first Chern number on the period group. -/
 def chern : PeriodGroup ω c →+ ℤ :=
   (AddMonoidHom.snd ℝ ℤ).comp (periods ω c)
+
+/-- The degree `2 c(γ)` of a class `γ`: recapping an orbit by `γ` shifts its Conley–Zehnder
+grading by `2 c(γ)`. It is the degree of the monomial `e^γ` of the Floer Novikov ring. -/
+def degree : PeriodGroup ω c →+ ℤ :=
+  2 • chern ω c
+
+/-- The degree of a class is twice its first Chern number. -/
+@[simp]
+theorem degree_apply (γ : PeriodGroup ω c) : degree ω c γ = 2 * chern ω c γ := by
+  simp [degree]
+
+/-- Degrees in the period group are even. -/
+theorem even_degree (γ : PeriodGroup ω c) : Even (degree ω c γ) :=
+  ⟨chern ω c γ, by rw [degree_apply, two_mul]⟩
 
 /-- The joint period map sends the class of `s` to its area and first Chern number. -/
 theorem periods_mk (s : S) : periods ω c (s : PeriodGroup ω c) = (ω s, c s) := by
@@ -198,6 +214,13 @@ theorem area_injective_iff : Function.Injective (area ω c) ↔ ω.ker ≤ c.ker
       refine ext (by rw [hγ, map_zero]) ?_
       simpa using h (by simpa using hγ)
 
+/-- The degree is injective exactly when the first Chern number is. -/
+theorem degree_injective_iff :
+    Function.Injective (degree ω c) ↔ Function.Injective (chern ω c) := by
+  refine ⟨fun h γ γ' hγ => h ?_, fun h γ γ' hγ => h ?_⟩
+  · rw [degree_apply, degree_apply, hγ]
+  · simpa using hγ
+
 /-- If every spherical class with vanishing first Chern number has vanishing area, the period
 group is cyclic. -/
 theorem isAddCyclic_of_ker_le (h : c.ker ≤ ω.ker) : IsAddCyclic (PeriodGroup ω c) :=
@@ -227,6 +250,11 @@ the first Chern number embeds the period group into `ℤ`. -/
 theorem chern_injective_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) :
     Function.Injective (chern ω c) :=
   chern_injective_iff.2 (ker_le_ker_of_area_eq_mul_chern h)
+
+/-- For a spherically monotone pair, the degree embeds the period group into `ℤ`. -/
+theorem degree_injective_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) :
+    Function.Injective (degree ω c) :=
+  degree_injective_iff.2 (chern_injective_of_area_eq_mul_chern h)
 
 /-- For a spherically monotone pair the period group is cyclic. -/
 theorem isAddCyclic_of_area_eq_mul_chern (h : ∀ s, ω s = τ * c s) :
