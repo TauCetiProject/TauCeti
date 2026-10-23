@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.BoundedAbove
-public import TauCeti.MeasureTheory.OptimalTransport.Duality.BoundedBelow
+public import TauCeti.MeasureTheory.OptimalTransport.Cost.BoundedBelow
 import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 
 /-!
