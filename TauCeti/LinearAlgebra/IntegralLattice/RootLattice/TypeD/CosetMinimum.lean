@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
 
 import TauCeti.Algebra.Order.Field.HalfInteger
+import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.CosetNorm
 import TauCeti.Data.Int.SumSquares
 
 /-!
@@ -33,8 +34,6 @@ lower bound.
 
 ## Main results
 
-* `TauCeti.IntegralLattice.one_le_checkerboardLattice_form_self_of_sub_checkerboardVector_mem`:
-  vectors of the vector coset have norm at least `1`.
 * `TauCeti.IntegralLattice.div_four_le_checkerboardLattice_form_self`: vectors with all
   coordinates in `ℤ + 1/2` have norm at least `n / 4`.
 * `TauCeti.IntegralLattice.isLeast_form_self_checkerboardVectorClass`,
@@ -60,40 +59,16 @@ variable {n : ℕ}
 
 /-! ## The vector coset -/
 
-/-- A vector of the vector coset has integral coordinates, not all zero since their sum is odd;
-a nonzero coordinate has square at least one. -/
+/-- A vector of the vector coset has integral coordinates. -/
 private theorem exists_int_of_sub_checkerboardVector_mem [NeZero n] {x : Fin n → ℚ}
     (hx : x - checkerboardVector n ∈ checkerboardCarrier n) :
-    ∃ z : Fin n → ℤ, (∀ i, x i = (z i : ℚ)) ∧ ∃ i, 1 ≤ z i * z i := by
+    ∃ z : Fin n → ℤ, ∀ i, x i = (z i : ℚ) := by
   choose w hw using ((mem_checkerboardCarrier_iff _).mp hx).1
-  have hx_eq (i : Fin n) :
-      x i = ((w i + if i = checkerboardLastIndex n then 1 else 0 : ℤ) : ℚ) := by
-    have := hw i
-    rw [Pi.sub_apply, checkerboardVector_apply] at this
-    push_cast
-    split_ifs at this ⊢ <;> linarith
-  refine ⟨_, hx_eq, ?_⟩
-  have hodd : Odd (∑ i, (w i + if i = checkerboardLastIndex n then 1 else 0)) := by
-    rw [Finset.sum_add_distrib, Fintype.sum_ite_eq']
-    exact ((mem_checkerboardCarrier_iff_even_sum w hw).mp hx).add_one
-  obtain ⟨i, hi⟩ : ∃ i, (w i + if i = checkerboardLastIndex n then 1 else 0) ≠ 0 := by
-    by_contra! h
-    simp [h] at hodd
-  refine ⟨i, ?_⟩
-  rw [← abs_mul_abs_self]
-  exact one_le_mul_of_one_le_of_one_le (Int.one_le_abs hi) (Int.one_le_abs hi)
-
-/-- **Vectors of the vector coset have norm at least one.**  Their coordinates are integers with
-odd sum, so at least one of them is nonzero. -/
-theorem one_le_checkerboardLattice_form_self_of_sub_checkerboardVector_mem [NeZero n]
-    {x : Fin n → ℚ} (hx : x - checkerboardVector n ∈ checkerboardCarrier n) :
-    1 ≤ (checkerboardLattice n).form x x := by
-  obtain ⟨z, hz, i, hone⟩ := exists_int_of_sub_checkerboardVector_mem hx
-  rw [checkerboardLattice_form_apply]
-  have hle : x i * x i ≤ ∑ j, x j * x j :=
-    Finset.single_le_sum (fun j _ ↦ mul_self_nonneg (x j)) (Finset.mem_univ i)
-  have hone' : (1 : ℚ) ≤ x i * x i := by rw [hz i]; exact_mod_cast hone
-  linarith
+  refine ⟨fun i ↦ w i + if i = checkerboardLastIndex n then 1 else 0, fun i ↦ ?_⟩
+  have := hw i
+  rw [Pi.sub_apply, checkerboardVector_apply] at this
+  push_cast
+  split_ifs at this ⊢ <;> linarith
 
 /-- A norm-one vector of the vector coset is `±eᵢ`: one integral coordinate is nonzero, so it
 has square one and all other coordinates vanish. -/
@@ -101,7 +76,7 @@ private theorem exists_eq_single_of_form_self_eq_one [NeZero n] {x : Fin n → �
     (hx : x - checkerboardVector n ∈ checkerboardCarrier n)
     (hnorm : (checkerboardLattice n).form x x = 1) :
     ∃ i, x = Pi.single i 1 ∨ x = -Pi.single i 1 := by
-  obtain ⟨z, hz, -⟩ := exists_int_of_sub_checkerboardVector_mem hx
+  obtain ⟨z, hz⟩ := exists_int_of_sub_checkerboardVector_mem hx
   have hsum : ∑ j, z j ^ 2 = 1 := by
     rw [checkerboardLattice_form_apply] at hnorm
     have : ((∑ j, z j ^ 2 : ℤ) : ℚ) = 1 := by
@@ -144,12 +119,12 @@ theorem isLeast_form_self_checkerboardVectorClass [NeZero n] :
     IsLeast {q : ℚ | ∃ x : (checkerboardLattice n).dualCarrier,
       Submodule.Quotient.mk x = checkerboardVectorClass n ∧
         (checkerboardLattice n).form x x = q} 1 := by
-  refine ⟨⟨⟨checkerboardVector n, checkerboardVector_mem_dualCarrier⟩,
-    (mk_eq_checkerboardVectorClass_iff _).mpr (by rw [sub_self]; exact zero_mem _),
-    checkerboardLattice_form_checkerboardVector_self⟩, ?_⟩
-  rintro q ⟨x, hx, rfl⟩
-  exact one_le_checkerboardLattice_form_self_of_sub_checkerboardVector_mem
-    ((mk_eq_checkerboardVectorClass_iff x).mp hx)
+  have h := (isPosDef_checkerboardLattice n).isPosSemidef.isLeast_form_self_of_form_self_lt_two
+    (isEven_checkerboardLattice n)
+    (x := ⟨checkerboardVector n, checkerboardVector_mem_dualCarrier⟩)
+    ((mk_eq_checkerboardVectorClass_iff _).mpr (by rw [sub_self]; exact zero_mem _))
+    (by rw [checkerboardLattice_form_checkerboardVector_self]; norm_num)
+  rwa [checkerboardLattice_form_checkerboardVector_self] at h
 
 /-! ## The spinor and cospinor cosets -/
 
