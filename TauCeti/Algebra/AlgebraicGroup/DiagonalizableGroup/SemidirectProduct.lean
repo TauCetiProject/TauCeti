@@ -74,8 +74,8 @@ variable {R : Type u} [CommSemiring R] {G : Type v} [Monoid G]
 theorem pointCochain_regularCoboundary (g : MonoidAlgebra R G →ₐ[R] A) (v : V) :
     pointCochain V g (regularCoboundary (R := R) (G := G) v) =
       1 ⊗ₜ[R] v - endOfPoint V g (1 ⊗ₜ[R] v) := by
-  rw [regularCoboundary_apply, map_sub, pointCochain_tmul, ← MonoidAlgebra.one_def, map_one,
-    endOfPoint_tmul, one_smul, pointCochain_apply]
+  rw [regularCoboundary_apply]
+  simp [← MonoidAlgebra.one_def, endOfPoint_tmul, pointCochain_apply]
 
 namespace IsRegularCocycle₁
 
@@ -175,12 +175,17 @@ theorem isRegularCocycle₁_iff_forall_pointCochain_mul (b : V ⊗[R] MonoidAlge
   refine ⟨fun hb A _ _ g h ↦ hb.pointCochain_mul g h, fun H ↦ ?_⟩
   have h := H (MonoidAlgebra R G ⊗[R] MonoidAlgebra R G)
     (toConv Algebra.TensorProduct.includeLeft) (toConv Algebra.TensorProduct.includeRight)
-  rw [← TauCeti.Bialgebra.comulPoint_eq_include_mul, ofConv_toConv, ofConv_toConv, ofConv_toConv,
-    pointCochain_apply, Bialgebra.toLinearMap_comulAlgHom,
-    endOfPoint_includeLeft_pointCochain_includeRight, pointCochain_includeLeft, ← map_add,
-    ← map_add] at h
-  rw [isRegularCocycle₁_iff, add_comm, ← MonoidAlgebra.one_def]
-  exact (TensorProduct.comm R V _).injective h
+  rw [← TauCeti.Bialgebra.comulPoint_eq_include_mul] at h
+  simp only [endOfPoint_includeLeft_pointCochain_includeRight,
+    pointCochain_includeLeft] at h
+  have htransport :
+      TensorProduct.comm R V _ (Coalgebra.comul.lTensor V b) =
+        TensorProduct.comm R V _ (TensorProduct.assoc R V (MonoidAlgebra R G)
+          (MonoidAlgebra R G) ((coact (R := R) (C := MonoidAlgebra R G) (M := V)).rTensor _ b +
+            b ⊗ₜ[R] 1)) := by
+    simpa only [pointCochain_apply, Bialgebra.toLinearMap_comulAlgHom, map_add, add_comm] using h
+  rw [isRegularCocycle₁_iff, ← MonoidAlgebra.one_def]
+  exact (TensorProduct.comm R V _).injective htransport
 
 end CommMonoid
 
