@@ -46,6 +46,20 @@ theorem Matrix.GeneralLinearGroup.map_expSMulHom
   TauCeti.map_expSMulHom R hX f.mapMatrix f
     (fun r a ↦ Matrix.map_smul' _ r a (map_mul _)) t
 
+/-- Evaluating the polynomial exponential curve gives its value over any coefficient algebra. -/
+theorem Matrix.GeneralLinearGroup.map_aeval_expSMulHom
+    {ι R A : Type*} [Fintype ι] [DecidableEq ι]
+    [CommRing R] [Algebra ℚ R] [CommRing A] [Algebra R A] [Algebra ℚ A]
+    {X : Matrix ι ι R} (hX : IsNilpotent X) (t : A) :
+    Matrix.GeneralLinearGroup.map (Polynomial.aeval (R := R) t : R[X] →+* A)
+        (TauCeti.expSMulHom R[X] (hX.map Polynomial.C.mapMatrix)
+          (Multiplicative.ofAdd Polynomial.X)) =
+      TauCeti.expSMulHom A (hX.map (algebraMap R A).mapMatrix)
+        (Multiplicative.ofAdd t) := by
+  rw [Matrix.GeneralLinearGroup.map_expSMulHom]
+  simp only [toAdd_ofAdd, RingHom.coe_coe, Polynomial.aeval_X,
+    RingHom.mapMatrix_apply, Matrix.map_map, Function.comp_def, Polynomial.aeval_C]
+
 namespace TauCeti.GeneralLinear
 
 universe u v
@@ -90,11 +104,8 @@ theorem aeval_comp_nilpotentOneParameterCoordinateMap (hX : IsNilpotent X) (t : 
       (generalLinearToPoint n (expSMulHom R hX (Multiplicative.ofAdd t))).ofConv := by
   apply WithConv.toConv_injective
   rw [nilpotentOneParameterCoordinateMap, toConv_comp_generalLinearToPoint_ofConv,
-    Matrix.GeneralLinearGroup.map_expSMulHom, toConv_ofConv]
-  simp only [toAdd_ofAdd, RingHom.coe_coe,
-    Polynomial.aeval_X, RingHom.mapMatrix_apply, Matrix.map_map,
-    Function.comp_def, Polynomial.aeval_C, Algebra.algebraMap_self]
-  congr 2
+    Matrix.GeneralLinearGroup.map_aeval_expSMulHom hX t, toConv_ofConv]
+  simp only [Algebra.algebraMap_self, RingHom.mapMatrix_id, RingHom.id_apply]
 
 section ClosedSubgroup
 
@@ -139,10 +150,7 @@ theorem expSMulHom_log_mem_hopfIdealPointsSubgroup
   have h := map_mem_hopfIdealPointsSubgroup n I (Polynomial.aeval t)
     (expSMulHom_ofAdd_X_mem_hopfIdealPointsSubgroup n I (IsNilpotent.isNilpotent_log hg)
       (by simpa only [Units.nilpotentExpUnit_log g hg] using hI))
-  rw [Matrix.GeneralLinearGroup.map_expSMulHom] at h
-  simpa only [toAdd_ofAdd, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-    Polynomial.aeval_X, RingHom.mapMatrix_apply, Matrix.map_map,
-    Function.comp_def, Polynomial.aeval_C] using h
+  rwa [Matrix.GeneralLinearGroup.map_aeval_expSMulHom (IsNilpotent.isNilpotent_log hg) t] at h
 
 end ClosedSubgroup
 
