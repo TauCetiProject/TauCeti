@@ -33,8 +33,9 @@ Mittag-Leffler, `ModuleTower.shift_surjective_of_isMittagLeffler`),
 is a short exact sequence of complexes (`ComplexTower.shortComplex_shortExact`). Products of
 modules are exact, so the homology of the product complex is the product of the homologies
 (`ComplexTower.productHomologyEquiv`), and the shift acts on it as the shift of the tower of
-homology modules `C.homology i`. The long exact homology sequence then splits into the
-**Milnor sequences**: for every pair of degrees `i, j` with `c.Rel i j`,
+homology modules `C.homology i`. For a tower whose shift is surjective in every degree, the long
+exact homology sequence then splits into the **Milnor sequences**: for every pair of degrees
+`i, j` with `c.Rel i j`,
 
 `0 → lim¹ Hᵢ(Cₙ) → Hⱼ(lim C) → lim Hⱼ(Cₙ) → 0`
 
@@ -46,7 +47,8 @@ The map `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is induced by the projections `lim C �
 For cochain complexes indexed by `ℤ` and `i = k - 1`, `j = k`, this is the cochain sequence
 `0 → lim¹ H^(k-1)(Cₙ) → H^k(lim C) → lim H^k(Cₙ) → 0`; for chain complexes indexed by `ℕ` and
 `i = j + 1`, it is the chain sequence `0 → lim¹ H_(j+1)(Cₙ) → H_j(lim C) → lim H_j(Cₙ) → 0`.
-When `lim¹ Hᵢ(Cₙ)` vanishes, for instance when the tower of homology modules is Mittag-Leffler
+When, in addition to the degreewise surjectivity of the shift, `lim¹ Hᵢ(Cₙ)` vanishes, for
+instance when the tower of homology modules is Mittag-Leffler
 (`ModuleTower.subsingleton_limOne_of_isMittagLeffler`), the map `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is
 therefore bijective (`ComplexTower.homologyToLim_bijective`).
 
@@ -65,9 +67,10 @@ therefore bijective (`ComplexTower.homologyToLim_bijective`).
   the Milnor sequence.
 * `TauCeti.ComplexTower.limOneToHomology_injective`,
   `TauCeti.ComplexTower.exact_limOneToHomology_homologyToLim`,
-  `TauCeti.ComplexTower.homologyToLim_surjective`: exactness of the Milnor sequence.
-* `TauCeti.ComplexTower.homologyToLim_bijective`: `Hⱼ(lim C) ≅ lim Hⱼ(Cₙ)` when `lim¹ Hᵢ(Cₙ)`
-  vanishes.
+  `TauCeti.ComplexTower.homologyToLim_surjective`: exactness of the Milnor sequence for towers
+  whose shift is surjective in every degree.
+* `TauCeti.ComplexTower.homologyToLim_bijective`: `Hⱼ(lim C) ≅ lim Hⱼ(Cₙ)` when, in addition,
+  `lim¹ Hᵢ(Cₙ)` vanishes.
 
 ## References
 
@@ -453,8 +456,8 @@ theorem limOneToHomology_mk {i j : ι} (hij : c.Rel i j) (x : (C.homology i).Pro
   -- `ModuleCat.Hom.hom` is an abbreviation for the `ConcreteCategory.hom` coercion on the right.
   rfl
 
-/-- **Exactness of the Milnor sequence at `lim¹`.** The map `lim¹ Hᵢ(Cₙ) → Hⱼ(lim C)` is
-injective. -/
+/-- **Exactness of the Milnor sequence at `lim¹`.** For a tower whose shift is surjective in
+every degree, the map `lim¹ Hᵢ(Cₙ) → Hⱼ(lim C)` is injective. -/
 theorem limOneToHomology_injective {i j : ι} (hij : c.Rel i j) :
     Function.Injective (C.limOneToHomology hC hij) := by
   rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
@@ -469,8 +472,9 @@ theorem limOneToHomology_injective {i j : ι} (hij : c.Rel i j) :
   rw [← productHomologyEquiv_homologyMap_productComplexShift]
   exact (C.productHomologyEquiv i).eq_symm_apply.1 hy
 
-/-- **Exactness of the Milnor sequence at `Hⱼ(lim C)`.** The image of `lim¹ Hᵢ(Cₙ) → Hⱼ(lim C)`
-is the kernel of `Hⱼ(lim C) → lim Hⱼ(Cₙ)`. -/
+/-- **Exactness of the Milnor sequence at `Hⱼ(lim C)`.** For a tower whose shift is surjective
+in every degree, the image of `lim¹ Hᵢ(Cₙ) → Hⱼ(lim C)` is the kernel of
+`Hⱼ(lim C) → lim Hⱼ(Cₙ)`. -/
 theorem exact_limOneToHomology_homologyToLim {i j : ι} (hij : c.Rel i j) :
     Function.Exact (C.limOneToHomology hC hij) (C.homologyToLim j) := by
   -- `homologyToLim` is the inclusion into the product complex followed by the isomorphism
@@ -483,8 +487,8 @@ theorem exact_limOneToHomology_homologyToLim {i j : ι} (hij : c.Rel i j) :
     exact_connecting_homologyMap_limComplexι hC hij x
 
 include hC in
-/-- **Exactness of the Milnor sequence at `lim Hⱼ(Cₙ)`.** The map `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is
-surjective. -/
+/-- **Exactness of the Milnor sequence at `lim Hⱼ(Cₙ)`.** For a tower whose shift is surjective
+in every degree, the map `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is surjective. -/
 theorem homologyToLim_surjective (j : ι) : Function.Surjective (C.homologyToLim j) := by
   intro y
   -- The homology class of the product complex corresponding to `y` is killed by the shift, hence
@@ -501,8 +505,9 @@ theorem homologyToLim_surjective (j : ι) : Function.Surjective (C.homologyToLim
   exact (C.productHomologyEquiv j).eq_symm_apply.1 hx
 
 include hC in
-/-- If `lim¹ Hᵢ(Cₙ)` vanishes, for instance when the tower of degree-`i` homology modules is
-Mittag-Leffler, then `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is bijective. -/
+/-- If the shift of every tower of terms is surjective and `lim¹ Hᵢ(Cₙ)` vanishes, for instance
+when the tower of degree-`i` homology modules is Mittag-Leffler, then `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is
+bijective. -/
 theorem homologyToLim_bijective {i j : ι} (hij : c.Rel i j)
     [Subsingleton (C.homology i).limOne] : Function.Bijective (C.homologyToLim j) := by
   refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, homologyToLim_surjective hC j⟩
