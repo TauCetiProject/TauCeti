@@ -165,21 +165,15 @@ noncomputable def transIso :
 @[simp]
 theorem transIso_hom_apply (f : DiscreteCoind G U (DiscreteCoind U V A)) :
     (transIso hW hsmul hU).hom f = transEquiv hW hsmul hU f := by
-  simp [transIso]
-  -- `simp` leaves `transEquiv hW hsmul hU f` on both sides, typed on the left in the carrier of
-  -- `ofDiscreteModule ℤ G (DiscreteCoind G W A)`, which is that module by definition.
-  rfl
+  rw [transIso, ofDiscreteModuleIso_hom]
+  exact ofDiscreteModuleMap_hom_apply _ _ f
 
 /-- The inverse of the transitivity isomorphism acts on underlying modules as
 `transEquiv.symm`. -/
 @[simp]
 theorem transIso_inv_apply (φ : DiscreteCoind G W A) :
     (transIso hW hsmul hU).inv φ = (transEquiv hW hsmul hU).symm φ := by
-  simp [transIso]
-  -- As in `transIso_hom_apply`: the two sides differ only in being typed in the carrier of
-  -- `ofDiscreteModule ℤ G (DiscreteCoind G U (DiscreteCoind U V A))`, which is that module by
-  -- definition.
-  rfl
+  exact ofDiscreteModuleIso_inv_hom_apply _ _ φ
 
 /-! ### The trivial subgroup -/
 
