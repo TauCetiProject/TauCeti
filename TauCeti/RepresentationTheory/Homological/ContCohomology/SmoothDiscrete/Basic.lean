@@ -784,20 +784,10 @@ theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
       ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
   (rfl)
 
--- `dsimp% only` on the left-hand side: see the comment on `ofDiscreteModulePair_hom_apply`. Here
--- `simp` also unfolds the `have` that `show … from` elaborates to, and the `.obj` of `⟨_, _⟩`.
-/-- Restriction along `U → G` does not change the underlying map of a morphism. The object
-transports identify the functor's objects with the restricted representations. -/
-@[simp]
-theorem smoothDiscreteResFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R G}
-    (f : A ⟶ B) (x : A.obj.V) :
-    (dsimp% only (show B.obj.V from
-      (((eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
-          (smoothDiscreteResFunctor_obj R G U B))).hom.comp
-        ((smoothDiscreteResFunctor R G U).map f).hom.hom).comp
-          (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
-            (smoothDiscreteResFunctor_obj R G U A).symm)).hom) x)) = f.hom.hom x :=
-  (rfl)
+/-- Restriction along `U → G` does not change the underlying map of a morphism. -/
+@[simp] lemma smoothDiscreteResFunctor_map_hom_hom_apply
+    {A B : SmoothDiscreteTopRep.{u, v, w} R G} (f : A ⟶ B) (x : A.obj.V) :
+    ((smoothDiscreteResFunctor R G U).map f).hom.hom x = f.hom.hom x := (rfl)
 
 end Restriction
 
