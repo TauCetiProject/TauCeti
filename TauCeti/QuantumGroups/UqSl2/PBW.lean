@@ -138,21 +138,10 @@ theorem f_pow_mul_kUnit_zpow (a : ℕ) (b : ℤ) :
 theorem e_mul_kUnit_zpow (b : ℤ) :
     e q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
       q ^ (-2 * b) • (((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * e q) := by
-  have hq : q ≠ 0 := Fact.out
-  have hk : e q * k q = q ^ (-2 : ℤ) • (k q * e q) := by
-    rw [k_mul_e, smul_smul, zpow_neg, zpow_ofNat, inv_mul_cancel₀ (pow_ne_zero 2 hq), one_smul]
-  have hkInv : e q * kInv q = q ^ (2 : ℤ) • (kInv q * e q) := by
-    rw [e_mul_kInv, zpow_ofNat]
-  induction b using Int.induction_on with
-  | zero => simp
-  | succ n ih =>
-    rw [zpow_add_one, Units.val_mul, kUnit_val, ← mul_assoc, ih, smul_mul_assoc, mul_assoc, hk,
-      mul_smul_comm, smul_smul, ← mul_assoc, ← zpow_add₀ hq]
-    ring_nf
-  | pred n ih =>
-    rw [zpow_sub_one, Units.val_mul, kUnit_inv, ← mul_assoc, ih, smul_mul_assoc, mul_assoc, hkInv,
-      mul_smul_comm, smul_smul, ← mul_assoc, ← zpow_add₀ hq]
-    ring_nf
+  have h := mul_laurentEval (e_mul_kUnit q) (T b)
+  rw [rescale_T, map_mul, laurentEval_C, laurentEval_T, ← Algebra.smul_def, smul_mul_assoc] at h
+  rw [h, inv_zpow', ← zpow_natCast, ← zpow_mul, Units.val_zpow_eq_zpow_val, Units.val_mk0]
+  norm_num
 
 /-- Moving a natural power of `E` past an integer power of `K`. -/
 theorem e_pow_mul_kUnit_zpow (c : ℕ) (b : ℤ) :

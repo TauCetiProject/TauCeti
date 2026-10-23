@@ -222,7 +222,7 @@ private theorem f_mul_kUnit :
     mul_inv_cancel₀ (pow_ne_zero 2 Fact.out), one_smul]
 
 /-- `E K = q⁻² K E` in `UqSl2 q`. -/
-private theorem e_mul_kUnit :
+theorem e_mul_kUnit :
     e q * (kUnit q : UqSl2 q) =
       (((Units.mk0 q Fact.out ^ 2)⁻¹ : ℂˣ) : ℂ) • (↑(kUnit q) * e q) := by
   rw [kUnit_val, k_mul_e, smul_smul, Units.val_inv_eq_inv_val, Units.val_pow_eq_pow_val,
