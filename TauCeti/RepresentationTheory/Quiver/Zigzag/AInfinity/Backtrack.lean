@@ -730,22 +730,21 @@ private theorem taylor_comp_coalgHom_zigzagBacktrackTaylor :
       AInfinityAlgebra.taylor_of_tprod, zigzagLoopAInfinityAlgebra_m_eq_zero _ _ h₂ h₄,
       _root_.zero_apply]
 
-variable (c) in
 /-- The backtrack Taylor map has degree zero for the suspended path-length grading. -/
 theorem isHomogeneous_zigzagBacktrackTaylor :
     LinearMap.IsHomogeneous (zigzagBacktrackTaylor hns P a)
-      (gradedPiece ((zigzagLoopAInfinityAlgebra hns c hc).grading.shift 1))
-      ((zigzagLoopAInfinityAlgebra hns c hc).grading.shift 1).piece 0 := by
+      (gradedPiece ((zigzagStrictAInfinityAlgebra k hns).grading.shift 1))
+      ((zigzagStrictAInfinityAlgebra k hns).grading.shift 1).piece 0 := by
   rw [LinearMap.isHomogeneous_def]
   intro D z hz
   refine gradedPiece_induction
     (motive := fun w ↦ zigzagBacktrackTaylor hns P a w ∈
-      ((zigzagLoopAInfinityAlgebra hns c hc).grading.shift 1).piece (D + 0)) hz ?_ ?_ ?_ ?_
+      ((zigzagStrictAInfinityAlgebra k hns).grading.shift 1).piece (D + 0)) hz ?_ ?_ ?_ ?_
   · intro m hm 𝒟 y hy hD
     by_cases h₃ : m = 3
     · subst h₃
       rw [zigzagBacktrackTaylor_of_tprod_three_koszulTwist, InternalGrading.shift_piece,
-        zigzagLoopAInfinityAlgebra_grading_piece]
+        zigzagStrictAInfinityAlgebra_grading_piece]
       have hy' (i : Fin 3) : y i ∈ zigzagIntegerGrade k G (𝒟 i + 1) := by
         simpa using hy i
       have hmem := (isHomogeneous_zigzagBacktrackCochain hns (P := P) a).map_mem (fun i ↦ 𝒟 i + 1)
@@ -781,10 +780,10 @@ noncomputable def zigzagBacktrackAInfinityHom :
       (zigzagStrictAInfinityAlgebra k hns) :=
   AInfinityHom.ofTaylor (letter k _ + zigzagBacktrackTaylor hns P a)
     (by
-      rw [← zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading
+      rw [zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading
         (zigzagBacktrackCoefficients P a)
         (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients a hP)]
-      exact (isHomogeneous_letter _).add (isHomogeneous_zigzagBacktrackTaylor hns a _ _))
+      exact (isHomogeneous_letter _).add (isHomogeneous_zigzagBacktrackTaylor hns a))
     (taylor_comp_coalgHom_zigzagBacktrackTaylor hns a hP hP')
 
 /-- The Taylor map of the backtrack isomorphism. -/
