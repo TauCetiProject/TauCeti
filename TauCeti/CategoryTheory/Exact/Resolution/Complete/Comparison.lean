@@ -217,6 +217,22 @@ The corrections in degree zero and `-1` are `φ⁰ - c ≫ d` and `φ⁻¹ - d �
 
 variable (φ : r.complex ⟶ r'.complex)
 
+/-- The cancellation behind the upward step: if `d ≫ h' ≫ d = φ ≫ d` in degree `m`, then
+`φᵐ⁺¹ - h' ≫ d` vanishes on `Zᵐ⁺¹`, since `Xᵐ ↠ Zᵐ⁺¹` is an epimorphism. -/
+private theorem ι_comp_sub_eq_zero_of (m : ℤ) (h' : r.X (m + 1) ⟶ r'.X m)
+    (H : r.d m ≫ h' ≫ r'.d m = φ.f m ≫ r'.d m) :
+    r.ι (m + 1) ≫ (φ.f (m + 1) - h' ≫ r'.d m) = 0 := by
+  rw [← cancel_epi (r.π m), comp_zero, ← Category.assoc, ← d_def, Preadditive.comp_sub,
+    ← f_comp_d, H, sub_self]
+
+/-- The cancellation behind the downward step: if `d ≫ h' ≫ d = d ≫ φ` in degree `m`, then
+`φᵐ - d ≫ h'` vanishes after `X'ᵐ ↠ Z'ᵐ⁺¹`, since `Z'ᵐ⁺¹ ↪ X'ᵐ⁺¹` is a monomorphism. -/
+private theorem sub_comp_π_eq_zero_of (m : ℤ) (h' : r.X (m + 1) ⟶ r'.X m)
+    (H : r.d m ≫ h' ≫ r'.d m = r.d m ≫ φ.f (m + 1)) :
+    (φ.f m - r.d m ≫ h') ≫ r'.π m = 0 := by
+  rw [← cancel_mono (r'.ι (m + 1)), zero_comp, Category.assoc, ← d_def, Preadditive.sub_comp,
+    f_comp_d, Category.assoc, H, sub_self]
+
 /-- The upward step of the null-homotopy. -/
 private noncomputable def homUp (n : ℤ) (χ : r.X (n + 1) ⟶ r'.X (n + 1))
     (hχ : r.ι (n + 1) ≫ χ = 0) (hχd : χ ≫ r'.d (n + 1) = φ.f (n + 1) ≫ r'.d (n + 1)) :
@@ -225,9 +241,7 @@ private noncomputable def homUp (n : ℤ) (χ : r.X (n + 1) ⟶ r'.X (n + 1))
   let h' := (r'.isInjective_X (n + 1)).factorThru (r.isInflation_ι (n + 1 + 1))
     (r.descZ (n + 1) χ hχ)
   have hd : r.d (n + 1) ≫ h' = χ := by simp [h', d_def]
-  ⟨h', hd, by
-    rw [← cancel_epi (r.π (n + 1)), comp_zero, ← Category.assoc, ← d_def, Preadditive.comp_sub,
-      ← f_comp_d, reassoc_of% hd, hχd, sub_self]⟩
+  ⟨h', hd, ι_comp_sub_eq_zero_of φ (n + 1) h' (by rw [reassoc_of% hd, hχd])⟩
 
 /-- The correction following an upward step agrees with `φ` after the differential. -/
 private theorem sub_comp_d_eq (n : ℤ) (h' : r.X (n + 1) ⟶ r'.X n) :
@@ -241,9 +255,7 @@ private noncomputable def homDown (n : ℤ) (ω : r.X (n + 1) ⟶ r'.X (n + 1))
       h' ≫ r'.d n = ω ∧ (φ.f n - r.d n ≫ h') ≫ r'.π n = 0 } :=
   let h' := (r.isProjective_X (n + 1)).factorThru (r'.isDeflation_π n) (r'.liftZ (n + 1) ω hω)
   have hd : h' ≫ r'.d n = ω := by simp [h', d_def]
-  ⟨h', hd, by
-    rw [← cancel_mono (r'.ι (n + 1)), zero_comp, Category.assoc, ← d_def, Preadditive.sub_comp,
-      f_comp_d, Category.assoc, hd, hdω, sub_self]⟩
+  ⟨h', hd, sub_comp_π_eq_zero_of φ n h' (by rw [hd, hdω])⟩
 
 /-- The correction following a downward step agrees with `φ` before the differential. -/
 private theorem d_comp_sub_eq (n : ℤ) (h' : r.X (n + 1 + 1) ⟶ r'.X (n + 1)) :
@@ -269,11 +281,15 @@ private theorem sub_comp_d_eq_zero :
   simp
 
 include hφ hc in
+/-- The start of the downward recursion, from `ι_comp_sub_eq_zero` through
+`sub_comp_π_eq_zero_of` in degree `-1`. -/
 private theorem sub_comp_π_eq_zero :
     (φ.f (Int.negSucc 0) - r.d (Int.negSucc 0) ≫ c) ≫ r'.π (Int.negSucc 0) = 0 := by
-  rw [← cancel_mono (r'.ι 0), zero_comp, Category.assoc, ← d_negSucc_zero, Preadditive.sub_comp,
-    f_comp_d_negSucc_zero, Category.assoc, ← Preadditive.comp_sub, d_negSucc_zero (r := r),
-    d_negSucc_zero (r := r'), Category.assoc, ι_comp_sub_eq_zero φ hφ c hc, comp_zero]
+  have h := ι_comp_sub_eq_zero φ hφ c hc
+  rw [Preadditive.comp_sub, sub_eq_zero] at h
+  have H : r.d (Int.negSucc 0) ≫ c ≫ r'.d (Int.negSucc 0) = r.d (Int.negSucc 0) ≫ φ.f 0 := by
+    rw [d_negSucc_zero, d_negSucc_zero, Category.assoc, Category.assoc, h]
+  exact sub_comp_π_eq_zero_of φ (Int.negSucc 0) c H
 
 private theorem d_comp_sub_eq_zero :
     r.d (Int.negSucc 1) ≫ (φ.f (Int.negSucc 0) - r.d (Int.negSucc 0) ≫ c) =
@@ -312,20 +328,66 @@ private noncomputable def homotopyHom : ∀ n : ℤ, r.X (n + 1) ⟶ r'.X n
   | Int.negSucc 0 => c
   | Int.negSucc (k + 1) => (homNeg φ hφ c hc k).1
 
+/-! The equations of these recursions at the constructors of `ℤ` and at their successors, by
+`rfl`, as for the lift. -/
+
+private theorem homPos_zero :
+    (homPos φ hφ c hc 0).1 =
+      (homUp φ (Int.negSucc 0) _ (ι_comp_sub_eq_zero φ hφ c hc) (sub_comp_d_eq_zero φ c)).1 :=
+  rfl
+
+private theorem homPos_succ (k : ℕ) :
+    (homPos φ hφ c hc (k + 1)).1 = (homUp φ k _ (homPos φ hφ c hc k).2
+      (sub_comp_d_eq φ k (homPos φ hφ c hc k).1)).1 :=
+  rfl
+
+private theorem homNeg_zero :
+    (homNeg φ hφ c hc 0).1 =
+      (homDown φ (Int.negSucc 1) _ (sub_comp_π_eq_zero φ hφ c hc) (d_comp_sub_eq_zero φ c)).1 :=
+  rfl
+
+private theorem homNeg_succ (k : ℕ) :
+    (homNeg φ hφ c hc (k + 1)).1 = (homDown φ (Int.negSucc (k + 2)) _ (homNeg φ hφ c hc k).2
+      (d_comp_sub_eq φ (Int.negSucc (k + 2)) (homNeg φ hφ c hc k).1)).1 :=
+  rfl
+
+private theorem homotopyHom_ofNat (k : ℕ) :
+    homotopyHom φ hφ c hc (Int.ofNat k) = (homPos φ hφ c hc k).1 := rfl
+
+private theorem homotopyHom_ofNat_add_one (k : ℕ) :
+    homotopyHom φ hφ c hc (Int.ofNat k + 1) = (homPos φ hφ c hc (k + 1)).1 := rfl
+
+private theorem homotopyHom_negSucc_zero : homotopyHom φ hφ c hc (Int.negSucc 0) = c := rfl
+
+private theorem homotopyHom_negSucc_zero_add_one :
+    homotopyHom φ hφ c hc (Int.negSucc 0 + 1) = (homPos φ hφ c hc 0).1 := rfl
+
+private theorem homotopyHom_negSucc_succ (k : ℕ) :
+    homotopyHom φ hφ c hc (Int.negSucc (k + 1)) = (homNeg φ hφ c hc k).1 := rfl
+
+private theorem homotopyHom_negSucc_one_add_one :
+    homotopyHom φ hφ c hc (Int.negSucc 1 + 1) = c := rfl
+
+private theorem homotopyHom_negSucc_add_two_add_one (k : ℕ) :
+    homotopyHom φ hφ c hc (Int.negSucc (k + 2) + 1) = (homNeg φ hφ c hc k).1 := rfl
+
 /-! The homotopy identities, one for each kind of degree: each is the equation `d ≫ h' = χ` or
-`h' ≫ d = ω` returned by the step that produced the component. -/
+`h' ≫ d = ω` returned by the step that produced the component. After the equations above, the
+goal and that equation differ only in the indices `Int.ofNat k + 1` against `↑k + 1` and
+`Int.negSucc (k + 1) + 1` against `Int.negSucc k`, which `exact` identifies by reduction. -/
 
 private theorem comm_ofNat (k : ℕ) :
     φ.f (Int.ofNat k + 1) = r.d (Int.ofNat k + 1) ≫ homotopyHom φ hφ c hc (Int.ofNat k + 1) +
       homotopyHom φ hφ c hc (Int.ofNat k) ≫ r'.d (Int.ofNat k) := by
-  rw [← sub_eq_iff_eq_add]
+  rw [← sub_eq_iff_eq_add, homotopyHom_ofNat_add_one, homotopyHom_ofNat, homPos_succ]
   exact (homUp φ k _ (homPos φ hφ c hc k).2 (sub_comp_d_eq φ k (homPos φ hφ c hc k).1)).2.1.symm
 
 private theorem comm_negSucc_zero :
     φ.f (Int.negSucc 0 + 1) =
       r.d (Int.negSucc 0 + 1) ≫ homotopyHom φ hφ c hc (Int.negSucc 0 + 1) +
         homotopyHom φ hφ c hc (Int.negSucc 0) ≫ r'.d (Int.negSucc 0) := by
-  rw [← sub_eq_iff_eq_add, d_negSucc_zero]
+  rw [← sub_eq_iff_eq_add, d_negSucc_zero, homotopyHom_negSucc_zero_add_one,
+    homotopyHom_negSucc_zero, homPos_zero]
   exact (homUp φ (Int.negSucc 0) _ (ι_comp_sub_eq_zero φ hφ c hc)
     (sub_comp_d_eq_zero φ c)).2.1.symm
 
@@ -333,7 +395,7 @@ private theorem comm_negSucc_one :
     φ.f (Int.negSucc 1 + 1) =
       r.d (Int.negSucc 1 + 1) ≫ homotopyHom φ hφ c hc (Int.negSucc 1 + 1) +
         homotopyHom φ hφ c hc (Int.negSucc 1) ≫ r'.d (Int.negSucc 1) := by
-  rw [← sub_eq_iff_eq_add']
+  rw [← sub_eq_iff_eq_add', homotopyHom_negSucc_one_add_one, homotopyHom_negSucc_succ, homNeg_zero]
   exact (homDown φ (Int.negSucc 1) _ (sub_comp_π_eq_zero φ hφ c hc)
     (d_comp_sub_eq_zero φ c)).2.1.symm
 
@@ -341,7 +403,8 @@ private theorem comm_negSucc_add_two (k : ℕ) :
     φ.f (Int.negSucc (k + 2) + 1) =
       r.d (Int.negSucc (k + 2) + 1) ≫ homotopyHom φ hφ c hc (Int.negSucc (k + 2) + 1) +
         homotopyHom φ hφ c hc (Int.negSucc (k + 2)) ≫ r'.d (Int.negSucc (k + 2)) := by
-  rw [← sub_eq_iff_eq_add']
+  rw [← sub_eq_iff_eq_add', homotopyHom_negSucc_add_two_add_one, homotopyHom_negSucc_succ,
+    homNeg_succ]
   exact (homDown φ (Int.negSucc (k + 2)) _ (homNeg φ hφ c hc k).2
     (d_comp_sub_eq φ (Int.negSucc (k + 2)) (homNeg φ hφ c hc k).1)).2.1.symm
 
