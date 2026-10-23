@@ -85,6 +85,33 @@ theorem insertVertex_apply_finRotate_succ_self :
     poly.insertVertex i c (finRotate (n + 1) i.succ) = poly (finRotate n i) := by
   rw [Fin.finRotate_succ_eq_succ_succAbove, insertVertex_apply_succAbove]
 
+section EdgePath
+
+variable [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+
+/-- Away from the new vertex, the edges of `poly.insertVertex i c` run along the edges of
+`poly`. -/
+theorem edgePath_insertVertex_succAbove {k : Fin n} (hk : k ≠ i) :
+    (poly.insertVertex i c).edgePath R (i.succ.succAbove k) = poly.edgePath R k := by
+  rw [edgePath, edgePath, Fin.finRotate_succ_succAbove_of_ne hk, insertVertex_apply_succAbove,
+    insertVertex_apply_succAbove]
+
+/-- The first new edge of `poly.insertVertex i c` runs from vertex `i` to the new vertex `c`. -/
+@[simp]
+theorem edgePath_insertVertex_castSucc_self :
+    (poly.insertVertex i c).edgePath R i.castSucc = AffineMap.lineMap (poly i) c := by
+  rw [edgePath, finRotate_apply, Fin.coeSucc_eq_succ, insertVertex_apply_castSucc_self,
+    insertVertex_apply_succ_self]
+
+/-- The second new edge of `poly.insertVertex i c` runs from the new vertex `c` to the vertex
+after `i`. -/
+@[simp]
+theorem edgePath_insertVertex_succ_self :
+    (poly.insertVertex i c).edgePath R i.succ = AffineMap.lineMap c (poly (finRotate n i)) := by
+  rw [edgePath, insertVertex_apply_succ_self, insertVertex_apply_finRotate_succ_self]
+
+end EdgePath
+
 /-! ### Points of the boundary -/
 
 section Boundary
