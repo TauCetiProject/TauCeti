@@ -38,8 +38,6 @@ the Brauer algebra `B_k(|ι|)`.
 
 * `TauCeti.BrauerDiagram.IsConstantOnArcs`: a labelling of the boundary points is constant on the
   arcs of a diagram.
-* `TauCeti.BrauerDiagram.IsLowerEnd`: a boundary point comes before its partner, so that the lower
-  ends index the arcs of a diagram.
 * `TauCeti.BrauerDiagram.isConstantOnArcsEquiv`: a labelling constant on the arcs of a diagram is
   the same as a free choice of one label per arc, read at the lower ends.
 
@@ -50,8 +48,6 @@ the Brauer algebra `B_k(|ι|)`.
   permutation.
 * `TauCeti.BrauerDiagram.isConstantOnArcs_capCup_iff`: the labellings constant on the arcs of a
   cap-cup diagram.
-* `TauCeti.BrauerDiagram.prod_eq_prod_isLowerEnd`: a product over the boundary points is a product
-  over the arcs, indexed by their lower ends.
 * `TauCeti.BrauerDiagram.IsConstantOnArcs.composeDiagram`: a labelling of a stack constant on the
   arcs of both diagrams restricts to the outer boundary as a labelling constant on the arcs of the
   composite.
@@ -136,58 +132,6 @@ theorem isConstantOnArcs_capCup_iff {a b : Fin k} (hab : a ≠ b) (u v : Fin k �
 /-! ### One label per arc -/
 
 section LowerEnd
-
-/-- The boundary point `x` is the **lower end** of its arc in `D`: it comes before its partner in
-the order of `Fin (k + k)`. Every arc has exactly one lower end, so the lower ends index the arcs.
--/
-def IsLowerEnd (D : BrauerDiagram k) (x : Fin k ⊕ Fin k) : Prop :=
-  finSumFinEquiv x < finSumFinEquiv (D.val x)
-
-instance (D : BrauerDiagram k) : DecidablePred D.IsLowerEnd :=
-  fun x => inferInstanceAs (Decidable (finSumFinEquiv x < finSumFinEquiv (D.val x)))
-
-/-- A boundary point that is not the lower end of its arc has the lower end as its partner. -/
-theorem isLowerEnd_val_of_not_isLowerEnd (D : BrauerDiagram k) {x : Fin k ⊕ Fin k}
-    (hx : ¬D.IsLowerEnd x) : D.IsLowerEnd (D.val x) := by
-  have hne : finSumFinEquiv (D.val x) ≠ finSumFinEquiv x :=
-    finSumFinEquiv.injective.ne (D.apply_ne x)
-  rw [IsLowerEnd, D.apply_apply]
-  exact lt_of_le_of_ne (not_lt.mp hx) hne
-
-/-- The partner of a lower end is not a lower end. -/
-theorem not_isLowerEnd_val (D : BrauerDiagram k) {x : Fin k ⊕ Fin k}
-    (hx : D.IsLowerEnd x) : ¬D.IsLowerEnd (D.val x) := by
-  rw [IsLowerEnd, D.apply_apply]
-  exact not_lt.mpr hx.le
-
-/-- The points that are not lower ends correspond to the lower ends, through the matching. -/
-def notLowerEndEquiv (D : BrauerDiagram k) :
-    {x // ¬D.IsLowerEnd x} ≃ {x // D.IsLowerEnd x} where
-  toFun x := ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd x.2⟩
-  invFun x := ⟨D.val x, D.not_isLowerEnd_val x.2⟩
-  left_inv x := Subtype.ext (D.apply_apply x)
-  right_inv x := Subtype.ext (D.apply_apply x)
-
-/-- `notLowerEndEquiv` sends a point that is not a lower end to its partner. -/
-@[simp]
-theorem notLowerEndEquiv_apply (D : BrauerDiagram k) (x : {x // ¬D.IsLowerEnd x}) :
-    D.notLowerEndEquiv x = ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd x.2⟩ :=
-  (rfl)
-
-/-- The inverse of `notLowerEndEquiv` sends a lower end to its partner. -/
-@[simp]
-theorem notLowerEndEquiv_symm_apply (D : BrauerDiagram k) (x : {x // D.IsLowerEnd x}) :
-    D.notLowerEndEquiv.symm x = ⟨D.val x, D.not_isLowerEnd_val x.2⟩ :=
-  (rfl)
-
-/-- A product over the boundary points is a product over the arcs, each arc contributing the
-factors at its lower end and at its partner. -/
-theorem prod_eq_prod_isLowerEnd {M : Type*} [CommMonoid M] (D : BrauerDiagram k)
-    (f : Fin k ⊕ Fin k → M) :
-    ∏ x, f x = ∏ x : {x // D.IsLowerEnd x}, f x * f (D.val x) := by
-  rw [← Fintype.prod_subtype_mul_prod_subtype D.IsLowerEnd f, Finset.prod_mul_distrib]
-  exact congrArg _ (Fintype.prod_equiv D.notLowerEndEquiv _ _ fun x => by
-    simp [D.apply_apply])
 
 /-- A labelling constant on the arcs of `D` is the same as a free choice of a label at each lower
 end. -/
