@@ -68,7 +68,6 @@ theorem manifoldLeviForm_norm_sq_sub_apply
   simpa only [manifoldLeviForm_def, Function.comp_def] using h
 
 /-- The Levi diagonal of squared distance is the squared norm of the complex tangent map. -/
-@[simp]
 theorem re_manifoldLeviForm_norm_sq_sub_apply_self
     (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x) (v : E) :
     (manifoldLeviForm E (fun y ↦ ‖i y - a‖ ^ 2) x v v).re =
