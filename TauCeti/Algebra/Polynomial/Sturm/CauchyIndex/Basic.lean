@@ -135,6 +135,7 @@ variable {S : Type*} [CommRing S] [LinearOrder S] {f : R →+* S}
 
 /-- Jumps are preserved by mapping the polynomials and the point through a strictly monotone
 ring homomorphism. -/
+@[simp]
 theorem cauchyJump_map (hf : StrictMono f) (p q : R[X]) (a : R) :
     cauchyJump (p.map f) (q.map f) (f a) = cauchyJump p q a := by
   rw [cauchyJump_def, cauchyJump_def, ← eq_rootMultiplicity_map hf.injective,
@@ -142,6 +143,7 @@ theorem cauchyJump_map (hf : StrictMono f) (p q : R[X]) (a : R) :
 
 /-- Cauchy indices are preserved by mapping the polynomials and the set through a strictly
 monotone ring homomorphism. -/
+@[simp]
 theorem cauchyIndex_map_image (hf : StrictMono f) (p q : R[X]) (s : Set R) :
     cauchyIndex (p.map f) (q.map f) (f '' s) = cauchyIndex p q s := by
   rw [cauchyIndex_def, cauchyIndex_def, finsum_mem_image hf.injective.injOn]

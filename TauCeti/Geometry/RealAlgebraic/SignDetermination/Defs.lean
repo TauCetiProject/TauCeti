@@ -130,6 +130,7 @@ variable {S : Type*} [Semiring S] [LinearOrder S] [DecidableEq S] {f : R →+* S
 
 /-- Sign counts are preserved by mapping the points and the polynomials through a strictly
 monotone ring homomorphism. -/
+@[simp]
 theorem signCount_image {J : Type*} (hf : StrictMono f) (Z : Finset R) (Q : J → R[X])
     (σ : J → SignType) :
     signCount (Z.image f) (fun j => (Q j).map f) σ = signCount Z Q σ := by
@@ -140,6 +141,7 @@ theorem signCount_image {J : Type*} (hf : StrictMono f) (Z : Finset R) (Q : J �
 
 /-- Sign sums are preserved by mapping the points and the polynomial through a strictly
 monotone ring homomorphism. -/
+@[simp]
 theorem signSum_image (hf : StrictMono f) (Z : Finset R) (p : R[X]) :
     signSum (Z.image f) (p.map f) = signSum Z p := by
   rw [signSum_eq_sum, signSum_eq_sum, sum_image fun _ _ _ _ h => hf.injective h]

@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Algebra.Polynomial.Sturm.CauchyIndex.Basic
 public import Mathlib.Algebra.Ring.IsFormallyReal
-import Mathlib.Algebra.Order.Archimedean.Real.Hom
 import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 import TauCeti.FieldTheory.RealClosure.AlgebraicClosed
+import TauCeti.FieldTheory.RealClosure.Hom
 
 /-! # Roots over a real closed field under embeddings into formally real domains
 
@@ -20,16 +20,14 @@ in `R`, with the same multiplicities. Indeed, every irreducible factor of `p` ov
 linear or a quadratic whose discriminant is minus a nonzero square, and such a quadratic stays
 root-free in `S`. The formal reality of `S` is needed: `X ^ 2 + 1` over `ℝ` acquires roots in `ℂ`.
 
-When `R` and `S` are ordered, `f` is automatically strictly monotone, since it maps the
-nonnegative elements of `R`, which are squares, to squares. Consequently the
-root-based invariants of univariate real algebra are independent of the ambient ring: Tarski
-queries, sign counts at the roots, and Cauchy indices on any subset of `S` are computed in `R`.
+When `R` and `S` are ordered, `f` is automatically strictly monotone
+(`RingHom.strictMono_of_isRealClosed`). Consequently the root-based invariants of univariate
+real algebra are independent of the ambient ring: Tarski queries, sign counts at the roots, and
+Cauchy indices on any subset of `S` are computed in `R`.
 
 ## Main results
 
 * `Polynomial.roots_map_of_isRealClosed`: the roots of `p.map f` are the images of those of `p`.
-* `RingHom.strictMono_of_isRealClosed`: a ring homomorphism from an ordered real closed field to
-  a nontrivial ordered ring is strictly monotone.
 * `Polynomial.tarskiQuery_map_of_isRealClosed` and
   `Polynomial.signCount_roots_map_of_isRealClosed`: transport of Tarski queries and of sign
   counts at roots.
@@ -132,23 +130,6 @@ theorem mem_range_of_isRoot_map_of_isRealClosed {f : R →+* S} {p : R[X]} (hp :
   exact Set.mem_range_self x
 
 end Roots
-
-end Polynomial
-
-namespace RingHom
-
-variable {R S : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [IsRealClosed R]
-  [Ring S] [LinearOrder S] [IsOrderedRing S] [Nontrivial S]
-
-/-- A ring homomorphism from an ordered real closed field into a nontrivial ordered ring is
-strictly monotone, since the nonnegative elements of a real closed field are squares. -/
-theorem strictMono_of_isRealClosed (f : R →+* S) : StrictMono f :=
-  (ringHom_monotone (fun _ ↦ IsRealClosed.nonneg_iff_isSquare.mp) f).strictMono_of_injective
-    f.injective
-
-end RingHom
-
-namespace Polynomial
 
 section Ordered
 
