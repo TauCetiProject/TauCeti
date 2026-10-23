@@ -21,6 +21,9 @@ The characteristic contraction equation determines the field uniquely. Its linea
 is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
 identity used to show that Hamiltonian flows preserve the symplectic form.
 
+Along a family of Hamiltonians whose derivatives vary continuously, the Hamiltonian vector
+fields vary continuously.
+
 The Poisson bracket `{F, G} = ω(X_F, X_G)` of two Hamiltonians is the symplectic pairing of their
 Hamiltonian vector fields. With the contraction convention it is `dF(X_G) = -dG(X_F)`; it is
 antisymmetric and vanishes when either argument is constant.
@@ -102,6 +105,26 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   funext x
   rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
   simp
+
+section Continuity
+
+variable {X : Type*} [TopologicalSpace X] {K : X → V → ℝ} {u : X → V} {s : Set X}
+
+/-- Along a family of Hamiltonians `K z` and points `u z` whose derivatives `dK_z(u z)` vary
+continuously on a set, the Hamiltonian vector fields `X_{K z}(u z)` vary continuously on it. -/
+theorem continuousOn_hamiltonianVectorField_comp (ω : SymplecticForm V)
+    (h : ContinuousOn (fun z ↦ fderiv ℝ (K z) (u z)) s) :
+    ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) s :=
+  ω.toBilinForm.toContinuousBilinearMap.inverse.continuous.comp_continuousOn h
+
+/-- Along a family of Hamiltonians `K z` and points `u z` whose derivatives `dK_z(u z)` vary
+continuously, the Hamiltonian vector fields `X_{K z}(u z)` vary continuously. -/
+theorem continuous_hamiltonianVectorField_comp (ω : SymplecticForm V)
+    (h : Continuous fun z ↦ fderiv ℝ (K z) (u z)) :
+    Continuous fun z ↦ ω.hamiltonianVectorField (K z) (u z) :=
+  ω.toBilinForm.toContinuousBilinearMap.inverse.continuous.comp h
+
+end Continuity
 
 section PoissonBracket
 

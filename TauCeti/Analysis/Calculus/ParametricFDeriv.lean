@@ -34,6 +34,10 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 * `hasFDerivAt_timeSlice`: the spatial Jacobian differentiates the corresponding fixed-parameter
   slice.
 * `fderiv_timeSlice`: the derivative of a fixed-parameter slice is its spatial Jacobian.
+* `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: for a normed parameter space, the
+  derivatives of the two slices are the restrictions of the joint derivative.
+* `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `q ↦ F (q, γ q)` for a normed
+  parameter space.
 * `TauCeti.hasDerivAt_comp_prodMk`: the chain rule along a curve `s ↦ F (s, γ s)`.
 * `ContDiffAt.deriv_parameterCurve_eventuallyEq_timeFDeriv`: near a point, the derivatives of the
   parameter curves are the parameter-velocity field.
@@ -122,6 +126,40 @@ theorem timeFDeriv_eq (F : 𝕜 × E → F') (t : 𝕜) :
     timeFDeriv F t = fun x => fderiv 𝕜 F (t, x) (1, 0) :=
   (rfl)
 
+namespace TauCeti
+
+section Slices
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P] {F : P × E → F'} {p : P} {x : E}
+
+/-- The derivative of the parameter slice `fun q ↦ F (q, x)` is the joint derivative restricted to
+the parameter directions. -/
+theorem fderiv_slice_left (hF : DifferentiableAt 𝕜 F (p, x)) :
+    fderiv 𝕜 (fun q ↦ F (q, x)) p = (fderiv 𝕜 F (p, x)).comp (inl 𝕜 P E) :=
+  (hF.hasFDerivAt.comp p (hasFDerivAt_prodMk_left p x)).fderiv
+
+/-- The derivative of the fixed-parameter slice `fun y ↦ F (p, y)` is the joint derivative
+restricted to the spatial directions. -/
+theorem fderiv_slice_right (hF : DifferentiableAt 𝕜 F (p, x)) :
+    fderiv 𝕜 (fun y ↦ F (p, y)) x = (fderiv 𝕜 F (p, x)).comp (inr 𝕜 P E) :=
+  (hF.hasFDerivAt.comp x (hasFDerivAt_prodMk_right p x)).fderiv
+
+/-- **The chain rule along a graph.** The derivative of `fun q ↦ F (q, γ q)` is the parameter
+derivative of `F` plus the spatial derivative of `F` applied to the derivative of `γ`. -/
+theorem fderiv_comp_graph_apply {γ : P → E} (hγ : DifferentiableAt 𝕜 γ p)
+    (hF : DifferentiableAt 𝕜 F (p, γ p)) (v : P) :
+    fderiv 𝕜 (fun q ↦ F (q, γ q)) p v =
+      fderiv 𝕜 F (p, γ p) (v, 0) + fderiv 𝕜 (fun y ↦ F (p, y)) (γ p) (fderiv 𝕜 γ p v) := by
+  have h : HasFDerivAt (fun q ↦ F (q, γ q))
+      ((fderiv 𝕜 F (p, γ p)).comp ((ContinuousLinearMap.id 𝕜 P).prod (fderiv 𝕜 γ p))) p :=
+    hF.hasFDerivAt.comp p ((hasFDerivAt_id p).prodMk hγ.hasFDerivAt)
+  rw [h.fderiv, fderiv_slice_right hF, comp_apply, comp_apply, ← map_add]
+  simp
+
+end Slices
+
+end TauCeti
+
 /-- The parameter velocity is the derivative of the parameter curve `fun s ↦ F (s, x)`. -/
 theorem hasDerivAt_parameterCurve {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     (hF : DifferentiableAt 𝕜 F (t, x)) :
@@ -140,7 +178,7 @@ theorem hasFDerivAt_timeSlice {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
 theorem fderiv_timeSlice {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     (hF : DifferentiableAt 𝕜 F (t, x)) :
     fderiv 𝕜 (fun y => F (t, y)) x = spatialFDeriv F x t :=
-  (hasFDerivAt_timeSlice hF).fderiv
+  TauCeti.fderiv_slice_right hF
 
 namespace TauCeti
 

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Basic
 public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
 # Curvature of Hamiltonian perturbations and the Floer energy identity
@@ -26,8 +27,11 @@ vector field (`ω(X_F, ·) = dF`) and `{F, G} = ω(X_F, X_G)` for the Poisson br
 
 The Floer equation `(du - X_K)^{0,1} = 0` says that the perturbed derivative is complex linear for
 the standard complex structure on `ℝ × ℝ`, or in coordinates
-`∂_s u - X_{K_s}(u) + J (∂_t u - X_{K_t}(u)) = 0`. For solutions, the energy density is
-nonnegative under tameness and is half the metric energy density `|du - X_K|²`.
+`∂_s u - X_{K_s}(u) + J (∂_t u - X_{K_t}(u)) = 0`. Since the energy density is by definition
+the symplectic area density of the perturbed derivative, for solutions it is nonnegative under
+tameness and is half the metric energy density `|du - X_K|²`, by
+`IsComplexLinearMap.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg` and
+`IsComplexLinearMap.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm`.
 
 The main result is the energy identity: pointwise,
 `ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t}) = ω(∂_s u, ∂_t u) + d(K(u)) - R_K(u)`,
@@ -50,9 +54,6 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
 * `SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff`: the coordinate form of the Floer
   equation.
-* `SymplecticForm.floerEnergyDensity_nonneg`,
-  `SymplecticForm.stdComplexLineEnergyDensity_perturbedFDeriv`: for solutions of the Floer
-  equation, the energy density is nonnegative and is half the metric energy density.
 * `SymplecticForm.hamiltonianCurvature_zero_left`,
   `SymplecticForm.hamiltonianCurvature_cylindrical`,
   `SymplecticForm.hamiltonianCurvature_continuation`: the curvature of perturbations without `ds`
@@ -72,45 +73,7 @@ open Function MeasureTheory Set
 
 namespace TauCeti.SymplecticForm
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-section PartialDerivatives
-
-variable {K : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ} {x : V}
-
-/-- The derivative of the domain slice `w ↦ K w x` is the joint derivative restricted to the domain
-directions. -/
-private theorem fderiv_slice_left_apply (hK : DifferentiableAt ℝ (uncurry K) (z, x))
-    (v : ℝ × ℝ) : fderiv ℝ (fun w ↦ K w x) z v = fderiv ℝ (uncurry K) (z, x) (v, 0) := by
-  have h : HasFDerivAt (fun w ↦ K w x)
-      ((fderiv ℝ (uncurry K) (z, x)).comp (ContinuousLinearMap.inl ℝ (ℝ × ℝ) V)) z :=
-    HasFDerivAt.comp (g := uncurry K) z hK.hasFDerivAt (hasFDerivAt_prodMk_left (𝕜 := ℝ) z x)
-  simp [h.fderiv]
-
-/-- The derivative of the target slice `K z` is the joint derivative restricted to the target
-directions. -/
-private theorem fderiv_slice_right (hK : DifferentiableAt ℝ (uncurry K) (z, x)) :
-    fderiv ℝ (K z) x = (fderiv ℝ (uncurry K) (z, x)).comp (ContinuousLinearMap.inr ℝ (ℝ × ℝ) V) :=
-  (HasFDerivAt.comp (g := uncurry K) x hK.hasFDerivAt
-    (hasFDerivAt_prodMk_right (𝕜 := ℝ) z x)).fderiv
-
-/-- The chain rule for `w ↦ K w (u w)`: the domain derivative of `K` plus the target derivative of
-`K` applied to the derivative of `u`. -/
-private theorem fderiv_comp_graph_apply {u : ℝ × ℝ → V} (hu : DifferentiableAt ℝ u z)
-    (hK : DifferentiableAt ℝ (uncurry K) (z, u z)) (v : ℝ × ℝ) :
-    fderiv ℝ (fun w ↦ K w (u w)) z v =
-      fderiv ℝ (uncurry K) (z, u z) (v, 0) + fderiv ℝ (K z) (u z) (fderiv ℝ u z v) := by
-  have h : HasFDerivAt (fun w ↦ K w (u w))
-      ((fderiv ℝ (uncurry K) (z, u z)).comp
-        ((ContinuousLinearMap.id ℝ (ℝ × ℝ)).prod (fderiv ℝ u z))) z :=
-    HasFDerivAt.comp (g := uncurry K) z hK.hasFDerivAt ((hasFDerivAt_id z).prodMk hu.hasFDerivAt)
-  rw [h.fderiv, fderiv_slice_right hK, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, ← map_add]
-  simp
-
-end PartialDerivatives
-
-variable [FiniteDimensional ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 section Curvature
 
@@ -245,23 +208,7 @@ theorem floerEnergyDensity_def (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V
         (ω.perturbedFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
 
-variable {J : AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {z : ℝ × ℝ}
-
-/-- For a solution of the Floer equation, the energy density is nonnegative under tameness. -/
-theorem floerEnergyDensity_nonneg {ω : SymplecticForm V} (hω : ω.Tames J)
-    (hu : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
-    0 ≤ ω.floerEnergyDensity Ks Kt u z :=
-  hu.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hω
-
-/-- For a solution of the Floer equation, the metric energy density `|du - X_K|²` is twice the
-Floer energy density. -/
-theorem stdComplexLineEnergyDensity_perturbedFDeriv {ω : SymplecticForm V}
-    (hu : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
-    ω.stdComplexLineEnergyDensity J (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) =
-      2 * ω.floerEnergyDensity Ks Kt u z :=
-  hu.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm
+variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {z : ℝ × ℝ}
 
 /-- **The pointwise energy identity.** The Floer energy density is the symplectic area density
 `ω(∂_s u, ∂_t u)`, plus the exterior derivative `∂_s (K_t(u)) - ∂_t (K_s(u))` of the pulled-back
@@ -274,10 +221,17 @@ theorem floerEnergyDensity_eq (ω : SymplecticForm V) (hu : DifferentiableAt ℝ
         (fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
           fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag) -
         ω.hamiltonianCurvature Ks Kt z (u z) := by
+  -- The chain rule along the graph of `u`, and the domain slices, for `K = Ks` and `K = Kt`.
+  have hgraph (K : ℝ × ℝ → V → ℝ) (hK : DifferentiableAt ℝ (uncurry K) (z, u z)) (v : ℝ × ℝ) :
+      fderiv ℝ (fun w ↦ K w (u w)) z v =
+        fderiv ℝ (uncurry K) (z, u z) (v, 0) + fderiv ℝ (K z) (u z) (fderiv ℝ u z v) :=
+    fderiv_comp_graph_apply (F := uncurry K) hu hK v
+  have hslice (K : ℝ × ℝ → V → ℝ) (hK : DifferentiableAt ℝ (uncurry K) (z, u z)) (v : ℝ × ℝ) :
+      fderiv ℝ (fun w ↦ K w (u z)) z v = fderiv ℝ (uncurry K) (z, u z) (v, 0) :=
+    congrArg (· v) (fderiv_slice_left (F := uncurry K) hK)
   rw [floerEnergyDensity_def, hamiltonianCurvature_def, poissonBracket_def,
     perturbedFDeriv_apply_stdComplexLineReal, perturbedFDeriv_apply_stdComplexLineImag,
-    fderiv_comp_graph_apply hu hKt, fderiv_comp_graph_apply hu hKs,
-    fderiv_slice_left_apply hKt, fderiv_slice_left_apply hKs]
+    hgraph Kt hKt, hgraph Ks hKs, hslice Kt hKt, hslice Ks hKs]
   -- Contracting the Hamiltonian vector fields with `du` gives the target derivatives of `K`.
   have hs : ω.toBilinForm (ω.hamiltonianVectorField (Ks z) (u z))
       (fderiv ℝ u z stdComplexLineImag) = fderiv ℝ (Ks z) (u z) (fderiv ℝ u z stdComplexLineImag) :=
@@ -296,50 +250,39 @@ section Integral
 
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
-/-- Along a `C¹` family of Hamiltonians, the Hamiltonian vector field evaluated along a continuous
-map is continuous. -/
-private theorem continuous_hamiltonianVectorField_comp (ω : SymplecticForm V)
-    {K : ℝ × ℝ → V → ℝ} (hK : ContDiff ℝ 1 (uncurry K)) (hu : Continuous u) :
-    Continuous fun z ↦ ω.hamiltonianVectorField (K z) (u z) := by
-  set B := ω.toBilinForm.toContinuousBilinearMap
-  have hX (z : ℝ × ℝ) : ω.hamiltonianVectorField (K z) (u z) =
-      B.inverse ((fderiv ℝ (uncurry K) (z, u z)).comp (ContinuousLinearMap.inr ℝ (ℝ × ℝ) V)) := by
-    rw [eq_comm, eq_hamiltonianVectorField_iff,
-      fderiv_slice_right ((hK.differentiable one_ne_zero) (z, u z))]
-    intro v
-    exact congrArg (fun L : V →L[ℝ] ℝ ↦ L v)
-      (ω.isInvertible_toContinuousBilinearMap.self_apply_inverse _)
-  simp only [hX]
-  exact B.inverse.continuous.comp <|
-    ((hK.continuous_fderiv one_ne_zero).comp (continuous_id.prodMk hu)).clm_comp continuous_const
+/-- For `C¹` perturbation data, the curvature evaluated along a map continuous on a set is
+continuous on that set. -/
+private theorem continuousOn_hamiltonianCurvature_comp (ω : SymplecticForm V) {s : Set (ℝ × ℝ)}
+    (hu : ContinuousOn u s) (hKs : ContDiff ℝ 1 (uncurry Ks)) (hKt : ContDiff ℝ 1 (uncurry Kt)) :
+    ContinuousOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) s := by
+  have hD (K : ℝ × ℝ → V → ℝ) (hK : ContDiff ℝ 1 (uncurry K)) :
+      ContinuousOn (fun z ↦ fderiv ℝ (uncurry K) (z, u z)) s :=
+    (hK.continuous_fderiv one_ne_zero).comp_continuousOn (continuousOn_id.prodMk hu)
+  -- The domain and target derivatives of `K` along `u` are restrictions of its joint derivative.
+  have hslice (K : ℝ × ℝ → V → ℝ) (hK : ContDiff ℝ 1 (uncurry K)) (z v : ℝ × ℝ) :
+      fderiv ℝ (fun w ↦ K w (u z)) z v = fderiv ℝ (uncurry K) (z, u z) (v, 0) :=
+    congrArg (· v) (fderiv_slice_left (F := uncurry K) ((hK.differentiable one_ne_zero) _))
+  have hX (K : ℝ × ℝ → V → ℝ) (hK : ContDiff ℝ 1 (uncurry K)) :
+      ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) s := by
+    have h (z : ℝ × ℝ) : fderiv ℝ (K z) (u z) =
+        (fderiv ℝ (uncurry K) (z, u z)).comp (ContinuousLinearMap.inr ℝ (ℝ × ℝ) V) :=
+      fderiv_slice_right (F := uncurry K) ((hK.differentiable one_ne_zero) _)
+    refine ω.continuousOn_hamiltonianVectorField_comp ?_
+    simp only [h]
+    exact (hD K hK).clm_comp continuousOn_const
+  simp only [hamiltonianCurvature_def, poissonBracket_def, hslice Ks hKs, hslice Kt hKt]
+  exact (((hD Kt hKt).clm_apply continuousOn_const).sub
+    ((hD Ks hKs).clm_apply continuousOn_const)).sub <|
+      ω.continuousOn_apply_comp (hX Ks hKs) (hX Kt hKt)
 
-/-- The symplectic pairing of two continuous maps is continuous. -/
-private theorem continuous_apply_comp (ω : SymplecticForm V) {p q : ℝ × ℝ → V}
-    (hp : Continuous p) (hq : Continuous q) : Continuous fun z ↦ ω (p z) (q z) := by
-  simpa only [comp_apply, LinearMap.toContinuousBilinearMap_apply] using
-    (ω.toBilinForm.toContinuousBilinearMap.continuous.comp hp).clm_apply hq
-
-/-- For `C¹` perturbation data, the curvature evaluated along a continuous map is continuous. -/
-private theorem continuous_hamiltonianCurvature_comp (ω : SymplecticForm V) (hu : Continuous u)
-    (hKs : ContDiff ℝ 1 (uncurry Ks)) (hKt : ContDiff ℝ 1 (uncurry Kt)) :
-    Continuous fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z) := by
-  have hD (K : ℝ × ℝ → V → ℝ) (hK : ContDiff ℝ 1 (uncurry K)) (v : (ℝ × ℝ) × V) :
-      Continuous fun z ↦ fderiv ℝ (uncurry K) (z, u z) v :=
-    ((hK.continuous_fderiv one_ne_zero).comp (continuous_id.prodMk hu)).clm_apply continuous_const
-  simp only [hamiltonianCurvature_def, poissonBracket_def,
-    fun z v ↦ fderiv_slice_left_apply ((hKs.differentiable one_ne_zero) (z, u z)) v,
-    fun z v ↦ fderiv_slice_left_apply ((hKt.differentiable one_ne_zero) (z, u z)) v]
-  exact ((hD Kt hKt _).sub (hD Ks hKs _)).sub <|
-    ω.continuous_apply_comp (ω.continuous_hamiltonianVectorField_comp hKs hu)
-      (ω.continuous_hamiltonianVectorField_comp hKt hu)
-
-/-- **The energy identity on a rectangle.** For `C¹` data on a rectangle `[a₁, b₁] × [a₂, b₂]`,
-the integral of the Floer energy density is the symplectic area, plus the integral of the
-pulled-back one-form `K(u) = K_s(u) ds + K_t(u) dt` over the positively oriented boundary, minus
-the integral of the curvature `R_K(u)`. -/
-theorem integral_floerEnergyDensity (ω : SymplecticForm V) (hu : ContDiff ℝ 1 u)
-    (hKs : ContDiff ℝ 1 (uncurry Ks)) (hKt : ContDiff ℝ 1 (uncurry Kt)) {a b : ℝ × ℝ}
-    (hab : a ≤ b) :
+/-- **The energy identity on a rectangle.** For `C¹` perturbation data and a map `u` that is `C¹`
+on an open neighbourhood of a rectangle `[a₁, b₁] × [a₂, b₂]`, the integral of the Floer energy
+density over the rectangle is the symplectic area, plus the integral of the pulled-back one-form
+`K(u) = K_s(u) ds + K_t(u) dt` over the positively oriented boundary, minus the integral of the
+curvature `R_K(u)`. -/
+theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiff ℝ 1 (uncurry Ks))
+    (hKt : ContDiff ℝ 1 (uncurry Kt)) {a b : ℝ × ℝ} (hab : a ≤ b) (habU : Icc a b ⊆ U) :
     ∫ z in Icc a b, ω.floerEnergyDensity Ks Kt u z =
       (∫ z in Icc a b, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
         ((∫ s in a.1..b.1, Ks (s, a.2) (u (s, a.2))) + (∫ t in a.2..b.2, Kt (b.1, t) (u (b.1, t))) -
@@ -349,42 +292,46 @@ theorem integral_floerEnergyDensity (ω : SymplecticForm V) (hu : ContDiff ℝ 1
   -- The pulled-back components `K_t(u)` and `-K_s(u)`, to which the divergence theorem applies.
   set f : ℝ × ℝ → ℝ := fun w ↦ Kt w (u w)
   set g : ℝ × ℝ → ℝ := fun w ↦ -Ks w (u w)
-  have hf : ContDiff ℝ 1 f := hKt.comp (contDiff_id.prodMk hu)
-  have hKsu : ContDiff ℝ 1 fun w ↦ Ks w (u w) := hKs.comp (contDiff_id.prodMk hu)
-  have hg : ContDiff ℝ 1 g := hKsu.neg
-  have hd₁ : Differentiable ℝ (uncurry Ks) := hKs.differentiable one_ne_zero
-  have hd₂ : Differentiable ℝ (uncurry Kt) := hKt.differentiable one_ne_zero
-  have hdu : Differentiable ℝ u := hu.differentiable one_ne_zero
-  have hcont (L : ℝ × ℝ → ℝ × ℝ →L[ℝ] ℝ) (hL : Continuous L) (v : ℝ × ℝ) :
+  have hf : ContDiffOn ℝ 1 f U := hKt.comp_contDiffOn (contDiffOn_id.prodMk hu)
+  have hg : ContDiffOn ℝ 1 g U := (hKs.comp_contDiffOn (contDiffOn_id.prodMk hu)).neg
+  have hdiff {h : ℝ × ℝ → ℝ} (hh : ContDiffOn ℝ 1 h U) {z : ℝ × ℝ} (hz : z ∈ U) :
+      HasFDerivAt h (fderiv ℝ h z) z :=
+    ((hh.differentiableOn one_ne_zero z hz).differentiableAt (hU.mem_nhds hz)).hasFDerivAt
+  have hint {z : ℝ × ℝ} (hz : z ∈ Ioo a.1 b.1 ×ˢ Ioo a.2 b.2) : z ∈ U :=
+    habU (Icc_prod_eq a b ▸ ⟨Ioo_subset_Icc_self hz.1, Ioo_subset_Icc_self hz.2⟩)
+  have hcont {L : ℝ × ℝ → ℝ × ℝ →L[ℝ] ℝ} (hL : ContinuousOn L U) (v : ℝ × ℝ) :
       IntegrableOn (fun z ↦ L z v) (Icc a b) :=
-    (hL.clm_apply continuous_const).continuousOn.integrableOn_compact isCompact_Icc
+    ((hL.mono habU).clm_apply continuousOn_const).integrableOn_compact isCompact_Icc
   have hderiv : IntegrableOn
       (fun z ↦ fderiv ℝ f z stdComplexLineReal + fderiv ℝ g z stdComplexLineImag) (Icc a b) :=
-    (hcont _ (hf.continuous_fderiv one_ne_zero) _).add
-      (hcont _ (hg.continuous_fderiv one_ne_zero) _)
+    (hcont (hf.continuousOn_fderiv_of_isOpen hU le_rfl) _).add
+      (hcont (hg.continuousOn_fderiv_of_isOpen hU le_rfl) _)
   have hdiv := integral_divergence_prod_Icc_of_hasFDerivAt_of_le f g (fderiv ℝ f) (fderiv ℝ g)
-    a b hab hf.continuous.continuousOn hg.continuous.continuousOn
-    (fun z _ ↦ ((hf.differentiable one_ne_zero) z).hasFDerivAt)
-    (fun z _ ↦ ((hg.differentiable one_ne_zero) z).hasFDerivAt) hderiv
+    a b hab (hf.continuousOn.mono habU) (hg.continuousOn.mono habU)
+    (fun _ hz ↦ hdiff hf (hint hz)) (fun _ hz ↦ hdiff hg (hint hz)) hderiv
   have hg' (z : ℝ × ℝ) : fderiv ℝ g z stdComplexLineImag =
       -fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag := by
     simp [g, fderiv_fun_neg]
   -- The remaining terms of the pointwise identity are integrable.
-  have hdu' : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
+  have hdu' : ContinuousOn (fderiv ℝ u) (Icc a b) :=
+    (hu.continuousOn_fderiv_of_isOpen hU le_rfl).mono habU
   have harea : IntegrableOn
       (fun z ↦ ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) (Icc a b) :=
-    (ω.continuous_apply_comp (hdu'.clm_apply continuous_const)
-      (hdu'.clm_apply continuous_const)).continuousOn.integrableOn_compact isCompact_Icc
+    (ω.continuousOn_apply_comp (hdu'.clm_apply continuousOn_const)
+      (hdu'.clm_apply continuousOn_const)).integrableOn_compact isCompact_Icc
   have hcurv : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) (Icc a b) :=
-    (ω.continuous_hamiltonianCurvature_comp hu.continuous hKs hKt).continuousOn.integrableOn_compact
-      isCompact_Icc
+    (ω.continuousOn_hamiltonianCurvature_comp (hu.continuousOn.mono habU) hKs
+      hKt).integrableOn_compact isCompact_Icc
   calc
     ∫ z in Icc a b, ω.floerEnergyDensity Ks Kt u z =
         ∫ z in Icc a b, (ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) +
           (fderiv ℝ f z stdComplexLineReal + fderiv ℝ g z stdComplexLineImag) -
           ω.hamiltonianCurvature Ks Kt z (u z)) := by
-      refine setIntegral_congr_fun measurableSet_Icc fun z _ ↦ ?_
-      rw [ω.floerEnergyDensity_eq (hdu z) (hd₁ (z, u z)) (hd₂ (z, u z)), hg', ← sub_eq_add_neg]
+      refine setIntegral_congr_fun measurableSet_Icc fun z hz ↦ ?_
+      have hzU := habU hz
+      rw [ω.floerEnergyDensity_eq ((hu.differentiableOn one_ne_zero z hzU).differentiableAt
+          (hU.mem_nhds hzU)) ((hKs.differentiable one_ne_zero) (z, u z))
+          ((hKt.differentiable one_ne_zero) (z, u z)), hg', ← sub_eq_add_neg]
     _ = _ := by
       have hsum : IntegrableOn (fun z ↦
           ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) +
