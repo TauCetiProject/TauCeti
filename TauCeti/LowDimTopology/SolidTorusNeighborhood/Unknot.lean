@@ -66,15 +66,6 @@ open Metric Set Topology
 
 namespace TauCeti
 
-/-! ### The unknot in the coordinates of `ℂ²` -/
-
-/-- On the first factor of `ℂ²`, `TauCeti.complexProdToEuclideanFour` is the inclusion
-`TauCeti.complexToEuclideanFour` of the first coordinate plane. -/
-theorem complexProdToEuclideanFour_toLp_zero (z : ℂ) :
-    complexProdToEuclideanFour (WithLp.toLp 2 (z, 0)) = complexToEuclideanFour z := by
-  ext i
-  fin_cases i <;> simp
-
 /-! ### The standard solid torus neighbourhood of the unknot -/
 
 /-- The standard solid torus neighbourhood of the unknot: `(w, ζ) ↦ (ζ, w) / √(1 + ‖w‖ ^ 2)` in
@@ -184,25 +175,22 @@ def unknotExteriorHomeomorph : knotExterior (Φ := unknotSolidTorus) ≃ₜ Soli
     (sphereProdFstLeHomeomorph ℂ ℂ)).trans
     ((Homeomorph.refl _).prodCongr Circle.homeomorphSphere.symm)
 
+/- In the next three proofs `mem_ofPred_eq` is excluded: it rewrites the set-builder subtype of
+`TauCeti.sphereProdFstLeHomeomorph`, after which its coordinate simp lemmas no longer match. -/
+
 @[simp]
 theorem coe_unknotExteriorHomeomorph_apply_fst (x : knotExterior (Φ := unknotSolidTorus)) :
     ((unknotExteriorHomeomorph x).1 : ℂ) =
       ‖(complexProdToEuclideanFour.symm (x : EuclideanSpace ℝ (Fin 4))).snd‖⁻¹ •
         (complexProdToEuclideanFour.symm (x : EuclideanSpace ℝ (Fin 4))).fst := by
-  simp only [unknotExteriorHomeomorph, Homeomorph.trans_apply, Homeomorph.coe_prodCongr,
-    Prod.map_fst, Homeomorph.refl_apply, id_eq]
-  rw [coe_sphereProdFstLeHomeomorph_apply_fst]
-  simp [-complexProdToEuclideanFour_symm_apply]
+  simp [unknotExteriorHomeomorph, -mem_ofPred_eq, -complexProdToEuclideanFour_symm_apply]
 
 @[simp]
 theorem coe_unknotExteriorHomeomorph_apply_snd (x : knotExterior (Φ := unknotSolidTorus)) :
     ((unknotExteriorHomeomorph x).2 : ℂ) =
       ‖(complexProdToEuclideanFour.symm (x : EuclideanSpace ℝ (Fin 4))).snd‖⁻¹ •
         (complexProdToEuclideanFour.symm (x : EuclideanSpace ℝ (Fin 4))).snd := by
-  simp only [unknotExteriorHomeomorph, Homeomorph.trans_apply, Homeomorph.coe_prodCongr,
-    Prod.map_snd, Circle.coe_homeomorphSphere_symm_apply]
-  rw [coe_sphereProdFstLeHomeomorph_apply_snd]
-  simp [-complexProdToEuclideanFour_symm_apply]
+  simp [unknotExteriorHomeomorph, -mem_ofPred_eq, -complexProdToEuclideanFour_symm_apply]
 
 @[simp]
 theorem coe_unknotExteriorHomeomorph_symm_apply (p : SolidTorus) :
@@ -210,13 +198,7 @@ theorem coe_unknotExteriorHomeomorph_symm_apply (p : SolidTorus) :
         EuclideanSpace ℝ (Fin 4)) =
       complexProdToEuclideanFour (WithLp.toLp 2
         ((√(1 + ‖(p.1 : ℂ)‖ ^ 2))⁻¹ • (p.1 : ℂ), (√(1 + ‖(p.1 : ℂ)‖ ^ 2))⁻¹ • (p.2 : ℂ))) := by
-  simp only [unknotExteriorHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm,
-    Homeomorph.coe_prodCongr, Homeomorph.refl_symm, Homeomorph.symm_symm,
-    Homeomorph.subtype_symm_apply_coe, IsometryEquiv.coe_toHomeomorph_symm,
-    LinearIsometryEquiv.unitSphereIsometryEquiv_symm, LinearIsometryEquiv.symm_symm,
-    LinearIsometryEquiv.coe_unitSphereIsometryEquiv_apply]
-  rw [coe_sphereProdFstLeHomeomorph_symm_apply]
-  simp
+  simp [unknotExteriorHomeomorph, -mem_ofPred_eq, -complexProdToEuclideanFour_symm_apply]
 
 /-- **The exterior of the unknot exchanges meridian and longitude.** On the boundary torus, the
 identification `TauCeti.unknotExteriorHomeomorph` of the exterior of the unknot with `D² × S¹`

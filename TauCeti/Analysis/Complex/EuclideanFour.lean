@@ -50,10 +50,9 @@ private theorem complexProdToEuclideanFourₗ_apply (x : WithLp 2 (ℂ × ℂ)) 
 `WithLp 2 (ℂ × ℂ)` to Euclidean four-space. -/
 def complexProdToEuclideanFour : WithLp 2 (ℂ × ℂ) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) :=
   ⟨complexProdToEuclideanFourₗ, fun x ↦ by
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), WithLp.prod_norm_sq_eq_of_L2,
-      EuclideanSpace.norm_sq_eq, Fin.sum_univ_four, complexProdToEuclideanFourₗ_apply,
-      Complex.sq_norm, Complex.sq_norm, Complex.normSq_apply, Complex.normSq_apply]
-    simp only [Matrix.cons_val, Real.norm_eq_abs, sq_abs]
+    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)]
+    simp [complexProdToEuclideanFourₗ_apply, WithLp.prod_norm_sq_eq_of_L2,
+      EuclideanSpace.norm_sq_eq, Fin.sum_univ_four, Complex.sq_norm, Complex.normSq_apply]
     ring⟩
 
 @[simp]
