@@ -29,7 +29,10 @@ namespace Units
 /-- The positive real units form a preconnected set. -/
 theorem isPreconnected_posSubgroup_real :
     IsPreconnected (Units.posSubgroup ℝ : Set ℝˣ) := by
-  change IsPreconnected (Units.val ⁻¹' Set.Ioi (0 : ℝ))
+  have hcarrier : (Units.posSubgroup ℝ : Set ℝˣ) = Units.val ⁻¹' Set.Ioi (0 : ℝ) := by
+    ext u
+    exact Units.mem_posSubgroup u
+  rw [hcarrier]
   exact isPreconnected_Ioi.preimage_units_val (by simp : (0 : ℝ) ∉ Set.Ioi 0)
 
 /-- The positive real units are the identity component of the real unit group. -/
