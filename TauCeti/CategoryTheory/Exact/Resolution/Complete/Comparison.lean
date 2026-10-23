@@ -21,10 +21,12 @@ of `r'` out of the projective terms of `r`; in nonnegative degrees it is built u
 across the inflations of `r` into the injective terms of `r'`.
 
 A map of complexes lifting `f` is null-homotopic exactly when `f` factors through a
-projective-injective object, that is, when `f` vanishes in the stable category. In particular two
-lifts of the same morphism are homotopic, and two complete resolutions with isomorphic objects of
-cycles in degree zero are homotopy equivalent. In a Frobenius exact category every object has a
-complete resolution, so complete resolutions are unique up to homotopy equivalence.
+projective-injective object. When `E` is Frobenius, the projective-injective objects are the
+relative projectives, so this says that `f` vanishes in `E.ProjectiveStableCategory`. In
+particular two lifts of the same morphism are homotopic, and two complete resolutions with
+isomorphic objects of cycles in degree zero are homotopy equivalent. In a Frobenius exact
+category every object has a complete resolution, so complete resolutions are unique up to
+homotopy equivalence.
 
 No Frobenius hypothesis is needed for the comparison theorem itself: the projectivity and
 injectivity of the terms of the two resolutions are all it uses.
@@ -53,6 +55,16 @@ injectivity of the terms of the two resolutions are all it uses.
   complete resolutions and their uniqueness up to homotopy.
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69, Section 12, for
   the comparison theorem for projective resolutions in an exact category.
+* `Mathlib/CategoryTheory/Abelian/Projective/Resolution.lean`, whose `lift`, `liftHomotopyZero`,
+  `liftHomotopy`, `liftIdHomotopy`, `liftCompHomotopy` and `homotopyEquiv` API for projective
+  resolutions in abelian categories is followed here, including the derivation of
+  `liftHomotopy` from `liftHomotopyZero` through `Homotopy.equivSubZero`, and the construction of
+  the lift and of the null-homotopy from a base case and a repeated step.
+* `Mathlib/CategoryTheory/Abelian/Injective/Resolution.lean`, the dual comparison theory for
+  injective resolutions, which the upward half of the construction follows.
+* `TauCeti/CategoryTheory/Exact/Resolution/Comparison.lean`, the comparison theorem for finite
+  projective resolutions in an exact category (`TauCeti.ExactStructure.FiniteResolution.lift`,
+  `liftHomotopy`, `homotopyEquiv`), of which this is the bi-infinite analogue.
 -/
 
 public section
@@ -434,7 +446,9 @@ theorem factorsThrough_of_homotopy (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (h 
   exact ObjectProperty.factorsThrough_comp _ (r.projectiveInjective 0) (r.ι 0) _
 
 /-- A map of complexes lifting `f` is null-homotopic if and only if `f` factors through a
-projective-injective object, that is, `f` vanishes in the stable category. -/
+projective-injective object. When `E` is Frobenius, this says that `f` vanishes in the stable
+category, by `TauCeti.ExactStructure.IsFrobenius.projectiveInjective_eq_isProjective` and
+`TauCeti.ExactStructure.projectiveStableFunctor_map_eq_zero_iff`. -/
 theorem nonempty_homotopy_zero_iff (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) :
     Nonempty (Homotopy φ 0) ↔ E.projectiveInjective.FactorsThrough f :=
   ⟨fun ⟨h⟩ => factorsThrough_of_homotopy hφ h, fun hf => ⟨liftHomotopyZero φ hφ hf⟩⟩

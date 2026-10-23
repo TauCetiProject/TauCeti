@@ -114,7 +114,8 @@ isomorphisms are identities. -/
 noncomputable abbrev complex : CochainComplex C ℤ :=
   CochainComplex.splice r.shortComplex fun _ ↦ Iso.refl _
 
-/-- The differential of the complex in consecutive degrees, in the form `rw` can use. -/
+/-- The differential of the complex in consecutive degrees, in the form `rw` can use. It is not a
+simp lemma: `simp` already reduces its left-hand side through `CochainComplex.of_d`. -/
 theorem complex_d (n : ℤ) : r.complex.d n (n + 1) = r.d n := by
   rw [CochainComplex.splice_d, Iso.refl_hom, Category.id_comp, d_def]
 
@@ -129,12 +130,6 @@ theorem f_comp_d {r' : E.CompleteResolution} (φ : r.complex ⟶ r'.complex) (n 
     φ.f n ≫ r'.d n = r.d n ≫ φ.f (n + 1) := by
   rw [← complex_d, ← complex_d]
   exact φ.comm n (n + 1)
-
-/-- `f_comp_d` out of degree `-1`, whose following index `Int.negSucc 0 + 1` reduces to `0`. -/
-@[reassoc]
-theorem f_comp_d_negSucc_zero {r' : E.CompleteResolution} (φ : r.complex ⟶ r'.complex) :
-    φ.f (Int.negSucc 0) ≫ r'.d (Int.negSucc 0) = r.d (Int.negSucc 0) ≫ φ.f 0 :=
-  r.f_comp_d φ _
 
 /-- The `n`-th conflation as an injective presentation of the cycles `Zⁿ`. -/
 abbrev injectivePresentation (n : ℤ) : E.InjectivePresentation (r.Z n) where

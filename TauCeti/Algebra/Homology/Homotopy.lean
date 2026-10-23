@@ -14,8 +14,8 @@ public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 /-!
 # Constructions on chain homotopies
 
-Three constructions of chain homotopies: two produce new homotopies from old ones, and the
-third assembles a null-homotopy from components given all at once.
+Four constructions of chain homotopies: two produce new homotopies from old ones, and the
+other two assemble a null-homotopy from components given all at once.
 
 `Homotopy.descCokernel` descends a homotopy along a degreewise cokernel.  Let `p : L ⟶ M` exhibit
 `M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'` be any morphism of
@@ -38,6 +38,11 @@ complexes from its components `h n : P.X n ⟶ Q.X (n + 1)`, given all at once t
 homotopy identities in degree zero and in positive degrees.  It is the non-inductive counterpart of
 Mathlib's `Homotopy.mkInductive`, for the situation where the components are constructed by a
 recursion of their own rather than one degree at a time from the previous two.
+
+`Homotopy.mkCochainComplexInt` is its counterpart for `ℤ`-indexed cochain complexes: a
+null-homotopy of `e : P ⟶ Q` from components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy
+identities `e.f (n + 1) = d ≫ h (n + 1) + h n ≫ d`, stated in every degree `n + 1` so that no
+index is a difference.
 
 `Homotopy.comm_zero_apply` and `Homotopy.comm_succ_apply` are the homotopy identities of a
 homotopy between maps of `ℕ`-indexed chain complexes of modules, evaluated on elements.
