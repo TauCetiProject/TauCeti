@@ -29,6 +29,8 @@ transition matrix between two such bases is block upper triangular
 ## Main declarations
 
 * `Module.Basis.ofExactLift`: the basis of `B` assembled from `a`, `c` and the lifts `s`.
+* `Module.Basis.eq_ofExactLift`: every basis of `B` made of the image of `a` followed by lifts
+  of `c` is of this form.
 * `Module.Basis.ofExactLift_det_eq_mul`: the determinant with respect to such a basis of a family
   made of images of a family `x` of `A` and of lifts of a family `y` of `C` is
   `a.det x * c.det y`.
@@ -119,6 +121,14 @@ its coordinates in `a`. -/
 theorem ofExactLift_repr_apply_inl (x : A) (i : κ) :
     (ofExactLift hf hfg a c s hs).repr (f x) (Sum.inl i) = a.repr x i := by
   simp [ofExactLift, prod_repr_inl, exactLiftEquiv_apply]
+
+/-- A basis of `B` indexed by `κ ⊕ σ` that is the image of the basis `a` of `A` on the left
+summand, and whose vectors on the right summand lift the basis `c` of `C`, is the basis
+`ofExactLift` with these lifts. -/
+theorem eq_ofExactLift (b : Basis (κ ⊕ σ) R B) (hb : ∀ i, b (.inl i) = f (a i))
+    (hb' : ∀ j, g (b (.inr j)) = c j) :
+    b = ofExactLift hf hfg a c (fun j ↦ b (.inr j)) hb' :=
+  eq_of_apply_eq fun | .inl i => by simp [hb] | .inr j => by simp
 
 section CommSemiring
 

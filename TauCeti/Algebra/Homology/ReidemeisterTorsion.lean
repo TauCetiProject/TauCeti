@@ -523,49 +523,8 @@ section ShortExact
 
 variable {C} {C' C'' : ChainComplex (ModuleCat F) ℤ}
 
-/-- A chain map sends the boundaries `Bⱼ` of its source into the boundaries of its target. -/
-private def boundaryMap {K L : ChainComplex (ModuleCat F) ℤ} (φ : K ⟶ L) (j : ℤ) :
-    LinearMap.range (K.d (j + 1) j).hom →ₗ[F] LinearMap.range (L.d (j + 1) j).hom :=
-  (φ.f j).hom.restrict fun _ ⟨y, hy⟩ ↦ ⟨(φ.f (j + 1)).hom y, by rw [Hom.comm_apply, hy]⟩
-
-/-- The boundary map is the restriction of the chain map. -/
-private theorem coe_boundaryMap {K L : ChainComplex (ModuleCat F) ℤ} (φ : K ⟶ L) (j : ℤ)
-    (x : LinearMap.range (K.d (j + 1) j).hom) : (boundaryMap φ j x : L.X j) = (φ.f j).hom x :=
-  rfl
-
 variable {f : C' ⟶ C} {g : C ⟶ C''} (hf : ∀ i, Function.Injective (f.f i).hom)
   (hfg : ∀ i, Function.Exact (f.f i).hom (g.f i).hom) (hg : ∀ i, Function.Surjective (g.f i).hom)
-
-include hf in
-/-- A degreewise injective chain map is injective on boundaries. -/
-private theorem injective_boundaryMap (j : ℤ) : Function.Injective (boundaryMap f j) :=
-  fun _ _ hxy ↦ Subtype.ext (hf j (congrArg Subtype.val hxy))
-
-include hfg hg in
-/-- In a degreewise short exact sequence `0 → C' → C → C'' → 0` with `C''` exact in degree
-`j + 1`, the boundaries form a sequence `B'ⱼ → Bⱼ → B''ⱼ` which is exact in the middle. -/
-private theorem exact_boundaryMap (j : ℤ) (h'' : C''.ExactAt (j + 1)) :
-    Function.Exact (boundaryMap f j) (boundaryMap g j) := by
-  rintro ⟨_, x, rfl⟩
-  constructor
-  · intro hx
-    have hx' : (C''.d (j + 1) j).hom ((g.f (j + 1)).hom x) = 0 := by
-      rw [Hom.comm_apply]
-      exact congrArg Subtype.val hx
-    -- The image of `x` in `C''ⱼ₊₁` is a cycle, hence the boundary of some `g w`; then
-    -- `x - d w` lies in `C'ⱼ₊₁` and has the same boundary as `x`.
-    obtain ⟨⟨_, z, rfl⟩, hz⟩ :=
-      ((exact_subtype_rangeRestrict (i := j + 1 + 1) (k := j) (by simp) (by simp) h'') _).1
-        (Subtype.ext hx')
-    obtain ⟨w, rfl⟩ := hg (j + 1 + 1) z
-    obtain ⟨x', hx''⟩ := ((hfg (j + 1)) (x - (C.d (j + 1 + 1) (j + 1)).hom w)).1 (by
-      rw [map_sub, ← Hom.comm_apply, sub_eq_zero]
-      exact hz.symm)
-    refine ⟨⟨(C'.d (j + 1) j).hom x', x', rfl⟩, Subtype.ext ?_⟩
-    rw [coe_boundaryMap, ← Hom.comm_apply, hx'', map_sub, d_comp_d_apply, sub_zero]
-  · rintro ⟨x', hx'⟩
-    rw [← hx']
-    exact Subtype.ext ((hfg j).apply_apply_eq_zero _)
 
 variable {p' p'' : ℕ} {j : ℤ}
 
@@ -577,9 +536,11 @@ private def shortExactBoundaryBasis (h'' : C''.ExactAt (j + 1))
     (b'' : Basis (Fin p'') F (LinearMap.range (C''.d (j + 1) j).hom)) (t : Fin p'' → C.X (j + 1))
     (ht : ∀ k, (C''.d (j + 1) j).hom ((g.f (j + 1)).hom (t k)) = b'' k) :
     Basis (Fin (p' + p'')) F (LinearMap.range (C.d (j + 1) j).hom) :=
-  (Basis.ofExactLift (injective_boundaryMap hf j) (exact_boundaryMap hfg hg j h'') b' b''
+  (Basis.ofExactLift (f.boundaryMap_injective (j + 1) (hf j))
+    (Hom.exact_boundaryMap (by simp) (by simp) (hfg (j + 1)) (hfg j) (hg (j + 1 + 1)) h'') b' b''
     (fun k ↦ ⟨(C.d (j + 1) j).hom (t k), t k, rfl⟩)
-    fun k ↦ Subtype.ext ((Hom.comm_apply g _ _ _).symm.trans (ht k))).reindex finSumFinEquiv
+    fun k ↦ Subtype.ext ((Hom.coe_boundaryMap g _ _ _).trans
+      ((Hom.comm_apply g _ _ _).symm.trans (ht k)))).reindex finSumFinEquiv
 
 /-- The vectors of `shortExactBoundaryBasis` are the images of `b'` followed by the boundaries of
 the lifts `t`. -/
@@ -590,7 +551,7 @@ private theorem coe_shortExactBoundaryBasis (h'' : C''.ExactAt (j + 1))
     (fun k ↦ (shortExactBoundaryBasis hf hfg hg h'' b' b'' t ht k : C.X j)) =
       Fin.append (fun k ↦ (f.f j).hom (b' k)) fun k ↦ (C.d (j + 1) j).hom (t k) := by
   ext k
-  induction k using Fin.addCases <;> simp [shortExactBoundaryBasis, coe_boundaryMap]
+  induction k using Fin.addCases <;> simp [shortExactBoundaryBasis]
 
 variable {n' n'' : ℤ → ℕ} {c' : ∀ i, Basis (Fin (n' i)) F (C'.X i)}
   {c'' : ∀ i, Basis (Fin (n'' i)) F (C''.X i)} {c : ∀ i, Basis (Fin (n' i + n'' i)) F (C.X i)}
@@ -603,7 +564,14 @@ include hc' in
 private theorem eq_reindex_ofExactLift (i : ℤ) :
     c i = (Basis.ofExactLift (hf i) (hfg i) (c' i) (c'' i) (fun k ↦ c i (Fin.natAdd (n' i) k))
       (hc'' i)).reindex finSumFinEquiv :=
-  Basis.eq_of_apply_eq fun k ↦ by induction k using Fin.addCases <;> simp [hc']
+  calc c i = ((c i).reindex finSumFinEquiv.symm).reindex finSumFinEquiv :=
+        Basis.eq_of_apply_eq fun _ ↦ by simp
+    _ = _ := by
+      rw [Basis.eq_ofExactLift (hf i) (hfg i) (c' i) (c'' i) ((c i).reindex finSumFinEquiv.symm)
+        (by simp [hc']) fun k ↦ by simpa using hc'' i k]
+      congr 2
+      ext k
+      simp
 
 include hc' hc'' in
 /-- The bracket of the middle term of a based short exact sequence of acyclic complexes, for the
@@ -653,34 +621,18 @@ private theorem torsionBracket_shortExactBoundaryBasis (hC : C.ExactAt (j + 1))
       zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one]
   -- It remains to check, block by block, that the reordered family is made of the images of the
   -- family `(b'₁, s')` of `C'ⱼ₊₁` followed by lifts of the family `(b''₁, g ∘ t₀)` of `C''ⱼ₊₁`.
-  · intro i
+  · have hl (m : Fin (p' + q')) : finCongr hN (finSumFinEquiv (.inl (finCongr hn'.symm m))) =
+        Fin.castAdd (p'' + q'') m := Fin.ext (by simp)
+    intro i
     obtain ⟨m, rfl⟩ := (finCongr hn'.symm).surjective i
-    induction m using Fin.addCases with
-    | left m =>
-      rw [Function.comp_apply, Function.comp_apply, show finCongr hN (finSumFinEquiv
-        (Sum.inl (finCongr hn'.symm (Fin.castAdd q' m)))) =
-          Fin.castAdd (p'' + q'') (Fin.castAdd q' m) from Fin.ext (by simp)]
-      simp
-    | right m =>
-      rw [Function.comp_apply, Function.comp_apply, show finCongr hN (finSumFinEquiv
-        (Sum.inl (finCongr hn'.symm (Fin.natAdd p' m)))) =
-          Fin.castAdd (p'' + q'') (Fin.natAdd p' m) from Fin.ext (by simp)]
-      simp
-  · intro i
+    rw [Function.comp_apply, Function.comp_apply, hl]
+    induction m using Fin.addCases <;> simp
+  · have hr (m : Fin (p'' + q'')) : finCongr hN (finSumFinEquiv (.inr (finCongr hn''.symm m))) =
+        Fin.natAdd (p' + q') m := Fin.ext (by simp; omega)
+    intro i
     obtain ⟨m, rfl⟩ := (finCongr hn''.symm).surjective i
-    induction m using Fin.addCases with
-    | left m =>
-      rw [Function.comp_apply, Function.comp_apply, show finCongr hN (finSumFinEquiv
-        (Sum.inr (finCongr hn''.symm (Fin.castAdd q'' m)))) =
-          Fin.natAdd (p' + q') (Fin.castAdd q'' m) from Fin.ext (by simp; omega)]
-      simp only [Fin.append_left, Fin.append_right]
-      rw [← Hom.comm_apply, ht₁]
-      simp
-    | right m =>
-      rw [Function.comp_apply, Function.comp_apply, show finCongr hN (finSumFinEquiv
-        (Sum.inr (finCongr hn''.symm (Fin.natAdd p'' m)))) =
-          Fin.natAdd (p' + q') (Fin.natAdd p'' m) from Fin.ext (by simp; omega)]
-      simp
+    rw [Function.comp_apply, Function.comp_apply, hr]
+    induction m using Fin.addCases <;> simp [← Hom.comm_apply, ht₁]
 
 /-- **Multiplicativity of the torsion.** Let `0 → C₁ → C₂ → C₃ → 0` be a short exact sequence of
 chain complexes of vector spaces, with `C₁` and `C₃` acyclic, and with compatible bases: the basis

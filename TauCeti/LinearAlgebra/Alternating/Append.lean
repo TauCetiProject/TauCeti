@@ -45,55 +45,44 @@ theorem map_append_append_comm (f : M [⋀^Fin (a + b + (c + d))]→ₗ[R] N) (x
       one_mul, mul_one, TauCeti.sign_finAddFlip_trans_finCongr, mul_comm c b]
   -- On each of the four blocks, `e.permCongr τ` sends the position of an argument of
   -- `(x, z, y, w)` to the position of the same argument in `(x, y, z, w)`.
+  have hp : a + c + (b + d) = a + b + (c + d) := by omega
+  have h₁ (i : Fin a) : e.permCongr τ (finCongr hp (Fin.castAdd (b + d) (Fin.castAdd c i))) =
+      Fin.castAdd (c + d) (Fin.castAdd b i) := by
+    have : e.symm (finCongr hp (Fin.castAdd (b + d) (Fin.castAdd c i))) =
+        Fin.castAdd ((c + b) + d) i := Fin.ext rfl
+    simp only [Equiv.permCongr_apply, this]
+    ext
+    simp [τ, e]
+  have h₂ (k : Fin c) : e.permCongr τ (finCongr hp (Fin.castAdd (b + d) (Fin.natAdd a k))) =
+      Fin.natAdd (a + b) (Fin.castAdd d k) := by
+    have : e.symm (finCongr hp (Fin.castAdd (b + d) (Fin.natAdd a k))) =
+        Fin.natAdd a (Fin.castAdd d (Fin.castAdd b k)) := Fin.ext rfl
+    simp only [Equiv.permCongr_apply, this]
+    ext
+    simp [τ, S, e, finAddFlip_apply_castAdd]
+    omega
+  have h₃ (j : Fin b) : e.permCongr τ (finCongr hp (Fin.natAdd (a + c) (Fin.castAdd d j))) =
+      Fin.castAdd (c + d) (Fin.natAdd a j) := by
+    have : e.symm (finCongr hp (Fin.natAdd (a + c) (Fin.castAdd d j))) =
+        Fin.natAdd a (Fin.castAdd d (Fin.natAdd c j)) := Fin.ext (Nat.add_assoc a c j)
+    simp only [Equiv.permCongr_apply, this]
+    ext
+    simp [τ, S, e, finAddFlip_apply_natAdd]
+  have h₄ (l : Fin d) : e.permCongr τ (finCongr hp (Fin.natAdd (a + c) (Fin.natAdd b l))) =
+      Fin.natAdd (a + b) (Fin.natAdd c l) := by
+    have : e.symm (finCongr hp (Fin.natAdd (a + c) (Fin.natAdd b l))) =
+        Fin.natAdd a (Fin.natAdd (c + b) l) := Fin.ext (by simp [e]; omega)
+    simp only [Equiv.permCongr_apply, this]
+    ext
+    simp [τ, e]
+    omega
   have hv : Fin.append (Fin.append x y) (Fin.append z w) ∘ e.permCongr τ =
       Fin.append (Fin.append x z) (Fin.append y w) ∘ Fin.cast (by omega) := by
     ext p
-    obtain ⟨q, rfl⟩ := (finCongr (show a + c + (b + d) = a + b + (c + d) by omega)).surjective p
+    obtain ⟨q, rfl⟩ := (finCongr hp).surjective p
     induction q using Fin.addCases with
-    | left q =>
-      induction q using Fin.addCases with
-      | left i =>
-        have h : e.permCongr τ (finCongr (by omega) (Fin.castAdd (b + d) (Fin.castAdd c i))) =
-            Fin.castAdd (c + d) (Fin.castAdd b i) := by
-          rw [Equiv.permCongr_apply, show e.symm (finCongr (by omega) (Fin.castAdd (b + d)
-            (Fin.castAdd c i))) = Fin.castAdd ((c + b) + d) i from Fin.ext rfl]
-          ext
-          simp [τ, e]
-        rw [Function.comp_apply, h]
-        simp
-      | right i =>
-        have h : e.permCongr τ (finCongr (by omega) (Fin.castAdd (b + d) (Fin.natAdd a i))) =
-            Fin.natAdd (a + b) (Fin.castAdd d i) := by
-          rw [Equiv.permCongr_apply, show e.symm (finCongr (by omega) (Fin.castAdd (b + d)
-            (Fin.natAdd a i))) = Fin.natAdd a (Fin.castAdd d (Fin.castAdd b i)) from Fin.ext rfl]
-          ext
-          simp [τ, S, e]
-          omega
-        rw [Function.comp_apply, h]
-        simp
-    | right q =>
-      induction q using Fin.addCases with
-      | left k =>
-        have h : e.permCongr τ (finCongr (by omega) (Fin.natAdd (a + c) (Fin.castAdd d k))) =
-            Fin.castAdd (c + d) (Fin.natAdd a k) := by
-          rw [Equiv.permCongr_apply, show e.symm (finCongr (by omega) (Fin.natAdd (a + c)
-            (Fin.castAdd d k))) = Fin.natAdd a (Fin.castAdd d (Fin.natAdd c k)) from
-              Fin.ext (by simp [e]; omega)]
-          ext
-          simp [τ, S, e]
-        rw [Function.comp_apply, h]
-        simp
-      | right l =>
-        have h : e.permCongr τ (finCongr (by omega) (Fin.natAdd (a + c) (Fin.natAdd b l))) =
-            Fin.natAdd (a + b) (Fin.natAdd c l) := by
-          rw [Equiv.permCongr_apply, show e.symm (finCongr (by omega) (Fin.natAdd (a + c)
-            (Fin.natAdd b l))) = Fin.natAdd a (Fin.natAdd (c + b) l) from
-              Fin.ext (by simp [e]; omega)]
-          ext
-          simp [τ, e]
-          omega
-        rw [Function.comp_apply, h]
-        simp
+    | left q => induction q using Fin.addCases <;> simp only [Function.comp_apply, h₁, h₂] <;> simp
+    | right q => induction q using Fin.addCases <;> simp only [Function.comp_apply, h₃, h₄] <;> simp
   rw [← hv, f.map_perm, hsign]
 
 end AlternatingMap
