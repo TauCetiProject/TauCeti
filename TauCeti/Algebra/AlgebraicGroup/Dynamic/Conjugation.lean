@@ -78,27 +78,14 @@ section Normalizer
 variable {R H A : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 variable [CommSemiring A] [Algebra R A]
 
-/-- The generic point `λ(T)` of a cocharacter lies in its own Levi subgroup. -/
-private theorem genericPoint_mem_levi (l : H →ₐc[R] LaurentPolynomial R) :
-    genericPoint A l ∈ levi (LaurentPolynomial A) l := by
-  rw [genericPoint_eq_pointsHom]
-  exact pointsHom_mem_levi _
-
-/-- Constant points of the Levi subgroup are Laurent-valued points of the Levi subgroup. -/
-private theorem constPoint_mem_levi (l : H →ₐc[R] LaurentPolynomial R)
-    {g : WithConv (H →ₐ[R] A)} (hg : g ∈ levi A l) :
-    constPoint A g ∈ levi (LaurentPolynomial A) l := by
-  simpa only [Subgroup.mem_comap, constPoint_apply, AlgHom.mapValue_apply] using
-    levi_le_comap (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) hg
-
 /-- **The normalizer of the dynamic Levi in the dynamic parabolic, on points.** A point `p` of
 `P(λ)` conjugates the generic point `λ(T)` into `Z(λ)` exactly when `p` lies in `Z(λ)`. -/
 theorem conj_genericPoint_mem_levi_iff (l : H →ₐc[R] LaurentPolynomial R)
     {p : WithConv (H →ₐ[R] A)} (hp : p ∈ parabolic A l) :
     constPoint A p * genericPoint A l * (constPoint A p)⁻¹ ∈ levi (LaurentPolynomial A) l ↔
       p ∈ levi A l := by
-  refine ⟨fun h => ?_, fun h => mul_mem (mul_mem (constPoint_mem_levi l h)
-    (genericPoint_mem_levi l)) (inv_mem (constPoint_mem_levi l h))⟩
+  refine ⟨fun h => ?_, fun h => mul_mem (mul_mem (constPoint_mem_levi h)
+    (genericPoint_mem_levi l)) (inv_mem (constPoint_mem_levi h))⟩
   obtain ⟨u, hu, z, hz, rfl⟩ := exists_mem_unipotent_mem_levi hp
   -- The Levi factor `z` commutes with `λ(T)`, so `u` alone conjugates `λ(T)` into the Levi.
   have hzT : constPoint A z * genericPoint A l * (constPoint A z)⁻¹ = genericPoint A l := by
@@ -115,14 +102,12 @@ theorem conj_genericPoint_mem_levi_iff (l : H →ₐc[R] LaurentPolynomial R)
   -- The commutator of `u` with `λ(T)` lies in both the unipotent and the Levi subgroup.
   have hw : constPoint A u * conjugate A l u⁻¹ ∈
       unipotent (LaurentPolynomial A) l ⊓ levi (LaurentPolynomial A) l := by
-    have hcu : constPoint A u ∈ unipotent (LaurentPolynomial A) l := by
-      simpa only [Subgroup.mem_comap, constPoint_apply, AlgHom.mapValue_apply] using
-        unipotent_le_comap (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) hu
     have hc : constPoint A u * conjugate A l u⁻¹ =
         constPoint A u * genericPoint A l * (constPoint A u)⁻¹ * (genericPoint A l)⁻¹ := by
       rw [conjugate_apply, map_inv]
       group
-    refine Subgroup.mem_inf.mpr ⟨mul_mem hcu (conjugate_mem_unipotent (inv_mem hu)), ?_⟩
+    refine Subgroup.mem_inf.mpr
+      ⟨mul_mem (constPoint_mem_unipotent hu) (conjugate_mem_unipotent (inv_mem hu)), ?_⟩
     rw [hc]
     exact mul_mem hu' (inv_mem (genericPoint_mem_levi l))
   rw [unipotent_inf_levi, Subgroup.mem_bot, mul_eq_one_iff_eq_inv, ← map_inv, inv_inv] at hw
@@ -149,10 +134,8 @@ noncomputable def conjCocharacter (l : H →ₐc[R] LaurentPolynomial R)
 @[simp]
 theorem conjCocharacter_apply (l : H →ₐc[R] LaurentPolynomial R) (g : WithConv (H →ₐ[R] R))
     (h : H) : l.conjCocharacter g h = l (HopfAlgebra.pointConjugationAlgHom g h) := by
-  rw [conjCocharacter, comp_apply, ← HopfAlgebra.pointConjugationBialgEquiv_toAlgHom]
-  -- The bialgebra equivalence and its underlying algebra map have the same coercion to a
-  -- function; no rewriting lemma relates these two coercions.
-  rfl
+  rw [conjCocharacter, comp_apply]
+  exact congrArg l (DFunLike.congr_fun (HopfAlgebra.pointConjugationBialgEquiv_toAlgHom g) h)
 
 /-- Conjugating by the identity point does not change a cocharacter. -/
 @[simp]
@@ -186,11 +169,6 @@ theorem genericPoint_conjCocharacter (l : H →ₐc[R] LaurentPolynomial R)
         (AlgHom.mapValue (H := H) (Algebra.ofId R (LaurentPolynomial A)) g)⁻¹ := by
   rw [genericPoint_eq_pointsHom, genericPoint_eq_pointsHom, pointsHom_conjCocharacter]
 
-private theorem surjective_pointConjugationBialgEquiv (g : WithConv (H →ₐ[R] R)) :
-    Function.Surjective (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom := by
-  simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-    EquivLike.surjective (HopfAlgebra.pointConjugationBialgEquiv g)
-
 /-- **The dynamic parabolic of a conjugate cocharacter** is the conjugate parabolic:
 `P(gλg⁻¹) = gP(λ)g⁻¹`. -/
 theorem conj_mem_parabolic_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomial R)
@@ -200,7 +178,7 @@ theorem conj_mem_parabolic_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomi
         parabolic A (l.conjCocharacter g) ↔ x ∈ parabolic A l := by
   rw [← HopfAlgebra.mapDomain_pointConjugationBialgEquiv, conjCocharacter]
   exact (mem_parabolic_iff_of_surjective _
-    (surjective_pointConjugationBialgEquiv g) l x).symm
+    (HopfAlgebra.surjective_pointConjugationBialgEquiv g) l x).symm
 
 /-- **The dynamic Levi of a conjugate cocharacter** is the conjugate Levi:
 `Z(gλg⁻¹) = gZ(λ)g⁻¹`. -/
@@ -210,7 +188,8 @@ theorem conj_mem_levi_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomial R)
           (AlgHom.mapValue (H := H) (Algebra.ofId R A) g)⁻¹ ∈
         levi A (l.conjCocharacter g) ↔ x ∈ levi A l := by
   rw [← HopfAlgebra.mapDomain_pointConjugationBialgEquiv, conjCocharacter]
-  exact (mem_levi_iff_of_surjective _ (surjective_pointConjugationBialgEquiv g) l x).symm
+  exact (mem_levi_iff_of_surjective _
+    (HopfAlgebra.surjective_pointConjugationBialgEquiv g) l x).symm
 
 /-- **The dynamic unipotent subgroup of a conjugate cocharacter** is the conjugate subgroup:
 `U(gλg⁻¹) = gU(λ)g⁻¹`. -/
@@ -221,7 +200,7 @@ theorem conj_mem_unipotent_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomi
         unipotent A (l.conjCocharacter g) ↔ x ∈ unipotent A l := by
   rw [← HopfAlgebra.mapDomain_pointConjugationBialgEquiv, conjCocharacter]
   exact (mem_unipotent_iff_of_surjective _
-    (surjective_pointConjugationBialgEquiv g) l x).symm
+    (HopfAlgebra.surjective_pointConjugationBialgEquiv g) l x).symm
 
 /-- Conjugating by a point of the dynamic parabolic does not change it: `P(pλp⁻¹) = P(λ)` for a
 rational point `p` of `P(λ)`. -/
@@ -262,27 +241,11 @@ universe u v
 
 variable {R : Type u} {H : Type v} [CommRing R] [CommRing H] [HopfAlgebra R H]
 
-/-- A Hopf ideal whose points are the `g`-conjugates of the points of `I` is the conjugate of
-`I` by `g`. -/
-private theorem eq_conjugate_of_forall_conj_mem {I J : HopfIdeal R H} (g : WithConv (H →ₐ[R] R))
-    (h : ∀ (A : CommAlgCat.{v} R) (x : WithConv (H →ₐ[R] A)),
-      AlgHom.mapValue (H := H) (Algebra.ofId R A) g * x *
-          (AlgHom.mapValue (H := H) (Algebra.ofId R A) g)⁻¹ ∈
-        CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) J A ↔
-      x ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A) :
-    J = I.conjugate g := by
-  apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq (H := _root_.CommHopfAlgCat.of R H)
-  intro A
-  ext x
-  set q := AlgHom.mapValue (H := H) (Algebra.ofId R A) g
-  have hx : x = q * (q⁻¹ * x * q) * q⁻¹ := by group
-  rw [hx, h, CommHopfAlgCat.pointConjugation_mem_conjugate_iff]
-
 /-- The defining Hopf ideal of `P(gλg⁻¹)` is the `g`-conjugate of that of `P(λ)`. -/
 theorem parabolicDefiningHopfIdeal_conjCocharacter (l : H →ₐc[R] LaurentPolynomial R)
     (g : WithConv (H →ₐ[R] R)) :
     parabolicDefiningHopfIdeal (l.conjCocharacter g) = (parabolicDefiningHopfIdeal l).conjugate g :=
-  eq_conjugate_of_forall_conj_mem g <| by
+  HopfIdeal.eq_conjugate_of_forall_mem_iff g <| by
     rintro ⟨A⟩ x
     rw [quotientPointsSubgroup_parabolicDefiningHopfIdeal,
       quotientPointsSubgroup_parabolicDefiningHopfIdeal]
@@ -292,7 +255,7 @@ theorem parabolicDefiningHopfIdeal_conjCocharacter (l : H →ₐc[R] LaurentPoly
 theorem leviDefiningHopfIdeal_conjCocharacter (l : H →ₐc[R] LaurentPolynomial R)
     (g : WithConv (H →ₐ[R] R)) :
     leviDefiningHopfIdeal (l.conjCocharacter g) = (leviDefiningHopfIdeal l).conjugate g :=
-  eq_conjugate_of_forall_conj_mem g fun A x => by
+  HopfIdeal.eq_conjugate_of_forall_mem_iff g fun A x => by
     rw [quotientPointsSubgroup_leviDefiningHopfIdeal, quotientPointsSubgroup_leviDefiningHopfIdeal]
     exact conj_mem_levi_conjCocharacter_iff l g x
 
@@ -300,7 +263,7 @@ theorem leviDefiningHopfIdeal_conjCocharacter (l : H →ₐc[R] LaurentPolynomia
 theorem unipotentDefiningHopfIdeal_conjCocharacter (l : H →ₐc[R] LaurentPolynomial R)
     (g : WithConv (H →ₐ[R] R)) :
     (l.conjCocharacter g).unipotentDefiningHopfIdeal = l.unipotentDefiningHopfIdeal.conjugate g :=
-  eq_conjugate_of_forall_conj_mem g <| by
+  HopfIdeal.eq_conjugate_of_forall_mem_iff g <| by
     rintro ⟨A⟩ x
     rw [quotientPointsSubgroup_unipotentDefiningHopfIdeal,
       quotientPointsSubgroup_unipotentDefiningHopfIdeal]
@@ -358,15 +321,11 @@ theorem conjugate_leviDefiningHopfIdeal_eq_self_iff (l : H →ₐc[R] LaurentPol
         rw [quotientPointsSubgroup_leviDefiningHopfIdeal]
         exact genericPoint_mem_levi l)
     rw [h, quotientPointsSubgroup_leviDefiningHopfIdeal] at hmem
-    have hconst : AlgHom.mapValue (H := H) (Algebra.ofId R (LaurentPolynomial R)) p =
-        constPoint R p := by
-      rw [constPoint_apply, AlgHom.mapValue_apply]
-      -- Both sides use an `R`-algebra map `R → R[T;T⁻¹]`, and there is only one such map.
-      congr 2
-    rw [hconst] at hmem
+    rw [← constPoint_mapValue_ofId, Algebra.ofId_self, AlgHom.mapValue_id,
+      MonoidHom.id_apply] at hmem
     exact (conj_genericPoint_mem_levi_iff l hp).mp hmem
   · intro hz
-    refine (eq_conjugate_of_forall_conj_mem p fun A x => ?_).symm
+    refine (HopfIdeal.eq_conjugate_of_forall_mem_iff p fun A x => ?_).symm
     have hq : AlgHom.mapValue (H := H) (Algebra.ofId R A) p ∈ levi A l :=
       levi_le_comap (Algebra.ofId R A) hz
     rw [quotientPointsSubgroup_leviDefiningHopfIdeal,

@@ -307,6 +307,12 @@ theorem pointsHom_mem_levi (u : Aˣ) : pointsHom A l u ∈ levi A l := by
     mul_assoc,
     mul_inv_cancel, mul_one]
 
+variable (l) in
+/-- The generic point `λ(T)` of a cocharacter lies in its own Levi subgroup. -/
+theorem genericPoint_mem_levi : genericPoint A l ∈ levi (LaurentPolynomial A) l := by
+  rw [genericPoint_eq_pointsHom]
+  exact pointsHom_mem_levi _
+
 /-- For a commutative affine group every point is fixed by conjugation, so the dynamic Levi
 subgroup attached to any cocharacter is everything. -/
 theorem levi_eq_top [Coalgebra.IsCocomm R H] : levi A l = ⊤ :=
@@ -366,6 +372,19 @@ theorem unipotent_le_comap : unipotent A l ≤ (unipotent B l).comap (AlgHom.map
   rw [← mapValue_limit φ ⟨g, hgP⟩, hg1, map_one]
 
 end Functoriality
+
+/-- Constant points of the Levi subgroup are Laurent-valued points of the Levi subgroup. -/
+theorem constPoint_mem_levi {g : WithConv (H →ₐ[R] A)} (hg : g ∈ levi A l) :
+    constPoint A g ∈ levi (LaurentPolynomial A) l := by
+  simpa only [Subgroup.mem_comap, constPoint_apply, AlgHom.mapValue_apply] using
+    levi_le_comap (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) hg
+
+/-- Constant points of the unipotent subgroup are Laurent-valued points of the unipotent
+subgroup. -/
+theorem constPoint_mem_unipotent {g : WithConv (H →ₐ[R] A)} (hg : g ∈ unipotent A l) :
+    constPoint A g ∈ unipotent (LaurentPolynomial A) l := by
+  simpa only [Subgroup.mem_comap, constPoint_apply, AlgHom.mapValue_apply] using
+    unipotent_le_comap (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) hg
 
 /-! ### The limit lies in the Levi subgroup -/
 
