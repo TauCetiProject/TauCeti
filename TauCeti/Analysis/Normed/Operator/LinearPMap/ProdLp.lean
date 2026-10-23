@@ -134,8 +134,10 @@ theorem dense_withLpProdMap_domain_iff :
     Dense ((f.withLpProdMap p g).domain : Set (WithLp p (E × F))) ↔
       Dense (f.domain : Set E) ∧ Dense (g.domain : Set F) := by
   have hdom : ((f.withLpProdMap p g).domain : Set (WithLp p (E × F))) =
-      homeomorphProd p E F ⁻¹' ((f.domain : Set E) ×ˢ (g.domain : Set F)) :=
-    Set.ext fun _ => mem_withLpProdMap_domain
+      homeomorphProd p E F ⁻¹' ((f.domain : Set E) ×ˢ (g.domain : Set F)) := by
+    -- Mathlib has no apply lemma for `homeomorphProd`; evaluate it through its `toEquiv`.
+    ext x
+    simp [← Homeomorph.coe_toEquiv]
   rw [hdom, (homeomorphProd p E F).isOpenQuotientMap.dense_preimage_iff, dense_iff_closure_eq,
     closure_prod_eq, prod_eq_univ, ← dense_iff_closure_eq, ← dense_iff_closure_eq]
 
@@ -162,8 +164,12 @@ theorem isClosed_withLpProdMap_iff : (f.withLpProdMap p g).IsClosed ↔ f.IsClos
     ((homeomorphProd p E F).prodCongr (homeomorphProd p E' F')).trans
       (Homeomorph.prodProdProdComm E F E' F')
   have hgraph : ((f.withLpProdMap p g).graph : Set (WithLp p (E × F) × WithLp p (E' × F'))) =
-      Φ ⁻¹' ((f.graph : Set (E × E')) ×ˢ (g.graph : Set (F × F'))) :=
-    Set.ext fun _ => mem_graph_withLpProdMap_iff
+      Φ ⁻¹' ((f.graph : Set (E × E')) ×ˢ (g.graph : Set (F × F'))) := by
+    ext z
+    rw [SetLike.mem_coe, mem_graph_withLpProdMap_iff, mem_preimage]
+    simp only [Φ, Homeomorph.trans_apply, Homeomorph.coe_prodCongr]
+    -- `homeomorphProd` and `prodProdProdComm` have no apply lemmas; evaluate them as equivalences.
+    simp [← Homeomorph.coe_toEquiv, Homeomorph.prodProdProdComm]
   -- Both graphs contain `0`, so the closure of their product determines each closure.
   have hne : ((f.graph : Set (E × E')) ×ˢ (g.graph : Set (F × F'))).Nonempty :=
     ⟨(0, 0), f.graph.zero_mem, g.graph.zero_mem⟩
