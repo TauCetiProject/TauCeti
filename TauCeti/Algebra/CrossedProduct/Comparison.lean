@@ -254,8 +254,11 @@ variable {K : Type} [Field K]
 
 /-- The absolute Galois group is locally compact, being compact and Hausdorff. Instance search
 does not find this within its default budget under the imports of this file, so it is assembled
-here from the Krull topology being Hausdorff. -/
-private local instance : LocallyCompactSpace (AbsoluteGaloisGroup K) :=
+here from the Krull topology being Hausdorff. It is public because the statement of
+`brauerCohomologyEquiv_apply` uses it, and named so that it does not clash with the anonymous
+local instance of `TauCeti.FieldTheory.GaloisCohomology.BrauerTorsion` in modules importing both. -/
+local instance locallyCompactSpace_absoluteGaloisGroup :
+    LocallyCompactSpace (AbsoluteGaloisGroup K) :=
   have : R1Space (AbsoluteGaloisGroup K) := @T2Space.r1Space _ _ krullTopology_t2
   have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup K) :=
     ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
@@ -276,7 +279,7 @@ def brauerCohomologyEquiv :
 
 /-- For `K : Type`, the continuous comparison is the explicit one read in Mathlib's continuous
 cohomology. -/
-private theorem brauerCohomologyEquiv_apply (x : Additive (BrauerGroup K)) :
+theorem brauerCohomologyEquiv_apply (x : Additive (BrauerGroup K)) :
     brauerCohomologyEquiv K x =
       explicitH2AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K)
         (brauerExplicitH2Equiv K x) :=
