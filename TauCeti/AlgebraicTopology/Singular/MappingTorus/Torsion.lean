@@ -28,8 +28,8 @@ the fibre in `Hₙ₊₁(T_φ)` with the cokernel of `𝟙 - φ_*` on `Hₙ₊�
 Suppose `k` is a domain, `Hₙ₊₁(F)` is free of finite rank, `det (𝟙 - φ_*) ≠ 0` on it, and
 `Hₙ(F)` is torsion-free. The cokernel of `𝟙 - φ_*` is then killed by `det (𝟙 - φ_*)`, while the
 quotient of `Hₙ₊₁(T_φ)` by the image of the fibre embeds in `Hₙ(F)`. Hence the image of the fibre
-is exactly the torsion submodule of `Hₙ₊₁(T_φ)`. Over a principal ideal domain it has as many
-elements as `k ⧸ (det (𝟙 - φ_*))`, and over `ℤ` its order is `|det (𝟙 - φ_*)|`.
+is exactly the torsion submodule of `Hₙ₊₁(T_φ)`. Over a principal ideal domain its `Nat.card`
+equals that of `k ⧸ (det (𝟙 - φ_*))`, and over `ℤ` it is finite of order `|det (𝟙 - φ_*)|`.
 
 In degree one the torsion-freeness hypothesis always holds, since `H₀(F)` is free on the path
 components of `F`. When `H₁(F; ℤ)` is free of finite rank, as for a closed orientable surface, and
@@ -38,12 +38,10 @@ cokernel of `1 - φ_*`, and its order as `|det (1 - φ_*)|`.
 
 ## Main results
 
-* `TauCeti.MappingTorus.wangCokernelEquiv`: the cokernel of `𝟙 - φ_*` on `Hₙ(F)` is isomorphic
-  to the image of the fibre inclusion in `Hₙ(T_φ)`.
 * `TauCeti.MappingTorus.torsion_homology_eq_range_homologyMap_fibreInclusionChainMap`: the
   torsion submodule of `Hₙ₊₁(T_φ)` is the image of the fibre, under the hypotheses above.
 * `TauCeti.MappingTorus.card_torsion_homology_eq_card_quotient_span_det`: over a principal ideal
-  domain, this torsion submodule has as many elements as `k ⧸ (det (𝟙 - φ_*))`.
+  domain, this torsion submodule has the same `Nat.card` as `k ⧸ (det (𝟙 - φ_*))`.
 * `TauCeti.MappingTorus.card_torsion_homology_one_eq_natAbs_det`: the integral Wang
   torsion order, `#(H₁(T_φ; ℤ))_tors = |det (1 - φ_*)|`.
 
@@ -61,43 +59,6 @@ universe w
 namespace TauCeti.MappingTorus
 
 variable {k : Type w} [CommRing k] {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ F)
-
-/-- The kernel of the map `Hₙ(F) → Hₙ(T_φ)` induced by the fibre inclusion is the image of
-`𝟙 - φ_*`. -/
-theorem ker_homologyMap_fibreInclusionChainMap (n : ℕ) :
-    LinearMap.ker (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) n).hom =
-      LinearMap.range
-        (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom) := by
-  have := (wang_exact₂ φ (ModuleCat.of k k) n).moduleCat_range_eq_ker
-  simp only [homologyMap_wangEndomorphism, ModuleCat.hom_sub, ModuleCat.hom_id] at this
-  exact this.symm
-
-/-- The image of the map `Hₙ₊₁(F) → Hₙ₊₁(T_φ)` induced by the fibre inclusion is the kernel of
-the Wang connecting morphism `Hₙ₊₁(T_φ) → Hₙ(F)`. -/
-theorem range_homologyMap_fibreInclusionChainMap (n : ℕ) :
-    LinearMap.range (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) (n + 1)).hom =
-      LinearMap.ker (wangδ φ (ModuleCat.of k k) n).hom :=
-  (wang_exact₃ φ (ModuleCat.of k k) n).moduleCat_range_eq_ker
-
-/-- **The Wang cokernel.** The cokernel of `𝟙 - φ_*` on `Hₙ(F)` is isomorphic, through the fibre
-inclusion, to the image of `Hₙ(F)` in `Hₙ(T_φ)`. -/
-def wangCokernelEquiv (n : ℕ) :
-    ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj (ModuleCat.of k k)).obj
-        (TopCat.of F)).homology n ⧸ LinearMap.range
-          (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom)) ≃ₗ[k]
-      LinearMap.range (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) n).hom :=
-  (Submodule.quotEquivOfEq _ _ (ker_homologyMap_fibreInclusionChainMap φ n).symm).trans
-    (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) n).hom.quotKerEquivRange
-
-/-- The Wang cokernel isomorphism sends the class of `x` to the image of `x` under the fibre
-inclusion. -/
-@[simp]
-theorem coe_wangCokernelEquiv_mk (n : ℕ)
-    (x : (((singularChainComplexFunctor (ModuleCat.{w} k)).obj (ModuleCat.of k k)).obj
-      (TopCat.of F)).homology n) :
-    (wangCokernelEquiv φ n (Submodule.Quotient.mk x) : _) =
-      (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) n).hom x :=
-  (rfl)
 
 /-- If `Hₙ(F)` is torsion-free, every torsion class of `Hₙ₊₁(T_φ)` comes from the fibre: the Wang
 connecting morphism sends it to a torsion class of `Hₙ(F)`, hence to zero. -/
@@ -153,7 +114,8 @@ theorem torsion_homology_eq_range_homologyMap_fibreInclusionChainMap (n : ℕ)
 
 /-- **The order of the torsion of the homology of a mapping torus** over a principal ideal domain:
 under the hypotheses of `torsion_homology_eq_range_homologyMap_fibreInclusionChainMap`, the
-torsion submodule of `Hₙ₊₁(T_φ)` has as many elements as `k ⧸ (det (𝟙 - φ_*))`. -/
+torsion submodule of `Hₙ₊₁(T_φ)` has the same `Nat.card` as `k ⧸ (det (𝟙 - φ_*))`. Both sides
+are `0` when these modules are infinite. -/
 theorem card_torsion_homology_eq_card_quotient_span_det [IsPrincipalIdealRing k] (n : ℕ)
     [Module.Free k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj
       (ModuleCat.of k k)).obj (TopCat.of F)).homology (n + 1))]
