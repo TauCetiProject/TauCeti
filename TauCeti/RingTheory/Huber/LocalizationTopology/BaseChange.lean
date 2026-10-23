@@ -77,10 +77,11 @@ localisations `S` and `S'` are arbitrary, as for
   the descent `Â⟨T'/s'⟩ → A⟨T/s⟩`, which needs only `s'` and each numerator in `T'` to come
   from `A`.
 * `TauCeti.Huber.PairOfDefinition.coe_completionLocCompletionEquiv`,
+  `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv_apply`,
   `TauCeti.Huber.PairOfDefinition.continuous_completionLocCompletionEquiv`,
   `TauCeti.Huber.PairOfDefinition.continuous_completionLocCompletionEquiv_symm`,
-  `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv_comp_toCompletionLoc` and
-  `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv_symm_comp_toCompletionLoc`: the
+  `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv_coe_comp_toCompletionLoc` and
+  `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv_symm_coe_comp_toCompletionLoc`: the
   isomorphism is the base change along `A → Â`, it is a homeomorphism, and both directions are
   compatible with the structure maps.
 
@@ -654,6 +655,36 @@ theorem coe_completionLocCompletionEquiv :
       Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT :=
   (rfl)
 
+/-- **The isomorphism is the base change along `A → Â`**, applied to an element. -/
+@[simp]
+theorem completionLocCompletionEquiv_apply :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    ∀ x : Completion S, completionLocCompletionEquiv P T s S hden P' T' s' S' hden' hs hT hT' x =
+      completionLocMap P T s S hden P' Completion.coeRingHom
+        Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT x :=
+  fun _ ↦ rfl
+
+/-- The inverse of the isomorphism is the descent map of
+`existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom`: `RingEquiv.ofRingHom` keeps
+the given inverse (`RingEquiv.ofRingHom_symm` holds by `rfl`). -/
+private theorem coe_completionLocCompletionEquiv_symm :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    ((completionLocCompletionEquiv P T s S hden P' T' s' S' hden' hs hT hT').symm :
+      Completion S' →+* Completion S) =
+      (existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P T s S hden P' T' s'
+        S' hden' hs hT').choose :=
+  (rfl)
+
 /-- The isomorphism `A⟨T/s⟩ ≃+* Â⟨T'/s'⟩` is continuous. -/
 theorem continuous_completionLocCompletionEquiv :
     letI := locUniformSpace P T s S hden
@@ -688,13 +719,14 @@ theorem continuous_completionLocCompletionEquiv_symm :
   let _ := locUniformSpace P' T' s' S' hden'
   have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
   have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  rw [← RingEquiv.coe_toRingHom, coe_completionLocCompletionEquiv_symm]
   exact (existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P T s S hden P' T'
     s' S' hden' hs hT').choose_spec.1.1
 
 /-- **The isomorphism is compatible with the structure maps**: `A → A⟨T/s⟩` followed by it is
 `A → Â → Â⟨T'/s'⟩`. -/
 @[simp]
-theorem completionLocCompletionEquiv_comp_toCompletionLoc :
+theorem completionLocCompletionEquiv_coe_comp_toCompletionLoc :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
@@ -718,7 +750,7 @@ theorem completionLocCompletionEquiv_comp_toCompletionLoc :
 /-- **The inverse is compatible with the structure maps**: `Â → Â⟨T'/s'⟩` followed by it is the
 extension `Â → A⟨T/s⟩` of the structure map of `A`. -/
 @[simp]
-theorem completionLocCompletionEquiv_symm_comp_toCompletionLoc :
+theorem completionLocCompletionEquiv_symm_coe_comp_toCompletionLoc :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
@@ -735,6 +767,7 @@ theorem completionLocCompletionEquiv_symm_comp_toCompletionLoc :
   let _ := locUniformSpace P' T' s' S' hden'
   have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
   have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  rw [coe_completionLocCompletionEquiv_symm]
   exact (existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P T s S hden P' T'
     s' S' hden' hs hT').choose_spec.1.2
 
