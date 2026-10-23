@@ -31,6 +31,7 @@ transition matrix between two such bases is block upper triangular
 * `Module.Basis.ofExactLift`: the basis of `B` assembled from `a`, `c` and the lifts `s`.
 * `Module.Basis.eq_ofExactLift`: every basis of `B` made of the image of `a` followed by lifts
   of `c` is of this form.
+* `Module.Basis.eq_reindex_ofExactLift`: the same for a basis indexed by `Fin (m + n)`.
 * `Module.Basis.ofExactLift_det_eq_mul`: the determinant with respect to such a basis of a family
   made of images of a family `x` of `A` and of lifts of a family `y` of `C` is
   `a.det x * c.det y`.
@@ -129,6 +130,22 @@ theorem eq_ofExactLift (b : Basis (κ ⊕ σ) R B) (hb : ∀ i, b (.inl i) = f (
     (hb' : ∀ j, g (b (.inr j)) = c j) :
     b = ofExactLift hf hfg a c (fun j ↦ b (.inr j)) hb' :=
   eq_of_apply_eq fun | .inl i => by simp [hb] | .inr j => by simp
+
+/-- A basis of `B` indexed by `Fin (m + n)` that is the image of the basis `a` of `A` on the first
+`m` indices, and whose last `n` vectors lift the basis `c` of `C`, is the basis `ofExactLift`
+with these lifts, reindexed by `finSumFinEquiv`. -/
+theorem eq_reindex_ofExactLift {m n : ℕ} (a : Basis (Fin m) R A) (c : Basis (Fin n) R C)
+    (b : Basis (Fin (m + n)) R B) (hb : ∀ i, b (Fin.castAdd n i) = f (a i))
+    (hb' : ∀ j, g (b (Fin.natAdd m j)) = c j) :
+    b = (ofExactLift hf hfg a c (fun j ↦ b (Fin.natAdd m j)) hb').reindex finSumFinEquiv :=
+  calc b = (b.reindex finSumFinEquiv.symm).reindex finSumFinEquiv :=
+        eq_of_apply_eq fun _ ↦ by simp
+    _ = _ := by
+      rw [eq_ofExactLift hf hfg a c (b.reindex finSumFinEquiv.symm) (by simp [hb])
+        fun j ↦ by simpa using hb' j]
+      congr 2
+      ext j
+      simp
 
 section CommSemiring
 

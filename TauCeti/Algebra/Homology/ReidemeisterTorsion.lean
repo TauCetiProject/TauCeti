@@ -267,16 +267,21 @@ theorem reidemeisterTorsion_eq_zero_iff (hn : {i | n i ≠ 0}.Finite) :
   ⟨fun h₀ h ↦ C.reidemeisterTorsion_ne_zero c hn h h₀, C.reidemeisterTorsion_of_not_acyclic c⟩
 
 include c in
+/-- The boundaries vanish in a degree where the complex vanishes. -/
+private theorem finrank_range_d_eq_zero {j : ℤ} (hj : n j = 0) :
+    finrank F (LinearMap.range (C.d (j + 1) j).hom) = 0 := by
+  have : Module.Finite F (C.X j) := .of_basis (c j)
+  have hle := Submodule.finrank_le (LinearMap.range (C.d (j + 1) j).hom)
+  rwa [finrank_eq_card_basis (c j), Fintype.card_fin, hj, Nat.le_zero] at hle
+
+include c in
 /-- The determinant of one basis of the boundaries with respect to another is `1` in a degree
 where the complex vanishes. -/
 private theorem det_eq_one_of_eq_zero {j : ℤ} (hj : n j = 0)
     (b b' : Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) F
       (LinearMap.range (C.d (j + 1) j).hom)) : b.det b' = 1 := by
-  have : Module.Finite F (C.X j) := .of_basis (c j)
-  have hle := Submodule.finrank_le (LinearMap.range (C.d (j + 1) j).hom)
-  rw [finrank_eq_card_basis (c j), Fintype.card_fin, hj, Nat.le_zero] at hle
   have : IsEmpty (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) := by
-    rw [hle]; infer_instance
+    rw [finrank_range_d_eq_zero C c hj]; infer_instance
   simp
 
 section Bounded
@@ -558,21 +563,6 @@ variable {n' n'' : ℤ → ℕ} {c' : ∀ i, Basis (Fin (n' i)) F (C'.X i)}
   (hc' : ∀ i k, c i (Fin.castAdd (n'' i) k) = (f.f i).hom (c' i k))
   (hc'' : ∀ i k, (g.f i).hom (c i (Fin.natAdd (n' i) k)) = c'' i k)
 
-include hc' in
-/-- Compatible bases of a short exact sequence: the basis of the middle term is the basis
-`ofExactLift` assembled from the bases of the outer terms. -/
-private theorem eq_reindex_ofExactLift (i : ℤ) :
-    c i = (Basis.ofExactLift (hf i) (hfg i) (c' i) (c'' i) (fun k ↦ c i (Fin.natAdd (n' i) k))
-      (hc'' i)).reindex finSumFinEquiv :=
-  calc c i = ((c i).reindex finSumFinEquiv.symm).reindex finSumFinEquiv :=
-        Basis.eq_of_apply_eq fun _ ↦ by simp
-    _ = _ := by
-      rw [Basis.eq_ofExactLift (hf i) (hfg i) (c' i) (c'' i) ((c i).reindex finSumFinEquiv.symm)
-        (by simp [hc']) fun k ↦ by simpa using hc'' i k]
-      congr 2
-      ext k
-      simp
-
 include hc' hc'' in
 /-- The bracket of the middle term of a based short exact sequence of acyclic complexes, for the
 boundary bases `shortExactBoundaryBasis`, is the product of the brackets of the outer terms, up to
@@ -612,7 +602,9 @@ private theorem torsionBracket_shortExactBoundaryBasis (hC : C.ExactAt (j + 1))
   rw [show Fin.cast (show n' (j + 1) + n'' (j + 1) = p' + p'' + (q' + q'') by omega) =
       Fin.cast (show p' + q' + (p'' + q'') = p' + p'' + (q' + q'') by omega) ∘ finCongr hN
       from funext fun _ ↦ by simp,
-    ← Function.comp_assoc, hsw, eq_reindex_ofExactLift hf hfg hc' hc'', Basis.det_reindex,
+    ← Function.comp_assoc, hsw,
+    Basis.eq_reindex_ofExactLift (hf (j + 1)) (hfg (j + 1)) (c' (j + 1)) (c'' (j + 1)) _
+      (hc' (j + 1)) (hc'' (j + 1)), Basis.det_reindex,
     Basis.ofExactLift_det_eq_mul _ _ _ _ _ _
       (Fin.append (fun k ↦ (b'₁ k : C'.X (j + 1))) s' ∘ Fin.cast hn')
       (Fin.append (fun k ↦ (b''₁ k : C''.X (j + 1))) (fun k ↦ (g.f (j + 1)).hom (t₀ k)) ∘
@@ -634,6 +626,31 @@ private theorem torsionBracket_shortExactBoundaryBasis (hC : C.ExactAt (j + 1))
     rw [Function.comp_apply, Function.comp_apply, hr]
     induction m using Fin.addCases <;> simp [← Hom.comm_apply, ht₁]
 
+/-- If the middle term of a sequence of based complexes is unbounded, then so is one of the outer
+terms, so both sides of the multiplicativity formula are `0`, whatever the sign `ε`. -/
+private theorem reidemeisterTorsion_eq_mul_of_not_finite {C₁ C₂ C₃ : ChainComplex (ModuleCat F) ℤ}
+    {n₁ n₃ : ℤ → ℕ} (c₁ : ∀ i, Basis (Fin (n₁ i)) F (C₁.X i))
+    (c₃ : ∀ i, Basis (Fin (n₃ i)) F (C₃.X i)) (c₂ : ∀ i, Basis (Fin (n₁ i + n₃ i)) F (C₂.X i))
+    (hn : ¬{i | n₁ i + n₃ i ≠ 0}.Finite) (ε : F) :
+    C₂.reidemeisterTorsion c₂ = ε * (C₁.reidemeisterTorsion c₁ * C₃.reidemeisterTorsion c₃) := by
+  rw [reidemeisterTorsion_of_not_finite C₂ c₂ hn]
+  by_cases hn₁ : {i | n₁ i ≠ 0}.Finite
+  · have hn₃ : ¬{i | n₃ i ≠ 0}.Finite := fun hn₃ ↦
+      hn ((hn₁.union hn₃).subset fun i hi ↦ by
+        simp only [Set.mem_union, Set.mem_ofPred_eq] at hi ⊢; omega)
+    simp [reidemeisterTorsion_of_not_finite C₃ c₃ hn₃]
+  · simp [reidemeisterTorsion_of_not_finite C₁ c₁ hn₁]
+
+/-- The Koszul sign of the multiplicativity formula has finite support when `C₁` is bounded,
+since its factor in degree `j` is `1` whenever the boundaries of `C₁` vanish in degree `j`. -/
+private theorem hasFiniteMulSupport_neg_one_pow_finrank {C₁ C₃ : ChainComplex (ModuleCat F) ℤ}
+    {n₁ : ℤ → ℕ} (c₁ : ∀ i, Basis (Fin (n₁ i)) F (C₁.X i)) (hn₁ : {i | n₁ i ≠ 0}.Finite) :
+    Function.HasFiniteMulSupport fun j : ℤ ↦
+      (-1 : F) ^ (finrank F (LinearMap.range (C₃.d (j + 1 + 1) (j + 1)).hom) *
+        finrank F (LinearMap.range (C₁.d (j + 1) j).hom)) :=
+  hn₁.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
+    simp [finrank_range_d_eq_zero C₁ c₁ (j := j) (by simpa using hj)]
+
 /-- **Multiplicativity of the torsion.** Let `0 → C₁ → C₂ → C₃ → 0` be a short exact sequence of
 chain complexes of vector spaces, with `C₁` and `C₃` acyclic, and with compatible bases: the basis
 `c₂ i` of `C₂ᵢ` is the image of the basis `c₁ i` of `C₁ᵢ` followed by lifts of the basis `c₃ i` of
@@ -652,13 +669,7 @@ theorem reidemeisterTorsion_eq_mul_of_shortExact {S : ShortComplex (ChainComplex
       (S.X₁.reidemeisterTorsion c₁ * S.X₃.reidemeisterTorsion c₃) := by
   by_cases hn : {i | n₁ i + n₃ i ≠ 0}.Finite
   swap
-  · rw [reidemeisterTorsion_of_not_finite S.X₂ c₂ hn]
-    by_cases hn₁ : {i | n₁ i ≠ 0}.Finite
-    · have hn₃ : ¬{i | n₃ i ≠ 0}.Finite := fun hn₃ ↦
-        hn ((hn₁.union hn₃).subset fun i hi ↦ by
-          simp only [Set.mem_union, Set.mem_ofPred_eq] at hi ⊢; omega)
-      simp [reidemeisterTorsion_of_not_finite S.X₃ c₃ hn₃]
-    · simp [reidemeisterTorsion_of_not_finite S.X₁ c₁ hn₁]
+  · exact reidemeisterTorsion_eq_mul_of_not_finite c₁ c₃ c₂ hn _
   have hn₁ : {i | n₁ i ≠ 0}.Finite :=
     hn.subset fun i hi ↦ by simp only [Set.mem_ofPred_eq] at hi ⊢; omega
   have hn₃ : {i | n₃ i ≠ 0}.Finite :=
@@ -686,15 +697,7 @@ theorem reidemeisterTorsion_eq_mul_of_shortExact {S : ShortComplex (ChainComplex
     (chosenLift S.X₁ c₁) (chosenLift_spec S.X₁ c₁)
   have hτ₃ := hasFiniteMulSupport_torsionBracket (c := c₃) hn₃ h₃ (chosenBasis S.X₃ c₃)
     (fun j k ↦ (S.g.f (j + 1)).hom (t j k)) ht
-  have hε : Function.HasFiniteMulSupport fun j : ℤ ↦
-      (-1 : F) ^ (finrank F (LinearMap.range (S.X₃.d (j + 1 + 1) (j + 1)).hom) *
-        finrank F (LinearMap.range (S.X₁.d (j + 1) j).hom)) :=
-    hn₁.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-      have : Module.Finite F (S.X₁.X j) := .of_basis (c₁ j)
-      have hle := Submodule.finrank_le (LinearMap.range (S.X₁.d (j + 1) j).hom)
-      rw [finrank_eq_card_basis (c₁ j), Fintype.card_fin, show n₁ j = 0 by simpa using hj,
-        Nat.le_zero] at hle
-      simp [hle]
+  have hε := hasFiniteMulSupport_neg_one_pow_finrank (C₃ := S.X₃) c₁ hn₁
   rw [reidemeisterTorsion_eq_finprod hn (hS.acyclic_X₂ h₁ h₃) β s hs,
     reidemeisterTorsion_eq_finprod hn₁ h₁ (chosenBasis S.X₁ c₁) (chosenLift S.X₁ c₁)
       (chosenLift_spec S.X₁ c₁),
