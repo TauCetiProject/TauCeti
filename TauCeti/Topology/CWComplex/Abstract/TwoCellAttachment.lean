@@ -238,19 +238,23 @@ instance instT2Space [T2Space X] : T2Space (TwoCellAttachment γ) :=
 
 /-- `TwoCellAttachment γ` is obtained from `X` by attaching 2-disks, in the sense of Mathlib's
 categorical `AttachCells` structure, along the inclusion of `X`. The cells are the characteristic
-maps `TauCeti.TwoCellAttachment.diskCell γ i` (`TauCeti.TwoCellAttachment.attachCells_cell`). The
-body is exposed so that its cells are indexed by `ι` by definition, which the statement of
-`TauCeti.TwoCellAttachment.attachCells_cell` needs in order to typecheck. -/
-@[expose] def attachCells :
+maps `TauCeti.TwoCellAttachment.diskCell γ i` (`TauCeti.TwoCellAttachment.attachCells_cell`),
+indexed by `ι` through `TauCeti.TwoCellAttachment.attachCellsEquiv`. -/
+def attachCells :
     HomotopicalAlgebra.AttachCells.{u} (TopCat.RelativeCWComplex.basicCell 2)
       (TopCat.ofHom (incl γ)) :=
   (cellAttachmentAttachCells (attachingMap γ)).ofArrowIso
     (Arrow.isoMk (Iso.refl _) (isoCellAttachment γ) (by simp))
 
+/-- The cells of `TauCeti.TwoCellAttachment.attachCells γ` are indexed by `ι`. -/
+def attachCellsEquiv : (attachCells γ).ι ≃ ι :=
+  Equiv.refl _
+
 /-- The cells of `TauCeti.TwoCellAttachment.attachCells γ` are the characteristic maps of the
 squares, read on the disk. -/
 @[simp]
-lemma attachCells_cell (i : ι) : (attachCells γ).cell i = diskCell γ i :=
+lemma attachCells_cell (i : ι) :
+    (attachCells γ).cell ((attachCellsEquiv γ).symm i) = diskCell γ i :=
   (Category.assoc _ _ _).symm.trans <|
     (congrArg (· ≫ (isoCellAttachment γ).hom) (cellAttachmentAttachCells_cell _ i)).trans
       (cellAttachmentCell_isoCellAttachment_hom γ i)
@@ -296,7 +300,7 @@ def cwComplexCellTwoEquiv :
       (cwComplex γ hX).instRelCWComplex 2 ≃ ι :=
   haveI := hX 2 le_rfl
   ((cwComplexCellEquiv' γ hX 2).trans (Equiv.emptySum _ _)).trans
-    (attachCells γ).toRelativeCWComplexAttachCellsEquiv
+    ((attachCells γ).toRelativeCWComplexAttachCellsEquiv.trans (attachCellsEquiv γ))
 
 /-- The characteristic map of a cell of `X` of dimension `m ≠ 2`, as a cell of
 `TauCeti.TwoCellAttachment.cwComplex`, is its characteristic map in `X` followed by `incl γ`. -/
@@ -317,13 +321,10 @@ lemma map_cwComplexCellTwoEquiv_symm (i : ι) (y : Metric.closedBall (0 : Fin 2 
       diskCell γ i ((diskHomeomorphClosedBall 2).symm y) := by
   have := hX 2 le_rfl
   refine (TopCat.RelativeCWComplex.map_cwComplexTransCellEquiv_symm_inr _ _ _ 2
-    ((attachCells γ).toRelativeCWComplexAttachCellsEquiv.symm i) y).trans ?_
-  rw [HomotopicalAlgebra.AttachCells.toRelativeCWComplex_cells_ι]
-  -- The cells of `attachCells γ` are indexed by `ι` only up to unfolding `attachCells`, which
-  -- `rw` does not do, so the last two steps are congruences.
-  exact (congrArg (fun k ↦ (attachCells γ).cell k ((diskHomeomorphClosedBall 2).symm y))
-    ((attachCells γ).toRelativeCWComplexAttachCellsEquiv.apply_symm_apply i)).trans
-    (congrArg (fun g ↦ g ((diskHomeomorphClosedBall 2).symm y)) (attachCells_cell γ i))
+    ((attachCells γ).toRelativeCWComplexAttachCellsEquiv.symm ((attachCellsEquiv γ).symm i))
+    y).trans ?_
+  rw [HomotopicalAlgebra.AttachCells.toRelativeCWComplex_cells_ι, Equiv.apply_symm_apply,
+    attachCells_cell]
 
 end CWComplex
 
