@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.IsCommutative
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
-public import Mathlib.CategoryTheory.Category.Cat
 public import Mathlib.CategoryTheory.Center.Basic
 public import Mathlib.CategoryTheory.SingleObj
 
@@ -65,7 +64,7 @@ The pseudofunctor and strong-transformation axioms are those of
 * Niles Johnson and Donald Yau, *2-Dimensional Categories*, arXiv:2002.06055, Chapter 4.
 -/
 
-@[expose] public section
+public section
 
 universe w v u
 
@@ -143,8 +142,8 @@ lemma centralUnitIso_associativity_iff (c : G × G → (CatCenter C)ˣ) (g h j :
       (centralUnitIso C (c (j, h * g) * c (h, g) * (c (j, h))⁻¹ * (c (j * h, g))⁻¹)).hom := by
     ext X
     simp [CatCenter.mul_app]
-  rw [key, centralUnitIso_hom_eq_id_iff, mul_inv_eq_one, mul_inv_eq_iff_eq_mul,
-    mul_comm (c (j, h * g)), eq_comm]
+  rw [key, centralUnitIso_hom_eq_id_iff, mul_inv_eq_one, mul_inv_eq_iff_eq_mul]
+  simp only [eq_comm, mul_comm]
 
 /-- The left unit condition of a pseudofunctor out of `LocallyDiscrete (SingleObj G)` with
 identity `1`-cells, central compositors `centralUnitIso C (c (h, g))` at `g ≫ h = h * g` and
@@ -176,7 +175,7 @@ lemma centralUnitIso_right_unitor_iff (c : G × G → (CatCenter C)ˣ) (u : (Cat
 object to `C` and every `g` to the identity functor; its composition comparison at
 `g ≫ h = h * g` is `centralUnitIso C (c (h, g))`, and its unit comparison is
 `centralUnitIso C (c (1, 1))⁻¹`. -/
-def centralCocyclePseudofunctor (c : G × G → (CatCenter C)ˣ)
+@[expose] def centralCocyclePseudofunctor (c : G × G → (CatCenter C)ˣ)
     (hc : ∀ g h j : G, c (g * h, j) * c (g, h) = c (h, j) * c (g, h * j)) :
     LocallyDiscrete (SingleObj G) ⥤ᵖ Cat.{v, w} :=
   LocallyDiscrete.mkPseudofunctor (fun _ ↦ Cat.of C) (fun _ ↦ 𝟙 _)
@@ -269,8 +268,8 @@ lemma centralUnitIso_naturality_comp_iff (b : G → (CatCenter C)ˣ) (c c' : G �
       (centralUnitIso C (b (h * g) * c' (h, g))).hom := by
     ext X
     simp [CatCenter.mul_app]
-  rw [key, key', centralUnitIso_hom_inj, div_mul_eq_mul_div, eq_div_iff_mul_eq']
-  simp only [mul_comm, mul_left_comm]
+  rw [key, key', centralUnitIso_hom_inj, ← eq_inv_mul_iff_mul_eq]
+  simp only [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc]
 
 variable {C}
 
@@ -280,7 +279,7 @@ is `centralUnitIso C (b g)`, when `c'` is `c` multiplied by the coboundary of
 `b : G → (CatCenter C)ˣ`. By `centralUnitIso_naturality_comp_iff`, this coboundary relation is
 also necessary for the identity components and the `2`-cells `centralUnitIso C (b g)` to form a
 strong transformation. -/
-def centralCocycleStrongTrans {c c' : G × G → (CatCenter C)ˣ}
+@[expose] def centralCocycleStrongTrans {c c' : G × G → (CatCenter C)ˣ}
     {hc : ∀ g h j : G, c (g * h, j) * c (g, h) = c (h, j) * c (g, h * j)}
     {hc' : ∀ g h j : G, c' (g * h, j) * c' (g, h) = c' (h, j) * c' (g, h * j)}
     (b : G → (CatCenter C)ˣ) (hb : ∀ g h : G, c' (g, h) = b g * b h / b (g * h) * c (g, h)) :
@@ -296,8 +295,7 @@ def centralCocycleStrongTrans {c c' : G × G → (CatCenter C)ˣ}
     -- definitional identification of `(centralCocyclePseudofunctor C c hc).map f` with `𝟙 _`.
     exact (Category.id_comp _).trans (Category.comp_id _).symm
   naturality_id _ := (centralUnitIso_naturality_id_iff C b _ _).2 (by
-    rw [hb 1 1, mul_one, mul_div_cancel_right, mul_inv_rev, mul_left_comm, mul_inv_cancel,
-      mul_one])
+    simp [hb 1 1, div_eq_mul_inv, mul_comm])
   naturality_comp g h := (centralUnitIso_naturality_comp_iff C b c c' g.as h.as).2 (hb _ _)
 
 @[simp]
