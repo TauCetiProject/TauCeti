@@ -26,8 +26,8 @@ subgroup of `GLₙ` lies in its Lie algebra.
 
 * `TauCeti.Bialgebra.curveVelocity`: the velocity at zero of a polynomial curve through the
   identity.
-* `TauCeti.Bialgebra.algEquivSelf_curveVelocity_apply`: the velocity evaluates a coordinate
-  function to the linear coefficient of its pullback.
+* `TauCeti.Bialgebra.curveVelocity_apply`, `TauCeti.Bialgebra.algEquivSelf_curveVelocity_apply`:
+  the velocity evaluates a coordinate function to the linear coefficient of its pullback.
 * `TauCeti.Bialgebra.curveVelocity_mem_lieSubalgebra`: a curve in a closed subgroup has its
   velocity in the subgroup's Lie algebra.
 
@@ -73,12 +73,8 @@ noncomputable def curveVelocity (γ : H →ₐ[R] R[X])
     apply (CounitAlgebra.algEquivSelf R H R).injective
     rw [map_add, CounitAlgebra.algEquivSelf_smul, CounitAlgebra.algEquivSelf_smul,
       algEquivSelf_curveVelocityLinearMap_apply, algEquivSelf_curveVelocityLinearMap_apply,
-      algEquivSelf_curveVelocityLinearMap_apply, map_mul, coeff_mul,
-      Finset.Nat.antidiagonal_succ, Finset.sum_cons, Finset.Nat.antidiagonal_zero,
-      Finset.sum_map, Finset.sum_singleton]
-    simp only [Function.Embedding.coe_prodMap, Prod.map_fst, Prod.map_snd,
-      Function.Embedding.coeFn_mk, Function.Embedding.refl_apply, zero_add, hcoeff,
-      Algebra.algebraMap_self, RingHom.id_apply]
+      algEquivSelf_curveVelocityLinearMap_apply, map_mul, mul_coeff_one]
+    simp only [hcoeff, Algebra.algebraMap_self, RingHom.id_apply]
     ring
 
 /-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
@@ -90,6 +86,15 @@ theorem algEquivSelf_curveVelocity_apply (γ : H →ₐ[R] R[X])
     (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) (h : H) :
     CounitAlgebra.algEquivSelf R H R (curveVelocity γ hγ h) = (γ h).coeff 1 :=
   algEquivSelf_curveVelocityLinearMap_apply γ h
+
+/-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
+`t` in its pullback, read through the identification of the counit coefficient algebra with
+`R`. -/
+@[simp]
+theorem curveVelocity_apply (γ : H →ₐ[R] R[X])
+    (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) (h : H) :
+    curveVelocity γ hγ h = (γ h).coeff 1 :=
+  (CounitAlgebra.algEquivSelf_apply R H R _).symm.trans (algEquivSelf_curveVelocity_apply γ hγ h)
 
 end Velocity
 
