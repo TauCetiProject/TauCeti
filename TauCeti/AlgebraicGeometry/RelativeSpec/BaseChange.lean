@@ -357,10 +357,9 @@ theorem relativeSpecPullbackFst_comp :
   let c := (QuasicoherentAlgebra.pullbackComp g f).hom.app A
   let p := C.obj.relativeSpecToBase
   have ht : (CommMon.relativeSpecMap c.hom ≫ relativeSpecPullbackFst B g) ≫
-      B.obj.relativeSpecToBase = p ≫ g :=
-    (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (relativeSpecPullbackFst_relativeSpecToBase
-      B g)).trans ((Category.assoc _ _ _).symm.trans
-        (congrArg (· ≫ g) (CommMon.relativeSpecMap_relativeSpecToBase c.hom))))
+      B.obj.relativeSpecToBase = p ≫ g := by
+    rw [Category.assoc, relativeSpecPullbackFst_relativeSpecToBase]
+    exact CommMon.relativeSpecMap_relativeSpecToBase_assoc c.hom g
   -- The algebra map of the morphism `Spec_Z ((g ≫ f)^* A) ⟶ Spec_Y (f^* A)` over `g`.
   have hB : B.obj.relativeSpecHomEquiv (p ≫ g) ⟨_, ht⟩ =
       QuasicoherentAlgebra.pullbackHomEquiv g B _ (c.hom ≫ C.obj.relativeSpecPushforwardIso.inv) ≫
@@ -376,9 +375,9 @@ theorem relativeSpecPullbackFst_comp :
   refine congrArg Subtype.val ((A.obj.relativeSpecHomEquiv (p ≫ g ≫ f)).injective
     (a₁ := ⟨_, relativeSpecPullbackFst_relativeSpecToBase A (g ≫ f)⟩)
     (a₂ := ⟨(CommMon.relativeSpecMap c.hom ≫ relativeSpecPullbackFst B g) ≫
-      relativeSpecPullbackFst A f, (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
-        (relativeSpecPullbackFst_relativeSpecToBase A f)).trans ((Category.assoc _ _ _).symm.trans
-          (congrArg (· ≫ f) ht)))⟩) ?_)
+      relativeSpecPullbackFst A f, by
+        rw [Category.assoc, relativeSpecPullbackFst_relativeSpecToBase, ← Category.assoc, ht,
+          Category.assoc]⟩) ?_)
   -- Both algebra maps are computed by `relativeSpecHomEquiv_comp_relativeSpecPullbackFst`; the
   -- composites of schemes over `X` agree definitionally up to associativity and units.
   refine (relativeSpecHomEquiv_comp_relativeSpecPullbackFst A (g ≫ f)
