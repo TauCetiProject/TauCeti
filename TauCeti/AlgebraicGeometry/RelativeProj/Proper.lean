@@ -88,9 +88,9 @@ quasi-compact over the base. -/
 theorem quasiCompact_relativeProjToBase (h : ∀ U : X.Opens, IsAffineOpen U →
       Algebra.FiniteType (A.gradedSectionsGrading U 0) (⨁ n, Γ(A.X n, U))) :
     QuasiCompact A.relativeProjToBase :=
-  -- Instance search fails to unify `IsZariskiLocalAtTarget @QuasiCompact` with Mathlib's generic
-  -- instance `HasAffineProperty.instIsZariskiLocalAtTarget`, so it is applied explicitly to the
-  -- affine property of quasi-compact morphisms.
+  -- Instance search cannot use Mathlib's instance `HasAffineProperty @QuasiCompact _`: its affine
+  -- property is stored at a dependent function type, not at `AffineTargetMorphismProperty`, so it
+  -- cannot be assigned to that out-parameter. The instance is therefore supplied explicitly.
   have : IsZariskiLocalAtTarget @QuasiCompact.{u} :=
     @HasAffineProperty.instIsZariskiLocalAtTarget _ _
       instHasAffinePropertyQuasiCompactCompactSpaceCarrierCarrierCommRingCat
@@ -103,11 +103,12 @@ base. -/
 theorem locallyOfFiniteType_relativeProjToBase
     (h : ∀ U : X.Opens, IsAffineOpen U → Algebra.FiniteType Γ(X, U) (⨁ n, Γ(A.X n, U))) :
     LocallyOfFiniteType A.relativeProjToBase :=
-  -- Instance search fails to unify `IsZariskiLocalAtTarget @LocallyOfFiniteType` with Mathlib's
-  -- generic instance `HasRingHomProperty.instIsZariskiLocalAtTarget`, so it is applied explicitly
-  -- to the ring homomorphism property `RingHom.FiniteType`.
+  -- Instance search cannot assign the bare `@LocallyOfFiniteType`, whose type is a dependent
+  -- function type, to an argument of type `MorphismProperty Scheme`. Restating it at that type
+  -- lets instance search find Mathlib's instance.
   have : IsZariskiLocalAtTarget @LocallyOfFiniteType.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.FiniteType)
+    inferInstanceAs <|
+      IsZariskiLocalAtTarget (show MorphismProperty Scheme from @LocallyOfFiniteType)
   (A.relativeProjToBase_iff_forall_isAffineOpen @LocallyOfFiniteType).mpr fun U hU ↦
     have := h U hU
     inferInstance
