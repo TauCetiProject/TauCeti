@@ -42,6 +42,8 @@ the constant terms of `∂⁻` over `ZMod 2`.
 
 * `TauCeti.GridDiagram.sum_unblockedDecompositions_eq_zero`: the pairing itself, for any function
   on decompositions whose paired terms cancel, over any coefficients.
+* `TauCeti.GridDiagram.unblockedDecompositionWeight_recut`: recutting a decomposition preserves
+  its weight.
 * `TauCeti.GridDiagram.sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero`: every matrix
   entry of the square of `∂⁻` vanishes.
 * `TauCeti.GridDiagram.unblockedDifferential_comp_self_eq_zero`: `∂⁻ ∘ ∂⁻ = 0`.
@@ -125,6 +127,16 @@ theorem sum_unblockedDecompositions_eq_zero {M : Type*} [AddCommMonoid M] {x z :
     · exact D.recut_recut _ _ _
   rw [hdisjoint, hcommon, add_zero]
 
+/-- Recutting a two-step decomposition by two empty rectangles sharing one side column preserves
+its weight: the two decompositions cover the same squares. -/
+theorem unblockedDecompositionWeight_recut (R : Type*) [CommSemiring R] {x z : GridState n}
+    (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty)
+    (hsecond : D.second.IsEmpty) :
+    G.unblockedDecompositionWeight R (D.recut hone hfirst hsecond) =
+      G.unblockedDecompositionWeight R D := by
+  rw [G.unblockedDecompositionWeight_def R, G.unblockedDecompositionWeight_def R]
+  exact (D.isRecut_recut hone hfirst hsecond).isRepartition.OMonomial_mul_OMonomial G R
+
 variable (R : Type*) [CommSemiring R] [CharP R 2]
 
 /-- In characteristic two every matrix entry of the square of the unblocked grid differential
@@ -139,8 +151,7 @@ theorem sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero (x z : GridSta
     (fun D _ hone hfirst hsecond => ?_)
   · rw [G.unblockedDecompositionWeight_commute R D]
     exact CharTwo.add_self_eq_zero _
-  · rw [G.unblockedDecompositionWeight_def R, G.unblockedDecompositionWeight_def R,
-      (D.isRecut_recut hone hfirst hsecond).isRepartition.OMonomial_mul_OMonomial G R]
+  · rw [G.unblockedDecompositionWeight_recut R D]
     exact CharTwo.add_self_eq_zero _
 
 /-- In characteristic two the square of the unblocked grid differential vanishes on a

@@ -166,11 +166,9 @@ theorem sum_signedUnblockedCoefficient_mul_signedUnblockedCoefficient_eq_zero
       (G.unblockedDecompositionWeight_commute R D h)
     rw [D.commute_first_toGridRectangle h, D.commute_second_toGridRectangle h, add_comm]
   · have hrecut := (D.isRecut_recut hone hfirst hsecond)
-    refine hcancel D _ (S.signOf_mul_signOf_eq_neg hfirst hsecond hrecut.isEmpty_first
+    exact hcancel D _ (S.signOf_mul_signOf_eq_neg hfirst hsecond hrecut.isEmpty_first
       hrecut.isEmpty_second (D.recut_ne hone hfirst hsecond) hrecut.isRepartition.val_add_val_eq)
-      ?_
-    rw [G.unblockedDecompositionWeight_def R, G.unblockedDecompositionWeight_def R]
-    exact hrecut.isRepartition.OMonomial_mul_OMonomial G R
+      (G.unblockedDecompositionWeight_recut R D hone hfirst hsecond)
 
 /-- The signed unblocked differential squares to zero, over every commutative ring. -/
 theorem signedUnblockedDifferential_comp_self_eq_zero :
