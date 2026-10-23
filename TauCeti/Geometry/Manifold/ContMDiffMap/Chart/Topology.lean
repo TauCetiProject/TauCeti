@@ -183,6 +183,20 @@ theorem continuous_chartIteratedFDeriv (x : M) (m : ℕ) (hm : m ≤ n) :
   rw [← chartJetSet_self_target x (0 : F) m hm K V]
   exact isOpen_chartJetSet x 0 m hm hK hV
 
+/-- Subtraction of vector-valued maps is continuous in the weak Whitney topology. -/
+theorem continuous_sub_manifoldWeakWhitney :
+    Continuous (fun fg : C^n⟮I, M; 𝓘(𝕜, F), F⟯ × C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦
+      fg.1 - fg.2) := by
+  apply continuous_manifoldWeakWhitney_iff.mpr
+  intro x y m hm K hK V hV
+  rw [chartJetSet_self_target x y m hm K V]
+  have hjet := continuous_chartIteratedFDeriv (I := I) (F := F) x m hm
+  have hsub := (hjet.comp continuous_fst).sub (hjet.comp continuous_snd)
+  convert (ContinuousMap.isOpen_setOfPred_mapsTo hK hV).preimage hsub using 1
+  ext fg
+  simp only [mem_preimage, mem_ofPred_eq, chartIteratedFDeriv_sub,
+    Pi.sub_apply, Function.comp_apply]
+
 end VectorTarget
 
 section NormedSpaces

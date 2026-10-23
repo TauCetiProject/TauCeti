@@ -107,14 +107,12 @@ theorem chartDerivativeSeminorm_bot (x : M) (m : ℕ) (hm : m ≤ n) :
 theorem continuous_chartDerivativeSeminorm (x : M)
     (K : TopologicalSpace.Compacts (extChartAt I x).target) (m : ℕ) (hm : m ≤ n) :
     Continuous (chartDerivativeSeminorm (F := F) x K m hm) := by
-  simp only [show ⇑(chartDerivativeSeminorm (F := F) x K m hm) =
-    (fun f ↦ ‖(chartIteratedFDeriv f x m hm).restrict K‖) from
-      funext (chartDerivativeSeminorm_apply x K m hm)]
   have hjet : Continuous (fun f : C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦
       (chartIteratedFDeriv f x m hm).restrict (K : Set _)) :=
     (ContinuousMap.continuous_restrict (K : Set (extChartAt I x).target)).comp
       (continuous_chartIteratedFDeriv (I := I) (F := F) x m hm)
-  exact (continuous_norm (E := C(K, E [×m]→L[𝕜] F))).comp hjet
+  exact ((continuous_norm (E := C(K, E [×m]→L[𝕜] F))).comp hjet).congr
+    (fun f ↦ (chartDerivativeSeminorm_apply x K m hm f).symm)
 
 /-- The compact chart `C^k` seminorm: the maximum of the coordinate derivative seminorms
 through order `k`, including order zero. -/
@@ -176,45 +174,17 @@ theorem mem_ball_chartCkSeminorm_iff (x : M)
         ‖chartIteratedFDeriv g x m ((Nat.cast_le.mpr hm).trans hk) z -
           chartIteratedFDeriv f x m ((Nat.cast_le.mpr hm).trans hk) z‖ < r := by
   rw [Seminorm.mem_ball, chartCkSeminorm_lt_iff x K k hk (g - f) hr]
-  have hsub (m : ℕ) (hm : m ≤ n) :
-      chartIteratedFDeriv (g - f) x m hm =
-        chartIteratedFDeriv g x m hm - chartIteratedFDeriv f x m hm := by
-    exact (chartIteratedFDerivLinearMap_apply x m hm (g - f)).symm.trans
-      ((map_sub (chartIteratedFDerivLinearMap (F := F) x m hm) g f).trans
-        (congrArg₂ (· - ·) (chartIteratedFDerivLinearMap_apply x m hm g)
-          (chartIteratedFDerivLinearMap_apply x m hm f)))
-  simp only [hsub, ContinuousMap.sub_apply]
+  simp only [chartIteratedFDeriv_sub, ContinuousMap.sub_apply]
 
 /-- A ball of a compact coordinate derivative seminorm is weak Whitney open. -/
 theorem isOpen_ball_chartDerivativeSeminorm (x : M)
     (K : TopologicalSpace.Compacts (extChartAt I x).target) (m : ℕ) (hm : m ≤ n)
     (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (r : ℝ) :
     IsOpen ((chartDerivativeSeminorm x K m hm).ball f r) := by
-  have hjet : Continuous (fun g : C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦
-      (chartIteratedFDeriv g x m hm).restrict (K : Set _)) :=
-    (ContinuousMap.continuous_restrict (K : Set (extChartAt I x).target)).comp
-      (continuous_chartIteratedFDeriv (I := I) (F := F) x m hm)
-  have hcont : Continuous (fun g : C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦
-      ‖(chartIteratedFDeriv g x m hm).restrict K -
-        (chartIteratedFDeriv f x m hm).restrict K‖) :=
-    (continuous_norm (E := C(K, E [×m]→L[𝕜] F))).comp (hjet.sub continuous_const)
-  convert isOpen_lt hcont (continuous_const (y := r)) using 1
-  ext g
-  simp only [Seminorm.mem_ball, mem_ofPred_eq, chartDerivativeSeminorm_apply]
-  have hsub : (chartIteratedFDeriv (g - f) x m hm).restrict K =
-      (chartIteratedFDeriv g x m hm).restrict K -
-        (chartIteratedFDeriv f x m hm).restrict K := by
-    apply ContinuousMap.ext
-    intro z
-    have h : chartIteratedFDeriv (g - f) x m hm =
-        chartIteratedFDeriv g x m hm - chartIteratedFDeriv f x m hm :=
-      (chartIteratedFDerivLinearMap_apply x m hm (g - f)).symm.trans
-        ((map_sub (chartIteratedFDerivLinearMap (F := F) x m hm) g f).trans
-          (congrArg₂ (· - ·) (chartIteratedFDerivLinearMap_apply x m hm g)
-            (chartIteratedFDerivLinearMap_apply x m hm f)))
-    simpa only [ContinuousMap.restrict_apply, ContinuousMap.sub_apply] using
-      DFunLike.congr_fun h z.1
-  rw [hsub]
+  exact isOpen_lt
+    ((continuous_chartDerivativeSeminorm x K m hm).comp
+      (continuous_sub_manifoldWeakWhitney.comp (continuous_id.prodMk continuous_const)))
+    continuous_const
 
 /-- A compact chart `C^k` ball about a map is open in the weak Whitney topology. -/
 theorem isOpen_ball_chartCkSeminorm (x : M)

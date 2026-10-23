@@ -146,4 +146,15 @@ theorem chartIteratedFDerivLinearMap_apply (x : M) (m : ℕ) (hm : m ≤ n)
       (chartIteratedFDerivLinearMap x m hm) f = chartIteratedFDeriv f x m hm :=
   (rfl)
 
+/-- Coordinate differentiation commutes with subtraction of vector-valued maps. -/
+@[simp]
+theorem chartIteratedFDeriv_sub
+    (f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) (m : ℕ) (hm : m ≤ n) :
+    chartIteratedFDeriv (f - g) x m hm =
+      chartIteratedFDeriv f x m hm - chartIteratedFDeriv g x m hm := by
+  exact (chartIteratedFDerivLinearMap_apply x m hm (f - g)).symm.trans
+    ((map_sub (chartIteratedFDerivLinearMap (F := F) x m hm) f g).trans
+      (congrArg₂ (· - ·) (chartIteratedFDerivLinearMap_apply x m hm f)
+        (chartIteratedFDerivLinearMap_apply x m hm g)))
+
 end ContMDiffMap
