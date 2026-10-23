@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.HochschildClass
 
 /-!
 # Liu--Wang's quartic `A∞` deformation of the affine `D₄` zigzag algebra
@@ -40,6 +41,13 @@ algebra is `A∞` isomorphic to the strict zigzag algebra, through an isomorphis
 is the identity, and it is formal (`TauCeti.isFormal_liuWangAffineD4AInfinityAlgebra`). In these
 conventions the displayed values therefore define the trivial `A∞` deformation.
 
+A single rotation is not a coboundary. The loop operation of the walk `β₄ α₁ β₁ α₄` alone, with
+coefficient one, is a Hochschild cocycle which is not a coboundary, since the centre has four
+distinct neighbours
+(`TauCeti.not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk`); see
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.HochschildClass`. In particular `HH^{4, -2}`
+of the affine `D₄` zigzag algebra is nonzero (`TauCeti.not_hochschildVanishesAt_four_affineD4`).
+
 ## Main definitions
 
 * `TauCeti.liuWangAffineD4Walk`: the closed walk `β₄ α₁ β₁ α₄`, as four darts in product order.
@@ -60,6 +68,9 @@ conventions the displayed values therefore define the trivial `A∞` deformation
 * `TauCeti.exists_isIso_liuWangAffineD4AInfinityAlgebra` and
   `TauCeti.isFormal_liuWangAffineD4AInfinityAlgebra`: the algebra is `A∞` isomorphic to the strict
   zigzag algebra, and formal.
+* `TauCeti.not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk` and
+  `TauCeti.not_hochschildVanishesAt_four_affineD4`: the loop operation of the walk alone is not a
+  Hochschild coboundary, so `HH^{4, -2}` of the affine `D₄` zigzag algebra is nonzero.
 
 ## References
 
@@ -326,5 +337,58 @@ theorem isFormal_liuWangAffineD4AInfinityAlgebra (c : k) :
     liuWangAffineD4Coefficients_eq_zigzagBacktrackCoefficients]
   exact isFormal_zigzagLoopAInfinityAlgebra_zigzagBacktrackCoefficients _ _
     fst_eq_snd_of_mem_liuWangAffineD4BacktrackPairs ne_symm_of_mem_liuWangAffineD4BacktrackPairs
+
+/-! ### A single rotation of the walk -/
+
+/-- The darts into the centre `1` of the affine `D₄` graph from the leaves `0`, `2`, `3` and
+`4`. -/
+private def affineD4LeafDart : Fin 4 → (AffineDynkinType.D 4).graph.Dart :=
+  ![⟨(0, 1), (AffineDynkinType.graph_D_adj le_rfl).2 (by decide)⟩,
+    ⟨(2, 1), (AffineDynkinType.graph_D_adj le_rfl).2 (by decide)⟩,
+    ⟨(3, 1), (AffineDynkinType.graph_D_adj le_rfl).2 (by decide)⟩,
+    ⟨(4, 1), (AffineDynkinType.graph_D_adj le_rfl).2 (by decide)⟩]
+
+/-- **The loop operation of Liu--Wang's walk alone is not a Hochschild coboundary.** With
+coefficient one on the single walk `β₄ α₁ β₁ α₄`, and zero on its other rotations, the quartic
+operation of the loop deformation is a Hochschild cocycle of the strict zigzag algebra which is not
+the Hochschild differential of any suspended cochain of degree zero. By contrast the sum of the four
+rotations with equal coefficients, Liu--Wang's operation, is a coboundary
+(`TauCeti.isFormal_liuWangAffineD4AInfinityAlgebra`). -/
+theorem not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk [Nontrivial k]
+    (hc : ∀ w ∈ (Finsupp.single liuWangAffineD4Walk (1 : k)).support, ∀ i,
+      (w i).fst = (w (i + 1)).snd) :
+    ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k (AffineDynkinType.D 4).graph) →ₗ[k]
+        nonisolatedZigzagQuotient k (AffineDynkinType.D 4).graph,
+      LinearMap.IsHomogeneous φ (ReducedTensorWords.gradedPiece
+          ((zigzagStrictAInfinityAlgebra k
+            (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))).grading.shift 1))
+          ((zigzagStrictAInfinityAlgebra k
+            (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))).grading.shift 1).piece 0 ∧
+        (zigzagStrictAInfinityAlgebra k
+            (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))).hochschildDifferential 0
+            φ =
+          (zigzagLoopAInfinityAlgebra (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))
+            _ hc).obstruction
+            (zigzagStrictAInfinityAlgebra k
+              (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))) ⟨4, by norm_num⟩ := by
+  -- Liu--Wang's walk is the rotated backtrack walk of the darts from the leaves `4` and `0`.
+  have hw : liuWangAffineD4Walk = fun t ↦
+      zigzagBacktrackWalk _ (affineD4LeafDart 3).symm (affineD4LeafDart 0) (t + 1) := by
+    rw [zigzagBacktrackWalk_def]
+    decide
+  revert hc
+  rw [hw]
+  exact fun hc ↦ not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single
+    (by decide) (v := 1) (by decide) hc
+
+/-- **The quartic Hochschild cohomology `HH^{4, -2}` of the affine `D₄` zigzag algebra is
+nonzero**, over every nontrivial commutative ring: the centre has the four distinct neighbours
+`0`, `2`, `3` and `4`. -/
+theorem not_hochschildVanishesAt_four_affineD4 [Nontrivial k] :
+    ¬(zigzagStrictAInfinityAlgebra k
+      (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))).HochschildVanishesAt
+        ⟨4, by norm_num⟩ :=
+  not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra (δ := affineD4LeafDart)
+    (by decide) (v := 1) (by decide)
 
 end TauCeti
