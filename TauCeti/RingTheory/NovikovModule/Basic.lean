@@ -102,9 +102,15 @@ variable {H ι : Type*} [AddGroup H] [Finite ι] {P : ι → Type*}
 
 include hF
 
+omit [Finite ι] in
+/-- The potential of a generator is its reference potential minus the period of its displacement. -/
+theorem potential_eq_sub_vsub (r : ∀ i, P i) (i : ι) (p : P i) :
+    F ⟨i, p⟩ = F ⟨i, r i⟩ - N (p -ᵥ r i) := by
+  simpa only [vsub_vadd] using hF i (p -ᵥ r i) (r i)
+
 /-- Finiteness above potential thresholds is equivalent to the Novikov support condition in
 every orbit, for any chosen lifts. -/
-theorem mem_iff_finite_lt (r : ∀ i, P i) (a : (Σ i, P i) → R) :
+theorem mem_iff_forall_finite_vadd_lt (r : ∀ i, P i) (a : (Σ i, P i) → R) :
     a ∈ NovikovModule R F ↔
       ∀ i C, {h | a ⟨i, h +ᵥ r i⟩ ≠ 0 ∧ N h < C}.Finite := by
   constructor
@@ -123,18 +129,17 @@ theorem mem_iff_finite_lt (r : ∀ i, P i) (a : (Σ i, P i) → R) :
     rintro ⟨i, p⟩ hp
     refine Set.mem_iUnion.mpr ⟨i, p -ᵥ r i, ⟨?_, ?_⟩, ?_⟩
     · simpa using hp.1
-    · have := hF i (p -ᵥ r i) (r i)
-      simp only [vsub_vadd] at this
-      linarith [hp.2]
+    · linarith [potential_eq_sub_vsub hF r i p, hp.2]
     · simp
 
 /-- Coordinates of a completed combination relative to one lift in each orbit. This is a
 ground-ring linear equivalence with a finite family of Novikov series. -/
 def coordinates (r : ∀ i, P i) :
     NovikovModule R F ≃ₗ[R] (ι → NovikovSeries R H N) where
-  toFun a i := ⟨fun h => a.val ⟨i, h +ᵥ r i⟩, (mem_iff_finite_lt hF r a.val).mp a.property i⟩
+  toFun a i := ⟨fun h => a.val ⟨i, h +ᵥ r i⟩,
+    (mem_iff_forall_finite_vadd_lt hF r a.val).mp a.property i⟩
   invFun b := ⟨fun s => (b s.1).coeff (s.2 -ᵥ r s.1), by
-    apply (mem_iff_finite_lt hF r _).mpr
+    apply (mem_iff_forall_finite_vadd_lt hF r _).mpr
     intro i C
     simpa using (b i).finite_lt C⟩
   left_inv a := by
@@ -163,76 +168,114 @@ theorem coordinates_symm_apply (r : ∀ i, P i) (b : ι → NovikovSeries R H N)
 
 /-- The potential cutoff in an orbit is the period cutoff measured from its chosen lift. -/
 theorem coordinates_coeff_eq_zero_iff (r : ∀ i, P i) (a : NovikovModule R F) (C : ℝ) :
-    (∀ s, C < F s → a.val s = 0) ↔
-      ∀ i h, N h < F ⟨i, r i⟩ - C → (coordinates hF r a i).coeff h = 0 := by
+    (∀ i h, N h < F ⟨i, r i⟩ - C → (coordinates hF r a i).coeff h = 0) ↔
+      ∀ s, C < F s → a.val s = 0 := by
   constructor
+  · intro ha ⟨i, p⟩ hp
+    simpa using ha i (p -ᵥ r i) (by linarith [potential_eq_sub_vsub hF r i p])
   · intro ha i h hh
     exact ha ⟨i, h +ᵥ r i⟩ (by rw [hF]; linarith)
-  · intro ha ⟨i, p⟩ hp
-    have h := hF i (p -ᵥ r i) (r i)
-    simp only [vsub_vadd] at h
-    simpa using ha i (p -ᵥ r i) (by linarith)
 
 /-- Changing the reference lift translates the exponent by the old lift minus the new lift.
 Thus the matrix of a lift change is diagonal with monomial entries. -/
-theorem coordinates_change (r r' : ∀ i, P i) (a : NovikovModule R F) (i : ι) :
+theorem coordinates_apply_eq_mul_single (r r' : ∀ i, P i) (a : NovikovModule R F) (i : ι) :
     coordinates hF r' a i =
       coordinates hF r a i * NovikovSeries.single (r i -ᵥ r' i) 1 := by
   ext h
   simp only [NovikovSeries.coeff_mul_single, mul_one, coordinates_coeff, sub_eq_add_neg,
     neg_vsub_eq_vsub_rev, add_vadd, vsub_vadd]
 
-/-- The Novikov scalar action obtained in lift coordinates. Install this structure with
-`letI := NovikovModule.module (R := R) hF r`. Its action is independent of `r` by `smul_eq`. -/
+/-- The Novikov module structure, transported using arbitrary orbit lifts. Install it with
+`letI := NovikovModule.module (R := R) hF`. Every choice of lifts is linear for this one
+structure by `coordinates_smul`. -/
 @[instance_reducible]
-def module (r : ∀ i, P i) : Module (NovikovSeries R H N) (NovikovModule R F) :=
-  (coordinates hF r).toAddEquiv.module _
+def module : Module (NovikovSeries R H N) (NovikovModule R F) :=
+  (coordinates hF (fun i => Classical.arbitrary (P i))).toAddEquiv.module _
 
-/-- Novikov scalar multiplication is componentwise multiplication in lift coordinates. -/
+/-- Novikov scalar multiplication is componentwise multiplication in any lift coordinates. -/
 theorem coordinates_smul (r : ∀ i, P i) (b : NovikovSeries R H N)
     (a : NovikovModule R F) :
-    letI := module (R := R) hF r
+    letI := module (R := R) hF
     coordinates hF r (b • a) = b • coordinates hF r a := by
-  exact ((coordinates hF r).toAddEquiv.linearEquiv (NovikovSeries R H N)).map_smul b a
+  let := module (R := R) hF
+  let r₀ := fun i => Classical.arbitrary (P i)
+  have hc : coordinates hF r₀ (b • a) = b • coordinates hF r₀ a := by
+    exact ((coordinates hF r₀).toAddEquiv.linearEquiv (NovikovSeries R H N)).map_smul b a
+  ext i h
+  have hcoord := congrFun hc i
+  rw [coordinates_apply_eq_mul_single hF r₀ r, hcoord]
+  simp only [Pi.smul_apply, smul_eq_mul]
+  rw [coordinates_apply_eq_mul_single hF r₀ r]
+  exact congrArg (fun x : NovikovSeries R H N => x.coeff h) (mul_assoc _ _ _)
+
+/-- Coordinates in any chosen lifts form a Novikov-linear equivalence for the shared module
+structure. -/
+def coordinatesLinearEquiv (r : ∀ i, P i) :
+    letI := module (R := R) hF
+    NovikovModule R F ≃ₗ[NovikovSeries R H N] (ι → NovikovSeries R H N) :=
+  letI := module (R := R) hF
+  { (coordinates hF r).toAddEquiv with map_smul' := coordinates_smul hF r }
+
+/-- The Novikov-linear coordinate equivalence evaluates to the original coefficient coordinates. -/
+@[simp]
+theorem coordinatesLinearEquiv_apply (r : ∀ i, P i) (a : NovikovModule R F) :
+    coordinatesLinearEquiv hF r a = coordinates hF r a := (rfl)
+
+/-- The inverse Novikov-linear equivalence reconstructs the same coefficient function. -/
+@[simp]
+theorem coordinatesLinearEquiv_symm_apply (r : ∀ i, P i) (b : ι → NovikovSeries R H N) :
+    (coordinatesLinearEquiv hF r).symm b = (coordinates hF r).symm b := (rfl)
 
 /-- A monomial acts by deck translation, with its coefficient multiplying on the left. -/
-theorem single_smul_apply (r : ∀ i, P i) (h : H) (c : R) (a : NovikovModule R F)
+theorem single_smul_apply (h : H) (c : R) (a : NovikovModule R F)
     (i : ι) (p : P i) :
-    letI := module (R := R) hF r
+    letI := module (R := R) hF
     (NovikovSeries.single (N := N) h c • a).val ⟨i, p⟩ = c * a.val ⟨i, -h +ᵥ p⟩ := by
+  let r := fun i => Classical.arbitrary (P i)
   have heq := congrArg (fun b : ι → NovikovSeries R H N => (b i).coeff (p -ᵥ r i))
     (coordinates_smul hF r (NovikovSeries.single h c) a)
   simpa only [coordinates_coeff, vsub_vadd, Pi.smul_apply, smul_eq_mul,
     NovikovSeries.coeff_single_mul, add_vadd] using heq
 
-/-- The Novikov scalar action on the actual coefficient functions does not depend on the
-chosen lifts, even when the coefficient ring or exponent group is noncommutative. -/
-theorem smul_eq (r r' : ∀ i, P i) (b : NovikovSeries R H N) (a : NovikovModule R F) :
-    (letI := module (R := R) hF r; b • a) = (letI := module (R := R) hF r'; b • a) := by
-  apply (coordinates hF r').injective
-  ext i h
-  have hcoord := congrFun (coordinates_smul hF r b a) i
-  have hcoord' := congrFun (coordinates_smul hF r' b a) i
-  rw [coordinates_change hF r r', hcoord, hcoord']
-  simp only [Pi.smul_apply, smul_eq_mul]
-  rw [coordinates_change hF r r']
-  exact congrArg (fun x : NovikovSeries R H N => x.coeff h) (mul_assoc _ _ _)
-
 /-- The basis of the completed module consisting of the chosen orbit lifts. This exhibits
 it as a finite free Novikov module. -/
 def basis (r : ∀ i, P i) :
-    letI := module (R := R) hF r
+    letI := module (R := R) hF
     Module.Basis ι (NovikovSeries R H N) (NovikovModule R F) := by
-  letI := module (R := R) hF r
+  letI := module (R := R) hF
   exact (Pi.basisFun (NovikovSeries R H N) ι).map
-    ((coordinates hF r).toAddEquiv.linearEquiv (NovikovSeries R H N)).symm
+    (coordinatesLinearEquiv hF r).symm
 
 /-- In lift coordinates, the basis vector for an orbit is the unit series in that orbit
 and zero in every other orbit. -/
 @[simp]
 theorem coordinates_basis [DecidableEq ι] (r : ∀ i, P i) (i : ι) :
     coordinates (R := R) hF r (basis hF r i) = Pi.single i 1 := by
-  simp [basis, Pi.basisFun_apply]
+  simp [basis, coordinatesLinearEquiv, Pi.basisFun_apply]
+
+/-- Basis representation is precisely the Novikov coordinate series in each orbit. -/
+@[simp]
+theorem basis_repr_apply (r : ∀ i, P i) (a : NovikovModule R F) (i : ι) :
+    letI := module (R := R) hF
+    (basis hF r).repr a i = coordinates hF r a i := by
+  simp [basis, coordinatesLinearEquiv]
+
+/-- Changing a basis lift multiplies its basis vector on the left by the monomial of the
+new lift minus the old lift. Both bases belong to the same Novikov module. -/
+theorem basis_eq_single_smul (r r' : ∀ i, P i) (i : ι) :
+    letI := module (R := R) hF
+    basis (R := R) hF r' i =
+      NovikovSeries.single (N := N) (r' i -ᵥ r i) (1 : R) • basis (R := R) hF r i := by
+  classical
+  let := module (R := R) hF
+  apply (coordinates hF r).injective
+  rw [coordinates_smul, coordinates_basis]
+  ext j
+  rw [coordinates_apply_eq_mul_single hF r' r, coordinates_basis]
+  by_cases hij : i = j
+  · subst j
+    simp
+  · simp [Ne.symm hij]
 
 end Coordinates
 
