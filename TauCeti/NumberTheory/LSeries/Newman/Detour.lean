@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.RemovableSingularity
-public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
+public import TauCeti.Analysis.Contour.DslopeFTC
+public import TauCeti.Analysis.Contour.LogDerivFTC
 public import TauCeti.Analysis.Contour.Primitive
 public import TauCeti.Analysis.Contour.Winding.StarConvex
 
@@ -23,9 +24,9 @@ semicircle of radius `R`, parametrized counterclockwise from `-R * I` to `R * I`
 half-plane, close enough to the imaginary axis to stay inside `Ω`.
 
 The detour used here is the parabolic arc `newmanDetour R δ`, parametrized on `[-1, 1]` by
-`s ↦ -δ (1 - s²) - R s I`. It runs from `R * I` to `-R * I`, lies in the strip
-`-δ ≤ re z ≤ 0`, `|im z| ≤ R`, and meets the imaginary axis only at its endpoints. This file
-proves:
+`s ↦ -δ (1 - s²) - R s I`. It runs from `R * I` to `-R * I`; for `R ≥ 0` and `δ > 0` it lies in
+the strip `-δ ≤ re z ≤ 0`, `|im z| ≤ R`, and meets the imaginary axis only at its endpoints. This
+file proves:
 
 * `exists_convex_newmanDetour_subset`: by compactness of the segment `[-R * I, R * I]`, for some
   `δ > 0` the right semicircle and the detour lie in an open convex subset of `Ω`;
@@ -42,7 +43,8 @@ proves:
 
 The deformation identities split `g z / z` into the removable-singularity quotient
 `dslope g 0`, which has a primitive on the convex set, and the polar part `g 0 / z`, whose
-integral over each of the three arcs is `π i`.
+integral over each of the three arcs is `π i` (the general splitting is
+`TauCeti.Contour.integral_mul_div_eq_of_hasDerivAt_dslope`).
 
 ## References
 
@@ -62,7 +64,8 @@ namespace TauCeti.LSeries
 variable {R δ : ℝ}
 
 /-- **Newman's left detour.** The parabolic arc `s ↦ -δ (1 - s²) - R s I`, which on `[-1, 1]`
-runs from `R * I` to `-R * I` through the strip `-δ ≤ re z ≤ 0`, `|im z| ≤ R`. -/
+runs from `R * I` to `-R * I`; for `R, δ ≥ 0` it stays in the strip `-δ ≤ re z ≤ 0`,
+`|im z| ≤ R`. -/
 noncomputable def newmanDetour (R δ s : ℝ) : ℂ :=
   -((δ : ℂ) * (1 - (s : ℂ) ^ 2)) - R * s * I
 
@@ -188,44 +191,6 @@ theorem exists_convex_newmanDetour_subset {Ω : Set ℂ} (hΩ : IsOpen Ω)
     · linarith [neg_abs_le (R * s), le_abs_self (R * s)]
     · linarith [neg_abs_le (R * s), le_abs_self (R * s)]
 
-/-- Splitting `g z / z` into `dslope g 0 z + g 0 / z` along a path avoiding `0`, and integrating
-the first summand with a primitive `H` of `dslope g 0`. -/
-private theorem integral_mul_div_eq {U : Set ℂ} {g H : ℂ → ℂ} {γ γ' : ℝ → ℂ} {a b : ℝ}
-    (hU : U ∈ 𝓝 (0 : ℂ)) (hg : DifferentiableOn ℂ g U)
-    (hH : ∀ z ∈ U, HasDerivAt H (dslope g 0 z) z)
-    (hγ : ∀ s ∈ [[a, b]], HasDerivAt γ (γ' s) s) (hγ' : ContinuousOn γ' [[a, b]])
-    (hγU : ∀ s ∈ [[a, b]], γ s ∈ U) (hγ0 : ∀ s ∈ [[a, b]], γ s ≠ 0) :
-    ∫ s in a..b, γ' s * (g (γ s) / γ s) =
-      H (γ b) - H (γ a) + g 0 * ∫ s in a..b, γ' s / γ s := by
-  have hγc : ContinuousOn γ [[a, b]] := fun s hs ↦ (hγ s hs).continuousAt.continuousWithinAt
-  have hd : ContinuousOn (fun s ↦ dslope g 0 (γ s)) [[a, b]] :=
-    ((differentiableOn_dslope hU).mpr hg).continuousOn.comp hγc fun s hs ↦ hγU s hs
-  have hq : ContinuousOn (fun s ↦ γ' s / γ s) [[a, b]] := hγ'.div hγc hγ0
-  have hsplit : EqOn (fun s ↦ γ' s * (g (γ s) / γ s))
-      (fun s ↦ dslope g 0 (γ s) * γ' s + g 0 * (γ' s / γ s)) [[a, b]] := by
-    intro s hs
-    have h0 := hγ0 s hs
-    simp only [dslope_of_ne _ h0, slope_def_field, sub_zero]
-    field_simp
-    ring
-  have hi : IntervalIntegrable (fun s ↦ dslope g 0 (γ s) * γ' s) volume a b :=
-    (hd.mul hγ').intervalIntegrable
-  rw [intervalIntegral.integral_congr hsplit, intervalIntegral.integral_add hi
-    ((hq.const_mul _).intervalIntegrable),
-    intervalIntegral.integral_const_mul,
-    intervalIntegral.integral_eq_sub_of_hasDerivAt (f := H ∘ γ)
-      (fun s hs ↦ (hH _ (hγU s hs)).comp s (hγ s hs)) hi]
-  rfl
-
-/-- The polar part over the right or left semicircle: any half-turn of `circleMap 0 R`
-integrates `dz / z` to `π i`. -/
-private theorem integral_circleMap_div (hR : R ≠ 0) (a : ℝ) :
-    ∫ θ in a..a + π, circleMap 0 R θ * I / circleMap 0 R θ = π * I := by
-  have h : EqOn (fun θ ↦ circleMap 0 R θ * I / circleMap 0 R θ) (fun _ ↦ I) [[a, a + π]] :=
-    fun θ _ ↦ mul_div_cancel_left₀ _ (circleMap_ne_center hR)
-  rw [intervalIntegral.integral_congr h, intervalIntegral.integral_const, add_sub_cancel_left,
-    real_smul]
-
 /-- The polar part over the detour: it integrates `dz / z` to `π i`, a primitive along it being
 `log (-z)`. -/
 private theorem integral_deriv_newmanDetour_div (hR : 0 < R) (hδ : 0 < δ) :
@@ -239,19 +204,19 @@ private theorem integral_deriv_newmanDetour_div (hR : 0 < R) (hδ : 0 < δ) :
       simpa using hδ
     · right
       exact mul_ne_zero hR.ne' h
-  have hderiv : ∀ s ∈ [[(-1 : ℝ), 1]], HasDerivAt (fun s ↦ log (-newmanDetour R δ s))
-      (deriv (newmanDetour R δ) s / newmanDetour R δ s) s := by
-    intro s hs
-    convert ((hasDerivAt_newmanDetour R δ s).neg).clog_real (hmem s hs) using 1
-    rw [deriv_newmanDetour, Pi.neg_apply, neg_div_neg_eq]
   have hcont : ContinuousOn (fun s ↦ deriv (newmanDetour R δ) s / newmanDetour R δ s)
       [[(-1 : ℝ), 1]] := by
     simp only [deriv_newmanDetour]
     exact (by fun_prop : Continuous fun s : ℝ ↦ 2 * δ * (s : ℂ) - R * I).continuousOn.div
       (continuous_newmanDetour R δ).continuousOn
       fun s _ ↦ newmanDetour_ne_zero hR.ne' hδ.ne' s
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hcont.intervalIntegrable,
-    newmanDetour_one, newmanDetour_neg_one, neg_neg, ← mul_neg,
+  have h := Contour.integral_deriv_div_eq_log_sub_log (f := fun s ↦ -newmanDetour R δ s)
+    (f' := fun s ↦ -deriv (newmanDetour R δ) s) countable_empty
+    (continuous_newmanDetour R δ).neg.continuousOn
+    (fun s _ ↦ (hasDerivAt_newmanDetour R δ s).differentiableAt.hasDerivAt.neg) hmem
+    (by simpa only [neg_div_neg_eq] using hcont.intervalIntegrable)
+  simp only [neg_div_neg_eq] at h
+  rw [h, newmanDetour_one, newmanDetour_neg_one, neg_neg, ← mul_neg,
     log_ofReal_mul hR I_ne_zero, log_ofReal_mul hR (neg_ne_zero.mpr I_ne_zero), log_I, log_neg_I]
   ring
 
@@ -267,23 +232,10 @@ private theorem integral_newmanDetour_mul_div_eq {U : Set ℂ} {g H : ℂ → �
   have hc : ContinuousOn (deriv (newmanDetour R δ)) [[(-1 : ℝ), 1]] :=
     (by fun_prop : Continuous fun s : ℝ ↦ 2 * δ * (s : ℂ) - R * I).continuousOn.congr
       fun s _ ↦ deriv_newmanDetour R δ s
-  rw [integral_mul_div_eq hU hg hH
+  rw [Contour.integral_mul_div_eq_of_hasDerivAt_dslope hU hg hH
     (fun s _ ↦ (hasDerivAt_newmanDetour R δ s).differentiableAt.hasDerivAt) hc (hI ▸ hdet)
     (fun s _ ↦ newmanDetour_ne_zero hR.ne' hδ.ne' s), integral_deriv_newmanDetour_div hR hδ,
     newmanDetour_one, newmanDetour_neg_one]
-
-/-- The integral of `g z / z` over the half-turn of `circleMap 0 R` on `[a, a + π]`, through a
-primitive `H` of `dslope g 0`. -/
-private theorem integral_circleMap_mul_div_eq {U : Set ℂ} {g H : ℂ → ℂ} (hR : 0 < R) (a : ℝ)
-    (hU : U ∈ 𝓝 (0 : ℂ)) (hg : DifferentiableOn ℂ g U)
-    (hH : ∀ z ∈ U, HasDerivAt H (dslope g 0 z) z)
-    (hcirc : ∀ θ ∈ Icc a (a + π), circleMap 0 R θ ∈ U) :
-    ∫ θ in a..a + π, circleMap 0 R θ * I * (g (circleMap 0 R θ) / circleMap 0 R θ) =
-      H (circleMap 0 R (a + π)) - H (circleMap 0 R a) + g 0 * (π * I) := by
-  have hI : [[a, a + π]] = Icc a (a + π) := uIcc_of_le (by linarith [Real.pi_pos])
-  rw [integral_mul_div_eq hU hg hH (fun θ _ ↦ hasDerivAt_circleMap 0 R θ)
-    (by fun_prop) (hI ▸ hcirc) (fun θ _ ↦ circleMap_ne_center hR.ne'),
-    integral_circleMap_div hR.ne']
 
 /-- A convex set containing the endpoints `±R * I` of the detour contains `0`, and on it
 `dslope g 0` has a primitive when `g` is holomorphic there. -/
@@ -313,11 +265,12 @@ theorem integral_right_semicircle_add_integral_newmanDetour {U : Set ℂ} {g : �
       ∫ s in (-1 : ℝ)..1, deriv (newmanDetour R δ) s *
         (g (newmanDetour R δ s) / newmanDetour R δ s) = 2 * π * I * g 0 := by
   obtain ⟨h0, H, hH⟩ := exists_primitive_dslope hU hconv hg hdet
-  have he : π / 2 = -π / 2 + π := by ring
-  rw [he, integral_circleMap_mul_div_eq hR _ h0 hg hH (he ▸ hcirc),
-    integral_newmanDetour_mul_div_eq hR hδ h0 hg hH hdet, ← he,
+  rw [Contour.integral_circleMap_mul_div_eq_of_hasDerivAt_dslope hR.ne' h0 hg hH
+      (by rwa [uIcc_of_le (by linarith [Real.pi_pos])]),
+    integral_newmanDetour_mul_div_eq hR hδ h0 hg hH hdet,
     circleMap_pi_div_two, circleMap_neg_pi_div_two]
   simp only [zero_add, zero_sub]
+  push_cast
   ring
 
 /-- **The detour replaces the left semicircle.** If `g` is holomorphic on an open convex set `U`
@@ -334,13 +287,15 @@ theorem integral_left_semicircle_eq_integral_newmanDetour {U : Set ℂ} {g : ℂ
       ∫ s in (-1 : ℝ)..1, deriv (newmanDetour R δ) s *
         (g (newmanDetour R δ s) / newmanDetour R δ s) := by
   obtain ⟨h0, H, hH⟩ := exists_primitive_dslope hU hconv hg hdet
-  have he : 3 * π / 2 = π / 2 + π := by ring
-  have hc : circleMap 0 R (π / 2 + π) = -(R * I) := by
-    rw [show π / 2 + π = -π / 2 + 2 * π by ring, periodic_circleMap, circleMap_neg_pi_div_two,
-      zero_sub]
-  rw [he, integral_circleMap_mul_div_eq hR _ h0 hg hH (he ▸ hcirc),
-    integral_newmanDetour_mul_div_eq hR hδ h0 hg hH hdet, hc,
-    circleMap_pi_div_two, zero_add]
+  -- The left semicircle ends at `-R * I`, a full turn after the right semicircle starts there.
+  have he : 3 * π / 2 = -π / 2 + 2 * π := by ring
+  have hc : circleMap 0 R (3 * π / 2) = -(R * I) := by
+    rw [he, periodic_circleMap, circleMap_neg_pi_div_two, zero_sub]
+  rw [Contour.integral_circleMap_mul_div_eq_of_hasDerivAt_dslope hR.ne' h0 hg hH
+      (by rwa [uIcc_of_le (by linarith [Real.pi_pos])]),
+    integral_newmanDetour_mul_div_eq hR hδ h0 hg hH hdet, hc, circleMap_pi_div_two, zero_add]
+  push_cast
+  ring
 
 /-- **The detour contribution vanishes in the limit.** If `w` is continuous on the detour
 `newmanDetour R δ` with `δ > 0`, then `∫ w(z) exp (T z) dz` over the detour tends to `0` as
