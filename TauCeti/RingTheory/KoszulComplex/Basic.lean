@@ -44,8 +44,8 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
 
 The interface (the Koszul complex of a linear functional with exterior-power terms, the
 alternating-deletion differential, `koszulComplex.map` along `ψ ∘ g = φ`, and the homotopy
-`d(m ∧ v) + m ∧ d(v) = φ(m) v`) follows the design proposed by Nailin Guan in the open Mathlib pull
-requests [mathlib4#43708](https://github.com/leanprover-community/mathlib4/pull/43708) (definition
+`d(m ∧ v) + m ∧ d(v) = φ(m) v`) follows the design of Nailin Guan in the Mathlib pull requests
+[mathlib4#43708](https://github.com/leanprover-community/mathlib4/pull/43708) (definition
 of the Koszul complex) and
 [mathlib4#43706](https://github.com/leanprover-community/mathlib4/pull/43706) (homotopy of the
 Koszul complex). No code from those pull requests is vendored here.
