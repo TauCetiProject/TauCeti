@@ -89,6 +89,28 @@ def simplexBoundaryCoordinateMap (n : ℕ) :
     (x : Fin (n + 2) → ℝ) (i : Option (Fin n)) :
     simplexBoundaryCoordinateMap n x i = x (finSuccEquivLast.symm i).castSucc := (rfl)
 
+/-- Restore the omitted barycentric coordinate as the missing mass, reversing
+`simplexBoundaryCoordinateMap` on the affine hyperplane of total mass one. -/
+def simplexBoundaryCoordinateLift (n : ℕ) :
+    (Option (Fin n) → ℝ) →ᴬ[ℝ] (Fin (n + 2) → ℝ) :=
+  (ContinuousLinearMap.pi (φ := fun _ : Fin (n + 2) => ℝ) (Fin.lastCases
+    (motive := fun _ => (Option (Fin n) → ℝ) →L[ℝ] ℝ)
+    (-∑ i : Option (Fin n), ContinuousLinearMap.proj i)
+    (fun j : Fin (n + 1) => ContinuousLinearMap.proj (finSuccEquivLast j)))).toContinuousAffineMap +
+      ContinuousAffineMap.const ℝ (Option (Fin n) → ℝ)
+        (Pi.single (Fin.last (n + 1)) 1 : Fin (n + 2) → ℝ)
+
+/-- The retained coordinates are restored in their original order. -/
+@[simp] theorem simplexBoundaryCoordinateLift_castSucc (n : ℕ)
+    (y : Option (Fin n) → ℝ) (i : Fin (n + 1)) :
+    simplexBoundaryCoordinateLift n y i.castSucc = y (finSuccEquivLast i) := by
+  simp [simplexBoundaryCoordinateLift]
+
+/-- The last coordinate is the mass left after summing the retained coordinates. -/
+@[simp] theorem simplexBoundaryCoordinateLift_last (n : ℕ) (y : Option (Fin n) → ℝ) :
+    simplexBoundaryCoordinateLift n y (Fin.last (n + 1)) = 1 - ∑ i, y i := by
+  simp [simplexBoundaryCoordinateLift, sub_eq_add_neg, add_comm]
+
 private def topToCoordinateSimplex (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
     coordinateSimplex (Fin n) := by

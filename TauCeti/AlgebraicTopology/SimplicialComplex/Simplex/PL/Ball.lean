@@ -126,25 +126,21 @@ def simplexHalfSpacePLChart (n : ℕ) (v : Option (Option (Fin n))) :
   ext i
   exact realizationTopHomeomorphOptionCoordinateSimplex_apply n x i
 
-/-- On the target the inverse chart recovers the retained barycentric coordinates. -/
-theorem simplexHalfSpacePLChart_symm_castSucc (n : ℕ) (v : Option (Option (Fin n)))
-    {q : {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}}
-    (hq : q ∈ (simplexHalfSpacePLChart n v).target) (i : Fin (n + 1)) :
-    ((simplexHalfSpacePLChart n v).symm q).1 i.castSucc =
-      (coordinateSimplexHalfSpaceMap v).symm q.1 (finSuccEquivLast i) := by
-  simp only [simplexHalfSpacePLChart, Homeomorph.transOpenPartialHomeomorph_symm_apply,
-    Function.comp_apply, realizationTopHomeomorphOptionCoordinateSimplex_symm_castSucc]
-  rw [coe_coordinateSimplexHalfSpaceChart_symm_apply v hq]
-
-/-- The omitted inverse barycentric coordinate is the missing mass of the ambient inverse. -/
-theorem simplexHalfSpacePLChart_symm_last (n : ℕ) (v : Option (Option (Fin n)))
+/-- On a chart target, the ambient inverse flattening and affine missing-mass lift
+recover every barycentric coordinate of the inverse chart. -/
+theorem coe_simplexHalfSpacePLChart_symm (n : ℕ) (v : Option (Option (Fin n)))
     {q : {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}}
     (hq : q ∈ (simplexHalfSpacePLChart n v).target) :
-    ((simplexHalfSpacePLChart n v).symm q).1 (Fin.last (n + 1)) =
-      1 - ∑ i, (coordinateSimplexHalfSpaceMap v).symm q.1 i := by
+    (((simplexHalfSpacePLChart n v).symm q).1 : Fin (n + 2) → ℝ) =
+      simplexBoundaryCoordinateLift n ((coordinateSimplexHalfSpaceMap v).symm q.1) := by
   simp only [simplexHalfSpacePLChart, Homeomorph.transOpenPartialHomeomorph_symm_apply,
-    Function.comp_apply, realizationTopHomeomorphOptionCoordinateSimplex_symm_last]
-  rw [coe_coordinateSimplexHalfSpaceChart_symm_apply v hq]
+    Function.comp_apply]
+  funext i
+  exact Fin.lastCases
+    (by simp [realizationTopHomeomorphOptionCoordinateSimplex_symm_last,
+      coe_coordinateSimplexHalfSpaceChart_symm_apply v hq])
+    (fun j => by simp [realizationTopHomeomorphOptionCoordinateSimplex_symm_castSucc,
+      coe_coordinateSimplexHalfSpaceChart_symm_apply v hq]) i
 
 /-- On a vertex chart's source, proper-face support is exactly normal coordinate zero. -/
 theorem support_ne_univ_iff_simplexHalfSpacePLChart_snd_eq_zero (n : ℕ)
