@@ -723,10 +723,9 @@ theorem IsCollaredConcordance.concordant (h : IsCollaredConcordance Gc g₀ g₁
     simp only [Θ, Prod.map_snd, coe_collarTimeIcc]
   let B := Gc.pullback Θ (contMDiff_prodMap_id_collarTimeIcc hδ hδ₁ (by simp))
     fun p ↦ (isInvertible_mfderiv_prodMap_id_collarTimeIcc hδ hδ₁ p).injective
-  have hB : B.HasPositiveScalarCurvature := (hasPositiveScalarCurvature_iff _).2 fun p ↦ by
-    rw [scalarCurvature_pullback_of_isInvertible Gc _
-      (isInvertible_mfderiv_prodMap_id_collarTimeIcc hδ hδ₁)]
-    exact (hasPositiveScalarCurvature_iff _).1 h.hasPositiveScalarCurvature _
+  have hB : B.HasPositiveScalarCurvature :=
+    h.hasPositiveScalarCurvature.pullback_of_isInvertible _
+      (isInvertible_mfderiv_prodMap_id_collarTimeIcc hδ hδ₁)
   have hB₀ (p : M × ℝ) (hp : p.2 ∈ Ioo (ε / 2) ε) : B.inner p = g₀.cylinder.inner p :=
     pullback_prodMap_id_collarTimeIcc_inner hδ hδ₁ ⟨hp.1, by linarith [hp.2]⟩ (h₀ _ (by
       rw [hΘ, collarTime_of_mem hδ ⟨hp.1.le, by linarith [hp.2]⟩]
