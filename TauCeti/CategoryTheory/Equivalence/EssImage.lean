@@ -26,7 +26,9 @@ their graded symmetric algebras, with the degree-one component as retraction.
 ## Main declarations
 
 * `CategoryTheory.Functor.equivEssImageOfCompIso`: the equivalence onto the essential image with
-  inverse `L.essImage.ι ⋙ R` and unit `e.symm`.
+  inverse `L.essImage.ι ⋙ R` and unit `e.symm`;
+* `CategoryTheory.Functor.essImage_iff_nonempty_iso_of_compIso`: an object `A` lies in the
+  essential image of `L` exactly when `L.obj (R.obj A) ≅ A`.
 -/
 
 public section
@@ -54,24 +56,9 @@ noncomputable def equivEssImageOfCompIso : C ≌ L.EssImageSubcategory :=
         Functor.associator _ _ _) ≪≫
     (Functor.associator _ _ _).symm ≪≫
     Functor.isoWhiskerRight L.toEssImage.asEquivalence.counitIso _ ≪≫ Functor.leftUnitor _)
-  { functor := L.toEssImage
-    inverse := L.essImage.ι ⋙ R
-    unitIso := e.symm
-    counitIso := E.counitIso
-    functor_unitIso_comp X := by
-      -- The unit of `E` is `e.symm`: by naturality of `e.inv` it is `e.inv.app X` followed by
-      -- `R` applied to the triangle identity of `L.toEssImage.asEquivalence` at `X`.
-      have h := congrArg (fun f ↦ R.map f.hom) (L.toEssImage.asEquivalence.functor_unit_comp X)
-      have hn := e.inv.naturality (L.toEssImage.asEquivalence.unitIso.hom.app X)
-      simp only [Equivalence.unit, Equivalence.counit, Functor.asEquivalence_functor,
-        ObjectProperty.FullSubcategory.comp_hom, toEssImage_map_hom, Functor.map_comp,
-        ObjectProperty.FullSubcategory.id_hom, Functor.map_id] at h
-      simp only [Functor.id_map, Functor.comp_map, Functor.asEquivalence_functor] at hn
-      have hu : E.unitIso.hom.app X = e.inv.app X := by
-        simp [E, Equivalence.changeInverse, reassoc_of% hn, h]
-      have h' := E.functor_unit_comp X
-      rw [hu] at h'
-      exact h' }
+  -- `Equivalence.mk` keeps its counit `e` and adjusts its unit, so the unit of the symmetric
+  -- equivalence is `e.symm`.
+  (Equivalence.mk (L.essImage.ι ⋙ R) L.toEssImage E.counitIso.symm e).symm
 
 /-- The forward functor of `equivEssImageOfCompIso` is the corestriction of `L` to its essential
 image. -/
@@ -90,6 +77,14 @@ theorem equivEssImageOfCompIso_inverse :
 @[simp]
 theorem equivEssImageOfCompIso_unitIso : (L.equivEssImageOfCompIso e).unitIso = e.symm :=
   (rfl)
+
+include e in
+omit [L.Full] in
+/-- An object lies in the essential image of a functor `L` with a retraction `e : L ⋙ R ≅ 𝟭 C`
+exactly when it is isomorphic to `L` applied to its image under `R`. -/
+theorem essImage_iff_nonempty_iso_of_compIso (A : D) :
+    L.essImage A ↔ Nonempty (L.obj (R.obj A) ≅ A) :=
+  ⟨fun ⟨X, ⟨i⟩⟩ ↦ ⟨L.mapIso (R.mapIso i.symm ≪≫ e.app X) ≪≫ i⟩, fun ⟨i⟩ ↦ ⟨_, ⟨i⟩⟩⟩
 
 end Functor
 

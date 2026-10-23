@@ -21,9 +21,9 @@ the essential image of `gradedSymmetricAlgebra X`. Their relative spectra are th
 Since the graded symmetric algebra functor is fully faithful and its degree-one component recovers
 `F`, it is an equivalence
 `gradedSymmetricAlgebraEquiv X : QuasicoherentSheaf X ≌ FreeGradedQuasicoherentAlgebra X`,
-whose inverse is the degree-one functor and whose unit is the identification `Sym¹ F ≅ F` of
-`gradedSymmetricAlgebraDegreeOneIso`. A morphism of free graded algebras is therefore the same as
-a morphism of their degree-one components.
+whose inverse is the degree-one functor and whose unit is the identification `F ≅ Sym¹ F`,
+the inverse of `gradedSymmetricAlgebraDegreeOneIso`. A morphism of free graded algebras is
+therefore the same as a morphism of their degree-one components.
 
 ## Main declarations
 
@@ -94,9 +94,8 @@ as a graded algebra, to the graded symmetric algebra of its degree-one component
 theorem essImage_gradedSymmetricAlgebra_iff (A : GradedQuasicoherentAlgebra X) :
     (gradedSymmetricAlgebra X).essImage A ↔
       Nonempty ((gradedSymmetricAlgebra X).obj (degreeOne.obj A) ≅ A) :=
-  ⟨fun h ↦ ⟨(gradedSymmetricAlgebra X).essImage.ι.mapIso
-      ((gradedSymmetricAlgebraEquiv X).counitIso.app ⟨A, h⟩)⟩,
-    fun ⟨e⟩ ↦ ⟨_, ⟨e⟩⟩⟩
+  (gradedSymmetricAlgebra X).essImage_iff_nonempty_iso_of_compIso
+    (gradedSymmetricAlgebraDegreeOneIso X) A
 
 end
 
