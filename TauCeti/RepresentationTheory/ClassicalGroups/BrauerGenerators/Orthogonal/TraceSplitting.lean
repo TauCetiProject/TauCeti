@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Harmonic
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
-# The trace splitting of the orthogonal tensor square
+# The trace splitting of the orthogonal tensor powers
 
 The cap `TauCeti.orthogonalCap` contracts the two factors of `V ⊗ V`, `V = kⁿ`, against the
 coordinate dot product, and the cup `TauCeti.orthogonalCup` expands a scalar into
@@ -38,6 +39,18 @@ the three pieces have dimensions `5 + 3 + 1 = 9`, the traceless symmetric, the a
 the trace; the two examples at the end of the file check the `8 = 9 - 1` half of that count, which
 is the part visible without the symmetric/exterior splitting.
 
+In every degree `d` the trace line generalizes to the **trace tensors**
+`TauCeti.orthogonalTraceTensors k n d`, the sum of the images of the arcs
+`TauCeti.orthogonalCupCapAt k n d i j`: the tensors built by inserting the invariant form into
+some pair of slots of a tensor of degree `d - 2`. They form the first step of the trace filtration
+of `V^{⊗d}`, and over a star-ordered field such as `ℚ`, `ℝ` or `ℂ` they complement the harmonic
+tensors (`TauCeti.isCompl_harmonicTensorsSubrep_orthogonalTraceTensors`). The reason is
+Hermitian rather than combinatorial: the matrix of each arc in the monomial basis is symmetric with
+entries `0` and `1`, so the arcs are self-adjoint for the Hermitian form in which that basis is
+orthonormal, the harmonic tensors are the orthogonal complement of the trace tensors, and that form
+is anisotropic. An invertible loop value is no longer what drives the splitting, and over a field
+of positive characteristic the splitting can fail already on two strands.
+
 The splitting needs `n` invertible in `k` and not merely nonzero as a natural number: where
 `(n : k) = 0` the cap kills the cup, so the Brauer generator `e = cup ∘ cap` squares to zero, and
 for `n ≠ 0` the trace line then lies **inside** the harmonic tensors instead of complementing
@@ -58,6 +71,8 @@ tensors and its image is the trace line.
 * `TauCeti.orthogonalTraceProjection`: the normalized Brauer generator `n⁻¹ • e`, defined where
   the loop value is invertible. It is the projection onto the trace line along the harmonic
   tensors.
+* `TauCeti.orthogonalTraceTensors`: in degree `d`, the sum of the images of the arcs, a
+  subrepresentation of `V^{⊗d}`.
 
 ## Main results
 
@@ -81,6 +96,11 @@ tensors and its image is the trace line.
 * `TauCeti.finrank_harmonicTensors_two`: **the harmonic tensors have codimension one**,
   `dim (harmonic) + 1 = n²`, and `TauCeti.finrank_orthogonalTraceLine`: for `n ≠ 0` the trace
   line is a line.
+* `TauCeti.orthogonalTraceTensors_two`: on two strands the trace tensors are the trace line.
+* `TauCeti.isCompl_harmonicTensors_iSup_range_orthogonalCupCapAt` and
+  `TauCeti.isCompl_harmonicTensorsSubrep_orthogonalTraceTensors`: **the trace splitting in every
+  degree**: over a star-ordered field the harmonic tensors and the trace tensors are
+  complementary, at the level of submodules and of subrepresentations.
 
 ## References
 
@@ -283,6 +303,106 @@ theorem finrank_orthogonalTraceLine [NeZero n] :
     LinearMap.finrank_range_of_inj (orthogonalCup_injective k n), Module.finrank_self]
 
 end Field
+
+/-! ### The trace splitting in every degree -/
+
+section TraceTensors
+
+variable (d : ℕ) [CommRing k]
+
+/-- **The trace tensors** of `V^{⊗d}`: the sum of the images of the arcs
+`TauCeti.orthogonalCupCapAt k n d i j`, that is, of the tensors obtained by inserting the
+invariant form `∑ⱼ eⱼ ⊗ eⱼ` into some pair of distinct slots. It is a subrepresentation because
+every arc commutes with the diagonal action of the orthogonal group. On two strands it is the
+trace line (`TauCeti.orthogonalTraceTensors_two`). -/
+noncomputable def orthogonalTraceTensors :
+    Subrepresentation ((stdOrthogonalRep k n).tensorPower d) where
+  toSubmodule := ⨆ (i : Fin d) (j : Fin d) (_ : i ≠ j),
+    LinearMap.range (orthogonalCupCapAt k n d i j)
+  apply_mem_toSubmodule g := by
+    suffices h : (⨆ (i : Fin d) (j : Fin d) (_ : i ≠ j),
+        LinearMap.range (orthogonalCupCapAt k n d i j)) ≤
+        Submodule.comap ((stdOrthogonalRep k n).tensorPower d g)
+          (⨆ (i : Fin d) (j : Fin d) (_ : i ≠ j), LinearMap.range (orthogonalCupCapAt k n d i j))
+      from fun x hx => h hx
+    refine iSup_le fun i => iSup_le fun j => iSup_le fun hij => ?_
+    rintro _ ⟨y, rfl⟩
+    have h := LinearMap.congr_fun (commute_orthogonalCupCapAt_tensorPower k n d g hij).eq y
+    rw [Module.End.mul_apply, Module.End.mul_apply] at h
+    rw [Submodule.mem_comap, ← h]
+    exact Submodule.mem_iSup_of_mem i <| Submodule.mem_iSup_of_mem j <|
+      Submodule.mem_iSup_of_mem hij <| LinearMap.mem_range_self _ _
+
+@[simp]
+theorem orthogonalTraceTensors_toSubmodule :
+    (orthogonalTraceTensors k n d).toSubmodule =
+      ⨆ (i : Fin d) (j : Fin d) (_ : i ≠ j), LinearMap.range (orthogonalCupCapAt k n d i j) :=
+  (rfl)
+
+variable {k n d}
+
+/-- The image of every arc consists of trace tensors. -/
+theorem range_orthogonalCupCapAt_le_orthogonalTraceTensors {i j : Fin d} (hij : i ≠ j) :
+    LinearMap.range (orthogonalCupCapAt k n d i j) ≤ (orthogonalTraceTensors k n d).toSubmodule :=
+  le_iSup_of_le i <| le_iSup_of_le j <| le_iSup_of_le hij le_rfl
+
+/-- The order-level universal property: the trace tensors lie in a submodule exactly when the
+image of every arc does. -/
+theorem orthogonalTraceTensors_toSubmodule_le_iff {p : Submodule k (⨂[k]^d (Fin n → k))} :
+    (orthogonalTraceTensors k n d).toSubmodule ≤ p ↔
+      ∀ i j : Fin d, i ≠ j → LinearMap.range (orthogonalCupCapAt k n d i j) ≤ p := by
+  simp only [orthogonalTraceTensors_toSubmodule, iSup_le_iff]
+
+variable (k n)
+
+/-- **On two strands the trace tensors are the trace line**: the only arc is the Brauer generator
+`e = cup ∘ cap`, whose image is the image of the cup. -/
+theorem orthogonalTraceTensors_two : orthogonalTraceTensors k n 2 = orthogonalTraceLine k n := by
+  refine Subrepresentation.toSubmodule_injective (le_antisymm ?_ ?_)
+  · rw [orthogonalTraceTensors_toSubmodule_le_iff]
+    intro i j hij
+    rw [orthogonalTraceLine_toSubmodule, ← range_orthogonalCupCap, ← orthogonalCupCapAt_zero_one]
+    rcases (by decide : ∀ i j : Fin 2, i ≠ j → i = 0 ∧ j = 1 ∨ i = 1 ∧ j = 0) i j hij with
+      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · exact le_rfl
+    · rw [orthogonalCupCapAt_comm]
+  · rw [orthogonalTraceLine_toSubmodule, ← range_orthogonalCupCap, ← orthogonalCupCapAt_zero_one]
+    exact range_orthogonalCupCapAt_le_orthogonalTraceTensors (by decide)
+
+end TraceTensors
+
+section StarOrderedField
+
+variable (d : ℕ) [Field k] [PartialOrder k] [StarRing k] [StarOrderedRing k]
+
+/-- **The harmonic tensors complement the images of the arcs** over a star-ordered field, such as
+`ℚ`, `ℝ` or `ℂ` (with `ComplexOrder`): `V^{⊗d}` is the direct sum of the common kernel of the arcs
+and the sum of their images.
+
+Some such hypothesis on `k` is needed: on two strands over a field in which `n` is a nonzero
+multiple of the characteristic, the cap kills the cup, so the trace line `range (cup)` is a nonzero
+subspace of the harmonic tensors. -/
+theorem isCompl_harmonicTensors_iSup_range_orthogonalCupCapAt :
+    IsCompl (harmonicTensors k n d)
+      (⨆ (i : Fin d) (j : Fin d) (_ : i ≠ j), LinearMap.range (orthogonalCupCapAt k n d i j)) := by
+  have h := LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix
+    (tensorPowerBasis k n d)
+    (fun p : {p : Fin d × Fin d // p.1 ≠ p.2} => orthogonalCupCapAt k n d p.1.1 p.1.2)
+    fun p => isHermitian_toMatrix_orthogonalCupCapAt p.2
+  simpa only [iInf_subtype, iSup_subtype, iInf_prod, iSup_prod, harmonicTensors_def] using h
+
+/-- **The trace splitting of the orthogonal tensor power.** Over a star-ordered field the harmonic
+tensors and the trace tensors are complementary subrepresentations of `V^{⊗d}`, so
+`Subrepresentation.equivProdOfIsCompl` presents `V^{⊗d}` as their direct sum. On two strands,
+`TauCeti.isCompl_harmonicTensorsSubrep_orthogonalTraceLine` gives the same splitting under the
+different hypothesis that the loop value `n` is invertible. -/
+theorem isCompl_harmonicTensorsSubrep_orthogonalTraceTensors :
+    IsCompl (harmonicTensorsSubrep k n d) (orthogonalTraceTensors k n d) :=
+  Subrepresentation.isCompl_toSubmodule.mp <| by
+    rw [harmonicTensorsSubrep_toSubmodule, orthogonalTraceTensors_toSubmodule]
+    exact isCompl_harmonicTensors_iSup_range_orthogonalCupCapAt k n d
+
+end StarOrderedField
 
 -- On `(k³)^{⊗2}` the trace splitting is `8 + 1 = 9 = 3²`, the harmonic tensors being the
 -- traceless symmetric `5` plus the antisymmetric `3`. Nothing below is special to `ℚ`.
