@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.RingTheory.MvPolynomial.Jacobian
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
