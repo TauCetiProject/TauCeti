@@ -97,6 +97,12 @@ theorem simplexCharacteristicMap_apply {x : Fin n → ℝ} (hx : x ∈ closedBal
     simplexCharacteristicMap K f hf x = (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).1 :=
   simplexCharacteristicFun_apply K f hf hx
 
+/-- The characteristic map is injective on the closed ball. -/
+theorem injOn_simplexCharacteristicMap_closedBall :
+    InjOn (simplexCharacteristicMap K f hf) (closedBall 0 1) := fun x hx x' hx' h ↦ by
+  rw [simplexCharacteristicMap_apply K f hf hx, simplexCharacteristicMap_apply K f hf hx'] at h
+  exact congrArg Subtype.val ((simplexClosedBallHomeomorph K f hf).injective (Subtype.ext h))
+
 /-- The characteristic map sends the inverse closed-simplex homeomorphism of a point back to
 that point. -/
 @[simp]

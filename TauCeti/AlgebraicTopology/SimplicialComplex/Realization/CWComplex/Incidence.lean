@@ -5,29 +5,37 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.LocalDegree
+public import TauCeti.AlgebraicTopology.Cellular.Regular
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.Basic
 
 /-!
-# Incidence support for simplicial realization cells
+# Incidence numbers of simplicial realization cells
 
-The cellular boundary of a simplex is supported on its codimension-one faces.  This file proves
-the support statement for the classical CW structure on the weak realization of an abstract
-simplicial complex: if an `n`-cell is not a face of an `(n + 1)`-cell, their cellular incidence
-coefficient is zero.  Equivalently, the cellular boundary column is supported on the cells
-obtained by deleting one vertex.
+The cellular boundary of a simplex is supported on its codimension-one faces, with unit
+coefficients.  This file proves both statements for the classical CW structure on the weak
+realization of an abstract simplicial complex.
 
-The proof uses the local-degree description of cellular incidence.  The barycentre picked out by
-the origin of an `n`-cell's characteristic map lies in its open cell.  If the cell is not a face
-of the larger simplex, that point is absent from the larger cell's frontier, so the attaching map
-has local degree zero there.
+* If an `n`-cell is not a face of an `(n + 1)`-cell, their cellular incidence coefficient is zero
+  (`TauCeti.cellularIncidence_realization_eq_zero_of_not_subset`).  Equivalently, the cellular
+  boundary column is supported on the cells obtained by deleting one vertex
+  (`TauCeti.support_cellularBoundaryColumn_realization_subset_faces`).  The barycentre picked out
+  by the origin of an `n`-cell's characteristic map lies in its open cell.  If the cell is not a
+  face of the larger simplex, that point is absent from the larger cell's frontier, so the
+  attaching map has local degree zero there.
+* The attaching map of a simplicial cell is injective
+  (`TauCeti.cellAttachingMap_realization_injective`): the realization is a regular CW complex.
+  Hence the incidence coefficient of a positive-dimensional codimension-one face is a unit of the
+  coefficient ring (`TauCeti.isUnit_cellularIncidence_realization_of_subset`), so `±1` over `ℤ`.
 
-Computing the nonzero coefficients, including their alternating signs in the increasing vertex
-order, is a separate orientation calculation.
+Computing the signs of these units, which alternate in the increasing vertex order, is a separate
+orientation calculation.  The faces of a `1`-simplex, where the boundary sphere is `S⁰`, are not
+treated here.
 
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Sections 2.1--2.2.
+* A. T. Lundell, S. Weingram, *The Topology of CW Complexes*, Van Nostrand Reinhold (1969),
+  Chapter V (regular CW complexes).
 -/
 
 public section
@@ -128,5 +136,45 @@ theorem support_cellularBoundaryColumn_realization_subset_faces
       apply hi
       simpa only [Equiv.symm_apply_apply] using
         cellularIncidence_realization_eq_zero_of_not_subset (R := R) c _ hsubset
+
+/-- **Simplicial realizations are regular CW complexes**: the attaching map of every simplicial
+cell is injective, since its characteristic map is injective on the closed ball. -/
+theorem cellAttachingMap_realization_injective
+    (c : _root_.AbstractSimplicialComplex.RealizationCell K n) :
+    letI := _root_.AbstractSimplicialComplex.realizationCWComplex K
+    Function.Injective
+      (cellAttachingMap (_root_.AbstractSimplicialComplex.realizationCellEquiv K n |>.symm c)) := by
+  let := _root_.AbstractSimplicialComplex.realizationCWComplex K
+  intro z z' h
+  have h' := congrArg Subtype.val h
+  rw [coe_cellAttachingMap_apply, coe_cellAttachingMap_apply,
+    _root_.AbstractSimplicialComplex.map_realizationCellEquiv_symm] at h'
+  exact (TopCat.isClosedEmbedding_diskBoundaryInclusion n).injective
+    ((diskHomeomorphClosedBall n).injective (Subtype.ext
+      (c.injOn_characteristicMap_closedBall (diskHomeomorphClosedBall n _).2
+        (diskHomeomorphClosedBall n _).2 h')))
+
+/-- **Codimension-one faces have unit incidence numbers.** The incidence coefficient of a
+positive-dimensional face `d` of a simplicial cell `c`, with one vertex fewer, in the cellular
+boundary of `c` is a unit of the coefficient ring. -/
+theorem isUnit_cellularIncidence_realization_of_subset
+    (c : _root_.AbstractSimplicialComplex.RealizationCell K (n + 2))
+    (d : _root_.AbstractSimplicialComplex.RealizationCell K (n + 1))
+    (h : d.1.1 ⊆ c.1.1) :
+    letI := _root_.AbstractSimplicialComplex.realizationCWComplex K
+    IsUnit (cellularIncidence (Set.univ : Set (_root_.AbstractSimplicialComplex.Realization K))
+      R (n + 1) (_root_.AbstractSimplicialComplex.realizationCellEquiv K (n + 1) |>.symm d)
+        (_root_.AbstractSimplicialComplex.realizationCellEquiv K (n + 2) |>.symm c)) := by
+  let := _root_.AbstractSimplicialComplex.realizationCWComplex K
+  refine isUnit_cellularIncidence_of_injective _ R (cellAttachingMap_realization_injective c) ?_
+  rw [_root_.AbstractSimplicialComplex.openCell_realizationCellEquiv_symm,
+    _root_.AbstractSimplicialComplex.cellFrontier_realizationCellEquiv_symm]
+  intro x hx
+  rw [Set.mem_ofPred_eq] at hx ⊢
+  rw [hx]
+  refine Finset.ssubset_iff_subset_ne.2 ⟨h, fun hdc ↦ ?_⟩
+  have hcard := congrArg Finset.card hdc
+  rw [d.2, c.2] at hcard
+  omega
 
 end TauCeti

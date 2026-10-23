@@ -69,4 +69,19 @@ lemma coe_cellAttachingMap_apply (j : cell C n) (z : TopCat.diskBoundary.{w} n) 
       map n j (diskHomeomorphClosedBall n (TopCat.diskBoundaryInclusion n z)) :=
   (rfl)
 
+/-- The attaching map of a cell maps the boundary sphere onto the frontier of the cell. -/
+lemma range_cellAttachingMap (j : cell C n) :
+    Set.range (fun z ↦ (cellAttachingMap j z : X)) = cellFrontier n j := by
+  ext x
+  constructor
+  · rintro ⟨z, rfl⟩
+    exact ⟨_, diskHomeomorphClosedBall_diskBoundaryInclusion_mem_sphere z, rfl⟩
+  · rintro ⟨p, hp, rfl⟩
+    set q := (diskHomeomorphClosedBall n).symm ⟨p, sphere_subset_closedBall hp⟩
+    have hq : diskHomeomorphClosedBall n q = ⟨p, sphere_subset_closedBall hp⟩ :=
+      Homeomorph.apply_symm_apply _ _
+    obtain ⟨z, hz⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff q).1
+      (by rw [hq]; exact mem_sphere_zero_iff_norm.1 hp)
+    exact ⟨z, (coe_cellAttachingMap_apply j z).trans (by rw [hz, hq])⟩
+
 end TauCeti

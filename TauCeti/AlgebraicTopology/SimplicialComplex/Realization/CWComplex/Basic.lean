@@ -69,6 +69,11 @@ theorem characteristicMap_target (c : RealizationCell K n) :
     c.characteristicMap.target = {x : Realization K | x.1.support = c.1.1} := by
   rw [characteristicMap, simplexCharacteristicMap_target, image_vertexEmbedding]
 
+/-- A cell's characteristic map is injective on the closed ball. -/
+theorem injOn_characteristicMap_closedBall (c : RealizationCell K n) :
+    InjOn c.characteristicMap (closedBall 0 1) :=
+  injOn_simplexCharacteristicMap_closedBall K c.vertexEmbedding _
+
 /-- The open ball maps onto the points whose support is the cell's face. -/
 @[simp]
 theorem image_characteristicMap_ball (c : RealizationCell K n) :

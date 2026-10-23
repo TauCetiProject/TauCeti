@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.LocalDegree
+public import TauCeti.AlgebraicTopology.Cellular.Regular
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Involution
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Sphere
 public import TauCeti.Topology.CWComplex.Classical.RealProjective
 
 /-!
@@ -259,45 +258,6 @@ private lemma mapsTo_cellAttachingMap_upperHemisphere_compl_pole (hi : i + 1 ≤
   (eq_pole_or_eq_of_cellAttachingMap_eq hi c h).elim hu fun h' ↦
     diskBoundaryNeg_pole_notMem_upperHemisphere i (h' ▸ u.2)
 
-/-- **Excision near the pole.** On the upper hemisphere, the attaching map of the `(i + 1)`-cell
-of `RPᴺ` induces isomorphisms from `H(U, U ∖ {p})` to the local homology of the `i`-skeleton at the
-class of the pole `p`. -/
-private lemma isIso_singularHomologyMap_upperHemisphere {A : Type*} [Category A]
-    [HasCoproducts.{0} A] [Abelian A] (R : A) (hi : i + 1 ≤ N)
-    (c : cell (univ : Set (RealProjectiveSpace N)) i)
-    (c' : cell (univ : Set (RealProjectiveSpace N)) (i + 1))
-    (hfU : MapsTo (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
-        C(upperHemisphere i, TopCat.diskBoundary.{0} (i + 1))) ≫ cellAttachingMap c')
-      (Subtype.val ⁻¹' {pole i}ᶜ : Set (upperHemisphere i))
-      {cellAttachingMap c' (pole i)}ᶜ) (n : ℕ) :
-    IsIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfU) R n) := by
-  refine TopPair.isIso_singularHomologyMap_of_open_cover R (TopPair.ofSubsetMap _ hfU) ?_ ?_
-    (fun b : Bool ↦ bif b
-      then (Subtype.val ⁻¹' Topology.RelCWComplex.openCell i c :
-        Set (skeletonLT (univ : Set (RealProjectiveSpace N)) (i + 1 : ℕ)))
-      else {cellAttachingMap c' (pole i)}ᶜ)
-    (fun b ↦ ?_) ?_ (fun b ↦ ?_) n
-  · rw [TopPair.ofSubsetMap_fst]
-    exact isEmbedding_cellAttachingMap_restrict hi c'
-  · rintro u ⟨y, hy⟩
-    refine ⟨⟨u, fun hu ↦ y.2 ?_⟩, rfl⟩
-    refine hy.trans ?_
-    rw [TopPair.ofSubsetMap_fst_apply]
-    exact congrArg (cellAttachingMap c') hu
-  · cases b
-    · have : T1Space (skeletonLT (univ : Set (RealProjectiveSpace N)) (i + 1 : ℕ)) := inferInstance
-      exact @isOpen_compl_singleton _ _ this _
-    · exact isOpen_preimage_val_openCell i subset_rfl c
-  · refine eq_univ_of_forall fun z ↦ mem_iUnion.2 ?_
-    by_cases hz : z = cellAttachingMap c' (pole i)
-    · exact ⟨true, hz ▸ cellAttachingMap_pole_mem_openCell hi c c'⟩
-    · exact ⟨false, hz⟩
-  · cases b
-    · exact Or.inl TopPair.range_ofSubset_map.symm.subset
-    · refine Or.inr fun z hz ↦ ?_
-      obtain ⟨u, hu, rfl⟩ := exists_mem_upperHemisphere_cellAttachingMap_eq hi c c' z hz
-      exact ⟨⟨u, hu⟩, TopPair.ofSubsetMap_fst_apply _ _ _⟩
-
 section Ring
 
 variable (R : Type) [Ring R]
@@ -326,7 +286,9 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
   have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
     (isOpen_upperHemisphere i) isClosed_singleton
     (singleton_subset_iff.2 (pole_mem_upperHemisphere i)) i
-  have := isIso_singularHomologyMap_upperHemisphere (ModuleCat.of R R) hi c c' hfU i
+  have := isIso_singularHomologyMap_cellAttachingMap_domRestrict univ (ModuleCat.of R R) hx
+    (isEmbedding_cellAttachingMap_restrict hi c')
+    (exists_mem_upperHemisphere_cellAttachingMap_eq hi c c') hfU i
   -- The sphere generator in `Hᵢ(Sⁱ, Sⁱ ∖ {p, -p})`, and its contribution near the pole.
   obtain ⟨s, hs⟩ : ∃ s, s = diskBoundaryFundamentalClass (ModuleCat.of R R)
       ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ) := ⟨_, rfl⟩
