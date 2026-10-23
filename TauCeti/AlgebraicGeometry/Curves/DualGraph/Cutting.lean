@@ -86,28 +86,60 @@ lemma marking_cutComponent (x : (G.smoothing Sᶜ).Vertex)
     (i : {i : ι ⊕ (S × Fin 2) // G.smoothingVertex Sᶜ (G.cutMarking S i) = x}) :
     ((G.cutComponent S x).marking i).1 = G.cutMarking S i.1 := (rfl)
 
+/-- The vertices of the cut pieces, taken together, are the original vertices. -/
+def sigmaVertexCutComponentEquiv :
+    (Σ x : (G.smoothing Sᶜ).Vertex, (G.cutComponent S x).Vertex) ≃ G.Vertex :=
+  Equiv.sigmaFiberEquiv (G.smoothingVertex Sᶜ)
+
+@[simp]
+lemma sigmaVertexCutComponentEquiv_apply
+    (v : Σ x : (G.smoothing Sᶜ).Vertex, (G.cutComponent S x).Vertex) :
+    G.sigmaVertexCutComponentEquiv S v = v.2.1 := (rfl)
+
+@[simp]
+lemma sigmaVertexCutComponentEquiv_symm_apply (v : G.Vertex) :
+    (G.sigmaVertexCutComponentEquiv S).symm v =
+      ⟨G.smoothingVertex Sᶜ v, ⟨v, rfl⟩⟩ := (rfl)
+
+/-- The edges of the cut pieces, taken together, are exactly the uncut edges. -/
+def sigmaEdgeCutComponentEquiv :
+    (Σ x : (G.smoothing Sᶜ).Vertex, (G.cutComponent S x).Edge) ≃ {e // e ∉ S} :=
+  (Equiv.sigmaCongrRight fun x ↦
+    (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ Sᶜ)
+      (fun e ↦ G.smoothingVertex Sᶜ (G.endpoint e 0) = x)).symm).trans
+    ((Equiv.sigmaFiberEquiv fun e : ↥(Sᶜ) ↦
+      G.smoothingVertex Sᶜ (G.endpoint e.1 0)).trans
+      (Equiv.subtypeEquivRight fun _ ↦ mem_compl))
+
+@[simp]
+lemma sigmaEdgeCutComponentEquiv_apply
+    (e : Σ x : (G.smoothing Sᶜ).Vertex, (G.cutComponent S x).Edge) :
+    G.sigmaEdgeCutComponentEquiv S e = ⟨e.2.1, mem_compl.mp e.2.2.1⟩ := (rfl)
+
+@[simp]
+lemma sigmaEdgeCutComponentEquiv_symm_apply (e : {e // e ∉ S}) :
+    (G.sigmaEdgeCutComponentEquiv S).symm e =
+      ⟨G.smoothingVertex Sᶜ (G.endpoint e.1 0), ⟨e.1, mem_compl.mpr e.2, rfl⟩⟩ := (rfl)
+
+/-- Branch markings do not affect the arithmetic genus of a cut component. -/
+@[simp]
+theorem arithmeticGenus_cutComponent (x : (G.smoothing Sᶜ).Vertex) :
+    (G.cutComponent S x).arithmeticGenus = (G.smoothing Sᶜ).genus x := by
+  rw [genus_smoothing]
+  -- The vertex, edge and genus fields coincide; only the marking type and map differ.
+  simp only [arithmeticGenus_def, firstBetti_def]
+
 /-- **Genus of a partial normalization.** The sum of the arithmetic genera of its connected
 pieces, plus the number of cut nodes plus one, equals the original genus plus the number of
 pieces. This includes separating, nonseparating and simultaneous cuts, without subtraction. -/
 theorem sum_arithmeticGenus_cutComponent_add_card :
     (∑ x : (G.smoothing Sᶜ).Vertex, (G.cutComponent S x).arithmeticGenus) + #S + 1 =
       G.arithmeticGenus + Fintype.card (G.smoothing Sᶜ).Vertex := by
-  have h := (G.smoothing Sᶜ).arithmeticGenus_add_card_vertex
-  rw [G.arithmeticGenus_smoothing Sᶜ] at h
-  -- Branch markings do not affect the arithmetic genus of a smoothing component.
-  have hgen (x : (G.smoothing Sᶜ).Vertex) :
-      (G.smoothing Sᶜ).genus x = (G.cutComponent S x).arithmeticGenus := by
-    simp only [arithmeticGenus_def, firstBetti_def]
-  simp_rw [← hgen]
-  have hE := G.card_edge_smoothing Sᶜ
-  have hS := card_add_card_compl S
-  dsimp only [smoothing] at *
-  omega
-
-/-- Cutting cannot create more than one new connected piece per cut node. -/
-theorem card_vertex_smoothing_compl_le :
-    Fintype.card (G.smoothing Sᶜ).Vertex ≤ #S + 1 := by
-  have h := (G.smoothing Sᶜ).card_vertex_le_card_edge_add_one
+  have h : G.arithmeticGenus + Fintype.card (G.smoothing Sᶜ).Vertex =
+      (∑ x : (G.smoothing Sᶜ).Vertex, (G.cutComponent S x).arithmeticGenus) +
+        Fintype.card (G.smoothing Sᶜ).Edge + 1 := by
+    simpa only [arithmeticGenus_smoothing, arithmeticGenus_cutComponent, genus_smoothing] using
+      (G.smoothing Sᶜ).arithmeticGenus_add_card_vertex
   have hE := G.card_edge_smoothing Sᶜ
   have hS := card_add_card_compl S
   omega
@@ -117,7 +149,8 @@ theorem sum_arithmeticGenus_cutComponent_le :
     (∑ x : (G.smoothing Sᶜ).Vertex, (G.cutComponent S x).arithmeticGenus) ≤
       G.arithmeticGenus := by
   have := G.sum_arithmeticGenus_cutComponent_add_card S
-  have := G.card_vertex_smoothing_compl_le S
+  have := G.card_vertex_smoothing_add_card_le Sᶜ
+  have := card_add_card_compl S
   omega
 
 /-! ### Special flags and stability -/
