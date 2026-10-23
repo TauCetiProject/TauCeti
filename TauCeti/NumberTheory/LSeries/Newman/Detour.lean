@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Convex
-public import Mathlib.Analysis.Complex.RemovableSingularity
-public import Mathlib.MeasureTheory.Integral.CircleIntegral
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import TauCeti.Analysis.Contour.DslopeFTC
 public import TauCeti.Analysis.Contour.LogDerivFTC
