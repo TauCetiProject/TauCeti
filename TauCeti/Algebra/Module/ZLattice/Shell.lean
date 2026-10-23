@@ -34,9 +34,9 @@ This file proves that every shell is finite, that `r_L(0) = 1` and that negative
 represented; that the representation numbers of a translate depend only on its coset, are
 unchanged by `γ ↦ -γ`, and are invariant under linear isometries; that an even lattice represents
 only even natural numbers and an integral lattice only natural numbers; and that for a full
-lattice `L` in a real inner product space of dimension `n` the representation numbers grow at
-most like `t^{n/2}`, from the count of lattice points in a ball, which is `O(R^n)` by Mathlib's
-asymptotic lattice-point count `ZLattice.covolume.tendsto_card_le_div'`.
+lattice `L` in a real normed space of dimension `n` the representation numbers grow at most like
+`t^{n/2}`, from the count of lattice points in a ball, which is `O(R^n)` by Mathlib's asymptotic
+lattice-point count `ZLattice.covolume.tendsto_card_le_div''`.
 
 ## Main definitions
 
@@ -303,12 +303,16 @@ theorem IsIntegral.representationNumber_eq_zero (h : IsIntegral L) (ht : ¬ ∃ 
     representationNumber L t = 0 := by
   rw [representationNumber_def, h.shell_eq_empty ht, Set.ncard_empty]
 
+end Inner
+
 /-! ### Growth of the representation numbers -/
 
-variable [FiniteDimensional ℝ E] (L) [DiscreteTopology L] [IsZLattice ℝ L]
+section Growth
 
-/-- A full lattice in a real inner product space of dimension `n` has `O(R^n)` points in the
-closed ball of radius `R` about the origin, as `R → ∞`. -/
+variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] (L) [DiscreteTopology L] [IsZLattice ℝ L]
+
+/-- A full lattice in a real normed space of dimension `n` has `O(R^n)` points in the closed ball
+of radius `R` about the origin, as `R → ∞`. -/
 theorem ncard_closedBall_inter_isBigO :
     (fun R : ℝ ↦ ((closedBall (0 : E) R ∩ L).ncard : ℝ)) =O[atTop]
       fun R ↦ R ^ finrank ℝ E := by
@@ -327,12 +331,30 @@ theorem ncard_closedBall_inter_isBigO :
     simp [pow_le_pow_iff_left₀ (norm_nonneg x) hR hn]
   have h1 : {x : E | x ∈ Set.univ ∧ ‖x‖ ^ n ≤ 1} = closedBall 0 1 := by
     simpa using hball 1 zero_le_one
-  -- Mathlib's asymptotic count of lattice points in the dilates of the unit ball.
-  have key := covolume.tendsto_card_le_div' L (X := Set.univ) (F := fun x ↦ ‖x‖ ^ n)
+  -- Mathlib's asymptotic count of lattice points in the dilates of the unit ball, in the
+  -- coordinates of a `ℤ`-basis `b` of `L`.
+  let b := Free.chooseBasis ℤ L
+  have : Nonempty (Free.ChooseBasisIndex ℤ L) := by
+    have : Nontrivial L := nontrivial_of_finrank_pos <| (ZLattice.rank ℝ L).symm ▸ finrank_pos
+    infer_instance
+  have hcard : Fintype.card (Free.ChooseBasisIndex ℤ L) = n := by
+    rw [← finrank_eq_card_chooseBasisIndex, ZLattice.rank ℝ L]
+  -- The image of the unit sphere in the coordinates of `b` is null, being the preimage of a
+  -- sphere under a linear equivalence.
+  have hnull :
+      volume (frontier ((b.ofZLatticeBasis ℝ L).equivFun '' closedBall (0 : E) 1)) = 0 := by
+    let f := (b.ofZLatticeBasis ℝ L).equivFunL
+    rw [show (b.ofZLatticeBasis ℝ L).equivFun '' closedBall (0 : E) 1 = f.symm ⁻¹' closedBall 0 1
+        from (b.ofZLatticeBasis ℝ L).equivFun.image_eq_preimage_symm _,
+      ← IsOpenMap.preimage_frontier_eq_frontier_preimage (f := f.symm)
+        f.symm.toHomeomorph.isOpenMap f.symm.continuous,
+      ← Measure.map_apply f.symm.continuous.measurable isClosed_frontier.measurableSet,
+      frontier_closedBall _ one_ne_zero]
+    exact Measure.addHaar_sphere _ _ _
+  have key := covolume.tendsto_card_le_div'' b (X := Set.univ) (F := fun x ↦ ‖x‖ ^ n)
     (fun _ _ _ _ ↦ Set.mem_univ _)
-    (fun x r hr ↦ by rw [norm_smul, Real.norm_of_nonneg hr, mul_pow])
-    (h1 ▸ isBounded_closedBall) (h1 ▸ measurableSet_closedBall)
-    (by rw [h1, frontier_closedBall _ one_ne_zero]; exact Measure.addHaar_sphere _ _ _)
+    (fun x r hr ↦ by rw [hcard, norm_smul, Real.norm_of_nonneg hr, mul_pow])
+    (h1 ▸ isBounded_closedBall) (h1 ▸ measurableSet_closedBall) (h1 ▸ hnull)
   have hO : (fun c : ℝ ↦ (Nat.card ({x : E | x ∈ Set.univ ∧ ‖x‖ ^ n ≤ c} ∩ L : Set E) : ℝ))
       =O[atTop] fun c ↦ c :=
     isBigO_of_div_tendsto_nhds ((eventually_gt_atTop 0).mono fun c hc h0 ↦ absurd h0 hc.ne') _ key
@@ -340,8 +362,8 @@ theorem ncard_closedBall_inter_isBigO :
   filter_upwards [eventually_ge_atTop 0] with R hR
   simp only [Function.comp_apply, Nat.card_coe_set_eq, Set.mem_univ, true_and, hball R hR]
 
-/-- The representation numbers of a full lattice in a real inner product space of dimension `n`
-grow at most like `t^{n/2}`: `r_L(t) = O(t^{n/2})` as `t → ∞`. -/
+/-- The representation numbers of a full lattice in a real normed space of dimension `n` grow at
+most like `t^{n/2}`: `r_L(t) = O(t^{n/2})` as `t → ∞`. -/
 theorem representationNumber_isBigO :
     (fun t : ℝ ↦ (representationNumber L t : ℝ)) =O[atTop]
       fun t ↦ t ^ ((finrank ℝ E : ℝ) / 2) := by
@@ -358,6 +380,6 @@ theorem representationNumber_isBigO :
     congr 1
     ring
 
-end Inner
+end Growth
 
 end ZLattice
