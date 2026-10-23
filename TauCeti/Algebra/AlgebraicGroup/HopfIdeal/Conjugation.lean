@@ -11,7 +11,6 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Comap
 
-import Mathlib.Tactic.Group
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
@@ -322,9 +321,9 @@ theorem _root_.TauCeti.HopfIdeal.eq_conjugate_of_forall_mem_iff {I J : HopfIdeal
   apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq (H := _root_.CommHopfAlgCat.of R H)
   intro A
   ext x
-  set q := AlgHom.mapValue (H := H) (Algebra.ofId R A) g
-  have hx : x = q * (q⁻¹ * x * q) * q⁻¹ := by group
-  rw [hx, h, pointConjugation_mem_conjugate_iff]
+  -- Every point is the `g`-conjugate of some point.
+  obtain ⟨y, rfl⟩ := (MulAut.conj (AlgHom.mapValue (H := H) (Algebra.ofId R A) g)).surjective x
+  rw [MulAut.conj_apply, h, pointConjugation_mem_conjugate_iff]
 
 end CommHopfAlgCat
 

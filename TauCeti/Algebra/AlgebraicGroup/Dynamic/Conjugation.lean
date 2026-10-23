@@ -43,7 +43,9 @@ over a commutative base ring.
 * `BialgHom.conj_mem_parabolic_conjCocharacter_iff`,
   `BialgHom.conj_mem_levi_conjCocharacter_iff` and
   `BialgHom.conj_mem_unipotent_conjCocharacter_iff`: the dynamic subgroups of a conjugate
-  cocharacter are the conjugate subgroups.
+  cocharacter are the conjugate subgroups, with `BialgHom.mem_parabolic_conjCocharacter_iff`,
+  `BialgHom.mem_levi_conjCocharacter_iff` and `BialgHom.mem_unipotent_conjCocharacter_iff`
+  testing membership by conjugating back.
 * `BialgHom.parabolicDefiningHopfIdeal_conjCocharacter`,
   `BialgHom.leviDefiningHopfIdeal_conjCocharacter` and
   `BialgHom.unipotentDefiningHopfIdeal_conjCocharacter`: the same for the closed subgroup
@@ -111,9 +113,7 @@ theorem conj_genericPoint_mem_levi_iff (l : H →ₐc[R] LaurentPolynomial R)
     rw [hc]
     exact mul_mem hu' (inv_mem (genericPoint_mem_levi l))
   rw [unipotent_inf_levi, Subgroup.mem_bot, mul_eq_one_iff_eq_inv, ← map_inv, inv_inv] at hw
-  have hu1 : u ∈ unipotent A l ⊓ levi A l := ⟨hu, mem_levi_iff.mpr hw.symm⟩
-  rw [unipotent_inf_levi, Subgroup.mem_bot] at hu1
-  rwa [hu1, one_mul]
+  rwa [eq_one_of_mem_unipotent_of_mem_levi hu (mem_levi_iff.mpr hw.symm), one_mul]
 
 end Normalizer
 
@@ -202,6 +202,33 @@ theorem conj_mem_unipotent_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomi
   exact (mem_unipotent_iff_of_surjective _
     (HopfAlgebra.surjective_pointConjugationBialgEquiv g) l x).symm
 
+/-- A point lies in `P(gλg⁻¹)` exactly when its conjugate by `g⁻¹` lies in `P(λ)`. -/
+theorem mem_parabolic_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomial R)
+    (g : WithConv (H →ₐ[R] R)) (x : WithConv (H →ₐ[R] A)) :
+    x ∈ parabolic A (l.conjCocharacter g) ↔
+      (AlgHom.mapValue (H := H) (Algebra.ofId R A) g)⁻¹ * x *
+        AlgHom.mapValue (H := H) (Algebra.ofId R A) g ∈ parabolic A l := by
+  rw [← conj_mem_parabolic_conjCocharacter_iff l g, mul_assoc, mul_inv_cancel_right,
+    mul_inv_cancel_left]
+
+/-- A point lies in `Z(gλg⁻¹)` exactly when its conjugate by `g⁻¹` lies in `Z(λ)`. -/
+theorem mem_levi_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomial R)
+    (g : WithConv (H →ₐ[R] R)) (x : WithConv (H →ₐ[R] A)) :
+    x ∈ levi A (l.conjCocharacter g) ↔
+      (AlgHom.mapValue (H := H) (Algebra.ofId R A) g)⁻¹ * x *
+        AlgHom.mapValue (H := H) (Algebra.ofId R A) g ∈ levi A l := by
+  rw [← conj_mem_levi_conjCocharacter_iff l g, mul_assoc, mul_inv_cancel_right,
+    mul_inv_cancel_left]
+
+/-- A point lies in `U(gλg⁻¹)` exactly when its conjugate by `g⁻¹` lies in `U(λ)`. -/
+theorem mem_unipotent_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomial R)
+    (g : WithConv (H →ₐ[R] R)) (x : WithConv (H →ₐ[R] A)) :
+    x ∈ unipotent A (l.conjCocharacter g) ↔
+      (AlgHom.mapValue (H := H) (Algebra.ofId R A) g)⁻¹ * x *
+        AlgHom.mapValue (H := H) (Algebra.ofId R A) g ∈ unipotent A l := by
+  rw [← conj_mem_unipotent_conjCocharacter_iff l g, mul_assoc, mul_inv_cancel_right,
+    mul_inv_cancel_left]
+
 /-- Conjugating by a point of the dynamic parabolic does not change it: `P(pλp⁻¹) = P(λ)` for a
 rational point `p` of `P(λ)`. -/
 @[simp]
@@ -211,9 +238,8 @@ theorem parabolic_conjCocharacter_of_mem_parabolic (l : H →ₐc[R] LaurentPoly
   set q := AlgHom.mapValue (H := H) (Algebra.ofId R A) p
   have hq : q ∈ parabolic A l := parabolic_le_comap (Algebra.ofId R A) hp
   ext x
-  have hx := conj_mem_parabolic_conjCocharacter_iff (A := A) l p (q⁻¹ * x * q)
-  rw [show q * (q⁻¹ * x * q) * q⁻¹ = x by group] at hx
-  rw [hx, Subgroup.mul_mem_cancel_right _ hq, Subgroup.mul_mem_cancel_left _ (inv_mem hq)]
+  rw [mem_parabolic_conjCocharacter_iff, Subgroup.mul_mem_cancel_right _ hq,
+    Subgroup.mul_mem_cancel_left _ (inv_mem hq)]
 
 /-- Conjugating by a point of the dynamic parabolic does not change the dynamic unipotent
 subgroup: `U(pλp⁻¹) = U(λ)` for a rational point `p` of `P(λ)`. -/
@@ -224,12 +250,12 @@ theorem unipotent_conjCocharacter_of_mem_parabolic (l : H →ₐc[R] LaurentPoly
   set q := AlgHom.mapValue (H := H) (Algebra.ofId R A) p
   have hq : q ∈ parabolic A l := parabolic_le_comap (Algebra.ofId R A) hp
   ext x
-  have hx := conj_mem_unipotent_conjCocharacter_iff (A := A) l p (q⁻¹ * x * q)
-  rw [show q * (q⁻¹ * x * q) * q⁻¹ = x by group] at hx
-  rw [hx]
-  refine ⟨fun h => ?_, fun h => by simpa only [inv_inv] using conj_mem_unipotent (inv_mem hq) h⟩
-  simpa only [mul_assoc, mul_inv_cancel, mul_one, mul_inv_cancel_left] using
-    conj_mem_unipotent hq h
+  -- `q` also lies in `P(pλp⁻¹) = P(λ)`, so it normalizes `U(pλp⁻¹)` as well.
+  have hq' : q ∈ parabolic A (l.conjCocharacter p) := by
+    rwa [parabolic_conjCocharacter_of_mem_parabolic l hp]
+  refine ⟨fun h => (conj_mem_unipotent_conjCocharacter_iff l p x).mp (conj_mem_unipotent hq' h),
+    fun h => (mem_unipotent_conjCocharacter_iff l p x).mpr ?_⟩
+  simpa only [inv_inv] using conj_mem_unipotent (inv_mem hq) h
 
 end Points
 
@@ -348,9 +374,7 @@ theorem conjugate_leviDefiningHopfIdeal_eq_self_iff_of_mem_unipotent
     (l : H →ₐc[R] LaurentPolynomial R) {u : WithConv (H →ₐ[R] R)} (hu : u ∈ unipotent R l) :
     (leviDefiningHopfIdeal l).conjugate u = leviDefiningHopfIdeal l ↔ u = 1 := by
   rw [conjugate_leviDefiningHopfIdeal_eq_self_iff l (unipotent_le_parabolic hu)]
-  refine ⟨fun h => ?_, fun h => h ▸ one_mem _⟩
-  have hu1 : u ∈ unipotent R l ⊓ levi R l := ⟨hu, h⟩
-  rwa [unipotent_inf_levi, Subgroup.mem_bot] at hu1
+  exact ⟨eq_one_of_mem_unipotent_of_mem_levi hu, fun h => h ▸ one_mem _⟩
 
 /-- **The unipotent subgroup acts freely on the conjugates of the Levi.** Distinct rational
 points `u` of `U(λ)` give distinct Levi factors `uZ(λ)u⁻¹ = Z(uλu⁻¹)` of `P(λ)`. -/

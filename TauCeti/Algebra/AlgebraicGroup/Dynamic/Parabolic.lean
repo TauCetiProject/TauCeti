@@ -293,6 +293,12 @@ theorem unipotent_inf_levi : unipotent A l ⊓ levi A l = ⊥ := by
   obtain ⟨hgP, hg1⟩ := mem_unipotent_iff.mp hg.1
   rw [Subgroup.mem_bot, ← limit_of_mem_levi hg.2, ← hg1]
 
+/-- A point lying in both the dynamic unipotent subgroup and the Levi subgroup is trivial. -/
+theorem eq_one_of_mem_unipotent_of_mem_levi {g : WithConv (H →ₐ[R] A)} (hu : g ∈ unipotent A l)
+    (hz : g ∈ levi A l) : g = 1 := by
+  have hg : g ∈ unipotent A l ⊓ levi A l := ⟨hu, hz⟩
+  rwa [unipotent_inf_levi, Subgroup.mem_bot] at hg
+
 /-! ### Cocharacter values, and the commutative case -/
 
 /-- **The values of the cocharacter lie in its own Levi subgroup.** They commute with the generic
@@ -613,9 +619,9 @@ theorem eq_of_unipotent_mul_levi_eq {u₁ u₂ z₁ z₂ : WithConv (H →ₐ[R]
   have hcross : u₂⁻¹ * u₁ = z₂ * z₁⁻¹ := by
     have h' := congrArg (fun t => u₂⁻¹ * t * z₁⁻¹) h
     simpa [mul_assoc] using h'
-  have hbot : u₂⁻¹ * u₁ ∈ unipotent A l ⊓ levi A l :=
-    Subgroup.mem_inf.mpr ⟨mul_mem (inv_mem hu₂) hu₁, hcross ▸ mul_mem hz₂ (inv_mem hz₁)⟩
-  rw [unipotent_inf_levi, Subgroup.mem_bot, inv_mul_eq_one] at hbot
+  have hbot := eq_one_of_mem_unipotent_of_mem_levi (mul_mem (inv_mem hu₂) hu₁)
+    (hcross ▸ mul_mem hz₂ (inv_mem hz₁))
+  rw [inv_mul_eq_one] at hbot
   refine ⟨hbot.symm, ?_⟩
   rw [hbot] at h
   exact mul_left_cancel h
