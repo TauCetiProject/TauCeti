@@ -240,14 +240,8 @@ theorem exists_eq_neg_one_pow_mul_five_pow_mul_sq (u : ℤ_[2]ˣ) :
   -- `u` and `r` have the same residue modulo `8`, so `u r⁻¹ ∈ U^(3)` is a square.
   have hres : PadicInt.toZModPow 3 (u : ℤ_[2]) = PadicInt.toZModPow 3 r := by
     simpa [r, serreEps, serreOmega, map_ofNat] using key _ (exists_toZModPow_three_mul_eq_one u)
-  have hmem : u * hr.unit⁻¹ ∈ unitsPrincipal 2 3 := by
-    rw [mem_unitsPrincipal_iff_toZModPow, Units.val_mul, map_mul, hres, ← map_mul,
-      IsUnit.mul_val_inv, map_one]
-  rw [unitsPrincipal_three_eq_range_powMonoidHom_two] at hmem
-  obtain ⟨w, hw⟩ := hmem
-  refine ⟨w, ?_⟩
-  rw [powMonoidHom_apply, eq_mul_inv_iff_mul_eq] at hw
-  rw [← hw, Units.val_mul, Units.val_pow_eq_pow_val, IsUnit.unit_spec, mul_comm]
+  obtain ⟨w, hw, hw'⟩ := PadicInt.exists_eq_sq_mul_of_toZModPow_three_eq hr u.isUnit hres.symm
+  exact ⟨hw.unit, by simp [hw', mul_comm]⟩
 
 /-- **Squares of `2`-adic units in `ℚ_2`.** A unit of `ℤ_2` is a square in `ℚ_2` exactly when it is
 `1 mod 8`. -/
