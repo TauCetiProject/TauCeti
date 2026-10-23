@@ -6,17 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.ClassNumber
-import Mathlib.NumberTheory.NumberField.Basic
-import Mathlib.RingTheory.ClassGroup.ExtendedHom
+public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.RingTheory.ClassGroup.ExtendedHom
 
 /-!
 # The class group and class number are isomorphism invariants of number fields
 
-A ring isomorphism `e : K ≃+* L` between two number fields identifies their rings of integers,
+A ring isomorphism `e : K ≃+* L` between two fields identifies their rings of integers,
 and a ring isomorphism of Dedekind domains identifies their class groups. This file combines those
 two existing isomorphisms — `NumberField.RingOfIntegers.mapRingEquiv` and `ClassGroup.mulEquiv` —
-to produce the isomorphism of the class groups, from which the equality of the class numbers
-follows.
+to produce the isomorphism of the class groups, from which the equality of the class numbers of
+number fields follows.
 
 ## Main results
 
@@ -29,17 +29,38 @@ follows.
 public section
 
 open NumberField
+open scoped nonZeroDivisors
 
-variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
+variable {K L : Type*} [Field K] [Field L]
 
-/-- A ring isomorphism `e : K ≃+* L` between number fields induces an isomorphism between the
-class groups of their rings of integers. -/
+/-- A ring isomorphism `e : K ≃+* L` between fields induces an isomorphism between the class
+groups of their rings of integers. -/
 noncomputable def RingEquiv.classGroupEquiv (e : K ≃+* L) :
     ClassGroup (𝓞 K) ≃* ClassGroup (𝓞 L) :=
   ClassGroup.mulEquiv (NumberField.RingOfIntegers.mapRingEquiv e)
 
+/-- The class-group isomorphism is the one induced by the ring isomorphism of the rings of
+integers. -/
+theorem RingEquiv.classGroupEquiv_eq (e : K ≃+* L) :
+    e.classGroupEquiv = ClassGroup.mulEquiv (NumberField.RingOfIntegers.mapRingEquiv e) := (rfl)
+
+/-- The class-group isomorphism sends the class of a non-zero ideal to the class of its image
+under the induced ring isomorphism. -/
+@[simp]
+theorem RingEquiv.classGroupEquiv_mk0 [IsDedekindDomain (𝓞 K)] [IsDedekindDomain (𝓞 L)]
+    (e : K ≃+* L) (I : (Ideal (𝓞 K))⁰) :
+    e.classGroupEquiv (ClassGroup.mk0 I) =
+      ClassGroup.mk0
+        ⟨I.1.map (NumberField.RingOfIntegers.mapRingEquiv e),
+          mem_nonZeroDivisors_iff_ne_zero.mpr <|
+            (Ideal.map_eq_bot_iff_of_injective
+              (NumberField.RingOfIntegers.mapRingEquiv e).injective).not.mpr
+              (mem_nonZeroDivisors_iff_ne_zero.mp I.2)⟩ :=
+  ClassGroup.mulEquiv_mk0 (NumberField.RingOfIntegers.mapRingEquiv e) I
+
 /-- Isomorphic number fields have the same class number: if `e : K ≃+* L`, then
 `classNumber K = classNumber L`. -/
-theorem RingEquiv.classNumber_eq (e : K ≃+* L) : classNumber K = classNumber L := by
+theorem RingEquiv.classNumber_eq (e : K ≃+* L) [NumberField K] [NumberField L] :
+    classNumber K = classNumber L := by
   rw [classNumber, classNumber]
   exact Fintype.card_congr (RingEquiv.classGroupEquiv e).toEquiv
