@@ -11,6 +11,7 @@ public import Mathlib.Basic.Sign.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.MeasureTheory.SetAlgebra
 public import TauCeti.Data.List.PermanencesMinusVariations
+public import TauCeti.Data.Set.Lattice
 
 /-!
 # Semialgebraic sets
@@ -240,15 +241,6 @@ theorem isSemialgebraic_sign_eval_eq (p : MvPolynomial σ R) (ε : SignType) :
   · simpa only [SignType.zero_eq_zero, sign_eq_zero_iff] using isSemialgebraic_eval_eq_zero p
   · simpa only [SignType.neg_eq_neg_one, sign_eq_neg_one_iff] using isSemialgebraic_eval_neg p
   · simpa only [SignType.pos_eq_one, sign_eq_one_iff] using isSemialgebraic_eval_pos p
-
-/-- The set of points where a family of functions `g i` satisfies a condition `Φ` on its tuple of
-values is the union, over the tuples `ε` satisfying `Φ`, of the sets where `g i = ε i` for all
-`i`. -/
-theorem setOf_apply_eq_biUnion_iInter {α β ι : Type*} (g : ι → α → β) (Φ : (ι → β) → Prop) :
-    {x | Φ fun i => g i x} = ⋃ ε ∈ {ε | Φ ε}, ⋂ i, {x | g i x = ε i} := by
-  ext x
-  simp only [mem_ofPred_eq, mem_iUnion, mem_iInter, exists_prop]
-  exact ⟨fun h => ⟨_, h, fun _ => rfl⟩, fun ⟨ε, hε, h⟩ => (funext h).symm ▸ hε⟩
 
 omit [IsOrderedAddMonoid R] in
 /-- A sign condition on finitely many polynomials defines a semialgebraic set: membership may

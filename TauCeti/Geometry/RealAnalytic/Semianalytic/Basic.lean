@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Analytic.Composition
 public import Mathlib.Analysis.Analytic.Polynomial
+public import TauCeti.Data.Set.Lattice
+public import TauCeti.Data.SignType.Basic
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
 
 /-!
@@ -397,20 +399,6 @@ theorem SemianalyticAt.preimage [CompleteSpace F] {s : Set F} {g : E → F}
 end SemianalyticAt
 
 /-! ### Equivalence of presentations -/
-
-/-- Prescribed signs `ε` of the entries of `a` amount to a single equation, the vanishing of the sum
-of the squares of the `a i` with `ε i = 0`, together with the positivity of `ε i * a i` for the
-other `i`. -/
-theorem forall_sign_eq_iff_sum_sq_eq_zero_and_pos {ι R : Type*} [Fintype ι] [Ring R]
-    [LinearOrder R] [IsStrictOrderedRing R] (a : ι → R) (ε : ι → SignType) :
-    (∀ i, SignType.sign (a i) = ε i) ↔
-      ∑ i with ε i = 0, a i ^ 2 = 0 ∧ ∀ i, 0 < if ε i = 0 then 1 else (ε i : R) * a i := by
-  have (b : R) (δ : SignType) :
-      SignType.sign b = δ ↔ (δ = 0 → b = 0) ∧ 0 < if δ = 0 then 1 else (δ : R) * b := by
-    rcases δ with _ | _ | _ <;> simp [sign_eq_zero_iff, sign_eq_neg_one_iff, sign_eq_one_iff]
-  rw [Finset.sum_eq_zero_iff_of_nonneg fun i _ => sq_nonneg (a i)]
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, pow_eq_zero_iff two_ne_zero, this,
-    forall_and]
 
 /-- **Equivalence of presentations.** A set is semianalytic at `x` if and only if, on some
 neighbourhood `U` of `x`, it agrees with a finite union of sets
