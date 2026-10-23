@@ -12,9 +12,9 @@ public import Mathlib.Algebra.Lie.Solvable
 /-!
 # Perfectness of residue central extensions
 
-The formal current algebra of a perfect Lie algebra is perfect. Over a field, its residue
-central extension is perfect exactly when the invariant symmetric form is nonzero. This is
-the perfectness condition needed for the universal central extension of a loop algebra.
+Over a field, the residue central extension of the formal current algebra of a perfect Lie
+algebra is perfect exactly when the invariant symmetric form is nonzero. This is the
+perfectness condition needed for the universal central extension of a loop algebra.
 
 We use Mathlib's `LieAlgebra.ofTwoCocycle` directly. The form `Φ` has Mathlib's residue
 convention `Res(f dg) Φ(x, y)`; the affine convention with level form `κ` uses `Φ = -κ`.
