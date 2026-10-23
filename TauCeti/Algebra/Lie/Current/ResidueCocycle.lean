@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
+public import TauCeti.Algebra.Lie.Cochain
 public import TauCeti.Algebra.Lie.Current.Basic
 public import TauCeti.RingTheory.LaurentSeries.ResiduePairing
 
@@ -44,6 +45,9 @@ of an invariant symmetric form `κ` is the cocycle attached here to `Φ = -κ`.
 * `TauCeti.CurrentAlgebra.residuePairing_lie`: the 2-cocycle identity for an invariant form.
 * `TauCeti.CurrentAlgebra.twoCochainOfBilinear`: the alternating 2-cochain of a symmetric form.
 * `TauCeti.CurrentAlgebra.twoCocycleOfBilinear`: the 2-cocycle of an invariant symmetric form.
+* `TauCeti.CurrentAlgebra.twoCochainOfBilinearSMulRight`: the residue 2-cochain
+  `(u, v) ↦ Res(f dg) Φ(x, y) • z` with coefficients in a module `Z` with trivial action, linear
+  in `z` and natural in `Z`.
 
 ## References
 
@@ -251,6 +255,60 @@ theorem twoCocycleOfBilinear_coe (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInv
     (twoCocycleOfBilinear R L Φ hΦ hΦs : twoCochain R (currentAlgebra R L)
       (TrivialLieModule R (currentAlgebra R L) R)) = twoCochainOfBilinear R L Φ hΦs :=
   (rfl)
+
+section Coefficients
+
+variable {Z Z' : Type*} [AddCommGroup Z] [Module R Z] [AddCommGroup Z'] [Module R Z']
+
+/-- The residue 2-cochain with coefficients in a module `Z` with trivial action, attached to a
+symmetric bilinear form `Φ` on `L` and a vector `z : Z`:
+`(f ⊗ x, g ⊗ y) ↦ Res(f dg) Φ(x, y) • z`. It is linear in `z`; for `Z = R` and `z = 1` it is
+`twoCochainOfBilinear`. -/
+def twoCochainOfBilinearSMulRight (Φ : LinearMap.BilinForm R L) (hΦ : Φ.IsSymm) :
+    Z →ₗ[R] twoCochain R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) Z) where
+  toFun z :=
+    ⟨(residuePairing R L Φ).compr₂ ((TrivialLieModule.equiv R (currentAlgebra R L) Z).symm ∘ₗ
+      LinearMap.toSpanSingleton R Z z), mem_twoCochain_iff.mpr fun u ↦ by
+        simp [residuePairing_self R L hΦ u]⟩
+  map_add' _ _ := Subtype.ext (LinearMap.ext₂ fun _ _ ↦ by simp)
+  map_smul' _ _ := Subtype.ext (LinearMap.ext₂ fun _ _ ↦ by simp [smul_smul, mul_comm])
+
+/-- The values of the residue cochain with coefficients in `Z` are the values of the residue
+pairing times `z`. -/
+@[simp]
+theorem twoCochainOfBilinearSMulRight_apply_apply (Φ : LinearMap.BilinForm R L) (hΦ : Φ.IsSymm)
+    (z : Z) (u v : currentAlgebra R L) :
+    twoCochainOfBilinearSMulRight R L Φ hΦ z u v =
+      (TrivialLieModule.equiv R (currentAlgebra R L) Z).symm (residuePairing R L Φ u v • z) :=
+  (rfl)
+
+/-- For `Z = R`, the residue cochain with coefficient `1` is the scalar residue cochain. -/
+theorem twoCochainOfBilinearSMulRight_one (Φ : LinearMap.BilinForm R L) (hΦ : Φ.IsSymm) :
+    twoCochainOfBilinearSMulRight R L Φ hΦ (1 : R) = twoCochainOfBilinear R L Φ hΦ :=
+  Subtype.ext (LinearMap.ext₂ fun _ _ ↦ by simp)
+
+/-- **Naturality of the residue cochain in its coefficients.** Pushing the residue cochain with
+coefficient `z` forward along a linear map `g : Z → Z'` gives the residue cochain with coefficient
+`g z`. -/
+theorem twoCochainMap_twoCochainOfBilinearSMulRight (Φ : LinearMap.BilinForm R L)
+    (hΦ : Φ.IsSymm) (g : Z →ₗ[R] Z') (z : Z) :
+    twoCochainMap ((TrivialLieModule.equiv R (currentAlgebra R L) Z').symm.toLinearMap ∘ₗ g ∘ₗ
+        (TrivialLieModule.equiv R (currentAlgebra R L) Z).toLinearMap)
+        (LieHom.id : currentAlgebra R L →ₗ⁅R⁆ currentAlgebra R L)
+        (twoCochainOfBilinearSMulRight R L Φ hΦ z) =
+      twoCochainOfBilinearSMulRight R L Φ hΦ (g z) :=
+  Subtype.ext (LinearMap.ext₂ fun _ _ ↦ by simp)
+
+/-- The residue cochain with coefficients in `Z` of an invariant symmetric form is a 2-cocycle. -/
+theorem twoCochainOfBilinearSMulRight_mem_twoCocycle (Φ : LinearMap.BilinForm R L)
+    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (z : Z) :
+    twoCochainOfBilinearSMulRight R L Φ hΦs z ∈
+      twoCocycle R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) Z) :=
+  (mem_twoCocycle_iff_of_trivial _ _ _ _).mpr fun u v w ↦ by
+    simp only [twoCochainOfBilinearSMulRight_apply_apply, residuePairing_lie R L hΦ u v w,
+      add_smul, map_add]
+
+end Coefficients
 
 end Lie
 

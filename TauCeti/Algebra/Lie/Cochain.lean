@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Cochain
+public import Mathlib.Algebra.Lie.Solvable
+public import Mathlib.Algebra.Lie.TensorProduct
+public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # Low-degree Lie algebra cochains
@@ -21,6 +25,10 @@ with values in an `L`-module `M`.
   (`LieModule.Cohomology.twoCochainMap_mem_twoCocycle`).
 * An additive group structure on every submodule of 2-cochains, such as the 2-cocycles, so that
   quotients of such submodules can be formed.
+* `LieModule.Cohomology.sub_apply_apply`: the values of a difference of 2-cochains.
+* `LieModule.Cohomology.exists_d₁₂_eq_of_forall_dual`: on a perfect Lie algebra, a 2-cochain with
+  trivial projective coefficients is a coboundary once its image under every linear functional is
+  one.
 -/
 
 public section
@@ -35,6 +43,10 @@ by unification, so it is named explicitly. -/
 instance instAddCommGroupSubmoduleTwoCochain (S : Submodule R (twoCochain R L M)) :
     AddCommGroup S :=
   Submodule.addCommGroup (M := twoCochain R L M) S
+
+@[simp]
+lemma sub_apply_apply (a b : twoCochain R L M) (x y : L) : (a - b) x y = a x y - b x y :=
+  (rfl)
 
 variable {L' M' : Type*} [LieRing L'] [LieAlgebra R L'] [AddCommGroup M'] [Module R M']
 
@@ -76,5 +88,37 @@ lemma twoCochainMap_mem_twoCocycle [LieRingModule L' M'] [LieModule R L' M']
   rw [mem_twoCocycle_iff_of_trivial] at hc ⊢
   intro x y z
   simp only [twoCochainMap_apply_apply, LieHom.map_lie, hc (φ x) (φ y) (φ z), map_add]
+
+/-- **On a perfect Lie algebra, coboundaries are detected by functionals.** Let `L` be a perfect Lie
+algebra and `M` a projective module with trivial action, for instance a vector space. A 2-cochain
+`c` with values in `M` is a coboundary as soon as, for every linear functional `φ` on `M`, the
+scalar cochain `φ ∘ c` is the coboundary `(x, y) ↦ -g ⁅x, y⁆` of some linear form `g` on `L`. The
+coefficients may be infinitely generated: since `L` is perfect, `c` descends along the bracket
+`L ⊗ L → L`, because functionals separate the points of `M`. -/
+theorem exists_d₁₂_eq_of_forall_dual [LieModule.IsTrivial L M] [Module.Projective R M]
+    (hL : LieAlgebra.derivedSeries R L 1 = ⊤) (c : twoCochain R L M)
+    (hc : ∀ φ : Module.Dual R M, ∃ g : Module.Dual R L, ∀ x y : L, φ (c x y) = -g ⁅x, y⁆) :
+    ∃ f : oneCochain R L M, d₁₂ R L M f = c := by
+  let B := (LieModule.toModuleHom R L L).toLinearMap
+  have hB_apply (x y : L) : B (x ⊗ₜ y) = ⁅x, y⁆ := LieModule.toModuleHom_apply R L L x y
+  have hB : Function.Surjective B := by
+    intro u
+    have hu : u ∈ Submodule.span R {⁅x, y⁆ | (x : L) (y : L)} := by
+      rw [← LieAlgebra.coe_derivedSeries_one_eq, hL]
+      exact Submodule.mem_top
+    refine LinearMap.mem_range.mp ((Submodule.span_le.mpr ?_) hu)
+    rintro _ ⟨x, y, rfl⟩
+    exact ⟨x ⊗ₜ y, hB_apply x y⟩
+  -- The kernel of the bracket is killed by every functional applied to `c`, hence by `c`.
+  have hker : LinearMap.ker B ≤ LinearMap.ker (TensorProduct.lift c.1) := by
+    intro w hw
+    refine LinearMap.mem_ker.mpr ((Module.forall_dual_apply_eq_zero_iff R _).mp fun φ ↦ ?_)
+    obtain ⟨g, hg⟩ := hc φ
+    have hφ : φ ∘ₗ TensorProduct.lift c.1 = -(g ∘ₗ B) :=
+      TensorProduct.ext' fun x y ↦ by simp [hB_apply, hg]
+    simpa [LinearMap.mem_ker.mp hw] using LinearMap.congr_fun hφ w
+  refine ⟨-B.liftOfSurjective hB ⟨_, hker⟩, Subtype.ext (LinearMap.ext₂ fun x y ↦ ?_)⟩
+  rw [twoCochain_val_apply, d₁₂_apply_apply_ofTrivial, ← hB_apply, LinearMap.neg_apply, neg_neg,
+    LinearMap.equivOfSurjective_apply, TensorProduct.lift.tmul, twoCochain_val_apply]
 
 end LieModule.Cohomology

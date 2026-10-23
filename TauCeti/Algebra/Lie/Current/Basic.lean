@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.BaseChange
 public import Mathlib.Algebra.Lie.Loop
+public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
 
 /-!
@@ -16,7 +17,9 @@ Formal currents in a Lie algebra `L` over `R` are the scalar extension
 `R⸨X⸩ ⊗[R] L`, with the coefficientwise scalar action
 and Mathlib's scalar-extension bracket. The order submodule
 `orderSubmodule R L N` is spanned by tensors whose scalar series vanish below `N`.
-The bracket of currents of orders at least `M` and `N` has order at least `M + N`.
+The bracket of currents of orders at least `M` and `N` has order at least `M + N`; conversely,
+when `L` is perfect every current of order at least `M + N` is a sum of such brackets, so formal
+currents of a perfect Lie algebra are perfect.
 Every current has a finite lower bound. The coefficient, order and truncation API
 also applies to any coefficient module, without a Lie structure.
 
@@ -256,6 +259,49 @@ theorem lie_mem_orderSubmodule {M N : ℤ} {u v : currentAlgebra R L}
   rw [LieHom.coe_toLinearMap, LieAlgebra.ad_apply, LieAlgebra.ExtendScalars.bracket_tmul]
   simpa only [TensorProduct.smul_tmul', smul_eq_mul] using
     smul_mem_orderSubmodule R L hf (tmul_mem_orderSubmodule R L N hg ⁅x, y⁆)
+
+/-- **Currents of a perfect Lie algebra are sums of brackets of higher-order currents.** If `L` is
+perfect, every current of order at least `M + N` is a linear combination of brackets of currents
+of orders at least `M` and `N`. -/
+theorem orderSubmodule_add_le_span_lie (hL : LieAlgebra.derivedSeries R L 1 = ⊤) (M N : ℤ) :
+    orderSubmodule R L (M + N) ≤ Submodule.span R
+      {w | ∃ u ∈ orderSubmodule R L M, ∃ v ∈ orderSubmodule R L N, ⁅u, v⁆ = w} := by
+  refine Submodule.span_le.mpr ?_
+  rintro _ ⟨f, x, hf, rfl⟩
+  rw [SetLike.mem_coe]
+  have hx : x ∈ Submodule.span R {⁅y, z⁆ | (y : L) (z : L)} := by
+    rw [← LieAlgebra.coe_derivedSeries_one_eq, hL]
+    exact Submodule.mem_top
+  induction hx using Submodule.span_induction with
+  | mem w hw =>
+    obtain ⟨y, z, rfl⟩ := hw
+    -- `f ⊗ ⁅y, z⁆ = ⁅t^M ⊗ y, t^(-M) f ⊗ z⁆`, where `t^(-M) f` has order at least `N`.
+    have hN : ((N : ℤ) : WithTop ℤ) ≤ (HahnSeries.single (-M) (1 : R) * f).orderTop := by
+      have h := add_le_add (HahnSeries.orderTop_single_le (a := -M) (r := (1 : R))) hf
+      rw [← WithTop.coe_add, neg_add_cancel_left] at h
+      exact h.trans HahnSeries.orderTop_add_le_mul
+    refine Submodule.subset_span ⟨HahnSeries.single M 1 ⊗ₜ y,
+      tmul_mem_orderSubmodule R L M HahnSeries.orderTop_single_le y,
+      (HahnSeries.single (-M) (1 : R) * f) ⊗ₜ z, tmul_mem_orderSubmodule R L N hN z, ?_⟩
+    rw [LieAlgebra.ExtendScalars.bracket_tmul, ← mul_assoc, HahnSeries.single_mul_single,
+      add_neg_cancel, mul_one, HahnSeries.single_zero_one, one_mul]
+  | zero => simp
+  | add w w' _ _ hw hw' => simpa only [TensorProduct.tmul_add] using Submodule.add_mem _ hw hw'
+  | smul r w _ hw => simpa only [TensorProduct.tmul_smul] using Submodule.smul_mem _ r hw
+
+/-- **Formal currents of a perfect Lie algebra are perfect** as a Lie algebra over the base ring:
+every current is an `R`-linear combination of brackets of currents. Mathlib's
+`LieAlgebra.derivedSeries_baseChange` gives the weaker statement over the Laurent series ring; the
+statement over `R` is the one that applies to `R`-linear cochains. -/
+theorem derivedSeries_one_eq_top (hL : LieAlgebra.derivedSeries R L 1 = ⊤) :
+    LieAlgebra.derivedSeries R (currentAlgebra R L) 1 = ⊤ := by
+  refine eq_top_iff.mpr fun u _ ↦ ?_
+  obtain ⟨N, hN⟩ := exists_mem_orderSubmodule R L u
+  have hu : u ∈ Submodule.span R {⁅a, b⁆ | (a : currentAlgebra R L) (b : currentAlgebra R L)} :=
+    Submodule.span_mono (by rintro _ ⟨a, -, b, -, rfl⟩; exact ⟨a, b, rfl⟩)
+      (orderSubmodule_add_le_span_lie R L hL N 0 (by simpa using hN))
+  rwa [← LieAlgebra.coe_derivedSeries_one_eq, LieIdeal.toLieSubalgebra_toSubmodule,
+    LieSubmodule.mem_toSubmodule] at hu
 
 /-- The inclusion of polynomial currents into formal currents. -/
 def ofLoop : LieAlgebra.loopAlgebra R ℤ L →ₗ⁅R⁆ currentAlgebra R L :=
