@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Basic
-public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 public import Mathlib.CategoryTheory.ConcreteCategory.Basic
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.Order.Zorn
@@ -39,14 +37,10 @@ of unique gluings (`TopCat.Sheaf.existsUnique_gluing'`). Sheaves of modules are 
 * `TopCat.Presheaf.isLocallyFlasque_of_forall_surjective`: surjectivity of all restriction maps
   implies local flasqueness;
 * `TopCat.Sheaf.isFlasque_of_isLocallyFlasque`: a locally flasque sheaf is flasque;
-* `TopCat.Sheaf.isLocallyFlasque_of_isFlasque_of_surjective_epi`: a flasque sheaf is locally
-  flasque, whenever the epimorphisms of the coefficient category are surjective;
-* `TopCat.Sheaf.isLocallyFlasque_of_isFlasque` and
-  `TopCat.Sheaf.isFlasque_iff_isLocallyFlasque`: for sheaves of modules, local
-  flasqueness and flasqueness are equivalent;
-* `TopCat.Sheaf.isLocallyFlasque_of_isFlasque_types` and
-  `TopCat.Sheaf.isFlasque_iff_isLocallyFlasque_types`: the same equivalence for sheaves of
-  sets.
+* `TopCat.Sheaf.isLocallyFlasque_of_isFlasque`: a flasque sheaf is locally flasque when the
+  forgetful functor of the coefficient category preserves epimorphisms;
+* `TopCat.Sheaf.isFlasque_iff_isLocallyFlasque`: local flasqueness and flasqueness are
+  equivalent under these assumptions, in particular for sheaves of modules and sets.
 
 ## References
 
@@ -281,31 +275,23 @@ instance isFlasque_of_isLocallyFlasque [HasLimitsOfSize.{u, u} C]
     exact ConcreteCategory.epi_of_surjective _
       (surjective_map_of_isLocallyFlasque F (leOfHom i.unop))
 
-/-- **Flasque locality, converse**: a flasque sheaf is locally flasque, whenever every epimorphism
-of the coefficient category is surjective. -/
-theorem isLocallyFlasque_of_isFlasque_of_surjective_epi
-    (F : TopCat.Sheaf C X) (hF : F.IsFlasque)
-    (h : ∀ {A B : C} (f : A ⟶ B), Epi f → Function.Surjective f) :
+/-- **Flasque locality, converse**: a flasque sheaf is locally flasque when the forgetful functor
+of its coefficient category preserves epimorphisms. -/
+theorem isLocallyFlasque_of_isFlasque [(CategoryTheory.forget C).PreservesEpimorphisms]
+    (F : TopCat.Sheaf C X) (hF : F.IsFlasque) :
     F.IsLocallyFlasque := by
   refine TopCat.Presheaf.isLocallyFlasque_of_forall_surjective F.1 ?_
   intro U V hUV
-  exact h _ (hF.epi (homOfLE hUV).op)
+  letI := hF.epi (homOfLE hUV).op
+  exact (CategoryTheory.epi_iff_surjective
+    ((CategoryTheory.forget C).map (F.1.map (homOfLE hUV).op))).mp inferInstance
 
-end General
-
-section Modules
-
-variable {R : Type u} [Ring R]
-
-/-- A flasque sheaf of modules is locally flasque: for every point, the restriction maps inside
-some neighbourhood of that point are surjective. -/
-theorem isLocallyFlasque_of_isFlasque (F : TopCat.Sheaf (ModuleCat.{u} R) X)
-    (hF : F.IsFlasque) : F.IsLocallyFlasque :=
-  isLocallyFlasque_of_isFlasque_of_surjective_epi F hF fun f hEpi =>
-    (ModuleCat.epi_iff_surjective f).mp hEpi
-
-/-- For sheaves of modules, being flasque is equivalent to being locally flasque. -/
-theorem isFlasque_iff_isLocallyFlasque (F : TopCat.Sheaf (ModuleCat.{u} R) X) :
+/-- A sheaf is flasque exactly when it is locally flasque, provided its forgetful functor
+preserves limits and epimorphisms and reflects isomorphisms. -/
+theorem isFlasque_iff_isLocallyFlasque [HasLimitsOfSize.{u, u} C]
+    [(CategoryTheory.forget C).ReflectsIsomorphisms]
+    [PreservesLimitsOfSize.{u, u} (CategoryTheory.forget C)]
+    [(CategoryTheory.forget C).PreservesEpimorphisms] (F : TopCat.Sheaf C X) :
     F.IsFlasque ↔ F.IsLocallyFlasque := by
   constructor
   · intro hF
@@ -314,27 +300,6 @@ theorem isFlasque_iff_isLocallyFlasque (F : TopCat.Sheaf (ModuleCat.{u} R) X) :
     let : F.IsLocallyFlasque := h
     exact isFlasque_of_isLocallyFlasque F
 
-end Modules
-
-section Sets
-
-/-- A flasque sheaf of sets is locally flasque: for every point, the restriction maps inside some
-neighbourhood of that point are surjective. -/
-theorem isLocallyFlasque_of_isFlasque_types (F : TopCat.Sheaf (Type u) X) (hF : F.IsFlasque) :
-    F.IsLocallyFlasque :=
-  isLocallyFlasque_of_isFlasque_of_surjective_epi F hF fun f hEpi =>
-    (CategoryTheory.epi_iff_surjective f).mp hEpi
-
-/-- For sheaves of sets, being flasque is equivalent to being locally flasque. -/
-theorem isFlasque_iff_isLocallyFlasque_types (F : TopCat.Sheaf (Type u) X) :
-    F.IsFlasque ↔ F.IsLocallyFlasque := by
-  constructor
-  · intro hF
-    exact isLocallyFlasque_of_isFlasque_types F hF
-  · intro h
-    let : F.IsLocallyFlasque := h
-    exact isFlasque_of_isLocallyFlasque F
-
-end Sets
+end General
 
 end TopCat.Sheaf
