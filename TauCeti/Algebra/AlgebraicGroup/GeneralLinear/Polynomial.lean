@@ -83,7 +83,8 @@ theorem endOfPoint_matrixMonoidComodule
         Comodule.endOfPoint M g := by
   let := σ
   have heq : Comodule.Corestrict (polynomialCoordinateBialgHom k n).toCoalgHom =
-      (inferInstance : Comodule k (coordinateHopfAlgebra k n) M) := Comodule.ext hσ
+      (inferInstance : Comodule k (coordinateHopfAlgebra k n) M) :=
+        CoalgHom.corestrict_eq_of_factor _ σ hσ
   rw [← Comodule.endOfPoint_corestrict, heq]
 
 end TauCeti.GeneralLinear

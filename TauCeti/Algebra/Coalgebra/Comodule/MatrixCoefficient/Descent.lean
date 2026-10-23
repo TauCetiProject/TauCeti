@@ -46,7 +46,8 @@ theorem existsUnique_comoduleFactor_iff
   constructor
   · rintro ⟨σ, hσ, _⟩ i j
     let := σ
-    have heq : Corestrict f = (inferInstance : Comodule R D M) := Comodule.ext hσ
+    have heq : Corestrict f = (inferInstance : Comodule R D M) :=
+      f.corestrict_eq_of_factor σ hσ
     have hc := coefficientMatrix_corestrict b f
     rw [heq] at hc
     exact ⟨coefficientMatrix (C := C) b i j, congrFun (congrFun hc i) j |>.symm⟩

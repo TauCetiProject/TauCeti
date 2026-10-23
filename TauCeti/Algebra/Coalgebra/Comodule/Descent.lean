@@ -46,39 +46,19 @@ def comoduleOfFactor (f : C →ₗc[R] D) (ρ : M →ₗ[R] M ⊗[R] C)
     Comodule R C M where
   coact := ρ
   coassoc := by
-    have hmap (z : M ⊗[R] C) :
-        TensorProduct.map LinearMap.id (TensorProduct.map f.toLinearMap f.toLinearMap)
-            (TensorProduct.assoc R M C C (ρ.rTensor C z)) =
-          TensorProduct.assoc R M D D
-            ((coact (R := R) (C := D) (M := M)).rTensor D
-              (f.toLinearMap.lTensor M z)) := by
-      induction z using TensorProduct.inductionOn with
-      | tmul m c =>
-        simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul]
-        rw [← LinearMap.congr_fun hρ m, LinearMap.comp_apply]
-        induction ρ m using TensorProduct.inductionOn with
-        | tmul x d => simp
-        | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
-      | add x y hx hy => simp only [map_add, hx, hy]
-    have hcomul (z : M ⊗[R] C) :
-        TensorProduct.map LinearMap.id (TensorProduct.map f.toLinearMap f.toLinearMap)
-            (Coalgebra.comul.lTensor M z) =
-          Coalgebra.comul.lTensor M (f.toLinearMap.lTensor M z) := by
-      induction z using TensorProduct.inductionOn with
-      | tmul m c => simp [CoalgHomClass.map_comp_comul_apply]
-      | add x y hx hy => simp only [map_add, hx, hy]
     ext m
     apply hi
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-    have hm : f.toLinearMap.lTensor M (ρ m) = coact (R := R) (C := D) m :=
-      LinearMap.congr_fun hρ m
-    rw [hmap, hcomul, hm, coassoc_apply]
+    have hm : f.toLinearMap.lTensor M (ρ m) = coact (R := R) (C := D) m := by
+      simpa only [LinearMap.comp_apply] using LinearMap.congr_fun hρ m
+    rw [← f.assoc_rTensor_lTensor_comp ρ, hρ, ← f.comul_lTensor_lTensor, hm,
+      coassoc_apply]
   lTensor_counit_comp_coact := by
-    have hc : Coalgebra.counit.lTensor M ∘ₗ f.toLinearMap.lTensor M =
-        (Coalgebra.counit (R := R) (A := C)).lTensor M := by
-      ext m c
-      simp
-    rw [← hc, LinearMap.comp_assoc, hρ, lTensor_counit_comp_coact]
+    ext m
+    have hm : f.toLinearMap.lTensor M (ρ m) = coact (R := R) (C := D) m := by
+      simpa only [LinearMap.comp_apply] using LinearMap.congr_fun hρ m
+    rw [LinearMap.comp_apply, ← f.counit_lTensor_lTensor, hm]
+    exact LinearMap.congr_fun lTensor_counit_comp_coact m
 
 /-- The descended coaction is the specified linear factorization. -/
 @[simp]
@@ -114,5 +94,14 @@ theorem existsUnique_comoduleFactor_iff [Module.Flat R M] [Module.Flat R C]
     ext m
     apply hi
     exact (LinearMap.congr_fun hσ m).trans (LinearMap.congr_fun hρ m).symm
+
+/-- A coaction factoring through a coalgebra map corestricts to the original
+comodule structure. The tensor map in corestriction is `f.toLinearMap.lTensor M`. -/
+theorem corestrict_eq_of_factor (f : C →ₗc[R] D) (σ : Comodule R C M)
+    (hσ : f.toLinearMap.lTensor M ∘ₗ σ.coact = coact (R := R) (C := D)) :
+    (letI := σ; Corestrict f) = (inferInstance : Comodule R D M) := by
+  apply Comodule.ext
+  rw [corestrict_coact]
+  simpa only [corestrictCoact, ← LinearMap.lTensor_def] using hσ
 
 end CoalgHom
