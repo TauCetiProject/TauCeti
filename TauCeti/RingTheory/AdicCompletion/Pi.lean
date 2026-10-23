@@ -15,10 +15,13 @@ is `I`-adically Hausdorff as soon as every factor is. If the family is finite, t
 holds for adic precompleteness and completeness. In particular a finite free module `Fin n → R`
 over an `I`-adically complete ring is `I`-adically complete, which is what the complete Nakayama
 lemma (`surjective_of_mkQ_comp_surjective`) requires of the source of a map out of a finite free
-module.
+module. For a principal ideal `(π)`, the `(π)`-adic filtration of a product `ι → R` is read off
+coordinatewise: `x ∈ (π)^n • ⊤` exactly when `π ^ n` divides every coordinate of `x`.
 
 ## Main results
 
+* `TauCeti.mem_span_singleton_pow_smul_top_iff`: membership in `(π)^n • ⊤` on a product module is
+  coordinatewise divisibility by `π ^ n`.
 * `AdicCompletion.pi_of`: the product of the completions of the factors receives the canonical
   map from the product as the product of the canonical maps.
 * `IsHausdorff.pi`: adic Hausdorffness passes to products.
@@ -29,6 +32,23 @@ module.
 public section
 
 open AdicCompletion
+
+namespace TauCeti
+
+/-- On a product module, membership in `(π)^n • ⊤` is coordinatewise divisibility by `π ^ n`. -/
+theorem mem_span_singleton_pow_smul_top_iff {R : Type*} [CommSemiring R] {ι : Type*} (π : R)
+    (x : ι → R) (n : ℕ) :
+    x ∈ ((Ideal.span {π}) ^ n • ⊤ : Submodule R (ι → R)) ↔ ∀ i, π ^ n ∣ x i := by
+  rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul,
+    Submodule.mem_smul_pointwise_iff_exists]
+  constructor
+  · rintro ⟨y, -, rfl⟩ i
+    exact ⟨y i, rfl⟩
+  · intro h
+    choose y hy using h
+    exact ⟨y, Submodule.mem_top, funext fun i ↦ (hy i).symm⟩
+
+end TauCeti
 
 variable {R : Type*} [CommRing R] (I : Ideal R) {ι : Type*} (M : ι → Type*)
   [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)]

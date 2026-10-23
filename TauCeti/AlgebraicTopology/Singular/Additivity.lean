@@ -12,6 +12,8 @@ public import Mathlib.Topology.ContinuousMap.Sigma
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
+public import TauCeti.AlgebraicTopology.Singular.Relative
+public import TauCeti.Topology.Category.TopPair
 
 /-!
 # Additivity of singular chains and singular homology
@@ -28,6 +30,11 @@ modules over a ring).  Under that hypothesis the singular homology of a disjoint
 coproduct of the singular homologies of the summands in every degree.  This is the additivity
 axiom of Eilenberg--Steenrod.
 
+The same holds for relative singular chains and relative singular homology of the disjoint union
+`TopPair.sigma P = ∐ᵢ (Xᵢ, Aᵢ)` of a family of topological pairs: relative chains are the cokernel
+of the map from the chains of the subspace to those of the ambient space, both of which are
+additive, and cokernels commute with coproducts.
+
 Every map in sight is induced by one of the inclusions `X i ⟶ Σ i, X i`, so the results are
 statements about cofans rather than unrelated degreewise decompositions.
 
@@ -38,6 +45,8 @@ statements about cofans rather than unrelated degreewise decompositions.
 * `TauCeti.isColimitCofanSingularHomology`: if coproducts indexed by `ι` are exact in the
   coefficient category, the singular homology of `Σ i, X i` in each degree is the coproduct of the
   singular homologies of the `X i`.
+* `TopPair.isColimitCofanSingularChainComplex` and `TopPair.isColimitCofanSingularHomology`: the
+  same for the relative singular chains and relative singular homology of `∐ᵢ (Xᵢ, Aᵢ)`.
 
 ## Sources
 
@@ -51,7 +60,8 @@ Morrison, Mario Carneiro and Andrew Yang in `Mathlib/Topology/Category/TopCat/Li
 The passage from chains to homology is
 `TauCeti.homologicalComplexHomologyFunctor_preservesColimitsOfShape`, in
 `TauCeti/Algebra/Homology/ShortComplex/Colimit`, applied with Mathlib's exactness class
-`HasExactColimitsOfShape`.
+`HasExactColimitsOfShape`.  The passage from absolute to relative chains is
+`TauCeti.isColimitCofanMkCokernelCofork`, in `TauCeti/CategoryTheory/Limits/Shapes/Products`.
 -/
 
 public section
@@ -182,3 +192,53 @@ def isColimitCofanSingularHomology :
 end Homology
 
 end TauCeti
+
+namespace TopPair
+
+variable {ι : Type w} (P : ι → TopPair.{w})
+
+section Chains
+
+variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] (R : C)
+
+/-- **Additivity of relative singular chains.** The relative singular chain complex of the
+disjoint union `∐ᵢ (Xᵢ, Aᵢ)` of a family of topological pairs, with coefficients in `R`, is the
+coproduct of the relative singular chain complexes of the pairs, with the inclusions of the
+summands as the cofan legs. -/
+def isColimitCofanSingularChainComplex :
+    IsColimit (Cofan.mk ((sigma P).singularChainComplex R)
+      fun i ↦ singularChainComplexMap (sigmaι P i) R) :=
+  -- Relative chains are the cokernels of the maps from subspace chains to ambient chains, and
+  -- both of those are additive.
+  TauCeti.isColimitCofanMkCokernelCofork
+    (fun i ↦ (P i).isColimitCokernelCoforkSingularChainComplex R)
+    (TauCeti.isColimitCofanSingularChainComplex (fun i ↦ (P i).snd) C R)
+    (TauCeti.isColimitCofanSingularChainComplex (fun i ↦ (P i).fst) C R)
+    (fun i ↦ ((Functor.map_comp _ _ _).symm.trans
+      ((congrArg ((AlgebraicTopology.singularChainComplexFunctor.{w} C).obj R).map
+        (Hom.w (sigmaι P i))).trans (Functor.map_comp _ _ _))))
+    ((sigma P).isColimitCokernelCoforkSingularChainComplex R) _
+    (fun i ↦ (((SSetPair.chainComplexFunctorπ C).app R).naturality
+      (toSSetPair.map (sigmaι P i))).symm)
+
+end Chains
+
+section Homology
+
+variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  [HasExactColimitsOfShape (Discrete ι) C] (R : C) (k : ℕ)
+
+/-- **Additivity of relative singular homology.** If coproducts indexed by `ι` are exact in `C`,
+then in every degree the relative singular homology of the disjoint union `∐ᵢ (Xᵢ, Aᵢ)` of a
+family of topological pairs, with coefficients in `R`, is the coproduct of the relative singular
+homologies of the pairs, with the maps induced by the inclusions of the summands as the cofan
+legs. -/
+def isColimitCofanSingularHomology :
+    IsColimit (Cofan.mk ((sigma P).singularHomology R k)
+      fun i ↦ TopPair.singularHomologyMap (sigmaι P i) R k) :=
+  isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor C _ k) _ _
+    (isColimitCofanSingularChainComplex P C R)
+
+end Homology
+
+end TopPair

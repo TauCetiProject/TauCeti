@@ -14,12 +14,19 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 The diagonal torus of `SL_n` is the preimage of the diagonal torus of `GL_n`. A unit in a
 commutative ring also defines a determinant-one diagonal matrix by placing the unit and its
 inverse in two distinct diagonal positions. This generalizes Mathlib's field-valued
-`Matrix.SpecialLinearGroup.diag2n` construction.
+`Matrix.SpecialLinearGroup.diag2n` construction. The coordinate-separation predicate records
+whether determinant-one diagonal matrices can distinguish every pair of coordinate lines;
+a unit whose square is not one supplies such separation.
 
 ## Main declarations
 
 * `Matrix.SpecialLinearGroup.diag2nUnit`: the two-coordinate diagonal matrix attached to a unit.
 * `Matrix.SpecialLinearGroup.diagonalTorus`: the diagonal torus of `SL_n`.
+* `Matrix.SpecialLinearGroup.DiagonalTorusSeparatesCoordinates`: coordinate separation by the torus.
+* `Matrix.SpecialLinearGroup.diagonalTorusSeparatesCoordinates_of_exists_sq_ne_one`: a sufficient
+  condition for coordinate separation over a commutative ring.
+* `Matrix.GeneralLinearGroup.exists_toGL_mul_eq`: every invertible matrix is a determinant-one
+  matrix times a diagonal matrix.
 * `Matrix.SpecialLinearGroup.map_diag2nUnit`: naturality under a ring homomorphism.
 * `Matrix.SpecialLinearGroup.diag2nUnit_decompose`: a two-coordinate unit diagonal matrix is a
   product of six transvections.
@@ -133,6 +140,20 @@ theorem _root_.Matrix.SpecialLinearGroup.diag2n_decompose {K : Type u} [Field K]
     Units.val_inv_eq_inv_val] using
     Matrix.SpecialLinearGroup.diag2nUnit_decompose hij (Units.mk0 a ha)
 
+/-- Every invertible matrix over a commutative ring is a determinant-one matrix times a diagonal
+matrix. -/
+theorem _root_.Matrix.GeneralLinearGroup.exists_toGL_mul_eq {R : Type u} [CommRing R]
+    {m : Type v} [Fintype m] [DecidableEq m] (g : GL m R) :
+    ∃ x : Matrix.SpecialLinearGroup m R, ∃ t : m → Rˣ,
+      Matrix.SpecialLinearGroup.toGL x * diagGL t = g := by
+  obtain ⟨u, hu⟩ := exists_det_mul_diagGL_eq_one g
+  let x : Matrix.SpecialLinearGroup m R :=
+    ⟨(g * diagGL u : GL m R), by
+      rw [← Matrix.GeneralLinearGroup.val_det_apply, hu, Units.val_one]⟩
+  refine ⟨x, u⁻¹, ?_⟩
+  have hx : Matrix.SpecialLinearGroup.toGL x = g * diagGL u := Units.ext rfl
+  rw [hx, map_inv, mul_inv_cancel_right]
+
 end
 
 end TauCeti
@@ -164,6 +185,39 @@ theorem mem_diagonalTorus_iff_toGL_mem {g : SpecialLinearGroup (Fin n) R} :
 theorem mem_diagonalTorus_iff {g : SpecialLinearGroup (Fin n) R} :
     g ∈ diagonalTorus R n ↔ (g : Matrix (Fin n) (Fin n) R).IsDiag := by
   rw [mem_diagonalTorus_iff_toGL_mem, TauCeti.mem_diagonalTorus_iff, coe_GL_coe_matrix]
+
+/-- The determinant-one diagonal torus separates coordinates if each pair of distinct coordinates
+receives different values under some diagonal element of determinant one. -/
+def DiagonalTorusSeparatesCoordinates (R : Type u) [CommRing R] (n : ℕ) : Prop :=
+  ∀ i j : Fin n, i ≠ j → ∃ t : Fin n → Rˣ, ∏ r, (t r : R) = 1 ∧ t i ≠ t j
+
+/-- Coordinate separation is witnessed by a determinant-one unit diagonal with different
+entries at each chosen pair of distinct coordinates. -/
+theorem diagonalTorusSeparatesCoordinates_iff :
+    DiagonalTorusSeparatesCoordinates R n ↔
+      ∀ i j : Fin n, i ≠ j → ∃ t : Fin n → Rˣ, ∏ r, (t r : R) = 1 ∧ t i ≠ t j :=
+  (Iff.rfl)
+
+/-- A unit whose square is not one makes the determinant-one diagonal torus separate
+coordinates. -/
+theorem diagonalTorusSeparatesCoordinates_of_exists_sq_ne_one
+    (hR : ∃ a : Rˣ, a ^ 2 ≠ 1) : DiagonalTorusSeparatesCoordinates R n := by
+  obtain ⟨a, ha⟩ := hR
+  intro i j hij
+  refine ⟨Pi.mulSingle i a * Pi.mulSingle j a⁻¹, ?_, ?_⟩
+  · simp only [Pi.mul_apply, Units.val_mul, Finset.prod_mul_distrib,
+      ← Units.coe_prod, Fintype.prod_pi_mulSingle', Units.mul_inv]
+  · simpa [Pi.mulSingle_apply, hij, hij.symm, eq_inv_iff_mul_eq_one, ← sq] using ha
+
+/-- Coordinate separation implies that the unit group is nontrivial when there are at least two
+coordinates. -/
+theorem DiagonalTorusSeparatesCoordinates.nontrivial_of_not_subsingleton
+    (hsep : DiagonalTorusSeparatesCoordinates R n) (hn : ¬ Subsingleton (Fin n)) :
+    Nontrivial Rˣ := by
+  let _ : Nontrivial (Fin n) := not_subsingleton_iff_nontrivial.mp hn
+  obtain ⟨i, j, hij⟩ := exists_pair_ne (Fin n)
+  obtain ⟨t, _, ht⟩ := hsep i j hij
+  exact nontrivial_of_ne (t i) (t j) ht
 
 end
 

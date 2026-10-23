@@ -52,6 +52,57 @@ universe v
 
 variable {G : Type v} [Group G] {N : Subgroup G} {k : Type} [Field k]
 
+/-- Over an inverted subgroup `N` of index two, the character of the representation induced from
+a linear character `ψ` of `N` that is not its own inverse sums to zero on squares. -/
+private theorem sum_filter_mem_character_ρ_indFDRep_sq_eq_zero [Fintype G]
+    [DecidablePred (· ∈ N)] (hindex : N.index = 2) {s : G} (hs : s ∉ N)
+    (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (hN : IsUnit (Nat.card N : k)) {ψ : N →* kˣ}
+    (hψ : ψ ^ 2 ≠ 1) :
+    ∑ x ∈ Finset.univ.filter (fun g : G => g ∈ N),
+      Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ (x ^ 2) = 0 := by
+  -- The sums over `N` of the nontrivial characters `ψ ^ 2` and `(ψ ^ 2)⁻¹` vanish.
+  have hzeroSum : ∀ χ : N →* kˣ, χ ≠ 1 → ∑ x : N, (χ x : k) = 0 := fun χ hχ =>
+    sum_hom_units_eq_zero ((Units.coeHom k).comp χ) fun h =>
+      hχ <| MonoidHom.ext fun x => Units.ext (DFunLike.congr_fun h x)
+  -- The `Inv` on `N →* kˣ` is `MonoidHom.instInv`, so `inv_ne_one` needs its argument
+  -- pinned before the `DivisionMonoid` instance it is stated for can be found.
+  have hinvψ : (ψ ^ 2)⁻¹ ≠ 1 := (inv_ne_one (a := ψ ^ 2)).mpr hψ
+  have hstep (x : N) : Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ
+      ((x : G) ^ 2) = (((ψ ^ 2) x : kˣ) : k) + ((((ψ ^ 2)⁻¹) x : kˣ) : k) := by
+    rw [FDRep.character_ρ,
+      character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv hN ψ
+        (Subgroup.sq_mem_of_index_two hindex _)]
+    simp [← SubmonoidClass.mk_pow]
+  rw [Finset.sum_subtype (p := (· ∈ N)) _ (fun x => by simp) _,
+    Finset.sum_congr rfl fun x _ => hstep x, Finset.sum_add_distrib, hzeroSum _ hψ,
+    hzeroSum _ hinvψ, add_zero]
+
+/-- Off an inverted subgroup `N` of index two, the character of the representation induced from
+a linear character `ψ` of `N` sums on squares to `|N|` copies of `2 ψ (s ^ 2)`. -/
+private theorem sum_filter_notMem_character_ρ_indFDRep_sq [Fintype G] [DecidablePred (· ∈ N)]
+    (hindex : N.index = 2) {s : G} (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
+    (hN : IsUnit (Nat.card N : k)) (ψ : N →* kˣ) :
+    ∑ x ∈ Finset.univ.filter (fun g : G => g ∉ N),
+      Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ (x ^ 2) =
+        (Nat.card N : k) * (2 * (ψ ⟨s ^ 2, Subgroup.sq_mem_of_index_two hindex s⟩ : k)) := by
+  set z : N := ⟨s ^ 2, Subgroup.sq_mem_of_index_two hindex s⟩ with hzdef
+  -- `ψ z` is a square root of `1`, so the character is `2 ψ z` at every outside square.
+  have hzsq : z ^ 2 = 1 :=
+    Subtype.ext (by
+      simpa using sq_sq_eq_one_of_conj_eq_inv (Subgroup.sq_mem_of_index_two hindex s) hinv)
+  have hψz : (ψ z)⁻¹ = ψ z :=
+    inv_eq_of_mul_eq_one_right (by rw [← pow_two, ← map_pow, hzsq, map_one])
+  have houterStep : ∀ x ∈ Finset.univ.filter (fun g : G => g ∉ N),
+      Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ (x ^ 2) =
+        2 * (ψ z : k) := by
+    intro x hx
+    rw [sq_eq_sq_of_notMem_of_index_two hindex hs hinv (Finset.mem_filter.mp hx).2]
+    rw [FDRep.character_ρ,
+      character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv hN ψ
+        (Subgroup.sq_mem_of_index_two hindex s), ← hzdef, hψz, two_mul]
+  rw [Finset.sum_congr rfl houterStep, Finset.sum_const, nsmul_eq_mul,
+    card_filter_notMem_eq_card_of_index_two hindex]
+
 /-- **The Frobenius-Schur indicator of a character induced from an inverted subgroup of index
 two** is the value of the character on the common square `s ^ 2` of the elements outside the
 subgroup.  The hypothesis `ψ ^ 2 ≠ 1` says that `ψ` is not its own inverse, and `hG` that the order
@@ -63,94 +114,16 @@ theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_eq_apply_sq_of_conj_e
     FDRep.frobeniusSchurIndicator (indFDRep (FDRep.ofLinearCharacter ψ)) =
       (ψ ⟨s ^ 2, Subgroup.sq_mem_of_index_two hindex s⟩ : k) := by
   classical
-  -- `s` lies outside `N`: inside it, `hinv` would make `ψ` its own inverse, because `kˣ` is
-  -- commutative, and that is what `hψ` forbids.
-  have hs : s ∉ N := by
-    intro hsN
-    refine hψ (MonoidHom.ext fun x => ?_)
-    have hconj : (⟨s, hsN⟩ : N) * x * (⟨s, hsN⟩ : N)⁻¹ = x⁻¹ :=
-      Subtype.ext (by simpa using hinv (x : G) x.2)
-    have hfix : ψ x = (ψ x)⁻¹ := by
-      have h := congrArg ψ hconj
-      simp only [map_mul, map_inv] at h
-      rwa [mul_comm (ψ (⟨s, hsN⟩ : N)) (ψ x), mul_inv_cancel_right] at h
-    have hsq : ψ x * ψ x = 1 := by
-      have hrewrite : ψ x * ψ x = ψ x * (ψ x)⁻¹ := by rw [← hfix]
-      rw [hrewrite, mul_inv_cancel]
-    rw [MonoidHom.pow_apply, MonoidHom.one_apply, pow_two, hsq]
+  -- `s` lies outside `N`: an inverting element inside `N` would force `ψ ^ 2 = 1`.
+  have hs : s ∉ N := fun hsN => hψ (monoidHom_sq_eq_one_of_mem_of_conj_eq_inv hsN hinv ψ)
   have hcast : (Nat.card G : k) = (Nat.card N : k) * 2 := by
     rw [← Subgroup.card_mul_index N, hindex]; push_cast; ring
   have hNunit : IsUnit (Nat.card N : k) := isUnit_of_mul_isUnit_left (hcast ▸ hG)
-  set z : N := ⟨s ^ 2, Subgroup.sq_mem_of_index_two hindex s⟩ with hzdef
-  -- `ψ z` is a square root of `1`, so the character of the induced representation is `2 ψ z` off
-  -- the subgroup.
-  have hzsq : z ^ 2 = 1 :=
-    Subtype.ext (by
-      simpa using sq_sq_eq_one_of_conj_eq_inv (Subgroup.sq_mem_of_index_two hindex s) hinv)
-  have hψz : (ψ z)⁻¹ = ψ z :=
-    inv_eq_of_mul_eq_one_right (by rw [← pow_two, ← map_pow, hzsq, map_one])
-  have hval : ∀ (g : G) (hg : g ∈ N),
-      Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ g =
-        (ψ ⟨g, hg⟩ : k) + ((ψ ⟨g, hg⟩)⁻¹ : kˣ) := fun g hg => by
-    -- `FDRep.character_forget₂_obj` is the explicit bridge between the two character interfaces.
-    -- It is stated for the representation carried by `forget₂`, the one `FDRep.forget₂_ρ`
-    -- identifies with `V.ρ`; rewriting along that identification is not an option here, because
-    -- the motive is ill-typed while `indFDRep` is not `@[expose]`d.
-    have hbridge : Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ g =
-        (indFDRep (FDRep.ofLinearCharacter ψ)).character g :=
-      FDRep.character_forget₂_obj _ g
-    rw [hbridge]
-    exact character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv
-      hNunit ψ hg
-  -- The half of `G` inside `N` contributes the sum of the nontrivial character `ψ ^ 2` and of its
-  -- inverse, both of which vanish.
-  have hzeroSum : ∀ χ : N →* kˣ, χ ≠ 1 → ∑ x : N, (χ x : k) = 0 := by
-    intro χ hχ
-    refine sum_hom_units_eq_zero ((Units.coeHom k).comp χ) fun hcontra => hχ ?_
-    exact MonoidHom.ext fun x => Units.ext (congrFun (congrArg DFunLike.coe hcontra) x)
-  -- The `Inv` on `N →* kˣ` is `MonoidHom.instInv`, so `inv_ne_one` needs its argument
-  -- pinned before the `DivisionMonoid` instance it is stated for can be found.
-  have hinvψ : (ψ ^ 2)⁻¹ ≠ 1 := (inv_ne_one (a := ψ ^ 2)).mpr hψ
-  have hstep : ∀ x : N,
-      Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ
-          ((x : G) ^ 2) = (((ψ ^ 2) x : kˣ) : k) + ((((ψ ^ 2)⁻¹) x : kˣ) : k) := by
-    intro x
-    rw [hval ((x : G) ^ 2) (Subgroup.sq_mem_of_index_two hindex _)]
-    have hx : (⟨(x : G) ^ 2, Subgroup.sq_mem_of_index_two hindex (x : G)⟩ : N) = x ^ 2 :=
-      Subtype.ext (by simp)
-    rw [hx]
-    simp
-  have hinner : ∑ x ∈ Finset.univ.filter (fun g : G => g ∈ N),
-      Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ (x ^ 2)
-        = 0 := by
-    have hsub : ∑ x ∈ Finset.univ.filter (fun g : G => g ∈ N),
-        Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ (x ^ 2)
-          = ∑ x : N, Representation.character
-              (indFDRep (FDRep.ofLinearCharacter ψ)).ρ ((x : G) ^ 2) :=
-      Finset.sum_subtype _ (fun x => by simp) _
-    rw [hsub, Finset.sum_congr rfl fun x _ => hstep x, Finset.sum_add_distrib,
-      hzeroSum _ hψ, hzeroSum _ hinvψ, add_zero]
-  -- The other half contributes `|N|` copies of `2 ψ z`.
-  have houter : ∑ x ∈ Finset.univ.filter (fun g : G => ¬ g ∈ N),
-      Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ (x ^ 2) =
-        (Nat.card N : k) * (2 * (ψ z : k)) := by
-    have houterStep : ∀ x ∈ Finset.univ.filter (fun g : G => ¬ g ∈ N),
-        Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ (x ^ 2) =
-          2 * (ψ z : k) := by
-      intro x hx
-      rw [sq_eq_sq_of_notMem_of_index_two hindex hs hinv (by simpa using hx),
-        hval (s ^ 2) (Subgroup.sq_mem_of_index_two hindex s), ← hzdef, hψz]
-      ring
-    rw [Finset.sum_congr rfl houterStep, Finset.sum_const, nsmul_eq_mul]
-    congr 1
-    have hnotMemCard : (Finset.univ.filter (fun x : G => ¬ x ∈ N)).card = Nat.card N := by
-      simpa using card_filter_notMem_eq_card_of_index_two (N := N) hindex
-    rw [hnotMemCard]
   -- `|G| = 2 |N|` turns the two halves into a single multiple of `|G|`, which the average cancels.
-  have hcollect : (Nat.card N : k) * (2 * (ψ z : k)) = (Nat.card G : k) * (ψ z : k) := by
-    rw [hcast]; ring
   rw [FDRep.frobeniusSchurIndicator_def, Representation.frobeniusSchurIndicator_def,
-    ← Finset.sum_filter_add_sum_filter_not Finset.univ (fun g : G => g ∈ N), hinner, houter,
-    zero_add, hcollect, ← mul_assoc, inv_mul_cancel₀ hG.ne_zero, one_mul]
+    ← Finset.sum_filter_add_sum_filter_not Finset.univ (fun g : G => g ∈ N),
+    sum_filter_mem_character_ρ_indFDRep_sq_eq_zero hindex hs hinv hNunit hψ,
+    sum_filter_notMem_character_ρ_indFDRep_sq hindex hs hinv hNunit ψ, zero_add,
+    inv_mul_eq_iff_eq_mul₀ hG.ne_zero, hcast, mul_assoc]
 
 end TauCeti

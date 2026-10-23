@@ -51,11 +51,11 @@ matrix algebras one size down, acting on the two half-spin summands.
 `basis` transports Mathlib's `Module.Basis.ExteriorAlgebra` along `equivExterior`, so its elements
 are not by definition the products `ι Q (b i₁) * ⋯ * ι Q (b iₖ)` of generators: `equivExterior` is
 built from `CliffordAlgebra.changeForm`, which corrects a product of generators by lower-order
-terms. Nothing below needs the products, only their number. Identifying
-the two families is the Clifford analogue of a Poincaré-Birkhoff-Witt theorem, and is the content
-of the associated-graded isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` against the
-degree filtration of `TauCeti/LinearAlgebra/CliffordAlgebra/Filtration.lean`; it is left to that
-separate milestone.
+terms. Nothing below needs the products, only their number. Identifying the two families is the
+Clifford analogue of a Poincaré-Birkhoff-Witt theorem, and is the content of the associated-graded
+isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filtration of
+`TauCeti/LinearAlgebra/CliffordAlgebra/Filtration.lean`; that isomorphism is
+`CliffordAlgebra.associatedGradedEquivExterior` in `TauCeti.LinearAlgebra.CliffordAlgebra.PBW`.
 
 ## Main definitions
 
@@ -87,8 +87,6 @@ separate milestone.
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 0, "The associated graded is the exterior algebra (a PBW-type theorem)".
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
 -/
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Basic
 -- Proof-only, named in no statement here: the passage from an integral `x`-coordinate to an
 -- integral `y`-coordinate along the Weierstrass equation.

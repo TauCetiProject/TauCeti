@@ -16,7 +16,7 @@ Continuous integration ensures that the mathematics always compiles
 
 # How review works
 
-When a pull request is opened, CI runs first, including the full Mathlib linters.
+When a pull request is opened, CI runs first, including the full Mathlib linters on the modules it changes; a daily run lints the whole library.
 Once it is green, AI review agents judge the change against fixed, open-source
 rubrics — scope, correctness, reuse, attribution, API design, generality, placement,
 naming, documentation, proof quality, and deprecation — and post `approve`,

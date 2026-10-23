@@ -105,8 +105,6 @@ topological. -/
 noncomputable def padicIntUnitsEquivProd :
     ℤ_[p]ˣ ≃ₜ* rootsOfUnity (p - 1) ℤ_[p] × unitsPrincipal p 1 :=
   have : NeZero (p - 1) := ⟨Nat.sub_ne_zero_of_lt hp.out.one_lt⟩
-  have : CompactSpace (unitsPrincipal p 1) :=
-    isCompact_iff_compactSpace.mp (isClosed_unitsPrincipal p 1).isCompact
   let e := padicIntUnitsProdMulEquiv p
   -- Multiplication is continuous, and a continuous bijection from a compact space to a Hausdorff
   -- space is a homeomorphism.

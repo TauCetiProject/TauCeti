@@ -12,16 +12,18 @@ public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 /-!
 # Affine group schemes are anti-equivalent to commutative Hopf algebras
 
-Over a commutative ring `S`, the contravariant functor `Spec` is an equivalence from the
-opposite of the category of commutative `S`-Hopf algebras onto the category of affine
-group schemes over `Spec S`. This is the assembled Layer 0 dictionary of the
-reductive-groups roadmap.
+Over a commutative ring `S`, the contravariant functor `Spec` is an equivalence from the opposite of
+the category of commutative `S`-Hopf algebras onto the category of affine group schemes over
+`Spec S`.
 
 Mathlib's `AlgebraicGeometry/Group/Affine.lean` provides the functor
 (`AlgebraicGeometry.hopfSpec`), its full faithfulness, and the characterization of its
 essential image as the affine group schemes (`AlgebraicGeometry.essImage_hopfSpec`);
 this file composes them into the equivalence with the category
 `TauCeti.AffineGroupSchemeCat` of the parent file.
+
+`TauCeti.AffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso` identifies an affine group
+scheme with the Hopf spectrum of its coordinate algebra, using the counit of this equivalence.
 -/
 
 public section
@@ -74,6 +76,16 @@ noncomputable def commHopfAlgCatOpEquivAffineGroupSchemeCat.functorObjIso
   (affineGroupSchemeProperty (CommRingCat.of R)).ι.preimageIso
     ((commHopfAlgCatOpEquivAffineGroupSchemeCat.functorCompιIso
       (CommRingCat.of R)).app H)
+
+/-- An affine group scheme is the Hopf spectrum of its coordinate Hopf algebra. -/
+noncomputable def AffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso
+    (R : Type u) [CommRing R] (G : AffineGroupSchemeCat (CommRingCat.of R)) :
+    (hopfSpec (CommRingCat.of R)).obj
+        ((commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).inverse.obj G) ≅ G.obj :=
+  ((commHopfAlgCatOpEquivAffineGroupSchemeCat.functorCompιIso (CommRingCat.of R)).app
+      ((commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).inverse.obj G)).symm ≪≫
+    (affineGroupSchemeProperty (CommRingCat.of R)).ι.mapIso
+      ((commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).counitIso.app G)
 
 /-- To identify the inverse image of an isomorphism-invariant property of affine group schemes
 under the Hopf-algebra/group-scheme anti-equivalence, it suffices to identify that property on

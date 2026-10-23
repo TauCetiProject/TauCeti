@@ -89,12 +89,6 @@ reductivity, maximality of the weight torus, or any finiteness or simplicity sta
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15.
 * J. E. Humphreys, *Linear Algebraic Groups*, §27.
-
-This is the pinned instance of the graph-automorphism half of "Pinnings ... This is what makes
-'the' graph automorphism well defined" in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L1, ordinary and
-graph-twisted Steinberg maps, of `TauCetiRoadmap/CFSGStatement/README.md`, whose twisted branches
-compose such a `γ` with the field Frobenius.
 -/
 
 public section
@@ -158,8 +152,8 @@ def geckGraphAut (hsigma : sigma ∈ t.diagramSymmetry) : Aut (t.geckGroupScheme
   Aut.autMulEquivOfIso (eqToIso (t.geckGroupScheme_def ht).symm) (toralGraphAut ht hsigma)
 
 private theorem geckGraphAut_hom (hsigma : sigma ∈ t.diagramSymmetry) :
-    (t.geckGraphAut ht hsigma).hom =
-      eqToHom (t.geckGroupScheme_def ht) ≫ (toralGraphAut ht hsigma).hom ≫
+    (t.geckGraphAut ht hsigma).asIso.hom =
+      eqToHom (t.geckGroupScheme_def ht) ≫ (toralGraphAut ht hsigma).asIso.hom ≫
         eqToHom (t.geckGroupScheme_def ht).symm := by
   rw [geckGraphAut, TauCeti.CategoryTheory.autMulEquivOfIso_hom, eqToIso.inv, eqToIso.hom]
 
@@ -168,7 +162,7 @@ symmetry, without changing its additive parameter. -/
 @[reassoc (attr := simp)]
 theorem geckRootSubgroup_comp_geckGraphAut_hom (hsigma : sigma ∈ t.diagramSymmetry)
     (i : Fin t.rank ⊕ Fin t.rank) :
-    t.geckRootSubgroup ht i ≫ (t.geckGraphAut ht hsigma).hom =
+    t.geckRootSubgroup ht i ≫ (t.geckGraphAut ht hsigma).asIso.hom =
       t.geckRootSubgroup ht (diagramRootGeneratorPerm sigma i) := by
   rw [geckGraphAut_hom, geckRootSubgroup_def, geckRootSubgroup_def, Category.assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, toralGraphAut, ← Category.assoc,
@@ -178,10 +172,11 @@ theorem geckRootSubgroup_comp_geckGraphAut_hom (hsigma : sigma ∈ t.diagramSymm
 @[reassoc (attr := simp)]
 theorem geckRootSubgroup_comp_geckGraphAut_inv (hsigma : sigma ∈ t.diagramSymmetry)
     (i : Fin t.rank ⊕ Fin t.rank) :
-    t.geckRootSubgroup ht (diagramRootGeneratorPerm sigma i) ≫ (t.geckGraphAut ht hsigma).inv =
+    t.geckRootSubgroup ht (diagramRootGeneratorPerm sigma i) ≫
+        (t.geckGraphAut ht hsigma).asIso.inv =
       t.geckRootSubgroup ht i := by
   rw [← geckRootSubgroup_comp_geckGraphAut_hom ht hsigma i, Category.assoc,
-    (t.geckGraphAut ht hsigma).hom_inv_id, Category.comp_id]
+    (t.geckGraphAut ht hsigma).asIso.hom_inv_id, Category.comp_id]
 
 /-- **The graph automorphism intertwines the represented weight torus with the relabelling**
 attached to the diagram symmetry: composing the torus morphism with `γ` is the same as relabelling
@@ -189,7 +184,7 @@ its coordinates by `σ⁻¹` first. Nothing here asserts that this morphism is a
 is an equation of morphisms and not a statement that `γ` normalizes a subgroup scheme. -/
 @[reassoc (attr := simp)]
 theorem geckWeightTorus_comp_geckGraphAut_hom (hsigma : sigma ∈ t.diagramSymmetry) :
-    t.geckWeightTorus ht ≫ (t.geckGraphAut ht hsigma).hom =
+    t.geckWeightTorus ht ≫ (t.geckGraphAut ht hsigma).asIso.hom =
       SplitTorus.relabel ℤ sigma⁻¹ ≫ t.geckWeightTorus ht := by
   rw [geckGraphAut_hom, geckWeightTorus_def, Category.assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, toralGraphAut, ← Category.assoc,
@@ -200,20 +195,20 @@ theorem geckWeightTorus_comp_geckGraphAut_hom (hsigma : sigma ∈ t.diagramSymme
 undoing the relabelling by `σ⁻¹` that the forward automorphism performs. -/
 @[reassoc (attr := simp)]
 theorem geckWeightTorus_comp_geckGraphAut_inv (hsigma : sigma ∈ t.diagramSymmetry) :
-    t.geckWeightTorus ht ≫ (t.geckGraphAut ht hsigma).inv =
+    t.geckWeightTorus ht ≫ (t.geckGraphAut ht hsigma).asIso.inv =
       SplitTorus.relabel ℤ sigma ≫ t.geckWeightTorus ht := by
-  calc t.geckWeightTorus ht ≫ (t.geckGraphAut ht hsigma).inv
+  calc t.geckWeightTorus ht ≫ (t.geckGraphAut ht hsigma).asIso.inv
       = (SplitTorus.relabel ℤ sigma ≫ SplitTorus.relabel ℤ sigma⁻¹ ≫ t.geckWeightTorus ht) ≫
-          (t.geckGraphAut ht hsigma).inv := by
+          (t.geckGraphAut ht hsigma).asIso.inv := by
         simp only [← Category.assoc, SplitTorus.relabel_comp, mul_inv_cancel,
           SplitTorus.relabel_one, Category.id_comp]
     _ = SplitTorus.relabel ℤ sigma ≫
-          (t.geckWeightTorus ht ≫ (t.geckGraphAut ht hsigma).hom) ≫
-            (t.geckGraphAut ht hsigma).inv := by
+          (t.geckWeightTorus ht ≫ (t.geckGraphAut ht hsigma).asIso.hom) ≫
+            (t.geckGraphAut ht hsigma).asIso.inv := by
         rw [geckWeightTorus_comp_geckGraphAut_hom]
         simp only [Category.assoc]
     _ = SplitTorus.relabel ℤ sigma ≫ t.geckWeightTorus ht := by
-        rw [Category.assoc, (t.geckGraphAut ht hsigma).hom_inv_id, Category.comp_id]
+        rw [Category.assoc, (t.geckGraphAut ht hsigma).asIso.hom_inv_id, Category.comp_id]
 
 /-- **The order of the graph automorphism divides that of the diagram symmetry.** An involution of
 the numbered diagram therefore gives `γ ^ 2 = 1`, and the triality of `D₄` gives `γ ^ 3 = 1`. -/
@@ -279,19 +274,6 @@ theorem geckGraphAutMatrix_pow_eq_one (hsigma : sigma ∈ t.diagramSymmetry) (A 
   -- matrix of the inverse permutation; that is the matrix `coe_geckGraphAutMatrix` produces.
   rw [Units.val_pow_eq_pow_val, Units.val_one, coe_geckGraphAutMatrix,
     ← Matrix.permMatrixHom_apply, ← map_pow, geckDiagramFinPerm_pow_eq_one ht hsigma hm, map_one]
-
-/-- The points of the pinned Geck carrier are the points of the Kostant toral closure of the
-pinned Geck data. -/
-private theorem geckPoints_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
-    t.geckPoints ht A =
-      TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
-        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-        (t.geckCoordinateLattice ht).toAddSubgroup
-        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-        (t.isNilpotent_geckRepresentation_rootGenerator ht)
-        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A := by
-  rw [t.geckPoints_def ht A,
-    TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def, t.geckDefiningIdeal_def ht]
 
 /-- **The matrix of the pinned coordinate permutation normalizes the points of the Geck
 carrier.** -/
@@ -370,13 +352,13 @@ theorem schemePointsMulEquiv_geckGraphAut_comp_geckGroupSchemeι
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (t.geckGroupScheme ht).X) :
     GeneralLinear.schemePointsMulEquiv (t.geckDim ht) A
-        (p ≫ ((t.geckGraphAut ht hsigma).hom ≫ t.geckGroupSchemeι ht).hom.hom) =
+        (p ≫ ((t.geckGraphAut ht hsigma).asIso.hom ≫ t.geckGroupSchemeι ht).hom.hom) =
       t.geckGraphAutMatrix ht hsigma A *
           GeneralLinear.schemePointsMulEquiv (t.geckDim ht) A
             (p ≫ (t.geckGroupSchemeι ht).hom.hom) *
         (t.geckGraphAutMatrix ht hsigma A)⁻¹ := by
-  have hcomp : (t.geckGraphAut ht hsigma).hom ≫ t.geckGroupSchemeι ht =
-      eqToHom (t.geckGroupScheme_def ht) ≫ (toralGraphAut ht hsigma).hom ≫
+  have hcomp : (t.geckGraphAut ht hsigma).asIso.hom ≫ t.geckGroupSchemeι ht =
+      eqToHom (t.geckGroupScheme_def ht) ≫ (toralGraphAut ht hsigma).asIso.hom ≫
         TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι
           (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
           (t.geckCoordinateLattice ht).toAddSubgroup

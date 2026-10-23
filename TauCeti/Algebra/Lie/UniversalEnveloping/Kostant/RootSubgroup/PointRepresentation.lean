@@ -98,8 +98,7 @@ private theorem kostantRootSubgroupPointAction_naturality
   have hmap (x : A ⊗[ℤ] M) :
       GeneralLinear.scalarExtensionMap (V := M) phi x =
         TensorProduct.map phi.hom.toLinearMap LinearMap.id x := by
-    induction x using TensorProduct.induction_on with
-    | zero => simp
+    induction x using TensorProduct.inductionOn with
     | tmul a m => simp
     | add x y hx hy => simp [hx, hy]
   rw [hmap z, hmap]

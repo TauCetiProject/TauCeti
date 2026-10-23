@@ -58,9 +58,6 @@ to one of bimodules and an injectivity criterion for modules over a general base
 
 ## References
 
-This is the third clause of Layer 2 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, whose target
-signatures `zigzagTrace`, `zigzagTracePairing`, `zigzagTracePairing_isSymm` and
-`zigzagTracePairing_nondegenerate` appear in `TauCetiRoadmap/ZigzagPreprojective/Suggested.lean`.
 See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and
 Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*, Section 2.
 -/

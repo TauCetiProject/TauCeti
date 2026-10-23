@@ -35,9 +35,6 @@ hypothesis on `M` is needed.
 * `TauCeti.AdditiveGroup.gaTangentLinearEquiv`: the tangent module of `𝔾ₐ` is the coefficient
   algebra `B`.
 * `TauCeti.AdditiveGroup.tangent_bracket_eq_zero`: the tangent Lie bracket is zero.
-
-This advances Layer 2 (`Lie(G)`) and the additive-group worked example of the
-ReductiveGroups roadmap.
 -/
 
 public section

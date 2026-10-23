@@ -21,10 +21,9 @@ Eᵢ⁽ⁿ⁾,  Fᵢ⁽ⁿ⁾,  and  (Hᵢ choose n).
 ```
 
 This subring serves as the Serre-generator candidate integral form, providing the explicit
-presentation-level input for the Chevalley--Demazure construction. For an arbitrary integer
-matrix `CM`, it is defined by the simple generator families; identification with the
-canonical all-root Kostant `ℤ`-form is deferred until suitable root-datum hypotheses and
-comparison theorems are available.
+presentation-level input for the Chevalley--Demazure construction. For an arbitrary integer matrix
+`CM`, it is defined by the simple generator families; identification with the canonical all-root
+Kostant `ℤ`-form, which needs root-datum hypotheses, is not treated here.
 
 The form spans the rational enveloping algebra: the Serre generators generate the presented Lie
 algebra, and the general spanning theorem for `kostantForm` applies. It is also stable under both
@@ -44,14 +43,6 @@ of the coefficients `(H choose k)`.
   with `refl`, `trans`, and `symm` laws.
 * `TauCeti.serreChevalleyKostantEquiv`: the Chevalley involution restricted to the integral form,
   with self-inverse and commutation laws.
-
-## Roadmap
-
-This supplies the concrete Kostant-form input to the Chevalley--Demazure construction in Layer 9
-of `TauCetiRoadmap/ReductiveGroups/README.md`. That construction starts from the Serre presentation
-of a pinned Cartan matrix; the generic form with arbitrary root and Cartan families is not yet the
-explicit integral object attached to that presentation. The resulting pinned group schemes are
-consumed by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
 
 ## References
 

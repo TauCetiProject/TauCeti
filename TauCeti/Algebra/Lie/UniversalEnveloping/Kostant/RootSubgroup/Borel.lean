@@ -120,13 +120,13 @@ theorem map_kostantSubsystemSubgroup_conj_kostantTorusPoints
   refine le_antisymm ?_ ?_
   · rw [Subgroup.map_le_iff_le_comap]
     refine (kostantSubsystemSubgroup_le_iff e h ρ M hM hnil).2 fun i hiS t => ?_
-    rw [Subgroup.mem_comap, MonoidHom.coe_coe, hconj i hiS]
+    rw [Subgroup.mem_comap, MonoidHom.coe_ofClass, hconj i hiS]
     exact kostantRootSubgroupParam_mem_kostantSubsystemSubgroup e h ρ M hM hnil hiS A _
   · refine (kostantSubsystemSubgroup_le_iff e h ρ M hM hnil).2 fun i hiS t => ?_
     refine ⟨kostantRootSubgroupParam e h ρ M hM i (hnil i) A
       (Multiplicative.ofAdd ((↑(torusCharacter s (α i))⁻¹ : A) * Multiplicative.toAdd t)),
       kostantRootSubgroupParam_mem_kostantSubsystemSubgroup e h ρ M hM hnil hiS A _, ?_⟩
-    rw [MonoidHom.coe_coe, hconj i hiS]
+    rw [MonoidHom.coe_ofClass, hconj i hiS]
     congr 1
     simp only [toAdd_ofAdd, ← mul_assoc, Units.mul_inv, one_mul, ofAdd_toAdd]
 

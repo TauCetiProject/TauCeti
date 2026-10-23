@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma
 public import TauCeti.Probability.Distributions.Gamma.Basic
+import TauCeti.Probability.Cdf
 
 /-!
 # The cumulative distribution function of a gamma law
@@ -127,6 +128,12 @@ theorem cdf_gammaMeasure_eq (ha : 0 < a) (hr : 0 < r) (x : ℝ) :
     ← lowerIncompleteGamma_eq_integral ha (by positivity), regularizedGamma_eq_div]
   field_simp
 
+/-- A Gamma law of positive shape and rate has positive survival at every finite point. -/
+theorem cdf_gammaMeasure_lt_one (ha : 0 < a) (hr : 0 < r) (x : ℝ) :
+    cdf (gammaMeasure a r) x < 1 := by
+  rw [cdf_gammaMeasure_eq ha hr]
+  exact regularizedGamma_lt_one a (r * x)
+
 /-! ### Consequences -/
 
 /-- The mass a gamma law assigns to a lower half-line, in measure form. -/
@@ -143,11 +150,8 @@ theorem measureReal_Ioc_gammaMeasure (ha : 0 < a) (hr : 0 < r) {y : ℝ} (hyx : 
     (gammaMeasure a r).real (Ioc y x) =
       regularizedGamma a (r * x) - regularizedGamma a (r * y) := by
   have hp : IsProbabilityMeasure (gammaMeasure a r) := isProbabilityMeasure_gammaMeasure ha hr
-  have hunion : (gammaMeasure a r).real (Iic y) + (gammaMeasure a r).real (Ioc y x) =
-      (gammaMeasure a r).real (Iic x) := by
-    rw [← measureReal_union (Iic_disjoint_Ioc le_rfl) measurableSet_Ioc, Iic_union_Ioc_eq_Iic hyx]
-  rw [measureReal_Iic_gammaMeasure ha hr x, measureReal_Iic_gammaMeasure ha hr y] at hunion
-  linarith
+  rw [Measure.measureReal_Ioc_eq_cdf_sub _ hyx, cdf_gammaMeasure_eq ha hr,
+    cdf_gammaMeasure_eq ha hr]
 
 /-- The upper tail of a gamma law is `1 - P(a, r * x)`. -/
 @[simp]

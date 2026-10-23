@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.MayerVietoris
+import Mathlib.Algebra.Category.Grp.Zero
 
 /-!
 # Vanishing consequences of the Mayer-Vietoris sequence

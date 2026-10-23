@@ -41,10 +41,10 @@ theorem dotProduct_self_eq_zero_iff_three_dvd_hammingNorm (x : ι → ZMod 3) :
   rw [dotProduct_self_eq_hammingNorm_ternary, ZMod.natCast_eq_zero_iff]
 
 /-- Every word in a Euclidean self-orthogonal ternary code has weight divisible by three. -/
-theorem three_dvd_hammingNorm_of_le_euclideanDual {C : Submodule (ZMod 3) (ι → ZMod 3)}
-    (hC : C ≤ C.euclideanDual) {x : ι → ZMod 3} (hx : x ∈ C) :
-    3 ∣ hammingNorm x := by
-  exact (dotProduct_self_eq_zero_iff_three_dvd_hammingNorm x).mp
-    (Submodule.mem_euclideanDual.mp (hC hx) x hx)
+theorem three_dvd_hammingNorm_of_isSelfOrthogonal {C : Submodule (ZMod 3) (ι → ZMod 3)}
+    (hC : C.IsSelfOrthogonal) {x : ι → ZMod 3} (hx : x ∈ C) :
+    3 ∣ hammingNorm x :=
+  (dotProduct_self_eq_zero_iff_three_dvd_hammingNorm x).mp
+    (Submodule.isSelfOrthogonal_iff.mp hC x hx x hx)
 
 end TauCeti

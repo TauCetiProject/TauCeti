@@ -1,0 +1,94 @@
+name: pick-runner
+
+# Staging tries eligible dedicated machines before cloud-capacity discovery. Machines
+# advertise class, permanent machine, and ephemeral instance labels. All limits
+# are approximate: concurrent pickers can observe the same free capacity.
+# Full or unknown cloud capacity queues on GitHub instead of bypassing the
+# Namespace cap. Picker/control jobs do not count towards the build-job cap.
+# Preserve the repository API reserve for status and merge automation.
+on:
+  workflow_call:
+    inputs:
+      fleet-staging:
+        description: Use staging preferences and eligible dedicated machines; takes precedence over fleet-pr
+        type: boolean
+        default: false
+      fleet-pr:
+        description: Use PR preferences and eligible dedicated machines when pr-head is supplied
+        type: boolean
+        default: false
+      pr-head:
+        description: Immutable 40-character PR head; empty disables dedicated PR placement and recovery
+        type: string
+        default: ""
+    secrets:
+      FLEET_READ_TOKEN: { required: false }
+      TAUCETI_GITHUB_STATE_TOKEN: { required: false }
+    outputs:
+      runner:
+        description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
+        value: ${{ jobs.pick.outputs.runner }}
+      pool:
+        description: "Destination key: github, namespace, or a machine name from services.fleet; valid only for the matching attempt"
+        value: ${{ jobs.pick.outputs.pool }}
+      attempt:
+        description: Picker's github.run_attempt; callers must compare it with their current attempt before using runner or pool
+        value: ${{ jobs.pick.outputs.attempt }}
+      busy:
+        description: Observed running GitHub-hosted jobs, including control jobs; empty when unknown
+        value: ${{ jobs.pick.outputs.busy }}
+      budget:
+        description: GitHub-hosted running-job budget used for this selection
+        value: ${{ jobs.pick.outputs.budget }}
+      namespace_busy:
+        description: Observed queued or running Namespace build jobs, excluding control jobs; empty when unknown
+        value: ${{ jobs.pick.outputs.namespace_busy }}
+      namespace_cap:
+        description: Approximate shared Namespace build-job cap used for this selection
+        value: ${{ jobs.pick.outputs.namespace_cap }}
+
+jobs:
+  pick:
+    # Bors selection must not wait behind the GitHub builds it is trying to
+    # dispatch. Reuse the existing small, high-priority Namespace control profile.
+    runs-on: ${{ inputs.fleet-staging && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-latest' }}
+    timeout-minutes: 5
+    continue-on-error: true
+    outputs:
+      runner: ${{ steps.pick.outputs.runner }}
+      pool: ${{ steps.pick.outputs.pool }}
+      attempt: ${{ steps.pick.outputs.attempt }}
+      busy: ${{ steps.pick.outputs.busy }}
+      budget: ${{ steps.pick.outputs.budget }}
+      namespace_busy: ${{ steps.pick.outputs.namespace_busy }}
+      namespace_cap: ${{ steps.pick.outputs.namespace_cap }}
+    steps:
+      - name: Checkout workflow-pinned runner selector
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          sparse-checkout: |
+            tauceti.toml
+            scripts/fleet_runner.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b0ba29c5888c6f3c1470f54a7c0b304399f77006
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: b0ba29c5888c6f3c1470f54a7c0b304399f77006
+          project-directory: .
+      - name: Select destination in configured preference order
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
+          BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
+          NAMESPACE_BUILD_CAP: ${{ vars.NAMESPACE_BUILD_CAP }}
+          API_RESERVE: ${{ vars.PICKER_REPOSITORY_API_RESERVE || '250' }}
+          FLEET_JOB_KIND: ${{ inputs.fleet-staging && 'staging' || inputs.fleet-pr && 'pr' || 'other' }}
+          PR_HEAD: ${{ inputs.pr-head }}
+          FLEET_CI_ENABLED: ${{ vars.FLEET_CI_ENABLED }}
+          FLEET_RUNNER_GROUP_ID: ${{ vars.FLEET_RUNNER_GROUP_ID }}
+          FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
+        run: python3 scripts/fleet_runner.py --route

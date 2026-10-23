@@ -14,9 +14,10 @@ import Mathlib.Topology.Maps.Basic
 # Images of open simply connected sets under injective holomorphic maps
 
 A holomorphic map that is injective on an open set `Ω ⊆ ℂ` carries `Ω` to an open set, and carries
-a simply connected `Ω` to a simply connected set. Both facts are used by the Riemann mapping
-theorem, where the image of an extremal map has to be recognized as a domain of the same kind as
-the original.
+a simply connected `Ω` to a simply connected set. Openness is used by the Riemann mapping theorem
+(in the Koebe square-root step); the transport of simple connectivity is a standalone topological
+fact, which that proof does not need, since it carries holomorphic square roots across such a map
+instead (`TauCeti.HasHolomorphicSquareRoots.image`).
 
 ## The argument
 
@@ -113,13 +114,5 @@ theorem isSimplyConnected_image_of_differentiableOn_of_injOn (hΩo : IsOpen Ω)
   -- `IsSimplyConnected (univ : Set ↥Ω)` is simple connectivity of `↥Ω` itself.
   have : SimplyConnectedSpace ↥Ω := hΩc
   exact (Homeomorph.Set.univ ↥Ω).toHomotopyEquiv.simplyConnectedSpace
-
-/-- Deprecated compatibility alias for the old name, which named only the injectivity hypothesis. -/
-@[deprecated isOpen_image_of_differentiableOn_of_injOn (since := "2026-07-29")]
-alias isOpen_image_of_injOn := isOpen_image_of_differentiableOn_of_injOn
-
-/-- Deprecated compatibility alias for the old name, which named only the injectivity hypothesis. -/
-@[deprecated isSimplyConnected_image_of_differentiableOn_of_injOn (since := "2026-07-29")]
-alias isSimplyConnected_image_of_injOn := isSimplyConnected_image_of_differentiableOn_of_injOn
 
 end TauCeti

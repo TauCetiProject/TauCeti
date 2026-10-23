@@ -140,7 +140,7 @@ theorem exists_isAtom_forall_nonempty_linearEquiv_conjSubrep [ρ.IsIrreducible]
       ∀ τ : Subrepresentation (ρ.comp N.subtype), IsAtom τ →
         ∃ g : G, Nonempty (τ.asSubmodule ≃ₗ[k[N]] (conjSubrep ρ g σ).asSubmodule) := by
   have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
-  obtain ⟨σ, hσ⟩ := exists_isAtom (ρ.comp N.subtype)
+  obtain ⟨σ, hσ⟩ := _root_.Representation.exists_isAtom (ρ.comp N.subtype)
   exact ⟨σ, hσ, fun _ hτ => exists_nonempty_linearEquiv_conjSubrep ρ hσ hτ⟩
 
 /-- **`G` permutes the isotypic components of the restriction transitively.**  The isotypic

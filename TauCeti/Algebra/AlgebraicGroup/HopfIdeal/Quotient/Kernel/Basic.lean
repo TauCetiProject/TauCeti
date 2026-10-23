@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
 
 /-!
@@ -41,6 +41,8 @@ algebraic groups is represented by the quotient by this ideal.
 -/
 
 public section
+
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 open CategoryTheory
 
@@ -108,6 +110,13 @@ theorem kernelHopfIdeal_comp (f : H ⟶ K) {L : _root_.CommHopfAlgCat.{v} R} (g 
     kernelHopfIdeal (f ≫ g) = (kernelHopfIdeal f).map g.hom := by
   rw [kernelHopfIdeal_def, kernelHopfIdeal_def, _root_.CommHopfAlgCat.hom_comp,
     ← HopfIdeal.map_map]
+
+/-- The kernel of `Spec L → Spec K` is contained in the kernel of `Spec L → Spec H`.
+Hopf ideals reverse the inclusion of closed subgroups. -/
+theorem kernelHopfIdeal_comp_le (f : H ⟶ K) {L : _root_.CommHopfAlgCat.{v} R} (g : K ⟶ L) :
+    kernelHopfIdeal (f ≫ g) ≤ kernelHopfIdeal g := by
+  rw [kernelHopfIdeal_comp, kernelHopfIdeal_def g]
+  exact HopfIdeal.map_mono g.hom (HopfIdeal.le_augmentation R K _)
 
 /-- Precomposing a coordinate morphism with a surjective morphism does not change its kernel
 closed subgroup scheme. -/

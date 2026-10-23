@@ -7,14 +7,17 @@ module
 
 public import TauCeti.InformationTheory.Coding.Binary.Basic
 public import TauCeti.InformationTheory.Coding.DirectSum
-public import TauCeti.InformationTheory.Coding.Equivalence
+public import TauCeti.InformationTheory.Coding.Semilinear.Basic
 
 /-!
 # Operations on even and doubly-even binary codes
 
 Evenness and double evenness are preserved by direct sums and by monomial equivalence, hence
-also by coordinate permutations. Over the binary field every unit is one, so the two notions of
-equivalence agree anyway, by `TauCeti.isMonomialEquivalent_iff_isPermutationEquivalent`.
+also by coordinate permutations. Over the binary field every unit is one and the only field
+automorphism is the identity, so semilinear, monomial, and permutation equivalence all agree, by
+`TauCeti.isSemilinearEquivalent_iff_isMonomialEquivalent` and
+`TauCeti.isMonomialEquivalent_iff_isPermutationEquivalent`; in particular both properties are
+also invariant under semilinear equivalence.
 
 These results provide the closure properties used to build larger self-orthogonal binary codes
 from smaller ones without changing the divisibility conditions on their Hamming weights.
@@ -98,6 +101,26 @@ theorem isDoublyEven_iff_of_isPermutationEquivalent (h : IsPermutationEquivalent
 theorem IsDoublyEven.of_isPermutationEquivalent (hC : IsDoublyEven C)
     (h : IsPermutationEquivalent C D) : IsDoublyEven D :=
   hC.of_isMonomialEquivalent h.isMonomialEquivalent
+
+/-- Evenness of binary codes is invariant under semilinear equivalence. -/
+theorem isEven_iff_of_isSemilinearEquivalent (h : IsSemilinearEquivalent C D) :
+    IsEven C ↔ IsEven D :=
+  isEven_iff_of_isMonomialEquivalent (isSemilinearEquivalent_iff_isMonomialEquivalent.mp h)
+
+/-- Semilinear equivalence preserves evenness of binary codes. -/
+theorem IsEven.of_isSemilinearEquivalent (hC : IsEven C) (h : IsSemilinearEquivalent C D) :
+    IsEven D :=
+  (isEven_iff_of_isSemilinearEquivalent h).mp hC
+
+/-- Double evenness of binary codes is invariant under semilinear equivalence. -/
+theorem isDoublyEven_iff_of_isSemilinearEquivalent (h : IsSemilinearEquivalent C D) :
+    IsDoublyEven C ↔ IsDoublyEven D :=
+  isDoublyEven_iff_of_isMonomialEquivalent (isSemilinearEquivalent_iff_isMonomialEquivalent.mp h)
+
+/-- Semilinear equivalence preserves double evenness of binary codes. -/
+theorem IsDoublyEven.of_isSemilinearEquivalent (hC : IsDoublyEven C)
+    (h : IsSemilinearEquivalent C D) : IsDoublyEven D :=
+  (isDoublyEven_iff_of_isSemilinearEquivalent h).mp hC
 
 end BinaryCode
 

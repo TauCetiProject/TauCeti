@@ -169,8 +169,7 @@ theorem centerPointwiseQuotientIsoPGL_hom_naturality {A B : CommAlgCat.{u} k} (�
           (↑q : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A ⧸
             CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A))
   rw [centerPointwiseQuotientIsoPGL_hom_mk,
-    centerPointwiseQuotientIsoPGL_hom_mk, Matrix.ProjGenLinGroup.map_mk,
-    HopfAlgebra.mapPoints_apply]
+    centerPointwiseQuotientIsoPGL_hom_mk, Matrix.ProjGenLinGroup.map_mk]
   exact congrArg Matrix.ProjGenLinGroup.mk (pointsMulEquiv_mapValue n φ.hom q)
 
 /-- The pointwise center quotient of `GLₙ` is naturally isomorphic to the presheaf with values

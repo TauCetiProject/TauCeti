@@ -7,8 +7,8 @@ module
 
 public import TauCeti.GroupTheory.Torsion
 public import TauCeti.Topology.Algebra.ContinuousMulEquiv
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.D0
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.D0.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
 
@@ -206,11 +206,18 @@ private theorem lift_d0AbelianizationInv (t : Multiplicative ((ℤ_[2] × ℤ_[2
 private theorem d0AbelianizationInv_comp_lift :
     d0AbelianizationInv.comp (TopologicalAbelianization.lift d0AbelianizationHom) =
       ContinuousMonoidHom.id _ := by
-  refine TopologicalAbelianization.hom_ext (DFunLike.congr_fun (d0_hom_ext ?_ ?_ ?_ :
-    (d0AbelianizationInv.comp (TopologicalAbelianization.lift d0AbelianizationHom)).comp
-      (ContinuousMonoidHom.quotientMk _) = ContinuousMonoidHom.quotientMk _)) <;>
+  apply TopologicalAbelianization.hom_ext
+  suffices h :
+      (d0AbelianizationInv.comp (TopologicalAbelianization.lift d0AbelianizationHom)).comp
+        (Subgroup.quotientMkContinuousMonoidHom _) =
+          Subgroup.quotientMkContinuousMonoidHom _ by
+    intro x
+    simpa only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
+      Subgroup.quotientMkContinuousMonoidHom_apply, ContinuousMonoidHom.coe_id, id_eq] using
+        DFunLike.congr_fun h x
+  refine d0_hom_ext ?_ ?_ ?_ <;>
     simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      ContinuousMonoidHom.quotientMk_apply, TopologicalAbelianization.lift_mk,
+      Subgroup.quotientMkContinuousMonoidHom_apply, TopologicalAbelianization.lift_mk,
       d0AbelianizationHom_d0A, d0AbelianizationHom_d0S, d0AbelianizationHom_d0Y,
       d0AbelianizationInv_ofAdd]
   · rw [d0AbelianizationTorsionHom_ofAdd_one, d0AbelianizationTorsionGenerator,
@@ -283,8 +290,7 @@ theorem torsion_topologicalAbelianization_demushkinD0 :
 two elements, the identity and the class of `AS²`. -/
 theorem nat_card_torsion_topologicalAbelianization_demushkinD0 :
     Nat.card (torsion (TopologicalAbelianization demushkinD0)) = 2 := by
-  rw [Nat.card_congr (torsionMulEquiv isAddTorsion_of_finite
-    d0AbelianizationEquiv.toMulEquiv).toEquiv, Nat.card_eq_fintype_card,
-    Fintype.card_multiplicative, ZMod.card]
+  rw [natCard_torsion_of_mulEquiv isAddTorsion_of_finite d0AbelianizationEquiv.toMulEquiv,
+    Nat.card_zmod]
 
 end TauCeti

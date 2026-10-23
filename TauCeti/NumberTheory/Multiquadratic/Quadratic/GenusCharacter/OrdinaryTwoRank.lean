@@ -119,17 +119,15 @@ theorem genusCharFunNarrowClassGroupHom_mkPrincipal_gen {s : Finset ℤ}
         (NarrowClassGroup.mkPrincipal (Units.mk0 (θ : K) (coe_gen_ne_zero hmin))) : ℤˣ) : ℤ) =
       P.sign := by
   set x : 𝓞 K := 1 + 2 * θ with hxdef
-  have hnormQ : Algebra.norm ℚ (x : K) = 1 - 4 * (d : ℚ) := by
-    have hxK : (x : K) = ((1 : ℚ) : K) + ((2 : ℚ) : K) * (θ : K) := by
-      rw [hxdef]
-      push_cast
-      rfl
-    rw [hxK, norm_add_mul_gen hmin hgen]
-    ring
   have hnorm : Algebra.norm ℤ x = 1 - 4 * d := by
-    have h := hnormQ
-    rw [← Algebra.coe_norm_int] at h
-    exact_mod_cast h
+    have h := TauCeti.NumberField.norm_int_add_mul_gen hmin hgen 2 1
+    push_cast at h
+    rw [hxdef, h]
+    ring
+  have hnormQ : Algebra.norm ℚ (x : K) = 1 - 4 * (d : ℚ) := by
+    rw [← Algebra.coe_norm_int, hnorm]
+    push_cast
+    ring
   have hx : x ≠ 0 := by
     intro h0
     rw [h0] at hnormQ

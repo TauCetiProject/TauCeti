@@ -233,7 +233,10 @@ continuous, although multiplication on `Πʳ n : ℕ, [Multiplicative ℚ, ⊥]`
 private theorem continuous_mul_restrictedProductSum_rat_bot :
     Continuous fun z : Πʳ _ : ℕ ⊕ ℕ, [Multiplicative ℚ,
         ((⊥ : Subgroup (Multiplicative ℚ)) : Set (Multiplicative ℚ))] ↦
-      (restrictedProductSum (fun _ ↦ ⊥) z).1 * (restrictedProductSum (fun _ ↦ ⊥) z).2 := by
+      (restrictedProductSum (fun _ ↦ ⊥) Sum.inl_injective.comap_cofinite_eq
+          Sum.inr_injective.comap_cofinite_eq z).1 *
+        (restrictedProductSum (fun _ ↦ ⊥) Sum.inl_injective.comap_cofinite_eq
+          Sum.inr_injective.comap_cofinite_eq z).2 := by
   rw [RestrictedProduct.continuous_dom]
   intro T hT
   -- The stage of `ℕ` on which both halves of the stage `T` are integral.
@@ -266,7 +269,8 @@ non-open, reference subgroup at every index, it is a discontinuous bijection. Th
 hypothesis of `continuous_restrictedProductSum_symm` therefore cannot be dropped. -/
 theorem not_continuous_restrictedProductSum_symm :
     ¬ Continuous (restrictedProductSum (G := fun _ : ℕ ⊕ ℕ ↦ Multiplicative ℚ)
-      fun _ ↦ (⊥ : Subgroup (Multiplicative ℚ))).symm := by
+      (fun _ ↦ (⊥ : Subgroup (Multiplicative ℚ))) Sum.inl_injective.comap_cofinite_eq
+      Sum.inr_injective.comap_cofinite_eq).symm := by
   intro h
   refine not_continuousMul_restrictedProduct_rat_bot
     ⟨(continuous_mul_restrictedProductSum_rat_bot.comp h).congr fun p ↦ ?_⟩

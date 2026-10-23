@@ -30,6 +30,8 @@ reindexing a series needs.
 Reading the coefficient of a single-variable monomial through a renaming along an embedding is
 likewise available only through `coeff_embDomain_rename`, which speaks about `Finsupp.embDomain`;
 at one variable raised to an arbitrary power the `single (e i) n` spelling is the more usable one.
+When the target variable type is `Unit`, the renamed series is a univariate `PowerSeries`, and
+the same coefficient is recorded in the `PowerSeries.coeff` spelling.
 
 Associativity is where the two spellings of a two-variable series genuinely diverge: the named
 form substitutes an already-substituted series through `pairSubstitution`, the `Fin 2` form
@@ -42,6 +44,8 @@ reindexing the three-variable ambient ring as well, along `unitSumUnitSumUnitEqu
   substituting `g ∘ e` into `p`.
 * `MvPowerSeries.coeff_single_rename`: the coefficient of `rename e p` at the single-variable
   monomial `single (e i) n` is the coefficient of `p` at `single i n`, for any exponent `n`.
+* `PowerSeries.coeff_rename`: renaming the variables of `p` along `e : σ ≃ Unit` gives a
+  univariate power series whose `n`-th coefficient is that of `p` at `single (e.symm ()) n`.
 * `MvPowerSeries.aeval_rename`: evaluating `rename e p` at a family reindexes the family, i.e. it
   is evaluating `p` at that family precomposed with `e`.
 * `MvPowerSeries.rename_unitSumUnitEquivFinTwo_assoc`: reindexing a two-variable associative
@@ -80,6 +84,16 @@ variable the `single (e i) n` spelling is the one a caller meets. -/
 theorem coeff_single_rename (e : σ ↪ τ) (p : MvPowerSeries σ R) (i : σ) (n : ℕ) :
     coeff (single (e i) n) (rename e p) = coeff (single i n) p := by
   rw [← embDomain_single, coeff_embDomain_rename]
+
+/-- **A series renamed onto the variable type `Unit` is read as a univariate power series**: its
+`n`-th `PowerSeries` coefficient is the coefficient of `p` at the `n`-th power of the variable
+`e.symm ()`. This is `MvPowerSeries.coeff_single_rename` in the `PowerSeries.coeff` spelling that
+Mathlib's univariate API uses. -/
+@[simp]
+theorem _root_.PowerSeries.coeff_rename (e : σ ≃ Unit) (p : MvPowerSeries σ R) (n : ℕ) :
+    PowerSeries.coeff n (rename e p) = MvPowerSeries.coeff (single (e.symm ()) n) p := by
+  rw [← PowerSeries.coeff_coeToMvPowerSeries]
+  exact coeff_single_rename e.toEmbedding p (e.symm ()) n
 
 /-- **A renamed series has no exponent outside the image of `e`**: if `ν` is nonzero at a variable
 `j` that `e` misses, then `ν` is not in the range of `Finsupp.mapDomain e`, so the coefficient

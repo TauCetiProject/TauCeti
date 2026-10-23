@@ -147,6 +147,24 @@ lemma one_sub_conj_mul_ne_zero_of_norm_lt_one {z w : ℂ}
       rw [norm_mul, norm_conj]
       exact (mul_le_of_le_one_left (norm_nonneg _) hw.le).trans_lt hz)).ne_zero
 
+/-- If one point is inside the unit disc and the other is on its boundary, both the
+pseudo-hyperbolic numerator and denominator are nonzero. -/
+lemma sub_ne_zero_and_one_sub_conj_mul_ne_zero_of_norm_lt_one_of_norm_eq_one {w z : ℂ}
+    (hw : ‖w‖ < 1) (hz : ‖z‖ = 1) :
+    z - w ≠ 0 ∧ 1 - (starRingEnd ℂ) w * z ≠ 0 := by
+  have hzw : z - w ≠ 0 := by
+    intro h
+    have : z = w := sub_eq_zero.mp h
+    rw [this] at hz
+    linarith
+  have hden : 1 - (starRingEnd ℂ) w * z ≠ 0 := by
+    intro h
+    have heq : (starRingEnd ℂ) w * z = 1 := (sub_eq_zero.mp h).symm
+    have hnorm : ‖(starRingEnd ℂ) w * z‖ = 1 := by rw [heq]; simp
+    rw [norm_mul, Complex.norm_conj, hz, mul_one] at hnorm
+    linarith
+  exact ⟨hzw, hden⟩
+
 /-- For points in the open unit ball, the denominator in the pseudo-hyperbolic expression is
 nonzero. -/
 lemma one_sub_conj_mul_ne_zero_of_mem_ball {z w : ℂ}

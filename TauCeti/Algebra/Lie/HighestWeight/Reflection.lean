@@ -21,13 +21,13 @@ dominant integral weight `lam`. This file records that the weights of `M` are st
 reflection in each simple root, hence under the whole Weyl group, and that they are integral on the
 simple coroots.
 
-`M` is not assumed finite-dimensional: for the modules of Layer 4 of the highest weight roadmap
-finite-dimensionality is the conclusion, not a hypothesis. What is available instead is
-integrability along each simple root, proved in
+`M` is not assumed finite-dimensional: for such a module finite-dimensionality is a conclusion, not
+a hypothesis. What is available instead is integrability along each simple root, proved in
 `TauCeti/Algebra/Lie/HighestWeight/Integrable.lean`, and reflection stability is what
 `TauCeti/Algebra/Lie/Weights/Integrable.lean` extracts from it. Combined with the weight cone
 `lam - Q⁺` of `TauCeti/Algebra/Lie/HighestWeight/Module.lean`, stability under the reflections is
-what will confine the weights of `M` to a finite set.
+what confines the weights of `M` to a finite set
+(`TauCeti/Algebra/Lie/HighestWeight/Weight/Support.lean`).
 
 ## Main results
 
@@ -44,10 +44,6 @@ what will confine the weights of `M` to a finite set.
   weights take integer values on the simple coroots.
 
 ## References
-
-This is the weight-stability half of the "weight-cone bound" milestone of Layer 4, "the
-classification of finite-dimensional irreducibles", of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §21.2.
 -/

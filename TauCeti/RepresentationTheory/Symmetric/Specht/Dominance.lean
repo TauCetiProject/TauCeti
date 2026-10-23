@@ -130,10 +130,7 @@ end YoungTableau
 
 open YoungTableau
 
-/-- Classical decidability of membership in the column group, used to form its finite sum, as in
-`TauCeti/RepresentationTheory/Symmetric/Symmetrizer.lean`. -/
-noncomputable local instance (t : YoungTableau lam) : DecidablePred (· ∈ colSubgroup t) :=
-  Classical.decPred _
+attribute [local instance] YoungTableau.decidablePredMemColSubgroup
 
 /-- **The dominance triangularity of maps out of a Specht module.**  A nonzero map of
 representations from the Specht module of `lam` to the Young permutation module `M^μ` forces the

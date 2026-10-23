@@ -17,9 +17,10 @@ public import TauCeti.InformationTheory.Coding.Equivalence
 Relabelling the coordinate set of a linear code along an equivalence is the most basic operation
 on codes, and every further construction is expected to commute with it. This file defines
 `TauCeti.reindex` as the image of the code under coordinate transport, and records membership,
-functoriality, the order and lattice laws, and invariance of the dimension.
+functoriality, the order and lattice laws, and invariance of the dimension and minimum distance.
 
-Neither the field nor the coordinate types are assumed finite.
+The field is never assumed finite, and the coordinate types are finite only where minimum
+distance is involved.
 
 ## Main declarations
 
@@ -27,6 +28,7 @@ Neither the field nor the coordinate types are assumed finite.
 * `TauCeti.mem_reindex`: membership characterization, with the direction of the equivalence
   explicit.
 * `TauCeti.finrank_reindex`: relabelling coordinates preserves the dimension.
+* `TauCeti.hammingMinDist_reindex`: relabelling coordinates preserves the minimum distance.
 * `TauCeti.isPermutationEquivalent_reindex`: a reindexed code is permutation equivalent to the
   original one.
 
@@ -114,5 +116,12 @@ theorem isPermutationEquivalent_reindex (C : LinearCode F ι) (e : κ ≃ ι) :
 theorem finrank_reindex (C : LinearCode F ι) (e : κ ≃ ι) :
     Module.finrank F (reindex C e) = Module.finrank F C := by
   rw [reindex_def, LinearEquiv.finrank_map_eq]
+
+/-- A coordinate equivalence preserves the minimum distance of a code, even for the zero code. -/
+@[simp]
+theorem hammingMinDist_reindex [Fintype ι] [Fintype κ] [DecidableEq F] (C : LinearCode F ι)
+    (e : κ ≃ ι) :
+    (reindex C e : Set (κ → F)).hammingMinDist = (C : Set (ι → F)).hammingMinDist :=
+  (isPermutationEquivalent_reindex C e).hammingMinDist_eq
 
 end TauCeti

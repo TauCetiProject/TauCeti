@@ -24,6 +24,8 @@ quadratic field-norm computation).
 generator the `θ`-coefficient is nonzero, so any two generators differ by `θ' = b + aθ` with
 `a ≠ 0` and a statement proved for one transfers to every other.
 `TauCeti.linearIndependent_one_of_notMem_range_algebraMap` is the linear-algebra step behind them.
+`TauCeti.quadraticExtensionBasis` makes `(1, x)` a basis for any non-scalar `x` in a
+degree-two algebra over a field, with evaluation lemmas for its two basis vectors.
 
 None asks for a field on `L`: each theorem needs only a semiring, with the ring structure required
 by linear independence obtained locally through `Algebra.semiringToRing`. Non-scalar existence is
@@ -34,8 +36,9 @@ the algebra together with `1`. Over a field, the results cover split and non-red
 algebras such as `K × K` and `K[X]/(X²)`.
 
 These are used by the extension quadratic twist in
-`TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist.lean` and by the quadratic field-norm
-computation in `TauCeti/NumberTheory/NumberField/Quadratic/Norm.lean`.
+`TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist/Basic.lean` and by the quadratic field-norm
+computation in `TauCeti/NumberTheory/NumberField/Quadratic/Norm.lean`. The shared basis also
+supplies explicit coordinates for quadratic-extension trace transfer.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 `FLT/Mathlib/LinearAlgebra/Dimension/IsQuadraticExtension.lean` at commit
@@ -90,6 +93,30 @@ theorem TauCeti.linearIndependent_one_of_notMem_range_algebraMap [Semiring L] [A
     exact hθ ⟨0, Subsingleton.elim _ _⟩
   exact (LinearIndependent.pair_iff' one_ne_zero).mpr fun a ha ↦
     hθ ⟨a, by rwa [Algebra.algebraMap_eq_smul_one]⟩
+
+namespace TauCeti
+
+/-- The basis `(1, x)` of a degree-two algebra over a field for an element outside the base. -/
+noncomputable def quadraticExtensionBasis [Semiring L] [Algebra K L] {x : L}
+    (hx : x ∉ Set.range (algebraMap K L)) (hfin : Module.finrank K L = 2) :
+    Module.Basis (Fin 2) K L := by
+  let _ : Ring L := Algebra.semiringToRing K
+  exact basisOfLinearIndependentOfCardEqFinrank (b := ![1, x])
+    (linearIndependent_one_of_notMem_range_algebraMap K L hx) (by simp [hfin])
+
+@[simp]
+theorem quadraticExtensionBasis_zero [Semiring L] [Algebra K L] {x : L}
+    (hx : x ∉ Set.range (algebraMap K L)) (hfin : Module.finrank K L = 2) :
+    quadraticExtensionBasis K L hx hfin 0 = 1 := by
+  simp [quadraticExtensionBasis]
+
+@[simp]
+theorem quadraticExtensionBasis_one [Semiring L] [Algebra K L] {x : L}
+    (hx : x ∉ Set.range (algebraMap K L)) (hfin : Module.finrank K L = 2) :
+    quadraticExtensionBasis K L hx hfin 1 = x := by
+  simp [quadraticExtensionBasis]
+
+end TauCeti
 
 /-- **Every element of a quadratic extension is `b + aθ`** for a fixed generator `θ`: the basis
 `1, θ` spans `L` over `K`. The `θ`-coefficient may vanish, exactly when the element lies in the

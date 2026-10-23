@@ -20,15 +20,18 @@ with real shape `r` and success probability `p`. Its native mass is the Gamma-ex
 `Γ(k + r) / (k! Γ(r)) * p^r * (1 - p)^k`.
 
 The definition is totalized explicitly: the positive family is used for `0 < r` and `0 < p ≤ 1`,
-the boundary `r = 0` is a Dirac mass at zero, and every other parameter value gives the zero
-measure.  The file supplies the normalized measure, its native singleton and support interfaces,
-the exact integrability domain and closed form of its probability-generating function, and the
-additivity of the shape parameter under convolution.
+the boundaries `r = 0` and `p = 1` are Dirac masses at zero, and every other parameter value gives
+the zero measure. The file supplies the normalized measure, its native singleton and support
+interfaces, the exact integrability domain and closed form of its probability-generating function,
+and the additivity of the shape parameter under convolution.
 
 ## Main results
 
 * `negativeBinomialMeasure_singleton` and `negativeBinomialMeasure_real_singleton` compute the
   native masses;
+* `negativeBinomialMeasure_zero` and
+  `negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one` identify the two Dirac boundary
+  laws;
 * `negativeBinomialMeasure_singleton_ne_zero_iff` characterizes their exact support, including the
   shape-zero and success-probability-one boundary laws;
 * `pgf_negativeBinomialMeasure` computes the probability-generating function on its exact domain;
@@ -140,11 +143,28 @@ private theorem gamma_ratio_eq_multichoose (hr : 0 < r) (k : ℕ) :
     _ = ((k.factorial : ℝ) * Ring.multichoose r k) / k.factorial := by rw [← h]
     _ = Ring.multichoose r k := by field_simp
 
-/-- The real negative-binomial mass in its multichoose coefficient form. -/
-theorem negativeBinomialWeightReal_eq_coeff (hr : 0 < r) (k : ℕ) :
+/-- The real negative-binomial mass in its multichoose coefficient form, including shape zero. -/
+theorem negativeBinomialWeightReal_eq_coeff (hr : 0 ≤ r) (k : ℕ) :
     negativeBinomialWeightReal r p k =
       (Ring.multichoose r k : ℝ) * Real.rpow p r * (1 - p) ^ k := by
-  rw [negativeBinomialWeightReal_eq_gamma hr.ne' k, gamma_ratio_eq_multichoose hr k]
+  rcases hr.eq_or_lt with rfl | hr
+  · cases k <;> simp [negativeBinomialWeightReal]
+  · rw [negativeBinomialWeightReal_eq_gamma hr.ne' k, gamma_ratio_eq_multichoose hr k]
+
+/-- At success probability one, the negative-binomial law is concentrated at zero. -/
+@[simp]
+theorem negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one {r : ℝ} (hr : 0 ≤ r) :
+    negativeBinomialMeasure r 1 = Measure.dirac 0 := by
+  rcases hr.eq_or_lt with rfl | hr
+  · exact negativeBinomialMeasure_zero zero_lt_one le_rfl
+  rw [negativeBinomialMeasure_eq_sum_dirac hr.le zero_lt_one le_rfl,
+    ← Measure.sum_smul_dirac (Measure.dirac 0)]
+  congr 1
+  funext k
+  by_cases hk : k = 0
+  · subst k
+    simp [negativeBinomialWeight, negativeBinomialWeightReal_eq_coeff hr.le]
+  · simp [negativeBinomialWeight, negativeBinomialWeightReal_eq_coeff hr.le, hk, zero_pow hk]
 
 private theorem negativeBinomialWeightReal_nonneg (hr : 0 ≤ r) (hp : 0 ≤ p) (hp1 : p ≤ 1)
     (k : ℕ) : 0 ≤ negativeBinomialWeightReal r p k := by
@@ -153,7 +173,7 @@ private theorem negativeBinomialWeightReal_nonneg (hr : 0 ≤ r) (hp : 0 ≤ p) 
     split_ifs <;> norm_num
   rcases hp.eq_or_lt with rfl | hp
   · simp [negativeBinomialWeightReal, hr.ne', Real.zero_rpow hr.ne']
-  rw [negativeBinomialWeightReal_eq_coeff hr k]
+  rw [negativeBinomialWeightReal_eq_coeff hr.le k]
   have hcoeff : 0 ≤ (Ring.multichoose r k : ℝ) := by
     rw [← gamma_ratio_eq_multichoose hr k]
     exact div_nonneg (Real.Gamma_pos_of_pos (by positivity)).le
@@ -177,7 +197,7 @@ private theorem hasSum_negativeBinomialWeightReal_mul_pow (hr : 0 < r) (hp : 0 <
   have hweight (k : ℕ) :
       negativeBinomialWeightReal r p k * t ^ k =
         (Ring.multichoose r k : ℝ) * ((1 - p) * t) ^ k * Real.rpow p r := by
-    rw [negativeBinomialWeightReal_eq_coeff hr k, mul_pow]
+    rw [negativeBinomialWeightReal_eq_coeff hr.le k, mul_pow]
     ring
   have hden : 0 ≤ 1 - (1 - p) * t := by
     linarith [le_abs_self ((1 - p) * t)]
@@ -244,7 +264,7 @@ theorem geometricMeasure_eq_negativeBinomialMeasure_one (p : unitInterval) (hp :
   refine Measure.ext_of_measureReal_singleton fun k => ?_
   rw [geometricMeasure_real_singleton hp,
     negativeBinomialMeasure_real_singleton zero_le_one hpR p.2.2,
-    negativeBinomialWeightReal_eq_coeff zero_lt_one]
+    negativeBinomialWeightReal_eq_coeff zero_le_one]
   have hp_rpow : Real.rpow (p : ℝ) 1 = p := Real.rpow_one _
   rw [hp_rpow]
   simp only [Ring.multichoose_one, one_mul]
@@ -314,7 +334,7 @@ theorem integrable_pow_negativeBinomialMeasure_iff {r p : ℝ} (hr : 0 < r)
       (fun k : ℕ => Real.rpow p r *
         ((Ring.multichoose r k : ℝ) * |(1 - p) * t| ^ k)) := by
     funext k
-    rw [negativeBinomialWeightReal_eq_coeff hr k, abs_mul,
+    rw [negativeBinomialWeightReal_eq_coeff hr.le k, abs_mul,
       abs_of_nonneg (by linarith : 0 ≤ 1 - p), mul_pow]
     ring
   rw [hfun, summable_mul_left_iff hp_rpow.ne']

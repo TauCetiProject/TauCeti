@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.SimpleModule.Isotypic
 
 /-!
-# A semisimple module is the direct sum of its isotypic components
+# Hom spaces and direct sums of isotypic components
 
 Mathlib shows that the isotypic components of a module are independent
 (`sSupIndep_isotypicComponents`) and, for a semisimple module, span it
@@ -18,7 +18,18 @@ semisimple module is the internal direct sum of its isotypic components. When th
 many components, for instance when the module is Noetherian, composing with
 `DFinsupp.linearEquivFunOnFintype` presents it as their product.
 
+Maps from a simple module `S` into `M` land in its `S`-isotypic component. Restricting the
+codomain therefore gives an equivalence of hom spaces, without any semisimplicity or
+finiteness assumption on `M`. A map from a simple module into an isotypic module of a different
+type is zero (`IsIsotypicOfType.linearMap_eq_zero`). The isotypic components of pairwise
+non-isomorphic simple modules are independent (`TauCeti.iSupIndep_isotypicComponent`); this is the
+indexed form of Mathlib's `sSupIndep_isotypicComponents`, allowing types that do not occur in the
+module.
+
 ## Main definitions
+
+* `TauCeti.linearMapIsotypicComponentEquiv`: the hom space from `S` into its isotypic component
+  is linearly equivalent to the hom space from `S` into the ambient module.
 
 * `TauCeti.IsSemisimpleModule.linearEquivIsotypicComponents`: a semisimple module is linearly
   equivalent to the direct sum of its isotypic components.
@@ -31,6 +42,77 @@ many components, for instance when the module is Noetherian, composing with
 -/
 
 public section
+
+namespace TauCeti
+
+section Hom
+
+variable {R M S : Type*} [Ring R] [AddCommGroup M] [Module R M]
+  [AddCommGroup S] [Module R S]
+
+/-- A module is its own isotypic component: the top submodule is isomorphic to the module. -/
+@[simp]
+theorem isotypicComponent_self_eq_top : isotypicComponent R S S = ⊤ :=
+  eq_top_iff.mpr <| (Submodule.le_isotypicComponent ⊤).trans_eq
+    Submodule.topEquiv.isotypicComponent_eq
+
+variable [IsSimpleModule R S]
+
+/-- A map out of a simple module takes its values in the isotypic component of that type. -/
+theorem _root_.LinearMap.apply_mem_isotypicComponent (f : S →ₗ[R] M) (s : S) :
+    f s ∈ isotypicComponent R M S := by
+  have h := LinearMap.le_comap_isotypicComponent (M := S) (N := M) S f
+  rw [isotypicComponent_self_eq_top] at h
+  exact h Submodule.mem_top
+
+variable (k : Type*) [CommSemiring k] [Algebra k R] [Module k M] [IsScalarTower k R M]
+
+/-- Composition with the inclusion of the `S`-isotypic component is an equivalence of hom
+spaces out of the simple module `S`. Its inverse corestricts a map to that component.
+The equivalence is linear over the scalar semiring acting on the target. -/
+def linearMapIsotypicComponentEquiv :
+    (S →ₗ[R] isotypicComponent R M S) ≃ₗ[k] (S →ₗ[R] M) where
+  toFun g := (isotypicComponent R M S).subtype ∘ₗ g
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun f := f.codRestrict _ f.apply_mem_isotypicComponent
+  left_inv _ := by ext s; rfl
+  right_inv _ := by ext s; rfl
+
+/-- The forward equivalence composes a map into the isotypic component with its inclusion
+into the ambient module. -/
+@[simp]
+theorem linearMapIsotypicComponentEquiv_apply
+    (f : S →ₗ[R] isotypicComponent R M S) (s : S) :
+    linearMapIsotypicComponentEquiv k f s = f s := (rfl)
+
+/-- The inverse equivalence corestricts a map into the ambient module to its isotypic
+component, preserving its values. -/
+@[simp]
+theorem linearMapIsotypicComponentEquiv_symm_apply (f : S →ₗ[R] M) (s : S) :
+    (linearMapIsotypicComponentEquiv k).symm f s =
+      ⟨f s, f.apply_mem_isotypicComponent s⟩ := (rfl)
+
+end Hom
+
+end TauCeti
+
+namespace IsIsotypicOfType
+
+variable {R M N S : Type*} [Ring R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [AddCommGroup S] [Module R S]
+  [IsSimpleModule R S]
+
+/-- A map from a simple module into an isotypic module of a different type is zero. -/
+theorem linearMap_eq_zero (h : IsIsotypicOfType R M N)
+    (hne : ¬ Nonempty (S ≃ₗ[R] N)) (f : S →ₗ[R] M) : f = 0 := by
+  obtain hinj | hzero := f.injective_or_eq_zero
+  · let e := LinearEquiv.ofInjective f hinj
+    have : IsSimpleModule R (LinearMap.range f) := .congr e.symm
+    exact False.elim (hne ⟨e.trans (h (LinearMap.range f)).some⟩)
+  · exact hzero
+
+end IsIsotypicOfType
 
 namespace TauCeti.IsSemisimpleModule
 
@@ -71,3 +153,35 @@ theorem linearEquivIsotypicComponents_apply_of_mem {c : isotypicComponents R M} 
   linearEquivIsotypicComponents_apply_coe ⟨x, hx⟩
 
 end TauCeti.IsSemisimpleModule
+
+namespace TauCeti
+
+variable (R M : Type*) [Ring R] [AddCommGroup M] [Module R M]
+
+/-- The isotypic components of a family of pairwise non-isomorphic simple modules are
+independent. -/
+theorem iSupIndep_isotypicComponent {κ : Type*} (S : κ → Type*) [∀ j, AddCommGroup (S j)]
+    [∀ j, Module R (S j)] [∀ j, IsSimpleModule R (S j)]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[R] S j) → i = j) :
+    iSupIndep fun j => isotypicComponent R M (S j) := by
+  -- Restricted to the nonzero components, the family is an injective reindexing of
+  -- `isotypicComponents R M`.
+  have hmem (j : κ) (hj : isotypicComponent R M (S j) ≠ ⊥) :
+      isotypicComponent R M (S j) ∈ isotypicComponents R M := by
+    obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hj
+    obtain ⟨e⟩ := isIsotypicOfType_submodule_iff.mp
+      (IsIsotypicOfType.isotypicComponent R M (S j)) N hN
+    exact ⟨N, ‹_›, e.isotypicComponent_eq.symm⟩
+  rw [← iSupIndep_ne_bot]
+  refine ((sSupIndep_iff _).mp (sSupIndep_isotypicComponents R M)).comp
+    (f := fun j : {j // isotypicComponent R M (S j) ≠ ⊥} => ⟨_, hmem j.1 j.2⟩) ?_
+  intro ⟨i, hi⟩ ⟨j, _⟩ hij
+  -- A simple submodule of the common component is a copy of both `S i` and `S j`.
+  obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hi
+  obtain ⟨e⟩ := isIsotypicOfType_submodule_iff.mp
+    (IsIsotypicOfType.isotypicComponent R M (S i)) N hN
+  obtain ⟨e'⟩ := isIsotypicOfType_submodule_iff.mp
+    (IsIsotypicOfType.isotypicComponent R M (S j)) N (hN.trans (congrArg Subtype.val hij).le)
+  exact Subtype.ext (hS i j ⟨e.symm.trans e'⟩)
+
+end TauCeti

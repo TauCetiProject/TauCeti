@@ -9,57 +9,225 @@ public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.Algebra.Subalgebra.Pi
 public import Mathlib.Algebra.Central.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
 # Transporting and decomposing the center of an algebra
 
 Constructions on `Subalgebra.center` that Mathlib states only for `Subring.center`, or only
 as an equality of subalgebras, and that are needed whenever a structure theorem presents an algebra
-up to an algebra equivalence, together with the criterion for a commutative algebra to be central.
+up to an algebra equivalence, together with the criterion for a commutative algebra to be central
+and the ring of scalars a central subalgebra provides.
 
+* `Subalgebra.map_center_val` identifies the center of a subalgebra with its intersection
+  with its centralizer in the ambient algebra.
 * `TauCeti.centerCongr` transports the center along an algebra equivalence. It is the
   `Subalgebra` counterpart of Mathlib's `Subring.centerCongr`, which sees only the ring
   structure and therefore cannot record `R`-linearity.
 * `TauCeti.centerPiAlgEquiv` splits the center of a product of algebras as the product of the
   centers, upgrading Mathlib's `Subalgebra.center_pi` from an equality of subalgebras of
   `Π i, S i` to an algebra equivalence with `Π i, Subalgebra.center R (S i)`.
-* `TauCeti.centerAlgEquivOfIsCentral` identifies the center of a central algebra with the base
-  field, so that its dimension is one (`TauCeti.finrank_center_of_isCentral`).
+* `TauCeti.centerAlgEquivOfIsCentral` identifies the center of a central algebra with its base
+  semiring when the scalar action is faithful. Its dimension is therefore one
+  (`TauCeti.finrank_center_of_isCentral`).
 * `TauCeti.isCentral_iff_surjective_algebraMap` records that a commutative algebra is central
   exactly when its structure map is surjective, the precise sense in which centrality is a strong
   condition on a field extension.
+* `Subalgebra.centralSubalgebraAlgebra` makes a subalgebra of the center into a ring of scalars
+  for the ambient algebra, so that finiteness and integrality over it can be stated. Its structure
+  map and action are `Subalgebra.centralSubalgebraAlgebra_algebraMap_apply` and
+  `Subalgebra.centralSubalgebraAlgebra_smul_def`, and
+  `Subalgebra.isScalarTower_centralSubalgebraAlgebra` records that the base ring, the subalgebra
+  and the ambient algebra form a scalar tower.
+* `Subalgebra.centerAlgebra` gives the whole center its canonical scalar action by inclusion.
+  `Subalgebra.isScalarTower_centerAlgebra` records compatibility with the original base action,
+  and `Subalgebra.centerAlgebraIsCentral` records that the resulting algebra is central.
+  `Subalgebra.finite_centerAlgebra_of_finite` transfers module finiteness from the original base
+  ring to the center.
+  `Subalgebra.finite_over_center_of_finite` transfers module finiteness from a central
+  subalgebra to the center. `Subalgebra.finite_center_of_isNoetherian` makes the center finite
+  over that subalgebra when the ambient algebra is Noetherian as a module; together with
+  `Subalgebra.isNoetherianRing_center_of_finite`, this supplies a Noetherian center for
+  applications of the generalized Krull intersection theorem.
 -/
 
 public section
+
+namespace Subalgebra
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- The center of a subalgebra, included in the ambient algebra, consists of its elements
+which centralize the whole subalgebra. -/
+@[simp]
+theorem map_center_val (B : Subalgebra R A) :
+    (center R B).map B.val = B ⊓ centralizer R (B : Set A) := by
+  ext x
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    refine ⟨z.property, (mem_centralizer_iff R).mpr ?_⟩
+    intro b hb
+    exact congrArg Subtype.val ((mem_center_iff.mp hz) ⟨b, hb⟩)
+  · rintro ⟨hx, hcomm⟩
+    refine mem_map.mpr ⟨⟨x, hx⟩, mem_center_iff.mpr ?_, rfl⟩
+    intro b
+    exact Subtype.ext ((mem_centralizer_iff R).mp hcomm b b.property)
+
+/-- The center of an algebra acts on the algebra by its inclusion. -/
+instance centerAlgebra : Algebra (center R A) A :=
+  (center R A).val.toRingHom.toAlgebra' fun z a =>
+    (mem_center_iff.mp z.property a).symm
+
+/-- The structure map from the center to an algebra is inclusion. -/
+@[simp]
+theorem centerAlgebra_algebraMap_apply (z : center R A) :
+    algebraMap (center R A) A z = z := rfl
+
+/-- The structure map from the center is the inclusion homomorphism. -/
+theorem centerAlgebra_algebraMap :
+    algebraMap (center R A) A = (center R A).val.toRingHom := by
+  ext z
+  rfl
+
+/-- The original base ring, the center, and the ambient algebra form a scalar tower for the
+canonical action of the center by inclusion. -/
+theorem isScalarTower_centerAlgebra : IsScalarTower R (center R A) A := by
+  exact IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+
+/-- Every algebra is central when regarded as an algebra over its full center. -/
+instance centerAlgebraIsCentral : Algebra.IsCentral (center R A) A := by
+  refine ⟨fun x hx ↦ Algebra.mem_bot.mpr ?_⟩
+  exact ⟨⟨x, hx⟩, rfl⟩
+
+/-- An algebra finite as a module over its original base ring remains finite as a module over its
+center. -/
+theorem finite_centerAlgebra_of_finite [Module.Finite R A] : Module.Finite (center R A) A := by
+  let _ : IsScalarTower R (center R A) A := isScalarTower_centerAlgebra
+  exact Module.Finite.of_restrictScalars_finite R (center R A) A
+
+variable (S : Subalgebra R (Subalgebra.center R A))
+
+/-- A subalgebra of the center of an algebra acts on the ambient algebra by multiplication. -/
+abbrev centralSubalgebraAlgebra : Algebra S A :=
+  (((center R A).val.comp S.val).toRingHom.toAlgebra' fun s a ↦
+    (mem_center_iff.mp s.1.property a).symm)
+
+/-- The structure map of `Subalgebra.centralSubalgebraAlgebra` is the inclusion of `S` into the
+ambient algebra. -/
+@[simp]
+theorem centralSubalgebraAlgebra_algebraMap_apply (s : S) :
+    letI := centralSubalgebraAlgebra S
+    algebraMap S A s = ((s : center R A) : A) :=
+  rfl
+
+/-- `Subalgebra.centralSubalgebraAlgebra` makes `S` act by multiplication in the ambient
+algebra. -/
+@[simp]
+theorem centralSubalgebraAlgebra_smul_def (s : S) (a : A) :
+    letI := centralSubalgebraAlgebra S
+    s • a = ((s : center R A) : A) * a :=
+  rfl
+
+/-- `R`, a subalgebra `S` of the center, and the ambient algebra form a scalar tower: the two
+actions of `R` on the ambient algebra agree because `S` acts by multiplication. -/
+theorem isScalarTower_centralSubalgebraAlgebra :
+    letI := centralSubalgebraAlgebra S
+    IsScalarTower R S A := by
+  refine ⟨fun r s a ↦ ?_⟩
+  rw [centralSubalgebraAlgebra_smul_def, centralSubalgebraAlgebra_smul_def, ← smul_mul_assoc]
+  congr 1
+
+section FiniteOverCenter
+
+attribute [local instance] centralSubalgebraAlgebra
+
+/-- Finiteness over a central subalgebra implies finiteness over the whole center. -/
+theorem finite_over_center_of_finite [Module.Finite S A] :
+    Module.Finite (center R A) A :=
+  Module.Finite.of_restrictScalars_finite S (center R A) A
+
+end FiniteOverCenter
+
+end Subalgebra
+
+namespace Subalgebra
+
+section FiniteOverCentralSubalgebra
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+  (S : Subalgebra R (center R A))
+
+attribute [local instance] centralSubalgebraAlgebra
+
+/-- The center, regarded as a submodule over a central subalgebra. -/
+private def centerSubmodule : Submodule S A where
+  carrier := (center R A : Set A)
+  zero_mem' := (center R A).zero_mem
+  add_mem' := fun ha hb => (center R A).add_mem ha hb
+  smul_mem' := by
+    intro s a ha
+    exact (center R A).mul_mem s.val.property ha
+
+/-- The action on the submodule is multiplication in the ambient algebra. -/
+private theorem centerSubmodule_smul_coe (s : S) (x : centerSubmodule S) :
+    ((s • x : centerSubmodule S) : A) = ((s : center R A) : A) * (x : A) := by
+  rw [Submodule.coe_smul, centralSubalgebraAlgebra_smul_def]
+
+/-- The action on the center is multiplication by the included scalar. -/
+private theorem center_smul_coe (s : S) (x : center R A) :
+    ((s • x : center R A) : A) = ((s : center R A) : A) * (x : A) := by
+  have hmap : algebraMap S (center R A) s = (s : center R A) := rfl
+  have hsmul : s • x = algebraMap S (center R A) s * x := Algebra.smul_def s x
+  rw [hsmul, hmap, (center R A).coe_mul]
+
+/-- The submodule of central elements has the canonical center's `S`-module structure. -/
+private def centerSubmoduleEquiv : (centerSubmodule S) ≃ₗ[S] center R A where
+  toFun x := ⟨x.1, x.2⟩
+  invFun x := ⟨x.1, x.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' s x := by
+    apply Subtype.ext
+    rw [center_smul_coe, centerSubmodule_smul_coe]
+    simp only [RingHom.id_apply]
+
+/-- If an algebra is Noetherian as a module over a central subalgebra, its center is
+finite over that subalgebra. -/
+theorem finite_center_of_isNoetherian [IsNoetherian S A] :
+    Module.Finite S (center R A) := by
+  have : Module.Finite S (centerSubmodule S) :=
+    Module.Finite.of_fg (IsNoetherian.noetherian (centerSubmodule S))
+  exact Module.Finite.equiv (centerSubmoduleEquiv S)
+
+end FiniteOverCentralSubalgebra
+
+section NoetherianCenter
+
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
+  (S : Subalgebra R (center R A))
+
+attribute [local instance] centralSubalgebraAlgebra
+
+/-- A finite algebra over a Noetherian central subalgebra has Noetherian center. -/
+theorem isNoetherianRing_center_of_finite [IsNoetherianRing S] [Module.Finite S A] :
+    IsNoetherianRing (center R A) := by
+  have hNoetherian : IsNoetherian S A := isNoetherian_of_isNoetherianRing_of_finite S A
+  exact @IsNoetherianRing.of_finite S (center R A) _ _ _ _ _
+    (@finite_center_of_isNoetherian R A _ _ _ S hNoetherian)
+
+end NoetherianCenter
+
+end Subalgebra
 
 namespace TauCeti
 
 variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
 
-/-- An algebra equivalence carries the center onto the center. -/
-theorem map_center_eq_center (e : A ≃ₐ[R] B) :
-    (Subalgebra.center R A).map (e : A →ₐ[R] B) = Subalgebra.center R B := by
-  refine le_antisymm ?_ ?_
-  · rintro _ hx
-    obtain ⟨a, ha, rfl⟩ := Subalgebra.mem_map.mp hx
-    rw [Subalgebra.mem_center_iff] at ha ⊢
-    intro b'
-    obtain ⟨a', rfl⟩ := e.surjective b'
-    simp only [AlgEquiv.coe_toAlgHom]
-    rw [← map_mul, ← map_mul, ha a']
-  · intro b hb
-    rw [Subalgebra.mem_center_iff] at hb
-    refine Subalgebra.mem_map.mpr ⟨e.symm b, ?_, e.apply_symm_apply b⟩
-    rw [Subalgebra.mem_center_iff]
-    intro a
-    apply e.injective
-    rw [map_mul, map_mul, e.apply_symm_apply]
-    exact hb (e a)
-
 /-- The center of an algebra, transported along an algebra equivalence. -/
 def centerCongr (e : A ≃ₐ[R] B) :
     Subalgebra.center R A ≃ₐ[R] Subalgebra.center R B :=
-  (e.subalgebraMap _).trans (Subalgebra.equivOfEq _ _ (map_center_eq_center e))
+  (e.subalgebraMap _).trans (Subalgebra.equivOfEq _ _ (Subalgebra.map_center_eq e))
 
 @[simp]
 theorem centerCongr_apply_coe (e : A ≃ₐ[R] B) (x : Subalgebra.center R A) :
@@ -110,18 +278,19 @@ end Pi
 
 section IsCentral
 
-variable (K D : Type*) [Field K] [Semiring D] [Nontrivial D] [Algebra K D]
-  [Algebra.IsCentral K D]
+variable (K D : Type*) [CommSemiring K] [Semiring D] [Algebra K D]
+  [FaithfulSMul K D] [Algebra.IsCentral K D]
 
-/-- The center of a central algebra is the base field. -/
+/-- The center of a central algebra with faithful scalars is the base semiring. -/
 noncomputable def centerAlgEquivOfIsCentral : Subalgebra.center K D ≃ₐ[K] K :=
-  (Subalgebra.equivOfEq _ _ (Algebra.IsCentral.center_eq_bot K D)).trans (Algebra.botEquiv K D)
+  (Subalgebra.equivOfEq _ _ (Algebra.IsCentral.center_eq_bot K D)).trans
+    (Algebra.botEquivOfInjective (FaithfulSMul.algebraMap_injective K D))
 
 /-- The inverse of `centerAlgEquivOfIsCentral` is the structure map of the algebra. -/
 @[simp]
 theorem coe_centerAlgEquivOfIsCentral_symm (r : K) :
     ((centerAlgEquivOfIsCentral K D).symm r : D) = algebraMap K D r := by
-  simp [centerAlgEquivOfIsCentral]
+  simpa using congrArg Subtype.val ((centerAlgEquivOfIsCentral K D).symm.commutes r)
 
 /-- `centerAlgEquivOfIsCentral` sends a central element to the scalar it is the image of. -/
 @[simp]
@@ -129,7 +298,7 @@ theorem algebraMap_centerAlgEquivOfIsCentral (x : Subalgebra.center K D) :
     algebraMap K D (centerAlgEquivOfIsCentral K D x) = (x : D) := by
   rw [← coe_centerAlgEquivOfIsCentral_symm, AlgEquiv.symm_apply_apply]
 
-/-- A central algebra has a one-dimensional center. -/
+/-- A central algebra with faithful scalars has a one-dimensional center. -/
 @[simp]
 theorem finrank_center_of_isCentral : Module.finrank K (Subalgebra.center K D) = 1 :=
   ((centerAlgEquivOfIsCentral K D).toLinearEquiv.finrank_eq).trans (CommSemiring.finrank_self K)

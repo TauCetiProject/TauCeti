@@ -125,7 +125,7 @@ lemma normalizerQuotientConjEquiv_trans_mk_congr {G : Type*} [TopologicalSpace G
   congr 1
   ext x
   -- The quotient and subgroup congruences reduce the remaining goal to pointwise equality of
-  -- the two deck conjugation representatives, where `conjMulEquivTrans` is definitional.
+  -- the two deck conjugation representatives, where `conjMulEquiv_trans` is definitional.
   change (((conjMulEquiv k hqr) ((conjMulEquiv h hpq) (φ : deck p)) : deck r).1 x) =
     ((conjMulEquiv (h.trans k) (fun e => by rw [Homeomorph.trans_apply, hqr, hpq])
       (φ : deck p) : deck r).1 x)

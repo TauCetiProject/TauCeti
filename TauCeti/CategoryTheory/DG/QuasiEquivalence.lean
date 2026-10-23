@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.CategoryTheory.DG.FullSubcategory
-public import TauCeti.CategoryTheory.DG.HomotopyCategory
+public import TauCeti.CategoryTheory.DG.Opposite.Functor
 
 /-!
 # Quasi-equivalences of differential graded categories
@@ -18,6 +18,23 @@ A DG functor is quasi-fully faithful when it induces a quasi-isomorphism on ever
 A quasi-equivalence additionally reaches every target object up to isomorphism in the homotopy
 category. Full DG subcategories furnish a basic example: their inclusions are quasi-equivalences
 exactly when each ambient object is isomorphic in `H⁰` to an object of the subcategory.
+
+On homotopy categories, a quasi-fully faithful DG functor `F` induces a fully faithful functor
+`H⁰(F)`, and a quasi-equivalence induces an equivalence `H⁰(C) ≌ H⁰(D)`. The converse fails:
+`H⁰(F)` only sees the degree-zero cohomology of the Hom complexes.
+
+## Main results
+
+* `CategoryTheory.EnrichedFunctor.IsQuasiFullyFaithful.full_mapDGHomotopyCategory` and
+  `CategoryTheory.EnrichedFunctor.IsQuasiFullyFaithful.faithful_mapDGHomotopyCategory`: a
+  quasi-fully faithful DG functor induces a fully faithful functor on homotopy categories.
+* `CategoryTheory.EnrichedFunctor.isQuasiEquivalence_iff_isQuasiFullyFaithful_and_essSurj`:
+  a quasi-equivalence is a quasi-fully faithful DG functor whose induced functor on homotopy
+  categories is essentially surjective.
+* `CategoryTheory.EnrichedFunctor.IsQuasiEquivalence.isEquivalence_mapDGHomotopyCategory`: a
+  quasi-equivalence induces an equivalence of homotopy categories.
+* `TauCeti.DGFullSubcategory.isQuasiEquivalence_inclusion_iff`: when the inclusion of a full DG
+  subcategory is a quasi-equivalence.
 
 ## References
 
@@ -76,6 +93,12 @@ theorem isQuasiFullyFaithful_id :
   change QuasiIso (𝟙 _)
   exact quasiIso_of_isIso _
 
+/-- A DG functor which is an isomorphism on every Hom complex is quasi-fully faithful. -/
+theorem isQuasiFullyFaithful_of_isIso_map
+    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (hF : ∀ X Y : C, IsIso (F.map X Y)) : EnrichedFunctor.IsQuasiFullyFaithful F :=
+  fun X Y ↦ have := hF X Y; quasiIso_of_isIso _
+
 /-- Composition preserves quasi-full faithfulness. -/
 theorem IsQuasiFullyFaithful.comp
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
@@ -87,6 +110,19 @@ theorem IsQuasiFullyFaithful.comp
   rw [EnrichedFunctor.comp_map]
   exact quasiIso_comp (F.map X Y) (G.map (F.obj X) (F.obj Y))
     (hφ := hF X Y) (hφ' := hG (F.obj X) (F.obj Y))
+
+/-- A DG functor is quasi-fully faithful exactly when its opposite is: the Hom chain maps are
+the same maps with source and target reversed. -/
+@[simp]
+theorem isQuasiFullyFaithful_op_iff
+    (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
+    F.op.IsQuasiFullyFaithful ↔ F.IsQuasiFullyFaithful := by
+  -- The Hom chain maps are definitionally the same after reversing the two objects.
+  constructor
+  · intro hF X Y
+    exact hF (Opposite.op Y) (Opposite.op X)
+  · intro hF X Y
+    exact hF Y.unop X.unop
 
 /-- A DG functor is a quasi-equivalence when it is a quasi-isomorphism on all Hom complexes
 and every target object is isomorphic in `H⁰` to an object in its image. -/
@@ -118,6 +154,51 @@ theorem isQuasiEquivalence_id :
   refine ⟨isQuasiFullyFaithful_id, ?_⟩
   intro Y
   exact ⟨Y, ⟨Iso.refl _⟩⟩
+
+/-! ### The induced functor on homotopy categories -/
+
+/-- A quasi-fully faithful DG functor induces a bijection on every Hom of homotopy categories. -/
+theorem IsQuasiFullyFaithful.mapDGHomotopyCategory_map_bijective
+    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (hF : EnrichedFunctor.IsQuasiFullyFaithful F) (X Y : TauCeti.DGHomotopyCategory R C) :
+    Function.Bijective (F.mapDGHomotopyCategory.map : (X ⟶ Y) → _) := by
+  have := hF.isIso_homologyMap (TauCeti.DGHomotopyCategory.underlying R X)
+    (TauCeti.DGHomotopyCategory.underlying R Y) 0
+  -- The action of `H⁰(F)` on morphisms is the map induced on degree-zero cohomology.
+  exact ConcreteCategory.bijective_of_isIso (homologyMap (F.map _ _) 0)
+
+/-- A quasi-fully faithful DG functor induces a full functor on homotopy categories. -/
+theorem IsQuasiFullyFaithful.full_mapDGHomotopyCategory
+    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (hF : EnrichedFunctor.IsQuasiFullyFaithful F) : F.mapDGHomotopyCategory.Full :=
+  ⟨fun {X Y} ↦ (hF.mapDGHomotopyCategory_map_bijective X Y).2⟩
+
+/-- A quasi-fully faithful DG functor induces a faithful functor on homotopy categories. -/
+theorem IsQuasiFullyFaithful.faithful_mapDGHomotopyCategory
+    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (hF : EnrichedFunctor.IsQuasiFullyFaithful F) : F.mapDGHomotopyCategory.Faithful :=
+  ⟨fun {X Y} ↦ (hF.mapDGHomotopyCategory_map_bijective X Y).1⟩
+
+/-- A DG functor is a quasi-equivalence exactly when it is quasi-fully faithful and the functor
+it induces on homotopy categories is essentially surjective. -/
+theorem isQuasiEquivalence_iff_isQuasiFullyFaithful_and_essSurj
+    (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
+    IsQuasiEquivalence F ↔ IsQuasiFullyFaithful F ∧ F.mapDGHomotopyCategory.EssSurj := by
+  refine and_congr_right fun _ ↦ ⟨fun h ↦ ⟨fun Y ↦ ?_⟩, fun h Y ↦ ?_⟩
+  · obtain ⟨X, ⟨e⟩⟩ := h (TauCeti.DGHomotopyCategory.underlying R Y)
+    -- `H⁰(F)` sends `X` to `F X`, and `Y` is the object of `H⁰(D)` on its underlying object.
+    exact ⟨TauCeti.DGHomotopyCategory.of R X, ⟨e⟩⟩
+  · obtain ⟨X, ⟨e⟩⟩ := h.mem_essImage (TauCeti.DGHomotopyCategory.of R Y)
+    -- As above, `H⁰(F)` sends `X` to the object on `F` of its underlying object.
+    exact ⟨TauCeti.DGHomotopyCategory.underlying R X, ⟨e⟩⟩
+
+/-- A quasi-equivalence of DG categories induces an equivalence of homotopy categories. -/
+theorem IsQuasiEquivalence.isEquivalence_mapDGHomotopyCategory
+    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (hF : EnrichedFunctor.IsQuasiEquivalence F) : F.mapDGHomotopyCategory.IsEquivalence where
+  faithful := hF.isQuasiFullyFaithful.faithful_mapDGHomotopyCategory
+  full := hF.isQuasiFullyFaithful.full_mapDGHomotopyCategory
+  essSurj := ((isQuasiEquivalence_iff_isQuasiFullyFaithful_and_essSurj F).1 hF).2
 
 end CategoryTheory.EnrichedFunctor
 

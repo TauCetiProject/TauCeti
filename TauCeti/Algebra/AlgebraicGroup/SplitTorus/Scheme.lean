@@ -27,11 +27,6 @@ The scheme-valued point comparison uses the same-universe diagonalizable-group b
 `DiagonalizableGroup.Scheme.Points`; this is why both the base ring and finite index type live
 in the same universe. Ordinary character and cocharacter exponents remain in `ℤ`.
 
-This advances Layer 4 of the reductive-groups roadmap
-(`TauCetiRoadmap/ReductiveGroups/README.md`): the finite-rank split torus, its
-character and cocharacter lattices, and their perfect pairing now have a synchronized
-group-scheme realization.
-
 ## Main declarations
 
 * `TauCeti.SplitTorus.groupScheme`: the finite-rank split torus group scheme.

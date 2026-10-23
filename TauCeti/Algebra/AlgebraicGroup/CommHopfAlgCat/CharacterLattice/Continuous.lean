@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Basic
+import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
 # Continuity of the absolute-Galois action on geometric characters
@@ -75,11 +76,7 @@ private theorem stabilizer_scalarExtension_isOpen {A : Type v} [Semiring A] [Alg
     (x : AlgebraicClosure k ⊗[k] A) :
     IsOpen (MulAction.stabilizer (Field.absoluteGaloisGroup k) x :
       Set (Field.absoluteGaloisGroup k)) := by
-  induction x using TensorProduct.induction_on with
-  | zero =>
-      convert isOpen_univ
-      ext σ
-      simp only [Set.mem_univ, SetLike.mem_coe, MulAction.mem_stabilizer_iff, smul_zero]
+  induction x using TensorProduct.inductionOn with
   | tmul a x =>
       apply Subgroup.isOpen_mono
         (H₁ := MulAction.stabilizer (Field.absoluteGaloisGroup k) a)

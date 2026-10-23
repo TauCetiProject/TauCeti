@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Basic
-public import TauCeti.KnotTheory.Grid.Diagram.Relabeling
 
 /-!
 # Relabeling and grid commutation arcs

@@ -13,9 +13,9 @@ public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 
 This file proves the step that drives the uniqueness half of the Krull-Schmidt theorem. Suppose a
 module `M` is the internal direct sum of a finite family `Q` of indecomposable submodules, and
-suppose `N` is an indecomposable direct summand of `M`. Then `N` is isomorphic to one of the
-summands `Q i₀`, and it may be *exchanged* for it: `M` is also the direct sum of `N` and the
-remaining summands `⨆ j ≠ i₀, Q j`.
+suppose `N` is a direct summand of `M` whose endomorphism ring is local. Then `N` is isomorphic
+to one of the summands `Q i₀`, and it may be *exchanged* for it: `M` is also the direct sum of `N`
+and the remaining summands `⨆ j ≠ i₀, Q j`.
 
 The argument is the classical one. The endomorphisms of `N` obtained by projecting `N` into `Q i`
 and back sum to the identity, because the
@@ -43,13 +43,10 @@ explicit complement `S`, rather than deducing one, because that is how it is use
 summand of a second decomposition of `M`, whose other summands supply `S`.
 
 Of `N` the proof needs only that `Module.End A N` is local, so that is the hypothesis; it already
-makes `N` nonzero (`TauCeti.nontrivial_of_isLocalRing_end`) and indecomposable
+makes `N` nonzero (`TauCeti.nontrivial_of_nontrivial_end`) and indecomposable
 (`TauCeti.isIndecomposableModule_of_isLocalRing_end`), and indecomposability is never used.
 
 ## References
-
-This implements the exchange argument behind the uniqueness bullet of Layer 2 ("the Krull-Schmidt
-theorem") of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
 
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.4.
@@ -92,7 +89,7 @@ theorem exists_linearEquiv_and_isCompl_biSup_ne
     [IsLocalRing (Module.End A N)] (hNS : IsCompl N S) :
     ∃ i₀ : ι, Nonempty (N ≃ₗ[A] Q i₀) ∧ IsCompl N (⨆ j, ⨆ (_ : j ≠ i₀), Q j) := by
   have _ : Fintype ι := Fintype.ofFinite ι
-  have _ : Nontrivial N := nontrivial_of_isLocalRing_end (A := A)
+  have _ : Nontrivial N := nontrivial_of_nontrivial_end (R := A)
   -- Locality of `Module.End A N` picks out an index whose component is invertible.
   obtain ⟨i₀, -, hunit⟩ : ∃ i₀ ∈ Finset.univ, IsUnit ((N.projectionOnto S hNS ∘ₗ (Q i₀).subtype)
       ∘ₗ (internalProjection hQi hQt i₀).domRestrict N) :=

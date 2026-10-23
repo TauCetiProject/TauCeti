@@ -32,6 +32,8 @@ description as the least common multiple of the indices of open overgroups.
   multiple of the indices of open overgroups.
 * `OpenSubgroup.profiniteIndex_eq_ofNat_index`: agreement with the ordinary index for an
   open subgroup.
+* `Subgroup.profiniteIndex_eq_primePower`: an open subgroup whose ordinary index is a power of
+  a prime has that supernatural prime power as its index.
 * `Subgroup.profiniteIndex_topologicalClosure`: taking topological closure does not change
   the index.
 * `Subgroup.profiniteIndex_eq_one_iff_topologicalClosure_eq_top`: the index is one exactly
@@ -209,6 +211,26 @@ theorem _root_.OpenSubgroup.profiniteIndex_apply_eq_padicValNat (U : OpenSubgrou
   exact Supernatural.ofNat_apply
     (⟨U.toSubgroup.index,
       Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) ℓ
+
+/-- **An open subgroup of prime-power index has that supernatural prime power as its index.**
+This is the shape every *open*-subgroup index in a pro-`q` group takes, and it avoids the
+positivity side condition of `OpenSubgroup.profiniteIndex_eq_ofNat_index`. Openness is not
+superfluous: by `Subgroup.isOpen_iff_isClosed_and_isNatural_profiniteIndex` a closed subgroup
+that is not open has an index no finite exponent describes. -/
+theorem _root_.Subgroup.profiniteIndex_eq_primePower {H : Subgroup G} (hH : IsOpen (H : Set G))
+    {q : Nat.Primes} {k : ℕ} (h : H.index = (q : ℕ) ^ k) :
+    Subgroup.profiniteIndex H = Supernatural.primePower q k := by
+  have hval : ∀ ℓ : Nat.Primes, Subgroup.profiniteIndex H ℓ = (padicValNat ℓ H.index : ℕ∞) :=
+    fun ℓ ↦ OpenSubgroup.profiniteIndex_apply_eq_padicValNat ⟨H, hH⟩ ℓ
+  refine Supernatural.ext fun ℓ ↦ ?_
+  have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩
+  rw [hval, h]
+  rcases eq_or_ne ℓ q with rfl | hne
+  · rw [Supernatural.primePower_apply_self, padicValNat.prime_pow]
+  · have hnd : ¬((ℓ : ℕ) ∣ (q : ℕ) ^ k) := fun hdvd ↦
+      hne (Nat.Primes.coe_nat_inj ℓ q |>.mp
+        ((Nat.prime_dvd_prime_iff_eq ℓ.prop q.prop).mp (ℓ.prop.dvd_of_dvd_pow hdvd)))
+    rw [Supernatural.primePower_apply_of_ne hne, padicValNat.eq_zero_of_not_dvd hnd, Nat.cast_zero]
 
 /-- The finite-quotient and supernatural-index formulations of the prime-to-`ℓ` condition
 for a subgroup of a profinite group agree. -/

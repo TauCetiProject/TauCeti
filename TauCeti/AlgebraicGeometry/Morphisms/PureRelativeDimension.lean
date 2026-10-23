@@ -31,6 +31,12 @@ Without the finiteness hypothesis locality on the source fails already for
 `Spec k[x]_(x) → Spec k`: its only fibre is irreducible of dimension one, while its open generic
 point has dimension zero.
 
+For morphisms locally of finite type the property is stable under arbitrary base change. The fibre
+of a base change is the base change of a fibre along an extension of residue fields, and a scheme
+locally of finite type over a field is pure-dimensional of dimension `d` exactly when its
+extension of scalars to a larger field is
+(`TauCeti.AlgebraicGeometry.isPureDimensional_pullback_Spec_map_iff_of_field`).
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension d f`: `f` has relative dimension at most `d`,
@@ -39,6 +45,8 @@ point has dimension zero.
   scheme-theoretic fibre characterization.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.isPureDimensional_fiber`: the
   scheme-theoretic fibre formulation.
+* `TauCeti.AlgebraicGeometry.PureRelativeDimension.unique`: a morphism with nonempty source has
+  at most one pure relative dimension.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.of_locallyQuasiFinite`: locally quasi-finite
   morphisms have pure relative dimension zero.
 * `TauCeti.AlgebraicGeometry.pureRelativeDimension_iff_of_field`: over a field, pure relative
@@ -48,6 +56,8 @@ point has dimension zero.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.isZariskiLocalAtTarget`: locality on the target.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.isOpenImmersion_comp` and
   `TauCeti.AlgebraicGeometry.pureRelativeDimension_iff_of_openCover`: locality on the source for
+  morphisms locally of finite type.
+* `TauCeti.AlgebraicGeometry.PureRelativeDimension.of_isPullback`: stability under base change of
   morphisms locally of finite type.
 
 ## References
@@ -124,6 +134,13 @@ theorem isPureDimensional_fiber (f : X ⟶ Y) [PureRelativeDimension d f] (y : Y
   ((pureRelativeDimension_iff_relativeDimensionLE_and_isPureDimensional_fiber f).mp
     inferInstance).2 y
 
+/-- A morphism with nonempty source has at most one pure relative dimension. -/
+theorem unique {e : ℕ} (f : X ⟶ Y) [Nonempty X] [PureRelativeDimension d f]
+    [PureRelativeDimension e f] : d = e := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  have : Nonempty (f ⁻¹' {f x}) := ⟨⟨x, rfl⟩⟩
+  exact (isPureDimensional_preimage (f := f) (f x)).unique (isPureDimensional_preimage (f x))
+
 /-- A locally quasi-finite morphism has pure relative dimension zero. -/
 instance (priority := low) of_locallyQuasiFinite (f : X ⟶ Y) [LocallyQuasiFinite f] :
     PureRelativeDimension 0 f where
@@ -190,6 +207,37 @@ instance isZariskiLocalAtTarget (d : ℕ) :
   rw [← isPureDimensional_preimage_comp_iff _ (f ⁻¹ᵁ U i).ι.isEmbedding f y
     fun x hx ↦ ⟨⟨x, by simpa [Set.mem_singleton_iff.mp hx] using hi⟩, rfl⟩]
   exact isPureDimensional_preimage y
+
+/-- Having pure relative dimension `d` is stable under base change of morphisms locally of finite
+type. -/
+theorem of_isPullback {P : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
+    (h : IsPullback fst snd f g) [LocallyOfFiniteType f] [PureRelativeDimension d f] :
+    PureRelativeDimension d snd := by
+  have : RelativeDimensionLE d snd := .of_isPullback h
+  refine (pureRelativeDimension_iff_relativeDimensionLE_and_isPureDimensional_fiber snd).mpr
+    ⟨this, fun y ↦ ?_⟩
+  have : LocallyOfFiniteType (f.fiberToSpecResidueField (g y)) :=
+    inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Z.fromSpecResidueField (g y))))
+  let := (g.residueFieldMap y).hom.toAlgebra
+  -- The fibre of `snd` at `y` is the base change of the fibre of `f` at `g y` along the
+  -- extension of residue fields `κ(g y) → κ(y)`.
+  exact (isPullback_fiberToSpecResidueField_of_isPullback h y).isoPullback.hom.homeomorph
+    |>.isPureDimensional_iff.mpr <|
+    (isPureDimensional_pullback_Spec_map_iff_of_field (K := Z.residueField (g y))
+      (L := Y.residueField y) (f.fiberToSpecResidueField (g y))).mpr
+      (isPureDimensional_fiber f (g y))
+
+/-- The base change `pullback.snd f g` of a morphism `f` locally of finite type has pure relative
+dimension that of `f`. -/
+instance pullback_snd (f : X ⟶ Z) (g : Y ⟶ Z) [LocallyOfFiniteType f]
+    [PureRelativeDimension d f] : PureRelativeDimension d (pullback.snd f g) :=
+  .of_isPullback (.of_hasPullback f g)
+
+/-- The base change `pullback.fst f g` of a morphism `g` locally of finite type has pure relative
+dimension that of `g`. -/
+instance pullback_fst (f : X ⟶ Z) (g : Y ⟶ Z) [LocallyOfFiniteType g]
+    [PureRelativeDimension d g] : PureRelativeDimension d (pullback.fst f g) :=
+  .of_isPullback (IsPullback.of_hasPullback f g).flip
 
 end PureRelativeDimension
 

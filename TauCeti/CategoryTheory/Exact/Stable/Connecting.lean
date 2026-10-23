@@ -37,6 +37,8 @@ of a split conflation is zero.
 
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_connectingMap_eq`: any map
   induced by an extension to `I(X)` agrees with `connectingMap` in the stable category.
+* `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_eq_connectingMap_comp`: the
+  connecting map may be computed from any relative injective presentation of `X`.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_g_comp_connectingMap` and
   `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_connectingMap_comp_cokernelMap`:
   consecutive composites of the standard triangle vanish in the stable category.
@@ -123,6 +125,24 @@ theorem projectiveStableFunctor_map_connectingMap_eq
   · rw [Preadditive.comp_sub, ha, f_comp_connectingMiddleMap, sub_self]
   · rw [Preadditive.comp_sub, Preadditive.sub_comp, g_comp_connectingMap, hδ]
 
+/-- The connecting map may be computed from any relative injective presentation
+`X ⟶ P.I ⟶ P.K` of the first term `X` of the conflation: a map `δ : Z ⟶ P.K` induced on
+cokernels by an extension `Y ⟶ P.I` of the inflation of `P` is the connecting map, followed by
+the comparison of the chosen suspension with `P.K`, in the stable category. -/
+theorem projectiveStableFunctor_map_eq_connectingMap_comp (P : E.InjectivePresentation S.X₁)
+    (a : S.X₂ ⟶ P.I) (δ : S.X₃ ⟶ P.K) (ha : S.f ≫ a = P.i) (hδ : S.g ≫ δ = a ≫ P.p) :
+    E.projectiveStableFunctor.map δ = E.projectiveStableFunctor.map (hE.connectingMap hS) ≫
+      (hE.projectiveStableIsoSuspensionObj P).inv := by
+  rw [projectiveStableIsoSuspensionObj_inv, ← Functor.map_comp]
+  -- Both maps are third components of morphisms from `S` to the short complex of `P` which are
+  -- the identity on first terms; the middle term of `P` is projective.
+  exact E.projectiveStableFunctor_map_τ₃_eq_of_τ₁_eq hS (T := ShortComplex.mk P.i P.p P.zero)
+    (hE.isProjective_I P) (φ := ⟨𝟙 _, a, δ, by simpa using ha.symm, hδ.symm⟩)
+    (ψ := ⟨𝟙 _, hE.connectingMiddleMap hS ≫ (hE.suspensionPresentation S.X₁).middleMap P (𝟙 _),
+      hE.connectingMap hS ≫ (hE.suspensionPresentation S.X₁).cokernelMap P (𝟙 _),
+      by simp [InjectivePresentation.i_comp_middleMap],
+      by simp [InjectivePresentation.p_comp_cokernelMap]⟩) rfl
+
 /-- The composite `Y ⟶ Z ⟶ ΣX` of the standard triangle vanishes in the stable category: it
 factors through the injective `I(X)`. -/
 @[simp]
@@ -171,6 +191,34 @@ theorem projectiveStableFunctor_map_connectingMap_naturality {T : ShortComplex C
   · rw [Preadditive.comp_sub, Preadditive.sub_comp, ← φ.comm₂₃_assoc, g_comp_connectingMap,
       g_comp_connectingMap_assoc, InjectivePresentation.p_comp_cokernelMap, Category.assoc,
       Category.assoc]
+
+/-- A stable commutative square between conflations extends across both the cokernel arrows
+and the connecting arrows. -/
+theorem exists_stable_connecting_square {S T : ShortComplex C}
+    (hS : E.Conflation S) (hT : E.Conflation T)
+    (a : E.projectiveStableFunctor.obj S.X₁ ⟶ E.projectiveStableFunctor.obj T.X₁)
+    (b : E.projectiveStableFunctor.obj S.X₂ ⟶ E.projectiveStableFunctor.obj T.X₂)
+    (hab : E.projectiveStableFunctor.map S.f ≫ b =
+      a ≫ E.projectiveStableFunctor.map T.f) :
+    ∃ c : E.projectiveStableFunctor.obj S.X₃ ⟶ E.projectiveStableFunctor.obj T.X₃,
+      E.projectiveStableFunctor.map S.g ≫ c = b ≫ E.projectiveStableFunctor.map T.g ∧
+      (E.projectiveStableFunctor.map (hE.connectingMap hS) ≫
+        eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj S.X₁).symm) ≫
+          hE.stableSuspension.map a =
+      c ≫ E.projectiveStableFunctor.map (hE.connectingMap hT) ≫
+        eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj T.X₁).symm := by
+  obtain ⟨a, rfl⟩ := E.projectiveStableFunctor.map_surjective a
+  obtain ⟨b, rfl⟩ := E.projectiveStableFunctor.map_surjective b
+  obtain ⟨φ, hφ₁, hφ₂⟩ := E.exists_shortComplex_hom_of_stable_square
+    (fun P => (hE.projective_iff_injective P).1) hS a b
+    (by simpa only [Functor.map_comp] using hab)
+  refine ⟨E.projectiveStableFunctor.map φ.τ₃, ?_, ?_⟩
+  · rw [← hφ₂, ← Functor.map_comp, ← Functor.map_comp, φ.comm₂₃]
+  · have hδ := hE.projectiveStableFunctor_map_connectingMap_naturality hS hT φ
+    rw [hφ₁, Functor.map_comp, Functor.map_comp] at hδ
+    simp only [stableSuspension_map_projectiveStableFunctor_map, Category.assoc,
+      eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    rw [← reassoc_of% hδ]
 
 /-- For the chosen suspension presentation `X ⟶ I(X) ⟶ ΣX` itself, the connecting map is the
 identity of `ΣX` in the stable category. -/

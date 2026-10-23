@@ -18,7 +18,7 @@ the projection onto the `i`-th factor and with `Matrix.toLinAlgEquiv'` presents 
 `Fin (d i) → k` as a `k[G]`-module, hence as a representation of `G`.
 
 Two facts make the resulting family the family of irreducibles. Each `blockRepresentation e i` is
-irreducible by `TauCeti.Representation.isIrreducible_of_asAlgebraHom_surjective`, its algebra map
+irreducible by `Representation.isIrreducible_of_asAlgebraHom_surjective`, its algebra map
 onto `End k (Fin (d i) → k)` being surjective. And the blocks are pairwise inequivalent, because
 the idempotent `e.symm (Pi.single i 1)` acts as the identity on the `i`-th block and as zero on
 every other one.
@@ -45,11 +45,8 @@ irreducible representations of `G` indexed by the conjugacy classes of `G`.
 
 ## References
 
-This supplies one half of the block ⇆ irreducible-representation matching that Layer 2.5 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-asks for, in the concrete form needed by Layer 3's completeness statement. See J.-P. Serre, *Linear
-Representations of Finite Groups*, Section 6.4, or I. M. Isaacs, *Character Theory of Finite
-Groups*, Chapter 1.
+See J.-P. Serre, *Linear Representations of Finite Groups*, Section 6.4, or I. M. Isaacs, *Character
+Theory of Finite Groups*, Chapter 1.
 -/
 
 public section

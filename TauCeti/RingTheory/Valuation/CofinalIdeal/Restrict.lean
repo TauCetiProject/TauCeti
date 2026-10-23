@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
+public import TauCeti.RingTheory.Valuation.Continuous.Basic
 public import TauCeti.RingTheory.Valuation.RestrictToConvex
 
 /-!
@@ -37,6 +38,10 @@ The point-level map on `Spv A` that Wedhorn's retraction `r_I` is built from liv
 * `Valuation.restrictToIdeal_le_iff` : how restricted values compare, totally.
 * `Valuation.restrictToIdeal_ne_zero_of_le` : the restriction keeps every value above a
   kept value.
+* `Valuation.restrictToIdeal_lt_restrictToIdeal_iff` : below a kept value, the restriction
+  compares exactly as `v` does.
+* `Valuation.IsContinuous.restrictToIdeal` : the restriction of a continuous valuation is
+  continuous.
 * `Valuation.exists_mem_restrictToIdeal_ne_zero` : **Wedhorn Lemma 7.5(3)**, that the
   restriction does not vanish identically on `I` unless `v` does.
 * `Valuation.restrictToIdeal_ne_zero_of_isAdmissible` : it does not kill a denominator
@@ -83,9 +88,9 @@ names. This is the bridge between membership in a transported convex subgroup, w
 through `OrderMonoidIso.unitsWithZero`, and the introduction rules for `cΓ_v(I)`, which are
 phrased through `valueGroup.mk`. -/
 private theorem unitsWithZero_mk0_restrict (v : Valuation A Γ₀) {a : A}
-    (h0 : (MonoidWithZeroHom.ofClass v) a ≠ 0) (ha : v.restrict a ≠ 0) :
+    (h0 : v a ≠ 0) (ha : v.restrict a ≠ 0) :
     OrderMonoidIso.unitsWithZero (Units.mk0 (v.restrict a) ha) =
-      valueGroup.mk (.ofClass v) 1 a (by simp) h0 := by
+      valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0 := by
   rw [← WithZero.coe_inj, ← v.restrict_eq_mk h0]
   exact WithZero.coe_unitsWithZeroEquiv_eq_units_val _
 
@@ -97,7 +102,7 @@ private theorem mk0_restrict_mem_comapUnitsWithZero (v : Valuation A Γ₀) (I :
     (a : A) (ha : v.restrict a ≠ 0) (h1 : 1 ≤ v.restrict a) :
     Units.mk0 (v.restrict a) ha ∈
       ConvexSubgroup.comapUnitsWithZero (characteristicSubgroupOfIdeal v I hfg) := by
-  have h0 : (MonoidWithZeroHom.ofClass v) a ≠ 0 := fun h => ha (v.restrict_eq_zero_iff.mpr h)
+  have h0 : v a ≠ 0 := fun h => ha (v.restrict_eq_zero_iff.mpr h)
   rw [ConvexSubgroup.mem_comapUnitsWithZero, unitsWithZero_mk0_restrict v h0 ha]
   refine characteristicSubgroup_le_characteristicSubgroupOfIdeal v I hfg
     (valueGroup_mk_mem_characteristicSubgroup_of_one_le_value h0 ?_)
@@ -159,10 +164,10 @@ Private: it is the units-transport implementation, and every lemma below applies
 so no consumer has to name `comapUnitsWithZero`. -/
 private theorem mk0_restrict_mem_comapUnitsWithZero_iff (v : Valuation A Γ₀) (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) {a : A}
-    (h0 : (MonoidWithZeroHom.ofClass v) a ≠ 0) :
+    (h0 : v a ≠ 0) :
     Units.mk0 (v.restrict a) (fun h => h0 (v.restrict_eq_zero_iff.mp h)) ∈
         ConvexSubgroup.comapUnitsWithZero (characteristicSubgroupOfIdeal v I hfg) ↔
-      valueGroup.mk (.ofClass v) 1 a (by simp) h0 ∈ characteristicSubgroupOfIdeal v I hfg := by
+      valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0 ∈ characteristicSubgroupOfIdeal v I hfg := by
   rw [ConvexSubgroup.mem_comapUnitsWithZero, unitsWithZero_mk0_restrict v h0 _]
 
 /-- Off `cΓ_v(I)`, the restriction vanishes. The hypothesis is non-membership in `cΓ_v(I)`
@@ -172,8 +177,8 @@ Not `@[simp]`: `restrictToIdeal_eq_zero_iff` is the simp-normal form for a vanis
 restriction, and it rewrites this lemma's left-hand side, which `simpNF` rejects. -/
 theorem restrictToIdeal_apply_of_notMem (v : Valuation A Γ₀) (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) {a : A}
-    (h0 : (MonoidWithZeroHom.ofClass v) a ≠ 0)
-    (hm : valueGroup.mk (.ofClass v) 1 a (by simp) h0 ∉ characteristicSubgroupOfIdeal v I hfg) :
+    (h0 : v a ≠ 0)
+    (hm : valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0 ∉ characteristicSubgroupOfIdeal v I hfg) :
     v.restrictToIdeal I hfg a = 0 :=
 by
   rw [restrictToIdeal_def v I hfg (mk0_restrict_mem_comapUnitsWithZero v I hfg)]
@@ -184,7 +189,7 @@ by
 @[simp]
 theorem restrictToIdeal_apply_of_eq_zero (v : Valuation A Γ₀) (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) {a : A}
-    (h0 : (MonoidWithZeroHom.ofClass v) a = 0) : v.restrictToIdeal I hfg a = 0 :=
+    (h0 : v a = 0) : v.restrictToIdeal I hfg a = 0 :=
 by
   rw [restrictToIdeal_def v I hfg (mk0_restrict_mem_comapUnitsWithZero v I hfg)]
   exact restrictToConvex_apply_of_eq_zero _ _ _ (v.restrict_eq_zero_iff.mpr h0)
@@ -194,9 +199,9 @@ by
 branch too makes its left-hand side reducible by that lemma, which `simpNF` rejects. -/
 theorem restrictToIdeal_eq_zero_iff_of_ne (v : Valuation A Γ₀) (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) {a : A}
-    (h0 : (MonoidWithZeroHom.ofClass v) a ≠ 0) :
+    (h0 : v a ≠ 0) :
     v.restrictToIdeal I hfg a = 0 ↔
-      valueGroup.mk (.ofClass v) 1 a (by simp) h0 ∉ characteristicSubgroupOfIdeal v I hfg :=
+      valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0 ∉ characteristicSubgroupOfIdeal v I hfg :=
   by
   rw [restrictToIdeal_def v I hfg (mk0_restrict_mem_comapUnitsWithZero v I hfg)]
   exact (restrictToConvex_eq_zero_iff_of_ne _ _ _
@@ -209,9 +214,9 @@ the form consumers holding a nonvanishing hypothesis want. -/
 @[simp]
 theorem restrictToIdeal_eq_zero_iff (v : Valuation A Γ₀) (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) (a : A) :
-    v.restrictToIdeal I hfg a = 0 ↔ (MonoidWithZeroHom.ofClass v) a = 0 ∨
-      ∃ h0 : (MonoidWithZeroHom.ofClass v) a ≠ 0,
-        valueGroup.mk (.ofClass v) 1 a (by simp) h0 ∉ characteristicSubgroupOfIdeal v I hfg := by
+    v.restrictToIdeal I hfg a = 0 ↔ v a = 0 ∨
+      ∃ h0 : v a ≠ 0,
+        valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0 ∉ characteristicSubgroupOfIdeal v I hfg := by
   rw [restrictToIdeal, restrictToConvex_eq_zero_iff]
   constructor
   · rintro (hz | ⟨hr, hnm⟩)
@@ -231,8 +236,8 @@ values, and it rewrites this lemma's left-hand side, which `simpNF` rejects. -/
 theorem restrictToIdeal_le_iff_of_mem (v : Valuation A Γ₀) (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) {a b : A}
     (h0a : v a ≠ 0) (h0b : v b ≠ 0)
-    (hma : valueGroup.mk (.ofClass v) 1 a (by simp) h0a ∈ characteristicSubgroupOfIdeal v I hfg)
-    (hmb : valueGroup.mk (.ofClass v) 1 b (by simp) h0b ∈ characteristicSubgroupOfIdeal v I hfg) :
+    (hma : valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0a ∈ characteristicSubgroupOfIdeal v I hfg)
+    (hmb : valueGroup.mk (v : A →*₀ Γ₀) 1 b (by simp) h0b ∈ characteristicSubgroupOfIdeal v I hfg) :
     v.restrictToIdeal I hfg a ≤ v.restrictToIdeal I hfg b ↔ v a ≤ v b :=
 by
   rw [restrictToIdeal_def v I hfg (mk0_restrict_mem_comapUnitsWithZero v I hfg),
@@ -264,7 +269,7 @@ theorem coe_le_restrictToIdeal_iff (v : Valuation A Γ₀) (I : Ideal A)
     (u : (ConvexSubgroup.comapUnitsWithZero
       (characteristicSubgroupOfIdeal v I hfg)).toSubgroup) :
     (u : RestrictedValues v I hfg) ≤ v.restrictToIdeal I hfg a ↔
-      ((u : (ValueGroup₀ (.ofClass v))ˣ) : ValueGroup₀ (.ofClass v)) ≤ v.restrict a :=
+      ((u : (v.ValueGroup₀)ˣ) : v.ValueGroup₀) ≤ v.restrict a :=
   coe_le_restrictToConvex_iff _ _ _ a u
 
 /-- Comparing a restricted value against an abstract member of the transported `cΓ_v(I)`,
@@ -275,7 +280,7 @@ theorem restrictToIdeal_lt_coe_iff (v : Valuation A Γ₀) (I : Ideal A)
     (u : (ConvexSubgroup.comapUnitsWithZero
       (characteristicSubgroupOfIdeal v I hfg)).toSubgroup) :
     v.restrictToIdeal I hfg a < (u : RestrictedValues v I hfg) ↔
-      v.restrict a < ((u : (ValueGroup₀ (.ofClass v))ˣ) : ValueGroup₀ (.ofClass v)) :=
+      v.restrict a < ((u : (v.ValueGroup₀)ˣ) : v.ValueGroup₀) :=
   restrictToConvex_lt_coe_iff _ _ _ a u
 
 /-- A value at least `1` stays at least `1`: `cΓ_v(I)` keeps every attained value `≥ 1`. -/
@@ -303,7 +308,7 @@ private theorem characteristicSubgroup_restrictToIdeal_eq_top_of_meets (w : Valu
   obtain ⟨u, hu⟩ := WithZero.ne_zero_iff_exists.mp hγ0
   -- rewriting the goal, not the hypothesis: `u`'s own type mentions `cΓ_v(I)`, so rewriting
   -- that away inside the hypothesis is not type correct
-  have hmem : OrderMonoidIso.unitsWithZero (u : (ValueGroup₀ (.ofClass w))ˣ)
+  have hmem : OrderMonoidIso.unitsWithZero (u : (w.ValueGroup₀)ˣ)
       ∈ characteristicSubgroup w := by
     rw [← characteristicSubgroupOfIdeal_of_meets hfg hm]
     exact ConvexSubgroup.mem_comapUnitsWithZero.mp u.2
@@ -321,20 +326,20 @@ private theorem characteristicSubgroup_restrictToIdeal_eq_top_of_meets (w : Valu
     have hcoe : ((OrderMonoidIso.unitsWithZero
           ((u⁻¹ : (ConvexSubgroup.comapUnitsWithZero
             (characteristicSubgroupOfIdeal w I hfg)).toSubgroup) :
-            (ValueGroup₀ (.ofClass w))ˣ) :
-          valueGroup (.ofClass w)) : ValueGroup₀ (.ofClass w)) =
+            (w.ValueGroup₀)ˣ) :
+          w.valueGroup) : w.ValueGroup₀) =
         (((u⁻¹ : (ConvexSubgroup.comapUnitsWithZero
             (characteristicSubgroupOfIdeal w I hfg)).toSubgroup) :
-          (ValueGroup₀ (.ofClass w))ˣ) : ValueGroup₀ (.ofClass w)) :=
+          (w.ValueGroup₀)ˣ) : w.ValueGroup₀) :=
       WithZero.coe_unitsWithZeroEquiv_eq_units_val _
     rw [← hcoe, WithZero.coe_le_coe]
     simp only [InvMemClass.coe_inv]
     simpa using inv_le_inv_iff.mpr hginv
   · rw [← ValueGroup₀.embedding_strictMono.le_iff_le, Valuation.embedding_restrict, ← hu,
       coe_le_restrictToIdeal_iff, hga]
-    have hcoe : ((OrderMonoidIso.unitsWithZero (u : (ValueGroup₀ (.ofClass w))ˣ) :
-        valueGroup (.ofClass w)) : ValueGroup₀ (.ofClass w)) =
-        ((u : (ValueGroup₀ (.ofClass w))ˣ) : ValueGroup₀ (.ofClass w)) :=
+    have hcoe : ((OrderMonoidIso.unitsWithZero (u : (w.ValueGroup₀)ˣ) :
+        w.valueGroup) : w.ValueGroup₀) =
+        ((u : (w.ValueGroup₀)ˣ) : w.ValueGroup₀) :=
       WithZero.coe_unitsWithZeroEquiv_eq_units_val _
     rw [← hcoe, WithZero.coe_le_coe]
     exact hgle
@@ -368,9 +373,9 @@ private theorem cofinalValue_restrictToIdeal_of_not_meets (w : Valuation A Γ₀
     restrictToIdeal_lt_coe_iff, map_pow]
   -- `OrderMonoidIso.unitsWithZero` and `WithZero.unitsWithZeroEquiv` agree, but only up to
   -- defeq, so the bridge has to be stated rather than rewritten with
-  have hcoe : ((OrderMonoidIso.unitsWithZero (u : (ValueGroup₀ (.ofClass w))ˣ) :
-      valueGroup (.ofClass w)) : ValueGroup₀ (.ofClass w)) =
-      ((u : (ValueGroup₀ (.ofClass w))ˣ) : ValueGroup₀ (.ofClass w)) :=
+  have hcoe : ((OrderMonoidIso.unitsWithZero (u : (w.ValueGroup₀)ˣ) :
+      w.valueGroup) : w.ValueGroup₀) =
+      ((u : (w.ValueGroup₀)ˣ) : w.ValueGroup₀) :=
     WithZero.coe_unitsWithZeroEquiv_eq_units_val _
   rwa [hcoe] at hn
 
@@ -393,8 +398,8 @@ the nonzero branch of `restrictToIdeal_eq_zero_iff`, in the form a consumer hold
 proof wants. -/
 theorem restrictToIdeal_ne_zero_of_mem (v : Valuation A Γ₀) (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) {a : A}
-    (h0 : (MonoidWithZeroHom.ofClass v) a ≠ 0)
-    (hmem : valueGroup.mk (.ofClass v) 1 a (by simp) h0 ∈
+    (h0 : v a ≠ 0)
+    (hmem : valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0 ∈
       characteristicSubgroupOfIdeal v I hfg) :
     v.restrictToIdeal I hfg a ≠ 0 :=
   fun h ↦ (restrictToIdeal_eq_zero_iff_of_ne v I hfg h0).mp h hmem
@@ -411,32 +416,45 @@ theorem restrictToIdeal_ne_zero_of_le (v : Valuation A Γ₀) (I : Ideal A)
     (hb : v.restrictToIdeal I hfg b ≠ 0) (hab : v b ≤ v a) :
     v.restrictToIdeal I hfg a ≠ 0 := by
   intro ha
-  have hb0 : (ofClass v) b ≠ 0 := fun h ↦ hb (restrictToIdeal_apply_of_eq_zero v I hfg h)
-  have ha0 : (ofClass v) a ≠ 0 := fun h ↦ hb0 (le_antisymm (h ▸ hab) zero_le)
-  have hbmem : valueGroup.mk (.ofClass v) 1 b (by simp) hb0 ∈
+  have hb0 : v b ≠ 0 := fun h ↦ hb (restrictToIdeal_apply_of_eq_zero v I hfg h)
+  have ha0 : v a ≠ 0 := fun h ↦ hb0 (le_antisymm (h ▸ hab) zero_le)
+  have hbmem : valueGroup.mk (v : A →*₀ Γ₀) 1 b (by simp) hb0 ∈
       characteristicSubgroupOfIdeal v I hfg := by
     by_contra hm
     exact hb (restrictToIdeal_apply_of_notMem v I hfg hb0 hm)
-  have hamem : valueGroup.mk (.ofClass v) 1 a (by simp) ha0 ∉
+  have hamem : valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) ha0 ∉
       characteristicSubgroupOfIdeal v I hfg :=
     (restrictToIdeal_eq_zero_iff_of_ne v I hfg ha0).mp ha
-  have hle : valueGroup.mk (.ofClass v) 1 b (by simp) hb0 ≤
-      valueGroup.mk (.ofClass v) 1 a (by simp) ha0 := by
+  have hle : valueGroup.mk (v : A →*₀ Γ₀) 1 b (by simp) hb0 ≤
+      valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) ha0 := by
     have h := (v.restrict_le_iff (x := b) (y := a)).mpr hab
     rwa [v.restrict_eq_mk hb0, v.restrict_eq_mk ha0, WithZero.coe_le_coe] at h
-  rcases le_or_gt (valueGroup.mk (.ofClass v) 1 a (by simp) ha0) 1 with h1 | h1
+  rcases le_or_gt (valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) ha0) 1 with h1 | h1
   · exact hamem (ConvexSubgroup.mem_of_le_le_one hbmem hle h1)
   · refine hamem (characteristicSubgroup_le_characteristicSubgroupOfIdeal v I hfg ?_)
     exact mem_characteristicSubgroup_iff.mpr
       ⟨_, mem_characteristicGenerators.mpr ⟨h1.le, a, v.restrict_eq_mk ha0⟩,
         Left.inv_le_self h1.le, le_rfl⟩
 
+/-- **Strict comparison below a kept value.** If the restriction keeps `b`, then `a` lies strictly
+below `b` after restriction exactly when it does under `v`: a value discarded by the restriction
+was already below `v b`, by `restrictToIdeal_ne_zero_of_le`. -/
+theorem restrictToIdeal_lt_restrictToIdeal_iff (v : Valuation A Γ₀) (I : Ideal A)
+    (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) {a b : A}
+    (hb : v.restrictToIdeal I hfg b ≠ 0) :
+    v.restrictToIdeal I hfg a < v.restrictToIdeal I hfg b ↔ v a < v b := by
+  rw [← not_le, ← not_le, restrictToIdeal_le_iff]
+  refine ⟨fun h hba ↦ h (Or.inr ⟨restrictToIdeal_ne_zero_of_le v I hfg hb hba, hba⟩), ?_⟩
+  rintro h (h0 | ⟨-, hba⟩)
+  · exact hb h0
+  · exact h hba
+
 /-- **Wedhorn Lemma 7.5(3).** If `v` does not vanish identically on `I`, neither does its
 restriction: `v(I) ≠ 0` implies `r_I(v)(I) ≠ 0`, so `I` is not contained in the support of the
 restricted valuation. This is the form Wedhorn's Theorem 7.10 consumes. -/
 theorem exists_mem_restrictToIdeal_ne_zero (v : Valuation A Γ₀) (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical)
-    (hne : ∃ a ∈ I, (ofClass v) a ≠ 0) :
+    (hne : ∃ a ∈ I, v a ≠ 0) :
     ∃ a ∈ I, v.restrictToIdeal I hfg a ≠ 0 := by
   have hex : ∃ γ ∈ valueSet v I, γ ∈ characteristicSubgroupOfIdeal v I hfg := by
     by_cases hm : IdealMeetsCharacteristicSubgroup v I
@@ -445,12 +463,12 @@ theorem exists_mem_restrictToIdeal_ne_zero (v : Valuation A Γ₀) (I : Ideal A)
     · exact exists_mem_valueSet_mem_characteristicSubgroupOfIdeal hfg hm hne
   obtain ⟨γ, hγI, hγH⟩ := hex
   obtain ⟨a, haI, hav⟩ := mem_valueSet.mp hγI
-  have ha0 : (ofClass v) a ≠ 0 := fun h ↦ by
+  have ha0 : v a ≠ 0 := fun h ↦ by
     rw [v.restrict_eq_zero_iff.mpr h] at hav
     exact WithZero.coe_ne_zero hav.symm
   refine ⟨a, haI, restrictToIdeal_ne_zero_of_mem v I hfg ha0 ?_⟩
-  have hcoe : (valueGroup.mk (.ofClass v) 1 a (by simp) ha0 :
-      ValueGroup₀ (.ofClass v)) = γ := by
+  have hcoe : (valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) ha0 :
+      v.ValueGroup₀) = γ := by
     rw [← v.restrict_eq_mk ha0, hav]
   rwa [WithZero.coe_inj.mp hcoe]
 
@@ -479,7 +497,7 @@ theorem restrictToIdeal_ne_zero_of_isAdmissible (v : Valuation A Γ₀) (I : Ide
       rw [← (inferInstance : Ideal.IsPrime (Valuation.supp R)).radical]
       exact Ideal.radical_mono (Ideal.span_le.mpr hsupp)
     exact fun a ha ↦ (Valuation.mem_supp_iff R a).mp (h ha)
-  by_cases hne : ∃ a ∈ I, (ofClass v) a ≠ 0
+  by_cases hne : ∃ a ∈ I, v a ≠ 0
   · obtain ⟨a, haI, hane⟩ := exists_mem_restrictToIdeal_ne_zero v I hfg hne
     exact hane (hI a haI)
   · push Not at hne
@@ -487,5 +505,15 @@ theorem restrictToIdeal_ne_zero_of_isAdmissible (v : Valuation A Γ₀) (I : Ide
       (characteristicSubgroupOfIdeal_eq_top_iff hfg).mpr
         (Or.inl fun a ha ↦ cofinalValueFor_top_iff.mp (cofinalValueFor_of_eq_zero (hne a ha)))
     exact restrictToIdeal_ne_zero_of_mem v I hfg hu0 (htop ▸ ConvexSubgroup.mem_top) hRu
+
+/-- **The restriction of a continuous valuation is continuous.** Below a kept value the
+restriction compares exactly as `v` does (`restrictToIdeal_lt_restrictToIdeal_iff`), so each set
+`{a | v|cΓ_v(I) (a) < v|cΓ_v(I) (b)}` cutting out continuity is the open set
+`{a | v a < v b}`. -/
+theorem IsContinuous.restrictToIdeal [TopologicalSpace A] {v : Valuation A Γ₀}
+    (hv : v.IsContinuous) (I : Ideal A) (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) :
+    (v.restrictToIdeal I hfg).IsContinuous := by
+  refine (isContinuous_iff_forall_ne_zero _).mpr fun b hb ↦ ?_
+  simpa only [restrictToIdeal_lt_restrictToIdeal_iff v I hfg hb] using isContinuous_def.mp hv b
 
 end Valuation

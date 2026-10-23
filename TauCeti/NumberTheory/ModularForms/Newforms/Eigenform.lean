@@ -40,6 +40,9 @@ and bad primes.
   `HeckeRing.GL2.Eigenform.qExpansion_coeff_prime_pow_add_two`: the same identities for the
   coefficients of a normalised eigenform, conditions (2) and (3) of Diamond–Shurman's
   Proposition 5.8.5 at every index.
+* `HeckeRing.GL2.Eigenform.qExpansion_coeff_mem_of_forall_prime`: by these identities, every
+  coefficient of a normalised eigenform lies in each subring of `ℂ` containing the coefficients
+  at the primes and the scalars `χ(p) p^{k−1}` of the recurrence.
 
 ## Provenance
 
@@ -279,6 +282,32 @@ theorem qExpansion_coeff_prime_pow_add_two (f : Eigenform N k)
   lift p to ℕ+ using hp.pos
   simp only [← PNat.pow_coe, f.qExpansion_coeff_eq_eigenvalue h₁]
   exact f.eigenvalue_prime_pow_add_two hp r
+
+/-- **The coefficients of a normalised full eigenform lie in every subring containing the prime
+data of its Hecke recurrence.** If `a₁ = 1` and a subring of `ℂ` contains `a_p` and
+`χ(p) p^{k−1}` for every prime `p`, with `χ(p) = 0` for `p ∣ N`, then it contains every
+coefficient `a_n`. -/
+theorem qExpansion_coeff_mem_of_forall_prime {S : Type*} [SetLike S ℂ] [SubringClass S ℂ]
+    (f : Eigenform N k) (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (s : S)
+    (ha : ∀ p : ℕ, p.Prime → (qExpansion 1 f.toCuspForm).coeff p ∈ s)
+    (hχ : ∀ p : ℕ, p.Prime →
+      (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1) ∈ s) (n : ℕ) :
+    (qExpansion 1 f.toCuspForm).coeff n ∈ s := by
+  induction n using Nat.recOnPrimeCoprime with
+  | zero =>
+      rw [CuspFormClass.qExpansion_coeff_zero f.toCuspForm one_pos
+        (TauCeti.one_mem_strictPeriods_Gamma1_map N)]
+      exact zero_mem s
+  | prime_pow p r hp =>
+      induction r using Nat.twoStepInduction with
+      | zero => simp [h₁]
+      | one => simpa using ha p hp
+      | more r ih₁ ih₂ =>
+          rw [f.qExpansion_coeff_prime_pow_add_two h₁ hp r]
+          exact sub_mem (mul_mem (ha p hp) ih₂) (mul_mem (hχ p hp) ih₁)
+  | coprime a b _ _ hab ha' hb' =>
+      rw [f.qExpansion_coeff_mul h₁ hab]
+      exact mul_mem ha' hb'
 
 end Eigenform
 

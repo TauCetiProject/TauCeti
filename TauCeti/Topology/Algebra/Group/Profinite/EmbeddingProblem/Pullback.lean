@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.Topology.Algebra.Group.Generation
 
 public import TauCeti.GroupTheory.GroupExtension.Of.Surjective
@@ -138,7 +138,7 @@ theorem exists_splitting_iff_hasSolution :
     refine ⟨P.pullbackSnd.comp (s : G →* P.pullback), (P.isSolution_iff_continuous _).mpr
       ⟨P.continuous_pullbackSnd.comp hs, ?_⟩⟩
     ext g
-    rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.coe_coe, pullbackSnd_apply,
+    rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.coe_ofClass, pullbackSnd_apply,
       ← (P.mem_pullback _).mp (s g).property]
     congr 1
     simpa using s.rightHom_splitting g

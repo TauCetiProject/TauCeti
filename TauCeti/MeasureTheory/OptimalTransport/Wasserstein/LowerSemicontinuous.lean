@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 -- Proof-only: weak lower semicontinuity of the optimal transport cost, and `W_∞` as the supremum
 -- of the finite-exponent distances.
 import TauCeti.MeasureTheory.OptimalTransport.Stability
@@ -40,7 +40,9 @@ functions is lower semicontinuous.
   exponent, on an extended pseudometric space with Polish topology;
 * `TauCeti.lowerSemicontinuous_wassersteinEDist` — lower semicontinuity for every exponent,
   including `p = ∞`, on a Polish metric space;
-* `TauCeti.wassersteinEDist_le_liminf` — its form along weakly convergent families of laws.
+* `TauCeti.wassersteinEDist_le_liminf` — its form along weakly convergent families of laws;
+* `TauCeti.WassersteinSpace.edist_le_liminf` — the same inequality for the distance from a fixed
+  law of the Wasserstein space `P_p (X)`, along weakly convergent families of `P_p (X)`.
 
 ## References
 
@@ -74,7 +76,7 @@ theorem lowerSemicontinuous_wassersteinEDist_of_ne_top (hp : p ≠ ∞) :
         wassersteinEDist 0 q.1.toMeasure q.2.toMeasure) = fun _ ↦ 0 :=
       funext fun q ↦ nonpos_iff_eq_zero.1 <|
         (wassersteinEDist_le (isCoupling_prod q.1.toMeasure q.2.toMeasure) 0).trans_eq
-          eLpNorm_exponent_zero
+          (eLpNorm_exponent_zero measurable_edist.aestronglyMeasurable)
     rw [h0]
     exact lowerSemicontinuous_const
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
@@ -84,7 +86,7 @@ theorem lowerSemicontinuous_wassersteinEDist_of_ne_top (hp : p ≠ ∞) :
       (fun t : ℝ≥0∞ ↦ t ^ p.toReal⁻¹) ∘ fun q ↦
         transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) q.1.toMeasure q.2.toMeasure := by
     funext q
-    rw [Function.comp_apply, ← wassersteinEDist_rpow_eq_transportCost hp0 hp,
+    rw [Function.comp_apply, ← wassersteinEDist_rpow_eq_transportCost measurable_edist hp0 hp,
       ENNReal.rpow_rpow_inv hr.ne']
   rw [heq]
   exact ENNReal.continuous_rpow_const.comp_lowerSemicontinuous
@@ -122,6 +124,16 @@ theorem wassersteinEDist_le_liminf {ι : Type*} {l : Filter ι} {μs νs : ι �
   le_of_forall_lt_imp_le_of_dense fun a ha ↦ le_liminf_of_le (by isBoundedDefault) <|
     ((hμ.prodMk_nhds hν).eventually (lowerSemicontinuous_wassersteinEDist p (μ, ν) a ha)).mono
       fun _ h ↦ h.le
+
+/-- **Weak limits do not increase the distance from a fixed law of `P_p (X)`**: on a Polish metric
+space, if the laws of a family `v` of `P_p (X)` converge weakly to the law of `ν` along a filter
+`l`, then `W_p (μ, ν) ≤ liminf W_p (μ, v i)` for every law `μ` of `P_p (X)`. -/
+theorem WassersteinSpace.edist_le_liminf {p : ℝ≥0∞} [Fact (1 ≤ p)] {ι : Type*} {l : Filter ι}
+    {μ ν : WassersteinSpace p X} {v : ι → WassersteinSpace p X}
+    (h : Tendsto (fun i ↦ (v i : ProbabilityMeasure X)) l (𝓝 ν)) :
+    edist μ ν ≤ liminf (fun i ↦ edist μ (v i)) l := by
+  simp only [WassersteinSpace.edist_def]
+  exact wassersteinEDist_le_liminf tendsto_const_nhds h p
 
 end Metric
 

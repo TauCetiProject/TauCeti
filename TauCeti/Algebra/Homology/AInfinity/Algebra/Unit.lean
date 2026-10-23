@@ -65,6 +65,11 @@ variable {𝒜 : AInfinityAlgebra R A} {e e' : A}
 theorem unary_eq_zero (h : 𝒜.StrictUnit e) : 𝒜.m 1 ![e] = 0 := by
   simpa using h.higher 1 (by decide) ![e] ⟨0, rfl⟩
 
+/-- A strict unit is a cycle for the differential. -/
+theorem differential_eq_zero (h : 𝒜.StrictUnit e) : 𝒜.differential e = 0 := by
+  rw [differential_apply]
+  exact h.unary_eq_zero
+
 /-- The higher operations vanish when a specified input is the strict unit. -/
 theorem m_eq_zero_of_eq_unit (h : 𝒜.StrictUnit e) {n : ℕ} (hn : n ≠ 2)
     (x : Fin n → A) {i : Fin n} (hi : x i = e) : 𝒜.m n x = 0 := by

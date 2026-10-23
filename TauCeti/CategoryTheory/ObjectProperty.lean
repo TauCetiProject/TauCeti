@@ -33,6 +33,10 @@ standard functors between full subcategories.
 * `CategoryTheory.ObjectProperty.prop_biprod_of_isClosedUnderBinaryProducts`: a property closed
   under binary products holds for binary biproducts, with `X ⊞ Y` as the syntactic form of the
   conclusion.
+* `CategoryTheory.ObjectProperty.homMk_eta` and `CategoryTheory.ObjectProperty.homMk_comp`:
+  `homMk` of the underlying morphism is the morphism itself, and `homMk` preserves composites.
+* `CategoryTheory.ObjectProperty.lift_map_hom_of_eq`: a functor defined as a lift through a full
+  subcategory acts on morphisms as the lifted functor, up to the identifications of objects.
 * `CategoryTheory.ObjectProperty.essentiallySmall_of_ambient`: every property in an essentially
   small category is essentially small.
 * `CategoryTheory.ObjectProperty.ιOfLE_additive`: the inclusion of a smaller property into a larger
@@ -43,6 +47,10 @@ standard functors between full subcategories.
 * `CategoryTheory.Equivalence.congrFullSubcategory_functor_comp_ι` and
   `CategoryTheory.Equivalence.congrFullSubcategory_inverse_comp_ι`: the restricted functors,
   followed by the inclusions, are the inclusions followed by the original functors.
+* `CategoryTheory.Equivalence.congrFullSubcategory_functor_obj_obj`,
+  `CategoryTheory.Equivalence.congrFullSubcategory_functor_map_hom` and their `inverse`
+  counterparts: the restricted functors evaluated on objects and morphisms, for deriving the
+  evaluation lemmas of any equivalence defined as a `congrFullSubcategory`.
 -/
 
 public section
@@ -119,6 +127,31 @@ instance ιOfLE_additive {C : Type u₁} [Category.{v₁} C] [Preadditive C]
     {P P' : ObjectProperty C} (h : P ≤ P') : (ObjectProperty.ιOfLE h).Additive where
   map_add := rfl
 
+/-- A morphism of a full subcategory is `homMk` of its underlying morphism. -/
+@[simp]
+theorem homMk_eta {C : Type u₁} [Category.{v₁} C] {P : ObjectProperty C}
+    {X Y : P.FullSubcategory} (f : X ⟶ Y) : homMk f.hom = f :=
+  rfl
+
+/-- `homMk` of a composite is the composite of the `homMk`s. This is useful when `homMk (· ≫ ·)`
+appears under a functor. -/
+theorem homMk_comp {C : Type u₁} [Category.{v₁} C] {P : ObjectProperty C}
+    {X Y Z : P.FullSubcategory} (f : X.obj ⟶ Y.obj) (g : Y.obj ⟶ Z.obj) :
+    homMk (f ≫ g) = homMk f ≫ homMk g :=
+  rfl
+
+/-- A functor `G` given by the lift of `F` through a full subcategory acts on morphisms as `F`,
+up to the identifications of the underlying objects. Stated for any `G` equal to the lift, so that
+it applies to a functor defined as a lift (via its equation lemma) without unfolding it. -/
+theorem lift_map_hom_of_eq {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    {P : ObjectProperty D} {F : C ⥤ D} {hF : ∀ A, P (F.obj A)} {G : C ⥤ P.FullSubcategory}
+    (hG : G = P.lift F hF) {A B : C} (f : A ⟶ B) (hA : (G.obj A).obj = F.obj A)
+    (hB : (G.obj B).obj = F.obj B) :
+    (G.map f).hom = eqToHom hA ≫ F.map f ≫ eqToHom hB.symm := by
+  subst hG
+  rw [eqToHom_refl, eqToHom_refl, Category.id_comp, Category.comp_id, ObjectProperty.lift_map,
+    ObjectProperty.homMk_hom]
+
 end ObjectProperty
 
 namespace Equivalence
@@ -166,6 +199,46 @@ theorem congrFullSubcategory_inverse_comp_ι
   exact Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ by
     simp only [Functor.comp_map, ObjectProperty.ι_obj_lift_map, eqToHom_refl, Category.id_comp,
       Category.comp_id]
+
+section Evaluation
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+  {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
+  (e : C ≌ D) (h : Q.inverseImage e.functor = P)
+
+/-- The forward functor on corresponding full subcategories acts on objects as the original
+functor. Not a simp lemma: `congrFullSubcategory_functor` already unfolds the left-hand side. -/
+theorem congrFullSubcategory_functor_obj_obj (X : P.FullSubcategory) :
+    ((e.congrFullSubcategory h).functor.obj X).obj = e.functor.obj X.obj := by
+  rw [congrFullSubcategory_functor_eq_lift, ObjectProperty.lift_obj_obj, Functor.comp_obj,
+    ObjectProperty.ι_obj]
+
+/-- The forward functor on corresponding full subcategories acts on morphisms as the original
+functor, up to the identifications of `congrFullSubcategory_functor_obj_obj`. -/
+theorem congrFullSubcategory_functor_map_hom {X Y : P.FullSubcategory} (f : X ⟶ Y) :
+    ((e.congrFullSubcategory h).functor.map f).hom =
+      eqToHom (e.congrFullSubcategory_functor_obj_obj h X) ≫ e.functor.map f.hom ≫
+        eqToHom (e.congrFullSubcategory_functor_obj_obj h Y).symm := by
+  simpa only [Functor.comp_map, ObjectProperty.ι_map] using
+    Functor.congr_hom (e.congrFullSubcategory_functor_comp_ι h) f
+
+/-- The inverse functor on corresponding full subcategories acts on objects as the original
+inverse. Not a simp lemma: `congrFullSubcategory_inverse` already unfolds the left-hand side. -/
+theorem congrFullSubcategory_inverse_obj_obj (Y : Q.FullSubcategory) :
+    ((e.congrFullSubcategory h).inverse.obj Y).obj = e.inverse.obj Y.obj := by
+  rw [congrFullSubcategory_inverse_eq_lift, ObjectProperty.lift_obj_obj, Functor.comp_obj,
+    ObjectProperty.ι_obj]
+
+/-- The inverse functor on corresponding full subcategories acts on morphisms as the original
+inverse, up to the identifications of `congrFullSubcategory_inverse_obj_obj`. -/
+theorem congrFullSubcategory_inverse_map_hom {X Y : Q.FullSubcategory} (f : X ⟶ Y) :
+    ((e.congrFullSubcategory h).inverse.map f).hom =
+      eqToHom (e.congrFullSubcategory_inverse_obj_obj h X) ≫ e.inverse.map f.hom ≫
+        eqToHom (e.congrFullSubcategory_inverse_obj_obj h Y).symm := by
+  simpa only [Functor.comp_map, ObjectProperty.ι_map] using
+    Functor.congr_hom (e.congrFullSubcategory_inverse_comp_ι h) f
+
+end Evaluation
 
 /-- The functor of an equivalence restricted to corresponding full subcategories is additive. -/
 instance congrFullSubcategory_functor_additive

@@ -73,6 +73,7 @@ open _root_.FundamentalGroup
 variable {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] [LocallyPathConnectedSpace X]
   [SemilocallySimplyConnectedSpace X] (x₀ : X)
 
+omit [PathConnectedSpace X] in
 /-- **A pointed connected cover is the quotient of the universal cover by the subgroup it
 recovers.** If a covering map `p` with path-connected total space and a lift `e₀` of `x₀` recover
 `H ≤ π₁(X, x₀)`, then `E` is homeomorphic to `UniversalCover x₀ / H` over `X`, by a
@@ -91,6 +92,7 @@ theorem exists_homeomorph_subgroupQuotient_of_range_eq {E : Type*} [TopologicalS
     (isCoveringMap_subgroupQuotientProj x₀ H) hpe (subgroupQuotientProj_basepoint x₀ H)
     (hH.trans (range_mapOfEq_subgroupQuotientProj x₀ H).symm)
 
+omit [PathConnectedSpace X] in
 /-- **Every pointed connected cover of `(X, x₀)` is realised by exactly one subgroup of
 `π₁(X, x₀)`.** The subgroups of `π₁(X, x₀)` therefore parametrise the pointed connected covers
 of `(X, x₀)` bijectively, up to isomorphism over `X` respecting the chosen lifts. -/
@@ -107,6 +109,7 @@ theorem existsUnique_subgroup_homeomorph_subgroupQuotient {E : Type*} [Topologic
   exact ((IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq hp
     (isCoveringMap_subgroupQuotientProj x₀ H) hpe (subgroupQuotientProj_basepoint x₀ H)).mp hH).symm
 
+omit [PathConnectedSpace X] in
 /-- **The covers attached to two subgroups are isomorphic as pointed covers exactly when the
 subgroups are equal.** This is the injectivity of the subgroup parametrisation. -/
 theorem exists_homeomorph_subgroupQuotient_comp_eq_iff_eq
@@ -121,6 +124,7 @@ theorem exists_homeomorph_subgroupQuotient_comp_eq_iff_eq
     (subgroupQuotientProj_basepoint x₀ H) (subgroupQuotientProj_basepoint x₀ K),
     range_mapOfEq_subgroupQuotientProj, range_mapOfEq_subgroupQuotientProj]
 
+omit [PathConnectedSpace X] in
 /-- **The covers attached to two subgroups are isomorphic as unpointed covers exactly when the
 subgroups are conjugate.** Forgetting the distinguished points therefore turns the subgroup
 parametrisation into a bijection between conjugacy classes of subgroups of `π₁(X, x₀)` and

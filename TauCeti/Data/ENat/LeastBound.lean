@@ -24,6 +24,7 @@ When `P` is monotone (a bound at `m` gives a bound at every `n ≥ m`), the char
 * `TauCeti.leastENatBound`: the infimum in `ℕ∞` of the natural numbers satisfying a predicate.
 * `TauCeti.leastENatBound_le_iff`: for a monotone predicate, `leastENatBound P ≤ n ↔ P n`.
 * `TauCeti.leastENatBound_eq_top_iff`: the value is `⊤` exactly when the predicate never holds.
+* `TauCeti.leastENatBound_eq_zero_iff`: the value is `0` exactly when the predicate holds at `0`.
 * `TauCeti.leastENatBound_antitone`: a weaker predicate has a smaller least bound.
 -/
 
@@ -50,6 +51,12 @@ theorem leastENatBound_le {n : ℕ} (h : P n) : leastENatBound P ≤ n :=
 /-- The least bound is `⊤` exactly when no natural number satisfies the predicate. -/
 @[simp]
 theorem leastENatBound_eq_top_iff : leastENatBound P = ⊤ ↔ ∀ n : ℕ, ¬P n := by
+  simp [leastENatBound]
+
+/-- The least bound is `0` exactly when `0` satisfies the predicate. Unlike
+`leastENatBound_le_iff`, this needs no monotonicity. -/
+@[simp]
+theorem leastENatBound_eq_zero_iff : leastENatBound P = 0 ↔ P 0 := by
   simp [leastENatBound]
 
 /-- The least bound is attained: when some natural number satisfies `P`, the least one does. -/

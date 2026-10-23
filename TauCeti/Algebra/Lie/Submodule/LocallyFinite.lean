@@ -124,7 +124,7 @@ theorem exists_pow_toEnd_eq_zero_of_isIrreducible [LieModule.IsIrreducible R L M
 is contained in it. -/
 private theorem map_toEnd_le_iff {x : L} {N : Submodule R M} :
     N.map (toEnd R L M x) ≤ N ↔ ∀ u ∈ N, ⁅x, u⁆ ∈ N := by
-  simp [SetLike.le_def]
+  simp [IsConcreteLE.le_iff]
 
 variable (R M) in
 /-- The vectors of `M` lying in some finitely generated `R`-submodule stable under bracketing with

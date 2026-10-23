@@ -30,6 +30,7 @@ computation (`Quadratic/Norm.lean`).
 * `NumberField.finrank_rat_eq_two_of_minpoly_eq_X_sq_sub_X_add`: the same for a field generated
   by a root of a monic quadratic `X² - X + c`, the half-integer presentation.
 * `NumberField.gen_sq`: the integral generator squares to the radicand in `𝓞 K`.
+* `TauCeti.NumberField.smul_gen_eq_or_eq_neg`: every `ℚ`-automorphism sends `θ` to `±θ`.
 * `NumberField.coe_gen_sq`: the generator squares to the radicand, `θ² = d` in `K`.
 * `NumberField.coe_gen_sq_ratCast`: the same over `ℚ`, `θ² = (d : ℚ)` in `K`.
 * `NumberField.gen_notMem_range`: the generator is not rational, `θ ∉ ℚ`.
@@ -261,3 +262,17 @@ theorem discr_one_halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d)
   push_cast; ring
 
 end NumberField
+
+namespace TauCeti.NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+
+/-- Every `ℚ`-automorphism of `K` sends `θ` to `θ` or to `-θ`, the two square roots of the
+radicand `d`. -/
+theorem smul_gen_eq_or_eq_neg (hmin : minpoly ℤ θ = X ^ 2 - C d) (σ : K ≃ₐ[ℚ] K) :
+    σ • θ = θ ∨ σ • θ = -θ := by
+  have hσ : (σ • θ) ^ 2 = θ ^ 2 := by
+    rw [← smul_pow', gen_sq hmin, smul_algebraMap]
+  exact sq_eq_sq_iff_eq_or_eq_neg.mp hσ
+
+end TauCeti.NumberField

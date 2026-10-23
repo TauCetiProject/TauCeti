@@ -76,7 +76,7 @@ Separability of the resolvent is what the forward implication needs; the reverse
 `TauCeti.HasGaloisLabel.exists_isRoot_specialize_of_exists_le_map_conj`, which assumes nothing
 about the resolvent. -/
 theorem HasGaloisLabel.exists_isRoot_specialize_iff (h : HasGaloisLabel f j) (hf : f.Monic)
-    (spec : ResolventSpec n) (hres : (spec.specialize F f).Separable) :
+    (spec : ResolventSpec n) (hres : ResolventSeparationEvidence spec f) :
     (∃ a : F, (spec.specialize F f).IsRoot a) ↔
       ∃ τ : Perm (Fin n), referenceSubgroup n j ≤ spec.H.map (MulAut.conj τ).toMonoidHom := by
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable

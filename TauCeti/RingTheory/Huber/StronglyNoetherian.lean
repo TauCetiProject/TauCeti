@@ -7,13 +7,15 @@ module
 
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
+public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 public import TauCeti.Topology.UniformSpace.DiscreteUniformity
 public import Mathlib.RingTheory.Polynomial.Basic
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Basic
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Surjective
+import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Strong noetherianness of a nonarchimedean ring
@@ -48,9 +50,13 @@ discrete case below is proved through it.
 * `TauCeti.Huber.IsStronglyNoetherian.restrictedMvPowerSeriesCompletion`: over a Huber base the
   predicate passes to `A⟨X₁,…,Xₖ⟩`, so a strongly noetherian ring stays strongly noetherian under
   the construction. This is the iteration isomorphism `A⟨X⟩⟨Y⟩ ≅ A⟨X,Y⟩` of
-  `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate` read as a statement about the
+  `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Basic` read as a statement about the
   predicate; `[IsHuberRing A]` is what that isomorphism asks of the base, and the predicate itself
   does not.
+* `TauCeti.Huber.IsStronglyNoetherian.weightedRestrictedSubring_one_weight`: when the ordinary
+  restricted-series ring is complete and Hausdorff, it is strongly noetherian too, because it is
+  bicontinuously isomorphic to the completed algebra above. A complete Hausdorff base supplies
+  these hypotheses.
 * `TauCeti.Huber.isNoetherianRing_completion_of_isStronglyNoetherian`: the zero-variable
   *consequence* of the predicate — strong noetherianness quantifies over every `k`, and its
   `k = 0` component says the separated completion `Â` is noetherian. The identification behind it,
@@ -65,6 +71,9 @@ discrete case below is proved through it.
   below, not against whichever `UniformSpace A` a consumer has in scope.
 * `Ideal.isClosed_weightedRestrictedSubring_one_weight`: every ideal in an
   uncompleted restricted-series ring over a complete Hausdorff strongly noetherian Tate ring is
+  closed.
+* `Ideal.isClosed_restrictedMvPowerSeriesCompletion`: every ideal of the completed
+  `A⟨X₁, …, Xₖ⟩` over a strongly noetherian Tate ring, not necessarily complete or Hausdorff, is
   closed.
 
 * `TauCeti.Huber.IsStronglyNoetherian.of_surjective`: strong noetherianness passes along a
@@ -81,20 +90,32 @@ discrete case below is proved through it.
   unqualified `TauCeti.Huber.IsTopologicallyFiniteType` is weaker — it allows an arbitrary finite
   weight family — and is not what this serves.
 
-* `TauCeti.Huber.isStronglyNoetherian_congr`: strong noetherianness is invariant under a
-  bicontinuous ring isomorphism. Layer 4.1 takes `IsStronglyNoetherian A` as a hypothesis while
-  the ring in question is presented in more than one way, so the hypothesis has to survive the
-  comparison isomorphisms; this is what makes that legitimate. Continuity is needed in *both*
-  directions and is not automatic — `weightedMapCompletion` is built from
-  `UniformSpace.Completion.mapRingHom`, which induces nothing on completions from a
-  discontinuous map.
+* `TauCeti.Huber.IsStronglyNoetherian.quotient`: for the same `A`, the quotient `A ⧸ J` by a
+  closed ideal, with the quotient topology, is strongly noetherian. In particular
+  `A⟨X₁, …, Xₖ⟩ ⧸ (Xᵢ²)` is strongly noetherian over a complete Hausdorff strongly noetherian
+  Tate ring (`TauCeti.Huber.isStronglyNoetherian_quotient_span_weightedX_sq`).
+
+* `IsDenseInducing.isStronglyNoetherian_iff`: strong noetherianness is invariant under a dense
+  inducing ring map `A → B`, because `A` and `B` then have isomorphic completed restricted
+  power-series algebras (`IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv`).
+* `TauCeti.Huber.isStronglyNoetherian_completion_iff`: in particular a nonarchimedean ring is
+  strongly noetherian exactly when its separated completion `Â` is, and
+  `TauCeti.Huber.IsStronglyNoetherian.completion` records the forward direction as an instance.
+  This is the step that lets results proved for complete Hausdorff strongly noetherian rings be
+  applied to an arbitrary strongly noetherian ring through its completion.
+* `TauCeti.Huber.isStronglyNoetherian_congr`: the special case of a bicontinuous ring
+  isomorphism. A ring presented in more than one way has to keep the hypothesis
+  `IsStronglyNoetherian` across the comparison isomorphisms, and this is what makes that
+  legitimate. Continuity is needed in *both* directions: a `RingEquiv` is not assumed to be a
+  homeomorphism.
 
 What is not here is the assembly that turns the result above into Wedhorn's statement: that a
-ring *strictly* topologically of finite type over a strongly noetherian `A` is again strongly
-noetherian. That needs `TauCeti.Huber.IsStrictlyTopologicallyFiniteType` unfolded to its open
-quotient `A⟨X₁,…,Xₖ⟩ ↠ B` and the result above applied to it. The unqualified
-`TauCeti.Huber.IsTopologicallyFiniteType` presents `B` as a quotient of the completion of a
-*weighted* `A⟨X⟩_T` for an arbitrary finite weight family, and is not covered at all.
+ring topologically of finite type over a strongly noetherian `A` is again strongly noetherian.
+It lives in `TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic`:
+`TauCeti.Huber.IsStrictlyTopologicallyFiniteType.isStronglyNoetherian` unfolds a strict
+presentation to its open quotient `A⟨X₁,…,Xₖ⟩ ↠ B` and applies the result above, and
+`TauCeti.Huber.IsTopologicallyFiniteType.isStronglyNoetherian` reduces a presentation by a
+*weighted* `A⟨X⟩_T` to a strict one when `A` is a Tate ring.
 
 ## Provenance
 
@@ -109,11 +130,10 @@ Nothing was copied.
 That same contrast is why AINTLIB's `isStronglyNoetherian_congr`
 (`projects/AdicSpaces/Adic spaces/StronglyNoetherianTransport.lean`) does not transfer either:
 it transports along `restrictedMvPowerSeriesEquiv`, built by hand on the uncompleted subring.
-The proof *shape* — coefficientwise transport in both directions, mutually inverse by the
-functor laws, then noetherianness along the resulting surjection — is the same, but here it
-runs one level up, on `TauCeti.Huber.weightedMapCompletion`, and the bridge is definitional:
-`restrictedMvPowerSeriesCompletion k A` is by definition the completion of the weighted
-subring at the trivial weight family, which is exactly that map's shape.
+Here the transport runs one level up, on the completions: a dense inducing map, of which a
+bicontinuous isomorphism is the simplest case, identifies the completed restricted power-series
+algebras because the completion of the uncompleted restricted-series ring over `B` is also a
+completion of the one over `A`.
 -/
 
 open scoped Uniformity
@@ -129,8 +149,8 @@ restricted power-series algebra `A⟨X₁,…,Xₖ⟩` over it is noetherian. Fo
 that the separated completion of `A` be noetherian.
 
 This is the hypothesis of Wedhorn's Theorem 8.28, the strongly noetherian form of Tate
-acyclicity; Wedhorn states it for Tate rings, and every complete rank-one nonarchimedean
-field satisfies it (BGR 5.2.6 — not yet formalised). -/
+acyclicity; Wedhorn states it for Tate rings, and every complete nonarchimedean normed field
+satisfies it (BGR 5.2.6; `TauCeti.Huber.IsStronglyNoetherian.of_normedField`). -/
 @[mk_iff]
 class IsStronglyNoetherian : Prop where
   isNoetherianRing (k : ℕ) : IsNoetherianRing (restrictedMvPowerSeriesCompletion k A)
@@ -168,6 +188,26 @@ theorem _root_.Ideal.isClosed_weightedRestrictedSubring_one_weight {k : ℕ}
 
 end ClosedIdeal
 
+section ClosedIdealCompletion
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+  [IsStronglyNoetherian A]
+
+/-- **Every ideal of `A⟨X₁, …, Xₖ⟩` is closed**, for a strongly noetherian Tate ring `A`, which
+need not be complete or Hausdorff: `A⟨X₁, …, Xₖ⟩` is a complete metrisable noetherian Tate ring.
+Compare `Ideal.isClosed_weightedRestrictedSubring_one_weight`, the same statement for the
+uncompleted algebra over a complete Hausdorff `A`. -/
+theorem _root_.Ideal.isClosed_restrictedMvPowerSeriesCompletion {k : ℕ}
+    (I : Ideal (restrictedMvPowerSeriesCompletion k A)) :
+    IsClosed (I : Set (restrictedMvPowerSeriesCompletion k A)) := by
+  have : IsTateRing (restrictedMvPowerSeriesCompletion k A) :=
+    IsTateRing.of_continuous (continuous_algebraMap_restrictedMvPowerSeriesCompletion k A)
+  have : (𝓤 (restrictedMvPowerSeriesCompletion k A)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  exact isClosed_of_isNoetherian I
+
+end ClosedIdealCompletion
+
 /-! ### The discrete case -/
 
 /-- **A noetherian ring with the discrete topology is strongly noetherian.** This is the
@@ -191,11 +231,13 @@ power-series algebra over a strongly noetherian ring is again strongly noetheria
 construction can be iterated without leaving the class.
 
 `[IsHuberRing A]` is asked here and not by the predicate: it is what the iteration isomorphism
-of `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate` requires of the base. -/
+of `TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Basic` requires of the base. -/
 instance IsStronglyNoetherian.restrictedMvPowerSeriesCompletion [IsHuberRing A]
     [IsStronglyNoetherian A] (k : ℕ) :
     IsStronglyNoetherian (restrictedMvPowerSeriesCompletion k A) where
-  isNoetherianRing m := isNoetherianRing_of_ringEquiv _ (iterateRingEquiv k m A)
+  isNoetherianRing m := isNoetherianRing_of_ringEquiv _
+    (iterateRingEquiv isWeightFamily_one_weight isWeightFamily_one_weight
+      isWeightFamily_one_weight (fun _ ↦ rfl) fun _ ↦ by simp [UniformSpace.Completion.coe_one])
 
 /-! ### Zero variables -/
 
@@ -245,28 +287,66 @@ section Transport
 variable {A B : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
   [CommRing B] [TopologicalSpace B] [NonarchimedeanRing B]
 
-/-- **The isomorphism `A⟨X₁,…,Xₖ⟩ ≃+* B⟨X₁,…,Xₖ⟩` induced by a bicontinuous ring isomorphism
-`e : A ≃+* B`**, acting coefficientwise. Continuity of `e` and of `e.symm` are both hypotheses;
-neither follows from the other for a bare `RingEquiv`. -/
--- The equiv is `TauCeti.Huber.weightedMapCompletionEquiv` at the constant weight family; both
--- continuity hypotheses are load-bearing there.
-private noncomputable def restrictedMvPowerSeriesCompletionCongr (e : A ≃+* B) (he : Continuous e)
-    (he' : Continuous e.symm) (k : ℕ) :
-    restrictedMvPowerSeriesCompletion k A ≃+* restrictedMvPowerSeriesCompletion k B :=
-  weightedMapCompletionEquiv e he he' isWeightFamily_one_weight isWeightFamily_one_weight
-    (fun _ ↦ by simp) (fun _ ↦ by simp)
+/-- **Strong noetherianness is invariant under a dense inducing ring map**: if `φ : A → B` is
+dense inducing, then `A` is strongly noetherian exactly when `B` is. -/
+-- The completed restricted power-series algebras over `A` and over `B` are isomorphic, by
+-- `IsDenseInducing.restrictedMvPowerSeriesCompletionEquiv`.
+theorem _root_.IsDenseInducing.isStronglyNoetherian_iff {φ : A →+* B}
+    (hφ : IsDenseInducing φ) : IsStronglyNoetherian A ↔ IsStronglyNoetherian B := by
+  constructor <;> intro h <;> refine ⟨fun k ↦ ?_⟩
+  · exact isNoetherianRing_of_ringEquiv _ (hφ.restrictedMvPowerSeriesCompletionEquiv k)
+  · exact isNoetherianRing_of_ringEquiv _ (hφ.restrictedMvPowerSeriesCompletionEquiv k).symm
 
 /-- **Strong noetherianness is invariant under a bicontinuous ring isomorphism.** Continuity of
 `e` and of `e.symm` are both hypotheses; neither follows from the other for a bare `RingEquiv`. -/
--- Each `A⟨X₁,…,Xₖ⟩` is carried to `B⟨X₁,…,Xₖ⟩` by `restrictedMvPowerSeriesCompletionCongr`, and
--- noetherianness transports along the resulting surjection.
 theorem isStronglyNoetherian_congr (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm) :
-    IsStronglyNoetherian A ↔ IsStronglyNoetherian B := by
-  constructor <;> intro h <;> refine ⟨fun k ↦ ?_⟩
-  · exact isNoetherianRing_of_ringEquiv _ (restrictedMvPowerSeriesCompletionCongr e he he' k)
-  · exact isNoetherianRing_of_ringEquiv _ (restrictedMvPowerSeriesCompletionCongr e he he' k).symm
+    IsStronglyNoetherian A ↔ IsStronglyNoetherian B :=
+  IsDenseInducing.isStronglyNoetherian_iff (φ := (e : A →+* B))
+    (Homeomorph.mk e.toEquiv he he').isDenseEmbedding.isDenseInducing
 
 end Transport
+
+/-! ### The separated completion -/
+
+section Completion
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [NonarchimedeanRing A]
+
+/-- **Completion preserves and reflects strong noetherianness**: a nonarchimedean ring is strongly
+noetherian exactly when its separated completion `Â` is. -/
+-- The completion map `A → Â` is dense inducing.
+@[simp]
+theorem isStronglyNoetherian_completion_iff :
+    IsStronglyNoetherian (UniformSpace.Completion A) ↔ IsStronglyNoetherian A :=
+  (UniformSpace.Completion.isDenseInducing_coe.isStronglyNoetherian_iff
+    (φ := UniformSpace.Completion.coeRingHom)).symm
+
+/-- **The separated completion of a strongly noetherian ring is strongly noetherian.** -/
+instance IsStronglyNoetherian.completion [IsStronglyNoetherian A] :
+    IsStronglyNoetherian (UniformSpace.Completion A) :=
+  isStronglyNoetherian_completion_iff.mpr inferInstance
+
+end Completion
+
+/-! ### The uncompleted restricted-series algebra -/
+
+/-- **Strong noetherianity passes to the ordinary restricted-series ring when that ring is
+complete and Hausdorff.** It then agrees bicontinuously with the completed algebra
+`A⟨X₁, …, Xₖ⟩`, which is strongly noetherian by iteration. A complete Hausdorff base supplies
+the two hypotheses on the restricted-series ring.
+
+Completeness and separation are needed precisely for this comparison with the completion. -/
+instance IsStronglyNoetherian.weightedRestrictedSubring_one_weight
+    [IsHuberRing A] [IsStronglyNoetherian A] (k : ℕ)
+    [CompleteSpace (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight)]
+    [T0Space (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight)] :
+    IsStronglyNoetherian
+      (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :=
+  (isStronglyNoetherian_congr (restrictedMvPowerSeriesCompletionEquiv k A)
+    uniformContinuous_restrictedMvPowerSeriesCompletionEquiv.continuous
+    uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm.continuous).mp inferInstance
 
 /-! ### Descent along an open quotient map -/
 
@@ -288,7 +368,7 @@ homomorphism is decided at zero. `IsOpenQuotientMap.isStronglyNoetherian` is the
 holding the bundled open-quotient structure.
 
 Openness of `π` is what carries the hypothesis: it is what makes `A⟨Y₁,…,Yₖ⟩ → B⟨Y₁,…,Yₖ⟩`
-surjective, by `TauCeti.Huber.weightedMap_one_weight_surjective`. Completeness and
+surjective, by `TauCeti.Huber.weightedMap_surjective`. Completeness and
 separation of both rings are what let `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` read
 that surjection back as one of the completed algebras. Countable generation of `𝓝 (0 : A)` is a
 further hypothesis, carried by the section: it is what supplies the shrinking family the lifted
@@ -299,7 +379,8 @@ This is the presentation-independent half of Wedhorn's Proposition & Definition 
 (`TauCeti.Huber.IsStrictlyTopologicallyFiniteType`), so the statement that such a ring is strongly
 noetherian reduces to this together with strong noetherianness of `A⟨X₁,…,Xₖ⟩` itself. The
 unqualified `TauCeti.Huber.IsTopologicallyFiniteType` presents `B` as a quotient of a *weighted*
-`A⟨X⟩_T` instead, and is not covered. -/
+`A⟨X⟩_T` instead; over a Tate ring such a presentation can be replaced by a strict one
+(`TauCeti.Huber.IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType`). -/
 theorem IsStronglyNoetherian.of_surjective [IsStronglyNoetherian A] {π : A →+* B}
     (hπ : Continuous π) (hsurj : Function.Surjective π)
     (hnhds : nhds (0 : B) ≤ Filter.map π (nhds (0 : A))) : IsStronglyNoetherian B := by
@@ -310,7 +391,8 @@ theorem IsStronglyNoetherian.of_surjective [IsStronglyNoetherian A] {π : A →+
         fun _ ↦ by simp)).comp (restrictedMvPowerSeriesCompletionEquiv k A).toRingHom) ?_
   simp only [RingHom.coe_comp]
   exact ((restrictedMvPowerSeriesCompletionEquiv k B).symm.surjective.comp
-    (weightedMap_one_weight_surjective hπ hsurj hnhds)).comp
+    (weightedMap_surjective hπ hsurj hnhds isWeightFamily_one_weight
+      isWeightFamily_one_weight (fun _ ↦ by simp))).comp
     (restrictedMvPowerSeriesCompletionEquiv k A).surjective
 
 /-- **The open-quotient form of `TauCeti.Huber.IsStronglyNoetherian.of_surjective`**, for a caller
@@ -321,6 +403,35 @@ theorem _root_.IsOpenQuotientMap.isStronglyNoetherian [IsStronglyNoetherian A] {
   IsStronglyNoetherian.of_surjective hπ.continuous hπ.surjective
     (map_zero π ▸ hπ.isOpenMap.nhds_le 0)
 
+/-- **Strong noetherianness passes to the quotient by a closed ideal.** If `A` is complete,
+Hausdorff, strongly noetherian and has countably generated `𝓝 0`, then `A ⧸ J` with the quotient
+topology is strongly noetherian for every closed ideal `J`.
+
+The quotient is complete because `A` is complete and first countable, and Hausdorff because `J`
+is closed; `IsOpenQuotientMap.isStronglyNoetherian` then applies to the quotient map. -/
+theorem IsStronglyNoetherian.quotient [IsStronglyNoetherian A] (J : Ideal A)
+    (hJ : IsClosed (J : Set A)) : IsStronglyNoetherian (A ⧸ J) := by
+  let _ : UniformSpace (A ⧸ J) := IsTopologicalAddGroup.rightUniformSpace _
+  have _ : IsUniformAddGroup (A ⧸ J) := isUniformAddGroup_of_addCommGroup
+  have _ : CompleteSpace (A ⧸ J) := QuotientAddGroup.completeSpace_right _ J.toAddSubgroup
+  have _ : T1Space (A ⧸ J) := (Ideal.Quotient.t1Space_iff J).mpr hJ
+  exact (QuotientRing.isOpenQuotientMap_mk J).isStronglyNoetherian
+
 end Quotient
+
+section QuotientRestricted
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [IsTateRing A] [IsStronglyNoetherian A] [CompleteSpace A] [T0Space A] {k : ℕ}
+
+/-- **`A⟨X₁, …, Xₖ⟩ ⧸ (Xᵢ²)` is strongly noetherian** over a complete Hausdorff strongly
+noetherian Tate ring `A`, since every ideal of `A⟨X₁, …, Xₖ⟩` is closed. -/
+theorem isStronglyNoetherian_quotient_span_weightedX_sq (i : Fin k) :
+    IsStronglyNoetherian (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight ⧸
+        Ideal.span {weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i ^ 2}) :=
+  IsStronglyNoetherian.quotient _ (Ideal.isClosed_weightedRestrictedSubring_one_weight _)
+
+end QuotientRestricted
 
 end TauCeti.Huber

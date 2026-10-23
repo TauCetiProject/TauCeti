@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.CoordinatePower
 public import TauCeti.LinearAlgebra.IntegralLattice.CoordinatePower
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 
+import Mathlib.Algebra.BigOperators.Field
+
 /-!
 # Discriminant forms of coordinate powers
 

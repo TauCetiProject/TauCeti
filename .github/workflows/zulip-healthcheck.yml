@@ -2,7 +2,7 @@ name: Zulip PR status (healthcheck)
 
 # Actively probe the Zulip bot's credentials on a schedule, so a broken
 # ZULIP_API_KEY is caught even when no PR opens or builds for a while. The
-# per-PR workflows (zulip-pr.yml / zulip-pr-status.yml) only exercise the
+# per-PR reconciler (pr-status.yml) only exercises the
 # integration when something happens on a PR; this one fails loudly on its own
 # cadence. `check` touches no PR and no message -- it just authenticates and
 # confirms the bot is subscribed to the channel.
@@ -27,6 +27,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/pr_status
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
       - name: Probe Zulip credentials
         # No continue-on-error: a failed probe means the integration is broken
         # and this run should go red. See scripts/pr_status/README.md.

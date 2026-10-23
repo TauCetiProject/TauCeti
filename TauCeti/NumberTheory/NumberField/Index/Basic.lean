@@ -37,6 +37,8 @@ invariances under translating the generator by an integer and negating it.
 * `TauCeti.NumberField.IntegralPrimitiveElement.index_pos`: the index is positive.
 * `TauCeti.NumberField.IntegralPrimitiveElement.index_eq_one_iff`: the index is `1` exactly when
   `ℤ[θ]` is all of `𝓞 K`.
+* `TauCeti.NumberField.IntegralPrimitiveElement.index_eq_one_of_finrank_eq_one`: in a number field
+  of degree one, in particular in `ℚ` (`IntegralPrimitiveElement.index_rat`), every index is `1`.
 * `TauCeti.NumberField.adjoin_rat_eq_top_of_adjoin_int_eq_top`: an element generating `𝓞 K` over
   `ℤ` generates `K` over `ℚ`.
 * `TauCeti.NumberField.IntegralPrimitiveElement.index_addIntCast`: integer translation preserves
@@ -178,6 +180,21 @@ theorem adjoin_ofAdjoinEqTop {θ : 𝓞 K} (h : Algebra.adjoin ℤ {θ} = (⊤ :
 theorem index_ofAdjoinEqTop {θ : 𝓞 K} (h : Algebra.adjoin ℤ {θ} = (⊤ : Subalgebra ℤ (𝓞 K))) :
     (ofAdjoinEqTop h).index = 1 :=
   (index_eq_one_iff _).mpr (adjoin_ofAdjoinEqTop h)
+
+/-- In a number field of degree one over `ℚ`, every integral primitive element has index `1`. -/
+theorem index_eq_one_of_finrank_eq_one (h : Module.finrank ℚ K = 1)
+    (θ : IntegralPrimitiveElement K) : θ.index = 1 := by
+  have hbij : Function.Bijective (algebraMap ℤ (𝓞 K)) :=
+    Module.Free.bijective_algebraMap_of_finrank_eq_one
+      ((_root_.NumberField.RingOfIntegers.rank K).trans h)
+  refine (index_eq_one_iff θ).mpr (eq_top_iff.mpr fun x _ ↦ ?_)
+  obtain ⟨n, rfl⟩ := hbij.2 x
+  exact Subalgebra.algebraMap_mem _ n
+
+/-- Every integral primitive element of `ℚ` has index `1`. -/
+@[simp]
+theorem index_rat (θ : IntegralPrimitiveElement ℚ) : θ.index = 1 :=
+  index_eq_one_of_finrank_eq_one (Module.finrank_self ℚ) θ
 
 /-! ### Changing the generator -/
 

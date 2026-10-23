@@ -73,12 +73,14 @@ def weightTable : TauCeti.MinusculeWeightTable (Fin 7) (Fin 56) where
   cartanMatrix := CartanMatrix.E 7
   weight := e7MinusculeWeight
   reflection i := e7MinusculeReflection i
-  cartanMatrix_isSymm := CartanMatrix.E_isSymm 7
   cartanMatrix_diag := CartanMatrix.E_diag 7
-  cartanMatrix_isSimplyLaced := CartanMatrix.isSimplyLaced_E 7
+  cartanMatrix_offDiag_nonpos := CartanMatrix.E_off_diag_nonpos 7
+  cartanMatrix_zero_comm i j := by rw [(CartanMatrix.E_isSymm 7).apply]
   weight_eq_neg_one_or_eq_zero_or_eq_one :=
     e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one
-  weight_reflection := e7MinusculeWeight_reflection_apply
+  weight_reflection i a j := by
+    rw [(CartanMatrix.E_isSymm 7).apply]
+    exact e7MinusculeWeight_reflection_apply i a j
   weight_injective := e7MinusculeWeight_injective
 
 /-- The Cartan matrix of the type-`E₇` minuscule weight table is the `E₇` Cartan matrix. -/

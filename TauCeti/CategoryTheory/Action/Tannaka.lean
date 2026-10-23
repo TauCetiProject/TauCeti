@@ -73,23 +73,28 @@ variable (G : Type u) [Monoid G]
 /-- Acting by `g : G` on every `G`-set is a natural endomorphism of the forgetful functor from
 `G`-sets to types; this is the resulting monoid map `G →* End (Action.forget (Type u) G)`. -/
 def toEndForgetAction : G →* End (Action.forget (Type u) G) where
-  toFun g := { app A := A.ρ g, naturality _ _ f := (f.comm g).symm }
-  map_one' := NatTrans.ext (funext fun A => map_one A.ρ)
-  map_mul' g h := NatTrans.ext (funext fun A => map_mul A.ρ g h)
+  toFun g := .of { app A := (A.ρ g).asHom, naturality _ _ f := (f.comm g).symm }
+  map_one' := End.ext (NatTrans.ext (funext fun A => congrArg End.asHom (map_one A.ρ)))
+  map_mul' g h := End.ext (NatTrans.ext (funext fun A => congrArg End.asHom (map_mul A.ρ g h)))
 
 variable {G}
 
-@[simp]
+/-- The computation rule for `TauCeti.toEndForgetAction`.
+
+This is not a `simp` lemma: the type of `NatTrans.app` puts `(Action.forget (Type u) G).obj A` in
+the coercion of the left-hand side, and `simp` rewrites that to `A.V` by `Action.forget_obj`, so
+the left-hand side here is not in `simp`-normal form. -/
 theorem toEndForgetAction_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
-    (toEndForgetAction G g).app A x = g • x :=
+    (toEndForgetAction G g).asHom.app A x = g • x :=
   by
     -- Unfold the unexposed constructor once to establish its public computation rule.
-    change A.ρ g x = g • x
+    change (A.ρ g).asHom x = g • x
     rfl
 
-@[simp]
+/-- The value of `TauCeti.toEndForgetAction G g` at the identity of the left regular `G`-set; not a
+`simp` lemma, for the reason given at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem toEndForgetAction_app_leftRegular_one (g : G) :
-    (toEndForgetAction G g).app (Action.leftRegular G) (1 : G) = g :=
+    (toEndForgetAction G g).asHom.app (Action.leftRegular G) (1 : G) = g :=
   mul_one g
 
 /-- The orbit map `a ↦ a • x` of a point `x` of a `G`-set `A`, as a map of `G`-sets from the left
@@ -112,11 +117,12 @@ theorem _root_.CategoryTheory.Action.leftRegularHom_hom_apply {A : Action (Type 
 as the element of `G` it produces at the identity of the left regular `G`-set: naturality against
 the orbit map `CategoryTheory.Action.leftRegularHom` leaves it no other choice. -/
 theorem end_forgetAction_app_apply (η : End (Action.forget (Type u) G)) {s : G}
-    (hs : η.app (Action.leftRegular G) (1 : G) = s) (A : Action (Type u) G) (x : ToType A) :
-    η.app A x = s • x := by
+    (hs : η.asHom.app (Action.leftRegular G) (1 : G) = s) (A : Action (Type u) G)
+    (x : ToType A) :
+    η.asHom.app A x = s • x := by
   subst hs
-  calc η.app A x = η.app A ((1 : G) • x) := by rw [one_smul]
-    _ = _ := NatTrans.naturality_apply η (Action.leftRegularHom x) (1 : G)
+  calc η.asHom.app A x = η.asHom.app A ((1 : G) • x) := by rw [one_smul]
+    _ = _ := NatTrans.naturality_apply η.asHom (Action.leftRegularHom x) (1 : G)
 
 variable (G)
 
@@ -124,9 +130,9 @@ variable (G)
 does so without repetition: evaluation at the identity of the left regular `G`-set inverts
 `TauCeti.toEndForgetAction`, by `TauCeti.end_forgetAction_app_apply`. -/
 theorem toEndForgetAction_bijective : Function.Bijective (toEndForgetAction G) := by
-  refine ⟨fun g h hgh => ?_, fun η => ⟨η.app (Action.leftRegular G) (1 : G), ?_⟩⟩
+  refine ⟨fun g h hgh => ?_, fun η => ⟨η.asHom.app (Action.leftRegular G) (1 : G), ?_⟩⟩
   · rw [← toEndForgetAction_app_leftRegular_one g, ← toEndForgetAction_app_leftRegular_one h, hgh]
-  · refine NatTrans.ext (funext fun A => ?_)
+  · refine End.ext (NatTrans.ext (funext fun A => ?_))
     ext x
     exact (end_forgetAction_app_apply η rfl A x).symm
 
@@ -147,14 +153,14 @@ regular `G`-set. -/
 @[simp]
 theorem endForgetActionMulEquiv_symm_apply_eq (η : End (Action.forget (Type u) G)) (g : G) :
     (endForgetActionMulEquiv G).symm η = g ↔
-      η.app (Action.leftRegular G) (1 : G) = g := by
+      η.asHom.app (Action.leftRegular G) (1 : G) = g := by
   rw [MulEquiv.symm_apply_eq]
   constructor
   · intro h
     rw [h, endForgetActionMulEquiv_apply, toEndForgetAction_app_leftRegular_one]
   · intro h
     rw [endForgetActionMulEquiv_apply]
-    refine NatTrans.ext (funext fun A => ?_)
+    refine End.ext (NatTrans.ext (funext fun A => ?_))
     ext x
     exact (end_forgetAction_app_apply η h A x).trans
       (toEndForgetAction_app_apply g A x).symm
@@ -171,20 +177,22 @@ def unitsAutForgetActionMulEquiv : Gˣ ≃* Aut (Action.forget (Type u) G) :=
 
 variable {G}
 
-@[simp]
+/-- The automorphism attached to a unit `g` acts by `g`; not a `simp` lemma, for the reason given
+at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem unitsAutForgetActionMulEquiv_hom_app_apply (g : Gˣ) (A : Action (Type u) G)
     (x : ToType A) :
-    (unitsAutForgetActionMulEquiv G g).hom.app A x = (g : G) • x := by
+    (unitsAutForgetActionMulEquiv G g).asIso.hom.app A x = (g : G) • x := by
   -- `Aut.unitsEndEquivAut` keeps the underlying endomorphism as the `hom` projection.
-  change (endForgetActionMulEquiv G (g : G)).app A x = _
+  change (endForgetActionMulEquiv G (g : G)).asHom.app A x = _
   rw [endForgetActionMulEquiv_apply, toEndForgetAction_app_apply]
 
-@[simp]
+/-- The inverse of the automorphism attached to a unit `g` acts by `g⁻¹`; not a `simp` lemma, for
+the reason given at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem unitsAutForgetActionMulEquiv_inv_app_apply (g : Gˣ) (A : Action (Type u) G)
     (x : ToType A) :
-    (unitsAutForgetActionMulEquiv G g).inv.app A x = ((g⁻¹ : Gˣ) : G) • x := by
+    (unitsAutForgetActionMulEquiv G g).asIso.inv.app A x = ((g⁻¹ : Gˣ) : G) • x := by
   -- `Aut.unitsEndEquivAut` keeps the endomorphism of the inverse unit as the `inv` projection.
-  change (endForgetActionMulEquiv G ((g⁻¹ : Gˣ) : G)).app A x = _
+  change (endForgetActionMulEquiv G ((g⁻¹ : Gˣ) : G)).asHom.app A x = _
   rw [endForgetActionMulEquiv_apply, toEndForgetAction_app_apply]
 
 /-- The inverse of the automorphism form of Tannaka duality is characterized by evaluating the
@@ -192,7 +200,7 @@ forward natural transformation at the identity of the left regular `G`-set. -/
 @[simp]
 theorem unitsAutForgetActionMulEquiv_symm_apply_eq (η : Aut (Action.forget (Type u) G)) (g : Gˣ) :
     (unitsAutForgetActionMulEquiv G).symm η = g ↔
-      η.hom.app (Action.leftRegular G) (1 : G) = (g : G) := by
+      η.asIso.hom.app (Action.leftRegular G) (1 : G) = (g : G) := by
   rw [MulEquiv.symm_apply_eq]
   constructor
   · intro h
@@ -201,9 +209,9 @@ theorem unitsAutForgetActionMulEquiv_symm_apply_eq (η : Aut (Action.forget (Typ
       ((toEndForgetAction_app_apply (g : G) (Action.leftRegular G) (1 : G)).symm.trans
         (toEndForgetAction_app_leftRegular_one (g : G)))
   · intro h
-    refine Aut.ext (NatTrans.ext (funext fun A => ?_))
+    refine Aut.ext (Iso.ext (NatTrans.ext (funext fun A => ?_)))
     ext x
-    exact (end_forgetAction_app_apply η.hom h A x).trans
+    exact (end_forgetAction_app_apply (Aut.toEnd η) h A x).trans
       (unitsAutForgetActionMulEquiv_hom_app_apply g A x).symm
 
 variable (G)
@@ -226,10 +234,10 @@ appearing in the type of `x` to `(Action.forget (Type u) G).obj (e.obj p)`, so t
 here is not in `simp`-normal form. -/
 theorem endCompForgetActionMulEquiv_app_apply {C : Type*} [Category C]
     (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : G) (p : C) (x : ToType (e.obj p)) :
-    (endCompForgetActionMulEquiv G e g).app p x = g • x :=
+    (endCompForgetActionMulEquiv G e g).asHom.app p x = g • x :=
   by
     -- Unfold the unexposed transport once; its value is then governed by the public base rule.
-    change (endForgetActionMulEquiv G g).app (e.obj p) x = g • x
+    change (endForgetActionMulEquiv G g).asHom.app (e.obj p) x = g • x
     rw [endForgetActionMulEquiv_apply, toEndForgetAction_app_apply]
 
 variable (G)
@@ -249,18 +257,18 @@ variable {G}
 the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. -/
 theorem unitsAutCompForgetActionMulEquiv_hom_app_apply {C : Type*} [Category C]
     (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : Gˣ) (p : C) (x : ToType (e.obj p)) :
-    (unitsAutCompForgetActionMulEquiv G e g).hom.app p x = (g : G) • x := by
+    (unitsAutCompForgetActionMulEquiv G e g).asIso.hom.app p x = (g : G) • x := by
   -- The transport whiskers with `e`, so the value is the untransported one at `e.obj p`.
-  change (unitsAutForgetActionMulEquiv G g).hom.app (e.obj p) x = _
+  change (unitsAutForgetActionMulEquiv G g).asIso.hom.app (e.obj p) x = _
   exact unitsAutForgetActionMulEquiv_hom_app_apply g (e.obj p) x
 
 /-- The inverse of a transported natural automorphism acts by the inverse unit on every fibre; not
 a `simp` lemma, for the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. -/
 theorem unitsAutCompForgetActionMulEquiv_inv_app_apply {C : Type*} [Category C]
     (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : Gˣ) (p : C) (x : ToType (e.obj p)) :
-    (unitsAutCompForgetActionMulEquiv G e g).inv.app p x = ((g⁻¹ : Gˣ) : G) • x := by
+    (unitsAutCompForgetActionMulEquiv G e g).asIso.inv.app p x = ((g⁻¹ : Gˣ) : G) • x := by
   -- The transport whiskers with `e`, so the value is the untransported one at `e.obj p`.
-  change (unitsAutForgetActionMulEquiv G g).inv.app (e.obj p) x = _
+  change (unitsAutForgetActionMulEquiv G g).asIso.inv.app (e.obj p) x = _
   exact unitsAutForgetActionMulEquiv_inv_app_apply g (e.obj p) x
 
 end Monoid
@@ -283,16 +291,17 @@ theorem autForgetActionMulEquiv_apply (g : G) :
     autForgetActionMulEquiv G g = unitsAutForgetActionMulEquiv G (toUnits g) :=
   (rfl)
 
-@[simp]
+/-- The automorphism attached to `g` acts by `g`; not a `simp` lemma, for the reason given at
+`TauCeti.toEndForgetAction_app_apply`. -/
 theorem autForgetActionMulEquiv_hom_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
-    (autForgetActionMulEquiv G g).hom.app A x = g • x := by
+    (autForgetActionMulEquiv G g).asIso.hom.app A x = g • x := by
   rw [autForgetActionMulEquiv_apply, unitsAutForgetActionMulEquiv_hom_app_apply,
     val_toUnits_apply]
 
-/-- The inverse of the automorphism associated to `g` acts by `g⁻¹`. -/
-@[simp]
+/-- The inverse of the automorphism associated to `g` acts by `g⁻¹`; not a `simp` lemma, for the
+reason given at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem autForgetActionMulEquiv_inv_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
-    (autForgetActionMulEquiv G g).inv.app A x = g⁻¹ • x := by
+    (autForgetActionMulEquiv G g).asIso.inv.app A x = g⁻¹ • x := by
   rw [autForgetActionMulEquiv_apply, unitsAutForgetActionMulEquiv_inv_app_apply, ← map_inv,
     val_toUnits_apply]
 
@@ -301,7 +310,7 @@ transformation at the identity of the left regular `G`-set. -/
 @[simp]
 theorem autForgetActionMulEquiv_symm_apply_eq (η : Aut (Action.forget (Type u) G)) (g : G) :
     (autForgetActionMulEquiv G).symm η = g ↔
-      η.hom.app (Action.leftRegular G) (1 : G) = g := by
+      η.asIso.hom.app (Action.leftRegular G) (1 : G) = g := by
   rw [MulEquiv.symm_apply_eq]
   constructor
   · intro h
@@ -310,9 +319,9 @@ theorem autForgetActionMulEquiv_symm_apply_eq (η : Aut (Action.forget (Type u) 
       ((toEndForgetAction_app_apply g (Action.leftRegular G) (1 : G)).symm.trans
         (toEndForgetAction_app_leftRegular_one g))
   · intro h
-    refine Aut.ext (NatTrans.ext (funext fun A => ?_))
+    refine Aut.ext (Iso.ext (NatTrans.ext (funext fun A => ?_)))
     ext x
-    exact (end_forgetAction_app_apply η.hom h A x).trans
+    exact (end_forgetAction_app_apply (Aut.toEnd η) h A x).trans
       (autForgetActionMulEquiv_hom_app_apply g A x).symm
 
 variable (G)
@@ -337,7 +346,7 @@ theorem autCompForgetActionMulEquiv_apply {C : Type*} [Category C] (e : C ⥤ Ac
 the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. -/
 theorem autCompForgetActionMulEquiv_hom_app_apply {C : Type*} [Category C]
     (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : G) (p : C) (x : ToType (e.obj p)) :
-    (autCompForgetActionMulEquiv G e g).hom.app p x = g • x := by
+    (autCompForgetActionMulEquiv G e g).asIso.hom.app p x = g • x := by
   rw [autCompForgetActionMulEquiv_apply, unitsAutCompForgetActionMulEquiv_hom_app_apply,
     val_toUnits_apply]
 
@@ -345,7 +354,7 @@ theorem autCompForgetActionMulEquiv_hom_app_apply {C : Type*} [Category C]
 lemma, for the reason given at `TauCeti.endCompForgetActionMulEquiv_app_apply`. -/
 theorem autCompForgetActionMulEquiv_inv_app_apply {C : Type*} [Category C]
     (e : C ⥤ Action (Type u) G) [e.IsEquivalence] (g : G) (p : C) (x : ToType (e.obj p)) :
-    (autCompForgetActionMulEquiv G e g).inv.app p x = g⁻¹ • x := by
+    (autCompForgetActionMulEquiv G e g).asIso.inv.app p x = g⁻¹ • x := by
   rw [autCompForgetActionMulEquiv_apply, unitsAutCompForgetActionMulEquiv_inv_app_apply,
     ← map_inv, val_toUnits_apply]
 

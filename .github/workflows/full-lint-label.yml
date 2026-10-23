@@ -1,0 +1,26 @@
+name: Rebuild on full-lint
+
+# Adding the `full-lint` label to a PR asks for its environment lint to cover the whole library
+# (scripts/lint-scope.sh). Labels do not trigger pr-build, which would otherwise start (and fan
+# out to every workflow_run consumer) on every label change, so this dispatches one pr-build run
+# for the PR, exactly as a maintainer would with `gh workflow run pr-build.yml -f pr=N`. That run
+# supersedes any build of the PR in progress through pr-build's concurrency group.
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+permissions:
+  actions: write
+
+jobs:
+  rebuild:
+    if: ${{ github.event.label.name == 'full-lint' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch pr-build for this PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh workflow run pr-build.yml -R "$REPO" -f pr="$PR"

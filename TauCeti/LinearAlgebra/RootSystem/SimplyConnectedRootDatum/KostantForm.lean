@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Orbit
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
+public import TauCeti.Algebra.Module.IntegralOrbit
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Basic
 
 /-!
@@ -325,13 +325,13 @@ integral form as a hypothesis. This one is preserved by construction, by
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/GeckLattice/Basic.lean`,
 where the orbit is identified with the coordinate lattice. -/
 def geckOrbit : Submodule ℤ (t.GeckIndex ht → ℚ) :=
-  UniversalEnvelopingAlgebra.orbitOfRep (t.kostantForm ht) (t.geckRepresentation ht)
+  Subring.orbitOfRep (t.kostantForm ht) (t.geckRepresentation ht)
     (range fun x => Pi.single x 1)
 
 /-- The pinned integral orbit is the generic represented orbit of the standard coordinate
 vectors. -/
 theorem geckOrbit_def :
-    t.geckOrbit ht = UniversalEnvelopingAlgebra.orbitOfRep (t.kostantForm ht)
+    t.geckOrbit ht = Subring.orbitOfRep (t.kostantForm ht)
       (t.geckRepresentation ht) (range fun x => Pi.single x 1) := (rfl)
 
 /-- A Kostant-form translate of a standard coordinate vector lies in the integral orbit. -/
@@ -340,14 +340,14 @@ theorem geckRepresentation_single_mem_geckOrbit
     (x : t.GeckIndex ht) :
     t.geckRepresentation ht u (Pi.single x 1) ∈ t.geckOrbit ht := by
   rw [geckOrbit_def]
-  exact UniversalEnvelopingAlgebra.apply_mem_orbitOfRep _ _ _ hu (mem_range_self x)
+  exact Subring.apply_mem_orbitOfRep _ _ _ hu (mem_range_self x)
 
 /-- Every standard coordinate vector lies in the integral orbit, the identity of the enveloping
 algebra being one of the elements the orbit is taken over. -/
 theorem single_mem_geckOrbit (x : t.GeckIndex ht) :
     Pi.single x (1 : ℚ) ∈ t.geckOrbit ht := by
   rw [geckOrbit_def]
-  exact UniversalEnvelopingAlgebra.subset_orbitOfRep _ _ _ (mem_range_self x)
+  exact Subring.subset_orbitOfRep _ _ _ (mem_range_self x)
 
 /-- **The integral orbit is stable under the Kostant form.** This is the hypothesis a Kostant root
 subgroup needs of the stable `ℤ`-submodule it acts on, and it holds here because the orbit is taken
@@ -357,14 +357,14 @@ theorem geckRepresentation_mem_geckOrbit
     {v : t.GeckIndex ht → ℚ} (hv : v ∈ t.geckOrbit ht) :
     t.geckRepresentation ht u v ∈ t.geckOrbit ht := by
   rw [geckOrbit_def] at hv ⊢
-  exact UniversalEnvelopingAlgebra.apply_mem_orbitOfRep_of_mem _ _ _ hu hv
+  exact Subring.apply_mem_orbitOfRep_of_mem _ _ _ hu hv
 
 /-- The elimination principle for the pinned integral orbit. -/
 theorem geckOrbit_le_iff (N : Submodule ℤ (t.GeckIndex ht → ℚ)) :
     t.geckOrbit ht ≤ N ↔
       ∀ u ∈ t.kostantForm ht, ∀ x,
         t.geckRepresentation ht u (Pi.single x 1) ∈ N := by
-  rw [geckOrbit_def, UniversalEnvelopingAlgebra.orbitOfRep_le_iff]
+  rw [geckOrbit_def, Subring.orbitOfRep_le_iff]
   constructor
   · intro h u hu x
     exact h u hu (Pi.single x 1) (mem_range_self x)
@@ -377,7 +377,7 @@ theorem span_geckOrbit_eq_top :
     Submodule.span ℚ (t.geckOrbit ht : Set (t.GeckIndex ht → ℚ)) = ⊤ := by
   classical
   rw [geckOrbit_def]
-  apply UniversalEnvelopingAlgebra.span_orbitOfRep_eq_top
+  apply Subring.span_orbitOfRep_eq_top
   have hrange : range (fun x : t.GeckIndex ht => Pi.single x (1 : ℚ)) =
       range (Pi.basisFun ℚ (t.GeckIndex ht)) :=
     congrArg Set.range

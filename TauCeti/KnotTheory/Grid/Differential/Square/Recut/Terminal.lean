@@ -20,7 +20,7 @@ in the orientation where the two rectangles share their *terminal* side column, 
 initial-side orientation built in `TauCeti.KnotTheory.Grid.Differential.Square.Recut.Initial`.
 
 The two orientations are genuinely different configurations rather than one another's image under
-a symmetry of the situation. Reversing a rectangle (`GridRectangleBetween.symm`) does exchange its
+a symmetry of the situation. Reversing a rectangle (to the one from `y` to `x`) does exchange its
 two side columns, but it spans the complementary arc of columns and hence does not preserve
 emptiness; and the diagonal reflection `GridRectangleDecomposition.transpose` exchanges side
 columns with corner rows, so it carries a common terminal side column to a coincidence of corner

@@ -57,6 +57,9 @@ categorical action on the fibre is `IsCoveringMap.fundamentalGroupMulAction`, an
   `TauCeti.CoveringSpace.fiberActionFunctor_obj_ρ_apply`,
   `TauCeti.CoveringSpace.fiberActionFunctor_obj_mulAction` and
   `TauCeti.CoveringSpace.fiberActionFunctor_map_hom`: its values.
+* `TauCeti.CoveringSpace.fiberActionFunctor_faithful`,
+  `TauCeti.CoveringSpace.fiberActionFunctor_full`: over a path-connected, locally path-connected
+  base the functor is fully faithful, without semilocal simple connectivity.
 * `TauCeti.CoveringSpace.fiberActionEquivalence`: **covering spaces of `X` are equivalent to
   `π₁(X, x₀)`-sets.**
 * `TauCeti.ConnectedCoveringSpace.isTransitiveAction_fiberAction`: the `π₁(X, x₀)`-set attached to a
@@ -71,15 +74,11 @@ categorical action on the fibre is `IsCoveringMap.fundamentalGroupMulAction`, an
 
 ## References
 
-This is the `π₁(X)`-set form of the alternative lens on Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`, which asks to "phrase the classification of
-connected covers via transitive `π₁(X)`-sets / the monodromy functor, with disconnected covers
-as functors out of the fundamental groupoid"; see Hatcher, *Algebraic Topology*, Section 1.3. It
-consumes the fundamental-groupoid classification of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.MonodromyEquivalence`, the
-stabiliser-cover reconstruction of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, which rests on the
-based-path universal cover adapted from Kim Morrison's
+This is the `π₁(X)`-set form of the classification of covering spaces; see Hatcher, *Algebraic
+Topology*, Section 1.3. It consumes the fundamental-groupoid classification of
+`TauCeti.AlgebraicTopology.UniversalCover.Classification.MonodromyEquivalence`, the stabiliser-cover
+reconstruction of `TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, which
+rests on the based-path universal cover adapted from Kim Morrison's
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), and Mathlib's
 `CategoryTheory.Action.functorCategoryEquivalence`; no Mathlib proof is vendored.
 -/
@@ -118,7 +117,7 @@ theorem fiberActionFunctor_obj_V (p : CoveringSpace X) :
 @[simp]
 theorem fiberActionFunctor_obj_ρ_apply (p : CoveringSpace X) (g : FundamentalGroup X x₀)
     (e : ⇑p.proj ⁻¹' {x₀}) :
-    ((fiberActionFunctor x₀).obj p).ρ g e = p.isCoveringMap_proj.monodromy g e :=
+    ((fiberActionFunctor x₀).obj p).ρ g e = p.isCoveringMap_proj.monodromy g.toPath e :=
   (rfl)
 
 /-- The `MulAction` carried by the fundamental-group set attached to a cover is Mathlib's
@@ -135,6 +134,24 @@ theorem fiberActionFunctor_map_hom {p q : CoveringSpace X} (f : p ⟶ q) :
       ↾(Function.fiberMap f.hom.left.hom (proj_hom_comp_hom_left_hom f) x₀) :=
   IsCoveringMap.monodromyNatTrans_app p.isCoveringMap_proj q.isCoveringMap_proj
     f.hom.left.hom (proj_hom_comp_hom_left_hom f) x₀
+
+/-- Over a path-connected base, the fibre-action functor is faithful: the fundamental groupoid is
+connected, so restricting its actions to the vertex group at `x₀` is an equivalence. -/
+instance fiberActionFunctor_faithful [PathConnectedSpace X] :
+    (fiberActionFunctor x₀).Faithful := by
+  have := Groupoid.isEquivalence_singleObjFunctor (C := FundamentalGroupoid X)
+    (FundamentalGroupoid.mk x₀) (FundamentalGroupoid.nonempty_hom _)
+  unfold fiberActionFunctor
+  infer_instance
+
+/-- Over a path-connected, locally path-connected base, the fibre-action functor is full: every
+`π₁(X, x₀)`-equivariant map of fibres over `x₀` is induced by a map of covering spaces. -/
+instance fiberActionFunctor_full [PathConnectedSpace X] [LocallyPathConnectedSpace X] :
+    (fiberActionFunctor x₀).Full := by
+  have := Groupoid.isEquivalence_singleObjFunctor (C := FundamentalGroupoid X)
+    (FundamentalGroupoid.mk x₀) (FundamentalGroupoid.nonempty_hom _)
+  unfold fiberActionFunctor
+  infer_instance
 
 section Classification
 
@@ -216,6 +233,7 @@ instance transitiveFiberActionFunctor_faithful :
 instance transitiveFiberActionFunctor_full : (transitiveFiberActionFunctor x₀).Full :=
   inferInstanceAs <| (ObjectProperty.lift _ _ _).Full
 
+omit [PathConnectedSpace X] in
 /-- **Every transitive `π₁(X, x₀)`-set is the fibre action of a connected cover.** The cover is
 the quotient of the universal cover by the stabiliser of a point of the set. -/
 theorem exists_fiberAction_iso (A : Action (Type u) (FundamentalGroup X x₀))

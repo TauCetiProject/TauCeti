@@ -38,7 +38,10 @@ characters.
 * `TauCeti.GlobalNumberFields.RayClassCharacter.induced_injective`: increasing the modulus does
   not identify distinct characters;
 * `TauCeti.GlobalNumberFields.RayClassCharacter.onIdeals_induced`: change of modulus commutes
-  with evaluation on ideals.
+  with evaluation on ideals;
+* `TauCeti.GlobalNumberFields.RayClassCharacter.exists_induced_eq_iff_of_finitePart_eq`: a
+  character is induced from a modulus with the same finite part exactly when it is trivial on the
+  sign classes of the forgotten real places.
 
 ## References
 
@@ -137,6 +140,26 @@ theorem onIdeals_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪)
     (I : integralIdealsPrimeTo 𝔫) :
     (χ.induced h).onIdeals I = χ.onIdeals (integralIdealsPrimeToInclusion h I) := by
   simp
+
+/-- **Inducing from a modulus with the same finite part is a condition on sign classes.**  When
+`𝔪 ∣ 𝔫` have the same finite part, a ray class character of `𝔫` is induced from `𝔪` exactly when
+it is trivial on the classes `residueSignRayClass 𝔫 (1, s)` of every pattern of signs `s` trivial
+at the real places of `𝔪`. -/
+theorem exists_induced_eq_iff_of_finitePart_eq (h : 𝔪 ∣ 𝔫) (hfin : 𝔪.finitePart = 𝔫.finitePart)
+    (η : RayClassCharacter 𝔫) :
+    (∃ ψ : RayClassCharacter 𝔪, ψ.induced h = η) ↔
+      ∀ s : 𝔫.infinitePart → ℤˣ, (∀ w : 𝔫.infinitePart, w.1 ∈ 𝔪.infinitePart → s w = 1) →
+        η (residueSignRayClass 𝔫 (1, s)) = 1 := by
+  constructor
+  · rintro ⟨ψ, rfl⟩ s hs
+    rw [induced_apply, (classMap_eq_one_iff_of_finitePart_eq h hfin _).mpr ⟨s, hs, rfl⟩, map_one]
+  · intro hη
+    have hker : (classMap h).ker ≤ η.ker := fun c hc ↦ by
+      obtain ⟨s, hs, rfl⟩ := (classMap_eq_one_iff_of_finitePart_eq h hfin c).mp hc
+      exact hη s hs
+    refine ⟨MonoidHom.liftOfSurjective (classMap h) (classMap_surjective h) ⟨η, hker⟩,
+      MonoidHom.ext fun c ↦ ?_⟩
+    rw [induced_apply, MonoidHom.liftOfRightInverse_comp_apply]
 
 end RayClassCharacter
 

@@ -10,7 +10,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
 import Mathlib.Probability.Independence.InfinitePi
 import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.OfMatrixGrid
 import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
-import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel
+import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel.Basic
 import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Approximation
 import TauCeti.MeasureTheory.MeasurableSpace.Finpartition
 import TauCeti.Probability.Moments.Pi
@@ -339,9 +339,11 @@ private theorem cutDist_comap_tendsto_inProbability_of_countablyGenerated
   set U := countableStepGraphonAvg W k
   have hL : ∫ p, |U p.1 p.2 - W p.1 p.2| ∂(μ.prod μ) < τ := by
     have h := ENNReal.toReal_lt_of_lt_ofReal hk
-    rw [eLpNorm_one_eq_lintegral_enorm, ← integral_norm_eq_lintegral_enorm
-      (f := (fun z : Ω × Ω => U z.1 z.2) - fun z : Ω × Ω => W z.1 z.2)
-      (U.measurable.sub W.measurable).aestronglyMeasurable] at h
+    have hmeas : AEStronglyMeasurable
+        ((fun z : Ω × Ω => U z.1 z.2) - fun z : Ω × Ω => W z.1 z.2) (μ.prod μ) :=
+      (U.measurable.sub W.measurable).aestronglyMeasurable
+    rw [eLpNorm_one_eq_lintegral_enorm hmeas,
+      ← integral_norm_eq_lintegral_enorm hmeas] at h
     simpa only [Pi.sub_apply, Real.norm_eq_abs] using h
   -- It factors through the part index of its partition.
   set P := Finpartition.countablePartition Ω k
@@ -361,7 +363,6 @@ private theorem cutDist_comap_tendsto_inProbability_of_countablyGenerated
         (P.indexedPartition.mem_index z'), hx, hx']
   -- The sampling error beyond `3 L / ε` decays like `1 / n`.
   set A := 3 / ε + 9 * (Fintype.card P.parts : ℝ) ^ 3 / ε ^ 2 with hAdef
-  have hA : 0 ≤ A := by positivity
   obtain ⟨N, hN⟩ := exists_nat_gt (2 * A / δ)
   refine ⟨N, fun n hn => ?_⟩
   have hn1 : (0 : ℝ) < (n + 1 : ℕ) := by positivity

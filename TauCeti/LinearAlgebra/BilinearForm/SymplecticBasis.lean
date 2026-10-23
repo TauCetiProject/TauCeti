@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
-import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Symplectic bases of nondegenerate alternating forms
@@ -49,6 +48,8 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
   a symplectic basis.**
 * `LinearMap.BilinForm.IsAlt.even_finrank`: a space carrying a nondegenerate alternating form has
   even dimension.
+* `LinearMap.BilinForm.IsAlt.exists_basis_apply_eq_J_inl_zero_eq`: every nonzero vector is the
+  vector at `inl 0` of some symplectic basis.
 
 ## References
 
@@ -108,8 +109,7 @@ of the hyperbolic pair `e, f`. -/
 theorem IsAlt.sub_smul_add_smul_mem_orthogonal_span_pair (u : M) :
     u - B f u • e + B e u • f ∈ B.orthogonal (span R {e, f}) := by
   have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
-  rw [mem_orthogonal_span_pair_iff]
-  simp [hfe, hef, hB.self_eq_zero]
+  simp [orthogonal, hfe, hef, hB.self_eq_zero]
 
 /-- The restriction of a nondegenerate alternating form to the orthogonal complement of the span
 of a hyperbolic pair is nondegenerate. -/
@@ -119,7 +119,7 @@ theorem IsAlt.restrict_nondegenerate_orthogonal_span_pair (hnd : B.Nondegenerate
     rw [restrict_apply] at h ⊢
     exact hB.isRefl x y h
   refine (IsRefl.nondegenerate_iff_separatingLeft hrefl).2 fun z hz => ?_
-  obtain ⟨hez, hfz⟩ := (mem_orthogonal_span_pair_iff B).1 z.2
+  obtain ⟨hez, hfz⟩ : B e z = 0 ∧ B f z = 0 := by simpa [orthogonal] using z.2
   suffices key : (z : M) = 0 from Submodule.coe_eq_zero.1 key
   refine hnd.1 z fun u => ?_
   have hz' := hz ⟨_, hB.sub_smul_add_smul_mem_orthogonal_span_pair hfe u⟩
@@ -132,7 +132,7 @@ private theorem IsAlt.iSup_comap_orthogonal_span_pair_eq_top {ι : Type*} {W : �
     (horth : ∀ i j, j ≠ σ i → ∀ v ∈ W i, ∀ w ∈ W j, B v w = 0)
     {i : ι} (he : e ∈ W i) (hf : f ∈ W (σ i)) :
     ⨆ j, (W j).comap (B.orthogonal (span R {e, f})).subtype = ⊤ := by
-  set Z := B.orthogonal (span R {e, f}) with hZ
+  set Z := B.orthogonal (span R {e, f})
   set p : M →ₗ[R] M := LinearMap.id - (B f).smulRight e + (B e).smulRight f with hp_def
   have hpu : ∀ u, p u = u - B f u • e + B e u • f := fun u => by simp [hp_def]
   have hpZ : ∀ u, p u ∈ Z := fun u => by
@@ -165,7 +165,7 @@ private theorem IsAlt.iSup_comap_orthogonal_span_pair_eq_top {ι : Type*} {W : �
       exact add_mem hx hy
   -- The projection fixes `Z` pointwise.
   refine eq_top_iff.2 fun z _ => ?_
-  obtain ⟨hez, hfz⟩ := (mem_orthogonal_span_pair_iff B).1 z.2
+  obtain ⟨hez, hfz⟩ : B e z = 0 ∧ B f z = 0 := by simpa [Z, orthogonal] using z.2
   have hz : (⟨p z, hpZ z⟩ : Z) = z := Subtype.ext (by simp [hpu, hez, hfz])
   exact hz ▸ hp z
 
@@ -215,8 +215,10 @@ theorem IsAlt.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair {m : ℕ}
     ∃ b : Basis (Fin (m + 1) ⊕ Fin (m + 1)) K V,
       (∀ x y, B (b x) (b y) = Matrix.J (Fin (m + 1)) K x y) ∧
         ⇑b = Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a)) := by
-  have hec : ∀ x, B e (c x) = 0 := fun x => ((mem_orthogonal_span_pair_iff B).1 (c x).2).1
-  have hfc : ∀ x, B f (c x) = 0 := fun x => ((mem_orthogonal_span_pair_iff B).1 (c x).2).2
+  have hecf : ∀ x, B e (c x) = 0 ∧ B f (c x) = 0 := fun x => by
+    simpa [orthogonal] using (c x).2
+  have hec : ∀ x, B e (c x) = 0 := fun x => (hecf x).1
+  have hfc : ∀ x, B f (c x) = 0 := fun x => (hecf x).2
   let d : Fin (m + 1) ⊕ Fin (m + 1) → V :=
     Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a))
   have hd : ∀ x y, B (d x) (d y) = Matrix.J (Fin (m + 1)) K x y :=
@@ -261,7 +263,7 @@ private theorem exists_basis_apply_eq_J_of_iSup_eq_top_aux (n : ℕ) :
   have hf : f ∈ W (σ i) := smul_mem _ _ hw
   have hfe : B f e = 1 := by rw [hf_def]; simp [inv_mul_cancel₀ hwe]
   -- Apply the induction hypothesis to the orthogonal complement of `span {e, f}`.
-  set Z := B.orthogonal (span K {e, f}) with hZ
+  set Z := B.orthogonal (span K {e, f})
   have hZn : finrank K Z + 2 = n := hn ▸ hB.finrank_orthogonal_span_pair_add_two hnd hfe
   obtain ⟨m, c, hc, hcW⟩ := ih (finrank K Z) (by omega) Z rfl (B.restrict Z)
     (fun z => hB.self_eq_zero z) (hB.restrict_nondegenerate_orthogonal_span_pair hfe hnd)
@@ -307,5 +309,28 @@ theorem IsAlt.exists_basis_toMatrix_eq_J :
 theorem IsAlt.even_finrank : Even (finrank K V) := by
   obtain ⟨m, b, -⟩ := hB.exists_basis_toMatrix_eq_J hnd
   exact ⟨m, by rw [finrank_eq_card_basis b, Fintype.card_sum, Fintype.card_fin]⟩
+
+/-- **Every nonzero vector heads a symplectic basis.** For a nondegenerate alternating form on a
+finite-dimensional space and a nonzero vector `e`, there is a basis indexed by
+`Fin (m + 1) ⊕ Fin (m + 1)` in which the matrix of the form is `Matrix.J` and whose vector at the
+position `inl 0` is `e`. -/
+theorem IsAlt.exists_basis_apply_eq_J_inl_zero_eq {e : V} (he : e ≠ 0) :
+    ∃ (m : ℕ) (b : Basis (Fin (m + 1) ⊕ Fin (m + 1)) K V),
+      (∀ x y, B (b x) (b y) = Matrix.J (Fin (m + 1)) K x y) ∧ b (Sum.inl 0) = e := by
+  -- A partner `f` with `B f e = 1`.
+  obtain ⟨w, hw⟩ : ∃ w, B w e ≠ 0 := by
+    by_contra! h
+    exact he (hnd.2 e h)
+  have hfe : B ((B w e)⁻¹ • w) e = 1 := by
+    rw [map_smul, LinearMap.smul_apply, smul_eq_mul, inv_mul_cancel₀ hw]
+  -- A symplectic basis of the orthogonal complement of the hyperbolic pair.
+  have hZ : (B.restrict (B.orthogonal (span K {e, (B w e)⁻¹ • w}))).IsAlt :=
+    fun z => hB.self_eq_zero z
+  obtain ⟨m, c, hc⟩ :=
+    hZ.exists_basis_toMatrix_eq_J (hB.restrict_nondegenerate_orthogonal_span_pair hfe hnd)
+  have hc' : ∀ x y, B (c x) (c y) = Matrix.J (Fin m) K x y := fun x y => by
+    rw [← hc, toMatrix_apply, restrict_apply, LinearMap.domRestrict_apply]
+  obtain ⟨b, hb, hbd⟩ := hB.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair hnd hfe c hc'
+  exact ⟨m, b, hb, by rw [hbd, Sum.elim_inl, Fin.cons_zero]⟩
 
 end LinearMap.BilinForm

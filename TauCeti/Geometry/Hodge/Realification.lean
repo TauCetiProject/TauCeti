@@ -33,13 +33,15 @@ them the values of its real scalar extension.
   conjugation.
 * `TauCeti.Hodge.exists_eq_realificationComplexEquiv_one_tmul`: every real point of the abstract
   complexification comes from the realification.
-* `TauCeti.Hodge.integralFormBaseChange_realificationComplexEquiv_one_tmul`: on such points a
+* `TauCeti.Hodge.bilinForm_realificationComplexEquiv_one_tmul`: on such points a
   complexified integral form is the real scalar extension of that form.
 -/
 
 public section
 
 namespace TauCeti.Hodge
+
+open IsBaseChange
 
 open scoped TensorProduct
 
@@ -107,12 +109,10 @@ theorem realificationComplexEquiv_conj (hℂ : IsBaseChange ℂ ιℂ)
     (x : ℂ ⊗[ℝ] Realification V) :
     realificationComplexEquiv hℂ (tmulConj (Realification V) x) =
       latticeConj hℂ (realificationComplexEquiv hℂ x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul z x =>
-      induction x using TensorProduct.induction_on with
-      | zero => simp
+      induction x using TensorProduct.inductionOn with
       | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
       | tmul r v =>
           rw [tmulConj_tmul, realificationComplexEquiv_tmul_tmul,
@@ -157,14 +157,14 @@ The complexification of an integral bilinear form, evaluated on the images of tw
 under the realification comparison, is the real scalar extension of the form evaluated on those
 vectors. -/
 @[simp]
-theorem integralFormBaseChange_realificationComplexEquiv_one_tmul (hℂ : IsBaseChange ℂ ιℂ)
+theorem bilinForm_realificationComplexEquiv_one_tmul (hℂ : IsBaseChange ℂ ιℂ)
     (Q : LinearMap.BilinForm ℤ V) (x y : Realification V) :
-    integralFormBaseChange hℂ Q (realificationComplexEquiv hℂ (1 ⊗ₜ[ℝ] x))
+    bilinForm hℂ Q (realificationComplexEquiv hℂ (1 ⊗ₜ[ℝ] x))
       (realificationComplexEquiv hℂ (1 ⊗ₜ[ℝ] y)) = (Q.baseChange ℝ x y : ℂ) := by
   have hform : ((Q.baseChange ℝ).baseChange ℂ).compl₁₂
       (realificationComplexEquiv hℂ).symm.toLinearMap
-      (realificationComplexEquiv hℂ).symm.toLinearMap = integralFormBaseChange hℂ Q :=
-    integralFormBaseChange_unique hℂ Q _ fun v w ↦ by simp [Algebra.smul_def]
+      (realificationComplexEquiv hℂ).symm.toLinearMap = bilinForm hℂ Q :=
+    bilinForm_unique hℂ Q _ fun v w ↦ by simp [Algebra.smul_def]
   rw [← hform]
   simp [Algebra.smul_def]
 

@@ -16,8 +16,6 @@ bialgebra isomorphism proves that every point of the multiplicative group `𝔾�
 ## Main declarations
 
 * `TauCeti.MultiplicativeGroup.isSemisimplePoint`: every point of `𝔾ₘ` is semisimple.
-
-This is the `𝔾ₘ = D(ℤ)` example from Layer 4 of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -38,7 +36,7 @@ theorem isSemisimplePoint
     HopfAlgebra.IsSemisimplePoint g := by
   let e := AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ
   have h := DiagonalizableGroup.isSemisimplePoint
-    (AlgHom.mapDomain (e.symm : MonoidAlgebra R (Multiplicative ℤ) →ₐc[R] LaurentPolynomial R) g)
+    (BialgHom.mapDomain (e.symm : MonoidAlgebra R (Multiplicative ℤ) →ₐc[R] LaurentPolynomial R) g)
   exact (HopfAlgebra.isSemisimplePoint_mapDomain_iff e.symm g).mp h
 
 end MultiplicativeGroup

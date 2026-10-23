@@ -442,13 +442,14 @@ private theorem compProd_gaussianCondKernel_eq_map_prod {S : Matrix (ι ⊕ κ) 
 observed covariance block, the regular conditional law of the first coordinate block given the
 second is Gaussian with the Schur-complement covariance and the usual affine conditional mean. -/
 theorem condDistrib_multivariateGaussian {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    [IsProbabilityMeasure P] (X : Ω → EuclideanSpace ℝ (ι ⊕ κ))
+    [IsFiniteMeasure P] (X : Ω → EuclideanSpace ℝ (ι ⊕ κ))
     (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
     (hX : HasLaw X (multivariateGaussian m S) P) (hS : S.PosSemidef)
     (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) :
     condDistrib (fun ω => (EuclideanSpace.sumEquivProd (X ω)).1)
         (fun ω => (EuclideanSpace.sumEquivProd (X ω)).2) P =ᵐ[
       P.map (fun ω => (EuclideanSpace.sumEquivProd (X ω)).2)] m.gaussianCondKernel S := by
+  let : IsProbabilityMeasure P := hX.isProbabilityMeasure
   let X₁ := fun ω => (EuclideanSpace.sumEquivProd (X ω)).1
   let X₂ := fun ω => (EuclideanSpace.sumEquivProd (X ω)).2
   let R := fun x : EuclideanSpace ℝ (ι ⊕ κ) => (gaussianResidualMatrix S).toEuclideanLin x

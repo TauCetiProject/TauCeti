@@ -105,7 +105,7 @@ theorem locallyIntegrable_newtonianKernel (n : ℕ) :
         (F := ℝ) (f := newtonianKernel n) (α := (n : ℝ) - 2) (C := C) ?_ ?_ ?_ ?_
       · have hn1 : 1 ≤ n := le_trans (by norm_num) hn
         simpa [finrank_euclideanSpace, Fintype.card_fin] using hn1
-      · have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
+      · have _ : (3 : ℝ) ≤ n := by exact_mod_cast hn
         rw [finrank_euclideanSpace_fin]
         linarith
       · refine Filter.Eventually.of_forall ?_
@@ -163,7 +163,7 @@ theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) :
       (α := (n : ℝ) - 1) (C := C) ?_ ?_ ?_ ?_
     · simpa [finrank_euclideanSpace, Fintype.card_fin] using hn1
     · rw [finrank_euclideanSpace_fin]
-      have hnℝ : (1 : ℝ) ≤ n := by exact_mod_cast hn1
+      have _ : (1 : ℝ) ≤ n := by exact_mod_cast hn1
       linarith
     · filter_upwards [hae] with x hx
       rw [norm_fderiv_newtonianKernel n hn2 hx]

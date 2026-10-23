@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Central.Matrix
 public import Mathlib.Algebra.Central.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.LittleWedderburn
 public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 

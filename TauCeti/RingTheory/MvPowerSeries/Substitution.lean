@@ -51,6 +51,15 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   every other to `0`, for an index type of any size.
 * `MvPowerSeries.ne_of_subst_eq_X_of_subst_eq_zero` : a substitution sending one series to `X` and
   another to `0` separates them.
+* `MvPowerSeries.subst_powerSeriesSubst` : substituting into the composite of a one-variable
+  series with a multivariate one is substituting into the inner series.
+* `MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero` : substituting a family of series
+  without constant term preserves the constant coefficient.
+* `MvPowerSeries.hasSubst_finTwo` : two substitutable series form a substitution family `![x, y]`
+  for the two variables indexed by `Fin 2`.
+* `MvPowerSeries.finTwo_X_eq_X` : the pair `![X 0, X 1]` is the family of variables `X`.
+* `MvPowerSeries.coeff_subst_X_zero`, `MvPowerSeries.coeff_subst_zero_X` : the coefficients of
+  `f(X, 0)` and `f(0, Y)` are the coefficients of the pure powers of `X` and of `Y` in `f(X, Y)`.
 
 ## Separating multivariable parameters
 
@@ -234,6 +243,79 @@ theorem ne_of_subst_eq_X_of_subst_eq_zero {O : Type*} [CommRing O] [Nontrivial O
     {g : σ' → MvPowerSeries Unit O} {a b : MvPowerSeries σ' O}
     (ha : subst g a = PowerSeries.X) (hb : subst g b = 0) : a ≠ b := fun hab ↦
   PowerSeries.X_ne_zero (by rw [← ha, hab]; exact hb)
+
+/-- Substituting `b` into the composite `f ∘ g` of a one-variable series `f` with a multivariate
+series `g` is substituting `g ∘ b` into `f`. -/
+theorem subst_powerSeriesSubst {O : Type*} [CommRing O] {σ' τ' : Type*}
+    {b : σ' → MvPowerSeries τ' O} (hb : HasSubst b) {g : MvPowerSeries σ' O}
+    (hg : PowerSeries.HasSubst g) (f : PowerSeries O) :
+    subst b (PowerSeries.subst g f) = PowerSeries.subst (subst b g) f := by
+  rw [PowerSeries.subst_def, PowerSeries.subst_def, subst_comp_subst_apply hg.const hb]
+
+/-- Substituting a family of series without constant term preserves the constant coefficient.
+
+This is the multivariate analogue of `PowerSeries.constantCoeff_subst_of_constantCoeff_zero`. -/
+theorem constantCoeff_subst_of_constantCoeff_zero {O O' : Type*} [CommRing O] [CommRing O']
+    [Algebra O O'] {σ' τ' : Type*} {a : σ' → MvPowerSeries τ' O'} (ha : HasSubst a)
+    (ha' : ∀ i, constantCoeff (a i) = 0) (f : MvPowerSeries σ' O) :
+    constantCoeff (subst a f) = algebraMap O O' (constantCoeff f) := by
+  rw [constantCoeff_subst ha, finsum_eq_single _ 0]
+  · simp [Algebra.algebraMap_eq_smul_one, coeff_zero_eq_constantCoeff_apply]
+  · intro d hd
+    obtain ⟨i, hi⟩ : ∃ i, d i ≠ 0 := by
+      by_contra! hc
+      exact hd <| Finsupp.ext hc
+    -- the monomial `aᵈ` has a factor `a i` without constant term
+    have : constantCoeff (d.prod fun s e ↦ a s ^ e) = 0 := by
+      rw [Finsupp.prod, map_prod]
+      exact Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hi) (by
+        rw [map_pow, ha', zero_pow hi])
+    rw [this, smul_zero]
+
+section FinTwo
+
+variable {O : Type*} [CommRing O]
+
+/-- Two series that can each be substituted into a one-variable series form a substitution family
+`![x, y]` for the two variables indexed by `Fin 2`, as for evaluating a formal group law at
+`(x, y)`. -/
+theorem hasSubst_finTwo {x y : MvPowerSeries σ O} (hx : PowerSeries.HasSubst x)
+    (hy : PowerSeries.HasSubst y) : HasSubst ![x, y] :=
+  hasSubst_of_constantCoeff_nilpotent fun s ↦ by fin_cases s <;> simpa
+
+/-- The pair of variables `![X 0, X 1]` is the family of variables `X` indexed by `Fin 2`, so
+substituting it is the identity (`subst_self`). -/
+theorem finTwo_X_eq_X {A : Type*} [Semiring A] : ![(X 0 : MvPowerSeries (Fin 2) A), X 1] = X := by
+  funext s
+  fin_cases s <;> rfl
+
+/-- Setting `Y = 0` in a two-variable series `f(X, Y)` keeps exactly the pure powers of `X`: the
+coefficient of `Xⁿ` in `f(X, 0)` is the coefficient of `Xⁿ` in `f`. -/
+theorem coeff_subst_X_zero (f : MvPowerSeries (Fin 2) O) (n : ℕ) :
+    PowerSeries.coeff n (subst ![PowerSeries.X, 0] f) = coeff (Finsupp.single 0 n) f := by
+  rw [PowerSeries.coeff, coeff_subst (a := ![PowerSeries.X, 0]) HasSubst.X_zero,
+    finsum_eq_single _ (Finsupp.single 0 n)]
+  · simp [PowerSeries.coeff_X_pow]
+  · intro d hd
+    by_cases hd₁ : d 1 = 0
+    · have : n ≠ d 0 := fun h ↦ hd (by ext i; fin_cases i <;> simp_all)
+      simp [Finsupp.prod_fintype, hd₁, PowerSeries.coeff_X_pow, this]
+    · simp [Finsupp.prod_fintype, hd₁]
+
+/-- Setting `X = 0` in a two-variable series `f(X, Y)` keeps exactly the pure powers of `Y`: the
+coefficient of `Yⁿ` in `f(0, Y)` is the coefficient of `Yⁿ` in `f`. -/
+theorem coeff_subst_zero_X (f : MvPowerSeries (Fin 2) O) (n : ℕ) :
+    PowerSeries.coeff n (subst ![0, PowerSeries.X] f) = coeff (Finsupp.single 1 n) f := by
+  rw [PowerSeries.coeff, coeff_subst (a := ![0, PowerSeries.X]) HasSubst.zero_X,
+    finsum_eq_single _ (Finsupp.single 1 n)]
+  · simp [PowerSeries.coeff_X_pow]
+  · intro d hd
+    by_cases hd₀ : d 0 = 0
+    · have : n ≠ d 1 := fun h ↦ hd (by ext i; fin_cases i <;> simp_all)
+      simp [Finsupp.prod_fintype, hd₀, PowerSeries.coeff_X_pow, this]
+    · simp [Finsupp.prod_fintype, hd₀]
+
+end FinTwo
 
 end MvPowerSeries
 

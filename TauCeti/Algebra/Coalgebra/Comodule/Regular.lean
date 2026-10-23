@@ -19,10 +19,6 @@ This file packages the regular right comodule of a coalgebra as a bundled object
 the rank-one free module `R` into the regular comodule, and multiplication of a bialgebra
 as a morphism from the tensor square of its regular comodule.
 
-This is Layer 1 infrastructure for the Tau Ceti reductive-groups roadmap target
-"Comodules over a coalgebra/Hopf algebra", specifically the regular-representation part of
-the finitely generated comodule category.
-
 ## Main definitions
 
 * `TauCeti.ComoduleCat.regular`: the bundled regular right comodule.
@@ -143,13 +139,11 @@ noncomputable def regularMul : Hom R H (H ⊗[R] H) H where
             (Comodule.tensorCombine (R := R) (C := H) (M := H) (N := H) (a ⊗ₜ[R] b)) =
           TensorProduct.map (LinearMap.mul' R H) (LinearMap.mul' R H)
             (TensorProduct.tensorTensorTensorComm R H H H H (a ⊗ₜ[R] b)) := by
-      induction a using TensorProduct.induction_on with
-      | zero => simp
+      induction a using TensorProduct.inductionOn with
       | add a₁ a₂ ha₁ ha₂ =>
         simp only [TensorProduct.add_tmul, map_add, ha₁, ha₂]
       | tmul a₁ a₂ =>
-        induction b using TensorProduct.induction_on with
-        | zero => simp
+        induction b using TensorProduct.inductionOn with
         | add b₁ b₂ hb₁ hb₂ =>
           simp only [TensorProduct.tmul_add, map_add, hb₁, hb₂]
         | tmul b₁ b₂ => simp

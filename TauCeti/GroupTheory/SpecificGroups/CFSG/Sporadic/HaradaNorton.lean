@@ -27,7 +27,7 @@ t⁵, t^a t², t^c t⁻², [t,b], (dt)³.
 
 Here `[r,s] = r⁻¹s⁻¹rs` and `r^s = s⁻¹rs`, following the Magma source. Mathlib's
 `commutatorElement` uses the opposite commutator convention, so a source commutator is represented
-by `Relator.comm (.inv r) (.inv s)`. Conjugates are expanded directly in the structured
+by `Relator.commInvInv r s`. Conjugates are expanded directly in the structured
 expressions. The proved `TauCeti.Relator.toWord_toFreeGroup` theorem is the audit boundary between
 these expressions and the signed words consumed by `PresentedGroup`.
 
@@ -142,23 +142,23 @@ def hnPresentation : GroupPresentation where
   expectedRelatorCount := 19
   transcribed :=
     [ .pow a 4,
-      Relator.comm (.inv (.pow a 2)) (.inv b),
+      Relator.commInvInv (.pow a 2) b,
       .pow b 7,
       .pow (a ⬝ .pow b 2) 4,
       .pow (.inv a) 2 ⬝ .pow (a ⬝ b ⬝ a ⬝ .pow b 3) 3,
       .pow (.pow (a ⬝ b) 3 ⬝ a ⬝ .pow (.inv b) 3) 2,
       .pow c 2 ⬝ .pow a 2,
-      Relator.comm (.inv a) (.inv c),
-      Relator.comm (.inv (b ⬝ a ⬝ b)) (.inv c),
+      Relator.commInvInv a c,
+      Relator.commInvInv (b ⬝ a ⬝ b) c,
       .pow (b ⬝ a ⬝ .pow b 3 ⬝ c) 3,
       .pow d 2,
       .pow (a ⬝ d) 2,
-      Relator.comm (.inv b) (.inv d),
+      Relator.commInvInv b d,
       .inv dConjugator ⬝ d ⬝ dConjugator ⬝ .pow (c ⬝ d) 3,
       .pow t 5,
       .inv a ⬝ t ⬝ a ⬝ .pow t 2,
       .inv c ⬝ t ⬝ c ⬝ .pow (.inv t) 2,
-      Relator.comm (.inv t) (.inv b),
+      Relator.commInvInv t b,
       .pow (d ⬝ t) 3 ]
 
 /-- The generator names recorded for `HN`. The row's body is sealed, so this equation is what shows
@@ -274,7 +274,7 @@ theorem hnPresentation_transcribed :
         Relator.comm (.inv (.gen ⟨4, by simp⟩)) (.inv (.gen ⟨1, by simp⟩)),
         -- (dt)³
         .pow (.gen ⟨3, by simp⟩ ⬝ .gen ⟨4, by simp⟩) 3 ] := by
-  simp [hnPresentation]
+  simp [hnPresentation, Relator.commInvInv]
 
 /-- The generator and relator counts recorded for `HN` agree with the transcribed data. -/
 theorem hnPresentation_matchesMetadata : hnPresentation.matchesMetadata := by decide
@@ -298,7 +298,7 @@ theorem hnPresentation_not_relatorsCyclicallyReduced :
     ¬ hnPresentation.relatorsCyclicallyReduced := by
   simp only [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
     hnPresentation, List.map_cons, List.map_nil, Relator.toWord_mul, Relator.toWord_pow,
-    Relator.toWord_inv, Relator.toWord_comm, Relator.toWord_gen]
+    Relator.toWord_inv, Relator.toWord_commInvInv, Relator.toWord_gen]
   decide
 
 /-- Free reduction makes every compiled `HN` relator word cyclically reduced. -/

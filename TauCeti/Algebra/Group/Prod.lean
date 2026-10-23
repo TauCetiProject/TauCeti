@@ -15,15 +15,26 @@ A product of two monoids is their coproduct in commutative monoids: a homomorphi
 `N →* P`, recovered by restricting along the two inclusions. Mathlib has the two directions
 separately, as `MonoidHom.coprod` and composition with `MonoidHom.inl` and `MonoidHom.inr`,
 together with the fact that they are mutually inverse; this file packages them as the
-corresponding equivalence.
+corresponding equivalence, and records that such a homomorphism is the product of its two
+restrictions pulled back along the projections.
+
+For a homomorphism `f : M × N →* P` into a group, the triangular map
+`(m, n) ↦ (m, f (m, n))` is surjective exactly when its second component on `{1} × N` is
+surjective. The additive version gives the same criterion for additive homomorphisms, without
+any scalar or topological assumptions.
 
 The file also records the value and the inverse of a product `MulEquiv.prodCongr` of two
-multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`.
+multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`, and
+recognizes a commutative monoid with projections and inclusions satisfying the biproduct
+identities as the product of the two factors.
 
 ## Main definitions
 
 * `MonoidHom.coprodEquiv`: the multiplicative equivalence `((M →* P) × (N →* P)) ≃* (M × N →* P)`
   for `P` a commutative monoid.
+* `MulEquiv.ofProdCoprod`: the multiplicative equivalence `P ≃* A × B` determined by
+  projections `P →* A`, `P →* B` and inclusions `A →* P`, `B →* P` satisfying the biproduct
+  identities.
 * `MulEquiv.prodCongr_apply`, `MulEquiv.prodCongr_symm`: the product of two isomorphisms acts
   componentwise, and its inverse is the product of the inverses.
 -/
@@ -31,6 +42,8 @@ multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv
 public section
 
 namespace MonoidHom
+
+section CoprodEquiv
 
 variable {M N P : Type*} [MulOneClass M] [MulOneClass N] [CommMonoid P]
 
@@ -58,6 +71,39 @@ product restricts it along the two inclusions. -/]
 theorem coprodEquiv_symm_apply (f : M × N →* P) :
     coprodEquiv.symm f = (f.comp (inl M N), f.comp (inr M N)) := (rfl)
 
+/-- A homomorphism out of a product is the product of its restrictions to the two factors,
+pulled back along the two projections. -/
+@[to_additive /-- A homomorphism out of a product is the sum of its restrictions to the two
+factors, pulled back along the two projections. -/]
+theorem comp_inl_comp_fst_mul_comp_inr_comp_snd (f : M × N →* P) :
+    (f.comp (inl M N)).comp (fst M N) * (f.comp (inr M N)).comp (snd M N) = f := by
+  ext x
+  simp [← map_mul]
+
+end CoprodEquiv
+
+variable {M N P : Type*} [MulOneClass M] [MulOneClass N] [Group P]
+
+/-- The triangular map `(m, n) ↦ (m, f (m, n))` is surjective if and only if the restriction
+of `f` to `{1} × N` is surjective. Neither factor of the domain needs inverses. -/
+@[to_additive (attr := simp) surjective_fst_prod_iff
+/-- The triangular map `(m, n) ↦ (m, f (m, n))` is surjective
+if and only if the restriction of `f` to `{0} × N` is surjective. Neither factor of the domain
+needs additive inverses. -/]
+theorem surjective_fst_prod_iff (f : M × N →* P) :
+    Function.Surjective ((fst M N).prod f) ↔ Function.Surjective (f.comp (inr M N)) := by
+  constructor
+  · intro h p
+    obtain ⟨⟨m, n⟩, hmn⟩ := h (1, p)
+    have hm : m = 1 := congrArg Prod.fst hmn
+    exact ⟨n, by simpa [hm] using congrArg Prod.snd hmn⟩
+  · intro h ⟨m, p⟩
+    obtain ⟨n, hn⟩ := h ((f (m, 1))⁻¹ * p)
+    refine ⟨(m, n), Prod.ext rfl ?_⟩
+    have hsplit : f (m, n) = f (m, 1) * f (1, n) := by
+      rw [← map_mul, Prod.mk_mul_mk, mul_one, one_mul]
+    simpa [hsplit] using congrArg (f (m, 1) * ·) hn
+
 end MonoidHom
 
 namespace MulEquiv
@@ -75,5 +121,48 @@ theorem prodCongr_apply (f : M ≃* M') (g : N ≃* N') (x : M × N) :
 /-- The inverse of a product of two additive isomorphisms is the product of the inverses. -/]
 theorem prodCongr_symm (f : M ≃* M') (g : N ≃* N') :
     (f.prodCongr g).symm = f.symm.prodCongr g.symm := (rfl)
+
+section ofProdCoprod
+
+variable {P A B : Type*} [CommMonoid P] [MulOneClass A] [MulOneClass B]
+  (fst : P →* A) (snd : P →* B) (inl : A →* P) (inr : B →* P)
+  (h : (inl.coprod inr).comp (fst.prod snd) = MonoidHom.id P)
+  (fst_inl : fst.comp inl = MonoidHom.id A) (fst_inr : fst.comp inr = 1)
+  (snd_inl : snd.comp inl = 1) (snd_inr : snd.comp inr = MonoidHom.id B)
+
+/-- A commutative monoid `P` with projections `fst : P →* A`, `snd : P →* B` and inclusions
+`inl : A →* P`, `inr : B →* P` satisfying the biproduct identities is the product `A × B`: the
+forward map is `fst.prod snd` and the inverse is `inl.coprod inr`. -/
+@[to_additive ofProdCoprod
+/-- An additive commutative monoid `P` with projections `fst : P →+ A`,
+`snd : P →+ B` and inclusions `inl : A →+ P`, `inr : B →+ P` satisfying the biproduct identities
+is the product `A × B`: the forward map is `fst.prod snd` and the inverse is
+`inl.coprod inr`. -/]
+def ofProdCoprod : P ≃* A × B where
+  toFun := fst.prod snd
+  invFun := inl.coprod inr
+  map_mul' := map_mul _
+  left_inv x := DFunLike.congr_fun h x
+  right_inv := fun ⟨x, y⟩ => by
+    apply Prod.ext
+    · simpa using congrArg₂ (· * ·)
+        (DFunLike.congr_fun fst_inl x) (DFunLike.congr_fun fst_inr y)
+    · simpa using congrArg₂ (· * ·)
+        (DFunLike.congr_fun snd_inl x) (DFunLike.congr_fun snd_inr y)
+
+/-- The equivalence `MulEquiv.ofProdCoprod` is given by the two projections. -/
+@[to_additive (attr := simp) ofProdCoprod_apply
+/-- The equivalence `AddEquiv.ofProdCoprod` is given by the two projections. -/]
+theorem ofProdCoprod_apply (x : P) :
+    ofProdCoprod fst snd inl inr h fst_inl fst_inr snd_inl snd_inr x = (fst x, snd x) := (rfl)
+
+/-- The inverse of `MulEquiv.ofProdCoprod` multiplies the two inclusions. -/
+@[to_additive (attr := simp) ofProdCoprod_symm_apply
+/-- The inverse of `AddEquiv.ofProdCoprod` adds the two inclusions. -/]
+theorem ofProdCoprod_symm_apply (x : A × B) :
+    (ofProdCoprod fst snd inl inr h fst_inl fst_inr snd_inl snd_inr).symm x =
+      inl x.1 * inr x.2 := (rfl)
+
+end ofProdCoprod
 
 end MulEquiv

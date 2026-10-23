@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
+import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
 # The simply connected root datum of type F4

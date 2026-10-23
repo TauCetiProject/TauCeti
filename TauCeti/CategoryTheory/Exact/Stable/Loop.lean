@@ -30,6 +30,8 @@ It exposes the chosen presentation and its commuting squares for subsequent comp
 * `TauCeti.ExactStructure.EnoughProjectives.loopObj`: the kernel of the chosen presentation.
 * `TauCeti.ExactStructure.EnoughProjectives.loopMap`: the induced map on kernels.
 * `TauCeti.ExactStructure.EnoughProjectives.stableLoop`: the additive stable loop functor.
+* `TauCeti.ExactStructure.EnoughProjectives.stableLoopObjIso`: the stable loop object is the
+  kernel term of any relative projective presentation.
 
 ## References
 
@@ -188,6 +190,32 @@ theorem stableLoop_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶ Y) :
     (hE.stableLoop_obj_projectiveStableFunctor_obj Y)).2
       ((conj_eqToHom_iff_heq _ _ (hE.loopToStable_obj X) (hE.loopToStable_obj Y)).1
         (hE.loopToStable_map f))
+
+/-- The stable loop object of `X` is the kernel term of any relative projective presentation of
+`X`: the chosen presentation is compared with `P` by
+`ProjectivePresentation.projectiveStableIso`. -/
+noncomputable def stableLoopObjIso {X : C} (P : E.ProjectivePresentation X) :
+    hE.stableLoop.obj (E.projectiveStableFunctor.obj X) ≅ E.projectiveStableFunctor.obj P.K :=
+  eqToIso (hE.stableLoop_obj_projectiveStableFunctor_obj X) ≪≫
+    (hE.projectivePresentation X).projectiveStableIso P
+
+/-- The comparison with the stable loop object is induced by the identity of the presented
+object. -/
+@[simp]
+theorem stableLoopObjIso_hom {X : C} (P : E.ProjectivePresentation X) :
+    (hE.stableLoopObjIso P).hom =
+      eqToHom (hE.stableLoop_obj_projectiveStableFunctor_obj X) ≫
+        E.projectiveStableFunctor.map ((hE.projectivePresentation X).kernelMap P (𝟙 X)) := by
+  simp [stableLoopObjIso]
+
+/-- The inverse comparison with the stable loop object is induced by the identity of the
+presented object. -/
+@[simp]
+theorem stableLoopObjIso_inv {X : C} (P : E.ProjectivePresentation X) :
+    (hE.stableLoopObjIso P).inv =
+      E.projectiveStableFunctor.map (P.kernelMap (hE.projectivePresentation X) (𝟙 X)) ≫
+        eqToHom (hE.stableLoop_obj_projectiveStableFunctor_obj X).symm := by
+  simp [stableLoopObjIso]
 
 end ExactStructure.EnoughProjectives
 

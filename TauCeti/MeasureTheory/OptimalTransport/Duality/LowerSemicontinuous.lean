@@ -6,17 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Compact
-import TauCeti.MeasureTheory.OptimalTransport.Existence
+import TauCeti.MeasureTheory.OptimalTransport.Duality.Attainment
+import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 
 /-!
-# Kantorovich duality for lower-semicontinuous costs on compact spaces
+# Kantorovich duality for lower-semicontinuous costs
 
-This file extends compact Kantorovich duality from continuous finite costs to arbitrary
-lower-semicontinuous costs `c : X × Y → ℝ≥0∞`. In particular, the cost may be unbounded or take
-the value `∞`, so the common primal and dual value is retained in `ℝ≥0∞`.
+This file extends Kantorovich duality from continuous finite costs to arbitrary
+lower-semicontinuous costs `c : X × Y → ℝ≥0∞`, first on compact metrizable spaces and then on
+Polish spaces. In particular, the cost may be unbounded or take the value `∞`, so the common
+primal and dual value is retained in `ℝ≥0∞`.
 
-The bridge is the monotone bounded-continuous approximation `TauCeti.lscApprox`. On compact
-metrizable spaces, minimization over the coupling set commutes with this increasing supremum:
+The bridge is the monotone bounded-continuous approximation `TauCeti.lscApprox`. For tight
+marginals on metrizable spaces, minimization over the compact coupling set commutes with this
+increasing supremum:
 
 `transportCost c μ ν = ⨆ n, transportCost (lscApprox c n) μ ν`.
 
@@ -33,6 +36,8 @@ with the supremum of the positive parts of the values of continuous dual-feasibl
   spaces, in a form that permits the value `∞`;
 * `TauCeti.transportCost_eq_sSup_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous` —
   the same result as an equality with the supremum of the continuous dual values.
+* `TauCeti.isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous` — strong
+  Kantorovich duality on Polish spaces, with the supremum taken over integrable feasible pairs.
 
 ## References
 
@@ -40,9 +45,8 @@ with the supremum of the positive parts of the values of continuous dual-feasibl
   Theorem 1.3.
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, 2009, Theorem 5.10.
 
-This is the compact lower-semicontinuous regime of Layer 2, item 4 of the optimal-transport
-roadmap. Its monotone-approximation theorem is the compact exhaustion step used by the Polish
-lower-semicontinuous regime.
+The nonnegative case treated here is the base case for costs bounded below by integrable split
+marginal terms: subtracting such a lower bound reduces a signed cost to a nonnegative one.
 -/
 
 public section
@@ -57,11 +61,14 @@ namespace TauCeti
 universe u v
 
 variable {X : Type u} {Y : Type v}
-  [TopologicalSpace X] [TopologicalSpace.MetrizableSpace X] [CompactSpace X]
-  [MeasurableSpace X] [BorelSpace X] [TopologicalSpace Y]
-  [TopologicalSpace.MetrizableSpace Y] [CompactSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+  [TopologicalSpace X] [MeasurableSpace X] [TopologicalSpace Y] [MeasurableSpace Y]
   {μ : Measure X} {ν : Measure Y} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
   {c : X × Y → ℝ≥0∞}
+
+section Compact
+
+variable [TopologicalSpace.MetrizableSpace X] [CompactSpace X] [BorelSpace X]
+  [TopologicalSpace.MetrizableSpace Y] [CompactSpace Y] [BorelSpace Y]
 
 /-- **Strong Kantorovich duality for lower-semicontinuous costs on compact metrizable spaces.**
 The primal transport cost is the least upper bound, in `ℝ≥0∞`, of the positive parts of the
@@ -72,7 +79,8 @@ primal value `∞`, in which case the continuous dual values are unbounded rathe
 real supremum. -/
 theorem isLUB_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous
     (hc : LowerSemicontinuous c) :
-    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Continuous φ ∧ Continuous ψ ∧ DualFeasible c φ ψ ∧
+    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Continuous φ ∧ Continuous ψ ∧
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
       ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} (transportCost c μ ν) := by
   let : PseudoMetricSpace X := TopologicalSpace.pseudoMetrizableSpacePseudoMetric X
   let : PseudoMetricSpace Y := TopologicalSpace.pseudoMetrizableSpacePseudoMetric Y
@@ -86,7 +94,8 @@ theorem isLUB_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous
         hψ.continuousOn.integrableOn_compact' (μ := ν) isCompact_univ MeasurableSet.univ
     exact hfeas.ofReal_kantorovichDualValue_le_transportCost hφi hψi
   · intro b hb
-    rw [transportCost_eq_iSup_transportCost_lscApprox hc]
+    rw [transportCost_eq_iSup_transportCost_lscApprox
+      IsTightMeasureSet.of_compactSpace IsTightMeasureSet.of_compactSpace hc]
     refine iSup_le fun n ↦ ?_
     by_cases hbtop : b = ∞
     · simp only [hbtop, le_top]
@@ -100,8 +109,9 @@ theorem isLUB_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous
       (isLUB_kantorovichDualValue_continuous
         (μ := μ) (ν := ν) hcn_cont hcn_nonneg).2 fun r hr ↦ by
           obtain ⟨φ, ψ, hφ, hψ, hfeas, rfl⟩ := hr
-          have hfeas' : DualFeasible c φ ψ :=
-            ((dualFeasible_ofReal_iff hcn_nonneg φ ψ).2 hfeas).mono_cost hcn_le
+          have hfeas' : DualFeasible (fun z ↦ (c z : EReal)) φ ψ :=
+            ((dualFeasible_ofReal_iff hcn_nonneg φ ψ).2 hfeas).mono_cost
+              fun z ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (hcn_le z)
           exact (ENNReal.ofReal_le_iff_le_toReal hbtop).1
             (hb ⟨φ, ψ, hφ, hψ, hfeas', rfl⟩)
     have hcost_ne_top : transportCost (fun z ↦ ENNReal.ofReal (cn z)) μ ν ≠ ∞ :=
@@ -117,7 +127,60 @@ values. This formulation remains meaningful when the common value is `∞`. -/
 theorem transportCost_eq_sSup_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous
     (hc : LowerSemicontinuous c) :
     transportCost c μ ν = sSup {r : ℝ≥0∞ | ∃ φ ψ, Continuous φ ∧ Continuous ψ ∧
-      DualFeasible c φ ψ ∧ ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} :=
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
+      ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} :=
   (isLUB_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous hc).sSup_eq.symm
+
+end Compact
+
+section Polish
+
+variable [PolishSpace X] [BorelSpace X] [PolishSpace Y] [BorelSpace Y]
+
+/-- **Strong Kantorovich duality for nonnegative lower-semicontinuous costs on Polish spaces.**
+The primal transport cost is the least upper bound, in `ℝ≥0∞`, of the positive parts of the
+values of all integrable dual-feasible pairs. Both the cost and the common value may be infinite.
+
+Unlike dual attainment for bounded continuous costs, this theorem asserts equality of primal and
+dual values only: an unbounded lower-semicontinuous cost need not have an integrable dual
+optimizer. -/
+theorem isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
+    (hc : LowerSemicontinuous c) :
+    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Integrable φ μ ∧ Integrable ψ ν ∧
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
+      ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} (transportCost c μ ν) := by
+  let : PseudoMetricSpace X := TopologicalSpace.pseudoMetrizableSpacePseudoMetric X
+  let : PseudoMetricSpace Y := TopologicalSpace.pseudoMetrizableSpacePseudoMetric Y
+  constructor
+  · rintro r ⟨φ, ψ, hφ, hψ, hfeas, rfl⟩
+    exact hfeas.ofReal_kantorovichDualValue_le_transportCost hφ hψ
+  · intro b hb
+    rw [transportCost_eq_iSup_transportCost_lscApprox
+      isTightMeasureSet_singleton isTightMeasureSet_singleton hc]
+    refine iSup_le fun n ↦ ?_
+    let cn : X × Y → ℝ := lscApproxAux c n
+    have hcn_cont : Continuous cn := continuous_lscApproxAux c n
+    have hcn_nonneg : ∀ z, 0 ≤ cn z := lscApproxAux_nonneg c n
+    have hcn_bdd : BddAbove (range cn) :=
+      ⟨n, forall_mem_range.2 (lscApproxAux_le_natCast c n)⟩
+    obtain ⟨π, φ, ψ, h, -⟩ :=
+      exists_isDualCertificate_of_continuous (μ := μ) (ν := ν) hcn_cont hcn_nonneg hcn_bdd
+    have hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ :=
+      h.dualFeasible.mono_cost fun z ↦
+        EReal.coe_ennreal_le_coe_ennreal_iff.2 (ofReal_lscApproxAux_le c n z)
+    have hle := hb ⟨φ, ψ, h.integrable_left, h.integrable_right, hfeas, rfl⟩
+    rw [← h.transportCost_eq] at hle
+    simpa only [cn, coe_lscApprox_apply] using hle
+
+/-- Polish lower-semicontinuous Kantorovich duality, written as equality with the supremum of the
+positive parts of all integrable dual values. -/
+theorem transportCost_eq_sSup_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
+    (hc : LowerSemicontinuous c) :
+    transportCost c μ ν = sSup {r : ℝ≥0∞ | ∃ φ ψ, Integrable φ μ ∧ Integrable ψ ν ∧
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
+      ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} :=
+  (isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous hc).sSup_eq.symm
+
+end Polish
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.ComposableArrows.Basic
-public import Mathlib.Topology.Category.TopPair
+public import TauCeti.Topology.Category.TopPair
 
 /-!
 # Triples of topological spaces
@@ -21,6 +21,9 @@ Like `TopPair`, `TauCeti.TopTriple` is a full subcategory of a category of diagr
 so a morphism of triples is a triple of continuous maps commuting with the two embeddings.  All
 three pair constructions are therefore functorial, and the two maps of pairs between them are
 natural.
+
+Nested subsets `s ⊆ t ⊆ u` of a topological space give the triple `TopTriple.ofInclusions`, whose
+three pairs are the pairs `TopPair.ofInclusion` of the three inclusions among them.
 -/
 
 @[expose] public section
@@ -87,6 +90,13 @@ variable {B A X : TopCat.{u}} (i : B ⟶ A) (j : A ⟶ X) (hi : IsEmbedding i) (
 
 end
 
+/-- The triple `(u, t, s)` determined by nested subsets `s ⊆ t ⊆ u` of a topological space, with
+the two inclusions as its embeddings. -/
+abbrev ofInclusions {X : TopCat.{u}} {s t u : Set X} (hst : s ⊆ t) (htu : t ⊆ u) : TopTriple.{u} :=
+  of (B := TopCat.of s) (A := TopCat.of t) (X := TopCat.of u)
+    (TopCat.ofHom (ContinuousMap.inclusion hst)) (TopCat.ofHom (ContinuousMap.inclusion htu))
+    (Topology.IsEmbedding.inclusion hst) (Topology.IsEmbedding.inclusion htu)
+
 variable {T} {T' : TopTriple.{u}}
 
 /-- Morphisms of triples of topological spaces. -/
@@ -140,6 +150,21 @@ abbrev outerPair : TopTriple.{u} ⥤ TopPair.{u} where
 @[simp] lemma totalPair_obj_map : (totalPair.obj T).map = T.totalMap := rfl
 
 @[simp] lemma outerPair_obj_map : (outerPair.obj T).map = T.outerMap := rfl
+
+section
+
+variable {X : TopCat.{u}} {s t u : Set X} (hst : s ⊆ t) (htu : t ⊆ u)
+
+@[simp] lemma innerPair_obj_ofInclusions :
+    innerPair.obj (ofInclusions hst htu) = TopPair.ofInclusion hst := rfl
+
+@[simp] lemma totalPair_obj_ofInclusions :
+    totalPair.obj (ofInclusions hst htu) = TopPair.ofInclusion (hst.trans htu) := rfl
+
+@[simp] lemma outerPair_obj_ofInclusions :
+    outerPair.obj (ofInclusions hst htu) = TopPair.ofInclusion htu := rfl
+
+end
 
 @[simp] lemma innerPair_map_fst (φ : T ⟶ T') :
     TopPair.Hom.fst (innerPair.map φ) = Hom.snd φ := rfl

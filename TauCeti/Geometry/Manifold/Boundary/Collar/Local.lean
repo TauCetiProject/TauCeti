@@ -25,6 +25,8 @@ boundary, which is what Hirsch's bump-function argument does and what this file 
 
 ## Main definitions
 
+* `TauCeti.EuclideanHalfSpace.interiorEmbedding`: a homeomorphism of `ℝⁿ⁺¹` onto the open
+  half-space, through which charts of a boundaryless manifold become interior half-space charts.
 * `TauCeti.EuclideanHalfSpace.normalRay`: the inward normal ray `[0, ∞) → EuclideanHalfSpace 1`,
   the parametrization by which the one-dimensional half-space model is a half-line.
 * `TauCeti.EuclideanHalfSpace.normalIio`: the initial segment `[0, ε)` of the one-dimensional
@@ -205,6 +207,75 @@ def homeomorphNormalIio (ε : ℝ) : ↥(normalIio ε) ≃ₜ ↥(Set.Ico (0 : �
 @[simp]
 theorem coe_homeomorphNormalIio {ε : ℝ} (t : ↥(normalIio ε)) :
     (homeomorphNormalIio ε t : ℝ) = t.1.1 0 := (rfl)
+
+/-- The open embedding `t ↦ eᵗ` of the real line onto the open part `(0, ∞)` of the
+one-dimensional half-space. -/
+private def expRay (t : ℝ) : EuclideanHalfSpace 1 := normalRay (Real.exp t)
+
+private theorem expRay_coe_apply (t : ℝ) : (expRay t).1 0 = Real.exp t := by
+  simp [expRay, (Real.exp_pos t).le]
+
+private theorem range_expRay : range expRay = {s | 0 < s.1 0} := by
+  ext s
+  refine ⟨?_, fun hs => ⟨Real.log (s.1 0), ?_⟩⟩
+  · rintro ⟨t, rfl⟩
+    simpa [expRay_coe_apply] using Real.exp_pos t
+  · rw [expRay, Real.exp_log hs, normalRay_normalCoord]
+
+private theorem isOpenEmbedding_expRay : IsOpenEmbedding expRay := by
+  have hcoord : Continuous fun s : EuclideanHalfSpace 1 => s.1 0 := by fun_prop
+  have hcomp : (fun s : EuclideanHalfSpace 1 => s.1 0) ∘ expRay = Real.exp :=
+    funext expRay_coe_apply
+  refine ⟨IsEmbedding.of_comp (continuous_normalRay.comp Real.continuous_exp) hcoord
+    (hcomp ▸ Real.isOpenEmbedding_exp.isEmbedding), ?_⟩
+  rw [range_expRay]
+  exact isOpen_lt continuous_const hcoord
+
+/-- A homeomorphism of `ℝⁿ⁺¹` onto the open half-space `{x | 0 < x 0}`, exponentiating the zeroth
+coordinate and keeping the others. Composing the charts of a boundaryless manifold with it gives
+charts in the half-space model whose points are all interior points. -/
+def interiorEmbedding (n : ℕ) (v : EuclideanSpace ℝ (Fin (n + 1))) :
+    EuclideanHalfSpace (n + 1) :=
+  collarDiffeomorph (k := ⊤) n
+    (Prod.map id expRay ((euclideanHalfSpaceBoundaryNormalEquiv n).symm v))
+
+/-- The zeroth coordinate of `interiorEmbedding` is the exponential of the zeroth coordinate. -/
+@[simp]
+theorem interiorEmbedding_coe_apply_zero (n : ℕ) (v : EuclideanSpace ℝ (Fin (n + 1))) :
+    (interiorEmbedding n v).1 0 = Real.exp (v 0) := by
+  rw [interiorEmbedding, collarDiffeomorph_apply_zero, Prod.map_snd, expRay_coe_apply,
+    euclideanHalfSpaceBoundaryNormalEquiv_symm_apply_snd]
+
+/-- The other coordinates of `interiorEmbedding` are unchanged. -/
+@[simp]
+theorem interiorEmbedding_coe_apply_succ (n : ℕ) (v : EuclideanSpace ℝ (Fin (n + 1)))
+    (i : Fin n) : (interiorEmbedding n v).1 i.succ = v i.succ := by
+  rw [interiorEmbedding, collarDiffeomorph_apply_succ, Prod.map_fst, id_eq,
+    euclideanHalfSpaceBoundaryNormalEquiv_symm_apply_fst, euclideanHalfSpaceBoundaryProj_apply]
+
+/-- `interiorEmbedding` is an open embedding, with image the open half-space
+(`TauCeti.EuclideanHalfSpace.range_interiorEmbedding`). -/
+theorem isOpenEmbedding_interiorEmbedding (n : ℕ) :
+    IsOpenEmbedding (interiorEmbedding n) :=
+  (collarDiffeomorph (k := ⊤) n).toHomeomorph.isOpenEmbedding.comp <|
+    (IsOpenEmbedding.id.prodMap isOpenEmbedding_expRay).comp
+      (euclideanHalfSpaceBoundaryNormalEquiv n).symm.toHomeomorph.isOpenEmbedding
+
+/-- The image of `interiorEmbedding` is the open half-space, the interior of the model. -/
+theorem range_interiorEmbedding (n : ℕ) :
+    range (interiorEmbedding n) = {y | 0 < y.1 0} := by
+  ext y
+  refine ⟨?_, fun hy => ?_⟩
+  · rintro ⟨v, rfl⟩
+    rw [mem_ofPred_eq, interiorEmbedding_coe_apply_zero]
+    exact Real.exp_pos _
+  · refine ⟨euclideanHalfSpaceBoundaryNormalEquiv n
+      (((collarDiffeomorph (k := ⊤) n).symm y).1, Real.log (y.1 0)), ?_⟩
+    rw [interiorEmbedding, ContinuousLinearEquiv.symm_apply_apply, Prod.map_apply, id_eq]
+    conv_rhs => rw [← (collarDiffeomorph (k := ⊤) n).apply_symm_apply y]
+    refine congrArg _ (Prod.ext rfl ?_)
+    rw [expRay, Real.exp_log hy, ← collarDiffeomorph_symm_apply_snd_apply_zero (k := ⊤),
+      normalRay_normalCoord]
 
 end EuclideanHalfSpace
 

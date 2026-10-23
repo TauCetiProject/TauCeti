@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # The logarithmic integral
@@ -34,6 +35,8 @@ the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bou
 * `TauCeti.Real.logIntegral_eq_div_log_sub_add` — the antiderivative identity above.
 * `TauCeti.Real.logIntegral_isEquivalent_div_log` — `Li x ~ x / log x` at infinity, with the
   quotient form `TauCeti.Real.tendsto_logIntegral_mul_log_div_atTop`.
+* `TauCeti.Real.tendsto_div_div_log_of_isLittleO_logIntegral` — an `o (x / log x)` error
+  relative to `δ Li x` gives `f x / (x / log x) → δ`.
 * `TauCeti.Real.isLittleO_integral_div_mul_log_sq` — for `f` interval integrable above `2` and of
   at most linear growth, `∫ t in 2..x, f t / (t * log t ^ 2)` is `o (x / log x)`.
 
@@ -203,7 +206,6 @@ private theorem integral_inv_log_sq_le {x : ℝ} (hx : 4 ≤ x) :
       (intervalIntegrable_inv_log_pow 2 (by linarith) (by linarith))).symm
   have hb₁ : (∫ t in (2 : ℝ)..√x, (Real.log t ^ 2)⁻¹) ≤ √x / Real.log 2 ^ 2 := by
     refine le_trans (integral_inv_log_pow_le 2 one_lt_two hsq) ?_
-    have hpos : (0 : ℝ) < Real.log 2 ^ 2 := by positivity
     gcongr
     linarith
   have hb₂ : (∫ t in √x..x, (Real.log t ^ 2)⁻¹) ≤ 4 * x / Real.log x ^ 2 := by
@@ -231,7 +233,6 @@ theorem tendsto_integral_inv_log_sq_mul_log_div_atTop :
   · filter_upwards [eventually_ge_atTop (4 : ℝ)] with x hx
     have hx0 : (0 : ℝ) < x := by linarith
     have hlogx : 0 < Real.log x := Real.log_pos (by linarith)
-    have hsqpos : (0 : ℝ) < √x := Real.sqrt_pos.mpr hx0
     have hsqx : √x * √x = x := Real.mul_self_sqrt hx0.le
     have hbound := integral_inv_log_sq_le hx
     rw [div_le_iff₀ hx0]
@@ -260,7 +261,6 @@ theorem tendsto_logIntegral_mul_log_div_atTop :
     simpa using h
   refine hmain.congr' ?_
   filter_upwards [eventually_ge_atTop (2 : ℝ)] with x hx
-  have hx0 : (0 : ℝ) < x := by linarith
   have hlogx : 0 < Real.log x := Real.log_pos (by linarith)
   rw [logIntegral_eq_div_log_sub_add hx]
   field_simp
@@ -297,6 +297,16 @@ theorem isLittleO_const_div_log (c : ℝ) :
     (fun _ : ℝ ↦ c) =o[atTop] fun x : ℝ ↦ x / Real.log x :=
   isLittleO_const_left.mpr <| Or.inr <|
     (tendsto_abs_atTop_atTop.comp tendsto_div_log_atTop).congr fun _ ↦ (Real.norm_eq_abs _).symm
+
+/-- An error of `o (x / log x)` relative to `δ Li x` gives the ratio limit `f x / (x / log x) → δ`,
+since `Li x ~ x / log x`. -/
+theorem tendsto_div_div_log_of_isLittleO_logIntegral {f : ℝ → ℝ} {δ : ℝ}
+    (h : (fun x ↦ f x - δ * logIntegral x) =o[atTop] fun x : ℝ ↦ x / Real.log x) :
+    Tendsto (fun x : ℝ ↦ f x / (x / Real.log x)) atTop (𝓝 δ) := by
+  have h' : (fun x ↦ f x - δ * (x / Real.log x)) =o[atTop] fun x : ℝ ↦ x / Real.log x :=
+    (h.add (logIntegral_isEquivalent_div_log.isLittleO.const_mul_left δ)).congr_left
+      fun x ↦ by simp only [Pi.sub_apply]; ring
+  exact (isLittleO_sub_mul_iff_tendsto_div (tendsto_div_log_atTop.eventually_ne_atTop 0)).mp h'
 
 /-- `∫ t in 2..x, (log t ^ 2)⁻¹` is `o (x / log x)`; this is
 `TauCeti.Real.tendsto_integral_inv_log_sq_mul_log_div_atTop` read as an `IsLittleO`. -/
@@ -381,7 +391,6 @@ theorem isLittleO_integral_div_mul_log_sq {f : ℝ → ℝ}
   obtain ⟨T, hT⟩ := eventually_atTop.mp (hc.and (eventually_ge_atTop (2 : ℝ)))
   have hT2 : (2 : ℝ) ≤ T := (hT T le_rfl).2
   have hbound : ∀ t, T ≤ t → |f t| ≤ c * t := fun t ht ↦ by
-    have h2t : (2 : ℝ) ≤ t := (hT t ht).2
     simpa [Real.norm_eq_abs, abs_of_nonneg (by linarith : (0 : ℝ) ≤ t)] using (hT t ht).1
   have hc0 : 0 ≤ c := by nlinarith [hbound T le_rfl, abs_nonneg (f T)]
   -- Both summands of `abs_integral_div_mul_log_sq_le` are `o (x / log x)`.

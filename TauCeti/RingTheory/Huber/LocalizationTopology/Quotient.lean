@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Basic
 import TauCeti.RingTheory.Huber.WeightedEval.Quotient
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -149,8 +148,7 @@ private theorem isPowerBounded_quotientMk_weightedC_mul_unit_inv {t : Fin k → 
   rcases hu with rfl | ⟨i, rfl⟩
   · simp
   -- `tᵢ/s` is the class of `Xᵢ`
-  · convert (isPowerBounded_weightedX_one_weight i).map_of_isOpenMap continuous_quot_mk.continuousAt
-      (QuotientRing.isOpenMap_coe (rationalRelationIdeal t s)) using 1
+  · convert (isPowerBounded_weightedX_one_weight i).quotientMk (rationalRelationIdeal t s) using 1
     exact (Units.mul_inv_eq_iff_eq_mul _).2 <|
       (rationalRelationIdeal_quotientMk_weightedC_mul_weightedX t s i).symm.trans (mul_comm _ _)
 
@@ -161,7 +159,7 @@ namespace PairOfDefinition
 section ToCompletion
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-  (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+  (P : PairOfDefinition A) (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
   [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) {k : ℕ} (t : Fin k → A)
   (ht : ∀ i, t i ∈ T)
 
@@ -233,10 +231,10 @@ end ToCompletion
 section Identification
 
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
-  [IsHuberRing A] [CompleteSpace A] (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*)
+  [IsHuberRing A] [CompleteSpace A] (P : PairOfDefinition A) (T : Set A) (s : A) (S : Type*)
   [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
   {k : ℕ} (t : Fin k → A) (ht : ∀ i, t i ∈ T) (hsplit : ∀ u ∈ T, u = s ∨ u ∈ Set.range t)
-  (hspan : Ideal.span (insert s (T : Set A)) = ⊤)
+  (hspan : Ideal.span (insert s T) = ⊤)
   (hcl : IsClosed (rationalRelationIdeal t s : Set (weightedRestrictedSubring
     (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight)))
 
@@ -257,11 +255,15 @@ private theorem existsUnique_continuous_ringHom_completion_rationalQuotient :
   let _ : UniformSpace (_ ⧸ rationalRelationIdeal t s) := IsTopologicalAddGroup.rightUniformSpace _
   have _ : IsUniformAddGroup (_ ⧸ rationalRelationIdeal t s) := isUniformAddGroup_of_addCommGroup
   have _ : CompleteSpace (_ ⧸ rationalRelationIdeal t s) := QuotientAddGroup.completeSpace_right _ _
-  exact existsUnique_continuous_ringHom_completion_locTopology P T s S hden
+  -- `T` is finite, as it lies in `{s} ∪ range t`
+  have hT : T.Finite := ((Set.finite_range t).insert s).subset fun u hu ↦ hsplit u hu
+  exact existsUnique_continuous_ringHom_completion_locTopology_of_isBounded_submonoidClosure P T
+    s S hden
     (continuous_quot_mk.comp (continuous_weightedC isWeightFamily_one_weight)).continuousAt
     (isUnit_rationalRelationIdeal_quotientMk_weightedC <| Ideal.span_insert_eq_top_of_subset
       (fun u hu ↦ Set.mem_insert_iff.mpr (hsplit u hu)) hspan)
-    fun u hu ↦ isPowerBounded_quotientMk_weightedC_mul_unit_inv _ (hsplit u hu)
+    (isBounded_submonoidClosure (hT.image _) fun _ ⟨u, hu, h⟩ ↦
+      h ▸ isPowerBounded_quotientMk_weightedC_mul_unit_inv _ (hsplit u hu))
 
 -- The map `A⟨T/s⟩ → A⟨X₁, …, Xₖ⟩ ⧸ (tᵢ - s Xᵢ)` into the quotient.
 private noncomputable def completionToRationalQuotient :

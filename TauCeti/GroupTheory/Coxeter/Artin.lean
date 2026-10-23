@@ -22,7 +22,7 @@ subject only to
 
 The braid group on `n` strands is the Artin-Tits group of the Coxeter matrix of type `A`, and this
 file is where its presentation and universal property are proved once and for all; the type-`A`
-specialisation is `TauCeti.BraidGroup` in `TauCeti.GroupTheory.SpecificGroups.Braid`.
+specialisation is `TauCeti.BraidGroup` in `TauCeti.GroupTheory.SpecificGroups.Braid.Basic`.
 
 The alternating words are Mathlib's `CoxeterSystem.braidWord`, so the relator is spelled with
 exactly the words that Mathlib's `CoxeterSystem.wordProd_braidWord_eq` proves equal in a Coxeter

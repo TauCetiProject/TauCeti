@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Crosscut.Basic
 import Mathlib.Geometry.Euclidean.Basic
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 import TauCeti.Topology.Circle.Metric
 
@@ -187,7 +188,6 @@ theorem closedBall_inter_sphere_eq_circleMap_image_Icc (hζ : dist ζ c = r) (h�
         ((c - ζ).arg - Real.arccos (ρ / (2 * r)))
         ((c - ζ).arg + Real.arccos (ρ / (2 * r))) := by
   have hr : 0 < r := by linarith
-  have hx0 : 0 < ρ / (2 * r) := div_pos hρ (by positivity)
   have hx1 : ρ / (2 * r) < 1 := (div_lt_one (by positivity)).mpr hρr
   ext z
   constructor

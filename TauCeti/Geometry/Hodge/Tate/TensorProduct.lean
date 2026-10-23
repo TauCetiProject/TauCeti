@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Hodge.TensorProduct
+public import TauCeti.Geometry.Hodge.TensorProduct.Basic
 public import TauCeti.Geometry.Hodge.Tate.Basic
 public import TauCeti.Geometry.Hodge.Tate.Twist
 
@@ -130,8 +130,8 @@ theorem tate_add_piece_eq_comap (k m p : ℤ) :
     (tate (k + m)).piece p =
       (((tate k).tensorProduct (tate m)).piece p).comap
         (TensorProduct.rid ℂ ℂ).symm.toLinearMap := by
-  rw [← HodgeStructureOn.tateTwist_piece_eq_comap, HodgeStructureOn.tateTwist_piece,
-    tate_piece, tate_piece]
+  rw [HodgeStructure.tensorProduct_piece, ← HodgeStructureOn.tateTwist_piece_eq_comap,
+    HodgeStructureOn.tateTwist_piece, tate_piece, tate_piece]
   have hiff : p = -(k + m) ↔ p + m = -k := by omega
   simp only [hiff]
 
@@ -140,7 +140,8 @@ theorem tate_add_piece_eq_comap (k m p : ℤ) :
 theorem tate_add_F_eq_comap (k m p : ℤ) :
     (tate (k + m)).F p =
       (((tate k).tensorProduct (tate m)).F p).comap (TensorProduct.rid ℂ ℂ).symm.toLinearMap := by
-  rw [← HodgeStructureOn.tateTwist_F_eq_comap, HodgeStructureOn.tateTwist_F, tate_F, tate_F]
+  rw [HodgeStructure.tensorProduct_F, ← HodgeStructureOn.tateTwist_F_eq_comap,
+    HodgeStructureOn.tateTwist_F, tate_F, tate_F]
   have hiff : p ≤ -(k + m) ↔ p + m ≤ -k := by omega
   simp only [hiff]
 

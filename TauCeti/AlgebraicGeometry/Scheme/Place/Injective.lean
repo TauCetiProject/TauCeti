@@ -61,7 +61,7 @@ theorem toPlace_eq_iff {x y : X}
           algebraMap (X.presheaf.stalk y) X.functionField a := by
       rw [← X.coe_stalkToPlaceIntegersAlgEquiv (k := k) x,
         ← X.coe_stalkToPlaceIntegersAlgEquiv (k := k) y]
-      simp only [e, ex, ey, RingEquiv.trans_apply, AlgEquiv.coe_ringEquiv,
+      simp only [e, ex, ey, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
         AlgEquiv.apply_symm_apply]
       exact RingEquiv.coe_subringCongr_apply _ _
     have hg (z : X) :

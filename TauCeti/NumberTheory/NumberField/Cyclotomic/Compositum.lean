@@ -163,7 +163,8 @@ theorem restrictNormalHom_prod_autToPow_injective {ζ : M} (hζ : IsPrimitiveRoo
   have htop : IntermediateField.adjoin K {ζ} ⊔ (IsScalarTower.toAlgHom K L M).fieldRange
       = (⊤ : IntermediateField K M) :=
     TauCeti.IntermediateField.adjoin_sup_fieldRange_eq_top K L M
-      (IsCyclotomicExtension.adjoin_primitive_root_eq_top (n := m) hζ)
+      (IntermediateField.adjoin_eq_top_of_algebra _ _
+        (IsCyclotomicExtension.adjoin_primitive_root_eq_top (n := m) hζ))
   rw [htop, IntermediateField.fixingSubgroup_top, Subgroup.mem_bot] at hmem
   exact hmem
 
@@ -197,7 +198,8 @@ theorem isGalois_of_isGalois_of_isCyclotomicExtension : IsGalois K M := by
       (IntermediateField.adjoin K {ζ} ⊔ (IsScalarTower.toAlgHom K L M).fieldRange :
         IntermediateField K M) := IntermediateField.normal_sup K M _ _
   rw [TauCeti.IntermediateField.adjoin_sup_fieldRange_eq_top K L M
-    (IsCyclotomicExtension.adjoin_primitive_root_eq_top (n := m) hζ)] at hsup
+    (IntermediateField.adjoin_eq_top_of_algebra _ _
+        (IsCyclotomicExtension.adjoin_primitive_root_eq_top (n := m) hζ))] at hsup
   have : Normal K M := Normal.of_algEquiv (h := hsup) IntermediateField.topEquiv
   have : Algebra.IsSeparable L M := IsCyclotomicExtension.isSeparable (S := {m}) (K := L) (L := M)
   have : Algebra.IsSeparable K M := Algebra.IsSeparable.trans K L M

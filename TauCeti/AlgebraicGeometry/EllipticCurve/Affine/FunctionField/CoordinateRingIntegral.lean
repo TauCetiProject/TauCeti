@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 public import Mathlib.RingTheory.Valuation.IsTrivialOn
 -- Proof-only: `moduleFinite_coordinateRing`, the finiteness that makes the coordinate ring
 -- integral over `F[x]`.

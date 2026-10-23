@@ -193,13 +193,13 @@ def lieModuleHomDirectSumEquiv :
   invFun g := ∑ i, (DirectSum.lieModuleOf R ι L P i).comp (g i)
   left_inv f := by
     refine LieModuleHom.ext fun s ↦ ?_
-    rw [LieModuleHom.sum_apply]
+    rw [_root_.sum_apply]
     simp only [_root_.LieModuleHom.comp_apply, DirectSum.lieModuleOf_apply,
       DirectSum.lieModuleComponent_apply]
     exact _root_.DirectSum.sum_univ_of (f s)
   right_inv g := by
     refine funext fun j ↦ LieModuleHom.ext fun s ↦ ?_
-    rw [_root_.LieModuleHom.comp_apply, LieModuleHom.sum_apply]
+    rw [_root_.LieModuleHom.comp_apply, _root_.sum_apply]
     simp only [_root_.LieModuleHom.comp_apply, DirectSum.lieModuleOf_apply,
       DirectSum.lieModuleComponent_apply]
     rw [DFinsupp.finsetSum_apply, Finset.sum_eq_single j]
@@ -218,7 +218,7 @@ omit [_root_.LieModule R L S] in
 theorem lieModuleHomDirectSumEquiv_symm_apply (g : Π i, (S →ₗ⁅R,L⁆ P i)) (s : S) :
     (lieModuleHomDirectSumEquiv R L S P).symm g s
       = ∑ i, _root_.DirectSum.of P i (g i s) := by
-  simp [lieModuleHomDirectSumEquiv, LieModuleHom.sum_apply]
+  simp [lieModuleHomDirectSumEquiv]
 
 end Additivity
 

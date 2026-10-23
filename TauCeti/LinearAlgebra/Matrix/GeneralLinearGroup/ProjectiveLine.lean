@@ -277,7 +277,7 @@ theorem natCard_fixedCosets_jordanGL (a : Fˣ) {b : F} (hb : b ≠ 0) :
 
 section NonSplit
 
-variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- **An element of the non-split torus outside `F` fixes no coset at all.** A fixed coset would
 exhibit an upper-triangular conjugate, which is exactly what
@@ -286,8 +286,8 @@ such a matrix lies in `F`, so it has no eigenline over `F`. -/
 @[simp]
 theorem natCard_fixedCosets_gl2NonSplitTorusHom {x : Eˣ}
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    Nat.card {c : GL (Fin 2) F ⧸ GL2Borel F // GL2NonSplitTorusHom F E hE x • c = c} = 0 :=
-  natCard_fixedCosets_eq_zero (GL2NonSplitTorus.conj_notMem_gl2Borel hE hx)
+    Nat.card {c : GL (Fin 2) F ⧸ GL2Borel F // GL2NonSplitTorusHom F E x • c = c} = 0 :=
+  natCard_fixedCosets_eq_zero (GL2NonSplitTorus.conj_notMem_gl2Borel hx)
 
 end NonSplit
 

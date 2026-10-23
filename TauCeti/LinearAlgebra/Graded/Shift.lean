@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Ring.NegOnePow
-public import TauCeti.LinearAlgebra.Graded.Multilinear
+public import TauCeti.LinearAlgebra.Graded.Insertion
 import Mathlib.Tactic.Ring
 
 /-!
@@ -317,6 +316,23 @@ theorem suspExp_congr {k : ℕ} {d e : ℕ → ℤ} (h : ∀ i < k, d i = e i) :
   intro i hi
   rw [h i (Finset.mem_range.1 hi)]
 
+/-- When all `k` inputs have the same degree `c`, the suspension exponent is
+`(k choose 2) * c = k (k - 1) / 2 * c`. -/
+@[simp]
+theorem suspExp_const (k : ℕ) (c : ℤ) : suspExp k (fun _ ↦ c) = (k.choose 2 : ℤ) * c := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [suspExp_def] at ih ⊢
+    have hsum : ∑ i ∈ Finset.range k, (((k + 1 : ℕ) : ℤ) - 1 - i) * c =
+        ∑ i ∈ Finset.range k, (((k : ℤ) - 1 - i) * c + c) :=
+      Finset.sum_congr rfl fun i _ ↦ by push_cast; ring
+    rw [Finset.sum_range_succ, hsum, Finset.sum_add_distrib, ih, Nat.choose_succ_succ,
+      Nat.choose_one_right]
+    simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    push_cast
+    ring
+
 /-- Split the suspension exponent between an initial block and the block following it. -/
 theorem suspExp_add (a b : ℕ) (d : ℕ → ℤ) :
     suspExp (a + b) d =
@@ -368,6 +384,15 @@ theorem suspend_apply {k : ℕ} {M : Fin k → Type uM} {N : Type uN}
     (d : ℕ → ℤ) (f : MultilinearMap R M N) (x : ∀ i, M i) :
     suspend d f x = TauCeti.negOnePowCast R (suspExp k d) • f x := by
   rw [suspend_eq_smul, smul_apply]
+
+/-- Evaluating a suspended operation on a natural-indexed input family scales its value by the
+suspension sign of the supplied degrees. -/
+@[simp]
+theorem evalNat_suspend {k : ℕ} {M : Type uM} {N : Type uN}
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (d : ℕ → ℤ) (f : MultilinearMap R (fun _ : Fin k ↦ M) N) (x : ℕ → M) :
+    evalNat (suspend d f) x = TauCeti.negOnePowCast R (suspExp k d) • evalNat f x := by
+  rw [suspend_eq_smul, evalNat_smul]
 
 /-- Suspension for a fixed degree family is an involution, so `suspend d` also computes
 unsuspension. -/

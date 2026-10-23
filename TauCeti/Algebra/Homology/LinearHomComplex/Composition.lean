@@ -473,7 +473,8 @@ private lemma ι₁₂_associator_whiskerLeft_comp (p q r j : ℤ)
       (by omega)]
     rfl
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, e₁, Category.assoc,
-    HomologicalComplex.ι_ι_associator_hom_assoc, HomologicalComplex.ι_whiskerLeft_assoc,
+    HomologicalComplex.ι_ι_associator_hom_assoc _ _ _ p q r (p + q) (q + r) j rfl rfl h' (by omega),
+    HomologicalComplex.ι_whiskerLeft_assoc,
     ι_linearHomComplexComp, ← MonoidalCategory.whiskerLeft_comp_assoc, ι_linearHomComplexComp]
 
 /-- Composition of cochains is associative, with the tensor products identified by the monoidal

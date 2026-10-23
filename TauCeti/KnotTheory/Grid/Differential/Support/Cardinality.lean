@@ -56,7 +56,7 @@ variable {n : ℕ} (G : GridDiagram n)
 support theorem. -/
 theorem fullyBlockedDifferentialOnGenerator_support_card_le_choose (x : GridState n) :
     (G.fullyBlockedDifferentialOnGenerator x).support.card ≤ n.choose 2 :=
-  (G.fullyBlockedDifferentialOnGenerator_support_card_le x).trans x.card_columnSwapNeighbors_le
+  (G.fullyBlockedDifferentialOnGenerator_support_card_le x).trans x.card_columnSwapNeighbors.le
 
 /-- The support of the fully blocked differential of one generator is empty in grid
 size at most `1`. -/
@@ -115,7 +115,7 @@ theorem fullyBlockedDifferential_support_card_le (c : GridChain (ZMod 2) n) :
     (G.fullyBlockedDifferential c).support.card ≤ c.support.card * n.choose 2 :=
   (Finset.card_le_card (G.fullyBlockedDifferential_support_subset_biUnion c)).trans
     (Finset.card_biUnion_le_card_mul c.support (fun x : GridState n => x.columnSwapNeighbors)
-      (n.choose 2) fun x _ => x.card_columnSwapNeighbors_le)
+      (n.choose 2) fun x _ => x.card_columnSwapNeighbors.le)
 
 /-- The fully blocked differential is zero on every chain in grid size at most `1`. -/
 theorem fullyBlockedDifferential_eq_zero_of_le_one (G : GridDiagram n) (hn : n ≤ 1) :

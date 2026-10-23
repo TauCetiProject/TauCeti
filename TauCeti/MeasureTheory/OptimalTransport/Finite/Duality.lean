@@ -64,10 +64,9 @@ codomain: the inner supremum is `⊤` at a plan whose marginals are wrong.
   the same certificate read through `TauCeti.contactSet`;
 * `TauCeti.TransportMatrix.forall_cost_le_iff_exists_forall_add_le_and_support_subset_contactSet`
   — existential complementary slackness, with finite dual attainment supplying the potentials;
-* `TauCeti.finiteDualValue_eq_kantorovichDualValue`,
-  `TauCeti.TransportMatrix.cost_eq_integral` and
-  `TauCeti.TransportMatrix.isCoupling_toPMF_toMeasure` — the bridges to the measure-level dual
-  value, primal value and couplings.
+* `TauCeti.finiteDualValue_eq_kantorovichDualValue` and
+  `TauCeti.TransportMatrix.cost_eq_integral` — the bridges to the measure-level dual
+  and primal values.
 
 ## References
 
@@ -143,12 +142,6 @@ the standard simplex on the product. -/
 private def stdSimplexSet : Set (ι × κ → ℝ) :=
   {f | (∀ q, 0 ≤ f q) ∧ ∑ q, f q = 1}
 
-/-- The real transport plans: nonnegative functions on the product with the prescribed row and
-column sums. This is the standard-simplex picture of `TauCeti.TransportMatrix`. -/
-private def RealPlans (μ : PMF ι) (ν : PMF κ) : Set (ι × κ → ℝ) :=
-  {f | (∀ q, 0 ≤ f q) ∧ (∀ i, ∑ j, f (i, j) = (μ i).toReal) ∧
-    ∀ j, ∑ i, f (i, j) = (ν j).toReal}
-
 /-- The cost of a real transport plan. -/
 private def costFun (c : ι × κ → ℝ) (f : ι × κ → ℝ) : ℝ := ∑ q, c q * f q
 
@@ -156,31 +149,6 @@ namespace TransportMatrix
 
 private theorem cost_eq_costFun (c : ι × κ → ℝ) (A : TransportMatrix μ ν) :
     A.cost c = costFun c A.toRealFun := A.cost_def c
-
-private theorem toRealFun_mem_realPlans (A : TransportMatrix μ ν) :
-    A.toRealFun ∈ RealPlans μ ν :=
-  ⟨A.toRealFun_nonneg, A.sum_toRealFun_row, A.sum_toRealFun_col⟩
-
-/-- The transportation matrix attached to a nonnegative function with the prescribed row and
-column sums. -/
-private def ofRealFun (hf : f ∈ RealPlans μ ν) : TransportMatrix μ ν where
-  matrix i j := ENNReal.ofReal (f (i, j))
-  row_sum i := by
-    rw [← ENNReal.ofReal_sum_of_nonneg fun j _ ↦ hf.1 (i, j), hf.2.1 i,
-      ENNReal.ofReal_toReal (μ.apply_ne_top i)]
-  col_sum j := by
-    rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hf.1 (i, j), hf.2.2 j,
-      ENNReal.ofReal_toReal (ν.apply_ne_top j)]
-
-private theorem toRealFun_ofRealFun (hf : f ∈ RealPlans μ ν) :
-    (ofRealFun hf).toRealFun = f := by
-  funext q
-  rw [toRealFun_apply]
-  exact ENNReal.toReal_ofReal (hf.1 q)
-
-private theorem cost_ofRealFun (c : ι × κ → ℝ) (hf : f ∈ RealPlans μ ν) :
-    (ofRealFun hf).cost c = costFun c f := by
-  rw [cost_eq_costFun, toRealFun_ofRealFun]
 
 end TransportMatrix
 
@@ -295,11 +263,14 @@ private theorem isClosed_realPlans : IsClosed (RealPlans μ ν) := by
       isClosed_eq (continuous_finsetSum _ fun i _ ↦ continuous_apply (i, j)) continuous_const
   exact h1.inter (h2.inter h3)
 
-private theorem isCompact_realPlans : IsCompact (RealPlans μ ν) :=
+/-- Real transportation plans with prescribed finite marginals form a compact set. This permits
+continuous auxiliary objectives to select a plan among the minimizers of a transport cost. -/
+theorem isCompact_realPlans : IsCompact (RealPlans μ ν) :=
   IsCompact.of_isClosed_subset isCompact_stdSimplexSet isClosed_realPlans
     realPlans_subset_stdSimplex
 
-private theorem realPlans_nonempty (μ : PMF ι) (ν : PMF κ) : (RealPlans μ ν).Nonempty :=
+/-- The real plans with prescribed marginals form a nonempty set: the independent plan is one. -/
+theorem realPlans_nonempty (μ : PMF ι) (ν : PMF κ) : (RealPlans μ ν).Nonempty :=
   ⟨(TransportMatrix.independent μ ν).toRealFun,
     TransportMatrix.toRealFun_mem_realPlans _⟩
 
@@ -397,12 +368,11 @@ theorem exists_forall_finiteDualValue_le (c : ι × κ → ℝ) (μ : PMF ι) (�
   have : Nonempty ι := ⟨μ.support_nonempty.some⟩
   have : Nonempty κ := ⟨ν.support_nonempty.some⟩
   obtain ⟨q₀, hq₀⟩ := Finite.exists_max fun q : ι × κ ↦ |c q|
-  set M : ℝ := |c q₀| with hMdef
+  set M : ℝ := |c q₀|
   have hM : ∀ q, |c q| ≤ M := hq₀
   have hM0 : 0 ≤ M := abs_nonneg _
   set K : Set ((ι → ℝ) × (κ → ℝ)) :=
     {p | (∀ i j, p.1 i + p.2 j ≤ c (i, j)) ∧ (∀ i, |p.1 i| ≤ 2 * M) ∧ ∀ j, |p.2 j| ≤ 3 * M}
-    with hKdef
   have hKclosed : IsClosed K := by
     have h1 : IsClosed {p : (ι → ℝ) × (κ → ℝ) | ∀ i j, p.1 i + p.2 j ≤ c (i, j)} := by
       simp only [Set.ofPred_forall]
@@ -625,8 +595,9 @@ theorem exists_cost_eq_finiteDualValue (c : ι × κ → ℝ) (μ : PMF ι) (ν 
       ⨆ p : (ι → ℝ) × (κ → ℝ), ((lagrangian c μ ν f p : ℝ) : EReal) := by
     refine le_iInf₂ fun f hf ↦ ?_
     by_cases hmem : f ∈ RealPlans μ ν
-    · rw [iSup_lagrangian_of_mem c hmem, EReal.coe_le_coe_iff,
-        ← TransportMatrix.cost_ofRealFun c hmem]
+    · rw [iSup_lagrangian_of_mem c hmem, EReal.coe_le_coe_iff]
+      rw [costFun]
+      rw [← TransportMatrix.cost_ofRealFun c hmem]
       exact hA _
     · rw [iSup_lagrangian_of_notMem c hf hmem]
       exact le_top
@@ -756,17 +727,6 @@ theorem TransportMatrix.cost_eq_integral (c : ι × κ → ℝ) (A : TransportMa
     A.cost c = ∫ q, c q ∂A.toPMF.toMeasure := by
   rw [PMF.integral_eq_sum, cost_def]
   simp [smul_eq_mul, mul_comm]
-
-omit [MeasurableSingletonClass ι] [MeasurableSingletonClass κ] in
-/-- The measure a finite transportation matrix defines is a coupling of the two marginals. -/
-theorem TransportMatrix.isCoupling_toPMF_toMeasure (A : TransportMatrix μ ν) :
-    IsCoupling A.toPMF.toMeasure μ.toMeasure ν.toMeasure where
-  fst_eq := by
-    rw [MeasureTheory.Measure.fst,
-      PMF.toMeasure_map Prod.fst A.toPMF measurable_fst, A.map_fst_toPMF]
-  snd_eq := by
-    rw [MeasureTheory.Measure.snd,
-      PMF.toMeasure_map Prod.snd A.toPMF measurable_snd, A.map_snd_toPMF]
 
 end Measure
 

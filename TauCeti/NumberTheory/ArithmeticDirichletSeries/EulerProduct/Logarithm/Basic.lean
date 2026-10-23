@@ -31,6 +31,8 @@ a simply connected zero-free region on which to choose one — and is not constr
 
 ## Main results
 
+* `TauCeti.MultiplicativeIdealWeight.summable_neg_log_one_sub`: summability of the
+  prime-indexed logarithm sum wherever the ideal-indexed series converges absolutely.
 * `TauCeti.MultiplicativeIdealWeight.exp_tsum_neg_log_one_sub_eq_LSeries`: the `L`-series as the
   exponential of a sum of principal logarithms over the primes.
 * `TauCeti.MultiplicativeIdealWeight.tsum_prime_pow_eq_tsum_neg_log_one_sub`: that sum re-indexed
@@ -53,6 +55,14 @@ open IdealArithmeticFunction
 
 variable {K : Type*} [Field K] [NumberField K] (χ : MultiplicativeIdealWeight K) {s : ℂ}
 
+/-- The prime-indexed sum of principal logarithms converges whenever the ideal-indexed series
+of a multiplicative ideal weight converges absolutely. -/
+theorem summable_neg_log_one_sub
+    (hs : Summable (idealTerm K χ.toIdealArithmeticFunction s)) :
+    Summable (fun P : HeightOneSpectrum (𝓞 K) ↦
+      -log (1 - χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s)) :=
+  (Summable.clog_one_sub (χ.summable_div_of_summable_idealTerm hs)).neg
+
 /-- **The Euler product in exponential form.** For a completely multiplicative ideal weight whose
 ideal-indexed series converges absolutely at `s`, the `L`-series is the exponential of the sum of
 principal logarithms `-log (1 - χ(P) N(P)⁻ˢ)` over the height-one primes.
@@ -66,8 +76,7 @@ theorem exp_tsum_neg_log_one_sub_eq_LSeries
         -log (1 - χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s)) =
       LSeries (normCoeff K χ.toIdealArithmeticFunction) s := by
   have hne := χ.one_sub_div_ne_zero_of_summable_idealTerm hs
-  have H := (Summable.clog_one_sub
-    (χ.summable_div_of_summable_idealTerm hs)).neg.hasSum.cexp.tprod_eq
+  have H := (χ.summable_neg_log_one_sub hs).hasSum.cexp.tprod_eq
   simp only [Function.comp_apply, exp_neg, exp_log (hne _)] at H
   exact H.symm.trans (χ.hasProd_eulerFactor hs).tprod_eq
 

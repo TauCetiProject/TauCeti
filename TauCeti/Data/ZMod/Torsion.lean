@@ -13,9 +13,32 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 For every nonzero `p`, the subgroup of `ZMod (p ^ (k + 1))` killed by `p` is additively
 equivalent to `ZMod p`. This counts the elements killed by `p` in prime-power cyclic factors,
 as required by the rank-two finite-abelian criterion.
+
+In the first nontrivial case `k = 1`, an element of `ZMod (p ^ 2)` killed by `p` is a multiple of
+`p`, so it reduces to `0` modulo `p` (`ZMod.cast_eq_zero_of_natCast_mul_eq_zero`); this is what
+prevents a character of order `p` from lifting modulo `p ^ 2`. More generally, an element of
+`ZMod (p ^ (n + 1))` killed by `p` is the reduction of a multiple of `p ^ n`
+(`ZMod.exists_eq_pow_mul_of_zsmul_eq_zero`).
 -/
 
 public section
+
+/-- An element of `ZMod (p ^ 2)` killed by `p` reduces to `0` modulo `p`: its representative is
+divisible by `p`. -/
+theorem ZMod.cast_eq_zero_of_natCast_mul_eq_zero {p : ℕ} [NeZero p] {u : ZMod (p ^ 2)}
+    (hu : (p : ZMod (p ^ 2)) * u = 0) : (ZMod.cast u : ZMod p) = 0 := by
+  rw [← ZMod.natCast_zmod_val u, ← Nat.cast_mul, ZMod.natCast_eq_zero_iff] at hu
+  rw [ZMod.cast_eq_val, ZMod.natCast_eq_zero_iff]
+  exact (Nat.mul_dvd_mul_iff_left (Nat.pos_of_ne_zero (NeZero.ne p))).mp (by rwa [← sq])
+
+/-- An element of `ZMod (p ^ (n + 1))` killed by `p` is the reduction of a multiple of `p ^ n`. -/
+theorem ZMod.exists_eq_pow_mul_of_zsmul_eq_zero {p n : ℕ} [NeZero p] {x : ZMod (p ^ (n + 1))}
+    (hx : (p : ℤ) • x = 0) : ∃ t : ℤ, x = (((p : ℤ) ^ n * t : ℤ) : ZMod (p ^ (n + 1))) := by
+  obtain ⟨j, rfl⟩ := ZMod.intCast_surjective x
+  rw [zsmul_eq_mul, ← Int.cast_mul, ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.cast_pow, pow_succ,
+    mul_comm ((p : ℤ) ^ n)] at hx
+  obtain ⟨t, rfl⟩ := Int.dvd_of_mul_dvd_mul_left (by exact_mod_cast NeZero.ne p) hx
+  exact ⟨t, rfl⟩
 
 namespace TauCeti
 

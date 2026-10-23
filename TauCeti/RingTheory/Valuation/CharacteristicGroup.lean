@@ -20,7 +20,7 @@ with the two value conditions of the `Spv (A, I)` theory of §4.3 and §7.1 that
 against it. They share a file because the fullness condition `Γ_v = cΓ_v` is precisely a
 statement about this subgroup, and the `Spv (A, I)` membership criterion of Lemma 7.4
 combines it with cofinality. Both are formulated
-on the **value group** of `v` — Mathlib's `ValueGroup₀ (.ofClass v)`, via the restricted
+on the **value group** of `v` — Mathlib's `v.ValueGroup₀`, via the restricted
 valuation `v.restrict` — not on the ambient codomain, so they are invariant under valuation
 equivalence (`IsEquiv.cofinalValue_iff`, `IsEquiv.hasFullCharacteristicGroup_iff`) and can
 be consumed on points of the valuation spectrum:
@@ -53,10 +53,12 @@ formalised here.
   cofinal values.
 * `Valuation.mem_characteristicSubgroup_iff` : Membership in `cΓ_v` is bounding by a
   single attained value `≥ 1`.
+* `Valuation.hasFullCharacteristicGroup_of_one_lt` : A valuation into a `MulArchimedean`
+  group with a value `> 1` has full characteristic group.
 * `Valuation.hasFullCharacteristicGroup_iff_characteristicSubgroup_eq_top` : The
   elementwise fullness condition is exactly `cΓ_v = Γ_v`.
 * `Valuation.characteristicSubgroup_eq_comap_of_isEquiv` and
-  `Valuation.valueGroupOrderIso_mem_characteristicSubgroup_iff` : `cΓ_v` is invariant
+  `Valuation.orderMonoidIso_mem_characteristicSubgroup_iff` : `cΓ_v` is invariant
   under valuation equivalence, so it descends to points of the valuation spectrum.
 
 ## References
@@ -84,12 +86,12 @@ variable {A : Type*} [Ring A] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ
 power `(v a) ^ n` lies strictly below `γ` (Wedhorn Lemma 7.1: the condition satisfied by
 the elements of an ideal of definition). -/
 def CofinalValue (v : Valuation A Γ₀) (a : A) : Prop :=
-  ∀ γ : ValueGroup₀ (.ofClass v), 0 < γ → ∃ n : ℕ, v.restrict a ^ n < γ
+  ∀ γ : v.ValueGroup₀, 0 < γ → ∃ n : ℕ, v.restrict a ^ n < γ
 
 /-- The defining property of a cofinal value, on the value group of `v`. -/
 @[simp]
 theorem cofinalValue_iff {v : Valuation A Γ₀} {a : A} :
-    CofinalValue v a ↔ ∀ γ : ValueGroup₀ (.ofClass v), 0 < γ → ∃ n : ℕ, v.restrict a ^ n < γ :=
+    CofinalValue v a ↔ ∀ γ : v.ValueGroup₀, 0 < γ → ∃ n : ℕ, v.restrict a ^ n < γ :=
   Iff.rfl
 
 /-- **A uniform exponent for finitely many cofinal values.** If every member of a finite set has
@@ -99,7 +101,7 @@ No bound on the values need be assumed: cofinality already forces `v.restrict a 
 `γ = 1`. That is what makes the exponent uniform, since raising a value `≤ 1` to a higher power
 only decreases it, so the largest of the individual exponents serves. -/
 theorem exists_pow_lt_of_forall_cofinalValue {v : Valuation A Γ₀} (S : Finset A)
-    (hcof : ∀ a ∈ S, CofinalValue v a) {γ : ValueGroup₀ (.ofClass v)} (hγ : 0 < γ) :
+    (hcof : ∀ a ∈ S, CofinalValue v a) {γ : v.ValueGroup₀} (hγ : 0 < γ) :
     ∃ n : ℕ, ∀ a ∈ S, v.restrict a ^ n < γ := by
   have hle : ∀ a ∈ S, v.restrict a ≤ 1 := fun a ha ↦ by
     obtain ⟨n, hn⟩ := hcof a ha 1 one_pos
@@ -113,11 +115,11 @@ isomorphism of their value groups. -/
 theorem CofinalValue.of_isEquiv {v : Valuation A Γ₀} {w : Valuation A Γ₀'}
     (h : v.IsEquiv w) {a : A} (hv : CofinalValue v a) : CofinalValue w a := by
   intro γ hγ
-  obtain ⟨n, hn⟩ := hv (h.orderMonoidIso.symm γ)
-    (zero_lt_iff.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso heq))
+  obtain ⟨n, hn⟩ := hv (h.orderMonoidIso₀.symm γ)
+    (zero_lt_iff.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso₀ heq))
   refine ⟨n, ?_⟩
-  have := (map_lt_map_iff h.orderMonoidIso).mpr hn
-  rw [map_pow, Valuation.IsEquiv.orderMonoidIso_spec] at this
+  have := (map_lt_map_iff h.orderMonoidIso₀).mpr hn
+  rw [map_pow, Valuation.IsEquiv.orderMonoidIso₀_spec] at this
   simpa using this
 
 /-- Cofinality is invariant under valuation equivalence. -/
@@ -135,32 +137,32 @@ automatically satisfies `1 ≤ v.restrict a`, since the two bounds force `x⁻¹
 the second disjunct of Wedhorn Lemma 7.4(ii); it is weaker than the *microbial* condition
 of Wedhorn Definition 5.46 (on a field it holds for every valuation). -/
 def HasFullCharacteristicGroup (v : Valuation A Γ₀) : Prop :=
-  ∀ γ : ValueGroup₀ (.ofClass v), 0 < γ →
+  ∀ γ : v.ValueGroup₀, 0 < γ →
     ∃ a : A, (v.restrict a)⁻¹ ≤ γ ∧ γ ≤ v.restrict a
 
 /-- The defining property of the full-characteristic-group condition. -/
 @[simp]
 theorem hasFullCharacteristicGroup_iff {v : Valuation A Γ₀} :
     HasFullCharacteristicGroup v ↔
-      ∀ γ : ValueGroup₀ (.ofClass v), 0 < γ →
+      ∀ γ : v.ValueGroup₀, 0 < γ →
         ∃ a : A, (v.restrict a)⁻¹ ≤ γ ∧ γ ≤ v.restrict a :=
   Iff.rfl
 
 /-- A bounding witness is automatically at least `1`: the two bounds force
 `x⁻¹ ≤ x` at a positive element. -/
 private theorem one_le_of_inv_le_of_le {v : Valuation A Γ₀}
-    {x γ : ValueGroup₀ (.ofClass v)} (hγ : 0 < γ)
+    {x γ : v.ValueGroup₀} (hγ : 0 < γ)
     (h1 : x⁻¹ ≤ γ) (h2 : γ ≤ x) : 1 ≤ x := by
   by_contra hx
   push Not at hx
   have hx0 : 0 < x := hγ.trans_le h2
-  have h3 : (1 : ValueGroup₀ (.ofClass v)) < x⁻¹ := (one_lt_inv₀ hx0).mpr hx
+  have h3 : (1 : v.ValueGroup₀) < x⁻¹ := (one_lt_inv₀ hx0).mpr hx
   exact absurd ((h1.trans h2).trans hx.le) (not_le.mpr h3)
 
 /-- Strengthened elimination: a bounding witness for a positive `γ` can be taken with
 `1 ≤ v.restrict a` alongside the two bounds. -/
 theorem HasFullCharacteristicGroup.exists_one_le {v : Valuation A Γ₀}
-    (h : HasFullCharacteristicGroup v) {γ : ValueGroup₀ (.ofClass v)} (hγ : 0 < γ) :
+    (h : HasFullCharacteristicGroup v) {γ : v.ValueGroup₀} (hγ : 0 < γ) :
     ∃ a : A, 1 ≤ v.restrict a ∧ (v.restrict a)⁻¹ ≤ γ ∧ γ ≤ v.restrict a := by
   obtain ⟨a, h1, h2⟩ := h γ hγ
   exact ⟨a, one_le_of_inv_le_of_le hγ h1 h2, h1, h2⟩
@@ -170,14 +172,14 @@ valuations, through the ordered isomorphism of their value groups. -/
 theorem HasFullCharacteristicGroup.of_isEquiv {v : Valuation A Γ₀} {w : Valuation A Γ₀'}
     (h : v.IsEquiv w) (hv : HasFullCharacteristicGroup v) : HasFullCharacteristicGroup w := by
   intro γ hγ
-  obtain ⟨a, ha_lo, ha_hi⟩ := hv (h.orderMonoidIso.symm γ)
-    (zero_lt_iff.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso heq))
+  obtain ⟨a, ha_lo, ha_hi⟩ := hv (h.orderMonoidIso₀.symm γ)
+    (zero_lt_iff.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso₀ heq))
   refine ⟨a, ?_, ?_⟩
-  · have := (map_le_map_iff h.orderMonoidIso).mpr ha_lo
-    rw [map_inv₀, Valuation.IsEquiv.orderMonoidIso_spec] at this
+  · have := (map_le_map_iff h.orderMonoidIso₀).mpr ha_lo
+    rw [map_inv₀, Valuation.IsEquiv.orderMonoidIso₀_spec] at this
     simpa using this
-  · have := (map_le_map_iff h.orderMonoidIso).mpr ha_hi
-    rw [Valuation.IsEquiv.orderMonoidIso_spec] at this
+  · have := (map_le_map_iff h.orderMonoidIso₀).mpr ha_hi
+    rw [Valuation.IsEquiv.orderMonoidIso₀_spec] at this
     simpa using this
 
 /-- The full-characteristic-group condition is invariant under valuation equivalence. -/
@@ -191,38 +193,55 @@ group dominates the inverse of some nonzero value: the existence statement used 
 `Γ_v = cΓ_v` case of Wedhorn Lemma 7.10. -/
 theorem HasFullCharacteristicGroup.exists_inv_le {v : Valuation A Γ₀}
     (h : HasFullCharacteristicGroup v)
-    {γ : ValueGroup₀ (.ofClass v)} (hγ : 0 < γ) :
+    {γ : v.ValueGroup₀} (hγ : 0 < γ) :
     ∃ t : A, v.restrict t ≠ 0 ∧ (v.restrict t)⁻¹ ≤ γ := by
   obtain ⟨a, ha_inv_le, ha_le⟩ := h γ hγ
   exact ⟨a, (hγ.trans_le ha_le).ne', ha_inv_le⟩
+
+/-- **A valuation of rank at most one with a value `> 1` has full characteristic group.** If the
+codomain is `MulArchimedean` and `1 < v y`, the powers `v (y ^ n)` bound every positive element
+of the value group from above and below. -/
+theorem hasFullCharacteristicGroup_of_one_lt [MulArchimedean Γ₀] {v : Valuation A Γ₀} {y : A}
+    (hy : 1 < v y) : HasFullCharacteristicGroup v := by
+  intro γ hγ
+  set g := ValueGroup₀.embedding γ
+  have hg : 0 < g := by
+    simpa [g] using ValueGroup₀.embedding_strictMono hγ
+  obtain ⟨n, hn⟩ := MulArchimedean.arch (max g g⁻¹) hy
+  have hyn : 0 < v y ^ n := pow_pos (one_pos.trans hy) n
+  refine ⟨y ^ n, ?_, ?_⟩
+  · rw [← ValueGroup₀.embedding_strictMono.le_iff_le, map_inv₀, embedding_restrict, map_pow]
+    exact (inv_le_comm₀ hyn hg).mpr ((le_max_right _ _).trans hn)
+  · rw [← ValueGroup₀.embedding_strictMono.le_iff_le, embedding_restrict, map_pow]
+    exact (le_max_left _ _).trans hn
 
 /-! ### The characteristic subgroup -/
 
 /-- The generators of the characteristic subgroup `cΓ_v` of Wedhorn 4.13: the values `≥ 1`
 attained by `v`, as elements of the value group (Mathlib's `valueGroup.mk f r s`
-represents `(f r)⁻¹ * f s`, so `valueGroup.mk (.ofClass v) 1 a` is the value `v a`). -/
-def characteristicGenerators (v : Valuation A Γ₀) : Set (valueGroup (.ofClass v)) :=
-  {γ | 1 ≤ γ ∧ ∃ a : A, v.restrict a = (γ : ValueGroup₀ (.ofClass v))}
+represents `(f r)⁻¹ * f s`, so `valueGroup.mk (v : A →*₀ Γ₀) 1 a` is the value `v a`). -/
+def characteristicGenerators (v : Valuation A Γ₀) : Set v.valueGroup :=
+  {γ | 1 ≤ γ ∧ ∃ a : A, v.restrict a = (γ : v.ValueGroup₀)}
 
 /-- Membership in the generating set: the attained values `≥ 1`, in the `v.restrict` form
 consumers hold. -/
 @[simp]
-theorem mem_characteristicGenerators {v : Valuation A Γ₀} {γ : valueGroup (.ofClass v)} :
+theorem mem_characteristicGenerators {v : Valuation A Γ₀} {γ : v.valueGroup} :
     γ ∈ characteristicGenerators v ↔
-      1 ≤ γ ∧ ∃ a : A, v.restrict a = (γ : ValueGroup₀ (.ofClass v)) :=
+      1 ≤ γ ∧ ∃ a : A, v.restrict a = (γ : v.ValueGroup₀) :=
   Iff.rfl
 
 /-- The **characteristic subgroup** `cΓ_v` of Wedhorn 4.13: the smallest convex subgroup of
 the value group containing the values `≥ 1` attained by `v`. -/
 noncomputable def characteristicSubgroup (v : Valuation A Γ₀) :
-    TauCeti.ConvexSubgroup (valueGroup (.ofClass v)) :=
+    TauCeti.ConvexSubgroup v.valueGroup :=
   TauCeti.ConvexSubgroup.closure (characteristicGenerators v)
 
 /-- Universal property: `cΓ_v` lies inside a convex subgroup exactly when the attained
 values `≥ 1` do. -/
 @[simp]
 theorem characteristicSubgroup_le_iff {v : Valuation A Γ₀}
-    {H : TauCeti.ConvexSubgroup (valueGroup (.ofClass v))} :
+    {H : TauCeti.ConvexSubgroup v.valueGroup} :
     characteristicSubgroup v ≤ H ↔ characteristicGenerators v ⊆ H :=
   TauCeti.ConvexSubgroup.closure_le
 
@@ -234,8 +253,8 @@ theorem characteristicGenerators_subset_characteristicSubgroup (v : Valuation A 
 /-- **Introduction rule.** An attained value `≥ 1` lies in the characteristic subgroup,
 stated for the ordinary restricted value. -/
 theorem mem_characteristicSubgroup_of_restrict {v : Valuation A Γ₀} {a : A}
-    {γ : valueGroup (.ofClass v)} (h1 : 1 ≤ γ)
-    (ha : v.restrict a = (γ : ValueGroup₀ (.ofClass v))) :
+    {γ : v.valueGroup} (h1 : 1 ≤ γ)
+    (ha : v.restrict a = (γ : v.ValueGroup₀)) :
     γ ∈ characteristicSubgroup v :=
   characteristicGenerators_subset_characteristicSubgroup v ⟨h1, a, ha⟩
 
@@ -243,17 +262,17 @@ theorem mem_characteristicSubgroup_of_restrict {v : Valuation A Γ₀} {a : A}
 a representation of the value. -/
 theorem valueGroup_mk_mem_characteristicSubgroup_of_one_le
     {v : Valuation A Γ₀} {a : A}
-    (h : (MonoidWithZeroHom.ofClass v) a ≠ 0)
-    (h1 : 1 ≤ valueGroup.mk (.ofClass v) 1 a (by simp) h) :
-    valueGroup.mk (.ofClass v) 1 a (by simp) h ∈ characteristicSubgroup v :=
+    (h : v a ≠ 0)
+    (h1 : 1 ≤ valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h) :
+    valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h ∈ characteristicSubgroup v :=
   mem_characteristicSubgroup_of_restrict h1 (v.restrict_eq_mk h)
 
 /-- An attained value at least `1` puts its class in `cΓ_v`. This is the form consumers hold,
 since they meet `1 ≤ v a` rather than a bound in the value group. The nonvanishing hypothesis
 is part of the statement, since the class `valueGroup.mk … h` is indexed by it. -/
 theorem valueGroup_mk_mem_characteristicSubgroup_of_one_le_value {v : Valuation A Γ₀} {a : A}
-    (h : (MonoidWithZeroHom.ofClass v) a ≠ 0) (h1 : 1 ≤ v a) :
-    valueGroup.mk (.ofClass v) 1 a (by simp) h ∈ characteristicSubgroup v := by
+    (h : v a ≠ 0) (h1 : 1 ≤ v a) :
+    valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h ∈ characteristicSubgroup v := by
   refine valueGroup_mk_mem_characteristicSubgroup_of_one_le h ?_
   rw [← WithZero.coe_le_coe, ← v.restrict_eq_mk h]
   have : v.restrict 1 ≤ v.restrict a := v.restrict_le_iff.mpr (by simpa using h1)
@@ -261,12 +280,12 @@ theorem valueGroup_mk_mem_characteristicSubgroup_of_one_le_value {v : Valuation 
 
 /-- Equivalent valuations have corresponding characteristic generators. -/
 theorem characteristicGenerators_map_of_isEquiv {v : Valuation A Γ₀} {w : Valuation A Γ₀'}
-    (h : v.IsEquiv w) {γ : valueGroup (.ofClass v)} (hγ : γ ∈ characteristicGenerators v) :
-    h.valueGroupOrderIso γ ∈ characteristicGenerators w := by
+    (h : v.IsEquiv w) {γ : v.valueGroup} (hγ : γ ∈ characteristicGenerators v) :
+    h.orderMonoidIso γ ∈ characteristicGenerators w := by
   obtain ⟨h1, a, ha⟩ := hγ
   refine ⟨?_, a, ?_⟩
-  · simpa using h.valueGroupOrderIso.map_le_map_iff'.mpr h1
-  · rw [h.valueGroupOrderIso_coe, ← ha, h.orderMonoidIso_spec]
+  · simpa using h.orderMonoidIso.map_le_map_iff'.mpr h1
+  · rw [← h.orderMonoidIso₀_coe, ← ha, h.orderMonoidIso₀_spec]
 
 /-- **Invariance under valuation equivalence.** The characteristic subgroup is carried into
 the characteristic subgroup by the induced value-group isomorphism. Applying this to `h.symm`
@@ -275,7 +294,7 @@ may be used on points of the valuation spectrum. -/
 theorem characteristicSubgroup_le_comap_of_isEquiv {v : Valuation A Γ₀} {w : Valuation A Γ₀'}
     (h : v.IsEquiv w) :
     characteristicSubgroup v ≤
-      TauCeti.ConvexSubgroup.comap h.valueGroupOrderIso (characteristicSubgroup w) := by
+      TauCeti.ConvexSubgroup.comap h.orderMonoidIso (characteristicSubgroup w) := by
   rw [characteristicSubgroup_le_iff]
   intro γ hγ
   exact TauCeti.ConvexSubgroup.mem_comap.mpr
@@ -284,20 +303,20 @@ theorem characteristicSubgroup_le_comap_of_isEquiv {v : Valuation A Γ₀} {w : 
 
 /-- Membership form of the invariance. -/
 theorem mem_characteristicSubgroup_of_isEquiv {v : Valuation A Γ₀} {w : Valuation A Γ₀'}
-    (h : v.IsEquiv w) {γ : valueGroup (.ofClass v)} (hγ : γ ∈ characteristicSubgroup v) :
-    h.valueGroupOrderIso γ ∈ characteristicSubgroup w :=
+    (h : v.IsEquiv w) {γ : v.valueGroup} (hγ : γ ∈ characteristicSubgroup v) :
+    h.orderMonoidIso γ ∈ characteristicSubgroup w :=
   TauCeti.ConvexSubgroup.mem_comap.mp (characteristicSubgroup_le_comap_of_isEquiv h hγ)
 
 /-! ### Fullness as a statement about the characteristic subgroup -/
 
 /-- `1` is an attained value `≥ 1`. -/
 private theorem one_mem_characteristicGenerators (v : Valuation A Γ₀) :
-    (1 : valueGroup (.ofClass v)) ∈ characteristicGenerators v :=
+    (1 : v.valueGroup) ∈ characteristicGenerators v :=
   ⟨le_rfl, 1, by simp⟩
 
 /-- The attained values `≥ 1` are closed under multiplication, because `v` is. -/
 private theorem mul_mem_characteristicGenerators {v : Valuation A Γ₀}
-    {γ δ : valueGroup (.ofClass v)} (hγ : γ ∈ characteristicGenerators v)
+    {γ δ : v.valueGroup} (hγ : γ ∈ characteristicGenerators v)
     (hδ : δ ∈ characteristicGenerators v) : γ * δ ∈ characteristicGenerators v := by
   obtain ⟨h1, a, ha⟩ := hγ
   obtain ⟨h2, b, hb⟩ := hδ
@@ -309,7 +328,7 @@ private theorem mul_mem_characteristicGenerators {v : Valuation A Γ₀}
 The non-obvious direction is that one generator suffices: the attained values `≥ 1` are closed
 under multiplication, so the elements they bound already form a convex subgroup. -/
 theorem mem_characteristicSubgroup_iff {v : Valuation A Γ₀}
-    {γ : valueGroup (.ofClass v)} :
+    {γ : v.valueGroup} :
     γ ∈ characteristicSubgroup v ↔
       ∃ g ∈ characteristicGenerators v, g⁻¹ ≤ γ ∧ γ ≤ g := by
   exact TauCeti.ConvexSubgroup.mem_closure_of_nonempty_of_mul_mem_of_one_le
@@ -326,19 +345,19 @@ theorem hasFullCharacteristicGroup_iff_characteristicSubgroup_eq_top {v : Valuat
   constructor
   · intro hv
     refine eq_top_iff.mpr fun γ _ ↦ ?_
-    obtain ⟨a, hinv, hle⟩ := hv (γ : ValueGroup₀ (.ofClass v)) (by simp)
+    obtain ⟨a, hinv, hle⟩ := hv (γ : v.ValueGroup₀) (by simp)
     have hne : v.restrict a ≠ 0 := by
       intro hz
       rw [hz] at hle
       simp at hle
-    have h0 : (MonoidWithZeroHom.ofClass v) a ≠ 0 := fun hz ↦
+    have h0 : v a ≠ 0 := fun hz ↦
       hne (v.restrict_eq_zero_iff.mpr hz)
-    have hga : v.restrict a = ((valueGroup.mk (.ofClass v) 1 a (by simp) h0 :
-      valueGroup (.ofClass v)) : ValueGroup₀ (.ofClass v)) := v.restrict_eq_mk h0
+    have hga : v.restrict a = ((valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0 :
+      v.valueGroup) : v.ValueGroup₀) := v.restrict_eq_mk h0
     rw [hga, ← WithZero.coe_inv, WithZero.coe_le_coe] at hinv
     rw [hga, WithZero.coe_le_coe] at hle
-    have h1g : (1 : valueGroup (.ofClass v)) ≤ valueGroup.mk (.ofClass v) 1 a (by simp) h0 := by
-      rcases le_total 1 (valueGroup.mk (.ofClass v) 1 a (by simp) h0) with h | h
+    have h1g : (1 : v.valueGroup) ≤ valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0 := by
+      rcases le_total 1 (valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0) with h | h
       · exact h
       · exact (one_le_inv'.mpr h).trans (hinv.trans hle)
     have hmem := mem_characteristicSubgroup_of_restrict h1g hga
@@ -353,47 +372,47 @@ theorem hasFullCharacteristicGroup_iff_characteristicSubgroup_eq_top {v : Valuat
     · rw [ha, WithZero.coe_le_coe]; exact hdg
 
 /-- The generators correspond **exactly** under the induced value-group isomorphism: both
-sides are indexed by the same ring, and `orderMonoidIso_spec` matches `v.restrict a` with
+sides are indexed by the same ring, and `orderMonoidIso₀_spec` matches `v.restrict a` with
 `w.restrict a`.
 
 Not a `simp` lemma, though its subgroup counterpart is: `mem_characteristicGenerators` is
 already the `simp` normal form for the left-hand side, so tagging this one fails `simpNF`
 (the left-hand side rewrites to `1 ≤ …  ∧ ∃ a, w.restrict a = …` before it can fire). -/
-theorem valueGroupOrderIso_mem_characteristicGenerators_iff {v : Valuation A Γ₀}
-    {w : Valuation A Γ₀'} (h : v.IsEquiv w) {γ : valueGroup (.ofClass v)} :
-    h.valueGroupOrderIso γ ∈ characteristicGenerators w ↔ γ ∈ characteristicGenerators v := by
+theorem orderMonoidIso_mem_characteristicGenerators_iff {v : Valuation A Γ₀}
+    {w : Valuation A Γ₀'} (h : v.IsEquiv w) {γ : v.valueGroup} :
+    h.orderMonoidIso γ ∈ characteristicGenerators w ↔ γ ∈ characteristicGenerators v := by
   refine ⟨fun ⟨h1, a, ha⟩ ↦ ⟨?_, a, ?_⟩, characteristicGenerators_map_of_isEquiv h⟩
-  · simpa using h.valueGroupOrderIso.map_le_map_iff'.mp (by simpa using h1)
-  · have hspec : h.orderMonoidIso (v.restrict a) = w.restrict a := h.orderMonoidIso_spec a
-    rw [ha, h.valueGroupOrderIso_coe] at hspec
-    exact h.orderMonoidIso.toMulEquiv.injective hspec
+  · simpa using h.orderMonoidIso.map_le_map_iff'.mp (by simpa using h1)
+  · have hspec : h.orderMonoidIso₀ (v.restrict a) = w.restrict a := h.orderMonoidIso₀_spec a
+    rw [ha, ← h.orderMonoidIso₀_coe] at hspec
+    exact h.orderMonoidIso₀.toMulEquiv.injective hspec
 
 /-- **`cΓ_v` is an invariant of the equivalence class**, in membership form. -/
 @[simp]
-theorem valueGroupOrderIso_mem_characteristicSubgroup_iff {v : Valuation A Γ₀}
-    {w : Valuation A Γ₀'} (h : v.IsEquiv w) {γ : valueGroup (.ofClass v)} :
-    h.valueGroupOrderIso γ ∈ characteristicSubgroup w ↔ γ ∈ characteristicSubgroup v := by
+theorem orderMonoidIso_mem_characteristicSubgroup_iff {v : Valuation A Γ₀}
+    {w : Valuation A Γ₀'} (h : v.IsEquiv w) {γ : v.valueGroup} :
+    h.orderMonoidIso γ ∈ characteristicSubgroup w ↔ γ ∈ characteristicSubgroup v := by
   rw [mem_characteristicSubgroup_iff, mem_characteristicSubgroup_iff]
   constructor
   · rintro ⟨g, hg, hgγ, hγg⟩
-    refine ⟨h.valueGroupOrderIso.symm g, ?_, ?_, ?_⟩
-    · rw [← valueGroupOrderIso_mem_characteristicGenerators_iff h]
+    refine ⟨h.orderMonoidIso.symm g, ?_, ?_, ?_⟩
+    · rw [← orderMonoidIso_mem_characteristicGenerators_iff h]
       simpa using hg
-    · simpa using h.valueGroupOrderIso.symm.map_le_map_iff'.mpr hgγ
-    · simpa using h.valueGroupOrderIso.symm.map_le_map_iff'.mpr hγg
+    · simpa using h.orderMonoidIso.symm.map_le_map_iff'.mpr hgγ
+    · simpa using h.orderMonoidIso.symm.map_le_map_iff'.mpr hγg
   · rintro ⟨g, hg, hgγ, hγg⟩
-    exact ⟨h.valueGroupOrderIso g,
-      (valueGroupOrderIso_mem_characteristicGenerators_iff h).mpr hg,
-      by simpa using h.valueGroupOrderIso.map_le_map_iff'.mpr hgγ,
-      h.valueGroupOrderIso.map_le_map_iff'.mpr hγg⟩
+    exact ⟨h.orderMonoidIso g,
+      (orderMonoidIso_mem_characteristicGenerators_iff h).mpr hg,
+      by simpa using h.orderMonoidIso.map_le_map_iff'.mpr hgγ,
+      h.orderMonoidIso.map_le_map_iff'.mpr hγg⟩
 
 /-- Equality form of the invariance: `cΓ_v` is the pullback of `cΓ_w`. -/
 theorem characteristicSubgroup_eq_comap_of_isEquiv {v : Valuation A Γ₀}
     {w : Valuation A Γ₀'} (h : v.IsEquiv w) :
     characteristicSubgroup v =
-      TauCeti.ConvexSubgroup.comap h.valueGroupOrderIso (characteristicSubgroup w) :=
+      TauCeti.ConvexSubgroup.comap h.orderMonoidIso (characteristicSubgroup w) :=
   TauCeti.ConvexSubgroup.ext fun _ ↦
-    ((valueGroupOrderIso_mem_characteristicSubgroup_iff h).symm.trans
+    ((orderMonoidIso_mem_characteristicSubgroup_iff h).symm.trans
       TauCeti.ConvexSubgroup.mem_comap.symm)
 
 end Valuation

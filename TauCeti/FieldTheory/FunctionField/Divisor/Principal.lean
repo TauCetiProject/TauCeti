@@ -48,6 +48,9 @@ the places themselves.
 ## Main results
 
 * `TauCeti.Divisor.zeros_sub_poles`: `div z = (z)₀ - (z)_∞`, with both parts effective.
+* `TauCeti.Divisor.poles_pow`: `(zⁿ)_∞ = n (z)_∞`.
+* `TauCeti.Divisor.poles_eq_natCast_zsmul_ofPoint_of_ord_eq_neg`: a function with a single pole,
+  of order `n` at `P`, has pole divisor `nP`.
 * `TauCeti.Divisor.principal_eq_zero_iff_mem_algebraicClosure`: `div z = 0` exactly when `z` is
   a constant, and `TauCeti.Divisor.principal_eq_zero_iff`: over an exact constant field, exactly
   when `z ∈ kˣ`.
@@ -267,6 +270,21 @@ theorem mem_support_poles_iff (hF : IsFunctionField k F) {z : Fˣ} {P : Place k 
   rw [WeilDivisor.mem_support_iff, coeff_poles]
   omega
 
+/-- A place is outside the support of the pole divisor of `z` exactly when `z` is regular
+there. -/
+theorem coeff_poles_eq_zero_iff (hF : IsFunctionField k F) (z : Fˣ) (P : Place k F) :
+    (poles hF z).coeff P = 0 ↔ (z : F) ∈ P.integers := by
+  rw [coeff_poles, P.mem_integers_iff_ord_nonneg]
+  omega
+
+/-- The function `z` has valuation `exp ((z)_∞(P))` at `P`, the largest pole order that its pole
+divisor allows, exactly when `z⁻¹` is regular at `P`. -/
+theorem valuation_eq_exp_coeff_poles_iff (hF : IsFunctionField k F) (z : Fˣ) (P : Place k F) :
+    P.valuation (z : F) = WithZero.exp ((poles hF z).coeff P) ↔ (z : F)⁻¹ ∈ P.integers := by
+  rw [← neg_neg ((poles hF z).coeff P), ← P.ord_eq_iff_valuation_eq_exp_neg z.ne_zero,
+    coeff_poles, P.mem_integers_iff_ord_nonneg, P.ord_inv]
+  omega
+
 @[simp]
 theorem isEffective_zeros (hF : IsFunctionField k F) (z : Fˣ) :
     WeilDivisor.IsEffective (zeros hF z) :=
@@ -282,10 +300,35 @@ theorem zeros_sub_poles (hF : IsFunctionField k F) (z : Fˣ) :
     zeros hF z - poles hF z = principal hF z :=
   posPart_sub_negPart (principal hF z)
 
+/-- The pole divisor of a power of a function is the multiple of its pole divisor:
+`(zⁿ)_∞ = n (z)_∞`. -/
+@[simp]
+theorem poles_pow (hF : IsFunctionField k F) (z : Fˣ) (n : ℕ) :
+    poles hF (z ^ n) = n • poles hF z :=
+  WeilDivisor.ext fun P => by
+    rw [coeff_poles, WeilDivisor.coeff_nsmul, coeff_poles, Units.val_pow_eq_pow_val, P.ord_pow]
+    rcases le_total 0 (P.ord (z : F)) with h | h
+    · rw [max_eq_right (by nlinarith), max_eq_right (by omega), mul_zero]
+    · rw [max_eq_left (by nlinarith), max_eq_left (by omega), mul_neg]
+
 /-- The poles of a function are the zeros of its inverse. -/
 theorem poles_eq_zeros_inv (hF : IsFunctionField k F) (z : Fˣ) :
     poles hF z = zeros hF z⁻¹ :=
   WeilDivisor.ext fun P => by rw [coeff_poles, coeff_zeros, Units.val_inv_eq_inv_val, P.ord_inv]
+
+/-- **The pole divisor of a function with a single pole**: a function of order `-n` at `P`,
+with `n : ℕ`, that is regular at every other place has pole divisor `nP`. -/
+theorem poles_eq_natCast_zsmul_ofPoint_of_ord_eq_neg (hF : IsFunctionField k F) {z : Fˣ}
+    {P : Place k F} {n : ℕ} (hP : P.ord (z : F) = -(n : ℤ))
+    (hQ : ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord (z : F)) :
+    poles hF z = (n : ℤ) • WeilDivisor.ofPoint P := by
+  ext Q
+  rcases eq_or_ne Q P with rfl | hQP
+  · rw [coeff_poles, hP, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_self, mul_one]
+    omega
+  · rw [coeff_poles, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_of_ne hQP, mul_zero]
+    have := hQ Q hQP
+    omega
 
 /-- **Two functions with the same divisor differ by a constant of the base field**, over an exact
 constant field. -/

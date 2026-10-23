@@ -168,6 +168,12 @@ theorem mem_piece_iff (hs : HodgeStructureOn W ω n) (p : ℤ) (x : W) :
     x ∈ hs.piece p ↔ x ∈ hs.F p ∧ x ∈ hs.conjF (n - p) := by
   simp only [piece_def, Submodule.mem_inf]
 
+/-- A vector fixed by the conjugation lies in the Hodge component `H^{p,n-p}` exactly when it lies
+in the two filtration steps `F^p` and `F^{n-p}`. -/
+theorem mem_piece_iff_of_conj_eq (hs : HodgeStructureOn W ω n) (p : ℤ) {x : W}
+    (hx : ω.toEquiv x = x) : x ∈ hs.piece p ↔ x ∈ hs.F p ∧ x ∈ hs.F (n - p) := by
+  rw [mem_piece_iff, mem_conjF_iff, hx]
+
 /-- A Hodge component lies in its corresponding filtration step. -/
 theorem piece_le_F (hs : HodgeStructureOn W ω n) (p : ℤ) : hs.piece p ≤ hs.F p :=
   inf_le_left

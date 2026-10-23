@@ -11,9 +11,8 @@ public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.MemLp
 # Hermite functions as `L²` vectors
 
 This file packages the pointwise Hermite functions `TauCeti.hermiteFunction n` as elements of
-`Lp 𝕜 2 volume`, for any `RCLike` scalar field `𝕜`.  This is the `hermiteFunctionLp` family
-named in the `OrthogonalL2Bases` roadmap's Part A3: the later orthonormality and Hilbert-basis
-theorems use these `Lp` vectors, while the analytic `L²` membership is supplied by
+`Lp 𝕜 2 volume`, for any `RCLike` scalar field `𝕜`. The orthonormality and Hilbert-basis theorems
+use these `Lp` vectors, while the analytic `L²` membership is supplied by
 `TauCeti.memLp_two_hermiteFunction`.
 
 The a.e. representative lemmas are the anti-vacuity pins for downstream consumers: they expose

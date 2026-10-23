@@ -72,13 +72,12 @@ theorem form_rationalizationEquiv (L : IntegralLattice V) (x y : ℚ ⊗[ℤ] L)
     L.form (Submodule.rationalizationEquiv L.carrier x)
         (Submodule.rationalizationEquiv L.carrier y) =
       L.integralForm.baseChange ℚ x y := by
-  let h := Submodule.IsLattice.isBaseChange_subtype L.carrier
+  let h := Submodule.isBaseChange_subtype L.carrier
   -- The generic equivalence is opaque across modules; identify it by its pure-tensor equation.
   have he : Submodule.rationalizationEquiv L.carrier = h.equiv := by
     apply LinearEquiv.ext
     intro t
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | add s t hs ht => simp only [map_add, hs, ht]
     | tmul q z =>
       rw [Submodule.rationalizationEquiv_tmul, h.equiv_tmul]
@@ -137,7 +136,7 @@ theorem ofIntegralForm_form (B : LinearMap.BilinForm ℤ M) (hB : B.IsSymm) :
 theorem ofIntegralForm_carrier (B : LinearMap.BilinForm ℤ M) (hB : B.IsSymm) :
     (ofIntegralForm B hB).carrier = LinearMap.range (TensorProduct.mk ℤ ℚ M 1) :=
   (IntegralLattice.ofBasis_carrier _ _ _ _).trans
-    (TensorProduct.range_mk_one_eq_span (Module.Free.chooseBasis ℤ M)).symm
+    (Module.Free.chooseBasis ℤ M).range_mk_one_eq_span.symm
 
 /-- The carrier of a rationalized integral form consists exactly of the unit pure tensors. -/
 @[simp]
@@ -211,8 +210,7 @@ theorem rationalizationEquiv_baseChange_carrierEquiv
     (B : LinearMap.BilinForm ℤ M) (hB : B.IsSymm) (x : ℚ ⊗[ℤ] M) :
     Submodule.rationalizationEquiv (ofIntegralForm B hB).carrier
         (LinearEquiv.baseChange ℤ ℚ M _ (carrierEquiv B hB) x) = x := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul q m =>
     rw [LinearEquiv.baseChange_tmul, Submodule.rationalizationEquiv_tmul,

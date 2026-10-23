@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Properties
@@ -52,7 +52,7 @@ normal forms for sections used in line-bundle constructions.
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry TopologicalSpace
 
 namespace TauCeti
 
@@ -65,6 +65,25 @@ noncomputable section
 namespace SheafOfModules
 
 variable (X : Scheme.{u})
+
+/-- Construct a rank-one atlas from an open cover and a trivialization on each member. -/
+def LocalTrivializations.ofIsOpenCover {M : X.Modules} {ι : Type u} (W : ι → X.Opens)
+    (hW : IsOpenCover W)
+    (e : ∀ i, _root_.SheafOfModules.unit (X.ringCatSheaf.over (W i)) ≅ M.over (W i)) :
+    TauCeti.SheafOfModules.LocalTrivializations.{u, u, u} M :=
+  { I := ι
+    X := W
+    coversTop := (Opens.coversTop_iff (X : Type u) W).mpr hW
+    iso := fun i ↦ TauCeti.SheafOfModules.freePUnitIsoUnit
+      (X.ringCatSheaf.over (W i)) ≪≫ e i }
+
+/-- Construct a rank-one atlas from a neighbourhood of each point and a trivialization there. -/
+def LocalTrivializations.ofForallMem {M : X.Modules} (V : X → X.Opens)
+    (hx : ∀ x, x ∈ V x)
+    (e : ∀ x, _root_.SheafOfModules.unit (X.ringCatSheaf.over (V x)) ≅ M.over (V x)) :
+    TauCeti.SheafOfModules.LocalTrivializations.{u, u, u} M :=
+  LocalTrivializations.ofIsOpenCover X V
+    (TopologicalSpace.IsOpenCover.mk (top_unique fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hx x⟩)) e
 
 /-- The object property of being an invertible sheaf on a scheme. -/
 abbrev isInvertible : ObjectProperty X.Modules :=
@@ -97,6 +116,12 @@ namespace InvertibleSheaf
 
 instance (L : InvertibleSheaf X) : SheafOfModules.isInvertible X L.obj :=
   L.property
+
+/-- The underlying sheaf of a line bundle is quasicoherent. -/
+instance isQuasicoherent_obj (L : InvertibleSheaf X) : L.obj.IsQuasicoherent :=
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
+  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
+  inferInstanceAs F.IsQuasicoherent
 
 /-- The invertible sheaf given by the free sheaf on an indexing type with exactly one element. -/
 def free (X : Scheme.{u}) (I : Type u) [Nonempty I] [Subsingleton I] :
@@ -164,13 +189,9 @@ theorem isInvertible_iff_exists_isOpenCover :
   · rintro ⟨ι, W, hW, e⟩
     -- On each `W i`, transport the trivialization `𝒪_{W i} ≅ M|_{W i}` of `(W i).toScheme`-modules
     -- back to the slice site over `W i` along the equivalence `Scheme.Modules.overEquiv`.
-    exact TauCeti.SheafOfModules.LocalTrivializations.isInvertible (M := M)
-      { I := ι
-        X := W
-        coversTop := (Opens.coversTop_iff (X : Type u) W).mpr hW
-        iso i := TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over (W i)) ≪≫
-          (Scheme.Modules.overEquiv (W i)).fullyFaithfulFunctor.preimageIso
-            ((e i).some ≪≫ ((Scheme.Modules.overFunctorEquiv (W i)).app M).symm) }
+    exact (LocalTrivializations.ofIsOpenCover X W hW fun i ↦
+      (Scheme.Modules.overEquiv (W i)).fullyFaithfulFunctor.preimageIso
+        ((e i).some ≪≫ ((Scheme.Modules.overFunctorEquiv (W i)).app M).symm)).isInvertible
 
 end AlgebraicGeometry.SheafOfModules
 
@@ -273,6 +294,14 @@ theorem trivializationCoordinate_map_trivializationGenerator (M : X.Modules) {V 
     exact h.symm
   rw [h', map_one, LinearEquiv.apply_symm_apply]
 
+/-- The basis section of a rank-one trivialization has coordinate one. -/
+@[simp]
+theorem trivializationCoordinate_trivializationGenerator (M : X.Modules) {V : X.Opens}
+    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V) :
+    trivializationCoordinate M t (𝟙 V) (trivializationGenerator M t) = 1 := by
+  have h := trivializationCoordinate_map_trivializationGenerator M t (𝟙 V)
+  rwa [op_id, M.presheaf.map_id, ConcreteCategory.id_apply] at h
+
 /-- A section is its coordinate times the restricted basis section of a rank-one
 trivialization. -/
 theorem eq_trivializationCoordinate_smul_map_trivializationGenerator (M : X.Modules)
@@ -329,6 +358,19 @@ theorem trivializationGenerator_ne_zero (M : X.Modules) {V : X.Opens}
   have hcoord := trivializationCoordinate_map_trivializationGenerator M t (𝟙 V)
   rw [op_id, M.presheaf.map_id, ConcreteCategory.id_apply, h, map_zero] at hcoord
   exact zero_ne_one (α := Γ(X, V)) hcoord
+
+open TopologicalSpace in
+/-- Every point of a scheme lies in the domain of a rank-one trivialization of an invertible
+sheaf. -/
+theorem exists_mem_trivialization (M : X.Modules)
+    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X M] (x : X) :
+    ∃ (V : X.Opens) (_ : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V),
+      x ∈ V := by
+  let t := TauCeti.SheafOfModules.LocalTrivializations.ofIsInvertible M
+  have ht : ⨆ i, t.X i = ⊤ := by
+    simpa only [IsOpenCover] using (Opens.coversTop_iff (X : Type u) t.X).mp t.coversTop
+  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (ht ▸ Opens.mem_top x : x ∈ ⨆ i, t.X i)
+  exact ⟨t.X i, t.iso i, hi⟩
 
 end
 

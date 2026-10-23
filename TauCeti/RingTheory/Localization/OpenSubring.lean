@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, Claude Opus 5, Codex
 -/
 module
 
@@ -11,9 +11,9 @@ public import TauCeti.Topology.Algebra.TopologicallyNilpotent
 /-!
 # Localising an open subring at a topologically nilpotent element
 
-Let `B` be an **open** subring of a topological ring `A`, and let `s : B` be topologically
-nilpotent in `A`. Inverting `s` on both sides does not distinguish the two rings: the induced map
-`B_s → A_s` is a ring isomorphism.
+Let `A` be a commutative ring with a topology and separately continuous multiplication, let `B`
+be an **open** subring of `A`, and let `s : B` be topologically nilpotent in `A`. Inverting `s` on
+both sides does not distinguish the two rings: the induced map `B_s → A_s` is a ring isomorphism.
 
 The point is that `B` is open, so a topologically nilpotent `s` absorbs every element of `A` into
 `B` after enough multiplications. Passing to `B_s` makes that absorption invertible, which is
@@ -22,11 +22,11 @@ exactly what surjectivity needs. Injectivity is not topological at all and is Ma
 ## Implementation notes
 
 Surjectivity goes through the Mathlib criterion rather than through elements of the localisations:
-`IsLocalization.Away.map_surjective_iff` reduces it to "every `a : A` is `sᵐ` times the image of
-something in `B`", which is `exists_mul_pow_mem_of_isTopologicallyNilpotent` verbatim, up to
-commuting the product.
+`IsLocalization.Away.map_surjective_iff` reduces it to "for every `a : A`, some `sᵐ * a` is the
+image of an element of `B`", which is `exists_mul_pow_mem_of_isTopologicallyNilpotent` verbatim,
+up to commuting the product.
 
-Only `ContinuousMul` is assumed, matching the absorption lemma: continuity of addition, a
+Only `SeparatelyContinuousMul` is assumed, matching the absorption lemma: continuity of addition, a
 nonarchimedean neighbourhood basis and any Huber structure are all irrelevant here.
 
 Injectivity is not proved here at all: it is Mathlib's `IsLocalization.map_injective_of_injective`
@@ -52,7 +52,7 @@ public section
 
 namespace TauCeti.Localization
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [ContinuousMul A]
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousMul A]
 variable {B : Subring A} {s : B}
 
 -- Neither half needs subtraction in the localisations: `IsLocalization.Away.map_surjective_iff` and

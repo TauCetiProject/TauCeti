@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.ClassEquation
+public import TauCeti.Algebra.Group.Conj
 public import TauCeti.RepresentationTheory.CharacterTable.Degree
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Eigenrow
 
@@ -61,8 +62,6 @@ computation on `Ω` alone.
 
 ## References
 
-This proves the "normalization and degree recovery" item of Layer 5 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
 See I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 3, and J. D. Dixon, *High speed
 computation of group characters*, Numer. Math. **10** (1967), 446-450.
 -/
@@ -110,7 +109,7 @@ This is the conversion from a row of the central character table `Ω` to the cor
 ordinary character table `X`; the degree it needs is supplied by
 `TauCeti.Representation.finrank_sq_mul_classRowNorm_eq_card`. When the order of the group is
 invertible in `k`, the hypothesis on the class size comes from
-`TauCeti.ConjClasses.card_carrier_cast_ne_zero`. -/
+`ConjClasses.card_carrier_cast_ne_zero`. -/
 theorem character_eq_finrank_mul_centralCharacter_div {C : ConjClasses G} {g : G}
     (hg : ConjClasses.mk g = C) (hcard : (Nat.card C.carrier : k) ≠ 0) :
     ρ.character g =

@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.IdentityComponent
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 import TauCeti.Algebra.AlgebraicGroup.Connected.Translation
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
 import TauCeti.RingTheory.FiniteType.PointSeparation
+import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 public import TauCeti.Topology.NoetherianSpace.ConnectedComponents
 import Mathlib.RingTheory.FiniteStability
 import Mathlib.RingTheory.Idempotents
@@ -31,9 +33,7 @@ identity component.  The affine Nullstellensatz then promotes this pointwise sta
 required identity in the tensor square; tensor-product right exactness identifies its kernel with
 `I ⊗ H + H ⊗ I`.
 
-The algebraically closed hypothesis is the natural one for the geometric identity component in
-the reductive-groups roadmap.  Descent of this construction to the ground field and construction
-of the component group are separate steps.
+The algebraically closed hypothesis is the natural one for the geometric identity component.
 
 ## Main declarations
 
@@ -46,11 +46,6 @@ of the component group are separate steps.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This advances Layer 3, "Identity component `G°` and component group `π₀(G)`", of the
-ReductiveGroups roadmap.  The quotient Hopf algebra now gives the identity component over an
-algebraically closed field; descent, geometric connectedness over a general field, and the finite
-étale component group remain.
 -/
 
 public section
@@ -91,8 +86,7 @@ private theorem map_tensorSquare_comul_apply
           ((f.comp (Algebra.TensorProduct.includeRight
             (R := k) (A := B) (B := B))).comp q)).ofConv x := by
   rw [AlgHom.convMul_apply]
-  induction Coalgebra.comul (R := k) x using TensorProduct.induction_on with
-  | zero => simp
+  induction Coalgebra.comul (R := k) x using TensorProduct.inductionOn with
   | add x y hx hy => simp [hx, hy]
   | tmul x y =>
       rw [Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.lift_tmul]
@@ -153,9 +147,9 @@ private theorem comul_one_sub_connectedComponentIdempotent_mem
     [LocallyConnectedSpace (PrimeSpectrum H)] :
     Coalgebra.comul (R := k)
         (1 - PrimeSpectrum.connectedComponentIdempotent (Bialgebra.augmentationPoint k H)) ∈
-      HopfIdeal.leftTensorIdeal (R := k) (H := H)
+      Ideal.leftTensorIdeal (R := k) (B := H)
           (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) ⊔
-        HopfIdeal.rightTensorIdeal (R := k) (H := H)
+        Ideal.rightTensorIdeal (R := k) (A := H)
           (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) := by
   let I := PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)
   let e := PrimeSpectrum.connectedComponentIdempotent (Bialgebra.augmentationPoint k H)
@@ -173,8 +167,8 @@ private theorem comul_one_sub_connectedComponentIdempotent_mem
     change 1 - F (Coalgebra.comul (R := k) e) = 0
     rw [ha_eq_one, sub_self]
   have hker_eq : RingHom.ker F.toRingHom =
-      HopfIdeal.leftTensorIdeal (R := k) (H := H) I ⊔
-        HopfIdeal.rightTensorIdeal (R := k) (H := H) I := by
+      Ideal.leftTensorIdeal (R := k) (B := H) I ⊔
+        Ideal.rightTensorIdeal (R := k) (A := H) I := by
     have hqker : RingHom.ker q = I := by
       -- Unfold the local quotient-map abbreviation for Mathlib's kernel theorem.
       change RingHom.ker (Ideal.Quotient.mkₐ k I) = I
@@ -182,7 +176,7 @@ private theorem comul_one_sub_connectedComponentIdempotent_mem
     -- Unfold the local tensor-square map abbreviation before tensor-product exactness rewrites it.
     change RingHom.ker (Algebra.TensorProduct.map q q) = _
     simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
-      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q hq hq
+      AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q hq hq
   rwa [hker_eq] at hker
 
 /-- The ideal cutting out the augmentation point's connected component is stable under
@@ -193,9 +187,9 @@ theorem comul_mem_connectedComponentIdeal_augmentationPoint
     letI : LocallyConnectedSpace (PrimeSpectrum H) := inferInstance
     x ∈ PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H) →
       Coalgebra.comul (R := k) x ∈
-        HopfIdeal.leftTensorIdeal (R := k) (H := H)
+        Ideal.leftTensorIdeal (R := k) (B := H)
             (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) ⊔
-          HopfIdeal.rightTensorIdeal (R := k) (H := H)
+          Ideal.rightTensorIdeal (R := k) (A := H)
             (PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)) := by
   dsimp only
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
@@ -206,8 +200,8 @@ theorem comul_mem_connectedComponentIdeal_augmentationPoint
   -- Expose the local component ideal so its principal-generator characterization can rewrite.
   change x ∈ I at hx
   change Coalgebra.comul (R := k) x ∈
-    HopfIdeal.leftTensorIdeal (R := k) (H := H) I ⊔
-      HopfIdeal.rightTensorIdeal (R := k) (H := H) I
+    Ideal.leftTensorIdeal (R := k) (B := H) I ⊔
+      Ideal.rightTensorIdeal (R := k) (A := H) I
   rw [PrimeSpectrum.mem_connectedComponentIdeal_iff] at hx
   obtain ⟨a, rfl⟩ := hx
   rw [Bialgebra.comul_mul]
@@ -254,4 +248,75 @@ theorem mem_identityComponentHopfIdeal
   dsimp only
   rfl
 
+/-- The identity-component Hopf ideal of a finite-type affine group vanishes exactly when its
+spectrum is connected. -/
+@[simp]
+theorem identityComponentHopfIdeal_eq_bot_iff_connectedSpace :
+    identityComponentHopfIdeal (k := k) (H := H) = ⊥ ↔
+      ConnectedSpace (PrimeSpectrum H) := by
+  constructor
+  · intro h
+    let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
+    let z := Bialgebra.augmentationPoint k H
+    have hbot : PrimeSpectrum.connectedComponentIdeal z = ⊥ := by
+      rw [← identityComponentHopfIdeal_toIdeal, h, HopfIdeal.bot_toIdeal]
+    let e := (Ideal.quotEquivOfEq hbot).trans (RingEquiv.quotientBot H)
+    exact (PrimeSpectrum.homeomorphOfRingEquiv e).connectedSpace_iff.mp
+      (PrimeSpectrum.connectedSpace_quotient_connectedComponentIdeal z)
+  · intro h
+    let _ : ConnectedSpace (PrimeSpectrum H) := h
+    let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
+    let _ : LocallyConnectedSpace (PrimeSpectrum H) := inferInstance
+    let z : PrimeSpectrum H := Bialgebra.augmentationPoint k H
+    apply HopfIdeal.ext
+    intro x
+    rw [mem_identityComponentHopfIdeal, HopfIdeal.mem_bot]
+    rw [PrimeSpectrum.mem_connectedComponentIdeal_iff (x := z)]
+    simp only [PrimeSpectrum.connectedComponentIdempotent_eq_one, sub_self, mul_zero,
+      exists_const]
+    exact ⟨Eq.symm, Eq.symm⟩
+
 end TauCeti.HopfAlgebra
+
+namespace TauCeti.CommHopfAlgCat
+
+universe u v
+
+variable {k : Type u} [Field k] [IsAlgClosed k]
+
+/-- The ideal of the identity component of a finite-type affine group is killed by every
+homomorphism to a connected affine group. Contravariantly, the image of a connected group
+containing the identity lies in the identity component. -/
+theorem identityComponentHopfIdeal_toIdeal_le_ker_of_connected
+    {H : _root_.CommHopfAlgCat.{v} k} [Algebra.FiniteType k H]
+    {K : _root_.CommHopfAlgCat.{v} k} [ConnectedSpace (PrimeSpectrum K)]
+    (f : H ⟶ K) :
+    (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).toIdeal ≤
+      RingHom.ker f.hom.toAlgHom.toRingHom := by
+  let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
+  let z := Bialgebra.augmentationPoint k H
+  let e := PrimeSpectrum.connectedComponentIdempotent z
+  have he : f.hom e = 1 := by
+    let _ : Nontrivial K := Bialgebra.nontrivial k
+    have hidem : IsIdempotentElem (f.hom e) :=
+      (PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent z).map
+        f.hom.toAlgHom.toRingHom
+    rcases (connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one.mp
+      (inferInstance : ConnectedSpace (PrimeSpectrum K))) (f.hom e) hidem with hzero | hone
+    · have hε : (Bialgebra.counitAlgHom k K) (f.hom e) = 1 := by
+        rw [Bialgebra.counitAlgHom_apply, CoalgHomClass.counit_comp_apply]
+        exact AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one
+          (Bialgebra.counitAlgHom k H)
+      rw [hzero, map_zero] at hε
+      exact (zero_ne_one hε).elim
+    · exact hone
+  dsimp only [e, z] at he
+  intro x hx
+  rw [HopfAlgebra.identityComponentHopfIdeal_toIdeal] at hx
+  dsimp only [z] at hx
+  obtain ⟨a, rfl⟩ := PrimeSpectrum.mem_connectedComponentIdeal_iff.mp hx
+  rw [RingHom.mem_ker]
+  simp only [BialgHom.coe_toAlgHom, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+  simp [he]
+
+end TauCeti.CommHopfAlgCat

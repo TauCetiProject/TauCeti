@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Topology.Instances.Matrix
 
 /-!
 # Orthogonal matrices as linear isometries
@@ -17,6 +18,11 @@ corresponding Euclidean space.
 
 * `TauCeti.orthogonalGroupToLinearIsometryEquiv`: the group homomorphism from orthogonal
   matrices to linear isometry equivalences of Euclidean space.
+
+## Main results
+
+* `TauCeti.continuous_orthogonalGroupToLinearIsometryEquiv`: the resulting linear maps depend
+  continuously on the matrix, for the operator-norm topology.
 -/
 
 public section
@@ -85,6 +91,19 @@ theorem orthogonalGroupToLinearIsometryEquiv_injective :
   exact LinearMap.ext fun x => by
     simpa only [orthogonalGroupToLinearIsometryEquiv_apply, Matrix.toLpLin_apply] using
       _root_.LinearIsometryEquiv.congr_fun h x
+
+/-- The linear map of an orthogonal matrix depends continuously on the matrix: the conversion to
+continuous linear endomorphisms of Euclidean space is continuous for the subspace topology on the
+orthogonal group and the operator-norm topology. -/
+theorem continuous_orthogonalGroupToLinearIsometryEquiv :
+    Continuous fun A : Matrix.orthogonalGroup ι ℝ ↦
+      ((orthogonalGroupToLinearIsometryEquiv A).toContinuousLinearEquiv :
+        EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) := by
+  refine continuous_clm_apply.mpr fun x ↦ ?_
+  simp only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    orthogonalGroupToLinearIsometryEquiv_apply]
+  exact (PiLp.continuous_toLp 2 _).comp
+    (continuous_subtype_val.matrix_mulVec continuous_const)
 
 end
 

@@ -249,9 +249,6 @@ private noncomputable def extEulerRightAdditiveInvariant
   map_iso₁ {X X'} e Y :=
     extEuler_of_iso (h.isEulerAdmissible X.property Y.property)
       (h.isEulerAdmissible X'.property Y.property) (P.ι.mapIso e) (Iso.refl Y.obj)
-  map_iso₂ X {Y Y'} e :=
-    extEuler_of_iso (h.isEulerAdmissible X.property Y.property)
-      (h.isEulerAdmissible X.property Y'.property) (Iso.refl X.obj) (Q.ι.mapIso e)
   map_conflation₂ X {S} hS := by
     have hc : (ExactStructure.abelian C).Conflation (S.map Q.ι) :=
       (ExactStructure.fullSubcategory_conflation_iff hQ S).mp hS

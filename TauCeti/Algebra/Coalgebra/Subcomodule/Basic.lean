@@ -98,7 +98,7 @@ instance : SMulMemClass (Subcomodule R C M) R M where
   smul_mem {N} r {_} hm := N.carrier.smul_mem r hm
 
 instance : PartialOrder (Subcomodule R C M) :=
-  .ofSetLike (Subcomodule R C M) M
+  .ofSetLike (Subcomodule R C M)
 
 /-- The underlying submodule of a subcomodule. -/
 @[expose] def toSubmodule (N : Subcomodule R C M) : Submodule R M :=
@@ -152,7 +152,6 @@ theorem rid_lTensor_coact_mem (N : Subcomodule R C M) (f : C →ₗ[R] R) {m : M
   rw [← hx]
   clear hx hm
   induction x with
-  | zero => simp
   | tmul y c => simpa using N.carrier.smul_mem (f c) y.2
   | add a b ha hb => simpa only [map_add] using add_mem ha hb
 
@@ -321,7 +320,8 @@ source subcomodule belongs to `B`. -/
 theorem map_le_iff {A : Subcomodule R C M} {f : Comodule.Hom R C M N} {B : Subcomodule R C N} :
     A.map f ≤ B ↔ ∀ ⦃m⦄, m ∈ A → f m ∈ B := by
   rw [← toSubmodule_le_toSubmodule, map_toSubmodule, Submodule.map_le_iff_le_comap]
-  simp only [SetLike.le_def, Submodule.mem_comap, mem_toSubmodule, Comodule.Hom.coe_toLinearMap]
+  simp only [IsConcreteLE.le_iff, Submodule.mem_comap, mem_toSubmodule,
+    Comodule.Hom.coe_toLinearMap]
 
 /-- The image construction is monotone in the source subcomodule. -/
 theorem map_mono (f : Comodule.Hom R C M N) {A B : Subcomodule R C M} (hAB : A ≤ B) :
@@ -335,14 +335,7 @@ theorem map_bot (f : Comodule.Hom R C M N) : (⊥ : Subcomodule R C M).map f = �
   ext n
   simp only [← mem_toSubmodule, map_toSubmodule, bot_toSubmodule, Submodule.map_bot]
 
-/-- The image of the top subcomodule is the range of the comodule morphism as a submodule. -/
-@[simp]
-theorem map_top_toSubmodule (f : Comodule.Hom R C M N) :
-    ((⊤ : Subcomodule R C M).map f).toSubmodule = LinearMap.range f.toLinearMap := by
-  rw [map_toSubmodule, top_toSubmodule, Submodule.map_top]
-
 /-- The identity comodule morphism leaves a subcomodule unchanged. -/
-@[simp]
 theorem map_id (A : Subcomodule R C M) : A.map (Comodule.Hom.id R C M) = A := by
   ext n
   simp only [← mem_toSubmodule, map_toSubmodule, Comodule.Hom.id_toLinearMap,
@@ -374,7 +367,7 @@ def range (f : Hom R C M N) : Subcomodule R C N :=
 @[simp]
 theorem range_toSubmodule (f : Hom R C M N) :
     (range (R := R) (C := C) f).toSubmodule = LinearMap.range f.toLinearMap := by
-  rw [range, Subcomodule.map_top_toSubmodule]
+  rw [range, Subcomodule.map_toSubmodule, Subcomodule.top_toSubmodule, Submodule.map_top]
 
 /-- The range of a comodule morphism out of a finitely generated module is finitely generated
 as an `R`-module. -/

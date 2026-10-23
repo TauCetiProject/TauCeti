@@ -8,26 +8,39 @@ module
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Constructions
 public import Mathlib.Algebra.Group.Equiv.TypeTags
+public import Mathlib.Algebra.Group.ULift
 
 /-!
-# Topological isomorphisms between multiplicative type tags of products
+# Topological isomorphisms between type tags
 
 The multiplicative type tag of a product of additive topological groups is topologically
-isomorphic to the product of the multiplicative type tags, and when `T` has a unique element,
-`Multiplicative (M × T)` is topologically isomorphic to `Multiplicative M`. These are
-`MulEquiv.prodMultiplicative` and `AddEquiv.prodUnique` between the multiplicative type tags,
-upgraded to `ContinuousMulEquiv`s: the first transports properties of topological groups, such as
-being pro-`p`, between the two shapes of a product, and the second collapses a product
-decomposition of a topological group whose second factor turns out to be trivial.
+isomorphic to the product of the multiplicative type tags, both for binary products and for
+dependent products, and when `T` has a unique element, `Multiplicative (M × T)` is topologically
+isomorphic to `Multiplicative M`. These are `MulEquiv.prodMultiplicative`,
+`MulEquiv.piMultiplicative` and `AddEquiv.prodUnique` between the multiplicative type tags,
+upgraded to `ContinuousMulEquiv`s: the first two transport properties of topological groups, such
+as being pro-`p`, between the two shapes of a product, and the last collapses a product
+decomposition of a topological group whose second factor turns out to be trivial. The universe
+lift `ULift M` of a topological monoid is topologically isomorphic to `M`, which is
+`MulEquiv.ulift` upgraded to a `ContinuousMulEquiv`; it lets a universal property whose target must
+live in a fixed universe be applied to a group in a smaller one.
 
 ## Main definitions
 
 * `TauCeti.ContinuousMulEquiv.prodMultiplicative`: the topological isomorphism
   `Multiplicative (M × N) ≃ₜ* Multiplicative M × Multiplicative N`, with its evaluation lemmas
   `prodMultiplicative_apply` and `prodMultiplicative_symm_apply`.
+* `TauCeti.ContinuousMulEquiv.piMultiplicative`: the topological isomorphism
+  `Multiplicative (∀ i, K i) ≃ₜ* ∀ i, Multiplicative (K i)`, with its evaluation lemmas
+  `piMultiplicative_apply` and `piMultiplicative_symm_apply`.
 * `TauCeti.ContinuousMulEquiv.multiplicativeProdUnique`: the topological isomorphism
   `Multiplicative (M × T) ≃ₜ* Multiplicative M` for `[Unique T]`, with its evaluation lemmas
   `multiplicativeProdUnique_apply` and `multiplicativeProdUnique_symm_apply`.
+* `ContinuousAddEquiv.toMultiplicative`: a topological isomorphism `M ≃ₜ+ N` of additive groups
+  as a topological isomorphism `Multiplicative M ≃ₜ* Multiplicative N`, with its evaluation
+  lemmas `toMultiplicative_apply` and `toMultiplicative_symm_apply`.
+* `TauCeti.ContinuousMulEquiv.ulift`: the topological isomorphism `ULift M ≃ₜ* M`, with its
+  evaluation lemmas `ulift_apply` and `ulift_symm_apply`.
 -/
 
 public section
@@ -64,6 +77,33 @@ theorem ContinuousMulEquiv.prodMultiplicative_symm_apply (x : Multiplicative M �
 
 end Prod
 
+section Pi
+
+variable {ι : Type*} (K : ι → Type*) [∀ i, Add (K i)] [∀ i, TopologicalSpace (K i)]
+
+/-- The multiplicative type tag of a dependent product is the product of the multiplicative type
+tags, as a topological isomorphism. This is `MulEquiv.piMultiplicative` as a
+`ContinuousMulEquiv`. -/
+def ContinuousMulEquiv.piMultiplicative :
+    Multiplicative (∀ i, K i) ≃ₜ* ∀ i, Multiplicative (K i) where
+  toMulEquiv := MulEquiv.piMultiplicative K
+  continuous_toFun :=
+    continuous_pi fun i ↦ continuous_ofAdd.comp ((continuous_apply i).comp continuous_toAdd)
+  continuous_invFun :=
+    continuous_ofAdd.comp (continuous_pi fun i ↦ continuous_toAdd.comp (continuous_apply i))
+
+@[simp]
+theorem ContinuousMulEquiv.piMultiplicative_apply (x : Multiplicative (∀ i, K i)) (i : ι) :
+    ContinuousMulEquiv.piMultiplicative K x i = ofAdd (x.toAdd i) :=
+  (rfl)
+
+@[simp]
+theorem ContinuousMulEquiv.piMultiplicative_symm_apply (x : ∀ i, Multiplicative (K i)) :
+    (ContinuousMulEquiv.piMultiplicative K).symm x = ofAdd fun i ↦ (x i).toAdd :=
+  (rfl)
+
+end Pi
+
 section Unique
 
 variable (M T : Type*) [AddZeroClass M] [AddZeroClass T] [TopologicalSpace M] [TopologicalSpace T]
@@ -92,5 +132,54 @@ theorem ContinuousMulEquiv.multiplicativeProdUnique_symm_apply (v : Multiplicati
   (rfl)
 
 end Unique
+
+section ToMultiplicative
+
+variable {M N : Type*} [Add M] [Add N] [TopologicalSpace M] [TopologicalSpace N]
+
+/-- A topological isomorphism `M ≃ₜ+ N` of additive topological groups, as a topological
+isomorphism `Multiplicative M ≃ₜ* Multiplicative N` of the multiplicative type tags. This is
+`AddEquiv.toMultiplicative` as a `ContinuousMulEquiv`. -/
+def _root_.ContinuousAddEquiv.toMultiplicative (e : M ≃ₜ+ N) :
+    Multiplicative M ≃ₜ* Multiplicative N where
+  toMulEquiv := AddEquiv.toMultiplicative e.toAddEquiv
+  continuous_toFun := continuous_ofAdd.comp (e.continuous.comp continuous_toAdd)
+  continuous_invFun := continuous_ofAdd.comp (e.symm.continuous.comp continuous_toAdd)
+
+@[simp]
+theorem _root_.ContinuousAddEquiv.toMultiplicative_apply (e : M ≃ₜ+ N) (x : Multiplicative M) :
+    e.toMultiplicative x = ofAdd (e x.toAdd) :=
+  (rfl)
+
+@[simp]
+theorem _root_.ContinuousAddEquiv.toMultiplicative_symm_apply (e : M ≃ₜ+ N)
+    (y : Multiplicative N) : e.toMultiplicative.symm y = ofAdd (e.symm y.toAdd) :=
+  (rfl)
+
+end ToMultiplicative
+
+section ULift
+
+universe u v
+
+variable {M : Type u} [Mul M] [TopologicalSpace M]
+
+/-- The universe lift of a topological monoid is topologically isomorphic to it. This is
+`MulEquiv.ulift` as a `ContinuousMulEquiv`. -/
+def ContinuousMulEquiv.ulift : ULift.{v} M ≃ₜ* M where
+  toMulEquiv := MulEquiv.ulift
+  continuous_toFun := continuous_uliftDown
+  continuous_invFun := continuous_uliftUp
+
+@[simp]
+theorem ContinuousMulEquiv.ulift_apply (x : ULift.{v} M) : ContinuousMulEquiv.ulift x = x.down :=
+  (rfl)
+
+@[simp]
+theorem ContinuousMulEquiv.ulift_symm_apply (x : M) :
+    (ContinuousMulEquiv.ulift : ULift.{v} M ≃ₜ* M).symm x = ULift.up.{v} x :=
+  (rfl)
+
+end ULift
 
 end TauCeti

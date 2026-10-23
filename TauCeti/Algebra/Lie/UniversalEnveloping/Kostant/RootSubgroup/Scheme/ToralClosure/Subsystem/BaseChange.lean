@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Subsystem.Basic
 
 /-!
@@ -74,6 +75,15 @@ noncomputable def kostantTorusSubsystemBaseChangeIdeal :
       (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ n)) :=
   CommHopfAlgCat.baseChangeHopfIdeal
     (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS)
+
+/-- The subsystem base-change ideal is the scalar extension of its integral defining ideal. -/
+@[simp]
+theorem kostantTorusSubsystemBaseChangeIdeal_def :
+    kostantTorusSubsystemBaseChangeIdeal e h ρ M hM b wt S hnilS A =
+      CommHopfAlgCat.baseChangeHopfIdeal
+        (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS) := by
+  unfold kostantTorusSubsystemBaseChangeIdeal
+  rfl
 
 /-- Quotienting by the specialized subsystem ideal agrees with base-changing the integral
 subsystem coordinate ring. -/
@@ -181,5 +191,101 @@ theorem kostantTorusSubsystemBaseChangeIdeal_toIdeal_le_torus_ker :
     (GeneralLinear.weightTorusCoordinateMap wt)
     (kostantTorusSubsystemDefiningIdeal_toIdeal_le_torus_ker
       e h ρ M hM b wt S hnilS)
+
+/-! ## Inclusion into the full toral closure -/
+
+/-- Base change preserves the inclusion of the full toral defining ideal in every subsystem
+defining ideal. -/
+theorem kostantToralBaseChangeIdeal_le_kostantTorusSubsystemBaseChangeIdeal
+    (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (T : Set I) :
+    kostantToralBaseChangeIdeal e h ρ M hM hnil b wt A ≤
+      kostantTorusSubsystemBaseChangeIdeal e h ρ M hM b wt T
+        (fun i => hnil i.1) A := by
+  rw [kostantToralBaseChangeIdeal_def]
+  unfold kostantTorusSubsystemBaseChangeIdeal
+  exact CommHopfAlgCat.baseChangeHopfIdeal_mono
+    (kostantToralDefiningIdeal_le_kostantTorusSubsystemDefiningIdeal
+      e h ρ M hM b wt hnil T)
+
+/-- The coordinate morphism of the base-changed inclusion of a torus subsystem into the full
+toral closure. -/
+noncomputable def kostantTorusSubsystemBaseChangeInclusionCoordinateMap
+    (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (T : Set I) :
+    CommHopfAlgCat.quotient
+        (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ n))
+        (kostantToralBaseChangeIdeal e h ρ M hM hnil b wt A) ⟶
+      CommHopfAlgCat.quotient
+        (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ n))
+        (kostantTorusSubsystemBaseChangeIdeal e h ρ M hM b wt T
+          (fun i => hnil i.1) A) :=
+  CommHopfAlgCat.quotientMapOfLe _
+    (kostantToralBaseChangeIdeal_le_kostantTorusSubsystemBaseChangeIdeal
+      e h ρ M hM b wt A hnil T)
+
+/-- The base-changed subsystem inclusion is compatible with the two quotient maps. -/
+@[simp]
+theorem mkQuotient_comp_kostantTorusSubsystemBaseChangeInclusionCoordinateMap
+    (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (T : Set I) :
+    CommHopfAlgCat.mkQuotient
+          (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ n))
+          (kostantToralBaseChangeIdeal e h ρ M hM hnil b wt A) ≫
+        kostantTorusSubsystemBaseChangeInclusionCoordinateMap
+          e h ρ M hM b wt A hnil T =
+      CommHopfAlgCat.mkQuotient
+        (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ n))
+        (kostantTorusSubsystemBaseChangeIdeal e h ρ M hM b wt T
+          (fun i => hnil i.1) A) :=
+  CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe _
+    (kostantToralBaseChangeIdeal_le_kostantTorusSubsystemBaseChangeIdeal
+      e h ρ M hM b wt A hnil T)
+
+/-- The coordinate morphism of a base-changed torus-subsystem inclusion is surjective. -/
+theorem kostantTorusSubsystemBaseChangeInclusionCoordinateMap_surjective
+    (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (T : Set I) :
+    Function.Surjective
+      (kostantTorusSubsystemBaseChangeInclusionCoordinateMap
+        e h ρ M hM b wt A hnil T).hom :=
+  CommHopfAlgCat.quotientMapOfLe_surjective _
+    (kostantToralBaseChangeIdeal_le_kostantTorusSubsystemBaseChangeIdeal
+      e h ρ M hM b wt A hnil T)
+
+/-- The base-changed subsystem inclusion intertwines each selected root-subgroup map with its
+factorization through the full toral closure. -/
+@[simp]
+theorem kostantTorusSubsystemBaseChangeInclusionCoordinateMap_comp_root
+    (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (T : Set I) {i : I} (hi : i ∈ T) :
+    kostantTorusSubsystemBaseChangeInclusionCoordinateMap
+          e h ρ M hM b wt A hnil T ≫
+        kostantRootSubgroupTorusSubsystemBaseChangeCoordinateMap
+          e h ρ M hM b wt T (fun j => hnil j.1) A hi =
+      kostantRootSubgroupToralBaseChangeCoordinateMap
+        e h ρ M hM hnil b wt A i := by
+  apply CommHopfAlgCat.mkQuotient_hom_ext
+  rw [← Category.assoc,
+    mkQuotient_comp_kostantTorusSubsystemBaseChangeInclusionCoordinateMap,
+    mkQuotient_comp_kostantRootSubgroupTorusSubsystemBaseChangeCoordinateMap,
+    mkQuotient_comp_kostantRootSubgroupToralBaseChangeCoordinateMap]
+
+/-- The base-changed subsystem inclusion intertwines the represented weight-torus maps. -/
+@[simp]
+theorem kostantTorusSubsystemBaseChangeInclusionCoordinateMap_comp_weightTorus
+    (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (T : Set I) :
+    kostantTorusSubsystemBaseChangeInclusionCoordinateMap
+          e h ρ M hM b wt A hnil T ≫
+        kostantWeightTorusTorusSubsystemBaseChangeCoordinateMap
+          e h ρ M hM b wt T (fun j => hnil j.1) A =
+      kostantWeightTorusToralBaseChangeCoordinateMap
+        e h ρ M hM hnil b wt A := by
+  apply CommHopfAlgCat.mkQuotient_hom_ext
+  rw [← Category.assoc,
+    mkQuotient_comp_kostantTorusSubsystemBaseChangeInclusionCoordinateMap,
+    mkQuotient_comp_kostantWeightTorusTorusSubsystemBaseChangeCoordinateMap,
+    mkQuotient_comp_kostantWeightTorusToralBaseChangeCoordinateMap]
 
 end TauCeti.UniversalEnvelopingAlgebra

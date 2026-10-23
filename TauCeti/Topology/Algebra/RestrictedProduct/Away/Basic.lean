@@ -26,6 +26,9 @@ needs.
 No finiteness of `S` is assumed anywhere: the away-`S` restricted product and the restriction to
 it make sense for every set of indices.
 
+Everything here is also stated for additive groups (`RestrictedProductAddGroupAway`,
+`addRestrictAway`, …).
+
 ## References
 
 * N. Bourbaki, *General Topology*.
@@ -47,11 +50,16 @@ variable [∀ i, Group (G i)]
 /-- The restricted product of `G` relative to `U` over the indices **outside** `S`. This is
 `RestrictedProductGroup` at the index type `{i // i ∉ S}`; no finiteness of `S` is needed to form
 it. -/
+@[to_additive /-- The restricted product of the family of additive groups `G` relative to `U` over
+the indices **outside** `S`. This is `RestrictedProductAddGroup` at the index type
+`{i // i ∉ S}`; no finiteness of `S` is needed to form it. -/]
 abbrev RestrictedProductGroupAway (S : Set ι) (U : ∀ i, Subgroup (G i)) :=
   RestrictedProductGroup fun i : {i // i ∉ S} ↦ U i.1
 
 /-- Restriction of a restricted product to the indices outside `S`, forgetting the coordinates
 indexed by `S`. -/
+@[to_additive addRestrictAway /-- Restriction of a restricted product of additive groups to the
+indices outside `S`, forgetting the coordinates indexed by `S`. -/]
 def restrictAway (S : Set ι) (U : ∀ i, Subgroup (G i)) :
     RestrictedProductGroup U →* RestrictedProductGroupAway S U :=
   RestrictedProduct.mapAlongMonoidHom G (fun i : {i // i ∉ S} ↦ G i.1) Subtype.val
@@ -59,7 +67,8 @@ def restrictAway (S : Set ι) (U : ∀ i, Subgroup (G i)) :
     (.of_forall fun _ _ hx ↦ hx)
 
 /-- The restriction away from `S` keeps the coordinates outside `S` unchanged. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictAway_apply /-- The restriction away from `S` of a restricted
+product of additive groups keeps the coordinates outside `S` unchanged. -/]
 theorem restrictAway_apply (S : Set ι) (U : ∀ i, Subgroup (G i))
     (x : RestrictedProductGroup U) (i : {i // i ∉ S}) :
     restrictAway S U x i = x i.1 :=
@@ -70,6 +79,10 @@ theorem restrictAway_apply (S : Set ι) (U : ∀ i, Subgroup (G i))
 /-- Restricting away from a larger set factors through restricting away from a smaller one:
 the coordinate of `restrictAway T U x` at `i ∉ T` is the coordinate of `restrictAway S U x` at
 the same index, viewed outside `S ⊆ T`. -/
+@[to_additive addRestrictAway_addRestrictAway /-- Restricting a restricted product of additive
+groups away from a larger set factors through restricting away from a smaller one: the coordinate of
+`addRestrictAway T U x` at `i ∉ T` is the coordinate of `addRestrictAway S U x` at the same index,
+viewed outside `S ⊆ T`. -/]
 theorem restrictAway_restrictAway {S T : Set ι} (hST : S ⊆ T) (U : ∀ i, Subgroup (G i))
     (x : RestrictedProductGroup U) (i : {i // i ∉ T}) :
     restrictAway T U x i = restrictAway S U x ⟨i.1, fun hi ↦ i.2 (hST hi)⟩ := by
@@ -77,6 +90,9 @@ theorem restrictAway_restrictAway {S T : Set ι} (hST : S ⊆ T) (U : ∀ i, Sub
 
 /-- The restriction away from `S` is continuous for every reference family: it is a map out of a
 single restricted product whose coordinate maps are identities. -/
+@[to_additive continuous_addRestrictAway /-- The restriction away from `S` of a restricted product
+of additive groups is continuous for every reference family: it is a map out of a single restricted
+product whose coordinate maps are identities. -/]
 theorem continuous_restrictAway [∀ i, TopologicalSpace (G i)] (S : Set ι)
     (U : ∀ i, Subgroup (G i)) :
     Continuous (restrictAway S U) :=

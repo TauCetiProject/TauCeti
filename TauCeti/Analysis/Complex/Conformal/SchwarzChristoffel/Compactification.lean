@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Basic
 public import TauCeti.Topology.JordanCurve.OnePoint
 -- Non-public: the fibre-sum bound is used only to spread integrability off the prevertices.
 import TauCeti.Algebra.BigOperators.Finset.Fiber

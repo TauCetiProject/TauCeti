@@ -28,6 +28,7 @@ dimension the two models are moreover identified as symplectic vector spaces.
 
 * `TauCeti.strongDualCotangentSymplecticForm`: the canonical symplectic form on
   `V × StrongDual ℝ V`.
+* `TauCeti.strongDualCotangentZeroSection`: the zero section of `V × StrongDual ℝ V`.
 * `TauCeti.strongDualCotangentEquiv`: the finite-dimensional identification with
   `V × Module.Dual ℝ V`.
 * `TauCeti.isSymplectomorphism_strongDualCotangentEquiv`: that identification is a
@@ -89,6 +90,16 @@ noncomputable def strongDualCotangentSymplecticForm :
 lemma strongDualCotangentSymplecticForm_apply (x y : V × StrongDual ℝ V) :
     strongDualCotangentSymplecticForm x y = y.2 x.1 - x.2 y.1 := by
   exact strongDualCotangentBilinForm_apply x y
+
+/-- The zero section in the normed linear cotangent space `V × StrongDual ℝ V`. -/
+def strongDualCotangentZeroSection : Submodule ℝ (V × StrongDual ℝ V) :=
+  LinearMap.range (LinearMap.inl ℝ V (StrongDual ℝ V))
+
+/-- A point of the normed cotangent space lies in the zero section exactly when its covector
+coordinate vanishes. -/
+@[simp] theorem mem_strongDualCotangentZeroSection_iff (z : V × StrongDual ℝ V) :
+    z ∈ strongDualCotangentZeroSection ↔ z.2 = 0 := by
+  simp [strongDualCotangentZeroSection, LinearMap.range_inl]
 
 section FiniteDimensional
 

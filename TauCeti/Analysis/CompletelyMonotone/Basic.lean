@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Topology.Order.MonotoneConvergence
 public import TauCeti.Analysis.Calculus.IteratedDerivWithin
+import TauCeti.Topology.Order.MonotoneConvergence
 
 /-!
 # Completely monotone functions
@@ -174,17 +175,13 @@ theorem iff_neg_one_pow_mul_iteratedDerivWithin_nonneg (hs : UniqueDiffOn ℝ s)
 theorem add {g : ℝ → ℝ} (hf : CompletelyMonotoneOn f s) (hg : CompletelyMonotoneOn g s) :
     CompletelyMonotoneOn (f + g) s := by
   rw [completelyMonotoneOn_iff_absolutelyMonotoneOn_comp_neg] at hf hg ⊢
-  convert AbsolutelyMonotoneOn.add hf hg using 1
-  ext u
-  rfl
+  exact AbsolutelyMonotoneOn.add hf hg
 
 /-- A nonnegative scalar multiple of a completely monotone function is completely monotone. -/
 theorem smul {c : ℝ} (hf : CompletelyMonotoneOn f s) (hc : 0 ≤ c) :
     CompletelyMonotoneOn (c • f) s := by
   rw [completelyMonotoneOn_iff_absolutelyMonotoneOn_comp_neg] at hf ⊢
-  convert AbsolutelyMonotoneOn.smul hf hc using 1
-  ext u
-  rfl
+  exact AbsolutelyMonotoneOn.smul hf hc
 
 end CompletelyMonotoneOn
 
@@ -570,23 +567,10 @@ protected lemma sum {ι : Type*} {s : Finset ι} {F : ι → ℝ → ℝ}
 end IsContinuousCompletelyMonotoneOnIoi
 
 /-- The `max`-truncation of a function antitone on a closed half-line is antitone everywhere:
-the shared totalization step of the half-line limit lemmas below. -/
+the totalization step of the half-line limit lemma below. -/
 private lemma antitone_comp_max {f : ℝ → ℝ} {a : ℝ} (hf : AntitoneOn f (Ici a)) :
     Antitone fun t : ℝ => f (max t a) := fun _ _ hab =>
   hf (mem_Ici.mpr (le_max_right _ _)) (mem_Ici.mpr (le_max_right _ _)) (max_le_max_right a hab)
-
-/-- A function antitone and bounded below on a closed half-line converges at infinity. -/
-private lemma exists_tendsto_atTop_of_antitoneOn_Ici {f : ℝ → ℝ} {a : ℝ} (hf : AntitoneOn f (Ici a))
-    (hbdd : BddBelow (f '' Ici a)) :
-    ∃ L, Tendsto f atTop (𝓝 L) := by
-  set g := fun t : ℝ => f (max t a) with hg
-  have hg_anti : Antitone g := antitone_comp_max hf
-  have hg_bdd : BddBelow (Set.range g) := by
-    obtain ⟨b, hb⟩ := hbdd
-    exact ⟨b, by rintro y ⟨t, rfl⟩; exact hb ⟨max t a, mem_Ici.mpr (le_max_right _ _), rfl⟩⟩
-  refine ⟨⨅ i, g i, ?_⟩
-  exact (tendsto_atTop_ciInf hg_anti hg_bdd).congr'
-    (eventually_atTop.mpr ⟨a, fun t ht => by simp [hg, max_eq_left ht]⟩)
 
 /-- A function antitone on a closed half-line lies above its limit at infinity there. -/
 private lemma le_of_tendsto_atTop_of_antitoneOn_Ici {f : ℝ → ℝ} {a : ℝ} (hf : AntitoneOn f (Ici a))
@@ -605,9 +589,9 @@ variable {f : ℝ → ℝ}
 antitone on `[0, ∞)` and bounded below by `0`. -/
 lemma exists_nonneg_tendsto_atTop (hf : IsContinuousCompletelyMonotoneOnIoi f) :
     ∃ L, Tendsto f atTop (𝓝 L) ∧ 0 ≤ L := by
-  obtain ⟨L, hL⟩ := exists_tendsto_atTop_of_antitoneOn_Ici hf.antitoneOn
+  have hL := tendsto_atTop_ciInf_of_antitoneOn_Ici hf.antitoneOn
     ⟨0, by rintro y ⟨x, hx, rfl⟩; exact hf.nonneg hx⟩
-  exact ⟨L, hL, ge_of_tendsto hL (eventually_atTop.mpr ⟨0, fun t ht => hf.nonneg ht⟩)⟩
+  exact ⟨_, hL, ge_of_tendsto hL (eventually_atTop.mpr ⟨0, fun t ht => hf.nonneg ht⟩)⟩
 
 /-- A closed-half-line completely monotone function lies above its limit at infinity on
 `[0, ∞)`. -/

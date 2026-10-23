@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.DisjointSum
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import TauCeti.GroupTheory.Perm.SwapFactors
+import TauCeti.GroupTheory.Perm.SigmaCongr
 import Mathlib.Logic.Equiv.Fin.Rotate
 
 /-!
@@ -275,14 +277,33 @@ theorem eulerChar_disjointSum (s : PermutationTriple m) (t : PermutationTriple n
   push_cast
   ring
 
+section IndexedDisjointSum
+
+variable {N : ℕ} {ι : Type*} [Fintype ι] {d : ι → ℕ}
+  (t : ∀ i, PermutationTriple (d i)) (e : (Σ i, Fin (d i)) ≃ Fin N)
+
+/-- The Euler characteristic adds over indexed disjoint sums, including an empty sum. -/
+@[simp]
+theorem eulerChar_indexedDisjointSum :
+    (indexedDisjointSum t e).eulerChar = ∑ i, (t i).eulerChar := by
+  classical
+  have hdegree : ∑ i, d i = N := by simpa using Fintype.card_congr e
+  have hdegree' : (∑ i, (d i : ℤ)) = N := by exact_mod_cast hdegree
+  simp only [eulerChar_def, indexedDisjointSum_σ0, indexedDisjointSum_σ1,
+    indexedDisjointSum_σinf, Equiv.orbitCount_permCongr, orbitCount_sigmaCongrRight,
+    Nat.cast_sum, Finset.sum_sub_distrib, Finset.sum_add_distrib]
+  rw [hdegree']
+
+end IndexedDisjointSum
+
 /-! ### Worked examples
 
 The monodromy of `z ↦ z ^ 3`, and a disjoint union of two trivial covers. -/
 
 example : (ofTwo (finRotate 3) 1).eulerChar = 2 := by
-  have h0 : (finRotate 3).partition.parts = {3} := by decide
-  have h1 : (1 : Perm (Fin 3)).partition.parts = {1, 1, 1} := by decide
-  have hinf : ((1 : Perm (Fin 3)) * finRotate 3)⁻¹.partition.parts = {3} := by decide
+  have h0 : (finRotate 3).partition.parts = {3} := parts_partition_finRotate (by norm_num)
+  have h1 : (1 : Perm (Fin 3)).partition.parts = {1, 1, 1} := by simp
+  have hinf : ((1 : Perm (Fin 3)) * finRotate 3)⁻¹.partition.parts = {3} := by simpa using h0
   rw [eulerChar_def, Perm.orbitCount_eq_card_parts_partition,
     Perm.orbitCount_eq_card_parts_partition, Perm.orbitCount_eq_card_parts_partition,
     ofTwo_σ0, ofTwo_σ1, ofTwo_σinf, h0, h1, hinf]

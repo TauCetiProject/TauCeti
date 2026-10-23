@@ -13,15 +13,15 @@ packagesDir = "../.lake/packages"
 # doc-gen4 with interproject linking (https://github.com/leanprover/doc-gen4/pull/396),
 # pinned to the fork branch until that PR lands upstream. It lets us document only TauCeti's
 # own modules and link references to Mathlib out to the hosted mathlib4_docs (see the
-# `DOCGEN_LOCAL_MODULE_ROOTS` / `DOCGEN_DEPS_DOCS_URL` env vars set in the Pages workflow),
-# instead of rendering the whole Mathlib closure locally. The revision is built against Lean
-# v4.33.0-rc1. This nested project inherits the root `lean-toolchain`; when it moves forward,
-# bump this to a compatible doc-gen4 revision and re-run
+# `DOCGEN_LOCAL_MODULE_ROOTS` / `DOCGEN_DEPS_DOCS_URL` env vars set in the API docs workflow),
+# instead of analyzing and rendering the whole Mathlib closure locally. The revision is built
+# against Lean v4.33.0-rc1. This nested project inherits the root `lean-toolchain`; when it
+# moves forward, bump this to a compatible doc-gen4 revision and re-run
 # `MATHLIB_NO_CACHE_ON_UPDATE=1 lake update doc-gen4` in this directory.
 [[require]]
 name = "doc-gen4"
 git = "https://github.com/kim-em/doc-gen4"
-rev = "4cac5a75c52048204e6d015554fbc10ce3f269a2"
+rev = "d25c28427ff9693ea711584a7037da22cdeee1c8"
 
 [[require]]
 name = "TauCeti"

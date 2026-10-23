@@ -36,6 +36,8 @@ for `C_K¹`, the adelic form of the finiteness of the class group and Dirichlet'
   closed.
 * `TauCeti.GlobalNumberFields.IdeleClassGroup.comap_normOne`: the ideles whose class has norm one
   are exactly the ideles of norm one.
+* `TauCeti.GlobalNumberFields.IdeleClassGroup.noncompactSpace`: the idele class group is not
+  compact.
 ## References
 
 * J. W. S. Cassels and A. Fröhlich, eds., *Algebraic Number Theory*, Chapter II, §16.
@@ -63,6 +65,11 @@ theorem ideleClassNorm_mk (x : IdeleGroup (𝓞 K) K) :
     ideleClassNorm (x : IdeleClassGroup (𝓞 K) K) = ideleNorm x :=
   QuotientGroup.lift_mk _ _ x
 
+/-- The idele class norm of an idele class is a positive real number. -/
+theorem coe_ideleClassNorm_pos (c : IdeleClassGroup (𝓞 K) K) :
+    0 < ((ideleClassNorm c : ℝ≥0) : ℝ) :=
+  NNReal.coe_pos.mpr (ideleClassNorm c).ne_zero.bot_lt
+
 /-- The idele class norm is continuous. -/
 theorem continuous_ideleClassNorm : Continuous (ideleClassNorm (K := K)) :=
   (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr (continuous_ideleNorm (K := K))
@@ -78,6 +85,10 @@ variable (K) in
 norm one. -/
 def normOne : Subgroup (IdeleClassGroup (𝓞 K) K) :=
   (ideleClassNorm (K := K)).ker
+
+/-- The norm-one idele class group is normal, being a kernel. -/
+instance normal_normOne : (normOne K).Normal :=
+  MonoidHom.normal_ker _
 
 /-- An idele class lies in the norm-one subgroup exactly when its idele class norm is `1`. -/
 @[simp]
@@ -112,6 +123,19 @@ theorem normOne_ne_top : normOne K ≠ ⊤ := by
   rw [hx1] at hx
   have := congrArg (fun u : ℝ≥0ˣ ↦ (u : ℝ≥0)) hx
   norm_num at this
+
+/-- **The idele class group of a number field is not compact**: it surjects continuously onto
+the noncompact group `ℝ>0`. This is in contrast to the norm-one subgroup `C_K¹`, which is
+compact. -/
+instance noncompactSpace : NoncompactSpace (IdeleClassGroup (𝓞 K) K) := by
+  refine not_compactSpace_iff.mp fun _ ↦ ?_
+  obtain ⟨M, hM⟩ := (isCompact_range <| Units.continuous_val.comp
+    (continuous_ideleClassNorm (K := K))).bddAbove
+  obtain ⟨c, hc⟩ := ideleClassNorm_surjective (K := K)
+    (Units.mk0 (M + 1) (by positivity))
+  have h := hM ⟨c, rfl⟩
+  simp only [Function.comp_apply, hc, Units.val_mk0] at h
+  exact (lt_add_one M).not_ge h
 
 end IdeleClassGroup
 

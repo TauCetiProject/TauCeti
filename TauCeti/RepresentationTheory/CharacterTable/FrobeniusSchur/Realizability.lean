@@ -35,8 +35,7 @@ form.  All that is left here is to assemble the three steps, and to record the c
 
 ## References
 
-This is the milestone `frobeniusSchurIndicatorRep_eq_one_realizable` of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`, whose other direction is in
+The converse, that an irreducible representation realizable over `ℝ` has indicator `1`, is in
 `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/RealForm.lean`.
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2, Theorem 31.
@@ -67,7 +66,7 @@ of the group supplies a positive definite invariant Hermitian form, and comparin
 a real structure, whose real points are a real form. -/
 theorem isRealizableOverReal_of_frobeniusSchurIndicator_eq_one
     (h : frobeniusSchurIndicator ρ = 1) : IsRealizableOverReal ρ := by
-  have : FiniteDimensional ℂ V := IsIrreducible.finiteDimensional ‹ρ.IsIrreducible›
+  have : FiniteDimensional ℂ V := ρ.asModuleEquiv.finiteDimensional
   obtain ⟨B, hBinv, hBsymm, hBnd⟩ := (frobeniusSchurIndicator_eq_one_iff ρ).mp h
   obtain ⟨H, hHinv, hHpos, hdef⟩ :=
     exists_isInvariantSesqForm_isPosSemidef_apply_self_ne_zero ρ

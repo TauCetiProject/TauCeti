@@ -162,8 +162,7 @@ theorem mapScalarExtensionAutomorphisms_baseChangeInvariantRestrictUnit
       baseChangeInvariantRestrictUnit (R := B) θ M hθ := by
   refine (TauCeti.GeneralLinear.eq_mapScalarExtensionAutomorphisms_of_apply_scalarExtensionMap_eq
     φ _ _ fun z => ?_).symm
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | tmul a m =>
       rw [TauCeti.GeneralLinear.scalarExtensionMap_tmul, val_baseChangeInvariantRestrictUnit_tmul,
         val_baseChangeInvariantRestrictUnit_tmul, TauCeti.GeneralLinear.scalarExtensionMap_tmul]

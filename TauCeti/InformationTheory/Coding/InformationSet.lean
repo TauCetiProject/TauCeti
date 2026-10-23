@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Puncture
+public import TauCeti.InformationTheory.Coding.Puncture.Coherence
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
 

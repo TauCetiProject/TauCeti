@@ -8,7 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Completion.Homeomorph
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.DenseRange
 
-import TauCeti.RingTheory.Huber.Completion
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
+import TauCeti.RingTheory.Huber.Completion.Basic
 
 /-!
 # Completion matches rational subsets
@@ -68,14 +69,9 @@ upstairs. -/
 theorem spaCompletionHomeomorph_preimage_mem_spaRationalFamily (Aplus : Subring A)
     {U : Set (spa Aplus)} (hU : U ∈ spaRationalFamily Aplus) :
     spaCompletionHomeomorph Aplus ⁻¹' U ∈ spaRationalFamily (completionPlus Aplus) := by
-  classical
   rw [coe_spaCompletionHomeomorph]
-  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalFamily_iff.mp hU
-  refine mem_spaRationalFamily_iff.mpr
-    ⟨T.image Completion.coeRingHom, Completion.coeRingHom s, ?_, ?_⟩
-  · rw [Finset.coe_image, ← Ideal.map_span]
-    exact isOpen_map_coeRingHom hT
-  · exact spaComap_preimage_rationalSubset ..
+  exact spaComap_preimage_mem_spaRationalFamily _ _ _ _ _
+    (fun _ h ↦ isOpen_map_coeRingHom h) hU
 
 /-- **Rational subsets push forward to rational subsets under completion.** The image under the
 homeomorphism of Wedhorn Proposition 7.48 of a rational subset of `Spa (Â, Â⁺)` is a rational

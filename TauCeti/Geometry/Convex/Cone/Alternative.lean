@@ -8,13 +8,16 @@ module
 public import TauCeti.Data.Matrix.DotProduct
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.RingTheory.Localization.Integer
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
 # Theorems of the alternative for nonnegative vectors
 
 This file proves the classical theorems of the alternative of Gordan, Stiemke and Tucker over an
-arbitrary linearly ordered field.
+arbitrary linearly ordered field, and Tucker's theorem for finite free `ℤ`-modules.
 
 For a finite family of vectors `a j` in a vector space over a linearly ordered field `K`,
 *Gordan's theorem* says that either some linear functional is strictly positive on every `a j`,
@@ -23,8 +26,15 @@ Applied to the images of the coordinate vectors in a quotient `(ι → K) ⧸ S`
 *Stiemke's theorem*: a subspace `S` contains no nonzero nonnegative vector exactly when some
 strictly positive vector is orthogonal to all of `S`. Both are consequences of *Tucker's key
 lemma*, which for each index `k` produces a nonnegative relation `x` and a functional `y` that is
-nonnegative on the family, one of them strictly positive at `k`. Unlike Mathlib's
-separation-based Farkas lemma `ProperCone.hyperplane_separation`, these results apply over `ℚ`.
+nonnegative on the family, one of them strictly positive at `k`. Summing these over all `k` gives
+*Tucker's theorem*: a single nonnegative relation `x` and a single functional `y`, nonnegative on
+the family, such that `x j + y (a j) > 0` for every `j`. Unlike Mathlib's separation-based Farkas
+lemma `ProperCone.hyperplane_separation`, these results apply over `ℚ`.
+
+Clearing denominators in rational coordinates turns Tucker's theorem into a statement about a
+finite family in a finite free `ℤ`-module, with a relation with natural-number coefficients and an
+integer-valued functional. In toric geometry this integral form produces the character separating
+two cones along their common face.
 
 The integer-lattice form of Stiemke's theorem is proved in
 `TauCeti.Algebra.Group.AddSubgroup.PositiveWeights`. The equivalent finiteness condition for
@@ -36,6 +46,9 @@ lemmas of Heegaard Floer theory.
 ## Main declarations
 
 * `TauCeti.exists_nonneg_sum_smul_eq_zero_and_coeff_add_dual_pos_at`: Tucker's key lemma.
+* `TauCeti.exists_nonneg_sum_smul_eq_zero_and_forall_coeff_add_dual_pos`: Tucker's theorem.
+* `TauCeti.exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos`: Tucker's theorem for a
+  finite family in a finite free `ℤ`-module.
 * `TauCeti.exists_forall_dual_pos_iff`: Gordan's theorem.
 * `Submodule.exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
   `ι → K`.
@@ -139,6 +152,25 @@ theorem exists_nonneg_sum_smul_eq_zero_and_coeff_add_dual_pos_at [Fintype ι] (a
   exact ⟨x, y, fun j => (hxy j (Finset.mem_univ j)).1, hsum,
     fun j => (hxy j (Finset.mem_univ j)).2, hpos⟩
 
+/-- **Tucker's theorem.** For a finite family of vectors `a j` there are a nonnegative linear
+relation `x` among the `a j` and a linear functional `y` that is nonnegative on every `a j`, such
+that `x j + y (a j) > 0` for every `j`: each vector either occurs in the relation or is strictly
+positive under `y`. -/
+theorem exists_nonneg_sum_smul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι] (a : ι → V) :
+    ∃ x : ι → K, ∃ y : Module.Dual K V, 0 ≤ x ∧ ∑ j, x j • a j = 0 ∧ (∀ j, 0 ≤ y (a j)) ∧
+      ∀ j, 0 < x j + y (a j) := by
+  -- Add up the relations and functionals given by Tucker's key lemma at every index.
+  choose x y hx hsum hy hpos using
+    exists_nonneg_sum_smul_eq_zero_and_coeff_add_dual_pos_at (K := K) a
+  refine ⟨∑ k, x k, ∑ k, y k, Finset.sum_nonneg fun k _ ↦ hx k, ?_, fun j ↦ ?_, fun j ↦ ?_⟩
+  · simp only [Finset.sum_apply, Finset.sum_smul]
+    rw [Finset.sum_comm]
+    exact Finset.sum_eq_zero fun k _ ↦ hsum k
+  · rw [LinearMap.sum_apply]
+    exact Finset.sum_nonneg fun k _ ↦ hy k j
+  · rw [Finset.sum_apply, LinearMap.sum_apply, ← Finset.sum_add_distrib]
+    exact Finset.sum_pos' (fun k _ ↦ add_nonneg (hx k j) (hy k j)) ⟨j, Finset.mem_univ j, hpos j⟩
+
 /-- **Gordan's theorem.** Some linear functional is strictly positive on every vector of a finite
 family exactly when the only nonnegative linear relation among the vectors is the trivial one. -/
 theorem exists_forall_dual_pos_iff [Fintype ι] (a : ι → V) :
@@ -149,12 +181,9 @@ theorem exists_forall_dual_pos_iff [Fintype ι] (a : ι → V) :
     refine (dotProduct_eq_zero_iff_of_pos hy hx).1 ?_
     simpa [dotProduct, mul_comm] using congrArg y hsum
   · intro h
-    choose x y hx hsum hy hpos using
-      exists_nonneg_sum_smul_eq_zero_and_coeff_add_dual_pos_at (K := K) a
-    refine ⟨∑ k, y k, fun j => ?_⟩
-    rw [LinearMap.sum_apply]
-    refine Finset.sum_pos' (fun k _ => hy k j) ⟨j, Finset.mem_univ j, ?_⟩
-    simpa [h (x j) (hx j) (hsum j)] using hpos j
+    obtain ⟨x, y, hx, hsum, -, hpos⟩ :=
+      exists_nonneg_sum_smul_eq_zero_and_forall_coeff_add_dual_pos (K := K) a
+    exact ⟨y, fun j => by simpa [h x hx hsum] using hpos j⟩
 
 end Field
 
@@ -184,4 +213,82 @@ theorem _root_.Submodule.exists_pos_dotProduct_eq_zero_iff (S : Submodule K (ι 
     simpa [dotProduct, mul_comm] using this
 
 end Field
+
+section Int
+
+variable {N : Type*} [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N]
+
+/-- **Tucker's theorem over the integers.** For a finite family of vectors `a j` in a finite free
+`ℤ`-module there are a linear relation `∑ j, x j • a j = 0` with natural-number coefficients and an
+integer-valued additive functional `m` that is nonnegative on every `a j`, such that
+`x j + m (a j) > 0` for every `j`. -/
+theorem exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι]
+    (a : ι → N) :
+    ∃ (x : ι → ℕ) (m : N →+ ℤ), ∑ j, x j • a j = 0 ∧ (∀ j, 0 ≤ m (a j)) ∧
+      ∀ j, 0 < (x j : ℤ) + m (a j) := by
+  classical
+  let b := Module.Free.chooseBasis ℤ N
+  -- Rational coordinates of lattice vectors with respect to an integral basis.
+  let e : N →+ (Module.Free.ChooseBasisIndex ℤ N → ℚ) :=
+    { toFun n k := (b.repr n k : ℚ)
+      map_zero' := by ext; simp
+      map_add' n n' := by ext; simp }
+  obtain ⟨X, Y, hX, hsum, hY, hpos⟩ :=
+    exists_nonneg_sum_smul_eq_zero_and_forall_coeff_add_dual_pos (K := ℚ) fun j ↦ e (a j)
+  -- Clear the denominators of the relation and of the values of the functional on the
+  -- coordinate vectors, by positive integers `D` and `E`.
+  obtain ⟨⟨D, hD⟩, hDX⟩ := IsLocalization.exist_integer_multiples_of_finite (Submonoid.pos ℤ) X
+  obtain ⟨⟨E, hE⟩, hEY⟩ := IsLocalization.exist_integer_multiples_of_finite (Submonoid.pos ℤ)
+    fun k ↦ Y (Pi.single k 1)
+  choose z hz using hDX
+  choose w hw using hEY
+  simp only [algebraMap_int_eq, eq_intCast, zsmul_eq_mul] at hz hw
+  have hD' : (0 : ℚ) < D := by exact_mod_cast hD
+  have hE' : (0 : ℚ) < E := by exact_mod_cast hE
+  let x : ι → ℕ := fun j ↦ (z j).toNat
+  have hx : ∀ j, (x j : ℚ) = D * X j := fun j ↦ by
+    have : (0 : ℚ) ≤ z j := by rw [hz]; exact mul_nonneg hD'.le (hX j)
+    rw [← hz]
+    exact_mod_cast Int.toNat_of_nonneg (by exact_mod_cast this)
+  let m : N →+ ℤ :=
+    { toFun n := ∑ k, w k * b.repr n k
+      map_zero' := by simp
+      map_add' n n' := by simp [mul_add, Finset.sum_add_distrib] }
+  have hm : ∀ n, (m n : ℚ) = E * Y (e n) := fun n ↦ by
+    rw [LinearMap.pi_apply_eq_sum_univ, Finset.mul_sum]
+    simp only [m, AddMonoidHom.coe_mk, ZeroHom.coe_mk, Int.cast_sum, Int.cast_mul, hw]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    simp only [e, AddMonoidHom.coe_mk, ZeroHom.coe_mk, smul_eq_mul]
+    have hk : (fun j ↦ if k = j then (1 : ℚ) else 0) = Pi.single k 1 := by
+      ext j
+      simp [Pi.single_apply, eq_comm]
+    rw [hk]
+    ring
+  refine ⟨x, m, ?_, fun j ↦ ?_, fun j ↦ ?_⟩
+  · apply b.repr.injective
+    ext k
+    have h := congrFun hsum k
+    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply] at h
+    have : ((b.repr (∑ j, x j • a j) k : ℤ) : ℚ) = 0 := by
+      rw [← mul_zero (D : ℚ), ← h]
+      simp [Finset.mul_sum, e, ← mul_assoc, hx]
+    simpa using (by exact_mod_cast this : b.repr (∑ j, x j • a j) k = 0)
+  · have : (0 : ℚ) ≤ m (a j) := by
+      rw [hm]
+      exact mul_nonneg hE'.le (hY j)
+    exact_mod_cast this
+  · have : (0 : ℚ) < x j + m (a j) := by
+      rw [hm, hx]
+      have hXj : 0 ≤ X j := hX j
+      rcases hXj.lt_or_eq with h | h
+      · exact add_pos_of_pos_of_nonneg (mul_pos hD' h)
+          (mul_nonneg hE'.le (hY j))
+      · rw [← h, mul_zero, zero_add]
+        have hYj := hpos j
+        rw [← h, zero_add] at hYj
+        exact mul_pos hE' hYj
+    exact_mod_cast this
+
+end Int
+
 end TauCeti

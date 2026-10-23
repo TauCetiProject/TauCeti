@@ -25,10 +25,9 @@ on their antipode images. Faithfulness says that these two coefficient algebras 
 coordinate Hopf algebra; hence the semisimple part is the identity, which characterizes a
 unipotent point.
 
-This is the bridge needed by Layer 5, "Unipotent groups", of the ReductiveGroups roadmap: a point
-of a group given with a faithful representation can now be tested for unipotence in that one
-representation instead of in every representation. The upper-unitriangular embedding
-characterization is still to come.
+With this bridge, a point of a group given with a faithful representation can be tested for
+unipotence in that one representation instead of in every representation. The upper-unitriangular
+embedding characterization is in `TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding`.
 
 ## Main declaration
 
@@ -73,16 +72,9 @@ theorem isUnipotentPoint_iff_isUnipotent_pointsAction_of_isFaithful
     exact (isUnipotentPoint_def g).mp hg M
   · intro hg
     rw [Point.isUnipotentPoint_iff_semisimplePart_eq_one]
-    apply Comodule.pointsAction_injective_of_isFaithful hM
-    have hGL :
-        LinearMap.GeneralLinearGroup.ofLinearEquiv
-            (Comodule.pointsAction M (Point.semisimplePart k H K g)) =
-          LinearMap.GeneralLinearGroup.ofLinearEquiv
-            (Comodule.pointsAction M (1 : WithConv (H →ₐ[k] K))) := by
-      rw [Point.ofLinearEquiv_pointsAction_semisimplePart,
-        GeneralLinearGroup.semisimplePart_eq_one_of_isUnipotent hg, map_one]
-      exact ((LinearMap.GeneralLinearGroup.generalLinearEquiv K _).symm.map_one).symm
-    exact (LinearMap.GeneralLinearGroup.generalLinearEquiv K _).symm.injective hGL
+    apply Comodule.eq_one_of_ofLinearEquiv_pointsAction_eq_one_of_isFaithful hM
+    rw [Point.ofLinearEquiv_pointsAction_semisimplePart,
+      GeneralLinearGroup.semisimplePart_eq_one_of_isUnipotent hg]
 
 end
 

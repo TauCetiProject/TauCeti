@@ -7,7 +7,8 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Continuous.Invariants
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Restriction, inflation and coefficient maps in continuous cohomology
@@ -34,18 +35,42 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
 
 * `TauCeti.ContinuousCohomology.coeffMap`, `TauCeti.ContinuousCohomology.res`,
   `TauCeti.ContinuousCohomology.infl`: the three named instances of `ContinuousCohomology.map`.
+* `TauCeti.ContinuousCohomology.resLE`: restriction along the inclusion of a subgroup into a
+  larger subgroup.
 * `TauCeti.ContinuousCohomology.continuousCohomologyFunctor`: `Hⁿ(G, -)` as a functor.
 * `TauCeti.ContinuousCohomology.resNatTrans`, `TauCeti.ContinuousCohomology.inflNatTrans`.
+* `TauCeti.ContinuousCohomology.shiftedResolutionMap`: the chain map of shifted coinduced
+  resolutions induced by a coefficient morphism.
 
 ## Main results
 
+* `TauCeti.ContinuousCohomology.resolutionMap_d_apply` and
+  `TauCeti.ContinuousCohomology.resolutionMap_ρ_apply`: coefficient maps on the coinduced
+  resolution commute with the differential and group action, on elements.
+* `TauCeti.ContinuousCohomology.resolutionMap_injective` and
+  `TauCeti.ContinuousCohomology.cochainsMap_f_injective`: a surjective group map paired with an
+  injective coefficient map induces injective maps on resolutions and homogeneous cochains.
+* `TauCeti.ContinuousCohomology.resolutionMap_id_apply_of_comp_eq` and
+  `TauCeti.ContinuousCohomology.cochainsMap_id_apply_of_comp_eq`: elementwise composition of
+  coefficient maps on resolutions and homogeneous cochains.
 * `TauCeti.ContinuousCohomology.coeffMap_comp`,
-  `TauCeti.ContinuousCohomology.res_comp_res` and
-  `TauCeti.ContinuousCohomology.infl_comp_infl`: the composition laws of the three named maps.
-* `TauCeti.ContinuousCohomology.coeffMap_comp_res` and
+  `TauCeti.ContinuousCohomology.res_comp_res`, `TauCeti.ContinuousCohomology.res_comp_resLE`,
+  `TauCeti.ContinuousCohomology.resLE_comp_resLE` and
+  `TauCeti.ContinuousCohomology.infl_comp_infl`: the composition laws of the named maps;
+  `TauCeti.ContinuousCohomology.resLE_refl`: restriction along the identity inclusion is the
+  identity.
+* `TauCeti.ContinuousCohomology.coeffMap_comp_res`,
+  `TauCeti.ContinuousCohomology.coeffMap_comp_resLE` and
   `TauCeti.ContinuousCohomology.coeffMap_comp_infl`: naturality of restriction and of inflation in
   the coefficients.
+* `TauCeti.ContinuousCohomology.map_comp_coeffMap`: the map of a compatible pair is natural in
+  the coefficients, under simultaneous change of group and coefficients.
 * `TauCeti.ContinuousCohomology.map_congr`: two compatible pairs that agree induce the same map.
+* `TauCeti.ContinuousCohomology.homologyMap_shiftedResolutionMap`: coefficient maps are induced
+  by `shiftedResolutionMap` on the cohomology of invariants.
+* `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_one_apply` and
+  `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_two_apply`: evaluation of mapped homogeneous
+  cocycles in degrees one and two.
 -/
 
 public section
@@ -58,7 +83,132 @@ namespace ContinuousCohomology
 
 open _root_.ContinuousCohomology
 
-universe u v
+universe u v w
+
+section ResolutionMaps
+
+open TopRep
+
+variable {R : Type u} [Ring R] [TopologicalSpace R]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {X Y : TopRep.{max v w} R G}
+
+/-- A coefficient morphism commutes with the coinduced resolution differential, on elements. -/
+theorem resolutionMap_d_apply (f : X ⟶ Y) (n : ℕ)
+    (x : (resolutionX X n).V) :
+    (d Y n).hom
+        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) =
+      (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom
+        ((d X n).hom x) := by
+  have h := congrArg (fun g ↦ g.hom.toContinuousLinearMap x)
+    (_root_.ContinuousCohomology.resolutionMap_comp_d (ContinuousMonoidHom.id G) f n)
+  simpa only [TopRep.hom_comp, hom_ofHom, ContIntertwiningMap.toContinuousLinearMap_comp,
+    ContinuousLinearMap.comp_apply, resFunctor_map_hom,
+    ContIntertwiningMap.toContinuousLinearMap_apply, ContIntertwiningMap.restrict_apply] using h
+
+/-- A coefficient morphism on the coinduced resolution commutes with the group action. -/
+theorem resolutionMap_ρ_apply (f : X ⟶ Y) (n : ℕ) (g : G)
+    (x : (resolutionX X n).V) :
+    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom
+        ((resolutionX X n).ρ g x) =
+      (resolutionX Y n).ρ g
+        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom x) := by
+  have h := hom_comm_apply
+    (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n) g x
+  simpa only [res, ContRepresentation.restrict_apply_apply,
+    MonoidHom.coe_ofClass, ContinuousMonoidHom.coe_id, id_eq] using h
+
+/-- The chain map of shifted coinduced resolutions `TopRep.resolution' X ⟶ TopRep.resolution' Y`
+induced by a coefficient morphism, `F ↦ f ∘ F` in every degree. Taking invariants gives the map
+`ContinuousCohomology.cochainsMap` at the identity of `G`
+(`TauCeti.ContinuousCohomology.mapHomologicalComplex_map_shiftedResolutionMap`). -/
+noncomputable def shiftedResolutionMap (f : X ⟶ Y) : resolution' X ⟶ resolution' Y where
+  f n := _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)
+  comm' i j hij := by
+    obtain rfl : i + 1 = j := hij
+    simp only [CochainComplex.of_d, resolution'd_eq]
+    exact _root_.ContinuousCohomology.resolutionMap_comp_d (ContinuousMonoidHom.id G) f (i + 1)
+
+/-- The degree-`n` component of `shiftedResolutionMap f` is the coefficient map on the
+`(n + 1)`-st term of the coinduced resolution. -/
+@[simp]
+theorem shiftedResolutionMap_f (f : X ⟶ Y) (n : ℕ) :
+    (shiftedResolutionMap f).f n =
+      _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1) :=
+  (rfl)
+
+/-- On invariants, the chain map of shifted coinduced resolutions induced by a coefficient
+morphism is the map of homogeneous cochains of Mathlib's `ContinuousCohomology.cochainsMap`. -/
+theorem mapHomologicalComplex_map_shiftedResolutionMap (f : X ⟶ Y) :
+    ((invariantsFunctor R G).mapHomologicalComplex _).map (shiftedResolutionMap f) =
+      cochainsMap (ContinuousMonoidHom.id G) f := by
+  ext n x : 4
+  -- Both sides restrict `resolutionMap (ContinuousMonoidHom.id G) f (n + 1)` to invariant elements:
+  -- `invariantsResMap` at the identity of `G` is `mapInvariants`.
+  rfl
+
+end ResolutionMaps
+
+section InjectiveResolutionMap
+
+variable {k : Type u} [Ring k] [TopologicalSpace k]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  (φ : G →ₜ* H) {Y : TopRep.{max v w} k H} {X : TopRep.{max v w} k G}
+  (ι : TopRep.res φ Y ⟶ X)
+
+/-- A surjective group map and an injective coefficient pair induce injective maps on every term
+of the coinduced resolutions. -/
+theorem resolutionMap_injective (hφ : Function.Surjective φ) (hι : Function.Injective ι.hom) :
+    ∀ n : ℕ, Function.Injective (resolutionMap φ ι n).hom
+  | 0 => hι
+  | n + 1 => fun F F' h ↦ by
+    ext q
+    obtain ⟨g, rfl⟩ := hφ q
+    exact resolutionMap_injective hφ hι n (DFunLike.congr_fun h g)
+
+/-- The map on homogeneous cochains induced by a surjective group map and an injective coefficient
+pair is injective in every degree. -/
+theorem cochainsMap_f_injective (hφ : Function.Surjective φ)
+    (hι : Function.Injective ι.hom) (n : ℕ) :
+    Function.Injective ((cochainsMap φ ι).f n) := fun _ _ h ↦
+  Subtype.ext (resolutionMap_injective φ ι hφ hι (n + 1) (congrArg Subtype.val h))
+
+end InjectiveResolutionMap
+
+section Composition
+
+variable {k : Type u} [Ring k] [TopologicalSpace k]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- On the coinduced resolutions, the maps induced by two composable coefficient morphisms compose
+to the map induced by their composite `e`, elementwise. This is Mathlib's
+`ContinuousCohomology.resolutionMap_comp` at the identity of `G`, read on elements; the composite is
+passed as `e` with the equation `h` because the coefficient morphism of `resolutionMap` is typed on
+`TopRep.res id X`, where an equation between composites in `TopRep k G` cannot be rewritten. -/
+theorem resolutionMap_id_apply_of_comp_eq {X Y Z : TopRep.{v} k G} (a : X ⟶ Y)
+    (b : Y ⟶ Z) {e : X ⟶ Z} (h : a ≫ b = e) (i : ℕ) (x : (TopRep.resolutionX X i).V) :
+    (resolutionMap (ContinuousMonoidHom.id G) b i).hom
+        ((resolutionMap (ContinuousMonoidHom.id G) a i).hom x) =
+      (resolutionMap (ContinuousMonoidHom.id G) e i).hom x := by
+  subst h
+  -- the composite of the identity of `G` with itself is the identity, by definition
+  exact (ConcreteCategory.congr_hom (resolutionMap_comp (ContinuousMonoidHom.id G)
+    (ContinuousMonoidHom.id G) a b i) x).symm
+
+/-- On homogeneous cochains, the maps induced by two composable coefficient morphisms compose to
+the map induced by their composite `e`, elementwise: Mathlib's
+`ContinuousCohomology.cochainsMap_comp` at the identity of `G`, stated as
+`resolutionMap_id_apply_of_comp_eq` is. -/
+theorem cochainsMap_id_apply_of_comp_eq {X Y Z : TopRep.{v} k G} (a : X ⟶ Y)
+    (b : Y ⟶ Z) {e : X ⟶ Z} (h : a ≫ b = e) (n : ℕ)
+    (x : (TopRep.homogeneousCochains X).X n) :
+    (cochainsMap (ContinuousMonoidHom.id G) b).f n
+        ((cochainsMap (ContinuousMonoidHom.id G) a).f n x) =
+      (cochainsMap (ContinuousMonoidHom.id G) e).f n x :=
+  Subtype.ext (resolutionMap_id_apply_of_comp_eq a b h (n + 1) x.1)
+
+end Composition
 
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -73,6 +223,18 @@ theorem map_congr {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGrou
     _root_.ContinuousCohomology.map φ f n = _root_.ContinuousCohomology.map ψ g n := by
   subst hφ
   rw [eq_of_heq hfg]
+
+variable {R} in
+/-- Two compatible pairs with equal homomorphisms and coefficient maps that agree pointwise induce
+the same map on continuous cohomology: the elementwise form of `map_congr`, for coefficient maps
+over homomorphisms that are only propositionally equal. -/
+theorem map_congr_of_hom_apply {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    {X : TopRep R G} {Y : TopRep R H} {φ ψ : H →ₜ* G} (hφ : φ = ψ)
+    (f : TopRep.res (φ : H →* G) X ⟶ Y) (g : TopRep.res (ψ : H →* G) X ⟶ Y)
+    (hfg : ∀ x : X, f.hom x = g.hom x) (n : ℕ) :
+    _root_.ContinuousCohomology.map φ f n = _root_.ContinuousCohomology.map ψ g n := by
+  subst hφ
+  rw [TopRep.hom_ext (DFunLike.ext _ _ hfg)]
 
 section CoeffMap
 
@@ -90,6 +252,14 @@ theorem coeffMap_def {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
     coeffMap f n = _root_.ContinuousCohomology.map (X := X) (ContinuousMonoidHom.id G) f n :=
   (rfl)
 
+/-- The coefficient map of `f` is induced on the cohomology of invariants by the chain map
+`shiftedResolutionMap f` of shifted coinduced resolutions. -/
+theorem homologyMap_shiftedResolutionMap {X Y : TopRep.{max v w} R G} (f : X ⟶ Y) (n : ℕ) :
+    HomologicalComplex.homologyMap
+        (((TopRep.invariantsFunctor R G).mapHomologicalComplex _).map
+          (shiftedResolutionMap f)) n = coeffMap f n := by
+  rw [mapHomologicalComplex_map_shiftedResolutionMap, coeffMap_def]
+
 /-- Coefficient maps preserve identities. -/
 @[simp]
 theorem coeffMap_id (X : TopRep R G) (n : ℕ) : coeffMap (𝟙 X) n = 𝟙 _ :=
@@ -101,6 +271,22 @@ theorem coeffMap_comp {X Y Z : TopRep R G} (f : X ⟶ Y) (g : Y ⟶ Z) (n : ℕ)
     coeffMap (f ≫ g) n = coeffMap f n ≫ coeffMap g n :=
   _root_.ContinuousCohomology.map_comp (X := X) (ContinuousMonoidHom.id G)
     (ContinuousMonoidHom.id G) f g n
+
+/-- **Naturality of compatible-pair maps in the coefficients**: for compatible pairs `(φ, f)` and
+`(φ, f')` and coefficient morphisms `a`, `b` forming a commutative square
+`res φ a ≫ f' = f ≫ b`, the induced maps satisfy `map φ f ≫ coeffMap b = coeffMap a ≫ map φ f'`. -/
+@[reassoc]
+theorem map_comp_coeffMap {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    {X X' : TopRep R G} {Y Y' : TopRep R H} (φ : H →ₜ* G) (f : TopRep.res (φ : H →* G) X ⟶ Y)
+    (f' : TopRep.res (φ : H →* G) X' ⟶ Y') (a : X ⟶ X') (b : Y ⟶ Y')
+    (h : (TopRep.resFunctor (φ : H →* G)).map a ≫ f' = f ≫ b) (n : ℕ) :
+    _root_.ContinuousCohomology.map φ f n ≫ coeffMap b n =
+      coeffMap a n ≫ _root_.ContinuousCohomology.map φ f' n := by
+  rw [coeffMap_def, coeffMap_def,
+    ← _root_.ContinuousCohomology.map_comp φ (ContinuousMonoidHom.id H) f b n,
+    ← _root_.ContinuousCohomology.map_comp (ContinuousMonoidHom.id G) φ a f' n]
+  -- Both composite group homomorphisms are `φ`, and the coefficient square is `h`.
+  exact map_congr (ContinuousMonoidHom.ext fun _ ↦ rfl) (heq_of_eq h.symm) n
 
 end CoeffMap
 
@@ -181,6 +367,71 @@ theorem res_comp_res (T : Subgroup S) (X : TopRep R G) (n : ℕ) :
 
 end Res
 
+section ResLE
+
+variable {R} {H S : Subgroup G}
+
+/-- Restriction along the inclusion of a subgroup `H` into a larger subgroup `S`, from the
+cohomology of `S` to that of `H`; the instance of `ContinuousCohomology.map` at the inclusion
+`H ↪ S` and the identity of the coefficients, both subgroups carrying the subspace topology. -/
+noncomputable def resLE (h : H ≤ S) (X : TopRep R G) (n : ℕ) :
+    continuousCohomology n (TopRep.res (S.subtype : S →* G) X) ⟶
+      continuousCohomology n (TopRep.res (H.subtype : H →* G) X) :=
+  _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupInclusion h)
+    (𝟙 (TopRep.res (H.subtype : H →* G) X)) n
+
+-- Not `@[simp]`: `resLE` is the intended normal form, and this lemma unfolds it.
+/-- The defining equation of `resLE`: it is `ContinuousCohomology.map` for the compatible pair
+consisting of the inclusion `H ↪ S` and the identity of the coefficients. -/
+theorem resLE_def (h : H ≤ S) (X : TopRep R G) (n : ℕ) :
+    resLE h X n = _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupInclusion h)
+      (𝟙 (TopRep.res (H.subtype : H →* G) X)) n :=
+  (rfl)
+
+/-- Restriction along the inclusion `H ↪ S` is natural in the coefficients. -/
+@[reassoc]
+theorem coeffMap_comp_resLE (h : H ≤ S) {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
+    coeffMap ((TopRep.resFunctor (S.subtype : S →* G)).map f) n ≫ resLE h Y n =
+      resLE h X n ≫ coeffMap ((TopRep.resFunctor (H.subtype : H →* G)).map f) n :=
+  (_root_.ContinuousCohomology.map_comp (X := TopRep.res (S.subtype : S →* G) X)
+        (ContinuousMonoidHom.id S) (ContinuousMonoidHom.subgroupInclusion h)
+        ((TopRep.resFunctor (S.subtype : S →* G)).map f) (𝟙 _) n).symm.trans
+    (_root_.ContinuousCohomology.map_comp (X := TopRep.res (S.subtype : S →* G) X)
+      (ContinuousMonoidHom.subgroupInclusion h) (ContinuousMonoidHom.id H) (𝟙 _)
+      ((TopRep.resFunctor (H.subtype : H →* G)).map f) n)
+
+/-- Restricting to `S` and then to a subgroup `H ≤ S` is restriction to `H`. -/
+@[reassoc (attr := simp)]
+theorem res_comp_resLE (h : H ≤ S) (X : TopRep R G) (n : ℕ) :
+    res S X n ≫ resLE h X n = res H X n := by
+  refine (_root_.ContinuousCohomology.map_comp (X := X) (ContinuousMonoidHom.subgroupSubtype S)
+      (ContinuousMonoidHom.subgroupInclusion h) (𝟙 _) (𝟙 _) n).symm.trans
+    (map_congr (ContinuousMonoidHom.subgroupSubtype_comp_subgroupInclusion h) (heq_of_eq ?_) n)
+  ext v
+  rfl
+
+/-- Restriction along the inclusion of a subgroup into itself is the identity. -/
+@[simp]
+theorem resLE_refl (X : TopRep R G) (n : ℕ) : resLE (le_refl H) X n = 𝟙 _ :=
+  (map_congr (ContinuousMonoidHom.subgroupInclusion_refl H) (heq_of_eq rfl) n).trans
+    (_root_.ContinuousCohomology.map_id _ n)
+
+/-- Restricting from `T` to `S` and then to `H`, for subgroups `H ≤ S ≤ T`, is restricting from
+`T` to `H`: the transition maps of the system of the `Hⁿ(S, X)` over the subgroups containing `H`
+compose. -/
+@[reassoc (attr := simp)]
+theorem resLE_comp_resLE {T : Subgroup G} (hHS : H ≤ S) (hST : S ≤ T) (X : TopRep R G) (n : ℕ) :
+    resLE hST X n ≫ resLE hHS X n = resLE (hHS.trans hST) X n := by
+  refine (_root_.ContinuousCohomology.map_comp (X := TopRep.res (T.subtype : T →* G) X)
+      (ContinuousMonoidHom.subgroupInclusion hST) (ContinuousMonoidHom.subgroupInclusion hHS)
+      (𝟙 _) (𝟙 _) n).symm.trans
+    (map_congr (ContinuousMonoidHom.subgroupInclusion_comp_subgroupInclusion hHS hST)
+      (heq_of_eq ?_) n)
+  ext v
+  rfl
+
+end ResLE
+
 section Infl
 
 variable (N : Subgroup G) [N.Normal]
@@ -192,8 +443,9 @@ coefficients on the quotient are the `N`-invariants `Xᴺ`, and the compatible p
 homomorphism together with the inclusion `Xᴺ ↪ X`. -/
 noncomputable def infl (X : TopRep R G) (n : ℕ) :
     continuousCohomology n (TopRep.quotientToInvariants X N) ⟶ continuousCohomology n X :=
-  _root_.ContinuousCohomology.map (ContinuousMonoidHom.quotientMk N)
-    (TopRep.quotientToInvariantsι X N) n
+  _root_.ContinuousCohomology.map (Subgroup.quotientMkContinuousMonoidHom N)
+    (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N) n
 
 -- Not `@[simp]`: `infl` is the intended normal form, and this lemma unfolds it.
 /-- The defining equation of `infl`: it is `ContinuousCohomology.map` for the compatible pair
@@ -202,8 +454,10 @@ theorem infl_def (X : TopRep R G) (n : ℕ) :
     infl N X n =
       -- Ascribed: otherwise an open `max v ?w` universe sends `=` into a slow coercion search.
       -- (This follows the ascription idiom of #8346.)
-      (_root_.ContinuousCohomology.map (ContinuousMonoidHom.quotientMk N)
-        (TopRep.quotientToInvariantsι X N) n :) :=
+      (_root_.ContinuousCohomology.map (X := TopRep.quotientToInvariants X N) (Y := X)
+        (Subgroup.quotientMkContinuousMonoidHom N) (eqToHom (congrArg (fun ψ => TopRep.res ψ
+          (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N) n :) :=
   (rfl)
 
 /-- Inflation is natural in the coefficients. -/
@@ -217,14 +471,32 @@ theorem coeffMap_comp_infl {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
   -- propagated into both `Eq.trans` and checked repeatedly (0.15 s).
   refine ((_root_.ContinuousCohomology.map_comp (X := TopRep.quotientToInvariants X N)
       (Y := TopRep.quotientToInvariants Y N) (Z := Y) (ContinuousMonoidHom.id (G ⧸ N))
-      (ContinuousMonoidHom.quotientMk N) (TopRep.quotientToInvariantsMap f N)
-      (TopRep.quotientToInvariantsι Y N) n).symm.trans (Eq.trans ?_
+      (Subgroup.quotientMkContinuousMonoidHom N) (TopRep.quotientToInvariantsMap f N)
+      (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants Y N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι Y N)
+        n).symm.trans (Eq.trans ?_
     (_root_.ContinuousCohomology.map_comp (X := TopRep.quotientToInvariants X N) (Y := X) (Z := Y)
-      (ContinuousMonoidHom.quotientMk N) (ContinuousMonoidHom.id G)
-      (TopRep.quotientToInvariantsι X N) f n)) :)
+      (Subgroup.quotientMkContinuousMonoidHom N) (ContinuousMonoidHom.id G)
+      (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N) f n)) :)
   -- Ascribed for the same reason (0.03 s).
-  exact map_congr rfl
-    (heq_of_eq (TopRep.quotientToInvariantsMap_comp_quotientToInvariantsι N f :)) n
+  apply map_congr rfl ?_ n
+  apply heq_of_eq
+  -- Make the restriction functor and its equality transports explicit after map_congr.
+  -- This aligns the source and target objects with eqToHom_naturality_assoc; rewriting the
+  -- original coerced map expression does not expose that naturality pattern.
+  change (TopRep.resFunctor (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)).map
+      (X := TopRep.quotientToInvariants X N) (Y := TopRep.quotientToInvariants Y N)
+      (TopRep.quotientToInvariantsMap f N) ≫
+        eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants Y N))
+          (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι Y N =
+    (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N) ≫ f
+  rw [eqToHom_naturality_assoc (fun ψ =>
+    (TopRep.resFunctor ψ).map (TopRep.quotientToInvariantsMap f N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)]
+  rw [TopRep.quotientToInvariantsMap_comp_quotientToInvariantsι]
+  exact (Category.assoc _ _ _).symm
 
 variable (R) in
 /-- Inflation, as a natural transformation of functors on `TopRep R G`; the continuous counterpart
@@ -251,16 +523,98 @@ coefficients. -/
 theorem infl_comp_infl (P : Subgroup (G ⧸ N)) [P.Normal] (X : TopRep R G) (n : ℕ) :
     infl P (TopRep.quotientToInvariants X N) n ≫ infl N X n =
       _root_.ContinuousCohomology.map
-        ((ContinuousMonoidHom.quotientMk P).comp (ContinuousMonoidHom.quotientMk N))
-        ((TopRep.resFunctor (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)).map
-            (TopRep.quotientToInvariantsι (TopRep.quotientToInvariants X N) P) ≫
-          TopRep.quotientToInvariantsι X N) n :=
-  (_root_.ContinuousCohomology.map_comp (ContinuousMonoidHom.quotientMk P)
-    (ContinuousMonoidHom.quotientMk N)
-    (TopRep.quotientToInvariantsι (TopRep.quotientToInvariants X N) P)
-    (TopRep.quotientToInvariantsι X N) n).symm
+        ((Subgroup.quotientMkContinuousMonoidHom P).comp (Subgroup.quotientMkContinuousMonoidHom N))
+        ((TopRep.resFunctor (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)).map
+            (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants
+              (TopRep.quotientToInvariants X N) P))
+      (Subgroup.coe_quotientMkContinuousMonoidHom P)) ≫ TopRep.quotientToInvariantsι
+        (TopRep.quotientToInvariants X N) P) ≫
+          (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N)) n :=
+  (_root_.ContinuousCohomology.map_comp (Subgroup.quotientMkContinuousMonoidHom P)
+    (Subgroup.quotientMkContinuousMonoidHom N)
+    (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants
+      (TopRep.quotientToInvariants X N) P))
+      (Subgroup.coe_quotientMkContinuousMonoidHom P)) ≫ TopRep.quotientToInvariantsι
+        (TopRep.quotientToInvariants X N) P)
+    (eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫ TopRep.quotientToInvariantsι X N) n).symm
 
 end Infl
+
+section Elementwise
+
+variable {R} {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  {X : TopRep R G} {Y : TopRep R H} (φ : H →ₜ* G) (f : TopRep.res (φ : H →* G) X ⟶ Y)
+
+/-- The map induced by a compatible pair on the `(i + 1)`-st term of the coinduced resolution,
+evaluated at a point of `H`: it is the map induced on the `i`-th term, applied to the value at the
+image point, `(F ↦ f ∘ F ∘ φ)` read one level down. -/
+@[simp]
+theorem resolutionMap_succ_apply (i : ℕ) (F : (TopRep.resolutionX X (i + 1)).V) (h : H) :
+    ((_root_.ContinuousCohomology.resolutionMap φ f (i + 1)) F :
+        C(H, (TopRep.resolutionX Y i).V)) h =
+      (_root_.ContinuousCohomology.resolutionMap φ f i) (F (φ h)) :=
+  rfl
+
+/-- The underlying resolution element of the image of a homogeneous cochain under the cochain map
+of a compatible pair is the image of its underlying element under the resolution map. -/
+theorem coe_cochainsMap_f_apply (i : ℕ) (v : (TopRep.homogeneousCochains X).X i) :
+    Subtype.val ((_root_.ContinuousCohomology.cochainsMap φ f).f i v) =
+      (_root_.ContinuousCohomology.resolutionMap φ f (i + 1)) v.1 :=
+  rfl
+
+/-- The map on continuous cohomology induced by a compatible pair, on the class of a cocycle: it
+is the class of the image of the cocycle. -/
+@[simp]
+theorem map_π_apply (n : ℕ) (a : _root_.ContinuousCohomology.cocycles X n) :
+    _root_.ContinuousCohomology.map φ f n (_root_.ContinuousCohomology.π X n a) =
+      _root_.ContinuousCohomology.π Y n (_root_.ContinuousCohomology.cocyclesMap φ f n a) := by
+  have h := ConcreteCategory.congr_hom (_root_.ContinuousCohomology.π_map φ f n) a
+  simpa only [ConcreteCategory.comp_apply] using h
+
+/-- The underlying cochain of the image of a cocycle under the cocycle map of a compatible pair is
+the image of its underlying cochain under the cochain map. -/
+theorem iCycles_cocyclesMap_apply (n : ℕ) (a : _root_.ContinuousCohomology.cocycles X n) :
+    (TopRep.homogeneousCochains Y).iCycles n (_root_.ContinuousCohomology.cocyclesMap φ f n a) =
+      (_root_.ContinuousCohomology.cochainsMap φ f).f n
+        ((TopRep.homogeneousCochains X).iCycles n a) := by
+  have h := ConcreteCategory.congr_hom
+    (HomologicalComplex.cyclesMap_i (_root_.ContinuousCohomology.cochainsMap φ f) n) a
+  simpa only [ConcreteCategory.comp_apply] using h
+
+/-- A mapped homogeneous one-cocycle is evaluated by applying the underlying additive coefficient
+map after precomposing both arguments with the group homomorphism. -/
+theorem iCycles_cocyclesMap_one_apply (a : _root_.ContinuousCohomology.cocycles X 1)
+    (f' : X.V →+ Y.V) (hf : ∀ m, f.hom m = f' m) (h₀ h₁ : H) :
+    ((TopRep.homogeneousCochains Y).iCycles 1
+        (_root_.ContinuousCohomology.cocyclesMap φ f 1 a)).val h₀ h₁ =
+      f' (((TopRep.homogeneousCochains X).iCycles 1 a).val (φ h₀) (φ h₁)) := by
+  rw [iCycles_cocyclesMap_apply, coe_cochainsMap_f_apply,
+    resolutionMap_succ_apply, resolutionMap_succ_apply,
+    _root_.ContinuousCohomology.resolutionMap_zero, hf]
+
+/-- A mapped homogeneous two-cocycle is evaluated by applying the underlying additive coefficient
+map after precomposing all three arguments with the group homomorphism. -/
+theorem iCycles_cocyclesMap_two_apply (a : _root_.ContinuousCohomology.cocycles X 2)
+    (f' : X.V →+ Y.V) (hf : ∀ m, f.hom m = f' m) (h₀ h₁ h₂ : H) :
+    ((TopRep.homogeneousCochains Y).iCycles 2
+        (_root_.ContinuousCohomology.cocyclesMap φ f 2 a)).val h₀ h₁ h₂ =
+      f' (((TopRep.homogeneousCochains X).iCycles 2 a).val
+        (φ h₀) (φ h₁) (φ h₂)) := by
+  rw [iCycles_cocyclesMap_apply, coe_cochainsMap_f_apply,
+    resolutionMap_succ_apply, resolutionMap_succ_apply, resolutionMap_succ_apply,
+    _root_.ContinuousCohomology.resolutionMap_zero, hf]
+
+/-- A coefficient map along an equality of coefficient objects is the transport along the induced
+equality of cohomology groups. -/
+@[simp]
+theorem coeffMap_eqToHom {X Y : TopRep R G} (e : X = Y) (n : ℕ) :
+    coeffMap (eqToHom e) n = eqToHom (congrArg (continuousCohomology n) e) := by
+  subst e
+  simp
+
+end Elementwise
 
 end ContinuousCohomology
 

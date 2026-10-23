@@ -58,8 +58,7 @@ private theorem tensorInclusion_tmul (rho : Representation ℤ (L ≃ₐ[k] L) M
 private theorem tensorInclusion_mem (rho : Representation ℤ (L ≃ₐ[k] L) M)
     (x : groupAlgebraInvariants rho ⊗[k] groupAlgebraInvariants rho) :
     tensorInclusion rho x ∈ groupAlgebraTensorInvariants rho := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul x y =>
       simp only [tensorInclusion_tmul, mem_groupAlgebraTensorInvariants_iff,
         groupAlgebraTensorActionSemilinearEquiv_tmul]
@@ -82,8 +81,7 @@ private theorem liftEquiv_tensorInclusion_bijective
     apply AlgHom.toLinearMap_injective
     apply TensorProduct.AlgebraTensorModule.ext
     intro a x
-    induction x using TensorProduct.induction_on with
-    | zero => simp
+    induction x using TensorProduct.inductionOn with
     | tmul x y => simp [e, TensorProduct.smul_tmul']
     | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
   rw [he]

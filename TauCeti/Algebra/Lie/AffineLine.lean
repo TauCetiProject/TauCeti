@@ -14,9 +14,10 @@ public import TauCeti.Algebra.Lie.Nilradical
 `t ↦ a * t + b` of the line: the free `K`-module on a dilation `x` and a translation `y`, with
 `⁅x, y⁆ = y`.  Over a field it is, up to isomorphism, the only nonabelian two-dimensional Lie
 algebra (a classification not carried out here), and it is the standard witness that the nilradical
-is strictly larger than Mathlib's `LieAlgebra.maxNilpotentIdeal`: its ideal of translations is
-abelian, so it is the whole nilradical, while `⁅x, y⁆ = y` says the ambient algebra acts on it by an
-invertible, hence non-nilpotent, operator, so `maxNilpotentIdeal` is `⊥`.
+is strictly larger than Mathlib's `LieAlgebra.maxNilpotentIdeal`. Over any nontrivial commutative
+ring, its nonzero abelian ideal of translations is contained in the nilradical, while
+`maxNilpotentIdeal` is `⊥`. Over a reduced commutative ring, the nilradical is exactly the ideal
+of translations.
 
 The adjoint action of an element `u` is computed here too: it sends the dilation direction into
 the translation line and scales that line by the dilation coordinate `u.1`, so all of its positive
@@ -203,6 +204,19 @@ theorem ad_translation_ne_zero [Nontrivial K] :
   rw [h, LinearMap.zero_apply, eq_comm, neg_eq_zero] at hx
   exact translation_ne_zero K hx
 
+/-- The translation `y` survives in every term of the series `⁅N, ⁅N, … ⁆⁆` attached to an ideal
+`N` containing an element of dilation coordinate `1`, because `⁅x, y⁆ = y`. -/
+theorem translation_mem_lcs_self {N : LieIdeal K (AffineLine K)} {u : AffineLine K} (hu : u ∈ N)
+    (hu1 : u.1 = 1) (k : ℕ) : translation K ∈ LieIdeal.lcs N (AffineLine K) k := by
+  induction k with
+  | zero => rw [LieIdeal.lcs_zero]; exact LieSubmodule.mem_top _
+  | succ k ih =>
+    rw [LieIdeal.lcs_succ]
+    have hmem : ⁅u, translation K⁆ ∈ ⁅N, LieIdeal.lcs N (AffineLine K) k⁆ :=
+      LieSubmodule.lie_mem_lie hu ih
+    have hbracket : ⁅u, translation K⁆ = translation K := by ext <;> simp [hu1]
+    rwa [hbracket] at hmem
+
 section Field
 
 variable (K : Type*) [Field K]
@@ -210,11 +224,8 @@ variable (K : Type*) [Field K]
 /-- Every nonzero ideal contains the translation `y`. -/
 theorem translation_mem_of_ne_bot {N : LieIdeal K (AffineLine K)} (h : N ≠ ⊥) :
     translation K ∈ N := by
-  obtain ⟨u, hu, hu0⟩ : ∃ u ∈ N, u ≠ 0 := by
-    by_contra hcon
-    refine h ((LieSubmodule.eq_bot_iff N).2 fun m hm ↦ ?_)
-    by_contra hm0
-    exact hcon ⟨m, hm, hm0⟩
+  obtain ⟨u, hu, hu0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+    (p := N.toSubmodule) ((LieSubmodule.toSubmodule_eq_bot N).not.mpr h)
   by_cases h1 : u.1 = 0
   · -- `u` is already a nonzero multiple of `y`.
     have h2 : u.2 ≠ 0 := fun h2 ↦ hu0 (by ext <;> simp [h1, h2])
@@ -240,64 +251,65 @@ theorem translation_mem_lcs {N : LieIdeal K (AffineLine K)} (h : N ≠ ⊥) (k :
     have hmem := LieSubmodule.lie_mem_lie (LieSubmodule.mem_top (dilation K)) ih
     rwa [lie_dilation_translation] at hmem
 
-/-- The translation `y` survives in every term of the series `⁅N, ⁅N, … ⁆⁆` attached to an ideal
-`N` containing an element of dilation coordinate `1`, because `⁅x, y⁆ = y`. -/
-theorem translation_mem_lcs_self {N : LieIdeal K (AffineLine K)} {u : AffineLine K} (hu : u ∈ N)
-    (hu1 : u.1 = 1) (k : ℕ) : translation K ∈ LieIdeal.lcs N (AffineLine K) k := by
-  induction k with
-  | zero => rw [LieIdeal.lcs_zero]; exact LieSubmodule.mem_top _
-  | succ k ih =>
-    rw [LieIdeal.lcs_succ]
-    have hmem : ⁅u, translation K⁆ ∈ ⁅N, LieIdeal.lcs N (AffineLine K) k⁆ :=
-      LieSubmodule.lie_mem_lie hu ih
-    have hbracket : ⁅u, translation K⁆ = translation K := by ext <;> simp [hu1]
-    rwa [hbracket] at hmem
+end Field
 
 /-- No nonzero ideal is acted on nilpotently by the whole algebra. -/
 theorem not_isNilpotent_of_ne_bot {N : LieIdeal K (AffineLine K)} (h : N ≠ ⊥) :
     ¬ LieModule.IsNilpotent (AffineLine K) N := by
   intro hnil
-  obtain ⟨k, hk⟩ := (LieModule.isNilpotent_iff K (AffineLine K) N).1 hnil
-  rw [LieSubmodule.lowerCentralSeries_eq_bot_iff_lcs_eq_bot] at hk
-  have hmem := translation_mem_lcs K h k
-  rw [hk, LieSubmodule.mem_bot] at hmem
-  exact translation_ne_zero K hmem
+  have hidem : IsIdempotentElem (LieModule.toEnd K (AffineLine K) N (dilation K)) := by
+    ext u <;> simp [Module.End.mul_apply]
+  have hz := hidem.eq_zero_of_isNilpotent
+    (LieModule.isNilpotent_toEnd_of_isNilpotent K (AffineLine K) N (dilation K))
+  have hsnd (u : N) : (u : AffineLine K).2 = 0 := by
+    simpa using congrArg (fun f : Module.End K N ↦ (f u : AffineLine K).2) hz
+  apply h
+  apply (LieSubmodule.eq_bot_iff N).2
+  intro u hu
+  have hfst := hsnd ⟨⁅translation K, u⁆, N.lie_mem hu⟩
+  ext
+  · simpa using hfst
+  · exact hsnd ⟨u, hu⟩
 
-/-- An ideal that is nilpotent as a Lie algebra consists of translations. -/
-theorem le_translationIdeal_of_isNilpotent {N : LieIdeal K (AffineLine K)}
+/-- Over a reduced commutative ring, an ideal that is nilpotent as a Lie algebra consists of
+translations. -/
+theorem le_translationIdeal_of_isNilpotent [IsReduced K] {N : LieIdeal K (AffineLine K)}
     (h : LieRing.IsNilpotent N) : N ≤ translationIdeal K := by
   intro u hu
-  rw [mem_translationIdeal]
-  by_contra hu1
-  obtain ⟨k, hk⟩ := (LieIdeal.isNilpotent_iff_exists_lcs_eq_bot N).1 h
-  -- Rescale `u` to dilation coordinate `1`; it still lies in `N`.
-  have hmem := translation_mem_lcs_self K (N.smul_mem (u.1)⁻¹ hu)
-    (by simp [inv_mul_cancel₀ hu1]) k
-  rw [hk, LieSubmodule.mem_bot] at hmem
-  exact translation_ne_zero K hmem
+  apply mem_translationIdeal.2
+  apply IsNilpotent.eq_zero
+  obtain ⟨n, hn⟩ := LieIdeal.isNilpotent_ad_of_mem N hu
+  refine ⟨n + 1, ?_⟩
+  have hz : LieAlgebra.ad K (AffineLine K) u ^ (n + 1) = 0 := by
+    rw [pow_succ, hn, zero_mul]
+  simpa [ad_pow u (Nat.succ_ne_zero n), pow_succ] using
+    congrArg (fun f : Module.End K (AffineLine K) ↦ (f (translation K)).2) hz
 
 /-- **The nilradical of the two-dimensional nonabelian Lie algebra is its ideal of translations**,
-the span of `y` (`translationIdeal_toSubmodule`). -/
-@[simp] theorem nilradical_eq_translationIdeal :
+the span of `y` (`translationIdeal_toSubmodule`), over any reduced commutative ring. -/
+@[simp] theorem nilradical_eq_translationIdeal [IsReduced K] :
     nilradical K (AffineLine K) = translationIdeal K :=
-  le_antisymm (le_translationIdeal_of_isNilpotent K inferInstance)
+  le_antisymm ((nilradical_le_iff K (AffineLine K)).2 fun _ ↦
+      le_translationIdeal_of_isNilpotent K)
     (LieIdeal.le_nilradical K (AffineLine K) (translationIdeal K) inferInstance)
 
 /-- **Mathlib's `LieAlgebra.maxNilpotentIdeal` of the two-dimensional nonabelian Lie algebra is
-`⊥`**: the algebra acts on every nonzero ideal through an invertible operator. -/
+`⊥`** over any commutative ring: dilation acts idempotently, and every nonzero ideal
+contains a translation on which it acts nontrivially. -/
 @[simp] theorem maxNilpotentIdeal_eq_bot : LieAlgebra.maxNilpotentIdeal K (AffineLine K) = ⊥ := by
-  by_contra h
-  exact not_isNilpotent_of_ne_bot K h inferInstance
+  apply le_bot_iff.1
+  apply sSup_le
+  intro N hN
+  exact le_of_eq (by_contra fun h ↦ not_isNilpotent_of_ne_bot K h hN)
 
 /-- **The containment `TauCeti.LieAlgebra.maxNilpotentIdeal_le_nilradical` is strict in general**:
-for the two-dimensional nonabelian Lie algebra the nilradical is the ideal of translations, while
-Mathlib's `LieAlgebra.maxNilpotentIdeal` is `⊥`. -/
-theorem maxNilpotentIdeal_lt_nilradical :
+over any nontrivial commutative ring, the nilradical contains the nonzero ideal of translations,
+while Mathlib's `LieAlgebra.maxNilpotentIdeal` is `⊥`. -/
+theorem maxNilpotentIdeal_lt_nilradical [Nontrivial K] :
     LieAlgebra.maxNilpotentIdeal K (AffineLine K) < nilradical K (AffineLine K) := by
-  rw [maxNilpotentIdeal_eq_bot, nilradical_eq_translationIdeal, bot_lt_iff_ne_bot]
-  exact translationIdeal_ne_bot K
-
-end Field
+  rw [maxNilpotentIdeal_eq_bot]
+  exact lt_of_lt_of_le (bot_lt_iff_ne_bot.2 (translationIdeal_ne_bot K))
+    (LieIdeal.le_nilradical K (AffineLine K) (translationIdeal K) inferInstance)
 
 end AffineLine
 

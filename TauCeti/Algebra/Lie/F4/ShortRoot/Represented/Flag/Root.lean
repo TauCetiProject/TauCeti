@@ -28,11 +28,7 @@ noncomputable section
 
 local notation "𝔽₂" => ZMod 2
 
-/-- Local adjoint comodule used for root-subgroup stability of the cotangent flag. -/
-local instance : Comodule 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
-    f4ShortRootCotangentDual :=
-  Derivation.adjointComodule
-    (R := 𝔽₂) (H := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
+attribute [local instance] f4ShortRootCotangentAdjointComodule
 
 variable {A : Type} [CommRing A] [Algebra 𝔽₂ A]
 
@@ -80,14 +76,13 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_range
   let e := TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
   rw [← e.apply_symm_apply x]
   generalize e.symm x = z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
-  | add x y hx hy => simpa using add_mem hx hy
+  induction z using TensorProduct.inductionOn with
   | tmul a X =>
       rw [f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul]
       apply Submodule.smul_mem
       rw [f4ShortRootRepresentedRangeMatrixBaseChange_eq_span]
       exact Submodule.subset_span (Set.mem_range_self X)
+  | add x y hx hy => simpa using add_mem hx hy
 
 /-- Root conjugation carries a represented adjoint matrix to the adjoint matrix of the
 integrally transformed ambient vector. -/
@@ -173,15 +168,14 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_ideal
     f4ShortRootBaseChangeAdjointMatrixLinearMap
         (f4ShortRootBaseChangeInclusion z) ∈
       f4ShortRootRepresentedIdealMatrixBaseChange (A := A) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
-  | add x y hx hy => simpa using add_mem hx hy
+  induction z using TensorProduct.inductionOn with
   | tmul a y =>
       rw [f4ShortRootBaseChangeInclusion_tmul]
       rw [f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul]
       apply Submodule.smul_mem
       rw [f4ShortRootRepresentedIdealMatrixBaseChange_eq_span]
       exact Submodule.subset_span (Set.mem_range_self y)
+  | add x y hx hy => simpa using add_mem hx hy
 
 /-- Carrier root-subgroup conjugation preserves the represented ideal matrix span. -/
 theorem f4ShortRootRootConj_mem_representedIdeal

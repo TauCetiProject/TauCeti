@@ -24,10 +24,9 @@ places any coefficient in a finite subcoalgebra. Its restricted regular comodule
 coefficient in its matrix-coefficient algebra, so equality of the two actions there detects
 equality at the chosen coefficient.
 
-This is the injectivity input for the Tannakian reconstruction target in Layer 1 of the
-reductive-groups roadmap: once a point is packaged as a tensor automorphism of the
-scalar-extension fibre functor, its components on finite-dimensional comodules determine the
-point uniquely.
+This is the injectivity input for Tannakian reconstruction: once a point is packaged as a tensor
+automorphism of the scalar-extension fibre functor, its components on finite-dimensional comodules
+determine the point uniquely.
 
 ## Main declarations
 
@@ -120,14 +119,12 @@ theorem endOfPoint_eq_iff_eqOn_matrixCoefficientSubalgebra
               (LinearMap.lTensor M k.toLinearMap (coact (R := R) (C := C) m))) φ =
           k (matrixCoefficient (R := R) (C := C) φ m) := by
       rw [matrixCoefficient_def]
-      induction coact (R := R) (C := C) m using TensorProduct.induction_on with
-      | zero => simp
+      induction coact (R := R) (C := C) m using TensorProduct.inductionOn with
       | add x y hx hy => simp [hx, hy]
       | tmul m c => simp
     apply LinearMap.ext
     intro z
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add z t hz ht => simp [hz, ht]
     | tmul a m =>
         rw [endOfPoint_tmul, endOfPoint_tmul]

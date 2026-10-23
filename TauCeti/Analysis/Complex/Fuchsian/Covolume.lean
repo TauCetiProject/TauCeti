@@ -32,6 +32,7 @@ form a countable set.
 * `Subgroup.instCountableOfDiscreteTopology`: a discrete subgroup of `PSL(2, ℝ)` is countable.
 * `Subgroup.countable_compl_freeLocus`: the points of `ℍ` with nontrivial stabilizer in a
   countable `Γ` form a countable set.
+* `Subgroup.freeLocus_nonempty`: some point of `ℍ` has trivial stabilizer in a countable `Γ`.
 * `Subgroup.exists_isFundamentalDomain`: a discrete `Γ` has a measurable fundamental domain
   whose translates are pairwise disjoint.
 * `Subgroup.IsCofinite`: a discrete subgroup of finite covolume.
@@ -86,6 +87,13 @@ null set. -/
 theorem volume_compl_freeLocus [Countable Γ] :
     volume ((freeLocus Γ ℍ : Set ℍ)ᶜ) = 0 :=
   (countable_compl_freeLocus Γ).measure_zero volume
+
+/-- A countable subgroup of `PSL(2, ℝ)` has a point of `ℍ` with trivial stabilizer. -/
+theorem freeLocus_nonempty [Countable Γ] : (freeLocus Γ ℍ : Set ℍ).Nonempty := by
+  by_contra h
+  have hnull := volume_compl_freeLocus Γ
+  rw [not_nonempty_iff_eq_empty.mp h, compl_empty] at hnull
+  exact (isOpen_univ.measure_pos volume univ_nonempty).ne' hnull
 
 /-- **A Fuchsian group has a measurable fundamental domain.** For a discrete subgroup
 `Γ ≤ PSL(2, ℝ)` there is a measurable fundamental domain for its action on `ℍ` whose translates

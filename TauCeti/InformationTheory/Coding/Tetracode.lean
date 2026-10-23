@@ -87,11 +87,14 @@ theorem euclideanDual_tetracode : tetracode.euclideanDual = tetracode := by
   rw [tetracode_def, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
     checkedBy_tetracodeGenerator, ← tetracode_def]
 
+/-- The tetracode is Euclidean self-dual. -/
+theorem isSelfDual_tetracode : tetracode.IsSelfDual :=
+  Submodule.isSelfDual_iff.mpr euclideanDual_tetracode.symm
+
 /-- The tetracode has dimension two over the ternary field. -/
 @[simp]
 theorem finrank_tetracode : Module.finrank (ZMod 3) tetracode = 2 := by
-  have h := Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual
-    euclideanDual_tetracode.symm
+  have h := isSelfDual_tetracode.two_mul_finrank_eq_card
   norm_num at h
   omega
 

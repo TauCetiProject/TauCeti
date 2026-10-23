@@ -293,7 +293,7 @@ theorem memHolder_iteratedFDeriv_two (f : C2HolderSpace α E F) :
     MemHolder α (iteratedFDeriv ℝ 2 (f : E → F)) := by
   rw [f.iteratedFDeriv_two_eq]
   simpa using f.memHolder_secondFDeriv.comp
-    (secondIteratedEquiv (E := E) (F := F)).lipschitz.holderWith.memHolder
+    (secondIteratedEquiv (E := E) (F := F)).lipschitzWith.holderWith.memHolder
 
 /-- Two bounded `C^{2,α}` maps are equal when their underlying functions agree pointwise. -/
 @[ext]

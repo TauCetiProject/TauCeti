@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
 
 /-!
 # The derivative of the `PSL(2, ℝ)`-action on the upper half-plane
@@ -38,6 +39,8 @@ it therefore becomes a character, which is what governs the stabilizers of a dis
   `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_inv` for the inverse.
 * `Matrix.ProjectiveSpecialLinearGroup.norm_smulDeriv_of_smul_eq_self`: the derivative at a
   fixed point is unimodular, so a transformation fixing a point rotates about it.
+* `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_dilation`: the dilation `z ↦ exp s * z` has
+  derivative `exp s`.
 
 ## References
 
@@ -176,5 +179,19 @@ theorem hasStrictDerivAt_coe_smul (q : PSL(2, ℝ)) (z : ℍ) :
 theorem deriv_coe_smul (q : PSL(2, ℝ)) (z : ℍ) :
     deriv (fun w : ℂ ↦ ((q • ofComplex w : ℍ) : ℂ)) (z : ℂ) = smulDeriv q z :=
   (hasStrictDerivAt_coe_smul q z).hasDerivAt.deriv
+
+-- Not `@[simp]`: `smulDeriv_coe` rewrites the left-hand side first. Use it via `rw`.
+/-- The derivative of the dilation `z ↦ exp s * z` is `exp s`. -/
+theorem smulDeriv_dilation (s : ℝ) (z : ℍ) : smulDeriv (↑(dilation s)) z = Real.exp s := by
+  rw [smulDeriv_coe]
+  simp only [denom, mapGL_coe_matrix, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+    Algebra.algebraMap_self_apply, coe_dilation, Matrix.of_apply, Matrix.cons_val',
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, Complex.ofReal_zero,
+    zero_mul, zero_add]
+  rw [← Complex.ofReal_pow, ← Complex.ofReal_inv, Complex.ofReal_inj, ← Real.exp_nat_mul,
+    ← Real.exp_neg]
+  congr 1
+  push_cast
+  ring
 
 end Matrix.ProjectiveSpecialLinearGroup

@@ -46,6 +46,8 @@ tower `F ⊆ E ⊆ E' ⊆ K` of ground fields in every degree.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_zero_H0π` and
   `TauCeti.ClassFieldTheory.LayerRestriction.tateHZeroEquivNormQuotient_tateCor_H0π`: in degree
   zero, corestriction is the ground-level norm.
+* `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_zeroTateClass`: in degree zero, corestriction
+  sends the zero-dimensional class of an element to that of its ground-level norm.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_neg_one_HNegOneπ`: in degree minus one,
   corestriction is the inclusion of norm kernels `kerNormInclusion`.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_negSucc_succ_comp_negSuccIso_hom`: in degrees
@@ -238,8 +240,9 @@ theorem tateCor_zero_H0π (T : LayerRestriction small big) (F : Formation G)
       (QuotientGroup.mk (s := big.relativeTop) q.out) := by
     conv_lhs => rw [← q.out_eq']
     rfl
-  rw [Representation.apply_eq_apply_of_quotientGroup_mk_eq
-    (TauCeti.TateCohomology.mapInvariants (T.isIntertwiningMap_repIso_range F) x).2
+  rw [Representation.apply_eq_apply_of_quotientGroup_mk_eq _
+    ((Representation.mem_invariants _ _).1
+      (TauCeti.TateCohomology.mapInvariants (T.isIntertwiningMap_repIso_range F) x).2)
     (a := (e q).out)
     (b := QuotientGroup.mk (s := big.relativeTop) q.out) (by rw [QuotientGroup.out_eq']; exact hq),
     NormalLayer.rep_ρ_mk_apply_coe, TauCeti.TateCohomology.mapInvariants_apply_coe,
@@ -255,6 +258,17 @@ theorem tateHZeroEquivNormQuotient_tateCor_H0π (T : LayerRestriction small big)
     big.tateHZeroEquivNormQuotient F (T.tateCor F 0 (TauCeti.TateCohomology.H0π (small.rep F) x)) =
       big.normQuotientMk F (T.groundNorm F (small.groundLevelEquiv F x)) := by
   rw [tateCor_zero_H0π, NormalLayer.tateHZeroEquivNormQuotient_H0π, LinearEquiv.apply_symm_apply]
+
+-- Not `@[simp]`: the `@[simp]` lemma `tateCor_zero` rewrites its left-hand side first.
+/-- **In degree zero, corestriction is the ground-level norm on zero-dimensional classes.** The
+zero-dimensional Tate class of an element of the ground level `A^{U'}` of `K/E` corestricts to the
+zero-dimensional Tate class of its norm `N_{U/U'}` in the ground level `A^U` of `K/F`. -/
+theorem tateCor_zeroTateClass (T : LayerRestriction small big) (F : Formation G)
+    (a : F.level small.ground) :
+    T.tateCor F 0 (small.zeroTateClass F a) = big.zeroTateClass F (T.groundNorm F a) := by
+  obtain ⟨x, rfl⟩ := (small.groundLevelEquiv F).surjective a
+  rw [NormalLayer.zeroTateClass_groundLevelEquiv, T.tateCor_zero_H0π,
+    ← NormalLayer.zeroTateClass_groundLevelEquiv, LinearEquiv.apply_symm_apply]
 
 /-! ### Towers -/
 
@@ -347,7 +361,7 @@ theorem trivialTateCor_zero_H0π (T : LayerRestriction small big)
     trivialTateRangeIso_hom_H0π, TauCeti.TateCohomology.H0π_comp_H0Cor_apply]
   congr 1
   apply Subtype.ext
-  rw [Representation.coe_relNormInvariants, Representation.relNorm_apply_of_mem_invariants]
+  rw [Representation.coe_relNormInvariants, Representation.relNorm_apply_of_forall_apply_eq]
   · simp only [T.index_range_galHom]
     simp
   · exact fun _ ↦ rfl
@@ -406,5 +420,17 @@ theorem trivialTateCor_negSucc_succ (T : LayerRestriction small big) (n : ℕ) :
         TauCeti.TateCohomology.negSuccCor
           (Rep.trivial ℤ big.Gal ℤ) T.galHom.range.subtype (n + 1) :=
   (rfl)
+
+/-- In degree `-2`, trivial-coefficient Tate corestriction is the range comparison followed by
+the map on first homology induced by inclusion. -/
+@[simp]
+theorem trivialTateCor_neg_two (T : LayerRestriction small big) :
+    T.trivialTateCor (-2) =
+      (T.trivialTateRangeIso (-2)).hom ≫
+        TauCeti.TateCohomology.HNegTwoCor
+          (Rep.trivial ℤ big.Gal ℤ) T.galHom.range.subtype :=
+  by
+    rw [TauCeti.TateCohomology.HNegTwoCor_eq_negSuccCor]
+    exact T.trivialTateCor_negSucc_succ 0
 
 end TauCeti.ClassFieldTheory.LayerRestriction

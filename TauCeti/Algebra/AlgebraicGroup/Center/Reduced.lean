@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Center.Basic
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Reduction
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Reduction
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 
 /-!
@@ -46,6 +46,8 @@ thickening controls the original center.
 -/
 
 public section
+
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 open CategoryTheory
 open scoped TensorProduct

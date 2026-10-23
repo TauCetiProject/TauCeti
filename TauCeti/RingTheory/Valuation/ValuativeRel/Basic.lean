@@ -5,6 +5,8 @@ Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Valuation.Integers
+public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
@@ -15,12 +17,18 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
 ## Main results
 
 * `TauCeti.ValuativeRel.not_vle_zero_of_isUnit` : If `f` is a unit, then `¬ f ≤ᵥ 0`.
+* `TauCeti.ValuativeRel.vle_of_vle_inv_mul` and
+  `TauCeti.ValuativeRel.vle_of_inv_mul_vle` : cancel a unit in valuation comparisons.
+* `TauCeti.natCast_ne_zero_of_isUnit` and `TauCeti.two_ne_zero_of_isUnit_two`: an integer
+  that is a unit in the ring of integers is nonzero in the ambient ring.
 * `TauCeti.valuativeExtension_self`: every valuative commutative semiring is a valuative extension
   of itself.
 * `TauCeti.valuation_le_one_of_sub_sq_le_one`: if an integral element differs from a square by
   an integral element, then the square root is integral.
 * `TauCeti.one_add_pow_ne_zero_of_valuation_lt_one`: a positive power of an element of valuation
   less than one cannot equal `-1`.
+* `TauCeti.valuation_lt_one_iff_mem_image_maximalIdeal`: in a field, the elements of valuation
+  less than one are the image of the maximal ideal of the ring of integers.
 
 ## References
 
@@ -42,6 +50,18 @@ theorem not_vle_zero_of_isUnit {A : Type*} [Semiring A] [ValuativeRel A] {f : A}
   simpa [Units.inv_mul, ValuativeRel.not_vle.mpr ValuativeRel.zero_vlt_one] using
     ValuativeRel.mul_vle_mul_right h ↑u⁻¹
 
+/-- If `1 ≤ᵥ ϖ⁻¹ * t` for a unit `ϖ`, then `ϖ ≤ᵥ t`. -/
+theorem vle_of_vle_inv_mul {A : Type*} [Semiring A] [ValuativeRel A] (ϖ : Aˣ) {t : A}
+    (h : 1 ≤ᵥ (ϖ⁻¹ : Aˣ) * t) : (ϖ : A) ≤ᵥ t := by
+  have h' := ValuativeRel.mul_vle_mul_right h ϖ
+  rwa [mul_one, ← mul_assoc, Units.mul_inv, one_mul] at h'
+
+/-- If `ϖ⁻¹ * t ≤ᵥ 1` for a unit `ϖ`, then `t ≤ᵥ ϖ`. -/
+theorem vle_of_inv_mul_vle {A : Type*} [Semiring A] [ValuativeRel A] (ϖ : Aˣ) {t : A}
+    (h : (ϖ⁻¹ : Aˣ) * t ≤ᵥ 1) : t ≤ᵥ (ϖ : A) := by
+  have h' := ValuativeRel.mul_vle_mul_right h ϖ
+  rwa [mul_one, ← mul_assoc, Units.mul_inv, one_mul] at h'
+
 end TauCeti.ValuativeRel
 
 open ValuativeRel
@@ -52,17 +72,26 @@ namespace TauCeti
 instance valuativeExtension_self (K : Type*) [CommSemiring K] [ValuativeRel K] :
     ValuativeExtension K K := ⟨fun a b ↦ by simp⟩
 
-variable {K : Type*} [CommRing K] [ValuativeRel K]
+variable {K : Type*} [Ring K] [ValuativeRel K]
+
+/-- A natural number that is a unit in the integer ring is nonzero in the ambient ring. -/
+theorem natCast_ne_zero_of_isUnit {n : ℕ}
+    (hn : IsUnit (n : (valuation K).integer)) : (n : K) ≠ 0 := by
+  have hunit : IsUnit (n : K) := by
+    simpa only [map_natCast] using hn.map (Subring.subtype ((valuation K).integer))
+  intro h
+  exact ValuativeRel.not_vle_zero_of_isUnit hunit (by simp [h])
+
+/-- If `2` is a unit in the integer ring, it is nonzero in the ambient ring. -/
+theorem two_ne_zero_of_isUnit_two (h2 : IsUnit (2 : (valuation K).integer)) : (2 : K) ≠ 0 := by
+  exact_mod_cast natCast_ne_zero_of_isUnit (K := K) (n := 2) (by exact_mod_cast h2)
 
 /-- If an element of valuation at most one differs from a square by an element of valuation at
 most one, then the square root also has valuation at most one. -/
 theorem valuation_le_one_of_sub_sq_le_one {u ξ : K} (hu : valuation K u ≤ 1)
     (hξ : valuation K (u - ξ ^ 2) ≤ 1) : valuation K ξ ≤ 1 := by
-  rw [← pow_le_one_iff (two_ne_zero), ← map_pow]
-  calc
-    valuation K (ξ ^ 2) = valuation K (u - (u - ξ ^ 2)) := by rw [sub_sub_cancel]
-    _ ≤ max (valuation K u) (valuation K (u - ξ ^ 2)) := (valuation K).map_sub _ _
-    _ ≤ 1 := max_le hu hξ
+  rw [← pow_le_one_iff two_ne_zero, ← map_pow]
+  simpa using (valuation K).map_sub_le hu hξ
 
 /-- A positive power of an element of valuation less than one cannot equal `-1`. -/
 theorem one_add_pow_ne_zero_of_valuation_lt_one {x : K} (hx : valuation K x < 1)
@@ -70,9 +99,19 @@ theorem one_add_pow_ne_zero_of_valuation_lt_one {x : K} (hx : valuation K x < 1)
   have hxpow : valuation K (x ^ n) < 1 := by
     rw [map_pow]
     exact pow_lt_one₀ zero_le hx hn
-  have hval : valuation K (1 + x ^ n) = 1 := (valuation K).map_one_add_of_lt hxpow
   intro h
-  rw [h, map_zero] at hval
-  exact zero_ne_one hval
+  simpa [h] using (valuation K).map_one_add_of_lt hxpow
+
+/-- An element of a field has valuation below `1` exactly when it lies in the maximal ideal of the
+ring of integers. -/
+theorem valuation_lt_one_iff_mem_image_maximalIdeal {K : Type*} [Field K] [ValuativeRel K]
+    {x : K} :
+    valuation K x < 1 ↔
+      x ∈ ((↑) : (valuation K).integer → K) ''
+        ↑(IsLocalRing.maximalIdeal (valuation K).integer) := by
+  refine ⟨fun hx ↦ ⟨⟨x, (Valuation.mem_integer_iff _ _).2 hx.le⟩,
+    (valuation K).mem_maximalIdeal_iff.2 hx, rfl⟩, ?_⟩
+  rintro ⟨c, hc, rfl⟩
+  exact (valuation K).mem_maximalIdeal_iff.1 hc
 
 end TauCeti

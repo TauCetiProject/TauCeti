@@ -40,7 +40,8 @@ theorem tendsto_lintegral_enorm_sub_of_tendsto_Lp {α G ι : Type*} [MeasurableS
     ((Measure.LpToL1CLM (𝕜 := ℝ) ν q).continuous.tendsto g).comp h
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at hL1
   refine hL1.congr fun i => ?_
-  rw [eLpNorm_one_eq_lintegral_enorm]
+  rw [eLpNorm_one_eq_lintegral_enorm
+    ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))]
   apply lintegral_congr_ae
   filter_upwards [Measure.LpToL1CLM_coeFn (𝕜 := ℝ) ν q (f i),
     Measure.LpToL1CLM_coeFn (𝕜 := ℝ) ν q g] with x hfi hg

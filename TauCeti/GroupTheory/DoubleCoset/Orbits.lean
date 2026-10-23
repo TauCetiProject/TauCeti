@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GroupAction.Burnside
 public import TauCeti.GroupTheory.GroupAction.Stabilizer
 public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.DoubleCoset
+import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Double cosets as orbits
@@ -52,6 +53,9 @@ numbers, which is the group-theoretic half of the statement that the permutation
   `TauCeti.card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_inv_smul` its form at a chosen
   representative. Stated multiplicatively, so it holds also when the stabilisers are infinite
   (`Nat.card = 0`).
+* `TauCeti.card_fiber_orbitOfCosetTranslate_eq_relIndex`: the fibre size itself, as the relative
+  index of the stabilisers of the translate `h⁻¹ • p` in `𝒢` and in `ℋ`; this determines the
+  fibre also when the stabilisers are infinite.
 * `TauCeti.preimage_orbit_eq_doubleCoset`: the double coset `KsH` is the preimage of the
   `K`-orbit of `sH`.
 * `TauCeti.card_doubleCosetQuotient_eq_card_orbitQuotient`: the two sides of that bijection have
@@ -285,6 +289,32 @@ theorem orbitOfCosetTranslate_eq_iff {𝒢 ℋ : Subgroup G} (hle : 𝒢 ≤ ℋ
         rw [Subgroup.coe_inv, Subgroup.coe_mul, Subgroup.coe_inv, Subgroup.coe_mul]
         simp [mul_assoc]
 
+/-- The fibre of `orbitOfCosetTranslate` through `q` is the `stabilizer ℋ p`-orbit of `q`, so it
+has as many elements as that orbit. -/
+private theorem card_fiber_orbitOfCosetTranslate_eq_ncard_orbit {𝒢 ℋ : Subgroup G}
+    (hle : 𝒢 ≤ ℋ) (p : α) (q : ℋ ⧸ 𝒢.subgroupOf ℋ) :
+    Nat.card {r : ℋ ⧸ 𝒢.subgroupOf ℋ // orbitOfCosetTranslate p r =
+        orbitOfCosetTranslate (𝒢 := 𝒢) p q} = (orbit (stabilizer ℋ p) q).ncard := by
+  have hset : {r : ℋ ⧸ 𝒢.subgroupOf ℋ | orbitOfCosetTranslate p r =
+      orbitOfCosetTranslate (𝒢 := 𝒢) p q} = orbit (stabilizer ℋ p) q :=
+    Set.ext fun r => orbitOfCosetTranslate_eq_iff hle p r _
+  -- `Set.coe_ofPred` is the subtype/`Set.Elem` step; spelling it out keeps the proof off the
+  -- unstated defeq, which has already been renamed once upstream (`Set.coe_setOf`)
+  rw [← hset, ← Nat.card_coe_set_eq, Set.coe_ofPred]
+
+/-- **The fibre size as an index.** The number of coset classes that translate `p` into the same
+orbit as `q` does is the index of the stabiliser of `q` inside `stabilizer ℋ p`.
+
+`q` ranges over arbitrary classes, and no finiteness is assumed: unlike the multiplicative form
+`card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_coset` below, this determines the fibre size
+even when the stabilisers are infinite. For a chosen representative, see
+`card_fiber_orbitOfCosetTranslate_eq_relIndex`. -/
+theorem card_fiber_orbitOfCosetTranslate_eq_index_stabilizer {𝒢 ℋ : Subgroup G}
+    (hle : 𝒢 ≤ ℋ) (p : α) (q : ℋ ⧸ 𝒢.subgroupOf ℋ) :
+    Nat.card {r : ℋ ⧸ 𝒢.subgroupOf ℋ // orbitOfCosetTranslate p r =
+        orbitOfCosetTranslate (𝒢 := 𝒢) p q} = (stabilizer (stabilizer ℋ p) q).index := by
+  rw [card_fiber_orbitOfCosetTranslate_eq_ncard_orbit hle, index_stabilizer]
+
 /-- **Orbit-stabiliser for the fibres of `orbitOfCosetTranslate`.** The number of coset classes
 that translate `p` into the same orbit as `q` does, times the order of the stabiliser of `q`
 inside `stabilizer ℋ p`, is the order of `stabilizer ℋ p`.
@@ -302,16 +332,8 @@ theorem card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_coset {𝒢 ℋ : S
     Nat.card {r : ℋ ⧸ 𝒢.subgroupOf ℋ // orbitOfCosetTranslate p r =
         orbitOfCosetTranslate (𝒢 := 𝒢) p q} *
       Nat.card (stabilizer (↥(stabilizer ℋ p)) q) = Nat.card (stabilizer ℋ p) := by
-  -- the fibre is the orbit of `q` under `stabilizer ℋ p`
-  have hset : {r : ℋ ⧸ 𝒢.subgroupOf ℋ | orbitOfCosetTranslate p r =
-      orbitOfCosetTranslate (𝒢 := 𝒢) p q} = orbit (stabilizer ℋ p) q :=
-    Set.ext fun r => orbitOfCosetTranslate_eq_iff hle p r _
-  -- `Set.coe_ofPred` is the subtype/`Set.Elem` step; spelling it out keeps the proof off the
-  -- unstated defeq, which has already been renamed once upstream (`Set.coe_setOf`)
-  have hcard : Nat.card {r : ℋ ⧸ 𝒢.subgroupOf ℋ // orbitOfCosetTranslate p r =
-      orbitOfCosetTranslate (𝒢 := 𝒢) p q} = (orbit (stabilizer ℋ p) q).ncard := by
-    rw [← hset, ← Nat.card_coe_set_eq, Set.coe_ofPred]
-  rw [hcard, ← MulAction.index_stabilizer, Subgroup.index_mul_card]
+  rw [card_fiber_orbitOfCosetTranslate_eq_ncard_orbit hle, ← MulAction.index_stabilizer,
+    Subgroup.index_mul_card]
 
 /-- **The multiplicity identity at a chosen representative.** For `h : ℋ`, the number of coset
 classes translating `p` into the same orbit as the class of `h` does, times the order of the
@@ -333,6 +355,34 @@ theorem card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_inv_smul {𝒢 ℋ 
       Nat.card (stabilizer 𝒢 ((h : ℋ)⁻¹ • p)) = Nat.card (stabilizer ℋ p) := by
   rw [← card_stabilizer_subgroupOf hle, ← card_stabilizer_coset_eq_card_stabilizer_inv_smul,
     card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_coset hle]
+
+open scoped Pointwise in
+/-- **The fibre size as a relative index.** The representative specialisation of
+`card_fiber_orbitOfCosetTranslate_eq_index_stabilizer`: for `h : ℋ`, the number of coset classes
+translating `p` into the same `𝒢`-orbit as the class of `h` is the relative index of `𝒢` in the
+stabiliser of the translate `h⁻¹ • p` in `ℋ`, that is,
+`[stabilizer ℋ (h⁻¹ • p) : stabilizer 𝒢 (h⁻¹ • p)]`.
+
+The multiplicative identity `card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_inv_smul`
+degenerates to `0 = 0` when the stabilisers are infinite; this form determines the fibre size in
+every case, for instance for the infinite cyclic stabilisers of cusps of Fuchsian groups. -/
+theorem card_fiber_orbitOfCosetTranslate_eq_relIndex {𝒢 ℋ : Subgroup G}
+    (hle : 𝒢 ≤ ℋ) (p : α) (h : ℋ) :
+    Nat.card {r : ℋ ⧸ 𝒢.subgroupOf ℋ // orbitOfCosetTranslate p r =
+        orbitOfCosetTranslate (𝒢 := 𝒢) p ((h : ℋ ⧸ 𝒢.subgroupOf ℋ))} =
+      (𝒢.subgroupOf ℋ).relIndex (stabilizer ℋ (h⁻¹ • p)) := by
+  -- orbit-stabiliser, then conjugate the stabiliser `h (𝒢 ∩ ℋ) h⁻¹` of the class back by `h⁻¹`
+  calc _ = (stabilizer (stabilizer ℋ p) ((h : ℋ ⧸ 𝒢.subgroupOf ℋ))).index :=
+        card_fiber_orbitOfCosetTranslate_eq_index_stabilizer hle p _
+    _ = (MulAut.conj h • 𝒢.subgroupOf ℋ).relIndex (stabilizer ℋ p) := by
+        rw [← stabilizer_quotientGroup_mk, Subgroup.relIndex, stabilizer_subgroupOf]
+    _ = _ := by
+        rw [← Subgroup.relIndex_pointwise_smul (MulAut.conj h)⁻¹, inv_smul_smul]
+        congr 1
+        ext x
+        rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, inv_inv, mem_stabilizer_iff,
+          mem_stabilizer_iff, MulAut.smul_def, MulAut.conj_apply, mul_smul, mul_smul,
+          smul_eq_iff_eq_inv_smul]
 
 /-- **The orbit-indexed form**, which is the one a consumer wants: the weight is
 `TauCeti.cardStabilizerOnOrbit`, a function of the orbit rather than of a representative.

@@ -146,6 +146,12 @@ variable (k G)
 noncomputable def zigzagProjectiveVolume (i : V) : zigzagProjective k G i :=
   zigzagProjectiveBasisFun k G i (.inr (.inr ()))
 
+/-- The degree-two projective basis vector is its volume vector. -/
+theorem zigzagProjectiveBasisFun_inr_inr (i : V) (a : Unit) :
+    zigzagProjectiveBasisFun k G i (.inr (.inr a)) = zigzagProjectiveVolume k G i := by
+  cases a
+  rfl
+
 @[simp]
 theorem coe_zigzagProjectiveVolume (i : V) :
     (zigzagProjectiveVolume k G i : nonisolatedZigzagQuotient k G) =

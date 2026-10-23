@@ -95,13 +95,11 @@ private theorem counitEvaluation_mul
           ((TensorProduct.AlgebraTensorModule.distribBaseChange k A N P).symm
             (x ⊗ₜ[A] y))) =
       counitEvaluation k H A N x * counitEvaluation k H A P y := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x x' hx hx' =>
       rw [TensorProduct.add_tmul, map_add, map_add, map_add, hx, hx', map_add, add_mul]
   | tmul a n =>
-      induction y using TensorProduct.induction_on with
-      | zero => simp
+      induction y using TensorProduct.inductionOn with
       | add y y' hy hy' =>
           rw [TensorProduct.tmul_add, map_add, map_add, map_add, hy, hy', map_add, mul_add]
       | tmul b p =>

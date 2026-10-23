@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
-public import Mathlib.Topology.Algebra.Module.Equiv
 
 /-!
 # The kernel of an operator paired with a complementary coordinate

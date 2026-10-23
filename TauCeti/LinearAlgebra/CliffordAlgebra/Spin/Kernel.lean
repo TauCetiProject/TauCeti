@@ -9,25 +9,39 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # The kernel of the Spin action
 
-For a positive-dimensional finite nondegenerate quadratic space over a field where `2` is
-invertible, the kernel of the Spin action consists of the two scalar elements. The proof first
-shows that an even Clifford element commuting with every generating vector is scalar, using
-contraction and the exterior-algebra basis. Unitarity then restricts the scalar to `1` or `-1`.
+On a subsingleton quadratic space, the Spin action is a bijection between trivial groups, so its
+kernel is trivial. In particular, this describes the zero-dimensional case over a field. For a
+positive-dimensional finite nondegenerate quadratic space over a field where `2` is invertible,
+the kernel instead consists of the two scalar elements. The proof first shows that an even
+Clifford element commuting with every generating vector is scalar, using contraction and the
+exterior-algebra basis. Unitarity then restricts the scalar to `1` or `-1`.
 
 ## Main results
 
+* `CliffordAlgebra.algebraMap_mem_spinGroup_of_isUnit`: a square root of unity lies in the Spin
+  group as soon as the quadratic form takes a unit value.
+* `CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_of_coe_eq_algebraMap`: a scalar Spin element
+  acts trivially.
 * `CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff`: a Spin element is in the kernel
 exactly when it is `1` or the canonical scalar `-1`.
 * `QuadraticMap.Isometry.spinGroupMap_negOne`: maps induced by quadratic isometries preserve the
   canonical scalar `-1`.
 * `CliffordAlgebra.eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq`: two Spin elements with the
   same projection differ by at most the canonical scalar `-1`.
+* `CliffordAlgebra.ker_spinToSpecialOrthogonal_eq_bot_of_subsingleton`: on a subsingleton module,
+  the kernel of the Spin action is trivial.
+* `CliffordAlgebra.spinToSpecialOrthogonal_bijective_of_subsingleton`: on a subsingleton module,
+  the Spin action is bijective.
+* `CliffordAlgebra.ker_spinToSpecialOrthogonal_eq_bot_of_finrank_eq_zero` and
+  `CliffordAlgebra.spinToSpecialOrthogonal_bijective_of_finrank_eq_zero` specialize these results
+  to zero-dimensional vector spaces.
 * `CliffordAlgebra.card_ker_spinToSpecialOrthogonal`: the kernel of the Spin action on
-the special orthogonal group has cardinality two.
+  the special orthogonal group has cardinality two in positive dimension.
 * `CliffordAlgebra.zmodTwoMulEquivKerSpinToSpecialOrthogonal`: the kernel is canonically
   equivalent to `Multiplicative (ZMod 2)`.
 * `CliffordAlgebra.zmodTwoMulEquivKerSpinToSpecialOrthogonal_apply_ofAdd_one`: the chosen
@@ -37,9 +51,7 @@ the special orthogonal group has cardinality two.
 
 ## References
 
-This completes Layer 2's kernel target, `card_ker_spinToSpecialOrthogonal`, in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Suggested.lean`. See H. B. Lawson and
-M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 -/
 
 public section
@@ -57,30 +69,26 @@ section Scalar
 
 variable {K : Type u} [Field K] [Module K M]
 
-/-! ### The scalar `-1` in the Spin group -/
+/-! ### Square roots of unity, and the scalar `-1`, in the Spin group -/
+
+/-- A square root of unity belongs to the Spin group when the quadratic form is a unit on some
+vector: it is the product of the two invertible vectors `ζ (Q v)⁻¹ • v` and `v`. -/
+theorem algebraMap_mem_spinGroup_of_isUnit (Q : QuadraticForm R M) (v : M)
+    (hvQ : IsUnit (Q v)) {ζ : R} (hζ : ζ ^ 2 = 1) :
+    algebraMap R (CliffordAlgebra Q) ζ ∈ spinGroup Q := by
+  let u := (IsUnit.of_pow_eq_one hζ two_ne_zero).unit
+  rw [spinGroup.mem_iff]
+  refine ⟨?_, ?_⟩
+  · refine ⟨⟨_, unitsMap_algebraMap_mem_lipschitzGroup ⟨v, hvQ⟩ u, rfl⟩, ?_⟩
+    simp [Unitary.mem_iff, ← sq, ← map_pow, hζ]
+  · exact (CliffordAlgebra.even Q).algebraMap_mem ζ
 
 /-- The scalar `-1` belongs to the Spin group when the quadratic form is a unit
 on some vector. -/
 theorem neg_one_mem_spinGroup_of_isUnit (Q : QuadraticForm R M) (v : M)
     (hvQ : IsUnit (Q v)) :
     (-1 : CliffordAlgebra Q) ∈ spinGroup Q := by
-  let _ : Invertible (Q v) := hvQ.invertible
-  let a : R := -⅟(Q v)
-  have ha : IsUnit a := (isUnit_of_invertible (⅟(Q v))).neg
-  let _ : Invertible a := ha.invertible
-  have havQ : IsUnit (Q (a • v)) := QuadraticMap.isUnit_apply_smul ha hvQ
-  let _ : Invertible (Q (a • v)) := havQ.invertible
-  let x := unitι Q (a • v) * unitι Q v
-  have hx : (x : CliffordAlgebra Q) = -1 := by
-    simp only [x, Units.val_mul, coe_unitι, map_smul, Algebra.smul_def]
-    rw [mul_assoc, ι_sq_scalar, ← map_mul]
-    simp [a]
-  rw [spinGroup.mem_iff]
-  refine ⟨?_, ?_⟩
-  · refine ⟨⟨x, mul_mem (unitι_mem_lipschitzGroup _) (unitι_mem_lipschitzGroup _), hx⟩,
-      ?_⟩
-    simp [Unitary.mem_iff]
-  · exact (CliffordAlgebra.even Q).neg_mem (CliffordAlgebra.even Q).one_mem
+  simpa using algebraMap_mem_spinGroup_of_isUnit Q v hvQ (ζ := -1) neg_one_sq
 
 /-- The scalar `-1` belongs to the Spin group of a nonzero quadratic form over a field. -/
 theorem neg_one_mem_spinGroup (Q : QuadraticForm K M) (hQ : Q ≠ 0) :
@@ -172,9 +180,9 @@ section NegOne
 
 variable [Invertible (2 : R)]
 
-/-- A Spin element whose Clifford value is `-1` lies in the kernel of the Spin action. -/
-theorem mem_ker_spinToSpecialOrthogonal_of_coe_eq_neg_one
-    (x : spinGroup Q) (h : (x : CliffordAlgebra Q) = -1) :
+/-- A Spin element whose Clifford value is a scalar lies in the kernel of the Spin action. -/
+theorem mem_ker_spinToSpecialOrthogonal_of_coe_eq_algebraMap
+    (x : spinGroup Q) {r : R} (h : (x : CliffordAlgebra Q) = algebraMap R _ r) :
     x ∈ MonoidHom.ker (spinToSpecialOrthogonal Q) := by
   rw [MonoidHom.mem_ker]
   apply Subtype.ext
@@ -182,8 +190,15 @@ theorem mem_ker_spinToSpecialOrthogonal_of_coe_eq_neg_one
   intro m
   rw [coe_spinToSpecialOrthogonal_apply]
   apply ι_injective Q
-  rw [ι_spinVectorAction_apply]
-  simp [h]
+  have hc : Commute (x : CliffordAlgebra Q) (ι Q m) := h ▸ Algebra.commute_algebraMap_left r _
+  rw [ι_spinVectorAction_apply, hc.eq, mul_assoc, spinGroup.mul_star_self_of_mem x.2, mul_one]
+  simp
+
+/-- A Spin element whose Clifford value is `-1` lies in the kernel of the Spin action. -/
+theorem mem_ker_spinToSpecialOrthogonal_of_coe_eq_neg_one
+    (x : spinGroup Q) (h : (x : CliffordAlgebra Q) = -1) :
+    x ∈ MonoidHom.ker (spinToSpecialOrthogonal Q) :=
+  mem_ker_spinToSpecialOrthogonal_of_coe_eq_algebraMap Q x (r := -1) (by simpa using h)
 
 namespace spinGroup
 
@@ -246,6 +261,20 @@ namespace CliffordAlgebra
 
 section Kernel
 
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The Spin action on a subsingleton quadratic space has trivial kernel. -/
+theorem ker_spinToSpecialOrthogonal_eq_bot_of_subsingleton [Subsingleton M]
+    (Q : QuadraticForm R M) [Invertible (2 : R)] :
+    MonoidHom.ker (spinToSpecialOrthogonal Q) = ⊥ := by
+  exact (MonoidHom.ker_eq_bot_iff _).2 (Function.injective_of_subsingleton _)
+
+/-- The Spin action on a subsingleton quadratic space is a bijection between trivial groups. -/
+theorem spinToSpecialOrthogonal_bijective_of_subsingleton [Subsingleton M]
+    (Q : QuadraticForm R M) [Invertible (2 : R)] :
+    Function.Bijective (spinToSpecialOrthogonal Q) := by
+  exact Function.bijective_of_subsingleton' _
+
 variable {K : Type u} {M : Type v} [Field K] [AddCommGroup M] [Module K M]
   [FiniteDimensional K M]
 
@@ -299,6 +328,21 @@ theorem mem_ker_spinToOrthogonal_iff
       x = 1 ∨ x = spinGroup.negOne Q hQ.ne_zero := by
   rw [← ker_spinToSpecialOrthogonal]
   exact mem_ker_spinToSpecialOrthogonal_iff Q hQ x
+
+/-- The Spin action on a zero-dimensional quadratic space has trivial kernel. -/
+theorem ker_spinToSpecialOrthogonal_eq_bot_of_finrank_eq_zero
+    (hM : Module.finrank K M = 0) (Q : QuadraticForm K M) [Invertible (2 : K)] :
+    MonoidHom.ker (spinToSpecialOrthogonal Q) = ⊥ := by
+  let _ : Subsingleton M := Module.finrank_zero_iff.mp hM
+  exact ker_spinToSpecialOrthogonal_eq_bot_of_subsingleton Q
+
+/-- The Spin action on a zero-dimensional quadratic space is a bijection between trivial
+groups. -/
+theorem spinToSpecialOrthogonal_bijective_of_finrank_eq_zero
+    (hM : Module.finrank K M = 0) (Q : QuadraticForm K M) [Invertible (2 : K)] :
+    Function.Bijective (spinToSpecialOrthogonal Q) := by
+  let _ : Subsingleton M := Module.finrank_zero_iff.mp hM
+  exact spinToSpecialOrthogonal_bijective_of_subsingleton Q
 
 /-- The kernel of the Spin action on a positive-dimensional finite nondegenerate quadratic space
 over a field where `2` is invertible has cardinality two. -/

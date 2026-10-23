@@ -1,0 +1,36 @@
+name: Live CI page tests
+on:
+  push:
+    paths:
+      [
+        "web/static_files/ci-live.js",
+        "scripts/ci_live_summary.py",
+        "scripts/test_ci_live*",
+        ".github/workflows/ci-live*.yml",
+      ]
+  pull_request:
+    paths:
+      [
+        "web/static_files/ci-live.js",
+        "scripts/ci_live_summary.py",
+        "scripts/test_ci_live*",
+        ".github/workflows/ci-live*.yml",
+      ]
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: node --test scripts/test_ci_live_browser.mjs
+      - run: python3 -m unittest discover -s scripts -p test_ci_live_summary.py

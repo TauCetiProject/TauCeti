@@ -8,7 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 
 import Mathlib.Algebra.EuclideanDomain.Int
--- `dvd_mul_mul_apply` and `dvd_diag_of_dvd_entries`, used only inside proofs below.
+-- `dvd_mul_mul_apply`, `dvd_diag_of_dvd_entries` and the minor divisibility of
+-- `prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq`, used only inside proofs
+-- below.
 import TauCeti.LinearAlgebra.Matrix.Divisibility
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 -- `prod_eq_det_of_mul_mul_eq_diagonal`, `exists_SL_mul_mul_eq_of_mul_mul_eq` and
@@ -550,13 +552,13 @@ private lemma make_first_divide_all (k : ℕ) (d : Fin (k + 2) → ℤ) (hd : �
   revert d hd ha_pos
   induction N using Nat.strongRecOn with
   | _ N ih =>
-    intro d hd ha_pos hN
+    intro d hd _ hN
     by_cases hall : ∀ j, d (0 : Fin (k + 2)) ∣ d j
     · exact ⟨d, hd, hall, 1, 1, by simp⟩
     · push Not at hall
       obtain ⟨j, hj_ndvd⟩ := hall
       have hj_ne : j.val ≠ 0 := fun h ↦ hj_ndvd ((Fin.ext h : j = 0) ▸ dvd_refl _)
-      obtain ⟨L₁, R₁, d₁, hd₁_pos, hd₁_zero, hd₁_rest, _, hlt, hmul₁⟩ :=
+      obtain ⟨L₁, R₁, d₁, hd₁_pos, hd₁_zero, _, _, hlt, hmul₁⟩ :=
         gcd_step_general k d hd j hj_ne
       have hN₁ : (d₁ (0 : Fin (k + 2))).natAbs < N := by
         -- definitional: the literal `0` and the constructor `⟨0, _⟩` coincide in `Fin (k + 2)`
@@ -718,7 +720,7 @@ private lemma dvd_of_le_of_chain {d : Fin n → ℤ}
     simpa [Nat.add_sub_cancel' (Fin.val_le_of_le hij)] using h (j.val - i.val) (by omega)
   intro t
   induction t with
-  | zero => intro ht; exact dvd_rfl
+  | zero => intro _; exact dvd_rfl
   | succ m ih => exact fun ht ↦ dvd_trans (ih (by omega)) (hchain (i.val + m) ht)
 
 /-- **Smith normal form over `ℤ` with special linear transformations.** Every square integer
@@ -779,61 +781,18 @@ theorem exists_smith_normal_form_of_det_ne_zero (A : Matrix (Fin n) (Fin n) ℤ)
 The partial products `d 0 * ⋯ * d (k-1)` of a chained diagonal are determined by the
 `GL_n(ℤ)`-equivalence class, by a Cauchy–Binet expansion of the leading `k × k` minor. -/
 
-/-- Along a divisibility chain, the product of the first `k` entries divides the product of
-the entries at any `k` distinct positions. -/
-private lemma prod_dvd_prod_of_injective {d : Fin n → ℤ}
-    (hd : ∀ ⦃i j : Fin n⦄, i ≤ j → d i ∣ d j) (k : ℕ) (hk : k ≤ n) (f : Fin k → Fin n)
-    (hf : Function.Injective f) :
-    (∏ j : Fin k, d ⟨j.val, by omega⟩) ∣ (∏ j : Fin k, d (f j)) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    obtain ⟨j₀, _, hmax⟩ :=
-      Finset.exists_max_image Finset.univ (fun j ↦ (f j).val) Finset.univ_nonempty
-    have hge : k ≤ (f j₀).val := by
-      by_contra hlt; push Not at hlt
-      have : Fintype.card (Fin (k + 1)) ≤ Fintype.card (Fin k) :=
-        Fintype.card_le_of_injective
-          (fun j : Fin (k + 1) ↦ (⟨(f j).val, by
-            exact Nat.lt_of_le_of_lt (hmax j (Finset.mem_univ _)) hlt⟩ : Fin k))
-          (fun j₁ j₂ heq ↦ by simp only [Fin.mk.injEq] at heq; exact hf (Fin.ext heq))
-      simp at this
-    rw [Fin.prod_univ_castSucc, Fin.prod_univ_succAbove _ j₀, mul_comm (d (f j₀)) _]
-    exact mul_dvd_mul (ih (by omega) (f ∘ j₀.succAbove)
-      (hf.comp Fin.succAbove_right_injective)) (hd (by simpa [Fin.le_def] using hge))
-
-/-- One direction of the invariant-factor comparison, by Cauchy–Binet on the leading minor. -/
+/-- One direction of the invariant-factor comparison: the case `c₂ = 1` of
+`Matrix.prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq`. -/
 private lemma prod_take_dvd_of_mul_diagonal_mul_eq {c d : Fin n → ℤ}
     (hc : ∀ ⦃i j : Fin n⦄, i ≤ j → c i ∣ c j) (P Q : Matrix (Fin n) (Fin n) ℤ)
     (hcd : P * Matrix.diagonal c * Q = Matrix.diagonal d) (k : ℕ) (hk : k ≤ n) :
     (∏ j : Fin k, c ⟨j.val, by omega⟩) ∣ (∏ j : Fin k, d ⟨j.val, by omega⟩) := by
-  set e : Fin k → Fin n := fun j ↦ ⟨j.val, by omega⟩ with he_def
-  have he_inj : Function.Injective e := fun _ _ h ↦ Fin.ext (Fin.mk.inj h)
-  have hprod_d : ∏ j : Fin k, d (e j) =
-      det ((P * Matrix.diagonal c * Q).submatrix e e) := by
-    rw [hcd]
-    -- a diagonal reindexed by an equiv is the diagonal of the composed function
-    rw [show (Matrix.diagonal d).submatrix e e =
-        Matrix.diagonal (fun j : Fin k ↦ d (e j)) from by
-      ext i j; simp only [Matrix.submatrix_apply, Matrix.diagonal_apply, he_inj.eq_iff]]
-    exact Matrix.det_diagonal.symm
-  rw [hprod_d]
-  have hcb : det ((P * Matrix.diagonal c * Q).submatrix e e) =
-      ∑ g : Fin k → Fin n, (∏ i : Fin k, c (g i)) *
-        ((∏ i : Fin k, Q (g i) (e i)) * det (P.submatrix e g)) := by
-    simp only [Matrix.det_apply', Matrix.submatrix_apply, Matrix.mul_apply,
-      Matrix.diagonal_apply, mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
-      Finset.prod_univ_sum, Fintype.piFinset_univ, Finset.mul_sum]
-    rw [Finset.sum_comm]; congr 1; ext g; congr 1; ext σ
-    simp only [Finset.prod_mul_distrib]; ring
-  rw [hcb]
-  apply Finset.dvd_sum; intro g _
-  by_cases hg : Function.Injective g
-  · exact dvd_mul_of_dvd_left (prod_dvd_prod_of_injective hc k hk g hg) _
-  · simp only [Function.not_injective_iff] at hg; obtain ⟨j₁, j₂, hgeq, hjne⟩ := hg
-    have : det (P.submatrix e g) = 0 := Matrix.det_zero_of_column_eq hjne (fun i ↦ by
-      simp only [Matrix.submatrix_apply, hgeq])
-    simp [this]
+  have h := prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq hc
+    (c₂ := fun _ ↦ 1) (d := d) (fun _ _ _ ↦ dvd_rfl) P 1 Q
+    (by rw [diagonal_one, Matrix.mul_one, Matrix.mul_one, hcd]) hk
+  rw [Finset.prod_const_one, mul_one] at h
+  -- `Fin.castLE hk j` is by definition the element `⟨j.val, _⟩` of `Fin n`
+  exact h
 
 /-- **Uniqueness of the Smith normal form**: two nonnegative diagonals with divisibility
 chains in the same `GL_n(ℤ)`-equivalence class are equal — including singular forms, whose

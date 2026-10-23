@@ -36,8 +36,8 @@ generator.
   states differ there.
 * `TauCeti.GridRectangleBetween.eq_or_eq_swapSides`: any two oriented rectangles between the same
   states are equal or differ by `swapSides`.
-* `TauCeti.GridRectangleBetween.all_eq_pair`, `TauCeti.GridRectangleBetween.card_all_le_two`,
-  `TauCeti.GridRectangleBetween.card_all_eq_two_of_nonempty`: there are at most two oriented
+* `TauCeti.GridRectangleBetween.univ_eq_pair`, `TauCeti.GridRectangleBetween.card_le_two`,
+  `TauCeti.GridRectangleBetween.card_eq_two_of_nonempty`: there are at most two oriented
   rectangles between two states, and exactly two when there is at least one.
 * `TauCeti.GridRectangleBetween.card_emptyRectangles_le_two`: there are at most two empty
   rectangles between two states.
@@ -88,53 +88,29 @@ theorem right_apply_ne : y R.right ≠ x R.right :=
 two side columns are exactly the two columns where `x` and `y` differ, which are `R.left` and
 `R.right`, so its ordered side pair is one of the two orderings of that pair. -/
 theorem eq_or_eq_swapSides (S : GridRectangleBetween x y) : S = R ∨ S = R.swapSides := by
-  have hSl := (R.apply_ne_iff S.left).mp S.left_apply_ne
-  have hSr := (R.apply_ne_iff S.right).mp S.right_apply_ne
-  rcases hSl with hSl | hSl
-  · refine Or.inl (eq_of_sides hSl ?_)
-    rcases hSr with hSr | hSr
-    · exact absurd (hSl.trans hSr.symm) S.left_ne_right
-    · exact hSr
-  · refine Or.inr (eq_of_sides ?_ ?_)
-    · rw [swapSides_left]; exact hSl
-    · rcases hSr with hSr | hSr
-      · rw [swapSides_right]; exact hSr
-      · exact absurd (hSl.trans hSr.symm) S.left_ne_right
-
-/-- The oriented rectangles between two states are contained in the pair `{R, R.swapSides}`. -/
-theorem all_subset_pair : all x y ⊆ {R, R.swapSides} := by
-  intro S _
-  rcases R.eq_or_eq_swapSides S with h | h <;> simp [h]
+  rcases (R.apply_ne_iff S.left).mp S.left_apply_ne with hSl | hSl
+  · exact Or.inl (GridRectangleBetween.left_injective hSl)
+  · exact Or.inr (GridRectangleBetween.left_injective (by simpa only [swapSides_left] using hSl))
 
 /-- Given one oriented rectangle between two states, the oriented rectangles between them are
 exactly the pair `{R, R.swapSides}`. -/
-theorem all_eq_pair : all x y = {R, R.swapSides} := by
-  refine Finset.Subset.antisymm R.all_subset_pair ?_
-  intro S hS
-  rcases Finset.mem_insert.mp hS with h | h
-  · exact h ▸ mem_all R
-  · exact (Finset.mem_singleton.mp h) ▸ mem_all R.swapSides
-
-/-- There are at most two oriented rectangles between two grid states. -/
-theorem card_all_le_two (x y : GridState n) : (all x y).card ≤ 2 := by
-  rcases (all x y).eq_empty_or_nonempty with h | h
-  · rw [h]; simp
-  · obtain ⟨R, -⟩ := h
-    calc (all x y).card
-        ≤ ({R, R.swapSides} : Finset (GridRectangleBetween x y)).card :=
-          Finset.card_le_card R.all_subset_pair
-      _ = 2 := Finset.card_pair R.swapSides_ne_self.symm
+theorem univ_eq_pair : (Finset.univ : Finset (GridRectangleBetween x y)) = {R, R.swapSides} := by
+  ext S
+  simpa using R.eq_or_eq_swapSides S
 
 /-- When there is at least one oriented rectangle between two states, there are exactly two: the
 chosen one and its side swap. -/
-theorem card_all_eq_two_of_nonempty (h : (all x y).Nonempty) : (all x y).card = 2 := by
-  obtain ⟨R, -⟩ := h
-  rw [R.all_eq_pair, Finset.card_pair R.swapSides_ne_self.symm]
+theorem card_eq_two_of_nonempty [Nonempty (GridRectangleBetween x y)] :
+    Fintype.card (GridRectangleBetween x y) = 2 := by
+  obtain ⟨R⟩ := ‹Nonempty (GridRectangleBetween x y)›
+  rw [← Finset.card_univ, R.univ_eq_pair, Finset.card_pair R.swapSides_ne_self.symm]
 
 /-- Any finite subcollection of oriented rectangles between two states has cardinality at most
 two. -/
-theorem card_le_two (s : Finset (GridRectangleBetween x y)) : s.card ≤ 2 :=
-  (Finset.card_le_card (by intro R _; exact mem_all R)).trans (card_all_le_two x y)
+theorem card_le_two (s : Finset (GridRectangleBetween x y)) : s.card ≤ 2 := by
+  rcases isEmpty_or_nonempty (GridRectangleBetween x y) with h | h
+  · simp [Finset.eq_empty_of_isEmpty s]
+  · exact (Finset.card_le_univ s).trans card_eq_two_of_nonempty.le
 
 /-- There are at most two empty oriented rectangles between two grid states. -/
 theorem card_emptyRectangles_le_two (x y : GridState n) : (emptyRectangles x y).card ≤ 2 :=

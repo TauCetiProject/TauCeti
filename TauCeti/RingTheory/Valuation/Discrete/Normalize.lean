@@ -8,13 +8,14 @@ module
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
-# Normalizing a `ℤᵐ⁰`-valued valuation of a field
+# Normalizing a `ℤᵐ⁰`-valued valuation of a division ring
 
-The orders `ord_v f` attained by a `ℤᵐ⁰`-valued valuation `v` of a field form a subgroup of `ℤ`,
-so they are the multiples of a single natural number, the *index* `Valuation.ordIndex v`; it is
-zero exactly when `v` is trivial. Dividing the order by the index produces the *normalization*
+The orders `ord_v f` attained by a `ℤᵐ⁰`-valued valuation `v` of a division ring form a subgroup
+of `ℤ`, so they are the multiples of a single natural number, the *index* `Valuation.ordIndex v`;
+it is zero exactly when `v` is trivial. Dividing the order by the index produces the *normalization*
 `Valuation.normalization v`: the valuation equivalent to `v` whose value group is all of `ℤᵐ⁰`
-(the trivial valuation, when `v` is trivial).
+(the trivial valuation, when `v` is trivial). The index construction, its invariance under
+surjective restriction, and its value on surjective valuations are available for any ring.
 
 This is the operation that turns the restriction of a discrete valuation along a field extension
 back into a normalized one, and the index it divides by is the ramification index of that
@@ -29,14 +30,16 @@ extension.
 
 * `Valuation.ordIndex_dvd_ord`: every order attained by `v` is a multiple of the index.
 * `Valuation.ordIndex_eq_mul_of_forall_ord_eq`: indices multiply when one order function is a
-  positive integral multiple of another.
+  natural-number multiple of another.
+* `Valuation.ordIndex_comap_of_surjective`: restriction along a surjective map preserves the
+  index.
 * `Valuation.ord_normalization_mul_ordIndex`: the order function of `v` is the index times the
   order function of its normalization — the defining relation between the two.
 * `Valuation.isEquiv_normalization`: a valuation is equivalent to its normalization; in
-  particular the two have the same valuation subring.
+  particular, for a valuation of a field, the two have the same valuation subring.
 * `Valuation.normalization_surjective`: the normalization of a nontrivial valuation is
   surjective.
-* `Valuation.IsTrivialOn.normalization`: normalization preserves triviality on a base ring.
+* `Valuation.IsTrivialOn.normalization`: normalization preserves triviality on a base semiring.
 -/
 
 public section
@@ -45,13 +48,16 @@ open scoped WithZero
 
 namespace Valuation
 
-variable {F : Type*} [Field F]
-
 section OrdIndex
 
-/-- The **index** of a `ℤᵐ⁰`-valued valuation of a field: the least positive order it attains,
-and `0` when the valuation is trivial. The orders attained by `v` are exactly the multiples of
-the index (`Valuation.ordIndex_dvd_ord` and `Valuation.exists_ord_eq_ordIndex`). -/
+section Ring
+
+variable {F : Type*} [Ring F]
+
+/-- The **index** of a `ℤᵐ⁰`-valued valuation of a ring: the least positive order it attains,
+and `0` when it attains none. For a valuation of a division ring, the orders attained by `v` are
+exactly the multiples of the index (`Valuation.ordIndex_dvd_ord` and
+`Valuation.exists_ord_eq_ordIndex`), and the index is `0` exactly when `v` is trivial. -/
 noncomputable def ordIndex (v : _root_.Valuation F ℤᵐ⁰) : ℕ :=
   sInf {n : ℕ | 0 < n ∧ ∃ f : F, ord v f = n}
 
@@ -59,6 +65,36 @@ variable (v : _root_.Valuation F ℤᵐ⁰)
 
 theorem ordIndex_le {n : ℕ} (hn : 0 < n) {f : F} (hf : ord v f = n) : ordIndex v ≤ n :=
   Nat.sInf_le ⟨hn, f, hf⟩
+
+/-- Every valuation attains its index as an order, including when the index is zero. -/
+theorem exists_ord_eq_ordIndex : ∃ f : F, ord v f = ordIndex v := by
+  rcases eq_or_ne (ordIndex v) 0 with hv | hv
+  · exact ⟨1, by simp [hv]⟩
+  have hS : {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n}.Nonempty := by
+    by_contra h
+    rw [Set.not_nonempty_iff_eq_empty] at h
+    exact hv (by rw [ordIndex, h, Nat.sInf_empty])
+  exact (Nat.sInf_mem hS).2
+
+/-- **The index is unchanged by restriction along a surjective map**: `v` and `v.comap f` attain
+the same orders. Applied to a ring isomorphism, this says that the index of a valuation does not
+depend on how its ring is presented. -/
+theorem ordIndex_comap_of_surjective {K : Type*} [Ring K] {f : K →+* F}
+    (hf : Function.Surjective f) : ordIndex (v.comap f) = ordIndex v := by
+  simp only [ordIndex, ord_comap, hf.exists]
+
+/-- A surjective valuation has index `1`, the least positive integer order. -/
+@[simp]
+theorem ordIndex_eq_one_of_surjective (hv : Function.Surjective v) : ordIndex v = 1 := by
+  obtain ⟨f, hf⟩ := ord_surjective v hv 1
+  have hS : {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n}.Nonempty := ⟨1, Nat.one_pos, f, hf⟩
+  exact Nat.le_antisymm (ordIndex_le v Nat.one_pos hf) (Nat.sInf_mem hS).1
+
+end Ring
+
+section DivisionRing
+
+variable {F : Type*} [DivisionRing F] (v : _root_.Valuation F ℤᵐ⁰)
 
 private theorem ordSet_nonempty {f : F} (hf : ord v f ≠ 0) :
     {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n}.Nonempty := by
@@ -70,22 +106,13 @@ private theorem ordSet_nonempty {f : F} (hf : ord v f ≠ 0) :
 theorem ordIndex_pos {f : F} (hf : ord v f ≠ 0) : 0 < ordIndex v :=
   (Nat.sInf_mem (ordSet_nonempty v hf)).1
 
-/-- A nontrivial valuation attains its index as an order. -/
-theorem exists_ord_eq_ordIndex (hv : ordIndex v ≠ 0) : ∃ f : F, ord v f = ordIndex v := by
-  have hS : {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n}.Nonempty := by
-    by_contra h
-    rw [Set.not_nonempty_iff_eq_empty] at h
-    exact hv (by rw [ordIndex, h, Nat.sInf_empty])
-  exact (Nat.sInf_mem hS).2
-
 /-- The index vanishes exactly for the trivial valuations. -/
 theorem ordIndex_eq_zero_iff : ordIndex v = 0 ↔ ∀ f : F, ord v f = 0 := by
   refine ⟨fun h f ↦ ?_, fun h ↦ ?_⟩
   · by_contra hf
     have := ordIndex_pos v hf
     omega
-  · by_contra hne
-    obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex v hne
+  · obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex v
     rw [h f] at hf
     omega
 
@@ -93,7 +120,7 @@ theorem ordIndex_eq_zero_iff : ordIndex v = 0 ↔ ∀ f : F, ord v f = 0 := by
 theorem ordIndex_dvd_ord (f : F) : (ordIndex v : ℤ) ∣ ord v f := by
   rcases eq_or_ne (ordIndex v) 0 with h | h
   · simp [h, (ordIndex_eq_zero_iff v).mp h f]
-  obtain ⟨t, ht⟩ := exists_ord_eq_ordIndex v h
+  obtain ⟨t, ht⟩ := exists_ord_eq_ordIndex v
   have ht0 : t ≠ 0 := by
     rintro rfl
     rw [ord_zero] at ht
@@ -114,6 +141,20 @@ theorem ordIndex_dvd_ord (f : F) : (ordIndex v : ℤ) ∣ ord v f := by
     (f := f / t ^ (ord v f / (ordIndex v : ℤ))) (by rw [hord]; omega)
   omega
 
+/-- If one order function is a natural-number multiple of another, their indices differ
+by the same factor. This includes a zero factor and trivial valuations. -/
+theorem ordIndex_eq_mul_of_forall_ord_eq (w : _root_.Valuation F ℤᵐ⁰) {e : ℕ}
+    (hord : ∀ f : F, ord v f = e * ord w f) : ordIndex v = e * ordIndex w := by
+  apply Nat.dvd_antisymm
+  · obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex w
+    have h := ordIndex_dvd_ord v f
+    rw [hord, hf, ← Nat.cast_mul] at h
+    exact Int.natCast_dvd_natCast.mp h
+  · obtain ⟨f, hf⟩ := exists_ord_eq_ordIndex v
+    have h := mul_dvd_mul_left (e : ℤ) (ordIndex_dvd_ord w f)
+    rw [← hord, hf, ← Nat.cast_mul] at h
+    exact Int.natCast_dvd_natCast.mp h
+
 /-- **A nontrivial valuation has nonzero order index.** This is the hypothesis
 `Valuation.normalization_surjective` asks for, so it is what lets a nontrivial valuation be
 normalized. -/
@@ -122,24 +163,18 @@ theorem ordIndex_ne_zero_of_isNontrivial [v.IsNontrivial] : ordIndex v ≠ 0 := 
   have hxne : x ≠ 0 := fun h ↦ hx0 (by simp [h])
   refine fun h ↦ hx1 ?_
   have hord := (ordIndex_eq_zero_iff v).mp h x
-  rwa [ord_eq_iff_valuation_eq_exp_neg v hxne, neg_zero, WithZero.exp_zero] at hord
+  rwa [ord_eq_iff_valuation_eq_exp_neg v (v.ne_zero_iff.mpr hxne), neg_zero,
+    WithZero.exp_zero] at hord
+
+end DivisionRing
 
 end OrdIndex
 
 section Normalization
 
-variable (v : _root_.Valuation F ℤᵐ⁰)
+section DivisionRing
 
-private theorem ediv_ordIndex_add (f g : F) :
-    (ord v f + ord v g) / (ordIndex v : ℤ) =
-      ord v f / (ordIndex v : ℤ) + ord v g / (ordIndex v : ℤ) := by
-  rcases eq_or_ne (ordIndex v) 0 with h | h
-  · simp [h]
-  · have he : (ordIndex v : ℤ) ≠ 0 := by exact_mod_cast h
-    obtain ⟨a, ha⟩ := ordIndex_dvd_ord v f
-    obtain ⟨b, hb⟩ := ordIndex_dvd_ord v g
-    rw [ha, hb, ← mul_add, Int.mul_ediv_cancel_left _ he, Int.mul_ediv_cancel_left _ he,
-      Int.mul_ediv_cancel_left _ he]
+variable {F : Type*} [DivisionRing F] (v : _root_.Valuation F ℤᵐ⁰)
 
 private theorem ediv_ordIndex_mono {a b : ℤ} (h : a ≤ b) :
     a / (ordIndex v : ℤ) ≤ b / (ordIndex v : ℤ) := by
@@ -148,7 +183,7 @@ private theorem ediv_ordIndex_mono {a b : ℤ} (h : a ≤ b) :
   · exact Int.ediv_le_ediv (by omega) h
 
 open scoped Classical in
-/-- The **normalization** of a `ℤᵐ⁰`-valued valuation of a field: the valuation whose order
+/-- The **normalization** of a `ℤᵐ⁰`-valued valuation of a division ring: the valuation whose order
 function is the order function of `v` divided by the index `Valuation.ordIndex v`. It is
 equivalent to `v` and, as soon as `v` is nontrivial, surjective. -/
 noncomputable def normalization : _root_.Valuation F ℤᵐ⁰ where
@@ -161,7 +196,9 @@ noncomputable def normalization : _root_.Valuation F ℤᵐ⁰ where
     rcases eq_or_ne g 0 with rfl | hg
     · simp
     have hfg : f * g ≠ 0 := mul_ne_zero hf hg
-    rw [ord_mul v hf hg, ediv_ordIndex_add, neg_add, WithZero.exp_add]
+    rw [ord_mul v (v.ne_zero_iff.mpr hf) (v.ne_zero_iff.mpr hg),
+      Int.add_ediv_of_dvd_left (ordIndex_dvd_ord v f), neg_add,
+      WithZero.exp_add]
     simp [hf, hg, hfg]
   map_add_le_max' f g := by
     rcases eq_or_ne f 0 with rfl | hf
@@ -170,7 +207,7 @@ noncomputable def normalization : _root_.Valuation F ℤᵐ⁰ where
     · simp
     rcases eq_or_ne (f + g) 0 with h0 | h0
     · simp [h0]
-    have hmin := min_ord_le_ord_add v h0
+    have hmin := min_ord_le_ord_add v (v.ne_zero_iff.mpr h0)
     simp only [hf, hg, h0, ite_false]
     rcases le_total (ord v f) (ord v g) with h | h
     · refine le_trans ?_ (le_max_left _ _)
@@ -201,9 +238,7 @@ theorem ord_normalization (f : F) : ord (normalization v) f = ord v f / (ordInde
 theorem ord_normalization_mul_ordIndex (f : F) :
     ord (normalization v) f * (ordIndex v : ℤ) = ord v f := by
   rw [ord_normalization]
-  rcases eq_or_ne (ordIndex v) 0 with h | h
-  · simp [h, (ordIndex_eq_zero_iff v).mp h f]
-  · exact Int.ediv_mul_cancel (ordIndex_dvd_ord v f)
+  exact Int.ediv_mul_cancel (ordIndex_dvd_ord v f)
 
 theorem ord_normalization_nonneg_iff {f : F} : 0 ≤ ord (normalization v) f ↔ 0 ≤ ord v f := by
   rcases eq_or_ne (ordIndex v) 0 with h | h
@@ -215,23 +250,12 @@ theorem ord_normalization_nonneg_iff {f : F} : 0 ≤ ord (normalization v) f ↔
 theorem isEquiv_normalization : (normalization v).IsEquiv v := by
   rw [isEquiv_iff_val_le_one]
   intro f
-  rw [← _root_.Valuation.mem_valuationSubring_iff, ← _root_.Valuation.mem_valuationSubring_iff,
-    mem_valuationSubring_iff_ord_nonneg, mem_valuationSubring_iff_ord_nonneg]
-  exact ord_normalization_nonneg_iff v
-
-@[simp]
-theorem valuationSubring_normalization :
-    (normalization v).valuationSubring = v.valuationSubring :=
-  (isEquiv_iff_valuationSubring _ _).mp (isEquiv_normalization v)
-
-/-- **A surjective valuation has index `1`**: it already attains the order `1`, and the index
-divides every order attained. -/
-@[simp]
-theorem ordIndex_eq_one_of_surjective (hv : Function.Surjective v) : ordIndex v = 1 := by
-  obtain ⟨f, hf⟩ := ord_surjective v hv 1
-  have hdvd := ordIndex_dvd_ord v f
-  rw [hf] at hdvd
-  exact Nat.dvd_one.mp (Int.natCast_dvd_natCast.mp (by simpa using hdvd))
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  simpa only [ord_def, neg_nonneg,
+    WithZero.log_le_iff_le_exp ((normalization v).ne_zero_iff.mpr hf),
+    WithZero.log_le_iff_le_exp (v.ne_zero_iff.mpr hf), WithZero.exp_zero]
+    using ord_normalization_nonneg_iff v (f := f)
 
 /-- **A surjective valuation is its own normalization**: normalizing divides every order by the
 index, which is `1`. -/
@@ -241,76 +265,38 @@ theorem normalization_eq_self_of_surjective (hv : Function.Surjective v) : norma
   rcases eq_or_ne f 0 with rfl | hf
   · simp
   · rw [normalization_apply v hf, ordIndex_eq_one_of_surjective v hv, Nat.cast_one, Int.ediv_one,
-      ← valuation_eq_exp_neg_ord v hf]
+      ← valuation_eq_exp_neg_ord v (v.ne_zero_iff.mpr hf)]
 
 /-- The normalization of a nontrivial valuation is surjective: its value group is all of
 `ℤᵐ⁰`. -/
 theorem normalization_surjective (hv : ordIndex v ≠ 0) :
     Function.Surjective (normalization v) := by
-  obtain ⟨t, ht⟩ := exists_ord_eq_ordIndex v hv
+  obtain ⟨t, ht⟩ := exists_ord_eq_ordIndex v
   have ht0 : t ≠ 0 := by
     rintro rfl
     rw [ord_zero] at ht
     omega
   have he : (ordIndex v : ℤ) ≠ 0 := by exact_mod_cast hv
-  intro x
-  induction x using WithZero.expRecOn with
-  | zero => exact ⟨0, map_zero _⟩
-  | exp n =>
-    refine ⟨t ^ (-n), ?_⟩
-    rw [normalization_apply v (zpow_ne_zero _ ht0), ord_zpow, ht,
-      Int.mul_ediv_cancel _ he, neg_neg]
+  apply surjective_of_map_eq_exp_neg_one (normalization v) (t := t)
+  rw [normalization_apply v ht0, ht, Int.ediv_self he]
 
-/-- If the order function of a nontrivial valuation is a positive integral multiple of the
-order function of another, then their indices differ by the same factor. -/
-theorem ordIndex_eq_mul_of_forall_ord_eq (w : _root_.Valuation F ℤᵐ⁰) {e : ℕ} (he : 0 < e)
-    (hw : ordIndex w ≠ 0) (hord : ∀ f : F, ord v f = e * ord w f) :
-    ordIndex v = e * ordIndex w := by
-  obtain ⟨f, hf⟩ := ord_surjective (normalization w) (normalization_surjective w hw) 1
-  have hwf : ord w f = (ordIndex w : ℤ) := by
-    rw [← ord_normalization_mul_ordIndex w f, hf, one_mul]
-  have hvf : ord v f = (e * ordIndex w : ℕ) := by
-    rw [hord, hwf]
-    norm_cast
-  have hprodPos : 0 < e * ordIndex w := Nat.mul_pos he (Nat.pos_of_ne_zero hw)
-  have hle := ordIndex_le v hprodPos hvf
-  have hv : ordIndex v ≠ 0 := by
-    exact Nat.ne_of_gt (ordIndex_pos v (by rw [hvf]; exact_mod_cast hprodPos.ne'))
-  obtain ⟨g, hg⟩ := exists_ord_eq_ordIndex v hv
-  have hwordPos : 0 < ord w g := by
-    have := hord g
-    rw [hg] at this
-    have he' : (0 : ℤ) < e := by exact_mod_cast he
-    have hv' : (0 : ℤ) < ordIndex v := by exact_mod_cast Nat.pos_of_ne_zero hv
-    nlinarith
-  have hwordEq : ord w g = (ord w g).toNat := by omega
-  have hwle := ordIndex_le w (n := (ord w g).toNat) (by omega) hwordEq
-  have hge : e * ordIndex w ≤ ordIndex v := by
-    have hordg := hord g
-    rw [hg] at hordg
-    have hwle' : (ordIndex w : ℤ) ≤ ord w g := by
-      calc
-        (ordIndex w : ℤ) ≤ ((ord w g).toNat : ℕ) := by exact_mod_cast hwle
-        _ = ord w g := by omega
-    have he' : (0 : ℤ) ≤ e := by positivity
-    have : (e * ordIndex w : ℕ) ≤ ordIndex v := by
-      exact_mod_cast (calc
-        (e : ℤ) * ordIndex w ≤ (e : ℤ) * ord w g := mul_le_mul_of_nonneg_left hwle' he'
-        _ = (ordIndex v : ℤ) := hordg.symm)
-    exact this
-  omega
+/-- Normalization preserves triviality on a base semiring. -/
+theorem IsTrivialOn.normalization {A : Type*} [CommSemiring A] [Algebra A F]
+    [v.IsTrivialOn A] : (_root_.Valuation.normalization v).IsTrivialOn A :=
+  (isEquiv_normalization v).symm.isTrivialOn inferInstance
 
-/-- Normalization preserves triviality on a base ring. -/
-theorem IsTrivialOn.normalization {A : Type*} [CommRing A] [Algebra A F]
-    [v.IsTrivialOn A] : (_root_.Valuation.normalization v).IsTrivialOn A where
-  eq_one a ha := by
-    have h1 : v (algebraMap A F a) = 1 := IsTrivialOn.eq_one a ha
-    have h0 : algebraMap A F a ≠ 0 := by
-      rintro h
-      rw [h, map_zero] at h1
-      exact zero_ne_one h1
-    rw [normalization_apply v h0, ord_def, h1]
-    simp
+end DivisionRing
+
+section Field
+
+variable {F : Type*} [Field F] (v : _root_.Valuation F ℤᵐ⁰)
+
+@[simp]
+theorem valuationSubring_normalization :
+    (normalization v).valuationSubring = v.valuationSubring :=
+  (isEquiv_iff_valuationSubring _ _).mp (isEquiv_normalization v)
+
+end Field
 
 end Normalization
 

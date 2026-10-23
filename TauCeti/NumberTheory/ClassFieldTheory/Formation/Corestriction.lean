@@ -26,6 +26,11 @@ corestricting from `K/E'` to `K/F` (`cohomologyCor_trans`). This is the transiti
 group-cohomology corestriction, `TauCeti.groupCohomology.corestriction_trans`, read through the
 coefficient identifications `repIso`.
 
+For the restriction of a layer to the layer of its whole Galois group, the relative degree is `1`,
+so restriction is injective on cohomology
+(`NormalLayer.cohomologyRes_subgroupRestriction_top_injective`); a class whose restriction
+generates the cohomology of that layer therefore generates the cohomology of the original layer.
+
 ## References
 
 * E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §§2–4.
@@ -167,3 +172,28 @@ theorem cohomologyCor_trans (T : LayerRestriction a b) (T' : LayerRestriction b 
     ((T'.repIso_hom_apply_coe F _).trans (T.repIso_hom_apply_coe F x)).symm
 
 end TauCeti.ClassFieldTheory.LayerRestriction
+
+namespace TauCeti.ClassFieldTheory.NormalLayer
+
+variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [TotallyDisconnectedSpace G] (L : NormalLayer G) (F : Formation G)
+
+/-- Restriction to the layer of the whole Galois group is injective on cohomology: corestriction
+splits it, the relative degree being `1`. -/
+theorem cohomologyRes_subgroupRestriction_top_injective (n : ℕ) :
+    Function.Injective ((L.subgroupRestriction ⊤).cohomologyRes F n) := by
+  intro x y hxy
+  have h := congrArg ((L.subgroupRestriction ⊤).cohomologyCor F n) hxy
+  simpa [LayerRestriction.cohomologyCor_cohomologyRes_apply,
+    relativeDegree_subgroupRestriction] using h
+
+/-- If the restriction of `u` to the layer of the whole Galois group generates the cohomology of
+that layer, then `u` generates the cohomology of `L`. -/
+theorem exists_zsmul_eq_of_cohomologyRes_subgroupRestriction_top {n : ℕ} (u : L.H F n)
+    (hgen : ∀ x : (L.subgroupLayer ⊤).H F n,
+      ∃ m : ℤ, x = m • (L.subgroupRestriction ⊤).cohomologyRes F n u)
+    (y : L.H F n) : ∃ m : ℤ, m • u = y := by
+  obtain ⟨m, hm⟩ := hgen ((L.subgroupRestriction ⊤).cohomologyRes F n y)
+  exact ⟨m, L.cohomologyRes_subgroupRestriction_top_injective F n (by rw [map_zsmul, hm])⟩
+
+end TauCeti.ClassFieldTheory.NormalLayer

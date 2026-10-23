@@ -54,8 +54,7 @@ table is therefore private to this file; the completeness statement is its only 
 
 The Euclidean model of the `E₈` lattice and its two hundred and forty minimal vectors are Bourbaki,
 *Lie Groups and Lie Algebras, Chapters 4--6*, Plate VII, and Conway--Sloane, *Sphere Packings,
-Lattices and Groups*, chapter 4, section 8. This supports the target "a named datum per valid type"
-in Layer 6 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
+Lattices and Groups*, chapter 4, section 8.
 -/
 
 public section
@@ -239,7 +238,7 @@ theorem exists_e8Coroot_eq {v : Fin 8 → ℤ} (hv : (v ᵥ* CartanMatrix.E 8) �
     intro w hw
     exact mem_e8DoubledMinimalSet_of_isDoubledE8 (isDoubledE8_e8DoubledEmbed w)
       (by rw [e8DoubledEmbed_dotProduct_self, hw]; norm_num)
-  set T : Finset (Fin 8 → ℤ) := e8DoubledMinimalSet with hT
+  set T : Finset (Fin 8 → ℤ) := e8DoubledMinimalSet
   set C : Finset (Fin 8 → ℤ) := Finset.univ.image fun k ↦ e8DoubledEmbed (e8Coroot k) with hC
   have hCT : C ⊆ T := by
     rw [hC]

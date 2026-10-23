@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Basic.Complex.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
-public import TauCeti.RepresentationTheory.LinearCharacter
+public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
 
 /-!
@@ -51,6 +51,8 @@ representation is not proved here.
   representation associated to `TauCeti.GL2Borel.linearChar`.
 * `TauCeti.GL2BorelRep_def`: the bundled Borel representation is `TauCeti.GL2Borel.linearRep`, the
   form to reason from when the action itself, and not only its character, is needed.
+* `TauCeti.GL2Borel.nonempty_iso_borelRep_iff`: two inducing Borel lines are isomorphic exactly
+  when their ordered parameter pairs agree.
 * `TauCeti.finrank_GL2PrincipalSeries` and `TauCeti.character_one_GL2PrincipalSeries`: the
   principal series has dimension `q + 1`.
 
@@ -70,23 +72,18 @@ has a carrier in the universe of the group, `TauCeti.indFDRep` transports it to 
 model whose carrier lies in the universe of the coefficient ring. It therefore produces an object
 of `FDRep ℂ (GL (Fin 2) F)` without restricting the universe of `F`.
 
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/Suggested.lean` pins `GL2PrincipalSeries`
-with a `[DecidableEq F]` hypothesis. It is not needed: `GL (Fin 2) F` needs decidable equality only
-on the index type `Fin 2`, and carrying an unused instance argument would be flagged by the
-`unusedArguments` linter, so it is dropped here.
+No `[DecidableEq F]` hypothesis is assumed: `GL (Fin 2) F` needs decidable equality only on the
+index type `Fin 2`.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The Borel and the principal series": the targets `GL2PrincipalSeries` and
-  `character_one_GL2PrincipalSeries`, whose names are the roadmap's.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 5.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 5.2.
 -/
 
 public section
 
-open Matrix
+open CategoryTheory Matrix
 
 namespace TauCeti
 
@@ -215,6 +212,21 @@ theorem character_GL2BorelRep (α β : Fˣ →* ℂˣ) (g : GL2Borel F) :
   GL2Borel.character_linearRep (R := F) (k := ℂ) α β g
 
 end CommRing
+
+namespace GL2Borel
+
+variable {F : Type*} [CommRing F]
+
+/-- **The inducing Borel lines remember their ordered parameter pair.** Two representations
+`α ⊗ β` and `γ ⊗ δ` of the Borel subgroup are isomorphic exactly when `α = γ` and `β = δ`. -/
+@[simp]
+theorem nonempty_iso_borelRep_iff (α β γ δ : Fˣ →* ℂˣ) :
+    Nonempty (GL2BorelRep F α β ≅ GL2BorelRep F γ δ) ↔ α = γ ∧ β = δ := by
+  rw [GL2BorelRep_def, GL2BorelRep_def, linearRep_def, linearRep_def,
+    ← FDRep.ofLinearCharacter_def, ← FDRep.ofLinearCharacter_def,
+    FDRep.nonempty_iso_ofLinearCharacter_iff, linearChar_inj]
+
+end GL2Borel
 
 /-! ### The principal series -/
 

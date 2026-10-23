@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.ZMod.IntUnitsPower
+public import TauCeti.GroupTheory.Index.Indicator
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 import Mathlib.Tactic.Group
 import Mathlib.Tactic.NthRewrite
@@ -25,11 +27,15 @@ outside `N` have one and the same square, that common square squares to one, and
 
 The file also records the coset structure of an arbitrary subgroup of index two, which needs no
 inverting element: `G ⧸ N` consists of the trivial coset and the coset of any `s ∉ N`, so a finite
-sum over `G ⧸ N` has exactly those two terms.
+sum over `G ⧸ N` has exactly those two terms. Conversely, a subgroup `H` such that the product of
+any two elements outside `H` lies in `H` has index dividing two.
 
 ## Main statements
 
 * `TauCeti.isMulCommutative_of_conj_eq_inv`: **a subgroup inverted by conjugation is abelian.**
+* `TauCeti.sq_eq_one_of_mem_of_conj_eq_inv`: if the inverting element lies in the subgroup, the
+  subgroup has exponent two, and `TauCeti.monoidHom_sq_eq_one_of_mem_of_conj_eq_inv`: every
+  homomorphism from it to a commutative monoid squares to one.
 * `TauCeti.conj_eq_inv_of_notMem_of_index_two`: **one inverting element outside a subgroup of index
   two makes every element outside it invert.**
 * `TauCeti.sq_eq_sq_of_notMem_of_index_two`: the elements outside such a subgroup all have the same
@@ -41,6 +47,11 @@ sum over `G ⧸ N` has exactly those two terms.
   `TauCeti.sum_quotient_eq_add_of_index_two`: a finite sum over them is the sum of two terms.
 * `TauCeti.smul_mk_one_of_notMem_of_index_two` and `TauCeti.smul_mk_of_notMem_of_index_two`: an
   element outside a subgroup of index two exchanges the two cosets.
+* `Subgroup.index_dvd_two_of_mul_mem` and `Subgroup.index_eq_two_of_mul_mem`: if the product of
+  any two elements outside a subgroup lies in it, its index divides two, and is two when the
+  subgroup is proper.
+* `Subgroup.indexTwoCharacter`: the character `G →* Multiplicative (ZMod 2)` with kernel a given
+  subgroup of index two (`Subgroup.ker_indexTwoCharacter`).
 -/
 
 public section
@@ -60,6 +71,31 @@ theorem isMulCommutative_of_conj_eq_inv {s : G} (hinv : ∀ x ∈ N, s * x * s�
         _ = s * y * s⁻¹ * (s * z * s⁻¹) := by group
         _ = (y : G)⁻¹ * (z : G)⁻¹ := by rw [hinv y y.2, hinv z z.2]
     simpa using congrArg Inv.inv h
+
+/-- **A subgroup inverted by conjugation by one of its own elements has exponent two.**  If an
+element `s ∈ N` satisfies `s * x * s⁻¹ = x⁻¹` for every `x ∈ N`, then `x ^ 2 = 1` for every
+`x ∈ N`. -/
+theorem sq_eq_one_of_mem_of_conj_eq_inv {s : G} (hs : s ∈ N)
+    (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) {x : G} (hx : x ∈ N) : x ^ 2 = 1 := by
+  -- `N` is abelian, so conjugation by `s ∈ N` fixes `x`, which is therefore its own inverse.
+  have hcomm : s * x = x * s := by
+    simpa using congrArg Subtype.val
+      (isMulCommutative_iff.mp (isMulCommutative_of_conj_eq_inv hinv) ⟨s, hs⟩ ⟨x, hx⟩)
+  have h := hinv x hx
+  rw [hcomm, mul_inv_cancel_right] at h
+  rw [pow_two]
+  nth_rewrite 2 [h]
+  exact mul_inv_cancel x
+
+/-- **A homomorphism to a commutative monoid squares to one on a subgroup inverted by one of its
+own elements**, that subgroup having exponent two (`TauCeti.sq_eq_one_of_mem_of_conj_eq_inv`).
+Read contrapositively, a single `ψ` with `ψ ^ 2 ≠ 1` places every element inverting `N` outside
+`N`. -/
+theorem monoidHom_sq_eq_one_of_mem_of_conj_eq_inv {M : Type*} [CommMonoid M] {s : G}
+    (hs : s ∈ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (ψ : N →* M) : ψ ^ 2 = 1 := by
+  ext x
+  have hx : x ^ 2 = 1 := Subtype.ext (by simpa using sq_eq_one_of_mem_of_conj_eq_inv hs hinv x.2)
+  rw [MonoidHom.pow_apply, ← map_pow, hx, map_one, MonoidHom.one_apply]
 
 /-- **One inverting element outside a subgroup of index two makes every element outside it
 invert.**  If some `s ∉ N` satisfies `s * x * s⁻¹ = x⁻¹` for every `x ∈ N`, then so does every
@@ -160,3 +196,73 @@ theorem smul_mk_of_notMem_of_index_two (hindex : N.index = 2) {s γ : G} (hs : s
   exact (Subgroup.mul_mem_iff_of_index_two hindex).2 (iff_of_false hγ hs)
 
 end TauCeti
+
+namespace Subgroup
+
+/-! ### Index two from the products of outside elements -/
+
+section MulMem
+
+variable {G : Type*} [Group G] {H : Subgroup G}
+
+/-- **A subgroup whose outside elements multiply into it has index dividing two.** If the product
+of any two elements outside `H` lies in `H`, then `H.index ∣ 2`. -/
+@[to_additive /-- **An additive subgroup whose outside elements add into it has index dividing
+two.** If the sum of any two elements outside `H` lies in `H`, then `H.index ∣ 2`. -/]
+theorem index_dvd_two_of_mul_mem (h : ∀ a b, a ∉ H → b ∉ H → a * b ∈ H) : H.index ∣ 2 := by
+  refine index_dvd_two_iff'.2 ?_
+  by_cases ha : ∃ a, a ∉ H
+  · obtain ⟨a, ha⟩ := ha
+    exact ⟨a, fun b ↦ or_iff_not_imp_right.2 (h a b ha)⟩
+  · exact ⟨1, fun b ↦ Or.inr (by_contra fun hb ↦ ha ⟨b, hb⟩)⟩
+
+/-- **A proper subgroup whose outside elements multiply into it has index two.** If the product of
+any two elements outside `H` lies in `H`, and some element lies outside `H`, then `H.index = 2`. -/
+@[to_additive /-- **A proper additive subgroup whose outside elements add into it has index two.**
+If the sum of any two elements outside `H` lies in `H`, and some element lies outside `H`, then
+`H.index = 2`. -/]
+theorem index_eq_two_of_mul_mem (h : ∀ a b, a ∉ H → b ∉ H → a * b ∈ H) {a : G} (ha : a ∉ H) :
+    H.index = 2 :=
+  index_eq_two_iff_exists_notMem_and'.2 ⟨a, ha, fun b ↦ or_iff_not_imp_right.2 (h a b ha)⟩
+
+end MulMem
+
+/-! ### The character of a subgroup of index two -/
+
+variable {G : Type*} [Group G] (N : Subgroup G)
+
+/-- **The character of a subgroup of index two**: the homomorphism `χ_N : G → 𝔽₂`, written
+multiplicatively, that is `0` on `N` and `1` off it. It is the sign indicator
+`Subgroup.signIndicatorHom` read through the identification `TauCeti.additiveIntUnitsAddEquiv` of
+`ℤˣ` with `ZMod 2`. Its kernel is `N` (`Subgroup.ker_indexTwoCharacter`). -/
+noncomputable def indexTwoCharacter (hN : N.index = 2) : G →* Multiplicative (ZMod 2) :=
+  (AddEquiv.toMultiplicativeRight TauCeti.additiveIntUnitsAddEquiv).toMonoidHom.comp
+    (N.signIndicatorHom (hN ▸ dvd_rfl))
+
+variable {N}
+
+/-- The character of a subgroup of index two vanishes on the subgroup. -/
+@[simp]
+theorem toAdd_indexTwoCharacter_of_mem (hN : N.index = 2) {γ : G} (h : γ ∈ N) :
+    (N.indexTwoCharacter hN γ).toAdd = 0 := by
+  simp [indexTwoCharacter, h]
+
+/-- The character of a subgroup of index two is `1` off the subgroup. -/
+@[simp]
+theorem toAdd_indexTwoCharacter_of_notMem (hN : N.index = 2) {γ : G} (h : γ ∉ N) :
+    (N.indexTwoCharacter hN γ).toAdd = 1 := by
+  simp [indexTwoCharacter, h]
+
+/-- The character of a subgroup of index two is trivial exactly on the subgroup. -/
+@[simp]
+theorem indexTwoCharacter_eq_one_iff (hN : N.index = 2) {γ : G} :
+    N.indexTwoCharacter hN γ = 1 ↔ γ ∈ N := by
+  rw [indexTwoCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.map_eq_one_iff,
+    signIndicatorHom_apply, signIndicator_eq_one_iff]
+
+/-- **The kernel of the character of a subgroup of index two is the subgroup.** -/
+@[simp]
+theorem ker_indexTwoCharacter (hN : N.index = 2) : (N.indexTwoCharacter hN).ker = N :=
+  Subgroup.ext fun _ => (MonoidHom.mem_ker).trans (indexTwoCharacter_eq_one_iff hN)
+
+end Subgroup

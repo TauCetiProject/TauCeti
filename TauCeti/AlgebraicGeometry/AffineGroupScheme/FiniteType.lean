@@ -19,15 +19,14 @@ schemes to the finite-type objects. On the coordinate side, finite type means
 `G ⟶ Spec R` is locally of finite type. Since the source and target are affine, this is the
 usual finite-type condition for an affine group scheme.
 
-The key compatibility theorem is
-`TauCeti.algebraFiniteType_iff_locallyOfFiniteType_hopfSpec`: the coordinate algebra `H` is
-finitely generated over `R` exactly when the structural morphism of its Hopf spectrum is
-locally of finite type. Restricting the existing anti-equivalence along this equality gives
+The key compatibility theorem is `TauCeti.algebraFiniteType_iff_locallyOfFiniteType_hopfSpec`: the
+coordinate algebra `H` is finitely generated over `R` exactly when the structural morphism of its
+Hopf spectrum is locally of finite type. Restricting the anti-equivalence along this equality gives
 
 `(FiniteTypeCommHopfAlgCat R)ᵒᵖ ≌ FiniteTypeAffineGroupSchemeCat (CommRingCat.of R)`.
 
-Thus finite type remains a separate object property in both models, as required by the
-reductive-groups roadmap, while the dictionary records that the two predicates correspond.
+Thus finite type remains a separate object property in both models, while the dictionary records
+that the two predicates correspond.
 
 ## Main declarations
 
@@ -47,11 +46,10 @@ reductive-groups roadmap, while the dictionary records that the two predicates c
 
 ## References
 
-The affine anti-equivalence is `TauCeti.commHopfAlgCatOpEquivAffineGroupSchemeCat`, assembled
-from Mathlib's `AlgebraicGeometry.hopfSpec`. The finite-type comparison uses Mathlib's
+The affine anti-equivalence is `TauCeti.commHopfAlgCatOpEquivAffineGroupSchemeCat`, assembled from
+Mathlib's `AlgebraicGeometry.hopfSpec`. The finite-type comparison uses Mathlib's
 `AlgebraicGeometry.HasRingHomProperty.Spec_iff` for locally finite-type morphisms and
-`RingHom.finiteType_algebraMap`. This is the finite-type predicate synchronization requested
-in Layer 0 of `TauCetiRoadmap/ReductiveGroups/README.md`.
+`RingHom.finiteType_algebraMap`.
 -/
 
 public section

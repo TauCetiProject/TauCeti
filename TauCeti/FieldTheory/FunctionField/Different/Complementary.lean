@@ -112,7 +112,7 @@ theorem exists_mem_differentIdeal_ord_eq :
   have hnot : ¬ (centerIntegralClosure k F P').asIdeal ^ (differentExponent k F P' + 1) ∣
       differentIdeal (P'.restrict k F).integers (integralClosure (P'.restrict k F).integers F') :=
     fun h ↦ by simpa using (pow_dvd_differentIdeal_iff_le_differentExponent k F P').mp h
-  obtain ⟨y, hy, hyP⟩ := SetLike.not_le_iff_exists.mp (mt Ideal.dvd_iff_le.mpr hnot)
+  obtain ⟨y, hy, hyP⟩ := IsConcreteLE.not_le_iff_exists.mp (mt Ideal.dvd_iff_le.mpr hnot)
   have hy0 : y ≠ 0 := by
     rintro rfl
     exact hyP (zero_mem _)
@@ -280,7 +280,6 @@ theorem exists_forall_valuation_le_and_trace_eq (hF' : IsFunctionField k' F')
     intro Q' hQ'
     rw [Q'.valuation_eq_exp_neg_ord ((map_ne_zero _).mpr hc0), ord_algebraMap_restrict k F Q', hQ',
       P.ord_div hx0 hy0, WithZero.exp_le_exp]
-    have he : (0 : ℤ) ≤ ramificationIdx F Q' := by positivity
     nlinarith
   have hb (Q' : Place k' F') (hQ' : Q'.restrict k F = P) :
       Q'.valuation (algebraMap (integralClosure P.integers F') F' b) ≤ 1 :=

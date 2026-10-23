@@ -35,10 +35,9 @@ tensor product of the coordinate algebras.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Proposition 2.4.12.
 
-This supplies the smooth-unipotence step in Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap. The binary product of two radical candidates is formed as the image of
-multiplication from their conjugation semidirect product; the source must first be known to be
-smooth unipotent.
+This supplies the smooth-unipotence step for the unipotent radical. The binary product of two
+radical candidates is formed as the image of multiplication from their conjugation semidirect
+product; the source must first be known to be smooth unipotent.
 -/
 
 public section
@@ -92,7 +91,7 @@ theorem semidirectProduct (H K : _root_.CommHopfAlgCat.{u} k)
     let p := CommHopfAlgCat.grpObjPointsMulEquiv H X n
     have hxright : (ePoint x).right = 1 := by
       exact x.2
-    have hpoint : x = AlgHom.mapDomain A.coordinateInl.hom p := by
+    have hpoint : x = BialgHom.mapDomain A.coordinateInl.hom p := by
       apply ePoint.injective
       rw [A.pointMulEquiv_mapDomain_coordinateInl]
       rw [MulEquiv.symm_apply_apply]
@@ -105,7 +104,7 @@ theorem semidirectProduct (H K : _root_.CommHopfAlgCat.{u} k)
   have hW (x : W) : IsNilpotent (rho x - 1) := by
     obtain ⟨r, hr⟩ := x.2
     let p := CommHopfAlgCat.grpObjPointsMulEquiv K X r
-    have hpoint : x = AlgHom.mapDomain A.coordinateInr.hom p := by
+    have hpoint : x = BialgHom.mapDomain A.coordinateInr.hom p := by
       apply ePoint.injective
       rw [A.pointMulEquiv_mapDomain_coordinateInr]
       rw [MulEquiv.symm_apply_apply]

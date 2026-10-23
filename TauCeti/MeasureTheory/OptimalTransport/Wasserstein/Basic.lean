@@ -9,9 +9,10 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
-public import TauCeti.MeasureTheory.OptimalTransport.Existence
-public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan
+public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Gluing
+public import TauCeti.Topology.EMetricSpace.Rpow
 
 /-!
 # The Wasserstein distance of two measures
@@ -37,7 +38,11 @@ The two-variable transport identities below assume joint measurability of the gr
 distance, `Measurable fun z : X × X ↦ edist z.1 z.2`. This is not automatic for an abstract
 `PseudoEMetricSpace` sitting on an unrelated measurable space, and it is exactly what is needed to
 move the objective along a pushforward; on a second countable Borel space it is Mathlib's
-`measurable_edist`. The pure finite-moment results use only almost-everywhere strong measurability
+`measurable_edist`. The same hypothesis is what makes the objective computable at all, since
+`MeasureTheory.eLpNorm` is `∞` for a function that is not almost-everywhere strongly measurable:
+that is why the two endpoint readings at `p = 0` and `p = ∞` and the transport-cost bridge ask for
+it, even though no pushforward is involved. The pure finite-moment results use only
+almost-everywhere strong measurability
 of the relevant distance sections, the two-Dirac value needs no measurability at all, and the
 vanishing on the diagonal needs only a measurable diagonal, `MeasurableEq`. Nothing else about the
 topology is assumed until the triangle inequality asks for a standard Borel structure, which is
@@ -48,7 +53,9 @@ what the gluing lemma consumes.
 * `TauCeti.wassersteinEDist p μ ν` — the infimum of `eLpNorm (fun z ↦ edist z.1 z.2) p π` over the
   couplings `π` of `μ` and `ν`.
 * `TauCeti.HasFiniteMoment p μ` — the `MemLp` finite-moment condition about some basepoint, with
-  `TauCeti.hasFiniteMoment_of_ae_mem_finset` supplying finite moments for finite carriers.
+  `TauCeti.hasFiniteMoment_of_ae_mem_finset`, `TauCeti.hasFiniteMoment_of_boundedSpace`, and
+  `TauCeti.hasFiniteMoment_dirac` supplying finite moments for finite carriers, bounded spaces,
+  and Dirac laws.
 
 ## Main statements
 
@@ -60,6 +67,8 @@ what the gluing lemma consumes.
   measure to a single point;
 * `TauCeti.wassersteinEDist_top` — the `p = ∞` characterization by coupling-wise essential
   suprema;
+* `TauCeti.eq_of_pairwise_edist_ge_of_wassersteinEDist_top_lt` — on a uniformly separated
+  space, measures at `W_∞` distance below the separation scale agree;
 * `TauCeti.wassersteinEDist_self`, `TauCeti.wassersteinEDist_comm` and
   `TauCeti.wassersteinEDist_triangle` — the three axioms of an extended pseudodistance;
 * `TauCeti.wassersteinEDist_mono_exponent` — monotonicity in `p` when the first marginal is a
@@ -80,12 +89,32 @@ what the gluing lemma consumes.
   along a single coupling, and with
   `TauCeti.hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top` recording that
   the finite-moment hypothesis on the anchor cannot be dropped;
+* `TauCeti.hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top` — a law of finite weighted
+  Wasserstein cost against finitely many laws, one of positive weight and finite moment, has finite
+  moment;
+* `TauCeti.exists_notMem_dist_sq_add_dist_sq_le_of_wassersteinEDist_le` — a probability measure
+  `W₂`-close to two Dirac laws gives, off any null set, a point `z` with
+  `d(x₀, z)² + d(z, x₁)² ≤ 2 R²`;
+* `TauCeti.HasFiniteMoment.smul_measure` and `TauCeti.HasFiniteMoment.add_measure` — finite
+  moments survive finite scalings and sums of finite measures, hence mixtures;
 * `TauCeti.HasFiniteMoment.integrable_of_lipschitzWith` — a Lipschitz real function is integrable
   against a finite measure of finite first moment;
+* `TauCeti.HasFiniteMoment.memLp_id` — on a normed additive group, a finite measure of finite
+  `p`-moment has the identity in `L^p`, and `TauCeti.memLp_of_hasFiniteMoment_map` reads this off
+  for a function from its law; `TauCeti.integrable_norm_sub_sq_of_hasFiniteMoment` deduces that the
+  quadratic cost is integrable against a coupling of laws of finite second moment, and
+  `TauCeti.lintegral_edist_sq_eq_ofReal_integral` rewrites its transport integral as a real one;
 * `TauCeti.wassersteinEDist_rpow_eq_transportCost` and
   `TauCeti.wassersteinEDist_eq_transportCost_rpow` — for `0 < p < ∞`, the exact bridge to Layer 1's
   transport cost of `edist ^ p`, with `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the
-  minimizers and `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`;
+  minimizers, `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`, and
+  `TauCeti.wassersteinEDist_rpow_le_lintegral` the bound by the transport integral of a single
+  coupling, and `TauCeti.transportCost_edist_rpow_eq_top_of_not_hasFiniteMoment` the infinite
+  value against a target without finite moment;
+* `TauCeti.edist_rpow_le_mul_edist_rpow_add_mul_edist_rpow` — the split upper bound
+  `K * (edist x₀ x ^ r + edist x₀ y ^ r)` for the cost `edist x y ^ r`, with
+  `TauCeti.HasFiniteMoment.lintegral_const_mul_edist_rpow_ne_top` its integrability under a finite
+  `p`-moment;
 * `TauCeti.exists_isCoupling_eLpNorm_eq_wassersteinEDist` — on a Polish metric space and for a
   finite nonzero exponent, between finite measures that admit a coupling, the infimum is attained;
 * `TauCeti.wassersteinEDist_eq_zero_iff` — on a Polish metric space and for a finite nonzero
@@ -148,19 +177,21 @@ variable [EDist X] {μ ν : Measure X} {π : Measure (X × X)}
 /-- The **`p`-Wasserstein distance** of `μ` and `ν`: the infimum, over the couplings `π` of `μ`
 and `ν`, of the `L^p (π)` seminorm of the ground extended distance `fun z ↦ edist z.1 z.2`.
 
-It is `∞` when `μ` and `ν` have no coupling at all. At `p = ∞` the objective is the
-`π`-essential supremum of the ground distance, by Mathlib's `MeasureTheory.eLpNorm`
-convention. -/
+It is `∞` when `μ` and `ν` have no coupling at all. For a jointly measurable ground distance the
+objective at `p = ∞` is the `π`-essential supremum, by Mathlib's `MeasureTheory.eLpNorm`
+convention; without measurability that convention makes every objective `∞`. -/
 def wassersteinEDist (p : ℝ≥0∞) (μ ν : Measure X) : ℝ≥0∞ :=
   ⨅ (π : Measure (X × X)) (_ : IsCoupling π μ ν), eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π
 
 /-- At exponent `∞`, the Wasserstein distance is the infimum of the coupling-wise essential
-suprema of the ground distance. -/
-theorem wassersteinEDist_top (μ ν : Measure X) :
+suprema of a jointly measurable ground distance. -/
+theorem wassersteinEDist_top (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (μ ν : Measure X) :
     wassersteinEDist ∞ μ ν =
       ⨅ (π : Measure (X × X)) (_ : IsCoupling π μ ν),
         eLpNormEssSup (fun z : X × X ↦ edist z.1 z.2) π := by
-  simp only [wassersteinEDist, eLpNorm_exponent_top]
+  simp only [wassersteinEDist]
+  exact iInf_congr fun π ↦ iInf_congr fun _ ↦
+    eLpNorm_exponent_top hd.aestronglyMeasurable
 
 /-- Every coupling bounds the Wasserstein distance from above. -/
 theorem wassersteinEDist_le (hπ : IsCoupling π μ ν) (p : ℝ≥0∞) :
@@ -191,6 +222,26 @@ theorem wassersteinEDist_lt_iff :
       ∃ π, IsCoupling π μ ν ∧ eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π < a := by
   simp only [wassersteinEDist, iInf_lt_iff, exists_prop]
 
+/-- On a space whose distinct points are at least `r` apart, two measures at
+`W_∞` distance strictly less than `r` agree. A coupling below the strict bound cannot move
+mass between distinct points. This also applies when the distance is infinite. -/
+theorem eq_of_pairwise_edist_ge_of_wassersteinEDist_top_lt
+    {Y : Type*} [MeasurableSpace Y] [EDist Y] {μ ν : Measure Y} {r : ℝ≥0∞}
+    (hsep : Pairwise fun x y : Y ↦ r ≤ edist x y)
+    (h : wassersteinEDist ∞ μ ν < r) : μ = ν := by
+  obtain ⟨π, hπ, hπd⟩ := wassersteinEDist_lt_iff.mp h
+  have hbound := ae_le_eLpNormEssSup (f := fun z : Y × Y ↦ edist z.1 z.2) (μ := π)
+  simp only [enorm_eq_self] at hbound
+  have hπess : eLpNormEssSup (fun z : Y × Y ↦ edist z.1 z.2) π < r :=
+    (eLpNormEssSup_le_eLpNorm_top).trans_lt hπd
+  have hae : (fun z : Y × Y ↦ z.1) =ᵐ[π] (fun z ↦ z.2) := hbound.mono fun z hz ↦ by
+    by_contra hne
+    exact (not_lt_of_ge (hsep hne)) (hz.trans_lt hπess)
+  calc
+    μ = π.fst := hπ.fst_eq.symm
+    _ = π.snd := Measure.map_congr hae
+    _ = ν := hπ.snd_eq
+
 /-- The Wasserstein distance is infinite exactly when every coupling has an infinite objective.
 Measures with no coupling at all satisfy the right-hand side vacuously. -/
 @[simp]
@@ -212,13 +263,16 @@ theorem exists_isCoupling_of_wassersteinEDist_ne_top (h : wassersteinEDist p μ 
   obtain ⟨π, hπ, -⟩ := wassersteinEDist_lt_iff.1 h.lt_top
   exact ⟨π, hπ⟩
 
-/-- At the exponent `0` the objective is identically `0`, so the Wasserstein distance of any two
-coupled measures vanishes. Thus distance-specific results below exclude `p = 0`, although
-monotonicity in the exponent remains valid when its lower exponent is `0`. -/
-theorem wassersteinEDist_exponent_zero (h : ∃ π, IsCoupling π μ ν) :
+/-- At the exponent `0` the objective of a jointly measurable ground distance is identically `0`,
+so the Wasserstein distance of any two coupled measures vanishes. Thus distance-specific results
+below exclude `p = 0`, although monotonicity in the exponent remains valid when its lower exponent
+is `0`. -/
+theorem wassersteinEDist_exponent_zero (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (h : ∃ π, IsCoupling π μ ν) :
     wassersteinEDist 0 μ ν = 0 := by
   obtain ⟨π, hπ⟩ := h
-  simpa using wassersteinEDist_le hπ 0
+  exact nonpos_iff_eq_zero.1 ((wassersteinEDist_le hπ 0).trans_eq
+    (eLpNorm_exponent_zero hd.aestronglyMeasurable))
 
 /-- Scaling both measures by the same nonzero finite factor scales their Wasserstein distance by
 the corresponding `L^p` factor. At `p = ∞` this factor is one. -/
@@ -302,14 +356,15 @@ theorem wassersteinEDist_add_smul_dirac_le
       = eLpNorm (E.indicator f) p (σ.map (fun x ↦ (x, x)) + τ.map (fun x ↦ (x, x₀))) := by
         rw [hind]
     _ = eLpNorm f p ((σ.map (fun x ↦ (x, x)) + τ.map (fun x ↦ (x, x₀))).restrict E) :=
-        eLpNorm_indicator_eq_eLpNorm_restrict hE
+        eLpNorm_indicator_eq_eLpNorm_restrict hE.nullMeasurableSet
     _ = eLpNorm f p ((τ.map (fun x ↦ (x, x₀))).restrict E) := by
         rw [Measure.restrict_add, Measure.restrict_eq_zero.2 hAE, zero_add]
     _ = eLpNorm (E.indicator f) p (τ.map (fun x ↦ (x, x₀))) :=
-        (eLpNorm_indicator_eq_eLpNorm_restrict hE).symm
+        (eLpNorm_indicator_eq_eLpNorm_restrict hE.nullMeasurableSet).symm
     _ = eLpNorm f p (τ.map (fun x ↦ (x, x₀))) := by rw [hind]
     _ = eLpNorm (fun x ↦ edist x x₀) p τ :=
         eLpNorm_map_measure hd.aestronglyMeasurable hpair.aemeasurable
+
 
 end Perturbation
 
@@ -369,12 +424,12 @@ variable [EDist X]
 
 /-- **Monotonicity in the exponent.** If the first marginal is a probability measure, then the
 Wasserstein distance is monotone in `p`. -/
-theorem wassersteinEDist_mono_exponent (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
-    (hpq : p ≤ q) (μ ν : Measure X) [IsProbabilityMeasure μ] :
+theorem wassersteinEDist_mono_exponent (hpq : p ≤ q) (μ ν : Measure X)
+    [IsProbabilityMeasure μ] :
     wassersteinEDist p μ ν ≤ wassersteinEDist q μ ν := by
   refine iInf₂_mono fun π hπ ↦ ?_
   have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
-  exact eLpNorm_le_eLpNorm_of_exponent_le hpq hd.aestronglyMeasurable
+  exact eLpNorm_le_eLpNorm_of_exponent_le hpq
 
 section Dirac
 
@@ -389,6 +444,12 @@ def HasFiniteMoment (p : ℝ≥0∞) (ν : Measure X) : Prop :=
 theorem hasFiniteMoment_def :
     HasFiniteMoment p ν ↔ ∃ x : X, MemLp (fun y ↦ edist x y) p ν :=
   Iff.rfl
+
+/-- Scaling a measure by a finite constant preserves finite `p`-moments. -/
+theorem HasFiniteMoment.smul_measure {ν : Measure X} (h : HasFiniteMoment p ν) {c : ℝ≥0∞}
+    (hc : c ≠ ∞) : HasFiniteMoment p (c • ν) :=
+  let ⟨x, hx⟩ := h
+  ⟨x, hx.smul_measure hc⟩
 
 /-- **The unique-coupling identity.** A Dirac source has exactly one coupling with each
 probability target, so the Wasserstein distance from `δ x` is the `L^p (ν)` seminorm of the ground
@@ -413,8 +474,7 @@ theorem memLp_edist_iff_wassersteinEDist_dirac_ne_top
     [IsProbabilityMeasure ν] :
     MemLp (fun y ↦ edist x y) p ν ↔ wassersteinEDist p (Measure.dirac x) ν ≠ ∞ := by
   rw [wassersteinEDist_dirac_left hd]
-  exact ⟨MemLp.eLpNorm_ne_top, fun h ↦
-    ⟨(hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable, h.lt_top⟩⟩
+  exact ⟨MemLp.eLpNorm_ne_top, fun h ↦ h.lt_top⟩
 
 /-- The existential finite-moment predicate is equivalently finite Wasserstein distance from some
 Dirac measure. -/
@@ -471,13 +531,34 @@ theorem wassersteinEDist_dirac_left_le_add (hd : Measurable fun z : X × X ↦ e
   have hconst : eLpNorm (fun _ : X ↦ edist x₁ x₀) p ν = edist x₁ x₀ := by
     rw [eLpNorm_const _ hp0 (IsProbabilityMeasure.ne_zero ν)]
     simp
+  have hsec : AEStronglyMeasurable (fun y ↦ edist x₁ y) ν :=
+    (hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable
   rw [wassersteinEDist_dirac_left hd, wassersteinEDist_dirac_left hd, ← hconst]
   calc eLpNorm (fun y ↦ edist x₁ y) p ν
       ≤ eLpNorm ((fun _ : X ↦ edist x₁ x₀) + fun y ↦ edist x₀ y) p ν :=
-        eLpNorm_mono_enorm fun y ↦ by simpa using edist_triangle x₁ x₀ y
+        eLpNorm_mono_enorm hsec fun y ↦ by simpa using edist_triangle x₁ x₀ y
     _ ≤ eLpNorm (fun _ : X ↦ edist x₁ x₀) p ν + eLpNorm (fun y ↦ edist x₀ y) p ν :=
-        eLpNorm_add_le aestronglyMeasurable_const
-          (hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable hp
+        eLpNorm_add_le hp
+
+/-- **The triangle inequality through a Dirac law.** For probability measures, the Wasserstein
+distance to a Dirac law is at most the distance to any intermediate probability measure plus the
+distance from it to the Dirac law. A Dirac law has a single coupling with each probability measure,
+so no gluing, and hence no standard Borel hypothesis, is needed; compare
+`TauCeti.wassersteinEDist_triangle`. -/
+theorem wassersteinEDist_triangle_dirac (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp : 1 ≤ p) (μ ν : Measure X) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (y : X) :
+    wassersteinEDist p μ (Measure.dirac y) ≤
+      wassersteinEDist p μ ν + wassersteinEDist p ν (Measure.dirac y) := by
+  have hy : Measurable fun x : X ↦ edist x y := hd.comp (measurable_id.prodMk measurable_const)
+  rw [wassersteinEDist_dirac_right hd, wassersteinEDist_dirac_right hd, wassersteinEDist]
+  simp only [ENNReal.iInf_add]
+  refine le_iInf₂ fun π hπ ↦ ?_
+  -- Read both distances to the atom on the coupling `π`, then apply Minkowski's inequality.
+  rw [← eLpNorm_comp_measurePreserving hy.aestronglyMeasurable hπ.measurePreserving_fst,
+    ← eLpNorm_comp_measurePreserving hy.aestronglyMeasurable hπ.measurePreserving_snd]
+  refine (eLpNorm_mono_enorm (hy.comp measurable_fst).aestronglyMeasurable fun z ↦ ?_).trans
+    (eLpNorm_add_le hp)
+  simpa using edist_triangle z.1 z.2 y
 
 /-- Finite `p`-moment about a basepoint is independent of the basepoint inside a fixed
 finite-distance component. On an extended pseudometric space the finite-distance hypothesis cannot
@@ -528,32 +609,9 @@ theorem wassersteinEDist_triangle (hd : Measurable fun z : X × X ↦ edist z.1 
   have hcoup : IsCoupling (γ.map (Prod.map id Prod.snd)) μ ρ :=
     ⟨(Measure.fst_map_prodMap_id_snd hγπ).trans hπ.fst_eq,
       (Measure.snd_map_prodMap_id_snd hγσ).trans hσ.snd_eq⟩
-  refine (wassersteinEDist_le hcoup p).trans ?_
-  have houter : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (γ.map (Prod.map id Prod.snd))
-      = eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.2) p γ := by
-    rw [eLpNorm_map_measure hd.aestronglyMeasurable
-      (measurable_id.prodMap measurable_snd).aemeasurable]
-    rfl
-  have hfirst : eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.1) p γ
-      = eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π := by
-    rw [← hγπ, eLpNorm_map_measure hd.aestronglyMeasurable
-      (measurable_id.prodMap measurable_fst).aemeasurable]
-    rfl
-  have hsecond : eLpNorm (fun w : X × X × X ↦ edist w.2.1 w.2.2) p γ
-      = eLpNorm (fun z : X × X ↦ edist z.1 z.2) p σ := by
-    rw [← hγσ, Measure.snd, eLpNorm_map_measure hd.aestronglyMeasurable
-      measurable_snd.aemeasurable]
-    rfl
-  rw [houter, ← hfirst, ← hsecond]
-  calc eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.2) p γ
-      ≤ eLpNorm ((fun w : X × X × X ↦ edist w.1 w.2.1)
-          + fun w : X × X × X ↦ edist w.2.1 w.2.2) p γ :=
-        eLpNorm_mono_enorm fun w ↦ by
-          simpa using edist_triangle w.1 w.2.1 w.2.2
-    _ ≤ eLpNorm (fun w : X × X × X ↦ edist w.1 w.2.1) p γ
-          + eLpNorm (fun w : X × X × X ↦ edist w.2.1 w.2.2) p γ :=
-        eLpNorm_add_le (hd.comp (measurable_id.prodMap measurable_fst)).aestronglyMeasurable
-          (hd.comp measurable_snd).aestronglyMeasurable hp
+  exact (wassersteinEDist_le hcoup p).trans
+    (MeasureTheory.eLpNorm_map_prodMap_id_snd_le hp hγπ hγσ hd hd hd fun x y z ↦
+      edist_triangle x y z)
 
 end Triangle
 
@@ -585,7 +643,8 @@ theorem HasFiniteMoment.memLp
     (hd : AEStronglyMeasurable (fun y ↦ edist x y) ν)
     [IsFiniteMeasure ν] : MemLp (fun y ↦ edist x y) p ν := by
   obtain ⟨x₀, hx₀⟩ := h
-  exact (memLp_edist_iff_of_edist_ne_top hx₀.1 hd (edist_ne_top x x₀)).1 hx₀
+  exact (memLp_edist_iff_of_edist_ne_top hx₀.aestronglyMeasurable hd
+    (edist_ne_top x x₀)).1 hx₀
 
 /-- A Lipschitz real function is integrable against a finite measure with finite first moment: it
 grows at most linearly in the distance to a basepoint. These are the test functions of the
@@ -615,6 +674,25 @@ theorem hasFiniteMoment_of_ae_mem_finset [OpensMeasurableSpace X] {ν : Measure 
   · filter_upwards [hs] with y hy
     simpa only [enorm_eq_self] using Finset.le_sup (f := fun z ↦ edist x₀ z) hy
 
+/-- On a nonempty bounded pseudometric space, for instance a nonempty compact one, every finite
+measure has finite `p`-moment for every exponent: the ground distance is bounded. -/
+theorem hasFiniteMoment_of_boundedSpace [OpensMeasurableSpace X] [BoundedSpace X] [Nonempty X]
+    (ν : Measure X) [IsFiniteMeasure ν] : HasFiniteMoment p ν := by
+  obtain ⟨C, hC⟩ := Metric.boundedSpace_iff.1 ‹BoundedSpace X›
+  let x₀ : X := Classical.arbitrary X
+  refine hasFiniteMoment_def.2 ⟨x₀, MemLp.of_enorm_bound (C := ENNReal.ofReal C)
+    measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top (.of_forall fun y ↦ ?_)⟩
+  simpa only [enorm_eq_self, edist_dist] using ENNReal.ofReal_le_ofReal (hC x₀ y)
+
+/-- A Dirac law has finite `p`-moment for every exponent: its distance from its atom vanishes
+almost everywhere. -/
+theorem hasFiniteMoment_dirac [OpensMeasurableSpace X] (p : ℝ≥0∞) (x : X) :
+    HasFiniteMoment p (Measure.dirac x) := by
+  refine hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := 0)
+    measurable_edist_right.aestronglyMeasurable ENNReal.zero_ne_top ?_⟩
+  filter_upwards [ae_eq_dirac' (a := x) (measurable_edist_right (x := x))] with y hy
+  simp only [enorm_eq_self, hy, Function.const_apply, edist_self, le_refl]
+
 /-- On an ordinary pseudometric space, the finite-moment condition can be tested at any prescribed
 basepoint whose distance section is almost-everywhere strongly measurable. -/
 theorem hasFiniteMoment_iff_memLp_edist {x : X} {ν : Measure X}
@@ -628,9 +706,38 @@ theorem hasFiniteMoment_iff_lintegral_edist_rpow_ne_top [OpensMeasurableSpace X]
     (hp0 : p ≠ 0) (hp : p ≠ ∞) (x : X) (ν : Measure X) [IsFiniteMeasure ν] :
     HasFiniteMoment p ν ↔ ∫⁻ y, edist x y ^ p.toReal ∂ν ≠ ∞ := by
   rw [hasFiniteMoment_iff_memLp_edist (x := x) measurable_edist_right.aestronglyMeasurable]
-  rw [MemLp, and_iff_right measurable_edist_right.aestronglyMeasurable,
-    eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp, lt_top_iff_ne_top]
+  rw [MemLp, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp
+      measurable_edist_right.aestronglyMeasurable, lt_top_iff_ne_top]
   simp only [enorm_eq_self]
+
+/-- For a finite nonzero exponent `p`, a finite measure with finite `p`-moment integrates every
+finite multiple of the `p`-th power of the distance to a basepoint to a finite value; this is the
+integrability half of the split upper bound for the cost `edist ^ p`. -/
+theorem HasFiniteMoment.lintegral_const_mul_edist_rpow_ne_top [OpensMeasurableSpace X]
+    {ν : Measure X} [IsFiniteMeasure ν] (hν : HasFiniteMoment p ν) (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (x : X) {c : ℝ≥0∞} (hc : c ≠ ∞) : ∫⁻ y, c * edist x y ^ p.toReal ∂ν ≠ ∞ := by
+  rw [lintegral_const_mul' _ _ hc]
+  exact ENNReal.mul_ne_top hc ((hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x ν).1 hν)
+
+/-- The sum of two finite measures with finite `p`-moments has finite `p`-moment. -/
+theorem HasFiniteMoment.add_measure [OpensMeasurableSpace X] {μ ν : Measure X}
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν] (hμ : HasFiniteMoment p μ)
+    (hν : HasFiniteMoment p ν) : HasFiniteMoment p (μ + ν) := by
+  obtain ⟨x, hx⟩ := id hμ
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact ⟨x, memLp_zero_iff_aestronglyMeasurable.2 measurable_edist_right.aestronglyMeasurable⟩
+  rcases eq_or_ne p ∞ with rfl | hp
+  · -- At `p = ∞`, both moment conditions are essential bounds about `x`.
+    have hy := hν.memLp (x := x) measurable_edist_right.aestronglyMeasurable
+    refine ⟨x, MemLp.of_enorm_bound measurable_edist_right.aestronglyMeasurable
+      (C := max (eLpNormEssSup (fun y ↦ edist x y) μ) (eLpNormEssSup (fun y ↦ edist x y) ν))
+      (max_ne_top (eLpNormEssSup_le_eLpNorm_top.trans_lt hx.eLpNorm_lt_top).ne
+        (eLpNormEssSup_le_eLpNorm_top.trans_lt hy.eLpNorm_lt_top).ne) ?_⟩
+    exact ae_add_measure_iff.2 ⟨ae_le_eLpNormEssSup.mono fun _ h ↦ h.trans (le_max_left _ _),
+      ae_le_eLpNormEssSup.mono fun _ h ↦ h.trans (le_max_right _ _)⟩
+  rw [hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x] at hμ hν ⊢
+  rw [lintegral_add_measure]
+  exact ENNReal.add_ne_top.2 ⟨hμ, hν⟩
 
 /-- On an ordinary pseudometric space, the finite-moment condition is equivalent to finite
 Wasserstein distance from the Dirac law at any prescribed basepoint. -/
@@ -707,8 +814,7 @@ theorem hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment
         hν).eLpNorm_ne_top (wassersteinEDist_le (isCoupling_prod μ₀ ν) p)
   · intro hν
     obtain ⟨π, hπ, hπtop⟩ := wassersteinEDist_lt_iff.mp hν.lt_top
-    exact (memLp_edist_iff_hasFiniteMoment_of_isCoupling hd hπ hx₀).mp
-      ⟨hd.aestronglyMeasurable, hπtop⟩
+    exact (memLp_edist_iff_hasFiniteMoment_of_isCoupling hd hπ hx₀).mp hπtop
 
 /-- Finite moment of the anchor is exactly the condition under which its finite-distance component
 is the finite-moment space: the criterion above holds for every probability law if and only if the
@@ -729,23 +835,142 @@ theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
         (measurable_id.prodMk measurable_id).aemeasurable]
       exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ edist_self x))⟩
 
+/-- A probability law of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ q` has
+finite `p`-moment, provided some law `μ i` with `i ∈ s` of positive weight has finite `p`-moment
+and `0 < q`: the corresponding summand bounds `W_p(ν, μ i)`. -/
+theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {ι : Type*} {s : Finset ι} {w : ι → ℝ≥0∞}
+    {μ : ι → Measure X} {ν : Measure X} [IsProbabilityMeasure ν] {i : ι} (hi : i ∈ s)
+    (hwi : w i ≠ 0) [IsProbabilityMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {q : ℝ}
+    (hq : 0 < q) (h : ∑ j ∈ s, w j * wassersteinEDist p ν (μ j) ^ q ≠ ∞) :
+    HasFiniteMoment p ν := by
+  have hi' : w i * wassersteinEDist p ν (μ i) ^ q ≠ ∞ :=
+    ne_top_of_le_ne_top h (Finset.single_le_sum (f := fun j ↦ w j * wassersteinEDist p ν (μ j) ^ q)
+      (fun _ _ ↦ bot_le) hi)
+  rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ,
+    wassersteinEDist_comm hd]
+  exact fun htop ↦ hi' (by rw [htop, ENNReal.top_rpow_of_pos hq, ENNReal.mul_top hwi])
+
 end Anchor
 
+/-- **A point near two Dirac laws.** If a probability measure `ν` is within `W₂`-distance `R` of
+both `δ_{x₀}` and `δ_{x₁}`, then outside any `ν`-null set `s` there is a point `z` with
+`d(x₀, z)² + d(z, x₁)² ≤ 2 R²`: the two second moments of `ν` add up to at most `2 R²`, and some
+point off `s` lies below their mean. -/
+theorem exists_notMem_dist_sq_add_dist_sq_le_of_wassersteinEDist_le
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (ν : Measure X) [IsProbabilityMeasure ν]
+    {s : Set X} (hs : ν s = 0) {x₀ x₁ : X} {R : ℝ} (hR : 0 ≤ R)
+    (h₀ : wassersteinEDist 2 (Measure.dirac x₀) ν ≤ ENNReal.ofReal R)
+    (h₁ : wassersteinEDist 2 (Measure.dirac x₁) ν ≤ ENNReal.ofReal R) :
+    ∃ z ∉ s, dist x₀ z ^ 2 + dist z x₁ ^ 2 ≤ 2 * R ^ 2 := by
+  -- The second moment of `ν` about `x` is `W₂(δ_x, ν)²`.
+  have hsec (x : X) : Measurable fun y ↦ edist x y :=
+    hd.comp (measurable_const.prodMk measurable_id)
+  have hmom (x : X) : ∫⁻ z, ENNReal.ofReal (dist x z ^ 2) ∂ν =
+      wassersteinEDist 2 (Measure.dirac x) ν ^ ((2 : ℝ≥0) : ℝ) := by
+    rw [wassersteinEDist_dirac_left hd, ← ENNReal.coe_ofNat,
+      eLpNorm_nnreal_pow_eq_lintegral (f := fun y ↦ edist x y) two_ne_zero
+        (hsec x).aestronglyMeasurable]
+    refine lintegral_congr fun z ↦ ?_
+    rw [enorm_eq_self, edist_dist, NNReal.coe_ofNat, ENNReal.ofReal_rpow_of_nonneg dist_nonneg
+      zero_le_two, Real.rpow_two]
+  have hbound (x : X) (hx : wassersteinEDist 2 (Measure.dirac x) ν ≤ ENNReal.ofReal R) :
+      ∫⁻ z, ENNReal.ofReal (dist x z ^ 2) ∂ν ≤ ENNReal.ofReal (R ^ 2) := by
+    rw [hmom, NNReal.coe_ofNat, ← Real.rpow_two, ← ENNReal.ofReal_rpow_of_nonneg hR zero_le_two]
+    gcongr
+  -- Some `z` outside the `ν`-null set `s` lies below the mean of the two moments.
+  have hmeas (x : X) : Measurable fun z ↦ ENNReal.ofReal (dist x z ^ 2) := by
+    have : Measurable fun z ↦ dist x z := by
+      simpa only [edist_dist, ENNReal.toReal_ofReal dist_nonneg] using (hsec x).ennreal_toReal
+    fun_prop
+  obtain ⟨z, hz, hle⟩ := exists_notMem_null_le_lintegral (μ := ν)
+    (f := fun z ↦ ENNReal.ofReal (dist x₀ z ^ 2) + ENNReal.ofReal (dist x₁ z ^ 2))
+    ((hmeas x₀).add (hmeas x₁)).aemeasurable hs
+  refine ⟨z, hz, ?_⟩
+  rw [lintegral_add_left (hmeas x₀)] at hle
+  have := hle.trans (add_le_add (hbound x₀ h₀) (hbound x₁ h₁))
+  rw [← ENNReal.ofReal_add (by positivity) (by positivity),
+    ← ENNReal.ofReal_add (by positivity) (by positivity),
+    ENNReal.ofReal_le_ofReal_iff (by positivity)] at this
+  rw [dist_comm z x₁]
+  linarith
+
 end MetricMoment
+
+section NormedMoment
+
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
+
+/-- For an integrable quadratic cost, the transport integral of the squared extended distance is
+the real transport integral of the squared norm of the displacement. -/
+theorem lintegral_edist_sq_eq_ofReal_integral {π : Measure (E × E)}
+    (hπ : Integrable (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) π) :
+    ∫⁻ z, edist z.1 z.2 ^ 2 ∂π = ENNReal.ofReal (∫ z, ‖z.1 - z.2‖ ^ 2 ∂π) := by
+  rw [ofReal_integral_eq_lintegral_ofReal hπ (.of_forall fun z ↦ by positivity)]
+  refine lintegral_congr fun z ↦ ?_
+  rw [edist_dist, dist_eq_norm, ENNReal.ofReal_pow (norm_nonneg _)]
+
+variable [OpensMeasurableSpace E] [SecondCountableTopology E]
+
+/-- On a normed additive group, a finite measure with finite `p`-moment has the identity in
+`L^p`: its distance from the basepoint `0` is the norm. -/
+theorem HasFiniteMoment.memLp_id {ν : Measure E} [IsFiniteMeasure ν] (h : HasFiniteMoment p ν) :
+    MemLp id p ν :=
+  (memLp_congr_enorm aestronglyMeasurable_id measurable_edist_right.aestronglyMeasurable
+    (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).2
+    (h.memLp (x := 0) measurable_edist_right.aestronglyMeasurable)
+
+/-- A function whose law under a finite measure has finite `q`-th moment lies in `Lq`. -/
+theorem memLp_of_hasFiniteMoment_map {α : Type*} [MeasurableSpace α] {π : Measure α}
+    [IsFiniteMeasure π] {f : α → E} (hf : Measurable f) (h : HasFiniteMoment q (π.map f)) :
+    MemLp f q π :=
+  (memLp_map_measure_iff aestronglyMeasurable_id hf.aemeasurable).1 h.memLp_id
+
+/-- The quadratic cost `‖x - y‖²` is integrable against a finite measure on `E × E` whose two
+marginals have finite second moment. -/
+theorem integrable_norm_sub_sq_of_hasFiniteMoment {π : Measure (E × E)} [IsFiniteMeasure π]
+    (h₁ : HasFiniteMoment 2 π.fst) (h₂ : HasFiniteMoment 2 π.snd) :
+    Integrable (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) π := by
+  rw [Measure.fst] at h₁
+  rw [Measure.snd] at h₂
+  exact (memLp_two_iff_integrable_sq_norm (by fun_prop)).1 <|
+    (memLp_of_hasFiniteMoment_map measurable_fst h₁).sub
+      (memLp_of_hasFiniteMoment_map measurable_snd h₂)
+
+/-- The displacement `(x, y) ↦ y - x` is square integrable against a finite measure on `E × E`
+whose two marginals have finite second moment. -/
+theorem memLp_sub_of_hasFiniteMoment {π : Measure (E × E)} [IsFiniteMeasure π]
+    (h₁ : HasFiniteMoment 2 π.fst) (h₂ : HasFiniteMoment 2 π.snd) :
+    MemLp (fun z : E × E ↦ z.2 - z.1) 2 π := by
+  rw [Measure.fst] at h₁
+  rw [Measure.snd] at h₂
+  exact (memLp_of_hasFiniteMoment_map measurable_snd h₂).sub
+    (memLp_of_hasFiniteMoment_map measurable_fst h₁)
+
+end NormedMoment
 
 section Bridge
 
 variable [EDist X]
 
+/-- For a finite nonzero exponent, every coupling bounds the `p`-th power of the Wasserstein
+distance by its transport integral of `edist ^ p`. -/
+theorem wassersteinEDist_rpow_le_lintegral (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) {μ ν : Measure X} {π : Measure (X × X)} (hπ : IsCoupling π μ ν) :
+    wassersteinEDist p μ ν ^ p.toReal ≤ ∫⁻ z, edist z.1 z.2 ^ p.toReal ∂π := by
+  rw [← eLpNorm_rpow_eq_lintegral hp0 hp hd.aemeasurable]
+  exact ENNReal.rpow_le_rpow (wassersteinEDist_le hπ p) ENNReal.toReal_nonneg
+
 /-- **The bridge to the primal Kantorovich problem.** For a finite nonzero exponent the `p`-th
 power of the Wasserstein distance is the transport cost of the cost `edist ^ p`, so the two
 infima — one of `L^p` seminorms, one of integrals — are the same optimisation problem. -/
-theorem wassersteinEDist_rpow_eq_transportCost (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ ν : Measure X) :
+theorem wassersteinEDist_rpow_eq_transportCost (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ ν : Measure X) :
     wassersteinEDist p μ ν ^ p.toReal
       = transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) μ ν := by
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  have key (π : Measure (X × X)) := eLpNorm_rpow_eq_lintegral hp0 hp
-    (fun z : X × X ↦ edist z.1 z.2) π
+  have key (π : Measure (X × X)) :=
+    eLpNorm_rpow_eq_lintegral (μ := π) hp0 hp hd.aemeasurable
   refine le_antisymm (le_transportCost fun π hπ ↦ ?_) ?_
   · rw [← key π]
     exact ENNReal.rpow_le_rpow (wassersteinEDist_le hπ p) hr.le
@@ -768,7 +993,8 @@ theorem wassersteinEDist_rpow_eq_transportCost (hp0 : p ≠ 0) (hp : p ≠ ∞) 
 /-- A coupling minimizes the `p`-power transport cost exactly when its `L^p` displacement realizes
 the Wasserstein infimum. This connects Wasserstein minimizers to the existing optimal-coupling
 API. -/
-theorem isOptimalCoupling_edist_rpow_iff (hp0 : p ≠ 0) (hp : p ≠ ∞) :
+theorem isOptimalCoupling_edist_rpow_iff (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) :
     IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) π μ ν ↔
       IsCoupling π μ ν ∧
         eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π = wassersteinEDist p μ ν := by
@@ -778,30 +1004,95 @@ theorem isOptimalCoupling_edist_rpow_iff (hp0 : p ≠ 0) (hp : p ≠ ∞) :
     refine ⟨hπ.toIsCoupling, ENNReal.rpow_left_injective hr ?_⟩
     have hpow : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π ^ p.toReal =
         wassersteinEDist p μ ν ^ p.toReal := by
-      rw [eLpNorm_rpow_eq_lintegral hp0 hp, hπ.lintegral_eq,
-        wassersteinEDist_rpow_eq_transportCost hp0 hp]
+      rw [eLpNorm_rpow_eq_lintegral hp0 hp hd.aemeasurable, hπ.lintegral_eq,
+        wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
     exact hpow
   · rintro ⟨hπ, hval⟩
     refine ⟨hπ, ?_⟩
-    rw [← eLpNorm_rpow_eq_lintegral hp0 hp, hval,
-      wassersteinEDist_rpow_eq_transportCost hp0 hp]
+    rw [← eLpNorm_rpow_eq_lintegral hp0 hp hd.aemeasurable, hval,
+      wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
+
+/-- For a finite nonzero exponent, the transport integral of `edist ^ p` against an optimal
+coupling for that cost is the `p`-th power of the Wasserstein distance. -/
+theorem IsOptimalCoupling.lintegral_edist_rpow_eq (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) {μ ν : Measure X} {π : Measure (X × X)}
+    (hπ : IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) π μ ν) :
+    ∫⁻ z, edist z.1 z.2 ^ p.toReal ∂π = wassersteinEDist p μ ν ^ p.toReal := by
+  rw [hπ.lintegral_eq, wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
+
+/-- At finite Wasserstein distance and for a finite nonzero exponent, the ground distance lies in
+`L^p` of an optimal coupling for the cost `edist ^ p`. -/
+theorem IsOptimalCoupling.memLp_edist (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) {μ ν : Measure X} {π : Measure (X × X)}
+    (hπ : IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) π μ ν)
+    (hfin : wassersteinEDist p μ ν ≠ ∞) :
+    MemLp (fun z : X × X ↦ edist z.1 z.2) p π := by
+  rw [memLp_iff, ((isOptimalCoupling_edist_rpow_iff hd hp0 hp).1 hπ).2]
+  exact hfin.lt_top
 
 /-- The root form of `TauCeti.wassersteinEDist_rpow_eq_transportCost`: for a finite nonzero
 exponent the Wasserstein distance is the `p`-th root of the transport cost of `edist ^ p`. -/
-theorem wassersteinEDist_eq_transportCost_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ ν : Measure X) :
+theorem wassersteinEDist_eq_transportCost_rpow (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ ν : Measure X) :
     wassersteinEDist p μ ν
       = transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) μ ν ^ (1 / p.toReal) := by
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  rw [← wassersteinEDist_rpow_eq_transportCost hp0 hp, ← ENNReal.rpow_mul,
+  rw [← wassersteinEDist_rpow_eq_transportCost hd hp0 hp, ← ENNReal.rpow_mul,
     mul_one_div_cancel hr.ne', ENNReal.rpow_one]
 
 /-- At the exponent `1` the Wasserstein distance is the transport cost of the ground distance
 itself: the Kantorovich–Rubinstein problem is the primal problem for the cost `edist`. -/
-theorem wassersteinEDist_one_eq_transportCost (μ ν : Measure X) :
+theorem wassersteinEDist_one_eq_transportCost (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (μ ν : Measure X) :
     wassersteinEDist 1 μ ν = transportCost (fun z : X × X ↦ edist z.1 z.2) μ ν := by
-  simpa using wassersteinEDist_eq_transportCost_rpow (X := X) one_ne_zero ENNReal.one_ne_top μ ν
+  simpa using
+    wassersteinEDist_eq_transportCost_rpow (X := X) hd one_ne_zero ENNReal.one_ne_top μ ν
 
 end Bridge
+
+section NormedOptimal
+
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+  [SecondCountableTopology E] {μ ν : Measure E} {π : Measure (E × E)}
+
+/-- For a finite nonzero exponent, the `p`-th moment of the displacement `(x, y) ↦ y - x` under an
+optimal coupling for the cost `‖x - y‖ ^ p` is the `p`-th power of the Wasserstein distance. -/
+theorem IsOptimalCoupling.lintegral_enorm_sub_rpow_eq (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (hπ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) π μ ν) :
+    ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p.toReal ∂π = wassersteinEDist p μ ν ^ p.toReal := by
+  rw [← hπ.lintegral_edist_rpow_eq measurable_edist hp0 hp]
+  simp only [edist_eq_enorm_sub, enorm_sub_rev]
+
+/-- At finite Wasserstein distance and for a finite nonzero exponent, the displacement
+`(x, y) ↦ y - x` lies in `L^p` of an optimal coupling for the cost `‖x - y‖ ^ p`. -/
+theorem IsOptimalCoupling.memLp_sub (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (hπ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) π μ ν)
+    (hfin : wassersteinEDist p μ ν ≠ ∞) :
+    MemLp (fun z : E × E ↦ z.2 - z.1) p π :=
+  (memLp_congr_enorm (by fun_prop) measurable_edist.aestronglyMeasurable
+    (.of_forall fun z ↦ by simp [edist_eq_enorm_sub, enorm_sub_rev])).2
+    (hπ.memLp_edist measurable_edist hp0 hp hfin)
+
+end NormedOptimal
+
+section InfiniteMoment
+
+variable [PseudoMetricSpace X]
+
+/-- Without a finite `p`-moment on the target, the transport cost of `edist ^ p` from a law of
+finite `p`-moment is infinite, for `0 < p < ∞`. -/
+theorem transportCost_edist_rpow_eq_top_of_not_hasFiniteMoment
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    {μ ν : Measure X} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (hμ : HasFiniteMoment p μ) (hν : ¬HasFiniteMoment p ν) :
+    transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) μ ν = ∞ := by
+  have hW : wassersteinEDist p μ ν = ∞ := by
+    by_contra h
+    exact hν ((hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ).2 h)
+  rw [← wassersteinEDist_rpow_eq_transportCost hd hp0 hp, hW,
+    ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp0 hp)]
+
+end InfiniteMoment
 
 section Polish
 
@@ -847,7 +1138,7 @@ theorem exists_isCoupling_eLpNorm_eq_wassersteinEDist (hp0 : p ≠ 0) (hp : p �
     simp [ν', smul_smul, ENNReal.mul_inv_cancel hm0 hmtop]
   -- Normalise the marginals, optimise the resulting probability problem, and rescale its plan.
   obtain ⟨π, hπ⟩ := exists_isOptimalCoupling_edist_rpow μ' ν' p.toReal
-  obtain ⟨hπc, hval⟩ := (isOptimalCoupling_edist_rpow_iff hp0 hp).1 hπ
+  obtain ⟨hπc, hval⟩ := (isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).1 hπ
   have hscaled : IsCoupling (m • π) μ ν := hμeq ▸ hνeq ▸ hπc.smul m
   refine ⟨m • π, hscaled, ?_⟩
   rw [eLpNorm_smul_measure_of_ne_zero hm0, smul_eq_mul, hval, ← hμeq, ← hνeq,
@@ -864,7 +1155,7 @@ theorem wassersteinEDist_eq_zero_iff (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ ν : M
   obtain ⟨π, hπ, hval⟩ :=
     exists_isCoupling_eLpNorm_eq_wassersteinEDist hp0 hp μ ν ⟨π₀, hπ₀⟩
   have hzero : (fun z : X × X ↦ edist z.1 z.2) =ᵐ[π] 0 :=
-    (eLpNorm_eq_zero_iff measurable_edist.aestronglyMeasurable hp0).1 (hval.trans h)
+    (eLpNorm_eq_zero_iff hp0).1 (hval.trans h)
   have hdiag : (Prod.fst : X × X → X) =ᵐ[π] Prod.snd := by
     filter_upwards [hzero] with z hz using edist_eq_zero.1 hz
   rw [← hπ.fst_eq, ← hπ.snd_eq, Measure.fst, Measure.snd, Measure.map_congr hdiag]
@@ -911,7 +1202,7 @@ theorem wassersteinEDist_top_eq_zero_iff (μ ν : Measure X) [IsFiniteMeasure μ
           wassersteinEDist_smul (p := ∞) (a := m⁻¹) hminv₀ hminv_top
       _ = 0 := by rw [h, mul_zero]
   have hone : wassersteinEDist 1 μ' ν' = 0 := nonpos_iff_eq_zero.mp <|
-    (wassersteinEDist_mono_exponent measurable_edist le_top μ' ν').trans_eq htop
+    (wassersteinEDist_mono_exponent le_top μ' ν').trans_eq htop
   have heq : μ' = ν' :=
     (wassersteinEDist_eq_zero_iff one_ne_zero ENNReal.one_ne_top μ' ν').1 hone
   calc

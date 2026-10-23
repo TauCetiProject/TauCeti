@@ -41,6 +41,8 @@ carrier, its group scheme and its triality automorphism remains downstream.
   three data fields.
 * `TauCeti.D4Tripled.raisingMatrix`, `loweringMatrix`, and `cartanGeneratorMatrix`: the integral
   Chevalley generators on the tripled weight basis.
+* `TauCeti.D4Tripled.rootMatrix`: the raising and lowering matrices as one family indexed by
+  signed nodes.
 * `TauCeti.D4Tripled.raisingMatrix_trialityPerm`, `loweringMatrix_trialityPerm`, and
   `cartanGeneratorMatrix_trialityPerm`: triality carries each generator at node `i` to the
   generator at node `trialityPermD4 i`, entrywise along `d4TripledTrialityPerm`.
@@ -75,12 +77,14 @@ def weightTable : TauCeti.MinusculeWeightTable (Fin 4) (Fin 24) where
   cartanMatrix := CartanMatrix.D 4
   weight := d4TripledWeight
   reflection i := d4TripledReflection i
-  cartanMatrix_isSymm := CartanMatrix.D_isSymm 4
   cartanMatrix_diag i := CartanMatrix.D_diag (n := 4) i
-  cartanMatrix_isSimplyLaced := CartanMatrix.isSimplyLaced_D 4
+  cartanMatrix_offDiag_nonpos := CartanMatrix.D_off_diag_nonpos 4
+  cartanMatrix_zero_comm i j := by rw [(CartanMatrix.D_isSymm 4).apply]
   weight_eq_neg_one_or_eq_zero_or_eq_one :=
     d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one
-  weight_reflection := d4TripledWeight_reflection_apply
+  weight_reflection i a j := by
+    rw [(CartanMatrix.D_isSymm 4).apply]
+    exact d4TripledWeight_reflection_apply i a j
   weight_injective := d4TripledWeight_injective
 
 /-- The Cartan matrix of the tripled type-`D₄` weight table is the `D₄` Cartan matrix. -/
@@ -149,6 +153,28 @@ def loweringMatrix (i : Fin 4) : Matrix (Fin 24) (Fin 24) ℤ :=
 /-- The diagonal matrix of the `i`-th simple coroot on the integral tripled weight basis. -/
 def cartanGeneratorMatrix (i : Fin 4) : Matrix (Fin 24) (Fin 24) ℤ :=
   weightTable.cartanGeneratorMatrix i
+
+/-- The integral matrix of a numbered simple-root generator on the tripled module: a raising
+matrix at a positive index, a lowering matrix at a negative one. -/
+def rootMatrix : Fin 4 ⊕ Fin 4 → Matrix (Fin 24) (Fin 24) ℤ
+  | .inl i => raisingMatrix i
+  | .inr i => loweringMatrix i
+
+/-- The integral matrix of a positive numbered root generator is the raising matrix. -/
+@[simp]
+theorem rootMatrix_inl (i : Fin 4) : rootMatrix (.inl i) = raisingMatrix i := (rfl)
+
+/-- The integral matrix of a negative numbered root generator is the lowering matrix. -/
+@[simp]
+theorem rootMatrix_inr (i : Fin 4) : rootMatrix (.inr i) = loweringMatrix i := (rfl)
+
+/-- The raising matrix is the raising matrix of the tripled weight table. -/
+theorem raisingMatrix_def (i : Fin 4) : raisingMatrix i = weightTable.raisingMatrix i :=
+  (rfl)
+
+/-- The lowering matrix is the lowering matrix of the tripled weight table. -/
+theorem loweringMatrix_def (i : Fin 4) : loweringMatrix i = weightTable.loweringMatrix i :=
+  (rfl)
 
 /-- The entry formula for a simple raising matrix. -/
 @[simp]

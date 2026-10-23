@@ -6,22 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
--- `TauCeti.MeasureTheory.Integral.Dilation` is imported publicly: `TauCeti.lintegral_comp_inv_smul`
--- is the `∫⁻` form of the statement below, so the two belong together for a reader of either.
-public import TauCeti.MeasureTheory.Integral.Dilation
+public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Dilation scaling of the `Lᵖ` seminorm
 
 Dilating the variable of a function on a finite-dimensional real normed space `E` by `r⁻¹`, for
 `r > 0`, multiplies its `Lᵖ` seminorm against an additive Haar measure by `r ^ (n / p)`, where
-`n` is the dimension of `E` and `0 < p < ∞`. This is the `eLpNorm` form of the lower Lebesgue
-integral law `TauCeti.lintegral_comp_inv_smul`, obtained by applying the latter to
-`y ↦ ‖f y‖ₑ ^ p` and taking a `p`-th root.
+`n` is the dimension of `E`. Here `n / p` stands for `n / p.toReal`, which is `0` at `p = 0` and
+`p = ∞` by Lean's conventions `ENNReal.toReal ∞ = 0` and `x / 0 = 0`, so at those two exponents
+the factor is `1`. This is the `eLpNorm` counterpart of the lower Lebesgue integral law
+`TauCeti.lintegral_comp_inv_smul`.
+
+More generally, composing with a linear automorphism `e` multiplies the `Lᵖ` seminorm by
+`|det e|^(-1 / p)`, and the `Lᵖ` seminorm on a preimage `e ⁻¹' s` by the same factor relative to
+the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a continuous extended norm.
 
 ## Main declarations
 
 * `TauCeti.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`.
+* `TauCeti.eLpNorm_comp_continuousLinearEquiv`: `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
+* `TauCeti.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity for the `Lᵖ`
+  seminorms on `e ⁻¹' s` and on `s`.
 -/
 
 public section
@@ -33,23 +39,43 @@ open scoped ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
-  {G : Type*} [NormedAddCommGroup G]
+  {G : Type*} [TopologicalSpace G] [ContinuousENorm G]
 
 /-- **Dilation scaling of the `Lᵖ` seminorm:** `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`, where
-`n` is the dimension of the ambient space. -/
-theorem eLpNorm_comp_inv_smul (f : E → G) {r : ℝ} (hr : 0 < r) {p : ℝ≥0∞} (hp₀ : p ≠ 0)
-    (hp : p ≠ ∞) :
-    eLpNorm (fun x => f (r⁻¹ • x)) p μ =
-      ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) * eLpNorm f p μ := by
-  have ht : 0 < p.toReal := ENNReal.toReal_pos hp₀ hp
-  have key := lintegral_comp_inv_smul μ (fun y => ‖f y‖ₑ ^ p.toReal) hr
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp, eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp,
-    key, ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
-  have hpow : ((r ^ finrank ℝ E : ℝ)) ^ (1 / p.toReal) = r ^ ((finrank ℝ E : ℝ) / p.toReal) := by
-    rw [← Real.rpow_natCast r (finrank ℝ E), ← Real.rpow_mul hr.le]
-    ring_nf
+`n` is the dimension of the ambient space. The exponent `n / p` is `n / p.toReal`, which is `0` at
+`p = 0` and `p = ∞`, where the factor is thus `1`. -/
+theorem eLpNorm_comp_inv_smul (u : E → G) {r : ℝ} (hr : 0 < r) (p : ℝ≥0∞) :
+    eLpNorm (fun x => u (r⁻¹ • x)) p μ =
+      ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) * eLpNorm u p μ := by
+  have hr' : r⁻¹ ≠ 0 := inv_ne_zero hr.ne'
+  rw [← Function.comp_def, ← (measurableEmbedding_const_smul₀ hr').eLpNorm_map_measure,
+    Measure.map_addHaar_smul μ hr', eLpNorm_smul_measure_of_ne_zero (by positivity), smul_eq_mul]
   congr 1
-  rw [← hpow]
-  exact ENNReal.ofReal_rpow_of_pos (by positivity : (0 : ℝ) < r ^ finrank ℝ E)
+  rw [inv_pow, inv_inv, abs_of_pos (by positivity), ENNReal.ofReal_rpow_of_pos (by positivity),
+    ← Real.rpow_natCast, ← Real.rpow_mul hr.le, one_div, ENNReal.toReal_inv, div_eq_mul_inv]
+
+/-- **Linear change of variables in the `Lᵖ` seminorm on a set:** composing with a linear
+automorphism `e` multiplies the `Lᵖ` seminorm on `e ⁻¹' s`, against an additive Haar measure, by
+`|det e|^(-1 / p)` relative to the `Lᵖ` seminorm of the function on `s`. The set `s` need not be
+measurable. -/
+theorem eLpNorm_comp_continuousLinearEquiv_restrict_preimage
+    (u : E → G) (e : E ≃L[ℝ] E) (p : ℝ≥0∞) {s : Set E} :
+    eLpNorm (u ∘ e) p (μ.restrict (e ⁻¹' s)) =
+      ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
+        eLpNorm u p (μ.restrict s) := by
+  have hdet : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 := (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
+  have hmap : Measure.map e μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
+    Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
+  have he : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
+  rw [← he.eLpNorm_map_measure, ← he.restrict_map, hmap, Measure.restrict_smul,
+    eLpNorm_smul_measure_of_ne_zero (by simpa using hdet), smul_eq_mul]
+
+/-- **Linear change of variables in the `Lᵖ` seminorm:** composing with a linear automorphism `e`
+multiplies the `Lᵖ` seminorm against an additive Haar measure by `|det e|^(-1 / p)`. The exponent
+`1 / p` is `(1 / p).toReal`, which is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. -/
+theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p : ℝ≥0∞) :
+    eLpNorm (u ∘ e) p μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
+      eLpNorm u p μ := by
+  simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
 
 end TauCeti

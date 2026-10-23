@@ -50,7 +50,7 @@ namespace TauCeti
 
 namespace IsFiniteType
 
-variable {B : Type*} [Fintype B] [DecidableEq B] {A : Matrix B B ℤ}
+variable {B : Type*} [DecidableEq B] {A : Matrix B B ℤ}
 
 omit [DecidableEq B] in
 private lemma matrix_apply_eq_neg_one_iff_adj (h : IsFiniteType A) {i j : B} (hij : i ≠ j)
@@ -268,7 +268,7 @@ edge do not obstruct the conclusion.
 The returned map is injective, so `TauCeti.IsFiniteType.submatrix` applies directly. Its matrix
 identity is oriented to match `TauCeti.doubleForkCartanMatrix`, the obstruction proved in
 `TauCeti.LinearAlgebra.RootSystem.FiniteType.AffineD`. -/
-theorem exists_doubleFork_submatrix (h : IsFiniteType A) {u v : B}
+theorem exists_doubleFork_submatrix [Fintype B] (h : IsFiniteType A) {u v : B}
     (huv : (diagramGraph A).Reachable u v)
     (hsl : {w | (diagramGraph A).Reachable u w}.Pairwise fun i j ↦ A i j = 0 ∨ A i j = -1)
     (huv_ne : u ≠ v)
@@ -350,7 +350,7 @@ theorem exists_doubleFork_submatrix (h : IsFiniteType A) {u v : B}
 `TauCeti.IsFiniteType.exists_doubleFork_submatrix`, simple-lacedness is needed only on the
 component of `u`. Otherwise that theorem produces an affine `D` principal submatrix,
 contradicting `TauCeti.not_isFiniteType_doubleForkCartanMatrix`. -/
-theorem eq_of_reachable_of_degree_eq_three (h : IsFiniteType A) {u v : B}
+theorem eq_of_reachable_of_degree_eq_three [Fintype B] (h : IsFiniteType A) {u v : B}
     (huv : (diagramGraph A).Reachable u v)
     (hsl : {w | (diagramGraph A).Reachable u w}.Pairwise fun i j ↦ A i j = 0 ∨ A i j = -1)
     (hu : (diagramGraph A).degree u = 3) (hv : (diagramGraph A).degree v = 3) :
@@ -363,7 +363,7 @@ theorem eq_of_reachable_of_degree_eq_three (h : IsFiniteType A) {u v : B}
 
 /-- **A connected simply-laced finite-type diagram has at most one branch vertex.** This is the
 connected form used when extracting the `D` and `E` Dynkin diagrams from a finite-type matrix. -/
-theorem eq_of_degree_eq_three (h : IsFiniteType A) (hsl : A.IsSimplyLaced)
+theorem eq_of_degree_eq_three [Fintype B] (h : IsFiniteType A) (hsl : A.IsSimplyLaced)
     (hconn : (diagramGraph A).Connected) {u v : B}
     (hu : (diagramGraph A).degree u = 3) (hv : (diagramGraph A).degree v = 3) :
     u = v :=

@@ -67,12 +67,10 @@ indecomposable, at the price of that hypothesis.
 
 ## References
 
-This is the "descent by height" step of the reflection induction in Layer 5, Gabriel's theorem, of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`: it supplies the map to
-positive roots that the layer's `gabriel_indecomposable_equiv_posRoot` target is built from. See
-Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
-Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras* I,
-VII.5.
+This is the step of the reflection induction for Gabriel's theorem showing that the dimension vector
+of an indecomposable is a positive root. See Bernstein--Gelfand--Ponomarev, *Coxeter functors and
+Gabriel's theorem*, and Assem--Simson--Skowroński, *Elements of the Representation Theory of
+Associative Algebras* I, VII.5.
 -/
 
 public section
@@ -144,22 +142,7 @@ theorem titsForm_dimVector_eq_one_of_isZero_reflectionFunctorList :
               (titsForm_reflect (V := V) i _).symm
           _ = 1 := ih
       · -- The stage annihilates: the representation is the vertex simple at the sink.
-        obtain ⟨y, hy, hspan⟩ :=
-          exists_ne_zero_span_eq_top_of_forall_subsingleton hi.path_self_eq_nil hM hsub
-        have hone : @dimVector k V fld q M i = 1 := by
-          rw [dimVector_apply]
-          exact (finrank_eq_one_iff_of_nonzero (K := k) y hy).mpr hspan
-        have hzero : ∀ j : V, j ≠ i → @dimVector k V fld q M j = 0 := by
-          intro j hj
-          let : Subsingleton (M.obj ((Paths.of V).obj j)) := hsub j hj
-          rw [dimVector_apply]
-          exact Module.finrank_zero_of_subsingleton (R := k)
-        have hd : (fun j : V ↦ (@dimVector k V fld q M j : ℤ)) = Pi.single i 1 := by
-          funext j
-          rcases eq_or_ne j i with rfl | hj
-          · rw [Pi.single_eq_same, hone, Nat.cast_one]
-          · rw [Pi.single_eq_of_ne hj, hzero j hj, Nat.cast_zero]
-        rw [hd]
+        rw [dimVector_eq_single_of_forall_subsingleton hi.path_self_eq_nil hM hsub]
         exact @titsForm_single_of_isEmpty V q fV hq _ i hi.isEmpty_hom_self
 
 /-! ### Every indecomposable representation is annihilated by a power of the Coxeter functor -/

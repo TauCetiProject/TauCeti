@@ -24,8 +24,10 @@ The theorem is phrased for a map whose domain is the subtype `C`. Thus its fibre
 interiors are taken in the topology of the curve itself, which is the natural form for boundary
 maps and avoids an ambient-space side condition.
 
-## Main result
+## Main results
 
+* `TauCeti.IsJordanCurve.subsingleton_fiber_of_isPreconnected_of_interior_eq_empty` — a
+  preconnected, interiorless point fibre of a continuous map from a Jordan curve is a subsingleton.
 * `TauCeti.IsJordanCurve.injective_of_isPreconnected_fiber_of_interior_fiber_eq_empty` — a
   continuous map from a Jordan curve with preconnected, interiorless point fibres is injective.
 * `TauCeti.IsJordanCurve.injective_iff_isPreconnected_fiber_of_interior_fiber_eq_empty` — under
@@ -46,32 +48,35 @@ open Set Topology
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
   [T2Space X] [T1Space Y] {C : Set X} {g : C → Y}
 
-/-- **A monotone map from a Jordan curve with interiorless fibres is injective.** Let `C` be a
-Jordan curve and `g : C → Y` a continuous map to a `T₁` space. If every point fibre of `g` is
-preconnected and has empty interior in `C`, then `g` is injective.
-
-Continuity makes each fibre closed, hence compact because `C` is compact. Empty interior says its
-complement is dense. The fibre is therefore a nowhere-dense subcontinuum of the Jordan curve, so
-`TauCeti.IsJordanCurve.subsingleton_of_subset_closure_sdiff` makes it a subsingleton. -/
-theorem IsJordanCurve.injective_of_isPreconnected_fiber_of_interior_fiber_eq_empty
-    (hC : IsJordanCurve C) (hg : Continuous g)
-    (hpre : ∀ y, IsPreconnected {x | g x = y})
-    (hinterior : ∀ y, interior {x | g x = y} = ∅) : Function.Injective g := by
+/-- **A preconnected interiorless fibre of a map from a Jordan curve is a subsingleton.** Let `C`
+be a Jordan curve and `g : C → Y` a continuous map to a `T₁` space. If the fibre of `g` over `y` is
+preconnected and has empty interior in `C`, then it has at most one point. -/
+theorem IsJordanCurve.subsingleton_fiber_of_isPreconnected_of_interior_eq_empty
+    (hC : IsJordanCurve C) (hg : Continuous g) {y : Y}
+    (hpre : IsPreconnected {x | g x = y}) (hinterior : interior {x | g x = y} = ∅) :
+    {x | g x = y}.Subsingleton := by
+  -- the fibre is closed, hence compact, and its complement is dense: it is a nowhere-dense
+  -- subcontinuum of the Jordan curve
   let _ : CompactSpace C := isCompact_iff_compactSpace.mp hC.isCompact
   have hJ : IsJordanCurve (univ : Set C) := by
     obtain ⟨e⟩ := isJordanCurve_iff.mp hC
     exact isJordanCurve_iff.mpr ⟨(Homeomorph.Set.univ C).trans e⟩
-  intro x y hxy
-  let S : Set C := {z | g z = g x}
-  have hScompact : IsCompact S := by
-    exact (isClosed_singleton.preimage hg).isCompact
-  have hSdense : S ⊆ closure ((univ : Set C) \ S) := by
-    have hdense : Dense Sᶜ := interior_eq_empty_iff_dense_compl.mp (hinterior (g x))
-    rw [← compl_eq_univ_sdiff, hdense.closure_eq]
-    exact subset_univ S
-  have hSsub : S.Subsingleton :=
-    hJ.subsingleton_of_subset_closure_sdiff (subset_univ S) hScompact (hpre (g x)) hSdense
-  exact hSsub (by simp [S]) (by simp [S, hxy])
+  have hdense : Dense {x | g x = y}ᶜ := interior_eq_empty_iff_dense_compl.mp hinterior
+  refine hJ.subsingleton_of_subset_closure_sdiff (subset_univ _)
+    (isClosed_singleton.preimage hg).isCompact hpre ?_
+  rw [← compl_eq_univ_sdiff, hdense.closure_eq]
+  exact subset_univ _
+
+/-- **A monotone map from a Jordan curve with interiorless fibres is injective.** Let `C` be a
+Jordan curve and `g : C → Y` a continuous map to a `T₁` space. If every point fibre of `g` is
+preconnected and has empty interior in `C`, then `g` is injective, by
+`TauCeti.IsJordanCurve.subsingleton_fiber_of_isPreconnected_of_interior_eq_empty`. -/
+theorem IsJordanCurve.injective_of_isPreconnected_fiber_of_interior_fiber_eq_empty
+    (hC : IsJordanCurve C) (hg : Continuous g)
+    (hpre : ∀ y, IsPreconnected {x | g x = y})
+    (hinterior : ∀ y, interior {x | g x = y} = ∅) : Function.Injective g := fun x _ hxy =>
+  hC.subsingleton_fiber_of_isPreconnected_of_interior_eq_empty hg (hpre (g x)) (hinterior (g x))
+    rfl hxy.symm
 
 /-- **For an interiorless-fibre map from a Jordan curve, monotonicity is equivalent to
 injectivity.** The forward implication is

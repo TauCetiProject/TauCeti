@@ -9,6 +9,7 @@ public import Mathlib.Probability.CDF
 public import Mathlib.Probability.HasLaw
 public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
 public import TauCeti.Probability.Distributions.Beta.Basic
+import TauCeti.Probability.Cdf
 
 /-!
 # The cumulative distribution function of a beta law
@@ -159,11 +160,7 @@ theorem measureReal_Ioc_betaMeasure (hα : 0 < α) (hβ : 0 < β) {y : ℝ} (hyx
     (betaMeasure α β).real (Ioc y x) =
       regularizedIncompleteBeta α β x - regularizedIncompleteBeta α β y := by
   have hp : IsProbabilityMeasure (betaMeasure α β) := isProbabilityMeasureBeta hα hβ
-  have hunion : (betaMeasure α β).real (Iic y) + (betaMeasure α β).real (Ioc y x) =
-      (betaMeasure α β).real (Iic x) := by
-    rw [← measureReal_union (Iic_disjoint_Ioc le_rfl) measurableSet_Ioc, Iic_union_Ioc_eq_Iic hyx]
-  rw [measureReal_Iic_betaMeasure hα hβ x, measureReal_Iic_betaMeasure hα hβ y] at hunion
-  linarith
+  rw [Measure.measureReal_Ioc_eq_cdf_sub _ hyx, cdf_betaMeasure_eq hα hβ, cdf_betaMeasure_eq hα hβ]
 
 /-- The upper tail of a beta law is `1 - I_x(α, β)`. -/
 @[simp]

@@ -26,12 +26,20 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {α : Type*} [LinearOrder α] {X : Type*} [PseudoEMetricSpace X]
+variable {α : Type*} [LinearOrder α] {X : Type*}
+
+section WeakPseudoEMetricSpace
+
+variable [TopologicalSpace X] [WeakPseudoEMetricSpace X]
 
 /-- The metric variation of a path in a subtype is unchanged by applying its coercion. -/
 @[simp] theorem eVariationOn_subtypeVal_comp {s : Set X} {f : α → s} {t : Set α} :
     eVariationOn f t = eVariationOn ((Subtype.val : s → X) ∘ f) t := by
   rfl
+
+end WeakPseudoEMetricSpace
+
+variable [PseudoEMetricSpace X]
 
 /-- If the total variations of the maps `F i` on `s` are eventually bounded by `u i`, then the
 total variation on `s` of a pointwise limit of the `F i` is at most `liminf u`. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 public import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Side lengths in the Schwarz--Christoffel formula
@@ -142,13 +143,6 @@ theorem intervalIntegrable_schwarzChristoffelDensity {ι : Type*} [Fintype ι]
   · simp [hkq, hpq.ne']
   · simp [hkp, hkq]
 
-private lemma not_mem_Ioo_prevertices_succ (a : Fin (n + 1) → ℝ) (ha : StrictMono a)
-    (i : Fin n) (k : Fin (n + 1)) : a k ∉ Ioo (a i.castSucc) (a i.succ) := by
-  intro hk
-  have hik : i.castSucc < k := (ha.lt_iff_lt).mp hk.1
-  have hki : k < i.succ := (ha.lt_iff_lt).mp hk.2
-  exact (Fin.le_of_castSucc_lt_of_succ_lt hik hki).false
-
 /-- For strictly ordered prevertices, the density is integrable between consecutive prevertices
 when the two endpoint exponents are greater than `-1`. -/
 theorem intervalIntegrable_schwarzChristoffelDensity_succ (a e : Fin (n + 1) → ℝ)
@@ -157,7 +151,7 @@ theorem intervalIntegrable_schwarzChristoffelDensity_succ (a e : Fin (n + 1) →
     IntervalIntegrable (schwarzChristoffelDensity a e) volume
       (a i.castSucc) (a i.succ) := by
   apply intervalIntegrable_schwarzChristoffelDensity a e (ha i.castSucc_lt_succ)
-    (fun k _ ↦ not_mem_Ioo_prevertices_succ a ha i k)
+    (fun k _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone i k)
   · simpa [ha.injective.eq_iff, Finset.filter_eq'] using hleft
   · simpa [ha.injective.eq_iff, Finset.filter_eq'] using hright
 
@@ -176,7 +170,7 @@ theorem schwarzChristoffelVertex_succ_sub_eq_sideIntegral_mul (a e : Fin (n + 1)
   let C : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
   have hpq : p < q := ha i.castSucc_lt_succ
   have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo p q := by
-    exact fun k _ ↦ not_mem_Ioo_prevertices_succ a ha i k
+    exact fun k _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone i k
   have hsum (k : Fin (n + 1)) : ∑ l with a l = a k, e l = e k := by
     simp [ha.injective.eq_iff, Finset.filter_eq']
   have hleftsum : -1 < ∑ k with a k = p, e k := by
@@ -211,7 +205,7 @@ theorem schwarzChristoffelSideIntegral_pos (a e : Fin (n + 1) → ℝ) (ha : Str
     (ha i.castSucc_lt_succ)
   intro x hx
   exact schwarzChristoffelDensity_pos a e fun k _ hxk ↦
-    not_mem_Ioo_prevertices_succ a ha i k (hxk ▸ hx)
+    not_mem_Ioo_castSucc_succ a ha.monotone i k (hxk ▸ hx)
 
 /-- The side-length integral is the Euclidean distance between the corresponding consecutive
 Schwarz--Christoffel vertices. -/

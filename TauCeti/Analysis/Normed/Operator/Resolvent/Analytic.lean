@@ -55,21 +55,21 @@ variable {A : X →ₗ.[𝕜] X} {lambda : 𝕜}
 
 omit [CompleteSpace X] in
 private theorem eventually_norm_sub_mul_norm_resolvent_lt_one :
-    ∀ᶠ mu in 𝓝 lambda, ‖mu - lambda‖ * ‖resolvent A lambda‖ < 1 := by
-  have hradius : 0 < 1 / (‖resolvent A lambda‖ + 1) := by positivity
+    ∀ᶠ mu in 𝓝 lambda, ‖mu - lambda‖ * ‖A.resolvent lambda‖ < 1 := by
+  have hradius : 0 < 1 / (‖A.resolvent lambda‖ + 1) := by positivity
   filter_upwards [eventually_norm_sub_lt lambda hradius] with mu hmu
-  have hprod : ‖mu - lambda‖ * (‖resolvent A lambda‖ + 1) < 1 :=
+  have hprod : ‖mu - lambda‖ * (‖A.resolvent lambda‖ + 1) < 1 :=
     (lt_div_iff₀ (by positivity)).mp (by simpa using hmu)
   exact lt_of_le_of_lt
     (mul_le_mul_of_nonneg_left (by linarith) (norm_nonneg (mu - lambda))) hprod
 
 /-- The resolvent of a `LinearPMap` is analytic at every point of its resolvent set. -/
-theorem analyticAt_resolvent (h : lambda ∈ resolventSet A) :
-    AnalyticAt 𝕜 (resolvent A) lambda := by
-  let R : X →L[𝕜] X := resolvent A lambda
+theorem analyticAt_resolvent (h : lambda ∈ A.resolventSet) :
+    AnalyticAt 𝕜 (A.resolvent) lambda := by
+  let R : X →L[𝕜] X := A.resolvent lambda
   let localResolvent : 𝕜 → X →L[𝕜] X := fun mu =>
     R * Ring.inverse (1 - (lambda - mu) • R)
-  have heq : resolvent A =ᶠ[𝓝 lambda] localResolvent := by
+  have heq : A.resolvent =ᶠ[𝓝 lambda] localResolvent := by
     filter_upwards [eventually_norm_sub_mul_norm_resolvent_lt_one
       (A := A) (lambda := lambda)] with mu hmu
     simpa only [R, localResolvent] using resolvent_eq_mul_inverse_one_sub h hmu
@@ -83,7 +83,7 @@ theorem analyticAt_resolvent (h : lambda ∈ resolventSet A) :
 
 /-- The resolvent of a `LinearPMap` is analytic in operator norm on its resolvent set. -/
 theorem _root_.LinearPMap.analyticOnNhd_resolvent (A : X →ₗ.[𝕜] X) :
-    AnalyticOnNhd 𝕜 (resolvent A) (resolventSet A) :=
+    AnalyticOnNhd 𝕜 (A.resolvent) (A.resolventSet) :=
   fun _ h => analyticAt_resolvent h
 
 end TauCeti.LinearPMap

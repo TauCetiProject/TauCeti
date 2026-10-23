@@ -17,10 +17,10 @@ This file records the ambient independence and Lie-span results for those genera
 split-Cartan constructions can use them as simple-root coordinates. The generator membership and
 coordinate lemmas live with the generator definitions in `Root/Generators.lean`.
 
-Independence over a commutative domain comes from
-`DynkinType.linearIndependent_typeDSimpleRoot_cast`: the simple-root matrix has determinant
-squaring to `4`, which is nonzero when `2` is nonzero. The ambient independence and Lie-span
-theorems then expose the resulting split Cartan structure.
+Independence over a commutative domain in which `2` is nonzero comes from
+`DynkinType.linearIndependent_typeDSimpleRoot_cast`: the doubled fundamental coweights pair with
+the simple roots diagonally by `2`, which is regular in such a domain. The ambient independence
+and Lie-span theorems then expose the resulting split Cartan structure.
 
 ## Main declarations
 
@@ -50,7 +50,8 @@ private theorem linearIndependent_cartanGenerator_subtype (n : ℕ) (hn : 4 ≤ 
         cartanGenerator_mem_typeDDiagonalCartan n hn i⟩ : typeDDiagonalCartan K (Fin n))) := by
   have hrows : LinearIndependent K (fun i j =>
       (DynkinType.typeDSimpleRoot n hn i j : K)) :=
-    DynkinType.linearIndependent_typeDSimpleRoot_cast (K := K) hn
+    DynkinType.linearIndependent_typeDSimpleRoot_cast
+      (IsRegular.of_ne_zero (NeZero.ne (2 : K))).right hn
   have hcoord : LinearIndependent K (fun i =>
       typeDDiagonalEquiv (K := K) (ι := Fin n)
         (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))) :=

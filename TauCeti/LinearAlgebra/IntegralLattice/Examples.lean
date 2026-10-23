@@ -1,12 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.RadicalQuotient
 
 /-!
@@ -34,6 +34,8 @@ the affine form.
   `!![2, -2; -2, 2]`.
 * `TauCeti.IntegralLattice.affineA1RadicalQuotientIsometry`: the isometry from the radical
   quotient of `affineA1` to `a1`.
+* `TauCeti.IntegralLattice.infinite_vectorsOfNorm_zero_hyperbolicPlane`: the hyperbolic plane
+  has infinitely many vectors of norm zero, so shells of an indefinite lattice need not be finite.
 
 ## References
 
@@ -58,6 +60,11 @@ private def negativeA1Matrix : Matrix (Fin 1) (Fin 1) ℤ := fun _ _ => -2
 private def hyperbolicPlaneMatrix : Matrix (Fin 2) (Fin 2) ℤ := fun i j =>
   if i.val = j.val then 0 else 1
 
+private theorem hyperbolicPlaneMatrix_isSymm : hyperbolicPlaneMatrix.IsSymm := by
+  apply Matrix.IsSymm.ext
+  intro i j
+  simp only [hyperbolicPlaneMatrix, eq_comm]
+
 private def affineA1Matrix : Matrix (Fin 2) (Fin 2) ℤ := fun i j =>
   if i.val = j.val then 2 else -2
 
@@ -80,10 +87,29 @@ noncomputable def negativeA1 : IntegralLattice ℚ := by
 /-- The hyperbolic plane, with Gram matrix `!![0, 1; 1, 0]`. -/
 noncomputable def hyperbolicPlane : IntegralLattice (Fin 2 → ℚ) := by
   exact
-  ofGramMatrix (Pi.basisFun ℚ (Fin 2)) hyperbolicPlaneMatrix (by
-    apply Matrix.IsSymm.ext
-    intro i j
-    simp only [hyperbolicPlaneMatrix, eq_comm])
+  ofGramMatrix (Pi.basisFun ℚ (Fin 2)) hyperbolicPlaneMatrix hyperbolicPlaneMatrix_isSymm
+
+/-- The coordinate integral basis of the hyperbolic plane. -/
+noncomputable def hyperbolicPlaneBasis : Basis (Fin 2) ℤ hyperbolicPlane :=
+  ofGramMatrix.basis (Pi.basisFun ℚ (Fin 2)) hyperbolicPlaneMatrix hyperbolicPlaneMatrix_isSymm
+
+/-- The hyperbolic basis vectors are the standard coordinate vectors. -/
+@[simp] theorem coe_hyperbolicPlaneBasis (i : Fin 2) :
+    (hyperbolicPlaneBasis i : Fin 2 → ℚ) = Pi.single i 1 := by
+  have h := ofGramMatrix.coe_basis (Pi.basisFun ℚ (Fin 2)) hyperbolicPlaneMatrix
+    hyperbolicPlaneMatrix_isSymm i
+  exact h.trans (Pi.basisFun_apply ℚ (Fin 2) i)
+
+/-- The coordinate integral basis has the standard hyperbolic Gram matrix. -/
+@[simp] theorem gramMatrix_hyperbolicPlaneBasis :
+    hyperbolicPlane.gramMatrix hyperbolicPlaneBasis = !![0, 1; 1, 0] := by
+  have h := gramMatrix_ofGramMatrix (Pi.basisFun ℚ (Fin 2)) hyperbolicPlaneMatrix
+    hyperbolicPlaneMatrix_isSymm
+  have hg : hyperbolicPlane.gramMatrix hyperbolicPlaneBasis = hyperbolicPlaneMatrix := by
+    simpa only [hyperbolicPlane, hyperbolicPlaneBasis] using h
+  rw [hg]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [hyperbolicPlaneMatrix]
 
 /-- The degenerate affine `A₁` lattice, with Gram matrix `!![2, -2; -2, 2]`. -/
 noncomputable def affineA1 : IntegralLattice (Fin 2 → ℚ) := by
@@ -248,6 +274,19 @@ theorem isIndefinite_hyperbolicPlane : hyperbolicPlane.IsIndefinite := by
     norm_num
   · refine ⟨![1, -1], ?_⟩
     norm_num
+
+/-- **The hyperbolic plane has an infinite shell of norm zero.** It is nondegenerate, but every
+integer multiple of the first coordinate vector is isotropic, so the finiteness of shells of a
+positive definite lattice cannot be weakened to nondegeneracy. -/
+theorem infinite_vectorsOfNorm_zero_hyperbolicPlane :
+    (hyperbolicPlane.vectorsOfNorm 0).Infinite := by
+  let f : ℤ → hyperbolicPlane := fun a ↦
+    ⟨![(a : ℚ), 0], (mem_hyperbolicPlane_carrier_iff _).mpr fun i ↦ by
+      fin_cases i <;> simp⟩
+  refine Set.infinite_of_injective_forall_mem (f := f) (fun a b hab ↦ ?_) fun a ↦ ?_
+  · have := congrArg (fun x : hyperbolicPlane ↦ (x : Fin 2 → ℚ) 0) hab
+    simpa [f] using this
+  · simp [f, mem_vectorsOfNorm]
 
 /-- The hyperbolic plane has signature `(1, 0, 1)`. -/
 @[simp]

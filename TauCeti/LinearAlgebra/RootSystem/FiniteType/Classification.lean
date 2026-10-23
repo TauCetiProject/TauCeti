@@ -73,7 +73,7 @@ namespace TauCeti
 
 namespace IsFiniteType
 
-variable {B : Type*} [Fintype B] {A : Matrix B B ℤ}
+variable {B : Type*} {A : Matrix B B ℤ}
 
 /-- **The classification of finite-type Cartan matrices.** Every nonempty connected finite-type
 matrix agrees with the standard Cartan matrix of a unique valid Dynkin type after a simultaneous
@@ -82,6 +82,8 @@ theorem existsUnique_dynkinType (h : IsFiniteType A) (hconn : (diagramGraph A).C
     ∃! t : DynkinType, t.Valid ∧
       ∃ e : B ≃ Fin t.rank, ∀ i j, A i j = t.cartanMatrix (e i) (e j) := by
   classical
+  have := h.finite
+  have : Fintype B := Fintype.ofFinite B
   by_cases h3 : ∃ u v : B, A u v * A v u = 3
   · obtain ⟨u, v, huv⟩ := h3
     obtain ⟨e, he⟩ := h.exists_equiv_cartanMatrix_eq_G2_of_apply_mul_apply_eq_three

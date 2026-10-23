@@ -25,8 +25,9 @@ The product-to-zero-one direction is Hewitt–Savage, packaged for the product l
 `exchangeableSigma_trivial_of_infinitePi`.
 
 The converse is the substantive half, and it runs at the level of the *mixing law* rather than the
-directing map. The canonical witness `directingProbabilityMeasure` is `tailProcess`-measurable, and
-`pathTail_le_exchangeableSigma` puts the path tail inside `exchangeableSigma`, so every preimage
+directing map. The canonical witness `tailConditionalProbabilityMeasure` is
+`tailProcess`-measurable, and `pathTail_le_exchangeableSigma` puts the path tail inside
+`exchangeableSigma`, so every preimage
 `ν ⁻¹' A` is an exchangeable event. Triviality therefore makes `ρ.map ν` a zero-one measure on
 `ProbabilityMeasure α`, hence a Dirac measure by
 `IsZeroOneMeasure.exists_eq_dirac_probabilityMeasure`, and the de Finetti mixture representation
@@ -69,16 +70,16 @@ theorem infinitePi_of_exchangeableSigma_trivial [StandardBorelSpace α]
     (exchangeable_iff_exchangeableLaw_pathLaw fun n => (hcoord n).aemeasurable).2
       (by simpa [pathLaw_def] using hρ)
   have hmix : MixedIIDWith ρ (fun n (x : ℕ → α) => x n)
-      (directingProbabilityMeasure ρ fun n (x : ℕ → α) => x n) :=
+      (tailConditionalProbabilityMeasure ρ fun n (x : ℕ → α) => x n) :=
     mixedIIDWith_of_contractable (hexch.contractable fun n => (hcoord n).aemeasurable) hcoord
-  set ν := directingProbabilityMeasure ρ fun n (x : ℕ → α) => x n with hν
+  set ν := tailConditionalProbabilityMeasure ρ fun n (x : ℕ → α) => x n
   have hν_meas : Measurable ν := hmix.measurable_mixingRepresentative
   -- Preimages under the canonical witness are exchangeable events.
   have hpre : ∀ {A : Set (ProbabilityMeasure α)}, MeasurableSet A →
       MeasurableSet[exchangeableSigma α] (ν ⁻¹' A) := by
     intro A hA
     have htail : MeasurableSet[tailProcess fun n (x : ℕ → α) => x n] (ν ⁻¹' A) :=
-      measurable_tailProcess_directingProbabilityMeasure hA
+      measurable_tailProcess_tailConditionalProbabilityMeasure hA
     exact pathTail_le_exchangeableSigma _ (by rwa [pathTail_eq_tailProcess])
   have hzo : IsZeroOneMeasure (ρ.map ν) :=
     ⟨fun A hA => by rw [Measure.map_apply hν_meas hA]; exact htriv _ (hpre hA)⟩

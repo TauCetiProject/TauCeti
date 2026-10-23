@@ -60,7 +60,6 @@ private theorem extendScalars_map_apply (x : A ⊗[R] L) :
     LieAlgebra.ExtendScalars.map (AlgHom.id R A) f x =
       LinearMap.baseChange A (f : L →ₗ[R] L') x := by
   induction x with
-  | zero => simp
   | tmul a x => simp
   | add x y hx hy => simp [hx, hy]
 

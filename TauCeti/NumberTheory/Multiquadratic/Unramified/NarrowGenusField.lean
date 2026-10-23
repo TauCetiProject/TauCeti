@@ -108,7 +108,7 @@ theorem exists_algEquiv_apply_eq (hL : IsNarrowGenusField d L y)
   have hML : Module.finrank ℚ M ≤ Module.finrank ℚ L :=
     LinearMap.finrank_le_finrank_of_injective (f := ψ.toLinearMap) ψ.injective
   have hrank : Module.finrank ℚ L = Module.finrank ℚ M := le_antisymm hLM hML
-  let e : L ≃ₐ[ℚ] M := TauCeti.algEquivOfFinrankEq φ hrank
+  let e : L ≃ₐ[ℚ] M := φ.algEquivOfFinrankEq hrank
   have hminpoly {N : Type u} [Field N] [NumberField N] {w : N}
       (hN : IsNarrowGenusField d N w) :
       minpoly ℚ w = Polynomial.X ^ 2 - Polynomial.C ((d : ℤ) : ℚ) := by

@@ -22,6 +22,8 @@ over the roots of a polynomial.
 
 * `TauCeti.exists_pos_closedBall_subset_and_lt_dist`: a common radius that is small enough for
   every centre at once.
+* `TauCeti.eq_of_dist_lt_of_dist_lt`: two such centres within the radius of a common point
+  coincide.
 -/
 
 public section
@@ -49,6 +51,13 @@ theorem exists_pos_closedBall_subset_and_lt_dist {T : Finset X} {U : X → Set X
     (((h1.and h2).filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin).exists
       (f := 𝓝[>] (0 : ℝ))
   exact ⟨r, hr, h1r, h2r⟩
+
+/-- Two points that are either equal or more than `2 * r` apart are equal if both lie within `r`
+of a common point. -/
+theorem eq_of_dist_lt_of_dist_lt {Y : Type*} [PseudoMetricSpace Y] {w w' y : Y} {r : ℝ}
+    (hsep : w ≠ w' → 2 * r < dist w w') (h : dist y w < r) (h' : dist y w' < r) : w = w' := by
+  by_contra hne
+  linarith [hsep hne, dist_triangle_left w w' y]
 
 end TauCeti
 

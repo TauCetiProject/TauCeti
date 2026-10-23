@@ -9,7 +9,7 @@ public import TauCeti.Probability.Exchangeability.IID
 public import TauCeti.Probability.Exchangeability.MarkovExchangeable
 public import TauCeti.Probability.Exchangeability.Recurrence.Basic
 public import TauCeti.Probability.Exchangeability.RowExchangeable
-public import TauCeti.Probability.Exchangeability.SuccessorArray
+public import TauCeti.Probability.Process.SuccessorArray
 public import Mathlib.Probability.Distributions.Uniform
 public import Mathlib.Probability.Independence.InfinitePi
 
@@ -87,24 +87,24 @@ namespace Probability
 /-- The fair-coin law on the three-letter alphabet `Fin 3`: the uniform law of the two letters `0`
 and `1`, giving no mass to the spare letter `2`. -/
 def spareStateLaw : Measure (Fin 3) :=
-  (PMF.uniformOfFinset {0, 1} (Finset.insert_nonempty 0 {1})).toMeasure
+  Measure.uniformOfFinset {0, 1}
 
 instance : IsProbabilityMeasure spareStateLaw :=
-  PMF.toMeasure.isProbabilityMeasure _
+  ⟨by
+    simp only [spareStateLaw, Measure.uniformOfFinset_apply]
+    simp [ENNReal.div_self]⟩
 
 /-- The spare letter is null. -/
 @[simp]
 theorem spareStateLaw_singleton_two : spareStateLaw {(2 : Fin 3)} = 0 := by
-  rw [spareStateLaw, PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _),
-    PMF.uniformOfFinset_apply_of_notMem _ (by decide)]
+  rw [spareStateLaw, Measure.uniformOfFinset_apply_singleton_of_notMem (by decide)]
 
 /-- Each of the two letters the process uses carries mass `2⁻¹`. -/
 @[simp]
 theorem spareStateLaw_singleton_of_ne_two {a : Fin 3} (ha : a ≠ 2) :
     spareStateLaw {a} = (2 : ℝ≥0∞)⁻¹ := by
   have hmem : a ∈ ({0, 1} : Finset (Fin 3)) := by fin_cases a <;> revert ha <;> decide
-  rw [spareStateLaw, PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _),
-    PMF.uniformOfFinset_apply_of_mem _ hmem]
+  rw [spareStateLaw, Measure.uniformOfFinset_apply_singleton_of_mem hmem]
   norm_num
 
 /-- The law of the example: fair-coin i.i.d. sequences in the alphabet `Fin 3`. -/

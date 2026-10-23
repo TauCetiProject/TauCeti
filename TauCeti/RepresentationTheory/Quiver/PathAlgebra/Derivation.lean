@@ -109,6 +109,7 @@ rule to hold, `f e` must lie in the corner of `kQ` cut out by the endpoints of `
 noncomputable def liftDerivation : pathAlgebra k Q →ₗ[k] pathAlgebra k Q :=
   liftLinear k fun x => liftDerivationPath k wt f x.2.2
 
+omit [Finite Q] in
 private theorem liftDerivation_ofPath (x : Quiver.TotalPath Q) :
     liftDerivation k wt f (ofPath x) = liftDerivationPath k wt f x.2.2 :=
   liftLinear_ofPath k _ x
@@ -130,7 +131,7 @@ private theorem vertexIdempotent_mul_liftDerivation_ofPath (x : Quiver.TotalPath
   rw [liftDerivation_ofPath]
   induction p with
   | nil => rw [liftDerivationPath_nil, mul_zero]
-  | cons p e ih =>
+  | cons p e _ =>
       rw [liftDerivationPath_cons, mul_add, ← mul_assoc, hfl e, mul_smul_comm, ← mul_assoc,
         ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath]
 

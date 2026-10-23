@@ -15,7 +15,10 @@ For natural numbers `m` and `n`, the triangle group `TriangleGroup 1 m n` is cyc
 relator makes `x` trivial, the product relation makes `z = y⁻¹`, and the remaining presentation
 is the cyclic group of order `Nat.gcd m n` when that gcd is positive. When `m = n = 0`, it is
 infinite cyclic. In particular, taking `n = m` identifies `TriangleGroup 1 m m` with the cyclic
-group of order `m`.
+group of order `m`. A positive gcd makes the group finite for arbitrary parameters
+(`TauCeti.TriangleGroup.finite_one`); under the signature condition `1 ≤ m ≤ n` this is the cyclic
+row of the spherical triangle-group classification, where the order of the sorted parameter row
+`(1, m, n)` is `Nat.gcd m n`, and the order of the reduced exact row `(1, m, m)` is `m`.
 
 The equivalence is stated with the usual Mathlib multiplicative tag on `ZMod (Nat.gcd m n)`;
 it is a group because the additive group `ZMod (Nat.gcd m n)` is being reinterpreted
@@ -100,6 +103,15 @@ theorem natCard_one (m n : ℕ) : Nat.card (TriangleGroup 1 m n) = Nat.gcd m n :
 For `m = 0`, it is infinite cyclic and its `Nat.card` is `0`. -/
 theorem natCard_one_self_self (m : ℕ) : Nat.card (TriangleGroup 1 m m) = m := by
   simpa only [Nat.gcd_self] using natCard_one m m
+
+/-- For arbitrary parameters `m` and `n`, a positive `Nat.gcd m n` makes the triangle group
+`TriangleGroup 1 m n` finite, of order `Nat.gcd m n`. The parameters are unrestricted here, so this
+is a finiteness statement about any pair `(m, n)`; under the signature condition `1 ≤ m ≤ n` it is
+the cyclic row of the spherical classification, where the order of the sorted parameter row
+`(1, m, n)` is `Nat.gcd m n`, and the order of the reduced exact row `(1, m, m)` is `m`. -/
+theorem finite_one {m n : ℕ} (h : 0 < Nat.gcd m n) : Finite (TriangleGroup 1 m n) := by
+  have hcard : 0 < Nat.card (TriangleGroup 1 m n) := by simpa only [natCard_one] using h
+  exact Nat.card_pos_iff.mp hcard |>.2
 
 /-- If `Nat.gcd m n > 0`, the signature `(1, m, n)` has cyclic triangle group of order
 `Nat.gcd m n`. If `m = n = 0`, it is infinite cyclic. -/

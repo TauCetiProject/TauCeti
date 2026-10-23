@@ -17,11 +17,14 @@ public import Mathlib.RingTheory.SimpleModule.IsAlgClosed
 Over an algebraically closed field `k` whose characteristic does not divide the order of a finite
 group `G`, Maschke's theorem makes `k[G]` semisimple and Artin--Wedderburn presents it as a finite
 product of matrix algebras `∏ᵢ Matₙᵢ(k)`. This file reads the two classical numerical invariants
-off such a presentation:
+off such a presentation. The sum-of-squares identity only needs a commutative semiring with the
+strong rank condition; the center statements are over a commutative semiring, with the strong rank
+condition
+for their numerical conclusions.
 
-* `TauCeti.sum_sq_eq_card_of_algEquiv_pi_matrix`: the matrix sizes satisfy `∑ᵢ nᵢ² = |G|`, because
+* `AlgEquiv.sum_sq_eq_card_of_pi_matrix`: the matrix sizes satisfy `∑ᵢ nᵢ² = |G|`, because
   both sides compute `dimₖ k[G]`;
-* `TauCeti.card_eq_card_conjClasses_of_algEquiv_pi_matrix`: the **number of blocks is the number of
+* `AlgEquiv.card_eq_card_conjClasses_of_pi_matrix`: the **number of blocks is the number of
   conjugacy classes** of `G`, because both sides compute `dimₖ Z(k[G])` — on one side through the
   class-sum basis (`TauCeti.finrank_center_monoidAlgebra`), on the other because the center of a
   product of matrix algebras over `k` is the product of their (one-dimensional) centers.
@@ -37,44 +40,40 @@ blocks are in bijection with the isomorphism classes of simple `k[G]`-modules, a
 of degrees does not depend on the chosen presentation. What this file supplies is the numerical
 half, which is what the dimension arguments can see. Both are proved downstream, in
 `TauCeti/RepresentationTheory/CharacterTable/IrreducibleClassification.lean`, as
-`TauCeti.nonempty_equiv_index_simpleSubmoduleClasses` and `TauCeti.natCard_degree_fiber_eq`,
+`AlgEquiv.nonempty_equiv_index_simpleSubmoduleClasses` and `TauCeti.natCard_degree_fiber_eq`,
 on top of the block representations of
 `TauCeti/RepresentationTheory/CharacterTable/BlockRepresentation.lean` and the exhaustion
 `TauCeti.ClassFunction.exists_nonempty_equiv` of
 `TauCeti/RepresentationTheory/CharacterTable/Completeness.lean`.
 
-## References
-
-This implements the Layer 2 targets `exists_algEquiv_pi_matrix`, `sum_sq_dim_eq_card`,
-`center_algEquiv_pi`, and `card_irreps_eq_card_conjClasses` of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-and its
-[suggested declarations](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/Suggested.lean).
 -/
 
 public section
 
-namespace TauCeti
+namespace AlgEquiv
 
+open TauCeti
 open scoped BigOperators
 
 section Presentation
 
-variable {k G : Type*} [Field k] {ι : Type*} {d : ι → ℕ}
+variable {k G : Type*} {ι : Type*} {d : ι → ℕ}
 
-/-- **The sum of the squares of the matrix sizes is the order of the group**: both sides compute
-the dimension of `k[G]`. -/
-theorem sum_sq_eq_card_of_algEquiv_pi_matrix [Monoid G] [Finite G] [Fintype ι]
+/-- **The sum of the squares of the matrix sizes is the cardinality of the monoid**: both sides
+compute the rank of `k[G]` over a commutative semiring with the strong rank condition. -/
+theorem sum_sq_eq_card_of_pi_matrix [CommSemiring k] [StrongRankCondition k] [Monoid G] [Fintype ι]
     (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
     ∑ i, d i ^ 2 = Nat.card G :=
   calc ∑ i, d i ^ 2
       = Module.finrank k (Π i, Matrix (Fin (d i)) (Fin (d i)) k) := (finrank_pi_matrix k d).symm
     _ = Module.finrank k (MonoidAlgebra k G) := e.toLinearEquiv.finrank_eq.symm
-    _ = Nat.card G := by
-        let := Fintype.ofFinite G
-        rw [Module.finrank_eq_card_basis (MonoidAlgebra.basis G k), Fintype.card_eq_nat_card]
+    _ = Nat.card G := Module.finrank_eq_nat_card_basis (MonoidAlgebra.basis G k)
 
-/-- **The center of the group algebra splits**: a Wedderburn presentation of `k[G]` with blocks
+section Center
+
+variable [CommSemiring k]
+
+/-- **The center of the monoid algebra splits**: a Wedderburn presentation of `k[G]` with blocks
 indexed by `ι` identifies `Z(k[G])` with the algebra `ι → k` of functions on the blocks. -/
 noncomputable def centerMonoidAlgebraAlgEquivPi [Monoid G] [∀ i, NeZero (d i)]
     (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
@@ -82,7 +81,7 @@ noncomputable def centerMonoidAlgebraAlgEquivPi [Monoid G] [∀ i, NeZero (d i)]
   (centerCongr e).trans (centerPiMatrixAlgEquiv k d)
 
 /-- `centerMonoidAlgebraAlgEquivPi e` records, block by block, the scalar that a central element of
-`k[G]` acts by: the `i`-th component of the image of `e` is that scalar matrix. -/
+`k[G]` acts by: the `i`-th component of `e z` is the corresponding scalar matrix. -/
 @[simp]
 theorem algebraMap_centerMonoidAlgebraAlgEquivPi_apply [Monoid G] [∀ i, NeZero (d i)]
     (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k)
@@ -105,17 +104,26 @@ sides compute the dimension of `Z(k[G])`.
 
 This is the numerical half of the count `#irreducibles = #conjugacy classes`; identifying the blocks
 with the isomorphism classes of simple `k[G]`-modules is a separate statement. -/
-theorem card_eq_card_conjClasses_of_algEquiv_pi_matrix [Group G] [Finite G] [Fintype ι]
+theorem card_eq_card_conjClasses_of_pi_matrix [StrongRankCondition k] [Group G] [Finite G]
+    [Finite ι]
     [∀ i, NeZero (d i)] (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
-    Fintype.card ι = Nat.card (ConjClasses G) :=
-  calc Fintype.card ι
-      = Module.finrank k (Subalgebra.center k (Π i, Matrix (Fin (d i)) (Fin (d i)) k)) :=
-        (finrank_center_pi_matrix k d).symm
+    Nat.card ι = Nat.card (ConjClasses G) := by
+  let := Fintype.ofFinite ι
+  calc Nat.card ι
+      = Module.finrank k (ι → k) := by rw [Module.finrank_pi, Nat.card_eq_fintype_card]
     _ = Module.finrank k (Subalgebra.center k (MonoidAlgebra k G)) :=
-        (centerCongr e).toLinearEquiv.finrank_eq.symm
+        e.centerMonoidAlgebraAlgEquivPi.toLinearEquiv.finrank_eq.symm
     _ = Nat.card (ConjClasses G) := finrank_center_monoidAlgebra k G
 
+end Center
+
 end Presentation
+
+end AlgEquiv
+
+namespace TauCeti
+
+open scoped BigOperators
 
 section Existence
 
@@ -140,12 +148,12 @@ theorem exists_algEquiv_pi_matrix_conjClasses :
   obtain ⟨n, d, hd, ⟨e⟩⟩ := exists_algEquiv_pi_matrix k G
   have := hd
   obtain rfl : n = Nat.card (ConjClasses G) := by
-    simpa using card_eq_card_conjClasses_of_algEquiv_pi_matrix e
+    simpa using e.card_eq_card_conjClasses_of_pi_matrix
   set σ := Finite.equivFin (ConjClasses G)
   refine ⟨fun c => d (σ c), fun c => hd _, ?_,
     ⟨e.trans (AlgEquiv.piCongrLeft k (fun i => Matrix (Fin (d i)) (Fin (d i)) k) σ).symm⟩⟩
   rw [finsum_comp_equiv σ (f := fun i => d i ^ 2), finsum_eq_sum_of_fintype]
-  exact sum_sq_eq_card_of_algEquiv_pi_matrix e
+  exact e.sum_sq_eq_card_of_pi_matrix
 
 end Existence
 

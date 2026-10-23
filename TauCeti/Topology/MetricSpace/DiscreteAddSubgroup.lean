@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Uniform
 public import Mathlib.Data.Set.Card.Arithmetic
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.MetricSpace.Bounded
 public import Mathlib.Topology.MetricSpace.Pseudo.Real
 
@@ -39,7 +40,7 @@ theorem finite_inter (L : AddSubgroup E) [DiscreteTopology L] {s : Set E} (hs : 
     (s ∩ (L : Set E)).Finite :=
   Metric.finite_isBounded_inter_isClosed
     (SetLike.isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology L›) hs
-    AddSubgroup.isClosed_of_discrete
+    AddSubgroup.isClosed_of_discreteTopology
 
 /-- A set whose points are pairwise at distance at most `r` carries at most as many points of a
 discrete subgroup as the closed ball of radius `r` centred at the origin does.  Translating a

@@ -20,6 +20,11 @@ public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
 -- an object of `ModuleCat (pathAlgebra k Q)` the `k`-structure that the declarations below ask of a
 -- `kQ`-module; they are needed to state anything about `TauCeti.quiverRepFunctor` on objects.
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
+-- `Mathlib.CategoryTheory.Linear.FunctorCategory` and `Mathlib.CategoryTheory.Linear.LinearFunctor`
+-- supply the `k`-linear structure on `TauCeti.QuiverRep k Q` and the `Functor.Linear` class, in
+-- which the linearity of `TauCeti.quiverRepFunctor` is stated.
+public import Mathlib.CategoryTheory.Linear.FunctorCategory
+public import Mathlib.CategoryTheory.Linear.LinearFunctor
 
 /-!
 # The representation of a quiver carried by a module over its path algebra
@@ -57,6 +62,9 @@ functor **fully faithful**.
   `Hom`-sets, packaged as `TauCeti.quiverRepHomOfModule_bijective` and, on the bundled functor, as
   `TauCeti.quiverRepFunctorFullyFaithful`. The inverse laws for the explicit inverse are that
   surjectivity statement together with `TauCeti.moduleHomOfQuiverRepHom_quiverRepHomOfModule`.
+* The functor is additive and `k`-linear, so that on `Hom`-sets it is an isomorphism of
+  `k`-vector spaces and not merely a bijection; that is what makes a dimension computed for
+  representations also one for `kQ`-modules.
 
 ## Implementation notes
 
@@ -463,6 +471,46 @@ instance : (quiverRepFunctor.{u, v, w, t} k Q).Full :=
 
 instance : (quiverRepFunctor.{u, v, w, t} k Q).Faithful :=
   (quiverRepFunctorFullyFaithful k Q).faithful
+
+/-- **The functor is additive**: a `kQ`-linear map restricts to the vertex components
+additively. -/
+instance : (quiverRepFunctor.{u, v, w, t} k Q).Additive where
+  map_add {M N f g} := by
+    have key : ∀ x : Q, vertexComponentMap k (ModuleCat.Hom.hom f + ModuleCat.Hom.hom g) x
+        = vertexComponentMap k (ModuleCat.Hom.hom f) x
+          + vertexComponentMap k (ModuleCat.Hom.hom g) x :=
+      fun x ↦ LinearMap.ext fun y ↦ Subtype.ext (by simp)
+    refine NatTrans.ext (funext fun x ↦ ?_)
+    -- the rewrite by `NatTrans.app_add` is done before `change Q at x`, since it needs `x` as an
+    -- object of `CategoryTheory.Paths Q`, while `quiverRepHomOfModule_app` needs it as a vertex
+    rw [NatTrans.app_add]
+    change Q at x
+    rw [quiverRepFunctor_map, quiverRepFunctor_map, quiverRepFunctor_map,
+      quiverRepHomOfModule_app, quiverRepHomOfModule_app, quiverRepHomOfModule_app,
+      ModuleCat.hom_add, key x]
+    -- the sum of morphisms of `ModuleCat k` left in the goal is the one of the preadditive
+    -- structure on that category, which `ModuleCat.ofHom_add` is not stated for; the two are the
+    -- same operation, but only `exact` identifies them, not the syntactic matching of `rw`
+    exact ModuleCat.ofHom_add _ _
+
+/-- **The functor is `k`-linear**: the vertex components of a `kQ`-module are `k`-subspaces, and
+restricting a `kQ`-linear map to them is `k`-linear in the map. This is what makes the functor
+compare `k`-dimensions of morphism spaces. -/
+instance : (quiverRepFunctor.{u, v, w, t} k Q).Linear k where
+  map_smul {M N} f r := by
+    have key : ∀ x : Q, vertexComponentMap k (r • ModuleCat.Hom.hom f) x
+        = r • vertexComponentMap k (ModuleCat.Hom.hom f) x :=
+      fun x ↦ LinearMap.ext fun y ↦ Subtype.ext (by simp)
+    refine NatTrans.ext (funext fun x ↦ ?_)
+    rw [NatTrans.app_smul]
+    change Q at x
+    rw [quiverRepFunctor_map, quiverRepFunctor_map, quiverRepHomOfModule_app,
+      quiverRepHomOfModule_app, ModuleCat.hom_smul, key x]
+    -- as for additivity, `ModuleCat.hom_smul` is the operation lemma for the scalar action left in
+    -- the goal, and is supplied its argument explicitly because `rw` does not match it
+    exact ModuleCat.hom_ext
+      (ModuleCat.hom_smul (S := k) r
+        (ModuleCat.ofHom (vertexComponentMap k (ModuleCat.Hom.hom f) x))).symm
 
 end Functor
 

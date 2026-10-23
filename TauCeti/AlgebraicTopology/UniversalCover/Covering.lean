@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.AlgebraicTopology.UniversalCover.Basic
+public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # Universal cover: covering map, simple connectedness, universal property
@@ -24,9 +25,19 @@ This file is adapted from Kim Morrison's
 
 * `UniversalCover.isCoveringMap`: the endpoint projection is a covering map.
 * `UniversalCover.discreteTopology_fiber`: fibers of the universal cover are discrete.
+* `UniversalCover.locallyPathConnectedSpace`: the universal cover is locally path-connected.
 * `UniversalCover.pathConnectedSpace`: the universal cover is path-connected.
 * `UniversalCover.simplyConnectedSpace`: the universal cover is simply connected.
 * `UniversalCover.existsUnique_continuousMap_lifts`: the universal lifting property.
+* `UniversalCover.apply_one_eq_ofBasedPath`: a lift of a based path starting at the constant-path
+  point ends at the class of that path.
+
+## Implementation notes
+
+`UniversalCover.isCoveringMap` does not assume `X` is path-connected. Over a point with no path
+from `x₀` the preimage of a good neighbourhood is empty, hence evenly covered
+(`IsEvenlyCovered.of_preimage_eq_empty`); over the path component of `x₀` the sheet
+trivialization applies.
 -/
 
 public section
@@ -42,143 +53,112 @@ namespace TauCeti.UniversalCover
 variable {x₀ x : X}
 
 /-- The endpoint projection `proj` is a covering map, assuming `X` is semilocally simply
-connected, locally path-connected, and path-connected. -/
-theorem isCoveringMap [LocallyPathConnectedSpace X] [PathConnectedSpace X]
-    [SemilocallySimplyConnectedSpace X] (x₀ : X) :
+connected and locally path-connected. Fibres over points outside the path component of `x₀` are
+empty. -/
+theorem isCoveringMap [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] (x₀ : X) :
     IsCoveringMap (proj (x₀ := x₀)) := by
   intro x
   obtain ⟨U, hU_open, hxU, hU_pathConn, hU_slsc⟩ :=
     exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial x
-  let S := sheet (x₀ := x₀) U hxU
-  have _ne_ι : Nonempty (Path.Homotopic.Quotient x₀ x) :=
-    ⟨Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x₀ x)⟩
-  have _ne_fun : Nonempty (X → TauCeti.UniversalCover x₀) :=
-    ⟨fun _ ↦ ofBasedPath x₀ (BasedPath.ofPath (PathConnectedSpace.somePath x₀ x₀))⟩
-  have h_open_iff : ∀ q : Path.Homotopic.Quotient x₀ x, ∀ {W : Set X}, W ⊆ U →
-      (IsOpen W ↔ IsOpen (proj (x₀ := x₀) ⁻¹' W ∩ S q)) := by
-    intro q W hWU
-    refine ⟨fun hW ↦ (hW.preimage (continuous_proj x₀)).inter (isOpen_sheet U hU_open hxU q),
-      fun h_open_inter ↦ ?_⟩
-    have h := isOpenMap_proj x₀ _ h_open_inter
-    rwa [Set.image_preimage_inter,
-      Set.inter_eq_left.mpr (hWU.trans (proj_surjOn_sheet hU_pathConn hxU q))] at h
-  refine ((IsEvenlyCovered.of_trivialization (t :=
-    IsOpen.trivializationDiscrete (f := proj (x₀ := x₀))
-      S U hU_open h_open_iff (proj_injOn_sheet hU_slsc hxU)
-      (proj_surjOn_sheet hU_pathConn hxU) (pairwise_disjoint_sheet hU_slsc hxU)
-      (sheet_exhaustive hU_pathConn hxU))
-    ?_).to_isEvenlyCovered_preimage)
-  rw [IsOpen.trivializationDiscrete_baseSet]
-  exact hxU
+  -- This case split, which removes the path-connectedness hypothesis, is adapted from
+  -- https://github.com/leanprover-community/mathlib4/pull/38292.
+  cases isEmpty_or_nonempty (Path.Homotopic.Quotient x₀ x) with
+  | inl h =>
+    refine (IsEvenlyCovered.of_preimage_eq_empty Empty (hU_open.mem_nhds hxU)
+      ?_).to_isEvenlyCovered_preimage
+    apply Set.eq_empty_of_subset_empty
+    simpa using sheet_exhaustive (x₀ := x₀) hU_pathConn hxU
+  | inr h =>
+    let S := sheet (x₀ := x₀) U hxU
+    have : Nonempty (X → TauCeti.UniversalCover x₀) :=
+      ⟨fun _ ↦ ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀))⟩
+    have h_open_iff : ∀ q : Path.Homotopic.Quotient x₀ x, ∀ {W : Set X}, W ⊆ U →
+        (IsOpen W ↔ IsOpen (proj (x₀ := x₀) ⁻¹' W ∩ S q)) := by
+      intro q W hWU
+      refine ⟨fun hW ↦ (hW.preimage (continuous_proj x₀)).inter (isOpen_sheet U hU_open hxU q),
+        fun h_open_inter ↦ ?_⟩
+      have h := isOpenMap_proj x₀ _ h_open_inter
+      rwa [Set.image_preimage_inter,
+        Set.inter_eq_left.mpr (hWU.trans (proj_surjOn_sheet hU_pathConn hxU q))] at h
+    refine ((IsEvenlyCovered.of_trivialization (t :=
+      IsOpen.trivializationDiscrete (f := proj (x₀ := x₀))
+        S U hU_open h_open_iff (proj_injOn_sheet hU_slsc hxU)
+        (proj_surjOn_sheet hU_pathConn hxU) (pairwise_disjoint_sheet hU_slsc hxU)
+        (sheet_exhaustive hU_pathConn hxU))
+      ?_).to_isEvenlyCovered_preimage)
+    rw [IsOpen.trivializationDiscrete_baseSet]
+    exact hxU
 
 /-- Fibers of the universal cover are discrete. -/
-instance discreteTopology_fiber [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+instance discreteTopology_fiber [LocallyPathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] (x₀ x : X) :
     DiscreteTopology (proj (x₀ := x₀) ⁻¹' {x}) :=
   (isCoveringMap x₀ x).discreteTopology_fiber
 
+/-- The universal cover of a locally path-connected, semilocally simply connected space is
+locally path-connected, since its projection is a local homeomorphism. -/
+instance locallyPathConnectedSpace [LocallyPathConnectedSpace X]
+    [SemilocallySimplyConnectedSpace X] (x₀ : X) :
+    LocallyPathConnectedSpace (TauCeti.UniversalCover x₀) :=
+  (isCoveringMap x₀).isLocalHomeomorph.locallyPathConnectedSpace
+
 /-- Every point of `UniversalCover x₀` is joined to the point represented by the constant
 path. The connecting path is the family of initial segments `t ↦ α |_[0, t]`. -/
 theorem joined_basepoint_ofBasedPath (α : BasedPath x₀) :
-    Joined (ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀))) (ofBasedPath x₀ α) :=
-  ⟨{  toFun t := ofBasedPath x₀ (BasedPath.ofPath (Path.initialSegmentFamily α.toPath t))
-      continuous_toFun :=
-        (continuous_ofBasedPath x₀).comp <| by
-          apply Continuous.subtype_mk
-          exact ContinuousMap.continuous_of_continuous_uncurry _
-            (Path.continuous_initialSegmentFamily_uncurry α.toPath)
-      source' := by
-        rw [Path.initialSegmentFamily_zero, ofBasedPath_ofPath]
-        simp only [ofBasedPath_def]
-        apply UniversalCover.ext α.2
-        apply Path.Homotopic.hpath_hext
-        intro t
-        -- `BasedPath.ofPath` packages a path and `toPath` unpacks it, so the two sides agree
-        -- pointwise by definition.
-        rfl
-      target' := by
-        rw [Path.initialSegmentFamily_one, ofBasedPath_def]
-        simp only [ofBasedPath_def]
-        apply UniversalCover.ext rfl
-        apply Path.Homotopic.hpath_hext
-        intro t
-        -- as in `source'`, the two sides differ only in the proof arguments of `Path.cast`.
-        rfl }⟩
+    Joined (ofBasedPath x₀ (BasedPath.refl x₀)) (ofBasedPath x₀ α) :=
+  -- Ported from https://github.com/leanprover-community/mathlib4/pull/44185.
+  ⟨{  toFun t := ofBasedPath x₀ (α.initialSegmentFamily t)
+      continuous_toFun := by fun_prop
+      source' := by simp
+      target' := by simp }⟩
 
 /-- The universal cover is path-connected. -/
 instance pathConnectedSpace (x₀ : X) :
     PathConnectedSpace (TauCeti.UniversalCover x₀) := by
-  refine ⟨⟨ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀))⟩, fun z₁ z₂ ↦ ?_⟩
+  refine ⟨⟨ofBasedPath x₀ (BasedPath.refl x₀)⟩, fun z₁ z₂ ↦ ?_⟩
   obtain ⟨α₁, rfl⟩ := surjective_ofBasedPath x₀ z₁
   obtain ⟨α₂, rfl⟩ := surjective_ofBasedPath x₀ z₂
   exact (joined_basepoint_ofBasedPath α₁).symm.trans (joined_basepoint_ofBasedPath α₂)
 
-/-- At time `0` the family of initial segments of `γ` appended to `α` is the class of `α`
-itself. -/
-private theorem ofBasedPath_append_initialSegmentFamily_zero {α : BasedPath x₀} {y : X}
-    (γ : Path (BasedPath.endpoint α) y) :
-    ofBasedPath x₀ (BasedPath.append α (Path.initialSegmentFamily γ 0)) = ofBasedPath x₀ α := by
-  have h0_hom :
-      Path.Homotopic
-        ((α.toPath.trans (Path.initialSegmentFamily γ 0)).cast rfl
-          (by simp))
-        α.toPath := by
-    rw [Path.initialSegmentFamily_zero]
-    simpa using! Path.Homotopic.trans_refl α.toPath
-  have h0_end : BasedPath.endpoint (BasedPath.append α (Path.initialSegmentFamily γ 0)) =
-      BasedPath.endpoint α := by
-    rw [BasedPath.endpoint_append]
-    simp
-  exact ofBasedPath_eq_of_homotopic_toPath (x₀ := x₀) h0_end h0_hom
-
-/-- At time `1` the family of initial segments of `γ` appended to `α` is the class of
-`α.append γ`. -/
-private theorem ofBasedPath_append_initialSegmentFamily_one {α : BasedPath x₀} {y : X}
-    (γ : Path (BasedPath.endpoint α) y) :
-    ofBasedPath x₀ (BasedPath.append α (Path.initialSegmentFamily γ 1)) =
-      ofBasedPath x₀ (BasedPath.append α γ) := by
-  rw [Path.initialSegmentFamily_one]
-  apply congrArg (ofBasedPath x₀)
-  apply BasedPath.ext
-  intro t
-  -- `BasedPath.append` inserts endpoint casts definitionally; expose the underlying paths.
-  change (α.toPath.trans (γ.cast _ _)) t = (α.toPath.trans γ) t
-  rw [Path.trans_apply, Path.trans_apply]
-  split_ifs <;> simp only [Path.cast_coe]
-
 /-- The lift through `proj` of a path `γ` starting at the class of `α` ends at the class of
 the concatenated based path `α.append γ`. -/
 theorem liftPath_apply_one_eq_ofBasedPath_append
-    [LocallyPathConnectedSpace X] [PathConnectedSpace X]
-    [SemilocallySimplyConnectedSpace X] {α : BasedPath x₀} {y : X}
-    (γ : Path (BasedPath.endpoint α) y) : (isCoveringMap x₀).liftPath γ (ofBasedPath x₀ α)
-      (by simp) 1 =
+    [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] {α : BasedPath x₀} {y : X}
+    (γ : Path (BasedPath.endpoint α) y) :
+    (isCoveringMap x₀).liftPath γ (ofBasedPath x₀ α) (by simp) 1 =
       ofBasedPath x₀ (BasedPath.append α γ) := by
-  let Γ : C(I, TauCeti.UniversalCover x₀) := by
-    refine ⟨fun t ↦ ofBasedPath x₀ (BasedPath.append α (Path.initialSegmentFamily γ t)),
-      ?_⟩
-    exact (continuous_ofBasedPath x₀).comp
-      (BasedPath.continuous_append_initialSegmentFamily α γ)
+  -- Ported from https://github.com/leanprover-community/mathlib4/pull/44185.
+  -- The lift is `t ↦ ofBasedPath (append α γ|_[0, t])`.
+  let Γ : C(I, TauCeti.UniversalCover x₀) :=
+    ⟨fun t ↦ ofBasedPath x₀ (BasedPath.append α (γ.initialSegmentFamily t)), by fun_prop⟩
   have hΓ_lifts : proj (x₀ := x₀) ∘ Γ = γ := by
     ext t
-    -- Unfold the local `ContinuousMap` wrapper so `proj_ofBasedPath` can rewrite its value.
-    rw [Function.comp_apply, show Γ t =
-      ofBasedPath x₀ (BasedPath.append α (Path.initialSegmentFamily γ t)) from rfl,
-      proj_ofBasedPath, BasedPath.endpoint_append]
-  have hΓ_zero : Γ 0 = ofBasedPath x₀ α :=
-    ofBasedPath_append_initialSegmentFamily_zero γ
-  have hΓ_eq_lift :
-      Γ = (isCoveringMap x₀).liftPath γ (ofBasedPath x₀ α)
-        (by simp) :=
-    ((isCoveringMap x₀).eq_liftPath_iff' (γ := γ)
-      (e := ofBasedPath x₀ α)
-      (γ_0 := by simp) (Γ := Γ)).2
-      ⟨hΓ_lifts, hΓ_zero⟩
-  rw [← hΓ_eq_lift]
-  -- Both sides are values of the local lift wrapper; unfolding exposes the appended paths.
-  change ofBasedPath x₀ (BasedPath.append α (Path.initialSegmentFamily γ 1)) =
-    ofBasedPath x₀ (BasedPath.append α γ)
-  exact ofBasedPath_append_initialSegmentFamily_one γ
+    simp [Γ]
+  have hΓ_zero : Γ 0 = ofBasedPath x₀ α := by
+    have h0 : ((α.toPath.trans (γ.initialSegmentFamily 0)).cast rfl (by simp)).Homotopic
+        α.toPath := by
+      rw [Path.initialSegmentFamily_zero]
+      -- The remaining casts only change proof fields, so this is `α.toPath.trans (refl _)`.
+      exact Path.Homotopic.trans_refl α.toPath
+    exact ofBasedPath_eq_of_homotopic_toPath (by rw [BasedPath.endpoint_append]; simp) h0
+  rw [← ((isCoveringMap x₀).eq_liftPath_iff' (γ := γ) (γ_0 := by simp) (Γ := Γ)).2
+    ⟨hΓ_lifts, hΓ_zero⟩]
+  -- `Γ` is given by an anonymous constructor; expose its value at `1`.
+  change ofBasedPath x₀ (α.append (γ.initialSegmentFamily 1)) = _
+  rw [Path.initialSegmentFamily_one]
+  rfl
+
+/-- **The endpoint of a lift of a based path.** A continuous path in the universal cover that starts
+at the constant-path point and lies over the based path `γ` ends at the class of `γ`: by unique
+path lifting it agrees with the family of initial segments `t ↦ γ |_[0, t]`. -/
+theorem apply_one_eq_ofBasedPath [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    {g : I → TauCeti.UniversalCover x₀} (hg : Continuous g) (γ : BasedPath x₀)
+    (hγ : ∀ t, (g t).proj = γ t) (h₀ : g 0 = ofBasedPath x₀ (BasedPath.refl x₀)) :
+    g 1 = ofBasedPath x₀ γ := by
+  have h := (isCoveringMap x₀).eq_of_comp_eq hg
+    (g₂ := fun t ↦ ofBasedPath x₀ (γ.initialSegmentFamily t)) (by fun_prop)
+    (funext fun t ↦ by simp [hγ]) 0 (by simpa using h₀)
+  simpa using congrFun h 1
 
 /-- **A loop whose appended class returns to `α` is nullhomotopic.** If appending the loop `γ` to
 `α` leaves the class of `α` unchanged in the universal cover, then `γ` is trivial in the
@@ -200,7 +180,7 @@ private theorem quotient_mk_eq_refl_of_ofBasedPath_append_eq {α : BasedPath x�
   exact h'.trans (Path.Homotopic.trans_refl α.toPath).symm
 
 /-- The universal cover is simply connected. -/
-instance simplyConnectedSpace [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+instance simplyConnectedSpace [LocallyPathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] (x₀ : X) :
     SimplyConnectedSpace (TauCeti.UniversalCover x₀) := by
   rw [simply_connected_iff_loops_nullhomotopic]
@@ -229,13 +209,14 @@ instance simplyConnectedSpace [LocallyPathConnectedSpace X] [PathConnectedSpace 
   have hcast :=
     congrArg (Path.Homotopic.Quotient.cast · (proj_ofBasedPath x₀ α) (proj_ofBasedPath x₀ α))
       hγ_null
-  simpa [γ, ← Path.Homotopic.Quotient.mk_map] using! hcast
+  simp only [γ, ← Path.Homotopic.Quotient.mk_map] at hcast ⊢
+  simpa using hcast
 
 /-- Universal property of the universal cover: a continuous map from a simply connected,
 locally path-connected space lifts uniquely after specifying the image of one point. -/
 theorem existsUnique_continuousMap_lifts {A : Type*} [TopologicalSpace A]
     [SimplyConnectedSpace A] [LocallyPathConnectedSpace A]
-    [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+    [LocallyPathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] (x₀ : X)
     (f : C(A, X)) (a₀ : A) (e₀ : TauCeti.UniversalCover x₀) (he : proj e₀ = f a₀) :
     ∃! F : C(A, TauCeti.UniversalCover x₀), F a₀ = e₀ ∧ proj ∘ F = f :=

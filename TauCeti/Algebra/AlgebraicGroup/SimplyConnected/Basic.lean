@@ -42,9 +42,7 @@ every central-isogeny coordinate map out of it is surjective.
 * J. S. Milne, *Algebraic Groups* (2017), §21.4.
 * T. A. Springer, *Linear Algebraic Groups*, §9.6.
 
-This supplies the coordinate-Hopf form of the simply-connected-form target in Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap. Construction of simply
-connected covers and their relation to root data remain downstream.
+Simply connected covers and their relation to root data are not constructed here.
 -/
 
 public section

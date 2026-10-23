@@ -47,10 +47,8 @@ noncomputable def matrixBaseChangeLieEquiv :
   map_smul' := map_smul (Algebra.matrixBaseChangeAlgEquiv R A n)
   map_lie' {x y} := by
     induction x with
-    | zero => simp
     | tmul a M =>
       induction y with
-      | zero => simp
       | tmul b N =>
         simp only [LieAlgebra.ExtendScalars.bracket_tmul,
           Algebra.matrixBaseChangeAlgEquiv_tmul, LieRing.of_associative_ring_bracket]

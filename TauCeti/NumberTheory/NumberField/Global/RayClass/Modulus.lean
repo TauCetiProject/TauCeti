@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Ideal.Away
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Congruence
+public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
+
+import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # Moduli of a number field and multiplicative congruence
@@ -27,7 +31,7 @@ This file builds that vocabulary:
 * the group `idealsPrimeTo 𝔪` of invertible fractional ideals and the monoid
   `integralIdealsPrimeTo 𝔪` of nonzero integral ideals that are prime to the finite part.
 
-The last two are *abbreviations* for `TauCeti.NumberFieldArithmetic.idealsAway 𝔪.support` and
+The last two are *abbreviations* for `TauCeti.NumberFieldArithmetic.idealsAway K 𝔪.support` and
 `TauCeti.NumberFieldArithmetic.integralIdealsAway 𝔪.support`: there is exactly one group of
 prime-to fractional ideals and one monoid of prime-to integral ideals, and both are the ones built
 away from a finite set of primes.
@@ -48,6 +52,8 @@ away from a finite set of primes.
 
 ## Main results
 
+* `TauCeti.GlobalNumberFields.Modulus.wellFounded_dvd_and_ne`: strict divisibility of moduli is
+  well founded.
 * `TauCeti.GlobalNumberFields.Modulus.mem_support_iff`: membership in the support is divisibility
   of the finite part.  `Modulus.support_one` and `Modulus.support_mono` are consequences.
 * `TauCeti.GlobalNumberFields.Modulus.pow_exponent_dvd_finitePart` and
@@ -133,6 +139,37 @@ theorem dvd_trans {𝔪 𝔫 𝔭 : Modulus K} (h₁ : 𝔪 ∣ 𝔫) (h₂ : �
   dvd_iff.mpr ⟨(dvd_iff.mp h₁).1.trans (dvd_iff.mp h₂).1,
     (dvd_iff.mp h₁).2.trans (dvd_iff.mp h₂).2⟩
 
+/-- Divisibility of moduli is antisymmetric. -/
+theorem dvd_antisymm {𝔪 𝔫 : Modulus K} (hm : 𝔪 ∣ 𝔫) (hn : 𝔫 ∣ 𝔪) : 𝔪 = 𝔫 := by
+  apply Modulus.ext
+  · exact le_antisymm (Ideal.dvd_iff_le.mp (dvd_iff.mp hn).1)
+      (Ideal.dvd_iff_le.mp (dvd_iff.mp hm).1)
+  · exact Finset.Subset.antisymm (dvd_iff.mp hm).2 (dvd_iff.mp hn).2
+
+/-- **Strict divisibility of moduli is well founded**: there is no infinite sequence of moduli in
+which each term is a proper divisor of the previous one.  Along a proper divisor, the absolute norm
+of the finite part plus the number of real places strictly decreases.  In particular every nonempty
+set of moduli has a member none of whose proper divisors lies in the set. -/
+theorem wellFounded_dvd_and_ne : WellFounded fun 𝔪 𝔫 : Modulus K ↦ 𝔪 ∣ 𝔫 ∧ 𝔪 ≠ 𝔫 := by
+  refine Subrelation.wf (fun {𝔪 𝔫} h ↦ ?_) (InvImage.wf
+    (fun 𝔪 : Modulus K ↦ Ideal.absNorm 𝔪.finitePart + 𝔪.infinitePart.card) wellFounded_lt)
+  obtain ⟨⟨⟨L, hL⟩, hinf⟩, hne⟩ := h
+  have hnorm : Ideal.absNorm 𝔫.finitePart = Ideal.absNorm 𝔪.finitePart * Ideal.absNorm L := by
+    rw [hL, map_mul]
+  have h𝔫 : Ideal.absNorm 𝔫.finitePart ≠ 0 := Ideal.absNorm_eq_zero_iff.not.mpr 𝔫.finitePart_ne_bot
+  have hL0 : Ideal.absNorm L ≠ 0 := fun h0 ↦ h𝔫 (by rw [hnorm, h0, mul_zero])
+  have h𝔪 : Ideal.absNorm 𝔪.finitePart ≠ 0 := fun h0 ↦ h𝔫 (by rw [hnorm, h0, zero_mul])
+  have hcard := Finset.card_le_card hinf
+  have hle : Ideal.absNorm 𝔪.finitePart ≤ Ideal.absNorm 𝔫.finitePart :=
+    hnorm ▸ Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hL0)
+  simp only [InvImage]
+  by_contra hlt
+  -- Both summands can only grow along divisibility, so if the sum does not grow, neither does.
+  have hnorm_eq : Ideal.absNorm 𝔫.finitePart = Ideal.absNorm 𝔪.finitePart := by omega
+  rw [hnorm] at hnorm_eq
+  refine hne (Modulus.ext ?_ (Finset.eq_of_subset_of_card_le hinf (by omega)))
+  rw [hL, Ideal.absNorm_eq_one_iff.mp ((Nat.mul_eq_left h𝔪).mp hnorm_eq), Ideal.mul_top]
+
 /-- The **support** of a modulus: the finite set of height-one primes dividing its finite part. -/
 noncomputable def support (𝔪 : Modulus K) : Finset (HeightOneSpectrum (𝓞 K)) :=
   (Ideal.finite_factors 𝔪.finitePart_ne_zero).toFinset
@@ -170,14 +207,17 @@ theorem exponent_pos_of_mem_support {𝔪 : Modulus K} {v : HeightOneSpectrum (�
     (hv : v ∈ 𝔪.support) : 0 < 𝔪.exponent v :=
   Nat.pos_of_ne_zero ((mem_support_iff_exponent_ne_zero 𝔪 v).mp hv)
 
+/-- **The exponent is the exact multiplicity of the prime in the finite part**: `v ^ n` divides the
+finite part exactly when `n` is at most the exponent of `v`. -/
+theorem pow_dvd_finitePart_iff_le_exponent (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K))
+    {n : ℕ} : v.asIdeal ^ n ∣ 𝔪.finitePart ↔ n ≤ 𝔪.exponent v := by
+  rw [exponent, le_count_associates_iff_le_pow v 𝔪.finitePart_ne_bot, Ideal.dvd_iff_le]
+
 /-- **The prescribed prime power divides the finite part.**  This is what turns membership in the
 finite part into the valuation bound recorded by `IsCongrOne`. -/
 theorem pow_exponent_dvd_finitePart (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
-    v.asIdeal ^ 𝔪.exponent v ∣ 𝔪.finitePart := by
-  have h : Associates.mk v.asIdeal ^ 𝔪.exponent v ≤ Associates.mk 𝔪.finitePart :=
-    (Associates.prime_pow_dvd_iff_le (Associates.mk_ne_zero.mpr 𝔪.finitePart_ne_zero)
-      (Associates.irreducible_mk.mpr v.irreducible)).mpr le_rfl
-  rwa [← Associates.mk_pow, Associates.mk_le_mk_iff_dvd] at h
+    v.asIdeal ^ 𝔪.exponent v ∣ 𝔪.finitePart :=
+  (pow_dvd_finitePart_iff_le_exponent 𝔪 v).mpr le_rfl
 
 /-- **Membership in the finite part is a local condition.**  An algebraic integer lying in the
 prime power prescribed by the exponent at every prime dividing the finite part lies in the finite
@@ -237,6 +277,10 @@ def one (K : Type*) [Field K] [NumberField K] : Modulus K where
 theorem one_dvd (𝔪 : Modulus K) : one K ∣ 𝔪 :=
   dvd_iff.mpr ⟨by rw [one_finitePart, ← Ideal.one_eq_top]; exact _root_.one_dvd _, by simp⟩
 
+/-- The trivial modulus is the only divisor of itself. -/
+theorem eq_one_of_dvd_one {𝔪 : Modulus K} (h : 𝔪 ∣ one K) : 𝔪 = one K :=
+  dvd_antisymm h (one_dvd 𝔪)
+
 end Modulus
 
 /-- The modulus with unit finite part and **every** real place.  Its ray class group is the narrow
@@ -281,6 +325,14 @@ theorem isCongrOne_iff {𝔪 : Modulus K} {x : Kˣ} :
         ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) :=
   Iff.rfl
 
+/-- Multiplicative congruence is the finite ideal congruence together with the selected
+real-place positivity conditions. -/
+theorem isCongrOne_iff_mem_congruenceSubgroup_and_pos {𝔪 : Modulus K} {x : Kˣ} :
+    IsCongrOne 𝔪 x ↔
+      x ∈ Ideal.congruenceSubgroup 𝔪.finitePart K 𝔪.finitePart_ne_bot ∧
+        ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := by
+  simp only [isCongrOne_iff, Ideal.mem_congruenceSubgroup_iff, Modulus.exponent_def]
+
 namespace IsCongrOne
 
 variable {𝔪 : Modulus K} {x : Kˣ}
@@ -304,17 +356,16 @@ theorem valuation_sub_one_lt_one (hx : IsCongrOne 𝔪 x) {v : HeightOneSpectrum
 /-- **An element congruent to one is a unit at the primes dividing the finite part.** -/
 theorem valuation_eq_one (hx : IsCongrOne 𝔪 x) {v : HeightOneSpectrum (𝓞 K)}
     (hv : v.asIdeal ∣ 𝔪.finitePart) : v.valuation K (x : K) = 1 := by
-  have h := Valuation.map_one_add_of_lt (v.valuation K) (hx.valuation_sub_one_lt_one hv)
-  rwa [add_sub_cancel] at h
+  exact Ideal.valuation_eq_one_of_mem_congruenceSubgroup
+    (isCongrOne_iff_mem_congruenceSubgroup_and_pos.mp hx).1 hv
 
 /-- **Congruence is antitone in the modulus.**  An element congruent to one modulo the larger
 modulus `𝔫` is congruent to one modulo every divisor `𝔪` of `𝔫`: the exponents can only have
 shrunk and fewer real places are constrained. -/
 theorem mono {𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (hx : IsCongrOne 𝔫 x) : IsCongrOne 𝔪 x := by
-  refine ⟨fun v hv ↦ ?_, fun w hw ↦ hx.pos ((Modulus.dvd_iff.mp h).2 hw)⟩
-  refine (hx.valuation_sub_one_le (hv.trans (Modulus.dvd_iff.mp h).1)).trans
-    (WithZero.exp_le_exp.mpr ?_)
-  exact neg_le_neg (Int.ofNat_le.mpr (Modulus.exponent_mono h v))
+  rw [isCongrOne_iff_mem_congruenceSubgroup_and_pos] at hx ⊢
+  exact ⟨Ideal.congruenceSubgroup_antitone (Modulus.dvd_iff.mp h).1 hx.1,
+    fun w hw ↦ hx.2 w ((Modulus.dvd_iff.mp h).2 hw)⟩
 
 end IsCongrOne
 
@@ -328,28 +379,14 @@ def congruenceSubgroup (𝔪 : Modulus K) : Subgroup Kˣ where
     · simp
   mul_mem' := by
     rintro x y hx hy
-    refine ⟨fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-    · -- `xy - 1 = x (y - 1) + (x - 1)`, and `x` is a unit at `v`.
-      have hxy : ((x * y : Kˣ) : K) - 1 = (x : K) * ((y : K) - 1) + ((x : K) - 1) := by
-        push_cast; ring
-      refine le_trans (hxy ▸ Valuation.map_add (v.valuation K) _ _) (max_le ?_ ?_)
-      · rw [map_mul, hx.valuation_eq_one hv, one_mul]
-        exact hy.valuation_sub_one_le hv
-      · exact hx.valuation_sub_one_le hv
-    · have := mul_pos (hx.pos hw) (hy.pos hw)
-      rwa [← map_mul, ← Units.val_mul] at this
+    simp only [Set.mem_ofPred_eq, isCongrOne_iff_mem_congruenceSubgroup_and_pos] at hx hy ⊢
+    refine ⟨mul_mem hx.1 hy.1, fun w hw ↦ ?_⟩
+    simpa only [Units.val_mul, map_mul] using mul_pos (hx.2 w hw) (hy.2 w hw)
   inv_mem' := by
     rintro x hx
-    refine ⟨fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-    · have hne : (x : K) ≠ 0 := x.ne_zero
-      have hxy : ((x⁻¹ : Kˣ) : K) - 1 = -(((x : K) - 1) * (x : K)⁻¹) := by
-        rw [Units.val_inv_eq_inv_val]
-        field_simp
-        ring
-      rw [hxy, Valuation.map_neg, map_mul, map_inv₀, hx.valuation_eq_one hv, inv_one, mul_one]
-      exact hx.valuation_sub_one_le hv
-    · have := inv_pos.mpr (hx.pos hw)
-      rwa [← map_inv₀, ← Units.val_inv_eq_inv_val] at this
+    simp only [Set.mem_ofPred_eq, isCongrOne_iff_mem_congruenceSubgroup_and_pos] at hx ⊢
+    refine ⟨inv_mem hx.1, fun w hw ↦ ?_⟩
+    simpa only [Units.val_inv_eq_inv_val, map_inv₀] using inv_pos.mpr (hx.2 w hw)
 
 @[simp] theorem mem_congruenceSubgroup {𝔪 : Modulus K} {x : Kˣ} :
     x ∈ congruenceSubgroup 𝔪 ↔ IsCongrOne 𝔪 x := Iff.rfl
@@ -361,19 +398,17 @@ theorem congruenceSubgroup_antitone {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) 
 
 /-- The subgroup of `Kˣ` of elements that are units at every prime dividing the finite part of the
 modulus.  This is the domain of reduction to the residue units. -/
-def primeToSubgroup (𝔪 : Modulus K) : Subgroup Kˣ where
-  carrier := {x | ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
-    v.valuation K (x : K) = 1}
-  one_mem' := by simp
-  mul_mem' := fun hx hy v hv ↦ by
-    rw [Units.val_mul, map_mul, hx v hv, hy v hv, one_mul]
-  inv_mem' := fun hx v hv ↦ by
-    rw [Units.val_inv_eq_inv_val, map_inv₀, hx v hv, inv_one]
+noncomputable abbrev primeToSubgroup (𝔪 : Modulus K) : Subgroup Kˣ :=
+  (𝔪.support : Set (HeightOneSpectrum (𝓞 K)))ᶜ.unit K
 
-@[simp] theorem mem_primeToSubgroup {𝔪 : Modulus K} {x : Kˣ} :
+@[simp↓] theorem mem_primeToSubgroup {𝔪 : Modulus K} {x : Kˣ} :
     x ∈ primeToSubgroup 𝔪 ↔
-      ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v.valuation K (x : K) = 1 :=
-  Iff.rfl
+      ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v.valuation K (x : K) = 1 := by
+  -- Mathlib has no S-unit membership lemma; unfold the defining valuation condition.
+  change (∀ v ∉ (𝔪.support : Set (HeightOneSpectrum (𝓞 K)))ᶜ,
+    v.valuation K (x : K) = 1) ↔ _
+  simp only [Set.mem_compl_iff, Finset.mem_coe,
+    not_not, Modulus.mem_support_iff]
 
 /-- A larger finite part has a smaller prime-to subgroup.  This is the carrier map used when
 changing the finite part in a reduction statement. -/
@@ -389,7 +424,7 @@ theorem primeToSubgroup_le_of_dvd {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart �
 the principal ideal of an element congruent to one prime to the modulus. -/
 theorem congruenceSubgroup_le_primeToSubgroup (𝔪 : Modulus K) :
     congruenceSubgroup 𝔪 ≤ primeToSubgroup 𝔪 :=
-  fun _ hx v hv ↦ hx.valuation_eq_one (v := v) hv
+  fun _ hx ↦ mem_primeToSubgroup.mpr fun v hv ↦ hx.valuation_eq_one (v := v) hv
 
 /-- The units of `𝓞 K` congruent to one modulo `𝔪`.  Its index in `(𝓞 K)ˣ` is the unit correction
 in the ray class number formula. -/
@@ -405,7 +440,7 @@ def unitsCongruenceSubgroup (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
 theorem unitsMap_mem_primeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
     Units.map (algebraMap (𝓞 K) K).toMonoidHom u ∈ primeToSubgroup 𝔪 := by
   refine mem_primeToSubgroup.mpr fun v _ ↦ ?_
-  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, valuation_of_algebraMap]
+  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, valuation_of_algebraMap]
   refine intValuation_eq_one_iff.mpr fun hu ↦ v.isPrime.ne_top ?_
   exact Ideal.eq_top_of_isUnit_mem _ hu u.isUnit
 
@@ -453,7 +488,7 @@ positive integer units.** -/
   ext u
   rw [mem_unitsCongruenceSubgroup, isCongrOne_narrowModulus_iff,
     mem_totallyPositiveIntegerUnits]
-  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
 /-! ### Ideals prime to a modulus -/
 
@@ -462,7 +497,7 @@ multiplicity vanishes at every prime dividing the finite part.  There is one suc
 built away from a finite set of primes. -/
 noncomputable abbrev idealsPrimeTo (𝔪 : Modulus K) :
     Subgroup (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
-  NumberFieldArithmetic.idealsAway (K := K) 𝔪.support
+  NumberFieldArithmetic.idealsAway K 𝔪.support
 
 /-- Coprimality of a nonzero integral ideal to a modulus: it is prime to the support, that is, to
 the finite part.  This is the membership predicate of `integralIdealsPrimeTo`. -/
@@ -495,7 +530,7 @@ as `I` and the finite part fail to generate the unit ideal. -/
 theorem Modulus.isCoprimeTo_iff_sup_eq_top {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     𝔪.IsCoprimeTo I ↔ I ≠ ⊥ ∧ I ⊔ 𝔪.finitePart = ⊤ := by
   rw [isCoprimeTo_iff]
-  refine and_congr_right fun hI ↦ ⟨fun h ↦ ?_, fun h v hv hdvd ↦ ?_⟩
+  refine and_congr_right fun _ ↦ ⟨fun h ↦ ?_, fun h v hv hdvd ↦ ?_⟩
   · refine Ideal.isCoprime_iff_sup_eq.mp (Ideal.coprime_of_no_prime_ge fun 𝔭 h𝔭I h𝔭m h𝔭 ↦ ?_)
     have h𝔭bot : 𝔭 ≠ ⊥ := fun hbot ↦ 𝔪.finitePart_ne_bot (le_bot_iff.mp (hbot ▸ h𝔭m))
     exact h ⟨𝔭, h𝔭, h𝔭bot⟩ ((mem_support_iff _ _).mpr (Ideal.dvd_iff_le.mpr h𝔭m))
@@ -507,11 +542,17 @@ theorem Modulus.isCoprimeTo_iff_sup_eq_top {𝔪 : Modulus K} {I : Ideal (𝓞 K
 /-- **The monoid of nonzero integral ideals prime to a modulus.**  There is one such monoid, the
 one built away from a finite set of primes; its membership predicate is `Modulus.IsCoprimeTo`. -/
 noncomputable abbrev integralIdealsPrimeTo (𝔪 : Modulus K) : Submonoid (Ideal (𝓞 K)) :=
-  NumberFieldArithmetic.integralIdealsAway (K := K) 𝔪.support
+  NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) 𝔪.support
 
 theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     I ∈ integralIdealsPrimeTo 𝔪 ↔ 𝔪.IsCoprimeTo I :=
   NumberFieldArithmetic.mem_integralIdealsAway_iff.trans Modulus.isCoprimeTo_iff.symm
+
+/-- A generator of an integral ideal prime to a modulus is nonzero, since such an ideal is. -/
+theorem ne_zero_of_coe_eq_span_singleton {𝔪 : Modulus K} {J : integralIdealsPrimeTo 𝔪} {β : 𝓞 K}
+    (hJ : (J : Ideal (𝓞 K)) = Ideal.span {β}) : β ≠ 0 := fun h ↦
+  (Modulus.isCoprimeTo_iff_sup_eq_top.mp (Modulus.mem_integralIdealsPrimeTo.mp J.2)).1
+    (by rw [hJ, h, Ideal.span_singleton_eq_bot])
 
 /-- **The integral prime-to monoid is antitone in the modulus**: the support of a divisor `𝔪` of
 `𝔫` is contained in that of `𝔫`, so an ideal prime to `𝔫` is prime to `𝔪`. -/

@@ -29,6 +29,8 @@ path algebra it is the `k`-dual `D(eᵢ · kQ)` of the right ideal spanned by th
   `k`-linear isomorphism `(M ⟶ Iᵢ) ≃ₗ[k] Module.Dual k Mᵢ` sending a morphism to the functional
   reading off its value on the trivial path. This is the universal property from which everything
   else here follows, and it is dual to `TauCeti.indecProjRepHomEquiv`.
+* `TauCeti.isSplitMono_of_indecInjRep_app_injective`: a morphism out of `Iᵢ` that is injective at
+  `i` is a split monomorphism.
 * `TauCeti.injective_indecInjRep`: `Iᵢ` is an injective object of `TauCeti.QuiverRep k Q`.
 * `TauCeti.dimVector_indecInjRep`: the dimension vector of `Iᵢ` counts the paths into `i`, and
   `TauCeti.not_isZero_indecInjRep`: `Iᵢ` is nonzero.
@@ -287,6 +289,19 @@ theorem indecInjRepHomEquiv_comp (i : Q) {M N : QuiverRep k Q} (g : M ⟶ N)
     indecInjRepHomEquiv i M (g ≫ f) =
       indecInjRepHomEquiv i N f ∘ₗ (g.app ((Paths.of Q).obj i)).hom :=
   (rfl)
+
+/-- A morphism out of `Iᵢ` that is injective at `i` is a split monomorphism. The retraction is
+obtained by extending the functional corresponding to the identity of `Iᵢ` across that injective
+component. -/
+theorem isSplitMono_of_indecInjRep_app_injective {i : Q} {X : QuiverRep k Q}
+    (g : indecInjRep k Q i ⟶ X) (hg : Function.Injective (g.app ((Paths.of Q).obj i))) :
+    IsSplitMono g := by
+  obtain ⟨φ, hφ⟩ := LinearMap.dualMap_surjective_of_injective hg
+    (indecInjRepHomEquiv i (indecInjRep k Q i) (𝟙 (indecInjRep k Q i)))
+  refine IsSplitMono.mk' ⟨(indecInjRepHomEquiv i X).symm φ, ?_⟩
+  apply (indecInjRepHomEquiv i (indecInjRep k Q i)).injective
+  rw [indecInjRepHomEquiv_comp, LinearEquiv.apply_symm_apply]
+  exact hφ
 
 /-- **The representations `Iᵢ` are injective.** A morphism into `Iᵢ` is a single linear functional
 on the source at `i`, a monomorphism of representations is injective there, and a linear functional

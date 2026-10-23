@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.GroupScheme
+public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.BaseChange
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.RootInToral
 
@@ -165,6 +165,17 @@ theorem rootSubgroupCoordinateMap_surjective (k : Fin 6 ⊕ Fin 6) :
     isUnit_one (rep_serreRootGenerator_matrixBasis k)
     (rep_serreRootGenerator_sq_apply_matrixBasis k)
 
+/-- Every numbered integral root-subgroup coordinate map is surjective. In particular, its
+differential is injective over every coefficient algebra. -/
+theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin 6 ⊕ Fin 6) :
+    Function.Surjective (rootSubgroupIntegralCoordinateMap k).hom := by
+  have h := (rootSubgroupCoordinateMap_surjective k).comp
+    (CommHopfAlgCat.mkQuotient_surjective _ _)
+  rw [← BialgHom.coe_comp, ← CommHopfAlgCat.hom_comp,
+    mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
+    ← mkQuotient_comp_rootSubgroupIntegralCoordinateMap] at h
+  exact Function.Surjective.of_comp h
+
 /-- **Every numbered root-subgroup map into the doubled type-`E₆` minuscule carrier is a closed
 immersion.** Its scheme-theoretic image is therefore a closed copy of `𝔾ₐ`, as a pinning requires
 of its root subgroups. -/
@@ -181,7 +192,7 @@ instance isClosedImmersion_rootSubgroup (k : Fin 6 ⊕ Fin 6) :
 /-- Every numbered root-subgroup map into the doubled type-`E₆` minuscule carrier is a
 monomorphism. -/
 theorem mono_rootSubgroup (k : Fin 6 ⊕ Fin 6) : Mono (rootSubgroup k) :=
-  mono_of_isClosedImmersion_underlying (rootSubgroup k)
+  Grp.mono_of_mono_left (rootSubgroup k)
 
 /-- **A numbered doubled type-`E₆` minuscule root subgroup as a closed subgroup scheme of the
 carrier.** -/

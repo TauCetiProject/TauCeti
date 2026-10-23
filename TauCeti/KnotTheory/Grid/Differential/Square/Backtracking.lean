@@ -17,11 +17,10 @@ transpositions. This file records the first exact feature of that two-step suppo
 swaps the same pair of columns twice returns to the starting state, so the source state appears in
 its own two-step neighbour set exactly when the grid has at least two columns.
 
-This is small but useful bookkeeping for the later `∂² = 0` rectangle-pairing argument: diagonal
-targets lie in the two-step search space exactly through such backtracking when `2 ≤ n`. Grids of
-size `0` and `1` have no two-step targets at all, so any coefficient-level vanishing there follows
-from the existing small-grid differential support API rather than from a cancellation argument in
-this file.
+This is small but useful bookkeeping for the `∂² = 0` rectangle-pairing argument: diagonal targets
+lie in the two-step search space exactly through such backtracking when `2 ≤ n`. Grids of size `0`
+and `1` have no two-step targets at all, so any coefficient-level vanishing there follows from the
+small-grid differential support API rather than from a cancellation argument in this file.
 
 ## Main results
 
@@ -36,10 +35,8 @@ this file.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3,
-"The complexes and `∂² = 0`", where the square-zero proof pairs two-step rectangle
-decompositions. The column-transposition model of rectangle targets follows
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3 and 4.
+The column-transposition model of rectangle targets follows Ozsváth--Stipsicz--Szabó, *Grid Homology
+for Knots and Links*, Chapters 3 and 4.
 -/
 
 public section
@@ -59,20 +56,21 @@ theorem self_mem_twoStepColumnSwapNeighbors_of_ne (x : GridState n) {a b : Fin n
   rw [mem_columnSwapNeighbors]
   exact ⟨a, b, hab, by simp⟩
 
-/-- A diagonal two-step column-swap witness must swap the same unordered pair of columns twice. -/
+/-- A diagonal two-step column-swap witness whose first swap is nontrivial swaps the same unordered
+pair of columns twice. -/
 theorem sym2_mk_eq_of_swapColumns_swapColumns_eq_self (x : GridState n) {a b c d : Fin n}
-    (hab : a ≠ b) (hcd : c ≠ d) (h : (x.swapColumns a b).swapColumns c d = x) :
+    (hab : a ≠ b) (h : (x.swapColumns a b).swapColumns c d = x) :
     s(a, b) = s(c, d) := by
   have hswap : x.swapColumns a b = x.swapColumns c d := by
     simpa using congrArg (fun y : GridState n => y.swapColumns c d) h
-  exact sym2_mk_eq_of_swapColumns_eq hab hcd hswap
+  exact sym2_mk_eq_of_swapColumns_eq hab hswap
 
-/-- Two nontrivial column swaps form a diagonal two-step witness exactly when they use the same
-unordered pair of columns. -/
+/-- A nontrivial column swap followed by a second column swap is a diagonal two-step witness exactly
+when the two use the same unordered pair of columns. -/
 theorem swapColumns_swapColumns_eq_self_iff_sym2_mk_eq (x : GridState n) {a b c d : Fin n}
-    (hab : a ≠ b) (hcd : c ≠ d) : (x.swapColumns a b).swapColumns c d = x ↔ s(a, b) = s(c, d) := by
+    (hab : a ≠ b) : (x.swapColumns a b).swapColumns c d = x ↔ s(a, b) = s(c, d) := by
   constructor
-  · exact x.sym2_mk_eq_of_swapColumns_swapColumns_eq_self hab hcd
+  · exact x.sym2_mk_eq_of_swapColumns_swapColumns_eq_self hab
   · intro hsym
     rw [Sym2.eq, Sym2.rel_iff'] at hsym
     rcases hsym with hpair | hpair

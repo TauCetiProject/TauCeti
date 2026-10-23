@@ -54,10 +54,7 @@ harmless, is `TauCeti.SU2.conj_character_symPower_torusExp`, proved with the clo
 
 ## References
 
-This is the Weyl-chamber half of the engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`, "Engine case: `SU(2)` and the
-maximal torus", whose acceptance criterion asks for the character orthonormality of `SU(2)` to be
-computed through the Weyl integration formula, reducing to
+Character orthonormality through the Weyl integration formula reduces to
 `(2/π) ∫₀^π sin ((m+1) θ) sin ((n+1) θ) dθ = δ_{mn}`.
 
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapters 17-18.
@@ -106,10 +103,10 @@ The name records that this is orthonormality of the characters *restricted to th
 the transported density, not against Haar measure on `SU(2)`. Composing it with the Weyl
 integration formula `TauCeti.SU2.weyl_integration_formula` -- which reduces the Haar integral of a
 class function on `SU(2)` to exactly this right-hand side -- gives the character orthonormality
-`∫ χ_m · conj χ_n dμ = δ_{mn}` of the compact-groups roadmap
+`∫ χ_m · conj χ_n dμ = δ_{mn}`
 (`TauCeti.SU2.integral_character_symPower_mul_conj`), in the shape of the abstract
-`TauCeti.ContRepresentation.character_orthonormal_self` and
-`TauCeti.ContRepresentation.character_orthonormal_distinct`
+`ContRepresentation.character_orthonormal_self` and
+`ContRepresentation.character_orthonormal_distinct`
 (`TauCeti/RepresentationTheory/Compact/Character/Basic.lean`), whose name shape this deliberately
 does *not* reuse. -/
 theorem character_symPower_orthonormal_torusExp (m n : ℕ) :

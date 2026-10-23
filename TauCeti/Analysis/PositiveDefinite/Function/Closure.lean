@@ -17,9 +17,7 @@ products, and unweighted finite sums/products. Here we package the forms used by
 finite approximations: finite nonnegative weighted sums, real-weighted variants, and powers. The
 weighted sum API is available in scalar (`•`) notation.
 
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the positive-definite
-functions API asking for closure under sums and products before the Bochner and BCR representation
-milestones. No external formalization is vendored.
+No external formalization is vendored.
 
 ## Main declarations
 
@@ -49,9 +47,7 @@ variable {M : Type*} [AddMonoid M] [StarAddMonoid M]
 /-- Positive-definite functions are closed under multiplication by a nonnegative real scalar. -/
 theorem real_smul {r : ℝ} {F : M → ℂ} (hr : 0 ≤ r) (hF : IsPositiveDefinite F) :
     IsPositiveDefinite (fun x => r • F x) := by
-  convert hF.const_mul (k := (r : ℂ)) (by exact_mod_cast hr) using 1
-  ext x
-  exact Algebra.smul_def r (F x)
+  exact hF.const_mul (k := (r : ℂ)) (by exact_mod_cast hr)
 
 /-- Finite nonnegative complex-weighted sums of positive-definite functions are positive
 definite. This is the finite-mixture form used when the weights are already complex scalars with
@@ -85,7 +81,7 @@ theorem sum_real_const_mul {ι : Type*} {s : Finset ι} {w : ι → ℝ} {F : ι
 /-- Schur powers of a positive-definite function are positive definite. -/
 theorem pow {F : M → ℂ} (hF : IsPositiveDefinite F) (n : ℕ) :
     IsPositiveDefinite (fun x => F x ^ n) :=
-  of_posSemidef (posSemidef_schur_pow hF.posSemidef n)
+  of_posSemidef (hF.posSemidef.hadamard_pow n)
 
 section Values
 

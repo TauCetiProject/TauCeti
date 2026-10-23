@@ -46,6 +46,9 @@ after their stronger level-preserving notion of non-ambient isotopy (Definition 
   `TauCeti.Topology.Homotopy.AmbientIsotopic.Basic`.
 * `TauCeti.AmbientIsotopy Y`: a homotopy of `Y` from the identity whose total
   level-preserving map is a homeomorphism.
+* `TauCeti.AmbientIsotopy.reparamHomeomorph`: the level-preserving self-homeomorphism
+  `(y, s) ↦ (Φ (ρ s, y), s)` of `Y × T` obtained by reparametrising an ambient isotopy along a
+  continuous map `ρ : T → I`.
 * `TauCeti.AmbientIsotopy.trans` / `TauCeti.AmbientIsotopy.symm`: the composition and inverse of
   ambient isotopies, the closure operations that make ambient isotopy an equivalence relation.
 
@@ -290,6 +293,33 @@ theorem totalHomeomorph_symm_fst (p : I × Y) : (Φ.totalHomeomorph.symm p).1 = 
   have h := Φ.totalHomeomorph.apply_symm_apply p
   rw [totalHomeomorph_apply] at h
   exact (Prod.ext_iff.mp h).1
+
+/-- Reparametrising the ambient isotopy `Φ` by a continuous map `ρ : T → I` gives the
+level-preserving self-homeomorphism `(y, s) ↦ (Φ (ρ s, y), s)` of `Y × T`. With `T = ℝ` and `ρ` a
+clamp which is `0` near `-∞` and `1` near `+∞`, composing it with `f × id` for an embedding `f`
+gives the trace of `Φ` along `f`, a concordance from `f` to `Φ.final ∘ f`. -/
+noncomputable def reparamHomeomorph {T : Type*} [TopologicalSpace T] (ρ : C(T, I)) :
+    Y × T ≃ₜ Y × T where
+  toFun p := (Φ.toContinuousMap (ρ p.2, p.1), p.2)
+  invFun p := ((Φ.totalHomeomorph.symm (ρ p.2, p.1)).2, p.2)
+  left_inv p := by
+    have h : Φ.totalHomeomorph.symm (ρ p.2, Φ.toContinuousMap (ρ p.2, p.1)) = (ρ p.2, p.1) := by
+      simpa using Φ.totalHomeomorph.symm_apply_apply (ρ p.2, p.1)
+    simp [h]
+  right_inv p := by
+    have h1 : Φ.totalHomeomorph.symm (ρ p.2, p.1) =
+        (ρ p.2, (Φ.totalHomeomorph.symm (ρ p.2, p.1)).2) :=
+      Prod.ext (totalHomeomorph_symm_fst Φ _) rfl
+    have h2 := Φ.totalHomeomorph.apply_symm_apply (ρ p.2, p.1)
+    rw [h1, totalHomeomorph_apply] at h2
+    exact Prod.ext (congrArg Prod.snd h2) rfl
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+@[simp]
+theorem reparamHomeomorph_apply {T : Type*} [TopologicalSpace T] (ρ : C(T, I)) (p : Y × T) :
+    Φ.reparamHomeomorph ρ p = (Φ.toContinuousMap (ρ p.2, p.1), p.2) :=
+  (rfl)
 
 /-- **Composition of ambient isotopies**: follow `Φ_t` then `Ψ_t` at each time `t`. -/
 def trans (Ψ : AmbientIsotopy Y) : AmbientIsotopy Y where

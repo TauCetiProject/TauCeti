@@ -31,6 +31,8 @@ module `M` with `⁅L, M⁆ ⊆ N` and `N` acted on trivially would otherwise es
   is perfect.**
 * `TauCeti.isTrivial_of_derivedSeries_one_eq_top_of_lie_lie_eq_zero`: over a perfect Lie algebra,
   a module on which the action composes to zero is a trivial module.
+* `LieHom.eq_zero_of_derivedSeries_one_eq_top`: homomorphisms from a perfect Lie algebra
+  to an abelian Lie algebra vanish.
 
 ## References
 
@@ -118,3 +120,22 @@ theorem isTrivial_of_derivedSeries_one_eq_top_of_lie_lie_eq_zero (hL : derivedSe
 end Perfect
 
 end TauCeti
+
+namespace LieHom
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [LieRing M] [LieAlgebra R M] [IsLieAbelian M]
+
+/-- Every Lie homomorphism from a perfect Lie algebra to an abelian Lie algebra is zero. -/
+theorem eq_zero_of_derivedSeries_one_eq_top (f : L →ₗ⁅R⁆ M)
+    (hL : LieAlgebra.derivedSeries R L 1 = ⊤) : f = 0 := by
+  have hM : LieAlgebra.derivedSeries R M 1 = ⊥ := by
+    rw [LieAlgebra.derivedSeries_def, ← LieAlgebra.abelian_iff_derived_one_eq_bot,
+      lie_abelian_iff_equiv_lie_abelian LieIdeal.topEquiv]
+    infer_instance
+  have hmap := LieIdeal.derivedSeries_map_le (f := f) 1
+  rw [hL, hM, le_bot_iff, LieIdeal.map_eq_bot_iff] at hmap
+  ext x
+  exact hmap (LieSubmodule.mem_top x)
+
+end LieHom

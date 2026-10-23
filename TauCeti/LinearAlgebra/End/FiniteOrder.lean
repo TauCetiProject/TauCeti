@@ -42,31 +42,30 @@ conjugation is such a `σ`, with `j = n - 1`, since it sends a root of unity `μ
 `μ⁻¹ = μ ^ (n - 1)`; that instance is the source of `conj (χ g) = χ g⁻¹` for characters of complex
 representations.
 
-All the results are stated of `Module.End`, so they sit in the `End` namespace under
-`open Module`; the one whose consumers use it under its Mathlib receiver type,
-`Module.End.exists_eq_smul_of_norm_trace_eq_finrank`, is in that type's own namespace.
+The results are stated in the `Module.End` namespace, so they are available through dot notation
+on endomorphisms.
 
 ## Main results
 
-* `TauCeti.End.pow_eq_one_of_isRoot_charpoly`: the roots of the characteristic polynomial of
+* `Module.End.pow_eq_one_of_isRoot_charpoly`: the roots of the characteristic polynomial of
   an endomorphism of finite order `n` are `n`-th roots of unity.
-* `TauCeti.End.isSemisimple_of_pow_eq_one`: an endomorphism of finite order `n`, with `n`
+* `Module.End.isSemisimple_of_pow_eq_one`: an endomorphism of finite order `n`, with `n`
   invertible in the field, is semisimple.
-* `TauCeti.End.isIntegral_trace_of_pow_eq_one`: over any field, the trace of an endomorphism of
+* `Module.End.isIntegral_trace_of_pow_eq_one`: over any field, the trace of an endomorphism of
   finite order is integral over `ℤ`.
-* `TauCeti.End.trace_pow_eq_sum_eigenvalue_pow`: over an algebraically closed field, the trace of
+* `Module.End.trace_pow_eq_sum_eigenvalue_pow`: over an algebraically closed field, the trace of
   `f ^ m` is the sum of the `m`-th powers of the eigenvalues of `f`, weighted by the dimensions of
   the eigenspaces.
-* `TauCeti.End.map_trace_eq_trace_pow`: a ring endomorphism raising every `n`-th root of unity to
+* `Module.End.map_trace_eq_trace_pow`: a ring endomorphism raising every `n`-th root of unity to
   the `j`-th power sends the trace of an endomorphism of finite order `n` to the trace of its
   `j`-th power.
-* `TauCeti.End.conj_trace_eq_trace_pow_sub_one`: over `ℂ`, the conjugate of the trace of an
+* `Module.End.conj_trace_eq_trace_pow_sub_one`: over `ℂ`, the conjugate of the trace of an
   endomorphism of finite order `n` is the trace of its inverse `f ^ (n - 1)`.
 * `Module.End.exists_eq_smul_of_norm_trace_eq_finrank`: over `ℂ`, an endomorphism of finite order
   whose trace has absolute value the dimension **is a scalar**, the scalar being a root of unity.
   The trace is the sum of `finrank ℂ V` many roots of unity, so that absolute value is the largest
   it can take, and it is attained only when the eigenvalues all coincide.
-* `TauCeti.End.trace_eq_finrank_iff`: over `ℂ`, an endomorphism of finite order has trace equal to
+* `Module.End.trace_eq_finrank_iff`: over `ℂ`, an endomorphism of finite order has trace equal to
   the dimension **exactly when it is the identity**. The trace is the sum of `finrank ℂ V` many
   roots of unity, each of real part at most `1`, so the value `finrank ℂ V` is attained only when
   every eigenvalue is `1`, and such a diagonalizable endomorphism is the identity. The statement
@@ -77,15 +76,13 @@ All the results are stated of `Module.End`, so they sit in the `End` namespace u
 
 public section
 
-namespace TauCeti
-
 open Module Polynomial
 
 universe u w
 
 variable {k : Type u} {V : Type w} [Field k] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
 
-namespace End
+namespace Module.End
 
 /-- Every root of the characteristic polynomial of an endomorphism `f` with `f ^ n = 1` is an
 `n`-th root of unity. -/
@@ -100,7 +97,7 @@ theorem pow_eq_one_of_isRoot_charpoly {f : End k V} {n : ℕ} (hf : f ^ n = 1) {
 
 /-- The trace of an endomorphism of finite order is an algebraic integer once its characteristic
 polynomial splits: the trace is then the sum of the roots, and each of those is an `n`-th root of
-unity. This is the splitting case of `TauCeti.End.isIntegral_trace_of_pow_eq_one`, which subsumes
+unity. This is the splitting case of `Module.End.isIntegral_trace_of_pow_eq_one`, which subsumes
 it, so it stays private. -/
 private theorem isIntegral_trace_of_pow_eq_one_of_splits {f : End k V} {n : ℕ} (hn : n ≠ 0)
     (hf : f ^ n = 1) (hsplits : f.charpoly.Splits) : IsIntegral ℤ (LinearMap.trace k V f) := by
@@ -147,7 +144,7 @@ theorem mapsTo_pow_eigenspace (f : End k V) (μ : k) (m : ℕ) :
 
 /-- The trace of `f ^ m` on the `μ`-eigenspace of `f` is `dim(V_μ) * μ ^ m`, because `f ^ m` acts
 there as the scalar `μ ^ m`. -/
-theorem trace_restrict_eigenspace (f : End k V) (μ : k) (m : ℕ) :
+theorem trace_pow_restrict_eigenspace (f : End k V) (μ : k) (m : ℕ) :
     LinearMap.trace k _ ((f ^ m).restrict (mapsTo_pow_eigenspace f μ m)) =
       (finrank k (f.eigenspace μ) : k) * μ ^ m := by
   have hrestrict : (f ^ m).restrict (mapsTo_pow_eigenspace f μ m) = μ ^ m • LinearMap.id := by
@@ -182,7 +179,7 @@ theorem trace_pow_eq_sum_eigenvalue_pow (hn : (n : k) ≠ 0) (hf : f ^ n = 1) (m
   classical
   rw [LinearMap.trace_eq_sum_trace_restrict' (isInternal_eigenspace_of_pow_eq_one hn hf)
     (End.finite_hasEigenvalue f) (mapsTo_pow_eigenspace f · m)]
-  exact Finset.sum_congr rfl fun μ _ => trace_restrict_eigenspace f μ m
+  exact Finset.sum_congr rfl fun μ _ => trace_pow_restrict_eigenspace f μ m
 
 /-- **A ring endomorphism raising the roots of unity to the `j`-th power raises an endomorphism of
 finite order to the `j`-th power, as far as the trace can see**: if `f ^ n = 1` and `σ μ = μ ^ j`
@@ -221,9 +218,9 @@ vectors of `ℂ` has absolute value `finrank ℂ V` only when they all point the
 eigenvalue equals the common phase `μ`; `f` is diagonalizable, so it is `μ` times the identity.
 
 The bound itself, `‖tr f‖ ≤ finrank ℂ V`, is the triangle inequality;
-`TauCeti.End.eq_one_of_trace_eq_finrank` is the case `μ = 1`, where the trace attains the bound at
+`Module.End.eq_one_of_trace_eq_finrank` is the case `μ = 1`, where the trace attains the bound at
 the positive real value `finrank ℂ V`. -/
-theorem _root_.Module.End.exists_eq_smul_of_norm_trace_eq_finrank {f : End ℂ V} {n : ℕ}
+theorem exists_eq_smul_of_norm_trace_eq_finrank {f : End ℂ V} {n : ℕ}
     (hn : n ≠ 0) (hf : f ^ n = 1)
     (h : ‖LinearMap.trace ℂ V f‖ = (finrank ℂ V : ℝ)) : ∃ μ : ℂ, μ ^ n = 1 ∧ f = μ • 1 := by
   classical
@@ -231,7 +228,7 @@ theorem _root_.Module.End.exists_eq_smul_of_norm_trace_eq_finrank {f : End ℂ V
   rcases Nat.eq_zero_or_pos (finrank ℂ V) with hV | hV
   · have : Subsingleton V := Module.finrank_zero_iff.1 hV
     exact ⟨1, one_pow n, LinearMap.ext fun _ => Subsingleton.elim _ _⟩
-  set E := (End.finite_hasEigenvalue f).toFinset with hE
+  set E := (End.finite_hasEigenvalue f).toFinset
   have hdim : ∑ μ ∈ E, (finrank ℂ (f.eigenspace μ) : ℂ) = (finrank ℂ V : ℂ) := by
     simpa using (trace_pow_eq_sum_eigenvalue_pow hn' hf 0).symm
   have htrace : ∑ μ ∈ E, (finrank ℂ (f.eigenspace μ) : ℂ) * μ = LinearMap.trace ℂ V f := by
@@ -338,7 +335,7 @@ theorem eq_one_of_trace_eq_finrank {f : End ℂ V} {n : ℕ} (hn : n ≠ 0) (hf 
     rw [mul_right_cancel₀ (Nat.cast_ne_zero.2 hV.ne') (h.trans (one_mul _).symm), one_smul]
 
 /-- **An endomorphism of finite order has trace the dimension exactly when it is the identity.**
-The forward direction is `TauCeti.End.eq_one_of_trace_eq_finrank`; the converse is
+The forward direction is `Module.End.eq_one_of_trace_eq_finrank`; the converse is
 `LinearMap.trace_one`. -/
 theorem trace_eq_finrank_iff {f : End ℂ V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
     LinearMap.trace ℂ V f = (finrank ℂ V : ℂ) ↔ f = 1 :=
@@ -346,6 +343,4 @@ theorem trace_eq_finrank_iff {f : End ℂ V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ 
 
 end Complex
 
-end End
-
-end TauCeti
+end Module.End

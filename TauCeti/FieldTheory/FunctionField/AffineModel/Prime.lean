@@ -14,11 +14,10 @@ public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Basic
 
 An *affine model* of `F / k` is a Dedekind `k`-subalgebra `R` of `F` whose fraction field is `F`.
 `TauCeti/FieldTheory/FunctionField/AffineModel/Place.lean` sends a place of `F / k` that is finite
-on `R` to a height one prime of `R`, its centre. This file supplies the other direction: the
-normalized `𝔭`-adic valuation of `F` attached to a height one prime `𝔭` of `R` is trivial on the
-constants — every nonzero constant is a unit of `R`, hence lies outside `𝔭` — so it *is* a place
-of `F / k`. The two constructions are mutually inverse, which packages the correspondence as a
-bijection
+on `R` to a height one prime of `R`, its centre. The converse construction,
+`TauCeti.Place.ofPrime`, and its order and residue-field API live in
+`TauCeti/FieldTheory/FunctionField/Place/Adic.lean`. This file proves that the two constructions
+are mutually inverse and packages the correspondence as a bijection
 
 `{P : Place k F | R ⊆ 𝒪_P} ≃ HeightOneSpectrum R`.
 
@@ -35,11 +34,11 @@ above becomes the bijection `S ≃ HeightOneSpectrum 𝒪_S`.
 
 ## Main definitions
 
-* `TauCeti.Place.ofPrime`: the place of `F / k` attached to a height one prime of an affine
-  model.
+* `TauCeti.Place.residueRingHom` and `TauCeti.Place.quotientRingEquivResidueField`: evaluation
+  and residue identification over a model with no shared constant-field algebra requirement.
 * `TauCeti.Place.residueHom`: evaluation of the elements of the model at a place finite on it, a
   `k`-algebra map `R → F_P` whose kernel is the centre of the place
-  (`TauCeti.Place.ker_residueHom`).
+  (`TauCeti.Place.ker_residueRingHom`).
 * `TauCeti.Place.heightOneSpectrumEquiv`: the bijection between the places finite on a model and
   the height one primes of the model.
 * `TauCeti.holomorphyRingHeightOneSpectrumEquiv`: that bijection for the model `𝒪_S`, whose
@@ -52,12 +51,9 @@ above becomes the bijection `S ≃ HeightOneSpectrum 𝒪_S`.
   as exactly the places finite on the model, with `TauCeti.Place.range_ofPrime` and
   `TauCeti.Place.compl_range_ofPrime` the same statement for the finite chart and its complement
   as sets of places.
-* `TauCeti.Place.ord_ofPrime_algebraMap`: the coefficient formula `ord_P r = mult_𝔭 (r)`, for
-  `r ≠ 0`, the `𝔭`-form of `TauCeti.Place.ord_algebraMap_eq_multiplicity_center`.
 * `TauCeti.Place.quotientAlgEquivResidueField`: the residue field of a place finite on the model
   is `R` modulo the centre of the place, whence `TauCeti.Place.degree_eq_finrank_quotient_center`;
-  `TauCeti.Place.quotientAlgEquivResidueFieldOfPrime` and `TauCeti.Place.degree_ofPrime` are the
-  `𝔭`-forms, `F_P = R ⧸ 𝔭` and `deg P = [R ⧸ 𝔭 : k]`.
+  the corresponding formulas at `TauCeti.Place.ofPrime` are supplied by the basic adic-place API.
 
 ## References
 
@@ -76,51 +72,11 @@ namespace Place
 universe u v w
 
 variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
-  {R : Type w} [CommRing R] [Algebra k R] [Algebra R F]
-  [IsScalarTower k R F]
-
-section OfPrime
-
-variable [IsDedekindDomain R] [IsFractionRing R F]
-
-variable (k F)
-
-/-- **The place of `F / k` attached to a height one prime `𝔭` of an affine model `R`**: its
-valuation is Mathlib's normalized `𝔭`-adic valuation of `F`. Triviality on the constants is the
-only thing to check, and it holds because a nonzero constant is a unit of `R` and therefore
-avoids `𝔭`. -/
-noncomputable def ofPrime (𝔭 : HeightOneSpectrum R) : Place k F where
-  valuation := 𝔭.valuation F
-  valuation_surjective := 𝔭.valuation_surjective F
-  isTrivialOn := ⟨fun c hc ↦ by
-    rw [IsScalarTower.algebraMap_apply k R F, HeightOneSpectrum.valuation_eq_one_iff_notMem]
-    exact Ideal.notMem_of_isUnit _ ((isUnit_iff_ne_zero.mpr hc).map (algebraMap k R))⟩
-
-variable (𝔭 : HeightOneSpectrum R)
-
-@[simp]
-theorem valuation_ofPrime : (ofPrime k F 𝔭).valuation = 𝔭.valuation F := (rfl)
-
-/-- An affine model is contained in the valuation ring of the place of each of its height one
-primes: the place of `𝔭` is finite on `R`. -/
-theorem algebraMap_mem_integers_ofPrime (r : R) :
-    algebraMap R F r ∈ (ofPrime k F 𝔭).integers :=
-  (ofPrime k F 𝔭).mem_integers_iff.mpr (by rw [valuation_ofPrime]; exact 𝔭.valuation_le_one r)
-
-/-- The valuation of the place of `𝔭` extends the `𝔭`-adic valuation of the model. -/
-theorem valuation_ofPrime_algebraMap (r : R) :
-    (ofPrime k F 𝔭).valuation (algebraMap R F r) = 𝔭.intValuation r := by
-  rw [valuation_ofPrime, HeightOneSpectrum.valuation_of_algebraMap]
-
-/-- The elements of the model with a zero at the place of `𝔭` are exactly the elements of `𝔭`. -/
-theorem valuation_ofPrime_algebraMap_lt_one_iff {r : R} :
-    (ofPrime k F 𝔭).valuation (algebraMap R F r) < 1 ↔ r ∈ 𝔭.asIdeal := by
-  rw [valuation_ofPrime, HeightOneSpectrum.valuation_lt_one_iff_mem]
-
-end OfPrime
+  {R : Type w} [CommRing R] [Algebra R F]
 
 section Correspondence
 
+variable [Algebra k R] [IsScalarTower k R F]
 variable [IsDedekindDomain R] [IsFractionRing R F]
 
 variable (k F)
@@ -157,11 +113,6 @@ theorem heightOneSpectrumEquiv_apply
 theorem coe_heightOneSpectrumEquiv_symm_apply (𝔭 : HeightOneSpectrum R) :
     ((heightOneSpectrumEquiv k F R).symm 𝔭).1 = ofPrime k F 𝔭 := (rfl)
 
-/-- Distinct height one primes of a model give distinct places. -/
-theorem ofPrime_injective : Function.Injective (ofPrime (R := R) k F) := fun 𝔭 𝔮 h ↦
-  HeightOneSpectrum.eq_of_valuation_isEquiv_valuation (K := F)
-    (by rw [← valuation_ofPrime k F 𝔭, ← valuation_ofPrime k F 𝔮, h])
-
 /-- **A place of `F / k` is the place of a height one prime of an affine model `R` exactly when
 it is finite on `R`**: the image of `TauCeti.Place.ofPrime` is the finite chart of the model. -/
 theorem exists_eq_ofPrime_iff (P : Place k F) :
@@ -187,15 +138,6 @@ theorem compl_range_ofPrime :
   ext P
   simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_forall]
 
-/-- **The coefficient formula on the finite chart**: the order at the place of `𝔭` of a nonzero
-element of the model is the multiplicity of `𝔭` in the ideal it generates. This is
-`TauCeti.Place.ord_algebraMap_eq_multiplicity_center` at the place of `𝔭`, whose centre is `𝔭`,
-and it is what turns a divisor supported on the finite chart into a factorization of ideals. -/
-theorem ord_ofPrime_algebraMap (𝔭 : HeightOneSpectrum R) {r : R} (hr : r ≠ 0) :
-    (ofPrime k F 𝔭).ord (algebraMap R F r) = multiplicity 𝔭.asIdeal (Ideal.span {r}) := by
-  rw [(ofPrime k F 𝔭).ord_algebraMap_eq_multiplicity_center
-    (algebraMap_mem_integers_ofPrime k F 𝔭) hr, center_ofPrime]
-
 end Correspondence
 
 section ResidueField
@@ -204,20 +146,14 @@ variable (P : Place k F) (hR : ∀ r : R, algebraMap R F r ∈ P.integers)
 
 include hR
 
-/-- **Evaluation of the elements of an affine model at a place finite on it**, as a map of
-`k`-algebras `R → F_P`. It is surjective with kernel the centre of the place, which is the
-content of `TauCeti.Place.quotientAlgEquivResidueField`. -/
-noncomputable def residueHom : R →ₐ[k] P.ResidueField :=
-  { (IsLocalRing.residue P.integers).comp ((algebraMap R F).codRestrict P.integers hR) with
-    commutes' := fun c ↦ by
-      rw [IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
-        IsLocalRing.ResidueField.algebraMap_eq]
-      exact congrArg (IsLocalRing.residue _)
-        (Subtype.ext (IsScalarTower.algebraMap_apply k R F c).symm) }
+/-- **Evaluation of an affine model at a place finite on it**, as a ring map `R → F_P`.
+No algebra structure over the constant field of the place is required on `R`. -/
+noncomputable def residueRingHom : R →+* P.ResidueField :=
+  (IsLocalRing.residue P.integers).comp ((algebraMap R F).codRestrict P.integers hR)
 
 @[simp]
-theorem residueHom_apply (r : R) :
-    P.residueHom hR r = IsLocalRing.residue P.integers ⟨algebraMap R F r, hR r⟩ := (rfl)
+theorem residueRingHom_apply (r : R) :
+    P.residueRingHom hR r = IsLocalRing.residue P.integers ⟨algebraMap R F r, hR r⟩ := (rfl)
 
 variable [IsFractionRing R F]
 
@@ -225,9 +161,9 @@ variable [IsFractionRing R F]
 evaluation-map form of `TauCeti.Place.mem_center_asIdeal`, which says the same thing about the
 valuation of `P`. -/
 @[simp]
-theorem ker_residueHom : RingHom.ker (P.residueHom hR) = (P.center hR).asIdeal := by
+theorem ker_residueRingHom : RingHom.ker (P.residueRingHom hR) = (P.center hR).asIdeal := by
   ext r
-  rw [RingHom.mem_ker, residueHom_apply, P.residue_eq_zero_iff_valuation_lt_one,
+  rw [RingHom.mem_ker, residueRingHom_apply, P.residue_eq_zero_iff_valuation_lt_one,
     P.mem_center_asIdeal hR]
 
 variable [IsDedekindDomain R]
@@ -236,23 +172,62 @@ variable [IsDedekindDomain R]
 model.** This is Mathlib's approximation theorem for the adic valuation of the centre, at the
 accuracy `1`: a function integral at the place is within `1` of an element of the model, so the
 two have the same residue. -/
-theorem residueHom_surjective : Function.Surjective (P.residueHom hR) := by
+theorem residueRingHom_surjective : Function.Surjective (P.residueRingHom hR) := by
   intro y
   obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective y
   obtain ⟨c, hc⟩ := HeightOneSpectrum.exists_valuation_sub_lt_of_integer (P.center hR)
     (by rw [P.valuation_center hR]; exact P.mem_integers_iff.mp a.2) 1
   rw [Units.val_one, P.valuation_center hR] at hc
   refine ⟨c, ?_⟩
-  rw [residueHom_apply, ← sub_eq_zero, ← map_sub, P.residue_eq_zero_iff_valuation_lt_one]
+  rw [residueRingHom_apply, ← sub_eq_zero, ← map_sub, P.residue_eq_zero_iff_valuation_lt_one]
   push_cast
   exact hc
 
-/-- **The residue field of a place finite on an affine model is the model modulo the centre of
-the place**, as `k`-algebras. -/
+/-- **The residue field of a place finite on a Dedekind model is the model modulo its
+centre**, as rings. The model need not carry an algebra structure over the place's constants. -/
+noncomputable def quotientRingEquivResidueField :
+    (R ⧸ (P.center hR).asIdeal) ≃+* P.ResidueField :=
+  (Ideal.quotEquivOfEq (P.ker_residueRingHom hR).symm).trans
+    (RingHom.quotientKerEquivOfSurjective (P.residueRingHom_surjective hR))
+
+@[simp]
+theorem quotientRingEquivResidueField_mk (r : R) :
+    P.quotientRingEquivResidueField hR (Ideal.Quotient.mk (P.center hR).asIdeal r)
+      = P.residueRingHom hR r := (rfl)
+
+variable [Algebra k R] [IsScalarTower k R F]
+
+/-- **Evaluation of an affine model at a place finite on it**, as a map of `k`-algebras.
+Its underlying ring map is `TauCeti.Place.residueRingHom`. -/
+noncomputable def residueHom : R →ₐ[k] P.ResidueField :=
+  { P.residueRingHom hR with
+    -- The structure update presents evaluation through `toFun`; restate it as application
+    -- of the bundled ring map so `residueRingHom_apply` can rewrite the argument.
+    commutes' := fun c ↦ show
+      P.residueRingHom hR (algebraMap k R c) = algebraMap k P.ResidueField c from by
+        rw [residueRingHom_apply, IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
+          IsLocalRing.ResidueField.algebraMap_eq]
+        exact congrArg (IsLocalRing.residue _)
+          (Subtype.ext (IsScalarTower.algebraMap_apply k R F c).symm) }
+
+omit [IsFractionRing R F] [IsDedekindDomain R] in
+@[simp]
+theorem residueHom_apply (r : R) :
+    P.residueHom hR r = IsLocalRing.residue P.integers ⟨algebraMap R F r, hR r⟩ := (rfl)
+
+/-- **The residue field of a place finite on the model is the model modulo its centre**,
+as `k`-algebras. Its underlying ring equivalence is
+`TauCeti.Place.quotientRingEquivResidueField`. -/
 noncomputable def quotientAlgEquivResidueField :
     (R ⧸ (P.center hR).asIdeal) ≃ₐ[k] P.ResidueField :=
-  (Ideal.quotientEquivAlgOfEq k (P.ker_residueHom hR).symm).trans
-    (Ideal.quotientKerAlgEquivOfSurjective (P.residueHom_surjective hR))
+  { P.quotientRingEquivResidueField hR with
+    -- The structure update exposes the equivalence's `toFun` projection. Restating it as
+    -- bundled application lets `quotientRingEquivResidueField_mk` rewrite the residue.
+    commutes' := fun c ↦ show
+      P.quotientRingEquivResidueField hR (algebraMap k _ c) = algebraMap k P.ResidueField c from by
+        rw [← Ideal.Quotient.mk_comp_algebraMap, RingHom.comp_apply,
+          quotientRingEquivResidueField_mk]
+        exact (P.residueHom hR).commutes c }
 
 @[simp]
 theorem quotientAlgEquivResidueField_mk (r : R) :
@@ -268,35 +243,6 @@ theorem degree_eq_finrank_quotient_center :
   exact ((P.quotientAlgEquivResidueField hR).toLinearEquiv.finrank_eq).symm
 
 end ResidueField
-
-section ResidueFieldOfPrime
-
-variable [IsDedekindDomain R] [IsFractionRing R F]
-
-variable (k F) (𝔭 : HeightOneSpectrum R)
-
-/-- **The residue field of the place of a height one prime `𝔭` of an affine model is `R ⧸ 𝔭`**,
-as `k`-algebras: this is `TauCeti.Place.quotientAlgEquivResidueField` at the place of `𝔭`, whose
-centre is `𝔭`. -/
-noncomputable def quotientAlgEquivResidueFieldOfPrime :
-    (R ⧸ 𝔭.asIdeal) ≃ₐ[k] (ofPrime k F 𝔭).ResidueField :=
-  (Ideal.quotientEquivAlgOfEq k
-      (congrArg HeightOneSpectrum.asIdeal (center_ofPrime k F 𝔭)).symm).trans
-    ((ofPrime k F 𝔭).quotientAlgEquivResidueField (algebraMap_mem_integers_ofPrime k F 𝔭))
-
-@[simp]
-theorem quotientAlgEquivResidueFieldOfPrime_mk (r : R) :
-    quotientAlgEquivResidueFieldOfPrime k F 𝔭 (Ideal.Quotient.mk 𝔭.asIdeal r)
-      = (ofPrime k F 𝔭).residueHom (algebraMap_mem_integers_ofPrime k F 𝔭) r := (rfl)
-
-/-- **The degree of the place of `𝔭` is the residue degree of `𝔭`**: the weight a divisor
-attaches to a place of the finite chart is the one Mathlib's ideal theory attaches to the
-corresponding prime. -/
-theorem degree_ofPrime : (ofPrime k F 𝔭).degree = Module.finrank k (R ⧸ 𝔭.asIdeal) := by
-  rw [(ofPrime k F 𝔭).degree_eq_finrank_quotient_center (algebraMap_mem_integers_ofPrime k F 𝔭),
-    center_ofPrime]
-
-end ResidueFieldOfPrime
 
 end Place
 

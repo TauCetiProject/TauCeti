@@ -28,6 +28,7 @@ finiteness condition on `H`.
 
 * `TauCeti.Comodule.dualCoact`: the coaction map on the linear dual.
 * `TauCeti.Comodule.dualTensorHom_dualCoact`: its characteristic linear-map equation.
+* `TauCeti.Comodule.dualCoact_eq_sum`: the dual coaction written in a basis.
 * `TauCeti.Comodule.dual`: the explicit, non-global dual comodule structure.
 
 ## References
@@ -79,6 +80,18 @@ theorem dualTensorHom_dualCoact_apply (φ : Module.Dual R M) (m : M) :
   rw [dualTensorHom_dualCoact]
   simp only [LinearMap.comp_apply, matrixCoefficientBilinear_apply_apply]
 
+/-- The dual coaction written in a basis: the coefficient of `b*ⱼ` is the antipode of the
+matrix coefficient `c(φ, b j)`. -/
+theorem dualCoact_eq_sum {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R M)
+    (φ : Module.Dual R M) :
+    dualCoact (R := R) (H := H) (M := M) φ =
+      ∑ j, b.dualBasis j ⊗ₜ[R] HopfAlgebra.antipode R (matrixCoefficient (C := H) φ (b j)) := by
+  apply (dualTensorHomEquivOfBasis (N := H) b).injective
+  rw [dualTensorHomEquivOfBasis_apply, dualTensorHomEquivOfBasis_apply]
+  refine b.ext fun l ↦ ?_
+  rw [dualTensorHom_dualCoact_apply, map_sum, LinearMap.sum_apply]
+  simp [dualTensorHom_apply, Finsupp.single_apply]
+
 /-- Applying the counit to the coefficient leg of the dual coaction recovers the original
 functional. -/
 theorem dualCoact_counit : (Coalgebra.counit (R := R) (A := H)).lTensor (Module.Dual R M) ∘ₗ
@@ -114,8 +127,7 @@ private theorem dualTensorHom_assoc_dualCoact_rTensor (x : Module.Dual R M ⊗[R
       TensorProduct.comm R H H
         (TensorProduct.map (dualTensorHom R M H x) (HopfAlgebra.antipode R)
           (coact (R := R) (C := H) (M := M) m)) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [map_add, TensorProduct.map_add_left, LinearMap.add_apply]
         using congrArg₂ (· + ·) hx hy
@@ -135,8 +147,7 @@ private theorem dualTensorHom_assoc_dualCoact_rTensor (x : Module.Dual R M ⊗[R
       rw [LinearMap.rTensor_tmul, hleft, dualTensorHom_dualCoact_apply]
       rw [matrixCoefficient_def]
       generalize coact (R := R) (C := H) (M := M) m = z
-      induction z using TensorProduct.induction_on with
-      | zero => simp
+      induction z using TensorProduct.inductionOn with
       | add x y hx hy =>
           simpa only [map_add, TensorProduct.add_tmul]
             using congrArg₂ (· + ·) hx hy

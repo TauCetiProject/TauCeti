@@ -45,9 +45,8 @@ Two facts make `Ω` an invariant of `L` rather than of the chosen basis. They ar
   commutes with everything.
 
 Only nondegeneracy, symmetry and invariance of the Killing form are used, so the argument below
-would go through for any invariant nondegenerate symmetric form once the definitions and lemmas
-are parameterised by such a form; as written they are stated for the Killing form, which is the
-canonical choice this development needs and the one the roadmap pins.
+would go through for any invariant nondegenerate symmetric form once the definitions and lemmas are
+parameterised by such a form; as written they are stated for the Killing form.
 
 ## Main definitions
 
@@ -70,7 +69,7 @@ canonical choice this development needs and the one the roadmap pins.
   Casimir operators.
 * `TauCeti.casimirElement_mem_center`: **the Casimir element is central in `U(L)`.**
 
-The remaining statement about `casimirElement`, that it acts on a highest weight module of weight
+The other main statement about `casimirElement`, that it acts on a highest weight module of weight
 `λ` by the scalar `⟨λ + ρ, λ + ρ⟩ - ⟨ρ, ρ⟩`, is not proved here but in
 `TauCeti/Algebra/Lie/HighestWeight/Casimir.lean`, which is where the highest weight vectors and the
 invariant form on weights that it is phrased in are available.
@@ -87,8 +86,6 @@ invariant form on weights that it is phrased in are available.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §6.2, which builds
   the Casimir element of the trace form of a faithful representation of a semisimple Lie algebra;
   the Killing form is the case of the adjoint representation.
-* [Highest weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md),
-  Layer 5, "The Casimir element".
 -/
 
 public section
@@ -156,7 +153,7 @@ on `∑ᵢ xᵢ ⊗ yᵢ`, which vanishes. -/
 theorem ι_mul_casimirElement (z : L) :
     ι K z * casimirElement K L = casimirElement K L * ι K z := by
   classical
-  set b := Module.finBasis K L with hb
+  set b := Module.finBasis K L
   rw [← sub_eq_zero, casimirElement_eq_sum b, Finset.mul_sum, Finset.sum_mul,
     ← Finset.sum_sub_distrib]
   have hcomm : ∀ x y : L, ι K x * ι K y - ι K y * ι K x = ι K (⁅x, y⁆ : L) := fun x y ↦ by

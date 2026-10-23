@@ -106,6 +106,11 @@ def HNegTwoCor (M : Rep R G) (f : H →* G) :
     tateCohomology (Rep.res f M) (-2) ⟶ tateCohomology M (-2) :=
   negSuccCor M f 1
 
+/-- Degree-`-2` corestriction is the degree-one instance of negative corestriction. -/
+theorem HNegTwoCor_eq_negSuccCor (M : Rep R G) (f : H →* G) :
+    HNegTwoCor M f = negSuccCor M f 1 :=
+  (rfl)
+
 /-- Degree-`-2` corestriction is natural in the coefficient representation. -/
 @[reassoc (attr := simp)]
 theorem map_comp_HNegTwoCor {M N : Rep R G} (f : H →* G) (φ : M ⟶ N) :

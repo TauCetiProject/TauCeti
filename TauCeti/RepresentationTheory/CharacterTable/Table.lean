@@ -7,7 +7,12 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Completeness
 public import TauCeti.RepresentationTheory.CharacterTable.Degree
-import TauCeti.RepresentationTheory.FDRep
+-- `FDRep.character_mem_irreducibleCharacters` is stated for a simple object of `FDRep k G`.
+public import TauCeti.RepresentationTheory.Simple.Basic
+import TauCeti.RepresentationTheory.FDRep.Basic
+-- Non-public: irreducibility transports along an equivariant linear equivalence, used to move an
+-- irreducible representation onto a coordinate space.
+import TauCeti.RepresentationTheory.Irreducible
 
 /-!
 # The character table of a finite group
@@ -29,7 +34,7 @@ by a permutation of them.
 The two orthogonality relations become statements about the table: its rows are orthonormal for the
 character pairing, and its columns are orthogonal with the class sizes as weights. Over `ℂ` both
 take their familiar Hermitian form, because inversion conjugates character values
-(`TauCeti.Representation.conj_char`).
+(`Representation.conj_char`).
 
 ## Main definitions
 
@@ -50,8 +55,8 @@ take their familiar Hermitian form, because inversion conjugates character value
 * `TauCeti.card_inv_mul_sum_characterTable_mul_characterTable_inv` and
   `TauCeti.card_inv_mul_sum_characterTable_mul_conj`: **first (row) orthogonality**, over `k` and in
   its Hermitian form over `ℂ`; `TauCeti.card_inv_mul_sum_card_conjClass_mul_characterTable_mul_conj`
-  is the latter summed one column at a time, the form in which the roadmap's specification of a
-  character table asks for it;
+  is the latter summed one column at a time, the form in which `TauCeti.IsCharacterTableSpec` asks
+  for it;
   `TauCeti.characterPairing_ofCharacter_irreducibleRepresentation_orthonormal` is the same relation
   phrased as orthonormality for the character pairing.
 * `TauCeti.exists_irreducibleCharacter_eq_one`: the trivial character is a row of the table, and
@@ -60,6 +65,8 @@ take their familiar Hermitian form, because inversion conjugates character value
 * `TauCeti.card_conjClass_mul_sum_characterTable_mul_characterTable_inv` and
   `TauCeti.sum_characterTable_mul_conj`: **second (column) orthogonality**, over `k` and in its
   Hermitian form over `ℂ`.
+* `TauCeti.irreducibleCharacter_apply_mem_of_forall_pow_eq_one_mem`: the entries lie in every
+  subring containing the `|G|`-th roots of unity.
 * `TauCeti.characterTable_one`: the identity-class column of the table lists the degrees, which are
   positive (`TauCeti.characterDegree_pos`) and have squares summing to `|G|`
   (`TauCeti.sum_characterDegree_sq_eq_card`); in characteristic zero they moreover divide `|G|`
@@ -76,18 +83,13 @@ set free of a universe parameter beyond those of `k` and `G`. Nothing is lost:
 The rows are indexed by `Fin (Nat.card (ConjClasses G))` rather than by a bare `Fin r`, so that the
 squareness of the table is visible in its type.
 
-The roadmap pins the character table over `ℂ`. Everything holds over any algebraically closed field
-in which `|G|` is invertible except the Hermitian refinements, which are stated over `ℂ`, and the
-divisibility of the degrees by `|G|`, which additionally assumes `CharZero k`. So the table is
-defined over such a `k`, and `TauCeti.characterTable ℂ G` is the pinned object.
+Everything holds over any algebraically closed field in which `|G|` is invertible except the
+Hermitian refinements, which are stated over `ℂ`, and the divisibility of the degrees by `|G|`,
+which additionally assumes `CharZero k`. So the table is defined over such a `k`, and
+`TauCeti.characterTable ℂ G` is the classical complex character table.
 
 ## References
 
-This is Layer 3 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md):
-the character table as an object, with its second orthogonality relation
-(`char_column_orthogonality` in that roadmap's `Suggested.lean`) and the degrees in its
-identity-class column.
 See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 2, or J.-P. Serre, *Linear
 Representations of Finite Groups* (1977), Section 2.5.
 -/
@@ -107,9 +109,8 @@ variable (k : Type u) (G : Type v) [Field k] [Group G]
 /-- **The irreducible characters of `G` over `k`**: the set of characters of the irreducible
 representations of `G` on the coordinate spaces `Fin n → k`.
 
-Restricting to coordinate spaces costs nothing over an algebraically closed field in which `|G|` is
-invertible: by `TauCeti.character_mem_irreducibleCharacters` the character of an irreducible
-representation on any finite-dimensional space belongs to this set. -/
+Restricting to coordinate spaces costs nothing: by `TauCeti.character_mem_irreducibleCharacters` the
+character of an irreducible representation on any finite-dimensional space belongs to this set. -/
 def irreducibleCharacters : Set (G → k) :=
   {f | ∃ (n : ℕ) (ρ : Representation k G (Fin n → k)), ρ.IsIrreducible ∧ ρ.character = f}
 
@@ -124,20 +125,34 @@ theorem mem_irreducibleCharacters_iff {f : G → k} :
       ∃ (n : ℕ) (ρ : Representation k G (Fin n → k)), ρ.IsIrreducible ∧ ρ.character = f :=
   Iff.rfl
 
-variable [Finite G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
-
-/-- **Every irreducible character is an irreducible character**: the character of an irreducible
-representation on an arbitrary finite-dimensional space lies in `TauCeti.irreducibleCharacters`,
-because it is equivalent to one of the representations on a coordinate space. -/
+/-- **The character of an irreducible representation is an irreducible character**: the character
+of an irreducible representation on an arbitrary finite-dimensional space lies in
+`TauCeti.irreducibleCharacters`, because a basis transports it to an equivalent representation on a
+coordinate space. -/
 @[simp]
 theorem character_mem_irreducibleCharacters {V : Type w} [AddCommGroup V] [Module k V]
     [FiniteDimensional k V] (σ : Representation k G V) [σ.IsIrreducible] :
     σ.character ∈ irreducibleCharacters k G := by
-  have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
-  obtain ⟨d, ρ, hirr, hind, -⟩ := exists_irreducible_family_conjClasses k G
-  have := hirr
-  obtain ⟨C, ⟨e⟩⟩ := ClassFunction.exists_nonempty_equiv ρ hind rfl σ
-  exact ⟨d C, ρ C, hirr C, (_root_.Representation.char_iso e).symm⟩
+  let e : V ≃ₗ[k] (Fin (finrank k V) → k) := (Module.finBasis k V).equivFun
+  -- the representation `σ` transported along `e`
+  let ρ : Representation k G (Fin (finrank k V) → k) :=
+    { toFun g := e.conj (σ g)
+      map_one' := by simp [Module.End.one_eq_id, LinearEquiv.conj_id]
+      map_mul' g h := by simp [Module.End.mul_eq_comp, LinearEquiv.conj_comp] }
+  have he : ∀ g v, e (σ g v) = ρ g (e v) := fun g v => by
+    simp [ρ, LinearEquiv.conj_apply_apply]
+  exact ⟨_, ρ, Representation.isIrreducible_of_linearEquiv e he ‹_›,
+    (_root_.Representation.char_iso (Representation.Equiv.mk e fun g => LinearMap.ext (he g))).symm⟩
+
+/-- **The character of a simple object of `FDRep k G` is an irreducible character**, the bundled
+form of `TauCeti.character_mem_irreducibleCharacters`. -/
+@[simp]
+theorem _root_.FDRep.character_mem_irreducibleCharacters (X : FDRep k G)
+    [CategoryTheory.Simple X] : X.character ∈ irreducibleCharacters k G :=
+  have := FDRep.isIrreducible_of_simple X
+  TauCeti.character_mem_irreducibleCharacters X.ρ
+
+variable [Finite G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
 variable (k G)
 
@@ -185,6 +200,12 @@ variable {G}
 /-- The `i`-th irreducible character of `G`. -/
 noncomputable def irreducibleCharacter (i : Fin (Nat.card (ConjClasses G))) : G → k :=
   finEquivIrreducibleCharacters k G i
+
+/-- The `i`-th member of the chosen enumeration is the `i`-th irreducible character. -/
+@[simp]
+theorem coe_finEquivIrreducibleCharacters_apply (i : Fin (Nat.card (ConjClasses G))) :
+    (finEquivIrreducibleCharacters k G i : G → k) = irreducibleCharacter k i :=
+  (rfl)
 
 /-- Every enumerated character is an irreducible character. -/
 @[simp]
@@ -248,6 +269,15 @@ theorem irreducibleCharacter_one (i : Fin (Nat.card (ConjClasses G))) :
     irreducibleCharacter k i 1 = (characterDegree k i : k) := by
   rw [← character_irreducibleRepresentation k i, _root_.Representation.char_one]
   simp
+
+/-- **The values of the irreducible characters lie in every subring of `k` containing the
+`|G|`-th roots of unity**, each value being a sum of such roots. -/
+theorem irreducibleCharacter_apply_mem_of_forall_pow_eq_one_mem {A : Subring k}
+    (hA : ∀ x : k, x ^ Nat.card G = 1 → x ∈ A) (i : Fin (Nat.card (ConjClasses G))) (g : G) :
+    irreducibleCharacter k i g ∈ A := by
+  rw [← character_irreducibleRepresentation k i]
+  exact Representation.char_mem_of_forall_pow_eq_one_mem _ (IsAlgClosed.splits _)
+    (pow_card_eq_one' (x := g)) hA
 
 /-- **The degree of an irreducible character is positive**: an irreducible representation is
 nonzero, so the space affording the character has positive dimension. -/
@@ -522,9 +552,8 @@ theorem card_inv_mul_sum_characterTable_mul_conj [Fintype G]
 
 /-- **First (row) orthogonality over `ℂ`, summed one column at a time**: the Hermitian pairing of
 two rows of the complex character table, collected over the conjugacy classes with the class sizes
-as weights. This is the shape in which the roadmap's specification of a character table asks for row
-orthonormality; `TauCeti.card_inv_mul_sum_characterTable_mul_conj` is the same statement summed over
-the group.
+as weights. This is the shape in which `TauCeti.IsCharacterTableSpec` asks for row orthonormality;
+`TauCeti.card_inv_mul_sum_characterTable_mul_conj` is the same statement summed over the group.
 
 The enumeration of the conjugacy classes is an explicit `Fintype` argument rather than a classical
 one, so that the statement is about whichever enumeration the caller has in hand; a caller with

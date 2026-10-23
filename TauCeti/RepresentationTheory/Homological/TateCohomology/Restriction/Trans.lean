@@ -25,6 +25,8 @@ to Tate cohomology.
 * `TauCeti.TateCohomology.negSuccRes_trans`: restriction is transitive along a tower of subgroups.
 * `TauCeti.TateCohomology.map_comp_negSuccRes`: restriction commutes with the Tate map of a
   compatible pair along a group isomorphism.
+* `TauCeti.TateCohomology.negSuccRes_natural`: in particular, restriction is natural in the
+  coefficient representation.
 -/
 
 public section
@@ -72,5 +74,22 @@ theorem map_comp_negSuccRes {G' : Type u} [Group G'] [Fintype G'] (e : G ≃* G'
   -- of the restricted coefficient map over `S`.
   exact _ ≫= (TauCeti.groupHomology.map_comp_transfer_congrOfMapEq e he hφ.toRes n).trans
     (_ ≫= groupHomology.map_congr rfl (by simp) n)
+
+/-- **Tate restriction below degree `-1` is natural in the coefficient representation.** This is
+`map_comp_negSuccRes` along the identity of `G`. -/
+@[reassoc]
+theorem negSuccRes_natural (H : Subgroup G) {N : Rep.{u} R G} (f : M ⟶ N) (n : ℕ) [NeZero n] :
+    (tateCohomologyFunctor (Int.negSucc n)).map f ≫ negSuccRes N H n =
+      negSuccRes M H n ≫ (tateCohomologyFunctor (Int.negSucc n)).map
+        ((Rep.resFunctor H.subtype).map f) := by
+  have hf : M.ρ.IsIntertwiningMap (N.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
+      f.hom.toLinearMap := ⟨fun g v ↦ Rep.hom_comm_apply f g v⟩
+  have h := map_comp_negSuccRes M (MulEquiv.refl G) hf (S' := H) (Subgroup.map_id H) n
+  rw [map_refl] at h
+  -- The restricted pair lies along `congrOfMapEq (MulEquiv.refl G) _`, the identity of `H`.
+  exact h.trans (negSuccRes M H n ≫= (map_congr (e₂ := MulEquiv.refl H)
+    (h₂ := ⟨fun h v ↦ Rep.hom_comm_apply ((Rep.resFunctor H.subtype).map f) h v⟩)
+    (MulEquiv.ext fun x ↦ Subtype.ext (Subgroup.coe_congrOfMapEq_apply _ _ x)) rfl _).trans
+      (map_refl _ _))
 
 end TauCeti.TateCohomology

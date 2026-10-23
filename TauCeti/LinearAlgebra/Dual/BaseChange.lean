@@ -14,6 +14,8 @@ import Mathlib.LinearAlgebra.Contraction
 This file defines the canonical pairing between the scalar extensions of a module and its linear
 dual. It sends an `R`-linear functional extended to `A` to the corresponding `A`-linear functional
 on the scalar extension of its domain. For a finite projective module, this map is an equivalence.
+For an arbitrary base-change map, a nonzero functional remains nonzero when the scalar extension
+is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 
 ## Main declarations
 
@@ -82,8 +84,7 @@ theorem _root_.Module.Dual.baseChangeEvaluation_one_tmul_baseChange
     (f : M →ₗ[R] N) (φ : Module.Dual R N) (t : A ⊗[R] M) :
     baseChangeEvaluation (R := R) (M := N) (A := A) (1 ⊗ₜ[R] φ) (f.baseChange A t) =
       baseChangeEvaluation (R := R) (M := M) (A := A) (1 ⊗ₜ[R] (φ.comp f)) t := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add s t hs ht => simpa only [map_add] using congrArg₂ (· + ·) hs ht
   | tmul a m => simp [baseChangeEvaluation_tmul]
 
@@ -128,8 +129,7 @@ corresponding element of the dual basis. -/
 theorem baseChange_coord {ι : Type*} (b : Module.Basis ι R M) (i : ι) (z : A ⊗[R] M) :
     ((TensorProduct.isBaseChange R M A).basis b).repr z i =
       Module.Dual.baseChange A (b.coord i) z := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add z w hz hw => simpa only [map_add, Finsupp.add_apply] using congrArg₂ (· + ·) hz hw
   | tmul a m =>
       calc
@@ -157,3 +157,21 @@ theorem eq_of_baseChange_eq [Module.Free R M] {x y : A ⊗[R] M}
   exact h (b.coord i)
 
 end TauCeti.Module.Dual
+
+namespace IsBaseChange
+
+variable {R A V W : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W] [Module A W]
+  [IsScalarTower R A W] [FaithfulSMul R A] {j : V →ₗ[R] W}
+
+/-- A nonzero dual element remains nonzero under a faithful extension of scalars. -/
+theorem toDual_ne_zero (h : IsBaseChange A j) (s : Module.Dual R V) (hs : s ≠ 0) :
+    h.toDual s ≠ 0 := by
+  intro hz
+  apply hs
+  ext v
+  apply FaithfulSMul.algebraMap_injective R A
+  have hv := DFunLike.congr_fun hz (j v)
+  simpa only [toDual_comp_apply, LinearMap.zero_apply, map_zero] using hv
+
+end IsBaseChange

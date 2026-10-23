@@ -29,6 +29,8 @@ stated for plain pairs of vectors, and every hypothesis is a value of one of the
 * `TauCeti.one_sub_vecMulVec_mul_self`: the quadratic relation.
 * `TauCeti.det_one_sub_vecMulVec` and `TauCeti.inv_one_sub_vecMulVec`: the determinant and the
   inverse.
+* `TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply` and its inverse counterpart compute the
+  induced linear automorphism on column vectors.
 -/
 
 public section
@@ -118,5 +120,35 @@ hypothesis, so `simp` cannot infer it from the left-hand side. Consumers that fi
 theorem inv_one_sub_vecMulVec (t : Rˣ) {u v : α → R} (h : v ⬝ᵥ u = (t : R) + 1) :
     (1 - vecMulVec u v)⁻¹ = 1 - ((t⁻¹ : Rˣ) : R) • vecMulVec u v :=
   Matrix.inv_eq_right_inv (one_sub_vecMulVec_mul_inv t h)
+
+/-- The induced linear automorphism subtracts the row pairing in the column direction. -/
+@[simp]
+theorem oneSubVecMulVecGL_toLinearEquiv_apply (t : Rˣ) (u v x : α → R)
+    (h : v ⬝ᵥ u = (t : R) + 1) :
+    (LinearMap.GeneralLinearGroup.generalLinearEquiv R (α → R)
+      (Matrix.GeneralLinearGroup.toLin (oneSubVecMulVecGL t u v h))) x =
+        x - (v ⬝ᵥ x) • u := by
+  simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
+    Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply, coe_oneSubVecMulVecGL,
+    Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.vecMulVec_mulVec, op_smul_eq_smul]
+
+/-- The inverse induced automorphism rescales the same row pairing by the inverse unit. -/
+@[simp]
+theorem oneSubVecMulVecGL_toLinearEquiv_symm_apply (t : Rˣ) (u v x : α → R)
+    (h : v ⬝ᵥ u = (t : R) + 1) :
+    (LinearMap.GeneralLinearGroup.generalLinearEquiv R (α → R)
+      (Matrix.GeneralLinearGroup.toLin (oneSubVecMulVecGL t u v h))).symm x =
+        x - ((↑t⁻¹ : R) * (v ⬝ᵥ x)) • u := by
+  let L := Matrix.GeneralLinearGroup.toLin.trans
+    (LinearMap.GeneralLinearGroup.generalLinearEquiv R (α → R))
+  calc
+    _ = L (oneSubVecMulVecGL t u v h)⁻¹ x := by
+      simp only [L, map_inv, MulEquiv.trans_apply, LinearEquiv.coe_inv]
+    _ = _ := by
+      simp only [L, MulEquiv.trans_apply, LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
+        Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply,
+        Matrix.GeneralLinearGroup.coe_inv, coe_oneSubVecMulVecGL, inv_one_sub_vecMulVec t h,
+        Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec, Matrix.vecMulVec_mulVec,
+        op_smul_eq_smul, smul_smul]
 
 end TauCeti

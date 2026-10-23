@@ -48,9 +48,6 @@ must instead detect infinitesimal points.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This supplies the smooth case of the geometric definition required by Layer 5, "Unipotent
-groups", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -64,9 +61,9 @@ universe u v
 /-- The object property asserting that every algebraic-closure-valued point acts unipotently in
 every finite-dimensional representation.
 
-This geometric-point criterion is kept separate from smoothness, as required by the roadmap. It
-is not by itself a definition of unipotence for nonreduced group schemes, whose infinitesimal
-structure is invisible to algebraic-closure-valued points. -/
+Smoothness is not part of this property; `smoothUnipotentCommHopfAlgProperty` adds it. The
+geometric-point criterion is not by itself a definition of unipotence for nonreduced group schemes,
+whose infinitesimal structure is invisible to algebraic-closure-valued points. -/
 def geometricallyUnipotentPointsCommHopfAlgProperty (k : Type u) [Field k] :
     ObjectProperty (CommHopfAlgCat.{v} k) :=
   fun H ↦ ∀ g : WithConv (H →ₐ[k] AlgebraicClosure k),

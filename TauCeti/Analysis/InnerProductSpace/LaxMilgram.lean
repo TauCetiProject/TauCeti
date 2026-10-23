@@ -15,7 +15,7 @@ Mathlib's Lax--Milgram theorem is packaged as
 `B : V →L[ℝ] V →L[ℝ] ℝ` induces a continuous linear equivalence `V ≃L[ℝ] V` sending
 `u` to the Riesz representative of the functional `v ↦ B u v`.
 
-The PDE roadmap's energy-method lane needs the corresponding variational-solution API:
+The variational formulation of coercive equations uses the corresponding solution API:
 given a represented forcing functional `v ↦ ⟪F, v⟫`, there is a unique `u` satisfying
 `B u v = ⟪F, v⟫` for every test vector `v`.  This file records that direct
 existence/uniqueness form without changing Mathlib's theorem or introducing any PDE-specific
@@ -32,6 +32,7 @@ bundled structure.
 * `IsCoercive.existsUnique_forall_eq_inner`: the combined existence-and-uniqueness theorem.
 * `IsCoercive.solutionOfFunctional` and `IsCoercive.existsUnique_forall_eq`: the same API
   for an arbitrary continuous linear functional, using Fréchet--Riesz representation.
+* `IsCoercive.solutionOfFunctionalCLM`: the continuous linear solution map on the strong dual.
 
 The proof is a thin wrapper around Mathlib's `IsCoercive.continuousLinearEquivOfBilin` and
 its characteristic identity.
@@ -124,6 +125,18 @@ theorem solutionOfFunctional_def (hB : IsCoercive B) (ℓ : StrongDual ℝ V) :
     solutionOfFunctional hB ℓ =
       solutionOfInner hB ((InnerProductSpace.toDual ℝ V).symm ℓ) :=
   by simp [solutionOfFunctional]
+
+/-- The Lax--Milgram solution map on continuous linear functionals, bundled as a continuous
+linear map. -/
+def solutionOfFunctionalCLM (hB : IsCoercive B) : StrongDual ℝ V →L[ℝ] V :=
+  hB.continuousLinearEquivOfBilin.symm.toContinuousLinearMap.comp
+    (InnerProductSpace.toDual ℝ V).symm.toContinuousLinearEquiv.toContinuousLinearMap
+
+/-- The bundled functional solution map agrees with `solutionOfFunctional` at each functional. -/
+@[simp]
+theorem solutionOfFunctionalCLM_apply (hB : IsCoercive B) (ℓ : StrongDual ℝ V) :
+    hB.solutionOfFunctionalCLM ℓ = hB.solutionOfFunctional ℓ :=
+  (rfl)
 
 /-- For represented functionals, the functional solution agrees with `solutionOfInner`. -/
 @[simp]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Basic
+public import Mathlib.Algebra.Module.LinearMap.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 
 /-!
@@ -18,7 +18,8 @@ Precomposition reverses composition, which is exactly what exchanges the two sid
 
 This file records that action as the ring homomorphism `TauCeti.dualRightAction`.
 
-On the other side, a `k`-algebra `A` acts on the right of the dual of its left regular module by
+On the other side, a semiring `A` with a `k`-module structure commuting with left multiplication
+acts on the right of the dual of its left regular module by
 `(ψ · c) b = ψ (c * b)`, which Mathlib writes as the domain action `DomMulAct.mk c • ψ`. A
 `k`-linear map `A → Module.Dual k A` that is right `A`-linear for this action is determined by its
 value at `1`; this is `TauCeti.dualLinearMap_apply_apply`.
@@ -76,13 +77,13 @@ theorem dualRightAction_apply_apply (a : A) (φ : Module.Dual k N) (x : N) :
 
 section DomMulAct
 
-variable {k} [Algebra k A]
+variable {k} [Module k A] [SMulCommClass k A A]
 
 /-- A `k`-linear map from `A` to its dual that is right `A`-linear, for the action
 `DomMulAct.mk c • ψ = ψ (c * ·)` on the dual, is determined by its value at `1`. -/
 theorem dualLinearMap_apply_apply {e : A →ₗ[k] Module.Dual k A}
     (he : ∀ a c : A, e (a * c) = DomMulAct.mk c • e a) (a b : A) : e a b = e 1 (a * b) := by
-  simpa [DomMulAct.smul_linearMap_apply] using LinearMap.congr_fun (he 1 a) b
+  simpa using LinearMap.congr_fun (he 1 a) b
 
 end DomMulAct
 

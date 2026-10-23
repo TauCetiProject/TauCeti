@@ -27,12 +27,6 @@ symmetric in the involution, it satisfies the Cauchy–Schwarz inequality coming
 sub-form, and the class is closed under sums and nonnegative complex scalar multiples, with the
 Schur pointwise product closure and nonnegative constants as examples.
 
-This is the `Objects` and first `API to develop` slice of Part C of the `OneParameterSemigroups`
-roadmap in TauCetiRoadmap: "positive-definite functions and Bochner's theorem". Mathlib has
-related APIs for positive-semidefinite matrices, bilinear and linear maps, and RKHS kernels, but
-not for positive-definite functions on an involutive monoid, so the predicate and its API are built
-here. The continuity theory and Bochner's representation theorem are later milestones.
-
 ## Main declarations
 
 * `TauCeti.IsPositiveDefinite`: the positive-definiteness predicate for `F : M → ℂ`.
@@ -47,6 +41,8 @@ here. The continuity theory and Bochner's representation theorem are later miles
 * `TauCeti.IsPositiveDefinite.conj_symm`: `conj (F (b + a⋆)) = F (a + b⋆)`.
 * `TauCeti.IsPositiveDefinite.normSq_le`: the Cauchy–Schwarz inequality
   `‖F (a + b⋆)‖² ≤ (F (a + a⋆)).re * (F (b + b⋆)).re`.
+* `TauCeti.IsPositiveDefinite.norm_apply_add_star_le`: a uniform bound at the "norm points"
+  `a + star a` bounds every value `F (p + star q)`.
 * `TauCeti.IsPositiveDefinite.norm_apply_le_map_zero_re_of_add_star_eq_zero`: `‖F a‖ ≤ (F 0).re`
   when `a + star a = 0`, with the additive-group corollary
   `TauCeti.IsPositiveDefinite.norm_apply_le_map_zero_re_of_star_eq_neg` for `star a = -a`.
@@ -208,6 +204,12 @@ theorem normSq_le (hF : IsPositiveDefinite F) (a b : M) :
       ≤ (F (a + star a)).re * (F (b + star b)).re :=
   hF.posSemidef.normSq_le a b
 
+/-- A positive-definite function bounded at the "norm points" `a + star a` is bounded at every
+point of the form `p + star q`, by Cauchy--Schwarz for its kernel. -/
+theorem norm_apply_add_star_le {C : ℝ} (hF : IsPositiveDefinite F)
+    (hbdd : ∀ a, ‖F (a + star a)‖ ≤ C) (p q : M) : ‖F (p + star q)‖ ≤ C :=
+  hF.posSemidef.norm_le_of_norm_apply_self_le hbdd p q
+
 /-- If `a + star a = 0`, then a positive-definite function is bounded at `a` by its value at
 zero. -/
 theorem norm_apply_le_map_zero_re_of_add_star_eq_zero (hF : IsPositiveDefinite F)
@@ -276,8 +278,11 @@ namespace IsPositiveDefinite
 
 /-- Positive-definite functions are closed under finite sums. -/
 theorem sum {ι : Type*} {s : Finset ι} {F : ι → M → ℂ} (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :
-    IsPositiveDefinite (fun x => ∑ i ∈ s, F i x) :=
-  of_posSemidef <| posSemidef_finset_sum fun i hi => (hF i hi).posSemidef
+    IsPositiveDefinite (fun x => ∑ i ∈ s, F i x) := by
+  apply of_posSemidef
+  have heq : (∑ i ∈ s, fun a b : M => F i (a + star b)) =
+      (fun a b : M => ∑ i ∈ s, F i (a + star b)) := by ext; simp
+  exact heq ▸ Matrix.posSemidef_sum s (fun i hi => (hF i hi).posSemidef)
 
 /-- Positive-definite functions are closed under finite products (Schur product). -/
 theorem prod {ι : Type*} {s : Finset ι} {F : ι → M → ℂ} (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :

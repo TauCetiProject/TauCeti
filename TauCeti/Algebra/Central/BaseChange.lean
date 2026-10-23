@@ -118,8 +118,7 @@ theorem of_baseChange [Algebra.IsCentral L (L ⊗[K] A)] : Algebra.IsCentral K A
     -- `1 ⊗ₜ a` is central in `L ⊗[K] A`; centrality of the ring does not depend on the base.
     have hcentral : (1 : L) ⊗ₜ[K] a ∈ Subalgebra.center L (L ⊗[K] A) := by
       refine Subalgebra.mem_center_iff.mpr fun y => ?_
-      induction y using TensorProduct.induction_on with
-      | zero => simp
+      induction y using TensorProduct.inductionOn with
       | tmul l b => simp [Algebra.TensorProduct.tmul_mul_tmul, ha b]
       | add y z hy hz => simp [add_mul, mul_add, hy, hz]
     obtain ⟨l, hl⟩ := Algebra.mem_bot.mp (Algebra.IsCentral.out hcentral)

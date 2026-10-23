@@ -139,7 +139,7 @@ theorem upperMass_map (F : SimpleGraph (Fin k)) (f : Fin k ↪ Fin l) :
     L.upperMass (F.map ⇑f) = L.upperMass F := by
   have hset : {G : SimpleGraph (Fin l) | F.map ⇑f ≤ G} =
       SimpleGraph.comap ⇑f ⁻¹' {H : SimpleGraph (Fin k) | F ≤ H} :=
-    Set.ext fun G => SimpleGraph.map_le_iff_le_comap f F G
+    Set.ext fun _ => SimpleGraph.map_le_iff_le_comap
   rw [upperMass_def, upperMass_def, hset,
     ← Measure.map_apply (SimpleGraph.measurable_comap ⇑f) MeasurableSet.of_discrete,
     L.consistent f]

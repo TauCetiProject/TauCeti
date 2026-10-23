@@ -187,6 +187,15 @@ theorem disjoint_image_Ioi_Iio (h : IsBicollar f b) :
   rw [htt] at hneg
   exact absurd (hpos.trans hneg) (lt_irrefl 0)
 
+/-- Every point of the image of a bicollared map is a limit of points of the bicollar at depths
+in `s`, if `0` is in the closure of `s`. -/
+theorem apply_mem_closure_image (h : IsBicollar f b) {s : Set ℝ} (hs : (0 : ℝ) ∈ closure s)
+    (x : N) : f x ∈ closure (b '' (univ ×ˢ s)) := by
+  rw [← h.apply_zero x]
+  refine image_closure_subset_closure_image h.isOpenEmbedding.continuous ⟨(x, 0), ?_, rfl⟩
+  rw [closure_prod_eq, closure_univ]
+  exact ⟨mem_univ _, hs⟩
+
 /-- A bicollar restricts to a bicollar over any open subset of the domain. -/
 theorem restrict (h : IsBicollar f b) {U : Set N} (hU : IsOpen U) :
     IsBicollar (f ∘ ((↑) : U → N)) (b ∘ Prod.map ((↑) : U → N) id) where
@@ -205,6 +214,32 @@ theorem comp_homeomorph (h : IsBicollar f b) (e : N' ≃ₜ N) :
     IsBicollar (f ∘ e) (b ∘ Prod.map e id) where
   isOpenEmbedding := h.isOpenEmbedding.comp (e.isOpenEmbedding.prodMap IsOpenEmbedding.id)
   apply_zero x := h.apply_zero (e x)
+
+/-- Reversing the depth coordinate of a bicollar gives a bicollar, with its two sides
+exchanged. -/
+theorem comp_prodMap_id_neg (h : IsBicollar f b) : IsBicollar f (b ∘ Prod.map id Neg.neg) where
+  isOpenEmbedding := h.isOpenEmbedding.comp
+    (IsOpenEmbedding.id.prodMap (Homeomorph.neg ℝ).isOpenEmbedding)
+  apply_zero x := by simpa using h.apply_zero x
+
+open Function in
+/-- Bicollars with pairwise disjoint images assemble into a bicollar of the map they collar on the
+disjoint union of their domains. -/
+theorem sigma {ι : Type*} {N : ι → Type*} [∀ i, TopologicalSpace (N i)] {f : ∀ i, N i → M}
+    {b : ∀ i, N i × ℝ → M} (h : ∀ i, IsBicollar (f i) (b i))
+    (hb : Pairwise (Disjoint on fun i => range (b i))) :
+    IsBicollar (fun x : Σ i, N i => f x.1 x.2) (fun p => b p.1.1 (p.1.2, p.2)) where
+  isOpenEmbedding := by
+    have hinj : Function.Injective fun q : Σ i, N i × ℝ => b q.1 q.2 := by
+      rintro ⟨i, p⟩ ⟨j, q⟩ hpq
+      obtain rfl | hij := eq_or_ne i j
+      · rw [(h i).isOpenEmbedding.injective (a₁ := p) (a₂ := q) hpq]
+      · exact ((hb hij).ne_of_mem (mem_range_self p) (mem_range_self q) hpq).elim
+    exact (IsOpenEmbedding.of_continuous_injective_isOpenMap
+      (continuous_sigma fun i => (h i).isOpenEmbedding.continuous) hinj
+      (isOpenMap_sigma.2 fun i => (h i).isOpenEmbedding.isOpenMap)).comp
+      (Homeomorph.sigmaProdDistrib (ι := ι) (X := N) (Y := ℝ)).isOpenEmbedding
+  apply_zero x := (h x.1).apply_zero x.2
 
 end IsBicollar
 
@@ -253,6 +288,14 @@ theorem exists_isOpen_sdiff_range_eq_union [Nonempty N] (h : IsBicollared f) :
 end IsBicollared
 
 namespace IsLocallyBicollared
+
+/-- A locally bicollared map is continuous, being continuous on each open set on which it is
+bicollared. -/
+theorem continuous (h : IsLocallyBicollared f) : Continuous f :=
+  continuous_iff_continuousAt.2 fun x =>
+    let ⟨_, hU, hxU, hb⟩ := h x
+    (continuousOn_iff_continuous_domRestrict.2 hb.isEmbedding.continuous).continuousAt
+      (hU.mem_nhds hxU)
 
 /-- Local bicollaring is inherited by the restriction to an open subset of the domain. -/
 theorem restrict (h : IsLocallyBicollared f) {U : Set N} (hU : IsOpen U) :

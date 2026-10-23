@@ -9,6 +9,7 @@ public import Mathlib.Algebra.DirectSum.Internal
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
 public import Mathlib.RingTheory.Derivation.Basic
 public import TauCeti.Algebra.WordFiltration.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
 # Homogeneous submodules of a symmetric algebra
@@ -16,7 +17,8 @@ public import TauCeti.Algebra.WordFiltration.Basic
 For a module `M` over a commutative semiring `R`, this file defines the degree-`n` piece of
 `SymmetricAlgebra R M` to be the `n`-th power of the range of the canonical generator map,
 identifies it with the span of the products of exactly `n` generators, and records that degrees add
-under multiplication. The pieces span the whole symmetric algebra, but no internal direct-sum
+under multiplication and that scaling linear evaluation scales degree-`n` values by the `n`-th
+power. The pieces span the whole symmetric algebra, but no internal direct-sum
 decomposition is proven here. A derivation of the symmetric algebra that sends every generator to
 degree one preserves every homogeneous submodule.
 
@@ -28,6 +30,11 @@ degree one preserves every homogeneous submodule.
 * `TauCeti.SymmetricAlgebra.iSup_homogeneousSubmodule_eq_top`: the homogeneous pieces span the
   whole symmetric algebra.
 * `TauCeti.SymmetricAlgebra.instGradedMonoid`: the homogeneous submodules form a graded monoid.
+* `TauCeti.SymmetricAlgebra.homogeneousSubmoduleZeroEquiv`,
+  `TauCeti.SymmetricAlgebra.homogeneousSubmoduleOneEquiv`: the homogeneous pieces of degree zero
+  and one are the scalars and the module itself.
+* `AlgHom.apply_eq_pow_mul_of_forall_ι_eq`: rescaling generator values in the target
+  algebra rescales homogeneous values by the corresponding power.
 * `TauCeti.SymmetricAlgebra.derivation_mem_homogeneousSubmodule`: a derivation sending generators
   to degree one preserves every homogeneous submodule.
 
@@ -53,6 +60,33 @@ abbrev homogeneousSubmodule (n : ℕ) : Submodule R (SymmetricAlgebra R M) :=
 theorem ι_mem_homogeneousSubmodule (x : M) :
     SymmetricAlgebra.ι R M x ∈ homogeneousSubmodule R M 1 := by
   simpa only [pow_one] using LinearMap.mem_range_self (SymmetricAlgebra.ι R M) x
+
+variable {R M} in
+/-- Algebra maps whose values on generators differ by a scalar in the target algebra
+have degree-`n` values differing by its `n`th power. -/
+theorem _root_.AlgHom.apply_eq_pow_mul_of_forall_ι_eq {A : Type*}
+    [CommSemiring A] [Algebra R A] (f g : SymmetricAlgebra R M →ₐ[R] A)
+    (c : A) (h : ∀ m, g (SymmetricAlgebra.ι R M m) = c * f (SymmetricAlgebra.ι R M m))
+    {n : ℕ} {s : SymmetricAlgebra R M} (hs : s ∈ homogeneousSubmodule R M n) :
+    g s = c ^ n * f s := by
+  induction hs using Submodule.pow_induction_on_left' with
+  | algebraMap r => simp
+  | add x y _ _ _ ihx ihy => simp [ihx, ihy, mul_add]
+  | mem_mul m hm _ _ _ ih =>
+    obtain ⟨y, rfl⟩ := hm
+    simp only [map_mul, h, ih, pow_succ]
+    ring
+
+/-- Scaling a linear evaluation by `r` scales the value of a homogeneous polynomial of
+degree `n` by `rⁿ`. -/
+theorem lift_smul_of_mem_homogeneousSubmodule {A : Type*} [CommSemiring A] [Algebra R A]
+    (f : M →ₗ[R] A) (r : R) {n : ℕ} {p : SymmetricAlgebra R M}
+    (hp : p ∈ homogeneousSubmodule R M n) :
+    SymmetricAlgebra.lift (r • f) p = r ^ n • SymmetricAlgebra.lift f p := by
+  simpa only [Algebra.smul_def, map_pow] using
+    AlgHom.apply_eq_pow_mul_of_forall_ι_eq (SymmetricAlgebra.lift f)
+      (SymmetricAlgebra.lift (r • f)) (algebraMap R A r)
+      (fun m ↦ by simp [Algebra.smul_def]) hp
 
 /-- A product of `n` symmetric-algebra generators is homogeneous of degree `n`. -/
 theorem prod_map_ι_mem_homogeneousSubmodule (l : List M) :
@@ -104,6 +138,51 @@ theorem iSup_homogeneousSubmodule_eq_top :
         (Set.range (SymmetricAlgebra.ι R M))).toSubmodule :=
       TauCeti.Algebra.iSup_wordFiltration_eq_adjoin (SymmetricAlgebra.ι R M)
     _ = ⊤ := by rw [hadjoin]; rfl
+
+/-- The degree-zero homogeneous submodule of a symmetric algebra is the image of the scalars,
+which embed injectively. -/
+noncomputable def homogeneousSubmoduleZeroEquiv : homogeneousSubmodule R M 0 ≃ₗ[R] R :=
+  ((LinearEquiv.ofInjective (Algebra.linearMap R (SymmetricAlgebra R M))
+    (SymmetricAlgebra.algebraMap_leftInverse M).injective).trans
+    (LinearEquiv.ofEq _ _ (by rw [homogeneousSubmodule, pow_zero, Submodule.one_eq_range]))).symm
+
+/-- The inverse of `homogeneousSubmoduleZeroEquiv` sends a scalar to its image in the symmetric
+algebra. -/
+@[simp]
+theorem coe_homogeneousSubmoduleZeroEquiv_symm_apply (r : R) :
+    ((homogeneousSubmoduleZeroEquiv R M).symm r : SymmetricAlgebra R M) =
+      algebraMap R (SymmetricAlgebra R M) r :=
+  (rfl)
+
+/-- A degree-zero element of a symmetric algebra is the image of the scalar
+`homogeneousSubmoduleZeroEquiv` assigns to it. -/
+@[simp]
+theorem algebraMap_homogeneousSubmoduleZeroEquiv_apply (x : homogeneousSubmodule R M 0) :
+    algebraMap R (SymmetricAlgebra R M) (homogeneousSubmoduleZeroEquiv R M x) = x := by
+  conv_rhs => rw [← (homogeneousSubmoduleZeroEquiv R M).symm_apply_apply x]
+  exact (coe_homogeneousSubmoduleZeroEquiv_symm_apply R M _).symm
+
+/-- The degree-one homogeneous submodule of a symmetric algebra is the image of the module, which
+embeds injectively. -/
+noncomputable def homogeneousSubmoduleOneEquiv : homogeneousSubmodule R M 1 ≃ₗ[R] M :=
+  ((LinearEquiv.ofInjective (SymmetricAlgebra.ι R M) (ι_injective R M)).trans
+    (LinearEquiv.ofEq _ _ (pow_one _).symm)).symm
+
+/-- The inverse of `homogeneousSubmoduleOneEquiv` sends an element of the module to its
+generator. -/
+@[simp]
+theorem coe_homogeneousSubmoduleOneEquiv_symm_apply (m : M) :
+    ((homogeneousSubmoduleOneEquiv R M).symm m : SymmetricAlgebra R M) =
+      SymmetricAlgebra.ι R M m :=
+  (rfl)
+
+/-- A degree-one element of a symmetric algebra is the generator of the element of the module
+`homogeneousSubmoduleOneEquiv` assigns to it. -/
+@[simp]
+theorem ι_homogeneousSubmoduleOneEquiv_apply (x : homogeneousSubmodule R M 1) :
+    SymmetricAlgebra.ι R M (homogeneousSubmoduleOneEquiv R M x) = x := by
+  conv_rhs => rw [← (homogeneousSubmoduleOneEquiv R M).symm_apply_apply x]
+  exact (coe_homogeneousSubmoduleOneEquiv_symm_apply R M _).symm
 
 /-- The homogeneous submodules form a graded monoid: the unit is homogeneous of degree zero, and
 multiplication adds degrees. -/

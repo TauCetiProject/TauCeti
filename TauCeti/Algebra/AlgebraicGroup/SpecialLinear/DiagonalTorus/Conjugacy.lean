@@ -82,60 +82,33 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
     ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mp hI) π
   obtain ⟨P, hdet, hmat⟩ := exists_det_eq_one_mul_map_eq_map_mul_diagGL (algebraMap k Q)
     _ P₀ t hmat₀
-  let s : Matrix.SpecialLinearGroup (Fin (r + 1)) k :=
-    ⟨P, by rw [← Matrix.GeneralLinearGroup.val_det_apply, hdet, Units.val_one]⟩
   let g : WithConv (coordinateHopfAlgebra k (r + 1) →ₐ[k] k) :=
-    (pointsMulEquiv (R := k) (A := k) (r + 1)).symm s⁻¹
+    (pointsMulEquiv (R := k) (A := k) (r + 1)).symm
+      (Matrix.SpecialLinearGroup.toGLKerEquiv.symm ⟨P, hdet⟩)⁻¹
   -- The generic point of the subgroup, conjugated by `g`, is diagonal.
   have hdiag : Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := k) (A := Q) (r + 1)
       (toConv ((πS : coordinateHopfAlgebra k (r + 1) →ₐ[k] Q).comp
         (HopfAlgebra.pointConjugationAlgHom g)))) = diagGL t := by
-    have hπ : Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := k) (A := Q) (r + 1)
-        (toConv (πS : coordinateHopfAlgebra k (r + 1) →ₐ[k] Q))) =
-        GeneralLinear.pointsMulEquiv (r + 1) (toConv (π : _ →ₐ[k] Q)) :=
-      -- `quotientPointsHom` precomposes with the quotient map `coordinateMap`, giving `π`.
-      (pointsMulEquiv_toGL k (r + 1) _).symm
-    have hg : Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := k) (A := Q) (r + 1)
-        (AlgHom.mapValue (H := coordinateHopfAlgebra k (r + 1)) (Algebra.ofId k Q) g)) =
-        Matrix.GeneralLinearGroup.map (algebraMap k Q) P⁻¹ := by
-      rw [pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, map_inv, map_inv, map_inv]
-      congr 1
-      ext i j
-      rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
-        Matrix.SpecialLinearGroup.map_apply_coe, Matrix.GeneralLinearGroup.map_apply]
-      -- `Algebra.ofId k Q` is `algebraMap k Q` as a ring homomorphism.
-      rfl
-    calc
-      Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := k) (A := Q) (r + 1)
+    have hmatrix' : Matrix.SpecialLinearGroup.toGL
+        (pointsMulEquiv (R := k) (A := Q) (r + 1)
           (toConv ((πS : coordinateHopfAlgebra k (r + 1) →ₐ[k] Q).comp
             (HopfAlgebra.pointConjugationAlgHom g)))) =
-          Matrix.GeneralLinearGroup.map (algebraMap k Q) P⁻¹ *
-            Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := k) (A := Q) (r + 1)
-              (toConv (πS : coordinateHopfAlgebra k (r + 1) →ₐ[k] Q))) *
-            (Matrix.GeneralLinearGroup.map (algebraMap k Q) P⁻¹)⁻¹ := by
-        rw [HopfAlgebra.comp_pointConjugationAlgHom, map_mul, map_mul, map_inv,
-          map_mul, map_mul, map_inv, hg]
-      _ = Matrix.GeneralLinearGroup.map (algebraMap k Q) P⁻¹ *
-            GeneralLinear.pointsMulEquiv (r + 1) (toConv (π : _ →ₐ[k] Q)) *
-            (Matrix.GeneralLinearGroup.map (algebraMap k Q) P⁻¹)⁻¹ := by rw [hπ]
-      _ = (Matrix.GeneralLinearGroup.map (algebraMap k Q) P)⁻¹ *
-            (GeneralLinear.pointsMulEquiv (r + 1) (toConv (π : _ →ₐ[k] Q)) *
-              Matrix.GeneralLinearGroup.map (algebraMap k Q) P) := by
-          rw [map_inv, inv_inv, mul_assoc]
-      _ = (Matrix.GeneralLinearGroup.map (algebraMap k Q) P)⁻¹ *
-            (Matrix.GeneralLinearGroup.map (algebraMap k Q) P * diagGL t) := by rw [hmat]
-      _ = diagGL t := by simp
+        (Matrix.GeneralLinearGroup.map (algebraMap k Q) P)⁻¹ *
+          GeneralLinear.pointsMulEquiv (r + 1) (toConv (π : _ →ₐ[k] Q)) *
+          Matrix.GeneralLinearGroup.map (algebraMap k Q) P := by
+      simpa only [g, π, BialgHom.comp_toAlgHom] using
+        pointsMulEquiv_comp_pointConjugationAlgHom_symm_toGLKerEquiv_symm
+          (R := k) (n := r + 1) P hdet
+          (πS : coordinateHopfAlgebra k (r + 1) →ₐ[k] Q)
+    rw [hmatrix', mul_assoc, hmat]
+    simp
   have hmem := (mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff r k Q
     (toConv ((πS : coordinateHopfAlgebra k (r + 1) →ₐ[k] Q).comp
       (HopfAlgebra.pointConjugationAlgHom g)))).mpr (by
         rw [hdiag, diagGL_coe]
         exact Matrix.isDiag_diagonal _)
-  have hle : diagonalTorusDefiningIdeal r k ≤ I.conjugate g := by
-    intro x hx
-    rw [HopfIdeal.mem_conjugate, ← HopfIdeal.mem_toIdeal,
-      ← CommHopfAlgCat.mkQuotient_eq_zero_iff]
-    exact (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mp hmem x hx
-  exact ⟨g⁻¹, by simpa using HopfIdeal.conjugate_mono g⁻¹ hle⟩
+  exact ⟨g⁻¹, HopfIdeal.conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient
+    I (diagonalTorusDefiningIdeal r k) g hmem⟩
 
 /-- **Split maximal tori of `SL_{r+1}` are conjugate to the diagonal torus.** A maximal torus of
 `SL_{r+1}` over `k` which is split over `k` is the conjugate of the diagonal torus by a rational

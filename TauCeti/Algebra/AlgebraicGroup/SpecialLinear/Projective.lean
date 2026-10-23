@@ -210,8 +210,7 @@ theorem centerPointwiseQuotientIsoPSL_hom_naturality (hn : 0 < n)
           (↑q : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A ⧸
             CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A))
   rw [centerPointwiseQuotientIsoPSL_hom_mk,
-    centerPointwiseQuotientIsoPSL_hom_mk, projectiveMap_mk,
-    HopfAlgebra.mapPoints_apply]
+    centerPointwiseQuotientIsoPSL_hom_mk, projectiveMap_mk]
   exact congrArg QuotientGroup.mk
     (SpecialLinear.pointsMulEquiv_mapValue (R := k) (A := A) (B := B) n φ.hom q)
 

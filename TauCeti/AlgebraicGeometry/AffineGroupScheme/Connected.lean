@@ -30,8 +30,7 @@ scheme-theoretic `GeometricallyConnected` predicate on its Hopf spectrum.
 
 * J. S. Milne, *Algebraic Groups* (2017), §2.a.
 
-This is the geometric-connectedness prerequisite for Layer 3, "Identity component and component
-group", of the ReductiveGroups roadmap.
+This is the geometric-connectedness prerequisite for the identity component and the component group.
 -/
 
 public section

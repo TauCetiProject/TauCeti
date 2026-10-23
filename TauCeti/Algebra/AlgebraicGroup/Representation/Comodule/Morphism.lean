@@ -73,8 +73,7 @@ private theorem coact_apply_eq_universal_endOfPoint
     rw [Comodule.endOfPoint_tmul]
     exact one_smul _ _
   rw [hend]
-  induction rho.coact z using TensorProduct.induction_on with
-  | zero => simp
+  induction rho.coact z using TensorProduct.inductionOn with
   | add a b ha hb => simpa only [map_add] using congrArg₂ (fun c d ↦ c + d) ha hb
   | tmul a b =>
       simp only [LinearMap.lTensor_tmul, AlgEquiv.toLinearMap_apply,
@@ -125,7 +124,7 @@ theorem map_coact_of_baseChange_comp_endOfPoint_universal
           (f.baseChange (ULift.{max u v w x} H)
             (Comodule.endOfPoint V ULift.algEquiv.symm.toAlgHom (1 ⊗ₜ[R] z)))) := by
         congr 1
-        simp only [LinearMap.baseChange_eq_ltensor, LinearMap.lTensor_def,
+        simp only [LinearMap.baseChange_eq_lTensor, LinearMap.lTensor_def,
           TensorProduct.map_map, LinearMap.comp_id, LinearMap.id_comp]
     _ = TensorProduct.comm R H W
         (TensorProduct.map ULift.algEquiv.toLinearMap LinearMap.id

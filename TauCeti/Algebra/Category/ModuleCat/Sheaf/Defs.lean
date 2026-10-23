@@ -11,14 +11,20 @@ public import Mathlib.Algebra.Category.Ring.Limits
 /-!
 # Basic definitions for sheaves of modules
 
-This file collects the coefficient sheaf obtained by forgetting commutativity and the counit
-identifying the sheafification of the underlying presheaf of a sheaf of modules with that sheaf.
+This file collects the coefficient sheaf obtained by forgetting commutativity, the original
+commutative-ring actions on its section modules, the counit
+identifying the sheafification of the underlying presheaf of a sheaf of modules with that sheaf,
+and the vanishing of every sheaf of modules over a sheaf of rings whose sections are trivial.
 
 ## Main declarations
 
 * `SheafOfModules.ringCatSheaf` forgets commutativity in a sheaf of commutative rings;
+* `SheafOfModules.isZero_of_forall_subsingleton`: sheaves of modules over a sheaf of rings all of
+  whose rings of sections are trivial are zero objects;
 * `SheafOfModules.sheafificationIso` identifies a sheaf of modules with the sheafification of its
-  underlying presheaf, naturally (`SheafOfModules.sheafificationIso_inv_naturality`).
+  underlying presheaf, naturally (`SheafOfModules.sheafificationIso_inv_naturality`);
+* `SheafOfModules.unit_comp_val_sheafification_map_comp_sheafificationIso_hom`: the
+  sheafification of a morphism to a sheaf restricts to that morphism along the sheafification map.
 
 This supports `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a
 scheme; the Picard group `Pic X` under `⊗`".
@@ -26,7 +32,7 @@ scheme; the Picard group `Pic X` under `⊗`".
 
 public section
 
-open CategoryTheory Category
+open CategoryTheory Category Limits
 
 namespace TauCeti
 
@@ -37,6 +43,18 @@ noncomputable section
 namespace SheafOfModules
 
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
+
+/-- Every sheaf of modules over a sheaf of rings all of whose rings of sections are trivial is a
+zero object. -/
+theorem isZero_of_forall_subsingleton {S : Sheaf J RingCat.{u}}
+    (hS : ∀ W, Subsingleton (S.obj.obj W)) (N : SheafOfModules.{v} S) : IsZero N := by
+  rw [IsZero.iff_id_eq_zero]
+  apply SheafOfModules.hom_ext
+  ext W x
+  have := hS W
+  have := Module.subsingleton (S.obj.obj W) (N.val.obj W)
+  exact Subsingleton.elim _ _
+
 variable [HasWeakSheafify J AddCommGrpCat.{v}] [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
 
 /-- The sheaf of rings underlying a sheaf of commutative rings on a site; the site-level
@@ -44,6 +62,14 @@ analogue of `AlgebraicGeometry.Scheme.ringCatSheaf`. -/
 abbrev ringCatSheaf (R : Sheaf J CommRingCat.{u})
     [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})] : Sheaf J RingCat.{u} :=
   (sheafCompose J (forget₂ CommRingCat RingCat.{u})).obj R
+
+/-- Sections of a sheaf of modules over the underlying ring sheaf retain the module action
+of the original commutative ring of sections. -/
+instance _root_.SheafOfModules.sectionModule
+    {R : Sheaf J CommRingCat.{u}} [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
+    (P : _root_.SheafOfModules.{v} (ringCatSheaf R)) (U : Cᵒᵖ) :
+    Module (R.obj.obj U) (P.val.obj U) :=
+  inferInstanceAs (Module ((ringCatSheaf R).obj.obj U) (P.val.obj U))
 
 /-- Sheafifying the underlying presheaf of modules of a sheaf of `R`-modules `M`, for a sheaf of
 rings `R`, recovers `M`; this is the counit of the sheafification adjunction. -/
@@ -78,6 +104,19 @@ theorem sheafificationIso_hom_naturality {R : Sheaf J RingCat.{u}} {M N : SheafO
   rw [← cancel_epi (sheafificationIso R M).inv, Iso.inv_hom_id_assoc,
     ← Category.assoc, ← sheafificationIso_inv_naturality, Category.assoc,
     Iso.inv_hom_id, Category.comp_id]
+
+/-- On the sheafification map of a presheaf of modules `P`, the sheafification of a morphism
+`g : P ⟶ M` to a sheaf, followed by `sheafificationIso`, is `g`. -/
+theorem unit_comp_val_sheafification_map_comp_sheafificationIso_hom {R : Sheaf J RingCat.{u}}
+    {P : PresheafOfModules.{v} R.obj} {M : SheafOfModules.{v} R} (g : P ⟶ M.val) :
+    (PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).unit.app P ≫
+      ((PresheafOfModules.sheafification (𝟙 R.obj)).map g ≫ (sheafificationIso R M).hom).val =
+    g := by
+  rw [sheafificationIso_hom]
+  -- Move `g` past the sheafification map, then use a triangle identity.
+  let adj := PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)
+  exact (adj.unit.naturality_assoc _ _).symm.trans
+    ((congrArg (g ≫ ·) (adj.right_triangle_components M)).trans (Category.comp_id _))
 
 end SheafOfModules
 

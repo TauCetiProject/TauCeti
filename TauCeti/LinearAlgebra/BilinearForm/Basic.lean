@@ -7,9 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
-# A form that is both symmetric and alternating
+# Basic identities for bilinear forms
 
 Away from characteristic two a bilinear form cannot be both symmetric and alternating without
 being zero: symmetry and alternation give `B x y = B y x` and `B x y = -B y x`, so `2 * B x y = 0`,
@@ -19,6 +20,10 @@ That cancellation is all the hypothesis on the ring there is: `2` has to be regu
 is asked of any other element, so the statement covers rings with zero divisors elsewhere.  Over a
 field, or over any domain, `IsRegular.of_ne_zero` supplies the hypothesis from `(2 : R) ≠ 0`.
 
+For a left-separating alternating bilinear map on a module with a two-element basis, its value
+on that basis has trivial scalar annihilator. This holds over any commutative semiring and for
+maps valued in an arbitrary module.
+
 ## Main results
 
 * `TauCeti.BilinForm.eq_zero_of_isSymm_of_isAlt`: a symmetric alternating form over a ring in which
@@ -27,9 +32,39 @@ field, or over any domain, `IsRegular.of_ne_zero` supplies the hypothesis from `
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
 * `Module.Basis.dualBasis_smul_apply`: the dual basis of a scalar multiple of a form.
+* `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
+* `LinearMap.IsAlt.eq_zero_of_smul_apply_basis_eq_zero`: the value of a left-separating
+  alternating bilinear map on a two-element basis has trivial scalar annihilator.
 -/
 
 public section
+
+namespace LinearMap.IsAlt
+
+/-- The value of a left-separating alternating bilinear map on a two-element basis has trivial
+scalar annihilator, over any commutative semiring. -/
+theorem eq_zero_of_smul_apply_basis_eq_zero {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (b : Module.Basis (Fin 2) R M) {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt)
+    (hω : ω.SeparatingLeft) {r : R} (hr : r • ω (b 0) (b 1) = 0) : r = 0 := by
+  have hb : r • b 0 = 0 := hω _ fun y ↦ by
+    conv_lhs => rw [← b.sum_repr y]
+    simp only [Fin.sum_univ_two, map_add, map_smul, smul_apply, halt (b 0), hr, smul_zero,
+      add_zero]
+  simpa using congr(b.repr $hb 0)
+
+end LinearMap.IsAlt
+
+namespace LinearMap.BilinForm.IsSymm
+
+/-- Polarization of a symmetric bilinear form over a commutative semiring. -/
+theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} (hB : B.IsSymm) (x y : M) :
+    B (x + y) (x + y) = B x x + B y y + 2 * B x y := by
+  simp only [map_add, LinearMap.add_apply, hB.eq y x]
+  ring
+
+end LinearMap.BilinForm.IsSymm
 
 namespace TauCeti
 

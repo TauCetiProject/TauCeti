@@ -36,6 +36,8 @@ weak maximum-principle argument.
   Caccioppoli's inequality for `(u - k)⁺` at an arbitrary level with an `L²` hypothesis.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le`:
   the nonnegative-level specialization, whose `L²` hypothesis is automatic.
+* `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le`: the form on concentric
+  balls `B(x₀, r) ⊆ B(x₀, R)`, `∫_{B(x₀, r)} ‖∇w‖² ≤ (2Λ/λ)² (c/(R - r))² ∫_{B(x₀, R)} w²`.
 
 ## References
 
@@ -47,7 +49,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Matrix Set TopologicalSpace
+open Filter MeasureTheory Matrix Metric Set TopologicalSpace
 open scoped ContDiff Gradient InnerProductSpace
 
 namespace TauCeti
@@ -159,6 +161,35 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_
   exact W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise hlam w hψ hψM hgradM hE hpt
     hforce
 
+/-- **The zero-forcing Caccioppoli inequality for a positive truncation of a weak
+subsolution.** This is the specialization of
+`UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp` to
+`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`. -/
+theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0)
+    {k : ℝ} (hwLp : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega))
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hcpt : HasCompactSupport ψ) (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    let w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
+    ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
+      (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu := by
+  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp ha
+    (f := 0) (fun v hv => (hu v hv).trans_eq (integral_eq_zero_of_ae (by
+      filter_upwards [Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx
+      rw [hx, Pi.zero_apply, zero_mul])).symm) hwLp hψ hcpt hts
+  have hzero : ∫ x in Omega, ψ x ^ 2 * (0 : Lp ℝ 2 (mu.restrict Omega)) x *
+      W1p.value (W1p.posPartAboveOfMemLp (by norm_num) k u hwLp) x ∂mu = 0 :=
+    integral_eq_zero_of_ae (by
+      filter_upwards [Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx
+      rw [hx, Pi.zero_apply, mul_zero, zero_mul])
+  dsimp only at hcacc ⊢
+  rw [hzero, mul_zero, add_zero] at hcacc
+  exact hcacc
+
 /-- **The Caccioppoli inequality for a nonnegative-level truncation of a weak subsolution.**
 This specializes
 `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp`; the
@@ -182,6 +213,44 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le
   rw [W1p.posPartAboveOfMemLp_eq_posPartAbove (by norm_num) hk u
     (W1p.memLp_posPartAbove hk u)] at hgeneral
   exact hgeneral
+
+/-- **The Caccioppoli inequality on concentric balls.** There is a constant `c > 0`, depending
+only on the dimension, such that the following holds for every additive Haar measure `μ`.
+Let `a` be measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let
+`u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`. At any level `k` with
+`w = (u - k)⁺ ∈ L²(Ω)`, and for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with
+`0 < r < R`,
+
+`∫_{B(x₀, r)} ‖∇w‖² ≤ (2Λ/λ)² (c / (R - r))² ∫_{B(x₀, R)} w²`. -/
+theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le :
+    ∃ c : ℝ, 0 < c ∧ ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
+      {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+      {lam Lam : ℝ} {u : W1p mu Omega 2} {k : ℝ}
+      (hwLp : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega))
+      {x₀ : EuclideanSpace ℝ ι} {r R : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+          energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0) →
+      0 < r → r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∫ x in ball x₀ r,
+          ‖W1p.gradient (W1p.posPartAboveOfMemLp (by norm_num) k u hwLp) x‖ ^ 2 ∂mu ≤
+        (2 * Lam / lam) ^ 2 * (c / (R - r)) ^ 2 *
+          ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
+  obtain ⟨c, hc0, hc⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
+  refine ⟨c, hc0, ?_⟩
+  intro mu _ Omega a lam Lam u k hwLp x₀ r R h ha hu hr hrR hball
+  set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
+  -- Caccioppoli's inequality for `w`, with zero forcing, localized to the balls.
+  have hloc := hc w (A := (2 * Lam / lam) ^ 2) (B := 0) (sq_nonneg _) le_rfl hr hrR hball
+    fun ψ hψ hcpt hts => by
+      simpa using h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos ha hu hwLp
+        hψ hcpt hts
+  refine hloc.trans_eq ?_
+  rw [add_zero, integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hball (by
+    filter_upwards [W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp] with x hx
+    rw [hx]))]
 
 end PDE
 

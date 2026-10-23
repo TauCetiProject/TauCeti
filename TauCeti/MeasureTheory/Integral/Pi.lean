@@ -34,6 +34,8 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 * `TauCeti.lintegral_fintype_prod_eq_prod₀`: the same for almost everywhere measurable factors.
 * `TauCeti.integral_pi_eq_integral_integral_update`: the two-coordinate Fubini
   identity.
+* `TauCeti.integral_pi_sum_mul`: Fubini over a sum of index types, for a product of a function of
+  each block of coordinates.
 -/
 
 public section
@@ -58,7 +60,7 @@ theorem integral_pi_eq_integral_integral_update {E : Type*} [NormedAddCommGroup 
       ∫ z, (∫ p : α a × α b, f (update (update z a p.1) b p.2) ∂(μ a).prod (μ b))
         ∂(Measure.pi μ) := by
   set g : ((∀ i, α i) × α a × α b) → (∀ i, α i) :=
-    fun w => update (update w.1 a w.2.1) b w.2.2 with hg
+    fun w => update (update w.1 a w.2.1) b w.2.2
   have hmp := measurePreserving_update_update μ hab
   have hcomp : Integrable (fun w => f (g w)) ((Measure.pi μ).prod ((μ a).prod (μ b))) :=
     hmp.integrable_comp_of_integrable hf
@@ -146,5 +148,16 @@ theorem lintegral_fintype_prod_eq_prod₀ {ι : Type*} [Fintype ι] {α : ι →
   rw [lintegral_congr_ae (hae.mono fun x hx => Finset.prod_congr rfl fun i _ => hx i),
     lintegral_fintype_prod_eq_prod μ fun i => (hf i).measurable_mk]
   exact Finset.prod_congr rfl fun i _ => (lintegral_congr_ae (hf i).ae_eq_mk).symm
+
+/-- **Fubini over a sum of index types.** Over a finite product measure indexed by `ι ⊕ ι'`, the
+integral of a function of the `ι` coordinates times a function of the `ι'` coordinates is the
+product of the two integrals. -/
+theorem integral_pi_sum_mul {ι ι' : Type*} [Fintype ι] [Fintype ι'] {α : ι ⊕ ι' → Type*}
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)]
+    {L : Type*} [RCLike L] (f : (∀ i, α (.inl i)) → L) (g : (∀ i, α (.inr i)) → L) :
+    ∫ x, f (fun i => x (.inl i)) * g (fun i => x (.inr i)) ∂Measure.pi μ =
+      (∫ y, f y ∂Measure.pi fun i => μ (.inl i)) * ∫ y, g y ∂Measure.pi fun i => μ (.inr i) := by
+  rw [← (measurePreserving_sumPiEquivProdPi_symm μ).integral_comp']
+  exact integral_prod_mul f g
 
 end TauCeti

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LocalField.AlgebraicExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
+import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 
 /-!
 # Local-field structures on finite intermediate fields
@@ -35,6 +37,9 @@ they make the intermediate field a nonarchimedean local field.
   valuation.
 * `TauCeti.finiteIntermediateField_isNonarchimedeanLocalField`: the intermediate field is a
   nonarchimedean local field.
+* `IntermediateField.valuativeExtension_of_isNonarchimedeanLocalField`: when the ambient field
+  is itself a nonarchimedean local field extending `K`, this holds for every compatible
+  intermediate field, and is an instance.
 
 ## References
 
@@ -56,20 +61,20 @@ requiring a norm, topology, or valuative relation on the ambient field. -/
 @[implicit_reducible]
 def finiteIntermediateFieldNormedField (M : IntermediateField K Ω) [Module.Finite K M] :
     NormedField M :=
-  finiteExtensionNormedField K M
+  algebraicExtensionNormedField K M
 
 /-- The valuative relation defined by the spectral norm on a finite intermediate field `M/K`.
 It is a named structure so consumers can install it locally without creating instance diamonds. -/
 @[implicit_reducible]
 def finiteIntermediateFieldValuativeRel (M : IntermediateField K Ω) [Module.Finite K M] :
     ValuativeRel M :=
-  finiteExtensionValuativeRel K M
+  algebraicExtensionValuativeRel K M
 
 /-- The topology defined by the spectral norm on a finite intermediate field `M/K`. -/
 @[implicit_reducible]
 def finiteIntermediateFieldTopology (M : IntermediateField K Ω) [Module.Finite K M] :
     TopologicalSpace M :=
-  finiteExtensionNormedFieldTopology K M
+  algebraicExtensionNormedFieldTopology K M
 
 /-- The valuative relation constructed on a finite intermediate field extends the valuative
 relation of the base field. -/
@@ -77,7 +82,7 @@ theorem finiteIntermediateField_valuativeExtension
     (M : IntermediateField K Ω) [Module.Finite K M] :
     letI := finiteIntermediateFieldValuativeRel K Ω M
     ValuativeExtension K M :=
-  finiteExtension_valuativeExtension K M
+  algebraicExtension_valuativeExtension K M
 
 /-- The spectral-norm topology and valuative relation constructed on a finite intermediate field
 are compatible. -/
@@ -85,7 +90,7 @@ theorem finiteIntermediateField_isValuativeTopology
     (M : IntermediateField K Ω) [Module.Finite K M] :
     @IsValuativeTopology M _ (finiteIntermediateFieldValuativeRel K Ω M)
       (finiteIntermediateFieldTopology K Ω M) :=
-  finiteExtension_isValuativeTopology K M
+  algebraicExtension_isValuativeTopology K M
 
 /-- A finite intermediate field, equipped with its spectral-norm topology and valuative relation,
 is a nonarchimedean local field. -/
@@ -94,5 +99,18 @@ theorem finiteIntermediateField_isNonarchimedeanLocalField
     @IsNonarchimedeanLocalField M _ (finiteIntermediateFieldValuativeRel K Ω M)
       (finiteIntermediateFieldTopology K Ω M) :=
   finiteExtension_isNonarchimedeanLocalField K M
+
+variable {K Ω} in
+/-- **A local field is a valuative extension of its compatible intermediate fields.** For an
+extension `Ω / K` of nonarchimedean local fields and an intermediate field `E` carrying a valuative
+relation extending that of `K`, the valuative relation of `Ω` extends that of `E`. The extension
+`Ω / K` is automatically finite, so `E / K` is algebraic and
+`IntermediateField.valuativeExtension` applies. -/
+instance _root_.IntermediateField.valuativeExtension_of_isNonarchimedeanLocalField
+    [ValuativeRel Ω] [TopologicalSpace Ω] [IsNonarchimedeanLocalField Ω] [ValuativeExtension K Ω]
+    (E : IntermediateField K Ω) [ValuativeRel E] [ValuativeExtension K E] :
+    ValuativeExtension E Ω :=
+  have := finite_of_valuativeExtension K Ω
+  E.valuativeExtension
 
 end TauCeti

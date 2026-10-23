@@ -28,7 +28,7 @@ t², [t,x], [t,yxy(xy⁻¹)²(xy)³],
 
 Here `r^s` means `s⁻¹rs`, as in the ATLAS Magma source. The source's commutator convention is
 `[r,s] = r⁻¹s⁻¹rs`, opposite to Mathlib's `commutatorElement`, so a source commutator is stored as
-`Relator.comm (.inv r) (.inv s)`. The structured expressions otherwise preserve the source's
+`Relator.commInvInv r s`. The structured expressions otherwise preserve the source's
 products, powers, and conjugates. The proved `TauCeti.Relator.toWord_toFreeGroup` is the audit
 boundary between these expressions and the signed words consumed by `PresentedGroup`.
 
@@ -116,10 +116,6 @@ private abbrev t : Relator (Fin 3) := .gen 2
 @[inherit_doc Relator.mul]
 local infixl:70 " ⬝ " => Relator.mul
 
-/-- The source's commutator `[r,s] = r⁻¹s⁻¹rs`, represented in Mathlib's convention. -/
-private abbrev sourceComm (r s : Relator (Fin 3)) : Relator (Fin 3) :=
-  .comm (.inv r) (.inv s)
-
 /-- The source's conjugate `r^s = s⁻¹rs`. -/
 private abbrev sourceConj (r s : Relator (Fin 3)) : Relator (Fin 3) :=
   .inv s ⬝ r ⬝ s
@@ -167,13 +163,13 @@ def j4Presentation : GroupPresentation where
     [ .pow x 2,
       .pow y 3,
       .pow (x ⬝ y) 23,
-      .pow (sourceComm x y) 12,
-      .pow (sourceComm x (y ⬝ x ⬝ y)) 5,
+      .pow (.commInvInv x y) 12,
+      .pow (.commInvInv x (y ⬝ x ⬝ y)) 5,
       sixthWord,
       .pow (x ⬝ y ⬝ .pow (x ⬝ y ⬝ x ⬝ .inv y) 3) 4,
       .pow t 2,
-      sourceComm t x,
-      sourceComm t (y ⬝ x ⬝ y ⬝ .pow (x ⬝ .inv y) 2 ⬝ .pow (x ⬝ y) 3),
+      .commInvInv t x,
+      .commInvInv t (y ⬝ x ⬝ y ⬝ .pow (x ⬝ .inv y) 2 ⬝ .pow (x ⬝ y) 3),
       .pow (y ⬝ sourceConj t firstConjugator) 3,
       .pow (.pow (y ⬝ x ⬝ y ⬝ x ⬝ y ⬝ x ⬝ y) 3 ⬝ t ⬝
         sourceConj t secondConjugator) 2 ]
@@ -295,7 +291,7 @@ theorem j4Presentation_transcribed :
             .gen ⟨2, by simp⟩ ⬝
             (.pow (.gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩) 3 ⬝ .gen ⟨1, by simp⟩ ⬝
               .pow (.gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩) 6 ⬝ .gen ⟨1, by simp⟩))) 2 ] := by
-  simp [j4Presentation]
+  simp [j4Presentation, Relator.commInvInv]
 
 /-- The generator and relator counts recorded for `J₄` agree with the transcribed data. -/
 theorem j4Presentation_matchesMetadata : j4Presentation.matchesMetadata := by
@@ -325,7 +321,7 @@ theorem j4Presentation_relatorsCyclicallyReduced :
     j4Presentation.relatorsCyclicallyReduced := by
   simp only [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
     j4Presentation, List.map_cons, List.map_nil, Relator.toWord_mul, Relator.toWord_pow,
-    Relator.toWord_inv, Relator.toWord_comm, Relator.toWord_gen]
+    Relator.toWord_inv, Relator.toWord_commInvInv, Relator.toWord_gen]
   decide
 
 end TauCeti.Sporadic

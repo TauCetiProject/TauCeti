@@ -86,7 +86,7 @@ def SporadicName.presentation : SporadicName → GroupPresentation
   | .Fi23 => Sporadic.fi23Presentation
   | .Fi24Prime => Sporadic.fi24PrimePresentation
   | .HN => Sporadic.hnPresentation
-  | .Ly => Sporadic.lyPresentation
+  | .Ly => Sporadic.Lyons.presentation
   | .Th => Sporadic.Thompson.presentation
   | .B => Sporadic.BabyMonster.presentation
   | .M => Sporadic.Monster.presentation
@@ -122,7 +122,7 @@ theorem presentation_matchesMetadata (s : SporadicName) :
   | Fi23 => exact Sporadic.fi23Presentation_matchesMetadata
   | Fi24Prime => exact Sporadic.fi24PrimePresentation_matchesMetadata
   | HN => exact Sporadic.hnPresentation_matchesMetadata
-  | Ly => exact Sporadic.matchesMetadata_lyPresentation
+  | Ly => exact Sporadic.Lyons.matchesMetadata_presentation
   | Th => exact Sporadic.Thompson.matchesMetadata_presentation
   | B => exact Sporadic.BabyMonster.matchesMetadata_presentation
   | M => exact Sporadic.Monster.presentation_matchesMetadata

@@ -17,11 +17,8 @@ and `E` of degree `d`, then `D - E` is effective of degree `e - d`. The cancella
 show that adding the residual back recovers the original divisor, up to the unavoidable casts
 in the natural-number degree index.
 
-This is formal divisor bookkeeping for the Jacobian challenge roadmap's Layer C symmetric-power
-lane (`TauCetiRoadmap/JacobianChallenge/README.md`, "Relative effective Cartier divisors and
-symmetric powers `Symᵈ X`"). The scheme-level construction is later geometry; this file supplies
-the elementary residual-divisor API used when separating a fixed effective base divisor from an
-unordered collection of points. No external mathematics is vendored.
+This file supplies the elementary residual-divisor API used when separating a fixed effective base
+divisor from an unordered collection of points. No external mathematics is vendored.
 -/
 
 public section

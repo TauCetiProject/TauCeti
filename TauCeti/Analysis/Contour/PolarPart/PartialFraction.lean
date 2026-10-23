@@ -24,6 +24,8 @@ punctured limit of this kind already makes `f` meromorphic with at most a simple
 hypothesis.
 Conversely, every such sum is holomorphic off `S`, has these limits and tends to `0` at infinity.
 This gives the characterization `eqOn_sum_div_sub_iff`.
+The same limits show that the coefficients of such a sum are determined by its values on any set
+accumulating at every pole.
 
 This is how one identifies a function from its singularities and its behaviour at infinity. For
 example, the pre-Schwarzian derivative `F'' / F'` of a conformal map `F` from the upper half-plane
@@ -43,6 +45,8 @@ characterization identifies it with the Schwarz--Christoffel expression
   through the limits of `(z - s) * f z`.
 * `TauCeti.Contour.eqOn_sum_div_sub_iff` -- the resulting characterization of the functions
   `z ↦ ∑ s ∈ S, c s / (z - s)` off `S`.
+* `TauCeti.Contour.eq_of_eqOn_sum_div_sub` -- two such sums with the same distinct poles that agree
+  on a set accumulating at every pole have the same coefficients.
 
 ## References
 
@@ -78,6 +82,27 @@ theorem tendsto_sum_div_sub_cobounded (S : Finset ℂ) (c : ℂ → ℂ) :
 
 end Finset
 
+namespace TauCeti
+
+/-- Multiplying a finite partial-fraction sum by `z` at infinity recovers the sum of its
+coefficients. The poles may be indexed with repetitions. -/
+theorem tendsto_mul_sum_div_sub_cobounded {ι : Type*} {S : Finset ι} (a c : ι → ℂ) :
+    Tendsto (fun z : ℂ => z * ∑ i ∈ S, c i / (z - a i)) (cobounded ℂ)
+      (𝓝 (∑ i ∈ S, c i)) := by
+  simp_rw [Finset.mul_sum]
+  refine tendsto_finsetSum _ fun i _ => ?_
+  have hlim : Tendsto (fun z : ℂ => c i * (1 - a i * z⁻¹)⁻¹) (cobounded ℂ)
+      (𝓝 (c i * (1 - a i * 0)⁻¹)) :=
+    ((((tendsto_inv₀_cobounded (α := ℂ)).const_mul _).const_sub 1).inv₀ (by simp)).const_mul _
+  simp only [mul_zero, sub_zero, inv_one, mul_one] at hlim
+  apply hlim.congr'
+  filter_upwards [tendsto_norm_cobounded_atTop.eventually_gt_atTop ‖a i‖] with z hz
+  have hz0 : z ≠ 0 := norm_pos_iff.mp ((norm_nonneg _).trans_lt hz)
+  have hza : z - a i ≠ 0 := sub_ne_zero.mpr fun h => by simp [h] at hz
+  field_simp
+
+end TauCeti
+
 namespace TauCeti.Contour
 
 /-- At a point `s ∈ S`, the partial-fraction sum `z ↦ ∑ t ∈ S, c t / (z - t)` has residue
@@ -98,6 +123,36 @@ theorem tendsto_sub_mul_sum_div_sub {S : Finset ℂ} (c : ℂ → ℂ) {s : ℂ}
   refine hlim.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with z hz
   rw [← Finset.add_sum_erase S _ hs, mul_add, mul_div_cancel₀ _ (sub_ne_zero.2 hz)]
+
+/-- For a sum indexed by an injective family of poles `a i`, the product
+`(z - a j) * ∑ i, c i / (z - a i)` tends to `c j` as `z → a j`. -/
+theorem tendsto_sub_mul_sum_div_sub_of_injective {ι : Type*} [Fintype ι] {a : ι → ℂ}
+    (ha : Function.Injective a) (c : ι → ℂ) (j : ι) :
+    Tendsto (fun z => (z - a j) * ∑ i, c i / (z - a i)) (𝓝[≠] a j) (𝓝 (c j)) := by
+  classical
+  have hsum (z : ℂ) : ∑ i, c i / (z - a i) =
+      ∑ s ∈ Finset.univ.image a, Function.extend a c 0 s / (z - s) := by
+    rw [Finset.sum_image fun i _ k _ h => ha h]
+    simp [ha.extend_apply]
+  simp_rw [hsum]
+  simpa [ha.extend_apply] using
+    tendsto_sub_mul_sum_div_sub (Function.extend a c 0) (Finset.mem_image_of_mem a
+      (Finset.mem_univ j))
+
+/-- **Uniqueness of partial-fraction coefficients.** Two partial-fraction sums with the same
+distinct poles `a i` that agree on a set accumulating at every pole have the same
+coefficients. -/
+theorem eq_of_eqOn_sum_div_sub {ι : Type*} [Fintype ι] {a : ι → ℂ}
+    (ha : Function.Injective a) {c d : ι → ℂ} {s : Set ℂ} (hs : ∀ i, AccPt (a i) (𝓟 s))
+    (h : EqOn (fun z => ∑ i, c i / (z - a i)) (fun z => ∑ i, d i / (z - a i)) s) :
+    c = d := by
+  funext j
+  have := accPt_principal_iff_nhdsWithin.mp (hs j)
+  have hle : 𝓝[s \ {a j}] a j ≤ 𝓝[≠] a j := nhdsWithin_mono _ fun _ hz => hz.2
+  refine tendsto_nhds_unique ((tendsto_sub_mul_sum_div_sub_of_injective ha c j).mono_left hle)
+    (((tendsto_sub_mul_sum_div_sub_of_injective ha d j).mono_left hle).congr' ?_)
+  filter_upwards [self_mem_nhdsWithin] with z hz
+  exact congrArg ((z - a j) * ·) (h hz.1).symm
 
 /-! ### Identification by Liouville's theorem -/
 

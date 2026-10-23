@@ -24,6 +24,11 @@ The special case `x = g` recovers the character of the regular representation, b
 statement is what identifies the scalar in an essential idempotence `c * c = a • c`, by pairing
 with `TauCeti.LinearMap.trace_eq_mul_finrank_range`.
 
+Multiplying on both sides at once, the endomorphism `x ↦ g * x * y` of a finite group algebra has
+`σ`-th diagonal entry `y_{σ⁻¹ g⁻¹ σ}`, so its trace is the sum of the coefficients of `y` along the
+conjugates of `g⁻¹`, each conjugate counted once for every element conjugating `g⁻¹` to it. Over
+a field `k`, if `y * y = κ • y`, this trace is `κ` times the character of the left ideal `k[G] y`.
+
 ## Main statements
 
 * `TauCeti.trace_leftMulMatrix_monoidAlgebra`: the matrix form, the trace of the left regular
@@ -31,6 +36,8 @@ with `TauCeti.LinearMap.trace_eq_mul_finrank_range`.
 * `TauCeti.MonoidAlgebra.trace_mulRight`: the trace of right multiplication by `x` on `k[G]` is
   `|G| * x_1`.
 * `TauCeti.MonoidAlgebra.trace_mulLeft`: the same for left multiplication.
+* `MonoidAlgebra.trace_mulLeft_single_mul_mulRight`: the trace of `x ↦ g * x * y` on a
+  finite group algebra is `∑ σ, y_{σ⁻¹ g⁻¹ σ}`.
 -/
 
 public section
@@ -80,3 +87,17 @@ theorem MonoidAlgebra.trace_mulLeft {k G : Type*} [CommSemiring k] [Monoid G]
     trace_leftMulMatrix_monoidAlgebra, Nat.card_eq_fintype_card]
 
 end TauCeti
+
+/-- **The trace of a two-sided multiplication on a finite group algebra.** The endomorphism
+`x ↦ g * x * y` of `k[G]` has trace `∑ σ, y_{σ⁻¹ g⁻¹ σ}`: its diagonal entry at `σ` is the
+coefficient of `σ` in `g σ y`. -/
+@[simp]
+theorem MonoidAlgebra.trace_mulLeft_single_mul_mulRight {k G : Type*} [CommSemiring k] [Group G]
+    [Fintype G] (g : G) (y : MonoidAlgebra k G) :
+    LinearMap.trace k (MonoidAlgebra k G)
+        (LinearMap.mulLeft k (MonoidAlgebra.single g 1) * LinearMap.mulRight k y) =
+      ∑ σ : G, y.coeff (σ⁻¹ * g⁻¹ * σ) := by
+  classical
+  rw [LinearMap.trace_eq_matrix_trace k (MonoidAlgebra.basis G k), Matrix.trace]
+  refine Finset.sum_congr rfl fun σ _ => ?_
+  simp [LinearMap.toMatrix_apply, ← mul_assoc, mul_inv_rev]

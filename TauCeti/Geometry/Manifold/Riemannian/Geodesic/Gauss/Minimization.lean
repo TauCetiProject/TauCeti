@@ -44,7 +44,6 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)]
 
 /-- **A radial geodesic minimizes length inside a normal neighbourhood.** Any `C¹` curve from
 `p` to `exp_p v` that remains in the image of a normal domain containing `v` has length at least

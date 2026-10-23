@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.OpenMapping.Complete
-public import TauCeti.Topology.Algebra.Nonarchimedean.FirstCountable
+public import Mathlib.Topology.Maps.Strict.Module
+import Mathlib.Topology.Baire.CompleteMetrizable
+import TauCeti.Topology.Algebra.IsUniformGroup.Submodule
+import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
 # Henkel's open mapping theorem
@@ -26,15 +29,21 @@ Each hypothesis pays for one step and no other.
   approximation can run.
 * Completeness removes the closure, in `TauCeti.mem_image_of_mem_closure_image`.
 
-What is left is bookkeeping: shift the basis so its zeroth term lies inside the given
-neighbourhood, and feed the result to the group-theoretic criterion for openness.
+The last two steps do not depend on how the closure step was obtained, and are packaged as
+`TauCeti.isOpenMap_of_closure_image_mem_nhds`; this file feeds the Baire step into it.
 
 ## Main results
 
 * `TauCeti.HasZeroSequenceOfUnits.isOpenMap`: Henkel's open mapping theorem.
-* `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`: the same map induces the quotient topology on
-  its target — the form the strict-morphism material will consume, where what matters is not that
-  images are open but that the target's topology is determined by the source's.
+* `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`: the surjective map in `isOpenMap` induces the
+  quotient topology on its target, so the target's topology is determined by the source's.
+* `TauCeti.HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range`: over a ring with a zero
+  sequence of units, closed-range linear maps from a complete first-countable nonarchimedean
+  module into a complete metrisable module are strict, assuming continuity at zero for the map
+  and for the scalar action on the source, and continuity of constant scalar actions on the target.
+
+The other two implications of Wedhorn's Theorem 6.16, that an open linear map is surjective and that
+a continuous one has a complete target, are in `TauCeti.Topology.Algebra.OpenMapping.Converse`.
 
 Mathlib's `MonoidHom.isOpenMap_of_sigmaCompact` proves openness for a continuous surjection from
 a σ-compact source onto a T2 Baire target group (locally compact groups being the standard
@@ -70,22 +79,9 @@ the action, in the form `hc` that the Baire step already uses. -/
 theorem HasZeroSequenceOfUnits.isOpenMap {F : Type*} [FunLike F M N] [MulActionHomClass F A M N]
     [AddMonoidHomClass F M N] (f : F) (hf : Function.Surjective f)
     (hfc : ContinuousAt (f : M → N) 0) (hc : ∀ x : M, ContinuousAt (fun a : A ↦ a • x) 0) :
-    IsOpenMap (f : M → N) := by
-  refine IsTopologicalAddGroup.isOpenMap_iff_nhds_zero.mpr fun S hS ↦ ?_
-  rw [Filter.mem_map] at hS
-  obtain ⟨V, hV⟩ := NonarchimedeanAddGroup.exists_antitone_basis_openAddSubgroup (G := M)
-  obtain ⟨n₀, -, hn₀⟩ := hV.toHasBasis.mem_iff.mp hS
-  -- Shift the basis so that its zeroth term already lies inside `f ⁻¹' S`.
-  have hW : (𝓝 (0 : M)).HasAntitoneBasis fun n ↦ ((V (n₀ + n)).toAddSubgroup : Set M) :=
-    hV.comp_mono (fun _ _ hab ↦ Nat.add_le_add_left hab _)
-      (by simpa [Nat.add_comm] using tendsto_add_atTop_nat n₀)
-  have hnhds : ∀ n, closure ((f : M → N) ''
-      ((V (n₀ + n)).toAddSubgroup : Set M)) ∈ 𝓝 (0 : N) := fun n ↦
-    HasZeroSequenceOfUnits.closure_image_mem_nhds_zero f hf hc
-      (hW.toHasBasis.mem_of_mem (i := n) trivial)
-  refine Filter.mem_of_superset (hnhds 0) fun y hy ↦ ?_
-  obtain ⟨x, hx, rfl⟩ := mem_image_of_mem_closure_image f hfc hW (fun n ↦ hnhds (n + 1)) hy
-  exact hn₀ hx
+    IsOpenMap (f : M → N) :=
+  isOpenMap_of_closure_image_mem_nhds f hfc fun _ hU ↦
+    HasZeroSequenceOfUnits.closure_image_mem_nhds_zero f hf hc hU
 
 /-- **Henkel's theorem in quotient form.** Under exactly the hypotheses of
 `TauCeti.HasZeroSequenceOfUnits.isOpenMap`, the map does not merely carry open sets to open sets:
@@ -102,6 +98,33 @@ theorem HasZeroSequenceOfUnits.isQuotientMap {F : Type*} [FunLike F M N]
     IsQuotientMap (f : M → N) :=
   have hcont : Continuous (f : M → N) := continuous_of_continuousAt_zero f hfc
   (HasZeroSequenceOfUnits.isOpenMap f hf hfc hc).isQuotientMap hcont hf
+
+section ClosedRange
+
+open scoped Uniformity
+
+variable {R E F : Type*} [Ring R] [TopologicalSpace R] [HasZeroSequenceOfUnits R]
+  [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E]
+  [(𝓝 (0 : E)).IsCountablyGenerated] [NonarchimedeanAddGroup E] [Module R E]
+  [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F] [CompleteSpace F]
+  [(𝓤 F).IsCountablyGenerated] [T0Space F] [Module R F] [ContinuousConstSMul R F]
+
+/-- A linear map with closed range is strict when the scalar ring has a zero sequence of units,
+the source is complete, first countable and nonarchimedean, and the target is complete and
+metrisable. Only continuity at zero is needed for the map and for scalar multiplication. -/
+theorem HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range (f : E →ₗ[R] F)
+    (hfc : ContinuousAt (f : E → F) 0)
+    (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hr : IsClosed (f.range : Set F)) : Topology.IsStrictMap (f : E → F) := by
+  have : CompleteSpace f.range := hr.completeSpace_coe
+  have hcont : Continuous (f.rangeRestrict : E → f.range) :=
+    (continuous_of_continuousAt_zero f hfc).subtype_mk _
+  exact LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mpr
+    ⟨f.surjective_rangeRestrict, hcont,
+      HasZeroSequenceOfUnits.isOpenMap f.rangeRestrict f.surjective_rangeRestrict
+        hcont.continuousAt hc⟩
+
+end ClosedRange
 
 end TauCeti
 

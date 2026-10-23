@@ -7,6 +7,7 @@ module
 
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.Int.MulPred
+public import TauCeti.LowDimTopology.Plumbing.Cube.Option
 public import TauCeti.LowDimTopology.Plumbing.BlowUp
 public import TauCeti.LowDimTopology.Plumbing.Weight.Sublevel
 
@@ -167,6 +168,31 @@ theorem characteristicWeight_le_blowUpCharacteristic (k : P.characteristicVector
   have h := P.two_mul_characteristicWeight_blowUpCharacteristic v k (δ : ℤ) hδ x s
   have hnn := Int.zero_le_mul_sub_units δ s
   linarith
+
+/-- Forgetting the exceptional coordinate cannot increase a cube's characteristic weight
+when the characteristic covector has exceptional value `±1`. This includes cubes containing
+the exceptional direction. -/
+theorem characteristicWeight_dropNone_le_blowUpVertex (k : P.characteristicVectors)
+    (δ : ℤˣ) (C : PlumbingCube (Option V)) :
+    PlumbingCube.characteristicWeight P k C.dropNone ≤
+      PlumbingCube.characteristicWeight (P.blowUpVertex v)
+        (P.blowUpCharacteristic v k (δ : ℤ) (by
+          rcases Int.units_eq_one_or δ with rfl | rfl <;> norm_num)) C := by
+  classical
+  rw [PlumbingCube.characteristicWeight_def]
+  apply P.characteristicCubeWeight_le k
+  intro z hz
+  have hz' : z ∈ C.dropNone.vertices := by
+    simpa only [PlumbingCube.vertices_def] using hz
+  rw [PlumbingCube.vertices_dropNone, Finset.mem_image] at hz'
+  obtain ⟨y, hy, rfl⟩ := hz'
+  have h := P.characteristicWeight_le_blowUpCharacteristic v k δ
+    (fun w => y (some w)) (y none - y (some v))
+  rw [← blowUpVertexEquiv_symm_apply v y, LinearEquiv.apply_symm_apply] at h
+  apply h.trans
+  simpa only [PlumbingCube.characteristicWeight_def] using
+    (P.blowUpVertex v).characteristicWeight_le_characteristicCubeWeight _
+      (by simpa only [PlumbingCube.vertices_def] using hy)
 
 /-- **The infimum of the characteristic weight is a blow-up invariant.** For a characteristic
 covector carrying a unit on the exceptional class, the infimum of the characteristic weight of

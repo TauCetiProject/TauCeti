@@ -11,41 +11,43 @@ public import Mathlib.Order.SupIndep
 /-!
 # Products of submodules
 
-A product submodule `p.prod q : Submodule R (M × N)` is, as a module, the product `p × q`.
-
-Products also preserve indexed suprema and independence of families of submodules.
+Products of submodules preserve indexed suprema and independence of families of submodules, and
+the two coordinate copies `Submodule.fst` and `Submodule.snd` of the factors of a product module
+are cut out by the vanishing of the other coordinate and are complementary.
 
 ## Main declarations
 
-* `Submodule.prodEquiv`: `↥(p.prod q) ≃ₗ p × q`.
 * `TauCeti.iSup_prod_submodule`: products commute with indexed suprema.
 * `TauCeti.iSupIndep.prod`: products of independent families are independent.
+* `Submodule.mem_fst_iff`, `Submodule.mem_snd_iff`: membership in the coordinate copies of the
+  factors.
+* `Submodule.isCompl_fst_snd`: the coordinate copies of the two factors are complementary.
 -/
 
 public section
 
 namespace Submodule
 
-variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [AddCommMonoid N]
-variable [Module R M] [Module R N]
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [AddCommMonoid N] [Module R M]
+  [Module R N]
 
-/-- A product submodule, as a module, is the product of the two submodules.
-
-This is the linear refinement of `AddSubmonoid.prodEquiv`. -/
-def prodEquiv (p : Submodule R M) (q : Submodule R N) : ↥(p.prod q) ≃ₗ[R] p × q :=
-  { Equiv.Set.prod (p : Set M) (q : Set N) with
-    map_add' _ _ := rfl
-    map_smul' _ _ := rfl }
-
+/-- A vector of a product module lies in the copy of the first factor exactly when its second
+coordinate vanishes. -/
 @[simp]
-theorem prodEquiv_apply (p : Submodule R M) (q : Submodule R N) (x : ↥(p.prod q)) :
-    prodEquiv p q x = (⟨x.1.1, x.2.1⟩, ⟨x.1.2, x.2.2⟩) :=
-  (rfl)
+theorem mem_fst_iff {x : M × N} : x ∈ Submodule.fst R M N ↔ x.2 = 0 :=
+  mem_comap.trans (mem_bot R)
 
+/-- A vector of a product module lies in the copy of the second factor exactly when its first
+coordinate vanishes. -/
 @[simp]
-theorem prodEquiv_symm_apply (p : Submodule R M) (q : Submodule R N) (x : p × q) :
-    (prodEquiv p q).symm x = ⟨(x.1.1, x.2.1), x.1.2, x.2.2⟩ :=
-  (rfl)
+theorem mem_snd_iff {x : M × N} : x ∈ Submodule.snd R M N ↔ x.1 = 0 :=
+  mem_comap.trans (mem_bot R)
+
+variable (R M N)
+
+/-- The copies of the two factors of a product module are complementary submodules. -/
+theorem isCompl_fst_snd : IsCompl (Submodule.fst R M N) (Submodule.snd R M N) :=
+  .of_eq (fst_inf_snd R M N) (fst_sup_snd R M N)
 
 end Submodule
 

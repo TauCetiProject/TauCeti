@@ -42,10 +42,8 @@ inclusion is faithfully flat.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
 
-This supplies the image-descent step for the solvable radical in Layer 6 of the ReductiveGroups
-roadmap. Together with the semidirect-product source construction, it reduces binary-product
-closure of solvable subgroup schemes to faithful flatness of the canonical source-to-image
-morphism.
+Together with the semidirect-product source construction, this reduces binary-product closure of
+solvable subgroup schemes to faithful flatness of the canonical source-to-image morphism.
 -/
 
 public section
@@ -80,7 +78,7 @@ theorem isSolvable_points_of_faithfullyFlat (f : H ⟶ K)
   exact Group.isSolvable_of_surjective
     (G := HopfAlgebra.points (R := R) (H := K) (CommAlgCat.of R L))
     (G' := HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R L))
-    (f := ((mapPointsFunctor f).app (CommAlgCat.of R L)).hom)
+    (f := ((CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of R L)).hom)
     (mapPointsFunctor_app_surjective_of_faithfullyFlat L f hfinite hflat)
 
 end CommHopfAlgCat
@@ -108,12 +106,8 @@ theorem image_of_faithfullyFlat (f : H ⟶ K) [Algebra.FiniteType k K]
     (hK : geometricallySolvablePointsCommHopfAlgProperty k K)
     (hflat : (CommHopfAlgCat.imageι f).hom.toAlgHom.toRingHom.FaithfullyFlat) :
     geometricallySolvablePointsCommHopfAlgProperty k (CommHopfAlgCat.image f) := by
-  have hfinite : (CommHopfAlgCat.imageι f).hom.toAlgHom.FiniteType := by
-    apply AlgHom.FiniteType.of_comp_finiteType
-      (f := Algebra.ofId k (CommHopfAlgCat.image f))
-    rw [Algebra.comp_ofId]
-    exact RingHom.finiteType_algebraMap.mpr inferInstance
-  exact of_faithfullyFlat (CommHopfAlgCat.imageι f) hfinite hflat hK
+  exact of_faithfullyFlat (CommHopfAlgCat.imageι f)
+    (CommHopfAlgCat.imageι_finiteType f) hflat hK
 
 /-- The multiplication image of a normal geometrically solvable closed subgroup and another
 geometrically solvable closed subgroup is geometrically solvable when its canonical

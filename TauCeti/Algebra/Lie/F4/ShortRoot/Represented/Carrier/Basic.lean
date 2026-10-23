@@ -38,10 +38,7 @@ abbrev f4ShortRootCarrierCoordinateHopfAlgebra :=
   CommHopfAlgCat.quotient H₂₆
     (CommHopfAlgCat.commonKernelHopfIdeal F4ShortRoot.PrimeField.generator)
 
-/-- The ambient adjoint cotangent comodule used before corestricting to the F4 carrier. -/
-local instance f4ShortRootAmbientCotangentComodule :
-    Comodule 𝔽₂ H₂₆ f4ShortRootCotangentDual :=
-  Derivation.adjointComodule (R := 𝔽₂) (H := H₂₆)
+attribute [local instance] f4ShortRootCotangentAdjointComodule
 
 /-- The adjoint cotangent comodule of `GL₂₆`, corestricted to the generated carrier. -/
 noncomputable instance f4ShortRootCarrierCotangentComodule :
@@ -199,17 +196,26 @@ noncomputable def f4ShortRootCarrierIdealInRange :
       f4ShortRootCarrierCotangentRange :=
   f4ShortRootCarrierCotangentIdeal.comap f4ShortRootCarrierCotangentRange.subtype
 
-@[simp] theorem mem_f4ShortRootCarrierIdealInRange
+@[simp↓] theorem mem_f4ShortRootCarrierIdealInRange
     (x : f4ShortRootCarrierCotangentRange) :
     x ∈ f4ShortRootCarrierIdealInRange ↔
       (x : f4ShortRootCotangentDual) ∈ f4ShortRootCarrierCotangentIdeal := by
   rw [f4ShortRootCarrierIdealInRange, TauCeti.Subcomodule.mem_comap,
     TauCeti.Subcomodule.subtype_apply]
 
-/-- The carrier range inherits additive inverses from its module structure over `𝔽₂`. -/
+-- Instance diamond: `AddCommGroup G` is also derivable from
+-- `[IsSimpleAddGroup G] [AddGroup.IsNilpotent G]`, which instance search reaches first for `𝔽₂`.
+-- That structure is equal to `Ring.toAddCommGroup` but not syntactically, and its underlying
+-- `AddCommMonoid` is not the one recorded in `Module 𝔽₂ 𝔽₂`, so `LinearMap.addCommGroup` fails to
+-- synthesize `AddCommGroup (M →ₗ[𝔽₂] 𝔽₂)`. Raising the priority of the ring path locally restores
+-- it; the instances below are closed terms, so importers do not need this attribute.
+attribute [local instance 2000] Ring.toAddCommGroup
+
+/-- The carrier cotangent range is an additive group, inheriting additive inverses from its
+module structure over `𝔽₂`. -/
 noncomputable instance f4ShortRootCarrierCotangentRangeAddCommGroup :
     AddCommGroup f4ShortRootCarrierCotangentRange :=
-  inferInstanceAs (AddCommGroup f4ShortRootCarrierCotangentRange.toSubmodule)
+  Module.addCommMonoidToAddCommGroup 𝔽₂
 
 private noncomputable def f4ShortRootCarrierRangeEquivToSubmodule :
     f4ShortRootCarrierCotangentRange ≃ₗ[𝔽₂]
@@ -244,7 +250,7 @@ noncomputable def f4ShortRootCarrierMiddleEquivQuotient :
     rw [show A = f4ShortRootRepresentedIdeal.map B.subtype from
       f4ShortRootRepresentedIdealAmbient_eq_map]
     exact Submodule.comap_map_eq_of_injective B.injective_subtype _
-  let eEq := Submodule.subquotientEquivOfEq
+  let eEq := Submodule.subquotientEquivOfEq (R := 𝔽₂) (M := f4ShortRootCotangentDual)
     f4ShortRootCarrierCotangentIdeal.toSubmodule
     f4ShortRootCarrierCotangentRange.toSubmodule
     (A.map e.toLinearMap) (B.map e.toLinearMap) hA hB

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
+import Mathlib.LinearAlgebra.Matrix.Dual
 
 /-!
 # The simply connected root datum of type G2

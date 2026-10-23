@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Comap
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Reduction
+import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Reduction
 import TauCeti.RingTheory.FiniteType.Tensor.Product
 
 /-!
@@ -30,6 +30,8 @@ reduced. Neither connectedness nor solvability is required for these results.
 -/
 
 public section
+
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 open scoped TensorProduct
 
@@ -76,13 +78,8 @@ variable (H : _root_.CommHopfAlgCat.{v} k) [Algebra.FiniteType k H] [IsReduced H
 /-- The derived closed subgroup of a reduced finite-type affine group over an algebraically
 closed field has reduced coordinate ring. -/
 theorem isReduced_quotient_derivedDefiningIdeal :
-    IsReduced (quotient H (derivedDefiningIdeal H)) := by
-  let D := quotient H (derivedDefiningIdeal H)
-  -- Establish reducedness before inferring it for the tensor square: the Hopf reduction
-  -- quotient theorem already requires that tensor square to be reduced.
-  let _ : IsReduced (D ⧸ nilradical D) :=
-    (Ideal.isRadical_iff_quotient_reduced _).mp (Ideal.radical_isRadical ⊥)
-  exact isReduced_quotient_derivedDefiningIdeal_of_isReduced_tensorProduct H
+    IsReduced (quotient H (derivedDefiningIdeal H)) :=
+  isReduced_quotient_derivedDefiningIdeal_of_isReduced_tensorProduct H
 
 /-- The derived closed subgroup of a reduced finite-type affine group over an algebraically
 closed field is smooth. -/

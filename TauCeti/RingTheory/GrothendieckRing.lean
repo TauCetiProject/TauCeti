@@ -210,7 +210,7 @@ noncomputable def liftRingHom : (S →+* R) ≃ (GrothendieckAddGroup S →+* R)
         obtain ⟨a, b, rfl⟩ := exists_eq_sub_of x
         obtain ⟨c, d, rfl⟩ := exists_eq_sub_of y
         simp only [sub_mul, mul_sub, of_mul_of, AddMonoidHom.toFun_eq_coe, map_sub,
-          lift_apply_of, RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_coe, map_mul] }
+          lift_apply_of, RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, map_mul] }
   invFun F := F.comp ofRingHom
   left_inv f := RingHom.ext fun a => lift_apply_of f.toAddMonoidHom a
   right_inv F := ringHom_ext fun a => lift_apply_of (F.comp ofRingHom).toAddMonoidHom a

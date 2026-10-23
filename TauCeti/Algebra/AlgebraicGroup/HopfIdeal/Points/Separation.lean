@@ -32,9 +32,8 @@ two reduced finite-type closed subgroups with the same points have the same defi
 * J. S. Milne, *Algebraic Groups* (2017), Sections 1.d and 2.a.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 3.2.
 
-This is the point-separation input for the maximal-torus step in Layer 7 of the ReductiveGroups
-roadmap. It allows pointwise centralizer calculations to determine reduced closed subgroup
-schemes.
+This is the point-separation input for maximal tori. It allows pointwise centralizer calculations to
+determine reduced closed subgroup schemes.
 -/
 
 public section

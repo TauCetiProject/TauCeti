@@ -42,7 +42,7 @@ open scoped NumberField nonZeroDivisors
 
 namespace TauCeti.Multiquadratic
 
-open NumberField
+open _root_.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 

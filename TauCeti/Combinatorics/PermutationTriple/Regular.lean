@@ -28,6 +28,8 @@ Counting then turns both characterisations into equalities of orders with the de
 
 * `TauCeti.PermutationTriple.IsRegular`: the triple is connected and its automorphism group is
   transitive on the sheets.
+* `TauCeti.PermutationTriple.automorphismGroupMulEquivMonodromyGroupMulOpposite`: the automorphism
+  group of a regular triple is isomorphic to the opposite of its monodromy group.
 
 ## Main results
 
@@ -38,6 +40,9 @@ Counting then turns both characterisations into equalities of orders with the de
 * `TauCeti.PermutationTriple.isRegular_iff_card_automorphismGroup`: a triple is regular exactly
   when it is connected and its automorphism group has order the degree.
 * `TauCeti.PermutationTriple.isRegular_smul_iff`: regularity is invariant under relabeling.
+* `TauCeti.PermutationTriple.unop_automorphismGroupMulEquivMonodromyGroupMulOpposite_smul`: the
+  element of the monodromy group corresponding to an automorphism `τ` moves the base sheet `i` to
+  `τ i`.
 
 ## References
 
@@ -177,6 +182,89 @@ theorem isRegular_iff_of_equivalent {t t' : PermutationTriple n} (h : Equivalent
     t.IsRegular ↔ t'.IsRegular := by
   obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp h
   exact (isRegular_smul_iff τ t).symm
+
+/-! ### The automorphism group of a regular triple -/
+
+private noncomputable def automorphismGroupEvalEquiv
+    (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃ Fin n :=
+  Equiv.ofBijective (fun τ : t.automorphismGroup ↦ τ • i) ⟨by
+      intro τ σ h
+      apply Subtype.ext
+      have hfix : (((σ⁻¹ * τ : t.automorphismGroup) : Perm (Fin n))) i = i := by
+        dsimp only at h
+        rw [Subgroup.smul_def, Subgroup.smul_def, Perm.smul_def, Perm.smul_def] at h
+        rw [Subgroup.coe_mul, Subgroup.coe_inv, Perm.mul_apply, h, Perm.inv_def, symm_apply_apply]
+      have hone : (σ⁻¹ * τ : t.automorphismGroup) = 1 := Subtype.ext <|
+        eq_one_of_mem_automorphismGroup_of_apply_eq ht.isConnected.isPretransitive
+          (σ⁻¹ * τ).2 hfix
+      exact congrArg Subtype.val <| calc
+        τ = σ * (σ⁻¹ * τ) := by simp
+        _ = σ := by rw [hone, mul_one],
+    by
+      intro j
+      exact ht.isPretransitive.exists_smul_eq i j⟩
+
+private noncomputable def monodromyGroupEvalEquiv
+    (ht : t.IsRegular) (i : Fin n) : t.monodromyGroup ≃ Fin n :=
+  Equiv.ofBijective (fun g : t.monodromyGroup ↦ g • i) ⟨by
+      let _ : IsCancelSMul t.monodromyGroup (Fin n) := ht.isCancelSMul
+      exact fun g h hgh ↦ IsCancelSMul.right_cancel g h i hgh,
+    by
+      intro j
+      exact ht.isConnected.isPretransitive.exists_smul_eq i j⟩
+
+private theorem automorphismGroupEvalEquiv_apply (ht : t.IsRegular) (i : Fin n)
+    (τ : t.automorphismGroup) : automorphismGroupEvalEquiv ht i τ = τ • i :=
+  Equiv.ofBijective_apply _ _ _
+
+private theorem monodromyGroupEvalEquiv_apply (ht : t.IsRegular) (i : Fin n)
+    (g : t.monodromyGroup) : monodromyGroupEvalEquiv ht i g = g • i :=
+  Equiv.ofBijective_apply _ _ _
+
+private noncomputable def automorphismGroupEquivMonodromyGroup
+    (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃ t.monodromyGroup :=
+  (automorphismGroupEvalEquiv ht i).trans (monodromyGroupEvalEquiv ht i).symm
+
+private theorem automorphismGroupEquivMonodromyGroup_smul
+    (ht : t.IsRegular) (i : Fin n) (τ : t.automorphismGroup) :
+    automorphismGroupEquivMonodromyGroup ht i τ • i = τ • i := by
+  rw [automorphismGroupEquivMonodromyGroup, Equiv.trans_apply, ← monodromyGroupEvalEquiv_apply ht,
+    Equiv.apply_symm_apply, automorphismGroupEvalEquiv_apply]
+
+/-- The automorphism group of a regular triple is isomorphic to the opposite of its monodromy
+group. Both act simply transitively on the sheets, and an automorphism `τ` goes to the unique
+element of the monodromy group moving the base sheet `i` to `τ i`
+(`TauCeti.PermutationTriple.unop_automorphismGroupMulEquivMonodromyGroupMulOpposite_smul`). The
+opposite occurs because automorphisms act on the right of the monodromy action. -/
+noncomputable def automorphismGroupMulEquivMonodromyGroupMulOpposite
+    (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃* t.monodromyGroupᵐᵒᵖ where
+  toEquiv := (automorphismGroupEquivMonodromyGroup ht i).trans MulOpposite.opEquiv
+  map_mul' τ σ := by
+    apply MulOpposite.unop_injective
+    simp only [Equiv.toFun_as_coe, Equiv.trans_apply, MulOpposite.opEquiv_apply,
+      MulOpposite.unop_mul, MulOpposite.unop_op]
+    let _ : IsCancelSMul t.monodromyGroup (Fin n) := ht.isCancelSMul
+    apply IsCancelSMul.right_cancel _ _ i
+    rw [automorphismGroupEquivMonodromyGroup_smul, mul_smul, mul_smul,
+      automorphismGroupEquivMonodromyGroup_smul]
+    rw [← automorphismGroupEquivMonodromyGroup_smul ht i σ]
+    simp only [Subgroup.smul_def, Perm.smul_def]
+    have hτ : (τ : Perm (Fin n)) ∈
+        Subgroup.centralizer (t.monodromyGroup : Set (Perm (Fin n))) := by
+      rw [← automorphismGroup_eq_centralizer_monodromyGroup]
+      exact τ.2
+    simpa only [Perm.mul_apply] using DFunLike.congr_fun (Subgroup.mem_centralizer_iff.mp hτ
+      (automorphismGroupEquivMonodromyGroup ht i σ)
+      (automorphismGroupEquivMonodromyGroup ht i σ).2).symm i
+
+/-- The characteristic property of
+`TauCeti.PermutationTriple.automorphismGroupMulEquivMonodromyGroupMulOpposite`: the element of the
+monodromy group that an automorphism `τ` goes to moves the base sheet `i` to `τ i`. -/
+@[simp]
+theorem unop_automorphismGroupMulEquivMonodromyGroupMulOpposite_smul (ht : t.IsRegular) (i : Fin n)
+    (τ : t.automorphismGroup) :
+    (automorphismGroupMulEquivMonodromyGroupMulOpposite ht i τ).unop • i = τ • i :=
+  automorphismGroupEquivMonodromyGroup_smul ht i τ
 
 end PermutationTriple
 

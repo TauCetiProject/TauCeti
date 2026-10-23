@@ -58,7 +58,7 @@ theorem exists_faithfulRepresentation_of_pointSeparating [FiniteDimensional K L]
   by_contra hrho
   have hker : rho.ker ≠ ⊥ := fun hbot ↦
     hrho ((LieHom.ker_eq_bot (f := rho)).mp hbot)
-  obtain ⟨x, hxker, hxbot⟩ := SetLike.exists_of_lt (bot_lt_iff_ne_bot.mpr hker)
+  obtain ⟨x, hxker, hxbot⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr hker)
   have hxne : x ≠ 0 := by
     simpa using hxbot
   obtain ⟨W, _, _, _, sigma, hsigma⟩ := hseparates x hxne

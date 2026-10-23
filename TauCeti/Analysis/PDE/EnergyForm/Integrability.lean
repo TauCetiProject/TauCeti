@@ -85,12 +85,7 @@ lemma integrable_energyIntegrand_apply₂_of_memLp_two
     Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x)) μ :=
   integrable_energyIntegrand_apply₂_of_integrable_norm_mul hLam ha hb hc
     hU.aestronglyMeasurable hV.aestronglyMeasurable ha_bound hb_bound hc_bound
-    (by
-      convert
-        (hU.norm.integrable_mul hV.norm :
-          Integrable ((fun x => ‖U x‖) * fun x => ‖V x‖) μ) using 1
-      ext x
-      rw [Pi.mul_apply])
+    (hU.norm.integrable_mul hV.norm)
 
 /-- Bounded measurable coefficient fields and bounded measurable jet fields give an integrable
 scalar energy density on a finite-measure space. -/

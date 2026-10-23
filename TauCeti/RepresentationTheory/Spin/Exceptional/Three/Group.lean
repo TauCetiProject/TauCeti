@@ -214,7 +214,7 @@ private theorem spinThreeEquivMatrix_positiveRoot
   simp only [spinThreeEquivMatrix, AlgEquiv.trans_apply, P.evenCliffordEquivEnd_apply]
   refine bas.ext fun i => ?_
   rcases finTwo_eq_vacuum_or_occupied i with rfl | rfl
-  · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
+  · rw [Module.Basis.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_left, one_smul]
     have h := P.typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty b z hz hcoord
     simp only [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_last,
@@ -223,7 +223,7 @@ private theorem spinThreeEquivMatrix_positiveRoot
     simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
       spinThreeExteriorBasis_vacuum, spinThreeExteriorBasis_occupied,
       coe_evenBivector, Fin.last_zero] using h
-  · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
+  · rw [Module.Basis.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_right vacuumIndex_ne_occupiedIndex, zero_smul]
     simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
       spinThreeExteriorBasis_occupied, coe_evenBivector] using
@@ -242,12 +242,12 @@ private theorem spinThreeEquivMatrix_negativeRoot
   simp only [spinThreeEquivMatrix, AlgEquiv.trans_apply, P.evenCliffordEquivEnd_apply]
   refine bas.ext fun i => ?_
   rcases finTwo_eq_vacuum_or_occupied i with rfl | rfl
-  · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
+  · rw [Module.Basis.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_right vacuumIndex_ne_occupiedIndex.symm, zero_smul]
     simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
       spinThreeExteriorBasis_vacuum, coe_evenBivector] using
       spinAction_negativeRoot_empty P b z
-  · rw [TauCeti.toLinAlgEquiv_single_apply_basis]
+  · rw [Module.Basis.toLinAlgEquiv_single_apply_basis]
     simp only [ite_eq_left, one_smul]
     have h := P.typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton
       b z hz hcoord
@@ -257,34 +257,6 @@ private theorem spinThreeEquivMatrix_negativeRoot
     simpa only [Matrix.toLinAlgEquiv_toMatrixAlgEquiv, bas,
       spinThreeExteriorBasis_vacuum, spinThreeExteriorBasis_occupied,
       coe_evenBivector, Fin.last_zero] using h
-
-private theorem spinThreeHom_intertwines
-    [NeZero (2 : K)] [FiniteDimensional K V]
-    (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
-    (hV : finrank K V = 3) (g : spinGroup Q) :
-    (spinThreeExteriorBasis P b).equivFun.toLinearMap.comp (spinRep Q P g) =
-      (stdSLRep K 2 (spinThreeHom hV (spinThreeEquivMatrix P b hV) g)).comp
-        (spinThreeExteriorBasis P b).equivFun.toLinearMap := by
-  apply LinearMap.ext
-  intro s
-  simp only [LinearMap.comp_apply, spinRep_apply, stdSLRep_apply, Matrix.mulVecLin_apply]
-  -- Expose the matrix carried by `spinThreeHom`; the remaining equality is the canonical
-  -- coordinate formula for the matrix of a linear map.
-  change (spinThreeExteriorBasis P b).equivFun (spinAction Q P g s) =
-    Matrix.mulVec (spinThreeEquivMatrix P b hV (spinGroupToEven Q g))
-      ((spinThreeExteriorBasis P b).equivFun s)
-  rw [spinThreeEquivMatrix, AlgEquiv.trans_apply, P.evenCliffordEquivEnd_apply,
-    coe_spinGroupToEven_apply]
-  have hmatrix :
-      LinearMap.toMatrixAlgEquiv (spinThreeExteriorBasis P b) (spinAction Q P g) =
-        LinearMap.toMatrix (spinThreeExteriorBasis P b) (spinThreeExteriorBasis P b)
-          (spinAction Q P g) := by
-    ext i j
-    rw [LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
-  rw [hmatrix]
-  simpa only [Basis.equivFun_apply] using
-      (LinearMap.toMatrix_mulVec_repr (spinThreeExteriorBasis P b)
-        (spinThreeExteriorBasis P b) (spinAction Q P g) s).symm
 
 /-- For a three-dimensional quadratic space with polarization data over a field with `2 ≠ 0`,
 there is an equivalence from its Spin group to `SL₂` under which the spin representation is the
@@ -369,7 +341,12 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_
     exact MulEquiv.ofBijective_apply f ⟨hf_inj, hf_surj⟩ g
   simp only [MonoidHom.comp_apply]
   rw [hφ]
-  simpa only [f, e] using spinThreeHom_intertwines P b hV g
+  have hfg : (f g : Matrix (Fin 2) (Fin 2) K) =
+      spinThreeEquivMatrix P b hV (spinGroupToEven Q g) := rfl
+  rw [stdSLRep_apply, hfg]
+  simpa only [spinThreeEquivMatrix] using
+    P.evenCliffordEquivEnd_toMatrix_intertwines_spinRep
+      (hV ▸ by decide) (spinThreeExteriorBasis P b) g
 
 /-- A nondegenerate three-dimensional quadratic space over a separably closed field of
 characteristic not two has Spin group isomorphic to `SL₂`. The equivalence is noncanonical because

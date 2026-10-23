@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
+public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.FiniteType
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
@@ -40,6 +40,8 @@ node `0` is trivalent, and the three arms are `1`, `2, 3`, and `4, 5, 6, 7, 8`, 
 
 * `TauCeti.isTree_zigzagA2Graph`, `TauCeti.isTree_zigzagD4Graph`,
   `TauCeti.isTree_zigzagE8Graph`, and `TauCeti.isTree_zigzagAffineE8Graph`: the graphs are trees.
+* `TauCeti.not_exists_dynkinType_iso_zigzagAffineE8Graph`: affine `E₈` is not a finite Dynkin
+  diagram.
 * `TauCeti.finrank_zigzagAlgebra_D4`, `TauCeti.finrank_zigzagAlgebra_E8`, and
   `TauCeti.finrank_zigzagAlgebra_affineE8`: the three zigzag dimensions.
 * `TauCeti.finrank_center_zigzagAlgebra_D4`, `TauCeti.finrank_center_zigzagAlgebra_E8`, and
@@ -68,6 +70,10 @@ def zigzagD4Graph : SimpleGraph (Fin 4) :=
 /-- The `E₈` graph, read from its Bourbaki-numbered standard Cartan matrix. -/
 def zigzagE8Graph : SimpleGraph (Fin 8) :=
   diagramGraph DynkinType.E8.cartanMatrix
+
+/-- The named `E₈` graph is the diagram of the standard Bourbaki-labelled Cartan matrix. -/
+theorem zigzagE8Graph_eq_diagramGraph :
+    zigzagE8Graph = diagramGraph DynkinType.E8.cartanMatrix := (rfl)
 
 /-- The affine `E₈` graph `T_{2,3,6}`, with node `0` trivalent and each arm numbered outwards. -/
 def zigzagAffineE8Graph : SimpleGraph (Fin 9) :=
@@ -135,6 +141,22 @@ theorem connected_zigzagA2Graph : zigzagA2Graph.Connected :=
 theorem exists_adj_zigzagA2Graph (i : Fin 2) : ∃ j, zigzagA2Graph.Adj i j :=
   connected_zigzagA2Graph.preconnected.exists_adj_of_nontrivial i
 
+/-- The dart of `A₂` leaving the node `i`. -/
+@[expose]
+def zigzagA2Dart (i : Fin 2) : zigzagA2Graph.Dart :=
+  ⟨(i, i + 1), by fin_cases i <;> simp⟩
+
+@[simp]
+theorem zigzagA2Dart_fst (i : Fin 2) : (zigzagA2Dart i).fst = i := (rfl)
+
+@[simp]
+theorem zigzagA2Dart_snd (i : Fin 2) : (zigzagA2Dart i).snd = i + 1 := (rfl)
+
+/-- Both nodes of `A₂` have degree one. -/
+@[simp]
+theorem degree_zigzagA2Graph (i : Fin 2) : zigzagA2Graph.degree i = 1 := by
+  fin_cases i <;> decide
+
 /-- The `D₄` graph is connected. -/
 theorem connected_zigzagD4Graph : zigzagD4Graph.Connected :=
   DynkinType.connected_diagramGraph_cartanMatrix (by simp)
@@ -198,6 +220,13 @@ theorem isTree_zigzagAffineE8Graph : zigzagAffineE8Graph.IsTree := by
   exact ⟨connected_zigzagAffineE8Graph, by
     rw [Nat.card_eq_fintype_card, ← SimpleGraph.edgeFinset_card,
       card_edgeFinset_zigzagAffineE8Graph, Nat.card_fin]⟩
+
+/-- **Affine `E₈` is not a finite Dynkin diagram**: the arm-labelled `T_{2,3,6}` graph is not
+isomorphic to the diagram of any valid Dynkin type. -/
+theorem not_exists_dynkinType_iso_zigzagAffineE8Graph :
+    ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (zigzagAffineE8Graph ≃g diagramGraph t.cartanMatrix) :=
+  AffineDynkinType.not_exists_dynkinType_iso AffineDynkinType.valid_E8
+    AffineDynkinType.isGraphical_E8
 
 /-- The `A₂` graph has one edge. -/
 @[simp]

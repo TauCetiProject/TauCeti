@@ -17,10 +17,9 @@ smoothness is preserved, and an affine cover of the source has smooth coordinate
 the ring of global functions of the target. That ring is isomorphic to the field, so the
 coordinate algebras are reduced by `TauCeti.isReduced_of_smooth`.
 
-The main result is the instance `AlgebraicGeometry.Smooth.geometricallyReduced`. It supplies the
-geometric-reducedness half of the Jacobian challenge's standing-hypotheses deduction that a
-smooth, geometrically connected curve is geometrically integral. The remaining irreducibility
-half uses that the local rings of a smooth scheme over a field are regular domains.
+The main result is the instance `AlgebraicGeometry.Smooth.geometricallyReduced`. Smooth,
+geometrically connected morphisms are also shown to be geometrically integral in
+`TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral`.
 
 No formalization is vendored. The commutative-algebra input is
 `TauCeti.isReduced_of_smooth`; the passage from affine opens to the whole scheme uses

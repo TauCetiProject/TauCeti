@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Valuation.Basic
 import Mathlib.RingTheory.Polynomial.IsIntegral
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 
 /-!
 # Function-field pullbacks of isogenies
@@ -205,7 +205,7 @@ theorem fieldPullback_unique (φ : Isogeny W₁ W₂)
     (hf : ∀ x : W₂.CoordinateRing,
       f (algebraMap W₂.CoordinateRing W₂.FunctionField x) = φ.pullback x) :
     f = φ.fieldPullback :=
-  AlgHom.coe_ringHom_injective <| ringHom_eq_fieldPullback φ f.toRingHom hf
+  AlgHom.toRingHom_injective <| ringHom_eq_fieldPullback φ f.toRingHom hf
 
 /-- **A coordinate-level structure map forces the field-level one.** If an
 `Algebra W₂.CoordinateRing W₁.FunctionField` structure is the coordinate pullback, then any

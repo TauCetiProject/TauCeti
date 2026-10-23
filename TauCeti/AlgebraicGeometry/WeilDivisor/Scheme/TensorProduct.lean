@@ -160,7 +160,8 @@ lemma sectionsMulLift_tmul (s : Γ(sheaf D, U)) (t : Γ(sheaf E, U)) :
 /-- Multiplication inside `𝒦_X`, as a morphism from the sectionwise tensor product of the
 presheaves of modules underlying `𝒪_X(D)` and `𝒪_X(E)` to the one underlying `𝒪_X(D + E)`. -/
 def tensorPresheafHom :
-    PresheafOfModules.Monoidal.tensorObj (R := X.sheaf.obj) (sheaf D).val (sheaf E).val ⟶
+    PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := X.sheaf.obj) (sheaf D).val
+      (sheaf E).val ⟶
       (sheaf (D + E)).val where
   app U := ModuleCat.MonoidalCategory.tensorLift
     (fun s t ↦ sectionsMul D E U.unop s t)
@@ -178,9 +179,7 @@ def tensorPresheafHom :
 lemma tensorPresheafHom_app :
     ModuleCat.Hom.hom (R := X.sheaf.obj.obj (op U)) ((tensorPresheafHom D E).app (op U)) =
       sectionsMulLift D E U :=
-  TensorProduct.ext' fun s t ↦
-    (ModuleCat.MonoidalCategory.tensorLift_tmul _ _ _ _ _ _ _).trans
-      (sectionsMulLift_tmul D E U s t).symm
+  TensorProduct.ext' fun s t ↦ (sectionsMulLift_tmul D E U s t).symm
 
 end Multiplication
 
@@ -284,8 +283,7 @@ theorem sectionsMulLift_injective (hV : ∀ y ∈ V, coheight y ≤ 1) :
     Function.Injective (sectionsMulLift D E V) := by
   have key : Function.LeftInverse (sectionsMulRetraction hg D) (sectionsMulLift D E V) := by
     intro w
-    induction w using TensorProduct.induction_on with
-    | zero => rw [map_zero, map_zero]
+    induction w using TensorProduct.inductionOn with
     | tmul a b =>
       rw [sectionsMulLift_tmul]
       exact sectionsMulRetraction_sectionsMul hg D hV a b

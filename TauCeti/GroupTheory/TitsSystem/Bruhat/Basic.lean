@@ -36,9 +36,15 @@ simple cells are developed in `TauCeti.GroupTheory.TitsSystem.Bruhat.Subword`.
   a representative in `N`.
 * `TauCeti.TitsSystem.exists_mem_bruhatCell`: every Weyl-indexed Bruhat cell contains a
   representative from `N`.
+* `TauCeti.TitsSystem.subgroupB_mul_bruhatCell` and `TauCeti.TitsSystem.bruhatCell_mul_subgroupB`:
+  the identity cell `B` is absorbed by every cell.
 * `TauCeti.TitsSystem.bruhatCells_eq_univ`: the Bruhat cells cover the ambient group.
 * `TauCeti.TitsSystem.bruhatCell_mul_eq_or_eq_union_of_mem_simple`: multiplication on the left by
   a simple Bruhat cell gives either the adjacent cell or its union with the original cell.
+* `TauCeti.TitsSystem.subset_bruhatCell_mul_of_mem_simple` and
+  `TauCeti.TitsSystem.bruhatCell_mul_subset_union_of_mem_simple`: the adjacent cell always occurs
+  in the product with a simple cell on the left, and nothing beyond the adjacent and the original
+  cell does.
 * `TauCeti.TitsSystem.bruhatCell_mul_self_eq_union_of_mem_simple`: the square of a simple cell is
   its union with the identity cell.
 * `TauCeti.TitsSystem.exists_mem_doubleCoset`: every group element lies in a cell represented
@@ -116,6 +122,14 @@ theorem mem_bruhatCell_iff {g : G} {w : T.WeylGroup} :
     rw [bruhatCell_mk, ← doubleCoset_eq_of_mk_eq T.subgroupB T.subgroupN hm]
     exact hg
 
+/-- A Bruhat cell is the double coset of any of its elements. -/
+theorem bruhatCell_eq_doubleCoset {g : G} {w : T.WeylGroup}
+    (hg : g ∈ T.bruhatCell w) :
+    T.bruhatCell w = DoubleCoset.doubleCoset g T.subgroupB T.subgroupB := by
+  obtain ⟨n, rfl, hn⟩ := T.mem_bruhatCell_iff.mp hg
+  rw [T.bruhatCell_mk]
+  exact (DoubleCoset.doubleCoset_eq_of_mem hn).symm
+
 /-- Every Weyl-indexed Bruhat cell contains a representative from the normalizer subgroup. -/
 theorem exists_mem_bruhatCell (w : T.WeylGroup) :
     ∃ n : T.subgroupN, QuotientGroup.mk n = w ∧ (n : G) ∈ T.bruhatCell w := by
@@ -132,6 +146,24 @@ theorem bruhatCell_one : T.bruhatCell 1 = (T.subgroupB : Set G) := by
       rw [QuotientGroup.mk_one]
     _ = DoubleCoset.doubleCoset (1 : G) T.subgroupB T.subgroupB := T.bruhatCell_mk 1
     _ = T.subgroupB := doubleCoset_one_self T.subgroupB
+
+/-- The identity cell `B` (see `TauCeti.TitsSystem.bruhatCell_one`) is absorbed on the left:
+`B (B w B) = B w B`. -/
+@[simp]
+theorem subgroupB_mul_bruhatCell (w : T.WeylGroup) :
+    (T.subgroupB : Set G) * T.bruhatCell w = T.bruhatCell w := by
+  obtain ⟨n, rfl⟩ := QuotientGroup.mk'_surjective T.intersection w
+  simp only [QuotientGroup.mk'_apply, bruhatCell_mk, DoubleCoset.doubleCoset]
+  rw [← mul_assoc, ← mul_assoc, coe_mul_coe]
+
+/-- The identity cell `B` (see `TauCeti.TitsSystem.bruhatCell_one`) is absorbed on the right:
+`(B w B) B = B w B`. -/
+@[simp]
+theorem bruhatCell_mul_subgroupB (w : T.WeylGroup) :
+    T.bruhatCell w * (T.subgroupB : Set G) = T.bruhatCell w := by
+  obtain ⟨n, rfl⟩ := QuotientGroup.mk'_surjective T.intersection w
+  simp only [QuotientGroup.mk'_apply, bruhatCell_mk, DoubleCoset.doubleCoset]
+  rw [mul_assoc, coe_mul_coe]
 
 /-- The union over `N` defining `bruhatCells` can equivalently be indexed canonically by the Weyl
 group. -/
@@ -236,6 +268,24 @@ theorem bruhatCell_mul_eq_or_eq_union_of_mem_simple {s : T.WeylGroup} (hs : s �
   simpa only [QuotientGroup.mk'_apply, ← QuotientGroup.mk_mul, Subgroup.comap_subtype,
     bruhatCell_mk] using
     T.mul_doubleCoset_eq_or_eq_union_of_mem_simple hs r rfl n
+
+/-- The adjacent cell always occurs in the product with a simple cell on the left. -/
+theorem subset_bruhatCell_mul_of_mem_simple {s : T.WeylGroup} (hs : s ∈ T.simple)
+    (w : T.WeylGroup) : T.bruhatCell (s * w) ⊆ T.bruhatCell s * T.bruhatCell w := by
+  rcases T.bruhatCell_mul_eq_or_eq_union_of_mem_simple hs w with h | h
+  · rw [h]
+  · rw [h]
+    exact Set.subset_union_left
+
+/-- The product with a simple cell on the left lies in the union of the adjacent and the original
+cell. -/
+theorem bruhatCell_mul_subset_union_of_mem_simple {s : T.WeylGroup} (hs : s ∈ T.simple)
+    (w : T.WeylGroup) :
+    T.bruhatCell s * T.bruhatCell w ⊆ T.bruhatCell (s * w) ∪ T.bruhatCell w := by
+  rcases T.bruhatCell_mul_eq_or_eq_union_of_mem_simple hs w with h | h
+  · rw [h]
+    exact Set.subset_union_left
+  · rw [h]
 
 /-- The square of a simple Bruhat cell is the union of that cell with the identity cell:
 `(B s B)(B s B) = B ∪ B s B`.

@@ -88,10 +88,8 @@ theorem toLineBundleClass_eq_of_linearlyEquivalent {D E : SchemeWeilDivisor X}
 lemma toLineBundleClass_zero :
     toLineBundleClass hX (0 : SchemeWeilDivisor X) = 1 := by
   unfold toLineBundleClass
-  rw [← LineBundleClass.mk_trivial, LineBundleClass.mk_eq_mk_iff]
-  simpa only [toInvertibleSheaf_obj, InvertibleSheaf.trivial_obj] using
-    ⟨(unitIsoSheafZero hX).symm ≪≫
-      (TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf).symm⟩
+  rw [LineBundleClass.mk_eq_one_iff, toInvertibleSheaf_obj]
+  exact ⟨(unitIsoSheafZero hX).symm⟩
 
 /-- A principal divisor determines the trivial line-bundle class. -/
 @[simp]

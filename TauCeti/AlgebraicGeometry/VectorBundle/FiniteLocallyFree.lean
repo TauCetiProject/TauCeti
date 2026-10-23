@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocallyFree
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 
 /-!
@@ -23,7 +25,9 @@ vector bundles of finite rank. This file packages them as the full subcategory
 * it is a symmetric monoidal category, with the tensor product and unit `𝒪_X` of `X.Modules`, and
   its inclusion into `X.Modules` is braided monoidal;
 * it is an additive category: it contains the zero sheaf and is closed under direct sums, so it
-  has finite biproducts, computed in `X.Modules`.
+  has finite biproducts, computed in `X.Modules`;
+* it is stable under pullback along an arbitrary morphism of schemes `f : X ⟶ Y`, giving the
+  pullback functor `FiniteLocallyFreeSheaf Y ⥤ FiniteLocallyFreeSheaf X`.
 
 Invertible sheaves are finite locally free, and finite locally free sheaves are finitely
 presented; the corresponding inclusions of full subcategories are fully faithful.
@@ -36,6 +40,10 @@ presented; the corresponding inclusions of full subcategories are fully faithful
   free sheaves in `X.Modules`;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.free X I`: the free sheaf on a finite type
   `I`;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pullback f`: the pullback of finite locally
+  free sheaves along a morphism of schemes `f`;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pullbackFreeIso f I`: pullback of a finite
+  free sheaf as a free sheaf on the same basis;
 * `AlgebraicGeometry.Scheme.Modules.isMonoidal_isFiniteLocallyFree`: finite local freeness is a
   monoidal property of `𝒪_X`-modules;
 * `AlgebraicGeometry.Scheme.Modules.containsZero_isFiniteLocallyFree` and
@@ -108,6 +116,13 @@ instance (E : FiniteLocallyFreeSheaf X) : E.obj.IsLocallyFree :=
 instance (E : FiniteLocallyFreeSheaf X) : E.obj.IsFinitePresentation :=
   E.property.2
 
+/-- A finite locally free sheaf is of finite type. -/
+instance (E : FiniteLocallyFreeSheaf X) : E.obj.IsFiniteType :=
+  -- Finite presentation implies finite type for sheaves of modules, and instance search does not
+  -- unfold `X.Modules`, so the underlying object is rebound with the type of sheaves of modules.
+  let F : _root_.SheafOfModules X.ringCatSheaf := E.obj
+  inferInstanceAs F.IsFiniteType
+
 /-- A finite locally free sheaf is quasi-coherent. -/
 instance (E : FiniteLocallyFreeSheaf X) : E.obj.IsQuasicoherent :=
   -- Mathlib's instance deriving quasi-coherence from local freeness is stated for sheaves of
@@ -133,6 +148,49 @@ def free (I : Type u) [Finite I] : FiniteLocallyFreeSheaf X :=
 lemma free_obj (I : Type u) [Finite I] :
     (free X I).obj = _root_.SheafOfModules.free (R := X.ringCatSheaf) I :=
   (rfl)
+
+variable {X} in
+/-- The pullback of finite locally free sheaves along a morphism of schemes `f : X ⟶ Y`: the
+pullback of a locally free and finitely presented `𝒪_Y`-module is a locally free and finitely
+presented `𝒪_X`-module. -/
+def pullback {Y : Scheme.{u}} (f : X ⟶ Y) : FiniteLocallyFreeSheaf Y ⥤ FiniteLocallyFreeSheaf X :=
+  (Scheme.Modules.isFiniteLocallyFree X).lift
+    ((Scheme.Modules.isFiniteLocallyFree Y).ι ⋙ Scheme.Modules.pullback f)
+    fun E ↦ ⟨Scheme.Modules.isLocallyFree_pullback f E.obj,
+      Scheme.Modules.isFinitePresentation_pullback f E.obj⟩
+
+variable {X} in
+/-- The underlying sheaf of the pullback of a finite locally free sheaf is its pullback as an
+`𝒪_Y`-module. -/
+@[simp]
+lemma pullback_obj_obj {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
+    ((pullback f).obj E).obj = (Scheme.Modules.pullback f).obj E.obj :=
+  (rfl)
+
+variable {X} in
+/-- Pullback of a free sheaf, expressed in the finite locally free category. -/
+noncomputable def pullbackFreeIso {Y : Scheme.{u}} (f : X ⟶ Y) (J : Type u) [Finite J] :
+    (pullback f).obj (free Y J) ≅ free X J := by
+  letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
+    inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
+  exact ObjectProperty.isoMk _
+    (eqToIso (by rw [pullback_obj_obj, free_obj]; rfl) ≪≫
+      SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom J ≪≫
+      eqToIso (free_obj X J).symm)
+
+variable {X} in
+/-- Pullback acts on a morphism of finite locally free sheaves by the underlying pullback of
+modules. -/
+@[simp]
+lemma pullback_map_hom {Y : Scheme.{u}} (f : X ⟶ Y) {E F : FiniteLocallyFreeSheaf Y}
+    (φ : E ⟶ F) :
+    ((pullback f).map φ).hom =
+      eqToHom (pullback_obj_obj f E) ≫ (Scheme.Modules.pullback f).map φ.hom ≫
+        eqToHom (pullback_obj_obj f F).symm := by
+  cases pullback_obj_obj f E
+  cases pullback_obj_obj f F
+  unfold pullback
+  simp
 
 /-- The fully faithful inclusion of finite locally free sheaves into finitely presented
 sheaves. -/

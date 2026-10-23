@@ -46,6 +46,7 @@ isomorphic to `S` into the two halves.
   the source of an injective map into `M` and the target of a surjective map out of `M` — each
   contribute at most `M`'s multiplicity.
 * `TauCeti.jordanHolderMultiplicity_prod`: `[M × N : S] = [M : S] + [N : S]`.
+* `TauCeti.jordanHolderMultiplicity_pi`: additivity on a finite product of modules.
 
 ## References
 
@@ -195,5 +196,23 @@ theorem jordanHolderMultiplicity_prod [IsNoetherian R M] [IsArtinian R M] [IsNoe
       jordanHolderMultiplicity R M S + jordanHolderMultiplicity R N S :=
   jordanHolderMultiplicity_eq_add_of_exact (LinearMap.inl R M N) (LinearMap.snd R M N)
     (LinearMap.inl_injective) (LinearMap.snd_surjective) Function.Exact.inl_snd
+
+/-- The Jordan-Hölder multiplicity in a finite product is the sum of the multiplicities in
+its factors. This is the multiplicity analogue of `Module.length_pi_of_fintype`. -/
+@[simp]
+theorem jordanHolderMultiplicity_pi : ∀ {ι : Type*} [Fintype ι]
+    (N : ι → Type*) [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
+    [∀ i, IsNoetherian R (N i)] [∀ i, IsArtinian R (N i)],
+    jordanHolderMultiplicity R (∀ i, N i) S = ∑ i, jordanHolderMultiplicity R (N i) S := by
+  apply Fintype.induction_empty_option
+  · intro α β _ e IH N _ _ _ _
+    let _ : Fintype α := .ofEquiv β e.symm
+    rw [← jordanHolderMultiplicity_eq_of_linearEquiv (LinearEquiv.piCongrLeft R N e) S,
+      IH, e.sum_comp (fun i ↦ jordanHolderMultiplicity R (N i) S)]
+  · intro N _ _ _ _
+    simp [jordanHolderMultiplicity_eq_zero_of_subsingleton]
+  · intro ι _ IH N _ _ _ _
+    rw [jordanHolderMultiplicity_eq_of_linearEquiv (LinearEquiv.piOptionEquivProd R) S,
+      jordanHolderMultiplicity_prod, IH, Fintype.sum_option]
 
 end TauCeti

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Commutator
+public import Mathlib.Data.FunLike.Fintype
 public import Mathlib.GroupTheory.GroupExtension.Defs
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
@@ -49,6 +51,8 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
 * `TauCeti.FactorSet.trivial`: the factor set that is constantly `1`.
 * `TauCeti.FactorSet.map`: the pushforward of a factor set along a `G`-equivariant homomorphism of
   coefficient modules.
+* `TauCeti.FactorSet.ofBimultiplicative`: the factor set of a map `G →* G →* M`, for a trivial
+  action.
 
 ## Main results
 
@@ -59,6 +63,10 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
   extension.
 * `TauCeti.FactorSet.mul_inl`: conjugation moves the copy of `M` by the action of the image in `G`.
 * `TauCeti.FactorSet.inl_range_le_center`: when `G` acts trivially the extension is central.
+* `TauCeti.FactorSet.commutatorElement_eq_inl`: for commutative `G` acting trivially, the
+  commutator of `x` and `y` is the ratio of the values of `α` on their images in the two orders.
+* `TauCeti.FactorSet.forall_canonicalSection_mul_iff`: the canonical section is a homomorphism
+  exactly for the trivial factor set.
 * `TauCeti.FactorSet.nonempty_groupExtensionEquiv`: cohomologous factor sets build equivalent
   extensions.
 * `TauCeti.FactorSet.trivialMulEquiv`: the extension attached to the trivial factor set is the
@@ -66,10 +74,7 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
 
 ## References
 
-This supplies the central-extension target of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` ("projective representations,
-factor sets, and the Schur multiplier"), which the roadmap records as independent of Layers 3-5
-apart from its closing Clifford-theory obstruction. See G. Karpilovsky, *Projective Representations
+G. Karpilovsky, *Projective Representations
 of Finite Groups*, Marcel Dekker (1985), Ch. 1, and I. M. Isaacs, *Character Theory of Finite
 Groups*, AMS Chelsea (1976), Ch. 11.
 -/
@@ -114,6 +119,9 @@ theorem coe_mk (f : G × G → M) (hf : IsMulCocycle₂ f) (hf₁ : f (1, 1) = 1
 theorem ext {α β : FactorSet G M} (h : ∀ p : G × G, α p = β p) : α = β :=
   DFunLike.ext _ _ h
 
+instance [Finite G] [Finite M] : Finite (FactorSet G M) :=
+  DFunLike.finite (FactorSet G M)
+
 section
 
 variable (α : FactorSet G M)
@@ -147,7 +155,7 @@ end
 
 section Map
 
-variable {N : Type*} [CommGroup N] [MulDistribMulAction G N] (f : M →*[G] N) (α : FactorSet G M)
+variable {N : Type*} [CommGroup N] [MulDistribMulAction G N] (α : FactorSet G M) (f : M →*[G] N)
 
 /-- **Pushforward of a factor set along an equivariant homomorphism of coefficient modules**: the
 factor set `(g, h) ↦ f (α (g, h))` of `G` with values in `N`. -/
@@ -177,7 +185,28 @@ structure Extension (α : FactorSet G M) where
 
 namespace Extension
 
+/-- **The twisted product is `M × G` as a type.** It is the multiplication that the factor set
+twists, not the underlying set. -/
+def equivProd (α : FactorSet G M) : α.Extension ≃ M × G where
+  toFun x := (x.left, x.right)
+  invFun p := ⟨p.1, p.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem equivProd_apply {α : FactorSet G M} (x : α.Extension) :
+    equivProd α x = (x.left, x.right) :=
+  (rfl)
+
+@[simp]
+theorem equivProd_symm_apply {α : FactorSet G M} (p : M × G) :
+    (equivProd α).symm p = ⟨p.1, p.2⟩ :=
+  (rfl)
+
 variable {α : FactorSet G M}
+
+instance [Finite G] [Finite M] : Finite α.Extension :=
+  Finite.of_equiv _ (equivProd α).symm
 
 instance instMul : Mul α.Extension where
   mul x y := ⟨x.left * x.right • y.left * α (x.right, y.right), x.right * y.right⟩
@@ -238,6 +267,27 @@ instance instGroup : Group α.Extension where
 
 end Extension
 
+section MapExtension
+
+variable {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+
+/-- The homomorphism of twisted products induced by an equivariant coefficient homomorphism. -/
+def mapExtension (α : FactorSet G M) (f : M →*[G] N) :
+    α.Extension →* (α.map f).Extension where
+  toFun x := ⟨f x.left, x.right⟩
+  map_one' := by ext <;> simp
+  map_mul' x y := by ext <;> simp [map_smul]
+
+@[simp]
+theorem mapExtension_left (α : FactorSet G M) (f : M →*[G] N) (x : α.Extension) :
+    (α.mapExtension f x).left = f x.left := (rfl)
+
+@[simp]
+theorem mapExtension_right (α : FactorSet G M) (f : M →*[G] N) (x : α.Extension) :
+    (α.mapExtension f x).right = x.right := (rfl)
+
+end MapExtension
+
 section
 
 variable (α : FactorSet G M)
@@ -259,6 +309,21 @@ def rightHom : α.Extension →* G where
   map_mul' _ _ := rfl
 
 @[simp] theorem rightHom_apply (x : α.Extension) : rightHom α x = x.right := (rfl)
+
+/-- The induced map of extensions commutes with the coefficient inclusions. -/
+@[simp]
+theorem mapExtension_comp_inl {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+    (f : M →*[G] N) :
+    (α.mapExtension f).comp (inl α) = (inl (α.map f)).comp f.toMonoidHom := by
+  ext <;> rfl
+
+/-- The induced map of extensions preserves the projection to the quotient group. -/
+@[simp]
+theorem rightHom_comp_mapExtension {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+    (f : M →*[G] N) :
+    (rightHom (α.map f)).comp (α.mapExtension f) = rightHom α := by
+  ext
+  rfl
 
 theorem inl_injective : Function.Injective (inl α) := fun _ _ h => congrArg Extension.left h
 
@@ -307,6 +372,12 @@ theorem canonicalSection_mul (g h : G) :
       = inl α (α (g, h)) * α.canonicalSection (g * h) := by
   ext <;> simp
 
+/-- The inverse of a value of the canonical section is the section at the inverse, corrected by the
+value of `α` on `g` and `g⁻¹`. -/
+theorem inv_canonicalSection (g : G) :
+    (α.canonicalSection g)⁻¹ = inl α (g⁻¹ • (α (g, g⁻¹))⁻¹) * α.canonicalSection g⁻¹ := by
+  ext <;> simp
+
 /-- **Every element of the twisted product factors through the canonical section**, as its
 `M`-component times the section at its `G`-component. Together with
 `TauCeti.FactorSet.canonicalSection_mul` this reduces any statement about a homomorphism out of the
@@ -332,6 +403,31 @@ theorem inl_range_le_center (h : ∀ (g : G) (a : M), g • a = a) :
   rw [mul_inl, h]
 
 end
+
+section Commutator
+
+open scoped commutatorElement
+
+variable {A : Type*} [CommGroup A] [MulDistribMulAction A M] (α : FactorSet A M)
+
+/-- **Commutators in a central extension of a commutative group.** When `A` is commutative and acts
+trivially on `M`, the commutator of two elements of the extension lies in the copy of `M`, and it is
+the ratio of the two values of `α` on their images, taken in the two orders. In particular it
+depends only on those images. -/
+theorem commutatorElement_eq_inl (h : ∀ (g : A) (a : M), g • a = a) (x y : α.Extension) :
+    ⁅x, y⁆ = inl α (α (x.right, y.right) / α (y.right, x.right)) := by
+  have hxy : x * y = inl α (α (x.right, y.right) / α (y.right, x.right)) * (y * x) := by
+    ext
+    · simp only [Extension.mul_left, inl_left, inl_right, h, Extension.mul_right, map_one_fst,
+        mul_one]
+      rw [div_mul_eq_mul_div, eq_div_iff_mul_eq']
+      ac_rfl
+    · simp only [Extension.mul_right, inl_right, one_mul]
+      exact mul_comm _ _
+  rw [commutatorElement_def, hxy]
+  group
+
+end Commutator
 
 section Rescale
 
@@ -437,7 +533,36 @@ def trivialSplitting : (trivial G M).groupExtension.Splitting :=
 
 @[simp] theorem trivialSplitting_apply (g : G) : trivialSplitting G M g = ⟨1, g⟩ := (rfl)
 
+variable {G M} in
+/-- **The canonical section is a homomorphism exactly for the trivial factor set.** This is the
+converse of `TauCeti.FactorSet.trivialSplitting`: a nontrivial value of `α` is a failure of
+multiplicativity of the section, by `TauCeti.FactorSet.canonicalSection_mul`. -/
+theorem forall_canonicalSection_mul_iff (α : FactorSet G M) :
+    (∀ g h : G, α.canonicalSection (g * h) = α.canonicalSection g * α.canonicalSection h) ↔
+      α = trivial G M := by
+  simp only [canonicalSection_mul, right_eq_mul, map_eq_one_iff _ (inl_injective α)]
+  exact ⟨fun hα => ext fun p => by simpa using hα p.1 p.2, fun hα g h => by simp [hα]⟩
+
 end Trivial
+
+section Bimultiplicative
+
+/-- **A bimultiplicative map is a factor set for a trivial action.** For a map `β : G →* G →* M`
+that is multiplicative in each variable, both sides of the cocycle identity are the product of
+`β g h`, `β g j` and `β h j`. Bilinear sign cocycles on lattices, such as the ordered sign cocycle
+`Matrix.signFactorSet` of an integer matrix, are of this form. -/
+def ofBimultiplicative (β : G →* G →* M) (h : ∀ (g : G) (a : M), g • a = a) : FactorSet G M where
+  toFun p := β p.1 p.2
+  isMulCocycle₂' g k j := by
+    simp only [map_mul, MonoidHom.mul_apply, h, mul_comm, mul_left_comm]
+  map_one_one' := by simp
+
+@[simp]
+theorem ofBimultiplicative_apply (β : G →* G →* M) (h : ∀ (g : G) (a : M), g • a = a)
+    (p : G × G) : ofBimultiplicative β h p = β p.1 p.2 :=
+  (rfl)
+
+end Bimultiplicative
 
 end FactorSet
 

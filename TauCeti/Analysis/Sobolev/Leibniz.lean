@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # The product rule for weak derivatives
@@ -28,7 +29,10 @@ summand of the Leibniz formula.  No smoothness of `u` is used, and no boundary h
 
 Smoothness of `ψ` is more than the identity needs — `C¹` would do — but it is what makes `ψ φ` a
 member of Mathlib's `TestFunction` type, whose smoothness order is `∞`, and it is what every
-intended application supplies (cutoffs are built from `ContDiffBump`).
+intended application supplies (cutoffs are built from `ContDiffBump`). Only smoothness on `Ω` is
+used (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul`), since `ψ φ` only sees `ψ` on `tsupport φ`; a
+coefficient field of an elliptic operator, smooth in the domain but not beyond it, is a factor of
+this kind.
 
 ## Why this is the localization tool
 
@@ -41,10 +45,16 @@ explicit, non-asymptotic formula is the point.
 
 ## Main declarations
 
-* `TauCeti.HasWeakLineDerivOn.contDiff_smul`: the Leibniz rule in a direction `v`.
-* `TauCeti.HasWeakFDerivOn.contDiff_smul`: its Fréchet form, with the rank-one correction
-  `(fderiv ℝ ψ x).smulRight (u x)`.
-* `TauCeti.HasWeakFDerivOn.contDiff_smul_gradient`: the form consumed by `TauCeti.W1p`, where a
+* `TauCeti.HasWeakLineDerivOn.contDiffOn_smul`: the Leibniz rule in a direction `v`, for a factor
+  smooth on `Ω`.
+* `TauCeti.HasWeakLineDerivOn.contDiff_smul`: its case of a factor smooth on all of `E`.
+* `TauCeti.HasWeakFDerivOn.contDiffOn_smul`, `TauCeti.HasWeakFDerivOn.contDiff_smul`: its
+  Fréchet form, with the rank-one correction `(fderiv ℝ ψ x).smulRight (u x)`.
+* `TauCeti.HasWeakLineDerivOn.smul_contDiff` and `TauCeti.HasWeakFDerivOn.smul_contDiff`: the
+  rule with the roles exchanged, for a weakly differentiable scalar `a` and a smooth
+  vector-valued `g`: `D(a g) = a Dg + Da ⊗ g`.
+* `TauCeti.HasWeakFDerivOn.contDiffOn_smul_gradient`,
+  `TauCeti.HasWeakFDerivOn.contDiff_smul_gradient`: the form consumed by `TauCeti.W1p`, where a
   weak derivative of a scalar function is recorded by its Riesz representative and the rule reads
   `∇(ψ u) = ψ ∇u + u ∇ψ`.
 
@@ -66,42 +76,30 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] [OpensMeasurableSpace E]
   [LocallyCompactSpace E] {Ω : Opens E} {v : E} {μ : Measure E} {u u' : E → F} {ψ : E → ℝ}
 
-omit [MeasurableSpace E] [OpensMeasurableSpace E] [LocallyCompactSpace E] in
-/-- A directional derivative of a smooth function is smooth. -/
-private theorem contDiff_fderiv_apply (hψ : ContDiff ℝ ∞ ψ) (v : E) :
-    ContDiff ℝ ∞ fun x => fderiv ℝ ψ x v :=
-  (hψ.fderiv_right (by simp)).clm_apply contDiff_const
+/-- **The Leibniz rule for weak directional derivatives, local form.** If `u'` is a weak derivative
+of `u` in the direction `v` on `Ω` and `ψ` is smooth on `Ω`, then `ψ u` is weakly differentiable in
+the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`.
 
-/-- **The Leibniz rule for weak directional derivatives.** If `u'` is a weak derivative of `u` in
-the direction `v` on `Ω` and `ψ` is smooth, then `ψ u` is weakly differentiable in the direction
-`v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`.
-
-Nothing is assumed about `Ω` beyond openness: the test function `ψ φ` used in the proof is still
-compactly supported inside `Ω`, so the boundary term of the classical integration by parts is
-absent here just as it is in the definition. -/
-theorem HasWeakLineDerivOn.contDiff_smul (h : HasWeakLineDerivOn μ Ω u u' v)
-    (hψ : ContDiff ℝ ∞ ψ) :
+Nothing is assumed about `ψ` off `Ω`, and nothing about `Ω` beyond openness: the test function
+`ψ φ` used in the proof is still compactly supported inside `Ω`, so the boundary term of the
+classical integration by parts is absent here just as it is in the definition. -/
+theorem HasWeakLineDerivOn.contDiffOn_smul (h : HasWeakLineDerivOn μ Ω u u' v)
+    (hψ : ContDiffOn ℝ ∞ ψ Ω) :
     HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
       (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) v := by
   have hΩ : IsLocallyClosed (Ω : Set E) := Ω.isOpen.isLocallyClosed
-  have hdψ : ContDiff ℝ ∞ fun x => fderiv ℝ ψ x v := contDiff_fderiv_apply hψ v
+  have hdψ : ContDiffOn ℝ ∞ (fun x => fderiv ℝ ψ x v) Ω :=
+    (hψ.fderiv_of_isOpen Ω.isOpen (by simp)).clm_apply contDiffOn_const
   have hu : LocallyIntegrableOn (fun x => ψ x • u x) Ω μ :=
-    h.locallyIntegrableOn.continuousOn_smul hΩ hψ.continuous.continuousOn
+    h.locallyIntegrableOn.continuousOn_smul hΩ hψ.continuousOn
   have hu' : LocallyIntegrableOn (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) Ω μ :=
-    (h.locallyIntegrableOn_deriv.continuousOn_smul hΩ hψ.continuous.continuousOn).add
-      (h.locallyIntegrableOn.continuousOn_smul hΩ hdψ.continuous.continuousOn)
+    (h.locallyIntegrableOn_deriv.continuousOn_smul hΩ hψ.continuousOn).add
+      (h.locallyIntegrableOn.continuousOn_smul hΩ hdψ.continuousOn)
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨h.completeSpace, hu, hu', fun φ => ?_⟩
-  -- `ψ φ` and `(∂_v ψ) φ` are test functions on `Ω`: smoothness is preserved by products and
-  -- the support only shrinks.
-  obtain ⟨Φ, hΦ⟩ : ∃ Φ : 𝓓(Ω, ℝ), (Φ : E → ℝ) = ψ * (φ : E → ℝ) :=
-    ⟨⟨ψ * (φ : E → ℝ), hψ.mul φ.contDiff, φ.hasCompactSupport.mul_left,
-      tsupport_mul_subset_right.trans φ.tsupport_subset⟩, rfl⟩
-  obtain ⟨Ψ, hΨ⟩ :
-      ∃ Ψ : 𝓓(Ω, ℝ), (Ψ : E → ℝ) = (fun x => fderiv ℝ ψ x v) * (φ : E → ℝ) :=
-    ⟨⟨(fun x => fderiv ℝ ψ x v) * (φ : E → ℝ), hdψ.mul φ.contDiff,
-      φ.hasCompactSupport.mul_left,
-      tsupport_mul_subset_right.trans φ.tsupport_subset⟩, rfl⟩
+  -- `ψ φ` and `(∂_v ψ) φ` are test functions on `Ω`.
+  obtain ⟨Φ, hΦ⟩ := TestFunction.exists_coe_eq_smul_of_contDiffOn hψ φ
+  obtain ⟨Ψ, hΨ⟩ := TestFunction.exists_coe_eq_smul_of_contDiffOn hdψ φ
   have hint1 : Integrable (fun x => lineDeriv ℝ (Φ : E → ℝ) x v • u x) μ :=
     integrable_lineDeriv_smul_of_locallyIntegrableOn h.locallyIntegrableOn Φ v
   have hint2 : Integrable (fun x => (Ψ : E → ℝ) x • u x) μ :=
@@ -110,19 +108,15 @@ theorem HasWeakLineDerivOn.contDiff_smul (h : HasWeakLineDerivOn μ Ω u u' v)
     integrable_smul_of_locallyIntegrableOn h.locallyIntegrableOn_deriv Φ
   -- The classical product rule for the smooth factors.
   have hlineΦ : ∀ x, lineDeriv ℝ (Φ : E → ℝ) x v
-      = ψ x * lineDeriv ℝ (φ : E → ℝ) x v + (Ψ : E → ℝ) x := by
-    intro x
-    have hdψx : DifferentiableAt ℝ ψ x := (hψ.differentiable (by simp)) x
-    have hdφx : DifferentiableAt ℝ (φ : E → ℝ) x := (φ.contDiff.differentiable (by simp)) x
-    have hmul : DifferentiableAt ℝ (ψ * (φ : E → ℝ)) x := hdψx.mul hdφx
-    rw [hΦ, hΨ, hmul.lineDeriv_eq_fderiv, hdφx.lineDeriv_eq_fderiv, fderiv_mul hdψx hdφx]
-    simp only [add_apply, FunLike.coe_smul, Pi.smul_apply, Pi.mul_apply, smul_eq_mul]
-    ring
+      = ψ x * lineDeriv ℝ (φ : E → ℝ) x v + (Ψ : E → ℝ) x := fun x => by
+    rw [hΦ, hΨ, TestFunction.lineDeriv_fun_smul_of_differentiableOn
+      (hψ.differentiableOn (by simp)) φ x v]
+    simp only [smul_eq_mul]
   have hsplit : ∫ x, (φ : E → ℝ) x • (ψ x • u' x + fderiv ℝ ψ x v • u x) ∂μ
       = ∫ x, (Φ : E → ℝ) x • u' x ∂μ + ∫ x, (Ψ : E → ℝ) x • u x ∂μ := by
     rw [← integral_add hint3 hint2]
     refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-    simp only [hΦ, hΨ, Pi.mul_apply, smul_add, smul_smul, mul_comm]
+    simp only [hΦ, hΨ, smul_add, smul_smul, smul_eq_mul, mul_comm]
   calc ∫ x, lineDeriv ℝ (φ : E → ℝ) x v • (ψ x • u x) ∂μ
       = ∫ x, (lineDeriv ℝ (Φ : E → ℝ) x v • u x - (Ψ : E → ℝ) x • u x) ∂μ := by
         refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
@@ -134,16 +128,71 @@ theorem HasWeakLineDerivOn.contDiff_smul (h : HasWeakLineDerivOn μ Ω u u' v)
     _ = -∫ x, (φ : E → ℝ) x • (ψ x • u' x + fderiv ℝ ψ x v • u x) ∂μ := by
         rw [hsplit]; abel
 
+/-- **The Leibniz rule for weak directional derivatives.** If `u'` is a weak derivative of `u` in
+the direction `v` on `Ω` and `ψ` is smooth, then `ψ u` is weakly differentiable in the direction
+`v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`. -/
+theorem HasWeakLineDerivOn.contDiff_smul (h : HasWeakLineDerivOn μ Ω u u' v)
+    (hψ : ContDiff ℝ ∞ ψ) :
+    HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
+      (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) v :=
+  h.contDiffOn_smul hψ.contDiffOn
+
+/-- **The Leibniz rule for weak Fréchet derivatives, local form**: `D(ψ u) = ψ Du + u ⊗ Dψ` on
+`Ω` for `ψ` smooth on `Ω`, the correction being the rank-one map `v ↦ (Dψ v) u`. -/
+theorem HasWeakFDerivOn.contDiffOn_smul {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
+    (hψ : ContDiffOn ℝ ∞ ψ Ω) :
+    HasWeakFDerivOn μ Ω (fun x => ψ x • u x)
+      (fun x => ψ x • U x + (fderiv ℝ ψ x).smulRight (u x)) := by
+  rw [hasWeakFDerivOn_iff]
+  intro v
+  have hv := (h.hasWeakLineDerivOn v).contDiffOn_smul hψ
+  convert hv using 2 with x
+  simp
+
 /-- **The Leibniz rule for weak Fréchet derivatives**: `D(ψ u) = ψ Du + u ⊗ Dψ`, the correction
 being the rank-one map `v ↦ (Dψ v) u`. -/
 theorem HasWeakFDerivOn.contDiff_smul {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
     (hψ : ContDiff ℝ ∞ ψ) :
     HasWeakFDerivOn μ Ω (fun x => ψ x • u x)
-      (fun x => ψ x • U x + (fderiv ℝ ψ x).smulRight (u x)) := by
-  rw [hasWeakFDerivOn_iff]
+      (fun x => ψ x • U x + (fderiv ℝ ψ x).smulRight (u x)) :=
+  h.contDiffOn_smul hψ.contDiffOn
+
+/-- **The Leibniz rule with a smooth vector-valued factor.** If `a'` is a weak derivative of a
+scalar function `a` in the direction `v` on `Ω` and `g` is smooth with values in a
+finite-dimensional space, then `a g` is weakly differentiable in the direction `v` on `Ω`, with
+derivative `a ∂_v g + a' g`. -/
+theorem HasWeakLineDerivOn.smul_contDiff [FiniteDimensional ℝ F] {a a' : E → ℝ} {g : E → F}
+    (h : HasWeakLineDerivOn μ Ω a a' v) (hg : ContDiff ℝ ∞ g) :
+    HasWeakLineDerivOn μ Ω (fun x => a x • g x) (fun x => a x • fderiv ℝ g x v + a' x • g x) v := by
+  -- Expand `g` in a basis `(bᵢ)` of `F`: `a g = ∑ᵢ (gᵢ a) bᵢ` with smooth scalar coordinates `gᵢ`,
+  -- to each of which the scalar Leibniz rule applies.
+  set b := Module.finBasis ℝ F
+  let c : Fin (Module.finrank ℝ F) → F →L[ℝ] ℝ := fun i => LinearMap.toContinuousLinearMap
+    (b.coord i)
+  have hc : ∀ i, ContDiff ℝ ∞ fun x => c i (g x) := fun i => (c i).contDiff.comp hg
+  have hfd : ∀ i x, fderiv ℝ (fun y => c i (g y)) x v = c i (fderiv ℝ g x v) := fun i x => by
+    rw [fderiv_fun_comp x (c i).differentiableAt ((hg.differentiable (by simp)) x),
+      ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply]
+  have hsum := HasWeakLineDerivOn.sum (F := F) Finset.univ fun i _ =>
+    ((h.contDiff_smul (hc i)).clm_comp (ContinuousLinearMap.toSpanSingleton ℝ (b i)))
+  have hrepr : ∀ y : F, ∑ i, c i y • b i = y := fun y => by
+    simp [c, Module.Basis.coord_apply]
+  refine (hsum.congr_ae (Filter.Eventually.of_forall fun x => ?_)).congr_ae_deriv
+    (Filter.Eventually.of_forall fun x => ?_)
+  · simp only [ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, mul_comm, mul_smul,
+      ← Finset.smul_sum, hrepr]
+  · simp only [ContinuousLinearMap.toSpanSingleton_apply, hfd, add_smul, Finset.sum_add_distrib,
+      smul_eq_mul, mul_comm (c _ _), mul_smul, ← Finset.smul_sum, hrepr, add_comm]
+
+/-- **The Leibniz rule with a smooth vector-valued factor, Fréchet form**:
+`D(a g) = a Dg + Da ⊗ g`, the correction being the rank-one map `v ↦ (Da v) g`. -/
+theorem HasWeakFDerivOn.smul_contDiff [FiniteDimensional ℝ F] {a : E → ℝ} {A : E → E →L[ℝ] ℝ}
+    {g : E → F} (h : HasWeakFDerivOn μ Ω a A) (hg : ContDiff ℝ ∞ g) :
+    HasWeakFDerivOn μ Ω (fun x => a x • g x)
+      (fun x => a x • fderiv ℝ g x + (A x).smulRight (g x)) := by
+  rw [hasWeakFDerivOn_iff] at h ⊢
   intro v
-  have hv := (h.hasWeakLineDerivOn v).contDiff_smul hψ
-  convert hv using 2 with x
+  convert (h v).smul_contDiff hg using 2 with x
   simp
 
 end General
@@ -156,6 +205,17 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Measurabl
 
 open scoped Gradient
 
+/-- **The Leibniz rule in gradient form, local form**: `∇(ψ a) = ψ ∇a + a ∇ψ` on `Ω` for `ψ`
+smooth on `Ω`. -/
+theorem HasWeakFDerivOn.contDiffOn_smul_gradient
+    (h : HasWeakFDerivOn μ Ω a fun x => innerSL ℝ (g x)) (hψ : ContDiffOn ℝ ∞ ψ Ω) :
+    HasWeakFDerivOn μ Ω (fun x => ψ x • a x)
+      (fun x => innerSL ℝ (ψ x • g x + a x • ∇ ψ x)) := by
+  have hv := h.contDiffOn_smul hψ
+  convert hv using 2 with x
+  ext w
+  simp [inner_gradient_left (𝕜 := ℝ) (f := ψ) (x := x), mul_comm]
+
 /-- **The Leibniz rule in gradient form**: `∇(ψ a) = ψ ∇a + a ∇ψ`.
 
 This is the shape `TauCeti.W1p` stores a weak derivative in — a scalar function together with the
@@ -164,11 +224,8 @@ on the Sobolev space consumes. -/
 theorem HasWeakFDerivOn.contDiff_smul_gradient
     (h : HasWeakFDerivOn μ Ω a fun x => innerSL ℝ (g x)) (hψ : ContDiff ℝ ∞ ψ) :
     HasWeakFDerivOn μ Ω (fun x => ψ x • a x)
-      (fun x => innerSL ℝ (ψ x • g x + a x • ∇ ψ x)) := by
-  have hv := h.contDiff_smul hψ
-  convert hv using 2 with x
-  ext w
-  simp [inner_gradient_left (𝕜 := ℝ) (f := ψ) (x := x), mul_comm]
+      (fun x => innerSL ℝ (ψ x • g x + a x • ∇ ψ x)) :=
+  h.contDiffOn_smul_gradient hψ.contDiffOn
 
 end InnerProduct
 

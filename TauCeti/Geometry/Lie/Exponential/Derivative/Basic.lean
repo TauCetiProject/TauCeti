@@ -324,8 +324,10 @@ theorem hasFDerivAt_extChartAt_mulInvariantExp_smul_mul_mulInvariantExp_smul_zer
   have hchart := hext.comp 0 hcurve
   simp only [Function.comp_apply] at hchart
   rw [hzero] at hchart
-  apply hchart.mdifferentiableAt.differentiableAt.hasFDerivAt.congr_fderiv
-  rw [← mfderiv_eq_fderiv, hchart.mfderiv]
+  -- Read the manifold derivative as a Fréchet derivative, ascribing the model-space types so
+  -- that the derivative is typed by `ℝ` and `E` rather than by their `TangentSpace` synonyms.
+  have hFD : HasFDerivAt (𝕜 := ℝ) (E := ℝ) (F := E) _ _ 0 := hchart.hasFDerivAt
+  apply hFD.congr_fderiv
   apply DFunLike.coe_injective
   funext t
   rw [show (0 : ℝ) • X = 0 by exact zero_smul ℝ X,

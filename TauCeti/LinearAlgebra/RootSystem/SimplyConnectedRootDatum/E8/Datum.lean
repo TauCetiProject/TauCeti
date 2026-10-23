@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Lattice
+import TauCeti.Algebra.Group.Submonoid.Closure
 import TauCeti.LinearAlgebra.Matrix.Gram
 
 /-!
@@ -33,14 +34,14 @@ root datum, without a two hundred and forty by two hundred and forty table.
 Both families span their lattice here, so the datum carries a `RootPairing.IsRootSystem` instance:
 the roots by `TauCeti.DynkinType.span_root_e8SimplyConnectedRootDatum_eq_top` and the coroots by
 `TauCeti.DynkinType.corootSpan_e8SimplyConnectedRootDatum_eq_top`. It is the coroot half that the
-pinned Chevalley--Demazure construction consumes as its simply connected condition, and the datum
-is stated through that same coroot-side condition as its siblings, which is what the per-type
-dispatcher will collect. The root half is particular to `E₈`, one of the three types — with `F₄`
-and `G₂` — whose Cartan determinant is `1`: its root lattice is already the whole weight lattice
-and the simply connected form is also the adjoint one. The `F₄` and `G₂` files carry an instance
-for that same reason. In the files of the remaining types, whose Cartan determinant is greater than
-`1`, the roots span only the root lattice, sitting inside the weight lattice at the index recorded
-by that determinant, and no such instance exists.
+pinned Chevalley--Demazure construction consumes as its simply connected condition, and the datum is
+stated through that same coroot-side condition as its siblings, which is what the per-type
+dispatcher `TauCeti.DynkinType.simplyConnectedRootDatum` collects. The root half is particular to
+`E₈`, one of the three types — with `F₄` and `G₂` — whose Cartan determinant is `1`: its root
+lattice is already the whole weight lattice and the simply connected form is also the adjoint one.
+The `F₄` and `G₂` files carry an instance for that same reason. In the files of the remaining types,
+whose Cartan determinant is greater than `1`, the roots span only the root lattice, sitting inside
+the weight lattice at the index recorded by that determinant, and no such instance exists.
 
 ## Main definitions
 
@@ -61,9 +62,8 @@ by that determinant, and no such instance exists.
 ## References
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
-4--6*, Plate VII, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
-12.1. This is the `E₈` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. Its assembly follows
+4--6*, Plate VII, and Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+section 12.1. Its assembly follows
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.Basic`.
 -/
 

@@ -7,9 +7,10 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.Averaging
 public import Mathlib.MeasureTheory.Function.ContinuousMapDense
-public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
+public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
+import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
 
 /-!
 # Convolution operators on `L²` of a compact group
@@ -26,11 +27,14 @@ map `convolutionCLM k : L²(G) →L[𝕜] C(G)` is bounded by the uniform norm o
 
 Composing with `ContinuousMap.toLp` gives the convolution operator `convolutionOperator k` on
 `L²(G)`. Its properties are proved here: it is self-adjoint when the kernel is symmetric
-(`k g⁻¹ = conj (k g)`), it commutes with right translation, and it is a **compact operator**.
+(`k g⁻¹ = conj (k g)`), it commutes with right translation and with each left translation
+whose conjugation action preserves the kernel. In particular, central kernels commute with every
+left translation. It is also a **compact operator**.
 Together these say that the eigenspace of a symmetric convolution operator at a nonzero eigenvalue
 is a *finite-dimensional* right-translation-invariant subspace of `L²(G)` all of whose elements
-have continuous representatives, and that such eigenspaces exist; the eigenspaces at *all*
-eigenvalues, the possibly infinite-dimensional kernel included, together span a dense subspace.
+have continuous representatives, and that such eigenspaces exist when the operator is nonzero.
+The eigenspaces at *all* eigenvalues, the possibly infinite-dimensional kernel included, together
+span a dense subspace.
 This is how the Peter-Weyl theorem manufactures finite-dimensional representations of `G` without
 presupposing that any exist.
 
@@ -48,9 +52,14 @@ presupposing that any exist.
   `(k * f) x = ∫ z, k z * f (z⁻¹ * x)` when `f` is continuous.
 * `TauCeti.norm_convolutionCLM_apply_le`: `‖k * f‖_∞ ≤ ‖k‖_∞ * ‖f‖₂`, so convolution against a
   continuous kernel is bounded from `L²(G)` into the uniform norm of `C(G)`.
+* `TauCeti.convolutionOperator_apply_eq_integral_leftRegularLp`: convolution is the strong
+  integral of weighted left translations, including for infinite compact groups.
 * `TauCeti.isSelfAdjoint_convolutionOperator`: a symmetric kernel gives a self-adjoint operator.
 * `TauCeti.convolutionCLM_compMeasurePreserving_mul_right`: convolution commutes with right
   translation.
+* `TauCeti.convolutionOperator_compMeasurePreserving_mul_left`: convolution commutes with left
+  translation by `g₀` when the kernel is invariant under conjugation by `g₀`; in particular,
+  central kernels commute with every left translation.
 * `TauCeti.isCompactOperator_convolutionCLM` and `TauCeti.isCompactOperator_convolutionOperator`:
   convolution against a continuous kernel is a compact operator, into `C(G)` and into `L²(G)`.
 * `TauCeti.finiteDimensional_eigenspace_convolutionOperator`: consequently the eigenspace of
@@ -83,23 +92,16 @@ statement that they depend continuously on `x`, so no uniform-continuity argumen
 Self-adjointness is proved by writing `convolutionOperator k H`, for a *continuous* `H`, as the
 Bochner integral of the kernel sections weighted by `H`, and then extending to all of `L²(G)` by
 density (`ContinuousMap.toLp_denseRange`). The more direct Fubini argument on `G × G` is not
-available: the product of two Borel spaces is Borel only under a second-countability hypothesis,
-which a compact group need not satisfy, whereas a continuous function on a compact space is
-integrable with no such hypothesis (`TauCeti.integrable_continuousMap`).
+available: the product Borel structure need not agree with the Borel structure of the product
+without a second-countability hypothesis, which a compact group need not satisfy. A continuous
+function on a compact space is integrable with no such hypothesis
+(`TauCeti.integrable_continuousMap`).
 
 The conjugation in the kernel sections is bookkeeping for Mathlib's convention that the inner
 product is conjugate linear in its first argument; it is invisible in the pointwise formula
 `convolutionCLM_apply_apply`.
 
 ## References
-
-This is the opening of Layer 5 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), which names
-`convolutionOperator`, its self-adjointness for a symmetric kernel (there spelled
-`convolutionOperator_isSelfAdjoint`, renamed here to `isSelfAdjoint_convolutionOperator` for the
-predicate-prefix convention), its compactness (`convolutionOperator_isCompact`) and the finite
-dimensionality of its nonzero eigenspaces (`convolutionOperator_eigenspace_finiteDimensional`) as
-milestones on the non-circular route to the Peter-Weyl theorem.
 
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, 2nd ed., CRC (2016), §5.2.
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapters 3-4.
@@ -354,6 +356,58 @@ theorem norm_convolutionOperator_le (k : C(G, 𝕜)) : ‖convolutionOperator (G
     rw [convolutionOperator_apply]
     exact (norm_toLp_le _).trans (norm_convolutionCLM_apply_le k f)
 
+private noncomputable def weightedLeftTranslate (k f : C(G, 𝕜)) : C(G, C(G, 𝕜)) :=
+  ContinuousMap.curry ⟨fun p : G × G => k p.1 * f (p.1⁻¹ * p.2), by fun_prop⟩
+
+omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
+private theorem weightedLeftTranslate_apply (k f : C(G, 𝕜)) (g : G) :
+    weightedLeftTranslate k f g = k g • f.comp (.mulLeft g⁻¹) := by
+  ext x
+  simp [weightedLeftTranslate, smul_eq_mul]
+
+private theorem convolutionOperator_toLp_eq_integral (k f : C(G, 𝕜)) :
+    convolutionOperator k (ContinuousMap.toLp 2 (haarProb G) 𝕜 f) =
+      ∫ g, k g • leftRegularLp 𝕜 G g (ContinuousMap.toLp 2 (haarProb G) 𝕜 f) ∂haarProb G := by
+  have hint := integrable_continuousMap G (weightedLeftTranslate k f)
+  have heq : convolutionCLM k (ContinuousMap.toLp 2 (haarProb G) 𝕜 f) =
+      ∫ g, weightedLeftTranslate k f g ∂haarProb G := by
+    ext x
+    rw [convolutionCLM_toLp_apply]
+    have h := (ContinuousMap.evalCLM 𝕜 x).integral_comp_comm hint
+    simpa [weightedLeftTranslate] using h
+  rw [convolutionOperator_apply, heq,
+    ← (ContinuousMap.toLp 2 (haarProb G) 𝕜).integral_comp_comm hint]
+  apply integral_congr_ae
+  filter_upwards [] with g
+  rw [weightedLeftTranslate_apply, map_smul, leftRegularLp_toLp]
+
+/-- Convolution is the strong integrated action of its kernel in the left regular representation.
+The integral is taken in `L²(G)` after applying each translation to `f`; this formula applies to
+infinite compact groups, whose regular representation need only be strongly continuous. -/
+theorem convolutionOperator_apply_eq_integral_leftRegularLp (k : C(G, 𝕜))
+    (f : Lp 𝕜 2 (haarProb G)) :
+    convolutionOperator k f = ∫ g, k g • leftRegularLp 𝕜 G g f ∂haarProb G := by
+  let : MeasurableSpace (Additive G) := ‹MeasurableSpace G›
+  let : BorelSpace (Additive G) := ‹BorelSpace G›
+  -- Transfer the measure instances to the additive tag used by the strong integrated form.
+  let μ : Measure (Additive G) := haarProb G
+  let : μ.InnerRegularCompactLTTop :=
+    inferInstanceAs ((haarProb G).InnerRegularCompactLTTop)
+  let T : Lp 𝕜 2 (haarProb G) →L[𝕜] Lp 𝕜 2 (haarProb G) :=
+    ContRepresentation.integratedOperatorL1 (G := Additive G) (leftRegularLp 𝕜 G)
+      continuous_leftRegularLp_apply (isUnitary_leftRegularLp 𝕜 G).exists_norm_le μ
+      ((integrable_continuousMap G k).toL1 k)
+  have hT (v : Lp 𝕜 2 (haarProb G)) :
+      T v = ∫ g, k g • leftRegularLp 𝕜 G g v ∂haarProb G :=
+    ContRepresentation.integratedOperatorL1_toL1 (G := Additive G) (μ := μ)
+      (π := leftRegularLp 𝕜 G) (integrable_continuousMap G k) v
+  have heq : (convolutionOperator k : Lp 𝕜 2 (haarProb G) → Lp 𝕜 2 (haarProb G)) = T :=
+    (ContinuousMap.toLp_denseRange (E := 𝕜) (p := 2) (haarProb G) 𝕜 (by simp)).equalizer
+      (convolutionOperator k).continuous T.continuous (funext fun F => by
+        rw [Function.comp_apply, Function.comp_apply, hT]
+        exact convolutionOperator_toLp_eq_integral k F)
+  rw [← hT, congrFun heq f]
+
 /-! ### Self-adjointness for a symmetric kernel
 
 For a *continuous* weight `H` the kernel sections may be averaged against `H`, giving a Bochner
@@ -472,14 +526,55 @@ theorem convolutionOperator_compMeasurePreserving_mul_right (k : C(G, 𝕜))
         (Lp.compMeasurePreserving (· * g₀) (measurePreserving_mul_right (haarProb G) g₀) f)
       = Lp.compMeasurePreserving (· * g₀) (measurePreserving_mul_right (haarProb G) g₀)
           (convolutionOperator k f) := by
-  have hqmp := (measurePreserving_mul_right (haarProb G) g₀).quasiMeasurePreserving
-  rw [Lp.ext_iff]
-  refine (coeFn_convolutionOperator k _).trans ?_
-  refine Filter.EventuallyEq.symm (((Lp.coeFn_compMeasurePreserving (E := 𝕜) (p := 2)
-    (convolutionOperator k f) (measurePreserving_mul_right (haarProb G) g₀)).trans
-      (hqmp.ae_eq_comp (coeFn_convolutionOperator k f))).trans ?_)
-  exact Filter.Eventually.of_forall fun y =>
-    (convolutionCLM_compMeasurePreserving_mul_right k f g₀ y).symm
+  rw [convolutionOperator_apply, convolutionOperator_apply]
+  calc
+    _ = ContinuousMap.toLp 2 (haarProb G) 𝕜
+        ((convolutionCLM k f).comp (ContinuousMap.mulRight g₀)) := by
+      congr 1
+      ext x
+      exact convolutionCLM_compMeasurePreserving_mul_right k f g₀ x
+    _ = _ := (Lp.compMeasurePreserving_toLp 𝕜 _ (ContinuousMap.mulRight g₀)
+      (measurePreserving_mul_right (haarProb G) g₀)).symm
+
+/-! ### Equivariance under left translation -/
+
+/-- Convolution commutes with left translation by `g₀` when the kernel is invariant under
+conjugation by `g₀`, expressed by `k (g₀ * h) = k (h * g₀)` for every `h`. In particular,
+a central kernel commutes with every left translation. -/
+theorem convolutionCLM_compMeasurePreserving_mul_left (k : C(G, 𝕜))
+    (f : Lp 𝕜 2 (haarProb G)) (g₀ : G)
+    (hk : ∀ h : G, k (g₀ * h) = k (h * g₀)) (x : G) :
+    convolutionCLM k
+        (Lp.compMeasurePreserving (g₀ * ·) (measurePreserving_mul_left (haarProb G) g₀) f) x
+      = convolutionCLM k f (g₀ * x) := by
+  have hg (y : G) : k (g₀ * x * (g₀ * y)⁻¹) = k (x * y⁻¹) := by
+    simpa [mul_inv_rev, mul_assoc] using hk (x * y⁻¹ * g₀⁻¹)
+  rw [convolutionCLM_apply_apply, convolutionCLM_apply_apply,
+    ← integral_mul_left_eq_self (fun y => k (g₀ * x * y⁻¹) * (f : G → 𝕜) y) g₀]
+  refine integral_congr_ae ?_
+  filter_upwards [Lp.coeFn_compMeasurePreserving (E := 𝕜) (p := 2) f
+    (measurePreserving_mul_left (haarProb G) g₀)] with y hy
+  rw [hy, hg y]
+  rfl
+
+/-- On `L²(G)`, convolution commutes with left translation by `g₀` when the kernel is
+invariant under conjugation by `g₀`. -/
+theorem convolutionOperator_compMeasurePreserving_mul_left (k : C(G, 𝕜))
+    (f : Lp 𝕜 2 (haarProb G)) (g₀ : G)
+    (hk : ∀ h : G, k (g₀ * h) = k (h * g₀)) :
+    convolutionOperator k
+        (Lp.compMeasurePreserving (g₀ * ·) (measurePreserving_mul_left (haarProb G) g₀) f)
+      = Lp.compMeasurePreserving (g₀ * ·) (measurePreserving_mul_left (haarProb G) g₀)
+          (convolutionOperator k f) := by
+  rw [convolutionOperator_apply, convolutionOperator_apply]
+  calc
+    _ = ContinuousMap.toLp 2 (haarProb G) 𝕜
+        ((convolutionCLM k f).comp (ContinuousMap.mulLeft g₀)) := by
+      congr 1
+      ext x
+      exact convolutionCLM_compMeasurePreserving_mul_left k f g₀ hk x
+    _ = _ := (Lp.compMeasurePreserving_toLp 𝕜 _ (ContinuousMap.mulLeft g₀)
+      (measurePreserving_mul_left (haarProb G) g₀)).symm
 
 /-! ### Compactness of the convolution operator
 
@@ -567,14 +662,14 @@ theorem isCompactOperator_convolutionOperator (k : C(G, 𝕜)) :
 
 /-! ### The eigenspaces of a convolution operator
 
-Compactness bounds the dimension of each nonzero eigenspace; the pointwise formula shows every
-eigenvector at a nonzero eigenvalue is a continuous function; and equivariance makes the
+Compactness bounds the dimension of each eigenspace at a nonzero eigenvalue; the pointwise formula
+shows every such eigenvector has a continuous representative; and equivariance makes the
 eigenspaces right-translation invariant. Together these are the three properties that turn a
 symmetric convolution operator into a source of finite-dimensional representations of `G`. The
 eigenspace at `0` is the complementary case: it convolves to nothing at all. -/
 
-/-- **A nonzero eigenspace of a convolution operator is finite-dimensional**, because the operator
-is compact. -/
+/-- **An eigenspace at a nonzero eigenvalue is finite-dimensional**, because the convolution
+operator is compact. -/
 theorem finiteDimensional_eigenspace_convolutionOperator (k : C(G, 𝕜)) {μ : 𝕜} (hμ : μ ≠ 0) :
     FiniteDimensional 𝕜 (Module.End.eigenspace (convolutionOperator (G := G) k).toLinearMap μ) :=
   ContinuousLinearMap.finite_dimensional_eigenspace (isCompactOperator_convolutionOperator k) μ hμ

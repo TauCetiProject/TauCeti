@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Idempotents
@@ -67,8 +66,9 @@ semiperfect.
   from a projective module restricts to a projective cover of `M` on a submodule of its source.
 * `TauCeti.exists_isProjectiveCover`: **every module over a semiprimary ring has a projective
   cover**, carried by a submodule of the free module on its underlying set.
-* `TauCeti.exists_isProjectiveCover_of_finiteDimensional`: the same statement for a module over a
-  finite-dimensional algebra, which is a semiprimary ring.
+* `TauCeti.exists_isProjectiveCover_of_finite`: the same statement for a module over a ring that is
+  finite over an Artinian ring, such as a finite-dimensional algebra over a field; such a ring is
+  semiprimary.
 
 ## References
 
@@ -186,18 +186,20 @@ theorem exists_isProjectiveCover [IsSemiprimaryRing R] :
 
 end Semiprimary
 
-section FiniteDimensional
+section FiniteOverArtinian
 
-/-- **Every module over a finite-dimensional algebra has a projective cover.** A finite-dimensional
-algebra is an Artinian ring, hence semiprimary, so this is `TauCeti.exists_isProjectiveCover` read
-through that instance; in particular no finiteness is required of the module. -/
-theorem exists_isProjectiveCover_of_finiteDimensional (k : Type w) [Field k] (A : Type u) [Ring A]
-    [Algebra k A] [FiniteDimensional k A] (V : Type v) [AddCommGroup V] [Module A V] :
+/-- **Every module over a ring finite over an Artinian ring has a projective cover.** Here `K` is an
+Artinian ring acting on `A` compatibly with its multiplication, with `A` finite as a `K`-module; for
+instance, `A` may be a finite-dimensional algebra over a field. No finiteness is required of the
+module. -/
+theorem exists_isProjectiveCover_of_finite (K : Type w) [Ring K] [IsArtinianRing K] (A : Type u)
+    [Ring A] [Module K A] [IsScalarTower K A A] [Module.Finite K A] (V : Type v) [AddCommGroup V]
+    [Module A V] :
     ∃ P : Submodule A (V →₀ A),
       IsProjectiveCover (Finsupp.linearCombination A id ∘ₗ P.subtype) := by
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
+  have : IsArtinianRing A := IsArtinianRing.of_finite K A
   exact exists_isProjectiveCover A V
 
-end FiniteDimensional
+end FiniteOverArtinian
 
 end TauCeti

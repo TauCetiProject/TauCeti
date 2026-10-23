@@ -26,6 +26,11 @@ class of `J` inverts the ray class of `I`.  The image of `idealClass 𝔪` is th
 of the ray class group, and since it contains the class of every prime not dividing `𝔪` it is
 everything: this is the moving lemma, `idealClass_surjective`.
 
+## Main definitions
+
+* `TauCeti.GlobalNumberFields.idealClassLift`: a homomorphism out of the integral ideals prime to
+  `𝔪` that kills the integral ideals of trivial ray class factors through `idealClass 𝔪`.
+
 ## Main results
 
 * `TauCeti.GlobalNumberFields.exists_mem_isCongrOne`: an ideal comaximal with the finite part of
@@ -37,6 +42,11 @@ everything: this is the moving lemma, `idealClass_surjective`.
   prime to `𝔪` is inverted by the ray class of another such ideal.
 * `TauCeti.GlobalNumberFields.idealClass_surjective`: **the moving lemma**, that every ray class is
   the class of a nonzero integral ideal prime to the modulus.
+* `TauCeti.GlobalNumberFields.RayClassGroup.hom_ext`: homomorphisms out of the ray class group
+  agreeing after `idealClass 𝔪` are equal; `idealClassLift_unique` is the matching uniqueness of
+  `idealClassLift`.
+* `TauCeti.GlobalNumberFields.mem_ker_idealClassLift`: the kernel of `idealClassLift φ hφ` consists
+  of the ray classes of the integral ideals killed by `φ`.
 * `TauCeti.GlobalNumberFields.idealClass_eq_one_iff_exists_generator`: the generator form of
   `idealClass_eq_one_iff`, with the generator kept inside `𝓞 K` and its two defining conditions
   spelled out.
@@ -69,20 +79,16 @@ theorem isCongrOne_of_sub_one_mem {𝔪 : Modulus K} {x : Kˣ} {a : 𝓞 K} (hxa
     (hmem : a - 1 ∈ 𝔪.finitePart)
     (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
     IsCongrOne 𝔪 x := by
-  refine isCongrOne_iff.mpr ⟨fun v _ ↦ ?_, hpos⟩
-  have hsub : (x : K) - 1 = algebraMap (𝓞 K) K (a - 1) := by rw [map_sub, map_one, hxa]
-  rw [hsub, valuation_of_algebraMap, intValuation_le_pow_iff_mem]
-  exact Ideal.le_of_dvd (Modulus.pow_exponent_dvd_finitePart 𝔪 v) hmem
+  exact isCongrOne_iff_mem_congruenceSubgroup_and_pos.mpr
+    ⟨(Ideal.mem_congruenceSubgroup_iff_sub_one_mem hxa).mpr hmem, hpos⟩
 
 /-- **Congruence to one, read back on an algebraic integer.**  The converse of
 `isCongrOne_of_sub_one_mem` at the finite places: a unit congruent to one modulo `𝔪` that is the
 image of `a : 𝓞 K` has `a - 1` in the finite part. -/
 theorem sub_one_mem_of_isCongrOne {𝔪 : Modulus K} {x : Kˣ} {a : 𝓞 K} (hxa : (x : K) = a)
     (h : IsCongrOne 𝔪 x) : a - 1 ∈ 𝔪.finitePart := by
-  refine Modulus.mem_finitePart_of_forall_mem_pow_exponent 𝔪 fun v hv ↦ ?_
-  have hsub : (x : K) - 1 = algebraMap (𝓞 K) K (a - 1) := by rw [map_sub, map_one, hxa]
-  simpa only [hsub, valuation_of_algebraMap, intValuation_le_pow_iff_mem]
-    using h.valuation_sub_one_le hv
+  exact (Ideal.mem_congruenceSubgroup_iff_sub_one_mem hxa).mp
+    (isCongrOne_iff_mem_congruenceSubgroup_and_pos.mp h).1
 
 /-- **A generator congruent to one inside an ideal comaximal with the finite part.**  For a nonzero
 ideal `D` with `D ⊔ 𝔪₀ = ⊤` there is an algebraic integer `a ∈ D` whose image in `Kˣ` is congruent
@@ -168,7 +174,7 @@ theorem idealClass_surjective (𝔪 : Modulus K) : Function.Surjective (idealCla
   -- The fractional ideals prime to `𝔪` whose ray class lies in `G`, viewed in the ambient group.
   let T : Subgroup (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
     (G.comap (rayClassMk 𝔪)).map (idealsPrimeTo 𝔪).subtype
-  have hT : NumberFieldArithmetic.idealsAway (K := K) 𝔪.support ≤ T := by
+  have hT : NumberFieldArithmetic.idealsAway K 𝔪.support ≤ T := by
     rw [NumberFieldArithmetic.idealsAway_eq_closure_primes 𝔪.support]
     refine (Subgroup.closure_le _).mpr ?_
     rintro P ⟨v, hv, hPv⟩
@@ -177,7 +183,7 @@ theorem idealClass_surjective (𝔪 : Modulus K) : Function.Surjective (idealCla
       -- A prime dividing `v` equals `v`, by maximality; so it cannot lie in the support.
       exact hv (HeightOneSpectrum.ext
         (v.isMaximal.eq_of_le w.isPrime.ne_top (Ideal.le_of_dvd hdvd)) ▸ hw)
-    refine ⟨NumberFieldArithmetic.integralIdealsAwayHom 𝔪.support ⟨v.asIdeal, hvmem⟩,
+    refine ⟨NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support ⟨v.asIdeal, hvmem⟩,
       ⟨⟨v.asIdeal, hvmem⟩, idealClass_apply 𝔪 ⟨v.asIdeal, hvmem⟩⟩, Units.ext ?_⟩
     rw [Subgroup.coe_subtype, NumberFieldArithmetic.coe_integralIdealsAwayHom, hPv]
   intro c
@@ -185,6 +191,91 @@ theorem idealClass_surjective (𝔪 : Modulus K) : Function.Surjective (idealCla
   obtain ⟨I', hI', hI'I⟩ := Subgroup.mem_map.mp (hT I.2)
   obtain ⟨J, hJ⟩ := hI'
   exact ⟨J, by rw [hJ]; congr 1; exact Subtype.ext hI'I⟩
+
+/-! ### Factoring through the ray class map -/
+
+/-- **A homomorphism killing the trivial ray classes is constant on ray classes.**  If `φ` kills
+every integral ideal of trivial ray class, then it takes the same value on any two integral ideals
+in the same ray class: an ideal `J''` in the inverse class makes `φ J''` inverse to both. -/
+theorem apply_eq_of_idealClass_eq {𝔪 : Modulus K} {M : Type*} [Monoid M]
+    (φ : integralIdealsPrimeTo 𝔪 →* M) (hφ : ∀ J, idealClass 𝔪 J = 1 → φ J = 1)
+    {J J' : integralIdealsPrimeTo 𝔪} (h : idealClass 𝔪 J = idealClass 𝔪 J') : φ J = φ J' := by
+  obtain ⟨J'', hJ''⟩ := idealClass_surjective 𝔪 (idealClass 𝔪 J')⁻¹
+  have h₁ : φ J * φ J'' = 1 := by
+    rw [← map_mul]
+    exact hφ _ (by rw [map_mul, hJ'', h, mul_inv_cancel])
+  have h₂ : φ J'' * φ J' = 1 := by
+    rw [← map_mul]
+    exact hφ _ (by rw [map_mul, hJ'', inv_mul_cancel])
+  exact left_inv_eq_right_inv h₁ h₂
+
+/-- **Factoring through the ray class map.**  A homomorphism out of the integral ideals prime to
+`𝔪` that kills every integral ideal of trivial ray class factors through `idealClass 𝔪`, which is
+surjective by the moving lemma. -/
+noncomputable def idealClassLift {𝔪 : Modulus K} {M : Type*} [Monoid M]
+    (φ : integralIdealsPrimeTo 𝔪 →* M) (hφ : ∀ J, idealClass 𝔪 J = 1 → φ J = 1) :
+    RayClassGroup 𝔪 →* M :=
+  (Con.lift (Con.ker (idealClass 𝔪)) φ fun {_ _} h =>
+      (Con.ker_rel _).mpr (apply_eq_of_idealClass_eq φ hφ ((Con.ker_rel _).mp h))).comp
+    (Con.quotientKerEquivOfSurjective _ (idealClass_surjective 𝔪)).symm.toMonoidHom
+
+/-- The factorization `idealClassLift φ hφ` sends the ray class of `J` to `φ J`. -/
+@[simp]
+theorem idealClassLift_idealClass {𝔪 : Modulus K} {M : Type*} [Monoid M]
+    (φ : integralIdealsPrimeTo 𝔪 →* M) (hφ : ∀ J, idealClass 𝔪 J = 1 → φ J = 1)
+    (J : integralIdealsPrimeTo 𝔪) : idealClassLift φ hφ (idealClass 𝔪 J) = φ J := by
+  have hJ : (Con.quotientKerEquivOfSurjective _ (idealClass_surjective 𝔪)).symm
+      (idealClass 𝔪 J) = J :=
+    -- Mathlib states no evaluation lemma for `Con.quotientKerEquivOfSurjective`; on the class of
+    -- `J` it is `Con.kerLift`, which evaluates to `idealClass _ J` by definition.
+    (MulEquiv.symm_apply_eq _).mpr (rfl)
+  rw [idealClassLift, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hJ, Con.lift_coe]
+
+/-- Composing `idealClassLift φ hφ` with the ray class map gives back `φ`. -/
+theorem idealClassLift_comp_idealClass {𝔪 : Modulus K} {M : Type*} [Monoid M]
+    (φ : integralIdealsPrimeTo 𝔪 →* M) (hφ : ∀ J, idealClass 𝔪 J = 1 → φ J = 1) :
+    (idealClassLift φ hφ).comp (idealClass 𝔪) = φ :=
+  MonoidHom.ext (idealClassLift_idealClass φ hφ)
+
+/-- **Homomorphisms out of the ray class group are determined on ideals.**  Two homomorphisms out
+of `RayClassGroup 𝔪` that agree on the ray classes of the integral ideals prime to `𝔪` are equal,
+since every ray class is such a class by the moving lemma. -/
+@[ext]
+theorem RayClassGroup.hom_ext {𝔪 : Modulus K} {M : Type*} [Monoid M]
+    {f g : RayClassGroup 𝔪 →* M} (h : f.comp (idealClass 𝔪) = g.comp (idealClass 𝔪)) : f = g :=
+  MonoidHom.ext fun c ↦ by
+    obtain ⟨J, rfl⟩ := idealClass_surjective 𝔪 c
+    exact DFunLike.congr_fun h J
+
+/-- **Uniqueness of the factorization through the ray class map.**  A homomorphism out of
+`RayClassGroup 𝔪` whose composite with `idealClass 𝔪` is `φ` is `idealClassLift φ hφ`. -/
+theorem idealClassLift_unique {𝔪 : Modulus K} {M : Type*} [Monoid M]
+    {φ : integralIdealsPrimeTo 𝔪 →* M} (hφ : ∀ J, idealClass 𝔪 J = 1 → φ J = 1)
+    {f : RayClassGroup 𝔪 →* M} (h : f.comp (idealClass 𝔪) = φ) : f = idealClassLift φ hφ :=
+  RayClassGroup.hom_ext (by rw [h, idealClassLift_comp_idealClass])
+
+/-- The factorization of a surjective homomorphism through the ray class map is surjective. -/
+theorem idealClassLift_surjective {𝔪 : Modulus K} {M : Type*} [Monoid M]
+    {φ : integralIdealsPrimeTo 𝔪 →* M} (hφ : ∀ J, idealClass 𝔪 J = 1 → φ J = 1)
+    (hsurj : Function.Surjective φ) : Function.Surjective (idealClassLift φ hφ) := by
+  intro c
+  obtain ⟨J, rfl⟩ := hsurj c
+  exact ⟨_, idealClassLift_idealClass φ hφ J⟩
+
+/-- **The kernel of the factorization through the ray class map** consists of the ray classes of
+the integral ideals killed by `φ`. -/
+theorem mem_ker_idealClassLift {𝔪 : Modulus K} {M : Type*} [Monoid M]
+    {φ : integralIdealsPrimeTo 𝔪 →* M} (hφ : ∀ J, idealClass 𝔪 J = 1 → φ J = 1)
+    {c : RayClassGroup 𝔪} :
+    c ∈ (idealClassLift φ hφ).ker ↔
+      ∃ J : integralIdealsPrimeTo 𝔪, idealClass 𝔪 J = c ∧ φ J = 1 := by
+  constructor
+  · intro hc
+    obtain ⟨J, rfl⟩ := idealClass_surjective _ c
+    rw [MonoidHom.mem_ker, idealClassLift_idealClass] at hc
+    exact ⟨J, rfl, hc⟩
+  · rintro ⟨J, rfl, hJ⟩
+    rwa [MonoidHom.mem_ker, idealClassLift_idealClass]
 
 /-! ### Triviality criteria with integral generators -/
 
@@ -246,8 +337,8 @@ theorem idealClass_eq_one_iff_exists_integral {𝔪 : Modulus K} (I : integralId
       rw [← FractionalIdeal.coeIdeal_span_singleton, ← FractionalIdeal.coeIdeal_mul, hab,
         FractionalIdeal.coeIdeal_span_singleton]
     rw [Units.val_mul, Units.val_inv_eq_inv_val, hxa, hyb,
-      ← FractionalIdeal.spanSingleton_mul_spanSingleton, ← hcoe, mul_assoc,
-      FractionalIdeal.spanSingleton_mul_spanSingleton, mul_inv_cancel₀ hb0,
-      FractionalIdeal.spanSingleton_one, mul_one]
+      map_mul (FractionalIdeal.spanSingleton _), ← hcoe, mul_assoc,
+      ← map_mul (FractionalIdeal.spanSingleton _), mul_inv_cancel₀ hb0,
+      map_one (FractionalIdeal.spanSingleton _), mul_one]
 
 end TauCeti.GlobalNumberFields

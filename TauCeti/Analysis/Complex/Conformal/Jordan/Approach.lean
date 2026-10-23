@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Inverse.BoundaryCluster
 public import TauCeti.Analysis.Complex.Conformal.Jordan.Domain
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import TauCeti.Analysis.Complex.Conformal.Caratheodory
 import TauCeti.Analysis.Complex.PlaneSeparation.Basic
 import TauCeti.Topology.JordanCurve.SmallArc
@@ -146,7 +145,7 @@ private theorem IsJordanDomain.exists_isPreconnected_inter_ball_subset_of_arc
       · exact hz
     · exact fun hz => ⟨hz.1, Or.inr hz⟩
   have hSsep : y ∈ connectedComponentIn Sᶜ x₀ :=
-    hU.isConnected.isPreconnected.subset_connectedComponentIn hx₀U
+    hU.isConnected.isPreconnected.subset_connectedComponentIn (F := Sᶜ) hx₀U
       (fun z hz hzJ => (Set.eq_empty_iff_forall_notMem.mp hUJ) z ⟨hz, hzJ⟩) hyU
   have hTsep : y ∈ connectedComponentIn Tᶜ x₀ := by
     refine (convex_ball a ρ).isPreconnected.subset_connectedComponentIn hx₀a ?_ hya
@@ -165,7 +164,7 @@ theorem IsJordanDomain.exists_isPreconnected_inter_ball_subset
   obtain ⟨S, hSJ, hScompact, hSpre, haS, hball⟩ :=
     hU.isJordanCurve_frontier.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball ha hε
   have hcancel : frontier U \ (frontier U \ S) = S := sdiff_sdiff_cancel_left hSJ
-  refine hU.exists_isPreconnected_inter_ball_subset_of_arc hε
+  refine hU.exists_isPreconnected_inter_ball_subset_of_arc hε (W := frontier U \ S)
     (fun z hz => ⟨hz.1, hball hz⟩) ⟨ha, haS⟩ ?_ ?_
   · rw [hcancel]; exact hScompact.isClosed
   · rw [hcancel]; exact hSpre
@@ -195,7 +194,8 @@ theorem IsJordanDomain.injOn_closedBall_of_conformal
     fun _ ha => hJ.isPreconnectedApproachAt ha
 
 /-- **Boundary injectivity, Jordan case**, in the hypothesis shape of
-`TauCeti.exists_continuousOn_closedBall_eqOn_of_isJordanCurve_frontier`. -/
+`TauCeti.exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier` with a Jordan-curve
+boundary. -/
 theorem injOn_closedBall_of_isJordanCurve_frontier (hr : 0 < r)
     (hf : DifferentiableOn ℂ f (ball c r)) (hinj : InjOn f (ball c r))
     (hb : IsBounded (f '' ball c r)) (hJf : IsJordanCurve (frontier (f '' ball c r)))
@@ -212,7 +212,7 @@ theorem injOn_closedBall_of_isJordanCurve_frontier (hr : 0 < r)
 /-- **The Riemann map of a Jordan domain extends to a homeomorphism of the
 closures.** -/
 theorem exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier {Ω : Set ℂ}
-    (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩb : IsBounded Ω)
+    (hΩo : IsOpen Ω) (hΩc : IsConnected Ω) (hΩb : IsBounded Ω)
     (hΩJ : IsJordanCurve (frontier Ω)) :
     ∃ g : ℂ → ℂ, ContinuousOn g (closedBall 0 1) ∧ DifferentiableOn ℂ g (ball 0 1) ∧
       BijOn g (ball 0 1) Ω ∧

@@ -31,8 +31,8 @@ proper schemes is a separate prerequisite.
 
 * `AlgebraicGeometry.Scheme.genus k X`, the genus `dim_k H¹(X, 𝒪_X)` of a scheme, and its
   defining formula `AlgebraicGeometry.Scheme.genus_def`;
-* `TauCeti.AlgebraicGeometry.finrank_cohomology_zero_trivial_eq_one`: `dim_k H⁰(X, 𝒪_X) = 1`
-  for an integral scheme, universally closed over `k`, with a `k`-rational point;
+* `TauCeti.AlgebraicGeometry.finrank_cohomology_zero_trivial_eq_one_of_surjective`:
+  `dim_k H⁰(X, 𝒪_X) = 1` when all global functions are constants;
 * `TauCeti.AlgebraicGeometry.eulerCharBelow_trivial_eq_one_sub_genus`: for an integral scheme
   universally closed over `k` with a `k`-rational point, `χ(𝒪_X) = 1 - g`.
 
@@ -75,18 +75,12 @@ lemma _root_.AlgebraicGeometry.Scheme.genus_def (X : Scheme.{u}) [X.Over (Spec (
 
 variable {X : Scheme.{u}} [X.Over (Spec (.of k))]
 
-/-- **Only constant global functions.** On an integral scheme that is universally closed over a
-field `k` and has a `k`-rational point, `H⁰(X, 𝒪_X)` is one-dimensional over `k`. -/
-theorem finrank_cohomology_zero_trivial_eq_one [IsIntegral X]
-    [UniversallyClosed (X ↘ Spec (.of k))] {s : Spec (.of k) ⟶ X}
-    (hs : s ≫ X ↘ Spec (.of k) = 𝟙 (Spec (.of k))) :
+/-- If every global function on a nonempty scheme over a field is constant, then
+`H⁰(X, 𝒪_X)` has dimension one over the field. -/
+theorem finrank_cohomology_zero_trivial_eq_one_of_surjective [Nonempty X]
+    (hφ : Function.Surjective (Scheme.Modules.baseRingToGlobalSections k X)) :
     finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) = 1 := by
-  -- The base ring maps onto the global functions, since both factors of
-  -- `baseRingToGlobalSections` are bijective.
-  have hφ : Function.Surjective (Scheme.Modules.baseRingToGlobalSections k X) := by
-    rw [funext (Scheme.Modules.baseRingToGlobalSections_apply k X)]
-    exact (appTop_bijective_of_section hs).2.comp
-      (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective
+  let _ : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, trivial⟩⟩
   -- Pass from the trivial line bundle to the structure sheaf `𝒪_X`, and from `H⁰` to global
   -- sections.
   let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
@@ -120,7 +114,10 @@ theorem eulerCharBelow_trivial_eq_one_sub_genus [IsIntegral X]
     {s : Spec (.of k) ⟶ X}
     (hs : s ≫ X ↘ Spec (.of k) = 𝟙 (Spec (.of k))) :
     Scheme.Modules.eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 = 1 - X.genus k := by
-  rw [Scheme.Modules.eulerCharBelow_two, finrank_cohomology_zero_trivial_eq_one k hs,
+  rw [Scheme.Modules.eulerCharBelow_two, finrank_cohomology_zero_trivial_eq_one_of_surjective k (by
+      rw [funext (Scheme.Modules.baseRingToGlobalSections_apply k X)]
+      exact (appTop_bijective_of_section hs).2.comp
+        (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective),
     Scheme.genus_def, Nat.cast_one]
 
 end

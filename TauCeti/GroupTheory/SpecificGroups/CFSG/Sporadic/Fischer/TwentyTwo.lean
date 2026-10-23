@@ -24,7 +24,7 @@ a², b¹³, (ab)¹¹, (ab²)²¹,
 ```
 
 The source's commutator convention is `[r,s] = r⁻¹s⁻¹rs`, opposite to Mathlib's
-`commutatorElement`, so each commutator is stored as `Relator.comm (.inv r) (.inv s)` as
+`commutatorElement`, so each commutator is stored as `Relator.commInvInv r s` as
 `TauCeti.Relator` prescribes. The proved `TauCeti.Relator.toWord_toFreeGroup` is the audit boundary
 between these expressions and the signed words consumed by `PresentedGroup`.
 
@@ -145,10 +145,6 @@ private abbrev b : Relator (Fin 2) := .gen 1
 @[inherit_doc Relator.mul]
 local infixl:70 " ⬝ " => Relator.mul
 
-/-- The source's commutator `[r, s] = r⁻¹ s⁻¹ r s`, represented in Mathlib's convention. -/
-private abbrev sourceComm (r s : Relator (Fin 2)) : Relator (Fin 2) :=
-  .comm (.inv r) (.inv s)
-
 /-- The ATLAS finite presentation of the Fischer group `Fi₂₂` on its standard generators `a`
 and `b`.
 
@@ -183,15 +179,15 @@ def fi22Presentation : GroupPresentation where
       .pow b 13,
       .pow (a ⬝ b) 11,
       .pow (a ⬝ .pow b 2) 21,
-      .pow (sourceComm a b) 3,
-      .pow (sourceComm a (.pow b 2)) 3,
-      .pow (sourceComm a (.pow b 3)) 3,
-      .pow (sourceComm a (.pow b 4)) 2,
-      .pow (sourceComm a (.pow b 5)) 3,
-      .pow (sourceComm a (b ⬝ a ⬝ .pow b 2)) 3,
-      .pow (sourceComm a (.inv b ⬝ a ⬝ .pow (.inv b) 2)) 2,
-      .pow (sourceComm a (b ⬝ a ⬝ .pow b 5)) 2,
-      .pow (sourceComm a (.pow b 2 ⬝ a ⬝ .pow b 5)) 2 ]
+      .pow (.commInvInv a b) 3,
+      .pow (.commInvInv a (.pow b 2)) 3,
+      .pow (.commInvInv a (.pow b 3)) 3,
+      .pow (.commInvInv a (.pow b 4)) 2,
+      .pow (.commInvInv a (.pow b 5)) 3,
+      .pow (.commInvInv a (b ⬝ a ⬝ .pow b 2)) 3,
+      .pow (.commInvInv a (.inv b ⬝ a ⬝ .pow (.inv b) 2)) 2,
+      .pow (.commInvInv a (b ⬝ a ⬝ .pow b 5)) 2,
+      .pow (.commInvInv a (.pow b 2 ⬝ a ⬝ .pow b 5)) 2 ]
 
 /-- The generator names recorded for `Fi₂₂`. The row's body is sealed, so this is what lets a
 consumer see that it is a two-generator presentation. -/
@@ -300,7 +296,7 @@ theorem fi22Presentation_transcribed :
         .pow (.comm (.inv (.gen ⟨0, by simp⟩))
           (.inv (.pow (.gen ⟨1, by simp⟩) 2 ⬝ .gen ⟨0, by simp⟩ ⬝
             .pow (.gen ⟨1, by simp⟩) 5))) 2 ] := by
-  simp [fi22Presentation]
+  simp [fi22Presentation, Relator.commInvInv]
 
 /-- The generator and relator counts recorded for `Fi₂₂` agree with the transcribed data. -/
 theorem fi22Presentation_matchesMetadata : fi22Presentation.matchesMetadata := by
@@ -329,7 +325,7 @@ theorem fi22Presentation_relatorsCyclicallyReduced :
     fi22Presentation.relatorsCyclicallyReduced := by
   simp only [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
     fi22Presentation, List.map_cons, List.map_nil, Relator.toWord_mul, Relator.toWord_pow,
-    Relator.toWord_inv, Relator.toWord_comm, Relator.toWord_gen]
+    Relator.toWord_inv, Relator.toWord_commInvInv, Relator.toWord_gen]
   decide
 
 end TauCeti.Sporadic

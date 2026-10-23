@@ -8,7 +8,7 @@ module
 import Mathlib.FieldTheory.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.Integrality
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 
 /-!
 # The translation action of the point group on the function field
@@ -20,11 +20,11 @@ automorphism `τ_P^*` of the function field `F(W)`, and `P ↦ τ_P^*` is a fait
 point group on `F(W)`. This file constructs that action.
 
 The construction runs through the generic point `g` of
-`TauCeti/AlgebraicGeometry/EllipticCurve/Affine/FunctionField/GenericPoint.lean`. Translating a
-function by `P` is evaluating it at `g + P`, so the pullback of `τ_P` on the affine coordinate ring
-is `CoordinateRing.evalAlgHom` at the coordinates of the translate `g + P_{F(W)}`, and the
-composition law is the associativity of the point group: applying `τ_Q^*` to a coordinate of
-`g + P` moves the generic point to `g + Q`, hence the pair to `g + P + Q`.
+`TauCeti/AlgebraicGeometry/EllipticCurve/Affine/FunctionField/GenericPoint/Basic.lean`.
+Translating a function by `P` is evaluating it at `g + P`, so the pullback of `τ_P` on the affine
+coordinate ring is `CoordinateRing.evalAlgHom` at the coordinates of the translate `g + P_{F(W)}`,
+and the composition law is the associativity of the point group: applying `τ_Q^*` to a coordinate
+of `g + P` moves the generic point to `g + Q`, hence the pair to `g + P + Q`.
 
 Two facts make the construction go through, and both come down to the transcendence of the
 coordinate function `x`. First, `g + P` is never the point at infinity, since otherwise `g` would
@@ -43,9 +43,9 @@ injective (`CoordinateRing.algHom_injective`) and so extendable to the fraction 
 
 ## Main results
 
-* `WeierstrassCurve.Affine.translation_zero` and
-  `WeierstrassCurve.Affine.translation_add`: the action laws, `τ_O^* = 1` and
-  `τ_{P + Q}^* = τ_P^* ≫ τ_Q^*`.
+* `WeierstrassCurve.Affine.translation_zero`, `WeierstrassCurve.Affine.translation_add` and
+  `WeierstrassCurve.Affine.translation_neg`: the action laws, `τ_O^* = 1`,
+  `τ_{P + Q}^* = τ_P^* ≫ τ_Q^*` and `τ_{-P}^* = (τ_P^*)⁻¹`.
 * `WeierstrassCurve.Affine.translation_eq_one_iff` and
   `WeierstrassCurve.Affine.translation_injective` and
   `WeierstrassCurve.Affine.translationHom_injective`: the action is faithful.
@@ -323,6 +323,12 @@ noncomputable def translationHom :
 @[simp]
 theorem translationHom_apply (P : Multiplicative (W⁄F).toAffine.Point) :
     translationHom W P = translation W (Multiplicative.toAdd P) := (rfl)
+
+/-- **The translation by `-P` is the inverse of the translation by `P`.** -/
+@[simp]
+theorem translation_neg (P : (W⁄F).toAffine.Point) :
+    translation W (-P) = (translation W P)⁻¹ :=
+  map_inv (translationHom W) (Multiplicative.ofAdd P)
 
 /-- **The translation moves the coordinate `x` to the `x`-coordinate of the translate of the
 generic point**: this is what makes `translation` the pullback of `τ_P`. -/

@@ -166,8 +166,11 @@ theorem exists_f4Coroot_longSimple_coordinates_eq_two_mul (β : Fin 48)
   rw [f4_pairing_longSimple_zero] at h₀
   rw [f4_pairing_longSimple_one] at h₁
   norm_num at h₀ h₁
-  refine ⟨f4Coroot β 1 - f4Coroot β 2 - f4Root β 1,
-    f4Coroot β 0 - f4Root β 0, ?_, ?_⟩ <;> omega
+  -- Name the two pairings, so that the witnesses do not have to spell them out.
+  obtain ⟨a₀, h₀⟩ : ∃ a : ℤ, 2 * a = 2 * f4Coroot β 0 - f4Coroot β 1 := ⟨_, h₀⟩
+  obtain ⟨a₁, h₁⟩ : ∃ a : ℤ, 2 * a = -f4Coroot β 0 + 2 * f4Coroot β 1 - 2 * f4Coroot β 2 :=
+    ⟨_, h₁⟩
+  exact ⟨f4Coroot β 1 - f4Coroot β 2 - a₁, f4Coroot β 0 - a₀, by omega, by omega⟩
 
 
 end TauCeti.DynkinType

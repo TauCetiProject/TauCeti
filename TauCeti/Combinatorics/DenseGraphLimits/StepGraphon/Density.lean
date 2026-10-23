@@ -27,9 +27,9 @@ remain, is `TauCeti.Combinatorics.DenseGraphLimits.CutMetric.OfMatrixGrid`.
 ## Main results
 
 * `TauCeti.DenseGraphLimits.exists_stepGraphon_cutDist_le` -- every graphon is within `ε` in cut
-  distance of a step graphon on a measurable finite partition with at most `4 ^ (⌈1/ε²⌉ + 1)` parts;
+  distance of a step graphon on a measurable finite partition with at most `4 ^ ⌈1/ε²⌉` parts;
 * `TauCeti.DenseGraphLimits.exists_ofMatrix_cutDist_le` -- every graphon is within `ε` in cut
-  distance of a finite weighted graph on any vertex set of size at least `4 ^ (⌈1/ε²⌉ + 1)`.
+  distance of a finite weighted graph on any vertex set of size at least `4 ^ ⌈1/ε²⌉`.
 
 ## References
 
@@ -51,11 +51,11 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasu
 
 /-- **Step graphons are dense in the cut metric**, with the Frieze--Kannan part count: every
 graphon is within `ε` in cut distance of a step graphon on a measurable finite partition with at
-most `4 ^ (⌈1 / ε²⌉ + 1)` parts. -/
+most `4 ^ (⌈1 / ε²⌉)` parts. -/
 theorem exists_stepGraphon_cutDist_le (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < ε) :
     ∃ (P : Finpartition (Set.univ : Set Ω)) (hP : ∀ p ∈ P.parts, MeasurableSet p)
       (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p),
-      P.parts.card ≤ 4 ^ (Nat.ceil (1 / ε ^ 2) + 1) ∧
+      P.parts.card ≤ 4 ^ (Nat.ceil (1 / ε ^ 2)) ∧
         cutDist W (stepGraphon (μ := μ) P hP val hsymm) ≤ ε := by
   obtain ⟨P, hP, hcard, happrox⟩ := weak_regularity_frieze_kannan μ W hε
   refine ⟨P, hP, blockAverage P W, blockAverage_comm P W, hcard, ?_⟩
@@ -63,7 +63,7 @@ theorem exists_stepGraphon_cutDist_le (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < 
   exact (cutDist_le_cutNorm_sub W _).trans happrox
 
 /-- **Every graphon is within `ε` in cut distance of a finite weighted graph**, on any vertex set
-of size at least the Frieze--Kannan bound `4 ^ (⌈1 / ε²⌉ + 1)`: the block matrix of a Frieze--Kannan
+of size at least the Frieze--Kannan bound `4 ^ (⌈1 / ε²⌉)`: the block matrix of a Frieze--Kannan
 approximation, carrying the block measures as vertex weights.
 
 The vertex weights are the pushforward of `μ` along the block-index map `g`, so they are the
@@ -71,7 +71,7 @@ measures of the blocks; vertices beyond the blocks carry weight zero.  Allowing 
 vertex set, rather than exactly the number of blocks, keeps the carrier of the approximation
 independent of the graphon. -/
 theorem exists_ofMatrix_cutDist_le (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < ε) {n : ℕ}
-    (hn : 4 ^ (Nat.ceil (1 / ε ^ 2) + 1) ≤ n) :
+    (hn : 4 ^ (Nat.ceil (1 / ε ^ 2)) ≤ n) :
     ∃ (g : Ω → Fin n) (_hg : Measurable g) (b : Fin n → Fin n → Set.Icc (0 : ℝ) 1)
       (hb : ∀ i j, b i j = b j i), cutDist W (Graphon.ofMatrix (μ.map g) b hb) ≤ ε := by
   obtain ⟨P, hP, hcard, happrox⟩ := weak_regularity_frieze_kannan μ W hε

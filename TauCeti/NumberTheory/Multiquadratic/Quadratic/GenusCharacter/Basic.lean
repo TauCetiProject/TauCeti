@@ -7,13 +7,14 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Character
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
+import TauCeti.NumberTheory.LegendreSymbol.NormForm
 
 /-!
 # Genus characters of a quadratic discriminant
 
 Genus theory attaches to a fundamental discriminant `D` a family of real quadratic characters, one
 for each prime discriminant occurring in a factorization `D = P₁ ⋯ P_t`
-(`IsFundamentalDiscriminant.exists_finset_primeDiscriminant`); the products of these over subsets
+(`Int.IsFundamentalDiscr.exists_finset_primeDiscriminant`); the products of these over subsets
 are the *genus characters* of `D`. The character `primeDiscriminantCharFun P` of a single prime
 discriminant is built in
 `TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Character`. This file defines the
@@ -87,29 +88,6 @@ private theorem sq_emod_eight (a : ℤ) : a ^ 2 % 8 = 0 ∨ a ^ 2 % 8 = 1 ∨ a 
       a % 8 = 6 ∨ a % 8 = 7 := by omega
   rcases h with h | h | h | h | h | h | h | h <;> rw [sq_emod a 8, h] <;> norm_num
 
-/-- **The odd half of the genus-character relation.** If an odd prime `p` divides `D` but not `n`,
-and `4n = x² - D y²`, then `n` is a nonzero quadratic residue modulo `p`: reducing the hypothesis
-modulo `p` kills the `D y²` term and leaves `4n ≡ x²`, so `n` is the square of `x / 2`. -/
-theorem jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
-    {D n x y : ℤ} (hpD : (p : ℤ) ∣ D) (hpn : ¬ (p : ℤ) ∣ n)
-    (h : 4 * n = x ^ 2 - D * y ^ 2) : jacobiSym n p = 1 := by
-  have : Fact p.Prime := ⟨hp⟩
-  have hn0 : (n : ZMod p) ≠ 0 := by rwa [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
-  have h2 : (2 : ZMod p) ≠ 0 := by
-    have hdvd : ¬ ((p : ℤ) ∣ 2) := fun hdvd =>
-      hp2 ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp (by exact_mod_cast hdvd))
-    simpa using (ZMod.intCast_zmod_eq_zero_iff_dvd (2 : ℤ) p).not.mpr hdvd
-  rw [← jacobiSym.legendreSym.to_jacobiSym]
-  refine (legendreSym.eq_one_iff p hn0).mpr ⟨(x : ZMod p) * 2⁻¹, ?_⟩
-  have hD0 : (D : ZMod p) = 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr hpD
-  have h4 : (4 : ZMod p) * (n : ZMod p) = (x : ZMod p) ^ 2 := by
-    have hcast := congrArg (fun z : ℤ => (z : ZMod p)) h
-    push_cast at hcast
-    rw [hD0] at hcast
-    simpa using hcast
-  field_simp
-  linear_combination h4
-
 /-- **The even half of the genus-character relation.** Let `P` be an even prime discriminant and
 `Q ≡ 1 (mod 4)`. If an odd integer `n` satisfies `4n = x² - P * Q * y²`, then the character of `P`
 is trivial at `n`.
@@ -182,7 +160,7 @@ private theorem prod_emod_four_eq_one {s : Finset ℤ} (hs : ∀ P ∈ s, P % 4 
 
 /-- **The genus-character relation.** Let `D = ∏ P ∈ s, P` be a factorization of a discriminant
 into prime discriminants, at most one of them even, as produced by
-`IsFundamentalDiscriminant.exists_finset_primeDiscriminant`. For each `P ∈ s`, every integer `n`
+`Int.IsFundamentalDiscr.exists_finset_primeDiscriminant`. For each `P ∈ s`, every integer `n`
 coprime to `P` and represented by the principal form of discriminant `D`, `4n = x² - D y²`, has
 trivial character at `P`.
 

@@ -46,12 +46,15 @@ instance instSemilocallySimplyConnectedSpaceSubtypePathComponent
     [SemilocallySimplyConnectedSpace X] :
     SemilocallySimplyConnectedSpace (pathComponent x₀) :=
   ⟨fun a => by
-    obtain ⟨U, hU, hloop⟩ :=
-      SemilocallySimplyConnectedSpace.exists_mem_nhds_loops_nullhomotopic (a : X)
-    refine ⟨Subtype.val ⁻¹' U, continuous_subtype_val.tendsto a hU, fun γ hγ => ?_⟩
+    obtain ⟨U, hU, hloop⟩ := semilocallySimplyConnectedAt_def.mp
+      (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (a : X))
+    refine semilocallySimplyConnectedAt_def.mpr
+      ⟨Subtype.val ⁻¹' U, continuous_subtype_val.tendsto a hU, fun γ hγ => ?_⟩
     apply homotopic_pathComponent_of_map_subtypeVal_homotopic x₀
     rw [Path.map_refl]
-    exact hloop (γ.map continuous_subtype_val) (by simpa using hγ)⟩
+    refine hloop (γ.map continuous_subtype_val) ?_
+    rintro _ ⟨t, rfl⟩
+    exact hγ ⟨t, rfl⟩⟩
 
 /-- A fibre of the quotient to connected components is semilocally simply connected when the
 ambient space is locally path-connected and semilocally simply connected. -/
@@ -72,24 +75,27 @@ noncomputable def _root_.FundamentalGroup.pathComponentMulEquiv (a : pathCompone
       (⟨Subtype.val, continuous_subtype_val⟩ : C(pathComponent x₀, X)) a) <| by
     constructor
     · rw [injective_iff_map_eq_one]
-      intro g hg
-      obtain ⟨γ, rfl⟩ := Quotient.exists_rep (FundamentalGroup.toPath g)
+      intro ⟨g⟩ hg
+      obtain ⟨γ, rfl⟩ := Quotient.exists_rep g
+      simp only [Path.Homotopic.Quotient.mk''_eq_mk] at hg
       have hnull : (γ.map continuous_subtype_val).Homotopic (Path.refl (a : X)) := by
         refine (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mp ?_
-        exact (FundamentalGroup.map_fromPath
-            (⟨Subtype.val, continuous_subtype_val⟩ : C(pathComponent x₀, X)) a γ).symm.trans
-          (hg.trans (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (a : X))))
-      refine (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mpr ?_
+        simpa only [Path.Homotopic.Quotient.mk''_eq_mk] using
+          (congrArg CategoryTheory.End.asHom (FundamentalGroup.map_fromPath
+            (⟨Subtype.val, continuous_subtype_val⟩ : C(pathComponent x₀, X)) a γ)).symm.trans
+          ((congrArg CategoryTheory.End.asHom hg).trans
+            (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (a : X))))
+      refine CategoryTheory.End.ext ((FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mpr ?_)
       apply homotopic_pathComponent_of_map_subtypeVal_homotopic x₀
       rw [Path.map_refl]
       exact hnull
-    · intro g
-      obtain ⟨γ, rfl⟩ := Quotient.exists_rep (FundamentalGroup.toPath g)
+    · intro ⟨g⟩
+      obtain ⟨γ, rfl⟩ := Quotient.exists_rep g
       have hmem : ∀ t, γ t ∈ pathComponent x₀ := γ.mem_pathComponent_of_mem a.2
       refine ⟨FundamentalGroup.fromPath
         ⟦Path.codRestrict (x := a) (y := a) γ hmem⟧, ?_⟩
+      simp only [Path.Homotopic.Quotient.mk''_eq_mk]
       rw [FundamentalGroup.map_fromPath, Path.map_codRestrict]
-      rfl
 
 @[simp]
 theorem _root_.FundamentalGroup.pathComponentMulEquiv_apply (a : pathComponent x₀)

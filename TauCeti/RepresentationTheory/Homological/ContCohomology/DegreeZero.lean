@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
+import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
 # Degree zero of continuous cohomology, and compatible pairs
@@ -32,8 +33,9 @@ Two consequences are recorded because later layers use them rather than the squa
 `H⁰_cont(G, -)` and the invariants functor are naturally isomorphic
 (`TauCeti.ContinuousCohomology.zeroIsoNatIso`). Second, inflation is an isomorphism in degree zero
 (`TauCeti.ContinuousCohomology.isIso_infl_zero`): `(X^N)^{G/N}` and `X^G` are canonically
-isomorphic by explicit mutually inverse maps that preserve the underlying vector. Restriction is a
-monomorphism in degree zero (`TauCeti.ContinuousCohomology.mono_res_zero`) because `X^G ⊆ X^S`.
+isomorphic by explicit mutually inverse maps that preserve the underlying vector. Restriction is
+injective in degree zero (`TauCeti.ContinuousCohomology.res_zero_injective`), and so a
+monomorphism (`TauCeti.ContinuousCohomology.mono_res_zero`), because `X^G ⊆ X^S`.
 
 The route to the square is the explicit evaluation formula
 `TauCeti.ContinuousCohomology.coe_zeroIso_hom_π`: a `0`-cocycle of the homogeneous complex is an
@@ -47,6 +49,8 @@ together with the invariant-class constructor `degreeZeroClass` that the same la
 ## Main definitions
 
 * `TauCeti.ContinuousCohomology.degreeZeroClass`: the degree-zero class of an invariant vector.
+* `TauCeti.ContinuousCohomology.degreeZeroCocycle`: the constant `0`-cocycle of an invariant
+  vector, a representative of its degree-zero class (`π_degreeZeroCocycle`).
 * `TauCeti.ContinuousCohomology.zeroIsoNatIso`: `H⁰_cont(G, -) ≅ (-)^G` as functors.
 
 ## Main results
@@ -56,10 +60,12 @@ together with the invariant-class constructor `degreeZeroClass` that the same la
 * `TauCeti.ContinuousCohomology.coeffMap_comp_zeroIso_hom`,
   `TauCeti.ContinuousCohomology.res_comp_zeroIso_hom`,
   `TauCeti.ContinuousCohomology.infl_comp_zeroIso_hom`: the same for the three named instances.
+* `TauCeti.ContinuousCohomology.degreeZeroClass_eq_π`: the degree-zero class of an invariant
+  vector is the class of any `0`-cocycle with that value at `1`.
 * `TauCeti.ContinuousCohomology.map_degreeZeroClass`: compatible-pair functoriality on classes of
   invariant vectors.
-* `TauCeti.ContinuousCohomology.isIso_infl_zero`, `TauCeti.ContinuousCohomology.mono_res_zero`:
-  the degree-zero edge of inflation-restriction.
+* `TauCeti.ContinuousCohomology.isIso_infl_zero`, `TauCeti.ContinuousCohomology.res_zero_injective`,
+  `TauCeti.ContinuousCohomology.mono_res_zero`: the degree-zero edge of inflation-restriction.
 -/
 
 public section
@@ -193,9 +199,20 @@ theorem infl_comp_zeroIso_hom (N : Subgroup G) [N.Normal] (X : TopRep R G) :
       ((zeroIso (TopRep.quotientToInvariants X N)).hom ≫
         TopRep.invariantsResMap (QuotientGroup.mk' N : G →* G ⧸ N)
           (TopRep.quotientToInvariantsι X N) :) := by
-  rw [infl_def]
-  exact map_comp_zeroIso_hom (ContinuousMonoidHom.quotientMk N)
-    (TopRep.quotientToInvariantsι X N)
+  rw [infl_def, map_comp_zeroIso_hom]
+  congr 1
+  ext v
+  -- After extensionality, normalize the invariant-map composite to its underlying linear
+  -- map application. The public eqToHom evaluation lemma then removes the restriction
+  -- transport; it does not match through the outer coerced composite.
+  change (TopRep.quotientToInvariantsι X N).hom
+      ((eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom v.1) =
+    (TopRep.quotientToInvariantsι X N).hom v.1
+  rw [TopRep.eqToHom_hom_apply (congrArg (fun ψ =>
+    TopRep.res ψ (TopRep.quotientToInvariants X N))
+      (Subgroup.coe_quotientMkContinuousMonoidHom N))]
+  simp only [cast_eq]
 
 end CompatiblePair
 
@@ -227,6 +244,37 @@ theorem coe_zeroIso_hom_degreeZeroClass (u : X.V) (hu : ∀ g : G, X.ρ g u = u)
     (dsimp% only (((zeroIso X).hom (degreeZeroClass X u hu)) : X.V)) = u := by
   simp [degreeZeroClass]
 
+/-- **The degree-zero class of an invariant vector is the class of any `0`-cocycle whose value at
+`1` is that vector.** A homogeneous `0`-cocycle is determined by its value at `1`, so this
+identifies `degreeZeroClass` with the class map `π X 0` on cocycles. -/
+theorem degreeZeroClass_eq_π (σ : cocycles X 0) (u : X.V) (hu : ∀ g : G, X.ρ g u = u)
+    (h : ((homogeneousCochains X).iCycles 0 σ).1 1 = u) :
+    degreeZeroClass X u hu = π X 0 σ := by
+  have hσ : (zeroIso X).hom (π X 0 σ) = ⟨u, (ContRepresentation.mem_invariants u).2 hu⟩ :=
+    Subtype.ext ((coe_zeroIso_hom_π X σ).trans h)
+  rw [degreeZeroClass, ← hσ, Iso.hom_inv_id_apply]
+
+/-- **The constant `0`-cocycle of an invariant vector.** The homogeneous `0`-cochain
+`g ↦ u` is the image of `u` under the first differential `TopRep.d X 0` of the resolution; it is
+invariant because `u` is, and a cocycle because the resolution is a complex. Its class is
+`degreeZeroClass X u hu` (`π_degreeZeroCocycle`). -/
+noncomputable def degreeZeroCocycle (X : TopRep R G) (u : X.V) (hu : ∀ g : G, X.ρ g u = u) :
+    cocycles X 0 :=
+  (cocycles₀Iso X).inv
+    ((d₀kerIso X).symm ⟨u, (ContRepresentation.mem_invariants u).2 hu⟩)
+
+/-- The constant `0`-cocycle of `u` is, as a homogeneous cochain, the constant map `g ↦ u`. -/
+theorem coe_iCycles_degreeZeroCocycle (u : X.V) (hu : ∀ g : G, X.ρ g u = u) :
+    ((homogeneousCochains X).iCycles 0 (degreeZeroCocycle X u hu)).1 = (TopRep.d X 0).hom u := by
+  rw [← coe_cocycles₀Iso_hom, degreeZeroCocycle, Iso.inv_hom_id_apply]
+  rfl
+
+/-- **The class of the constant `0`-cocycle of an invariant vector is its degree-zero class.** -/
+@[simp]
+theorem π_degreeZeroCocycle (u : X.V) (hu : ∀ g : G, X.ρ g u = u) :
+    π X 0 (degreeZeroCocycle X u hu) = degreeZeroClass X u hu :=
+  (degreeZeroClass_eq_π _ u hu (by rw [coe_iCycles_degreeZeroCocycle]; rfl)).symm
+
 /-- Every degree-zero class is the class of an invariant vector. -/
 theorem exists_degreeZeroClass_eq (x : continuousCohomology 0 X) :
     ∃ (u : X.V) (hu : ∀ g : G, X.ρ g u = u), degreeZeroClass X u hu = x :=
@@ -246,20 +294,26 @@ end Class
 
 section Edge
 
-/-- **Restriction is a monomorphism in degree zero.** This is the degree-zero left edge of the
+/-- **Restriction is injective in degree zero.** This is the degree-zero left edge of the
 inflation-restriction sequence: `X^G ⊆ X^S`. -/
-theorem mono_res_zero (S : Subgroup G) (X : TopRep R G) :
-    Mono (TauCeti.ContinuousCohomology.res S X 0) := by
+theorem res_zero_injective (S : Subgroup G) (X : TopRep R G) :
+    Function.Injective (TauCeti.ContinuousCohomology.res S X 0).hom := by
   have hinjective : Function.Injective (TopRep.invariantsResMap (S.subtype : S →* G)
       (𝟙 (TopRep.res (S.subtype : S →* G) X))) := by
     intro a b hab
     ext
     exact congrArg
       (fun w : (TopRep.res (S.subtype : S →* G) X).ρ.invariants ↦ (w : X.V)) hab
-  have : Mono (TopRep.invariantsResMap (S.subtype : S →* G)
-      (𝟙 (TopRep.res (S.subtype : S →* G) X))) :=
-    ConcreteCategory.mono_of_injective _ hinjective
-  exact mono_of_mono_fac (res_comp_zeroIso_hom S X)
+  -- read restriction through the identifications of `H⁰` with the invariants
+  refine Function.Injective.of_comp (f := (zeroIso (TopRep.res (S.subtype : S →* G) X)).hom) ?_
+  rw [← ConcreteCategory.coe_comp, res_comp_zeroIso_hom, ConcreteCategory.coe_comp]
+  exact hinjective.comp (ConcreteCategory.bijective_of_isIso (zeroIso X).hom).1
+
+/-- **Restriction is a monomorphism in degree zero**: the categorical form of
+`TauCeti.ContinuousCohomology.res_zero_injective`. -/
+theorem mono_res_zero (S : Subgroup G) (X : TopRep R G) :
+    Mono (TauCeti.ContinuousCohomology.res S X 0) :=
+  ConcreteCategory.mono_of_injective _ (res_zero_injective S X)
 
 variable (N : Subgroup G) [N.Normal] (X : TopRep R G)
 

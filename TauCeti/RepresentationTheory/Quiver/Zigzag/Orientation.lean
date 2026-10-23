@@ -6,7 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
+public import TauCeti.Combinatorics.Quiver.Reorient
+public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
+public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
+public import TauCeti.RepresentationTheory.Quiver.Symmetrify
+import Mathlib.Combinatorics.Quiver.Cast
 
 /-!
 # Orienting a simple graph and recovering its doubled quiver
@@ -30,9 +35,20 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.OrientedQuiver`: the quiver of the chosen darts.
 * `TauCeti.DoubledQuiver.OrientedQuiver.homEquiv`: its arrows over a pair of graph vertices are
   exactly the adjacency proofs whose dart the orientation selects.
+* `TauCeti.DoubledQuiver.OrientedQuiver.card_hom_ofLinearOrder` and
+  `TauCeti.DoubledQuiver.OrientedQuiver.isAcyclic_ofLinearOrder`: arrow counts and acyclicity for
+  the linear-order orientation.
+* `TauCeti.DoubledQuiver.OrientedQuiver.card_symmetrify_hom`: symmetrifying an orientation
+  recovers the adjacency counts of the graph.
+* `TauCeti.DoubledQuiver.OrientedQuiver.sum_card_hom_add_card_hom_mul`: a vertex weight summed
+  against the arrow counts of an orientation in both directions is its neighbour sum, via which a
+  positive superadditive weight on the oriented quiver excludes isolated vertices
+  (`TauCeti.DoubledQuiver.OrientedQuiver.exists_adj_of_pos_two_mul_le_sum`).
 * `TauCeti.DoubledQuiver.symmetrifyMap`: the canonical prefunctor from the symmetrification of an
   oriented graph to its doubled quiver.
 * `TauCeti.DoubledQuiver.unsymmetrifyMap`: its inverse prefunctor.
+* `TauCeti.exists_forall_exists_nonempty_reorient_hom`: a neighbour choice without mutual choices
+  gives a reorientation of any orientation with no sinks.
 
 ## References
 
@@ -146,8 +162,16 @@ instance : Quiver.IsThin (OrientedQuiver G o) := fun _ _ =>
 instance [Finite V] : Finite (OrientedQuiver G o) :=
   Finite.of_equiv V (vertexEquiv G o)
 
+/-- The oriented quiver has finitely many vertices when the graph does. -/
+noncomputable instance [Finite V] : Fintype (OrientedQuiver G o) :=
+  Fintype.ofFinite _
+
 instance (i j : OrientedQuiver G o) : Finite (i ⟶ j) :=
   Finite.of_subsingleton
+
+/-- The arrows of an oriented simple graph form a finite type between any two vertices. -/
+noncomputable instance (i j : OrientedQuiver G o) : Fintype (i ⟶ j) :=
+  Fintype.ofFinite _
 
 /-- The oriented-quiver arrow corresponding to a chosen dart. -/
 def arrow {i j : V} (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
@@ -183,6 +207,124 @@ theorem homEquiv_symm_apply {i j : V} (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G
 theorem exists_eq_arrow {i j : V} (e : vertex G o i ⟶ vertex G o j) :
     ∃ (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o), e = arrow G o h ho :=
   ⟨(homEquiv G o i j e).1, (homEquiv G o i j e).2, Subsingleton.elim _ _⟩
+
+/-- For the linear-order orientation, there is one arrow from `i` to `j` exactly when `i < j`
+and the vertices are adjacent. -/
+-- Keep `Nat.card` so this statement does not depend on a choice of finiteness enumeration.
+theorem card_hom_ofLinearOrder [LinearOrder V] (i j : V) [Decidable (i < j ∧ G.Adj i j)] :
+    Nat.card (vertex G (Orientation.ofLinearOrder G) i ⟶
+        vertex G (Orientation.ofLinearOrder G) j) =
+      if i < j ∧ G.Adj i j then 1 else 0 := by
+  rw [Nat.card_congr (homEquiv G (Orientation.ofLinearOrder G) i j)]
+  simp only [Orientation.mem_ofLinearOrder_iff]
+  split_ifs with h
+  · exact Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ ↦ Subtype.ext rfl⟩, ⟨⟨h.2, h.1⟩⟩⟩
+  · exact @Nat.card_of_isEmpty _ ⟨fun p ↦ h ⟨p.2, p.1⟩⟩
+
+private theorem path_length_zero_or_lt_ofLinearOrder [LinearOrder V]
+    {a b : OrientedQuiver G (Orientation.ofLinearOrder G)}
+    (p : _root_.Quiver.Path a b) : p.length = 0 ∨
+      (vertexEquiv G (Orientation.ofLinearOrder G)).symm a <
+        (vertexEquiv G (Orientation.ofLinearOrder G)).symm b := by
+  induction p with
+  | nil => exact Or.inl rfl
+  | @cons b c p e ih =>
+    right
+    have he : (vertexEquiv G (Orientation.ofLinearOrder G)).symm b <
+        (vertexEquiv G (Orientation.ofLinearOrder G)).symm c := by
+      have he' := (homEquiv G (Orientation.ofLinearOrder G)
+        ((vertexEquiv G (Orientation.ofLinearOrder G)).symm b)
+        ((vertexEquiv G (Orientation.ofLinearOrder G)).symm c)
+        (by simpa only [← vertexEquiv_apply, Equiv.apply_symm_apply] using e)).2
+      simpa only [Orientation.mem_ofLinearOrder_iff] using he'
+    rcases ih with hp | hp
+    · rw [(Path.eq_of_length_zero p hp)]
+      exact he
+    · exact lt_trans hp he
+
+/-- Orienting every edge of a graph from the smaller vertex to the larger makes an acyclic
+quiver. -/
+theorem isAcyclic_ofLinearOrder [LinearOrder V] :
+    TauCeti.Quiver.IsAcyclic (OrientedQuiver G (Orientation.ofLinearOrder G)) := by
+  apply TauCeti.Quiver.isAcyclic_def.mpr
+  intro a p
+  rcases path_length_zero_or_lt_ofLinearOrder G p with hp | hp
+  · exact p.eq_nil_of_length_zero hp
+  · exact (lt_irrefl _ hp).elim
+
+/-- An orientation has one arrow, in total across the two directions, over each edge. -/
+theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :
+    Nat.card (vertex G o i ⟶ vertex G o j) +
+        Nat.card (vertex G o j ⟶ vertex G o i) =
+      if G.Adj i j then 1 else 0 := by
+  rw [Nat.card_congr (homEquiv G o i j), Nat.card_congr (homEquiv G o j i)]
+  split_ifs with h
+  · by_cases ho : (⟨(i, j), h⟩ : G.Dart) ∈ o
+    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∉ o := (o.symm_notMem_iff_mem G _).2 ho
+      have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 1 :=
+        Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h, ho⟩⟩⟩
+      have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
+        @Nat.card_of_isEmpty _ ⟨fun p => ho' p.2⟩
+      rw [h1, h2]
+    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
+      have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
+        @Nat.card_of_isEmpty _ ⟨fun p => ho p.2⟩
+      have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 1 :=
+        Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h.symm, ho'⟩⟩⟩
+      rw [h1, h2]
+  · have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
+      @Nat.card_of_isEmpty _ ⟨fun p => h p.1⟩
+    have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
+      @Nat.card_of_isEmpty _ ⟨fun p => h p.1.symm⟩
+    rw [h1, h2]
+
+/-- The symmetrification of an oriented graph has one arrow between two vertices exactly when they
+are adjacent: the chosen arrow over the edge or its formal reverse. -/
+theorem card_symmetrify_hom [DecidableRel G.Adj] (i j : V) :
+    Fintype.card (Symmetrify.of.obj (vertex G o i) ⟶ Symmetrify.of.obj (vertex G o j)) =
+      if G.Adj i j then 1 else 0 := by
+  rw [TauCeti.card_symmetrify_hom, Fintype.card_eq_nat_card, Fintype.card_eq_nat_card,
+    card_hom_add_card_hom G o i j]
+
+/-- **A weight on a graph read on an orientation**: for every vertex `i`, the multigraph sum
+`∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` over the vertices of the oriented quiver is the neighbour sum
+`∑_{j ∼ i} δ_j`, since an orientation has exactly one arrow over each edge. -/
+theorem sum_card_hom_add_card_hom_mul [Fintype V] [DecidableRel G.Adj] {S : Type*} [Semiring S]
+    (δ : V → S) (i : V) :
+    ∑ j : OrientedQuiver G o, ((Fintype.card (vertex G o i ⟶ j) +
+        Fintype.card (j ⟶ vertex G o i) : ℕ) : S) * δ ((vertexEquiv G o).symm j) =
+      ∑ j ∈ G.neighborFinset i, δ j := by
+  have hc (j : V) :
+      ((Fintype.card (vertex G o i ⟶ vertex G o j) + Fintype.card (vertex G o j ⟶ vertex G o i) :
+        ℕ) : S) = if G.Adj i j then 1 else 0 := by
+    rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card, card_hom_add_card_hom G o i j]
+    split_ifs <;> simp
+  have hsum :
+      ∑ j ∈ G.neighborFinset i, δ j = ∑ j : V, (if G.Adj i j then (1 : S) else 0) * δ j := by
+    simp only [ite_mul, one_mul, zero_mul]
+    rw [← Finset.sum_filter]
+    exact Finset.sum_congr (by ext j; simp) fun _ _ => rfl
+  refine (hsum.trans (Fintype.sum_equiv (vertexEquiv G o) _ _ fun j => ?_)).symm
+  simp only [vertexEquiv_apply, vertexEquiv_symm_vertex, hc j]
+
+/-- **A positive superadditive weight on an oriented graph excludes isolated vertices.** Let `δ`
+be a weight on the vertices of an orientation of a finite simple graph over a strictly ordered
+commutative ring, positive at every vertex, with `2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every
+vertex of the oriented quiver. Then every vertex of the graph has a neighbour. -/
+theorem exists_adj_of_pos_two_mul_le_sum [Finite V]
+    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+    (δ : OrientedQuiver G o → S) (hδ : ∀ i, 0 < δ i)
+    (hδle : ∀ i, 2 * δ i ≤
+      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j)
+    (i : V) : ∃ j, G.Adj i j := by
+  classical
+  have : Fintype V := Fintype.ofFinite V
+  -- The multigraph sum in the superadditivity condition is the neighbour sum.
+  have hδle' : ∀ j : V, 2 * δ (vertex G o j) ≤ ∑ j' ∈ G.neighborFinset j, δ (vertex G o j') :=
+    fun j => (hδle (vertex G o j)).trans
+      (sum_card_hom_add_card_hom_mul G o (fun j => δ (vertex G o j)) j).le
+  exact SimpleGraph.exists_adj_of_pos_two_mul_le_sum
+    (fun j => δ (vertex G o j)) (fun j => hδ (vertex G o j)) hδle' i
 
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where
@@ -392,6 +534,34 @@ theorem symmetrifyMap_isCovering : (symmetrifyMap G o).IsCovering := by
       (symmetrifyMap_comp_unsymmetrifyMap G o)).2
 
 end DoubledQuiver
+
+open DoubledQuiver
+
+variable {V : Type u} {G : SimpleGraph V}
+
+/-- If `f` chooses a neighbour at every vertex of `G` with no two vertices choosing each other, then
+some reorientation of any orientation of `G` has no sinks: turning around the arrows `j ⟶ i` with
+`f i = j` leaves every vertex `u` with the outgoing arrow `u ⟶ f u`. -/
+theorem exists_forall_exists_nonempty_reorient_hom (o : Orientation G) {f : V → V}
+    (hf : ∀ u, G.Adj u (f u) ∧ f (f u) ≠ u) :
+    ∃ σ : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → Bool,
+      ∀ u, ∃ w, Nonempty (reorientVertex σ u ⟶ reorientVertex σ w) := by
+  classical
+  let φ := (OrientedQuiver.vertexEquiv G o).symm
+  refine ⟨fun i j _ => decide (f (φ j) = φ i), fun u => ?_⟩
+  obtain ⟨u, rfl⟩ := (OrientedQuiver.vertexEquiv G o).surjective u
+  obtain ⟨hadj, hne⟩ := hf u
+  refine ⟨OrientedQuiver.vertex G o (f u), ?_⟩
+  rw [OrientedQuiver.vertexEquiv_apply]
+  by_cases ho : (⟨(u, f u), hadj⟩ : G.Dart) ∈ o
+  · -- The edge is oriented `u ⟶ f u`, and `f (f u) ≠ u` keeps it.
+    refine ⟨reorientKeep _ (OrientedQuiver.arrow G o hadj ho) ?_⟩
+    simpa only [φ, OrientedQuiver.vertexEquiv_symm_vertex, decide_eq_true_eq] using hne
+  · -- The edge is oriented `f u ⟶ u`, and is turned around.
+    have ho' : (⟨(f u, u), hadj.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
+    refine ⟨reorientFlip _ (OrientedQuiver.arrow G o hadj.symm ho') ?_⟩
+    simp only [φ, OrientedQuiver.vertexEquiv_symm_vertex, decide_true]
+
 end TauCeti
 
 namespace SimpleGraph.Coloring

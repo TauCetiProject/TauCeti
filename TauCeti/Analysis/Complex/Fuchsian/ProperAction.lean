@@ -31,7 +31,7 @@ namespace TauCeti
 /-- Every discrete subgroup of `PSL(2, ℝ)` acts properly discontinuously on the upper
 half-plane. -/
 instance (G : Subgroup PSL(2, ℝ)) [DiscreteTopology G] : ProperlyDiscontinuousSMul G ℍ := by
-  have : IsClosed (G : Set PSL(2, ℝ)) := Subgroup.isClosed_of_discrete
+  have : IsClosed (G : Set PSL(2, ℝ)) := Subgroup.isClosed_of_discreteTopology
   rw [properlyDiscontinuousSMul_iff_properSMul]
   infer_instance
 

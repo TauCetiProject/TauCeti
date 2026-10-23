@@ -52,8 +52,7 @@ theorem range_mapBaseChange_eq_span_singleton (ω : Ω[A⁄R])
       Submodule.span B {KaehlerDifferential.map R R A B ω} := by
   refine le_antisymm ?_ ?_
   · rintro v ⟨t, rfl⟩
-    induction t using TensorProduct.induction_on with
-    | zero => rw [map_zero]; exact Submodule.zero_mem _
+    induction t using TensorProduct.inductionOn with
     | tmul b η =>
       obtain ⟨a, rfl⟩ := (Submodule.span_singleton_eq_top_iff A ω).mp hω η
       rw [KaehlerDifferential.mapBaseChange_tmul, map_smul]

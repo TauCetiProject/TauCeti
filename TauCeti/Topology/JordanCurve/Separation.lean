@@ -57,6 +57,8 @@ The corollaries for a circle `Metric.sphere c r` of `ℂ` are the case the confo
 * `TauCeti.IsJordanCurve.exists_isPathConnected_union_eq_sdiff_pair` — the same for an arbitrary
   Jordan curve, together with the statement that the two arcs are its connected components: every
   preconnected subset of the cut curve lies in one of them.
+* `TauCeti.IsJordanCurve.exists_isCompact_isConnected_union_eq_inter_eq_pair` — a Jordan curve
+  is the union of two closed arcs meeting exactly in two given points.
 * `TauCeti.IsJordanCurve.not_isPreconnected_sdiff_pair` — consequently two points always separate a
   Jordan curve.
 * `TauCeti.isPathConnected_sphere_sdiff_singleton`,
@@ -128,7 +130,7 @@ theorem exists_isOpen_isPathConnected_union_eq_compl_pair_circle {z w : Circle} 
 
 /-! ## Cutting a Jordan curve
 
-Both statements below are the circle statement carried across the parametrization
+The statements below are the circle statements carried across the parametrization
 `TauCeti.jordanParam e` of a Jordan curve by the circle, whose properties — continuity,
 injectivity, range, and that it is inducing — are in
 `TauCeti/Topology/JordanCurve/Basic.lean`. -/
@@ -203,6 +205,28 @@ theorem IsJordanCurve.not_isPreconnected_sdiff_pair (h : IsJordanCurve C) (hp : 
   rcases hdich subset_rfl hcon with hc | hc
   · exact Set.disjoint_left.mp hdisj (hc (hunion ▸ mem_union_right _ hy)) hy
   · exact Set.disjoint_left.mp hdisj hx (hc (hunion ▸ mem_union_left _ hx))
+
+/-- **A Jordan curve is the union of two closed arcs meeting in two given points.** For `p ≠ q` on
+a Jordan curve `C` there are compact connected sets `A` and `B` with `A ∪ B = C` and
+`A ∩ B = {p, q}`: the images of the closed arcs `Circle.path z w` and `Circle.path w z` of the
+circle, where `z` and `w` correspond to `p` and `q`. -/
+theorem IsJordanCurve.exists_isCompact_isConnected_union_eq_inter_eq_pair (h : IsJordanCurve C)
+    (hp : p ∈ C) (hq : q ∈ C) (hpq : p ≠ q) :
+    ∃ A B : Set X, IsCompact A ∧ IsCompact B ∧ IsConnected A ∧ IsConnected B ∧
+      A ∪ B = C ∧ A ∩ B = {p, q} := by
+  obtain ⟨e⟩ := isJordanCurve_iff.mp h
+  have hzw : e ⟨p, hp⟩ ≠ e ⟨q, hq⟩ := fun hh => hpq (congrArg Subtype.val (e.injective hh))
+  set z := e ⟨p, hp⟩
+  set w := e ⟨q, hq⟩
+  have hg := continuous_jordanParam e
+  refine ⟨jordanParam e '' range (Circle.path z w), jordanParam e '' range (Circle.path w z),
+    (isCompact_range (Circle.path z w).continuous).image hg,
+    (isCompact_range (Circle.path w z).continuous).image hg,
+    (isConnected_range (Circle.path z w).continuous).image _ hg.continuousOn,
+    (isConnected_range (Circle.path w z).continuous).image _ hg.continuousOn, ?_, ?_⟩
+  · rw [← image_union, Circle.range_path_union_range_path hzw, image_univ, range_jordanParam]
+  · rw [← image_inter (jordanParam_injective e), Circle.range_path_inter_range_path hzw,
+      image_pair, jordanParam_apply_apply, jordanParam_apply_apply]
 
 /-! ## The circles of `ℂ` -/
 

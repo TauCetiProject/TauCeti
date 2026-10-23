@@ -156,7 +156,7 @@ private lemma finite_image_orbit_mk_orbit (𝒢 : Subgroup (GL (Fin 2) ℝ))
     fun q ↦ Quotient.liftOn' q (fun p ↦ Quotient.mk'' p.val) (by
       rintro ⟨a, ha⟩ ⟨b, hb⟩ ⟨h, hh⟩
       have hval : ((h : ↥𝒮ℒ) : GL (Fin 2) ℝ) • b = a := congrArg Subtype.val hh
-      exact Quotient.sound' ⟨(⟨((h : ↥𝒮ℒ) : GL (Fin 2) ℝ), h.2⟩ : ↥𝒢), hval⟩) with hF
+      exact Quotient.sound' ⟨(⟨((h : ↥𝒮ℒ) : GL (Fin 2) ℝ), h.2⟩ : ↥𝒢), hval⟩) with _
   refine (Set.finite_range F).subset ?_
   rintro _ ⟨p, hp, rfl⟩
   exact ⟨Quotient.mk'' ⟨p, hp⟩, rfl⟩

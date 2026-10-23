@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
 
 /-!
 # The Möbius-action conjugation at a positive determinant
@@ -26,12 +27,23 @@ unfolded by hand.
 * `UpperHalfPlane.σ_eq_refl_of_det_pos`: `σ g = ContinuousAlgEquiv.refl ℝ ℂ` for `0 < det g`.
 * `UpperHalfPlane.ofReal_mul_add_eq_zero_iff`: `m z + n = 0` for real `m`, `n` and `z ∈ ℍ` only
   when `m = n = 0`, the `iff` form of Mathlib's `UpperHalfPlane.linear_ne_zero`.
+* `UpperHalfPlane.num_sub_smul_mul_denom`: the difference formula
+  `g • z - g • τ = det g · (z - τ) / ((cz + d)(cτ + d))` for `det g > 0`, with the denominator of
+  `g • z` cleared.
+* `UpperHalfPlane.J_smul_re`, `UpperHalfPlane.J_smul_im`: the involution `J : z ↦ -conj z`
+  negates the real part and preserves the imaginary part.
+* `Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J`, `Matrix.SpecialLinearGroup.J_mul_mapGL`:
+  conjugation by `J` realizes `conjJ` on the image of `SL(2, R)` in `GL(2, ℝ)`.
 * `ModularGroup.sl_smul_set`: the `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action
   along the coercion, the pointwise-image counterpart of Mathlib's `ModularGroup.sl_moeb`.
 * `ModularGroup.smul_eq_smul_of_eq_or_eq_neg`: elements of `SL(2, ℤ)` that agree up to sign act
   alike on `ℍ`.
 * `Matrix.SpecialLinearGroup.toGL_smul`: the `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action
   of the underlying matrix, the `SL(2, ℝ)` counterpart of Mathlib's `ModularGroup.sl_moeb`.
+* `TauCeti.bijOn_sub_div_sub_upperHalfPlaneSet`: an ordered pair of real prevertices gives
+  a fractional-linear bijection of the upper half-plane.
+* `ModularGroup.re_S_smul`, `ModularGroup.S_smul_S_smul`: the inversion `S` negates the real
+  part up to a `normSq` factor, and is an involution of `ℍ`.
 
 ## Provenance
 
@@ -75,6 +87,33 @@ theorem _root_.Matrix.SpecialLinearGroup.toGL_smul (g : SL(2, ℝ)) (τ : ℍ) :
     simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
   rw [MulAction.compHom_smul_def, h]
 
+/-- The orientation-reversing involution `J : z ↦ -conj z` negates the real part. -/
+@[simp]
+theorem J_smul_re (τ : ℍ) : (J • τ).re = -τ.re := by
+  rw [← coe_re, coe_J_smul, Complex.neg_re, Complex.conj_re, coe_re]
+
+/-- The orientation-reversing involution `J : z ↦ -conj z` preserves the imaginary part. -/
+@[simp]
+theorem J_smul_im (τ : ℍ) : (J • τ).im = τ.im := by
+  rw [← coe_im, coe_J_smul, Complex.neg_im, Complex.conj_im, neg_neg, coe_im]
+
+/-- Conjugation by `J` realizes `conjJ` on the image of `SL(2, R)` in `GL(2, ℝ)`. -/
+theorem _root_.Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J {R : Type*} [CommRing R]
+    [Algebra R ℝ] (γ : SL(2, R)) :
+    J * Matrix.SpecialLinearGroup.mapGL ℝ γ * J =
+      Matrix.SpecialLinearGroup.mapGL ℝ (Matrix.SpecialLinearGroup.conjJ γ) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [J, Matrix.SpecialLinearGroup.mapGL_coe_matrix, Matrix.mul_apply, Fin.sum_univ_two,
+      Matrix.vecMul, dotProduct]
+
+/-- `J` intertwines the image of `γ ∈ SL(2, R)` in `GL(2, ℝ)` with that of `conjJ γ`. -/
+theorem _root_.Matrix.SpecialLinearGroup.J_mul_mapGL {R : Type*} [CommRing R] [Algebra R ℝ]
+    (γ : SL(2, R)) :
+    J * Matrix.SpecialLinearGroup.mapGL ℝ γ =
+      Matrix.SpecialLinearGroup.mapGL ℝ (Matrix.SpecialLinearGroup.conjJ γ) * J := by
+  rw [← Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J, mul_assoc, ← sq, J_sq, mul_one]
+
 /-- A real linear combination `m z + n` of a point `z` of the upper half-plane and `1` vanishes only
 when both coefficients do, as `z` is not real: the `iff` form of `UpperHalfPlane.linear_ne_zero`. -/
 theorem ofReal_mul_add_eq_zero_iff (z : ℍ) {m n : ℝ} : (m : ℂ) * z + n = 0 ↔ m = 0 ∧ n = 0 := by
@@ -82,6 +121,20 @@ theorem ofReal_mul_add_eq_zero_iff (z : ℍ) {m n : ℝ} : (m : ℂ) * z + n = 0
   -- the imaginary part `m (im z)` of `m z + n` vanishes only for `m = 0`
   obtain rfl : m = 0 := by simpa [z.im_ne_zero] using congrArg Complex.im h
   simpa using h
+
+/-- For `g = !![a, b; c, d]` of positive determinant,
+`(az + b) - (g • τ)(cz + d) = det g · (z - τ) / (cτ + d)`: dividing by `cz + d` gives the
+difference formula `g • z - g • τ = det g · (z - τ) / ((cz + d)(cτ + d))`, in the form that
+clears the denominator of `g • z`. -/
+theorem num_sub_smul_mul_denom {g : GL (Fin 2) ℝ} (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
+    (τ z : ℍ) :
+    num g z - (g • τ : ℍ) * denom g z =
+      ((g : Matrix (Fin 2) (Fin 2) ℝ).det : ℂ) * ((z : ℂ) - τ) / denom g τ := by
+  rw [coe_smul_of_det_pos (by rwa [Matrix.GeneralLinearGroup.val_det_apply]),
+    eq_div_iff (denom_ne_zero g τ)]
+  field_simp [denom_ne_zero g τ]
+  simp only [num, denom, Matrix.det_fin_two, Complex.ofReal_sub, Complex.ofReal_mul]
+  ring
 
 end UpperHalfPlane
 
@@ -100,4 +153,47 @@ theorem smul_eq_smul_of_eq_or_eq_neg {g k : SL(2, ℤ)} {z : ℍ} (hg : g = k �
     g • z = k • z :=
   hg.elim (· ▸ rfl) (· ▸ SL_neg_smul _ _)
 
+-- Not `@[simp]`: the simpNF linter rewrites the stated LHS through the unconditional simp lemma
+-- `ModularGroup.sl_moeb` to the `GL (Fin 2) ℝ`-lifted action, which is not how call sites state
+-- the `S`-action.
+/-- The inversion `S` negates the real part of every point and divides by its norm-square. -/
+lemma re_S_smul (p : ℍ) : (S • p).re = -p.re / Complex.normSq (p : ℂ) := by
+  rw [modular_S_smul]
+  simp [Complex.inv_re]
+  ring
+
+-- Not `@[simp]`: the simpNF linter rewrites the stated LHS through the unconditional simp
+-- lemma `ModularGroup.sl_moeb` to the `GL (Fin 2) ℝ`-lifted double action, the same reason
+-- `re_S_smul` above is not tagged.
+/-- The inversion `S` is an involution of `ℍ`. -/
+lemma S_smul_S_smul (p : ℍ) : S • (S • p) = p := by
+  rw [← SL_neg_smul, ← S_inv, inv_smul_smul]
+
 end ModularGroup
+
+namespace TauCeti
+
+open Complex Function Set
+
+/-- For `p < q`, the real fractional-linear transformation sending `p` to infinity
+and `q` to zero preserves the upper half-plane bijectively. -/
+theorem bijOn_sub_div_sub_upperHalfPlaneSet {p q : ℝ} (hpq : p < q) :
+    BijOn (fun z : ℂ => (z - (q : ℂ)) / (z - (p : ℂ)))
+      upperHalfPlaneSet upperHalfPlaneSet := by
+  let g : GL (Fin 2) ℝ := Matrix.GeneralLinearGroup.mkOfDetNeZero
+    !![1, -q; 1, -p] (by simpa [Matrix.det_fin_two, sub_eq_add_neg, add_comm] using
+      (sub_pos.mpr hpq).ne')
+  have hg : 0 < g.det.val := by
+    simpa [g, Matrix.GeneralLinearGroup.mkOfDetNeZero,
+      Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_fin_two] using sub_pos.mpr hpq
+  have hsemi : Semiconj ((↑) : ℍ → ℂ) (fun z => g • z)
+      (fun z : ℂ => (z - (q : ℂ)) / (z - (p : ℂ))) := by
+    intro z
+    rw [UpperHalfPlane.coe_smul_of_det_pos hg]
+    simp [UpperHalfPlane.num, UpperHalfPlane.denom, g,
+      Matrix.GeneralLinearGroup.mkOfDetNeZero, sub_eq_add_neg]
+  simpa only [UpperHalfPlane.range_coe] using
+    hsemi.bijOn_range (MulAction.toPerm g).bijective UpperHalfPlane.coe_injective
+
+
+end TauCeti

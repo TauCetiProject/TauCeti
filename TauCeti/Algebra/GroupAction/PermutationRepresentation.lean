@@ -51,6 +51,11 @@ hypothesis as `faithfulSMul_of_normalClosure_eq_top`.
 * `Equiv.permutationRepresentation_eq_conj` and
   `Equiv.map_permutationRepresentation_range_conj`: replacing the enumeration conjugates the
   representation, and its image.
+* `Equiv.permutationRepresentation_eq_of_map_smul`: an enumeration carrying the action to a
+  given homomorphism `ρ : G →* Equiv.Perm (Fin n)` recovers `ρ`.
+* `Equiv.ker_permutationRepresentation`, `Equiv.comap_stabilizer_permutationRepresentation` and
+  `Equiv.isPretransitive_range_permutationRepresentation_iff`: the kernel, the point stabilisers
+  and the transitivity of the representation are those of the action.
 
 -/
 
@@ -111,6 +116,38 @@ theorem map_permutationRepresentation_range_conj (e e' : α ≃ Fin n) :
       (permutationRepresentation (G := G) e').range := by
   simp only [permutationRepresentation, ← MonoidHom.map_range]
   exact (Equiv.map_permCongrHom_eq_map_conj e e' _).symm
+
+/-- **An equivariant enumeration recovers the representation.** If `e` carries the action of `G`
+on `α` to the action of `G` on `Fin n` through `ρ`, then `ρ` is the permutation representation
+read through `e`. -/
+theorem permutationRepresentation_eq_of_map_smul (e : α ≃ Fin n) {ρ : G →* Equiv.Perm (Fin n)}
+    (he : ∀ (g : G) (x : α), e (g • x) = ρ g (e x)) : permutationRepresentation e = ρ := by
+  ext g i
+  simp [he]
+
+/-- **The kernel does not depend on the enumeration**: it is the kernel of the action. -/
+@[simp]
+theorem ker_permutationRepresentation (e : α ≃ Fin n) :
+    (permutationRepresentation (G := G) e).ker = (MulAction.toPermHom G α).ker :=
+  MonoidHom.ker_comp_of_injective _ _ (Equiv.permCongrHom e).injective
+
+/-- **The point stabilisers of the representation are those of the action**: the stabiliser of
+the index `e x` pulls back to the stabiliser of `x`. -/
+@[simp]
+theorem comap_stabilizer_permutationRepresentation (e : α ≃ Fin n) (x : α) :
+    (MulAction.stabilizer (Equiv.Perm (Fin n)) (e x)).comap
+        (permutationRepresentation (G := G) e) =
+      MulAction.stabilizer G x := by
+  ext g
+  simp [MulAction.mem_stabilizer_iff]
+
+/-- **The representation is transitive exactly when the action is.** -/
+@[simp]
+theorem isPretransitive_range_permutationRepresentation_iff (e : α ≃ Fin n) :
+    MulAction.IsPretransitive (permutationRepresentation (G := G) e).range (Fin n) ↔
+      MulAction.IsPretransitive G α := by
+  rw [permutationRepresentation, MonoidHom.range_comp, Equiv.isPretransitive_map_permCongrHom_iff,
+    MulAction.isPretransitive_range_toPermHom_iff]
 
 end Equiv
 

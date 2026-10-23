@@ -307,7 +307,7 @@ theorem twoDoubleEdgeCartanMatrix_zero_false :
 
 section Chain
 
-variable {B : Type*} [Fintype B] {A : Matrix B B ℤ}
+variable {B : Type*} {A : Matrix B B ℤ}
 
 /-- **Two nonpositive integers whose product is `2` are `-1` and `-2`**, in one order or the other:
 the two entries of a double edge, whose orientation this splits into its two cases. -/
@@ -374,7 +374,8 @@ private theorem submatrix_eq_twoDoubleEdgeCartanMatrix (h : IsFiniteType A) {v :
 edge.** This is the previous exclusion transported along the chain; the orientation of the first
 edge is normalized here, and the general case follows by transposition in
 `TauCeti.IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le`. -/
-private theorem not_two_le_of_chain_of_apply_eq_neg_two (h : IsFiniteType A) {v : ℕ → B}
+private theorem not_two_le_of_chain_of_apply_eq_neg_two (h : IsFiniteType A)
+    {v : ℕ → B}
     (hv : Set.InjOn v (Set.Iio (m + 3)))
     (hzero : ∀ s t, s + 1 < t → t < m + 3 → A (v s) (v t) = 0)
     (hsimple : ∀ s, 0 < s → s < m + 1 → A (v s) (v (s + 1)) = -1 ∧ A (v (s + 1)) (v s) = -1)
@@ -408,7 +409,8 @@ submatrices, so the chain may sit anywhere inside a larger diagram. The hypothes
 in the diagram of the matrix provides, the non-adjacency of non-consecutive vertices coming from
 the diagram of a finite-type matrix being a forest
 (`TauCeti.isAcyclic_diagramGraph`). -/
-theorem IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le (h : IsFiniteType A) {v : ℕ → B}
+theorem IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le (h : IsFiniteType A)
+    {v : ℕ → B}
     (hv : Set.InjOn v (Set.Iio (m + 3)))
     (hzero : ∀ s t, s + 1 < t → t < m + 3 → A (v s) (v t) = 0)
     (hsimple : ∀ s, 0 < s → s < m + 1 → A (v s) (v (s + 1)) * A (v (s + 1)) (v s) = 1)

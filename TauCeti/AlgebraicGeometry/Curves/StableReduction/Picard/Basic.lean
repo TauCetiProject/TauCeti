@@ -301,6 +301,12 @@ def degree : T.Pic →ₗ[ℤ] ℤ :=
 lemma degree_mk (d : T.Component → ℤ) :
     T.degree (Submodule.Quotient.mk d) = T.totalDegree d := (rfl)
 
+/-- The degree of the unit multidegree supported at a component. -/
+lemma degree_mk_single (i : T.Component) :
+    T.degree (Submodule.Quotient.mk (Pi.single i 1)) =
+      (T.multiplicity i : ℤ) * (T.weight i : ℤ) := by
+  rw [degree_mk, totalDegree, Fintype.linearCombination_apply_single, smul_eq_mul, one_mul]
+
 /-- A class of nonzero total degree has infinite order in `Pic(T)`: no nonzero multiple of it
 vanishes. -/
 theorem smul_ne_zero_of_degree_ne_zero {x : T.Pic} (hx : T.degree x ≠ 0) {n : ℤ} (hn : n ≠ 0) :
@@ -321,7 +327,7 @@ assertion that `Pic(T)` is a finitely generated abelian group of rank one. -/
 theorem smul_mk_single_ne_zero (i : T.Component) {n : ℤ} (hn : n ≠ 0) :
     n • (Submodule.Quotient.mk (Pi.single i 1) : T.Pic) ≠ 0 := by
   refine T.smul_ne_zero_of_degree_ne_zero ?_ hn
-  rw [degree_mk, totalDegree, Fintype.linearCombination_apply_single, smul_eq_mul, one_mul]
+  rw [T.degree_mk_single]
   exact mul_ne_zero (Int.natCast_pos.mpr (T.multiplicity i).pos).ne' (T.weight_ne_zero i)
 
 /-! ### Invariance under equivalences of numerical types -/

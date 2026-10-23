@@ -8,7 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
-public import TauCeti.LinearAlgebra.Determinant
+public import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 
 /-!
 # Alternants
@@ -35,6 +36,14 @@ exponent repeats (`TauCeti.alternant_eq_zero_of_not_injective`) and otherwise ch
 of the sorting permutation (`TauCeti.alternant_comp_perm`) — is the move of one bead on the abacus
 of beta-numbers, which is how the Murnaghan-Nakayama rule arises from it.
 
+The companion rule for elementary symmetric polynomials,
+
+`e_r · a_α = ∑_{|T| = r} a_{α + 1_T}`,
+
+`TauCeti.esymm_mul_alternant`, raises `r` *distinct* exponents by one each instead.  On beta-numbers
+that adds a vertical strip, and since the shifted exponents stay in their original order, no sorting
+sign appears: that is the dual Pieri rule.
+
 ## Main definitions
 
 * `TauCeti.alternant σ R α`: the alternant `det (X_i ^ α_j)` in `MvPolynomial σ R`.
@@ -43,6 +52,8 @@ of beta-numbers, which is how the Murnaghan-Nakayama rule arises from it.
 
 * `TauCeti.alternant_eq_sum`: the Leibniz expansion of the alternant as a signed sum of monomials,
   and `TauCeti.coeff_alternant` with `TauCeti.coeff_alternant_of_injective` its coefficients.
+* `TauCeti.alternant_ne_zero_of_injective`: an alternant of pairwise distinct exponents is
+  nonzero.
 * `TauCeti.isHomogeneous_alternant`: `a_α` is homogeneous of degree `∑ i, α i`.
 * `TauCeti.rename_alternant`: `a_α` is antisymmetric, permuting the variables by `e` multiplying
   it by `sign e`.
@@ -53,6 +64,10 @@ of beta-numbers, which is how the Murnaghan-Nakayama rule arises from it.
 * `TauCeti.alternant_fin_val_eq_vandermonde`: for the exponents `0, 1, …, n - 1` the alternant
   is the Vandermonde product `∏_{i < j} (X_j - X_i)`.
 * `TauCeti.psum_mul_alternant`: the power-sum multiplication rule `p_r · a_α = ∑_j a_{α + r e_j}`.
+* `TauCeti.hsymm_mul_alternant`: the complete-homogeneous multiplication rule
+  `h_r · a_α = ∑_{|γ| = r} a_{α + γ}`.
+* `TauCeti.esymm_mul_alternant`: the elementary-symmetric multiplication rule
+  `e_r · a_α = ∑_{|T| = r} a_{α + 1_T}`.
 
 ## References
 
@@ -60,7 +75,7 @@ of beta-numbers, which is how the Murnaghan-Nakayama rule arises from it.
   Section 3 (alternants and the bialternant formula) and Section 7 (the characters of the
   symmetric groups).
 * R. P. Stanley, *Enumerative Combinatorics, Vol. 2*, Sections 7.15 (the classical definition of
-  Schur functions) and 7.17 (the Murnaghan-Nakayama rule).
+  Schur functions and the Pieri rules) and 7.17 (the Murnaghan-Nakayama rule).
 -/
 
 public section
@@ -131,6 +146,14 @@ theorem coeff_alternant_of_injective {α : σ → ℕ} (hα : Function.Injective
     funext i
     simp
 
+/-- **An alternant of pairwise distinct exponents is nonzero**: the monomial `∏ᵢ X_i ^ α i`
+occurs in it with coefficient `1`. -/
+theorem alternant_ne_zero_of_injective [Nontrivial R] {α : σ → ℕ} (hα : Function.Injective α) :
+    alternant σ R α ≠ 0 := by
+  intro h
+  have := coeff_alternant_of_injective (R := R) hα 1
+  simp [h] at this
+
 /-- An alternant is homogeneous of degree the total of its exponents. -/
 theorem isHomogeneous_alternant (α : σ → ℕ) :
     (alternant σ R α).IsHomogeneous (∑ i, α i) := by
@@ -198,5 +221,99 @@ theorem psum_mul_alternant (r : ℕ) (α : σ → ℕ) :
     · simp [hA, Matrix.updateRow_ne hk, Function.update_of_ne hk]
   rw [sum_congr rfl fun j _ => hcol j, Matrix.sum_det_updateRow_mul_row, Matrix.det_transpose,
     psum, alternant_def]
+
+/-- **The complete-homogeneous multiplication rule for alternants**: multiplying `a_α` by the
+complete homogeneous symmetric polynomial `h_r` gives the sum of the alternants obtained from `α` by
+adding an exponent vector of total degree `r`, `h_r · a_α = ∑_{|γ| = r} a_{α + γ}`.
+
+Unlike the power-sum rule, the shifts here are not supported at a single index, so the terms with a
+repeated exponent do not account for all the cancellation: the surviving terms still have to be
+sorted back into decreasing order.  That extra step is what separates the Pieri rule from the
+Murnaghan-Nakayama rule. -/
+theorem hsymm_mul_alternant (r : ℕ) (α : σ → ℕ) :
+    hsymm σ R r * alternant σ R α =
+      ∑ γ ∈ Finset.piAntidiag (Finset.univ : Finset σ) r,
+        alternant σ R fun i => α i + γ i := by
+  have hsum : ∀ (τ : Perm σ) (γ : σ → ℕ), ∑ i, γ (τ i) = ∑ i, γ i := fun τ γ =>
+    Equiv.sum_comp τ γ
+  -- Twisting the alphabet by a permutation permutes the exponent vectors of total degree `r`, so
+  -- the monomials of `h_r` are the same whichever variable each exponent is attached to.
+  have key : ∀ τ : Perm σ,
+      ∑ γ ∈ Finset.piAntidiag (Finset.univ : Finset σ) r,
+          ∏ i, (X (τ i) : MvPolynomial σ R) ^ γ i = hsymm σ R r := by
+    intro τ
+    rw [hsymm_eq_sum_piAntidiag]
+    refine Finset.sum_nbij' (fun γ => γ ∘ τ.symm) (fun γ => γ ∘ τ) (fun γ hγ => ?_)
+      (fun γ hγ => ?_) (fun γ _ => funext fun i => by simp) (fun γ _ => funext fun i => by simp)
+      fun γ _ => ?_
+    · simp only [Finset.mem_piAntidiag, Finset.mem_univ, implies_true, and_true,
+        Function.comp_apply] at hγ ⊢
+      rw [hsum τ.symm γ, hγ]
+    · simp only [Finset.mem_piAntidiag, Finset.mem_univ, implies_true, and_true,
+        Function.comp_apply] at hγ ⊢
+      rw [hsum τ γ, hγ]
+    · simp only [Function.comp_apply]
+      rw [← Equiv.prod_comp τ fun k => (X k : MvPolynomial σ R) ^ γ (τ.symm k)]
+      exact Finset.prod_congr rfl fun i _ => by rw [Equiv.symm_apply_apply]
+  simp only [alternant_eq_sum, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun τ _ => ?_
+  rw [mul_smul_comm, ← Finset.smul_sum]
+  congr 1
+  rw [← key τ, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun γ _ => ?_
+  rw [← Finset.prod_mul_distrib]
+  exact Finset.prod_congr rfl fun i _ => by rw [← pow_add, Nat.add_comm]
+
+/-- **The elementary-symmetric multiplication rule for alternants**: multiplying `a_α` by the
+elementary symmetric polynomial `e_r = ∑_{|T| = r} ∏_{i ∈ T} X_i` gives the sum of the alternants
+obtained from `α` by raising by one each of the `r` exponents indexed by an `r`-element set,
+`e_r · a_α = ∑_{|T| = r} a_{α + 1_T}`.
+
+Unlike the power-sum rule, this raises no exponent twice, so the shifted exponent vectors are the
+translates of `α` by the indicator of a set. -/
+theorem esymm_mul_alternant (r : ℕ) (α : σ → ℕ) :
+    esymm σ R r * alternant σ R α =
+      ∑ T ∈ powersetCard r (univ : Finset σ),
+        alternant σ R fun j => α j + if j ∈ T then 1 else 0 := by
+  -- Expand both sides by the Leibniz formula.  A permutation `τ` contributes the monomial
+  -- `∏ᵢ X_{τ i} ^ α i` times, on the left, the squarefree monomial of an `r`-element set, and, on
+  -- the right, the squarefree monomial of the set of raised exponents carried along `τ`.
+  have key : ∀ (T : Finset σ) (τ : Perm σ),
+      ∏ i, (X (τ i) : MvPolynomial σ R) ^ (α i + if i ∈ T then 1 else 0) =
+        (∏ i, (X (τ i) : MvPolynomial σ R) ^ α i) *
+          ∏ k ∈ T.map τ.toEmbedding, (X k : MvPolynomial σ R) := by
+    intro T τ
+    rw [prod_map]
+    simp only [Equiv.coe_toEmbedding, pow_add, prod_mul_distrib]
+    congr 1
+    calc ∏ i, (X (τ i) : MvPolynomial σ R) ^ (if i ∈ T then 1 else 0)
+        = ∏ i, if i ∈ T then (X (τ i) : MvPolynomial σ R) else 1 :=
+          prod_congr rfl fun i _ => by split_ifs <;> simp
+      _ = ∏ i ∈ T, (X (τ i) : MvPolynomial σ R) := by rw [prod_ite_mem, univ_inter]
+  rw [eq_comm]
+  calc ∑ T ∈ powersetCard r (univ : Finset σ),
+          alternant σ R (fun j => α j + if j ∈ T then 1 else 0)
+      = ∑ T ∈ powersetCard r (univ : Finset σ), ∑ τ : Perm σ, Perm.sign τ •
+          ((∏ i, (X (τ i) : MvPolynomial σ R) ^ α i) *
+            ∏ k ∈ T.map τ.toEmbedding, (X k : MvPolynomial σ R)) :=
+        sum_congr rfl fun T _ => by
+          rw [alternant_eq_sum]
+          exact sum_congr rfl fun τ _ => by rw [key T τ]
+    _ = ∑ τ : Perm σ, ∑ T ∈ powersetCard r (univ : Finset σ), Perm.sign τ •
+          ((∏ i, (X (τ i) : MvPolynomial σ R) ^ α i) *
+            ∏ k ∈ T.map τ.toEmbedding, (X k : MvPolynomial σ R)) := sum_comm
+    _ = ∑ τ : Perm σ, ∑ T ∈ powersetCard r (univ : Finset σ), Perm.sign τ •
+          ((∏ i, (X (τ i) : MvPolynomial σ R) ^ α i) * ∏ k ∈ T, (X k : MvPolynomial σ R)) :=
+        sum_congr rfl fun τ _ => Finset.sum_equiv (Equiv.finsetCongr τ)
+          (fun T => by simp) fun T _ => by simp
+    _ = ∑ T ∈ powersetCard r (univ : Finset σ), ∑ τ : Perm σ, Perm.sign τ •
+          ((∏ i, (X (τ i) : MvPolynomial σ R) ^ α i) * ∏ k ∈ T, (X k : MvPolynomial σ R)) :=
+        sum_comm
+    _ = esymm σ R r * alternant σ R α := by
+        rw [esymm, sum_mul]
+        refine sum_congr rfl fun T _ => ?_
+        rw [alternant_eq_sum, mul_sum]
+        exact sum_congr rfl fun τ _ => by rw [mul_smul_comm, mul_comm]
 
 end TauCeti

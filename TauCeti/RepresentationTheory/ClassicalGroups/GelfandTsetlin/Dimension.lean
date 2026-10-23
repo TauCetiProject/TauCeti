@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Count
-public import TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension.Basic
 import TauCeti.LinearAlgebra.Vandermonde
 
 /-!
@@ -20,20 +20,20 @@ dimension formula for `GL n`:
 This is `TauCeti.GTPattern.card_topRow_eq_weylDimension`, and its `DominantWeight`-indexed form
 `TauCeti.GTPattern.card_topWeight_eq_weylDimension`.  Both sides are already built: the left by
 `TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Count`, the right by
-`TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension`.  What is proved here is that they
-agree, so that the two candidate dimensions for the irreducible rational representation of `GL n`
-of highest weight `λ` — the number of Gelfand-Tsetlin patterns, and the Weyl product formula —
-are the same natural number.  That either of them *is* the dimension of a representation is not
-proved here and cannot yet be stated: no representation and no Gelfand-Tsetlin basis is
-constructed, and none is used.  This is an identity between a lattice-point count and a product
-formula.
+`TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension.Basic`.  What is proved here is that
+they agree, so that the two candidate dimensions for the irreducible rational representation of
+`GL n` of highest weight `λ` — the number of Gelfand-Tsetlin patterns, and the Weyl product
+formula — are the same natural number.  That either of them *is* the dimension of a
+representation is not proved here and cannot yet be stated: no representation and no
+Gelfand-Tsetlin basis is constructed, and none is used.  This is an identity between a
+lattice-point count and a product formula.
 
 ## The proof
 
-The proof is the branching recursion, exactly as the roadmap asks: deleting the top row of a
-pattern gives `TauCeti.GTPattern.card_topRow_succ`, which counts the patterns over `λ` by the
-patterns over each sequence interlacing `λ`.  So it suffices to know that the Weyl dimension
-satisfies the same recursion, `∑_{μ ≺ λ} dim V_μ = dim V_λ`.
+The proof is the branching recursion: deleting the top row of a pattern gives
+`TauCeti.GTPattern.card_topRow_succ`, which counts the patterns over `λ` by the patterns over each
+sequence interlacing `λ`. So it suffices to know that the Weyl dimension satisfies the same
+recursion, `∑_{μ ≺ λ} dim V_μ = dim V_λ`.
 
 In the shifted coordinates `xₖ = k - λₖ`, which turn a weakly decreasing sequence into a weakly
 increasing one, the Weyl numerator `∏_{i<j} (λᵢ - λⱼ + j - i)` is the Vandermonde determinant of
@@ -45,12 +45,10 @@ the ratio of the two superfactorial denominators.
 
 * `TauCeti.GTPattern.card_topRow_eq_weylDimension`: **the Gelfand-Tsetlin dimension formula.**
 * `TauCeti.GTPattern.card_topWeight_eq_weylDimension`: the same, indexed by a dominant weight.
-* `TauCeti.weylDimension_two_one_zero`: the `GL 3` acceptance example, `dim V_{(2,1,0)} = 8`.
+* `TauCeti.weylDimension_two_one_zero`: a worked `GL 3` example, `dim V_{(2,1,0)} = 8`.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 6, "The Gelfand-Tsetlin dimension formula".
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), §15.3 and Exercise 15.4.
 -/
 
@@ -205,10 +203,10 @@ theorem card_topWeight_eq_weylDimension {n : ℕ} (l : DominantWeight n) :
 
 end GTPattern
 
-/-- **The `GL 3` acceptance example**: the weight `(2, 1, 0)` has Weyl dimension `8`, the dimension
-of the adjoint representation of `SL 3`.  Read off the eight Gelfand-Tsetlin patterns over that top
-row (`TauCeti.GTPattern.card_topRow_three_two_one_zero`) through the dimension formula, rather than
-by evaluating the product. -/
+/-- **A worked `GL 3` example**: the weight `(2, 1, 0)` has Weyl dimension `8`, the dimension of the
+adjoint representation of `SL 3`. Read off the eight Gelfand-Tsetlin patterns over that top row
+(`TauCeti.GTPattern.card_topRow_three_two_one_zero`) through the dimension formula, rather than by
+evaluating the product. -/
 theorem weylDimension_two_one_zero :
     weylDimension (⟨![2, 1, 0], by decide⟩ : DominantWeight 3) = 8 :=
   (GTPattern.card_topRow_eq_weylDimension ⟨![2, 1, 0], by decide⟩).symm.trans

@@ -57,8 +57,7 @@ theorem range_eq_invariants_of_liftBaseChange_surjective
         IsScalarTower.algebraMap_smul]
     have hmem (x : L ⊗[k] W) :
         ρ.norm (a • f.liftBaseChange L x) ∈ LinearMap.range f := by
-      induction x using TensorProduct.induction_on with
-      | zero => simp
+      induction x using TensorProduct.inductionOn with
       | tmul b w =>
           rw [LinearMap.liftBaseChange_tmul, smul_smul, hnorm]
           exact ⟨Algebra.trace k L (a * b) • w, f.map_smul _ _⟩

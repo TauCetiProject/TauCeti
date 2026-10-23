@@ -66,10 +66,7 @@ private theorem splitting_map_comp_comul :
         (TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
           k L k L L L B B ((1 ⊗ₜ[L] a) ⊗ₜ[k] t)) =
         a • (groupAlgebraInvariantsTensorEquiv rho t : A ⊗[L] A) := by
-    induction t using TensorProduct.induction_on with
-    | zero =>
-        simp only [TensorProduct.tmul_zero, LinearEquiv.map_zero]
-        simp
+    induction t using TensorProduct.inductionOn with
     | tmul y z => simp [TensorProduct.tmul_smul]
     | add y z hy hz =>
         simp only [TensorProduct.tmul_add, LinearEquiv.map_add]
@@ -110,13 +107,12 @@ theorem groupAlgebraInvariantsBaseChangeBialgEquiv_symm_apply (x : B) :
 
 /-- The splitting identifies the scalar-factor Galois action on the base change with the
 simultaneous coefficient and exponent action on the split group algebra. -/
--- Use as an explicit rewrite: `simp` expands the action via `ScalarAut.smul_def` first.
+@[simp]
 theorem groupAlgebraInvariantsBaseChangeBialgEquiv_smul (sigma : L ≃ₐ[k] L)
     (x : L ⊗[k] B) :
     groupAlgebraInvariantsBaseChangeBialgEquiv rho (sigma • x) =
       groupAlgebraAction rho sigma (groupAlgebraInvariantsBaseChangeBialgEquiv rho x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [smul_add, map_add, hx, hy]
   | tmul a x =>
       rw [ScalarAut.smul_tmul, groupAlgebraInvariantsBaseChangeBialgEquiv_tmul,

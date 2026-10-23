@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.BigOperators.Finset.Range
 public import TauCeti.RingTheory.Nilpotent.BaseChangeAction
 public import Mathlib.Algebra.Lie.Derivation.BaseChange
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Integral exponentials of nilpotent Lie derivations
@@ -121,7 +122,7 @@ private theorem baseChangeExp_tmul_lie (D : LieDerivation ℚ L L) (M : LieSubal
         ∑ n ∈ range (2 * k), ∑ ij ∈ antidiagonal n,
           (t ^ (ij.1 + ij.2) * (a * b)) ⊗ₜ[ℤ] ⁅d ij.1 x, d ij.2 y⁆ := by
       apply Finset.sum_congr rfl
-      intro n hn
+      intro n _
       rw [integralDividedPower_lie, TensorProduct.tmul_sum]
       apply Finset.sum_congr rfl
       intro ij hij
@@ -158,11 +159,9 @@ theorem baseChangeExp_lie (D : LieDerivation ℚ L L) (M : LieSubalgebra ℤ L)
         baseChangeExp D.toLinearMap M hM t y⁆ := by
   let _ : LieRing (R ⊗[ℤ] M) := LieAlgebra.ExtendScalars.instLieRing ℤ R M
   let _ : LieAlgebra R (R ⊗[ℤ] M) := LieAlgebra.ExtendScalars.instLieAlgebra ℤ R M
-  induction x using TensorProduct.induction_on with
-  | zero => rw [zero_lie, map_zero, zero_lie]
+  induction x using TensorProduct.inductionOn with
   | tmul a x =>
-      induction y using TensorProduct.induction_on with
-      | zero => rw [lie_zero, map_zero, lie_zero]
+      induction y using TensorProduct.inductionOn with
       | tmul b y => exact baseChangeExp_tmul_lie D M hM hD t a b x y
       | add y z hy hz =>
           rw [lie_add, map_add, hy, hz]

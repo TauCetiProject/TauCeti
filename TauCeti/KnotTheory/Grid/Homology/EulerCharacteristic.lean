@@ -11,6 +11,7 @@ public import TauCeti.KnotTheory.Grid.EulerCharacteristic
 
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.Homology.CochainComplexOpposite
+import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
 import TauCeti.Algebra.Homology.Embedding.Restriction
 import TauCeti.Algebra.Homology.EulerCharacteristic.FiniteDimensional
 

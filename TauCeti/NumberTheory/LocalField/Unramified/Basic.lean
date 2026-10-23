@@ -1,0 +1,379 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.Smooth.Fiber
+public import Mathlib.RingTheory.Unramified.LocalRing
+public import TauCeti.NumberTheory.LocalField.InertiaDegree
+public import TauCeti.RingTheory.Unramified.LocalRing
+
+/-!
+# Unramified extensions of local fields
+
+Let `L/K` be an extension of nonarchimedean local fields whose valuations are compatible, in the
+sense of `ValuativeExtension K L`. This file defines the predicate
+
+`TauCeti.IsUnramified K L`
+
+by the two conditions that the value group of `K` is carried onto that of `L`, in the form
+`ramificationIndex K L = 1`, and that the residue extension `𝓀[L] / 𝓀[K]` is separable. The
+second condition is automatic here, because the residue field of a nonarchimedean local field is
+finite and hence perfect, but it is the condition that makes the predicate the arithmetic notion
+of unramifiedness for a general valued field, and it is what the comparison with the étale
+notions rests on.
+
+The file proves the equivalent forms of the predicate that later work uses: the value-group form,
+the valuation form `v_L ∘ algebraMap = v_K`, the ideal form `𝓂[K] 𝒪[L] = 𝓂[L]`, the degree form
+`f(L/K) = [L : K]`, and the comparison with `Algebra.FormallyUnramified 𝒪[K] 𝒪[L]`,
+`Algebra.IsUnramifiedAt 𝒪[K] 𝓂[L]` and `Algebra.Etale 𝒪[K] 𝒪[L]`, which makes Mathlib's
+unramifiedness and étale theory available for extensions of local fields. Unramifiedness is also
+shown to be stable in a tower in both directions.
+
+The ideal form is what makes the integers of an unramified extension a lattice modelled on the
+residue extension: reduction modulo `𝓂[K] 𝒪[L] = 𝓂[L]` loses no generators, by
+`TauCeti.IsLocalRing.span_residue_image_eq_top_iff_span_eq_top`, and the two extensions have the
+same degree. Bases therefore correspond in both directions: a family of elements of `𝒪[L]`
+lifting a basis of `𝓀[L]` over `𝓀[K]` is a basis of `𝒪[L]` over `𝒪[K]`, and the reduction of a
+basis of `𝒪[L]` over `𝒪[K]` is a basis of `𝓀[L]` over `𝓀[K]`. These integral bases are the
+computational input to the norm and trace of an unramified extension.
+
+## Main definitions
+
+* `TauCeti.IsUnramified`: an extension of nonarchimedean local fields is unramified when its
+  ramification index is `1` and its residue extension is separable.
+* `TauCeti.IsUnramified.basisOfResidueBasis`: the integral basis of `𝒪[L]` over `𝒪[K]` given by
+  a family lifting a basis of `𝓀[L]` over `𝓀[K]`.
+* `TauCeti.IsUnramified.residueBasis`: the basis of `𝓀[L]` over `𝓀[K]` given by the reduction of
+  a basis of `𝒪[L]` over `𝒪[K]`.
+
+## Main results
+
+* `TauCeti.isUnramified_iff_ramificationIndex_eq_one`: the separability condition is automatic,
+  so the predicate is `e(L/K) = 1`.
+* `TauCeti.isUnramified_iff_normalizedValuation_comp_unitsMap_surjective`: `L/K` is unramified
+  exactly when the normalized value group of `K` is carried onto that of `L`.
+* `TauCeti.isUnramified_iff_normalizedValuation_algebraMap`: `L/K` is unramified exactly when the
+  normalized valuation of `L` restricts to that of `K`.
+* `TauCeti.isUnramified_iff_map_maximalIdeal_eq`: `L/K` is unramified exactly when `𝓂[K]`
+  generates `𝓂[L]`.
+* `TauCeti.IsUnramified.irreducible_algebraMap`: in an unramified extension a uniformizer of `K`
+  stays a uniformizer of `L`.
+* `TauCeti.isUnramified_iff_inertiaDegree_eq_finrank`: `L/K` is unramified exactly when
+  `f(L/K) = [L : K]`.
+* `TauCeti.IsUnramified.isTamelyRamified`: an unramified extension is tamely ramified.
+* `TauCeti.isUnramified_tower_iff`, `TauCeti.IsUnramified.trans`,
+  `TauCeti.IsUnramified.tower_bot` and `TauCeti.IsUnramified.tower_top`: `M/K` is unramified
+  exactly when both steps of a tower `M/L/K` are.
+* `TauCeti.IsUnramified.ramificationIndex_tower_eq`,
+  `TauCeti.IsUnramified.inertiaDegree_tower_eq` and
+  `TauCeti.IsUnramified.isTotallyRamified_iff_finrank_eq`: over an unramified `L/K`, the top
+  step `M/L` has the ramification index of `M/K`, has residue degree `f(M/K) / [L : K]`, and is
+  totally ramified exactly when `[L : K] = f(M/K)`.
+* `TauCeti.isUnramified_iff_formallyUnramified`, `TauCeti.isUnramified_iff_isUnramifiedAt` and
+  `TauCeti.isUnramified_iff_etale`: the comparison with Mathlib's `Algebra.FormallyUnramified`,
+  `Algebra.IsUnramifiedAt` and `Algebra.Etale` for `𝒪[L]` over `𝒪[K]`.
+* `TauCeti.IsUnramified.finrank_integerRing_eq_finrank_residueField`: the rank of `𝒪[L]` over
+  `𝒪[K]` is the degree of the residue extension.
+* `TauCeti.IsUnramified.residueBasis_repr`: the coordinates of a residue in the residue basis
+  are the residues of the integral coordinates.
+* `TauCeti.IsUnramified.residueBasis_basisOfResidueBasis` and
+  `TauCeti.IsUnramified.basisOfResidueBasis_residueBasis`: the two constructions are mutually
+  inverse.
+* `TauCeti.IsUnramified.exists_basis_residue_eq`: every basis of the residue extension is the
+  reduction of an integral basis.
+
+## References
+
+* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter I, §4 and Chapter III, §5.
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, §7.
+-/
+
+public section
+
+open ValuativeRel IsLocalRing
+
+namespace TauCeti
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+
+variable (K L) in
+/-- An extension `L/K` of nonarchimedean local fields with compatible valuations is
+**unramified** when the normalized value group of `K` is carried onto that of `L`, that is
+`e(L/K) = 1`, and the residue extension `𝓀[L] / 𝓀[K]` is separable.
+
+The separability condition is automatic for nonarchimedean local fields, whose residue fields
+are finite and hence perfect; it is carried in the definition because it is what the notion means
+for a general valued field, and it is one of the two halves of Mathlib's criterion
+`Algebra.FormallyUnramified.iff_map_maximalIdeal_eq`. -/
+class IsUnramified : Prop where
+  /-- The ramification index of an unramified extension is `1`. -/
+  ramificationIndex_eq_one : ramificationIndex K L = 1
+  /-- The residue extension of an unramified extension is separable. -/
+  isSeparable_residueField : Algebra.IsSeparable 𝓀[K] 𝓀[L]
+
+attribute [simp] IsUnramified.ramificationIndex_eq_one
+
+variable (K L) in
+/-- **An extension of nonarchimedean local fields is unramified exactly when `e(L/K) = 1`.** The
+residue extension of such an extension is automatically separable, its residue fields being
+finite. -/
+theorem isUnramified_iff_ramificationIndex_eq_one :
+    IsUnramified K L ↔ ramificationIndex K L = 1 :=
+  ⟨fun _ ↦ IsUnramified.ramificationIndex_eq_one, fun h ↦ ⟨h, inferInstance⟩⟩
+
+variable (K L) in
+/-- **An extension of nonarchimedean local fields is unramified exactly when the normalized value
+group of `K` is carried onto the normalized value group of `L`.** This is the form the definition
+takes for a general valued field: the map of value groups is injective in any case, so
+unramifiedness is exactly its surjectivity. -/
+theorem isUnramified_iff_normalizedValuation_comp_unitsMap_surjective :
+    IsUnramified K L ↔ Function.Surjective
+      ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))) := by
+  rw [isUnramified_iff_ramificationIndex_eq_one, ramificationIndex_def, Subgroup.index_eq_one,
+    MonoidHom.range_eq_top]
+
+variable (K L) in
+/-- **An extension of nonarchimedean local fields is unramified exactly when the normalized
+valuation of `L` restricts along the algebra map to the normalized valuation of `K`.** -/
+theorem isUnramified_iff_normalizedValuation_algebraMap :
+    IsUnramified K L ↔ ∀ x : Kˣ,
+      normalizedValuation L (Units.map (algebraMap K L : K →* L) x) = normalizedValuation K x := by
+  rw [isUnramified_iff_ramificationIndex_eq_one, ramificationIndex_eq_iff]
+  simp only [pow_one]
+
+/-- In an unramified extension the normalized valuation of `L` extends that of `K`. -/
+theorem IsUnramified.normalizedValuation_algebraMap [IsUnramified K L] (x : Kˣ) :
+    normalizedValuation L (Units.map (algebraMap K L : K →* L) x) = normalizedValuation K x :=
+  (isUnramified_iff_normalizedValuation_algebraMap K L).1 ‹_› x
+
+variable (K L) in
+/-- **An extension of nonarchimedean local fields is unramified exactly when the maximal ideal of
+`𝒪[K]` generates the maximal ideal of `𝒪[L]`.** -/
+theorem isUnramified_iff_map_maximalIdeal_eq :
+    IsUnramified K L ↔ 𝓂[K].map (algebraMap 𝒪[K] 𝒪[L]) = 𝓂[L] := by
+  rw [isUnramified_iff_ramificationIndex_eq_one, map_maximalIdeal_eq_maximalIdeal_pow]
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  refine ⟨fun h ↦ by rw [h, pow_one], fun h ↦ ?_⟩
+  rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ, Ideal.span_singleton_pow,
+    Ideal.span_singleton_eq_span_singleton] at h
+  have hdvd : ϖ ^ ramificationIndex K L ∣ ϖ ^ 1 := by simpa using h.dvd
+  have := (pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit).1 hdvd
+  have := ramificationIndex_pos (K := K) (L := L)
+  omega
+
+/-- In an unramified extension the maximal ideal of `𝒪[K]` generates the maximal ideal of
+`𝒪[L]`. -/
+@[simp]
+theorem IsUnramified.map_maximalIdeal [IsUnramified K L] :
+    𝓂[K].map (algebraMap 𝒪[K] 𝒪[L]) = 𝓂[L] :=
+  (isUnramified_iff_map_maximalIdeal_eq K L).1 ‹_›
+
+/-- **In an unramified extension a uniformizer of `K` stays a uniformizer of `L`.** -/
+theorem IsUnramified.irreducible_algebraMap [IsUnramified K L] {π : 𝒪[K]} (hπ : Irreducible π) :
+    Irreducible (algebraMap 𝒪[K] 𝒪[L] π) := by
+  rw [IsDiscreteValuationRing.irreducible_iff_uniformizer,
+    ← IsUnramified.map_maximalIdeal (K := K),
+    (IsDiscreteValuationRing.irreducible_iff_uniformizer π).1 hπ, Ideal.map_span,
+    Set.image_singleton]
+
+variable (K L) in
+/-- **An extension of nonarchimedean local fields is unramified exactly when its residue degree
+is its degree**, that is `f(L/K) = [L : K]`. -/
+theorem isUnramified_iff_inertiaDegree_eq_finrank :
+    IsUnramified K L ↔ inertiaDegree K L = Module.finrank K L := by
+  rw [isUnramified_iff_ramificationIndex_eq_one, ← ramificationIndex_mul_inertiaDegree]
+  refine ⟨fun h ↦ by rw [h, one_mul], fun h ↦ ?_⟩
+  exact Nat.eq_of_mul_eq_mul_right inertiaDegree_pos (by rw [← h, one_mul])
+
+/-- In an unramified extension the residue degree is the degree of the extension. -/
+@[simp]
+theorem IsUnramified.inertiaDegree_eq_finrank [IsUnramified K L] :
+    inertiaDegree K L = Module.finrank K L :=
+  (isUnramified_iff_inertiaDegree_eq_finrank K L).1 ‹_›
+
+variable (K L) in
+/-- An unramified extension of nonarchimedean local fields is tamely ramified: its ramification
+index `1` is prime to the residue characteristic. -/
+theorem IsUnramified.isTamelyRamified [IsUnramified K L] : IsTamelyRamified K L := by
+  rw [isTamelyRamified_iff, IsUnramified.ramificationIndex_eq_one, Nat.dvd_one]
+  exact (CharP.prime_ringChar 𝓀[K]).ne_one
+
+section Tower
+
+variable (K L) (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
+  [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
+  [ValuativeExtension L M] [ValuativeExtension K M]
+
+/-- **Unramifiedness in a tower** `M/L/K`: the extension `M/K` is unramified exactly when both
+`L/K` and `M/L` are. -/
+theorem isUnramified_tower_iff :
+    IsUnramified K M ↔ IsUnramified K L ∧ IsUnramified L M := by
+  simp only [isUnramified_iff_ramificationIndex_eq_one,
+    ramificationIndex_tower (K := K) (L := L) M, mul_eq_one]
+
+/-- Unramifiedness is transitive in a tower `M/L/K`. -/
+theorem IsUnramified.trans [IsUnramified K L] [IsUnramified L M] : IsUnramified K M :=
+  (isUnramified_tower_iff K L M).2 ⟨‹_›, ‹_›⟩
+
+/-- The bottom step of an unramified tower is unramified. -/
+theorem IsUnramified.tower_bot [IsUnramified K M] : IsUnramified K L :=
+  ((isUnramified_tower_iff K L M).1 ‹_›).1
+
+/-- The top step of an unramified tower is unramified. -/
+theorem IsUnramified.tower_top [IsUnramified K M] : IsUnramified L M :=
+  ((isUnramified_tower_iff K L M).1 ‹_›).2
+
+omit [ValuativeExtension K M] in
+/-- Over an unramified `L/K`, the top step of a tower `M/L/K` has the ramification index of the
+whole extension: `e(M/L) = e(M/K)`. -/
+theorem IsUnramified.ramificationIndex_tower_eq [IsUnramified K L] :
+    ramificationIndex L M = ramificationIndex K M := by
+  rw [ramificationIndex_tower (K := K) (L := L) M,
+    IsUnramified.ramificationIndex_eq_one (K := K) (L := L), one_mul]
+
+/-- Over an unramified `L/K`, the residue degree of a tower `M/L/K` factors as
+`f(M/K) = [L : K] · f(M/L)`. -/
+theorem IsUnramified.inertiaDegree_tower_eq [IsUnramified K L] :
+    inertiaDegree K M = Module.finrank K L * inertiaDegree L M := by
+  rw [inertiaDegree_tower (K := K) (L := L) M, IsUnramified.inertiaDegree_eq_finrank]
+
+/-- Over an unramified `L/K`, the top step of a tower `M/L/K` is totally ramified exactly when
+`L/K` already has the full residue degree `f(M/K)`. -/
+theorem IsUnramified.isTotallyRamified_iff_finrank_eq [IsUnramified K L] :
+    IsTotallyRamified L M ↔ Module.finrank K L = inertiaDegree K M := by
+  have hpos : 0 < Module.finrank K L :=
+    IsUnramified.inertiaDegree_eq_finrank (K := K) (L := L) ▸ inertiaDegree_pos
+  rw [isTotallyRamified_iff_inertiaDegree_eq_one, IsUnramified.inertiaDegree_tower_eq K L M]
+  exact ⟨fun h ↦ by rw [h, mul_one],
+    fun h ↦ Nat.eq_of_mul_eq_mul_left hpos (by rw [mul_one]; exact h.symm)⟩
+
+end Tower
+
+variable (K L) in
+/-- **An extension of nonarchimedean local fields is unramified exactly when `𝒪[L]` is formally
+unramified over `𝒪[K]`.** -/
+theorem isUnramified_iff_formallyUnramified :
+    IsUnramified K L ↔ Algebra.FormallyUnramified 𝒪[K] 𝒪[L] := by
+  rw [Algebra.FormallyUnramified.iff_map_maximalIdeal_eq, isUnramified_iff_map_maximalIdeal_eq]
+  exact ⟨fun h ↦ ⟨inferInstance, h⟩, fun h ↦ h.2⟩
+
+variable (K L) in
+/-- **An extension of nonarchimedean local fields is unramified exactly when `𝒪[L]` is unramified
+over `𝒪[K]` at `𝓂[L]`**, in Mathlib's sense. -/
+theorem isUnramified_iff_isUnramifiedAt :
+    IsUnramified K L ↔ Algebra.IsUnramifiedAt 𝒪[K] 𝓂[L] := by
+  rw [isUnramifiedAt_maximalIdeal_iff, isUnramified_iff_formallyUnramified]
+
+variable (K L) in
+/-- **An extension of nonarchimedean local fields is unramified exactly when `𝒪[L]` is étale over
+`𝒪[K]`.** -/
+theorem isUnramified_iff_etale : IsUnramified K L ↔ Algebra.Etale 𝒪[K] 𝒪[L] := by
+  rw [isUnramified_iff_formallyUnramified]
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  -- `𝒪[L]` is finite and free over the noetherian ring `𝒪[K]`, so it is flat and of finite
+  -- presentation, and étale is then the same as formally unramified.
+  have : Algebra.FinitePresentation 𝒪[K] 𝒪[L] :=
+    Algebra.FinitePresentation.of_finiteType.1 inferInstance
+  exact Algebra.Etale.of_formallyUnramified_of_flat
+
+/-! ### The integral basis attached to a residue basis -/
+
+variable (K L) in
+/-- **In an unramified extension the rank of `𝒪[L]` over `𝒪[K]` is the degree of the residue
+extension.** Both are the degree `[L : K]`. This is Mathlib's
+`IsLocalRing.finrank_eq_finrank_residueField` for the étale extension `𝒪[L]/𝒪[K]` of
+`isUnramified_iff_etale`, stated for local fields. -/
+theorem IsUnramified.finrank_integerRing_eq_finrank_residueField [IsUnramified K L] :
+    Module.finrank 𝒪[K] 𝒪[L] = Module.finrank 𝓀[K] 𝓀[L] := by
+  rw [finrank_integerRing, ← inertiaDegree_def, IsUnramified.inertiaDegree_eq_finrank]
+
+section ResidueBasis
+
+variable {ι : Type*} [Fintype ι]
+
+/-- **The integral basis of an unramified extension attached to a residue basis**: a family in
+`𝒪[L]` whose residues form a basis of `𝓀[L]` over `𝓀[K]` is a basis of `𝒪[L]` over `𝒪[K]`. -/
+noncomputable def IsUnramified.basisOfResidueBasis [IsUnramified K L]
+    (b : Module.Basis ι 𝓀[K] 𝓀[L]) (x : ι → 𝒪[L]) (hx : ∀ i, residue 𝒪[L] (x i) = b i) :
+    Module.Basis ι 𝒪[K] 𝒪[L] :=
+  basisOfTopLeSpanOfCardEqFinrank x
+    (by
+      refine ((IsLocalRing.span_residue_image_eq_top_iff_span_eq_top
+        (IsUnramified.map_maximalIdeal (K := K) (L := L))).1 ?_).ge
+      rw [← Set.range_comp]
+      simpa only [Function.comp_def, hx] using b.span_eq)
+    (by rw [IsUnramified.finrank_integerRing_eq_finrank_residueField K L,
+      ← Module.finrank_eq_card_basis b])
+
+@[simp]
+theorem IsUnramified.coe_basisOfResidueBasis [IsUnramified K L]
+    (b : Module.Basis ι 𝓀[K] 𝓀[L]) (x : ι → 𝒪[L]) (hx : ∀ i, residue 𝒪[L] (x i) = b i) :
+    ⇑(IsUnramified.basisOfResidueBasis b x hx) = x :=
+  coe_basisOfTopLeSpanOfCardEqFinrank ..
+
+/-- **The residue basis of an integral basis of an unramified extension**: the reduction of a
+basis of `𝒪[L]` over `𝒪[K]` is a basis of `𝓀[L]` over `𝓀[K]`. This is Mathlib's
+`IsLocalRing.basisQuotient` for the quotients by `𝓂[K]` and `𝓂[K] 𝒪[L]`, stated for the residue
+fields themselves, which it identifies because `𝓂[K] 𝒪[L] = 𝓂[L]`. -/
+noncomputable def IsUnramified.residueBasis [IsUnramified K L]
+    (B : Module.Basis ι 𝒪[K] 𝒪[L]) : Module.Basis ι 𝓀[K] 𝓀[L] :=
+  basisOfTopLeSpanOfCardEqFinrank (residue 𝒪[L] ∘ B)
+    (by
+      rw [Set.range_comp]
+      exact ((IsLocalRing.span_residue_image_eq_top_iff_span_eq_top
+        (IsUnramified.map_maximalIdeal (K := K) (L := L))).2 B.span_eq).ge)
+    (by rw [← IsUnramified.finrank_integerRing_eq_finrank_residueField K L,
+      ← Module.finrank_eq_card_basis B])
+
+@[simp]
+theorem IsUnramified.coe_residueBasis [IsUnramified K L] (B : Module.Basis ι 𝒪[K] 𝒪[L]) :
+    ⇑(IsUnramified.residueBasis B) = residue 𝒪[L] ∘ B :=
+  coe_basisOfTopLeSpanOfCardEqFinrank ..
+
+/-- The coordinates of the residue of `x` in the residue basis of `B` are the residues of the
+coordinates of `x` in `B`. -/
+@[simp]
+theorem IsUnramified.residueBasis_repr [IsUnramified K L] (B : Module.Basis ι 𝒪[K] 𝒪[L])
+    (x : 𝒪[L]) (i : ι) :
+    (IsUnramified.residueBasis B).repr (residue 𝒪[L] x) i = residue 𝒪[K] (B.repr x i) := by
+  have hx : residue 𝒪[L] x = ∑ c, residue 𝒪[K] (B.repr x c) • IsUnramified.residueBasis B c := by
+    conv_lhs => rw [← B.sum_repr x]
+    simp only [map_sum, Algebra.smul_def, map_mul, ← ResidueField.algebraMap_residue,
+      IsUnramified.coe_residueBasis, Function.comp_apply]
+  rw [hx, Module.Basis.repr_sum_self]
+
+/-- Reducing the integral basis lifting a residue basis returns that residue basis. -/
+@[simp]
+theorem IsUnramified.residueBasis_basisOfResidueBasis [IsUnramified K L]
+    (b : Module.Basis ι 𝓀[K] 𝓀[L]) (x : ι → 𝒪[L]) (hx : ∀ i, residue 𝒪[L] (x i) = b i) :
+    IsUnramified.residueBasis (IsUnramified.basisOfResidueBasis b x hx) = b :=
+  DFunLike.coe_injective <| by
+    rw [IsUnramified.coe_residueBasis, IsUnramified.coe_basisOfResidueBasis]
+    exact funext hx
+
+/-- Lifting the reduction of an integral basis returns that integral basis. -/
+@[simp]
+theorem IsUnramified.basisOfResidueBasis_residueBasis [IsUnramified K L]
+    (B : Module.Basis ι 𝒪[K] 𝒪[L]) :
+    IsUnramified.basisOfResidueBasis (IsUnramified.residueBasis B) B
+      (fun i ↦ (congrFun (IsUnramified.coe_residueBasis B) i).symm) = B :=
+  DFunLike.coe_injective (IsUnramified.coe_basisOfResidueBasis ..)
+
+end ResidueBasis
+
+/-- Every basis of the residue extension of an unramified extension is the reduction of a basis
+of `𝒪[L]` over `𝒪[K]`. -/
+theorem IsUnramified.exists_basis_residue_eq [IsUnramified K L] {ι : Type*}
+    (b : Module.Basis ι 𝓀[K] 𝓀[L]) :
+    ∃ B : Module.Basis ι 𝒪[K] 𝒪[L], ∀ i, residue 𝒪[L] (B i) = b i := by
+  have := Module.Finite.finite_basis b
+  let _ := Fintype.ofFinite ι
+  choose x hx using fun i ↦ residue_surjective (R := 𝒪[L]) (b i)
+  exact ⟨IsUnramified.basisOfResidueBasis b x hx, by simp [hx]⟩
+
+end TauCeti

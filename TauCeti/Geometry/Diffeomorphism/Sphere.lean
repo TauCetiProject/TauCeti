@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Diffeomorphism.Group
+public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.LinearAlgebra.OrthogonalGroup
+import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # The orthogonal group acts on the sphere by diffeomorphisms
@@ -21,16 +23,13 @@ sphere as an analytic manifold, and assembles the restrictions into a group homo
 linear isometry group is the orthogonal group `O(n + 1)`, this is the reference inclusion
 `O(n + 1) → Diff(Sⁿ)`.
 
-That inclusion is the last item asked for by layer 3 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`, layer 3, "diffeomorphism groups with the C^∞
-topology"): "The reference inclusion `O(n+1) → Diff(Sⁿ)` (consume `Matrix.orthogonalGroup`,
-layer 7's isometry action, and the sphere instance) as a continuous group homomorphism". The
-roadmap wants it *continuous* for the `C^∞` topology on `Diff(Sⁿ)`, and that topology is a
-separate layer-3 deliverable which does not exist yet, so this file builds the group
-homomorphism and stops there; continuity is a statement to add once the topology lands. It is
-also the map whose source and target the Smale conjecture `Diff(S³) ≃ O(4)`
-(`[Kir97, Problem 4.34]`, Hatcher) compares, and the roadmap's acceptance criterion "the
-inclusion `O(4) → Diff(S³)` is stateable" is `TauCeti.orthogonalToDiffSphere 3 ω`.
+The inclusion is continuous for the subspace topology on `O(n + 1)` and the weak Whitney `C^m`
+topology on the diffeomorphism group, from `TauCeti.Geometry.Diffeomorphism.Topology`. More
+generally, restricting a continuous family of linear isometry equivalences to the unit sphere
+gives a continuous family of `C^m` maps. This is the map whose source and target the Smale
+conjecture `Diff(S³) ≃ O(4)` (`[Kir97, Problem 4.34]`, Hatcher) compares: the conjecture asserts
+that `TauCeti.orthogonalToDiffSphere 3 ω` is a homotopy equivalence, a statement that needs the
+continuity proved here.
 
 ## Main definitions
 
@@ -46,7 +45,10 @@ inclusion `O(4) → Diff(S³)` is stateable" is `TauCeti.orthogonalToDiffSphere 
 ## Main results
 
 * `LinearIsometryEquiv.contMDiff_unitSphereEquiv`: the restriction to the unit sphere is
-  `C^m` for every smoothness exponent.
+  `C^m` for every smoothness exponent, so the linear isometry group acts on the unit sphere by
+  `C^m` maps (a `ContMDiffConstSMul` instance).
+* `LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction,
+  read in the ambient spaces through the sphere inclusions, is the linear isometry itself.
 * `LinearIsometryEquiv.isometry_unitSphereEquiv`: it is an isometry for the distance the
   sphere inherits from `E`, so the action is by isometries of the round sphere.
 * `LinearIsometryEquiv.unitSphereDiffeomorph_neg_apply`: the diffeomorphism induced by
@@ -56,6 +58,12 @@ inclusion `O(4) → Diff(S³)` is stateable" is `TauCeti.orthogonalToDiffSphere 
   `LinearIsometryEquiv.unitSphereDiffHom_injective` and
   `TauCeti.orthogonalToDiffSphere_injective`: the inclusion is injective, so `O(n + 1)` is
   realised as a subgroup of `Diff(Sⁿ)`.
+* `Continuous.toContMDiffMap_unitSphereDiffeomorph`: the restriction to the unit sphere of a
+  continuous family of linear isometry equivalences is continuous in the weak Whitney topology.
+* `TauCeti.continuous_orthogonalToDiffSphere`: the reference inclusion `O(n + 1) → Diff(Sⁿ)` is
+  continuous.
+* `TauCeti.continuousOrthogonalToDiffSphere`: the reference inclusion packaged as a continuous
+  map.
 
 ## Implementation notes
 
@@ -88,6 +96,25 @@ theorem contMDiff_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) :
   refine (h.codRestrict_sphere (n := k) fun x =>
     (map_mem_unitSphere_iff e _).2 x.2).congr fun x => ?_
   exact Subtype.ext (coe_unitSphereEquiv_apply e x)
+
+/-- The differential of the restriction of a linear isometry to the unit spheres, read in the
+ambient space through the inclusion of the target sphere, is the linear isometry applied to the
+tangent vector read in the ambient space. -/
+-- Compute the ambient derivative before exposing its tangent-space identification.
+@[simp↓]
+theorem mvfderiv_coe_sphere_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) (x : sphere (0 : E) 1)
+    (v : TangentSpace (𝓡 n) x) :
+    mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
+        (mfderiv (𝓡 n) (𝓡 k) (unitSphereEquiv e) x v) =
+      e (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) := by
+  have hcomp : ((↑) : sphere (0 : F) 1 → F) ∘ unitSphereEquiv e =
+      e ∘ ((↑) : sphere (0 : E) 1 → E) :=
+    funext fun y ↦ coe_unitSphereEquiv_apply e y
+  rw [← mvfderiv_comp_apply x (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero)
+    ((contMDiff_unitSphereEquiv (m := 1) e).mdifferentiableAt one_ne_zero), hcomp,
+    mvfderiv_comp_apply x ((e.contDiff (n := 1)).contMDiff.mdifferentiableAt one_ne_zero)
+      (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero), mvfderiv_eq_fderiv, e.fderiv]
+  simp [mvfderiv]
 
 /-- The diffeomorphism between unit spheres induced by a linear isometry equivalence. -/
 def unitSphereDiffeomorph (e : E ≃ₗᵢ[ℝ] F) (m : ℕ∞ω) :
@@ -154,13 +181,101 @@ theorem unitSphereDiffHom_injective :
   refine TauCeti.LinearMap.eq_of_eqOn_unitSphere fun x hx => ?_
   simpa using congrArg Subtype.val (DFunLike.congr_fun h ⟨x, hx⟩)
 
+/-- The linear isometry group of `E` acts on the unit sphere by `C^m` maps, for every smoothness
+exponent `m`. -/
+instance : ContMDiffConstSMul (𝓡 n) m (E ≃ₗᵢ[ℝ] E) (sphere (0 : E) 1) :=
+  ⟨contMDiff_unitSphereEquiv⟩
+
 end InnerProduct
+
+section Continuity
+
+/-! ### Continuity in the linear isometry
+
+The restriction of a linear isometry to the unit sphere depends continuously on the isometry,
+for the weak Whitney topology on the `C^m` maps between the spheres.
+-/
+
+open TopologicalSpace
+open scoped TauCeti.ManifoldWeakWhitney
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+variable {n k : ℕ} [Fact (finrank ℝ E = n + 1)] [Fact (finrank ℝ F = k + 1)] {m : ℕ∞ω}
+
+variable (n) in
+/-- The invertible continuous linear maps from `E` to `F`, an open subset of `E →L[ℝ] F`. -/
+private def invertibleOpens : Opens (E →L[ℝ] F) :=
+  haveI := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
+  haveI := FiniteDimensional.complete ℝ E
+  ⟨{T | T.IsInvertible}, ContinuousLinearMap.isOpen_setOfPred_isInvertible⟩
+
+/-- Membership in `invertibleOpens` is invertibility. -/
+private theorem mem_invertibleOpens_iff {T : E →L[ℝ] F} :
+    T ∈ invertibleOpens n ↔ T.IsInvertible :=
+  Iff.rfl
+
+/-- An invertible linear map does not vanish on the unit sphere. -/
+private theorem apply_ne_zero_of_mem_invertibleOpens (T : invertibleOpens n (E := E) (F := F))
+    (x : sphere (0 : E) 1) : (T : E →L[ℝ] F) x ≠ 0 := by
+  obtain ⟨e, he⟩ := mem_invertibleOpens_iff.mp T.2
+  rw [← he, ContinuousLinearEquiv.coe_coe]
+  exact (map_ne_zero_iff e e.injective).mpr (ne_zero_of_mem_unit_sphere x)
+
+/-- Apply an invertible linear map to a point of the unit sphere and renormalise, landing on the
+unit sphere of the target. -/
+private noncomputable def normalizedApply
+    (z : invertibleOpens n (E := E) (F := F) × sphere (0 : E) 1) : sphere (0 : F) 1 :=
+  ⟨‖(z.1 : E →L[ℝ] F) z.2‖⁻¹ • (z.1 : E →L[ℝ] F) z.2, by
+    rw [mem_sphere_zero_iff_norm]
+    exact norm_smul_inv_norm (apply_ne_zero_of_mem_invertibleOpens z.1 z.2)⟩
+
+/-- The renormalised action is jointly `C^m` in the invertible linear map and the point. -/
+private theorem contMDiff_normalizedApply :
+    ContMDiff (𝓘(ℝ, E →L[ℝ] F).prod (𝓡 n)) (𝓡 k) m
+      (normalizedApply (n := n) (E := E) (F := F)) := by
+  have hpair : ContMDiff (𝓘(ℝ, E →L[ℝ] F).prod (𝓡 n)) 𝓘(ℝ, (E →L[ℝ] F) × E) m
+      fun z : invertibleOpens n (E := E) (F := F) × sphere (0 : E) 1 ↦
+        ((z.1 : E →L[ℝ] F), (z.2 : E)) :=
+    (contMDiff_subtype_val.comp contMDiff_fst).prodMk_space
+      (contMDiff_coe_sphere.comp contMDiff_snd)
+  have happ : ContDiff ℝ m fun p : (E →L[ℝ] F) × E ↦ p.1 p.2 :=
+    isBoundedBilinearMap_apply.contDiff
+  have hval : ContMDiff (𝓘(ℝ, E →L[ℝ] F).prod (𝓡 n)) 𝓘(ℝ, F) m
+      fun z ↦ (normalizedApply (n := n) (E := E) (F := F) z : F) := by
+    intro z
+    have hne := apply_ne_zero_of_mem_invertibleOpens z.1 z.2
+    exact (((happ.contDiffAt.norm ℝ hne).inv (norm_ne_zero_iff.mpr hne)).smul
+      happ.contDiffAt).comp_contMDiffAt (hpair z)
+  -- `normalizedApply` is by definition the corestriction of its underlying `F`-valued map.
+  exact hval.codRestrict_sphere fun z ↦ (normalizedApply z).2
+
+/-- The restriction to the unit sphere of a continuous family of linear isometry equivalences is
+a continuous family of `C^m` maps between the spheres, for the weak Whitney topology. Continuity of
+the family is asked for in the operator-norm topology. -/
+theorem _root_.Continuous.toContMDiffMap_unitSphereDiffeomorph {X : Type*} [TopologicalSpace X]
+    {e : X → E ≃ₗᵢ[ℝ] F} (he : Continuous fun x ↦ ((e x).toContinuousLinearEquiv : E →L[ℝ] F)) :
+    Continuous fun x ↦ (unitSphereDiffeomorph (n := n) (k := k) (e x) m).toContMDiffMap := by
+  let f : C^m⟮𝓘(ℝ, E →L[ℝ] F).prod (𝓡 n), invertibleOpens n (E := E) (F := F) ×
+      sphere (0 : E) 1; 𝓡 k, sphere (0 : F) 1⟯ :=
+    ⟨normalizedApply, contMDiff_normalizedApply⟩
+  have hlift : Continuous fun x ↦
+      (⟨_, mem_invertibleOpens_iff.mpr ⟨(e x).toContinuousLinearEquiv, rfl⟩⟩ :
+        invertibleOpens n (E := E) (F := F)) :=
+    he.subtype_mk _
+  convert (ContMDiffMap.manifoldWeakWhitneyCurry f).continuous.comp hlift using 1
+  funext x
+  ext y : 2
+  rw [Function.comp_apply, ContMDiffMap.manifoldWeakWhitneyCurry_apply]
+  simp [f, normalizedApply]
+
+end Continuity
 
 end LinearIsometryEquiv
 
 namespace TauCeti
 
-open scoped EuclideanSpace
+open scoped EuclideanSpace TauCeti.DiffeomorphWeakWhitney
 
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)`: an orthogonal transformation of `ℝⁿ⁺¹`
 restricts to a diffeomorphism of the unit sphere `Sⁿ`, and this restriction is a group
@@ -186,5 +301,30 @@ theorem orthogonalToDiffSphere_injective (n : ℕ) (m : ℕ∞ω) :
     Function.Injective (orthogonalToDiffSphere n m) := by
   exact LinearIsometryEquiv.unitSphereDiffHom_injective.comp
     orthogonalGroupToLinearIsometryEquiv_injective
+
+open scoped TauCeti.DiffeomorphWeakWhitney in
+/-- The reference inclusion `O(n + 1) → Diff(Sⁿ)` is continuous, for the subspace topology on
+the orthogonal group and the weak Whitney `C^m` topology on the diffeomorphism group. -/
+theorem continuous_orthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
+    Continuous (orthogonalToDiffSphere n m) := by
+  refine Diffeomorph.continuous_weakWhitney_iff.mpr ?_
+  simpa only [orthogonalToDiffSphere_apply, LinearIsometryEquiv.unitSphereDiffHom_apply] using
+    continuous_orthogonalGroupToLinearIsometryEquiv.toContMDiffMap_unitSphereDiffeomorph
+
+/-- The reference inclusion `O(n + 1) → Diff(Sⁿ)`, packaged as a continuous map. -/
+noncomputable def continuousOrthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
+    ContinuousMap (Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
+      (Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :=
+  ⟨orthogonalToDiffSphere n m, continuous_orthogonalToDiffSphere n m⟩
+
+@[simp]
+theorem continuousOrthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
+    (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
+    continuousOrthogonalToDiffSphere n m A = orthogonalToDiffSphere n m A :=
+  by
+    -- `ContinuousMap` application does not unfold this bundled definition automatically;
+    -- expose the underlying map before closing the resulting reflexive equality.
+    change orthogonalToDiffSphere n m A = orthogonalToDiffSphere n m A
+    rfl
 
 end TauCeti

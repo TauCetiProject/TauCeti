@@ -124,6 +124,17 @@ theorem isHomogeneous (f : AInfinityStrictHom AA BB) :
   intro p a ha
   simpa only [add_zero] using f.map_mem' ha
 
+/-- A bijective strict morphism reflects degrees: an element has degree `p` exactly when its image
+does. -/
+theorem map_mem_iff_of_bijective (f : AInfinityStrictHom AA BB) (hf : Function.Bijective f)
+    {p : ℤ} {a : A} : f a ∈ BB.grading.piece p ↔ a ∈ AA.grading.piece p := by
+  refine ⟨fun ha ↦ ?_, f.map_mem⟩
+  let e := LinearEquiv.ofBijective f.toLinearMap hf
+  have he : LinearMap.IsHomogeneous e.toLinearMap AA.grading.piece BB.grading.piece 0 :=
+    f.isHomogeneous
+  have hea := he.linearEquiv_symm.map_mem (x := e a) ha
+  rwa [add_zero, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] at hea
+
 /-- The underlying linear map of a strict morphism is homogeneous of degree zero for the gradings
 shifted by `c`; the case `c = 1` is the suspended grading of the bar construction. -/
 theorem isHomogeneous_shift (f : AInfinityStrictHom AA BB) (c : ℤ) :
@@ -265,7 +276,7 @@ private theorem taylor_comp_barMap (f : AInfinityStrictHom AA BB) :
   have hmaps :
       (BB.taylor ∘ₗ f.barMap) ∘ₗ ReducedTensorWords.of R A n =
         (f.toLinearMap ∘ₗ AA.taylor) ∘ₗ ReducedTensorWords.of R A n := by
-    apply AA.grading.piTensorProduct_ext
+    apply InternalGrading.piTensorProduct_ext (fun _ ↦ AA.grading)
     intro q
     let d : ℕ → ℤ := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).1 else 0
     let y : ℕ → A := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).2 else 0
@@ -281,7 +292,7 @@ private theorem taylor_comp_barMap (f : AInfinityStrictHom AA BB) :
     simp only [y, Fin.isLt, dite_true] at hBB hAA
     simp only [LinearMap.comp_apply, barMap_of_tprod]
     rw [hBB, hAA]
-    rw [AInfinity.evalNat_suspend, AInfinity.evalNat_suspend, map_smul]
+    rw [MultilinearMap.evalNat_suspend, MultilinearMap.evalNat_suspend, map_smul]
     simp only [MultilinearMap.evalNat_def]
     congr 1
     exact (f.map_m n.1 fun i ↦ y i).symm
@@ -416,6 +427,10 @@ when its Taylor map only reads the letter component through the linear part. -/
 def IsStrict (f : AInfinityHom AA BB) : Prop :=
   f.taylor = f.linearPart ∘ₗ ReducedTensorWords.letter R A
 
+/-- Strictness is equivalent to the Taylor map factoring through the letter component. -/
+theorem isStrict_iff (f : AInfinityHom AA BB) :
+    f.IsStrict ↔ f.taylor = f.linearPart ∘ₗ ReducedTensorWords.letter R A := (Iff.rfl)
+
 /-- The identity `A∞` morphism is strict. -/
 @[simp]
 theorem isStrict_id (AA : AInfinityAlgebra R A) : (AInfinityHom.id AA).IsStrict := by
@@ -449,7 +464,7 @@ noncomputable def IsStrict.toStrictHom {f : AInfinityHom AA BB} (hf : f.IsStrict
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · rw [AA.m_zero, BB.m_zero, LinearMap.compMultilinearMap_zero,
         MultilinearMap.zero_compLinearMap]
-    apply AA.grading.multilinearMap_ext
+    apply InternalGrading.multilinearMap_ext (fun _ ↦ AA.grading)
     intro d x hx
     let e : ℕ → ℤ := fun i ↦ if h : i < n then d ⟨i, h⟩ else 0
     let y : ℕ → A := fun i ↦ if h : i < n then x ⟨i, h⟩ else 0
@@ -468,7 +483,7 @@ noncomputable def IsStrict.toStrictHom {f : AInfinityHom AA BB} (hf : f.IsStrict
     have h := LinearMap.congr_fun htaylor
       (ReducedTensorWords.of R A ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ y i))
     rw [LinearMap.comp_apply, LinearMap.comp_apply, ReducedTensorWords.map_of_tprod, hB, hA,
-      AInfinity.evalNat_suspend, AInfinity.evalNat_suspend, map_smul] at h
+      MultilinearMap.evalNat_suspend, MultilinearMap.evalNat_suspend, map_smul] at h
     simp only [MultilinearMap.evalNat_def, hxy] at h
     have h' := congrArg (negOnePowCast R (MultilinearMap.suspExp n e) • ·) h
     simp only [smul_smul, ← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul, one_smul] at h'

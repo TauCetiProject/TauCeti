@@ -35,6 +35,7 @@ place whose restriction is the original place.
 * `TauCeti.Place.restrict_surjective_of_finiteDimensional`: the same statement for an extension
   of algebraic function fields, where both integrality hypotheses are theorems rather than
   hypotheses.
+* `TauCeti.Place.isIntegral_integers_algebraMap`: constants are integral over `𝒪_P`.
 * `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`: the integral closure of the
   valuation ring `𝒪_P` in the larger field is the intersection of the valuation rings of the
   places above `P` (Stichtenoth, Section III.2).
@@ -111,6 +112,16 @@ theorem restrict_surjective (hF' : IsFunctionField k' F') :
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
+omit [Algebra.IsIntegral F F'] in
+/-- Constants of `F'` are integral over the valuation ring of every place of `F / k`: they are
+integral over `k`, which lies in `𝒪_P`. -/
+theorem isIntegral_integers_algebraMap (P : Place k F) (c : k') :
+    IsIntegral P.integers (algebraMap k' F' c) := by
+  have : IsScalarTower k P.integers F' :=
+    .of_algebraMap_eq fun c ↦ IsScalarTower.algebraMap_apply k F F' c
+  exact ((Algebra.IsIntegral.isIntegral (R := k) c).map
+    (IsScalarTower.toAlgHom k k' F')).tower_top
+
 /-- **The integral closure of `𝒪_P` is the intersection of the valuation rings above `P`**
 (Stichtenoth, Section III.2): an element of `F'` is integral over the valuation ring of a place
 `P` of `F / k` exactly when it is regular at every place of `F' / k'` lying over `P`.
@@ -127,10 +138,7 @@ theorem isIntegral_iff_forall_restrict_eq_mem_integers (hF' : IsFunctionField k'
   by_contra hx
   have hxB : x ∉ (integralClosure P.integers F').toSubring := hx
   obtain ⟨V, hBV, hxV⟩ := Subring.exists_le_valuationSubring_of_isIntegrallyClosedIn hxB
-  have : IsScalarTower k P.integers F' :=
-    .of_algebraMap_eq fun c ↦ IsScalarTower.algebraMap_apply k F F' c
-  have hk'V : ∀ c : k', algebraMap k' F' c ∈ V := fun c ↦ hBV
-    ((Algebra.IsIntegral.isIntegral (R := k) c).map (IsScalarTower.toAlgHom k k' F')).tower_top
+  have hk'V : ∀ c : k', algebraMap k' F' c ∈ V := fun c ↦ hBV (isIntegral_integers_algebraMap P c)
   have hV : V ≠ ⊤ := fun hV ↦ hxV (hV ▸ ValuationSubring.mem_top _)
   have hP' : (ofValuationSubring hF' hk'V hV).restrict k F = P := by
     refine (restrict_eq_iff_integers_le k F _ P).mpr fun f hf ↦ ?_

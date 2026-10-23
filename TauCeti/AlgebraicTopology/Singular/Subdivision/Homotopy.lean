@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.AffineChain
+import TauCeti.Algebra.Homology.Homotopy
 
 /-!
 # Barycentric subdivision is chain homotopic to the identity
@@ -235,24 +236,14 @@ lemma singularPrismX_boundary_add_boundary_singularPrismX (n : ℕ) :
 /-- **Barycentric subdivision is chain homotopic to the identity.** The singular prism operator
 is a chain homotopy from the identity of the singular chain complex of `X` with coefficients in
 `R` to its barycentric subdivision. -/
-def singularSubdivisionHomotopy : Homotopy (𝟙 _) (singularSubdivisionChainMap R X) where
-  hom i j := if h : i + 1 = j then singularPrismX R X i ≫ eqToHom (by rw [h]) else 0
-  zero i j hij := by
-    rw [ComplexShape.down_Rel] at hij
-    simp [hij]
-  comm i := by
-    cases i with
-    | zero =>
-      rw [Homotopy.dNext_zero_chainComplex, Homotopy.prevD_chainComplex]
-      simp
-    | succ n =>
-      rw [Homotopy.dNext_succ_chainComplex, Homotopy.prevD_chainComplex]
-      simp [singularPrismX_boundary_add_boundary_singularPrismX]
+def singularSubdivisionHomotopy : Homotopy (𝟙 _) (singularSubdivisionChainMap R X) :=
+  Homotopy.equivSubZero.symm <| Homotopy.mkChainComplex _ (singularPrismX R X) (by simp)
+    fun n ↦ by simp [singularPrismX_boundary_add_boundary_singularPrismX]
 
 @[simp]
 lemma singularSubdivisionHomotopy_hom (n : ℕ) :
-    (singularSubdivisionHomotopy R X).hom n (n + 1) = singularPrismX R X n := by
-  simp [singularSubdivisionHomotopy]
+    (singularSubdivisionHomotopy R X).hom n (n + 1) = singularPrismX R X n :=
+  Homotopy.mkChainComplex_hom_succ _ _ _ _ n
 
 /-- Barycentric subdivision induces the identity on singular homology. -/
 @[simp]

@@ -23,6 +23,8 @@ unit circle with respect to normalized arc length. Its integral is identified wi
 * `TauCeti.isFiniteMeasure_circleDensityMeasure`: a continuous density gives a finite measure.
 * `TauCeti.integral_circleDensityMeasure`: integration against the weighted measure is a circle
   average.
+* `TauCeti.circleAverage_sub_zpow`: the circle average of `(z - c) ^ n` is `1` for `n = 0` and
+  `0` otherwise, the orthogonality relation of the characters of the circle.
 -/
 
 public section
@@ -77,5 +79,20 @@ theorem integral_circleDensityMeasure {E : Type*} [NormedAddCommGroup E] [Normed
   have h₀ : 0 ≤ (2 * π)⁻¹ * φ (circleMap 0 1 θ) :=
     mul_nonneg (by positivity) (hφ₀ _ (circleMap_mem_sphere 0 zero_le_one θ))
   simp only [hexp, ENNReal.toReal_ofReal h₀, smul_smul]
+
+/-- **Orthogonality of the characters of the circle.** The normalized circle average of an
+integer power `(z - c) ^ n` over a circle centred at `c` is `1` for `n = 0` and `0` otherwise. -/
+@[simp] theorem circleAverage_sub_zpow {c : ℂ} {R : ℝ} (n : ℤ) :
+    circleAverage (fun z ↦ (z - c) ^ n) c R = if n = 0 then 1 else 0 := by
+  by_cases hR : R = 0
+  · subst R
+    simp only [circleAverage_zero, sub_self, zero_zpow_eq]
+  split_ifs with hn
+  · simp [hn, circleAverage_const]
+  rw [← circleAverage_abs_radius, circleAverage_eq_circleIntegral (abs_ne_zero.mpr hR),
+    circleIntegral.integral_congr (abs_nonneg R) (g := fun z ↦ (z - c) ^ (n - 1)) fun z hz ↦ ?_,
+    circleIntegral.integral_sub_zpow_of_ne (by omega), smul_zero]
+  have hz : z - c ≠ 0 := sub_ne_zero.mpr (ne_of_mem_sphere hz (abs_ne_zero.mpr hR))
+  simp [zpow_sub_one₀ hz, mul_comm]
 
 end TauCeti

@@ -77,13 +77,13 @@ namespace IsSimpleGroup
 /-- A nonabelian simple group has trivial centre. -/
 theorem center_eq_bot_of_not_isMulCommutative [IsSimpleGroup G] (h : ¬ IsMulCommutative G) :
     center G = ⊥ :=
-  (Subgroup.Normal.eq_bot_or_eq_top inferInstance).resolve_right fun ht =>
+  (Subgroup.Normal.eq_bot_or_eq_top (center G)).resolve_right fun ht =>
     h (center_eq_top_iff.mp ht)
 
 /-- A nonabelian simple group is perfect. -/
 theorem isPerfect_of_not_isMulCommutative [IsSimpleGroup G] (h : ¬ IsMulCommutative G) :
     Group.IsPerfect G := by
-  refine ⟨(Subgroup.Normal.eq_bot_or_eq_top inferInstance).resolve_left fun hb => ?_⟩
+  refine ⟨(Subgroup.Normal.eq_bot_or_eq_top (commutator G)).resolve_left fun hb => ?_⟩
   rw [commutator_def, commutator_top_right_eq_bot_iff_le_center, top_le_iff] at hb
   exact h (center_eq_top_iff.mp hb)
 

@@ -30,7 +30,7 @@ import TauCeti.FieldTheory.Finite.FrobeniusFixed
 import Mathlib.FieldTheory.Finite.Trace
 -- Non-public: lifting an invertible scalar matrix to a unit of `F` is used only inside the
 -- surjectivity half of the classification.
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # The conjugacy classes of `GL₂` over a field
@@ -76,7 +76,9 @@ describing the centralizer of a non-scalar matrix rather than its conjugacy clas
   `GL₂(F)` are conjugate exactly when they have the same trace and the same determinant.
 * `TauCeti.GL2NonSplitTorus.isConj_gl2NonSplitTorusHom_iff`: the elements of the non-split torus
   conjugate to an elliptic element `u` are exactly `u` and its Frobenius conjugate `u^q`.
-* `TauCeti.card_conjClasses_GL2`: `GL₂(𝔽_q)` has `q² - 1` conjugacy classes.
+* `TauCeti.card_conjClasses_GL2`: `GL₂(𝔽_q)` has `q² - 1` conjugacy classes, and
+  `TauCeti.natCard_conjClasses_GL_fin_two_of_card_eq_two`: three of them over a field with two
+  elements.
 
 ## References
 
@@ -225,8 +227,8 @@ theorem isConj_iff_of_notMem_range_scalar {g h : GL (Fin 2) F}
 
 namespace GL2NonSplitTorus
 
-variable {E : Type*} [Field E] [Algebra F E] [Finite F]
-  (hE : Module.finrank F E = 2) {u v : Eˣ}
+variable {E : Type*} [Field E] [Algebra F E] [Finite F] [Algebra.IsQuadraticExtension F E]
+  {u v : Eˣ}
 
 /-- **The elements of the elliptic torus conjugate to a given elliptic element.** For `u : Eˣ`
 outside `F`, the matrix of `v : Eˣ` is conjugate to that of `u` exactly when `v` is `u` or its
@@ -236,29 +238,29 @@ Conjugate matrices have the same trace and determinant, which on the torus are t
 norm of the field element; and `u`, `u^q` are the two roots of `X² - Tr(u) X + N(u)`, so an element
 with those invariants is one of them. -/
 theorem isConj_gl2NonSplitTorusHom_iff (hu : (u : E) ∉ Set.range (algebraMap F E)) :
-    IsConj (GL2NonSplitTorusHom F E hE u) (GL2NonSplitTorusHom F E hE v) ↔
+    IsConj (GL2NonSplitTorusHom F E u) (GL2NonSplitTorusHom F E v) ↔
       v = u ∨ v = u ^ Nat.card F := by
-  have hfin : Module.Finite F E := Module.finite_of_finrank_eq_succ (n := 1) hE
+  have h2 := Algebra.IsQuadraticExtension.finrank_eq_two F E
   have : Finite E := Module.finite_of_finite F
   have hupow : ((u ^ Nat.card F : Eˣ) : E) ∉ Set.range (algebraMap F E) := by
     rw [Units.val_pow_eq_pow_val]
-    exact FiniteField.pow_natCard_notMem_range_algebraMap hE hu
+    exact FiniteField.pow_natCard_notMem_range_algebraMap hu
   -- the trace and the norm of a quadratic extension of a finite field, written out
   have htr : ∀ w : E, algebraMap F E (Algebra.trace F E w) = w + w ^ Nat.card F := by
     intro w
-    rw [FiniteField.algebraMap_trace_eq_sum_pow, hE]
+    rw [FiniteField.algebraMap_trace_eq_sum_pow, h2]
     simp [Finset.sum_range_succ]
   have hnm : ∀ w : E, algebraMap F E (Algebra.norm F w) = w * w ^ Nat.card F := by
     intro w
-    rw [FiniteField.algebraMap_norm_eq_prod_pow, hE]
+    rw [FiniteField.algebraMap_norm_eq_prod_pow, h2]
     simp [Finset.prod_range_succ]
   constructor
   · intro hconj
     have htrace : Algebra.trace F E (v : E) = Algebra.trace F E (u : E) := by
-      rw [← trace_gl2NonSplitTorusHom hE, ← trace_gl2NonSplitTorusHom hE,
+      rw [← trace_gl2NonSplitTorusHom, ← trace_gl2NonSplitTorusHom,
         trace_val_eq_of_isConj hconj]
     have hnorm : Algebra.norm F (v : E) = Algebra.norm F (u : E) := by
-      rw [← val_det_gl2NonSplitTorusHom hE, ← val_det_gl2NonSplitTorusHom hE]
+      rw [← val_det_gl2NonSplitTorusHom, ← val_det_gl2NonSplitTorusHom]
       exact congrArg Units.val
         (isConj_iff_eq.1 (Matrix.GeneralLinearGroup.det.map_isConj hconj)).symm
     have h1 : (v : E) + (v : E) ^ Nat.card F = (u : E) + (u : E) ^ Nat.card F := by
@@ -273,15 +275,15 @@ theorem isConj_gl2NonSplitTorusHom_iff (hu : (u : E) ∉ Set.range (algebraMap F
   · rintro (rfl | rfl)
     · exact IsConj.refl _
     · refine (isConj_iff_of_notMem_range_scalar
-        (notMem_range_scalar_gl2NonSplitTorusHom hE hu)
-        (notMem_range_scalar_gl2NonSplitTorusHom hE hupow)).mpr ⟨?_, ?_⟩
+        (notMem_range_scalar_gl2NonSplitTorusHom hu)
+        (notMem_range_scalar_gl2NonSplitTorusHom hupow)).mpr ⟨?_, ?_⟩
       · rw [trace_gl2NonSplitTorusHom, trace_gl2NonSplitTorusHom]
         refine FaithfulSMul.algebraMap_injective F E ?_
-        rw [htr, htr, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard hE, add_comm]
+        rw [htr, htr, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard, add_comm]
       · rw [← Matrix.GeneralLinearGroup.val_det_apply, ← Matrix.GeneralLinearGroup.val_det_apply,
           val_det_gl2NonSplitTorusHom, val_det_gl2NonSplitTorusHom]
         refine FaithfulSMul.algebraMap_injective F E ?_
-        rw [hnm, hnm, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard hE, mul_comm]
+        rw [hnm, hnm, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard, mul_comm]
 
 end GL2NonSplitTorus
 
@@ -368,5 +370,13 @@ theorem card_conjClasses_GL2 (F : Type*) [Field F] [Finite F] :
   have e1 : (m + 1) ^ 2 = m * m + 2 * m + 1 := by ring
   rw [hm, Nat.add_sub_cancel, e1, Nat.add_sub_cancel]
   ring
+
+/-- **`GL₂` over a field with two elements has three conjugacy classes**, namely `q² - 1 = 3` at
+`q = 2`: the central class `{1}`, the unipotent class of the transvections, and the elliptic class
+of the elements of order `3`. -/
+theorem natCard_conjClasses_GL_fin_two_of_card_eq_two {F : Type*} [Field F] [Fintype F]
+    (hF : Fintype.card F = 2) : Nat.card (ConjClasses (GL (Fin 2) F)) = 3 := by
+  rw [card_conjClasses_GL2 F, Nat.card_eq_fintype_card, hF]
+  norm_num
 
 end TauCeti

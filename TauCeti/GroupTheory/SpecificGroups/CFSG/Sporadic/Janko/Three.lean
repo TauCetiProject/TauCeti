@@ -32,7 +32,7 @@ presentation page displays the same eight words with those two interchanged. No 
 is marked redundant, in either of its two renderings.
 
 The source's commutator convention is `[r,s] = r⁻¹s⁻¹rs`, opposite to Mathlib's
-`commutatorElement`, so the commutator is stored as `Relator.comm (.inv r) (.inv s)` as
+`commutatorElement`, so the commutator is stored as `Relator.commInvInv r s` as
 `TauCeti.Relator` prescribes. The structured expressions otherwise preserve the displayed products
 and powers. The proved `TauCeti.Relator.toWord_toFreeGroup` is the audit boundary between these
 expressions and the signed words that `PresentedGroup` consumes.
@@ -173,7 +173,7 @@ def j3Presentation : GroupPresentation where
   transcribed :=
     [ .pow a 2,
       .pow b 3,
-      .pow (.comm (.inv a) (.inv b)) 9,
+      .pow (.commInvInv a b) 9,
       .pow ab1 19,
       .pow (.pow ab1 6 ⬝ .pow abNeg1 5) 2,
       sixthWord,
@@ -289,7 +289,7 @@ theorem j3Presentation_transcribed :
         .pow (.pow (.gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩) 3 ⬝
           .pow ((.gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩) ⬝
             (.gen ⟨0, by simp⟩ ⬝ .inv (.gen ⟨1, by simp⟩))) 2) 4 ] := by
-  simp [j3Presentation]
+  simp [j3Presentation, Relator.commInvInv]
 
 /-- The generator and relator counts recorded for `J₃` agree with the transcribed data. -/
 theorem j3Presentation_matchesMetadata : j3Presentation.matchesMetadata := by decide
@@ -317,7 +317,7 @@ theorem j3Presentation_relatorsCyclicallyReduced :
     j3Presentation.relatorsCyclicallyReduced := by
   simp only [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
     j3Presentation, List.map_cons, List.map_nil, Relator.toWord_mul, Relator.toWord_pow,
-    Relator.toWord_inv, Relator.toWord_comm, Relator.toWord_gen]
+    Relator.toWord_inv, Relator.toWord_commInvInv, Relator.toWord_gen]
   decide
 
 end TauCeti.Sporadic

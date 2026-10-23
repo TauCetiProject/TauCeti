@@ -19,6 +19,10 @@ of a map over the base to a fibre and the relabelling `Equiv.compFiberEquiv` of 
 bijection of bases — come from `TauCeti.Logic.Function.Fiber`; this file adds their
 compatibility with monodromy.
 
+More generally, a map of covering spaces lying over a continuous map of bases carries the lift of
+a path to the lift of its image, so it carries monodromy along a path to monodromy along the image
+path, and likewise for loop classes under the induced map of fundamental groups.
+
 These constructions are the morphism-level input for the alternative classification of covers
 as functors from the fundamental groupoid in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
 item 8. Mathlib supplies the object-level functor `IsCoveringMap.monodromyFunctor`; this file
@@ -28,12 +32,17 @@ packages its functoriality in the covering map.
 
 * `IsCoveringMap.fiberMap_monodromy`: a map of covers intertwines monodromy transport
   on their fibres.
+* `IsCoveringMap.permutationRepresentation_eq_of_fiberMap`: a map of covers respecting
+  numberings identifies the numbered monodromy representations.
 * `IsCoveringMap.monodromyNatTrans`: a map of covers induces a natural transformation
   between their monodromy functors.
 * `IsCoveringMap.monodromyNatIso`: an isomorphism of covers induces a natural
   isomorphism between their monodromy functors.
 * `IsCoveringMap.monodromyHomeomorphCompNatIso`: changing the base by a homeomorphism
   transports the monodromy functor by the inverse homeomorphism.
+* `IsCoveringMap.coe_monodromy_map`, `IsCoveringMap.coe_monodromy_mapOfEq`: a map of covers
+  lying over a map of bases carries monodromy along a path, or a loop class, to monodromy along
+  its image.
 
 ## References
 
@@ -50,11 +59,8 @@ namespace TauCeti
 
 section
 
-universe u v
-
-variable {E F G : Type u} {X : Type v}
-  [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace G] [TopologicalSpace X]
-  {p : E → X} {q : F → X} {r : G → X}
+variable {E F X : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace X]
+  {p : E → X} {q : F → X}
 
 /-- A map between covering spaces over the same base intertwines monodromy along every path. -/
 @[simp]
@@ -95,6 +101,33 @@ theorem _root_.IsCoveringMap.fiberMap_monodromy (hp : _root_.IsCoveringMap p)
   refine eq_of_heq (HEq.trans (show HEq (Γ.map (q'.comp f)) (Γ.map p') by rw [hcomp]) ?_)
   rw [hp.map_liftPathQuotient a e]
   exact (Path.Homotopic.Quotient.cast_heq _ _).trans (Path.Homotopic.Quotient.cast_heq _ _).symm
+
+/-- A map of covers that preserves the numberings of two fibres identifies their numbered
+monodromy representations. -/
+theorem _root_.IsCoveringMap.permutationRepresentation_eq_of_fiberMap
+    {n : ℕ} (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q)
+    (x : X) (ν : p ⁻¹' {x} ≃ Fin n) (ν' : q ⁻¹' {x} ≃ Fin n)
+    (f : C(E, F)) (hf : q ∘ f = p)
+    (hν : ∀ e, ν' (Function.fiberMap f hf x e) = ν e) :
+    ν'.permCongrHom.toMonoidHom.comp (hq.monodromyPerm x) =
+      ν.permCongrHom.toMonoidHom.comp (hp.monodromyPerm x) := by
+  ext γ i
+  obtain ⟨e, rfl⟩ := ν.surjective i
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Equiv.permCongrHom_coe]
+  rw [Equiv.permCongr_apply, Equiv.permCongr_apply,
+    Equiv.symm_apply_apply, ← hν e, Equiv.symm_apply_apply,
+    IsCoveringMap.coe_monodromyPerm, IsCoveringMap.coe_monodromyPerm,
+    ← hp.fiberMap_monodromy hq f hf γ.asHom e, hν]
+
+end
+
+section
+
+universe u v
+
+variable {E F G : Type u} {X : Type v}
+  [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace G] [TopologicalSpace X]
+  {p : E → X} {q : F → X} {r : G → X}
 
 /-- A continuous map of covering spaces over `X` induces a natural transformation between
 their monodromy functors. Its component over `x` is the restriction of `f` to the fibre over
@@ -249,5 +282,42 @@ theorem _root_.IsCoveringMap.monodromyHomeomorphCompNatIso_hom_app
 end BaseHomeomorph
 
 end
+
+section BaseMap
+
+variable {E F X Y : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace X]
+  [TopologicalSpace Y] {p : E → X} {q : F → Y}
+
+/-- A map of covering spaces lying over a continuous map of bases carries monodromy along a path
+to monodromy along its image: if `q ∘ g = f ∘ p`, the lift of `f ∘ γ` starting at `g e` ends at
+`g` applied to the end of the lift of `γ` starting at `e`. -/
+theorem _root_.IsCoveringMap.coe_monodromy_map (hp : _root_.IsCoveringMap p)
+    (hq : _root_.IsCoveringMap q) {g : C(E, F)} {f : C(X, Y)} (hgf : q ∘ g = f ∘ p)
+    {x y : X} (a : Path.Homotopic.Quotient x y) (e : p ⁻¹' {x}) (e' : q ⁻¹' {f x})
+    (he : g e = e') :
+    (hq.monodromy (a.map f) e' : F) = g (hp.monodromy a e) := by
+  induction a using Path.Homotopic.Quotient.ind with | mk γ => ?_
+  have hΓ := hp.liftPath_lifts γ e (γ.source.trans e.2.symm)
+  rw [← Path.Homotopic.Quotient.mk_map,
+    hq.monodromy_eq_apply_one (Γ := g.comp (hp.liftPath γ e (γ.source.trans e.2.symm))) ?_
+      (by simpa [hp.liftPath_zero] using he),
+    hp.monodromy_eq_apply_one hΓ (hp.liftPath_zero ..), ContinuousMap.comp_apply]
+  funext t
+  simpa using (congrFun hgf _).trans (congrArg f (congrFun hΓ t))
+
+/-- A map of covering spaces lying over a based continuous map of bases intertwines the
+monodromy actions of the fundamental groups: if `q ∘ g = f ∘ p`, the monodromy of the image of a
+loop class `γ` at `g e` is `g` applied to the monodromy of `γ` at `e`. -/
+theorem _root_.IsCoveringMap.coe_monodromy_mapOfEq (hp : _root_.IsCoveringMap p)
+    (hq : _root_.IsCoveringMap q) {g : C(E, F)} {f : C(X, Y)} (hgf : q ∘ g = f ∘ p)
+    {x : X} {y : Y} (h : f x = y) (γ : FundamentalGroup X x) (e : p ⁻¹' {x})
+    (e' : q ⁻¹' {y}) (he : g e = e') :
+    (hq.monodromy (FundamentalGroup.mapOfEq f h γ).asHom e' : F) =
+      g (hp.monodromy γ.asHom e) := by
+  subst h
+  rw [FundamentalGroup.mapOfEq_apply, Path.Homotopic.Quotient.cast_rfl_rfl]
+  exact hp.coe_monodromy_map hq hgf γ.asHom e e' he
+
+end BaseMap
 
 end TauCeti

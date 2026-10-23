@@ -39,6 +39,10 @@ and chain homotopies for commutation invariance are later Lane G.5 targets.
 * `TauCeti.GridDiagram.rowsNoninterleaving_transpose` and
   `TauCeti.GridDiagram.columnsNoninterleaving_transpose`: diagonal reflection exchanges row and
   column non-interleaving.
+* `TauCeti.GridDiagram.columnsNoninterleaving_of_X_eq_finRotate_O` and
+  `TauCeti.GridDiagram.rowsNoninterleaving_of_X_eq_finRotate_O`: a column (or row) whose two
+  markings are adjacent, with the `X`-marking cyclically after the `O`-marking, is
+  non-interleaving with every column (or row).
 
 ## References
 
@@ -82,21 +86,21 @@ theorem X_notMem_columnArc (c : Fin n) : G.X c ∉ columnArc G c := by
 This is the column-coordinate version of `columnArc`: it starts at the unique column containing
 the row's `O` marking and ends at the unique column containing the row's `X` marking. -/
 noncomputable def rowArc (r : Fin n) : Finset (Fin n) :=
-  Grid.cIoo (OColumnOfRow G r) (XColumnOfRow G r)
+  Grid.cIoo (G.O.transpose r) (G.X.transpose r)
 
 /-- Membership in a row arc is membership in the open cyclic interval from that row's `O` column
 to its `X` column. -/
 @[simp]
 theorem mem_rowArc (r c : Fin n) :
-    c ∈ rowArc G r ↔ c ∈ Grid.cIoo (OColumnOfRow G r) (XColumnOfRow G r) :=
+    c ∈ rowArc G r ↔ c ∈ Grid.cIoo (G.O.transpose r) (G.X.transpose r) :=
   Iff.rfl
 
 /-- The `O` endpoint of a row is not in its own open row arc. -/
-theorem OColumn_notMem_rowArc (r : Fin n) : OColumnOfRow G r ∉ rowArc G r := by
+theorem OColumn_notMem_rowArc (r : Fin n) : G.O.transpose r ∉ rowArc G r := by
   simp [rowArc]
 
 /-- The `X` endpoint of a row is not in its own open row arc. -/
-theorem XColumn_notMem_rowArc (r : Fin n) : XColumnOfRow G r ∉ rowArc G r := by
+theorem XColumn_notMem_rowArc (r : Fin n) : G.X.transpose r ∉ rowArc G r := by
   simp [rowArc]
 
 /-- Two columns of a grid diagram have non-interleaving marking segments.
@@ -110,8 +114,8 @@ def ColumnsNoninterleaving (a b : Fin n) : Prop :=
 
 /-- Two rows of a grid diagram have non-interleaving marking segments. -/
 def RowsNoninterleaving (a b : Fin n) : Prop :=
-  Grid.Noninterleaving (OColumnOfRow G a) (XColumnOfRow G a)
-    (OColumnOfRow G b) (XColumnOfRow G b)
+  Grid.Noninterleaving (G.O.transpose a) (G.X.transpose a)
+    (G.O.transpose b) (G.X.transpose b)
 
 /-- The defining endpoint-side conditions for column non-interleaving. -/
 theorem columnsNoninterleaving_iff (a b : Fin n) :
@@ -123,8 +127,8 @@ theorem columnsNoninterleaving_iff (a b : Fin n) :
 /-- The defining endpoint-side conditions for row non-interleaving. -/
 theorem rowsNoninterleaving_iff (a b : Fin n) :
     RowsNoninterleaving G a b ↔
-      (OColumnOfRow G a ∈ rowArc G b ↔ XColumnOfRow G a ∈ rowArc G b) ∧
-        (OColumnOfRow G b ∈ rowArc G a ↔ XColumnOfRow G b ∈ rowArc G a) := by
+      (G.O.transpose a ∈ rowArc G b ↔ G.X.transpose a ∈ rowArc G b) ∧
+        (G.O.transpose b ∈ rowArc G a ↔ G.X.transpose b ∈ rowArc G a) := by
   rfl
 
 /-- A column is non-interleaving with itself. -/
@@ -136,6 +140,26 @@ theorem columnsNoninterleaving_self (a : Fin n) : ColumnsNoninterleaving G a a :
 @[simp]
 theorem rowsNoninterleaving_self (a : Fin n) : RowsNoninterleaving G a a := by
   simp [RowsNoninterleaving]
+
+/-- A column whose `X`-marking lies directly above its `O`-marking is non-interleaving with
+every column. -/
+theorem columnsNoninterleaving_of_X_eq_finRotate_O {a : Fin n}
+    (h : G.X a = finRotate n (G.O a)) (b : Fin n) : ColumnsNoninterleaving G a b := by
+  rcases eq_or_ne b a with rfl | hba
+  · exact G.columnsNoninterleaving_self b
+  · exact Grid.noninterleaving_of_eq_finRotate h (fun h' ↦ hba (G.O.toPerm.injective h'))
+      (fun h' ↦ hba (G.X.toPerm.injective h'))
+
+/-- A row whose `X`-marking lies directly right of its `O`-marking is non-interleaving with every
+row. -/
+theorem rowsNoninterleaving_of_X_eq_finRotate_O {a : Fin n}
+    (h : G.X.transpose a = finRotate n (G.O.transpose a)) (b : Fin n) :
+    RowsNoninterleaving G a b := by
+  rcases eq_or_ne b a with rfl | hba
+  · exact G.rowsNoninterleaving_self b
+  · exact Grid.noninterleaving_of_eq_finRotate h
+      (fun h' ↦ hba (G.O.transpose.toPerm.injective h'))
+      (fun h' ↦ hba (G.X.transpose.toPerm.injective h'))
 
 /-- Column non-interleaving is symmetric in the two columns. -/
 theorem columnsNoninterleaving_comm {a b : Fin n} :
@@ -157,7 +181,7 @@ theorem rowArc_transpose (c : Fin n) : rowArc G.transpose c = columnArc G c := b
 original diagram. -/
 @[simp]
 theorem columnArc_transpose (r : Fin n) : columnArc G.transpose r = rowArc G r := by
-  simp only [columnArc, rowArc, transpose_O_apply, transpose_X_apply]
+  simp only [columnArc, rowArc, transpose_O, transpose_X]
 
 /-- Diagonal reflection exchanges row non-interleaving with column non-interleaving. -/
 @[simp]
@@ -170,7 +194,7 @@ theorem rowsNoninterleaving_transpose (a b : Fin n) :
 theorem columnsNoninterleaving_transpose (a b : Fin n) :
     ColumnsNoninterleaving G.transpose a b ↔ RowsNoninterleaving G a b :=
   by
-    simp only [RowsNoninterleaving, ColumnsNoninterleaving, transpose_O_apply, transpose_X_apply]
+    simp only [RowsNoninterleaving, ColumnsNoninterleaving, transpose_O, transpose_X]
 
 end GridDiagram
 

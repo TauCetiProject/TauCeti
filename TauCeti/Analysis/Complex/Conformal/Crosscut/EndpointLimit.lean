@@ -189,8 +189,8 @@ The gap is uniform over the arc, and in particular does not shrink as an end of 
 approached: that is the whole content. A short sub-arc carries little length, and by the chord
 bound `TauCeti.ofReal_dist_le_mul_lintegral_Ioc` the length a sub-arc carries bounds the distance
 between the images of its two ends; that is the domination hypothesis of
-`TauCeti.uniformContinuousOn_of_edist_le_setLIntegral`, which draws the modulus from the absolute
-continuity of the integral and knows nothing of circles.
+`Set.OrdConnected.uniformContinuousOn_of_edist_le_setLIntegral`, which draws the modulus from the
+absolute continuity of the integral and knows nothing of circles.
 
 Uniform continuity in the angle is *not* uniform continuity of `f` on the arc as a subset of the
 plane, but on an arc of angular width below a full turn the two agree, which is what
@@ -205,16 +205,16 @@ theorem exists_pos_forall_dist_le_of_lintegral_ne_top (hUo : IsOpen U)
     ∃ η > 0, ∀ θ₁ ∈ Ioo a b, ∀ θ₂ ∈ Ioo a b, |θ₁ - θ₂| ≤ η →
       dist (f (circleMap ζ ρ θ₁)) (f (circleMap ζ ρ θ₂)) ≤ ε := by
   have huc : UniformContinuousOn (fun θ => f (circleMap ζ ρ θ)) (Ioo a b) :=
-    uniformContinuousOn_of_edist_le_setLIntegral ordConnected_Ioo
+    ordConnected_Ioo.uniformContinuousOn_of_edist_le_setLIntegral
       (edist_le_setLIntegral_enorm_deriv_circleMap hUo hf ζ hmemU)
       (setLIntegral_enorm_deriv_circleMap_ne_top hfin)
   obtain ⟨η, hη, hmod⟩ := Metric.uniformContinuousOn_iff_le.1 huc ε hε
   exact ⟨η, hη, fun θ₁ h₁ θ₂ h₂ habs => hmod θ₁ h₁ θ₂ h₂ (by rwa [Real.dist_eq])⟩
 
-/-- **An arc of finite image length has bounded image.** The chord bound applied to the whole arc
-rather than to a sub-arc: by `TauCeti.isBounded_image_of_edist_le_setLIntegral` any two of its
-points have images at distance at most `|ρ| * ∫⁻ θ in Ioo a b, ‖deriv f (circleMap ζ ρ θ)‖ₑ`, a
-finite number.
+/-- **An arc of finite image length has bounded image.** The chord bound applied to the whole
+arc rather than to a sub-arc: by `Set.OrdConnected.isBounded_image_of_edist_le_setLIntegral`
+any two of its points have images at distance at most `|ρ| * ∫⁻ θ in Ioo a b, ‖deriv f
+(circleMap ζ ρ θ)‖ₑ`, a finite number.
 
 This is what makes a subsingleton cluster set along the arc an honest limit, the compactness input
 of `TauCeti.exists_tendsto_of_clusterSetOn_subsingleton`. -/
@@ -224,7 +224,7 @@ theorem isBounded_image_circleMap_image_Ioo_of_lintegral_ne_top (hUo : IsOpen U)
     (hfin : ∫⁻ θ in Ioo a b, ‖deriv f (circleMap ζ ρ θ)‖ₑ ≠ ⊤) :
     IsBounded (f '' (circleMap ζ ρ '' Ioo a b)) := by
   rw [image_image]
-  exact isBounded_image_of_edist_le_setLIntegral ordConnected_Ioo
+  exact ordConnected_Ioo.isBounded_image_of_edist_le_setLIntegral
     (edist_le_setLIntegral_enorm_deriv_circleMap hUo hf ζ hmemU)
     (setLIntegral_enorm_deriv_circleMap_ne_top hfin)
 

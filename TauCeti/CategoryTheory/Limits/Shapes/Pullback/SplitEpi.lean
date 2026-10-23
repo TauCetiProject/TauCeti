@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.EpiMono
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 
 /-!
 # Pullbacks of split epimorphisms
@@ -20,9 +21,11 @@ T ⟶ X ×[S] T
 ```
 
 whose projections are `g ≫ s` and `𝟙 T`. The construction is packaged as
-`CategoryTheory.SplitEpi.pullback`; its projection formulas characterize it uniquely.
-The file also records naturality in both the split epimorphism and the base-change
-morphism, and supplies the corresponding low-priority `IsSplitEpi` instance.
+`CategoryTheory.SplitEpi.pullback`; its projection formulas characterize it uniquely, and
+together with the original section it forms a pullback square
+(`CategoryTheory.SplitEpi.isPullback_pullback_section`). The file also records naturality in
+both the split epimorphism and the base-change morphism, and supplies the corresponding
+low-priority `IsSplitEpi` instance.
 
 For a scheme over a field, a rational point is precisely such a chosen section of the
 structure morphism. Thus this construction supplies base change of rational points, as
@@ -67,6 +70,14 @@ lemma pullback_section_fst (h : SplitEpi f) {T : C} (g : T ⟶ S) [HasPullback f
     (h.pullback g).section_ ≫ Limits.pullback.fst f g = g ≫ h.section_ := by
   simp only [pullback_section_def, Limits.pullback.lift_fst]
 
+/-- A pulled-back section is the base change of the original section: the square formed by
+`(h.pullback g).section_`, `g`, the first projection and `h.section_` is a pullback square. -/
+lemma isPullback_pullback_section (h : SplitEpi f) {T : C} (g : T ⟶ S) [HasPullback f g] :
+    IsPullback (h.pullback g).section_ g (Limits.pullback.fst f g) h.section_ :=
+  -- Paste with the pullback square of `f` and `g`; both horizontal composites are identities.
+  .of_right (by simpa only [(h.pullback g).id, h.id] using IsPullback.id_horiz g)
+    (h.pullback_section_fst g) (IsPullback.of_hasPullback f g).flip
+
 /-- The two projection formulas uniquely determine the pulled-back section. -/
 lemma eq_pullback_section (h : SplitEpi f) {T : C} (g : T ⟶ S) [HasPullback f g]
     (t : T ⟶ Limits.pullback f g) (hfst : t ≫ Limits.pullback.fst f g = g ≫ h.section_)
@@ -88,8 +99,8 @@ lemma pullback_section_naturality {Y : C} {f' : Y ⟶ S} (h : SplitEpi f)
         Limits.pullback.map f g f' g i (𝟙 T) (𝟙 S) (by simp [hi]) (by simp) =
       (h'.pullback g).section_ := by
   apply Limits.pullback.hom_ext
-  · simp [Limits.pullback.map, Limits.pullback.lift_fst, Category.assoc, hsection]
-  · simp [Limits.pullback.map, Limits.pullback.lift_snd, Category.assoc]
+  · simp [Limits.pullback.map, Category.assoc, hsection]
+  · simp [Limits.pullback.map, Category.assoc]
 
 /-- Pullback of a chosen section is natural in the base-change morphism.
 
@@ -101,8 +112,18 @@ lemma pullback_section_map (h : SplitEpi f) {T T' : C} (g : T ⟶ S) (k : T' ⟶
         Limits.pullback.map f (k ≫ g) f g (𝟙 X) k (𝟙 S) (by simp) (by simp) =
       k ≫ (h.pullback g).section_ := by
   apply Limits.pullback.hom_ext
-  · simp [Limits.pullback.map, Limits.pullback.lift_fst, Category.assoc]
-  · simp [Limits.pullback.map, Limits.pullback.lift_snd, Category.assoc]
+  · simp [Limits.pullback.map, Category.assoc]
+  · simp [Limits.pullback.map, Category.assoc]
+
+/-- Naturality of a pulled-back section when the base-change composite is given by an equal
+morphism. This form is convenient for morphisms in an over category. -/
+lemma pullback_section_map_of_eq (h : SplitEpi f) {T T' : C} (g : T ⟶ S)
+    (g' : T' ⟶ S) (k : T' ⟶ T) (w : k ≫ g = g') [HasPullback f g] [HasPullback f g'] :
+    (h.pullback g').section_ ≫
+        Limits.pullback.map f g' f g (𝟙 X) k (𝟙 S) (by simp) (by simp [← w]) =
+      k ≫ (h.pullback g).section_ := by
+  subst g'
+  exact h.pullback_section_map g k
 
 end SplitEpi
 

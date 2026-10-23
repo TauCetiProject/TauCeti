@@ -18,7 +18,8 @@ all special orthogonal transformations to reflection pairs, as needed when provi
 by putting those pairs in the identity component.
 
 The full orthogonal group is generated as a monoid by individual reflections, as expressed by
-`closure_reflectionOrthogonal_eq_top`.
+`closure_reflectionOrthogonal_eq_top`; consequently a homomorphism out of it is determined by its
+values on reflections, `orthogonalGroup_hom_ext`.
 
 ## Main results
 
@@ -31,6 +32,47 @@ The full orthogonal group is generated as a monoid by individual reflections, as
 -/
 
 public section
+
+namespace QuadraticMap
+
+open TauCeti.QuadraticMap
+
+universe u v
+
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V] [NeZero (2 : K)]
+
+/-- The product of two reflections, as an element of the special orthogonal group. -/
+noncomputable def reflectionPairSpecialOrthogonal
+    (Q : QuadraticForm K V) (u v : V) [Invertible (Q u)] [Invertible (Q v)] :
+    specialOrthogonalGroup Q :=
+  ⟨(reflectionOrthogonal Q u : V ≃ₗ[K] V) * reflectionOrthogonal Q v, by
+    rw [mem_specialOrthogonalGroup_iff]
+    constructor
+    · exact (orthogonalGroup Q).mul_mem (reflectionOrthogonal Q u).2
+        (reflectionOrthogonal Q v).2
+    · simp⟩
+
+omit [NeZero (2 : K)] in
+/-- The underlying orthogonal isometry of a pair of reflections. -/
+@[simp] theorem reflectionPairSpecialOrthogonal_toOrthogonal
+    (Q : QuadraticForm K V) (u v : V) [Invertible (Q u)] [Invertible (Q v)] :
+    specialOrthogonalToOrthogonal Q (reflectionPairSpecialOrthogonal Q u v) =
+      reflectionOrthogonal Q u * reflectionOrthogonal Q v := by
+  apply Subtype.ext
+  simp only [coe_specialOrthogonalToOrthogonal, Subgroup.coe_mul,
+    reflectionPairSpecialOrthogonal]
+
+omit [NeZero (2 : K)] in
+/-- A pair of reflections acts by applying the second reflection, then the first. -/
+@[simp] theorem reflectionPairSpecialOrthogonal_apply
+    (Q : QuadraticForm K V) (u v x : V) [Invertible (Q u)] [Invertible (Q v)] :
+    (reflectionPairSpecialOrthogonal Q u v : V ≃ₗ[K] V) x =
+      reflection Q u (reflection Q v x) := by
+  simp only [reflectionPairSpecialOrthogonal, Subgroup.coe_mk, LinearEquiv.mul_apply,
+    coe_reflectionOrthogonal]
+
+end QuadraticMap
 
 namespace TauCeti.QuadraticMap
 
@@ -81,6 +123,18 @@ theorem closure_reflectionOrthogonal_eq_top
     subgroup_eq_top_of_reflection_mem Q hQ (Subgroup.closure S)
       (fun v hv ↦ Subgroup.subset_closure ⟨v, hv, rfl⟩)
   rw [htop, Subgroup.top_toSubmonoid]
+
+/-- Two monoid homomorphisms out of the orthogonal group are equal as soon as they agree on every
+reflection in a vector of invertible norm. -/
+theorem orthogonalGroup_hom_ext
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) {M : Type*} [MulOneClass M]
+    {f g : orthogonalGroup Q →* M}
+    (h : ∀ (v : V) [Invertible (Q v)],
+      f (reflectionOrthogonal Q v) = g (reflectionOrthogonal Q v)) :
+    f = g :=
+  MonoidHom.eq_of_eqOn_denseM (closure_reflectionOrthogonal_eq_top Q hQ) <| by
+    rintro _ ⟨v, _, rfl⟩
+    exact h v
 
 /-- Every determinant-one orthogonal transformation belongs to any submonoid containing all
 products of two reflections. No nonzero-dimensional hypothesis is required. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Dimension
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Link
+import Mathlib.Data.Nat.Cast.Order.Basic
 
 /-!
 # Stellar subdivision at a face
@@ -128,6 +129,16 @@ theorem mem_stellarSubdivision_iff :
     τ ∈ stellarSubdivision K σ v ↔
       (v ∉ τ ∧ τ ∈ K ∧ ¬ σ ⊆ τ) ∨ (v ∈ τ ∧ ¬ σ ⊆ τ.erase v ∧ τ.erase v ∪ σ ∈ K) :=
   Iff.rfl
+
+/-- Every stellar simplex omits a vertex of the starred face, including simplices containing
+its new barycentric vertex. -/
+theorem exists_notMem_of_mem_stellarSubdivision (hvσ : v ∉ σ)
+    (hτ : τ ∈ stellarSubdivision K σ v) : ∃ a ∈ σ, a ∉ τ := by
+  rcases mem_stellarSubdivision_iff.mp hτ with ⟨-, -, h⟩ | ⟨-, h, -⟩
+  · exact Finset.not_subset.mp h
+  · obtain ⟨a, ha, haτ⟩ := Finset.not_subset.mp h
+    exact ⟨a, ha, fun hat => haτ (Finset.mem_erase.mpr
+      ⟨fun hav => hvσ (hav ▸ ha), hat⟩)⟩
 
 /-- A set missing the new vertex is a face of the stellar subdivision exactly when it is a face of
 `K` not containing the starred face: these are precisely the faces of `deletion K σ`. -/
@@ -265,6 +276,41 @@ theorem link_stellarSubdivision_singleton (hv : ({v} : Finset ι) ∉ K) :
     have hvρ : v ∉ ρ := notMem_of_singleton_notMem hv hρK
     exact ⟨hne, Finset.disjoint_singleton_right.mpr hvρ,
       (insert_mem_stellarSubdivision_iff hvρ).mpr ⟨hρσ, hstar⟩⟩
+
+/-- The link of a face containing the new vertex is the corresponding link in the boundary of
+the closed star of the original starred face. -/
+@[simp]
+theorem link_stellarSubdivision_insert {ρ : Finset ι} (hv : ({v} : Finset ι) ∉ K)
+    (hvρ : v ∉ ρ) :
+    link (stellarSubdivision K σ v) (insert v ρ) =
+      link (closedStar K σ ⊓ deletion K σ) ρ := by
+  have hdis : Disjoint ({v} : Finset ι) ρ := Finset.disjoint_singleton_left.mpr hvρ
+  calc
+    link (stellarSubdivision K σ v) (insert v ρ) =
+        link (link (stellarSubdivision K σ v) {v}) ρ := by
+      rw [link_link hdis, Finset.singleton_union]
+    _ = link (closedStar K σ ⊓ deletion K σ) ρ := by
+      rw [link_stellarSubdivision_singleton hv]
+
+/-- The link of a stellar face containing the new vertex lies in the corresponding link of
+the original closed-star boundary. This containment does not require freshness of the vertex. -/
+theorem link_stellarSubdivision_insert_le_link_closedStar_inf_deletion {ρ : Finset ι} :
+    link (stellarSubdivision K σ v) (insert v ρ) ≤
+      link (closedStar K σ ⊓ deletion K σ) (ρ.erase v) := by
+  intro τ hτ
+  obtain ⟨hne, hdis, hface⟩ := mem_link_nonempty.mp hτ
+  have hvτ : v ∉ τ := (Finset.disjoint_insert_right.mp hdis).1
+  have hρ : insert v (ρ.erase v) = insert v ρ := by simp
+  have hvτρ : v ∉ τ ∪ ρ.erase v := by simp [hvτ]
+  have hface' : insert v (τ ∪ ρ.erase v) ∈ stellarSubdivision K σ v := by
+    rw [← Finset.union_insert, hρ]
+    exact hface
+  obtain ⟨hσ, hK⟩ := (insert_mem_stellarSubdivision_iff hvτρ).mp hface'
+  refine mem_link_nonempty.mpr ⟨hne,
+    (Finset.disjoint_insert_right.mp hdis).2.mono_right (Finset.erase_subset _ _), ?_⟩
+  have hne' := hne.mono (Finset.subset_union_left : τ ⊆ τ ∪ ρ.erase v)
+  exact mem_inf.mpr ⟨mem_closedStar_nonempty.mpr ⟨hne', hK⟩,
+    mem_deletion.mpr ⟨(K.isRelLowerSet_faces hK).2 Finset.subset_union_left hne', hσ⟩⟩
 
 /-! ### Relabeling -/
 

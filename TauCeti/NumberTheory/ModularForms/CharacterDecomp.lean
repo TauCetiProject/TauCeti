@@ -29,7 +29,7 @@ operators (`TauCeti/LinearAlgebra/Eigenspace/JointEigenvector/Basic.lean`).
 The statements are unconditional, at every level `N` (including `N = 0`, where the diamond
 group is `ℤˣ`): the diamond group `(ZMod N)ˣ` is finite (`instFiniteZModUnits`, from
 `Mathlib.Data.ZMod.Units`) and commutative, so the classical character projectors decompose
-every vector (`iSup_iInf_eigenspace_unitHom_eq_top_of_commGroup`), with no
+every vector (`TauCeti.iSup_iInf_eigenspace_unitHom_eq_top_of_commGroup`), with no
 finite-dimensionality hypotheses anywhere.
 
 Ported from the AINTLIB `LeanModularForms` project
@@ -92,7 +92,7 @@ theorem iSup_inf_modFormCharSpace_of_invariant
     (⨆ χ : (ZMod N)ˣ →* ℂˣ, p ⊓ modFormCharSpace k χ) = p := by
   have h : (⨆ χ₀ : (ZMod N)ˣ →* ℂˣ,
       p ⊓ ⨅ d : (ZMod N)ˣ, (diamondOpHom k d).eigenspace ((χ₀ d : ℂ))) = p :=
-    iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup
+    TauCeti.iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup
       isUnit_card_unitsZMod p hp
   simpa only [modFormCharSpace_def] using h
 
@@ -104,7 +104,7 @@ theorem iSup_inf_cuspFormCharSpace_of_invariant
     (⨆ χ : (ZMod N)ˣ →* ℂˣ, p ⊓ cuspFormCharSpace k χ) = p := by
   have h : (⨆ χ₀ : (ZMod N)ˣ →* ℂˣ,
       p ⊓ ⨅ d : (ZMod N)ˣ, (diamondOpCuspHom k d).eigenspace ((χ₀ d : ℂ))) = p :=
-    iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup
+    TauCeti.iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup
       isUnit_card_unitsZMod p hp
   simpa only [cuspFormCharSpace_def] using h
 
@@ -123,7 +123,7 @@ theorem iSupIndep_modFormCharSpace (k : ℤ) :
     iSupIndep (fun χ : (ZMod N)ˣ →* ℂˣ ↦ modFormCharSpace (N := N) k χ) := by
   have h : iSupIndep (fun χ₀ : (ZMod N)ˣ →* ℂˣ ↦
       ⨅ d : (ZMod N)ˣ, (diamondOpHom k d).eigenspace ((χ₀ d : ℂ))) :=
-    iSupIndep_iInf_eigenspace_unitHom (ρ := diamondOpHom k)
+    TauCeti.iSupIndep_iInf_eigenspace_unitHom (ρ := diamondOpHom k)
   simpa only [modFormCharSpace_def] using h
 
 /-- **Internal direct sum decomposition**: `M_k(Γ₁(N))` decomposes as the direct
@@ -138,7 +138,7 @@ theorem iSupIndep_cuspFormCharSpace (k : ℤ) :
     iSupIndep (fun χ : (ZMod N)ˣ →* ℂˣ ↦ cuspFormCharSpace (N := N) k χ) := by
   have h : iSupIndep (fun χ₀ : (ZMod N)ˣ →* ℂˣ ↦
       ⨅ d : (ZMod N)ˣ, (diamondOpCuspHom k d).eigenspace ((χ₀ d : ℂ))) :=
-    iSupIndep_iInf_eigenspace_unitHom (ρ := diamondOpCuspHom k)
+    TauCeti.iSupIndep_iInf_eigenspace_unitHom (ρ := diamondOpCuspHom k)
   simpa only [cuspFormCharSpace_def] using h
 
 /-- **The cusp-form character subspaces span the whole space.** -/

@@ -29,6 +29,8 @@ finite function space `Fin d → R`.
 * `Polynomial.mem_monicIrreduciblesOfDegree_iff`: the defining membership condition.
 * `Polynomial.finite_monicIrreduciblesOfDegree`: over a finite coefficient ring there are
   finitely many.
+* `Polynomial.ncard_monicIrreduciblesOfDegree_one`: over a domain the monic irreducibles of degree
+  one are the `X - C a`, as many as the elements of the coefficient ring.
 * `TauCeti.irreducible_map_intCast_of_natDegree_eq_three`: a monic integral cubic with no integral
   root is irreducible over `ℚ`.
 * `TauCeti.irreducible_map_intCast_of_natDegree_eq_four`: a monic integral quartic with no
@@ -38,6 +40,8 @@ finite function space `Fin d → R`.
 public section
 
 namespace Polynomial
+
+section Semiring
 
 variable (R : Type*) [Semiring R]
 
@@ -65,6 +69,33 @@ theorem finite_monicIrreduciblesOfDegree [Nontrivial R] [Finite R] (d : ℕ) :
     rw [← Set.finite_coe_iff]
     exact Finite.of_equiv _ (Polynomial.monicEquivDegreeLT (R := R) d).symm
   exact hmon.subset fun g hg => ⟨hg.1, hg.2.2⟩
+
+end Semiring
+
+section Domain
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- Over a domain, the monic irreducible polynomials of degree one are exactly the `X - C a`. -/
+theorem monicIrreduciblesOfDegree_one :
+    monicIrreduciblesOfDegree R 1 = Set.range fun a : R => X - C a := by
+  ext g
+  rw [mem_monicIrreduciblesOfDegree_iff, Set.mem_range]
+  constructor
+  · rintro ⟨hmon, -, hdeg⟩
+    exact ⟨-g.coeff 0, by rw [C_neg, sub_neg_eq_add, ← hmon.eq_X_add_C hdeg]⟩
+  · rintro ⟨a, rfl⟩
+    exact ⟨monic_X_sub_C a, irreducible_X_sub_C a, natDegree_X_sub_C a⟩
+
+variable (R) in
+/-- Over a domain there are as many monic irreducible polynomials of degree one as elements of
+the coefficient ring. -/
+@[simp] theorem ncard_monicIrreduciblesOfDegree_one :
+    (monicIrreduciblesOfDegree R 1).ncard = Nat.card R := by
+  rw [monicIrreduciblesOfDegree_one]
+  exact Set.ncard_range_of_injective fun a b h => by simpa using h
+
+end Domain
 
 end Polynomial
 

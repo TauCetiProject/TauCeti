@@ -107,6 +107,24 @@ theorem mem_topologicalClosure_zpowers_two_iff {f : ℕ} (hf : 2 ≤ f) {u : ℤ
         (hle hx)
       rwa [mul_inv_cancel_left] at this
 
+/-- **An element of the twisted subgroup `U^[f]` outside `1 + 4ℤ_2` is a topological generator of
+it**, in the sense that its negative has exact level `f`: `U^[f] = U^(f+1) ∪ w U^(f+1)` for the
+generator `w`, and the elements outside `1 + 4ℤ_2` are those of the coset `w U^(f+1)`. -/
+theorem neg_mem_unitsPrincipal_and_notMem_succ_of_mem_topologicalClosure_zpowers_two {f : ℕ}
+    (hf : 2 ≤ f) {w u : ℤ_[2]ˣ} (hw : -w ∈ unitsPrincipal 2 f)
+    (hw' : -w ∉ unitsPrincipal 2 (f + 1)) (hu : u ∈ (Subgroup.zpowers w).topologicalClosure)
+    (hu2 : u ∉ unitsPrincipal 2 2) :
+    -u ∈ unitsPrincipal 2 f ∧ -u ∉ unitsPrincipal 2 (f + 1) := by
+  rcases (mem_topologicalClosure_zpowers_two_iff hf hw hw').1 hu with h | h
+  · exact absurd (unitsPrincipal_antitone 2 (by omega) h) hu2
+  · have e : -u = -w * (w⁻¹ * u) := by rw [neg_mul, mul_inv_cancel_left]
+    refine ⟨?_, fun h' ↦ hw' ?_⟩
+    · rw [e]
+      exact mul_mem hw (unitsPrincipal_antitone 2 (by omega) h)
+    · have e' : -w = -u * (w⁻¹ * u)⁻¹ := by rw [e, mul_inv_cancel_right]
+      rw [e']
+      exact mul_mem h' (inv_mem h)
+
 /-- `-1 ∉ U^[f]`: unlike `{±1} × U^(f+1)`, the twisted subgroup does not contain `-1`. -/
 theorem neg_one_notMem_topologicalClosure_zpowers_two {f : ℕ} (hf : 2 ≤ f) {u : ℤ_[2]ˣ}
     (hneg : -u ∈ unitsPrincipal 2 f) (hneg' : -u ∉ unitsPrincipal 2 (f + 1)) :

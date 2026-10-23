@@ -88,8 +88,7 @@ private theorem integralDividedPower_one_eq_kostantRootOperator
     integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M 1 hv v =
       kostantRootOperator e h ρ M hM i v :=
   Subtype.ext <| by
-    rw [coe_integralDividedPower_apply, coe_kostantRootOperator_apply,
-      Associative.dividedPower_one, Module.End.smul_def]
+    rw [coe_integralDividedPower_one_apply, coe_kostantRootOperator_apply, Module.End.smul_def]
 
 /-- A root vector acting nilpotently with nilpotency class at most one acts as zero, so the
 degenerate branch of the divided-power expansion carries no linear term. -/

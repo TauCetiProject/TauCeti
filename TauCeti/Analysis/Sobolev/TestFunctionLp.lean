@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Test functions as elements of `Lp`
@@ -67,7 +68,8 @@ the function vanishes outside `Omega`, so the restriction may be dropped. -/
 theorem enorm_testFunctionLp_eq_eLpNorm (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     ‖testFunctionLp (mu := mu) q phi‖ₑ = eLpNorm (phi : E → ℝ) q mu := by
   rw [Lp.enorm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae q phi),
-    eLpNorm_restrict_eq_of_support_subset ((subset_tsupport _).trans phi.tsupport_subset)]
+    eLpNorm_restrict_eq_of_support_subset phi.continuous.aestronglyMeasurable
+      ((subset_tsupport _).trans phi.tsupport_subset)]
 
 @[simp]
 theorem testFunctionLp_add (q : ENNReal) (phi psi : 𝓓(Omega, ℝ)) :
@@ -156,8 +158,7 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : 
     exact LinearMap.mkContinuous_norm_le _ hC hf₀
   · set g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 (mu.restrict Omega))).symm (-g')
     have hg : LocallyIntegrableOn g Omega mu :=
-      locallyIntegrableOn_of_locallyIntegrable_restrict
-        ((Lp.memLp g).locallyIntegrable (by norm_num))
+      Lp.locallyIntegrableOn g (by norm_num)
     refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun phi => ?_⟩
     have hg'phi : g' (T phi) = ℓ phi := by
       simpa [f₀, e, LinearEquiv.ofInjective_apply] using hg'f (e phi)
@@ -189,11 +190,6 @@ theorem continuous_gradient_testFunction (phi : 𝓓(Omega, ℝ)) :
     Continuous fun x => ∇ (phi : E → ℝ) x :=
   (contDiff_gradient_testFunction phi).continuous
 
-/-- The gradient of a test function has compact support. -/
-theorem hasCompactSupport_gradient_testFunction (phi : 𝓓(Omega, ℝ)) :
-    HasCompactSupport fun x => ∇ (phi : E → ℝ) x :=
-  (phi.hasCompactSupport.fderiv ℝ).comp_left (map_zero _)
-
 /-- The gradient of a test function on `Ω` vanishes outside `Ω`. -/
 theorem support_gradient_testFunction_subset (phi : 𝓓(Omega, ℝ)) :
     Function.support (fun x => ∇ (phi : E → ℝ) x) ⊆ (Omega : Set E) :=
@@ -208,7 +204,7 @@ variable [MeasurableSpace E] [OpensMeasurableSpace E] {mu : Measure E}
 theorem memLp_gradient_testFunction (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     MemLp (fun x => ∇ (phi : E → ℝ) x) q (mu.restrict Omega) :=
   (continuous_gradient_testFunction phi).memLp_of_hasCompactSupport
-    (hasCompactSupport_gradient_testFunction phi)
+    phi.hasCompactSupport.gradient
 
 /-- The gradient of a test function on `Ω`, as an element of `Lᵠ(Ω, E)`. -/
 def gradientTestFunctionLp (q : ENNReal) (phi : 𝓓(Omega, ℝ)) : Lp E q (mu.restrict Omega) :=
@@ -231,9 +227,16 @@ may be dropped, and `‖∇ phi x‖ = ‖fderiv ℝ phi x‖`. -/
 theorem enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     ‖gradientTestFunctionLp (mu := mu) q phi‖ₑ =
       eLpNorm (fderiv ℝ (phi : E → ℝ)) q mu := by
+  have hgrad : AEStronglyMeasurable (fun x => ∇ (phi : E → ℝ) x) mu :=
+    ((continuous_gradient_testFunction phi).stronglyMeasurable_of_hasCompactSupport
+      phi.hasCompactSupport.gradient).aestronglyMeasurable
+  have hfderiv : AEStronglyMeasurable (fderiv ℝ (phi : E → ℝ)) mu :=
+    ((contDiff_infty_iff_fderiv.mp phi.contDiff).2.continuous
+      |>.stronglyMeasurable_of_hasCompactSupport
+        (phi.hasCompactSupport.fderiv ℝ)).aestronglyMeasurable
   rw [Lp.enorm_def, eLpNorm_congr_ae (gradientTestFunctionLp_apply_ae q phi),
-    eLpNorm_restrict_eq_of_support_subset (support_gradient_testFunction_subset phi),
-    eLpNorm_congr_norm_ae
+    eLpNorm_restrict_eq_of_support_subset hgrad (support_gradient_testFunction_subset phi),
+    eLpNorm_congr_norm_ae hgrad hfderiv
       (ae_of_all _ fun x => norm_gradient_eq_norm_fderiv (𝕜 := ℝ) (phi : E → ℝ) x)]
 
 @[simp]

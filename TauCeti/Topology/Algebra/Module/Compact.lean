@@ -1,16 +1,19 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Andrew Yang
 -/
 module
 
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Nonarchimedean.Profinite
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Compact modules over a compact ring
@@ -44,6 +47,10 @@ witness that a compact totally disconnected topological ring is a compact module
 
 ## Main results
 
+* `Submodule.FG.isCompact`: over a compact semiring, a finitely generated submodule of a
+  topological module is compact.
+* `Submodule.span_eq_top_of_dense_closure`: over a compact ring, a finite set spans a Hausdorff
+  module as soon as a subset of its span generates a dense additive subgroup.
 * `OpenAddSubgroup.exists_submodule_isOpen_subset`: over a compact ring, an open additive subgroup
   of a topological module contains an open submodule.
 * `TauCeti.NonarchimedeanAddGroup.isLinearTopology`: over a compact ring, a nonarchimedean
@@ -51,6 +58,8 @@ witness that a compact totally disconnected topological ring is a compact module
 * `TauCeti.IsLinearTopology.eq_zero_of_forall_mem_of_isOpen`,
   `TauCeti.IsLinearTopology.sInf_isOpen_eq_bot`: in a `T1` linearly topologized module the open
   submodules intersect in zero.
+* `TauCeti.IsLinearTopology.continuous_iff_forall_continuous_mkQ`: a map into a linearly
+  topologized module is continuous exactly when it is continuous modulo every open submodule.
 * `TauCeti.exists_forall_mkQ_eq`: for a compact topological module, the map to compatible
   families in its quotients by open submodules is surjective.
 * `TauCeti.existsUnique_forall_mkQ_eq`: a compact `T1` linearly topologized module is the
@@ -70,6 +79,46 @@ witness that a compact totally disconnected topological ring is a compact module
 public section
 
 open Filter Topology
+
+section CompactSemiring
+
+variable {R M : Type*} [Semiring R] [TopologicalSpace R] [CompactSpace R] [AddCommMonoid M]
+  [Module R M] [TopologicalSpace M] [ContinuousAdd M] [ContinuousSMul R M]
+
+/-- **A finitely generated submodule of a topological module over a compact semiring is compact.**
+Unlike Mathlib's `Submodule.isCompact_of_fg`, the semiring need not be commutative; the completed
+group algebra of a nonabelian profinite group is the case that needs this. -/
+theorem Submodule.FG.isCompact {N : Submodule R M} (hN : N.FG) : IsCompact (N : Set M) := by
+  -- The proof is that of Mathlib's `Submodule.isCompact_of_fg` (Andrew Yang): the submodule is the
+  -- image of a finite power of `R` under the continuous linear-combination map. Commutativity of
+  -- `R` is never used.
+  obtain ⟨s, hs⟩ := hN
+  have : LinearMap.range (Fintype.linearCombination R (α := s) Subtype.val) = N := by
+    simp [hs]
+  rw [← this]
+  refine isCompact_range ?_
+  simp only [Fintype.linearCombination, Finset.univ_eq_attach, LinearMap.coe_mk, AddHom.coe_mk]
+  fun_prop
+
+end CompactSemiring
+
+section CompactRing
+
+variable {R M : Type*} [Ring R] [TopologicalSpace R] [CompactSpace R] [AddCommGroup M]
+  [Module R M] [TopologicalSpace M] [T2Space M] [ContinuousAdd M] [ContinuousSMul R M]
+
+/-- **A finite set spans a Hausdorff module over a compact ring as soon as a subset of its span
+generates a dense additive subgroup**: the span is compact, hence closed, and contains a dense
+set. -/
+theorem Submodule.span_eq_top_of_dense_closure {T S : Set M} (hT : T.Finite)
+    (hS : S ⊆ Submodule.span R T) (hd : Dense (AddSubgroup.closure S : Set M)) :
+    Submodule.span R T = ⊤ := by
+  have hle : (AddSubgroup.closure S : Set M) ⊆ Submodule.span R T := by
+    rw [← Submodule.coe_toAddSubgroup]
+    exact SetLike.coe_subset_coe.2 ((AddSubgroup.closure_le _).2 hS)
+  exact top_unique fun x _ ↦ closure_minimal hle (Submodule.fg_span hT).isCompact.isClosed (hd x)
+
+end CompactRing
 
 namespace TauCeti
 
@@ -156,16 +205,39 @@ theorem IsLinearTopology.sInf_isOpen_eq_bot :
 
 end Separated
 
+section Continuity
+
+variable [IsTopologicalAddGroup M] [IsLinearTopology R M]
+
+variable (R) in
+/-- **Continuity level by level.** A map into a linearly topologized topological module is
+continuous exactly when its compositions with the quotient maps onto the quotients by the open
+submodules are continuous. -/
+theorem IsLinearTopology.continuous_iff_forall_continuous_mkQ {X : Type*} [TopologicalSpace X]
+    {f : X → M} :
+    Continuous f ↔ ∀ N : Submodule R M, IsOpen (N : Set M) → Continuous (N.mkQ ∘ f) := by
+  refine ⟨fun hf N _ ↦ N.continuous_mkQ.comp hf, fun h ↦ continuous_iff_continuousAt.2 fun x ↦ ?_⟩
+  rw [ContinuousAt, ← map_add_left_nhds_zero (f x),
+    ((IsLinearTopology.hasBasis_open_submodule R).map _).tendsto_right_iff]
+  intro N hN
+  have := Submodule.Quotient.discreteTopology_of_isOpen N hN
+  filter_upwards [((h N hN).isOpen_preimage _ (isOpen_discrete {N.mkQ (f x)})).mem_nhds
+    (by simp)] with z hz
+  exact ⟨f z - f x, (Submodule.Quotient.eq N).1 hz, add_sub_cancel _ _⟩
+
+end Continuity
+
 section Compact
 
-variable [ContinuousAdd M] [CompactSpace M]
+variable [CompactSpace M]
 
 /-- **Surjectivity onto compatible families of open quotients.** Every family of elements of
 `M ⧸ N`, with `N` ranging over the open submodules, that is compatible along the factor maps
-`M ⧸ N → M ⧸ N'` for `N ≤ N'` comes from an element of the compact topological module `M`.
-The element is unique when `M` is moreover `T1` and linearly topologized
-(`TauCeti.existsUnique_forall_mkQ_eq`). -/
-theorem exists_forall_mkQ_eq (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.1)
+`M ⧸ N → M ⧸ N'` for `N ≤ N'` comes from an element of `M`, for `M` compact with separately
+continuous addition. The element is unique when `M` moreover has continuous addition and is `T1`
+and linearly topologized (`TauCeti.existsUnique_forall_mkQ_eq`). -/
+theorem exists_forall_mkQ_eq [SeparatelyContinuousAdd M]
+    (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.1)
     (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.1 ≤ N'.1),
       Submodule.factor h (x N) = x N') :
     ∃ m : M, ∀ N, N.1.mkQ m = x N := by
@@ -195,7 +267,7 @@ theorem exists_forall_mkQ_eq (x : ∀ N : {N : Submodule R M // IsOpen (N : Set 
 /-- **The inverse-limit description of a compact linearly topologized module**: a compatible
 family of elements of the quotients `M ⧸ N` by the open submodules comes from exactly one element
 of `M`. -/
-theorem existsUnique_forall_mkQ_eq [IsLinearTopology R M] [T1Space M]
+theorem existsUnique_forall_mkQ_eq [ContinuousAdd M] [IsLinearTopology R M] [T1Space M]
     (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.1)
     (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.1 ≤ N'.1),
       Submodule.factor h (x N) = x N') :

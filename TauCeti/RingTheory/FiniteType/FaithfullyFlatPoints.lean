@@ -25,6 +25,8 @@ prescribed point, which is a nontrivial finite-type `K`-algebra and therefore ha
 
 ## Main declarations
 
+* `AlgHom.exists_comp_eq_of_comap_eq_ker`: a point lifts when its kernel lies in the
+  spectral image of a finite-type map.
 * `AlgHom.surjective_comp_right_of_comap_surjective`: a map surjective on prime spectra is
   surjective on algebraically closed points when the map is of finite type.
 * `AlgHom.surjective_comp_right_of_faithfullyFlat`: precomposition along a faithfully flat
@@ -55,7 +57,7 @@ variable [CommRing B] [Algebra k B]
 variable [Field K] [Algebra k K] [IsAlgClosed K]
 
 /-- A point of `A` lifts through `f` if a prime of `B` lies over its kernel. -/
-private theorem exists_comp_eq_of_comap_eq_ker (f : A →ₐ[k] B) (hft : f.FiniteType)
+theorem exists_comp_eq_of_comap_eq_ker (f : A →ₐ[k] B) (hft : f.FiniteType)
     (p : A →ₐ[k] K)
     (P : PrimeSpectrum B)
     (hP : PrimeSpectrum.comap f.toRingHom P =

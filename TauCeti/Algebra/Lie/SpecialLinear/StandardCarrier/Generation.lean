@@ -46,8 +46,8 @@ variable {A : Type u} [CommRing A]
 private theorem rootTransvection_mem_points (k : Fin r ⊕ Fin r) (c : A) :
     TauCeti.transvectionUnit (rootTarget_ne_rootSource r k) c ∈ points r A := by
   have h := (rootSubgroupPoints r k A (Multiplicative.ofAdd c)).property
-  rw [coe_rootSubgroupPoints, kostantRootSubgroupMatrix_eq_transvection] at h
-  simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd] using h
+  rw [coe_rootSubgroupPoints_eq_transvectionUnit] at h
+  simpa only [toAdd_ofAdd] using h
 
 /-- Every elementary transvection over a commutative ring is a point of the type `A_r` carrier. -/
 theorem transvectionUnit_mem_points {i j : Fin (r + 1)} (hij : i ≠ j) (c : A) :
@@ -96,9 +96,8 @@ theorem points_eq_range_toGL_of_transvection_generation {R : Type u} [CommRing R
   apply le_antisymm
   · intro g hg
     have hdet : Matrix.GeneralLinearGroup.det g = 1 := det_eq_one_of_mem_points r hg
-    have hmem : g ∈ Matrix.GeneralLinearGroup.det ⁻¹' ({1} : Set Rˣ) := by
-      simpa only [Set.mem_preimage, Set.mem_singleton_iff] using hdet
-    rw [← Matrix.SpecialLinearGroup.range_toGL] at hmem
+    have hmem : g ∈ Matrix.GeneralLinearGroup.det.ker := MonoidHom.mem_ker.mpr hdet
+    rw [← Matrix.SpecialLinearGroup.range_toGL_eq_ker_det] at hmem
     exact hmem
   · rintro _ ⟨g, rfl⟩
     exact toGL_mem_points_of_transvection_generation r hgen g

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.MellinTransform
 public import Mathlib.NumberTheory.LSeries.SumCoeff
+import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 
 /-!
 # Analytic continuation of an L-series from a bound on its partial sums

@@ -91,7 +91,7 @@ theorem wassersteinEDist_top_sum_smul_le {ι : Type*} [Countable ι]
       exact hz.trans (le_iSup_of_le i (le_iSup_of_le hpos le_rfl))
   choose π hπ hb using h
   refine (wassersteinEDist_le (IsCoupling.sum hπ) ∞).trans ?_
-  rw [eLpNorm_exponent_top]
+  rw [eLpNorm_exponent_top measurable_edist.aestronglyMeasurable]
   apply eLpNormEssSup_le_of_ae_enorm_bound
   simpa only [enorm_eq_self] using Measure.ae_sum_iff.mpr hb
 

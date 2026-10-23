@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 public import TauCeti.RingTheory.DedekindDomain.PrimesAbove
+import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 
 /-!
 # The primes of a number field above those ramifying in another
@@ -27,6 +28,10 @@ how the prime behaves in `L / E`.
 
 * `NumberField.Chebotarev.mem_primesAboveRamifiedPrimes_iff`: the defining condition for
   membership.
+* `NumberField.Chebotarev.under_mem_primesAboveRamifiedPrimes_of_not_isUnramifiedAt`: a prime
+  below a ramified prime in a tower satisfies the defining condition.
+* `NumberField.Chebotarev.under_mem_primesAboveRamifiedPrimes_iff_inertia_ne_bot`: in a
+  Galois tower, membership of the contraction is equivalent to nontrivial inertia upstairs.
 
 ## Comparison with ramification in `L / E`
 
@@ -81,5 +86,27 @@ below `𝔓` ramifies in `L`. -/
 theorem mem_primesAboveRamifiedPrimes_iff (𝔓 : HeightOneSpectrum (𝓞 E)) :
     𝔓 ∈ primesAboveRamifiedPrimes K L E ↔ 𝔓.under (𝓞 K) ∈ ramifiedPrimes K L :=
   (Set.Finite.mem_toFinset _).trans (HeightOneSpectrum.mem_primesAbove_iff _ _ _ _)
+
+/-- If `Q` ramifies over `K`, its contraction to `E` lies above a ramified prime of `K`. -/
+theorem under_mem_primesAboveRamifiedPrimes_of_not_isUnramifiedAt
+    [Algebra E L] [IsScalarTower K E L] (Q : HeightOneSpectrum (𝓞 L))
+    (hQ : ¬ Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal) :
+    Q.under (𝓞 E) ∈ primesAboveRamifiedPrimes K L E := by
+  rw [mem_primesAboveRamifiedPrimes_iff, HeightOneSpectrum.under_under,
+    mem_ramifiedPrimes_iff]
+  intro hur
+  exact hQ (hur Q.asIdeal)
+
+/-- In a Galois extension, the contraction of `Q` to an intermediate number field lies above a
+ramified prime of `K` exactly when the inertia group at `Q` over `K` is nontrivial. -/
+theorem under_mem_primesAboveRamifiedPrimes_iff_inertia_ne_bot
+    [IsGalois K L] [Algebra E L] [IsScalarTower K E L]
+    (Q : HeightOneSpectrum (𝓞 L)) :
+    Q.under (𝓞 E) ∈ primesAboveRamifiedPrimes K L E ↔
+      Q.asIdeal.inertia (L ≃ₐ[K] L) ≠ ⊥ := by
+  rw [mem_primesAboveRamifiedPrimes_iff, HeightOneSpectrum.under_under]
+  have h := (under_notMem_ramifiedPrimes_iff_isUnramifiedAt (K := K) (L := L) Q).trans
+    (Ideal.isUnramifiedAt_iff_inertia_eq_bot (K := K) Q.asIdeal)
+  simpa only [not_not] using not_congr h
 
 end NumberField.Chebotarev

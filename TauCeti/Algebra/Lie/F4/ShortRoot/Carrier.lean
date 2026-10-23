@@ -340,7 +340,7 @@ theorem points_def (A : Type v) [CommRing A] :
 
 /-- A matrix is a point of the short-root carrier exactly when its associated convolution point
 kills the carrier's defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 26) A) :
     g ∈ points A ↔ ∀ x ∈ definingIdeal,
@@ -473,7 +473,8 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin 4 → Aˣ) :
 
 /-! ## Closed subgroups and the pinning equation -/
 
-private theorem representedRootCoordinateMap_surjective (k : Fin 4 ⊕ Fin 4) :
+/-- The represented integral root-subgroup coordinate map into the additive group is surjective. -/
+theorem representedRootSubgroupCoordinateMap_surjective (k : Fin 4 ⊕ Fin 4) :
     Function.Surjective
       (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap rootGen cartanGen rep
         lattice.toAddSubgroup rep_kostantForm_mem_lattice k
@@ -490,7 +491,7 @@ theorem rootSubgroupCoordinateMap_surjective (k : Fin 4 ⊕ Fin 4) :
         rep_kostantForm_mem_lattice
         isNilpotent_rep_serreRootGenerator latticeBasis f4ShortRootWeight k).hom :=
   TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap_surjective_of_surjective
-    _ _ _ _ _ _ _ _ k (representedRootCoordinateMap_surjective k)
+    _ _ _ _ _ _ _ _ k (representedRootSubgroupCoordinateMap_surjective k)
 
 /-- Every numbered simple root subgroup is a closed copy of the additive group. -/
 instance isClosedImmersion_rootSubgroup (k : Fin 4 ⊕ Fin 4) :
@@ -509,7 +510,7 @@ instance isClosedImmersion_weightTorus : IsClosedImmersion weightTorus.hom.hom.l
 
 /-- The scheme-level pinning equation: conjugation by the weight torus acts on each numbered
 simple root subgroup through the corresponding type-`F₄` root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 4 ⊕ Fin 4)
     (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶

@@ -206,7 +206,7 @@ theorem ι_eq_zero_iff (N : QuiverSubrep M) : N.ι = 0 ↔ N = ⊥ := by
     refine (Submodule.eq_bot_iff _).2 fun x hx ↦ ?_
     have happ : N.ι.app a = 0 := by
       rw [NatTrans.congr_app h a]
-      exact Limits.zero_app _ _ _ _
+      exact Limits.zero_app _ _ _
     calc (x : M.obj a) = N.ι.app a (⟨x, hx⟩ : N.toSubmodule a) := rfl
       _ = 0 := by rw [happ]; rfl
   · exact fun h ↦ (isZero_toQuiverRep h).eq_of_src _ _

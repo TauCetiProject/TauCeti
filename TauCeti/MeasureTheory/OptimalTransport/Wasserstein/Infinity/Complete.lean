@@ -91,8 +91,10 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum
       _ = wassersteinEDist ∞ (μ n) (μ (n + 1)) := hπopt n
       _ ≤ b n := hμ n
   have hjump : ∀ n, ∀ᵐ x ∂P, edist (x n) (x (n + 1)) ≤ b n := fun n ↦ by
+    have hm : AEStronglyMeasurable (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) P :=
+      ((hev n).edist (hev (n + 1))).aestronglyMeasurable
     have hess : eLpNormEssSup (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) P ≤ b n := by
-      rw [← eLpNorm_exponent_top]
+      rw [← eLpNorm_exponent_top hm]
       exact hjumpNorm n
     filter_upwards [ae_le_eLpNormEssSup
       (f := fun x : ℕ → X ↦ edist (x n) (x (n + 1)))] with x hx
@@ -117,7 +119,9 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum
         ((hev n).prodMk hZ).aemeasurable]
       rfl
     _ ≤ ∑' k, b (n + k) := by
-      rw [eLpNorm_exponent_top]
+      have hm : AEStronglyMeasurable (fun x : ℕ → X ↦ edist (x n) (Z x)) P :=
+        ((hev n).edist hZ).aestronglyMeasurable
+      rw [eLpNorm_exponent_top hm]
       refine eLpNormEssSup_le_of_ae_enorm_bound ?_
       filter_upwards [ae_all_iff.2 hjump, hZtendsto] with x hx hxlim
       simpa using edist_le_tsum_of_edist_le_of_tendsto b

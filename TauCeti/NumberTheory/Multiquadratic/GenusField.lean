@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.InfinitePlace
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Real.Basic
+import TauCeti.FieldTheory.AlgHom
 
 /-!
 # Genus fields of quadratic fields
@@ -102,7 +103,7 @@ theorem exists_algEquiv_apply_eq (hL : IsGenusField.{u, v} d L y)
   have hML : Module.finrank ℚ M ≤ Module.finrank ℚ L :=
     LinearMap.finrank_le_finrank_of_injective (f := ψ.toLinearMap) ψ.injective
   have hrank : Module.finrank ℚ L = Module.finrank ℚ M := le_antisymm hLM hML
-  refine ⟨TauCeti.algEquivOfFinrankEq φ hrank, ?_⟩
+  refine ⟨φ.algEquivOfFinrankEq hrank, ?_⟩
   simpa using hφ
 
 end IsGenusField

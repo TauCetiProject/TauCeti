@@ -207,8 +207,7 @@ private theorem isRestricted_mvPowerSeriesBaseChange_map
     (x : TensorProduct A M (restrictedMvPowerSeriesSubring k A)) :
     IsRestricted (mvPowerSeriesBaseChange
       (TensorProduct.map LinearMap.id restrictedMvPowerSeriesSubringVal.toLinearMap x)) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul m f =>
       simpa using (mem_restrictedMvPowerSeriesSubring.mp f.2).mvPowerSeriesBaseChange_tmul m
   | add y z hy hz => simpa using hy.add hz
@@ -276,8 +275,7 @@ theorem restrictedMvPowerSeriesSubmoduleMap_baseChange {N : Type*} [AddCommMonoi
     (x : TensorProduct A M (restrictedMvPowerSeriesSubring k A)) :
     restrictedMvPowerSeriesSubmoduleMap φ hφ (restrictedMvPowerSeriesBaseChange x) =
       restrictedMvPowerSeriesBaseChange (TensorProduct.map φ LinearMap.id x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul m f =>
       apply Subtype.ext
       funext s
@@ -360,8 +358,7 @@ theorem restrictedMvPowerSeriesFinPiEquiv_baseChange
     (x : TensorProduct A (Fin n → A) (restrictedMvPowerSeriesSubring k A)) :
     restrictedMvPowerSeriesFinPiEquiv k n A (restrictedMvPowerSeriesBaseChange x) =
       tensorFinPiEquiv k n A x := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul m f =>
       funext i
       apply Subtype.ext

@@ -11,7 +11,11 @@ public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.RingTheory.LocalRing.Defs
+public import Mathlib.RingTheory.Artinian.Defs
 import TauCeti.RingTheory.LocalRing.Basic
+import TauCeti.RingTheory.KrullSchmidt.Indecomposable
+import Mathlib.RingTheory.Artinian.Module
+import Mathlib.RingTheory.HopkinsLevitzki
 
 /-!
 # Recognizing indecomposable objects from their endomorphisms
@@ -26,8 +30,8 @@ indecomposable — together with the two forms in which it is used in practice. 
 endomorphisms are recorded faithfully in a *local* ring, by a map preserving zero, the identity and
 squares, is indecomposable; this is the criterion behind the Krull–Schmidt theorem, and the one
 the quiver Jordan blocks need, their endomorphism algebra `k[X]/(Xⁿ⁺¹)` being local but not a
-field. And over a field, an object whose endomorphism space is one-dimensional (a *brick*) is
-indecomposable.
+field. And over a division ring, an object whose endomorphism space is one-dimensional (a
+*brick*) is indecomposable.
 
 The converse holds as soon as idempotents split, that is, over an idempotent-complete category
 (`CategoryTheory.IsIdempotentComplete`, which every abelian category is): splitting `e` and `𝟙 - e`
@@ -44,15 +48,26 @@ decomposition of the whole object.
 * `TauCeti.indecomposable_of_injective_of_isLocalRing`: **an object whose endomorphisms are
   recorded faithfully in a local ring, by a map preserving zero, the identity and squares, is
   indecomposable.**
-* `TauCeti.indecomposable_of_finrank_end_eq_one`: in a `k`-linear category over a field,
+* `TauCeti.indecomposable_of_finrank_end_eq_one`: in a `k`-linear category over a division ring,
   **a brick is indecomposable**.
 * `TauCeti.isoBiprodOfRetracts`: two retracts of `X` whose idempotents sum to the identity exhibit
   `X` as their biproduct.
 * `TauCeti.idempotent_eq_zero_or_id_of_indecomposable`: the converse of the first criterion, over
   an idempotent-complete category, packaged with it as
   `TauCeti.indecomposable_iff_idempotent_eq_zero_or_id`.
+* `TauCeti.isLocalRing_end_of_idempotent_eq_zero_or_id`: in a linear category over a commutative
+  Artinian ring, a nonzero object whose endomorphisms are finitely generated over the base and whose
+  only idempotent endomorphisms are `0` and the identity has a local endomorphism ring.
+* `TauCeti.isLocalRing_end_of_indecomposable`: the same for an indecomposable object of an
+  idempotent-complete category; this is Fitting's lemma, for instance for a Hom-finite linear
+  category over a field.
+* `TauCeti.indecomposable_of_isLocalRing_end`: conversely, an object with a local endomorphism ring
+  is indecomposable.
 * `TauCeti.isIso_of_isIso_comp`: an invertible composite `f ≫ g` through an object with only
   trivial idempotent endomorphisms has `f` invertible.
+* `CategoryTheory.Functor.indecomposable_obj_of_map_bijective`: a functor preserving zero morphisms
+  and bijective on the endomorphisms of an indecomposable object carries it to an indecomposable
+  object; in particular a fully faithful one does.
 
 ## Implementation notes
 
@@ -62,44 +77,26 @@ idempotent the two agree, but the hypothesis is easier to discharge as stated.
 
 `indecomposable_of_injective_of_isLocalRing` records the endomorphisms in an unbundled map `φ`,
 asked to be injective, to send `0` to `0` and `𝟙 X` to `1`, and to carry squares to squares,
-`φ (e ≫ e) = φ e * φ e`. Those are exactly the equations the proof consumes: an idempotent has an
-idempotent record, a local ring pins that record to `0` or `1`, the two normalization equations
-say which endomorphisms those values are the records of, and injectivity carries the dichotomy
-back to the idempotent. Multiplicativity is asked on squares alone because that is where the proof
-meets `φ`, and because it is the hypothesis that costs a use site least: asking instead that `φ`
-turn every `≫` into a product would raise a question this one does not, the multiplication of
-`End X` being composition in the opposite order. On a square the two orders agree, so no use site
-has to choose between them. Bundling `φ` as a ring homomorphism would settle the order the other
-way and demand additivity besides, which no use site has reason to prove. The ring is not asked to
-be commutative because the endomorphism ring of an indecomposable object, the intended source of
-`φ`, is not.
+`φ (e ≫ e) = φ e * φ e`. On a square the two orders of multiplication agree, so no use site has to
+choose between `≫` and the multiplication of `End X`; bundling `φ` as a ring homomorphism would
+settle the order and demand additivity besides. The ring is not asked to be commutative because
+the endomorphism ring of an indecomposable object, the intended source of `φ`, is not.
 
-Two neighbours state the same idea in narrower settings and do not reach the objects that need it
-here. `TauCeti.indecomposable_iff_isLocalRing_end` asks `CategoryTheory.End` itself to be local but
-is confined to `ModuleCat A` and to modules of finite length;
+Two neighbours state the same idea in narrower settings.
+`TauCeti.indecomposable_iff_isLocalRing_end` asks `CategoryTheory.End` itself to be local but is
+confined to `ModuleCat A` and to modules of finite length;
 `TauCeti.isIndecomposableModule_of_isLocalRing_end` is the statement for bare modules. A quiver
-representation is a functor `Paths Q ⥤ ModuleCat k`, not an object of `ModuleCat A`, and asking for
-`IsLocalRing (X ⟶ X)` would make every use site exhibit its endomorphisms as a ring first —
-recording them instead in a ring already known to be local is what makes the criterion cheap to
-apply.
+representation is a functor `Paths Q ⥤ ModuleCat k`, not an object of `ModuleCat A`, and recording
+its endomorphisms in a ring already known to be local is what makes the criterion cheap to apply.
 
-`indecomposable_of_idempotent_eq_zero_or_id` extracts, from an isomorphism `X ≅ Y ⊞ Z`, the
-idempotent `biprod.fst ≫ biprod.inl` transported to `X`. It is `0` exactly when `Y` is zero and the
-identity exactly when `Z` is zero, so the hypothesis splits the decomposition; the proof reads off
-`𝟙 Y` and `𝟙 Z` from it using only the biproduct equations `biprod.inl_fst`, `biprod.inr_snd` and
-`biprod.inr_fst`.
-
-That every endomorphism of a brick is a scalar is Mathlib's `finrank_eq_one_iff_of_nonzero'`
-applied to the identity, which spans the endomorphism space because it is nonzero.
-
-The brick criterion is stated for a field. The argument itself only inverts one scalar, so it
-would run over a division ring, but `CategoryTheory.Linear` takes a commutative base and
-`Module.finrank` is the invariant used by the consumers, so no generality is lost in practice.
+The criteria that only produce or consume idempotents and zero objects are stated over
+`CategoryTheory.Limits.HasZeroMorphisms`, the setting of `CategoryTheory.Indecomposable` itself;
+only the converse direction, which forms `𝟙 X - e`, and the biproduct decomposition from retracts
+need a preadditive category. The brick criterion is stated over a division ring.
 
 `isoBiprodOfRetracts` asks only for the two retractions and the identity `r₁ ≫ i₁ + r₂ ≫ i₂ = 𝟙 X`;
-the orthogonality relations `i₁ ≫ r₂ = 0` and `i₂ ≫ r₁ = 0` that make the comparison map an
-isomorphism are consequences, extracted by cancelling the split monomorphisms `i₁` and `i₂`. Stating
-it this way keeps it usable from any source of complementary idempotents, not only from
+the orthogonality relations `i₁ ≫ r₂ = 0` and `i₂ ≫ r₁ = 0` follow. Stating it this way keeps it
+usable from any source of complementary idempotents, not only from
 `CategoryTheory.IsIdempotentComplete.idempotents_split`.
 -/
 
@@ -111,32 +108,24 @@ open CategoryTheory CategoryTheory.Limits
 
 universe v u
 
-variable {C : Type u} [Category.{v} C] [Preadditive C]
+variable {C : Type u} [Category.{v} C]
 
-/-- **An object with no nontrivial idempotent endomorphism is indecomposable.** A decomposition
-`X ≅ Y ⊞ Z` produces the idempotent `biprod.fst ≫ biprod.inl` on `X`; it is `0` only if `Y` is
-zero, and the identity only if `Z` is zero. -/
+section HasZeroMorphisms
+
+variable [HasZeroMorphisms C]
+
+/-- **An object with no nontrivial idempotent endomorphism is indecomposable.** -/
 theorem indecomposable_of_idempotent_eq_zero_or_id [HasBinaryBiproducts C] {X : C} (hX : ¬ IsZero X)
     (h : ∀ e : X ⟶ X, e ≫ e = e → e = 0 ∨ e = 𝟙 X) : Indecomposable X := by
   refine ⟨hX, fun Y Z i ↦ ?_⟩
-  have hidem : (i.hom ≫ biprod.fst ≫ biprod.inl ≫ i.inv) ≫
-      (i.hom ≫ biprod.fst ≫ biprod.inl ≫ i.inv) = i.hom ≫ biprod.fst ≫ biprod.inl ≫ i.inv := by
-    simp
-  rcases h _ hidem with h0 | h1
+  rcases h (i.hom ≫ biprod.fst ≫ biprod.inl ≫ i.inv) (by simp) with h0 | h1
   · refine Or.inl ((IsZero.iff_id_eq_zero Y).mpr ?_)
-    -- Conjugating back and framing with `biprod.inl`, `biprod.fst` turns the idempotent into `𝟙 Y`.
-    have := congrArg (fun f : X ⟶ X ↦ biprod.inl ≫ i.inv ≫ f ≫ i.hom ≫ biprod.fst) h0
-    simpa using this
+    simpa using congrArg (fun f : X ⟶ X ↦ biprod.inl ≫ i.inv ≫ f ≫ i.hom ≫ biprod.fst) h0
   · refine Or.inr ((IsZero.iff_id_eq_zero Z).mpr ?_)
-    -- Framing instead with `biprod.inr`, `biprod.snd` kills the idempotent and leaves `𝟙 Z`.
-    have := congrArg (fun f : X ⟶ X ↦ biprod.inr ≫ i.inv ≫ f ≫ i.hom ≫ biprod.snd) h1
-    simpa using this.symm
+    simpa using (congrArg (fun f : X ⟶ X ↦ biprod.inr ≫ i.inv ≫ f ≫ i.hom ≫ biprod.snd) h1).symm
 
 /-- **An object whose endomorphisms are recorded faithfully in a local ring is indecomposable.**
-The record `φ` is asked to be injective and to preserve zero, the identity and squares. An
-idempotent endomorphism then has an idempotent record, and a local ring carries no idempotent
-other than `0` and `1` (`TauCeti.IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem`), so the
-record — and with it the endomorphism, the record being faithful — is `0` or the identity. This is
+The record `φ` is asked to be injective and to preserve zero, the identity and squares. This is
 the criterion behind the Krull–Schmidt theorem: an object whose endomorphism ring is local is
 indecomposable. -/
 theorem indecomposable_of_injective_of_isLocalRing [HasBinaryBiproducts C] {X : C} (hX : ¬ IsZero X)
@@ -145,9 +134,29 @@ theorem indecomposable_of_injective_of_isLocalRing [HasBinaryBiproducts C] {X : 
     Indecomposable X := by
   refine indecomposable_of_idempotent_eq_zero_or_id hX fun e he ↦ ?_
   have hidem : IsIdempotentElem (φ e) := (hsq e).symm.trans (congrArg φ he)
-  rcases IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem hidem with h0 | h1
+  rcases IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing hidem with h0 | h1
   · exact Or.inl (hφ (h0.trans hzero.symm))
   · exact Or.inr (hφ (h1.trans hid.symm))
+
+/-- **A composite that is invertible has an invertible first factor**, when the object it passes
+through has only the trivial idempotent endomorphisms and the identity of the source is nonzero.
+Both hypotheses hold when the source is nonzero and the middle object is indecomposable in a
+category where idempotents split (`TauCeti.idempotent_eq_zero_or_id_of_indecomposable`). -/
+theorem isIso_of_isIso_comp {X Y : C} (hX : 𝟙 X ≠ 0)
+    (hY : ∀ e : Y ⟶ Y, e ≫ e = e → e = 0 ∨ e = 𝟙 Y) (f : X ⟶ Y) (g : Y ⟶ X)
+    (h : IsIso (f ≫ g)) : IsIso f := by
+  have hfp : f ≫ g ≫ inv (f ≫ g) = 𝟙 X := by rw [← Category.assoc, IsIso.hom_inv_id]
+  rcases hY ((g ≫ inv (f ≫ g)) ≫ f) (by simp only [Category.assoc, reassoc_of% hfp])
+    with h0 | h1
+  · refine absurd ?_ hX
+    calc 𝟙 X = f ≫ ((g ≫ inv (f ≫ g)) ≫ f) ≫ g ≫ inv (f ≫ g) := by
+          simp only [Category.assoc, reassoc_of% hfp, hfp]
+      _ = 0 := by rw [h0, zero_comp, comp_zero]
+  · exact ⟨⟨g ≫ inv (f ≫ g), hfp, h1⟩⟩
+
+end HasZeroMorphisms
+
+variable [Preadditive C]
 
 /-- **Two retracts whose idempotents sum to the identity split an object as a biproduct.** Its
 comparison map and inverse are read off by `TauCeti.isoBiprodOfRetracts_hom` and
@@ -156,19 +165,15 @@ noncomputable def isoBiprodOfRetracts [HasBinaryBiproducts C] {X Y Z : C} (i₁ 
     (i₂ : Z ⟶ X) (r₂ : X ⟶ Z) (h₁ : i₁ ≫ r₁ = 𝟙 Y) (h₂ : i₂ ≫ r₂ = 𝟙 Z)
     (h : r₁ ≫ i₁ + r₂ ≫ i₂ = 𝟙 X) : X ≅ Y ⊞ Z := by
   -- `i₁` and `i₂` are split monomorphisms, so orthogonality can be checked after composing with
-  -- them, where the hypothesis `h` and the two retraction identities settle it.
+  -- them, where `h` and the two retraction identities settle it.
   haveI : IsSplitMono i₁ := ⟨⟨r₁, h₁⟩⟩
   haveI : IsSplitMono i₂ := ⟨⟨r₂, h₂⟩⟩
-  have horth₁ : i₁ ≫ r₂ = 0 := by
-    have key : i₁ ≫ (r₁ ≫ i₁ + r₂ ≫ i₂) = i₁ := by rw [h, Category.comp_id]
-    rw [Preadditive.comp_add, ← Category.assoc, h₁, Category.id_comp] at key
-    rw [← cancel_mono i₂, Category.assoc]
-    simpa using key
-  have horth₂ : i₂ ≫ r₁ = 0 := by
-    have key : i₂ ≫ (r₁ ≫ i₁ + r₂ ≫ i₂) = i₂ := by rw [h, Category.comp_id]
-    rw [Preadditive.comp_add, ← Category.assoc (f := i₂) (g := r₂), h₂, Category.id_comp] at key
-    rw [← cancel_mono i₁, Category.assoc]
-    simpa using key
+  have key₁ : i₁ ≫ (r₁ ≫ i₁ + r₂ ≫ i₂) = i₁ := by rw [h, Category.comp_id]
+  have key₂ : i₂ ≫ (r₁ ≫ i₁ + r₂ ≫ i₂) = i₂ := by rw [h, Category.comp_id]
+  simp only [Preadditive.comp_add, reassoc_of% h₁, reassoc_of% h₂, add_eq_left,
+    add_eq_right] at key₁ key₂
+  have horth₁ : i₁ ≫ r₂ = 0 := by rw [← cancel_mono i₂, Category.assoc, key₁, zero_comp]
+  have horth₂ : i₂ ≫ r₁ = 0 := by rw [← cancel_mono i₁, Category.assoc, key₂, zero_comp]
   exact
     { hom := biprod.lift r₁ r₂
       inv := biprod.desc i₁ i₂
@@ -216,67 +221,112 @@ theorem indecomposable_iff_idempotent_eq_zero_or_id [HasBinaryBiproducts C]
   ⟨fun hX ↦ ⟨hX.1, fun _ he ↦ idempotent_eq_zero_or_id_of_indecomposable hX he⟩,
     fun hX ↦ indecomposable_of_idempotent_eq_zero_or_id hX.1 hX.2⟩
 
-omit [Preadditive C] in
-/-- **A composite that is invertible has an invertible first factor**, when the object it passes
-through has only the trivial idempotent endomorphisms and the identity of the source is nonzero:
-the composite produces the idempotent `(g ≫ inv (f ≫ g)) ≫ f` of `Y`, which is then `0` or `𝟙 Y`,
-and `0` is excluded by `𝟙 X ≠ 0`.
+section Linear
 
-The hypotheses are the two consequences of indecomposability that the argument uses, in the form
-`TauCeti.idempotent_eq_zero_or_id_of_indecomposable` supplies the second one; neither is stated as
-indecomposability itself, which would need biproducts and splitting idempotents. Only the zero
-morphisms are used, not the additivity of the hom-groups, so the statement is made at
-`CategoryTheory.Limits.HasZeroMorphisms` rather than in the preadditive setting of the rest of
-this file. -/
-theorem isIso_of_isIso_comp [HasZeroMorphisms C] {X Y : C} (hX : 𝟙 X ≠ 0)
-    (hY : ∀ e : Y ⟶ Y, e ≫ e = e → e = 0 ∨ e = 𝟙 Y) (f : X ⟶ Y) (g : Y ⟶ X)
-    (h : IsIso (f ≫ g)) : IsIso f := by
-  have := h
-  have hfp : f ≫ (g ≫ inv (f ≫ g)) = 𝟙 X := by rw [← Category.assoc, IsIso.hom_inv_id]
-  have hidem : ((g ≫ inv (f ≫ g)) ≫ f) ≫ (g ≫ inv (f ≫ g)) ≫ f = (g ≫ inv (f ≫ g)) ≫ f := by
-    rw [Category.assoc, ← Category.assoc f, hfp, Category.id_comp]
-  rcases hY _ hidem with h0 | h1
-  · exfalso
-    have hf0 : f = 0 := by
-      have hz : f ≫ (g ≫ inv (f ≫ g)) ≫ f = 0 := by rw [h0, comp_zero]
-      rwa [← Category.assoc, hfp, Category.id_comp] at hz
-    have hzero : f ≫ (g ≫ inv (f ≫ g)) = 0 := by
-      simpa using congrArg (fun t : X ⟶ Y ↦ t ≫ (g ≫ inv (f ≫ g))) hf0
-    exact hX (hfp.symm.trans hzero)
-  · exact ⟨⟨g ≫ inv (f ≫ g), hfp, h1⟩⟩
-
-variable {k : Type*} [Field k] [Linear k C]
-
-/-- An object whose endomorphism space is one-dimensional has a nonzero identity, hence is not a
-zero object. -/
-theorem id_ne_zero_of_finrank_end_eq_one {X : C} (h : Module.finrank k (X ⟶ X) = 1) :
-    𝟙 X ≠ 0 := by
-  have : Nontrivial (X ⟶ X) := Module.nontrivial_of_finrank_pos (R := k) (by rw [h]; exact one_pos)
-  obtain ⟨f, g, hfg⟩ := exists_pair_ne (X ⟶ X)
-  intro hid
-  exact hfg (by rw [← Category.comp_id f, ← Category.comp_id g, hid, comp_zero, comp_zero])
+variable {k : Type*} [Semiring k] [Nontrivial k] [Linear k C]
 
 /-- An object whose endomorphism space is one-dimensional is not a zero object. -/
 theorem not_isZero_of_finrank_end_eq_one {X : C} (h : Module.finrank k (X ⟶ X) = 1) :
-    ¬ IsZero X := fun hX ↦
-  id_ne_zero_of_finrank_end_eq_one h ((IsZero.iff_id_eq_zero X).mp hX)
+    ¬ IsZero X := fun hX ↦ by
+  have : Subsingleton (X ⟶ X) := ⟨hX.eq_of_src⟩
+  rw [Module.finrank_zero_of_subsingleton] at h
+  exact zero_ne_one h
 
-/-- **A brick is indecomposable.** If the endomorphism space of `X` is one-dimensional over the
-base field then the identity spans it, so every endomorphism is a scalar, the only idempotents are
-`0` and the identity and `TauCeti.indecomposable_of_idempotent_eq_zero_or_id` applies. -/
-theorem indecomposable_of_finrank_end_eq_one [HasBinaryBiproducts C] {X : C}
-    (h : Module.finrank k (X ⟶ X) = 1) :
+/-- An object whose endomorphism space is one-dimensional has a nonzero identity. -/
+theorem id_ne_zero_of_finrank_end_eq_one {X : C} (h : Module.finrank k (X ⟶ X) = 1) :
+    𝟙 X ≠ 0 := fun hid ↦
+  not_isZero_of_finrank_end_eq_one h ((IsZero.iff_id_eq_zero X).mpr hid)
+
+end Linear
+
+/-- **A brick is indecomposable**: an object whose endomorphism space over a division ring is
+one-dimensional is indecomposable. -/
+theorem indecomposable_of_finrank_end_eq_one {k : Type*} [DivisionRing k] [Linear k C]
+    [HasBinaryBiproducts C] {X : C} (h : Module.finrank k (X ⟶ X) = 1) :
     Indecomposable X := by
+  have hid := id_ne_zero_of_finrank_end_eq_one h
   refine indecomposable_of_idempotent_eq_zero_or_id (not_isZero_of_finrank_end_eq_one h)
     fun e he ↦ ?_
-  obtain ⟨c, rfl⟩ :=
-    (finrank_eq_one_iff_of_nonzero' (𝟙 X) (id_ne_zero_of_finrank_end_eq_one h)).mp h e
+  obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_nonzero' (𝟙 X) hid).mp h e
   rw [Linear.smul_comp, Linear.comp_smul, Category.comp_id, smul_smul] at he
-  rcases eq_or_ne c 0 with rfl | hc
+  rcases IsIdempotentElem.iff_eq_zero_or_one.mp (smul_left_injective k hid he) with rfl | rfl
   · exact Or.inl (zero_smul k (𝟙 X))
-  · refine Or.inr ?_
-    -- Scaling the idempotent equation `(c * c) • 𝟙 X = c • 𝟙 X` by `c⁻¹` gives `c • 𝟙 X = 𝟙 X`.
-    have := congrArg (fun f : X ⟶ X ↦ c⁻¹ • f) he
-    simpa [smul_smul, ← mul_assoc, inv_mul_cancel₀ hc] using this
+  · exact Or.inr (one_smul k (𝟙 X))
+
+/-- **A nonzero object with no nontrivial idempotent endomorphism has a local endomorphism ring**,
+in a linear category over a commutative Artinian ring `R` when the endomorphisms of the object are
+finitely generated over `R`. Then `End X` has finite length over itself, and a ring of finite length
+with no idempotents besides `0` and `1` is local by Fitting's lemma
+(`TauCeti.isLocalRing_of_isIndecomposableModule_self`). -/
+theorem isLocalRing_end_of_idempotent_eq_zero_or_id {R : Type*} [CommRing R] [IsArtinianRing R]
+    [Linear R C] {X : C} [Module.Finite R (X ⟶ X)] (hX : ¬ IsZero X)
+    (h : ∀ e : X ⟶ X, e ≫ e = e → e = 0 ∨ e = 𝟙 X) : IsLocalRing (End X) := by
+  have : Module.Finite R (End X) := Module.Finite.equiv End.linearEquiv.symm
+  have hA : IsFiniteLength (End X) (End X) := isFiniteLength_iff_isNoetherian_isArtinian.2
+    ⟨isNoetherian_of_tower R inferInstance, isArtinian_of_tower R inferInstance⟩
+  refine isLocalRing_of_isIndecomposableModule_self hA ((isIndecomposableModule_self_iff _).2
+    ⟨nontrivial_of_ne 1 0 fun h ↦ hX ((IsZero.iff_id_eq_zero X).2 congr(($h).asHom)),
+      fun e he ↦ ?_⟩)
+  rcases h e.asHom congr($(he.eq).asHom) with h | h
+  · exact Or.inl (End.ext h)
+  · exact Or.inr (End.ext h)
+
+/-- **Fitting's lemma: an indecomposable object has a local endomorphism ring**, in an
+idempotent-complete linear category over a commutative Artinian ring `R` when the endomorphisms of
+the object are finitely generated over `R`, for instance in a Hom-finite linear category over a
+field. Indecomposability leaves `0` and `1` as the only idempotents of `End X`
+(`TauCeti.idempotent_eq_zero_or_id_of_indecomposable`). -/
+theorem isLocalRing_end_of_indecomposable {R : Type*} [CommRing R] [IsArtinianRing R] [Linear R C]
+    [HasBinaryBiproducts C] [IsIdempotentComplete C] {X : C} [Module.Finite R (X ⟶ X)]
+    (hX : Indecomposable X) : IsLocalRing (End X) :=
+  isLocalRing_end_of_idempotent_eq_zero_or_id (R := R) hX.1 fun _ he ↦
+    idempotent_eq_zero_or_id_of_indecomposable hX he
+
+/-- **An object with a local endomorphism ring is indecomposable**, the converse of
+`TauCeti.isLocalRing_end_of_indecomposable`. -/
+theorem indecomposable_of_isLocalRing_end [HasBinaryBiproducts C] {X : C} [IsLocalRing (End X)] :
+    Indecomposable X :=
+  indecomposable_of_injective_of_isLocalRing
+    (fun h ↦ zero_ne_one (α := End X) (End.ext ((IsZero.iff_id_eq_zero X).mp h).symm)) End.of
+    (fun _ _ h ↦ congr(($h).asHom)) rfl rfl fun _ ↦ rfl
 
 end TauCeti
+
+namespace CategoryTheory.Indecomposable
+
+variable {C : Type*} [Category* C] [Limits.HasZeroMorphisms C] [Limits.HasBinaryBiproducts C]
+
+/-- Indecomposability is invariant under isomorphism. -/
+theorem of_iso {X Y : C} (hX : Indecomposable X) (e : X ≅ Y) : Indecomposable Y :=
+  ⟨fun h ↦ hX.1 (h.of_iso e), fun A B f ↦ hX.2 A B (e ≪≫ f)⟩
+
+end CategoryTheory.Indecomposable
+
+namespace CategoryTheory.Functor
+
+open Limits
+
+variable {C : Type*} [Category* C] [Preadditive C] {D : Type*} [Category* D] [HasZeroMorphisms D]
+
+/-- **A functor bijective on the endomorphisms of an indecomposable object carries it to an
+indecomposable object**, when idempotents split in the source. A fully faithful functor
+qualifies, by `CategoryTheory.Functor.FullyFaithful.map_bijective`. -/
+theorem indecomposable_obj_of_map_bijective [HasBinaryBiproducts C] [IsIdempotentComplete C]
+    [HasBinaryBiproducts D] (F : C ⥤ D) {X : C}
+    (hX : Indecomposable X) (hF : Function.Bijective (F.map : (X ⟶ X) → (F.obj X ⟶ F.obj X))) :
+    Indecomposable (F.obj X) := by
+  obtain ⟨g, hg⟩ := hF.2 (0 : F.obj X ⟶ F.obj X)
+  have hzero : F.map (0 : X ⟶ X) = 0 := by
+    calc
+      F.map (0 : X ⟶ X) = F.map (g ≫ (0 : X ⟶ X)) := by rw [comp_zero]
+      _ = 0 := by rw [F.map_comp, hg, zero_comp]
+  refine TauCeti.indecomposable_of_idempotent_eq_zero_or_id (fun h0 ↦ hX.1 ?_) fun e he ↦ ?_
+  · rw [IsZero.iff_id_eq_zero] at h0 ⊢
+    exact hF.1 (by rw [F.map_id, h0, hzero])
+  · obtain ⟨η, rfl⟩ := hF.2 e
+    rcases TauCeti.idempotent_eq_zero_or_id_of_indecomposable hX
+        (hF.1 (by rw [F.map_comp, he])) with h | h
+    · exact Or.inl (by rw [h, hzero])
+    · exact Or.inr (by rw [h, F.map_id])
+
+end CategoryTheory.Functor

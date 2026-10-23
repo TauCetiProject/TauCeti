@@ -16,7 +16,9 @@ import Mathlib.MeasureTheory.Measure.Prokhorov
 
 The canonical graphon space `GraphonSpaceI` is a compact metric space (the
 Lovász--Szegedy compactness theorem). It combines completeness of unit-interval graphons
-with total boundedness of their cut-distance quotient.
+with total boundedness of their cut-distance quotient. The graphon space over an atomless standard
+Borel carrier is isometric to `GraphonSpaceI` (`isometryEquivGraphonSpaceI`), so it is compact too,
+and hence complete.
 
 Compactness passes to the mixing measures: `ProbabilityMeasure GraphonSpaceI` is compact and
 metrizable (the compact-space direction of Prokhorov's theorem), so every sequence of probability
@@ -26,6 +28,8 @@ measures on the graphon space has a weakly convergent subsequence
 ## Main results
 
 * `TauCeti.DenseGraphLimits.GraphonSpaceI.instCompactSpace` -- `GraphonSpaceI` is compact.
+* `TauCeti.DenseGraphLimits.GraphonSpace.instCompactSpace` -- the graphon space over an atomless
+  standard Borel carrier is compact.
 * `TauCeti.DenseGraphLimits.exists_subseq_tendsto_probabilityMeasure` -- every sequence of
   probability measures on `GraphonSpaceI` has a weakly convergent subsequence.
 
@@ -34,6 +38,8 @@ measures on the graphon space has a weakly convergent subsequence
 * L. Lovász and B. Szegedy, *Szemerédi's Lemma for the Analyst*, GAFA 17 (2007), Theorem 5.1.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012),
   Theorem 9.23.
+* S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
+  (2013), Theorem A.7.
 -/
 
 public section
@@ -52,6 +58,14 @@ namespace DenseGraphLimits
 compact metric space. This supplies compactness for graphon-space arguments. -/
 instance GraphonSpaceI.instCompactSpace : CompactSpace GraphonSpaceI :=
   ⟨isCompact_iff_totallyBounded_isComplete.2 ⟨totallyBounded_graphonSpaceI, isComplete_univ⟩⟩
+
+/-- **Lovász--Szegedy compactness over atomless standard Borel carriers.** The cut-distance
+quotient of graphons on a standard Borel space with an atomless probability measure is a compact
+metric space, being isometric to `GraphonSpaceI`. -/
+instance GraphonSpace.instCompactSpace {Ω : Type*} [MeasurableSpace Ω] [StandardBorelSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ] [NullSingletonClass μ] :
+    CompactSpace (GraphonSpace Ω μ) :=
+  isometryEquivGraphonSpaceI.symm.toHomeomorph.compactSpace
 
 /-- **Compactness extraction.** Every sequence of probability measures on `GraphonSpaceI` has a
 weakly convergent subsequence: the graphon space is a compact metric space, so its space of

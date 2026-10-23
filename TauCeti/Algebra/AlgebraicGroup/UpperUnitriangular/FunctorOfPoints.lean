@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
 public import TauCeti.Algebra.AlgebraicGroup.UpperUnitriangular.Coordinate.HopfAlgebra
 
 /-!
@@ -16,8 +15,7 @@ of the upper-unitriangular coordinate Hopf algebra with the existing upper-unitr
 group. The equivalence is natural in the commutative value algebra and therefore assembles into
 a natural isomorphism of group-valued functors.
 
-The construction includes empty finite index types and zero rings. It does not yet package a
-group scheme.
+The construction includes empty finite index types and zero rings.
 
 ## Main declarations
 
@@ -35,13 +33,9 @@ group scheme.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
-
-The layout follows `GeneralLinear.FunctorOfPoints`.
 -/
 
 public section
-
-open scoped TensorProduct
 
 namespace TauCeti.UpperUnitriangular
 
@@ -67,13 +61,6 @@ private theorem isUpperUnitriangular_matrixOfPoint
     (matrixOfPoint R m f).IsUpperUnitriangular :=
   (isUpperUnitriangular_genericMatrix R m).map
     (f.ofConv.comp (coordinateHopfAlgebraAlgEquiv R m).toAlgHom)
-
-@[simp]
-private theorem matrixOfPoint_apply
-    (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) (i j : m) :
-    matrixOfPoint R m f i j =
-      f.ofConv (coordinateHopfAlgebraAlgEquiv R m (genericMatrix R m i j)) := by
-  rfl
 
 /-- The upper-unitriangular matrix obtained by evaluating a point on the generic matrix. -/
 noncomputable def pointToUpperUnitriangular
@@ -209,7 +196,7 @@ theorem pointsMulEquiv_mapValue {B : Type*} [CommRing B] [Algebra R B]
     (φ : A →ₐ[R] B) (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
     pointsMulEquiv R m (AlgHom.mapValue (H := coordinateHopfAlgebra R m) φ f) =
       UpperUnitriangularGroup.map φ.toRingHom (pointsMulEquiv R m f) := by
-  exact pointToUpperUnitriangular_mapValue R m φ f
+  simpa only [pointsMulEquiv_apply] using pointToUpperUnitriangular_mapValue R m φ f
 
 /-- Naturality of the inverse pointwise equivalence in the value algebra. -/
 theorem mapValue_pointsMulEquiv_symm_apply {B : Type*} [CommRing B] [Algebra R B]
@@ -226,7 +213,7 @@ section Functor
 
 /-- The group-valued functor sending a commutative `R`-algebra to its upper-unitriangular group,
 before the universe lift used by `upperUnitriangularFunctor`. -/
-private noncomputable abbrev upperUnitriangularFunctorUnlifted :
+private abbrev upperUnitriangularFunctorUnlifted :
     CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj A := GrpCat.of (upperUnitriangularGroup m (A : Type w))
   map φ := GrpCat.ofHom (UpperUnitriangularGroup.map φ.hom.toRingHom)
@@ -240,7 +227,7 @@ private noncomputable abbrev upperUnitriangularFunctorUnlifted :
 /-- The group-valued functor sending a commutative `R`-algebra to its upper-unitriangular group
 and a value-algebra morphism to entrywise application. Its values are universe-lifted so that its
 codomain agrees with the generic Hopf-algebra points functor. -/
-noncomputable def upperUnitriangularFunctor :
+def upperUnitriangularFunctor :
     CommAlgCat.{w} R ⥤ GrpCat.{max u v w} :=
   upperUnitriangularFunctorUnlifted (R := R) m ⋙ GrpCat.uliftFunctor.{u, max v w}
 
@@ -263,7 +250,7 @@ theorem upperUnitriangularFunctor_map {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
   (rfl)
 
 /-- Entrywise computation of a value-algebra map on the upper-unitriangular functor. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem upperUnitriangularFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (g : ULift.{u, max v w} (upperUnitriangularGroup m A)) (i j : m) :
     (eqToHom (upperUnitriangularFunctor_obj (R := R) m B)
@@ -288,7 +275,7 @@ noncomputable def pointsNatIso :
 
 /-- After transport along `upperUnitriangularFunctor_obj`, the forward component of
 `pointsNatIso` is the pointwise upper-unitriangular equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R m) A) :
     (eqToHom (upperUnitriangularFunctor_obj (R := R) m A)
@@ -297,7 +284,7 @@ theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
 
 /-- After transport back along `upperUnitriangularFunctor_obj`, the inverse component of
 `pointsNatIso` is polynomial evaluation on strict-upper entries. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_inv_app_apply (A : CommAlgCat.{w} R)
     (g : ULift.{u, max v w} (upperUnitriangularGroup m A)) :
     (pointsNatIso (R := R) m).inv.app A

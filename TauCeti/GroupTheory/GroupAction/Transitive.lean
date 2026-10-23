@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
+public import Mathlib.GroupTheory.Perm.Cycle.Basic
 
 /-!
 # Transitive actions
@@ -26,17 +27,23 @@ assumed.
 
 * `TauCeti.quotientStabilizerEquiv`: for a transitive action of `G` on `X` and a point `b : X`,
   the equivalence `G ⧸ stabilizer G b ≃ X` sending the coset of `g` to `g • b`.
+* `MonoidHom.quotientComapStabilizerEquiv`: the same for a transitive permutation representation
+  `ρ : G →* Equiv.Perm X`, whose point stabiliser is the preimage under `ρ` of a stabiliser in
+  `Equiv.Perm X`.
 
 ## Main results
 
 * `TauCeti.quotientStabilizerEquiv_mk`: its value on a coset, and
-  `TauCeti.quotientStabilizerEquiv_smul`: its equivariance.
+  `TauCeti.quotientStabilizerEquiv_smul`: its equivariance; likewise
+  `MonoidHom.quotientComapStabilizerEquiv_mk` and `MonoidHom.quotientComapStabilizerEquiv_smul`.
 * `TauCeti.natCard_dvd_natCard_of_isPretransitive`: the number of points of a nonempty set acted
   on transitively divides the order of the group.
 * `TauCeti.stabilizer_eq_bot_of_natCard_eq`, `TauCeti.eq_one_of_natCard_eq_of_smul_eq_self`: a
   transitive action of a group with as many elements as the finite set acted on is regular, so
   only the identity fixes a point.
 * `TauCeti.isPretransitive_prod_left`: a product with a subsingleton stays pretransitive.
+* `MonoidHom.isCycleOn_apply_of_zpowers_eq_top`: the image of a generator under a transitive
+  permutation representation of a cyclic group is one cycle on the whole set.
 
 ## Implementation notes
 
@@ -123,3 +130,54 @@ theorem eq_one_of_natCard_eq_of_smul_eq_self [Finite X] (h : Nat.card G = Nat.ca
   Subgroup.mem_bot.mp (stabilizer_eq_bot_of_natCard_eq h x ▸ mem_stabilizer_iff.mpr hgx)
 
 end TauCeti
+
+namespace MonoidHom
+
+open Equiv
+
+variable {G X : Type*} [Group G]
+
+/-- **A generator of a cyclic group acts as one cycle in every transitive permutation
+representation.** If `g` generates `G` and the image of `ρ : G →* Perm X` acts transitively,
+then `ρ g` is a cycle on all of `X`. This includes singleton `X`, where `ρ g` is the identity
+and `IsCycleOn univ` is the appropriate nondegenerate-free formulation. -/
+theorem isCycleOn_apply_of_zpowers_eq_top (ρ : G →* Perm X)
+    (hρ : IsPretransitive ρ.range X) {g : G} (hg : Subgroup.zpowers g = ⊤) :
+    (ρ g).IsCycleOn Set.univ := by
+  refine ⟨(ρ g).bijective.bijOn_univ, fun x _ y _ => ?_⟩
+  obtain ⟨⟨_, a, rfl⟩, ha⟩ := hρ.exists_smul_eq x y
+  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (hg.symm ▸ Subgroup.mem_top a)
+  have ha' : ρ a x = y := by simpa [Subgroup.smul_def] using ha
+  exact ⟨k, by simpa [← map_zpow, hk] using ha'⟩
+
+/-- **Orbit-stabiliser for a transitive permutation representation** `ρ : G →* Perm X`: the coset
+space of the point stabiliser `ρ⁻¹ (stabilizer x)` is `X`, the coset of `g` corresponding to
+`ρ g x`. This is `TauCeti.quotientStabilizerEquiv` for the action of `G` on `X` through `ρ`. -/
+noncomputable def quotientComapStabilizerEquiv (ρ : G →* Perm X) (hρ : IsPretransitive ρ.range X)
+    (x : X) : G ⧸ (stabilizer (Perm X) x).comap ρ ≃ X :=
+  letI := MulAction.compHom X ρ
+  haveI : IsPretransitive G X := ⟨fun y z => by
+    obtain ⟨⟨_, g, rfl⟩, hg⟩ := hρ.exists_smul_eq y z
+    exact ⟨g, hg⟩⟩
+  -- Under `MulAction.compHom`, `g • x` is `ρ g • x` by definition, so the two stabilisers agree
+  -- elementwise by `rfl`.
+  (Subgroup.quotientEquivOfEq (by ext; rfl)).trans (TauCeti.quotientStabilizerEquiv G x)
+
+/-- The computation rule for `MonoidHom.quotientComapStabilizerEquiv`: the coset of `g` goes to
+`ρ g x`. -/
+@[simp]
+theorem quotientComapStabilizerEquiv_mk (ρ : G →* Perm X) (hρ : IsPretransitive ρ.range X)
+    (x : X) (g : G) : quotientComapStabilizerEquiv ρ hρ x (QuotientGroup.mk g) = ρ g x := by
+  rw [quotientComapStabilizerEquiv, Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
+    TauCeti.quotientStabilizerEquiv_mk]
+  rfl
+
+/-- The identification of the coset space with `X` carries left multiplication by `g` to `ρ g`. -/
+@[simp]
+theorem quotientComapStabilizerEquiv_smul (ρ : G →* Perm X) (hρ : IsPretransitive ρ.range X)
+    (x : X) (g : G) (q : G ⧸ (stabilizer (Perm X) x).comap ρ) :
+    quotientComapStabilizerEquiv ρ hρ x (g • q) = ρ g (quotientComapStabilizerEquiv ρ hρ x q) := by
+  induction q using QuotientGroup.induction_on with
+  | H g' => simp [Perm.mul_apply]
+
+end MonoidHom

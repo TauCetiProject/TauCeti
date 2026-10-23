@@ -118,7 +118,7 @@ theorem card_classGroup_dvd_classNumber (hF : IsFunctionField k F) {P : Place k 
     (hP : ∃ r : R, algebraMap R F r ∉ P.integers) (hdeg : P.degree = 1) :
     Nat.card (ClassGroup R) ∣ classNumber hF := by
   rw [Nat.card_congr (Additive.ofMul (α := ClassGroup R)), classNumber_def]
-  exact AddSubgroup.card_dvd_of_surjective _
+  exact AddSubgroup.card_dvd_of_surjective
     (classGroupHom_comp_subtype_surjective R hF hP hdeg)
 
 end Divisor

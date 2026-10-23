@@ -5,19 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Basic
+public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Combinatorics.Quiver.Path
 
 /-!
 # Alternating vertex functions
 
-A ring-valued function on the vertices of a quiver *alternates* when it is negated by every arrow,
+A function from the vertices of a quiver to a monoid with distributive negation *alternates*
+when it is negated by every arrow,
 `c j = -c i` for all `a : i ⟶ j`. This file records what such a function does along a path: it is
 multiplied by `(-1)ⁿ` over a path of length `n`, so it is unchanged along a path of even length and
 negated along one of odd length.
 
 In particular, a closed walk of odd length forces an alternating function to satisfy
-`c a = -c a`, hence `2 * c a = 0`.
+`c a = -c a`. When the values lie in a ring, this gives `2 * c a = 0`.
 
 ## Main results
 
@@ -31,7 +32,7 @@ namespace TauCeti
 
 universe u v
 
-variable {V : Type u} [Quiver.{v} V] (k : Type*) [Ring k]
+variable {V : Type u} [Quiver.{v} V] (k : Type*) [Monoid k] [HasDistribNeg k]
 
 /-- **A sign-changing vertex function changes by `(-1)ⁿ` along a path.** If `c` negates along
 every arrow of a quiver, then it is multiplied by `(-1)ⁿ` along every path of length `n`. -/

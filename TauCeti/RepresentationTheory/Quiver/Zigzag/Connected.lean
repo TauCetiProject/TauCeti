@@ -39,9 +39,7 @@ definition and decomposition of zigzag algebras.
 
 ## References
 
-This is the connected-component compatibility required in Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`. See Huerfano--Khovanov,
-*A category for the adjoint representation*, Section 3.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3.
 -/
 
 public section

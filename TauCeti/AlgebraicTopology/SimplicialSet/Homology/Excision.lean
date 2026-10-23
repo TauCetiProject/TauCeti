@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
+import Mathlib.CategoryTheory.Limits.Preserves.SigmaConst
 
 /-!
 # Relative chains and complementary simplices

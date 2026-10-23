@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
 public import TauCeti.Topology.Homeomorph.SetCongr
+public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 
 /-!
 # Graphs over the range of a projection
@@ -21,6 +22,8 @@ embedded graph. The projection is a continuous left inverse of its graph paramet
   projection is an embedding.
 * `ContinuousLinearMap.graphHomeomorph`: the part of the range of a projection lying in a set `s`
   is homeomorphic to the graph over it, with inverse given by the projection.
+* `ContinuousLinearMap.projectionGraphChart`: the ambient coordinate change
+  `z ↦ z - g (P z)` straightens the graph on an open cylinder over its parameter set.
 -/
 
 public section
@@ -79,5 +82,76 @@ theorem coe_graphHomeomorph_symm_apply (P : M →L[R] M) (hP : IsIdempotentElem 
   exact ((LinearMap.IsIdempotentElem.mem_range_iff
     (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp
       (LinearMap.mem_range.mpr (v : range P).2)).symm
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
+  [IsTopologicalAddGroup M]
+
+/-- The triangular ambient chart straightening a graph over the range of an idempotent
+continuous linear map. Its source and target are the cylinder over `U`. The coordinate
+change itself does not require idempotence. -/
+def projectionGraphChart (P : M →L[R] M) (g : M → M)
+    {U : Set M} (hU : IsOpen U) (hg : ContinuousOn g (P.range ∩ U))
+    (hPg : ∀ v ∈ (P.range : Set M) ∩ U, P (g v) = 0) : OpenPartialHomeomorph M M where
+  toFun z := z - g (P z)
+  invFun z := z + g (P z)
+  source := P ⁻¹' U
+  target := P ⁻¹' U
+  map_source' z hz := by simpa [hPg (P z) ⟨P.mem_range_self z, hz⟩] using hz
+  map_target' z hz := by simpa [hPg (P z) ⟨P.mem_range_self z, hz⟩] using hz
+  left_inv' z hz := by simp [hPg (P z) ⟨P.mem_range_self z, hz⟩]
+  right_inv' z hz := by simp [hPg (P z) ⟨P.mem_range_self z, hz⟩]
+  open_source := hU.preimage P.continuous
+  open_target := hU.preimage P.continuous
+  continuousOn_toFun := continuousOn_id.sub
+    (hg.comp P.continuous.continuousOn fun z hz ↦ ⟨P.mem_range_self z, hz⟩)
+  continuousOn_invFun := continuousOn_id.add
+    (hg.comp P.continuous.continuousOn fun z hz ↦ ⟨P.mem_range_self z, hz⟩)
+
+variable (P : M →L[R] M) (g : M → M)
+  {U : Set M} (hU : IsOpen U) (hg : ContinuousOn g (P.range ∩ U))
+  (hPg : ∀ v ∈ (P.range : Set M) ∩ U, P (g v) = 0)
+
+@[simp]
+theorem projectionGraphChart_source :
+    (P.projectionGraphChart g hU hg hPg).source = P ⁻¹' U := (rfl)
+
+@[simp]
+theorem projectionGraphChart_target :
+    (P.projectionGraphChart g hU hg hPg).target = P ⁻¹' U := (rfl)
+
+@[simp]
+theorem projectionGraphChart_apply (z : M) :
+    P.projectionGraphChart g hU hg hPg z = z - g (P z) := (rfl)
+
+@[simp]
+theorem projectionGraphChart_symm_apply (z : M) :
+    (P.projectionGraphChart g hU hg hPg).symm z = z + g (P z) := (rfl)
+
+/-- On its source, the chart takes a graph precisely to the range of the projection.
+The graph may be defined over a larger parameter set `S`, for example a closed disk whose
+interior contains `U`. -/
+theorem projectionGraphChart_mem_range_iff (hP : IsIdempotentElem P)
+    {S : Set M} (hUS : U ⊆ S) (hPgS : ∀ v ∈ (P.range : Set M) ∩ S, P (g v) = 0)
+    {z : M} (hz : P z ∈ U) :
+    P.projectionGraphChart g hU hg hPg z ∈ P.range ↔
+      z ∈ (fun v ↦ v + g v) '' ((P.range : Set M) ∩ S) := by
+  have hfix (v : M) : v ∈ P.range ↔ P v = v :=
+    LinearMap.IsIdempotentElem.mem_range_iff
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)
+  constructor
+  · intro h
+    have heq : P z = z - g (P z) := by
+      simpa only [projectionGraphChart_apply, map_sub,
+        hPg (P z) ⟨P.mem_range_self z, hz⟩, sub_zero] using (hfix _).mp h
+    exact ⟨P z, ⟨P.mem_range_self z, hUS hz⟩, (eq_sub_iff_add_eq).mp heq⟩
+  · rintro ⟨v, ⟨hv, hvU⟩, rfl⟩
+    have hvP := (hfix v).mp hv
+    simp only [projectionGraphChart_apply, map_add, hvP, hPgS v ⟨hv, hvU⟩, add_zero,
+      add_sub_cancel_right]
+    exact hv
 
 end ContinuousLinearMap

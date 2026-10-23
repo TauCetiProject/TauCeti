@@ -199,6 +199,8 @@ end SemistandardYoungTableau
 
 namespace TauCeti
 
+open YoungDiagram (ofPartition)
+
 /-- The semistandard Young tableaux of shape `μ` written in the alphabet `{0, …, n - 1}`, that
 is, those all of whose entries are smaller than `n`.  Mathlib's `SemistandardYoungTableau μ`
 allows arbitrary natural-number entries and is infinite for a nonempty `μ`, so bounding the
@@ -292,21 +294,21 @@ theorem sum_le_sum_take_rowLens_of_diagramKostkaNumber_ne_zero {μ : YoungDiagra
 
 /-- The **Kostka number** `K_{μ ν}` of two partitions of the same natural number: the number of
 semistandard tableaux of the shape of `μ` whose content is the row lengths of the diagram of `ν`,
-that is (by `TauCeti.rowLen_diagramOf`), the tableaux using the entry `i` exactly as often as the
-`i`-th largest part of `ν` prescribes. -/
+that is (by `YoungDiagram.rowLen_ofPartition`), the tableaux using the entry `i` exactly as often as
+the `i`-th largest part of `ν` prescribes. -/
 noncomputable def kostkaNumber {n : ℕ} (μ ν : n.Partition) : ℕ :=
-  diagramKostkaNumber (diagramOf μ) (diagramOf ν).rowLen
+  diagramKostkaNumber (ofPartition μ) (ofPartition ν).rowLen
 
 /-- The Kostka number of two partitions is the Kostka number of the diagram of `μ` together with
 the row lengths of the diagram of `ν`. -/
 theorem kostkaNumber_def {n : ℕ} (μ ν : n.Partition) :
-    kostkaNumber μ ν = diagramKostkaNumber (diagramOf μ) (diagramOf ν).rowLen := (rfl)
+    kostkaNumber μ ν = diagramKostkaNumber (ofPartition μ) (ofPartition ν).rowLen := (rfl)
 
 /-- A Kostka number of two partitions is nonzero exactly when a tableau of shape `μ` and content
 `ν` exists. -/
 theorem kostkaNumber_ne_zero_iff {n : ℕ} {μ ν : n.Partition} :
-    kostkaNumber μ ν ≠ 0 ↔ ∃ T : _root_.SemistandardYoungTableau (diagramOf μ),
-      ⇑(SemistandardYoungTableau.content T) = (diagramOf ν).rowLen := by
+    kostkaNumber μ ν ≠ 0 ↔ ∃ T : _root_.SemistandardYoungTableau (ofPartition μ),
+      ⇑(SemistandardYoungTableau.content T) = (ofPartition ν).rowLen := by
   rw [kostkaNumber_def, diagramKostkaNumber_ne_zero_iff]
 
 /-- A partition contributes exactly one tableau to its own Kostka number. -/
@@ -322,8 +324,9 @@ theorem dominates_of_kostkaNumber_ne_zero {n : ℕ} {μ ν : n.Partition}
   rw [kostkaNumber_def] at h
   have hk := sum_le_sum_take_rowLens_of_diagramKostkaNumber_ne_zero h k
   rwa [YoungDiagram.sum_range_rowLen_eq_card_filter_fst,
-    ← YoungDiagram.sum_take_rowLens_eq_card_filter_fst, rowLens_diagramOf,
-    rowLens_diagramOf] at hk
+    ← YoungDiagram.sum_take_rowLens_eq_card_filter_fst,
+    YoungDiagram.rowLens_ofPartition_eq_sort_parts,
+    YoungDiagram.rowLens_ofPartition_eq_sort_parts] at hk
 
 /-- **The Kostka numbers vanish off the dominance order**: there is no semistandard tableau of
 shape `μ` and content `ν` unless `μ` dominates `ν`. -/

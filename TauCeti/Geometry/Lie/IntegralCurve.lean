@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.IntegralCurve.UniformTime
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
+import TauCeti.Geometry.Manifold.IntegralCurve.Regularity
 
 /-!
 # Integral curves of invariant vector fields
@@ -167,7 +168,7 @@ variable [CompleteSpace E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold 
 /-- The canonical integral curve of an invariant vector field on a smooth Lie group is smooth. -/
 theorem contMDiff_mulInvariantIntegralCurve (v : GroupLieAlgebra I G) (x : G) :
     ContMDiff 𝓘(ℝ, ℝ) I ∞ (mulInvariantIntegralCurve v x) :=
-  (isMIntegralCurve_mulInvariantIntegralCurve v x).contMDiff
+  TauCeti.Manifold.contMDiff_of_isMIntegralCurve (isMIntegralCurve_mulInvariantIntegralCurve v x)
     (contMDiff_mulInvariantVectorField_infty v)
 
 end SmoothInvariantIntegralCurve

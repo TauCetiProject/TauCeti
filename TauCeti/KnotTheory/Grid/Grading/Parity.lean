@@ -37,6 +37,10 @@ the two marking permutations, hence the sign of the component permutation `𝕏�
 ## Main definitions
 
 * `TauCeti.OddComponentGridDiagram`: a grid diagram with an odd number of link components.
+* `TauCeti.GridDiagram.IsKnot.toOddComponentGridDiagram`: a knot grid has one, hence an odd
+  number of components.
+* `TauCeti.OddComponentGridDiagram.relabelRows`, `TauCeti.OddComponentGridDiagram.relabelColumns`:
+  relabeling keeps the number of link components odd.
 * `TauCeti.OddComponentGridDiagram.alexanderℤ`: the integer Alexander grading.
 * `TauCeti.OddComponentGridDiagram.bidegree`: the (`O`-Maslov, Alexander) degree of a grid state.
 * `TauCeti.OddComponentGridDiagram.alexanderSupport`: the Alexander degrees occupied by grid
@@ -205,10 +209,10 @@ theorem negOnePow_maslovOℤ (x : GridState n) :
       + ((Finset.univ.filter fun p : Fin n × Fin n ↦
         p.1 < p.2 ∧ G.O p.2 < G.O p.1).card : ℤ) =
       ((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2).card : ℤ) := by
-    rw [OSet, GridState.I_self_pointSet_eq_card]
+    rw [OSet_def, GridState.I_self_pointSet_eq_card]
     exact_mod_cast GridState.card_filter_noninversion_add_card_filter_inversion G.O
   obtain ⟨k, hk⟩ : Even ((GridPoint.JNumCenter x.pointSet G.OSet : ℤ) + n) := by
-    rw [OSet]
+    rw [OSet_def]
     exact GridState.even_JNumCenter_pointSet_add x G.O
   have heq : (G.maslovOℤ x).negOnePow =
       (((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2 ∧ x p.2 < x p.1).card : ℤ)
@@ -316,9 +320,66 @@ end GridDiagram
 abbrev OddComponentGridDiagram (n : ℕ) :=
   {G : GridDiagram n // Odd G.componentCount}
 
+namespace GridDiagram.IsKnot
+
+variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
+
+/-- A knot grid, viewed as a grid with an odd number of components. -/
+abbrev toOddComponentGridDiagram : OddComponentGridDiagram n :=
+  ⟨G, by rw [G.isKnot_def.mp hG]; exact odd_one⟩
+
+end GridDiagram.IsKnot
+
 namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n)
+
+/-- Relabeling the rows of a grid diagram with an odd number of components. -/
+def relabelRows (ρ : Equiv.Perm (Fin n)) : OddComponentGridDiagram n :=
+  ⟨G.1.relabelRows ρ, by rw [GridDiagram.componentCount_relabelRows]; exact G.2⟩
+
+/-- The underlying grid diagram of `G.relabelRows ρ` is the row-relabeled diagram. -/
+@[simp]
+theorem val_relabelRows (ρ : Equiv.Perm (Fin n)) : (G.relabelRows ρ).1 = G.1.relabelRows ρ :=
+  (rfl)
+
+/-- Relabeling the columns of a grid diagram with an odd number of components. -/
+def relabelColumns (κ : Equiv.Perm (Fin n)) : OddComponentGridDiagram n :=
+  ⟨G.1.relabelColumns κ, by rw [GridDiagram.componentCount_relabelColumns]; exact G.2⟩
+
+/-- The underlying grid diagram of `G.relabelColumns κ` is the column-relabeled diagram. -/
+@[simp]
+theorem val_relabelColumns (κ : Equiv.Perm (Fin n)) :
+    (G.relabelColumns κ).1 = G.1.relabelColumns κ :=
+  (rfl)
+
+/-- The half-turn of the marking squares of a diagram with an odd number of components. -/
+abbrev rotate : OddComponentGridDiagram n :=
+  ⟨G.1.rotate, by rw [GridDiagram.componentCount_rotate]; exact G.2⟩
+
+/-- The underlying diagram of the half-turn is the half-turned underlying diagram. -/
+@[simp]
+theorem val_rotate : G.rotate.1 = G.1.rotate :=
+  (rfl)
+
+/-- The half-turn is an involution on diagrams with an odd number of components. -/
+@[simp]
+theorem rotate_rotate : G.rotate.rotate = G :=
+  Subtype.ext G.1.rotate_rotate
+
+/-- The diagonal reflection of a diagram with an odd number of components. -/
+abbrev transpose : OddComponentGridDiagram n :=
+  ⟨G.1.transpose, by rw [GridDiagram.componentCount_transpose]; exact G.2⟩
+
+/-- The underlying diagram of the diagonal reflection is the reflected underlying diagram. -/
+@[simp]
+theorem val_transpose : G.transpose.1 = G.1.transpose :=
+  (rfl)
+
+/-- The diagonal reflection is an involution on diagrams with an odd number of components. -/
+@[simp]
+theorem transpose_transpose : G.transpose.transpose = G :=
+  Subtype.ext G.1.transpose_transpose
 
 /-- The integer Alexander grading of a grid state. -/
 def alexanderℤ (x : GridState n) : ℤ :=
@@ -330,6 +391,13 @@ theorem two_mul_alexanderℤ (x : GridState n) :
   obtain ⟨a, ha⟩ := (G.1.even_alexanderTwoℤ_iff x).mpr G.2
   rw [alexanderℤ, ha]
   omega
+
+/-- The diagonal reflection of a diagram and a grid state preserves the integer Alexander
+grading. -/
+@[simp]
+theorem alexanderℤ_transpose (x : GridState n) :
+    G.transpose.alexanderℤ x.transpose = G.alexanderℤ x := by
+  rw [alexanderℤ, alexanderℤ, val_transpose, GridDiagram.alexanderTwoℤ_transpose]
 
 /-- The integer Alexander grading agrees with the original rational-valued Alexander grading. -/
 theorem alexander_eq_intCast (x : GridState n) :

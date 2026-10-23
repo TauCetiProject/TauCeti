@@ -62,6 +62,14 @@ of `G`, equivalently the central extensions of `G` by `kˣ` up to equivalence.
 * `TauCeti.FactorSet.cohomologyClass_eq_zero_iff` and
   `TauCeti.FactorSet.nonempty_splitting_iff_cohomologyClass_eq_zero`: the class vanishes exactly
   for the coboundaries, equivalently for the factor sets whose extension splits.
+* `TauCeti.FactorSet.nsmul_cohomologyClass_eq_zero_iff`: `n` kills a factor-set class exactly
+  when the pointwise `n`-th power of the factor set is a multiplicative coboundary.
+* `TauCeti.FactorSet.exists_rescale_pow_eq_one`: with a surjective `n`-th power map for
+  nonzero `n`, a class killed by `n` admits a normalized rescaling by an action-aware
+  coboundary whose values have `n`-th power one. For `n = 0`, no divisibility is needed.
+* `TauCeti.FactorSet.exists_cohomologyClass_eq_and_pow_eq_one`: the rescaling produces a
+  cohomologous factor-set representative with pointwise `n`-th power one under the same
+  hypotheses, allowing torsion classes to be represented by root-valued factor sets.
 * `TauCeti.GroupExtension.cohomologyClass_factorSet_eq`: the class of the factor set of a
   normalized section does not depend on the section.
 * `TauCeti.GroupExtension.nonempty_equiv_iff_cohomologyClass_factorSet_eq`: **`H²(G, M)` classifies
@@ -144,7 +152,73 @@ theorem cohomologyClass_eq_zero_iff : α.cohomologyClass = 0 ↔ IsMulCoboundary
   rw [← cohomologyClass_trivial (G := G) (M := M), cohomologyClass_eq_iff]
   simp
 
+/-- A natural number kills the class of a factor set exactly when its pointwise power is a
+multiplicative coboundary. -/
+theorem nsmul_cohomologyClass_eq_zero_iff (n : ℕ) :
+    n • α.cohomologyClass = 0 ↔ IsMulCoboundary₂ (fun p ↦ α p ^ n) := by
+  rw [cohomologyClass_def, ← map_nsmul, H2π_eq_zero_iff]
+  have hcoe : ⇑(n • α.toCocycles₂) = fun p ↦ Additive.ofMul (α p ^ n) := by
+    ext p
+    -- The custom coercion on `cocycles₂` is pointwise but has no nsmul application lemma.
+    change n • Additive.ofMul (α p) = Additive.ofMul (α p ^ n)
+    rfl
+  rw [hcoe]
+  exact ⟨fun h ↦ isMulCoboundary₂_of_mem_coboundaries₂ _ h,
+    fun h ↦ (coboundariesOfIsMulCoboundary₂ h).2⟩
+
 end Class
+
+/-- If `n` kills the class of a factor set and the coefficient group is `n`-divisible,
+a normalized rescaling by an action-aware coboundary makes every value have
+`n`-th power one. When `n = 0`, no divisibility hypothesis is needed. -/
+theorem exists_rescale_pow_eq_one (α : FactorSet G M) {n : ℕ}
+    (hroot : n ≠ 0 → Function.Surjective (fun z : M ↦ z ^ n))
+    (hα : n • α.cohomologyClass = 0) :
+    ∃ d : G → M, d 1 = 1 ∧ ∀ g h,
+      (d g * (g • d h) * (d (g * h))⁻¹ * α (g, h)) ^ n = 1 := by
+  classical
+  by_cases hn : n = 0
+  · exact ⟨fun _ ↦ 1, rfl, fun _ _ ↦ by simp [hn]⟩
+  obtain ⟨c, hc⟩ := (α.nsmul_cohomologyClass_eq_zero_iff n).1 hα
+  have hc1 : c 1 = 1 := by simpa using hc 1 1
+  choose e he using fun g ↦ hroot hn (c g)⁻¹
+  let d (g : G) := if g = 1 then 1 else e g
+  have hd (g : G) : d g ^ n = (c g)⁻¹ := by
+    by_cases hg : g = 1
+    · simp [d, hg, hc1]
+    · simp [d, hg, he]
+  refine ⟨d, by simp [d], fun g h ↦ ?_⟩
+  simp only [mul_pow, inv_pow, ← smul_pow', hd, ← hc g h, div_eq_mul_inv, smul_inv']
+  apply Additive.ofMul.injective
+  simp only [ofMul_mul, ofMul_inv, ofMul_one]
+  abel
+
+/-- A factor set whose class is killed by `n` has a
+cohomologous representative with `n`-th power one whenever the coefficient power map is
+surjective for nonzero `n`. For `n = 0`, the original factor set is already such a
+representative. -/
+theorem exists_cohomologyClass_eq_and_pow_eq_one (α : FactorSet G M)
+    {n : ℕ}
+    (hroot : n ≠ 0 → Function.Surjective (fun z : M ↦ z ^ n))
+    (hα : n • α.cohomologyClass = 0) :
+    ∃ β : FactorSet G M, β.cohomologyClass = α.cohomologyClass ∧
+      ∀ p, β p ^ n = 1 := by
+  obtain ⟨d, hd1, hd⟩ := α.exists_rescale_pow_eq_one hroot hα
+  let β : FactorSet G M :=
+    { toFun p := d p.1 * (p.1 • d p.2) * (d (p.1 * p.2))⁻¹ * α p
+      isMulCocycle₂' := by
+        intro g h j
+        have ha := α.isMulCocycle₂ g h j
+        simp only [smul_mul', smul_inv', ← mul_smul]
+        convert congrArg
+          (fun a ↦ d g * (g • d h) * ((g * h) • d j) * (d (g * h * j))⁻¹ * a) ha using 1 <;>
+          simp only [mul_assoc] <;> apply Additive.ofMul.injective <;>
+          simp only [ofMul_mul, ofMul_inv] <;> abel
+      map_one_one' := by simp [hd1] }
+  refine ⟨β, (cohomologyClass_eq_iff β α).2 ⟨d, fun g h ↦ ?_⟩, ?_⟩
+  · simp [β, div_eq_mul_inv, mul_assoc, mul_comm]
+  · rintro ⟨g, h⟩
+    exact hd g h
 
 /-! ### Normalizing a cocycle -/
 

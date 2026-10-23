@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
-public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 
 /-!
 # Diagonal split-torus representations and the Kostant weight torus
@@ -205,6 +205,7 @@ private theorem groupSchemePoint_comp_weightTorusRepresentation
       ((toConv (q.ofConv.comp f.hom.toAlgHom)).ofConv.toRingHom)) ≫
           eqToHom (GeneralLinear.groupScheme_X_left ℤ n).symm
   have hmapLeft := congrArg Over.Hom.left hmap
+  rw [BialgHom.mapDomain_apply] at hmapLeft
   -- The spectrum equivalence and `hopfSpec` display definitionally equal sources through
   -- different wrappers; restate `hmapLeft` with their common coordinate-spectrum types.
   change Spec.map (CommRingCat.ofHom

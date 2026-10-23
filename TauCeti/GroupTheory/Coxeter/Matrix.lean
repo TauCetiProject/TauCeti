@@ -29,18 +29,13 @@ theorem coxeterMatrixA_apply (i j : Fin m) :
 theorem coxeterMatrixA_eq_three (h : (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i) :
     CoxeterMatrix.A m i j = 3 := by
   rw [coxeterMatrixA_apply]
-  split_ifs with h₁ h₂
-  · exact absurd (congrArg Fin.val h₁) (by omega)
-  · rfl
-  · exact absurd h.symm h₂
+  split_ifs <;> simp_all
 
 /-- Indices of the type-`A` Coxeter matrix at distance at least two carry the entry `2`. -/
 theorem coxeterMatrixA_eq_two (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
     CoxeterMatrix.A m i j = 2 := by
   rw [coxeterMatrixA_apply]
-  split_ifs with h₁ h₂
-  · exact absurd (congrArg Fin.val h₁) (by omega)
-  · exact absurd h₂ (by omega)
-  · rfl
+  split_ifs <;> simp_all
+  all_goals omega
 
 end TauCeti

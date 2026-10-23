@@ -100,12 +100,10 @@ theorem tensor_action_apply
       (TensorProduct.AlgebraTensorModule.distribBaseChange R A V W).symm
         (TensorProduct.map (Theta.action A x).val (Psi.action A x).val
           (TensorProduct.AlgebraTensorModule.distribBaseChange R A V W z)) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add z t hz ht => simpa only [map_add] using congrArg₂ (fun p q ↦ p + q) hz ht
   | tmul a z =>
-      induction z using TensorProduct.induction_on with
-      | zero => simp
+      induction z using TensorProduct.inductionOn with
       | add z t hz ht =>
           simpa only [tmul_add, map_add] using congrArg₂ (fun p q ↦ p + q) hz ht
       | tmul v w =>

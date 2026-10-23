@@ -18,6 +18,7 @@ circle `Circle = {z : ℂ | ‖z‖ = 1}` via the standard orthonormal basis iso
 
 ## Main declarations
 
+* `TauCeti.Sphere1`, `TauCeti.Sphere1.east`: the unit circle in `ℝ²` and its point `(1, 0)`.
 * `TauCeti.EuclideanSpace.sphereIsometryEquivCircle`: the isometry equivalence between the unit
   circle in two-dimensional Euclidean space and `Circle`.
 * `TauCeti.EuclideanSpace.sphereHomeomorphCircle`: the homeomorphism between the unit circle in
@@ -42,6 +43,18 @@ namespace TauCeti
 
 open Metric
 open scoped EuclideanSpace
+
+/-- The unit circle `S¹ ⊆ ℝ²`. -/
+abbrev Sphere1 : Type := sphere (0 : EuclideanSpace ℝ (Fin 2)) 1
+
+/-- The point `(1, 0)` of the unit circle. -/
+noncomputable def Sphere1.east : Sphere1 := ⟨EuclideanSpace.single 0 1, by simp⟩
+
+/-- The point `(1, 0)` of the unit circle, as a vector of `ℝ²`. -/
+@[simp]
+theorem Sphere1.coe_east :
+    (Sphere1.east : EuclideanSpace ℝ (Fin 2)) = EuclideanSpace.single 0 1 := by
+  rw [Sphere1.east]
 
 namespace EuclideanSpace
 

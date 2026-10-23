@@ -9,15 +9,17 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 public import TauCeti.Geometry.Manifold.Riemannian.PathELength
 
 /-!
-# Length of maximal geodesics
+# Length of geodesics
 
-A maximal geodesic has constant speed on its maximal interval. Its directed Riemannian length from
-parameter `s` to `t` is its initial speed times `ENNReal.ofReal (t - s)`, so the length is zero
-when `t < s`. This gives the Lipschitz bound used in the metric-completeness argument for geodesic
-completeness.
+A geodesic has constant speed on a preconnected parameter set, so its directed Riemannian length
+from parameter `s` to `t` is its speed times `ENNReal.ofReal (t - s)`; the length is zero when
+`t < s`. For maximal geodesics this gives the Lipschitz bound used in the metric-completeness
+argument for geodesic completeness.
 
 ## Main results
 
+* `TauCeti.Manifold.IsGeodesicCurveOn.pathELength_eq`: on a preconnected parameter set, the
+  directed length of a geodesic is its speed times the elapsed time.
 * `TauCeti.Manifold.norm_curveVelocityWithin_maximalGeodesic`: the velocity of a maximal geodesic
   has the norm of its initial velocity throughout its interval.
 * `TauCeti.Manifold.pathELength_maximalGeodesic`: its directed length from `s` to `t` is its
@@ -38,6 +40,38 @@ noncomputable section
 
 namespace TauCeti.Manifold
 
+section ConstantSpeed
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  {γ : ℝ → M} {s : Set ℝ}
+
+/-- On an interval with endpoints in its preconnected domain, the directed length of a geodesic
+from `a` to `b` is its speed at any chosen time in that domain times `ENNReal.ofReal (b - a)`. The
+domain need not be open, so this applies to geodesic segments on closed intervals. -/
+theorem IsGeodesicCurveOn.pathELength_eq (h : IsGeodesicCurveOn I γ s) (hconn : IsPreconnected s)
+    {a b c : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hc : c ∈ s) :
+    pathELength I γ a b = ‖curveVelocityWithin I γ s c‖ₑ * ENNReal.ofReal (b - a) := by
+  have hsub : Icc a b ⊆ s := hconn.ordConnected.out ha hb
+  have key : ∀ t ∈ Ioo a b,
+      ‖mfderiv 𝓘(ℝ, ℝ) I γ t 1‖ₑ = ‖curveVelocityWithin I γ s c‖ₑ := by
+    intro t ht
+    have hnhds : s ∈ 𝓝 t :=
+      mem_nhds_iff.2 ⟨Ioo a b, Ioo_subset_Icc_self.trans hsub, isOpen_Ioo, ht⟩
+    have hvel : mfderiv 𝓘(ℝ, ℝ) I γ t 1 = curveVelocityWithin I γ s t :=
+      ((curveVelocityWithin_of_mem_nhds hnhds).trans (curveVelocity_apply (I := I))).symm
+    rw [hvel, ← ofReal_norm, ← ofReal_norm,
+      h.norm_curveVelocityWithin_eq hconn (hsub (Ioo_subset_Icc_self ht)) hc]
+  rw [pathELength_eq_lintegral_mfderiv_Ioo, setLIntegral_congr_fun measurableSet_Ioo key,
+    setLIntegral_const, Real.volume_Ioo]
+
+end ConstantSpeed
+
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -46,7 +80,6 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space (TangentBundle I M)]
 
 variable {p : M} {v : TangentSpace I p}
 
@@ -64,19 +97,9 @@ is `‖v‖ * ENNReal.ofReal (t - s)`, and hence is zero when `t < s`. -/
 theorem pathELength_maximalGeodesic {s t : ℝ} (hs : s ∈ geodesicInterval I M p v)
     (ht : t ∈ geodesicInterval I M p v) :
     pathELength I (maximalGeodesic I M p v) s t = ‖v‖ₑ * ENNReal.ofReal (t - s) := by
-  have hsub : Ioo s t ⊆ geodesicInterval I M p v :=
-    Ioo_subset_Icc_self.trans (ordConnected_geodesicInterval.out hs ht)
-  have key : ∀ u ∈ Ioo s t,
-      ‖mfderiv 𝓘(ℝ, ℝ) I (maximalGeodesic I M p v) u 1‖ₑ = ‖v‖ₑ := by
-    intro u hu
-    have hmem := hsub hu
-    have hvel : mfderiv 𝓘(ℝ, ℝ) I (maximalGeodesic I M p v) u 1 =
-        curveVelocityWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) u :=
-      ((curveVelocityWithin_of_mem_nhds (isOpen_geodesicInterval.mem_nhds hmem)).trans
-        (curveVelocity_apply (I := I))).symm
-    rw [hvel, ← ofReal_norm, ← ofReal_norm, norm_curveVelocityWithin_maximalGeodesic hmem]
-  rw [pathELength_eq_lintegral_mfderiv_Ioo, setLIntegral_congr_fun measurableSet_Ioo key,
-    setLIntegral_const, Real.volume_Ioo]
+  rw [(isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.pathELength_eq
+    isPreconnected_geodesicInterval hs ht zero_mem_geodesicInterval, ← ofReal_norm, ← ofReal_norm,
+    norm_curveVelocityWithin_maximalGeodesic zero_mem_geodesicInterval]
 
 end TauCeti.Manifold
 

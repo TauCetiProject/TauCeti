@@ -48,7 +48,7 @@ theorem avoidsMarkings_unknot_iff (R : GridRectangle (n + 2)) :
     R.AvoidsMarkings (GridDiagram.unknot n) ↔
       ∀ c ∈ Grid.cIco R.left R.right,
         c ∉ Grid.cIco R.bottom R.top ∧ c + 1 ∉ Grid.cIco R.bottom R.top := by
-  simp only [R.avoidsMarkings_iff_forall, mem_columnSquares, mem_rowSquares,
+  simp only [R.avoidsMarkings_iff_forall, mem_coveredColumns, mem_coveredRows,
     GridDiagram.unknot_O_apply, GridDiagram.unknot_X_apply_eq_add_one]
 
 end GridRectangle

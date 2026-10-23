@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Parabolic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.PointMaps
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import Mathlib.LinearAlgebra.Matrix.Block
@@ -45,8 +46,8 @@ the coefficient is read directly, so zero divisors cause no problem.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This supplies the higher-rank block-cocharacter calculation requested by the dynamic-parabolic
-route in Layer 7, "Structure theory", of the ReductiveGroups roadmap.
+This supplies the higher-rank block-cocharacter calculation for the dynamic approach to parabolic
+subgroups.
 -/
 
 public section
@@ -83,11 +84,11 @@ theorem pointsMulEquiv_pointsHom_weightCocharacter (w : Fin N → ℤ) (t : Aˣ)
 theorem pointsMulEquiv_conjugate_weightCocharacter (w : Fin N → ℤ)
     (g : WithConv (coordinateHopfAlgebra R N →ₐ[R] A)) :
     pointsMulEquiv N (Cocharacter.conjugate A (weightCocharacter (R := R) w) g) =
-      diagGL (weightDiagonalUnits w (MultiplicativeGroup.genericUnit A)) *
+      diagGL (weightDiagonalUnits w (LaurentPolynomial.genericUnit A)) *
         Matrix.GeneralLinearGroup.map
           (IsScalarTower.toAlgHom R A (LaurentPolynomial A) : A →+* LaurentPolynomial A)
           (pointsMulEquiv N g) *
-        (diagGL (weightDiagonalUnits w (MultiplicativeGroup.genericUnit A)))⁻¹ := by
+        (diagGL (weightDiagonalUnits w (LaurentPolynomial.genericUnit A)))⁻¹ := by
   rw [Cocharacter.conjugate_apply, map_mul, map_mul, map_inv,
     Cocharacter.genericPoint_eq_pointsHom,
     pointsMulEquiv_pointsHom_weightCocharacter, Cocharacter.constPoint_apply,
@@ -106,15 +107,15 @@ theorem pointsMulEquiv_conjugate_weightCocharacter_apply (w : Fin N → ℤ)
     Matrix.diagonal_mul, Matrix.mul_diagonal, Matrix.GeneralLinearGroup.map_apply,
     Pi.inv_apply, weightDiagonalUnits_apply]
   have hinv :
-      (((MultiplicativeGroup.genericUnit A ^ w j)⁻¹ : (LaurentPolynomial A)ˣ) :
+      (((LaurentPolynomial.genericUnit A ^ w j)⁻¹ : (LaurentPolynomial A)ˣ) :
           LaurentPolynomial A) = LaurentPolynomial.T (-w j) := by
-    rw [← zpow_neg, MultiplicativeGroup.genericUnit_zpow_val]
-  rw [MultiplicativeGroup.genericUnit_zpow_val]
+    rw [← zpow_neg, LaurentPolynomial.genericUnit_zpow_val]
+  rw [LaurentPolynomial.genericUnit_zpow_val]
   -- Normalize the pointwise inverse of the diagonal function and the scalar-extension map;
   -- neither wrapper has an application lemma at this expression.
   change LaurentPolynomial.T (w i) *
       LaurentPolynomial.C ((pointsMulEquiv N g : Matrix (Fin N) (Fin N) A) i j) *
-        (((MultiplicativeGroup.genericUnit A ^ w j)⁻¹ : (LaurentPolynomial A)ˣ) :
+        (((LaurentPolynomial.genericUnit A ^ w j)⁻¹ : (LaurentPolynomial A)ˣ) :
           LaurentPolynomial A) = _
   rw [hinv, LaurentPolynomial.T_mul, LaurentPolynomial.mul_T_assoc, ← sub_eq_add_neg]
 

@@ -6,16 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Basic
+public import Mathlib.RingTheory.Finiteness.Defs
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Rank
+import Mathlib.LinearAlgebra.Dimension.ErdosKaplansky
+import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.LinearAlgebra.StdBasis
 import Mathlib.Topology.Instances.ZMod
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basis
+public import TauCeti.Topology.Algebra.ContinuousZModDual
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.ContinuousDual
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.DualRank
+import TauCeti.Topology.Algebra.Group.Profinite.Hopfian
 
 /-!
-# The generator rank of a free pro-`p` group on a finite type
+# The generator rank of a free pro-`p` group
 
 The canonical generators of `freeProP p X` generate it topologically
 (`freeProP.topologicalClosure_closure_range_of_eq_top`), so for finite `X` the free pro-`p` group
@@ -27,16 +34,33 @@ For finite `X` the classes also span, by Burnside's basis theorem, so they form 
 `X`. The Frattini quotient is therefore `𝔽_p^X`, and the topological generator rank of
 `freeProP p X` is the cardinality of `X`, in natural-number and in cardinal form.
 
-Finiteness of `X` is essential for the rank statement. For infinite `X` the classes of the
-generators are still linearly independent, but they span only a dense subspace of the Frattini
-quotient, whose dimension is that of the space of all maps `X → 𝔽_p` rather than `#X`
-(Ribes–Zalesskii, Section 3.3); the free objects of infinite rank are indexed by a profinite space
-rather than by a discrete type.
+For `X` of any cardinality the universal property identifies the continuous `𝔽_p`-valued
+characters of `freeProP p X` with the arbitrary functions `X → 𝔽_p`
+(`freeProP.continuousZModDualEquiv`), so by Burnside's basis theorem in cardinal form the
+topological generator rank is the `𝔽_p`-dimension of `𝔽_p^X`. For finite `X` this is `#X` again;
+for infinite `X` the Erdős–Kaplansky theorem gives the dimension `p ^ #X`, which is strictly
+larger than `#X` (Ribes–Zalesskii, Section 3.3). This is why the free objects of infinite rank,
+whose bases converge to `1`, are indexed by a profinite space rather than by a discrete type.
+
+For finite `X` the continuous `𝔽_p`-dual has the basis dual to the generators
+(`freeProP.dualBasis`), and the automorphisms of `freeProP p X` act on it through their
+transposes. A family of elements whose classes span the Frattini quotient is the image of the
+generators under a continuous automorphism (Burnside's basis theorem and the Hopf property of
+topologically finitely generated profinite groups), and every linear automorphism of the
+continuous dual is the transpose of a continuous automorphism of `freeProP p X`.
 
 ## Main definitions
 
 * `TauCeti.freeProP.frattiniQuotientBasis`: for finite `X`, the basis of the Frattini quotient of
   `freeProP p X` formed by the classes of the generators.
+* `TauCeti.freeProP.characterOfFun`: the continuous `𝔽_p`-valued character of `freeProP p X` with
+  prescribed values on the generators.
+* `TauCeti.freeProP.continuousZModDualEquiv`: the continuous `𝔽_p`-dual of `freeProP p X` is
+  `𝔽_p^X`.
+* `TauCeti.freeProP.dualBasis`: for finite `X`, the basis of the continuous `𝔽_p`-dual of
+  `freeProP p X` dual to the generators.
+* `TauCeti.freeProP.continuousMulEquivOfTopologicallyGenerates`: for finite `X`, the continuous
+  automorphism of `freeProP p X` sending the generators to a given topological generating family.
 
 ## Main results
 
@@ -46,6 +70,17 @@ rather than by a discrete type.
   `𝔽_p`-dimension `Nat.card X`.
 * `TauCeti.topologicalGeneratorRankNat_freeProP`, `TauCeti.topologicalGeneratorRank_freeProP`:
   for finite `X`, the free pro-`p` group on `X` has topological generator rank `Nat.card X`.
+* `TauCeti.topologicalGeneratorRank_freeProP_eq_rank`: for every `X`, the topological generator
+  rank of `freeProP p X` is the `𝔽_p`-dimension of `𝔽_p^X`.
+* `TauCeti.topologicalGeneratorRank_freeProP_of_infinite`,
+  `TauCeti.mk_lt_topologicalGeneratorRank_freeProP`: for infinite `X`, the rank is `p ^ #X`, which
+  exceeds `#X`.
+* `TauCeti.freeProP.exists_continuousMulEquiv_continuousZModDualMap_eq`: for finite `X`, every
+  linear automorphism of the continuous `𝔽_p`-dual of `freeProP p X` is the transpose of a
+  continuous automorphism.
+* `exists_continuousMulEquiv_continuousZModDualMap_eq_and_apply_of_eq_of_forall_toMul_of_eq`:
+  the continuous automorphism can be chosen to fix every generator at which the linear
+  automorphism does not change the values of characters.
 
 ## References
 
@@ -111,6 +146,47 @@ theorem linearIndependent_frattiniQuotient_of :
   simpa [Function.comp_def, frattiniQuotientToPi_of] using
     Pi.linearIndependent_single_one X (ZMod p)
 
+/-! ### Continuous characters of a free pro-`p` group -/
+
+/-- The continuous `𝔽_p`-valued character of the free pro-`p` group on `X` taking the value `f x`
+at the generator `x`, for an arbitrary function `f : X → ZMod p`: the universal property applied
+to the finite `p`-group `ℤ/p`, lifted to the universe of `X`. -/
+noncomputable def characterOfFun (f : X → ZMod p) : freeProP p X →ₜ* Multiplicative (ZMod p) :=
+  ((ContinuousMulEquiv.ulift : ULift.{u} (Multiplicative (ZMod p)) ≃ₜ* Multiplicative (ZMod p)) :
+      ULift.{u} (Multiplicative (ZMod p)) →ₜ* Multiplicative (ZMod p)).comp
+    (lift ((ZModModule.isPGroup_multiplicative (n := p) (G := ZMod p)).isProP.of_equiv
+        ContinuousMulEquiv.ulift.symm)
+      fun x ↦ ULift.up (Multiplicative.ofAdd (f x)))
+
+/-- The character attached to `f` takes the value `f x` at the generator `x`. -/
+@[simp]
+theorem characterOfFun_of (f : X → ZMod p) (x : X) :
+    characterOfFun p X f (of x) = Multiplicative.ofAdd (f x) := by
+  simp [characterOfFun]
+
+/-- **The continuous `𝔽_p`-dual of a free pro-`p` group is `𝔽_p^X`.** Evaluation at the generators
+identifies the continuous characters of `freeProP p X` with the arbitrary functions `X → 𝔽_p`, as
+`𝔽_p`-vector spaces; the inverse is `TauCeti.freeProP.characterOfFun`. No finiteness of `X` is
+needed. -/
+noncomputable def continuousZModDualEquiv :
+    continuousZModDual p (freeProP p X) ≃ₗ[ZMod p] (X → ZMod p) where
+  __ := LinearMap.pi fun x ↦ continuousZModDual.evalₗ (of x)
+  invFun f := Additive.ofMul (characterOfFun p X f)
+  left_inv φ := Additive.toMul.injective <| hom_ext fun x ↦ by simp
+  right_inv f := funext fun x ↦ by simp
+
+@[simp]
+theorem continuousZModDualEquiv_apply (φ : continuousZModDual p (freeProP p X)) (x : X) :
+    continuousZModDualEquiv p X φ x = Multiplicative.toAdd (Additive.toMul φ (of x)) := by
+  simp [continuousZModDualEquiv]
+
+@[simp]
+theorem continuousZModDualEquiv_symm_apply (f : X → ZMod p) :
+    (continuousZModDualEquiv p X).symm f = Additive.ofMul (characterOfFun p X f) :=
+  (rfl)
+
+/-! ### Finite rank -/
+
 variable [Finite X]
 
 /-- **The Frattini quotient of a free pro-`p` group of finite rank is `𝔽_p^X`.** For finite `X`
@@ -140,9 +216,191 @@ theorem finrank_quotient_proPFrattini :
       Nat.card X :=
   Module.finrank_eq_nat_card_basis (frattiniQuotientBasis p X)
 
+/-! ### The dual basis of the generators -/
+
+section DualBasis
+
+/-- **The dual basis of the generators**: the basis of the continuous `𝔽_p`-dual of `freeProP p X`
+whose `i`-th vector is the coordinate character `x_j ↦ δ_{ij}`. -/
+noncomputable def dualBasis : Module.Basis X (ZMod p) (continuousZModDual p (freeProP p X)) :=
+  (Pi.basisFun (ZMod p) X).map (continuousZModDualEquiv p X).symm
+
+/-- The continuous `𝔽_p`-dual of a free pro-`p` group of finite rank is finite-dimensional. -/
+instance : Module.Finite (ZMod p) (continuousZModDual p (freeProP p X)) :=
+  Module.Finite.of_basis (dualBasis p X)
+
+/-- The `i`-th vector of the dual basis is the character reading off the exponent of `x_i`. -/
+theorem dualBasis_apply [DecidableEq X] (i : X) :
+    dualBasis p X i = Additive.ofMul (characterOfFun p X (Pi.single i 1)) := by
+  rw [dualBasis, Module.Basis.map_apply, Pi.basisFun_apply, continuousZModDualEquiv_symm_apply]
+
+/-- The `i`-th coordinate character takes the value `δ_{ij}` at the generator `x_j`. -/
+@[simp]
+theorem toMul_dualBasis_of [DecidableEq X] (i j : X) :
+    (dualBasis p X i).toMul (of j) = Multiplicative.ofAdd ((Pi.single i 1 : X → ZMod p) j) := by
+  rw [dualBasis_apply, toMul_ofMul, characterOfFun_of]
+
+/-- The `i`-th coordinate of a character in the dual basis is its value at the generator `x_i`. -/
+@[simp]
+theorem dualBasis_repr (χ : continuousZModDual p (freeProP p X)) (i : X) :
+    (dualBasis p X).repr χ i = (χ.toMul (of i)).toAdd := by
+  rw [dualBasis, Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_symm,
+    Pi.basisFun_repr, continuousZModDualEquiv_apply]
+
+/-- The `k`-th coordinate character of `freeProP p (Fin n)` takes the value `δ_{k a}` at the
+`ℕ`-indexed generator `x_a`, including out of range, where `x_a = 1`. -/
+theorem toMul_dualBasis_freeProPGen {n : ℕ} (k : Fin n) (a : ℕ) :
+    ((dualBasis p (Fin n) k).toMul (freeProPGen p n a)).toAdd = if (k : ℕ) = a then 1 else 0 := by
+  by_cases h : a < n
+  · rw [freeProPGen_of_lt p h, toMul_dualBasis_of, toAdd_ofAdd, Pi.single_apply]
+    simp [Fin.ext_iff, eq_comm]
+  · rw [freeProPGen_eq_one_of_le p (not_lt.mp h), map_one, toAdd_one, ite_eq_right]
+    omega
+
+end DualBasis
+
+/-! ### Automorphisms of a free pro-`p` group of finite rank -/
+
+section Automorphism
+
+variable {p X}
+
+/-- **The automorphism of a free pro-`p` group of finite rank sending the generators to a
+topological generating family.** The endomorphism `x_i ↦ y_i` is surjective because the `y_i`
+generate topologically, hence bijective by the Hopf property of topologically finitely generated
+profinite groups. -/
+noncomputable def continuousMulEquivOfTopologicallyGenerates (y : X → freeProP p X)
+    (hy : (Subgroup.closure (Set.range y)).topologicalClosure = ⊤) :
+    freeProP p X ≃ₜ* freeProP p X :=
+  (isTopologicallyFinitelyGenerated_freeProP p X).continuousMulEquivOfSurjective
+    (f := (lift (isProP_freeProP p X) y).toMonoidHom) (lift (isProP_freeProP p X) y).continuous
+    (lift_surjective _ (by
+      rw [dense_iff_closure_eq, ← Subgroup.topologicalClosure_coe, hy, Subgroup.coe_top]))
+
+omit [Fact p.Prime] in
+/-- The automorphism attached to a topological generating family sends the generators to it. -/
+@[simp]
+theorem continuousMulEquivOfTopologicallyGenerates_of (y : X → freeProP p X)
+    (hy : (Subgroup.closure (Set.range y)).topologicalClosure = ⊤) (i : X) :
+    continuousMulEquivOfTopologicallyGenerates y hy (of i) = y i := by
+  rw [continuousMulEquivOfTopologicallyGenerates,
+    IsTopologicallyFinitelyGenerated.continuousMulEquivOfSurjective_apply]
+  exact lift_of _ _ i
+
+/-- **Every linear automorphism of the continuous `𝔽_p`-dual of a free pro-`p` group of finite
+rank is the transpose of a continuous automorphism.** Given `S`, a dual family `y` of the basis
+`S⁻¹ χ_i`, where `χ_i` is the dual basis of the generators, satisfies `χ (y_j) = (S χ)(x_j)` for
+every character `χ`; it generates topologically, by Burnside's basis theorem, and the automorphism
+`x_j ↦ y_j` has transpose `S`. -/
+theorem exists_continuousMulEquiv_continuousZModDualMap_eq
+    (S : continuousZModDual p (freeProP p X) ≃ₗ[ZMod p] continuousZModDual p (freeProP p X)) :
+    ∃ e : freeProP p X ≃ₜ* freeProP p X, ∀ χ : continuousZModDual p (freeProP p X),
+      (e : freeProP p X →ₜ* freeProP p X).continuousZModDualMap χ = S χ := by
+  cases nonempty_fintype X
+  obtain ⟨y, -, hgen, hcoord⟩ :=
+    (isProP_freeProP p X).exists_tendsto_cofinite_topologicallyGenerates_coord_eq
+      ((dualBasis p X).map S.symm)
+  -- Every character takes the same value at `y_j` as its image under `S` takes at `x_j`.
+  have key (χ : continuousZModDual p (freeProP p X)) (j : X) :
+      χ.toMul (y j) = (S χ).toMul (of j) := by
+    have h := hcoord j χ
+    rw [Module.Basis.coord_apply, Module.Basis.map_repr, LinearEquiv.trans_apply,
+      LinearEquiv.symm_symm, dualBasis_repr] at h
+    exact Multiplicative.toAdd.injective h.symm
+  refine ⟨continuousMulEquivOfTopologicallyGenerates y hgen, fun χ ↦ ?_⟩
+  refine Additive.toMul.injective (hom_ext fun j ↦ ?_)
+  rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply, ContinuousMonoidHom.coe_coe,
+    continuousMulEquivOfTopologicallyGenerates_of, key]
+
+/-- **A linear automorphism of the dual is the transpose of an automorphism fixing prescribed
+generators.** If `S` acts trivially on the values at the generators `x_j`, `j ∈ T`, in the sense
+that `(S χ) (x_j) = χ (x_j)` for every character `χ`, then `S` is the transpose of a continuous
+automorphism `e` with `e (x_j) = x_j` for every `j ∈ T`. -/
+theorem exists_continuousMulEquiv_continuousZModDualMap_eq_and_apply_of_eq_of_forall_toMul_of_eq
+    (S : continuousZModDual p (freeProP p X) ≃ₗ[ZMod p] continuousZModDual p (freeProP p X))
+    {T : Set X} (hT : ∀ j ∈ T, ∀ χ : continuousZModDual p (freeProP p X),
+      (S χ).toMul (of j) = χ.toMul (of j)) :
+    ∃ e : freeProP p X ≃ₜ* freeProP p X,
+      (∀ χ : continuousZModDual p (freeProP p X),
+        (e : freeProP p X →ₜ* freeProP p X).continuousZModDualMap χ = S χ) ∧
+      ∀ j ∈ T, e (of j) = of j := by
+  classical
+  -- Some transpose `e₀` of `S` sends each `x_j`, `j ∈ T`, to an element congruent to `x_j` modulo
+  -- the Frattini subgroup; composing `e₀` with the automorphism `x_j ↦ e₀⁻¹ (x_j)` (`j ∈ T`),
+  -- `x_j ↦ x_j` (`j ∉ T`), which exists by Burnside's basis theorem and has trivial transpose,
+  -- corrects it.
+  obtain ⟨e₀, he₀⟩ := exists_continuousMulEquiv_continuousZModDualMap_eq S
+  let y : X → freeProP p X := fun j ↦ if j ∈ T then e₀.symm (of j) else of j
+  -- Every character takes the same value at `y_j` as at `x_j`.
+  have hy (j : X) (χ : continuousZModDual p (freeProP p X)) : χ.toMul (y j) = χ.toMul (of j) := by
+    simp only [y]
+    split_ifs with hj
+    · have h := he₀ (S.symm χ)
+      rw [LinearEquiv.apply_symm_apply] at h
+      have h' := hT j hj (S.symm χ)
+      rw [LinearEquiv.apply_symm_apply] at h'
+      calc χ.toMul (e₀.symm (of j))
+          = ((e₀ : freeProP p X →ₜ* freeProP p X).continuousZModDualMap (S.symm χ)).toMul
+            (e₀.symm (of j)) := by rw [h]
+        _ = χ.toMul (of j) := by
+          rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply, ContinuousMonoidHom.coe_coe,
+            e₀.apply_symm_apply, h']
+    · rfl
+  -- So `y_j ≡ x_j` modulo the Frattini subgroup, and `y` generates topologically.
+  have hmk : ⇑(QuotientGroup.mk' (proPFrattini p (freeProP p X))) ∘ y =
+      ⇑(QuotientGroup.mk' (proPFrattini p (freeProP p X))) ∘ of := by
+    funext j
+    rw [Function.comp_apply, Function.comp_apply, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
+      QuotientGroup.eq, proPFrattini_eq_iInf_ker, Subgroup.mem_iInf]
+    intro φ
+    rw [MonoidHom.mem_ker, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass, map_mul,
+      map_inv, ← toMul_ofMul φ, hy j (Additive.ofMul φ), inv_mul_cancel]
+  have hgen : (Subgroup.closure (Set.range y)).topologicalClosure = ⊤ := by
+    rw [topologicallyGenerates_iff_frattiniQuotient (isProP_freeProP p X), ← Set.range_comp, hmk,
+      Set.range_comp, ← topologicallyGenerates_iff_frattiniQuotient (isProP_freeProP p X)]
+    exact topologicalClosure_closure_range_of_eq_top p X
+  refine ⟨(continuousMulEquivOfTopologicallyGenerates y hgen).trans e₀, fun χ ↦ ?_, fun j hj ↦ ?_⟩
+  · refine Additive.toMul.injective (hom_ext fun j ↦ ?_)
+    have h := hy j ((e₀ : freeProP p X →ₜ* freeProP p X).continuousZModDualMap χ)
+    rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply,
+      ContinuousMonoidHom.toMul_continuousZModDualMap_apply, ContinuousMonoidHom.coe_coe] at h
+    rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply, ContinuousMonoidHom.coe_coe,
+      ContinuousMulEquiv.trans_apply, continuousMulEquivOfTopologicallyGenerates_of, ← he₀ χ,
+      ContinuousMonoidHom.toMul_continuousZModDualMap_apply, ContinuousMonoidHom.coe_coe]
+    exact h
+  · rw [ContinuousMulEquiv.trans_apply, continuousMulEquivOfTopologicallyGenerates_of]
+    simp only [y, ite_eq_left hj, e₀.apply_symm_apply]
+
+end Automorphism
+
 end freeProP
 
-variable [Fact p.Prime] [Finite X]
+variable [Fact p.Prime]
+
+/-- **The rank of a free pro-`p` group is the dimension of `𝔽_p^X`**, for a generating type `X` of
+any cardinality: Burnside's basis theorem in cardinal form, read through the continuous dual
+`TauCeti.freeProP.continuousZModDualEquiv`. -/
+theorem topologicalGeneratorRank_freeProP_eq_rank :
+    topologicalGeneratorRank (freeProP p X) = Module.rank (ZMod p) (X → ZMod p) := by
+  rw [(isProP_freeProP p X).topologicalGeneratorRank_eq_rank_continuousZModDual,
+    (freeProP.continuousZModDualEquiv p X).rank_eq]
+
+/-- **The free pro-`p` group on an infinite type `X` has rank `p ^ #X`.** The continuous dual is
+`𝔽_p^X`, whose dimension over `𝔽_p` is its cardinality by the Erdős–Kaplansky theorem. -/
+theorem topologicalGeneratorRank_freeProP_of_infinite [Infinite X] :
+    topologicalGeneratorRank (freeProP p X) = (p : Cardinal.{u}) ^ #X := by
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  rw [topologicalGeneratorRank_freeProP_eq_rank, rank_fun_infinite, Cardinal.mk_arrow,
+    Cardinal.lift_uzero, Cardinal.mk_fintype, ZMod.card, Cardinal.lift_natCast]
+
+/-- **An infinite type is strictly smaller than the rank of the free pro-`p` group on it**: the
+rank is `p ^ #X`, not `#X`. -/
+theorem mk_lt_topologicalGeneratorRank_freeProP [Infinite X] :
+    #X < topologicalGeneratorRank (freeProP p X) := by
+  rw [topologicalGeneratorRank_freeProP_of_infinite]
+  exact Cardinal.cantor' #X (by exact_mod_cast (Fact.out : p.Prime).one_lt)
+
+variable [Finite X]
 
 /-- **The free pro-`p` group on a finite type `X` has topological generator rank `Nat.card X`**,
 in natural-number form. -/

@@ -42,6 +42,9 @@ restricted to more than five components because the five-component case is its L
 * `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end`: the
   weights along such a chain of at least five components are constant except possibly at one
   end.
+* `TauCeti.NumericalType.left_fiber_relation`, `TauCeti.NumericalType.interior_fiber_relation`
+  and `TauCeti.NumericalType.right_fiber_relation`: the fibre relations along a sequence of
+  distinct components exhausting all components whose nonconsecutive members do not meet.
 -/
 
 public section
@@ -134,7 +137,70 @@ lemma le_card_snoc (hc : T.IsSelfIntersectionMinusTwoChain t c) {branch : T.Comp
     apply Fin.ext
     exact hc.injOn_snoc hbranch_ne p (by omega) q (by omega) hpq)
 
+/-- A chain read backwards is again a chain. -/
+lemma reverse (hc : T.IsSelfIntersectionMinusTwoChain t c) :
+    T.IsSelfIntersectionMinusTwoChain t fun i ↦ c (t - 1 - i) where
+  injOn i hi j hj h := by
+    have := hc.injOn (t - 1 - i) (by omega) (t - 1 - j) (by omega) h
+    omega
+  intersection_self i hi := hc.intersection_self (t - 1 - i) (by omega)
+  intersection_succ_pos i hi := by
+    rw [T.intersection_comm]
+    exact hc.intersection_pos (by omega) (by omega)
+
+/-- Prepending a component of self-intersection `-2w` which is not in a chain and, when the chain
+is nonempty, meets its first component gives a chain one component longer. -/
+lemma cons (hc : T.IsSelfIntersectionMinusTwoChain t c) {x : T.Component}
+    (hx_ne : ∀ i < t, x ≠ c i) (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ)))
+    (hx_pos : 0 < t → 0 < T.intersection x (c 0)) :
+    T.IsSelfIntersectionMinusTwoChain (t + 1) fun i ↦ if i = 0 then x else c (i - 1) where
+  injOn i hi j hj h := by
+    rcases Nat.eq_zero_or_pos i with rfl | hi0 <;> rcases Nat.eq_zero_or_pos j with rfl | hj0
+    · rfl
+    · simp only [↓reduceIte, hj0.ne'] at h
+      exact (hx_ne (j - 1) (by omega) h).elim
+    · simp only [↓reduceIte, hi0.ne'] at h
+      exact (hx_ne (i - 1) (by omega) h.symm).elim
+    · simp only [hi0.ne', hj0.ne', ↓reduceIte] at h
+      have := hc.injOn (i - 1) (by omega) (j - 1) (by omega) h
+      omega
+  intersection_self i hi := by
+    rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · simpa using hx_self
+    · simpa only [hi0.ne', ↓reduceIte] using hc.intersection_self (i - 1) (by omega)
+  intersection_succ_pos i hi := by
+    rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · simpa using hx_pos (by omega)
+    · simpa only [hi0.ne', Nat.add_one_ne_zero, ↓reduceIte, Nat.add_sub_cancel] using
+        hc.intersection_pos (i := i - 1) (by omega) (by omega)
+
+/-- The components of a chain of length `t` form a set of `t` components. -/
+@[simp]
+lemma card_image_range (hc : T.IsSelfIntersectionMinusTwoChain t c) :
+    #((range t).image c) = t := by
+  rw [card_image_of_injOn fun i hi j hj h ↦
+    hc.injOn i (mem_range.mp hi) j (mem_range.mp hj) h, card_range]
+
 end IsSelfIntersectionMinusTwoChain
+
+/-- Every set of components contains a longest chain. -/
+lemma exists_chain_forall_le (S : Finset T.Component) :
+    ∃ t c, T.IsSelfIntersectionMinusTwoChain t c ∧ (∀ i < t, c i ∈ S) ∧
+      ∀ t' c', T.IsSelfIntersectionMinusTwoChain t' c' → (∀ i < t', c' i ∈ S) → t' ≤ t := by
+  classical
+  let P : ℕ → Prop := fun t ↦ ∃ c, T.IsSelfIntersectionMinusTwoChain t c ∧ ∀ i < t, c i ∈ S
+  have hle : ∀ t, P t → t ≤ #S := by
+    rintro t ⟨c, hc, hcS⟩
+    rw [← hc.card_image_range]
+    exact card_le_card fun x hx ↦ by
+      obtain ⟨i, hi, rfl⟩ := mem_image.mp hx
+      exact hcS i (mem_range.mp hi)
+  have hP0 : P 0 := by
+    obtain ⟨x⟩ := T.componentNonempty
+    exact ⟨fun _ ↦ x, ⟨by omega, by omega, by omega⟩, by omega⟩
+  obtain ⟨c, hc, hcS⟩ := Nat.findGreatest_spec (Nat.zero_le _) hP0
+  exact ⟨_, c, hc, hcS, fun t' c' hc' hc'S ↦
+    Nat.le_findGreatest (hle t' ⟨c', hc', hc'S⟩) ⟨c', hc', hc'S⟩⟩
 
 /-- If two meeting components of a numerical type have intersection number `aᵢⱼ = wᵢp = wⱼq`
 with `pq = 1`, then they have equal weights. -/
@@ -252,7 +318,7 @@ private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
         (hc.intersection_self e he) (hc.intersection_self f hf)
         (hc.ne ha hd had) (hc.ne ha he hae) (hc.ne ha hf haf) (hc.ne hb he hbe)
         (hc.ne hb hf hbf) (hc.ne hd hf hdf) hab hbd hde hef
-    set W : ℤ := (T.weight (c 1) : ℤ) with hWdef
+    set W : ℤ := (T.weight (c 1) : ℤ)
     -- Every edge strictly inside the chain equals the weight of both of its endpoints.
     have hstep : ∀ j, 1 ≤ j → j + 2 < t →
         T.intersection (c j) (c (j + 1)) = (T.weight (c j) : ℤ) ∧
@@ -371,6 +437,30 @@ theorem IsSelfIntersectionMinusTwoChain.intersection_eq_zero {t : ℕ} {c : ℕ 
 
 namespace IsSelfIntersectionMinusTwoChain
 
+/-- A component outside a chain meets at most one of its components, provided the numerical type
+has a component besides it and those of the chain: otherwise the chain would close up into a
+cycle. -/
+lemma eq_of_intersection_pos {t : ℕ} {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t + 1 < Fintype.card T.Component)
+    {x : T.Component} (hx_ne : ∀ i < t, x ≠ c i)
+    (hx_self : T.intersection x x = -(2 * (T.weight x : ℤ))) {r s : ℕ} (hs : s < t)
+    (hr : 0 < T.intersection (c r) x) (hrs : r ≤ s) (hsx : 0 < T.intersection (c s) x) :
+    r = s := by
+  by_contra hne
+  -- `x, c s, c (s - 1), …, c r` is a chain whose two ends meet.
+  have hd := ((hc.shift (r := r) (s := s - r + 1) (by omega)).reverse).cons
+    (fun i hi ↦ hx_ne _ (by omega)) hx_self (by
+      intro _
+      rw [T.intersection_comm]
+      -- The last position of the shifted block is position `s` in the original chain.
+      simpa [show r + (s - r) = s by omega] using hsx)
+  have h := hd.intersection_eq_zero (by omega) (p := 0) (q := s - r + 1) (by omega) (by omega)
+    (by omega) (by omega) (by omega)
+  simp only [↓reduceIte, Nat.add_one_ne_zero, Nat.add_sub_cancel, Nat.sub_self,
+    Nat.add_zero] at h
+  rw [T.intersection_comm] at h
+  omega
+
 /-- The intersection entries of a proper simply laced chain with common weight `w`. -/
 theorem intersection_eq_ite {t : ℕ} {c : ℕ → T.Component} {w : ℤ}
     (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
@@ -438,6 +528,98 @@ theorem IsSelfIntersectionMinusTwoChain.right_sum_eq {t : ℕ} {c : ℕ → T.Co
         hc.intersection_eq_zero hcard hj (by omega) (by omega) (by omega) (by omega), zero_mul])
     rfl
 
+/-- For a sequence of components which are distinct below `t` and exhaust a numerical type, the
+fibre relation at any position is a sum over the positions below `t`. -/
+theorem sum_range_multiplicity_mul_intersection_eq_zero {t : ℕ} {c : ℕ → T.Component}
+    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j) (hcard : Fintype.card T.Component = t)
+    (i : ℕ) :
+    ∑ j ∈ range t, (T.multiplicity (c j) : ℤ) * T.intersection (c i) (c j) = 0 := by
+  classical
+  have hu : (range t).image c = (univ : Finset T.Component) := by
+    apply eq_univ_of_card
+    rw [card_image_of_injOn fun a ha b hb hab ↦
+      hinj a (mem_range.mp ha) b (mem_range.mp hb) hab, card_range, hcard]
+  have h := T.fiber_relation (c i)
+  rw [← hu, sum_image] at h
+  · exact h
+  · intro a ha b hb hab
+    exact hinj a (mem_range.mp ha) b (mem_range.mp hb) hab
+
+/-- For a sequence of components `c 0, …, c (t - 1)` which are distinct below `t`, together with
+a finite set `S` of further components disjoint from them, when these exhaust a numerical type,
+the fibre relation at any component splits into a sum over the positions below `t` and a sum
+over `S`. -/
+theorem sum_range_add_sum_intersection_mul_multiplicity_eq_zero {t : ℕ} {c : ℕ → T.Component}
+    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j) {S : Finset T.Component}
+    (hS : ∀ i < t, c i ∉ S) (hcard : Fintype.card T.Component = t + #S) (x : T.Component) :
+    ∑ j ∈ range t, T.intersection x (c j) * T.multiplicity (c j) +
+      ∑ y ∈ S, T.intersection x y * T.multiplicity y = 0 := by
+  classical
+  have hinj' : Set.InjOn c (range t) := fun a ha b hb hab ↦
+    hinj a (mem_range.mp ha) b (mem_range.mp hb) hab
+  have hdisj : Disjoint ((range t).image c) S := by
+    rw [disjoint_left]
+    intro y hy
+    obtain ⟨i, hi, rfl⟩ := mem_image.mp hy
+    exact hS i (mem_range.mp hi)
+  have hu : (range t).image c ∪ S = univ := by
+    apply eq_univ_of_card
+    rw [card_union_of_disjoint hdisj, card_image_of_injOn hinj', card_range, hcard]
+  have h := T.fiber_relation x
+  rw [← hu, sum_union hdisj, sum_image hinj'] at h
+  rw [← h]
+  congr 1 <;> exact sum_congr rfl fun _ _ ↦ mul_comm _ _
+
+/-- For a sequence of at least two components which are distinct below `t`, exhaust a numerical
+type and meet only when consecutive, the fibre relation at the left end has only its diagonal
+and adjacent terms. -/
+theorem left_fiber_relation {t : ℕ} {c : ℕ → T.Component}
+    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
+    (hcard : Fintype.card T.Component = t) (ht : 2 ≤ t)
+    (hzero : ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c i) (c j) = 0) :
+    (T.multiplicity (c 0) : ℤ) * T.intersection (c 0) (c 0) +
+      T.multiplicity (c 1) * T.intersection (c 0) (c 1) = 0 := by
+  have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard 0
+  rw [sum_range_eq_of_eq_zero_off_pair (a := 0) (b := 1) (by omega) (by omega) (by omega)
+    (fun j hj hj0 hj1 ↦ by rw [hzero 0 (by omega) j hj hj0.symm (by omega) (by omega), mul_zero])
+    rfl] at h
+  exact h
+
+/-- For a sequence of components which are distinct below `t`, exhaust a numerical type and meet
+only when consecutive, the fibre relation at an interior position has only its diagonal and two
+adjacent terms. -/
+theorem interior_fiber_relation {t : ℕ} {c : ℕ → T.Component}
+    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
+    (hcard : Fintype.card T.Component = t)
+    (hzero : ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c i) (c j) = 0) {i : ℕ} (hi : 0 < i) (hit : i + 1 < t) :
+    (T.multiplicity (c (i - 1)) : ℤ) * T.intersection (c i) (c (i - 1)) +
+        T.multiplicity (c i) * T.intersection (c i) (c i) +
+      T.multiplicity (c (i + 1)) * T.intersection (c i) (c (i + 1)) = 0 := by
+  have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard i
+  rw [sum_range_eq_of_eq_zero_off_triple (a := i - 1) (b := i) (d := i + 1)
+    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (fun j hj hprev hself hnext ↦ by
+      rw [hzero i (by omega) j hj hself.symm (by omega) (by omega), mul_zero]) rfl] at h
+  exact h
+
+/-- For a sequence of at least two components which are distinct below `t`, exhaust a numerical
+type and meet only when consecutive, the fibre relation at the right end has only its diagonal
+and adjacent terms. -/
+theorem right_fiber_relation {t : ℕ} {c : ℕ → T.Component}
+    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
+    (hcard : Fintype.card T.Component = t) (ht : 2 ≤ t)
+    (hzero : ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c i) (c j) = 0) :
+    (T.multiplicity (c (t - 2)) : ℤ) * T.intersection (c (t - 1)) (c (t - 2)) +
+      T.multiplicity (c (t - 1)) * T.intersection (c (t - 1)) (c (t - 1)) = 0 := by
+  have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard (t - 1)
+  rw [sum_range_eq_of_eq_zero_off_pair (a := t - 2) (b := t - 1)
+    (by omega) (by omega) (by omega)
+    (fun j hj hprev hself ↦ by
+      rw [hzero (t - 1) (by omega) j hj hself.symm (by omega) (by omega), mul_zero]) rfl] at h
+  exact h
 
 /-- The weight classification of a chain of components of self-intersection `-2w`. -/
 private lemma exists_weight_eq_except_one_end_aux (T : NumericalType.{u}) (t : ℕ) :

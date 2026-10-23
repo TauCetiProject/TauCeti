@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Quotient
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Presentation
 public import TauCeti.RingTheory.Huber.Restricted.Laurent
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
-public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.RingHom
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.LocalizationTopology.Iterated
@@ -195,9 +194,10 @@ theorem flat_quotient_laurentRelationIdeal
     (weightedRestrictedSubring_one_weight (k := 1) (A := UniformSpace.Completion S)))
     (fun x ↦ subringCongr_one_weight_weightedC x)
   -- it carries the relation ideal to the ideal of Lemma 8.31
-  have hmap : Ideal.span {algebraMap (UniformSpace.Completion S)
-        (restrictedMvPowerSeriesSubring 1 (UniformSpace.Completion S))
-        ((divBy t s : S) : UniformSpace.Completion S) - restrictedX 0}
+  have hmap : Ideal.span
+        {algebraMap (UniformSpace.Completion S)
+          (restrictedMvPowerSeriesSubring 1 (UniformSpace.Completion S))
+          ((divBy t s : S) : UniformSpace.Completion S) - restrictedX 0}
       = (laurentRelationIdeal P T s t S hden).map (RingEquiv.subringCongr
         (weightedRestrictedSubring_one_weight (k := 1)
           (A := UniformSpace.Completion S)) : _ →+* _) := by
@@ -622,9 +622,9 @@ theorem flat_restrictionRingHomOfSubset_of_span_eq_top [IsHuberRing A]
     let _ : IsLocalization.Away (u * s) S' :=
       IsLocalization.Away.of_associated (associated_unit_mul_left s u hu).symm
     have hdenU : HasDenominatorPower P U (u * s) S :=
-      hden.of_coe_eq_image_mul_left hu hU
+      hden.of_eq_image_mul_left hu hU
     have hdenU' : HasDenominatorPower P U' (u * s) S' :=
-      hden'.of_coe_eq_image_mul_left hu hU'
+      hden'.of_eq_image_mul_left hu hU'
     have hUU' : ∀ x ∈ U, x ∈ U' := by
       intro x hx
       obtain ⟨t, ht, rfl⟩ := hU ▸ Finset.mem_coe.mpr hx
@@ -646,8 +646,8 @@ theorem flat_restrictionRingHomOfSubset_of_span_eq_top [IsHuberRing A]
       flat_restrictionRingHomOfSubset_of_isTopologicallyNilpotent_of_span_eq_top
         P U (u * s) S hdenU U' S' hdenU' hUU' (fun _ ↦ inferInstance)
           (fun _ ↦ inferInstance) (fun _ ↦ hnil) (fun _ ↦ hspanU)
-    have hsource := locSubring_eq_of_coe_eq_image_mul_left P T U u s S hU
-    have htarget := locSubring_eq_of_coe_eq_image_mul_left P T' U' u s S' hU'
+    have hsource := locSubring_eq_of_eq_image_mul_left P T U u s S hU
+    have htarget := locSubring_eq_of_eq_image_mul_left P T' U' u s S' hU'
     have hmap := restrictionRingHomOfSubset_heq P T T' s S hden S' hden' hTT'
       U U' (u * s) hdenU hdenU' hUU' hsource htarget
     exact ringHom_flat_of_completion_heq
@@ -724,24 +724,25 @@ variable [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
 -- `A → A⟨{1}/f⟩` is flat: it is the structure map of `A⟨X⟩ ⧸ (1 - f X)` followed by the
 -- identification of that quotient with `A⟨{1}/f⟩`.
 private theorem flat_toCompletionLoc_singleton_one (P : PairOfDefinition A) (f : A) (S : Type*)
-    [CommRing S] [Algebra A S] [IsLocalization.Away f S] (h1 : HasDenominatorPower P {1} f S) :
-    letI := locUniformSpace P {1} f S h1
-    letI := isUniformAddGroup_locUniformSpace P {1} f S h1
-    letI := isTopologicalRing_locUniformSpace P {1} f S h1
-    (toCompletionLoc P {1} f S h1).Flat := by
-  let _ := locUniformSpace P {1} f S h1
-  have _ := isUniformAddGroup_locUniformSpace P {1} f S h1
-  have _ := isTopologicalRing_locUniformSpace P {1} f S h1
+    [CommRing S] [Algebra A S] [IsLocalization.Away f S]
+    (h1 : HasDenominatorPower P ({1} : Finset A) f S) :
+    letI := locUniformSpace P ({1} : Finset A) f S h1
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S h1
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S h1
+    (toCompletionLoc P ({1} : Finset A) f S h1).Flat := by
+  let _ := locUniformSpace P ({1} : Finset A) f S h1
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S h1
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S h1
   -- `A⟨X⟩` is noetherian and metrisable, so `(1 - f X)` is closed, as the identification needs
   have _ := isNoetherianRing_of_ringEquiv _ (restrictedMvPowerSeriesCompletionEquiv 1 A)
   have _ : (𝓤 (weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
       isWeightFamily_one_weight)).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
   have hcl := isClosed_of_isNoetherian (rationalRelationIdeal (fun _ : Fin 1 ↦ (1 : A)) f)
-  let e := rationalQuotientRingEquiv P {1} f S h1 (fun _ ↦ 1) one_mem_singleton_one
+  let e := rationalQuotientRingEquiv P ({1} : Finset A) f S h1 (fun _ ↦ 1) one_mem_singleton_one
     (eq_or_mem_range_one f) (span_insert_singleton_one f) hcl
-  have hcomp : e.toRingHom.comp (algebraMap A _) = toCompletionLoc P {1} f S h1 :=
-    RingHom.ext <| rationalQuotientRingEquiv_algebraMap P {1} f S h1 (fun _ ↦ 1)
+  have hcomp : e.toRingHom.comp (algebraMap A _) = toCompletionLoc P ({1} : Finset A) f S h1 :=
+    RingHom.ext <| rationalQuotientRingEquiv_algebraMap P ({1} : Finset A) f S h1 (fun _ ↦ 1)
       one_mem_singleton_one (eq_or_mem_range_one f) (span_insert_singleton_one f) hcl
   -- `A` is a complete noetherian Tate ring, as Lemma 8.31(2) asks; it is noetherian because
   -- completeness is asked for the right uniformity, which is the ambient one
@@ -761,14 +762,15 @@ private theorem flat_toCompletionLoc_of_one_mem (P : PairOfDefinition A) {U : Fi
     letI := isUniformAddGroup_locUniformSpace P U f S hden
     letI := isTopologicalRing_locUniformSpace P U f S hden
     (toCompletionLoc P U f S hden).Flat := by
-  have h1 : HasDenominatorPower P {1} f S :=
-    hasDenominatorPower_of_idealOfDefinition_le_span P {1} (G := {1}) (by simp) (by simp) f S
-  have _ := isUniformAddGroup_locUniformSpace P {1} f S h1
-  have _ := isTopologicalRing_locUniformSpace P {1} f S h1
+  have h1 : HasDenominatorPower P ({1} : Finset A) f S :=
+    hasDenominatorPower_of_idealOfDefinition_le_span P ({1} : Finset A) (G := {1}) (by simp)
+      (by simp) f S
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S h1
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S h1
   have _ := isUniformAddGroup_locUniformSpace P U f S hden
   have _ := isTopologicalRing_locUniformSpace P U f S hden
   simpa using (flat_toCompletionLoc_singleton_one P f S h1).comp
-    (flat_restrictionRingHomOfSubset_of_span_eq_top P {1} f S h1 U S hden
+    (flat_restrictionRingHomOfSubset_of_span_eq_top P ({1} : Finset A) f S h1 U S hden
       (Finset.singleton_subset_iff.2 hU) (fun _ ↦ inferInstance) (fun _ ↦ inferInstance)
       fun _ ↦ by simp [Ideal.span_insert])
 
@@ -813,11 +815,11 @@ theorem flat_toCompletionLoc (P : PairOfDefinition A) (T : Finset A) (s : A) (S 
   have _ : IsLocalization.Away (v * s) S :=
     IsLocalization.Away.of_associated (associated_unit_mul_left s v u⁻¹.isUnit).symm
   have hV : ((T.image (v * ·) : Finset A) : Set A) = (v * ·) '' (T : Set A) := Finset.coe_image
-  have hVT := locSubring_eq_of_coe_eq_image_mul_left P T _ v s S hV
+  have hVT := locSubring_eq_of_eq_image_mul_left P T _ v s S hV
   refine flat_toCompletionLoc_of_locSubring_eq_of_one_mem P hden (Finset.mem_insert_self 1 _)
-    ((hden.of_coe_eq_image_mul_left u⁻¹.isUnit hV).mono (Finset.subset_insert _ _)) ?_
+    ((hden.of_eq_image_mul_left u⁻¹.isUnit hV).mono (Finset.subset_insert _ _)) ?_
   -- adjoining the numerator `1` changes nothing, since `1/(v s) = u/s` is already in `D`
-  rw [locSubring_insert_eq_of_divBy_mem P (v * s) S
+  rw [Finset.coe_insert, locSubring_insert_eq_of_divBy_mem P (v * s) S
     (by rwa [hVT, ← u.inv_mul, divBy_mul_mul_left]), hVT]
 
 end StructureMap
@@ -825,24 +827,6 @@ end StructureMap
 section Refinement
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-
--- Over a Tate ring the localisation `A⟨T/s⟩` is Tate, because the image of a pseudouniformiser of
--- `A` is one.
-private theorem isTateRing_completion_locTopology_of_isTateRing [IsTateRing A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
-    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    letI := isHuberRing_locUniformSpace P T s S hden
-    IsTateRing (UniformSpace.Completion S) := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
-  exact { toIsHuberRing := isHuberRing_completion_locTopology P T s S hden
-          exists_isPseudoUniformizer :=
-            ⟨_, hϖ.map (continuous_toCompletionLoc P T s S hden)⟩ }
 
 /-- **Wedhorn's Proposition 8.30 for a refinement, asking everything of `A⟨T/s⟩`.** The restriction
 map `A⟨T/s⟩ → A⟨T''/s''⟩` of a refinement is flat as soon as `B = A⟨T/s⟩` is Tate and strongly

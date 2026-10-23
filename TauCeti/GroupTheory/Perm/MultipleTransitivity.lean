@@ -9,15 +9,18 @@ public import Mathlib.GroupTheory.GroupAction.Jordan
 public import TauCeti.GroupTheory.Perm.Basic
 
 /-!
-# Long cycles and double transitivity
+# Long cycles and transitivity
 
-A transitive permutation group containing a cycle on all but one point is doubly transitive. The
+A permutation group containing a cycle on all points is transitive, and a transitive permutation
+group containing a cycle on all but one point is doubly transitive. In the second case, the
 missing point is the unique fixed point of the cycle. Its stabilizer contains the cycle and is
 therefore transitive on the complement; the usual point-stabilizer criterion then gives double
 transitivity of the original action.
 
 ## Main results
 
+* `TauCeti.isPretransitive_of_isCycle_mem_of_support_eq_univ`: a permutation group containing a
+  cycle with full support is transitive.
 * `TauCeti.card_support_add_one_eq_card_iff_existsUnique_fixedPoint`: a permutation moves all but
   one point exactly when it has a unique fixed point.
 * `TauCeti.is_two_pretransitive_of_isCycle_mem_of_existsUnique_fixedPoint`: a transitive
@@ -98,6 +101,15 @@ theorem isPreprimitive_of_isCycle_mem_of_existsUnique_fixedPoint
     (is_two_pretransitive_of_isCycle_mem_of_existsUnique_fixedPoint G hσ hσG hfix)
 
 variable [Fintype α] [DecidableEq α]
+
+/-- A permutation subgroup containing a cycle with full support acts transitively. -/
+theorem isPretransitive_of_isCycle_mem_of_support_eq_univ {G : Subgroup (Equiv.Perm α)}
+    {g : Equiv.Perm α} (hgc : g.IsCycle) (hg : g ∈ G) (hsupp : g.support = Finset.univ) :
+    IsPretransitive G α := by
+  have h := Equiv.Perm.isPretransitive_of_isCycle_mem hgc hg
+  rw [hsupp, Finset.coe_univ, Set.compl_univ] at h
+  exact IsPretransitive.of_surjective_map
+    SubMulAction.ofFixingSubgroupEmpty_equivariantMap_bijective.surjective h
 
 /-- A transitive subgroup of a finite symmetric group that contains a cycle moving all but one
 point is doubly transitive. -/

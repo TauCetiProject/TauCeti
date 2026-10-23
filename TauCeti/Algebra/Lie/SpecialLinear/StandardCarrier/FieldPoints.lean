@@ -69,8 +69,8 @@ only if its determinant is one. -/
 theorem mem_points_iff_det_eq_one (g : Matrix.GeneralLinearGroup (Fin (r + 1)) K) :
     g ∈ points r K ↔ Matrix.GeneralLinearGroup.det g = 1 := by
   rw [points_eq_range_toGL r]
-  have h := Set.ext_iff.mp
-    (Matrix.SpecialLinearGroup.range_toGL (n := Fin (r + 1)) (A := K)) g
-  simpa only [MonoidHom.mem_range, Set.mem_range, Set.mem_preimage, Set.mem_singleton_iff] using h
+  have h := SetLike.ext_iff.mp
+    (Matrix.SpecialLinearGroup.range_toGL_eq_ker_det (n := Fin (r + 1)) (R := K)) g
+  simpa only [MonoidHom.mem_ker] using h
 
 end TauCeti.SlStd

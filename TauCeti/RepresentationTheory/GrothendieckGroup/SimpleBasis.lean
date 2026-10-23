@@ -38,6 +38,10 @@ the projective/simple coordinates used to express the Cartan map as a matrix.
 * `TauCeti.linearIndependent_exactK0OfFamily`: pairwise nonisomorphic simple classes are
   linearly independent.
 * `TauCeti.span_range_exactK0OfFamily_eq_top`: an exhaustive family of simple classes spans.
+* `TauCeti.free_exactK0_of_isExhaustiveSimpleFamily`,
+  `TauCeti.finite_exactK0_of_isExhaustiveSimpleFamily` and
+  `TauCeti.finrank_exactK0_eq_card_of_isExhaustiveSimpleFamily`: `G₀(mod R)` is a free
+  `ℤ`-module, finite of rank the number of simple classes.
 * `TauCeti.IsSimpleModule.nonempty_linearEquiv_quot_maximalIdeal`: a simple module over a
   commutative local ring is isomorphic to its residue field.
 * `TauCeti.isExhaustiveSimpleFamily_of_isLocalRing`: over a commutative local ring a single simple
@@ -69,8 +73,6 @@ variable (R) (S : Type w) [AddCommGroup S] [Module R S]
 private noncomputable def jordanHolderInvariant :
     ExactK0.AdditiveInvariant (finiteModulesExactStructure R) ℤ where
   obj M := jordanHolderMultiplicity R M S
-  map_iso {_ _} e := congrArg Int.ofNat
-    (jordanHolderMultiplicity_eq_of_linearEquiv (FGModuleCat.isoToLinearEquiv e) S)
   map_conflation {T} hT := by
     have hshort := (finiteModulesExactStructure_conflation_iff R T).mp hT
     have hexact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp hshort.exact
@@ -233,21 +235,7 @@ private theorem exactK0_of_type_mem_span_range_simple
       rw [ExactK0.of_congr e.toFGModuleCatIso]
       exact Submodule.subset_span (Set.mem_range_self i)
     have hNmem : ExactK0.of (FGModuleCat.of R N) ∈ G := ih inferInstance
-    let T : ShortComplex (FGModuleCat R) :=
-      ShortComplex.mk (FGModuleCat.ofHom N.subtype) (FGModuleCat.ofHom N.mkQ) (by
-        apply FGModuleCat.hom_ext
-        exact (LinearMap.exact_subtype_mkQ N).linearMap_comp_eq_zero)
-    have hconf : (finiteModulesExactStructure R).Conflation T :=
-      (finiteModulesExactStructure_conflation_iff R T).mpr <| by
-        apply ModuleCat.shortComplex_shortExact
-        · exact LinearMap.exact_subtype_mkQ N
-        · exact N.injective_subtype
-        · exact N.mkQ_surjective
-    have hrel :
-        (ExactK0.of (FGModuleCat.of R M) : ExactK0 (finiteModulesExactStructure R)) =
-          ExactK0.of (FGModuleCat.of R N) + ExactK0.of (FGModuleCat.of R Q) := by
-      simpa only [T, Q] using ExactK0.of_conflation hconf
-    rw [hrel]
+    rw [exactK0_of_eq_submodule_add_quotient R N]
     exact G.add_mem hNmem hQ
 
 omit hS in
@@ -292,6 +280,28 @@ theorem simpleClassBasis_repr_apply (hexhaustive : IsExhaustiveSimpleFamily S)
     (fun c x ↦ funext fun i ↦ map_zsmul _ c x) (fun j ↦ funext fun k ↦ ?_) x i
   rw [simpleClassBasis_apply, Finsupp.single_apply]
   exact jordanHolderCoordinate_exactK0OfFamily S hnoniso k j
+
+include hnoniso in
+/-- **`G₀(mod R)` is a free `ℤ`-module**, on the classes of an exhaustive family of pairwise
+nonisomorphic simple modules. -/
+theorem free_exactK0_of_isExhaustiveSimpleFamily (hexhaustive : IsExhaustiveSimpleFamily S) :
+    Module.Free ℤ (ExactK0 (finiteModulesExactStructure R)) :=
+  Module.Free.of_basis (simpleClassBasis S hnoniso hexhaustive)
+
+include hnoniso in
+/-- **`G₀(mod R)` is a finitely generated `ℤ`-module** when there are finitely many simple
+classes. -/
+theorem finite_exactK0_of_isExhaustiveSimpleFamily [Finite I]
+    (hexhaustive : IsExhaustiveSimpleFamily S) :
+    Module.Finite ℤ (ExactK0 (finiteModulesExactStructure R)) :=
+  Module.Finite.of_basis (simpleClassBasis S hnoniso hexhaustive)
+
+include hnoniso in
+/-- **The rank of `G₀(mod R)` is the number of isomorphism classes of simple modules.** -/
+theorem finrank_exactK0_eq_card_of_isExhaustiveSimpleFamily [Fintype I]
+    (hexhaustive : IsExhaustiveSimpleFamily S) :
+    Module.finrank ℤ (ExactK0 (finiteModulesExactStructure R)) = Fintype.card I :=
+  Module.finrank_eq_card_basis (simpleClassBasis S hnoniso hexhaustive)
 
 end SimpleFamily
 

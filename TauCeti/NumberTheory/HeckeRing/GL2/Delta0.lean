@@ -189,6 +189,11 @@ lemma Delta0_le_posDetInt : Delta0 N ≤ posDetInt 2 := by
   obtain ⟨A, hA, hdet, -, -⟩ := (mem_Delta0_iff N).mp hg
   exact (mem_posDetInt_iff 2).mpr ⟨(hasIntEntries_iff 2).mpr ⟨A, hA⟩, hdet⟩
 
+/-- `Δ₀(N)` consists of matrices with integer entries: `Delta0_le_posDetInt` with the positivity
+forgotten. -/
+lemma Delta0_le_intEntries : Delta0 N ≤ intEntries 2 :=
+  (Delta0_le_posDetInt N).trans (posDetInt_le_intEntries 2)
+
 /-- **`Δ₀(N)` lies in the commensurator of the image of any finite-index subgroup of `SL₂(ℤ)`.**
 
 This is the right-hand half of the Hecke triple `Γ ≤ Δ₀(N) ≤ commensurator(Γ.map (mapGL ℚ))`,

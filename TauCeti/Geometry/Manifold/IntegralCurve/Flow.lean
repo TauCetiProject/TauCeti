@@ -27,10 +27,13 @@ be false. The results below always carry the precise membership hypotheses.
   restarting at `t` is exactly the translate by `-t` of the original interval.
 * `maximalIntegralCurve_add`: the domain-aware flow law
   `φ x (t + s) = φ (φ x t) s`.
-* `maximalIntegralCurveFlowDomain`: the natural domain of the maximal flow.
+* `maximalIntegralCurveFlowDomain`: the natural domain of the maximal flow, which is everything
+  for a complete field (`maximalIntegralCurveFlowDomain_eq_univ`).
 * `isOpen_maximalIntegralCurveFlowDomain`: the natural domain is open.
 * `contMDiffOn_maximalIntegralCurve`: the maximal flow of a `C^n` vector field (`1 ≤ n ≤ ∞`) is
   `C^n` on its natural domain.
+* `mapClusterPt_atTop_maximalIntegralCurve`: the ω-limit set of a maximal integral curve defined
+  for all positive time is invariant under the maximal flow.
 
 ## References
 
@@ -40,7 +43,7 @@ be false. The results below always carry the precise membership hypotheses.
 
 public section
 
-open Function Manifold Set
+open Filter Function Manifold Set
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti
@@ -89,7 +92,7 @@ private theorem sub_mem_maximalIntegralCurveInterval
     (ht : t ∈ maximalIntegralCurveInterval v x)
     (hs : s ∈ maximalIntegralCurveInterval v x) :
     s - t ∈ maximalIntegralCurveInterval v (maximalIntegralCurve v x t) := by
-  obtain ⟨a, b, h0, ht', hs', hγ⟩ :=
+  obtain ⟨a, b, _, ht', hs', hγ⟩ :=
     exists_common_Ioo_maximalIntegralCurveInterval hv ht hs
   have hshift : IsMIntegralCurveOn (maximalIntegralCurve v x ∘ (· + t)) v
       (Ioo (a - t) (b - t)) := by
@@ -109,7 +112,7 @@ theorem maximalIntegralCurve_add
     (hts : t + s ∈ maximalIntegralCurveInterval v x) :
     maximalIntegralCurve v x (t + s) =
       maximalIntegralCurve v (maximalIntegralCurve v x t) s := by
-  obtain ⟨a, b, h0, ht', hst', hγ⟩ :=
+  obtain ⟨a, b, _, ht', hst', hγ⟩ :=
     exists_common_Ioo_maximalIntegralCurveInterval hv ht hts
   have hshift : IsMIntegralCurveOn (maximalIntegralCurve v x ∘ (· + t)) v
       (Ioo (a - t) (b - t)) := by
@@ -173,6 +176,15 @@ omit [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
 @[simp] theorem mem_maximalIntegralCurveFlowDomain {p : M × ℝ} :
     p ∈ maximalIntegralCurveFlowDomain v ↔ p.2 ∈ maximalIntegralCurveInterval v p.1 :=
   Iff.rfl
+
+omit [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
+/-- For a complete vector field, whose maximal integral curves are all defined for all time, the
+natural domain of the maximal flow is everything. -/
+theorem maximalIntegralCurveFlowDomain_eq_univ
+    (h : ∀ x, maximalIntegralCurveInterval v x = univ) :
+    maximalIntegralCurveFlowDomain v = univ := by
+  ext p
+  simp [h]
 
 /-- A point is good for the order-`n + 1` maximal flow if the natural domain is a neighbourhood
 of that point and the total, junk-extended flow is `C^(n+1)` there. -/
@@ -384,5 +396,30 @@ theorem contMDiffOn_maximalIntegralCurve [FiniteDimensional ℝ E] {n : ℕ∞} 
   let _ : IsManifold I (k + 1 : ℕ) M := IsManifold.of_le (n := n) hkn
   exact (isMaximalIntegralCurveFlowPoint_of_mem (I := I) k (hv.of_le hkn)
     hp).2.contMDiffWithinAt.of_le (by exact_mod_cast hmk)
+
+/-- **The ω-limit set of a forward maximal integral curve is invariant under the maximal flow.**
+If the maximal integral curve through `x` is defined for all positive time and `z` is one of its
+cluster points as `t → ∞`, then so is every point of the maximal integral curve through `z`. -/
+theorem mapClusterPt_atTop_maximalIntegralCurve [FiniteDimensional ℝ E]
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    (hx : Ici 0 ⊆ maximalIntegralCurveInterval v x) {z : M}
+    (hz : MapClusterPt z atTop (maximalIntegralCurve v x))
+    (hs : s ∈ maximalIntegralCurveInterval v z) :
+    MapClusterPt (maximalIntegralCurve v z s) atTop (maximalIntegralCurve v x) := by
+  -- The time-`s` map of the maximal flow is continuous at `z`, its domain being open.
+  have hcont : ContinuousAt (fun y ↦ maximalIntegralCurve v y s) z := by
+    have h := (contMDiffOn_maximalIntegralCurve le_rfl hv).continuousOn.continuousAt
+      ((isOpen_maximalIntegralCurveFlowDomain hv).mem_nhds
+        (mem_maximalIntegralCurveFlowDomain (p := (z, s)) |>.mpr hs))
+    exact h.comp (f := fun y ↦ (y, s)) (by fun_prop)
+  -- Restarting the curve through `x` at a late time `t` and running it for time `s` reaches its
+  -- value at time `t + s`.
+  have heq : (fun t ↦ maximalIntegralCurve v (maximalIntegralCurve v x t) s) =ᶠ[atTop]
+      fun t ↦ maximalIntegralCurve v x (t + s) := by
+    filter_upwards [eventually_ge_atTop (max 0 (-s))] with t ht
+    exact (maximalIntegralCurve_add hv (hx (le_of_max_le_left ht))
+      (hx (by simp only [mem_Ici]; linarith [le_max_right 0 (-s)]))).symm
+  exact (heq.mapClusterPt_iff.mp (hz.continuousAt_comp hcont)).of_comp
+    (tendsto_atTop_add_const_right _ s tendsto_id)
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 
 /-!
 # The degree-two grading on the dual numbers
@@ -20,6 +21,9 @@ the usual ungraded dual-number algebra.
 
 * `TauCeti.dualNumberGrade`: the degree pieces of the dual numbers.
 * `TauCeti.dualNumberGradedAlgebra`: the corresponding graded-algebra structure.
+* `TauCeti.dualNumberIntegerGrade` and `TauCeti.dualNumberIntegerGradedAlgebra`: the same grading
+  extended by zero to integer degrees, the indexing in which internal shifts of graded modules
+  are stated.
 
 ## Main results
 
@@ -28,6 +32,10 @@ the usual ungraded dual-number algebra.
 * `TauCeti.dualNumberGrade_zero_eq_ker_snd` and
   `TauCeti.dualNumberGrade_two_eq_ker_fst`: the two nonzero pieces in coordinates.
 * `TauCeti.dualNumberGrade_eq_bot`: every degree other than zero and two vanishes.
+* `TauCeti.dualNumberGradeZeroEquiv` and `TauCeti.dualNumberGradeTwoEquiv`:
+  the two nonzero pieces are linearly equivalent to the base ring.
+* `TauCeti.dualNumberIntegerGrade_zero_eq_span_one`: in the integer grading, degree zero is the
+  line through `1`.
 
 ## Implementation notes
 
@@ -96,6 +104,62 @@ theorem inr_mem_dualNumberGrade_two (r : R) :
 theorem eps_mem_dualNumberGrade_two :
     DualNumber.eps ∈ dualNumberGrade R 2 := by
   simpa only [DualNumber.eps] using inr_mem_dualNumberGrade_two R 1
+
+/-- The degree-zero piece of the dual numbers is linearly equivalent to the base ring. -/
+noncomputable def dualNumberGradeZeroEquiv : dualNumberGrade R 0 ≃ₗ[R] R where
+  toFun x := x.1.fst
+  invFun r := ⟨TrivSqZeroExt.inl r, inl_mem_dualNumberGrade_zero R r⟩
+  left_inv x := by
+    apply Subtype.ext
+    apply TrivSqZeroExt.ext
+    · simp
+    · simp [(mem_dualNumberGrade_zero (R := R)).mp x.2]
+  right_inv r := by simp
+  map_add' x y := by simp
+  map_smul' r x := by simp
+
+/-- The degree-zero equivalence reads the scalar coordinate. -/
+@[simp]
+theorem dualNumberGradeZeroEquiv_apply (x : dualNumberGrade R 0) :
+    dualNumberGradeZeroEquiv R x = x.1.fst := by
+  unfold dualNumberGradeZeroEquiv
+  rfl
+
+/-- The inverse degree-zero equivalence inserts a scalar dual number. -/
+@[simp]
+theorem dualNumberGradeZeroEquiv_symm_apply (r : R) :
+    (dualNumberGradeZeroEquiv R).symm r =
+      ⟨TrivSqZeroExt.inl r, inl_mem_dualNumberGrade_zero R r⟩ := by
+  unfold dualNumberGradeZeroEquiv
+  rfl
+
+/-- The degree-two piece of the dual numbers is linearly equivalent to the base ring. -/
+noncomputable def dualNumberGradeTwoEquiv : dualNumberGrade R 2 ≃ₗ[R] R where
+  toFun x := x.1.snd
+  invFun r := ⟨TrivSqZeroExt.inr r, inr_mem_dualNumberGrade_two R r⟩
+  left_inv x := by
+    apply Subtype.ext
+    apply TrivSqZeroExt.ext
+    · simp [(mem_dualNumberGrade_two (R := R)).mp x.2]
+    · simp
+  right_inv r := by simp
+  map_add' x y := by simp
+  map_smul' r x := by simp
+
+/-- The degree-two equivalence reads the infinitesimal coordinate. -/
+@[simp]
+theorem dualNumberGradeTwoEquiv_apply (x : dualNumberGrade R 2) :
+    dualNumberGradeTwoEquiv R x = x.1.snd := by
+  unfold dualNumberGradeTwoEquiv
+  rfl
+
+/-- The inverse degree-two equivalence inserts an infinitesimal dual number. -/
+@[simp]
+theorem dualNumberGradeTwoEquiv_symm_apply (r : R) :
+    (dualNumberGradeTwoEquiv R).symm r =
+      ⟨TrivSqZeroExt.inr r, inr_mem_dualNumberGrade_two R r⟩ := by
+  unfold dualNumberGradeTwoEquiv
+  rfl
 
 /-- Multiplication adds degrees in the standard grading of the dual numbers. -/
 theorem mul_mem_dualNumberGrade {m n : ℕ} {x y : DualNumber R}
@@ -218,5 +282,47 @@ rather than a global instance so callers choose when to install it locally. -/
 noncomputable def dualNumberGradedAlgebra : GradedAlgebra (dualNumberGrade R) := by
   letI := dualNumberGradedMonoid R
   exact DirectSum.IsInternal.gradedAlgebra (isInternal_dualNumberGrade R)
+
+/-! ### Integer degrees -/
+
+/-- The standard grading of the dual numbers, extended by zero from natural to integer degrees.
+This is the indexing used by internal shifts of graded modules. -/
+noncomputable def dualNumberIntegerGrade (d : ℤ) : Submodule R (DualNumber R) :=
+  Graded.extendByZero (dualNumberGrade R) d
+
+/-- In a natural degree `n`, the integer grading is the degree-`n` piece of the standard grading. -/
+@[simp]
+theorem dualNumberIntegerGrade_ofNat (n : ℕ) :
+    dualNumberIntegerGrade R n = dualNumberGrade R n :=
+  Graded.extendByZero_natCast _ n
+
+/-- The integer grading of the dual numbers vanishes in negative degrees. -/
+@[simp]
+theorem dualNumberIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
+    dualNumberIntegerGrade R d = ⊥ :=
+  Graded.extendByZero_of_neg _ hd
+
+/-- The unit of the dual numbers has integer degree zero. -/
+theorem one_mem_dualNumberIntegerGrade_zero :
+    (1 : DualNumber R) ∈ dualNumberIntegerGrade R 0 := by
+  rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero,
+    TrivSqZeroExt.snd_one]
+
+/-- **Integer degree zero is the line through `1`.** -/
+theorem dualNumberIntegerGrade_zero_eq_span_one :
+    dualNumberIntegerGrade R 0 = R ∙ (1 : DualNumber R) := by
+  ext x
+  rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero,
+    Submodule.mem_span_singleton]
+  refine ⟨fun hx => ⟨x.fst, TrivSqZeroExt.ext (by simp) (by simp [hx])⟩, ?_⟩
+  rintro ⟨r, rfl⟩
+  simp
+
+/-- The dual numbers are integer graded, with `ε` in degree two and zero pieces in negative
+degrees. This is a definition rather than a global instance, like `dualNumberGradedAlgebra`. -/
+@[instance_reducible]
+noncomputable def dualNumberIntegerGradedAlgebra : GradedAlgebra (dualNumberIntegerGrade R) :=
+  let _ := dualNumberGradedAlgebra R
+  Graded.gradedAlgebraExtendByZero (dualNumberGrade R)
 
 end TauCeti

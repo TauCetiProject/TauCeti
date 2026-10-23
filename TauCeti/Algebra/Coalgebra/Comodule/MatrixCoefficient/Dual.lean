@@ -70,8 +70,7 @@ theorem matrixCoefficient_dual_eval (φ : Module.Dual R M) (m : M) :
   rw [matrixCoefficient_def, dual_coact,
     ← dualTensorHom_dualCoact_apply (R := R) (H := H) (M := M)]
   generalize dualCoact (R := R) (H := H) (M := M) φ = x
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hx hy
   | tmul ψ h => simp

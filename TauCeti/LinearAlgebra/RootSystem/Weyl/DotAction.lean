@@ -89,6 +89,8 @@ public section
 
 namespace TauCeti
 
+open RootPairing
+
 universe u v w x
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
@@ -253,7 +255,7 @@ variable [LinearOrder R]
 dominant, equivalently (`TauCeti.mem_openDotDominantChamber_iff_neg_one_lt_coroot'`) those with
 `-1 < ⟨x, αᵢ^∨⟩` for every simple root `αᵢ`.
 
-This, and not `TauCeti.dominantChamber`, is the region the dot action is free on for a general
+This, and not `RootPairing.dominantChamber`, is the region the dot action is free on for a general
 coefficient ring: the walls of the dot action sit at `⟨x, αᵢ^∨⟩ = -1`
 (`TauCeti.dotAction_ofIdx_eq_self_iff`), so this is the open chamber the dot action cuts out. Every
 dominant weight lies in it (`TauCeti.dominantChamber_subset_openDotDominantChamber`), and the

@@ -41,6 +41,8 @@ choosing a preferred presentation.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.exists_presentationIndex_mem`: the rational opens presented by the
+  indices of an open cover it.
 * `TauCeti.ValuationSpectrum.exists_presentationToRationalSubsetIndex_obj_eq`: every rational
   subset index is exactly represented by an admissible presentation.
 * `CategoryTheory.Functor.Final
@@ -86,9 +88,7 @@ noncomputable def presentationToRationalSubsetIndex (Aplus : Subring A)
     PresentationIndex (P := P) Aplus V ⥤ RationalSubsetIndex Aplus V where
   obj i :=
     OrderDual.toDual
-      ⟨spaBasicOpen Aplus i.pres.num i.pres.den,
-        mem_spaRationalOpens.mpr <| mem_spaRationalFamily_iff.mpr
-          ⟨i.pres.num, i.pres.den, i.isOpen_span, Set.ext fun _ ↦ mem_spaBasicOpen⟩,
+      ⟨spaBasicOpen Aplus i.pres.num i.pres.den, spaBasicOpen_mem_spaRationalOpens i.isOpen_span,
         i.le_open⟩
   map {i j} f := homOfLE <| spaBasicOpen_le_spaBasicOpen_iff.mpr <|
     rationalSubset_subset_rationalSubset_of_le Aplus f.le
@@ -111,24 +111,23 @@ theorem exists_presentationToRationalSubsetIndex_obj_eq
     (U : RationalSubsetIndex Aplus V) :
     ∃ i : PresentationIndex (P := P) Aplus V,
       (presentationToRationalSubsetIndex Aplus V).obj i = U := by
-  obtain ⟨T, s, hT, hU⟩ :=
-    mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp U.2.1)
-  let p : P.Presentation :=
-    { num := T
-      den := s
-      hasDenominatorPower := P.hasDenominatorPower_of_isOpen_span T s _ hT }
-  have hopen : spaBasicOpen Aplus p.num p.den = (OrderDual.ofDual U).1 := by
-    apply Opens.ext
-    exact (Set.ext fun _ ↦ mem_spaBasicOpen).trans hU.symm
+  obtain ⟨T, s, hT, hU⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp U.2.1
   let i : PresentationIndex (P := P) Aplus V :=
-    { pres := p
+    { pres := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
       isOpen_span := hT
-      le_open := hopen.le.trans U.2.2 }
-  refine ⟨i, ?_⟩
-  apply OrderDual.ofDual.injective
-  apply Subtype.ext
-  rw [presentationToRationalSubsetIndex_obj_open]
-  exact hopen
+      le_open := hU.ge.trans U.2.2 }
+  exact ⟨i, OrderDual.ofDual.injective <|
+    Subtype.ext <| (presentationToRationalSubsetIndex_obj_open Aplus V i).trans hU.symm⟩
+
+/-- **Every point of an open lies in the rational open of one of its indices**: the rational opens
+`R(i)`, for `i` ranging over the indices of `V`, cover `V`. -/
+theorem exists_presentationIndex_mem {v : ↥(spa Aplus)} (hv : v ∈ V) :
+    ∃ i : PresentationIndex (P := P) Aplus V, v ∈ spaBasicOpen Aplus i.pres.num i.pres.den := by
+  -- `P` makes `A` a Huber ring, so the rational opens form a basis
+  have : IsHuberRing A := ⟨⟨P⟩⟩
+  obtain ⟨W, hW, hvW, hWV⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens Aplus) hv
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
+  exact ⟨⟨⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩, hT, hWV⟩, hvW⟩
 
 /-- The functor from presentations to rational subsets is final: every rational subset is in its
 image, and the presentation index is filtered by common refinement. This is the categorical

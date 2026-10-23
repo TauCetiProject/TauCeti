@@ -79,7 +79,7 @@ determinant reduces to `1`. -/
 theorem isTopologicallyNilpotent_one_sub_det_one_sub {B : Matrix n n A}
     (hB : ∀ i j, IsTopologicallyNilpotent (B i j)) :
     IsTopologicallyNilpotent (1 - (1 - B).det) := by
-  set I := topologicallyNilpotentIdeal A with hI
+  set I := topologicallyNilpotentIdeal A with _
   set B' := toPowerBoundedMatrix B hB with hB'
   have hmap : (Ideal.Quotient.mk I).mapMatrix (1 - B') = 1 := by
     ext i j

@@ -45,16 +45,16 @@ finite field and `E/F` a supplied degree-`2` extension, which is what makes the 
 available; the four hypotheses are read at the representatives of
 `TauCeti.exists_isConj_normalForm`. -/
 theorem ext_gl2NormalForm (E : Type*) [Field E] [Algebra F E]
-    (hE : Module.finrank F E = 2) {f₁ f₂ : ClassFunction k (GL (Fin 2) F)}
+    [Algebra.IsQuadraticExtension F E] {f₁ f₂ : ClassFunction k (GL (Fin 2) F)}
     (hscalar : ∀ a : Fˣ, f₁.1 (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
       f₂.1 (Matrix.GeneralLinearGroup.scalar (Fin 2) a))
     (hdiag : ∀ a b : Fˣ, a ≠ b → f₁.1 (diagGL ![a, b]) = f₂.1 (diagGL ![a, b]))
     (hjordan : ∀ a : Fˣ, f₁.1 (jordanGL a (1 : F)) = f₂.1 (jordanGL a (1 : F)))
     (helliptic : ∀ x : Eˣ, (x : E) ∉ Set.range (algebraMap F E) →
-      f₁.1 (GL2NonSplitTorusHom F E hE x) = f₂.1 (GL2NonSplitTorusHom F E hE x)) :
+      f₁.1 (GL2NonSplitTorusHom F E x) = f₂.1 (GL2NonSplitTorusHom F E x)) :
     f₁ = f₂ := by
   refine Subtype.ext (funext fun g => ?_)
-  rcases exists_isConj_normalForm E hE g with ⟨a, rfl⟩ | ⟨a, b, hab, h⟩ | ⟨a, h⟩ | ⟨x, hx, h⟩
+  rcases exists_isConj_normalForm E g with ⟨a, rfl⟩ | ⟨a, b, hab, h⟩ | ⟨a, h⟩ | ⟨x, hx, h⟩
   · exact hscalar a
   · rw [eq_of_isConj f₁ h, eq_of_isConj f₂ h]
     exact hdiag a b hab

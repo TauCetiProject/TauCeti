@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyc
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.FiniteCyclic
 public import TauCeti.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
+import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 
 /-!
 # Tate cohomology of a finite cyclic group is two-periodic

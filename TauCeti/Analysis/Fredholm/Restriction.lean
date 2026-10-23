@@ -5,19 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.Comp
 public import TauCeti.Analysis.Fredholm.Criteria
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
 # Fredholm operators from finite-codimension restrictions
 
 Let `T : E →L[𝕜] F` carry a closed finite-codimensional subspace `E₁` into a closed
-finite-codimensional subspace `F₁`. Mathlib's `ContinuousLinearMap.IsFredholm.of_restrict`
-shows that `T` is Fredholm when the induced operator `E₁ →L[𝕜] F₁` is. This file records the
-accompanying index formula: the index of `T` is the index of the restriction plus
-`codim E₁ - codim F₁`. It is a basic reduction for the Fredholm-operator substrate in Lane F0
-of the analytic Heegaard Floer roadmap, in particular when an operator is first controlled
-after discarding finitely many modes.
+finite-codimensional subspace `F₁`. Mathlib's `ContinuousLinearMap.IsFredholm.of_restrict` shows
+that `T` is Fredholm when the induced operator `E₁ →L[𝕜] F₁` is. This file records the accompanying
+index formula: the index of `T` is the index of the restriction plus `codim E₁ - codim F₁`. It is a
+basic reduction, in particular when an operator is first controlled after discarding finitely many
+modes.
 
 ## Main declarations
 
@@ -56,8 +55,14 @@ theorem _root_.ContinuousLinearMap.index_restrict (hE₁ : IsClosed (E₁ : Set 
   have hfactor : T.comp E₁.subtypeL = F₁.subtypeL.comp (T.restrict hT) := by
     ext x
     exact (congrArg Subtype.val (ContinuousLinearMap.restrict_apply hT x)).symm
-  have hdom := ContinuousLinearMap.index_comp T E₁.subtypeL hTfull hιE
-  have hcod := ContinuousLinearMap.index_comp F₁.subtypeL (T.restrict hT) hιF hT₁
+  have hdom : ContinuousLinearMap.index (T.comp E₁.subtypeL) =
+      ContinuousLinearMap.index T + ContinuousLinearMap.index E₁.subtypeL := by
+    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+      hTfull.index_comp hιE
+  have hcod : ContinuousLinearMap.index (F₁.subtypeL.comp (T.restrict hT)) =
+      ContinuousLinearMap.index F₁.subtypeL + ContinuousLinearMap.index (T.restrict hT) := by
+    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+      hιF.index_comp hT₁
   have hEindex : ContinuousLinearMap.index E₁.subtypeL = -(finrank K (E ⧸ E₁) : ℤ) := by
     rw [ContinuousLinearMap.index_of_injective E₁.subtypeL Subtype.val_injective,
       Submodule.toLinearMap_subtypeL, Submodule.range_subtype]

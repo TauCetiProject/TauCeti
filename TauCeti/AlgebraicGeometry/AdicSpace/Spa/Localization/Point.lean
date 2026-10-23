@@ -21,6 +21,7 @@ of Proposition 8.2(1).
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.rationalLocalizationPoint_def`: the defining formula.
 * `TauCeti.ValuationSpectrum.comap_rationalLocalizationPoint`: the rational point lies over `x`.
 * `TauCeti.ValuationSpectrum.comap_homOfRationalSubsetSubset_rationalLocalizationPoint`: the
   rational points agree along comparison maps.
@@ -51,6 +52,19 @@ noncomputable def rationalLocalizationPoint (hP : P.ringOfDefinition ≤ Aplus) 
   comap (Presentation.completionLocObjCommRingCatIso p).hom.hom
     ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _ p.hasDenominatorPower).symm
       ⟨x, mem_spaBasicOpen.mp hx⟩).1
+
+/-- The point of `A⟨p⟩` determined by `x ∈ R(p)` is the preimage of `x` under
+`spaCompletedLocalizationHomeomorph`, pulled back along `completionLocObjCommRingCatIso`. -/
+theorem rationalLocalizationPoint_def (hP : P.ringOfDefinition ≤ Aplus) (p : Presentation P)
+    (x : spa Aplus) (hx : x ∈ spaBasicOpen Aplus p.num p.den) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    rationalLocalizationPoint hP p x hx =
+      comap (Presentation.completionLocObjCommRingCatIso p).hom.hom
+        ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _ p.hasDenominatorPower).symm
+          ⟨x, mem_spaBasicOpen.mp hx⟩).1 := by
+  rw [rationalLocalizationPoint]
 
 /-- **The rational point lies over `x`**: pulled back along the structure map `A → A⟨p⟩`, the
 point of `A⟨p⟩` determined by `x ∈ R(p)` is `x` itself. -/

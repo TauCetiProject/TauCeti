@@ -28,11 +28,11 @@ vanishes**, and let `W ≠ 0` be an invariant subspace.  Then:
   one for each tensor factor, hence nonzero: the highest weight is indexed by a *constant*
   unordered tuple, and only the constant ordered tuple orders it, so the coordinate is the single
   product `∏ⱼ u₀,ₖⱼ` with no cancellation
-  (`SymmetricPower.repr_basis_symmetricPower_tprod_ofFn_const`).  Torus-stability then puts the
+  (`Module.Basis.symmetricPower_repr_tprod_apply_ofFn_const`).  Torus-stability then puts the
   highest weight vector `e₀^d` into `W`.
 * `u · e₀^d` is the **pure power** `(u e₀)^d`, and a pure power of a vector with nonzero
   coordinates has *every* coordinate nonzero
-  (`SymmetricPower.repr_basis_symmetricPower_tprod_const_ne_zero`); the terms of the coordinate sum
+  (`Module.Basis.symmetricPower_repr_tprod_const_apply_ne_zero`); the terms of the coordinate sum
   all coincide, so again nothing cancels.  Torus-stability now puts **every** weight vector into
   `W`, so `W` is everything.
 
@@ -132,7 +132,7 @@ private theorem repr_symPower_mixElement_weightBasis_last_ne_zero (i : Fin (d + 
     (weightBasis d).repr (symPower d mixElement (weightBasis d i)) (Fin.last d) ≠ 0 := by
   obtain ⟨f, hf⟩ := exists_weightBasis_eq_tprod d i
   rw [hf, weightBasis_eq_reindex, Basis.repr_reindex_apply, symFinTwoEquiv_symm_last,
-    symPower_apply_tprod, coe_mixElement, SymmetricPower.repr_basis_symmetricPower_tprod_ofFn_const]
+    symPower_apply_tprod, coe_mixElement, Module.Basis.symmetricPower_repr_tprod_apply_ofFn_const]
   exact Finset.prod_ne_zero_iff.2 fun j _ => by
     rw [repr_mulVec_basisFun]; exact mixMatrix_apply_ne_zero 0 (f j)
 
@@ -146,8 +146,8 @@ private theorem repr_symPower_mixElement_weightBasis_last_ne_zero' (i : Fin (d +
     rw [weightBasis_apply, symFinTwoEquiv_symm_last, Basis.symmetricPower_apply,
       SymmetricPower.tprodOfSym_ofFn]
   rw [hf, weightBasis_eq_reindex, Basis.repr_reindex_apply, symPower_apply_tprod, coe_mixElement]
-  exact SymmetricPower.repr_basis_symmetricPower_tprod_const_ne_zero _
-    (fun l => by rw [repr_mulVec_basisFun]; exact mixMatrix_apply_ne_zero l 0) _
+  exact Module.Basis.symmetricPower_repr_tprod_const_apply_ne_zero _ _
+    (fun l _ => by rw [repr_mulVec_basisFun]; exact mixMatrix_apply_ne_zero l 0)
 
 /-! ### Irreducibility -/
 
@@ -164,10 +164,6 @@ it but does not prove it. -/
 theorem isIrreducible_symPower : Representation.IsIrreducible (symPower d) := by
   have hnt : Nontrivial (Sym[ℂ]^d(Fin 2 → ℂ)) :=
     Module.nontrivial_of_finrank_pos (R := ℂ) (by rw [finrank_symPower]; omega)
-  have hntsub : Nontrivial (Subrepresentation (symPower d)) := by
-    refine ⟨⊥, ⊤, fun hbot => absurd (congrArg Subrepresentation.toSubmodule hbot) ?_⟩
-    rw [Subrepresentation.toSubmodule_bot, Subrepresentation.toSubmodule_top]
-    exact bot_ne_top
   refine { eq_bot_or_eq_top := fun σ => ?_ }
   rcases eq_or_ne σ ⊥ with hσ | hσ
   · exact Or.inl hσ

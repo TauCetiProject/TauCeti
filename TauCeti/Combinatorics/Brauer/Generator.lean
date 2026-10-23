@@ -5,7 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Brauer.LoopCount
+-- `TauCeti.Combinatorics.Brauer.Flip` is imported for the reflection of a Brauer diagram, whose
+-- fixed point `TauCeti.BrauerDiagram.flip_capCup` below is; it re-exports
+-- `TauCeti.Combinatorics.Brauer.LoopCount`, which supplies the middle-loop count the relations
+-- below are stated with.
+public import TauCeti.Combinatorics.Brauer.Flip
+public import TauCeti.Combinatorics.Brauer.PropagatingNumber
 
 /-!
 # The Brauer generators and their relations
@@ -73,6 +78,9 @@ restated here.
   `TauCeti.BrauerDiagram.topThrough_capCup`: its through strands are the rest.
 * `TauCeti.capCup_ne_permToBrauer`: a cap-cup diagram on a pair of distinct indices is not a
   permutation diagram.
+* `TauCeti.BrauerDiagram.propagatingNumber_capCup`: a cap-cup diagram propagates `k - 2` strands,
+  so the propagating number is not constant.
+* `TauCeti.BrauerDiagram.flip_capCup`: a cap-cup diagram is its own reflection.
 * `TauCeti.composeDiagram_capCup_capCup`, `TauCeti.middleLoopCount_capCup_capCup`: the relation
   `e * e = δ • e`.
 * `TauCeti.composeDiagram_permToBrauer_swap_capCup`,
@@ -261,6 +269,19 @@ Not a `simp` lemma, for the reason given for `TauCeti.BrauerDiagram.bottomThroug
 theorem topThrough_capCup (hab : a ≠ b) : (capCup a b).topThrough = {a, b}ᶜ := by
   rw [← compl_compl (capCup a b).topThrough, ← topCup_eq_compl, topCup_capCup hab]
 
+/-- **A cap-cup diagram loses exactly the two strands it bends**, so its propagating number is
+`k - 2`. -/
+@[simp]
+theorem propagatingNumber_capCup (hab : a ≠ b) : (capCup a b).propagatingNumber = k - 2 := by
+  have hsum := (capCup a b).propagatingNumber_add_card_bottomCap
+  rw [bottomCap_capCup hab, Finset.card_pair hab] at hsum
+  omega
+
+-- On two strands a cap-cup diagram propagates nothing, so the bound
+-- `TauCeti.BrauerDiagram.propagatingNumber_le` is far from an equality in general.
+example : (capCup (0 : Fin 2) 1).propagatingNumber = 0 := by
+  rw [propagatingNumber_capCup (by decide)]
+
 end BrauerDiagram
 
 /-- **A cap-cup diagram on a pair of distinct indices is not a permutation diagram**: it has a
@@ -301,6 +322,23 @@ theorem capCup_eq_capCup_iff (hab : a ≠ b) :
   · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
     · rfl
     · exact capCup_comm _ _
+
+/-! ### Reflecting a cap-cup diagram -/
+
+namespace BrauerDiagram
+
+/-- **A cap-cup diagram is its own reflection**: its cap and its cup are the same pair `{a, b}`,
+so turning the diagram upside down exchanges them and changes nothing. With
+`TauCeti.flip_composeDiagram` and `TauCeti.middleLoopCount_flip`, reflection therefore carries
+each Brauer relation on cap-cup diagrams to its mirror, the same stack read upside down. -/
+@[simp]
+theorem flip_capCup (a b : Fin k) : (capCup a b).flip = capCup a b := by
+  rcases eq_or_ne a b with rfl | hab
+  · rw [capCup_self, flip_permToBrauer, inv_one]
+  exact (eq_capCup_iff hab).mpr ⟨by simp [capCup_val_inr_left hab],
+    by simp [capCup_val_inl_left hab], fun i hia hib => by simp [capCup_val_inr_of_ne hia hib]⟩
+
+end BrauerDiagram
 
 /-! ### Relabelling a cap-cup diagram -/
 

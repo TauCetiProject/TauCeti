@@ -6,26 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Differential
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.BaseChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
 
 /-!
 # The Frobenius isogeny kills the differentials
 
 Over a finite field, the Frobenius isogeny of a Weierstrass curve pulls every differential of the
 function field back to zero. This is the differential-level form of its inseparability: the
-invariant differential in particular is pulled back to `0`.
+invariant differential in particular is pulled back to `0`. The base-changed Frobenius over any
+field extension also kills the invariant differential.
 
 ## Main results
 
 * `TauCeti.Isogeny.pullbackDifferential_frobeniusIsogeny`: `π^*` is the zero map on differentials.
+* `TauCeti.Isogeny.pullbackDifferential_baseChangeFrobenius_invariantDifferential`: the
+  base-changed Frobenius kills the invariant differential over any field extension.
 
 ## Provenance
 
 The AINTLIB `HasseWeil` project (Chris Birkbeck, Apache 2.0, commit
 `513e83879e2f8cbc626eb9e04d660e92be16ccba`) has the corresponding statements for the invariant
 differential only, `omegaPullbackCoeff_frobenius` and
-`frobenius_pullbackKaehler_invariantDifferential` in `BridgeFrobenius.lean`; the statement here is
-for every differential of the function field.
+`frobenius_pullbackKaehler_invariantDifferential` in `BridgeFrobenius.lean`; the first statement
+here is for every differential of the function field.
 
 ## References
 
@@ -60,6 +64,21 @@ theorem pullbackDifferential_frobeniusIsogeny : (frobeniusIsogeny W).pullbackDif
   | zero => rw [map_zero, map_zero]
   | add _ _ _ _ ha hb => rw [map_add, map_add, ha, hb]
   | smul c _ _ h => simp only [pullbackDifferential_smul, h, LinearMap.zero_apply, smul_zero]
+
+variable {K : Type*} [Field K] [Algebra F K]
+
+/-- The base-changed Frobenius kills the invariant differential, over any field extension. -/
+@[simp]
+theorem pullbackDifferential_baseChangeFrobenius_invariantDifferential :
+    (baseChangeFrobenius K W).pullbackDifferential
+      (invariantDifferential (W⁄K).toAffine) = 0 := by
+  rw [baseChangeFrobenius_def]
+  -- The transfer lemma uses `W.map`; rewriting does not unfold the semireducible base change
+  -- in the differential's type, so present that type explicitly.
+  change ((frobeniusIsogeny W).map (algebraMap F K)).pullbackDifferential
+    (invariantDifferential (W.map (algebraMap F K))) = 0
+  simpa only [pullbackDifferential_frobeniusIsogeny, LinearMap.zero_apply, map_zero] using
+    (mapDifferential_pullback_invariantDifferential (frobeniusIsogeny W) (algebraMap F K)).symm
 
 end TauCeti.Isogeny
 

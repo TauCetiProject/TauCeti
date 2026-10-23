@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.RingTheory.Finiteness.Projective
-public import TauCeti.RingTheory.Localization.IntegerMultiple
+public import TauCeti.RingTheory.Localization.Finiteness
 
 /-!
 # Trace-dual families of a projective extension
@@ -50,13 +50,6 @@ variable (A K : Type*) {L B : Type*} [CommRing A] [Field K] [CommRing B] [Field 
   [IsDomain A] [IsFractionRing A K] [FiniteDimensional K L] [Algebra.IsSeparable K L]
   [IsIntegralClosure B A L]
 
-omit [IsDomain A] [IsFractionRing A K] [FiniteDimensional K L] [Algebra.IsSeparable K L]
-  [IsIntegralClosure B A L] in
-private theorem algebraMap_smul_eq (r : A) (y : B) :
-    algebraMap B L (r • y) = algebraMap A K r • algebraMap B L y := by
-  rw [Algebra.smul_def, map_mul, ← IsScalarTower.algebraMap_apply,
-    IsScalarTower.algebraMap_apply A K L, ← Algebra.smul_def]
-
 variable {A} in
 /-- **Linear forms are trace pairings.** Every `A`-linear form `f : B → A` on the integral closure
 of `A` in a finite separable extension `L / K` is `x ↦ Tr_{L/K}(y x)` for some `y ∈ L`. -/
@@ -75,27 +68,20 @@ theorem exists_trace_mul_algebraMap_eq (f : B →ₗ[A] A) :
   have hg : Set.EqOn g₁ g₂ (Set.range b') := by
     rintro _ ⟨i, rfl⟩
     simp [g₁, g₂, φ, hb']
-  obtain ⟨a, ha, hax⟩ := exists_smul_mem_span_basis A K b b' hb'
-    (IsIntegralClosure.algebraMap_injective B A L) x
+  have hspan : (IsScalarTower.toAlgHom A B L).toLinearMap x ∈
+      Submodule.span K ((IsScalarTower.toAlgHom A B L).toLinearMap '' Set.range b') := by
+    simpa only [← Set.range_comp, Function.comp_def, AlgHom.toLinearMap_apply,
+      IsScalarTower.toAlgHom_apply, hb'] using
+      b.mem_span (algebraMap B L x)
+  obtain ⟨a, ha, hax⟩ :=
+    (IsScalarTower.toAlgHom A B L).toLinearMap.exists_smul_mem_span_of_apply_mem_span_image
+      (IsIntegralClosure.algebraMap_injective B A L) A⁰ (Set.range b') x hspan
   have h := LinearMap.eqOn_span' hg hax
   simp only [map_smul] at h
-  have ha' : algebraMap A K a ≠ 0 := (IsFractionRing.injective A K).ne_iff' (map_zero _) |>.mpr ha
   rw [← algebraMap_smul K, ← algebraMap_smul K a (g₂ x)] at h
-  exact smul_right_injective K ha' h
+  exact (IsLocalization.map_units K ⟨a, ha⟩).smul_left_cancel.mp h
 
 variable [Module.Finite A B] [Module.Projective A B]
-
-omit [Algebra A B] [Algebra A L] [IsScalarTower A K L] [IsScalarTower A B L]
-  [IsDomain A] [IsFractionRing A K] [FiniteDimensional K L] [Algebra.IsSeparable K L]
-  [IsIntegralClosure B A L] [Module.Finite A B] [Module.Projective A B] in
-/-- Moving a scalar trace pairing between the two entries of a trace-dual expansion. -/
-private theorem trace_pairing_smul_swap (x y : L) (b z : B) (r : A)
-    (hr : Algebra.trace K L (y * algebraMap B L z) = algebraMap A K r) :
-    Algebra.trace K L ((Algebra.trace K L (x * algebraMap B L b) • y) *
-        algebraMap B L z) =
-      Algebra.trace K L (x * (algebraMap A K r • algebraMap B L b)) := by
-  rw [smul_mul_assoc, map_smul, hr, mul_smul_comm, map_smul,
-    smul_eq_mul, smul_eq_mul, mul_comm]
 
 /-- **A finite trace-dual family.** If the integral closure `B` of `A` in a finite separable
 extension `L / K` is a finite projective `A`-module, there are finitely many `bᵢ ∈ B` and
@@ -115,7 +101,7 @@ theorem exists_sum_trace_mul_smul_eq :
       simp [Pi.single_apply]
     conv_rhs => rw [← LinearMap.id_apply (R := A) z, ← hFG, LinearMap.comp_apply, hG, map_sum,
       map_sum]
-    simp only [map_smul, algebraMap_smul_eq A K, b]
+    simp only [b, ← IsScalarTower.toAlgHom_apply A B L, map_smul, algebraMap_smul]
   refine ⟨n, b, y, fun i ↦ ?_, fun x ↦ ?_⟩
   · rw [Submodule.mem_traceDual]
     intro _ hz
@@ -128,8 +114,8 @@ theorem exists_sum_trace_mul_smul_eq :
     rw [sub_mul, map_sub, Finset.sum_mul, map_sum, sub_eq_zero]
     conv_rhs => rw [← hB z, Finset.mul_sum, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    exact trace_pairing_smul_swap A K x (y i) (b i) z (G z i) (by
-      simpa only [LinearMap.comp_apply, LinearMap.proj_apply] using hy i z)
+    simp only [mul_smul_comm, map_smul, hy, LinearMap.comp_apply,
+      LinearMap.proj_apply, smul_eq_mul, mul_comm]
   rw [← sub_eq_zero]
   refine (traceForm_nondegenerate K L).1 _ fun z ↦ ?_
   obtain ⟨⟨a, ha⟩, hm⟩ := IsIntegral.exists_multiple_integral_of_isLocalization A⁰ z

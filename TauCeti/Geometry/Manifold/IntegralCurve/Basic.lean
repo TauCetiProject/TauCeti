@@ -8,16 +8,12 @@ module
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Analysis.ODE.ExistUnique
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
-# Regularity of integral curves
+# Integral curves in coordinates
 
-An integral curve gains one derivative over its vector field. In particular, integral curves of
-smooth vector fields on boundaryless smooth manifolds are smooth.
-
-This file also records the correspondence between an integral curve and the solution of the
+This file records the correspondence between an integral curve and the solution of the
 coordinate equation it becomes when read in one fixed extended chart, in both directions, and the
 uniqueness statement that comes with it: two integral curves on an open interval which agree once
 agree throughout, as soon as one of them stays in a fixed chart over which the coordinate field is
@@ -30,8 +26,6 @@ continuously differentiable.
 * `IsMIntegralCurveAt.map_of_mfderiv_eq`: the corresponding result for local integral curves.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
   curve on that set.
-* `IsMIntegralCurve.contMDiff_succ`: an integral curve of a `C^n` vector field is `C^(n + 1)`.
-* `IsMIntegralCurve.contMDiff`: an integral curve of a smooth vector field is smooth.
 * `IsMIntegralCurveAt.of_extChartAt_symm`: a coordinate solution gives a manifold integral curve.
 * `IsMIntegralCurveOn.hasDerivAt_extChartAt`: conversely, an integral curve read in a fixed
   extended chart solves the coordinate equation there.
@@ -117,7 +111,7 @@ theorem map_of_mfderiv_eq {f : M → M'} {V : (x : M) → TangentSpace I x}
   obtain ⟨sf, hsf, hf⟩ := hf
   obtain ⟨sVW, hsVW, hVW⟩ := hVW
   refine ⟨s ∩ sf ∩ sVW, Filter.inter_mem (Filter.inter_mem hs hsf) hsVW, ?_⟩
-  exact (hγs.mono fun _ ht ↦ ht.1.1).map_of_mfderiv_eq
+  exact (hγs.mono (Set.inter_subset_left.trans Set.inter_subset_left)).map_of_mfderiv_eq
     (fun t ht ↦ hf t ht.1.2) (fun t ht ↦ hVW t ht.2)
 
 end IsMIntegralCurveAt
@@ -280,107 +274,3 @@ theorem IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt
       filter_upwards [hcoord, hJ, hδsrc] with r hr hrJ hrδsrc
       exact φ.injOn (hγsrc r hrJ) hrδsrc hr
     exact (hlocal.and hJ).mono fun _ hr ↦ ⟨hr.1, hr.2⟩
-
-/-- A local integral curve of a `C^1` vector field on a boundaryless manifold is `C^2` at its
-initial parameter. -/
-theorem IsMIntegralCurveAt.contMDiffAt_two
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    [BoundarylessManifold I M] [IsManifold I 2 M]
-    {γ : ℝ → M} {v : (x : M) → TangentSpace I x} {t₀ : ℝ}
-    (hγ : IsMIntegralCurveAt γ v t₀)
-    (hv : ContMDiffAt I I.tangent 1 (fun x => (⟨x, v x⟩ : TangentBundle I M)) (γ t₀)) :
-    ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t₀ := by
-  rw [contMDiffAt_iff_target]
-  refine ⟨hγ.continuousAt, ?_⟩
-  let c : ℝ → E := (extChartAt I (γ t₀)) ∘ γ
-  let v' : E → E := fun x =>
-    tangentCoordChange I ((extChartAt I (γ t₀)).symm x) (γ t₀)
-      ((extChartAt I (γ t₀)).symm x) (v ((extChartAt I (γ t₀)).symm x))
-  have hv' : ContDiffAt ℝ 1 v' (extChartAt I (γ t₀) (γ t₀)) := by
-    have hv₀ := hv
-    rw [contMDiffAt_iff] at hv₀
-    exact (hv₀.2.contDiffAt
-      (range_mem_nhds_isInteriorPoint BoundarylessManifold.isInteriorPoint)).snd
-  obtain ⟨u, hxu, hvu⟩ := hv'.contDiffOn le_rfl (by simp)
-  have hcsrc : ∀ᶠ t in 𝓝 t₀, γ t ∈ (extChartAt I (γ t₀)).source :=
-    hγ.continuousAt.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I) _)
-  have hderiv : ∀ᶠ t in 𝓝 t₀, HasDerivAt c (v' (c t)) t :=
-    hγ.eventually_hasDerivAt.and hcsrc |>.mono fun t ht => by
-      apply ht.1.congr_deriv
-      simp only [v', c, Function.comp_apply]
-      rw [PartialEquiv.left_inv _ ht.2]
-  have hcu : ∀ᶠ t in 𝓝 t₀, c t ∈ u :=
-    ((continuousAt_extChartAt (γ t₀)).comp hγ.continuousAt).eventually hxu
-  have hall : {t | HasDerivAt c (v' (c t)) t ∧ c t ∈ u} ∈ 𝓝 t₀ :=
-    hderiv.and hcu
-  obtain ⟨s, hsP, hsopen, hst₀⟩ := mem_nhds_iff.mp hall
-  have hc : ContDiffAt ℝ 2 c t₀ :=
-    (TauCeti.contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
-      (fun t ht => (hsP ht).1)).contDiffAt (hsopen.mem_nhds hst₀)
-  have hc' : ContDiffAt ℝ 2 ((extChartAt I (γ t₀)) ∘ γ) t₀ := by
-    simpa only [c] using hc
-  exact hc'.contMDiffAt
-
-namespace IsMIntegralCurve
-
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [BoundarylessManifold I M]
-
-/-- An integral curve of a `C^n` vector field on a boundaryless smooth manifold is `C^(n + 1)`. -/
-theorem contMDiff_succ (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
-    {γ : ℝ → M} {v : (x : M) → TangentSpace I x}
-    (hγ : IsMIntegralCurve γ v)
-    (hv : let _ : IsManifold I 1 M := IsManifold.of_le (n := (n + 1 : ℕ)) (by
-      exact_mod_cast Nat.succ_le_succ (Nat.zero_le n));
-      CMDiff n (fun x => (⟨x, v x⟩ : TangentBundle I M))) :
-    ContMDiff 𝓘(ℝ, ℝ) I (n + 1 : ℕ) γ := by
-  let _ : IsManifold I 1 M := IsManifold.of_le (n := (n + 1 : ℕ)) (by
-    exact_mod_cast Nat.succ_le_succ (Nat.zero_le n))
-  -- The hypothesis stages this same low-order manifold instance in a dependent `let`; unfold that
-  -- binder so its `TangentBundle` agrees with the explicitly installed instance above.
-  change CMDiff n (fun x => (⟨x, v x⟩ : TangentBundle I M)) at hv
-  intro t₀
-  rw [contMDiffAt_iff_target]
-  refine ⟨hγ.continuous.continuousAt, ?_⟩
-  let c : ℝ → E := (extChartAt I (γ t₀)) ∘ γ
-  let v' : E → E := fun x =>
-    tangentCoordChange I ((extChartAt I (γ t₀)).symm x) (γ t₀)
-      ((extChartAt I (γ t₀)).symm x) (v ((extChartAt I (γ t₀)).symm x))
-  have hv' : ContDiffAt ℝ n v' (extChartAt I (γ t₀) (γ t₀)) := by
-    have hv₀ := hv.contMDiffAt (x := γ t₀)
-    rw [contMDiffAt_iff] at hv₀
-    exact (hv₀.2.contDiffAt
-      (range_mem_nhds_isInteriorPoint BoundarylessManifold.isInteriorPoint)).snd
-  obtain ⟨u, hxu, hvu⟩ := hv'.contDiffOn le_rfl (by simp)
-  have hcsrc : ∀ᶠ t in 𝓝 t₀, γ t ∈ (extChartAt I (γ t₀)).source :=
-    hγ.continuous.continuousAt.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I) _)
-  have hderiv : ∀ᶠ t in 𝓝 t₀, HasDerivAt c (v' (c t)) t :=
-    (hγ.isMIntegralCurveAt t₀).eventually_hasDerivAt.and hcsrc |>.mono fun t ht => by
-      apply ht.1.congr_deriv
-      simp only [v', c, Function.comp_apply]
-      rw [PartialEquiv.left_inv _ ht.2]
-  have hcu : ∀ᶠ t in 𝓝 t₀, c t ∈ u :=
-    ((continuousAt_extChartAt (γ t₀)).comp hγ.continuous.continuousAt).eventually hxu
-  have hall : {t | HasDerivAt c (v' (c t)) t ∧ c t ∈ u} ∈ 𝓝 t₀ :=
-    hderiv.and hcu
-  obtain ⟨s, hsP, hsopen, hst₀⟩ := mem_nhds_iff.mp hall
-  have hc : ContDiffAt ℝ (n + 1 : ℕ) c t₀ :=
-    (TauCeti.contDiffOn_succ_of_hasDerivAt_comp hsopen hvu (fun t ht => (hsP ht).2)
-      (fun t ht => (hsP ht).1)).contDiffAt (hsopen.mem_nhds hst₀)
-  have hc' : ContDiffAt ℝ (n + 1 : ℕ) ((extChartAt I (γ t₀)) ∘ γ) t₀ := by
-    simpa only [c] using hc
-  exact hc'.contMDiffAt
-
-/-- An integral curve of an infinitely smooth vector field on a boundaryless smooth manifold is
-infinitely smooth. -/
-theorem contMDiff [IsManifold I ∞ M] {γ : ℝ → M} {v : (x : M) → TangentSpace I x}
-    (hγ : IsMIntegralCurve γ v)
-    (hv : CMDiff ∞ (fun x => (⟨x, v x⟩ : TangentBundle I M))) :
-    ContMDiff 𝓘(ℝ, ℝ) I ∞ γ := by
-  rw [contMDiff_infty]
-  intro n
-  let _ : IsManifold I (n + 1 : ℕ) M := IsManifold.of_le (n := ∞)
-    (by exact_mod_cast le_top)
-  exact (hγ.contMDiff_succ n (hv.of_le (by exact_mod_cast le_top))).of_le
-    (by exact_mod_cast Nat.le_succ n)
-
-end IsMIntegralCurve

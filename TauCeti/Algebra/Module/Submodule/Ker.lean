@@ -10,7 +10,11 @@ public import Mathlib.Algebra.Module.Submodule.Ker
 import Mathlib.LinearAlgebra.Span.Defs
 
 /-!
-# Splitting a vector along the kernels of commuting endomorphisms
+# Kernels of commuting endomorphisms
+
+A linear map `f` intertwining endomorphisms `d` and `e`, that is with `f ∘ d = e ∘ f`, sends the
+kernel of `d` into the kernel of `e` (`LinearMap.map_mem_ker_of_comp_eq`); this is how a chain map
+acts on cycles.
 
 Let `r₁` and `r₂` be endomorphisms of a module `M` with `ker r₁ ⊓ ker r₂ = ⊥`, let `l₁` and `l₂`
 be endomorphisms commuting with both, and let `Y ≤ ker r₁` and `Z ≤ ker r₂` be submodules. If
@@ -23,6 +27,7 @@ right-action form of their Lemma 2), `l₁`, `l₂` the left multiplications by 
 
 ## Main results
 
+* `LinearMap.map_mem_ker_of_comp_eq`: an intertwining map sends kernel to kernel.
 * `TauCeti.End.mem_inf_ker_sup_inf_ker_of_mem_sup`: the splitting statement above.
 
 ## References
@@ -32,6 +37,16 @@ right-action form of their Lemma 2), `l₁`, `l₂` the left multiplications by 
 -/
 
 public section
+
+namespace LinearMap
+
+/-- A linear map `f` with `f ∘ d = e ∘ f` sends the kernel of `d` into the kernel of `e`. -/
+theorem map_mem_ker_of_comp_eq {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] {d : M →ₗ[R] M} {e : N →ₗ[R] N} (f : M →ₗ[R] N)
+    (hf : f ∘ₗ d = e ∘ₗ f) {x : M} (hx : x ∈ ker d) : f x ∈ ker e := by
+  rw [mem_ker, ← comp_apply e f, ← hf, comp_apply, mem_ker.mp hx, map_zero]
+
+end LinearMap
 
 namespace TauCeti.End
 

@@ -136,39 +136,48 @@ so it can rewrite `$HOME/.elan/bin/lake`, prepend a directory to every later ste
 Hardening the individual commands that touch the key does not help: any secret placed in a later
 step of that job is a secret placed in reach of code that landed on main. (This is not reachable
 from an unmerged PR, which compiles only under bwrap in `pr-build.yml`, with writes confined to
-`base/.lake` and no secret in the sandbox's `--env` allowlist.)
+`pr/.lake` and no secret in the sandbox's `--env` allowlist.)
 
-So `build` runs `lake cache stage`, which needs no credential and touches no network, and hands
-the staging directory to `publish-lake-cache` as a workflow artifact: about 60 MB, one flat
-directory of `.ltar` files plus the mappings. That job checks out exactly one file and has no Lake
-workspace and no dependencies, so no code from this repository or from Mathlib runs anywhere in
-it, and it takes no `GITHUB_TOKEN` scopes. `lake cache put-staged` is the command for exactly
-this: it does not configure the workspace and so does not execute arbitrary user code.
+After the build and audits, stock Lake validates the current inputs and emits the complete
+revision map with `--no-build --rehash`. The workflow-pinned `lake_cache_publish.py stage`
+planner compares archive bytes with the downloaded records saved before candidate code ran.
+It stages changed archives and availability-check misses, retaining the full map and a digest
+manifest for inherited objects. Anonymous HEAD checks are an optimization filter; their size/MD5
+ETags are not the publisher's final integrity check. Merge-group staging runs on the host after
+the sandbox exits. Ordinary PR outputs never enter shared publication.
 
-Nothing the build job reports is trusted there. The one file `publish-lake-cache` checks out is
-`lean-toolchain`, because which toolchain it installs decides which `lake` binary handles the key,
-and `elan toolchain install owner/repo:tag` fetches from that repository's releases. Taking that
-name from the build job would hand the choice straight back to code that landed on `main`, which
-can rewrite `lean-toolchain` on disk or poison the reporting step through `$GITHUB_ENV`. The pin
-is read from the repository instead, its shape is re-checked against `leanprover/lean4:` releases,
-and it must equal what the build job reports it built with.
+The flat staging directory is passed to the reusable `publish-lake-cache` workflow as a workflow
+artifact. The publisher has no Lake workspace or project dependencies. Only `lean-toolchain`
+comes from the immutable revision being published; the planning, probe and file helpers are
+checked out at `github.workflow_sha`. The pin must name an official `leanprover/lean4:` release
+and match the reported toolchain. Neither the reported values nor the staged data are trusted.
 
-Because it does not configure the workspace, `put-staged` cannot derive the toolchain and platform
-halves of the upload scope, so the job passes `--rev` and `--toolchain` explicitly and relies on
-the default of no platform. That reproduces the scope `lake cache put` derived, verified by
-comparing the revision URLs the two commands emit, which are identical:
-`revisions/TauCetiProject/TauCeti/tc/leanprover--lean4---<version>/<rev>.jsonl`. The platform is
-absent because `lakefile.toml` sets `platformIndependent = true`; the staging step fails loudly if
-that ever stops being true, since a silent mismatch would publish under a scope `pr-build` never
-reads.
+Before credentials are present, the workflow-pinned planner's `prepare()` validates the map
+schema and hash/archive names, rejects symlinks, nesting, nonregular files and extra entries,
+and checks that the manifest and staged objects cover the full map consistently. It hashes
+staged objects itself and GETs every inherited object from the public endpoint, verifying its
+SHA-256, MD5 and size. Public reads share connections in bounded batches; failed transfers or
+digest mismatches get bounded retries, and a failed batch prevents publication. A staging tree
+without a manifest is full staging, so every mapped object must be present and is hashed.
 
-The staged tree arrives from a job that ran code that landed on main, so `publish-lake-cache`
-checks it before pointing Lake at it: the tree must be a flat directory of regular files, and
-every string in the mappings must be a plain `<hash>.<ext>` artifact name. Lake parses an artifact
-name as everything after the first dot and joins it to the staging directory without checking that
-the result stays inside, so an unchecked name like `0.art/../../../proc/self/environ` would
-otherwise have Lake read the publishing job's environment and `PUT` it into a publicly readable
-bucket.
+The planner freezes the validated files and URL plan outside the staging tree. Only inline
+workflow shell and curl execute in the credential-bearing step: all required artifact uploads
+finish first, then the complete map uploads. A separate, key-free step confirms the map's exact
+bytes on the public endpoint. No candidate code or repository helper executes with the upload
+key, and partially uploaded artifacts never install a partial revision map.
+
+The publisher constructs the scope from the immutable revision and independently checked
+pin: `revisions/TauCetiProject/TauCeti/tc/leanprover--lean4---<version>/<rev>.jsonl`.
+The platform is absent because `lakefile.toml` sets `platformIndependent = true`; staging fails
+if that stops being true or if `fixedToolchain`/`bootstrap` would remove the toolchain scope.
+This keeps publication aligned with the scopes consumers read without loading a workspace in
+the publisher.
+
+Digests establish byte integrity; the existing exact-candidate builds and audits establish
+proof correctness and producer eligibility. If inherited bytes disappear after staging,
+publication fails closed. A new producer run with `LAKE_CACHE_FULL_PUBLICATION=1` transfers all
+built objects to repair the cache. See [incremental publication operations](../scripts/lake-cache-publication.md)
+for the fallback bounds, retry behavior and byte/time fields to compare.
 
 ## Why a custom domain
 

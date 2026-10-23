@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 440" role="img">
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,'Liberation Sans',sans-serif;fill:#eef2fb}.title{font-size:19.0px;font-weight:600}.subtitle{font-size:13.0px;fill:#9aa6c9}.tick{font-size:12.0px;fill:#9aa6c9}.grid{stroke:rgba(255,255,255,0.08);stroke-width:1.0}.axis{stroke:rgba(255,255,255,0.18);stroke-width:1.0}.legend{font-size:12.0px;fill:#eef2fb}.note{font-size:11.0px;fill:#9aa6c9}</style>
+<rect x="0.5" y="0.5" width="979" height="439" rx="12.0" fill="#101936" stroke="#1b2547" stroke-width="1.0"/>
+<text class="title" x="64" y="36">Where a PR build&#x27;s time goes</text>
+<text class="subtitle" x="64" y="58">Mean minutes per successful PR build, by phase; UTC days 20 Sep to 26 Sep</text>
+<line class="grid" x1="64" x2="928" y1="380.0" y2="380.0"/><text class="tick" x="56" y="384.0" text-anchor="end">0</text>
+<line class="grid" x1="64" x2="928" y1="328.8" y2="328.8"/><text class="tick" x="56" y="332.8" text-anchor="end">2</text>
+<line class="grid" x1="64" x2="928" y1="277.6" y2="277.6"/><text class="tick" x="56" y="281.6" text-anchor="end">4</text>
+<line class="grid" x1="64" x2="928" y1="226.4" y2="226.4"/><text class="tick" x="56" y="230.4" text-anchor="end">6</text>
+<line class="grid" x1="64" x2="928" y1="175.2" y2="175.2"/><text class="tick" x="56" y="179.2" text-anchor="end">8</text>
+<line class="grid" x1="64" x2="928" y1="124.0" y2="124.0"/><text class="tick" x="56" y="128.0" text-anchor="end">10</text>
+<text class="tick" transform="translate(16,252) rotate(-90)" text-anchor="middle">minutes per build</text>
+<text class="tick" x="125.7" y="398" text-anchor="middle">20 Sep</text>
+<text class="tick" x="249.1" y="398" text-anchor="middle">21 Sep</text>
+<text class="tick" x="372.6" y="398" text-anchor="middle">22 Sep</text>
+<text class="tick" x="496.0" y="398" text-anchor="middle">23 Sep</text>
+<text class="tick" x="619.4" y="398" text-anchor="middle">24 Sep</text>
+<text class="tick" x="742.9" y="398" text-anchor="middle">25 Sep</text>
+<text class="tick" x="866.3" y="398" text-anchor="middle">26 Sep</text>
+<line class="axis" x1="64" x2="928" y1="380" y2="380"/>
+<rect x="78.8" y="365.2" width="93.8" height="14.8" fill="#5eead4" fill-opacity="0.9"/>
+<rect x="78.8" y="335.3" width="93.8" height="29.9" fill="#ff9d4d" fill-opacity="0.9"/>
+<rect x="78.8" y="331.8" width="93.8" height="3.5" fill="#60a5fa" fill-opacity="0.9"/>
+<rect x="78.8" y="296.1" width="93.8" height="35.7" fill="#fb7185" fill-opacity="0.9"/>
+<rect x="78.8" y="183.6" width="93.8" height="112.5" fill="#c084fc" fill-opacity="0.9"/>
+<rect x="78.8" y="182.2" width="93.8" height="1.5" fill="#4ade80" fill-opacity="0.9"/>
+<rect x="819.4" y="359.9" width="93.8" height="20.1" fill="#5eead4" fill-opacity="0.9"/>
+<rect x="819.4" y="320.5" width="93.8" height="39.4" fill="#ff9d4d" fill-opacity="0.9"/>
+<rect x="819.4" y="315.0" width="93.8" height="5.5" fill="#60a5fa" fill-opacity="0.9"/>
+<rect x="819.4" y="251.6" width="93.8" height="63.4" fill="#fb7185" fill-opacity="0.9"/>
+<rect x="819.4" y="129.8" width="93.8" height="121.7" fill="#c084fc" fill-opacity="0.9"/>
+<rect x="819.4" y="128.1" width="93.8" height="1.7" fill="#4ade80" fill-opacity="0.9"/>
+<rect x="64" y="72" width="12" height="12" rx="2" fill="#5eead4"/>
+<text class="legend" x="81" y="82">setup and checks</text>
+<rect x="289" y="72" width="12" height="12" rx="2" fill="#ff9d4d"/>
+<text class="legend" x="306" y="82">Mathlib cache</text>
+<rect x="514" y="72" width="12" height="12" rx="2" fill="#60a5fa"/>
+<text class="legend" x="531" y="82">Lake cache</text>
+<rect x="739" y="72" width="12" height="12" rx="2" fill="#fb7185"/>
+<text class="legend" x="756" y="82">lint preparation</text>
+<rect x="64" y="86" width="12" height="12" rx="2" fill="#c084fc"/>
+<text class="legend" x="81" y="96">build, audits, lints</text>
+<rect x="289" y="86" width="12" height="12" rx="2" fill="#4ade80"/>
+<text class="legend" x="306" y="96">reporting</text>
+</svg>

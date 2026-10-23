@@ -24,11 +24,6 @@ The right coset `diag(d₀, d₁) · Γ` and the orbit of `diag(d₀, d₁)` und
 `Γ_∞ = ⟨T⟩` are described explicitly below; for `diag(1, m)` the former is Popa and Zagier's coset
 `K₀ = (1 0; 0 m) Γ`.
 
-## Main definitions
-
-* `TauCeti.TraceFormulaMatrix.diagonal d₀ d₁ h`: the matrix `diag(d₀, d₁)` of determinant
-  `n = d₀ d₁`.
-
 ## Main results
 
 * `TauCeti.TraceFormulaMatrixModule.exists_eq_smul_op_smul_mk_diagonal`: for `n > 0`, every
@@ -55,15 +50,6 @@ open scoped MatrixGroups RightActions
 namespace TauCeti
 
 variable {n : ℤ}
-
-/-- The diagonal matrix `diag(d₀, d₁)`, as a matrix of determinant `n = d₀ d₁`. -/
-def TraceFormulaMatrix.diagonal (d₀ d₁ : ℤ) (h : d₀ * d₁ = n) : TraceFormulaMatrix n :=
-  ⟨!![d₀, 0; 0, d₁], by simp [Matrix.det_fin_two_of, h]⟩
-
-/-- The underlying matrix of `TraceFormulaMatrix.diagonal d₀ d₁ h` is `diag(d₀, d₁)`. -/
-@[simp]
-theorem TraceFormulaMatrix.val_diagonal (d₀ d₁ : ℤ) (h : d₀ * d₁ = n) :
-    (TraceFormulaMatrix.diagonal d₀ d₁ h).1 = !![d₀, 0; 0, d₁] := (rfl)
 
 namespace TraceFormulaMatrixModule
 

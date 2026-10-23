@@ -29,22 +29,17 @@ discharges, namely that the two irreducibles are inequivalent.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.averageOperator_eq_finrank_inv_mul_trace_smul_id`: the average of a
+* `ContRepresentation.averageOperator_eq_finrank_inv_mul_trace_smul_id`: the average of a
   self-map is its normalized trace times the identity.
-* `TauCeti.ContRepresentation.schur_orthogonality_self`: the coordinate-free first Schur
+* `ContRepresentation.schur_orthogonality_self`: the coordinate-free first Schur
   orthogonality relation.
-* `TauCeti.ContRepresentation.schur_orthogonality_basis`: the corresponding Kronecker-delta
+* `ContRepresentation.schur_orthogonality_basis`: the corresponding Kronecker-delta
   formula in an orthonormal basis.
-* `TauCeti.ContRepresentation.schur_orthogonality`: the second Schur orthogonality relation, for
+* `ContRepresentation.schur_orthogonality`: the second Schur orthogonality relation, for
   a pair of inequivalent irreducible unitary representations.
 
-This supplies the three formulas pinned by the orthogonality items of Layer 4 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md);
-that item's remaining request, checking the convention against `fourierBasis` on `AddCircle`, waits
-on the `AddCircle` material and is not done here. The roadmap sketches the basis identity as the
-primitive one; here the coordinate-free statement is the primitive and the basis identity is read
-off from it, which is the shorter route and fixes the same convention.
-The mathematical argument follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
+The basis identity follows from the coordinate-free statement, in the same inner-product
+convention. The mathematical argument follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
@@ -53,7 +48,7 @@ open MeasureTheory
 open scoped InnerProductSpace
 open scoped MonoidAlgebra
 
-namespace TauCeti
+open TauCeti
 
 namespace ContRepresentation
 
@@ -80,7 +75,7 @@ theorem averageOperator_eq_finrank_inv_mul_trace_smul_id
         ContinuousLinearMap.id 𝕜 V := by
   have hdim : (Module.finrank 𝕜 V : 𝕜) ≠ 0 :=
     Representation.IsIrreducible.natCast_finrank_ne_zero hirr
-  have h := π.eq_finrank_inv_mul_trace_smul_id_of_irreducible hdim hirr
+  have h := π.eq_finrank_inv_mul_trace_smul_id_of_isIrreducible hdim hirr
     (averageIntertwiner π hπ π hπ T)
   rwa [toContinuousLinearMap_averageIntertwiner, trace_averageOperator] at h
 
@@ -149,7 +144,7 @@ variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G]
 finite-dimensional irreducible representations of a compact group are `L²`-orthogonal, provided the
 second one is unitary.
 
-This is `TauCeti.ContRepresentation.schur_orthogonality_distinct` with its hypothesis discharged:
+This is `ContRepresentation.schur_orthogonality_distinct` with its hypothesis discharged:
 the vanishing half of Schur's lemma turns inequivalence into the vanishing of every continuous
 intertwiner `π → ρ`. Algebraic closedness is not needed, since only the vanishing half of Schur's
 lemma is used. -/
@@ -160,10 +155,8 @@ theorem schur_orthogonality (π : ContRepresentation 𝕜 G V)
     (hne : IsEmpty (_root_.ContRepresentation.Equiv π ρ)) (v w : V) (v' w' : W) :
     ⟪matrixCoeffLp π hπ v w, matrixCoeffLp ρ hρ v' w'⟫_𝕜 = 0 :=
   schur_orthogonality_distinct π hπ ρ hρ hunitary
-    (fun f ↦ by simp [eq_zero_of_isEmpty_equiv hirrπ hirrρ hne f]) v w v' w'
+    (fun f ↦ by simp [ContRepresentation.eq_zero_of_isEmpty_equiv hirrπ hirrρ hne f]) v w v' w'
 
 end Inequivalent
 
 end ContRepresentation
-
-end TauCeti

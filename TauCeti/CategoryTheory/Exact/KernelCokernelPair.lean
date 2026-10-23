@@ -60,7 +60,6 @@ category with homology the notion coincides with Mathlib's
 * `TauCeti.isKernelCokernelPair_iff_shortExact`: in a balanced preadditive category the
   kernel–cokernel pairs among the short complexes with homology are exactly the short exact
   ones. These are the conflations of the canonical exact structure on an abelian category.
-
 ## Implementation notes
 
 `IsKernelCokernelPair` is a `Prop` whose fields are `Nonempty` universal properties, following

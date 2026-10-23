@@ -19,21 +19,16 @@ property of the universal cover alone: `X` is aspherical exactly when the higher
 groups of `UniversalCover x₀` vanish. Since the universal cover is simply connected, that
 condition says precisely that it is weakly contractible.
 
-This turns the Galois correspondence of Stage 2 into a statement about Eilenberg--Mac Lane
-spaces. Every subgroup `H ≤ π₁(X, x₀)` is realised by the connected cover
-`UniversalCover x₀ / H`, whose fundamental group is `Hᵐᵒᵖ`, hence isomorphic to `H`; when `X` is a
-`K(G, 1)` that cover is aspherical too, so it is a `K(H, 1)`. In particular every subgroup of
-the fundamental group of a `K(G, 1)` is isomorphic to the fundamental group of a `K(H, 1)`
-realised as a covering space of `X`.
+This turns the Galois correspondence of covering spaces into a statement about Eilenberg--Mac Lane
+spaces. Every subgroup `H ≤ π₁(X, x₀)` is realised by the connected cover `UniversalCover x₀ / H`,
+whose fundamental group is `Hᵐᵒᵖ`, hence isomorphic to `H`; when `X` is a `K(G, 1)` that cover is
+aspherical too, so it is a `K(H, 1)`. In particular every subgroup of the fundamental group of a
+`K(G, 1)` is isomorphic to the fundamental group of a `K(H, 1)` realised as a covering space of `X`.
 
 The general covering-space input is
 `IsCoveringMap.isAspherical_totalSpace`; the only work here is to supply the
 universal cover and the covers attached to subgroups as instances of it, with their
 distinguished basepoints.
-
-This advances `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13, "`K(G, 1)`
-spaces", by tying that item to the Stage 2 classification: the covers produced by item 7 of
-that stage are Eilenberg--Mac Lane spaces whenever the base is.
 
 ## Main declarations
 
@@ -89,6 +84,7 @@ theorem isEilenbergMacLaneSpaceOne {G : Type*} [Group G] (e : FundamentalGroup X
 
 variable (H : Subgroup (FundamentalGroup X x₀))
 
+omit [PathConnectedSpace X] in
 /-- The cover of an aspherical space attached to a subgroup of its fundamental group is
 aspherical. -/
 theorem isAspherical_subgroupQuotient (h : IsAspherical X x₀) :
@@ -96,6 +92,7 @@ theorem isAspherical_subgroupQuotient (h : IsAspherical X x₀) :
   (isCoveringMap_subgroupQuotientProj x₀ H).isAspherical_totalSpace
     (subgroupQuotientProj_basepoint x₀ H) h
 
+omit [PathConnectedSpace X] in
 /-- **The cover attached to `H ≤ π₁(X, x₀)` over a `K(G, 1)` is a `K(H, 1)`.**
 
 So every subgroup of the fundamental group of an aspherical space is isomorphic to the

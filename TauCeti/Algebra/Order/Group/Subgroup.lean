@@ -41,7 +41,7 @@ variable {Γ : Type*} [Group Γ] [LinearOrder Γ] [MulLeftStrictMono Γ]
 `Δ < Γ'` admits a member of `Γ'` outside `Δ` that exceeds `1`. -/
 theorem Subgroup.exists_one_lt_of_lt {Γ' Δ : Subgroup Γ} (hlt : Δ < Γ') :
     ∃ z, z ∈ Γ' ∧ z ∉ Δ ∧ 1 < z := by
-  obtain ⟨x, hxQ, hxD⟩ := SetLike.exists_of_lt hlt
+  obtain ⟨x, hxQ, hxD⟩ := IsConcreteLE.exists_of_lt hlt
   rcases lt_trichotomy x 1 with hl | he | hg
   · exact ⟨x⁻¹, inv_mem hxQ, fun e ↦ hxD (by simpa using inv_mem e), one_lt_inv'.mpr hl⟩
   · exact absurd (he ▸ one_mem Δ) hxD

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
+public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Finiteness
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
+public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 
 /-!
 # Unimodular integral lattices
@@ -15,6 +17,7 @@ An integral lattice is unimodular when its carrier is equal to its dual carrier.
 nondegenerate lattice this file identifies that condition with each of the standard criteria: the
 discriminant group is trivial, its cardinality is one, the Gram determinant is a unit, the
 discriminant is one, and the restricted integral pairing is a linear equivalence.
+Unimodularity also forces nondegeneracy of the rational form.
 
 The cardinality of the discriminant group is also computed as the absolute value of the Gram
 determinant.  The proof uses Mathlib's determinant/index formula for a full-rank submodule rather
@@ -29,6 +32,8 @@ than reproving Smith normal form.
   criterion.
 * `TauCeti.IntegralLattice.isUnimodular_iff_integralForm_bijective`: the perfect-pairing
   criterion.
+* `TauCeti.IntegralLattice.IsUnimodular.isPerfPair_integralForm`: the integral form of a
+  unimodular lattice is a perfect pairing.
 * `TauCeti.IntegralLattice.isUnimodular_iff_discriminant_eq_one`: the determinant criterion.
 * `TauCeti.IntegralLattice.integralPairingEquiv`: the restricted pairing as a linear equivalence.
 
@@ -61,6 +66,13 @@ def IsUnimodular (L : IntegralLattice V) : Prop :=
 theorem isUnimodular_def (L : IntegralLattice V) :
     L.IsUnimodular ↔ L.carrier = L.dualCarrier :=
   Iff.rfl
+
+/-- A unimodular integral lattice has a nondegenerate rational form. -/
+theorem IsUnimodular.nondegenerate {L : IntegralLattice V}
+    (hL : L.IsUnimodular) : L.form.Nondegenerate := by
+  apply L.isLattice_dualCarrier_iff_nondegenerate.mp
+  rw [L.isUnimodular_def] at hL
+  simpa only [← hL] using (inferInstance : L.carrier.IsLattice ℚ)
 
 /-- Unimodularity is equivalent to every vector in the dual carrier already belonging to the
 original carrier. -/
@@ -126,7 +138,8 @@ theorem integralForm_eq_dualPairingEquiv_comp :
   rw [L.integralForm_cast]
   symm
   rw [LinearMap.comp_apply]
-  convert L.dualPairingEquiv_cast (Submodule.inclusion L.le_dualCarrier x) y using 1 <;> rfl
+  convert L.dualPairingEquiv_cast (Submodule.inclusion L.le_dualCarrier x) y using 1
+  rfl
 
 /-- A nondegenerate integral lattice is unimodular exactly when its restricted pairing with the
 module dual is bijective. -/
@@ -160,6 +173,12 @@ theorem integralPairingEquiv_toLinearMap (hL : L.IsUnimodular) :
   exact LinearEquiv.ofBijective_apply L.integralForm x
 
 end Pairing
+
+/-- The integral form of a unimodular lattice is a perfect pairing. -/
+theorem IsUnimodular.isPerfPair_integralForm {L : IntegralLattice V} (hL : L.IsUnimodular) :
+    L.integralForm.IsPerfPair :=
+  let _ : L.IsNondegenerate := ⟨hL.nondegenerate⟩
+  .of_bijective _ (L.isUnimodular_iff_integralForm_bijective.mp hL)
 
 section DeterminantCriteria
 

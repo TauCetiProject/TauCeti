@@ -52,10 +52,8 @@ distinguishes tori from general groups of multiplicative type.
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
 
-This is the coordinate-algebra definition required by Layer 4, "Tori: split and non-split", of
-the ReductiveGroups roadmap. Smoothness and geometric connectedness are proved in
-`TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected`; the next step is the character lattice
-with its Galois action.
+Smoothness and geometric connectedness are proved in
+`TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected`.
 -/
 
 public section
@@ -140,10 +138,10 @@ theorem torusCommHopfAlgProperty.isCocomm
         (SplitTorus.characterGroup (ULift.{u} (Fin n)))).obj := inferInstance
   let hbase : _root_.Coalgebra.IsCocomm (AlgebraicClosure k)
       (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H).obj :=
-    Coalgebra.IsCocomm.of_bialgEquiv
-      (_root_.CommHopfAlgCat.ofIso <|
-        (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
-          (_root_.CommHopfAlgCat.{u} (AlgebraicClosure k))).mapIso i) (hA := hsplit)
+    let e := _root_.CommHopfAlgCat.ofIso <|
+      (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
+        (_root_.CommHopfAlgCat.{u} (AlgebraicClosure k))).mapIso i
+    e.toCoalgEquiv.toCoalgHom.isCocomm_of_surjective e.toCoalgEquiv.surjective (hA := hsplit)
   exact Coalgebra.IsCocomm.of_baseChange (h := hbase)
 
 /-- The category of finite-type torus coordinate Hopf algebras over a field.

@@ -66,6 +66,8 @@ obtained from the same proof.
 * `TauCeti.reorientPreprojectiveAlgebraEquiv_preprojectiveMk`: the isomorphism, computed on an
   arbitrary quotient representative, as the doubled-quiver identification followed by the rescaling
   by `-1` of the turned-around arrows.
+* `TauCeti.reorientPreprojectiveAlgebraEquiv_preprojectiveMk_doubledVertexIdempotent`: the
+  isomorphism matches the vertex idempotents.
 * `TauCeti.reorientPreprojectiveAlgebraEquiv_preprojectiveMk_ofArrow_keep` and its three
   companions: the isomorphism, computed on each of the four kinds of generator. An arrow `σ` leaves
   alone and its formal reverse are fixed, a turned-around arrow is carried to a formal reverse, and
@@ -81,12 +83,8 @@ what the transposition step of the proof does; the equality does *not* hold hom 
 
 ## References
 
-This is the orientation-independence clause of Layer 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`, which asks to turn around a chosen arrow by an
-algebra isomorphism rescaling one of the exchanged arrows by `-1`, to check that it sends every
-local relation to the corresponding relation, and to compose these maps into independence under
-every explicit reorientation `Reorient Q σ`, including in characteristic two. See Crawley-Boevey,
-*Quiver algebras, weighted projective lines, and the Deligne--Simpson problem*, Section 1.
+See Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
+problem*, Section 1.
 -/
 
 public section
@@ -158,6 +156,26 @@ noncomputable def reorientDoubledEquiv :
   mapAlgEquiv k (reorientSymmetrify σ) (reorientSymmetrifyInv σ)
     (reorientSymmetrify_comp_reorientSymmetrifyInv σ)
     (reorientSymmetrifyInv_comp_reorientSymmetrify σ)
+
+/-- The doubled path-algebra comparison acts by the homomorphism induced by the reorientation
+comparison of quivers. -/
+theorem reorientDoubledEquiv_apply (x : pathAlgebra k (Symmetrify (Reorient Q σ))) :
+    reorientDoubledEquiv k σ x =
+      mapAlgHom k (reorientSymmetrify σ)
+        ((reorientSymmetrify σ).obj_bijective_of_comp_eq_id (reorientSymmetrifyInv σ)
+          (reorientSymmetrify_comp_reorientSymmetrifyInv σ)
+          (reorientSymmetrifyInv_comp_reorientSymmetrify σ)) x := by
+  rw [reorientDoubledEquiv, mapAlgEquiv_apply]
+
+/-- The inverse doubled path-algebra comparison acts by the homomorphism induced by the inverse
+reorientation comparison of quivers. -/
+theorem reorientDoubledEquiv_symm_apply (x : pathAlgebra k (Symmetrify Q)) :
+    (reorientDoubledEquiv k σ).symm x =
+      mapAlgHom k (reorientSymmetrifyInv σ)
+        ((reorientSymmetrifyInv σ).obj_bijective_of_comp_eq_id (reorientSymmetrify σ)
+          (reorientSymmetrifyInv_comp_reorientSymmetrify σ)
+          (reorientSymmetrify_comp_reorientSymmetrifyInv σ)) x := by
+  rw [reorientDoubledEquiv, mapAlgEquiv_symm_apply]
 
 /-- The doubled path-algebra comparison maps a path of two arrows by mapping each arrow. -/
 private theorem reorientDoubledEquiv_ofArrowComp {i j l : Symmetrify (Reorient Q σ)} (a : i ⟶ j)
@@ -394,8 +412,7 @@ theorem reorientPreprojectiveAlgebraEquivGauged_preprojectiveMk
 
 /-- **The orientation-independence isomorphism, computed on generators**: it identifies the two
 doubled path algebras and then rescales, by `-1`, exactly the arrows `σ` turns around, leaving
-every formal reverse alone. This is the explicit map the roadmap asks for, in the form which makes
-the sign visible. -/
+every formal reverse alone. This is the explicit map, in the form which makes the sign visible. -/
 @[simp]
 theorem reorientPreprojectiveAlgebraEquiv_preprojectiveMk
     (x : pathAlgebra k (Symmetrify (Reorient Q σ))) :
@@ -406,6 +423,17 @@ theorem reorientPreprojectiveAlgebraEquiv_preprojectiveMk
     reorientPreprojectiveAlgebraEquivGauged_preprojectiveMk,
     preprojectiveAlgebraEquivGauged_symm_gaugedPreprojectiveMk]
   simp only [reorientSignUnit_inv, ← reorientSign_eq_coe_reorientSignUnit]
+
+/-- **The orientation-independence isomorphism matches the vertex idempotents.** Deliberately not
+a `simp` lemma, `TauCeti.reorientPreprojectiveAlgebraEquiv_preprojectiveMk` already rewriting its
+left-hand side. -/
+theorem reorientPreprojectiveAlgebraEquiv_preprojectiveMk_doubledVertexIdempotent (v : Q) :
+    reorientPreprojectiveAlgebraEquiv k σ (preprojectiveMk k (Reorient Q σ)
+        (doubledVertexIdempotent k (reorientVertex σ v)))
+      = preprojectiveMk k Q (doubledVertexIdempotent k v) := by
+  rw [reorientPreprojectiveAlgebraEquiv_preprojectiveMk,
+    reorientDoubledEquiv_doubledVertexIdempotent, doubledVertexIdempotent_def,
+    rescale_vertexIdempotent]
 
 /-! The four equations below compute the isomorphism on the generators of the reoriented algebra,
 which are the arrows of `Symmetrify (Reorient Q σ)`. They are deliberately not `simp` lemmas,

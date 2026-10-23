@@ -102,15 +102,15 @@ theorem finrank_code : Module.finrank (ZMod 3) code = 6 := by
 
 /-- Encoding is a linear equivalence between messages and codewords. -/
 noncomputable def encodingEquiv : (Fin 6 → ZMod 3) ≃ₗ[ZMod 3] code :=
-  (LinearEquiv.ofInjective generator.vecMulLinear vecMul_generator_injective).trans
-    (LinearEquiv.ofEq _ _ (by rw [code_def, Matrix.generatedBy_def]))
+  LinearCode.IsGeneratorMatrix.encodingEquiv
+    ((LinearCode.isGeneratorMatrix_def _ _).mpr code_def.symm)
+    (Matrix.vecMul_injective_iff.mp vecMul_generator_injective)
 
 /-- The encoding equivalence sends each message to its product with the generator. -/
 @[simp]
 theorem encodingEquiv_apply (a : Fin 6 → ZMod 3) : (encodingEquiv a : Fin 12 → ZMod 3) =
     a ᵥ* generator := by
-  simp only [encodingEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
-  exact LinearEquiv.ofInjective_apply generator.vecMulLinear a
+  rw [encodingEquiv, LinearCode.IsGeneratorMatrix.coe_encodingEquiv_apply]
 
 /-- The inverse encoding equivalence reads the first six coordinates of a codeword. -/
 @[simp]
@@ -130,14 +130,17 @@ theorem natCard_code : Nat.card code = 729 := by
 theorem generator_mul_transpose_eq_zero : generator * generatorᵀ = 0 := by decide
 
 /-- The extended ternary Golay code is Euclidean self-dual. -/
-@[simp]
-theorem euclideanDual_code : code.euclideanDual = code := by
-  symm
-  apply Submodule.eq_euclideanDual_of_le_of_card_le_two_mul_finrank
-  · rw [code_def, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
-      Matrix.generatedBy_le_checkedBy_iff]
+theorem isSelfDual_code : code.IsSelfDual := by
+  apply Submodule.IsSelfOrthogonal.isSelfDual_of_card_le_two_mul_finrank
+  · rw [Submodule.isSelfOrthogonal_iff_le, code_def,
+      ← Matrix.checkedBy_eq_euclideanDual_generatedBy, Matrix.generatedBy_le_checkedBy_iff]
     exact generator_mul_transpose_eq_zero
   · simp
+
+/-- The Euclidean dual of the extended ternary Golay code is the code itself. -/
+@[simp]
+theorem euclideanDual_code : code.euclideanDual = code :=
+  isSelfDual_code.euclideanDual_eq
 
 /-- The generator is also a parity-check matrix of the same code. -/
 @[simp↓]
@@ -199,8 +202,8 @@ theorem weightDistribution_code (w : ℕ) :
 
 /-- Every weight of the extended ternary Golay code is divisible by three. -/
 theorem three_dvd_hammingNorm {x : Fin 12 → ZMod 3} (hx : x ∈ code) :
-    3 ∣ hammingNorm x := by
-  exact three_dvd_hammingNorm_of_le_euclideanDual euclideanDual_code.ge hx
+    3 ∣ hammingNorm x :=
+  three_dvd_hammingNorm_of_isSelfOrthogonal isSelfDual_code.isSelfOrthogonal hx
 
 /-- The minimum distance of the extended ternary Golay code is six. -/
 @[simp]

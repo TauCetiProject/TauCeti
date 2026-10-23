@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.KrullDimension
+public import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # Pure-dimensional topological spaces
@@ -27,6 +27,8 @@ is irreducible of dimension one, while its generic point is an open subspace of 
 ## Main declarations
 
 * `TauCeti.IsPureDimensional`: every irreducible component has the prescribed Krull dimension.
+* `TauCeti.isPureDimensional_iff`: the defining condition on irreducible components.
+* `TauCeti.IsPureDimensional.unique`: a nonempty space has at most one pure dimension.
 * `TauCeti.IsPureDimensional.homeomorph`: invariance under homeomorphisms.
 * `Homeomorph.isPureDimensional_iff`: a homeomorphism preserves pure dimension.
 * `TauCeti.isPureDimensional_zero_of_discreteTopology`: discrete spaces have pure dimension zero.
@@ -50,13 +52,26 @@ topological Krull dimension `d`. -/
 def IsPureDimensional (d : ℕ) (X : Type*) [TopologicalSpace X] : Prop :=
   ∀ Z ∈ irreducibleComponents X, topologicalKrullDim Z = d
 
+/-- A space is pure-dimensional of dimension `d` exactly when each of its irreducible components
+has Krull dimension `d`. -/
+theorem isPureDimensional_iff {d : ℕ} {X : Type*} [TopologicalSpace X] :
+    IsPureDimensional d X ↔ ∀ Z ∈ irreducibleComponents X, topologicalKrullDim Z = d :=
+  Iff.rfl
+
 /-- An empty space is pure-dimensional of every dimension. -/
 @[simp]
 theorem isPureDimensional_of_isEmpty (d : ℕ) (X : Type*) [TopologicalSpace X] [IsEmpty X] :
     IsPureDimensional d X := by
   intro Z hZ
-  obtain ⟨x, hx⟩ := hZ.1.nonempty
+  obtain ⟨x, _⟩ := hZ.1.nonempty
   exact isEmptyElim x
+
+/-- A nonempty pure-dimensional space determines its dimension. -/
+theorem IsPureDimensional.unique {d e : ℕ} {X : Type*} [TopologicalSpace X] [Nonempty X]
+    (hd : IsPureDimensional d X) (he : IsPureDimensional e X) : d = e := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  have hx := irreducibleComponent_mem_irreducibleComponents x
+  exact_mod_cast (isPureDimensional_iff.mp hd _ hx).symm.trans (isPureDimensional_iff.mp he _ hx)
 
 /-- Pure dimension is preserved by a homeomorphism. -/
 theorem IsPureDimensional.homeomorph {d : ℕ} {X Y : Type*} [TopologicalSpace X]

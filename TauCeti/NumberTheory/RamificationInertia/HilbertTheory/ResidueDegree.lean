@@ -11,12 +11,16 @@ public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 /-!
 # Hilbert theory over arbitrary residue fields
 
-For a finite Galois extension of Dedekind domains, write `D` and `E` for the decomposition
-and inertia fields at `P`. The degree formulas are `[L : D] = e * f`, `[D : K] = g`,
+Let `L/K` be a finite Galois extension whose Galois group acts on an extension of rings `B/A`
+with ring of invariants `A`, and write `D` and `E` for the decomposition and inertia fields at a
+maximal ideal `P` of `B`. The degree formulas are `[L : D] = e * f`, `[D : K] = g`,
 `[L : E] = e * fᵢ`, and `[E : D] = fₛ`, where `fₛ` and `fᵢ` are the separable and inseparable
-residue degrees. No finiteness or separability of the residue fields is assumed.
+residue degrees. The formulas for `[L : D]` and `[L : E]` assume `B/A` is a finite flat
+extension of domains; none of them assumes finiteness or separability of the residue fields.
+When the residue extension at `P` is separable, `fᵢ = 1` and so `[L : E] = e`.
 
-The prime of the decomposition ring below `P` has ramification index and inertia degree one
+When `A` is a Dedekind domain with fraction field `K` and `B` a domain with fraction field `L`,
+the prime of the decomposition ring below `P` has ramification index and inertia degree one
 over the base. Thus all the ramification and residue degree at `P` remain above the
 decomposition ring, including the inseparable residue degree.
 
@@ -24,8 +28,9 @@ decomposition ring, including the inseparable residue degree.
 
 * J. Neukirch, *Algebraic Number Theory*, Ch. I (9.3) and (9.6).
 * The decomposition-ring argument adapts Xavier Roblot's
-  `Mathlib/NumberTheory/RamificationInertia/HilbertTheory.lean`, replacing its finite-residue
-  cardinality input by the general formulas in `RamificationInertia/SeparableDegree.lean`.
+  `Mathlib/NumberTheory/RamificationInertia/HilbertTheory.lean`, replacing its
+  separable-residue-field input by the general formulas in
+  `RamificationInertia/SeparableDegree.lean`.
 -/
 
 public section
@@ -41,21 +46,19 @@ section Degrees
 
 variable (A K L : Type*) {B : Type*} [CommRing A] [CommRing B] [Field K] [Field L]
   [Algebra A B] [Algebra K L] [FiniteDimensional K L] [MulSemiringAction Gal(L/K) B]
-  [IsGaloisGroup Gal(L/K) A B] [IsDedekindDomain A] [IsDedekindDomain B]
-  [Module.Finite A B] [Module.IsTorsionFree A B] (P : Ideal B) [P.IsMaximal]
+  [IsGaloisGroup Gal(L/K) A B] (P : Ideal B)
 
 variable (D : Type*) [Field D] [Algebra D L] [IsDecompositionField K L P D]
 
 include K P in
 /-- The degree above the decomposition field is `e * f`, also for inseparable residue
 extensions. -/
-theorem IsDecompositionField.finrank_eq_ramificationIdx_mul_inertiaDeg :
+theorem IsDecompositionField.finrank_eq_ramificationIdx_mul_inertiaDeg [IsDomain A]
+    [IsDomain B] [Module.Finite A B] [Module.Flat A B] [P.IsMaximal] :
     Module.finrank D L = P.ramificationIdx A * P.inertiaDeg A := by
   rw [← IsGaloisGroup.card_eq_finrank (stabilizer Gal(L/K) P) D L]
   exact P.card_stabilizer_eq_ramificationIdx_mul_inertiaDeg (R := A) (G := Gal(L/K))
 
-omit [IsDedekindDomain A] [IsDedekindDomain B] [Module.Finite A B]
-  [Module.IsTorsionFree A B] [P.IsMaximal] in
 /-- The degree of the decomposition field is the number of primes above the contracted prime,
 without a residue-field hypothesis. -/
 theorem IsDecompositionField.finrank_eq_ncard_primesOver [IsGalois K L]
@@ -75,27 +78,35 @@ variable (E : Type*) [Field E] [Algebra E L] [IsInertiaField K L P E]
 include K P in
 /-- The degree above the inertia field is the ramification index times the inseparable
 residue degree. -/
-theorem IsInertiaField.finrank_eq_ramificationIdx_mul_finInsepDegree :
+theorem IsInertiaField.finrank_eq_ramificationIdx_mul_finInsepDegree [IsDomain A]
+    [IsDomain B] [Module.Finite A B] [Module.Flat A B] [P.IsMaximal] :
     Module.finrank E L =
       P.ramificationIdx A * Field.finInsepDegree (A ⧸ P.under A) (B ⧸ P) := by
   rw [← IsGaloisGroup.card_eq_finrank (inertia Gal(L/K) P) E L]
   exact P.card_inertia_eq_ramificationIdx_mul_finInsepDegree (R := A) (G := Gal(L/K))
 
-omit [IsDedekindDomain A] [IsDedekindDomain B] [Module.IsTorsionFree A B] in
+include K P in
+/-- When the residue extension at `P` is separable, the degree above the inertia field is the
+ramification index. This is Mathlib's `IsInertiaField.rank_left` with separability assumed only at
+`P` rather than at every prime over `P.under A`, and with `B` not required to be Dedekind. -/
+theorem IsInertiaField.finrank_eq_ramificationIdx [IsDomain A] [IsDomain B] [Module.Finite A B]
+    [Module.Flat A B] [P.IsMaximal] [Algebra.IsSeparable (A ⧸ P.under A) (B ⧸ P)] :
+    Module.finrank E L = P.ramificationIdx A := by
+  rw [IsInertiaField.finrank_eq_ramificationIdx_mul_finInsepDegree A K L P E,
+    (isSeparable_iff_finInsepDegree_eq_one _ _).mp inferInstance, mul_one]
+
 include K L P in
 /-- The degree of the inertia field over the decomposition field is the separable residue
 degree. -/
-theorem IsInertiaField.finrank_eq_finSepDegree [Algebra D E] [IsScalarTower D E L] :
+theorem IsInertiaField.finrank_eq_finSepDegree [Algebra.IsIntegral A B] [P.IsMaximal]
+    [Algebra D E] [IsScalarTower D E L] :
     Module.finrank D E = Field.finSepDegree (A ⧸ P.under A) (B ⧸ P) := by
-  have : FiniteDimensional D L := IsGaloisGroup.finiteDimensional (stabilizer Gal(L/K) P) D L
-  have : FiniteDimensional E L := IsGaloisGroup.finiteDimensional (inertia Gal(L/K) P) E L
-  apply mul_left_injective₀ (b := Module.finrank E L) Module.finrank_pos.ne'
-  dsimp only
-  rw [Module.finrank_mul_finrank,
-    ← IsGaloisGroup.card_eq_finrank (stabilizer Gal(L/K) P) D L,
+  have h := Module.finrank_mul_finrank D E L
+  rw [← IsGaloisGroup.card_eq_finrank (stabilizer Gal(L/K) P) D L,
     ← IsGaloisGroup.card_eq_finrank (inertia Gal(L/K) P) E L,
     card_stabilizer_eq_card_inertia_mul_finSepDegree (G := Gal(L/K)) (P.under A) P,
-    mul_comm]
+    mul_comm (Nat.card _)] at h
+  exact Nat.eq_of_mul_eq_mul_right Nat.card_pos h
 
 end Degrees
 
@@ -109,20 +120,18 @@ variable (A K L : Type*) {B : Type*} [Field K] [Field L] [Algebra K L]
   (D 𝓞D : Type*) [Field D] [Algebra D L] [IsDecompositionField K L P D] [CommRing 𝓞D]
   [Algebra 𝓞D D] [IsFractionRing 𝓞D D] [Algebra 𝓞D B] [Algebra 𝓞D L]
   [IsScalarTower 𝓞D D L] [IsScalarTower 𝓞D B L]
-  [IsGalois K L] [FiniteDimensional K L] [IsDedekindDomain A] [IsDedekindDomain B]
-  [Module.Finite A B] [Module.IsTorsionFree A B] [Algebra A 𝓞D] [Module.Finite A 𝓞D]
-  [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D] [P.IsMaximal]
+  [IsGalois K L] [FiniteDimensional K L] [IsDedekindDomain A] [IsDomain B]
+  [Module.Finite A B] [Algebra A 𝓞D] [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D] [P.IsMaximal]
 
 omit [FiniteDimensional K L] [P.IsMaximal] in
 include K L D P in
 private theorem instances :
-    Module.Finite 𝓞D B ∧ Module.IsTorsionFree 𝓞D B ∧ Module.IsTorsionFree A 𝓞D ∧
+    Module.Finite 𝓞D B ∧ Module.IsTorsionFree 𝓞D B ∧ Module.IsTorsionFree A B ∧
       IsGaloisGroup Gal(L/K) A B ∧ IsGaloisGroup (stabilizer Gal(L/K) P) 𝓞D B := by
   have : Module.Finite 𝓞D B := Module.Finite.right A 𝓞D B
-  have : Module.IsTorsionFree 𝓞D B := by
-    rw [Module.isTorsionFree_iff_faithfulSMul]
-    exact Algebra.IsAlgebraic.faithfulSMul_tower_top A 𝓞D B
-  have : Module.IsTorsionFree A 𝓞D := Module.IsTorsionFree.of_faithfulSMul _ _ B
+  -- The fraction-field embeddings make both ring maps injective.
+  have : FaithfulSMul A B := .of_field_isFractionRing A B K L
+  have : FaithfulSMul 𝓞D B := .of_field_isFractionRing 𝓞D B D L
   exact ⟨inferInstance, inferInstance, inferInstance,
     .of_isFractionRing _ _ _ K L, .of_isFractionRing _ _ _ D L⟩
 
@@ -131,7 +140,7 @@ private theorem ramificationIdx_eq_and_inertiaDeg_eq :
     P.ramificationIdx 𝓞D = P.ramificationIdx A ∧ P.inertiaDeg 𝓞D = P.inertiaDeg A := by
   obtain ⟨_, _, _, _, _⟩ := instances A K L P D 𝓞D
   refine eq_and_eq_of_pos_of_le_of_mul_le_mul
-    (ramificationIdx_pos P 𝓞D) (inertiaDeg_pos P 𝓞D)
+    (ramificationIdx_pos 𝓞D P) (inertiaDeg_pos P 𝓞D)
     ((P.under 𝓞D).ramificationIdx_above_le P) (inertiaDeg_above_le (P.under 𝓞D) P) ?_
   have h := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn
     (P.under 𝓞D) B (stabilizer Gal(L/K) P)
@@ -160,7 +169,7 @@ theorem ramificationIdx_under_eq_one : (P.under 𝓞D).ramificationIdx A = 1 := 
   obtain ⟨_, _, _, _, _⟩ := instances A K L P D 𝓞D
   have h := ramificationIdx_tower (R := A) (P.under 𝓞D) P
   rw [ramificationIdx_eq A K L P D 𝓞D] at h
-  exact (right_eq_mul₀ (ramificationIdx_pos P A).ne').mp h
+  exact (right_eq_mul₀ (ramificationIdx_pos A P).ne').mp h
 
 include K L D P in
 /-- The prime contracted to the decomposition ring has residue degree one over the base,

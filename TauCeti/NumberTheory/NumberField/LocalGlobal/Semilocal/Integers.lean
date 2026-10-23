@@ -231,10 +231,7 @@ theorem integralSemilocalHom_fieldCompatibility
     (z : v.adicCompletionIntegers K ⊗[𝒪 K] 𝒪 L) :
     semilocalEquiv L v (integralSemilocalToField L v z) =
       fun w ↦ (integralSemilocalHom L v z w : w.1.adicCompletion L) := by
-  induction z using TensorProduct.induction_on with
-  | zero =>
-      funext w
-      simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy =>
       funext w
       simp only [map_add, Pi.add_apply]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Add
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.GenericPoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfinity
 
 /-!
@@ -75,6 +76,17 @@ theorem Hom.degree_zsmul [W₂.IsElliptic] (n : ℤ) (f : Hom W₁ W₂) :
 theorem Hom.degree_nsmul [W₂.IsElliptic] (n : ℕ) (f : Hom W₁ W₂) :
     (n • f).degree = n ^ 2 * f.degree := by
   rw [← natCast_zsmul f n, Hom.degree_zsmul, Int.natAbs_natCast]
+
+/-- **Integer multiples of the identity endomorphism are distinct.** In particular, the
+endomorphism ring of an elliptic curve has characteristic zero, independently of the
+characteristic of its base field. -/
+theorem Hom.zsmul_id_injective [W₁.IsElliptic] :
+    Function.Injective (fun n : ℤ ↦ n • Hom.id W₁) := by
+  intro m n h
+  apply WeierstrassCurve.Affine.zsmul_genericPoint_injective W₁
+  have ht := congrArg Hom.tautologicalPoint h
+  simpa only [Hom.tautologicalPoint_zsmul, Hom.id_def, Hom.tautologicalPoint_ofIsogeny,
+    Isogeny.id_pullback, CoordinatePullback.tautologicalPoint_id] using ht
 
 end TauCeti.Isogeny
 

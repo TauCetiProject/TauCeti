@@ -21,9 +21,8 @@ is semigroup-group positive definite on `ℝ≥0 × V`, and is continuous when `
 The proof is just the rank-one-kernel calculation for each factor, followed by the existing
 separated-product constructor.
 
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-("BCR semigroup--Bochner"): the representing integrand in the target theorem is a finite-measure
-mixture of these atoms.
+In the BCR semigroup--Bochner representation, the represented function is a finite-measure integral
+of these atoms.
 
 ## Main declarations
 

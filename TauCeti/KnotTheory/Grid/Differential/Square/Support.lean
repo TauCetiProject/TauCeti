@@ -15,8 +15,8 @@ differential twice. The one-step support theorem says that `∂ x` is supported 
 obtained from `x` by one nontrivial column transposition. Applying that theorem again gives a
 small ambient set for `∂ (∂ x)`: the union of the column-swap neighbours of those neighbours.
 
-The actual `∂² = 0` proof is not asserted here. These lemmas only isolate the finite target set
-on which the later rectangle-pairing argument has to check cancellation.
+The `∂² = 0` identity is not asserted here. These lemmas only isolate the finite target set on which
+the rectangle-pairing argument checks cancellation.
 
 ## Main results
 
@@ -29,10 +29,8 @@ on which the later rectangle-pairing argument has to check cancellation.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3,
-"The complexes and `∂² = 0`". The one-step column-transposition support condition follows
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3 and 4; this file
-packages the direct two-step consequence needed before the square-zero rectangle pairing.
+The one-step column-transposition support condition follows Ozsváth--Stipsicz--Szabó, *Grid Homology
+for Knots and Links*, Chapters 3 and 4; this file packages its direct two-step consequence.
 -/
 
 public section
@@ -82,7 +80,7 @@ theorem card_twoStepColumnSwapNeighbors_le (x : GridState n) :
   rw [twoStepColumnSwapNeighbors, sq]
   exact (Finset.card_biUnion_le_card_mul x.columnSwapNeighbors
       (fun y : GridState n => y.columnSwapNeighbors) (n.choose 2)
-      fun y _ => y.card_columnSwapNeighbors_le).trans
+      fun y _ => y.card_columnSwapNeighbors.le).trans
     (by rw [x.card_columnSwapNeighbors])
 
 /-- In grid size at most `1`, no state is reachable by two nontrivial column swaps. -/
@@ -146,9 +144,9 @@ theorem fullyBlockedDifferential_sq_support_card_le (c : GridChain (ZMod 2) n) :
       (fun x : GridState n => x.twoStepColumnSwapNeighbors) ((n.choose 2) ^ 2)
       fun x _ => x.card_twoStepColumnSwapNeighbors_le)
 
-/-- The support of `∂ (∂ x)` is contained in the states reachable from `x` by two
-column transpositions. This is the finite search space for the later rectangle-pairing proof of
-`∂² = 0` on generators. -/
+/-- The support of `∂ (∂ x)` is contained in the states reachable from `x` by two column
+transpositions. This is the finite search space for the rectangle-pairing proof of `∂² = 0` on
+generators. -/
 theorem fullyBlockedDifferential_sq_single_support_subset (x : GridState n) :
     (G.fullyBlockedDifferential (G.fullyBlockedDifferential (Finsupp.single x 1))).support ⊆
         x.twoStepColumnSwapNeighbors := by

@@ -23,6 +23,13 @@ ring.
 
 * `TauCeti.symmetricHomogeneousSubmodule σ R n`: the polynomials in `σ` over `R` that are both
   symmetric and homogeneous of degree `n`.
+
+## Main results
+
+* `MvPolynomial.isHomogeneous_esymm`: the elementary symmetric polynomial `eₖ` is homogeneous of
+  degree `k`.
+* `MvPolynomial.isHomogeneous_hsymm`: the complete homogeneous symmetric polynomial `hₖ` is
+  homogeneous of degree `k`.
 -/
 
 public section
@@ -50,3 +57,26 @@ theorem mem_symmetricHomogeneousSubmodule {p : MvPolynomial σ R} :
   Iff.rfl
 
 end TauCeti
+
+namespace MvPolynomial
+
+variable {σ R : Type*} [CommSemiring R]
+
+/-- The elementary symmetric polynomial `eₖ` is homogeneous of degree `k`. -/
+theorem isHomogeneous_esymm [Fintype σ] (k : ℕ) : (esymm σ R k).IsHomogeneous k := by
+  rw [esymm_eq_sum_subtype]
+  refine IsHomogeneous.sum _ _ _ fun t _ => ?_
+  have h := IsHomogeneous.prod (t : Finset σ) (fun i => (X i : MvPolynomial σ R)) (fun _ => 1)
+    fun i _ => isHomogeneous_X R i
+  rwa [Finset.sum_const, smul_eq_mul, mul_one, t.2] at h
+
+/-- The complete homogeneous symmetric polynomial `hₖ` is homogeneous of degree `k`. -/
+theorem isHomogeneous_hsymm [Fintype σ] [DecidableEq σ] (k : ℕ) :
+    (hsymm σ R k).IsHomogeneous k := by
+  have h (t : Multiset σ) : ((t.map X).prod : MvPolynomial σ R).IsHomogeneous t.card := by
+    induction t using Multiset.induction_on with
+    | empty => simpa using isHomogeneous_one σ R
+    | cons a t ih => simpa [add_comm] using (isHomogeneous_X R a).mul ih
+  exact IsHomogeneous.sum _ _ _ fun s _ => by simpa [s.2] using h s.1
+
+end MvPolynomial

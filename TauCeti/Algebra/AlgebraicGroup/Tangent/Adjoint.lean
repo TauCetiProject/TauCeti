@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.CentralPoint
 public import Mathlib.RepresentationTheory.Basic
+import TauCeti.Algebra.DualNumber.Convolution
 
 /-!
 # The adjoint action on the tangent space
@@ -33,6 +35,12 @@ computation appears; inverses come from the group of points.
 * `Derivation.adDerivation`: the conjugate of a tangent vector by a point.
 * `Derivation.toConv_coe_adDerivation`: that conjugate as the convolution product
   `g ⋆ d ⋆ g⁻¹`, the form the algebraic manipulations use.
+* `Derivation.snd_conjugate_tangentPoint`: conjugation on dual-number tangent points
+  induces the adjoint action on their infinitesimal coefficients.
+* `Derivation.adDerivation_eq_self_iff_commute_tangentPoint`: a point fixes a tangent
+  vector exactly when its constant lift commutes with the tangent point.
+* `Derivation.adDerivation_eq_self_of_isCentralPoint`: universally central points
+  act trivially on tangent vectors.
 * `Derivation.adRepresentation`: the adjoint action, as a representation of
   the convolution group of points on the tangent space.
 
@@ -46,8 +54,9 @@ finite-projectivity hypothesis on the conormal module and is not attempted here.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §14 (the adjoint representation).
-* J. C. Jantzen, *Representations of Algebraic Groups*, I.7.18.
+* J. S. Milne, *Algebraic Groups* (2017), §10 (Lie algebras) and §14
+  (the adjoint representation).
+* J. C. Jantzen, *Representations of Algebraic Groups*, I.7, especially I.7.18.
 -/
 
 public section
@@ -65,10 +74,10 @@ private lemma conj_comp_mul'
     toConv ((toConv g.ofConv.toLinearMap *
         toConv (↑d : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
         toConv ((g⁻¹).ofConv.toLinearMap)).ofConv ∘ₗ LinearMap.mul' R A) =
-      LinearMap.mulTensor 1 (toConv g.ofConv.toLinearMap *
+      WithConv.mulTensor 1 (toConv g.ofConv.toLinearMap *
           toConv (↑d : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
           toConv ((g⁻¹).ofConv.toLinearMap)) +
-        LinearMap.mulTensor (toConv g.ofConv.toLinearMap *
+        WithConv.mulTensor (toConv g.ofConv.toLinearMap *
           toConv (↑d : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
           toConv ((g⁻¹).ofConv.toLinearMap)) 1 := by
   have h := LinearMap.convMul_comp_coalgHom_distrib
@@ -85,8 +94,8 @@ private lemma conj_comp_mul'
   rw [h2, toConv_ofConv]
   rw [AlgHom.toConv_toLinearMap_comp_mul' g.ofConv, toConv_coe_comp_mul' d,
     AlgHom.toConv_toLinearMap_comp_mul' (g⁻¹).ofConv]
-  rw [mul_add, add_mul, LinearMap.mulTensor_convMul, LinearMap.mulTensor_convMul,
-    LinearMap.mulTensor_convMul, LinearMap.mulTensor_convMul, mul_one,
+  rw [mul_add, add_mul, WithConv.mulTensor_convMul, WithConv.mulTensor_convMul,
+    WithConv.mulTensor_convMul, WithConv.mulTensor_convMul, mul_one,
     ← AlgHom.toLinearMap_convMul, mul_inv_cancel, AlgHom.toLinearMap_convOne]
 
 /-- The Leibniz rule for a conjugated derivation, in scalar-action form. -/
@@ -104,7 +113,7 @@ private lemma conj_ofConv_mul
           toConv ((g⁻¹).ofConv.toLinearMap)).ofConv a := by
   have h := congrArg (fun F => F.ofConv (a ⊗ₜ[R] b)) (conj_comp_mul' g d)
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.mul'_apply,
-    ofConv_add, LinearMap.add_apply, LinearMap.mulTensor_apply_tmul,
+    ofConv_add, LinearMap.add_apply, WithConv.mulTensor_apply_tmul,
     LinearMap.convOne_apply, Bialgebra.CounitAlgebra.algebraMap_base] at h
   rw [h, ← Bialgebra.CounitAlgebra.algebraMap_apply R A B a,
     ← Bialgebra.CounitAlgebra.algebraMap_apply R A B b, ← Algebra.commutes,
@@ -207,5 +216,117 @@ lemma adRepresentation_apply (g : WithConv (A →ₐ[R] Bialgebra.CounitAlgebra 
   -- definitional unfolding once, explicitly.
   change adDerivation B g d = _
   rfl
+
+open TrivSqZeroExt in
+/-- Conjugating a tangent point by a constant dual-number point induces the adjoint
+action on its infinitesimal coefficient. -/
+@[simp↓]
+theorem snd_conjugate_tangentPoint
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B))
+    (g : WithConv (A →ₐ[R] Bialgebra.CounitAlgebra R A B)) (a : A) :
+    snd (((AlgHom.mapValue
+        (inlAlgHom R (Bialgebra.CounitAlgebra R A B)
+          (Bialgebra.CounitAlgebra R A B)) g) *
+      (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val *
+      (AlgHom.mapValue
+        (inlAlgHom R (Bialgebra.CounitAlgebra R A B)
+          (Bialgebra.CounitAlgebra R A B)) g)⁻¹).ofConv a) =
+      Derivation.adDerivation B g d a := by
+  let C := Bialgebra.CounitAlgebra R A B
+  let q := AlgHom.mapValue (H := A) (inlAlgHom R C C)
+  let p := (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val
+  let F := (fstHom R C C).toLinearMap
+  let S := (sndHom C C).restrictScalars R
+  have hF (g : WithConv (A →ₐ[R] C)) :
+      F ∘ₗ (q g).ofConv.toLinearMap = g.ofConv.toLinearMap := by
+    ext x
+    simp [F, q, AlgHom.mapValue_apply]
+  have hS (g : WithConv (A →ₐ[R] C)) :
+      S ∘ₗ (q g).ofConv.toLinearMap = 0 := by
+    ext x
+    simp [S, q, AlgHom.mapValue_apply]
+  have hp : S ∘ₗ p.ofConv.toLinearMap = d.toLinearMap := by
+    ext x
+    exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) x
+  have hc : S ∘ₗ (q g * p * q g⁻¹).ofConv.toLinearMap =
+      (Derivation.adDerivation B g d).toLinearMap := by
+    rw [← ofConv_toConv ((q g * p * q g⁻¹).ofConv.toLinearMap),
+      AlgHom.toLinearMap_convMul, AlgHom.toLinearMap_convMul]
+    dsimp only [S]
+    rw [WithConv.snd_comp_convMul, WithConv.snd_comp_convMul]
+    rw [hS, hS, hp, hF, hF]
+    simp only [toConv_zero, mul_zero, zero_mul, add_zero, zero_add, toConv_ofConv,
+      Derivation.coe_adDerivation_linearMap]
+  have ha := LinearMap.congr_fun hc a
+  simpa only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, sndHom_apply,
+    AlgHom.toLinearMap_apply, Derivation.coeFn_coe, S, q, p, map_inv] using ha
+
+end Derivation
+
+open TauCeti WithConv TrivSqZeroExt
+
+namespace Derivation
+
+universe u v w
+
+section Fixed
+
+variable {R : Type u} {H : Type v} {B : Type w}
+  [CommSemiring R] [CommSemiring H] [HopfAlgebra R H] [CommSemiring B] [Algebra R B]
+
+/-- A point fixes a tangent vector under the adjoint action exactly when its constant
+dual-number lift commutes with the vector's tangent point. -/
+theorem adDerivation_eq_self_iff_commute_tangentPoint
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H B))
+    (g : WithConv (H →ₐ[R] Bialgebra.CounitAlgebra R H B)) :
+    adDerivation B g d = d ↔
+      Commute (AlgHom.mapValue
+        (inlAlgHom R (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)) g)
+        (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val := by
+  let p := derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)
+  let q := AlgHom.mapValue
+    (inlAlgHom R (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)) g
+  let _ : (tangentKer R H B).Normal := by
+    rw [tangentKer_def]
+    infer_instance
+  have hmem : q * p.val * q⁻¹ ∈ tangentKer R H B :=
+    Subgroup.Normal.conj_mem p.val p.property q
+  constructor
+  · intro h
+    have he : q * p.val * q⁻¹ = p.val := by
+      apply ofConv_injective
+      apply AlgHom.ext
+      intro a
+      apply TrivSqZeroExt.ext
+      · exact (fst_apply_of_mem_tangentKer hmem a).trans
+          (fst_apply_of_mem_tangentKer p.property a).symm
+      · exact (snd_conjugate_tangentPoint d g a).trans
+          ((DFunLike.congr_fun h a).trans
+            (derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) a).symm)
+    exact (mul_inv_eq_iff_eq_mul (G := WithConv (H →ₐ[R] DualNumber
+      (Bialgebra.CounitAlgebra R H B)))).mp he
+  · intro h
+    ext a
+    have he := congrArg (fun z ↦ snd (z.ofConv a))
+      (Commute.mul_inv_cancel (G := WithConv (H →ₐ[R] DualNumber
+      (Bialgebra.CounitAlgebra R H B))) h)
+    exact (snd_conjugate_tangentPoint d g a).symm.trans
+      (he.trans (derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) a))
+
+end Fixed
+
+variable {R : Type u} {H : Type v} {B : Type (max v w)} [CommRing R] [CommRing H] [HopfAlgebra R H]
+  [CommRing B] [Algebra R B]
+
+/-- A universally central point acts trivially on tangent vectors over its value algebra. -/
+theorem adDerivation_eq_self_of_isCentralPoint
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H B))
+    {g : WithConv (H →ₐ[R] Bialgebra.CounitAlgebra R H B)}
+    (hg : HopfAlgebra.IsCentralPoint g) : adDerivation B g d = d := by
+  let C := Bialgebra.CounitAlgebra R H B
+  let p := (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val
+  rw [HopfAlgebra.isCentralPoint_def] at hg
+  exact (adDerivation_eq_self_iff_commute_tangentPoint d g).mpr
+    (hg (inlAlgHom R C C) p)
 
 end Derivation

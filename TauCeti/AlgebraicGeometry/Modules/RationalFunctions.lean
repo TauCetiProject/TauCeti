@@ -56,6 +56,9 @@ condition and the `𝒪_X`-module structure automatic.
   `TauCeti.AlgebraicGeometry.Scheme.subsingleton_rationalFunctions`, the sections over an empty
   open subset vanish; together these give
   `TauCeti.AlgebraicGeometry.Scheme.isFlasque_rationalFunctions`;
+* `TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsHom`, the morphism extending compatible
+  linear maps on nonempty opens, with its computation rule `rationalFunctionsHom_app` and
+  injectivity criterion `rationalFunctionsHom_app_injective`;
 * `TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsMul`, multiplication by a rational function
   as an endomorphism of `𝒦_X`, obtained by pushing forward multiplication by the corresponding
   global function on `Spec K(X)`; `rationalFunctionsEquiv_rationalFunctionsMul_app` identifies it
@@ -67,17 +70,18 @@ condition and the `𝒪_X`-module structure automatic.
   (`TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsEquiv_toRationalFunctions_app`), is
   injective on sections over every open subset of an integral scheme
   (`TauCeti.AlgebraicGeometry.Scheme.toRationalFunctions_app_injective`), and is therefore a
-  monomorphism.
+  monomorphism;
+* `TauCeti.AlgebraicGeometry.Scheme.exists_germToFunctionField_eq_of_forall_mem_range`: a
+  rational function lying in the local ring at every point of a nonempty open subset `U` is
+  regular on `U`.
 
 The sheaf `𝒪_X(D)` attached to a Weil divisor is the submodule of `𝒦_X` cut out by an order
 bound; it is built in `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Sheaf.lean`, and the
 multiplication endomorphisms above are what make it depend only on the divisor class of `D`.
 
-The Cartier divisors of `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A ("Divisors on a
-curve: Weil divisors `⊕_x ℤ` and Cartier divisors; the dictionaries `Cartier ≃ line bundles`
-and (smooth curve) `Weil ≃ Cartier`"), are the global sections of `𝒦_X^*/𝒪_X^*`, and the line
-bundle `𝒪_X(D)` attached to a divisor is a subsheaf of `𝒦_X`; both need the sheaf `𝒦_X` and the
-inclusion `𝒪_X ⟶ 𝒦_X` built here. On an integral scheme the sheaf of total quotient rings agrees
+Cartier divisors are the global sections of `𝒦_X^*/𝒪_X^*`, and the line bundle `𝒪_X(D)` attached
+to a divisor is a subsheaf of `𝒦_X`; both need the sheaf `𝒦_X` and the inclusion `𝒪_X ⟶ 𝒦_X`
+built here. On an integral scheme the sheaf of total quotient rings agrees
 with this constant sheaf, so no generality is lost at that stage.
 
 No formalization is vendored. The construction reuses Mathlib's `Scheme.functionField`,
@@ -288,6 +292,61 @@ theorem rationalFunctionsEquiv_map {U V : X.Opens} [Nonempty U] [Nonempty V] (i 
   rw [rationalFunctionsEquiv_apply, rationalFunctionsSectionsEquiv_map,
     rationalFunctionsRingEquiv_map, rationalFunctionsEquiv_apply]
 
+section Hom
+
+variable (M : X.Modules)
+  (app : ∀ (U : X.Opens) [Nonempty U],
+    M.val.obj (op U) ⟶ (rationalFunctions X).val.obj (op U))
+  (happ : ∀ {U V : X.Opens} [Nonempty U] [Nonempty V] (i : V ⟶ U) (s : Γ(M, U)),
+    app V (M.presheaf.map i.op s) = (rationalFunctions X).presheaf.map i.op (app U s))
+
+/-- Compatible linear maps to rational functions on nonempty opens extend to a morphism of
+module sheaves. On the empty open the component is the unique map to the zero module. -/
+def rationalFunctionsHom : M ⟶ rationalFunctions X := by
+  classical
+  refine
+    { val :=
+      { app := fun U ↦ if hU : Nonempty U.unop then
+          letI := hU
+          app U.unop
+        else 0
+        naturality := ?_ } }
+  intro U V i
+  by_cases hV : Nonempty V.unop
+  · let := hV
+    have hU : Nonempty U.unop := ⟨⟨(Classical.choice hV).1,
+      i.unop.le (Classical.choice hV).2⟩⟩
+    let := hU
+    simp only [dite_eq_left hU, dite_eq_left hV]
+    ext s
+    exact happ i.unop s
+  · ext s
+    exact TopCat.Presheaf.section_ext
+      ⟨(rationalFunctions X).presheaf, (rationalFunctions X).isSheaf⟩
+      V.unop _ _ fun x hx ↦ (hV ⟨⟨x, hx⟩⟩).elim
+
+/-- The extension agrees with the supplied linear map on every nonempty open. -/
+@[simp]
+theorem rationalFunctionsHom_app (U : X.Opens) [Nonempty U] (s : Γ(M, U)) :
+    (rationalFunctionsHom M app happ).app U s = app U s := by
+  simp only [rationalFunctionsHom, Scheme.Modules.Hom.app,
+    dite_eq_left (inferInstance : Nonempty U)]
+  rfl
+
+/-- Injectivity on nonempty opens implies injectivity of the extended morphism on all opens. -/
+theorem rationalFunctionsHom_app_injective
+    (hinj : ∀ (U : X.Opens) [Nonempty U], Function.Injective (app U)) (U : X.Opens) :
+    Function.Injective ((rationalFunctionsHom M app happ).app U) := by
+  intro s s' h
+  by_cases hU : Nonempty U
+  · let := hU
+    rw [rationalFunctionsHom_app, rationalFunctionsHom_app] at h
+    exact hinj U h
+  · exact TopCat.Presheaf.section_ext ⟨M.presheaf, M.isSheaf⟩
+      U s s' fun x hx ↦ (hU ⟨⟨x, hx⟩⟩).elim
+
+end Hom
+
 /-- The restriction maps of `𝒦_X` between nonempty open subsets are bijective. -/
 theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] [Nonempty V] (i : U ⟶ V) :
     Function.Bijective ((rationalFunctions X).presheaf.map i.op) := by
@@ -376,6 +435,35 @@ theorem rationalFunctionsEquiv_toRationalFunctions_app (U : X.Opens) [Nonempty U
     rationalFunctionsEquiv U (Scheme.Modules.Hom.app (toRationalFunctions X) U r) =
       X.germToFunctionField U r := by
   exact ConcreteCategory.congr_hom (app_comp_functionFieldSectionsIso U) r
+
+/-- A morphism from the structure sheaf to rational functions is multiplication by the
+rational function obtained by evaluating the global section `1`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.rationalFunctionsEquiv_app_unit
+    (φ : @Quiver.Hom X.Modules _ (SheafOfModules.unit X.ringCatSheaf) (rationalFunctions X))
+    (U : X.Opens) [Nonempty U] (a : Γ(X, U)) :
+    rationalFunctionsEquiv U (Scheme.Modules.Hom.app φ U a) =
+      X.germToFunctionField U a *
+        rationalFunctionsEquiv ⊤ (Scheme.Modules.Hom.app φ ⊤ (1 : Γ(X, ⊤))) := by
+  have hnat := φ.mapPresheaf.naturality_apply (homOfLE (le_top : U ≤ ⊤)).op (1 : Γ(X, ⊤))
+  -- The unit module's restrictions and scalar action are those of the structure sheaf.
+  have hres : Scheme.Modules.Hom.app φ U (1 : Γ(X, U)) =
+      (rationalFunctions X).presheaf.map (homOfLE (le_top : U ≤ ⊤)).op
+        (Scheme.Modules.Hom.app φ ⊤ (1 : Γ(X, ⊤))) := by
+    change Scheme.Modules.Hom.app φ U (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op 1) =
+      (rationalFunctions X).presheaf.map (homOfLE (le_top : U ≤ ⊤)).op
+        (Scheme.Modules.Hom.app φ ⊤ (1 : Γ(X, ⊤))) at hnat
+    simpa only [map_one] using hnat
+  calc
+    _ = rationalFunctionsEquiv U (a • Scheme.Modules.Hom.app φ U (1 : Γ(X, U))) := by
+      have h := Scheme.Modules.Hom.app_smul φ a (1 : Γ(X, U))
+      -- Scalar multiplication on the unit module is multiplication of regular functions.
+      change Scheme.Modules.Hom.app φ U (a * (1 : Γ(X, U)) : Γ(X, U)) =
+        a • Scheme.Modules.Hom.app φ U (1 : Γ(X, U)) at h
+      rw [mul_one] at h
+      exact congrArg (rationalFunctionsEquiv U) h
+    _ = _ := by
+      rw [map_smul, hres, rationalFunctionsEquiv_map, Algebra.smul_def,
+        RingHom.algebraMap_toAlgebra]
 
 section SectionsMul
 
@@ -536,6 +624,30 @@ theorem rationalFunctionsMul_inv_comp (g : X.functionFieldˣ) :
         rationalFunctionsMul X (g : X.functionField) = 𝟙 _ := by
   rw [← rationalFunctionsMul_mul, g.mul_inv, rationalFunctionsMul_one]
 
+/-- Multiplication by `g⁻¹` then `g` cancels on sections. -/
+@[simp]
+lemma rationalFunctionsMul_app_rationalFunctionsMul_inv_app (g : X.functionFieldˣ)
+    (U : X.Opens) (s : Γ(rationalFunctions X, U)) :
+    Scheme.Modules.Hom.app (rationalFunctionsMul X (g : X.functionField)) U
+        (Scheme.Modules.Hom.app (rationalFunctionsMul X
+          ((g⁻¹ : X.functionFieldˣ) : X.functionField)) U s) = s := by
+  simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+    Scheme.Modules.Hom.id_app, ConcreteCategory.id_apply] using
+    ConcreteCategory.congr_hom
+      (congrArg (fun φ ↦ Scheme.Modules.Hom.app φ U) (rationalFunctionsMul_inv_comp g)) s
+
+/-- Multiplication by `g` then `g⁻¹` cancels on sections. -/
+@[simp]
+lemma rationalFunctionsMul_inv_app_rationalFunctionsMul_app (g : X.functionFieldˣ)
+    (U : X.Opens) (s : Γ(rationalFunctions X, U)) :
+    Scheme.Modules.Hom.app (rationalFunctionsMul X
+        ((g⁻¹ : X.functionFieldˣ) : X.functionField)) U
+        (Scheme.Modules.Hom.app (rationalFunctionsMul X (g : X.functionField)) U s) = s := by
+  simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+    Scheme.Modules.Hom.id_app, ConcreteCategory.id_apply] using
+    ConcreteCategory.congr_hom
+      (congrArg (fun φ ↦ Scheme.Modules.Hom.app φ U) (rationalFunctionsMul_comp_inv g)) s
+
 end Mul
 
 variable [IsIntegral X]
@@ -558,6 +670,53 @@ theorem toRationalFunctions_app_injective (U : X.Opens) :
         ← rationalFunctionsEquiv_toRationalFunctions_app]
       exact congrArg _ hab
     exact X.germToFunctionField_injective U key
+
+/-- **A locally regular rational function is regular.** On an integral scheme, a rational function
+lying in the local ring `𝒪_{X,y}` at every point `y` of a nonempty open subset `U` is the germ of a
+section of `𝒪_X` over `U`: inside the function field, `Γ(X, U)` is the intersection of the local
+rings at the points of `U`. -/
+theorem exists_germToFunctionField_eq_of_forall_mem_range {U : X.Opens} [Nonempty U]
+    {f : X.functionField}
+    (hf : ∀ y ∈ U, f ∈ (algebraMap (X.presheaf.stalk y) X.functionField).range) :
+    ∃ a : Γ(X, U), X.germToFunctionField U a = f := by
+  -- The generic point lies in every nonempty open subset, so germs there see every overlap.
+  have hgen : ∀ V : X.Opens, Nonempty V → genericPoint X ∈ V := fun V _ ↦ genericPoint_mem V
+  -- Every point of `U` has a neighbourhood inside `U` on which `f` is regular.
+  have key : ∀ y : U, ∃ V : X.Opens, ∃ _ : (y : X) ∈ V, ∃ _ : V ≤ U,
+      ∃ s : Γ(X, V), X.presheaf.germ V (genericPoint X) (hgen V ⟨⟨(y : X), ‹_›⟩⟩) s = f := by
+    intro y
+    obtain ⟨g, hgf⟩ := hf y y.2
+    obtain ⟨W, hyW, s, hs⟩ := X.presheaf.exists_germ_eq g
+    have hmem : (y : X) ∈ (W ⊓ U : X.Opens) := ⟨hyW, y.2⟩
+    have hWU : Nonempty (W ⊓ U : X.Opens) := ⟨⟨(y : X), hmem⟩⟩
+    -- Only needed as an instance, so that `algebraMap_germ_eq_germToFunctionField` applies at `W`.
+    have : Nonempty W := ⟨⟨(y : X), hyW⟩⟩
+    refine ⟨W ⊓ U, hmem, inf_le_right, X.presheaf.map (homOfLE inf_le_left).op s, ?_⟩
+    rw [X.presheaf.germ_res_apply (homOfLE (inf_le_left : W ⊓ U ≤ W)) (genericPoint X)
+      (hgen _ hWU) s, ← hgf, ← hs]
+    exact (_root_.AlgebraicGeometry.Scheme.algebraMap_germ_eq_germToFunctionField X hyW s).symm
+  choose V hyV hVU s hs using key
+  -- The chosen local regular functions agree on overlaps, since they all have germ `f`.
+  have hne : ∀ y : U, Nonempty (V y) := fun y ↦ ⟨⟨(y : X), hyV y⟩⟩
+  have hcompat : TopCat.Presheaf.IsCompatible X.presheaf V s := by
+    intro y z
+    have hyz : Nonempty (V y ⊓ V z : X.Opens) :=
+      ⟨⟨genericPoint X, hgen _ (hne y), hgen _ (hne z)⟩⟩
+    refine X.germToFunctionField_injective (V y ⊓ V z) ?_
+    rw [X.presheaf.germ_res_apply (Opens.infLELeft (V y) (V z)) (genericPoint X)
+        (hgen _ hyz) (s y),
+      X.presheaf.germ_res_apply (Opens.infLERight (V y) (V z)) (genericPoint X)
+        (hgen _ hyz) (s z)]
+    exact (hs y).trans (hs z).symm
+  obtain ⟨a, ha, -⟩ := X.sheaf.existsUnique_gluing' V U (fun y ↦ homOfLE (hVU y))
+    (fun y hy ↦ Opens.mem_iSup.mpr ⟨⟨y, hy⟩, hyV ⟨y, hy⟩⟩) s hcompat
+  obtain ⟨y⟩ := ‹Nonempty U›
+  refine ⟨a, ?_⟩
+  -- `ha` is phrased through `X.sheaf`, whose underlying presheaf is `X.presheaf`; naming the
+  -- restriction identity with its `X.presheaf` type keeps the rewrites below type-correct.
+  have hres : X.presheaf.map (homOfLE (hVU y)).op a = s y := ha y
+  rw [← hs y, ← hres,
+    X.presheaf.germ_res_apply (homOfLE (hVU y)) (genericPoint X) (hgen _ (hne y)) a]
 
 /-- The morphism `𝒪_X ⟶ 𝒦_X` of ring sheaves is injective on sections over every open
 subset of an integral scheme. -/

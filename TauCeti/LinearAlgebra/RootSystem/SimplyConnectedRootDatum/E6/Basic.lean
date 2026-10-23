@@ -529,7 +529,7 @@ private lemma mem_or_neg_mem_of_eq_sum (f : Fin 72 → (Fin 6 → ℤ))
     (hneg : ∀ i, f (e6NegativeIndex i) = -f (e6PositiveIndex i)) (i : Fin 72) :
     f i ∈ AddSubmonoid.closure (f '' (e6SimpleSupport : Set (Fin 72))) ∨
       -f i ∈ AddSubmonoid.closure (f '' (e6SimpleSupport : Set (Fin 72))) := by
-  set C := AddSubmonoid.closure (f '' (e6SimpleSupport : Set (Fin 72))) with hC
+  set C := AddSubmonoid.closure (f '' (e6SimpleSupport : Set (Fin 72)))
   have hsimple (k : Fin 6) : f (e6SimpleIndex k) ∈ C :=
     AddSubmonoid.subset_closure ⟨e6SimpleIndex k, by rw [coe_e6SimpleSupport]; exact ⟨k, rfl⟩, rfl⟩
   have hpos (k : Fin 36) : f (e6PositiveIndex k) ∈ C := by

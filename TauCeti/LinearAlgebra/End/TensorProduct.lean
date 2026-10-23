@@ -101,8 +101,7 @@ private theorem _root_.Module.End.isSemisimple_rTensor_of_free {N : Type*} [AddC
       simp only [E₀', LinearEquiv.trans_apply, Finsupp.mapRange.linearEquiv_apply,
         Finsupp.mapRange_apply, Finsupp.smul_apply, Module.AEval'.X_smul_of,
         _root_.Module.End.smul_def]
-      induction x using TensorProduct.induction_on with
-      | zero => simp
+      induction x using TensorProduct.inductionOn with
       | tmul v m => simp [E₀]
       | add x y hx hy => simp [hx, hy]
   exact IsSemisimpleModule.congr E

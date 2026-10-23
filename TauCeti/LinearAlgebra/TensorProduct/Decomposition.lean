@@ -95,8 +95,7 @@ theorem tensorProduct (hA : DirectSum.IsInternal A) (hB : DirectSum.IsInternal B
           (fun p ↦ Submodule.map₂ (TensorProduct.mk K M N) (A p.1) (B p.2)) (i, j)
           (summandEquiv A B i j x) := by
     rw [coe_summandEquiv]
-    induction x using TensorProduct.induction_on with
-    | zero => simp
+    induction x using TensorProduct.inductionOn with
     | tmul a b =>
       simp only [TensorProduct.map_tmul, Submodule.coe_subtype, E, LinearEquiv.trans_apply,
         TensorProduct.congr_tmul, DirectSum.decomposeLinearEquiv_apply_coe,

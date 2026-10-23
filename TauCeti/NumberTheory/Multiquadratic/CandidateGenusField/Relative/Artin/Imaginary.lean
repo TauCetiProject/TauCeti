@@ -98,7 +98,7 @@ automorphism of `I` to the ordinary ideal class of `I` modulo squares. -/
 theorem autCandidateGenusFieldEquivElementaryTwoQuotient_artinHomAway
     (hd : Squarefree d) (hneg : d < 0)
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
-    (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
+    (I : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S) :
     autCandidateGenusFieldEquivElementaryTwoQuotient hd hneg
         (NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
           (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd
@@ -121,7 +121,7 @@ has trivial Artin automorphism in `Gal(K_gen/K)` precisely when its ideal class 
 theorem artinHomAway_candidateGenusField_eq_one_iff_of_neg
     (hd : Squarefree d) (hneg : d < 0)
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
-    (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
+    (I : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S) :
     NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
         (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd
           (not_isSquare_of_neg (by exact_mod_cast hneg)) v.asIdeal Q

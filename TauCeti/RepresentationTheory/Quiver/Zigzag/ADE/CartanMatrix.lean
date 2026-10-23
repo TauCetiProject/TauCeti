@@ -141,10 +141,10 @@ matrix** `2I - A`. This graph Cartan matrix is identified with
 `TauCeti.AffineDynkinType.cartanMatrix_eq_graphCartanMatrix`. -/
 theorem zigzagGradedCartanMatrix_map_eval_neg_one_affineE8 (k : Type*) [Field k] :
     (zigzagGradedCartanMatrix k zigzagAffineE8Graph).map (eval (-1)) =
-      graphCartanMatrix zigzagAffineE8Graph ℤ := by
+      SimpleGraph.graphCartanMatrix zigzagAffineE8Graph ℤ := by
   rw [zigzagGradedCartanMatrix_map_eval_neg_one k zigzagAffineE8Graph
     connected_zigzagAffineE8Graph.preconnected.exists_adj_of_nontrivial]
-  exact (graphCartanMatrix_eq_two_smul_one_sub_adjMatrix zigzagAffineE8Graph).symm
+  exact (SimpleGraph.graphCartanMatrix_eq_two_smul_one_sub_adjMatrix zigzagAffineE8Graph).symm
 
 /-- **At `q = -1`, the affine `E₈` graded Cartan matrix is the canonical affine generalized
 Cartan matrix.** -/
@@ -157,14 +157,14 @@ theorem zigzagGradedCartanMatrix_map_eval_neg_one_affineE8_eq_cartanMatrix
     AffineDynkinType.cartanMatrix_eq_graphCartanMatrix
       AffineDynkinType.isGraphical_E8]
   ext i j
-  rw [graphCartanMatrix_apply]
+  rw [SimpleGraph.graphCartanMatrix_apply]
   -- The named graph has index `Fin 9`, while the affine API spells this definitionally equal
   -- type as `Fin E8.nodes`; expose the casts so its entry lemma can rewrite the right side.
   change (if i = j then 2 else if zigzagAffineE8Graph.Adj i j then -1 else 0) =
-    graphCartanMatrix AffineDynkinType.E8.graph ℤ
+    SimpleGraph.graphCartanMatrix AffineDynkinType.E8.graph ℤ
       (Fin.cast AffineDynkinType.nodes_E8.symm i)
       (Fin.cast AffineDynkinType.nodes_E8.symm j)
-  rw [graphCartanMatrix_apply]
+  rw [SimpleGraph.graphCartanMatrix_apply]
   simp only [Fin.cast_inj, Fin.val_cast, zigzagAffineE8Graph_adj,
     AffineDynkinType.graph_E8_adj]
 

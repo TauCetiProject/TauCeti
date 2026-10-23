@@ -51,6 +51,8 @@ and the descent argument then places it in the old subspace.
 * `heckeTNat_eq_smul_of_heckeRingHomCharSpace_heckeTCompositeGamma0_eq_smul` and its cusp-form
   counterpart: a Hecke-ring eigenvector at a good prime is an eigenvector of the classical
   operator `heckeTNat` (resp. `heckeTCuspNat`).
+* `heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul_of_heckeTCuspNat_eq_smul`: the
+  converse on `S_k(N, χ)`, at every prime, whether or not it divides the level.
 
 ## References
 
@@ -90,6 +92,20 @@ theorem heckeTCuspNat_eq_smul_of_heckeRingHomCuspCharSpace_heckeTCompositeGamma0
       c • (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
   simpa [heckeTCompositeGamma0_prime N hp,
     heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp] using congrArg Subtype.val hF
+
+/-- **An eigenvector of the classical `T_p` is a ring eigenvector**, on `S_k(N, χ)`, at every
+prime `p`, whether or not `p ∣ N` (for `p ∣ N` read `T_p = U_p`): the converse of
+`heckeTCuspNat_eq_smul_of_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul`, the same
+equation read back through the coercion. -/
+theorem heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul_of_heckeTCuspNat_eq_smul
+    [NeZero p] (hp : p.Prime) {F : cuspFormCharSpace k χ} {c : ℂ}
+    (hF : heckeTCuspNat k p (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      c • (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)) :
+    heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N p) F = c • F :=
+  Subtype.ext <| by
+    rw [heckeTCompositeGamma0_prime N hp,
+      coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp, Submodule.coe_smul]
+    exact hF
 
 /-! ### The recurrence characterises the eigen-relation -/
 

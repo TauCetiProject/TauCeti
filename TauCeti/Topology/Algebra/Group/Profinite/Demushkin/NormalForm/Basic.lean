@@ -1,0 +1,659 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.MinimalPresentation
+
+/-!
+# The relator words of the Demushkin normal forms
+
+Labute's classification of Demushkin groups puts every finite-rank Demushkin group in one of
+three normal forms, each a pro-`p` group presented on `n` generators `x₁, …, xₙ` by a single
+relator word. This file presents these forms by the words
+
+* `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`, for `q ≠ 2` and `n` even;
+* `x₁² x₂^{2^f} (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`, for `q = 2` and `n` odd;
+* `x₁^{2+α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, for `q = 2` and `n` even,
+
+where `(x, y) = x⁻¹y⁻¹xy` is Labute's commutator. In the two `q = 2` forms Labute also allows
+`f = ∞`, meaning that the factor `x₂^{2^f}`, resp. `x₃^{2^f}`, is absent. The first word above
+takes a natural number `q`, and the two `q = 2` words take a natural-number level `f`; two
+`f = ∞` forms have words of their own, with no level: the odd form
+`x₁² (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)` is `demushkinWordTwoOddTop`, and the even form of rank two,
+`x₁^{2+α} (x₁, x₂)`, where `x₃ = 1` makes the even word read the same for every `f`, is
+`demushkinWordTwoRankTwo`. The even `f = ∞` form of rank at least four is not presented here.
+This file defines the commutator and the five words on an arbitrary tuple `x : ℕ → H` of group
+elements, so that the same word can be read in a free pro-`p` group and in any group that
+receives it. Read on the `ℕ`-indexed generators `TauCeti.freeProPGen` and
+`TauCeti.presentedProPGen`, which are `1` out of range, the words carry no index-bound side
+conditions.
+
+Under the conditions `p ∣ q` for the first word, `0 < f` for the second, `2 ∣ a` together with
+`0 < f` for the third, `2 ∣ a` for the rank-two word, and no condition for the odd word at
+`f = ∞`, each word is a product of `p`-th powers and commutators, so it lies in the
+pro-`p` Frattini subgroup of every topological group, in particular of the free pro-`p` group.
+Hence, under the same conditions, the presentation of a normal form on `n` generators is minimal:
+the presented group has topological generator rank exactly `n`.
+
+## Main definitions
+
+* `TauCeti.labuteComm`: Labute's commutator `(x, y) = x⁻¹y⁻¹xy`.
+* `TauCeti.demushkinWordNeTwo`, `TauCeti.demushkinWordTwoOdd`, `TauCeti.demushkinWordTwoEven`:
+  the three normal-form relator words, on an arbitrary tuple; `TauCeti.demushkinWordTwoOddTop`:
+  the odd word at level `f = ∞`, `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`;
+  `TauCeti.demushkinWordTwoRankTwo`: the even word of rank two, `x₁^{2+α} (x₁, x₂)`, with no
+  level; `TauCeti.demushkinWordTwoOdd_eq_demushkinWordTwoOddTop` reads the odd word as the odd word
+  at `f = ∞` when `x₂^{2^f} = 1`, `TauCeti.demushkinWordTwoEven_two` reads the even word at rank
+  two as the rank-two word, `TauCeti.demushkinWordTwoRankTwo_eq_demushkinWordNeTwo` reads the
+  rank-two word as the `q ≠ 2` word at `q = 2 + α`, and `TauCeti.demushkinWordTwoOdd_one` and
+  `TauCeti.demushkinWordTwoOddTop_one` read the two odd words at rank one as `x₁²`.
+
+## Main results
+
+* `TauCeti.demushkinWordNeTwo_presentedProPGen_eq_one` and its four companions: the generators of
+  the normal-form presentation satisfy its defining relation.
+* `TauCeti.demushkinWordNeTwo_mem_proPFrattini`, `TauCeti.demushkinWordTwoOdd_mem_proPFrattini`,
+  `TauCeti.demushkinWordTwoEven_mem_proPFrattini`,
+  `TauCeti.demushkinWordTwoRankTwo_mem_proPFrattini`,
+  `TauCeti.demushkinWordTwoOddTop_mem_proPFrattini`: each word lies in the pro-`p` Frattini
+  subgroup, for `p ∣ q`, resp. `0 < f`, resp. `2 ∣ a` and `0 < f`, resp. `2 ∣ a`, resp. always.
+* `TauCeti.topologicalGeneratorRankNat_presentedProP_demushkinWordNeTwo` and its four
+  companions: under the same conditions, the normal-form presentation on `n` generators, resp. on
+  two generators, is minimal.
+* `TauCeti.map_demushkinWordNeTwo_eq_one` and its four companions: a character into a
+  commutative group kills the word as soon as its values on the generators carrying a power have
+  trivial power: `χ(x₁)^q = 1`, resp. `χ(x₁)² = 1` and `χ(x₂)^{2^f} = 1`, resp. `χ(x₁)^{2+a} = 1`
+  and `χ(x₃)^{2^f} = 1`, resp. `χ(x₁)^{2+a} = 1`, resp. `χ(x₁)² = 1`.
+
+## References
+
+* J. P. Labute, *Classification of Demushkin groups*, Canad. J. Math. 19 (1967), 106–132,
+  Theorems 1–4.
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Theorem 3.9.19.
+-/
+
+public section
+
+namespace TauCeti
+
+open scoped commutatorElement
+
+/-! ### Labute's commutator -/
+
+section LabuteComm
+
+variable {H : Type*} [Group H]
+
+/-- **Labute's commutator** `(x, y) = x⁻¹y⁻¹xy`, the convention in which the Demushkin
+normal-form relators are written. Mathlib's `⁅x, y⁆ = xyx⁻¹y⁻¹` is the other convention; the two
+are related by `TauCeti.labuteComm_eq_commutatorElement_inv_inv`, and generate the same
+subgroups. -/
+def labuteComm (x y : H) : H := x⁻¹ * y⁻¹ * x * y
+
+/-- The defining equation of `TauCeti.labuteComm`. -/
+theorem labuteComm_def (x y : H) : labuteComm x y = x⁻¹ * y⁻¹ * x * y := (rfl)
+
+/-- Labute's commutator is Mathlib's commutator of the inverses: `(x, y) = ⁅x⁻¹, y⁻¹⁆`. -/
+theorem labuteComm_eq_commutatorElement_inv_inv (x y : H) : labuteComm x y = ⁅x⁻¹, y⁻¹⁆ := by
+  rw [labuteComm_def, commutatorElement_def, inv_inv, inv_inv]
+
+/-- A monoid homomorphism carries Labute's commutator to Labute's commutator. -/
+@[simp]
+theorem map_labuteComm {K F : Type*} [Group K] [FunLike F H K] [MonoidHomClass F H K] (f : F)
+    (x y : H) : f (labuteComm x y) = labuteComm (f x) (f y) := by
+  simp only [labuteComm_def, map_mul, map_inv]
+
+/-- Labute's commutator is trivial exactly when the two elements commute. -/
+theorem labuteComm_eq_one_iff_commute (x y : H) : labuteComm x y = 1 ↔ Commute x y := by
+  rw [labuteComm_eq_commutatorElement_inv_inv, commutatorElement_eq_one_iff_commute,
+    Commute.inv_inv_iff]
+
+/-- Labute's commutator of two commuting elements is trivial. -/
+theorem _root_.Commute.labuteComm_eq_one {x y : H} (h : Commute x y) : labuteComm x y = 1 :=
+  (labuteComm_eq_one_iff_commute x y).mpr h
+
+/-- Labute's commutator is trivial in a commutative group. -/
+@[simp]
+theorem labuteComm_eq_one {A : Type*} [CommGroup A] (x y : A) : labuteComm x y = 1 :=
+  (Commute.all x y).labuteComm_eq_one
+
+/-- Labute's commutator lies in the commutator subgroup. -/
+theorem labuteComm_mem_commutator (x y : H) : labuteComm x y ∈ commutator H := by
+  rw [labuteComm_eq_commutatorElement_inv_inv]
+  exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
+
+/-- Labute's commutator lies in the pro-`p` Frattini subgroup of a topological group. -/
+theorem labuteComm_mem_proPFrattini [TopologicalSpace H] {p : ℕ} (hp : p.Prime) (x y : H) :
+    labuteComm x y ∈ proPFrattini p H :=
+  commutator_le_proPFrattini hp (labuteComm_mem_commutator x y)
+
+/-- Labute's commutator `(x, y) = x⁻¹ (y⁻¹ x y)` of an element `x` of a normal subgroup `N` with
+any `y` lies in `N`. -/
+theorem labuteComm_mem_of_mem_left {N : Subgroup H} [N.Normal] {x : H} (hx : x ∈ N) (y : H) :
+    labuteComm x y ∈ N := by
+  rw [labuteComm_def, mul_assoc, mul_assoc]
+  exact N.mul_mem (N.inv_mem hx) (by simpa only [mul_assoc] using ‹N.Normal›.conj_mem' _ hx y)
+
+/-- Labute's commutator of two elements of a subgroup `N` lies in `⁅N, N⁆`. -/
+theorem labuteComm_mem_commutator_of_mem {N : Subgroup H} {x y : H} (hx : x ∈ N) (hy : y ∈ N) :
+    labuteComm x y ∈ ⁅N, N⁆ := by
+  rw [labuteComm_eq_commutatorElement_inv_inv]
+  exact Subgroup.commutator_mem_commutator (N.inv_mem hx) (N.inv_mem hy)
+
+/-- A product of Labute's commutators of elements of a subgroup `N` lies in `⁅N, N⁆`. -/
+theorem list_prod_map_labuteComm_range_mem_commutator {N : Subgroup H} (m : ℕ) {a b : ℕ → H}
+    (ha : ∀ i < m, a i ∈ N) (hb : ∀ i < m, b i ∈ N) :
+    ((List.range m).map fun i ↦ labuteComm (a i) (b i)).prod ∈ ⁅N, N⁆ := by
+  refine Subgroup.list_prod_mem _ ?_
+  simpa only [List.forall_mem_map, List.mem_range] using
+    fun i hi ↦ labuteComm_mem_commutator_of_mem (ha i hi) (hb i hi)
+
+end LabuteComm
+
+/-! ### The three normal-form words -/
+
+section Words
+
+variable {H : Type*} [Group H]
+
+/-- The `q ≠ 2` normal-form word `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`, on an arbitrary tuple
+`x : ℕ → H`, with `x 0` playing the role of `x₁`. The classification uses it for `n` even; the
+word has `n / 2` commutator factors. -/
+def demushkinWordNeTwo (q n : ℕ) (x : ℕ → H) : H :=
+  x 0 ^ q * ((List.range (n / 2)).map fun i ↦ labuteComm (x (2 * i)) (x (2 * i + 1))).prod
+
+/-- The defining equation of `TauCeti.demushkinWordNeTwo`. -/
+theorem demushkinWordNeTwo_def (q n : ℕ) (x : ℕ → H) :
+    demushkinWordNeTwo q n x =
+      x 0 ^ q * ((List.range (n / 2)).map fun i ↦ labuteComm (x (2 * i)) (x (2 * i + 1))).prod :=
+  (rfl)
+
+/-- At `q = 0` and rank two the word is the single commutator `(x₁, x₂)`, the surface relation of
+`ℤ_p × ℤ_p`. -/
+@[simp]
+theorem demushkinWordNeTwo_zero_two (x : ℕ → H) :
+    demushkinWordNeTwo 0 2 x = labuteComm (x 0) (x 1) := by
+  simp [demushkinWordNeTwo_def]
+
+/-- For `n ≥ 2` the `q ≠ 2` word splits off its first commutator factor: it is
+`x₁^q (x₁, x₂)` times the `q = 0` word `(x₃, x₄) ⋯ (x_{n-1}, x_n)` on `n - 2` letters, read on the
+tuple shifted by two. This is the shape of Labute's intermediate form for the dyadic relators of
+even rank, whose tail relator is a word in `x₃, …, x_n`. -/
+theorem demushkinWordNeTwo_eq_pow_mul_labuteComm_mul (q : ℕ) {n : ℕ} (hn : 2 ≤ n) (x : ℕ → H) :
+    demushkinWordNeTwo q n x =
+      x 0 ^ q * labuteComm (x 0) (x 1) * demushkinWordNeTwo 0 (n - 2) (fun i ↦ x (i + 2)) := by
+  obtain ⟨k, hk⟩ : ∃ k, n / 2 = k + 1 := ⟨n / 2 - 1, by omega⟩
+  have hk' : (n - 2) / 2 = k := by omega
+  have h0 : labuteComm (x (2 * 0)) (x (2 * 0 + 1)) = labuteComm (x 0) (x 1) := by norm_num
+  have hmap : (List.range k).map ((fun i ↦ labuteComm (x (2 * i)) (x (2 * i + 1))) ∘ Nat.succ) =
+      (List.range k).map fun i ↦ labuteComm (x (2 * i + 2)) (x (2 * i + 3)) :=
+    List.map_congr_left fun i _ ↦ by
+      simp only [Function.comp_apply, Nat.succ_eq_add_one]
+      ring_nf
+  rw [demushkinWordNeTwo_def, demushkinWordNeTwo_def, hk, hk', pow_zero, one_mul,
+    List.range_succ_eq_map, List.map_cons, List.prod_cons, List.map_map, h0, hmap, mul_assoc]
+
+/-- The `q = 2`, `n` odd normal-form word `x₁² x₂^{2^f} (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`, on an
+arbitrary tuple `x : ℕ → H`, with `x 0` playing the role of `x₁`. The parameter `f` is finite;
+the word has `n / 2` commutator factors. -/
+def demushkinWordTwoOdd (f n : ℕ) (x : ℕ → H) : H :=
+  x 0 ^ 2 * x 1 ^ 2 ^ f *
+    ((List.range (n / 2)).map fun i ↦ labuteComm (x (2 * i + 1)) (x (2 * i + 2))).prod
+
+/-- The defining equation of `TauCeti.demushkinWordTwoOdd`. -/
+theorem demushkinWordTwoOdd_def (f n : ℕ) (x : ℕ → H) :
+    demushkinWordTwoOdd f n x =
+      x 0 ^ 2 * x 1 ^ 2 ^ f *
+        ((List.range (n / 2)).map fun i ↦ labuteComm (x (2 * i + 1)) (x (2 * i + 2))).prod :=
+  (rfl)
+
+/-- At rank one the odd word is `x₁²`, whatever the level `f`: the factor `x₂^{2^f}` is `1` because
+the second generator is out of range, and the commutator product is empty. -/
+@[simp]
+theorem demushkinWordTwoOdd_one (f : ℕ) (x : ℕ → H) (hx : x 1 = 1) :
+    demushkinWordTwoOdd f 1 x = x 0 ^ 2 := by
+  simp [demushkinWordTwoOdd_def, hx]
+
+/-- The `q = 2`, `n` odd normal-form word at Labute's level `f = ∞`,
+`x₁² (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`, on an arbitrary tuple `x : ℕ → H`, with `x 0` playing the
+role of `x₁`: the odd word with the factor `x₂^{2^f}` absent. It carries no level, and the word
+has `n / 2` commutator factors. On a tuple with `x₂^{2^f} = 1` it agrees with
+`demushkinWordTwoOdd f n x` (`TauCeti.demushkinWordTwoOdd_eq_demushkinWordTwoOddTop`). -/
+def demushkinWordTwoOddTop (n : ℕ) (x : ℕ → H) : H :=
+  x 0 ^ 2 * ((List.range (n / 2)).map fun i ↦ labuteComm (x (2 * i + 1)) (x (2 * i + 2))).prod
+
+/-- The defining equation of `TauCeti.demushkinWordTwoOddTop`. -/
+theorem demushkinWordTwoOddTop_def (n : ℕ) (x : ℕ → H) :
+    demushkinWordTwoOddTop n x =
+      x 0 ^ 2 *
+        ((List.range (n / 2)).map fun i ↦ labuteComm (x (2 * i + 1)) (x (2 * i + 2))).prod :=
+  (rfl)
+
+/-- The odd word at a finite level `f` is the odd word at level `f = ∞` on every tuple whose
+second entry has trivial `2^f`-th power, in particular when the second generator is out of
+range. -/
+theorem demushkinWordTwoOdd_eq_demushkinWordTwoOddTop (f n : ℕ) {x : ℕ → H}
+    (hx : x 1 ^ 2 ^ f = 1) : demushkinWordTwoOdd f n x = demushkinWordTwoOddTop n x := by
+  rw [demushkinWordTwoOdd_def, demushkinWordTwoOddTop_def, hx, mul_one]
+
+/-- At rank one the odd word at level `f = ∞` is `x₁²`: the commutator product is empty. -/
+@[simp]
+theorem demushkinWordTwoOddTop_one (x : ℕ → H) : demushkinWordTwoOddTop 1 x = x 0 ^ 2 := by
+  simp [demushkinWordTwoOddTop_def]
+
+/-- The odd word `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{2m}, x_{2m+1})` on `2m + 1` letters is `x₁²` times
+the `q ≠ 2` word `x₂^{2^f} (x₂, x₃) ⋯ (x_{2m}, x_{2m+1})` on the `2m` letters `x₂, …, x_{2m+1}`,
+read on the tuple shifted by one. -/
+theorem demushkinWordTwoOdd_eq_sq_mul_demushkinWordNeTwo (f m : ℕ) (x : ℕ → H) :
+    demushkinWordTwoOdd f (2 * m + 1) x =
+      x 0 ^ 2 * demushkinWordNeTwo (2 ^ f) (2 * m) fun i ↦ x (i + 1) := by
+  have h1 : (2 * m + 1) / 2 = m := by omega
+  have h2 : 2 * m / 2 = m := by omega
+  rw [demushkinWordTwoOdd_def, demushkinWordNeTwo_def, h1, h2, mul_assoc]
+
+/-- The odd word at level `f = ∞`, `x₁² (x₂, x₃) ⋯ (x_{2m}, x_{2m+1})` on `2m + 1` letters, is
+`x₁²` times the `q ≠ 2` word at `q = 0`, `(x₂, x₃) ⋯ (x_{2m}, x_{2m+1})`, on the `2m` letters
+`x₂, …, x_{2m+1}`, read on the tuple shifted by one. -/
+theorem demushkinWordTwoOddTop_eq_sq_mul_demushkinWordNeTwo (m : ℕ) (x : ℕ → H) :
+    demushkinWordTwoOddTop (2 * m + 1) x =
+      x 0 ^ 2 * demushkinWordNeTwo 0 (2 * m) fun i ↦ x (i + 1) := by
+  have h1 : (2 * m + 1) / 2 = m := by omega
+  have h2 : 2 * m / 2 = m := by omega
+  rw [demushkinWordTwoOddTop_def, demushkinWordNeTwo_def, h1, h2, pow_zero, one_mul]
+
+/-- The `q = 2`, `n` even normal-form word `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`,
+on an arbitrary tuple `x : ℕ → H`, with `x 0` playing the role of `x₁`. The exponent `2 + a` is
+a natural number standing for Labute's `2 + α`, `α ∈ 4ℤ₂`: on an arbitrary group only natural
+powers make sense, and no normal form is lost, because the presented pro-`2` group is determined
+up to isomorphism by `n` and the image of its orientation (Labute, Theorem 2), which depends on
+`α` only through `v₂(α)`: it is `{±1} × U^(f)` for `v₂(α) ≥ f` and `U^[v₂(α)]` otherwise
+(corollary to Labute's Theorem 4), so `a = 0` and `a = 2^g` with `2 ≤ g < f` already realize
+every class. The word has `n / 2 - 1` commutator factors after `(x₁, x₂)`. -/
+def demushkinWordTwoEven (a f n : ℕ) (x : ℕ → H) : H :=
+  x 0 ^ (2 + a) * labuteComm (x 0) (x 1) * x 2 ^ 2 ^ f *
+    ((List.range (n / 2 - 1)).map fun i ↦ labuteComm (x (2 * i + 2)) (x (2 * i + 3))).prod
+
+/-- The defining equation of `TauCeti.demushkinWordTwoEven`. -/
+theorem demushkinWordTwoEven_def (a f n : ℕ) (x : ℕ → H) :
+    demushkinWordTwoEven a f n x =
+      x 0 ^ (2 + a) * labuteComm (x 0) (x 1) * x 2 ^ 2 ^ f *
+        ((List.range (n / 2 - 1)).map fun i ↦
+          labuteComm (x (2 * i + 2)) (x (2 * i + 3))).prod :=
+  (rfl)
+
+/-- The `q = 2` normal-form word of rank two, `x₁^{2+a} (x₁, x₂)`, on an arbitrary tuple
+`x : ℕ → H`, with `x 0` playing the role of `x₁`. It is the `n = 2` member of the even family
+with the factor `x₃^{2^f}` absent, Labute's level `f = ∞`, so it carries no level: on a tuple with
+`x 2 = 1` it agrees with `demushkinWordTwoEven a f 2 x` for every `f`
+(`TauCeti.demushkinWordTwoEven_two`). -/
+def demushkinWordTwoRankTwo (a : ℕ) (x : ℕ → H) : H :=
+  x 0 ^ (2 + a) * labuteComm (x 0) (x 1)
+
+/-- The defining equation of `TauCeti.demushkinWordTwoRankTwo`. -/
+theorem demushkinWordTwoRankTwo_def (a : ℕ) (x : ℕ → H) :
+    demushkinWordTwoRankTwo a x = x 0 ^ (2 + a) * labuteComm (x 0) (x 1) :=
+  (rfl)
+
+/-- At rank `2` the even word is the rank-two word: the factor `x₃^{2^f}` is `1` because the third
+generator is out of range, and the commutator product beyond `(x₁, x₂)` is empty. -/
+@[simp]
+theorem demushkinWordTwoEven_two (a f : ℕ) (x : ℕ → H) (hx : x 2 = 1) :
+    demushkinWordTwoEven a f 2 x = demushkinWordTwoRankTwo a x := by
+  simp [demushkinWordTwoEven_def, demushkinWordTwoRankTwo_def, hx]
+
+/-- The rank-two word `x₁^{2+a} (x₁, x₂)` is the `q ≠ 2` word at `q = 2 + a` on two generators,
+where that word has the single commutator factor `(x₁, x₂)`: Labute's level `f = ∞` of the even
+family at rank two is the `q ≠ 2` form with `q = 2 + α`. -/
+theorem demushkinWordTwoRankTwo_eq_demushkinWordNeTwo (a : ℕ) (x : ℕ → H) :
+    demushkinWordTwoRankTwo a x = demushkinWordNeTwo (2 + a) 2 x := by
+  simp [demushkinWordTwoRankTwo_def, demushkinWordNeTwo_def]
+
+/-- The `q ≠ 2` word lies in a normal subgroup `N` as soon as its power factor `x₁^q` and the left
+entries `x₁, x₃, …, x_{2m-1}` of its `m = n / 2` commutator factors do: a commutator with left
+entry in `N` lies in `N`. -/
+theorem demushkinWordNeTwo_mem {N : Subgroup H} [N.Normal] (q n : ℕ) {x : ℕ → H}
+    (h₀ : x 0 ^ q ∈ N) (hx : ∀ i < n / 2, x (2 * i) ∈ N) : demushkinWordNeTwo q n x ∈ N :=
+  mul_mem h₀ <| Subgroup.list_prod_mem _ <| by
+    simpa only [List.forall_mem_map, List.mem_range] using
+      fun i hi ↦ labuteComm_mem_of_mem_left (hx i hi) _
+
+/-- The `q = 2`, `n` odd word lies in a normal subgroup `N` as soon as its power factors `x₁²`,
+`x₂^{2^f}` and the left entries `x₂, x₄, …, x_{2m}` of its `m = n / 2` commutator factors do: a
+commutator with left entry in `N` lies in `N`. -/
+theorem demushkinWordTwoOdd_mem {N : Subgroup H} [N.Normal] (f n : ℕ) {x : ℕ → H}
+    (h₀ : x 0 ^ 2 ∈ N) (h₁ : x 1 ^ 2 ^ f ∈ N) (hx : ∀ i < n / 2, x (2 * i + 1) ∈ N) :
+    demushkinWordTwoOdd f n x ∈ N :=
+  mul_mem (mul_mem h₀ h₁) <| Subgroup.list_prod_mem _ <| by
+    simpa only [List.forall_mem_map, List.mem_range] using
+      fun i hi ↦ labuteComm_mem_of_mem_left (hx i hi) _
+
+/-- The `q = 2`, `n` odd word at level `f = ∞` lies in a normal subgroup `N` as soon as its power
+factor `x₁²` and the left entries `x₂, x₄, …, x_{2m}` of its `m = n / 2` commutator factors do: a
+commutator with left entry in `N` lies in `N`. -/
+theorem demushkinWordTwoOddTop_mem {N : Subgroup H} [N.Normal] (n : ℕ) {x : ℕ → H}
+    (h₀ : x 0 ^ 2 ∈ N) (hx : ∀ i < n / 2, x (2 * i + 1) ∈ N) : demushkinWordTwoOddTop n x ∈ N :=
+  mul_mem h₀ <| Subgroup.list_prod_mem _ <| by
+    simpa only [List.forall_mem_map, List.mem_range] using
+      fun i hi ↦ labuteComm_mem_of_mem_left (hx i hi) _
+
+/-- The `q = 2`, `n` even word lies in a normal subgroup `N` as soon as `x₁`, the left entry of
+its first commutator `(x₁, x₂)`, its power factor `x₃^{2^f}` and the left entries
+`x₃, x₅, …, x_{2m-1}` of its `m - 1 = n / 2 - 1` further commutator factors do: a commutator with
+left entry in `N` lies in `N`. For `n ≤ 3` there is no further commutator, and the last
+hypothesis is vacuous. -/
+theorem demushkinWordTwoEven_mem {N : Subgroup H} [N.Normal] (a f n : ℕ) {x : ℕ → H}
+    (h₀ : x 0 ∈ N) (h₂ : x 2 ^ 2 ^ f ∈ N) (hx : ∀ i < n / 2 - 1, x (2 * i + 2) ∈ N) :
+    demushkinWordTwoEven a f n x ∈ N :=
+  mul_mem (mul_mem (mul_mem (pow_mem h₀ _) (labuteComm_mem_of_mem_left h₀ _)) h₂) <|
+    Subgroup.list_prod_mem _ <| by
+      simpa only [List.forall_mem_map, List.mem_range] using
+        fun i hi ↦ labuteComm_mem_of_mem_left (hx i hi) _
+
+/-- The rank-two `q = 2` word lies in a normal subgroup `N` as soon as `x₁`, the left entry of
+its commutator `(x₁, x₂)`, does. -/
+theorem demushkinWordTwoRankTwo_mem {N : Subgroup H} [N.Normal] (a : ℕ) {x : ℕ → H}
+    (h₀ : x 0 ∈ N) : demushkinWordTwoRankTwo a x ∈ N :=
+  mul_mem (pow_mem h₀ _) (labuteComm_mem_of_mem_left h₀ _)
+
+variable {K F : Type*} [Group K] [FunLike F H K] [MonoidHomClass F H K] (φ : F)
+
+/-- A homomorphism reads the `q ≠ 2` word on the image tuple. -/
+@[simp]
+theorem map_demushkinWordNeTwo (q n : ℕ) (x : ℕ → H) :
+    φ (demushkinWordNeTwo q n x) = demushkinWordNeTwo q n (φ ∘ x) := by
+  simp only [demushkinWordNeTwo_def, map_mul, map_pow, map_list_prod, List.map_map,
+    Function.comp_def, map_labuteComm]
+
+/-- A homomorphism reads the `q = 2`, `n` odd word on the image tuple. -/
+@[simp]
+theorem map_demushkinWordTwoOdd (f n : ℕ) (x : ℕ → H) :
+    φ (demushkinWordTwoOdd f n x) = demushkinWordTwoOdd f n (φ ∘ x) := by
+  simp only [demushkinWordTwoOdd_def, map_mul, map_pow, map_list_prod, List.map_map,
+    Function.comp_def, map_labuteComm]
+
+/-- A homomorphism reads the `q = 2`, `n` odd word at level `f = ∞` on the image tuple. -/
+@[simp]
+theorem map_demushkinWordTwoOddTop (n : ℕ) (x : ℕ → H) :
+    φ (demushkinWordTwoOddTop n x) = demushkinWordTwoOddTop n (φ ∘ x) := by
+  simp only [demushkinWordTwoOddTop_def, map_mul, map_pow, map_list_prod, List.map_map,
+    Function.comp_def, map_labuteComm]
+
+/-- A homomorphism reads the `q = 2`, `n` even word on the image tuple. -/
+@[simp]
+theorem map_demushkinWordTwoEven (a f n : ℕ) (x : ℕ → H) :
+    φ (demushkinWordTwoEven a f n x) = demushkinWordTwoEven a f n (φ ∘ x) := by
+  simp only [demushkinWordTwoEven_def, map_mul, map_pow, map_list_prod, List.map_map,
+    Function.comp_def, map_labuteComm]
+
+/-- A homomorphism reads the rank-two `q = 2` word on the image tuple. -/
+@[simp]
+theorem map_demushkinWordTwoRankTwo (a : ℕ) (x : ℕ → H) :
+    φ (demushkinWordTwoRankTwo a x) = demushkinWordTwoRankTwo a (φ ∘ x) := by
+  simp only [demushkinWordTwoRankTwo_def, map_mul, map_pow, Function.comp_apply, map_labuteComm]
+
+variable {A : Type*} [CommGroup A]
+
+/-- In a commutative group the `q ≠ 2` word is `x₁^q`. -/
+@[simp]
+theorem demushkinWordNeTwo_eq_of_commGroup (q n : ℕ) (x : ℕ → A) :
+    demushkinWordNeTwo q n x = x 0 ^ q := by
+  simp [demushkinWordNeTwo_def]
+
+/-- In a commutative group the `q = 2`, `n` odd word is `x₁² x₂^{2^f}`. -/
+@[simp]
+theorem demushkinWordTwoOdd_eq_of_commGroup (f n : ℕ) (x : ℕ → A) :
+    demushkinWordTwoOdd f n x = x 0 ^ 2 * x 1 ^ 2 ^ f := by
+  simp [demushkinWordTwoOdd_def]
+
+/-- In a commutative group the `q = 2`, `n` odd word at level `f = ∞` is `x₁²`. -/
+@[simp]
+theorem demushkinWordTwoOddTop_eq_of_commGroup (n : ℕ) (x : ℕ → A) :
+    demushkinWordTwoOddTop n x = x 0 ^ 2 := by
+  simp [demushkinWordTwoOddTop_def]
+
+/-- In a commutative group the `q = 2`, `n` even word is `x₁^{2+a} x₃^{2^f}`. -/
+@[simp]
+theorem demushkinWordTwoEven_eq_of_commGroup (a f n : ℕ) (x : ℕ → A) :
+    demushkinWordTwoEven a f n x = x 0 ^ (2 + a) * x 2 ^ 2 ^ f := by
+  simp [demushkinWordTwoEven_def]
+
+/-- In a commutative group the rank-two `q = 2` word is `x₁^{2+a}`. -/
+@[simp]
+theorem demushkinWordTwoRankTwo_eq_of_commGroup (a : ℕ) (x : ℕ → A) :
+    demushkinWordTwoRankTwo a x = x 0 ^ (2 + a) := by
+  simp [demushkinWordTwoRankTwo_def]
+
+variable {G : Type*} [Group G] {F' : Type*} [FunLike F' G A] [MonoidHomClass F' G A] (χ : F')
+
+/-- A character into a commutative group whose value on `x₁` has trivial `q`-th power kills the
+`q ≠ 2` word. -/
+theorem map_demushkinWordNeTwo_eq_one (q n : ℕ) {x : ℕ → G} (h₀ : χ (x 0) ^ q = 1) :
+    χ (demushkinWordNeTwo q n x) = 1 := by
+  rw [map_demushkinWordNeTwo, demushkinWordNeTwo_eq_of_commGroup, Function.comp_apply, h₀]
+
+/-- A character into a commutative group whose value on `x₁` squares to `1` and whose value on
+`x₂` has trivial `2^f`-th power kills the `q = 2`, `n` odd word. -/
+theorem map_demushkinWordTwoOdd_eq_one (f n : ℕ) {x : ℕ → G} (h₀ : χ (x 0) ^ 2 = 1)
+    (h₁ : χ (x 1) ^ 2 ^ f = 1) : χ (demushkinWordTwoOdd f n x) = 1 := by
+  rw [map_demushkinWordTwoOdd, demushkinWordTwoOdd_eq_of_commGroup, Function.comp_apply,
+    Function.comp_apply, h₀, h₁, one_mul]
+
+/-- A character into a commutative group whose value on `x₁` squares to `1` kills the `q = 2`,
+`n` odd word at level `f = ∞`. -/
+theorem map_demushkinWordTwoOddTop_eq_one (n : ℕ) {x : ℕ → G} (h₀ : χ (x 0) ^ 2 = 1) :
+    χ (demushkinWordTwoOddTop n x) = 1 := by
+  rw [map_demushkinWordTwoOddTop, demushkinWordTwoOddTop_eq_of_commGroup, Function.comp_apply, h₀]
+
+/-- A character into a commutative group whose value on `x₁` has trivial `(2 + a)`-th power and
+whose value on `x₃` has trivial `2^f`-th power kills the `q = 2`, `n` even word. -/
+theorem map_demushkinWordTwoEven_eq_one (a f n : ℕ) {x : ℕ → G} (h₀ : χ (x 0) ^ (2 + a) = 1)
+    (h₂ : χ (x 2) ^ 2 ^ f = 1) : χ (demushkinWordTwoEven a f n x) = 1 := by
+  rw [map_demushkinWordTwoEven, demushkinWordTwoEven_eq_of_commGroup, Function.comp_apply,
+    Function.comp_apply, h₀, h₂, one_mul]
+
+/-- A character into a commutative group whose value on `x₁` has trivial `(2 + a)`-th power kills
+the rank-two `q = 2` word. -/
+theorem map_demushkinWordTwoRankTwo_eq_one (a : ℕ) {x : ℕ → G} (h₀ : χ (x 0) ^ (2 + a) = 1) :
+    χ (demushkinWordTwoRankTwo a x) = 1 := by
+  rw [map_demushkinWordTwoRankTwo, demushkinWordTwoRankTwo_eq_of_commGroup, Function.comp_apply,
+    h₀]
+
+/-- The `q ≠ 2` word lies in the kernel of a character into a commutative group whose value on
+`x₁` has trivial `q`-th power. -/
+theorem demushkinWordNeTwo_mem_ker (q n : ℕ) {x : ℕ → G} (h₀ : χ (x 0) ^ q = 1) :
+    demushkinWordNeTwo q n x ∈ MonoidHom.ker (χ : G →* A) :=
+  MonoidHom.mem_ker.mpr (map_demushkinWordNeTwo_eq_one χ q n h₀)
+
+/-- The `q = 2`, `n` odd word lies in the kernel of a character into a commutative group whose
+value on `x₁` squares to `1` and whose value on `x₂` has trivial `2^f`-th power. -/
+theorem demushkinWordTwoOdd_mem_ker (f n : ℕ) {x : ℕ → G} (h₀ : χ (x 0) ^ 2 = 1)
+    (h₁ : χ (x 1) ^ 2 ^ f = 1) : demushkinWordTwoOdd f n x ∈ MonoidHom.ker (χ : G →* A) :=
+  MonoidHom.mem_ker.mpr (map_demushkinWordTwoOdd_eq_one χ f n h₀ h₁)
+
+/-- The `q = 2`, `n` odd word at level `f = ∞` lies in the kernel of a character into a
+commutative group whose value on `x₁` squares to `1`. -/
+theorem demushkinWordTwoOddTop_mem_ker (n : ℕ) {x : ℕ → G} (h₀ : χ (x 0) ^ 2 = 1) :
+    demushkinWordTwoOddTop n x ∈ MonoidHom.ker (χ : G →* A) :=
+  MonoidHom.mem_ker.mpr (map_demushkinWordTwoOddTop_eq_one χ n h₀)
+
+/-- The `q = 2`, `n` even word lies in the kernel of a character into a commutative group whose
+value on `x₁` has trivial `(2 + a)`-th power and whose value on `x₃` has trivial `2^f`-th
+power. -/
+theorem demushkinWordTwoEven_mem_ker (a f n : ℕ) {x : ℕ → G} (h₀ : χ (x 0) ^ (2 + a) = 1)
+    (h₂ : χ (x 2) ^ 2 ^ f = 1) : demushkinWordTwoEven a f n x ∈ MonoidHom.ker (χ : G →* A) :=
+  MonoidHom.mem_ker.mpr (map_demushkinWordTwoEven_eq_one χ a f n h₀ h₂)
+
+/-- The rank-two `q = 2` word lies in the kernel of a character into a commutative group whose
+value on `x₁` has trivial `(2 + a)`-th power. -/
+theorem demushkinWordTwoRankTwo_mem_ker (a : ℕ) {x : ℕ → G} (h₀ : χ (x 0) ^ (2 + a) = 1) :
+    demushkinWordTwoRankTwo a x ∈ MonoidHom.ker (χ : G →* A) :=
+  MonoidHom.mem_ker.mpr (map_demushkinWordTwoRankTwo_eq_one χ a h₀)
+
+end Words
+
+/-! ### The generators of a normal-form presentation satisfy the relation -/
+
+section Relation
+
+variable (p : ℕ)
+
+/-- The `ℕ`-indexed generators of the `q ≠ 2` normal-form presentation satisfy its defining
+relation `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n) = 1`. -/
+@[simp]
+theorem demushkinWordNeTwo_presentedProPGen_eq_one (q n : ℕ) :
+    demushkinWordNeTwo q n (presentedProPGen p n {demushkinWordNeTwo q n (freeProPGen p n)}) =
+      1 := by
+  rw [← presentedProP.mk_comp_freeProPGen, ← map_demushkinWordNeTwo]
+  exact presentedProP.mk_relator _ (Set.mem_singleton _)
+
+/-- The `ℕ`-indexed generators of the `q = 2`, `n` odd normal-form presentation satisfy its
+defining relation `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n) = 1`. -/
+@[simp]
+theorem demushkinWordTwoOdd_presentedProPGen_eq_one (f n : ℕ) :
+    demushkinWordTwoOdd f n (presentedProPGen p n {demushkinWordTwoOdd f n (freeProPGen p n)}) =
+      1 := by
+  rw [← presentedProP.mk_comp_freeProPGen, ← map_demushkinWordTwoOdd]
+  exact presentedProP.mk_relator _ (Set.mem_singleton _)
+
+/-- The `ℕ`-indexed generators of the `q = 2`, `n` odd normal-form presentation at level `f = ∞`
+satisfy its defining relation `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n) = 1`. -/
+@[simp]
+theorem demushkinWordTwoOddTop_presentedProPGen_eq_one (n : ℕ) :
+    demushkinWordTwoOddTop n (presentedProPGen p n {demushkinWordTwoOddTop n (freeProPGen p n)}) =
+      1 := by
+  rw [← presentedProP.mk_comp_freeProPGen, ← map_demushkinWordTwoOddTop]
+  exact presentedProP.mk_relator _ (Set.mem_singleton _)
+
+/-- The `ℕ`-indexed generators of the `q = 2`, `n` even normal-form presentation satisfy its
+defining relation `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n) = 1`. -/
+@[simp]
+theorem demushkinWordTwoEven_presentedProPGen_eq_one (a f n : ℕ) :
+    demushkinWordTwoEven a f n
+      (presentedProPGen p n {demushkinWordTwoEven a f n (freeProPGen p n)}) = 1 := by
+  rw [← presentedProP.mk_comp_freeProPGen, ← map_demushkinWordTwoEven]
+  exact presentedProP.mk_relator _ (Set.mem_singleton _)
+
+/-- The `ℕ`-indexed generators of the rank-two `q = 2` normal-form presentation satisfy its
+defining relation `x₁^{2+a} (x₁, x₂) = 1`. -/
+@[simp]
+theorem demushkinWordTwoRankTwo_presentedProPGen_eq_one (a : ℕ) :
+    demushkinWordTwoRankTwo a
+      (presentedProPGen p 2 {demushkinWordTwoRankTwo a (freeProPGen p 2)}) = 1 := by
+  rw [← presentedProP.mk_comp_freeProPGen, ← map_demushkinWordTwoRankTwo]
+  exact presentedProP.mk_relator _ (Set.mem_singleton _)
+
+end Relation
+
+/-! ### The words lie in the Frattini subgroup -/
+
+section Frattini
+
+variable {H : Type*} [Group H] [TopologicalSpace H]
+
+/-- For `p ∣ q`, the `q ≠ 2` word lies in the pro-`p` Frattini subgroup: `x₁^q` is a `p`-th power
+and the remaining factors are commutators. This covers `q = 0`. -/
+theorem demushkinWordNeTwo_mem_proPFrattini {p q : ℕ} (hp : p.Prime) (hq : p ∣ q) (n : ℕ)
+    (x : ℕ → H) : demushkinWordNeTwo q n x ∈ proPFrattini p H := by
+  refine mul_mem (pow_mem_proPFrattini_of_dvd hq _) (Subgroup.list_prod_mem _ ?_)
+  simpa only [List.forall_mem_map] using fun i _ ↦ labuteComm_mem_proPFrattini hp _ _
+
+/-- For `f ≥ 1`, the `q = 2`, `n` odd word lies in the pro-`2` Frattini subgroup: `x₁²` and
+`x₂^{2^f}` are squares and the remaining factors are commutators. -/
+theorem demushkinWordTwoOdd_mem_proPFrattini {f : ℕ} (hf : 0 < f) (n : ℕ) (x : ℕ → H) :
+    demushkinWordTwoOdd f n x ∈ proPFrattini 2 H := by
+  refine mul_mem (mul_mem (pow_mem_proPFrattini _)
+    (pow_mem_proPFrattini_of_dvd (dvd_pow_self 2 hf.ne') _)) (Subgroup.list_prod_mem _ ?_)
+  simpa only [List.forall_mem_map] using fun i _ ↦ labuteComm_mem_proPFrattini Nat.prime_two _ _
+
+/-- The `q = 2`, `n` odd word at level `f = ∞` lies in the pro-`2` Frattini subgroup: `x₁²` is a
+square and the remaining factors are commutators. -/
+theorem demushkinWordTwoOddTop_mem_proPFrattini (n : ℕ) (x : ℕ → H) :
+    demushkinWordTwoOddTop n x ∈ proPFrattini 2 H := by
+  refine mul_mem (pow_mem_proPFrattini _) (Subgroup.list_prod_mem _ ?_)
+  simpa only [List.forall_mem_map] using fun i _ ↦ labuteComm_mem_proPFrattini Nat.prime_two _ _
+
+/-- For `a` even and `f ≥ 1`, the `q = 2`, `n` even word lies in the pro-`2` Frattini subgroup:
+`x₁^{2+a}` and `x₃^{2^f}` are squares and the remaining factors are commutators. -/
+theorem demushkinWordTwoEven_mem_proPFrattini {a f : ℕ} (ha : 2 ∣ a) (hf : 0 < f) (n : ℕ)
+    (x : ℕ → H) : demushkinWordTwoEven a f n x ∈ proPFrattini 2 H := by
+  refine mul_mem (mul_mem (mul_mem (pow_mem_proPFrattini_of_dvd (dvd_add (dvd_refl 2) ha) _)
+    (labuteComm_mem_proPFrattini Nat.prime_two _ _))
+    (pow_mem_proPFrattini_of_dvd (dvd_pow_self 2 hf.ne') _)) (Subgroup.list_prod_mem _ ?_)
+  simpa only [List.forall_mem_map] using fun i _ ↦ labuteComm_mem_proPFrattini Nat.prime_two _ _
+
+/-- For `a` even, the rank-two `q = 2` word lies in the pro-`2` Frattini subgroup: `x₁^{2+a}` is a
+square and `(x₁, x₂)` is a commutator. -/
+theorem demushkinWordTwoRankTwo_mem_proPFrattini {a : ℕ} (ha : 2 ∣ a) (x : ℕ → H) :
+    demushkinWordTwoRankTwo a x ∈ proPFrattini 2 H :=
+  mul_mem (pow_mem_proPFrattini_of_dvd (dvd_add (dvd_refl 2) ha) _)
+    (labuteComm_mem_proPFrattini Nat.prime_two _ _)
+
+end Frattini
+
+/-! ### The normal-form presentations are minimal -/
+
+section Minimal
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- **The `q ≠ 2` normal-form presentation is minimal**: for `p ∣ q`, the pro-`p` group presented
+on `n` generators by `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` has topological generator rank `n`. -/
+theorem topologicalGeneratorRankNat_presentedProP_demushkinWordNeTwo {q : ℕ} (hq : p ∣ q)
+    (n : ℕ) :
+    topologicalGeneratorRankNat
+      (presentedProP p (Fin n) {demushkinWordNeTwo q n (freeProPGen p n)})
+      presentedProP.isTopologicallyFinitelyGenerated = n := by
+  simpa using (presentedProP.topologicalGeneratorRankNat_eq_card_iff
+    {demushkinWordNeTwo q n (freeProPGen p n)}).mpr
+    (Set.singleton_subset_iff.mpr (demushkinWordNeTwo_mem_proPFrattini Fact.out hq n _))
+
+/-- **The `q = 2`, `n` odd normal-form presentation is minimal**: for `f ≥ 1`, the pro-`2` group
+presented on `n` generators by `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)` has topological generator
+rank `n`. -/
+theorem topologicalGeneratorRankNat_presentedProP_demushkinWordTwoOdd {f : ℕ} (hf : 0 < f)
+    (n : ℕ) :
+    topologicalGeneratorRankNat
+      (presentedProP 2 (Fin n) {demushkinWordTwoOdd f n (freeProPGen 2 n)})
+      presentedProP.isTopologicallyFinitelyGenerated = n := by
+  simpa using (presentedProP.topologicalGeneratorRankNat_eq_card_iff
+    {demushkinWordTwoOdd f n (freeProPGen 2 n)}).mpr
+    (Set.singleton_subset_iff.mpr (demushkinWordTwoOdd_mem_proPFrattini hf n _))
+
+/-- **The `q = 2`, `n` odd normal-form presentation at level `f = ∞` is minimal**: the pro-`2`
+group presented on `n` generators by `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` has topological generator
+rank `n`. -/
+theorem topologicalGeneratorRankNat_presentedProP_demushkinWordTwoOddTop (n : ℕ) :
+    topologicalGeneratorRankNat
+      (presentedProP 2 (Fin n) {demushkinWordTwoOddTop n (freeProPGen 2 n)})
+      presentedProP.isTopologicallyFinitelyGenerated = n := by
+  simpa using (presentedProP.topologicalGeneratorRankNat_eq_card_iff
+    {demushkinWordTwoOddTop n (freeProPGen 2 n)}).mpr
+    (Set.singleton_subset_iff.mpr (demushkinWordTwoOddTop_mem_proPFrattini n _))
+
+/-- **The `q = 2`, `n` even normal-form presentation is minimal**: for `a` even and `f ≥ 1`, the
+pro-`2` group presented on `n` generators by `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`
+has topological generator rank `n`. -/
+theorem topologicalGeneratorRankNat_presentedProP_demushkinWordTwoEven {a f : ℕ} (ha : 2 ∣ a)
+    (hf : 0 < f) (n : ℕ) :
+    topologicalGeneratorRankNat
+      (presentedProP 2 (Fin n) {demushkinWordTwoEven a f n (freeProPGen 2 n)})
+      presentedProP.isTopologicallyFinitelyGenerated = n := by
+  simpa using (presentedProP.topologicalGeneratorRankNat_eq_card_iff
+    {demushkinWordTwoEven a f n (freeProPGen 2 n)}).mpr
+    (Set.singleton_subset_iff.mpr (demushkinWordTwoEven_mem_proPFrattini ha hf n _))
+
+/-- **The rank-two `q = 2` normal-form presentation is minimal**: for `a` even, the pro-`2` group
+presented on two generators by `x₁^{2+a} (x₁, x₂)` has topological generator rank `2`. -/
+theorem topologicalGeneratorRankNat_presentedProP_demushkinWordTwoRankTwo {a : ℕ} (ha : 2 ∣ a) :
+    topologicalGeneratorRankNat
+      (presentedProP 2 (Fin 2) {demushkinWordTwoRankTwo a (freeProPGen 2 2)})
+      presentedProP.isTopologicallyFinitelyGenerated = 2 := by
+  simpa using (presentedProP.topologicalGeneratorRankNat_eq_card_iff
+    {demushkinWordTwoRankTwo a (freeProPGen 2 2)}).mpr
+    (Set.singleton_subset_iff.mpr (demushkinWordTwoRankTwo_mem_proPFrattini ha _))
+
+end Minimal
+
+end TauCeti

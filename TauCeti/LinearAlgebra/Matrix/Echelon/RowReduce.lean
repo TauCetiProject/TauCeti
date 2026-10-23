@@ -65,26 +65,22 @@ that comes with the proof `List.pairwise_lt_finRange` that it does. The auxiliar
 column list as an argument and the results about it assume only that the list is strictly
 increasing, so the choice is confined to `TauCeti.rowReduce` itself.
 
-The file carries each block at the weakest `F` it needs. The invariant `IsRowReduceState` and
-the lemma that starts a sweep in it need only `[Zero F] [One F]`: the state records a `1` in each
-pivot column and a `0` elsewhere, and reads nothing else of `F`. Extending the invariant across a
-pivoting step needs `[Ring F]`, to subtract a multiple of the pivot row; that step never divides,
+The algebraic assumptions reflect the different parts of the argument. The invariant
+`IsRowReduceState` and the lemma that starts a sweep in it need only `[Zero F] [One F]`: the state
+records a `1` in each pivot column and a `0` elsewhere, and reads nothing else of `F`.
+Extending the invariant across a
+pivoting step needs `[NonAssocRing F]`, to subtract a multiple of the pivot row; it never divides,
 so it is stated for an arbitrary already-normalised row. The row space `rowSpan` of a state, with
 the three lemmas characterising it as the span of the rows the state carries, needs only
 `[Semiring F]`: those only take and reflect a span. The sweep itself needs `[DivisionRing F]`
 and `[DecidableEq F]`, to scale a row by `(v j)⁻¹` and to test entries against zero, so every
 result about what the sweep *does* to the invariant or to the row space is stated there. Only
 `TauCeti.rank_rowReduceMatrix` and `TauCeti.length_rowReduce_ofFn` need `F` commutative,
-`Matrix.rank` being defined over a commutative ring.
+`Matrix.rank` being defined over a commutative semiring.
 
-## References
-
-Layer 6 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-asks, as its computable finite-field linear algebra, for a `kernelBasis` obtained by "verified
-Gaussian elimination"; this file is that elimination. Reading a basis of the kernel off the reduced
-form is the step that remains: the free columns are those the pivots miss, and the entries of the
-reduced rows in a free column are the coordinates of the corresponding kernel vector.
+The reduced form also determines a basis of the kernel: each free column supplies one basis
+vector, with the reduced rows giving its coordinates in the pivot columns. This construction is
+implemented in `TauCeti.LinearAlgebra.Matrix.Echelon.KernelBasis`.
 -/
 
 public section
@@ -183,9 +179,9 @@ private theorem isRowReduceState_nil (L : List (Fin n → F)) :
 
 end ZeroOne
 
-section Ring
+section NonAssocRing
 
-variable {F : Type u} [Ring F] {n : ℕ}
+variable {F : Type u} [NonAssocRing F] {n : ℕ}
 
 /-- Recording a pivot row for a column preserves the invariant, and strikes that column off the
 ones still to visit: if `p` has a `1` in column `j` and vanishes in every column already visited,
@@ -247,7 +243,7 @@ private theorem isRowReduceState_append_pivot {cs : List (Fin n)} {j : Fin n}
     · have hdmem : d ∉ j :: cs := by simp [hne, hd]
       simp [hs.todo_eq_zero w' hw' d hdmem, hp0 d hdmem]
 
-end Ring
+end NonAssocRing
 
 section DivisionRing
 
@@ -345,13 +341,11 @@ variable (L : List (Fin n → F))
 /-- The `i`-th row of the reduced matrix is the `i`-th reduced row. -/
 @[simp] theorem rowReduceMatrix_apply (i : Fin (rowReduce L).length) :
     rowReduceMatrix L i = ((rowReduce L).get i).2 := by
-  unfold rowReduceMatrix
   rfl
 
 /-- The pivot of the `i`-th row of the reduced matrix is its recorded column. -/
 @[simp] theorem rowReducePivot_apply (i : Fin (rowReduce L).length) :
     rowReducePivot L i = (((rowReduce L).get i).1 : WithTop (Fin n)) := by
-  unfold rowReducePivot
   rfl
 
 /-- The pivot columns are strictly increasing along the rows. -/
@@ -393,13 +387,9 @@ theorem isReducedRowEchelon_rowReduceMatrix :
 theorem range_row_rowReduceMatrix :
     Set.range (rowReduceMatrix L).row = {v | v ∈ (rowReduce L).map Prod.snd} := by
   ext v
-  simp only [Set.mem_range, Set.mem_ofPred_eq, List.mem_map]
-  constructor
-  · rintro ⟨i, rfl⟩
-    exact ⟨(rowReduce L).get i, List.get_mem _ _, rfl⟩
-  · rintro ⟨q, hq, rfl⟩
-    obtain ⟨i, rfl⟩ := List.mem_iff_get.mp hq
-    exact ⟨i, rfl⟩
+  simp only [Set.mem_range, Matrix.row_apply', rowReduceMatrix_apply, Set.mem_ofPred_eq,
+    List.mem_map]
+  simp [List.mem_iff_get]
 
 end Echelon
 
@@ -518,7 +508,7 @@ end DivisionRing
 
 /-! ## The sweep computes the rank
 
-`Matrix.rank` is defined over a commutative ring, so these two results, alone in this file, ask
+`Matrix.rank` is defined over a commutative semiring, so these two results, alone in this file, ask
 `F` to be a field. -/
 
 section Field

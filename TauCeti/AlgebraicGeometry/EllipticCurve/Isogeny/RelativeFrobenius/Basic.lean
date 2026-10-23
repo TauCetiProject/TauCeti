@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GeneratedByY
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PowerTower
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.RelativeFrobenius
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Separability
@@ -60,35 +62,42 @@ that factorisation.
   `TauCeti.Isogeny.inseparableDegree_relativeFrobeniusIsogeny` splitting that as `1 · p`.
 * `TauCeti.Isogeny.degree_iterateRelativeFrobeniusIsogeny`: the `n`-fold iterate has degree
   `p ^ n` and is purely inseparable.
+* `TauCeti.Isogeny.fieldPullback_iterateRelativeFrobeniusIsogeny_map` and
+  `TauCeti.Isogeny.fieldPullback_relativeFrobeniusIsogeny_map`: coefficient Frobenius followed
+  by the relative pullback is the power map on the whole function field.
+* `TauCeti.Isogeny.fieldRange_relativeFrobeniusIsogeny` and
+  `TauCeti.Isogeny.fieldRange_iterateRelativeFrobeniusIsogeny`: the pulled-back copy of
+  `F(W⁽ᵖ⁾)` is `F(F(W)ᵖ)`, the subfield generated over the constants by the `p`-th powers, and
+  likewise with `p ^ n` for the iterate; with `fieldRange_relativeFrobeniusIsogeny_le_iff` and
+  `fieldRange_iterateRelativeFrobeniusIsogeny_le_iff` as the universal properties,
+  `fieldRange_iterateRelativeFrobeniusIsogeny_antitone` for the resulting tower, and
+  `fieldPullback_relativeFrobeniusIsogeny_genericX`,
+  `fieldPullback_relativeFrobeniusIsogeny_genericY` and their iterates for the values at the
+  generic point.
 
 The degree is the shared tower comparison
 `WeierstrassCurve.Affine.finrank_fieldRange_of_apply_X_eq_pow`, applied to the pullback: over the
 copy of `F(xᵖ)` inside `F(W)`, that copy sits below `F(x)` with relative degree `p` and below the
 pulled-back `F(W⁽ᵖ⁾)` with relative degree `2`, while `[F(W) : F(x)] = 2`. The finite-field
 `WeierstrassCurve.Affine.finrank_fieldRange_frobeniusAlgHom` is the same lemma applied to the
-`q`-power map.
+`q`-power map. Likewise the pulled-back function field is the shared
+`WeierstrassCurve.Affine.fieldRange_eq_adjoin_range_pow`, applied to the one-step and the iterated
+pullback at their values `xᵖ`, `yᵖ` and `x ^ (p ^ n)`, `y ^ (p ^ n)` at the generic point.
 
 No result here needs `W` to be elliptic, matching the isogeny API it extends; Mathlib's
 `WeierstrassCurve.instIsEllipticMap` supplies `(W.map (frobenius F p)).IsElliptic` for a consumer
 that does want it.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 1**, the milestone "Relative Frobenius, a
-milestone and not a one-liner" (`README.md:429`), which asks for "the **Frobenius twist** `W^{(p)}`
-with its coefficient description and base-change API" — Mathlib's `WeierstrassCurve.map` along
-`frobenius`, consumed rather than redefined — and "the **relative Frobenius** `F_{W/K} : W →
-W^{(p)}` with its function-field pullback". Base-change compatibility, the factorisation
-`φ = φ_sep ∘ F_{W/K}^r` of AEC II.2.12, and Verschiebung remain.
-
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.11, whose N.B. is the
   reason this file exists: over an imperfect `F`, parts (b) and (c) (pure inseparability and
-  degree `p`) survive unchanged, but part (a), the identification `φ* F(W⁽ᵖ⁾) = F(W)ᵖ`, does not.
-  Accordingly only the containment `F(W)ᵖ ⊆ φ* F(W⁽ᵖ⁾)` is proved here, as
-  `TauCeti.Isogeny.pow_mem_fieldRange_relativeFrobeniusIsogeny`, which is all pure
-  inseparability needs. Over a finite, hence perfect, base there is no gap, and
+  degree `p`) survive unchanged, but part (a), the identification `φ* F(W⁽ᵖ⁾) = F(W)ᵖ`, does not:
+  the pulled-back copy also contains the constants, which need not be `p`-th powers. The form
+  valid over every base is `φ* F(W⁽ᵖ⁾) = F(F(W)ᵖ)`, proved here as
+  `TauCeti.Isogeny.fieldRange_relativeFrobeniusIsogeny`; the containment
+  `F(W)ᵖ ⊆ φ* F(W⁽ᵖ⁾)` (`TauCeti.Isogeny.pow_mem_fieldRange_relativeFrobeniusIsogeny`) is all
+  pure inseparability needs. Over a finite, hence perfect, base there is no gap, and
   `Isogeny/Frobenius/Basic.lean` identifies the pullback with the `q`-power map outright
   (`fieldPullback_frobeniusIsogeny`).
 
@@ -238,6 +247,45 @@ theorem inseparableDegree_relativeFrobeniusIsogeny :
     (relativeFrobeniusIsogeny p W).inseparableDegree = p := by
   rw [inseparableDegree_eq_degree_of_isPurelyInseparable, degree_relativeFrobeniusIsogeny]
 
+/-! ### The image of the pullback -/
+
+/-- **The relative Frobenius pullback sends the generic `x`-coordinate of the twist to `xᵖ`.** -/
+@[simp]
+theorem fieldPullback_relativeFrobeniusIsogeny_genericX :
+    (relativeFrobeniusIsogeny p W).fieldPullback (W.map (frobenius F p)).genericX =
+      W.genericX ^ p := by
+  rw [genericX_eq_algebraMap, genericX_eq_algebraMap, fieldPullback_relativeFrobeniusIsogeny_X]
+
+/-- **The relative Frobenius pullback sends the generic `y`-coordinate of the twist to `yᵖ`.** -/
+@[simp]
+theorem fieldPullback_relativeFrobeniusIsogeny_genericY :
+    (relativeFrobeniusIsogeny p W).fieldPullback (W.map (frobenius F p)).genericY =
+      W.genericY ^ p := by
+  -- `y` is the class of the root adjoined by the Weierstrass polynomial
+  rw [genericY_def, genericY_def, AdjoinRoot.mk_X, AdjoinRoot.mk_X, ← CoordinateRing.map_root,
+    fieldPullback_relativeFrobeniusIsogeny_coordinateRingMap]
+
+/-- **The pulled-back copy of `F(W⁽ᵖ⁾)` is `F(F(W)ᵖ)`**, the subfield generated over the constants
+by the `p`-th powers (Silverman II.2.11(a), in the form valid over every base field: over a
+perfect `F` the constants are themselves `p`-th powers and this is `F(W)ᵖ`). This is
+`WeierstrassCurve.Affine.fieldRange_eq_adjoin_range_pow` at the values `xᵖ`, `yᵖ` of the pullback
+at the generic point. -/
+theorem fieldRange_relativeFrobeniusIsogeny :
+    (relativeFrobeniusIsogeny p W).fieldPullback.fieldRange =
+      IntermediateField.adjoin F (Set.range fun z : W.FunctionField ↦ z ^ p) :=
+  fieldRange_eq_adjoin_range_pow W _ (fieldPullback_relativeFrobeniusIsogeny_genericX p W)
+    (fieldPullback_relativeFrobeniusIsogeny_genericY p W)
+    (pow_mem_fieldRange_relativeFrobeniusIsogeny p W)
+
+/-- **The universal property of the pulled-back `F(W⁽ᵖ⁾)`**: it lies inside an intermediate field
+exactly when every `p`-th power does. -/
+@[simp]
+theorem fieldRange_relativeFrobeniusIsogeny_le_iff {N : IntermediateField F W.FunctionField} :
+    (relativeFrobeniusIsogeny p W).fieldPullback.fieldRange ≤ N ↔
+      ∀ z : W.FunctionField, z ^ p ∈ N := by
+  simp only [fieldRange_relativeFrobeniusIsogeny, IntermediateField.adjoin_le_iff,
+    Set.range_subset_iff, SetLike.mem_coe]
+
 /-! ### Iterated relative Frobenius -/
 
 /-- **The iterated relative Frobenius pullback.** It reads the coordinate-ring map
@@ -284,6 +332,19 @@ theorem iterateRelativeFrobeniusIsogeny_pullback (n : ℕ) :
     (iterateRelativeFrobeniusIsogeny p W n).pullback =
       iterateRelativeFrobeniusPullback p W n := (rfl)
 
+/-- The first iterated relative Frobenius is the one-step relative Frobenius, after
+identifying their target curves via `iterateFrobenius_one`. -/
+@[simp]
+theorem iterateRelativeFrobeniusIsogeny_one :
+    iterateRelativeFrobeniusIsogeny p W 1 =
+      (congrArg W.map (iterateFrobenius_one (R := F) p).symm ▸
+        relativeFrobeniusIsogeny p W) := by
+  symm
+  apply eq_of_pullback_coords
+  · simp [iterateRelativeFrobeniusPullback_apply, relativeFrobeniusPullback_apply,
+      CoordinateRing.iterateRelativeFrobenius_of, CoordinateRing.relativeFrobenius_of]
+  · simp [iterateRelativeFrobeniusPullback_apply, relativeFrobeniusPullback_apply]
+
 /-- The function-field pullback of a base-changed coordinate function is its
 `p ^ n`-th power. -/
 theorem fieldPullback_iterateRelativeFrobeniusIsogeny_coordinateRingMap (n : ℕ)
@@ -297,6 +358,58 @@ theorem fieldPullback_iterateRelativeFrobeniusIsogeny_coordinateRingMap (n : ℕ
   rw [Isogeny.fieldPullback_algebraMap, iterateRelativeFrobeniusIsogeny_pullback,
     iterateRelativeFrobeniusPullback_apply,
     CoordinateRing.iterateRelativeFrobenius_map, map_pow]
+
+/-- The coefficient Frobenius followed by the iterated relative Frobenius pullback is
+iterated Frobenius on the function field, as an equality of ring homomorphisms. -/
+theorem fieldPullback_iterateRelativeFrobeniusIsogeny_comp_map
+    (W : WeierstrassCurve.Affine F) (n : ℕ) :
+    let := expChar_of_injective_algebraMap (algebraMap F W.FunctionField).injective p
+    (iterateRelativeFrobeniusIsogeny p W n).fieldPullback.toRingHom.comp
+        (FunctionField.map W (iterateFrobenius F p n)) =
+      iterateFrobenius W.FunctionField p n := by
+  let := expChar_of_injective_algebraMap (algebraMap F W.FunctionField).injective p
+  apply IsFractionRing.ringHom_ext (A := W.CoordinateRing)
+  intro z
+  simp [iterateFrobenius_def]
+
+/-- The coefficient Frobenius followed by the iterated relative Frobenius pullback is
+the `p ^ n`-power map on the function field, including its rational functions. -/
+@[simp]
+theorem fieldPullback_iterateRelativeFrobeniusIsogeny_map
+    (W : WeierstrassCurve.Affine F) (n : ℕ) (z : W.FunctionField) :
+    (iterateRelativeFrobeniusIsogeny p W n).fieldPullback
+        (FunctionField.map W (iterateFrobenius F p n) z) = z ^ p ^ n :=
+  RingHom.congr_fun (fieldPullback_iterateRelativeFrobeniusIsogeny_comp_map p W n) z
+
+/-- The coefficient Frobenius followed by relative Frobenius is Frobenius on the
+function field, as an equality of ring homomorphisms. -/
+theorem fieldPullback_relativeFrobeniusIsogeny_comp_map
+    (W : WeierstrassCurve.Affine F) :
+    let := expChar_of_injective_algebraMap (algebraMap F W.FunctionField).injective p
+    (relativeFrobeniusIsogeny p W).fieldPullback.toRingHom.comp
+        (FunctionField.map W (frobenius F p)) = frobenius W.FunctionField p := by
+  let := expChar_of_injective_algebraMap (algebraMap F W.FunctionField).injective p
+  have h := fieldPullback_iterateRelativeFrobeniusIsogeny_comp_map p W 1
+  dsimp only at h
+  rw [iterateFrobenius_one (R := W.FunctionField) p] at h
+  simp only [iterateRelativeFrobeniusIsogeny_one] at h
+  have e := iterateFrobenius_one (R := F) p
+  -- Name the equality used in the target cast so that generalizing the ring homomorphism
+  -- also generalizes its proof; dependent casts prevent a direct rewrite in `h`.
+  change (congrArg W.map e.symm ▸ relativeFrobeniusIsogeny p W).fieldPullback.toRingHom.comp
+    (FunctionField.map W (iterateFrobenius F p 1)) = frobenius W.FunctionField p at h
+  generalize hf : iterateFrobenius F p 1 = f at e h
+  cases e
+  exact h
+
+/-- The coefficient Frobenius followed by relative Frobenius is the `p`-power map on
+the function field. -/
+@[simp]
+theorem fieldPullback_relativeFrobeniusIsogeny_map
+    (W : WeierstrassCurve.Affine F) (z : W.FunctionField) :
+    (relativeFrobeniusIsogeny p W).fieldPullback
+        (FunctionField.map W (frobenius F p) z) = z ^ p :=
+  RingHom.congr_fun (fieldPullback_relativeFrobeniusIsogeny_comp_map p W) z
 
 /-- **Every `p ^ n`-th power in `F(W)` lies in the pulled-back function field of the `n`-th
 Frobenius twist.** -/
@@ -337,6 +450,60 @@ theorem degree_iterateRelativeFrobeniusIsogeny (n : ℕ) :
   rw [Isogeny.degree_def]
   exact _root_.WeierstrassCurve.Affine.finrank_fieldRange_of_apply_X_eq_pow W _
     (fieldPullback_iterateRelativeFrobeniusIsogeny_X p W n)
+
+/-- **The iterated relative Frobenius pullback sends the generic `x`-coordinate of the twist to
+`x ^ (p ^ n)`.** -/
+@[simp]
+theorem fieldPullback_iterateRelativeFrobeniusIsogeny_genericX (n : ℕ) :
+    (iterateRelativeFrobeniusIsogeny p W n).fieldPullback
+        (W.map (iterateFrobenius F p n)).genericX =
+      W.genericX ^ p ^ n := by
+  rw [genericX_eq_algebraMap, genericX_eq_algebraMap,
+    fieldPullback_iterateRelativeFrobeniusIsogeny_X]
+
+/-- **The iterated relative Frobenius pullback sends the generic `y`-coordinate of the twist to
+`y ^ (p ^ n)`.** -/
+@[simp]
+theorem fieldPullback_iterateRelativeFrobeniusIsogeny_genericY (n : ℕ) :
+    (iterateRelativeFrobeniusIsogeny p W n).fieldPullback
+        (W.map (iterateFrobenius F p n)).genericY =
+      W.genericY ^ p ^ n := by
+  -- `y` is the class of the root adjoined by the Weierstrass polynomial
+  rw [genericY_def, genericY_def, AdjoinRoot.mk_X, AdjoinRoot.mk_X, ← CoordinateRing.map_root,
+    fieldPullback_iterateRelativeFrobeniusIsogeny_coordinateRingMap]
+
+/-- **The pulled-back copy of `F(W⁽ᵖⁿ⁾)` is `F(F(W)^(pⁿ))`**, the subfield generated over the
+constants by the `p ^ n`-th powers: the iterate of `fieldRange_relativeFrobeniusIsogeny`, read
+off `WeierstrassCurve.Affine.fieldRange_eq_adjoin_range_pow` in the same way. -/
+theorem fieldRange_iterateRelativeFrobeniusIsogeny (n : ℕ) :
+    (iterateRelativeFrobeniusIsogeny p W n).fieldPullback.fieldRange =
+      IntermediateField.adjoin F (Set.range fun z : W.FunctionField ↦ z ^ p ^ n) :=
+  fieldRange_eq_adjoin_range_pow W _
+    (fieldPullback_iterateRelativeFrobeniusIsogeny_genericX p W n)
+    (fieldPullback_iterateRelativeFrobeniusIsogeny_genericY p W n)
+    (pow_mem_fieldRange_iterateRelativeFrobeniusIsogeny p W n)
+
+/-- **The universal property of the pulled-back `F(W⁽ᵖⁿ⁾)`**: it lies inside an intermediate
+field exactly when every `p ^ n`-th power does. -/
+@[simp]
+theorem fieldRange_iterateRelativeFrobeniusIsogeny_le_iff (n : ℕ)
+    {N : IntermediateField F W.FunctionField} :
+    (iterateRelativeFrobeniusIsogeny p W n).fieldPullback.fieldRange ≤ N ↔
+      ∀ z : W.FunctionField, z ^ p ^ n ∈ N := by
+  simp only [fieldRange_iterateRelativeFrobeniusIsogeny, IntermediateField.adjoin_le_iff,
+    Set.range_subset_iff, SetLike.mem_coe]
+
+/-- **The pulled-back copies of the twists decrease along the Frobenius tower**: for `m ≤ n`, the
+pulled-back `F(W⁽ᵖⁿ⁾)` lies inside the pulled-back `F(W⁽ᵖᵐ⁾)`, as every `p ^ n`-th power is a
+`p ^ m`-th power. -/
+theorem fieldRange_iterateRelativeFrobeniusIsogeny_antitone :
+    Antitone fun n ↦ (iterateRelativeFrobeniusIsogeny p W n).fieldPullback.fieldRange := by
+  intro m n h
+  rw [fieldRange_iterateRelativeFrobeniusIsogeny_le_iff]
+  intro z
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  rw [pow_add, pow_mul]
+  exact pow_mem (pow_mem_fieldRange_iterateRelativeFrobeniusIsogeny p W m z) _
 
 end Isogeny
 

@@ -20,10 +20,16 @@ identity.
 
 The isomorphism identifies the ambient restricted products only; it need not carry the
 everywhere-integral subgroup of one family onto that of the other, because the coordinate
-condition can change at the finitely many indices where the families differ.  The witness
-`exists_map_integralSubgroup_ne` records a counterexample to the general preservation claim.
+condition can change at the finitely many indices where the families differ.  Precisely, it
+carries the subgroup cut out by any family `V` to the subgroup cut out by `V`, so it preserves the
+everywhere-integral subgroups exactly when the two families agree at every index
+(`map_integralSubgroup_restrictedProductCongr_eq_iff`).  The witness
+`exists_map_integralSubgroup_ne` records an explicit counterexample to the general preservation
+claim.
 The resulting transport of double-coset spaces is in
 `TauCeti.Topology.Algebra.RestrictedProduct.Congr.DoubleCoset`.
+
+The general statements have additive counterparts, such as `addRestrictedProductCongr`.
 
 ## References
 
@@ -45,6 +51,9 @@ variable [∀ i, Group (G i)]
 
 /-- The multiplicative equivalence between the restricted products with respect to two reference
 families that agree at all but finitely many indices. It is the identity in every coordinate. -/
+@[to_additive addRestrictedProductCongr /-- The additive equivalence between the restricted
+products with respect to two reference families that agree at all but finitely many indices. It is
+the identity in every coordinate. -/]
 def restrictedProductCongr (U U' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i) :
     (Πʳ i, [G i, (U i : Set (G i))]) ≃* (Πʳ i, [G i, (U' i : Set (G i))]) :=
@@ -54,7 +63,7 @@ def restrictedProductCongr (U U' : ∀ i, Subgroup (G i))
     exact Set.bijOn_id _
 
 /-- The change-of-family equivalence is the identity in every coordinate. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongr_apply]
 theorem restrictedProductCongr_apply (U U' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i)
     (x : Πʳ i, [G i, (U i : Set (G i))]) (i : ι) :
@@ -65,6 +74,7 @@ theorem restrictedProductCongr_apply (U U' : ∀ i, Subgroup (G i))
 
 Not a `simp` lemma: `simp` proves it from `restrictedProductCongr_symm` and
 `restrictedProductCongr_apply`. -/
+@[to_additive addRestrictedProductCongr_symm_apply]
 theorem restrictedProductCongr_symm_apply (U U' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i)
     (y : Πʳ i, [G i, (U' i : Set (G i))]) (i : ι) :
@@ -72,6 +82,7 @@ theorem restrictedProductCongr_symm_apply (U U' : ∀ i, Subgroup (G i))
   restrictedProductCongrRight_symm_apply U U' _ _ y i
 
 /-- The change-of-family equivalence is continuous, for every pair of reference families. -/
+@[to_additive continuous_addRestrictedProductCongr]
 theorem continuous_restrictedProductCongr [∀ i, TopologicalSpace (G i)]
     (U U' : ∀ i, Subgroup (G i)) (h : ∀ᶠ i in cofinite, U i = U' i) :
     Continuous (restrictedProductCongr U U' h) :=
@@ -79,13 +90,14 @@ theorem continuous_restrictedProductCongr [∀ i, TopologicalSpace (G i)]
 
 /-- The inverse of the change-of-family equivalence is continuous, for every pair of reference
 families. -/
+@[to_additive continuous_addRestrictedProductCongr_symm]
 theorem continuous_restrictedProductCongr_symm [∀ i, TopologicalSpace (G i)]
     (U U' : ∀ i, Subgroup (G i)) (h : ∀ᶠ i in cofinite, U i = U' i) :
     Continuous (restrictedProductCongr U U' h).symm :=
   continuous_restrictedProductCongrRight_symm U U' _ _ fun _ ↦ continuous_id
 
 /-- The change-of-family equivalence from a family to itself is the identity. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongr_refl]
 theorem restrictedProductCongr_refl (U : ∀ i, Subgroup (G i)) :
     restrictedProductCongr U U (.of_forall fun _ ↦ rfl) =
       MulEquiv.refl (Πʳ i, [G i, (U i : Set (G i))]) := by
@@ -94,7 +106,7 @@ theorem restrictedProductCongr_refl (U : ∀ i, Subgroup (G i)) :
 
 /-- The inverse of the change-of-family equivalence is the change-of-family equivalence in the
 opposite direction. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongr_symm]
 theorem restrictedProductCongr_symm (U U' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i) :
     (restrictedProductCongr U U' h).symm =
@@ -104,7 +116,7 @@ theorem restrictedProductCongr_symm (U U' : ∀ i, Subgroup (G i))
 
 /-- Two successive changes of family compose to the change of family between the outer two
 families. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongr_trans]
 theorem restrictedProductCongr_trans (U U' U'' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i) (h' : ∀ᶠ i in cofinite, U' i = U'' i) :
     (restrictedProductCongr U U' h).trans (restrictedProductCongr U' U'' h') =
@@ -116,6 +128,7 @@ theorem restrictedProductCongr_trans (U U' U'' : ∀ i, Subgroup (G i))
 
 /-- Naturality of the change-of-family equivalence with respect to componentwise maps: changing
 the family before or after applying a componentwise map gives the same homomorphism. -/
+@[to_additive addRestrictedProductCongr_naturality]
 theorem restrictedProductCongr_naturality {H : ι → Type w} [∀ i, Group (H i)]
     (U U' : ∀ i, Subgroup (G i)) (V V' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i →* H i)
@@ -130,6 +143,7 @@ theorem restrictedProductCongr_naturality {H : ι → Type w} [∀ i, Group (H i
 
 /-- As a monoid homomorphism, the change-of-family equivalence is the componentwise map induced
 by the identity homomorphisms. -/
+@[to_additive coe_addMonoidHom_addRestrictedProductCongr]
 theorem coe_monoidHom_restrictedProductCongr (U U' : ∀ i, Subgroup (G i))
     (h : ∀ᶠ i in cofinite, U i = U' i) :
     (restrictedProductCongr U U' h :
@@ -137,6 +151,43 @@ theorem coe_monoidHom_restrictedProductCongr (U U' : ∀ i, Subgroup (G i))
       restrictedProductMap U U' (fun _ ↦ MonoidHom.id _) (h.mono fun _ hi _ hx ↦ hi ▸ hx) := by
   ext x i
   simp
+
+/-- The change-of-family equivalence carries the subgroup cut out by a family `V` in the first
+restricted product to the subgroup cut out by the same family in the second. -/
+@[to_additive (attr := simp) map_integralAddSubgroupOf_addRestrictedProductCongr]
+theorem map_integralSubgroupOf_restrictedProductCongr (U U' V : ∀ i, Subgroup (G i))
+    (h : ∀ᶠ i in cofinite, U i = U' i) :
+    (integralSubgroupOf U V).map (restrictedProductCongr U U' h :
+        (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [G i, (U' i : Set (G i))]) =
+      integralSubgroupOf U' V := by
+  ext y
+  rw [Subgroup.map_equiv_eq_comap_symm, Subgroup.mem_comap, mem_integralSubgroupOf,
+    mem_integralSubgroupOf]
+  simp
+
+/-- The change-of-family equivalence carries the everywhere-integral subgroup of `U` to the
+subgroup of the `U'`-restricted product cut out by `U`. -/
+@[to_additive (attr := simp) map_integralAddSubgroup_addRestrictedProductCongr]
+theorem map_integralSubgroup_restrictedProductCongr (U U' : ∀ i, Subgroup (G i))
+    (h : ∀ᶠ i in cofinite, U i = U' i) :
+    (integralSubgroup U).map (restrictedProductCongr U U' h :
+        (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [G i, (U' i : Set (G i))]) =
+      integralSubgroupOf U' U := by
+  rw [← integralSubgroupOf_self, map_integralSubgroupOf_restrictedProductCongr]
+
+/-- The change-of-family equivalence carries the everywhere-integral subgroup of `U` onto that of
+`U'` exactly when the two reference families agree at every index. Agreement at all but finitely
+many indices identifies the ambient restricted products, but not their integral subgroups. -/
+@[to_additive map_integralAddSubgroup_addRestrictedProductCongr_eq_iff]
+theorem map_integralSubgroup_restrictedProductCongr_eq_iff (U U' : ∀ i, Subgroup (G i))
+    (h : ∀ᶠ i in cofinite, U i = U' i) :
+    (integralSubgroup U).map (restrictedProductCongr U U' h :
+        (Πʳ i, [G i, (U i : Set (G i))]) →* Πʳ i, [G i, (U' i : Set (G i))]) =
+      integralSubgroup U' ↔ U = U' := by
+  rw [map_integralSubgroup_restrictedProductCongr, ← integralSubgroupOf_self U',
+    le_antisymm_iff, integralSubgroupOf_le_integralSubgroupOf_iff,
+    integralSubgroupOf_le_integralSubgroupOf_iff, funext_iff]
+  exact ⟨fun h i ↦ le_antisymm (h.1 i) (h.2 i), fun h ↦ ⟨fun i ↦ (h i).le, fun i ↦ (h i).ge⟩⟩
 
 /-- The change-of-family equivalence need not carry the everywhere-integral subgroup onto the
 everywhere-integral subgroup of the new family. The witness is that of

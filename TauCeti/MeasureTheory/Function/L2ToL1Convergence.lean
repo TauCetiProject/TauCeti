@@ -57,7 +57,8 @@ theorem tendsto_integral_norm_of_tendsto_eLpNorm_two {ι E : Type*} [NormedAddCo
       (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hf_L1
   convert hreal using 1
   ext i
-  simpa only [eLpNorm_one_eq_lintegral_enorm] using (integral_norm_eq_lintegral_enorm (hf_meas i))
+  simpa only [eLpNorm_one_eq_lintegral_enorm (hf_meas i)] using
+    integral_norm_eq_lintegral_enorm (hf_meas i)
 
 end MeasureTheory
 

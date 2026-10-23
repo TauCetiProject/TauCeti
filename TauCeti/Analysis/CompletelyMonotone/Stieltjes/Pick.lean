@@ -24,6 +24,8 @@ extension.
 
 ## Main declarations
 
+* `TauCeti.exists_isCompleteBernsteinFunction_eqOn_of_analyticOnNhd`: a nonnegative function
+  with a Pick extension to the slit plane agrees on `(0, ∞)` with a complete Bernstein function.
 * `TauCeti.isCompleteBernsteinFunction_iff_continuousWithinAt_nonneg_exists_analyticOnNhd`:
   the Pick characterization of complete Bernstein functions.
 
@@ -40,6 +42,30 @@ noncomputable section
 open Complex Filter MeasureTheory Set Topology
 
 namespace TauCeti
+
+/-- **Complete Bernstein functions from Pick extensions, on `(0, ∞)`.** A function that is
+nonnegative on `(0, ∞)` and has a holomorphic extension to the slit plane mapping the upper
+half-plane into its closure agrees on `(0, ∞)` with a complete Bernstein function.  Unlike the
+characterization below, no condition at `0` is imposed. -/
+theorem exists_isCompleteBernsteinFunction_eqOn_of_analyticOnNhd {f : ℝ → ℝ} {F : ℂ → ℂ}
+    (hF : AnalyticOnNhd ℂ F slitPlane) (hFf : ∀ t : ℝ, 0 < t → F t = f t)
+    (him : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, 0 ≤ (F z).im)
+    (hpos : ∀ t : ℝ, 0 < t → 0 ≤ f t) :
+    ∃ g : ℝ → ℝ, IsCompleteBernsteinFunction g ∧ EqOn g f (Ioi 0) := by
+  have hzero : ∀ t : ℝ, 0 < t → (F (t : ℂ)).im = 0 := fun t ht => by
+    rw [hFf t ht]
+    simp
+  obtain ⟨rho, b, hrhoFinite, hb, hrho, hrep⟩ :=
+    exists_isFiniteMeasure_eq_nevanlinnaKernel_add_of_im_eq_zero
+      hF.differentiableOn him hzero
+  let _ : IsFiniteMeasure rho := hrhoFinite
+  exact exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_nevanlinnaKernel
+    hrho hb (f := f) (fun t ht => by
+      rw [← hFf t ht]
+      exact eq_integral_nevanlinnaKernel_add_of_eqOn_upperHalfPlane
+        ((hF.continuousOn.continuousAt
+          (isOpen_slitPlane.mem_nhds (ofReal_mem_slitPlane.mpr ht))).continuousWithinAt)
+        hrho ht hrep) hpos
 
 /-- **Pick characterization of complete Bernstein functions** (Schilling--Song--Vondraček,
 Theorem 6.2). A real function is complete Bernstein exactly when it is right-continuous at `0`,
@@ -60,21 +86,7 @@ theorem isCompleteBernsteinFunction_iff_continuousWithinAt_nonneg_exists_analyti
     exact nonneg_of_mul_nonneg_right
       (him z (mem_slitPlane_iff.2 (Or.inr (ne_of_gt hz)))) hz
   · rintro ⟨hfcont, hpos, F, hF, hFf, him⟩
-    have hzero : ∀ t : ℝ, 0 < t → (F (t : ℂ)).im = 0 := fun t ht => by
-      rw [hFf t ht]
-      simp
-    obtain ⟨rho, b, hrhoFinite, hb, hrho, hrep⟩ :=
-      exists_isFiniteMeasure_eq_nevanlinnaKernel_add_of_im_eq_zero
-        hF.differentiableOn him hzero
-    let _ : IsFiniteMeasure rho := hrhoFinite
-    obtain ⟨g, hg, hgf⟩ :=
-      exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_nevanlinnaKernel
-        hrho hb (f := f) (fun t ht => by
-          rw [← hFf t ht]
-          exact eq_integral_nevanlinnaKernel_add_of_eqOn_upperHalfPlane
-            ((hF.continuousOn.continuousAt
-              (isOpen_slitPlane.mem_nhds (ofReal_mem_slitPlane.mpr ht))).continuousWithinAt)
-            hrho ht hrep) hpos
+    obtain ⟨g, hg, hgf⟩ := exists_isCompleteBernsteinFunction_eqOn_of_analyticOnNhd hF hFf him hpos
     have hzero : g 0 = f 0 := by
       have hgt : Tendsto g (𝓝[>] (0 : ℝ)) (𝓝 (g 0)) :=
         ((hg.isBernsteinFunction.continuousOn.continuousWithinAt (mem_Ici.mpr le_rfl)).mono

@@ -86,8 +86,8 @@ source subcoalgebra belongs to `B`. -/
 theorem map_le_iff {f : C →ₗc[R] D} {A : Subcoalgebra R C} {B : Subcoalgebra R D} :
     A.map f ≤ B ↔ ∀ ⦃c⦄, c ∈ A → f c ∈ B := by
   rw [← toSubmodule_le_toSubmodule, map_toSubmodule, Submodule.map_le_iff_le_comap]
-  simp only [SetLike.le_def, Submodule.mem_comap, mem_toSubmodule,
-    CoalgHom.toLinearMap_eq_coe, CoalgHom.coe_toLinearMap]
+  simp only [IsConcreteLE.le_iff, Submodule.mem_comap, mem_toSubmodule,
+    CoalgHom.toLinearMap_eq_ofClass, CoalgHom.coe_linearMapOfClass]
 
 /-- The image construction is monotone in the source subcoalgebra. -/
 theorem map_mono (f : C →ₗc[R] D) {A B : Subcoalgebra R C} (hAB : A ≤ B) :
@@ -102,7 +102,6 @@ theorem map_bot (f : C →ₗc[R] D) : (⊥ : Subcoalgebra R C).map f = ⊥ := b
   simp only [← mem_toSubmodule, map_toSubmodule, bot_toSubmodule, Submodule.map_bot]
 
 /-- The image of the top subcoalgebra is the range of the coalgebra morphism as a submodule. -/
-@[simp]
 theorem map_top_toSubmodule (f : C →ₗc[R] D) :
     ((⊤ : Subcoalgebra R C).map f).toSubmodule = LinearMap.range f.toLinearMap := by
   rw [map_toSubmodule, top_toSubmodule, Submodule.map_top]
@@ -111,7 +110,7 @@ theorem map_top_toSubmodule (f : C →ₗc[R] D) :
 @[simp]
 theorem map_id (A : Subcoalgebra R C) : A.map (CoalgHom.id R C) = A := by
   ext d
-  simp only [← mem_toSubmodule, map_toSubmodule, CoalgHom.toLinearMap_eq_coe,
+  simp only [← mem_toSubmodule, map_toSubmodule, CoalgHom.toLinearMap_eq_ofClass,
     CoalgHom.id_toLinearMap, Submodule.map_id]
 
 /-- Images of subcoalgebras compose with coalgebra morphisms. -/
@@ -119,7 +118,7 @@ theorem map_id (A : Subcoalgebra R C) : A.map (CoalgHom.id R C) = A := by
 theorem map_map (A : Subcoalgebra R C) (f : C →ₗc[R] D) (g : D →ₗc[R] E) :
     (A.map f).map g = A.map (g.comp f) := by
   ext d
-  simp only [← mem_toSubmodule, map_toSubmodule, CoalgHom.toLinearMap_eq_coe,
+  simp only [← mem_toSubmodule, map_toSubmodule, CoalgHom.toLinearMap_eq_ofClass,
     CoalgHom.comp_toLinearMap, Submodule.map_comp]
 
 /-- The image of a binary join is the binary join of the images. -/

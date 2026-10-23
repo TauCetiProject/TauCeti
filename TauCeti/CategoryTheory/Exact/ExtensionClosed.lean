@@ -37,6 +37,8 @@ finite projective resolution, be treated as an exact category in its own right.
 
 * `TauCeti.ExactStructure.IsExtensionClosed.prop_biprod`: extension closure implies closure under
   binary biproducts, so additivity of the subcategory only has to be assumed for the zero object.
+* `TauCeti.ExactStructure.IsExtensionClosed.isClosedUnderIsomorphisms`: an extension-closed
+  property holding for a zero object is closed under isomorphisms.
 * `TauCeti.ExactStructure.isExtensionClosed_split_iff` and
   `TauCeti.ExactStructure.isExtensionClosed_abelian_iff`: for the split exact structure extension
   closure is closure under binary biproducts, and for the canonical exact structure of an abelian
@@ -104,6 +106,16 @@ subcategory, so no separate closure hypothesis on biproducts is needed. -/
 theorem isClosedUnderBinaryProducts (hP : E.IsExtensionClosed P) [P.IsClosedUnderIsomorphisms] :
     P.IsClosedUnderBinaryProducts :=
   P.isClosedUnderBinaryProducts_of_prop_biprod fun _ _ hX hY => hP.prop_biprod hX hY
+
+/-- An extension-closed property holding for some zero object is closed under isomorphisms: an
+isomorphism `X ≅ Y` followed by the zero map to a zero object is a split conflation. -/
+theorem isClosedUnderIsomorphisms (hP : E.IsExtensionClosed P) [P.ContainsZero] :
+    P.IsClosedUnderIsomorphisms where
+  of_iso {X Y} e hX := by
+    obtain ⟨Z, hZ, hPZ⟩ := P.exists_prop_of_containsZero
+    exact hP.prop_X₂ (S := ShortComplex.mk e.hom (0 : Y ⟶ Z) (by simp))
+      (E.conflation_of_splitting (ShortComplex.Splitting.ofIsIsoOfIsZero _ inferInstance hZ))
+      hX hPZ
 
 end IsExtensionClosed
 

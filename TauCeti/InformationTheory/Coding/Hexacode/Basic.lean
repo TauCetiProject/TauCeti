@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.Matrix
-public import TauCeti.InformationTheory.Coding.GaloisDual
+public import TauCeti.InformationTheory.Coding.GaloisDual.Frobenius
 public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.FieldTheory.Finite.Four
 
@@ -130,17 +130,15 @@ theorem finrank_code (ω : F) : Module.finrank F (code ω) = 3 := by
 
 /-- Encoding identifies the three-dimensional message space with the hexacode. -/
 noncomputable def encodingEquiv (ω : F) : (Fin 3 → F) ≃ₗ[F] code ω :=
-  (LinearEquiv.ofInjective (generatorMatrix ω).vecMulLinear
-    (vecMul_generatorMatrix_injective ω)).trans
-    (LinearEquiv.ofEq _ _ ((code_def ω).trans (generatorMatrix ω).generatedBy_def).symm)
+  LinearCode.IsGeneratorMatrix.encodingEquiv
+    ((LinearCode.isGeneratorMatrix_def _ _).mpr (code_def ω).symm)
+    (Matrix.vecMul_injective_iff.mp (vecMul_generatorMatrix_injective ω))
 
 /-- The encoding equivalence multiplies a message by the generator. -/
 @[simp]
 theorem coe_encodingEquiv_apply (ω : F) (a : Fin 3 → F) :
     (encodingEquiv ω a : Fin 6 → F) = a ᵥ* generatorMatrix ω := by
-  simp only [encodingEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
-  exact (LinearEquiv.ofInjective_apply (σ₂₁ := RingHom.id F)
-    (generatorMatrix ω).vecMulLinear a).trans (Matrix.vecMulLinear_apply _ _)
+  rw [encodingEquiv, LinearCode.IsGeneratorMatrix.coe_encodingEquiv_apply]
 
 /-- Decoding recovers the first three coordinates. -/
 @[simp]
@@ -169,7 +167,7 @@ include hω
 /-- The generator has zero Hermitian Gram matrix. -/
 theorem generatorMatrix_mul_map_frobenius_transpose_eq_zero :
     generatorMatrix ω * ((generatorMatrix ω).map (frobenius F 2))ᵀ = 0 := by
-  have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
+  have _ : (2 : F) = 0 := CharTwo.two_eq_zero
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [generatorMatrix_def, Matrix.mul_apply, Fin.sum_univ_succ, frobenius_def] <;> grind
@@ -178,7 +176,7 @@ theorem generatorMatrix_mul_map_frobenius_transpose_eq_zero :
 ordinary dot product, unlike the Hermitian form. -/
 theorem generatorMatrix_mul_transpose_ne_zero :
     generatorMatrix ω * (generatorMatrix ω)ᵀ ≠ 0 := by
-  have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
+  have _ : (2 : F) = 0 := CharTwo.two_eq_zero
   have h01 : (generatorMatrix ω * (generatorMatrix ω)ᵀ) 0 1 = ω ^ 2 := by
     simp [generatorMatrix_def, Matrix.mul_apply, Fin.sum_univ_succ]
     grind
@@ -206,16 +204,10 @@ theorem checkedBy_map_frobenius_generatorMatrix :
 /-- Over a field of order four, the hexacode is Hermitian self-dual for Frobenius. -/
 theorem galoisDual_code [Finite F] (hF : Nat.card F = 4) :
     (frobeniusEquiv F 2).galoisDual (code ω) = code ω := by
-  let := Fintype.ofFinite F
-  have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
   rw [code_def, Matrix.generatedBy_def,
-    RingEquiv.galoisDual_range_vecMulLinear_of_involutive _
-      (fun x ↦ by
-        simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def,
-          RingHom.comp_apply, RingHom.one_def, RingHom.id_apply] using
-          DFunLike.congr_fun (FiniteField.frobenius_pow (p := 2) (n := 2) hcard) x)]
-  simpa only [Matrix.checkedBy_def, code_def, Matrix.generatedBy_def, coe_frobeniusEquiv]
-    using checkedBy_map_frobenius_generatorMatrix hω
+    RingEquiv.galoisDual_range_vecMulLinear_frobeniusEquiv (hF.trans (by norm_num)),
+    ← Matrix.checkedBy_def, checkedBy_map_frobenius_generatorMatrix hω, code_def,
+    Matrix.generatedBy_def]
 
 end CharacteristicTwo
 
@@ -252,7 +244,6 @@ theorem map_code_sq_conjugatePerm [CharP F 2] {ω : F} (hω : ω ^ 2 + ω + 1 = 
   simp only [LinearEquiv.funCongrLeft_apply, mem_code, Fin.isValue, LinearMap.funLeft_apply,
     conjugatePerm_symm_apply, Nat.succ_eq_add_one, Nat.reduceAdd, cons_val, cons_val_zero,
     cons_val_one]
-  have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
   constructor <;> rintro ⟨h3, h4, h5⟩ <;> constructor
   all_goals grind
 
@@ -267,9 +258,8 @@ theorem isPermutationEquivalent_code_sq [CharP F 2] {ω : F}
 theorem mem_code_inf_code_sq [CharP F 2] {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
     (x : Fin 6 → F) : x ∈ code ω ⊓ code (ω ^ 2) ↔ ∀ i, x i = x 0 := by
   rw [Submodule.mem_inf, mem_code, mem_code]
-  have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
   constructor
-  · rintro ⟨⟨h3, h4, h5⟩, ⟨k3, k4, k5⟩⟩ i
+  · rintro ⟨⟨h3, h4, h5⟩, ⟨k3, k4, _⟩⟩ i
     fin_cases i <;> grind
   · intro hx
     simp only [hx]

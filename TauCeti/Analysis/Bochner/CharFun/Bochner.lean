@@ -86,7 +86,7 @@ theorem bochner_charFun_probabilityMeasure (F : V → ℂ) :
       ∃! μ : Measure V, IsProbabilityMeasure μ ∧ charFun μ = F := by
   constructor
   · rintro ⟨hcont, hpd, hF0⟩
-    obtain ⟨μ, ⟨hμ, hμF⟩, huniq⟩ := (bochner_charFun F).mp ⟨hcont, hpd⟩
+    obtain ⟨μ, ⟨_, hμF⟩, huniq⟩ := (bochner_charFun F).mp ⟨hcont, hpd⟩
     have hprob : IsProbabilityMeasure μ := isProbabilityMeasure_iff_real.mpr <| by
       have h0 := congrFun hμF 0
       rw [charFun_zero, hF0] at h0

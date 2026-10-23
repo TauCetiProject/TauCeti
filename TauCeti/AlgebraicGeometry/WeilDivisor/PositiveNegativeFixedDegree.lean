@@ -18,12 +18,8 @@ API, in turn, is the formal model for symmetric powers.  The declarations here b
 layers by turning `D⁺` and `D⁻` into `EffectiveDivisorOfDegree` terms with their actual degrees
 as indices.
 
-This is formal divisor bookkeeping for the Jacobian challenge roadmap's Layer A and Layer C:
-`TauCetiRoadmap/JacobianChallenge/README.md`, specifically "Divisors on a curve: Weil divisors
-`⊕_x ℤ`", "Degree", and the symmetric-power prerequisite "Relative effective Cartier divisors
-and symmetric powers `Symᵈ X`".  No external mathematics is vendored; the proofs reuse Tau
-Ceti's `WeilDivisor.Order` positive/negative-part API and the existing
-`EffectiveDivisorOfDegree` packaging.
+No external mathematics is vendored; the proofs reuse Tau Ceti's `WeilDivisor.Order`
+positive/negative-part API and the `EffectiveDivisorOfDegree` packaging.
 -/
 
 public section

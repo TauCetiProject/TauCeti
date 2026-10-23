@@ -91,10 +91,8 @@ theorem insertPoint_injective :
     Function.Injective fun R : GridRectangleBetween x y => R.insertPoint p q := by
   intro R S h
   have hl := congrArg GridRectangleBetween.left h
-  have hr := congrArg GridRectangleBetween.right h
-  simp only [insertPoint_left, insertPoint_right] at hl hr
-  exact sidePair_injective (Prod.ext (p.succAbove_right_injective hl)
-    (p.succAbove_right_injective hr))
+  simp only [insertPoint_left] at hl
+  exact left_injective (p.succAbove_right_injective hl)
 
 variable {p q} in
 /-- Every rectangle between two states containing the same inserted point is transported from a

@@ -65,7 +65,6 @@ private lemma prod_erase_reflection_weylDenominator [DecidableEq ι] {i : ι}
         (1 - AddMonoidAlgebra.single (-(P.reflection i) (P.root j)) (1 : ℤ)) =
       ∏ j ∈ (posRootsFinset P b).erase i,
         (1 - AddMonoidAlgebra.single (-P.root j) (1 : ℤ)) := by
-  let s := (posRootsFinset P b).erase i
   let e := P.reflectionPerm i
   refine Finset.prod_bij (fun j _ ↦ e j) ?_ ?_ ?_ ?_
   · intro j hj
@@ -146,7 +145,7 @@ theorem coeff_weylDenominator_dotAction_ofIdx {i : ι} (hi : i ∈ b.support) (x
   -- Expose the underlying `Finsupp.mapDomain` to read its coefficient at the image of `x`.
   change (Finsupp.mapDomain (P.reflection i) (weylDenominator P b).coeff)
       ((P.reflection i) x) = _ at h
-  rw [Finsupp.mapDomain_apply (P.reflection i).injective] at h
+  rw [Finsupp.mapDomain_apply_of_injective (P.reflection i).injective] at h
   simp only [neg_mul, AddMonoidAlgebra.coeff_neg, Finsupp.neg_apply,
     AddMonoidAlgebra.coeff_single_mul_apply, one_mul] at h
   rw [dotAction_ofIdx P b hi]

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
-public import TauCeti.FieldTheory.FunctionField.AffineModel.Prime
+public import TauCeti.FieldTheory.FunctionField.Place.Adic
 
 /-!
 # Places attached to points with discrete valuation ring stalks
@@ -147,9 +148,14 @@ theorem _root_.AlgebraicGeometry.Scheme.toPlaceResidueFieldAlgEquiv_mk (X : Sche
     [IsDiscreteValuationRing (X.presheaf.stalk x)] (a : X.presheaf.stalk x) :
     X.toPlaceResidueFieldAlgEquiv (k := k) x
         (Ideal.Quotient.mk (IsLocalRing.maximalIdeal (X.presheaf.stalk x)) a) =
-      (X.toPlace (k := k) x).residueHom
-        (X.algebraMap_stalk_mem_toPlace_integers (k := k) x) a :=
-  Place.quotientAlgEquivResidueFieldOfPrime_mk k X.functionField _ a
+      IsLocalRing.residue (X.toPlace (k := k) x).integers
+        (X.stalkToPlaceIntegersAlgEquiv (k := k) x a) := by
+  have h := Place.quotientAlgEquivResidueFieldOfPrime_mk k X.functionField
+    (IsDiscreteValuationRing.maximalIdeal (X.presheaf.stalk x)) a
+  rw [Place.algebraMap_residueField] at h
+  refine h.trans (congrArg (IsLocalRing.residue _) ?_)
+  apply Subtype.ext
+  exact (Scheme.coe_stalkToPlaceIntegersAlgEquiv (k := k) X x a).symm
 
 /-- The degree of the place attached to `x` is the degree of the scheme-theoretic residue field
 `κ(x)` over the base field. -/
@@ -166,7 +172,8 @@ theorem _root_.AlgebraicGeometry.Scheme.toPlace_degree_eq_residueDegree (X : Sch
     [IsIntegral X] [X.Over (Spec (.of k))] (x : X)
     [IsDiscreteValuationRing (X.presheaf.stalk x)] :
     (X.toPlace (k := k) x).degree = (X ↘ Spec (.of k)).residueDegree x := by
-  rw [Scheme.toPlace_degree, Scheme.finrank_residueField_eq_residueDegree]
+  rw [Scheme.toPlace_degree, Scheme.residueFieldBaseAlgebra_eq_compHom]
+  exact ((X ↘ Spec (.of k)).residueDegree_eq_finrank x).symm
 
 end
 

@@ -11,10 +11,11 @@ import Mathlib.Algebra.Group.AddChar
 /-!
 # Powers of an additively indexed family of endomorphisms
 
-A family `f : ℕ → M →* M` of endomorphisms of a monoid indexed additively, so that `f 0` is the
-identity and `f (a + b)` is the composite of `f a` and `f b`, is an additive character
-`AddChar ℕ (Monoid.End M)`, and so turns multiplication of indices into powers in the
-endomorphism monoid: the `m`-th power of `f k` is `f (k * m)`.
+A family `f : ℕ → M →* M` of endomorphisms of a type with multiplication and a distinguished
+one, indexed additively so that `f 0` is the identity and `f (a + b)` is the composite of `f a`
+and `f b`, is an additive character `AddChar ℕ (Monoid.End M)`. Thus multiplication of indices
+corresponds to powers in the endomorphism monoid: the `m`-th power of `f k` is `f (k * m)`.
+No associativity or identity laws for multiplication on `M` are needed.
 
 This is the shape of the iteration laws of an iterated Frobenius, `Frob_0 = id` and
 `Frob_(a + b) = Frob_a ∘ Frob_b`, and the lemma packages Mathlib's `AddChar.map_nsmul_eq_pow`
@@ -29,7 +30,7 @@ public section
 
 namespace TauCeti
 
-variable {M : Type*} [Monoid M]
+variable {M : Type*} [MulOne M]
 
 /-- **Indices multiply under taking powers** in the endomorphism monoid: if `f 0` is the identity
 and `f (a + b) = f a ∘ f b`, then the `m`-th power of `f k` is `f (k * m)`. -/

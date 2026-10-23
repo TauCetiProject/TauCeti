@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Sard's lemma in equal dimensions
@@ -24,9 +25,8 @@ the regular values are dense.
 Mathlib proves the corresponding result for an endomorphism of one normed space in
 `addHaar_image_eq_zero_of_det_fderivWithin_eq_zero`.  We transport the codomain across a continuous
 linear equivalence and use uniqueness of additive Haar measure to return to the original codomain.
-This is the first, equal-dimensional slice of finite-dimensional Sard required by Lane F0 of the
-analytic Heegaard Floer roadmap.  The general Morse--Sard theorem additionally needs the
-higher-regularity argument when the dimensions differ.
+Together with the lower-dimensional-source case, this reduces the remaining Morse--Sard argument
+to maps whose source has strictly larger dimension, where higher regularity is needed.
 
 ## Main results
 
@@ -84,7 +84,8 @@ theorem addHaar_image_eq_zero_of_not_surjective_fderivWithin
   have hnull : (addHaar : Measure E) (g '' s) = 0 :=
     addHaar_image_eq_zero_of_det_fderivWithin_eq_zero addHaar hg' hdet
   have hpreimage : ν (e ⁻¹' (g '' s)) = 0 :=
-    (ContinuousLinearEquiv.quasiMeasurePreserving_addHaar e ν addHaar).preimage_null hnull
+    by simpa only [ContinuousLinearEquiv.toContinuousAddEquiv_coe] using
+      (e.toContinuousAddEquiv.quasiMeasurePreserving_addHaar ν addHaar).preimage_null hnull
   have himage : g '' s = e '' (f '' s) := by
     rw [image_image]
   rw [himage, Set.preimage_image_eq _ e.injective] at hpreimage

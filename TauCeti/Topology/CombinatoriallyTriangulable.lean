@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Triangulable
-public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold
+public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
 
 /-!
 # Combinatorially triangulable spaces

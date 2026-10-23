@@ -5,8 +5,10 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import Mathlib.Geometry.Manifold.Notation
+public import TauCeti.Analysis.Asymptotics.MvPolynomial
 
 /-!
 # Restriction of a function on the upper half-plane to the imaginary axis
@@ -43,6 +45,11 @@ constant is not determined by the goal.
 * `UpperHalfPlane.differentiableAt_resToImagAxis`: the restriction is real-differentiable at
   `t > 0` when `F ∘ ofComplex` is, and `differentiableAt_resToImagAxis_of_mDiffAt`: the same
   from manifold differentiability at the corresponding point.
+* `UpperHalfPlane.tendsto_ofComplex_I_mul_atTop_atImInfty`: `i t → i∞` as `t → ∞`, and
+  `Asymptotics.IsBigO.resToImagAxis`: an asymptotic bound at `i∞` restricts to a bound on the
+  imaginary axis at `+∞`.
+* `UpperHalfPlane.isBigO_aeval_num_denom`: along the imaginary axis, a polynomial in the
+  numerator and denominator of a Möbius transformation grows at most polynomially.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/Modularforms/ResToImagAxis.lean`, Chris Birkbeck,
@@ -115,20 +122,53 @@ theorem resToImagAxis_mul (F G : ℍ → ℂ) :
   funext t
   rcases le_or_gt t 0 with ht | ht <;> simp [resToImagAxis_of_pos, resToImagAxis_of_nonpos, ht]
 
-/-- The restriction commutes with scalar multiplication. -/
+/-- The restriction commutes with scalar multiplication, by any scalar acting on `ℂ` and
+fixing `0` (in particular complex, real and rational scalars). The scalar generality follows
+Mathlib's `Set.indicator_const_smul` and `Function.extend_smul`. -/
 @[simp]
-theorem resToImagAxis_smul (c : ℂ) (F : ℍ → ℂ) :
+theorem resToImagAxis_smul {α : Type*} [SMulZeroClass α ℂ] (c : α) (F : ℍ → ℂ) :
     resToImagAxis (c • F) = c • resToImagAxis F := by
   funext t
   rcases le_or_gt t 0 with ht | ht <;> simp [resToImagAxis_of_pos, resToImagAxis_of_nonpos, ht]
 
-/-- The real-scalar form of `resToImagAxis_smul`: the complex-scalar law does not fire on
-`(c : ℝ) • F`. Private, since its three consumers — `RealOnImagAxis.const_smul`,
-`PosOnImagAxis.const_smul` and `EventuallyPosOnImagAxis.const_smul` — are all in this file. -/
-@[simp]
-private theorem resToImagAxis_real_smul (c : ℝ) (F : ℍ → ℂ) :
-    resToImagAxis (c • F) = c • resToImagAxis F := by
-  simpa [Complex.real_smul] using resToImagAxis_smul (c : ℂ) F
+/-! ### Behaviour at `i∞` -/
+
+/-- Along the imaginary axis, `i t` tends to `i∞` as `t → ∞`. -/
+theorem tendsto_ofComplex_I_mul_atTop_atImInfty :
+    Tendsto (fun t : ℝ ↦ ofComplex (Complex.I * t)) atTop atImInfty := by
+  -- the argument of the private lemma behind Mathlib's `ModularForm.weakFEPair`
+  rw [atImInfty, tendsto_comap_iff]
+  refine tendsto_id.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with t ht
+  simp [ofComplex_apply_of_im_pos, ht, ← coe_im]
+
+/-- **An asymptotic bound at `i∞` restricts to the imaginary axis**: if `F = O(G)` along
+`atImInfty`, then `resToImagAxis F = O(t ↦ G (i t))` along `atTop`. -/
+theorem _root_.Asymptotics.IsBigO.resToImagAxis {E : Type*} [Norm E] {F : ℍ → ℂ} {G : ℍ → E}
+    (h : F =O[atImInfty] G) :
+    resToImagAxis F =O[atTop] fun t ↦ G (ofComplex (Complex.I * t)) := by
+  refine (h.comp_tendsto tendsto_ofComplex_I_mul_atTop_atImInfty).congr' ?_ EventuallyEq.rfl
+  filter_upwards [eventually_gt_atTop 0] with t ht
+  rw [Function.comp_apply, resToImagAxis_of_pos _ ht,
+    ofComplex_apply_of_im_pos (by simpa using ht)]
+
+open Asymptotics in
+/-- Along the imaginary axis, a polynomial `P` in the numerator `a i t + b` and denominator
+`c i t + d` of the Möbius transformation of a real matrix grows at most like `t ^ n` for
+`n ≥ P.totalDegree`. -/
+theorem isBigO_aeval_num_denom {R : Type*} [CommSemiring R] [Algebra R ℂ]
+    {P : MvPolynomial (Fin 2) R} {n : ℕ} (hP : P.totalDegree ≤ n) (g : GL (Fin 2) ℝ) :
+    (fun t : ℝ ↦ MvPolynomial.aeval ![num g (Complex.I * t), denom g (Complex.I * t)] P) =O[atTop]
+      fun t ↦ t ^ n := by
+  have hI : (fun t : ℝ ↦ Complex.I * (t : ℂ)) =O[atTop] fun t : ℝ ↦ t :=
+    isBigO_of_le _ fun t ↦ by simp
+  have haffine (a b : ℂ) : (fun t : ℝ ↦ a * (Complex.I * (t : ℂ)) + b) =O[atTop] fun t : ℝ ↦ t :=
+    (hI.const_mul_left a).add (isLittleO_const_id_atTop b).isBigO
+  refine TauCeti.isBigO_aeval_of_totalDegree_le hP (fun i ↦ ?_)
+    (isLittleO_const_id_atTop (1 : ℝ)).isBigO
+  fin_cases i
+  · simpa [num] using haffine (g 0 0 : ℂ) (g 0 1 : ℂ)
+  · simpa [denom] using haffine (g 1 0 : ℂ) (g 1 1 : ℂ)
 
 /-! ### Real-valuedness, positivity, and eventual positivity -/
 
@@ -212,7 +252,6 @@ theorem mul {F G : ℍ → ℂ} (hF : RealOnImagAxis F) (hG : RealOnImagAxis G) 
 @[fun_prop]
 theorem const_smul {F : ℍ → ℂ} {c : ℝ} (hF : RealOnImagAxis F) : RealOnImagAxis (c • F) :=
   fun t ht ↦ by
-  rw [resToImagAxis_real_smul]
   simp [Complex.real_smul, Complex.mul_im, hF t ht]
 
 /-- Natural powers preserve real-valuedness on the imaginary axis. -/
@@ -255,7 +294,6 @@ theorem mul {F G : ℍ → ℂ} (hF : PosOnImagAxis F) (hG : PosOnImagAxis G) :
 theorem const_smul {F : ℍ → ℂ} {c : ℝ} (hF : PosOnImagAxis F) (hc : 0 < c) :
     PosOnImagAxis (c • F) :=
   ⟨hF.1.const_smul, fun t ht ↦ by
-    rw [resToImagAxis_real_smul]
     simpa [Complex.real_smul, Complex.mul_re] using mul_pos hc (hF.2 t ht)⟩
 
 /-- Natural powers preserve positivity on the imaginary axis. -/
@@ -307,7 +345,6 @@ theorem const_smul {F : ℍ → ℂ} {c : ℝ} (hF : EventuallyPosOnImagAxis F) 
     EventuallyPosOnImagAxis (c • F) :=
   ⟨hF.1.const_smul, by
     filter_upwards [hF.2] with t hf
-    rw [resToImagAxis_real_smul]
     simpa [Complex.real_smul, Complex.mul_re] using mul_pos hc hf⟩
 
 /-- Natural powers preserve eventual positivity on the imaginary axis. -/

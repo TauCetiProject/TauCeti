@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 public import TauCeti.RingTheory.ClassGroup.Basic
+import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # The narrow class group of a number field
@@ -183,7 +184,7 @@ they differ by a unit of `𝓞 K`, so the narrow class of `(x)` is trivial iff o
     exact ⟨z⁻¹, by rw [← hz, inv_smul_smul]; exact hy⟩
   · rintro ⟨w, hw⟩
     refine ⟨Units.map (algebraMap (𝓞 K) K : (𝓞 K) →* K) w * x, ?_, ?_⟩
-    · simpa only [Units.val_mul, Units.coe_map, MonoidHom.coe_coe, Units.smul_def,
+    · simpa only [Units.val_mul, Units.coe_map, MonoidHom.coe_ofClass, Units.smul_def,
         Algebra.smul_def] using hw
     · rw [← Units.val_inj, coe_toPrincipalIdeal, coe_toPrincipalIdeal]
       refine spanSingleton_eq_spanSingleton.mpr ⟨w⁻¹, ?_⟩
@@ -235,10 +236,7 @@ theorem mkPrincipal_eq_one_of_isTotallyPositive {x : Kˣ} (hx : IsTotallyPositiv
 `𝓞 K`, so `(x)` and `(-x)` are the same fractional ideal. This is what makes the image of
 `mkPrincipal` a quotient of the group of sign patterns *modulo the global sign*. -/
 @[simp] theorem mkPrincipal_neg (x : Kˣ) : mkPrincipal (-x) = mkPrincipal (K := K) x := by
-  rw [mkPrincipal_apply, mkPrincipal_apply]
-  refine congrArg mk (Units.ext ?_)
-  rw [coe_toPrincipalIdeal, coe_toPrincipalIdeal, Units.val_neg]
-  exact spanSingleton_eq_spanSingleton.mpr ⟨-1, by simp⟩
+  rw [mkPrincipal_apply, mkPrincipal_apply, toPrincipalIdeal_neg]
 
 /-- The kernel of the forgetful map `Cl⁺(K) → Cl(K)` is killed by `2`: by exactness it is the image
 of `mkPrincipal`, which is `2`-torsion. So the narrow-vs-ordinary defect is an elementary abelian
@@ -390,7 +388,7 @@ theorem mk0_eq_mk0_iff {I J : (Ideal (𝓞 K))⁰} :
         rwa [Units.val_mul, FractionalIdeal.coe_mk0, FractionalIdeal.coe_mk0,
           coe_toPrincipalIdeal] at hval
       have hmul := congrArg (fun T => T * spanSingleton (𝓞 K)⁰ (y : K)) hcoe
-      simp only [mul_assoc, spanSingleton_mul_spanSingleton, ← hxK] at hmul
+      simp only [mul_assoc, ← map_mul (spanSingleton _), ← hxK] at hmul
       refine FractionalIdeal.coeIdeal_injective (K := K) ?_
       simp only [FractionalIdeal.coeIdeal_mul, coeIdeal_span_singleton]
       rw [mul_comm _ ((I : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K),

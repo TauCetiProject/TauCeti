@@ -25,8 +25,11 @@ consume — for instance the exact number of unit square classes in
 
 * `NumberField.unitsMulEquivTorsionProdMultiplicative`: the unit group as the product of
   its torsion subgroup and the free abelian group on the fundamental system.
+* `NumberField.rank_eq_one_of_finrank_eq_two_of_isReal`: a quadratic field with a real place
+  has unit rank one.
 * `NumberField.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of complex
   places plus one is the degree.
+* `NumberField.Units.fundSystem_not_mem_torsion`: fundamental units are nontorsion.
 -/
 
 public section
@@ -116,5 +119,31 @@ theorem rank_add_nrComplexPlaces_add_one :
   have h₃ : 0 < Fintype.card (InfinitePlace F) := Fintype.card_pos
   simp only [Units.rank]
   omega
+
+/-- **A real quadratic field has unit rank one.** In degree two, a real infinite place forces
+both infinite places to be real, so the unit rank is `2 - 1 = 1`. -/
+theorem rank_eq_one_of_finrank_eq_two_of_isReal {F : Type*} [Field F] [NumberField F]
+    (hdeg : finrank ℚ F = 2) {w : InfinitePlace F} (hw : w.IsReal) : rank F = 1 := by
+  classical
+  have hcard := InfinitePlace.card_add_two_mul_card_eq_rank F
+  rw [hdeg] at hcard
+  have hpos : InfinitePlace.nrRealPlaces F ≠ 0 := by
+    have : Nonempty {w : InfinitePlace F // w.IsReal} := ⟨⟨w, hw⟩⟩
+    exact Fintype.card_ne_zero
+  rw [rank, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
+  omega
+
+namespace Units
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- No member of a fundamental system is a torsion unit. -/
+theorem fundSystem_not_mem_torsion (i : Fin (rank K)) : fundSystem K i ∉ torsion K := by
+  intro hi
+  have hzero := dirichletUnitTheorem.logEmbedding_eq_zero_iff.mpr hi
+  rw [logEmbedding_fundSystem] at hzero
+  exact (basisUnitLattice K).ne_zero i (Subtype.ext hzero)
+
+end Units
 
 end NumberField

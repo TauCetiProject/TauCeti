@@ -35,18 +35,12 @@ then equips `R[x] / (xᵖ)` with its Hopf structure through the bridge instances
 
 The functor of points is recovered by pre-composing points of `αₚ` with the quotient map
 `R[x] → R[x] / (xᵖ)` (a bialgebra morphism, hence a convolution homomorphism through
-`TauCeti.AlgHom.mapDomain`) and reading the resulting `𝔾ₐ`-point off with
+`BialgHom.mapDomain`) and reading the resulting `𝔾ₐ`-point off with
 `TauCeti.AdditiveGroup.gaPointsMulEquiv`. The image consists of exactly the `p`-nilpotent
 elements, and the pre-composition map is injective because the quotient map is surjective, so
 `αₚ(A)` is the additive group of `p`-nilpotent elements of `A` (those `a` with `aᵖ = 0`). This
 exhibits `αₚ` as a non-reduced affine group scheme, the additive companion of the `μ_p` example of
 `TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.NotReduced`.
-
-This is the worked example `αₚ` from the Tau Ceti reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap): the standing hypotheses note that an affine
-group scheme of finite type "admits `μ_p`, `αₚ`, and other non-smooth / non-reduced groups",
-and Layer 3 develops "Hopf ideals ↔ closed subgroup schemes".
-
 ## Main declarations
 
 * `TauCeti.AlphaP.hopfIdeal`: the Hopf ideal `(xᵖ)` of the additive-group Hopf algebra.
@@ -61,7 +55,7 @@ and Layer 3 develops "Hopf ideals ↔ closed subgroup schemes".
 * `TauCeti.AlphaP.pointsMulEquiv`: the group isomorphism identifying the points of `αₚ` with the
   `p`-nilpotent subgroup.
 
-## References
+## See also
 
 The Hopf structure on the additive group is Tau Ceti's
 `TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic` and
@@ -90,17 +84,17 @@ by the freshman's dream in characteristic `p`, `Δ(xᵖ) = xᵖ ⊗ 1 + 1 ⊗ x�
 (`TauCeti.AdditiveGroup.comul_ι_pow`). -/
 private theorem comul_gen_mem :
     Coalgebra.comul (R := R) (ι R R 1 ^ p) ∈
-      HopfIdeal.leftTensorIdeal (R := R) (H := SymmetricAlgebra R R)
+      Ideal.leftTensorIdeal (R := R) (B := SymmetricAlgebra R R)
           (Ideal.span {(ι R R 1 : SymmetricAlgebra R R) ^ p}) ⊔
-        HopfIdeal.rightTensorIdeal (R := R) (H := SymmetricAlgebra R R)
+        Ideal.rightTensorIdeal (R := R) (A := SymmetricAlgebra R R)
           (Ideal.span {(ι R R 1 : SymmetricAlgebra R R) ^ p}) := by
   rw [AdditiveGroup.comul_ι_pow R p]
   exact Ideal.add_mem _
     (Ideal.mem_sup_left
-      (HopfIdeal.tmul_mem_leftTensorIdeal (R := R) (H := SymmetricAlgebra R R)
+      (Ideal.tmul_mem_leftTensorIdeal (R := R) (B := SymmetricAlgebra R R)
         (Ideal.mem_span_singleton_self _) 1))
     (Ideal.mem_sup_right
-      (HopfIdeal.tmul_mem_rightTensorIdeal (R := R) (H := SymmetricAlgebra R R) 1
+      (Ideal.tmul_mem_rightTensorIdeal (R := R) (A := SymmetricAlgebra R R) 1
         (Ideal.mem_span_singleton_self _)))
 
 omit [CharP R p] in
@@ -160,8 +154,9 @@ theorem map_augmentation_frobeniusBialgHom_eq_hopfIdeal :
     Set.image_singleton]
   -- `Ideal.map_span` exposes the ring-hom coercion; the bialgebra-hom form lets its generator
   -- computation lemma apply directly.
-  change z ∈ Ideal.span {(AdditiveGroup.frobeniusBialgHom R p)
-      (ι R R 1 : SymmetricAlgebra R R)} ↔ z ∈ (hopfIdeal (R := R) p).toIdeal
+  change z ∈ Ideal.span
+      {(AdditiveGroup.frobeniusBialgHom R p) (ι R R 1 : SymmetricAlgebra R R)} ↔
+    z ∈ (hopfIdeal (R := R) p).toIdeal
   rw [AdditiveGroup.frobeniusBialgHom_ι_one, hopfIdeal_toIdeal]
 
 /-- **The coordinate Hopf algebra of `αₚ`**, the quotient `R[x] / (xᵖ)`. It carries a Hopf
@@ -223,7 +218,7 @@ element of `Multiplicative A` by `TauCeti.AdditiveGroup.gaPointsMulEquiv`. -/
 @[expose] noncomputable def pointsHom :
     WithConv (CoordinateRing (R := R) p →ₐ[R] A) →* Multiplicative A :=
   (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).toMonoidHom.comp
-    (AlgHom.mapDomain (Bialgebra.Quotient.mkBialgHom (hopfIdeal (R := R) p).toIdeal))
+    (BialgHom.mapDomain (Bialgebra.Quotient.mkBialgHom (hopfIdeal (R := R) p).toIdeal))
 
 /-- A point of `αₚ` is sent to the value at `x` of its underlying `R[x]`-point: the element
 `F(x̄)` of `A`, where `x̄` is the class of `x` in the coordinate ring. -/
@@ -233,7 +228,7 @@ theorem toAdd_pointsHom (F : WithConv (CoordinateRing (R := R) p →ₐ[R] A)) :
       F.ofConv (Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal
         (ι R R 1 : SymmetricAlgebra R R)) := by
   simp only [pointsHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    AdditiveGroup.toAdd_gaPointsMulEquiv, AlgHom.mapDomain_apply,
+    AdditiveGroup.toAdd_gaPointsMulEquiv, BialgHom.mapDomain_apply,
     AlgHom.comp_apply, BialgHom.coe_toAlgHom, Bialgebra.Quotient.mkBialgHom_apply]
 
 /-- The points homomorphism of `αₚ` is injective, because the quotient map `R[x] → R[x] / (xᵖ)`
@@ -241,7 +236,7 @@ is surjective, so pre-composition with it is injective on algebra homomorphisms.
 theorem pointsHom_injective : Function.Injective (pointsHom (R := R) p (A := A)) := by
   intro F F' h
   have h2 := (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).injective h
-  rw [AlgHom.mapDomain_apply, AlgHom.mapDomain_apply] at h2
+  rw [BialgHom.mapDomain_apply, BialgHom.mapDomain_apply] at h2
   have h3 := WithConv.toConv_injective h2
   apply WithConv.ofConv_injective
   apply AlgHom.ext

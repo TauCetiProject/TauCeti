@@ -8,9 +8,10 @@ module
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.TensorProduct.Quotient
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 
 /-!
-# The kernel coordinate ring as a base change
+# Base change of scheme-theoretic kernels
 
 The coordinate ring of the kernel of an affine group-scheme morphism is the quotient by
 the kernel Hopf ideal `K·f(H⁺)`. This file identifies it with the base change
@@ -31,6 +32,9 @@ finite over the base as soon as the coordinate morphism is finite, and faithfull
 the base as soon as the coordinate morphism is faithfully flat. Both are the corresponding
 base-change stability results transported across the identification.
 
+Formation of the kernel Hopf ideal also commutes with extension of the base ring, including
+its infinitesimal structure.
+
 ## Main declarations
 
 * `TauCeti.CommHopfAlgCat.quotientKernelHopfIdealAlgEquiv`: the `K`-algebra equivalence
@@ -39,15 +43,17 @@ base-change stability results transported across the identification.
   ring is finite over the base.
 * `TauCeti.CommHopfAlgCat.moduleFaithfullyFlat_quotient_kernelHopfIdeal`: the kernel coordinate
   ring is faithfully flat over the base.
+* `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_kernelHopfIdeal`: the kernel Hopf ideal commutes
+  with scalar extension.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory TensorProduct
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 namespace CommHopfAlgCat
 
@@ -158,6 +164,28 @@ theorem moduleFaithfullyFlat_quotient_kernelHopfIdeal {f : H ⟶ K}
       ((_root_.TensorProduct.comm ↥H R ↥K).symm.restrictScalars R)
   exact Module.FaithfullyFlat.of_linearEquiv R _
     ((quotientKernelHopfIdealAlgEquiv f).restrictScalars R).toLinearEquiv
+
+/-- Formation of the kernel Hopf ideal commutes with extension of the base ring. -/
+@[simp]
+theorem baseChangeHopfIdeal_kernelHopfIdeal {S : Type w} [CommRing S] [Algebra R S]
+    (f : H ⟶ K) :
+    baseChangeHopfIdeal (K := S) (kernelHopfIdeal f) =
+      kernelHopfIdeal (baseChangeMap (K := S) f) := by
+  have hmap : ((Algebra.TensorProduct.includeRight : K →ₐ[R] S ⊗[R] K) :
+      K →+* S ⊗[R] K).comp (f.hom : H →+* K) =
+      ((baseChangeMap (K := S) f).hom :
+        S ⊗[R] H →+* S ⊗[R] K).comp
+          (Algebra.TensorProduct.includeRight : H →ₐ[R] S ⊗[R] H) := by
+    ext x
+    exact (baseChangeMap_apply_tmul f 1 x).symm
+  ext y
+  rw [← HopfIdeal.mem_toIdeal, ← HopfIdeal.mem_toIdeal,
+    baseChangeHopfIdeal_toIdeal, kernelHopfIdeal_toIdeal,
+    kernelHopfIdeal_toIdeal, ← baseChangeHopfIdeal_augmentation,
+    baseChangeHopfIdeal_toIdeal]
+  rw [← Ideal.map_coe (f := (Algebra.TensorProduct.includeRight : K →ₐ[R] S ⊗[R] K)),
+    ← Ideal.map_coe (f := (Algebra.TensorProduct.includeRight : H →ₐ[R] S ⊗[R] H)),
+    Ideal.map_map, Ideal.map_map, hmap]
 
 end CommHopfAlgCat
 

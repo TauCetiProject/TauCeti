@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Idempotent
+public import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Dimension
+-- Non-public: the count of standard Young tableaux of an extreme shape is used inside a proof,
+-- never in the type of an exported declaration.
+import TauCeti.Combinatorics.Young.StandardTableau.Reading
 
 /-!
 # The Specht ideals of the one-row and the one-column shape
@@ -36,14 +39,18 @@ antisymmetrizer is `1`, so `c_t` is the sum of the whole group and every group e
 for a shape with at most one column the row symmetrizer is `1`, so `c_t` is the signed sum of the
 whole group and every group element scales it by its sign.  What is left for this file is that
 either way `c_t` spans a `ℚ`-line inside `ℚ[Sₙ]`, which is therefore the whole left ideal it
-generates, and that the action on that line is the character in question.
+generates, that the action on that line is the character in question, and that no other shape
+gives a line.
 
-Only the ideal presentation `ℚ[Sₙ] c_t` of the Specht module is available here, so that is what
-these results are about; the identification of `S^λ` with the span of the polytabloids inside the
-Young permutation module is a separate milestone and is not used or claimed.  The corresponding
-statements one level down, that the permutation module `M^{(n)}` is the trivial representation and
-`M^{(1ⁿ)}` the regular one, are in
-`TauCeti.RepresentationTheory.Symmetric.PermutationModule.Extremes`.
+The results below are about the ideal presentation `ℚ[Sₙ] c_t` of the Specht module, which is the
+presentation the symmetrizer identities live in.  The other presentation, the span of the
+polytabloids inside the Young permutation module, enters only through the converse: the dimension
+of the ideal is the number `f^μ` of standard Young tableaux
+(`TauCeti.YoungTableau.finrank_spechtIdeal` in
+`TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Dimension`, which compares the two
+presentations), and `f^μ = 1` exactly on the two extreme shapes.  The corresponding statements one
+level down, that the permutation module `M^{(n)}` is the trivial representation and `M^{(1ⁿ)}` the
+regular one, are in `TauCeti.RepresentationTheory.Symmetric.PermutationModule.Extremes`.
 
 ## Main results
 
@@ -53,6 +60,8 @@ statements one level down, that the permutation module `M^{(n)}` is the trivial 
   sign representation.
 * `YoungTableau.finrank_spechtIdeal_of_rowSubgroup_eq_top` and
   `YoungTableau.finrank_spechtIdeal_of_colSubgroup_eq_top`: both are lines.
+* `YoungTableau.finrank_spechtIdeal_eq_one_iff`: and no other shape is, so the Specht ideal is a
+  line exactly on the two extreme shapes.
 * `YoungTableau.youngSymmetrizer_sq_of_rowSubgroup_eq_top` and
   `YoungTableau.youngSymmetrizer_sq_of_colSubgroup_eq_top`: because both are lines, the scalar in
   the essential idempotence of `c_t` is the full `n!`.
@@ -190,6 +199,19 @@ theorem youngSymmetrizer_sq_of_colSubgroup_eq_top (t : YoungTableau μ)
     youngSymmetrizer t * youngSymmetrizer t = (μ.card.factorial : ℚ) • youngSymmetrizer t := by
   rw [youngSymmetrizer_sq t, finrank_spechtIdeal_of_colSubgroup_eq_top t h,
     Nat.cast_one, div_one]
+
+/-! ### The extreme shapes are the only lines -/
+
+/-- **The Young-symmetrizer ideal is a line exactly on the extreme shapes**: the shapes with at
+most one column (`μ.rowLen 0 ≤ 1`) and those with at most one row (`μ.colLen 0 ≤ 1`), and no
+others.  The two implications for the shapes themselves are
+`TauCeti.YoungTableau.finrank_spechtIdeal_of_rowSubgroup_eq_top` and
+`TauCeti.YoungTableau.finrank_spechtIdeal_of_colSubgroup_eq_top` above, stated through the row and
+column groups of `t`; what is added here is the converse, which reads the dimension of the ideal as
+the number of standard Young tableaux of the shape. -/
+theorem finrank_spechtIdeal_eq_one_iff (t : YoungTableau μ) :
+    Module.finrank ℚ (spechtIdeal t) = 1 ↔ μ.rowLen 0 ≤ 1 ∨ μ.colLen 0 ≤ 1 := by
+  rw [finrank_spechtIdeal, standardCount_eq_one_iff]
 
 end YoungTableau
 

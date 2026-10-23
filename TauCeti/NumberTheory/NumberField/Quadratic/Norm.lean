@@ -17,7 +17,8 @@ For a quadratic number field `K = ℚ(√d)` presented by an algebraic integer `
 `K` in terms of the coordinates in the basis `1, θ`:
 
 * `norm_gen_eq_neg_radicand`: the norm of the generator, `N(θ) = -d` (negative of the radicand);
-* `norm_add_mul_gen`: in the coordinates `x = b + aθ` the norm is `N(b + aθ) = b² - d·a²`;
+* `norm_add_mul_gen`: in the coordinates `x = b + aθ` the norm is `N(b + aθ) = b² - d·a²`, and
+  `TauCeti.NumberField.norm_int_add_mul_gen` is the same formula for the integer norm on `𝓞 K`;
 * `norm_pos_of_radicand_neg`: when `d < 0` — the imaginary quadratic case, where `K` is totally
   complex — the norm is strictly positive on every nonzero element;
 * `radicand_pos_of_norm_eq_neg_one`: consequently an element of norm `-1` forces `0 < d`;
@@ -67,6 +68,32 @@ normalization rule. -/
     norm_gen_eq_neg_radicand hmin hgen]
   ring
 
+end NumberField
+
+namespace TauCeti.NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+
+/-- **The integer norm in the basis `1, θ`:** on `𝓞 K`, `N(b + aθ) = b² - d·a²` for integers
+`a`, `b`. This is `norm_add_mul_gen` read through `Algebra.coe_norm_int`. -/
+@[simp] theorem norm_int_add_mul_gen (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (a b : ℤ) :
+    Algebra.norm ℤ ((b : 𝓞 K) + (a : 𝓞 K) * θ) = b ^ 2 - d * a ^ 2 := by
+  have h : (Algebra.norm ℤ ((b : 𝓞 K) + (a : 𝓞 K) * θ) : ℚ) =
+      (b : ℚ) ^ 2 - (d : ℚ) * (a : ℚ) ^ 2 := by
+    have hval : (((b : 𝓞 K) + (a : 𝓞 K) * θ : 𝓞 K) : K) =
+        ((b : ℚ) : K) + ((a : ℚ) : K) * (θ : K) := by
+      simp only [RingOfIntegers.coe_eq_algebraMap, map_add, map_mul, map_intCast,
+        Rat.cast_intCast]
+    rw [Algebra.coe_norm_int, hval, norm_add_mul_gen hmin hgen]
+  exact_mod_cast h
+
+end TauCeti.NumberField
+
+namespace NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+
 /-- **The norm is positive in the imaginary case.** When `d < 0` the field `K = ℚ(√d)` is totally
 complex, and `N(b + aθ) = b² + |d|·a²`, so the norm is strictly positive on every nonzero element.
 This is the sign input that turns a norm-`±1` element into a norm-`1` one for Hilbert 90. -/
@@ -109,14 +136,9 @@ theorem exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one (hmin : minpoly ℤ �
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {a b : ℤ} (hab : b ^ 2 - d * a ^ 2 = -1) :
     ∃ u : (𝓞 K)ˣ, Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1 := by
   set x : 𝓞 K := (b : 𝓞 K) + (a : 𝓞 K) * θ with hxdef
-  have habq : ((b : ℤ) : ℚ) ^ 2 - ((d : ℤ) : ℚ) * ((a : ℤ) : ℚ) ^ 2 = -1 := by exact_mod_cast hab
   have hnorm : Algebra.norm ℚ ((x : K)) = -1 := by
-    have hval : ((x : 𝓞 K) : K)
-        = (((b : ℤ) : ℚ) : K) + (((a : ℤ) : ℚ) : K) * (θ : K) := by
-      rw [hxdef]
-      simp only [RingOfIntegers.coe_eq_algebraMap, map_add, map_mul, map_intCast,
-        Rat.cast_intCast]
-    rw [hval, norm_add_mul_gen hmin hgen, habq]
+    rw [← Algebra.coe_norm_int, hxdef, TauCeti.NumberField.norm_int_add_mul_gen hmin hgen, hab]
+    norm_num
   have hunit : IsUnit x := by
     rw [NumberField.isUnit_iff_norm, RingOfIntegers.coe_norm, hnorm]
     norm_num

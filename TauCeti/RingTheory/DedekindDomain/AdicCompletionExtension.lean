@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.AdjoinRoot.Factors
-public import TauCeti.RingTheory.DedekindDomain.Ideal
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.RingTheory.DedekindDomain.ValuationOfNeZero
 
 /-!
@@ -128,7 +128,7 @@ theorem valuation_maximalIdeal_adicCompletionIntegers (x : v.adicCompletion K) :
     (IsDiscreteValuationRing.maximalIdeal (v.adicCompletionIntegers K)).valuation
       (v.adicCompletion K) x = Valued.v x := by
   -- reduce to elements of the ring of integers
-  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective (A := v.adicCompletionIntegers K) x
+  obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective (A := v.adicCompletionIntegers K) x
   rw [map_div₀, map_div₀]
   suffices h : ∀ y : v.adicCompletionIntegers K,
       (IsDiscreteValuationRing.maximalIdeal (v.adicCompletionIntegers K)).valuation
@@ -330,7 +330,6 @@ lemma adicCompletionExtension_coe (x : K) :
   -- transported along it; these two rewrites name that identification rather than leaving it to
   -- a bare `rfl`.
   rw [WithVal.algebraMap_left_apply, WithVal.algebraMap_right_apply]
-  rfl
 
 /-- The square with sides `R → K_v → L_w` and `R → B → L_w` commutes. -/
 @[simp]
@@ -378,8 +377,8 @@ lemma valued_adicCompletionExtension (x : v.adicCompletion K) :
     Valued.v (adicCompletionExtension K L v w x) =
       Valued.v x ^ v.asIdeal.ramificationIdx' w.asIdeal := by
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
-  rw [← adicCompletion.valued_toCompletion L w (adicCompletionExtension K L v w x),
-    toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion K v x]
+  rw [← adicCompletion.valued_toCompletion_apply L w (adicCompletionExtension K L v w x),
+    toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion_apply K v x]
   have hsurjK : Function.Surjective (⇑(Valued.v : Valuation (v.valuation K).Completion ℤᵐ⁰)) :=
     Valued.valuedCompletion_surjective_iff.mpr <| .of_comp (v.valuation_surjective K)
   have hsurjL : Function.Surjective (⇑(Valued.v : Valuation (w.valuation L).Completion ℤᵐ⁰)) :=
@@ -396,6 +395,9 @@ lemma valued_adicCompletionExtension (x : v.adicCompletion K) :
   rw [UniformSpace.Completion.map_coe
       (uniformContinuous_algebraMap_liesOver (K := K) (L := L) v w),
     Valued.valuedCompletion_apply, Valued.valuedCompletion_apply]
+  -- Mathlib's `valuation_liesOver` states the exponent as `w.asIdeal.ramificationIdx R`, which
+  -- `ramificationIdx'_eq_ramificationIdx` identifies with the `ramificationIdx'` used here.
+  rw [Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot]
   exact valuation_liesOver (K := K) L v w (WithVal.equiv (v.valuation K) a)
 
 /-- The extension maps the ring of integers of `K_v` into the ring of integers of `L_w`. -/

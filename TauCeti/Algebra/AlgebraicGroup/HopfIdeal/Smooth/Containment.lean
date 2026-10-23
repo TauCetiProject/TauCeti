@@ -36,9 +36,8 @@ of the source and the counit condition force it to be zero.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and Sections 5.a and 10.a.
 * A. Borel, *Linear Algebraic Groups*, Section 11.21.
 
-This is the global equality step in Layer 5, "The unipotent radical", of the ReductiveGroups
-roadmap. It upgrades the infinitesimal equality supplied by the maximal-dimension construction to
-equality of closed subgroups.
+This is the global equality step for the unipotent radical. It upgrades the infinitesimal equality
+supplied by the maximal-dimension construction to equality of closed subgroups.
 -/
 
 public section
@@ -137,8 +136,7 @@ theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
   have hbaseChange_zero : P.cotangentComplex.lTensor κ = 0 := by
     apply LinearMap.ext
     intro z
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add x y hx hy => simp [hx, hy]
     | tmul a m =>
       obtain ⟨x, rfl⟩ := Algebra.Extension.Cotangent.mk_surjective (P := P) m

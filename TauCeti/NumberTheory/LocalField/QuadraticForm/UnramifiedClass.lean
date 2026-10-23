@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 
 import Mathlib.FieldTheory.Finite.GaloisField
-import TauCeti.Algebra.QuadraticAlgebra.NormTrace
+import Mathlib.RingTheory.QuadraticAlgebra
 import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.RingTheory.Finite.ArtinSchreier
@@ -37,7 +37,7 @@ so the norm equation for `Δ` is the one for the norm form `x² + xy - cy²` of
 is anisotropic over `𝓀[K]` by the choice of `c`. Hence a value of the form at a primitive integral
 vector is a unit, and every value has even valuation. Conversely the residue norm form is the norm
 of the quadratic extension of the finite field `𝓀[K]`, which is surjective, and Hensel's lemma for
-the norm (`TauCeti.Algebra.exists_norm_eq_of_norm_sub_mem_maximalIdeal`, with the unit `ω` of
+the norm (`TauCeti.Algebra.exists_norm_eq_of_norm_sub_mem`, with the unit `ω` of
 unit trace `1`) lifts it to every unit of `𝒪[K]`. The argument does not distinguish odd from even
 residue characteristic. In odd residue characteristic `Δ` is a unit with nonsquare residue, and
 over `ℚ₂` the choice `c = -1` gives `Δ = -3`, in the square class of `5`.
@@ -49,7 +49,9 @@ With the Hilbert symbol this reads `(Δ, b)_K = (-1)^{v_K(b)}`.
 * `TauCeti.exists_eq_sq_sub_one_add_four_mul_mul_sq_iff_even`: for `c` as above, `b` is a norm
   from `K(√(1 + 4c))` exactly when `v_K(b)` is even.
 * `TauCeti.exists_unramified_class`: there is a nonsquare `Δ` of valuation zero whose norms are
-  exactly the elements of even valuation.
+  exactly the elements of even valuation, with `valuation K (Δ - 1) ≤ valuation K 4`.
+* `TauCeti.not_isSquare_of_unramified_class`: every class with this norm criterion is nonsquare.
+* `TauCeti.unramified_class_of_isSquare_mul`: the criterion is invariant under square classes.
 * `TauCeti.hilbertSymbol_unramified`: for such a `Δ`, `(Δ, b)_K = (-1)^{v_K(b)}`.
 
 ## References
@@ -142,7 +144,7 @@ private theorem exists_sq_add_mul_sub_mul_sq_eq (hc : ∀ t : 𝓀[K], t ^ 2 + t
   obtain ⟨z, hz⟩ := @FiniteField.norm_surjective 𝓀[K]
     (QuadraticAlgebra 𝓀[K] (residue 𝒪[K] c) 1) _ _ QuadraticAlgebra.instAlgebra _
     (residue 𝒪[K] u)
-  replace hz : z.norm = residue 𝒪[K] u := (QuadraticAlgebra.algebraNorm_eq_norm z).symm.trans hz
+  replace hz : z.norm = residue 𝒪[K] u := (Algebra.norm_quadraticAlgebra_apply z).symm.trans hz
   obtain ⟨s, hs⟩ := residue_surjective z.re
   obtain ⟨t, ht⟩ := residue_surjective z.im
   -- `ω` is a unit of unit trace, so Hensel's lemma for the norm applies.
@@ -153,15 +155,15 @@ private theorem exists_sq_add_mul_sub_mul_sq_eq (hc : ∀ t : 𝓀[K], t ^ 2 + t
     rw [QuadraticAlgebra.isUnit_iff_norm_isUnit, QuadraticAlgebra.norm_def]
     simpa using hc0.neg
   have htr : IsUnit (Algebra.trace 𝒪[K] (QuadraticAlgebra 𝒪[K] c 1) QuadraticAlgebra.omega) := by
-    rw [QuadraticAlgebra.algebraTrace_eq_trace, QuadraticAlgebra.trace_omega]
+    rw [Algebra.trace_quadraticAlgebra_apply, QuadraticAlgebra.trace_omega]
     exact isUnit_one
-  obtain ⟨y, hy, -⟩ := Algebra.exists_norm_eq_of_norm_sub_mem_maximalIdeal hw htr
+  obtain ⟨y, hy, -⟩ := Algebra.exists_norm_eq_of_norm_sub_mem hw htr
     (a := (⟨s, t⟩ : QuadraticAlgebra 𝒪[K] c 1)) u.isUnit (by
-      rw [QuadraticAlgebra.algebraNorm_eq_norm, ← residue_eq_zero_iff, map_sub, ← hz,
+      rw [Algebra.norm_quadraticAlgebra_apply, ← residue_eq_zero_iff, map_sub, ← hz,
         QuadraticAlgebra.norm_def, QuadraticAlgebra.norm_def]
       simp [hs, ht])
   refine ⟨y.re, y.im, ?_⟩
-  rw [QuadraticAlgebra.algebraNorm_eq_norm, QuadraticAlgebra.norm_def] at hy
+  rw [Algebra.norm_quadraticAlgebra_apply, QuadraticAlgebra.norm_def] at hy
   linear_combination hy
 
 /-- **The unramified quadratic class, explicitly.** Let `c ∈ 𝒪[K]` have residue outside the image
@@ -197,9 +199,11 @@ end NormForm
 
 /-- **The unramified quadratic class.** There is a nonsquare `Δ ∈ Kˣ` of valuation
 zero such that `b ∈ Kˣ` is a norm from `K(√Δ)`, that is `b = x² - Δ y²` for some `x y : K`,
-exactly when `v_K(b)` is even. -/
+exactly when `v_K(b)` is even. The representative satisfies
+`valuation K ((Δ : K) - 1) ≤ valuation K 4`, that is, `Δ ≡ 1 mod 4`. -/
 theorem exists_unramified_class (h2 : (2 : K) ≠ 0) :
     ∃ Δ : Kˣ, ¬IsSquare Δ ∧ (normalizedValuation K Δ).toAdd = 0 ∧
+      valuation K ((Δ : K) - 1) ≤ valuation K 4 ∧
       ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
         Even (normalizedValuation K b).toAdd := by
   obtain ⟨a, ha_range⟩ := exists_not_mem_range_sq_add_self (𝓀[K])
@@ -215,7 +219,11 @@ theorem exists_unramified_class (h2 : (2 : K) ≠ 0) :
   have h4 : ((4 : 𝒪[K]) : K) = 4 := map_ofNat 𝒪[K].subtype 4
   have hΔK : (Δ : K) = 1 + 4 * (c : K) := by simp [Δ, h4]
   simp only [← hΔK] at hcrit
-  refine ⟨Δ, fun hsq ↦ ?_, by simp [Δ, normalizedValuation_integerUnits], hcrit⟩
+  have hΔ1 : valuation K ((Δ : K) - 1) ≤ valuation K 4 := by
+    rw [hΔK, add_sub_cancel_left, map_mul]
+    simpa using mul_le_mul' (le_refl (valuation K (4 : K)))
+      ((Valuation.mem_integer_iff _ _).mp c.2)
+  refine ⟨Δ, fun hsq ↦ ?_, by simp [Δ, normalizedValuation_integerUnits], hΔ1, hcrit⟩
   -- A square `Δ` would make a uniformizer, of odd valuation, a norm.
   have : Invertible (2 : K) := invertibleOfNonzero h2
   obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer K
@@ -223,6 +231,29 @@ theorem exists_unramified_class (h2 : (2 : K) ≠ 0) :
     (hilbertSymbol_eq_one_of_isSquare_left hsq ϖ))
   rw [(isUniformizer_def ϖ).mp hϖ, toAdd_ofAdd] at this
   exact Int.not_even_one this
+
+/-- If the norms from `K(√a)` are exactly the elements of even normalized valuation, then
+`a` is not a square. -/
+theorem not_isSquare_of_unramified_class (h2 : (2 : K) ≠ 0) {a : Kˣ}
+    (ha : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2) ↔
+      Even (normalizedValuation K b).toAdd) :
+    ¬IsSquare a := by
+  intro hsq
+  have : Invertible (2 : K) := invertibleOfNonzero h2
+  obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer K
+  have h := (ha ϖ).mp ((hilbertSymbol_eq_one_iff a ϖ).mp
+    (hilbertSymbol_eq_one_of_isSquare_left hsq ϖ))
+  rw [(isUniformizer_def ϖ).mp hϖ, toAdd_ofAdd] at h
+  exact Int.not_even_one h
+
+/-- The norm criterion only depends on the square class of `a`. -/
+theorem unramified_class_of_isSquare_mul {a Δ : Kˣ} (h : IsSquare (a * Δ))
+    (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
+      Even (normalizedValuation K b).toAdd) (b : Kˣ) :
+    (∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2) ↔ Even (normalizedValuation K b).toAdd := by
+  rw [← hilbertSymbol_eq_one_iff, hilbertSymbol_congr_sq a Δ b b h ⟨b, rfl⟩,
+    hilbertSymbol_eq_one_iff]
+  exact hΔ b
 
 /-- **Evaluation against the unramified class.** If the norms from `K(√Δ)` are exactly the
 elements of even valuation, as for the class of `TauCeti.exists_unramified_class`, then

@@ -22,6 +22,11 @@ averaged law `κ ∘ₘ μ`. Conversely, when the target space is standard Borel
 target. Any other finite kernel reconstructing the same plan agrees with `π.condKernel`
 `μ`-almost everywhere.
 
+When the plan is concentrated on a set that meets almost every vertical line in at most one
+point, the conditional kernel is almost everywhere a Dirac mass, so the plan is determined by its
+source marginal and that set; this is the form in which uniqueness of contact partners becomes
+uniqueness of optimal plans.
+
 ## Main statements
 
 * `TauCeti.isCoupling_compProd` constructs a coupling from a source measure and a Markov kernel;
@@ -35,6 +40,10 @@ target. Any other finite kernel reconstructing the same plan agrees with `π.con
 * `TauCeti.IsCoupling.compProd_condDistrib` and
   `TauCeti.IsCoupling.condDistrib_ae_eq_condKernel` give the same reconstruction through the
   conditional distribution of the two coordinate maps and identify the two Mathlib interfaces;
+* `TauCeti.IsCoupling.ae_exists_condKernel_eq_dirac` and
+  `TauCeti.IsCoupling.eq_of_ae_mem_of_subsingleton` — a coupling concentrated on a set with
+  almost all sections subsingletons has Dirac conditional laws, and is determined by its source
+  marginal and that set;
 * the corresponding declarations in `TauCeti.Coupling` specialize these results to the bundled
   probability-coupling type.
 
@@ -144,6 +153,44 @@ theorem condDistrib_ae_eq_condKernel (hπ : IsCoupling π μ ν) :
     condDistrib Prod.snd Prod.fst π =ᵐ[μ] π.condKernel :=
   (hπ.ae_eq_condKernel_iff_compProd_eq _).2 hπ.compProd_condDistrib
 
+/-- A finite coupling concentrated on a set whose sections `{y | (x, y) ∈ s}` are
+`μ`-almost all subsingletons is deterministic: for `μ`-almost every `x`, its conditional kernel
+at `x` is the Dirac mass at the unique point of the section. No measurability of `s` is
+needed. -/
+theorem ae_exists_condKernel_eq_dirac (hπ : IsCoupling π μ ν) {s : Set (X × Y)}
+    (hs : ∀ᵐ z ∂π, z ∈ s) (hsub : ∀ᵐ x ∂μ, {y | (x, y) ∈ s}.Subsingleton) :
+    ∀ᵐ x ∂μ, ∃ y, (x, y) ∈ s ∧ π.condKernel x = Measure.dirac y := by
+  let _ : IsFiniteMeasure μ := by
+    rw [← hπ.fst_eq]
+    infer_instance
+  rw [← hπ.compProd_condKernel] at hs
+  filter_upwards [Measure.ae_ae_of_ae_compProd hs, hsub] with x hx hxsub
+  obtain ⟨y, hy⟩ := hx.exists
+  refine ⟨y, hy, ?_⟩
+  have hae : ∀ᵐ y' ∂π.condKernel x, y' ∈ ({y} : Finset Y) :=
+    hx.mono fun y' hy' ↦ Finset.mem_singleton.2 (hxsub hy' hy)
+  rw [Measure.ae_mem_finset_iff, Finset.sum_singleton] at hae
+  have hy1 : π.condKernel x {y} = 1 := by
+    simpa using (congrArg (fun m : Measure Y ↦ m Set.univ) hae).symm
+  rw [hae, hy1, one_smul]
+
+/-- Two finite couplings with the same source marginal, concentrated on a common set whose
+sections are `μ`-almost all subsingletons, are equal. In particular their target marginals
+agree. -/
+theorem eq_of_ae_mem_of_subsingleton {π' : Measure (X × Y)} {ν' : Measure Y}
+    (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ ν') {s : Set (X × Y)}
+    (hs : ∀ᵐ z ∂π, z ∈ s) (hs' : ∀ᵐ z ∂π', z ∈ s)
+    (hsub : ∀ᵐ x ∂μ, {y | (x, y) ∈ s}.Subsingleton) : π = π' := by
+  let _ : IsFiniteMeasure μ := by
+    rw [← hπ.fst_eq]
+    infer_instance
+  let _ : IsFiniteMeasure π' := hπ'.isFiniteMeasure
+  rw [← hπ.compProd_condKernel, ← hπ'.compProd_condKernel]
+  refine Measure.compProd_congr ?_
+  filter_upwards [hπ.ae_exists_condKernel_eq_dirac hs hsub,
+    hπ'.ae_exists_condKernel_eq_dirac hs' hsub, hsub] with x ⟨y, hy, hκ⟩ ⟨y', hy', hκ'⟩ hxsub
+  rw [hκ, hκ', hxsub hy hy']
+
 end IsCoupling
 
 namespace Coupling
@@ -192,6 +239,25 @@ theorem condDistrib_ae_eq_condKernel (π : Coupling μ ν) :
     condDistrib Prod.snd Prod.fst π.1.toMeasure =ᵐ[μ.toMeasure]
       π.1.toMeasure.condKernel :=
   π.2.condDistrib_ae_eq_condKernel
+
+/-- A bundled coupling concentrated on a set with almost everywhere subsingleton sections has
+Dirac conditional laws at points of those sections. -/
+theorem ae_exists_condKernel_eq_dirac (π : Coupling μ ν) {s : Set (X × Y)}
+    (hs : ∀ᵐ z ∂π.1.toMeasure, z ∈ s)
+    (hsub : ∀ᵐ x ∂μ.toMeasure, {y | (x, y) ∈ s}.Subsingleton) :
+    ∀ᵐ x ∂μ.toMeasure, ∃ y, (x, y) ∈ s ∧
+      π.1.toMeasure.condKernel x = Measure.dirac y :=
+  π.2.ae_exists_condKernel_eq_dirac hs hsub
+
+/-- Bundled couplings with the same source and almost everywhere the same uniquely determined
+partner in a set have equal underlying plan measures. -/
+theorem eq_of_ae_mem_of_subsingleton {ν' : ProbabilityMeasure Y}
+    (π : Coupling μ ν) (π' : Coupling μ ν') {s : Set (X × Y)}
+    (hs : ∀ᵐ z ∂π.1.toMeasure, z ∈ s)
+    (hs' : ∀ᵐ z ∂π'.1.toMeasure, z ∈ s)
+    (hsub : ∀ᵐ x ∂μ.toMeasure, {y | (x, y) ∈ s}.Subsingleton) :
+    π.1.toMeasure = π'.1.toMeasure :=
+  π.2.eq_of_ae_mem_of_subsingleton π'.2 hs hs' hsub
 
 end Coupling
 

@@ -240,16 +240,13 @@ lemma opNorm_energyIntegrand_one_zero_mass_le (c : ℝ) :
       (gamma := ‖c‖) zero_le_one
       (fun η ξ => abs_dotProduct_one_mulVec_le η ξ) (by simp) le_rfl
 
-/-- **Pointwise Gårding inequality.** With a nonnegative mass coefficient (`c ≥ 0`), the
-diagonal of the jet form is bounded below by `(λ/2)‖∇u‖² − (β²/2λ)|u|²`. The ellipticity
-floor `λ‖∇u‖²` pays for the drift term via Young's inequality, leaving half the floor and a
-mass defect proportional to `β²/λ`. Integrating over `Ω` this is Gårding's inequality
-`a(u, u) ≥ (λ/2)‖∇u‖²_{L²} − (β²/2λ)‖u‖²_{L²}`. -/
-lemma garding_energyIntegrand_self_of_bounds (hlam : 0 < lam)
+/-- The pointwise Gårding bound with a free positive Young parameter. The gradient coefficient
+is `λ - ε`, and the mass defect is `β²/(4ε)`. No sign condition on `λ - ε` is needed. -/
+lemma garding_energyIntegrand_self_of_bounds_with_parameter {eps : ℝ} (heps : 0 < eps)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hQ : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hb : ‖b₀‖ ≤ beta) (hc : 0 ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
-    lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2
+    (lam - eps) * ‖U.2‖ ^ 2 - beta ^ 2 / (4 * eps) * U.1 ^ 2
       ≤ energyIntegrand A b₀ c₀ U U := by
   rw [energyIntegrand_self]
   have hQ' : lam * ‖U.2‖ ^ 2 ≤ A.toQuadraticForm' U.2 := hQ U.2
@@ -264,9 +261,25 @@ lemma garding_energyIntegrand_self_of_bounds (hlam : 0 < lam)
     have := neg_abs_le (⟪b₀, U.2⟫_ℝ * U.1)
     linarith
   have hYoung : beta * ‖U.2‖ * |U.1| ≤
-      lam / 2 * ‖U.2‖ ^ 2 + beta ^ 2 / (2 * lam) * U.1 ^ 2 :=
-    mul_norm_abs_le_half_mul_sq_add hlam beta U.1 ‖U.2‖
+      eps * ‖U.2‖ ^ 2 + beta ^ 2 / (4 * eps) * U.1 ^ 2 := by
+    convert mul_norm_abs_le_half_mul_sq_add (mul_pos two_pos heps) beta U.1 ‖U.2‖ using 1
+    ring
   nlinarith [hQ', hM, hD, hYoung]
+
+/-- **Pointwise Gårding inequality.** With a nonnegative mass coefficient (`c ≥ 0`), the
+diagonal of the jet form is bounded below by `(λ/2)‖∇u‖² − (β²/2λ)|u|²`. The ellipticity
+floor `λ‖∇u‖²` pays for the drift term via Young's inequality, leaving half the floor and a
+mass defect proportional to `β²/λ`. Integrating over `Ω` this is Gårding's inequality
+`a(u, u) ≥ (λ/2)‖∇u‖²_{L²} − (β²/2λ)‖u‖²_{L²}`. -/
+lemma garding_energyIntegrand_self_of_bounds (hlam : 0 < lam)
+    {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
+    (hQ : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hb : ‖b₀‖ ≤ beta) (hc : 0 ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
+    lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2
+      ≤ energyIntegrand A b₀ c₀ U U := by
+  convert garding_energyIntegrand_self_of_bounds_with_parameter (half_pos hlam) hQ hb hc U
+    using 1
+  ring
 
 end PDE
 

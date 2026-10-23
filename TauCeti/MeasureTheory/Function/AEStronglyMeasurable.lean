@@ -12,7 +12,9 @@ import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 # σ-algebra helpers for `AEStronglyMeasurable`
 
 A helper lemma for establishing `AEStronglyMeasurable` with respect to the infimum of an antitone
-sequence of σ-algebras, used when working with tail σ-algebras and reverse martingales.
+sequence of σ-algebras, used when working with tail σ-algebras and reverse martingales, and a
+lemma transporting `AEStronglyMeasurable` along precomposition by a map with absolutely continuous
+pushforward.
 
 ## Main results
 
@@ -25,6 +27,9 @@ sequence of σ-algebras, used when working with tail σ-algebras and reverse mar
   infimum.
 - `aestronglyMeasurable_iInf_of_tendsto_ae_antitone`: an a.e. limit of a sequence adapted to an
   antitone family `𝔽` is `AEStronglyMeasurable[⨅ n, 𝔽 n]`.
+- `MeasureTheory.AEStronglyMeasurable.comp_aemeasurable_of_map_absolutelyContinuous`: if
+  `μ.map f ≪ ν`, precomposition with an a.e.-measurable `f` preserves almost-everywhere strong
+  measurability.
 
 The result holds for a codomain in any second-countable conditionally complete linear order with the
 order topology and Borel σ-algebra (`ℝ` qualifies). The witness σ-algebras `m N` need not be related
@@ -165,3 +170,17 @@ lemma aestronglyMeasurable_iInf_of_tendsto_ae_antitone
 end MeasureTheory
 
 end TauCeti
+
+namespace MeasureTheory
+
+variable {α β F : Type*} [MeasurableSpace α] [MeasurableSpace β] [TopologicalSpace F]
+  {μ : Measure α} {ν : Measure β} {f : α → β} {g : β → F}
+
+/-- If `μ.map f ≪ ν`, precomposition with `f` takes functions almost everywhere strongly
+measurable for `ν` to functions almost everywhere strongly measurable for `μ`. -/
+theorem AEStronglyMeasurable.comp_aemeasurable_of_map_absolutelyContinuous
+    (hg : AEStronglyMeasurable g ν) (hf : AEMeasurable f μ) (hmap : μ.map f ≪ ν) :
+    AEStronglyMeasurable (g ∘ f) μ :=
+  (hg.mono_ac hmap).comp_aemeasurable hf
+
+end MeasureTheory

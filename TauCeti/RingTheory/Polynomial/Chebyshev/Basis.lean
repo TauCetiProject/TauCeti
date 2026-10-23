@@ -13,10 +13,8 @@ public import Mathlib.RingTheory.Polynomial.Chebyshev
 This file packages the Chebyshev polynomials of the first kind as a basis of `R[X]` when `R` is an
 integral domain in which `2` is invertible. Mathlib
 already proves that `T R n` has degree `n`, records its leading coefficient, and bundles the
-family as `Polynomial.Chebyshev.chebyshevTsequence`.  Its generic polynomial-sequence API then
+family as `Polynomial.Chebyshev.chebyshevTSequence`.  Its generic polynomial-sequence API then
 gives a basis whenever all leading coefficients are units.
-
-The resulting basis is an algebraic prerequisite for Part C of the `OrthogonalL2Bases` roadmap.
 
 ## Main declarations
 
@@ -37,7 +35,7 @@ private lemma isUnit_leadingCoeff_T (n : ℕ) : IsUnit (T R n).leadingCoeff := b
 /-- The Chebyshev polynomials of the first kind, indexed by their nonnegative degree, form a
 basis of `R[X]`. -/
 noncomputable def chebyshevTBasis : Module.Basis ℕ R R[X] :=
-  (chebyshevTsequence R).basis isUnit_leadingCoeff_T
+  (chebyshevTSequence R).basis isUnit_leadingCoeff_T
 
 /-- The `n`th vector of the Chebyshev basis is `T R n`. -/
 @[simp]

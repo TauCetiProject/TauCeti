@@ -70,6 +70,8 @@ public section
 
 noncomputable section
 
+open Function (occCount occCount_eq_sum occCount_castSucc occCount_succ)
+
 namespace TauCeti
 
 section Defs
@@ -184,7 +186,7 @@ theorem visitCount_succ [DecidableEq α] (x : ℕ → α) (a : α) (n : ℕ) :
     visitCount x a (n + 1) =
       if x n = a then visitCount x a n + 1 else visitCount x a n := by
   rw [visitCount_def, visitCount_def]
-  have h := (occCount_comp_castSucc_add_last (w := fun i : Fin (n + 1) => x i.val) a).symm
+  have h := (occCount_castSucc (w := fun i : Fin (n + 1) => x i.val) a).symm
   -- Normalize the finite-word endpoints while leaving `occCount` opaque.
   change occCount (fun i : Fin (n + 1) => x i.val) a =
     occCount (fun i : Fin n => x i.val) a + (if x n = a then 1 else 0) at h
@@ -221,7 +223,7 @@ theorem occCount_succ_add_zero_eq_visitCount_add_last (z : ℕ → α) (b : α) 
     occCount (fun i : Fin t => z (i.val + 1)) b + (if z 0 = b then 1 else 0) =
       visitCount z b t + (if z t = b then 1 else 0) := by
   classical
-  have h := occCount_comp_succ_add_zero (fun i : Fin (t + 1) => z i.val) b
+  have h := occCount_succ (fun i : Fin (t + 1) => z i.val) b
   -- Normalize the two endpoints of the word `fun i : Fin (t + 1) => z i`, keeping `occCount`
   -- opaque.
   have hzero : ((0 : Fin (t + 1)) : ℕ) = 0 := Fin.val_zero (n := t + 1)

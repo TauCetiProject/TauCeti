@@ -65,54 +65,6 @@ theorem exists_sq_add_self_add_one_eq_zero_of_card_eq_four (hF : Nat.card F = 4)
   simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hω
   exact ⟨ω, sq_add_self_add_one_eq_zero hF hω.1 hω.2⟩
 
-omit [Finite F] in
-/-- The four elements of a field of order four, labelled by a root of `X² + X + 1`. -/
-theorem univ_eq_zero_one_root_sq [Fintype F] [DecidableEq F] (hF : Nat.card F = 4) {ω : F}
-    (hω : ω ^ 2 + ω + 1 = 0) : Finset.univ = {0, 1, ω, ω ^ 2} := by
-  classical
-  have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
-  let := charP_of_card_eq_prime_pow (p := 2) (f := 2) hcard
-  have h0 : ω ≠ 0 := by rintro rfl; simp at hω
-  have h1 : ω ≠ 1 := by rintro rfl; simp [CharTwo.add_self_eq_zero] at hω
-  have hs0 : ω ^ 2 ≠ 0 := pow_ne_zero _ h0
-  have hs1 : ω ^ 2 ≠ 1 := by
-    intro h
-    have : ω = 0 := by linear_combination hω - h - (CharTwo.two_eq_zero (R := F))
-    exact h0 this
-  have hself : ω ^ 2 ≠ ω := by
-    intro h
-    simp [h, CharTwo.add_self_eq_zero] at hω
-  apply (Finset.eq_of_subset_of_card_le (Finset.subset_univ _) ?_).symm
-  simp [hcard, Ne.symm hself, Ne.symm h0, Ne.symm h1,
-    Ne.symm hs0, Ne.symm hs1]
-
-/-- Label a field of four elements by `0, 1, ω, ω²`, in that order. -/
-noncomputable def finFourEquiv (hF : Nat.card F = 4) {ω : F}
-    (hω : ω ^ 2 + ω + 1 = 0) : Fin 4 ≃ F := by
-  classical
-  letI := Fintype.ofFinite F
-  have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
-  refine Equiv.ofBijective ![0, 1, ω, ω ^ 2] ?_
-  apply (Fintype.bijective_iff_surjective_and_card _).mpr
-  refine ⟨?_, by simp [hcard]⟩
-  intro x
-  have hx : x ∈ ({0, 1, ω, ω ^ 2} : Finset F) := by
-    rw [← univ_eq_zero_one_root_sq hF hω]
-    exact Finset.mem_univ x
-  simp only [Finset.mem_insert, Finset.mem_singleton] at hx
-  rcases hx with rfl | rfl | rfl | rfl
-  · exact ⟨0, rfl⟩
-  · exact ⟨1, rfl⟩
-  · exact ⟨2, rfl⟩
-  · exact ⟨3, rfl⟩
-
-/-- The four-element labelling evaluates to the displayed tuple. -/
-@[simp]
-theorem finFourEquiv_apply (hF : Nat.card F = 4) {ω : F}
-    (hω : ω ^ 2 + ω + 1 = 0) (i : Fin 4) :
-    finFourEquiv hF hω i = ![0, 1, ω, ω ^ 2] i := (rfl)
-
-
 /-! ### The additive group of a field of order four -/
 
 /-- In a field of order four every element has additive order dividing two. -/
@@ -205,6 +157,27 @@ theorem zmodTwoProdAddEquiv_symm_root (hF : Nat.card F = 4) {ω : F}
 theorem zmodTwoProdAddEquiv_symm_root_sq (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) : (zmodTwoProdAddEquiv hF hω).symm (ω ^ 2) = (1, 1) :=
   (AddEquiv.symm_apply_eq _).mpr (zmodTwoProdAddEquiv_apply_one_one hF hω).symm
+
+/-- Label a field of four elements by `0, 1, ω, ω²`, in that order. -/
+noncomputable def finFourEquiv (hF : Nat.card F = 4) {ω : F}
+    (hω : ω ^ 2 + ω + 1 = 0) : Fin 4 ≃ F :=
+  (Equiv.ofBijective ![(0, 0), (1, 0), (0, 1), (1, 1)] (by decide)).trans
+    (zmodTwoProdAddEquiv hF hω).toEquiv
+
+/-- The four-element labelling evaluates to the displayed tuple. -/
+@[simp]
+theorem finFourEquiv_apply (hF : Nat.card F = 4) {ω : F}
+    (hω : ω ^ 2 + ω + 1 = 0) (i : Fin 4) :
+    finFourEquiv hF hω i = ![0, 1, ω, ω ^ 2] i := by
+  fin_cases i <;> simp [finFourEquiv]
+
+omit [Finite F] in
+/-- The four elements of a field of order four, labelled by a root of `X² + X + 1`. -/
+theorem univ_eq_zero_one_root_sq [Fintype F] [DecidableEq F] (hF : Nat.card F = 4) {ω : F}
+    (hω : ω ^ 2 + ω + 1 = 0) : Finset.univ = {0, 1, ω, ω ^ 2} := by
+  have hfin : Finset.univ (α := Fin 4) = {0, 1, 2, 3} := by decide
+  rw [← Finset.map_univ_equiv (finFourEquiv hF hω), hfin]
+  simp [finFourEquiv_apply]
 
 /-- The absolute trace of a field of order four to its prime field is `z ↦ z + z²`. -/
 theorem algebraMap_trace_eq_add_sq_of_natCard_eq_four [Algebra (ZMod 2) F] (hF : Nat.card F = 4)

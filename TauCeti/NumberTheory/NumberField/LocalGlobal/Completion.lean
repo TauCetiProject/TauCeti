@@ -117,7 +117,7 @@ theorem completionAlgHom_self (v : HeightOneSpectrum (𝒪 K)) :
       -- As in the statement, normalize the self-extension algebra map to `RingHom.id`.
       change v.asIdeal = Ideal.comap (RingHom.id _) v.asIdeal
       simp⟩
-  apply AlgHom.coe_ringHom_injective
+  apply AlgHom.toRingHom_injective
   symm
   apply v.eq_adicCompletionExtension_of_continuous K K v
   · exact continuous_id
@@ -161,7 +161,7 @@ theorem completionAlgHom_comp {M L : Type*} [Field M] [NumberField M] [Algebra K
     ((completionAlgHom u w).restrictScalars K).comp (completionAlgHom v u) =
       completionAlgHom v w := by
   let _ : w.asIdeal.LiesOver v.asIdeal := Ideal.LiesOver.trans w.asIdeal u.asIdeal v.asIdeal
-  apply AlgHom.coe_ringHom_injective
+  apply AlgHom.toRingHom_injective
   -- After forgetting the `AlgHom` structure, `restrictScalars` and `AlgHom.comp` reduce to the
   -- composition of the underlying canonical completion ring maps.
   change (u.adicCompletionExtension M L w).comp (v.adicCompletionExtension K M u) =

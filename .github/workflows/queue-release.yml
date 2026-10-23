@@ -26,9 +26,10 @@ jobs:
   release:
     runs-on: ubuntu-latest
     if: >-
-      github.event_name == 'workflow_dispatch'
-      || github.event.action == 'dequeued'
-      || github.event.pull_request.merged == true
+      vars.MERGE_BACKEND != 'bors'
+      && (github.event_name == 'workflow_dispatch'
+        || github.event.action == 'dequeued'
+        || github.event.pull_request.merged == true)
     steps:
       # Only trusted main code runs here; no PR checkout or App credentials.
       - uses: actions/checkout@v4
@@ -36,6 +37,12 @@ jobs:
           ref: main
           sparse-checkout: scripts
           persist-credentials: false
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
       - id: release
         env:
           GH_TOKEN: ${{ github.token }}

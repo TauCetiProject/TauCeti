@@ -50,17 +50,20 @@ open scoped ENNReal NNReal
 variable {𝕜 : Type*} [RCLike 𝕜] {α : Type*} [MeasurableSpace α] (μ : Measure α) (w : α → ℝ)
 
 /-- **Core seminorm identity.** The `L²(μ)` seminorm of `√w · g` equals the `L²(w·μ)` seminorm of
-`g`, where `w·μ = μ.withDensity (ENNReal.ofReal ∘ w)`. Only nonnegativity of `w` almost everywhere
-is needed. -/
+`g`, where `w·μ = μ.withDensity (ENNReal.ofReal ∘ w)`. Beyond a.e. measurability of the data, only
+nonnegativity of `w` almost everywhere is needed. -/
 private theorem eLpNorm_sqrt_smul_withDensity (hwm : AEMeasurable w μ)
-    (hw_nonneg : ∀ᵐ x ∂μ, 0 ≤ w x) (g : α → 𝕜) :
+    (hw_nonneg : ∀ᵐ x ∂μ, 0 ≤ w x) (g : α → 𝕜) (hg : AEStronglyMeasurable g μ) :
     eLpNorm (fun x => Real.sqrt (w x) • g x) 2 μ
       = eLpNorm g 2 (μ.withDensity fun x => ENNReal.ofReal (w x)) := by
   have h2z : (2 : ℝ≥0∞) ≠ 0 := by norm_num
   have h2t : (2 : ℝ≥0∞) ≠ ∞ := by norm_num
   have ht : (2 : ℝ≥0∞).toReal = 2 := by norm_num
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal h2z h2t,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal h2z h2t, ht]
+  have hsg : AEStronglyMeasurable (fun x => Real.sqrt (w x) • g x) μ :=
+    hwm.sqrt.aestronglyMeasurable.smul hg
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal h2z h2t hsg,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal h2z h2t
+      (hg.mono_ac (withDensity_absolutelyContinuous _ _)), ht]
   congr 1
   rw [lintegral_withDensity_eq_lintegral_mul_non_measurable₀ μ hwm.ennreal_ofReal
     (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)]
@@ -90,9 +93,8 @@ private theorem ac_withDensity (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEMeasur
 private theorem memLp_sqrt_smul (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEMeasurable w μ)
     (f : Lp 𝕜 2 (μ.withDensity fun x => ENNReal.ofReal (w x))) :
     MemLp (fun x => Real.sqrt (w x) • (f : α → 𝕜) x) 2 μ := by
-  refine ⟨(hwm.sqrt.aestronglyMeasurable).smul
-    ((Lp.aestronglyMeasurable f).mono_ac (ac_withDensity μ w hwpos hwm)), ?_⟩
-  rw [eLpNorm_sqrt_smul_withDensity μ w hwm (hwpos.mono fun _ h => h.le)]
+  rw [memLp_iff, eLpNorm_sqrt_smul_withDensity μ w hwm (hwpos.mono fun _ h => h.le) _
+    ((Lp.aestronglyMeasurable f).mono_ac (ac_withDensity μ w hwpos hwm))]
   exact Lp.eLpNorm_lt_top f
 
 /-- The inverse direction `(√w)⁻¹ · g` of a class in `L²(μ)` is in `L²(w·μ)`. -/
@@ -102,8 +104,7 @@ private theorem memLp_inv_sqrt_smul (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEM
       (μ.withDensity fun x => ENNReal.ofReal (w x)) := by
   have hasm : AEStronglyMeasurable (fun x => (Real.sqrt (w x))⁻¹ • (g : α → 𝕜) x) μ :=
     (hwm.sqrt.inv.aestronglyMeasurable).smul (Lp.aestronglyMeasurable g)
-  refine ⟨hasm.mono_ac (withDensity_ac μ w), ?_⟩
-  rw [← eLpNorm_sqrt_smul_withDensity μ w hwm (hwpos.mono fun _ h => h.le)]
+  rw [memLp_iff, ← eLpNorm_sqrt_smul_withDensity μ w hwm (hwpos.mono fun _ h => h.le) _ hasm]
   refine (eLpNorm_congr_ae ?_).trans_lt (Lp.eLpNorm_lt_top g)
   filter_upwards [hwpos] with x hx
   rw [smul_smul, mul_inv_cancel₀ (Real.sqrt_pos.2 hx).ne', one_smul]
@@ -151,7 +152,8 @@ noncomputable def weightL2Isometry (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEMe
     change ‖MemLp.toLp (fun x => Real.sqrt (w x) • (f : α → 𝕜) x)
       (memLp_sqrt_smul μ w hwpos hwm f)‖ = ‖f‖
     rw [Lp.norm_toLp, Lp.norm_def,
-      eLpNorm_sqrt_smul_withDensity μ w hwm (hwpos.mono fun _ h => h.le)]
+      eLpNorm_sqrt_smul_withDensity μ w hwm (hwpos.mono fun _ h => h.le) _
+        ((Lp.aestronglyMeasurable f).mono_ac (ac_withDensity μ w hwpos hwm))]
 
 /-- The forward isometry is multiplication by `√w`. -/
 theorem weightL2Isometry_apply (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEMeasurable w μ)
