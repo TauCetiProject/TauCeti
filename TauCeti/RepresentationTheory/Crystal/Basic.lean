@@ -63,6 +63,8 @@ operators are conjugated, and the bijection itself is a strict isomorphism.
 * `TauCeti.NormalCrystal.congr_refl`, `TauCeti.NormalCrystal.congr_trans`: functoriality of the
   transport.
 * `TauCeti.NormalCrystal.congr_dual`: transport commutes with the dual crystal.
+* `TauCeti.NormalCrystal.congr_e_eq_some_iff`,
+  `TauCeti.NormalCrystal.congr_f_eq_some_iff`: transport at the level of the root operators.
 * `TauCeti.NormalCrystal.StrictHom.congrInv_comp_congr`,
   `TauCeti.NormalCrystal.StrictHom.congr_comp_congrInv`: the two composites of the transport
   isomorphism are identities.
@@ -374,6 +376,17 @@ section Congr
 
 variable (c : NormalCrystal P b B) (e : B ≃ B')
 
+/-- Transport of an option along a bijection: `y` is the image of exactly the preimage of `y`.
+This is the form in which `Equiv.optionCongr` is used to conjugate the root operators. -/
+private theorem map_equiv_eq_some_iff {e : B ≃ B'} {o : Option B} {y : B'} :
+    o.map e = some y ↔ o = some (e.symm y) := by
+  rw [Option.map_eq_some_iff]
+  constructor
+  · rintro ⟨a, ha, rfl⟩
+    rw [ha, Equiv.symm_apply_apply]
+  · rintro rfl
+    exact ⟨e.symm y, rfl, Equiv.apply_symm_apply e y⟩
+
 /-- **Transport of a normal crystal along a bijection**: the weight and the string lengths are
 pulled back along `e` and the root operators are conjugated by `e`. -/
 def congr : NormalCrystal P b B' where
@@ -384,27 +397,17 @@ def congr : NormalCrystal P b B' where
   φ i x := c.φ i (e.symm x)
   f_eq_some_iff := by
     intro i x y
-    have h₁ := (Equiv.eq_symm_apply (Equiv.optionCongr e) (x := some y)
-      (y := c.f i (e.symm x))).symm
-    have h₂ := (Equiv.eq_symm_apply (Equiv.optionCongr e) (x := some x)
-      (y := c.e i (e.symm y))).symm
-    exact h₁.trans (c.f_eq_some_iff.trans h₂.symm)
+    rw [map_equiv_eq_some_iff, map_equiv_eq_some_iff, c.f_eq_some_iff]
   wt_of_e_eq_some := by
     intro i x y h
-    have h' : c.e i (e.symm x) = some (e.symm y) :=
-      (Equiv.eq_symm_apply (Equiv.optionCongr e) (x := some y)
-        (y := c.e i (e.symm x))).2 h
-    exact c.wt_of_e_eq_some h'
+    exact c.wt_of_e_eq_some (map_equiv_eq_some_iff.1 h)
   ε_eq_zero_iff := by
     intro i x
     rw [Option.map_eq_none_iff]
     exact c.ε_eq_zero_iff
   ε_of_e_eq_some := by
     intro i x y h
-    have h' : c.e i (e.symm x) = some (e.symm y) :=
-      (Equiv.eq_symm_apply (Equiv.optionCongr e) (x := some y)
-        (y := c.e i (e.symm x))).2 h
-    exact c.ε_of_e_eq_some h'
+    exact c.ε_of_e_eq_some (map_equiv_eq_some_iff.1 h)
   φ_eq_zero_iff := by
     intro i x
     rw [Option.map_eq_none_iff]
@@ -429,6 +432,17 @@ theorem congr_ε (i : b.support) (x : B') :
 @[simp]
 theorem congr_φ (i : b.support) (x : B') :
     (c.congr e).φ i x = c.φ i (e.symm x) := (rfl)
+
+/-- Transport along a bijection, at the level of the raising operators: the raising operator of the
+transport is the transported raising operator of the source. -/
+theorem congr_e_eq_some_iff (i : b.support) (x y : B') :
+    (c.congr e).e i x = some y ↔ c.e i (e.symm x) = some (e.symm y) := by
+  rw [congr_e, map_equiv_eq_some_iff]
+
+/-- Transport along a bijection, at the level of the lowering operators. -/
+theorem congr_f_eq_some_iff (i : b.support) (x y : B') :
+    (c.congr e).f i x = some y ↔ c.f i (e.symm x) = some (e.symm y) := by
+  rw [congr_f, map_equiv_eq_some_iff]
 
 /-- Transport along the identity bijection is the identity. -/
 @[simp]
