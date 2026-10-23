@@ -28,10 +28,11 @@ The main application is the sphere symmetric sequence `n ↦ (S¹)^∧n`, a lax 
 of the finite-bijection groupoid, whose Day convolution monoid structure is the ring structure of
 the sphere symmetric spectrum.
 
-To verify the monoid laws, we restate Mathlib's characterisations of the whiskerings, the
-associator and the unitors of `C ⊛⥤ V` along the Day convolution units `η F G` and `ν C V`, and
-prove that morphisms out of `(F ⊗ G) ⊗ H`, `𝟙_ ⊗ F` and `F ⊗ 𝟙_` are determined by their
-restrictions along these units.
+The monoid laws are verified using the restatements, along the Day convolution units, of the
+whiskerings, the associator and the unitors of `C ⊛⥤ V` and the corresponding extensionality
+lemmas from `TauCeti.CategoryTheory.Monoidal.DayConvolution.Basic`. The unit and multiplication
+are built with `DayFunctor.unitDesc` and `DayFunctor.tensorDesc` from Robin Carlier's Day
+convolution formalization in Mathlib (`Mathlib.CategoryTheory.Monoidal.DayConvolution.DayFunctor`).
 
 ## Main definitions
 
@@ -44,8 +45,6 @@ restrictions along these units.
 
 * `DayFunctor.ν_comp_one_natTrans_app`, `DayFunctor.η_app_comp_mul_natTrans_app`: the unit and
   multiplication restrict along the Day convolution units to the unit and the tensorator of `F`.
-* `DayFunctor.tensor_tensor_hom_ext`, `DayFunctor.unit_tensor_hom_ext`,
-  `DayFunctor.tensor_unit_hom_ext`: extensionality for morphisms out of iterated Day convolutions.
 
 ## References
 
@@ -83,115 +82,6 @@ variable {C : Type u₁} [Category.{v₁} C] {V : Type u₂} [Category.{v₂} V]
       (CostructuredArrow ((𝟭 C).prod <| Functor.fromPUnit.{0} <| 𝟙_ C) d) (tensorRight v)]
     [∀ (v : V) (d : C × C), Limits.PreservesColimitsOfShape
       (CostructuredArrow ((tensor C).prod (𝟭 C)) d) (tensorRight v)]
-
-/-! ### The monoidal structure along the Day convolution units -/
-
-/-- The left whiskering `F ◁ g` restricted along the Day convolution unit `η F G`. -/
-@[reassoc (attr := simp)]
-lemma η_app_comp_whiskerLeft_natTrans_app (F : C ⊛⥤ V) {G G' : C ⊛⥤ V} (g : G ⟶ G') (x y : C) :
-    (η F G).app (x, y) ≫ (F ◁ g).natTrans.app (x ⊗ y) =
-      F.functor.obj x ◁ g.natTrans.app y ≫ (η F G').app (x, y) :=
-  convolutionExtensionUnit_comp_ι_map_whiskerLeft_app V F g x y
-
-/-- The right whiskering `f ▷ G` restricted along the Day convolution unit `η F G`. -/
-@[reassoc (attr := simp)]
-lemma η_app_comp_whiskerRight_natTrans_app {F F' : C ⊛⥤ V} (f : F ⟶ F') (G : C ⊛⥤ V) (x y : C) :
-    (η F G).app (x, y) ≫ (f ▷ G).natTrans.app (x ⊗ y) =
-      f.natTrans.app x ▷ G.functor.obj y ≫ (η F' G).app (x, y) :=
-  convolutionExtensionUnit_comp_ι_map_whiskerRight_app C V f G x y
-
-/-- The tensor product `f ⊗ₘ g` restricted along the Day convolution unit `η F G`. -/
-@[reassoc (attr := simp)]
-lemma η_app_comp_tensorHom_natTrans_app {F F' G G' : C ⊛⥤ V} (f : F ⟶ F') (g : G ⟶ G')
-    (x y : C) :
-    (η F G).app (x, y) ≫ (f ⊗ₘ g).natTrans.app (x ⊗ y) =
-      (f.natTrans.app x ⊗ₘ g.natTrans.app y) ≫ (η F' G').app (x, y) :=
-  convolutionExtensionUnit_comp_ι_map_tensorHom_app C V f g x y
-
-/-- The associator `(F ⊗ G) ⊗ H ≅ F ⊗ G ⊗ H` restricted along the Day convolution units: at
-`(x, y, z)` it is the associator of `V`, followed by the units and the action of
-`F ⊗ G ⊗ H` on the inverse associator of `C`. -/
-@[reassoc (attr := simp)]
-lemma η_app_whiskerRight_comp_η_app_comp_associator_hom_natTrans_app (F G H : C ⊛⥤ V)
-    (x y z : C) :
-    (η F G).app (x, y) ▷ H.functor.obj z ≫ (η (F ⊗ G) H).app (x ⊗ y, z) ≫
-        (α_ F G H).hom.natTrans.app ((x ⊗ y) ⊗ z) =
-      (α_ _ _ _).hom ≫ F.functor.obj x ◁ (η G H).app (y, z) ≫ (η F (G ⊗ H)).app (x, y ⊗ z) ≫
-        (F ⊗ G ⊗ H).functor.map (α_ x y z).inv :=
-  associator_hom_unit_unit V F G H x y z
-
-/-- The left unitor `𝟙_ ⊗ F ≅ F` restricted along the Day convolution units. -/
-@[reassoc (attr := simp)]
-lemma ν_whiskerRight_comp_η_app_comp_leftUnitor_hom_natTrans_app (F : C ⊛⥤ V) (y : C) :
-    ν C V ▷ F.functor.obj y ≫ (η (𝟙_ (C ⊛⥤ V)) F).app (𝟙_ C, y) ≫
-        (λ_ F).hom.natTrans.app (𝟙_ C ⊗ y) =
-      (λ_ (F.functor.obj y)).hom ≫ F.functor.map (λ_ y).inv :=
-  leftUnitor_hom_unit_app V F y
-
-/-- The right unitor `F ⊗ 𝟙_ ≅ F` restricted along the Day convolution units. -/
-@[reassoc (attr := simp)]
-lemma whiskerLeft_ν_comp_η_app_comp_rightUnitor_hom_natTrans_app (F : C ⊛⥤ V) (x : C) :
-    F.functor.obj x ◁ ν C V ≫ (η F (𝟙_ (C ⊛⥤ V))).app (x, 𝟙_ C) ≫
-        (ρ_ F).hom.natTrans.app (x ⊗ 𝟙_ C) =
-      (ρ_ (F.functor.obj x)).hom ≫ F.functor.map (ρ_ x).inv :=
-  rightUnitor_hom_unit_app V F x
-
-/-- Morphisms out of `𝟙_ ⊗ F` are determined by their restrictions along `ν C V` and the Day
-convolution unit `η (𝟙_ _) F`. -/
-lemma unit_tensor_hom_ext {F G : C ⊛⥤ V} {α β : 𝟙_ (C ⊛⥤ V) ⊗ F ⟶ G}
-    (h : ∀ y : C, ν C V ▷ F.functor.obj y ≫ (η (𝟙_ (C ⊛⥤ V)) F).app (𝟙_ C, y) ≫
-        α.natTrans.app (𝟙_ C ⊗ y) =
-      ν C V ▷ F.functor.obj y ≫ (η (𝟙_ (C ⊛⥤ V)) F).app (𝟙_ C, y) ≫
-        β.natTrans.app (𝟙_ C ⊗ y)) :
-    α = β := by
-  ext1
-  apply Functor.hom_ext_of_isLeftKanExtension _ (η _ F) _
-  have : ((𝟙_ (C ⊛⥤ V)).functor ⊠ F.functor).IsLeftKanExtension
-      (ExternalProduct.extensionUnitLeft _ (νNatTrans C V) F.functor) :=
-    (ExternalProduct.isPointwiseLeftKanExtensionExtensionUnitLeft _ (νNatTrans C V)
-      F.functor (isPointwiseLeftKanExtensionUnitUnit C V (C ⊛⥤ V))).isLeftKanExtension
-  apply Functor.hom_ext_of_isLeftKanExtension _
-    (ExternalProduct.extensionUnitLeft _ (νNatTrans C V) F.functor) _
-  ext ⟨⟨⟩, y⟩
-  simpa using h y
-
-/-- Morphisms out of `F ⊗ 𝟙_` are determined by their restrictions along `ν C V` and the Day
-convolution unit `η F (𝟙_ _)`. -/
-lemma tensor_unit_hom_ext {F G : C ⊛⥤ V} {α β : F ⊗ 𝟙_ (C ⊛⥤ V) ⟶ G}
-    (h : ∀ x : C, F.functor.obj x ◁ ν C V ≫ (η F (𝟙_ (C ⊛⥤ V))).app (x, 𝟙_ C) ≫
-        α.natTrans.app (x ⊗ 𝟙_ C) =
-      F.functor.obj x ◁ ν C V ≫ (η F (𝟙_ (C ⊛⥤ V))).app (x, 𝟙_ C) ≫
-        β.natTrans.app (x ⊗ 𝟙_ C)) :
-    α = β := by
-  ext1
-  apply Functor.hom_ext_of_isLeftKanExtension _ (η F _) _
-  have : (F.functor ⊠ (𝟙_ (C ⊛⥤ V)).functor).IsLeftKanExtension
-      (ExternalProduct.extensionUnitRight _ (νNatTrans C V) F.functor) :=
-    (ExternalProduct.isPointwiseLeftKanExtensionExtensionUnitRight _ (νNatTrans C V)
-      F.functor (isPointwiseLeftKanExtensionUnitUnit C V (C ⊛⥤ V))).isLeftKanExtension
-  apply Functor.hom_ext_of_isLeftKanExtension _
-    (ExternalProduct.extensionUnitRight _ (νNatTrans C V) F.functor) _
-  ext ⟨x, ⟨⟩⟩
-  simpa using h x
-
-/-- Morphisms out of `(F ⊗ G) ⊗ H` are determined by their restrictions along the Day
-convolution units `η F G` and `η (F ⊗ G) H`. -/
-lemma tensor_tensor_hom_ext {F G H K : C ⊛⥤ V} {α β : (F ⊗ G) ⊗ H ⟶ K}
-    (h : ∀ x y z : C, (η F G).app (x, y) ▷ H.functor.obj z ≫ (η (F ⊗ G) H).app (x ⊗ y, z) ≫
-        α.natTrans.app ((x ⊗ y) ⊗ z) =
-      (η F G).app (x, y) ▷ H.functor.obj z ≫ (η (F ⊗ G) H).app (x ⊗ y, z) ≫
-        β.natTrans.app ((x ⊗ y) ⊗ z)) :
-    α = β := by
-  ext1
-  apply Functor.hom_ext_of_isLeftKanExtension _ (η (F ⊗ G) H) _
-  have : ((F ⊗ G).functor ⊠ H.functor).IsLeftKanExtension
-      (ExternalProduct.extensionUnitLeft _ (η F G) H.functor) :=
-    (ExternalProduct.isPointwiseLeftKanExtensionExtensionUnitLeft _ (η F G)
-      H.functor (isPointwiseLeftKanExtensionConvolutionExtensionUnit F G)).isLeftKanExtension
-  apply Functor.hom_ext_of_isLeftKanExtension _
-    (ExternalProduct.extensionUnitLeft _ (η F G) H.functor) _
-  ext ⟨⟨x, y⟩, z⟩
-  simpa using h x y z
 
 section LaxMonoidal
 
