@@ -26,7 +26,9 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
 * `TauCeti.one_add_pow_three_dvd_iff_four_dvd_mul`: in a domain with `2 ≠ 0`, divisibility by
   `(1 + x)³` is divisibility of the product with `1 + x` by `4`;
 * `IsPrimitiveRoot.minpoly_toInteger_eq_X_sq_add_one`: the minimal polynomial of `i` is
-  `X² + 1`, the hypothesis through which the quadratic-field API applies to `K`;
+  `X² + 1`, the hypothesis of the `GaussianRationals` API, which
+  `GaussianRationals.minpoly_eq_X_sq_sub_C` converts to the `X² - C d` form of the
+  quadratic-field API;
 * `IsPrimitiveRoot.norm_intCast_add_intCast_mul_toInteger_of_four`: the norm of `a + b i` is
   `a² + b²`;
 * `IsPrimitiveRoot.odd_norm_intCast_add_intCast_mul_toInteger_iff_of_four`: the norm of `a + b i`
@@ -78,7 +80,9 @@ variable {K : Type*} [Field K] [NumberField K] {ζ : K} (hζ : IsPrimitiveRoot �
 include hζ
 
 /-- The minimal polynomial over `ℤ` of a primitive fourth root of unity `i ∈ 𝓞 K` is `X² + 1`.
-This is the form in which the quadratic-field API takes its minimal-polynomial hypothesis. -/
+This is the minimal-polynomial hypothesis of the `GaussianRationals` API;
+`GaussianRationals.minpoly_eq_X_sq_sub_C` converts it to the `X² - C d` form taken by the
+quadratic-field lemmas such as `TauCeti.NumberField.norm_int_add_mul_gen`. -/
 theorem minpoly_toInteger_eq_X_sq_add_one : minpoly ℤ hζ.toInteger = X ^ 2 + 1 := by
   have h : minpoly ℤ ζ = X ^ 2 + 1 := by
     rw [← cyclotomic_eq_minpoly hζ (by norm_num), show (4 : ℕ) = 2 ^ (1 + 1) by norm_num,
