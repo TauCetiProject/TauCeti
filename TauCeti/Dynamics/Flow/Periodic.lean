@@ -82,9 +82,10 @@ theorem periodic_iff_return_of_hasDerivAt (hT : Periodic v T) {y : ℝ → E}
   simp only [timeDependentFlow_self, IsFixedPt]
 
 /-- Parametrized periodic global solutions correspond to fixed points of the return map.
-The forward map evaluates at the initial time, and the inverse follows the evolution. -/
+The forward map evaluates at the initial time, and the inverse follows the evolution.
+Periodicity is written pointwise to keep the evaluation simp lemmas in normal form. -/
 noncomputable def periodicSolutionEquivFixedPoints (hT : Periodic v T) (s : ℝ) :
-    {y : ℝ → E // (∀ t, HasDerivAt y (v t (y t)) t) ∧ Periodic y T} ≃
+    {y : ℝ → E // (∀ t, HasDerivAt y (v t (y t)) t) ∧ ∀ t, y (t + T) = y t} ≃
       fixedPoints (timeDependentFlow v hv s (s + T)) where
   toFun y := ⟨y.1 s, by
     rw [mem_fixedPoints, ← periodic_timeDependentFlow_iff hv hT]
@@ -101,7 +102,7 @@ noncomputable def periodicSolutionEquivFixedPoints (hT : Periodic v T) (s : ℝ)
 /-- The correspondence from periodic solutions to fixed points evaluates at the initial time. -/
 @[simp]
 theorem periodicSolutionEquivFixedPoints_apply (hT : Periodic v T) (s : ℝ)
-    (y : {y : ℝ → E // (∀ t, HasDerivAt y (v t (y t)) t) ∧ Periodic y T}) :
+    (y : {y : ℝ → E // (∀ t, HasDerivAt y (v t (y t)) t) ∧ ∀ t, y (t + T) = y t}) :
     (periodicSolutionEquivFixedPoints hv hT s y : E) = y.1 s :=
   (rfl)
 
