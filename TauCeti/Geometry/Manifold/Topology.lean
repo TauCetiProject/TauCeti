@@ -54,9 +54,9 @@ theorem locallyPathConnectedSpace (I : ModelWithCorners ℝ E H) : LocallyPathCo
   let _ : LocallyPathConnectedSpace I.target := hconvex.locallyPathConnectedSpace
   exact e.symm.locallyPathConnectedSpace
 
-/-- A real manifold modelled on a normed space is semilocally simply connected. -/
+/-- A charted space modelled on a real normed space is semilocally simply connected. -/
 theorem semilocallySimplyConnectedSpace (I : ModelWithCorners ℝ E H) (M : Type*)
-    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] :
+    [TopologicalSpace M] [ChartedSpace H M] :
     TauCeti.SemilocallySimplyConnectedSpace M := by
   apply TauCeti.SemilocallySimplyConnectedSpace.of_forall_exists_mem_nhds_isSimplyConnected
   intro x
