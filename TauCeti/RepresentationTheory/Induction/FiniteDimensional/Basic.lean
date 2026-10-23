@@ -267,7 +267,7 @@ theorem _root_.Rep.indMap_injective [S.FiniteIndex] {V W : Rep.{max w u} k S} :
   let q : Quotient (QuotientGroup.rightRel S) := Quotient.mk'' (1 : G)
   have hx := congrArg (fun m : Rep.ind S.subtype V ⟶ Rep.ind S.subtype W ↦
     indSubtypeEquivPi W (m.hom ((indSubtypeEquivPi V).symm (fun _ ↦ x))) q) h
-  simpa only [_root_.Rep.indSubtypeEquivPi_indMap.{u, v, w},
+  simpa only [_root_.Rep.indSubtypeEquivPi_indMap f, _root_.Rep.indSubtypeEquivPi_indMap g,
     LinearEquiv.apply_symm_apply, Representation.IntertwiningMap.toLinearMap_apply] using hx
 
 /-- **Induction from a finite-index subgroup preserves finiteness** of the underlying module. -/
@@ -525,6 +525,11 @@ passed to the split Grothendieck group in
 instance indFDRepFunctor_additive {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Additive where
   map_add {_ _} f g := indFDRepMap_add f g
+
+/-- Induction from a finite-index subgroup is linear over the coefficient field. -/
+instance indFDRepFunctor_linear {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Linear k where
+  map_smul f r := indFDRepMap_smul r f
 
 /-- Induction from a finite-index subgroup is faithful on finite-dimensional intertwiners. -/
 theorem indFDRepMap_injective {k G : Type u} [Field k] [Group G] {S : Subgroup G}

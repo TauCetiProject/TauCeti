@@ -73,21 +73,17 @@ theorem indEndAlgHom_bijective [Finite G] (A : FDRep k H)
     Function.Bijective A.indEndAlgHom := by
   classical
   let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (H : Set G))
-  have hdim : Module.finrank k (A ⟶ A) = Module.finrank k (indFDRep A ⟶ indFDRep A) := by
-    rw [finrank_hom_indFDRep_mackey_erase]
+  let : FiniteDimensional k (End A) := End.linearEquiv.symm.finiteDimensional
+  let : FiniteDimensional k (End (indFDRep A)) := End.linearEquiv.symm.finiteDimensional
+  have hdim : Module.finrank k (End A) = Module.finrank k (End (indFDRep A)) := by
+    rw [(End.linearEquiv (R := k) (X := A)).finrank_eq,
+      (End.linearEquiv (R := k) (X := indFDRep A)).finrank_eq,
+      finrank_hom_indFDRep_mackey_erase]
     simp only [mackeyDisjoint_iff_finrank_eq_zero] at h
     rw [Finset.sum_eq_zero (fun D hD ↦ h D (Finset.mem_erase.mp hD).1), add_zero]
-  let l : (A ⟶ A) →ₗ[k] (indFDRep A ⟶ indFDRep A) :=
-    { toFun := indFDRepMap
-      map_add' := indFDRepMap_add
-      map_smul' := indFDRepMap_smul }
-  have hsurj : Function.Surjective l :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mp indFDRepMap_injective
-  refine ⟨A.indEndAlgHom_injective, fun f ↦ ?_⟩
-  obtain ⟨g, hg⟩ := hsurj f.asHom
-  refine ⟨End.of g, End.ext ?_⟩
-  rw [indEndAlgHom_asHom]
-  exact hg
+  exact ⟨A.indEndAlgHom_injective,
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (f := A.indEndAlgHom.toLinearMap) hdim).mp A.indEndAlgHom_injective⟩
 
 /-- With no nonidentity Mackey intertwiners, induction identifies the actual endomorphism
 algebras, over any coefficient field. -/
