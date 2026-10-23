@@ -80,8 +80,9 @@ variable [SMul G X]
 variable (X G) in
 /-- An *equipartition* of `X` for an action of `G`: a finite set of pairs `(Aᵢ, gᵢ)` of a source
 piece `Aᵢ : Set X` and a group element `gᵢ : G`, such that the source pieces `Aᵢ` are pairwise
-disjoint and the target pieces `gᵢ • Aᵢ` are pairwise disjoint. Moving each `Aᵢ` by `gᵢ` is then an
-equidecomposition of the union of the `Aᵢ` with the union of the `gᵢ • Aᵢ`. -/
+disjoint and the target pieces `gᵢ • Aᵢ` are pairwise disjoint. When `G` is a group acting on `X`,
+moving each `Aᵢ` by `gᵢ` is then an equidecomposition of the union of the `Aᵢ` with the union of
+the `gᵢ • Aᵢ` (see `Equidecomp.Equipartition.toEquidecomp`). -/
 @[ext]
 structure Equipartition where
   /-- The pieces, each a source piece together with the group element moving it. -/
@@ -129,29 +130,20 @@ theorem eq_of_mem_smul (hp : p ∈ E.pieces) (hq : q ∈ E.pieces) (hyp : y ∈ 
     (hyq : y ∈ q.2 • q.1) : p = q :=
   E.pairwiseDisjoint_smul.elim hp hq <| not_disjoint_iff.2 ⟨y, hyp, hyq⟩
 
-/-- If a map `F` sends distinct pieces to disjoint sets, then the images of the pieces under `F`
-are pairwise disjoint sets. -/
-private theorem pairwiseDisjoint_image [DecidableEq (Set X)] {F : Set X × G → Set X}
-    (hF : (E.pieces : Set (Set X × G)).PairwiseDisjoint F) :
-    ((E.pieces.image F : Finset (Set X)) : Set (Set X)).PairwiseDisjoint id := by
-  rintro _ hs _ ht hst
-  simp only [Finset.coe_image, mem_image, Finset.mem_coe] at hs ht
-  obtain ⟨p, hp, rfl⟩ := hs
-  obtain ⟨q, hq, rfl⟩ := ht
-  exact hF hp hq fun hpq ↦ hst (congrArg F hpq)
-
 open scoped Classical in
 /-- The finite partition of the source of an equipartition into its nonempty source pieces. -/
 noncomputable def sourceFinpartition (E : Equipartition X G) : Finpartition E.source :=
   Finpartition.ofErase (E.pieces.image Prod.fst)
-    (Finset.supIndep_iff_pairwiseDisjoint.2 (pairwiseDisjoint_image E.pairwiseDisjoint_fst))
+    (Finset.supIndep_iff_pairwiseDisjoint.2 <| by
+      rw [Finset.coe_image]; exact E.pairwiseDisjoint_fst.image)
     (by rw [Finset.sup_image, Finset.sup_set_eq_biUnion]; rfl)
 
 open scoped Classical in
 /-- The finite partition of the target of an equipartition into its nonempty target pieces. -/
 noncomputable def targetFinpartition (E : Equipartition X G) : Finpartition E.target :=
   Finpartition.ofErase (E.pieces.image fun p ↦ p.2 • p.1)
-    (Finset.supIndep_iff_pairwiseDisjoint.2 (pairwiseDisjoint_image E.pairwiseDisjoint_smul))
+    (Finset.supIndep_iff_pairwiseDisjoint.2 <| by
+      rw [Finset.coe_image]; exact E.pairwiseDisjoint_smul.image)
     (by rw [Finset.sup_image, Finset.sup_set_eq_biUnion]; rfl)
 
 @[simp]
@@ -210,17 +202,9 @@ by `γ s`, provided these translates are pairwise disjoint. -/
 noncomputable def ofFinpartition : Equipartition X G where
   pieces := P.parts.image fun s ↦ (s, γ s)
   pairwiseDisjoint_fst := by
-    rintro _ hp _ hq hpq
-    simp only [Finset.coe_image, mem_image, Finset.mem_coe] at hp hq
-    obtain ⟨s, hs, rfl⟩ := hp
-    obtain ⟨t, ht, rfl⟩ := hq
-    exact P.disjoint hs ht fun hst ↦ hpq (by rw [hst])
+    rw [Finset.coe_image]; exact Set.Pairwise.image (f := fun s ↦ (s, γ s)) P.disjoint
   pairwiseDisjoint_smul := by
-    rintro _ hp _ hq hpq
-    simp only [Finset.coe_image, mem_image, Finset.mem_coe] at hp hq
-    obtain ⟨s, hs, rfl⟩ := hp
-    obtain ⟨t, ht, rfl⟩ := hq
-    exact hγ hs ht fun hst ↦ hpq (by rw [hst])
+    rw [Finset.coe_image]; exact Set.Pairwise.image (f := fun s ↦ (s, γ s)) hγ
 
 @[simp]
 theorem mem_ofFinpartition_pieces {p : Set X × G} :
@@ -268,22 +252,16 @@ points of the source that `f` moves by the chosen element `g` form a piece moved
 noncomputable def toEquipartition (f : Equidecomp X G) : Equipartition X G where
   pieces := f.witness.image fun g ↦ (piece f g, g)
   pairwiseDisjoint_fst := by
-    rintro _ hp _ hq hpq
-    simp only [Finset.coe_image, mem_image, Finset.mem_coe] at hp hq
-    obtain ⟨g, -, rfl⟩ := hp
-    obtain ⟨g', -, rfl⟩ := hq
-    refine Set.disjoint_left.2 fun a ha ha' ↦ hpq ?_
-    rw [eq_of_mem_piece ha ha']
+    rw [Finset.coe_image]
+    refine Set.Pairwise.image fun g _ g' _ hgg' ↦ Set.disjoint_left.2 fun a ha ha' ↦ ?_
+    exact hgg' (eq_of_mem_piece ha ha')
   pairwiseDisjoint_smul := by
-    rintro _ hp _ hq hpq
-    simp only [Finset.coe_image, mem_image, Finset.mem_coe] at hp hq
-    obtain ⟨g, -, rfl⟩ := hp
-    obtain ⟨g', -, rfl⟩ := hq
-    refine Set.disjoint_left.2 ?_
+    rw [Finset.coe_image]
+    refine Set.Pairwise.image fun g _ g' _ hgg' ↦ Set.disjoint_left.2 ?_
     rintro _ ⟨a, ha, rfl⟩ ⟨b, hb, hba⟩
     obtain rfl : b = a := f.toPartialEquiv.injOn hb.1 ha.1 <|
       (apply_eq_smul_of_mem_piece hb).trans <| hba.trans (apply_eq_smul_of_mem_piece ha).symm
-    exact hpq (by rw [eq_of_mem_piece ha hb])
+    exact hgg' (eq_of_mem_piece ha hb)
 
 private theorem mem_toEquipartition_pieces {f : Equidecomp X G} {p : Set X × G} :
     p ∈ f.toEquipartition.pieces ↔ ∃ g ∈ f.witness, (piece f g, g) = p := by
@@ -328,9 +306,7 @@ theorem toEquipartition_target (f : Equidecomp X G) : f.toEquipartition.target =
   refine ⟨fun hy ↦ ?_, fun hy ↦ ?_⟩
   · obtain ⟨p, hp, a, ha, rfl⟩ := Equipartition.mem_target.1 hy
     obtain ⟨g, -, rfl⟩ := mem_toEquipartition_pieces.1 hp
-    beta_reduce
-    rw [← apply_eq_smul_of_mem_piece ha]
-    exact apply_mem_target ha.1
+    simpa only [apply_eq_smul_of_mem_piece ha] using apply_mem_target ha.1
   · have ha := f.toPartialEquiv.map_target hy
     refine Equipartition.mem_target.2 ⟨_, mk_piece_choose_mem ha, _, mem_piece_choose ha, ?_⟩
     exact (apply_eq_smul_of_mem_piece (mem_piece_choose ha)).symm.trans
