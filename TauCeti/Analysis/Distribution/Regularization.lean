@@ -199,7 +199,7 @@ private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : �
     simp [R, φh, hφ₀, translateOfMapsTo_apply, hd.lineDeriv_eq_fderiv, sub_sub, add_comm h x]
   have hRK : tsupport R ⊆ K := by
     rw [hR]
-    exact tsupport_sub_sub_add_fderiv_subset _ hhδ
+    exact TauCeti.tsupport_sub_sub_add_fderiv_subset _ hhδ
   have hRbound : ∀ i ≤ N, ∀ y, ‖iteratedFDeriv ℝ i R y‖ ≤ c / (C + 1) * ‖h‖ := by
     intro i hi y
     have hri : ‖h‖ < r i := hh.trans_le ((min_le_right _ _).trans

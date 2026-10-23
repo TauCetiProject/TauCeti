@@ -31,7 +31,7 @@ compactly supported smooth function at once.
 ## Main declarations
 
 * `ContDiff.iteratedFDeriv_fderiv_apply`: `Dⁱ (y ↦ Df(y) v) = D(Dⁱ f)(·) v`.
-* `tsupport_sub_sub_add_fderiv_subset`: the support of the first-order Taylor remainder.
+* `TauCeti.tsupport_sub_sub_add_fderiv_subset`: the support of the first-order Taylor remainder.
 * `HasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le`: the uniform estimate on
   the derivatives of the first-order Taylor remainder.
 -/
@@ -80,6 +80,8 @@ theorem ContDiff.iteratedFDeriv_fderiv_apply {n : WithTop ℕ∞} {f : E → F} 
     rw [TauCeti.fderiv_clm_apply_const_apply hD]
     exact (hg.contDiffAt (x := x)).isSymmSndFDerivAt le_rfl w v
 
+namespace TauCeti
+
 /-- The first-order Taylor remainder `z ↦ f (z - h) - f z + Df(z) h` is supported in every closed
 `δ`-thickening of the support of `f` with `‖h‖ ≤ δ`. -/
 theorem tsupport_sub_sub_add_fderiv_subset (f : E → F) {h : E} {δ : ℝ} (hh : ‖h‖ ≤ δ) :
@@ -91,6 +93,8 @@ theorem tsupport_sub_sub_add_fderiv_subset (f : E → F) {h : E} {δ : ℝ} (hh 
   rw [image_eq_zero_of_notMem_tsupport hz₀, image_eq_zero_of_notMem_tsupport hzh,
     Function.notMem_support.1 fun h' ↦ hz₀ (support_fderiv_subset 𝕜 h')]
   simp
+
+end TauCeti
 
 /-- **Uniform first-order Taylor estimate for all derivatives.** If `f` is `C^{i+1}` with compact
 support, then the `i`-th derivative of the first-order Taylor remainder
