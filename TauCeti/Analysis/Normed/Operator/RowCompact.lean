@@ -281,6 +281,16 @@ theorem ringOpNorm_eq_iSup_rowNorm (u : C₀(J, R) →L[R] C₀(I, R)) : ‖u‖
   · exact (u.norm_matrixCoeff_le_rowNorm i j).trans (le_ciSup hbdd i)
   · exact Real.iSup_le u.rowNorm_le_ringOpNorm (ringOpNorm_nonneg u)
 
+/-- Over ultrametric Tate scalars, the `i`-th coordinate of `u x` is bounded by the row norm
+`rᵢ(u)` times `‖x‖`. -/
+theorem norm_apply_apply_le_rowNorm_mul (u : C₀(J, R) →L[R] C₀(I, R)) (x : C₀(J, R)) (i : I) :
+    ‖u x i‖ ≤ u.rowNorm i * ‖x‖ := by
+  rw [← (u.hasSum_mul_matrixCoeff x i).tsum_eq, mul_comm]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg (norm_nonneg x) (u.rowNorm_nonneg i)) fun j ↦ (norm_mul_le _ _).trans ?_
+  exact mul_le_mul (norm_coe_le_norm x j) (u.norm_matrixCoeff_le_rowNorm i j) (norm_nonneg _)
+    (norm_nonneg _)
+
 end Ultrametric
 
 section Truncation
