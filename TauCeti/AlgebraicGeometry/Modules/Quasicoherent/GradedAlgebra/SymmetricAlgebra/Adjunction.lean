@@ -26,22 +26,20 @@ linear schemes `Spec_X Sym F` over `X`.
 
 The extension `Symⁿ F ⟶ Aₙ` is built over each open `U` from the universal property of the
 symmetric algebra of the `Γ(X, U)`-module `Γ(F, U)`, with values in the graded ring
-`⨁ n, Γ(Aₙ, U)` of sections of `A`, and then sheafified; its compatibility with the unit and
+`⨁ n, Γ(Aₙ, U)` of sections of `A`, and then sheafified
+(`TauCeti.SheafOfModules.symmetricPowerLift`); its compatibility with the unit and
 the multiplication is checked on sections and transported along the monoidal sheafification
-adjunction. Uniqueness holds because `Sym F` is generated in degree one: its unit and its
-multiplications are epimorphisms (`epi_one_gradedSymmetricAlgebra`,
-`epi_mul_gradedSymmetricAlgebra`).
+adjunction. Uniqueness holds because `Sym F` is generated in degree one
+(`gradedSymmetricAlgebra_hom_ext`).
 
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraLift`: the morphism `Sym F ⟶ A` of graded
   quasicoherent algebras extending `φ : F ⟶ A₁`, characterized by
   `gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift`;
-* `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_hom_ext`: morphisms out of `Sym F` are
-  determined in degree one;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraAdjunction`: the adjunction
-  `gradedSymmetricAlgebra X ⊣ degreeOne`, whose unit is an isomorphism
-  (`isIso_gradedSymmetricAlgebraAdjunction_unit`).
+  `gradedSymmetricAlgebra X ⊣ degreeOne`, whose unit is the identification `F ≅ Sym¹ F`
+  (`gradedSymmetricAlgebraAdjunction_unit`).
 
 ## References
 
@@ -59,86 +57,6 @@ open _root_.AlgebraicGeometry CategoryTheory.CommMon GradedQuasicoherentAlgebra
 universe u
 
 noncomputable section
-
-section Transport
-
-/-! ### Sheafifying sectionwise maps out of symmetric powers -/
-
-open TauCeti.SheafOfModules (ringCatSheaf sheafificationIso)
-
-variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
-  [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
-  [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
-  {R : Sheaf J CommRingCat.{u}} {M : _root_.SheafOfModules.{u} (ringCatSheaf R)}
-  {B : ℕ → _root_.SheafOfModules.{u} (ringCatSheaf R)}
-  (ψ : ∀ n, (PresheafOfModulesOfCommRing.symmetricPower n).obj M.val ⟶ (B n).val)
-
-/-- The transpose along sheafification of a family of sectionwise maps `ψ n : Symⁿ M.val ⟶ Bₙ`
-out of the presheaf symmetric powers of `M`: a morphism `Symⁿ M ⟶ Bₙ` of sheaves of modules. -/
-private abbrev sheafifiedLift (n : ℕ) : (_root_.SheafOfModules.symmetricPower R n).obj M ⟶ B n :=
-  (_root_.SheafOfModules.symmetricPowerIso n M).hom ≫
-    (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map (ψ n) ≫
-      (sheafificationIso _ (B n)).hom
-
-/-- Sectionwise maps compatible with the multiplications sheafify to maps compatible with the
-multiplications. -/
-private lemma sheafifiedLift_mul (mul : ∀ i j, B i ⊗ B j ⟶ B (i + j))
-    (h : ∀ i j, (ψ i ⊗ₘ ψ j) ≫
-      Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) (B i) (B j) ≫
-        (mul i j).val = PresheafOfModulesOfCommRing.symmetricPowerMul M.val i j ≫ ψ (i + j))
-    (i j : ℕ) :
-    (sheafifiedLift ψ i ⊗ₘ sheafifiedLift ψ j) ≫ mul i j =
-      _root_.SheafOfModules.symmetricPowerMul M i j ≫ sheafifiedLift ψ (i + j) := by
-  refine GradedObject.map_mul_of_laxMonoidal
-    (F := PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj))
-    (e := fun n ↦ _root_.SheafOfModules.symmetricPowerIso n M) _ _
-    (_root_.SheafOfModules.symmetricPowerMul_def M)
-    (e' := fun n ↦ (sheafificationIso _ (B n)).symm)
-    (fun i j ↦ Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) (B i) (B j) ≫
-      (mul i j).val) mul (fun i j ↦ ?_) ψ (sheafifiedLift ψ) (fun n ↦ rfl) h i j
-  have h : ((TauCeti.SheafOfModules.sheafificationForgetAdjunction R).homEquiv _ _).symm
-      (Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) (B i) (B j) ≫
-        (mul i j).val) = ((B i).tensorUnderlyingIso (B j)).inv ≫ mul i j :=
-    (Equiv.symm_apply_eq _).2 (TauCeti.SheafOfModules.forget_μ_comp_map (mul i j))
-  rw [Adjunction.homEquiv_counit,
-    TauCeti.SheafOfModules.sheafificationForgetAdjunction_counit_app] at h
-  rw [Iso.symm_hom, Iso.symm_hom, Iso.symm_inv]
-  -- `h` displays the source of the sheafified map as `forget.obj (B i) ⊗ forget.obj (B j)`, the
-  -- goal as `(B i).val ⊗ (B j).val`; these agree only up to unfolding `forget`.
-  erw [h]
-  rw [← Category.assoc, ← _root_.SheafOfModules.tensorUnderlyingIso_hom, Iso.hom_inv_id_assoc]
-
-/-- Sectionwise maps compatible with the units sheafify to maps compatible with the units. -/
-private lemma sheafifiedLift_one (one : _root_.SheafOfModules.unit (ringCatSheaf R) ⟶ B 0)
-    (h : (PresheafOfModulesOfCommRing.symmetricPowerZeroIso R.obj).inv.app M.val ≫ ψ 0 =
-      one.val) :
-    (_root_.SheafOfModules.symmetricPowerZeroIso R).inv.app M ≫ sheafifiedLift ψ 0 = one := by
-  rw [_root_.SheafOfModules.symmetricPowerZeroIso_inv_app]
-  simp only [Category.assoc, Iso.inv_hom_id_assoc]
-  -- The sheafified presheaf maps are composable only up to the identification of
-  -- `PresheafOfModulesOfCommRing R.obj` with presheaves over `(ringCatSheaf R).obj`.
-  erw [← Functor.map_comp_assoc, h]
-  rw [TauCeti.SheafOfModules.sheafificationIso_hom_naturality, Iso.inv_hom_id_assoc]
-
-/-- Sectionwise maps restricting to `φ` on `Sym¹ M.val ≅ M.val` sheafify to maps restricting to
-`φ` on `Sym¹ M ≅ M`. -/
-private lemma sheafifiedLift_degreeOne (φ : M ⟶ B 1)
-    (h : (PresheafOfModulesOfCommRing.symmetricPowerOneIso R.obj).inv.app M.val ≫ ψ 1 = φ.val) :
-    (_root_.SheafOfModules.symmetricPowerOneIso R).inv.app M ≫ sheafifiedLift ψ 1 = φ := by
-  have h' : ψ 1 = (PresheafOfModulesOfCommRing.symmetricPowerOneIso R.obj).hom.app M.val ≫
-      φ.val := by
-    rw [← h]
-    exact (Iso.hom_inv_id_app_assoc _ _ _).symm
-  rw [← Iso.app_inv, Iso.inv_comp_eq, Iso.app_hom,
-    _root_.SheafOfModules.symmetricPowerOneIso_hom_app]
-  dsimp only [sheafifiedLift]
-  -- As in `sheafifiedLift_one`, `ψ 1` and its rewrite live over definitionally equal but
-  -- syntactically different presheaf categories.
-  erw [h', Functor.map_comp]
-  rw [Category.assoc, TauCeti.SheafOfModules.sheafificationIso_hom_naturality]
-  simp only [Category.assoc]
-
-end Transport
 
 section Sections
 
@@ -180,7 +98,7 @@ private lemma sectionsLift_homogeneous (φ : F ⟶ A.X 1) (U : X.Opens) {n : ℕ
       map_add]
   | mem_mul m hm i x _ ih =>
     obtain ⟨y, rfl⟩ := hm
-    rw [show i.succ = 1 + i from Nat.succ_eq_one_add i]
+    rw [Nat.succ_eq_one_add i]
     refine eq_of_eq_of (w := GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.X n, U)) (φ.app U y)
       (sectionsLift φ U x i)) ?_
     rw [map_mul, ih, sectionsLift_ι, DirectSum.of_mul_of, DirectSum.of_eq_same]
@@ -321,41 +239,31 @@ private abbrev symPowMul (i j : ℕ) : symPow F i ⊗ symPow F j ⟶ symPow F (i
 
 /-- The degree-`n` component `Symⁿ F ⟶ Aₙ` of the extension of `φ`. -/
 private def liftDegree (φ : F ⟶ A.X 1) (n : ℕ) : symPow F n ⟶ A.X n :=
-  sheafifiedLift (R := X.sheaf) (B := A.X) (presheafLift φ) n
+  TauCeti.SheafOfModules.symmetricPowerLift (R := X.sheaf) (presheafLift φ n)
 
 private lemma liftDegree_mul (φ : F ⟶ A.X 1) (i j : ℕ) :
     (liftDegree φ i ⊗ₘ liftDegree φ j) ≫ A.toMon.mul i j =
       symPowMul F i j ≫ liftDegree φ (i + j) :=
-  sheafifiedLift_mul (R := X.sheaf) (presheafLift φ) A.toMon.mul (presheafLift_mul φ) i j
+  TauCeti.SheafOfModules.symmetricPowerLift_mul (R := X.sheaf) (presheafLift φ) A.toMon.mul
+    (presheafLift_mul φ) i j
 
 private lemma liftDegree_one (φ : F ⟶ A.X 1) :
     ((SheafOfModules.symmetricPowerZeroIso X.sheaf).inv.app F : 𝟙_ X.Modules ⟶ symPow F 0) ≫
       liftDegree φ 0 = A.toMon.one :=
-  sheafifiedLift_one (R := X.sheaf) (presheafLift φ) A.toMon.one (presheafLift_one φ)
+  TauCeti.SheafOfModules.symmetricPowerZeroIso_inv_app_comp_symmetricPowerLift (R := X.sheaf)
+    (presheafLift_one φ)
 
 private lemma liftDegree_degreeOne (φ : F ⟶ A.X 1) :
     ((SheafOfModules.symmetricPowerOneIso X.sheaf).inv.app F : F ⟶ symPow F 1) ≫
       liftDegree φ 1 = φ :=
-  sheafifiedLift_degreeOne (R := X.sheaf) (presheafLift φ) φ (presheafLift_degreeOne φ)
+  TauCeti.SheafOfModules.symmetricPowerOneIso_inv_app_comp_symmetricPowerLift (R := X.sheaf)
+    (presheafLift_degreeOne φ)
 
 end Sections
 
 /-! ### The universal property -/
 
 variable {X : Scheme.{u}}
-
-/-- Morphisms of graded quasicoherent algebras out of the graded symmetric algebra `Sym F` are
-determined by their degree-one components. -/
-theorem gradedSymmetricAlgebra_hom_ext {F : QuasicoherentSheaf X}
-    {A : GradedQuasicoherentAlgebra X} {f g : (gradedSymmetricAlgebra X).obj F ⟶ A}
-    (h : degreeOne.map f = degreeOne.map g) :
-    f = g := by
-  refine hom_ext_of_epi_mul ?_
-  have h' := congrArg (fun f ↦ f.hom) h
-  simp only [degree_map_hom] at h'
-  exact (Iso.cancel_iso_hom_right _ _ (eqToIso (degree_obj_obj A 1).symm)).1
-    ((Iso.cancel_iso_hom_left (eqToIso (degree_obj_obj ((gradedSymmetricAlgebra X).obj F) 1))
-      _ _).1 h')
 
 /-- The morphism of graded quasicoherent algebras `Sym F ⟶ A` extending a morphism
 `φ : F ⟶ A₁` of quasicoherent sheaves into the degree-one component of `A`
@@ -442,12 +350,6 @@ theorem gradedSymmetricAlgebraAdjunction_unit :
   rw [← Adjunction.homEquiv_id, gradedSymmetricAlgebraAdjunction_homEquiv_apply,
     CategoryTheory.Functor.map_id]
   exact Category.comp_id _
-
-/-- The unit of `gradedSymmetricAlgebraAdjunction` is an isomorphism. -/
-instance isIso_gradedSymmetricAlgebraAdjunction_unit :
-    IsIso (gradedSymmetricAlgebraAdjunction X).unit := by
-  rw [gradedSymmetricAlgebraAdjunction_unit]
-  infer_instance
 
 end
 
