@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.ConjAct
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.Rank
@@ -34,9 +32,11 @@ through Mathlib's `MvPolynomial.zeroLocus` and `MvPolynomial.vanishingIdeal`.
 
 * `Matrix.aeval_det_submatrix_pow_mvPolynomialX`: the minors of `Z ^ j` are polynomials in the
   entries of `Z`.
-* `Matrix.rank_pow_le_of_mem_zeroLocus_vanishingIdeal`: a bound on the rank of `Z ^ j` holding on a
-  set of matrices holds on its Zariski closure.
-* `Matrix.isClosed_setOfPred_rank_pow_le`: the matrices with `rank (Z ^ j) ≤ r` form a closed set.
+* `Matrix.rank_le_of_mem_zeroLocus_vanishingIdeal` and
+  `Matrix.rank_pow_le_of_mem_zeroLocus_vanishingIdeal`: a bound on the rank of a matrix, or of its
+  `j`-th power, holding on a set of matrices holds on its Zariski closure.
+* `Matrix.isClosed_setOfPred_rank_le` and `Matrix.isClosed_setOfPred_rank_pow_le`: the matrices of
+  rank at most `r`, and the square matrices `Z` with `rank (Z ^ j) ≤ r`, form closed sets.
 * `Matrix.rank_pow_le_of_mem_zeroLocus_vanishingIdeal_orbit` and
   `Matrix.rank_pow_le_of_mem_closure_orbit`: on the Zariski closure, and on the topological
   closure, of the conjugacy class of `X`, the rank of every power is at most that of `X`.
@@ -69,16 +69,32 @@ theorem aeval_det_submatrix_pow_mvPolynomialX {R S : Type*} [CommRing R] [CommRi
   exact congrArg (fun A : Matrix n n S ↦ ((A ^ j).submatrix r c).det)
     (mvPolynomialX_mapMatrix_aeval R Z)
 
-/-- Conjugation by an invertible matrix preserves the rank. -/
-@[simp]
-theorem rank_conjAct_smul {R : Type*} [CommRing R] (g : ConjAct (GL n R)) (A : Matrix n n R) :
-    (g • A).rank = A.rank := by
-  rw [ConjAct.units_smul_def, rank_mul_eq_left_of_isUnit_det _ _ (isUnits_det_units _),
-    rank_mul_eq_right_of_isUnit_det _ _ (isUnits_det_units _)]
-
 section Zariski
 
 variable {k K : Type*} [Field k] [Field K] [Algebra k K]
+
+omit [DecidableEq n] in
+/-- **Rank bounds are Zariski closed.** If `rank Z ≤ r` for every matrix `Z` of a set `S`, then
+`rank Y ≤ r` for every `Y` on which all polynomials vanishing on `S` vanish. -/
+theorem rank_le_of_mem_zeroLocus_vanishingIdeal {m : Type*} [Finite m] {S : Set (Matrix m n K)}
+    {r : ℕ} (hS : ∀ Z ∈ S, Z.rank ≤ r) {Y : Matrix m n K}
+    (hY : Function.uncurry Y ∈ zeroLocus K (vanishingIdeal k (Function.uncurry '' S))) :
+    Y.rank ≤ r := by
+  -- The minors of a matrix `Z` are the values at `Z` of the minors of the generic matrix.
+  have key (Z : Matrix m n K) (a : Fin (r + 1) ↪ m) (b : Fin (r + 1) ↪ n) :
+      aeval (Function.uncurry Z) ((mvPolynomialX m n k).submatrix a b).det =
+        (Z.submatrix a b).det := by
+    rw [AlgHom.map_det, AlgHom.mapMatrix_apply, ← submatrix_map]
+    exact congrArg (fun A : Matrix m n K ↦ (A.submatrix a b).det)
+      (mvPolynomialX_map_eval₂ (algebraMap k K) Z)
+  rw [rank_le_iff_forall_det_submatrix_eq_zero]
+  intro a b
+  rw [← key]
+  refine mem_zeroLocus_iff.1 hY _ (mem_vanishingIdeal_iff.2 ?_)
+  -- The image under `Function.uncurry` sees `Z` as a function, so it is retyped as a matrix.
+  rintro - ⟨Z, hZ, rfl⟩
+  exact (key (Z : Matrix m n K) a b).trans
+    (rank_le_iff_forall_det_submatrix_eq_zero.1 (hS Z hZ) a b)
 
 /-- **Rank bounds are Zariski closed.** If `rank (Z ^ j) ≤ r` for every matrix `Z` of a set `S`,
 then `rank (Y ^ j) ≤ r` for every `Y` on which all polynomials vanishing on `S` vanish. -/
@@ -113,16 +129,23 @@ section Topological
 
 variable {K : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T1Space K]
 
+omit [DecidableEq n] in
+/-- Over a field with continuous ring operations and closed points, the matrices of rank at most
+`r` form a closed set. -/
+theorem isClosed_setOfPred_rank_le {m : Type*} [Finite m] (r : ℕ) :
+    IsClosed {A : Matrix m n K | A.rank ≤ r} := by
+  refine isClosed_of_closure_subset fun Y hY ↦ rank_le_of_mem_zeroLocus_vanishingIdeal
+    (k := K) (S := {A : Matrix m n K | A.rank ≤ r}) (fun _ hA ↦ hA)
+    (closure_subset_zeroLocus_vanishingIdeal _ ?_)
+  have huncurry : Continuous (Function.uncurry : Matrix m n K → m × n → K) :=
+    continuous_pi fun p ↦ continuous_id.matrix_elem p.1 p.2
+  exact mem_closure_image huncurry.continuousAt hY
+
 /-- Over a field with continuous ring operations and closed points, the matrices `Z` with
 `rank (Z ^ j) ≤ r` form a closed set. -/
 theorem isClosed_setOfPred_rank_pow_le (j r : ℕ) :
-    IsClosed {Z : Matrix n n K | (Z ^ j).rank ≤ r} := by
-  refine isClosed_of_closure_subset fun Y hY ↦ rank_pow_le_of_mem_zeroLocus_vanishingIdeal
-    (k := K) (S := {Z | (Z ^ j).rank ≤ r}) (fun _ hZ ↦ hZ)
-    (closure_subset_zeroLocus_vanishingIdeal _ ?_)
-  have huncurry : Continuous (Function.uncurry : Matrix n n K → n × n → K) :=
-    continuous_pi fun p ↦ continuous_id.matrix_elem p.1 p.2
-  exact mem_closure_image huncurry.continuousAt hY
+    IsClosed {Z : Matrix n n K | (Z ^ j).rank ≤ r} :=
+  (isClosed_setOfPred_rank_le r).preimage (continuous_pow j)
 
 /-- Over a field with continuous ring operations and closed points, on the closure of the
 conjugacy class of `X` the rank of every power is at most the rank of the same power of `X`. -/
