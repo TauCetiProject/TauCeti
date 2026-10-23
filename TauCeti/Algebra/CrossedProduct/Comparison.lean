@@ -254,9 +254,9 @@ variable {K : Type} [Field K]
 
 /-- The absolute Galois group is locally compact, being compact and Hausdorff. Instance search
 does not find this within its default budget under the imports of this file, so it is assembled
-here from the Krull topology being Hausdorff. It is public because the statement of
-`brauerCohomologyEquiv_apply` uses it, and named so that it does not clash with the anonymous
-local instance of `TauCeti.FieldTheory.GaloisCohomology.BrauerTorsion` in modules importing both. -/
+here from the Krull topology being Hausdorff. It is named so that it does not clash with the
+anonymous local instance of `TauCeti.FieldTheory.GaloisCohomology.BrauerTorsion` in modules
+importing both. -/
 local instance locallyCompactSpace_absoluteGaloisGroup :
     LocallyCompactSpace (AbsoluteGaloisGroup K) :=
   have : R1Space (AbsoluteGaloisGroup K) := @T2Space.r1Space _ _ krullTopology_t2
