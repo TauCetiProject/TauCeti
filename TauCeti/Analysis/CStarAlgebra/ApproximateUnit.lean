@@ -21,6 +21,7 @@ norm of a positive functional, from a C⋆-algebra to its quotients.
 public section
 
 open Filter
+open scoped CStarAlgebra
 
 namespace Filter.IsIncreasingApproximateUnit
 
@@ -32,9 +33,7 @@ variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
 C⋆-algebras is an increasing approximate unit. -/
 theorem map {l : Filter A} (hl : l.IsIncreasingApproximateUnit) (f : F)
     (hf : Function.Surjective f) : (l.map f).IsIncreasingApproximateUnit where
-  toIsApproximateUnit := hl.toIsApproximateUnit.map f
-    (AddMonoidHomClass.continuous_of_bound f 1 fun a => by
-      simpa using NonUnitalStarAlgHom.norm_apply_le f a) hf
+  toIsApproximateUnit := hl.toIsApproximateUnit.map f (map_continuous f) hf
   eventually_nonneg := eventually_map.mpr <| hl.eventually_nonneg.mono fun _ hx => map_nonneg f hx
   eventually_norm := eventually_map.mpr <| hl.eventually_norm.mono fun a ha =>
     (NonUnitalStarAlgHom.norm_apply_le f a).trans ha

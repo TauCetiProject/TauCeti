@@ -28,7 +28,8 @@ the real axis and the line `im z = β`, holomorphic on the open strip, with boun
 
 A *β-KMS state* is a state, that is a positive continuous functional of norm one, admitting a
 KMS function for every pair `a, b`. Positivity refers to the C⋆-algebra order on `A`, the
-order making it a `StarOrderedRing`; no result here uses positivity.
+order making it a `StarOrderedRing`. The positivity of a state is used only for pullback along
+surjective equivariant homomorphisms, where it guarantees that the norm is preserved.
 
 The strip lies above the real axis for `β > 0` and below it for `β < 0`. For `β = 0` it is the
 real axis itself, and the `0`-KMS states are exactly the tracial states, `isKMSState_zero_iff`;
