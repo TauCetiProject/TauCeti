@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Degree
 public import TauCeti.Analysis.Complex.RiemannSurface.Meromorphic
-public import TauCeti.Geometry.Manifold.Instances.OnePoint
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
@@ -99,6 +99,11 @@ theorem sphereMap_eq_of_eventuallyEq {k : X → OnePoint ℂ}
 theorem sphereMap_of_continuousAt (hf : ContinuousAt f x) : sphereMap f x = f x :=
   sphereMap_eq_of_tendsto ((continuous_coe.continuousAt.comp hf).tendsto.mono_left
     nhdsWithin_le_nhds)
+
+/-- The map to the sphere defined by a constant function is that constant. -/
+@[simp]
+theorem sphereMap_const (c : ℂ) : sphereMap (fun _ : X ↦ c) = fun _ ↦ (c : OnePoint ℂ) :=
+  funext fun _ ↦ sphereMap_of_continuousAt continuousAt_const
 
 /-- If `f` agrees on a punctured neighbourhood of `x` with a map `k` which is continuous near
 `x`, then `sphereMap f` agrees with `k` on a whole neighbourhood of `x`. -/

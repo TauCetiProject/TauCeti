@@ -33,9 +33,9 @@ The general positive-size center is identified with the corresponding roots-of-u
 specializing Mathlib's finite-index-type equivalence to `Fin n`.
 
 The surjectivity is ported from the AINTLIB `LeanModularForms` project
-(`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck). Prerequisite for the
-diamond operators of the ModularForms roadmap (Layer 0), where it realizes every unit of
-`ZMod N` as the lower-right entry of a matrix in `Γ₀(N)`.
+(`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck). It realizes every unit of
+`ZMod N` as the lower-right entry of a matrix in `Γ₀(N)`, providing the lifts used to define
+diamond operators.
 
 The two-modulus form generalizes an ad-hoc instance from the same project at commit
 `2baa76f742bdb4fb8ee323fabba41203bd390e08` (Apache-2.0):

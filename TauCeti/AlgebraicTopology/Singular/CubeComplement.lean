@@ -40,6 +40,8 @@ Coefficients are a module over a ring, since the compactness step is an argument
   embedded in the unit sphere of a real normed space is acyclic.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_compl_range_closedBall`: the same for an embedded
   closed disc, which is homeomorphic to a cube.
+* `TauCeti.isPathConnected_sphere_compl_range_closedBall`: the complement of a disc embedded in a
+  sphere is path connected.
 
 ## References
 
@@ -294,6 +296,23 @@ theorem isZero_reducedSingularHomologyFunctor_compl_range_closedBall {Y : Type w
   rw [← g.surjective.range_comp h]
   exact isZero_reducedSingularHomologyFunctor_compl_range_cube M hY (hc.comp g.continuous)
     (hi.comp g.injective) n
+
+/-- **The complement of a disc embedded in a sphere is path connected.** For every continuous
+injection `h` of the closed unit ball of a finite-dimensional real normed space into the unit
+sphere of a real normed space, the complement of the image of `h`, when nonempty, is path
+connected. Its reduced zeroth homology, which counts its path components but one, vanishes by
+`TauCeti.isZero_reducedSingularHomologyFunctor_compl_range_closedBall`. -/
+theorem isPathConnected_sphere_compl_range_closedBall {F : Type w} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {h : closedBall (0 : E) 1 → sphere (0 : F) 1} (hc : Continuous h) (hi : Function.Injective h)
+    (hne : (range h)ᶜ.Nonempty) : IsPathConnected (range h)ᶜ := by
+  obtain ⟨y, hy⟩ := hne
+  have : Nonempty ↥(range h)ᶜ := ⟨⟨y, hy⟩⟩
+  let K := ULift.{w} ℤ
+  exact isPathConnected_iff_pathConnectedSpace.2
+    (pathConnectedSpace_of_isZero_reducedSingularHomologyFunctor_zero
+      (isZero_reducedSingularHomologyFunctor_compl_range_closedBall (ModuleCat.of K K)
+        (isZero_reducedSingularHomologyFunctor_sphere_compl_singleton _) hc hi 0))
 
 end Main
 

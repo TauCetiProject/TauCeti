@@ -56,7 +56,8 @@ pointwise conclusion to smoothness on one open neighbourhood.
 * `HasStrictFDerivAt.eventually_implicitFunctionOfComplemented_eq`: near `0`, Mathlib's two
   spellings of the implicit function agree.
 * `ContinuousLinearMap.implicitCoordEquiv`: the derivative `x ↦ (f' x, P x)` of the coordinate
-  map, as a continuous linear equivalence.
+  map, as a continuous linear equivalence; its inverse is the inclusion on `{0} × ker f'`
+  (`ContinuousLinearMap.implicitCoordEquiv_symm_apply_zero_mk`).
 * `HasStrictFDerivAt.implicitCoordSource`: an open neighbourhood of the base point on which the
   derivative of the coordinate map stays invertible.
 * `HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented_congr` and
@@ -170,6 +171,22 @@ theorem coe_implicitCoordEquiv (f' : E →L[K] F) (hf' : f'.range = ⊤)
     (f'.implicitCoordEquiv hf' hker : E →L[K] F × f'.ker) = f'.prod (Classical.choose hker) :=
   ContinuousLinearMap.ext fun x ↦ by
     simp [implicitCoordEquiv, ContinuousLinearMap.equivProdOfSurjectiveOfIsCompl_apply]
+
+/-- The equivalence `ContinuousLinearMap.implicitCoordEquiv` sends `v` to `(f' v, P v)`. -/
+@[simp]
+theorem implicitCoordEquiv_apply (f' : E →L[K] F) (hf' : f'.range = ⊤)
+    (hker : f'.ker.ClosedComplemented) (v : E) :
+    f'.implicitCoordEquiv hf' hker v = (f' v, Classical.choose hker v) := by
+  rw [← ContinuousLinearEquiv.coe_coe, coe_implicitCoordEquiv, ContinuousLinearMap.prod_apply]
+
+/-- The inverse of `ContinuousLinearMap.implicitCoordEquiv` sends `(0, k)` to the kernel vector
+`k`. -/
+@[simp]
+theorem implicitCoordEquiv_symm_apply_zero_mk (f' : E →L[K] F) (hf' : f'.range = ⊤)
+    (hker : f'.ker.ClosedComplemented) (k : f'.ker) :
+    (f'.implicitCoordEquiv hf' hker).symm (0, k) = k := by
+  rw [ContinuousLinearEquiv.symm_apply_eq, implicitCoordEquiv_apply, Classical.choose_spec hker k,
+    ← ContinuousLinearMap.coe_coe, LinearMap.mem_ker.1 k.2]
 
 end ContinuousLinearMap
 

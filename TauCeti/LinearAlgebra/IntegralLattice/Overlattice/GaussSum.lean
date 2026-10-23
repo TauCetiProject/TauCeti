@@ -77,18 +77,9 @@ theorem gaussSign_discriminantQuadraticModule_restrictFull (L : IntegralLattice 
       (L.discriminantQuadraticModule hL).gaussSign := by
   set K := L.restrictFull N hN
   have hle : K.carrier ≤ L.carrier := by rwa [restrictFull_carrier]
-  have hdual : L.carrier ≤ K.dualCarrier := fun x hx ↦ by
-    rw [dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
-    intro y hy
-    rw [restrictFull_form]
-    exact L.form_mem_one ⟨x, hx⟩ ⟨y, hle hy⟩
-  let M : K.IntermediateCarrier := ⟨L.carrier, hle, hdual⟩
-  have hM : IntermediateCarrier.IsEven M := IntermediateCarrier.isEven_def.mpr fun x hx ↦ by
-    obtain ⟨z, hz⟩ := hL.exists_norm_eq_two_mul ⟨x, hx⟩
-    exact ⟨z, by rwa [norm_apply, restrictFull_form, ← norm_apply]⟩
-  have hLM : hM.isIntegral.toIntegralLattice = L := IntegralLattice.ext
-    (IntermediateCarrier.IsIntegral.toIntegralLattice_carrier _)
-    ((IntermediateCarrier.IsIntegral.toIntegralLattice_form _).trans (restrictFull_form _ _ _))
+  have hform : L.form = K.form := (restrictFull_form _ _ _).symm
+  have hM := L.isEven_toIntermediateCarrier hform hle hL
+  have hLM := L.toIntegralLattice_toIntermediateCarrier hform hle hM.isIntegral
   rw [← IntermediateCarrier.gaussSign_discriminantQuadraticModule _ hM,
     ((Isometry.ofEq hLM).discriminantQuadraticIsometry hM.isEven_toIntegralLattice).gaussSign_eq]
 

@@ -23,6 +23,9 @@ weight-space theory. The transport and finrank identities hold over any commutat
   weight space with the intersection of the target weight space and its range.
 * `LieModule.map_weightSpace_eq`: a Lie-module equivalence maps each weight space onto the
   corresponding weight space.
+* `LieModule.genWeightSpaceOf_eq_iSup_genWeightSpace`: for a finite-dimensional triangularizable
+  module, a generalized eigenspace of one element is the sum of the generalized weight spaces of
+  the weights taking that eigenvalue there.
 * `LieModuleEquiv.finrank_weightSpace_eq`: equivalent Lie modules have weight spaces of equal
   dimension.
 * `LieSubmodule.toSubmodule_map_weightSpace_incl`: inclusion identifies a submodule's weight space
@@ -92,6 +95,28 @@ theorem map_weightSpace_eq_of_injective {f : LieModuleHom R L M M₂} (χ : L �
 theorem map_weightSpace_eq (e : LieModuleEquiv R L M M₂) (χ : L → R) :
     (weightSpace M χ).map e = weightSpace M₂ χ := by
   simp [map_weightSpace_eq_of_injective χ e.injective]
+
+section Field
+
+variable {K L M : Type*} [Field K] [LieRing L] [LieAlgebra K L] [LieRing.IsNilpotent L]
+  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
+  [IsTriangularizable K L M]
+
+/-- **A generalized eigenspace of one element is the sum of the matching weight spaces.** The
+generalized `μ`-eigenspace of `x` is spanned by the generalized weight spaces of the weights taking
+the value `μ` at `x`. -/
+theorem genWeightSpaceOf_eq_iSup_genWeightSpace (μ : K) (x : L) :
+    genWeightSpaceOf M μ x = ⨆ (χ : Weight K L M) (_ : χ x = μ), genWeightSpace M χ := by
+  refine le_antisymm ?_ (iSup₂_le fun χ hχ ↦ hχ ▸ genWeightSpace_le_genWeightSpaceOf M x χ)
+  refine (eq_iSup_inf_genWeightSpace K L M (genWeightSpaceOf M μ x)).le.trans
+    (iSup_le fun χ ↦ ?_)
+  by_cases hχ : χ x = μ
+  · exact inf_le_right.trans (le_iSup₂_of_le χ hχ le_rfl)
+  · have hdisj := (disjoint_genWeightSpaceOf K L M (Ne.symm hχ)).mono_right
+      (genWeightSpace_le_genWeightSpaceOf M x χ)
+    exact hdisj.eq_bot.le.trans bot_le
+
+end Field
 
 end LieModule
 

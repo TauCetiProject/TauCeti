@@ -21,6 +21,8 @@ even though Frobenius on `ℤ_p ⧸ p = 𝔽_p` is bijective: no pseudouniformis
 
 * `TauCeti.Perfectoid.isPerfectoidTateRing_padicComplex`: `ℂ_p` is a perfectoid Tate ring.
 * `TauCeti.Perfectoid.not_isPerfectoidTateRing_padic`: `ℚ_p` is not.
+* `TauCeti.Perfectoid.not_isPerfectoidTateRing_padicComplex_prod_padic`: nor is `ℂ_p × ℚ_p`, a
+  factor of a perfectoid product being perfectoid.
 
 ## References
 
@@ -63,5 +65,11 @@ theorem not_isPerfectoidTateRing_padic : ¬ IsPerfectoidTateRing p ℚ_[p] := by
   have hp2 : 1 < p := (Fact.out : p.Prime).one_lt
   exact absurd this (not_le.mpr (pow_lt_self_of_lt_one₀ (by positivity)
     (inv_lt_one_of_one_lt₀ hp) hp2))
+
+/-- **`ℂ_p × ℚ_p` is not a perfectoid Tate ring**: its factor `ℚ_p` is not, and both factors of a
+perfectoid product are perfectoid. -/
+theorem not_isPerfectoidTateRing_padicComplex_prod_padic :
+    ¬ IsPerfectoidTateRing p (ℂ_[p] × ℚ_[p]) :=
+  fun h ↦ not_isPerfectoidTateRing_padic p (isPerfectoidTateRing_prod_iff.mp h).2
 
 end TauCeti.Perfectoid
