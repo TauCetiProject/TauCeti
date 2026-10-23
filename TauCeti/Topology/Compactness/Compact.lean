@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.Separation.Hausdorff
+import TauCeti.Topology.Separation.InvFunOn
 
 /-!
 # Compactness utilities
@@ -37,25 +38,6 @@ theorem _root_.IsCompact.inter_of_forall_exists {U S : Set X} (hU : IsCompact U)
   rw [heq]
   exact htf.isCompact_biUnion fun x hx ↦ hWc x (htU hx)
 
-/-- **The inverse of a continuous injection on a compact set is continuous.** If `f` is
-continuous and injective on a compact set `K` with values in a Hausdorff space, the inverse
-`Function.invFunOn f K` is continuous on `f '' K`. -/
-theorem _root_.IsCompact.continuousOn_invFunOn [Nonempty X] {Y : Type*} [TopologicalSpace Y]
-    [T2Space Y] {K : Set X} {f : X → Y} (hK : IsCompact K) (hf : ContinuousOn f K)
-    (hinj : InjOn f K) : ContinuousOn (Function.invFunOn f K) (f '' K) := by
-  rw [continuousOn_iff_isClosed]
-  -- The preimage of a closed set `F` is the compact, hence closed, set `f '' (F ∩ K)`.
-  intro F hF
-  refine ⟨f '' (F ∩ K), ((hK.inter_left hF).image_of_continuousOn
-    (hf.mono inter_subset_right)).isClosed, ?_⟩
-  ext w
-  constructor
-  · rintro ⟨hwF, z, hz, rfl⟩
-    rw [mem_preimage, hinj.leftInvOn_invFunOn hz] at hwF
-    exact ⟨⟨z, ⟨hwF, hz⟩, rfl⟩, z, hz, rfl⟩
-  · rintro ⟨⟨z, ⟨hzF, hzK⟩, rfl⟩, -⟩
-    exact ⟨by rwa [mem_preimage, hinj.leftInvOn_invFunOn hzK], z, hzK, rfl⟩
-
 /-- **A continuous injection on a compact set maps components onto components.** If `f` is
 continuous and injective on a compact set `K` with values in a Hausdorff space, and `A ⊆ K`, then
 `f` maps the connected component of `A` at a point `x ∈ K` onto the connected component of
@@ -70,7 +52,7 @@ theorem _root_.IsCompact.image_connectedComponentIn {Y : Type*} [TopologicalSpac
     -- The inverse is continuous on `f '' K`, so it maps the component at `f x` back into the
     -- component at `x`.
     have hgf : LeftInvOn (Function.invFunOn f K) f K := hinj.leftInvOn_invFunOn
-    have hg := ((hK.continuousOn_invFunOn hf hinj).mono
+    have hg := ((hf.continuousOn_invFunOn_image_of_isCompact hK subset_rfl hinj (by simp)).mono
       (image_mono hA)).image_connectedComponentIn_subset (mem_image_of_mem f hxA)
     rw [hgf.image_image' hA, hgf hx] at hg
     obtain ⟨w, hwA, rfl⟩ := connectedComponentIn_subset _ _ hv

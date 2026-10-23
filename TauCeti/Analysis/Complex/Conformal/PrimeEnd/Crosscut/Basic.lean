@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.PathConnected
 public import Mathlib.Analysis.InnerProductSpace.Convex
+public import TauCeti.Topology.Path.Map
 
 /-!
 # Crosscuts of planar domains
@@ -38,6 +39,7 @@ predicate.
   connected.
 * `Path.isCrosscut_symm` — crosscuts are invariant under reversing orientation.
 * `Path.IsCrosscut.map_homeomorph` — ambient homeomorphisms carry crosscuts to crosscuts.
+* `Path.IsCrosscut.map'` — so do maps continuous and injective on the closure of an open domain.
 * `Path.isCrosscut_segment_ball` — every nondegenerate chord of a disc is a crosscut.
 
 ## References
@@ -191,6 +193,23 @@ theorem IsCrosscut.map_homeomorph (hγ : IsCrosscut γ U) (e : ℂ ≃ₜ ℂ) :
     exact ⟨y, hγ.target_mem_frontier, rfl⟩
   · intro t ht
     exact ⟨γ t, hγ.mapsTo_interior ht, rfl⟩
+
+/-- **Crosscuts transport along maps injective on the closure.** If `f` is continuous and
+injective on the closure of an open set `U`, it carries each crosscut of `U` to a crosscut of
+`f '' U`. -/
+theorem IsCrosscut.map' {f : ℂ → ℂ} (hγ : γ.IsCrosscut U) (hUo : IsOpen U)
+    (hfc : ContinuousOn f (closure U)) (hfi : InjOn f (closure U)) :
+    (γ.map' (hfc.mono hγ.range_subset_closure)).IsCrosscut (f '' U) := by
+  have hfr {z : ℂ} (hz : z ∈ frontier U) : f z ∈ frontier (f '' U) := by
+    rw [frontier, Set.mem_sdiff]
+    refine ⟨hfc.image_closure (mem_image_of_mem f (frontier_subset_closure hz)), fun hzi => ?_⟩
+    obtain ⟨w, hw, hwz⟩ := interior_subset hzi
+    rw [hUo.frontier_eq] at hz
+    exact hz.2 (hfi (subset_closure hw) hz.1 hwz ▸ hw)
+  have hγU (t : I) : γ t ∈ closure U := hγ.range_subset_closure ⟨t, rfl⟩
+  rw [isCrosscut_def, map'_coe]
+  exact ⟨fun s t hst => hγ.injective (hfi (hγU s) (hγU t) hst), hfr hγ.source_mem_frontier,
+    hfr hγ.target_mem_frontier, fun t ht => mem_image_of_mem f (hγ.mapsTo_interior ht)⟩
 
 /-- **A nondegenerate chord of a disc is a crosscut.** If `x` and `y` are distinct points of
 `sphere c r`, then the straight path from `x` to `y` is injective, its endpoints lie on the

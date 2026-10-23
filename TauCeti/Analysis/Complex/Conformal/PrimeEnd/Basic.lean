@@ -40,6 +40,8 @@ equivalence of chains visibly an equivalence relation.
 * `IsPreconnected.subset_nullChainDomain` -- a preconnected set off a crosscut that meets its
   domain lies in it.
 * `TauCeti.IsNullChain` -- the null-chain predicate.
+* `TauCeti.chordal_le_norm_sub`, `TauCeti.norm_sub_le_mul_chordal` -- on a bounded set, chordal
+  and Euclidean distances are comparable.
 * `TauCeti.IsNullChain.nullChainDomain_eq_connectedComponentIn` -- each domain is the component
   of the cut set containing the next crosscut.
 * `TauCeti.IsNullChain.separatesIn` -- Pommerenke's separation condition.
@@ -105,6 +107,25 @@ structure IsNullChain (U : Set ℂ) (C : ℕ → Set ℂ) : Prop where
   eventually_chordal_lt : ∀ ε > 0, ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n,
     ‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) < ε
 
+/-- The chordal distance is at most the Euclidean distance. -/
+theorem chordal_le_norm_sub (z w : ℂ) :
+    ‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) ≤ ‖z - w‖ :=
+  div_le_self (norm_nonneg _)
+    (Real.one_le_sqrt.mpr (by nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]))
+
+/-- On the closed disc of radius `R` about `0`, the Euclidean distance is at most `1 + R ^ 2`
+times the chordal distance. -/
+theorem norm_sub_le_mul_chordal {R : ℝ} {z w : ℂ} (hz : ‖z‖ ≤ R) (hw : ‖w‖ ≤ R) :
+    ‖z - w‖ ≤ (1 + R ^ 2) * (‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))) := by
+  have hpos : 0 < √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) := Real.sqrt_pos.mpr (by positivity)
+  have hs : √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) ≤ 1 + R ^ 2 := by
+    rw [Real.sqrt_le_left (by positivity)]
+    have hz2 : ‖z‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hz 2
+    have hw2 : ‖w‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hw 2
+    nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]
+  rw [mul_div_assoc', le_div_iff₀ hpos]
+  nlinarith [norm_nonneg (z - w)]
+
 namespace IsNullChain
 
 /-- The domains cut off by a null chain decrease. -/
@@ -115,6 +136,11 @@ theorem antitone_nullChainDomain (hC : IsNullChain U C) : Antitone (nullChainDom
 theorem isConnected_inter (hC : IsNullChain U C) (n : ℕ) : IsConnected (C n ∩ U) := by
   obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
   exact hrange ▸ hγ.isConnected_range_inter
+
+/-- The crosscuts of a null chain lie in the closure of the domain. -/
+theorem subset_closure (hC : IsNullChain U C) (n : ℕ) : C n ⊆ closure U := by
+  obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
+  exact hrange ▸ hγ.range_subset_closure
 
 /-- The next crosscut lies, inside `U`, in the domain cut off by the previous one. -/
 theorem inter_subset_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Basic
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.Separation.InvFunOn
 
 /-!
 # Transporting prime ends along maps injective on the closure
@@ -16,9 +17,10 @@ import TauCeti.Topology.Compactness.Compact
 Let `U ⊆ ℂ` be a bounded open set and let `f : ℂ → ℂ` be continuous and injective on the closure
 of `U`. Since `closure U` is compact, `f` is then a homeomorphism of `closure U` onto its image,
 and it carries `U` onto `f '' U` and `frontier U` into `frontier (f '' U)`. Such a map carries
-crosscuts of `U` to crosscuts of `f '' U`, and the domains cut off by a sequence of cuts to the
-domains cut off by the image cuts. It is uniformly continuous on `closure U`, and on a bounded set
-chordal and Euclidean distances are comparable, so it carries null chains to null chains.
+crosscuts of `U` to crosscuts of `f '' U` (`Path.IsCrosscut.map'`), and the domains cut off by a
+sequence of cuts to the domains cut off by the image cuts. It is uniformly continuous on
+`closure U`, and on a bounded set chordal and Euclidean distances are comparable, so it carries
+null chains to null chains.
 Equivalence of chains is preserved and reflected, so `f` induces an injective map from the prime
 ends of `U` to those of `f '' U`. This map is a bijection: by invariance of domain `f '' U` is
 open, and the inverse of `f` is continuous on the closure of `f '' U` and transports null chains
@@ -29,8 +31,6 @@ Riemann map to the closed disc; see `Conformal/PrimeEnd/JordanDomain.lean`.
 
 ## Main declarations
 
-* `Path.IsCrosscut.map'` -- a map continuous and injective on the closure of an open set carries
-  its crosscuts to crosscuts of the image.
 * `TauCeti.nullChainDomain_image` -- the image of a cut-off domain is the domain cut off by the
   image cuts.
 * `TauCeti.IsNullChain.image` -- null chains transport to null chains.
@@ -52,57 +52,9 @@ noncomputable section
 
 open Bornology Filter Function Metric Set Topology
 
-namespace Path
-
-variable {x y : ℂ} {γ : Path x y} {U : Set ℂ} {f : ℂ → ℂ}
-
-/-- **Crosscuts transport along maps injective on the closure.** If `f` is continuous and
-injective on the closure of an open set `U`, it carries each crosscut of `U` to a crosscut of
-`f '' U`. -/
-theorem IsCrosscut.map' (hγ : γ.IsCrosscut U) (hUo : IsOpen U) (hfc : ContinuousOn f (closure U))
-    (hfi : InjOn f (closure U)) :
-    (γ.map' (hfc.mono hγ.range_subset_closure)).IsCrosscut (f '' U) := by
-  have hfr {z : ℂ} (hz : z ∈ frontier U) : f z ∈ frontier (f '' U) := by
-    rw [frontier, Set.mem_sdiff]
-    refine ⟨hfc.image_closure (mem_image_of_mem f (frontier_subset_closure hz)), fun hzi => ?_⟩
-    obtain ⟨w, hw, hwz⟩ := interior_subset hzi
-    rw [hUo.frontier_eq] at hz
-    exact hz.2 (hfi (subset_closure hw) hz.1 hwz ▸ hw)
-  have hγU (t : unitInterval) : γ t ∈ closure U := hγ.range_subset_closure ⟨t, rfl⟩
-  -- `γ.map'` evaluates as `f ∘ γ` by definition.
-  rw [isCrosscut_def]
-  exact ⟨fun s t hst => hγ.injective (hfi (hγU s) (hγU t) hst), hfr hγ.source_mem_frontier,
-    hfr hγ.target_mem_frontier, fun t ht => mem_image_of_mem f (hγ.mapsTo_interior ht)⟩
-
-end Path
-
 namespace TauCeti
 
 variable {U V : Set ℂ} {f : ℂ → ℂ} {C C' : ℕ → Set ℂ} {n : ℕ}
-
-/-- The crosscuts of a null chain lie in the closure of the domain. -/
-theorem IsNullChain.subset_closure (hC : IsNullChain U C) (n : ℕ) : C n ⊆ closure U := by
-  obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
-  exact hrange ▸ hγ.range_subset_closure
-
-/-- The chordal distance is at most the Euclidean distance. -/
-private lemma chordal_le_norm_sub (z w : ℂ) :
-    ‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) ≤ ‖z - w‖ :=
-  div_le_self (norm_nonneg _)
-    (Real.one_le_sqrt.mpr (by nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]))
-
-/-- On the closed disc of radius `R` about `0`, the Euclidean distance is at most `1 + R ^ 2`
-times the chordal distance. -/
-private lemma norm_sub_le_mul_chordal {R : ℝ} {z w : ℂ} (hz : ‖z‖ ≤ R) (hw : ‖w‖ ≤ R) :
-    ‖z - w‖ ≤ (1 + R ^ 2) * (‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))) := by
-  have hpos : 0 < √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) := Real.sqrt_pos.mpr (by positivity)
-  have hs : √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) ≤ 1 + R ^ 2 := by
-    rw [Real.sqrt_le_left (by positivity)]
-    have hz2 : ‖z‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hz 2
-    have hw2 : ‖w‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hw 2
-    nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]
-  rw [mul_div_assoc', le_div_iff₀ hpos]
-  nlinarith [norm_nonneg (z - w)]
 
 /-- **Images of cut-off domains.** Let `f` be continuous and injective on the closure of a bounded
 set `U`, and let the cuts `C n` and `C (n + 1)` lie in that closure. Then the domain cut off by
@@ -137,7 +89,7 @@ theorem IsNullChain.image (hC : IsNullChain U C) (hUb : IsBounded U) (hUo : IsOp
     IsNullChain (f '' U) fun n => f '' C n where
   exists_isCrosscut n := by
     obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
-    exact ⟨f x, f y, _, hγ.map' hUo hfc hfi, by rw [← hrange]; exact range_comp f γ⟩
+    exact ⟨f x, f y, _, hγ.map' hUo hfc hfi, by rw [Path.map'_coe, range_comp, hrange]⟩
   disjoint_succ n :=
     (hC.disjoint_succ n).image hfi (hC.subset_closure n) (hC.subset_closure (n + 1))
   nullChainDomain_succ_subset n := by
@@ -228,10 +180,9 @@ theorem map_surjective : Surjective (map hUb hUo hfc hfi hV) := by
   | h D hD =>
     have hK : IsCompact (closure U) := hUb.isCompact_closure
     set g := invFunOn f (closure U)
-    have hcl : f '' closure U = closure (f '' U) :=
-      (hfc.image_closure).antisymm (closure_minimal (image_mono subset_closure)
-        (hK.image_of_continuousOn hfc).isClosed)
-    have hgc : ContinuousOn g (closure (f '' U)) := hcl ▸ hK.continuousOn_invFunOn hfc hfi
+    have hcl := image_closure_of_isCompact hK hfc
+    have hgc : ContinuousOn g (closure (f '' U)) :=
+      hcl ▸ hfc.continuousOn_invFunOn_image_of_isCompact hK subset_rfl hfi (by simp)
     have hgi : InjOn g (closure (f '' U)) := hcl ▸ invFunOn_injOn_image f (closure U)
     have hgU : g '' (f '' U) = U := hfi.leftInvOn_invFunOn.image_image' subset_closure
     have hVb : IsBounded (f '' U) :=

@@ -17,9 +17,9 @@ map of the unit disc onto `Ω` extends to a homeomorphism `g` of the closed disc
 of `Ω`. Such a map transports prime ends (`TauCeti.PrimeEnd.map`), and the prime ends of the disc
 are the points of the unit circle (`TauCeti.unitDiscPrimeEnd_bijective`). So `g` carries the
 radial prime end of the disc at each point of the circle to a prime end of `Ω`, and every prime end
-of `Ω` arises in this way from exactly one point of the circle. For a Jordan domain the prime ends
-are therefore the ordinary boundary points, the case that Carathéodory's theory of prime ends
-generalizes.
+of `Ω` arises in this way from exactly one point of the circle. So the prime ends of `Ω` are in
+bijection with the points of the unit circle, which Carathéodory's extension identifies with the
+boundary points of `Ω`; this is the case that Carathéodory's theory of prime ends generalizes.
 
 ## Main declarations
 
