@@ -27,7 +27,8 @@ recovers heights from an anchor and consecutive increments, and characterises co
 differences. A sequence is admissible when it has a real affine lower bound,
 which is equivalent to having a convex minorant. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
-and shear, and under translating and reflecting the indices. These results provide the discrete
+and shear, and under translating the indices. Reflecting the indices in `N` preserves
+convexity; it discards the heights beyond `N`. These results provide the discrete
 geometry used to construct lower convex envelopes without any coefficient data.
 
 The supporting-line and chord arguments are adapted from William Coram's
