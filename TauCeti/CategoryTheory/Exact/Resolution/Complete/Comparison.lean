@@ -69,86 +69,119 @@ namespace ExactStructure
 
 namespace CompleteResolution
 
-variable {E : ExactStructure C} (r r' : E.CompleteResolution)
+variable {E : ExactStructure C} {r r' : E.CompleteResolution}
 
 section Lift
 
-/-- The components on cycles of the lift in nonnegative degrees: `f` in degree zero, and in
-degree `k + 1` the morphism induced on cokernels by the component on terms in degree `k`. -/
+/-! ### The lift
+
+The lift is assembled from two steps, each stated for an arbitrary degree `n`. Upwards, a map
+`g : Zⁿ ⟶ Z'ⁿ` extends across `Zⁿ ↪ Xⁿ` into the injective `X'ⁿ`, and the extension induces a map
+`Zⁿ⁺¹ ⟶ Z'ⁿ⁺¹` on cokernels. Downwards, a map `g : Zⁿ⁺¹ ⟶ Z'ⁿ⁺¹` lifts along `X'ⁿ ↠ Z'ⁿ⁺¹` out
+of the projective `Xⁿ`, and the lift induces a map `Zⁿ ⟶ Z'ⁿ` on kernels. -/
+
+/-- The upward step on terms: an extension of `g ≫ ι'ₙ` across the inflation `Zⁿ ↪ Xⁿ`. -/
+private noncomputable def liftUpX (n : ℤ) (g : r.Z n ⟶ r'.Z n) : r.X n ⟶ r'.X n :=
+  (r'.isInjective_X n).factorThru (r.isInflation_ι n) (g ≫ r'.ι n)
+
+@[reassoc]
+private theorem ι_liftUpX (n : ℤ) (g : r.Z n ⟶ r'.Z n) :
+    r.ι n ≫ liftUpX n g = g ≫ r'.ι n := by
+  simp [liftUpX]
+
+/-- The upward step on cycles: the map `Zⁿ⁺¹ ⟶ Z'ⁿ⁺¹` induced on cokernels by `liftUpX n g`. -/
+private noncomputable def liftUp (n : ℤ) (g : r.Z n ⟶ r'.Z n) : r.Z (n + 1) ⟶ r'.Z (n + 1) :=
+  r.descZ n (liftUpX n g ≫ r'.π n) (by simp [ι_liftUpX_assoc])
+
+@[reassoc]
+private theorem π_liftUp (n : ℤ) (g : r.Z n ⟶ r'.Z n) :
+    r.π n ≫ liftUp n g = liftUpX n g ≫ r'.π n := by
+  simp [liftUp]
+
+/-- The downward step on terms: a lift of `πₙ ≫ g` along the deflation `X'ⁿ ↠ Z'ⁿ⁺¹`. -/
+private noncomputable def liftDownX (n : ℤ) (g : r.Z (n + 1) ⟶ r'.Z (n + 1)) : r.X n ⟶ r'.X n :=
+  (r.isProjective_X n).factorThru (r'.isDeflation_π n) (r.π n ≫ g)
+
+@[reassoc]
+private theorem liftDownX_π (n : ℤ) (g : r.Z (n + 1) ⟶ r'.Z (n + 1)) :
+    liftDownX n g ≫ r'.π n = r.π n ≫ g := by
+  simp [liftDownX]
+
+/-- The downward step on cycles: the map `Zⁿ ⟶ Z'ⁿ` induced on kernels by `liftDownX n g`. -/
+private noncomputable def liftDown (n : ℤ) (g : r.Z (n + 1) ⟶ r'.Z (n + 1)) : r.Z n ⟶ r'.Z n :=
+  r'.liftZ n (r.ι n ≫ liftDownX n g) (by simp [liftDownX_π])
+
+@[reassoc]
+private theorem liftDown_ι (n : ℤ) (g : r.Z (n + 1) ⟶ r'.Z (n + 1)) :
+    liftDown n g ≫ r'.ι n = r.ι n ≫ liftDownX n g := by
+  simp [liftDown]
+
+variable (r r')
+
+/-- The components on cycles of the lift in nonnegative degrees, by upward steps from `f`. -/
 private noncomputable def liftPos (f : r.Z 0 ⟶ r'.Z 0) : ∀ k : ℕ, r.Z k ⟶ r'.Z k
   | 0 => f
-  | k + 1 =>
-      r.descZ k ((r'.isInjective_X k).factorThru (r.isInflation_ι k) (liftPos f k ≫ r'.ι k) ≫
-        r'.π k) (by simp)
+  | k + 1 => liftUp k (liftPos f k)
 
-/-- The component on terms of the lift in degree `k ≥ 0`: an extension of the component on cycles
-across the inflation `Zᵏ ↪ Xᵏ`, into the injective term of `r'`. -/
-private noncomputable def liftPosX (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) : r.X k ⟶ r'.X k :=
-  (r'.isInjective_X k).factorThru (r.isInflation_ι k) (liftPos r r' f k ≫ r'.ι k)
-
-@[reassoc]
-private theorem ι_liftPosX (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
-    r.ι k ≫ liftPosX r r' f k = liftPos r r' f k ≫ r'.ι k := by
-  simp [liftPosX]
-
-@[reassoc]
-private theorem π_liftPos (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
-    r.π k ≫ liftPos r r' f (k + 1) = liftPosX r r' f k ≫ r'.π k := by
-  simp [liftPos, liftPosX]
-
-/-- The components on cycles of the lift in nonpositive degrees, indexed so that `liftNeg f k`
-is the component in degree `Int.negSucc k + 1`: `f` in degree zero, and in degree
-`Int.negSucc k` the morphism induced on kernels by the component on terms there. -/
+/-- The components on cycles of the lift in nonpositive degrees, by downward steps from `f`;
+`liftNeg f k` is the component in degree `Int.negSucc k + 1`. -/
 private noncomputable def liftNeg (f : r.Z 0 ⟶ r'.Z 0) :
     ∀ k : ℕ, r.Z (Int.negSucc k + 1) ⟶ r'.Z (Int.negSucc k + 1)
   | 0 => f
-  | k + 1 =>
-      r'.liftZ (Int.negSucc k) (r.ι (Int.negSucc k) ≫
-        (r.isProjective_X (Int.negSucc k)).factorThru (r'.isDeflation_π (Int.negSucc k))
-          (r.π (Int.negSucc k) ≫ liftNeg f k)) (by simp)
+  | k + 1 => liftDown (Int.negSucc k) (liftNeg f k)
 
-/-- The component on terms of the lift in degree `Int.negSucc k`: a lift of the component on
-cycles along the deflation `X'ⁿ ↠ Z'ⁿ⁺¹`, out of the projective term of `r`. -/
-private noncomputable def liftNegX (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
-    r.X (Int.negSucc k) ⟶ r'.X (Int.negSucc k) :=
-  (r.isProjective_X (Int.negSucc k)).factorThru (r'.isDeflation_π (Int.negSucc k))
-    (r.π (Int.negSucc k) ≫ liftNeg r r' f k)
-
-@[reassoc]
-private theorem liftNegX_π (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
-    liftNegX r r' f k ≫ r'.π (Int.negSucc k) = r.π (Int.negSucc k) ≫ liftNeg r r' f k := by
-  simp [liftNegX]
-
-@[reassoc]
-private theorem liftNeg_ι (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
-    liftNeg r r' f (k + 1) ≫ r'.ι (Int.negSucc k) = r.ι (Int.negSucc k) ≫ liftNegX r r' f k := by
-  simp [liftNeg, liftNegX]
+/-- The components on cycles of the lift. -/
+private noncomputable def liftZ' (f : r.Z 0 ⟶ r'.Z 0) : ∀ n : ℤ, r.Z n ⟶ r'.Z n
+  | Int.ofNat k => liftPos r r' f k
+  | Int.negSucc k => liftNeg r r' f (k + 1)
 
 /-- The components on terms of the lift. -/
 private noncomputable def liftX (f : r.Z 0 ⟶ r'.Z 0) : ∀ n : ℤ, r.X n ⟶ r'.X n
-  | Int.ofNat k => liftPosX r r' f k
-  | Int.negSucc k => liftNegX r r' f k
+  | Int.ofNat k => liftUpX (Int.ofNat k) (liftPos r r' f k)
+  | Int.negSucc k => liftDownX (Int.negSucc k) (liftNeg r r' f k)
 
-private theorem liftX_comm (f : r.Z 0 ⟶ r'.Z 0) (n : ℤ) :
-    liftX r r' f n ≫ r'.d n = r.d n ≫ liftX r r' f (n + 1) := by
-  simp only [d_def]
-  -- In each case `change` unfolds `liftX` at a constructor. It also writes the indices
-  -- `Int.ofNat k + 1` and `Int.negSucc (k + 1) + 1` as `↑(k + 1)` and `Int.negSucc k`: these
-  -- agree definitionally, but only the latter forms match the lemmas.
-  match n with
-  | Int.ofNat k =>
-      change liftPosX r r' f k ≫ r'.π k ≫ r'.ι ((k + 1 : ℕ) : ℤ) =
-        (r.π k ≫ r.ι ((k + 1 : ℕ) : ℤ)) ≫ liftPosX r r' f (k + 1)
-      rw [Category.assoc, ι_liftPosX, π_liftPos_assoc]
-  | Int.negSucc 0 =>
-      change liftNegX r r' f 0 ≫ r'.π (Int.negSucc 0) ≫ r'.ι ((0 : ℕ) : ℤ) =
-        (r.π (Int.negSucc 0) ≫ r.ι ((0 : ℕ) : ℤ)) ≫ liftPosX r r' f 0
-      rw [Category.assoc, ι_liftPosX, liftNegX_π_assoc]
-      rfl
-  | Int.negSucc (k + 1) =>
-      change liftNegX r r' f (k + 1) ≫ r'.π (Int.negSucc (k + 1)) ≫ r'.ι (Int.negSucc k) =
-        (r.π (Int.negSucc (k + 1)) ≫ r.ι (Int.negSucc k)) ≫ liftNegX r r' f k
-      rw [liftNegX_π_assoc, Category.assoc, ← liftNeg_ι]
+/-! The equations of these recursions at the constructors of `ℤ`, and at their successors. The
+index `Int.negSucc (k + 1) + 1` reduces to `Int.negSucc k`, and `Int.ofNat k + 1` to
+`Int.ofNat (k + 1)`; these lemmas record the resulting unfoldings once, so that the proofs below
+rewrite with them instead of relying on the reductions. -/
+
+private theorem liftZ'_ofNat (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
+    liftZ' r r' f (Int.ofNat k) = liftPos r r' f k := rfl
+
+private theorem liftZ'_negSucc (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
+    liftZ' r r' f (Int.negSucc k) = liftNeg r r' f (k + 1) := rfl
+
+private theorem liftZ'_ofNat_add_one (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
+    liftZ' r r' f (Int.ofNat k + 1) = liftUp (Int.ofNat k) (liftPos r r' f k) := rfl
+
+private theorem liftZ'_negSucc_add_one (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
+    liftZ' r r' f (Int.negSucc k + 1) = liftNeg r r' f k := by
+  cases k <;> rfl
+
+private theorem liftNeg_succ (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
+    liftNeg r r' f (k + 1) = liftDown (Int.negSucc k) (liftNeg r r' f k) := rfl
+
+private theorem liftX_ofNat (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
+    liftX r r' f (Int.ofNat k) = liftUpX (Int.ofNat k) (liftPos r r' f k) := rfl
+
+private theorem liftX_negSucc (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
+    liftX r r' f (Int.negSucc k) = liftDownX (Int.negSucc k) (liftNeg r r' f k) := rfl
+
+/-- The lift on terms extends the lift on cycles. -/
+@[reassoc]
+private theorem ι_liftX (f : r.Z 0 ⟶ r'.Z 0) (n : ℤ) :
+    r.ι n ≫ liftX r r' f n = liftZ' r r' f n ≫ r'.ι n := by
+  cases n with
+  | ofNat k => rw [liftX_ofNat, liftZ'_ofNat, ι_liftUpX]
+  | negSucc k => rw [liftX_negSucc, liftZ'_negSucc, liftNeg_succ, liftDown_ι]
+
+/-- The lift on terms induces the lift on cycles in the following degree. -/
+@[reassoc]
+private theorem liftX_π (f : r.Z 0 ⟶ r'.Z 0) (n : ℤ) :
+    liftX r r' f n ≫ r'.π n = r.π n ≫ liftZ' r r' f (n + 1) := by
+  cases n with
+  | ofNat k => rw [liftX_ofNat, liftZ'_ofNat_add_one, π_liftUp]
+  | negSucc k => rw [liftX_negSucc, liftZ'_negSucc_add_one, liftDownX_π]
 
 /-- **The comparison map.** The map of complexes lifting `f : r.Z 0 ⟶ r'.Z 0` between the
 complexes of two complete resolutions. -/
@@ -156,209 +189,173 @@ noncomputable def lift (f : r.Z 0 ⟶ r'.Z 0) : r.complex ⟶ r'.complex where
   f := liftX r r' f
   comm' i j hij := by
     obtain rfl : i + 1 = j := hij
-    rw [complex_d, complex_d]
-    exact liftX_comm r r' f i
+    rw [complex_d, complex_d, d_def, d_def, liftX_π_assoc, Category.assoc, ι_liftX]
 
 /-- The lift induces `f` on the objects of cycles in degree zero. -/
 @[reassoc (attr := simp)]
 theorem ι_lift_f_zero (f : r.Z 0 ⟶ r'.Z 0) : r.ι 0 ≫ (lift r r' f).f 0 = f ≫ r'.ι 0 :=
-  ι_liftPosX r r' f 0
+  ι_liftX r r' f 0
 
 end Lift
 
 section Homotopy
 
-variable {r r'}
+/-! ### The null-homotopy
 
-/-- The commutation of a map of complexes with the differentials, in terms of the differentials
-of the complete resolutions. -/
-private theorem comm_d (φ : r.complex ⟶ r'.complex) (n : ℤ) :
-    φ.f n ≫ r'.d n = r.d n ≫ φ.f (n + 1) := by
-  rw [← complex_d, ← complex_d]
-  exact φ.comm n (n + 1)
+Let `φ` lift `f = ι₀ ≫ c ≫ π₋₁`. The null-homotopy has component `c : X⁰ ⟶ X'⁻¹`, and its other
+components come from two steps, each stated for an arbitrary degree `n`.
 
+Upwards, a correction `χ : Xⁿ⁺¹ ⟶ X'ⁿ⁺¹` vanishing on `Zⁿ⁺¹`, and agreeing with `φⁿ⁺¹` after the
+differential, induces `Zⁿ⁺² ⟶ X'ⁿ⁺¹`. Its extension across `Zⁿ⁺² ↪ Xⁿ⁺²`, into the injective
+`X'ⁿ⁺¹`, is a component `h'` with `d ≫ h' = χ`. The next correction is `φⁿ⁺² - h' ≫ d`.
 
-/-- The corrections of `φ` in nonnegative degrees. In degree `k` the correction is
-`φᵏ - hᵏ ≫ d`, where `h⁰ = c` and `hᵏ` is the component of the null-homotopy constructed in the
-previous step. It vanishes on `Zᵏ`, and agrees with `φᵏ` after the differential. -/
-private noncomputable def homPos (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) : ∀ k : ℕ,
-    { χ : r.X k ⟶ r'.X k // r.ι k ≫ χ = 0 ∧ χ ≫ r'.d k = φ.f k ≫ r'.d k }
-  | 0 => ⟨φ.f 0 - c ≫ r'.complex.d (Int.negSucc 0) 0, by
-      constructor
-      -- `change` writes the index `↑(0 : ℕ)` of the subtype as `0`, the index of `hφ` and `hc`.
-      · change r.ι 0 ≫ (φ.f 0 - c ≫ r'.complex.d (Int.negSucc 0) 0) = 0
-        rw [complex_d_negSucc_zero, Preadditive.comp_sub, hφ, hc, d_def]
-        simp only [Category.assoc]
-        exact sub_self _
-      · change (φ.f 0 - c ≫ r'.complex.d (Int.negSucc 0) 0) ≫ r'.d 0 = φ.f 0 ≫ r'.d 0
-        rw [complex_d_negSucc_zero, Preadditive.sub_comp, Category.assoc,
-          show r'.d (Int.negSucc 0) ≫ r'.d 0 = 0 from r'.d_d _, comp_zero, sub_zero]⟩
+Downwards, a correction `ω : Xⁿ⁺¹ ⟶ X'ⁿ⁺¹` vanishing after `X'ⁿ⁺¹ ↠ Z'ⁿ⁺²`, and agreeing with `φⁿ⁺¹`
+before the differential, corestricts to `Xⁿ⁺¹ ⟶ Z'ⁿ⁺¹`; its lift along `X'ⁿ ↠ Z'ⁿ⁺¹`, out of the
+projective `Xⁿ⁺¹`, is a component `h'` with `h' ≫ d = ω`. The next correction is `φⁿ - d ≫ h'`.
+
+The corrections in degree zero and `-1` are `φ⁰ - c ≫ d` and `φ⁻¹ - d ≫ c`. -/
+
+variable (φ : r.complex ⟶ r'.complex)
+
+/-- The upward step of the null-homotopy. -/
+private noncomputable def homUp (n : ℤ) (χ : r.X (n + 1) ⟶ r'.X (n + 1))
+    (hχ : r.ι (n + 1) ≫ χ = 0) (hχd : χ ≫ r'.d (n + 1) = φ.f (n + 1) ≫ r'.d (n + 1)) :
+    { h' : r.X (n + 1 + 1) ⟶ r'.X (n + 1) //
+      r.d (n + 1) ≫ h' = χ ∧ r.ι (n + 1 + 1) ≫ (φ.f (n + 1 + 1) - h' ≫ r'.d (n + 1)) = 0 } :=
+  let h' := (r'.isInjective_X (n + 1)).factorThru (r.isInflation_ι (n + 1 + 1))
+    (r.descZ (n + 1) χ hχ)
+  have hd : r.d (n + 1) ≫ h' = χ := by simp [h', d_def]
+  ⟨h', hd, by
+    rw [← cancel_epi (r.π (n + 1)), comp_zero, ← Category.assoc, ← d_def, Preadditive.comp_sub,
+      ← f_comp_d, reassoc_of% hd, hχd, sub_self]⟩
+
+/-- The correction following an upward step agrees with `φ` after the differential. -/
+private theorem sub_comp_d_eq (n : ℤ) (h' : r.X (n + 1) ⟶ r'.X n) :
+    (φ.f (n + 1) - h' ≫ r'.d n) ≫ r'.d (n + 1) = φ.f (n + 1) ≫ r'.d (n + 1) := by
+  rw [Preadditive.sub_comp, Category.assoc, d_d, comp_zero, sub_zero]
+
+/-- The downward step of the null-homotopy. -/
+private noncomputable def homDown (n : ℤ) (ω : r.X (n + 1) ⟶ r'.X (n + 1))
+    (hω : ω ≫ r'.π (n + 1) = 0) (hdω : r.d n ≫ ω = r.d n ≫ φ.f (n + 1)) :
+    { h' : r.X (n + 1) ⟶ r'.X n //
+      h' ≫ r'.d n = ω ∧ (φ.f n - r.d n ≫ h') ≫ r'.π n = 0 } :=
+  let h' := (r.isProjective_X (n + 1)).factorThru (r'.isDeflation_π n) (r'.liftZ (n + 1) ω hω)
+  have hd : h' ≫ r'.d n = ω := by simp [h', d_def]
+  ⟨h', hd, by
+    rw [← cancel_mono (r'.ι (n + 1)), zero_comp, Category.assoc, ← d_def, Preadditive.sub_comp,
+      f_comp_d, Category.assoc, hd, hdω, sub_self]⟩
+
+/-- The correction following a downward step agrees with `φ` before the differential. -/
+private theorem d_comp_sub_eq (n : ℤ) (h' : r.X (n + 1 + 1) ⟶ r'.X (n + 1)) :
+    r.d n ≫ (φ.f (n + 1) - r.d (n + 1) ≫ h') = r.d n ≫ φ.f (n + 1) := by
+  rw [Preadditive.comp_sub, d_d_assoc, zero_comp, sub_zero]
+
+variable {f : r.Z 0 ⟶ r'.Z 0} (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0)
+  (c : r.X 0 ⟶ r'.X (Int.negSucc 0)) (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0))
+
+/-! The two starting corrections, stated in degrees `0` and `-1`. They are the hypotheses of the
+first upward step in degree `n = -1` and of the first downward step in degree `n = -2`, whose
+indices `Int.negSucc 0 + 1` and `Int.negSucc 1 + 1` reduce to `0` and `Int.negSucc 0`. -/
+
+include hφ hc in
+private theorem ι_comp_sub_eq_zero :
+    r.ι 0 ≫ (φ.f 0 - c ≫ r'.π (Int.negSucc 0) ≫ r'.ι 0) = 0 := by
+  rw [Preadditive.comp_sub, hφ, hc]
+  simp
+
+private theorem sub_comp_d_eq_zero :
+    (φ.f 0 - c ≫ r'.π (Int.negSucc 0) ≫ r'.ι 0) ≫ r'.d 0 = φ.f 0 ≫ r'.d 0 := by
+  rw [Preadditive.sub_comp, d_def]
+  simp
+
+include hφ hc in
+private theorem sub_comp_π_eq_zero :
+    (φ.f (Int.negSucc 0) - r.d (Int.negSucc 0) ≫ c) ≫ r'.π (Int.negSucc 0) = 0 := by
+  rw [← cancel_mono (r'.ι 0), zero_comp, Category.assoc, ← d_negSucc_zero, Preadditive.sub_comp,
+    f_comp_d_negSucc_zero, Category.assoc, ← Preadditive.comp_sub, d_negSucc_zero (r := r),
+    d_negSucc_zero (r := r'), Category.assoc, ι_comp_sub_eq_zero φ hφ c hc, comp_zero]
+
+private theorem d_comp_sub_eq_zero :
+    r.d (Int.negSucc 1) ≫ (φ.f (Int.negSucc 0) - r.d (Int.negSucc 0) ≫ c) =
+      r.d (Int.negSucc 1) ≫ φ.f (Int.negSucc 0) :=
+  d_comp_sub_eq φ (Int.negSucc 1) c
+
+/-- The components `Xᵏ⁺¹ ⟶ X'ᵏ` of the null-homotopy in nonnegative degrees, by upward steps from
+the correction `φ⁰ - c ≫ d` in degree zero. -/
+private noncomputable def homPos : ∀ k : ℕ,
+    { h : r.X ((k : ℤ) + 1) ⟶ r'.X k //
+      r.ι ((k : ℤ) + 1) ≫ (φ.f ((k : ℤ) + 1) - h ≫ r'.d k) = 0 }
+  | 0 =>
+      let H := homUp φ (Int.negSucc 0) _ (ι_comp_sub_eq_zero φ hφ c hc) (sub_comp_d_eq_zero φ c)
+      ⟨H.1, H.2.2⟩
   | k + 1 =>
-      let χ := homPos φ hφ c hc k
-      let h := (r'.isInjective_X k).factorThru (r.isInflation_ι ((k : ℤ) + 1))
-        (r.descZ k χ.1 χ.2.1)
-      have hd : r.d k ≫ h = χ.1 := by simp [h, d_def]
-      -- `show` gives `h ≫ r'.d k`, of type `r.X (↑k + 1) ⟶ r'.X (↑k + 1)`, the type
-      -- `r.X ↑(k + 1) ⟶ r'.X ↑(k + 1)` of `φ.f ↑(k + 1)`; the indices agree definitionally.
-      ⟨φ.f ((k + 1 : ℕ) : ℤ) -
-          show r.X ((k + 1 : ℕ) : ℤ) ⟶ r'.X ((k + 1 : ℕ) : ℤ) from h ≫ r'.d k, by
-        constructor
-        · rw [← cancel_epi (r.π k), comp_zero, ← Category.assoc]
-          -- `change` writes `↑(k + 1)` as `↑k + 1`, the index of `d_def` and `comm_d`.
-          change (r.π k ≫ r.ι ((k : ℤ) + 1)) ≫ (φ.f ((k : ℤ) + 1) - h ≫ r'.d k) = 0
-          rw [← d_def, Preadditive.comp_sub, ← comm_d, reassoc_of% hd, χ.2.2, sub_self]
-        · change (φ.f ((k : ℤ) + 1) - h ≫ r'.d k) ≫ r'.d ((k : ℤ) + 1) =
-            φ.f ((k : ℤ) + 1) ≫ r'.d ((k : ℤ) + 1)
-          rw [Preadditive.sub_comp, Category.assoc, d_d, comp_zero, sub_zero]⟩
+      let H := homUp φ k _ (homPos k).2 (sub_comp_d_eq φ k (homPos k).1)
+      ⟨H.1, H.2.2⟩
 
-/-- The component `hᵏ⁺¹ : Xᵏ⁺¹ ⟶ X'ᵏ` of the null-homotopy in nonnegative degrees: an extension
-across `Zᵏ⁺¹ ↪ Xᵏ⁺¹`, into the injective term `X'ᵏ`, of the morphism induced on `Zᵏ⁺¹` by the
-correction in degree `k`. -/
-private noncomputable def hPos (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) (k : ℕ) : r.X ((k : ℤ) + 1) ⟶ r'.X k :=
-  (r'.isInjective_X k).factorThru (r.isInflation_ι ((k : ℤ) + 1))
-    (r.descZ k (homPos φ hφ c hc k).1 (homPos φ hφ c hc k).2.1)
-
-private theorem d_hPos (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) (k : ℕ) :
-    r.d k ≫ hPos φ hφ c hc k = (homPos φ hφ c hc k).1 := by
-  simp [hPos, d_def]
-
-private theorem homPos_succ (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) (k : ℕ) :
-    (homPos φ hφ c hc (k + 1)).1 = φ.f ((k : ℤ) + 1) - hPos φ hφ c hc k ≫ r'.d k :=
-  rfl
-
-private theorem homPos_zero (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) :
-    (homPos φ hφ c hc 0).1 = φ.f 0 - c ≫ r'.complex.d (Int.negSucc 0) 0 :=
-  rfl
-
-/-- The corrections of `φ` in negative degrees. In degree `Int.negSucc k` the correction is
-`φ - d ≫ h`, where the component `h` out of the following degree is `c` for `k = 0` and was
-constructed in the previous step otherwise. It vanishes after `X'ⁿ ↠ Z'ⁿ⁺¹`, and agrees with `φ`
-before the differential. -/
-private noncomputable def homNeg (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) : ∀ k : ℕ,
-    { ω : r.X (Int.negSucc k) ⟶ r'.X (Int.negSucc k) // ω ≫ r'.π (Int.negSucc k) = 0 ∧
-      r.d (Int.negSucc (k + 1)) ≫ ω = r.d (Int.negSucc (k + 1)) ≫ φ.f (Int.negSucc k) }
-  | 0 => ⟨φ.f (Int.negSucc 0) - r.d (Int.negSucc 0) ≫ c, by
-      constructor
-      · rw [← cancel_mono (r'.ι 0), zero_comp, Category.assoc]
-        -- `change` writes the index `0` of `ι` as `Int.negSucc 0 + 1`, the index of `d_def`.
-        change (φ.f (Int.negSucc 0) - r.d (Int.negSucc 0) ≫ c) ≫
-          r'.π (Int.negSucc 0) ≫ r'.ι (Int.negSucc 0 + 1) = 0
-        rw [← d_def, Preadditive.sub_comp, comm_d]
-        simp only [d_def]
-        -- `change` writes `Int.negSucc 0 + 1` as `0`, the index of `hφ`.
-        change (r.π (Int.negSucc 0) ≫ r.ι 0) ≫ φ.f 0 -
-          ((r.π (Int.negSucc 0) ≫ r.ι 0) ≫ c) ≫ r'.π (Int.negSucc 0) ≫ r'.ι 0 = 0
-        simp only [Category.assoc, hφ]
-        rw [hc]
-        simp only [Category.assoc]
-        exact sub_self _
-      · rw [Preadditive.comp_sub, ← Category.assoc,
-          show r.d (Int.negSucc (0 + 1)) ≫ r.d (Int.negSucc 0) = 0 from r.d_d _, zero_comp,
-          sub_zero]⟩
+/-- The components `Xⁿ⁺¹ ⟶ X'ⁿ` of the null-homotopy in degrees `n = Int.negSucc (k + 1)`, by
+downward steps from the correction `φ⁻¹ - d ≫ c` in degree `-1`. -/
+private noncomputable def homNeg : ∀ k : ℕ,
+    { h : r.X (Int.negSucc (k + 1) + 1) ⟶ r'.X (Int.negSucc (k + 1)) //
+      (φ.f (Int.negSucc (k + 1)) - r.d (Int.negSucc (k + 1)) ≫ h) ≫
+        r'.π (Int.negSucc (k + 1)) = 0 }
+  | 0 =>
+      let H := homDown φ (Int.negSucc 1) _ (sub_comp_π_eq_zero φ hφ c hc) (d_comp_sub_eq_zero φ c)
+      ⟨H.1, H.2.2⟩
   | k + 1 =>
-      let ω := homNeg φ hφ c hc k
-      let h := (r.isProjective_X (Int.negSucc k)).factorThru
-        (r'.isDeflation_π (Int.negSucc (k + 1))) (r'.liftZ (Int.negSucc k) ω.1 ω.2.1)
-      have hd : h ≫ r'.d (Int.negSucc (k + 1)) = ω.1 := by
-        rw [d_def]
-        -- `change` writes `Int.negSucc (k + 1) + 1` as `Int.negSucc k`, the index of `liftZ_ι`.
-        change h ≫ r'.π (Int.negSucc (k + 1)) ≫ r'.ι (Int.negSucc k) = ω.1
-        rw [isProjective.factorThru_comp_assoc]
-        exact r'.liftZ_ι _ _ _
-      ⟨φ.f (Int.negSucc (k + 1)) - r.d (Int.negSucc (k + 1)) ≫ h, by
-        constructor
-        · rw [← cancel_mono (r'.ι (Int.negSucc k)), zero_comp, Category.assoc]
-          -- `change` writes `Int.negSucc k` as `Int.negSucc (k + 1) + 1`, the index of `d_def`.
-          change (φ.f (Int.negSucc (k + 1)) - r.d (Int.negSucc (k + 1)) ≫ h) ≫
-            r'.π (Int.negSucc (k + 1)) ≫ r'.ι (Int.negSucc (k + 1) + 1) = 0
-          rw [← d_def, Preadditive.sub_comp, comm_d, Category.assoc, hd, ω.2.2]
-          exact sub_self _
-        · rw [Preadditive.comp_sub, ← Category.assoc,
-            show r.d (Int.negSucc (k + 1 + 1)) ≫ r.d (Int.negSucc (k + 1)) = 0 from r.d_d _,
-            zero_comp, sub_zero]⟩
+      let H := homDown φ (Int.negSucc (k + 2)) _ (homNeg k).2
+        (d_comp_sub_eq φ (Int.negSucc (k + 2)) (homNeg k).1)
+      ⟨H.1, H.2.2⟩
 
-/-- The component `X'ⁿ⁺¹ ⟶ X'ⁿ` of the null-homotopy out of degree `Int.negSucc k`, into degree
-`Int.negSucc (k + 1)`: a lift along `X'ⁿ ↠ Z'ⁿ⁺¹`, out of the projective term, of the morphism
-into `Z'ⁿ⁺¹` induced by the correction in degree `Int.negSucc k`. -/
-private noncomputable def hNeg (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) (k : ℕ) :
-    r.X (Int.negSucc k) ⟶ r'.X (Int.negSucc (k + 1)) :=
-  (r.isProjective_X (Int.negSucc k)).factorThru (r'.isDeflation_π (Int.negSucc (k + 1)))
-    (r'.liftZ (Int.negSucc k) (homNeg φ hφ c hc k).1 (homNeg φ hφ c hc k).2.1)
-
-private theorem hNeg_d (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) (k : ℕ) :
-    hNeg φ hφ c hc k ≫ r'.d (Int.negSucc (k + 1)) = (homNeg φ hφ c hc k).1 := by
-  rw [d_def]
-  -- `change` writes `Int.negSucc (k + 1) + 1` as `Int.negSucc k`, the index of `liftZ_ι`.
-  change hNeg φ hφ c hc k ≫ r'.π (Int.negSucc (k + 1)) ≫ r'.ι (Int.negSucc k) = _
-  rw [hNeg, isProjective.factorThru_comp_assoc]
-  exact r'.liftZ_ι _ _ _
-
-private theorem homNeg_succ (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) (k : ℕ) :
-    (homNeg φ hφ c hc (k + 1)).1 =
-      φ.f (Int.negSucc (k + 1)) - r.d (Int.negSucc (k + 1)) ≫ hNeg φ hφ c hc k :=
-  rfl
-
-private theorem homNeg_zero (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) :
-    (homNeg φ hφ c hc 0).1 = φ.f (Int.negSucc 0) - r.d (Int.negSucc 0) ≫ c :=
-  rfl
-
-/-- The components `Xⁿ⁺¹ ⟶ X'ⁿ` of the null-homotopy: `c` out of degree zero, and the
-components constructed in nonnegative and negative degrees otherwise. -/
-private noncomputable def homotopyHom (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) : ∀ n : ℤ, r.X (n + 1) ⟶ r'.X n
-  | Int.ofNat k => hPos φ hφ c hc k
+/-- The components `Xⁿ⁺¹ ⟶ X'ⁿ` of the null-homotopy. -/
+private noncomputable def homotopyHom : ∀ n : ℤ, r.X (n + 1) ⟶ r'.X n
+  | Int.ofNat k => (homPos φ hφ c hc k).1
   | Int.negSucc 0 => c
-  | Int.negSucc (k + 1) => hNeg φ hφ c hc k
+  | Int.negSucc (k + 1) => (homNeg φ hφ c hc k).1
 
-private theorem homotopyHom_comm (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) (n : ℤ) :
-    φ.f (n + 1) = r.d (n + 1) ≫ homotopyHom φ hφ c hc (n + 1) +
-      homotopyHom φ hφ c hc n ≫ r'.d n := by
-  match n with
-  | Int.ofNat k =>
-      rw [← sub_eq_iff_eq_add]
-      exact (homPos_succ φ hφ c hc k).symm.trans (d_hPos φ hφ c hc (k + 1)).symm
-  | Int.negSucc 0 =>
-      rw [← sub_eq_iff_eq_add, ← complex_d_negSucc_zero]
-      exact (homPos_zero φ hφ c hc).symm.trans (d_hPos φ hφ c hc 0).symm
-  | Int.negSucc 1 =>
-      rw [← sub_eq_iff_eq_add']
-      exact (homNeg_zero φ hφ c hc).symm.trans (hNeg_d φ hφ c hc 0).symm
-  | Int.negSucc (k + 2) =>
-      rw [← sub_eq_iff_eq_add']
-      exact (homNeg_succ φ hφ c hc k).symm.trans (hNeg_d φ hφ c hc (k + 1)).symm
+/-! The homotopy identities, one for each kind of degree: each is the equation `d ≫ h' = χ` or
+`h' ≫ d = ω` returned by the step that produced the component. -/
+
+private theorem comm_ofNat (k : ℕ) :
+    φ.f (Int.ofNat k + 1) = r.d (Int.ofNat k + 1) ≫ homotopyHom φ hφ c hc (Int.ofNat k + 1) +
+      homotopyHom φ hφ c hc (Int.ofNat k) ≫ r'.d (Int.ofNat k) := by
+  rw [← sub_eq_iff_eq_add]
+  exact (homUp φ k _ (homPos φ hφ c hc k).2 (sub_comp_d_eq φ k (homPos φ hφ c hc k).1)).2.1.symm
+
+private theorem comm_negSucc_zero :
+    φ.f (Int.negSucc 0 + 1) =
+      r.d (Int.negSucc 0 + 1) ≫ homotopyHom φ hφ c hc (Int.negSucc 0 + 1) +
+        homotopyHom φ hφ c hc (Int.negSucc 0) ≫ r'.d (Int.negSucc 0) := by
+  rw [← sub_eq_iff_eq_add, d_negSucc_zero]
+  exact (homUp φ (Int.negSucc 0) _ (ι_comp_sub_eq_zero φ hφ c hc)
+    (sub_comp_d_eq_zero φ c)).2.1.symm
+
+private theorem comm_negSucc_one :
+    φ.f (Int.negSucc 1 + 1) =
+      r.d (Int.negSucc 1 + 1) ≫ homotopyHom φ hφ c hc (Int.negSucc 1 + 1) +
+        homotopyHom φ hφ c hc (Int.negSucc 1) ≫ r'.d (Int.negSucc 1) := by
+  rw [← sub_eq_iff_eq_add']
+  exact (homDown φ (Int.negSucc 1) _ (sub_comp_π_eq_zero φ hφ c hc)
+    (d_comp_sub_eq_zero φ c)).2.1.symm
+
+private theorem comm_negSucc_add_two (k : ℕ) :
+    φ.f (Int.negSucc (k + 2) + 1) =
+      r.d (Int.negSucc (k + 2) + 1) ≫ homotopyHom φ hφ c hc (Int.negSucc (k + 2) + 1) +
+        homotopyHom φ hφ c hc (Int.negSucc (k + 2)) ≫ r'.d (Int.negSucc (k + 2)) := by
+  rw [← sub_eq_iff_eq_add']
+  exact (homDown φ (Int.negSucc (k + 2)) _ (homNeg φ hφ c hc k).2
+    (d_comp_sub_eq φ (Int.negSucc (k + 2)) (homNeg φ hφ c hc k).1)).2.1.symm
 
 /-- The null-homotopy of a map of complexes lifting `f = ι₀ ≫ c ≫ π₋₁`. -/
-private noncomputable def homotopyZeroOfEq (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
-    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
-    (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) : Homotopy φ 0 :=
+private noncomputable def homotopyZeroOfEq : Homotopy φ 0 :=
   Homotopy.mkCochainComplexInt φ (homotopyHom φ hφ c hc) fun n => by
     rw [complex_d, complex_d]
-    exact homotopyHom_comm φ hφ c hc n
+    match n with
+    | Int.ofNat k => exact comm_ofNat φ hφ c hc k
+    | Int.negSucc 0 => exact comm_negSucc_zero φ hφ c hc
+    | Int.negSucc 1 => exact comm_negSucc_one φ hφ c hc
+    | Int.negSucc (k + 2) => exact comm_negSucc_add_two φ hφ c hc k
 
-variable {φ : r.complex ⟶ r'.complex} {f : r.Z 0 ⟶ r'.Z 0}
+variable {φ}
 
 /-- A morphism of the objects of cycles in degree zero factoring through a projective-injective
 object factors as `ι₀ ≫ c ≫ π₋₁`, through the inflation `Z⁰ ↪ X⁰` and the deflation
@@ -399,32 +396,41 @@ theorem nonempty_homotopy_zero_iff (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) :
   ⟨fun ⟨h⟩ => factorsThrough_of_homotopy hφ h, fun hf => ⟨liftHomotopyZero φ hφ hf⟩⟩
 
 /-- Two lifts of the same morphism are homotopic. -/
-noncomputable def liftHomotopy {r r' : E.CompleteResolution} (f : r.Z 0 ⟶ r'.Z 0)
-    (φ ψ : r.complex ⟶ r'.complex) (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0)
-    (hψ : r.ι 0 ≫ ψ.f 0 = f ≫ r'.ι 0) : Homotopy φ ψ :=
+noncomputable def liftHomotopy (f : r.Z 0 ⟶ r'.Z 0) (φ ψ : r.complex ⟶ r'.complex)
+    (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (hψ : r.ι 0 ≫ ψ.f 0 = f ≫ r'.ι 0) : Homotopy φ ψ :=
   Homotopy.equivSubZero.symm (liftHomotopyZero (f := 0) (φ - ψ)
     (by simp [Preadditive.comp_sub, hφ, hψ]) (ObjectProperty.FactorsThrough.zero _ _ _))
 
+variable (r r')
+
 /-- The lift of the identity is homotopic to the identity. -/
-noncomputable def liftIdHomotopy (r : E.CompleteResolution) :
-    Homotopy (lift r r (𝟙 (r.Z 0))) (𝟙 r.complex) :=
+noncomputable def liftIdHomotopy : Homotopy (lift r r (𝟙 (r.Z 0))) (𝟙 r.complex) :=
   liftHomotopy (𝟙 _) _ _ (by simp) (by simp)
 
 /-- The lift of a composite is homotopic to the composite of the lifts. -/
-noncomputable def liftCompHomotopy (r r' r'' : E.CompleteResolution) (f : r.Z 0 ⟶ r'.Z 0)
+noncomputable def liftCompHomotopy (r'' : E.CompleteResolution) (f : r.Z 0 ⟶ r'.Z 0)
     (g : r'.Z 0 ⟶ r''.Z 0) : Homotopy (lift r r'' (f ≫ g)) (lift r r' f ≫ lift r' r'' g) :=
   liftHomotopy (f ≫ g) _ _ (by simp) (by simp)
 
 /-- **Uniqueness of complete resolutions up to homotopy.** Complete resolutions whose objects of
 cycles in degree zero are isomorphic have homotopy equivalent complexes. -/
-noncomputable def homotopyEquiv (r r' : E.CompleteResolution) (e : r.Z 0 ≅ r'.Z 0) :
-    HomotopyEquiv r.complex r'.complex where
+noncomputable def homotopyEquiv (e : r.Z 0 ≅ r'.Z 0) : HomotopyEquiv r.complex r'.complex where
   hom := lift r r' e.hom
   inv := lift r' r e.inv
-  homotopyHomInvId := (liftCompHomotopy r r' r e.hom e.inv).symm.trans
-    (by simpa using liftIdHomotopy r)
-  homotopyInvHomId := (liftCompHomotopy r' r r' e.inv e.hom).symm.trans
-    (by simpa using liftIdHomotopy r')
+  homotopyHomInvId := liftHomotopy (𝟙 _) _ _ (by simp) (by simp)
+  homotopyInvHomId := liftHomotopy (𝟙 _) _ _ (by simp) (by simp)
+
+/-- The homotopy equivalence induces `e.hom` on the objects of cycles in degree zero. -/
+@[reassoc (attr := simp)]
+theorem ι_homotopyEquiv_hom_f_zero (e : r.Z 0 ≅ r'.Z 0) :
+    r.ι 0 ≫ (homotopyEquiv r r' e).hom.f 0 = e.hom ≫ r'.ι 0 :=
+  ι_lift_f_zero r r' e.hom
+
+/-- The homotopy equivalence induces `e.inv` on the objects of cycles in degree zero. -/
+@[reassoc (attr := simp)]
+theorem ι_homotopyEquiv_inv_f_zero (e : r.Z 0 ≅ r'.Z 0) :
+    r'.ι 0 ≫ (homotopyEquiv r r' e).inv.f 0 = e.inv ≫ r.ι 0 :=
+  ι_lift_f_zero r' r e.inv
 
 end Homotopy
 

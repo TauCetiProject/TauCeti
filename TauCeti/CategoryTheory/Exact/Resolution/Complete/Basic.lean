@@ -30,11 +30,6 @@ maps are spliced. Uniqueness up to homotopy is the comparison theorem in
 * `TauCeti.ExactStructure.IsFrobenius.completeResolution`: a complete resolution of an object of
   a Frobenius exact category, with `TauCeti.ExactStructure.IsFrobenius.completeResolutionIso`.
 
-## Main results
-
-* `TauCeti.ExactStructure.IsFrobenius.exists_projective_conflation_sequence`: the same sequence
-  of conflations, as an existence statement.
-
 ## References
 
 * Ragnar-Olaf Buchweitz, *Maximal Cohen–Macaulay Modules and Tate Cohomology*, Section 4.
@@ -98,6 +93,9 @@ noncomputable def d (n : ℤ) : r.X n ⟶ r.X (n + 1) := r.π n ≫ r.ι (n + 1)
 
 theorem d_def (n : ℤ) : r.d n = r.π n ≫ r.ι (n + 1) := (rfl)
 
+/-- The differential out of degree `-1`, whose target index `Int.negSucc 0 + 1` reduces to `0`. -/
+theorem d_negSucc_zero : r.d (Int.negSucc 0) = r.π (Int.negSucc 0) ≫ r.ι 0 := (rfl)
+
 @[reassoc (attr := simp)]
 theorem ι_d (n : ℤ) : r.ι n ≫ r.d n = 0 := by simp [d_def]
 
@@ -117,6 +115,19 @@ theorem complex_d (n : ℤ) : r.complex.d n (n + 1) = r.d n := CochainComplex.of
 of the form `n + 1`. -/
 theorem complex_d_negSucc_zero : r.complex.d (Int.negSucc 0) 0 = r.d (Int.negSucc 0) :=
   r.complex_d _
+
+/-- A map of the spliced complexes commutes with the differentials of the resolutions. -/
+@[reassoc]
+theorem f_comp_d {r' : E.CompleteResolution} (φ : r.complex ⟶ r'.complex) (n : ℤ) :
+    φ.f n ≫ r'.d n = r.d n ≫ φ.f (n + 1) := by
+  rw [← complex_d, ← complex_d]
+  exact φ.comm n (n + 1)
+
+/-- `f_comp_d` out of degree `-1`, whose following index `Int.negSucc 0 + 1` reduces to `0`. -/
+@[reassoc]
+theorem f_comp_d_negSucc_zero {r' : E.CompleteResolution} (φ : r.complex ⟶ r'.complex) :
+    φ.f (Int.negSucc 0) ≫ r'.d (Int.negSucc 0) = r.d (Int.negSucc 0) ≫ φ.f 0 :=
+  r.f_comp_d φ _
 
 /-- The morphism into the cycles `Zⁿ` induced by a morphism into `Xⁿ` killed by `Xⁿ ↠ Zⁿ⁺¹`. -/
 noncomputable def liftZ {A : C} (n : ℤ) (k : A ⟶ r.X n) (hk : k ≫ r.π n = 0) : A ⟶ r.Z n :=
@@ -181,17 +192,6 @@ private theorem isProjective_conflationSequence (X : C) (n : ℤ) :
   cases n with
   | ofNat n => exact hE.isProjective_I (hE.enoughInjectives.injectivePresentation _)
   | negSucc n => exact (hE.enoughProjectives.projectivePresentation _).isProjective
-
-include hE in
-/-- Every object of a Frobenius exact category admits a bi-infinite sequence of conflations
-with projective-injective middle terms, starting at that object in degree zero. The connecting
-isomorphisms identify the cokernel of each conflation with the kernel of the next one. -/
-theorem exists_projective_conflation_sequence (X : C) :
-    ∃ S : ℤ → ShortComplex C, (∀ n, E.Conflation (S n)) ∧
-      (∀ n, E.isProjective (S n).X₂) ∧
-      (∀ n, Nonempty ((S n).X₃ ≅ (S (n + 1)).X₁)) ∧ Nonempty ((S 0).X₁ ≅ X) :=
-  ⟨conflationSequence hE X, conflation_conflationSequence hE X,
-    isProjective_conflationSequence hE X, fun n => ⟨conflationSequenceIso hE X n⟩, ⟨Iso.refl X⟩⟩
 
 /-- A complete resolution of an object of a Frobenius exact category, spliced from injective
 presentations in nonnegative degrees and projective presentations in negative degrees. Its object
