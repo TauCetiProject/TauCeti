@@ -13,8 +13,9 @@ public import TauCeti.GroupTheory.TrivialIntersection
 
 A group is CSA if its maximal abelian subgroups are malnormal. The centralizer of a nonidentity
 element in such a group is its unique maximal abelian subgroup containing that element. In
-particular, commutation is transitive through a nonidentity element. These properties are useful
-for the centralizers and equations of free groups and limit groups.
+particular, commutation is transitive through a nonidentity element. In a torsion-free
+commutative-transitive group no nonidentity element is conjugate to its inverse. These properties
+are useful for the centralizers and equations of free groups and limit groups.
 
 The definition follows Baumslag, Myasnikov and Remeslennikov, *Algebraic geometry over groups I*,
 §§1–2.
@@ -112,6 +113,31 @@ theorem isCommTransitive_iff_centralizer_isMulCommutative :
 theorem IsCSA.isCommTransitive (hG : IsCSA G) : IsCommTransitive G :=
   isCommTransitive_iff_centralizer_isMulCommutative.mpr
     (fun _ hy => hG.centralizer_isMulCommutative hy)
+
+/-- In a torsion-free commutative-transitive group, a nonidentity element is not conjugate to its
+inverse. -/
+theorem IsCommTransitive.not_isConj_inv [IsMulTorsionFree G] (hG : IsCommTransitive G) {x : G}
+    (hx : x ≠ 1) : ¬IsConj x x⁻¹ := by
+  rintro h
+  obtain ⟨g, hg⟩ := isConj_iff.1 h
+  have hxx : x * x ≠ 1 := by
+    rw [← pow_two]
+    exact (pow_eq_one_iff_left two_ne_zero).not.2 hx
+  -- Conjugating twice by `g` fixes `x`, so `g ^ 2` commutes with `x`.
+  have hg2 : Commute (g ^ 2) x := by
+    have h2 : g * (g * x * g⁻¹) * g⁻¹ = x := by
+      calc g * (g * x * g⁻¹) * g⁻¹ = g * x⁻¹ * g⁻¹ := by rw [hg]
+        _ = (g * x * g⁻¹)⁻¹ := by group
+        _ = x := by rw [hg, inv_inv]
+    calc g ^ 2 * x = g * (g * x * g⁻¹) * g⁻¹ * g ^ 2 := by simp [pow_two, mul_assoc]
+      _ = x * g ^ 2 := by rw [h2]
+  have hgx : Commute g x := by
+    by_cases hg1 : g ^ 2 = 1
+    · rw [(pow_eq_one_iff_left two_ne_zero).1 hg1]
+      exact Commute.one_left x
+    · exact hG g (g ^ 2) x hg1 (Commute.self_pow g 2) hg2
+  rw [hgx.eq, mul_inv_cancel_right] at hg
+  exact hxx (mul_eq_one_iff_eq_inv.2 hg)
 
 /-- A nonabelian commutative-transitive group has trivial center. -/
 theorem IsCommTransitive.center_eq_bot (hG : IsCommTransitive G)
