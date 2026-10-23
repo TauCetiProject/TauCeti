@@ -115,14 +115,14 @@ variable {R : Type*} [NormedCommRing R] [CompleteSpace R] {P : R[X]} {F : R⟦X�
 resultant is the resultant of `P` and `g`, read at any degree bound `n` for `g`. -/
 theorem entireResultant_coe (hP : P.Monic) (g : R[X]) {n : ℕ} (hn : g.natDegree ≤ n) :
     entireResultant P g = P.resultant g P.natDegree n := by
-  rw [entireResultant_def, PowerSeries.modByMonic_coe g hP, AdjoinRoot.mk_modByMonic hP,
+  rw [entireResultant_def, PowerSeries.modByMonic_coe g hP, AdjoinRoot.mk_modByMonic,
     AdjoinRoot.norm_mk_eq_resultant_of_natDegree_le hP hn]
 
 /-- The resultant of a monic `P` with `1` is `1`: multiplication by `1` has determinant `1`. -/
 @[simp]
 theorem entireResultant_one_right (hP : P.Monic) : entireResultant P 1 = 1 := by
   rw [entireResultant_def, ← Polynomial.coe_one, PowerSeries.modByMonic_coe _ hP,
-    AdjoinRoot.mk_modByMonic hP, map_one, map_one]
+    AdjoinRoot.mk_modByMonic, map_one, map_one]
 
 /-- The resultant of a monic `P` with itself is `0 ^ deg P`: it vanishes unless `P = 1`. -/
 @[simp]
@@ -199,7 +199,7 @@ theorem entireResultant_add_mul (hP : P.Monic) (hF : F.IsEntire) (hG : G.IsEntir
     entireResultant P (F + P * G) = entireResultant P F := by
   have hdiv := hF.modByMonic_add_divByMonic hP
   rw [entireResultant_def, entireResultant_def, ← hdiv, add_assoc, ← mul_add,
-    ((hF.divByMonic P).add hG).modByMonic_coe_add_coe_mul hP, AdjoinRoot.mk_modByMonic hP, hdiv]
+    ((hF.divByMonic P).add hG).modByMonic_coe_add_coe_mul hP, AdjoinRoot.mk_modByMonic, hdiv]
 
 /-- **Multiplicativity.** `Res(P, F * G) = Res(P, F) * Res(P, G)` for entire `F` and `G`. -/
 theorem entireResultant_mul (hP : P.Monic) (hF : F.IsEntire) (hG : G.IsEntire) :

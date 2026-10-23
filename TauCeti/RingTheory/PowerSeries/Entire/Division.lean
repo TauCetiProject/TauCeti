@@ -504,7 +504,7 @@ series. -/
 noncomputable def IsEntire.mkAdjoinRoot (hp : p.Monic) : IsEntire.subring R →+* AdjoinRoot p where
   toFun F := AdjoinRoot.mk p ((F : R⟦X⟧).modByMonic p)
   map_one' := by
-    rw [Subring.coe_one, ← Polynomial.coe_one, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic hp,
+    rw [Subring.coe_one, ← Polynomial.coe_one, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic,
       map_one]
   map_mul' F G := by
     have hF := IsEntire.mem_subring.mp F.2
@@ -524,7 +524,7 @@ noncomputable def IsEntire.mkAdjoinRoot (hp : p.Monic) : IsEntire.subring R →+
         ((r * r' : Polynomial R) : R⟦X⟧) + p * (q * r' + r * q' + p * q * q') := by
       rw [Subring.coe_mul, ← hdivF, ← hdivG, Polynomial.coe_mul]
       ring
-    rw [hFG, hQ.modByMonic_coe_add_coe_mul hp, AdjoinRoot.mk_modByMonic hp, map_mul]
+    rw [hFG, hQ.modByMonic_coe_add_coe_mul hp, AdjoinRoot.mk_modByMonic, map_mul]
   map_zero' := by simp
   map_add' F G := by
     rw [Subring.coe_add, (IsEntire.mem_subring.mp F.2).add_modByMonic
@@ -540,7 +540,7 @@ theorem IsEntire.mkAdjoinRoot_apply (hp : p.Monic) (F : IsEntire.subring R) :
 theorem IsEntire.mkAdjoinRoot_coe (hp : p.Monic) (g : Polynomial R) :
     IsEntire.mkAdjoinRoot hp ⟨g, IsEntire.mem_subring.mpr (isEntire_coe g)⟩ =
       AdjoinRoot.mk p g := by
-  rw [IsEntire.mkAdjoinRoot_apply, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic hp]
+  rw [IsEntire.mkAdjoinRoot_apply, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic]
 
 /-- Reduction of entire series modulo `p` is surjective: polynomials already reach every class. -/
 theorem IsEntire.mkAdjoinRoot_surjective (hp : p.Monic) :

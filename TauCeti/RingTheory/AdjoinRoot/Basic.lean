@@ -30,7 +30,7 @@ polynomial ring `R[X]/(X ^ n)`.
   evaluation of `p` at the image of the root.
 * `AdjoinRoot.root_X_pow_sub_one_pow`: the class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of
   unity.
-* `AdjoinRoot.mk_modByMonic`: for a monic relator, a polynomial and its remainder have the same
+* `AdjoinRoot.mk_modByMonic`: for any relator, a polynomial and its remainder have the same
   class.
 * `AdjoinRoot.exists_degree_lt_mk_eq`, `AdjoinRoot.mk_eq_mk_iff_of_degree_lt`: for a monic
   relator, every class is represented by a polynomial of degree less than that of the relator, and
@@ -118,11 +118,12 @@ theorem algHom_mk {g : R[X]} {B F : Type*} [Semiring B] [Algebra R B] [FunLike F
 theorem root_X_pow_sub_one_pow (n : ℕ) : root (X ^ n - 1 : R[X]) ^ n = 1 := by
   rw [← sub_eq_zero, ← mk_X, ← map_pow, ← map_one (mk _), ← map_sub, mk_self]
 
-/-- For a monic relator `g`, the remainder `p %ₘ g` has the same class as `p` in
+/-- For any relator `g`, the remainder `p %ₘ g` has the same class as `p` in
 `AdjoinRoot g`. -/
 @[simp]
-lemma mk_modByMonic {g : R[X]} (hg : g.Monic) (p : R[X]) : mk g (p %ₘ g) = mk g p := by
-  simpa using mk_leftInverse hg (mk g p)
+lemma mk_modByMonic {g : R[X]} (p : R[X]) : mk g (p %ₘ g) = mk g p := by
+  rw [Polynomial.modByMonic_eq_sub_mul_div, map_sub, map_mul, mk_self]
+  simp
 
 /-- **Every class in `AdjoinRoot g`, for `g` monic, is represented by a polynomial of degree
 less than `deg g`.** Division with remainder by a monic polynomial supplies the representative. -/
