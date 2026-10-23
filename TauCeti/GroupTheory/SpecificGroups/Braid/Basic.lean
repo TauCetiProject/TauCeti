@@ -331,6 +331,18 @@ def strandIncl {n : ℕ} : BraidGroup (n + 1) →* BraidGroup (n + 2) :=
 theorem strandIncl_sigma {n : ℕ} (i : Fin n) : strandIncl (sigma i) = sigma i.castSucc := by
   rw [strandIncl, lift_sigma]
 
+/-- Viewing a generator index one braid group up, as `TauCeti.BraidGroup.strandIncl` does, keeps
+the lower strand it crosses. -/
+theorem strand_castSucc {n : ℕ} (i : Fin (n + 1 - 1)) :
+    strand (n := n + 2) (i.castSucc : Fin (n + 1)) = (strand i).castSucc :=
+  Fin.ext (by simp)
+
+/-- Viewing a generator index one braid group up, as `TauCeti.BraidGroup.strandIncl` does, keeps
+the upper strand it crosses. -/
+theorem strandSucc_castSucc {n : ℕ} (i : Fin (n + 1 - 1)) :
+    strandSucc (n := n + 2) (i.castSucc : Fin (n + 1)) = (strandSucc i).castSucc :=
+  Fin.ext (by simp)
+
 /-- Adding an uncrossed strand does not change the exponent sum of a braid.
 
 Not `@[simp]`: the `BraidGroup` abbreviation puts its Coxeter index in the form `n + 2 - 1`,

@@ -60,6 +60,8 @@ the braid route and the diagram route agree on it.
   strands over a nontrivial base ring.
 * `TauCeti.TemperleyLieb.jones_strandIncl`: the representation commutes with adding a strand.
 * `TauCeti.MarkovEquiv.jonesTrace_eq`: the writhe-normalized trace is a Markov invariant.
+* `TauCeti.MarkovBraid.jonesTrace_skein` and `TauCeti.MarkovBraid.jonesTrace_strandIncl`: it
+  satisfies the Jones skein relation and is multiplied by `δ` when an uncrossed strand is added.
 * `TauCeti.MarkovBraid.jonesTrace_one_strand` and `TauCeti.MarkovBraid.jonesTrace_sigma_pow_three`:
   its values on the unknot and the trefoil braids.
 
@@ -281,6 +283,50 @@ theorem jonesTrace_stabilizeInv (a : Rˣ) (b : BraidGroup (n + 1)) :
     toAdd_mul, toAdd_inv, toAdd_ofAdd, neg_add, neg_neg, zpow_add, zpow_one, Units.val_mul]
   rw [inv_mul_jonesDelta_add, mul_assoc _ _ (_ * _), ← mul_assoc (((-a ^ 3 : Rˣ) : R)),
     Units.mul_inv, one_mul]
+
+/-- **Adding an uncrossed strand multiplies the writhe-normalized trace by `δ`**: the closure gains
+a split unknot. -/
+theorem jonesTrace_strandIncl (a : Rˣ) (b : BraidGroup (n + 1)) :
+    jonesTrace ⟨n + 1, BraidGroup.strandIncl b⟩ a =
+      jonesDelta a * jonesTrace (R := R) ⟨n, b⟩ a := by
+  rw [jonesTrace_def, jonesTrace_def, jones_strandIncl, markovTrace_strandIncl,
+    BraidGroup.exponentSum_strandIncl]
+  ring
+
+/-- **The skein relation of the writhe-normalized trace**: with `t = a⁻⁴`, it is the Jones skein
+relation `t⁻¹ V(L₊) - t V(L₋) = (t ^ (1/2) - t ^ (-1/2)) V(L₀)`, for a crossing in any braid
+context. -/
+theorem jonesTrace_skein (a : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n) :
+    (a : R) ^ 4 * jonesTrace ⟨n, b * BraidGroup.sigma (n := n + 1) i * c⟩ a -
+        ((a⁻¹ : Rˣ) : R) ^ 4 * jonesTrace ⟨n, b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c⟩ a =
+      (((a⁻¹ : Rˣ) : R) ^ 2 - (a : R) ^ 2) * jonesTrace ⟨n, b * c⟩ a := by
+  -- Expand the middle crossing `x • 1 + y • e` into the traces of its two smoothings; after
+  -- scaling by `a` and `a⁻¹` the `e`-terms of the crossing and its inverse cancel.
+  set τ := markovTrace (n := n + 1) (a ^ 2) (jonesDelta_eq_neg_sq_add_inv_sq a)
+  set B : TemperleyLieb R (jonesDelta a) (n + 1) := Units.val (jones (n + 1) a b)
+  set C : TemperleyLieb R (jonesDelta a) (n + 1) := Units.val (jones (n + 1) a c)
+  have hexp (x y : R) (u : (TemperleyLieb R (jonesDelta a) (n + 1))ˣ)
+      (hu : (u : TemperleyLieb R (jonesDelta a) (n + 1)) =
+        crossing (n := n + 1) (jonesDelta a) x y i) :
+      τ ((jones (n + 1) a b * u * jones (n + 1) a c : (TemperleyLieb R (jonesDelta a) (n + 1))ˣ) :
+          TemperleyLieb R (jonesDelta a) (n + 1)) =
+        x * τ (B * C) + y * τ (B * e (n := n + 1) (jonesDelta a) i * C) := by
+    rw [Units.val_mul, Units.val_mul, hu, crossing_def, mul_add, add_mul, mul_smul_comm,
+      mul_smul_comm, smul_mul_assoc, smul_mul_assoc, mul_one, map_add, map_smul, map_smul,
+      smul_eq_mul, smul_eq_mul]
+  simp only [jonesTrace_def, map_mul, map_inv, jones_sigma]
+  rw [hexp _ _ _ (jonesUnit_val (n := n + 1) a i), hexp _ _ _ (jonesUnit_inv_val (n := n + 1) a i)]
+  simp only [BraidGroup.exponentSum_sigma (n := n + 1), toAdd_mul, toAdd_inv, toAdd_ofAdd,
+    Units.val_mul]
+  generalize Multiplicative.toAdd (ArtinGroup.exponentSum _ b) = p
+  generalize Multiplicative.toAdd (ArtinGroup.exponentSum _ c) = q
+  -- Split off the writhe correction `U` of `b * c`.
+  rw [show -(p + 1 + q) = -(p + q) + -1 by ring, show -(p + (-1 : ℤ) + q) = -(p + q) + 1 by ring,
+    zpow_add, zpow_add, zpow_neg_one, zpow_one, Units.val_mul, Units.val_mul]
+  simp only [inv_neg, ← inv_pow, Units.val_neg, Units.val_pow_eq_pow_val]
+  set U : R := (((-a ^ 3) ^ (-(p + q)) : Rˣ) : R)
+  linear_combination U * τ (B * C) * (((a⁻¹ : Rˣ) : R) ^ 2 - (a : R) ^ 2) *
+    ((a : R) ^ 2 * ((a⁻¹ : Rˣ) : R) ^ 2 + (a : R) * ((a⁻¹ : Rˣ) : R) + 1) * a.mul_inv
 
 /-- On one strand the only braid is trivial, and its closure, the unknot, has writhe-normalized
 trace `δ`. -/
