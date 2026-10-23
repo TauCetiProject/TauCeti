@@ -116,7 +116,7 @@ theorem range_orbitClosureι : Set.range (orbitClosureι G x) = orbitClosure G x
 /-- The orbit morphism covers its scheme-theoretic closure exactly when the orbit is closed. -/
 theorem surjective_toOrbitClosure_iff :
     Surjective (toOrbitClosure G x) ↔ IsClosed (orbit G x) := by
-  rw [surjective_iff, toOrbitClosure_def, Scheme.Hom.surjective_toImage_iff, orbit_def]
+  rw [surjective_iff, toOrbitClosure_def, Scheme.Hom.toImage_surjective_iff, orbit_def]
 
 /-- The orbit closure is locally of finite type over the base whenever the ambient
 scheme is. -/

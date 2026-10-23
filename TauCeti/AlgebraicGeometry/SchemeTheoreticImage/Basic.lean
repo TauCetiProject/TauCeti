@@ -89,7 +89,7 @@ theorem toImage_surjective_of_isClosed_range (h : IsClosed (Set.range f)) :
 
 /-- A quasi-compact morphism covers its scheme-theoretic image exactly when its
 topological image is closed. -/
-theorem surjective_toImage_iff : Function.Surjective f.toImage ↔ IsClosed (Set.range f) := by
+theorem toImage_surjective_iff : Function.Surjective f.toImage ↔ IsClosed (Set.range f) := by
   refine ⟨fun h ↦ ?_, f.toImage_surjective_of_isClosed_range⟩
   rw [← f.toImage_imageι, Scheme.Hom.comp_base, TopCat.coe_comp, h.range_comp]
   exact f.imageι.isClosedEmbedding.isClosed_range
