@@ -107,6 +107,16 @@ theorem aeval_comp_nilpotentOneParameterCoordinateMap (hX : IsNilpotent X) (t : 
     Matrix.GeneralLinearGroup.map_aeval_expSMulHom hX t, toConv_ofConv]
   simp only [Algebra.algebraMap_self, RingHom.mapMatrix_id, RingHom.id_apply]
 
+/-- The polynomial curve `t ↦ exp(tX)` passes through the identity at `t = 0`. -/
+theorem aeval_zero_comp_nilpotentOneParameterCoordinateMap (hX : IsNilpotent X) :
+    (Polynomial.aeval (0 : R)).comp (nilpotentOneParameterCoordinateMap n hX) =
+      Bialgebra.counitAlgHom R (coordinateHopfAlgebra R n) := by
+  rw [aeval_comp_nilpotentOneParameterCoordinateMap, ofAdd_zero, map_one,
+    ← pointsMulEquiv_symm_apply, map_one]
+  ext x
+  rw [AlgHom.convOne_apply, Bialgebra.counitAlgHom_apply, Algebra.algebraMap_self,
+    RingHom.id_apply]
+
 section ClosedSubgroup
 
 variable [IsDomain R]
