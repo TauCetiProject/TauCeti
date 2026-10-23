@@ -19,10 +19,10 @@ For a finitely presented `R`-module `M` and any `R`-module `N`, the associated s
 internal-Hom comparison of the strong monoidal tilde functor; in particular it respects
 evaluation and is natural in both modules. No projectivity or Noetherian hypothesis is needed.
 
-This identifies the sheaf Hom on affine charts with its module counterpart. Together with
-`Module.FinitePresentation.isBaseChange_map`, it supplies the affine computations for flat
-base change of internal Hom. Finite presentation is essential: the internal Hom of arbitrary
-quasicoherent sheaves need not be quasicoherent.
+This identifies the internal-Hom objects on affine charts with the modules to which
+`Module.FinitePresentation.isBaseChange_map` applies. Compatibility with the pullback
+comparison is a separate step toward flat base change of internal Hom. Finite presentation
+is essential: the internal Hom of arbitrary quasicoherent sheaves need not be quasicoherent.
 
 ## References
 
@@ -71,14 +71,19 @@ instance isIso_tildeIhomComparison (M : ModuleCat.{u} R) [Module.FinitePresentat
 /-- The associated sheaf of internal Hom from a finitely presented module is the internal Hom
 of the associated sheaves, naturally in the target module. -/
 def tildeIhomIso (M : ModuleCat.{u} R) [Module.FinitePresentation R M] :
-    ihom M ⋙ tilde.functor R ≅ tilde.functor R ⋙ ihom (tilde M) :=
-  @asIso _ _ _ _ ((tilde.functor R).ihomComparison M) (isIso_tildeIhomComparison M)
+    ihom M ⋙ tilde.functor R ≅ tilde.functor R ⋙ ihom ((tilde.functor R).obj M) :=
+  asIso ((tilde.functor R).ihomComparison M)
 
 /-- The forward affine internal-Hom isomorphism is the canonical monoidal comparison. -/
--- Keep this as a named equation: simplifying the forward map alone prevents the standard
--- natural-isomorphism cancellation lemmas from matching its inverse.
+@[simp]
 theorem tildeIhomIso_hom (M : ModuleCat.{u} R) [Module.FinitePresentation R M] :
     (tildeIhomIso M).hom = (tilde.functor R).ihomComparison M :=
+  (rfl)
+
+/-- The inverse affine internal-Hom isomorphism inverts the canonical monoidal comparison. -/
+@[simp]
+theorem tildeIhomIso_inv (M : ModuleCat.{u} R) [Module.FinitePresentation R M] :
+    (tildeIhomIso M).inv = inv ((tilde.functor R).ihomComparison M) :=
   (rfl)
 
 end

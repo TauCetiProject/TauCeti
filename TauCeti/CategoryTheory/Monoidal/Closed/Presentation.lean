@@ -11,8 +11,9 @@ public import TauCeti.CategoryTheory.Monoidal.Closed.Kernels
 /-!
 # Internal-Hom comparisons and cokernel presentations
 
-A functor preserving kernels and a given cokernel presentation preserves internal Hom out of
-the presented object whenever it preserves internal Hom out of the two presenting objects.
+For a fixed target `N`, if a functor `F` preserves the cokernel presentation `f, g` of `M`
+and the kernel of `(pre f).app N`, then invertibility of its internal-Hom comparisons for
+the two presenting objects at `N` implies invertibility of its comparison for `M` at `N`.
 This reduces the comparison for finitely presented modules to the finite free case, without
 requiring the presented object to be projective.
 
@@ -37,8 +38,9 @@ variable {C D : Type*} [Category* C] [Category* D]
   (h : IsColimit (CokernelCofork.ofπ g w)) (N : C)
 
 include h in
-/-- A kernel-preserving functor preserves internal Hom out of a cokernel if it preserves the
-cokernel presentation and the internal Homs out of its two presenting objects. -/
+/-- If `F` preserves the cokernel presentation `f, g` and the kernel of `(pre f).app N`,
+and its internal-Hom comparisons for `A` and `B` are invertible at `N`, then its comparison
+for `M` is invertible at `N`. -/
 theorem ihomComparison_isIso_of_cokernel
     [PreservesColimit (parallelPair f 0) F]
     [PreservesLimit (parallelPair ((pre f).app N) 0) F]

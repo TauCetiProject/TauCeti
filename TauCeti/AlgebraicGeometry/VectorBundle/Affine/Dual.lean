@@ -44,15 +44,16 @@ noncomputable section
 
 variable (R : CommRingCat.{u})
 
+-- The subcategory already supplies finiteness and projectivity; use Mathlib's implication
+-- locally to infer finite presentation without broadening global instance search.
+attribute [local instance] Module.finitePresentation_of_projective
+
 /-- The associated sheaf of the linear dual of a finite projective module is canonically
 isomorphic to the internal-Hom dual of its associated finite locally free sheaf. -/
 def finiteProjectiveEquivDualIso (M : (finiteProjectiveModules R).FullSubcategory) :
     (finiteProjectiveEquiv R).functor.obj (FiniteProjectiveModules.dual R M) ≅
-      dual ((finiteProjectiveEquiv R).functor.obj M) := by
-  let _ : Module.Finite R M.obj := (finiteProjectiveModules_iff.mp M.property).1
-  let _ : Module.Projective R M.obj := (finiteProjectiveModules_iff.mp M.property).2
-  let _ : Module.FinitePresentation R M.obj := Module.finitePresentation_of_projective R M.obj
-  exact ObjectProperty.isoMk _ ((tilde.functor R).mapIso
+      dual ((finiteProjectiveEquiv R).functor.obj M) :=
+  ObjectProperty.isoMk _ ((tilde.functor R).mapIso
         (ModuleCat.homLinearEquiv.toModuleIso :
           (ihom M.obj).obj (𝟙_ (ModuleCat.{u} R)) ≅
             ModuleCat.of R (Module.Dual R M.obj)).symm ≪≫
@@ -74,11 +75,10 @@ theorem finiteProjectiveEquivDualIso_hom_hom
           (𝟙_ (ModuleCat.{u} R)) ≫
         (ihom ((tilde.functor R).obj M.obj)).map (η (tilde.functor R)) :=
   by
-    rw [finiteProjectiveEquivDualIso]
-    -- Cross the full-subcategory object wrappers, then use the public affine comparison.
-    erw [ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom,
-      Iso.trans_hom, Iso.trans_hom, Iso.app_hom,
-      tildeIhomIso_hom]
+    -- Reduce the packaged isomorphism operations across the full-subcategory wrappers;
+    -- the final reflexivity step identifies tilde with the functor's object formula.
+    dsimp [finiteProjectiveEquivDualIso, Iso.trans, Iso.app]
+    simp
     rfl
 
 /-- The affine dual comparison is contravariantly natural in the finite projective module. -/
