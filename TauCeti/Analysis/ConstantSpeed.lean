@@ -66,6 +66,7 @@ theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [Topolo
 
 /-- The natural parameterization of a curve of locally bounded variation has the same trace
 when restricted to the set of cumulative variations from a base point. -/
+@[simp]
 theorem LocallyBoundedVariationOn.image_naturalParameterization {α E : Type*}
     [LinearOrder α] [TopologicalSpace E] [WeakEMetricSpace E] {f : α → E} {s : Set α}
     (hf : LocallyBoundedVariationOn f s) {a : α} (ha : a ∈ s) :
