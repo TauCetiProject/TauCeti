@@ -62,7 +62,7 @@ theorem inflateZ2_restriction_apply (g h : AbsoluteGaloisGroup L) :
       (d.inflateZ2 F : _ → UnitsCoeff L) (g, h) := by
   apply Additive.toMul.injective
   apply Units.ext
-  simp only [coe_inflateZ2, coe_toCocycles₂, inflate_toFun, toMul_unitsCoeffMap,
+  simp only [coe_inflateZ2, inflate_toFun, toMul_unitsCoeffMap,
     toMul_ofMul, Units.coe_map, hd]
   rw [← restrictNormalHom_equivFixingSubgroup K L σ E F ι π hι hπ g,
     ← restrictNormalHom_equivFixingSubgroup K L σ E F ι π hι hπ h]

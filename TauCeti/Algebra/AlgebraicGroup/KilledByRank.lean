@@ -13,22 +13,21 @@ public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Algebra.HopfAlgebra.TensorShear
 
 /-!
-# Finite locally free commutative group schemes are killed by their rank
+# Finite flat commutative Hopf algebras are killed by their rank
 
 Let `H` be a commutative and cocommutative Hopf algebra over a commutative ring `R`, so that
 `Spec H` is a commutative affine group scheme over `R` whose group of `A`-valued points is the
-convolution group `WithConv (H →ₐ[R] A)`. If `H` is finite projective over `R` of constant rank
-`n`, that is, `Spec H` is a finite locally free commutative group scheme of rank `n`, then every
-point is killed by `n`: `x ^ n = 1` for every commutative `R`-algebra `A` and every
-`x : WithConv (H →ₐ[R] A)`. This is Deligne's theorem. It is the input which turns a point of
-exact order `n` of an elliptic curve into an `n`-torsion point, and which makes the
-factorisation construction of dual isogenies possible.
+convolution group `WithConv (H →ₐ[R] A)`. If `H` is finite flat over `R` of constant stalk rank
+`n`, then every point is killed by `n`: `x ^ n = 1` for every commutative `R`-algebra `A` and every
+`x : WithConv (H →ₐ[R] A)`. This includes Deligne's theorem for finite locally free commutative
+group schemes. It is the input which turns a Drinfeld point of exact order `n` into an
+`n`-torsion section, and which makes the factorisation construction of dual isogenies possible.
 
 ## Main results
 
 * `TauCeti.AlgHom.convPow_finrank_eq_one`: when `H` is free of finite rank over `R`, every point
   is killed by `Module.finrank R H`.
-* `TauCeti.AlgHom.convPow_eq_one_of_rankAtStalk`: when `H` is finite projective over `R` and its
+* `TauCeti.AlgHom.convPow_eq_one_of_rankAtStalk`: when `H` is finite flat over `R` and its
   rank at every prime is `n`, every point is killed by `n`.
 
 ## Implementation notes
@@ -41,8 +40,8 @@ Write `ι₁` and `ι₂` for the two inclusions `H → H ⊗[R] H`. The shear a
 `a ⊗ b ↦ (a ⊗ 1) Δ b` of `H ⊗[R] H` over its left factor preserves norms and sends `ι₂` to
 `Δ = ι₁ * ι₂`, where `ι₁` comes from the identity of `H`. Taking norms gives
 `N(ι₂) = id ^ n * N(ι₂)`, and `ι₂` is a unit, so `id ^ n = 1`. The universal point `id` then
-controls every point. The locally free case follows by checking the resulting identity of
-elements of `H` after localizing at every maximal ideal of `R`.
+controls every point. The finite flat case follows by checking the resulting identity of
+elements of `H` after localizing at every maximal ideal of `R`, where finite flat modules are free.
 
 ## References
 
@@ -176,8 +175,8 @@ private theorem convPow_eq_one_of_baseChange {S : Type*} [CommRing S] [Algebra R
   rw [← e.symm_apply_apply x, ← map_pow, convPow_finrank_eq_one, map_one]
 
 /-- **Deligne's theorem.** Every point of a commutative and cocommutative Hopf algebra which is
-finite projective of constant rank `n` over `R` is killed by `n`. -/
-theorem convPow_eq_one_of_rankAtStalk [Module.Finite R H] [Module.Projective R H] {n : ℕ}
+finite flat of constant stalk rank `n` over `R` is killed by `n`. -/
+theorem convPow_eq_one_of_rankAtStalk [Module.Finite R H] [Module.Flat R H] {n : ℕ}
     (hn : ∀ p, Module.rankAtStalk (R := R) H p = n) {A : Type*} [CommSemiring A] [Algebra R A]
     (x : WithConv (H →ₐ[R] A)) : x ^ n = 1 := by
   -- It suffices to treat the universal point, the identity of `H`. Its `n`-th power and the
