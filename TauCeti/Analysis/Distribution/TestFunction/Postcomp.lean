@@ -1,0 +1,67 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Distribution.TestFunction
+
+/-!
+# Changing the coefficient space of test functions
+
+A continuous linear equivalence of coefficient spaces induces a continuous linear equivalence
+of native test-function spaces. These maps preserve the exact support, including on each fixed
+compact support, and commute with extension to a larger open domain. Continuity uses Mathlib's
+`TestFunction.postcompCLM`, hence the native locally convex inductive-limit topology.
+-/
+
+public section
+
+namespace TauCeti
+
+open scoped Distributions
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {Ω Ω' : TopologicalSpace.Opens E} {n : ℕ∞}
+
+/-- A change of coefficient space acts on test functions by pointwise postcomposition. -/
+noncomputable def _root_.TestFunction.postcompCLE (e : F ≃L[ℝ] G) :
+    𝓓^{n}(Ω, F) ≃L[ℝ] 𝓓^{n}(Ω, G) where
+  toLinearEquiv :=
+    { toFun := TestFunction.postcompCLM e.toContinuousLinearMap
+      invFun := TestFunction.postcompCLM e.symm.toContinuousLinearMap
+      left_inv := by intro φ; ext x; simp
+      right_inv := by intro φ; ext x; simp
+      map_add' := map_add _
+      map_smul' := map_smul _ }
+  continuous_toFun := (TestFunction.postcompCLM e.toContinuousLinearMap).continuous
+  continuous_invFun := (TestFunction.postcompCLM e.symm.toContinuousLinearMap).continuous
+
+@[simp]
+theorem _root_.TestFunction.postcompCLE_apply (e : F ≃L[ℝ] G) (φ : 𝓓^{n}(Ω, F)) (x : E) :
+    TestFunction.postcompCLE e φ x = e (φ x) := by rfl
+
+@[simp]
+theorem _root_.TestFunction.postcompCLE_symm (e : F ≃L[ℝ] G) :
+    (TestFunction.postcompCLE (Ω := Ω) (n := n) e).symm = TestFunction.postcompCLE e.symm := by rfl
+
+/-- An invertible coefficient change preserves the topological support exactly. -/
+@[simp]
+theorem _root_.TestFunction.tsupport_postcompCLE (e : F ≃L[ℝ] G) (φ : 𝓓^{n}(Ω, F)) :
+    tsupport (TestFunction.postcompCLE e φ) = tsupport φ := by
+  apply congrArg closure
+  ext x
+  simp [Function.mem_support]
+
+/-- Coefficient changes commute with extension and lowering regularity, including the zero-map
+case of `monoCLM` when the domains or orders are incompatible. -/
+theorem _root_.TestFunction.postcompCLE_monoCLM (e : F ≃L[ℝ] G) {m : ℕ∞}
+    (φ : 𝓓^{n}(Ω, F)) :
+    TestFunction.postcompCLE e (TestFunction.monoCLM ℝ (Ω₂ := Ω') (n₂ := m) φ) =
+      TestFunction.monoCLM ℝ (Ω₂ := Ω') (n₂ := m) (TestFunction.postcompCLE e φ) := by
+  ext x
+  by_cases h : m ≤ n ∧ Ω ≤ Ω' <;> simp [h]
+
+end TauCeti
