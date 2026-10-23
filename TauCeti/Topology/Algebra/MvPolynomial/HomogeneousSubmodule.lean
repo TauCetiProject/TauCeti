@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.RingTheory.MvPolynomial.Jacobian
-public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
@@ -32,8 +31,9 @@ parametrizes families of homogeneous equations of fixed degrees, the zero equati
 and so families of projective zero loci.
 Arguments about such families, such as closedness of the incidence variety of pairs (equations,
 common zero) or of the locus where the Jacobian drops rank, need evaluation and differentiation
-to depend continuously, and holomorphically over `ℂ`, on the coefficients and the point jointly.
-This file provides those regularity statements.
+to depend continuously on the coefficients and the point jointly.
+This file provides those continuity statements; their analytic counterparts are in
+`TauCeti.Analysis.MvPolynomial.HomogeneousSubmodule`.
 
 ## Main definitions
 
@@ -50,11 +50,6 @@ This file provides those regularity statements.
 * `TauCeti.continuous_jacobiMatrixAt_homogeneousSubmodule`: the Jacobian matrix of a family of
   homogeneous polynomials at a point depends continuously on the coefficients and the point
   jointly.
-* `TauCeti.analyticAt_eval_homogeneousSubmodule_comp`,
-  `TauCeti.analyticAt_eval_pderiv_homogeneousSubmodule_comp`: over a nontrivially normed field,
-  evaluation and the evaluated partial derivatives are analytic in the coefficients and the point
-  jointly, along any continuous linear parametrization of the coefficients, for instance the
-  inverse of `TauCeti.homogeneousCoeffEquiv n`.
 -/
 
 public section
@@ -63,15 +58,7 @@ namespace TauCeti
 
 open MvPolynomial
 
-variable {σ R : Type*}
-
-/-- In finitely many variables there are finitely many exponent vectors of each degree. -/
-instance finite_degree_eq [Finite σ] (n : ℕ) : Finite {s : σ →₀ ℕ // s.degree = n} :=
-  (Finsupp.finite_of_degree_eq n).to_subtype
-
-section Topology
-
-variable [CommSemiring R] [TopologicalSpace R]
+variable {σ R : Type*} [CommSemiring R] [TopologicalSpace R]
 
 /-- The homogeneous polynomials of degree `n` over a topological semiring carry the module
 topology. -/
@@ -143,23 +130,13 @@ instance homogeneousSubmodule_t2Space [Finite σ] [T2Space R] (n : ℕ) :
     T2Space (homogeneousSubmodule σ R n) :=
   (homogeneousCoeffEquiv n).toHomeomorph.isEmbedding.t2Space
 
-/-- A homogeneous polynomial evaluates as the sum over the exponent vectors of its degree of its
-coefficients times the corresponding monomials. -/
-theorem eval_coe_homogeneousSubmodule_eq_sum [Finite σ] {n : ℕ}
-    [Fintype {s : σ →₀ ℕ // s.degree = n}] (p : homogeneousSubmodule σ R n) (v : σ → R) :
-    eval v (p : MvPolynomial σ R) =
-      ∑ s, homogeneousCoeffEquiv n p s * eval v (monomial s.1 1) := by
-  conv_lhs => rw [← (homogeneousCoeffEquiv n).symm_apply_apply p]
-  simp only [coe_homogeneousCoeffEquiv_symm_apply, map_sum]
-  simp only [eval_monomial, one_mul]
-
 /-- **Evaluation is jointly continuous** on the homogeneous polynomials of degree `n` in finitely
 many variables: `(p, v) ↦ p(v)` is continuous in the coefficients and the point together. -/
 theorem continuous_eval_homogeneousSubmodule [Finite σ] (n : ℕ) :
     Continuous fun q : homogeneousSubmodule σ R n × (σ → R) ↦
       eval q.2 (q.1 : MvPolynomial σ R) := by
   have := Fintype.ofFinite {s : σ →₀ ℕ // s.degree = n}
-  simp only [eval_coe_homogeneousSubmodule_eq_sum]
+  simp only [eval_coe_homogeneousSubmodule_eq_sum, ← homogeneousCoeffEquiv_apply]
   refine continuous_finsetSum _ fun s _ ↦ ?_
   exact ((continuous_apply s).comp ((homogeneousCoeffEquiv n).continuous.comp continuous_fst)).mul
     ((continuous_eval _).comp continuous_snd)
@@ -183,41 +160,5 @@ theorem continuous_jacobiMatrixAt_homogeneousSubmodule {ι : Type*} [Finite σ] 
       (((continuous_apply i).comp continuous_fst).prodMk
         (continuous_snd : Continuous fun q : (∀ i, homogeneousSubmodule σ R (d i)) × (σ → R) ↦ q.2))
     simpa only [Function.comp_def, jacobiMatrixAt_apply] using h
-
-end Topology
-
-section Analytic
-
-variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [Fintype σ]
-
-/-- **Evaluation is analytic in the coefficients and the point.** For any continuous linear
-parametrization `Φ` of the homogeneous polynomials of degree `n` by a normed space, for instance
-the inverse of the coefficient equivalence `homogeneousCoeffEquiv n`, the map
-`(a, v) ↦ (Φ a)(v)` is analytic. -/
-theorem analyticAt_eval_homogeneousSubmodule_comp {n : ℕ}
-    (Φ : F →L[𝕜] homogeneousSubmodule σ 𝕜 n) (z : F × (σ → 𝕜)) :
-    AnalyticAt 𝕜 (fun q : F × (σ → 𝕜) ↦ eval q.2 (Φ q.1 : MvPolynomial σ 𝕜)) z := by
-  have := Fintype.ofFinite {s : σ →₀ ℕ // s.degree = n}
-  simp only [eval_coe_homogeneousSubmodule_eq_sum]
-  refine Finset.analyticAt_fun_sum _ fun s _ ↦ ?_
-  refine (ContinuousLinearMap.analyticAt
-    (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : {s : σ →₀ ℕ // s.degree = n} ↦ 𝕜) s ∘L
-      (homogeneousCoeffEquiv (σ := σ) (R := 𝕜) n).toContinuousLinearMap ∘L Φ ∘L
-        ContinuousLinearMap.fst 𝕜 F (σ → 𝕜)) z).mul ?_
-  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_snd',
-    ContinuousLinearMap.proj_apply, aeval_eq_eval] using AnalyticAt.aeval_mvPolynomial (A := 𝕜)
-    (fun i ↦ (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : σ ↦ 𝕜) i ∘L
-      ContinuousLinearMap.snd 𝕜 F (σ → 𝕜)).analyticAt z) (monomial s.1 1)
-
-/-- The partial derivatives of a homogeneous polynomial, evaluated at a point, are analytic in the
-coefficients and the point, along any continuous linear parametrization `Φ` of the
-coefficients. -/
-theorem analyticAt_eval_pderiv_homogeneousSubmodule_comp {n : ℕ}
-    (Φ : F →L[𝕜] homogeneousSubmodule σ 𝕜 n) (j : σ) (z : F × (σ → 𝕜)) :
-    AnalyticAt 𝕜 (fun q : F × (σ → 𝕜) ↦ eval q.2 (pderiv j (Φ q.1 : MvPolynomial σ 𝕜))) z :=
-  analyticAt_eval_homogeneousSubmodule_comp (homogeneousPDeriv j n ∘L Φ) z
-
-end Analytic
 
 end TauCeti
