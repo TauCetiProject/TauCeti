@@ -70,8 +70,10 @@ private theorem ker_baseChangeMkQ_saturation (N : G(k, K ⊗[R] M; K)) :
     LinearMap.ker (baseChangeMkQ K (saturation V N)) = N.toSubmodule := by
   -- Localizing the inverse image recovers every submodule over the localization.
   rw [ker_baseChangeMkQ]
-  simpa only [saturation, Submodule.localized'_eq_span,
-    AlgebraTensorModule.rTensor_linearMap_apply] using
+  have hmap : ⇑(AlgebraTensorModule.rTensor R M (Algebra.linearMap V K)) =
+      ⇑((IsScalarTower.toAlgHom R V K).toLinearMap.rTensor M) :=
+    funext fun x ↦ AlgebraTensorModule.rTensor_linearMap_apply x
+  simpa only [saturation, Submodule.localized'_eq_span, hmap] using
     (Submodule.localized'gi K (nonZeroDivisors V)
       (AlgebraTensorModule.rTensor R M (Algebra.linearMap V K))).l_u_eq N.toSubmodule
 
