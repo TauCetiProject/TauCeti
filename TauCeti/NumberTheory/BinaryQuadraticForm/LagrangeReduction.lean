@@ -196,20 +196,12 @@ theorem exists_smul_isLagrangeReduced (f : BinaryQuadraticForm ℤ) (hf : ¬ IsS
     rw [hm'] at h₁ h₂
     rw [abs_le]
     constructor <;> lia
-  refine ⟨ModularGroup.T ^ k * γ₀, ?_⟩
-  rw [mul_smul]
-  have hTa : (ModularGroup.T ^ k • g).a = g.a := by
-    simp [ModularGroup.coe_T_zpow]
-  have hTb : (ModularGroup.T ^ k • g).b = g.b - 2 * g.a * k := by
-    simp [ModularGroup.coe_T_zpow]
   -- the last coefficient is the leading coefficient of `S • T ^ k • g`, a form in the class
-  have hSa : (ModularGroup.S • ModularGroup.T ^ k • g).a = (ModularGroup.T ^ k • g).c := by
-    simp [ModularGroup.coe_S]
-  refine ⟨?_, ?_⟩
-  · rw [hTa, hTb]
-    exact hb
-  · rw [hTa, ← hSa, ← mul_smul]
-    exact hmin _
+  have hc := hmin (ModularGroup.S * ModularGroup.T ^ k)
+  rw [mul_smul, S_smul, T_zpow_smul] at hc
+  refine ⟨ModularGroup.T ^ k * γ₀, ?_⟩
+  rw [mul_smul, T_zpow_smul]
+  exact ⟨hb, hc⟩
 
 /-- A form of nonsquare discriminant is properly equivalent to a member of the finite set
 `lagrangeReducedForms` of its discriminant. -/
@@ -253,6 +245,6 @@ example : (⟨1, 1, -1⟩ : BinaryQuadraticForm ℤ).IsLagrangeReduced ∧
   decide
 
 example : ModularGroup.S • (⟨1, 1, -1⟩ : BinaryQuadraticForm ℤ) = ⟨-1, -1, 1⟩ := by
-  ext <;> simp [ModularGroup.coe_S]
+  simp
 
 end TauCeti.BinaryQuadraticForm
