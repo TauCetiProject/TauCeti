@@ -88,12 +88,6 @@ private theorem stabilizerHopfIdeal_eq (v : M) :
 
 variable {k H}
 
-/-- The trivial factor of `M × k` is fixed by the coaction. -/
-private theorem coact_snd_eq (a : k) :
-    letI : Comodule k H k := trivial
-    coact (R := k) (C := H) a = a ⊗ₜ[k] (1 : H) :=
-  rfl
-
 /-- The comodule projection `M × k → M`. -/
 private abbrev fstHom : Hom k H (M × k) M :=
   letI : Comodule k H k := trivial
@@ -111,7 +105,8 @@ private theorem matrixCoefficient_prodTrivial (Φ : M × k →ₗ[k] k) (v : M) 
       matrixCoefficient (R := k) (C := H) (Φ ∘ₗ LinearMap.inl k M k) v +
         algebraMap k H (Φ (0, 1)) := by
   let : Comodule k H k := trivial
-  rw [prodTrivial, matrixCoefficient_prod, matrixCoefficient_def (m := (1 : k)), coact_snd_eq]
+  rw [prodTrivial, matrixCoefficient_prod, matrixCoefficient_def (m := (1 : k)),
+    trivial_coact_apply (R := k) (C := H)]
   simp [Algebra.algebraMap_eq_smul_one]
 
 /-- Points act trivially on the trivial factor of `M × k`. -/
@@ -248,7 +243,8 @@ theorem mem_lieSubalgebra_stabilizerHopfIdeal_iff (v : M)
     have h1 := fstHom.map_differential d ((v, 1) : M × k)
     have h2 := sndHom.map_differential d ((v, 1) : M × k)
     simp only [fstHom, sndHom, prodFst_apply, prodSnd_apply] at h1 h2
-    rw [differential_eq_zero_of_coact_eq_tmul_one (coact_snd_eq (k := k) (H := H) 1)] at h2
+    rw [differential_eq_zero_of_coact_eq_tmul_one
+      (trivial_coact_apply (R := k) (C := H) (1 : k))] at h2
     exact Prod.ext h1 h2
   rw [stabilizerHopfIdeal_eq, Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff]
   constructor
