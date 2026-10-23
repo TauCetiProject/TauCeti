@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.Hyperexponential.Basic
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
-import TauCeti.Probability.Distributions.Gamma.Basic
 
 /-!
 # Operations on hyperexponential laws
@@ -21,7 +20,7 @@ divide the exponential variable by the rate selected by the category. Zero-weigh
 may have arbitrary rates, since they are selected with probability zero.
 
 The constructions use `map_categoricalMeasure`, `hyperexponentialMeasure_eq_bind`, and
-`gammaMeasure_map_const_mul` (specialized to exponential laws).
+`expMeasure_map_const_mul`.
 
 ## References
 
@@ -90,8 +89,7 @@ theorem map_mul_hyperexponentialMeasure {c : ℝ} (hc : 0 < c) :
     · simp [hi]
     · rw [Measure.map_smul _ (by fun_prop)]
       congr 1
-      simpa only [expMeasure] using
-        gammaMeasure_map_const_mul one_pos (hr i (pos_iff_ne_zero.mpr hi)) hc
+      exact expMeasure_map_const_mul (hr i (pos_iff_ne_zero.mpr hi)) hc
   · have hscale : ¬ ∀ i, 0 < p.weights i → 0 < r i / c := by
       simpa only [div_pos_iff_of_pos_right hc] using hr
     simp [hyperexponentialMeasure_of_not_pos hr,
@@ -120,9 +118,8 @@ theorem map_div_prod_categoricalMeasure_expMeasure
   have hri : 0 < r i := hr i (pos_iff_ne_zero.mpr (by simpa using hi))
   dsimp only
   rw [Measure.map_map hmeas measurable_prodMk_left]
-  have hscale := gammaMeasure_map_const_mul one_pos one_pos (inv_pos.mpr hri)
-  simpa only [Function.comp_def, expMeasure, one_div, inv_inv, div_eq_mul_inv,
-    mul_comm, mul_one] using hscale
+  simp_rw [Function.comp_def, div_eq_inv_mul]
+  rw [expMeasure_map_const_mul one_pos (inv_pos.mpr hri), one_div, inv_inv]
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 variable {I : Ω → ι} {E : Ω → ℝ}
