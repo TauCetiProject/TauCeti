@@ -71,17 +71,6 @@ namespace TauCeti
 private theorem coe_two_padicTwo : ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 :=
   map_ofNat (Subring.subtype 𝒪[ℚ_[2]]) 2
 
-/-- `-15` is a square in `ℚ₂`, since it is `1` modulo `8`. -/
-private theorem isSquare_neg_fifteen : IsSquare (-15 : ℚ_[2]) := by
-  have hu : IsUnit ((-15 : ℤ) : ℤ_[2]) := PadicInt.isUnit_iff.2 <|
-    le_antisymm (PadicInt.norm_le_one _)
-      (not_lt.1 ((PadicInt.norm_int_lt_one_iff_dvd _).not.2 (by decide)))
-  have h := (isSquare_coe_iff_mem_unitsPrincipal_three hu.unit).2 (by
-    rw [mem_unitsPrincipal_iff_toZModPow, hu.unit_spec, map_intCast]
-    decide)
-  rw [hu.unit_spec] at h
-  exact_mod_cast h
-
 /-! ### The discriminant and wild exponents -/
 
 /-- **`ℚ₂(√ϖ)` has discriminant exponent `3`** for every uniformizer `ϖ` of `ℚ₂`. -/
@@ -147,7 +136,7 @@ private theorem adjoin_le_maximalUnramifiedExtension_of_sq_eq_five {w : Separabl
   have hwv : w ∈ ℚ_[2]⟮v⟯ :=
     IntermediateField.mem_adjoin_simple_of_isSquare_mul (a := -3) (c := 5)
       (by simp [hv, map_ofNat]) (by simp [hw, map_ofNat]) (by norm_num)
-      (by norm_num [isSquare_neg_fifteen])
+      (by norm_num [Padic.isSquare_neg_fifteen])
   exact IntermediateField.adjoin_simple_le_iff.2
     (IntermediateField.adjoin_simple_le_iff.2 hvM hwv)
 

@@ -53,6 +53,7 @@ for some unit `w`. Read in `ℚ_2`, a unit of `ℤ_2` is a square of `ℚ_2` exa
 * `TauCeti.isSquare_coe_iff_mem_unitsPrincipal_three`: a unit of `ℤ_2` is a square in `ℚ_2`
   exactly when it lies in `U^(3) = 1 + 8ℤ_2`, and
   `TauCeti.isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero` exactly when `ε(u) = ω(u) = 0`.
+* `Padic.isSquare_neg_fifteen`: `-15` is a square in `ℚ_2`.
 
 ## References
 
@@ -274,5 +275,16 @@ theorem isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero {a : ℚ_[2]ˣ} {u 
     (ha : (a : ℚ_[2]) = u) : IsSquare a ↔ serreEps u = 0 ∧ serreOmega u = 0 := by
   rw [← isSquare_units_val_iff, ha, isSquare_coe_iff_mem_unitsPrincipal_three,
     serreEps_eq_zero_and_serreOmega_eq_zero_iff]
+
+/-- `-15` is a square in `ℚ_2`, since it is `1 mod 8`. -/
+theorem _root_.Padic.isSquare_neg_fifteen : IsSquare (-15 : ℚ_[2]) := by
+  have hu : IsUnit ((-15 : ℤ) : ℤ_[2]) := PadicInt.isUnit_iff.2 <|
+    le_antisymm (PadicInt.norm_le_one _)
+      (not_lt.1 ((PadicInt.norm_int_lt_one_iff_dvd _).not.2 (by decide)))
+  have h := (isSquare_coe_iff_mem_unitsPrincipal_three hu.unit).2 (by
+    rw [mem_unitsPrincipal_iff_toZModPow, hu.unit_spec, map_intCast]
+    decide)
+  rw [hu.unit_spec] at h
+  exact_mod_cast h
 
 end TauCeti

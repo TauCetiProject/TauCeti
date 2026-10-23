@@ -288,10 +288,12 @@ theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
     (PadicInt.irreducible_p (p := p)).map (_root_.Padic.integerRingEquiv p).symm
 
 /-- The residue prime `p` has additive valuation `1` in the integer ring of `ℚ_[p]`. -/
+@[simp]
 theorem addVal_natCast_self : IsDiscreteValuationRing.addVal 𝒪[ℚ_[p]] p = 1 :=
   IsDiscreteValuationRing.addVal_uniformizer (irreducible_natCast_self p)
 
 /-- The residue field of `ℚ_[p]` has characteristic `p`. -/
+@[simp]
 theorem ringChar_residueField : ringChar 𝓀[ℚ_[p]] = p :=
   ((Nat.dvd_prime Fact.out).1 (IsLocalRing.natCast_mem_maximalIdeal_iff_dvd.1
     ((IsLocalRing.mem_maximalIdeal _).2 (irreducible_natCast_self p).not_isUnit))).resolve_left
