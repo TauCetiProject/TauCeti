@@ -148,8 +148,8 @@ namespace TauCeti
 
 section
 
-variable (R A M : Type*) [CommSemiring R] [AddCommMonoid A] [Module R A]
-  [TopologicalSpace A] [AddCommGroup M] [Module R M] [TopologicalSpace M]
+variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [Module R A]
+  [TopologicalSpace A] [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M]
   [IsTopologicalAddGroup M] [ContinuousConstSMul R M]
 
 /-- The signed cyclic rotation on continuous multilinear cochains. -/
@@ -198,8 +198,8 @@ end
 
 section Multiplication
 
-variable (R A M : Type*) [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
-  [TopologicalSpace A] [AddCommGroup M] [Module R M] [TopologicalSpace M]
+variable (R A M : Type*) [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [TopologicalSpace A] [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M]
   [IsTopologicalAddGroup M] [ContinuousConstSMul R M]
   [IsScalarTower R A A] [SMulCommClass R A A] [ContinuousMul A]
 
@@ -253,8 +253,8 @@ end Multiplication
 
 section Unit
 
-variable (R A M : Type*) [CommSemiring R] [AddCommMonoid A] [Module R A]
-  [TopologicalSpace A] [AddCommGroup M] [Module R M] [TopologicalSpace M]
+variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [Module R A]
+  [TopologicalSpace A] [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M]
   [IsTopologicalAddGroup M] [ContinuousConstSMul R M] [One A]
 
 /-- The unit-inserting contraction on continuous multilinear cochains. -/
@@ -306,8 +306,8 @@ end Unit
 
 section Cyclic
 
-variable (R A M : Type*) [CommSemiring R] [AddCommMonoid A] [Module R A]
-  [TopologicalSpace A] [AddCommGroup M] [Module R M] [TopologicalSpace M]
+variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [Module R A]
+  [TopologicalSpace A] [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M]
   [IsTopologicalAddGroup M] [ContinuousConstSMul R M]
 
 /-- The submodule of jointly continuous cochains satisfying the signed cyclic relation. -/
@@ -360,9 +360,9 @@ end Cyclic
 
 section NonUnital
 
-variable (R A M : Type*) [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+variable (R A M : Type*) [Semiring R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [TopologicalSpace A] [ContinuousMul A]
-  [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [ContinuousConstSMul R M]
 
 /-- The continuous Hochschild coboundary squares to zero. -/
@@ -418,9 +418,9 @@ end NonUnital
 
 section Unital
 
-variable (R A M : Type*) [CommSemiring R] [NonAssocSemiring A] [Module R A]
+variable (R A M : Type*) [Semiring R] [NonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [TopologicalSpace A] [ContinuousMul A]
-  [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [ContinuousConstSMul R M]
 
 /-- In degree zero, insertion of the unit contracts the continuous bar differential. -/
@@ -432,7 +432,7 @@ theorem continuousBarContraction_continuousBarCoboundary_zero
   simp
 
 /-- In positive degrees, insertion of the unit contracts the continuous bar differential. -/
-theorem continuousBarCoboundary_continuousBarContraction_add
+theorem continuousBarCoboundary_barContraction_add_barContraction_barCoboundary
     {n : ℕ} (φ : ContinuousMultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) :
     continuousBarCoboundary R A M n (continuousBarContraction R A M n φ) +
       continuousBarContraction R A M (n + 1) (continuousBarCoboundary R A M (n + 1) φ) = φ := by
@@ -442,7 +442,7 @@ theorem continuousBarCoboundary_continuousBarContraction_add
     barCoboundary_barContraction_add_barContraction_barCoboundary φ.toMultilinearMap
 
 /-- The continuous Hochschild and Connes operators anticommute. -/
-theorem continuousHochschildCoboundary_continuousConnesB_add
+theorem continuousHochschildCoboundary_connesB_add_connesB_hochschildCoboundary
     {n : ℕ} (φ : ContinuousMultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) :
     continuousHochschildCoboundary R A M n (continuousConnesB R A M n φ) +
       continuousConnesB R A M (n + 1) (continuousHochschildCoboundary R A M (n + 1) φ) = 0 := by
