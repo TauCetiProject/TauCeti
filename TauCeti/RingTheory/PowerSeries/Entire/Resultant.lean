@@ -142,6 +142,7 @@ theorem entireResultant_eq_prod_evalAt {ι : Type*} [Fintype ι] {a : ι → R}
   exact Finset.prod_eq_zero (Finset.mem_univ i) (by simp)
 
 /-- The resultant with a linear factor is a value: `Res(X - a, F) = F(a)` for entire `F`. -/
+@[simp]
 theorem entireResultant_X_sub_C (a : R) (hF : F.IsEntire) :
     entireResultant (X - C a) F = F.evalAt a := by
   simpa using entireResultant_eq_prod_evalAt (ι := Unit) (a := fun _ ↦ a) (by simp) hF
