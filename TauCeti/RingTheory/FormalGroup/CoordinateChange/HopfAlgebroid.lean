@@ -50,8 +50,7 @@ groupoid law in the group of strict coordinates. In the tensor model, the compos
   `Δ η_L = (η_L ⊗ 1) η_L` and `Δ η_R = (1 ⊗ η_R) η_R`.
 * `TauCeti.LazardRing.tensorLift_counit_id_comp_coproduct`,
   `TauCeti.LazardRing.tensorLift_id_counit_comp_coproduct`: `(ε ⊗ id) Δ = id = (id ⊗ ε) Δ`.
-* `TauCeti.LazardRing.tensorLift_comp_coproduct_assoc`: coassociativity,
-  `(Δ ⊗ id) Δ = (id ⊗ Δ) Δ`.
+* `TauCeti.LazardRing.coproduct_coassoc`: coassociativity, `(Δ ⊗ id) Δ = (id ⊗ Δ) Δ`.
 * `TauCeti.LazardRing.conjugation_comp_C`, `TauCeti.LazardRing.conjugation_comp_rightUnit`,
   `TauCeti.LazardRing.conjugation_comp_conjugation`: `c η_L = η_R`, `c η_R = η_L` and `c c = id`.
 * `TauCeti.LazardRing.counit_comp_conjugation`: `ε c = ε`.
@@ -98,6 +97,20 @@ def tensorLift :
     ext r
     simpa using RingHom.congr_fun p.2 r
   right_inv k := ringHom_ext' (RingHom.ext fun r ↦ by simp) fun i ↦ by simp
+
+/-- The left component of the pair classified by `k : Γ ⊗_L Γ →+* R` is its restriction along the
+left factor `C`. -/
+@[simp]
+theorem tensorLift_symm_apply_fst (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
+    (tensorLift.symm k).1.1 = k.comp C :=
+  (rfl)
+
+/-- The right component of the pair classified by `k : Γ ⊗_L Γ →+* R` is its restriction along the
+right factor `MvPolynomial.map η_R`. -/
+@[simp]
+theorem tensorLift_symm_apply_snd (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
+    (tensorLift.symm k).1.2 = k.comp (map rightUnit) :=
+  (rfl)
 
 /-- `tensorLift (f, g)` restricts to `f` on the left factor. -/
 @[simp]
@@ -239,7 +252,7 @@ factor and of `Γ` along `η_L`, whose three factors are `C ∘ C`, `C ∘ MvPol
 `MvPolynomial.map (MvPolynomial.map η_R ∘ η_R)`. In it, `Δ ⊗ id` is `tensorLift (C ∘ Δ, ι₃)` with
 `ι₃` the third factor, and `id ⊗ Δ` is `tensorLift (C ∘ C, ι₂₃ ∘ Δ)` with
 `ι₂₃ = MvPolynomial.map (MvPolynomial.map η_R)` the inclusion of the last two factors. -/
-theorem tensorLift_comp_coproduct_assoc :
+theorem coproduct_coassoc :
     (tensorLift (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)))
         ⟨(C.comp coproduct, map ((map (σ := ℕ+) rightUnit).comp rightUnit)),
           RingHom.ext fun r ↦ by simp⟩).comp coproduct =
