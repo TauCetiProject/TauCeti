@@ -68,8 +68,8 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
   domain, the points fixed by a positive iterate of the Frobenius form a finite group.
 * `TauCeti.FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom`:
   base change identifies the geometric Frobenius with the `q`-Frobenius on points.
-* `TauCeti.FiniteField.map_fixedSubgroup_frobeniusPoints_of_surjective`: the fixed points of a
-  closed subgroup scheme are its points that are fixed in the ambient group.
+* `BialgHom.map_fixedSubgroup_frobeniusPoints_of_surjective`: the fixed points of a closed
+  subgroup scheme are its points that are fixed in the ambient group.
 * `TauCeti.FiniteField.finite_fixedSubgroup_geometricFrobenius`: `G^F` is finite for `H` of finite
   type.
 * `TauCeti.FiniteField.baseChangePointsMulEquiv_symm_frobeniusPoints`: for a model over `ℤ` and
@@ -302,8 +302,8 @@ theorem finite_fixedSubgroup_frobeniusPoints [Algebra.FiniteType K H] [IsDomain 
 /-- **Frobenius-fixed points of a closed subgroup scheme.** For a surjective bialgebra morphism
 `ψ : H → H₁`, cutting out a closed subgroup scheme of `Spec H`, the points of that subgroup fixed
 by its own Frobenius are exactly its points that are fixed in the ambient group. -/
-theorem map_fixedSubgroup_frobeniusPoints_of_surjective {H₁ : Type*} [Semiring H₁]
-    [_root_.HopfAlgebra K H₁] (ψ : H →ₐc[K] H₁) (hψ : Function.Surjective ψ) (n : ℕ) :
+theorem _root_.BialgHom.map_fixedSubgroup_frobeniusPoints_of_surjective {H₁ : Type*}
+    [Semiring H₁] [_root_.HopfAlgebra K H₁] (ψ : H →ₐc[K] H₁) (hψ : Function.Surjective ψ) (n : ℕ) :
     (fixedSubgroup (frobeniusPoints K n (H := H₁) (A := A))).map (BialgHom.mapDomain ψ) =
       (BialgHom.mapDomain (A := A) ψ).range ⊓ fixedSubgroup (frobeniusPoints K n) :=
   (BialgHom.mapDomain ψ).map_fixedSubgroup_of_injective (mapDomain_comp_frobeniusPoints ψ n)
