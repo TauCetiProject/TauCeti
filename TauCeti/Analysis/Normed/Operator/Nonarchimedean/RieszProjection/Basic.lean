@@ -148,6 +148,32 @@ theorem mapsTo_range_one_sub_smul (hE : IsRieszProjection u a h E) :
   simpa only [sub_apply, one_apply_eq_self, smul_apply, SetLike.mem_coe] using
     E.range.sub_mem hx (E.range.smul_mem a (hE.mapsTo_range hx))
 
+/-- The complementary inverse preserves the kernel of the Riesz projection. -/
+theorem mapsTo_ker_inverse (hE : IsRieszProjection u a h E) :
+    Set.MapsTo hE.exists_inverse.choose E.ker E.ker := by
+  intro x _
+  apply LinearMap.mem_ker.mpr
+  simpa only [coe_coe, mul_apply_eq_comp, zero_apply] using
+    congr($(hE.exists_inverse.choose_spec.2.2.1) x)
+
+/-- On the complementary summand, the complementary inverse is a left inverse of the
+spectral operator. -/
+theorem inverse_one_sub_smul_apply (hE : IsRieszProjection u a h E)
+    {x : C₀(I, R)} (hx : x ∈ E.ker) :
+    hE.exists_inverse.choose ((1 - a • u) x) = x := by
+  have hx' : E x = 0 := LinearMap.mem_ker.mp hx
+  simpa only [mul_apply_eq_comp, sub_apply, one_apply_eq_self, hx', sub_zero] using
+    congr($(hE.exists_inverse.choose_spec.2.1) x)
+
+/-- On the complementary summand, the complementary inverse is a right inverse of the
+spectral operator. -/
+theorem one_sub_smul_apply_inverse (hE : IsRieszProjection u a h E)
+    {x : C₀(I, R)} (hx : x ∈ E.ker) :
+    (1 - a • u) (hE.exists_inverse.choose x) = x := by
+  have hx' : E x = 0 := LinearMap.mem_ker.mp hx
+  simpa only [mul_apply_eq_comp, sub_apply, one_apply_eq_self, hx', sub_zero] using
+    congr($(hE.exists_inverse.choose_spec.1) x)
+
 /-- **The range of a Riesz projection is the generalised eigenspace** `ker (1 - a • u) ^ h`. -/
 theorem range_eq_ker (hE : IsRieszProjection u a h E) :
     LinearMap.range (E : C₀(I, R) →ₗ[R] C₀(I, R)) =
@@ -214,14 +240,17 @@ nilpotence bound is zero. -/
 theorem IsRieszProjection.isRowCompact {u E : C₀(I, R) →L[R] C₀(I, R)} {a : R} {h : ℕ}
     (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact) :
     E.IsRowCompact := by
-  have hEq : E = (1 - (1 - a • u) ^ h) * E := by
-    rw [sub_mul (α := C₀(I, R) →L[R] C₀(I, R)), one_mul, hE.pow_mul_eq_zero,
-      sub_zero (G := C₀(I, R) →L[R] C₀(I, R))]
-  rw [hEq, ← mul_neg_geom_sum (R := C₀(I, R) →L[R] C₀(I, R)), mul_def, mul_def]
-  have hc : (1 - (1 - a • u)).IsRowCompact := by
-    rw [sub_sub_cancel (G := C₀(I, R) →L[R] C₀(I, R))]
-    exact hu.smul a
-  exact (hc.comp_clm _).comp_clm E
+  let C : C₀(I, R) →L[R] C₀(I, R) := 1 - a • u
+  -- The geometric sum expresses E as a row-compact factor a • u followed by bounded maps.
+  have hEq : E = (1 - C) * (∑ i ∈ Finset.range h, C ^ i) * E := by
+    rw [mul_neg_geom_sum C h]
+    simp only [C, sub_mul (α := C₀(I, R) →L[R] C₀(I, R)), one_mul,
+      hE.pow_mul_eq_zero, sub_zero (G := C₀(I, R) →L[R] C₀(I, R))]
+  have hc : (1 - C).IsRowCompact := by
+    simpa only [C, sub_sub_cancel (1 : C₀(I, R) →L[R] C₀(I, R)) (a • u)] using
+      hu.smul a
+  rw [hEq]
+  simpa only [mul_def] using (hc.comp_clm _).comp_clm E
 
 end RowCompact
 

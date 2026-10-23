@@ -108,38 +108,23 @@ theorem isClosed_range_pow (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
 /-- The spectral operator `1 - a • u` as a continuous linear automorphism of the
 complementary summand `ker E`, identified with every stabilised range by `range_pow_eq_ker`.
 Its inverse is the restriction of the witness supplied by `IsRieszProjection.exists_inverse`. -/
-noncomputable def equivKer (hE : IsRieszProjection u a h E) : E.ker ≃L[R] E.ker := by
-  let w := hE.exists_inverse.choose
-  have hw := hE.exists_inverse.choose_spec
-  have hwker : ∀ x ∈ E.ker, w x ∈ E.ker := by
-    intro x _
-    apply LinearMap.mem_ker.mpr
-    simpa only [w, coe_coe, mul_apply_eq_comp, zero_apply] using congr($(hw.2.2.1) x)
-  let f : E.ker →L[R] E.ker :=
-    (1 - a • u).restrict (fun _ hx ↦ hE.mapsTo_ker_one_sub_smul hx)
-  let g : E.ker →L[R] E.ker := w.restrict hwker
-  refine ContinuousLinearEquiv.equivOfInverse f g ?_ ?_
-  · intro x
-    apply Subtype.ext
-    have hx : E (x : C₀(I, R)) = 0 := LinearMap.mem_ker.mp x.property
-    simpa [f, g, w, coe_restrict_apply, hx] using congr($(hw.2.1) (x : C₀(I, R)))
-  · intro x
-    apply Subtype.ext
-    have hx : E (x : C₀(I, R)) = 0 := LinearMap.mem_ker.mp x.property
-    simpa [f, g, w, coe_restrict_apply, hx] using congr($(hw.1) (x : C₀(I, R)))
+noncomputable def equivKer (hE : IsRieszProjection u a h E) : E.ker ≃L[R] E.ker :=
+  ContinuousLinearEquiv.equivOfInverse
+    ((1 - a • u).restrict (fun _ hx ↦ hE.mapsTo_ker_one_sub_smul hx))
+    (hE.exists_inverse.choose.restrict (fun _ hx ↦ hE.mapsTo_ker_inverse hx))
+    (fun x ↦ Subtype.ext (hE.inverse_one_sub_smul_apply x.property))
+    (fun x ↦ Subtype.ext (hE.one_sub_smul_apply_inverse x.property))
 
 /-- The complementary automorphism acts by the spectral operator. -/
 @[simp]
 theorem coe_equivKer_apply (hE : IsRieszProjection u a h E) (x : E.ker) :
-    (hE.equivKer x : C₀(I, R)) = (1 - a • u) x := by
-  simp [equivKer, ContinuousLinearEquiv.equivOfInverse_apply, coe_restrict_apply]
+    (hE.equivKer x : C₀(I, R)) = (1 - a • u) x :=
+  (rfl)
 
 /-- The inverse complementary automorphism acts by the chosen complementary inverse. -/
-@[simp]
 theorem coe_equivKer_symm_apply (hE : IsRieszProjection u a h E) (x : E.ker) :
-    (hE.equivKer.symm x : C₀(I, R)) = hE.exists_inverse.choose x := by
-  simp [equivKer, ContinuousLinearEquiv.symm_equivOfInverse,
-    ContinuousLinearEquiv.equivOfInverse_apply, coe_restrict_apply]
+    (hE.equivKer.symm x : C₀(I, R)) = hE.exists_inverse.choose x :=
+  (rfl)
 
 variable [DiscreteTopology I] [DecidableEq I] [IsUltrametricDist R]
 
