@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
-public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basic
+public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
 # Degree scaling of an exterior algebra
@@ -57,20 +56,6 @@ end TauCeti.ExteriorAlgebra
 namespace ExteriorAlgebra
 
 open TauCeti.ExteriorAlgebra
-
-/-- Contraction against a functional commutes with an exterior-algebra map after pulling
-back the functional. -/
-theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
-    (d : Module.Dual R N) (x : ExteriorAlgebra R M) :
-    contractLeft (Q := (0 : QuadraticForm R N)) d (_root_.ExteriorAlgebra.map f x) =
-      _root_.ExteriorAlgebra.map f
-        (contractLeft (Q := (0 : QuadraticForm R M)) (d ∘ₗ f) x) := by
-  induction x using CliffordAlgebra.left_induction with
-  | algebraMap r => simp only [AlgHom.commutes, contractLeft_algebraMap, map_zero]
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | ι_mul x m hx =>
-    simp only [map_mul, _root_.ExteriorAlgebra.map_apply_ι, contractLeft_ι_mul, hx,
-      map_sub, map_smul, LinearMap.comp_apply]
 
 /-- The degree scaling is the exterior-algebra map induced by `r • id`. -/
 theorem degreeScaling_apply (r : Rˣ) (x : ExteriorAlgebra R M) :

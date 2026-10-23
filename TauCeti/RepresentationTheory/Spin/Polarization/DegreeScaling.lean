@@ -74,7 +74,7 @@ theorem scaledSpinAction_apply (r : Kˣ) (a : CliffordAlgebra Q) (s : ExteriorAl
 theorem degreeScaling_comp_spinAction (r : Kˣ) (a : CliffordAlgebra Q) :
     (degreeScaling r).toLinearMap ∘ₗ spinAction Q P a =
       P.scaledSpinAction r a ∘ₗ (degreeScaling r).toLinearMap := by
-  ext s
+  refine LinearMap.ext fun s ↦ ?_
   rw [LinearMap.comp_apply, LinearMap.comp_apply, scaledSpinAction_apply, ← degreeScaling_symm,
     AlgEquiv.toLinearMap_apply, AlgEquiv.toLinearMap_apply, AlgEquiv.symm_apply_apply]
 
@@ -89,7 +89,7 @@ multiplication. -/
 @[simp]
 theorem scaledSpinAction_ι_coe_W (r : Kˣ) (x : P.W) :
     P.scaledSpinAction r (CliffordAlgebra.ι Q x) = (r : K) • P.wedge x := by
-  ext s
+  refine LinearMap.ext fun s ↦ ?_
   rw [scaledSpinAction_apply, spinAction_ι_wedge, map_mul, degreeScaling_ι,
     ← degreeScaling_symm, AlgEquiv.apply_symm_apply, smul_mul_assoc, LinearMap.smul_apply,
     wedge_apply]
@@ -98,7 +98,7 @@ theorem scaledSpinAction_ι_coe_W (r : Kˣ) (x : P.W) :
 @[simp]
 theorem scaledSpinAction_ι_coe_W' (r : Kˣ) (y : P.W') :
     P.scaledSpinAction r (CliffordAlgebra.ι Q y) = ((r⁻¹ : Kˣ) : K) • P.contract y := by
-  ext s
+  refine LinearMap.ext fun s ↦ ?_
   rw [scaledSpinAction_apply, spinAction_ι_contract, degreeScaling_contractLeft,
     ← degreeScaling_symm, AlgEquiv.apply_symm_apply, LinearMap.smul_apply, contract_apply]
 
@@ -107,7 +107,7 @@ scalar coordinate times the parity operator. -/
 @[simp]
 theorem scaledSpinAction_ι_coe_line (r : Kˣ) (z : P.line) :
     P.scaledSpinAction r (CliffordAlgebra.ι Q z) = P.lineOperator z := by
-  ext s
+  refine LinearMap.ext fun s ↦ ?_
   rw [scaledSpinAction_apply, spinAction_ι_lineOperator, map_smul, degreeScaling_involute,
     ← degreeScaling_symm, AlgEquiv.apply_symm_apply, lineOperator_apply]
 
