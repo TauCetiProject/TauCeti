@@ -37,7 +37,7 @@ variable {R : Type u} [Ring R]
 
 /-- A primitive ideal is the annihilator of the simple left module associated to
 a maximal left ideal. Equivalently, it is the annihilator of a simple left module in any universe;
-see `IsPrimitive.of_annihilator` and `IsPrimitive.exists_annihilator`. -/
+see `isPrimitive_annihilator` and `IsPrimitive.exists_annihilator`. -/
 def IsPrimitive (I : Ideal R) : Prop :=
   ∃ J : Ideal R, J.IsMaximal ∧ Module.annihilator R (R ⧸ J) = I
 
@@ -48,7 +48,7 @@ theorem isPrimitive_iff_exists_isMaximal (I : Ideal R) :
 
 /-- The annihilator of a simple left module is primitive. The module may live in
 any universe. -/
-theorem IsPrimitive.of_annihilator (M : Type v) [AddCommGroup M] [Module R M]
+theorem isPrimitive_annihilator (M : Type v) [AddCommGroup M] [Module R M]
     [hM : IsSimpleModule R M] : (Module.annihilator R M).IsPrimitive := by
   obtain ⟨J, hJ, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp hM
   exact ⟨J, hJ, e.annihilator_eq.symm⟩
