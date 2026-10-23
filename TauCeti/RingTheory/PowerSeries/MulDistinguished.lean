@@ -42,11 +42,13 @@ distinguished coefficient is a unit.
 * `TauCeti.PowerSeries.isMulDistinguished_monomial` and
   `TauCeti.PowerSeries.isMulDistinguished_X_sub_C`: monomials with multiplicative-unit
   coefficient, and `X - b` for `b` in the closed disc of radius `c`.
+* `TauCeti.PowerSeries.isMulDistinguished_iff_gaussNorm_eq`: a monic polynomial of degree `s` is
+  multiplicatively distinguished of degree `s` at `c` exactly when its Gauss norm is `c ^ s`.
 
 ## References
 
 * F. Martin, *Overconvergent subanalytic subsets in the framework of Berkovich spaces*,
-  J. Eur. Math. Soc. 18 (2016), Definition 1.24 and Lemma 1.26.
+  J. Eur. Math. Soc. 18 (2016), Definition 1.24, Lemma 1.26 and Corollary 1.28.
 -/
 
 public section
@@ -117,6 +119,23 @@ theorem isMulDistinguished_monomial [Nontrivial R] (hc : 0 < c) {a : R} (ha : Is
     (n : ℕ) : IsMulDistinguished c n (PowerSeries.monomial n a) :=
   ⟨isDistinguished_monomial hc ha.isUnit.ne_zero n, by
     rwa [PowerSeries.coeff_monomial_same]⟩
+
+/-- **Weierstrass polynomials at a radius.** Over a norm-one ring, a monic polynomial of degree `s`
+is multiplicatively distinguished of degree `s` at a positive radius `c` exactly when its Gauss
+norm at `c` is `c ^ s`, the weighted norm of its leading term. This is the normalisation of the
+polynomial factor in Weierstrass preparation. Lower coefficients may tie with the leading one, as
+for `X - 1` at the radius `1`. -/
+theorem isMulDistinguished_iff_gaussNorm_eq [NormOneClass R] (hc : 0 < c) {p : Polynomial R}
+    (hp : p.IsMonicOfDegree s) :
+    IsMulDistinguished c s (p : PowerSeries R) ↔ (p : PowerSeries R).gaussNorm norm c = c ^ s := by
+  have hs : (p : PowerSeries R).coeff s = 1 := by
+    rw [Polynomial.coeff_coe, ← hp.natDegree_eq]
+    exact hp.monic.coeff_natDegree
+  refine ⟨fun h ↦ by rw [← h.norm_coeff_mul_pow_eq, hs, norm_one, one_mul], fun h ↦
+    ⟨isDistinguished_of_isMonicOfDegree hc hp fun k _ ↦ ?_, by rw [hs]; exact isNormMulUnit_one⟩⟩
+  rw [← h, ← Polynomial.coeff_coe]
+  exact PowerSeries.le_gaussNorm norm c _
+    (hasGaussNorm_of_isRestricted (isRestricted_polynomial p)) k
 
 variable [IsUltrametricDist R]
 
