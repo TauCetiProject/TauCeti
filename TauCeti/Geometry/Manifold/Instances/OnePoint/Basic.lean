@@ -40,7 +40,8 @@ inverted chart (`OnePoint.mdifferentiableAt_iff_of_eq_infty`).
 * `OnePoint.instChartedSpace`: the charted space structure, with preferred charts
   `OnePoint.chartAt_coe` and `OnePoint.chartAt_infty`.
 * `OnePoint.instIsManifold`: the analytic manifold structure.
-* `OnePoint.contMDiff_coe`: the inclusion `𝕜 → OnePoint 𝕜` is analytic.
+* `OnePoint.contMDiff_coe` and `OnePoint.contMDiff_invChart_symm`: the inverses of the two charts,
+  the inclusion `𝕜 → OnePoint 𝕜` and `w ↦ w⁻¹` (with `0 ↦ ∞`), are analytic.
 * `OnePoint.mdifferentiableAt_iff_of_ne_infty`, `OnePoint.mdifferentiableAt_iff_of_eq_infty`
   and `OnePoint.mdifferentiableAt_coe_comp_iff`: differentiability of maps into `OnePoint 𝕜`.
 
@@ -263,6 +264,13 @@ theorem contMDiff_coe : ContMDiff 𝓘(𝕜) 𝓘(𝕜) ω ((↑) : 𝕜 → One
   have hsymm : ⇑(affineChart.symm : OpenPartialHomeomorph 𝕜 (OnePoint 𝕜)) = (↑) :=
     funext affineChart_symm_apply
   rwa [chartAt_coe, affineChart_target, contMDiffOn_univ, hsymm] at h
+
+/-- The inverse of the inverted chart, `0 ↦ ∞` and `w ↦ w⁻¹` for `w ≠ 0`, is analytic on all
+of `𝕜`. -/
+theorem contMDiff_invChart_symm :
+    ContMDiff 𝓘(𝕜) 𝓘(𝕜) ω (invChart.symm : 𝕜 → OnePoint 𝕜) := by
+  have h := contMDiffOn_chart_symm (I := 𝓘(𝕜)) (n := ω) (x := (∞ : OnePoint 𝕜))
+  rwa [chartAt_infty, invChart_target, contMDiffOn_univ] at h
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]

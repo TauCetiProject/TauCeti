@@ -144,6 +144,11 @@ def positiveDefiningIdeal : HopfIdeal (ZMod 3) carrierAlgebra :=
   HopfIdeal.kerOfSurjective positiveRestriction.hom
     (CommHopfAlgCat.quotientMapOfLe_surjective _ _)
 
+/-- The positive ideal is the kernel of restriction to the positive subgroup. -/
+theorem positiveDefiningIdeal_def :
+    positiveDefiningIdeal = HopfIdeal.kerOfSurjective positiveRestriction.hom
+      (CommHopfAlgCat.quotientMapOfLe_surjective _ _) := (rfl)
+
 /-- A carrier coordinate lies in the positive ideal exactly when it vanishes on the positive
 subgroup. -/
 @[simp↓]

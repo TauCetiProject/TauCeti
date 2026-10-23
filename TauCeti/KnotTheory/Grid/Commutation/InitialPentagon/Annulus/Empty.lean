@@ -42,7 +42,7 @@ namespace TauCeti
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 /-- In a counted same-side-order rectangle--initial-side pentagon term, the rectangle spans one
 cyclic column. -/

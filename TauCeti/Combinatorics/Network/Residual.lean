@@ -46,6 +46,7 @@ lower bounds. We prove:
 * `TauCeti.excessAt_residualNet`: passing from residual arrows to net changes preserves excess.
 * `TauCeti.residualUpdate_mem_Icc`: feasible residual updates are feasible.
 * `TauCeti.excessAt_residualUpdate`: excess is additive under residual updates.
+* `TauCeti.residualCapacity_residualUpdate`: the residual capacities after a residual update.
 * `TauCeti.excessAt_residualUpdate_source`: a residual assignment conserved away from `s` and `t`
   lowers the excess at `s` by its value at `t`.
 * `TauCeti.image_residualUpdate_Icc`: the residual updates of a feasible `f` by feasible residual
@@ -192,6 +193,16 @@ theorem residualCapacity_mem (H : AddSubgroup K) {lo hi f : Assignment Q K}
   rcases e with e | e
   · exact H.sub_mem (hhi e) (hf e)
   · exact H.sub_mem (hf e) (hlo e)
+
+/-- **Residual capacities after a residual update.** Updating `f` by `r` lowers the residual
+capacity of a residual arrow `a` by the value of `r` on `a` and raises it by the value of `r` on the
+reverse residual arrow `a.swap`, the other residual copy of the same arrow. -/
+theorem residualCapacity_residualUpdate (lo hi f : Assignment Q K)
+    (r : Assignment (ResidualHom Q) K) {v w : V} (a : ResidualHom Q v w) :
+    residualCapacity lo hi (residualUpdate f r) a =
+      residualCapacity lo hi f a - r a + r (a.swap : ResidualHom Q w v) := by
+  rcases a with e | e <;> simp only [residualCapacity_inl, residualCapacity_inr, Sum.swap_inl,
+    Sum.swap_inr, residualUpdate_apply] <;> abel
 
 /-- The residual capacity on the residual arrows from `S` to `T` is the room left on the arrows
 from `S` to `T` plus the room left to decrease the arrows from `T` to `S`. -/

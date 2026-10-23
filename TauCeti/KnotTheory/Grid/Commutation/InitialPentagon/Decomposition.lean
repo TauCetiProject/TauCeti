@@ -242,7 +242,7 @@ end GridRectangleInitialPentagonDecomposition
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 /-- The counted rectangle--initial-side pentagon domains: a rectangle of the original diagram
 and an initial-side pentagon counted by the commutation map. -/
