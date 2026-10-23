@@ -30,6 +30,8 @@ nilpotence and lives with the other dimension counts in `TauCeti.Algebra.Lie.Gen
 
 * `TauCeti.isNilpotent_ad_matrix_iff`: `ad X` is nilpotent iff `X` is a scalar plus a nilpotent
   matrix.
+* `TauCeti.isNilpotent_ad_of_isNilpotent_ad_sl`: ad-nilpotence of `x ∈ sl n K` on `sl n K` implies
+  ad-nilpotence on `gl n K`.
 * `TauCeti.isNilpotent_ad_sl_iff`: for `x ∈ sl n K`, `ad x` is nilpotent iff `x` is a nilpotent
   matrix.
 * `TauCeti.image_setOf_isNilpotent_ad_sl`: the ad-nilpotent elements of `sl n K`, viewed as
@@ -63,6 +65,21 @@ theorem isNilpotent_ad_matrix_iff [PerfectField K] {X : Matrix n n K} :
   refine exists_congr fun c ↦ ?_
   rw [← IsNilpotent.map_iff e.injective, map_sub, map_smul, map_one, Algebra.algebraMap_eq_smul_one]
 
+/-- If the size of the matrices is nonzero in `K` (or `n` is empty), an element of `sl n K` with
+nilpotent adjoint action on `sl n K` also has nilpotent adjoint action on `gl n K`: `gl n K` is
+`sl n K` plus the scalars, and `ad x` kills the scalars. -/
+theorem isNilpotent_ad_of_isNilpotent_ad_sl (hn : Nonempty n → (Fintype.card n : K) ≠ 0)
+    {x : SpecialLinear.sl n K} (hx : IsNilpotent (ad K (SpecialLinear.sl n K) x)) :
+    IsNilpotent (ad K (Matrix n n K) (x : Matrix n n K)) := by
+  obtain ⟨k, hk⟩ := hx
+  refine ⟨k + 1, LinearMap.ext fun A ↦ ?_⟩
+  obtain ⟨Y, r, rfl⟩ := exists_sl_add_smul_one_eq (fun h ↦ (hn h).isUnit) A
+  have hY := LinearMap.congr_fun
+    (End.commute_pow_left_of_commute ((SpecialLinear.sl n K).ad_comp_incl_eq x) (k + 1)) Y
+  have h1 : ⁅(x : Matrix n n K), (1 : Matrix n n K)⁆ = 0 := by
+    simp [LieRing.of_associative_ring_bracket]
+  simpa [pow_succ, hk, h1] using hY
+
 /-- **Ad-nilpotent elements of `sl n`.** Over a perfect field in which the size of the matrices is
 nonzero, an element of `sl n K` has nilpotent adjoint action on `sl n K` exactly when it is a
 nilpotent matrix. The hypothesis cannot be dropped: in characteristic `p` the identity matrix of
@@ -74,30 +91,12 @@ theorem isNilpotent_ad_sl_iff [PerfectField K] (hn : Nonempty n → (Fintype.car
   cases isEmpty_or_nonempty n with
   | inl _ => exact ⟨1, Subsingleton.elim _ _⟩
   | inr hne =>
-    -- `gl n K` is `sl n K` plus the scalars, and `ad x` kills the scalars, so `ad x` is nilpotent
-    -- on `gl n K` as well.
-    have hgl : IsNilpotent (ad K (Matrix n n K) (x : Matrix n n K)) := by
-      obtain ⟨k, hk⟩ := hx
-      refine ⟨k + 1, LinearMap.ext fun A ↦ ?_⟩
-      obtain ⟨Y, r, rfl⟩ := exists_sl_add_smul_one_eq (fun h ↦ (hn h).isUnit) A
-      have hY := LinearMap.congr_fun
-        (End.commute_pow_left_of_commute ((SpecialLinear.sl n K).ad_comp_incl_eq x) (k + 1)) Y
-      have h1 : ad K (Matrix n n K) (x : Matrix n n K) (r • 1) = 0 := by
-        simp [LieRing.of_associative_ring_bracket]
-      simp only [LinearMap.coe_comp, Function.comp_apply, LieHom.coe_toLinearMap,
-        LieSubalgebra.coe_incl, pow_succ, hk, zero_mul, LinearMap.zero_apply,
-        ZeroMemClass.coe_zero] at hY
-      rw [LinearMap.zero_apply, map_add, pow_succ, Module.End.mul_apply, Module.End.mul_apply, h1,
-        map_zero, add_zero]
-      simpa only [Module.End.mul_apply] using hY
     -- The scalar component has trace zero, so it vanishes.
-    obtain ⟨c, hc⟩ := isNilpotent_ad_matrix_iff.mp hgl
+    obtain ⟨c, hc⟩ := isNilpotent_ad_matrix_iff.mp (isNilpotent_ad_of_isNilpotent_ad_sl hn hx)
     have htr : c * Fintype.card n = 0 := by
-      have := (Matrix.isNilpotent_trace_of_isNilpotent hc).eq_zero
-      rwa [Matrix.trace_sub, Matrix.trace_smul, Matrix.trace_one,
-        (SpecialLinear.mem_sl_iff).mp x.2, zero_sub, neg_eq_zero, smul_eq_mul] at this
-    rw [mul_eq_zero, or_iff_left (hn hne)] at htr
-    simpa [htr] using hc
+      simpa [Matrix.trace_sub, (SpecialLinear.mem_sl_iff).mp x.2] using
+        (Matrix.isNilpotent_trace_of_isNilpotent hc).eq_zero
+    simpa [(mul_eq_zero.mp htr).resolve_right (hn hne)] using hc
 
 /-- **The nilpotent cone of `sl n`.** Over a perfect field in which the size of the matrices is
 nonzero, the elements of `sl n K` with nilpotent adjoint action, viewed as matrices, are exactly

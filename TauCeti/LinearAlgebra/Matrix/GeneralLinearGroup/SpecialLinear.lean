@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
 /-!
-# Scalar multiples of determinant-one matrices
+# Scalar multiples of determinant-one matrices and `SL` versus `GL` conjugacy
 
 Over an algebraically closed field, every invertible matrix is a determinant-one matrix
 times a scalar matrix. Consequently, a subspace stable under the special linear group
@@ -20,25 +20,20 @@ when units have roots, and `ProjectiveSpecialLinearGroup.isoPSLOfAlgClosed` over
 algebraically closed fields.
 The empty matrix index is included.
 
-The same factorization compares conjugacy of matrices under the two groups. Over any commutative
-ring, a conjugate `g X g⁻¹` by `g ∈ GL(n, R)` is also a conjugate by `SL(n, R)` exactly when the
-determinant of `g` can be corrected inside the centralizer of `X`: some invertible matrix commuting
-with `X` has the same determinant as `g`. When every unit has a root of degree the matrix size, a
-scalar matrix supplies this correction, so the conjugation orbits of `SL(n, K)` and `GL(n, K)` on
-`Matrix n n K` agree. Over an algebraically closed field they agree for every index type, including
-the empty and the one-element ones.
+The file also compares conjugacy of matrices under the two groups. By
+`Matrix.GeneralLinearGroup.toConjAct_smul_mem_orbit_specialLinearGroup_iff`, a `GL(n, K)`-conjugate
+of `X` is an `SL(n, K)`-conjugate exactly when the determinant of the conjugator is corrected by an
+invertible matrix in the centralizer of `X`. Scalar matrices commute with everything, so they
+supply this correction whenever the determinant of the conjugator is the determinant of a scalar
+matrix: when every unit has a root of degree the matrix size, and, through the factorization above,
+over an algebraically closed field. In both cases the conjugation orbits of `SL(n, K)` and
+`GL(n, K)` on `Matrix n n K` agree; over an algebraically closed field this holds for every index
+type, including the empty and the one-element ones.
 
 ## Main results
 
-* `ConjAct.toConjAct_toGL_smul`: conjugating by `s ∈ SL(n, R)` is conjugating by its image in
-  `GL(n, R)`.
 * `Matrix.GeneralLinearGroup.exists_toGL_mul_scalar_eq`: over an algebraically closed field, an
   invertible matrix is a determinant-one matrix times a scalar matrix.
-* `Matrix.GeneralLinearGroup.toConjAct_smul_mem_orbit_specialLinearGroup_iff`: a
-  `GL(n, R)`-conjugate is an `SL(n, R)`-conjugate exactly when the determinant of the conjugator
-  is the determinant of an invertible matrix in the centralizer.
-* `Matrix.GeneralLinearGroup.orbit_conjAct_specialLinearGroup_subset`: an `SL(n, R)`-conjugate is
-  a `GL(n, R)`-conjugate.
 * `Matrix.GeneralLinearGroup.orbit_conjAct_specialLinearGroup_eq_of_roots` and
   `Matrix.GeneralLinearGroup.orbit_conjAct_specialLinearGroup_eq`: when units have roots of degree
   the matrix size, and over an algebraically closed field, the `SL(n, K)`- and
@@ -46,18 +41,6 @@ the empty and the one-element ones.
 -/
 
 public section
-
-namespace ConjAct
-
-variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
-
-/-- Conjugating a matrix by the image of `s ∈ SL(n, R)` in `GL(n, R)` is conjugating it by `s`. -/
-@[simp]
-theorem toConjAct_toGL_smul (s : Matrix.SpecialLinearGroup ι R) (X : Matrix ι ι R) :
-    toConjAct (Matrix.SpecialLinearGroup.toGL s) • X = toConjAct s • X := by
-  simp [units_smul_def, specialLinearGroup_smul_def, ← map_inv]
-
-end ConjAct
 
 namespace Matrix.GeneralLinearGroup
 
@@ -74,39 +57,6 @@ theorem exists_toGL_mul_scalar_eq_of_roots [CommRing K] (g : GL ι K)
   | H s =>
     obtain ⟨z, hz⟩ := ProjGenLinGroup.mk_eq_mk_iff.mp hs
     exact ⟨s, z, hz⟩
-
-/-- **Determinant correction of conjugators.** Over a commutative ring `K`, the conjugate
-`g X g⁻¹` of a matrix `X` by `g ∈ GL(n, K)` is also a conjugate of `X` by `SL(n, K)` exactly when
-some invertible matrix commuting with `X` has the determinant of `g`. -/
-theorem toConjAct_smul_mem_orbit_specialLinearGroup_iff [CommRing K] {g : GL ι K}
-    {X : Matrix ι ι K} :
-    ConjAct.toConjAct g • X ∈ MulAction.orbit (ConjAct (SpecialLinearGroup ι K)) X ↔
-      ∃ c : GL ι K, Commute (c : Matrix ι ι K) X ∧ det c = det g := by
-  -- An invertible matrix fixes `X` under conjugation exactly when it commutes with `X`.
-  have hfix (c : GL ι K) : ConjAct.toConjAct c • X = X ↔ Commute (c : Matrix ι ι K) X := by
-    rw [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, Units.mul_inv_eq_iff_eq_mul]
-    exact (commute_iff_eq _ _).symm
-  rw [MulAction.mem_orbit_iff]
-  constructor
-  · rintro ⟨s, hs⟩
-    obtain ⟨s, rfl⟩ := ConjAct.toConjAct.surjective s
-    refine ⟨(SpecialLinearGroup.toGL s)⁻¹ * g, (hfix _).mp ?_, by simp⟩
-    rw [ConjAct.toConjAct_mul, mul_smul, ← hs, ← ConjAct.toConjAct_toGL_smul,
-      ConjAct.toConjAct_inv, inv_smul_smul]
-  · rintro ⟨c, hc, hdet⟩
-    obtain ⟨s, hs⟩ : g * c⁻¹ ∈ (SpecialLinearGroup.toGL (n := ι) (R := K)).range := by
-      rw [SpecialLinearGroup.range_toGL_eq_ker_det, MonoidHom.mem_ker, map_mul, map_inv, hdet,
-        mul_inv_cancel]
-    refine ⟨ConjAct.toConjAct s, ?_⟩
-    rw [← ConjAct.toConjAct_toGL_smul, hs, ConjAct.toConjAct_mul, mul_smul, ConjAct.toConjAct_inv,
-      inv_smul_eq_iff.mpr ((hfix c).mpr hc).symm]
-
-/-- An `SL(n, K)`-conjugate of a matrix is a `GL(n, K)`-conjugate. -/
-theorem orbit_conjAct_specialLinearGroup_subset [CommRing K] (X : Matrix ι ι K) :
-    MulAction.orbit (ConjAct (SpecialLinearGroup ι K)) X ⊆
-      MulAction.orbit (ConjAct (GL ι K)) X := by
-  rintro _ ⟨s, rfl⟩
-  exact ⟨ConjAct.toConjAct (SpecialLinearGroup.toGL (ConjAct.ofConjAct s)), by simp⟩
 
 /-- A scalar matrix with the determinant of `g` corrects `g` to a determinant-one conjugator. -/
 private theorem toConjAct_smul_mem_orbit_specialLinearGroup_of_det_scalar [CommRing K]
