@@ -13,8 +13,9 @@ public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 Under the identification `A ⊗[R] R[X_σ] ≃ A[X_σ]` of `MvPolynomial.algebraTensorAlgEquiv`, the
 power `(u - a v) ^ i` of polynomials `u, v` over `R` and a scalar `a` of `A` is the image of the
 tensor `∑ₗ (-1)ˡ (i choose l) aˡ ⊗ uⁱ⁻ˡ vˡ`. Contracting the `A`-leg of this tensor against a
-linear functional extracts the binomial terms one at a time; for `A = R[t]` and `a = t`, the
-coefficient of `tⁿ` in `(u - t v) ^ i` is `(-1)ⁿ (i choose n) uⁱ⁻ⁿ vⁿ`.
+linear functional gives a weighted sum of the binomial terms. For `A = R[t]` and `a = t`,
+coefficient functionals extract individual terms: the coefficient of `tⁿ` in `(u - t v) ^ i`
+is `(-1)ⁿ (i choose n) uⁱ⁻ⁿ vⁿ`.
 
 ## Main declarations
 

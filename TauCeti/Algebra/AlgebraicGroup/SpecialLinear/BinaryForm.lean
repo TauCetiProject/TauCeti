@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
 public import TauCeti.Algebra.Polynomial.Homogenize
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Polynomial
+import Mathlib.Algebra.MvPolynomial.Coeff
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
 import TauCeti.Algebra.MvPolynomial.Fin.Two
 import TauCeti.RingTheory.TensorProduct.MvPolynomial
@@ -396,7 +397,7 @@ theorem X_one_pow_mem_of_ne_bot {W : Subcomodule k (coordinateHopfAlgebra k 2)
   have key : coeffAction upperPoint i₀ f = (f.coeff m₀ * (-1) ^ i₀) • MvPolynomial.X 1 ^ d := by
     conv_lhs => rw [f.as_sum]
     rw [map_sum, Finset.sum_eq_single m₀]
-    · rw [MvPolynomial.monomial_eq_C_mul_X_pow_mul_X_pow, ← MvPolynomial.smul_eq_C_mul, map_smul,
+    · rw [MvPolynomial.monomial_fin_two, mul_assoc, ← MvPolynomial.smul_eq_C_mul, map_smul,
         coeffAction_upperPoint_X_pow_mul_X_pow, hm₀i, Nat.choose_self, Nat.sub_self,
         ← hf.add_eq_of_mem_support hm₀, hm₀i]
       simp [smul_smul, pow_add, mul_comm]
@@ -408,7 +409,7 @@ theorem X_one_pow_mem_of_ne_bot {W : Subcomodule k (coordinateHopfAlgebra k 2)
         have h₁ := hf.add_eq_of_mem_support hm
         have h₂ := hf.add_eq_of_mem_support hm₀
         exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨heq.trans hm₀i.symm, by omega⟩)
-      rw [MvPolynomial.monomial_eq_C_mul_X_pow_mul_X_pow, ← MvPolynomial.smul_eq_C_mul, map_smul,
+      rw [MvPolynomial.monomial_fin_two, mul_assoc, ← MvPolynomial.smul_eq_C_mul, map_smul,
         coeffAction_upperPoint_X_pow_mul_X_pow, Nat.choose_eq_zero_of_lt hlt]
       simp
     · intro h
@@ -445,7 +446,7 @@ private theorem binaryForms_le_of_ne_bot (hd : ∀ n ≤ d, (d.choose n : k) ≠
   have hf' := mem_binaryForms.mp hf
   rw [f.as_sum]
   refine sum_mem fun m hm ↦ ?_
-  rw [MvPolynomial.monomial_eq_C_mul_X_pow_mul_X_pow, ← MvPolynomial.smul_eq_C_mul]
+  rw [MvPolynomial.monomial_fin_two, mul_assoc, ← MvPolynomial.smul_eq_C_mul]
   refine SMulMemClass.smul_mem _ ?_
   have hmd := hf'.add_eq_of_mem_support hm
   simpa [← hmd] using hmon (m 0) (hmd ▸ Nat.le_add_right _ _)
