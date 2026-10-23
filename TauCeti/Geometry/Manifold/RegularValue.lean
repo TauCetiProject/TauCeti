@@ -125,8 +125,9 @@ scalar field using `mvfderiv`. No differentiability hypothesis is needed. -/
 theorem isRegularPoint_iff_mvfderiv_ne_zero {g : M → 𝕜} :
     IsRegularPoint I 𝓘(𝕜) g x ↔ mvfderiv I g x ≠ 0 := by
   rw [isRegularPoint_iff]
-  have h := EquivLike.comp_surjective (mfderiv I 𝓘(𝕜) g x)
-    (NormedSpace.fromTangentSpace (g x))
+  have h : Surjective (mvfderiv I g x) ↔ Surjective (mfderiv I 𝓘(𝕜) g x) := by
+    simpa only [mvfderiv, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe] using
+      EquivLike.comp_surjective (mfderiv I 𝓘(𝕜) g x) (NormedSpace.fromTangentSpace (g x))
   rw [← h]
   refine (LinearMap.surjective_iff_ne_zero (f := (mvfderiv I g x).toLinearMap)).trans ?_
   exact not_congr (ContinuousLinearMap.coe_inj (f := mvfderiv I g x) (g := 0))

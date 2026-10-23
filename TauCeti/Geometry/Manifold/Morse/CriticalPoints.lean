@@ -100,11 +100,16 @@ theorem criticalPoints_eq_setOf_mfderiv_eq_zero :
     criticalPoints I f = {x | mfderiv I 𝓘(ℝ) f x = 0} :=
   Set.ext fun _ ↦ mem_criticalPoints_iff_mfderiv_eq_zero
 
+/-- A point is regular for a real-valued function exactly when it is not critical. -/
+theorem isRegularPoint_iff_notMem_criticalPoints :
+    IsRegularPoint I 𝓘(ℝ) f x ↔ x ∉ criticalPoints I f := by
+  rw [isRegularPoint_iff_mvfderiv_ne_zero, mem_criticalPoints]
+
 /-- A scalar value is regular exactly when it is not the value of a critical point. -/
 theorem isRegularValue_iff_notMem_image_criticalPoints {c : ℝ} :
     IsRegularValue I 𝓘(ℝ) f c ↔ c ∉ f '' criticalPoints I f := by
-  simp only [isRegularValue_iff, isRegularPoint_iff_mvfderiv_ne_zero, mem_image,
-    mem_criticalPoints, not_exists, not_and]
+  simp only [isRegularValue_iff, isRegularPoint_iff_notMem_criticalPoints, mem_image,
+    not_exists, not_and]
   tauto
 
 /-- A function and its negation have the same critical points. -/

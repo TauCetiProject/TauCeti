@@ -25,8 +25,8 @@ preimage, rather than by Sard's theorem. The exhaustion retains its actual suble
 
 ## Main results
 
-* `TauCeti.IsMorse.exists_isRegularValue_mem_Ioo`: a compact band has a regular value in every
-  nonempty interval between its endpoints.
+* `TauCeti.IsMorse.exists_isRegularValue_mem_Ioo`: if the band `f ⁻¹' Icc a b` is compact and
+  `a < b`, there is a regular value in `Ioo a b`.
 * `TauCeti.IsMorse.exists_regular_sublevel_exhaustion`: the regular-level compact exhaustion of
   a proper bounded-below Morse function.
 
@@ -46,8 +46,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {f : M → ℝ}
 
-/-- A compact band of a Morse function contains only finitely many critical values, so every
-nonempty open interval between its endpoints contains a regular value. -/
+/-- A compact band of a Morse function contains only finitely many critical values, so there is
+a regular value strictly between `a` and `b` whenever `a < b`. -/
 theorem IsMorse.exists_isRegularValue_mem_Ioo (hf : IsMorse I f) {a b : ℝ} (hab : a < b)
     (hcompact : IsCompact (f ⁻¹' Icc a b)) :
     ∃ c ∈ Ioo a b, IsRegularValue I 𝓘(ℝ) f c := by
@@ -125,12 +125,13 @@ theorem IsMorse.exists_regular_sublevel_exhaustion (hf : IsMorse I f) (hp : IsPr
       isCompact' := hcompact
       subset_interior_succ' := fun n ↦ ?_
       iUnion_eq' := ?_ }
-  · refine ⟨a, K, hmono, htop, hreg, fun _ ↦ rfl, ?_, fun n ↦
+  · have hK : ∀ n, K n = f ⁻¹' Iic (a n) := fun _ ↦ rfl
+    refine ⟨a, K, hmono, htop, hreg, hK, ?_, fun n ↦
       hf.finite_criticalPoints_inter (K.isCompact n)⟩
     apply eq_empty_iff_forall_notMem.2
     intro x hx
-    have hx' : f x ≤ a 0 := hx
-    exact (ha0 x).not_ge hx'
+    rw [hK, mem_preimage, mem_Iic] at hx
+    exact (ha0 x).not_ge hx
   · intro x hx
     exact mem_interior_iff_mem_nhds.2 <|
       Filter.mem_of_superset
