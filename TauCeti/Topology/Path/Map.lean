@@ -26,7 +26,7 @@ namespace Path
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x y : X}
 
 /-- The image of a path along a map continuous on its range is the composite path. -/
-@[simp]
+@[simp, grind =]
 theorem map'_coe (γ : Path x y) {f : X → Y} (h : ContinuousOn f (Set.range γ)) :
     ⇑(γ.map' h) = f ∘ γ :=
   rfl
