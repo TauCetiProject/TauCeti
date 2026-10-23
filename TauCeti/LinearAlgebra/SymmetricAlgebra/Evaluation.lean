@@ -38,7 +38,7 @@ time.
 
 ## Main results
 
-* `SymmetricAlgebra.lift_apply_eq_eval_equivMvPolynomial`: in the coordinates of a basis,
+* `Module.Basis.lift_apply_eq_eval_equivMvPolynomial`: in the coordinates of a basis,
   the evaluation at a linear form is the evaluation of a polynomial at the values of the form on
   the basis.
 * `SymmetricAlgebra.exists_polynomial_eval_eq_lift_add_smul`: along an affine line of
@@ -51,9 +51,7 @@ time.
 
 public section
 
-namespace SymmetricAlgebra
-
-section CommSemiring
+namespace Module.Basis
 
 variable {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
@@ -69,7 +67,9 @@ theorem lift_apply_eq_eval_equivMvPolynomial (b : Module.Basis ι R M) (f : M �
     SymmetricAlgebra.algHom_ext <| b.ext fun i ↦ by simp
   rw [h, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ← MvPolynomial.aeval_eq_eval]
 
-end CommSemiring
+end Module.Basis
+
+namespace SymmetricAlgebra
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
@@ -110,7 +110,7 @@ theorem eq_zero_of_forall_lift_eq_zero {ι : Type*} (b : Module.Basis ι R M) {s
   -- the point `x` is the coordinate vector of the linear form `b.constr R x`
   have hfx : ∀ i, b.constr R x (b i) ∈ s i := fun i ↦ by
     simpa only [Module.Basis.constr_basis] using hx i (Set.mem_univ i)
-  have hcoord := SymmetricAlgebra.lift_apply_eq_eval_equivMvPolynomial b (b.constr R x) p
+  have hcoord := b.lift_apply_eq_eval_equivMvPolynomial (b.constr R x) p
   simp only [Module.Basis.constr_basis] at hcoord
   rw [← hcoord, h _ hfx, map_zero]
 

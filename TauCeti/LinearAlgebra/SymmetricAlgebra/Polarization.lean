@@ -61,7 +61,7 @@ theorem span_pow_eq_homogeneous_of_polynomial_vanishing (S : Set V)
   have hS' : ∀ q, (∀ x ∈ b.equivFun '' S, MvPolynomial.eval x q = 0) → q = 0 := by
     intro q hq
     have hzero := hS ((SymmetricAlgebra.equivMvPolynomial b.dualBasis).symm q) fun v hv ↦ by
-      rw [SymmetricAlgebra.lift_apply_eq_eval_equivMvPolynomial b.dualBasis,
+      rw [b.dualBasis.lift_apply_eq_eval_equivMvPolynomial,
         AlgEquiv.apply_symm_apply]
       simpa [Module.Basis.dualBasis_apply] using hq _ ⟨v, hv, rfl⟩
     simpa using hzero
