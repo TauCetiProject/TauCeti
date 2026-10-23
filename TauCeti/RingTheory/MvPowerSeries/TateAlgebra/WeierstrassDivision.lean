@@ -20,10 +20,11 @@ variable is one-variable Weierstrass division over that coefficient ring.
 
 The divisor hypothesis is that the iterated series of `g` is multiplicatively distinguished of
 degree `s` at the radius `c none` (`TauCeti.PowerSeries.IsMulDistinguished`): its Gauss norm is
-attained by the coefficient of `X none ^ s`, every later coefficient is strictly smaller, and that
-coefficient, a restricted series in the remaining variables, is a multiplicative unit of the ring
-of such series. A remainder is a series of degree less than `s` in `X none`: every monomial in
-which `X none` occurs with exponent at least `s` has coefficient zero. Its coefficients in the
+attained in degree `s`, every later weighted coefficient norm `‖aₙ‖ * c none ^ n` is strictly
+smaller (earlier ones may tie), and the coefficient in degree `s`, a restricted series in the
+remaining variables, is a multiplicative unit of the ring of such series. A remainder is a series
+of degree less than `s` in `X none`: every monomial in which `X none` occurs with exponent at
+least `s` has coefficient zero. Its coefficients in the
 remaining variables are arbitrary restricted series.
 
 Over a complete coefficient ring every restricted series `f` then has a unique decomposition
@@ -61,7 +62,7 @@ public section
 namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries
-open TauCeti.Huber (restrictedOptionEquiv coeff_restrictedOptionEquiv_eq_zero_iff
+open TauCeti.Huber (restrictedOptionEquiv forall_coeff_restrictedOptionEquiv_eq_zero_iff
   norm_restrictedOptionEquiv)
 
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : Option σ → ℝ}
@@ -69,13 +70,6 @@ variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : Option σ 
 
 local notation "Inner" => IsRestricted.subring (R := R) (fun i : σ ↦ c (some i))
 local notation "Flat" => IsRestricted.subring (R := R) c
-
-/-- A series of degree less than `s` in the separated variable has an iterated series vanishing in
-every degree `≥ s`. -/
-private theorem coeff_restrictedOptionEquiv_eq_zero {r : Flat}
-    (hr : ∀ t : Option σ →₀ ℕ, s ≤ t none → coeff t (r : MvPowerSeries (Option σ) R) = 0) :
-    ∀ m, s ≤ m → PowerSeries.coeff m (restrictedOptionEquiv r : PowerSeries Inner) = 0 :=
-  fun m hm ↦ (coeff_restrictedOptionEquiv_eq_zero_iff r m).mpr fun t ht ↦ hr t (ht ▸ hm)
 
 /-- The underlying series of the iterated series of `g * q + r`. -/
 private theorem coe_restrictedOptionEquiv_mul_add (g q r : Flat) :
@@ -112,7 +106,7 @@ theorem norm_mul_add_eq_max_of_isMulDistinguished {g : Flat}
     ← norm_restrictedOptionEquiv (f := q), ← norm_restrictedOptionEquiv (f := r),
     PowerSeries.norm_eq_gaussNorm, coe_restrictedOptionEquiv_mul_add]
   exact hg.gaussNorm_mul_add_eq_max Fact.out (restrictedOptionEquiv q).2
-    (coeff_restrictedOptionEquiv_eq_zero hr)
+    ((forall_coeff_restrictedOptionEquiv_eq_zero_iff _ s).mpr hr)
 
 /-- **Uniqueness in several-variable Weierstrass division.** Over an ultrametric normed
 commutative ring, let the iterated series of `g` in the separated variable `X none` be
@@ -129,8 +123,8 @@ theorem eq_and_eq_of_mul_add_eq_mul_add_of_isMulDistinguished {g : Flat}
   have h' := congrArg (fun x : Flat ↦ (restrictedOptionEquiv x : PowerSeries Inner)) h
   simp only [coe_restrictedOptionEquiv_mul_add] at h'
   obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add Fact.out (restrictedOptionEquiv q).2
-    (restrictedOptionEquiv q').2 (coeff_restrictedOptionEquiv_eq_zero hr)
-    (coeff_restrictedOptionEquiv_eq_zero hr') h'
+    (restrictedOptionEquiv q').2 ((forall_coeff_restrictedOptionEquiv_eq_zero_iff _ s).mpr hr)
+    ((forall_coeff_restrictedOptionEquiv_eq_zero_iff _ s).mpr hr') h'
   exact ⟨restrictedOptionEquiv.injective (Subtype.ext hq),
     restrictedOptionEquiv.injective (Subtype.ext hr)⟩
 
@@ -159,8 +153,7 @@ theorem exists_mul_add_eq_of_isMulDistinguished [CompleteSpace R] {g : Flat}
   set r : Flat := restrictedOptionEquiv.symm
     ⟨r', TauCeti.PowerSeries.isRestricted_of_forall_coeff_eq_zero hr'⟩
   have hr : ∀ t : Option σ →₀ ℕ, s ≤ t none → coeff t (r : MvPowerSeries (Option σ) R) = 0 :=
-    fun t ht ↦ (coeff_restrictedOptionEquiv_eq_zero_iff r (t none)).mp
-      (by simpa [r] using hr' _ ht) t rfl
+    (forall_coeff_restrictedOptionEquiv_eq_zero_iff r s).mp (by simpa [r] using hr')
   have hf : g * q + r = f := restrictedOptionEquiv.injective <| Subtype.ext <| by
     rw [coe_restrictedOptionEquiv_mul_add]
     simpa [q, r] using hqr

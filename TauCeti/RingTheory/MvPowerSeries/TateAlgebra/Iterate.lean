@@ -229,6 +229,17 @@ theorem coeff_restrictedOptionEquiv_eq_zero_iff (f : Flat) (n : ℕ) :
   have h' := h t.some
   rwa [← ht, Finsupp.optionElim_some] at h'
 
+/-- The iterated series vanishes in all degrees at least `s` exactly when the separated
+variable has exponent less than `s` in every nonzero monomial. -/
+theorem forall_coeff_restrictedOptionEquiv_eq_zero_iff (f : Flat) (s : ℕ) :
+    (∀ m, s ≤ m → PowerSeries.coeff m (restrictedOptionEquiv f : PowerSeries Inner) = 0) ↔
+      ∀ t : Option σ →₀ ℕ, s ≤ t none → coeff t (f : MvPowerSeries (Option σ) R) = 0 := by
+  constructor
+  · exact fun h t ht ↦
+      (coeff_restrictedOptionEquiv_eq_zero_iff f (t none)).mp (h _ ht) t rfl
+  · exact fun h m hm ↦
+      (coeff_restrictedOptionEquiv_eq_zero_iff f m).mpr fun t ht ↦ h t (ht ▸ hm)
+
 /-- The comparison is determined by its formal series: the image of `f` is the image of `f`
 under `MvPowerSeries.optionEquivLeft`, with coefficients regarded as restricted series. -/
 @[simp]
