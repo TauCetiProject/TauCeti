@@ -293,9 +293,8 @@ private theorem prod_projectiveSpaceRatioMonomial_pow (a : {j : Option ι // j �
       MonoidAlgebra.single (ofAdd ((projectiveSpaceDualSemigroupEquiv b hi k).symm a)) 1 := by
   have h : (projectiveSpaceDualSemigroupEquiv b hi k).symm a =
       ∑ j, a j • projectiveSpaceChartCharacter b hi k j := by
-    rw [AddEquiv.symm_apply_eq, map_sum]
-    ext l
-    simp [Pi.single_apply]
+    -- The general formula sums over `univ` built from classical decidable equality.
+    convert projectiveSpaceDualSemigroupEquiv_symm_apply b hi k a
   rw [h, ofAdd_sum, ← MonoidAlgebra.of_apply, map_prod]
   refine Finset.prod_congr rfl fun j _ ↦ ?_
   rw [projectiveSpaceRatioMonomial_eq_single b hi k j.2, ofAdd_nsmul, map_pow,
@@ -423,11 +422,14 @@ theorem projectiveSpaceChartToProj_self (k : Option ι) :
         Proj.awayι 𝒜 (X k) (SymmetricAlgebra.ι_mem_homogeneousSubmodule ℂ _ _) one_pos := by
   rw [projectiveSpaceChartToProj, projectiveSpaceAwayEquiv_toRingHom]
 
+/-- The chart-ring isomorphism `projectiveSpaceAwayEquiv` is an isomorphism in `CommRingCat`. -/
+private instance isIso_ofHom_projectiveSpaceAwayEquiv (k : Option ι) :
+    IsIso (CommRingCat.ofHom (projectiveSpaceAwayEquiv b hi k).toAlgHom.toRingHom) :=
+  (ConcreteCategory.isIso_iff_bijective _).2 (projectiveSpaceAwayEquiv b hi k).bijective
+
 /-- The affine chart of the maximal cone omitting `k` is an open subscheme of projective space. -/
 instance isOpenImmersion_projectiveSpaceChartToProj (k : Option ι) :
     IsOpenImmersion (projectiveSpaceChartToProj b hi (le_refl (projectiveSpaceCone b i {k}ᶜ))) := by
-  have : IsIso (CommRingCat.ofHom (projectiveSpaceAwayEquiv b hi k).toAlgHom.toRingHom) :=
-    (ConcreteCategory.isIso_iff_bijective _).2 (projectiveSpaceAwayEquiv b hi k).bijective
   rw [projectiveSpaceChartToProj_self]
   infer_instance
 
@@ -436,12 +438,8 @@ space. -/
 theorem opensRange_projectiveSpaceChartToProj (k : Option ι) :
     (projectiveSpaceChartToProj b hi (le_refl (projectiveSpaceCone b i {k}ᶜ))).opensRange =
       Proj.basicOpen 𝒜 (X k) := by
-  have : IsIso (CommRingCat.ofHom (projectiveSpaceAwayEquiv b hi k).toAlgHom.toRingHom) :=
-    (ConcreteCategory.isIso_iff_bijective _).2 (projectiveSpaceAwayEquiv b hi k).bijective
-  rw [← Proj.opensRange_awayι 𝒜 _ (SymmetricAlgebra.ι_mem_homogeneousSubmodule ℂ _ _) one_pos,
-    ← Scheme.Hom.opensRange_comp_of_isIso
-      (Spec.map (CommRingCat.ofHom (projectiveSpaceAwayEquiv b hi k).toAlgHom.toRingHom))]
-  congr 1
+  simp only [projectiveSpaceChartToProj_self, Scheme.Hom.opensRange_comp_of_isIso,
+    Proj.opensRange_awayι]
 
 /-- In the chart of the maximal cone omitting `k`, the standard open `D₊(X_l)` of projective space
 is the locus where the ratio `X_l / X_k` does not vanish. -/
