@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Eigenspace.Transport
 public import TauCeti.QuantumGroups.UqSl2.Basic
-public import TauCeti.QuantumGroups.QuantumInteger
+public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.Analysis.Complex.Polynomial.Basic

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # The first Bianchi identity
@@ -55,13 +56,6 @@ theorem curvatureOperator_cyclic_eq_zero
     (isTorsionFree_iff cov).mp ht
   let _ : IsManifold I (minSmoothness ℝ 3) M :=
     IsManifold.of_le (m := minSmoothness ℝ 3) (n := ∞) (by simp)
-  let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M :=
-    IsManifold.of_le (m := (∞ : ℕ∞ω) + 1) (n := ∞) (by simp)
-  have hbr {U V : Π y : M, TangentSpace I y}
-      (hU : CMDiff ∞ (T% U)) (hV : CMDiff ∞ (T% V)) :
-      CMDiff ∞ (T% (mlieBracket I U V)) :=
-    ContDiff.mlieBracket_vectorField (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) hU hV (by
-      simp [minSmoothness_of_isRCLikeNormedField])
   have ht' {U V : Π y : M, TangentSpace I y}
       (hU : CMDiff ∞ (T% U)) (hV : CMDiff ∞ (T% V)) :
       mlieBracket I U V x = cov V x (U x) - cov U x (V x) :=
@@ -70,7 +64,8 @@ theorem curvatureOperator_cyclic_eq_zero
     (hX.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt
     (hY.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt
     (hZ.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt (x := x)
-  rw [ht' hX (hbr hY hZ), ht' (hbr hX hY) hZ, ht' hY (hbr hX hZ),
+  rw [ht' hX (contMDiff_mlieBracket hY hZ), ht' (contMDiff_mlieBracket hX hY) hZ,
+    ht' hY (contMDiff_mlieBracket hX hZ),
     cov.covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free ht hY hZ x (X x),
     cov.covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free ht hX hY x (Z x),
     cov.covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free ht hX hZ x (Y x)] at hj

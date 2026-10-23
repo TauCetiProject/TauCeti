@@ -31,7 +31,9 @@ below some order is the coefficient family of a current.
 Polynomial currents embed through `LieAlgebra.ExtendScalars.map` and the existing
 Laurent-polynomial inclusion. Their coefficients agree with Mathlib's
 `LieAlgebra.LoopAlgebra.toFinsupp`. Truncation below `N` produces a polynomial
-current whose difference from the original lies in `orderSubmodule R L N`.
+current whose difference from the original lies in `orderSubmodule R L N`, and it kills
+`orderSubmodule R L N`. A linear map on polynomial currents killing all modes `t^n ⊗ x` with
+`n ≥ N` therefore extends to formal currents by composing with truncation below `N`.
 
 ## References
 
@@ -309,6 +311,42 @@ theorem ofLoop_trunc_sub_mem_orderSubmodule (N : ℤ) (u : currentAlgebra R L) :
       (_root_.LaurentSeries.le_orderTop_sub_toLaurentSeries_trunc N f) x
   | add u v hu hv =>
     simpa only [map_add, add_sub_add_comm] using (orderSubmodule R L N).add_mem hu hv
+
+
+/-- The polynomial mode `t^a ⊗ x` has order at least `a`. -/
+theorem ofLoop_single_tmul_mem_orderSubmodule (a : ℤ) (x : L) :
+    ofLoop R L (AddMonoidAlgebra.single a 1 ⊗ₜ x) ∈ orderSubmodule R L a := by
+  rw [ofLoop_tmul]
+  exact tmul_mem_orderSubmodule R L a
+    (by rw [LaurentPolynomial.toLaurentSeries_single]; exact HahnSeries.orderTop_single_le) x
+
+/-- Truncation below `N` kills the currents of order at least `N`. -/
+theorem trunc_eq_zero_of_mem_orderSubmodule {N : ℤ} {u : currentAlgebra R L}
+    (hu : u ∈ orderSubmodule R L N) : trunc R L N u = 0 :=
+  (LieAlgebra.LoopAlgebra.toFinsupp R ℤ L).injective <| by
+    ext n
+    rw [toFinsupp_trunc, map_zero, Finsupp.zero_apply, ite_eq_right_iff]
+    exact coeff_eq_zero_of_mem_orderSubmodule R L hu
+
+/-- A linear map on polynomial currents which vanishes on all modes `t^n ⊗ x` with `n ≥ N` is
+unchanged by first truncating polynomial currents below `N`. -/
+theorem apply_trunc_ofLoop {V : Type*} [AddCommGroup V] [Module R V] {N : ℤ}
+    (g : LieAlgebra.loopAlgebra R ℤ L →ₗ[R] V)
+    (hg : ∀ n, N ≤ n → ∀ x, g (AddMonoidAlgebra.single n 1 ⊗ₜ x) = 0)
+    (p : LieAlgebra.loopAlgebra R ℤ L) : g (trunc R L N (ofLoop R L p)) = g p := by
+  -- The difference has no coefficients below `N`, so it is a sum of modes killed by `g`.
+  obtain ⟨v, hv⟩ := (LieAlgebra.LoopAlgebra.toFinsupp R ℤ L).symm.surjective
+    (p - trunc R L N (ofLoop R L p))
+  have hvN (n : ℤ) (hn : n < N) : v n = 0 := by
+    have h := congrArg (LieAlgebra.LoopAlgebra.toFinsupp R ℤ L · n) hv
+    simp only [LinearEquiv.apply_symm_apply] at h
+    simp [h, hn]
+  rw [eq_comm, ← sub_eq_zero, ← map_sub, ← hv, ← Finsupp.sum_single v, map_finsuppSum,
+    map_finsuppSum]
+  refine Finset.sum_eq_zero fun n hn ↦ ?_
+  dsimp only
+  rw [LieAlgebra.LoopAlgebra.toFinsupp_symm_single,
+    hg n (not_lt.mp fun h ↦ Finsupp.mem_support_iff.mp hn (hvN n h))]
 
 end Lie
 
