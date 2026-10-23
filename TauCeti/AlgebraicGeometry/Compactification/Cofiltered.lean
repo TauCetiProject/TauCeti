@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Compactification.BaseChange
 public import TauCeti.AlgebraicGeometry.Compactification.Refinement
 public import TauCeti.AlgebraicGeometry.Compactification.Uniqueness
-public import TauCeti.CategoryTheory.Filtered.Comparison
 
 /-!
 # Compactifications form a cofiltered category
@@ -23,9 +21,11 @@ theorem for separated finite-type morphisms over a qcqs base.
 
 Consequently a functor out of compactifications that sends every refinement map to an
 isomorphism has canonical comparison isomorphisms between its values at any two
-compactifications, `CategoryTheory.Functor.cofilteredComparison`. They may be computed through
-any common refinement and satisfy the identity, inverse and cocycle laws. They are compatible
-with base change, `Compactification.cofilteredComparison_hom_comp_app_baseChange`.
+compactifications, `CategoryTheory.Functor.cofilteredComparison` from
+`TauCeti.CategoryTheory.Filtered.Comparison`. They may be computed through any common
+refinement and satisfy the identity, inverse and cocycle laws. They are compatible with base
+change: for a natural transformation `τ : F ⟶ Compactification.baseChangeFunctor g ⋙ F'`, this
+is `F.cofilteredComparison_hom_comp_app (Compactification.baseChangeFunctor g) F' τ`.
 
 ## References
 
@@ -52,20 +52,6 @@ instance : IsCofilteredOrEmpty (Compactification f) where
   cone_maps C _ _ _ := ⟨_, commonRefinementFst C C, hom_unique _ _⟩
 
 instance [Nonempty (Compactification f)] : IsCofiltered (Compactification f) where
-
-/-- The base-change law for comparison isomorphisms: comparisons between the values of a functor
-on compactifications of `f` commute with a natural transformation to the corresponding functor
-on the base-changed compactifications. -/
-@[reassoc]
-theorem cofilteredComparison_hom_comp_app_baseChange {T : Scheme.{u}} {𝒞 : Type*} [Category* 𝒞]
-    (g : T ⟶ S) (F : Compactification f ⥤ 𝒞)
-    [∀ (C D : Compactification f) (h : C ⟶ D), IsIso (F.map h)]
-    (F' : Compactification (pullback.snd f g) ⥤ 𝒞)
-    [∀ (C D : Compactification (pullback.snd f g)) (h : C ⟶ D), IsIso (F'.map h)]
-    (τ : F ⟶ baseChangeFunctor g ⋙ F') (C₁ C₂ : Compactification f) :
-    (F.cofilteredComparison C₁ C₂).hom ≫ τ.app C₂ =
-      τ.app C₁ ≫ (F'.cofilteredComparison (C₁.baseChange g) (C₂.baseChange g)).hom :=
-  F.cofilteredComparison_hom_comp_app (baseChangeFunctor g) F' τ C₁ C₂
 
 end Compactification
 

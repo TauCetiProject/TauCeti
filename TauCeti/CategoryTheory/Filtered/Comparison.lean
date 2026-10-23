@@ -67,9 +67,12 @@ theorem cofilteredComparison_hom_eq {i j k : J} (u : k ⟶ i) (v : k ⟶ j) :
     (F.cofilteredComparison i j).hom = CategoryTheory.inv (F.map u) ≫ F.map v := by
   have : IsCofiltered J := { nonempty := ⟨i⟩ }
   have h : F.IsEventuallyConstantTo i := fun _ _ ↦ inferInstance
-  simpa only [cofilteredComparison, Iso.trans_hom, Iso.symm_hom, asIso_hom, asIso_inv,
-    IsEventuallyConstantTo.coneπApp, IsEventuallyConstantTo.isoMap] using
-    h.coneπApp_eq j k u v
+  have inv_eq {k : J} (α : k ⟶ i) : (h.isoMap α ⟨𝟙 i⟩).inv = CategoryTheory.inv (F.map α) :=
+    IsIso.eq_inv_of_hom_inv_id (h.isoMap_hom_inv_id α _)
+  have h₁ := h.coneπApp_eq j _ (minToLeft i j) (minToRight i j)
+  have h₂ := h.coneπApp_eq j k u v
+  rw [inv_eq] at h₁ h₂
+  simpa [cofilteredComparison, ← h₁] using h₂
 
 /-- On a morphism of `J`, the comparison isomorphism is the image of that morphism. -/
 theorem cofilteredComparison_hom_eq_map {i j : J} (u : i ⟶ j) :
@@ -100,18 +103,17 @@ theorem cofilteredComparison_hom_comp_hom (i j k : J) :
 @[reassoc (attr := simp)]
 theorem map_comp_cofilteredComparison_hom {i j : J} (u : i ⟶ j) (k : J) :
     F.map u ≫ (F.cofilteredComparison j k).hom = (F.cofilteredComparison i k).hom := by
-  rw [← F.cofilteredComparison_hom_eq_map u, cofilteredComparison_hom_comp_hom]
+  simp [← F.cofilteredComparison_hom_eq_map u]
 
 @[reassoc (attr := simp)]
 theorem cofilteredComparison_hom_comp_map (i : J) {j k : J} (v : j ⟶ k) :
     (F.cofilteredComparison i j).hom ≫ F.map v = (F.cofilteredComparison i k).hom := by
-  rw [← F.cofilteredComparison_hom_eq_map v, cofilteredComparison_hom_comp_hom]
+  simp [← F.cofilteredComparison_hom_eq_map v]
 
 @[simp]
 theorem cofilteredComparison_inv (i j : J) :
-    (F.cofilteredComparison i j).inv = (F.cofilteredComparison j i).hom := by
-  rw [← cancel_epi (F.cofilteredComparison i j).hom, Iso.hom_inv_id,
-    cofilteredComparison_hom_comp_hom, cofilteredComparison_refl, Iso.refl_hom]
+    (F.cofilteredComparison i j).inv = (F.cofilteredComparison j i).hom :=
+  Iso.inv_ext (by simp)
 
 @[simp]
 theorem cofilteredComparison_symm (i j : J) :
@@ -136,9 +138,8 @@ theorem cofilteredComparison_hom_comp_app {J' : Type*} [Category* J'] [IsCofilte
     (F.cofilteredComparison i j).hom ≫ τ.app j =
       τ.app i ≫ (F'.cofilteredComparison (G.obj i) (G.obj j)).hom := by
   rw [F.cofilteredComparison_hom_eq (minToLeft i j) (minToRight i j),
-    F'.cofilteredComparison_hom_eq (G.map (minToLeft i j)) (G.map (minToRight i j)),
-    Category.assoc, IsIso.inv_comp_eq, τ.naturality_assoc, Functor.comp_map,
-    IsIso.hom_inv_id_assoc, τ.naturality, Functor.comp_map]
+    F'.cofilteredComparison_hom_eq (G.map (minToLeft i j)) (G.map (minToRight i j))]
+  simp [IsIso.inv_comp_eq]
 
 end Functor
 
