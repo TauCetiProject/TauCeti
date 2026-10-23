@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+public import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Computable
 
 /-!
@@ -458,16 +458,6 @@ theorem eq_evalRingHom {R : Type*} [CommRing R] (f : ℤ →+* R) (r : R)
     (hr : (cyclotomic e ℤ).eval₂ f r = 0) (g : Cyclotomic e →+* R) (hg : g (zeta e) = r) :
     g = evalRingHom f r hr :=
   ringHom_ext (by rw [hg, evalRingHom_zeta])
-
-/-- A primitive `e`-th root of unity `r` in a domain `R` is a root of the cyclotomic polynomial
-`Φ_e` over any ring, mapped to `R` along any ring homomorphism `f`.  Over `ℤ` this is the
-hypothesis of `TauCeti.Cyclotomic.evalRingHom`; Mathlib's `IsPrimitiveRoot.isRoot_cyclotomic` is
-the case of `Φ_e` taken over `R` itself. -/
-theorem _root_.IsPrimitiveRoot.eval₂_cyclotomic {S R : Type*} [Ring S] [CommRing R] [IsDomain R]
-    [NeZero e] (f : S →+* R) {r : R} (hr : IsPrimitiveRoot r e) :
-    (cyclotomic e S).eval₂ f r = 0 := by
-  rw [← eval_map, map_cyclotomic]
-  exact hr.isRoot_cyclotomic (NeZero.pos e)
 
 /-- Evaluate a coefficient vector by Horner's rule.  Unlike `Polynomial.eval₂`, this is a genuine
 computation because it works directly on the finite list. -/
