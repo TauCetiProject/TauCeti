@@ -31,8 +31,14 @@ the unit part of the norm group of `L/K` to the unit values of one binary quadra
 uniformizer `a` the Eisenstein basis `(1, √a)` has `T = 0` and `N = -a`, and the first family is
 the description `u² (1 - a t²)` of `TauCeti.mem_quadraticNormSubgroup_iff_of_isUniformizer`.
 
+The generators of such bases are typically of the form `(x - b)/s` for a square root `x ∉ K`
+of `a ∈ K`. When `2b = s t` and `b² - a = s² c` with `t, c ∈ 𝒪[K]`, this element is integral,
+with trace `-t` and norm `c`.
+
 ## Main results
 
+* `TauCeti.exists_integerRing_eq_div_of_sq_eq`: the element `(x - b)/s` above lies in `𝒪[L]`,
+  with trace `-t` and norm `c`.
 * `Module.Basis.exists_norm_eq_iff_of_integerRing`: the unit norms are exactly the two
   families above.
 
@@ -45,6 +51,50 @@ the description `u² (1 - a t²)` of `TauCeti.mem_quadraticNormSubgroup_iff_of_i
 public section
 
 open ValuativeRel IsLocalRing TauCeti
+
+namespace TauCeti
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+  [Algebra.IsQuadraticExtension K L]
+
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+open Polynomial in
+/-- If `x ∉ K` is a square root of `a`, `2b = s t` and `b² - a = s² c` with `s ≠ 0` and
+`t, c ∈ 𝒪[K]`, then `(x - b)/s` lies in `𝒪[L]`, with trace `-t` and norm `c`. -/
+theorem exists_integerRing_eq_div_of_sq_eq {x : L} {a b s : K} {t c : 𝒪[K]}
+    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L a) (hs : s ≠ 0)
+    (ht : 2 * b = s * t) (hbc : b ^ 2 - a = s ^ 2 * c) :
+    ∃ ω : 𝒪[L], (ω : L) = (x - algebraMap K L b) / algebraMap K L s ∧
+      Algebra.trace K L (ω : L) = -(t : K) ∧ Algebra.norm K (ω : L) = c := by
+  set y := (x - algebraMap K L b) / algebraMap K L s
+  have hy : y = algebraMap K L (-b / s) + algebraMap K L s⁻¹ * x := by
+    simp only [y, map_div₀, map_neg, map_inv₀]
+    ring
+  have htr : Algebra.trace K L y = -(t : K) := by
+    rw [hy, Algebra.IsQuadraticExtension.trace_algebraMap_add_algebraMap_mul_of_sq_eq hx hx2]
+    field_simp
+    linear_combination -ht
+  have hn : Algebra.norm K y = c := by
+    rw [hy, Algebra.IsQuadraticExtension.norm_algebraMap_add_algebraMap_mul_of_sq_eq hx hx2]
+    field_simp
+    linear_combination hbc
+  -- `y` is a root of the monic polynomial `X² + t X + c` over `𝒪[K]`.
+  have hint : IsIntegral 𝒪[K] y := by
+    refine ⟨X ^ 2 + C t * X + C c, ?_, ?_⟩
+    · rw [add_assoc]
+      exact monic_X_pow_add (degree_linear_le.trans_lt (by norm_num))
+    · have hsq := Algebra.IsQuadraticExtension.sq_eq_trace_smul_sub_norm K y
+      rw [htr, hn, Algebra.smul_def] at hsq
+      simp only [eval₂_add, eval₂_mul, eval₂_X_pow, eval₂_C, eval₂_X,
+        IsScalarTower.algebraMap_apply 𝒪[K] K L, Algebra.algebraMap_ofSubsemiring_apply]
+      rw [map_neg] at hsq
+      linear_combination hsq
+  exact ⟨⟨y, (Valuation.Integers.isIntegral_iff_valuation_le_one
+    (Valuation.integer.integers (valuation K)) _).1 hint⟩, rfl, htr, hn⟩
+
+end TauCeti
 
 namespace Module.Basis
 
