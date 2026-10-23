@@ -141,7 +141,7 @@ theorem span_range_coordinateAlgHom_X
   rw [← algSpec_map_left_ofAlgHom, algSpec_map_coordinateAlgHom, Over.comp_left,
     toAffineSpace_left, ← Scheme.Opens.range_ι (puncturedAffineSpaceOpens R ι)]
   rintro _ ⟨x, rfl⟩
-  exact ⟨s.left x, rfl⟩
+  exact ⟨s.left x, (Scheme.Hom.comp_apply _ _ _).symm⟩
 
 /-- Evaluation at a unimodular vector is a morphism `Spec A ⟶ 𝔸^ι_R` landing in punctured affine
 space. -/

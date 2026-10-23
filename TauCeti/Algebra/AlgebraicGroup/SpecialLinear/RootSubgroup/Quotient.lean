@@ -154,8 +154,9 @@ theorem firstColumn_mapValue {B : CommAlgCat.{u} R} (φ : A ⟶ B)
       (algSpec (.of R)).map φ.op ≫ firstColumn g :=
   PuncturedAffineSpace.hom_ext fun i ↦ by
     rw [coordinateAlgHom_firstColumn, PuncturedAffineSpace.coordinateAlgHom_comp,
-      AlgHom.comp_apply, coordinateAlgHom_firstColumn, pointsMulEquiv_mapValue]
-    rfl
+      AlgHom.comp_apply, coordinateAlgHom_firstColumn, pointsMulEquiv_mapValue,
+      Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+      AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
 
 variable (R) in
 /-- The first-column map from `SL₂` to the punctured plane, as a natural map of functors of
@@ -167,6 +168,12 @@ noncomputable def firstColumnPoints :
   naturality A B χ := by
     ext ⟨g⟩
     exact congrArg ULift.up (firstColumn_mapValue χ.unop.unop g)
+
+/-- The first-column map of functors of points sends a point `g` of `SL₂` to its first column. -/
+theorem firstColumnPoints_app_apply (A : (CommAlgCat.{u} R)ᵒᵖᵒᵖ)
+    (g : ULift (HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A.unop.unop)) :
+    (firstColumnPoints R).app A g = ULift.up (firstColumn g.down) :=
+  (rfl)
 
 /-- Every point of the punctured plane lifts to `SL₂`, so the first-column map is locally
 surjective for the fppf topology, without passing to a cover. -/
