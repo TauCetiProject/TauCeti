@@ -162,8 +162,7 @@ theorem mem_initialPentagonInitialCrossOverlapPartners_iff_sides
       (G.mem_initialPentagonInitialCrossOverlapSources C D).1 hD
     obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hcounted
     have hf := G.isEmpty_of_mem_unblockedRectangles hR
-    have hs : D.second.IsEmpty := by
-      simpa only [D.pentagon_toGridRectangleBetween] using ((G.mem_initialPentagons _).1 hP).1
+    have hs : D.second.IsEmpty := D.underlying_second_isEmpty ((G.mem_initialPentagons _).1 hP).1
     have hone :=
       D.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommon hcol
     have hEq : D.recutLeftEqLeft hcommon hcol hf hs = E := by
