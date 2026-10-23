@@ -119,20 +119,24 @@ theorem expSMulHom_ofAdd_X_mem_hopfIdealPointsSubgroup
     Algebra.algebraMap_self, AlgHom.comp_apply, pointsMulEquiv_symm_apply] using heval.trans hm
 
 /-- Every algebra-valued parameter of `t ↦ exp(t log g)` stays in a closed subgroup containing
-the unipotent point `g`. The value algebra may be nonreduced. -/
-theorem map_aeval_expSMulHom_log_mem_hopfIdealPointsSubgroup
+the unipotent point `g`. The value algebra may be nonreduced; a rational algebra structure
+can always be induced from the base using `Algebra.compHom`. -/
+theorem expSMulHom_log_mem_hopfIdealPointsSubgroup
     (I : HopfIdeal R (coordinateHopfAlgebra R n))
     (g : Matrix.GeneralLinearGroup (Fin n) R)
     (hg : IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1))
     (hI : g ∈ hopfIdealPointsSubgroup n I R)
-    {A : Type v} [CommRing A] [Algebra R A] (t : A) :
-    Matrix.GeneralLinearGroup.map (Polynomial.aeval (R := R) t).toRingHom
-        (expSMulHom R[X]
-          ((IsNilpotent.isNilpotent_log hg).map Polynomial.C.mapMatrix)
-          (Multiplicative.ofAdd Polynomial.X)) ∈ hopfIdealPointsSubgroup n I A :=
-  map_mem_hopfIdealPointsSubgroup n I (Polynomial.aeval t)
+    {A : Type v} [CommRing A] [Algebra R A] [Algebra ℚ A] (t : A) :
+    expSMulHom A ((IsNilpotent.isNilpotent_log hg).map (algebraMap R A).mapMatrix)
+      (Multiplicative.ofAdd t) ∈ hopfIdealPointsSubgroup n I A := by
+  have h := map_mem_hopfIdealPointsSubgroup n I (Polynomial.aeval t)
     (expSMulHom_ofAdd_X_mem_hopfIdealPointsSubgroup n I (IsNilpotent.isNilpotent_log hg)
       (by simpa only [Units.nilpotentExpUnit_log g hg] using hI))
+  rw [Matrix.GeneralLinearGroup.map,
+    map_expSMulHom R[X] _ _ _ (fun r a ↦ Matrix.map_smul' _ r a (map_mul _))] at h
+  simpa only [toAdd_ofAdd, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    Polynomial.aeval_X, RingHom.mapMatrix_apply, Matrix.map_map,
+    Function.comp_def, Polynomial.aeval_C] using h
 
 end ClosedSubgroup
 
