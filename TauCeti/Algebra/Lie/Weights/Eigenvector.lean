@@ -34,7 +34,6 @@ of the weight. This is how a weight is read off a coordinate of a vector in an e
 
 ## Main results
 
-* `LieAlgebra.ad_eq_toEnd`: the adjoint action is the action `toEnd R L L` of `L` on itself.
 * `TauCeti.lie_mem_iInf_eigenspace_ad`: the bracket adds eigenvalues for any family of adjoint
   operators.
 * `TauCeti.lie_mem_iSup_iInf_eigenspace_ad`: the sum of simultaneous eigenspaces with integral
@@ -58,12 +57,6 @@ of the weight. This is how a weight is read off a coordinate of a vector in an e
 -/
 
 public section
-
-/-- The adjoint action `ad R L` is by definition the action `LieModule.toEnd R L L` of `L` on
-itself. Rewriting with this lemma moves results about Lie modules to the adjoint action. -/
-theorem LieAlgebra.ad_eq_toEnd (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] :
-    LieAlgebra.ad R L = LieModule.toEnd R L L :=
-  rfl
 
 namespace TauCeti
 
