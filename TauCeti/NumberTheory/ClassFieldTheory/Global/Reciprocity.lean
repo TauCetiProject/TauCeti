@@ -174,6 +174,7 @@ theorem surjective_globalArtinMap (ι : L →ₐ[K] SeparableClosure K) :
 
 /-- **The global Artin map kills principal ideles**: the class in `C_K` of the principal idele of
 `x ∈ Kˣ` is trivial, so its Artin symbol vanishes. This is the reciprocity law in idelic form. -/
+@[simp]
 theorem globalArtinMap_principal (ι : L →ₐ[K] SeparableClosure K) (x : Kˣ) :
     globalArtinMap K L ι
         (.ofMul (IdeleGroup.unitEmbedding (𝓞 K) K x : IdeleClassGroup (𝓞 K) K)) = 0 := by
