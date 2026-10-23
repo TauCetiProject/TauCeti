@@ -97,11 +97,17 @@ theorem taylorExpAt_add (r s : R) :
   have hstable (t : R) : ∀ x ∈ K, (t • D) x ∈ K := by
     intro x hx
     rw [hmem] at hx ⊢
-    rw [smul_apply, ← coeFn_coe, ← Module.End.pow_apply, LinearMap.map_smul,
-      Module.End.pow_apply, coeFn_coe, ← Function.iterate_succ_apply,
-      Function.iterate_succ_apply', hx, map_zero, smul_zero]
+    calc
+      D^[n] ((t • D) x) = t • D^[n] (D x) := by
+        simpa only [Module.End.pow_apply, coeFn_coe, smul_apply] using
+          (D.toLinearMap ^ n).map_smul t (D x)
+      _ = 0 := by
+        rw [← Function.iterate_succ_apply, Function.iterate_succ_apply', hx,
+          map_zero, smul_zero]
   let g (t : R) : Module.End ℚ K :=
     ((t • D).toLinearMap.toAddMonoidHom.toRatLinearMap).restrict (hstable t)
+  -- Restriction and conversion of an additive map to a rational linear map preserve
+  -- its underlying function; coercing the restricted output recovers the derivation.
   have hg_apply (t : R) :
       Function.Semiconj (fun y : K => (y : A)) (g t) (t • D) := fun _ => rfl
   have hpow (t : R) (i : ℕ) (y : K) : ((g t ^ i) y : A) = (t • D)^[i] y := by
