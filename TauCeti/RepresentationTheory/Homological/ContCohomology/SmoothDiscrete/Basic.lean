@@ -759,21 +759,23 @@ variable (R : Type u) [Ring R] [TopologicalSpace R]
 
 variable {R G} in
 /-- Restriction of a bundled smooth discrete representation to a subgroup, as an object whose
-underlying representation is definitionally `TopRep.res U.subtype A.obj`. The object map of
-`smoothDiscreteResFunctor` is not exposed, so statements that must see this definitional equality
-(for instance the domain of `coindTraceHom`) use this abbreviation instead. -/
+underlying representation is `TopRep.res U.subtype A.obj` at reducible transparency. It is the
+object map of `TauCeti.smoothDiscreteResFunctor` by `rfl`, but not at reducible transparency, so
+statements that must see the restricted representation (for instance the domain of
+`TauCeti.coindTraceHom`) use this abbreviation. -/
 abbrev smoothDiscreteResTopRep (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     SmoothDiscreteTopRep.{u, v, w} R U :=
   ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩
 
-/-- Restriction along `U → G` on smooth discrete representations. -/
-def smoothDiscreteResFunctor :
-    SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U where
-  obj A := ⟨TopRep.res (U.subtype : U →* G) A.obj,
-    A.property.res continuous_subtype_val⟩
-  map f := ObjectProperty.homMk ((TopRep.resFunctor (U.subtype : U →* G)).map f.hom)
-  map_id _ := rfl
-  map_comp _ _ := rfl
+/-- Restriction along `U → G` on smooth discrete representations: Mathlib's `TopRep.resFunctor`
+along the subgroup inclusion, lifted to the smooth discrete objects since restriction preserves
+smoothness (`TauCeti.IsSmoothDiscrete.res`). The body is `@[expose]`d so that other modules see its
+object map as `TauCeti.smoothDiscreteResTopRep` and its action on morphisms as that of
+`TopRep.resFunctor`, both by `rfl`. -/
+@[expose] def smoothDiscreteResFunctor :
+    SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U :=
+  ObjectProperty.lift _ (smoothDiscreteι R G ⋙ TopRep.resFunctor (U.subtype : U →* G))
+    fun A ↦ A.property.res continuous_subtype_val
 
 /-- Restriction along `U → G` restricts the underlying topological representation. -/
 @[simp]
@@ -785,7 +787,7 @@ theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
 -- `dsimp% only` on the left-hand side: see the comment on `ofDiscreteModulePair_hom_apply`. Here
 -- `simp` also unfolds the `have` that `show … from` elaborates to, and the `.obj` of `⟨_, _⟩`.
 /-- Restriction along `U → G` does not change the underlying map of a morphism. The object
-transports identify the opaque functor's objects with the restricted representations. -/
+transports identify the functor's objects with the restricted representations. -/
 @[simp]
 theorem smoothDiscreteResFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R G}
     (f : A ⟶ B) (x : A.obj.V) :
