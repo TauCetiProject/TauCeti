@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.Basic
 public import TauCeti.Geometry.Manifold.Instances.Sigma
+public import TauCeti.Topology.Connected.Sigma
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Topology.Connected.Clopen
 public import Mathlib.Topology.Homeomorph.Quotient
@@ -342,18 +343,8 @@ section Vertex
 
 /-- An isomorphism maps each connected component of the normalization into a single component. -/
 theorem fst_apply_eq_fst_apply [∀ i, PreconnectedSpace (X i)] (e : Iso I n d d')
-    {x y : Σ i, X i} (h : x.1 = y.1) : (e x).1 = (e y).1 := by
-  obtain ⟨i, a⟩ := x
-  obtain ⟨j, b⟩ := y
-  subst h
-  have hconn : IsPreconnected (e '' range (Sigma.mk i)) := by
-    rw [← image_univ]
-    exact (isPreconnected_univ.image _ continuous_sigmaMk.continuousOn).image _
-      e.continuous.continuousOn
-  have hsub := hconn.subset_isClopen (isClopen_range_sigmaMk (i := (e ⟨i, a⟩).1))
-    ⟨e ⟨i, a⟩, mem_image_of_mem _ (mem_range_self a), ⟨_, rfl⟩⟩
-  obtain ⟨c, hc⟩ := hsub (mem_image_of_mem _ (mem_range_self b))
-  rw [← hc]
+    {x y : Σ i, X i} (h : x.1 = y.1) : (e x).1 = (e y).1 :=
+  e.continuous.fst_apply_eq_fst_apply_of_fst_eq h
 
 variable [∀ i, ConnectedSpace (X i)] [∀ i, ConnectedSpace (X' i)]
 
