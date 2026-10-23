@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Stabilizer
 public import TauCeti.AlgebraicGeometry.Group.Cartier
+public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 
 /-!
 # Geometry of scheme-theoretic stabilizers
@@ -73,14 +74,12 @@ variable {k : Type u} [Field k] [CharZero k]
 
 /-- Scheme-theoretic stabilizers of affine finite-type group actions are smooth in
 characteristic zero. No reducedness or connectedness assumption is needed. -/
-theorem smooth_stabilizer : Smooth (stabilizer G x).hom := by
-  have : IsClosedImmersion x.left :=
-    isClosedImmersion_of_comp_eq_id X.hom x.left (Over.w x)
-  exact TauCeti.AlgebraicGeometry.smooth_of_grpObj_of_charZero (stabilizer G x)
+instance smooth_stabilizer : Smooth (stabilizer G x).hom :=
+  TauCeti.AlgebraicGeometry.smooth_of_grpObj_of_charZero (stabilizer G x)
 
 /-- The fibre of an orbit map over a translate of its base point is smooth in characteristic
 zero, by its translation isomorphism with the scheme-theoretic stabilizer. -/
-theorem smooth_orbitFiber_smul (h : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
+instance smooth_orbitFiber_smul (h : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
     Smooth (orbitFiber G x (h • x)).hom := by
   have := smooth_stabilizer G x
   rw [← Over.w (stabilizer.fiberSmulIso G x h).hom]
