@@ -30,9 +30,9 @@ only on the group, with no topology or countability hypothesis.
 The two directions go through explicit Følner families, which we treat for counting measure on
 any type `X` with measurable singletons acted on by `G`. A Følner family along a nontrivial filter
 passes all finite tests, because finitely many eventual conditions hold simultaneously.
-Conversely, the witnesses of the finite tests, indexed by pairs `(K, n)` of a finite test set and
-a natural number and chosen with tolerance `1 / (n + 1)`, form a Følner family along `atTop`,
-which is a nontrivial filter.
+Conversely, if every finite test has a witness, there is a Følner family of finite nonempty sets
+indexed by pairs `(K, n)` of a finite test set and a natural number, along `atTop`, which is a
+nontrivial filter. The proof picks for `(K, n)` a witness for `K` with tolerance `1 / (n + 1)`.
 
 ## Main definitions
 
@@ -42,8 +42,8 @@ which is a nontrivial filter.
 
 * `IsFoelner.exists_finset_card_smul_symmDiff_lt`: a nontrivial counting-measure Følner family
   passes every finite test.
-* `TauCeti.exists_isFoelner_atTop`: witnesses of all finite tests form a Følner family indexed by
-  `Finset G × ℕ`.
+* `TauCeti.exists_isFoelner_atTop`: if every finite test has a witness, there is a Følner family
+  of finite nonempty sets indexed by `Finset G × ℕ` along `atTop`.
 * `TauCeti.hasFoelnerSets_iff`: `HasFoelnerSets G` is equivalent to the finite-set condition.
 * `MulEquiv.hasFoelnerSets_iff`: having Følner sets is invariant under group isomorphisms.
 
@@ -70,10 +70,12 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : T
     [SMul M X] {F : Finset X} (hF : F.Nonempty) (m : M) {ε : ℝ} (hε : 0 < ε) :
     Measure.count ((m • (F : Set X)) ∆ F) / Measure.count (F : Set X) < ENNReal.ofReal ε ↔
       (#((m • F) ∆ F) : ℝ) < ε * #F := by
-  rw [← coe_smul_finset, ← coe_symmDiff, Measure.count_apply_finset,
-    Measure.count_apply_finset, ENNReal.div_lt_iff (by simp [hF.ne_empty]) (by simp),
-    ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul hε.le,
-    ENNReal.ofReal_lt_ofReal_iff (mul_pos hε (by exact_mod_cast hF.card_pos))]
+  -- Turn the counting measures into cardinalities.
+  simp only [← coe_smul_finset, ← coe_symmDiff, Measure.count_apply_finset]
+  -- Clear the denominator in `ℝ≥0∞`, then compare a natural number with a real.
+  rw [ENNReal.div_lt_iff (by simp [hF.ne_empty]) (by simp), ← ENNReal.ofReal_natCast #F,
+    ← ENNReal.ofReal_mul hε.le]
+  exact ENNReal.natCast_lt_ofReal
 
 /-- A Følner family for counting measure along a nontrivial filter passes every finite test: for
 each finite `K ⊆ G` and `ε > 0` there is a finite nonempty `F ⊆ X` with `|gF △ F| < ε · |F|` for
@@ -97,14 +99,14 @@ theorem IsFoelner.exists_finset_card_smul_symmDiff_lt [MulAction G X] {ι : Type
 
 namespace TauCeti
 
-/-- If every finite test has a witness, then choosing a witness `F (K, n)` for the test set `K`
-with tolerance `1 / (n + 1)` gives a Følner family of finite nonempty sets for counting measure,
-indexed by `Finset G × ℕ` along `atTop`. -/
+/-- If every finite test has a witness, then there is a Følner family of finite nonempty sets for
+counting measure, indexed by `Finset G × ℕ` along `atTop`. -/
 theorem exists_isFoelner_atTop [MulAction G X]
     (h : ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset X, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F) :
     ∃ F : Finset G × ℕ → Finset X, (∀ i, (F i).Nonempty) ∧
       IsFoelner G Measure.count atTop (fun i => (F i : Set X)) := by
+  -- At `(K, n)`, take a witness for the test set `K` with tolerance `1 / (n + 1)`.
   choose F hne hlt using fun i : Finset G × ℕ => h i.1 (1 / (i.2 + 1)) (by positivity)
   refine ⟨F, hne, Eventually.of_forall fun i => (F i).measurableSet,
     Eventually.of_forall fun i => by simp [Measure.count_apply_finset, (hne i).ne_empty],
