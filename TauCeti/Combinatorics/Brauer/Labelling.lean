@@ -168,6 +168,18 @@ def notLowerEndEquiv (D : BrauerDiagram k) :
   left_inv x := Subtype.ext (D.apply_apply x)
   right_inv x := Subtype.ext (D.apply_apply x)
 
+/-- `notLowerEndEquiv` sends a point that is not a lower end to its partner. -/
+@[simp]
+theorem notLowerEndEquiv_apply (D : BrauerDiagram k) (x : {x // ¬D.IsLowerEnd x}) :
+    D.notLowerEndEquiv x = ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd x.2⟩ :=
+  (rfl)
+
+/-- The inverse of `notLowerEndEquiv` sends a lower end to its partner. -/
+@[simp]
+theorem notLowerEndEquiv_symm_apply (D : BrauerDiagram k) (x : {x // D.IsLowerEnd x}) :
+    D.notLowerEndEquiv.symm x = ⟨D.val x, D.not_isLowerEnd_val x.2⟩ :=
+  (rfl)
+
 /-- A product over the boundary points is a product over the arcs, each arc contributing the
 factors at its lower end and at its partner. -/
 theorem prod_eq_prod_isLowerEnd {M : Type*} [CommMonoid M] (D : BrauerDiagram k)
@@ -175,7 +187,7 @@ theorem prod_eq_prod_isLowerEnd {M : Type*} [CommMonoid M] (D : BrauerDiagram k)
     ∏ x, f x = ∏ x : {x // D.IsLowerEnd x}, f x * f (D.val x) := by
   rw [← Fintype.prod_subtype_mul_prod_subtype D.IsLowerEnd f, Finset.prod_mul_distrib]
   exact congrArg _ (Fintype.prod_equiv D.notLowerEndEquiv _ _ fun x => by
-    simp [notLowerEndEquiv, D.apply_apply])
+    simp [D.apply_apply])
 
 /-- A labelling constant on the arcs of `D` is the same as a free choice of a label at each lower
 end. -/
