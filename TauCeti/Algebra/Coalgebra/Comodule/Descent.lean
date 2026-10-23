@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
+public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.Algebra.Module.Submodule.Equiv
 
@@ -52,9 +52,14 @@ def comoduleOfFactor (f : C →ₗc[R] D) (ρ : M →ₗ[R] M ⊗[R] C)
           TensorProduct.assoc R M D D
             ((coact (R := R) (C := D) (M := M)).rTensor D
               (f.toLinearMap.lTensor M z)) := by
-      rw [TensorProduct.map_map_assoc]
-      rw [LinearMap.map_rTensor, LinearMap.lTensor_def, LinearMap.rTensor_map,
-        LinearMap.comp_id, ← LinearMap.lTensor_def, hρ]
+      induction z using TensorProduct.inductionOn with
+      | tmul m c =>
+        simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul]
+        rw [← LinearMap.congr_fun hρ m, LinearMap.comp_apply]
+        induction ρ m using TensorProduct.inductionOn with
+        | tmul x d => simp
+        | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
+      | add x y hx hy => simp only [map_add, hx, hy]
     have hcomul (z : M ⊗[R] C) :
         TensorProduct.map LinearMap.id (TensorProduct.map f.toLinearMap f.toLinearMap)
             (Coalgebra.comul.lTensor M z) =
@@ -111,43 +116,3 @@ theorem existsUnique_comoduleFactor_iff [Module.Flat R M] [Module.Flat R C]
     exact (LinearMap.congr_fun hσ m).trans (LinearMap.congr_fun hρ m).symm
 
 end CoalgHom
-
-namespace Module.Basis
-
-/-- For a finite free comodule, descent through a coalgebra inclusion is equivalent
-to every entry of its coefficient matrix belonging to the image. -/
-theorem existsUnique_comoduleFactor_iff
-    [Module.Flat R C] [Module.Flat R D]
-    {ι : Type*} [Finite ι] (b : Module.Basis ι R M)
-    (f : C →ₗc[R] D) (hf : Function.Injective f) :
-    (∃! σ : Comodule R C M,
-      f.toLinearMap.lTensor M ∘ₗ σ.coact = coact (R := R) (C := D)) ↔
-      ∀ i j, coefficientMatrix (C := D) b i j ∈ LinearMap.range f.toLinearMap := by
-  classical
-  let := Fintype.ofFinite ι
-  let := Module.Free.of_basis b
-  constructor
-  · rintro ⟨σ, hσ, _⟩ i j
-    let := σ
-    have heq : Corestrict f = (inferInstance : Comodule R D M) := Comodule.ext hσ
-    have hc := coefficientMatrix_corestrict b f
-    rw [heq] at hc
-    exact ⟨coefficientMatrix (C := C) b i j, congrFun (congrFun hc i) j |>.symm⟩
-  · intro h
-    apply (CoalgHom.existsUnique_comoduleFactor_iff f hf).mpr
-    have hb (j : ι) : coact (R := R) (C := D) (b j) ∈
-        LinearMap.range (f.toLinearMap.lTensor M) := by
-      rw [coact_basis_eq_sum_coefficientMatrix b]
-      apply Submodule.sum_mem
-      intro i _
-      obtain ⟨c, hc⟩ := h i j
-      have hc' : f c = coefficientMatrix (C := D) b i j := hc
-      exact ⟨b i ⊗ₜ[R] c, by simp [hc']⟩
-    intro m
-    rw [← b.sum_repr m, map_sum]
-    apply Submodule.sum_mem
-    intro j _
-    rw [map_smul]
-    exact Submodule.smul_mem _ _ (hb j)
-
-end Module.Basis

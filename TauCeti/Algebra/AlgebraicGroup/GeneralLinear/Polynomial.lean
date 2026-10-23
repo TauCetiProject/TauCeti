@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.Polynomial
-public import TauCeti.Algebra.Coalgebra.Comodule.Descent
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Descent
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 
 /-!
