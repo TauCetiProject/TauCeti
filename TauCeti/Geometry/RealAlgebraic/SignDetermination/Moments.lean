@@ -163,7 +163,7 @@ end Full
 
 /-! ### Kronecker product structure -/
 
-variable {J : Type*} [Fintype J] (K : Type*) [Fintype K]
+variable {J : Type*} [Fintype J] {K : Type*} [Fintype K]
 
 /-- With one coordinate, the full ternary moment matrix is the one-coordinate sign matrix. -/
 theorem fullMatrix_of_unique [Unique J] :
