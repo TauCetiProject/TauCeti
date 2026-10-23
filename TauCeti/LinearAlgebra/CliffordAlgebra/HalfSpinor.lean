@@ -19,8 +19,9 @@ a finite-dimensional complex vector space with a real algebra map
 (`CliffordAlgebra.chirality`) splits `W` into its `±1` eigenspaces `W⁺` and `W⁻`.
 
 This file proves the facts about `Γ` and the generators that the linearized Seiberg–Witten
-equations use. Each generator `c(v)` exchanges the two eigenspaces, and is injective for `v ≠ 0`
-since `c(v)² = -‖v‖²`, so the eigenspaces have the same dimension. The main result: for a nonzero
+equations use; they hold for every such Clifford module. Each generator `c(v)` exchanges the two
+eigenspaces, and is injective for `v ≠ 0` since `c(v)² = -‖v‖²`, so the eigenspaces have the same
+dimension. The main result: for a nonzero
 `ψ` in one eigenspace, Clifford multiplication `v ↦ c(v) ψ` is a real-linear isomorphism of `V`
 onto the other eigenspace when the eigenspaces have complex dimension two. It is injective
 because `c(v) ψ = 0` forces `‖v‖² ψ = 0`, and both sides have real dimension four.
@@ -37,17 +38,17 @@ the `-ε`-eigenspace, and the case `ε = 1` is `W⁺ → W⁻`.
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.cliffordMulEquiv`: for a nonzero `ψ` in a two-dimensional eigenspace of
+* `CliffordAlgebra.cliffordMulEquiv`: for a nonzero `ψ` in a two-dimensional eigenspace of
   `Γ`, the real-linear isomorphism `v ↦ c(v) ψ` from `V` onto the opposite eigenspace.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.isSelfAdjoint_map_chirality`: `Γ* = Γ`.
-* `TauCeti.SeibergWitten.map_ι_mem_eigenspace_chirality_neg`: `c(v)` maps the `ε`-eigenspace of
+* `CliffordAlgebra.isSelfAdjoint_map_chirality`: `Γ* = Γ`.
+* `CliffordAlgebra.map_ι_mem_eigenspace_chirality_neg`: `c(v)` maps the `ε`-eigenspace of
   `Γ` into the `-ε`-eigenspace.
-* `TauCeti.SeibergWitten.finrank_eigenspace_chirality_neg`: the two eigenspaces have the same
+* `CliffordAlgebra.finrank_eigenspace_chirality_neg`: the two eigenspaces have the same
   dimension.
-* `TauCeti.SeibergWitten.eq_zero_of_forall_re_inner_map_ι_apply_eq_zero`: if
+* `CliffordAlgebra.eq_zero_of_forall_re_inner_map_ι_apply_eq_zero`: if
   `Re ⟪c(v) ψ, χ⟫ = 0` for all `v`, with `ψ ≠ 0` and `χ` in the opposite eigenspace, then `χ = 0`.
 
 ## References
@@ -61,9 +62,9 @@ public section
 
 noncomputable section
 
-namespace TauCeti.SeibergWitten
+namespace CliffordAlgebra
 
-open CliffordAlgebra Module Module.End
+open Module Module.End
 open scoped InnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
@@ -165,4 +166,4 @@ theorem eq_zero_of_forall_re_inner_map_ι_apply_eq_zero {ε : ℂ} {ψ χ : W}
   rw [← hv, ← RCLike.re_to_complex, inner_self_eq_norm_sq] at hχ₀
   exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hχ₀)
 
-end TauCeti.SeibergWitten
+end CliffordAlgebra
