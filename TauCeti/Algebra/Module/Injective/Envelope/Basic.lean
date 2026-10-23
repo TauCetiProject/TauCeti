@@ -72,13 +72,6 @@ as an extension target; it is automatic whenever `R` and that module live in the
 
 ## References
 
-This implements the injective-envelope half of the "projective covers and injective envelopes"
-bullet of Layer 3 of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`
-("dually `injectiveEnvelope M`"), whose projective half is
-`TauCeti/Algebra/Module/ProjectiveCover/Basic.lean`. As on the projective side, the bullet is not
-discharged by this file: existence of envelopes, and hence a canonical `injectiveEnvelope M`
-chosen by it, remains.
-
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.5, and T. Y. Lam, *Lectures on Modules and Rings*, §3.
 -/
