@@ -206,8 +206,9 @@ theorem lieSpan_chevalleyE_chevalleyF_eq_top (hB : B.PosDef) (hdiag : ∀ i, B i
     refine PosDef.normTwoShell_nonneg_induction (motive := fun a ↦ ∀ ha, root B ⟨a, ha⟩ ∈ K) hB
       hdiag hoff (fun i _ ↦ hE i) (fun a i ha _ hai ih _ ↦ step (hE i) (ih ha) ?_) ha hnn ha
     have hm : Pi.single i 1 + a ∈ B.normTwoShell := by rwa [add_comm]
-    rw [chevalleyE_def, root_lie_root, rootBracket_of_mem hm,
-      show (⟨_, hm⟩ : B.normTwoShell) = ⟨_, hai⟩ from Subtype.ext (add_comm _ _)]
+    -- The bracket `⁅Eᵢ, x_a⁆` lands on the root `αᵢ + a`; the induction indexes it as `a + αᵢ`.
+    have hc : (⟨_, hm⟩ : B.normTwoShell) = ⟨_, hai⟩ := Subtype.ext (add_comm _ _)
+    rw [chevalleyE_def, root_lie_root, rootBracket_of_mem hm, hc]
     exact ⟨_, rfl⟩
   -- The negative root vectors, by height induction on their negatives.
   have hneg (a : I → ℤ) (ha : -a ∈ B.normTwoShell) (hnn : 0 ≤ a) : root B ⟨-a, ha⟩ ∈ K := by
@@ -217,9 +218,12 @@ theorem lieSpan_chevalleyE_chevalleyF_eq_top (hB : B.PosDef) (hdiag : ∀ i, B i
     · exact neg_mem_normTwoShell.mpr ha
     have hm : -Pi.single i 1 + -a ∈ B.normTwoShell := by
       rwa [← neg_add_rev, neg_mem_normTwoShell]
-    rw [chevalleyF_def, root_lie_root, rootBracket_of_mem hm,
-      show (⟨_, hm⟩ : B.normTwoShell) = ⟨-(a + Pi.single i 1), neg_mem_normTwoShell.mpr hai⟩ from
-        Subtype.ext (neg_add_rev _ _).symm]
+    -- The bracket `⁅Fᵢ, x_(-a)⁆` lands on the root `-αᵢ + -a`; the induction indexes it as
+    -- `-(a + αᵢ)`.
+    have hc : (⟨_, hm⟩ : B.normTwoShell) =
+        ⟨-(a + Pi.single i 1), neg_mem_normTwoShell.mpr hai⟩ :=
+      Subtype.ext (neg_add_rev _ _).symm
+    rw [chevalleyF_def, root_lie_root, rootBracket_of_mem hm, hc]
     exact ⟨_, rfl⟩
   have hroot (c : B.normTwoShell) : root B c ∈ K := by
     rcases hB.nonneg_or_nonpos_of_mem_normTwoShell hev hoff c.2 with h | h
