@@ -129,7 +129,7 @@ private theorem comul_comp_coaugmentedBarDifferential :
 /-- The left co-Leibniz law of the left cofree part: after the cofree left coaction, it splits into
 the bar differential of `A` on the coalgebra factor, with the right word removed by the counit,
 and the twisted left cofree part on the remaining factor. -/
-private theorem leftCofreeCoact_comp_leftTaylor
+theorem leftCofreeCoact_comp_leftTaylor
     (F : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R] M) :
     Comodule.leftCofreeCoact R (TensorWords R A) M ∘ₗ leftTaylor AA F =
       TensorProduct.map AA.coaugmentedBarDifferential
@@ -148,17 +148,18 @@ private theorem leftCofreeCoact_comp_leftTaylor
   have h3 := Comodule.comp_rid_comp_lTensor_eq_lTensor_comp_leftCoactRTensor
     (Comodule.leftCofreeCoact R (TensorWords R A) M)
     (Coalgebra.counit (R := R) (A := TensorWords R B))
-  rw [leftTaylor_def, LinearMap.comp_add, ← LinearMap.comp_assoc, h1, LinearMap.comp_assoc,
-    Comodule.leftCofreeCoact_comp_leftCoactRTensor_leftCofreeCoact, ← LinearMap.comp_assoc,
-    ← LinearMap.comp_assoc, h2, LinearMap.add_comp]
-  simp only [LinearMap.comp_assoc]
-  rw [h3, TensorProduct.map_add_right, LinearMap.add_comp]
+  -- Pass the coaction through the outer maps, then through the inner ones, then regroup.
+  simp only [leftTaylor_def, LinearMap.comp_add, LinearMap.add_comp, TensorProduct.map_add_right,
+    ← LinearMap.comp_assoc, h1, h2]
+  simp only [LinearMap.comp_assoc, h3,
+    Comodule.leftCofreeCoact_comp_leftCoactRTensor_leftCofreeCoact]
   simp only [← LinearMap.comp_assoc, LinearMap.map_comp_lTensor, LinearMap.rTensor_comp_lTensor]
   abel
 
 /-- The counit projection of the left cofree comodule recovers `F` from the left cofree part: the
 bar differential of `A` has no counit component. -/
-private theorem leftCofreeCounit_comp_leftTaylor
+@[simp]
+theorem leftCofreeCounit_comp_leftTaylor
     (F : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R] M) :
     Comodule.leftCofreeCounit R (TensorWords R A) M ∘ₗ leftTaylor AA F = F := by
   have hτ : Coalgebra.counit ∘ₗ TensorWords.map ((AA.grading.shift 1).koszulTwist 1) =
@@ -166,13 +167,13 @@ private theorem leftCofreeCounit_comp_leftTaylor
     rw [counit_eq_counit, counit_comp_map]
   have hb : Comodule.leftCofreeCounit R (TensorWords R A) M ∘ₗ
       AA.coaugmentedBarDifferential.rTensor M = 0 := by
-    rw [Comodule.leftCofreeCounit_def, LinearMap.comp_assoc, ← LinearMap.rTensor_comp,
+    simp only [Comodule.leftCofreeCounit_def, LinearMap.comp_assoc, ← LinearMap.rTensor_comp,
       counit_eq_counit, AA.isGradedCoderivation_coaugmentedBarDifferential.counit_comp,
       LinearMap.rTensor_zero, LinearMap.comp_zero]
-  rw [leftTaylor_def, LinearMap.comp_add, ← LinearMap.comp_assoc,
-    Comodule.leftCofreeCounit_comp_map hτ, LinearMap.comp_assoc,
-    Comodule.leftCofreeCounit_comp_leftCoactRTensor_leftCofreeCoact, LinearMap.comp_id,
-    ← LinearMap.comp_assoc, hb, LinearMap.zero_comp, add_zero]
+  simp only [leftTaylor_def, LinearMap.comp_add, ← LinearMap.comp_assoc,
+    Comodule.leftCofreeCounit_comp_map hτ, hb, LinearMap.zero_comp, add_zero]
+  rw [LinearMap.comp_assoc, Comodule.leftCofreeCounit_comp_leftCoactRTensor_leftCofreeCoact,
+    LinearMap.comp_id]
 
 end LeftTaylor
 
@@ -297,14 +298,14 @@ theorem isLeftGradedCoderivationOver_gradedCoderiv (G : InternalGrading R M)
     -- The left cofree part satisfies the left co-Leibniz law after deconcatenating the right
     -- word, because the left and right coactions commute; the term with the bar differential of
     -- `BB` passes the left coaction with the twist of the left word.
-    rw [gradedCoderiv_def, LinearMap.comp_add, TensorProduct.map_add_right, LinearMap.add_comp,
-      ← LinearMap.comp_assoc, Comodule.leftCoactRTensor_comp_rTensor,
+    simp only [gradedCoderiv_def, LinearMap.comp_add, LinearMap.add_comp,
+      TensorProduct.map_add_right, ← LinearMap.comp_assoc, Comodule.leftCoactRTensor_comp_rTensor,
       leftCofreeCoact_comp_leftTaylor, LinearMap.rTensor_add]
-    simp only [LinearMap.comp_add, LinearMap.add_comp, LinearMap.comp_assoc]
-    rw [Comodule.assoc_comp_rTensor_map_counit_comp_assoc_symm_comp_lTensor_comul,
-      Comodule.assoc_comp_rTensor_comp_assoc_symm_comp_lTensor_comul,
-      Comodule.leftCoactRTensor_comp_lTensor_comp_rTensor_map (comul_comp_map_koszulTwist AA),
-      add_assoc]
+    simp only [LinearMap.comp_assoc,
+      Comodule.assoc_comp_rTensor_map_counit_comp_assoc_symm_comp_lTensor_comul]
+    simp only [Comodule.assoc_comp_rTensor_comp_assoc_symm_comp_lTensor_comul,
+      Comodule.leftCoactRTensor_comp_lTensor_comp_rTensor_map (comul_comp_map_koszulTwist AA)]
+    abel
   refine Comodule.isLeftGradedCoderivationOver_iff_coact_apply.2 fun x ↦ ?_
   rw [koszulTwist_grading]
   exact LinearMap.congr_fun key x

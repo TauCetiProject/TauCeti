@@ -191,20 +191,7 @@ theorem isHomogeneous_assoc {P : Type w'} [AddCommMonoid P] [Module R P]
     LinearMap.IsHomogeneous (TensorProduct.assoc R M N P).toLinearMap
       ((G.tensorProduct H).tensorProduct K).piece (G.tensorProduct (H.tensorProduct K)).piece
       0 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro n z hz
-  refine (G.tensorProduct H).tensorProduct_piece_le K
-    (C := ((G.tensorProduct (H.tensorProduct K)).piece (n + 0)).comap
-      (TensorProduct.assoc R M N P).toLinearMap) (fun p t ht u hu ↦ ?_) hz
-  refine G.tensorProduct_piece_le H
-    (C := ((G.tensorProduct (H.tensorProduct K)).piece (n + 0)).comap
-      ((TensorProduct.assoc R M N P).toLinearMap ∘ₗ (TensorProduct.mk R (M ⊗[R] N) P).flip u))
-    (fun r x hx y hy ↦ ?_) ht
-  rw [Submodule.mem_comap, LinearMap.comp_apply, LinearMap.flip_apply, TensorProduct.mk_apply,
-    LinearEquiv.coe_coe, TensorProduct.assoc_tmul]
-  have hdeg : n + 0 = r + (p - r + (n - p)) := by ring
-  rw [hdeg]
-  exact tmul_mem_tensorProduct _ _ hx (tmul_mem_tensorProduct H K hy hu)
+  exact (isHomogeneous_assoc_symm G H K).linearEquiv_symm
 
 end Internal
 
