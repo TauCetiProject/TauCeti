@@ -135,33 +135,16 @@ theorem chirality_eq_neg_volumeElement : chirality Q o = -volumeElement Q o := b
 
 variable {Q}
 
-/-- In terms of the Clifford basis of a positively oriented orthonormal basis `e`, the chirality
-element is minus the basis vector indexed by all of `Fin 4`. -/
-private theorem chirality_eq_neg_basis_univ (b : OrthonormalBasis (Fin 4) ℝ V)
-    (hb : b.toBasis.orientation = o) :
-    chirality Q o = -basis Q b.toBasis Finset.univ := by
-  have h : o.volumeEquiv.symm 1 = b.toBasis.topVector := by
-    rw [LinearEquiv.symm_apply_eq, o.volumeEquiv_topVector b hb]
-  rw [chirality_def, h, Basis.coe_topVector, CliffordAlgebra.basis_apply]
-
 section Form
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
 
-/-- The chirality element is minus the ordered product of the generators of a positively oriented
-orthonormal basis, written as a list. -/
-private theorem chirality_eq_neg_prod (b : OrthonormalBasis (Fin 4) ℝ V)
-    (hb : b.toBasis.orientation = o) :
-    chirality Q o = -(((List.finRange 4).map b).map (ι Q)).prod := by
-  rw [chirality_eq_neg_basis_univ o b hb, basis_eq_prod_map_sort (b.isOrthoᵢ_associated hQ),
-    Fin.sort_univ, OrthonormalBasis.coe_toBasis]
-
 /-- **Frame independence of the chirality element**: `Γ = -c(e₁) c(e₂) c(e₃) c(e₄)` for every
 positively oriented orthonormal basis `e`. -/
 theorem chirality_eq (b : OrthonormalBasis (Fin 4) ℝ V) (hb : b.toBasis.orientation = o) :
     chirality Q o = -(ι Q (b 0) * ι Q (b 1) * ι Q (b 2) * ι Q (b 3)) := by
-  rw [chirality_eq_neg_prod o hQ b hb]
+  rw [chirality_eq_neg_volumeElement, volumeElement_eq o b hb (b.isOrthoᵢ_associated hQ)]
   simp [List.finRange_succ, mul_assoc]
 
 /-- A positively oriented orthonormal basis of the oriented four-space. -/
@@ -175,20 +158,14 @@ private theorem frame_orientation : (frame o).toBasis.orientation = o :=
 /-- **The chirality element is an involution**: `Γ² = 1`. -/
 @[simp]
 theorem chirality_mul_self : chirality Q o * chirality Q o = 1 := by
-  rw [chirality_eq_neg_basis_univ o (frame o) (frame_orientation o), neg_mul_neg,
-    basis_mul_self_of_orthonormal hQ]
-  norm_num [Nat.choose_two_right]
+  rw [chirality_eq_neg_volumeElement, neg_mul_neg, volumeElement_mul_self o hQ]
+  norm_num
 
+omit hQ in
 /-- **The chirality element anticommutes with every generator**: `Γ c(v) = -c(v) Γ`. -/
 theorem chirality_mul_ι (v : V) : chirality Q o * ι Q v = -(ι Q v * chirality Q o) := by
-  have hspan : v ∈ Submodule.span ℝ {x : V | x ∈ (List.finRange 4).map (frame o)} := by
-    have h : {x : V | x ∈ (List.finRange 4).map (frame o)} = Set.range (frame o) := by
-      ext; simp
-    rw [h, ← OrthonormalBasis.coe_toBasis, (frame o).toBasis.span_eq]
-    exact Submodule.mem_top
-  rw [chirality_eq_neg_prod o hQ (frame o) (frame_orientation o), neg_mul, mul_neg,
-    prod_map_ι_mul_ι_of_even_length ((frame o).pairwise_isOrtho_map hQ (List.nodup_finRange 4))
-      (by simp [Nat.even_iff]) hspan]
+  rw [chirality_eq_neg_volumeElement, neg_mul, mul_neg,
+    volumeElement_mul_ι_of_even o (by decide) v]
 
 omit hQ in
 /-- The chirality element is fixed by reversal. Together with `involute_chirality`, it is fixed by
@@ -203,13 +180,14 @@ omit hQ in
 theorem involute_chirality : involute (chirality Q o) = chirality Q o := by
   norm_num [chirality_eq_neg_volumeElement]
 
+omit hQ in
 /-- **Two-forms commute with the chirality element**, since `Γ` anticommutes with each of the two
 generators in a bivector. -/
 theorem commute_chirality_bivectorExterior (x : ⋀[ℝ]^2 V) :
     Commute (chirality Q o) (bivectorExterior Q x) := by
   have hι : ∀ a b : V, chirality Q o * (ι Q a * ι Q b) = ι Q a * ι Q b * chirality Q o := by
     intro a b
-    rw [← mul_assoc, chirality_mul_ι o hQ, neg_mul, mul_assoc, chirality_mul_ι o hQ, mul_neg,
+    rw [← mul_assoc, chirality_mul_ι o, neg_mul, mul_assoc, chirality_mul_ι o, mul_neg,
       neg_neg, mul_assoc]
   have hmem : bivectorExterior Q x ∈ Subalgebra.toSubmodule
       (Subalgebra.centralizer ℝ {chirality Q o}) := by
@@ -237,7 +215,8 @@ private theorem basis_mul_basis_compl (hcard : 2 + 2 = Fintype.card (Fin 4))
       exact hcard
   rw [basis_mul_basis_of_disjoint ((frame o).isOrthoᵢ_associated hQ) hst,
     ← powersetCard.sign_eq_permOfDisjoint_sign hcard s t hst, hunion,
-    chirality_eq_neg_basis_univ o (frame o) (frame_orientation o), neg_neg]
+    chirality_eq_neg_volumeElement, volumeElement_eq_basis o (frame o) (frame_orientation o),
+    neg_neg]
 
 /-- **The self-duality relation**: the Clifford action of the Hodge dual of a two-form is the
 chirality element times the action of the two-form, `c₂(⋆α) = Γ c₂(α)`. -/
@@ -258,7 +237,7 @@ theorem bivectorExterior_hodgeStar (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[ℝ]^2
     rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 s.2]
     norm_num
   have hcomm : A * chirality Q o = chirality Q o * A := by
-    have h := (commute_chirality_bivectorExterior o hQ (b.toBasis.exteriorPower 2 s)).eq.symm
+    have h := (commute_chirality_bivectorExterior (Q := Q) o (b.toBasis.exteriorPower 2 s)).eq.symm
     rwa [bivectorExterior_exteriorPower_basis] at h
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.mulLeft_apply]
   rw [o.hodgeStar_basis b (frame_orientation o) hkl s, map_zsmul_unit,
@@ -274,14 +253,14 @@ theorem bivectorExterior_hodgeStar (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[ℝ]^2
 theorem bivectorExterior_mul_chirality_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = -x) :
     bivectorExterior Q x * chirality Q o = -bivectorExterior Q x := by
-  rw [← (commute_chirality_bivectorExterior o hQ x).eq, ← bivectorExterior_hodgeStar o hQ hkl,
+  rw [← (commute_chirality_bivectorExterior o x).eq, ← bivectorExterior_hodgeStar o hQ hkl,
     hx, map_neg]
 
 /-- A self-dual two-form `α`, `⋆α = α`, satisfies `c₂(α) Γ = c₂(α)`. -/
 theorem bivectorExterior_mul_chirality_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = x) :
     bivectorExterior Q x * chirality Q o = bivectorExterior Q x := by
-  rw [← (commute_chirality_bivectorExterior o hQ x).eq, ← bivectorExterior_hodgeStar o hQ hkl, hx]
+  rw [← (commute_chirality_bivectorExterior o x).eq, ← bivectorExterior_hodgeStar o hQ hkl, hx]
 
 /-! ### The anticommutator of two two-forms -/
 
