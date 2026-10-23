@@ -51,9 +51,7 @@ Dually, the last variable `Xₙ` can be moved into the coefficients instead, thr
 The coefficient of `Xᵘ` then has as its coefficient of `Xₙ ^ k` the coefficient of `f` at the
 exponent `Finsupp.snoc u k` (`MvPolynomial.optionEquivRight_rename_finSuccEquivLast_coeff_coeff`).
 This is the form used for Lazard evaluation, where the base variables are eliminated first and
-the last variable is kept. Reversing all variables before singling out the last one singles out
-`X₀` with the remaining variables reversed
-(`MvPolynomial.optionEquivLeft_rename_finSuccEquivLast_rename_revPerm`).
+the last variable is kept.
 
 -/
 
@@ -203,25 +201,7 @@ theorem finSuccEquiv_rename_finRotate (f : MvPolynomial (Fin (n + 1)) R) :
     intro i
     refine Fin.lastCases ?_ (fun j ↦ ?_) i
     · simp [finSuccEquiv_X_zero, optionEquivLeft_X_none]
-    · have hrot : finRotate (n + 1) j.castSucc = j.succ := finRotate_of_lt j.isLt
-      simp [hrot, finSuccEquiv_X_succ, optionEquivLeft_X_some]
-  exact DFunLike.congr_fun h f
-
-/-- Reversing all variables and then singling out the last one is the same as singling out
-`X₀` and reversing the remaining variables in the coefficients. This places coordinate zero
-last and lists the base coordinates in reverse order. -/
-theorem optionEquivLeft_rename_finSuccEquivLast_rename_revPerm
-    (f : MvPolynomial (Fin (n + 1)) R) :
-    optionEquivLeft R (Fin n) (rename finSuccEquivLast (rename Fin.revPerm f)) =
-      Polynomial.mapAlgEquiv (renameEquiv R Fin.revPerm) (finSuccEquiv R n f) := by
-  have h : ((optionEquivLeft R (Fin n)).toAlgHom.comp (rename finSuccEquivLast)).comp
-      (rename Fin.revPerm) = (Polynomial.mapAlgEquiv (renameEquiv R Fin.revPerm)).toAlgHom.comp
-        (finSuccEquiv R n).toAlgHom := by
-    apply algHom_ext
-    intro i
-    refine Fin.cases ?_ (fun j ↦ ?_) i
-    · simp [finSuccEquiv_X_zero, optionEquivLeft_X_none]
-    · simp [finSuccEquiv_X_succ, optionEquivLeft_X_some, Fin.rev_succ]
+    · simp [finSuccEquiv_X_succ, optionEquivLeft_X_some]
   exact DFunLike.congr_fun h f
 
 /-- Moving the polynomial variable into the coefficient ring maps a constant multivariate

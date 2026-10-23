@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.OpenMapping.Complete
+public import Mathlib.Topology.Maps.Strict.Module
+import Mathlib.Topology.Baire.CompleteMetrizable
+import TauCeti.Topology.Algebra.IsUniformGroup.Submodule
+import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
 # Henkel's open mapping theorem
@@ -31,9 +35,12 @@ The last two steps do not depend on how the closure step was obtained, and are p
 ## Main results
 
 * `TauCeti.HasZeroSequenceOfUnits.isOpenMap`: Henkel's open mapping theorem.
-* `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`: the same map induces the quotient topology on
-  its target — the form the strict-morphism material will consume, where what matters is not that
-  images are open but that the target's topology is determined by the source's.
+* `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`: the surjective map in `isOpenMap` induces the
+  quotient topology on its target, so the target's topology is determined by the source's.
+* `TauCeti.HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range`: over a ring with a zero
+  sequence of units, closed-range linear maps from a complete first-countable nonarchimedean
+  module into a complete metrisable module are strict, assuming continuity at zero for the map
+  and for the scalar action on the source, and continuity of constant scalar actions on the target.
 
 The other two implications of Wedhorn's Theorem 6.16, that an open linear map is surjective and that
 a continuous one has a complete target, are in `TauCeti.Topology.Algebra.OpenMapping.Converse`.
@@ -91,6 +98,33 @@ theorem HasZeroSequenceOfUnits.isQuotientMap {F : Type*} [FunLike F M N]
     IsQuotientMap (f : M → N) :=
   have hcont : Continuous (f : M → N) := continuous_of_continuousAt_zero f hfc
   (HasZeroSequenceOfUnits.isOpenMap f hf hfc hc).isQuotientMap hcont hf
+
+section ClosedRange
+
+open scoped Uniformity
+
+variable {R E F : Type*} [Ring R] [TopologicalSpace R] [HasZeroSequenceOfUnits R]
+  [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E]
+  [(𝓝 (0 : E)).IsCountablyGenerated] [NonarchimedeanAddGroup E] [Module R E]
+  [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F] [CompleteSpace F]
+  [(𝓤 F).IsCountablyGenerated] [T0Space F] [Module R F] [ContinuousConstSMul R F]
+
+/-- A linear map with closed range is strict when the scalar ring has a zero sequence of units,
+the source is complete, first countable and nonarchimedean, and the target is complete and
+metrisable. Only continuity at zero is needed for the map and for scalar multiplication. -/
+theorem HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range (f : E →ₗ[R] F)
+    (hfc : ContinuousAt (f : E → F) 0)
+    (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hr : IsClosed (f.range : Set F)) : Topology.IsStrictMap (f : E → F) := by
+  have : CompleteSpace f.range := hr.completeSpace_coe
+  have hcont : Continuous (f.rangeRestrict : E → f.range) :=
+    (continuous_of_continuousAt_zero f hfc).subtype_mk _
+  exact LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mpr
+    ⟨f.surjective_rangeRestrict, hcont,
+      HasZeroSequenceOfUnits.isOpenMap f.rangeRestrict f.surjective_rangeRestrict
+        hcont.continuousAt hc⟩
+
+end ClosedRange
 
 end TauCeti
 

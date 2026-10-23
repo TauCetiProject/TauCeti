@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Etale.Finite
 public import Mathlib.RingTheory.TotallySplit
 public import TauCeti.RingTheory.Etale.AdjoinRoot
 public import TauCeti.RingTheory.Etale.Idempotent
@@ -12,12 +13,17 @@ public import TauCeti.RingTheory.Idempotents.Refinement
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Unramified.Section.Idempotent
 
+import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Finiteness.Prod
+import Mathlib.RingTheory.Finiteness.Small
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.Rank
+import Mathlib.RingTheory.TensorProduct.Pi
+import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.AdjoinRoot.Separable
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Pi
 
 /-!
@@ -47,6 +53,14 @@ there only through sections of faithfully flat covers and roots of separable pol
 * `TauCeti.isFiniteEtaleSplit_iff_isSepClosed`: a field has no nonsplit finite étale covers if
   and only if it is separably closed.
 * `TauCeti.IsFiniteEtaleSplit.of_isSepClosed`: the instance for separably closed fields.
+* `TauCeti.Algebra.IsTotallySplit.baseChange`: total splitting is stable under base change.
+* `TauCeti.IsFiniteEtaleSplit.nonempty_algHom`: a faithfully flat finite étale `R`-algebra maps to
+  every `R`-algebra without nonsplit finite étale covers.
+* `TauCeti.IsFiniteEtaleSplit.pi`, `TauCeti.IsFiniteEtaleSplit.prod`: products of rings without
+  nonsplit finite étale covers have none.
+* `TauCeti.isFiniteEtaleSplit_iff_of_full_of_essSurj`: the condition is invariant under a ring
+  map along which base change `CommAlgCat.FiniteEtale.baseChange` is full and essentially
+  surjective (e.g. an equivalence of categories).
 
 ## Implementation notes
 
@@ -148,9 +162,6 @@ theorem quotient_span_singleton (h : IsTotallySplit R T) {ε : T} (hε : IsIdemp
   let ε' := φ ε
   have hε' : IsIdempotentElem ε' := hε.map φ
   choose a ha using fun j ↦ Ideal.Quotient.mk_surjective (ε' j)
-  have hmk (j : Fin m) : Ideal.Quotient.mk (Ideal.span {1 - e j}) (e j) = 1 := by
-    rw [← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq]
-    exact Ideal.mem_span_singleton'.mpr ⟨-1, by ring⟩
   -- The lift `a j` is idempotent modulo `1 - e j`, which `e j` annihilates.
   have hsq (j : Fin m) : e j * (a j * a j - a j) = 0 := by
     have hmem : a j * a j - a j ∈ Ideal.span {1 - e j} := by
@@ -173,7 +184,7 @@ theorem quotient_span_singleton (h : IsTotallySplit R T) {ε : T} (hε : IsIdemp
       Ideal.Quotient.piFactorₐ_apply]
     refine forall_congr' fun j ↦ ?_
     rw [← RingHom.mem_ker, Ideal.Quotient.factor_ker, Ideal.map_span, Set.image_singleton]
-    simp [e', hmk, ha]
+    simp [e', ha]
   exact ⟨m, e', he', ⟨(Ideal.quotientEquivAlg _ (Ideal.span {ε'}) φ
     (by simp [ε', Ideal.map_span])).trans ((Ideal.quotientEquivAlgOfEq R hker.symm).trans
       (Ideal.quotientKerAlgEquivOfSurjective (Ideal.Quotient.piFactorₐ_surjective R hle)))⟩⟩
@@ -226,6 +237,18 @@ theorem etale (h : IsTotallySplit R T) : Algebra.Etale R T := by
 theorem finite (h : IsTotallySplit R T) : Module.Finite R T := by
   obtain ⟨m, e, -, ⟨φ⟩⟩ := h
   exact .equiv φ.symm.toLinearEquiv
+
+open TensorProduct in
+/-- Total splitting is stable under base change: if `T ≃ₐ[R] ∏ R ⧸ (1 - e_j)`, then
+`S ⊗[R] T ≃ₐ[S] ∏ S ⧸ (1 - e_j)`, with the images of the same idempotents. -/
+theorem baseChange (S : Type*) [CommRing S] [Algebra R S] (h : IsTotallySplit R T) :
+    IsTotallySplit S (S ⊗[R] T) := by
+  obtain ⟨m, e, he, ⟨φ⟩⟩ := h
+  refine ⟨m, algebraMap R S ∘ e, fun j ↦ (he j).map _, ⟨?_⟩⟩
+  refine (Algebra.TensorProduct.congr AlgEquiv.refl φ).trans <|
+    (Algebra.TensorProduct.piRight R S S _).trans <| AlgEquiv.piCongrRight fun j ↦ ?_
+  exact (Algebra.TensorProduct.quotIdealMapEquivTensorQuot S (Ideal.span {1 - e j})).symm.trans
+    (Ideal.quotientEquivAlgOfEq S (by simp [Ideal.map_span]))
 
 end IsTotallySplit
 
@@ -329,5 +352,97 @@ theorem isFiniteEtaleSplit_iff_isSepClosed (K : Type u) [Field K] :
   refine ⟨fun _ ↦ IsSepClosed.of_exists_root K fun p hp hirr hsep ↦ ?_, fun _ ↦ inferInstance⟩
   exact IsFiniteEtaleSplit.exists_root hp hirr.natDegree_pos
     (separable_iff_isUnit_mk_derivative.mp hsep)
+
+/-- Over a ring without nonsplit finite étale covers, a finite étale algebra in any universe is
+totally split. The defining property of `IsFiniteEtaleSplit R` only quantifies over algebras in
+the universe of `R`; a finite algebra is small over `R`, so it applies to an isomorphic copy. -/
+theorem Algebra.IsTotallySplit.of_isFiniteEtaleSplit [IsFiniteEtaleSplit R] (T : Type*)
+    [CommRing T] [Algebra R T] [Algebra.Etale R T] [Module.Finite R T] :
+    Algebra.IsTotallySplit R T := by
+  have : Small.{u} T := Module.Finite.small R T
+  have : Algebra.Etale R (Shrink.{u} T) := .of_equiv (Shrink.algEquiv R T).symm
+  exact (IsFiniteEtaleSplit.isTotallySplit (Shrink.{u} T)).of_algEquiv (Shrink.algEquiv R T)
+
+open TensorProduct in
+/-- A faithfully flat finite étale `R`-algebra `T` admits an `R`-algebra map to every
+`R`-algebra `S` without nonsplit finite étale covers: the base change `S ⊗[R] T` is faithfully
+flat and finite étale over `S`, hence has a section. -/
+theorem IsFiniteEtaleSplit.nonempty_algHom (S : Type*) [CommRing S] [Algebra R S]
+    [IsFiniteEtaleSplit S] (T : Type*) [CommRing T] [Algebra R T] [Algebra.Etale R T]
+    [Module.Finite R T] [Module.FaithfullyFlat R T] : Nonempty (T →ₐ[R] S) := by
+  obtain ⟨σ⟩ := (Algebra.IsTotallySplit.of_isFiniteEtaleSplit (R := S)
+    (S ⊗[R] T)).nonempty_algHom_of_faithfulSMul
+  exact ⟨(σ.restrictScalars R).comp Algebra.TensorProduct.includeRight⟩
+
+/-- A product of rings without nonsplit finite étale covers, over any index type, has none: a
+faithfully flat finite étale algebra over the product maps to every factor, and these maps
+assemble to a section. -/
+instance IsFiniteEtaleSplit.pi {ι : Type*} (A : ι → Type*) [∀ i, CommRing (A i)]
+    [∀ i, IsFiniteEtaleSplit (A i)] : IsFiniteEtaleSplit ((i : ι) → A i) := by
+  refine isFiniteEtaleSplit_iff_exists_section.mpr fun T _ _ _ _ _ ↦ ?_
+  let (i : ι) : Algebra ((i : ι) → A i) (A i) := (Pi.evalRingHom A i).toAlgebra
+  have σ (i : ι) :=
+    Classical.choice (IsFiniteEtaleSplit.nonempty_algHom (R := (i : ι) → A i) (A i) T)
+  exact ⟨{ RingHom.pi fun i ↦ (σ i).toRingHom with
+    commutes' := fun r ↦ funext fun i ↦ (σ i).commutes r }⟩
+
+/-- A product of two rings without nonsplit finite étale covers has none: a faithfully flat
+finite étale algebra over the product maps to both factors, and these maps assemble to a
+section. -/
+instance IsFiniteEtaleSplit.prod (A B : Type*) [CommRing A] [CommRing B] [IsFiniteEtaleSplit A]
+    [IsFiniteEtaleSplit B] : IsFiniteEtaleSplit (A × B) := by
+  refine isFiniteEtaleSplit_iff_exists_section.mpr fun T _ _ _ _ _ ↦ ?_
+  let : Algebra (A × B) A := (RingHom.fst A B).toAlgebra
+  let : Algebra (A × B) B := (RingHom.snd A B).toAlgebra
+  obtain ⟨σ⟩ := IsFiniteEtaleSplit.nonempty_algHom (R := A × B) A T
+  obtain ⟨τ⟩ := IsFiniteEtaleSplit.nonempty_algHom (R := A × B) B T
+  exact ⟨{ σ.toRingHom.prod τ.toRingHom with
+    commutes' := fun r ↦ Prod.ext (σ.commutes r) (τ.commutes r) }⟩
+
+section BaseChange
+
+open CategoryTheory CommAlgCat TensorProduct
+
+variable (R' : Type*) [CommRing R'] [Algebra R R']
+
+/-- If every finite étale `R'`-algebra is a base change of a finite étale `R`-algebra, and `R` has
+no nonsplit finite étale covers, then neither does `R'`. -/
+theorem IsFiniteEtaleSplit.of_essSurj_baseChange [IsFiniteEtaleSplit R]
+    [(FiniteEtale.baseChange.{u} R R').EssSurj] : IsFiniteEtaleSplit R' where
+  isTotallySplit T _ _ _ _ := by
+    let F := FiniteEtale.baseChange.{u} R R'
+    -- `F` lands in algebras in the universe of `R' ⊗[R] A`, which may be larger than that of
+    -- `T`, so lift `T` there.
+    have : Algebra.Etale R' (ULift.{u} T) := .of_equiv ULift.algEquiv.symm
+    have : Module.Finite R' (ULift.{u} T) := .equiv ULift.algEquiv.symm.toLinearEquiv
+    let A := F.objPreimage (.of R' (ULift.{u} T))
+    -- `F.obj A` is by definition `R' ⊗[R] A`, so `F.obj A ≅ ULift T` is an `AlgEquiv`.
+    exact ((IsFiniteEtaleSplit.isTotallySplit A.obj).baseChange R').of_algEquiv
+      ((algEquivOfIso ((ObjectProperty.ι _).mapIso (F.objObjPreimageIso _))).trans
+        ULift.algEquiv)
+
+/-- If base change along `R → R'` is full on finite étale algebras and `R'` has no nonsplit
+finite étale covers, then neither does `R`: the section of `R' ⊗[R] T` over `R'` descends to a
+section of `T` over `R`. -/
+theorem IsFiniteEtaleSplit.of_full_baseChange [IsFiniteEtaleSplit R']
+    [(FiniteEtale.baseChange.{u} R R').Full] : IsFiniteEtaleSplit R := by
+  refine isFiniteEtaleSplit_iff_exists_section.mpr fun T _ _ _ _ _ ↦ ?_
+  obtain ⟨σ⟩ := (Algebra.IsTotallySplit.of_isFiniteEtaleSplit (R := R')
+    (R' ⊗[R] T)).nonempty_algHom_of_faithfulSMul
+  let F := FiniteEtale.baseChange.{u} R R'
+  -- `F.obj (.of R T)` and `F.obj (.of R R)` are by definition `R' ⊗[R] T` and `R' ⊗[R] R`.
+  let f : F.obj (.of R T) ⟶ F.obj (.of R R) :=
+    FiniteEtale.ofHom ((Algebra.TensorProduct.rid R R' R').symm.toAlgHom.comp σ)
+  exact ⟨(F.preimage f).hom.hom⟩
+
+/-- Having no nonsplit finite étale covers is invariant under a ring map along which base change
+of finite étale algebras is full and essentially surjective, e.g. an equivalence of categories. -/
+theorem isFiniteEtaleSplit_iff_of_full_of_essSurj
+    [(FiniteEtale.baseChange.{u} R R').Full] [(FiniteEtale.baseChange.{u} R R').EssSurj] :
+    IsFiniteEtaleSplit R ↔ IsFiniteEtaleSplit R' :=
+  ⟨fun _ ↦ .of_essSurj_baseChange (R := R) R',
+    fun _ ↦ .of_full_baseChange R'⟩
+
+end BaseChange
 
 end TauCeti

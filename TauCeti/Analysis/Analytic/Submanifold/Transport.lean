@@ -66,15 +66,10 @@ theorem IsAnalyticSubmanifold.preimage (hS : IsAnalyticSubmanifold d S)
       univ_inter, mem_preimage] using hxc
 
 /-- Permuting the ambient coordinates preserves analytic submanifolds and their dimension. -/
-theorem IsAnalyticSubmanifold.preimage_comp_perm (hS : IsAnalyticSubmanifold d S)
-    (e : Equiv.Perm (Fin n)) : IsAnalyticSubmanifold d ((fun x ↦ x ∘ e) ⁻¹' S) := by
-  let L := ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜) e.symm
-  have hL (x : Fin n → 𝕜) : L x = x ∘ e := by
-    ext i
-    simp [L, ContinuousLinearEquiv.piCongrLeft, Equiv.piCongrLeft_apply]
-  convert hS.preimage L.toHomeomorph (fun y _ ↦ L.analyticAt y) (fun y _ ↦ L.symm.analyticAt y)
-    using 1
-  ext x
-  simp [hL]
+theorem IsAnalyticSubmanifold.preimage_comp_equiv (hS : IsAnalyticSubmanifold d S)
+    (e : Fin n ≃ Fin n) : IsAnalyticSubmanifold d ((fun x ↦ x ∘ e) ⁻¹' S) :=
+  -- Precomposition with a permutation of coordinates is a continuous linear equivalence.
+  let L := (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜) e).symm
+  hS.preimage L.toHomeomorph (fun y _ ↦ L.analyticAt y) (fun y _ ↦ L.symm.analyticAt y)
 
 end TauCeti

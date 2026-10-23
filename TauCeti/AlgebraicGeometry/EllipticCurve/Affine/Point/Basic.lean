@@ -48,8 +48,8 @@ hypotheses only because Mathlib's `Point.map` does.
   transport along an equality of curves, as in `AddEquiv.cast` and `Equiv.cast`, fixes the
   point at infinity and keeps the coordinates of a point.
 
-The coordinate accessors support `TauCetiRoadmap/EllipticCurves/README.md`, Layer 0.5, whose
-translation-action milestone evaluates functions at translates of the generic point.
+The coordinate accessors let regular functions be evaluated at translates of the generic point.
+These evaluations define the pullback of translation on the curve's function field.
 
 ## Provenance
 

@@ -465,12 +465,10 @@ constructor, and its definitional checks unfold it. -/
 module becomes the identity morphism of the object it names. -/
 @[simp] lemma ofDiscreteModuleMap_id :
     ofDiscreteModuleMap (LinearMap.id (R := R) (M := M)) (fun _ _ ↦ rfl) =
-      𝟙 (ofDiscreteModule R G M) := by
-  -- Both sides fix `m`: `ofDiscreteModuleMap_hom_apply` on the left, `TopRep.id_apply` on the
-  -- right.
-  refine TopRep.hom_ext (DFunLike.ext _ _ fun (m : M) ↦ ?_)
-  exact (ofDiscreteModuleMap_hom_apply _ _ m).trans
-    (TopRep.id_apply (ofDiscreteModule R G M) m).symm
+      𝟙 (ofDiscreteModule R G M) :=
+  -- Both sides have the identity intertwining map as underlying map: `ofDiscreteModuleMap` is a
+  -- `TopRep.ofHom`, and `TopRep.hom_ofHom` and `TopRep.hom_id` hold by `rfl`.
+  (rfl)
 
 -- The left-hand side is the composite, which carries both equivariance hypotheses, and the
 -- right-hand side derives the equivariance of the composite: a hypothesis occurring on the left
@@ -483,14 +481,10 @@ by two `G`-equivariant `R`-linear maps is the morphism named by their composite.
     (f : M →ₗ[R] N) (hf : ∀ (g : G) (m : M), f (g • m) = g • f m)
     (f' : N →ₗ[R] P) (hf' : ∀ (g : G) (n : N), f' (g • n) = g • f' n) :
     ofDiscreteModuleMap f hf ≫ ofDiscreteModuleMap f' hf' =
-      ofDiscreteModuleMap (f'.comp f) (fun g m ↦ by simp only [LinearMap.comp_apply, hf, hf']) := by
-  -- Both sides send `m` to `f' (f m)`: `TopRep.comp_apply` for the composite on the left, and
-  -- `ofDiscreteModuleMap_hom_apply` on each factor.
-  refine TopRep.hom_ext (DFunLike.ext _ _ fun (m : M) ↦ ?_)
-  exact ((ofDiscreteModuleMap_hom_apply _ _ m).trans <|
-    (congrArg (⇑f') (ofDiscreteModuleMap_hom_apply f hf m).symm).trans <|
-      (ofDiscreteModuleMap_hom_apply f' hf' _).symm.trans
-        (TopRep.comp_apply (ofDiscreteModuleMap f hf) (ofDiscreteModuleMap f' hf') m).symm).symm
+      ofDiscreteModuleMap (f'.comp f) (fun g m ↦ by simp only [LinearMap.comp_apply, hf, hf']) :=
+  -- Both sides have underlying map `f' ∘ f`: `ofDiscreteModuleMap` is a `TopRep.ofHom`, and
+  -- `TopRep.hom_ofHom` and `TopRep.hom_comp` hold by `rfl`.
+  (rfl)
 
 /-- A `G`-equivariant `R`-linear equivalence of discrete modules as an isomorphism of
 `TopRep R G`, with `ofDiscreteModuleMap` of the equivalence and of its inverse as the two
@@ -538,18 +532,11 @@ def ofDiscreteModuleHomAddEquiv :
         (Representation.ofDistribMulAction R G N) where
   toFun φ := φ.hom.toIntertwiningMap
   invFun f := ofDiscreteModuleMap f.toLinearMap fun g m ↦ f.isIntertwining _ _ g m
-  -- Both round trips rewrap the *same* underlying function, so it is enough to compare the two
-  -- sides at a point, where `TauCeti.ofDiscreteModuleMap_hom_apply` identifies them.
-  left_inv φ := by
-    ext (m : M); exact ofDiscreteModuleMap_hom_apply (G := G) _ _ m
-  right_inv f := by
-    ext (m : M)
-    exact ofDiscreteModuleMap_hom_apply (G := G) f.toLinearMap
-      (fun g m ↦ f.isIntertwining _ _ g m) m
-  -- Addition of morphisms of `TopRep` is addition of the underlying intertwining maps
-  -- (`TopRep.hom_add`), so the translation is additive pointwise.
-  map_add' φ ψ := by
-    ext (m : M); exact congr($(TopRep.hom_add _ _ φ ψ) m)
+  -- Both round trips rewrap the same underlying function, and addition of morphisms of `TopRep` is
+  -- addition of the underlying intertwining maps (`TopRep.hom_add`).
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
 
 variable {R G M N}
 

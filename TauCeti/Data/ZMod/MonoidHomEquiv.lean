@@ -25,6 +25,7 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 
 ## Main results
 
+* `Multiplicative.mem_zpowers_ofAdd_one`: the element `1` generates `ℤ/Nℤ`.
 * `TauCeti.zmodMonoidHomEquiv_symm_apply` and `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: the
   homomorphism of `g` sends `a` to `g ^ a.val`, and that of `(g, h)` sends `(a, b)` to
   `g ^ a.val * h ^ b.val`.
@@ -34,9 +35,14 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 
 public section
 
-namespace TauCeti
-
 variable {N : ℕ}
+
+/-- The standard generator `1` of `ℤ/Nℤ`, written multiplicatively, generates the group. -/
+theorem Multiplicative.mem_zpowers_ofAdd_one (x : Multiplicative (ZMod N)) :
+    x ∈ Subgroup.zpowers (.ofAdd 1) :=
+  ⟨x.toAdd.cast, by simp [← ofAdd_zsmul]⟩
+
+namespace TauCeti
 
 /-- The homomorphism `ℤ/Nℤ →+ G` sending `1` to an element `g` of `G` killed by `N`. -/
 private noncomputable def zmodLift {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) :
@@ -83,6 +89,12 @@ noncomputable def zmodMonoidHomEquiv (G : Type*) [Group G] :
 theorem coe_zmodMonoidHomEquiv_apply {G : Type*} [Group G] (φ : Multiplicative (ZMod N) →* G) :
     (zmodMonoidHomEquiv N G φ : G) = φ (.ofAdd 1) :=
   (rfl)
+
+/-- The homomorphism associated to an element killed by `N` sends `1` to that element,
+including when `N = 1`. -/
+theorem zmodMonoidHomEquiv_symm_apply_ofAdd_one {G : Type*} [Group G]
+    (g : {g : G // g ^ N = 1}) : (zmodMonoidHomEquiv N G).symm g (.ofAdd 1) = g.1 := by
+  rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
 
 /-- The homomorphism `ℤ/Nℤ →* G` of an element `g` killed by `N` sends `a` to `g ^ a.val`. -/
 @[simp]

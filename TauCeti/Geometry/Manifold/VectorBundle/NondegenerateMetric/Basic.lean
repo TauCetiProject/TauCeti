@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
@@ -82,6 +83,15 @@ theorem contMDiff (g : ContMDiffNondegenerateMetric (I := I) (M := M)) :
     ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ) x (g x)) :=
   g.toContMDiffSection.contMDiff
+
+/-- Pairing two differentiable vector fields with a smooth nondegenerate metric is
+differentiable. -/
+theorem mdifferentiableAt_apply (g : ContMDiffNondegenerateMetric (I := I) (M := M))
+    {Y Z : Π x : M, TangentSpace I x} {x : M}
+    (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+    MDiffAt (fun y ↦ g y (Y y) (Z y)) x := by
+  have h := (g.contMDiff.mdifferentiable (by simp)).mdifferentiableAt.clm_bundle_apply₂ hY hZ
+  simpa [mdifferentiableAt_section] using h
 
 /-- Evaluation of a smooth nondegenerate metric is symmetric in its tangent arguments. -/
 theorem apply_comm (g : ContMDiffNondegenerateMetric (I := I) (M := M))

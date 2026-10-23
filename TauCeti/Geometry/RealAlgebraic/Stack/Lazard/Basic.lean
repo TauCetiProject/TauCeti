@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.MultipleRoots.Submanifold
+public import TauCeti.Geometry.RealAlgebraic.SignInvariant
 public import TauCeti.Geometry.RealAlgebraic.Stack.Basic
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Lift
 import Mathlib.Analysis.Analytic.Polynomial
+import Mathlib.Logic.Equiv.Fin.Rotate
+import Mathlib.Topology.Algebra.MvPolynomial
 
 /-!
 # Lazard delineations
@@ -36,14 +39,14 @@ By `MvPolynomial.lazardValuation_snoc`, the Lazard valuation of a nonzero member
 root of the Lazard evaluation over `α`. Over a Lazard delineation it is therefore constant on
 every section, where it ends with the multiplicity of the section, and on every sector, where it
 ends with `0`. Since a polynomial vanishes exactly where its Lazard valuation is positive, each
-member is then sign-invariant on every preconnected stack cell
-(`IsPreconnected.signInvariant_eval_of_lazardValuationReindex_eq`).
+member is then sign-invariant on every section and sector over a preconnected base.
 
 The ambient stack convention places the distinguished coordinate first, while Lazard
 evaluation places it last. The valuation theorem retains the original Lazard coordinate
-order by evaluating at `Fin.snoc (Fin.tail x) (x 0)`; no invariance of Lazard valuation under
-permutation is asserted. These statements apply to the actual ambient `stackCells` used in
-cylindrical decompositions.
+order by evaluating at `Fin.snoc (Fin.tail x) (x 0)`. For signs, this is evaluation of the
+polynomial renamed by `finRotate`; no invariance of Lazard valuation under permutation is
+asserted. These statements apply to the actual ambient `stackCells` used in cylindrical
+decompositions.
 
 Where the removed exponents are constant, the coefficients of the Lazard evaluations are
 polynomial functions of the base point. So over an analytic submanifold of `ℝⁿ` the root
@@ -61,6 +64,12 @@ In other words, every Lazard delineation over an analytic submanifold is an anal
   valuation-invariant on each section and each sector.
 * `TauCeti.LazardDelineation.lazardValuation_snoc_eq_of_mem_stackCells`: every member is Lazard
   valuation-invariant on each ambient stack cell in the original coordinate order.
+* `TauCeti.LazardDelineation.signInvariant_sectionSet`,
+  `TauCeti.LazardDelineation.signInvariant_sectorSet`: over a preconnected base, every member is
+  sign-invariant on each section and each sector.
+* `TauCeti.LazardDelineation.signInvariant_rename_finRotate_of_mem_stackCells`: over a
+  preconnected base, every member is sign-invariant on each ambient stack cell after moving the
+  distinguished coordinate to the front.
 * `TauCeti.LazardDelineation.analyticOnSubmanifold_root`: over an analytic submanifold, the root
   functions are analytic.
 
@@ -207,6 +216,42 @@ theorem lazardValuation_snoc_eq_of_mem_stackCells (k : ι)
     obtain ⟨z', hz', rfl⟩ := hy
     simpa only [tail_cylinder, cylinder_apply_zero] using
       D.lazardValuation_snoc_eq_of_mem_sectorSet k hz hz'
+
+/-- Over a preconnected base, every member of a family is sign-invariant on each section of a
+Lazard delineation. -/
+theorem signInvariant_sectionSet (hS : IsPreconnected S) (k : ι) (i : Fin D.count) :
+    SignInvariant (fun z : S × ℝ ↦ eval (Fin.snoc z.1.1 z.2) (F k)) (sectionSet D.root i) := by
+  have := isPreconnected_iff_preconnectedSpace.1 hS
+  refine (isPreconnected_sectionSet (D.continuous_root i)).signInvariant_of_eq_zero_iff
+    ((continuous_eval (F k)).comp ((continuous_subtype_val.comp continuous_fst).finSnoc
+      (A := fun _ ↦ ℝ) continuous_snd)).continuousOn fun z hz z' hz' ↦ ?_
+  rw [← lazardValuation_pos_iff, ← lazardValuation_pos_iff,
+    D.lazardValuation_snoc_eq_of_mem_sectionSet k hz hz']
+
+/-- Over a preconnected base, every member of a family is sign-invariant on each sector of a
+Lazard delineation. -/
+theorem signInvariant_sectorSet (hS : IsPreconnected S) (k : ι) (j : Fin (D.count + 1)) :
+    SignInvariant (fun z : S × ℝ ↦ eval (Fin.snoc z.1.1 z.2) (F k)) (sectorSet D.root j) := by
+  have := isPreconnected_iff_preconnectedSpace.1 hS
+  refine (isPreconnected_sectorSet D.continuous_root D.strictMono_root j
+    ).signInvariant_of_eq_zero_iff
+    ((continuous_eval (F k)).comp ((continuous_subtype_val.comp continuous_fst).finSnoc
+      (A := fun _ ↦ ℝ) continuous_snd)).continuousOn fun z hz z' hz' ↦ ?_
+  rw [← lazardValuation_pos_iff, ← lazardValuation_pos_iff,
+    D.lazardValuation_snoc_eq_of_mem_sectorSet k hz hz']
+
+/-- Over a preconnected base, every member of a Lazard delineation is sign-invariant on each
+ambient stack cell after moving the distinguished coordinate to the front. -/
+theorem signInvariant_rename_finRotate_of_mem_stackCells (hS : IsPreconnected S) (k : ι)
+    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
+    SignInvariant (fun x ↦ eval x (rename (finRotate (n + 1)) (F k))) E := by
+  have key : (fun x ↦ eval x (rename (finRotate (n + 1)) (F k))) ∘ cylinder S =
+      fun z ↦ eval (Fin.snoc z.1.1 z.2) (F k) := by
+    funext z
+    rw [Function.comp_apply, eval_rename, cylinder_def, Fin.snoc_eq_cons_rotate]
+    rfl
+  rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [signInvariant_image, key]
+  exacts [D.signInvariant_sectionSet hS k i, D.signInvariant_sectorSet hS k j]
 
 /-- **Lazard delineations over analytic submanifolds are analytic.** Over an analytic
 submanifold `S`, the root functions of a Lazard delineation are analytic on `S`. Any ambient

@@ -42,7 +42,8 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
 local notation "Γ" => zigzagAlgebraInternalGrading k G
 local notation "U" => zigzagGradedBraidBimodule k G
-local notation "F" => zigzagBimoduleTensor k G
+local notation "F" => (GradedModuleCat.bimoduleTensor Γ Γ Γ :
+  GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ)
 local notation "T" => zigzagBraidInverseComplexTensor k G
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
@@ -267,10 +268,7 @@ private def forwardCancellationData (i : V) :
 /-- The graded braid complex followed by its inverse is homotopy equivalent
 to the regular graded zigzag bimodule in cochain degree zero. -/
 def zigzagBraidComplexTensorInverseHomotopyEquiv (i : V) :
-    HomotopyEquiv (zigzagBraidInverseComplexTensor k G i)
-      ((HomologicalComplex.single
-        (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
-        (ComplexShape.up ℤ) 0).obj (zigzagGradedBimodule k G)) :=
+    HomotopyEquiv (zigzagBraidInverseComplexTensor k G i) (zigzagBraidUnitComplex k G) :=
   (Contraction.ThreeTermCancellationData.toContraction
     (forwardCancellationData k G i)).homotopyEquiv.symm
 

@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
 -- Private: the product, reversal and exterior-basis lemmas below are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
@@ -44,6 +45,11 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   scalar part.
 * `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the basis vector indexed by
   `s` is the product of the generators of `s` in increasing order.
+* `CliffordAlgebra.basis_mul_basis_of_disjoint`: for an orthogonal basis, basis vectors with
+  disjoint index sets multiply to the signed basis vector of the union.
+* `CliffordAlgebra.basis_mul_ι_of_mem` and `CliffordAlgebra.basis_mul_ι_of_notMem`: a basis
+  vector `e_s` and a basis generator `ι Q (b i)` commute up to the sign `(-1) ^ (|s| - 1)` when
+  `i ∈ s`, and up to `(-1) ^ |s|` when `i ∉ s`.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul_basis`: the pairing of two basis vectors.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul`: pairing against a basis vector extracts a
   coordinate, `τ (reverse e_s * x) = (∏ i ∈ s, Q (b i)) * xₛ`.
@@ -89,6 +95,55 @@ theorem basis_eq_prod_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (
   rw [basis_apply, LinearEquiv.symm_apply_eq,
     equivExterior_prod_map_ι_of_pairwise_isOrtho Q (pairwise_isOrtho_map_sort hb s),
     Module.Basis.exteriorAlgebra_eq_prod_map_sort]
+
+/-- **For an orthogonal basis, multiplying basis vectors with disjoint index sets is transported
+from the exterior algebra**: the Clifford product of `e_s` and `e_t` is the image of the exterior
+product of the corresponding exterior basis vectors, since no generator meets itself. -/
+theorem basis_mul_basis_eq_symm_equivExterior (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    {s t : Finset I} (h : Disjoint s t) :
+    basis Q b s * basis Q b t =
+      (equivExterior Q).symm (b.ExteriorAlgebra s * b.ExteriorAlgebra t) := by
+  have hl : ((s.sort ++ t.sort).map b).Pairwise Q.IsOrtho := by
+    refine List.pairwise_map.mpr <| (List.nodup_append.2 ⟨s.sort_nodup _, t.sort_nodup _, ?_⟩).imp
+      fun hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij)
+    rintro i hi _ hj rfl
+    exact Finset.disjoint_left.1 h ((Finset.mem_sort _).1 hi) ((Finset.mem_sort _).1 hj)
+  rw [LinearEquiv.eq_symm_apply, basis_eq_prod_map_sort hb, basis_eq_prod_map_sort hb,
+    b.exteriorAlgebra_eq_prod_map_sort, b.exteriorAlgebra_eq_prod_map_sort]
+  -- The concatenated list of generators is transported factorwise.
+  simpa only [List.map_append, List.prod_append] using
+    equivExterior_prod_map_ι_of_pairwise_isOrtho Q hl
+
+/-- **The multiplication rule for basis vectors with disjoint index sets**: for an orthogonal basis,
+`e_s * e_t = ε • e_{s ∪ t}`, where `ε` is the sign of the shuffle listing `s` before `t`. This is
+the Clifford counterpart of Mathlib's `ExteriorAlgebra.basis_mul_of_disjoint`. -/
+theorem basis_mul_basis_of_disjoint (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {m n : ℕ}
+    {s : Set.powersetCard I m} {t : Set.powersetCard I n} (h : Disjoint s.val t.val) :
+    basis Q b s * basis Q b t =
+      (Set.powersetCard.permOfDisjoint h).sign • basis Q b (Set.powersetCard.disjUnion h) := by
+  rw [basis_mul_basis_eq_symm_equivExterior hb h, ExteriorAlgebra.basis_mul_of_disjoint b s t h,
+    map_zsmul_unit, basis_apply]
+
+/-- **A basis generator crosses a basis vector containing it at the cost of `(-1) ^ (|s| - 1)`**,
+for an orthogonal basis: `e_s * ι Q (b i) = (-1) ^ (|s| - 1) • (ι Q (b i) * e_s)` when `i ∈ s`. -/
+theorem basis_mul_ι_of_mem (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {s : Finset I} {i : I}
+    (hi : i ∈ s) :
+    basis Q b s * ι Q (b i) = ((-1 : R) ^ (s.card - 1)) • (ι Q (b i) * basis Q b s) := by
+  rw [basis_eq_prod_map_sort hb, ← s.length_sort (· ≤ ·), ← List.length_map b]
+  exact prod_map_ι_mul_ι_of_mem_span (pairwise_isOrtho_map_sort hb s)
+    (Submodule.subset_span (List.mem_map.2 ⟨i, (Finset.mem_sort _).2 hi, rfl⟩))
+
+/-- **A basis generator crosses a basis vector not containing it at the cost of `(-1) ^ |s|`**,
+for an orthogonal basis: `e_s * ι Q (b i) = (-1) ^ |s| • (ι Q (b i) * e_s)` when `i ∉ s`. -/
+theorem basis_mul_ι_of_notMem (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {s : Finset I}
+    {i : I} (hi : i ∉ s) :
+    basis Q b s * ι Q (b i) = ((-1 : R) ^ s.card) • (ι Q (b i) * basis Q b s) := by
+  rw [basis_eq_prod_map_sort hb, ← s.length_sort (· ≤ ·), ← List.length_map b]
+  refine prod_map_ι_mul_ι_of_forall_isOrtho fun x hx ↦ ?_
+  obtain ⟨j, hj, rfl⟩ := List.mem_map.1 hx
+  refine QuadraticMap.associated_isOrtho.mp (hb ?_)
+  rintro rfl
+  exact hi ((Finset.mem_sort _).1 hj)
 
 /-- The scalar part of a product of generators of an orthogonal basis vanishes as soon as one index
 occurs exactly once. -/

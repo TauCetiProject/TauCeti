@@ -375,7 +375,7 @@ theorem ncard_doubleCoset_weyl :
   have hsum := congrArg Set.ncard (union_doubleCoset_weyl_eq_univ F)
   rw [Set.ncard_union_eq (disjoint_doubleCoset_weyl F) (Set.toFinite _) (Set.toFinite _),
     Set.ncard_univ, ← Nat.card_coe_set_eq, SetLike.coe_sort_coe, card_eq,
-    natCard_GL_fin_two, hm] at hsum
+    natCard_GL_fin_two, Nat.card_eq_fintype_card, hm] at hsum
   simp only [Nat.add_sub_cancel] at hsum
   rw [hm]
   simp only [Nat.add_sub_cancel]

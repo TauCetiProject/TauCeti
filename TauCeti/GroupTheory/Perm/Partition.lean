@@ -54,11 +54,15 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
 * `Equiv.Perm.fullCycleType_eq_map_card_filter`: the full cycle type is the multiset of orbit
   sizes, read through any function whose fibres are the orbits.
 * `Equiv.Perm.fullCycleType_eq_sum_subtypePerm`: the full cycle type is additive over the fibres
-  of any function that `σ` preserves.
+  of any function that `σ` preserves; `Equiv.Perm.fullCycleType_eq_add_subtypePerm` is the form
+  for a `σ`-stable predicate and its complement.
 * `Equiv.Perm.ncard_setOf_sameCycle`: the cycle through `x` has `Function.minimalPeriod σ x`
-  points.
+  points; `Equiv.Perm.minimalPeriod_eq_natCard_of_forall_sameCycle` is the case of a single cycle
+  through every point.
 * `Equiv.Perm.fullCycleType_eq_map_univ`: the full cycle type is the multiset of the cycle
   lengths, read through any finite type labelling the cycles.
+* `Equiv.Perm.fullCycleType_of_forall_sameCycle`: a permutation with a single cycle through every
+  point has full cycle type `{Fintype.card α}`.
 * `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`: the classes of `Equiv.Perm.SameCycle`
   are the nontrivial cycle factors together with the fixed points, via the point-level map
   `Equiv.Perm.cycleFactorOrFixedPoint`.
@@ -375,6 +379,16 @@ theorem fullCycleType_one :
     fullCycleType (1 : Equiv.Perm α) = Multiset.replicate (Fintype.card α) 1 := by
   rw [fullCycleType_def, Equiv.Perm.parts_partition_one]
 
+/-- The identity is the only permutation all of whose full cycle lengths are one. -/
+@[simp]
+theorem forall_mem_fullCycleType_eq_one_iff {σ : Equiv.Perm α} :
+    (∀ k ∈ fullCycleType σ, k = 1) ↔ σ = 1 := by
+  refine ⟨fun h => ?_, fun h k hk => ?_⟩
+  · rw [← cycleType_eq_zero, ← filter_fullCycleType_eq_cycleType, Multiset.filter_eq_nil]
+    exact fun k hk => by rw [h k hk]; omega
+  · rw [h, fullCycleType_one] at hk
+    exact Multiset.eq_of_mem_replicate hk
+
 /-- On an empty finite carrier, the full cycle type is empty. -/
 @[simp]
 theorem fullCycleType_of_isEmpty [IsEmpty α] (σ : Equiv.Perm α) :
@@ -560,6 +574,26 @@ theorem fullCycleType_eq_sum_subtypePerm {ι : Type*} [Fintype ι]
   simp only [Finset.mem_disjiUnion, Finset.mem_univ, true_and, Finset.mem_image]
   exact ⟨fun ⟨x, hx⟩ => ⟨π x, ⟨x, rfl⟩, hx⟩, fun ⟨_, x, hx⟩ => ⟨x, hx⟩⟩
 
+/-- If `σ` preserves a predicate `p`, then the full cycle type of `σ` is the sum of the full cycle
+types of its restrictions to `p` and to its complement. -/
+theorem fullCycleType_eq_add_subtypePerm (σ : Equiv.Perm α) (p : α → Prop) [DecidablePred p]
+    (h : ∀ x, p (σ x) ↔ p x) :
+    σ.fullCycleType = (σ.subtypePerm h).fullCycleType +
+      (σ.subtypePerm (p := fun x => ¬ p x) fun x => not_congr (h x)).fullCycleType := by
+  rw [fullCycleType_eq_sum_subtypePerm σ (fun x => decide (p x)) (by simp [h]), Fintype.sum_bool]
+  -- The fibres of `decide ∘ p` carry classical `Fintype` instances; `convert` absorbs them.
+  congr 1
+  · convert fullCycleType_permCongr
+      (Equiv.subtypeEquivRight fun x => (by simp : p x ↔ decide (p x) = true)) (σ.subtypePerm h)
+      using 2
+    ext
+    simp
+  · convert fullCycleType_permCongr
+      (Equiv.subtypeEquivRight fun x => (by simp : ¬ p x ↔ decide (p x) = false))
+      (σ.subtypePerm (p := fun x => ¬ p x) fun x => not_congr (h x)) using 2
+    ext
+    simp
+
 end
 
 /-! ### Orbit sizes -/
@@ -610,6 +644,13 @@ theorem ncard_setOf_sameCycle [Finite α] (x : α) :
     Nat.card_eq_fintype_card]
   exact (minimalPeriod_eq_card (a := σ) (b := x)).symm
 
+/-- If a single cycle of `σ` passes through every point, then every point has minimal period the
+cardinality of the carrier. -/
+theorem minimalPeriod_eq_natCard_of_forall_sameCycle [Finite α] {x : α}
+    (hx : ∀ y, σ.SameCycle x y) (y : α) : Function.minimalPeriod σ y = Nat.card α := by
+  rw [← ncard_setOf_sameCycle, Set.eq_univ_of_forall (s := {z | σ.SameCycle y z})
+    fun z => (hx y).symm.trans (hx z), Set.ncard_univ]
+
 end
 
 variable [Fintype α] [DecidableEq α] (σ : Equiv.Perm α)
@@ -642,6 +683,19 @@ theorem fullCycleType_eq_map_univ {γ : Type*} [Fintype γ] (e : Quotient (SameC
   congr 1
   ext y
   simp [hm, eq_comm]
+
+/-- A permutation with a single cycle through every point has a single part, the cardinality of
+the carrier. -/
+theorem fullCycleType_of_forall_sameCycle {x : α} (hx : ∀ y, σ.SameCycle x y) :
+    σ.fullCycleType = {Fintype.card α} := by
+  let e : Quotient (SameCycle.setoid σ) ≃ Unit :=
+    { toFun := fun _ => ()
+      invFun := fun _ => Quotient.mk _ x
+      left_inv := fun q => Quotient.inductionOn q fun y => Quotient.sound (hx y)
+      right_inv := fun _ => rfl }
+  rw [fullCycleType_eq_map_univ σ e (f := fun _ => Fintype.card α) fun y => by
+    rw [minimalPeriod_eq_natCard_of_forall_sameCycle σ hx y, Nat.card_eq_fintype_card]]
+  simp
 
 /-- The fixed points of a permutation are the complement of its support. -/
 theorem card_subtype_apply_eq :

@@ -187,13 +187,8 @@ theorem multiplesDivisor_le_ker {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} 
 theorem coe_support_multiplesDivisor (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) :
     ((E.multiplesDivisor P N).support : Set E.carrier) =
       ⋃ a < N, Set.range (P ^ (a + 1)).left := by
-  induction N with
-  | zero => simp [Scheme.IdealSheafData.support_top]
-  | succ N ih =>
-    have := (P ^ (N + 1)).left.isClosedImmersion_of_comp_eq_id (f := E.structureMap) (Over.w _)
-    rw [multiplesDivisor_succ, Scheme.IdealSheafData.support_mul, TopologicalSpace.Closeds.coe_sup,
-      ih, Set.biUnion_lt_succ, Scheme.Hom.support_ker,
-      (P ^ (N + 1)).left.isClosedEmbedding.isClosed_range.closure_eq]
+  ext
+  simp [multiplesDivisor_eq_pointsDivisor, coe_support_pointsDivisor, Fin.exists_iff]
 
 /-! ### Translating divisors of points -/
 
@@ -272,7 +267,7 @@ theorem IsOfExactOrder.comp_mulBy_eq_one {P : 𝟙_ (Over S) ⟶ Over.mk E.struc
 
 /-- **The points of exact order one**: an `S`-point of `E` has exact order one exactly when it is
 the zero section. The divisor `[0]` is the trivial subgroup scheme of `E`. -/
-@[simp]
+@[simp high]
 theorem isOfExactOrder_one_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
     E.IsOfExactOrder P 1 ↔ P = 1 := by
   refine ⟨fun h ↦ by simpa using h.pow_eq_one, ?_⟩
@@ -289,7 +284,7 @@ theorem isOfExactOrder_one_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
     have hle : E.zero.ker ≤ i.left.ker := hi.ge
     have key : (IsClosedImmersion.lift E.zero i.left hle ≫ E.zero) ≫ E.structureMap ≫ E.zero =
         IsClosedImmersion.lift E.zero i.left hle ≫ E.zero := by
-      rw [Category.assoc, zero_comp_structureMap_assoc]
+      rw [Category.assoc, E.zero_comp_assoc]
     rw [IsClosedImmersion.lift_fac] at key
     ext1
     rw [hom_one_left]

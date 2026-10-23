@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.Completeness
 public import TauCeti.RepresentationTheory.CharacterTable.Degree
 -- `FDRep.character_mem_irreducibleCharacters` is stated for a simple object of `FDRep k G`.
 public import TauCeti.RepresentationTheory.Simple.Basic
-import TauCeti.RepresentationTheory.FDRep
+import TauCeti.RepresentationTheory.FDRep.Basic
 -- Non-public: irreducibility transports along an equivariant linear equivalence, used to move an
 -- irreducible representation onto a coordinate space.
 import TauCeti.RepresentationTheory.Irreducible

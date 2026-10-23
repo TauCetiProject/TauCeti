@@ -27,6 +27,8 @@ them; that classification, which runs through the action on the projective line,
 
 ## Main declarations
 
+* `Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff`: over a ring without zero divisors, two
+  matrices of `SL(2, R)` have the same class exactly when they agree up to sign.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic`: an element of `PSL(2, R)` is parabolic when
   it has a parabolic representative, and `isParabolic_mk_iff`: then every representative is.
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_conj_iff`: parabolicity is invariant under
@@ -61,18 +63,21 @@ def IsParabolic (g : PSL(2, R)) : Prop :=
 
 variable [NoZeroDivisors R]
 
+/-- Two matrices of `SL(2, R)` have the same class in `PSL(2, R)` exactly when they are equal up
+to sign. -/
+theorem mk_eq_mk_iff {a b : SL(2, R)} : (a : PSL(2, R)) = b ↔ b = a ∨ b = -a := by
+  rw [QuotientGroup.eq, SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one, inv_mul_eq_one,
+    inv_mul_eq_iff_eq_mul, mul_neg_one, eq_comm (a := a)]
+
 /-- The class of a matrix of `SL(2, R)` is parabolic exactly when the matrix is: the only other
 representative is its negative, which is parabolic along with it. -/
 @[simp]
 theorem isParabolic_mk_iff (a : SL(2, R)) :
     IsParabolic (a : PSL(2, R)) ↔ (a : GL (Fin 2) R).IsParabolic := by
   refine ⟨fun ⟨b, hb, hpar⟩ ↦ ?_, fun h ↦ ⟨a, rfl, h⟩⟩
-  rw [QuotientGroup.eq, SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one] at hb
-  rcases hb with hb | hb
-  · rwa [inv_mul_eq_one.mp hb] at hpar
-  · rw [inv_mul_eq_iff_eq_mul, mul_neg_one] at hb
-    subst hb
-    simpa [GeneralLinearGroup.IsParabolic] using hpar
+  rcases mk_eq_mk_iff.1 hb with rfl | rfl
+  · exact hpar
+  · simpa [GeneralLinearGroup.IsParabolic] using hpar
 
 /-- Parabolicity is invariant under conjugation in `PSL(2, R)`. -/
 @[simp]

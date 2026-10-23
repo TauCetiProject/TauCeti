@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
 public import TauCeti.RingTheory.MvPolynomial.IrreducibleBasis.Lazard
+public import TauCeti.RingTheory.MvPolynomial.SquarefreeBasis.Lazard
 
 /-!
 # Lazard delineations of a family from its irreducible basis
@@ -33,8 +34,8 @@ members of `F` may be nullified at points of `S`, and their contents may vanish.
 This is the passage from the basis to the original family in Lazard's lifting: once the basis
 has a Lazard delineation over a cell on which the Lazard projection is valuation-invariant, every
 original input is valuation-invariant, hence sign-invariant, on each section and sector above it
-(`TauCeti.LazardDelineation.lazardValuation_snoc_eq_of_mem_sectionSet`, its sector version and
-`IsPreconnected.signInvariant_eval_of_lazardValuationReindex_eq`).
+(`TauCeti.LazardDelineation.lazardValuation_snoc_eq_of_mem_sectionSet`,
+`TauCeti.LazardDelineation.signInvariant_sectionSet` and their sector versions).
 
 ## Main definitions and results
 
@@ -94,7 +95,8 @@ noncomputable def ofIrreducibleBasis
     exponent f := (e f.1).lazardExponent (Polynomial.C ∘ x₀.1)
     lazardExponent_eq f x := by
       rw [hswap]
-      refine hB.lazardExponent_eq f.2 ?_ fun b hb ↦ (hexp b hb x).trans (hexp b hb x₀).symm
+      refine hB.isSquarefreeBasis.lazardExponent_eq f.2 ?_
+        fun b hb ↦ (hexp b hb x).trans (hexp b hb x₀).symm
       -- Constant content valuation gives constant content exponents, including content `0`.
       obtain h0 | h0 := eq_or_ne f.1.content 0
       · simp [h0]

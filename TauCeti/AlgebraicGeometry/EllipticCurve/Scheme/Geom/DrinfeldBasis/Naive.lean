@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.DrinfeldBasis.
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GeometricFiber
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
-import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 import TauCeti.AlgebraicGeometry.IdealSheaf.Rank
 import TauCeti.AlgebraicGeometry.ResidueField
 
@@ -70,32 +69,13 @@ theorem IsFiberwiseInjective.isDrinfeldBasis
     {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)}
     (hφ : E.IsFiberwiseInjective φ) : E.IsDrinfeldBasis N φ := by
   have hn : (N : ℤ) ≠ 0 := by exact_mod_cast NeZero.ne N
-  have (a : Multiplicative (ZMod N × ZMod N)) : IsClosedImmersion (φ a).left :=
-    (φ a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
   let i := (E.torsionι N).left
   have hrel := E.isRelativeEffectiveCartier_pointsDivisor φ
   have := hrel.flat
-  have hprod : E.pointsDivisor φ = ⨅ a, (φ a).left.ker := by
-    rw [pointsDivisor_def]
-    apply Scheme.IdealSheafData.prod_eq_iInf_of_pairwise_disjoint_support
-    intro a b hab
-    apply disjoint_iff.mpr
-    apply SetLike.coe_injective
-    simpa only [Set.inf_eq_inter, Set.bot_eq_empty,
-      TopologicalSpace.Closeds.coe_inf, TopologicalSpace.Closeds.coe_bot,
-      Scheme.Hom.support_ker,
-      (IsClosedImmersion.isClosedEmbedding (φ a).left).isClosed_range.closure_eq,
-      (IsClosedImmersion.isClosedEmbedding (φ b).left).isClosed_range.closure_eq] using
-      (hφ.disjoint_range hab).eq_bot
   have hle : i.ker ≤ E.pointsDivisor φ := by
-    rw [hprod]
-    refine le_iInf fun a ↦ ?_
-    have ha : a ^ N = 1 := Multiplicative.toAdd.injective <| by
-      ext <;> simp [nsmul_eq_mul]
-    have hx : φ a ≫ E.mulBy N = 1 := by
-      rw [comp_mulBy, zpow_natCast, ← map_pow, ha, map_one]
-    simpa [i, ← Over.comp_left, E.torsionLift_torsionι (φ a) hx] using
-      Scheme.Hom.le_ker_comp (E.torsionLift (φ a) hx).left i
+    apply hφ.ker_torsionι_left_le_pointsDivisor
+    intro a
+    simpa [IsMonHom.monoidHom_apply, comp_mulBy] using range_le_ker_mulBy φ ⟨a, rfl⟩
   rw [isDrinfeldBasis_iff, ← ker_torsionι_left]
   exact (Scheme.IdealSheafData.eq_of_le_of_finrank_eq hle E.structureMap (by
     rw [← Scheme.Hom.finrank_comp_left_of_isIso i.toImage,

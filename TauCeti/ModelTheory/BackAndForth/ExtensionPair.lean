@@ -27,6 +27,8 @@ empty tuples is carried by the given pair of tuples.
 ## Main results
 
 * `TauCeti.SameAtomicType.exists_snoc_of_isExtensionPair`: matching one-point extensions.
+* `TauCeti.isExtensionPair_iff_forall_exists_snoc`: conversely, matching one-point extensions of
+  tuples give an extension pair.
 * `TauCeti.isTupleBFSystem_sameAtomicType`: the atomic-type pairs form a tuple back-and-forth
   system.
 * `TauCeti.SameAtomicType.bfEquiv_of_isExtensionPair`: atomic-type agreement implies
@@ -68,6 +70,26 @@ theorem exists_snoc_of_isExtensionPair (h : SameAtomicType (L := L) a b)
   · simpa [c] using (hgb j).symm
 
 end SameAtomicType
+
+/-- In a relational language, `M`, `N` form an extension pair exactly when tuples with the same
+atomic type always have matching one-point extensions on the `M` side. This is how the extension
+property is checked for concrete structures, one new element at a time. -/
+theorem isExtensionPair_iff_forall_exists_snoc :
+    L.IsExtensionPair M N ↔ ∀ {n : ℕ} {a : Fin n → M} {b : Fin n → N},
+      SameAtomicType (L := L) a b → ∀ x : M, ∃ y : N,
+        SameAtomicType (L := L) (snoc a x) (snoc b y) := by
+  refine ⟨fun hMN _ _ _ h x => h.exists_snoc_of_isExtensionPair hMN x, fun h f x => ?_⟩
+  -- Enumerate the finite domain of `f` and extend the enumeration by `x`.
+  obtain ⟨n, s, hs⟩ := Substructure.fg_iff_exists_fin_generating_family.mp f.2
+  have hd : (f.1.dom : Set M) = Set.range s := by
+    rw [← hs, Substructure.closure_eq_of_isRelational]
+  let a' : Fin n → f.1.dom := fun i => ⟨s i, by rw [← SetLike.mem_coe, hd]; exact ⟨i, rfl⟩⟩
+  obtain ⟨y, hy⟩ := h (f.1.sameAtomicType a') x
+  obtain ⟨g, c, hc, he, -⟩ := hy.exists_fgEquiv
+  refine ⟨g, (by simpa only [snoc_last] using hc (last n)) ▸ (c (last n)).property, ?_⟩
+  exact PartialEquiv.le_of_dom_eq_range a' (fun _ => rfl) (fun _ => rfl) hd
+    (fun i => c i.castSucc) (fun i => by simpa only [snoc_castSucc] using hc i.castSucc)
+    (fun i => by simpa only [snoc_castSucc, Function.comp_apply] using he i.castSucc)
 
 /-- When `M` and `N` form an extension pair in both directions and their empty tuples agree (that
 is, on the nullary relations), the pairs of tuples with the same atomic type form a tuple

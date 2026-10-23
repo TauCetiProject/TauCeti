@@ -16,6 +16,14 @@ Its generators are the fibres at points, and its relations identify a coefficien
 parallel transport along a path. This describes degree-zero classes without choosing paths
 or basepoints, including for disconnected spaces.
 
+## Main definitions
+
+* `TauCeti.LocalCoefficientSystem.ιTwistedHomology₀`: the class in zeroth homology of a
+  coefficient in the fibre at a point, with `ιTwistedHomology₀_def` its defining equation.
+* `TauCeti.LocalCoefficientSystem.isColimitTwistedHomology₀Cocone`,
+  `TauCeti.LocalCoefficientSystem.twistedHomology₀IsoColimit`: zeroth homology is the colimit of the
+  local system.
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 3.H.
@@ -40,6 +48,14 @@ variable {R : Type u} [Ring R] {X : TopCat.{v}}
 def ιTwistedHomology₀ (x : X) : L.obj (FundamentalGroupoid.mk x) ⟶ twistedHomology L 0 :=
   ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) ≫
     (twistedChainComplex L).pOpcycles 0 ≫ (twistedChainComplex L).isoHomologyι₀.inv
+
+/-- The class of a coefficient in the fibre at `x` is the image in zeroth homology of the summand
+of the point simplex at `x`.  This is the defining equation of `ιTwistedHomology₀`. -/
+theorem ιTwistedHomology₀_def (x : X) :
+    ιTwistedHomology₀ L x =
+      ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) ≫
+        (twistedChainComplex L).pOpcycles 0 ≫ (twistedChainComplex L).isoHomologyι₀.inv :=
+  (rfl)
 
 /-- A zero-simplex represents the class of its coefficient in the fibre at its vertex. -/
 @[reassoc]

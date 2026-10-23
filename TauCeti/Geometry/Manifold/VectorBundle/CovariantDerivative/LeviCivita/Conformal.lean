@@ -45,6 +45,8 @@ the connections are compared directly on `M`.
 * `TauCeti.Manifold.conformalConnectionTensor`: the tensor `A` above, for the metric of the
   `RiemannianBundle` instance; `TauCeti.Manifold.conformalConnectionTensor_apply` evaluates it,
   and `TauCeti.Manifold.inner_conformalConnectionTensor` pairs it with a third vector.
+* `TauCeti.Manifold.contMDiff_conformalConnectionTensor_apply`: evaluated on `C^n` vector fields,
+  the tensor of a nowhere vanishing `C^(n + 1)` function is a `C^n` vector field.
 * `TauCeti.Manifold.conformalConnectionTensor_rpow`: the tensor of `u ^ p` is `p` times the
   tensor of `u`.
 * `Bundle.ContMDiffRiemannianMetric.isLeviCivitaConnection_rescale_addOneForm`: adding the tensor
@@ -115,6 +117,26 @@ theorem inner_conformalConnectionTensor (f : M → ℝ) (x : M) (v w z : Tangent
     inner_add_left, inner_mgradient]
   ring
 
+/-- The conformal connection tensor of a nowhere vanishing `C^(n + 1)` function, evaluated on two
+`C^n` vector fields, is a `C^n` vector field for a `C^n` metric. -/
+theorem contMDiff_conformalConnectionTensor_apply {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)] {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) (hf₀ : ∀ x, f x ≠ 0)
+    {Y Z : Π x : M, TangentSpace I x} (hY : CMDiff n (T% Y)) (hZ : CMDiff n (T% Z)) :
+    CMDiff n (T% (fun y ↦ conformalConnectionTensor I f y (Y y) (Z y))) := by
+  have hgrad := contMDiff_mgradient (I := I) hf
+  -- The bundle argument of `ContMDiff.inner_bundle` is not inferred through `TangentSpace`.
+  have hinner {U W : Π x : M, TangentSpace I x} (hU : CMDiff n (T% U)) (hW : CMDiff n (T% W)) :
+      ContMDiff I 𝓘(ℝ) n (fun y ↦ inner ℝ (U y) (W y)) :=
+    ContMDiff.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := id) hU hW
+  -- Write the tensor through the gradient, `df(v) = ⟪grad f, v⟫`, and combine smooth sections.
+  refine (((contMDiff_const.mul (hf.of_le le_self_add)).inv₀ fun y ↦
+      mul_ne_zero two_ne_zero (hf₀ y)).smul_section
+    ((((hinner hgrad hZ).smul_section hY).add_section
+      ((hinner hgrad hY).smul_section hZ)).sub_section
+        ((hinner hY hZ).smul_section hgrad))).congr fun y ↦ ?_
+  simp [conformalConnectionTensor_apply, inner_mgradient]
+
 /-- The conformal connection tensor of a real power `u ^ p` of a positive function is `p` times
 that of `u`. For `p = 4 / (n - 2)` this is the conformal factor of the Yamabe problem. -/
 theorem conformalConnectionTensor_rpow {u : M → ℝ} {x : M} (hu : MDiffAt u x) (hux : 0 < u x)
@@ -127,6 +149,23 @@ theorem conformalConnectionTensor_rpow {u : M → ℝ} {x : M} (hu : MDiffAt u x
     rw [← inner_mgradient, hgrad, real_inner_smul_left, inner_mgradient]
   ext v w
   simp only [conformalConnectionTensor_apply, smul_apply, hd, hgrad, Real.rpow_sub_one hux.ne']
+  match_scalars <;> field_simp
+
+/-- The conformal connection tensor of an exponential factor `e^(2φ)` is the classical tensor
+`A(v, w) = dφ(w) v + dφ(v) w - ⟪v, w⟫ grad φ` of the conformal change `e^(2φ) g`. -/
+theorem conformalConnectionTensor_exp_two_mul_apply {φ : M → ℝ} {x : M} (hφ : MDiffAt φ x)
+    (v w : TangentSpace I x) :
+    conformalConnectionTensor I (fun y ↦ Real.exp (2 * φ y)) x v w =
+      mvfderiv I φ x w • v + mvfderiv I φ x v • w - inner ℝ v w • mgradient I φ x := by
+  have hgrad : mgradient I (fun y ↦ Real.exp (2 * φ y)) x =
+      (Real.exp (2 * φ x) * 2) • mgradient I φ x :=
+    mgradient_comp_hasDerivAt (f := φ) (g := fun t ↦ Real.exp (2 * t))
+      (by simpa using ((hasDerivAt_id (φ x)).const_mul 2).exp) hφ
+  have hd : ∀ v, mvfderiv I (fun y ↦ Real.exp (2 * φ y)) x v =
+      Real.exp (2 * φ x) * 2 * mvfderiv I φ x v := by
+    intro v
+    rw [← inner_mgradient, hgrad, real_inner_smul_left, inner_mgradient]
+  simp only [conformalConnectionTensor_apply, hd, hgrad]
   match_scalars <;> field_simp
 
 end TauCeti.Manifold

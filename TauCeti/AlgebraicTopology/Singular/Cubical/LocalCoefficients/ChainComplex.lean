@@ -88,6 +88,12 @@ theorem normalizedTwistedCubicalChainComplex_d_apply (L : LocalCoefficientSystem
   simp only [normalizedTwistedCubicalChainComplex, ChainComplex.of_d]
   rfl
 
+/-- The differential of the normalized cubical chain complex is the boundary, as a morphism of
+modules. -/
+theorem normalizedTwistedCubicalChainComplex_d (L : LocalCoefficientSystem.{u, v, w} R X)
+    (n : ℕ) : L.normalizedTwistedCubicalChainComplex.d (n + 1) n = ModuleCat.ofHom (boundary L n) :=
+  ModuleCat.hom_ext (LinearMap.ext fun x ↦ normalizedTwistedCubicalChainComplex_d_apply L n x)
+
 /-- The chain map of normalized cubical chain complexes induced by a morphism of local
 systems. -/
 def normalizedTwistedCubicalChainComplexCoefficientMap {L K : LocalCoefficientSystem.{u, v, w} R X}

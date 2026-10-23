@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 public import TauCeti.Analysis.Complex.LocalNormalForm
 public import TauCeti.Topology.Covering.LocalPower
+import TauCeti.Analysis.Complex.RiemannSurface.IdentityTheorem
 
 /-!
 # Local power coordinates for holomorphic maps of Riemann surfaces
@@ -23,7 +24,9 @@ This supplies actual biholomorphic coordinates at ramification points, rather th
 of nearby fibres. They are the local models used to remove and replace branch discs in the
 branched-cover Euler-characteristic argument. The theorem
 `TauCeti.RiemannSurface.isLocalPowerAt_localMultiplicity` packages the same coordinates in the
-topological `TauCeti.IsLocalPowerAt` vocabulary used by branched covers.
+topological `TauCeti.IsLocalPowerAt` vocabulary used by branched covers. In particular, on a
+connected Riemann surface every fibre of a nonconstant holomorphic map is discrete
+(`TauCeti.RiemannSurface.eventually_apply_ne_of_ne_const`).
 
 ## References
 
@@ -133,5 +136,20 @@ theorem isLocalPowerAt_localMultiplicity
     have hy : e.symm w ∈ e.source := e.map_target hw
     rw [hψ]
     simpa only [e.right_inv hw] using (hpow _ hy).2
+
+/-- **Discreteness of the fibres.** On a connected Riemann surface, a holomorphic map other than the
+constant map with value `y₀` takes the value `y₀` at no point of a punctured neighbourhood of any
+point. -/
+theorem eventually_apply_ne_of_ne_const [PreconnectedSpace X]
+    (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) {y₀ : Y} (h : f ≠ fun _ ↦ y₀) (x : X) :
+    ∀ᶠ y in 𝓝[≠] x, f y ≠ y₀ := by
+  have := ChartedSpace.t1Space ℂ Y
+  rcases eq_or_ne (f x) y₀ with hx | hx
+  · obtain ⟨x₁, hx₁⟩ : ∃ x₁, f x₁ ≠ f x := by
+      by_contra! hc
+      exact h (funext fun y ↦ (hc y).trans hx)
+    exact hx ▸ (isLocalPowerAt_localMultiplicity (.of_forall hf)
+      (not_eventuallyConst_of_ne hf hx₁ x)).eventually_ne
+  · exact nhdsWithin_le_nhds ((hf x).continuousAt.eventually (isOpen_ne.mem_nhds hx))
 
 end TauCeti.RiemannSurface

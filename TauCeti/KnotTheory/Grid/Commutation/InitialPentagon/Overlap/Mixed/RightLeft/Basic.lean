@@ -73,12 +73,6 @@ namespace TauCeti.GridRectangleInitialPentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
-private theorem underlying_second_isEmpty
-    (D : GridRectangleInitialPentagonDecomposition a s x z) (h : D.pentagon.IsEmpty) :
-    D.toGridRectangleDecomposition.second.IsEmpty := by
-  rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at h ⊢
-  simpa only [D.pentagon_toGridRectangleBetween] using h
-
 private theorem second_bottom_eq_first_bottom
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.right = D.second.left) :
@@ -203,9 +197,7 @@ theorem recutRightEqLeft_toGridRectangleDecomposition
       D.toGridRectangleDecomposition.recut
         (D.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_left hcommon
           (D.first_left_ne_second_right_of_right_eq_left hcommon hturn))
-        hfirst (by
-          rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at hsecond ⊢
-          simpa only [D.pentagon_toGridRectangleBetween] using hsecond) :=
+        hfirst (D.underlying_second_isEmpty hsecond) :=
   (rfl)
 
 /-- The promoted decomposition is an empty-rectangle recut of the original composite domain. -/
@@ -362,7 +354,7 @@ end TauCeti.GridRectangleInitialPentagonDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 section Weights
 
@@ -454,10 +446,9 @@ private theorem initialPentagonRightLeftOverlapSource_recut_data
     D.toGridRectangleDecomposition.HasOneCommonSide ∧ D.first.IsEmpty ∧ D.second.IsEmpty := by
   obtain ⟨hcommon, hturn, hfirst, hsecond⟩ :=
     G.initialPentagonRightLeftOverlapSource_data C D hD
-  refine ⟨D.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_left hcommon
-    (D.first_left_ne_second_right_of_right_eq_left hcommon hturn), hfirst, ?_⟩
-  rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at hsecond ⊢
-  simpa only [D.pentagon_toGridRectangleBetween] using hsecond
+  exact ⟨D.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_left hcommon
+    (D.first_left_ne_second_right_of_right_eq_left hcommon hturn), hfirst,
+    D.underlying_second_isEmpty hsecond⟩
 
 private theorem initialPentagonRightLeftOverlapPartner_injective :
     Function.Injective (G.initialPentagonRightLeftOverlapPartner C (x := x) (z := z)) := by

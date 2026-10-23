@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.Permutation
+public import TauCeti.RepresentationTheory.FreeOfBasis
 public import TauCeti.Topology.CWComplex.Classical.Covering
 public import Mathlib.RepresentationTheory.Rep.Basic
 
@@ -209,21 +210,18 @@ variable {n : ℕ}
   (s : cell C n → letI := cwComplexPreimage C hG.isCoveringMap; cell (p ⁻¹' C) n)
   (hs : ∀ i, (cellPreimageEquiv C hG.isCoveringMap n (s i)).1 = i)
 
-/-- The basis equivalence underlying `TauCeti.cellularChainRepIsoFree` sends the generator
-`single i (single g 1)` to the cellular basis vector of the lifted cell `g • s i`. -/
-@[simp]
-private lemma basisEquiv_single (i : cell C n) (g : G) :
+/-- Translation by `g` sends the cellular basis vector of the lifted cell `h • s i` to that of
+`(g * h) • s i`. -/
+private lemma cellularChainRepresentation_sigmaSMulLiftEquiv (g h : G) (i : cell C n) :
     letI := cwComplexPreimage C hG.isCoveringMap
     letI := cellPreimageMulAction C hG n
     haveI := hG.isCoveringMap.t2Space
-    (Finsupp.basis fun _ ↦ MonoidAlgebra.basis G R).equiv (cellularChainBasis (p ⁻¹' C) R n)
-        (sigmaSMulLiftEquiv C hG s hs) (Finsupp.single i (MonoidAlgebra.single g 1)) =
-      cellularChainBasis (p ⁻¹' C) R n (g • s i) := by
+    cellularChainRepresentation C hG R n g
+        (cellularChainBasis (p ⁻¹' C) R n (sigmaSMulLiftEquiv C hG s hs ⟨i, h⟩)) =
+      cellularChainBasis (p ⁻¹' C) R n (sigmaSMulLiftEquiv C hG s hs ⟨i, g * h⟩) := by
   let := cwComplexPreimage C hG.isCoveringMap
   have := hG.isCoveringMap.t2Space
-  simpa only [Finsupp.coe_basis, MonoidAlgebra.basis_apply, sigmaSMulLiftEquiv_apply] using
-    Module.Basis.equiv_apply (b := Finsupp.basis fun _ ↦ MonoidAlgebra.basis G R) (i := ⟨i, g⟩)
-      (cellularChainBasis (p ⁻¹' C) R n) (sigmaSMulLiftEquiv C hG s hs)
+  simp only [sigmaSMulLiftEquiv_apply, cellularChainRepresentation_cellularChainBasis, mul_smul]
 
 /-- The isomorphism of `TauCeti.cellularChainRepIsoFree`, as an equivalence of
 representations from the free representation. -/
@@ -232,12 +230,8 @@ private def freeEquivCellularChainRepresentation :
   letI := cwComplexPreimage C hG.isCoveringMap
   letI := cellPreimageMulAction C hG n
   haveI := hG.isCoveringMap.t2Space
-  .mk ((Finsupp.basis fun _ ↦ MonoidAlgebra.basis G R).equiv
-      (cellularChainBasis (p ⁻¹' C) R n) (sigmaSMulLiftEquiv C hG s hs)) fun g ↦
-    (Finsupp.basis fun _ ↦ MonoidAlgebra.basis G R).ext fun x ↦ by
-      simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-        Finsupp.coe_basis, MonoidAlgebra.basis_apply, Representation.free_single_single,
-        basisEquiv_single, cellularChainRepresentation_cellularChainBasis, mul_smul]
+  (cellularChainRepresentation C hG R n).freeEquivOfBasis (cellularChainBasis (p ⁻¹' C) R n)
+    (sigmaSMulLiftEquiv C hG s hs) (cellularChainRepresentation_sigmaSMulLiftEquiv C hG R s hs)
 
 /-- **The cellular chains of the lift are free over the group ring**, with basis one chosen lift
 of each cell of `C`: given a lift `s i` of each `n`-cell `i` of `C`, the `n`-th cellular chain
@@ -259,8 +253,12 @@ lemma cellularChainRepIsoFree_inv_hom_single (i : cell C n) (g : G) :
       cellularChainBasis (p ⁻¹' C) R n (g • s i) := by
   let := cwComplexPreimage C hG.isCoveringMap
   have := hG.isCoveringMap.t2Space
+  let := cellPreimageMulAction C hG n
   rw [cellularChainRepIsoFree, Iso.symm_inv, Rep.mkIso_hom_hom_apply]
-  exact basisEquiv_single C hG R s hs i g
+  exact (Representation.freeEquivOfBasis_single (cellularChainRepresentation C hG R n)
+    (cellularChainBasis (p ⁻¹' C) R n) (sigmaSMulLiftEquiv C hG s hs)
+    (cellularChainRepresentation_sigmaSMulLiftEquiv C hG R s hs) i g 1).trans
+      (by rw [one_smul, sigmaSMulLiftEquiv_apply])
 
 /-- The cellular basis vector of the lifted cell `g • s i` corresponds to the generator
 `single i (single g 1)` of the free representation. This is not a `simp` lemma: `simp` unfolds
