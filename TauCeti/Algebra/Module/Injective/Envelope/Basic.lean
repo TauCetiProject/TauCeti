@@ -33,9 +33,10 @@ unique: any two injective envelopes of `M` differ by a linear equivalence commut
 structure maps (`TauCeti.IsInjectiveEnvelope.exists_linearEquiv`). Uniqueness is what makes "the"
 injective envelope a well-defined object.
 
-*Existence* of injective envelopes is a separate matter, and is not proved here; nothing below
-assumes it, every statement being conditional on an envelope being given. Over a finite-dimensional
-algebra the indecomposable injectives arise as the envelopes of the simple modules.
+*Existence* of injective envelopes is a separate matter, proved in
+`TauCeti/Algebra/Module/Injective/Envelope/Existence.lean`; nothing below assumes it, every
+statement being conditional on an envelope being given. Over a finite-dimensional algebra the
+indecomposable injectives arise as the envelopes of the simple modules.
 
 ## Universes
 

@@ -37,6 +37,8 @@ essential along **any** linear map (`TauCeti.IsEssential.comap`, the analogue of
 
 * `TauCeti.isEssential_iff`: the definition, restated so that essentiality can be proved and used
   downstream.
+* `TauCeti.isEssential_iff_forall_exists_smul`: a submodule is essential exactly when every nonzero
+  element has a nonzero multiple in it.
 * `TauCeti.isEssential_top`, `TauCeti.IsEssential.mono`, `TauCeti.isEssential_inf_iff`: the
   essential submodules of `M` are closed upwards and under binary infima, and contain `⊤`.
 * `TauCeti.isEssential_bot_iff`: `⊥` is essential exactly for the zero module.
@@ -81,6 +83,21 @@ so this is the interface through which essentiality is both proved and used. -/
 theorem isEssential_iff {N : Submodule R M} :
     IsEssential N ↔ ∀ K : Submodule R M, N ⊓ K = ⊥ → K = ⊥ :=
   (Iff.rfl)
+
+/-- **Essentiality, pointwise.** A submodule is essential exactly when every nonzero element has a
+nonzero multiple in it, that is, when it meets every nonzero cyclic submodule. -/
+theorem isEssential_iff_forall_exists_smul {N : Submodule R M} :
+    IsEssential N ↔ ∀ x : M, x ≠ 0 → ∃ r : R, r • x ∈ N ∧ r • x ≠ 0 := by
+  refine ⟨fun hN x hx => ?_, fun H K hK => ?_⟩
+  · by_contra! h
+    refine hx (Submodule.span_singleton_eq_bot.mp (hN _ ((Submodule.eq_bot_iff _).mpr ?_)))
+    rintro _ ⟨hyN, hy⟩
+    obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hy
+    exact h r hyN
+  · refine (Submodule.eq_bot_iff _).mpr fun x hx => ?_
+    by_contra hx0
+    obtain ⟨r, hrN, hr0⟩ := H x hx0
+    exact hr0 ((Submodule.eq_bot_iff _).mp hK _ ⟨hrN, K.smul_mem r hx⟩)
 
 /-- The whole module is essential in itself. -/
 @[simp]
