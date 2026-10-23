@@ -17,7 +17,10 @@ import TauCeti.RingTheory.Nilpotent.Exp
 In an associative rational algebra, the finite logarithm of a unipotent element is nilpotent.
 It is inverse to `IsNilpotent.exp`, and both maps commute with ring homomorphisms between rings
 with a rational module structure. Thus the nilpotent elements and the elements whose difference
-from one is nilpotent are in bijection.
+from one is nilpotent are in bijection. The bijection respects nilpotency bounds: if `a ^ n = 0`
+then `(exp a - 1) ^ n = 0` (`IsNilpotent.pow_exp_sub_one_eq_zero`), and if `(u - 1) ^ n = 0` then
+`log u ^ n = 0`, so for each `n` the exponential maps `{a | a ^ n = 0}` onto `{u | (u - 1) ^ n = 0}`
+(`IsNilpotent.image_exp_setOf_pow_eq_zero`).
 These polynomial identities apply in particular to strictly upper-triangular and
 upper-unitriangular matrices, without topology or convergence assumptions.
 
@@ -87,6 +90,12 @@ theorem isNilpotent_log {a : A} (ha : IsNilpotent (a - 1)) : IsNilpotent (log a)
     · exact (ha.pow_of_pos hi).smul _
   · intro i j _ _
     exact (((Commute.refl (a - 1)).pow_pow i j).smul_left _).smul_right _
+
+/-- The logarithm preserves nilpotency bounds: if `(a - 1) ^ n = 0`, then `log a ^ n = 0`. -/
+theorem pow_log_eq_zero {a : A} {n : ℕ} (ha : (a - 1) ^ n = 0) : log a ^ n = 0 := by
+  rw [log_eq_sum (pow_eq_zero_of_le n.le_succ ha), sum_range_succ']
+  simpa using TauCeti.pow_sum_smul_pow_succ_eq_zero ha (range n)
+    fun i => ((-1 : ℚ) ^ (i + 2) / (i + 1 : ℕ))
 
 end IsNilpotent
 
@@ -198,5 +207,14 @@ theorem coe_expEquiv (a : {a : A // IsNilpotent a}) :
 @[simp]
 theorem coe_expEquiv_symm (a : {a : A // IsNilpotent (a - 1)}) :
     ((expEquiv A).symm a : A) = log (a : A) := (rfl)
+
+/-- The exponential maps the elements `a` with `a ^ n = 0` onto the elements `u` with
+`(u - 1) ^ n = 0`; the logarithm is the inverse map. -/
+theorem image_exp_setOf_pow_eq_zero (n : ℕ) :
+    exp '' {a : A | a ^ n = 0} = {u | (u - 1) ^ n = 0} := by
+  ext u
+  refine ⟨?_, fun hu => ⟨log u, pow_log_eq_zero hu, exp_log ⟨n, hu⟩⟩⟩
+  rintro ⟨a, ha, rfl⟩
+  exact pow_exp_sub_one_eq_zero ha
 
 end IsNilpotent

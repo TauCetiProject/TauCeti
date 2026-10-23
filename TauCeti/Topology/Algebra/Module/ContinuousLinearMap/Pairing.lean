@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 This file defines the continuous pairing obtained by exchanging the arguments of a jointly
 continuous continuous linear pairing, together with its evaluation and joint-continuity lemmas.
+Scalar multiplication is only assumed continuous for each fixed scalar.
 -/
 
 public section
@@ -21,9 +22,9 @@ namespace ContinuousLinearMap
 variable {G₁ G₂ G₃ : Type*}
   [AddCommGroup G₁] [Module ℝ G₁] [TopologicalSpace G₁]
   [AddCommGroup G₂] [Module ℝ G₂] [TopologicalSpace G₂]
-  [IsTopologicalAddGroup G₂] [ContinuousSMul ℝ G₂]
+  [IsTopologicalAddGroup G₂] [ContinuousConstSMul ℝ G₂]
   [AddCommGroup G₃] [Module ℝ G₃] [TopologicalSpace G₃]
-  [IsTopologicalAddGroup G₃] [ContinuousSMul ℝ G₃]
+  [IsTopologicalAddGroup G₃] [ContinuousConstSMul ℝ G₃]
 
 /-- The flipped continuous pairing obtained from a jointly continuous pairing.
 

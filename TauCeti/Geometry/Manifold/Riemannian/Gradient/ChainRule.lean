@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Chain rules for Riemannian gradients
@@ -142,5 +144,11 @@ theorem mgradient_comp_deriv {g : ℝ → ℝ} (hg : DifferentiableAt ℝ g (f x
     (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
     mgradient I (g ∘ f) x = deriv g (f x) • mgradient I f x :=
   mgradient_comp_hasDerivAt hg.hasDerivAt hf
+
+/-- The gradient of the logarithm of a function at a point where it does not vanish:
+`grad (log f) = f⁻¹ • grad f`. -/
+theorem mgradient_log (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hx : f x ≠ 0) :
+    mgradient I (fun y ↦ Real.log (f y)) x = (f x)⁻¹ • mgradient I f x :=
+  mgradient_comp_hasDerivAt (Real.hasDerivAt_log hx) hf
 
 end TauCeti.Manifold

@@ -11,9 +11,10 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 # Maps between tensor products of algebras
 
 The base change `Algebra.TensorProduct.map (AlgHom.id R S) f : S ⊗[R] B → S ⊗[R] C` of an
-algebra map `f : B →ₐ[R] C` agrees with `LinearMap.lTensor S` applied to the underlying linear
-map of `f`. This lets results about base change of linear maps, such as flatness preserving
-injectivity and exactness, be applied to base change of algebra maps.
+algebra map `f : B →ₐ[R] C` agrees with `LinearMap.lTensor S` applied to the underlying
+linear map of `f`, and similarly on the right with `LinearMap.rTensor S`. This lets results
+about base change of linear maps, such as flatness preserving injectivity and exactness, be
+applied to base change of algebra maps.
 
 For an `S`-algebra `B` over `R` which need not be commutative, the multiplication maps
 `S ⊗[R] B → B` and `B ⊗[R] S → B` are `S`-algebra maps, because `S` acts through its central
@@ -35,6 +36,8 @@ twists the first factor by a ring automorphism.
 
 * `AlgHom.lTensor_toLinearMap_apply`: `f.toLinearMap.lTensor S` is
   `Algebra.TensorProduct.map (AlgHom.id R S) f`.
+* `AlgHom.rTensor_toLinearMap_apply`: `f.toLinearMap.rTensor S` is
+  `Algebra.TensorProduct.map f (AlgHom.id R S)`.
 * `Algebra.TensorProduct.mulLeft`, `Algebra.TensorProduct.mulRight`: the
   multiplication maps `s ⊗ b ↦ s • b` and `b ⊗ t ↦ b * t`.
 * `Algebra.TensorProduct.liftRingHom x y h`: the ring homomorphism `a ⊗ b ↦ x a * y b`.
@@ -61,6 +64,16 @@ theorem AlgHom.lTensor_toLinearMap_apply {R B C : Type*} (S : Type*) [CommSemiri
     f.toLinearMap.lTensor S x = Algebra.TensorProduct.map (AlgHom.id R S) f x := by
   induction x using TensorProduct.inductionOn with
   | tmul s b => simp
+  | add x y hx hy => simp [hx, hy]
+
+/-- Right base change of the underlying linear map of an algebra map is the right base change of
+the algebra map. -/
+theorem AlgHom.rTensor_toLinearMap_apply {R B C : Type*} (S : Type*) [CommSemiring R]
+    [Semiring S] [Algebra R S] [Semiring B] [Algebra R B] [Semiring C] [Algebra R C]
+    (f : B →ₐ[R] C) (x : B ⊗[R] S) :
+    f.toLinearMap.rTensor S x = Algebra.TensorProduct.map f (AlgHom.id R S) x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul b s => simp
   | add x y hx hy => simp [hx, hy]
 
 namespace Algebra.TensorProduct

@@ -14,6 +14,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
+public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
 
 /-!
@@ -73,8 +74,12 @@ Two statements are worth singling out.
 ## Main results
 
 * `TauCeti.BilinForm.isIsometry_iff_toMatrix`: the Gram-matrix criterion `Aᵀ * G * A = G`.
+* `TauCeti.BilinForm.isIsometry_toLin_iff_mem_isometryMatrices`: the same criterion, as
+  membership of a matrix in `Matrix.isometryMatrices` of the Gram matrix.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
+* `LinearMap.BilinForm.Isometry.injective`: an isometric embedding of a left-separating form is
+  injective.
 * `TauCeti.BilinForm.IsIsometry.bijective`: over an integral domain, an isometry of a
   left-separating form on a finite free module is bijective.
 * `TauCeti.BilinForm.IsIsometry.map_orthogonal`: a surjective isometry carries `B`-orthogonal
@@ -97,6 +102,23 @@ isometry group of `Q.polarBilin`,
 -/
 
 public section
+
+/-! ### Isometric embeddings -/
+
+namespace LinearMap.BilinForm.Isometry
+
+variable {R M M' : Type*} [CommSemiring R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+  [Module R M'] {B : LinearMap.BilinForm R M} {B' : LinearMap.BilinForm R M'}
+
+/-- An isometric embedding of a left-separating form is injective: a vector in its kernel pairs
+trivially with everything. -/
+theorem injective (ι : B →bᵢ B') (hB : B.SeparatingLeft) : Function.Injective ι := by
+  intro x y hxy
+  rw [← sub_eq_zero]
+  refine hB (x - y) fun z => ?_
+  rw [← ι.map_app, map_sub, hxy, sub_self, LinearMap.map_zero₂]
+
+end LinearMap.BilinForm.Isometry
 
 namespace TauCeti
 
@@ -269,6 +291,13 @@ theorem isIsometry_iff_toMatrix (b : Basis ι R M) :
   rw [isIsometry_iff_comp, ← (LinearMap.BilinForm.toMatrix b).injective.eq_iff,
     LinearMap.BilinForm.toMatrix_comp b b B f f]
 
+/-- A matrix `X` preserves the Gram matrix of `B` in a basis `b` exactly when the endomorphism it
+represents in `b` is an isometry of `B`. -/
+theorem isIsometry_toLin_iff_mem_isometryMatrices (b : Basis ι R M) {X : Matrix ι ι R} :
+    IsIsometry B (Matrix.toLin b b X) ↔
+      X ∈ Matrix.isometryMatrices (LinearMap.BilinForm.toMatrix b B) := by
+  rw [isIsometry_iff_toMatrix b, LinearMap.toMatrix_toLin, Matrix.mem_isometryMatrices]
+
 end Matrix
 
 /-! ### Base change -/
@@ -318,11 +347,8 @@ variable {R M : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
 /-- An isometry of a left-separating form is injective: it cannot collapse a vector that pairs
 nontrivially with something. -/
 theorem IsIsometry.injective (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
-    Function.Injective f := by
-  intro x y hxy
-  rw [← sub_eq_zero]
-  refine hB (x - y) fun z => ?_
-  rw [← hf.apply (x - y) z, map_sub, hxy, sub_self, LinearMap.map_zero₂]
+    Function.Injective f :=
+  LinearMap.BilinForm.Isometry.injective ⟨f, hf.apply⟩ hB
 
 end AddCommGroup
 

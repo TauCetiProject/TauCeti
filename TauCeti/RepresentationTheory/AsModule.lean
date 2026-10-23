@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.CategoryTheory.Skeletal
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
-public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!

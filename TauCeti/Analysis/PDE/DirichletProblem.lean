@@ -559,7 +559,7 @@ theorem existsUnique_isWeakSolutionDirichlet_of_subset_slab
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
     (energyFormH1_poincare_constant_pos h.pos hbeta (by linarith) hsmall)
     (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_slab h ha hb hc hb_bound hc_bound
-      hc_nonneg hst hslab w.2) f
+      hc_nonneg hslab w.2) f
 
 /-- **Existence and uniqueness for a domain inside a ball.** For `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` with a
 uniformly elliptic principal part, a drift bounded by `β`, a bounded nonnegative mass

@@ -19,11 +19,22 @@ sets and computes the inversion set of the identity and of a simple reflection.
 These computations are the base cases for the root-level exchange step and the later identification
 of Coxeter length with the number of inversions.
 
+An inversion set and its complement in the positive roots are both closed under root addition. For
+the left action of `w` on roots, `inversions P b w⁻¹` and its complement are the positive roots
+`β` with `w⁻¹ β` negative, respectively positive. They index the root directions of the two
+complementary intersections `U⁺ ∩ w U⁻ w⁻¹` and `U⁺ ∩ w U⁺ w⁻¹` used as coordinates on Bruhat
+cells; closedness under root addition is the combinatorial condition for a set of positive roots
+to be the set of roots of a subgroup of `U⁺` normalized by the torus.
+
 ## Main definitions and results
 
 * `TauCeti.inversions` is the set of positive roots sent to negative roots.
 * `TauCeti.inversions_one` computes the inversion set of the identity.
 * `TauCeti.inversions_ofIdx` computes the inversion set of a simple reflection.
+* `TauCeti.add_mem_inversions` and `TauCeti.add_mem_posRoots_sdiff_inversions`: an inversion set
+  and its complement in the positive roots are closed under root addition.
+* `TauCeti.mem_inversions_or_mem_inversions_of_add_mem`: an inversion that is a sum of two positive
+  roots has an inversion among its summands.
 * `TauCeti.image_root_inversions` identifies index-level inversions with vector roots.
 * `TauCeti.ncard_inversions_eq_ncard_vector_inversions` identifies their cardinalities.
 
@@ -109,6 +120,40 @@ theorem inversions_eq_posRoots_iff :
     intro i hi
     refine ⟨(mem_posRoots P b i).mp hi, ?_⟩
     exact (mem_negRoots P b _).mp (h hi)
+
+/-- A positive root lies outside the inversion set exactly when its image is again positive. -/
+lemma mem_posRoots_sdiff_inversions (i : ι) :
+    i ∈ posRoots P b \ inversions P b w ↔ b.IsPos i ∧ b.IsPos (P.weylGroupToPerm w i) := by
+  simp only [Set.mem_sdiff, mem_posRoots, mem_inversions, not_and, not_not]
+  exact ⟨fun h ↦ ⟨h.1, h.2 h.1⟩, fun h ↦ ⟨h.1, fun _ ↦ h.2⟩⟩
+
+/-- **Inversion sets are closed under root addition**: a root that is the sum of two inversions
+of `w` is again an inversion of `w`. -/
+theorem add_mem_inversions {i j k : ι} (hi : i ∈ inversions P b w) (hj : j ∈ inversions P b w)
+    (hk : P.root k = P.root i + P.root j) : k ∈ inversions P b w :=
+  ⟨hi.1.add hj.1 hk, fun hpos ↦ hi.2 (by
+    -- The image of `k` is the sum of the images of `i` and `j`, both negative.
+    have hneg := add_mem_negRoots P b ((mem_negRoots P b _).mpr hi.2)
+      ((mem_negRoots P b _).mpr hj.2) (P.root_weylGroupToPerm_eq_add w hk)
+    exact absurd hpos ((mem_negRoots P b _).mp hneg))⟩
+
+/-- **The positive roots outside an inversion set are closed under root addition**: a root that is
+the sum of two positive roots kept positive by `w` is itself positive and kept positive by `w`. -/
+theorem add_mem_posRoots_sdiff_inversions {i j k : ι} (hi : i ∈ posRoots P b \ inversions P b w)
+    (hj : j ∈ posRoots P b \ inversions P b w) (hk : P.root k = P.root i + P.root j) :
+    k ∈ posRoots P b \ inversions P b w := by
+  rw [mem_posRoots_sdiff_inversions] at hi hj ⊢
+  exact ⟨hi.1.add hj.1 hk, hi.2.add hj.2 (P.root_weylGroupToPerm_eq_add w hk)⟩
+
+/-- **Inversion sets are coclosed**: if a sum of two positive roots is an inversion of `w`, then
+one of the two summands is an inversion of `w`. -/
+theorem mem_inversions_or_mem_inversions_of_add_mem {i j k : ι} (hi : b.IsPos i)
+    (hj : b.IsPos j) (hk : P.root k = P.root i + P.root j) (hkw : k ∈ inversions P b w) :
+    i ∈ inversions P b w ∨ j ∈ inversions P b w := by
+  by_contra! h
+  have hdiff := add_mem_posRoots_sdiff_inversions P b w ⟨(mem_posRoots P b i).mpr hi, h.1⟩
+    ⟨(mem_posRoots P b j).mpr hj, h.2⟩ hk
+  exact hdiff.2 hkw
 
 /-- The number of inversions is at most the number of positive roots. -/
 lemma ncard_inversions_le [Finite ι] :
