@@ -25,7 +25,8 @@ relations force `E = F = 0`.
 
 The quotient construction supplies a universal property for tuples satisfying these relations.
 Since the generators generate the algebra, a complex-linear map between `UqSl2 q`-modules that
-commutes with `E`, `F` and `K` is `UqSl2 q`-linear. We also package `K` as a unit and derive the
+commutes with `E`, `F` and `K` is `UqSl2 q`-linear, and an element of `UqSl2 q` that commutes
+with `E`, `F` and `K` is central. We also package `K` as a unit and derive the
 commutation rules with `K⁻¹`; these are the basic presentation-level identities used when putting
 words into triangular order.  Establishing a PBW basis, and hence nontriviality of this
 presentation, requires additional Ore-extension arguments and is not part of the presentation
@@ -320,6 +321,39 @@ theorem _root_.LinearMap.map_smul_of_commute_uqSl2 {V W : Type*} [AddCommGroup V
   | algebraMap c => rw [algebraMap_smul, algebraMap_smul, map_smul]
   | add a b _ _ ha hb => rw [add_smul, add_smul, map_add, ha, hb]
   | mul a b _ _ ha hb => rw [mul_smul, mul_smul, ha, hb]
+
+/-- An element of `UqSl2 q` that commutes with `E`, `F` and `K` commutes with every element of
+`UqSl2 q`; commuting with `K⁻¹` is automatic. -/
+theorem commute_of_commute_generators {z : UqSl2 q} (he : Commute (e q) z)
+    (hf : Commute (f q) z) (hk : Commute (k q) z) (a : UqSl2 q) : Commute a z := by
+  have hkInv : Commute (kInv q) z := by
+    rw [← kUnit_inv]
+    exact Commute.units_inv_left (by rwa [kUnit_val])
+  refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (R := ℂ)
+    (s := Set.range (generator q)) ?_ ?_).symm
+  · rw [adjoin_range_generator]
+    exact Algebra.mem_top
+  · rintro _ ⟨g, rfl⟩
+    cases g
+    exacts [he.symm, hf.symm, hk.symm, hkInv.symm]
+
+/-- A complex subspace of a `UqSl2 q`-module that is stable under `E`, `F`, `K` and `K⁻¹` is
+stable under every element of `UqSl2 q`. -/
+theorem _root_.Submodule.smul_mem_of_uqSl2_generators {V : Type*} [AddCommGroup V] [Module ℂ V]
+    [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V] (W : Submodule ℂ V)
+    (he : ∀ x ∈ W, e q • x ∈ W) (hf : ∀ x ∈ W, f q • x ∈ W) (hk : ∀ x ∈ W, k q • x ∈ W)
+    (hkInv : ∀ x ∈ W, kInv q • x ∈ W) (a : UqSl2 q) {x : V} (hx : x ∈ W) : a • x ∈ W := by
+  have ha : a ∈ Algebra.adjoin ℂ (Set.range (generator q)) := by
+    rw [adjoin_range_generator]
+    exact Algebra.mem_top
+  induction ha using Algebra.adjoin_induction generalizing x with
+  | mem a ha =>
+    obtain ⟨g, rfl⟩ := ha
+    cases g
+    exacts [he x hx, hf x hx, hk x hx, hkInv x hx]
+  | algebraMap c => rw [algebraMap_smul]; exact W.smul_mem c hx
+  | add a b _ _ ha hb => rw [add_smul]; exact W.add_mem (ha hx) (hb hx)
+  | mul a b _ _ ha hb => rw [mul_smul]; exact ha (hb hx)
 
 /-- Algebra maps from `UqSl2 q` are equivalent to tuples satisfying its defining relations. -/
 def liftEquiv : (UqSl2 q →ₐ[ℂ] A) ≃ GeneratorTuple q A where

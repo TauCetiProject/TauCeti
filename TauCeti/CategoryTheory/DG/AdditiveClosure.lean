@@ -43,6 +43,8 @@ degree-one matrix of this kind.
 * `TauCeti.DGAdditiveClosure.embedding`: the DG functor sending `X` to the one-term sum.
 * `TauCeti.DGAdditiveClosure.single`, `TauCeti.DGAdditiveClosure.proj`: the inclusion of and the
   projection to a summand.
+* `TauCeti.DGAdditiveClosure.sum`: the direct sum `M ⊕ N` of two objects, the concatenation of
+  their families of summands.
 
 ## Main results
 
@@ -355,15 +357,30 @@ theorem dgHomEquiv_proj (M : DGAdditiveClosure C) (i : M.ι) (j : M.ι) (u : PUn
   (rfl)
 
 /-- The entries of the identity are closed. -/
-private theorem dgDifferential_dgHomEquiv_dgId (M : DGAdditiveClosure C) (i j : M.ι) :
+@[simp↓]
+theorem dgDifferential_dgHomEquiv_dgId (M : DGAdditiveClosure C) (i j : M.ι) :
     dgDifferential R 0 (dgHomEquiv R M M 0 (dgId R M) i j) = 0 := by
   rw [← dgHomEquiv_dgDifferential, dgDifferential_dgId, map_zero, Pi.zero_apply, Pi.zero_apply]
 
-/-- The entries of the identity multiply as the entries of a matrix idempotent. -/
-private theorem sum_dgComp_dgHomEquiv_dgId (M : DGAdditiveClosure C) (i k : M.ι) :
-    ∑ j, dgComp R (dgHomEquiv R M M 0 (dgId R M) i j) (dgHomEquiv R M M 0 (dgId R M) j k)
-      (add_zero 0) = dgHomEquiv R M M 0 (dgId R M) i k := by
-  rw [← dgHomEquiv_dgComp, dgComp_dgId]
+/-- Multiplying a row of morphisms out of the summands of `M` on the left by a row of the identity
+of `M` picks out one of them. -/
+@[simp↓]
+theorem sum_dgHomEquiv_dgId_dgComp {M : DGAdditiveClosure C} {Z : C} {q : ℤ}
+    (F : ∀ j, DGHom R q (M.X j) Z) (i : M.ι) :
+    ∑ j, dgComp R (dgHomEquiv R M M 0 (dgId R M) i j) (F j) (zero_add q) = F i := by
+  classical
+  rw [Finset.sum_eq_single i (fun j _ hj ↦ by rw [dgHomEquiv_dgId_of_ne R M (Ne.symm hj),
+    zero_dgComp]) (by simp), dgHomEquiv_dgId_self, dgId_dgComp]
+
+/-- Multiplying a column of morphisms into the summands of `M` on the right by a column of the
+identity of `M` picks out one of them. -/
+@[simp↓]
+theorem sum_dgComp_dgHomEquiv_dgId {M : DGAdditiveClosure C} {Z : C} {p : ℤ}
+    (F : ∀ j, DGHom R p Z (M.X j)) (k : M.ι) :
+    ∑ j, dgComp R (F j) (dgHomEquiv R M M 0 (dgId R M) j k) (add_zero p) = F k := by
+  classical
+  rw [Finset.sum_eq_single k (fun j _ hj ↦ by rw [dgHomEquiv_dgId_of_ne R M hj, dgComp_zero])
+    (by simp), dgHomEquiv_dgId_self, dgComp_dgId]
 
 /- The entries of `single` and `proj` are entries of the identity of `M`, whose types agree with
 the types of the entries of `single` and `proj` only after reducing the projections of the
@@ -394,7 +411,8 @@ theorem dgComp_single_proj_self (M : DGAdditiveClosure C) (i : M.ι) :
     cases u
     cases u'
     rw [dgHomEquiv_dgComp, dgHomEquiv_dgId_self]
-    exact (sum_dgComp_dgHomEquiv_dgId R M i i).trans (dgHomEquiv_dgId_self R M i)
+    exact (sum_dgComp_dgHomEquiv_dgId R (dgHomEquiv R M M 0 (dgId R M) i) i).trans
+      (dgHomEquiv_dgId_self R M i)
 
 /-- The inclusion of a summand followed by the projection to a different summand vanishes. -/
 @[simp↓]
@@ -402,7 +420,8 @@ theorem dgComp_single_proj_of_ne (M : DGAdditiveClosure C) {i j : M.ι} (h : i �
     dgComp R (single R M i) (proj R M j) (add_zero 0) = 0 :=
   dgHom_ext R fun _ _ ↦ by
     rw [dgHomEquiv_dgComp, map_zero]
-    exact (sum_dgComp_dgHomEquiv_dgId R M i j).trans (dgHomEquiv_dgId_of_ne R M h)
+    exact (sum_dgComp_dgHomEquiv_dgId R (dgHomEquiv R M M 0 (dgId R M) i) j).trans
+      (dgHomEquiv_dgId_of_ne R M h)
 
 /-- **`⊕ᵢ Xᵢ` is the direct sum of its summands**: the sum over all summands of the projection
 followed by the inclusion is the identity. -/
@@ -411,7 +430,47 @@ theorem sum_dgComp_proj_single (M : DGAdditiveClosure C) :
   dgHom_ext R fun j k ↦ by
     rw [map_sum, Finset.sum_apply, Finset.sum_apply]
     simp only [dgHomEquiv_dgComp, Fintype.sum_unique]
-    exact sum_dgComp_dgHomEquiv_dgId R M j k
+    exact sum_dgComp_dgHomEquiv_dgId R (dgHomEquiv R M M 0 (dgId R M) j) k
+
+/-! ### Binary sums -/
+
+/-- The **direct sum** `M ⊕ N` of two objects of the additive closure: the concatenation of their
+families of summands. -/
+-- The family is defined by pattern matching rather than by `Sum.elim`, so that its values at
+-- `Sum.inl i` and `Sum.inr j` reduce at reducible transparency: the matrix entries of morphisms
+-- out of and into `M ⊕ N` are then reducibly morphisms between summands of `M` and `N`.
+abbrev sum (M N : DGAdditiveClosure C) : DGAdditiveClosure C :=
+  ⟨M.ι ⊕ N.ι, fun | .inl i => M.X i | .inr j => N.X j⟩
+
+/-- The block of the identity of `M ⊕ N` on the summands of `M` is the identity of `M`. -/
+@[simp↓]
+theorem dgHomEquiv_dgId_sum_inl_inl (M N : DGAdditiveClosure C) (i j : M.ι) :
+    dgHomEquiv R _ _ 0 (dgId R (M.sum N)) (.inl i) (.inl j) =
+      dgHomEquiv R M M 0 (dgId R M) i j := by
+  rcases eq_or_ne i j with rfl | h
+  · rw [dgHomEquiv_dgId_self, dgHomEquiv_dgId_self]
+  · rw [dgHomEquiv_dgId_of_ne R _ (Sum.inl_injective.ne h), dgHomEquiv_dgId_of_ne R _ h]
+
+/-- The block of the identity of `M ⊕ N` from the summands of `M` to those of `N` vanishes. -/
+@[simp↓]
+theorem dgHomEquiv_dgId_sum_inl_inr (M N : DGAdditiveClosure C) (i : M.ι) (j : N.ι) :
+    dgHomEquiv R _ _ 0 (dgId R (M.sum N)) (.inl i) (.inr j) = 0 :=
+  dgHomEquiv_dgId_of_ne R _ Sum.inl_ne_inr
+
+/-- The block of the identity of `M ⊕ N` from the summands of `N` to those of `M` vanishes. -/
+@[simp↓]
+theorem dgHomEquiv_dgId_sum_inr_inl (M N : DGAdditiveClosure C) (i : N.ι) (j : M.ι) :
+    dgHomEquiv R _ _ 0 (dgId R (M.sum N)) (.inr i) (.inl j) = 0 :=
+  dgHomEquiv_dgId_of_ne R _ Sum.inr_ne_inl
+
+/-- The block of the identity of `M ⊕ N` on the summands of `N` is the identity of `N`. -/
+@[simp↓]
+theorem dgHomEquiv_dgId_sum_inr_inr (M N : DGAdditiveClosure C) (i j : N.ι) :
+    dgHomEquiv R _ _ 0 (dgId R (M.sum N)) (.inr i) (.inr j) =
+      dgHomEquiv R N N 0 (dgId R N) i j := by
+  rcases eq_or_ne i j with rfl | h
+  · rw [dgHomEquiv_dgId_self, dgHomEquiv_dgId_self]
+  · rw [dgHomEquiv_dgId_of_ne R _ (Sum.inr_injective.ne h), dgHomEquiv_dgId_of_ne R _ h]
 
 end DGAdditiveClosure
 

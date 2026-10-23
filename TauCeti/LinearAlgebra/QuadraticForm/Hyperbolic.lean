@@ -303,11 +303,13 @@ theorem _root_.QuadraticForm.equivalent_restrict_span_pair_hyperbolicPlane [Inve
 /-- Two isotropic vectors `x, y` with `polar Q x y = 1` split `Q` as the orthogonal sum of the
 hyperbolic plane they span and its orthogonal complement. -/
 theorem _root_.QuadraticForm.equivalent_hyperbolicPlane_prod_restrict_orthogonal
-    [FiniteDimensional K V] [Invertible (2 : K)] (Q : QuadraticForm K V) {x y : V}
+    [Invertible (2 : K)] (Q : QuadraticForm K V) {x y : V}
     (hxQ : Q x = 0) (hyQ : Q y = 0) (hxy : polar Q x y = 1) :
     Q.Equivalent ((hyperbolicPlane K).prod
       (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {x, y})))) := by
   set W := Submodule.span K {x, y}
+  have : FiniteDimensional K W :=
+    FiniteDimensional.span_of_finite K ((Set.finite_singleton y).insert x)
   obtain ⟨eH⟩ := Q.equivalent_restrict_span_pair_hyperbolicPlane hxQ hyQ hxy
   have hcomp : IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) :=
     (eH.symm.nondegenerate_iff.mp nondegenerate_hyperbolicPlane).isCompl_orthogonal
@@ -315,13 +317,15 @@ theorem _root_.QuadraticForm.equivalent_hyperbolicPlane_prod_restrict_orthogonal
     ⟨(QuadraticMap.IsometryEquiv.prodRestrictOrthogonal Q W hcomp).symm⟩
     (QuadraticMap.Equivalent.prod ⟨eH⟩ (QuadraticMap.Equivalent.refl _))
 
-/-- In a regular finite-dimensional quadratic space, the orthogonal complement of the hyperbolic
+/-- In a regular quadratic space, the orthogonal complement of the hyperbolic
 plane spanned by isotropic vectors `x, y` with `polar Q x y = 1` is regular. -/
 theorem _root_.QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal_span_pair
-    [FiniteDimensional K V] [Invertible (2 : K)] {Q : QuadraticForm K V} (hQ : Q.Nondegenerate)
+    [Invertible (2 : K)] {Q : QuadraticForm K V} (hQ : Q.Nondegenerate)
     {x y : V} (hxQ : Q x = 0) (hyQ : Q y = 0) (hxy : polar Q x y = 1) :
     (Q.restrict
       (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {x, y}))).Nondegenerate := by
+  have : FiniteDimensional K (Submodule.span K {x, y}) :=
+    FiniteDimensional.span_of_finite K ((Set.finite_singleton y).insert x)
   obtain ⟨eH⟩ := Q.equivalent_restrict_span_pair_hyperbolicPlane hxQ hyQ hxy
   exact hQ.nondegenerate_restrict_orthogonal
     (eH.symm.nondegenerate_iff.mp nondegenerate_hyperbolicPlane)

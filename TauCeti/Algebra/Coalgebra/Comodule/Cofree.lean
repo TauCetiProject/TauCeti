@@ -18,9 +18,8 @@ the value at `M` of the right adjoint to the forgetful functor from comodules to
 universal property is `Comodule.Hom.cofreeEquiv`: comodule morphisms from a comodule `P` into
 `M ⊗[R] C` are exactly `R`-linear maps `P → M`.
 
-Taking `M = R` recovers (up to the unitor) the regular comodule already provided in
-`TauCeti.Algebra.Coalgebra.Comodule.Regular`; the cofree construction generalizes it to an
-arbitrary module of "coefficients".
+Taking `M = R` recovers (up to the unitor) the regular comodule `Comodule.instSelf`; the cofree
+construction generalizes it to an arbitrary module of "coefficients".
 
 The cofree comodule structure is provided as an explicit named definition `Comodule.cofree`,
 not as a global instance: an `R`-module can carry many coactions, and the cofree one (which on

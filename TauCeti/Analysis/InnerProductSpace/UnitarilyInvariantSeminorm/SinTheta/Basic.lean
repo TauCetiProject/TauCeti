@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Basic
 
 /-!
 # The Davis–Kahan `sin Θ` theorems in unitarily invariant seminorms

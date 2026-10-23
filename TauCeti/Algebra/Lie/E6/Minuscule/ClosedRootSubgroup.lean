@@ -162,7 +162,7 @@ instance isClosedImmersion_rootSubgroup (k : Fin 6 ⊕ Fin 6) :
 
 /-- Every numbered root-subgroup map into the type-`E₆` minuscule carrier is a monomorphism. -/
 theorem mono_rootSubgroup (k : Fin 6 ⊕ Fin 6) : Mono (rootSubgroup k) :=
-  mono_of_isClosedImmersion_underlying (rootSubgroup k)
+  Grp.mono_of_mono_left (rootSubgroup k)
 
 /-- **A numbered type-`E₆` minuscule root subgroup as a closed subgroup scheme of the carrier.** -/
 noncomputable def rootSubgroupClosedSubgroup (k : Fin 6 ⊕ Fin 6) :

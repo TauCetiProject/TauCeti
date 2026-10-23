@@ -49,12 +49,15 @@ series of a profinite group.
   with its copy inside a larger subgroup respects every restricted ambient action.
 * `Subgroup.continuous_subgroupOf_codRestrict`: the inclusion of `U ⊓ D` into `U`, presented
   using `U.subgroupOf D`, is continuous.
+* `Continuous.subgroupHom`: a homomorphism of subgroups computing a continuous ambient
+  homomorphism is continuous.
 * `Dense.denseRange_subgroupOf_codRestrict`: a dense subgroup meets an open subgroup densely.
 * `Subgroup.index_comap_of_denseRange`: the preimage of an open subgroup under a homomorphism with
   dense range has the same index.
 * `Subgroup.instIsClosedTopologicalClosure`: the topological closure of a subgroup is closed.
 * `Subgroup.isClosed_center`: the center of a Hausdorff group with separately continuous
   multiplication is closed.
+* `Subgroup.isClosed_subgroupOf`: a closed subgroup read inside another subgroup is closed there.
 * `Subgroup.dense_iff_topologicalClosure_eq_top`: a subgroup is dense exactly when its topological
   closure is everything; `IsClosed.subgroup_topologicalClosure_eq`: a closed subgroup is its own
   topological closure.
@@ -156,11 +159,25 @@ instance isClosed_center [SeparatelyContinuousMul G] [T2Space G] :
   simpa only [coe_center, Set.centralizer_univ] using
     Set.isClosed_centralizer (Set.univ : Set G)
 
+/-- A closed subgroup `H`, read inside another subgroup `K` as `H.subgroupOf K`, is closed in `K`.
+As an instance, it lets instance search find the separation and compactness properties of
+quotients `K ⧸ H.subgroupOf K` such as the graded pieces of a closed central series. -/
+instance isClosed_subgroupOf (H K : Subgroup G) [IsClosed (H : Set G)] :
+    IsClosed (H.subgroupOf K : Set K) :=
+  IsClosed.preimage continuous_subtype_val ‹_›
+
 /-- The inclusion of `U ⊓ D` into `U`, where `U ⊓ D` is presented as the subgroup `U.subgroupOf D`
 of `D`, is continuous. -/
 theorem continuous_subgroupOf_codRestrict (D U : Subgroup G) :
     Continuous ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2) :=
   (continuous_subtype_val.comp continuous_subtype_val).codRestrict _
+
+/-- A homomorphism of subgroups is continuous if its values are those of a continuous
+homomorphism of the ambient groups. -/
+theorem _root_.Continuous.subgroupHom {G' : Type*} [Group G'] [TopologicalSpace G']
+    {U : Subgroup G} {U' : Subgroup G'} {φ : G →* G'} (hφ : Continuous φ) {ψ : U →* U'}
+    (hψ : ∀ u, (ψ u : G') = φ u) : Continuous ψ :=
+  continuous_induced_rng.2 ((hφ.comp continuous_subtype_val).congr fun u ↦ (hψ u).symm)
 
 /-- **A dense subgroup meets an open subgroup densely.** If `D` is dense and `U` is open, the
 inclusion of `U ⊓ D`, presented as the subgroup `U.subgroupOf D` of `D`, into `U` has dense

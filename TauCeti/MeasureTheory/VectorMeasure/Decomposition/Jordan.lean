@@ -8,38 +8,28 @@ module
 public import Mathlib.MeasureTheory.VectorMeasure.Decomposition.Jordan
 
 /-!
-# Total variation of a difference of measures, eventwise
+# Jordan decomposition of a difference of measures, eventwise
 
 The positive part of the Jordan decomposition of a signed measure `s` has total mass equal to
 the largest value of `s` on a set, and its negative part the largest value of `-s`. For a
 difference `μ - ν` of two finite measures these are the largest excess `μ A - ν A` and the
-largest excess `ν A - μ A` over measurable events `A`. Consequently, eventwise bounds
+largest excess `ν A - μ A` over measurable events `A`. For two finite measures of the same total
+mass the two parts have equal mass.
 
-```text
-μ A ≤ ν A + c,    ν A ≤ μ A + d    (A measurable)
-```
-
-bound Mathlib's total variation measure of `μ.toSignedMeasure - ν.toSignedMeasure` on the whole
-space by `c + d`. For two finite measures of the same total mass the two parts have equal mass,
-so the total variation on the whole space is at most `2 * c` exactly when every event satisfies
-`μ A ≤ ν A + c`.
-
-This pins down the normalization relating two common conventions for probability measures:
-`SignedMeasure.totalVariation` on `Set.univ` is the signed-measure norm `‖μ - ν‖`, which is twice
-the total-variation distance `sup_A |μ A - ν A|`.
+These masses compute Mathlib's total variation distance `etvDist μ ν` through measurable events;
+see `TauCeti.MeasureTheory.Measure.TotalVariation`.
 
 ## Main declarations
 
 * `MeasureTheory.SignedMeasure.toJordanDecomposition_posPart_univ_eq_iSup` and
   `MeasureTheory.SignedMeasure.toJordanDecomposition_negPart_univ_eq_iSup`: the masses of the
   positive and negative parts as suprema of `s` and `-s`;
-* `MeasureTheory.Measure.totalVariation_toSignedMeasure_sub_univ_le`: eventwise bounds in both
-  directions bound the total variation of a difference of finite measures;
-* `MeasureTheory.Measure.totalVariation_toSignedMeasure_sub_univ_le_two_mul_iff`: for finite
-  measures of equal total mass, the total variation is at most `2 * c` if and only if every
-  measurable event satisfies `μ A ≤ ν A + c`.
+* `MeasureTheory.Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup` and
+  `MeasureTheory.Measure.toJordanDecomposition_toSignedMeasure_sub_negPart_univ_eq_iSup`: the
+  same masses for `μ - ν`, as largest excesses over measurable events;
+* `MeasureTheory.Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ`:
+  for finite measures of equal total mass the two parts have equal mass.
 -/
-
 public section
 
 open Set
@@ -106,19 +96,6 @@ theorem toJordanDecomposition_toSignedMeasure_sub_negPart_univ_eq_iSup :
   rw [← neg_sub, SignedMeasure.toJordanDecomposition_neg, JordanDecomposition.neg_negPart,
     toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup]
 
-/-- **Total variation from eventwise bounds.** If every measurable event has `μ`-mass at most its
-`ν`-mass plus `c`, and `ν`-mass at most its `μ`-mass plus `d`, then the total variation of
-`μ - ν` on the whole space is at most `c + d`. -/
-theorem totalVariation_toSignedMeasure_sub_univ_le {c d : ℝ≥0∞}
-    (h₁ : ∀ A, MeasurableSet A → μ A ≤ ν A + c) (h₂ : ∀ A, MeasurableSet A → ν A ≤ μ A + d) :
-    (μ.toSignedMeasure - ν.toSignedMeasure).totalVariation univ ≤ c + d := by
-  rw [SignedMeasure.totalVariation, add_apply,
-    toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup,
-    toJordanDecomposition_toSignedMeasure_sub_negPart_univ_eq_iSup]
-  gcongr
-  · exact iSup₂_le fun A hA => tsub_le_iff_left.2 (h₁ A hA)
-  · exact iSup₂_le fun A hA => tsub_le_iff_left.2 (h₂ A hA)
-
 /-- For finite measures of equal total mass, the positive and negative parts of the Jordan
 decomposition of `μ - ν` have equal total mass. -/
 theorem toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ
@@ -132,21 +109,6 @@ theorem toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ
   rw [s.apply_eq_posPart_real_sub_negPart_real MeasurableSet.univ, sub_eq_zero,
     measureReal_def, measureReal_def] at hs
   exact (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).1 hs
-
-/-- **Total variation as an eventwise bound.** For finite measures of equal total mass (e.g. two
-probability measures), the total variation of `μ - ν` on the whole space is at most `2 * c` if
-and only if every measurable event has `μ`-mass at most its `ν`-mass plus `c`. In other words,
-`(μ.toSignedMeasure - ν.toSignedMeasure).totalVariation univ` is twice the total-variation
-distance `sup_A |μ A - ν A|`. -/
-theorem totalVariation_toSignedMeasure_sub_univ_le_two_mul_iff (h : μ univ = ν univ)
-    {c : ℝ≥0∞} :
-    (μ.toSignedMeasure - ν.toSignedMeasure).totalVariation univ ≤ 2 * c ↔
-      ∀ A, MeasurableSet A → μ A ≤ ν A + c := by
-  rw [SignedMeasure.totalVariation, add_apply,
-    ← toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ h, ← two_mul,
-    ENNReal.mul_le_mul_iff_right two_ne_zero ENNReal.ofNat_ne_top,
-    toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup]
-  simp only [iSup_le_iff, tsub_le_iff_left]
 
 end Measure
 

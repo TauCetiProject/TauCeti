@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
 
 /-!
@@ -29,6 +30,9 @@ is exactly the hypothesis set of
 The radius is supplied as an instance argument `[Fact (0 < c)]`; at the unit radius it is found
 automatically.
 
+Setting the variable to zero is a surjection onto `R` killing the non-zero-divisor `X`, so at any
+radius the Krull dimension of the restricted series ring is at least `dim R + 1`.
+
 ## Main results
 
 * `TauCeti.PowerSeries.norm_eq_gaussNorm`: the norm of a restricted series is its Gauss norm.
@@ -38,6 +42,8 @@ automatically.
   variable has norm `c`.
 * `TauCeti.PowerSeries.nnnorm_eq_gaussValuation`: the norm is the Gauss valuation
   `TauCeti.PowerSeries.gaussValuation`.
+* `TauCeti.PowerSeries.ringKrullDim_succ_le_ringKrullDim_isRestricted_subring`: adjoining a
+  restricted variable, at any radius, raises the Krull dimension by at least one.
 * Instances: `NormedRing`, `NormedCommRing`, `IsUltrametricDist`, `NormOneClass`,
   `NormMulClass` and `CompleteSpace` on `PowerSeries.IsRestricted.subring c`.
 
@@ -152,5 +158,21 @@ noncomputable instance instNormedCommRingIsRestrictedSubring :
     (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)))
 
 end NormedCommRing
+
+section KrullDimension
+
+/-- Setting the variable to zero shows `dim R + 1 ≤ dim R⟨X⟩` for the ring of restricted power
+series of any radius over an ultrametric normed commutative ring `R`. -/
+theorem ringKrullDim_succ_le_ringKrullDim_isRestricted_subring {R : Type*} [NormedCommRing R]
+    [IsUltrametricDist R] (c : ℝ) :
+    ringKrullDim R + 1 ≤ ringKrullDim (PowerSeries.IsRestricted.subring (R := R) c) := by
+  let S := PowerSeries.IsRestricted.subring (R := R) c
+  let X : S := ⟨PowerSeries.X, PowerSeries.X_eq (R := R) ▸ PowerSeries.isRestricted_monomial c 1 1⟩
+  have hX : X ∈ nonZeroDivisors S := mem_nonZeroDivisors_iff_right.mpr fun x hx ↦
+    Subtype.ext <| PowerSeries.mul_X_cancel (ψ := 0) (by simpa [X] using congrArg Subtype.val hx)
+  exact ringKrullDim_succ_le_of_surjective (PowerSeries.constantCoeff.comp S.subtype)
+    (fun r ↦ ⟨⟨PowerSeries.C r, PowerSeries.isRestricted_C c r⟩, by simp⟩) hX (by simp [X])
+
+end KrullDimension
 
 end TauCeti.PowerSeries

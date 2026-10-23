@@ -90,8 +90,8 @@ theorem exists_eq_smul_one_of_isIrreducible
     (Representation.IsIrreducible.algebraMap_intertwiningMap_bijective_of_isAlgClosed
       (ρ := π.toRepresentation)).2 f.toIntertwiningMap
   refine ⟨c, ContIntertwiningMap.ext <| ContinuousLinearMap.ext fun v ↦ ?_⟩
-  simpa [Algebra.algebraMap_eq_smul_one, ContIntertwiningMap.smul_apply,
-    ContIntertwiningMap.one_apply] using congr($hc.symm v)
+  simpa [Algebra.algebraMap_eq_smul_one, ContIntertwiningMap.toContinuousLinearMap_apply,
+    ContIntertwiningMap.smul_apply, ContIntertwiningMap.one_apply] using congr($hc.symm v)
 
 /-- **The Schur scalar is the normalized trace.** Taking traces pins down the scalar of
 `exists_eq_smul_one_of_isIrreducible`: the underlying continuous linear map of a continuous

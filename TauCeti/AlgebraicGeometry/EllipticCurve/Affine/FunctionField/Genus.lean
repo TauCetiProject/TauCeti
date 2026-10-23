@@ -143,10 +143,6 @@ section RiemannRochSpace
 
 variable [W.IsElliptic]
 
-local instance : IsDedekindDomain W.CoordinateRing :=
-  have := isIntegrallyClosed_coordinateRing W
-  W.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- **The Riemann–Roch spaces at infinity of an elliptic curve**: for `n : ℕ`, a function lies
 in `L(n · O)` exactly when it is `p + q y` for polynomials `p` and `q` with `2 deg p ≤ n` and
 `2 deg q + 3 ≤ n` (the latter read as vacuous when `q = 0`).  So `L(n · O)` is spanned by the

@@ -11,9 +11,10 @@ public import TauCeti.RingTheory.LaurentSeries.Convergence
 /-!
 # Laurent polynomials as Laurent series
 
-A Laurent polynomial is a Laurent series with finitely many nonzero coefficients. This file
-defines the ring homomorphism `LaurentPolynomial.toLaurentSeries : R[T;T⁻¹] →+* R⸨X⸩` sending `T`
-to `X`, and shows that it preserves coefficients, so in particular it is injective. This map gives
+Over any semiring, a Laurent polynomial is a Laurent series with finitely many nonzero
+coefficients. This file defines the ring homomorphism
+`LaurentPolynomial.toLaurentSeries : R[T;T⁻¹] →+* R⸨X⸩` sending `T` to `X`, and shows that it
+preserves coefficients, so in particular it is injective. When `R` is commutative, this map gives
 `R⸨X⸩` its canonical `R[T;T⁻¹]`-algebra structure. The resulting algebra towers make the two
 routes from polynomials to Laurent series agree: through power series and through Laurent
 polynomials. The image of the Laurent-polynomial map is exactly the Laurent series of finite
@@ -49,56 +50,41 @@ open scoped LaurentPolynomial LaurentSeries Polynomial
 
 namespace LaurentPolynomial
 
-variable {R : Type*} [CommSemiring R]
+section Semiring
 
-/-- `X` as a unit of `R⸨X⸩`, with inverse `X⁻¹`. -/
-private noncomputable def singleOneUnit : (R⸨X⸩)ˣ where
-  val := HahnSeries.single 1 1
-  inv := HahnSeries.single (-1) 1
-  val_inv := by simp
-  inv_val := by simp
+variable {R : Type*} [Semiring R]
 
-private theorem val_singleOneUnit_zpow (n : ℤ) :
-    ((singleOneUnit (R := R) ^ n : (R⸨X⸩)ˣ) : R⸨X⸩) = HahnSeries.single n 1 := by
-  induction n using Int.induction_on with
-  | zero => simp
-  | succ n ih =>
-    rw [zpow_add_one, Units.val_mul, ih]
-    simp [singleOneUnit]
-  | pred n ih =>
-    rw [zpow_sub_one, Units.val_mul, ih]
-    simp [singleOneUnit, sub_eq_add_neg]
+/-- The multiplicative family of Laurent-series monomials with coefficient one. -/
+private noncomputable def monomialHom : Multiplicative ℤ →* R⸨X⸩ where
+  toFun n := HahnSeries.single n.toAdd 1
+  map_one' := by simp
+  map_mul' := by intros; simp
+
+private theorem commute_C_monomialHom (r : R) (n : Multiplicative ℤ) :
+    Commute (HahnSeries.C r) (monomialHom n) := by
+  simp [Commute, SemiconjBy, monomialHom, HahnSeries.C_apply]
 
 /-- The inclusion of Laurent polynomials into Laurent series, sending `T` to `X`. -/
 noncomputable def toLaurentSeries : R[T;T⁻¹] →+* R⸨X⸩ :=
-  eval₂ HahnSeries.C singleOneUnit
+  AddMonoidAlgebra.liftNCRingHom HahnSeries.C monomialHom commute_C_monomialHom
 
 /-- `Tⁿ` is sent to `Xⁿ`, for every integer `n`. -/
 @[simp]
 theorem toLaurentSeries_T (n : ℤ) : toLaurentSeries (T n : R[T;T⁻¹]) = HahnSeries.single n 1 := by
-  rw [toLaurentSeries, eval₂_T, val_singleOneUnit_zpow]
+  rw [T, toLaurentSeries, AddMonoidAlgebra.liftNCRingHom_single]
+  simp [monomialHom]
+
+/-- The monomial `a Tⁿ` is sent to `a Xⁿ`. -/
+theorem toLaurentSeries_single (n : ℤ) (a : R) :
+    toLaurentSeries (AddMonoidAlgebra.single n a : R[T;T⁻¹]) = HahnSeries.single n a := by
+  rw [toLaurentSeries, AddMonoidAlgebra.liftNCRingHom_single]
+  simp [monomialHom, HahnSeries.C_apply]
 
 /-- Constants are sent to constants. -/
 @[simp]
 theorem toLaurentSeries_C (r : R) : toLaurentSeries (C r) = HahnSeries.C r := by
-  rw [toLaurentSeries, eval₂_C]
-
-/-- Laurent series form an algebra over Laurent polynomials through the finite-support
-inclusion. -/
-noncomputable instance _root_.LaurentSeries.algebraLaurentPolynomial : Algebra R[T;T⁻¹] R⸨X⸩ :=
-  toLaurentSeries.toAlgebra
-
-/-- The algebra map from Laurent polynomials to Laurent series is the finite-support
-inclusion. -/
-@[simp]
-theorem algebraMap_eq_toLaurentSeries (p : R[T;T⁻¹]) :
-    algebraMap R[T;T⁻¹] R⸨X⸩ p = toLaurentSeries p := (rfl)
-
-/-- The coefficient ring, Laurent-polynomial ring, and Laurent-series ring form an algebra
-tower. -/
-instance isScalarTower_laurentSeries : IsScalarTower R R[T;T⁻¹] R⸨X⸩ :=
-  .of_algebraMap_smul fun r f ↦ by
-    simp [Algebra.smul_def]
+  rw [← single_eq_C, toLaurentSeries, AddMonoidAlgebra.liftNCRingHom_single]
+  simp [monomialHom]
 
 /-- The inclusion of a polynomial into Laurent series agrees with first viewing it as a Laurent
 polynomial. -/
@@ -114,11 +100,6 @@ theorem toLaurentSeries_toLaurent (p : R[X]) :
     · simp
   exact DFunLike.congr_fun h p
 
-/-- The polynomial, Laurent-polynomial, and Laurent-series algebra structures form a tower. -/
-instance isScalarTower_polynomial_laurentPolynomial :
-    IsScalarTower (Polynomial R) R[T;T⁻¹] (LaurentSeries R) :=
-  .of_algebraMap_eq fun p ↦ by simp
-
 /-- The inclusion of Laurent polynomials into Laurent series preserves coefficients. -/
 @[simp]
 theorem coeff_toLaurentSeries (p : R[T;T⁻¹]) (n : ℤ) :
@@ -126,10 +107,9 @@ theorem coeff_toLaurentSeries (p : R[T;T⁻¹]) (n : ℤ) :
   induction p using LaurentPolynomial.induction_on' with
   | add p q hp hq => simp [hp, hq]
   | C_mul_T m r =>
-    rw [map_mul, toLaurentSeries_T, toLaurentSeries_C, ← single_eq_C_mul_T, HahnSeries.C_apply,
-      HahnSeries.single_mul_single, zero_add, mul_one, HahnSeries.coeff_single,
-      AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
-    simp [eq_comm]
+    rw [map_mul, toLaurentSeries_T, toLaurentSeries_C, ← single_eq_C_mul_T]
+    simp [-single_eq_C_mul_T, HahnSeries.C_apply, HahnSeries.coeff_single,
+      AddMonoidAlgebra.coeff_single, Finsupp.single_apply, eq_comm]
 
 /-- The inclusion of Laurent polynomials into Laurent series is injective. -/
 theorem toLaurentSeries_injective : Function.Injective (toLaurentSeries (R := R)) :=
@@ -174,13 +154,43 @@ theorem order_toLaurentSeries (p : R[T;T⁻¹]) (hp : p ≠ 0) :
     apply toLaurentSeries_injective
     simpa using h
 
+end Semiring
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R]
+
+/-- Laurent series form an algebra over Laurent polynomials through the finite-support
+inclusion. -/
+noncomputable instance _root_.LaurentSeries.algebraLaurentPolynomial : Algebra R[T;T⁻¹] R⸨X⸩ :=
+  toLaurentSeries.toAlgebra
+
+/-- The algebra map from Laurent polynomials to Laurent series is the finite-support
+inclusion. -/
+@[simp]
+theorem algebraMap_eq_toLaurentSeries (p : R[T;T⁻¹]) :
+    algebraMap R[T;T⁻¹] R⸨X⸩ p = toLaurentSeries p := (rfl)
+
+/-- The coefficient ring, Laurent-polynomial ring, and Laurent-series ring form an algebra
+tower. -/
+instance isScalarTower_laurentSeries : IsScalarTower R R[T;T⁻¹] R⸨X⸩ :=
+  .of_algebraMap_smul fun r f ↦ by
+    simp [Algebra.smul_def]
+
+/-- The polynomial, Laurent-polynomial, and Laurent-series algebra structures form a tower. -/
+instance isScalarTower_polynomial_laurentPolynomial :
+    IsScalarTower (Polynomial R) R[T;T⁻¹] (LaurentSeries R) :=
+  .of_algebraMap_eq fun p ↦ by simp
+
+end CommSemiring
+
 end LaurentPolynomial
 
 namespace LaurentSeries
 
 open Filter Topology
 
-variable {R : Type*} [CommSemiring R]
+variable {R : Type*} [Semiring R]
 
 /-- The Laurent polynomial obtained from a Laurent series by retaining the coefficients at
 exponents strictly less than `N`. The lower bound on a Laurent series makes this a finite sum. -/
@@ -220,7 +230,7 @@ theorem toLaurentSeries_trunc (N : ℤ) (f : R⸨X⸩) :
 
 section Ring
 
-variable {A : Type*} [CommRing A]
+variable {A : Type*} [Ring A]
 
 /-- The difference between a Laurent series and its truncation has order at least the cutoff. -/
 theorem le_orderTop_sub_toLaurentSeries_trunc (N : ℤ) (f : A⸨X⸩) :

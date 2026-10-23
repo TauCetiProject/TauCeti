@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Toric.Algebraic.Fan.Ray
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Subdivision
 public import TauCeti.Geometry.Toric.Algebraic.Ray.Face
 
@@ -46,6 +47,14 @@ the glued family meet in a face of each, inside the intersection of the cones of
 them. When `σ` is nonzero, every cone `τ` containing `σ` is covered by its local piece, so the
 result subdivides `Φ`.
 
+A cone of the star subdivision contains the ray through `u_σ` exactly when the least cone of `Φ`
+containing it contains `σ`. Indeed, a face of `σ` containing `u_σ` contains every `u_ρ`, so is
+`σ`; and a cone omitting `u_σ` is a cone of `Φ` not containing `σ`. This identifies the cones of
+the star subdivision lying over the cones containing `σ`, which describes the exceptional divisor
+of the blow-down. Dually, the cones of the star subdivision lying over the cones of `Φ` not
+containing `σ` are exactly those cones themselves, so away from the exceptional divisor the
+blow-down changes nothing.
+
 ## Main declarations
 
 * `TauCeti.Toric.starSubdivisionGenerator`: the ray generators of the star subdivision.
@@ -54,6 +63,8 @@ result subdivides `Φ`.
   the intersection of their index sets.
 * `TauCeti.Toric.isRegularCone_starSubdivisionCone`: every cone of the star subdivision is
   regular.
+* `TauCeti.Toric.starSubdivisionCone_eq_faceOrderIso_symm`: a cone of the star subdivision whose
+  index set omits `none` is a face of the cone.
 * `TauCeti.Toric.Fan.starSubdivision`: the star subdivision of the fan of faces of a regular cone.
 * `TauCeti.Toric.Fan.isRegular_starSubdivision`: it is regular.
 * `TauCeti.Toric.Fan.starSubdivision_isSubdivision`: for nonempty `A` it subdivides the fan of
@@ -67,6 +78,14 @@ result subdivides `Φ`.
   subdivides the fan.
 * `TauCeti.Toric.Fan.starSubdivisionAlong_ofCone`: on the fan of faces of a regular cone it is the
   star subdivision of the cone along the rays of the face.
+* `TauCeti.Toric.Fan.starSubdivisionAlongRay`: for nonzero `σ`, the ray of the star subdivision
+  through `u_σ`.
+* `TauCeti.Toric.Fan.starSubdivisionAlongRay_le_starSubdivisionCone`: a cone of the star
+  subdivision of a cone `τ ⊇ σ` whose generators include `u_σ` contains the ray through `u_σ`.
+* `TauCeti.Toric.Fan.starSubdivisionAlongRay_le_iff_le_leastCone`: a cone of the star subdivision
+  contains this ray exactly when the least cone of `Φ` containing it contains `σ`.
+* `TauCeti.Toric.Fan.not_le_leastCone_starSubdivisionAlong_iff`: the cones of the star subdivision
+  lying over the cones of `Φ` not containing `σ` are those cones themselves.
 
 ## References
 
@@ -304,6 +323,29 @@ theorem isRegularCone_starSubdivisionCone {S : Set (Option (ToricRay τ))}
       simp [hρ, hbu]
   rw [starSubdivisionCone_def, himage]
   exact isRegularCone_hull_image_basis hi _ _
+
+/-- A cone of the star subdivision of a regular cone `τ` whose index set omits `none` is the face
+of `τ` spanned by the rays it indexes. -/
+theorem starSubdivisionCone_eq_faceOrderIso_symm {S : Set (Option (ToricRay τ))} (hS : none ∉ S) :
+    starSubdivisionCone hi A hτ.toIsToricCone S =
+      ((hτ.faceOrderIso hi).symm {ρ | some ρ ∈ S}).toPointedCone := by
+  rw [IsRegularCone.faceOrderIso_symm_apply_toPointedCone, starSubdivisionCone_def]
+  congr 2
+  ext x
+  constructor
+  · rintro ⟨k, hk, rfl⟩
+    cases k with
+    | none => exact (hS hk).elim
+    | some ρ => exact ⟨ρ, hk, rfl⟩
+  · rintro ⟨ρ, hρ, rfl⟩
+    exact ⟨some ρ, hρ, rfl⟩
+
+/-- A cone of the star subdivision of a regular cone `τ` whose index set omits `none` is a face
+of `τ`. -/
+theorem isFaceOf_starSubdivisionCone {S : Set (Option (ToricRay τ))} (hS : none ∉ S) :
+    (starSubdivisionCone hi A hτ.toIsToricCone S).IsFaceOf τ := by
+  rw [starSubdivisionCone_eq_faceOrderIso_symm hi A hτ hS]
+  exact ((hτ.faceOrderIso hi).symm _).isFaceOf
 
 end Regular
 
@@ -604,7 +646,7 @@ noncomputable def starSubdivisionAlong : Fan i where
   mem_of_isFaceOf C F hC hF := by
     rw [mem_starSubdivisionAlongCones] at hC ⊢
     rcases hC with ⟨hC, hσC⟩ | ⟨τ, hτ, hστ, hC⟩
-    · exact Or.inl ⟨Φ.mem_of_isFaceOf hC hF, fun h ↦ hσC (h.trans hF.le)⟩
+    · exact Or.inl (Φ.setOf_not_le_closedUnderFaces σ ⟨hC, hσC⟩ hF)
     · exact Or.inr ⟨τ, hτ, hστ, (starSubdivisionAlongLocal Φ hΦ hσ hτ hστ).mem_of_isFaceOf hC hF⟩
   inf_isFaceOf_left _ _ := starSubdivisionAlongCones_inf_isFaceOf Φ hΦ hσ
 
@@ -689,6 +731,118 @@ theorem starSubdivisionAlong_ofCone (hi : IsIntegralLattice i) {τ : PointedCone
     have hτ₀τ := (mem_ofCone_cones hi _).1 hτ₀
     have h := mem_starSubdivision_cones_map_faceEmbedding hi hτ hτ₀τ _ hC
     rwa [← ToricRay.faceFinset_eq_map hτ₀τ] at h
+
+/-! ### The ray through the sum of the primitive generators -/
+
+/-- Inside every cone `τ` of `Φ` containing `σ`, the star subdivision along `σ` uses the same new
+ray generator: the sum of the primitive generators of the rays of `σ`. -/
+private theorem starSubdivisionGenerator_none_faceFinset {τ : PointedCone ℝ V}
+    (hτ : τ ∈ Φ.cones) (hστ : σ ≤ τ) :
+    starSubdivisionGenerator Φ.lattice
+        (ToricRay.faceFinset (Φ.isFaceOf_of_le hτ hσ hστ) (Φ.isToricCone hσ).fg)
+        (Φ.isToricCone hτ) none =
+      ∑ ρ ∈ ToricRay.faceFinset (PointedCone.IsFaceOf.refl σ) (Φ.isToricCone hσ).fg,
+        primitiveGenerator Φ.lattice (Φ.isToricCone hσ) ρ := by
+  rw [ToricRay.faceFinset_eq_map (Φ.isFaceOf_of_le hτ hσ hστ) (PointedCone.IsFaceOf.refl σ),
+    ← Option.map_none (f := ToricRay.faceEmbedding (Φ.isFaceOf_of_le hτ hσ hστ)),
+    starSubdivisionGenerator_map_faceEmbedding, starSubdivisionGenerator_none]
+
+/-- The ray of the star subdivision of `Φ` along a nonzero cone `σ` through the sum `u_σ` of the
+primitive generators of the rays of `σ`. When `σ` has at least two rays this is the ray added by
+the star subdivision; when `σ` is a ray it is `σ` itself. -/
+noncomputable def starSubdivisionAlongRay (hσ0 : σ ≠ ⊥) : (Φ.starSubdivisionAlong hΦ hσ).Ray :=
+  have hA := ToricRay.faceFinset_nonempty (PointedCone.IsFaceOf.refl σ) (Φ.isToricCone hσ).fg
+    (Φ.isToricCone hσ).salient hσ0
+  ⟨⟨PointedCone.hull ℝ {i (∑ ρ ∈ ToricRay.faceFinset (PointedCone.IsFaceOf.refl σ)
+      (Φ.isToricCone hσ).fg, primitiveGenerator Φ.lattice (Φ.isToricCone hσ) ρ)},
+    (Φ.mem_starSubdivisionAlong_cones hΦ hσ).2 (Or.inr ⟨σ, hσ, le_rfl,
+      hull_singleton_mem_starSubdivision_cones Φ.lattice _ (isRegular_iff.1 hΦ _ hσ) hA⟩)⟩, by
+    obtain ⟨ρ, hρ⟩ := hA
+    have h := (linearIndepOn_starSubdivisionGenerator Φ.lattice _ (Φ.isToricCone hσ)
+      ((isRegular_iff.1 hΦ _ hσ).linearIndependent_primitiveGenerator Φ.lattice)
+      (S := {none}) ⟨ρ, hρ, by simp⟩).ne_zero (mem_singleton none)
+    rw [starSubdivisionGenerator_none] at h
+    exact PointedCone.finrank_span_coe_hull_singleton h⟩
+
+/-- The cone of `Fan.starSubdivisionAlongRay` is the ray through the sum of the primitive generators
+of the rays of `σ`. -/
+@[simp]
+theorem coe_toCone_starSubdivisionAlongRay (hσ0 : σ ≠ ⊥) :
+    ((Φ.starSubdivisionAlongRay hΦ hσ hσ0).toCone : PointedCone ℝ V) =
+      PointedCone.hull ℝ {i (∑ ρ ∈ ToricRay.faceFinset (PointedCone.IsFaceOf.refl σ)
+        (Φ.isToricCone hσ).fg, primitiveGenerator Φ.lattice (Φ.isToricCone hσ) ρ)} :=
+  (rfl)
+
+/-- A cone of the star subdivision of a cone `τ ⊇ σ` of `Φ` along the rays of `σ` whose generators
+include `u_σ` contains the ray through `u_σ`. -/
+theorem starSubdivisionAlongRay_le_starSubdivisionCone (hσ0 : σ ≠ ⊥) {τ : PointedCone ℝ V}
+    (hτ : τ ∈ Φ.cones) (hστ : σ ≤ τ) {S : Set (Option (ToricRay τ))} (hS : none ∈ S) :
+    ((Φ.starSubdivisionAlongRay hΦ hσ hσ0).toCone : PointedCone ℝ V) ≤
+      starSubdivisionCone Φ.lattice
+        (ToricRay.faceFinset (Φ.isFaceOf_of_le hτ hσ hστ) (Φ.isToricCone hσ).fg)
+        (Φ.isToricCone hτ) S := by
+  rw [coe_toCone_starSubdivisionAlongRay, Submodule.span_singleton_le_iff_mem,
+    ← starSubdivisionGenerator_none_faceFinset Φ hσ hτ hστ]
+  exact PointedCone.subset_hull ⟨_, ⟨none, hS, rfl⟩, rfl⟩
+
+/-- A cone of the star subdivision of `Φ` along a nonzero cone `σ` contains the ray through
+`u_σ` exactly when the least cone of `Φ` containing it contains `σ`. -/
+theorem starSubdivisionAlongRay_le_iff_le_leastCone (hσ0 : σ ≠ ⊥)
+    (C : (Φ.starSubdivisionAlong hΦ hσ).cones) :
+    (Φ.starSubdivisionAlongRay hΦ hσ hσ0).toCone ≤ C ↔
+      σ ≤ (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.leastCone C.2 := by
+  have hsub := Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0
+  have hσt := Φ.isToricCone hσ
+  constructor
+  · intro hu
+    rw [← Subtype.coe_le_coe, coe_toCone_starSubdivisionAlongRay,
+      Submodule.span_singleton_le_iff_mem] at hu
+    -- The face `σ ⊓ L` of `σ` contains `u_σ`, hence contains `σ`.
+    exact (hσt.le_of_isFaceOf_of_sum_primitiveGenerator_mem Φ.lattice
+      (Φ.inf_isFaceOf_left hσ (hsub.toFanHom.leastCone_mem C.2))
+      ⟨starSubdivisionGenerator_mem Φ.lattice _ hσt none, hsub.le_leastCone C.2 hu⟩).trans
+        inf_le_right
+  · intro hσL
+    obtain ⟨C, hC⟩ := C
+    rcases (Φ.mem_starSubdivisionAlong_cones hΦ hσ).1 hC with ⟨hCΦ, hσC⟩ | ⟨τ, hτ, hστ, hCτ⟩
+    · exact (hσC (hσL.trans (hsub.leastCone_eq_self hC hCΦ).le)).elim
+    obtain ⟨S, ⟨ρ₀, hρ₀A, hρ₀S⟩, rfl⟩ := hCτ
+    by_cases hS : none ∈ S
+    · exact Φ.starSubdivisionAlongRay_le_starSubdivisionCone hΦ hσ hσ0 hτ hστ hS
+    -- Otherwise the cone is the face of `τ` spanned by rays of `τ`, which misses `ρ₀`.
+    have hτr := isRegular_iff.1 hΦ _ hτ
+    have hface := starSubdivisionCone_eq_faceOrderIso_symm Φ.lattice
+      (ToricRay.faceFinset (Φ.isFaceOf_of_le hτ hσ hστ) hσt.fg) hτr hS
+    have hσC := hσL.trans (hsub.leastCone_eq_self hC (Φ.mem_of_isFaceOf hτ
+      (isFaceOf_starSubdivisionCone Φ.lattice _ hτr hS))).le
+    rw [hface] at hσC
+    have hρ₀ := (hτr.mem_faceOrderIso_iff Φ.lattice _ ρ₀).2 (hσC (((ToricRay.mem_faceFinset _ _).1
+      hρ₀A) (primitiveGenerator_mem Φ.lattice hτr.toIsToricCone ρ₀)))
+    rw [OrderIso.apply_symm_apply] at hρ₀
+    exact (hρ₀S hρ₀).elim
+
+/-- Away from the cones containing `σ` the star subdivision of `Φ` along a nonzero cone `σ` changes
+nothing: a cone of the star subdivision has a least cone in `Φ` not containing `σ` exactly when it
+is a cone of `Φ` not containing `σ`. -/
+theorem not_le_leastCone_starSubdivisionAlong_iff (hσ0 : σ ≠ ⊥) {C : PointedCone ℝ V}
+    (hC : C ∈ (Φ.starSubdivisionAlong hΦ hσ).cones) :
+    ¬σ ≤ (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.leastCone hC ↔
+      C ∈ Φ.cones ∧ ¬σ ≤ C := by
+  have hsub := Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0
+  constructor
+  · intro hσL
+    refine ⟨?_, fun h ↦ hσL (h.trans (hsub.le_leastCone hC))⟩
+    rcases (Φ.mem_starSubdivisionAlong_cones hΦ hσ).1 hC with
+      ⟨hCΦ, -⟩ | ⟨τ, hτ, hστ, S, -, rfl⟩
+    · exact hCΦ
+    by_cases hS : none ∈ S
+    · -- The cone contains the ray through `u_σ`, so its least cone contains `σ`.
+      exact (hσL ((Φ.starSubdivisionAlongRay_le_iff_le_leastCone hΦ hσ hσ0 ⟨_, hC⟩).1
+        (Φ.starSubdivisionAlongRay_le_starSubdivisionCone hΦ hσ hσ0 hτ hστ hS))).elim
+    · exact Φ.mem_of_isFaceOf hτ
+        (isFaceOf_starSubdivisionCone Φ.lattice _ (isRegular_iff.1 hΦ _ hτ) hS)
+  · rintro ⟨hCΦ, hσC⟩
+    rwa [hsub.leastCone_eq_self hC hCΦ]
 
 end Along
 

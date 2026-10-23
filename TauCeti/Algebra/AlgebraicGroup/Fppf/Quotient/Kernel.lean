@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Presheaf
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.FinitePresentation
-import Mathlib.RingTheory.FiniteStability
 
 /-!
 # The fppf first isomorphism theorem for affine groups
@@ -54,7 +53,6 @@ morphism of fppf points induced by `f`.
 public section
 
 open CategoryTheory Opposite WithConv
-open scoped TensorProduct
 
 namespace TauCeti.CommHopfAlgCat
 
@@ -129,39 +127,6 @@ theorem fppfQuotientProjection_comp_kernelFppfQuotientHom (f : H ⟶ K) :
   exact congrArg F.mapGrp.map
     (pointwiseQuotientPresheafGrpProjection_comp_kernelPointwiseQuotientPresheafGrpHom f)
 
-/-- Over the faithfully flat, finitely presented base change `A ⟶ A ⊗[H] K`, every `A`-point of
-`Spec H` lifts to a point of `Spec K`. -/
-private theorem exists_faithfullyFlat_lift (f : H ⟶ K)
-    (hflat : f.hom.toAlgHom.toRingHom.FaithfullyFlat)
-    (hfp : f.hom.toAlgHom.toRingHom.FinitePresentation)
-    {A : CommAlgCat.{u} R} (y : H →ₐ[R] A) :
-    ∃ (B : CommAlgCat.{u} R) (φ : A ⟶ B) (z : K →ₐ[R] B),
-      φ.hom.toRingHom.FaithfullyFlat ∧ φ.hom.toRingHom.FinitePresentation ∧
-        z.comp f.hom.toAlgHom = φ.hom.comp y := by
-  let _ : Algebra H A := y.toRingHom.toAlgebra
-  let _ : Algebra H K := f.hom.toAlgHom.toRingHom.toAlgebra
-  have : Module.FaithfullyFlat H K := hflat
-  have : Algebra.FinitePresentation H K := hfp
-  let _ : Algebra R (A ⊗[H] K) :=
-    ((algebraMap A (A ⊗[H] K)).comp (algebraMap R A)).toAlgebra
-  -- The pushout square `H ⟶ A ⟶ A ⊗[H] K ⟵ K ⟵ H`, evaluated at `h`.
-  have hsq (h : H) : (1 : A) ⊗ₜ[H] f.hom.toAlgHom h = y h ⊗ₜ[H] (1 : K) :=
-    (RingHom.congr_fun (Algebra.TensorProduct.includeLeftRingHom_comp_algebraMap
-      (R := H) (A := A) (B := K)) h).symm
-  let φ : A →ₐ[R] A ⊗[H] K :=
-    { Algebra.TensorProduct.includeLeftRingHom with commutes' := fun _ ↦ rfl }
-  let z : K →ₐ[R] A ⊗[H] K :=
-    { Algebra.TensorProduct.includeRight.toRingHom with
-      commutes' := fun r ↦ by
-        -- Unfold `includeRight` and the `R`-algebra structure on `A ⊗[H] K`, which was defined
-        -- through `includeLeft`, to their values on pure tensors.
-        change (1 : A) ⊗ₜ[H] algebraMap R K r = algebraMap R A r ⊗ₜ[H] (1 : K)
-        rw [← f.hom.toAlgHom.commutes r, hsq, AlgHom.commutes] }
-  refine ⟨CommAlgCat.of R (A ⊗[H] K), CommAlgCat.ofHom φ, z, ?_, ?_, ?_⟩
-  · exact RingHom.faithfullyFlat_algebraMap_iff.2 inferInstance
-  · exact RingHom.finitePresentation_algebraMap.2 inferInstance
-  · exact AlgHom.ext hsq
-
 /-- If every point of `Spec H` lifts to a point of `Spec K` after a faithfully flat, finitely
 presented extension of its value algebra, the comparison from the fppf quotient of `Spec K` by the
 kernel of `f` to the fppf points of `Spec H` is an isomorphism of group objects in fppf sheaves.
@@ -230,7 +195,8 @@ theorem isIso_kernelFppfQuotientHom (f : H ⟶ K)
     (hflat : f.hom.toAlgHom.toRingHom.FaithfullyFlat)
     (hfp : f.hom.toAlgHom.toRingHom.FinitePresentation) :
     IsIso (kernelFppfQuotientHom f) :=
-  isIso_kernelFppfQuotientHom_of_exists_lift f fun _ ↦ exists_faithfullyFlat_lift f hflat hfp
+  isIso_kernelFppfQuotientHom_of_exists_lift f fun _ ↦
+    f.hom.toAlgHom.exists_faithfullyFlat_lift hflat hfp
 
 /-- **The fppf first isomorphism theorem for affine groups.** If `f : H ⟶ K` is faithfully flat
 and of finite presentation, then the fppf quotient of `Spec K` by the kernel of the represented

@@ -231,8 +231,7 @@ private theorem dualityMap_kummerCoeff_bijective_of_smul_eq_self [V.Normal] [V.F
     dualityMap2_bijective_of_bijective_discreteCoind (kummerCoeffAddEquivZMod hn) e₂ hVN hcoind A
       hA hAV⟩
 
-omit hV hVN hAV
-
+omit hV hVN hAV in
 /-- The three duality maps of `G_K` with coefficients in `μₙ` are bijective on `A`, through an
 open normal subgroup acting trivially on `A` and on `μₙ`. -/
 private theorem dualityMap_kummerCoeff_bijective :
@@ -247,6 +246,7 @@ private theorem dualityMap_kummerCoeff_bijective :
   dualityMap_kummerCoeff_bijective_of_smul_eq_self hn (W₁ ⊓ W₂).toSubgroup (W₁ ⊓ W₂).isOpen
     (fun v hv y ↦ h₁ v hv.1 y trivial) A hA fun v hv a ↦ h₂ v hv.2 a trivial
 
+omit hV hVN hAV in
 /-- **Local Tate duality in degree zero.** Let `K` be a nonarchimedean local field and `n` a natural
 number invertible in `K`. For every finite discrete `G_K`-module `A` killed by `n`, Tate's duality
 map `H⁰(G_K, A) → Hom(H²(G_K, Hom(A, μₙ)), H²(G_K, μₙ))` is bijective. -/
@@ -254,6 +254,7 @@ theorem dualityMap0_kummerCoeff_bijective :
     Function.Bijective (dualityMap0 (AbsoluteGaloisGroup K) A (KummerCoeff K n)) :=
   (dualityMap_kummerCoeff_bijective hn A hA).1
 
+omit hV hVN hAV in
 /-- **Local Tate duality in degree one.** Let `K` be a nonarchimedean local field and `n` a natural
 number invertible in `K`. For every finite discrete `G_K`-module `A` killed by `n`, Tate's duality
 map `H¹(G_K, A) → Hom(H¹(G_K, Hom(A, μₙ)), H²(G_K, μₙ))` is bijective. -/
@@ -261,6 +262,7 @@ theorem dualityMap1_kummerCoeff_bijective :
     Function.Bijective (dualityMap1 (AbsoluteGaloisGroup K) A (KummerCoeff K n)) :=
   (dualityMap_kummerCoeff_bijective hn A hA).2.1
 
+omit hV hVN hAV in
 /-- **Local Tate duality in degree two.** Let `K` be a nonarchimedean local field and `n` a natural
 number invertible in `K`. For every finite discrete `G_K`-module `A` killed by `n`, Tate's duality
 map `H²(G_K, A) → Hom(H⁰(G_K, Hom(A, μₙ)), H²(G_K, μₙ))` is bijective. -/

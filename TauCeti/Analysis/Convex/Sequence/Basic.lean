@@ -27,8 +27,8 @@ recovers heights from an anchor and consecutive increments, and characterises co
 differences. A sequence is admissible when it has a real affine lower bound,
 which is equivalent to having a convex minorant. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
-and shear. These results provide the discrete geometry used to construct lower
-convex envelopes without any coefficient data.
+and shear, and under translating the indices. These results provide the discrete
+geometry used to construct lower convex envelopes without any coefficient data.
 
 The supporting-line and chord arguments are adapted from William Coram's
 `PhD/TauCeti/Code/NewtonPolygons/ConvexSeq.lean` at revision
@@ -165,6 +165,19 @@ theorem IsAdmissible.mono {a b : ℕ → WithTop ℝ} (hb : IsAdmissible b) (hba
     IsAdmissible a :=
   let ⟨c, m, hcm⟩ := hb
   ⟨c, m, fun n => (hcm n).trans (hba n)⟩
+
+/-- A sequence whose heights are infinite after some index is admissible: a constant below
+its finitely many finite heights bounds it from below. -/
+theorem isAdmissible_of_forall_gt {a : ℕ → WithTop ℝ} {p : ℕ} (hp : ∀ n, p < n → a n = ⊤) :
+    IsAdmissible a := by
+  refine isAdmissible_iff.mpr ⟨(range (p + 1)).inf' nonempty_range_add_one
+    fun k => (a k).untop₀, 0, fun n => ?_⟩
+  by_cases hn : a n = ⊤
+  · simp [hn]
+  have hnp : n ∈ range (p + 1) :=
+    mem_range.mpr (Nat.lt_succ_of_le (not_lt.mp fun h => hn (hp n h)))
+  rw [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe, zero_mul, add_zero]
+  exact inf'_le _ hnp
 
 namespace IsConvexSeq
 
@@ -375,6 +388,36 @@ theorem coe_le_iff_exists_affine_minorant (n : ℕ) (r : ℝ) :
     refine le_trans (WithTop.coe_le_coe.mpr ?_) (hdm k)
     nlinarith [mul_nonneg hδ (sub_nonneg.mpr hnk')]
 
+/-- Raising an interior height preserves convexity provided the new height stays
+below the average of its finite neighbors. -/
+theorem update_of_le {n : ℕ} {y : ℝ}
+    (hn : h n ≠ ⊤) (hn₂ : h (n + 2) ≠ ⊤)
+    (hy : (h (n + 1)).untop₀ ≤ y)
+    (hbound : 2 * y ≤ (h n).untop₀ + (h (n + 2)).untop₀) :
+    IsConvexSeq (Function.update h (n + 1) (y : WithTop ℝ)) := by
+  have hn₁ : h (n + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hn hn₂ (by omega) (by omega)
+  have hdom (k : ℕ) :
+      Function.update h (n + 1) (y : WithTop ℝ) k ≠ ⊤ ↔ h k ≠ ⊤ := by
+    by_cases hk : k = n + 1
+    · simp [hk, hn₁]
+    · simp [Function.update_of_ne hk]
+  have hraise (k : ℕ) :
+      (h k).untop₀ ≤ (Function.update h (n + 1) (y : WithTop ℝ) k).untop₀ := by
+    by_cases hk : k = n + 1
+    · simpa [hk] using hy
+    · simp [Function.update_of_ne hk]
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨?_, fun k hk hk₂ => ?_⟩
+  · simpa only [hdom] using hh.ordConnected
+  · by_cases hkn : k = n
+    · subst k
+      simpa [Function.update_of_ne (by omega : n ≠ n + 1),
+        Function.update_of_ne (by omega : n + 2 ≠ n + 1)] using hbound
+    · have hmid := (isConvexSeq_iff_two_mul_le.mp hh).2 k
+        ((hdom k).mp hk) ((hdom (k + 2)).mp hk₂)
+      have hne : k + 1 ≠ n + 1 := by omega
+      rw [Function.update_of_ne hne]
+      exact hmid.trans (add_le_add (hraise k) (hraise (k + 2)))
+
 end IsConvexSeq
 
 /-- A height sequence admits a convex minorant exactly when it is admissible, that
@@ -443,5 +486,89 @@ theorem isAdmissible_add_affine_iff {a : ℕ → WithTop ℝ} (c m : ℝ) :
   simp only [← WithTop.coe_natCast, ← WithTop.coe_mul, ← WithTop.coe_add]
   exact ⟨fun ha => funext (fun n => (a n).add_affine_add_neg_affine c m n) ▸
     ha.add_affine (-c) (-m), fun ha => ha.add_affine c m⟩
+
+/-- Adding a real affine function does not change the finite unit edges. -/
+theorem finiteEdges_add_affine (h : ℕ → WithTop ℝ) (c m : ℝ) :
+    finiteEdges (fun n => h n + ((c + m * n : ℝ) : WithTop ℝ)) = finiteEdges h := by
+  ext n
+  simp only [mem_finiteEdges, ne_eq, WithTop.add_eq_top, WithTop.coe_ne_top, or_false]
+
+/-- Adding the real affine function with slope `m` adds `m` to the slope of every finite unit
+edge. -/
+theorem unitSlope_add_affine {h : ℕ → WithTop ℝ} {n : ℕ} (hn : n ∈ finiteEdges h) (c m : ℝ) :
+    unitSlope (fun n => h n + ((c + m * n : ℝ) : WithTop ℝ)) n = unitSlope h n + m := by
+  simp only [unitSlope_def, WithTop.untop₀_add hn.1 WithTop.coe_ne_top,
+    WithTop.untop₀_add hn.2 WithTop.coe_ne_top, WithTop.untop₀_coe]
+  push_cast
+  ring
+
+
+/-! ### Translation of indices -/
+
+/-- Dropping the first `k` heights preserves convexity. -/
+theorem IsConvexSeq.comp_add_right {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) (k : ℕ) :
+    IsConvexSeq fun n => h (n + k) := by
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨⟨fun i hi j hj l hl => ?_⟩, fun n hn hn₂ => ?_⟩
+  · exact hh.ne_top_of_le_of_le hi hj (by have := hl.1; omega) (by have := hl.2; omega)
+  · have e₁ : n + 1 + k = n + k + 1 := by omega
+    have e₂ : n + 2 + k = n + k + 2 := by omega
+    rw [e₂] at hn₂
+    rw [e₁, e₂]
+    exact (isConvexSeq_iff_two_mul_le.mp hh).2 (n + k) hn hn₂
+
+/-- Shifting heights `k` places to the right, with infinite heights at the first `k`
+indices, preserves convexity. -/
+theorem IsConvexSeq.shift {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) (k : ℕ) :
+    IsConvexSeq fun n => if k ≤ n then h (n - k) else ⊤ := by
+  have hmem {n : ℕ} : (if k ≤ n then h (n - k) else ⊤) ≠ ⊤ ↔ k ≤ n ∧ h (n - k) ≠ ⊤ := by
+    split_ifs with hkn <;> simp [hkn]
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨⟨fun i hi j hj l hl => ?_⟩, fun n hn hn₂ => ?_⟩
+  · obtain ⟨hki, hi⟩ := hmem.mp hi
+    obtain ⟨hkj, hj⟩ := hmem.mp hj
+    exact hmem.mpr ⟨hki.trans hl.1,
+      hh.ne_top_of_le_of_le hi hj (by have := hl.1; omega) (by have := hl.2; omega)⟩
+  · obtain ⟨hkn, hn⟩ := hmem.mp hn
+    obtain ⟨-, hn₂⟩ := hmem.mp hn₂
+    have e₁ : n + 1 - k = n - k + 1 := by omega
+    have e₂ : n + 2 - k = n - k + 2 := by omega
+    rw [e₂] at hn₂
+    simpa [hkn, show k ≤ n + 1 by omega, show k ≤ n + 2 by omega, e₁, e₂] using
+      (isConvexSeq_iff_two_mul_le.mp hh).2 (n - k) hn hn₂
+
+/-- Shifting a sequence `k` places to the right, with infinite heights at the first `k`
+indices, does not change admissibility. -/
+theorem isAdmissible_shift_iff {a : ℕ → WithTop ℝ} (k : ℕ) :
+    IsAdmissible (fun n => if k ≤ n then a (n - k) else ⊤) ↔ IsAdmissible a := by
+  simp only [← exists_convexSeq_le_iff]
+  refine ⟨fun ⟨g, hg, hga⟩ => ⟨_, hg.comp_add_right k, fun n => ?_⟩,
+    fun ⟨g, hg, hga⟩ => ⟨_, hg.shift k, fun n => ?_⟩⟩
+  · simpa using hga (n + k)
+  · dsimp only
+    split_ifs
+    exacts [hga _, le_rfl]
+
+/-- Shifting heights `k` places to the right, with infinite heights at the first `k` indices,
+shifts the finite unit edges `k` places to the right. -/
+theorem finiteEdges_shift (h : ℕ → WithTop ℝ) (k : ℕ) :
+    finiteEdges (fun n => if k ≤ n then h (n - k) else ⊤) = (· + k) '' finiteEdges h := by
+  ext n
+  simp only [mem_finiteEdges, Set.mem_image]
+  constructor
+  · rintro ⟨h₀, h₁⟩
+    have hk : k ≤ n := by
+      by_contra hk
+      simp [hk] at h₀
+    refine ⟨n - k, ⟨by simpa [hk] using h₀, ?_⟩, by omega⟩
+    simpa [show k ≤ n + 1 by omega, show n + 1 - k = n - k + 1 by omega] using h₁
+  · rintro ⟨m, ⟨h₀, h₁⟩, rfl⟩
+    simpa [show m + k + 1 - k = m + 1 by omega, show k ≤ m + k + 1 by omega] using
+      And.intro h₀ h₁
+
+/-- Shifting heights `k` places to the right, with infinite heights at the first `k` indices,
+moves every unit slope `k` places to the right. -/
+@[simp]
+theorem unitSlope_shift (h : ℕ → WithTop ℝ) (k n : ℕ) :
+    unitSlope (fun n => if k ≤ n then h (n - k) else ⊤) (n + k) = unitSlope h n := by
+  simp [unitSlope_def, show k ≤ n + k + 1 by omega, show n + k + 1 - k = n + 1 by omega]
 
 end TauCeti

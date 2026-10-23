@@ -7,6 +7,8 @@ module
 
 public import TauCeti.ModelTheory.Infinitary.Semantics
 
+import TauCeti.Data.Fin.Tuple.Basic
+
 /-!
 # Bound-variable relabelling and weakening of infinitary formulas
 
@@ -62,14 +64,7 @@ namespace BoundedFormulaInf
 
 /-- Extend a slot map past a quantifier: the new last slot goes to the new last slot. -/
 private def extend {m n : ℕ} (f : Fin m → Fin n) : Fin (m + 1) → Fin (n + 1) :=
-  Fin.snoc (fun i => (f i).castSucc) (Fin.last n)
-
-private theorem snoc_comp_extend {M : Type w} {m n : ℕ} (f : Fin m → Fin n) (xs : Fin n → M)
-    (y : M) : Fin.snoc xs y ∘ extend f = Fin.snoc (xs ∘ f) y := by
-  funext i
-  induction i using Fin.lastCases with
-  | last => simp [extend]
-  | cast i => simp [extend]
+  Fin.snoc (Fin.castSucc ∘ f) (Fin.last n)
 
 private theorem extend_id {m : ℕ} : extend (id : Fin m → Fin m) = id := by
   funext i
@@ -159,7 +154,9 @@ theorem realize_mapBound {M : Type w} [L.Structure M] :
     rw [Sum.elim_comp_map]
     rfl
   | imp φ ψ ihφ ihψ => intro v xs; simp only [mapBound, realize_imp, ihφ, ihψ]
-  | all φ ih => intro v xs; simp only [mapBound, realize_all, ih, snoc_comp_extend]
+  | all φ ih =>
+    intro v xs
+    simp only [mapBound, realize_all, ih, extend, Fin.snoc_comp_snoc_castSucc_comp]
   | iSup φs ih => intro v xs; simp only [mapBound, realize_iSup, ih]
   | iInf φs ih => intro v xs; simp only [mapBound, realize_iInf, ih]
 

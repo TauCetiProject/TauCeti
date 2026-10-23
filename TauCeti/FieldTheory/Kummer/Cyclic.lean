@@ -41,6 +41,8 @@ sense of Stichtenoth, Proposition 3.7.3.
 * `TauCeti.exists_forall_mem_zpowers_apply_eq`: `[L : K]` divides `n`, and some `g` generating
   `Gal(L/K)` satisfies `g s = ζ ^ (n / [L : K]) • s`.
 * `TauCeti.isCyclic_of_pow_eq_of_adjoin_eq_top`: `Gal(L/K)` is cyclic.
+* `TauCeti.exists_pow_finrank_eq_algebraMap`: `s ^ [L : K]` is some `c ∈ K` with
+  `c ^ (n / [L : K]) = b`.
 * `TauCeti.finrank_eq_of_pow_eq_of_adjoin_eq_top`: `[L : K] = n` when `b` is not a `p`-th power
   for any prime `p ∣ n`.
 * `TauCeti.X_pow_sub_C_irreducible_of_isPrimitiveRoot`: `Xⁿ - b` is then irreducible, and
@@ -171,6 +173,25 @@ theorem isCyclic_of_pow_eq_of_adjoin_eq_top [FiniteDimensional K L] (hb : b ≠ 
   let ⟨g, hg, _⟩ := exists_forall_mem_zpowers_apply_eq hζ hb hs hgen
   ⟨g, fun σ ↦ Subgroup.mem_zpowers_iff.1 (hg σ)⟩
 
+include hζ in
+/-- **The `[L : K]`-th power of a Kummer generator lies in `K`.** Let `L = K(s)` with
+`sⁿ = b ≠ 0`, where `K` contains a primitive `n`-th root of unity. Then `s ^ [L : K]` is some
+`c ∈ K` with `c ^ (n / [L : K]) = b`, an `(n / [L : K])`-th root of `b` in `K`. -/
+theorem exists_pow_finrank_eq_algebraMap [FiniteDimensional K L] (hb : b ≠ 0)
+    (hs : s ^ n = algebraMap K L b) (hgen : K⟮s⟯ = ⊤) :
+    ∃ c : K, s ^ finrank K L = algebraMap K L c ∧ c ^ (n / finrank K L) = b := by
+  have := isGalois_of_pow_eq_of_adjoin_eq_top hζ hb hs hgen
+  obtain ⟨g, hg, hdvd, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ hb hs hgen
+  set m := finrank K L
+  -- `s ^ m` is fixed by the generator `g` of `Gal(L/K)`, hence lies in `K`
+  have hζm : (ζ ^ (n / m)) ^ m = 1 := by rw [← pow_mul, Nat.div_mul_cancel hdvd, hζ.pow_eq_one]
+  have hfix : g ∈ MulAction.stabilizer (L ≃ₐ[K] L) (s ^ m) := by
+    simp [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, hgs, mul_pow, ← map_pow, hζm]
+  obtain ⟨c, hc⟩ := (IsGalois.mem_range_algebraMap_iff_fixed (s ^ m)).2 fun σ ↦
+    Subgroup.zpowers_le.2 hfix (hg σ)
+  refine ⟨c, hc.symm, (algebraMap K L).injective ?_⟩
+  rw [map_pow, hc, ← pow_mul, Nat.mul_div_cancel' hdvd, hs]
+
 omit [NeZero n] in
 /-- If `sⁿ = b` and `b` is not a `p`-th power in `K` for any prime `p` dividing `n`, then
 `n ≠ 0`: for `n = 0` the radicand `b = s ^ 0 = 1` would be a square. -/
@@ -199,18 +220,10 @@ theorem finrank_eq_of_pow_eq_of_adjoin_eq_top
     rw [← IntermediateField.finrank_top', ← hgen, hs, adjoin_zero, IntermediateField.finrank_bot]
   have hint : IsIntegral K s := IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)
   have := (PowerBasis.ofAdjoinSimpleEqTop hint hgen).finite
-  have := isGalois_of_pow_eq_of_adjoin_eq_top hζ hb0 hs hgen
-  obtain ⟨g, hg, hdvd, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ hb0 hs hgen
+  obtain ⟨-, -, hdvd, -⟩ := exists_forall_mem_zpowers_apply_eq hζ hb0 hs hgen
+  obtain ⟨c, -, hbc⟩ := exists_pow_finrank_eq_algebraMap hζ hb0 hs hgen
   set m := finrank K L
-  -- `s ^ m` is fixed by the generator `g` of `Gal(L/K)`, hence lies in `K`
-  have hζm : (ζ ^ (n / m)) ^ m = 1 := by rw [← pow_mul, Nat.div_mul_cancel hdvd, hζ.pow_eq_one]
-  have hfix : g ∈ MulAction.stabilizer (L ≃ₐ[K] L) (s ^ m) := by
-    simp [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, hgs, mul_pow, ← map_pow, hζm]
-  obtain ⟨c, hc⟩ := (IsGalois.mem_range_algebraMap_iff_fixed (s ^ m)).2 fun σ ↦
-    Subgroup.zpowers_le.2 hfix (hg σ)
-  -- so `b = c ^ (n / m)`, and nondegeneracy forces `n / m = 1`
-  have hbc : c ^ (n / m) = b := (algebraMap K L).injective <| by
-    rw [map_pow, hc, ← pow_mul, Nat.mul_div_cancel' hdvd, hs]
+  -- nondegeneracy forces `n / m = 1`
   have h1 : n / m = 1 := by
     by_contra h
     obtain ⟨p, hp, e, he⟩ := Nat.exists_prime_and_dvd h

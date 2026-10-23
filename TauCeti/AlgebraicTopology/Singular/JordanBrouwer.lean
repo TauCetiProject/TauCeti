@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Hemisphere
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Field.ULift
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.Geometry.Manifold.Instances.Sphere
 
 /-!
 # The complement of an embedded sphere and the Jordan–Brouwer separation theorem
@@ -47,6 +48,8 @@ complement has exactly two path components: the **Jordan–Brouwer separation th
   coefficients in degree `n - d`.
 * `TauCeti.natCard_zerothHomotopy_sphere_compl_range_eq_two`: **the Jordan–Brouwer separation
   theorem**: the complement of an embedded `Sⁿ⁻¹` in `Sⁿ` has exactly two path components.
+* `TauCeti.not_isPreconnected_compl_range_sphere`: in particular that complement is not
+  preconnected.
 
 ## References
 
@@ -125,8 +128,9 @@ private def reducedSingularHomologyComplRangeSphereIsoAux :
       refine eq_univ_of_forall fun x ↦ ?_
       simp only [D₁, D₂, mem_union, mem_ofPred_eq, coe_neg_sphere, inner_neg_right, neg_nonneg]
       exact le_total _ _
-    have hunion : (h '' D₁)ᶜ ∪ (h '' D₂)ᶜ = (range (h ∘ equatorInclusion p))ᶜ := by
+    have hunion : (h '' D₁)ᶜ ∪ (h '' D₂)ᶜ = (range (h ∘ equatorInclusion (p : E)))ᶜ := by
       rw [← compl_inter, ← image_inter hi, range_comp, range_equatorInclusion]
+      simp only [D₁, D₂, coe_neg_sphere]
     (TopCat.reducedMayerVietorisIsoOfIsZero M (Y := of Y) (isOpen_compl_image_hemisphere hc p)
       (isOpen_compl_image_hemisphere hc (-p)) hinter hunion
       (isZero_compl_image_hemisphere M hY hc hi p _)
@@ -135,8 +139,8 @@ private def reducedSingularHomologyComplRangeSphereIsoAux :
       (isZero_compl_image_hemisphere M hY hc hi (-p) _)).symm ≪≫
       reducedSingularHomologyComplRangeSphereIsoAux d (ℝ ∙ (p : E))ᗮ
         (Submodule.finrank_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere p))
-        (h ∘ equatorInclusion p) (hc.comp (continuous_equatorInclusion p))
-        (hi.comp (injective_equatorInclusion p)) (i + 1) ≪≫
+        (h ∘ equatorInclusion (p : E)) (hc.comp (continuous_equatorInclusion (p : E)))
+        (hi.comp (isometry_equatorInclusion (p : E)).injective) (i + 1) ≪≫
       eqToIso (congrArg (fun k ↦ (reducedSingularHomologyFunctor M k).obj (of Y)) (by omega))
 
 end InnerProduct
@@ -182,7 +186,7 @@ theorem isZero_reducedSingularHomologyFunctor_sphere_compl_range_sphere {n : ℕ
     (hF : finrank ℝ F = n + 1) (hc : Continuous h) (hi : Function.Injective h) {i : ℕ}
     (hin : i + finrank ℝ E ≠ n) :
     IsZero ((reducedSingularHomologyFunctor M i).obj (of ↥(range h)ᶜ)) :=
-  haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
   ((isZero_reducedSingularHomologyFunctor_sphere_of_ne M (by simp) hin).of_iso
     (reducedSingularHomologySphereIsoOfFinrankEq M
       (F := EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) (by simp [hF]) _)).of_iso
@@ -199,7 +203,7 @@ identification. -/
 def reducedSingularHomologySphereComplRangeSphereIso {i : ℕ}
     (hF : finrank ℝ F = i + finrank ℝ E + 1) (hc : Continuous h) (hi : Function.Injective h) :
     (reducedSingularHomologyFunctor M i).obj (of ↥(range h)ᶜ) ≅ M :=
-  haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
   reducedSingularHomologyComplRangeSphereIso M
       (isZero_reducedSingularHomologyFunctor_sphere_compl_singleton M) hc hi i ≪≫
     reducedSingularHomologySphereIsoOfFinrankEq M
@@ -225,17 +229,39 @@ theorem natCard_zerothHomotopy_sphere_compl_range_eq_two (hEF : finrank ℝ F = 
     exact not_subsingleton K (ModuleCat.subsingleton_of_isZero
       ((isZero_reducedSingularHomologyFunctor_of_isEmpty (ModuleCat.of K K) _ 0).of_iso e.symm))
   -- By `TauCeti.reducedSingularHomologySphereComplRangeSphereIso`, the reduced zeroth homology is
-  -- `K`. It is also the direct sum of copies of `K` indexed by the path components other than
-  -- that of `x`, so there is exactly one of them.
-  have hrank := ((ModuleCat.coprodIsoDirectSum _).symm ≪≫
-    (reducedSingularHomology₀Iso (ModuleCat.of K K) (X := of ↥(range h)ᶜ) x).symm ≪≫
-      e).toLinearEquiv.rank_eq
-  simp only [rank_directSum, rank_self, Cardinal.sum_const', mul_one] at hrank
+  -- `K`. Its rank also counts the path components other than that of `x`, so there is exactly one
+  -- of them.
+  have hrank := (rank_reducedSingularHomologyFunctor_zero (X := of ↥(range h)ᶜ) x).symm.trans
+    (e.toLinearEquiv.rank_eq.trans (Module.rank_self K))
   obtain ⟨hsub, hne⟩ := Cardinal.eq_one_iff_unique.1 hrank
   have : Unique {c : ZerothHomotopy ↥(range h)ᶜ // c ≠ ZerothHomotopy.mk x} :=
     @Unique.mk' _ ⟨Classical.arbitrary _⟩ hsub
   rw [← Nat.card_congr (Equiv.optionSubtypeNe (ZerothHomotopy.mk x)), Finite.card_option,
     Nat.card_unique]
+
+/-- **The Jordan–Brouwer separation theorem, connected form.** The complement of the image of a
+continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the unit
+sphere of a real normed space of dimension `dim E + 1` is not preconnected. -/
+theorem not_isPreconnected_compl_range_sphere (hEF : finrank ℝ F = finrank ℝ E + 1)
+    (hc : Continuous h) (hi : Function.Injective h) : ¬ IsPreconnected (range h)ᶜ := by
+  -- The sphere is a manifold, so the complement is open and locally path connected, and its two
+  -- path components are its connected components.
+  intro hconn
+  -- The unit sphere of `F` is homeomorphic to the Euclidean one, which is a manifold.
+  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) = finrank ℝ E + 1) := ⟨by simp⟩
+  have := ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin (finrank ℝ E)))
+    (sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1)
+  have := (sphereHomeomorphOfFinrankEq (F := F)
+    (E := EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) (by simp [hEF])).locallyPathConnectedSpace
+  have hcard := natCard_zerothHomotopy_sphere_compl_range_eq_two hEF hc hi
+  have := (isCompact_range hc).isClosed.isOpen_compl.locallyPathConnectedSpace
+  have := isPreconnected_iff_preconnectedSpace.mp hconn
+  have hle : Nat.card (ZerothHomotopy ↥(range h)ᶜ) ≤ 1 := by
+    rw [← Nat.card_congr connectedComponentsEquivZerothHomotopy]
+    simpa using Nat.card_le_card_of_injective
+      (f := fun _ : ConnectedComponents ↥(range h)ᶜ => ()) (fun _ _ _ => Subsingleton.elim _ _)
+  omega
 
 end Sphere
 

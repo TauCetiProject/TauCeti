@@ -29,6 +29,10 @@ open set.
 * `TauCeti.mfderiv_eq_fderiv_comp_of_eqOn`: `df_y = dh_{e y} ∘ de_y` where `f = h ∘ e`.
 * `TauCeti.isInvertible_mfderiv_chart`: the derivative of a chart of the `C^1` maximal atlas is
   invertible.
+* `TauCeti.contDiffAt_symm_trans_of_mem_maximalAtlas`: a transition map between two charts of the
+  `C^n` maximal atlas is `C^n` on its source.
+* `TauCeti.trans_mem_maximalAtlas_of_contDiffAt`: a chart of the `C^n` maximal atlas followed by a
+  `C^n` chart of the model space with `C^n` inverse is again in the maximal atlas.
 * `TauCeti.mfderiv_eq_zero_iff_of_eqOn`: on the source of `e`, the differential of `f` vanishes at
   `y` if and only if the Fréchet derivative of `h` vanishes at `e y`.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: the differential of a differentiable
@@ -94,6 +98,43 @@ theorem mfderiv_eq_zero_iff_of_eqOn (he : e ∈ IsManifold.maximalAtlas 𝓘(�
     rfl
 
 end Chart
+
+section MaximalAtlas
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] {n : WithTop ℕ∞}
+  {q : OpenPartialHomeomorph M E}
+
+/-- A transition map `q.symm.trans q'` between two charts of the maximal atlas is `C^n` at every
+point of its source. -/
+theorem contDiffAt_symm_trans_of_mem_maximalAtlas {q' : OpenPartialHomeomorph M E}
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hq' : q' ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    {z : E} (hz : z ∈ (q.symm.trans q').source) : ContDiffAt 𝕜 n (q.symm.trans q') z := by
+  rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage] at hz
+  rw [← contMDiffAt_iff_contDiffAt, OpenPartialHomeomorph.coe_trans]
+  exact (contMDiffAt_of_mem_maximalAtlas hq' hz.2).comp z
+    (contMDiffAt_symm_of_mem_maximalAtlas hq hz.1)
+
+variable [IsManifold 𝓘(𝕜, E) n M]
+
+/-- A chart `q` of the maximal atlas followed by a chart `e` of the model space which is `C^n` on
+its source, with `C^n` inverse on its target, is again a chart of the maximal atlas. -/
+theorem trans_mem_maximalAtlas_of_contDiffAt {e : OpenPartialHomeomorph E E}
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (he : ∀ z ∈ e.source, ContDiffAt 𝕜 n e z)
+    (hes : ∀ z ∈ e.target, ContDiffAt 𝕜 n e.symm z) :
+    q.trans e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M := by
+  refine (IsManifold.mem_maximalAtlas_iff_contMDiffOn _).2 ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage] at hz
+    rw [OpenPartialHomeomorph.coe_trans]
+    exact ((contMDiffAt_iff_contDiffAt.2 (he _ hz.2)).comp z
+      (contMDiffAt_of_mem_maximalAtlas hq hz.1)).contMDiffWithinAt
+  · rw [OpenPartialHomeomorph.trans_target, mem_inter_iff, mem_preimage] at hz
+    rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.coe_trans]
+    exact ((contMDiffAt_symm_of_mem_maximalAtlas hq hz.2).comp z
+      (contMDiffAt_iff_contDiffAt.2 (hes _ hz.1))).contMDiffWithinAt
+
+end MaximalAtlas
 
 section Preferred
 

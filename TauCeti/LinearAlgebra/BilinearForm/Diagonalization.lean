@@ -52,9 +52,9 @@ where every form that is alternating is symmetric, this classifies the nondegene
 bilinear forms, which is the input to the normal forms of one-relator pro-`2` groups.
 
 Gram determinants transform by the square of the coordinate-map determinant. Consequently, the
-product of the Gram determinants of equivalent bilinear forms is a square, without symmetry or
-nondegeneracy assumptions. When `2` is invertible, symmetric bilinear forms are equivalent
-exactly when their associated quadratic forms are equivalent.
+Gram determinants of equivalent bilinear forms differ by the square of a unit, and their product
+is a square, without symmetry or nondegeneracy assumptions. When `2` is invertible, symmetric
+bilinear forms are equivalent exactly when their associated quadratic forms are equivalent.
 
 ## Main results
 
@@ -64,8 +64,10 @@ exactly when their associated quadratic forms are equivalent.
   identifies the associated quadratic form with a weighted sum of squares.
 * `LinearMap.BilinForm.det_toMatrix_comp`, `LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det`:
   the Gram determinant under a linear map and under a change of basis.
-* `LinearMap.BilinForm.Equivalent.isSquare_det_mul_det`: equivalent forms have square product
-  of Gram determinants in any finite bases with the same index type.
+* `LinearMap.BilinForm.Equivalent.exists_det_eq_unit_sq_mul_det`: equivalent forms have Gram
+  determinants differing by a unit square, in any finite bases with the same index type.
+* `LinearMap.BilinForm.Equivalent.isSquare_det_mul_det`: hence the product of their Gram
+  determinants is a square.
 * `LinearMap.BilinForm.IsSymm.equivalent_iff_toQuadraticMap_equivalent`: when `2` is invertible,
   equivalence of symmetric bilinear forms is equivalent to equivalence of their quadratic forms.
 * `LinearMap.BilinForm.iIsOrtho.dvd_apply`: divisibility from diagonal values.
@@ -155,6 +157,21 @@ theorem det_toMatrix_eq_det_sq_mul_det {ι : Type*} [Fintype ι] [DecidableEq ι
   simpa only [comp_id_id, LinearMap.toMatrix_id_eq_basis_toMatrix] using
     det_toMatrix_comp c b B LinearMap.id
 
+/-- The Gram determinants of equivalent bilinear forms differ by the square of a unit. This
+holds over any commutative ring, including for singular and nonsymmetric forms, in any
+caller-provided finite bases with the same index type. -/
+theorem Equivalent.exists_det_eq_unit_sq_mul_det {N ι : Type*} [AddCommGroup N] [Module R N]
+    [Fintype ι] [DecidableEq ι] {C : BilinForm R N} (h : B.Equivalent C)
+    (b : Basis ι R M) (c : Basis ι R N) :
+    ∃ u : Rˣ, (B.toMatrix b).det = (u : R) ^ 2 * (C.toMatrix c).det := by
+  obtain ⟨e⟩ := h
+  have hform : B = C.comp e.toLinearEquiv.toLinearMap e.toLinearEquiv.toLinearMap := by
+    ext x y
+    exact (e.map_app y x).symm
+  refine ⟨(e.toLinearEquiv.isUnit_det b c).unit, ?_⟩
+  conv_lhs => rw [hform]
+  rw [det_toMatrix_comp b c, IsUnit.unit_spec]
+
 /-- The product of Gram determinants of equivalent bilinear forms is a square. This holds over
 any commutative ring, including for singular and nonsymmetric forms, in any caller-provided
 finite bases with the same index type. -/
@@ -162,15 +179,8 @@ theorem Equivalent.isSquare_det_mul_det {N ι : Type*} [AddCommGroup N] [Module 
     [Fintype ι] [DecidableEq ι] {C : BilinForm R N} (h : B.Equivalent C)
     (b : Basis ι R M) (c : Basis ι R N) :
     IsSquare ((B.toMatrix b).det * (C.toMatrix c).det) := by
-  obtain ⟨e⟩ := h
-  have hform : B = C.comp e.toLinearEquiv.toLinearMap e.toLinearEquiv.toLinearMap := by
-    ext x y
-    exact (e.map_app y x).symm
-  refine ⟨(LinearMap.toMatrix b c e.toLinearEquiv.toLinearMap).det * (C.toMatrix c).det,
-    ?_⟩
-  conv_lhs => rw [hform]
-  rw [det_toMatrix_comp b c]
-  ring
+  obtain ⟨u, hu⟩ := h.exists_det_eq_unit_sq_mul_det b c
+  exact ⟨u * (C.toMatrix c).det, by rw [hu]; ring⟩
 
 /-- When `2` is invertible, symmetric bilinear forms are equivalent exactly when their
 associated quadratic forms are equivalent. The underlying modules need not be finite or free. -/
@@ -178,19 +188,16 @@ theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
     {N : Type*} [AddCommGroup N] [Module R N] [Invertible (2 : R)]
     {C : BilinForm R N} (hB : B.IsSymm) (hC : C.IsSymm) :
     B.Equivalent C ↔ B.toQuadraticMap.Equivalent C.toQuadraticMap := by
-  constructor
-  · rintro ⟨e⟩
-    exact ⟨{ toLinearEquiv := e.toLinearEquiv
-             map_app' := fun x ↦ e.map_app x x }⟩
-  · rintro ⟨f⟩
-    have hform : B.toQuadraticMap = C.toQuadraticMap.comp f.toLinearEquiv.toLinearMap := by
-      ext x
-      exact (f.map_app x).symm
-    have hassoc := congrArg (QuadraticMap.associated (R := R)) hform
-    rw [QuadraticMap.associated_comp, QuadraticMap.associated_left_inverse R hB.eq,
-      QuadraticMap.associated_left_inverse R hC.eq] at hassoc
-    exact ⟨{ toLinearEquiv := f.toLinearEquiv
-             map_app' := fun x y ↦ (LinearMap.congr_fun (LinearMap.congr_fun hassoc x) y).symm }⟩
+  refine ⟨Equivalent.toQuadraticMap, ?_⟩
+  rintro ⟨f⟩
+  have hform : B.toQuadraticMap = C.toQuadraticMap.comp f.toLinearEquiv.toLinearMap := by
+    ext x
+    exact (f.map_app x).symm
+  have hassoc := congrArg (QuadraticMap.associated (R := R)) hform
+  rw [QuadraticMap.associated_comp, QuadraticMap.associated_left_inverse R hB.eq,
+    QuadraticMap.associated_left_inverse R hC.eq] at hassoc
+  exact ⟨{ toLinearEquiv := f.toLinearEquiv
+           map_app' := fun x y ↦ (LinearMap.congr_fun (LinearMap.congr_fun hassoc x) y).symm }⟩
 
 /-- Along an orthogonal basis, a common divisor of the diagonal values of a bilinear form divides
 every value of the form. -/

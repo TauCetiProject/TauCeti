@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Normed.Module.Trace
 import Mathlib.Analysis.InnerProductSpace.Trace
@@ -29,15 +29,19 @@ total variation of a function and the perimeter of a set are suprema of the pair
 * `TestFunction.divergenceCLM_apply`: pointwise, it is the trace of the Fréchet derivative.
 * `TestFunction.divergenceCLM_monoCLM`: the divergence commutes with extending a test vector
   field from `Ω'` to a larger open set `Ω`.
+* `TestFunction.divergenceCLM_postcompCLM_toSpanSingleton`: the divergence of the vector field
+  `φ v` is the directional derivative `∂_v φ`.
 * `TestFunction.divergenceCLM_apply_eq_sum`: in an orthonormal basis `b`, it is the sum of the
   derivatives of the components `⟪b i, φ⟫` in the directions `b i`.
+* `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a translated test vector field
+  is the translate of its divergence.
 -/
 
 public section
 
 namespace TestFunction
 
-open TopologicalSpace
+open LineDeriv TopologicalSpace
 open scoped ContDiff Distributions InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -63,6 +67,20 @@ theorem divergenceCLM_monoCLM (h : Ω' ≤ Ω) (φ : 𝓓(Ω', E)) :
   ext x
   simp [monoCLM_apply, h]
 
+/-- The divergence of the test vector field `φ v`, for a scalar test function `φ` and a fixed
+vector `v`, is the directional derivative `∂_v φ`. -/
+@[simp]
+theorem divergenceCLM_postcompCLM_toSpanSingleton (φ : 𝓓(Ω, ℝ)) (v : E) :
+    divergenceCLM (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ) = ∂_{v} φ := by
+  ext x
+  have hφ : DifferentiableAt ℝ (φ : E → ℝ) x := φ.contDiff.differentiable (by simp) x
+  have hcoe : ⇑(postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ) = fun y => φ y • v := by
+    ext y
+    simp
+  rw [divergenceCLM_apply, hcoe, fderiv_smul_const hφ, lineDerivOp_eq_lineDerivCLM ℝ,
+    lineDerivCLM_apply_of_le le_top, hφ.lineDeriv_eq_fderiv]
+  exact LinearMap.trace_smulRight _ _
+
 section InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -83,3 +101,21 @@ theorem divergenceCLM_apply_eq_sum {ι : Type*} [Fintype ι] (b : OrthonormalBas
 end InnerProductSpace
 
 end TestFunction
+
+namespace TauCeti
+
+open Set TestFunction TopologicalSpace
+open scoped Distributions
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {Ω V : Opens E} {h : E}
+
+/-- The divergence of a translated test vector field is the translate of its divergence. -/
+@[simp]
+theorem divergenceCLM_translateTestFunction (hVO : MapsTo (· + h) V Ω) (φ : 𝓓(V, E)) :
+    divergenceCLM (translateTestFunction hVO φ) =
+      translateTestFunction hVO (divergenceCLM φ) := by
+  ext y
+  simp only [divergenceCLM_apply, fderiv_translateTestFunction, translateTestFunction_apply]
+
+end TauCeti

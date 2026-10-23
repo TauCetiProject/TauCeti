@@ -159,10 +159,9 @@ theorem g_hom_app_surjective (V : C) (h : Subsingleton (S.X₁.H' 1 V)) :
     (Ext.mk₀ ((freeYonedaSheafSectionsEquiv J V S.X₃).symm s))
   refine ⟨freeYonedaSheafSectionsEquiv J V S.X₂ (Ext.addEquiv₀ x), ?_⟩
   rw [← freeYonedaSheafSectionsEquiv_naturality_right]
-  have hx' : Ext.addEquiv₀ x ≫ S.g = (freeYonedaSheafSectionsEquiv J V S.X₃).symm s := by
-    apply (Ext.mk₀_bijective _ _).injective
-    rw [← Ext.mk₀_comp_mk₀, Ext.mk₀_addEquiv₀_apply]
-    exact hx
+  have hx' : Ext.addEquiv₀ x ≫ S.g = (freeYonedaSheafSectionsEquiv J V S.X₃).symm s :=
+    (TauCeti.ext_addEquiv₀_comp_mk₀ x S.g).symm.trans <| (congrArg Ext.addEquiv₀ hx).trans <|
+      Ext.addEquiv₀.apply_symm_apply _
   rw [hx', AddEquiv.apply_symm_apply]
 
 /-- If `H¹(V, F₁)` vanishes, then the sequence of sections `0 ⟶ F₁(V) ⟶ F₂(V) ⟶ F₃(V) ⟶ 0` is

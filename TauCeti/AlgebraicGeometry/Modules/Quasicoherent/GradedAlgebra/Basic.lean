@@ -47,7 +47,9 @@ symmetric algebras of quasicoherent sheaves, enter this category.
   multiplications satisfying these laws;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.homMk`: the morphism of graded
   quasicoherent algebras given by componentwise maps preserving the unit and the homogeneous
-  multiplications.
+  multiplications;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.homMkOfEq`: the same, for componentwise
+  maps between families identified with the homogeneous components.
 -/
 
 public section
@@ -242,6 +244,106 @@ theorem homMk_hom_hom_hom {A B : GradedQuasicoherentAlgebra X} (f : ∀ n, A.obj
     (mul_f : ∀ i j, (f i ⊗ₘ f j) ≫ B.obj.toMon.mul i j = A.obj.toMon.mul i j ≫ f (i + j)) :
     (homMk f one_f mul_f).hom.hom.hom = f :=
   (rfl)
+
+/-- A morphism of graded quasicoherent algebras whose homogeneous components are identified with
+families `M` and `N` carrying units and multiplications, given by componentwise maps `M n ⟶ N n`
+preserving those units and multiplications. This transports `homMk` along identifications of
+components such as those provided by `ofHomogeneous_obj_X`. -/
+def homMkOfEq {A B : GradedQuasicoherentAlgebra X} {M N : ℕ → X.Modules}
+    (hA : A.obj.X = M) (hB : B.obj.X = N) {oneM : 𝟙_ X.Modules ⟶ M 0}
+    {oneN : 𝟙_ X.Modules ⟶ N 0} {mulM : ∀ i j, M i ⊗ M j ⟶ M (i + j)}
+    {mulN : ∀ i j, N i ⊗ N j ⟶ N (i + j)}
+    (hoA : A.obj.toMon.one = oneM ≫ eqToHom (congrFun hA 0).symm)
+    (hoB : B.obj.toMon.one = oneN ≫ eqToHom (congrFun hB 0).symm)
+    (hmA : ∀ i j, A.obj.toMon.mul i j =
+      (eqToHom (by rw [hA]) : A.obj.X i ⊗ A.obj.X j ⟶ M i ⊗ M j) ≫ mulM i j ≫
+        eqToHom (congrFun hA (i + j)).symm)
+    (hmB : ∀ i j, B.obj.toMon.mul i j =
+      (eqToHom (by rw [hB]) : B.obj.X i ⊗ B.obj.X j ⟶ N i ⊗ N j) ≫ mulN i j ≫
+        eqToHom (congrFun hB (i + j)).symm)
+    (f : ∀ n, M n ⟶ N n) (one_f : oneM ≫ f 0 = oneN)
+    (mul_f : ∀ i j, (f i ⊗ₘ f j) ≫ mulN i j = mulM i j ≫ f (i + j)) : A ⟶ B :=
+  homMk (fun n ↦ eqToHom (congrFun hA n) ≫ f n ≫ eqToHom (congrFun hB n).symm)
+    (by subst hA hB; simp only [hoA, hoB, eqToHom_refl, Category.comp_id, Category.id_comp]
+        exact one_f)
+    (fun i j ↦ by
+      subst hA hB
+      simp only [hmA, hmB, eqToHom_refl, Category.comp_id, Category.id_comp]
+      exact mul_f i j)
+
+/-- The components of `homMkOfEq` are the given morphisms, transported along the identifications
+of the homogeneous components. -/
+@[simp]
+theorem homMkOfEq_hom_hom_hom {A B : GradedQuasicoherentAlgebra X} {M N : ℕ → X.Modules}
+    (hA : A.obj.X = M) (hB : B.obj.X = N) {oneM : 𝟙_ X.Modules ⟶ M 0}
+    {oneN : 𝟙_ X.Modules ⟶ N 0} {mulM : ∀ i j, M i ⊗ M j ⟶ M (i + j)}
+    {mulN : ∀ i j, N i ⊗ N j ⟶ N (i + j)}
+    (hoA : A.obj.toMon.one = oneM ≫ eqToHom (congrFun hA 0).symm)
+    (hoB : B.obj.toMon.one = oneN ≫ eqToHom (congrFun hB 0).symm)
+    (hmA : ∀ i j, A.obj.toMon.mul i j =
+      (eqToHom (by rw [hA]) : A.obj.X i ⊗ A.obj.X j ⟶ M i ⊗ M j) ≫ mulM i j ≫
+        eqToHom (congrFun hA (i + j)).symm)
+    (hmB : ∀ i j, B.obj.toMon.mul i j =
+      (eqToHom (by rw [hB]) : B.obj.X i ⊗ B.obj.X j ⟶ N i ⊗ N j) ≫ mulN i j ≫
+        eqToHom (congrFun hB (i + j)).symm)
+    (f : ∀ n, M n ⟶ N n) (one_f : oneM ≫ f 0 = oneN)
+    (mul_f : ∀ i j, (f i ⊗ₘ f j) ≫ mulN i j = mulM i j ≫ f (i + j)) (n : ℕ) :
+    (homMkOfEq hA hB hoA hoB hmA hmB f one_f mul_f).hom.hom.hom n =
+      eqToHom (congrFun hA n) ≫ f n ≫ eqToHom (congrFun hB n).symm :=
+  (rfl)
+
+/-- `homMkOfEq` sends a family of identities to the identity. -/
+theorem homMkOfEq_id {A : GradedQuasicoherentAlgebra X} {M : ℕ → X.Modules} (hA : A.obj.X = M)
+    {oneM : 𝟙_ X.Modules ⟶ M 0} {mulM : ∀ i j, M i ⊗ M j ⟶ M (i + j)}
+    (hoA : A.obj.toMon.one = oneM ≫ eqToHom (congrFun hA 0).symm)
+    (hmA : ∀ i j, A.obj.toMon.mul i j =
+      (eqToHom (by rw [hA]) : A.obj.X i ⊗ A.obj.X j ⟶ M i ⊗ M j) ≫ mulM i j ≫
+        eqToHom (congrFun hA (i + j)).symm)
+    (f : ∀ n, M n ⟶ M n) (one_f : oneM ≫ f 0 = oneM)
+    (mul_f : ∀ i j, (f i ⊗ₘ f j) ≫ mulM i j = mulM i j ≫ f (i + j)) (hf : ∀ n, f n = 𝟙 (M n)) :
+    homMkOfEq hA hA hoA hoA hmA hmA f one_f mul_f = 𝟙 A :=
+  hom_ext _ _ fun n ↦ by
+    subst hA
+    simp only [homMkOfEq_hom_hom_hom, hf, eqToHom_refl, Category.id_comp]
+    -- The identity of a graded algebra is displayed on `A.obj.toMon.X n`, which is `A.obj.X n`
+    -- by definition of `CommMon.toMon`.
+    rfl
+
+/-- `homMkOfEq` sends componentwise composites to composites. -/
+theorem homMkOfEq_comp {A B C : GradedQuasicoherentAlgebra X} {M N P : ℕ → X.Modules}
+    (hA : A.obj.X = M) (hB : B.obj.X = N) (hC : C.obj.X = P) {oneM : 𝟙_ X.Modules ⟶ M 0}
+    {oneN : 𝟙_ X.Modules ⟶ N 0} {oneP : 𝟙_ X.Modules ⟶ P 0}
+    {mulM : ∀ i j, M i ⊗ M j ⟶ M (i + j)} {mulN : ∀ i j, N i ⊗ N j ⟶ N (i + j)}
+    {mulP : ∀ i j, P i ⊗ P j ⟶ P (i + j)}
+    (hoA : A.obj.toMon.one = oneM ≫ eqToHom (congrFun hA 0).symm)
+    (hoB : B.obj.toMon.one = oneN ≫ eqToHom (congrFun hB 0).symm)
+    (hoC : C.obj.toMon.one = oneP ≫ eqToHom (congrFun hC 0).symm)
+    (hmA : ∀ i j, A.obj.toMon.mul i j =
+      (eqToHom (by rw [hA]) : A.obj.X i ⊗ A.obj.X j ⟶ M i ⊗ M j) ≫ mulM i j ≫
+        eqToHom (congrFun hA (i + j)).symm)
+    (hmB : ∀ i j, B.obj.toMon.mul i j =
+      (eqToHom (by rw [hB]) : B.obj.X i ⊗ B.obj.X j ⟶ N i ⊗ N j) ≫ mulN i j ≫
+        eqToHom (congrFun hB (i + j)).symm)
+    (hmC : ∀ i j, C.obj.toMon.mul i j =
+      (eqToHom (by rw [hC]) : C.obj.X i ⊗ C.obj.X j ⟶ P i ⊗ P j) ≫ mulP i j ≫
+        eqToHom (congrFun hC (i + j)).symm)
+    (f : ∀ n, M n ⟶ N n) (one_f : oneM ≫ f 0 = oneN)
+    (mul_f : ∀ i j, (f i ⊗ₘ f j) ≫ mulN i j = mulM i j ≫ f (i + j))
+    (g : ∀ n, N n ⟶ P n) (one_g : oneN ≫ g 0 = oneP)
+    (mul_g : ∀ i j, (g i ⊗ₘ g j) ≫ mulP i j = mulN i j ≫ g (i + j))
+    (h : ∀ n, M n ⟶ P n) (one_h : oneM ≫ h 0 = oneP)
+    (mul_h : ∀ i j, (h i ⊗ₘ h j) ≫ mulP i j = mulM i j ≫ h (i + j))
+    (hfg : ∀ n, f n ≫ g n = h n) :
+    homMkOfEq hA hC hoA hoC hmA hmC h one_h mul_h =
+      homMkOfEq hA hB hoA hoB hmA hmB f one_f mul_f ≫
+        homMkOfEq hB hC hoB hoC hmB hmC g one_g mul_g :=
+  hom_ext _ _ fun n ↦ by
+    subst hA hB hC
+    simp only [homMkOfEq_hom_hom_hom, ObjectProperty.FullSubcategory.comp_hom, CommMon.comp_hom,
+      eqToHom_refl, Category.id_comp, Category.comp_id, ← hfg]
+    -- The composite of graded morphisms is displayed through the middle object
+    -- `B.obj.toMon.X n`, which is `B.obj.X n` by definition of `CommMon.toMon`.
+    rfl
 
 end GradedQuasicoherentAlgebra
 

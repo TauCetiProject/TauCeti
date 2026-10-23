@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Evaluation
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Evaluating a multivariate power series at arguments from an adic ideal
@@ -135,9 +136,10 @@ theorem eval₂_mem_pow_add_mul (hφ : Continuous φ) (ha : HasEval a) (hI : IsA
     · rw [pow_add]
       apply Ideal.mul_mem_mul (hcoeff d)
       apply Ideal.pow_le_pow_right (Nat.mul_le_mul_right j hge)
-      simpa only [Finsupp.prod, Finsupp.degree_apply,
-        Finset.prod_pow_eq_pow_sum, ← pow_mul, Nat.mul_comm, Finset.mul_sum] using
-        (Ideal.prod_mem_prod fun s (_ : s ∈ d.support) ↦ Ideal.pow_mem_pow (hmem s) (d s))
+      have h : d.prod (fun s e ↦ a s ^ e) ∈ (I ^ j) ^ d.degree := by
+        rw [← Finsupp.prod_pow_eq_pow_degree]
+        exact Ideal.prod_mem_prod fun s _ ↦ Ideal.pow_mem_pow (hmem s) (d s)
+      rwa [← pow_mul, Nat.mul_comm] at h
   have hsum := tsum_mem (hI.isClosed_pow (k + c * j)) hval
   rwa [htot.tsum_eq] at hsum
 

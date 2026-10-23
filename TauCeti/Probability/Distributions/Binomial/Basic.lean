@@ -32,8 +32,7 @@ characterization of Mathlib's binomial measure.  The native law remains
 * `TauCeti.Probability.charFun_map_cast_binomial` computes its characteristic function;
 * `TauCeti.Probability.binomial_conv_binomial` proves additivity of the native binomial laws;
 * `TauCeti.Probability.iIndepFun.hasLaw_sum_bernoulli` identifies a finite sum of independent
-  Bernoulli variables with a binomial law, and `TauCeti.Probability.hasLaw_card_filter_mem_pi`
-  the number of coordinates of an independent sample that lie in a fixed set.
+  Bernoulli variables with a binomial law.
 
 ## References
 
@@ -175,25 +174,6 @@ theorem iIndepFun.hasLaw_sum_bernoulli {ι : Type*} [Fintype ι] {p : unitInterv
     simp
   rw [hcomp]
   exact hsumCast
-
-open Finset in
-/-- Under the product of copies of a probability measure `μ`, the number of coordinates lying in a
-measurable set `s` has the binomial law, with one trial per coordinate and success probability
-`μ s`. -/
-theorem hasLaw_card_filter_mem_pi {ι α : Type*} [Fintype ι] [MeasurableSpace α] {μ : Measure α}
-    [IsProbabilityMeasure μ] {s : Set α} [DecidablePred (· ∈ s)] (hs : MeasurableSet s) :
-    HasLaw (fun x : ι → α ↦ #{i | x i ∈ s}) Bin(Fintype.card ι, ⟨μ.real s, by simp⟩)
-      (Measure.pi fun _ : ι ↦ μ) := by
-  have hindep : iIndepFun (fun i (x : ι → α) ↦ s.indicator (1 : α → ℕ) (x i))
-      (Measure.pi fun _ : ι ↦ μ) :=
-    iIndepFun_pi (X := fun _ ↦ s.indicator (1 : α → ℕ)) fun _ ↦
-      (measurable_one.indicator hs).aemeasurable
-  have hlaw (i : ι) : HasLaw (fun x : ι → α ↦ s.indicator (1 : α → ℕ) (x i))
-      Ber((1 : ℕ), 0, ⟨μ.real s, by simp⟩) (Measure.pi fun _ : ι ↦ μ) :=
-    (hasLaw_indicator_one_bernoulliMeasure hs.nullMeasurableSet).comp
-      (measurePreserving_eval (fun _ : ι ↦ μ) i).hasLaw
-  refine (iIndepFun.hasLaw_sum_bernoulli hindep hlaw).congr (ae_of_all _ fun x ↦ ?_)
-  simp [Set.indicator_apply]
 
 /-! ### Variance -/
 

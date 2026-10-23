@@ -169,7 +169,9 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus
     rw [← Complex.integral_comp_polarCoord_symm_Icc _ z₀ ha]
     exact setIntegral_congr_fun measurableSet_Icc fun p hp ↦ by
       rw [hdr p hp, hdt p hp]
-      exact B.apply_exp_circleMap_sub_swap (fderiv ℝ u (P p)) p.1 p.2
+      simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+        ContinuousLinearMap.coe_coe] using
+        B.toLinearMap₁₂.apply_exp_circleMap_sub_swap (fderiv ℝ u (P p)).toLinearMap p.1 p.2
   have hPc (r θ : ℝ) : P (r, θ) = circleMap z₀ r θ := by
     simp [P, Complex.polarCoord_symm_apply, circleMap, Complex.exp_mul_I]
   -- The radial edges of the rectangle give the two circle integrals.

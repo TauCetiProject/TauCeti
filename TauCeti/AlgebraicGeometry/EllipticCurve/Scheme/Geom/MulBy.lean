@@ -36,7 +36,9 @@ morphism of bases carries `[n]` to `[n]`.
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isMonHom_mulBy`: multiplication by `n` is a
   homomorphism of group schemes over `S`.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.comp_mulBy`: it sends a point `x` to `x ^ n`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.comp_mulBy`: it sends a point `x` to `x ^ n`, so
+  an `S`-point is killed by `n` exactly when `[n]` carries it to the zero section
+  (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.zpow_eq_one_iff_left_comp_mulBy_left`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_add`,
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_neg` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_mul`: `[m + n] = [m] * [n]`,
@@ -169,6 +171,15 @@ instance locallyOfFinitePresentation_mulBy_left (n : ℤ) :
 theorem zero_mulBy_left (n : ℤ) : E.zero ≫ (E.mulBy n).left = E.zero := by
   simpa only [Over.comp_left, one_left] using
     congrArg CommaMorphism.left (IsMonHom.one_hom (f := E.mulBy n))
+
+open MonoidalCategory in
+/-- **A point is killed by `n` exactly when `[n]` carries it to the zero section.** An `S`-point
+`P` of `E` satisfies `P ^ n = 1` in the group of points if and only if its composite with
+multiplication by `n` is the zero section. -/
+theorem zpow_eq_one_iff_left_comp_mulBy_left (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (n : ℤ) :
+    P ^ n = 1 ↔ P.left ≫ (E.mulBy n).left = E.zero := by
+  rw [← Over.comp_left, comp_mulBy, Over.OverMorphism.ext_iff]
+  simp
 
 /-- On the underlying scheme, `[0]` is the composite of the structure morphism and the zero
 section. -/

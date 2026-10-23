@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
-public import TauCeti.LinearAlgebra.Matrix.Connected
 import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
 /-!
@@ -70,20 +69,18 @@ theorem two_mul_dotProduct_mulVec_eq_neg_sum [Field K] {A : Matrix C C K} (hA : 
   simp_rw [← mul_sum, hrow]
   simp [mulVec, dotProduct, mul_sum]
 
-variable [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-
 omit [Fintype C] in
 /-- The summands of `Matrix.two_mul_dotProduct_mulVec_eq_neg_sum` are nonnegative when the
 off-diagonal entries of `A` are nonnegative and the entries of `m` are positive. -/
-private lemma sum_div_nonneg {A : Matrix C C K} (hnonneg : ∀ i j, i ≠ j → 0 ≤ A i j)
+private lemma sum_div_nonneg [DivisionRing K] [LinearOrder K] [IsStrictOrderedRing K]
+    {A : Matrix C C K} (hnonneg : ∀ i j, i ≠ j → 0 ≤ A i j)
     {m : C → K} (hm : ∀ i, 0 < m i) (x : C → K) (i j : C) :
     0 ≤ A i j * (m j * x i - m i * x j) ^ 2 / (m i * m j) := by
   rcases eq_or_ne i j with rfl | hij
   · simp
-  · have := hm i
-    have := hm j
-    have := hnonneg i j hij
-    positivity
+  · exact div_nonneg (mul_nonneg (hnonneg i j hij) (sq_nonneg _)) (mul_pos (hm i) (hm j)).le
+
+variable [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 
 /-- The quadratic form of a symmetric matrix over a linear ordered field with nonnegative
 off-diagonal entries is negative semidefinite as soon as the matrix kills a vector with positive
@@ -120,17 +117,9 @@ theorem dotProduct_mulVec_eq_zero_iff_of_mulVec_eq_zero {A : Matrix C C K} (hA :
         (sum_eq_zero_iff_of_nonneg fun j _ ↦ sum_div_nonneg hnonneg hm x i j).mp |>
         fun h ↦ h j (mem_univ j)
     have hedge {i j : C} (hij : i ≠ j ∧ 0 < A i j) : x i / m i = x j / m j := by
-      have hi := (hm i).ne'
-      have hj := (hm j).ne'
-      have hsq : (m j * x i - m i * x j) ^ 2 = 0 := by
-        have := hzero i j
-        rw [div_eq_zero_iff, mul_eq_zero] at this
-        rcases this with (h | h) | h
-        · exact absurd h hij.2.ne'
-        · exact h
-        · exact absurd h (mul_ne_zero hi hj)
-      rw [div_eq_div_iff hi hj]
-      linear_combination pow_eq_zero_iff (two_ne_zero) |>.mp hsq
+      rw [div_eq_div_iff (hm i).ne' (hm j).ne']
+      simpa [div_eq_zero_iff, hij.2.ne', (hm i).ne', (hm j).ne', sub_eq_zero, mul_comm]
+        using hzero i j
     refine ⟨x i₀ / m i₀, funext fun j ↦ ?_⟩
     have hj : x i₀ / m i₀ = x j / m j := by
       induction hconnected i₀ j with

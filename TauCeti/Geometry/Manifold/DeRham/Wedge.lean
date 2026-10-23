@@ -51,12 +51,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 namespace SmoothForm
 
-/-- A smooth form is differentiable as a section of the alternating bundle. -/
-private theorem mdifferentiableAt_section (φ : SmoothForm I M ℝ k) (x : M) :
-    MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ))
-      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] ℝ) y (φ.1 y)) x :=
-  ((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)).mdifferentiable (by simp) x
-
 /-- A smooth form is exact when, up to the identification of degrees `n = m + 1`, it is the
 exterior derivative of a smooth `m`-form. -/
 private theorem mem_exactForms_of_apply_eq {n m : ℕ} (h : n = m + 1) {φ : SmoothForm I M ℝ n}
@@ -80,8 +74,9 @@ private theorem mextDeriv_wedge_of_left_closed {φ : SmoothForm I M ℝ k}
     mextDeriv (φ.1.wedge β.1) x v =
       (-1 : ℝ) ^ k • φ.1.wedge (mextDeriv β.1) x
         (v ∘ Fin.cast (Nat.add_assoc k l 1).symm) := by
-  rw [mextDeriv_wedge (mdifferentiableAt_section φ x) (mdifferentiableAt_section β x), hφ]
-  simp
+  have h := mextDeriv_wedge_apply φ β x v
+  rw [hφ] at h
+  simpa using h
 
 /-- The wedge of two closed smooth forms is closed. -/
 theorem wedge_mem_closedForms {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M ℝ l}
@@ -89,9 +84,9 @@ theorem wedge_mem_closedForms {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M �
     wedge φ ψ ∈ closedForms I M (k + l) := by
   rw [mem_closedForms] at hφ hψ ⊢
   ext x v
-  rw [coe_wedge, mextDeriv_wedge (mdifferentiableAt_section φ x) (mdifferentiableAt_section ψ x),
-    hφ, hψ]
-  simp
+  have h := mextDeriv_wedge_apply φ ψ x v
+  rw [hφ, hψ] at h
+  simpa using h
 
 /-- The wedge of an exact smooth form with a closed smooth form is exact. -/
 theorem wedge_mem_exactForms_of_left_mem {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M ℝ l}
@@ -108,10 +103,9 @@ theorem wedge_mem_exactForms_of_left_mem {φ : SmoothForm I M ℝ k} {ψ : Smoot
     rw [mem_closedForms] at hψ
     -- `d (α ∧ ψ) = dα ∧ ψ` because `ψ` is closed.
     refine mem_exactForms_of_apply_eq (by omega) (wedge α ψ) fun x v ↦ ?_
-    rw [coe_wedge, coe_wedge,
-      mextDeriv_wedge (mdifferentiableAt_section α x) (mdifferentiableAt_section ψ x), hψ,
-      mextDerivₗ_apply]
-    simp
+    have h := mextDeriv_wedge_apply α ψ x v
+    rw [hψ] at h
+    simpa [mextDerivₗ_apply] using h.symm
 
 /-- The wedge of a closed smooth form with an exact smooth form is exact. -/
 theorem wedge_mem_exactForms_of_right_mem {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M ℝ l}

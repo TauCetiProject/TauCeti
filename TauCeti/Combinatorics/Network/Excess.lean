@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Algebra.Group.Subgroup.Ker
+public import Mathlib.Algebra.Group.Submonoid.BigOperators
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Tactic.Abel
+public import TauCeti.Combinatorics.Network.Basic
 
 /-!
 # Arrow assignments and their excess
@@ -32,6 +35,8 @@ at the sink `t`. A loop at `v` enters and leaves `v`, so it contributes nothing 
 * `TauCeti.arrowSum Q f S T`: the total value of `f` on the arrows from `S` to `T`.
 * `TauCeti.excessAt Q f v`: the excess of `f` at `v`.
 * `TauCeti.excessHom Q`: excess as an additive homomorphism `Assignment Q K →+ (V → K)`.
+* `TauCeti.Assignment.single e q`: the assignment with value `q` on the arrow `e` and zero
+  elsewhere.
 * `TauCeti.IsCirculation f`: `f` has zero excess at every vertex.
 
 ## Main results
@@ -39,13 +44,18 @@ at the sink `t`. A loop at `v` enters and leaves `v`, so it contributes nothing 
 * `TauCeti.sum_excessAt_eq_arrowSum_sub`: the total excess on a vertex set `S` is the value
   entering `S` minus the value leaving `S`.
 * `TauCeti.sum_excessAt`: the total excess over all vertices vanishes.
+* `TauCeti.excessAt_single`: a single arrow from `x` to `y` carrying `q` has excess `q` at `y` and
+  `-q` at `x`.
 * `TauCeti.excessAt_source_eq_neg_sink`: an assignment conserved away from `s` and `t` has opposite
-  excesses at `s` and `t`.
+  excesses at `s` and `t`, and `TauCeti.excessAt_sink_eq_arrowSum_sub` computes the excess at `t`
+  as the net value across any vertex set containing `s` but not `t`.
 * `TauCeti.isCirculation_iff_mem_ker`: circulations form the kernel of `excessHom`, and
   `TauCeti.setOf_excessAt_eq_eq_vadd_ker` identifies every nonempty prescribed-excess fibre with a
   translate of that kernel.
 * `TauCeti.map_excessAt` and `TauCeti.excessAt_comp_equiv`: excess commutes with additive maps of
   coefficients and with transport along an identification of arrow families.
+* `TauCeti.IsCirculation.map` and `TauCeti.Assignment.map_mem_Icc`: additive changes of
+  coefficients preserve circulations, and monotone ones preserve feasibility.
 
 ## Implementation notes
 
@@ -65,12 +75,34 @@ universe u u' v v' w
 
 variable {V : Type u} (Q : V → V → Type v) (K : Type w)
 
-/-- An *arrow assignment* of the arrow family `Q` with values in `K`: a value `f e : K` for every
-arrow `e : Q v w`. It carries no sign, capacity or conservation constraint, and inherits the
-pointwise algebraic structure of `K`. -/
-abbrev Assignment := ∀ ⦃v w : V⦄, Q v w → K
-
 variable {Q K}
+
+/-! ### Single-arrow assignments -/
+
+section Single
+
+variable [Zero K]
+
+open Classical in
+/-- The assignment with value `q` on the arrow `e` and zero on every other arrow. -/
+noncomputable def Assignment.single {x y : V} (e : Q x y) (q : K) : Assignment Q K :=
+  fun a b e' ↦ if (⟨a, b, e'⟩ : Σ a b, Q a b) = ⟨x, y, e⟩ then q else 0
+
+open Classical in
+theorem Assignment.single_apply {x y a b : V} (e : Q x y) (q : K) (e' : Q a b) :
+    Assignment.single e q e' = if (⟨a, b, e'⟩ : Σ a b, Q a b) = ⟨x, y, e⟩ then q else 0 :=
+  (rfl)
+
+@[simp]
+theorem Assignment.single_apply_self {x y : V} (e : Q x y) (q : K) :
+    Assignment.single e q e = q := by
+  simp [Assignment.single]
+
+theorem Assignment.single_apply_of_ne {x y a b : V} (e : Q x y) (q : K) {e' : Q a b}
+    (h : (⟨a, b, e'⟩ : Σ a b, Q a b) ≠ ⟨x, y, e⟩) : Assignment.single e q e' = 0 := by
+  simp [Assignment.single, h]
+
+end Single
 
 section AddCommMonoid
 
@@ -85,6 +117,19 @@ def arrowSum (f : Assignment Q K) (S T : Finset V) : K :=
 theorem arrowSum_def (f : Assignment Q K) (S T : Finset V) :
     arrowSum f S T = ∑ v ∈ S, ∑ w ∈ T, ∑ e : Q v w, f e :=
   (rfl)
+
+/-- An arrow sum as a sum over every arrow, with an indicator for its endpoints belonging to the
+specified sets. -/
+theorem arrowSum_eq_sum_ite [Fintype V] [DecidableEq V] (f : Assignment Q K)
+    (S T : Finset V) :
+    arrowSum f S T = ∑ v, ∑ w, ∑ e : Q v w, if v ∈ S ∧ w ∈ T then f e else 0 := by
+  simp [arrowSum_def, ite_and]
+
+/-- The arrow sums of an assignment with values in an additive submonoid lie in the submonoid. -/
+theorem arrowSum_mem {M : Type*} [SetLike M K] [AddSubmonoidClass M K] {H : M}
+    {f : Assignment Q K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) (S T : Finset V) :
+    arrowSum f S T ∈ H :=
+  sum_mem fun _ _ ↦ sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e
 
 @[simp]
 theorem arrowSum_zero (S T : Finset V) : arrowSum (0 : Assignment Q K) S T = 0 := by
@@ -117,14 +162,103 @@ theorem arrowSum_union_right [DecidableEq V] (f : Assignment Q K) (S : Finset V)
 summing them over the arrows between two vertex sets. -/
 theorem map_arrowSum {L F : Type*} [AddCommMonoid L] [FunLike F K L] [AddMonoidHomClass F K L]
     (φ : F) (f : Assignment Q K) (S T : Finset V) :
-    φ (arrowSum f S T) = arrowSum (fun ⦃a b⦄ (e : Q a b) ↦ φ (f e)) S T := by
+    φ (arrowSum f S T) = arrowSum (f.map φ) S T := by
   simp [arrowSum_def, map_sum]
+
+/-- Summing over the arrows between two vertex sets is monotone in the assignment. -/
+@[gcongr]
+theorem arrowSum_mono [Preorder K] [AddLeftMono K] {f g : Assignment Q K} (h : f ≤ g)
+    (S T : Finset V) : arrowSum f S T ≤ arrowSum g S T :=
+  sum_le_sum fun v _ ↦ sum_le_sum fun w _ ↦ sum_le_sum fun e _ ↦ h v w e
+
+/-- A nonnegative assignment has zero total value on the arrows from `S` to `T` exactly when it
+vanishes on each of these arrows. -/
+theorem arrowSum_eq_zero_iff_of_nonneg [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
+    (hf : 0 ≤ f) {S T : Finset V} :
+    arrowSum f S T = 0 ↔ ∀ v ∈ S, ∀ w ∈ T, ∀ e : Q v w, f e = 0 := by
+  have h₃ (v w : V) : 0 ≤ ∑ e : Q v w, f e := sum_nonneg fun e _ ↦ hf v w e
+  have h₂ (v : V) : 0 ≤ ∑ w ∈ T, ∑ e : Q v w, f e := sum_nonneg fun w _ ↦ h₃ v w
+  simp only [arrowSum_def, sum_eq_zero_iff_of_nonneg fun v _ ↦ h₂ v,
+    sum_eq_zero_iff_of_nonneg fun w _ ↦ h₃ _ w, sum_eq_zero_iff_of_nonneg fun e _ ↦ hf _ _ e,
+    mem_univ, true_implies]
+
+section Nonneg
+
+variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
+
+/-- For a nonnegative assignment, the arrow sum is monotone in the set of source vertices. -/
+theorem arrowSum_mono_left (hf : 0 ≤ f) {S S' : Finset V} (h : S ⊆ S') (T : Finset V) :
+    arrowSum f S T ≤ arrowSum f S' T :=
+  sum_le_sum_of_subset_of_nonneg h fun v _ _ ↦ sum_nonneg fun w _ ↦ sum_nonneg fun e _ ↦ hf v w e
+
+/-- For a nonnegative assignment, the arrow sum is monotone in the set of target vertices. -/
+theorem arrowSum_mono_right (hf : 0 ≤ f) (S : Finset V) {T T' : Finset V} (h : T ⊆ T') :
+    arrowSum f S T ≤ arrowSum f S T' :=
+  sum_le_sum fun v _ ↦ sum_le_sum_of_subset_of_nonneg h fun w _ _ ↦ sum_nonneg fun e _ ↦ hf v w e
+
+/-- For a nonnegative assignment, the arrow sum is subadditive in the set of source vertices. -/
+theorem arrowSum_union_left_le [DecidableEq V] (hf : 0 ≤ f) (S S' T : Finset V) :
+    arrowSum f (S ∪ S') T ≤ arrowSum f S T + arrowSum f S' T := by
+  rw [← union_sdiff_self_eq_union, arrowSum_union_left f disjoint_sdiff]
+  grw [arrowSum_mono_left hf sdiff_subset]
+
+/-- For a nonnegative assignment, the arrow sum is subadditive in the set of target vertices. -/
+theorem arrowSum_union_right_le [DecidableEq V] (hf : 0 ≤ f) (S T T' : Finset V) :
+    arrowSum f S (T ∪ T') ≤ arrowSum f S T + arrowSum f S T' := by
+  rw [← union_sdiff_self_eq_union, arrowSum_union_right f S disjoint_sdiff]
+  grw [arrowSum_mono_right hf S sdiff_subset]
+
+/-- Adding the vertices of `X` to a vertex set `S` increases the nonnegative value leaving it by
+at most the total value leaving `X`. -/
+theorem arrowSum_union_compl_le [Fintype V] [DecidableEq V] (hf : 0 ≤ f) (S X : Finset V) :
+    arrowSum f (S ∪ X) (S ∪ X)ᶜ ≤ arrowSum f S Sᶜ + arrowSum f X univ := by
+  grw [arrowSum_union_left_le hf, arrowSum_mono_right hf S (compl_subset_compl.mpr
+    subset_union_left), arrowSum_mono_right hf X (subset_univ _)]
+
+/-- Removing the vertices of `Y` from a vertex set `S` increases the nonnegative value leaving it
+by at most the total value entering `Y`. -/
+theorem arrowSum_sdiff_compl_le [Fintype V] [DecidableEq V] (hf : 0 ≤ f) (S Y : Finset V) :
+    arrowSum f (S \ Y) (S \ Y)ᶜ ≤ arrowSum f S Sᶜ + arrowSum f univ Y := by
+  have h : (S \ Y)ᶜ = Sᶜ ∪ Y := by
+    ext v
+    simp [imp_iff_not_or]
+  rw [h]
+  grw [arrowSum_union_right_le hf, arrowSum_mono_left hf sdiff_subset,
+    arrowSum_mono_left hf (subset_univ (S \ Y))]
+
+end Nonneg
+
+/-- The total value entering `v` for a single arrow from `x` to `y` is `q` when `v = y` and
+zero otherwise. -/
+theorem sum_sum_single_in [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q : K) (v : V) :
+    ∑ w, ∑ e' : Q w v, Assignment.single e q e' = if v = y then q else 0 := by
+  split_ifs with hv
+  · subst hv
+    rw [Fintype.sum_eq_single x fun w hw ↦ sum_eq_zero fun e' _ ↦
+        Assignment.single_apply_of_ne e q fun h ↦ hw (congrArg Sigma.fst h),
+      Fintype.sum_eq_single e fun e' he' ↦ Assignment.single_apply_of_ne e q (by simpa using he'),
+      Assignment.single_apply_self]
+  · exact sum_eq_zero fun w _ ↦ sum_eq_zero fun e' _ ↦
+      Assignment.single_apply_of_ne e q fun h ↦ hv (congrArg (fun a ↦ a.2.1) h)
+
+/-- The total value leaving `v` for a single arrow from `x` to `y` is `q` when `v = x` and
+zero otherwise. -/
+theorem sum_sum_single_out [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q : K) (v : V) :
+    ∑ w, ∑ e' : Q v w, Assignment.single e q e' = if v = x then q else 0 := by
+  split_ifs with hv
+  · subst hv
+    rw [Fintype.sum_eq_single y fun w hw ↦ sum_eq_zero fun e' _ ↦
+        Assignment.single_apply_of_ne e q fun h ↦ hw (congrArg (fun a ↦ a.2.1) h),
+      Fintype.sum_eq_single e fun e' he' ↦ Assignment.single_apply_of_ne e q (by simpa using he'),
+      Assignment.single_apply_self]
+  · exact sum_eq_zero fun w _ ↦ sum_eq_zero fun e' _ ↦
+      Assignment.single_apply_of_ne e q fun h ↦ hv (congrArg Sigma.fst h)
 
 end AddCommMonoid
 
-section AddCommGroup
+section SubtractionCommMonoid
 
-variable [AddCommGroup K] [∀ v w, Fintype (Q v w)]
+variable [SubtractionCommMonoid K] [∀ v w, Fintype (Q v w)]
 
 @[simp]
 theorem arrowSum_neg (f : Assignment Q K) (S T : Finset V) :
@@ -136,7 +270,11 @@ theorem arrowSum_sub (f g : Assignment Q K) (S T : Finset V) :
     arrowSum (f - g) S T = arrowSum f S T - arrowSum g S T := by
   simp [arrowSum_def, sum_sub_distrib]
 
-variable [Fintype V]
+end SubtractionCommMonoid
+
+section AddCommGroup
+
+variable [AddCommGroup K] [∀ v w, Fintype (Q v w)] [Fintype V]
 
 /-- The *excess* of the assignment `f` at the vertex `v`: the total value on arrows entering `v`
 minus the total value on arrows leaving `v`. Loops at `v` cancel. -/
@@ -146,6 +284,11 @@ def excessAt (f : Assignment Q K) (v : V) : K :=
 theorem excessAt_def (f : Assignment Q K) (v : V) :
     excessAt f v = ∑ w, ∑ e : Q w v, f e - ∑ w, ∑ e : Q v w, f e :=
   (rfl)
+
+/-- The excess of an assignment with values in an additive subgroup lies in the subgroup. -/
+theorem excessAt_mem {M : Type*} [SetLike M K] [AddSubgroupClass M K] {H : M}
+    {f : Assignment Q K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) (v : V) : excessAt f v ∈ H :=
+  sub_mem (sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e) (sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hf e)
 
 /-- The excess at `v` is the value entering `{v}` minus the value leaving `{v}`. -/
 theorem excessAt_eq_arrowSum_sub (f : Assignment Q K) (v : V) :
@@ -181,6 +324,22 @@ theorem excessAt_neg (f : Assignment Q K) (v : V) : excessAt (-f) v = -excessAt 
 theorem excessAt_sub (f g : Assignment Q K) (v : V) :
     excessAt (f - g) v = excessAt f v - excessAt g v :=
   congrFun (map_sub (excessHom Q K) f g) v
+
+/-- A nonnegative assignment that vanishes on every arrow entering `v` has nonpositive excess at
+`v`. -/
+theorem excessAt_nonpos_of_nonneg_of_forall_in_eq_zero [PartialOrder K] [IsOrderedAddMonoid K]
+    {f : Assignment Q K} (hf : 0 ≤ f) {v : V} (h : ∀ w (e : Q w v), f e = 0) :
+    excessAt f v ≤ 0 := by
+  simp only [excessAt_def, h, sum_const_zero, zero_sub, neg_nonpos]
+  exact sum_nonneg fun w _ ↦ sum_nonneg fun e _ ↦ hf _ _ e
+
+/-- A nonnegative assignment that vanishes on every arrow leaving `v` has nonnegative excess at
+`v`. -/
+theorem excessAt_nonneg_of_nonneg_of_forall_out_eq_zero [PartialOrder K] [IsOrderedAddMonoid K]
+    {f : Assignment Q K} (hf : 0 ≤ f) {v : V} (h : ∀ w (e : Q v w), f e = 0) :
+    0 ≤ excessAt f v := by
+  simp only [excessAt_def, h, sum_const_zero, sub_zero]
+  exact sum_nonneg fun w _ ↦ sum_nonneg fun e _ ↦ hf _ _ e
 
 /-- **Excess on a vertex set.** The total excess of `f` on `S` is the value on arrows entering `S`
 from its complement minus the value on arrows leaving `S` for its complement; arrows with both ends
@@ -218,11 +377,22 @@ theorem excessAt_source_eq_neg_sink (f : Assignment Q K) {s t : V}
   · rw [eq_neg_iff_add_eq_zero, ← sum_excessAt f,
       Fintype.sum_eq_add s t hst fun v hv ↦ hconserve v hv.1 hv.2]
 
+/-- **Value across a cut.** If an assignment is conserved at every vertex other than `s` and `t`,
+then for every vertex set `S` containing `s` but not `t`, the excess at `t` is the value on arrows
+leaving `S` minus the value on arrows entering `S`. -/
+theorem excessAt_sink_eq_arrowSum_sub [DecidableEq V] (f : Assignment Q K) {s t : V}
+    (hconserve : ∀ v, v ≠ s → v ≠ t → excessAt f v = 0) {S : Finset V} (hs : s ∈ S)
+    (ht : t ∉ S) : excessAt f t = arrowSum f S Sᶜ - arrowSum f Sᶜ S := by
+  have hsum : ∑ v ∈ S, excessAt f v = excessAt f s :=
+    sum_eq_single_of_mem s hs fun v hv hvs ↦ hconserve v hvs (ne_of_mem_of_not_mem hv ht)
+  rw [← neg_sub, ← sum_excessAt_eq_arrowSum_sub, hsum, excessAt_source_eq_neg_sink f hconserve,
+    neg_neg]
+
 /-- Mapping the values of an assignment along an additive group homomorphism commutes with
 taking excess. -/
 theorem map_excessAt {L F : Type*} [AddCommGroup L] [FunLike F K L] [AddMonoidHomClass F K L]
     (φ : F) (f : Assignment Q K) (v : V) :
-    φ (excessAt f v) = excessAt (fun ⦃a b⦄ (e : Q a b) ↦ φ (f e)) v := by
+    φ (excessAt f v) = excessAt (f.map φ) v := by
   simp [excessAt_def, map_sum]
 
 /-- Excess is invariant under transport along an identification `σ` of the vertices and
@@ -235,6 +405,13 @@ theorem excessAt_comp_equiv {W : Type u'} [Fintype W] {R : W → W → Type v'}
   simp only [excessAt_def, Equiv.sum_comp (τ _ _) (fun e ↦ g e)]
   rw [Equiv.sum_comp σ (fun w ↦ ∑ e : R w (σ v), g e),
     Equiv.sum_comp σ (fun w ↦ ∑ e : R (σ v) w, g e)]
+
+/-- **Excess of a single arrow.** The assignment with value `q` on an arrow from `x` to `y` and
+zero elsewhere has excess `q` at `y` and `-q` at `x`; for a loop the two cancel. -/
+@[simp]
+theorem excessAt_single [DecidableEq V] {x y : V} (e : Q x y) (q : K) (v : V) :
+    excessAt (Assignment.single e q) v = (if v = y then q else 0) - (if v = x then q else 0) := by
+  rw [excessAt_def, sum_sum_single_in, sum_sum_single_out]
 
 /-! ### Circulations and prescribed excess -/
 
@@ -295,5 +472,79 @@ theorem setOf_excessAt_eq_eq_vadd_ker {f₀ : Assignment Q K} {b : V → K}
     simpa using hc
 
 end AddCommGroup
+
+/-! ### Change of coefficients -/
+
+namespace Assignment
+
+section Algebra
+
+variable {L F : Type*} [FunLike F K L]
+
+@[simp]
+theorem map_zero [Zero K] [Zero L] [ZeroHomClass F K L] (φ : F) :
+    (0 : Assignment Q K).map φ = 0 := by
+  funext _ _ e
+  exact (map_apply _ _ e).trans (_root_.map_zero φ)
+
+@[simp]
+theorem map_add [Add K] [Add L] [AddHomClass F K L] (φ : F) (f g : Assignment Q K) :
+    (f + g).map φ = f.map φ + g.map φ := by
+  funext _ _ e
+  simp
+
+@[simp]
+theorem map_neg [AddGroup K] [AddGroup L] [AddMonoidHomClass F K L] (φ : F)
+    (f : Assignment Q K) : (-f).map φ = -f.map φ := by
+  funext _ _ e
+  simp
+
+@[simp]
+theorem map_sub [AddGroup K] [AddGroup L] [AddMonoidHomClass F K L] (φ : F)
+    (f g : Assignment Q K) : (f - g).map φ = f.map φ - g.map φ := by
+  funext _ _ e
+  simp
+
+end Algebra
+
+section Order
+
+variable {L : Type*} [Preorder K] [Preorder L] {φ : K → L}
+
+theorem map_mono (hφ : Monotone φ) {f g : Assignment Q K} (h : f ≤ g) : f.map φ ≤ g.map φ := by
+  intro x y e
+  simpa only [map_apply] using hφ (h x y e)
+
+/-- A monotone coefficient map preserves feasibility, with the bounds mapped as well. -/
+theorem map_mem_Icc (hφ : Monotone φ) {lo hi f : Assignment Q K} (hf : f ∈ Set.Icc lo hi) :
+    f.map φ ∈ Set.Icc (lo.map φ) (hi.map φ) :=
+  ⟨map_mono hφ hf.1, map_mono hφ hf.2⟩
+
+end Order
+
+end Assignment
+
+/-- A circulation stays a circulation after an additive change of coefficients. -/
+theorem IsCirculation.map [Fintype V] [∀ v w, Fintype (Q v w)] [AddCommGroup K] {L F : Type*}
+    [AddCommGroup L] [FunLike F K L] [AddMonoidHomClass F K L] {f : Assignment Q K}
+    (hf : IsCirculation f) (φ : F) : IsCirculation (f.map φ) :=
+  (isCirculation_iff _).2 fun v ↦ by
+    rw [← map_excessAt, (isCirculation_iff f).1 hf v, _root_.map_zero]
+
+namespace Network
+
+/-- Excess of an assignment on a network's arrow family. The network's bounds play no role. -/
+abbrev excessAt {C : Type*} [LE C] (N : Network C V) [Fintype V]
+    [∀ x y, Fintype (N.Hom x y)] {K : Type w} [AddCommGroup K]
+    (f : N.Assignment K) (x : V) : K :=
+  TauCeti.excessAt f x
+
+/-- The additive excess map on a network's arrow family. -/
+abbrev excessHom {C : Type*} [LE C] (N : Network C V) [Fintype V]
+    [∀ x y, Fintype (N.Hom x y)] {K : Type w} [AddCommGroup K] :
+    N.Assignment K →+ (V → K) :=
+  TauCeti.excessHom N.Hom K
+
+end Network
 
 end TauCeti

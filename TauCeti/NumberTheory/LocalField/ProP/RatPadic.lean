@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.OddDegree
-public import TauCeti.NumberTheory.LocalField.ProP.Marked
+public import TauCeti.NumberTheory.LocalField.ProP.Marked.Basic
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.D0.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Orientation

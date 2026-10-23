@@ -43,7 +43,11 @@ namespace WithZero
 
 section NegLog
 
-variable {M : Type*} [AddCommGroup M]
+variable {M : Type*}
+
+section Neg
+
+variable [Neg M]
 
 /-- The map `Mᵐ⁰ → WithTop M` sending `0` to `⊤` and `exp m` to `-m`.
 
@@ -60,39 +64,39 @@ lemma negLog_exp (m : M) : negLog (exp m) = ((-m : M) : WithTop M) := (rfl)
 
 @[simp]
 lemma negLog_eq_top {x : Mᵐ⁰} : negLog x = ⊤ ↔ x = 0 := by
-  induction x using expRecOn <;>
-    simp [-WithTop.LinearOrderedAddCommGroup.coe_neg]
+  induction x using expRecOn <;> simp
+
+end Neg
 
 @[simp]
-lemma negLog_one : negLog (1 : Mᵐ⁰) = 0 := by
-  rw [← exp_zero, negLog_exp, neg_zero, WithTop.coe_zero]
+lemma negLog_one [NegZeroClass M] : negLog (1 : Mᵐ⁰) = 0 := by
+  simpa only [exp_eq_coe_ofAdd, ofAdd_zero, coe_one, neg_zero,
+    WithTop.coe_zero] using negLog_exp (0 : M)
 
-lemma negLog_eq_coe {x : Mᵐ⁰} {m : M} : negLog x = (m : WithTop M) ↔ x = exp (-m) := by
-  induction x using expRecOn with
-  | zero =>
-    simp only [negLog_zero, WithTop.top_ne_coe, false_iff]
-    exact Ne.symm exp_ne_zero
-  | exp a => rw [negLog_exp, WithTop.coe_inj, exp_inj, neg_eq_iff_eq_neg]
+lemma negLog_eq_coe [InvolutiveNeg M] {x : Mᵐ⁰} {m : M} :
+    negLog x = (m : WithTop M) ↔ x = exp (-m) := by
+  induction x using expRecOn <;> simp [Ne.symm exp_ne_zero, neg_eq_iff_eq_neg]
 
 @[simp]
-lemma negLog_mul (x y : Mᵐ⁰) : negLog (x * y) = negLog x + negLog y := by
-  induction x using expRecOn with
-  | zero => simp
-  | exp a =>
-    induction y using expRecOn with
-    | zero => simp
-    | exp b => rw [← exp_add, negLog_exp, negLog_exp, negLog_exp, neg_add, WithTop.coe_add]
-
-variable [LinearOrder M] [IsOrderedAddMonoid M]
-
-@[simp]
-lemma negLog_le_negLog {x y : Mᵐ⁰} : negLog x ≤ negLog y ↔ y ≤ x := by
+lemma negLog_mul [SubtractionCommMonoid M] (x y : Mᵐ⁰) : negLog (x * y) = negLog x + negLog y := by
   induction x using expRecOn with
   | zero => simp
   | exp a =>
     induction y using expRecOn with
     | zero => simp
-    | exp b => rw [negLog_exp, negLog_exp, WithTop.coe_le_coe, neg_le_neg_iff, exp_le_exp]
+    | exp b => simp only [← exp_add, negLog_exp, neg_add, WithTop.coe_add]
+
+@[simp]
+lemma negLog_le_negLog [AddGroup M] [Preorder M] [AddLeftMono M] [AddRightMono M]
+    {x y : Mᵐ⁰} : negLog x ≤ negLog y ↔ y ≤ x := by
+  induction x using expRecOn with
+  | zero => simp
+  | exp a =>
+    induction y using expRecOn with
+    | zero => simp
+    | exp b => simp [neg_le_neg_iff]
+
+variable [AddCommGroup M] [Preorder M] [AddLeftMono M]
 
 variable (M) in
 /-- The order-and-additive isomorphism `(Additive Mᵐ⁰)ᵒᵈ ≃+o WithTop M` underlying `negLog`.
@@ -123,9 +127,9 @@ end NegLog
 
 /-! ### Naturality -/
 
-variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+variable {M N : Type*} [AddGroup M] [SubtractionMonoid N]
 
-/-- The negative logarithm commutes with additive maps of the value group. -/
+/-- The negative logarithm commutes with additive homomorphisms. -/
 lemma negLog_map (f : M →+ N) (x : Mᵐ⁰) :
     negLog (map' (AddMonoidHom.toMultiplicative f) x) = WithTop.map f (negLog x) := by
   induction x using expRecOn with

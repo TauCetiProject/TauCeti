@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoods
-public import TauCeti.Geometry.Manifold.Instances.OnePoint
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 
 /-!
 # Extending the puncture coordinates to the sphere
@@ -17,7 +17,9 @@ with zero sent to infinity. These continuous parametrisations express the power-
 models of a filled cover in the sphere, including their centres.
 
 The inverted coordinate uses `OnePoint.invChart`, so continuity at infinity comes from the
-sphere's existing chart rather than a separate limit argument.
+sphere's existing chart rather than a separate limit argument. For the same reason these maps are
+holomorphic for the complex structure of the sphere (`Puncture.contMDiff_sphereCoordInv`), which is
+what makes the local models of a filled cover holomorphic.
 
 ## References
 
@@ -31,7 +33,7 @@ public noncomputable section
 namespace TauCeti.ThricePuncturedSphere.Puncture
 
 open Set Topology
-open scoped OnePoint
+open scoped ContDiff Manifold OnePoint
 
 /-- The point of the Riemann sphere corresponding to a puncture. -/
 def toOnePoint : Puncture → OnePoint ℂ
@@ -81,6 +83,21 @@ theorem isOpenEmbedding_sphereCoordInv (q : Puncture) : IsOpenEmbedding q.sphere
 @[continuity, fun_prop] theorem continuous_sphereCoordInv (q : Puncture) :
     Continuous q.sphereCoordInv :=
   q.isOpenEmbedding_sphereCoordInv.continuous
+
+/-- The inverse puncture coordinates are holomorphic maps into the Riemann sphere, even at the
+centre: at a finite puncture they are affine, and at infinity the inverse of the inverted chart of
+the sphere. -/
+theorem contMDiff_sphereCoordInv (q : Puncture) :
+    ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω q.sphereCoordInv := by
+  have hd : ContDiff ℂ ω fun w : ℂ => w / 2 := contDiff_id.div_const 2
+  cases q with
+  | zero => exact OnePoint.contMDiff_coe.comp hd.contMDiff
+  | one => exact OnePoint.contMDiff_coe.comp (contDiff_const.sub hd).contMDiff
+  | inf =>
+    have h := contMDiffOn_symm_of_mem_maximalAtlas (I := 𝓘(ℂ)) (n := ω)
+      (IsManifold.subset_maximalAtlas (OnePoint.mem_atlas_iff.2 (Or.inr rfl)))
+    rw [OnePoint.invChart_target, contMDiffOn_univ] at h
+    exact h.comp hd.contMDiff
 
 /-- Away from the centre, the extended coordinate inverse agrees with the inclusion of the
 standard punctured neighbourhood into the sphere. -/

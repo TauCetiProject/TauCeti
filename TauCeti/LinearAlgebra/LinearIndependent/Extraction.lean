@@ -9,12 +9,15 @@ public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
+import Mathlib.Algebra.Algebra.IsSimpleRing
+
 /-!
 # Extracting independent vectors through field towers
 
 An independent family after an `F`-linear map can lose independence over an extension `K/F`.
 The degree of `K/F` bounds this loss: the number of independent images is at most
-`[K : F]` times the dimension of the `K`-span of the original vectors.
+`[K : F]` times the dimension of the `K`-span of the original vectors. The images may take
+values in a module over any nontrivial `F`-algebra; no division on its scalars is needed.
 
 We also select independent vectors from prescribed prefixes of a finite family. Combining
 the two statements selects `k` independent original vectors from `[K : F] * k` independent
@@ -34,7 +37,7 @@ open Module Submodule
 
 namespace LinearIndependent
 
-variable {F K E V W ι : Type*} [Field F] [DivisionRing K] [DivisionRing E]
+variable {F K E V W ι : Type*} [Field F] [DivisionRing K] [Semiring E] [Nontrivial E]
   [Algebra F K] [Algebra F E] [Module.Finite F K]
   [AddCommGroup V] [Module K V] [Module F V] [IsScalarTower F K V]
   [AddCommGroup W] [Module E W] [Module F W] [IsScalarTower F E W]
@@ -42,7 +45,7 @@ variable {F K E V W ι : Type*} [Field F] [DivisionRing K] [DivisionRing E]
 
 /-- Independence of the images under an `F`-linear map bounds the size of a finite family
 by the extension degree times the dimension of its `K`-span. Neither ambient vector space
-is required to be finite-dimensional. -/
+is required to be finite-dimensional. The image scalars can be any nontrivial `F`-algebra. -/
 theorem card_le_finrank_mul (h : LinearIndependent E (f ∘ u)) :
     Fintype.card ι ≤ finrank F K * finrank K (span K (Set.range u)) := by
   let U := span K (Set.range u)
@@ -93,7 +96,7 @@ theorem exists_linearIndependent_comp_of_lt_finrank_span {n k : ℕ} {u : Fin n 
 
 section FieldTowers
 
-variable {F E W : Type*} [Field F] [DivisionRing E] [Algebra F K] [Algebra F E]
+variable {F E W : Type*} [Field F] [Semiring E] [Nontrivial E] [Algebra F K] [Algebra F E]
   [Module.Finite F K] [Module F V] [IsScalarTower F K V]
   [AddCommGroup W] [Module E W] [Module F W] [IsScalarTower F E W]
 
@@ -109,9 +112,8 @@ theorem exists_linearIndependent_comp_finrank_mul {k : ℕ}
   refine exists_linearIndependent_comp_of_lt_finrank_span ?_
   intro j
   have hD : 0 < finrank F K := Module.finrank_pos
-  have hbound : finrank F K * (j : ℕ) + 1 ≤ finrank F K * k := by
-    have := Nat.mul_le_mul_left (finrank F K) j.isLt
-    nlinarith
+  have hbound : finrank F K * (j : ℕ) + 1 ≤ finrank F K * k :=
+    Nat.succ_le_of_lt (Nat.mul_lt_mul_of_pos_left j.isLt hD)
   let e := Fin.castLEEmb hbound
   have hcount : finrank F K * (j : ℕ) + 1 ≤
       finrank F K * finrank K (span K (Set.range (u ∘ e))) := by

@@ -390,6 +390,21 @@ theorem permHom_strandIncl_last {n : ℕ} (b : BraidGroup (n + 1)) :
     rw [hb]
     simp
 
+/-- A braid on the first `n + 1` strands, with two uncrossed strands added above it, commutes with
+the crossing of those two new strands. -/
+theorem commute_sigma_last_strandIncl_strandIncl {n : ℕ} (d : BraidGroup (n + 1)) :
+    Commute (sigma (n := n + 3) (Fin.last (n + 1))) (strandIncl (strandIncl d)) := by
+  induction d using sigma_induction_on with
+  | sigma j =>
+    rw [strandIncl_sigma, strandIncl_sigma]
+    refine sigma_mul_sigma_comm (Or.inr ?_)
+    simp only [Fin.val_castSucc, Fin.val_last]
+    have := j.isLt
+    omega
+  | one => simp
+  | mul d d' hd hd' => rw [map_mul, map_mul]; exact hd.mul_right hd'
+  | inv d hd => rw [map_inv, map_inv]; exact hd.inv_right
+
 /-- The pure braid group: the braids that return every strand to its own position. -/
 def pureSubgroup (n : ℕ) : Subgroup (BraidGroup n) := (permHom n).ker
 

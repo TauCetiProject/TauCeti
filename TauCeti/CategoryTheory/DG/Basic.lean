@@ -50,6 +50,7 @@ category; that category and its quotient by homotopy are not built here.
   `g ∘ f = (-1) ^ (p * q) • dgComp f g`.
 * `TauCeti.dgId_dgComp` and `TauCeti.dgComp_dgId`: the identity is a two-sided unit.
 * `TauCeti.dgDifferential_dgId`: the identity is a cycle.
+* `TauCeti.dgDifferential_eq_zero_of_dgComp_eq_dgId`: a two-sided inverse of a cycle is a cycle.
 * `TauCeti.castDeg`: transport a homogeneous morphism along an equality of degrees.
 
 ## References
@@ -397,5 +398,24 @@ theorem dgComp_dgId {X Y : C} {p : ℤ} (f : DGHom R p X Y) :
     Function.comp_apply, ModuleCat.MonoidalCategory.rightUnitor_inv_apply,
     ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.hom_id, LinearMap.id_coe,
     id_eq] using key
+
+/-- **A two-sided inverse of a closed morphism is closed**: if `f : X ⟶ Y` of degree `p` is a
+cycle and `g : Y ⟶ X` of degree `q` is inverse to it on both sides, then `g` is a cycle. -/
+theorem dgDifferential_eq_zero_of_dgComp_eq_dgId {X Y : C} {p q : ℤ} {f : DGHom R p X Y}
+    {g : DGHom R q Y X} (hf : dgDifferential R p f = 0) (hpq : p + q = 0)
+    (hfg : dgComp R f g hpq = dgId R X) (hgf : dgComp R g f (by omega) = dgId R Y) :
+    dgDifferential R q g = 0 := by
+  -- Differentiating `dgComp f g = dgId X` shows that `f` followed by `d g` vanishes.
+  have h : dgComp R f (dgDifferential R q g) (by omega : p + (q + 1) = 0 + 1) = 0 := by
+    have key := congrArg (dgDifferential R 0) hfg
+    rw [dgDifferential_dgComp, hf, zero_dgComp, dgDifferential_dgId] at key
+    exact (smul_eq_zero_iff_eq _).mp ((zero_add _).symm.trans key)
+  calc dgDifferential R q g
+      = dgComp R (dgId R Y) (dgDifferential R q g) (zero_add (q + 1)) := (dgId_dgComp R _).symm
+    _ = dgComp R (dgComp R g f (by omega)) (dgDifferential R q g) (zero_add (q + 1)) := by
+      rw [hgf]
+    _ = dgComp R g (dgComp R f (dgDifferential R q g) (by omega : p + (q + 1) = 0 + 1))
+          (by omega) := dgComp_assoc R g f _ (by omega) _ (by omega)
+    _ = 0 := by rw [h, dgComp_zero]
 
 end TauCeti

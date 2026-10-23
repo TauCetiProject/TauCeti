@@ -119,12 +119,7 @@ theorem signVariationsAt_map_mul (cs : List (Polynomial R)) {d : Polynomial R} {
   simp only [signVariationsAt_def]
   have heq : (cs.map (d * ·)).map (Polynomial.eval x) =
       (cs.map (Polynomial.eval x)).map (d.eval x * ·) := by simp [List.map_map, Function.comp_def]
-  rw [heq]
-  rcases lt_or_gt_of_ne hd with hd | hd
-  · exact List.signVariations_map_of_sign_eq_neg
-      (fun y => by rw [sign_mul, sign_neg hd, neg_one_mul]) _
-  · exact List.signVariations_map
-      (fun y => by rw [sign_mul, sign_pos hd, one_mul]) _
+  rw [heq, List.signVariations_map_mul_left _ hd]
 
 end OrderedCommRing
 

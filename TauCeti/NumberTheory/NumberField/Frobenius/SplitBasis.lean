@@ -136,7 +136,7 @@ theorem exists_finset_closure_artinElementAway_eq_range_restrictScalarsHom
         Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1 := by
   classical
   have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
-  have : IsMulCommutative (M ≃ₐ[K] M) := isMulCommutative_galoisGroup_of_commute hab
+  have : IsMulCommutative (M ≃ₐ[K] M) := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   set Y : Set (HeightOneSpectrum (𝓞 K)) := {v | v ∉ S ∧ ∃ Q : HeightOneSpectrum (𝓞 M),
     Q.asIdeal.LiesOver v.asIdeal ∧ (Q.asIdeal.under (𝓞 L)).inertiaDeg (𝓞 K) = 1}
   have hY := closure_artinElementAway_image_eq_range hp hexp hab S hur hgen

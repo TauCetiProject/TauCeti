@@ -43,6 +43,8 @@ cells `TauCeti.stackCells` of the stack in the ambient space.
   sections and sectors of a continuous strictly ordered real stack are connected.
 * `TauCeti.cylinder`, `TauCeti.isEmbedding_cylinder`: the ambient cylinder embedding.
 * `TauCeti.stackCells`: the ambient sections and sectors of a stack over a subset of `α ^ n`.
+* `TauCeti.image_cylinder_sectionSet_comp`, `TauCeti.image_cylinder_sectorSet_comp`,
+  `TauCeti.stackCells_comp`: ambient stack cells pull back along arbitrary base maps.
 * `TauCeti.sUnion_stackCells`, `TauCeti.pairwiseDisjoint_stackCells`,
   `TauCeti.isConnected_of_mem_stackCells`: the ambient cells of a stack partition the cylinder
   over its base, and over a connected base they are connected.
@@ -429,6 +431,42 @@ theorem image_cylinder_sectorSet_mem_stackCells (j : Fin (k + 1)) :
 theorem finite_stackCells (C : Set (Fin n → α)) (θ : Fin k → C → α) :
     (stackCells C θ).Finite :=
   (finite_range _).union (finite_range _)
+
+section Map
+
+variable {m : ℕ} (θ : Fin k → C → α) (f : (Fin m → α) → Fin n → α)
+
+omit [LinearOrder α] in
+/-- Pullback of an ambient section along a base map. The height coordinate is unchanged. -/
+theorem image_cylinder_sectionSet_comp (i : Fin k) :
+    cylinder (f ⁻¹' C) '' sectionSet (fun i x ↦ θ i ⟨f x.1, x.2⟩) i =
+      (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' (cylinder C '' sectionSet θ i) := by
+  ext y
+  simp only [mem_image_cylinder, mem_sectionSet, mem_preimage, Fin.tail_cons, Fin.cons_zero]
+
+/-- Pullback of an ambient sector along a base map, including either unbounded sector. -/
+theorem image_cylinder_sectorSet_comp (j : Fin (k + 1)) :
+    cylinder (f ⁻¹' C) '' sectorSet (fun i x ↦ θ i ⟨f x.1, x.2⟩) j =
+      (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' (cylinder C '' sectorSet θ j) := by
+  ext y
+  simp only [mem_image_cylinder, mem_sectorSet, mem_preimage, Fin.tail_cons, Fin.cons_zero]
+
+/-- The cells of a pulled-back stack are precisely the inverse images of the original cells.
+This holds even when the base map is not injective or surjective. -/
+theorem stackCells_comp :
+    stackCells (f ⁻¹' C) (fun i x ↦ θ i ⟨f x.1, x.2⟩) =
+      (fun E ↦ (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' E) '' stackCells C θ := by
+  ext E
+  simp only [mem_stackCells, mem_image]
+  constructor
+  · rintro (⟨i, rfl⟩ | ⟨j, rfl⟩)
+    · exact ⟨_, Or.inl ⟨i, rfl⟩, (image_cylinder_sectionSet_comp θ f i).symm⟩
+    · exact ⟨_, Or.inr ⟨j, rfl⟩, (image_cylinder_sectorSet_comp θ f j).symm⟩
+  · rintro ⟨E, (⟨i, rfl⟩ | ⟨j, rfl⟩), rfl⟩
+    · exact Or.inl ⟨i, image_cylinder_sectionSet_comp θ f i⟩
+    · exact Or.inr ⟨j, image_cylinder_sectorSet_comp θ f j⟩
+
+end Map
 
 /-- For pointwise strictly monotone `θ` with values in a densely ordered type without endpoints,
 every cell of the stack over `C` lies over the whole of `C`. -/
