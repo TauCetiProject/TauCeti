@@ -18,10 +18,11 @@ adjoint to the degree-one functor:
 
 `gradedSymmetricAlgebraAdjunction X : gradedSymmetricAlgebra X ⊣ degreeOne`.
 
-Its unit is the identification `F ≅ Sym¹ F` (`gradedSymmetricAlgebraAdjunction_unit`), so
-`gradedSymmetricAlgebra X` is fully faithful: it identifies quasicoherent sheaves with its
-essential image, the graded quasicoherent algebras freely generated in degree one. Under graded
-relative `Spec` these are the coordinate algebras of the linear schemes `Spec_X Sym F` over `X`.
+Its unit is the identification `F ≅ Sym¹ F` (`gradedSymmetricAlgebraAdjunction_unit`), an
+isomorphism, matching the fact that `gradedSymmetricAlgebra X` is fully faithful: it identifies
+quasicoherent sheaves with its essential image, the graded quasicoherent algebras freely
+generated in degree one. Under graded relative `Spec` these are the coordinate algebras of the
+linear schemes `Spec_X Sym F` over `X`.
 
 The extension `Symⁿ F ⟶ Aₙ` is built over each open `U` from the universal property of the
 symmetric algebra of the `Γ(X, U)`-module `Γ(F, U)`, with values in the graded ring
@@ -39,9 +40,8 @@ multiplications are epimorphisms (`epi_one_gradedSymmetricAlgebra`,
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_hom_ext`: morphisms out of `Sym F` are
   determined in degree one;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraAdjunction`: the adjunction
-  `gradedSymmetricAlgebra X ⊣ degreeOne`;
-* `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraFullyFaithful`: the graded symmetric algebra
-  functor is fully faithful.
+  `gradedSymmetricAlgebra X ⊣ degreeOne`, whose unit is an isomorphism
+  (`isIso_gradedSymmetricAlgebraAdjunction_unit`).
 
 ## References
 
@@ -344,26 +344,6 @@ end Sections
 
 variable {X : Scheme.{u}}
 
-/-- The unit `𝒪_X ⟶ Sym⁰ F` of the graded symmetric algebra is an epimorphism, being an
-isomorphism. -/
-instance epi_one_gradedSymmetricAlgebra (F : QuasicoherentSheaf X) :
-    Epi ((gradedSymmetricAlgebra X).obj F).obj.toMon.one := by
-  rw [one_gradedSymmetricAlgebra]
-  exact epi_comp' (@IsIso.epi_of_iso _ _ _ _ _
-      ((SheafOfModules.symmetricPowerZeroIso X.sheaf).app F.obj).symm.isIso_hom)
-    (@IsIso.epi_of_iso _ _ _ _ _ (eqToIso (gradedSymmetricAlgebra_obj_obj_X F 0).symm).isIso_hom)
-
-/-- The multiplications `Symⁱ F ⊗ Symʲ F ⟶ Symⁱ⁺ʲ F` of the graded symmetric algebra are
-epimorphisms; with `epi_one_gradedSymmetricAlgebra`, this says that `Sym F` is generated in degree
-one. -/
-instance epi_mul_gradedSymmetricAlgebra (F : QuasicoherentSheaf X) (i j : ℕ) :
-    Epi (((gradedSymmetricAlgebra X).obj F).obj.toMon.mul i j) := by
-  rw [mul_gradedSymmetricAlgebra]
-  exact epi_comp' (@IsIso.epi_of_iso _ _ _ _ _ (eqToIso (congrArg₂ (fun a b : X.Modules ↦ a ⊗ b)
-      (gradedSymmetricAlgebra_obj_obj_X F i) (gradedSymmetricAlgebra_obj_obj_X F j))).isIso_hom)
-    (epi_comp' (SheafOfModules.epi_symmetricPowerMul F.obj i j) (@IsIso.epi_of_iso _ _ _ _ _
-      (eqToIso (gradedSymmetricAlgebra_obj_obj_X F (i + j)).symm).isIso_hom))
-
 /-- Morphisms of graded quasicoherent algebras out of the graded symmetric algebra `Sym F` are
 determined by their degree-one components. -/
 theorem gradedSymmetricAlgebra_hom_ext {F : QuasicoherentSheaf X}
@@ -468,15 +448,6 @@ instance isIso_gradedSymmetricAlgebraAdjunction_unit :
     IsIso (gradedSymmetricAlgebraAdjunction X).unit := by
   rw [gradedSymmetricAlgebraAdjunction_unit]
   infer_instance
-
-variable (X) in
-/-- The graded symmetric algebra functor is fully faithful, since the unit of
-`gradedSymmetricAlgebraAdjunction` is an isomorphism. -/
-def gradedSymmetricAlgebraFullyFaithful : (gradedSymmetricAlgebra X).FullyFaithful :=
-  (gradedSymmetricAlgebraAdjunction X).fullyFaithfulLOfIsIsoUnit
-
-instance : (gradedSymmetricAlgebra X).Full :=
-  (gradedSymmetricAlgebraFullyFaithful X).full
 
 end
 
