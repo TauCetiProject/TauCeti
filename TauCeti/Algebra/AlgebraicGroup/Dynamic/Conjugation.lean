@@ -102,17 +102,16 @@ theorem conj_genericPoint_mem_levi_iff (l : H →ₐc[R] LaurentPolynomial R)
       simp only [map_mul, mul_inv_rev, mul_assoc]
     rwa [hsplit, hzT] at h
   -- The commutator of `u` with `λ(T)` lies in both the unipotent and the Levi subgroup.
-  have hw : constPoint A u * conjugate A l u⁻¹ ∈
-      unipotent (LaurentPolynomial A) l ⊓ levi (LaurentPolynomial A) l := by
-    have hc : constPoint A u * conjugate A l u⁻¹ =
-        constPoint A u * genericPoint A l * (constPoint A u)⁻¹ * (genericPoint A l)⁻¹ := by
-      rw [conjugate_apply, map_inv]
-      group
-    refine Subgroup.mem_inf.mpr
-      ⟨mul_mem (constPoint_mem_unipotent hu) (conjugate_mem_unipotent (inv_mem hu)), ?_⟩
-    rw [hc]
-    exact mul_mem hu' (inv_mem (genericPoint_mem_levi l))
-  rw [unipotent_inf_levi, Subgroup.mem_bot, mul_eq_one_iff_eq_inv, ← map_inv, inv_inv] at hw
+  have hc : constPoint A u * conjugate A l u⁻¹ =
+      constPoint A u * genericPoint A l * (constPoint A u)⁻¹ * (genericPoint A l)⁻¹ := by
+    rw [conjugate_apply, map_inv]
+    group
+  have hw := eq_one_of_mem_unipotent_of_mem_levi
+    (mul_mem (constPoint_mem_unipotent hu) (conjugate_mem_unipotent (inv_mem hu)))
+    (by
+      rw [hc]
+      exact mul_mem hu' (inv_mem (genericPoint_mem_levi l)))
+  rw [mul_eq_one_iff_eq_inv, ← map_inv, inv_inv] at hw
   rwa [eq_one_of_mem_unipotent_of_mem_levi hu (mem_levi_iff.mpr hw.symm), one_mul]
 
 end Normalizer
