@@ -45,7 +45,7 @@ closure of `M`.
 
 ## Main results
 
-* `TauCeti.mem_inertiaSubgroup_iff_of_semiconj`: if `φ ∘ τ = σ ∘ φ` for a ring isomorphism
+* `RingEquiv.mem_inertiaSubgroup_iff_of_semiconj`: if `φ ∘ τ = σ ∘ φ` for a ring isomorphism
   `φ : L^{alg} ≃ K^{alg}`, then `σ ∈ I_K` exactly when `τ ∈ I_L`.
 * `TauCeti.restrictMaximalUnramifiedHom_absoluteGaloisGroupExtend_eq_zpow_iff`: the image of
   `τ ∈ G_L` acts on `K^{ur}` as `Frob_K ^ (f n)` exactly when `τ` acts on `L^{ur}` as
@@ -76,31 +76,13 @@ noncomputable section
 
 open ValuativeRel IntermediateField
 
-namespace TauCeti
+namespace RingEquiv
 
-variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K]
+open TauCeti
 
-/-- The roots of the polynomials `X^{q^g} − X`, `g ≠ 0`, are separable over `K`: they generate the
-maximal unramified extension, which is Galois over `K`. -/
-private theorem mem_separableClosure_of_pow_natCard_pow_eq_self {x : AlgebraicClosure K} {g : ℕ}
-    (hg : g ≠ 0) (hx : x ^ Nat.card 𝓀[K] ^ g = x) :
-    x ∈ separableClosure K (AlgebraicClosure K) :=
-  le_separableClosure K _ (maximalUnramifiedExtension K (AlgebraicClosure K))
-    ((maximalUnramifiedExtension_eq_adjoin K _).ge (subset_adjoin _ _ ⟨g, hg, hx⟩))
-
-section Semiconj
-
-variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-
-/-- A root of `X^{q^g} − X` is a root of `X^{(q^f)^g} − X`, where `q` and `q^f` are the
-cardinalities of the residue fields of `K` and `L`. -/
-private theorem pow_natCard_residueField_pow_eq_self {R : Type*} [Monoid R] {z : R} {g : ℕ}
-    (hz : z ^ Nat.card 𝓀[K] ^ g = z) : z ^ Nat.card 𝓀[L] ^ g = z := by
-  rw [natCard_residueField K L, ← pow_mul, mul_comm, pow_mul]
-  have h := Function.IsFixedPt.iterate (f := (· ^ Nat.card 𝓀[K] ^ g)) hz (inertiaDegree K L)
-  rwa [pow_iterate] at h
 
 /-- **Inertia along an identification of algebraic closures.** Let `L/K` be an extension of
 nonarchimedean local fields and `φ : L^{alg} ≃ K^{alg}` a ring isomorphism, and let `τ ∈ G_L` and
@@ -123,7 +105,20 @@ theorem mem_inertiaSubgroup_iff_of_semiconj (φ : AlgebraicClosure L ≃+* Algeb
     exact (h z).symm.trans (congrArg φ (mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self.1 hτ z g
       hg (pow_natCard_residueField_pow_eq_self hz)))
 
-end Semiconj
+end RingEquiv
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+
+/-- The roots of the polynomials `X^{q^g} − X`, `g ≠ 0`, are separable over `K`: they generate the
+maximal unramified extension, which is Galois over `K`. -/
+private theorem mem_separableClosure_of_pow_natCard_pow_eq_self {x : AlgebraicClosure K} {g : ℕ}
+    (hg : g ≠ 0) (hx : x ^ Nat.card 𝓀[K] ^ g = x) :
+    x ∈ separableClosure K (AlgebraicClosure K) :=
+  le_separableClosure K _ (maximalUnramifiedExtension K (AlgebraicClosure K))
+    ((maximalUnramifiedExtension_eq_adjoin K _).ge (subset_adjoin _ _ ⟨g, hg, hx⟩))
 
 variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [FiniteDimensional K L]
