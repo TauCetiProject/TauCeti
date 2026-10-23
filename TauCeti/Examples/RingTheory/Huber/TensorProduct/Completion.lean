@@ -45,13 +45,13 @@ example [Subsingleton B] : Subsingleton (CompletedTensor A B C) :=
 example [Subsingleton C] : Subsingleton (CompletedTensor A B C) :=
   (CompletedTensor.inr A B C).codomain_trivial
 
-example : letI := tensorTopology A B C; Continuous (CompletedTensor.tmul A B C) :=
-  CompletedTensor.continuous_tmul A B C
+example : letI := tensorTopology A B C; Continuous (CompletedTensor.toCompletion A B C) :=
+  CompletedTensor.continuous_toCompletion A B C
 
 example : letI := tensorTopology A B C;
     letI := isTopologicalRing_tensorTopology A B C;
-    RingHom.ker (CompletedTensor.tmul A B C) = (⊥ : Ideal (B ⊗[A] C)).closure :=
-  CompletedTensor.ker_tmul A B C
+    RingHom.ker (CompletedTensor.toCompletion A B C) = (⊥ : Ideal (B ⊗[A] C)).closure :=
+  CompletedTensor.ker_toCompletion A B C
 
 end Generic
 
@@ -76,8 +76,9 @@ example : Nontrivial (CompletedTensor ℤ ℤ ℤ) :=
 -- Both factors contribute, with no hypothesis on the residue characteristic.
 example : CompletedTensor.lift (Int.castRingHom ℤ_[p]) (Int.castRingHom ℤ_[p]) rfl
     continuous_of_discreteTopology continuous_of_discreteTopology
-      (CompletedTensor.tmul ℤ ℤ ℤ ((2 : ℤ) ⊗ₜ[ℤ] (3 : ℤ))) = 6 := by
-  rw [CompletedTensor.tmul_tmul, map_mul, CompletedTensor.lift_inl, CompletedTensor.lift_inr]
+      (CompletedTensor.toCompletion ℤ ℤ ℤ ((2 : ℤ) ⊗ₜ[ℤ] (3 : ℤ))) = 6 := by
+  rw [CompletedTensor.toCompletion_tmul, map_mul, CompletedTensor.lift_inl,
+    CompletedTensor.lift_inr]
   norm_num
 
 -- Uniqueness is stated on both prescribed coprojections.
