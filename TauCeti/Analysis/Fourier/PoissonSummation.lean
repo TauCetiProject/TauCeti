@@ -154,12 +154,6 @@ variable (f : 𝓢(E, ℂ)) (o : OrthonormalBasis ι ℝ E)
 
 /-! ### The periodization of a Schwartz function -/
 
-private theorem tsum_add_add (x : E) (ℓ₀ : span ℤ (range o.toBasis)) :
-    ∑' ℓ : span ℤ (range o.toBasis), f (x + ℓ₀ + ℓ) =
-      ∑' ℓ : span ℤ (range o.toBasis), f (x + ℓ) := by
-  simp only [add_assoc]
-  exact (Equiv.addLeft ℓ₀).tsum_eq fun ℓ ↦ f (x + ℓ)
-
 variable [FiniteDimensional ℝ E]
 
 /-- The periodization `x ↦ ∑' ℓ, f (x + ℓ)` of `f` over the lattice spanned by `o`, on `E`. -/
@@ -168,7 +162,11 @@ private noncomputable def periodizationAux : C(E, ℂ) :=
 
 private theorem factorsThrough_periodizationAux :
     Function.FactorsThrough (periodizationAux f o) o.toTorus := fun x y h ↦ by
-  simpa [periodizationAux] using tsum_add_add f o y ⟨x - y, o.toTorus_eq_toTorus_iff.1 h⟩
+  obtain ⟨ℓ₀, rfl⟩ : ∃ ℓ₀ : span ℤ (range o.toBasis), y + ℓ₀ = x :=
+    ⟨⟨x - y, o.toTorus_eq_toTorus_iff.1 h⟩, add_sub_cancel _ _⟩
+  -- Translating by the lattice vector `ℓ₀` permutes the terms of the periodization.
+  simp only [periodizationAux, ContinuousMap.coe_mk, add_assoc]
+  exact (Equiv.addLeft ℓ₀).tsum_eq fun ℓ ↦ f (y + ℓ)
 
 /-- The periodization of `f` over the lattice spanned by `o`, on the torus. -/
 private noncomputable def periodization : C(UnitAddTorus ι, ℂ) :=
