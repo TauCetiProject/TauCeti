@@ -134,6 +134,14 @@ theorem leadingTerm_single (h : H) (r : R) :
 
 end LeadingTerm
 
+@[simp]
+theorem leadingTerm_neg [AddZeroClass H] {N : H →+ ℝ} [Ring R] (a : NovikovSeries R H N) :
+    (-a).leadingTerm = -a.leadingTerm := by
+  ext h
+  rw [AddMonoidAlgebra.coeff_neg, Finsupp.neg_apply, coeff_leadingTerm, coeff_leadingTerm,
+    order_neg, coeff_neg]
+  split_ifs <;> simp
+
 section MulOrder
 
 variable [AddZeroClass H] {N : H →+ ℝ} [NonUnitalNonAssocSemiring R] {a b : NovikovSeries R H N}

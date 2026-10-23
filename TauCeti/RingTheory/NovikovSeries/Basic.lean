@@ -56,6 +56,8 @@ design of the additive API follows that of Mathlib's `HahnSeries` in
   below, and a nonzero series attains a least period on its support.
 * `TauCeti.NovikovSeries.isLeast_order`: the order of a nonzero series is the least period of its
   support.
+* `TauCeti.NovikovSeries.min_order_le_order_add`: the order of a nonzero sum is at least the
+  smaller of the orders of the summands.
 * `TauCeti.NovikovSeries.forall_finite_lt_iff_bddBelow_support`: on `ℤ` with the period map
   `k ↦ k`, the support condition says exactly that the support is bounded below.
 * `TauCeti.NovikovSeries.finite_setOf_period_add_lt`: for two Novikov series, the pairs of
@@ -573,6 +575,25 @@ theorem order_single {r : R} (hr : r ≠ 0) : (single h r : NovikovSeries R H N)
   order_eq_of_isLeast <| by simp [support_single_of_ne hr]
 
 end Order
+
+section OrderAdditive
+
+variable {R H : Type*} [AddZeroClass H] {N : H →+ ℝ}
+
+/-- The order of a nonzero sum is at least the smaller of the orders of the summands. -/
+theorem min_order_le_order_add [AddZeroClass R] {a b : NovikovSeries R H N} (hab : a + b ≠ 0) :
+    min a.order b.order ≤ (a + b).order := by
+  obtain ⟨h, hh, hN⟩ := exists_coeff_ne_zero_and_period_eq_order hab
+  rw [← hN]
+  rcases support_add_subset a b (mem_support.2 hh) with hh | hh
+  · exact min_le_of_left_le (order_le_of_coeff_ne_zero (mem_support.1 hh))
+  · exact min_le_of_right_le (order_le_of_coeff_ne_zero (mem_support.1 hh))
+
+@[simp]
+theorem order_neg [AddGroup R] (a : NovikovSeries R H N) : (-a).order = a.order := by
+  simp [order]
+
+end OrderAdditive
 
 section Truncation
 
