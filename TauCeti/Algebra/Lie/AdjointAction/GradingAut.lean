@@ -90,13 +90,13 @@ private theorem gradingMap_gradingMap (s r : Rˣ) (x : L) :
   refine LinearMap.congr_fun (LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top
     (f := gradingMap hh s ∘ₗ gradingMap hh r) fun j y hy ↦ ?_) x
   rw [LinearMap.comp_apply, gradingMap_apply_of_mem hh r hy, map_smul,
-    gradingMap_apply_of_mem hh s hy, gradingMap_apply_of_mem hh (s * r) hy, smul_smul, mul_zpow,
-    Units.val_mul, mul_comm]
+    gradingMap_apply_of_mem hh s hy, gradingMap_apply_of_mem hh (s * r) hy]
+  simp [smul_smul, mul_zpow, mul_comm]
 
 private theorem gradingMap_one (x : L) : gradingMap hh 1 x = x :=
   LinearMap.congr_fun (LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top
     (f := gradingMap hh 1) (g := LinearMap.id) fun j y hy ↦ by
-      rw [gradingMap_apply_of_mem hh 1 hy, one_zpow, Units.val_one, one_smul, LinearMap.id_apply]) x
+      simp [gradingMap_apply_of_mem hh 1 hy]) x
 
 /-- `gradingMap hh s` preserves brackets with an eigenvector of `ad h`. -/
 private theorem gradingMap_lie_of_mem (s : Rˣ) {i : ℤ} {x : L}
@@ -111,8 +111,8 @@ private theorem gradingMap_lie_of_mem (s : Rˣ) {i : ℤ} {x : L}
     exact lie_mem_eigenspace_toEnd_add hx hy
   simp only [LinearMap.comp_apply, ad_apply]
   rw [gradingMap_apply_of_mem hh s hxy, gradingMap_apply_of_mem hh s hx,
-    gradingMap_apply_of_mem hh s hy, smul_lie, lie_smul, smul_smul, zpow_add, Units.val_mul,
-    mul_comm]
+    gradingMap_apply_of_mem hh s hy]
+  simp [smul_smul, zpow_add, mul_comm]
 
 private theorem gradingMap_lie (s : Rˣ) (x y : L) :
     gradingMap hh s ⁅x, y⁆ = ⁅gradingMap hh s x, gradingMap hh s y⁆ := by

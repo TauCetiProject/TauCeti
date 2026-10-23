@@ -132,7 +132,8 @@ noncomputable def contractingAction (t : IsSl2Triple h e f) : Kˣ →* Module.En
     ext x
     simp only [mul_inv_rev, Units.val_mul, LinearMap.smul_apply, LinearEquiv.coe_coe,
       LieEquiv.coe_toLinearEquiv, Module.End.mul_apply, map_smul]
-    rw [mul_comm d⁻¹, gradingAut_mul_apply, smul_smul, mul_pow, mul_comm ((c : K) ^ 2)]
+    rw [mul_comm d⁻¹, gradingAut_mul_apply, smul_smul]
+    ring_nf
 
 /-- **The weights of the contracting action.** The unit `c` acts on the `j`-eigenspace of `ad h`
 by `c ^ (2 - j)`. -/
@@ -141,8 +142,8 @@ theorem contractingAction_apply_of_mem (t : IsSl2Triple h e f) (c : Kˣ) {j : �
     t.contractingAction c x = (c : K) ^ (2 - j) • x := by
   simp only [contractingAction, MonoidHom.coe_mk, OneHom.coe_mk, LinearMap.smul_apply,
     LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv]
-  rw [gradingAut_apply_of_mem _ _ hx, smul_smul, inv_zpow', Units.val_zpow_eq_zpow_val,
-    zpow_sub₀ (Units.ne_zero c), div_eq_mul_inv, ← zpow_neg, zpow_ofNat]
+  rw [gradingAut_apply_of_mem _ _ hx, smul_smul]
+  simp [zpow_sub₀ (Units.ne_zero c), div_eq_mul_inv]
 
 /-- The contracting action fixes `e`, which has weight `2` for `ad h`. -/
 @[simp]
@@ -160,8 +161,9 @@ theorem contractingAction_apply_of_mem_ker_inf (t : IsSl2Triple h e f) (c : Kˣ)
     t.contractingAction c v = (c : K) ^ (n + 2) • v := by
   have hv' : v ∈ (ad K L h).eigenspace ((-(n : ℤ) : ℤ) : K) := by
     simpa using hv.2
-  rw [t.contractingAction_apply_of_mem c hv', sub_neg_eq_add, add_comm, ← zpow_natCast,
-    Nat.cast_add, Nat.cast_ofNat]
+  rw [t.contractingAction_apply_of_mem c hv', ← zpow_natCast]
+  push_cast
+  ring_nf
 
 /-- **The contracting action extends to `c = 0` on the slice.** A point `x` of the Slodowy slice
 is `e + ∑ₙ vₙ` with `vₙ ∈ ker (ad f)` of weight `-n` for `ad h`, and the unit `c` moves it to
