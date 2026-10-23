@@ -14,8 +14,7 @@ import Mathlib.Tactic.Linarith
 # Squares of half-integers in ordered fields
 
 An integer cast into a linearly ordered field and translated by one half has square at least
-one quarter, and so does any element of the field known to lie in `ℤ + 1/2`. This bound
-applies coordinatewise to vectors whose coordinates are half-integers.
+one quarter. This bound applies coordinatewise to vectors whose coordinates are half-integers.
 -/
 
 public section
