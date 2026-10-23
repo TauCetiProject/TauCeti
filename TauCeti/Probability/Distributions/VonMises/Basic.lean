@@ -81,6 +81,18 @@ def vonMisesPDFReal (m : AddCircle (2 * π)) (κ : ℝ) (θ : AddCircle (2 * π)
 def vonMisesPDF (m : AddCircle (2 * π)) (κ : ℝ) (θ : AddCircle (2 * π)) : ℝ≥0∞ :=
   ENNReal.ofReal (vonMisesPDFReal m κ θ)
 
+/-- The defining formula of the von Mises density. -/
+theorem vonMisesPDFReal_def (m : AddCircle (2 * π)) (κ : ℝ) :
+    vonMisesPDFReal m κ = fun θ => exp (κ * cos_periodic.lift (θ - m)) / besselI 0 κ := by
+  funext θ
+  rw [vonMisesPDFReal]
+
+/-- The extended von Mises density is the extended nonnegative real lift of the real density. -/
+theorem vonMisesPDF_def (m : AddCircle (2 * π)) (κ : ℝ) :
+    vonMisesPDF m κ = fun θ => ENNReal.ofReal (vonMisesPDFReal m κ θ) := by
+  funext θ
+  rw [vonMisesPDF]
+
 /-- At real representatives `x` of the angle and `μ` of the location, the von Mises density is
 `e^{κ cos (x - μ)} / I₀(κ)`. -/
 @[simp]
@@ -92,6 +104,12 @@ theorem vonMisesPDFReal_coe_coe (μ κ x : ℝ) :
 theorem vonMisesPDFReal_pos (m : AddCircle (2 * π)) (κ : ℝ) (θ : AddCircle (2 * π)) :
     0 < vonMisesPDFReal m κ θ :=
   div_pos (exp_pos _) (zero_lt_one.trans_le (one_le_besselI_zero_left κ))
+
+/-- The real part of the extended von Mises density is the real von Mises density. -/
+@[simp]
+theorem toReal_vonMisesPDF (m : AddCircle (2 * π)) (κ : ℝ) (θ : AddCircle (2 * π)) :
+    (vonMisesPDF m κ θ).toReal = vonMisesPDFReal m κ θ :=
+  ENNReal.toReal_ofReal (vonMisesPDFReal_pos m κ θ).le
 
 /-- The von Mises density is jointly continuous in the location, the concentration and the
 angle. -/
@@ -265,9 +283,8 @@ theorem integral_fourier_vonMisesMeasure (m : AddCircle (2 * π)) (hκ : 0 ≤ �
       fourier n m * (besselI n.natAbs κ / besselI 0 κ : ℝ) := by
   rw [vonMisesMeasure_of_nonneg hκ, integral_withDensity_eq_integral_toReal_smul
     (measurable_vonMisesPDF m κ) (ae_of_all _ fun _ => ENNReal.ofReal_lt_top)]
-  have hpdf (θ : AddCircle (2 * π)) : (vonMisesPDF m κ θ).toReal = vonMisesPDFReal m κ θ :=
-    ENNReal.toReal_ofReal (vonMisesPDFReal_pos m κ θ).le
-  simp only [hpdf, vonMisesPDFReal, Complex.real_smul, Complex.ofReal_div, div_mul_eq_mul_div]
+  simp only [toReal_vonMisesPDF, vonMisesPDFReal, Complex.real_smul, Complex.ofReal_div,
+    div_mul_eq_mul_div]
   rw [integral_div, integral_exp_mul_cos_sub_mul_fourier]
   ring
 
