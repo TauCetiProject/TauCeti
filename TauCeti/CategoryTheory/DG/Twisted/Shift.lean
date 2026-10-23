@@ -144,28 +144,6 @@ theorem dgHomEquiv_fromShift :
     dgHomEquiv R _ _ n (fromShift P n) = DGAdditiveClosure.fromShift R P.obj n :=
   LinearEquiv.apply_symm_apply _ _
 
-/-- The diagonal entries of `P ⟶ P⟦n⟧` are the comparison morphisms of the summands. -/
-theorem dgHomEquiv_toShift_self (i : P.obj.ι) :
-    matrixEquiv R _ _ (-n) (dgHomEquiv R _ _ (-n) (toShift P n)) i i =
-      DGShiftClosure.toShift R (P.obj.X i) n := by
-  rw [dgHomEquiv_toShift, DGAdditiveClosure.dgHomEquiv_toShift_self]
-
-/-- The off-diagonal entries of `P ⟶ P⟦n⟧` vanish. -/
-theorem dgHomEquiv_toShift_of_ne {i j : P.obj.ι} (h : i ≠ j) :
-    matrixEquiv R _ _ (-n) (dgHomEquiv R _ _ (-n) (toShift P n)) i j = 0 := by
-  rw [dgHomEquiv_toShift, DGAdditiveClosure.dgHomEquiv_toShift_of_ne _ _ h]
-
-/-- The diagonal entries of `P⟦n⟧ ⟶ P` are the inverse comparison morphisms of the summands. -/
-theorem dgHomEquiv_fromShift_self (i : P.obj.ι) :
-    matrixEquiv R _ _ n (dgHomEquiv R _ _ n (fromShift P n)) i i =
-      DGShiftClosure.fromShift R (P.obj.X i) n := by
-  rw [dgHomEquiv_fromShift, DGAdditiveClosure.dgHomEquiv_fromShift_self]
-
-/-- The off-diagonal entries of `P⟦n⟧ ⟶ P` vanish. -/
-theorem dgHomEquiv_fromShift_of_ne {i j : P.obj.ι} (h : i ≠ j) :
-    matrixEquiv R _ _ n (dgHomEquiv R _ _ n (fromShift P n)) i j = 0 := by
-  rw [dgHomEquiv_fromShift, DGAdditiveClosure.dgHomEquiv_fromShift_of_ne _ _ h]
-
 /-- **The comparison morphisms are natural up to the Koszul sign**: for `f : P ⟶ Q` of degree
 `p`, `f` followed by `Q ⟶ Q⟦n⟧` is `(-1)^(n * p)` times `P ⟶ P⟦n⟧` followed by the shift of
 `f`. -/
