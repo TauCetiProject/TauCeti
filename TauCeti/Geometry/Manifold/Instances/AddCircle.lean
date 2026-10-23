@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Algebra.LieGroup
+public import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 public import Mathlib.Topology.Covering.AddCircle
 public import Mathlib.Topology.Instances.ZMultiples
 public import TauCeti.Geometry.Manifold.Instances.Quotient
@@ -27,7 +29,11 @@ on the type synonym `TauCeti.PeriodLine p` of `ℝ`, which carries the topology 
 structure of `ℝ`. The equivalence `TauCeti.PeriodLine.ofReal p` identifies `ℝ` with it.
 
 The charts of `AddCircle p` are local lifts to `ℝ`: every chart `c` of the atlas satisfies
-`(c x : AddCircle p) = x` on its source (`AddCircle.coe_apply_of_mem_atlas`).
+`(c x : AddCircle p) = x` on its source (`AddCircle.coe_apply_of_mem_atlas`). Read in these
+charts, the quotient map and every translation have derivative `1`, and `AddCircle p` is an
+analytic additive Lie group. For a second positive period `q`, the rescaling
+`AddCircle.equivAddCircle p q`, sending the class of `t` to the class of `t * (p⁻¹ * q)`, is an
+analytic diffeomorphism with derivative `p⁻¹ * q`.
 
 ## Main definitions
 
@@ -39,6 +45,7 @@ The charts of `AddCircle p` are local lifts to `ℝ`: every chart `c` of the atl
   analytic manifold structure they form.
 * `TauCeti.PeriodLine.quotientDiffeomorph p n`: the orbit space is diffeomorphic to
   `AddCircle p`.
+* `AddCircle.diffeomorphAddCircle p q n`: the rescaling diffeomorphism `AddCircle p ≃ AddCircle q`.
 
 ## Main results
 
@@ -48,6 +55,12 @@ The charts of `AddCircle p` are local lifts to `ℝ`: every chart `c` of the atl
 * `AddCircle.isLocalDiffeomorph_coe`: the quotient map `ℝ → AddCircle p` is an analytic local
   diffeomorphism.
 * `AddCircle.coe_apply_of_mem_atlas`: the charts of `AddCircle p` are local lifts to `ℝ`.
+* `AddCircle.instLieAddGroup`: `AddCircle p` is an analytic additive Lie group.
+* `AddCircle.hasMFDerivAt_coe`, `AddCircle.mfderiv_add_right`: the quotient map and the
+  translations have derivative the identity of `ℝ`.
+* `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
+* `AddCircle.mfderiv_diffeomorphAddCircle`: the rescaling from period `p` to period `q` has
+  derivative multiplication by `p⁻¹ * q`.
 
 ## References
 
@@ -351,5 +364,207 @@ theorem exists_eventuallyEq_add_zsmul {c c' : OpenPartialHomeomorph (AddCircle p
   have hmk' : |m - k| < 1 := by exact_mod_cast hmk
   rw [← sub_eq_zero.mp (Int.abs_lt_one_iff.mp hmk'), ← hm]
   abel
+
+/-! ### The additive Lie group structure -/
+
+/-- The circle `AddCircle p` is an analytic additive Lie group. -/
+instance instLieAddGroup {n : ℕ∞ω} : LieAddGroup 𝓘(ℝ) n (AddCircle p) where
+  contMDiff_add := by
+    -- Near a pair of points, addition is the image in `AddCircle p` of the sum of two local real
+    -- lifts.
+    rintro ⟨x, y⟩
+    obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective x
+    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective y
+    have hs := isLocalDiffeomorph_coe p n s
+    have ht := isLocalDiffeomorph_coe p n t
+    have h₀ : ContMDiffAt (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ) n
+        (hs.localInverse ∘ Prod.fst + ht.localInverse ∘ Prod.snd)
+        ((s : AddCircle p), (t : AddCircle p)) :=
+      (hs.contMDiffAt_localInverse.comp_of_eq contMDiffAt_fst rfl).add
+        (ht.contMDiffAt_localInverse.comp_of_eq contMDiffAt_snd rfl)
+    have h := (contMDiff_coe p n).contMDiffAt.comp _ h₀
+    refine h.congr_of_eventuallyEq ?_
+    filter_upwards [hs.localInverse_eventuallyEq_right.comp_tendsto continuous_fst.continuousAt,
+      ht.localInverse_eventuallyEq_right.comp_tendsto continuous_snd.continuousAt] with z h₁ h₂
+    simp only [Function.comp_apply, id, Pi.add_apply] at h₁ h₂ ⊢
+    rw [coe_add, h₁, h₂]
+  contMDiff_neg := by
+    -- Negation is the descent of negation on `ℝ`.
+    have h : (fun x : AddCircle p ↦ -x) ∘ ((↑) : ℝ → AddCircle p) = (↑) ∘ fun t : ℝ ↦ -t :=
+      funext fun t ↦ (coe_neg p).symm
+    rw [← (isLocalDiffeomorph_coe p n).contMDiff_comp_iff QuotientAddGroup.mk_surjective le_rfl, h]
+    exact (contMDiff_coe p n).comp (contMDiff_neg 𝓘(ℝ) n)
+
+/-- The quotient map `ℝ → AddCircle p` has derivative the identity of `ℝ`, the tangent spaces of
+`AddCircle p` being read in its charts, which are local real lifts. -/
+theorem hasMFDerivAt_coe (t : ℝ) :
+    HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) ((↑) : ℝ → AddCircle p) t (ContinuousLinearMap.id ℝ ℝ) := by
+  -- The chart `c` at the image of `t` is a local real lift, so near `t` the quotient map read in
+  -- `c` is the translation by a fixed multiple of `p`.
+  have hσ := isLocalDiffeomorph_coe p ⊤ t
+  set c := chartAt ℝ (t : AddCircle p)
+  obtain ⟨k, hk⟩ := exists_eventuallyEq_add_zsmul (c := hσ.localInverse.toOpenPartialHomeomorph)
+    (c' := c) (fun y hy ↦ hσ.localInverse_right_inv hy) (fun y hy ↦ coe_apply_of_mem_atlas
+      (chart_mem_atlas ℝ _) hy) hσ.localInverse_mem_source (mem_chart_source ℝ _)
+  have hc : (c ∘ ((↑) : ℝ → AddCircle p)) =ᶠ[𝓝 t] fun u ↦ u + k • p := by
+    filter_upwards [hk.comp_tendsto (contMDiff_coe p 0).continuous.continuousAt,
+      hσ.localInverse_eventuallyEq_left] with u h₁ h₂
+    simp only [Function.comp_apply, id] at h₁ h₂ ⊢
+    rw [h₁]
+    exact congrArg (· + k • p) h₂
+  refine ⟨(contMDiff_coe p 0).continuous.continuousAt, ?_⟩
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, modelWithCornersSelf_coe,
+    Set.range_id, hasFDerivWithinAt_univ, extChartAt_coe, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, Function.id_comp, Function.comp_id, id_eq]
+  convert ((hasFDerivAt_id t).add_const (k • p)).congr_of_eventuallyEq hc using 1
+  -- The derivative carries the identifications `tangentSpaceCastModel` of the tangent spaces with
+  -- the model `ℝ`, which are the identity by definition.
+  ext
+  rfl
+
+/-- The derivative of the quotient map `ℝ → AddCircle p` is the identity of `ℝ`. -/
+@[simp]
+theorem mfderiv_coe (t : ℝ) :
+    mfderiv 𝓘(ℝ) 𝓘(ℝ) ((↑) : ℝ → AddCircle p) t = ContinuousLinearMap.id ℝ ℝ :=
+  (hasMFDerivAt_coe p t).mfderiv
+
+variable {p} in
+/-- At the image of `t`, a differentiable map out of `AddCircle p` has the derivative of its
+periodic lift at `t`. -/
+theorem mfderiv_comp_coe {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {g : AddCircle p → N} {t : ℝ}
+    (hg : MDifferentiableAt 𝓘(ℝ) I' g (t : AddCircle p)) :
+    mfderiv 𝓘(ℝ) I' (g ∘ (↑)) t = mfderiv 𝓘(ℝ) I' g (t : AddCircle p) := by
+  rw [mfderiv_comp t hg (hasMFDerivAt_coe p t).mdifferentiableAt, mfderiv_coe]
+  -- Composing with the identity of `ℝ`, read as the tangent space at `t`, changes nothing.
+  rfl
+
+/-- Every translation of `AddCircle p` has derivative the identity of `ℝ`. -/
+@[simp]
+theorem mfderiv_add_right (a x : AddCircle p) :
+    mfderiv 𝓘(ℝ) 𝓘(ℝ) (· + a) x = ContinuousLinearMap.id ℝ ℝ := by
+  obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective a
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
+  have h : (· + (s : AddCircle p)) ∘ ((↑) : ℝ → AddCircle p) = (↑) ∘ (· + s) :=
+    funext fun u ↦ (coe_add p u s).symm
+  have hlift : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) ((· + (s : AddCircle p)) ∘ ((↑) : ℝ → AddCircle p)) t
+      (ContinuousLinearMap.id ℝ ℝ) :=
+    ((hasMFDerivAt_coe p (t + s)).comp t ((hasFDerivAt_id t).add_const s).hasMFDerivAt
+      ).congr_of_eventuallyEq_abuse (.of_eq h)
+  exact (mfderiv_comp_coe ((contMDiff_add_right (I := 𝓘(ℝ)) (n := 1)).mdifferentiableAt
+    one_ne_zero)).symm.trans hlift.mfderiv
+
+/-- Multiplication by an integer `k` on `AddCircle p` has derivative multiplication by `k`, with its
+sign, at every point. -/
+@[simp]
+theorem mfderiv_zsmul (k : ℤ) (x : AddCircle p) :
+    mfderiv 𝓘(ℝ) 𝓘(ℝ) (fun y : AddCircle p ↦ k • y) x = k • ContinuousLinearMap.id ℝ ℝ := by
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
+  -- Multiplication by `k` is the descent of multiplication by `k` on `ℝ`.
+  have h : (fun y : AddCircle p ↦ k • y) ∘ ((↑) : ℝ → AddCircle p) = (↑) ∘ fun u : ℝ ↦ k • u :=
+    funext fun u ↦ (QuotientAddGroup.mk_zsmul _ u k).symm
+  have hk : ContMDiff 𝓘(ℝ) 𝓘(ℝ) 1 fun y : AddCircle p ↦ k • y := by
+    rw [← (isLocalDiffeomorph_coe p 1).contMDiff_comp_iff QuotientAddGroup.mk_surjective le_rfl, h]
+    exact (contMDiff_coe p 1).comp (contDiff_id.const_smul k).contMDiff
+  have hlift : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) ((fun y : AddCircle p ↦ k • y) ∘ ((↑) : ℝ → AddCircle p)) t
+      (k • ContinuousLinearMap.id ℝ ℝ) := by
+    have hm : HasFDerivAt (fun u : ℝ ↦ k • u) (k • ContinuousLinearMap.id ℝ ℝ) t :=
+      (hasFDerivAt_id t).const_smul k
+    exact ((hasMFDerivAt_coe p _).comp t hm.hasMFDerivAt).congr_of_eventuallyEq_abuse (.of_eq h)
+  exact (mfderiv_comp_coe (hk.mdifferentiableAt one_ne_zero)).symm.trans hlift.mfderiv
+
+/-! ### Rescaling the period -/
+
+variable (q r : ℝ) [Fact (0 < q)] [Fact (0 < r)]
+
+/-- The rescaling `AddCircle p ≃ AddCircle q` sending the class of `t` to the class of
+`t * (p⁻¹ * q)`, as an analytic diffeomorphism. It is `AddCircle.equivAddCircle`, the descent of
+multiplication by `p⁻¹ * q` on `ℝ`. -/
+noncomputable def diffeomorphAddCircle (n : ℕ∞ω) :
+    AddCircle p ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ AddCircle q where
+  toEquiv := (equivAddCircle p q (Fact.out : 0 < p).ne' (Fact.out : 0 < q).ne').toEquiv
+  contMDiff_toFun := by
+    rw [← (isLocalDiffeomorph_coe p n).contMDiff_comp_iff QuotientAddGroup.mk_surjective le_rfl]
+    exact (contMDiff_coe q n).comp (contDiff_id.mul contDiff_const).contMDiff
+  contMDiff_invFun := by
+    rw [← (isLocalDiffeomorph_coe q n).contMDiff_comp_iff QuotientAddGroup.mk_surjective le_rfl]
+    exact (contMDiff_coe p n).comp (contDiff_id.mul contDiff_const).contMDiff
+
+/-- The underlying map of `diffeomorphAddCircle p q n` is `AddCircle.equivAddCircle`. -/
+theorem coe_diffeomorphAddCircle (n : ℕ∞ω) :
+    ⇑(diffeomorphAddCircle p q n) =
+      equivAddCircle p q (Fact.out : 0 < p).ne' (Fact.out : 0 < q).ne' := (rfl)
+
+/-- The rescaling sends the class of `t` to the class of `t * (p⁻¹ * q)`. -/
+@[simp]
+theorem diffeomorphAddCircle_apply_coe (n : ℕ∞ω) (t : ℝ) :
+    diffeomorphAddCircle p q n t = (t * (p⁻¹ * q) : ℝ) := (rfl)
+
+/-- The underlying homeomorphism of `diffeomorphAddCircle p q n` is
+`AddCircle.homeomorphAddCircle`. -/
+@[simp]
+theorem toHomeomorph_diffeomorphAddCircle (n : ℕ∞ω) :
+    (diffeomorphAddCircle p q n).toHomeomorph =
+      homeomorphAddCircle p q (Fact.out : 0 < p).ne' (Fact.out : 0 < q).ne' := (rfl)
+
+/-- The inverse of the rescaling from `AddCircle p` to `AddCircle q` is the rescaling back. -/
+@[simp]
+theorem symm_diffeomorphAddCircle (n : ℕ∞ω) :
+    (diffeomorphAddCircle p q n).symm = diffeomorphAddCircle q p n := (rfl)
+
+/-- The rescaling is additive. -/
+@[simp]
+theorem diffeomorphAddCircle_add (n : ℕ∞ω) (x y : AddCircle p) :
+    diffeomorphAddCircle p q n (x + y) =
+      diffeomorphAddCircle p q n x + diffeomorphAddCircle p q n y := by
+  simp only [coe_diffeomorphAddCircle, map_add]
+
+/-- The rescaling commutes with integer multiplication. -/
+@[simp]
+theorem diffeomorphAddCircle_zsmul (n : ℕ∞ω) (k : ℤ) (x : AddCircle p) :
+    diffeomorphAddCircle p q n (k • x) = k • diffeomorphAddCircle p q n x := by
+  simp only [coe_diffeomorphAddCircle, map_zsmul]
+
+/-- Rescaling `AddCircle p` to its own period is the identity. -/
+@[simp]
+theorem diffeomorphAddCircle_self (n : ℕ∞ω) :
+    diffeomorphAddCircle p p n = Diffeomorph.refl 𝓘(ℝ) (AddCircle p) n := by
+  ext x
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
+  simp [(Fact.out : 0 < p).ne']
+
+/-- Rescaling from `AddCircle p` to `AddCircle q` and then to `AddCircle r` is the rescaling from
+`AddCircle p` to `AddCircle r`. -/
+@[simp]
+theorem diffeomorphAddCircle_trans (n : ℕ∞ω) :
+    (diffeomorphAddCircle p q n).trans (diffeomorphAddCircle q r n) =
+      diffeomorphAddCircle p r n := by
+  ext x
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
+  simp only [Diffeomorph.coe_trans, Function.comp_apply, diffeomorphAddCircle_apply_coe]
+  congr 1
+  field_simp [(Fact.out : 0 < q).ne']
+
+/-- The rescaling from `AddCircle p` to `AddCircle q` has derivative multiplication by `p⁻¹ * q`
+at every point. -/
+theorem mfderiv_diffeomorphAddCircle (n : ℕ∞ω) (x : AddCircle p) :
+    mfderiv 𝓘(ℝ) 𝓘(ℝ) (diffeomorphAddCircle p q n) x =
+      (p⁻¹ * q) • ContinuousLinearMap.id ℝ ℝ := by
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
+  -- The underlying map does not depend on `n`, and it is analytic.
+  have hD : ⇑(diffeomorphAddCircle p q n) = diffeomorphAddCircle p q ω :=
+    (coe_diffeomorphAddCircle p q n).trans (coe_diffeomorphAddCircle p q ω).symm
+  have h : ⇑(diffeomorphAddCircle p q ω) ∘ ((↑) : ℝ → AddCircle p) =
+      (↑) ∘ fun u : ℝ ↦ u * (p⁻¹ * q) :=
+    funext (diffeomorphAddCircle_apply_coe p q ω)
+  have hlift : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (diffeomorphAddCircle p q ω ∘ ((↑) : ℝ → AddCircle p)) t
+      ((p⁻¹ * q) • ContinuousLinearMap.id ℝ ℝ) := by
+    have hm : HasFDerivAt (fun u : ℝ ↦ u * (p⁻¹ * q)) ((p⁻¹ * q) • ContinuousLinearMap.id ℝ ℝ) t :=
+      (hasFDerivAt_id t).mul_const (p⁻¹ * q)
+    exact ((hasMFDerivAt_coe q _).comp t hm.hasMFDerivAt).congr_of_eventuallyEq_abuse (.of_eq h)
+  rw [hD]
+  exact (mfderiv_comp_coe ((diffeomorphAddCircle p q ω).mdifferentiable (by simp) _)).symm.trans
+    hlift.mfderiv
 
 end AddCircle
