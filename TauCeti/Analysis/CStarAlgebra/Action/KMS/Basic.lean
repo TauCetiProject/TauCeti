@@ -94,6 +94,20 @@ theorem eqOn (hF : α.IsKMSFunction β φ a b F) (hG : α.IsKMSFunction β φ a 
     EqOn F G (im ⁻¹' uIcc 0 β) :=
   hF.eqOn_of_apply_ofReal hG.continuousOn hG.differentiableOn hG.apply_ofReal
 
+/-- Subtracting KMS functions with the same first coefficient subtracts the second
+coefficients. -/
+theorem sub_right {c : A} (hF : α.IsKMSFunction β φ a b F)
+    (hG : α.IsKMSFunction β φ a c G) :
+    α.IsKMSFunction β φ a (b - c) (fun z => F z - G z) where
+  continuousOn := hF.continuousOn.sub hG.continuousOn
+  differentiableOn := hF.differentiableOn.sub hG.differentiableOn
+  isBounded_image := (hF.isBounded_image.sub hG.isBounded_image).subset
+    (image_subset_iff.mpr fun z hz => ⟨F z, mem_image_of_mem F hz,
+      G z, mem_image_of_mem G hz, rfl⟩)
+  apply_ofReal t := by simp [hF.apply_ofReal, hG.apply_ofReal, mul_sub]
+  apply_ofReal_add_mul_I t := by
+    simp [hF.apply_ofReal_add_mul_I, hG.apply_ofReal_add_mul_I, sub_mul]
+
 /-- On the two boundary lines a KMS function is bounded by `‖φ‖ ‖a‖ ‖b‖`. -/
 private theorem norm_le_of_im_eq (hF : α.IsKMSFunction β φ a b F) {z : ℂ}
     (hz : z.im = 0 ∨ z.im = β) : ‖F z‖ ≤ ‖φ‖ * ‖a‖ * ‖b‖ := by

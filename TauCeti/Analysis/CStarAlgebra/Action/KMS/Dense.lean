@@ -35,21 +35,7 @@ namespace TauCeti.CStarAction
 
 variable {A : Type*} [NonUnitalCStarAlgebra A]
   {α : CStarAction (Multiplicative ℝ) A} {β : ℝ} {φ : A →L[ℂ] ℂ}
-  {a b c : A} {F G : ℂ → ℂ}
-
-/-- Subtracting KMS functions with the same first coefficient subtracts the second
-coefficients. -/
-theorem IsKMSFunction.sub_right (hF : α.IsKMSFunction β φ a b F)
-    (hG : α.IsKMSFunction β φ a c G) :
-    α.IsKMSFunction β φ a (b - c) (fun z => F z - G z) where
-  continuousOn := hF.continuousOn.sub hG.continuousOn
-  differentiableOn := hF.differentiableOn.sub hG.differentiableOn
-  isBounded_image := (hF.isBounded_image.sub hG.isBounded_image).subset
-    (image_subset_iff.mpr fun z hz => ⟨F z, mem_image_of_mem F hz,
-      G z, mem_image_of_mem G hz, rfl⟩)
-  apply_ofReal t := by simp [hF.apply_ofReal, hG.apply_ofReal, mul_sub]
-  apply_ofReal_add_mul_I t := by
-    simp [hF.apply_ofReal_add_mul_I, hG.apply_ofReal_add_mul_I, sub_mul]
+  {a b : A}
 
 private theorem exists_isKMSFunction_of_tendsto {u : ℕ → A} {F : ℕ → ℂ → ℂ}
     (hu : Tendsto u atTop (𝓝 b)) (hF : ∀ n, α.IsKMSFunction β φ a (u n) (F n)) :
