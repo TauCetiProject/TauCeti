@@ -14,7 +14,6 @@ import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Smooth cutoffs for compact subsets
@@ -151,12 +150,17 @@ theorem _root_.ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport [Norm
     ∃ C : ℝ≥0, HolderWith C α φ ∧ ∀ x, ‖φ x‖ ≤ C := by
   obtain ⟨K, hK⟩ := hφ.lipschitzWith_of_hasCompactSupport hc one_ne_zero
   obtain ⟨B, hB⟩ := hφ.continuous.bounded_above_of_compact_support hc
-  have hD : ∀ x y, dist (φ x) (φ y) ≤ (2 * B.toNNReal : ℝ≥0) := fun x y => by
-    have := dist_le_norm_add_norm (φ x) (φ y)
+  have hB' (x : E) : ‖φ x‖ ≤ (2 * B.toNNReal : ℝ≥0) := by
     push_cast
-    linarith [hB x, hB y, Real.le_coe_toNNReal B]
-  refine ⟨_ + B.toNNReal, (hK.holderWith_of_dist_le hD hα).mono le_self_add, fun x => ?_⟩
-  exact (hB x).trans ((Real.le_coe_toNNReal B).trans (by exact_mod_cast le_add_self))
+    linarith [hB x, Real.le_coe_toNNReal B, B.toNNReal.coe_nonneg]
+  have h₀ : HolderWith (2 * B.toNNReal) 0 φ := fun x y => by
+    rw [NNReal.coe_zero, ENNReal.rpow_zero, mul_one, edist_dist]
+    refine ENNReal.ofReal_le_of_le_toReal ?_
+    rw [ENNReal.coe_toReal]
+    push_cast
+    linarith [dist_le_norm_add_norm (φ x) (φ y), hB x, hB y, Real.le_coe_toNNReal B]
+  exact ⟨_, h₀.of_le_of_le (holderWith_one.2 hK) zero_le hα,
+    fun x => (hB' x).trans (by exact_mod_cast le_max_left _ _)⟩
 
 /-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
 the next term. -/

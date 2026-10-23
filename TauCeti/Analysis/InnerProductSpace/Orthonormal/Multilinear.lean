@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The norm of a multilinear map on an orthonormal basis
@@ -21,13 +22,13 @@ The linear case, `‖L‖ ≤ ∑ i, ‖L (b i)‖`, is
 `ContinuousLinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`; for a first derivative it bounds
 the norm of the gradient by the sum of the absolute values of the partial derivatives.
 
-Conversely, the values on basis vectors are bounded by the operator norm
-(`ContinuousLinearMap.norm_apply_orthonormalBasis_le`, and
-`ContinuousMultilinearMap.norm_apply_orthonormalBasis_le` for the entries `H ![b i, b j]` of a
-bilinear map). For a bilinear map `H` on a space with an orthonormal basis indexed by `ι`, an entry
-bound `‖H ![b i, b j]‖ ≤ B` gives `‖H‖ ≤ (card ι)² B`
-(`ContinuousMultilinearMap.opNorm_le_card_sq_mul_of_norm_apply_le`), and a Hölder family of
-bilinear maps has Hölder entries with the same constant (`HolderOnWith.apply_orthonormalBasis`).
+Conversely, the entries `H ![b i, b j]` of a bilinear map on an orthonormal basis are bounded by
+the operator norm (`ContinuousMultilinearMap.norm_apply_orthonormalBasis_le`). For a bilinear map
+`H` on a space with an orthonormal basis indexed by `ι`, an entry bound `‖H ![b i, b j]‖ ≤ B`
+gives `‖H‖ ≤ (card ι)² B` (`ContinuousMultilinearMap.opNorm_le_card_sq_mul_of_norm_apply_le`).
+A Hölder family of bilinear maps has Hölder entries with the same constant
+(`HolderOnWith.apply_orthonormalBasis`), and conversely a family whose entries are Hölder with
+constant `C` is Hölder with constant `(card ι)² C` (`HolderOnWith.of_apply_orthonormalBasis`).
 These are the bounds relating a Hessian to its matrix entries.
 -/
 
@@ -50,12 +51,6 @@ theorem opNorm_le_sum_norm_apply_orthonormalBasis (L : E →L[𝕜] G) (b : Orth
   rw [map_smul, norm_smul, mul_comm]
   gcongr
   exact (PiLp.norm_apply_le (b.repr x) i).trans_eq (b.repr.norm_map x)
-
-/-- The value of a continuous linear map on a vector of an orthonormal basis has norm at most the
-operator norm. -/
-theorem norm_apply_orthonormalBasis_le (L : E →L[𝕜] G) (b : OrthonormalBasis ι 𝕜 E) (i : ι) :
-    ‖L (b i)‖ ≤ ‖L‖ := by
-  simpa using L.le_opNorm (b i)
 
 end ContinuousLinearMap
 
@@ -125,5 +120,19 @@ theorem HolderOnWith.apply_orthonormalBasis {X : Type*} [PseudoEMetricSpace X]
   refine le_trans ?_ (h x hx y hy)
   rw [edist_dist, edist_dist, dist_eq_norm, dist_eq_norm, ← sub_apply]
   exact ENNReal.ofReal_le_ofReal ((H x - H y).norm_apply_orthonormalBasis_le b i j)
+
+/-- A family of bilinear maps whose entries `H x ![b i, b j]`, on an orthonormal basis `b` indexed
+by `ι`, are Hölder on a set with constant `C` is Hölder there with constant `(card ι)² C`. This is
+the converse of `HolderOnWith.apply_orthonormalBasis`. -/
+theorem HolderOnWith.of_apply_orthonormalBasis {X : Type*} [PseudoMetricSpace X]
+    {H : X → ContinuousMultilinearMap 𝕜 (fun _ : Fin 2 => E) G} {C r : NNReal} {s : Set X}
+    (b : OrthonormalBasis ι 𝕜 E) (h : ∀ i j, HolderOnWith C r (fun x => H x ![b i, b j]) s) :
+    HolderOnWith ((Fintype.card ι : NNReal) ^ 2 * C) r H s := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  rw [dist_eq_norm]
+  refine ((H x - H y).opNorm_le_card_sq_mul_of_norm_apply_le b
+    (B := C * dist x y ^ (r : ℝ)) fun i j => ?_).trans_eq (by push_cast; ring)
+  rw [sub_apply, ← dist_eq_norm]
+  exact (h i j).dist_le hx hy
 
 end Bilinear

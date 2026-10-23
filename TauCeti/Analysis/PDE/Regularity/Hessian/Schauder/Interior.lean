@@ -10,6 +10,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -69,20 +70,6 @@ namespace TauCeti.PDE
 variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
-
-/-- The Hessian of a function on `ℝ^{n+1}` is globally `α`-Hölder when all of its entries are,
-with `(n + 1)²` times their common constant. -/
-private theorem holderWith_iteratedFDeriv_two_of_holderWith_apply {g : E → ℝ} {C α : ℝ≥0}
-    (h : ∀ i j, HolderWith C α fun x =>
-      fderiv ℝ (fderiv ℝ g) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) :
-    HolderWith ((n + 1) ^ 2 * C) α (iteratedFDeriv ℝ 2 g) := by
-  refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ => ?_)
-  rw [dist_eq_norm]
-  refine ((iteratedFDeriv ℝ 2 g x - iteratedFDeriv ℝ 2 g y).opNorm_le_card_sq_mul_of_norm_apply_le
-    (EuclideanSpace.basisFun _ ℝ) (B := C * dist x y ^ (α : ℝ)) fun i j => ?_).trans_eq
-    (by simp; ring)
-  rw [sub_apply]
-  simpa [Real.dist_eq, iteratedFDeriv_two_apply] using (h i j).dist_le x y
 
 /-- The product of a globally Hölder factor `c` vanishing off `s` with a factor `g` which is
 bounded and Hölder on `s` is globally Hölder, and bounded by the product of the bounds. -/
@@ -171,9 +158,7 @@ private theorem holderOnWith_ball_of_norm_le {u : E → ℝ} {x₀ : E} {R : ℝ
   refine ⟨hholder hLu, fun i => hholder (LipschitzOnWith.of_dist_le_mul fun x hx y hy => ?_)⟩
   rw [dist_eq_norm, ← sub_apply]
   calc ‖(fderiv ℝ u x - fderiv ℝ u y) (EuclideanSpace.single i 1)‖
-      ≤ ‖fderiv ℝ u x - fderiv ℝ u y‖ := by
-        simpa using (fderiv ℝ u x - fderiv ℝ u y).norm_apply_orthonormalBasis_le
-          (EuclideanSpace.basisFun _ ℝ) i
+      ≤ ‖fderiv ℝ u x - fderiv ℝ u y‖ := (fderiv ℝ u x - fderiv ℝ u y).unit_le_opNorm _ (by simp)
     _ ≤ N * dist x y := by
       rw [← dist_eq_norm]
       exact hLDu.dist_le_mul x hx y hy
@@ -322,20 +307,6 @@ private theorem holderWith_sum_smul_fderiv_fderiv_cutoff_mul {s : Set E} (hs : I
   push_cast
   ring
 
-/-- A function on `ℝ^{n+1}` bounded by `B` and supported in a set `s` of finite measure has `L²`
-norm at most `|s|^(1/2) B`. -/
-private theorem toReal_eLpNorm_two_le_of_support_subset {F : Type*} [NormedAddCommGroup F]
-    {f : E → F} {s : Set E} (hf : AEStronglyMeasurable f volume) (hfs : Function.support f ⊆ s)
-    (hs : volume s ≠ ⊤) {B : ℝ} (hB : ∀ x, ‖f x‖ ≤ B) :
-    (eLpNorm f 2 volume).toReal ≤ (volume s).toReal ^ (2⁻¹ : ℝ) * B := by
-  rw [← eLpNorm_restrict_eq_of_support_subset hf hfs]
-  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg (by positivity) (by simpa using hs)) ENNReal.ofReal_ne_top)
-    (eLpNorm_le_of_ae_bound hf.restrict (ae_of_all _ hB))).trans (le_of_eq ?_)
-  rw [Measure.restrict_apply_univ, ENNReal.toReal_mul, ← ENNReal.toReal_rpow,
-    ENNReal.toReal_ofReal ((norm_nonneg _).trans (hB 0))]
-  simp
-
 /-- The comparison of constants closing the interior estimate: if `X ≤ A N`, then
 `2 κ ((Z K + N B) / λ + Q X) ≤ 2 κ (Z / λ + B / λ + Q A) (K + N)`. -/
 private theorem interior_constant_le {κ lam Z B Q A K N X : ℝ} (hκ : 0 ≤ κ) (hlam : 0 < lam)
@@ -420,8 +391,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   obtain ⟨hHu, hHdu⟩ := holderOnWith_ball_of_norm_le hα1.le hu hN1 hN2
   have hdu (i : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R) :
       |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
-    simpa using ((fderiv ℝ u x).norm_apply_orthonormalBasis_le
-      (EuclideanSpace.basisFun _ ℝ) i).trans (hN1 x hx)
+    simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans
+      (hN1 x hx)
   have hd2u (i j : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R) :
       |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N := by
     simpa [iteratedFDeriv_two_apply] using ((iteratedFDeriv ℝ 2 u x).norm_apply_orthonormalBasis_le
@@ -446,17 +417,22 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
     convert hsmall using 2
     ring
   have key := hCS hlam hEll hEll' (L := L) (K := Z * K + N * B₂) (r := R) hR.le hR hsmall' hL hw
-    (holderWith_iteratedFDeriv_two_of_holderWith_apply fun i j => (hWH i j).1).memHolder hsupp
+    (holderOnWith_univ.1 (.of_apply_orthonormalBasis (EuclideanSpace.basisFun _ ℝ) fun i j =>
+      by simpa [iteratedFDeriv_two_apply] using holderOnWith_univ.2 (hWH i j).1)).memHolder hsupp
     hLw
   -- The `L²` norm of `D²w`.
   have hnorm (x : E) : ‖iteratedFDeriv ℝ 2 w x‖ ≤ ((n : ℝ) + 1) ^ 2 * (4 * Z * N) := by
     refine ((iteratedFDeriv ℝ 2 w x).opNorm_le_card_sq_mul_of_norm_apply_le
       (EuclideanSpace.basisFun _ ℝ) (B := 4 * Z * N) fun i j => ?_).trans_eq (by simp)
     simpa [iteratedFDeriv_two_apply, w] using (hWH i j).2 x
-  have hL2 : (eLpNorm (iteratedFDeriv ℝ 2 w) 2 volume).toReal ≤ A₃ * N :=
-    (toReal_eLpNorm_two_le_of_support_subset
-      (hw.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable hsupp
-      measure_closedBall_lt_top.ne hnorm).trans_eq (by simp only [A₃]; ring)
+  have hL2 : (eLpNorm (iteratedFDeriv ℝ 2 w) 2 volume).toReal ≤ A₃ * N := by
+    refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+      measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top) (eLpNorm_le_of_ae_bound_of_support_subset
+      (hw.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable hsupp (ae_of_all _ hnorm))).trans
+      (le_of_eq ?_)
+    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity)]
+    simp only [A₃, ENNReal.toReal_ofNat]
+    ring
   -- Comparison of the constants.
   have hlamLam : lam ≤ Lam := by
     have h := (hEll (EuclideanSpace.single 0 1)).trans (hEll' (EuclideanSpace.single 0 1))
