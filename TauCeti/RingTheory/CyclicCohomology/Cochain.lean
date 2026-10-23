@@ -53,6 +53,8 @@ identities between faces and the cyclic rotation
 * `TauCeti.hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero`: the Hochschild
   coboundary of a cyclic cochain vanishes on a tuple whose cyclically adjacent entries are
   quasi-inverse.
+* `TauCeti.apply_update_const_eq_zero_of_isIdempotentElem`: an even-degree cyclic cocycle vanishes
+  on `(e, …, y, …, e)` when `e` is idempotent and `y` is tangent to the idempotents at `e`.
 * `TauCeti.cyclicHochschildCoboundary_cyclicHochschildCoboundary`: the restriction of `b` to
   cyclic cochains also squares to zero.
 * `TauCeti.hochschildCoboundary_zero_eq_zero_iff`: the degree-zero cocycles are the traces.
@@ -451,6 +453,22 @@ theorem apply_const_eq_neg_of_mem_cyclicCochains
   have h := hφ fun _ ↦ x
   simpa only [Function.comp_def, hn.neg_one_pow, neg_one_smul] using h
 
+variable {R A M} in
+/-- In even degree, a cyclic cochain takes the same value when the single distinguished entry of
+an otherwise constant tuple moves to the first slot. -/
+private theorem apply_update_const_eq_apply_update_const_zero (hn : Even n)
+    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    (e z : A) (k : Fin (n + 1)) :
+    φ (Function.update (fun _ ↦ e) k z) = φ (Function.update (fun _ ↦ e) 0 z) := by
+  induction k using Fin.induction with
+  | zero => rfl
+  | succ k ih =>
+    have h := mem_cyclicCochains_iff.1 hφ (Function.update (fun _ ↦ e) k.castSucc z)
+    rw [Function.update_comp_equiv, Equiv.symm_symm, hn.neg_one_pow, one_smul] at h
+    rw [← ih, ← h]
+    congr 2
+    exact Fin.ext (by simp)
+
 /-- Every `0`-cochain is cyclic. -/
 @[simp]
 theorem cyclicCochains_zero : cyclicCochains R A M 0 = ⊤ :=
@@ -677,6 +695,56 @@ theorem cyclicHochschildCoboundary_comp_cyclicHochschildCoboundary :
     cyclicHochschildCoboundary_cyclicHochschildCoboundary (R := R) (A := A) (M := M) φ
 
 end Assoc
+
+section Idempotent
+
+variable {R A M : Type*} [Semiring R] [NonUnitalRing A] [Module R A] [IsScalarTower R A A]
+  [SMulCommClass R A A] [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+
+/-- **Infinitesimal invariance of the even pairing.** Let `φ` be a cyclic cocycle of even degree
+and `e` an idempotent. If `y` is tangent to the idempotents at `e`, that is `e y + y e = y`, then
+`φ` vanishes on the tuple `(e, …, e)` with one entry replaced by `y`. -/
+theorem apply_update_const_eq_zero_of_isIdempotentElem {n : ℕ} (hn : Even n)
+    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    (hbφ : hochschildCoboundary R A M n φ = 0) {e y : A} (he : IsIdempotentElem e)
+    (hy : e * y + y * e = y) (k : Fin (n + 1)) :
+    φ (Function.update (fun _ ↦ e) k y) = 0 := by
+  rw [apply_update_const_eq_apply_update_const_zero hn hφ]
+  -- Tangency forces `e y e = 0`, so `y = x e - e x` for `x = y e - e y`.
+  have hey : e * (y * e) = 0 := by
+    have h : e * (y * e) + e * (y * e) = e * (y * e) := by
+      conv_rhs => rw [← hy]
+      simp only [mul_add, add_mul, mul_assoc, he.eq, he.mul_self_mul]
+    simpa using h
+  set x := y * e - e * y
+  have hxy : x * e - e * x = y := by
+    simp only [x, sub_mul, mul_sub, mul_assoc, he.eq, he.mul_self_mul, hey, sub_zero, zero_sub,
+      sub_neg_eq_add]
+    rwa [add_comm]
+  -- Evaluate `bφ = 0` on `(x, e, …, e)`: the middle faces cancel in even degree.
+  have hb := congrArg (fun ψ ↦ ψ (Fin.cons x fun _ ↦ e)) hbφ
+  simp only [hochschildCoboundary_apply_eq_sum_contractNth_add, Fin.sum_univ_succ] at hb
+  have h0 : Fin.contractNth (0 : Fin (n + 1)).castSucc (· * ·)
+      (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) = Function.update (fun _ ↦ e) 0 (x * e) := by
+    funext k
+    cases k using Fin.cases <;> simp [Fin.contractNth]
+  have hj (j : Fin n) : Fin.contractNth j.succ.castSucc (· * ·)
+      (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) = Function.update (fun _ ↦ e) 0 x := by
+    funext k
+    cases k using Fin.cases <;> simp [Fin.contractNth, he.eq]
+  have hl : (Fin.cons ((Fin.cons x fun _ ↦ e : Fin (n + 2) → A) (Fin.last (n + 1)) *
+      (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) 0)
+      fun k : Fin n ↦ (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) k.castSucc.succ) =
+      Function.update (fun _ ↦ e) 0 (e * x) := by
+    funext k
+    cases k using Fin.cases <;> simp
+  simp only [Fin.val_zero, pow_zero, one_smul, Fin.val_succ, h0, hj, hl, zero_apply] at hb
+  rw [← Finset.sum_smul, Fin.sum_univ_eq_sum_range (fun i ↦ (-1 : ℤ) ^ (i + 1)) n] at hb
+  simp only [pow_succ, mul_neg_one, Finset.sum_neg_distrib, neg_one_geom_sum, hn, ↓reduceIte,
+    neg_zero, zero_smul, add_zero, (hn.add_one).neg_one_pow, neg_one_smul] at hb
+  rwa [← hxy, φ.map_update_sub, sub_eq_add_neg]
+
+end Idempotent
 
 end Coboundary
 
