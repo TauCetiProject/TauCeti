@@ -255,6 +255,29 @@ theorem d_extend {m m' n : ℕ} (t : ∀ i : ι n, (G.obj (B.model n i)).X m)
   refine Finsupp.sum_congr fun p _ ↦ ?_
   rw [map_smul, HomologicalComplex.Hom.comm_apply]
 
+/-- The boundary followed by the map determined by `t`, as a natural transformation, takes `x` to
+`extend t (∂ x)`. -/
+private theorem whiskerLeft_dNatTrans_comp_extendNatTrans_app_apply {m n : ℕ}
+    (t : ∀ i : ι n, (G.obj (B.model n i)).X m) (X : C) (x : (F.obj X).X (n + 1)) :
+    (F.whiskerLeft (HomologicalComplex.dNatTrans _ _ (n + 1) n) ≫ B.extendNatTrans t).app X x =
+      B.extend t X ((F.obj X).d (n + 1) n x) := by
+  simp
+
+/-- If the boundary of each `tᵢ` is the image of the boundary of the generator under the map
+determined by `t'`, then the boundary of the map determined by `t` is the map determined by `t'`
+applied to the boundary. -/
+private theorem d_extend_eq_extend_d {m n : ℕ}
+    (t : ∀ i : ι (n + 1), (G.obj (B.model (n + 1) i)).X (m + 1))
+    (t' : ∀ i : ι n, (G.obj (B.model n i)).X m)
+    (ht : ∀ i, (G.obj (B.model (n + 1) i)).d (m + 1) m (t i) =
+      B.extend t' (B.model (n + 1) i) ((F.obj (B.model (n + 1) i)).d (n + 1) n (B.gen (n + 1) i)))
+    (X : C) (x : (F.obj X).X (n + 1)) :
+    (G.obj X).d (m + 1) m (B.extend t X x) = B.extend t' X ((F.obj X).d (n + 1) n x) := by
+  rw [B.d_extend t
+      (F.whiskerLeft (HomologicalComplex.dNatTrans _ _ (n + 1) n) ≫ B.extendNatTrans t')
+      fun i ↦ (ht i).trans (B.whiskerLeft_dNatTrans_comp_extendNatTrans_app_apply _ _ _).symm,
+    B.whiskerLeft_dNatTrans_comp_extendNatTrans_app_apply]
+
 section ChainMap
 
 variable {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k} {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k}
@@ -297,17 +320,14 @@ private theorem d_chainMapGen (n : ℕ) (i : ι (n + 1)) :
     split_ifs with hex
     · exact hex.choose_spec
     refine absurd (hG.exists_d_eq_of_d_eq_zero (n + 2) i n _ ?_) hex
-    rw [B.d_extend _ (F.whiskerLeft (HomologicalComplex.dNatTrans _ _ (n + 1) n) ≫
-      B.extendNatTrans (B.chainMapGen t₀ n)) ih]
-    simp [HomologicalComplex.d_comp_d_apply]
+    rw [B.d_extend_eq_extend_d _ _ ih, HomologicalComplex.d_comp_d_apply, map_zero]
 
 include hG hεF ht₀ in
 /-- The maps determined by the chosen elements commute with the boundaries. -/
 private theorem d_extend_chainMapGen (n : ℕ) (X : C) (x : (F.obj X).X (n + 1)) :
     (G.obj X).d (n + 1) n (B.extend (B.chainMapGen t₀ (n + 1)) X x) =
       B.extend (B.chainMapGen t₀ n) X ((F.obj X).d (n + 1) n x) :=
-  B.d_extend _ (F.whiskerLeft (HomologicalComplex.dNatTrans _ _ (n + 1) n) ≫
-    B.extendNatTrans (B.chainMapGen t₀ n)) (B.d_chainMapGen hG hεF t₀ ht₀ n) X x
+  B.d_extend_eq_extend_d _ _ (B.d_chainMapGen hG hεF t₀ ht₀ n) X x
 
 /-- **Existence of natural chain maps**: if `G` is acyclic on the models of `F` and the augmentation
 of `F` vanishes on boundaries, the natural map `F₀ → G₀` determined by `t₀`, compatible with the
@@ -350,14 +370,20 @@ private def homotopyGen : (n : ℕ) → (i : ι n) → (G.obj (B.model n i)).X (
             ((F.obj (B.model (n + 1) i)).d (n + 1) n (B.gen (n + 1) i))
     then h.choose else 0
 
+/-- `f - g`, read in degree `n` as a natural transformation, takes `x` to
+`(f.app X).f n x - (g.app X).f n x`. -/
+private theorem whiskerRight_sub_eval_app_apply (n : ℕ) (X : C) (x : (F.obj X).X n) :
+    (Functor.whiskerRight (f - g) (HomologicalComplex.eval _ _ n)).app X x =
+      (f.app X).f n x - (g.app X).f n x := by
+  simp
+
 include hG hfg in
 /-- The homotopy condition in degree zero. -/
 private theorem d_extend_homotopyGen_zero (X : C) (x : (F.obj X).X 0) :
     (G.obj X).d 1 0 (B.extend (B.homotopyGen f g 0) X x) = (f.app X).f 0 x - (g.app X).f 0 x := by
-  -- `f - g` in degree zero takes `x` to `(f.app X).f 0 x - (g.app X).f 0 x` by definition
-  refine B.d_extend _ (Functor.whiskerRight (f - g) (HomologicalComplex.eval _ _ 0))
-    (fun i ↦ ?_) X x
-  rw [homotopyGen.eq_1]
+  rw [← whiskerRight_sub_eval_app_apply f g]
+  refine B.d_extend _ _ (fun i ↦ ?_) X x
+  rw [whiskerRight_sub_eval_app_apply, homotopyGen.eq_1]
   split_ifs with hex
   · exact hex.choose_spec
   refine absurd (hG.exists_d_eq_of_augment_eq_zero 0 i _ ?_) hex
@@ -375,8 +401,8 @@ private def homotopyTarget (n : ℕ) :
 
 private theorem homotopyTarget_app_apply (n : ℕ) (X : C) (x : (F.obj X).X (n + 1)) :
     (B.homotopyTarget f g n).app X x = (f.app X).f (n + 1) x - (g.app X).f (n + 1) x -
-      B.extend (B.homotopyGen f g n) X ((F.obj X).d (n + 1) n x) :=
-  (rfl)
+      B.extend (B.homotopyGen f g n) X ((F.obj X).d (n + 1) n x) := by
+  simp [homotopyTarget]
 
 include hG hfg in
 /-- In positive degrees, the chosen elements have the prescribed boundaries. -/
@@ -404,8 +430,9 @@ include hG hfg in
 /-- The homotopy condition in positive degrees. -/
 private theorem d_extend_homotopyGen_succ (n : ℕ) (X : C) (x : (F.obj X).X (n + 1)) :
     (G.obj X).d (n + 2) (n + 1) (B.extend (B.homotopyGen f g (n + 1)) X x) = (f.app X).f (n + 1) x -
-      (g.app X).f (n + 1) x - B.extend (B.homotopyGen f g n) X ((F.obj X).d (n + 1) n x) :=
-  B.d_extend _ (B.homotopyTarget f g n) (B.d_homotopyGen_succ hG f g hfg n) X x
+      (g.app X).f (n + 1) x - B.extend (B.homotopyGen f g n) X ((F.obj X).d (n + 1) n x) := by
+  rw [B.d_extend _ (B.homotopyTarget f g n) (B.d_homotopyGen_succ hG f g hfg n),
+    homotopyTarget_app_apply]
 
 /-- The components of the chain homotopy: `Fᵢ(X) → Gⱼ(X)`, determined on the models when
 `j = i + 1`, and zero otherwise. -/
