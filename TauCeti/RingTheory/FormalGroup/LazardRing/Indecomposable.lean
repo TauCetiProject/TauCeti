@@ -7,14 +7,14 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.RingTheory.Ideal.Cotangent
-public import TauCeti.RingTheory.FormalGroup.LazardRing
+public import TauCeti.RingTheory.FormalGroup.LazardRing.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 -- Proof-only: Bézout coefficients, the Lazard cocycles, formal group laws with square-zero
 -- coefficients, dual numbers and the ideal of variables of a polynomial ring.
 import Mathlib.Algebra.DualNumber
-import Mathlib.RingTheory.MvPolynomial.Ideal
 import TauCeti.Algebra.GCDMonoid.Finset
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.SquareZero
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # The indecomposables of the Lazard ring
@@ -83,8 +83,8 @@ coefficient of `X + Y`. -/
 @[simp]
 theorem augmentation_coeff_formalGroup (d : Fin 2 →₀ ℕ) :
     augmentation (coeff d formalGroup.toPowerSeries) = coeff d (X 0 + X 1 : MvPowerSeries _ ℤ) := by
-  rw [← coeff_map, ← FormalGroup.map_toPowerSeries, augmentation, map_lift]
-  rfl
+  rw [← coeff_map, ← FormalGroup.map_toPowerSeries, augmentation, map_lift,
+    FormalGroup.𝔾ₐ_toPowerSeries]
 
 /-- On polynomials in the `aᵢⱼ`, the augmentation is the constant coefficient. -/
 @[simp]
@@ -107,16 +107,11 @@ theorem mem_augmentationIdeal {x : LazardRing} :
 law. -/
 theorem augmentationIdeal_eq_span :
     augmentationIdeal = Ideal.span (Set.range fun ij ↦ mk (MvPolynomial.X ij)) := by
-  have hker : RingHom.ker (MvPolynomial.constantCoeff (σ := ℕ+ × ℕ+) (R := ℤ)) =
-      MvPolynomial.idealOfVars _ ℤ := by
-    ext p
-    rw [RingHom.mem_ker, ← pow_one (MvPolynomial.idealOfVars _ ℤ),
-      MvPolynomial.mem_pow_idealOfVars_iff', MvPolynomial.constantCoeff_eq]
-    simp [Finsupp.degree_eq_zero_iff]
   have hcomp : augmentation.comp mk = MvPolynomial.constantCoeff :=
     RingHom.ext augmentation_mk
   rw [augmentationIdeal, ← Ideal.map_comap_of_surjective mk mk_surjective (RingHom.ker _),
-    RingHom.comap_ker, hcomp, hker, MvPolynomial.idealOfVars, Ideal.map_span, ← Set.range_comp]
+    RingHom.comap_ker, hcomp, MvPolynomial.ker_constantCoeff, MvPolynomial.idealOfVars,
+    Ideal.map_span, ← Set.range_comp]
   rfl
 
 /-- The coefficients `aᵢⱼ` of the universal formal group law lie in the augmentation ideal. -/
