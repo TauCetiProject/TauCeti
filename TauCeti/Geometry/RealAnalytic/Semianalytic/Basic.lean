@@ -49,7 +49,7 @@ analytic on `U`, in the same way as `TauCeti.IsSemialgebraic` is defined from po
   `LocallyFinite.isSemianalytic_iUnion` for locally finite unions.
 * `TauCeti.SemianalyticAt.preimage_of_analyticOnNhd`, `TauCeti.SemianalyticAt.preimage` and
   `TauCeti.IsSemianalytic.preimage`: preimages under analytic maps;
-  `TauCeti.isSemianalytic_image_equiv_iff`: invariance under analytic isomorphisms, and
+  `Equiv.isSemianalytic_image_iff`: invariance under analytic isomorphisms, and
   `PartialEquiv.semianalyticAt_preimage_symm_iff`: its pointwise form for local analytic
   isomorphisms such as charts.
 * `TauCeti.IsSemialgebraic.isSemianalytic`: semialgebraic subsets of `σ → ℝ` are semianalytic.
@@ -549,16 +549,17 @@ theorem _root_.PartialEquiv.semianalyticAt_preimage_symm_iff [CompleteSpace E] [
 /-- **Analytic isomorphisms, locally.** For a bijection `e` analytic at `x` whose inverse is
 analytic at `e x`, the image `e '' s` is semianalytic at `e x` if and only if `s` is semianalytic
 at `x`. -/
-theorem semianalyticAt_image_equiv_iff [CompleteSpace E] [CompleteSpace F] {s : Set E} {x : E}
-    (e : E ≃ F) (he : AnalyticAt ℝ e x)
+theorem _root_.Equiv.semianalyticAt_image_iff [CompleteSpace E] [CompleteSpace F] {s : Set E}
+    {x : E} (e : E ≃ F) (he : AnalyticAt ℝ e x)
     (he' : AnalyticAt ℝ e.symm (e x)) : SemianalyticAt (e '' s) (e x) ↔ SemianalyticAt s x := by
   rw [e.image_eq_preimage_symm]
   exact e.toPartialEquiv.semianalyticAt_preimage_symm_iff univ_mem he he'
 
 /-- **Analytic isomorphisms.** For a bijection `e` that is analytic with analytic inverse, the
 image `e '' s` is semianalytic if and only if `s` is semianalytic. -/
-theorem isSemianalytic_image_equiv_iff {s : Set E} (e : E ≃ F) (he : AnalyticOnNhd ℝ e univ)
-    (he' : AnalyticOnNhd ℝ e.symm univ) : IsSemianalytic (e '' s) ↔ IsSemianalytic s := by
+theorem _root_.Equiv.isSemianalytic_image_iff {s : Set E} (e : E ≃ F)
+    (he : AnalyticOnNhd ℝ e univ) (he' : AnalyticOnNhd ℝ e.symm univ) :
+    IsSemianalytic (e '' s) ↔ IsSemianalytic s := by
   rw [e.image_eq_preimage_symm]
   refine ⟨fun hs => ?_, fun hs => hs.preimage he'⟩
   simpa [preimage_preimage] using hs.preimage he
