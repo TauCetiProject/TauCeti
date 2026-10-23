@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
+public import TauCeti.Algebra.AlgebraicGroup.Frobenius.Points
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Algebra.CharP.Frobenius.Bialgebra
 public import TauCeti.FieldTheory.Finite.Frobenius
@@ -26,7 +28,10 @@ When `H` is commutative, the `q`-power map on the functions of `G₀` is the bia
 endomorphism `TauCeti.frobeniusBialgHom K H`, the Frobenius endomorphism of `G₀` defined by its
 `𝔽_q`-structure, and the `q`-Frobenius on points is pre-composition with it. For `A = k` an
 algebraic closure of `𝔽_q`, reading the `k`-points of `G = G₀ ×_{𝔽_q} k` as the `k`-valued points
-of `H`, this is the geometric Frobenius `F` of `G`.
+of `H`, this is the geometric Frobenius `F` of `G`. On the coordinate algebra `k ⊗[K] H` of the
+base change it is the scalar extension `id ⊗ Frob` of the `q`-power map
+(`TauCeti.FiniteField.geometricFrobeniusBialgHom`), which is not the `q`-power map of `k ⊗[K] H`
+since that is not `k`-linear; under `G(R) ≃ Hom_K(H, R)` it becomes the `q`-Frobenius on points.
 
 The fixed points of the Frobenius are the points valued in the Frobenius-fixed subalgebra of `A`
 (`TauCeti.FiniteField.frobeniusFixedPointsMulEquiv`). When `A` is a domain, for instance a field
@@ -44,6 +49,10 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
   valued in the Frobenius-fixed subalgebra.
 * `TauCeti.FiniteField.rationalPointsMulEquiv`: over a domain, the `q`-Frobenius-fixed points are
   the `K`-points.
+* `TauCeti.FiniteField.geometricFrobeniusBialgHom`: the geometric Frobenius `id ⊗ Frob` of a base
+  change `k ⊗[K] H`.
+* `TauCeti.FiniteField.rationalPointsMulEquivFixedSubgroupGeometricFrobenius`: `G₀(K) ≃ G^F` for
+  the geometric Frobenius of the base change to a domain.
 
 ## Main results
 
@@ -57,6 +66,19 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
   points with the `K`-points is natural in the group scheme.
 * `TauCeti.FiniteField.finite_fixedSubgroup_frobeniusPoints`: for `H` of finite type and `A` a
   domain, the points fixed by a positive iterate of the Frobenius form a finite group.
+* `TauCeti.FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom`:
+  base change identifies the geometric Frobenius with the `q`-Frobenius on points.
+* `BialgHom.map_fixedSubgroup_frobeniusPoints_of_surjective`: the fixed points of a closed
+  subgroup scheme are its points that are fixed in the ambient group.
+* `BialgHom.tensorProductMap_comp_geometricFrobeniusBialgHom`: the geometric Frobenius commutes
+  with the base change of every morphism of monoid schemes over `K`.
+* `BialgHom.map_fixedSubgroup_mapDomain_geometricFrobeniusBialgHom_of_surjective`: the same
+  description of the fixed points of a closed subgroup scheme for the geometric Frobenius.
+* `TauCeti.FiniteField.finite_fixedSubgroup_mapDomain_geometricFrobeniusBialgHom`: `G^F` is
+  finite for `H` of finite type.
+* `TauCeti.FiniteField.baseChangePointsMulEquiv_symm_frobeniusPoints`: for a model over `ℤ` and
+  `q = p ^ n`, the `q ^ m`-Frobenius is the iterated prime-power Frobenius
+  `TauCeti.Bialgebra.iterateFrobeniusPoints p (n * m)`.
 
 ## References
 
@@ -66,7 +88,7 @@ O. Dudas and J. Michel, *Lectures on finite reductive groups and their represent
 
 public section
 
-open WithConv
+open WithConv TensorProduct
 
 namespace TauCeti.FiniteField
 
@@ -281,6 +303,208 @@ theorem finite_fixedSubgroup_frobeniusPoints [Algebra.FiniteType K H] [IsDomain 
     Finite.of_injective ofConv ofConv_injective
   exact Finite.of_equiv _ (frobeniusFixedPointsMulEquiv K H A n).toEquiv
 
+/-- **Frobenius-fixed points of a closed subgroup scheme.** For a surjective bialgebra morphism
+`ψ : H → H₁`, cutting out a closed subgroup scheme of `Spec H`, the points of that subgroup fixed
+by its own Frobenius are exactly its points that are fixed in the ambient group. -/
+theorem _root_.BialgHom.map_fixedSubgroup_frobeniusPoints_of_surjective {H₁ : Type*}
+    [Semiring H₁] [_root_.HopfAlgebra K H₁] (ψ : H →ₐc[K] H₁) (hψ : Function.Surjective ψ) (n : ℕ) :
+    (fixedSubgroup (frobeniusPoints K n (H := H₁) (A := A))).map (BialgHom.mapDomain ψ) =
+      (BialgHom.mapDomain (A := A) ψ).range ⊓ fixedSubgroup (frobeniusPoints K n) :=
+  (BialgHom.mapDomain ψ).map_fixedSubgroup_of_injective (mapDomain_comp_frobeniusPoints ψ n)
+    (BialgHom.mapDomain_injective_of_surjective ψ hψ)
+
 end HopfAlgebra
+
+/-! ### The geometric Frobenius of a base change -/
+
+section Geometric
+
+variable (k : Type*) [CommSemiring k] [Algebra K k]
+variable (H : Type*) [CommSemiring H] [_root_.Bialgebra K H]
+
+/-- The geometric Frobenius of the base change `Spec (k ⊗[K] H)` of an affine monoid scheme over
+a finite field `K`: the scalar extension `id ⊗ Frob` of the `q`-power bialgebra endomorphism of
+`H`. -/
+noncomputable def geometricFrobeniusBialgHom : k ⊗[K] H →ₐc[k] k ⊗[K] H :=
+  _root_.Bialgebra.TensorProduct.map (BialgHom.id k k) (frobeniusBialgHom K H)
+
+/-- On pure tensors, the geometric Frobenius raises the second factor to its `q`-th power. -/
+@[simp]
+theorem geometricFrobeniusBialgHom_tmul (s : k) (h : H) :
+    geometricFrobeniusBialgHom K k H (s ⊗ₜ h) = s ⊗ₜ (h ^ Fintype.card K) := by
+  simp [geometricFrobeniusBialgHom]
+
+variable {K k H}
+variable {R : Type*} [CommRing R] [Algebra k R] [Algebra K R] [IsScalarTower K k R]
+
+/-- **Base change identifies the geometric Frobenius with the `q`-Frobenius on points.** Under
+`G(R) ≃ Hom_K(H, R)`, the map on points induced by the geometric Frobenius of `k ⊗[K] H` is
+`frobeniusPoints K 1`. -/
+theorem baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom :
+    ((AlgHom.baseChangePointsMulEquiv (k := K) (K := k) (A := H) (R := R)).symm :
+        WithConv (k ⊗[K] H →ₐ[k] R) →* WithConv (H →ₐ[K] R)).comp
+      (BialgHom.mapDomain (A := R) (geometricFrobeniusBialgHom K k H)) =
+    (frobeniusPoints K 1).comp
+      ((AlgHom.baseChangePointsMulEquiv (k := K) (K := k) (A := H) (R := R)).symm :
+        WithConv (k ⊗[K] H →ₐ[k] R) →* WithConv (H →ₐ[K] R)) := by
+  ext f : 1
+  exact (BialgHom.baseChangePointsMulEquiv_symm_mapDomain (frobeniusBialgHom K H) f).trans
+    (DFunLike.congr_fun mapDomain_frobeniusBialgHom _)
+
+end Geometric
+
+/-! ### Naturality of the geometric Frobenius -/
+
+section GeometricNaturality
+
+variable {K} (k : Type*) [CommSemiring k] [Algebra K k]
+variable {H H₁ : Type*} [CommSemiring H] [CommSemiring H₁]
+variable {R : Type*} [CommRing R] [Algebra k R]
+
+section Bialgebra
+
+variable [_root_.Bialgebra K H] [_root_.Bialgebra K H₁]
+
+/-- **The geometric Frobenius is natural**: it commutes with the scalar extension
+`id ⊗ ψ : k ⊗[K] H → k ⊗[K] H₁` of every bialgebra morphism `ψ` over `K`, that is, with the base
+change of every morphism of monoid schemes over `K`. -/
+theorem _root_.BialgHom.tensorProductMap_comp_geometricFrobeniusBialgHom (ψ : H →ₐc[K] H₁) :
+    (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ).comp
+        (geometricFrobeniusBialgHom K k H) =
+      (geometricFrobeniusBialgHom K k H₁).comp
+        (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ) := by
+  ext x
+  induction x with
+  | tmul s h => simp
+  | add x y hx hy => simp_all [map_add]
+
+/-- The map on points induced by the base change of a bialgebra morphism `ψ` over `K` commutes
+with the maps on points induced by the geometric Frobenius. -/
+theorem _root_.BialgHom.mapDomain_tensorProductMap_comp_mapDomain_geometricFrobeniusBialgHom
+    (ψ : H →ₐc[K] H₁) :
+    (BialgHom.mapDomain (A := R) (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)).comp
+        (BialgHom.mapDomain (geometricFrobeniusBialgHom K k H₁)) =
+      (BialgHom.mapDomain (geometricFrobeniusBialgHom K k H)).comp
+        (BialgHom.mapDomain (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)) := by
+  rw [← BialgHom.mapDomain_comp, ← BialgHom.mapDomain_comp,
+    ψ.tensorProductMap_comp_geometricFrobeniusBialgHom k]
+
+end Bialgebra
+
+section HopfAlgebra
+
+variable [_root_.HopfAlgebra K H] [_root_.HopfAlgebra K H₁]
+
+/-- **The base change of a morphism of group schemes over `K` carries points fixed by the
+geometric Frobenius to points fixed by the geometric Frobenius.** -/
+theorem _root_.BialgHom.map_fixedSubgroup_mapDomain_geometricFrobeniusBialgHom_le
+    (ψ : H →ₐc[K] H₁) :
+    (fixedSubgroup (BialgHom.mapDomain (A := R) (geometricFrobeniusBialgHom K k H₁))).map
+        (BialgHom.mapDomain (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)) ≤
+      fixedSubgroup (BialgHom.mapDomain (geometricFrobeniusBialgHom K k H)) :=
+  map_fixedSubgroup_le _ (ψ.mapDomain_tensorProductMap_comp_mapDomain_geometricFrobeniusBialgHom k)
+
+/-- **Geometric-Frobenius-fixed points of a closed subgroup scheme.** For a surjective bialgebra
+morphism `ψ : H → H₁`, cutting out a closed subgroup scheme of `Spec H` over `K`, the points of its
+base change fixed by its own geometric Frobenius are exactly its points that are fixed by the
+geometric Frobenius of the ambient group. -/
+theorem _root_.BialgHom.map_fixedSubgroup_mapDomain_geometricFrobeniusBialgHom_of_surjective
+    (ψ : H →ₐc[K] H₁) (hψ : Function.Surjective ψ) :
+    (fixedSubgroup (BialgHom.mapDomain (A := R) (geometricFrobeniusBialgHom K k H₁))).map
+        (BialgHom.mapDomain (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)) =
+      (BialgHom.mapDomain (A := R) (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)).range ⊓
+        fixedSubgroup (BialgHom.mapDomain (geometricFrobeniusBialgHom K k H)) :=
+  (BialgHom.mapDomain (A := R)
+    (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)).map_fixedSubgroup_of_injective
+    (ψ.mapDomain_tensorProductMap_comp_mapDomain_geometricFrobeniusBialgHom k)
+    (BialgHom.mapDomain_injective_of_surjective _
+      (LinearMap.lTensor_surjective k (g := (ψ : H →ₗ[K] H₁)) hψ))
+
+end HopfAlgebra
+
+end GeometricNaturality
+
+section GeometricFixed
+
+variable (k : Type*) [CommRing k] [IsDomain k] [Algebra K k]
+variable (H : Type*) [CommSemiring H] [_root_.HopfAlgebra K H]
+
+/-- **`G₀(K) ≃ G^F`.** The `K`-rational points of `H` are isomorphic to the points of the base
+change `k ⊗[K] H` over a domain `k` fixed by the geometric Frobenius. The isomorphism sends a
+rational point `g` to `s ⊗ h ↦ s * g h`. -/
+noncomputable def rationalPointsMulEquivFixedSubgroupGeometricFrobenius :
+    WithConv (H →ₐ[K] K) ≃*
+      fixedSubgroup (BialgHom.mapDomain (A := k) (geometricFrobeniusBialgHom K k H)) :=
+  (rationalPointsMulEquiv K H k).trans
+    (fixedSubgroupCongr (AlgHom.baseChangePointsMulEquiv (k := K) (K := k) (A := H) (R := k)).symm
+      baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom).symm
+
+/-- The isomorphism `rationalPointsMulEquivFixedSubgroupGeometricFrobenius` is the base change of
+rational points. -/
+@[simp]
+theorem coe_rationalPointsMulEquivFixedSubgroupGeometricFrobenius_apply
+    (g : WithConv (H →ₐ[K] K)) :
+    (rationalPointsMulEquivFixedSubgroupGeometricFrobenius K k H g :
+        WithConv (k ⊗[K] H →ₐ[k] k)) = AlgHom.pointsBaseChange k g := by
+  apply ofConv_injective
+  ext h
+  simp [rationalPointsMulEquivFixedSubgroupGeometricFrobenius]
+
+/-- The inverse isomorphism `G^F ≃ G₀(K)` sends a fixed point `g` to the rational point whose
+value at `h` maps to `g (1 ⊗ h)` under the structure map `K → k`. -/
+@[simp]
+theorem algebraMap_rationalPointsMulEquivFixedSubgroupGeometricFrobenius_symm_apply_apply
+    (g : fixedSubgroup (BialgHom.mapDomain (A := k) (geometricFrobeniusBialgHom K k H))) (h : H) :
+    algebraMap K k (((rationalPointsMulEquivFixedSubgroupGeometricFrobenius K k H).symm g).ofConv
+        h) = (g : WithConv (k ⊗[K] H →ₐ[k] k)).ofConv (1 ⊗ₜ h) := by
+  conv_rhs =>
+    rw [← (rationalPointsMulEquivFixedSubgroupGeometricFrobenius K k H).apply_symm_apply g]
+  rw [coe_rationalPointsMulEquivFixedSubgroupGeometricFrobenius_apply,
+    AlgHom.pointsBaseChange_apply_tmul, one_mul]
+
+variable {H} {H₁ : Type*} [CommSemiring H₁] [_root_.HopfAlgebra K H₁] in
+/-- The isomorphism `G₀(K) ≃ G^F` is natural in the coordinate Hopf algebra: for a morphism
+`ψ : H → H₁`, the induced map on rational points corresponds to the map on Frobenius-fixed points
+induced by the scalar extension of `ψ`. -/
+theorem mapDomain_rationalPointsMulEquivFixedSubgroupGeometricFrobenius (ψ : H →ₐc[K] H₁)
+    (g : WithConv (H₁ →ₐ[K] K)) :
+    BialgHom.mapDomain (A := k) (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)
+        (rationalPointsMulEquivFixedSubgroupGeometricFrobenius K k H₁ g) =
+      rationalPointsMulEquivFixedSubgroupGeometricFrobenius K k H (BialgHom.mapDomain ψ g) := by
+  rw [coe_rationalPointsMulEquivFixedSubgroupGeometricFrobenius_apply,
+    coe_rationalPointsMulEquivFixedSubgroupGeometricFrobenius_apply,
+    BialgHom.mapDomain_pointsBaseChange]
+
+/-- **The fixed points of the geometric Frobenius form a finite group** when the coordinate algebra
+is of finite type. -/
+theorem finite_fixedSubgroup_mapDomain_geometricFrobeniusBialgHom [Algebra.FiniteType K H] :
+    Finite (fixedSubgroup (BialgHom.mapDomain (A := k) (geometricFrobeniusBialgHom K k H))) :=
+  have : Finite (WithConv (H →ₐ[K] K)) := .of_equiv _ (WithConv.equiv _).symm
+  .of_equiv _ (rationalPointsMulEquivFixedSubgroupGeometricFrobenius K k H).toEquiv
+
+end GeometricFixed
+
+/-! ### Comparison with a model over `ℤ` -/
+
+section Integral
+
+variable {K} {p n : ℕ}
+variable {H : Type*} [Semiring H] [_root_.Bialgebra ℤ H]
+variable {A : Type*} [CommRing A] [Algebra K A] [ExpChar A p]
+
+/-- **For a model over `ℤ`, the `q`-Frobenius is the iterated prime-power Frobenius.** If
+`q = p ^ n`, then under `(K ⊗ H)(A) ≃ Hom_ℤ(H, A)` the `q ^ m`-Frobenius of the base change
+`K ⊗[ℤ] H` is `iterateFrobeniusPoints p (n * m)`. -/
+theorem baseChangePointsMulEquiv_symm_frobeniusPoints (hq : Nat.card K = p ^ n) (m : ℕ)
+    (f : WithConv (K ⊗[ℤ] H →ₐ[K] A)) :
+    (AlgHom.baseChangePointsMulEquiv (k := ℤ) (K := K) (A := H) (R := A)).symm
+        (frobeniusPoints K m f) =
+      Bialgebra.iterateFrobeniusPoints p (n * m)
+        ((AlgHom.baseChangePointsMulEquiv (k := ℤ) (K := K) (A := H) (R := A)).symm f) := by
+  rw [Nat.card_eq_fintype_card] at hq
+  ext h
+  simp [hq, pow_mul]
+
+end Integral
 
 end TauCeti.FiniteField

@@ -467,6 +467,10 @@ inclusion `DirectSum.lof R ι M i`. -/
 def summand (i : ι) : Submodule R (⨁ i, M i) :=
   LinearMap.range (DirectSum.lof R ι M i)
 
+/-- The `i`-th summand is the range of the inclusion `DirectSum.lof R ι M i`. -/
+theorem summand_def (i : ι) : summand R M i = LinearMap.range (DirectSum.lof R ι M i) :=
+  (rfl)
+
 variable {R M}
 
 /-- An element of `⨁ i, M i` lies in the `i`-th summand exactly when it is `DirectSum.of M i m`
