@@ -87,26 +87,31 @@ half-norm form of the discriminant of the root lattice
   | G2, h => absurd h not_isSimplyLaced_G2
 
 /-- The glue alphabet of `Aₙ` is the cyclic model `ℤ/(n+1)`. -/
+@[simp]
 theorem glueAlphabet_A (n : ℕ) (ht : (A n).IsSimplyLaced) :
     (A n).glueAlphabet ht = typeAStandardQuadraticModule n :=
   (rfl)
 
 /-- For even `n`, the glue alphabet of `Dₙ` is the Klein four model `ℤ/2 × ℤ/2`. -/
+@[simp]
 theorem glueAlphabet_D_of_even (n : ℕ) (ht : (D n).IsSimplyLaced) (hn : Even n) :
     (D n).glueAlphabet ht = checkerboardStandardQuadraticModule n hn :=
   dite_eq_left hn
 
 /-- For odd `n`, the glue alphabet of `Dₙ` is the cyclic model `ℤ/4`. -/
+@[simp]
 theorem glueAlphabet_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (hn : Odd n) :
     (D n).glueAlphabet ht = checkerboardCyclicQuadraticModule n :=
   dite_eq_right (Nat.not_even_iff_odd.mpr hn)
 
 /-- The glue alphabet of `E₆` is the cyclic model `ℤ/3`. -/
+@[simp]
 theorem glueAlphabet_E6 (ht : E6.IsSimplyLaced) :
     E6.glueAlphabet ht = typeE₆StandardQuadraticModule :=
   (rfl)
 
 /-- The glue alphabet of `E₇` is the cyclic model `ℤ/2`. -/
+@[simp]
 theorem glueAlphabet_E7 (ht : E7.IsSimplyLaced) :
     E7.glueAlphabet ht = typeE₇StandardQuadraticModule :=
   (rfl)
