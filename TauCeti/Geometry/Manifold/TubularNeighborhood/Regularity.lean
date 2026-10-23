@@ -58,20 +58,22 @@ theorem isOpen_normalExpDomain [IsManifold I 1 M]
   ext p
   exact f.mem_normalExpDomain hn p
 
-variable [IsManifold I ∞ M]
-
-/-- The normal exponential is smooth on its natural open domain in the total normal bundle. -/
-theorem contMDiffOn_normalExp
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : ∞ ≤ n)
+/-- The normal exponential is `C^m` on its natural open domain in the total normal bundle for a
+`C^n` embedding with `m + 1 ≤ n`. -/
+theorem contMDiffOn_normalExp {m : ℕ∞ω} [ENat.LEInfty m] [IsManifold I 1 M]
+    [IsManifold I (m + 1) M]
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) :
     letI := f.normalSpaceFiberBundle hn hdim
-    ContMDiffOn (I.prod 𝓘(ℝ, P)) J ∞ (f.normalExp (P := P) hn)
+    ContMDiffOn (I.prod 𝓘(ℝ, P)) J m (f.normalExp (P := P) hn)
       (f.normalExpDomain (P := P) hn) := by
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
+  have hm' : m + 1 ≤ ∞ := by
+    lift m to ℕ∞ using ne_top_of_le_ne_top WithTop.coe_ne_top ENat.LEInfty.out
+    exact_mod_cast le_top
+  have : IsManifold J (m + 1) N := IsManifold.of_le hm'
   let := f.normalSpaceFiberBundle hn hdim
-  convert (Manifold.contMDiffOn_riemannianExp_tangentBundle (I := J) (M := N)).comp
-    (f.contMDiff_normalRepresentative (m := ∞) hn (by simpa using hm) hdim).contMDiffOn
+  convert ((Manifold.contMDiffOn_riemannianExp_tangentBundle (I := J) (M := N)).of_le
+    ENat.LEInfty.out).comp (f.contMDiff_normalRepresentative (m := m) hn hm hdim).contMDiffOn
     (fun p hp => (f.mem_normalExpDomain hn p).mp hp) using 1
   funext p
   exact f.normalExp_apply hn p
