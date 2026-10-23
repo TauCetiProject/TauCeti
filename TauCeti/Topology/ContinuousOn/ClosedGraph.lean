@@ -19,6 +19,8 @@ public section
 
 open Set
 
+namespace TauCeti
+
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- A function whose graph over `s` is closed and which maps `s` into a compact set is continuous
@@ -35,3 +37,5 @@ theorem continuousOn_of_isClosed_graphOn {f : X → Y} {s : Set X} {K : Set Y}
     rw [hgraph]
     exact hf.preimage (continuous_subtype_val.prodMap continuous_subtype_val)
   exact continuousOn_iff_continuous_domRestrict.mpr (continuous_subtype_val.comp hF)
+
+end TauCeti

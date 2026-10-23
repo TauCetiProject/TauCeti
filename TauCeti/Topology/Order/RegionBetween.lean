@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.Normed.Ring.Lemmas
 public import TauCeti.Topology.ContinuousOn.ClosedGraph
+public import TauCeti.Topology.UnitInterval.Basic
 
 /-!
 # Closures of bands and band interpolation maps
@@ -22,9 +23,10 @@ elementary endpoint calculus which glues the cell maps of that construction.
   the closure of the open band over `s` is the closed band over `closure s`.
   `TauCeti.closure_regionBetween_of_closure_graphOn_eq` states this, following Łojasiewicz, for
   endpoint functions whose graph closures are bounded single-valued functions on `closure s`.
-* `TauCeti.regionBetweenMap g φ φ' ψ ψ'`: over a base map `g`, the map sending the fibre
-  `[φ x, φ' x]` affinely onto `[ψ (g x), ψ' (g x)]`, lower endpoint to lower endpoint. A collapsed
-  fibre `φ x = φ' x` is sent to `(g x, ψ (g x))`.
+* `TauCeti.regionBetweenMap g φ φ' ψ ψ'`: over a base map `g`, the map interpolating affinely
+  between the fibres `[φ x, φ' x]` and `[ψ (g x), ψ' (g x)]`, lower endpoint to lower endpoint.
+  A collapsed fibre `φ x = φ' x` is sent to `(g x, ψ (g x))`, so for ordered endpoints a source
+  fibre is mapped onto its target fibre when it is nondegenerate, or when both fibres collapse.
 * Graph and restriction compatibility: the band map restricts to the graph maps of its endpoints
   (`TauCeti.image_regionBetweenMap_graphOn_lower`, `TauCeti.image_regionBetweenMap_graphOn_upper`)
   and depends only on the data over the points it is evaluated at
@@ -121,8 +123,7 @@ theorem closure_regionBetween [TopologicalSpace α] {f g : α → ℝ} {s : Set 
     · simp only [H]
       nlinarith
   rintro ⟨x, t⟩ ⟨hx, hft, htg⟩
-  have hc := unitInterval.div_mem (sub_nonneg.mpr hft) (sub_nonneg.mpr (hft.trans htg))
-    (sub_le_sub_right htg (f x))
+  have hc := sub_div_sub_mem_unitInterval hft htg
   refine closure_mono himage (hH.image_closure ⟨(x, (t - f x) / (g x - f x)), ?_, ?_⟩)
   · rw [hcl]
     exact ⟨hx, hc⟩
@@ -159,9 +160,11 @@ variable {X Y : Type*}
 
 /-- The band interpolation map over a base map `g : X → Y`, from the band between `φ` and `φ'`
 to the band between `ψ` and `ψ'`. It sends `(x, t)` to `(g x, s)` where
-`s = ψ (g x) + (t - φ x) / (φ' x - φ x) * (ψ' (g x) - ψ (g x))`, so that it maps the fibre
-`[φ x, φ' x]` affinely onto `[ψ (g x), ψ' (g x)]`. When the source endpoints coincide, the
-quotient is `0` and the point is sent to `(g x, ψ (g x))` (`regionBetweenMap_of_eq`). -/
+`s = ψ (g x) + (t - φ x) / (φ' x - φ x) * (ψ' (g x) - ψ (g x))`. If `φ x < φ' x` and
+`ψ (g x) ≤ ψ' (g x)`, it maps the fibre `[φ x, φ' x]` affinely onto `[ψ (g x), ψ' (g x)]`. When the
+source endpoints coincide, the quotient is `0` and the point is sent to `(g x, ψ (g x))`
+(`regionBetweenMap_of_eq`), so a collapsed source fibre is mapped onto its target fibre only when
+that collapses too. -/
 noncomputable def regionBetweenMap (g : X → Y) (φ φ' : X → ℝ) (ψ ψ' : Y → ℝ) (p : X × ℝ) :
     Y × ℝ :=
   (g p.1, ψ (g p.1) + (p.2 - φ p.1) / (φ' p.1 - φ p.1) * (ψ' (g p.1) - ψ (g p.1)))
@@ -221,19 +224,13 @@ theorem eqOn_regionBetweenMap {g₁ g₂ : X → Y} {φ₁ φ₁' φ₂ φ₂' :
   simp only [regionBetweenMap_apply, ← hg hx, hφ hx, hφ' hx, hψ (mem_image_of_mem g₁ hx),
     hψ' (mem_image_of_mem g₁ hx)]
 
-/-- The normalized height of `r ∈ [a, b]` lies in `[0, 1]`, also when `a = b`. -/
-private theorem div_sub_mem_unitInterval {a b r : ℝ} (har : a ≤ r) (hrb : r ≤ b) :
-    (r - a) / (b - a) ∈ unitInterval :=
-  unitInterval.div_mem (sub_nonneg.mpr har) (sub_nonneg.mpr (har.trans hrb))
-    (sub_le_sub_right hrb a)
-
 /-- The band map sends the closed band over `s` into the closed band over `t`. -/
 theorem mapsTo_regionBetweenMap_closedRegionBetween (hg : MapsTo g s t)
     (hψ : ∀ y ∈ t, ψ y ≤ ψ' y) :
     MapsTo (regionBetweenMap g φ φ' ψ ψ') (closedRegionBetween φ φ' s)
       (closedRegionBetween ψ ψ' t) := by
   rintro ⟨x, r⟩ ⟨hx, hφr, hrφ⟩
-  obtain ⟨hc₀, hc₁⟩ := div_sub_mem_unitInterval hφr hrφ
+  obtain ⟨hc₀, hc₁⟩ := sub_div_sub_mem_unitInterval hφr hrφ
   have hd : 0 ≤ ψ' (g x) - ψ (g x) := sub_nonneg.mpr (hψ _ (hg hx))
   refine ⟨hg hx, ?_, ?_⟩
   · simpa [regionBetweenMap_apply] using mul_nonneg hc₀ hd
@@ -256,14 +253,14 @@ theorem mapsTo_regionBetweenMap_regionBetween (hg : MapsTo g s t) (hψ : ∀ y �
 
 /-- The band map over a left inverse `g'` of `g`, with source and target endpoints exchanged,
 undoes the band map over `g` on the fibre over `x`, provided the source fibre over `x` collapses
-exactly when the target fibre over `g x` does. -/
+whenever the target fibre over `g x` does. -/
 theorem regionBetweenMap_regionBetweenMap {x : X} {r : ℝ} (hx : g' (g x) = x)
-    (hcollapse : φ x = φ' x ↔ ψ (g x) = ψ' (g x)) (hr : r ∈ Icc (φ x) (φ' x)) :
+    (hcollapse : ψ (g x) = ψ' (g x) → φ x = φ' x) (hr : r ∈ Icc (φ x) (φ' x)) :
     regionBetweenMap g' ψ ψ' φ φ' (regionBetweenMap g φ φ' ψ ψ' (x, r)) = (x, r) := by
   by_cases hφ : φ x = φ' x
   · rw [regionBetweenMap_of_eq hφ, regionBetweenMap_lower, hx, le_antisymm (hφ ▸ hr.2) hr.1]
   · have hφ₀ : φ' x - φ x ≠ 0 := sub_ne_zero.mpr (Ne.symm hφ)
-    have hψ₀ : ψ' (g x) - ψ (g x) ≠ 0 := sub_ne_zero.mpr (Ne.symm (hφ ∘ hcollapse.mpr))
+    have hψ₀ : ψ' (g x) - ψ (g x) ≠ 0 := sub_ne_zero.mpr (Ne.symm (hφ ∘ hcollapse))
     simp only [regionBetweenMap_apply, hx, add_sub_cancel_left, Prod.mk.injEq, true_and]
     field_simp
     ring
@@ -275,11 +272,12 @@ theorem invOn_regionBetweenMap (h : InvOn g' g s t) (hg' : MapsTo g' t s)
     (hcollapse : ∀ x ∈ s, φ x = φ' x ↔ ψ (g x) = ψ' (g x)) :
     InvOn (regionBetweenMap g' ψ ψ' φ φ') (regionBetweenMap g φ φ' ψ ψ')
       (closedRegionBetween φ φ' s) (closedRegionBetween ψ ψ' t) := by
-  refine ⟨fun ⟨x, r⟩ ⟨hx, hr⟩ ↦ regionBetweenMap_regionBetweenMap (h.1 hx) (hcollapse x hx) hr,
+  refine ⟨fun ⟨x, r⟩ ⟨hx, hr⟩ ↦
+    regionBetweenMap_regionBetweenMap (h.1 hx) (hcollapse x hx).mpr hr,
     fun ⟨y, r⟩ ⟨hy, hr⟩ ↦ regionBetweenMap_regionBetweenMap (h.2 hy) ?_ hr⟩
   have hy' := hcollapse _ (hg' hy)
   rw [(h.2 hy : g (g' y) = y)] at hy'
-  exact hy'.symm
+  exact hy'.mp
 
 /-- If `g` is a bijection from `s` to `t` with inverse `g'`, the endpoints are ordered, and a
 source fibre collapses exactly when the target fibre over it does, then the band map is a
@@ -333,7 +331,7 @@ theorem continuousOn_regionBetweenMap (hg : ContinuousOn g s) (hφ : ContinuousO
         (norm ∘ fun p : X × ℝ ↦ (p.2 - φ p.1) / (φ' p.1 - φ p.1)) := by
       refine isBoundedUnder_of_eventually_le (a := 1) (eventually_nhdsWithin_of_forall ?_)
       rintro ⟨y, u⟩ ⟨-, hu⟩
-      obtain ⟨hc₀, hc₁⟩ := div_sub_mem_unitInterval hu.1 hu.2
+      obtain ⟨hc₀, hc₁⟩ := sub_div_sub_mem_unitInterval hu.1 hu.2
       rwa [Function.comp_apply, Real.norm_eq_abs, abs_of_nonneg hc₀]
     have := (hψ₁ _ hp).tendsto.add (isBoundedUnder_le_mul_tendsto_zero hbdd hwidth)
     simpa [ContinuousWithinAt, hx] using this
