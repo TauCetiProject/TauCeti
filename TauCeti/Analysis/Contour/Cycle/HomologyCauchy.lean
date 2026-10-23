@@ -11,20 +11,26 @@ import TauCeti.Analysis.Contour.Dixon.H2.Bound
 import TauCeti.Analysis.Contour.Dixon.H2.Diff
 import TauCeti.Analysis.Contour.Dixon.FunctionDiff
 import Mathlib.Analysis.Complex.Liouville
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
 
 /-!
 # The homology Cauchy theorem for contour cycles
 
 This file extends the homology form of Cauchy's theorem from one parametrized closed curve to a
 finite formal integer cycle. If a cycle `C` lies in an open set `U`, is null-homologous there, and
-`f` is holomorphic on `U`, then `Cycle.integral f C = 0`.
+`f` is holomorphic on `U`, then `Cycle.integral f C = 0`. Here `f` may take values in any complex
+normed space, as needed for Banach-valued contour integrals such as resolvent integrals.
 
 The point is that null-homology belongs to the whole cycle: cancellation between different
 generators may make `C` null-homologous even when no individual generator is. Thus the result does
 not follow by applying the single-curve theorem termwise. Instead, Dixon's two auxiliary integrals
 are summed over the finite support of `C`. Their jump across the boundary of `U` is the winding
 number of the whole cycle, so cycle-level null-homology makes the sum entire; decay at infinity and
-Liouville then make it zero.
+Liouville then make it zero. For a complete space `E`, the vector-valued case follows from the
+scalar one: every continuous linear functional commutes with the cycle integral
+(`TauCeti.Contour.Cycle.integral_comp_comm`), and these functionals separate the points of `E` by
+the Hahn–Banach theorem. For an incomplete `E`, every Bochner integral valued in `E` is zero, and
+hence so is the cycle integral.
 
 ## Main result
 
@@ -224,14 +230,8 @@ private theorem cycleDixonH2_twist_eq_integral {f : ℂ → ℂ} {C : Cycle} {w 
   rw [mul_div_cancel_left₀ _ (sub_ne_zero.mpr
     (avoids_of_mem_support hw hγ t ht)), smul_eq_mul, mul_comm]
 
-/-- **The homology Cauchy theorem for contour cycles.** Let `C` be a finite formal integer
-combination of closed piecewise-`C¹` curves whose trace lies in an open set `U`. If `C` is
-null-homologous in `U` and `f` is holomorphic on `U`, then the contour integral of `f` over the
-whole cycle vanishes.
-
-The null-homology assumption is imposed only on `C`, not on each supported curve, so the theorem
-includes cancellations between different generators. -/
-theorem homologyCauchyTheorem {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ} (hU : IsOpen U)
+/-- The scalar case of `homologyCauchyTheorem`, by Dixon's argument. -/
+private theorem homologyCauchyTheorem_complex {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ} (hU : IsOpen U)
     (hCU : IsIn C U) (hf : DifferentiableOn ℂ f U) (hnull : IsNullHomologous C U) :
     integral f C = 0 := by
   by_cases hC : C = 0
@@ -247,6 +247,27 @@ theorem homologyCauchyTheorem {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ} (hU : 
         htwist.continuousOn hCU hwtrace,
       cycleDixonH2_twist_eq_integral hwtrace] at hzero
     simpa using hzero
+
+/-- **The homology Cauchy theorem for contour cycles.** Let `C` be a finite formal integer
+combination of closed piecewise-`C¹` curves whose trace lies in an open set `U`. If `C` is
+null-homologous in `U` and `f` is holomorphic on `U`, with values in any complex normed space,
+then the contour integral of `f` over the whole cycle vanishes.
+
+The null-homology assumption is imposed only on `C`, not on each supported curve, so the theorem
+includes cancellations between different generators. -/
+theorem homologyCauchyTheorem {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℂ → E}
+    {C : Cycle} {U : Set ℂ} (hU : IsOpen U) (hCU : IsIn C U) (hf : DifferentiableOn ℂ f U)
+    (hnull : IsNullHomologous C U) : integral f C = 0 := by
+  by_cases hE : CompleteSpace E
+  · -- Continuous linear functionals separate points, and each one reduces to the scalar case.
+    refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℂ) fun ℓ ↦ ?_
+    rw [← integral_comp_comm fun _ ↦
+      intervalIntegrable_of_mem_support (hf.continuousOn.mono (isIn_iff.mp hCU))]
+    exact homologyCauchyTheorem_complex hU hCU (ℓ.differentiable.comp_differentiableOn hf) hnull
+  · -- Without completeness every Bochner integral valued in `E` vanishes.
+    rw [integral_eq_sum_support]
+    exact Finset.sum_eq_zero fun γ _ ↦ by
+      simp [intervalIntegral, integral_of_not_completeSpace hE]
 
 end TauCeti.Contour.Cycle
 
