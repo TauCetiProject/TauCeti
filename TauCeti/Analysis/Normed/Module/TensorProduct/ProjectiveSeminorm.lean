@@ -41,8 +41,8 @@ this file adapts to two factors indexed by `Fin n` decompositions.
   the infimum of the costs of finite decompositions.
 * `TensorProduct.apply_le_mul_projectiveSeminorm`: a seminorm bounded by `C ‖x‖ ‖y‖` on
   pure tensors is bounded by `C` times the projective seminorm.
-* `TensorProduct.norm_lift_le_projectiveSeminorm`: over a nontrivially normed field, the linear map induced by a
-  bounded bilinear map `B` is bounded by `‖B‖` times the projective seminorm.
+* `TensorProduct.norm_lift_le_projectiveSeminorm`: over a nontrivially normed field, the linear
+  map induced by a bounded bilinear map `B` is bounded by `‖B‖` times the projective seminorm.
 
 ## References
 
