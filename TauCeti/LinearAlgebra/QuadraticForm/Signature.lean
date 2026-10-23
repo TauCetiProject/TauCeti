@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
+-- Mathlib does not expose the finite-set definition needed for scalar invariance.
+import all Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
@@ -77,21 +79,22 @@ theorem sigNeg_eq_sigPos_of_comp_eq_neg (Q : _root_.QuadraticForm R M) (e : M �
   rw [← sigPos_neg]
   exact (QuadraticMap.Equivalent.sigPos_eq ⟨⟨e, fun v ↦ by simp [he]⟩⟩).symm
 
-variable [IsStrictOrderedRing R] [Module.Finite R M]
+variable [IsStrictOrderedRing R]
 
 /-- Multiplication by a positive scalar preserves the positive index of inertia. -/
 @[simp]
 theorem sigPos_smul_of_pos (Q : _root_.QuadraticForm R M) {a : R} (ha : 0 < a) :
     sigPos (a • Q) = sigPos Q := by
-  apply le_antisymm
-  · obtain ⟨U, hUrank, hU⟩ := exists_finrank_eq_sigPos_and_posDef (a • Q)
-    rw [← hUrank]
-    apply le_sigPos_of_posDef
-    exact (QuadraticMap.posDef_smul_iff_of_pos (Q.restrict U) ha).mp hU
-  · obtain ⟨U, hUrank, hU⟩ := exists_finrank_eq_sigPos_and_posDef Q
-    rw [← hUrank]
-    apply le_sigPos_of_posDef
-    exact (QuadraticMap.posDef_smul_iff_of_pos (Q.restrict U) ha).mpr hU
+  classical
+  unfold sigPos
+  congr 1
+  ext r
+  simp only [Finset.mem_filter]
+  constructor
+  · rintro ⟨hr, U, hU, hpos⟩
+    exact ⟨hr, U, hU, (QuadraticMap.posDef_smul_iff_of_pos (Q.restrict U) ha).mp hpos⟩
+  · rintro ⟨hr, U, hU, hpos⟩
+    exact ⟨hr, U, hU, (QuadraticMap.posDef_smul_iff_of_pos (Q.restrict U) ha).mpr hpos⟩
 
 /-- Multiplication by a positive scalar preserves the negative index of inertia. -/
 @[simp]
