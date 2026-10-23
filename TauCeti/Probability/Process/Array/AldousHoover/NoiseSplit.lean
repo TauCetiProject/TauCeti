@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.Array.AldousHoover.Basic
-import Mathlib.Order.Sym2
 import TauCeti.Probability.Independence.InfinitePi
 import TauCeti.Probability.ProductMeasure
 
@@ -54,7 +53,6 @@ private def vertexNoiseIndex {κ ι β : Type*} (v : β → κ × ℕ) : Option 
 /-- The global variable, any injectively selected vertex variables, and any injectively selected
 cell variables have the product of uniform laws. Taking `v = id` retains every vertex coordinate;
 other selections allow the same law to be used after reindexing the vertex families. -/
-@[simp]
 theorem map_global_vertex_cell_noiseMeasure {κ ι β γ : Type*} {v : β → κ × ℕ} {c : γ → ι}
     (hv : Function.Injective v) (hc : Function.Injective c) :
     (noiseMeasure κ ι).map
@@ -75,10 +73,8 @@ theorem map_global_vertex_cell_noiseMeasure {κ ι β γ : Type*} {v : β → κ
   set f₁ : (NoiseIndex κ ι → I) → (Option β → I) × (γ → I) :=
     fun u => (fun o => u (vertexNoiseIndex v o), fun t => u (.cell (c t)))
   set f₂ : (Option β → I) → I × (β → I) := fun y => (y none, fun b => y (some b))
-  have h₁ : Measurable f₁ := (Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
-    (Measurable.of_eval fun _ => measurable_pi_apply _)
-  have h₂ : Measurable f₂ :=
-    (measurable_pi_apply _).prodMk (Measurable.of_eval fun _ => measurable_pi_apply _)
+  have h₁ : Measurable f₁ := by fun_prop
+  have h₂ : Measurable f₂ := by fun_prop
   have hsplit : (fun u : NoiseIndex κ ι → I =>
       ((u .global, fun b => u (.vertex (v b).1 (v b).2)), fun t => u (.cell (c t)))) =
       Prod.map f₂ id ∘ f₁ := by
@@ -106,10 +102,9 @@ theorem splitSeparateNoise_apply (u : NoiseIndex Axis (ℕ × ℕ) → I) :
   (rfl)
 
 /-- The separate noise split is measurable. -/
-theorem measurable_splitSeparateNoise : Measurable splitSeparateNoise :=
-  ((measurable_pi_apply _).prodMk ((Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
-    (Measurable.of_eval fun _ => measurable_pi_apply _))).prodMk
-      (Measurable.of_eval fun _ => measurable_pi_apply _)
+theorem measurable_splitSeparateNoise : Measurable splitSeparateNoise := by
+  unfold splitSeparateNoise
+  fun_prop
 
 /-- **The separate-coding noise splits into independent pieces**: the global variable, the i.i.d.
 row variables, the i.i.d. column variables and the i.i.d. cell variables are independent uniform
@@ -125,13 +120,10 @@ theorem map_splitSeparateNoise_noiseMeasure :
     rintro (i | i) (j | j) h <;> simp_all [v]
   set f : (ℕ ⊕ ℕ → I) → (ℕ → I) × (ℕ → I) :=
     fun z => (fun i => z (.inl i), fun j => z (.inr j))
-  have hf : Measurable f := (Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
-    (Measurable.of_eval fun _ => measurable_pi_apply _)
+  have hf : Measurable f := by fun_prop
   have hmeas : Measurable (fun u : NoiseIndex Axis (ℕ × ℕ) → I =>
-      ((u .global, fun b => u (.vertex (v b).1 (v b).2)), fun c => u (.cell c))) :=
-    ((measurable_pi_apply _).prodMk
-      (Measurable.of_eval fun _ => measurable_pi_apply _)).prodMk
-        (Measurable.of_eval fun _ => measurable_pi_apply _)
+      ((u .global, fun b => u (.vertex (v b).1 (v b).2)), fun c => u (.cell c))) := by
+    fun_prop
   have hsplit : splitSeparateNoise = Prod.map (Prod.map id f) id ∘
       (fun u => ((u .global, fun b => u (.vertex (v b).1 (v b).2)),
         fun c => u (.cell c))) := by
@@ -160,9 +152,9 @@ theorem splitJointNoise_apply (u : NoiseIndex Unit (Sym2 ℕ) → I) :
   (rfl)
 
 /-- The joint noise split is measurable. -/
-theorem measurable_splitJointNoise : Measurable splitJointNoise :=
-  ((measurable_pi_apply _).prodMk (Measurable.of_eval fun _ => measurable_pi_apply _)).prodMk
-    (Measurable.of_eval fun _ => measurable_pi_apply _)
+theorem measurable_splitJointNoise : Measurable splitJointNoise := by
+  unfold splitJointNoise
+  fun_prop
 
 /-- **The joint-coding noise splits into independent pieces**: the global variable, the i.i.d.
 vertex variables and the i.i.d. variables of the off-diagonal unordered pairs, indexed by the
@@ -175,11 +167,19 @@ theorem map_splitJointNoise_noiseMeasure :
   -- Increasing pairs are sorted, so `Sym2.mk` is injective on them.
   have hc : Function.Injective (fun t : {t : ℕ × ℕ // t.1 < t.2} => s(t.1.1, t.1.2)) :=
     fun t t' h => by
-      have := Sym2.sortEquiv.symm.injective (a₁ := ⟨t.1, t.2.le⟩) (a₂ := ⟨t'.1, t'.2.le⟩) h
-      exact Subtype.ext (Subtype.ext_iff.1 this :)
-  simpa only [← splitJointNoise_apply] using
-    (map_global_vertex_cell_noiseMeasure (v := fun k => ((), k))
-      (fun _ _ h => (Prod.mk.inj h).2) hc)
+      rcases Sym2.eq_iff.1 h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+      · exact Subtype.ext (Prod.ext h₁ h₂)
+      · have := t.2
+        have := t'.2
+        omega
+  have hsplit : splitJointNoise = fun u =>
+      ((u .global, fun k => u (.vertex ((), k).1 ((), k).2)),
+        fun t => u (.cell s(t.1.1, t.1.2))) := by
+    funext u
+    rfl
+  rw [hsplit]
+  exact map_global_vertex_cell_noiseMeasure (v := fun k => ((), k))
+    (fun _ _ h => (Prod.mk.inj h).2) hc
 
 end TauCeti.Probability.AldousHoover
 
