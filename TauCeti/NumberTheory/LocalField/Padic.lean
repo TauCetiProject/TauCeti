@@ -16,6 +16,7 @@ public import TauCeti.NumberTheory.LocalField.Uniformizer
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
+import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -46,7 +47,8 @@ concrete p-adic norm and valuation APIs.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
   the integer ring, `TauCeti.Padic.irreducible_natCast_self_mul_intCast` that so is its
   product with any integer prime to `p`, and `TauCeti.Padic.isUniformizer_natCast_self` that it
-  is a uniformizer of `ℚ_[p]`.
+  is a uniformizer of `ℚ_[p]`; `TauCeti.Padic.addVal_natCast_self` computes its additive
+  valuation and `TauCeti.Padic.ringChar_residueField` the residue characteristic `p`.
 * `TauCeti.Padic.valuation_eq_one_of_coe_eq`: a unit of `ℤ_[p]` has valuation one in `ℚ_[p]`.
 * `TauCeti.Padic.spanSingleton_natCast_pow_eq_maximalIdeal_zpow`: `p ^ n 𝒪[ℚ_[p]] = 𝓂 ^ n`.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
@@ -284,6 +286,16 @@ namespace TauCeti.Padic
 theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
   simpa only [map_natCast] using
     (PadicInt.irreducible_p (p := p)).map (_root_.Padic.integerRingEquiv p).symm
+
+/-- The residue prime `p` has additive valuation `1` in the integer ring of `ℚ_[p]`. -/
+theorem addVal_natCast_self : IsDiscreteValuationRing.addVal 𝒪[ℚ_[p]] p = 1 :=
+  IsDiscreteValuationRing.addVal_uniformizer (irreducible_natCast_self p)
+
+/-- The residue field of `ℚ_[p]` has characteristic `p`. -/
+theorem ringChar_residueField : ringChar 𝓀[ℚ_[p]] = p :=
+  ((Nat.dvd_prime Fact.out).1 (IsLocalRing.natCast_mem_maximalIdeal_iff_dvd.1
+    ((IsLocalRing.mem_maximalIdeal _).2 (irreducible_natCast_self p).not_isUnit))).resolve_left
+      CharP.ringChar_ne_one
 
 variable {p} in
 /-- The residue prime times an integer prime to `p` is a uniformizer of the integer ring of

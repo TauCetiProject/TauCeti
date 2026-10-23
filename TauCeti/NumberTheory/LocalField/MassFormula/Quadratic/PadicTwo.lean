@@ -71,13 +71,6 @@ namespace TauCeti
 private theorem coe_two_padicTwo : ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 :=
   map_ofNat (Subring.subtype 𝒪[ℚ_[2]]) 2
 
-private theorem ringChar_residueField_padicTwo_dvd_two : ringChar 𝓀[ℚ_[2]] ∣ 2 :=
-  IsLocalRing.natCast_mem_maximalIdeal_iff_dvd.1
-    ((IsLocalRing.mem_maximalIdeal _).2 (Padic.irreducible_natCast_self 2).not_isUnit)
-
-private theorem addVal_two_padicTwo : IsDiscreteValuationRing.addVal 𝒪[ℚ_[2]] 2 = 1 := by
-  simpa using IsDiscreteValuationRing.addVal_uniformizer (Padic.irreducible_natCast_self 2)
-
 /-- `-15` is a square in `ℚ₂`, since it is `1` modulo `8`. -/
 private theorem isSquare_neg_fifteen : IsSquare (-15 : ℚ_[2]) := by
   have hu : IsUnit ((-15 : ℤ) : ℤ_[2]) := PadicInt.isUnit_iff.2 <|
@@ -96,7 +89,7 @@ theorem discriminantExponent_adjoin_of_sq_eq_padicTwo {ϖ : 𝒪[ℚ_[2]]} (hϖ 
     {x : SeparableClosure ℚ_[2]} (hx : x ^ 2 = algebraMap ℚ_[2] (SeparableClosure ℚ_[2]) ϖ) :
     (ℚ_[2]⟮x⟯).discriminantExponent = 3 := by
   have h := natCast_discriminantExponent_adjoin_of_pow_eq hϖ two_pos hx
-  simp only [Nat.cast_ofNat, addVal_two_padicTwo] at h
+  simp only [Padic.addVal_natCast_self 2] at h
   exact_mod_cast h
 
 /-- **`ℚ₂(√(1 - ϖ))` has discriminant exponent `2`** for every uniformizer `ϖ` of `ℚ₂`. -/
@@ -105,8 +98,8 @@ theorem discriminantExponent_adjoin_of_sq_eq_one_sub_padicTwo {ϖ : 𝒪[ℚ_[2]
     (hx : x ^ 2 = algebraMap ℚ_[2] (SeparableClosure ℚ_[2]) (1 - ϖ)) :
     (ℚ_[2]⟮x⟯).discriminantExponent = 2 := by
   have h := natCast_discriminantExponent_adjoin_of_sq_eq_one_sub
-    ringChar_residueField_padicTwo_dvd_two hϖ hx
-  rw [addVal_two_padicTwo] at h
+    (Padic.ringChar_residueField 2).dvd hϖ hx
+  rw [← Nat.cast_ofNat (R := 𝒪[ℚ_[2]]) (n := 2), Padic.addVal_natCast_self] at h
   exact_mod_cast h
 
 /-- **`ℚ₂(√ϖ)` has wild exponent `2`** for every uniformizer `ϖ` of `ℚ₂`. -/
@@ -126,7 +119,7 @@ theorem wildExponent_adjoin_of_sq_eq_one_sub_padicTwo {ϖ : 𝒪[ℚ_[2]]} (hϖ 
   rw [IntermediateField.wildExponent_def,
     discriminantExponent_adjoin_of_sq_eq_one_sub_padicTwo hϖ hx,
     (mem_totallyRamifiedOfDegree_iff.1 (adjoin_mem_totallyRamifiedOfDegree_two_of_sq_eq_one_sub
-      ringChar_residueField_padicTwo_dvd_two hϖ hx)).1]
+      (Padic.ringChar_residueField 2).dvd hϖ hx)).1]
 
 /-! ### The classification -/
 
@@ -225,7 +218,7 @@ theorem totallyRamifiedOfDegree_two_eq_padicTwo {x₁ x₂ x₃ x₄ x₅ x₆ :
   · have hu {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : ¬ (2 : ℤ) ∣ m) (hx : x ^ 2 = 1 - 2 * m) :
         ℚ_[2]⟮x⟯ ∈ totallyRamifiedOfDegree ℚ_[2] 2 :=
       adjoin_mem_totallyRamifiedOfDegree_two_of_sq_eq_one_sub
-        ringChar_residueField_padicTwo_dvd_two
+        (Padic.ringChar_residueField 2).dvd
         (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm)
         (by simp [hx, coe_two_padicTwo, map_ofNat])
     have hr {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : ¬ (2 : ℤ) ∣ m) (hx : x ^ 2 = 2 * m) :
