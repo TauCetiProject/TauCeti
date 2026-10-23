@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.CommGrp_
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Limits
+public import TauCeti.AlgebraicGeometry.FiniteEtale.GroupScheme
 public import TauCeti.CategoryTheory.Action.Cartesian
 public import TauCeti.RingTheory.Etale.Galois
 
@@ -35,11 +35,9 @@ automorphisms (`TauCeti.FiniteEtaleScheme.galoisEquivalenceGrp`), and between th
 versions (`TauCeti.FiniteEtaleScheme.galoisEquivalenceCommGrp`). Being equivalences of
 categories, these also identify the homomorphisms of group objects on the two sides.
 
-Group objects in `FiniteEtaleScheme S` are the finite étale group schemes over `S`: the inclusion
-into `Over S` preserves finite products, so it carries group objects to group schemes over `S`,
-fully faithfully, and a group scheme over `S` comes from `FiniteEtaleScheme S` exactly when its
-underlying scheme is finite étale over `S`
-(`TauCeti.FiniteEtaleScheme.essImage_mapGrp_ι_iff`).
+Group objects in `FiniteEtaleScheme S` are the finite étale group schemes over `S`
+(`TauCeti.FiniteEtaleScheme.essImage_mapGrp_ι_iff`, in
+`TauCeti.AlgebraicGeometry.FiniteEtale.GroupScheme`).
 
 ## Main definitions
 
@@ -57,8 +55,6 @@ underlying scheme is finite étale over `S`
 * `TauCeti.FiniteEtaleScheme.galoisEquivalenceGrp_functor_comp_forget` and
   `TauCeti.FiniteEtaleScheme.galoisEquivalenceCommGrp_functor_comp_forget`: on underlying objects,
   the equivalences of group objects are `galoisEquivalence K Ω`.
-* `TauCeti.FiniteEtaleScheme.essImage_mapGrp_ι_iff`: the group schemes over `S` coming from group
-  objects of `FiniteEtaleScheme S` are those whose underlying scheme is finite étale over `S`.
 
 ## References
 
@@ -76,32 +72,6 @@ universe u
 namespace TauCeti
 
 namespace FiniteEtaleScheme
-
-section GroupScheme
-
-variable (S : Scheme.{u})
-
-/-- The inclusion of finite étale schemes over `S` into `Over S` is monoidal for the cartesian
-monoidal structures, as it preserves finite products. -/
-noncomputable instance : (finiteEtaleSchemeProperty S).ι.Monoidal :=
-  .ofChosenFiniteProducts _
-
-/-- The inclusion of finite étale schemes over `S` into `Over S` is braided. -/
-noncomputable instance : (finiteEtaleSchemeProperty S).ι.Braided :=
-  .ofChosenFiniteProducts _
-
-variable {S}
-
-/-- **Finite étale group schemes.** A group scheme over `S` is, up to isomorphism, a group object
-of finite étale schemes over `S` if and only if its underlying scheme is finite and étale over
-`S`. -/
-theorem essImage_mapGrp_ι_iff {G : Grp (Over S)} :
-    (finiteEtaleSchemeProperty S).ι.mapGrp.essImage G ↔ IsFinite G.X.hom ∧ Etale G.X.hom := by
-  rw [Functor.essImage_mapGrp, ← finiteEtaleSchemeProperty_iff]
-  exact ⟨fun ⟨X, ⟨e⟩⟩ ↦ (finiteEtaleSchemeProperty S).prop_of_iso e X.property,
-    fun h ↦ ⟨⟨G.X, h⟩, ⟨Iso.refl _⟩⟩⟩
-
-end GroupScheme
 
 variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω] [IsSepClosed Ω] [IsGalois K Ω]
 
