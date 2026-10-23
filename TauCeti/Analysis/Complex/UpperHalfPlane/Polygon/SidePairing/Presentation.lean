@@ -100,6 +100,14 @@ theorem relatorQuotient_sideRelator (i : Fin n) :
     PresentedGroup.mk σ.relators (σ.sideRelator i) = 1 :=
   PresentedGroup.one_of_mem (σ.sideRelator_mem_relators i)
 
+/-- Paired sides give inverse generators in the relator quotient. -/
+@[simp]
+theorem relatorQuotient_of_pair (i : Fin n) :
+    (PresentedGroup.of (σ.pair i) : σ.RelatorQuotient) = (PresentedGroup.of i)⁻¹ := by
+  apply eq_inv_of_mul_eq_one_left
+  simpa only [sideRelator_def, map_mul, PresentedGroup.of] using
+    σ.relatorQuotient_sideRelator i
+
 /-- A finite-vertex cycle word has order dividing that of its cycle transformation in the
 relator quotient. -/
 @[simp]

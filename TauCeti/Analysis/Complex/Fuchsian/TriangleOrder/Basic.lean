@@ -22,6 +22,7 @@ the geometric angle inequality `p.angle + q.angle + r.angle < π`.
 ## Main declarations
 
 * `TriangleOrder`: an elliptic order `m ≥ 2` or a cusp.
+* `TriangleOrder.exponent`: the corresponding presentation exponent, zero at a cusp.
 * `TriangleOrder.reciprocal`: the contribution `1 / m` or `0` to the triangle inequality.
 * `TriangleOrder.angle`: the corresponding angle `π / m` or `0`.
 * `TriangleOrder.IsHyperbolic`: the typed reciprocal-sum condition for a hyperbolic triple.
@@ -49,6 +50,29 @@ inductive TriangleOrder where
   deriving DecidableEq
 
 namespace TriangleOrder
+
+/-- The exponent in a triangle-group presentation: the elliptic order, or zero at a cusp.
+The zero exponent imposes no relation on a parabolic generator. -/
+def exponent : TriangleOrder → ℕ
+  | .elliptic m _ => m
+  | .cusp => 0
+
+@[simp]
+theorem exponent_elliptic (m : ℕ) (hm : 2 ≤ m) : (elliptic m hm).exponent = m :=
+  (rfl)
+
+@[simp]
+theorem exponent_cusp : cusp.exponent = 0 :=
+  (rfl)
+
+/-- Exactly the cusp parameter imposes no finite-order relation. -/
+@[simp]
+theorem exponent_eq_zero_iff (p : TriangleOrder) : p.exponent = 0 ↔ p = cusp := by
+  cases p with
+  | elliptic m hm =>
+    have hm0 : m ≠ 0 := by omega
+    simp [exponent, hm0]
+  | cusp => simp
 
 /-- The reciprocal contribution of a triangle vertex: `1 / m` for an elliptic vertex of order
 `m`, and `0` for a cusp. -/
