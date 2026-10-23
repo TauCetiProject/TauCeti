@@ -8,12 +8,11 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Oriented
--- Private: the orthogonal-basis and volume-element computations are used only inside proofs.
+-- Private: the orthogonal-basis computations are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!

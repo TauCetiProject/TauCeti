@@ -154,9 +154,11 @@ theorem reverse_volumeElement :
 @[simp]
 theorem star_volumeElement :
     star (volumeElement Q o) = (-1 : ℝ) ^ ((n + 1) / 2) • volumeElement Q o := by
-  rw [star_def, involute_volumeElement, map_smul, reverse_volumeElement, smul_smul,
-    ← Nat.neg_one_pow_choose_two n, ← Nat.neg_one_pow_choose_two (n + 1), ← pow_add,
-    Nat.choose_succ_succ', Nat.choose_one_right, add_comm n]
+  rw [star_def, involute_volumeElement, map_smul, reverse_volumeElement, smul_smul, ← pow_add]
+  -- The sign identity is the parity fact `⌊n / 2⌋ + n ≡ ⌊(n + 1) / 2⌋ (mod 2)`.
+  congr 1
+  refine neg_one_pow_congr ?_
+  rcases Nat.even_or_odd' n with ⟨k, rfl | rfl⟩ <;> simp only [Nat.even_iff] <;> omega
 
 /-- **Frame formula for the volume element**: `volumeElement Q o = c(e₁) ⋯ c(eₙ)` for every
 positively oriented orthonormal basis `e` that is orthogonal for `Q`, for instance for
