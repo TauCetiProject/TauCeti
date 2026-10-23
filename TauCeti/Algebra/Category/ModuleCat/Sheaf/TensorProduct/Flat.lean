@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Flat
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Yoneda
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
-import TauCeti.CategoryTheory.Monoidal.Closed.Abelian
+import TauCeti.CategoryTheory.Abelian.Exact
 
 /-!
 # Flatness of free module sheaves on representables
@@ -23,8 +23,8 @@ and sheafification is exact. Hence if tensoring with a presheaf of modules `P` p
 monomorphisms, so does tensoring with its sheafification
 (`PresheafOfModules.preservesMonomorphisms_tensorLeft_sheafification_obj`). Tensoring with a sheaf
 of modules is right exact, since it has a right adjoint, so preserving monomorphisms already makes
-it exact (`TauCeti.preservesFiniteLimits_tensorLeft_of_preservesMonomorphisms`, for any closed
-abelian monoidal category).
+it exact (`CategoryTheory.Functor.preservesFiniteLimits_of_preservesMonomorphisms`, for any right
+exact functor between abelian categories).
 Hence the sheafification of a sectionwise flat presheaf of modules is flat
 (`PresheafOfModulesOfCommRing.preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat`).
 
@@ -98,7 +98,8 @@ instance preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat
   have : (tensorLeft (C := PresheafOfModules.{u} (ringCatSheaf R).obj) P).PreservesMonomorphisms :=
     inferInstanceAs (tensorLeft P).PreservesMonomorphisms
   have := PresheafOfModules.preservesMonomorphisms_tensorLeft_sheafification_obj (R := R) P
-  exact TauCeti.preservesFiniteLimits_tensorLeft_of_preservesMonomorphisms _
+  -- Tensoring with a sheaf of modules is a left adjoint, hence right exact.
+  exact Functor.preservesFiniteLimits_of_preservesMonomorphisms _
 
 end PresheafOfModulesOfCommRing
 
