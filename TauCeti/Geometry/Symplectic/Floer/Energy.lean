@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Basic
 public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
-import TauCeti.Analysis.Calculus.ParametricFDeriv
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Curvature of Hamiltonian perturbations and the Floer energy identity
@@ -225,10 +225,10 @@ theorem floerEnergyDensity_eq (ω : SymplecticForm V) (hu : DifferentiableAt ℝ
   have hgraph (K : ℝ × ℝ → V → ℝ) (hK : DifferentiableAt ℝ (uncurry K) (z, u z)) (v : ℝ × ℝ) :
       fderiv ℝ (fun w ↦ K w (u w)) z v =
         fderiv ℝ (uncurry K) (z, u z) (v, 0) + fderiv ℝ (K z) (u z) (fderiv ℝ u z v) :=
-    fderiv_comp_graph_apply (F := uncurry K) hu hK v
+    fderiv_comp_graph_apply (f := uncurry K) hu hK v
   have hslice (K : ℝ × ℝ → V → ℝ) (hK : DifferentiableAt ℝ (uncurry K) (z, u z)) (v : ℝ × ℝ) :
       fderiv ℝ (fun w ↦ K w (u z)) z v = fderiv ℝ (uncurry K) (z, u z) (v, 0) :=
-    congrArg (· v) (fderiv_slice_left (F := uncurry K) hK)
+    congrArg (· v) (fderiv_slice_left (f := uncurry K) hK)
   rw [floerEnergyDensity_def, hamiltonianCurvature_def, poissonBracket_def,
     perturbedFDeriv_apply_stdComplexLineReal, perturbedFDeriv_apply_stdComplexLineImag,
     hgraph Kt hKt, hgraph Ks hKs, hslice Kt hKt, hslice Ks hKs]
@@ -261,12 +261,12 @@ private theorem continuousOn_hamiltonianCurvature_comp (ω : SymplecticForm V) {
   -- The domain and target derivatives of `K` along `u` are restrictions of its joint derivative.
   have hslice (K : ℝ × ℝ → V → ℝ) (hK : ContDiff ℝ 1 (uncurry K)) (z v : ℝ × ℝ) :
       fderiv ℝ (fun w ↦ K w (u z)) z v = fderiv ℝ (uncurry K) (z, u z) (v, 0) :=
-    congrArg (· v) (fderiv_slice_left (F := uncurry K) ((hK.differentiable one_ne_zero) _))
+    congrArg (· v) (fderiv_slice_left (f := uncurry K) ((hK.differentiable one_ne_zero) _))
   have hX (K : ℝ × ℝ → V → ℝ) (hK : ContDiff ℝ 1 (uncurry K)) :
       ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) s := by
     have h (z : ℝ × ℝ) : fderiv ℝ (K z) (u z) =
         (fderiv ℝ (uncurry K) (z, u z)).comp (ContinuousLinearMap.inr ℝ (ℝ × ℝ) V) :=
-      fderiv_slice_right (F := uncurry K) ((hK.differentiable one_ne_zero) _)
+      fderiv_slice_right (f := uncurry K) ((hK.differentiable one_ne_zero) _)
     refine ω.continuousOn_hamiltonianVectorField_comp ?_
     simp only [h]
     exact (hD K hK).clm_comp continuousOn_const
