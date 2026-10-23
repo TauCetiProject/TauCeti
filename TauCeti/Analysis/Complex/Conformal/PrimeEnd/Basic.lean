@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Basic
 public import TauCeti.Topology.Path.Separation
+import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Null chains and prime ends
@@ -58,7 +59,7 @@ public section
 
 noncomputable section
 
-open Filter Set Topology
+open Bornology Filter Metric Set Topology
 
 namespace TauCeti
 
@@ -107,6 +108,42 @@ structure IsNullChain (U : Set ℂ) (C : ℕ → Set ℂ) : Prop where
 
 namespace IsNullChain
 
+/-- On a bounded domain, chordally shrinking crosscuts also shrink in Euclidean diameter. -/
+theorem eventually_norm_sub_lt (hC : IsNullChain U C) (hU : IsBounded U) {ε : ℝ}
+    (hε : 0 < ε) : ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, ‖z - w‖ < ε := by
+  obtain ⟨R, hR, hbound⟩ := hU.closure.exists_pos_norm_le
+  filter_upwards [hC.eventually_chordal_lt (ε / (1 + R ^ 2)) (by positivity)]
+    with n hn z hz w hw
+  obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
+  have hsub : C n ⊆ closure U := hrange ▸ hγ.range_subset_closure
+  have hzR := hbound z (hsub hz)
+  have hwR := hbound w (hsub hw)
+  have hz2 : ‖z‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hzR 2
+  have hw2 : ‖w‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hwR 2
+  have hs : √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) ≤ 1 + R ^ 2 := by
+    rw [Real.sqrt_le_left (by positivity)]
+    nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]
+  have hpos : 0 < √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) :=
+    Real.sqrt_pos.mpr (by positivity)
+  have h := (div_lt_iff₀ hpos).mp (hn z hz w hw)
+  calc
+    ‖z - w‖ < ε / (1 + R ^ 2) * √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) := h
+    _ ≤ ε / (1 + R ^ 2) * (1 + R ^ 2) := mul_le_mul_of_nonneg_left hs (by positivity)
+    _ = ε := div_mul_cancel₀ _ (by positivity)
+
+/-- Crosscuts of a bounded null chain eventually avoid each compact subset of the open domain. -/
+theorem eventually_disjoint_isCompact (hC : IsNullChain U C) (hU : IsOpen U)
+    (hUb : IsBounded U) {K : Set ℂ} (hK : IsCompact K) (hKU : K ⊆ U) :
+    ∀ᶠ n in atTop, Disjoint (C n) K := by
+  obtain ⟨δ, hδ, hδU⟩ := hK.exists_thickening_subset_open hU hKU
+  filter_upwards [hC.eventually_norm_sub_lt hUb hδ] with n hn
+  refine disjoint_left.mpr fun z hzC hzK => ?_
+  obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
+  have hxC : x ∈ C n := hrange ▸ ⟨0, γ.source⟩
+  have hxU : x ∈ U := hδU (mem_thickening_iff.mpr ⟨z, hzK, by
+    simpa only [dist_eq_norm] using hn x hxC z hzC⟩)
+  exact (hU.frontier_eq.subset hγ.source_mem_frontier).2 hxU
+
 /-- The domains cut off by a null chain decrease. -/
 theorem antitone_nullChainDomain (hC : IsNullChain U C) : Antitone (nullChainDomain U C) :=
   antitone_nat_of_succ_le hC.nullChainDomain_succ_subset
@@ -141,6 +178,14 @@ theorem nullChainDomain_eq_connectedComponentIn (hC : IsNullChain U C) {z : ℂ}
 theorem nonempty_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
     (nullChainDomain U C n).Nonempty :=
   (hC.isConnected_inter (n + 1)).nonempty.mono (hC.inter_subset_nullChainDomain n)
+
+/-- Each domain cut off by a null chain is connected. -/
+theorem isConnected_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
+    IsConnected (nullChainDomain U C n) := by
+  obtain ⟨z, hz⟩ := (hC.isConnected_inter (n + 1)).nonempty
+  rw [hC.nullChainDomain_eq_connectedComponentIn hz]
+  exact isConnected_connectedComponentIn_iff.mpr
+    ⟨hz.2, disjoint_right.mp (hC.disjoint_succ n) hz.1⟩
 
 /-- Inside `U`, every crosscut after the first lies in the domain cut off by the first. -/
 theorem inter_subset_nullChainDomain_zero (hC : IsNullChain U C) (n : ℕ) :
