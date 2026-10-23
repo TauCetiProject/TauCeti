@@ -46,6 +46,8 @@ series `∑ₙ X Yⁿ` is restricted, since every weight involving `X` vanishes,
 ## References
 
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.1.
+* E. Grosse-Klönne, *Rigid analytic spaces with overconvergent structure sheaf*,
+  J. reine angew. Math. 519 (2000), §1.2.
 -/
 
 public section
@@ -175,12 +177,10 @@ variable [∀ i, Fact (0 < c i)]
 /-- Over a commutative ring, the Hasse derivative on the restricted-series ring is `R`-linear. -/
 @[simp]
 theorem restrictedHasseDeriv_smul (d : σ →₀ ℕ) (r : R) (f : IsRestricted.subring (R := R) c) :
-    restrictedHasseDeriv d (r • f) = r • restrictedHasseDeriv d f := by
-  apply Subtype.ext
-  -- The scalar action on restricted series is multiplication by the constant series `C r`.
-  simp only [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring,
-    coe_restrictedHasseDeriv]
-  simp only [← smul_eq_C_mul, map_smul]
+    restrictedHasseDeriv d (r • f) = r • restrictedHasseDeriv d f :=
+  Subtype.ext (by
+    rw [TauCeti.MvPowerSeries.coe_smul_isRestrictedSubring, coe_restrictedHasseDeriv,
+      coe_restrictedHasseDeriv, TauCeti.MvPowerSeries.coe_smul_isRestrictedSubring, map_smul])
 
 end NormedCommRing
 
