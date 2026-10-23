@@ -105,11 +105,7 @@ instance {C D : Compactification f} (h : Hom C D) [IsClosedImmersion h.hom.h] : 
 /-- The map of ambient schemes underlying an isomorphism of compactifications is an
 isomorphism. -/
 instance isIso_hom_h {C D : Compactification f} (h : Hom C D) [IsIso h] : IsIso h.hom.h :=
-  ⟨(inv h).hom.h, by
-    rw [← Factorisation.comp_h, ← ObjectProperty.FullSubcategory.comp_hom, IsIso.hom_inv_id,
-      ObjectProperty.FullSubcategory.id_hom, Factorisation.id_h], by
-    rw [← Factorisation.comp_h, ← ObjectProperty.FullSubcategory.comp_hom, IsIso.inv_hom_id,
-      ObjectProperty.FullSubcategory.id_hom, Factorisation.id_h]⟩
+  (ObjectProperty.ι _ ⋙ Factorisation.forget (f := f)).map_isIso h
 
 end Hom
 
