@@ -25,7 +25,8 @@ lines in a finite locally free representation `V`, use `M = V∨`.
 `Proj(Sym M)` a scheme over `Spec R`. Its properness and
 quasi-compactness instances require only `Module.Finite R M`; its Noetherianity instance
 also requires `IsNoetherianRing R`. The chart formula describes this morphism on the
-standard affine charts. Its source is Jacobson whenever `Spec R` is Jacobson.
+standard affine charts, and the standard opens of a spanning family of linear forms cover
+the projective spectrum. Its source is Jacobson whenever `Spec R` is Jacobson.
 
 ## References
 
@@ -81,6 +82,32 @@ theorem awayι_projToSpec {f : SymmetricAlgebra R M} {n : ℕ}
           (Submonoid.powers f)).comp (algebraMap R (homogeneousSubmodule R M 0)))) := by
   rw [projToSpec_def, Proj.awayι_toSpecZero_assoc, ← Spec.map_comp]
   rw [← CommRingCat.ofHom_comp]
+
+/-- The standard opens `D₊(v j)` of a spanning family `v` of linear forms cover the projective
+spectrum of the symmetric algebra. -/
+theorem iSup_basicOpen_ι_eq_top {κ : Type*} (v : κ → M)
+    (hv : Submodule.span R (Set.range v) = ⊤) :
+    ⨆ j, Proj.basicOpen (homogeneousSubmodule R M) (_root_.SymmetricAlgebra.ι R M (v j)) = ⊤ := by
+  refine Proj.iSup_basicOpen_eq_top' _ _ (fun j ↦ ⟨1, ι_mem_homogeneousSubmodule R M _⟩)
+    (top_unique ?_)
+  rintro a -
+  induction a using _root_.SymmetricAlgebra.induction with
+  | algebraMap r => exact Subalgebra.algebraMap_mem _ (algebraMap R (homogeneousSubmodule R M 0) r)
+  | ι m =>
+    have hm : m ∈ Submodule.span R (Set.range v) := hv ▸ Submodule.mem_top
+    induction hm using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨j, rfl⟩ := hx
+      exact Algebra.subset_adjoin ⟨j, rfl⟩
+    | zero => simp
+    | add x y _ _ hx hy =>
+      rw [map_add]
+      exact add_mem hx hy
+    | smul c x _ hx =>
+      rw [map_smul, Algebra.smul_def]
+      exact mul_mem (Subalgebra.algebraMap_mem _ (algebraMap R (homogeneousSubmodule R M 0) c)) hx
+  | mul a b ha hb => exact mul_mem ha hb
+  | add a b ha hb => exact add_mem ha hb
 
 /-- The projective spectrum of a finite module is proper over the coefficient ring.
 Freeness and projectivity are not required. -/

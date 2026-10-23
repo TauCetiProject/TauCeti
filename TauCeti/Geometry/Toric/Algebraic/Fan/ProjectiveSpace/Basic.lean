@@ -23,9 +23,9 @@ of their index sets, a face of both, and the cones form a fan. It is complete: s
 the coefficients of a point the least of them writes it as a conical combination omitting one
 generator.
 
-Classically, the affine chart of the maximal cone omitting the generator indexed by `k` is the
-standard affine chart of projective space on which the `k`-th homogeneous coordinate does not
-vanish; that identification is not made here.
+The affine chart of the maximal cone omitting the generator indexed by `k` is the standard affine
+chart of projective space on which the `k`-th homogeneous coordinate does not vanish; this is
+proved in `TauCeti.Geometry.Toric.Algebraic.Fan.ProjectiveSpace.Proj`.
 
 ## Main declarations
 
