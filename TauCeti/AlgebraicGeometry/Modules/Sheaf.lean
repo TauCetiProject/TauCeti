@@ -121,6 +121,9 @@ def toSheaf : X.Modules ⥤ Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{
 instance : (toSheaf X).Additive :=
   inferInstanceAs (_root_.SheafOfModules.toSheaf X.ringCatSheaf).Additive
 
+instance : (toSheaf X).Faithful :=
+  inferInstanceAs (_root_.SheafOfModules.toSheaf X.ringCatSheaf).Faithful
+
 instance : PreservesFiniteLimits (toSheaf X) :=
   inferInstanceAs (PreservesFiniteLimits (_root_.SheafOfModules.toSheaf X.ringCatSheaf))
 
@@ -146,8 +149,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_on_affineO
     obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset hx
     have hVU' : V ≤ U := hVU
     exact ⟨V, homOfLE hVU', hf V hV (N.presheaf.map (homOfLE hVU').op s), hxV⟩
-  have : (toSheaf X).Faithful :=
-    inferInstanceAs (_root_.SheafOfModules.toSheaf X.ringCatSheaf).Faithful
   exact (toSheaf X).epi_of_epi_map (Sheaf.epi_of_isLocallySurjective _)
 
 end Scheme.Modules

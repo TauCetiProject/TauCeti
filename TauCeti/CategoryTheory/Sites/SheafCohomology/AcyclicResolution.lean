@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Ab
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
+import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # Sections of acyclic resolutions compute cohomology
@@ -53,50 +54,6 @@ variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   [HasSheafify J AddCommGrpCat.{v}]
   {F : Sheaf J AddCommGrpCat.{v}} {K : CochainComplex (Sheaf J AddCommGrpCat.{v}) ℕ}
 
-/-- A morphism killed by the differential `Kʲ ⟶ Kʲ⁺¹` is killed by its corestriction to the
-cycles. -/
-private lemma comp_toCycles_eq_zero {A : Sheaf J AddCommGrpCat.{v}} (j : ℕ) (a : A ⟶ K.X j)
-    (ha : a ≫ K.d j (j + 1) = 0) : a ≫ K.toCycles j (j + 1) = 0 := by
-  rw [← cancel_mono (K.iCycles (j + 1)), Category.assoc, K.toCycles_i, ha, zero_comp]
-
-/-- The comparison of `0 ⟶ A ⟶ Kʲ ⟶ Zʲ⁺¹` with `0 ⟶ A ⟶ Kʲ ⟶ Kʲ⁺¹`: the corestriction of the
-differential to the cycles has the same kernel as the differential. -/
-private lemma exact_toCycles {A : Sheaf J AddCommGrpCat.{v}} (j : ℕ) (a : A ⟶ K.X j)
-    (ha : a ≫ K.d j (j + 1) = 0) (hex : (ShortComplex.mk a (K.d j (j + 1)) ha).Exact) :
-    (ShortComplex.mk a (K.toCycles j (j + 1))
-      (comp_toCycles_eq_zero j a ha)).Exact :=
-  (ShortComplex.exact_iff_of_epi_of_isIso_of_mono
-    (S₁ := ShortComplex.mk a (K.toCycles j (j + 1)) (comp_toCycles_eq_zero j a ha))
-    (S₂ := ShortComplex.mk a (K.d j (j + 1)) ha)
-    { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := K.iCycles (j + 1) }).2 hex
-
-/-- The corestriction `Kʲ ⟶ Zʲ⁺¹` of the differential is an epimorphism when `K` is exact in
-degree `j + 1`. -/
-private lemma epi_toCycles (j : ℕ) (hK : K.ExactAt (j + 1)) : Epi (K.toCycles j (j + 1)) := by
-  have hj : (ComplexShape.up ℕ).prev (j + 1) = j := by simp
-  have hk : (ComplexShape.up ℕ).next (j + 1) = j + 2 := by simp
-  have := ((K.exactAt_iff' j (j + 1) (j + 2) hj hk).1 hK).epi_toCycles
-  rw [← K.toCycles_cyclesIsoSc'_hom j (j + 1) (j + 2) hj hk] at this
-  exact (epi_comp_iff_of_isIso _ _).1 this
-
-/-- The short exact sequence `0 ⟶ A ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0` cut out of `K` by a kernel `A` of the
-differential `Kʲ ⟶ Kʲ⁺¹`, when `K` is exact in degree `j + 1`. -/
-private lemma shortExact_toCycles {A : Sheaf J AddCommGrpCat.{v}} (j : ℕ) (a : A ⟶ K.X j)
-    [Mono a] (ha : a ≫ K.d j (j + 1) = 0) (hex : (ShortComplex.mk a (K.d j (j + 1)) ha).Exact)
-    (hK : K.ExactAt (j + 1)) :
-    (ShortComplex.mk a (K.toCycles j (j + 1))
-      (comp_toCycles_eq_zero j a ha)).ShortExact :=
-  have := epi_toCycles j hK
-  { exact := exact_toCycles j a ha hex }
-
-/-- The short exact sequence `0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0` of the cycles of `K`, when `K` is exact in
-degree `j + 1`. -/
-private lemma shortExact_iCycles_toCycles (j : ℕ) (hK : K.ExactAt (j + 1)) :
-    (ShortComplex.mk (K.iCycles j) (K.toCycles j (j + 1))
-      (comp_toCycles_eq_zero j _ (K.iCycles_d j (j + 1)))).ShortExact :=
-  shortExact_toCycles j (K.iCycles j) (K.iCycles_d j (j + 1))
-    (ShortComplex.exact_of_f_is_kernel _ (K.cyclesIsKernel j (j + 1) (by simp))) hK
-
 variable [HasExt.{w} (Sheaf J AddCommGrpCat.{v})] (ι : F ⟶ K.X 0) [Mono ι] (hι : ι ≫ K.d 0 1 = 0)
   (hι' : (ShortComplex.mk ι (K.d 0 1) hι).Exact) (hK : ∀ j, K.ExactAt (j + 1)) (V : C)
   (hKV : ∀ j k, Subsingleton ((K.X j).H' (k + 1) V))
@@ -109,10 +66,13 @@ private lemma subsingleton_H'_cycles (j k : ℕ) (hF : Subsingleton (F.H' (j + k
   induction j generalizing k with
   | zero =>
     rw [zero_add] at hF
-    exact subsingleton_X₃ (shortExact_toCycles 0 ι hι hι' (hK 0)) V (k + 1) (hKV 0 k) hF
+    exact subsingleton_X₃ (K.shortExact_toCycles ι hι hι' (by simp) (hK 0)) V (k + 1)
+      (hKV 0 k) hF
   | succ j ih =>
-    exact subsingleton_X₃ (shortExact_iCycles_toCycles (j + 1) (hK (j + 1))) V (k + 1)
-      (hKV (j + 1) k) (ih (k + 1) (by rwa [show j + (k + 1) + 2 = j + 1 + k + 2 by omega]))
+    have hS := K.cyclesShortComplex_shortExact (j + 1) (j + 2) (by simp) (hK (j + 1))
+    rw [HomologicalComplex.cyclesShortComplex_def] at hS
+    exact subsingleton_X₃ hS V (k + 1) (hKV (j + 1) k)
+      (ih (k + 1) (by rwa [show j + (k + 1) + 2 = j + 1 + k + 2 by omega]))
 
 include hι' hK hKV in
 /-- **Acyclic resolutions compute cohomology**, in the form used to show that derived functors
@@ -133,9 +93,12 @@ theorem exists_d_hom_app_eq_of_resolution (n : ℕ) (hF : Subsingleton (F.H' (n 
   -- `Kⁿ(V) ⟶ Zⁿ⁺¹(V)` is onto, since `H¹(V, F) = 0` for `n = 0` and `H¹(V, Zⁿ) = 0` otherwise
   obtain ⟨t, rfl⟩ : ∃ t, (K.toCycles n (n + 1)).hom.app (op V) t = z := by
     cases n with
-    | zero => exact g_hom_app_surjective (shortExact_toCycles 0 ι hι hι' (hK 0)) V hF z
+    | zero =>
+      exact g_hom_app_surjective (K.shortExact_toCycles ι hι hι' (by simp) (hK 0)) V hF z
     | succ n =>
-      exact g_hom_app_surjective (shortExact_iCycles_toCycles (n + 1) (hK (n + 1))) V
+      have hS := K.cyclesShortComplex_shortExact (n + 1) (n + 2) (by simp) (hK (n + 1))
+      rw [HomologicalComplex.cyclesShortComplex_def] at hS
+      exact g_hom_app_surjective hS V
         (subsingleton_H'_cycles ι hι hι' hK V hKV n 0 hF) z
   refine ⟨t, ?_⟩
   -- the mapped inclusion of cycles is by definition the component of `iCycles` at `V`

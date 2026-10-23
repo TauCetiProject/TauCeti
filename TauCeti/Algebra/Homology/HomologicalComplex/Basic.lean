@@ -25,7 +25,9 @@ differential into it, the identification of the homology with the cycles is natu
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact when `j = c.next i`
 (`HomologicalComplex.cyclesShortComplex_exact`). For adjacent degrees `i` and `j`, the cycles of a
 complex exact in degree `j` fit into a short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
-(`HomologicalComplex.cyclesShortComplex_shortExact`). Constructing the bundled cycle sequence
+(`HomologicalComplex.cyclesShortComplex_shortExact`); likewise a monomorphism onto the kernel of
+the differential `Kᵢ ⟶ Kⱼ` gives a short exact sequence `0 ⟶ A ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
+(`HomologicalComplex.shortExact_toCycles`). Constructing the bundled cycle sequence
 requires homology only in the two selected degrees.
 The exactness results additionally require homology of the cycle sequence itself.
 For chain complexes indexed by the natural numbers, the identification of zero chains with
@@ -168,6 +170,22 @@ lemma cyclesShortComplex_exact (i j : ι) [K.HasHomology i] [K.HasHomology j]
     Fork.IsLimit.lift_ι _
   rw [← h, Category.assoc, S.f_pOpcycles, comp_zero]
 
+/-- A morphism killed by the differential `Kᵢ ⟶ Kⱼ` is killed by its corestriction to the
+cycles in degree `j`. -/
+lemma comp_toCycles_eq_zero {A : C} {i : ι} (j : ι) [K.HasHomology j] (a : A ⟶ K.X i)
+    (ha : a ≫ K.d i j = 0) : a ≫ K.toCycles i j = 0 := by
+  rw [← cancel_mono (K.iCycles j), Category.assoc, K.toCycles_i, ha, zero_comp]
+
+/-- The corestriction `Kᵢ ⟶ Zⱼ` of the differential has the same kernel as the differential
+`Kᵢ ⟶ Kⱼ`: if `A ⟶ Kᵢ ⟶ Kⱼ` is exact, then so is `A ⟶ Kᵢ ⟶ Zⱼ`. -/
+lemma exact_toCycles {A : C} {i : ι} (j : ι) [K.HasHomology j] (a : A ⟶ K.X i)
+    (ha : a ≫ K.d i j = 0) (hex : (ShortComplex.mk a (K.d i j) ha).Exact) :
+    (ShortComplex.mk a (K.toCycles i j) (comp_toCycles_eq_zero j a ha)).Exact :=
+  (ShortComplex.exact_iff_of_epi_of_isIso_of_mono
+    (S₁ := ShortComplex.mk a (K.toCycles i j) (comp_toCycles_eq_zero j a ha))
+    (S₂ := ShortComplex.mk a (K.d i j) ha)
+    { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := K.iCycles j }).2 hex
+
 end HomologicalComplex
 
 namespace HomologicalComplex
@@ -195,6 +213,15 @@ lemma cyclesShortComplex_shortExact (i j : ι) [K.HasHomology i] [K.HasHomology 
   rw [cyclesShortComplex_def] at hE ⊢
   exact ShortComplex.ShortExact.mk' hE
     inferInstance (epi_toCycles_of_exactAt hK (c.prev_eq' hij))
+
+/-- A monomorphism `A ⟶ Kᵢ` onto the kernel of the differential `Kᵢ ⟶ Kⱼ` fits into a short exact
+sequence `0 ⟶ A ⟶ Kᵢ ⟶ Zⱼ ⟶ 0` when `i` precedes `j` and `K` is exact in degree `j`. -/
+lemma shortExact_toCycles {A : C} {i j : ι} [K.HasHomology j] (a : A ⟶ K.X i) [Mono a]
+    (ha : a ≫ K.d i j = 0) (hex : (ShortComplex.mk a (K.d i j) ha).Exact)
+    (hij : c.prev j = i) (hK : K.ExactAt j) :
+    (ShortComplex.mk a (K.toCycles i j) (comp_toCycles_eq_zero j a ha)).ShortExact :=
+  have := epi_toCycles_of_exactAt hK hij
+  { exact := exact_toCycles j a ha hex }
 
 end HomologicalComplex
 

@@ -419,8 +419,6 @@ theorem epi_toSkyscraperResidueField (hclosed : IsClosed ({(y : X)} : Set X))
       have hyV : (y : X) ∉ V := fun h ↦ (Opens.mem_inf.mp h).2 rfl
       have := Scheme.subsingleton_skyscraperResidueField (y : X) hyV
       exact ⟨V, inf_le_left, ⟨0, @Subsingleton.elim _ this _ _⟩, ⟨hz, hzy⟩⟩
-  have : (Scheme.Modules.toSheaf X).Faithful :=
-    inferInstanceAs (_root_.SheafOfModules.toSheaf X.ringCatSheaf).Faithful
   exact (Scheme.Modules.toSheaf X).epi_of_epi_map hepi
 
 /-- **The residue sequence** `0 ⟶ 𝒪_X(D) ⟶ 𝒪_X(D + y) ⟶ κ(y)_y ⟶ 0` at a closed codimension-one

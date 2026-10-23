@@ -19,11 +19,12 @@ import TauCeti.Topology.Sheaves.Exact
 # Higher direct images along affine morphisms
 
 Let `f : X ⟶ Y` be a morphism of schemes and `M` a sheaf of modules on `X`. The higher direct
-image `R^q f_* M` vanishes as soon as the cohomology `H^q(f⁻¹ V, M)` vanishes for the members `V`
-of a basis of the topology of `Y` (`Scheme.Hom.isZero_higherDirectImage_succ_of_isBasis`). For
-an affine morphism `f` with locally Noetherian source and a quasi-coherent `M`, the preimages of
-the affine opens of `Y` are affine with Noetherian rings of sections, on which quasi-coherent
-sheaves have no higher cohomology. So all positive higher direct images vanish
+image `R^{q+1} f_* M` vanishes as soon as the cohomology `H^{q+1}(f⁻¹ V, M)` vanishes for the
+members `V` of a basis of the topology of `Y`
+(`Scheme.Hom.isZero_higherDirectImage_succ_of_isBasis`). For an affine morphism `f` with locally
+Noetherian source and a quasi-coherent `M`, the preimages of the affine opens of `Y` are affine
+with Noetherian rings of sections, on which quasi-coherent sheaves have no higher cohomology. So
+all positive higher direct images vanish
 (`Scheme.Hom.isZero_higherDirectImage_succ_of_isAffineHom`). Consequently the higher direct
 images of a coherent sheaf along a finite morphism to a locally Noetherian scheme are coherent:
 the direct image is, and the higher ones are zero
@@ -35,7 +36,7 @@ coefficients need to be flat.
 modules on `X`, as the homology of the complex `f_* I^•`. Its sections over an open `V` form the
 complex `I^•(f⁻¹ V)`. The terms of `I^•` are flasque
 (`AlgebraicGeometry.Scheme.Modules.isFlasque_of_injective`), so they are acyclic on every open,
-and the complex `I^•(f⁻¹ V)` is exact in degree `q` when `H^q(f⁻¹ V, M) = 0`
+and the complex `I^•(f⁻¹ V)` is exact in degree `q + 1` when `H^{q+1}(f⁻¹ V, M) = 0`
 (`CategoryTheory.Sheaf.H'.exists_d_hom_app_eq_of_resolution`). Exactness of the complex of
 sheaves `f_* I^•` can be checked on sections over a basis (`TopCat.Sheaf.exact_of_isBasis`).
 This is the vanishing half of the description of `R^q f_* M` as the sheaf associated to
@@ -43,8 +44,8 @@ This is the vanishing half of the description of `R^q f_* M` as the sheaf associ
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_succ_of_isBasis`: `R^q f_* M = 0` when
-  `H^q(f⁻¹ V, M) = 0` for the members `V` of a basis of `Y`;
+* `AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_succ_of_isBasis`: `R^{q+1} f_* M = 0`
+  when `H^{q+1}(f⁻¹ V, M) = 0` for the members `V` of a basis of `Y`;
 * `AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_succ_of_isAffineHom`: positive higher
   direct images of quasi-coherent sheaves along affine morphisms with locally Noetherian source
   vanish;
@@ -83,8 +84,6 @@ theorem isZero_higherDirectImage_succ_of_isBasis (M : X.Modules) (q : ℕ) {B : 
   refine IsZero.of_iso ?_ (P.isoRightDerivedObj (Scheme.Modules.pushforward f) (q + 1))
   rw [HomologicalComplex.homologyFunctor_obj, ← HomologicalComplex.exactAt_iff_isZero_homology,
     HomologicalComplex.exactAt_iff' _ q (q + 1) (q + 2) (by simp) (by simp)]
-  have : (toSheaf Y).Faithful :=
-    inferInstanceAs (_root_.SheafOfModules.toSheaf Y.ringCatSheaf).Faithful
   refine (toSheaf Y).reflects_exact_of_faithful _ (TopCat.Sheaf.exact_of_isBasis hB ?_)
   intro V hV s hs
   -- the image `K` of the resolution `I^•` under `toSheaf X` resolves the abelian sheaf of `M`,
