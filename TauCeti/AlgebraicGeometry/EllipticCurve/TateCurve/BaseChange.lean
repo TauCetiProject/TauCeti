@@ -51,8 +51,8 @@ variable {K L : Type*}
 
 section Coefficients
 
-variable [NormedCommRing K] [NormOneClass K] [CompleteSpace K] [IsUltrametricDist K]
-  [NormedCommRing L] [NormOneClass L] [CompleteSpace L] [IsUltrametricDist L]
+variable [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K]
+  [NormedCommRing L] [CompleteSpace L] [IsUltrametricDist L]
   (f : K →+* L) [RingHomIsometric f]
 
 /-- The fourth analytic Tate coefficient commutes with an isometric ring homomorphism. -/

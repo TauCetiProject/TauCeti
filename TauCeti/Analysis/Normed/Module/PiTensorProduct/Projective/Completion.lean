@@ -75,6 +75,22 @@ theorem tprod_apply [∀ i, TopologicalSpace (E i)] (hp : ∀ i, WithSeminorms (
       (ProjectiveTensorProduct.tprod p x : CompletedProjectiveTensorProduct p) :=
   (rfl)
 
+/-- A continuous linear map from a completed projective tensor product is determined by its
+values on pure tensors. -/
+@[ext]
+theorem continuousLinearMap_ext {F : Type*} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+    [T2Space F] {g h : CompletedProjectiveTensorProduct p →L[𝕜] F}
+    (hgh : ∀ x : ∀ i, E i, g (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p) =
+      h (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p)) :
+    g = h := by
+  have hz : g.toLinearMap.comp Completion.toComplL.toLinearMap =
+      h.toLinearMap.comp Completion.toComplL.toLinearMap :=
+    ProjectiveTensorProduct.linearMap_ext p fun x => by
+      simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, Completion.coe_toComplL,
+        ProjectiveTensorProduct.tprod_apply] using hgh x
+  exact DFunLike.coe_injective <|
+    Completion.ext g.continuous h.continuous (LinearMap.congr_fun hz)
+
 variable {F : Type*} [AddCommGroup F] [UniformSpace F] [Module 𝕜 F]
   [IsUniformAddGroup F] [UniformContinuousConstSMul 𝕜 F] [T0Space F] [CompleteSpace F]
 
@@ -98,22 +114,6 @@ theorem lift_tprod {τ : Type*} (q : SeminormFamily 𝕜 F τ) (hq : WithSeminor
     (x : ∀ i, E i) :
     lift p q hq f hf (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p) = f x := by
   simp [lift]
-
-omit [UniformContinuousConstSMul 𝕜 F] [CompleteSpace F] in
-/-- A continuous linear map from a completed projective tensor product is determined by its
-values on pure tensors. -/
-@[ext]
-theorem continuousLinearMap_ext {g h : CompletedProjectiveTensorProduct p →L[𝕜] F}
-    (hgh : ∀ x : ∀ i, E i, g (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p) =
-      h (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p)) :
-    g = h := by
-  have hz : g.toLinearMap.comp Completion.toComplL.toLinearMap =
-      h.toLinearMap.comp Completion.toComplL.toLinearMap :=
-    ProjectiveTensorProduct.linearMap_ext p fun x => by
-      simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, Completion.coe_toComplL,
-        ProjectiveTensorProduct.tprod_apply] using hgh x
-  exact DFunLike.coe_injective <|
-    Completion.ext g.continuous h.continuous (LinearMap.congr_fun hz)
 
 /-- The completed lift is the unique continuous linear map with the prescribed values on pure
 tensors. -/

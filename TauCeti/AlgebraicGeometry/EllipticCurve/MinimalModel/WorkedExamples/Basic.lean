@@ -10,8 +10,8 @@ public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
 -- Proof-only: the global-minimality class detects globally minimal equations, the algebra norm of
 -- a quadratic algebra is its explicit norm form, and units of a ring of integers have norm `±1`.
 import Mathlib.NumberTheory.NumberField.Units.Basic
+import Mathlib.RingTheory.QuadraticAlgebra
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.GlobalExistence
-import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 
 /-!
 # Worked example: a principal minimal discriminant with no global minimal model

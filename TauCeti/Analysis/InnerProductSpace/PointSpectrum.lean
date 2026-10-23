@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
-public import TauCeti.Analysis.InnerProductSpace.SymmetricFunctionalCalculus
+public import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
 
 /-!
 # Restricted point spectra and point-spectral subspaces
@@ -264,6 +264,28 @@ theorem pointSpectrumIn_pointSpectralSubspace (A : Module.End 𝕜 E) (Ω : Set 
   by_contra hμΩ
   exact hx0 ((disjoint_pointSpectralSubspace (Set.disjoint_singleton_left.mpr hμΩ)).le_bot
     ⟨eigenspace_le_pointSpectralSubspace (Set.mem_singleton μ) (mem_eigenspace_iff.mpr hx), hxΩ⟩)
+
+/-- The point-spectral subspace of `-A` selected by `Ω` is the point-spectral subspace of `A`
+selected by `-Ω`. -/
+@[simp]
+theorem pointSpectralSubspace_neg :
+    (-A).pointSpectralSubspace Ω = A.pointSpectralSubspace (-Ω) := by
+  have h (μ : ℝ) : (-A).eigenspace (μ : 𝕜) = A.eigenspace ((-μ : ℝ) : 𝕜) := by
+    ext x
+    simp only [mem_eigenspace_iff, LinearMap.neg_apply, RCLike.ofReal_neg, neg_smul,
+      neg_eq_iff_eq_neg]
+  refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_) (iSup₂_le fun μ hμ ↦ ?_)
+  · rw [h]
+    exact eigenspace_le_pointSpectralSubspace (Set.neg_mem_neg.mpr hμ)
+  · simpa only [h, neg_neg] using
+      eigenspace_le_pointSpectralSubspace (A := -A) (Set.mem_neg.mp hμ)
+
+/-- For an injective endomorphism, also selecting the eigenvalue `0` does not change a
+point-spectral subspace. -/
+theorem pointSpectralSubspace_insert_zero (hA : LinearMap.ker A = ⊥) :
+    A.pointSpectralSubspace (insert 0 Ω) = A.pointSpectralSubspace Ω := by
+  rw [Set.insert_eq, pointSpectralSubspace_union]
+  simp [pointSpectralSubspace, eigenspace_zero, hA]
 
 end Module.End
 

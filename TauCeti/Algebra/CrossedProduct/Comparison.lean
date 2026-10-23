@@ -9,7 +9,6 @@ public import TauCeti.Algebra.CrossedProduct.GaloisCocycle.BrauerClass
 public import TauCeti.Algebra.CrossedProduct.Inflation
 import TauCeti.Algebra.CrossedProduct.Comap
 import TauCeti.Algebra.CrossedProduct.Injectivity
-import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Descent
 
 /-!
 # The Brauer group as continuous `H²` of the absolute Galois group
@@ -32,9 +31,9 @@ cocycles can be compared over the compositum of their splitting fields, where ne
 `L ⊆ Kˢ` the two sides are then equal together
 (`BrauerGroup.crossedProductClass_eq_iff_inflateClass_eq`): cohomologous cocycles inflate to the
 same class, and conversely a cocycle whose inflation is a continuous coboundary `d b` presents the
-trivial Brauer class. For the converse, the continuous cochain `b` descends to a finite Galois
-`M ⊇ L` with values in `Mˣ` (`ContCohomology.exists_openNormalSubgroup_descendContinuous` and the
-fixed-field theorem for units), so that the cocycle refined to `M` is a coboundary there.
+trivial Brauer class. For the converse, such a cocycle becomes a coboundary after refinement to a
+finite Galois `M ⊇ L` (`TwoCocycle.inflateZ2_mem_B2_iff`), and refinement does not change the
+Brauer class.
 Multiplicativity of crossed-product classes (`crossedProductClass_mul`) and additivity of inflation
 (`TwoCocycle.inflateClass_mul`) make the comparison a homomorphism, and the two exhaustion theorems
 `BrauerGroup.exists_galoisCocycle_brauerClass_eq` and `exists_galoisCocycle_inflateClass` make it
@@ -74,64 +73,15 @@ open ContCohomology IntermediateField
 
 variable {K : Type} [Field K]
 
-/-! ### Refining a cocycle to a larger subextension -/
-
-namespace TwoCocycle
-
-variable {L M : IntermediateField K (SeparableClosure K)} [Normal K L] [Normal K M]
-
-/-- The refinement of a cocycle of `Gal(L/K)` to `Gal(M/K)` for `L ≤ M` inside `Kˢ`: the
-inflation along restriction `Gal(M/K) → Gal(L/K)` and the inclusion `L ⊆ M`. -/
-private def refine (hLM : L ≤ M) (c : TwoCocycle K L) : TwoCocycle K M :=
-  c.comap (inclusion hLM).restrictNormalHom (inclusion hLM)
-    (inclusion hLM).restrictNormalHom_commutes
-
-/-- On restrictions of automorphisms of `Kˢ`, the refinement of `c` takes the values of `c`. -/
-private theorem val_refine_toFun (hLM : L ≤ M) (c : TwoCocycle K L)
-    (g k : Gal(SeparableClosure K/K)) :
-    M.val ((c.refine hLM).toFun (AlgEquiv.restrictNormalHom M g)
-        (AlgEquiv.restrictNormalHom M k)) =
-      L.val (c.toFun (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k)) := by
-  rw [refine, comap_toFun,
-    restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes (fun _ ↦ rfl),
-    restrictNormalHom_of_compatible _ _ (inclusion hLM).restrictNormalHom_commutes (fun _ ↦ rfl)]
-  rfl
-
-/-- If, on restrictions of automorphisms of `Kˢ`, the values of `c` are the coboundary of a
-cochain `B : Gal(M/K) → Mˣ`, then the refinement of `c` to `M` is a coboundary. -/
-private theorem one_cohomologous_refine (hLM : L ≤ M) (c : TwoCocycle K L) (B : Gal(M/K) → Mˣ)
-    (hB : ∀ g k : Gal(SeparableClosure K/K),
-      L.val (c.toFun (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k)) =
-        g (M.val (B (AlgEquiv.restrictNormalHom M k))) *
-          (M.val (B (AlgEquiv.restrictNormalHom M g * AlgEquiv.restrictNormalHom M k)))⁻¹ *
-            M.val (B (AlgEquiv.restrictNormalHom M g))) :
-    (1 : TwoCocycle K M).Cohomologous (c.refine hLM) := by
-  have hsurj := AlgEquiv.restrictNormalHom_surjective (F := K) (K₁ := M) (SeparableClosure K)
-  refine cohomologous_iff.2 ⟨B, fun σ τ ↦ ?_⟩
-  obtain ⟨g, rfl⟩ := hsurj σ
-  obtain ⟨k, rfl⟩ := hsurj τ
-  apply M.val.injective
-  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-  have hr (x : M) : M.val (AlgEquiv.restrictNormalHom M g x) = g (M.val x) :=
-    AlgEquiv.restrictNormal_commutes g M x
-  rw [val_refine_toFun, hB, toFun_one, Units.val_one, one_mul, map_mul, map_mul, hr,
-    Units.val_inv_eq_inv_val, map_inv₀]
-
-/-- Refining a cocycle to a larger finite normal subextension does not change its inflated
-continuous class. -/
-private theorem inflateClass_refine [FiniteDimensional K L] [FiniteDimensional K M] (hLM : L ≤ M)
-    (c : TwoCocycle K L) : (c.refine hLM).inflateClass M = c.inflateClass L :=
-  c.inflateClass_comap _ _ _ fun _ ↦ rfl
-
-end TwoCocycle
-
 namespace BrauerGroup
 
 /-- Refining a cocycle to a larger finite Galois subextension does not change its Brauer class. -/
-private theorem crossedProductClass_refine {L M : IntermediateField K (SeparableClosure K)}
+@[simp]
+theorem crossedProductClass_refine {L M : IntermediateField K (SeparableClosure K)}
     [FiniteDimensional K L] [IsGalois K L] [FiniteDimensional K M] [IsGalois K M] (hLM : L ≤ M)
-    (c : TwoCocycle K L) : crossedProductClass (c.refine hLM) = crossedProductClass c :=
-  crossedProductClass_comap _ _ _ c
+    (c : TwoCocycle K L) : crossedProductClass (c.refine hLM) = crossedProductClass c := by
+  rw [TwoCocycle.refine_def]
+  exact crossedProductClass_comap _ _ _ c
 
 variable {L : IntermediateField K (SeparableClosure K)} [FiniteDimensional K L] [IsGalois K L]
 
@@ -140,42 +90,10 @@ private theorem crossedProductClass_eq_one_of_inflateClass_eq_zero {c : TwoCocyc
     (h : c.inflateClass L = 0) : crossedProductClass c = 1 := by
   rw [TwoCocycle.inflateClass_def, map_eq_zero_iff _ (AddEquiv.injective _),
     QuotientAddGroup.mk'_apply, H2pi_eq_zero_iff] at h
-  obtain ⟨b, hb, hd⟩ := mem_B2_iff.1 h
-  -- the continuous primitive `b` descends to a finite Galois level `M ⊇ L`
-  obtain ⟨V, hVU, bV, -, hbV⟩ :=
-    exists_openNormalSubgroup_descendContinuous (galoisOpenNormalSubgroup K L L.val) b hb
-  obtain ⟨M, _, _, rfl⟩ := exists_galoisOpenNormalSubgroup_eq V
-  have hLM : L ≤ M := by
-    have h : (galoisOpenNormalSubgroup K M M.val).toSubgroup ≤
-        (galoisOpenNormalSubgroup K L L.val).toSubgroup := hVU
-    rw [galoisOpenNormalSubgroup_toSubgroup, galoisOpenNormalSubgroup_toSubgroup,
-      fieldRange_val, fieldRange_val] at h
-    rw [← InfiniteGalois.fixedField_fixingSubgroup M, le_fixedField_iff_le_fixingSubgroup]
-    exact h
-  -- `b` only depends on the restriction to `M`, and takes values in `Mˣ`
-  have hconst : ∀ g g' : Gal(SeparableClosure K/K),
-      AlgEquiv.restrictNormalHom M g = AlgEquiv.restrictNormalHom M g' → b g = b g' := by
-    intro g g' hgg'
-    have hker : g⁻¹ * g' ∈ M.val.restrictNormalHom.ker := by
-      rw [MonoidHom.mem_ker, map_mul, map_inv, restrictNormalHom_val, hgg', inv_mul_cancel]
-    rw [AlgHom.ker_restrictNormalHom] at hker
-    rw [← hbV, ← hbV]
-    exact congrArg (fun q ↦ (bV q : UnitsCoeff K)) (QuotientGroup.eq.2 hker)
-  choose b' hb' using fun g ↦ mem_H0_fixingSubgroup_unitsCoeff_iff.1 (hbV g ▸ (bV g).2)
-  have hsurj := AlgEquiv.restrictNormalHom_surjective (F := K) (K₁ := M) (SeparableClosure K)
-  let B : Gal(M/K) → Mˣ := fun σ ↦ b' (Function.surjInv hsurj σ)
-  have hB (g : Gal(SeparableClosure K/K)) :
-      M.val (B (AlgEquiv.restrictNormalHom M g) : M) = ((b g).toMul : SeparableClosure K) :=
-    congrArg Units.val ((hb' _).trans (congrArg _ (hconst _ _ (Function.surjInv_eq hsurj _))))
-  -- so `B` exhibits the refinement of `c` to `M` as a coboundary
-  have hcoh : (1 : TwoCocycle K M).Cohomologous (c.refine hLM) := by
-    refine c.one_cohomologous_refine hLM B fun g k ↦ ?_
-    rw [← map_mul, hB, hB, hB]
-    simpa [AlgEquiv.smul_units_def, div_eq_mul_inv] using (congrArg
-      (fun x : UnitsCoeff K ↦ ((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K))
-        (congrFun hd (g, k))).symm
-  rw [← crossedProductClass_refine hLM, ← crossedProductClass_eq_of_cohomologous hcoh,
-    crossedProductClass_one]
+  -- the cocycle becomes a coboundary over a finite Galois `M ⊇ L`
+  obtain ⟨M, _, _, hLM, hcoh⟩ := (TwoCocycle.inflateZ2_mem_B2_iff L).1 h
+  exact (crossedProductClass_refine hLM c).symm.trans
+    ((crossedProductClass_eq_of_cohomologous hcoh).symm.trans crossedProductClass_one)
 
 /-- **Over a fixed finite Galois `L ⊆ Kˢ`, the Brauer class and the inflated continuous class
 determine each other**: two cocycles of `Gal(L/K)` have the same crossed-product class exactly when
