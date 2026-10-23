@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.RepresentationTheory.ToMultiplicative
 

@@ -25,8 +25,9 @@ A regular one-cocycle `b : V ⊗[R] R[G]` (`TauCeti.Comodule.IsRegularCocycle₁
 (`TauCeti.Comodule.eq_regularCoboundary_tensorComponent_monoidCoeff_one`), that splitting is the
 conjugate of the standard splitting `g ↦ (0, g)` by the element `1 ⊗ v` of the normal factor.
 The conjugating vector is a single vector of `V`, independent of `A`. Conversely, when `R` is a
-ring and `G` is commutative, a regular cochain whose sections are multiplicative on all points is
-a regular cocycle, as one sees from the universal pair of points of `R[G] ⊗[R] R[G]`.
+ring and `G` is commutative, a regular cochain satisfying the cocycle identity on all points is
+a regular cocycle; when moreover `G` is a group, this says that the sections are multiplicative
+on all points. Both follow from the universal pair of points of `R[G] ⊗[R] R[G]`.
 
 This is the vector-group step in the conjugacy of maximal tori in a connected solvable group:
 two tori complementary to a normal vector subgroup on which they act linearly are images of two
@@ -156,9 +157,9 @@ end IsRegularCocycle₁
 
 end Group
 
-section CommGroup
+section CommMonoid
 
-variable {R : Type u} [CommRing R] {G : Type v} [CommGroup G]
+variable {R : Type u} [CommRing R] {G : Type v} [CommMonoid G]
   {V : Type w} [AddCommGroup V] [Module R V] [Comodule R (MonoidAlgebra R G) V]
 
 /-- **The cocycle identity on points characterizes regular cocycles.** A regular cochain
@@ -180,6 +181,13 @@ theorem isRegularCocycle₁_iff_forall_pointCochain_mul (b : V ⊗[R] MonoidAlge
     ← map_add] at h
   rw [isRegularCocycle₁_iff, add_comm, ← MonoidAlgebra.one_def]
   exact (TensorProduct.comm R V _).injective h
+
+end CommMonoid
+
+section CommGroup
+
+variable {R : Type u} [CommRing R] {G : Type v} [CommGroup G]
+  {V : Type w} [AddCommGroup V] [Module R V] [Comodule R (MonoidAlgebra R G) V]
 
 /-- A regular cochain is a regular cocycle exactly when its sections of the points semidirect
 products `(A ⊗[R] V) ⋊ D(A)` are multiplicative for every commutative `R`-algebra `A`. -/
