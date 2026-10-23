@@ -5,10 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Units.Basic
+public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
+import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
+import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 
 /-!
-# Torsion units of a number field with a real place
+# Torsion units of a number field
+
+The torsion subgroup of the units of a number field `K` is cyclic, so `K` contains a primitive
+root of unity of order `torsionOrder K`. That root generates a cyclotomic subfield of degree
+`φ(torsionOrder K)`, which bounds the totient of the torsion order by the degree of `K`. When the
+unit rank is zero, Dirichlet's unit theorem leaves only the torsion: every unit is a root of
+unity. These are the inputs to the count of roots of unity in a quadratic field.
 
 A number field with a real infinite place has no roots of unity other than `±1`: a primitive root
 of unity of order greater than `2` has no real embedding
@@ -19,6 +27,11 @@ degree, to every field with a real place, in particular to the real quadratic fi
 
 ## Main results
 
+* `TauCeti.NumberField.Units.exists_isPrimitiveRoot_torsionOrder`: `K` contains a primitive
+  root of unity of order `torsionOrder K`.
+* `TauCeti.NumberField.Units.totient_torsionOrder_le_finrank`: `φ(torsionOrder K) ≤ [K : ℚ]`.
+* `TauCeti.NumberField.Units.torsion_eq_top_of_rank_eq_zero`: with unit rank zero, every unit
+  is torsion.
 * `TauCeti.NumberField.Units.torsion_eq_one_or_neg_one_of_isReal`: with a real place, every
   torsion unit is `1` or `-1`.
 * `TauCeti.NumberField.Units.torsionOrder_eq_two_of_isReal`: with a real place, the torsion
@@ -33,6 +46,30 @@ open scoped NumberField
 namespace TauCeti.NumberField.Units
 
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- A number field contains a primitive root of unity whose order is the torsion order: a
+generator of the cyclic torsion subgroup of the units. -/
+theorem exists_isPrimitiveRoot_torsionOrder : ∃ ζ : K, IsPrimitiveRoot ζ (torsionOrder K) := by
+  obtain ⟨μ, hμ⟩ : ∃ μ : torsion K, orderOf μ = torsionOrder K :=
+    IsCyclic.exists_ofOrder_eq_natCard
+  rw [← IsPrimitiveRoot.iff_orderOf, ← IsPrimitiveRoot.coe_submonoidClass_iff,
+    ← IsPrimitiveRoot.coe_units_iff] at hμ
+  exact ⟨_, hμ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)⟩
+
+/-- The totient of the torsion order is at most the degree: a primitive root of unity of order
+`torsionOrder K` generates a subfield of degree `φ(torsionOrder K)`. -/
+theorem totient_torsionOrder_le_finrank : (torsionOrder K).totient ≤ Module.finrank ℚ K := by
+  obtain ⟨ζ, hζ⟩ := exists_isPrimitiveRoot_torsionOrder (K := K)
+  simpa using hζ.lcm_totient_le_finrank hζ
+    (Polynomial.cyclotomic.irreducible_rat (by simp [torsionOrder_pos]))
+
+/-- **With unit rank zero, every unit is a root of unity.** Dirichlet's unit theorem writes a
+unit as a torsion unit times a product over an empty fundamental system. -/
+theorem torsion_eq_top_of_rank_eq_zero (h : rank K = 0) : torsion K = ⊤ := by
+  have : IsEmpty (Fin (rank K)) := by
+    rw [h]
+    infer_instance
+  simpa [Set.range_eq_empty] using closure_fundSystem_sup_torsion_eq_top K
 
 /-- In a number field with a real infinite place, every torsion unit is `1` or `-1`. -/
 theorem torsion_eq_one_or_neg_one_of_isReal {w : InfinitePlace K} (hw : w.IsReal)
