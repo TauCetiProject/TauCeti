@@ -26,6 +26,10 @@ This file works with an arbitrary module `M` and supplies:
   the morphisms and isomorphisms of central extensions `(x, m) ↦ (φ x, e m)` induced by a map `φ`
   of the quotients and a linear map `e` of the kernels carrying one cocycle to the other.
 
+The construction of `map` and `mapEquiv` follows Mathlib's `LieAlgebra.LieEquiv.ofCoboundary`,
+which identifies the extensions of cohomologous cocycles by acting on the coordinates of `ofProd`.
+Here the coordinates are instead transformed by a map of quotients and a map of kernels.
+
 These let structure theorems about abelian ideals, such as the existence of Levi complements, be
 applied to the sheared Lie algebra, for instance to show that a 2-cocycle is a coboundary. The
 morphisms of central extensions compare the extensions attached to proportional cocycles, and an
@@ -144,18 +148,13 @@ lemma map_comp {L'' M'' : Type*} [LieRing L''] [LieAlgebra R L''] [AddCommGroup 
 
 /-- A morphism of central extensions is injective when the maps of quotients and kernels are. -/
 lemma map_injective (hφ : Function.Injective φ) (he : Function.Injective e) :
-    Function.Injective (map c φ e c' h) := fun v w hvw ↦ by
-  apply (ofProd c).symm.injective
-  have := congrArg (ofProd c').symm hvw
-  simp only [ofProd_symm_map, Prod.mk.injEq] at this
-  exact Prod.ext (hφ this.1) (he this.2)
+    Function.Injective (map c φ e c' h) :=
+  (ofProd c').injective.comp ((hφ.prodMap he).comp (ofProd c).symm.injective)
 
 /-- A morphism of central extensions is surjective when the maps of quotients and kernels are. -/
 lemma map_surjective (hφ : Function.Surjective φ) (he : Function.Surjective e) :
-    Function.Surjective (map c φ e c' h) := fun w ↦ by
-  obtain ⟨x, hx⟩ := hφ ((ofProd c').symm w).1
-  obtain ⟨m, hm⟩ := he ((ofProd c').symm w).2
-  exact ⟨ofProd c (x, m), by simp [hx, hm]⟩
+    Function.Surjective (map c φ e c' h) :=
+  (ofProd c').surjective.comp ((hφ.prodMap he).comp (ofProd c).symm.surjective)
 
 end Map
 
