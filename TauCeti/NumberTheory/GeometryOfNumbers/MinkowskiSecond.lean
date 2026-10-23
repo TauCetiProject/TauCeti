@@ -46,6 +46,8 @@ every such `g` satisfies `g j ≤ λ_j`.
 * `ZLattice.prod_successiveMin_mul_measure_le_two_pow_mul_covolume`: the classical form
   `λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ` for a symmetric convex body `K` with `0` in its interior,
   and its real-valued form `ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`.
+* `ZLattice.prod_successiveMin_le_covolume_of_two_pow_le_measure`: `λ₀ ⋯ λₙ₋₁ ≤ covolume L μ`
+  when `2ⁿ ≤ μ K`, as for the central slice of the cube `[-1, 1]^ι` by Vaaler's theorem.
 
 ## Proof
 
@@ -568,5 +570,21 @@ theorem prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume (L : Submodul
   rwa [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal
     (Finset.prod_nonneg fun i _ ↦ successiveMin_nonneg L K i), ENNReal.toReal_ofReal
     (ZLattice.covolume_pos L μ).le, ENNReal.toReal_pow, ENNReal.toReal_ofNat] at h
+
+/-- **Minkowski's second theorem** for a convex body of volume at least `2ⁿ`: then the product of
+the successive minima is at most the covolume, `λ₀ ⋯ λₙ₋₁ ≤ covolume L μ`. By Vaaler's
+cube-slicing theorem this applies to the central slice of the cube `[-1, 1]^ι` by a subspace of
+`ℝ^ι`. -/
+theorem prod_successiveMin_le_covolume_of_two_pow_le_measure (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
+    {K : ConvexBody E} (hK : 0 ∈ interior (K : Set E)) (hKs : ∀ x ∈ K, -x ∈ K)
+    (hvol : 2 ^ finrank ℝ E ≤ μ K) :
+    ∏ i, successiveMin L K i ≤ ZLattice.covolume L μ := by
+  have h : ENNReal.ofReal (∏ i, successiveMin L K i) * 2 ^ finrank ℝ E ≤
+      ENNReal.ofReal (ZLattice.covolume L μ) * 2 ^ finrank ℝ E :=
+    (mul_le_mul_right hvol _).trans
+      ((prod_successiveMin_mul_measure_le_two_pow_mul_covolume L μ hK hKs).trans_eq (mul_comm _ _))
+  exact (ENNReal.ofReal_le_ofReal_iff (ZLattice.covolume_pos L μ).le).1
+    ((ENNReal.mul_le_mul_iff_left (pow_ne_zero _ two_ne_zero) (by simp)).1 h)
 
 end ZLattice

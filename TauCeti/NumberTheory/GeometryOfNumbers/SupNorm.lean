@@ -58,7 +58,10 @@ namespace ZLattice
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The central slice `W ∩ [-1, 1]^ι` of the cube, as a convex body in `W`. -/
+/-- The central slice `W ∩ [-1, 1]^ι` of the cube, as a convex body in `W`. The convexity and
+compactness proofs are adapted from those of the dilated slice in
+`ZLattice.exists_ne_zero_mem_abs_le_covolume_rpow` of TauCeti PR 19468,
+https://github.com/TauCetiProject/TauCeti/pull/19468. -/
 private def cubeSliceBody (W : Submodule ℝ (EuclideanSpace ℝ ι)) : ConvexBody W where
   carrier := {x | ∀ i, |(x : EuclideanSpace ℝ ι) i| ≤ 1}
   convex' := by
@@ -148,15 +151,9 @@ theorem exists_linearIndependent_prod_norm_ofLp_le_covolume (L : Submodule ℤ W
     rw [← hcy, ← Int.cast_smul_eq_zsmul ℝ]
     exact Submodule.smul_mem _ _ hspan
   · -- Minkowski's second theorem against Vaaler's bound `2 ^ k ≤ vol K`.
-    have hM := prod_successiveMin_mul_measure_le_two_pow_mul_covolume L volume hK hKs
-    have hV : (2 : ENNReal) ^ finrank ℝ W ≤ volume (K : Set W) :=
-      W.two_pow_finrank_le_volume_setOf_forall_abs_le_one
-    have hprod : ∏ i, successiveMin L K i ≤ covolume L := by
-      have h2 : ENNReal.ofReal (∏ i, successiveMin L K i) * 2 ^ finrank ℝ W ≤
-          ENNReal.ofReal (covolume L) * 2 ^ finrank ℝ W :=
-        (mul_le_mul_right hV _).trans (hM.trans_eq (mul_comm _ _))
-      exact (ENNReal.ofReal_le_ofReal_iff (covolume_pos L).le).1
-        ((ENNReal.mul_le_mul_iff_left (pow_ne_zero _ two_ne_zero) (by simp)).1 h2)
+    have hprod : ∏ i, successiveMin L K i ≤ covolume L :=
+      prod_successiveMin_le_covolume_of_two_pow_le_measure L volume hK hKs
+        W.two_pow_finrank_le_volume_setOf_forall_abs_le_one
     refine (Finset.prod_le_prod₀ (fun i _ ↦ norm_nonneg _) fun i _ ↦ ?_).trans hprod
     exact (pi_norm_le_iff_of_nonneg (hmin i).le).2 fun j ↦ by
       simpa [Real.norm_eq_abs] using habs i j
