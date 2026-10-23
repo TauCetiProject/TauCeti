@@ -174,3 +174,12 @@ end
 end Topology
 
 end TauCeti
+
+namespace TopCat.Presheaf.IsFlasque
+
+/-- A zero presheaf is flasque: each of its restriction maps lands in a zero object. -/
+theorem of_isZero {C : Type*} [Category* C] [HasZeroObject C] {X : TopCat.{u}}
+    {F : Presheaf C X} (h : IsZero F) : IsFlasque F :=
+  ⟨fun _ ↦ (h.obj _).epi _⟩
+
+end TopCat.Presheaf.IsFlasque

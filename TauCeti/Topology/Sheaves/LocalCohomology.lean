@@ -270,6 +270,16 @@ theorem isZero_supportedHSheaf_succ_of_isFlasque [TopCat.Presheaf.IsFlasque F.ob
   (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff _).2 fun _ W _ hxW ↦
     ⟨W, le_rfl, hxW, Subsingleton.elim (α := F.supportedH S W (n + 1)) _ _⟩
 
+/-- If the local cohomology sheaf `𝓗_Sⁿ(F)` vanishes, then every class in `H_Sⁿ(W, F)` vanishes
+locally: each point `x ∈ W` has an open neighbourhood `V ≤ W` on which the class restricts to
+zero. -/
+theorem exists_supportedHRestrict_eq_zero_of_isZero_supportedHSheaf {n : ℕ}
+    (h : IsZero (F.supportedHSheaf S n)) {W : Opens X} (c : F.supportedH S W n) {x : X}
+    (hx : x ∈ W) : ∃ (V : Opens X) (hVW : V ≤ W), x ∈ V ∧ F.supportedHRestrict S hVW n c = 0 := by
+  obtain ⟨V, hVW, hxV, hV⟩ := (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff _).1 h x W c hx
+  simp only [supportedHPresheaf_map] at hV
+  exact ⟨V, hVW, hxV, hV⟩
+
 section functor
 
 variable {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
@@ -371,13 +381,9 @@ theorem epi_supportedSectionsFunctor_map_g (hT : T.ShortExact)
   intro W s x hx
   -- the class `y` of `s` in `H_S⁰(W, F₃)` has image in `H_S¹(W, F₁)` vanishing near `x`
   obtain ⟨y, rfl⟩ := (T.X₃.supportedHZeroEquiv S W).surjective s
-  obtain ⟨V, hVW, hxV, hV⟩ := (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff _).1 h x W
-    (y.comp hT.extClass (zero_add 1)) hx
-  -- the restriction maps of `supportedHPresheaf` are the maps `supportedHRestrict`
-  replace hV : (T.X₃.supportedHRestrict S hVW 0 y).comp hT.extClass (zero_add 1) = 0 := by
-    simp only [supportedHPresheaf_map] at hV
-    rw [← supportedHRestrict_comp]
-    exact hV
+  obtain ⟨V, hVW, hxV, hV⟩ :=
+    T.X₁.exists_supportedHRestrict_eq_zero_of_isZero_supportedHSheaf S h (y.comp hT.extClass rfl) hx
+  rw [supportedHRestrict_comp] at hV
   -- so near `x` the class `y` comes from a section of `F₂` supported in `S`
   obtain ⟨z, hz⟩ := Ext.covariant_sequence_exact₃ _ hT _ (zero_add 1) hV
   -- sections of `Γ_S(F₂)` are by definition the subtype of supported sections of `F₂`, so
@@ -402,9 +408,8 @@ theorem isZero_supportedHSheaf_X₃_of_shortExact (hT : T.ShortExact)
     [TopCat.Presheaf.IsFlasque T.X₂.obj] {n : ℕ} (h : IsZero (T.X₁.supportedHSheaf S (n + 2))) :
     IsZero (T.X₃.supportedHSheaf S (n + 1)) := by
   refine (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff _).2 fun x W c hx ↦ ?_
-  obtain ⟨V, hVW, hxV, hV⟩ := (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff _).1 h x W
-    (c.comp hT.extClass rfl) hx
-  simp only [supportedHPresheaf_map] at hV
+  obtain ⟨V, hVW, hxV, hV⟩ :=
+    T.X₁.exists_supportedHRestrict_eq_zero_of_isZero_supportedHSheaf S h (c.comp hT.extClass rfl) hx
   -- the connecting map commutes with restriction to `V`, where it is injective
   exact ⟨V, hVW, hxV, (relativeH'.extClass_postcomp_bijective_of_isFlasque hT
     (S.complInclusion V) n).1
@@ -463,15 +468,13 @@ open `W`. -/
 theorem subsingleton_supportedH_of_isZero_supportedHSheaf {n : ℕ}
     (h : ∀ q < n, IsZero (F.supportedHSheaf S q)) {q : ℕ} (hq : q < n) (W : Opens X) :
     Subsingleton (F.supportedH S W q) := by
-  have hΓ : IsZero (F.supportedSectionsSheaf S) :=
-    (h 0 (by omega)).of_iso (F.supportedHSheafZeroIso S).symm
-  have hsec (V : Opens X) : Subsingleton (F.supportedSections S V) :=
-    AddCommGrpCat.subsingleton_of_isZero
-      ((sheafToPresheaf _ _ ⋙ (evaluation _ _).obj (op V)).map_isZero hΓ)
+  have hΓ : IsZero (F.supportedSectionsSheaf S).obj := (sheafToPresheaf _ _).map_isZero
+    ((h 0 (by omega)).of_iso (F.supportedHSheafZeroIso S).symm)
   rcases q with _ | q
-  · exact (F.supportedHZeroEquiv S W).injective.subsingleton
-  · have : TopCat.Presheaf.IsFlasque (F.supportedSectionsSheaf S).obj :=
-      ⟨fun _ ↦ (AddCommGrpCat.epi_iff_surjective _).2 fun _ ↦ ⟨0, (hsec _).elim _ _⟩⟩
+  · have : Subsingleton (F.supportedSections S W) :=
+      AddCommGrpCat.subsingleton_of_isZero (hΓ.obj (op W))
+    exact (F.supportedHZeroEquiv S W).injective.subsingleton
+  · have := TopCat.Presheaf.IsFlasque.of_isZero hΓ
     exact subsingleton_supportedH_succ_of_isZero_supportedHSheaf_succ F S
       (fun q hq ↦ h (q + 1) (by omega)) (by omega : q < n - 1) W
 
