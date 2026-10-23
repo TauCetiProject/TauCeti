@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Degree
 public import TauCeti.Analysis.Complex.RiemannSurface.Meromorphic
-public import TauCeti.Geometry.Manifold.Instances.OnePoint
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity

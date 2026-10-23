@@ -104,7 +104,7 @@ end TauCeti.GridInitialPentagonRectangleDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 private theorem mem_terminalOverlapPartners_of_recut_geometry
     (E : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z)
