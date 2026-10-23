@@ -420,6 +420,21 @@ theorem functorInnerIso_hom_app_τ₃ (h : δ' = δ + innerDerivation R b) :
     ((functorInnerIso h).hom.app M).τ₃ = 𝟙 M :=
   (rfl)
 
+@[simp]
+theorem functorInnerIso_inv_app_τ₂ (h : δ' = δ + innerDerivation R b) :
+    ((functorInnerIso h).inv.app M).τ₂ = ModuleCat.ofHom (innerEquiv M h).symm.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem functorInnerIso_inv_app_τ₁ (h : δ' = δ + innerDerivation R b) :
+    ((functorInnerIso h).inv.app M).τ₁ = 𝟙 M :=
+  (rfl)
+
+@[simp]
+theorem functorInnerIso_inv_app_τ₃ (h : δ' = δ + innerDerivation R b) :
+    ((functorInnerIso h).inv.app M).τ₃ = 𝟙 M :=
+  (rfl)
+
 end ShortComplex
 
 end DerivationExtension
