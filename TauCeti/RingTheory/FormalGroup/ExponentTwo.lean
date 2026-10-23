@@ -47,7 +47,9 @@ The lowest-degree part of a substitution is computed by
 
 ## Main results
 
-* `FormalGroup.subst_toPowerSeries_exponentTwoLog`: `g(F(X, Y)) = g(X) + g(Y)`.
+* `FormalGroup.subst_toPowerSeries_exponentTwoLog`: `g(F(X, Y)) = g(X) + g(Y)`, and
+  `FormalGroup.subst_subst_toPowerSeries_exponentTwoLog`: `g(F(x, y)) = g(x) + g(y)` for
+  substitutable `x, y`.
 * `FormalGroup.logarithm_unique_of_nsmulSeries_two_eq_zero`: for a formal group law `F` with
   `[2]_F = 0`, not necessarily commutative, two power series `g = X + ⋯` without terms of degree
   `2ᵏ`, `k ≥ 1`, such that `g(F(X, Y)) = g(X) + g(Y)` agree.
@@ -95,11 +97,8 @@ private theorem le_order_addError {g : PowerSeries R} {n : ℕ} (hg : n ≤ g.or
   have h {x : MvPowerSeries (Fin 2) R} (hx : constantCoeff x = 0) :
       (n : ℕ∞) ≤ (PowerSeries.subst x g).order :=
     hg.trans (PowerSeries.le_order_subst_left hx)
-  have hsub {a b : MvPowerSeries (Fin 2) R} (ha : (n : ℕ∞) ≤ a.order) (hb : (n : ℕ∞) ≤ b.order) :
-      (n : ℕ∞) ≤ (a - b).order := by
-    rw [sub_eq_add_neg]
-    exact (le_min ha (by rwa [order_neg])).trans min_order_le_add
-  exact hsub (hsub (h F.zero_constantCoeff) (h (constantCoeff_X 0))) (h (constantCoeff_X 1))
+  exact le_order_sub (le_order_sub (h F.zero_constantCoeff) (h (constantCoeff_X 0)))
+    (h (constantCoeff_X 1))
 
 /-- The lowest-degree part of the additivity defect of `c Xⁿ` is `c ((X + Y)ⁿ - Xⁿ - Yⁿ)`. -/
 private theorem homogeneousComponent_addError_smul_X_pow (c : R) (n : ℕ) :
@@ -303,9 +302,8 @@ private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] (hF : F.nsmul
     have hXn : (n : ℕ∞) ≤ (c • PowerSeries.X ^ n : PowerSeries R).order :=
       PowerSeries.nat_le_order _ _ fun i hi ↦ by simp [PowerSeries.coeff_X_pow, hi.ne]
     have hn' : (n : ℕ∞) ≤ (addError F (g - c • PowerSeries.X ^ n)).order := by
-      rw [addError_sub, sub_eq_add_neg]
-      exact (le_min hn (by rw [order_neg]; exact le_order_addError F hXn)).trans
-        min_order_le_add
+      rw [addError_sub]
+      exact le_order_sub hn (le_order_addError F hXn)
     refine succ_le_order_of_homogeneousComponent_eq_zero hn' ?_
     rw [addError_sub, map_sub, homogeneousComponent_addError_smul_X_pow, ← coe_leadingError,
       leadingError, hc, sub_self]
@@ -385,12 +383,9 @@ private theorem exists_logarithm [F.IsComm] (hF : F.nsmulSeries 2 = 0) :
       PowerSeries.nat_le_order _ _ fun i hi ↦ by rw [map_sub, coeff_approxLimit c hi, sub_self]
     have hdiff := le_order_addError F hlim
     rw [addError_sub] at hdiff
-    calc (m : ℕ∞) ≤ ((m + 2 : ℕ) : ℕ∞) := by exact_mod_cast (by omega : m ≤ m + 2)
-      _ ≤ min (addError F (approx c m)).order
-          (addError F (approxLimit c) - addError F (approx c m)).order := le_min (key m).2.1 hdiff
-      _ ≤ (addError F (approx c m) +
-          (addError F (approxLimit c) - addError F (approx c m))).order := min_order_le_add
-      _ = (addError F (approxLimit c)).order := by rw [add_sub_cancel]
+    have h := le_order_add (key m).2.1 hdiff
+    rw [add_sub_cancel] at h
+    exact (Nat.cast_le.mpr (by omega : m ≤ m + 2)).trans h
 
 end Construction
 
@@ -481,6 +476,19 @@ theorem subst_toPowerSeries_exponentTwoLog :
       PowerSeries.subst (X 0) (F.exponentTwoLog hF) +
         PowerSeries.subst (X 1) (F.exponentTwoLog hF) :=
   (addError_eq_zero_iff F).mp (Classical.choose_spec (exists_logarithm F hF)).2.2.2
+
+/-- **The normalised logarithm is additive along `F`** at any pair of power series `f₀, f₁` that
+can be substituted: `g(F(f₀, f₁)) = g(f₀) + g(f₁)`. -/
+theorem subst_subst_toPowerSeries_exponentTwoLog {σ : Type*} {f₀ f₁ : MvPowerSeries σ R}
+    (h₀ : PowerSeries.HasSubst f₀) (h₁ : PowerSeries.HasSubst f₁) :
+    PowerSeries.subst (subst ![f₀, f₁] F.toPowerSeries) (F.exponentTwoLog hF) =
+      PowerSeries.subst f₀ (F.exponentTwoLog hF) + PowerSeries.subst f₁ (F.exponentTwoLog hF) := by
+  have hf : HasSubst ![f₀, f₁] := hasSubst_finTwo h₀ h₁
+  have := congrArg (subst ![f₀, f₁]) (F.subst_toPowerSeries_exponentTwoLog hF)
+  rwa [subst_add hf, subst_powerSeriesSubst hf (PowerSeries.HasSubst.X _),
+    subst_powerSeriesSubst hf (PowerSeries.HasSubst.X _),
+    subst_powerSeriesSubst hf (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
+    subst_X hf, subst_X hf] at this
 
 /-- A power series `g = X + ⋯` without terms of degree `2ᵏ`, `k ≥ 1`, that is additive along `F`
 is the normalised logarithm. -/

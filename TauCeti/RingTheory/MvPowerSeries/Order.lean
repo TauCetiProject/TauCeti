@@ -22,6 +22,9 @@ of `f` and on the linear parts of the `a i`, into which it is substituted
 expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + ⋯`, is read off as
 the polynomial `f_p(X + Y, Z)`.
 
+A common lower bound on the orders of two series bounds the orders of their sum and difference
+(`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`).
+
 For two-variable series with linear coefficients one, the degree-one component is `X + Y`.
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
 `X + Y` in order at least two, and over a commutative ring the linear part of `f(x, y)` is the
@@ -31,6 +34,23 @@ sum of the linear parts of `x` and `y` (`MvPowerSeries.homogeneousComponent_one_
 public section
 
 namespace MvPowerSeries
+
+section AddSub
+
+variable {σ R : Type*} {n : ℕ∞}
+
+/-- A lower bound on the orders of two series bounds the order of their sum. -/
+theorem le_order_add [Semiring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
+    (hg : n ≤ g.order) : n ≤ (f + g).order :=
+  (le_min hf hg).trans min_order_le_add
+
+/-- A lower bound on the orders of two series bounds the order of their difference. -/
+theorem le_order_sub [Ring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
+    (hg : n ≤ g.order) : n ≤ (f - g).order := by
+  rw [sub_eq_add_neg]
+  exact le_order_add hf (by rwa [order_neg])
+
+end AddSub
 
 section Powers
 
