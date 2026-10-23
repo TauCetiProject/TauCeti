@@ -22,7 +22,7 @@ hyperbolic ideal. For an ordered real closed field, the resulting ring equivalen
 as its inverse.
 In particular, two regular forms over such a field have the same Witt class exactly when their
 integer signatures agree. Taking `K = ℝ` gives the real Witt ring; the real closed instance is
-available in `TauCeti.FieldTheory.IsRealClosed.Real`.
+available in `Mathlib.FieldTheory.IsRealClosed.Real`.
 
 ## Main definitions and results
 
