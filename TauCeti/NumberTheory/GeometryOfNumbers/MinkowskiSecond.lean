@@ -31,7 +31,7 @@ against which the products of the gauges of short lattice bases (such as fundame
 units, or bases of the integer kernel of a matrix) are measured.
 
 The statement here does not use a successive-minima function. It takes `ℝ`-independent lattice
-vectors `a i` and numbers `g 0 ≤ ⋯ ≤ g (n - 1)` such that every lattice vector `v` with
+vectors `a i` and nonnegative numbers `g i` such that every lattice vector `v` with
 `gauge K v < g j` lies in the span of `a 0, …, a (j - 1)`. Independent vectors realizing the
 successive minima satisfy this with `g = λ`: if `gauge K v < λ_j` and `i ≤ j` is least with
 `λ_i = λ_j`, then `a 0, …, a (i - 1)` and `v` lie in a dilate of `K` smaller than `λ_i • K`, so `v`
@@ -492,8 +492,8 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
 
 /-- **Minkowski's second theorem**, upper bound. Let `L` be a full lattice in an `n`-dimensional
 real normed space `E`, `μ` a Haar measure on `E`, and `K ⊆ E` convex and symmetric about `0`. Let
-`a 0, …, a (n - 1)` be `ℝ`-linearly independent vectors of `L` and `0 ≤ g 0 ≤ ⋯ ≤ g (n - 1)`
-numbers such that every `v ∈ L` with `gauge K v < g j` lies in the span of
+`a 0, …, a (n - 1)` be `ℝ`-linearly independent vectors of `L` and `g 0, …, g (n - 1)`
+nonnegative numbers such that every `v ∈ L` with `gauge K v < g j` lies in the span of
 `a 0, …, a (j - 1)`. Then `(∏ i, g i) * μ K ≤ 2 ^ n * covolume L μ`.
 
 Independent lattice vectors realizing the successive minima `λ₀ ≤ ⋯ ≤ λₙ₋₁` of `L` with respect to
@@ -503,7 +503,7 @@ theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E) [Discrete
     [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] {K : Set E}
     (hK : Convex ℝ K) (hKs : ∀ x ∈ K, -x ∈ K) {n : ℕ} (hn : n = finrank ℝ E) {a : Fin n → E}
     (haL : ∀ i, a i ∈ L) (ha : LinearIndependent ℝ a) {g : Fin n → ℝ} (hg0 : ∀ i, 0 ≤ g i)
-    (hg : Monotone g) (hgap : ∀ j, ∀ v ∈ L, gauge K v < g j → v ∈ span ℝ (a '' Iio j)) :
+    (hgap : ∀ j, ∀ v ∈ L, gauge K v < g j → v ∈ span ℝ (a '' Iio j)) :
     ENNReal.ofReal (∏ i, g i) * μ K ≤ 2 ^ n * ENNReal.ofReal (ZLattice.covolume L μ) := by
   -- Degenerate cases: some `g i` vanishes, or `K` has empty interior and hence measure zero.
   by_cases hgz : ∃ i, g i = 0
@@ -522,8 +522,20 @@ theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E) [Discrete
       rwa [(Homeomorph.neg E).image_interior, Homeomorph.coe_neg, image_neg_eq_neg, hneg] at h
     simpa using hK.interior hx₀ hx₀' (by norm_num : (0 : ℝ) ≤ 1 / 2)
       (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
+  -- Replace `g` by its running maximum `G`, which is monotone and still satisfies `hgap`.
+  let G : Fin n → ℝ := fun j ↦ (Finset.Iic j).sup' ⟨j, Finset.mem_Iic.2 le_rfl⟩ g
+  have hgG : ∀ i, g i ≤ G i := fun i ↦ Finset.le_sup' g (Finset.mem_Iic.2 le_rfl)
+  have hG : Monotone G := fun i j hij ↦ Finset.sup'_mono g (Finset.Iic_subset_Iic.2 hij) _
+  have hGgap : ∀ j, ∀ v ∈ L, gauge K v < G j → v ∈ span ℝ (a '' Iio j) := fun j v hv hlt ↦ by
+    obtain ⟨i, hi, hGi⟩ := Finset.exists_mem_eq_sup' ⟨j, Finset.mem_Iic.2 le_rfl⟩ g
+    exact span_mono (image_mono (Iio_subset_Iio (Finset.mem_Iic.1 hi)))
+      (hgap i v hv (hGi ▸ hlt))
   rw [← hKint]
-  exact prod_mul_measure_interior_le L μ hK hKs h0 hn haL ha
-    (fun i ↦ (hg0 i).lt_of_ne' (hgz i)) hg hgap
+  calc ENNReal.ofReal (∏ i, g i) * μ (interior K)
+      ≤ ENNReal.ofReal (∏ i, G i) * μ (interior K) := by
+        gcongr with i
+        exacts [fun i _ ↦ hg0 i, hgG i]
+    _ ≤ _ := prod_mul_measure_interior_le L μ hK hKs h0 hn haL ha
+      (fun i ↦ ((hg0 i).lt_of_ne' (hgz i)).trans_le (hgG i)) hG hGgap
 
 end ZLattice
