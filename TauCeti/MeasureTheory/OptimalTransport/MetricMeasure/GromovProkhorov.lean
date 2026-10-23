@@ -22,8 +22,8 @@ common space can be taken to be the disjoint union `X ⊕ Y`, glued by a metric 
 `d_GP (μ, ν) = ⨅ f, d_LP (inl_# μ, inr_# ν)`,
 
 the Lévy–Prokhorov distance `MeasureTheory.levyProkhorovEDist` being computed for the glued
-pseudometric `TauCeti.IsMetricCoupling.pseudoEMetricSpace`. Every other pair of isometric
-embeddings into a common space with measurable open sets gives an upper bound
+pseudometric `TauCeti.IsMetricCoupling.pseudoEMetricSpace`. Every other pair of a.e.-measurable
+isometric embeddings into a common space with measurable open sets gives an upper bound
 (`TauCeti.gromovProkhorovEDist_le_levyProkhorovEDist_map`), so allowing arbitrary common spaces
 would not lower the infimum.
 
@@ -98,8 +98,8 @@ variable {X X' Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace X'] [Pseu
 `X` and `Y`, of the Lévy–Prokhorov distance between the copies of `μ` and `ν` in the disjoint union
 `X ⊕ Y` with the pseudometric glued by `f`. This is the Gromov–Prokhorov distance of Greven,
 Pfaffelhuber and Winter with the common ambient space taken to be the disjoint union; by
-`TauCeti.gromovProkhorovEDist_le_levyProkhorovEDist_map`, isometric embeddings into any other common
-space with measurable open sets give no smaller value. -/
+`TauCeti.gromovProkhorovEDist_le_levyProkhorovEDist_map`, a.e.-measurable isometric embeddings into
+any other common space with measurable open sets give no smaller value. -/
 def gromovProkhorovEDist (μ : Measure X) (ν : Measure Y) : ℝ≥0∞ :=
   ⨅ (f : X → Y → ℝ≥0∞) (hf : IsMetricCoupling f),
     letI := hf.pseudoEMetricSpace
@@ -212,8 +212,8 @@ private theorem measure_le_of_levyProkhorovEDist_map_lt {T : X → Z} {S : Y →
         exact ⟨x, hx, hxy⟩
 
 /-- **Common isometric embeddings.** The Gromov–Prokhorov distance is at most the Lévy–Prokhorov
-distance between the images of `μ` and `ν` under isometric embeddings into any common space whose
-open sets are measurable. -/
+distance between the images of `μ` and `ν` under a.e.-measurable isometric embeddings into any
+common space whose open sets are measurable. -/
 theorem gromovProkhorovEDist_le_levyProkhorovEDist_map {T : X → Z} {S : Y → Z}
     (hT : Isometry T) (hS : Isometry S) (hTm : AEMeasurable T μ) (hSm : AEMeasurable S ν) :
     gromovProkhorovEDist μ ν ≤ levyProkhorovEDist (μ.map T) (ν.map S) := by
@@ -231,24 +231,38 @@ theorem gromovProkhorovEDist_le_levyProkhorovEDist_map {T : X → Z} {S : Y → 
 end Embedding
 
 /-- On a single space, the Gromov–Prokhorov distance is at most the Lévy–Prokhorov distance. -/
-theorem gromovProkhorovEDist_le_levyProkhorovEDist [OpensMeasurableSpace X] (μ ν : Measure X) :
+theorem gromovProkhorovEDist_le_levyProkhorovEDist (μ ν : Measure X) :
     gromovProkhorovEDist μ ν ≤ levyProkhorovEDist μ ν := by
-  simpa using gromovProkhorovEDist_le_levyProkhorovEDist_map (μ := μ) (ν := ν) isometry_id
-    isometry_id aemeasurable_id aemeasurable_id
+  refine le_of_forall_gt_imp_ge_of_dense fun δ hδ ↦ ?_
+  rcases eq_or_ne δ ∞ with rfl | hδtop
+  · exact le_top
+  have hsub (A : Set X) : thickening δ.toReal A ⊆ {y | ∃ x ∈ A, edist y x < δ} := fun y hy ↦ by
+    rwa [mem_thickening_iff_exists_edist_lt, ENNReal.ofReal_toReal hδtop] at hy
+  refine gromovProkhorovEDist_le_of_isMetricCoupling isMetricCoupling_edist (fun A hA ↦ ?_)
+    fun C hC ↦ (right_measure_le_of_levyProkhorovEDist_lt hδ hC).trans
+      (add_le_add_left (measure_mono (hsub C)) _)
+  simpa only [edist_comm] using (left_measure_le_of_levyProkhorovEDist_lt hδ hA).trans
+    (add_le_add_left (measure_mono (hsub A)) _)
 
 /-- The Gromov–Prokhorov distance from a measure to itself vanishes. -/
 @[simp]
-theorem gromovProkhorovEDist_self [OpensMeasurableSpace X] (μ : Measure X) :
+theorem gromovProkhorovEDist_self (μ : Measure X) :
     gromovProkhorovEDist μ μ = 0 :=
   nonpos_iff_eq_zero.mp ((gromovProkhorovEDist_le_levyProkhorovEDist μ μ).trans_eq
     (levyProkhorovEDist_self μ))
 
 /-- **Isometric images are at distance zero.** A measure and its pushforward along an isometry are
 at Gromov–Prokhorov distance `0`. -/
-theorem gromovProkhorovEDist_map_eq_zero [OpensMeasurableSpace Y] {T : X → Y} (hT : Isometry T)
-    (hTm : AEMeasurable T μ) : gromovProkhorovEDist μ (μ.map T) = 0 :=
-  nonpos_iff_eq_zero.mp ((gromovProkhorovEDist_le_levyProkhorovEDist_map hT isometry_id hTm
-    aemeasurable_id).trans_eq (by rw [Measure.map_id, levyProkhorovEDist_self]))
+theorem gromovProkhorovEDist_map_eq_zero {T : X → Y} (hT : Isometry T) (hTm : AEMeasurable T μ) :
+    gromovProkhorovEDist μ (μ.map T) = 0 := by
+  refine nonpos_iff_eq_zero.mp <| le_of_forall_gt_imp_ge_of_dense fun δ hδ ↦ ?_
+  refine gromovProkhorovEDist_le_of_isMetricCoupling (IsMetricCoupling.of_isometry hT isometry_id)
+    (fun A _ ↦ ?_) fun C hC ↦ ?_
+  · refine (Measure.le_map_apply_image hTm A).trans (le_add_right (measure_mono ?_))
+    rintro _ ⟨x, hx, rfl⟩
+    exact ⟨x, hx, (edist_self (T x)).trans_lt hδ⟩
+  · refine (Measure.map_apply_of_aemeasurable hTm hC).trans_le (le_add_right (measure_mono ?_))
+    exact fun x hx ↦ ⟨T x, hx, (edist_self (T x)).trans_lt hδ⟩
 
 section Triangle
 
@@ -313,40 +327,16 @@ theorem gromovProkhorovEDist_map_left [OpensMeasurableSpace X] [OpensMeasurableS
 
 section Coupling
 
-variable [OpensMeasurableSpace X] [OpensMeasurableSpace Y] {π : Measure (X × Y)}
-
-omit [OpensMeasurableSpace X] in
-/-- One half of `TauCeti.gromovProkhorovEDist_le_of_isCoupling`, for a set `B` of mass at most `δ`
-containing the pairs at cross distance at least `δ`. -/
-private theorem measure_le_of_isCoupling (hf : IsMetricCoupling f) (hπ : IsCoupling π μ ν)
-    {B : Set (X × Y)} (hB : ∀ z : X × Y, δ ≤ f z.1 z.2 → z ∈ B) (h : π B ≤ δ) {A : Set X}
-    (hA : MeasurableSet A) : μ A ≤ ν {y | ∃ x ∈ A, f x y < δ} + δ :=
-  calc μ A = π (A ×ˢ univ) := (hπ.measure_prod_univ hA).symm
-    _ ≤ π (univ ×ˢ {y | ∃ x ∈ A, f x y < δ} ∪ B) := by
-        refine measure_mono fun z hz ↦ ?_
-        rcases lt_or_ge (f z.1 z.2) δ with hlt | hge
-        · exact .inl ⟨mem_univ _, z.1, hz.1, hlt⟩
-        · exact .inr (hB z hge)
-    _ ≤ π (univ ×ˢ {y | ∃ x ∈ A, f x y < δ}) + π B := measure_union_le _ _
-    _ ≤ ν {y | ∃ x ∈ A, f x y < δ} + δ := by
-        rw [hπ.measure_univ_prod (hf.isOpen_setOf_exists_lt A δ).measurableSet]
-        gcongr
+variable {π : Measure (X × Y)}
 
 /-- **Couplings bound the Gromov–Prokhorov distance.** If, for a metric coupling `f`, some coupling
 of the measures gives mass at most `δ` to the pairs at cross distance at least `δ`, then the
 Gromov–Prokhorov distance is at most `δ`. -/
 theorem gromovProkhorovEDist_le_of_isCoupling (hf : IsMetricCoupling f) (hπ : IsCoupling π μ ν)
-    (h : π {z | δ ≤ f z.1 z.2} ≤ δ) : gromovProkhorovEDist μ ν ≤ δ := by
-  -- A measurable hull of the far pairs, so that its mass is also seen by the swapped coupling.
-  set B := toMeasurable π {z : X × Y | δ ≤ f z.1 z.2}
-  have hB : π B ≤ δ := (measure_toMeasurable _).trans_le h
-  refine gromovProkhorovEDist_le_of_isMetricCoupling hf
-    (fun A hA ↦ measure_le_of_isCoupling hf hπ (fun z hz ↦ subset_toMeasurable _ _ hz) hB hA)
-    fun C hC ↦ measure_le_of_isCoupling hf.swap hπ.swap (B := Prod.swap ⁻¹' B)
-      (fun z hz ↦ subset_toMeasurable _ _ hz) ?_ hC
-  rw [Measure.map_apply measurable_swap ((measurableSet_toMeasurable _ _).preimage
-    measurable_swap), preimage_preimage]
-  simpa only [Prod.swap_swap, preimage_id'] using hB
+    (h : π {z | δ ≤ f z.1 z.2} ≤ δ) : gromovProkhorovEDist μ ν ≤ δ :=
+  gromovProkhorovEDist_le_of_isMetricCoupling hf (fun _ ↦ hπ.measure_le_of_measure_setOf_le h)
+    fun _ ↦ hπ.swap.measure_le_of_measure_setOf_le (c := fun y x ↦ f x y)
+      ((MeasurableEquiv.prodComm.map_apply _).trans_le h)
 
 /-- For `0 < p < ∞`, the Gromov–Prokhorov distance is at most `‖f‖_{L^p (π)} ^ (p / (p + 1))` for
 every metric coupling `f` and every coupling `π` of the measures, by Markov's inequality. -/
