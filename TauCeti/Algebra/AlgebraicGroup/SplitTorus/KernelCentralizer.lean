@@ -238,6 +238,39 @@ theorem centralizerKerHopfIdeal_zero (T : SplitMaximalTorus R H r) :
   rw [← hπ, centralizerKerHopfIdeal_def]
   exact BialgHom.centralizerHopfIdeal_comp_le _ _
 
+/-- The torus of the kernel of the zero character is the whole torus, so `Z_G(T_0) = Z_G(T)`. -/
+@[simp]
+theorem centralizerKerTorusHopfIdeal_zero (T : SplitMaximalTorus R H r) :
+    T.centralizerKerTorusHopfIdeal 0 = BialgHom.centralizerHopfIdeal T.coordinateMap.hom := by
+  refine le_antisymm ?_ ?_
+  · simpa only [centralizerKerHopfIdeal_zero] using
+      T.centralizerKerTorusHopfIdeal_le_centralizerKerHopfIdeal 0
+  · -- Restriction has a left inverse: the character lattice has no nontrivial torsion.
+    let f : KerCharacterGroup (0 : ULift.{u} (Fin r) →₀ ℤ) →*
+        Multiplicative (ULift.{u} (Fin r) →₀ ℤ) :=
+      QuotientGroup.lift _ (MonoidHom.id _) (by simp)
+    let g : KerTorusCharacterGroup (0 : ULift.{u} (Fin r) →₀ ℤ) →*
+        Multiplicative (ULift.{u} (Fin r) →₀ ℤ) :=
+      QuotientGroup.lift _ f (by
+        intro χ hχ
+        have ht : f χ ∈ CommGroup.torsion (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) :=
+          CommGroup.le_comap_torsion f hχ
+        have htor : CommGroup.torsion (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) = ⊥ :=
+          CommGroup.isMulTorsionFree_iff_torsion_eq_bot.mp inferInstance
+        simpa only [htor, Subgroup.mem_bot, MonoidHom.mem_ker] using ht)
+    have hf : f.comp (QuotientGroup.mk' _) = MonoidHom.id _ :=
+      QuotientGroup.lift_comp_mk' _ _ _
+    have hg : g.comp (QuotientGroup.mk' _) = f := QuotientGroup.lift_comp_mk' _ _ _
+    have hgf : g.comp (kerTorusCharacterMap 0) = MonoidHom.id _ := by
+      rw [kerTorusCharacterMap, ← MonoidHom.comp_assoc, hg, hf]
+    have hπ : (MonoidAlgebra.mapDomainBialgHom R g).comp (T.kerTorusCoordinateMap 0) =
+        T.coordinateMap.hom := by
+      rw [kerTorusCoordinateMap, ← BialgHom.comp_assoc,
+        ← MonoidAlgebra.mapDomainBialgHom_comp, hgf, MonoidAlgebra.mapDomainBialgHom_id]
+      exact BialgHom.id_comp _
+    rw [← hπ, centralizerKerTorusHopfIdeal_def]
+    exact BialgHom.centralizerHopfIdeal_comp_le _ _
+
 /-- The kernel of `-α` is the kernel of `α`, so `Z_G(ker (-α)) = Z_G(ker α)`. -/
 @[simp]
 theorem centralizerKerHopfIdeal_neg (T : SplitMaximalTorus R H r) (α : ULift.{u} (Fin r) →₀ ℤ) :
