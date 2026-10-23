@@ -41,8 +41,8 @@ algebras and of graded relative Spec restricted to algebras free in degree one
   the grading of a linear scheme;
 * `TauCeti.AlgebraicGeometry.linearSpecEquiv`: the anti-equivalence
   `(QuasicoherentSheaf X)ᵒᵖ ≌ QuasicoherentLinearScheme X` with functor `linearSpec X` and inverse
-  `QuasicoherentLinearScheme.degreeOne X`, with unit `degreeOneLinearSpecIso` and counit
-  `linearSpecDegreeOneIso`.
+  `QuasicoherentLinearScheme.degreeOne X`, with unit the inverse of `degreeOneLinearSpecIso` and
+  counit `linearSpecDegreeOneIso`.
 
 ## References
 
