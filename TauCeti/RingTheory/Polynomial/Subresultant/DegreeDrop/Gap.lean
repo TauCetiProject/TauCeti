@@ -24,12 +24,13 @@ columns, and its first two columns read only the first row of the coefficient ma
 * at the last strict index `j = m - 1`, with `e ≤ j`, the subresultant is
   `p.coeff m ^ (n - j) • q`.
 
-Together with the two results above, this determines the subresultants of `p` and `q` at every
-strict index from the actual degree of `q`. The left versions follow by the block-swap sign.
-Taking `q` constant gives the subresultants of a polynomial and a constant.
+When `p.natDegree ≤ m`, these two identities together with the two results above determine the
+subresultants of `p` and `q` at every strict index from the actual degree of `q`. The left
+versions follow by the block-swap sign. Taking `q` constant gives the subresultants of a
+polynomial and a constant.
 
-These identities hold over every commutative ring, with no hypothesis on `p` and no
-nonvanishing assumption on any coefficient.
+The two identities of this file hold over every commutative ring, with no hypothesis on `p` and
+no nonvanishing assumption on any coefficient.
 
 ## Main results
 
@@ -142,7 +143,8 @@ theorem _root_.Polynomial.subresultantCoeff_eq_coeff_pow_mul_of_natDegree_right_
     induction i using Fin.addCases with
     | left l =>
       have hl : l.val = 0 := by omega
-      simp [M, hl, show k ≤ n by omega]
+      have hkn : k ≤ n := by omega
+      simp [M, hl, hkn]
     | right l =>
       have hne : (j + 1 - j) + l.val ≠ 0 := by omega
       simp only [M, subresultantCoeffMatrix_natAdd, Fin.val_natAdd, hne, ↓reduceIte]
@@ -172,7 +174,8 @@ theorem _root_.Polynomial.subresultant_eq_C_mul_of_natDegree_right_le
   ext k
   rw [coeff_subresultant, coeff_C_mul]
   by_cases hk : k ≤ j
-  · simp only [show j < min (j + 1) n by omega, hk, and_self, ↓reduceIte]
+  · have hjmin : j < min (j + 1) n := by omega
+    simp only [hjmin, hk, and_self, ↓reduceIte]
     exact subresultantCoeff_eq_coeff_pow_mul_of_natDegree_right_le hq hjn.le hk
   · simp only [hk, and_false, ↓reduceIte]
     rw [coeff_eq_zero_of_natDegree_lt (p := q) (by omega), mul_zero]
@@ -183,7 +186,7 @@ theorem _root_.Polynomial.subresultantCoeff_eq_neg_coeff_pow_mul_of_natDegree_le
     (hp : p.natDegree ≤ j) (hjm : j ≤ m) (hk : k ≤ j) :
     subresultantCoeff p q m (j + 1) j k = (-q.coeff (j + 1)) ^ (m - j) * p.coeff k := by
   rw [subresultantCoeff_comm, subresultantCoeff_eq_coeff_pow_mul_of_natDegree_right_le hp hjm hk,
-    show j + 1 - j = 1 by omega, mul_one, neg_pow]
+    Nat.add_sub_cancel_left, mul_one, neg_pow]
   ring
 
 /-- At index `j` with right bound `j + 1`, if the left input has degree at most `j`, the
@@ -199,7 +202,7 @@ theorem _root_.Polynomial.subresultant_eq_C_mul_of_natDegree_left_le
     (hp : p.natDegree ≤ j) (hjm : j < m) :
     subresultant p q m (j + 1) j = C ((-q.coeff (j + 1)) ^ (m - j)) * p := by
   rw [subresultant_comm, subresultant_eq_C_mul_of_natDegree_right_le hp hjm, ← mul_assoc, ← C_mul,
-    show j + 1 - j = 1 by omega, mul_one, neg_pow (q.coeff (j + 1))]
+    Nat.add_sub_cancel_left, mul_one, neg_pow (q.coeff (j + 1))]
 
 /-! ### Constant inputs -/
 

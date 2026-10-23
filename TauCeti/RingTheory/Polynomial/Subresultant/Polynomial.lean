@@ -373,6 +373,7 @@ theorem subresultant_comm [CommRing R]
 
 /-- A zero left input makes a coefficient minor vanish when its column block, of size `n - j`,
 is nonempty. -/
+@[simp]
 theorem subresultantCoeff_zero_left [CommRing R] (q : R[X]) {m n j : ℕ} (hjn : j < n) (k : ℕ) :
     subresultantCoeff 0 q m n j k = 0 := by
   simpa [zero_pow (Nat.sub_ne_zero_of_lt hjn)] using
@@ -380,6 +381,7 @@ theorem subresultantCoeff_zero_left [CommRing R] (q : R[X]) {m n j : ℕ} (hjn :
 
 /-- A zero right input makes a coefficient minor vanish when its column block, of size `m - j`,
 is nonempty. -/
+@[simp]
 theorem subresultantCoeff_zero_right [CommRing R] (p : R[X]) {m n j : ℕ} (hjm : j < m) (k : ℕ) :
     subresultantCoeff p 0 m n j k = 0 := by
   simpa [zero_pow (Nat.sub_ne_zero_of_lt hjm)] using
@@ -388,6 +390,7 @@ theorem subresultantCoeff_zero_right [CommRing R] (p : R[X]) {m n j : ℕ} (hjm 
 /-- A zero left input makes the principal coefficient vanish below the right bound. At `j = n`
 the empty column block gives instead `psc 0 q m n n = q.coeff n ^ (m - n)`
 (`Polynomial.psc_right_bound`). -/
+@[simp]
 theorem psc_zero_left [CommRing R] (q : R[X]) {m n j : ℕ} (hjn : j < n) :
     psc 0 q m n j = 0 := by
   simpa using subresultantCoeff_zero_left q (m := m) hjn j
@@ -395,6 +398,7 @@ theorem psc_zero_left [CommRing R] (q : R[X]) {m n j : ℕ} (hjn : j < n) :
 /-- A zero right input makes the principal coefficient vanish below the left bound. At `j = m`
 the empty column block gives instead `psc p 0 m n m = p.coeff m ^ (n - m)`
 (`Polynomial.psc_left_bound`). -/
+@[simp]
 theorem psc_zero_right [CommRing R] (p : R[X]) {m n j : ℕ} (hjm : j < m) :
     psc p 0 m n j = 0 := by
   simpa using subresultantCoeff_zero_right p (n := n) hjm j
@@ -454,7 +458,7 @@ theorem subresultant_succ_succ_self [CommRing R] {p q : R[X]} {j : ℕ}
   · simp only [min_self, Nat.lt_succ_self j, hk, and_self, ↓reduceIte]
     exact subresultantCoeff_succ_succ_self p q (by omega)
   · simp only [hk, and_false, ↓reduceIte]
-    rcases (show k = j + 1 ∨ j + 1 < k by omega) with rfl | hk'
+    obtain rfl | hk' : k = j + 1 ∨ j + 1 < k := by omega
     · ring
     · rw [coeff_eq_zero_of_natDegree_lt (hp.trans_lt hk'),
         coeff_eq_zero_of_natDegree_lt (hq.trans_lt hk')]
