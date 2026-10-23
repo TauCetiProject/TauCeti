@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Fin.Tuple.Basic
 public import TauCeti.Geometry.RealAlgebraic.CAD.Lazard.Basic
 public import TauCeti.Geometry.RealAlgebraic.Projection.Lazard.Lifting
 
@@ -90,12 +91,10 @@ theorem exists_isCAD_lazardValuationReindex_eq (F : Finset (MvPolynomial (Fin n)
     obtain ⟨𝓓, h𝓓, ha, hv⟩ := ih ((A.lazardProjection B).image (rename Fin.revPerm.symm))
     -- Read in reverse, each base cell carries a valuation-invariant Lazard projection.
     have hproj (q) (hq : q ∈ A.lazardProjection B) (C) (hC : C ∈ 𝓓)
-        (x) (hx : x ∈ (fun x ↦ x ∘ Fin.revPerm.symm.symm) ⁻¹' C)
-        (y) (hy : y ∈ (fun x ↦ x ∘ Fin.revPerm.symm.symm) ⁻¹' C) :
+        (x) (hx : x ∘ Fin.revPerm ∈ C) (y) (hy : y ∘ Fin.revPerm ∈ C) :
         q.lazardValuation x = q.lazardValuation y := by
-      have h := hv _ (Finset.mem_image_of_mem _ hq) C hC _ hx _ hy
-      simpa only [lazardValuationReindex_def, rename_rename, Equiv.self_comp_symm,
-        rename_id_apply, Function.comp_assoc, Equiv.symm_comp_self, Function.comp_id] using h
+      simpa only [lazardValuationReindex_rename_symm, Function.comp_assoc, Equiv.self_comp_symm,
+        Function.comp_id] using hv _ (Finset.mem_image_of_mem _ hq) C hC _ hx _ hy
     have hD (C) (hC : C ∈ 𝓓) : Nonempty (LazardDelineation
         (fun f : A ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm f.1))
         ((fun x ↦ x ∘ Fin.revPerm.symm.symm) ⁻¹' C)) := by
@@ -114,9 +113,8 @@ theorem exists_isCAD_lazardValuationReindex_eq (F : Finset (MvPolynomial (Fin n)
       rw [rename_rename, Equiv.symm_comp_self, rename_id_apply]
     -- Moving coordinate zero to the end of the reversed base is reversing all coordinates.
     have hsnoc (x : Fin (n + 1) → ℝ) :
-        Fin.snoc (Fin.tail x ∘ Fin.revPerm.symm) (x 0) = x ∘ Fin.revPerm.symm := by
-      have hrev (m : ℕ) : (⇑Fin.revPerm : Fin m → Fin m) = Fin.rev := funext Fin.revPerm_apply
-      rw [Fin.revPerm_symm, Fin.revPerm_symm, hrev, hrev, ← Fin.cons_comp_rev, Fin.cons_self_tail]
+        Fin.snoc (Fin.tail x ∘ Fin.revPerm.symm) (x 0) = x ∘ Fin.revPerm.symm :=
+      Fin.snoc_tail_comp_rev x
     refine ⟨𝓒, h𝓒, h𝓒a, fun f hf E hE x hx y hy ↦ ?_⟩
     have h := h𝓒v ⟨Φ f, Finset.mem_image_of_mem _ hf⟩ E hE x hx y hy
     rw [hG, hsnoc, hsnoc] at h
