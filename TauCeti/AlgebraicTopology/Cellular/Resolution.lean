@@ -31,7 +31,7 @@ complex is exact (`TauCeti.quasiIso_cellularChainComplexAugmentation`), so the c
 This applies to the universal cover of a `K(G, 1)` CW complex: if `B` carries a CW structure on
 the whole space and is aspherical, and `E` is simply connected, then `E` is weakly contractible, and
 since it has CW type, it is contractible by Whitehead's theorem
-(`IsCoveringMap.contractibleSpace_preimage_univ`, in
+(`IsCoveringMap.contractibleSpace_preimage_univ_of_isAspherical`, in
 `TauCeti.AlgebraicTopology.EilenbergMacLane.Contractible`). The group acting is `G`, acting on `E`
 by the given action; Mathlib's `IsQuotientCoveringMap.fundamentalGroupEquiv` identifies `G` with
 the opposite of the fundamental group of `B`. This resolution is the input for identifying the

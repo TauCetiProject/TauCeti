@@ -31,8 +31,11 @@ chain complex of a contractible CW complex is a resolution of the coefficients. 
 universal cover of a `K(G, 1)` CW complex with the lifted CW structure, this is the exactness
 behind the cellular projective resolution of the trivial representation of `G`.
 
-The coefficients lie in an abelian category with coproducts in which coproducts and sequential
-colimits are exact, as for modules over a ring; no finiteness of the set of cells is needed.
+The coefficients lie in an abelian category with coproducts in which coproducts are exact. The
+cellular–singular comparison in degree `0` needs the inclusion of the `1`-skeleton to induce an
+isomorphism on `H₀`, which is assumed as an instance hypothesis; it holds for every
+finite-dimensional complex, and for every complex when sequential colimits are exact in the
+coefficient category, as for modules over a ring.
 
 ## Main definitions
 
@@ -75,7 +78,7 @@ section Augmentation
 variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
   {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
   [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
-  [HasColimitsOfShape ℕ A] [HasExactColimitsOfShape ℕ A]
+  [IsIso ((skeletonBasePair C 1).singularHomologyMap (skeletonBasePairToComplex C 1) R 0)]
 
 /-- The **augmentation** of the cellular chains of a CW complex `C` in degree `0`: the projection
 onto cellular homology in degree `0`, followed by the cellular–singular comparison with
@@ -84,16 +87,6 @@ def cellularAugmentation : cellularChainGroup C R 0 ⟶ R :=
   eqToHom (cellularChainComplex_X C R 0).symm ≫ (cellularChainComplex C R).pOpcycles 0 ≫
     (cellularChainComplex C R).isoHomologyι₀.inv ≫
       (cellularSingularHomologyIsoOfCWComplex C R 0).hom ≫ (TopCat.of C).singularHomology₀ε R
-
-/-- The augmentation factors through cellular homology in degree `0`, the cellular–singular
-comparison and the augmentation of singular homology. -/
-lemma cellularAugmentation_def :
-    cellularAugmentation C R =
-      eqToHom (cellularChainComplex_X C R 0).symm ≫ (cellularChainComplex C R).pOpcycles 0 ≫
-        (cellularChainComplex C R).isoHomologyι₀.inv ≫
-          (cellularSingularHomologyIsoOfCWComplex C R 0).hom ≫
-            (TopCat.of C).singularHomology₀ε R :=
-  (rfl)
 
 /-- On the zeroth singular homology of the `0`-skeleton, mapped to the cellular chains by the
 quotient for the empty subspace, the augmentation is the augmentation of singular homology. -/
@@ -181,7 +174,7 @@ lemma descOpcycles_cellularAugmentation :
   rw [← cancel_epi ((cellularChainComplex C R).pOpcycles 0), p_descOpcycles]
   simp [cellularAugmentation]
 
-omit [HasColimitsOfShape ℕ A] [HasExactColimitsOfShape ℕ A] in
+omit [IsIso ((skeletonBasePair C 1).singularHomologyMap (skeletonBasePairToComplex C 1) R 0)] in
 /-- **The cellular chain complex of a contractible CW complex is exact in positive degrees**:
 its homology there is the positive-degree singular homology of a contractible space. The
 hypothesis on the inclusion of the `(n + 2)`-skeleton holds for every finite-dimensional complex,
@@ -197,8 +190,12 @@ theorem exactAt_cellularChainComplex_of_contractibleSpace [ContractibleSpace C] 
 /-- **The augmented cellular chain complex of a contractible CW complex is a resolution** of the
 coefficients: the augmentation is a quasi-isomorphism. In degree `0` it induces the composite of
 the cellular–singular comparison with the augmentation `H₀(C; R) ⟶ R`, an isomorphism because `C`
-is path connected; in positive degrees both complexes are exact. -/
-theorem quasiIso_cellularChainComplexAugmentation [ContractibleSpace C] :
+is path connected; in positive degrees both complexes are exact. The hypotheses on the inclusions
+of the skeleta hold for every finite-dimensional complex, and for every complex when sequential
+colimits are exact in the coefficient category. -/
+theorem quasiIso_cellularChainComplexAugmentation [ContractibleSpace C]
+    [∀ n : ℕ, IsIso ((skeletonBasePair C (n + 2)).singularHomologyMap
+      (skeletonBasePairToComplex C (n + 2)) R (n + 1))] :
     QuasiIso (cellularChainComplexAugmentation C R) where
   quasiIsoAt m := by
     cases m with
@@ -230,7 +227,8 @@ variable {X Y : Type w} [TopologicalSpace X] [T2Space X] [TopologicalSpace Y] [T
   {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
   [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
   [∀ m, HasExactColimitsOfShape (Discrete (cell C' m)) A]
-  [HasColimitsOfShape ℕ A] [HasExactColimitsOfShape ℕ A]
+  [IsIso ((skeletonBasePair C 1).singularHomologyMap (skeletonBasePairToComplex C 1) R 0)]
+  [IsIso ((skeletonBasePair C' 1).singularHomologyMap (skeletonBasePairToComplex C' 1) R 0)]
 
 /-- **The augmentation is natural under cellular maps.** -/
 @[reassoc (attr := simp)]
