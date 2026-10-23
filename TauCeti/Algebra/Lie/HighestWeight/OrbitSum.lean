@@ -52,7 +52,7 @@ public section
 
 namespace TauCeti
 
-open LieAlgebra LieModule Module
+open LieAlgebra LieModule Module RootPairing
 
 universe u v w
 
@@ -64,7 +64,7 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K]
 /-- The dominant integral weights below `lam` are the dominant integral weights `mu`, in the sense
 of `TauCeti.IsDominantIntegral`, with `lam - mu` in the positive root cone. -/
 theorem mem_dominantWeightsBelow_iff_isDominantIntegral {lam mu : Dual K H} :
-    mu ∈ dominantWeightsBelow (IsKilling.rootSystem H) b lam ↔
+    mu ∈ (IsKilling.rootSystem H).dominantWeightsBelow b lam ↔
       lam - mu ∈ posRootCone (IsKilling.rootSystem H) b ∧ IsDominantIntegral b mu := by
   simp only [mem_dominantWeightsBelow, rootSystem_coroot'_apply, isDominantIntegral_iff]
 
@@ -88,10 +88,10 @@ so this is the expansion of the character of `L(lam)`; it is stated for `M` itse
 identification with `L(lam)` is needed to use it. -/
 theorem formalCharacter_eq_orbitSum_add_lower (hv : IsHighestWeightVector b lam v)
     (hgen : LieSubmodule.lieSpan K L {v} = ⊤) :
-    formalCharacter K H M = weightOrbitSum (IsKilling.rootSystem H) lam +
-      ∑ mu ∈ (dominantWeightsBelow (IsKilling.rootSystem H) b lam).erase lam,
-        (formalCharacter K H M).coeff mu • weightOrbitSum (IsKilling.rootSystem H) mu := by
-  have hlam : lam ∈ dominantWeightsBelow (IsKilling.rootSystem H) b lam :=
+    formalCharacter K H M = (IsKilling.rootSystem H).weightOrbitSum lam +
+      ∑ mu ∈ ((IsKilling.rootSystem H).dominantWeightsBelow b lam).erase lam,
+        (formalCharacter K H M).coeff mu • (IsKilling.rootSystem H).weightOrbitSum mu := by
+  have hlam : lam ∈ (IsKilling.rootSystem H).dominantWeightsBelow b lam :=
     mem_dominantWeightsBelow_iff_isDominantIntegral.mpr ⟨by simp, hv.isDominantIntegral⟩
   have hint : ∀ chi : Dual K H, (formalCharacter K H M).coeff chi ≠ 0 →
       ∀ i ∈ b.support, ∃ z : ℤ, (IsKilling.rootSystem H).coroot' i chi = (z : K) :=
@@ -113,10 +113,10 @@ finite-dimensional exactly when `lam` is dominant integral
 (`TauCeti.finiteDimensional_irreducibleQuotient_of_isDominantIntegral`). -/
 theorem formalCharacter_irreducibleQuotient_eq_orbitSum_add_lower
     [FiniteDimensional K (irreducibleQuotient b lam)] :
-    formalCharacter K H (irreducibleQuotient b lam) = weightOrbitSum (IsKilling.rootSystem H) lam +
-      ∑ mu ∈ (dominantWeightsBelow (IsKilling.rootSystem H) b lam).erase lam,
+    formalCharacter K H (irreducibleQuotient b lam) = (IsKilling.rootSystem H).weightOrbitSum lam +
+      ∑ mu ∈ ((IsKilling.rootSystem H).dominantWeightsBelow b lam).erase lam,
         (formalCharacter K H (irreducibleQuotient b lam)).coeff mu •
-          weightOrbitSum (IsKilling.rootSystem H) mu :=
+          (IsKilling.rootSystem H).weightOrbitSum mu :=
   formalCharacter_eq_orbitSum_add_lower (isHighestWeightVector_irreducibleQuotientGenerator b lam)
     (lieSpan_irreducibleQuotientGenerator_eq_top b lam)
 

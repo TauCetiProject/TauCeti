@@ -46,15 +46,16 @@ contributes `f(y)`.
 
 ## Main definitions
 
-* `TauCeti.weylWeightOrbit`: the finite set of the distinct weights in the Weyl orbit of a weight.
-* `TauCeti.weightOrbitSum`: the orbit sum `m_x = ∑_{y ∈ W x} e^y`.
-* `TauCeti.dominantWeightsBelow`: the finite set of the dominant integral weights `mu` below a
+* `RootPairing.weylWeightOrbit`: the finite set of the distinct weights in the Weyl orbit of a
+  weight.
+* `RootPairing.weightOrbitSum`: the orbit sum `m_x = ∑_{y ∈ W x} e^y`.
+* `RootPairing.dominantWeightsBelow`: the finite set of the dominant integral weights `mu` below a
   weight `lam`, that is with `lam - mu` in the positive root cone.
 
 ## Main results
 
-* `TauCeti.coeff_weightOrbitSum`: the coefficients of `m_x` are `1` on the orbit of `x` and `0`
-  elsewhere, and `TauCeti.isWeylInvariant_weightOrbitSum`: `m_x` is Weyl-invariant.
+* `RootPairing.coeff_weightOrbitSum`: the coefficients of `m_x` are `1` on the orbit of `x` and `0`
+  elsewhere, and `RootPairing.isWeylInvariant_weightOrbitSum`: `m_x` is Weyl-invariant.
 * `TauCeti.IsWeylInvariant.eq_sum_coeff_smul_weightOrbitSum`: **a Weyl-invariant element supported
   below `lam` on integral weights is the combination of the orbit sums of the dominant integral
   weights below `lam`, with its own coefficients.**
@@ -68,15 +69,15 @@ contributes `f(y)`.
 
 public section
 
-namespace TauCeti
-
-open Finset
-
 universe u v w x
+
+namespace RootPairing
+
+open Finset TauCeti
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  (P : _root_.RootPairing ι R M N)
+  (P : RootPairing ι R M N)
 
 /-! ### Weyl orbits and orbit sums -/
 
@@ -85,47 +86,47 @@ section OrbitSum
 variable [Finite P.weylGroup]
 
 /-- The **Weyl orbit** of a weight `x`, as the finite set of its *distinct* Weyl translates `w • x`.
-As a set it is Mathlib's `MulAction.orbit` (`TauCeti.coe_weylWeightOrbit`). -/
+As a set it is Mathlib's `MulAction.orbit` (`RootPairing.coe_weylWeightOrbit`). -/
 noncomputable def weylWeightOrbit (x : M) : Finset M :=
   (Set.finite_range fun w : P.weylGroup ↦ w • x).toFinset
 
 /-- The **orbit sum** `m_x = ∑_{y ∈ W x} e^y` of a weight `x` in the integral group algebra
 `ℤ[M]`: every distinct weight of the Weyl orbit of `x` occurs once, with coefficient `1`. -/
 noncomputable def weightOrbitSum (x : M) : AddMonoidAlgebra ℤ M :=
-  ∑ y ∈ weylWeightOrbit P x, AddMonoidAlgebra.single y 1
+  ∑ y ∈ P.weylWeightOrbit x, AddMonoidAlgebra.single y 1
 
 variable {P}
 
 /-- A weight lies in the Weyl orbit of `x` exactly when it is a Weyl translate of `x`. -/
 @[simp]
 theorem mem_weylWeightOrbit {x y : M} :
-    y ∈ weylWeightOrbit P x ↔ ∃ w : P.weylGroup, w • x = y := by
+    y ∈ P.weylWeightOrbit x ↔ ∃ w : P.weylGroup, w • x = y := by
   simp [weylWeightOrbit]
 
 /-- The Weyl orbit of `x`, as a set, is the orbit of `x` under the action of the Weyl group. -/
 @[simp, norm_cast]
 theorem coe_weylWeightOrbit (x : M) :
-    (weylWeightOrbit P x : Set M) = MulAction.orbit P.weylGroup x := by
+    (P.weylWeightOrbit x : Set M) = MulAction.orbit P.weylGroup x := by
   ext y
   simp [MulAction.mem_orbit_iff]
 
 /-- Every Weyl translate of `x` lies in the Weyl orbit of `x`. -/
-theorem smul_mem_weylWeightOrbit (w : P.weylGroup) (x : M) : w • x ∈ weylWeightOrbit P x :=
+theorem smul_mem_weylWeightOrbit (w : P.weylGroup) (x : M) : w • x ∈ P.weylWeightOrbit x :=
   mem_weylWeightOrbit.mpr ⟨w, rfl⟩
 
 /-- A weight lies in its own Weyl orbit. -/
-theorem self_mem_weylWeightOrbit (x : M) : x ∈ weylWeightOrbit P x :=
+theorem self_mem_weylWeightOrbit (x : M) : x ∈ P.weylWeightOrbit x :=
   mem_weylWeightOrbit.mpr ⟨1, one_smul _ x⟩
 
 /-- Weyl-conjugate weights have the same Weyl orbit. -/
 @[simp]
 theorem weylWeightOrbit_smul (w : P.weylGroup) (x : M) :
-    weylWeightOrbit P (w • x) = weylWeightOrbit P x := by
+    P.weylWeightOrbit (w • x) = P.weylWeightOrbit x := by
   exact Finset.coe_injective (by simp only [coe_weylWeightOrbit, MulAction.orbit_smul])
 
 /-- The Weyl orbit of a weight is the Weyl orbit of any of its members. -/
-theorem weylWeightOrbit_eq_of_mem {x y : M} (h : y ∈ weylWeightOrbit P x) :
-    weylWeightOrbit P y = weylWeightOrbit P x := by
+theorem weylWeightOrbit_eq_of_mem {x y : M} (h : y ∈ P.weylWeightOrbit x) :
+    P.weylWeightOrbit y = P.weylWeightOrbit x := by
   apply Finset.coe_injective
   rw [coe_weylWeightOrbit, coe_weylWeightOrbit]
   exact MulAction.orbit_eq_iff.mpr (by
@@ -133,7 +134,7 @@ theorem weylWeightOrbit_eq_of_mem {x y : M} (h : y ∈ weylWeightOrbit P x) :
 
 /-- A Weyl translate of `y` lies in the Weyl orbit of `x` exactly when `y` does. -/
 theorem smul_mem_weylWeightOrbit_iff {x y : M} (w : P.weylGroup) :
-    w • y ∈ weylWeightOrbit P x ↔ y ∈ weylWeightOrbit P x := by
+    w • y ∈ P.weylWeightOrbit x ↔ y ∈ P.weylWeightOrbit x := by
   simp only [← Finset.mem_coe, coe_weylWeightOrbit]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · simpa only [inv_smul_smul] using MulAction.mem_orbit_of_mem_orbit w⁻¹ h
@@ -141,42 +142,42 @@ theorem smul_mem_weylWeightOrbit_iff {x y : M} (w : P.weylGroup) :
 
 /-- The Weyl orbit of the zero weight is `{0}`. -/
 @[simp]
-theorem weylWeightOrbit_zero : weylWeightOrbit P (0 : M) = {0} := by
+theorem weylWeightOrbit_zero : P.weylWeightOrbit (0 : M) = {0} := by
   ext y
   simp [eq_comm]
 
 /-- **The coefficients of an orbit sum**: `m_x` has coefficient `1` at every weight of the Weyl
 orbit of `x` and `0` at every other weight. -/
 theorem coeff_weightOrbitSum [DecidableEq M] (x y : M) :
-    (weightOrbitSum P x).coeff y = if y ∈ weylWeightOrbit P x then 1 else 0 := by
+    (P.weightOrbitSum x).coeff y = if y ∈ P.weylWeightOrbit x then 1 else 0 := by
   simp [weightOrbitSum, AddMonoidAlgebra.coeff_sum, AddMonoidAlgebra.coeff_single,
     Finsupp.single_apply]
 
 /-- The orbit sum of `x` has coefficient `1` on the Weyl orbit of `x`. -/
-theorem coeff_weightOrbitSum_of_mem {x y : M} (h : y ∈ weylWeightOrbit P x) :
-    (weightOrbitSum P x).coeff y = 1 := by
+theorem coeff_weightOrbitSum_of_mem {x y : M} (h : y ∈ P.weylWeightOrbit x) :
+    (P.weightOrbitSum x).coeff y = 1 := by
   classical
   simp [coeff_weightOrbitSum, h]
 
 /-- The orbit sum of `x` has coefficient `0` off the Weyl orbit of `x`. -/
-theorem coeff_weightOrbitSum_of_notMem {x y : M} (h : y ∉ weylWeightOrbit P x) :
-    (weightOrbitSum P x).coeff y = 0 := by
+theorem coeff_weightOrbitSum_of_notMem {x y : M} (h : y ∉ P.weylWeightOrbit x) :
+    (P.weightOrbitSum x).coeff y = 0 := by
   classical
   simp [coeff_weightOrbitSum, h]
 
 /-- Weyl-conjugate weights have the same orbit sum. -/
 @[simp]
 theorem weightOrbitSum_smul (w : P.weylGroup) (x : M) :
-    weightOrbitSum P (w • x) = weightOrbitSum P x := by
+    P.weightOrbitSum (w • x) = P.weightOrbitSum x := by
   rw [weightOrbitSum, weightOrbitSum, weylWeightOrbit_smul]
 
 /-- The orbit sum of the zero weight is the unit `e^0 = 1` of `ℤ[M]`. -/
 @[simp]
-theorem weightOrbitSum_zero : weightOrbitSum P (0 : M) = 1 := by
+theorem weightOrbitSum_zero : P.weightOrbitSum (0 : M) = 1 := by
   rw [weightOrbitSum, weylWeightOrbit_zero, sum_singleton, AddMonoidAlgebra.one_def]
 
 /-- **An orbit sum is Weyl-invariant.** -/
-theorem isWeylInvariant_weightOrbitSum (x : M) : IsWeylInvariant P (weightOrbitSum P x) := by
+theorem isWeylInvariant_weightOrbitSum (x : M) : IsWeylInvariant P (P.weightOrbitSum x) := by
   classical
   refine (isWeylInvariant_iff P _).mpr fun w y ↦ ?_
   simp only [coeff_weightOrbitSum, smul_mem_weylWeightOrbit_iff]
@@ -185,7 +186,7 @@ end OrbitSum
 
 /-! ### The dominant integral weights below a weight -/
 
-section Expansion
+section Dominant
 
 variable [Finite ι] [CharZero R] [IsDomain R] [P.IsRootSystem] [P.IsCrystallographic]
   (b : P.Base)
@@ -198,21 +199,35 @@ noncomputable def dominantWeightsBelow (lam : M) : Finset M :=
 
 variable {P b}
 
-/-- Membership in `TauCeti.dominantWeightsBelow`: `mu` lies below `lam` and is dominant
+/-- Membership in `RootPairing.dominantWeightsBelow`: `mu` lies below `lam` and is dominant
 integral. -/
 @[simp]
 theorem mem_dominantWeightsBelow {lam mu : M} :
-    mu ∈ dominantWeightsBelow P b lam ↔
+    mu ∈ P.dominantWeightsBelow b lam ↔
       lam - mu ∈ posRootCone P b ∧ ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i mu = (n : R) := by
   simp [dominantWeightsBelow]
 
 /-- A dominant integral weight is one of the dominant integral weights below itself. -/
 theorem self_mem_dominantWeightsBelow {lam : M}
     (hlam : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i lam = (n : R)) :
-    lam ∈ dominantWeightsBelow P b lam :=
+    lam ∈ P.dominantWeightsBelow b lam :=
   mem_dominantWeightsBelow.mpr ⟨by simp, hlam⟩
 
-variable [P.IsReduced] [Finite P.weylGroup] {f : AddMonoidAlgebra ℤ M} {lam : M}
+end Dominant
+
+end RootPairing
+
+/-! ### The orbit-sum expansion -/
+
+namespace TauCeti
+
+open Finset RootPairing
+
+variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
+  [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N}
+  [Finite ι] [CharZero R] [IsDomain R] [P.IsRootSystem] [P.IsCrystallographic]
+  {b : P.Base} [P.IsReduced] [Finite P.weylGroup] {f : AddMonoidAlgebra ℤ M} {lam : M}
 
 /-- **The orbit-sum expansion of a Weyl-invariant element.** Let `f ∈ ℤ[M]` be Weyl-invariant,
 with every weight in its support lying below `lam` and integral on the simple coroots. Then `f`
@@ -226,12 +241,12 @@ below `lam`, so the orbit sums of these weights account for every coefficient of
 theorem IsWeylInvariant.eq_sum_coeff_smul_weightOrbitSum (hf : IsWeylInvariant P f)
     (hcone : ∀ y, f.coeff y ≠ 0 → lam - y ∈ posRootCone P b)
     (hint : ∀ y, f.coeff y ≠ 0 → ∀ i ∈ b.support, ∃ z : ℤ, P.coroot' i y = (z : R)) :
-    f = ∑ mu ∈ dominantWeightsBelow P b lam, f.coeff mu • weightOrbitSum P mu := by
+    f = ∑ mu ∈ P.dominantWeightsBelow b lam, f.coeff mu • P.weightOrbitSum mu := by
   classical
   refine AddMonoidAlgebra.ext (Finsupp.ext fun y ↦ ?_)
   -- every term with `y` in the orbit of `mu` contributes `f(mu) = f(y)`
-  have hterm : ∀ mu : M, f.coeff mu * (weightOrbitSum P mu).coeff y =
-      if y ∈ weylWeightOrbit P mu then f.coeff y else 0 := fun mu ↦ by
+  have hterm : ∀ mu : M, f.coeff mu * (P.weightOrbitSum mu).coeff y =
+      if y ∈ P.weylWeightOrbit mu then f.coeff y else 0 := fun mu ↦ by
     rw [coeff_weightOrbitSum]
     split_ifs with h
     · obtain ⟨w, rfl⟩ := mem_weylWeightOrbit.mp h
@@ -250,7 +265,7 @@ theorem IsWeylInvariant.eq_sum_coeff_smul_weightOrbitSum (hf : IsWeylInvariant P
   obtain ⟨w, hwS, hwdom⟩ :=
     exists_weylGroup_smul_dominant_of_forall_reflection_mem_of_sub_mem_posRootCone b hcone hint
       hrefl (mu := y) hy
-  have hmem : w • y ∈ dominantWeightsBelow P b lam :=
+  have hmem : w • y ∈ P.dominantWeightsBelow b lam :=
     mem_dominantWeightsBelow.mpr ⟨hcone _ hwS, hwdom⟩
   rw [sum_eq_single_of_mem (w • y) hmem fun mu hmu hne ↦ ?_]
   · simp only [weylWeightOrbit_smul, self_mem_weylWeightOrbit, ↓reduceIte]
@@ -260,7 +275,5 @@ theorem IsWeylInvariant.eq_sum_coeff_smul_weightOrbitSum (hf : IsWeylInvariant P
   rw [← mul_smul] at hwdom
   have hfix := weylGroup_smul_eq_self_of_dominantIntegral (mem_dominantWeightsBelow.mp hmu).2 hwdom
   exact (hne (by rw [← mul_smul, hfix])).elim
-
-end Expansion
 
 end TauCeti
