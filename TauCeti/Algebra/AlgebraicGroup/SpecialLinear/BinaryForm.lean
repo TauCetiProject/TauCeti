@@ -336,6 +336,23 @@ private theorem coeffAction_upperPoint_X_pow_mul_X_pow (i j n : ℕ) :
   coeffAction_eq upperPoint (w := MvPolynomial.X 1 ^ j)
     (by rw [algebraTensorAlgEquiv_endOfPoint_upperPoint]; simp) n
 
+/-- The upper-point coefficient action on a coefficient-weighted monomial, using Mathlib's
+standard two-variable monomial formula. -/
+private theorem coeffAction_upperPoint_monomial (m : Fin 2 →₀ ℕ) (c : R) (n : ℕ) :
+    coeffAction upperPoint n (MvPolynomial.monomial m c) =
+      (c * ((-1) ^ n * ((m 0).choose n : R))) •
+        (MvPolynomial.X 0 ^ (m 0 - n) * MvPolynomial.X 1 ^ n * MvPolynomial.X 1 ^ m 1) := by
+  rw [MvPolynomial.monomial_fin_two, mul_assoc, ← MvPolynomial.smul_eq_C_mul, map_smul,
+    coeffAction_upperPoint_X_pow_mul_X_pow, smul_smul]
+
+/-- The coefficient at the top `x`-degree of a monomial is a signed multiple of `yᵈ`. -/
+private theorem coeffAction_upperPoint_monomial_top (m : Fin 2 →₀ ℕ) (c : R) {d : ℕ}
+    (hd : m 0 + m 1 = d) :
+    coeffAction upperPoint (m 0) (MvPolynomial.monomial m c) =
+      (c * (-1) ^ m 0) • MvPolynomial.X 1 ^ d := by
+  rw [coeffAction_upperPoint_monomial, Nat.choose_self, Nat.sub_self]
+  simp [← hd, pow_add]
+
 /-- The coefficient of `tⁿ` in `f(x, y - t x)` for a monomial `f = xⁱ yʲ`. -/
 private theorem coeffAction_lowerPoint_X_pow_mul_X_pow (i j n : ℕ) :
     coeffAction lowerPoint n (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j :
@@ -397,10 +414,8 @@ theorem X_one_pow_mem_of_ne_bot {W : Subcomodule k (coordinateHopfAlgebra k 2)
   have key : coeffAction upperPoint i₀ f = (f.coeff m₀ * (-1) ^ i₀) • MvPolynomial.X 1 ^ d := by
     conv_lhs => rw [f.as_sum]
     rw [map_sum, Finset.sum_eq_single m₀]
-    · rw [MvPolynomial.monomial_fin_two, mul_assoc, ← MvPolynomial.smul_eq_C_mul, map_smul,
-        coeffAction_upperPoint_X_pow_mul_X_pow, hm₀i, Nat.choose_self, Nat.sub_self,
-        ← hf.add_eq_of_mem_support hm₀, hm₀i]
-      simp [smul_smul, pow_add, mul_comm]
+    · simpa only [hm₀i] using
+        coeffAction_upperPoint_monomial_top m₀ (f.coeff m₀) (hf.add_eq_of_mem_support hm₀)
     · -- Every other monomial has a smaller power of `x`, so its binomial coefficient vanishes.
       intro m hm hne₀
       have hle : m 0 ≤ i₀ := (f.support.image (· 0)).le_max' _ (Finset.mem_image_of_mem _ hm)
@@ -409,8 +424,7 @@ theorem X_one_pow_mem_of_ne_bot {W : Subcomodule k (coordinateHopfAlgebra k 2)
         have h₁ := hf.add_eq_of_mem_support hm
         have h₂ := hf.add_eq_of_mem_support hm₀
         exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨heq.trans hm₀i.symm, by omega⟩)
-      rw [MvPolynomial.monomial_fin_two, mul_assoc, ← MvPolynomial.smul_eq_C_mul, map_smul,
-        coeffAction_upperPoint_X_pow_mul_X_pow, Nat.choose_eq_zero_of_lt hlt]
+      rw [coeffAction_upperPoint_monomial, Nat.choose_eq_zero_of_lt hlt]
       simp
     · intro h
       exact absurd hm₀ h
