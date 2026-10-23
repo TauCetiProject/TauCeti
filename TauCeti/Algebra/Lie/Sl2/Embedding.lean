@@ -18,10 +18,10 @@ homomorphism carries the standard triple
 `E = E₀₁`, `F = E₁₀`, `H = E₀₀ - E₁₁`
 
 to a triple, and conversely `IsSl2Triple.toLieHom` sends `E`, `F`, `H` to `e`, `f`, `h`. Over a
-domain of characteristic zero this homomorphism is injective, being the identification of
-`sl (Fin 2) K` with the Lie subalgebra `t.toLieSubalgebra K` spanned by the triple. This is the
-form in which statements about triples become statements about embeddings `sl₂ ↪ 𝔤`, and it is
-the form a representation of `sl₂` restricts along.
+domain of characteristic zero, with `L` torsion-free, this homomorphism is injective, being the
+identification of `sl (Fin 2) K` with the Lie subalgebra `t.toLieSubalgebra K` spanned by the
+triple. This is the form in which statements about triples become statements about embeddings
+`sl₂ ↪ 𝔤`, and it is the form a representation of `sl₂` restricts along.
 
 Read through this dictionary, the Jacobson–Morozov theorem says that in a finite-dimensional Lie
 algebra with nondegenerate Killing form over a field of characteristic zero, the images of `E`
@@ -32,20 +32,19 @@ conjugacy theorem says that two embeddings with the same value at `E` differ by 
 ## Main definitions
 
 * `IsSl2Triple.toLieHom`: the Lie algebra homomorphism `sl (Fin 2) K →ₗ⁅K⁆ L` of a triple.
-* `IsSl2Triple.toLieSubalgebraEquiv`: over a domain of characteristic zero, the Lie algebra
-  isomorphism of `sl (Fin 2) K` with the subalgebra `t.toLieSubalgebra K` spanned by the triple.
+* `IsSl2Triple.toLieSubalgebraEquiv`: over a domain of characteristic zero, with `L`
+  torsion-free, the Lie algebra isomorphism of `sl (Fin 2) K` with the subalgebra
+  `t.toLieSubalgebra K` spanned by the triple.
 
 ## Main results
 
-* `TauCeti.lieHom_ext_slFinTwo`: a Lie algebra homomorphism out of `sl (Fin 2) K` is determined by
-  its values at `E` and `F`.
 * `IsSl2Triple.toLieHom_apply`: the formula `A ↦ A₀₁ • e + A₁₀ • f + A₀₀ • h`.
 * `IsSl2Triple.range_toLieHom`: the range of `t.toLieHom K` is `t.toLieSubalgebra K`.
 * `IsSl2Triple.toLieHom_map` and `TauCeti.eq_toLieHom_map`: naturality, and every homomorphism
   `φ` out of `sl (Fin 2) K` with `φ H ≠ 0` is the homomorphism of the image of the standard triple.
 * `IsSl2Triple.toLieHom_injective` and `TauCeti.injective_lieHom_slFinTwo_iff`: over a domain of
-  characteristic zero, a homomorphism out of `sl (Fin 2) K` is injective if and only if it does not
-  kill `H`.
+  characteristic zero, into a torsion-free Lie algebra, a homomorphism out of `sl (Fin 2) K` is
+  injective if and only if it does not kill `H`.
 * `TauCeti.exists_injective_lieHom_slFinTwo_iff`: **Jacobson–Morozov for embeddings.** An element
   `e` is the image of `E` under an embedding `sl₂ ↪ L` if and only if `e ≠ 0` and `ad e` is
   nilpotent.
@@ -65,31 +64,6 @@ public section
 open LieAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-
-namespace TauCeti
-
-section Ext
-
-variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
-
-/-- A Lie algebra homomorphism out of `sl (Fin 2) K` is determined by its values at the raising
-element `E = E₀₁` and the lowering element `F = E₁₀`: the Cartan element is `⁅E, F⁆`, and the
-three span. -/
-@[ext]
-theorem lieHom_ext_slFinTwo {φ ψ : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ L}
-    (he : φ (SpecialLinear.single 0 1 zero_ne_one 1) = ψ (SpecialLinear.single 0 1 zero_ne_one 1))
-    (hf : φ (SpecialLinear.single 1 0 one_ne_zero 1) = ψ (SpecialLinear.single 1 0 one_ne_zero 1)) :
-    φ = ψ := by
-  have hh : φ (SpecialLinear.singleSubSingle 0 1 1) = ψ (SpecialLinear.singleSubSingle 0 1 1) := by
-    rw [← lie_single_single_eq_singleSubSingle zero_ne_one (1 : K), LieHom.map_lie,
-      LieHom.map_lie, he, hf]
-  have hlin : (φ : SpecialLinear.sl (Fin 2) K →ₗ[K] L) = ψ :=
-    Module.Basis.ext (slFinTwoBasis K) fun i ↦ by fin_cases i <;> simpa
-  exact LieHom.ext fun x ↦ LinearMap.congr_fun hlin x
-
-end Ext
-
-end TauCeti
 
 namespace IsSl2Triple
 
@@ -163,23 +137,19 @@ section Domain
 variable (K : Type*) {L : Type*} [CommRing K] [IsDomain K] [CharZero K] [LieRing L]
   [LieAlgebra K L] [Module.IsTorsionFree K L] {h e f : L} (t : IsSl2Triple h e f)
 
-/-- **The homomorphism of a triple is an embedding.** Over a domain of characteristic zero, it
-sends the standard basis of `sl (Fin 2) K` to the linearly independent family `e`, `f`, `h`
-(`TauCeti.linearIndependent_isSl2Triple`). -/
+/-- **The homomorphism of a triple is an embedding.** Over a domain of characteristic zero, with
+`L` torsion-free, it sends the standard basis of `sl (Fin 2) K` to the linearly independent
+family `e`, `f`, `h` (`TauCeti.linearIndependent_isSl2Triple`). -/
 theorem toLieHom_injective : Function.Injective (t.toLieHom K) := by
-  refine (injective_iff_map_eq_zero _).2 fun A hA ↦ ?_
-  rw [toLieHom_apply] at hA
-  have hc := Fintype.linearIndependent_iff.1 (linearIndependent_isSl2Triple t)
-    ![A.val 0 1, A.val 1 0, A.val 0 0] (by simpa [Fin.sum_univ_three] using hA)
-  have h₀ : A.val 0 1 = 0 := by simpa using hc 0
-  have h₁ : A.val 1 0 = 0 := by simpa using hc 1
-  have h₂ : A.val 0 0 = 0 := by simpa using hc 2
-  rw [eq_smul_single_add_smul_single_add_smul_singleSubSingle A zero_ne_one, h₀, h₁, h₂]
-  simp
+  have hc : (t.toLieHom K : SpecialLinear.sl (Fin 2) K →ₗ[K] L) =
+      (slFinTwoBasis K).constr K ![e, f, h] :=
+    (slFinTwoBasis K).ext fun i ↦ by simpa using t.toLieHom_slFinTwoBasis K i
+  rw [← LieHom.coe_toLinearMap, hc]
+  exact (slFinTwoBasis K).injective_constr_of_linearIndependent (linearIndependent_isSl2Triple t)
 
 /-- **`sl₂` is isomorphic to the subalgebra spanned by a triple.** Over a domain of characteristic
-zero, the homomorphism of a triple is a Lie algebra isomorphism of `sl (Fin 2) K` onto
-`t.toLieSubalgebra K`. -/
+zero, with `L` torsion-free, the homomorphism of a triple is a Lie algebra isomorphism of
+`sl (Fin 2) K` onto `t.toLieSubalgebra K`. -/
 noncomputable def toLieSubalgebraEquiv : SpecialLinear.sl (Fin 2) K ≃ₗ⁅K⁆ t.toLieSubalgebra K :=
   (LieEquiv.ofInjective _ (t.toLieHom_injective K)).trans
     (LieEquiv.ofEq _ _ (by rw [t.range_toLieHom K]))
@@ -216,8 +186,9 @@ section Injective
 variable {K L : Type*} [CommRing K] [IsDomain K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [Module.IsTorsionFree K L]
 
-/-- Over a domain of characteristic zero, a Lie algebra homomorphism out of `sl (Fin 2) K` is
-injective if and only if it does not kill the Cartan element `H = E₀₀ - E₁₁`. -/
+/-- Over a domain of characteristic zero, a Lie algebra homomorphism out of `sl (Fin 2) K` into a
+torsion-free Lie algebra is injective if and only if it does not kill the Cartan element
+`H = E₀₀ - E₁₁`. -/
 theorem injective_lieHom_slFinTwo_iff (φ : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ L) :
     Function.Injective φ ↔ φ (SpecialLinear.singleSubSingle 0 1 1) ≠ 0 := by
   refine ⟨fun hφ ↦ ?_, fun hφ ↦ ?_⟩
