@@ -49,7 +49,7 @@ theorem norm_trace_le_spectralNorm (x : L) :
       (((minpoly K x).natDegree - 1 : ℕ) : ℝ) = 1 := by
     rw [Nat.cast_sub hr, Nat.cast_one, sub_sub_cancel]
   rw [hdegree, div_one, Real.rpow_one] at h
-  exact h
+  simpa only [spectralNorm, spectralValue] using h
 
 end TauCeti
 
