@@ -123,4 +123,5 @@ theorem exists_map_succAbove_of_map_succAbove_eq {n : ℕ} {j k : Fin (n + 2)} (
     rwa [Fin.succAbove_pred_of_lt _ _ hjk, Fin.predAbove_of_le_castSucc _ _ hle] at this
   rw [← h, ← map_comp, ← hcomp, map_comp]
 
+
 end Convexity.StdSimplex
