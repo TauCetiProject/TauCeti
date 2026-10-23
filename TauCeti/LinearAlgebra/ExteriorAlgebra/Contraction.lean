@@ -502,15 +502,13 @@ theorem ι_mul_eq_involute_mul (m : M) (x : ExteriorAlgebra R M) :
   | add x y hx hy => rw [mul_add, hx, hy, map_add, add_mul]
 
 /-- **Contraction is natural in the module**: if `d' ∘ f = d`, then contracting by `d'` after
-`ExteriorAlgebra.map f` is `ExteriorAlgebra.map f` after contracting by `d`. -/
+`ExteriorAlgebra.map f` is `ExteriorAlgebra.map f` after contracting by `d`. This is the case of
+the zero quadratic forms of `CliffordAlgebra.contractLeft_map`. -/
 theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] {f : M →ₗ[R] N}
     {d : Module.Dual R M} {d' : Module.Dual R N} (h : d' ∘ₗ f = d) (x : ExteriorAlgebra R M) :
     contractLeft (Q := (0 : QuadraticForm R N)) d' (ExteriorAlgebra.map f x) =
-      ExteriorAlgebra.map f (contractLeft (Q := (0 : QuadraticForm R M)) d x) := by
-  induction x using CliffordAlgebra.left_induction with
-  | algebraMap r => rw [AlgHom.commutes, contractLeft_algebraMap, contractLeft_algebraMap, map_zero]
-  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
-  | ι_mul x m hx => simp [contractLeft_ι_mul, hx, ← h]
+      ExteriorAlgebra.map f (contractLeft (Q := (0 : QuadraticForm R M)) d x) :=
+  CliffordAlgebra.contractLeft_map h x
 
 end ExteriorAlgebra
 
