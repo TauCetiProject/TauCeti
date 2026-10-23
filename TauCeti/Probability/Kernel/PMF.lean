@@ -44,7 +44,6 @@ variable [Countable α] [MeasurableSingletonClass α]
 def ofPMF (p : α → PMF β) : Kernel α β :=
   ofFunOfCountable fun a => (p a).toMeasure
 
-@[simp]
 theorem ofPMF_apply (p : α → PMF β) (a : α) : ofPMF p a = (p a).toMeasure := (rfl)
 
 instance (p : α → PMF β) : IsMarkovKernel (ofPMF p) :=
