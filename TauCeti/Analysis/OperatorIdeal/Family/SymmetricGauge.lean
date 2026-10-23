@@ -52,6 +52,7 @@ operator-norm family: it is the `p = ∞` endpoint of the Schatten scale.
   gauge is the operator-norm family.
 * `TauCeti.SymmetricGauge.opGauge_smul`: `Φ(c T) = ‖c‖ Φ(T)`.
 * `TauCeti.SymmetricGauge.opGauge_comp_comp_le`: `Φ(A T B) ≤ ‖A‖ Φ(T) ‖B‖`.
+* `TauCeti.SymmetricGauge.opGauge_comp_comp_le_self`: `Φ(A T B) ≤ Φ(T)` for contractions `A`, `B`.
 * `TauCeti.SymmetricGauge.opGauge_le_of_forall_kyFanGauge_le`: Ky Fan domination implies
   domination of the induced gauges.
 * `TauCeti.SymmetricGauge.opGauge_add_le`: `Φ(S + T) ≤ Φ(S) + Φ(T)` for maps out of a Hilbert
@@ -137,6 +138,14 @@ theorem opGauge_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B : E �
           simpa [enorm_eq_nnnorm, mul_right_comm] using
             ENNReal.coe_le_coe.2 (singularValue_comp_comp_le A T B n)
     _ = ‖A‖ₑ * Φ.opGauge T * ‖B‖ₑ := by rw [extend_smul, opGauge_def, mul_right_comm]
+
+/-- Composition on both sides by contractions does not increase the induced gauge. -/
+theorem opGauge_comp_comp_le_self {A : G →L[𝕜] H} (hA : ‖A‖ ≤ 1) (T : F →L[𝕜] G)
+    {B : E →L[𝕜] F} (hB : ‖B‖ ≤ 1) : Φ.opGauge (A ∘L T ∘L B) ≤ Φ.opGauge T := by
+  refine (Φ.opGauge_comp_comp_le A T B).trans ?_
+  rw [enorm_eq_nnnorm, enorm_eq_nnnorm]
+  exact (mul_le_of_le_one_right' (by exact_mod_cast hB)).trans
+    (mul_le_of_le_one_left' (by exact_mod_cast hA))
 
 /-- **Ky Fan dominance.** If every Ky Fan prefix of `S` is at most the corresponding prefix of `T`,
 then the induced gauge of `S` is at most that of `T`. The two maps may act between different

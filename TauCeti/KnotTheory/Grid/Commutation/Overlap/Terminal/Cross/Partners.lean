@@ -157,7 +157,7 @@ end TauCeti.GridPentagonRectangleDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- The inverse cross-recut of a counted partner is counted in the original diagram. -/
 private theorem crossRecut_mem_rectanglePentagonDecompositions

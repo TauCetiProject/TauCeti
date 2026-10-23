@@ -17,9 +17,10 @@ Two finite measures on a compact subset of `ι → ℝ` (`ι` finite) that agree
 
 This complements the univariate mechanism in `TauCeti/Probability/Moments/Determinacy.lean`, which
 determines a finite measure on `ℝ` from its polynomial moments under a finite-exponential-moment
-hypothesis. Here the hypothesis is compact support instead, and the conclusion is multivariate. The
-two are genuinely different routes: that one is analytic (the moment generating function is
-analytic on a strip), this one is approximation-theoretic (Stone–Weierstrass).
+hypothesis. Here the hypothesis is compact support instead, and the conclusion is multivariate,
+with the univariate case on `ℝ` as a corollary. The two are genuinely different routes: that one is
+analytic (the moment generating function is analytic on a strip), this one is
+approximation-theoretic (Stone–Weierstrass).
 
 It supplies the determinacy input consumed by `mixedIID_mixingLaw_unique`
 (`TauCetiRoadmap/Exchangeability/README.md`, *Layer 6 — directing measures and de Finetti
@@ -31,6 +32,8 @@ i.i.d. laws on a compact box.
 * `Measure.ext_of_forall_integral_monomial_eq` — the compact-subtype form.
 * `Measure.ext_of_forall_integral_monomial_eq_of_support` — the ambient form on `ι → ℝ`, for
   measures supported on a common compact set.
+* `Measure.ext_of_forall_integral_pow_eq_of_support` — the univariate form on `ℝ`: two finite
+  measures supported on a common compact set and with the same moments `∫ xⁿ` are equal.
 
 ## Scope
 
@@ -141,5 +144,28 @@ theorem Measure.ext_of_forall_integral_monomial_eq_of_support [Fintype ι] (hK :
   have hmap := congrArg (Measure.map (Subtype.val : K → (ι → ℝ)))
     (Measure.ext_of_forall_integral_monomial_eq hmom')
   rwa [map_comap_subtype_coe hKm, map_comap_subtype_coe hKm, hμr, hνr] at hmap
+
+/-- **Univariate moment determinacy on a compact set.** Two finite Borel measures on `ℝ` that are
+both supported on a common compact set `K` and have the same moments `∫ xⁿ` are equal.
+
+Neither support hypothesis can be dropped: the moments are Bochner integrals, which are `0` for
+non-integrable integrands, so the Dirac mass at `0` and the standard Cauchy measure have the same
+moments. -/
+theorem Measure.ext_of_forall_integral_pow_eq_of_support {K : Set ℝ} (hK : IsCompact K)
+    {μ ν : Measure ℝ} [IsFiniteMeasure μ] [IsFiniteMeasure ν] (hμ : μ Kᶜ = 0) (hν : ν Kᶜ = 0)
+    (hmom : ∀ n : ℕ, ∫ x, x ^ n ∂μ = ∫ x, x ^ n ∂ν) :
+    μ = ν := by
+  let e := (MeasurableEquiv.funUnique Unit ℝ).symm
+  have hpre : e ⁻¹' (univ.pi fun _ : Unit ↦ K)ᶜ = Kᶜ := by
+    ext x
+    simp [e]
+  have key : μ.map e = ν.map e := by
+    refine Measure.ext_of_forall_integral_monomial_eq_of_support (isCompact_univ_pi fun _ ↦ hK)
+      ?_ ?_ fun n ↦ ?_
+    · rw [e.map_apply, hpre, hμ]
+    · rw [e.map_apply, hpre, hν]
+    · rw [e.measurableEmbedding.integral_map, e.measurableEmbedding.integral_map]
+      simpa [e] using hmom (n ())
+  simpa using congrArg (Measure.map e.symm) key
 
 end TauCeti

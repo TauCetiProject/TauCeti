@@ -139,6 +139,11 @@ theorem quantumInteger_def (q : K) (r : ℤ) :
     quantumInteger q r = (q ^ r - q ^ (-r)) / (q - q⁻¹) := by
   rw [quantumInteger]
 
+/-- `(q - q⁻¹) [n]_q = q^n - q^(-n)` for natural `n`. -/
+theorem sub_inv_mul_quantumInteger_natCast {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
+    (q - q⁻¹) * quantumInteger q n = q ^ n - q⁻¹ ^ n := by
+  rw [quantumInteger_def, mul_div_cancel₀ _ hq, zpow_neg, zpow_natCast, inv_pow]
+
 /-- The zeroth quantum integer is zero. -/
 @[simp] theorem quantumInteger_zero (q : K) : quantumInteger q 0 = 0 := by
   simp [quantumInteger]
@@ -207,6 +212,16 @@ theorem quantumInteger_add_one (q : K) (r : ℤ) :
   rw [hneg_sub_one, zpow_sub₀ hq0]
   simp only [zpow_one, zpow_neg]
   field_simp [hq0, hq]
+  ring
+
+/-- The addition formula `[a + b]_q = q^a [b]_q + q^(-b) [a]_q`. -/
+theorem quantumInteger_add (q : K) (a b : ℤ) :
+    quantumInteger q (a + b) = q ^ a * quantumInteger q b + q ^ (-b) * quantumInteger q a := by
+  by_cases hq : q - q⁻¹ = 0
+  · simp [quantumInteger, hq]
+  have hq0 := ne_zero_of_sub_inv_ne_zero hq
+  simp only [quantumInteger, neg_add, zpow_add₀ hq0]
+  field_simp
   ring
 
 /-- The difference of two quantum integers as a determinant of neighbouring quantum integers:

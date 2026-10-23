@@ -94,23 +94,24 @@ theorem Lp.measure_lt_norm_ne_zero {alpha F : Type*} [MeasurableSpace alpha]
     exact ENNReal.toReal_le_of_le_ofReal hc_nonneg (eLpNormEssSup_le_of_ae_bound hae)
   exact (not_lt_of_ge hf_le) hc
 
+/-- For `0 < p < ∞`, the integral of the `p`-th power of the pointwise norm of an `Lᵖ` function
+is the `p`-th power of its `Lᵖ` norm. -/
+theorem Lp.integral_norm_rpow_eq_norm_rpow {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (f : Lp F p m) :
+    ∫ x, ‖f x‖ ^ p.toReal ∂m = ‖f‖ ^ p.toReal := by
+  have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ p.toReal ∂m :=
+    integral_nonneg fun x => Real.rpow_nonneg (norm_nonneg _) _
+  rw [Lp.norm_def, toReal_eLpNorm,
+    lpNorm_eq_integral_norm_rpow_toReal hp0 hp (Lp.aestronglyMeasurable f),
+    ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (ENNReal.toReal_pos hp0 hp).ne', Real.rpow_one]
+
 /-- The integral of the squared pointwise norm of an `L²` function is its squared `L²` norm. -/
 theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [NormedAddCommGroup F] (f : Lp F 2 m) :
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
-  have hp0 : (2 : ℝ≥0∞) ≠ 0 := by norm_num
-  have hptop : (2 : ℝ≥0∞) ≠ ∞ := by norm_num
-  have h_lp := lpNorm_eq_integral_norm_rpow_toReal hp0 hptop (Lp.aestronglyMeasurable f)
-  rw [ENNReal.toReal_ofNat] at h_lp
-  have h_norm : ‖f‖ = lpNorm (⇑f) 2 m := by
-    rw [Lp.norm_def, toReal_eLpNorm]
-  have h_rpow : (fun x => ‖f x‖ ^ (2 : ℝ)) = fun x => ‖f x‖ ^ 2 := by
-    funext x
-    exact Real.rpow_two (‖f x‖)
-  rw [h_rpow] at h_lp
-  have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ 2 ∂m := integral_nonneg fun x => sq_nonneg _
-  rw [h_norm, h_lp, ← Real.rpow_two, ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (by norm_num),
-    Real.rpow_one]
+  simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
+    Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
 
 /-- On a finite measure space, the `L¹` norm of an `Lᵖ` function, `1 ≤ p`, is at most
 `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. -/

@@ -32,8 +32,8 @@ additional scalars `S` acting on `E`; this scalar-linear refinement is
 * `PadicInt.mahlerLinearIsometryEquiv`: Mahler's isometry as an `S`-linear isometric equivalence.
 * `PadicInt.mahlerEquiv_symm_single`: the Mahler series of a coordinate vector `single n a` is the
   Mahler term `x ↦ (x choose n) • a`.
-* `PadicInt.mahlerTerm_eq_smul`: over a `ℤ_[p]`-algebra `R`, the Mahler term with coefficient `a` is
-  `a` times the Mahler basis function `mahler n • 1`.
+* `PadicInt.mahlerTerm_eq_smul`: over a normed ring with a `ℤ_[p]`-action commuting with left
+  multiplication, the Mahler term with coefficient `a` is `a` times `mahler n • 1`.
 * `PadicInt.mahler_natCast_mul`: for `m : ℕ`, the Mahler function `(m x choose n)` is the integral
   combination of the `(x choose k)`, `k ≤ n`, with coefficients those of `((1 + T) ^ m - 1) ^ k`
   at `T ^ n`.
@@ -127,14 +127,13 @@ theorem mahlerEquiv_symm_single (n : ℕ) (a : E) :
 
 end Module
 
-/-- Over a `ℤ_[p]`-algebra `R`, the Mahler term with coefficient `a` is `a` times the Mahler basis
-function `mahler n • 1`. -/
-theorem mahlerTerm_eq_smul {R : Type*} [NormedRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R]
-    (a : R) (n : ℕ) :
+/-- For a normed ring `R` with a `ℤ_[p]`-action commuting with left multiplication, the Mahler term
+with coefficient `a` is `a` times the Mahler basis function `mahler n • 1`. -/
+theorem mahlerTerm_eq_smul {R : Type*} [NormedRing R] [Module ℤ_[p] R] [IsBoundedSMul ℤ_[p] R]
+    [SMulCommClass ℤ_[p] R R] (a : R) (n : ℕ) :
     mahlerTerm a n = a • ((mahler n : C(ℤ_[p], ℤ_[p])) • (1 : C(ℤ_[p], R))) := by
   ext x
-  rw [mahlerTerm_apply, ContinuousMap.smul_apply, ContinuousMap.smul_apply',
-    ContinuousMap.one_apply, smul_eq_mul, mul_smul_comm, mul_one]
+  simp [mahlerTerm_apply, mul_smul_comm]
 
 section Dilation
 
