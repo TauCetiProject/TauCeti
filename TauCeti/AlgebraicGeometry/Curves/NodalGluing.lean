@@ -371,6 +371,34 @@ def flagPointSet (d : FlagPairData ι Flag X) : Set (Σ i, X i) :=
     · exact ⟨(f, false), (flagPoint_false d f).symm.trans hx.symm⟩
     · exact ⟨(f, true), (flagPoint_true d f).symm.trans hx.symm⟩
 
+/-- The flag point set is the range of the flag points. -/
+theorem flagPointSet_eq_range (d : FlagPairData ι Flag X) :
+    flagPointSet d = Set.range (flagPoint d) :=
+  (rfl)
+
+/-- **Flag points are the points glued to another point.**  A point of the disjoint union is a
+flag point exactly when the generating relation relates it to some point. -/
+theorem mem_flagPointSet_iff_exists_flagRel (d : FlagPairData ι Flag X) (x : Σ i, X i) :
+    x ∈ flagPointSet d ↔ ∃ y, flagRel d x y := by
+  rw [mem_flagPointSet]
+  constructor
+  · rintro ⟨f, hx | hx⟩
+    · exact ⟨sndPoint d f, f, Or.inl ⟨hx, rfl⟩⟩
+    · exact ⟨fstPoint d f, f, Or.inr ⟨hx, rfl⟩⟩
+  · rintro ⟨y, f, ⟨hx, -⟩ | ⟨hx, -⟩⟩
+    · exact ⟨f, Or.inl hx⟩
+    · exact ⟨f, Or.inr hx⟩
+
+/-- **The partner of a flag point.**  The generating relation relates the flag points selected by
+`p` and `q` exactly when they are the two points of one flag pair: `q` is `p` with its boolean
+negated. -/
+theorem flagRel_flagPoint_iff (d : FlagPairData ι Flag X) (p q : Flag × Bool) :
+    flagRel d (flagPoint d p) (flagPoint d q) ↔ q = (p.1, !p.2) := by
+  obtain ⟨f, b⟩ := p
+  obtain ⟨g, c⟩ := q
+  simp only [flagRel_def, ← flagPoint_false, ← flagPoint_true, (flagPoint_injective d).eq_iff]
+  cases b <;> cases c <;> simp [eq_comm]
+
 /-- The flag points of `d` form a finite set. -/
 theorem flagPointSet_finite [Finite Flag] : (flagPointSet d).Finite :=
   Set.finite_range (flagPoint d)
@@ -478,6 +506,12 @@ def nodeOfFlag (d : FlagPairData ι Flag X) (f : Flag) : GluedCurve d :=
   refine Quotient.sound ?_
   exact (gluedRelSetoid_r d (sndPoint d f) (fstPoint d f)).mpr
     ((gluedRel_iff_of_flagPoints d (f := f) (g := f) (Or.inr rfl) (Or.inl rfl)).mpr rfl)
+
+/-- The flag point selected by `p` is sent to the node of its flag pair `p.1`. -/
+@[simp] theorem mk_flagPoint (d : FlagPairData ι Flag X) (p : Flag × Bool) :
+    Quotient.mk (gluedRelSetoid d) (flagPoint d p) = nodeOfFlag d p.1 := by
+  obtain ⟨f, b⟩ := p
+  cases b <;> simp
 
 /-- **The fibres of the flag-pair map.**  Two flag pairs have the same node exactly when they are
 equal, so every non-empty fibre of `nodeOfFlag` is a singleton.  The fibres over the points that
