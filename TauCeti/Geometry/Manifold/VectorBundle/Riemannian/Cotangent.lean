@@ -143,13 +143,14 @@ section Regular
 
 variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
-/-- **Covectors other than zero are regular points of the norm.** Along the fibre ray
-`t ↦ t • z` the norm is `t ↦ |t| ‖z.2‖`, whose derivative at `t = 1` is `‖z.2‖ ≠ 0`. -/
+/-- **Covectors other than zero are regular points of the norm.** Every covector `z` with
+`z.2 ≠ 0` is a regular point of `z ↦ ‖z.2‖`. -/
 theorem isRegularPoint_norm_snd {z : CotangentBundle I M} (hz : z.2 ≠ 0) :
     IsRegularPoint (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ)
       (fun z : CotangentBundle I M ↦ ‖z.2‖) z := by
   set f : CotangentBundle I M → ℝ := fun z ↦ ‖z.2‖
-  -- The fibre ray through `z`.
+  -- Along the fibre ray `t ↦ t • z` the norm is `t ↦ |t| ‖z.2‖`, whose derivative at `t = 1` is
+  -- `‖z.2‖ ≠ 0`, so the differential of the norm at `z` is surjective.
   set γ : ℝ → CotangentBundle I M := fun t ↦ ⟨z.proj, t • z.2⟩
   have hγ : ContMDiff 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1 γ :=
     contMDiff_id.smul_totalSpace contMDiff_const
