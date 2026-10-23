@@ -489,7 +489,7 @@ theorem exists_unpairedHexagonComposite_of_initialPentagonPair {x y z : GridStat
   generalize hCr : C.reverse = Cr at *
   have hcolumn : Cr.column = C.column := hCr ▸ C.reverse_column
   have hturn : Cr.turnRow = C.oppositeTurnRow := hCr ▸ C.reverse_turnRow
-  rcases Cr with ⟨column, turn, opposite, hne, hnon, hOa, hXa, hOb, hXb⟩
+  rcases Cr with ⟨⟨column, turn, hne⟩, opposite, hnon, hOa, hXa, hOb, hXb⟩
   simp only at hcolumn hturn
   subst column turn
   obtain ⟨hPE, hPX⟩ := (G.mem_initialPentagons P).mp hP

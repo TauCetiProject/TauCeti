@@ -71,7 +71,7 @@ private theorem norm_coeff_le_of_isDistinguished_one {g : washnitzerAlgebra (Opt
   set Gt := (Huber.restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate)
   have hGt (m : ℕ) (t : σ →₀ ℕ) : coeff t (↑(PowerSeries.coeff m Gt) : MvPowerSeries σ K) =
       coeff (t.optionElim m) (g : MvPowerSeries (Option σ) K) := by
-    rw [Huber.coeff_restrictedOptionEquiv, coeff_coeff_optionEquivLeft,
+    rw [Huber.coeff_restrictedOptionEquiv (c := fun _ ↦ 1), coeff_coeff_optionEquivLeft,
       washnitzerAlgebra.coe_toTate]
   have hone (t : σ →₀ ℕ) : t.prod (fun _ n ↦ (1 : ℝ) ^ n) = 1 := by
     rw [Finsupp.prod_pow_eq_pow_degree, one_pow]

@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Basic
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.Basic
 import TauCeti.LinearAlgebra.Trace.Exchange
 import TauCeti.LinearAlgebra.Trace.Idempotent
 import TauCeti.RepresentationTheory.ClassicalGroups.Weight.TensorPower

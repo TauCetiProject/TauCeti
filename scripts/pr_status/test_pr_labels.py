@@ -365,29 +365,6 @@ class RoadmapLabels(unittest.TestCase):
             self.assertEqual(core.pr_state("9")["roadmaps"], [])
 
 
-class InProgress(unittest.TestCase):
-    HEAD = "H" * 40
-    NOW = 1_700_000_000
-
-    def marker(self, head, expires):
-        return {"body": '<!--tauceti-review-in-progress {"head": "%s", "expires_at": %d}-->' % (head, expires)}
-
-    def test_unexpired_at_head_is_true(self):
-        self.assertTrue(core.inprogress_from([self.marker(self.HEAD, self.NOW + 900)], self.HEAD, self.NOW))
-
-    def test_expired_is_false(self):
-        self.assertFalse(core.inprogress_from([self.marker(self.HEAD, self.NOW - 1)], self.HEAD, self.NOW))
-
-    def test_wrong_head_is_false(self):
-        self.assertFalse(core.inprogress_from([self.marker("O" * 40, self.NOW + 900)], self.HEAD, self.NOW))
-
-    def test_malformed_is_ignored(self):
-        self.assertFalse(core.inprogress_from([{"body": "<!--tauceti-review-in-progress {bad-->"}], self.HEAD, self.NOW))
-
-    def test_no_marker_is_false(self):
-        self.assertFalse(core.inprogress_from([{"body": "just a comment"}], self.HEAD, self.NOW))
-
-
 class Derive(unittest.TestCase):
     """core.derive glues pr_state/ci_status/issue_comments together; stub them."""
 
@@ -412,7 +389,7 @@ class Derive(unittest.TestCase):
         }])
         self.assertEqual(core.derive("1")["review"], "changes")
 
-    def test_contributor_inprogress_marker_drives_status(self):
+    def test_old_marker_does_not_drive_status(self):
         self.stub(ci="success",
                   comments=[{
                       "body": '<!--tauceti-review-in-progress {"head": "H", "expires_at": 9999999999}-->',
@@ -420,7 +397,7 @@ class Derive(unittest.TestCase):
                   }])
         d = core.derive("1", now=1_700_000_000)
         self.assertEqual(d["lifecycle"], "open")
-        self.assertTrue(d["review_inprogress"])
+        self.assertNotIn("review_inprogress", d)
 
     def test_terminal_clears_everything(self):
         self.stub(state="closed", merged=True, ci="success",
@@ -429,7 +406,7 @@ class Derive(unittest.TestCase):
         self.assertEqual(d["lifecycle"], "merged")
         self.assertIsNone(d["ci"])
         self.assertIsNone(d["review"])
-        self.assertFalse(d["review_inprogress"])
+        self.assertNotIn("review_inprogress", d)
 
     def test_state_param_avoids_refetch(self):
         called = {"n": 0}

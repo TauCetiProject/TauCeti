@@ -18,7 +18,7 @@ implies it at every smaller threshold) and holds at `0`, the supremum recovers t
 
 public section
 
-namespace TauCeti
+namespace Antitone
 
 /-- For an antitone predicate on `ℕ` holding at `0`, a natural number is at most the supremum in
 `ℕ∞` of the natural numbers satisfying the predicate exactly when it satisfies the predicate. -/
@@ -34,4 +34,4 @@ theorem natCast_le_iSup_iff {P : ℕ → Prop} (hP : Antitone P) (h0 : P 0) {k :
     obtain ⟨hPn, hkn⟩ := lt_iSup_iff.mp hn
     exact hP (Nat.succ_le_of_lt (ENat.natCast_lt_natCast.mp hkn)) hPn
 
-end TauCeti
+end Antitone

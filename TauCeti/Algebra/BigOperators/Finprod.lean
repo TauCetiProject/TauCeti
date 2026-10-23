@@ -13,7 +13,8 @@ public import Mathlib.Algebra.BigOperators.Finprod
 `Fintype.prod_sum_type` splits a product over `α ⊕ β` into the two partial products, but it needs
 both index types to be finite.  This file records the `finprod` analogue, which only needs the two
 restricted families to have finite multiplicative support. Regrouping by the fibers of an
-arbitrary map is also available, without finiteness assumptions on the fibers.
+arbitrary map is also available, without finiteness assumptions on the fibers, as is cancelling a
+finitely supported factor whose product is `1`.
 
 ## Main results
 
@@ -21,6 +22,8 @@ arbitrary map is also available, without finiteness assumptions on the fibers.
   soon as its two restrictions do.
 * `TauCeti.finprod_sum_type`: `∏ᶠ v : α ⊕ β, f v = (∏ᶠ a, f (.inl a)) * ∏ᶠ b, f (.inr b)`.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
+* `TauCeti.finprod_mul_eq_right_of_finprod_eq_one`: multiplying by a finitely supported family
+  with product `1` preserves a product, without any finiteness assumption on the other factor.
 -/
 
 public section
@@ -84,5 +87,22 @@ theorem finprod_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (f : 
     _ = ∏ᶠ b, ∏ a ∈ hf.toFinset with g a = b, f a := finprod_congr hb
     _ = ∏ a ∈ hf.toFinset, f a := finprod_prod_filter g hf.toFinset f
     _ = ∏ᶠ a, f a := (finprod_eq_prod f hf).symm
+
+/-- Multiplying a family by a finitely supported family whose product is `1` does not change its
+product. The other family need not have finite multiplicative support: if it does not, neither
+does the product family, and both products are `1`. -/
+@[to_additive /-- Adding a finitely supported family whose sum is `0` to a family does not change
+its sum. The other family need not have finite support: if it does not, neither does the sum
+family, and both sums are `0`. -/]
+theorem finprod_mul_eq_right_of_finprod_eq_one {ι : Type*} {f g : ι → M}
+    (hf : HasFiniteMulSupport f) (hf1 : ∏ᶠ i, f i = 1) : ∏ᶠ i, f i * g i = ∏ᶠ i, g i := by
+  by_cases hg : HasFiniteMulSupport g
+  · rw [finprod_mul_distrib hf hg, hf1, one_mul]
+  · have hfg : ¬HasFiniteMulSupport fun i ↦ f i * g i := fun hfg ↦ hg <|
+      (hfg.union hf).subset fun i hi ↦ by
+        by_contra h
+        simp only [Set.mem_union, mem_mulSupport, not_or, not_not] at h
+        exact hi (by simpa [h.2] using h.1)
+    rw [finprod_of_infinite_mulSupport hfg, finprod_of_infinite_mulSupport hg]
 
 end TauCeti

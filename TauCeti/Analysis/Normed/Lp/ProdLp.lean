@@ -26,7 +26,8 @@ Finally, it bundles the componentwise action of two continuous linear maps `f` a
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
 Mathlib's `LinearIsometry.withLpProdMap`. For `p = 2` and inner product spaces this is the
 orthogonal block sum `f ⊕ g`. It is additive in the pair `(f, g)`, its rank is the sum of the
-ranks of `f` and `g`, and its operator norm is the larger of the two operator norms.
+ranks of `f` and `g`, and its operator norm is the larger of the two operator norms. The
+projections onto the factors and the inclusions of the factors are contractions.
 
 ## Main statements
 
@@ -41,6 +42,10 @@ ranks of `f` and `g`, and its operator norm is the larger of the two operator no
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
 * `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
+* `WithLp.norm_fstL_le_one`, `WithLp.norm_sndL_le_one`,
+  `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one`,
+  `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one` — the projections onto and the
+  inclusions of the factors are contractions.
 -/
 
 public section
@@ -252,3 +257,34 @@ theorem nnnorm_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
 end Normed
 
 end ContinuousLinearMap
+
+namespace WithLp
+
+section Contraction
+
+variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β : Type*) [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup α] [NormedSpace 𝕜 α] [SeminormedAddCommGroup β] [NormedSpace 𝕜 β]
+
+/-- The projection of `WithLp p (α × β)` onto its first factor is a contraction. -/
+theorem norm_fstL_le_one : ‖fstL p 𝕜 α β‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simpa using norm_fst_le (x := x)
+
+/-- The projection of `WithLp p (α × β)` onto its second factor is a contraction. -/
+theorem norm_sndL_le_one : ‖sndL p 𝕜 α β‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simpa using norm_snd_le (x := x)
+
+/-- The inclusion of the first factor into `WithLp p (α × β)` is a contraction. -/
+theorem norm_prodContinuousLinearEquiv_symm_comp_inl_le_one :
+    ‖(prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
+      ContinuousLinearMap.inl 𝕜 α β‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simp
+
+/-- The inclusion of the second factor into `WithLp p (α × β)` is a contraction. -/
+theorem norm_prodContinuousLinearEquiv_symm_comp_inr_le_one :
+    ‖(prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
+      ContinuousLinearMap.inr 𝕜 α β‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simp
+
+end Contraction
+
+end WithLp
