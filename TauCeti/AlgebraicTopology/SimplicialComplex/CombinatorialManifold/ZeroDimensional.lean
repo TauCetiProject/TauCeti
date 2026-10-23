@@ -9,15 +9,17 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.ZeroDimensional
 
 /-!
-# Combinatorial zero-balls and zero-spheres
+# Combinatorial zero-balls, zero-spheres and zero-manifolds
 
 A combinatorial zero-ball is exactly a single vertex, and a combinatorial zero-sphere is
 exactly two distinct vertices, with no higher faces. These characterizations identify the base
 cases of the sphere-or-ball link condition without requiring callers to unpack stellar move
 sequences. In particular, the link of a vertex in a combinatorial one-manifold has one or two
-vertices, corresponding to a boundary or interior point.
+vertices, corresponding to a boundary or interior point. A combinatorial zero-manifold has
+precisely the singleton faces, so an abstract combinatorial zero-manifold is the bottom complex.
 
-The definitions use stellar equivalence rather than a literal standard model. Their necessity
+The ball and sphere definitions use stellar equivalence rather than a literal standard model.
+Their necessity
 follows from preservation of dimension and, in dimension zero, of face cardinality under every
 stellar move and injective relabeling.
 
@@ -84,3 +86,33 @@ theorem isCombinatorialSphere_zero_iff :
     exact isCombinatorialSphere_simplexBoundary (by simp [hvw])
 
 end PreAbstractSimplicialComplex
+
+namespace AbstractSimplicialComplex
+
+open PreAbstractSimplicialComplex
+
+variable {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι}
+
+/-- A combinatorial zero-manifold has precisely the singleton faces. The bottom abstract
+complex contains every vertex, unlike the void bottom precomplex. -/
+@[simp]
+theorem isCombinatorialManifold_zero_iff_eq_bot :
+    IsCombinatorialManifold K.toPreAbstractSimplicialComplex 0 ↔ K = ⊥ := by
+  constructor
+  · intro h
+    apply bot_unique
+    intro σ hσ
+    exact PreAbstractSimplicialComplex.dimension_le_zero_iff.mp h.dimension_le σ hσ
+  · rintro rfl
+    refine PreAbstractSimplicialComplex.isCombinatorialManifold_zero_iff.mpr fun v _ => ?_
+    apply bot_unique
+    intro σ hσ
+    obtain ⟨hne, hdis, w, hw⟩ := mem_link_nonempty.mp hσ
+    have hvw : v = w := Finset.mem_singleton.mp
+      (hw ▸ Finset.mem_union_right σ (Finset.mem_singleton_self v))
+    obtain ⟨u, hu⟩ := hne
+    have huw : u = w := Finset.mem_singleton.mp (hw ▸ Finset.mem_union_left {v} hu)
+    have huv : u = v := huw.trans hvw.symm
+    exact (Finset.disjoint_singleton_right.mp hdis) (huv ▸ hu)
+
+end AbstractSimplicialComplex
