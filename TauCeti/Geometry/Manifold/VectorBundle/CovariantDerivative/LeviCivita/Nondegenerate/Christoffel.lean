@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordin
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Christoffel symbols of a nondegenerate Levi-Civita connection in a chart
