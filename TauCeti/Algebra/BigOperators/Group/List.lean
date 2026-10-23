@@ -49,7 +49,7 @@ theorem prod_map_erase_of_eq_one [DecidableEq ι] (l : List ι) (f : ι → M) {
     (ha : f a = 1) : ((l.erase a).map f).prod = (l.map f).prod := by
   by_cases h : a ∈ l
   · obtain ⟨l₁, l₂, -, rfl, he⟩ := exists_erase_eq h
-    rw [he, map_append, map_append, map_cons, prod_append, prod_append, prod_cons, ha, one_mul]
+    simp [he, ha]
   · rw [erase_of_not_mem h]
 
 end List

@@ -298,8 +298,8 @@ theorem parts_singletonPartEquiv_apply {i : α} (hi : i ∈ s)
 @[simp]
 theorem parts_singletonPartEquiv_symm_apply {i : α} (hi : i ∈ s)
     (τ : NoncrossingPartition (s.erase i)) :
-    ((singletonPartEquiv hi).symm τ).1.1.parts = insert {i} τ.1.parts :=
-  (rfl)
+    ((singletonPartEquiv hi).symm τ).1.1.parts = insert {i} τ.1.parts := by
+  simp [singletonPartEquiv]
 
 end NoncrossingPartition
 
