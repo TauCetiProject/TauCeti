@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Beta
+import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.Analysis.SpecialFunctions.Gamma
 
 /-!
 # Euler's beta integrals, in real-valued form
@@ -60,7 +62,10 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `1 / 2 < s`, with total mass `√ν * Β(1 / 2, s - 1 / 2)`;
 * `ProbabilityTheory.beta_comm` — symmetry of `Β`;
 * `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
-* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`.
+* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
+* `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
+* `ProbabilityTheory.tendsto_natCast_mul_beta_atTop` — `n Β(n, s) → 0` along the natural numbers
+  for `s > 1`.
 
 ## Implementation notes
 
@@ -506,5 +511,27 @@ theorem beta_add_one_left (ha : a ≠ 0) (hab : a + b ≠ 0) :
   rw [ProbabilityTheory.beta, ProbabilityTheory.beta, hshift, Real.Gamma_add_one ha,
     Real.Gamma_add_one hab]
   field_simp
+
+/-- Euler's beta function at the symmetric shape parameters `3 / 2`. -/
+@[simp]
+theorem beta_three_halves_three_halves : beta (3 / 2) (3 / 2) = Real.pi / 8 := by
+  have hg := Real.Gamma_nat_add_one_add_half 0
+  norm_num at hg
+  rw [beta, hg]
+  norm_num
+  nlinarith [Real.sq_sqrt Real.pi_pos.le]
+
+open Filter Topology in
+/-- The values `n B(n, s)` tend to zero for `s > 1`: they equal `Γ(s) Γ(n + 1) / Γ(n + s)`, which
+decays like `Γ(s) n ^ (1 - s)`. -/
+theorem tendsto_natCast_mul_beta_atTop {s : ℝ} (hs : 1 < s) :
+    Tendsto (fun n : ℕ => n * beta n s) atTop (𝓝 0) := by
+  have hlim := (Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop hs).const_mul
+    (Real.Gamma s)
+  rw [mul_zero] at hlim
+  refine hlim.congr' ?_
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  rw [beta, Real.Gamma_add_one (Nat.cast_ne_zero.mpr hn)]
+  ring
 
 end ProbabilityTheory

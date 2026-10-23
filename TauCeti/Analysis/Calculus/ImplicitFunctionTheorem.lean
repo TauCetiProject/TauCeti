@@ -56,9 +56,13 @@ pointwise conclusion to smoothness on one open neighbourhood.
 * `HasStrictFDerivAt.eventually_implicitFunctionOfComplemented_eq`: near `0`, Mathlib's two
   spellings of the implicit function agree.
 * `ContinuousLinearMap.implicitCoordEquiv`: the derivative `x ↦ (f' x, P x)` of the coordinate
-  map, as a continuous linear equivalence.
+  map, as a continuous linear equivalence; its inverse is the inclusion on `{0} × ker f'`
+  (`ContinuousLinearMap.implicitCoordEquiv_symm_apply_zero_mk`).
 * `HasStrictFDerivAt.implicitCoordSource`: an open neighbourhood of the base point on which the
   derivative of the coordinate map stays invertible.
+* `HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented_congr` and
+  `HasStrictFDerivAt.implicitCoordSource_congr`: both constructions depend only on the equation
+  and the base point.
 * `HasStrictFDerivAt.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem`: the
   inverse homeomorphism is `C^n` at every point of the target coming from that neighbourhood.
 * `HasStrictFDerivAt.surjective_of_mem_implicitCoordSource`: the derivative of the equation stays
@@ -168,6 +172,22 @@ theorem coe_implicitCoordEquiv (f' : E →L[K] F) (hf' : f'.range = ⊤)
   ContinuousLinearMap.ext fun x ↦ by
     simp [implicitCoordEquiv, ContinuousLinearMap.equivProdOfSurjectiveOfIsCompl_apply]
 
+/-- The equivalence `ContinuousLinearMap.implicitCoordEquiv` sends `v` to `(f' v, P v)`. -/
+@[simp]
+theorem implicitCoordEquiv_apply (f' : E →L[K] F) (hf' : f'.range = ⊤)
+    (hker : f'.ker.ClosedComplemented) (v : E) :
+    f'.implicitCoordEquiv hf' hker v = (f' v, Classical.choose hker v) := by
+  rw [← ContinuousLinearEquiv.coe_coe, coe_implicitCoordEquiv, ContinuousLinearMap.prod_apply]
+
+/-- The inverse of `ContinuousLinearMap.implicitCoordEquiv` sends `(0, k)` to the kernel vector
+`k`. -/
+@[simp]
+theorem implicitCoordEquiv_symm_apply_zero_mk (f' : E →L[K] F) (hf' : f'.range = ⊤)
+    (hker : f'.ker.ClosedComplemented) (k : f'.ker) :
+    (f'.implicitCoordEquiv hf' hker).symm (0, k) = k := by
+  rw [ContinuousLinearEquiv.symm_apply_eq, implicitCoordEquiv_apply, Classical.choose_spec hker k,
+    ← ContinuousLinearMap.coe_coe, LinearMap.mem_ker.1 k.2]
+
 end ContinuousLinearMap
 
 namespace HasStrictFDerivAt
@@ -266,6 +286,25 @@ theorem isOpen_implicitCoordSource (hf : HasStrictFDerivAt f f' a) (hf' : f'.ran
 theorem mem_implicitCoordSource (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
     (hker : f'.ker.ClosedComplemented) : a ∈ hf.implicitCoordSource hf' hker :=
   HasStrictFDerivAt.mem_toOpenPartialHomeomorph_source _
+
+/-- The implicit-function homeomorphism depends only on the equation and the base point, not on
+how they are written: equal equations at equal base points give equal homeomorphisms. -/
+theorem implicitToOpenPartialHomeomorphOfComplemented_congr {g : E → F} {b : E}
+    (hf : HasStrictFDerivAt f f' a) (hg : HasStrictFDerivAt g f' b) (hfg : f = g) (hab : a = b)
+    (hf' : f'.range = ⊤) (hker : f'.ker.ClosedComplemented) :
+    hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker =
+      hg.implicitToOpenPartialHomeomorphOfComplemented g f' hf' hker := by
+  subst hfg hab
+  rfl
+
+/-- The neighbourhood `HasStrictFDerivAt.implicitCoordSource` depends only on the equation and the
+base point, not on how they are written. -/
+theorem implicitCoordSource_congr {g : E → F} {b : E} (hf : HasStrictFDerivAt f f' a)
+    (hg : HasStrictFDerivAt g f' b) (hfg : f = g) (hab : a = b) (hf' : f'.range = ⊤)
+    (hker : f'.ker.ClosedComplemented) :
+    hf.implicitCoordSource hf' hker = hg.implicitCoordSource hf' hker := by
+  subst hfg hab
+  rfl
 
 /-- **The derivative of the coordinate map stays invertible on
 `HasStrictFDerivAt.implicitCoordSource`.** If `f` has derivative `A` at a point of that

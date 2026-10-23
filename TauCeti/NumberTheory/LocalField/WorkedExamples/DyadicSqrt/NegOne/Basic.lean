@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
+public import Mathlib.RingTheory.QuadraticAlgebra
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.CupPadicTwo
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.PadicTwo
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
 
@@ -76,13 +76,13 @@ theorem coe_oneAddTwoI : (oneAddTwoI : DyadicSqrtNegOne) = 1 + 2 * i := (rfl)
 /-- The trace of `1 + 2i` is `2`. -/
 @[simp↓] -- Compute before coercion and quadratic-algebra comparison lemmas apply.
 theorem trace_oneAddTwoI : Algebra.trace ℚ_[2] DyadicSqrtNegOne oneAddTwoI = 2 := by
-  rw [QuadraticAlgebra.algebraTrace_eq_trace]
+  rw [Algebra.trace_quadraticAlgebra_apply]
   norm_num [QuadraticAlgebra.trace_def, coe_oneAddTwoI]
 
 /-- The norm of `1 + 2i` is `5`. -/
 @[simp↓] -- Compute before coercion and quadratic-algebra comparison lemmas apply.
 theorem norm_oneAddTwoI : Algebra.norm ℚ_[2] (oneAddTwoI : DyadicSqrtNegOne) = 5 := by
-  rw [QuadraticAlgebra.algebraNorm_eq_norm]
+  rw [Algebra.norm_quadraticAlgebra_apply]
   norm_num [QuadraticAlgebra.norm_def, coe_oneAddTwoI]
 
 /-- The finite extension `ℚ_2(i)/ℚ_2` is separable. -/

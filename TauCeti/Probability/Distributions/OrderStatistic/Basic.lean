@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Distributions.Beta
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
-public import TauCeti.Data.Fin.Tuple.OrderStatistic
+public import TauCeti.Probability.Distributions.OrderStatistic.Independent
 public import TauCeti.Probability.Distributions.Uniform.Basic
 public import TauCeti.Probability.Quantile
+import Mathlib.Algebra.Order.Interval.Set.SuccPred
 import TauCeti.Probability.Distributions.Beta.Cdf
-import TauCeti.Probability.Distributions.Binomial.Basic
 import TauCeti.Probability.Distributions.Binomial.Tail
 
 /-!
@@ -78,14 +77,9 @@ theorem cdf_map_orderStatistic_pi_eq_regularizedIncompleteBeta [IsProbabilityMea
     (k : Fin n) (t : ℝ) :
     cdf ((Measure.pi fun _ : Fin n => μ).map (orderStatistic k)) t =
       regularizedIncompleteBeta ((k : ℝ) + 1) ((n : ℝ) - k) (cdf μ t) := by
-  have hset : orderStatistic k ⁻¹' Iic t =
-      {x : Fin n → ℝ | (k : ℕ) + 1 ≤ #{i | x i ∈ Iic t}} := by
-    rw [preimage_orderStatistic_Iic]
-    simp_rw [Set.mem_Iic, Nat.lt_iff_add_one_le]
-  rw [cdf_eq_real, map_measureReal_apply (measurable_orderStatistic k) measurableSet_Iic, hset,
-    (hasLaw_card_filter_mem_pi (s := Iic t) measurableSet_Iic).measureReal_eq
-      (p := fun j => (k : ℕ) + 1 ≤ j) .of_discrete, Fintype.card_fin,
-    binomial_tail_eq_regularizedIncompleteBeta (by omega), cdf_eq_real]
+  rw [cdf_map_orderStatistic_pi_eq_poissonBinomial, poissonBinomialMeasure_const,
+    Fintype.card_fin, ← Set.Ici_add_one_eq_Ioi, Set.Ici,
+    binomial_tail_eq_regularizedIncompleteBeta (by omega)]
   congr 1 <;> push_cast <;> ring
 
 /-- **The law of an order statistic.** If the `n` coordinates are independent with common law

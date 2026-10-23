@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.Spin.Structure
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Center
 import Mathlib.Algebra.Central.Matrix
-import Mathlib.Algebra.GroupWithZero.Idempotent
 
 /-!
 # The even unitary group of a split six-dimensional quadratic space
@@ -83,62 +82,26 @@ private theorem matrixProdReverse_one_zero
     [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
     (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) :
     matrixProdReverse e (1, 0) = (0, 1) := by
-  let : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  let p : Matrix n n K × Matrix n n K := (1, 0)
-  have hp : p ∈ Subalgebra.center K (Matrix n n K × Matrix n n K) := by
-    simp [p, Subalgebra.mem_center_iff]
+  have : FiniteDimensional K V := Module.finite_of_finrank_eq_succ hV
+  have hp : ((1, 0) : Matrix n n K × Matrix n n K) ∈ Subalgebra.center K _ := by
+    simp [Subalgebra.mem_center_iff]
+  -- Reversal is an involution fixing `0` and `1`, so the image of `(1, 0)` is neither of them.
+  have hinv := matrixProdReverse_involutive e (1, 0)
   -- The image is a central idempotent, so its matrix coordinates are scalar idempotents.
-  have hrcenter := matrixProdReverse_mem_center e hp
-  rw [Subalgebra.center_prod, Subalgebra.mem_prod] at hrcenter
-  obtain ⟨a, ha⟩ := (Algebra.IsCentral.mem_center_iff K).mp hrcenter.1
-  obtain ⟨b, hb⟩ := (Algebra.IsCentral.mem_center_iff K).mp hrcenter.2
-  have hidem : matrixProdReverse e p * matrixProdReverse e p = matrixProdReverse e p := by
-    rw [← matrixProdReverse_mul]
-    simp [p]
-  have haidem : a * a = a := by
-    have h := congrArg (fun z : Matrix n n K × Matrix n n K => z.1) hidem
-    simp only [Prod.fst_mul, ha, ← map_mul] at h
-    exact (algebraMap K (Matrix n n K)).injective h
-  have hbidem : b * b = b := by
-    have h := congrArg (fun z : Matrix n n K × Matrix n n K => z.2) hidem
-    simp only [Prod.snd_mul, hb, ← map_mul] at h
-    exact (algebraMap K (Matrix n n K)).injective h
-  -- Involutivity excludes zero and one; the central fixed-point theorem excludes `p` itself.
-  have hane : matrixProdReverse e p ≠ 0 := by
-    intro h
-    have h' := congrArg (matrixProdReverse e) h
-    simp [matrixProdReverse_involutive e p, p] at h'
-  have hbne : matrixProdReverse e p ≠ 1 := by
-    intro h
-    have h' := congrArg (matrixProdReverse e) h
-    simp [matrixProdReverse_involutive e p, matrixProdReverse_one, p] at h'
-  have hpne : matrixProdReverse e p ≠ p := by
-    intro h
-    have hp' : e.symm p ∈ Subalgebra.center K (even Q) := by
-      rw [← Subalgebra.map_center_eq e.symm]
-      exact Subalgebra.mem_map.mpr ⟨p, hp, rfl⟩
-    have hfix : reverseEven Q (e.symm p) = e.symm p := by
-      apply e.injective
-      simpa [matrixProdReverse_apply] using h
-    obtain ⟨c, hc⟩ :=
-      (CliffordAlgebra.reverseEven_eq_self_iff_of_mem_center_of_finrank_eq_six hQ hV hp').mp
-        hfix
-    have hpScalar : p = algebraMap K (Matrix n n K × Matrix n n K) c := by
-      simpa using congrArg e hc
-    have hc0 : c = 0 := by
-      have h := congrArg (fun z : Matrix n n K × Matrix n n K => z.2) hpScalar
-      exact (algebraMap K (Matrix n n K)).injective (by simpa [p] using h.symm)
-    simp [p, hc0] at hpScalar
-  -- Of the four pairs of scalar idempotents, only the complementary projector remains.
-  have ha01 : a = 0 ∨ a = 1 := IsIdempotentElem.iff_eq_zero_or_one.mp haidem
-  have hb01 : b = 0 ∨ b = 1 := IsIdempotentElem.iff_eq_zero_or_one.mp hbidem
-  have hr : matrixProdReverse e p = (algebraMap K _ a, algebraMap K _ b) :=
-    Prod.ext ha hb
-  rcases ha01 with rfl | rfl <;> rcases hb01 with rfl | rfl
-  · exact False.elim (hane (by simpa [Prod.ext_iff] using hr))
-  · simpa [p] using hr
-  · exact False.elim (hpne (by simpa [p] using hr))
-  · exact False.elim (hbne (by simpa [Prod.ext_iff] using hr))
+  have hc := matrixProdReverse_mem_center e hp
+  simp only [Subalgebra.center_prod, Subalgebra.mem_prod, Algebra.IsCentral.mem_center_iff K] at hc
+  obtain ⟨⟨a, ha⟩, b, hb⟩ := hc
+  have hr : matrixProdReverse e (1, 0) = (algebraMap K _ a, algebraMap K _ b) := Prod.ext ha hb
+  obtain ⟨rfl | rfl, rfl | rfl⟩ : (a = 1 ∨ a = 0) ∧ (b = 1 ∨ b = 0) := by
+    simpa [hr, ← map_mul, mul_right_eq_self₀] using (matrixProdReverse_mul e (1, 0) (1, 0)).symm
+  · simp [hr, Prod.mk_one_one, matrixProdReverse_one, Prod.ext_iff] at hinv
+  · -- Then `(1, 0)` is a reversal-fixed central element, hence a scalar, which it is not.
+    obtain ⟨c, hc⟩ := (CliffordAlgebra.reverseEven_eq_self_iff_of_mem_center_of_finrank_eq_six
+      hQ hV (MulEquivClass.apply_mem_center e.symm hp)).mp
+        (e.injective (by simpa [matrixProdReverse_apply] using hr))
+    simpa using congrArg (fun x ↦ (e x).1 - (e x).2) hc
+  · simpa using hr
+  · simp [hr, Prod.mk_zero_zero, Prod.ext_iff] at hinv
 
 private theorem matrixProdReverse_fst_one_zero
     [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
@@ -339,7 +302,34 @@ namespace TauCeti
 
 open _root_.CliffordAlgebra Module
 
-universe u
+/-- The first matrix factor of a polarized six-dimensional Spin element is the matrix of its
+even half-spin action in the basis used by `Algebra.endAlgEquivMatrix`. -/
+theorem coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
+    {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+    {Q : QuadraticForm K V} [Invertible (2 : K)] (P : SpinPolarizationData Q)
+    [FiniteDimensional K V] [FiniteDimensional K (spinPlus Q P)] (hline : P.line = ⊥)
+    (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4) (hV : finrank K V = 6)
+    (b : Basis (Fin 4) K (spinPlus Q P))
+    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) (s : spinGroup Q) :
+    let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
+    let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+      (P.nondegenerate_of_line_eq_bot hline) hV
+    (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
+  dsimp
+  calc
+    _ = (P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
+        (spinGroupToEven Q s)).1 := by
+      rw [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
+        CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
+    _ = (Algebra.endAlgEquivMatrix K (spinPlus Q P) hplus
+        (spinPlusAction Q P hline (spinGroupToEven Q s))) := by
+      simpa using congrArg Prod.fst
+        (P.evenCliffordEquivProdMatrix_apply (l := 3) hW (by omega)
+          (spinGroupToEven Q s))
+    _ = _ := by
+      rw [Algebra.endAlgEquivMatrix_apply K _ _]
+      rw [hb]
 
 variable (K : Type u) [Field K]
 

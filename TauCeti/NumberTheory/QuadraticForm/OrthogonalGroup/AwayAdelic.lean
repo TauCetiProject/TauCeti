@@ -30,6 +30,12 @@ determinant at every prime outside `S`, and for a nondegenerate form on a nonzer
 kernel of `Spin(V)(𝔸^S) → SO(V)(𝔸^S)` consists of the elements whose every component is `1` or
 `-1`.
 
+Local isometries `Q ⊗ ℚ_p ≃ Q' ⊗ ℚ_p` at the primes outside `S`, carrying the reference subgroups
+onto one another at almost every such prime, give isomorphisms of topological groups between the
+groups away from `S` of `Q` and of `Q'`, compatible with the maps `Spin → SO → O`. When the local
+isometries are given at every prime, restricting away from `S` turns the finite adelic transport
+`TauCeti.restrictedProductCongrRight` into the transport away from `S`.
+
 ## Main definitions
 
 * `TauCeti.QuadraticMap.OrthogonalCompactOpens.awayAdelicOrthogonal`,
@@ -38,6 +44,10 @@ kernel of `Spin(V)(𝔸^S) → SO(V)(𝔸^S)` consists of the elements whose eve
 * `TauCeti.QuadraticMap.OrthogonalCompactOpens.awayAdelicSpinToSpecialOrthogonal` and
   `TauCeti.QuadraticMap.OrthogonalCompactOpens.awayAdelicSpecialOrthogonalToOrthogonal`: the
   componentwise projections.
+* `TauCeti.QuadraticMap.OrthogonalCompactOpens.awayAdelicOrthogonalCongr`,
+  `TauCeti.QuadraticMap.OrthogonalCompactOpens.awayAdelicSpecialOrthogonalCongr`,
+  `TauCeti.QuadraticMap.OrthogonalCompactOpens.awayAdelicSpinCongr`: transport of points away from
+  `S` along local isometries.
 
 ## Main results
 
@@ -48,6 +58,12 @@ kernel of `Spin(V)(𝔸^S) → SO(V)(𝔸^S)` consists of the elements whose eve
   `SO` in `O` away from `S` is cut out by the determinant at every prime outside `S`.
 * `OrthogonalCompactOpens.mem_ker_awayAdelicSpinToSpecialOrthogonal_iff`: the kernel of
   `Spin → SO` away from `S` is the componentwise `±1`.
+* `awayAdelicSpecialOrthogonalCongr_comp_awayAdelicSpinToSpecialOrthogonal` and
+  `awayAdelicSpecialOrthogonalToOrthogonal_comp_awayAdelicSpecialOrthogonalCongr`, in the
+  namespace `OrthogonalCompactOpens`: transport away from `S` commutes with `Spin → SO → O`.
+* `OrthogonalCompactOpens.awayAdelicOrthogonalCongr_comp_restrictAway` and its special
+  orthogonal and Spin versions: restriction away from `S` intertwines finite adelic transport with
+  transport away from `S`.
 
 ## References
 
@@ -236,6 +252,207 @@ theorem mem_ker_awayAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V] 
   rw [awayAdelicSpinToSpecialOrthogonal_apply, RestrictedProduct.one_apply, ← MonoidHom.mem_ker,
     CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff _ hQp]
   simp only [Subtype.ext_iff, OneMemClass.coe_one, CliffordAlgebra.spinGroup.coe_negOne]
+
+/-! ### Transport along local isometries -/
+
+section Congr
+
+open Filter
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {Q' : QuadraticForm ℚ W}
+  (U' : OrthogonalCompactOpens Q')
+  (e : ∀ p : {p : Nat.Primes // p ∉ S},
+    (Q.baseChange ℚ_[p.1]).IsometryEquiv (Q'.baseChange ℚ_[p.1]))
+
+/-- The isomorphism of orthogonal groups away from `S` induced by local isometries at the primes
+outside `S` which carry the orthogonal reference subgroups onto one another at almost every such
+prime. -/
+def awayAdelicOrthogonalCongr
+    (he : ∀ᶠ p in cofinite, Set.BijOn (e p).orthogonalGroupCongr
+      (U.orthogonal p.1) (U'.orthogonal p.1)) :
+    U.awayAdelicOrthogonal S ≃ₜ* U'.awayAdelicOrthogonal S where
+  toMulEquiv := restrictedProductCongrRight (fun p : {p : Nat.Primes // p ∉ S} ↦ U.orthogonal p.1)
+    (fun p ↦ U'.orthogonal p.1) (fun p ↦ (e p).orthogonalGroupCongr) he
+  continuous_toFun :=
+    continuous_restrictedProductCongrRight _ _ _ he fun p ↦ (e p).continuous_orthogonalGroupCongr
+  continuous_invFun := continuous_restrictedProductCongrRight_symm _ _ _ he fun p ↦ by
+    rw [(e p).orthogonalGroupCongr_symm]
+    exact (e p).symm.continuous_orthogonalGroupCongr
+
+/-- Orthogonal transport away from `S` applies the local isometry at every prime outside `S`. -/
+@[simp]
+theorem awayAdelicOrthogonalCongr_apply
+    (he : ∀ᶠ p in cofinite, Set.BijOn (e p).orthogonalGroupCongr
+      (U.orthogonal p.1) (U'.orthogonal p.1))
+    (x : U.awayAdelicOrthogonal S) (p : {p : Nat.Primes // p ∉ S}) :
+    U.awayAdelicOrthogonalCongr S U' e he x p = (e p).orthogonalGroupCongr (x p) :=
+  restrictedProductCongrRight_apply _ _ _ he x p
+
+/-- Inverse orthogonal transport away from `S` applies the inverse local isometries. -/
+@[simp]
+theorem awayAdelicOrthogonalCongr_symm_apply
+    (he : ∀ᶠ p in cofinite, Set.BijOn (e p).orthogonalGroupCongr
+      (U.orthogonal p.1) (U'.orthogonal p.1))
+    (y : U'.awayAdelicOrthogonal S) (p : {p : Nat.Primes // p ∉ S}) :
+    (U.awayAdelicOrthogonalCongr S U' e he).symm y p = (e p).orthogonalGroupCongr.symm (y p) :=
+  restrictedProductCongrRight_symm_apply _ _ _ he y p
+
+/-- The isomorphism of special orthogonal groups away from `S` induced by local isometries at
+the primes outside `S` which carry the special orthogonal reference subgroups onto one another at
+almost every such prime. -/
+def awayAdelicSpecialOrthogonalCongr
+    (hso : ∀ᶠ p in cofinite, Set.BijOn (e p).specialOrthogonalGroupCongr
+      (U.specialOrthogonal p.1) (U'.specialOrthogonal p.1)) :
+    U.awayAdelicSpecialOrthogonal S ≃ₜ* U'.awayAdelicSpecialOrthogonal S where
+  toMulEquiv := restrictedProductCongrRight
+    (fun p : {p : Nat.Primes // p ∉ S} ↦ U.specialOrthogonal p.1)
+    (fun p ↦ U'.specialOrthogonal p.1) (fun p ↦ (e p).specialOrthogonalGroupCongr) hso
+  continuous_toFun := continuous_restrictedProductCongrRight _ _ _ hso fun p ↦
+    (e p).continuous_specialOrthogonalGroupCongr
+  continuous_invFun := continuous_restrictedProductCongrRight_symm _ _ _ hso fun p ↦ by
+    rw [(e p).specialOrthogonalGroupCongr_symm]
+    exact (e p).symm.continuous_specialOrthogonalGroupCongr
+
+/-- Special orthogonal transport away from `S` applies the local isometry at every prime outside
+`S`. -/
+@[simp]
+theorem awayAdelicSpecialOrthogonalCongr_apply
+    (hso : ∀ᶠ p in cofinite, Set.BijOn (e p).specialOrthogonalGroupCongr
+      (U.specialOrthogonal p.1) (U'.specialOrthogonal p.1))
+    (x : U.awayAdelicSpecialOrthogonal S) (p : {p : Nat.Primes // p ∉ S}) :
+    U.awayAdelicSpecialOrthogonalCongr S U' e hso x p =
+      (e p).specialOrthogonalGroupCongr (x p) :=
+  restrictedProductCongrRight_apply _ _ _ hso x p
+
+/-- Inverse special orthogonal transport away from `S` applies the inverse local isometries. -/
+@[simp]
+theorem awayAdelicSpecialOrthogonalCongr_symm_apply
+    (hso : ∀ᶠ p in cofinite, Set.BijOn (e p).specialOrthogonalGroupCongr
+      (U.specialOrthogonal p.1) (U'.specialOrthogonal p.1))
+    (y : U'.awayAdelicSpecialOrthogonal S) (p : {p : Nat.Primes // p ∉ S}) :
+    (U.awayAdelicSpecialOrthogonalCongr S U' e hso).symm y p =
+      (e p).specialOrthogonalGroupCongr.symm (y p) :=
+  restrictedProductCongrRight_symm_apply _ _ _ hso y p
+
+/-- The isomorphism of Spin groups away from `S` induced by local isometries at the primes
+outside `S` which carry the Spin reference subgroups onto one another at almost every such
+prime. -/
+def awayAdelicSpinCongr
+    (hs : ∀ᶠ p in cofinite, Set.BijOn (e p).spinGroupEquiv (U.spin p.1) (U'.spin p.1)) :
+    U.awayAdelicSpin S ≃ₜ* U'.awayAdelicSpin S where
+  toMulEquiv := restrictedProductCongrRight (fun p : {p : Nat.Primes // p ∉ S} ↦ U.spin p.1)
+    (fun p ↦ U'.spin p.1) (fun p ↦ (e p).spinGroupEquiv) hs
+  continuous_toFun :=
+    continuous_restrictedProductCongrRight _ _ _ hs fun p ↦ (e p).continuous_spinGroupEquiv
+  continuous_invFun := continuous_restrictedProductCongrRight_symm _ _ _ hs fun p ↦ by
+    rw [(e p).spinGroupEquiv_symm]
+    exact (e p).symm.continuous_spinGroupEquiv
+
+/-- Spin transport away from `S` applies the local isometry at every prime outside `S`. -/
+@[simp]
+theorem awayAdelicSpinCongr_apply
+    (hs : ∀ᶠ p in cofinite, Set.BijOn (e p).spinGroupEquiv (U.spin p.1) (U'.spin p.1))
+    (x : U.awayAdelicSpin S) (p : {p : Nat.Primes // p ∉ S}) :
+    U.awayAdelicSpinCongr S U' e hs x p = (e p).spinGroupEquiv (x p) :=
+  restrictedProductCongrRight_apply _ _ _ hs x p
+
+/-- Inverse Spin transport away from `S` applies the inverse local isometries. -/
+@[simp]
+theorem awayAdelicSpinCongr_symm_apply
+    (hs : ∀ᶠ p in cofinite, Set.BijOn (e p).spinGroupEquiv (U.spin p.1) (U'.spin p.1))
+    (y : U'.awayAdelicSpin S) (p : {p : Nat.Primes // p ∉ S}) :
+    (U.awayAdelicSpinCongr S U' e hs).symm y p = (e p).spinGroupEquiv.symm (y p) :=
+  restrictedProductCongrRight_symm_apply _ _ _ hs y p
+
+/-- Transport away from `S` intertwines the Spin projections away from `S`. -/
+theorem awayAdelicSpecialOrthogonalCongr_comp_awayAdelicSpinToSpecialOrthogonal
+    (hs : ∀ᶠ p in cofinite, Set.BijOn (e p).spinGroupEquiv (U.spin p.1) (U'.spin p.1))
+    (hso : ∀ᶠ p in cofinite, Set.BijOn (e p).specialOrthogonalGroupCongr
+      (U.specialOrthogonal p.1) (U'.specialOrthogonal p.1)) :
+    (U.awayAdelicSpecialOrthogonalCongr S U' e hso :
+        U.awayAdelicSpecialOrthogonal S →* U'.awayAdelicSpecialOrthogonal S).comp
+        (U.awayAdelicSpinToSpecialOrthogonal S) =
+      (U'.awayAdelicSpinToSpecialOrthogonal S).comp
+        (U.awayAdelicSpinCongr S U' e hs : U.awayAdelicSpin S →* U'.awayAdelicSpin S) := by
+  ext x p : 2
+  simp
+
+/-- Transport away from `S` intertwines the inclusions of `SO` into `O` away from `S`. -/
+theorem awayAdelicSpecialOrthogonalToOrthogonal_comp_awayAdelicSpecialOrthogonalCongr
+    (he : ∀ᶠ p in cofinite, Set.BijOn (e p).orthogonalGroupCongr
+      (U.orthogonal p.1) (U'.orthogonal p.1))
+    (hso : ∀ᶠ p in cofinite, Set.BijOn (e p).specialOrthogonalGroupCongr
+      (U.specialOrthogonal p.1) (U'.specialOrthogonal p.1)) :
+    (U'.awayAdelicSpecialOrthogonalToOrthogonal S).comp
+        (U.awayAdelicSpecialOrthogonalCongr S U' e hso :
+          U.awayAdelicSpecialOrthogonal S →* U'.awayAdelicSpecialOrthogonal S) =
+      (U.awayAdelicOrthogonalCongr S U' e he :
+          U.awayAdelicOrthogonal S →* U'.awayAdelicOrthogonal S).comp
+        (U.awayAdelicSpecialOrthogonalToOrthogonal S) := by
+  ext g p : 2
+  simp
+
+end Congr
+
+/-! ### Compatibility of transport with the restrictions from the finite adeles -/
+
+section CongrRestrict
+
+open Filter
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {Q' : QuadraticForm ℚ W}
+  (U' : OrthogonalCompactOpens Q')
+  (e : ∀ p : Nat.Primes, (Q.baseChange ℚ_[p]).IsometryEquiv (Q'.baseChange ℚ_[p]))
+
+/-- Restricting away from `S` turns finite adelic orthogonal transport into orthogonal transport
+away from `S`. -/
+@[simp]
+theorem awayAdelicOrthogonalCongr_comp_restrictAway
+    (he : ∀ᶠ p in cofinite, Set.BijOn (e p).orthogonalGroupCongr
+      (U.orthogonal p) (U'.orthogonal p)) :
+    (U.awayAdelicOrthogonalCongr S U' (fun p ↦ e p.1)
+        (Subtype.val_injective.tendsto_cofinite.eventually he) :
+        U.awayAdelicOrthogonal S →* U'.awayAdelicOrthogonal S).comp
+        (restrictAway S U.orthogonal) =
+      (restrictAway S U'.orthogonal).comp
+        (restrictedProductCongrRight U.orthogonal U'.orthogonal
+          (fun p ↦ (e p).orthogonalGroupCongr) he :
+          U.finiteAdelicOrthogonal →* U'.finiteAdelicOrthogonal) := by
+  ext x p : 2
+  simp
+
+/-- Restricting away from `S` turns finite adelic special orthogonal transport into special
+orthogonal transport away from `S`. -/
+@[simp]
+theorem awayAdelicSpecialOrthogonalCongr_comp_restrictAway
+    (hso : ∀ᶠ p in cofinite, Set.BijOn (e p).specialOrthogonalGroupCongr
+      (U.specialOrthogonal p) (U'.specialOrthogonal p)) :
+    (U.awayAdelicSpecialOrthogonalCongr S U' (fun p ↦ e p.1)
+        (Subtype.val_injective.tendsto_cofinite.eventually hso) :
+        U.awayAdelicSpecialOrthogonal S →* U'.awayAdelicSpecialOrthogonal S).comp
+        (restrictAway S U.specialOrthogonal) =
+      (restrictAway S U'.specialOrthogonal).comp
+        (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal
+          (fun p ↦ (e p).specialOrthogonalGroupCongr) hso :
+          U.finiteAdelicSpecialOrthogonal →* U'.finiteAdelicSpecialOrthogonal) := by
+  ext x p : 2
+  simp
+
+/-- Restricting away from `S` turns finite adelic Spin transport into Spin transport away from
+`S`. -/
+@[simp]
+theorem awayAdelicSpinCongr_comp_restrictAway
+    (hs : ∀ᶠ p in cofinite, Set.BijOn (e p).spinGroupEquiv (U.spin p) (U'.spin p)) :
+    (U.awayAdelicSpinCongr S U' (fun p ↦ e p.1)
+        (Subtype.val_injective.tendsto_cofinite.eventually hs) :
+        U.awayAdelicSpin S →* U'.awayAdelicSpin S).comp (restrictAway S U.spin) =
+      (restrictAway S U'.spin).comp
+        (restrictedProductCongrRight U.spin U'.spin (fun p ↦ (e p).spinGroupEquiv) hs :
+          U.finiteAdelicSpin →* U'.finiteAdelicSpin) := by
+  ext x p : 2
+  simp
+
+end CongrRestrict
 
 end OrthogonalCompactOpens
 

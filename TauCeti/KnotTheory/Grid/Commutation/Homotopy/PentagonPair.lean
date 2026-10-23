@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Decomposition
+public import TauCeti.KnotTheory.Grid.Differential.Square.SideOverlap
 import TauCeti.KnotTheory.Grid.Rectangle.Annulus.Empty
 import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Diagonal
 import Mathlib.Algebra.CharP.Two
@@ -24,6 +25,9 @@ these empty returning pairs. Their weights are consequently one over any commuta
 semiring. Counting the two possible annuli gives an explicit diagonal coefficient formula
 for the round-trip commutation map. Combining this count with the four hexagon--rectangle
 indicators proves the diagonal coefficient of the homotopy equation in characteristic two.
+
+Off the diagonal as well, the replaced grid line is a common side of the two rectangles of
+every pentagon pair.
 
 ## References
 
@@ -175,11 +179,11 @@ private theorem returning_pentagon_pair_iff
       | .inr P, .inr _ => P.right = c
       | _, _ => False := by
   -- Keep the reverse diagram's marking data while identifying its three geometric parameters.
-  rcases Cr with ⟨column, turn, opposite, hne, hnon, hOa, hXa, hOb, hXb⟩
+  rcases Cr with ⟨⟨column, turn, hne⟩, opposite, hnon, hOa, hXa, hOb, hXb⟩
   simp only at hcolumn hturn hopposite
   subst column turn opposite
   let Cr : ColumnCommutationData (G.swapColumns a b) :=
-    ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+    ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
   rcases D with ⟨m, P, Q⟩
   cases P with
   | inl P =>
@@ -196,7 +200,7 @@ private theorem returning_pentagon_pair_iff
         refine ⟨⟨h.1, G.disjoint_returning_pentagon_markings C P Q h
           G.X C.X_column_below C.X_next_above⟩, ⟨h.2, ?_⟩⟩
         exact (G.swapColumns a b).disjoint_returning_pentagon_markings
-          ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+          ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
           Q P h.symm _ hXa hXb
     | inr Q =>
       -- Opposite-side turns would force both distinct turn rows into one thin horizontal annulus.
@@ -222,7 +226,7 @@ private theorem returning_pentagon_pair_iff
         refine ⟨⟨h.1, G.disjoint_returning_initialPentagon_markings C P Q h
           G.X C.X_column_below C.X_next_above⟩, ⟨h.2, ?_⟩⟩
         exact (G.swapColumns a b).disjoint_returning_initialPentagon_markings
-          ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+          ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
           Q P h.symm _ hXa hXb
 
 /-- A counted returning pentagon pair has two terminal-side turns and occupies column `a`,
@@ -252,11 +256,11 @@ private theorem returning_pentagon_pair_weight_eq_one
       (G.swapColumns a b).commutationPentagonWeight Cr R D.second = 1 := by
   have hshape := (G.returning_pentagon_pair_iff C Cr hcolumn hturn hopposite D).mp hD
   -- In either surviving vertical annulus, every polynomial factor is one because no O is covered.
-  rcases Cr with ⟨column, turn, opposite, hne, hnon, hOa, hXa, hOb, hXb⟩
+  rcases Cr with ⟨⟨column, turn, hne⟩, opposite, hnon, hOa, hXa, hOb, hXb⟩
   simp only at hcolumn hturn hopposite
   subst column turn opposite
   let Cr : ColumnCommutationData (G.swapColumns a b) :=
-    ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+    ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
   rcases D with ⟨m, P, Q⟩
   cases P with
   | inl P =>
@@ -489,6 +493,35 @@ theorem unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_a
   apply CharTwo.eq_add_iff_add_eq.mpr
   convert hsum using 1
   ac_rfl
+
+/-- The diagonal commutation homotopy identity as sums of polygon-pair weights, over any
+commutative semiring of characteristic two. -/
+theorem sum_hexagonRectangleWeight_add_sum_rectangleHexagonWeight_self_eq_one_add
+    (R : Type*) [CommSemiring R] [CharP R 2] (x : GridState n) :
+    (∑ D ∈ G.hexagonRectangleDecompositions C x x, G.hexagonRectangleWeight C R D) +
+        ∑ D ∈ G.rectangleHexagonDecompositions C x x, G.rectangleHexagonWeight C R D =
+      1 + ∑ D ∈ G.pentagonPairDecompositions C x x, G.pentagonPairWeight C R D := by
+  simpa only [Finsupp.add_apply,
+    G.unblockedDifferential_commutationHomotopy_single_apply C R,
+    G.commutationHomotopy_unblockedDifferential_single_apply C R,
+    G.reverse_commutationMap_commutationMap_single_apply C R,
+    G.sum_commutationHexagonCoefficient_mul_unblockedCoefficient C R,
+    G.sum_unblockedCoefficient_mul_commutationHexagonCoefficient C R,
+    G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C R] using
+    G.unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_add C R x
+
+/-! ### The replaced grid line as a common side -/
+
+/-- The replaced grid line is a common side of the two rectangles of a pentagon pair: the
+terminal side of a terminal-side pentagon and the initial side of an initial-side one. -/
+theorem finRotate_mem_commonSideColumns_of_pentagonPair {x z : GridState n}
+    (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z) :
+    b ∈ D.toRectangleDecomposition.commonSideColumns := by
+  rcases D with ⟨m, P | P, Q | Q⟩
+  · simp [P.right_eq, Q.right_eq]
+  · simp [P.right_eq, Q.left_eq]
+  · simp [P.left_eq, Q.right_eq]
+  · simp [P.left_eq, Q.left_eq]
 
 end GridDiagram
 end TauCeti

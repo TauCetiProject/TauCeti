@@ -17,9 +17,10 @@ encodable carrier. Contrapositively, `(ℕ, ≤)` and `(ℤ, ≤)` are not poten
 sentence asserting a least element holds in the first and fails in the second.
 
 The converse holds at any common carrier, not only `M ⊕ N`: for countable structures the carrier
-`ℕ` gives Karp's theorem for `L_{ω₁ω}`, and for empty structures the empty carrier suffices. Two
-empty structures that differ on a nullary relation are separated by that relation, at every
-carrier in every universe.
+`ℕ` gives Karp's theorem for `L_{ω₁ω}`, and for empty structures the empty carrier suffices. On
+countable structures, agreement at `ℕ` is isomorphism, so pure sets of different finite sizes are
+separated. Two empty structures that differ on a nullary relation are separated by that relation,
+at every carrier in every universe.
 -/
 
 universe u
@@ -92,5 +93,17 @@ example :
     (.rel (⟨rfl⟩ : L.Relations 0) Fin.elim0)
   simp only [BoundedFormulaInf.realize_rel] at this
   exact this.1 trivial
+
+-- Countable structures agreeing on the `L_{ω₁ω}` sentences are isomorphic.
+example {L : Language} [L.IsRelational] {M N : Type*} [L.Structure M] [L.Structure N]
+    [Countable M] [Countable N] (h : InfEquivAt (L := L) ℕ M N) : Nonempty (M ≃[L] N) :=
+  countable_infEquivAt_nat_iff_iso.1 h
+
+-- Pure sets of sizes `2` and `3` are not isomorphic, so some `L_{ω₁ω}` sentence separates them.
+example [Language.empty.Structure (Fin 2)] [Language.empty.Structure (Fin 3)] :
+    ¬ InfEquivAt (L := Language.empty) ℕ (Fin 2) (Fin 3) := by
+  rw [countable_infEquivAt_nat_iff_iso]
+  rintro ⟨e⟩
+  simpa using Fintype.card_congr e.toEquiv
 
 end TauCeti

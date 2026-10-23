@@ -7,9 +7,11 @@ module
 
 public import Mathlib.NumberTheory.Height.Projectivization
 public import Mathlib.Order.Northcott
+public import TauCeti.InformationTheory.Coding.EuclideanDual
 public import TauCeti.LinearAlgebra.Projectivization.Plucker
 
 import Mathlib.NumberTheory.Height.NumberField
+import TauCeti.NumberTheory.Height.Basic
 import TauCeti.NumberTheory.Height.Northcott
 
 /-!
@@ -24,6 +26,11 @@ relative logarithmic height. Neither needs a number field or characteristic zero
 The zero subspace and the whole space have height `1`, and a line has the height of any nonzero
 vector spanning it. The height of a subspace does not depend on the spanning vectors: over `ℚ`
 the line spanned by `(2, 2)` has height `1`, so no primitive spanning vector is needed.
+
+A subspace and its orthogonal complement for the dot product, `Submodule.euclideanDual`, have the
+same height: up to a common nonzero factor and signs, the Plücker coordinates of the complement
+are the complementary Plücker coordinates of the subspace. Over `ℚ`, the line spanned by `(1, 2)`
+and the line spanned by `(-2, 1)`, its orthogonal complement in `ℚ²`, both have height `2`.
 
 If the field has finitely many elements of bounded height, for instance a number field, then
 `K^ι` has finitely many subspaces of bounded height, of all dimensions together. A subspace is
@@ -45,6 +52,8 @@ has finitely many points of bounded height.
   subspace and the whole space have height `1`.
 * `Submodule.relativeSubspaceHeight_span_singleton`: the line spanned by a nonzero vector has the
   height of that vector.
+* `Submodule.relativeSubspaceHeight_euclideanDual`: the orthogonal complement of `U` for the dot
+  product has the height of `U`.
 * `Submodule.instNorthcottRelativeSubspaceHeight` and
   `Submodule.instNorthcottRelativeSubspaceLogHeight`: the Northcott property for the relative
   height and the relative logarithmic height.
@@ -53,6 +62,8 @@ has finitely many points of bounded height.
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), §2.8.
+* J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative Subspace
+  Theorem*, Ann. of Math. 177 (2013), §6.1, (6.13).
 * W. M. Schmidt, *On heights of algebraic subspaces and diophantine approximations*, Ann. of
   Math. **85** (1967), 430–472.
 -/
@@ -182,6 +193,29 @@ theorem relativeSubspaceLogHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
     relativeSubspaceHeight_span_singleton hx,
     logHeight_eq_log_mulHeight]
 
+/-- **Duality of heights.** The orthogonal complement of a subspace `U` of `ι → K` for the dot
+product has the relative height of `U`. -/
+@[simp]
+theorem relativeSubspaceHeight_euclideanDual [Fintype ι] :
+    relativeSubspaceHeight U.euclideanDual = relativeSubspaceHeight U := by
+  let b := finBasis K U
+  let b' := finBasis K U.euclideanDual
+  obtain ⟨c, hc, h⟩ :=
+    exists_plucker_eq_mul_plucker_compl_or_eq_neg (finrank_add_finrank_euclideanDual U)
+    b.linearIndependent_coe_basis b'.linearIndependent_coe_basis
+    fun i j ↦ mem_euclideanDual.1 (b' j).2 _ (b i).2
+  rw [relativeSubspaceHeight_eq_mulHeight_plucker b', relativeSubspaceHeight_eq_mulHeight_plucker b,
+    mulHeight_eq_of_forall_eq_or_eq_neg h]
+  -- The tuple `fun t ↦ c * plucker _ (compl _ t)` is `c • (plucker _ ∘ compl _)` pointwise.
+  exact (mulHeight_smul_eq_mulHeight _ hc).trans (mulHeight_comp_equiv _ _)
+
+/-- The orthogonal complement of a subspace `U` of `ι → K` for the dot product has the relative
+logarithmic height of `U`. -/
+@[simp]
+theorem relativeSubspaceLogHeight_euclideanDual [Fintype ι] :
+    relativeSubspaceLogHeight U.euclideanDual = relativeSubspaceLogHeight U := by
+  simp [relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight]
+
 /-- The relative height of subspaces has the Northcott property whenever the scalar height does,
 for instance over a number field: for every `B` there are finitely many subspaces of `ι → K` of
 relative height at most `B`, of all dimensions together. -/
@@ -231,6 +265,21 @@ example : (ℚ ∙ ![(1 : ℚ), 2]).relativeSubspaceHeight = 2 := by
       _ = 2 := by
         rw [← Height.mulHeight₁_eq_mulHeight]
         exact_mod_cast Rat.mulHeight₁_natCast 2
+
+/-! In `ℚ²` the orthogonal complement of the line spanned by `(1, 2)` is the line spanned by
+`(-2, 1)`, so the two lines have the same height. -/
+
+example : (ℚ ∙ ![(-2 : ℚ), 1]).relativeSubspaceHeight =
+    (ℚ ∙ ![(1 : ℚ), 2]).relativeSubspaceHeight := by
+  have h : ℚ ∙ ![(-2 : ℚ), 1] = (ℚ ∙ ![(1 : ℚ), 2]).euclideanDual := by
+    refine Submodule.eq_of_le_of_finrank_eq ?_ ?_
+    · rw [Submodule.span_singleton_le_iff_mem, Submodule.mem_euclideanDual_span]
+      simp [dotProduct, Fin.sum_univ_two]
+    · have h := Submodule.finrank_add_finrank_euclideanDual (ℚ ∙ ![(1 : ℚ), 2])
+      rw [finrank_span_singleton (by simp), Fintype.card_fin] at h
+      rw [finrank_span_singleton (by simp)]
+      omega
+  rw [h, Submodule.relativeSubspaceHeight_euclideanDual]
 
 /-! Over `ℚ` the Northcott instance applies through Mathlib's number-field instance for the scalar
 height. -/

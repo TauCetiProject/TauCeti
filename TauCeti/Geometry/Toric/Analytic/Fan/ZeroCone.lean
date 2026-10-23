@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Analytic.Fan.Affine
+public import TauCeti.Geometry.Toric.Analytic.Fan.Affine.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Character
 public import TauCeti.Geometry.Toric.Analytic.Fan.TorusAction.Holomorphic
 

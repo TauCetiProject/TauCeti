@@ -34,6 +34,8 @@ with that of its image.
   the coroot functional of its image.
 * `RootPairing.weylGroupToPerm_ofIdx_apply` evaluates the action of a simple reflection.
 * `RootPairing.weylGroupToPerm_neg` says the action commutes with root negation.
+* `RootPairing.root_weylGroupToPerm_eq_add` says the action preserves decompositions of roots as
+  sums of two roots.
 * `RootPairing.weylGroup.ofIdx_mul_self` says a simple reflection is an involution.
 * `RootPairing.weylGroup.ofIdx_ne_one` says a simple reflection is not the identity over a
   ring of characteristic zero.
@@ -154,6 +156,12 @@ theorem weylGroupToPerm_injective
     [P.IsRootSystem] : Function.Injective P.weylGroupToPerm :=
   (Equiv.indexHom_injective P).comp Subtype.val_injective
 
+/-- The Weyl-group permutation is the root-index equivalence of the underlying automorphism.
+Use this explicitly: `MonoidHom.domRestrict_apply` already simplifies its left-hand side. -/
+lemma weylGroupToPerm_apply (w : P.weylGroup) (i : ι) :
+    P.weylGroupToPerm w i = (w : P.Aut).indexEquiv i :=
+  rfl
+
 /-- The Weyl-group permutation of a simple reflection is the corresponding root-index
 reflection. -/
 lemma weylGroupToPerm_ofIdx_apply (i j : ι) :
@@ -184,6 +192,15 @@ lemma weylGroupToPerm_neg (w : P.weylGroup) (j : ι) :
     letI := P.indexNeg
     P.weylGroupToPerm w (-j) = -(P.weylGroupToPerm w j) :=
   by simp [indexNeg_neg]
+
+/-- A Weyl-group element carries a decomposition of a root as a sum of two roots to the
+corresponding decomposition of the image roots. -/
+lemma root_weylGroupToPerm_eq_add (w : P.weylGroup) {i j k : ι}
+    (hk : P.root k = P.root i + P.root j) :
+    P.root (P.weylGroupToPerm w k) =
+      P.root (P.weylGroupToPerm w i) + P.root (P.weylGroupToPerm w j) := by
+  rw [← P.weylGroup_apply_root w k, ← P.weylGroup_apply_root w i, ← P.weylGroup_apply_root w j,
+    hk, smul_add]
 
 section
 

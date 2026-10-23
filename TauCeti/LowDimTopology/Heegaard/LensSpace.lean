@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.LowDimTopology.Heegaard.CurveHomology
+public import TauCeti.LowDimTopology.Heegaard.HatDifferential
 import TauCeti.Data.ZMod.Units
 import TauCeti.GroupTheory.Perm.Basic
+import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Algebra.Group.Pi.Units
 import Mathlib.GroupTheory.OrderOfElement
@@ -40,8 +42,9 @@ equivalence sends its class to `-q s`. Under this identification `ε(x_a, x_b) =
 `s_z(x) - s_z(y)` is Poincaré dual to `ε(x, y)`, this puts one generator in each of the `p` spin^c
 structures of `L(p, q)`. The diagram has no nonzero periodic domain, so it is weakly admissible.
 These are the combinatorial inputs to the computation `HF̂(L(p, q)) ≅ 𝔽₂^p`: the hat differential
-only counts disks whose domains join two generators, so it vanishes on this diagram. The Floer
-complex itself is not constructed here.
+only counts domains joining two generators, and weak admissibility excludes index-one domains from
+a generator to itself, so the hat differential of this diagram vanishes
+(`TauCeti.HeegaardRegionSystem.hatDifferential_lensSpace`).
 
 ## Main definitions
 
@@ -64,6 +67,10 @@ complex itself is not constructed here.
 * `TauCeti.HeegaardRegionSystem.periodicDomains_lensSpace` and
   `TauCeti.HeegaardRegionSystem.weaklyAdmissible_lensSpace`: the only periodic domain is zero, so
   the diagram is weakly admissible.
+* `TauCeti.HeegaardRegionSystem.cornerCount_lensSpace` and
+  `TauCeti.HeegaardRegionSystem.isNice_lensSpace`: every region is a square, so with all region
+  Euler characteristics one the diagram is nice.
+* `TauCeti.HeegaardRegionSystem.hatDifferential_lensSpace`: the hat differential vanishes.
 
 ## References
 
@@ -373,6 +380,37 @@ theorem periodicDomains_lensSpace : (lensSpace p q r).periodicDomains = ⊥ := b
 /-- The lens space diagram is weakly admissible. -/
 theorem weaklyAdmissible_lensSpace : (lensSpace p q r).WeaklyAdmissible :=
   weaklyAdmissible_iff.mpr fun P hP _ => by simpa using hP
+
+/-- Each region `R_j` has four corners, at the points `x_j`, `x_{j+1}`, `x_{j+q}` and
+`x_{j+q+1}`. -/
+@[simp]
+theorem cornerCount_lensSpace (s : ZMod p) : (lensSpace p q r).cornerCount s = 4 := by
+  rw [cornerCount_eq_card, Finset.card_filter, Fintype.sum_prod_type_right]
+  simp only [Fin.sum_univ_four, cornerRegion_eq, Matrix.cons_val]
+  simp [sub_eq_iff_eq_add]
+
+/-- Every region of the lens space diagram is a parallelogram, a disk with four corners, so the
+diagram is nice for the region Euler characteristics `1`. -/
+theorem isNice_lensSpace : (lensSpace p q r).IsNice 1 :=
+  isNice_iff.mpr fun s _ => ⟨rfl, Or.inr (cornerCount_lensSpace s)⟩
+
+/-- No domain is counted by the hat differential of the lens space diagram: distinct generators
+are joined by no domain, and in a weakly admissible diagram no index-one domain avoiding the
+basepoint runs from a generator to itself. -/
+@[simp]
+theorem hatDomains_lensSpace (x y : (lensSpace p q r).Generator) :
+    (lensSpace p q r).hatDomains 1 x y = ∅ := by
+  obtain rfl | hxy := eq_or_ne x y
+  · exact weaklyAdmissible_lensSpace.hatDomains_self 1 x
+  · exact Set.eq_empty_of_forall_notMem fun D hD =>
+      hxy (exists_isDomainBetween_lensSpace_iff.mp ⟨D, (mem_hatDomains_iff.mp hD).1⟩)
+
+/-- The hat differential of the genus-one diagram of `L(p, q)` vanishes, so its hat chain complex,
+on the `p` generators `x_a` (`lensSpaceGenerator_bijective`), has zero differential. -/
+@[simp]
+theorem hatDifferential_lensSpace : (lensSpace p q r).hatDifferential 1 = 0 :=
+  hatDifferential_eq_zero_iff.mpr fun x y =>
+    hatCoefficient_eq_zero_of_hatDomains_eq_empty (hatDomains_lensSpace x y)
 
 end HeegaardRegionSystem
 

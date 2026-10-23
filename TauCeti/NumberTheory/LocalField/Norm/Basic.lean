@@ -67,6 +67,8 @@ Herbrand shift instead.
   inertia degree.
 * `TauCeti.comap_zmultiples_inertiaDegree_le_normGroup`: if the units of `K` are norms, the norm
   group contains every element whose valuation is divisible by the residue degree.
+* `TauCeti.valuation_norm_eq_one_iff`: an element of `L` has valuation zero exactly when its
+  norm does.
 * `TauCeti.normUnits_mem_unitFiltration_of_mem` and
   `TauCeti.map_normUnits_unitFiltration_le`: the norm carries `U(L, e(L/K) i)` into `U(K,i)`.
 * `TauCeti.not_map_normUnits_unitFiltration_le_succ`: when `[L : K]` is prime to the residue
@@ -309,6 +311,15 @@ theorem normUnits_mem_unitFiltration_zero_iff {y : Lˣ} :
   rw [mem_unitFiltration_zero, mem_unitFiltration_zero, ← normalizedValuation_eq_one_iff,
     ← normalizedValuation_eq_one_iff, normalizedValuation_norm,
     pow_eq_one_iff_left (inertiaDegree_pos (K := K) (L := L)).ne']
+
+/-- An element of `L` has valuation zero exactly when its norm has valuation zero in `K`. -/
+theorem valuation_norm_eq_one_iff {z : L} :
+    valuation K (Algebra.norm K z) = 1 ↔ valuation L z = 1 := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  have h := normUnits_mem_unitFiltration_zero_iff (K := K) (y := Units.mk0 z hz)
+  rwa [mem_unitFiltration_zero, mem_unitFiltration_zero, Algebra.coe_normUnits,
+    Units.val_mk0] at h
 
 omit [FiniteDimensional K L] in
 variable (L) in

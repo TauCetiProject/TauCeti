@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.RootSubgroup.Basic
-public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Tangent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Differential
 
 /-!

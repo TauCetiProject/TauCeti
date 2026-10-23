@@ -19,7 +19,8 @@ second part is a single box; it is written at `n+2` so that both parts are posit
 hypothesis on `n`.
 
 It also records `TauCeti.parts_equivCast`, the transport of a partition along an equality of the
-number being partitioned: such a transport leaves the parts alone.
+number being partitioned: such a transport leaves the parts alone, and
+`Nat.Partition.card_parts_le`, which says a partition of `n` has at most `n` parts.
 -/
 
 public section
@@ -81,3 +82,11 @@ theorem sort_parts_singletonSecondRow (n : ℕ) :
 end Nat.Partition
 
 end TauCeti
+
+namespace Nat.Partition
+
+/-- **A partition of `n` has at most `n` parts**, since every part is at least `1`. -/
+theorem card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
+  simpa [μ.parts_sum] using μ.parts.card_nsmul_le_sum (a := 1) fun _ hx => μ.parts_pos hx
+
+end Nat.Partition
