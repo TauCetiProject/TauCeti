@@ -235,6 +235,12 @@ instance forget₂_additive {R : Type u} {G : Type v} [Ring R] [Monoid G] :
   -- preservation of addition is definitional.
   map_add := by intros; rfl
 
+/-- Forgetting finite generation preserves scalar multiplication of intertwiners. -/
+instance forget₂_linear {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
+    Functor.Linear R (forget₂ (FDRep R G) (Rep R G)) where
+  -- As for additivity, the forgetful functor keeps the underlying linear map.
+  map_smul := by intros; rfl
+
 open MonoidalCategory in
 /-- **Forgetting finite-dimensionality preserves the tensor product on the nose.**  The monoidal
 structure of `FDRep R G` is that of `FGModuleCat R` with the diagonal action, and the monoidal
