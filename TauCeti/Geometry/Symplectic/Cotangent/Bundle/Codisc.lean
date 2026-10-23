@@ -25,9 +25,9 @@ which the symplectic capacities of cotangent bundles are computed. This file est
 point-set and smooth structure.
 
 Both sets are closed, and compact when `M` is compact
-(`TauCeti.CotangentBundle.isCompact_codiscBundle`): over a chart domain the bundle coordinates of a
-covector of norm at most one are bounded, since the inverse tangent trivialization is locally
-bounded.
+(`TauCeti.CotangentBundle.isCompact_codiscBundle`) by `IsCompact.norm_le_bundle_of_continuous`:
+near each point the bundle coordinates of a covector are bounded by a multiple of its norm, since
+the inverse tangent trivialization is locally bounded.
 
 Since every nonzero value is a regular value of the norm of covectors
 (`TauCeti.CotangentBundle.isRegularValue_norm_snd`), `S*M` is a regular level. For a smooth metric
@@ -64,7 +64,7 @@ public section
 
 noncomputable section
 
-open Bundle Set Filter Metric Riemannian.Tensor
+open Bundle Set Filter Riemannian.Tensor
 open Manifold
 open scoped Manifold Topology ContDiff
 
@@ -118,64 +118,27 @@ theorem isClosed_codiscBundle : IsClosed (codiscBundle I M) :=
 theorem isClosed_cosphereBundle : IsClosed (cosphereBundle I M) :=
   isClosed_eq continuous_norm_snd continuous_const
 
-/-- Over a neighbourhood of every point, the covectors of norm at most one lie in a compact set:
-in the chart at the point, their base points stay in a compact set and their bundle coordinates
-are bounded, because the inverse tangent trivialization is locally bounded. -/
-private theorem exists_isCompact_norm_le (x : M) :
-    ∃ U ∈ 𝓝 x, ∃ L : Set (CotangentBundle I M), IsCompact L ∧
-      ∀ z : CotangentBundle I M, z.proj ∈ U → ‖z.2‖ ≤ 1 → z ∈ L := by
-  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 0) (F := E)
-    (V := fun x : M ↦ TangentSpace I x)
-  set φ := extChartAt I x
-  set z₀ : CotangentBundle I M := ⟨x, 0⟩
-  set Ψ := extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z₀
-  -- A compact neighbourhood `K'` of `φ x` in the range of `I`, inside the chart target.
-  obtain ⟨ε, ε0, hε⟩ := Metric.mem_nhdsWithin_iff.1 (extChartAt_target_mem_nhdsWithin (I := I) x)
-  set K' := closedBall (φ x) (ε / 2) ∩ range I
-  have hK'φ : K' ⊆ φ.target := fun q hq ↦
-    hε ⟨closedBall_subset_ball (half_lt_self ε0) hq.1, hq.2⟩
-  have hK' : IsCompact K' := (isCompact_closedBall _ _).inter_right I.isClosed_range
-  -- Near `x`, the inverse tangent trivialization at `x` has norm less than `C`.
-  obtain ⟨C, -, hC⟩ :=
-    eventually_norm_symmL_trivializationAt_lt E (fun x : M ↦ TangentSpace I x) x
-  refine ⟨φ.source ∩ φ ⁻¹' ball (φ x) (ε / 2) ∩
-    {y | ‖(trivializationAt E (TangentSpace I) x).symmL ℝ y‖ < C}, ?_,
-    Ψ.symm '' (K' ×ˢ closedBall 0 C), ?_, ?_⟩
-  · exact inter_mem (inter_mem (extChartAt_source_mem_nhds x)
-      ((continuousAt_extChartAt x).preimage_mem_nhds (ball_mem_nhds _ (half_pos ε0)))) hC
-  · refine (hK'.prod (isCompact_closedBall _ _)).image_of_continuousOn
-      ((continuousOn_extChartAt_symm z₀).mono ?_)
-    rintro ⟨q, p⟩ ⟨hq, -⟩
-    rw [FiberBundle.extChartAt_target, hom_trivializationAt_baseSet,
-      TangentBundle.trivializationAt_baseSet]
-    refine ⟨⟨hK'φ hq, ?_, by simp⟩, mem_univ _⟩
-    rw [← extChartAt_source (I := I)]
-    exact φ.map_target (hK'φ hq)
-  · rintro z ⟨⟨hzs, hzb⟩, hzC⟩ hz
-    have hzK' : φ z.proj ∈ K' :=
-      ⟨ball_subset_closedBall hzb, extChartAt_target_subset_range x (φ.map_source hzs)⟩
-    have hzs' : z.proj ∈ (chartAt H z₀.proj).source := by rwa [← extChartAt_source (I := I)]
-    have hzΨ : z ∈ Ψ.source := by
-      simp only [Ψ, FiberBundle.chartedSpace_chartAt, mfld_simps]
-      rw [Trivialization.coe_fst' _ (by simpa using hzs')]
-      exact ⟨⟨hzs', by simp⟩, hzs'⟩
-    refine ⟨Ψ z, ?_, Ψ.left_inv hzΨ⟩
-    rw [extChartAt_apply]
-    refine ⟨hzK', mem_closedBall_zero_iff.2 ?_⟩
-    -- The bundle coordinate of `z` is `z.2` composed with the inverse trivialization.
-    calc _ ≤ ‖z.2‖ * ‖(trivializationAt E (TangentSpace I) x).symmL ℝ z.proj‖ :=
-          ContinuousLinearMap.opNorm_comp_le _ _
-      _ ≤ 1 * C := mul_le_mul hz hzC.le (ContinuousLinearMap.opNorm_nonneg _) zero_le_one
-      _ = C := one_mul _
-
 /-- **The unit codisc bundle of a compact Riemannian manifold is compact.** -/
 theorem isCompact_codiscBundle [CompactSpace M] : IsCompact (codiscBundle I M) := by
-  choose U hU L hL hUL using exists_isCompact_norm_le (I := I) (M := M)
-  obtain ⟨t, -, ht⟩ := isCompact_univ.elim_nhds_subcover U fun x _ ↦ hU x
-  refine (t.isCompact_biUnion fun x _ ↦ hL x).of_isClosed_subset isClosed_codiscBundle ?_
-  intro z hz
-  obtain ⟨x, hx, hzx⟩ := mem_iUnion₂.1 (ht (mem_univ z.proj))
-  exact mem_iUnion₂.2 ⟨x, hx, hUL x z hzx hz⟩
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 0) (F := E)
+    (V := fun x : M ↦ TangentSpace I x)
+  convert (isCompact_univ (X := M)).norm_le_bundle_of_continuous (F := E →L[ℝ] ℝ)
+    (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) continuous_norm_snd (fun x ↦ ?_) 1 using 1
+  · ext; simp
+  -- In bundle coordinates, a covector is composed with the inverse tangent trivialization, which
+  -- is locally bounded.
+  set e := trivializationAt E (TangentSpace I) x
+  obtain ⟨C, -, hC⟩ := eventually_norm_symmL_trivializationAt_lt E (fun x : M ↦ TangentSpace I x) x
+  refine ⟨C, ?_⟩
+  filter_upwards [hC, e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x)]
+    with y hy hyb p
+  rw [Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ (by simpa [e] using hyb),
+    mul_comm]
+  simp only [hom_trivializationAt, Trivialization.continuousLinearMap_apply,
+    Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
+    ContinuousLinearMap.id_comp]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_mul_of_nonneg_left hy.le (norm_nonneg _))
 
 /-- The unit cosphere bundle of a compact Riemannian manifold is compact. -/
 theorem isCompact_cosphereBundle [CompactSpace M] : IsCompact (cosphereBundle I M) :=
