@@ -168,6 +168,13 @@ theorem toHomeomorphHom_injective :
   intro x
   exact congr_fun (congrArg DFunLike.coe h) x
 
+/-- The integer powers of the inverse of the homeomorphism underlying a self-diffeomorphism `f`
+act as the corresponding powers of `f⁻¹`. -/
+theorem toHomeomorph_symm_zpow_apply (f : M ≃ₘ^n⟮I, I⟯ M) (k : ℤ) (x : M) :
+    (f.toHomeomorph.symm ^ k) x = (f ^ (-k)) x := by
+  rw [← symm_toHomeomorph, ← inv_def, ← toHomeomorphHom_apply, ← map_zpow, inv_zpow',
+    toHomeomorphHom_apply, coe_toHomeomorph]
+
 end Diffeomorph
 
 namespace TauCeti

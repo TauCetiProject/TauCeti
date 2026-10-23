@@ -341,21 +341,15 @@ theorem contMDiff_proj [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] :
 
 /-! ### Comparison with the topological mapping torus -/
 
-/-- The iterates of the homeomorphism underlying `φ⁻¹` are those of `φ⁻¹`. -/
-private theorem toHomeomorph_symm_zpow_apply (k : ℤ) (x : M) :
-    (φ.toHomeomorph.symm ^ k) x = (φ ^ (-k)) x := by
-  rw [← Diffeomorph.symm_toHomeomorph, ← Diffeomorph.inv_def, ← Diffeomorph.toHomeomorphHom_apply,
-    ← map_zpow, inv_zpow', Diffeomorph.toHomeomorphHom_apply, Diffeomorph.coe_toHomeomorph]
-
 /-- The smooth mapping torus of `φ` is homeomorphic to Tau Ceti's topological mapping torus
 `TauCeti.MappingTorus` of `φ⁻¹`, by `[t, x] ↦ [x, t]`. -/
 def homeomorphMappingTorus : SmoothMappingTorus φ ≃ₜ MappingTorus φ.toHomeomorph.symm where
   toFun := MulAction.orbitRelQuotientLift
     (fun z ↦ MappingTorus.mk _ ((ofProd φ).symm z).2 ((ofProd φ).symm z).1) fun k z ↦ by
-      rw [ofProd_symm_smul, ← toHomeomorph_symm_zpow_apply]
+      rw [ofProd_symm_smul, ← Diffeomorph.toHomeomorph_symm_zpow_apply]
       exact MappingTorus.mk_vadd _ _ _ _
   invFun := MappingTorus.lift _ (fun p ↦ mk φ p.2 p.1) fun k x t ↦ by
-    rw [toHomeomorph_symm_zpow_apply, mk_add_intCast]
+    rw [Diffeomorph.toHomeomorph_symm_zpow_apply, mk_add_intCast]
     simp
   left_inv z := by
     obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
