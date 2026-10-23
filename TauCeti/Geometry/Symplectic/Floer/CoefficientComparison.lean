@@ -72,17 +72,11 @@ theorem coefficientComparison_single (A : S) (r : R) :
     coefficientComparison q hω (single A r) = single (-q A) r := by
   simp [coefficientComparison]
 
-include hω in
-/-- Only finitely many supported source classes contribute to a comparison coefficient. -/
-theorem finite_coefficientComparison_fiber (a : NovikovSeries R S ω) (γ : Γ) :
-    (a.support ∩ (-q) ⁻¹' {γ}).Finite :=
-  finite_support_inter_preimage_singleton (N' := -Ω) a
-    ⟨1, one_pos, period_rescale_neg hω⟩ γ
-
 /-- A coefficient of the comparison is the finite sum over its supported fibre. -/
 theorem coeff_coefficientComparison (a : NovikovSeries R S ω) (γ : Γ) :
     (coefficientComparison q hω a).coeff γ =
-      ∑ A ∈ (finite_coefficientComparison_fiber q hω a γ).toFinset, a.coeff A := by
+      ∑ A ∈ (finite_support_inter_preimage_singleton (N' := -Ω) a (φ := -q)
+        ⟨1, one_pos, period_rescale_neg hω⟩ γ).toFinset, a.coeff A := by
   classical
   rw [coefficientComparison_apply]
   apply coeff_map_eq_sum (RingHom.id R : R →+ R) (-q) _ a
