@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Equality
--- Proof-only: a convex set has positive volume exactly when its interior is nonempty.
+-- Proof-only: a convex set has positive volume exactly when its interior is nonempty, and
+-- containment in an open convex set from directional images.
 import TauCeti.Analysis.Convex.Measure
+import TauCeti.Analysis.Convex.Separation
 
 /-!
 # Equality in Brunn–Minkowski for convex bodies: homothety
@@ -26,7 +28,8 @@ quantiles of `K` and `L` along each unit vector `u` differ by a constant
 this constant as `⟪u, v⟫`, where `v` is the difference of the centroids of `L` and `K`
 (`TauCeti.setIntegral_quantile_map_inner_cond`). Since the quantiles sweep out the heights of
 interior points, `interior L` and `v +ᵥ interior K` have the same heights along every unit
-vector, so by separation of points from open convex sets they coincide. Passing to closures gives
+vector, so by separation of points from open convex sets they coincide
+(`Convex.subset_of_image_inner_subset`). Passing to closures gives
 `L = v +ᵥ K`. The additive equality case reduces to the multiplicative one by rescaling `A` and `B`
 to unit volume.
 
@@ -35,8 +38,6 @@ The hypothesis of positive volume is equivalent to nonempty interior
 
 ## Main results
 
-* `Convex.subset_of_image_inner_subset`: a set whose heights along every unit vector are heights
-  of points of a nonempty open convex set `W` is contained in `W`.
 * `Convex.exists_interior_eq_vadd_interior_of_volume_le`: for bounded Borel convex sets of positive
   volume, multiplicative equality forces the interiors to be translates.
 * `Convex.volume_smul_add_smul_eq_iff`: for compact convex sets of positive volume, multiplicative
@@ -58,30 +59,6 @@ open MeasureTheory MeasureTheory.Measure ProbabilityTheory Set
 open scoped ENNReal Pointwise RealInnerProductSpace
 
 namespace TauCeti
-
-/-- **Containment in an open convex set from directional images.** If the heights `⟪u, x⟫` of the
-points of `U` along every unit vector `u` are heights of points of a nonempty open convex set `W`,
-then `U ⊆ W`: a point outside `W` is strictly separated from it by a continuous linear functional,
-which is a positive multiple of the height along a unit vector. -/
-theorem _root_.Convex.subset_of_image_inner_subset {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [CompleteSpace E] {U W : Set E} (hW : Convex ℝ W) (hWo : IsOpen W)
-    (hWn : W.Nonempty)
-    (hUW : ∀ u : E, ‖u‖ = 1 → (fun x ↦ ⟪u, x⟫) '' U ⊆ (fun x ↦ ⟪u, x⟫) '' W) : U ⊆ W := by
-  intro x hx
-  by_contra hxW
-  obtain ⟨f, hf⟩ := geometric_hahn_banach_open_point hW hWo hxW
-  set w := (InnerProductSpace.toDual ℝ E).symm f
-  have hfw (y : E) : f y = ⟪w, y⟫ := InnerProductSpace.toDual_symm_apply.symm
-  have hw : w ≠ 0 := by
-    rintro hw
-    obtain ⟨a, ha⟩ := hWn
-    simpa [hfw, hw] using hf a ha
-  obtain ⟨a, ha, hax⟩ : ⟪‖w‖⁻¹ • w, x⟫ ∈ (fun y ↦ ⟪‖w‖⁻¹ • w, y⟫) '' W :=
-    hUW _ (norm_smul_inv_norm (𝕜 := ℝ) hw) (mem_image_of_mem _ hx)
-  simp only [real_inner_smul_left] at hax
-  have := hf a ha
-  rw [hfw, hfw, ← mul_left_cancel₀ (inv_ne_zero (norm_ne_zero_iff.2 hw)) hax] at this
-  exact lt_irrefl _ this
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]

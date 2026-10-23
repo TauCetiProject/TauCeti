@@ -279,12 +279,10 @@ theorem integrableOn_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded 
   have := cond_isProbabilityMeasure_of_finite hs0 hsb.measure_lt_top.ne
   have hm : Measurable fun x : E ↦ ⟪e, x⟫ := (continuous_const.inner continuous_id).measurable
   obtain ⟨C, hC⟩ := hsb.exists_norm_le
-  have hν : Integrable (fun y ↦ y) ν :=
+  have hν : Integrable id ν :=
     (integrable_map_measure aestronglyMeasurable_id hm.aemeasurable).2
       ((integrable_cond_of_norm_le hsm aestronglyMeasurable_id hC).const_inner e)
-  rw [← map_quantile_volume_Ioo ν] at hν
-  exact (integrable_map_measure aestronglyMeasurable_id
-    (measurable_quantile ν).aemeasurable).1 hν
+  exact (integrableOn_quantile_iff ν).2 hν
 
 /-- **The mean height.** The average over the levels `Ioo 0 1` of the quantile function of the
 height `⟪e, x⟫` of a point `x` drawn uniformly from a bounded Borel set `s` of positive volume is
@@ -297,10 +295,7 @@ theorem setIntegral_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded s
   have := cond_isProbabilityMeasure_of_finite hs0 hsb.measure_lt_top.ne
   have hm : Measurable fun x : E ↦ ⟪e, x⟫ := (continuous_const.inner continuous_id).measurable
   obtain ⟨C, hC⟩ := hsb.exists_norm_le
-  calc ∫ τ in Ioo 0 1, ν.quantile τ
-      = ∫ y, y ∂((volume.restrict (Ioo (0 : ℝ) 1)).map ν.quantile) :=
-        (integral_map (measurable_quantile ν).aemeasurable aestronglyMeasurable_id).symm
-    _ = ∫ y, y ∂ν := by rw [map_quantile_volume_Ioo]
+  calc ∫ τ in Ioo 0 1, ν.quantile τ = ∫ y, y ∂ν := setIntegral_quantile_eq_integral ν
     _ = ∫ x, ⟪e, x⟫ ∂(volume[|s]) := integral_map hm.aemeasurable aestronglyMeasurable_id
     _ = ⟪e, ∫ x, x ∂(volume[|s])⟫ := integral_inner
           (integrable_cond_of_norm_le hsm aestronglyMeasurable_id hC) e

@@ -87,6 +87,9 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.map_quantile_volume_Ioo` — inverse transform sampling: the quantile
   function pushes the uniform law on `Ioo 0 1` forward to the original law, packaged as
   `MeasureTheory.Measure.measurePreserving_quantile`;
+* `MeasureTheory.Measure.setIntegral_quantile_eq_integral` — the average of the quantile function
+  over the levels is the mean, with integrability characterized by
+  `MeasureTheory.Measure.integrableOn_quantile_iff`;
 * `MeasureTheory.Measure.quantile_map_volume_Ioo_ae` — conversely, the law of a monotone function
   of a uniform variable has that function as its quantile function, almost everywhere;
 * `MeasureTheory.Measure.cdf_map_eq_volume_restrict` — the probability integral transform for an
@@ -648,6 +651,20 @@ interval. -/
 theorem measurePreserving_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     MeasurePreserving μ.quantile (volume.restrict (Ioo (0 : ℝ) 1)) μ :=
   ⟨measurable_quantile μ, map_quantile_volume_Ioo μ⟩
+
+/-- The quantile function of a real probability law is integrable on the levels `Ioo 0 1` exactly
+when the law has a finite first moment. -/
+theorem integrableOn_quantile_iff (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    IntegrableOn μ.quantile (Ioo 0 1) ↔ Integrable id μ :=
+  (measurePreserving_quantile μ).integrable_comp aestronglyMeasurable_id
+
+/-- **The mean as the average quantile.** By inverse transform sampling, the average over the levels
+`Ioo 0 1` of the quantile function of a real probability law is its mean. Both sides vanish when
+the law has no finite first moment. -/
+theorem setIntegral_quantile_eq_integral (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    ∫ t in Ioo 0 1, μ.quantile t = ∫ x, x ∂μ := by
+  rw [← integral_map (f := fun x ↦ x) (measurable_quantile μ).aemeasurable
+    aestronglyMeasurable_id, map_quantile_volume_Ioo]
 
 /-- **The quantile of a monotone rearrangement.** The law of `f (U)`, for `U` uniform on the open
 unit interval and `f` monotone there, has quantile function `f` at almost every level: they can
