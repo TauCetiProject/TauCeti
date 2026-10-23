@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.WeakContractibility
-public import TauCeti.AlgebraicTopology.Homotopy.Whitehead
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Contractible
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.GroupHomology
 
 /-!
@@ -47,14 +45,6 @@ open CategoryTheory
 namespace TauCeti
 
 universe u
-
-/-- **Milnor's countable join is contractible**: it is weakly contractible, and it has CW type
-through its CW structure whose cells are the simplices of the countable join, so Whitehead's
-theorem applies. -/
-instance instContractibleSpaceUniversalGSpace (G : Type u) [Nonempty G] :
-    ContractibleSpace (universalGSpace G) :=
-  contractibleSpace_of_subsingleton_homotopyGroup (Classical.arbitrary _)
-    (subsingleton_homotopyGroup_universalGSpace G · _)
 
 variable (k : Type u) [CommRing k] (G : Type u) [Group G]
 

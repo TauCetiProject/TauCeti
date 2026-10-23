@@ -14,7 +14,7 @@ public import TauCeti.Topology.Category.TopCat.Action
 /-!
 # The singular chains of a contractible free `G`-space as a projective resolution
 
-Let a group `G` act on a space `E` by continuous maps. Pushing singular chains forward along the
+Let a monoid `G` act on a space `E` by continuous maps. Pushing singular chains forward along the
 translations `g • ·` makes each group of singular `n`-chains of `E` with coefficients in a
 commutative ring `k` a representation of `G` (`TauCeti.singularChainsRepresentation`), and the
 singular boundary is equivariant, so the singular chains form a chain complex of representations
@@ -22,9 +22,10 @@ singular boundary is equivariant, so the singular chains form a chain complex of
 (`TauCeti.singularChainsRepForget₂Iso`), and the sum of the coefficients of a `0`-chain is an
 augmentation onto the trivial representation (`TauCeti.singularChainsRepAugmentation`).
 
-The `n`-chains are the permutation representation of `G` on the singular `n`-simplices. If `G`
-acts freely on `E`, it acts freely on singular simplices, since a simplex is moved off itself
-already at one point; so each term is a free representation, in particular a projective one
+The `n`-chains are the permutation representation of `G` on the singular `n`-simplices
+(`TauCeti.singularChainsEquivOfMulAction`). If `G` is a group acting freely on `E`, it acts
+freely on singular simplices, since a simplex is moved off itself already at one point; so each
+term is a free representation, in particular a projective one
 (`TauCeti.projective_singularChainsRep_X`). If `E` is moreover contractible, the augmented
 singular chain complex is exact (`TauCeti.quasiIso_singularChainsAugmentation`), and the singular
 chains of `E` are a projective resolution of the trivial representation
@@ -38,6 +39,8 @@ homology of `G`.
 * `TauCeti.singularChainsRep`: the singular chain complex of `E`, as a chain complex of
   representations of `G`.
 * `TauCeti.singularChainsRepAugmentation`: its augmentation onto the trivial representation.
+* `TauCeti.singularChainsEquivOfMulAction`: the `n`-chains are the permutation representation on
+  singular `n`-simplices.
 * `TauCeti.singularChainsResolution`: for a free action on a contractible space, the projective
   resolution of the trivial representation by the singular chains.
 
@@ -64,7 +67,7 @@ namespace TauCeti
 
 section Equivariant
 
-variable (k : Type u) [CommRing k] (E : TopCat.{u}) (G : Type u) [Group G] [MulAction G E]
+variable (k : Type u) [CommRing k] (E : TopCat.{u}) (G : Type u) [Monoid G] [MulAction G E]
   [ContinuousConstSMul G E]
 
 /-- The action of `G` on the singular `n`-chains of a `G`-space `E`: `g` acts by pushing chains
@@ -76,15 +79,15 @@ def singularChainsRepresentation (n : ℕ) :
   map_one' := by
     have : TopCat.ofHom ⟨((1 : G) • · : E → E), continuous_const_smul 1⟩ = 𝟙 E :=
       ConcreteCategory.hom_ext _ _ fun x ↦ one_smul G x
-    rw [this, CategoryTheory.Functor.map_id]
-    rfl
+    rw [this, CategoryTheory.Functor.map_id, HomologicalComplex.id_f, ModuleCat.hom_id,
+      Module.End.one_eq_id]
   map_mul' g h := by
     have : TopCat.ofHom ⟨((g * h) • · : E → E), continuous_const_smul (g * h)⟩ =
         TopCat.ofHom ⟨(h • · : E → E), continuous_const_smul h⟩ ≫
           TopCat.ofHom ⟨(g • · : E → E), continuous_const_smul g⟩ :=
       ConcreteCategory.hom_ext _ _ fun x ↦ mul_smul g h x
-    rw [this, CategoryTheory.Functor.map_comp, HomologicalComplex.comp_f, ModuleCat.hom_comp]
-    rfl
+    rw [this, CategoryTheory.Functor.map_comp, HomologicalComplex.comp_f, ModuleCat.hom_comp,
+      Module.End.mul_eq_comp]
 
 variable {k E G}
 
@@ -96,12 +99,12 @@ lemma singularChainsRepresentation_apply (n : ℕ) (g : G) :
 
 /-- An element `g` sends the chain of a simplex `σ` to the chain of the translated simplex
 `g • σ`. -/
+@[simp]
 theorem singularChainsRepresentation_simplexChain {n : ℕ} (g : G)
     (σ : (TopCat.toSSet.obj E) _⦋n⦌) (a : k) :
-    singularChainsRepresentation k E G n g (simplexChain σ a) =
-      simplexChain ((TopCat.toSSet.map (TopCat.ofHom ⟨(g • · : E → E),
-        continuous_const_smul g⟩)).app _ σ) a :=
-  singularChains_map_f_simplexChain _ σ a
+    singularChainsRepresentation k E G n g (simplexChain σ a) = simplexChain (g • σ) a := by
+  rw [singularChainsRepresentation_apply, singularChains_map_f_simplexChain,
+    TauCeti.TopCat.toSSetObj_smul_def]
 
 variable (k E G)
 
@@ -155,6 +158,9 @@ def singularChainsRepForget₂Iso :
   HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) fun i j (h : j + 1 = i) ↦ by
     subst h
     rw [CategoryTheory.Functor.mapHomologicalComplex_obj_d, singularChainsRep_d]
+    -- `forget₂` sends `singularChainsRepDifferential` to its underlying linear map
+    -- (`Rep.forget₂_moduleCat_map`), the singular boundary; the components are identities between
+    -- objects that agree only by definition (`singularChainsRep_X`), so this closes by `rfl`.
     rfl
 
 /-- The components of `TauCeti.singularChainsRepForget₂Iso` are identities. -/
@@ -211,54 +217,27 @@ instance quasiIso_singularChainsRepAugmentation [ContractibleSpace E] :
     -- of the two complexes in degree `0` are identities by definition.
     rfl
 
-section Free
-
-variable (n : ℕ)
-
-/-- The action of `G` on the singular `n`-simplices of `E` by translation, induced from the
-functor `SingleObj G ⥤ Type u` they form. -/
-private abbrev singularSimplicesMulAction : MulAction G ((TopCat.toSSet.obj E) _⦋n⦌) :=
-  inferInstanceAs (MulAction G
-    (((E.actionFunctor G ⋙ TopCat.toSSet) ⋙ (evaluation _ _).obj (Opposite.op ⦋n⦌)).obj
-      (SingleObj.star G)))
-
-attribute [local instance] singularSimplicesMulAction
-
-/-- An element `g` acts on a singular simplex by pushing it forward along `g • ·`; the action is
-induced by the functor `TopCat.actionFunctor`, whose value on `g` is this translation. -/
-private lemma singularSimplices_smul_def (g : G) (σ : (TopCat.toSSet.obj E) _⦋n⦌) :
-    g • σ = (TopCat.toSSet.map (TopCat.ofHom ⟨(g • · : E → E), continuous_const_smul g⟩)).app _ σ :=
-  (rfl)
-
-/-- The action of `G` on the singular `n`-chains is the permutation representation on the
-singular `n`-simplices. -/
-private def singularChainsEquivOfMulAction :
+/-- **The singular `n`-chains are the permutation representation on singular `n`-simplices**:
+the chain of a simplex `σ` with coefficient `a` corresponds to `a` times the basis vector of `σ`,
+and `G` acts on simplices by translation (`TauCeti.TopCat.mulActionToSSetObj`). -/
+def singularChainsEquivOfMulAction (n : ℕ) :
     (singularChainsRepresentation k E G n).Equiv
       (Representation.ofMulAction k G ((TopCat.toSSet.obj E) _⦋n⦌)) :=
   .mk ((singularChainsLinearEquivFinsupp k E n).trans (MonoidAlgebra.coeffLinearEquiv k).symm)
-    fun g ↦ singularChains_linearMap_ext fun σ ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, singularChainsRepresentation_simplexChain]
-      simp [singularSimplices_smul_def]
+    fun g ↦ singularChains_linearMap_ext fun σ ↦ by simp
 
-variable [IsCancelSMul G E]
+end Equivariant
 
-/-- A free action on a space is free on its singular simplices: compare the translates of a
-simplex at one point. -/
-private lemma isCancelSMul_singularSimplices :
-    IsCancelSMul G ((TopCat.toSSet.obj E) _⦋n⦌) where
-  right_cancel' g h σ hσ := by
-    let x : SimplexCategory.toTop.{u}.obj ⦋n⦌ := SimplexCategory.toTopInitialVertex _
-    exact IsCancelSMul.right_cancel (P := E) g h (TauCeti.TopCat.simplexMap σ x)
-      congr(TauCeti.TopCat.simplexMap $hσ x)
+section Free
+
+variable (k : Type u) [CommRing k] (E : TopCat.{u}) (G : Type u) [Group G] [MulAction G E]
+  [ContinuousConstSMul G E] [IsCancelSMul G E]
 
 /-- **The singular chains of a free `G`-space are free representations**: each term of the
 equivariant singular chain complex is the permutation representation of a free action, on the
-singular simplices, and so it is projective. -/
-instance projective_singularChainsRep_X : Projective ((singularChainsRep k E G).X n) :=
-  have := isCancelSMul_singularSimplices E G n
+singular simplices (`TauCeti.TopCat.isCancelSMul_toSSetObj`), and so it is projective. -/
+instance projective_singularChainsRep_X (n : ℕ) : Projective ((singularChainsRep k E G).X n) :=
   Projective.of_iso (Rep.mkIso (singularChainsEquivOfMulAction k E G n)).symm inferInstance
-
-end Free
 
 /-- **The singular chains of a contractible free `G`-space are a projective resolution** of the
 trivial representation of `G` over `k`: `G` acts freely on singular simplices, so the terms are
@@ -268,7 +247,7 @@ exact. -/
 -- resolution is the equivariant singular chain complex by definition; the comparison of its
 -- coinvariants with the singular chains of an orbit space is stated for that complex.
 @[expose]
-def singularChainsResolution [IsCancelSMul G E] [ContractibleSpace E] :
+def singularChainsResolution [ContractibleSpace E] :
     ProjectiveResolution (Rep.trivial k G k) where
   complex := singularChainsRep k E G
   π := singularChainsRepAugmentation k E G
@@ -276,17 +255,17 @@ def singularChainsResolution [IsCancelSMul G E] [ContractibleSpace E] :
 /-- The complex of `TauCeti.singularChainsResolution` is the equivariant singular chain
 complex. -/
 @[simp]
-lemma singularChainsResolution_complex [IsCancelSMul G E] [ContractibleSpace E] :
+lemma singularChainsResolution_complex [ContractibleSpace E] :
     (singularChainsResolution k E G).complex = singularChainsRep k E G :=
   (rfl)
 
 /-- The augmentation of `TauCeti.singularChainsResolution` is that of the equivariant singular
 chains. -/
 @[simp]
-lemma singularChainsResolution_π [IsCancelSMul G E] [ContractibleSpace E] :
+lemma singularChainsResolution_π [ContractibleSpace E] :
     (singularChainsResolution k E G).π = singularChainsRepAugmentation k E G :=
   (rfl)
 
-end Equivariant
+end Free
 
 end TauCeti

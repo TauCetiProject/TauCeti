@@ -47,7 +47,6 @@ This applies to the orbit space of a contractible free `G`-space, such as a clas
 
 * K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section II.4, Proposition 4.1, and
   Section III.1.
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 3.G.
 -/
 
 public section
@@ -64,20 +63,6 @@ open TauCeti Representation MonoidalCategory
 
 variable {E B : TopCat.{u}} {p : E ⟶ B} {G : Type u} [Group G] [MulAction G E]
   (hG : IsQuotientCoveringMap p G) (k : Type u) [CommRing k]
-
-/-- Every singular simplex of the base of a quotient covering lifts, and two lifts of one simplex
-differ by translation by an element of `G`. -/
-private lemma singularSimplex_lift (n : ℕ) :
-    haveI := hG.toContinuousConstSMul
-    Function.Surjective ((TopCat.toSSet.map p).app (Opposite.op ⦋n⦌)) ∧
-      ∀ σ σ' : (TopCat.toSSet.obj E) _⦋n⦌,
-        (TopCat.toSSet.map p).app _ σ = (TopCat.toSSet.map p).app _ σ' →
-          ∃ g : G, (TopCat.toSSet.map
-            (TopCat.ofHom ⟨(g • · : E → E), continuous_const_smul g⟩)).app _ σ' = σ := by
-  have := hG.toContinuousConstSMul
-  obtain ⟨hsurj, horbit⟩ := (CategoryTheory.Limits.SingleObj.Types.nonempty_isColimit_iff _).1
-    ⟨isColimitOfPreserves ((evaluation _ _).obj (Opposite.op ⦋n⦌)) hG.isColimitMapCoconeToSSet⟩
-  exact ⟨hsurj, fun σ σ' h ↦ (horbit σ σ').1 h⟩
 
 /-- Pushing chains forward to the base of a quotient covering is invariant under translation. -/
 private lemma singularChains_map_comp_smul (g : G) :
@@ -125,7 +110,7 @@ private def coinvariantsTensorToSingularChains (n : ℕ) :
 private lemma coinvariantsTensorToSingularChains_mk (n : ℕ) (a : k)
     (c : ((singularChains k).obj E).X n) :
     haveI := hG.toContinuousConstSMul
-    coinvariantsTensorToSingularChains hG k n (Rep.coinvariantsTensorMk (Rep.trivial k G k)
+    (coinvariantsTensorToSingularChains hG k n).hom (Rep.coinvariantsTensorMk (Rep.trivial k G k)
         (Rep.of (singularChainsRepresentation k E G n)) a c) =
       a • ((singularChains k).map p).f n c := by
   have := hG.toContinuousConstSMul
@@ -154,7 +139,16 @@ private def singularChainsToCoinvariantsTensor (n : ℕ) :
   haveI := hG.toContinuousConstSMul
   chainsDesc fun τ ↦ Rep.coinvariantsTensorMk (Rep.trivial k G k)
     (Rep.of (singularChainsRepresentation k E G n)) 1
-      (simplexChain ((singularSimplex_lift hG n).1 τ).choose 1)
+      (simplexChain (hG.toSSet_map_app_surjective _ τ).choose 1)
+
+/-- A simplex of the base goes to the class of `1 ⊗ σ` for the chosen lift `σ`. -/
+private lemma singularChainsToCoinvariantsTensor_simplexChain_one (n : ℕ)
+    (τ : (TopCat.toSSet.obj B) _⦋n⦌) :
+    haveI := hG.toContinuousConstSMul
+    singularChainsToCoinvariantsTensor hG k n (simplexChain τ 1) =
+      Rep.coinvariantsTensorMk (Rep.trivial k G k) (Rep.of (singularChainsRepresentation k E G n)) 1
+        (simplexChain (hG.toSSet_map_app_surjective _ τ).choose 1) :=
+  chainsDesc_simplexChain_one _ τ
 
 /-- The comparison of `(k ⊗ Cₙ(E))_G` with the singular `n`-chains of the base is a linear
 equivalence. -/
@@ -166,19 +160,24 @@ private def coinvariantsTensorLinearEquivSingularChains (n : ℕ) :
   LinearEquiv.ofLinearMap (coinvariantsTensorToSingularChains hG k n).hom
     (singularChainsToCoinvariantsTensor hG k n)
     (singularChains_linearMap_ext fun τ ↦ by
-      rw [LinearMap.comp_apply, LinearMap.id_apply, singularChainsToCoinvariantsTensor,
-        chainsDesc_simplexChain_one, coinvariantsTensorToSingularChains_mk, one_smul,
-        singularChains_map_f_simplexChain, ((singularSimplex_lift hG n).1 τ).choose_spec])
+      simp only [LinearMap.comp_apply, LinearMap.id_apply,
+        singularChainsToCoinvariantsTensor_simplexChain_one]
+      rw [coinvariantsTensorToSingularChains_mk]
+      simp only [one_smul, singularChains_map_f_simplexChain,
+        (hG.toSSet_map_app_surjective _ τ).choose_spec])
     (Coinvariants.hom_ext <| TensorProduct.ext <| LinearMap.ext_ring <|
       singularChains_linearMap_ext fun σ ↦ by
-      obtain ⟨g, hg⟩ := (singularSimplex_lift hG n).2 _ σ
-        ((singularSimplex_lift hG n).1 ((TopCat.toSSet.map p).app _ σ)).choose_spec
+      -- The chosen lift of `p_* σ` is a translate `g • σ` of `σ`, and translating does not
+      -- change the class of `1 ⊗ σ`.
+      obtain ⟨g, hg⟩ := (hG.toSSet_map_app_eq_iff _ σ).1
+        (hG.toSSet_map_app_surjective _ ((TopCat.toSSet.map p).app _ σ)).choose_spec
       simp only [LinearMap.compr₂ₛₗ_apply, TensorProduct.mk_apply, LinearMap.comp_apply,
         LinearMap.id_apply]
-      rw [← Rep.coinvariantsTensorMk_apply, coinvariantsTensorToSingularChains_mk, one_smul,
-        singularChains_map_f_simplexChain, singularChainsToCoinvariantsTensor,
-        chainsDesc_simplexChain_one, ← hg, ← singularChainsRepresentation_simplexChain,
-        coinvariantsTensorMk_one_singularChainsRepresentation hG])
+      rw [← Rep.coinvariantsTensorMk_apply, coinvariantsTensorToSingularChains_mk]
+      simp only [one_smul, singularChains_map_f_simplexChain,
+        singularChainsToCoinvariantsTensor_simplexChain_one]
+      rw [← hg, ← singularChainsRepresentation_simplexChain]
+      exact coinvariantsTensorMk_one_singularChainsRepresentation hG k n g _)
 
 /-- The comparison maps commute with the differentials. -/
 private lemma coinvariantsTensorToSingularChains_comp_d (j : ℕ) :
@@ -193,11 +192,11 @@ private lemma coinvariantsTensorToSingularChains_comp_d (j : ℕ) :
   have hmap : (((Rep.coinvariantsTensor k G).obj (Rep.trivial k G k)).map
       (singularChainsRepDifferential k E G j)).hom (Rep.coinvariantsTensorMk _ _ a c) =
         Rep.coinvariantsTensorMk _ _ a ((singularChainsRepDifferential k E G j).hom c) := rfl
-  rw [LinearMap.compr₂_apply (Rep.coinvariantsTensorMk _ _), LinearMap.compr₂_apply
-    (Rep.coinvariantsTensorMk _ _), ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply,
-    LinearMap.comp_apply, coinvariantsTensorToSingularChains_mk, hmap,
-    singularChainsRepDifferential_hom_apply, coinvariantsTensorToSingularChains_mk,
-    map_smul]
+  rw [LinearMap.compr₂_apply (Rep.coinvariantsTensorMk _ _),
+    LinearMap.compr₂_apply (Rep.coinvariantsTensorMk _ _)]
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, hmap]
+  rw [coinvariantsTensorToSingularChains_mk, coinvariantsTensorToSingularChains_mk,
+    singularChainsRepDifferential_hom_apply, map_smul]
   exact congrArg (a • ·) (ConcreteCategory.congr_hom (((singularChains k).map p).comm (j + 1) j) c)
 
 /-- **The singular chains of the base of a quotient covering are the coinvariants of those of

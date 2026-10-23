@@ -12,12 +12,14 @@ public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 
 /-!
-# Acyclicity of the singular chains of a contractible space, on elements
+# Acyclicity of the singular chains of a contractible space
 
 The singular homology of a contractible space vanishes in positive degrees, and the reduced
 homology of a path-connected space vanishes in degree zero.  For chains with coefficients in a
 ring, this file states these facts on elements: a cycle of positive degree is a boundary, and a
-`0`-chain of augmentation zero is a boundary.
+`0`-chain of augmentation zero is a boundary.  It also states them for the whole complex: the
+augmented singular chain complex of a contractible space is exact, that is, the augmentation onto
+the coefficient ring in degree `0` is a quasi-isomorphism (a `QuasiIso` instance).
 
 ## Main results
 
