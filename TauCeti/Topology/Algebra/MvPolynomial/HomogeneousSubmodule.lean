@@ -9,7 +9,6 @@ public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.RingTheory.MvPolynomial.Jacobian
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
-public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
 import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
