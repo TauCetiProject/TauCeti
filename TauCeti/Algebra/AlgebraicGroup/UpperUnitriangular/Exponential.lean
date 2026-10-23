@@ -74,10 +74,7 @@ theorem map_expPullback_genericMatrix :
     (genericMatrix R m).map (expPullback R m) =
       IsNilpotent.exp (genericMatrix R m - 1) := by
   apply map_aeval_genericMatrix
-  apply IsUpperTriangular.isUpperUnitriangular_exp
-  · exact (isUpperUnitriangular_genericMatrix R m).isUpperTriangular.sub blockTriangular_one
-  · intro i
-    simp
+  exact (isUpperUnitriangular_genericMatrix R m).isUpperUnitriangular_exp_sub_one
 
 /-- Logarithm pullback evaluates the generic unitriangular matrix at one plus the logarithm. -/
 @[simp]
@@ -145,9 +142,7 @@ theorem logPullback_comp_expPullback :
 theorem expPullback_comp_logPullback :
     (expPullback R m).comp (logPullback R m) = AlgHom.id R (CoordinateRing R m) := by
   rw [expPullback, aeval_comp_logPullback R m _
-      (IsUpperTriangular.isUpperUnitriangular_exp
-        ((isUpperUnitriangular_genericMatrix R m).isUpperTriangular.sub blockTriangular_one)
-        (by intro i; simp)),
+      (isUpperUnitriangular_genericMatrix R m).isUpperUnitriangular_exp_sub_one,
     IsNilpotent.log_exp (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one]
   apply MvPolynomial.algHom_ext
   intro ij

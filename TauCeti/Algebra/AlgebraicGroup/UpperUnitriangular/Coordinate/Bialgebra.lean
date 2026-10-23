@@ -237,7 +237,6 @@ theorem map_aeval_genericMatrix_sub_one (R : Type u) [CommRing R]
     simp [Matrix.one_apply_ne ij.2.ne]
   have h := map_aeval_genericMatrix R m (M + 1) hU
   rw [hf] at h
-  rw [Matrix.map_sub _ (map_sub _), Matrix.map_one _ (map_zero _) (map_one _),
-    h, add_sub_cancel_right]
+  simp [Matrix.map_sub, Matrix.map_one, h]
 
 end TauCeti.UpperUnitriangular
