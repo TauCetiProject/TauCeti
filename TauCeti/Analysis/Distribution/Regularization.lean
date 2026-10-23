@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Topology.Algebra.Monoid
 
@@ -31,13 +32,12 @@ constant multiple of Lebesgue measure. The admissible translations form an open 
 `IsCompact.isOpen_setOf_mapsTo_add`, since `ρ` has compact support.
 
 Differentiability rests on the finite order of a distribution on each compact set,
-`Distribution.exists_norm_apply_le`: the first-order Taylor remainder of `x ↦ ρ (· - x)` is
-supported in a fixed compact set and all of its derivatives are `o(‖h‖)` uniformly, so its image
-under `T` is `o(‖h‖)` as well.
+`Distribution.exists_norm_apply_le` from `TauCeti.Analysis.Distribution.Order`: the first-order
+Taylor remainder of `x ↦ ρ (· - x)` is supported in a fixed compact set and all of its
+derivatives are `o(‖h‖)` uniformly, so its image under `T` is `o(‖h‖)` as well.
 
 ## Main declarations
 
-* `Distribution.exists_norm_apply_le`: a distribution has finite order on each compact set.
 * `Distribution.translatePairing`: the regularization `x ↦ T (ρ (· - x))`.
 * `Distribution.fderiv_translatePairing_apply`: the derivative identity.
 * `Distribution.contDiffOn_translatePairing`: the regularization is smooth.
@@ -62,32 +62,6 @@ namespace Distribution
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω V : Opens E}
-
-/-- **A distribution has finite order on each compact set.** For a compact `K ⊆ Ω` there are an
-order `N` and a constant `C` such that `‖T φ‖ ≤ C * M` for every test function `φ` supported in
-`K` whose derivatives of order at most `N` are all bounded by `M`. -/
-theorem exists_norm_apply_le (T : 𝓓'(Ω, F)) {K : Compacts E} (hK : (K : Set E) ⊆ Ω) :
-    ∃ (N : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K → ∀ M, 0 ≤ M →
-      (∀ i ≤ N, ∀ x, ‖iteratedFDeriv ℝ i φ x‖ ≤ M) → ‖T φ‖ ≤ C * M := by
-  let T' : 𝓓_{K}(E, ℝ) →L[ℝ] F := (T : 𝓓(Ω, ℝ) →L[ℝ] F).comp (ofSupportedInCLM ℝ hK)
-  obtain ⟨s, C, -, hC⟩ := Seminorm.bound_of_continuous
-    (ContDiffMapSupportedIn.withSeminorms ℝ E ℝ ⊤ K) ((normSeminorm ℝ F).comp T'.toLinearMap)
-    (continuous_norm.comp T'.continuous)
-  refine ⟨s.sup id, C, C.2, fun φ hφ M hM hφM => ?_⟩
-  let ψ : 𝓓_{K}(E, ℝ) := .of_support_subset φ.contDiff ((subset_tsupport _).trans hφ)
-  have hψ : ofSupportedInCLM ℝ hK ψ = φ := by
-    ext y
-    simp [ψ]
-  calc ‖T φ‖ = ‖T (ofSupportedInCLM ℝ hK ψ)‖ := by rw [hψ]
-    -- `T'` is by definition `T` precomposed with the inclusion `ofSupportedInCLM ℝ hK`.
-    _ = (normSeminorm ℝ F).comp T'.toLinearMap ψ := rfl
-    _ ≤ (C • s.sup (ContDiffMapSupportedIn.seminorm ℝ E ℝ ⊤ K)) ψ := hC ψ
-    _ ≤ C * M := by
-      rw [smul_apply, NNReal.smul_def, smul_eq_mul]
-      gcongr
-      refine Seminorm.finset_sup_apply_le hM fun i hi => ?_
-      rw [ContDiffMapSupportedIn.seminorm_top_le_iff ℝ hM]
-      exact fun x _ => hφM i (Finset.le_sup (f := id) hi) x
 
 omit [NormedSpace ℝ E] in
 /-- The topological support of a translate is the translated topological support. -/
@@ -149,9 +123,10 @@ theorem translatePairing_add (T S : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
   ext x
   by_cases h : MapsTo (· + x) (tsupport ρ) Ω <;> simp [translatePairing, h]
 
-/-- Regularization commutes with real scalar multiplication of the distribution. -/
+/-- Regularization commutes with scalar multiplication of the distribution. -/
 @[simp]
-theorem translatePairing_smul (c : ℝ) (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
+theorem translatePairing_smul {M : Type*} [Monoid M] [DistribMulAction M F] [SMulCommClass ℝ M F]
+    [ContinuousConstSMul M F] (c : M) (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
     (c • T).translatePairing ρ = c • T.translatePairing ρ := by
   ext x
   by_cases h : MapsTo (· + x) (tsupport ρ) Ω <;> simp [translatePairing, h]
