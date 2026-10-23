@@ -42,6 +42,12 @@ theorem coeff_optionEquivLeft_mem_washnitzerAlgebra {f : MvPowerSeries (Option �
 
 namespace washnitzerAlgebra
 
+/-- Forgetting overconvergence coefficientwise is injective on formal power series. -/
+theorem map_val_injective : Function.Injective
+    (PowerSeries.map ((washnitzerAlgebra σ R).val :
+      washnitzerAlgebra σ R →+* MvPowerSeries σ R)) :=
+  PowerSeries.map_injective _ Subtype.val_injective
+
 /-- Separate `Y = X none`, retaining overconvergent coefficients in the other variables. -/
 noncomputable def optionSeries :
     washnitzerAlgebra (Option σ) R →ₐ[R] PowerSeries (washnitzerAlgebra σ R) := by
@@ -52,9 +58,7 @@ noncomputable def optionSeries :
       optionEquivLeft σ R (f : MvPowerSeries (Option σ) R) := by
     ext m : 1
     simp [F, Subalgebra.val_apply]
-  have hi := PowerSeries.map_injective ((washnitzerAlgebra σ R).val :
-    washnitzerAlgebra σ R →+* MvPowerSeries σ R)
-    Subtype.val_injective
+  have hi := map_val_injective (σ := σ) (R := R)
   refine
     { toFun := F
       map_zero' := hi (by rw [hF]; simp)
@@ -74,7 +78,7 @@ theorem coe_coeff_optionSeries (f : washnitzerAlgebra (Option σ) R) (m : ℕ) :
 
 /-- Forgetting overconvergence of the coefficients recovers the formal variable separation. -/
 @[simp]
-theorem map_subtype_optionSeries (f : washnitzerAlgebra (Option σ) R) :
+theorem map_val_optionSeries (f : washnitzerAlgebra (Option σ) R) :
     PowerSeries.map ((washnitzerAlgebra σ R).val :
       washnitzerAlgebra σ R →+* MvPowerSeries σ R) (optionSeries f) =
       optionEquivLeft σ R (f : MvPowerSeries (Option σ) R) := by
@@ -88,24 +92,20 @@ theorem optionSeries_injective : Function.Injective (optionSeries (σ := σ) (R 
   apply (optionEquivLeft σ R).injective
   have hm := congrArg (PowerSeries.map ((washnitzerAlgebra σ R).val :
     washnitzerAlgebra σ R →+* MvPowerSeries σ R)) h
-  rwa [map_subtype_optionSeries, map_subtype_optionSeries] at hm
+  rwa [map_val_optionSeries, map_val_optionSeries] at hm
 
 /-- The separated variable becomes the univariate variable. -/
 @[simp]
 theorem optionSeries_X_none : optionSeries (X (Option σ) R none) = PowerSeries.X := by
-  apply PowerSeries.map_injective ((washnitzerAlgebra σ R).val :
-    washnitzerAlgebra σ R →+* MvPowerSeries σ R)
-    Subtype.val_injective
-  rw [map_subtype_optionSeries, coe_X, optionEquivLeft_X_none, PowerSeries.map_X]
+  apply map_val_injective
+  rw [map_val_optionSeries, coe_X, optionEquivLeft_X_none, PowerSeries.map_X]
 
 /-- A remaining variable becomes a constant coefficient. -/
 @[simp]
 theorem optionSeries_X_some (i : σ) :
     optionSeries (X (Option σ) R (some i)) = PowerSeries.C (X σ R i) := by
-  apply PowerSeries.map_injective ((washnitzerAlgebra σ R).val :
-    washnitzerAlgebra σ R →+* MvPowerSeries σ R)
-    Subtype.val_injective
-  rw [map_subtype_optionSeries, coe_X, optionEquivLeft_X_some, PowerSeries.map_C]
+  apply map_val_injective
+  rw [map_val_optionSeries, coe_X, optionEquivLeft_X_some, PowerSeries.map_C]
   exact congrArg PowerSeries.C (coe_X i).symm
 
 /-- Mapping the separated coefficients into the unit-radius Tate algebra agrees with

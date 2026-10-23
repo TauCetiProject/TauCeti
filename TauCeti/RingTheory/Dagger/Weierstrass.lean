@@ -48,6 +48,53 @@ local notation "W" => washnitzerAlgebra σ K
 local notation "W'" => washnitzerAlgebra (Option σ) K
 local notation "Tate" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 
+/-- Transport fixed-polyradius division to the overconvergent algebra. -/
+private theorem exists_mul_add_eq_series_of_isRestricted {c : Option σ → ℝ}
+    [∀ i, Fact (0 < c i)] {ρ : ℝ} (hρ : 1 < ρ) (hρc : ∀ i, ρ ≤ c i)
+    {g : W'} {s : ℕ} (hgc : IsRestricted c (g : MvPowerSeries (Option σ) K))
+    (hg : PowerSeries.IsDistinguished (c none) s
+      (Huber.restrictedOptionEquiv (c := c) (⟨g, hgc⟩ : IsRestricted.subring (R := K) c) :
+        PowerSeries (IsRestricted.subring (R := K) (fun i : σ ↦ c (some i)))))
+    (hu : IsUnit (PowerSeries.coeff s
+      (Huber.restrictedOptionEquiv (c := c) (⟨g, hgc⟩ : IsRestricted.subring (R := K) c) :
+        PowerSeries (IsRestricted.subring (R := K) (fun i : σ ↦ c (some i))))))
+    (f : W') (hf : IsRestricted c (f : MvPowerSeries (Option σ) K)) :
+    ∃ (q : W') (r : PowerSeries W),
+      (∀ m, s ≤ m → PowerSeries.coeff m r = 0) ∧
+        optionSeries q * optionSeries g + r = optionSeries f := by
+  let gC : IsRestricted.subring (R := K) c := ⟨g, hgc⟩
+  let fC : IsRestricted.subring (R := K) c := ⟨f, hf⟩
+  let G := Huber.restrictedOptionEquiv (c := c) gC
+  let F := Huber.restrictedOptionEquiv (c := c) fC
+  obtain ⟨Q, R, hQ, hR, hQR⟩ := hg.exists_mul_add_eq hu (Fact.out : 0 < c none) G.2 F.2
+  let qC := (Huber.restrictedOptionEquiv (c := c)).symm ⟨Q, hQ⟩
+  let q : W' := ⟨qC, mem_washnitzerAlgebra.mpr
+    ⟨ρ, hρ, isRestricted_of_le qC.2 (fun _ ↦ (zero_lt_one.trans hρ).le) hρc⟩⟩
+  let φ : IsRestricted.subring (R := K) (fun i : σ ↦ c (some i)) →+* W :=
+    (IsRestricted.subring (R := K) (fun i : σ ↦ c (some i))).subtype.codRestrict
+      (washnitzerAlgebra σ K).toSubring
+      (fun a ↦ mem_washnitzerAlgebra.mpr ⟨ρ, hρ,
+        isRestricted_of_le a.2 (fun _ ↦ (zero_lt_one.trans hρ).le) (fun i ↦ hρc (some i))⟩)
+  let Rw := PowerSeries.map φ R
+  have hQmap : PowerSeries.map ((washnitzerAlgebra σ K).val :
+      washnitzerAlgebra σ K →+* MvPowerSeries σ K) (optionSeries q) =
+      PowerSeries.map (IsRestricted.subring (R := K) (fun i : σ ↦ c (some i))).subtype Q := by
+    rw [washnitzerAlgebra.map_val_optionSeries]
+    simp only [q, qC]
+    rw [Huber.coe_restrictedOptionEquiv_symm (c := c)]
+    exact (optionEquivLeft σ K).apply_symm_apply _
+  have hRmap : PowerSeries.map ((washnitzerAlgebra σ K).val :
+      washnitzerAlgebra σ K →+* MvPowerSeries σ K) Rw =
+      PowerSeries.map (IsRestricted.subring (R := K) (fun i : σ ↦ c (some i))).subtype R := by
+    ext m : 1
+    simp [Rw, φ, Subalgebra.val_apply]
+  refine ⟨q, Rw, fun m hm ↦ by simp [Rw, hR m hm], ?_⟩
+  apply washnitzerAlgebra.map_val_injective
+  rw [map_add, map_mul, hQmap, hRmap, washnitzerAlgebra.map_val_optionSeries,
+    washnitzerAlgebra.map_val_optionSeries,
+    ← Huber.map_subtype_restrictedOptionEquiv (c := c) gC, ← map_mul, ← map_add, hQR]
+  exact Huber.map_subtype_restrictedOptionEquiv (c := c) fC
+
 private theorem exists_mul_add_eq_series {g : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
       (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
@@ -56,10 +103,10 @@ private theorem exists_mul_add_eq_series {g : W'} {s : ℕ}
     ∃ (q : W') (r : PowerSeries W),
       (∀ m, s ≤ m → PowerSeries.coeff m r = 0) ∧
         optionSeries q * optionSeries g + r = optionSeries f := by
-  -- Select unequal radii within a convergence radius of the dividend.
   obtain ⟨ρ₀, hρ₀, hf⟩ := mem_washnitzerAlgebra.mp f.2
   obtain ⟨ρ, hρpos, r, hρ, hρr, hr₀, hgr, G, hG, hd, huG⟩ :=
     exists_isDistinguished_isUnit_of_isDistinguished_one hg hu hρ₀
+  -- Install the positive-radius instance used by the norm on the coefficients of `G`.
   let _ := hρpos
   let c : Option σ → ℝ := fun i ↦ i.elim r (fun _ ↦ ρ)
   have hr : 1 < r := hρ.trans_le hρr
@@ -69,63 +116,26 @@ private theorem exists_mul_add_eq_series {g : W'} {s : ℕ}
     · exact zero_lt_one.trans hρ⟩
   have hcr (i) : c i ≤ r := by cases i <;> simp [c, hρr]
   have hρc (i) : ρ ≤ c i := by cases i <;> simp [c, hρr]
-  let fC : IsRestricted.subring (R := K) c :=
-    ⟨f, isRestricted_of_le hf (fun i ↦ (Fact.out : 0 < c i).le)
-      (fun i ↦ (hcr i).trans hr₀)⟩
-  let F := Huber.restrictedOptionEquiv (c := c) fC
-  let gC : IsRestricted.subring (R := K) c :=
-    ⟨g, isRestricted_of_le hgr (fun i ↦ (Fact.out : 0 < c i).le) hcr⟩
-  have hGC : G = (Huber.restrictedOptionEquiv (c := c) gC).val := by
+  have hgc : IsRestricted c (g : MvPowerSeries (Option σ) K) :=
+    isRestricted_of_le hgr (fun i ↦ (Fact.out : 0 < c i).le) hcr
+  have hGC : G = (Huber.restrictedOptionEquiv (c := c)
+      (⟨g, hgc⟩ : IsRestricted.subring (R := K) c)).val := by
     ext m : 1
     apply Subtype.ext
     rw [hG]
-    -- Normalize the coefficient-ring instances coming from the split polyradius.
-    convert! (Huber.coeff_restrictedOptionEquiv (c := c) gC m).symm using 0
-  have hGr : PowerSeries.IsRestricted r G := by
-    rw [hGC]
-    exact (Huber.restrictedOptionEquiv (c := c) gC).2
-  -- Divide in the Banach coefficient ring, then flatten the restricted quotient.
-  obtain ⟨Q, R, hQ, hR, hQR⟩ := hd.exists_mul_add_eq huG (zero_lt_one.trans hr) hGr F.2
-  let qC := (Huber.restrictedOptionEquiv (c := c)).symm ⟨Q, hQ⟩
-  let q : W' := ⟨qC, mem_washnitzerAlgebra.mpr
-    ⟨ρ, hρ, isRestricted_of_le qC.2 (fun _ ↦ (zero_lt_one.trans hρ).le) hρc⟩⟩
-  let φ : IsRestricted.subring (R := K) (fun _ : σ ↦ ρ) →+* W :=
-    (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype.codRestrict
-      (washnitzerAlgebra σ K).toSubring
-      (fun a ↦ mem_washnitzerAlgebra.mpr ⟨ρ, hρ, a.2⟩)
-  let Rw := PowerSeries.map φ R
-  -- The defining coefficient maps transport the division identity back to overconvergent series.
-  have hQmap : PowerSeries.map ((washnitzerAlgebra σ K).val :
-    washnitzerAlgebra σ K →+* MvPowerSeries σ K) (optionSeries q) =
-      PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype Q := by
-    rw [washnitzerAlgebra.map_subtype_optionSeries]
-    simp only [q, qC]
-    rw [Huber.coe_restrictedOptionEquiv_symm (c := c)]
-    convert! (optionEquivLeft σ K).apply_symm_apply
-      (PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype Q) using 0
-  have hRmap : PowerSeries.map ((washnitzerAlgebra σ K).val :
-    washnitzerAlgebra σ K →+* MvPowerSeries σ K) Rw =
-      PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype R := by
-    ext m : 1
-    simp [Rw, φ, Subalgebra.val_apply]
-  refine ⟨q, Rw, fun m hm ↦ by simp [Rw, hR m hm], ?_⟩
-  apply PowerSeries.map_injective ((washnitzerAlgebra σ K).val :
-    washnitzerAlgebra σ K →+* MvPowerSeries σ K)
-    Subtype.val_injective
-  rw [map_add, map_mul, hQmap, hRmap, washnitzerAlgebra.map_subtype_optionSeries,
-    washnitzerAlgebra.map_subtype_optionSeries]
-  have hGmap : PowerSeries.map
-      (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype G =
-        optionEquivLeft σ K (g : MvPowerSeries (Option σ) K) := by
-    ext m : 1
-    simpa only [PowerSeries.coeff_map, Subring.subtype_apply] using hG m
-  rw [← hGmap, ← map_mul, ← map_add, hQR]
-  convert! Huber.map_subtype_restrictedOptionEquiv (c := c) fC using 0
+    -- The split polyradius restricts to the constant radius `ρ` on the coefficient variables.
+    convert! (Huber.coeff_restrictedOptionEquiv (c := c)
+      (⟨g, hgc⟩ : IsRestricted.subring (R := K) c) m).symm using 0
+  -- The split polyradius has coefficient radius `ρ` and separated-variable radius `r`.
+  apply exists_mul_add_eq_series_of_isRestricted (c := c) hρ hρc hgc
+    (hGC ▸ hd) (hGC ▸ huG) f
+  exact isRestricted_of_le hf (fun i ↦ (Fact.out : 0 < c i).le)
+    (fun i ↦ (hcr i).trans hr₀)
 
-
-/-- **Overconvergent Weierstrass division.** A unit-radius distinguished overconvergent
-series with unit distinguished coefficient admits an overconvergent quotient and a polynomial
-remainder in the separated variable, of degree less than the distinguished degree. -/
+/-- **Overconvergent Weierstrass division.** If `g` is distinguished of degree `s` at unit
+radius with unit distinguished coefficient, then every overconvergent dividend `f` has an
+overconvergent quotient `q` and a polynomial remainder `r` over the smaller overconvergent
+algebra, of degree less than `s` in the separated variable, with `f = q * g + r`. -/
 theorem exists_mul_add_eq_of_isDistinguished {g : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
       (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
@@ -144,10 +154,10 @@ theorem exists_mul_add_eq_of_isDistinguished {g : W'} {s : ℕ}
   rwa [htrunc]
 
 omit [CompleteSpace K] in
-/-- **Uniqueness in overconvergent Weierstrass division.** Comparing in the unit-radius
-Tate algebra shows that any two overconvergent quotients and lower-degree polynomial
-remainders agree. -/
-theorem eq_and_eq_of_mul_add_eq_of_isDistinguished {g q q' : W'} {s : ℕ}
+/-- **Uniqueness in overconvergent Weierstrass division.** If `q * g + r = q' * g + r'`
+with polynomial remainders `r, r'` of degree less than `s` in the separated variable, then
+`q = q'` and `r = r'`. Neither completeness nor a unit distinguished coefficient is needed. -/
+theorem eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished {g q q' : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
       (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     {r r' : Polynomial W} (hr : r.degree < (s : WithBot ℕ))
@@ -185,7 +195,7 @@ theorem existsUnique_mul_add_eq_of_isDistinguished {g : W'} {s : ℕ}
       optionSeries p.1 * optionSeries g + (p.2 : PowerSeries W) = optionSeries f := by
   obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
   refine ⟨(q, r), ⟨hr, hqr⟩, fun p ⟨hp, he⟩ ↦ ?_⟩
-  obtain ⟨h1, h2⟩ := eq_and_eq_of_mul_add_eq_of_isDistinguished hg hp hr (he.trans hqr.symm)
+  obtain ⟨h1, h2⟩ := eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished hg hp hr (he.trans hqr.symm)
   exact Prod.ext h1 h2
 
 end TauCeti.Dagger
