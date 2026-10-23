@@ -38,6 +38,8 @@ comparisons change when both endpoints are multiplied by the same simple reflect
   `t` with `ℓ u < ℓ w`.
 * `CoxeterSystem.BruhatLE`: the Bruhat order, the reflexive transitive closure of `BruhatStep`.
 * `CoxeterSystem.bruhatPartialOrder`: the Bruhat order as a `PartialOrder` on `W`.
+* `CoxeterSystem.MinimalCosetRepCovBy`: the covering relation of the Bruhat order of a parabolic
+  quotient `W / W_J`, on minimal coset representatives.
 
 ## Main results
 
@@ -58,9 +60,16 @@ comparisons change when both endpoints are multiplied by the same simple reflect
   below the product of the whole word.
 * `CoxeterSystem.bruhatLE_iff_exists_sublist_wordProd_eq`: the full subword characterization of
   Bruhat order.
+* `CoxeterSystem.BruhatLE.bruhatLE_mul_simple`: the lifting property in the form `u ≤ w * s` when
+  `u ≤ w` and `s` lengthens `u`.
 * `CoxeterSystem.IsMinimalCosetRep.bruhatLE_mul` and
   `CoxeterSystem.isMinimalCosetRep_iff_forall_bruhatLE_mul`: a minimal representative of a left
   coset of a standard parabolic subgroup is the Bruhat-least element of that coset.
+* `CoxeterSystem.IsMinimalCosetRep.bruhatLE_of_bruhatLE_mul`: the projection to minimal coset
+  representatives is monotone.
+* `CoxeterSystem.MinimalCosetRepCovBy.exists_isReflection`: a cover of a parabolic quotient is the
+  projection of a Bruhat edge `t * x < x`; `CoxeterSystem.minimalCosetRepCovBy_one_simple` is the
+  cover of the identity by a simple reflection.
 
 ## References
 
@@ -69,7 +78,7 @@ The Coxeter-system input is `CoxeterSystem.strongExchange` of
 inversion-sequence API for `CoxeterSystem`.
 
 * A. Björner and F. Brenti, *Combinatorics of Coxeter Groups*, Springer GTM 231 (2005),
-  Sections 2.1 and 2.2.
+  Sections 2.1, 2.2 and 2.5.
 * N. Bourbaki, *Groupes et algèbres de Lie*, Chapitres IV-VI, Ch. IV, §1, Exercise 3.
 * J. E. Humphreys, *Reflection Groups and Coxeter Groups*, CUP (1990), Section 5.9.
 -/
@@ -458,6 +467,37 @@ theorem bruhatLE_iff_exists_sublist_wordProd_eq {u : W} {ω : List B} (hω : cs.
   · rintro ⟨σ, hσ, rfl⟩
     exact cs.bruhatLE_wordProd_of_sublist hω hσ
 
+section
+
+variable {cs}
+
+/-- **Lifting property, lower form.** If `u ≤ w` and the simple reflection `s i` lengthens `u`,
+then `u ≤ w * s i`. This is the substantial case of the lifting property when `s i` shortens `w`;
+when it lengthens `w`, already `w ≤ w * s i`. -/
+theorem BruhatLE.bruhatLE_mul_simple (h : cs.BruhatLE u w) {i : B}
+    (hu : ¬cs.IsRightDescent u i) : cs.BruhatLE u (w * cs.simple i) := by
+  obtain ⟨α, hαred, hαprod⟩ := cs.exists_isReduced (w * cs.simple i)
+  have hwordProd : π (α ++ [i]) = w := by
+    rw [cs.wordProd_append, cs.wordProd_singleton, ← hαprod, mul_assoc,
+      cs.simple_mul_simple_self, mul_one]
+  -- `u` is spelled by a reduced subword of `α ++ [i]`; it cannot use the last letter.
+  obtain ⟨σ, hσsub, hσprod, hσlen⟩ :=
+    h.exists_sublist_wordProd_eq_length_eq (α ++ [i]) hwordProd
+  obtain ⟨σ₁, σ₂, rfl, hσ₁, hσ₂⟩ := List.sublist_append_iff.mp hσsub
+  rcases List.sublist_singleton.mp hσ₂ with rfl | rfl
+  · rw [List.append_nil] at hσprod
+    rw [hαprod, ← hσprod]
+    exact cs.bruhatLE_wordProd_of_sublist hαred hσ₁
+  · have hprod : π σ₁ = u * cs.simple i := by
+      rw [← hσprod, cs.wordProd_append, cs.wordProd_singleton, mul_assoc,
+        cs.simple_mul_simple_self, mul_one]
+    have hle := cs.length_wordProd_le σ₁
+    rw [hprod, cs.not_isRightDescent_iff.mp hu] at hle
+    rw [List.length_append, List.length_singleton] at hσlen
+    omega
+
+end
+
 /-! ### Minimal coset representatives -/
 
 /-- **A minimal coset representative lies below every element of its coset.** If `u` has minimal
@@ -479,5 +519,84 @@ theorem isMinimalCosetRep_iff_forall_bruhatLE_mul {J : Set B} {u : W} :
     cs.IsMinimalCosetRep J u ↔ ∀ v ∈ cs.parabolic J, cs.BruhatLE u (u * v) :=
   ⟨fun hu _ hv ↦ hu.bruhatLE_mul cs hv, fun h ↦ cs.isMinimalCosetRep_iff.mpr fun i hi hdesc ↦
     (h _ (cs.simple_mem_parabolic hi)).length_le.not_gt (by rwa [IsRightDescent] at hdesc)⟩
+
+/-- **Projection to minimal coset representatives is monotone.** If a minimal coset representative
+`y` lies below an element `v * p` of the coset of the minimal representative `v`, then `y ≤ v`. -/
+theorem IsMinimalCosetRep.bruhatLE_of_bruhatLE_mul {J : Set B} {y v p : W}
+    (hy : cs.IsMinimalCosetRep J y) (hv : cs.IsMinimalCosetRep J v) (hp : p ∈ cs.parabolic J)
+    (h : cs.BruhatLE y (v * p)) : cs.BruhatLE y v := by
+  obtain ⟨n, hn⟩ : ∃ n, ℓ (v * p) = n := ⟨_, rfl⟩
+  induction n using Nat.strong_induction_on generalizing p with
+  | _ n ih =>
+    by_cases hmin : cs.IsMinimalCosetRep J (v * p)
+    · rwa [hv.eq_of_inv_mul_mem cs hmin (by rwa [inv_mul_cancel_left])]
+    -- Remove a right descent `s i` of `v * p` with `i ∈ J`; it is not a right descent of `y`.
+    obtain ⟨i, hi, hdesc⟩ : ∃ i ∈ J, cs.IsRightDescent (v * p) i := by
+      simpa using hmin
+    have h' := h.bruhatLE_mul_simple (cs.isMinimalCosetRep_iff.mp hy i hi)
+    rw [mul_assoc] at h'
+    have hlen := cs.isRightDescent_iff.mp hdesc
+    rw [mul_assoc] at hlen
+    exact ih _ (by omega) (mul_mem hp (cs.simple_mem_parabolic hi)) h' rfl
+
+/-- `y` is **covered by** `x` in the Bruhat order of the parabolic quotient `W / W_J`, modelled on
+the minimal coset representatives: both are minimal coset representatives, `y < x`, and no minimal
+coset representative lies strictly between them. -/
+structure MinimalCosetRepCovBy (J : Set B) (y x : W) : Prop where
+  /-- The lower element is a minimal coset representative. -/
+  isMinimalCosetRep_left : cs.IsMinimalCosetRep J y
+  /-- The upper element is a minimal coset representative. -/
+  isMinimalCosetRep_right : cs.IsMinimalCosetRep J x
+  /-- The lower element lies below the upper one. -/
+  bruhatLE : cs.BruhatLE y x
+  /-- The two elements are distinct. -/
+  ne : y ≠ x
+  /-- No minimal coset representative lies strictly between them. -/
+  eq_or_eq : ∀ z, cs.IsMinimalCosetRep J z → cs.BruhatLE y z → cs.BruhatLE z x → z = y ∨ z = x
+
+/-- **A simple reflection outside a standard parabolic subgroup covers the identity** in the Bruhat
+order of the parabolic quotient. -/
+theorem minimalCosetRepCovBy_one_simple {J : Set B} {i : B} (hi : cs.simple i ∉ cs.parabolic J) :
+    cs.MinimalCosetRepCovBy J 1 (cs.simple i) where
+  isMinimalCosetRep_left := cs.isMinimalCosetRep_iff.mpr fun j _ ↦ cs.not_isRightDescent_one j
+  isMinimalCosetRep_right := cs.isMinimalCosetRep_iff.mpr fun j hj hdesc ↦ hi <| by
+    -- A right descent `s j` of `s i` satisfies `s i * s j = 1`, so `s i = s j` is parabolic.
+    have hlen := cs.isRightDescent_iff.mp hdesc
+    rw [cs.length_simple] at hlen
+    have h1 : cs.simple i * cs.simple j = 1 := cs.length_eq_zero_iff.mp (by omega)
+    rw [mul_eq_one_iff_eq_inv, cs.inv_simple] at h1
+    exact h1 ▸ cs.simple_mem_parabolic hj
+  bruhatLE := (cs.one_bruhatStep (cs.isReflection_simple i)).bruhatLE
+  ne h := hi (h ▸ one_mem _)
+  eq_or_eq z _ _ hz := by
+    obtain ⟨σ, hσ, rfl⟩ := hz.exists_sublist_wordProd_eq [i] (cs.wordProd_singleton i)
+    rcases List.sublist_singleton.mp hσ with rfl | rfl
+    · exact Or.inl cs.wordProd_nil
+    · exact Or.inr (cs.wordProd_singleton i)
+
+/-- **A cover in the parabolic quotient comes from a reflection.** If `y` is covered by `x` among
+the minimal coset representatives for `J`, then there is a reflection `t` with `t * x < x` in the
+Bruhat graph such that `y` is the minimal representative of the coset of `t * x`. -/
+theorem MinimalCosetRepCovBy.exists_isReflection {J : Set B} {y x : W}
+    (h : cs.MinimalCosetRepCovBy J y x) :
+    ∃ t, cs.IsReflection t ∧ cs.BruhatStep (t * x) x ∧ y⁻¹ * (t * x) ∈ cs.parabolic J := by
+  -- The last edge of a Bruhat path from `y` to `x` ends with a reflection `t`.
+  obtain ⟨c, hyc, t, ht, rfl, hlt⟩ := h.bruhatLE.cases_tail.resolve_left h.ne.symm
+  have htc : t * (t * c) = c := by rw [← mul_assoc, ht.mul_self, one_mul]
+  -- Project `c` to the minimal representative `v = c * p` of its coset.
+  obtain ⟨p, hp, hv⟩ := cs.exists_isMinimalCosetRep J c
+  have hyv : cs.BruhatLE y (c * p) :=
+    h.isMinimalCosetRep_left.bruhatLE_of_bruhatLE_mul cs hv (inv_mem hp)
+      (by rwa [mul_inv_cancel_right])
+  have hvc : cs.BruhatLE (c * p) c := by
+    simpa using hv.bruhatLE_mul cs (inv_mem hp)
+  have hvx : cs.BruhatLE (c * p) (t * c) := hvc.tail ⟨t, ht, rfl, hlt⟩
+  have hvne : c * p ≠ t * c := fun heq ↦ (hvc.length_le.trans_lt hlt).ne (congrArg _ heq)
+  have hvy := (h.eq_or_eq _ hv hyv hvx).resolve_right hvne
+  refine ⟨t, ht, ?_, ?_⟩
+  · rw [htc]
+    exact ⟨t, ht, rfl, hlt⟩
+  · rw [htc, ← hvy, mul_inv_rev, inv_mul_cancel_right]
+    exact inv_mem hp
 
 end CoxeterSystem
