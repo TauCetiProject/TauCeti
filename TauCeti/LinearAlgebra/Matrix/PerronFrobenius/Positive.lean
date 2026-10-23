@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Algebra.Spectrum
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Algebra.Order.Field.Pi
 public import TauCeti.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Connected
@@ -88,22 +89,13 @@ section OrderedSemifield
 variable {K : Type*} [Semifield K] [LinearOrder K] [IsStrictOrderedRing K] {A : Matrix n n K}
   {v w y : n → K} {r μ t : K}
 
-omit [Fintype n] in
-/-- Comparing coordinate ratios gives a scalar multiple lying above a vector and touching it. -/
-private theorem exists_le_smul_of_pos [Finite n] (hv : ∀ i, 0 < v i) (j : n) (y : n → K) :
-    ∃ i, y ≤ (y i / v i) • v ∧ y i = y i / v i * v i := by
-  have : Nonempty n := ⟨j⟩
-  obtain ⟨i, hi⟩ := Finite.exists_max fun i => y i / v i
-  refine ⟨i, fun k ↦ ?_, (div_mul_cancel₀ _ (hv i).ne').symm⟩
-  simpa [mul_comm] using (div_le_iff₀ (hv k)).1 (hi k)
-
 /-- **Collatz–Wielandt bound.** Let `A` be entrywise nonnegative with `A v ≤ r v` for a vector `v`
 all of whose entries are strictly positive. If `t y ≤ A y` entrywise for some nonzero nonnegative
 vector `y`, then `t ≤ r`. -/
 theorem le_of_smul_le_mulVec (hA : ∀ i j, 0 ≤ A i j) (hv : ∀ i, 0 < v i)
     (hAv : A *ᵥ v ≤ r • v) (hy : 0 ≤ y) (hy0 : y ≠ 0) (h : t • y ≤ A *ᵥ y) : t ≤ r := by
   obtain ⟨j, hj⟩ := Function.ne_iff.1 hy0
-  obtain ⟨i, hyc, hyi⟩ := exists_le_smul_of_pos hv j y
+  obtain ⟨i, hyc, hyi⟩ := TauCeti.exists_le_smul_of_pos hv j y
   set c := y i / v i
   have hc : 0 < c := (mul_pos_iff_of_pos_right (hv j)).mp <| by
     simpa only [Pi.smul_apply, smul_eq_mul, Pi.zero_apply] using
@@ -137,7 +129,7 @@ theorem exists_pos_eq_smul_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀
     ∃ c : K, 0 < c ∧ w = c • v := by
   obtain rfl := eq_of_mulVec_eq_smul_of_nonneg hA hv hAv hw hw0 hAw
   obtain ⟨j, -⟩ := Function.ne_iff.1 hw0
-  obtain ⟨i, hwc, hwi⟩ := exists_le_smul_of_pos hv j w
+  obtain ⟨i, hwc, hwi⟩ := TauCeti.exists_le_smul_of_pos hv j w
   set c := w i / v i
   -- Equality in row `i` of the comparison forces equality in every coordinate, since each
   -- coefficient in that row is strictly positive.
