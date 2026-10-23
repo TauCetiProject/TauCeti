@@ -27,10 +27,11 @@ Serre's theorem compares orthonormal families of `M` with bases of `M~`. For a f
 * `e` is orthonormal exactly when the residues `ē` are linearly independent over `R~`
   (`TauCeti.ResidueModule.linearIndependent_mk_iff`). Orthonormal families always have
   independent residues, without the condition on the norms.
-* if the residues span `M~`, then `e` has dense span (`TauCeti.ResidueModule.dense_span`). The
-  proof is successive approximation: a vector of `M⁰` agrees with a combination of the `e i`
-  modulo `ϖM⁰`, the error is `ϖ` times a vector of `M⁰`, and iterating approximates the vector
-  modulo `ϖ ^ k M⁰` for every `k`. For an orthonormal family the converse holds, without the
+* if the residues span `M~`, then `e` has dense span
+  (`TauCeti.ResidueModule.dense_span_of_span_mk_eq_top`). The proof is successive
+  approximation: a vector of `M⁰` agrees with a combination of the `e i` modulo `ϖM⁰`, the error
+  is `ϖ` times a vector of `M⁰`, and iterating approximates the vector modulo `ϖ ^ k M⁰` for
+  every `k`. For an orthonormal family the converse holds, without the
   condition on the norms (`TauCeti.ResidueModule.span_mk_eq_top_of_isOrthonormalFamily`), so
   that the two are equivalent (`TauCeti.ResidueModule.span_mk_eq_top_iff`).
 
@@ -189,7 +190,7 @@ private theorem exists_mem_span_norm_sub_le (hM : ∀ m : M, zpowCeil ‖(ϖ.uni
       simp only [ha, Function.comp_apply]
     rw [mk_eq_mk_iff ϖ hM, Submodule.coe_sum] at heq
     simp only [Submodule.coe_smul, Subring.smul_def] at heq
-    exact le_of_lt_one_of_zpowCeil_eq_self ϖ.norm_pos ϖ.norm_lt_one (hM _) heq
+    exact le_of_zpowCeil_eq_self_of_lt_one ϖ.norm_pos ϖ.norm_lt_one (hM _) heq
   induction k with
   | zero => exact ⟨0, V.zero_mem, by simpa using hx⟩
   | succ k ih =>
@@ -211,7 +212,7 @@ private theorem exists_mem_span_norm_sub_le (hM : ∀ m : M, zpowCeil ‖(ϖ.uni
 /-- **Lifts of a spanning family of residues have dense span.** If the residues of a family of
 the closed unit ball span the residue module, for a norm with values in `‖ϖ‖ ^ ℤ ∪ {0}`, then the
 family spans a dense submodule. -/
-theorem dense_span (hM : ∀ m : M, zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ = ‖m‖)
+theorem dense_span_of_span_mk_eq_top (hM : ∀ m : M, zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ = ‖m‖)
     {e : I → unitClosedBallSubmodule R M}
     (hspan : Submodule.span (Subring.unitClosedBall R ⧸ unitBallIdeal R) (Set.range (mk ∘ e)) = ⊤) :
     Dense (Submodule.span R (Set.range fun i ↦ (e i : M)) : Set M) := by
@@ -279,7 +280,7 @@ theorem span_mk_eq_top_iff (hM : ∀ m : M, zpowCeil ‖(ϖ.unit : R)‖ ‖m‖
     {e : I → unitClosedBallSubmodule R M} (he : IsOrthonormalFamily R fun i ↦ (e i : M)) :
     Submodule.span (Subring.unitClosedBall R ⧸ unitBallIdeal R) (Set.range (mk ∘ e)) = ⊤ ↔
       Dense (Submodule.span R (Set.range fun i ↦ (e i : M)) : Set M) :=
-  ⟨dense_span ϖ hM, span_mk_eq_top_of_isOrthonormalFamily ϖ he⟩
+  ⟨dense_span_of_span_mk_eq_top ϖ hM, span_mk_eq_top_of_isOrthonormalFamily ϖ he⟩
 
 include ϖ in
 /-- **Orthonormal bases have residues forming a basis.** The residues of an orthonormal basis of
@@ -302,7 +303,7 @@ theorem isOrthonormalBasis_iff (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ ‖
       LinearIndependent (Subring.unitClosedBall R ⧸ unitBallIdeal R) (mk ∘ e) ∧
         Submodule.span (Subring.unitClosedBall R ⧸ unitBallIdeal R) (Set.range (mk ∘ e)) = ⊤ :=
   ⟨linearIndependent_mk_and_span_mk_eq_top ϖ, fun ⟨hli, hspan⟩ ↦
-    ⟨(linearIndependent_mk_iff ϖ hR hM).1 hli, dense_span ϖ hM hspan⟩⟩
+    ⟨(linearIndependent_mk_iff ϖ hR hM).1 hli, dense_span_of_span_mk_eq_top ϖ hM hspan⟩⟩
 
 /-- **Lifts of a residue basis are an orthonormal basis.** For norms with values in
 `‖ϖ‖ ^ ℤ ∪ {0}`, any family of the closed unit ball whose residues form a basis `b` of the residue

@@ -159,7 +159,7 @@ theorem mem_unitBallIdeal_smul_top_iff (ϖ : NormedRing.PseudoUniformizer R)
     m ∈ (unitBallIdeal R • ⊤ :
       Submodule (Subring.unitClosedBall R) (unitClosedBallSubmodule R M)) ↔ ‖(m : M)‖ < 1 :=
   ⟨norm_lt_one_of_mem_unitBallIdeal_smul_top, fun hm ↦ mem_unitBallIdeal_smul_top_of_norm_le ϖ
-    (le_of_lt_one_of_zpowCeil_eq_self ϖ.norm_pos ϖ.norm_lt_one (hM _) hm)⟩
+    (le_of_zpowCeil_eq_self_of_lt_one ϖ.norm_pos ϖ.norm_lt_one (hM _) hm)⟩
 
 namespace ResidueModule
 

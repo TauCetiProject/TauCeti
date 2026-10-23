@@ -207,7 +207,7 @@ theorem zpowCeil_lt_zpow_iff (n : ℤ) : zpowCeil c x < c ^ n ↔ x ≤ c ^ (n +
       (zpow_lt_zpow_right_of_lt_one₀ hc₀ hc₁ (Int.lt_succ n))
 
 /-- A number in `c ^ ℤ ∪ {0}` that is less than `1 = c ^ 0` is at most `c`. -/
-theorem le_of_lt_one_of_zpowCeil_eq_self (hx : zpowCeil c x = x) (h : x < 1) : x ≤ c := by
+theorem le_of_zpowCeil_eq_self_of_lt_one (hx : zpowCeil c x = x) (h : x < 1) : x ≤ c := by
   simpa using (zpowCeil_lt_zpow_iff hc₀ hc₁ 0).mp (by rwa [hx, zpow_zero])
 
 /-- **Rounding commutes with scaling by powers of `c`**:
