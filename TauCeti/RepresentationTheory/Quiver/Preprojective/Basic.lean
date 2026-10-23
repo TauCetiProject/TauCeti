@@ -666,8 +666,7 @@ theorem gaugedPreprojectiveMk_surjective (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → 
     Function.Surjective (gaugedPreprojectiveMk k ε) :=
   Ideal.Quotient.mk_surjective
 
--- Recognize quotient vanishing before generic zero tests search for nontriviality.
-@[simp↓]
+@[simp]
 theorem gaugedPreprojectiveMk_eq_zero_iff (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k)
     {f : pathAlgebra k (Symmetrify Q)} :
     gaugedPreprojectiveMk k ε f = 0 ↔ f ∈ gaugedPreprojectiveIdeal k ε := by
@@ -701,8 +700,7 @@ theorem preprojectiveMk_apply (f : pathAlgebra k (Symmetrify Q)) :
 theorem preprojectiveMk_surjective : Function.Surjective (preprojectiveMk k Q) :=
   Ideal.Quotient.mk_surjective
 
--- Recognize quotient vanishing before generic zero tests search for nontriviality.
-@[simp↓]
+@[simp]
 theorem preprojectiveMk_eq_zero_iff {f : pathAlgebra k (Symmetrify Q)} :
     preprojectiveMk k Q f = 0 ↔ f ∈ preprojectiveIdeal k Q := by
   rw [preprojectiveMk_apply, Ideal.Quotient.eq_zero_iff_mem, TwoSidedIdeal.mem_asIdeal]

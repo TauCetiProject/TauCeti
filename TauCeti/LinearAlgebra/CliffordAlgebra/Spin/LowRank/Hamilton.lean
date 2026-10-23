@@ -101,7 +101,6 @@ end Ternary
 
 /-! ### The explicit Hamilton action for the sum of three squares -/
 
-/-- The ternary sum-of-squares form used for Hamilton quaternion coordinates. -/
 private abbrev hamiltonThreeForm := weightedSumSquares K ![(1 : K), 1, 1]
 
 section
@@ -139,8 +138,7 @@ theorem coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_symm_apply
   exact coe_spinGroupEquivQuaternionUnitary_symm_apply _ _ _ _ _ q
 
 /-- The Hamilton quaternion corresponding to a Spin element has norm-square one. -/
--- Evaluate the norm before removing the even-unitary intermediate.
-@[simp↓]
+@[simp]
 theorem normSq_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne
     (s : spinGroup (weightedSumSquares K ![(1 : K), 1, 1])) :
     Quaternion.normSq
@@ -151,11 +149,9 @@ theorem normSq_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne
 
 end
 
-/-- The `i`th standard coordinate vector for the ternary quadratic form. -/
 private noncomputable abbrev hamiltonBasisVector (i : Fin 3) : Fin 3 → K :=
   Pi.basisFun K (Fin 3) i
 
-/-- The standard ordered orthogonal basis for the ternary sum-of-squares form. -/
 private noncomputable def hamiltonBasisList : List (Fin 3 → K) :=
   [hamiltonBasisVector 0, hamiltonBasisVector 1, hamiltonBasisVector 2]
 
@@ -172,7 +168,6 @@ private theorem hamiltonBasisList_span :
   rintro _ ⟨i, rfl⟩
   fin_cases i <;> simp [hamiltonBasisList, hamiltonBasisVector]
 
-/-- The Clifford volume element, the ordered product of the three standard basis vectors. -/
 private noncomputable def hamiltonVolume : CliffordAlgebra (hamiltonThreeForm (K := K)) :=
   (hamiltonBasisList (K := K)).map (CliffordAlgebra.ι (hamiltonThreeForm (K := K))) |>.prod
 
@@ -187,7 +182,6 @@ private theorem hamiltonVolume_mem_center :
       decide)
     (hamiltonBasisList_span (K := K))
 
-/-- The linear map `v ↦ v₀ e₁ e₂ + v₁ e₂ e₀ + v₂ e₀ e₁` into the even Clifford algebra. -/
 private noncomputable def hamiltonVectorEven :
     (Fin 3 → K) →ₗ[K] even (hamiltonThreeForm (K := K)) where
   toFun v :=

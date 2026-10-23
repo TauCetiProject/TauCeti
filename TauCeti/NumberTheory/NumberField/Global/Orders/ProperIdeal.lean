@@ -84,8 +84,7 @@ theorem multiplierRing_mul_isUnit
   simpa [mul_assoc, hJJ'] using h
 
 /-- Scaling a fractional ideal by a nonzero field element preserves its multiplier ring. -/
--- Handle principal scaling before the general invertible-ideal rule.
-@[simp↓]
+@[simp]
 theorem multiplierRing_mul_spanSingleton
     (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) {x : K} (hx : x ≠ 0) :
     O.multiplierRing (I * FractionalIdeal.spanSingleton _ x) = O.multiplierRing I := by
@@ -141,8 +140,7 @@ theorem isProperFractionalIdeal_mul_isUnit
   simp only [IsProperFractionalIdeal, O.multiplierRing_mul_isUnit I J hJ]
 
 /-- Properness is unchanged by nonzero principal scaling. -/
--- Handle principal scaling before the general invertible-ideal rule.
-@[simp↓]
+@[simp]
 theorem isProperFractionalIdeal_mul_spanSingleton
     (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) {x : K} (hx : x ≠ 0) :
     O.IsProperFractionalIdeal (I * FractionalIdeal.spanSingleton _ x) ↔
