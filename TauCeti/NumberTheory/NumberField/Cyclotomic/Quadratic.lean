@@ -42,7 +42,6 @@ theorem exists_intCast_add_intCast_mul_toInteger_eq (hn : n.totient = 2) (x : �
 
 /-- If `2 ≤ φ n`, an integer `m` divides `a + b ζ` in `𝓞 K = ℤ[ζ]` exactly when it divides both
 coordinates. -/
-@[simp]
 theorem intCast_dvd_intCast_add_intCast_mul_toInteger_iff (hn : 2 ≤ n.totient) {m a b : ℤ} :
     (m : 𝓞 K) ∣ a + b * hζ.toInteger ↔ m ∣ a ∧ m ∣ b := by
   refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun ⟨ha, hb⟩ ↦ ?_⟩

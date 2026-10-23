@@ -28,7 +28,7 @@ The unit `1` is primary, so the reciprocity statements carry their nonunit hypot
   `a ≡ 1` and `b ≡ 0`, or `a ≡ 3` and `b ≡ 2`, modulo `4`.
 * `TauCeti.isPrimaryGaussian_intCast_iff`: a rational integer is primary exactly when it is `1`
   modulo `4`.
-* `TauCeti.IsPrimaryGaussian.mul`, `TauCeti.IsPrimaryGaussian.mul_right_iff`,
+* `TauCeti.IsPrimaryGaussian.mul`, `TauCeti.IsPrimaryGaussian.mul_left_iff`,
   `TauCeti.IsPrimaryGaussian.of_intCast_mul`: primary elements are closed under products, and
   under division by a primary factor, in particular by a rational integer `m ≡ 1 (mod 4)`.
 * `TauCeti.IsPrimaryGaussian.map`: the image of a primary element under a ring endomorphism of
@@ -104,7 +104,7 @@ theorem IsPrimaryGaussian.mul (hx : IsPrimaryGaussian x) (hy : IsPrimaryGaussian
 
 /-- If `x` is primary, then `x * y` is primary exactly when `y` is: a primary element is
 congruent to `1` modulo `(1 + i)³`. -/
-theorem IsPrimaryGaussian.mul_right_iff (hx : IsPrimaryGaussian x) :
+theorem IsPrimaryGaussian.mul_left_iff (hx : IsPrimaryGaussian x) :
     IsPrimaryGaussian (x * y) ↔ IsPrimaryGaussian y := by
   refine ⟨fun hxy ↦ ?_, hx.mul⟩
   have h : y - 1 = (x * y - 1) - (x - 1) - (x - 1) * (y - 1) := by ring
@@ -115,7 +115,7 @@ theorem IsPrimaryGaussian.mul_right_iff (hx : IsPrimaryGaussian x) :
 private theorem IsPrimaryGaussian.unit_mul_inv_mul {u v : (𝓞 K)ˣ} {p : 𝓞 K}
     (hu : IsPrimaryGaussian ((u : 𝓞 K) * p)) (hv : IsPrimaryGaussian ((v : 𝓞 K) * (p * y))) :
     IsPrimaryGaussian (((v * u⁻¹ : (𝓞 K)ˣ) : 𝓞 K) * y) := by
-  refine hu.mul_right_iff.mp ?_
+  refine hu.mul_left_iff.mp ?_
   convert hv using 1
   push_cast
   linear_combination ((v : 𝓞 K) * p * y) * u.mul_inv
@@ -190,7 +190,7 @@ theorem isPrimaryGaussian_ofNat_iff {n : ℕ} [n.AtLeastTwo] :
 /-- If `m * x` is primary for a rational integer `m ≡ 1 (mod 4)`, then `x` is primary. -/
 theorem IsPrimaryGaussian.of_intCast_mul {m : ℤ} (hmx : IsPrimaryGaussian ((m : 𝓞 K) * x))
     (hm : m ≡ 1 [ZMOD 4]) : IsPrimaryGaussian x :=
-  (isPrimaryGaussian_intCast_iff.mpr hm).mul_right_iff.mp hmx
+  (isPrimaryGaussian_intCast_iff.mpr hm).mul_left_iff.mp hmx
 
 /-- The only primary unit of `𝓞 K = ℤ[i]` is `1`: of the units `±1, ±i`, only `1` is congruent
 to `1` modulo `(1 + i)³`. -/
