@@ -198,8 +198,7 @@ of the norms. -/
 theorem enorm_addConvolution_le (L : E →L[𝕜] E' →L[𝕜] F) {M : Type*} [AddMonoid M] (f : M → E)
     (g : M → E') (x : M) :
     ‖(f ⋆₊[L.toLinearMap₁₂] g) x‖ₑ ≤ ‖L‖ₑ * ((‖f ·‖ₑ) ⋆ᵣ₊ (‖g ·‖ₑ)) x := by
-  simp only [addRingConvolution, addConvolution, LinearMap.mul_apply',
-    ← ENNReal.tsum_mul_left]
+  simp only [addRingConvolution_apply, addConvolution, ← ENNReal.tsum_mul_left]
   refine enorm_tsum_le_tsum_enorm.trans (ENNReal.tsum_le_tsum fun ab ↦ ?_)
   rw [← mul_assoc]
   exact L.le_opENorm₂ _ _
