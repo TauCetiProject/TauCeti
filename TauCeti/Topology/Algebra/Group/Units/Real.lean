@@ -29,8 +29,8 @@ namespace Units
 /-- The positive real units form a preconnected set. -/
 theorem isPreconnected_posSubgroup_real :
     IsPreconnected (Units.posSubgroup ℝ : Set ℝˣ) := by
-  simpa only [Units.posSubgroup, Set.preimage_setOf_eq] using
-    isPreconnected_Ioi.preimage_units_val (by simp : (0 : ℝ) ∉ Set.Ioi 0)
+  change IsPreconnected (Units.val ⁻¹' Set.Ioi (0 : ℝ))
+  exact isPreconnected_Ioi.preimage_units_val (by simp : (0 : ℝ) ∉ Set.Ioi 0)
 
 /-- The positive real units are the identity component of the real unit group. -/
 theorem connectedComponentOfOne_real :
