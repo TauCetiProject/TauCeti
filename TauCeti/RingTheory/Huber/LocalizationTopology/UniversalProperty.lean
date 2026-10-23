@@ -358,7 +358,7 @@ theorem existsUnique_continuous_ringHom_locTopology {B : Type*} [CommRing B] [To
 
 /-- Passing to a multiple of the denominator gives a continuous map of uncompleted rational
 localisations when the target numerators contain the rescaled source numerators. -/
-theorem continuous_awayLift_locTopology [IsTopologicalRing A] (P : PairOfDefinition A)
+theorem continuous_awayLift_locTopology [SeparatelyContinuousMul A] (P : PairOfDefinition A)
     (U : Set A) (u : A) (V : Type*) [CommRing V] [Algebra A V] [IsLocalization.Away u V]
     (hU : P.HasDenominatorPower U u V) (T : Set A) (w : A) (W : Type*) [CommRing W]
     [Algebra A W] [IsLocalization.Away w W] (hT : P.HasDenominatorPower T w W)

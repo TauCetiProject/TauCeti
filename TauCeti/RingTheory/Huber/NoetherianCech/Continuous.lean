@@ -13,8 +13,10 @@ import TauCeti.RingTheory.Huber.LocalizationTopology.UniversalProperty
 
 The augmentation and differentials of the algebraic Čech complex are continuous for the natural
 module topologies over the uncompleted rational localizations. Consequently they extend to the
-separated completions used in the analytic Čech complex. No finiteness, completeness or
-noetherian hypothesis is needed for continuity.
+separated completions of this topologised algebraic complex. These give the maps of Huber's
+analytic Čech complex for `M = B`; for finite `M` over a ring with a noetherian ring of definition,
+identifying the completed terms with Huber's terms requires a comparison not proved here.
+No finiteness, completeness or noetherian hypothesis is needed for continuity.
 
 The topology on a face depends on its cardinality: deleting a vertex changes both the denominator
 and the numerator family. The restriction is continuous because multiplying the old numerators

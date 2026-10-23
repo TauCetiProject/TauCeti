@@ -17,10 +17,13 @@ completions, using Mathlib’s `AddMonoidHom.completion` on
 `TauCeti.cechLocalizationAugmentation` and `TauCeti.cechLocalizationDifferential`. Their values
 on the dense algebraic terms characterize them, and consecutive maps compose to zero.
 
-These are the completed maps in Huber's analytic Čech complex. This construction does not assert
-exactness: that requires strictness of the algebraic complex, in addition to its algebraic
-exactness. The construction here allows non-Hausdorff uncompleted terms and does not assume
-noetherianity, completeness of the coefficient ring, or finite generation of the module.
+These are the maps of the separated completion of the topologised algebraic Čech complex.
+For `M = B` they give the maps of Huber's analytic Čech complex; for finite `M` over a ring with a
+noetherian ring of definition, identifying the completed terms with Huber's terms requires a
+comparison not proved here. This construction does not assert exactness: that requires strictness
+of the algebraic complex, in addition to its algebraic exactness. The construction here allows
+non-Hausdorff uncompleted terms and does not assume noetherianity, completeness of the coefficient
+ring, or finite generation of the module.
 
 ## References
 
