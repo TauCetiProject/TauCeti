@@ -134,13 +134,10 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 /-- Averaging a bilinear map with its transpose, with codomain the symmetric subspace. -/
 def symmetrizeBilinear :
     (V →L[𝕜] V →L[𝕜] G) →L[𝕜] symmetricBilinearMaps 𝕜 V G :=
-  { toFun b := ⟨(2 : 𝕜)⁻¹ • (b + b.flip), fun v w ↦ by simp [add_comm]⟩
-    map_add' b c := by ext v w; simp; module
-    map_smul' a b := by ext v w; simp [smul_add, smul_smul, mul_comm]
-    cont := by
-      apply Continuous.subtype_mk
-      exact (continuous_const (y := (2 : 𝕜)⁻¹)).smul
-        (continuous_id.add (ContinuousLinearMap.flipₗᵢ 𝕜 V V G).continuous) }
+  ContinuousLinearMap.codRestrict
+    ((2 : 𝕜)⁻¹ • (ContinuousLinearMap.id 𝕜 _ +
+      ((flipₗᵢ 𝕜 V V G).toContinuousLinearEquiv : _ →L[𝕜] _)))
+    (symmetricBilinearMaps 𝕜 V G) (fun b v w ↦ by simp [add_comm])
 
 @[simp]
 theorem symmetrizeBilinear_apply (b : V →L[𝕜] V →L[𝕜] G) (v w : V) :
