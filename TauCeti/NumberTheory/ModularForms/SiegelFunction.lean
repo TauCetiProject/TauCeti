@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.ZetaValues
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 public import TauCeti.Analysis.SpecialFunctions.QPochhammer
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Basic
 
 /-!
 # Siegel functions
@@ -184,14 +183,14 @@ private theorem siegelFunction_add_zero_intCast (r : Fin 2 → ℝ) (n : ℤ) (�
       2 * π * I * (r 0 * τ + r 1) + n * (2 * π * I) by push_cast; ring,
       Complex.exp_add, exp_int_mul_two_pi_mul_I, mul_one]
   simp only [siegelFunction_eq_qTheta, Pi.add_apply, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one, add_zero, hw, Complex.neg_one_zpow_eq_exp]
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, add_zero, hw]
   have h : cexp (π * I * ((r 1 + n : ℝ) : ℂ) * (r 0 - 1)) =
       cexp (n * -(π * I)) * cexp (π * I * n * r 0) * cexp (π * I * r 1 * (r 0 - 1)) := by
     simp only [← Complex.exp_add]
     congr 1
     push_cast
     ring
-  rw [h]
+  rw [h, Complex.exp_int_mul, Complex.exp_neg_pi_mul_I]
   ring
 
 /-- **Translating `r₁` by one**: `g_{(r₁ + 1, r₂)} = -e^{-π i r₂} g_{(r₁, r₂)}` on the upper
@@ -279,7 +278,7 @@ theorem siegelFunction_add_intCast (r : Fin 2 → ℝ) (s : Fin 2 → ℤ) {τ :
       cexp (-(π * I * s 0 * s 1)) * (-1) ^ s 0 * (-1) ^ s 1 := by
     rw [zpow_add₀ (by norm_num), zpow_add₀ (by norm_num),
       show -(π * I * s 0 * s 1) = ((s 0 * s 1 : ℤ) : ℂ) * -(π * I) by push_cast; ring,
-      ← Complex.neg_one_zpow_eq_exp]
+      Complex.exp_int_mul, Complex.exp_neg_pi_mul_I]
   have hexp : cexp (-(π * I * s 0 * ((r 1 + s 1 : ℝ) : ℂ))) * cexp (π * I * s 1 * r 0) =
       cexp (-(π * I * s 0 * s 1)) * cexp (-(π * I * (s 0 * r 1 - s 1 * r 0))) := by
     simp only [← Complex.exp_add]

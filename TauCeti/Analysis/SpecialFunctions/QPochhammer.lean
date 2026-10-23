@@ -31,7 +31,8 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
 * `TauCeti.qTheta`: the theta product `θ_q(w) = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`.
 * `TauCeti.multipliable_qTheta`, `TauCeti.qTheta_ne_zero`: for `‖q‖ < 1` the product in
   `θ_q(w)` converges, and `θ_q(w) ≠ 0` when `w` is not an integral power of `q`.
-* `TauCeti.qTheta_mul_left`: its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)` for `‖q‖ < 1`.
+* `TauCeti.qTheta_mul_left`: its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)` for
+  `0 < ‖q‖ < 1` and `w ≠ 0`.
 * `TauCeti.hasProdLocallyUniformlyOn_one_sub_pow_mul`: for `q` and `w` continuous on an open set
   `U` with `‖q‖ < 1` there, `∏_{n ≥ 1} (1 - q(τ)ⁿ w(τ))` converges locally uniformly on `U`.
 * `TauCeti.differentiableOn_tprod_one_sub_pow_mul`: for `q` and `w` holomorphic on such a `U`,
