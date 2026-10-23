@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Enumerative.PerfectMatching
+public import TauCeti.Combinatorics.NoncrossingPartition.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 public import TauCeti.GroupTheory.Perm.SwapFactors
 import TauCeti.Data.Fin.Basic
@@ -52,6 +53,8 @@ noncrossing consequence of planarity in that one-vertex case. For perfect matchi
 
 ## Main results
 
+* `Function.Involutive.isNoncrossingMatching_iff`: an involution is a noncrossing matching
+  exactly when its orbit partition is a noncrossing partition.
 * `Equiv.Perm.orbitCount_finRotate_mul_add_orbitCount_le`: the boundary-count bound.
 * `TauCeti.orbitCount_finRotate_mul_swap_mul_swap`: two interleaved bands have one boundary
   cycle.
@@ -87,8 +90,9 @@ is a **noncrossing matching** when no two of its chords interleave: there are no
 `a < b < σ a < σ b`. For an involution the chords are the pairs `{a, σ a}` with `σ a ≠ a`, and
 the condition says that they are pairwise noninterleaving, so that they can be drawn disjointly
 inside a disc whose boundary meets them in the order of `α`. Equivalently, the partition of `α`
-into the orbits of the involution is noncrossing in the sense of `Finpartition.IsNoncrossing`;
-the condition is stated directly on the permutation, the form in which chord diagrams arise. -/
+into the orbits of the involution is noncrossing in the sense of `Finpartition.IsNoncrossing`
+(`Function.Involutive.isNoncrossingMatching_iff`); the condition is stated directly on the
+permutation, the form in which chord diagrams arise. -/
 def IsNoncrossingMatching (σ : Perm α) : Prop :=
   ∀ ⦃a b : α⦄, a < b → b < σ a → ¬ σ a < σ b
 
@@ -120,48 +124,31 @@ theorem IsNoncrossingMatching.of_forall_apply_eq_or (hσ : σ.IsNoncrossingMatch
 
 end LinearOrder
 
-/-! ### Removing a chord -/
-
-section RemoveChord
-
-variable {α : Type*} [DecidableEq α] {σ : Perm α}
-
-/-- Removing the chord `{a, σ a}` of an involution fixes its two ends and keeps every other
-chord: `Equiv.swap a (σ a) * σ` agrees with `σ` away from `a` and `σ a`. -/
-private theorem swap_mul_apply_eq_self_or (hσ : Function.Involutive σ) (a x : α) :
-    ((x = a ∨ x = σ a) ∧ (swap a (σ a) * σ) x = x) ∨
-      (x ≠ a ∧ x ≠ σ a ∧ (swap a (σ a) * σ) x = σ x) := by
-  by_cases hxa : x = a
-  · subst hxa
-    simp
-  by_cases hxc : x = σ a
-  · subst hxc
-    simp [hσ a]
-  refine Or.inr ⟨hxa, hxc, swap_apply_of_ne_of_ne ?_ ?_⟩
-  · exact fun h => hxc (by rw [← h, hσ x])
-  · exact fun h => hxa (σ.injective h)
-
-/-- Removing a chord from an involution leaves an involution. -/
-private theorem involutive_swap_mul (hσ : Function.Involutive σ) (a : α) :
-    Function.Involutive (swap a (σ a) * σ) := by
-  intro x
-  rcases swap_mul_apply_eq_self_or hσ a x with ⟨-, hx⟩ | ⟨hxa, hxc, hx⟩
-  · rw [hx, hx]
-  rcases swap_mul_apply_eq_self_or hσ a (σ x) with ⟨hy, -⟩ | ⟨-, -, hy⟩
-  · rcases hy with hy | hy
-    · exact (hxc (by rw [← hy, hσ x])).elim
-    · exact (hxa (σ.injective hy)).elim
-  · rw [hx, hy, hσ x]
-
-/-- Putting a removed chord back: `σ = (Equiv.swap a (σ a) * σ) * Equiv.swap a (σ a)` for an
-involution `σ`. -/
-private theorem swap_mul_mul_swap (hσ : Function.Involutive σ) (a : α) :
-    swap a (σ a) * σ * swap a (σ a) = σ := by
-  rw [mul_assoc, mul_swap_eq_swap_mul, hσ a, swap_comm, swap_mul_self_mul]
-
-end RemoveChord
-
 end Equiv.Perm
+
+/-- An involution of a finite linear order is a noncrossing matching exactly when the partition
+into its orbits, the pairs `{a, σ a}` and the fixed points, is a noncrossing partition. Any
+decidability instance for the orbit relation may be used, for instance a classical one. -/
+theorem Function.Involutive.isNoncrossingMatching_iff {α : Type*} [Fintype α] [LinearOrder α]
+    {σ : Perm α} [DecidableRel (Perm.SameCycle.setoid σ)] (hinv : Function.Involutive σ) :
+    σ.IsNoncrossingMatching ↔ (Finpartition.ofSetoid (Perm.SameCycle.setoid σ)).IsNoncrossing := by
+  have hsc : ∀ a b, σ.SameCycle a b ↔ a = b ∨ a = σ b := fun a b => by
+    simpa [show hinv.toPerm σ = σ from Equiv.ext fun _ => rfl] using
+      sameCycle_toPerm_iff σ hinv a b
+  simp only [Finpartition.isNoncrossing_iff_part, Finset.mem_univ, true_implies,
+    Finpartition.mem_part_ofSetoid_iff_rel]
+  refine ⟨fun hσ a b c hac d hbd hab hbc hcd => ?_, fun hP a b hab hba hlt => ?_⟩
+  · rcases (hsc a c).1 hac with rfl | rfl
+    · exact (lt_asymm hab hbc).elim
+    rcases (hsc b d).1 hbd with rfl | rfl
+    · exact (lt_asymm hbc hcd).elim
+    exact (hσ hab (by rwa [hinv c]) (by rwa [hinv c, hinv d])).elim
+  · have := hP a b (σ a) ((hsc a (σ a)).2 (Or.inr (hinv a).symm)) (σ b)
+      ((hsc b (σ b)).2 (Or.inr (hinv b).symm)) hab hba hlt
+    rcases (hsc a b).1 (Finpartition.mem_part_ofSetoid_iff_rel.1
+      (this ▸ (Finpartition.ofSetoid _).mem_part_self.2 (Finset.mem_univ b))) with rfl | h
+    · exact lt_irrefl _ hab
+    · exact lt_irrefl b (by rwa [h, hinv b] at hba)
 
 /-! ### Boundary cycles -/
 
@@ -323,21 +310,21 @@ theorem IsNoncrossingMatching.orbitCount_finRotate_mul_add_orbitCount [NeZero n]
   obtain ⟨a, ha, hin⟩ := hσ.exists_forall_apply_eq_self hinv h1
   set τ := swap a (σ a) * σ with hτ
   have hτσ : ∀ x, τ x = x ∨ τ x = σ x := fun x => by
-    rcases swap_mul_apply_eq_self_or hinv a x with ⟨-, hx⟩ | ⟨-, -, hx⟩
+    rcases hinv.swap_mul_apply_eq_self_or a x with ⟨-, hx⟩ | ⟨-, -, hx⟩
     exacts [Or.inl hx, Or.inr hx]
   have hsplit : orbitCount τ = orbitCount σ + 1 :=
     orbitCount_swap_mul_of_sameCycle (Fin.ne_of_lt ha) ⟨1, by simp⟩
   have hlt := orbitCount_lt_card_of_ne_one h1
   rw [Nat.card_eq_fintype_card, Fintype.card_fin] at hlt
   have hih := ih (n - orbitCount τ) (by omega) (hσ.of_forall_apply_eq_or hτσ)
-    (involutive_swap_mul hinv a) rfl
+    (hinv.swap_mul a) rfl
   have hsc : (finRotate n * τ).SameCycle a (σ a) := by
     refine sameCycle_finRotate_mul_of_forall_apply_eq_self ha.le fun x hax hxc => ?_
-    rcases swap_mul_apply_eq_self_or hinv a x with ⟨-, hx⟩ | ⟨hxa, -, hx⟩
+    rcases hinv.swap_mul_apply_eq_self_or a x with ⟨-, hx⟩ | ⟨hxa, -, hx⟩
     · exact hx
     · rw [hx, hin x (lt_of_le_of_ne hax (Ne.symm hxa)) hxc]
   have hrot := orbitCount_mul_swap_of_sameCycle (Fin.ne_of_lt ha) hsc
-  rw [mul_assoc, show τ * swap a (σ a) = σ from swap_mul_mul_swap hinv a] at hrot
+  rw [mul_assoc, show τ * swap a (σ a) = σ from hinv.swap_mul_mul_swap a] at hrot
   omega
 
 end Equiv.Perm
