@@ -51,6 +51,14 @@ open MonoidAlgebra TauCeti.AugmentationIdeal
 
 variable {Q : Type} [CommGroup Q]
 
+/-- An augmentation-ideal morphism intertwines the associated monoid-algebra action. -/
+private theorem augmentationHom_apply_asModule_smul {B : Rep ℤ Q}
+    (π : B ⟶ augmentationIdeal ℤ Q) (r : MonoidAlgebra ℤ Q) (v : B.ρ.asModule) :
+    π.hom (B.ρ.asModuleEquiv (r • v)) =
+      (augmentationIdeal ℤ Q).ρ.asAlgebraHom r (π.hom (B.ρ.asModuleEquiv v)) := by
+  rw [Representation.asModuleEquiv_map_smul]
+  exact π.hom.apply_asAlgebraHom r _
+
 /-- Lifts `x i` of the generators `[σ i] - 1` of `I_Q`, together with generators of the kernel of
 `π : B → I_Q`, span `B` as a `ℤ[Q]`-module. -/
 private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
@@ -62,12 +70,9 @@ private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
     Submodule.span (MonoidAlgebra ℤ Q)
       (Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.1)) = ⊤ := by
   classical
+  -- Use the associated module's scalar instance for the linear-equivalence transport.
+  let : Module ℤ B.ρ.asModule := B.ρ.instModuleAsModule
   have := Fintype.ofFinite ι
-  have hπsmul (r : MonoidAlgebra ℤ Q) (v : B.ρ.asModule) :
-      π.hom (B.ρ.asModuleEquiv (r • v)) =
-        (augmentationIdeal ℤ Q).ρ.asAlgebraHom r (π.hom (B.ρ.asModuleEquiv v)) := by
-    rw [Representation.asModuleEquiv_map_smul]
-    exact π.hom.apply_asAlgebraHom r (B.ρ.asModuleEquiv v)
   refine eq_top_iff.2 fun m _ ↦ ?_
   -- `π m` is a combination of the `[σ i] - 1`, since these generate `I_Q`.
   have hmem : (augmentationι ℤ Q).hom (π.hom (B.ρ.asModuleEquiv m)) ∈
@@ -91,26 +96,22 @@ private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
   have hm : B.ρ.asModuleEquiv (m - ∑ i, c i • x i) ∈
       LinearMap.ker π.hom.toLinearMap := by
     rw [LinearMap.mem_ker]
-    simp only [Representation.IntertwiningMap.toLinearMap_apply, map_sub, map_sum, hπsmul, hx]
+    simp only [Representation.IntertwiningMap.toLinearMap_apply, map_sub, map_sum,
+      augmentationHom_apply_asModule_smul, hx]
     rw [← hπm, sub_self]
   rw [← hs] at hm
   rw [← sub_add_cancel m (∑ i, c i • x i)]
   refine Submodule.add_mem _ ?_ (Submodule.sum_mem _ fun i _ ↦
     Submodule.smul_mem _ _ (Submodule.subset_span ⟨Sum.inl i, rfl⟩))
-  have hmem : B.ρ.asModuleEquiv.symm (B.ρ.asModuleEquiv (m - ∑ i, c i • x i)) ∈
-      Submodule.span (MonoidAlgebra ℤ Q)
-        (Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.1)) := by
-    refine Submodule.span_induction
-      (p := fun y _ ↦ B.ρ.asModuleEquiv.symm y ∈ Submodule.span (MonoidAlgebra ℤ Q)
-        (Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.1)))
-      (fun y hy ↦ Submodule.subset_span ⟨Sum.inr ⟨y, hy⟩, rfl⟩)
-      (by rw [map_zero]; exact Submodule.zero_mem _) (fun _ _ _ _ hy hz ↦ ?_)
-      (fun n y _ h ↦ ?_) hm
-    · simpa only [map_add] using Submodule.add_mem _ hy hz
-    · convert zsmul_mem h n using 1
-      exact (congrArg B.ρ.asModuleEquiv.symm (int_smul_eq_zsmul _ n y)).trans
-        (B.ρ.asModuleEquiv.symm.toAddMonoidHom.map_zsmul n y)
-  simpa only [LinearEquiv.symm_apply_apply] using hmem
+  have hmem := Submodule.mem_map_of_mem (f := B.ρ.asModuleEquiv.symm.toLinearMap) hm
+  rw [Submodule.map_span] at hmem
+  have hle : B.ρ.asModuleEquiv.symm '' (s : Set B) ⊆
+      Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.1) := by
+    rintro _ ⟨y, hy, rfl⟩
+    exact ⟨Sum.inr ⟨y, hy⟩, rfl⟩
+  have hmem' := Submodule.span_le_restrictScalars ℤ (MonoidAlgebra ℤ Q) _ hmem
+  simpa only [LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] using
+    Submodule.span_mono hle hmem'
 
 /-- **The norm kills an extension of the augmentation ideal by part of `I_Q B`** (Artin–Tate).
 Let `Q` be a finite abelian group and `π : B → I_Q` a surjection of integral representations whose
@@ -124,17 +125,10 @@ theorem norm_eq_zero_of_ker_le_coinvariantsKer [Fintype Q] (B : Rep ℤ Q)
   classical
   -- `B` is a module over the commutative ring `ℤ[Q]`, with augmentation ideal `I = ker ε`.
   let ε := TauCeti.MonoidAlgebra.augmentation ℤ Q
-  have hπsmul (r : MonoidAlgebra ℤ Q) (v : B.ρ.asModule) :
-      π.hom (B.ρ.asModuleEquiv (r • v)) =
-        (augmentationIdeal ℤ Q).ρ.asAlgebraHom r (π.hom (B.ρ.asModuleEquiv v)) := by
-    rw [Representation.asModuleEquiv_map_smul]
-    exact π.hom.apply_asAlgebraHom r _
   have hkerI (v : B.ρ.asModule) (hv : π.hom (B.ρ.asModuleEquiv v) = 0) :
       v ∈ RingHom.ker ε • (⊤ : Submodule (MonoidAlgebra ℤ Q) B.ρ.asModule) := by
-    have h := hker hv
-    rw [B.ρ.coinvariantsKer_eq_map_ker_augmentation_smul_top] at h
-    obtain ⟨w, hw, heq⟩ := h
-    exact B.ρ.asModuleEquiv.injective heq ▸ hw
+    simpa only [LinearEquiv.symm_apply_apply] using
+      (B.ρ.mem_coinvariantsKer_iff).mp (hker hv)
   -- A basis `σ` of `Q`, lifts `x i` of the generators `[σ i] - 1` of `I_Q`, and generators `s` of
   -- the kernel span `B`; their weights are the orders of the `σ i`, and `1`.
   obtain ⟨ι, _, σ, hσ, hord⟩ := CommGroup.exists_closure_range_eq_top_and_prod_orderOf_eq_card Q
@@ -151,7 +145,7 @@ theorem norm_eq_zero_of_ker_le_coinvariantsKer [Fintype Q] (B : Rep ℤ Q)
     · -- `ord(σ i) = (ord(σ i) - μ) + μ` with `μ = ∑ₖ [σ i ^ k]`, and `μ • x i` lies in the kernel.
       let μ : MonoidAlgebra ℤ Q := ∑ j ∈ Finset.range (orderOf (σ i)), single (σ i ^ j) 1
       have hμ : π.hom (B.ρ.asModuleEquiv (μ • x i)) = 0 := by
-        rw [hπsmul, hx]
+        rw [augmentationHom_apply_asModule_smul, hx]
         simp only [μ, map_sum, Representation.asAlgebraHom_single_one, LinearMap.sum_apply,
           ρ_singleSub, ← pow_succ]
         rw [Finset.sum_range_sub (fun j ↦ singleSub ℤ Q 1 (σ i ^ j)), pow_orderOf_eq_one,
@@ -175,7 +169,7 @@ theorem norm_eq_zero_of_ker_le_coinvariantsKer [Fintype Q] (B : Rep ℤ Q)
     simp only [Function.comp_apply] at hy
     have h0 := congrArg (augmentationι ℤ Q).hom
       (congrArg (fun v ↦ π.hom (B.ρ.asModuleEquiv v)) (hγ y))
-    rw [hπsmul, hy, map_zero, map_zero, map_zero,
+    rw [augmentationHom_apply_asModule_smul, hy, map_zero, map_zero, map_zero,
       Representation.IntertwiningMap.apply_asAlgebraHom,
       ι_singleSub, Representation.asAlgebraHom_ofMulAction_smul_eq_mul, mul_sub,
       sub_eq_zero] at h0
