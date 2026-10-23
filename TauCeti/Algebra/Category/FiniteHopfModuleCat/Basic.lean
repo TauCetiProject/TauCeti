@@ -81,7 +81,8 @@ instance (priority := 1100) (M : FiniteHopfModuleCat k H) : Module k M :=
   ((ModuleCat.restrictScalars (algebraMap k H)).obj M.obj).isModule
 
 instance (M : FiniteHopfModuleCat k H) : IsScalarTower k H M :=
-  IsScalarTower.of_algebraMap_smul fun _ _ => rfl
+  IsScalarTower.of_algebraMap_smul fun r x =>
+    (ModuleCat.restrictScalars.smul_def (algebraMap k H) r x).symm
 
 instance (M : FiniteHopfModuleCat k H) : Module.Finite k M := M.property
 
@@ -93,7 +94,7 @@ instance : (incl k H).Faithful := ObjectProperty.faithful_ι _
 
 instance : (incl k H).Full := ObjectProperty.full_ι _
 
-/-- Inclusion forgets the finiteness property of a morphism. -/
+/-- The inclusion sends a morphism to its underlying morphism of `H`-modules. -/
 @[simp]
 theorem incl_map {M N : FiniteHopfModuleCat k H} (f : M ⟶ N) :
     (incl k H).map f = f.hom := (rfl)
@@ -117,10 +118,34 @@ instance : (forgetToModule k H).Linear k where
 def forgetToFiniteModule : FiniteHopfModuleCat k H ⥤ FGModuleCat.{u} k :=
   (ModuleCat.isFG k).lift (forgetToModule k H) fun M => M.property
 
+/-- The underlying module of the finite forgetful functor is restriction of scalars. -/
+@[simp]
+theorem forgetToFiniteModule_obj_obj (M : FiniteHopfModuleCat k H) :
+    ((forgetToFiniteModule k H).obj M).obj = (forgetToModule k H).obj M := (rfl)
+
+/-- The finite forgetful functor sends a morphism to its restriction of scalars. -/
+@[simp]
+theorem forgetToFiniteModule_map_hom {M N : FiniteHopfModuleCat k H} (f : M ⟶ N) :
+    ((forgetToFiniteModule k H).map f).hom =
+      eqToHom (forgetToFiniteModule_obj_obj k H M) ≫ (forgetToModule k H).map f ≫
+        eqToHom (forgetToFiniteModule_obj_obj k H N).symm := (rfl)
+
 /-- The two scalar-field forgetful functors agree after inclusion. -/
 def forgetToFiniteModuleCompIso :
     forgetToFiniteModule k H ⋙ forget₂ (FGModuleCat k) (ModuleCat k) ≅ forgetToModule k H :=
   (ModuleCat.isFG k).liftCompιIso _ _
+
+/-- The forward forgetful comparison is the identity on each underlying module. -/
+@[simp]
+theorem forgetToFiniteModuleCompIso_hom_app (M : FiniteHopfModuleCat k H) :
+    (forgetToFiniteModuleCompIso k H).hom.app M =
+      eqToHom (forgetToFiniteModule_obj_obj k H M) := (rfl)
+
+/-- The inverse forgetful comparison is the identity on each underlying module. -/
+@[simp]
+theorem forgetToFiniteModuleCompIso_inv_app (M : FiniteHopfModuleCat k H) :
+    (forgetToFiniteModuleCompIso k H).inv.app M =
+      eqToHom (forgetToFiniteModule_obj_obj k H M).symm := (rfl)
 
 instance : (forgetToFiniteModule k H).Faithful :=
   Functor.Faithful.of_comp_iso (forgetToFiniteModuleCompIso k H)
@@ -147,7 +172,9 @@ abbrev of (V : Type u) [AddCommGroup V] [Module k V] [Module H V]
   ⟨ModuleCat.of H V, by
     let e : ((ModuleCat.restrictScalars (algebraMap k H)).obj (ModuleCat.of H V)) ≃ₗ[k] V :=
       { AddEquiv.refl V with
-        map_smul' := fun r x => IsScalarTower.algebraMap_smul (M := V) H r x }
+        map_smul' := fun r x =>
+          (ModuleCat.restrictScalars.smul_def (algebraMap k H) r x).trans
+            (IsScalarTower.algebraMap_smul (M := V) H r x) }
     exact Module.Finite.equiv e.symm⟩
 
 /-- Interpret an `H`-linear map as a morphism of finite-dimensional modules. -/
@@ -196,14 +223,9 @@ variable (k H) (V : Type w) [AddCommGroup V] [Module k V] [Module H V]
 original carrier universe. The `H`-action is transported through `Shrink.linearEquiv H V`. -/
 def ofShrink : FiniteHopfModuleCat k H :=
   have : Small.{u} V := Module.Finite.small k V
-  ⟨ModuleCat.of H (Shrink.{u} V), by
-    let e : ((ModuleCat.restrictScalars (algebraMap k H)).obj
-        (ModuleCat.of H (Shrink.{u} V))) ≃ₗ[k] V :=
-      { (Shrink.linearEquiv H V).toAddEquiv with
-        map_smul' := fun r x =>
-          ((Shrink.linearEquiv H V).map_smul (algebraMap k H r) x).trans
-            (IsScalarTower.algebraMap_smul H r _) }
-    exact Module.Finite.equiv e.symm⟩
+  have : IsScalarTower k H (Shrink.{u} V) := (equivShrink V).symm.isScalarTower k H
+  have : Module.Finite k (Shrink.{u} V) := Module.Finite.equiv (Shrink.linearEquiv k V).symm
+  of (k := k) (H := H) (Shrink.{u} V)
 
 /-- Shrinking a finite-dimensional module preserves its native `H`-action. -/
 def ofShrinkEquiv : ofShrink k H V ≃ₗ[H] V :=
