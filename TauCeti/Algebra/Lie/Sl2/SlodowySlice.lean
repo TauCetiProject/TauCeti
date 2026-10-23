@@ -15,7 +15,8 @@ public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
 Let `(h, e, f)` be an `sl₂` triple in a finite-dimensional Lie algebra `L` over a field `K` of
 characteristic zero. The **Slodowy slice** at `e` is the affine subspace `S = e + ker (ad f)` of
 `L`. Its direction is complementary to the tangent space `[L, e]` of the adjoint orbit of `e`
-(`IsSl2Triple.isCompl_range_ad_e_ker_ad_f`), so `S` is a transverse slice to that orbit.
+(`IsSl2Triple.isCompl_range_ad_e_ker_ad_f`), so `S` is transverse to that orbit at `e` at the
+level of tangent spaces.
 
 Over an algebraically closed field `ad h` is diagonalizable with integer eigenvalues, and for a
 unit `c` the grading automorphism `TauCeti.gradingAut` acts on the `j`-eigenspace `L(j)` by
@@ -69,8 +70,9 @@ section Slice
 variable (R : Type*) {L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 /-- **The Slodowy slice** `e + ker (ad f)`, as an affine subspace of `L`. When `(h, e, f)` is an
-`sl₂` triple this is a transverse slice to the adjoint orbit of `e` at `e`. For `f = 0`, in
-particular in the degenerate case `e = f = 0`, it is all of `L`
+`sl₂` triple in a finite-dimensional Lie algebra over a field of characteristic zero, its direction
+`ker (ad f)` is complementary to `[L, e]` (`IsSl2Triple.isCompl_range_ad_e_ker_ad_f`). For `f = 0`,
+in particular in the degenerate case `e = f = 0`, it is all of `L`
 (`TauCeti.slodowySlice_zero_right`). -/
 def slodowySlice (e f : L) : AffineSubspace R L :=
   AffineSubspace.mk' e (LinearMap.ker (ad R L f))
