@@ -28,11 +28,19 @@ The covolume of the dual lattice `L^∨ = ZLattice.dual L` is the inverse of the
 (`ZLattice.covolume_dual`): in an `ℤ`-basis of `L` and the dual basis of `L^∨`, the Gram matrices
 are inverse to each other.
 
+Independently of any inner product, pulling a full lattice back along a continuous linear
+automorphism `A` of a finite-dimensional real normed space divides its covolume by `|det A|`, for
+every Haar measure (`ZLattice.covolume_comap_continuousLinearEquiv`). Since Mathlib writes the
+image `A L` as the pullback `ZLattice.comap ℝ L A⁻¹`, this says `covolume (A L) = |det A| *
+covolume L`.
+
 ## Main results
 
 * `ZLattice.covolume_sq_eq_det_gram`: `covolume L ^ 2` is the determinant of the Gram matrix of
   any `ℤ`-basis of `L`.
 * `ZLattice.covolume_dual`: `covolume L^∨ = (covolume L)⁻¹`.
+* `ZLattice.covolume_comap_continuousLinearEquiv`: the covolume of the pullback of `L` along a
+  continuous linear automorphism `A` is `|det A|⁻¹ * covolume L`.
 -/
 
 public section
@@ -41,6 +49,34 @@ open Module MeasureTheory Submodule
 open LinearMap (BilinForm)
 
 namespace TauCeti
+
+section NormedSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- Pulling a full lattice back along a continuous linear automorphism `A` divides its covolume
+by `|det A|`, for any Haar measure. Read through images, `covolume (A L) = |det A| * covolume L`.
+Mathlib's `ZLattice.covolume_comap` is the measure-preserving case. -/
+theorem _root_.ZLattice.covolume_comap_continuousLinearEquiv (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (A : E ≃L[ℝ] E) (μ : Measure E := by volume_tac)
+    [μ.IsAddHaarMeasure] :
+    ZLattice.covolume (ZLattice.comap ℝ L A.toLinearMap) μ =
+      |A.toLinearMap.det|⁻¹ * ZLattice.covolume L μ := by
+  let b := Free.chooseBasis ℤ L
+  -- The fundamental domain of the pulled-back basis is the image of that of `b` under `A⁻¹`.
+  rw [ZLattice.covolume_eq_measure_fundamentalDomain _ μ
+      (ZLattice.isAddFundamentalDomain b μ),
+    ZLattice.covolume_eq_measure_fundamentalDomain _ μ
+      (ZLattice.isAddFundamentalDomain (b.ofZLatticeComap ℝ L A.toLinearEquiv) μ),
+    Basis.ofZLatticeBasis_comap, ← ZSpan.map_fundamentalDomain, measureReal_def, measureReal_def]
+  simp only [ContinuousLinearEquiv.coe_toLinearEquiv, Measure.addHaar_image_continuousLinearEquiv,
+    ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg _)]
+  rw [ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm, abs_inv]
+
+end NormedSpace
+
+section InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -96,5 +132,7 @@ theorem _root_.ZLattice.covolume_dual (L : Submodule ℤ E) [DiscreteTopology L]
   have hpos := mul_pos (ZLattice.covolume_pos (ZLattice.dual L) volume)
     (ZLattice.covolume_pos L volume)
   exact eq_inv_of_mul_eq_one_left ((pow_eq_one_iff_of_nonneg hpos.le two_ne_zero).mp hsq)
+
+end InnerProductSpace
 
 end TauCeti

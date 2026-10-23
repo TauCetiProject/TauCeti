@@ -10,25 +10,27 @@ public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.Algebra.Polynomial.AlgebraMap
-import Mathlib.Analysis.Normed.Ring.Ultra
+import TauCeti.Analysis.Normed.Ring.Ultra
+import TauCeti.Analysis.SpecificLimits.Normed
 import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
-import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 
 /-!
 # Evaluating integral coefficient series in non-archimedean normed rings
 
-Every integer has norm at most one in a non-archimedean normed ring with `‖1‖ = 1`. Thus a series
-with arbitrary integer coefficients converges at any parameter of norm below one, provided the ring
-is complete. This includes complete valued fields with nondiscrete valuations or positive
-characteristic.
+Every integer has norm at most `‖1‖` in a non-archimedean seminormed ring. Thus a series with
+arbitrary integer coefficients converges at any parameter of norm below one, provided the ring is
+complete. This includes complete valued fields with nondiscrete valuations or positive
+characteristic. More generally, `TauCeti.summable_norm_mul_pow_of_norm_le` applies to any bounded
+sequence of coefficients, without requiring a normalized norm.
 
-More generally, `RingHom.evalBoundedSeries` evaluates a power series after applying a coefficient
-ring homomorphism whose image has norm at most one. In a commutative target ring, both
-constructions are ring homomorphisms. Evaluation has norm at most one, at most the norm of the
-parameter for an integral series without constant term, and multiplication by an evaluated formal
-unit preserves norms, even when the ring norm is only submultiplicative.
+In a complete normed commutative ring, `RingHom.evalBoundedSeries` evaluates a power series after
+applying a coefficient ring homomorphism whose image has norm at most one. For a non-archimedean
+target with `‖1‖ = 1`, `evalIntSeries` specializes this to integer coefficients. Both constructions
+are ring homomorphisms. In a non-archimedean target, evaluation has norm at most one, at most the
+norm of the parameter for an integral series without constant term, and multiplication by an
+evaluated integral formal unit preserves norms, even when the ring norm is only submultiplicative.
 
 Iterating these evaluations, `evalIntBivariateSeries` evaluates an integral power series in two
 variables at a pair of parameters in the open unit ball. Likewise an integral polynomial has value
@@ -59,27 +61,6 @@ end Polynomial
 
 namespace RingHom
 
-/-- The terms of a power series are absolutely summable after applying a coefficient map with
-image in the closed unit ball, provided the parameter belongs to the open unit ball. -/
-theorem summable_norm_map_coeff_mul_pow {R K : Type*} [Semiring R]
-    [NormedRing K]
-    (φ : R →+* K) (hφ : ∀ r, ‖φ r‖ ≤ 1) (a : ℕ → R) {q : K} (hq : ‖q‖ < 1) :
-    Summable (fun n : ℕ ↦ ‖φ (a n) * q ^ n‖) := by
-  apply Summable.of_nonneg_of_le (fun n ↦ norm_nonneg _) (fun n ↦ ?_)
-    (summable_norm_geometric_of_norm_lt_one hq)
-  calc
-    ‖φ (a n) * q ^ n‖ ≤ ‖φ (a n)‖ * ‖q ^ n‖ := norm_mul_le _ _
-    _ ≤ 1 * ‖q ^ n‖ := mul_le_mul_of_nonneg_right (hφ (a n)) (norm_nonneg _)
-    _ = ‖q ^ n‖ := one_mul _
-
-/-- A power series becomes summable after applying a coefficient map with image in the closed unit
-ball and evaluating at a parameter in the open unit ball. -/
-theorem summable_map_coeff_mul_pow {R K : Type*} [Semiring R]
-    [NormedRing K] [CompleteSpace K]
-    (φ : R →+* K) (hφ : ∀ r, ‖φ r‖ ≤ 1) (a : ℕ → R) {q : K} (hq : ‖q‖ < 1) :
-    Summable (fun n : ℕ ↦ φ (a n) * q ^ n) :=
-  (summable_norm_map_coeff_mul_pow φ hφ a hq).of_norm
-
 /-- Evaluation of a formal power series after applying a coefficient ring homomorphism whose
 image has norm at most one. The defining sum converges at every parameter of norm less than one,
 without requiring a linear topology on the target. -/
@@ -93,15 +74,15 @@ noncomputable def evalBoundedSeries {R K : Type*} [Semiring R]
     simp [PowerSeries.coeff_one]
   map_add' f g := by
     simp_rw [map_add, add_mul]
-    exact (summable_map_coeff_mul_pow φ hφ (fun n ↦ coeff n f) hq).tsum_add
-      (summable_map_coeff_mul_pow φ hφ (fun n ↦ coeff n g) hq)
+    exact (TauCeti.summable_mul_pow_of_norm_le (fun n ↦ hφ (coeff n f)) hq).tsum_add
+      (TauCeti.summable_mul_pow_of_norm_le (fun n ↦ hφ (coeff n g)) hq)
   map_mul' f g := by
     let a : ℕ → K := fun n ↦ φ (coeff n f) * q ^ n
     let b : ℕ → K := fun n ↦ φ (coeff n g) * q ^ n
     have han : Summable (fun n ↦ ‖a n‖) :=
-      summable_norm_map_coeff_mul_pow φ hφ (fun n ↦ coeff n f) hq
+      TauCeti.summable_norm_mul_pow_of_norm_le (fun n ↦ hφ (coeff n f)) hq
     have hbn : Summable (fun n ↦ ‖b n‖) :=
-      summable_norm_map_coeff_mul_pow φ hφ (fun n ↦ coeff n g) hq
+      TauCeti.summable_norm_mul_pow_of_norm_le (fun n ↦ hφ (coeff n g)) hq
     rw [tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm han hbn]
     apply tsum_congr fun n ↦ ?_
     rw [PowerSeries.coeff_mul, map_sum, Finset.sum_mul]
@@ -164,37 +145,37 @@ end RingHom
 namespace TauCeti
 
 /-- The terms of an integer-coefficient power series are absolutely summable at a parameter of
-norm below one in a non-archimedean normed ring. -/
-theorem summable_norm_intCast_mul_pow {K : Type*} [NormedRing K] [NormOneClass K]
+norm below one in a non-archimedean seminormed ring. -/
+theorem summable_norm_intCast_mul_pow {K : Type*} [SeminormedRing K]
     [IsUltrametricDist K] (a : ℕ → ℤ) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ ‖(a n : K) * q ^ n‖) :=
-  RingHom.summable_norm_map_coeff_mul_pow (Int.castRingHom K)
-    (IsUltrametricDist.norm_intCast_le_one K) a hq
+  summable_norm_mul_pow_of_norm_le
+    (fun n ↦ IsUltrametricDist.norm_intCast_le_norm_one (a n)) hq
 
 /-- An arbitrary integer-coefficient power series converges at a parameter of norm below one in
-a complete non-archimedean normed ring. -/
-theorem summable_intCast_mul_pow {K : Type*} [NormedRing K] [NormOneClass K]
+a complete non-archimedean seminormed ring. -/
+theorem summable_intCast_mul_pow {K : Type*} [SeminormedRing K]
     [CompleteSpace K]
     [IsUltrametricDist K] (a : ℕ → ℤ) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ (a n : K) * q ^ n) :=
   (summable_norm_intCast_mul_pow a hq).of_norm
 
 /-- A bivariate family with arbitrary integer coefficients is absolutely summable when both
-parameters have norm below one in a non-archimedean normed ring. -/
-theorem summable_norm_intCast_mul_pow_mul_pow {K : Type*} [NormedRing K] [NormOneClass K]
+parameters have norm below one in a non-archimedean seminormed ring. -/
+theorem summable_norm_intCast_mul_pow_mul_pow {K : Type*} [SeminormedRing K]
     [IsUltrametricDist K] (c : ℕ × ℕ → ℤ) {u v : K} (hu : ‖u‖ < 1) (hv : ‖v‖ < 1) :
     Summable (fun p : ℕ × ℕ ↦ ‖(c p : K) * u ^ p.1 * v ^ p.2‖) := by
-  have hs := (summable_norm_geometric_of_norm_lt_one hu).mul_of_nonneg
-    (summable_norm_geometric_of_norm_lt_one hv) (fun _ ↦ norm_nonneg _)
+  have hs := (summable_norm_pow_of_norm_lt_one hu).mul_of_nonneg
+    (summable_norm_pow_of_norm_lt_one hv) (fun _ ↦ norm_nonneg _)
     (fun _ ↦ norm_nonneg _)
-  apply Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun p ↦ ?_) hs
+  apply Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun p ↦ ?_) (hs.mul_left ‖(1 : K)‖)
   calc
     ‖(c p : K) * u ^ p.1 * v ^ p.2‖ ≤ ‖(c p : K) * u ^ p.1‖ * ‖v ^ p.2‖ := norm_mul_le _ _
-    _ ≤ (1 * ‖u ^ p.1‖) * ‖v ^ p.2‖ := by
+    _ ≤ (‖(1 : K)‖ * ‖u ^ p.1‖) * ‖v ^ p.2‖ := by
       gcongr
-      exact (norm_mul_le _ _).trans
-        (mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_intCast_le_one K _) (norm_nonneg _))
-    _ = ‖u ^ p.1‖ * ‖v ^ p.2‖ := by rw [one_mul]
+      exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right
+        (IsUltrametricDist.norm_intCast_le_norm_one (c p)) (norm_nonneg _))
+    _ = ‖(1 : K)‖ * (‖u ^ p.1‖ * ‖v ^ p.2‖) := mul_assoc _ _ _
 
 /-- Evaluation of an integral formal power series at a parameter of norm below one in a complete
 non-archimedean normed commutative ring. Integer coefficients are bounded in norm, so the defining

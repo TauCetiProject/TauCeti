@@ -110,6 +110,19 @@ theorem inv {q : K} (hq : IsGenericQuantumParameter q) : IsGenericQuantumParamet
   apply hq.pow_ne_one hn
   simpa [inv_pow] using congrArg Inv.inv hpow
 
+/-- A positive natural power of a generic quantum parameter is generic. -/
+theorem pow {q : K} (hq : IsGenericQuantumParameter q) {k : ℕ} (hk : 0 < k) :
+    IsGenericQuantumParameter (q ^ k) := by
+  refine ⟨pow_ne_zero k hq.ne_zero, fun n hn hpow => ?_⟩
+  rw [← pow_mul] at hpow
+  exact hq.pow_ne_one (Nat.mul_pos hk hn) hpow
+
+/-- For nonzero `c`, the multiples `q ^ n * c` of a generic quantum parameter `q` are pairwise
+distinct. -/
+theorem pow_mul_injective {q c : K} (hq : IsGenericQuantumParameter q) (hc : c ≠ 0) :
+    Function.Injective fun n : ℕ => q ^ n * c :=
+  fun _ _ h => hq.pow_injective (mul_right_cancel₀ hc h)
+
 end IsGenericQuantumParameter
 
 /-- If `q - q⁻¹` is nonzero, then so is `q`. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+public import TauCeti.Analysis.Distribution.SchwartzSpace.LaplacianResolvent
 
 /-!
 # The gauge-fixed vortex operator at the vacuum
@@ -28,10 +29,18 @@ first-order operator `L₀ x = (G, C, H₁, H₂)` with
 
 This file defines `L₀` and its formal `L²` adjoint `L₀*` as continuous linear operators on
 `ℝ⁴`-valued Schwartz fields on `ℂ`. It proves the Weitzenböck identities
-`L₀* L₀ = L₀ L₀* = -Δ + 1 / 4` and the energy identity `‖L₀ x‖₂² = ‖∇x‖₂² + ‖x‖₂² / 4`, together
-with their consequences `‖x‖₂ ≤ 2 ‖L₀ x‖₂` and the injectivity of `L₀` on Schwartz fields. These
-are the vacuum inputs for the linear analysis of vortices, whose exterior regions are modelled on
-the vacuum.
+`L₀* L₀ = L₀ L₀* = -Δ + 1 / 4` and the energy identities
+`‖L₀ x‖₂² = ‖L₀* x‖₂² = ‖∇x‖₂² + ‖x‖₂² / 4`, for any additive Haar measure on `ℂ`, together with
+their consequences `‖x‖₂ ≤ 2 ‖L₀ x‖₂`, `‖x‖₂ ≤ 2 ‖L₀* x‖₂` and the injectivity of `L₀` and `L₀*` on
+Schwartz fields. Combined with the inverse `(-Δ + 1 / 4)⁻¹` of the shifted Laplacian
+(`SchwartzMap.laplacianResolvent`), the Weitzenböck identities show that `L₀` and `L₀*` are
+continuous linear automorphisms of the space of Schwartz fields, with inverses
+`L₀⁻¹ = L₀* (-Δ + 1 / 4)⁻¹` and `(L₀*)⁻¹ = L₀ (-Δ + 1 / 4)⁻¹`. Since `(-Δ + 1 / 4)⁻¹` multiplies
+the Fourier transform by `(4π² |ξ|² + 1 / 4)⁻¹`, the factor `4π²` coming from Mathlib's
+normalization of the Fourier transform, `L₀⁻¹` inverts the symbol of `L₀` as
+`L₀(ξ)* / (4π² |ξ|² + 1 / 4)`. Both inverses are bounded by `2` in `L²`, the gap
+`1 / 2` of the vacuum. These are the vacuum inputs for the linear analysis of vortices, whose
+exterior regions are modelled on the vacuum.
 
 ## Main declarations
 
@@ -40,13 +49,24 @@ the vacuum.
   `TauCeti.Vortex.vacuumOperator_apply_three`.
 * `TauCeti.Vortex.vacuumAdjoint`: its formal adjoint `L₀*`, characterized by
   `TauCeti.Vortex.vacuumAdjoint_apply_zero` through `TauCeti.Vortex.vacuumAdjoint_apply_three`.
-* `TauCeti.Vortex.integral_inner_vacuumOperator`: `∫ ⟪L₀ x, y⟫ = ∫ ⟪x, L₀* y⟫`.
+* `TauCeti.Vortex.integral_inner_vacuumOperator` and `TauCeti.Vortex.integral_inner_vacuumAdjoint`:
+  `∫ ⟪L₀ x, y⟫ = ∫ ⟪x, L₀* y⟫` and `∫ ⟪L₀* x, y⟫ = ∫ ⟪x, L₀ y⟫`.
 * `TauCeti.Vortex.vacuumAdjoint_vacuumOperator` and `TauCeti.Vortex.vacuumOperator_vacuumAdjoint`:
   `L₀* L₀ = -Δ + 1 / 4` and `L₀ L₀* = -Δ + 1 / 4`.
-* `TauCeti.Vortex.integral_norm_sq_vacuumOperator`: `‖L₀ x‖₂² = ‖∂₁ x‖₂² + ‖∂₂ x‖₂² + ‖x‖₂² / 4`.
+* `TauCeti.Vortex.integral_norm_sq_vacuumOperator`: `‖L₀ x‖₂² = ‖∂₁ x‖₂² + ‖∂₂ x‖₂² + ‖x‖₂² / 4`,
+  and `TauCeti.Vortex.integral_norm_sq_vacuumAdjoint`: the same identity for `L₀*`.
 * `TauCeti.Vortex.integral_norm_sq_le_four_mul_integral_norm_sq_vacuumOperator` and
   `TauCeti.Vortex.vacuumOperator_injective`: the resulting lower bound, and triviality of the
-  kernel on Schwartz fields.
+  kernel on Schwartz fields. Their analogues for `L₀*` are
+  `TauCeti.Vortex.integral_norm_sq_le_four_mul_integral_norm_sq_vacuumAdjoint` and
+  `TauCeti.Vortex.vacuumAdjoint_injective`.
+* `TauCeti.Vortex.vacuumOperatorEquiv` and `TauCeti.Vortex.vacuumAdjointEquiv`: `L₀` and `L₀*` as
+  continuous linear automorphisms of the Schwartz fields, with inverses given by
+  `TauCeti.Vortex.vacuumOperatorEquiv_symm_apply` and
+  `TauCeti.Vortex.vacuumAdjointEquiv_symm_apply`.
+* `TauCeti.Vortex.integral_norm_sq_vacuumOperatorEquiv_symm_le` and
+  `TauCeti.Vortex.integral_norm_sq_vacuumAdjointEquiv_symm_le`: `‖L₀⁻¹ y‖₂ ≤ 2 ‖y‖₂` and
+  `‖(L₀*)⁻¹ y‖₂ ≤ 2 ‖y‖₂`.
 
 ## References
 
@@ -209,30 +229,32 @@ theorem vacuumOperator_vacuumAdjoint :
   · simp [lineDerivOp_vacuumAdjoint, laplacian_eq_lineDerivOp_one_I, hc]
     ring
 
+variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
+
 private theorem integral_inner_firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) ℝ) :
-    ∫ z, ⟪firstOrder A₁ A₂ B x z, y z⟫ = ∫ z, ⟪x z, firstOrder (-A₁ᵀ) (-A₂ᵀ) Bᵀ y z⟫ := by
+    ∫ z, ⟪firstOrder A₁ A₂ B x z, y z⟫ ∂μ = ∫ z, ⟪x z, firstOrder (-A₁ᵀ) (-A₂ᵀ) Bᵀ y z⟫ ∂μ := by
   have hT (A : Matrix (Fin 4) (Fin 4) ℝ) (a b : EuclideanSpace ℝ (Fin 4)) :
       ⟪toEuclideanCLM (𝕜 := ℝ) A a, b⟫ = ⟪a, toEuclideanCLM (𝕜 := ℝ) Aᵀ b⟫ := by
     rw [← conjTranspose_eq_transpose_of_trivial, ← star_eq_conjTranspose, map_star,
       ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_right]
   have hint (M : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
-      (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) : Integrable (fun z ↦ ⟪M (f z), g z⟫) := by
+      (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) : Integrable (fun z ↦ ⟪M (f z), g z⟫) μ := by
     simpa only [postcompCLM_apply] using integrable_inner (postcompCLM M f) g
   have hint' (M : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
-      (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) : Integrable (fun z ↦ ⟪f z, M (g z)⟫) := by
+      (f g : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) : Integrable (fun z ↦ ⟪f z, M (g z)⟫) μ := by
     simpa only [real_inner_comm (f _)] using hint M g f
   have hD (A : Matrix (Fin 4) (Fin 4) ℝ) (v : ℂ) :
-      ∫ z, ⟪toEuclideanCLM (𝕜 := ℝ) A (∂_{v} x z), y z⟫ =
-        ∫ z, ⟪x z, toEuclideanCLM (𝕜 := ℝ) (-Aᵀ) (∂_{v} y z)⟫ := by
-    have h := integral_bilinear_lineDerivOp_right_eq_neg_left (μ := volume) y x
+      ∫ z, ⟪toEuclideanCLM (𝕜 := ℝ) A (∂_{v} x z), y z⟫ ∂μ =
+        ∫ z, ⟪x z, toEuclideanCLM (𝕜 := ℝ) (-Aᵀ) (∂_{v} y z)⟫ ∂μ := by
+    have h := integral_bilinear_lineDerivOp_right_eq_neg_left (μ := μ) y x
       ((innerSL ℝ).bilinearComp (ContinuousLinearMap.id ℝ _) (toEuclideanCLM (𝕜 := ℝ) A)) v
     simp only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.id_apply,
       innerSL_apply_apply] at h
-    calc ∫ z, ⟪toEuclideanCLM (𝕜 := ℝ) A (∂_{v} x z), y z⟫
-        = ∫ z, ⟪y z, toEuclideanCLM (𝕜 := ℝ) A (∂_{v} x z)⟫ :=
+    calc ∫ z, ⟪toEuclideanCLM (𝕜 := ℝ) A (∂_{v} x z), y z⟫ ∂μ
+        = ∫ z, ⟪y z, toEuclideanCLM (𝕜 := ℝ) A (∂_{v} x z)⟫ ∂μ :=
           integral_congr_ae (.of_forall fun _ ↦ real_inner_comm _ _)
-      _ = -∫ z, ⟪∂_{v} y z, toEuclideanCLM (𝕜 := ℝ) A (x z)⟫ := h
-      _ = ∫ z, ⟪x z, toEuclideanCLM (𝕜 := ℝ) (-Aᵀ) (∂_{v} y z)⟫ := by
+      _ = -∫ z, ⟪∂_{v} y z, toEuclideanCLM (𝕜 := ℝ) A (x z)⟫ ∂μ := h
+      _ = ∫ z, ⟪x z, toEuclideanCLM (𝕜 := ℝ) (-Aᵀ) (∂_{v} y z)⟫ ∂μ := by
           simp_rw [map_neg, _root_.neg_apply, inner_neg_right, integral_neg, ← hT,
             real_inner_comm (∂_{v} y _)]
   simp only [firstOrder_apply, inner_add_left, inner_add_right]
@@ -251,58 +273,142 @@ private theorem integral_inner_firstOrder (A₁ A₂ B : Matrix (Fin 4) (Fin 4) 
 /-- `vacuumAdjoint` is the formal `L²` adjoint of `vacuumOperator`:
 `∫ ⟪L₀ x, y⟫ = ∫ ⟪x, L₀* y⟫` for Schwartz fields `x` and `y`. -/
 theorem integral_inner_vacuumOperator :
-    ∫ z, ⟪vacuumOperator x z, y z⟫ = ∫ z, ⟪x z, vacuumAdjoint y z⟫ :=
+    ∫ z, ⟪vacuumOperator x z, y z⟫ ∂μ = ∫ z, ⟪x z, vacuumAdjoint y z⟫ ∂μ :=
   integral_inner_firstOrder x y _ _ _
+
+/-- `vacuumOperator` is the formal `L²` adjoint of `vacuumAdjoint`:
+`∫ ⟪L₀* x, y⟫ = ∫ ⟪x, L₀ y⟫` for Schwartz fields `x` and `y`. -/
+theorem integral_inner_vacuumAdjoint :
+    ∫ z, ⟪vacuumAdjoint x z, y z⟫ ∂μ = ∫ z, ⟪x z, vacuumOperator y z⟫ ∂μ := by
+  have h₁ (z : ℂ) : ⟪vacuumAdjoint x z, y z⟫ = ⟪y z, vacuumAdjoint x z⟫ := real_inner_comm _ _
+  have h₂ (z : ℂ) : ⟪x z, vacuumOperator y z⟫ = ⟪vacuumOperator y z, x z⟫ := real_inner_comm _ _
+  simp_rw [h₁, h₂]
+  exact (integral_inner_vacuumOperator y x).symm
 
 /-- **The vacuum energy identity**: `‖L₀ x‖₂² = ‖∇x‖₂² + ‖x‖₂² / 4`, where `‖∇x‖₂²` is the sum of
 the squared `L²` norms of the two coordinate derivatives `∂₁ x` and `∂₂ x`. -/
 theorem integral_norm_sq_vacuumOperator :
-    ∫ z, ‖vacuumOperator x z‖ ^ 2 =
-      (∫ z, ‖∂_{(1 : ℂ)} x z‖ ^ 2) + (∫ z, ‖∂_{I} x z‖ ^ 2) + 1 / 4 * ∫ z, ‖x z‖ ^ 2 := by
-  have hparts (v : ℂ) : ∫ z, ⟪x z, ∂_{v} (∂_{v} x) z⟫ = -∫ z, ‖∂_{v} x z‖ ^ 2 := by
-    have h := integral_bilinear_lineDerivOp_right_eq_neg_left (μ := volume) x (∂_{v} x)
-      ((innerSL ℝ).bilinearComp (.id ℝ _) (.id ℝ _)) v
-    simpa only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.id_apply,
-      innerSL_apply_apply, real_inner_self_eq_norm_sq] using h
-  calc ∫ z, ‖vacuumOperator x z‖ ^ 2
-      = ∫ z, ⟪x z, vacuumAdjoint (vacuumOperator x) z⟫ := by
-        simp_rw [← real_inner_self_eq_norm_sq]
-        exact integral_inner_vacuumOperator x (vacuumOperator x)
-    _ = -(∫ z, ⟪x z, ∂_{(1 : ℂ)} (∂_{(1 : ℂ)} x) z⟫) - (∫ z, ⟪x z, ∂_{I} (∂_{I} x) z⟫) +
-          1 / 4 * ∫ z, ⟪x z, x z⟫ := by
-        simp only [vacuumAdjoint_vacuumOperator, laplacian_eq_lineDerivOp_one_I, _root_.add_apply,
-          _root_.neg_apply, _root_.smul_apply, inner_add_right, inner_neg_right, inner_smul_right]
-        have h₁ : Integrable (fun z ↦ -(⟪x z, ∂_{(1 : ℂ)} (∂_{(1 : ℂ)} x) z⟫ +
-            ⟪x z, ∂_{I} (∂_{I} x) z⟫)) := ((integrable_inner _ _).add (integrable_inner _ _)).neg
-        rw [integral_add h₁ ((integrable_inner x x).const_mul _), integral_neg,
-          integral_add (integrable_inner _ _) (integrable_inner _ _),
-          integral_const_mul]
-        ring
-    _ = _ := by
-        rw [hparts (1 : ℂ), hparts I]
-        simp only [real_inner_self_eq_norm_sq]
-        ring
+    ∫ z, ‖vacuumOperator x z‖ ^ 2 ∂μ =
+      (∫ z, ‖∂_{(1 : ℂ)} x z‖ ^ 2 ∂μ) + (∫ z, ‖∂_{I} x z‖ ^ 2 ∂μ) + 1 / 4 * ∫ z, ‖x z‖ ^ 2 ∂μ := by
+  simp_rw [← real_inner_self_eq_norm_sq (vacuumOperator x _)]
+  rw [integral_inner_vacuumOperator, vacuumAdjoint_vacuumOperator,
+    integral_inner_neg_laplacian_add_smul_self orthonormalBasisOneI, Fin.sum_univ_two]
+  simp
+
+/-- The energy identity for the adjoint: `‖L₀* x‖₂² = ‖∇x‖₂² + ‖x‖₂² / 4`. -/
+theorem integral_norm_sq_vacuumAdjoint :
+    ∫ z, ‖vacuumAdjoint x z‖ ^ 2 ∂μ =
+      (∫ z, ‖∂_{(1 : ℂ)} x z‖ ^ 2 ∂μ) + (∫ z, ‖∂_{I} x z‖ ^ 2 ∂μ) + 1 / 4 * ∫ z, ‖x z‖ ^ 2 ∂μ := by
+  simp_rw [← real_inner_self_eq_norm_sq (vacuumAdjoint x _)]
+  rw [integral_inner_vacuumAdjoint, vacuumOperator_vacuumAdjoint,
+    integral_inner_neg_laplacian_add_smul_self orthonormalBasisOneI, Fin.sum_univ_two]
+  simp
 
 /-- **The vacuum lower bound**: `‖x‖₂² ≤ 4 ‖L₀ x‖₂²`, that is, `‖x‖₂ ≤ 2 ‖L₀ x‖₂`. -/
 theorem integral_norm_sq_le_four_mul_integral_norm_sq_vacuumOperator :
-    ∫ z, ‖x z‖ ^ 2 ≤ 4 * ∫ z, ‖vacuumOperator x z‖ ^ 2 := by
-  have h₁ : 0 ≤ ∫ z, ‖∂_{(1 : ℂ)} x z‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
-  have h₂ : 0 ≤ ∫ z, ‖∂_{I} x z‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
+    ∫ z, ‖x z‖ ^ 2 ∂μ ≤ 4 * ∫ z, ‖vacuumOperator x z‖ ^ 2 ∂μ := by
+  have h₁ : 0 ≤ ∫ z, ‖∂_{(1 : ℂ)} x z‖ ^ 2 ∂μ := integral_nonneg fun _ ↦ by positivity
+  have h₂ : 0 ≤ ∫ z, ‖∂_{I} x z‖ ^ 2 ∂μ := integral_nonneg fun _ ↦ by positivity
   rw [integral_norm_sq_vacuumOperator]
+  linarith
+
+/-- The lower bound for the adjoint: `‖x‖₂² ≤ 4 ‖L₀* x‖₂²`, that is, `‖x‖₂ ≤ 2 ‖L₀* x‖₂`. -/
+theorem integral_norm_sq_le_four_mul_integral_norm_sq_vacuumAdjoint :
+    ∫ z, ‖x z‖ ^ 2 ∂μ ≤ 4 * ∫ z, ‖vacuumAdjoint x z‖ ^ 2 ∂μ := by
+  have h₁ : 0 ≤ ∫ z, ‖∂_{(1 : ℂ)} x z‖ ^ 2 ∂μ := integral_nonneg fun _ ↦ by positivity
+  have h₂ : 0 ≤ ∫ z, ‖∂_{I} x z‖ ^ 2 ∂μ := integral_nonneg fun _ ↦ by positivity
+  rw [integral_norm_sq_vacuumAdjoint]
   linarith
 
 /-- The vacuum operator has trivial kernel on Schwartz fields. -/
 theorem vacuumOperator_injective : Function.Injective vacuumOperator := by
-  refine (injective_iff_map_eq_zero vacuumOperator).2 fun x hx ↦ ?_
-  have hle := integral_norm_sq_le_four_mul_integral_norm_sq_vacuumOperator x
-  simp only [hx, _root_.zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
-    not_false_eq_true, zero_pow, integral_zero, mul_zero] at hle
-  have hae : (fun z ↦ ‖x z‖ ^ 2) =ᵐ[volume] 0 :=
-    (integral_eq_zero_iff_of_nonneg (fun _ ↦ by positivity)
-      ((x.memLp 2).integrable_norm_pow two_ne_zero)).1
-      (le_antisymm hle (integral_nonneg fun _ ↦ by positivity))
-  have heq := (Continuous.ae_eq_iff_eq volume (by fun_prop) (continuous_const (y := (0 : ℝ)))).1 hae
-  ext z : 1
-  simpa using congrFun heq z
+  refine (injective_iff_map_eq_zero vacuumOperator).2 fun x hx ↦
+    (integral_norm_sq_eq_zero_iff (μ := volume)).1 <|
+      le_antisymm ?_ (integral_nonneg fun _ ↦ by positivity)
+  simpa [hx] using integral_norm_sq_le_four_mul_integral_norm_sq_vacuumOperator (μ := volume) x
+
+/-- The adjoint of the vacuum operator has trivial kernel on Schwartz fields. -/
+theorem vacuumAdjoint_injective : Function.Injective vacuumAdjoint := by
+  refine (injective_iff_map_eq_zero vacuumAdjoint).2 fun x hx ↦
+    (integral_norm_sq_eq_zero_iff (μ := volume)).1 <|
+      le_antisymm ?_ (integral_nonneg fun _ ↦ by positivity)
+  simpa [hx] using integral_norm_sq_le_four_mul_integral_norm_sq_vacuumAdjoint (μ := volume) x
+
+/-! ### The inverses of the vacuum operator and its adjoint -/
+
+private theorem vacuumOperator_vacuumAdjoint_laplacianResolvent :
+    vacuumOperator (vacuumAdjoint (laplacianResolvent (1 / 4) y)) = y := by
+  rw [vacuumOperator_vacuumAdjoint, neg_laplacian_laplacianResolvent_add_smul (by norm_num)]
+
+private theorem vacuumAdjoint_vacuumOperator_laplacianResolvent :
+    vacuumAdjoint (vacuumOperator (laplacianResolvent (1 / 4) y)) = y := by
+  rw [vacuumAdjoint_vacuumOperator, neg_laplacian_laplacianResolvent_add_smul (by norm_num)]
+
+/-- **The vacuum operator is invertible**: `L₀` as a continuous linear automorphism of the Schwartz
+fields. Its inverse is `L₀⁻¹ = L₀* (-Δ + 1 / 4)⁻¹` (`vacuumOperatorEquiv_symm_apply`). Since
+`(-Δ + 1 / 4)⁻¹` multiplies the Fourier transform by `(4π² |ξ|² + 1 / 4)⁻¹`, this inverts the
+symbol of `L₀` as `L₀(ξ)* / (4π² |ξ|² + 1 / 4)`. -/
+def vacuumOperatorEquiv : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) ≃L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
+  .equivOfInverse vacuumOperator (vacuumAdjoint ∘L laplacianResolvent (1 / 4))
+    (fun x ↦ vacuumOperator_injective <| by
+      rw [ContinuousLinearMap.comp_apply, vacuumOperator_vacuumAdjoint_laplacianResolvent])
+    (fun y ↦ by
+      rw [ContinuousLinearMap.comp_apply, vacuumOperator_vacuumAdjoint_laplacianResolvent])
+
+/-- **The adjoint of the vacuum operator is invertible**: `L₀*` as a continuous linear automorphism
+of the Schwartz fields. Its inverse is `(L₀*)⁻¹ = L₀ (-Δ + 1 / 4)⁻¹`
+(`vacuumAdjointEquiv_symm_apply`). -/
+def vacuumAdjointEquiv : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) ≃L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
+  .equivOfInverse vacuumAdjoint (vacuumOperator ∘L laplacianResolvent (1 / 4))
+    (fun x ↦ vacuumAdjoint_injective <| by
+      rw [ContinuousLinearMap.comp_apply, vacuumAdjoint_vacuumOperator_laplacianResolvent])
+    (fun y ↦ by
+      rw [ContinuousLinearMap.comp_apply, vacuumAdjoint_vacuumOperator_laplacianResolvent])
+
+@[simp]
+theorem coe_vacuumOperatorEquiv : ⇑vacuumOperatorEquiv = vacuumOperator :=
+  (rfl)
+
+@[simp]
+theorem coe_vacuumAdjointEquiv : ⇑vacuumAdjointEquiv = vacuumAdjoint :=
+  (rfl)
+
+/-- The inverse of the vacuum operator is `L₀⁻¹ = L₀* (-Δ + 1 / 4)⁻¹`. -/
+theorem vacuumOperatorEquiv_symm_apply :
+    vacuumOperatorEquiv.symm y = vacuumAdjoint (laplacianResolvent (1 / 4) y) :=
+  (rfl)
+
+/-- The inverse of the adjoint of the vacuum operator is `(L₀*)⁻¹ = L₀ (-Δ + 1 / 4)⁻¹`. -/
+theorem vacuumAdjointEquiv_symm_apply :
+    vacuumAdjointEquiv.symm y = vacuumOperator (laplacianResolvent (1 / 4) y) :=
+  (rfl)
+
+@[simp]
+theorem vacuumOperator_vacuumOperatorEquiv_symm : vacuumOperator (vacuumOperatorEquiv.symm y) = y :=
+  vacuumOperatorEquiv.apply_symm_apply y
+
+@[simp]
+theorem vacuumOperatorEquiv_symm_vacuumOperator : vacuumOperatorEquiv.symm (vacuumOperator x) = x :=
+  vacuumOperatorEquiv.symm_apply_apply x
+
+@[simp]
+theorem vacuumAdjoint_vacuumAdjointEquiv_symm : vacuumAdjoint (vacuumAdjointEquiv.symm y) = y :=
+  vacuumAdjointEquiv.apply_symm_apply y
+
+@[simp]
+theorem vacuumAdjointEquiv_symm_vacuumAdjoint : vacuumAdjointEquiv.symm (vacuumAdjoint x) = x :=
+  vacuumAdjointEquiv.symm_apply_apply x
+
+/-- **The vacuum gap for the inverse**: `‖L₀⁻¹ y‖₂² ≤ 4 ‖y‖₂²`, that is, `‖L₀⁻¹ y‖₂ ≤ 2 ‖y‖₂`. -/
+theorem integral_norm_sq_vacuumOperatorEquiv_symm_le :
+    ∫ z, ‖vacuumOperatorEquiv.symm y z‖ ^ 2 ∂μ ≤ 4 * ∫ z, ‖y z‖ ^ 2 ∂μ := by
+  simpa using integral_norm_sq_le_four_mul_integral_norm_sq_vacuumOperator (μ := μ)
+    (vacuumOperatorEquiv.symm y)
+
+/-- The vacuum gap for the inverse of the adjoint: `‖(L₀*)⁻¹ y‖₂ ≤ 2 ‖y‖₂`. -/
+theorem integral_norm_sq_vacuumAdjointEquiv_symm_le :
+    ∫ z, ‖vacuumAdjointEquiv.symm y z‖ ^ 2 ∂μ ≤ 4 * ∫ z, ‖y z‖ ^ 2 ∂μ := by
+  simpa using integral_norm_sq_le_four_mul_integral_norm_sq_vacuumAdjoint (μ := μ)
+    (vacuumAdjointEquiv.symm y)
 
 end TauCeti.Vortex

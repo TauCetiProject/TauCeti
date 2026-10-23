@@ -13,6 +13,7 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.Topology.Algebra.GroupAction.GermKernel
 import TauCeti.Algebra.BigOperators.Finset.Average
 import TauCeti.Topology.OpenPartialHomeomorph.MulAction
 import TauCeti.RepresentationTheory.Invariants
@@ -70,6 +71,9 @@ identity.
   a finite group action whose conjugated maps have strict derivatives `σ g` for a representation
   `σ`, there is a chart with `G`-invariant domain, centred at the point, with derivative the
   identity, in which `g` acts as `σ g`.
+* `OpenPartialHomeomorph.map_eq_one_iff_mem_germKernel`: the derivative representation
+  detects the ineffective kernel. An element of `G` lies in the germ kernel at the fixed point,
+  that is, acts as the identity near it, exactly when its derivative there is the identity.
 
 ## References
 
@@ -77,6 +81,9 @@ identity.
   372–381.
 * I. Moerdijk and D. A. Pronk, *Orbifolds, sheaves and groupoids*, K-Theory 12 (1997), 3–21,
   where this linearization gives the local charts of a proper étale groupoid.
+* A. Adem, J. Leida and Y. Ruan, *Orbifolds and Stringy Topology*, Cambridge Tracts in
+  Mathematics 171, Cambridge University Press, 2007, Ch. 1, for linear local models of
+  orbifolds, including nonfaithful ones and their ineffective kernel.
 -/
 
 public section
@@ -441,6 +448,29 @@ theorem exists_equivariant_chart (χ : OpenPartialHomeomorph X E) {x : X} (hxχ 
   · rw [bochnerChart_apply hA hxs, ContRepresentation.bochnerAverage_apply_of_forall_smul_eq _ _ hx,
       sub_self, map_zero]
   · simpa using hasStrictFDerivAt_bochnerChart_comp_symm hA (χ.map_source hxχ)
+
+/-- **The derivative representation detects the ineffective kernel.** In the setting of
+`OpenPartialHomeomorph.exists_equivariant_chart`, an element of `G` acts as the identity near the
+fixed point `x`, that is, lies in the germ kernel `TauCeti.MulAction.germKernel G x`, exactly when
+its derivative `σ g` at `x`, in the coordinates of `χ`, is the identity. -/
+theorem map_eq_one_iff_mem_germKernel (χ : OpenPartialHomeomorph X E) {x : X}
+    (hxχ : x ∈ χ.source) (hx : ∀ g : G, g • x = x) (σ : ContRepresentation 𝕜 G E)
+    (hσ : ∀ g : G, HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm) (σ g) (χ x)) (g : G) :
+    σ g = 1 ↔ g ∈ TauCeti.MulAction.germKernel G x := by
+  rw [TauCeti.MulAction.mem_germKernel]
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · -- the equivariant chart turns `g • y = y` into `σ g (e y) = e y`
+    obtain ⟨e, hxe, -, -, he, -⟩ := χ.exists_equivariant_chart hxχ hx σ hσ
+    filter_upwards [e.open_source.mem_nhds hxe] with y hy
+    exact e.injOn (he g y hy).1 hy (by rw [(he g y hy).2, h, one_apply_eq_self])
+  · -- the conjugated map `χ ∘ (g • ·) ∘ χ.symm` agrees with the identity near `χ x`
+    have hev : χ ∘ (g • ·) ∘ χ.symm =ᶠ[𝓝 (χ x)] id := by
+      have hsymm : ∀ᶠ w in 𝓝 (χ x), g • χ.symm w = χ.symm w :=
+        (χ.continuousAt_symm (χ.map_source hxχ)).eventually (by rwa [χ.left_inv hxχ])
+      filter_upwards [χ.eventually_right_inverse (χ.map_source hxχ), hsymm] with w hw hgw
+      simp [hgw, hw]
+    rw [ContinuousLinearMap.one_def]
+    exact (hσ g).hasFDerivAt.unique ((hasFDerivAt_id _).congr_of_eventuallyEq hev)
 
 end Linearization
 
