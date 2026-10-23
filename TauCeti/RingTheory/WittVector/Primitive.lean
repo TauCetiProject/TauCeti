@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.WittVector.Units
-public import TauCeti.Topology.Algebra.TopologicallyNilpotent
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
 # Primitive and distinguished Witt vectors
