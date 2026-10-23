@@ -33,17 +33,11 @@ namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
-/-- Every bounded continuous function on a discrete group belongs to `ucb G`. -/
-@[simp]
-theorem mem_ucb_of_discreteTopology (f : G →ᵇ ℝ) : f ∈ ucb G := by
-  rw [mem_ucb_iff]
-  simp [nhds_discrete]
-
 /-- On a discrete group the UCB subalgebra is the entire bounded-function algebra. -/
 @[simp]
 theorem ucb_eq_top : ucb G = ⊤ := by
   ext f
-  simp
+  simp [mem_ucb_iff, nhds_discrete]
 
 namespace UCB
 
@@ -61,18 +55,11 @@ theorem coe_discreteAlgEquiv_symm (f : G →ᵇ ℝ) :
     ((discreteAlgEquiv G).symm f : G →ᵇ ℝ) = f :=
   (discreteAlgEquiv G).apply_symm_apply f
 
-/-- The discrete identification preserves and reflects the pointwise order. -/
-@[simp]
-theorem discreteAlgEquiv_le_discreteAlgEquiv_iff {f h : UCB G} :
-    discreteAlgEquiv G f ≤ discreteAlgEquiv G h ↔ f ≤ h :=
-  Iff.rfl
-
 /-- The inverse discrete identification preserves and reflects the pointwise order. -/
 @[simp]
 theorem discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff {f h : G →ᵇ ℝ} :
-    (discreteAlgEquiv G).symm f ≤ (discreteAlgEquiv G).symm h ↔ f ≤ h := by
-  rw [← discreteAlgEquiv_le_discreteAlgEquiv_iff]
-  simp
+    (discreteAlgEquiv G).symm f ≤ (discreteAlgEquiv G).symm h ↔ f ≤ h :=
+  Iff.rfl
 
 variable (G) in
 /-- The discrete identification as a linear isometry equivalence for the supremum norm. -/

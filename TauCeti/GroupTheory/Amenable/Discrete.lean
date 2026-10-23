@@ -58,8 +58,9 @@ def boundedContinuousFunctionEquiv :
     (fun f hf => by
       simp only [LinearMap.comp_apply, PositiveLinearMap.coe_toLinearMap,
         AlgEquiv.toLinearMap_apply]
-      exact map_nonneg m.1 (by simpa only [map_zero] using
-        (UCB.discreteAlgEquiv_le_discreteAlgEquiv_iff (G := G)).2 hf))
+      exact map_nonneg m.1 (by
+        simpa only [UCB.discreteAlgEquiv_apply, ZeroMemClass.coe_zero] using
+          (Subtype.coe_le_coe.2 hf)))
     (by simpa using m.2)
   left_inv m := by
     ext f
