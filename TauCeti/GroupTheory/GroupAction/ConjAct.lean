@@ -59,9 +59,9 @@ open scoped Pointwise
 /-- Conjugating an element and a subgroup by the same inverse preserves membership. -/
 @[simp]
 theorem inv_mul_mul_mem_conjAct_smul_iff {G : Type*} [Group G] (g x : G) (H : Subgroup G) :
-    g⁻¹ * x * g ∈ ConjAct.toConjAct g⁻¹ • H ↔ x ∈ H := by
-  simpa only [ConjAct.toConjAct_smul, inv_inv] using
-    (smul_mem_pointwise_smul_iff (a := ConjAct.toConjAct g⁻¹) (S := H) (x := x))
+    g⁻¹ * x * g ∈ (ConjAct.toConjAct g)⁻¹ • H ↔ x ∈ H := by
+  simpa only [← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul, inv_inv] using
+    (smul_mem_pointwise_smul_iff (a := (ConjAct.toConjAct g)⁻¹) (S := H) (x := x))
 
 /-- **A central element of a subgroup lies in each of its conjugates**, since conjugation fixes
 it. -/
