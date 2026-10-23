@@ -92,7 +92,7 @@ end TauCeti.GridInitialPentagonRectangleDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted mixed initial-pentagon--rectangle domain whose rectangle ends inside the
 pentagon's rows, below or at the turn row, is the recut of a counted common-initial-side cross
