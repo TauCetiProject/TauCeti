@@ -201,19 +201,16 @@ theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
     {N : Type*} [AddCommGroup N] [Module R N] [Invertible (2 : R)]
     {C : BilinForm R N} (hB : B.IsSymm) (hC : C.IsSymm) :
     B.Equivalent C ↔ B.toQuadraticMap.Equivalent C.toQuadraticMap := by
-  constructor
-  · rintro ⟨e⟩
-    exact ⟨{ toLinearEquiv := e.toLinearEquiv
-             map_app' := fun x ↦ e.map_app x x }⟩
-  · rintro ⟨f⟩
-    have hform : B.toQuadraticMap = C.toQuadraticMap.comp f.toLinearEquiv.toLinearMap := by
-      ext x
-      exact (f.map_app x).symm
-    have hassoc := congrArg (QuadraticMap.associated (R := R)) hform
-    rw [QuadraticMap.associated_comp, QuadraticMap.associated_left_inverse R hB.eq,
-      QuadraticMap.associated_left_inverse R hC.eq] at hassoc
-    exact ⟨{ toLinearEquiv := f.toLinearEquiv
-             map_app' := fun x y ↦ (LinearMap.congr_fun (LinearMap.congr_fun hassoc x) y).symm }⟩
+  refine ⟨Equivalent.toQuadraticMap, ?_⟩
+  rintro ⟨f⟩
+  have hform : B.toQuadraticMap = C.toQuadraticMap.comp f.toLinearEquiv.toLinearMap := by
+    ext x
+    exact (f.map_app x).symm
+  have hassoc := congrArg (QuadraticMap.associated (R := R)) hform
+  rw [QuadraticMap.associated_comp, QuadraticMap.associated_left_inverse R hB.eq,
+    QuadraticMap.associated_left_inverse R hC.eq] at hassoc
+  exact ⟨{ toLinearEquiv := f.toLinearEquiv
+           map_app' := fun x y ↦ (LinearMap.congr_fun (LinearMap.congr_fun hassoc x) y).symm }⟩
 
 /-- Along an orthogonal basis, a common divisor of the diagonal values of a bilinear form divides
 every value of the form. -/

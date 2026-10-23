@@ -388,6 +388,36 @@ theorem coe_le_iff_exists_affine_minorant (n : ℕ) (r : ℝ) :
     refine le_trans (WithTop.coe_le_coe.mpr ?_) (hdm k)
     nlinarith [mul_nonneg hδ (sub_nonneg.mpr hnk')]
 
+/-- Raising an interior height preserves convexity provided the new height stays
+below the average of its finite neighbors. -/
+theorem update_of_le {n : ℕ} {y : ℝ}
+    (hn : h n ≠ ⊤) (hn₂ : h (n + 2) ≠ ⊤)
+    (hy : (h (n + 1)).untop₀ ≤ y)
+    (hbound : 2 * y ≤ (h n).untop₀ + (h (n + 2)).untop₀) :
+    IsConvexSeq (Function.update h (n + 1) (y : WithTop ℝ)) := by
+  have hn₁ : h (n + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hn hn₂ (by omega) (by omega)
+  have hdom (k : ℕ) :
+      Function.update h (n + 1) (y : WithTop ℝ) k ≠ ⊤ ↔ h k ≠ ⊤ := by
+    by_cases hk : k = n + 1
+    · simp [hk, hn₁]
+    · simp [Function.update_of_ne hk]
+  have hraise (k : ℕ) :
+      (h k).untop₀ ≤ (Function.update h (n + 1) (y : WithTop ℝ) k).untop₀ := by
+    by_cases hk : k = n + 1
+    · simpa [hk] using hy
+    · simp [Function.update_of_ne hk]
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨?_, fun k hk hk₂ => ?_⟩
+  · simpa only [hdom] using hh.ordConnected
+  · by_cases hkn : k = n
+    · subst k
+      simpa [Function.update_of_ne (by omega : n ≠ n + 1),
+        Function.update_of_ne (by omega : n + 2 ≠ n + 1)] using hbound
+    · have hmid := (isConvexSeq_iff_two_mul_le.mp hh).2 k
+        ((hdom k).mp hk) ((hdom (k + 2)).mp hk₂)
+      have hne : k + 1 ≠ n + 1 := by omega
+      rw [Function.update_of_ne hne]
+      exact hmid.trans (add_le_add (hraise k) (hraise (k + 2)))
+
 end IsConvexSeq
 
 /-- A height sequence admits a convex minorant exactly when it is admissible, that
