@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 -- `TauCeti.tprod_update_pair_expand`, the standard-basis expansion at two slots.
 public import TauCeti.LinearAlgebra.PiTensorProduct.BasisExpansion
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Basic
@@ -89,6 +90,10 @@ at every strand one of the two factors is the identity.
 * `TauCeti.orthogonalCupCapAt_tprod`: the value of the generator on a pure tensor at distinct
   strands.
 * `TauCeti.orthogonalCupCapAt_tensorPowerBasis`: the coordinate-basis formula for a contraction.
+* `TauCeti.tensorPowerBasis_repr_orthogonalCupCapAt_tensorPowerBasis` and
+  `TauCeti.isHermitian_toMatrix_orthogonalCupCapAt`: the matrix coefficients of an arc in the
+  monomial basis, which form a symmetric matrix of zeros and ones, Hermitian for every star
+  structure on `k`.
 * `TauCeti.orthogonalCupCapAt_self_tprod`: the degenerate value at `i = j`, which is a rank-one
   map at the single slot and not a self-contraction, so it is not an arc.
 * `TauCeti.orthogonalCupCapAt_comm`: the generator depends only on the unordered pair of strands.
@@ -267,6 +272,53 @@ theorem orthogonalCupCapAt_tensorPowerBasis {i j : Fin d} (hij : i ≠ j)
   · simp only [one_smul]
     exact Finset.sum_congr rfl fun c _ => by rw [htuple, tensorPowerBasis_apply]
   · simp
+
+/-- **The matrix coefficients of an arc** in the monomial basis: the coefficient of `e_w` in the
+image of `e_u` is `1` when the two capped coordinates of `u` agree, the two cupped coordinates of
+`w` agree, and `w` agrees with `u` off the two strands, and `0` otherwise. The condition is
+symmetric in `u` and `w`, so the matrix of the arc is symmetric. -/
+theorem tensorPowerBasis_repr_orthogonalCupCapAt_tensorPowerBasis {i j : Fin d} (hij : i ≠ j)
+    (u w : Fin d → Fin n) :
+    (tensorPowerBasis k n d).repr (orthogonalCupCapAt k n d i j (tensorPowerBasis k n d u)) w =
+      if u i = u j ∧ w i = w j ∧ ∀ t, t ≠ i → t ≠ j → w t = u t then 1 else 0 := by
+  classical
+  -- The basis tensor `e_w` occurs in the arc's sum exactly once, at `c = w i`, when `w` has the
+  -- shape of an output of the arc, and not at all otherwise.
+  have key (c : Fin n) : Function.update (Function.update u i c) j c = w ↔
+      c = w i ∧ w i = w j ∧ ∀ t, t ≠ i → t ≠ j → w t = u t := by
+    refine ⟨fun h => ?_, fun ⟨hc, hw, h⟩ => funext fun t => ?_⟩
+    · subst h
+      simp only [Function.update_self, Function.update_of_ne hij, true_and]
+      exact fun t hti htj => by simp [Function.update_of_ne hti, Function.update_of_ne htj]
+    · rcases eq_or_ne t j with rfl | htj
+      · rw [Function.update_self, hc, hw]
+      rcases eq_or_ne t i with rfl | hti
+      · rw [Function.update_of_ne htj, Function.update_self, hc]
+      · rw [Function.update_of_ne htj, Function.update_of_ne hti, h t hti htj]
+  rw [orthogonalCupCapAt_tensorPowerBasis hij]
+  by_cases hu : u i = u j
+  · simp only [hu, ↓reduceIte, true_and, map_sum, Finsupp.finsetSum_apply,
+      Module.Basis.repr_self, Finsupp.single_apply, key, ite_and, Finset.sum_ite_eq',
+      Finset.mem_univ]
+  · simp [hu]
+
+/-- **The matrix of an arc in the monomial basis is Hermitian**, for every star structure on `k`:
+it is symmetric, by `TauCeti.tensorPowerBasis_repr_orthogonalCupCapAt_tensorPowerBasis`, and its
+entries are `0` and `1`, which `star` fixes. So an arc is self-adjoint for the Hermitian form in
+which the monomial basis is orthonormal. -/
+theorem isHermitian_toMatrix_orthogonalCupCapAt [StarRing k] {i j : Fin d} (hij : i ≠ j) :
+    (LinearMap.toMatrix (tensorPowerBasis k n d) (tensorPowerBasis k n d)
+      (orthogonalCupCapAt k n d i j)).IsHermitian := by
+  refine Matrix.IsHermitian.ext fun w u => ?_
+  have hsymm : (w i = w j ∧ u i = u j ∧ ∀ t, t ≠ i → t ≠ j → u t = w t) ↔
+      (u i = u j ∧ w i = w j ∧ ∀ t, t ≠ i → t ≠ j → w t = u t) :=
+    ⟨fun ⟨hw, hu, h⟩ => ⟨hu, hw, fun t hti htj => (h t hti htj).symm⟩,
+      fun ⟨hu, hw, h⟩ => ⟨hw, hu, fun t hti htj => (h t hti htj).symm⟩⟩
+  rw [LinearMap.toMatrix_apply, LinearMap.toMatrix_apply,
+    tensorPowerBasis_repr_orthogonalCupCapAt_tensorPowerBasis hij,
+    tensorPowerBasis_repr_orthogonalCupCapAt_tensorPowerBasis hij]
+  simp only [hsymm]
+  split_ifs <;> simp
 
 /-- **The degenerate value at coincident strands**: at `i = j` the cap and the cup land on the
 same slot, and `TauCeti.orthogonalCupCapAt k n d i i` is *not* the contraction of that slot against
