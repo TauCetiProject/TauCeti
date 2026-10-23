@@ -18,11 +18,11 @@ space `ℕ → α`, and computes its finite-dimensional laws.
 
 The construction is Mathlib's Ionescu–Tulcea measure `ProbabilityTheory.Kernel.trajMeasure` for the
 time-indexed homogeneous kernel family that reads the current state off the trajectory so far and
-steps by the fixed transition kernel `κ`. Two facts identify the resulting measure
-(`eq_markovChainLaw`): its time-zero marginal is `ν`, and it has the Markov property
-`markovChainLaw_map_prefix_succ_eq_compProd`, which recursively determines the law of a prefix of
-length `n + 1` from the law of a prefix of length `n`. On a state space with measurable singletons
-that recursion unwinds to the familiar product formula
+steps by the fixed transition kernel `κ`. For a finite initial measure `ν`, two facts identify the
+resulting measure (`eq_markovChainLaw`): its time-zero marginal is `ν`, and it has the Markov
+property `markovChainLaw_map_prefix_succ_eq_compProd`, which recursively determines the law of a
+prefix of length `n + 1` from the law of a prefix of length `n`. On a state space with measurable
+singletons that recursion unwinds to the familiar product formula
 `markovChainLaw_map_prefix_apply_singleton`,
 
 ```text
@@ -62,8 +62,9 @@ the chain is `(κ ^ n) ∘ₘ ν`.
   measurable singletons, the mass of a finite path is the initial weight times the product of the
   transition weights; `MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton` is the same formula
   for the prefix laws of the coordinate process.
-* `MeasureTheory.Measure.eq_markovChainLaw` — the path law is the only measure on path space with
-  initial law `ν` satisfying the Markov recursion for its prefix laws.
+* `MeasureTheory.Measure.eq_markovChainLaw` — for a finite initial measure `ν`, the path law is the
+  only measure on path space with initial law `ν` satisfying the Markov recursion for its prefix
+  laws.
 
 ## References
 
@@ -260,7 +261,7 @@ theorem markovChainLaw_map_prefix_succ_eq_compProd [SFinite ν] (n : ℕ) :
 /-- **The one-step transition law of the chain.** The joint law of the states at times `n` and
 `n + 1` is the time-`n` law extended by `κ`; this is the Markov property read off two coordinates
 rather than a whole prefix. -/
-theorem markovChainLaw_map_pair_succ [IsProbabilityMeasure ν] (n : ℕ) :
+theorem markovChainLaw_map_pair_succ [SFinite ν] (n : ℕ) :
     (markovChainLaw ν κ).map (fun x => (x n, x (n + 1)))
       = ((markovChainLaw ν κ).map fun x => x n) ⊗ₘ κ := by
   have hlast : Measurable fun w : Fin (n + 1) → α => w (Fin.last n) :=
@@ -288,7 +289,7 @@ theorem markovChainLaw_map_pair_succ [IsProbabilityMeasure ν] (n : ℕ) :
 law at time `n` pushed through the transition kernel. With `markovChainLaw_map_eval_zero` this
 identifies every one-dimensional marginal of the chain. -/
 @[simp]
-theorem markovChainLaw_map_eval_succ [IsProbabilityMeasure ν] (n : ℕ) :
+theorem markovChainLaw_map_eval_succ [SFinite ν] (n : ℕ) :
     (markovChainLaw ν κ).map (fun x => x (n + 1))
       = κ ∘ₘ ((markovChainLaw ν κ).map fun x => x n) := by
   rw [← Measure.snd_compProd, ← markovChainLaw_map_pair_succ, Measure.snd_map_prodMk₀]
@@ -398,9 +399,9 @@ private theorem map_comp_eq_of_map_eq {β γ δ : Type*} [MeasurableSpace β] [M
     (hh : Measurable h) (heq : μ.map h = μ'.map h) : μ.map (g ∘ h) = μ'.map (g ∘ h) := by
   rw [← Measure.map_map hg hh, ← Measure.map_map hg hh, heq]
 
-/-- **Uniqueness of the path law.** A measure on path space whose time-zero marginal is `ν` and
-whose prefix laws satisfy the Markov recursion of `markovChainLaw_map_prefix_succ_eq_compProd` is
-the path law `markovChainLaw ν κ`. -/
+/-- **Uniqueness of the path law.** For a finite initial measure `ν`, a measure on path space whose
+time-zero marginal is `ν` and whose prefix laws satisfy the Markov recursion of
+`markovChainLaw_map_prefix_succ_eq_compProd` is the path law `markovChainLaw ν κ`. -/
 theorem _root_.MeasureTheory.Measure.eq_markovChainLaw [IsFiniteMeasure ν]
     {μ : Measure (ℕ → α)}
     (h₀ : μ.map (fun x => x 0) = ν)
