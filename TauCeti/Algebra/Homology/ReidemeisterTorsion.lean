@@ -47,6 +47,15 @@ where `[c'ᵢ / cᵢ]` is the determinant of `c' i` with respect to `c i`
 bases multiplies the torsion by the signs of the permutations, and rescaling the basis vectors by
 units multiplies it by the alternating product of their products.
 
+The torsion is invariant under isomorphisms of based complexes: transporting the bases of `C`
+along an isomorphism `e : C ≅ D` gives `D` the same torsion
+(`HomologicalComplex.reidemeisterTorsion_map`).
+Combined with the basis-change formula, if `Aᵢ` is the matrix of `eᵢ` in given bases of `Cᵢ` and
+`Dᵢ`, then `τ(C) = τ(D) · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)`
+(`HomologicalComplex.reidemeisterTorsion_eq_mul_finprod_det_toMatrix`). This is the formula
+`τ(A⁻¹ d A) = τ(d) · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)` for a differential `d` conjugated by degreewise
+automorphisms `Aᵢ`.
+
 ## Main declarations
 
 * `HomologicalComplex.torsionBracket`: the bracket `[bⱼ₊₁ sⱼ / cⱼ₊₁]` of a degree.
@@ -63,6 +72,10 @@ units multiplies it by the alternating product of their products.
   of the chain bases.
 * `HomologicalComplex.reidemeisterTorsion_unitsSMul`: the change of the torsion under a rescaling
   of the chain basis vectors by units.
+* `HomologicalComplex.reidemeisterTorsion_map`: the torsion is invariant under isomorphisms of
+  based complexes.
+* `HomologicalComplex.reidemeisterTorsion_eq_mul_finprod_det_toMatrix`: the change of the torsion
+  under an isomorphism of complexes, in terms of the determinants of its matrices.
 
 ## References
 
@@ -131,6 +144,14 @@ theorem torsionBracket_eq_det_mul (c' : ∀ i, Basis (Fin (n i)) F (C.X i)) :
   rw [torsionBracket, torsionBracket, ← Basis.det_mul_det _ ((c (j + 1)).reindex
     ((finCongr (eq_add_of_exactAt c h b₁ b₀)).trans finSumFinEquiv.symm))]
   simp [Basis.det_reindex, Function.comp_assoc, -Equiv.symm_trans, -Equiv.coe_trans]
+
+/-- A bracket does not change when its boundary bases are reindexed along equalities `p = p'` and
+`q = q'` of their sizes. -/
+private theorem torsionBracket_reindex {p' q' : ℕ} (hp : p = p') (hq : q = q') :
+    torsionBracket c h (b₁.reindex (finCongr hp)) (b₀.reindex (finCongr hq))
+      (s ∘ Fin.cast hq.symm) (fun k ↦ by simp [hs]) = torsionBracket c h b₁ b₀ s hs := by
+  subst hp hq
+  simp only [finCongr_refl, Basis.reindex_refl, Fin.cast_refl, Function.comp_id]
 
 /-- A bracket is nonzero. -/
 theorem torsionBracket_ne_zero : torsionBracket c h b₁ b₀ s hs ≠ 0 :=
@@ -307,17 +328,21 @@ include hn in
 /-- For a bounded acyclic complex, the torsion is the alternating product
 `∏ⱼ [bⱼ₊₁ sⱼ / cⱼ₊₁] ^ ((-1) ^ j)` of the brackets, for any bases `bⱼ` of the boundaries and any
 lifts `sⱼ` of `bⱼ`. -/
-theorem reidemeisterTorsion_eq_finprod
-    (b : ∀ j, Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) F
-      (LinearMap.range (C.d (j + 1) j).hom))
-    (s : ∀ j, Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom)) → C.X (j + 1))
+theorem reidemeisterTorsion_eq_finprod {r : ℤ → ℕ}
+    (b : ∀ j, Basis (Fin (r j)) F (LinearMap.range (C.d (j + 1) j).hom))
+    (s : ∀ j, Fin (r j) → C.X (j + 1))
     (hs : ∀ j k, (C.d (j + 1) j).hom (s j k) = b j k) :
     C.reidemeisterTorsion c =
       ∏ᶠ j : ℤ, torsionBracket c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^
         (j.negOnePow : ℤ) := by
-  rw [reidemeisterTorsion, dite_eq_left ⟨h, hn⟩, torsionOfAcyclic]
-  exact finprod_torsionBracket_eq hn h b (chosenBasis C c) s (chosenLift C c) hs
-    (chosenLift_spec C c)
+  -- Reindex the bases `b j` by `Fin (finrank F Bⱼ)`, as in the definition of the torsion.
+  have hr (j : ℤ) : r j = finrank F (LinearMap.range (C.d (j + 1) j).hom) := by
+    simpa using (finrank_eq_card_basis (b j)).symm
+  rw [reidemeisterTorsion, dite_eq_left ⟨h, hn⟩, torsionOfAcyclic,
+    finprod_torsionBracket_eq hn h (fun j ↦ (b j).reindex (finCongr (hr j))) (chosenBasis C c)
+      (fun j ↦ s j ∘ Fin.cast (hr j).symm) (chosenLift C c) (fun j k ↦ by simp [hs])
+      (chosenLift_spec C c)]
+  exact finprod_congr fun j ↦ by rw [torsionBracket_reindex]
 
 end Bounded
 
@@ -392,6 +417,86 @@ theorem reidemeisterTorsion_unitsSMul (w : ∀ i, Fin (n i) → Fˣ) :
   simp
 
 end BasisChange
+
+section Iso
+
+variable {C} {D : ChainComplex (ModuleCat F) ℤ} (e : C ≅ D)
+
+/-- Lifts `s` of a basis `b₀` of the boundaries `Bⱼ` of `C`, mapped by `e`, are lifts of the
+basis of the boundaries of `D` transported from `b₀`. -/
+private theorem d_hom_isoApp_comp_apply {j : ℤ} {q : ℕ}
+    (b₀ : Basis (Fin q) F (LinearMap.range (C.d (j + 1) j).hom)) (s : Fin q → C.X (j + 1))
+    (hs : ∀ k, (C.d (j + 1) j).hom (s k) = b₀ k) (k : Fin q) :
+    (D.d (j + 1) j).hom (((Hom.isoApp e (j + 1)).toLinearEquiv ∘ s) k) =
+      b₀.map (rangeDEquiv e (j + 1) j) k := by
+  rw [Basis.map_apply, coe_rangeDEquiv_apply, ← hs]
+  exact Hom.comm_apply e.hom _ _ _
+
+/-- Transporting a bracket along an isomorphism `e : C ≅ D`, by mapping the chain bases, the
+boundary bases and the lifts by `e`, does not change it. -/
+private theorem torsionBracket_map {j : ℤ} (hC : C.ExactAt (j + 1)) (hD : D.ExactAt (j + 1))
+    {p q : ℕ} (b₁ : Basis (Fin p) F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom))
+    (b₀ : Basis (Fin q) F (LinearMap.range (C.d (j + 1) j).hom))
+    (s : Fin q → C.X (j + 1)) (hs : ∀ k, (C.d (j + 1) j).hom (s k) = b₀ k) :
+    torsionBracket (fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv) hD
+        (b₁.map (rangeDEquiv e (j + 1 + 1) (j + 1))) (b₀.map (rangeDEquiv e (j + 1) j))
+        ((Hom.isoApp e (j + 1)).toLinearEquiv ∘ s) (d_hom_isoApp_comp_apply e b₀ s hs) =
+      torsionBracket c hC b₁ b₀ s hs := by
+  have hB : bracketBasis hD (b₁.map (rangeDEquiv e (j + 1 + 1) (j + 1)))
+      (b₀.map (rangeDEquiv e (j + 1) j))
+      ((Hom.isoApp e (j + 1)).toLinearEquiv ∘ s) (d_hom_isoApp_comp_apply e b₀ s hs) =
+        (bracketBasis hC b₁ b₀ s hs).map (Hom.isoApp e (j + 1)).toLinearEquiv :=
+    Basis.eq_of_apply_eq <| by
+      rintro (k | k) <;>
+        simp [bracketBasis, Basis.ofExactLift_inl, Basis.ofExactLift_inr]
+  simp only [torsionBracket, hB, Basis.det_reindex, Basis.det_map]
+  congr 1
+  ext k
+  simp only [Function.comp_apply, Basis.map_apply, LinearEquiv.symm_apply_apply]
+
+/-- The torsion is invariant under isomorphisms of based complexes: transporting the bases `c i`
+of `C` along an isomorphism `e : C ≅ D` gives bases of `D` for which `D` has the same torsion as
+`C`. -/
+theorem reidemeisterTorsion_map :
+    D.reidemeisterTorsion (fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv) =
+      C.reidemeisterTorsion c := by
+  by_cases hn : {i | n i ≠ 0}.Finite
+  swap
+  · simp [reidemeisterTorsion_of_not_finite _ _ hn]
+  have hacyclic : D.Acyclic ↔ C.Acyclic :=
+    forall_congr' fun i ↦
+      (ShortComplex.exact_iff_of_iso ((shortComplexFunctor _ _ i).mapIso e)).symm
+  by_cases h : C.Acyclic
+  swap
+  · rw [reidemeisterTorsion_of_not_acyclic _ _ h,
+      reidemeisterTorsion_of_not_acyclic _ _ (hacyclic.not.2 h)]
+  -- Compute the torsion of `D` with the boundary bases and lifts transported from `C`.
+  rw [reidemeisterTorsion_eq_finprod hn h (chosenBasis C c) (chosenLift C c)
+      (chosenLift_spec C c),
+    reidemeisterTorsion_eq_finprod hn (hacyclic.2 h)
+      (fun j ↦ (chosenBasis C c j).map (rangeDEquiv e (j + 1) j))
+      (fun j ↦ (Hom.isoApp e (j + 1)).toLinearEquiv ∘ chosenLift C c j)
+      (fun j ↦ d_hom_isoApp_comp_apply e _ _ (chosenLift_spec C c j))]
+  exact finprod_congr fun j ↦ by rw [torsionBracket_map]
+
+/-- The torsion under an isomorphism `e : C ≅ D` of complexes with bases `c i` and `c' i`: if
+`Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` in the bases `c i` and `c' i`, then
+`τ(C, c) = τ(D, c') · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)`. When `C` and `D` have the same chain spaces and
+bases, the differential of `C` is the conjugate `A⁻¹ d A` of the differential `d` of `D` by the
+degreewise automorphisms `Aᵢ`, and this is the formula
+`τ(A⁻¹ d A) = τ(d) · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)`. -/
+theorem reidemeisterTorsion_eq_mul_finprod_det_toMatrix (c' : ∀ i, Basis (Fin (n i)) F (D.X i)) :
+    C.reidemeisterTorsion c = D.reidemeisterTorsion c' *
+      ∏ᶠ i : ℤ, (LinearMap.toMatrix (c i) (c' i) (e.hom.f i).hom).det ^ (i.negOnePow : ℤ) := by
+  rw [← reidemeisterTorsion_map c e, reidemeisterTorsion_eq_mul_finprod_det D c']
+  congr 1
+  refine finprod_congr fun i ↦ ?_
+  rw [Basis.det_apply]
+  congr 3
+  ext k
+  simp
+
+end Iso
 
 section TwoDegrees
 
