@@ -99,7 +99,7 @@ theorem mapCoeff_wedgeWith_eq_postcomp (L : F₃ →L[ℝ] G) (μ : F₁ →L[�
     (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
     mapCoeff L (φ.wedgeWith μ ψ) = φ.wedgeWith ((ContinuousLinearMap.postcomp F₂ L).comp μ) ψ := by
   simpa only [mapCoeff_id] using mapCoeff_wedgeWith μ ((ContinuousLinearMap.postcomp F₂ L).comp μ)
-    (.id ℝ F₁) (.id ℝ F₂) L (fun _ _ ↦ rfl) φ ψ
+    (.id ℝ F₁) (.id ℝ F₂) L (fun _ _ ↦ by simp) φ ψ
 
 section RestrictScalars
 
