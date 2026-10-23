@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
@@ -30,6 +31,7 @@ and vanishing on boundaries.
 * `TauCeti.chainsDesc f`: the linear map out of the singular `n`-chains with the given values on
   singular simplices.
 * `TauCeti.singularAugment k X`: the augmentation of the simplicial singular chains.
+* `ContinuousMap.firstHomologyMap`: the induced linear map on first integral singular homology.
 
 ## Main results
 
@@ -220,3 +222,22 @@ theorem singularChains_map_f_pathChain {X Y : TopCat.{u}} (f : X ⟶ Y) (g : C(I
 end Paths
 
 end TauCeti
+
+namespace ContinuousMap
+
+open TauCeti
+
+/-- The map induced on first integral singular homology by a continuous map. -/
+abbrev firstHomologyMap {Y Z : Type} [TopologicalSpace Y] [TopologicalSpace Z] (g : C(Y, Z)) :
+    ((singularChains ℤ).obj (TopCat.of Y)).homology 1 →ₗ[ℤ]
+      ((singularChains ℤ).obj (TopCat.of Z)).homology 1 :=
+  (HomologicalComplex.homologyMap ((singularChains ℤ).map (TopCat.ofHom g)) 1).hom
+
+/-- First integral singular homology respects composition of continuous maps. -/
+theorem firstHomologyMap_comp {Y Z W : Type} [TopologicalSpace Y] [TopologicalSpace Z]
+    [TopologicalSpace W] (g : C(Z, W)) (g' : C(Y, Z)) (x) :
+    firstHomologyMap (g.comp g') x = firstHomologyMap g (firstHomologyMap g' x) := by
+  rw [firstHomologyMap, TopCat.ofHom_comp, Functor.map_comp, HomologicalComplex.homologyMap_comp,
+    ModuleCat.hom_comp, LinearMap.comp_apply]
+
+end ContinuousMap

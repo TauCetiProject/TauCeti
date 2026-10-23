@@ -8,8 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.LowDimTopology.DehnSurgery.Framing
 
-import Mathlib.Algebra.Category.ModuleCat.Biproducts
-import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
+import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 import TauCeti.Topology.JordanCurve.Basic
@@ -87,123 +86,12 @@ public section
 
 noncomputable section
 
+open ContinuousMap (firstHomologyMap firstHomologyMap_comp firstHomologyMap_eq_of_homotopic
+  firstHomologyMap_torusClass)
+
 open CategoryTheory Limits Set Metric Function Topology TauCeti.HurewiczOne
 
 namespace TauCeti
-
-/-! ### First homology of the torus `S¹ × S¹` -/
-
-/-- The map induced on first integral singular homology by a continuous map. -/
-private abbrev H1map {Y Z : Type} [TopologicalSpace Y] [TopologicalSpace Z] (g : C(Y, Z)) :
-    ((singularChains ℤ).obj (TopCat.of Y)).homology 1 →ₗ[ℤ]
-      ((singularChains ℤ).obj (TopCat.of Z)).homology 1 :=
-  (HomologicalComplex.homologyMap ((singularChains ℤ).map (TopCat.ofHom g)) 1).hom
-
-private theorem H1map_comp {Y Z W : Type} [TopologicalSpace Y] [TopologicalSpace Z]
-    [TopologicalSpace W] (g : C(Z, W)) (g' : C(Y, Z)) (x) :
-    H1map (g.comp g') x = H1map g (H1map g' x) := by
-  rw [H1map, TopCat.ofHom_comp, Functor.map_comp, HomologicalComplex.homologyMap_comp,
-    ModuleCat.hom_comp, LinearMap.comp_apply]
-
-private theorem H1map_eq_of_homotopic {Y Z : Type} [TopologicalSpace Y] [TopologicalSpace Z]
-    {g g' : C(Y, Z)} (H : g.Homotopic g') : H1map g = H1map g' :=
-  congrArg ModuleCat.Hom.hom
-    (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
-      (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some (ModuleCat.of ℤ ℤ) 1)
-
-/-- A homotopy equivalence induces a bijection on first homology. -/
-private theorem bijective_H1map {Y Z : Type} [TopologicalSpace Y] [TopologicalSpace Z]
-    (e : ContinuousMap.HomotopyEquiv Y Z) : Bijective (H1map e.toFun) := by
-  have :=
-    ConcreteCategory.bijective_of_isIso (e.reducedSingularHomologyIso (ModuleCat.of ℤ ℤ) 1).hom
-  rwa [ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_hom,
-    reducedSingularHomologyFunctor_succ] at this
-
-/-- The class of the `(p, q)` curve of `S¹ × S¹`. -/
-private abbrev torusClass (p q : ℤ) :
-    ((singularChains ℤ).obj (TopCat.of (Circle × Circle))).homology 1 :=
-  H₁AddEquivHomology (TopCat.of (Circle × Circle)) (loopClass (torusCurve p q))
-
-private theorem H1map_torusClass {Y : Type} [TopologicalSpace Y] (g : C(Circle × Circle, Y))
-    (p q : ℤ) :
-    H1map g (torusClass p q) =
-      H₁AddEquivHomology (TopCat.of Y) (loopClass ((torusCurve p q).map g.continuous)) :=
-  homologyMap_H₁AddEquivHomology_loopClass (TopCat.ofHom g) _
-
-private theorem circleProdFirstHomologyEquiv_torusClass (p q : ℤ) :
-    circleProdFirstHomologyEquiv (Homeomorph.refl (Circle × Circle)) (torusClass p q) = ![p, q] :=
-  circleProdFirstHomologyEquiv_torusCurve (Homeomorph.refl _) p q
-
-private theorem torusClass_eq (p q : ℤ) :
-    torusClass p q = p • torusClass 1 0 + q • torusClass 0 1 := by
-  apply (circleProdFirstHomologyEquiv (Homeomorph.refl (Circle × Circle))).injective
-  rw [map_add, map_zsmul, map_zsmul, circleProdFirstHomologyEquiv_torusClass,
-    circleProdFirstHomologyEquiv_torusClass, circleProdFirstHomologyEquiv_torusClass]
-  ext i
-  fin_cases i <;> simp
-
-private theorem exists_eq_torusClass
-    (x : ((singularChains ℤ).obj (TopCat.of (Circle × Circle))).homology 1) :
-    ∃ p q : ℤ, x = torusClass p q := by
-  refine ⟨circleProdFirstHomologyEquiv (Homeomorph.refl _) x 0,
-    circleProdFirstHomologyEquiv (Homeomorph.refl _) x 1, ?_⟩
-  apply (circleProdFirstHomologyEquiv (Homeomorph.refl (Circle × Circle))).injective
-  rw [circleProdFirstHomologyEquiv_torusClass]
-  ext i
-  fin_cases i <;> rfl
-
-private theorem torusClass_eq_zero_iff (p q : ℤ) : torusClass p q = 0 ↔ p = 0 ∧ q = 0 := by
-  rw [← (circleProdFirstHomologyEquiv (Homeomorph.refl (Circle × Circle))).map_eq_zero_iff,
-    circleProdFirstHomologyEquiv_torusClass]
-  refine ⟨fun h ↦ ⟨congrFun h 0, congrFun h 1⟩, ?_⟩
-  rintro ⟨rfl, rfl⟩
-  ext i
-  fin_cases i <;> rfl
-
-/-! ### Mayer–Vietoris in degree one -/
-
-/-- For an open cover `X = U ∪ V` of a space with `H₁(X) = H₂(X) = 0`, the Mayer–Vietoris map
-`H₁(U ∩ V) → H₁(U) ⊕ H₁(V)` is bijective. -/
-private theorem mayerVietoris_one {X : Type} [TopologicalSpace X] {U V : Set X} (hU : IsOpen U)
-    (hV : IsOpen V) (hUV : U ∪ V = univ)
-    (h₁ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 1).obj (TopCat.of X)))
-    (h₂ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 2).obj (TopCat.of X))) :
-    (∀ x, H1map (ContinuousMap.inclusion (inter_subset_left (t := V))) x = 0 →
-      H1map (ContinuousMap.inclusion (inter_subset_right (s := U))) x = 0 → x = 0) ∧
-    ∀ c, ∃ x, H1map (ContinuousMap.inclusion (inter_subset_left (t := V))) x = 0 ∧
-      H1map (ContinuousMap.inclusion (inter_subset_right (s := U))) x = c := by
-  rw [reducedSingularHomologyFunctor_succ] at h₁ h₂
-  have hiso := TopCat.isIso_mayerVietorisToBiprod_of_isZero (X := TopCat.of X)
-    (ModuleCat.of ℤ ℤ) hU hV hUV 1 h₂ h₁
-  set M := SSet.mayerVietorisToBiprod (ModuleCat.of ℤ ℤ)
-      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_left (t := V)))))
-      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_right (s := U))))) 1
-  -- Read the biproduct `H₁(U) ⊞ H₁(V)` as the product module, where elements have coordinates.
-  set P := M ≫ (ModuleCat.biprodIsoProd _ _).hom
-  have hP : Bijective P.hom := ConcreteCategory.bijective_of_isIso P
-  have hfst : ∀ x, (P.hom x).1 =
-      H1map (ContinuousMap.inclusion (inter_subset_left (t := V))) x := fun x ↦ by
-    have hc : P ≫ (ModuleCat.biprodIsoProd _ _).inv ≫ biprod.fst = SSet.homologyMap
-        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_left (t := V)))))
-        (ModuleCat.of ℤ ℤ) 1 := by
-      simp only [P, M, Category.assoc, Iso.hom_inv_id_assoc, SSet.mayerVietorisToBiprod_fst]
-    rw [ModuleCat.biprodIsoProd_inv_comp_fst] at hc
-    exact congr($(hc).hom x)
-  have hsnd : ∀ x, (P.hom x).2 =
-      -H1map (ContinuousMap.inclusion (inter_subset_right (s := U))) x := fun x ↦ by
-    have hc : P ≫ (ModuleCat.biprodIsoProd _ _).inv ≫ biprod.snd = -SSet.homologyMap
-        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_right (s := U)))))
-        (ModuleCat.of ℤ ℤ) 1 := by
-      simp only [P, M, Category.assoc, Iso.hom_inv_id_assoc, SSet.mayerVietorisToBiprod_snd]
-    rw [ModuleCat.biprodIsoProd_inv_comp_snd] at hc
-    exact congr($(hc).hom x)
-  refine ⟨fun x hx hx' ↦ ?_, fun c ↦ ?_⟩
-  · have h0 : P.hom x = 0 :=
-      Prod.ext ((hfst x).trans hx) ((hsnd x).trans (by rw [hx', neg_zero]; rfl))
-    exact hP.1 (h0.trans (map_zero P.hom).symm)
-  · obtain ⟨x, hx⟩ := hP.2 (0, -c)
-    exact ⟨x, (hfst x).symm.trans (congrArg Prod.fst hx),
-      neg_injective ((hsnd x).symm.trans (congrArg Prod.snd hx))⟩
 
 namespace IsSolidTorusNeighborhood
 
@@ -368,8 +256,10 @@ private theorem openToTorus_puncturedToOpen (h : IsSolidTorusNeighborhood f Φ)
 /-- The meridian at radius `1 / 2` dies in the open solid torus. -/
 private theorem H1map_puncturedToOpen_torusClass_zero (h : IsSolidTorusNeighborhood f Φ)
     (p : ℤ) :
-    H1map (puncturedToOpen f Φ) (H1map h.torusHomotopyEquiv.toFun (torusClass p 0)) = 0 := by
-  rw [← H1map_comp, H1map_eq_of_homotopic ⟨h.contractHomotopy⟩, H1map_torusClass,
+    firstHomologyMap (puncturedToOpen f Φ)
+      (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass p 0)) = 0 := by
+  rw [← firstHomologyMap_comp, firstHomologyMap_eq_of_homotopic ⟨h.contractHomotopy⟩,
+    firstHomologyMap_torusClass,
     loopClass_eq_of_apply_eq _ (Path.refl (h.coreMap (1, 1))) fun t ↦ Subtype.ext (by
       rw [Path.map_coe, comp_apply, Path.refl_apply, torusCurve_apply]
       simp [coreMap]),
@@ -379,14 +269,16 @@ private theorem H1map_puncturedToOpen_torusClass_zero (h : IsSolidTorusNeighborh
 torus. -/
 private theorem eq_zero_of_H1map_puncturedToOpen_eq_zero (h : IsSolidTorusNeighborhood f Φ)
     {p q : ℤ}
-    (hpq : H1map (puncturedToOpen f Φ) (H1map h.torusHomotopyEquiv.toFun (torusClass p q)) = 0) :
+    (hpq : firstHomologyMap (puncturedToOpen f Φ)
+      (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass p q)) = 0) :
     q = 0 := by
-  have hq : H1map h.openToTorus (H1map (puncturedToOpen f Φ)
-      (H1map h.torusHomotopyEquiv.toFun (torusClass p q))) = torusClass 0 q := by
-    rw [← H1map_comp, ← H1map_comp,
-      show (h.openToTorus.comp (puncturedToOpen f Φ)).comp h.torusHomotopyEquiv.toFun =
-        ⟨fun q ↦ (1, q.2), by fun_prop⟩ from ContinuousMap.ext h.openToTorus_puncturedToOpen,
-      H1map_torusClass]
+  have hprojection : (h.openToTorus.comp (puncturedToOpen f Φ)).comp
+      h.torusHomotopyEquiv.toFun = ⟨fun q ↦ (1, q.2), by fun_prop⟩ :=
+    ContinuousMap.ext h.openToTorus_puncturedToOpen
+  have hq : firstHomologyMap h.openToTorus (firstHomologyMap (puncturedToOpen f Φ)
+      (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass p q))) = torusClass 0 q := by
+    rw [← firstHomologyMap_comp, ← firstHomologyMap_comp,
+      hprojection, firstHomologyMap_torusClass]
     exact congrArg _ (loopClass_eq_of_apply_eq _ _ fun t ↦ by simp)
   rw [hpq, map_zero, eq_comm, torusClass_eq_zero_iff] at hq
   exact hq.2
@@ -424,15 +316,17 @@ private def expandHomotopy (h : IsSolidTorusNeighborhood f Φ) :
 
 /-- The knot is closed. -/
 private theorem isClosed_range_loop (h : IsSolidTorusNeighborhood f Φ) : IsClosed (range f) := by
-  rw [show f = fun z ↦ Φ (0, z) from funext fun z ↦ (h.apply_zero z).symm]
+  have hcore : f = fun z ↦ Φ (0, z) := funext fun z ↦ (h.apply_zero z).symm
+  rw [hcore]
   exact (isCompact_range
     (h.isEmbedding.continuous.comp (continuous_const.prodMk continuous_id))).isClosed
 
 include h₁ h₂ in
 private theorem mayerVietoris (h : IsSolidTorusNeighborhood f Φ) :
-    (∀ x, H1map (puncturedToOpen f Φ) x = 0 → H1map (puncturedToComplement f Φ) x = 0 →
-      x = 0) ∧
-    ∀ c, ∃ x, H1map (puncturedToOpen f Φ) x = 0 ∧ H1map (puncturedToComplement f Φ) x = c :=
+    (∀ x, firstHomologyMap (puncturedToOpen f Φ) x = 0 →
+      firstHomologyMap (puncturedToComplement f Φ) x = 0 → x = 0) ∧
+    ∀ c, ∃ x, firstHomologyMap (puncturedToOpen f Φ) x = 0 ∧
+      firstHomologyMap (puncturedToComplement f Φ) x = c :=
   mayerVietoris_one (X := X) h.isOpen_image h.isClosed_range_loop.isOpen_compl
     (eq_univ_of_forall fun x ↦ (em (x ∈ range f)).imp (fun hx ↦ h.range_subset_image hx) id)
     h₁ h₂
@@ -441,10 +335,10 @@ include h₁ h₂ in
 /-- Every class of the knot complement is a multiple of the meridian at radius `1 / 2`. -/
 private theorem exists_zsmul_eq (h : IsSolidTorusNeighborhood f Φ)
     (c : ((singularChains ℤ).obj (TopCat.of ↥(range f)ᶜ)).homology 1) :
-    ∃ k : ℤ, k • H1map (puncturedToComplement f Φ) (H1map h.torusHomotopyEquiv.toFun
-      (torusClass 1 0)) = c := by
+    ∃ k : ℤ, k • firstHomologyMap (puncturedToComplement f Φ)
+      (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass 1 0)) = c := by
   obtain ⟨x, hxU, rfl⟩ := (h.mayerVietoris h₁ h₂).2 c
-  obtain ⟨y, rfl⟩ := (bijective_H1map h.torusHomotopyEquiv).2 x
+  obtain ⟨y, rfl⟩ := (h.torusHomotopyEquiv.bijective_firstHomologyMap).2 x
   obtain ⟨p, q, rfl⟩ := exists_eq_torusClass y
   obtain rfl := h.eq_zero_of_H1map_puncturedToOpen_eq_zero hxU
   refine ⟨p, ?_⟩
@@ -453,15 +347,16 @@ private theorem exists_zsmul_eq (h : IsSolidTorusNeighborhood f Φ)
 include h₁ h₂ in
 /-- The meridian at radius `1 / 2` has infinite order in the knot complement. -/
 private theorem eq_zero_of_zsmul_eq_zero (h : IsSolidTorusNeighborhood f Φ) {k : ℤ}
-    (hk : k • H1map (puncturedToComplement f Φ) (H1map h.torusHomotopyEquiv.toFun
-      (torusClass 1 0)) = 0) : k = 0 := by
-  have hx := (h.mayerVietoris h₁ h₂).1 (H1map h.torusHomotopyEquiv.toFun (k • torusClass 1 0))
+    (hk : k • firstHomologyMap (puncturedToComplement f Φ)
+      (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass 1 0)) = 0) : k = 0 := by
+  have hx := (h.mayerVietoris h₁ h₂).1
+    (firstHomologyMap h.torusHomotopyEquiv.toFun (k • torusClass 1 0))
     (by rw [map_zsmul, map_zsmul, h.H1map_puncturedToOpen_torusClass_zero]; exact zsmul_zero k)
     (by rw [map_zsmul, map_zsmul, hk])
-  rw [← map_zero (H1map h.torusHomotopyEquiv.toFun)] at hx
+  rw [← map_zero (firstHomologyMap h.torusHomotopyEquiv.toFun)] at hx
   have hk0 : torusClass k 0 = 0 := by
     rw [torusClass_eq, zero_smul, add_zero]
-    exact (bijective_H1map h.torusHomotopyEquiv).1 hx
+    exact (h.torusHomotopyEquiv.bijective_firstHomologyMap).1 hx
   exact ((torusClass_eq_zero_iff k 0).1 hk0).1
 
 /-! ### The meridian generates the homology of the knot complement -/
@@ -470,7 +365,7 @@ private theorem eq_zero_of_zsmul_eq_zero (h : IsSolidTorusNeighborhood f Φ) {k 
 exterior of the knot `K = range f` into the knot complement. -/
 def boundaryHomologyMap (h : IsSolidTorusNeighborhood f Φ) :
     h.framedBoundaryTorus.H →ₗ[ℤ] ((singularChains ℤ).obj (TopCat.of ↥(range f)ᶜ)).homology 1 :=
-  H1map h.frontierToComplement
+  firstHomologyMap h.frontierToComplement
 
 /-- `TauCeti.IsSolidTorusNeighborhood.boundaryHomologyMap` is induced by the inclusion of the
 boundary torus of the exterior into the knot complement. -/
@@ -484,9 +379,12 @@ theorem boundaryHomologyMap_def (h : IsSolidTorusNeighborhood f Φ) :
 private theorem boundaryHomologyMap_torusCurveClass (h : IsSolidTorusNeighborhood f Φ)
     (p q : ℤ) :
     h.boundaryHomologyMap (FramedBoundaryTorus.torusCurveClass h.exteriorFrontierHomeomorph p q) =
-      H1map (puncturedToComplement f Φ) (H1map h.torusHomotopyEquiv.toFun (torusClass p q)) := by
-  have hH := LinearMap.congr_fun (H1map_eq_of_homotopic ⟨h.expandHomotopy⟩) (torusClass p q)
-  rw [H1map_comp, H1map_comp, H1map_torusClass ⟨h.exteriorFrontierHomeomorph, by fun_prop⟩,
+      firstHomologyMap (puncturedToComplement f Φ)
+        (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass p q)) := by
+  have hH := LinearMap.congr_fun (firstHomologyMap_eq_of_homotopic ⟨h.expandHomotopy⟩)
+    (torusClass p q)
+  rw [firstHomologyMap_comp, firstHomologyMap_comp,
+    firstHomologyMap_torusClass ⟨h.exteriorFrontierHomeomorph, by fun_prop⟩,
     ← FramedBoundaryTorus.torusCurveClass_def] at hH
   exact hH.symm
 
@@ -499,7 +397,8 @@ the linking number with the knot, oriented so that the meridian of `Φ` has link
 def complementHomologyEquiv (h : IsSolidTorusNeighborhood f Φ) :
     ((singularChains ℤ).obj (TopCat.of ↥(range f)ᶜ)).homology 1 ≃ₗ[ℤ] ℤ :=
   have hμ : h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0) =
-      H1map (puncturedToComplement f Φ) (H1map h.torusHomotopyEquiv.toFun (torusClass 1 0)) := by
+      firstHomologyMap (puncturedToComplement f Φ)
+        (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass 1 0)) := by
     rw [FramedBoundaryTorus.ofHomeomorph_basis_zero, h.boundaryHomologyMap_torusCurveClass]
   -- `LinearMap.toSpanSingleton` uses the `Module ℤ` action of the homology object, while the
   -- computations above use `zsmul`; the two agree by `Int.cast_smul_eq_zsmul`.
