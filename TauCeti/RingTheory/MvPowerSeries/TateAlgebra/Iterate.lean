@@ -41,6 +41,8 @@ For two arbitrary families of variables, the analogous comparison into multivari
   `R{X/c} ≃+* R{Y/(c ∘ some)}{T/c none}`, with its coefficients
   `TauCeti.Huber.coeff_restrictedOptionEquiv` and the inverse
   `TauCeti.Huber.coe_restrictedOptionEquiv_symm`.
+* `TauCeti.Huber.coeff_restrictedOptionEquiv_eq_zero_iff`: a coefficient of the iterated series
+  vanishes exactly when every monomial with that exponent of the separated variable does.
 * `TauCeti.Huber.restrictedOptionEquiv_algebraMap`, `TauCeti.Huber.coe_restrictedOptionEquiv_X_none`
   and `TauCeti.Huber.coe_restrictedOptionEquiv_X_some`: it sends constants to constants, the
   separated variable to the univariate variable, and the remaining variables to constants.
@@ -214,6 +216,18 @@ theorem coeff_restrictedOptionEquiv (f : Flat) (n : ℕ) :
     (a : MvPowerSeries (Option σ) R))) ((restrictedOptionEquiv (c := c)).symm_apply_apply f)
   rw [coe_restrictedOptionEquiv_symm, AlgEquiv.apply_symm_apply, PowerSeries.coeff_map] at h
   exact h
+
+/-- The coefficient of degree `n` of the iterated series vanishes exactly when `f` has no
+monomial in which the separated variable occurs with exponent `n`. -/
+theorem coeff_restrictedOptionEquiv_eq_zero_iff (f : Flat) (n : ℕ) :
+    PowerSeries.coeff (R := Inner) n (restrictedOptionEquiv f : PowerSeries Inner) = 0 ↔
+      ∀ t : Option σ →₀ ℕ, t none = n → coeff t (f : MvPowerSeries (Option σ) R) = 0 := by
+  rw [← Subtype.coe_inj, coeff_restrictedOptionEquiv, ZeroMemClass.coe_zero,
+    MvPowerSeries.ext_iff]
+  simp only [coeff_coeff_optionEquivLeft, map_zero]
+  refine ⟨fun h t ht ↦ ?_, fun h u ↦ h _ (Finsupp.optionElim_apply_none n u)⟩
+  have h' := h t.some
+  rwa [← ht, Finsupp.optionElim_some] at h'
 
 /-- The comparison is determined by its formal series: the image of `f` is the image of `f`
 under `MvPowerSeries.optionEquivLeft`, with coefficients regarded as restricted series. -/
