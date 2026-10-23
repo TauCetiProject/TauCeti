@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.GeneralizedNormal.Gamma
+public import TauCeti.Probability.Distributions.GeneralizedNormal.Relations
 public import TauCeti.Probability.Distributions.GeneralizedGamma.Transforms
 
 /-!
@@ -77,7 +78,7 @@ theorem integrableExpSet_id_generalizedNormalMeasure_of_one_lt
 @[simp]
 theorem integrableExpSet_id_generalizedNormalMeasure_one (hs : 0 < s) (m : ℝ) :
     integrableExpSet id (generalizedNormalMeasure m s 1) = Ioo (-s⁻¹) s⁻¹ := by
-  simp [integrableExpSet_id_generalizedNormalMeasure hs zero_lt_one]
+  rw [generalizedNormalMeasure_one, integrableExpSet_id_laplaceMeasure hs]
 
 /-- Below shape one, a valid generalized normal law has no nonzero exponential moments. -/
 @[simp]
