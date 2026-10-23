@@ -18,10 +18,9 @@ This remains true in residue characteristics `2` and `3`: the sixth coefficient 
 its integral coefficients, with no division in the target ring.
 
 For a unit parameter in the open unit ball of a complete non-archimedean normed commutative ring,
-these sums give a nonsingular Tate equation. The specialized norm estimates below assume
-`NormOneClass` (`‖1‖ = 1`): the discriminant has the same norm as the parameter, even when the
-ring norm is only submultiplicative. Under this hypothesis, the coefficients `a₄` and `a₆` have
-norm at most that of the parameter, and the invariant `c₄` has norm one.
+these sums give a nonsingular Tate equation. The discriminant has the same norm as the parameter,
+even when the ring norm is only submultiplicative, and the coefficients `a₄` and `a₆` have norm at
+most that of the parameter. The invariant `c₄` has norm one under `NormOneClass` (`‖1‖ = 1`).
 Over a field, `|j| = 1 / |q| > 1`. Point uniformisation requires further arguments.
 
 ## References
@@ -118,8 +117,6 @@ instance isElliptic_tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     (tateCurveAt q hq).IsElliptic :=
   ⟨isUnit_tateCurveAt_Δ q hq⟩
 
-variable [NormOneClass K]
-
 /-- The specialized Tate discriminant has the same norm as the parameter, even for a
 submultiplicative ring norm. -/
 @[simp] theorem norm_tateCurveAt_Δ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
@@ -137,6 +134,8 @@ theorem norm_tateCurveA₄_le (q : K) (hq : ‖q‖ < 1) : ‖tateCurveA₄ q hq
 `a₆` has no constant term. -/
 theorem norm_tateCurveA₆_le (q : K) (hq : ‖q‖ < 1) : ‖tateCurveA₆ q hq‖ ≤ ‖q‖ :=
   norm_evalIntSeries_le_of_constantCoeff_eq_zero q hq constantCoeff_tateCurve_a₆
+
+variable [NormOneClass K]
 
 /-- The invariant `c₄ = 1 + 240 s₃(q)` of the specialized Tate equation has norm one. -/
 @[simp] theorem norm_tateCurveAt_c₄ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :

@@ -30,10 +30,11 @@ In a complete normed commutative ring, `RingHom.evalBoundedSeries` evaluates a p
 applying a coefficient ring homomorphism whose image is uniformly bounded in norm. The resulting
 evaluation is a ring homomorphism, and in a non-archimedean target it satisfies the same uniform
 bound. For a non-archimedean target, `evalIntSeries` specializes this to integer coefficients
-without requiring a normalized norm. The results below bounding evaluation by one, or by the
-parameter norm for a series without constant term, assume `NormOneClass` (`‖1‖ = 1`). Under the
-same hypothesis, multiplication by an evaluated integral formal unit preserves norms, even when
-the ring norm is only submultiplicative.
+without requiring a normalized norm. Multiplication by an evaluated integral series is contractive,
+so evaluation of a series without constant term has norm at most that of the parameter, and
+multiplication by an evaluated integral formal unit preserves norms. These results do not require
+`NormOneClass`. The estimates bounding evaluation by one or giving formal units norm one retain
+`NormOneClass` (`‖1‖ = 1`).
 
 Iterating these evaluations, `evalIntBivariateSeries` evaluates an integral power series in two
 variables at a pair of parameters in the open unit ball. Likewise an integral polynomial has value
@@ -216,18 +217,44 @@ theorem norm_evalIntSeries_le_one {K : Type*} [NormedCommRing K] [NormOneClass K
     ‖evalIntSeries q hq f‖ ≤ 1 := by
   simpa only [norm_one] using norm_evalIntSeries_le_norm_one q hq f
 
+/-- Multiplication by an evaluated integral series inside the open unit ball does not increase
+norms, without requiring a normalized ring norm. -/
+theorem norm_mul_evalIntSeries_le {K : Type*} [NormedCommRing K] [CompleteSpace K]
+    [IsUltrametricDist K] (x q : K) (hq : ‖q‖ < 1) (f : ℤ⟦X⟧) :
+    ‖x * evalIntSeries q hq f‖ ≤ ‖x‖ := by
+  have hp : ∀ n : ℕ, ‖x * q ^ n‖ ≤ ‖x‖ := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      calc
+        ‖x * q ^ (n + 1)‖ = ‖(x * q ^ n) * q‖ := by rw [pow_succ, mul_assoc]
+        _ ≤ ‖x * q ^ n‖ * ‖q‖ := norm_mul_le _ _
+        _ ≤ ‖x‖ * 1 := mul_le_mul ih hq.le (norm_nonneg _) (norm_nonneg _)
+        _ = ‖x‖ := mul_one _
+  rw [evalIntSeries_apply,
+    ← (summable_intCast_mul_pow (fun n ↦ coeff n f) hq).tsum_mul_left x]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg _) fun n ↦ ?_
+  calc
+    ‖x * (((coeff n f : ℤ) : K) * q ^ n)‖ = ‖(coeff n f : ℤ) • (x * q ^ n)‖ := by
+      rw [zsmul_eq_mul]
+      congr 1
+      ring
+    _ ≤ ‖x * q ^ n‖ := IsUltrametricDist.norm_zsmul_le _ _
+    _ ≤ ‖x‖ := hp n
+
 /-- An integral series without constant term evaluates inside the open unit ball to an element of
 norm at most that of the parameter. -/
 theorem norm_evalIntSeries_le_of_constantCoeff_eq_zero {K : Type*} [NormedCommRing K]
-    [NormOneClass K] [CompleteSpace K] [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) {f : ℤ⟦X⟧}
+    [CompleteSpace K] [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) {f : ℤ⟦X⟧}
     (hf : constantCoeff f = 0) : ‖evalIntSeries q hq f‖ ≤ ‖q‖ := by
   obtain ⟨g, rfl⟩ := X_dvd_iff.mpr hf
   rw [map_mul, evalIntSeries_X]
-  exact (norm_mul_le_of_le le_rfl (norm_evalIntSeries_le_one q hq g)).trans_eq (mul_one _)
+  exact norm_mul_evalIntSeries_le q q hq g
 
 /-- Multiplication by an integral formal unit evaluated inside the open unit ball preserves norms
-in a complete non-archimedean normed commutative ring with `‖1‖ = 1`. -/
-@[simp] theorem norm_mul_evalIntSeries_of_isUnit {K : Type*} [NormedCommRing K] [NormOneClass K]
+in a complete non-archimedean normed commutative ring, without requiring a normalized norm. -/
+@[simp] theorem norm_mul_evalIntSeries_of_isUnit {K : Type*} [NormedCommRing K]
     [CompleteSpace K]
     [IsUltrametricDist K] (x q : K) (hq : ‖q‖ < 1) {f : ℤ⟦X⟧} (hf : IsUnit f) :
     ‖x * evalIntSeries q hq f‖ = ‖x‖ := by
@@ -235,12 +262,12 @@ in a complete non-archimedean normed commutative ring with `‖1‖ = 1`. -/
   have hmul : evalIntSeries q hq f * evalIntSeries q hq g = 1 := by
     rw [← map_mul, hfg, map_one]
   apply le_antisymm
-  · exact (norm_mul_le_of_le le_rfl (norm_evalIntSeries_le_one q hq f)).trans_eq (mul_one _)
+  · exact norm_mul_evalIntSeries_le x q hq f
   · calc
       ‖x‖ = ‖(x * evalIntSeries q hq f) * evalIntSeries q hq g‖ := by
         rw [mul_assoc, hmul, mul_one]
       _ ≤ ‖x * evalIntSeries q hq f‖ :=
-        (norm_mul_le_of_le le_rfl (norm_evalIntSeries_le_one q hq g)).trans_eq (mul_one _)
+        norm_mul_evalIntSeries_le _ q hq g
 
 /-- An integral formal unit evaluates to an element of norm one inside the open unit ball. -/
 @[simp] theorem norm_evalIntSeries_eq_one_of_isUnit {K : Type*} [NormedCommRing K] [NormOneClass K]
