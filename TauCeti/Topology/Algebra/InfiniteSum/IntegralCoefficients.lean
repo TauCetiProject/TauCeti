@@ -30,9 +30,10 @@ In a complete normed commutative ring, `RingHom.evalBoundedSeries` evaluates a p
 applying a coefficient ring homomorphism whose image is uniformly bounded in norm. The resulting
 evaluation is a ring homomorphism, and in a non-archimedean target it satisfies the same uniform
 bound. For a non-archimedean target, `evalIntSeries` specializes this to integer coefficients
-without requiring a normalized norm. When `‖1‖ = 1`, it has norm at most one, or at most the norm
-of the parameter for an integral series without constant term. Multiplication by an evaluated
-integral formal unit preserves norms, even when the ring norm is only submultiplicative.
+without requiring a normalized norm. The results below bounding evaluation by one, or by the
+parameter norm for a series without constant term, assume `NormOneClass` (`‖1‖ = 1`). Under the
+same hypothesis, multiplication by an evaluated integral formal unit preserves norms, even when
+the ring norm is only submultiplicative.
 
 Iterating these evaluations, `evalIntBivariateSeries` evaluates an integral power series in two
 variables at a pair of parameters in the open unit ball. Likewise an integral polynomial has value

@@ -18,9 +18,10 @@ This remains true in residue characteristics `2` and `3`: the sixth coefficient 
 its integral coefficients, with no division in the target ring.
 
 For a unit parameter in the open unit ball of a complete non-archimedean normed commutative ring,
-these sums give a nonsingular Tate equation. When `‖1‖ = 1`, its discriminant has the same norm as
-the parameter, even when the ring norm is only submultiplicative. The coefficients `a₄` and `a₆`
-have norm at most that of the parameter, and when `‖1‖ = 1` the invariant `c₄` has norm one.
+these sums give a nonsingular Tate equation. The specialized norm estimates below assume
+`NormOneClass` (`‖1‖ = 1`): the discriminant has the same norm as the parameter, even when the
+ring norm is only submultiplicative. Under this hypothesis, the coefficients `a₄` and `a₆` have
+norm at most that of the parameter, and the invariant `c₄` has norm one.
 Over a field, `|j| = 1 / |q| > 1`. Point uniformisation requires further arguments.
 
 ## References
