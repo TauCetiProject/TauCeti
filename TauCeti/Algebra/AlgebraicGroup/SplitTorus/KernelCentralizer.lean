@@ -53,7 +53,7 @@ statements assume only that the augmentation cotangent module of `H` is finite p
 * `TauCeti.SplitMaximalTorus.centralizerKerHopfIdeal`: the centralizer `Z_G(ker α)`.
 * `TauCeti.SplitMaximalTorus.centralizerKerTorusHopfIdeal`: the centralizer `Z_G(T_α)`.
 * `TauCeti.SplitMaximalTorus.centralizerKerHopfIdeal_le_definingIdeal`,
-  `TauCeti.SplitMaximalTorus.centralizerHopfIdeal_le_centralizerKerHopfIdeal` and
+  `TauCeti.SplitMaximalTorus.centralizerKerHopfIdeal_le_centralizerHopfIdeal` and
   `TauCeti.SplitMaximalTorus.centralizerKerTorusHopfIdeal_le_centralizerKerHopfIdeal`: the
   containments `T ⊆ Z_G(ker α)` and `Z_G(T) ⊆ Z_G(ker α) ⊆ Z_G(T_α)`.
 * `TauCeti.SplitMaximalTorus.lieSubalgebra_centralizerKerHopfIdeal_toSubmodule` and
@@ -193,7 +193,7 @@ theorem centralizerKerTorusHopfIdeal_def (T : SplitMaximalTorus R H r)
 
 /-- **`Z_G(T) ⊆ Z_G(ker α)`**: a point centralizing the torus centralizes the kernel of each of its
 characters. -/
-theorem centralizerHopfIdeal_le_centralizerKerHopfIdeal (T : SplitMaximalTorus R H r)
+theorem centralizerKerHopfIdeal_le_centralizerHopfIdeal (T : SplitMaximalTorus R H r)
     (α : ULift.{u} (Fin r) →₀ ℤ) :
     T.centralizerKerHopfIdeal α ≤ BialgHom.centralizerHopfIdeal T.coordinateMap.hom := by
   rw [centralizerKerHopfIdeal_def, kerCoordinateMap_def]
@@ -224,7 +224,7 @@ theorem centralizerKerTorusHopfIdeal_le_definingIdeal (T : SplitMaximalTorus R H
 @[simp]
 theorem centralizerKerHopfIdeal_zero (T : SplitMaximalTorus R H r) :
     T.centralizerKerHopfIdeal 0 = BialgHom.centralizerHopfIdeal T.coordinateMap.hom := by
-  refine le_antisymm (T.centralizerHopfIdeal_le_centralizerKerHopfIdeal 0) ?_
+  refine le_antisymm (T.centralizerKerHopfIdeal_le_centralizerHopfIdeal 0) ?_
   -- `ker 0 → T` is an isomorphism: the quotient map by the trivial subgroup has a left inverse.
   let f : KerCharacterGroup (0 : ULift.{u} (Fin r) →₀ ℤ) →*
       Multiplicative (ULift.{u} (Fin r) →₀ ℤ) :=
@@ -238,7 +238,7 @@ theorem centralizerKerHopfIdeal_zero (T : SplitMaximalTorus R H r) :
   rw [← hπ, centralizerKerHopfIdeal_def]
   exact BialgHom.centralizerHopfIdeal_comp_le _ _
 
-/-- The kernel of `-α` is the kernel of `α`. -/
+/-- The kernel of `-α` is the kernel of `α`, so `Z_G(ker (-α)) = Z_G(ker α)`. -/
 @[simp]
 theorem centralizerKerHopfIdeal_neg (T : SplitMaximalTorus R H r) (α : ULift.{u} (Fin r) →₀ ℤ) :
     T.centralizerKerHopfIdeal (-α) = T.centralizerKerHopfIdeal α := by
@@ -250,6 +250,30 @@ theorem centralizerKerHopfIdeal_neg (T : SplitMaximalTorus R H r) (α : ULift.{u
   exact le_antisymm
     (BialgHom.centralizerHopfIdeal_mapDomainBialgHom_mk'_comp_anti _ h.ge)
     (BialgHom.centralizerHopfIdeal_mapDomainBialgHom_mk'_comp_anti _ h.le)
+
+/-- The torus of the kernel of `-α` is that of `α`, so `Z_G(T_{-α}) = Z_G(T_α)`. -/
+@[simp]
+theorem centralizerKerTorusHopfIdeal_neg (T : SplitMaximalTorus R H r)
+    (α : ULift.{u} (Fin r) →₀ ℤ) :
+    T.centralizerKerTorusHopfIdeal (-α) = T.centralizerKerTorusHopfIdeal α := by
+  -- Restriction of characters to `T_{-β}` factors through restriction to `T_β`.
+  have key (β : ULift.{u} (Fin r) →₀ ℤ) :
+      T.centralizerKerTorusHopfIdeal (-β) ≤ T.centralizerKerTorusHopfIdeal β := by
+    have h : Subgroup.zpowers (Multiplicative.ofAdd β) ≤
+        Subgroup.zpowers (Multiplicative.ofAdd (-β)) := by
+      rw [ofAdd_neg, Subgroup.zpowers_inv]
+    let f : KerCharacterGroup β →* KerCharacterGroup (-β) :=
+      QuotientGroup.map _ _ (MonoidHom.id _) h
+    let g : KerTorusCharacterGroup β →* KerTorusCharacterGroup (-β) :=
+      QuotientGroup.map _ _ f (CommGroup.le_comap_torsion f)
+    have hg : g.comp (kerTorusCharacterMap β) = kerTorusCharacterMap (-β) := by
+      ext
+      rfl
+    rw [centralizerKerTorusHopfIdeal_def, centralizerKerTorusHopfIdeal_def,
+      kerTorusCoordinateMap_def, kerTorusCoordinateMap_def, ← hg,
+      MonoidAlgebra.mapDomainBialgHom_comp, BialgHom.comp_assoc]
+    exact BialgHom.centralizerHopfIdeal_comp_le _ _
+  exact le_antisymm (key α) (by simpa using key (-α))
 
 /-! ### Lie algebras -/
 
