@@ -20,9 +20,10 @@ I₁.map₂ I₂ J F h₁ h₂ : C₁/I₁ ⥤ C₂/I₂ ⥤ D/J
 ```
 
 on the ideal quotients. For a fixed object `X₁` of `C₁`, its partial functor on the class of
-`X₁` is the functor `I₂.map J (F.obj X₁)` induced by `F.obj X₁`. The descended bifunctor is
-additive, and linear, in each variable, and it is the unique bifunctor agreeing with `F`
-on representatives.
+`X₁` is the functor `I₂.map J (F.obj X₁)` induced by `F.obj X₁`; symmetrically, its partial
+functor on the class of an object `X₂` of `C₂` is `I₁.map J (F.flip.obj X₂)`. The descended
+bifunctor is additive, and linear, in each variable, and it is the unique bifunctor agreeing
+with `F` on representatives.
 
 This is the descent that turns a tensor product preserving null-homotopic maps on either side
 into a tensor product on homotopy categories. It follows the construction of
@@ -86,9 +87,10 @@ noncomputable def map₂ : I₁.Quotient ⥤ I₂.Quotient ⥤ J.Quotient :=
       apply CategoryTheory.Quotient.natTrans_ext
       ext X₂
       -- Both components are classes of components of `F`; their difference lies in `J`.
-      change J.quotientFunctor.map ((F.flip.obj X₂).map f) =
-        J.quotientFunctor.map ((F.flip.obj X₂).map g)
-      rw [quotientFunctor_map_eq_iff, ← Functor.map_sub]
+      rw [Functor.whiskerLeft_app, Functor.whiskerLeft_app,
+        CategoryTheory.Quotient.natTransLift_app, CategoryTheory.Quotient.natTransLift_app,
+        Functor.whiskerRight_app, Functor.whiskerRight_app, quotientFunctor_map_eq_iff,
+        ← Functor.flip_obj_map, ← Functor.flip_obj_map, ← Functor.map_sub]
       exact (mem_comap_hom J _).1 (le_def.1 (h₁ X₂) _ ((I₁.rel_iff).1 hfg)))
 
 /-- The partial functor of the descended bifunctor at the class of `X₁` is the functor induced
@@ -128,6 +130,17 @@ theorem quotientFunctor_comp_map₂_comp_whiskeringLeft :
       F ⋙ (Functor.whiskeringRight _ _ _).obj J.quotientFunctor :=
   (rfl)
 
+/-- The partial functor of the descended bifunctor in the first variable at the class of `X₂` is
+the functor induced on quotients by `F.flip.obj X₂`. -/
+theorem map₂_flip_obj_quotientFunctor_obj (X₂ : C₂) :
+    (I₁.map₂ I₂ J F h₁ h₂).flip.obj (I₂.quotientFunctor.obj X₂) =
+      I₁.map J (F.flip.obj X₂) (h₁ X₂) := by
+  apply CategoryTheory.Quotient.lift_unique' I₁.rel
+  rw [quotientFunctor_comp_map]
+  -- Evaluate the agreement of the descended bifunctor with `F` on representatives at `X₂`.
+  exact congrArg (fun G ↦ G.flip.obj X₂)
+    (quotientFunctor_comp_map₂_comp_whiskeringLeft I₁ I₂ J F h₁ h₂)
+
 /-- A bifunctor on the quotients that agrees with `F` on representatives is the descended
 bifunctor. -/
 theorem map₂_unique (G : I₁.Quotient ⥤ I₂.Quotient ⥤ J.Quotient)
@@ -147,53 +160,41 @@ theorem map₂_unique (G : I₁.Quotient ⥤ I₂.Quotient ⥤ J.Quotient)
   simp only [Functor.comp_map] at h
   simp only [Functor.comp_obj, Functor.comp_map, Functor.map_comp, eqToHom_map, h]
 
+instance (Z₂ : I₂.Quotient) : ((I₁.map₂ I₂ J F h₁ h₂).flip.obj Z₂).Additive :=
+  -- `Z₂` is the class of its representative `Z₂.as`.
+  Functor.additive_of_iso (eqToIso (map₂_flip_obj_quotientFunctor_obj I₁ I₂ J F h₁ h₂ Z₂.as).symm)
+
+instance (Z₁ : I₁.Quotient) : ((I₁.map₂ I₂ J F h₁ h₂).obj Z₁).Additive :=
+  -- `Z₁` is the class of its representative `Z₁.as`.
+  Functor.additive_of_iso (eqToIso (map₂_obj_quotientFunctor_obj I₁ I₂ J F h₁ h₂ Z₁.as).symm)
+
 instance : (I₁.map₂ I₂ J F h₁ h₂).Additive where
-  map_add {Z₁ Y₁ f g} := by
-    obtain ⟨f, rfl⟩ := I₁.quotientFunctor.map_surjective f
-    obtain ⟨g, rfl⟩ := I₁.quotientFunctor.map_surjective g
+  map_add {_ _ f g} := by
     apply CategoryTheory.Quotient.natTrans_ext
     ext X₂
-    rw [← Functor.map_add]
-    -- Components of the descended transformations are classes of components of `F`.
-    change J.quotientFunctor.map ((F.flip.obj X₂).map (f + g)) =
-      J.quotientFunctor.map ((F.flip.obj X₂).map f) +
-        J.quotientFunctor.map ((F.flip.obj X₂).map g)
-    rw [Functor.map_add, Functor.map_add]
-
-instance (Z₁ : I₁.Quotient) : ((I₁.map₂ I₂ J F h₁ h₂).obj Z₁).Additive := by
-  -- An object of the quotient is the class of its representative.
-  rw [show Z₁ = I₁.quotientFunctor.obj Z₁.as from rfl, map₂_obj_quotientFunctor_obj]
-  infer_instance
-
-instance (Z₂ : I₂.Quotient) : ((I₁.map₂ I₂ J F h₁ h₂).flip.obj Z₂).Additive where
-  map_add {_ _ f g} := by
-    simp only [Functor.flip_obj_map, Functor.map_add, NatTrans.app_add]
+    -- Components at `X₂` are the values of the additive partial functor in the first variable.
+    simp only [Functor.whiskerLeft_app, NatTrans.app_add, ← Functor.flip_obj_map, Functor.map_add]
 
 section Linear
 
 variable (R : Type*) [Semiring R] [Linear R C₁] [Linear R C₂] [Linear R D]
   [∀ X₁, (F.obj X₁).Linear R] [∀ X₂, (F.flip.obj X₂).Linear R]
 
-instance (Z₁ : I₁.Quotient) : ((I₁.map₂ I₂ J F h₁ h₂).obj Z₁).Linear R := by
-  -- An object of the quotient is the class of its representative.
-  rw [show Z₁ = I₁.quotientFunctor.obj Z₁.as from rfl, map₂_obj_quotientFunctor_obj]
-  infer_instance
+instance (Z₂ : I₂.Quotient) : ((I₁.map₂ I₂ J F h₁ h₂).flip.obj Z₂).Linear R :=
+  -- `Z₂` is the class of its representative `Z₂.as`.
+  Functor.linear_of_iso R (eqToIso (map₂_flip_obj_quotientFunctor_obj I₁ I₂ J F h₁ h₂ Z₂.as).symm)
+
+instance (Z₁ : I₁.Quotient) : ((I₁.map₂ I₂ J F h₁ h₂).obj Z₁).Linear R :=
+  -- `Z₁` is the class of its representative `Z₁.as`.
+  Functor.linear_of_iso R (eqToIso (map₂_obj_quotientFunctor_obj I₁ I₂ J F h₁ h₂ Z₁.as).symm)
 
 instance : (I₁.map₂ I₂ J F h₁ h₂).Linear R where
-  map_smul {Z₁ Y₁} f r := by
-    obtain ⟨f, rfl⟩ := I₁.quotientFunctor.map_surjective f
+  map_smul {_ _} f r := by
     apply CategoryTheory.Quotient.natTrans_ext
     ext X₂
-    rw [← Functor.map_smul]
-    -- Components of the descended transformations are classes of components of `F`.
-    change J.quotientFunctor.map ((F.flip.obj X₂).map (r • f)) =
-      r • J.quotientFunctor.map ((F.flip.obj X₂).map f)
-    rw [Functor.map_smul, Functor.map_smul]
-
-instance (Z₂ : I₂.Quotient) : ((I₁.map₂ I₂ J F h₁ h₂).flip.obj Z₂).Linear R where
-  map_smul {_ _} f r := by
-    rw [Functor.flip_obj_map, Functor.map_smul]
-    rfl
+    -- Components at `X₂` are the values of the linear partial functor in the first variable.
+    simp only [Functor.whiskerLeft_app, NatTrans.app_smul, ← Functor.flip_obj_map,
+      Functor.map_smul]
 
 end Linear
 

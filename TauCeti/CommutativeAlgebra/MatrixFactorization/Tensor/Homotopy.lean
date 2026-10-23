@@ -20,8 +20,10 @@ HMF(S,v) ⥤ HMF(S,w) ⥤ HMF(S,v+w)
 ```
 
 on the homotopy categories, given on classes of factorizations and of closed maps by the class
-of their tensor product. In particular, a homotopy equivalence in either variable induces an
-isomorphism of tensor products in `HMF(S,v+w)`.
+of their tensor product. Tensoring with the class of a fixed factorization, on either side, is
+the functor induced on homotopy categories by tensoring with that factorization. In particular,
+a homotopy equivalence in either variable induces an isomorphism of tensor products in
+`HMF(S,v+w)`.
 
 The descent is the general one for bifunctors on morphism-ideal quotients,
 `TauCeti.MorphismIdeal.map₂`, applied to the null-homotopic ideals.
@@ -61,6 +63,22 @@ noncomputable def homotopyTensor :
     nullHomotopic_le_comap_tensor_obj
 
 variable {S v w}
+
+/-- Tensoring on the left with the class of a fixed factorization `X` is the functor induced on
+homotopy categories by tensoring on the left with `X`. -/
+theorem homotopyTensor_obj_quotientFunctor_obj (X : MatrixFactorization S v) :
+    (homotopyTensor S v w).obj ((nullHomotopic (S := S) (w := v)).quotientFunctor.obj X) =
+      (nullHomotopic (S := S) (w := w)).map _ ((tensor S v w).obj X)
+        (nullHomotopic_le_comap_tensor_obj X) :=
+  MorphismIdeal.map₂_obj_quotientFunctor_obj ..
+
+/-- Tensoring on the right with the class of a fixed factorization `Y` is the functor induced on
+homotopy categories by tensoring on the right with `Y`. -/
+theorem homotopyTensor_flip_obj_quotientFunctor_obj (Y : MatrixFactorization S w) :
+    (homotopyTensor S v w).flip.obj ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj Y) =
+      (nullHomotopic (S := S) (w := v)).map _ ((tensor S v w).flip.obj Y)
+        (nullHomotopic_le_comap_tensor_flip_obj Y) :=
+  MorphismIdeal.map₂_flip_obj_quotientFunctor_obj ..
 
 /-- The tensor product of the classes of two factorizations is the class of their tensor
 product. -/
