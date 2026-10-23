@@ -53,7 +53,7 @@ theorem not_isValuationSaturated_maximalIdeal_integer {K : Type*} [NontriviallyN
     [IsUltrametricDist K] :
     ¬ IsValuationSaturated (Valued.integer K) (maximalIdeal (Valued.integer K))
       (maximalIdeal (Valued.integer K)) := by
-  refine not_isValuationSaturated_ideal_self (fun h ↦ ?_) (maximalIdeal.isMaximal _).ne_top
+  refine not_isValuationSaturated_ideal_ideal (fun h ↦ ?_) (maximalIdeal.isMaximal _).ne_top
   obtain ⟨x, hx0, hx1⟩ := Valued.integer.exists_norm_lt_one (K := K)
   have hx : x ∈ maximalIdeal (Valued.integer K) := Valued.integer.mem_maximalIdeal_iff.2 hx1
   rw [h, Ideal.mem_bot] at hx
